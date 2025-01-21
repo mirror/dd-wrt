@@ -1427,6 +1427,10 @@ generic:;
 		setRouter("Linksys MX8500");
 		return ROUTER_LINKSYS_MX8500;
 	}
+	if (!strcmp(modelstr, "MX5300")) {
+		setRouter("Linksys MX5300");
+		return ROUTER_LINKSYS_MX5300;
+	}
 	if (!strcmp(modelstr, "MR5500")) {
 		setRouter("Linksys MR5500");
 		return ROUTER_LINKSYS_MR5500;

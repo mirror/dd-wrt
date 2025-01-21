@@ -90,6 +90,7 @@ void start_jffs2(void)
 	case ROUTER_LINKSYS_MR5500:
 	case ROUTER_LINKSYS_MX5500:
 	case ROUTER_LINKSYS_MX8500:
+	case ROUTER_LINKSYS_MX5300:
 		ubidev = 1;
 		break;
 	case ROUTER_LINKSYS_EA8500:

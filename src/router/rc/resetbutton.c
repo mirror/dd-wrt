@@ -212,6 +212,7 @@ static int getbuttonstate()
 	case ROUTER_LINKSYS_MX4300:
 		return !get_gpio(52);
 	case ROUTER_LINKSYS_MX8500:
+	case ROUTER_LINKSYS_MX8300:
 		return !get_gpio(67);
 	case ROUTER_DYNALINK_DLWRX36:
 		return !get_gpio(34);
@@ -1416,6 +1417,10 @@ static void resetbtn_period_check(int sig)
 	case ROUTER_LINKSYS_MX8500:
 		sesgpio = 0x105;
 		val |= get_gpio(64) << 5;
+		break;
+	case ROUTER_LINKSYS_MX5300:
+		sesgpio = 0x105;
+		val |= get_gpio(54) << 5;
 		break;
 	case ROUTER_LINKSYS_MX4200V1:
 	case ROUTER_LINKSYS_MX4200V2:

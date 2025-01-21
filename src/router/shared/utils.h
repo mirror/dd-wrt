@@ -824,6 +824,8 @@
 
 #define ROUTER_LINKSYS_MX8500 0x11e143
 
+#define ROUTER_LINKSYS_MX5300 0x11f143
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 

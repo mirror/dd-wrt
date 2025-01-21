@@ -1169,6 +1169,18 @@ void start_sysinit(void)
 		set_linksys_defaults(1);
 		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		break;
+	case ROUTER_LINKSYS_MX5300:
+		profile = 1024;
+		fwlen = 0x20000;
+		load_nss_ipq807x(1024);
+		nvram_default_get("eth0_label", "wan");
+		nvram_default_get("eth1_label", "lan1");
+		nvram_default_get("eth2_label", "lan2");
+		nvram_default_get("eth3_label", "lan3");
+		nvram_default_get("eth4_label", "lan4");
+		set_linksys_defaults(1);
+		maddr = get_deviceinfo_linksys("hw_mac_addr");
+		break;
 	case ROUTER_LINKSYS_MX4300:
 		profile = 1024;
 		fwlen = 0x20000;
@@ -1283,16 +1295,33 @@ void start_sysinit(void)
 				putc(getc(fp), out);
 			fclose(out);
 			break;
-		case ROUTER_FORTINET_FAP231F:
-			fseek(fp, 0x33006, SEEK_SET);
+		case ROUTER_LINKSYS_MX5300:
+			fseek(fp, 0x33000, SEEK_SET);
 			out = fopen("/tmp/ath10k_board1.bin", "wb");
 			for (i = 0; i < 6; i++)
 				putc(getc(fp), out);
 			unsigned int newmac2[6];
 			sscanf(maddr, "%02X:%02X:%02X:%02X:%02X:%02X", &newmac2[0], &newmac2[1], &newmac2[2], &newmac2[3],
 			       &newmac2[4], &newmac2[5]);
-			for (i = 0; i < 6; i++)
+			for (i = 0; i < 6; i++) {
 				putc(newmac2[i], out);
+				getc(fp);
+			}
+			for (i = 0; i < 12052; i++)
+				putc(getc(fp), out);
+			fclose(out);
+		case ROUTER_FORTINET_FAP231F:
+			fseek(fp, 0x33000, SEEK_SET);
+			out = fopen("/tmp/ath10k_board1.bin", "wb");
+			for (i = 0; i < 6; i++)
+				putc(getc(fp), out);
+			unsigned int newmac2[6];
+			sscanf(maddr, "%02X:%02X:%02X:%02X:%02X:%02X", &newmac2[0], &newmac2[1], &newmac2[2], &newmac2[3],
+			       &newmac2[4], &newmac2[5]);
+			for (i = 0; i < 6; i++) {
+				putc(newmac2[i], out);
+				getc(fp);
+			}
 			for (i = 0; i < 2104; i++)
 				putc(getc(fp), out);
 			fclose(out);
@@ -1447,6 +1476,17 @@ void start_sysinit(void)
 		removeregdomain("/tmp/cal-pci-0000:01:00.0.bin", QCN9000);
 		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
 		break;
+	case ROUTER_LINKSYS_MX5300:
+		MAC_ADD(ethaddr);
+		nvram_set("wlan0_hwaddr", ethaddr);
+		patch(ethaddr, 14);
+		MAC_ADD(ethaddr);
+		nvram_set("wlan1_hwaddr", ethaddr);
+		patch(ethaddr, 20);
+		MAC_ADD(ethaddr);
+		nvram_set("wlan2_hwaddr", ethaddr);
+		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
+		break;
 	case ROUTER_LINKSYS_MX4200V1:
 		MAC_ADD(ethaddr);
 		nvram_set("wlan0_hwaddr", ethaddr);
@@ -1567,6 +1607,11 @@ void start_sysinit(void)
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_LINKSYS_MX8500:
+		setscaling(0);
+		disableportlearn();
+		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
+		break;
+	case ROUTER_LINKSYS_MX5300:
 		setscaling(0);
 		disableportlearn();
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
@@ -1710,6 +1755,15 @@ void start_wifi_drivers(void)
 			minif = 3;
 			break;
 
+		case ROUTER_LINKSYS_MX5300:
+			//			char *cert_region = get_deviceinfo_linksys("cert_region");
+			//			if (!cert_region)
+			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode,
+					     cert_region);
+			load_ath10k();
+			minif = 3;
+			break;
+
 		default:
 			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode,
 					     "");
@@ -1763,7 +1817,7 @@ void start_devinit_arch(void)
 void start_resetbc(void)
 {
 	int brand = getRouterBrand();
-	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MR7500 || brand == ROUTER_LINKSYS_MX8500 ||
+	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MR7500 || brand == ROUTER_LINKSYS_MX8500 || brand == ROUTER_LINKSYS_MX5300 ||
 	    brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_LINKSYS_MX5500 || brand == ROUTER_LINKSYS_MX4200V1 ||
 	    brand == ROUTER_LINKSYS_MX4200V2 || brand == ROUTER_LINKSYS_MX4300) {
 		if (!nvram_match("nobcreset", "1"))
