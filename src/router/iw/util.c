@@ -135,6 +135,7 @@ static const char *ifmodes[NL80211_IFTYPE_MAX + 1] = {
 	"P2P-device",
 	"outside context of a BSS",
 	"NAN",
+	"TDMA",
 };
 
 static char modebuf[100];
@@ -201,24 +202,33 @@ int ieee80211_channel_to_frequency(int chan, enum nl80211_band band)
 
 int ieee80211_frequency_to_channel(int freq)
 {
-	if (freq < 1000)
-		return 0;
 	/* see 802.11-2007 17.3.8.3.2 and Annex J */
 	if (freq == 2484)
 		return 14;
-	/* see 802.11ax D6.1 27.3.23.2 and Annex E */
-	else if (freq == 5935)
-		return 2;
+	// boes hack...
+	else if (freq == 2407)
+		return 0;
+	else if (freq < 2412)
+		return (freq - 2407) / 5 + 256;
 	else if (freq < 2484)
 		return (freq - 2407) / 5;
-	else if (freq >= 4910 && freq <= 4980)
+	else if (freq < 2502 && freq > 2484)
+		return 14;
+	else if (freq < 2512 && freq > 2484)
+		return 15;
+	else if (freq > 2484 && freq < 4000 )
+		return (15 + ((freq - 2512) / 20)) & 0xff;
+	else if (freq < 4990 && freq > 4940)
+		return ((freq * 10) + (((freq % 5) == 2) ? 5 : 0) - 49400) / 5;
+	else if (freq > 4800 && freq < 5005)
 		return (freq - 4000) / 5;
-	else if (freq < 5950)
-		return (freq - 5000) / 5;
-	else if (freq <= 45000) /* DMG band lower limit */
-		/* see 802.11ax D6.1 27.3.23.2 */
+	else if (freq == 5935)
+		return (freq - 5925) / 5;
+	else if (freq > 5950 && freq <= 7115)
 		return (freq - 5950) / 5;
-	else if (freq >= 58320 && freq <= 70200)
+	else if (freq <= 45000) /* DMG band lower limit */
+		return ((freq - 5000) / 5) & 0xff;
+	else if (freq >= 58320 && freq <= 64800)
 		return (freq - 56160) / 2160;
 	else
 		return 0;
@@ -471,6 +481,7 @@ enum nl80211_chan_width str_to_bw(const char *str)
 		const char *name;
 		unsigned int val;
 	} bwmap[] = {
+		{ .name = "2.5", .val = NL80211_CHAN_WIDTH_3, },
 		{ .name = "5", .val = NL80211_CHAN_WIDTH_5, },
 		{ .name = "10", .val = NL80211_CHAN_WIDTH_10, },
 		{ .name = "20", .val = NL80211_CHAN_WIDTH_20, },
@@ -509,6 +520,7 @@ static int parse_freqs(struct chandef *chandef, int argc, char **argv,
 	case NL80211_CHAN_WIDTH_20:
 	case NL80211_CHAN_WIDTH_5:
 	case NL80211_CHAN_WIDTH_10:
+	case NL80211_CHAN_WIDTH_3:
 		break;
 	case NL80211_CHAN_WIDTH_80P80:
 		need_cf2 = true;
@@ -629,6 +641,10 @@ int parse_freqchan(struct chandef *chandef, bool chan, int argc, char **argv,
 		  .width = NL80211_CHAN_WIDTH_20_NOHT,
 		  .freq1_diff = 0,
 		  .chantype = NL80211_CHAN_NO_HT },
+		{ .name = "2.5MHz",
+		  .width = NL80211_CHAN_WIDTH_3,
+		  .freq1_diff = 0,
+		  .chantype = -1 },
 		{ .name = "5MHz",
 		  .width = NL80211_CHAN_WIDTH_5,
 		  .freq1_diff = 0,
@@ -1874,7 +1890,7 @@ void iw_hexdump(const char *prefix, const __u8 *buf, size_t size)
 int get_cf1(const struct chanmode *chanmode, unsigned long freq)
 {
 	unsigned int cf1 = freq, j;
-	unsigned int bw80[] = { 5180, 5260, 5500, 5580, 5660, 5745,
+	unsigned int bw80[] = { 5180, 5260, 5500, 5580, 5660, 5745, 5825,
 				5955, 6035, 6115, 6195, 6275, 6355,
 				6435, 6515, 6595, 6675, 6755, 6835,
 				6195, 6995 };
@@ -1885,6 +1901,7 @@ int get_cf1(const struct chanmode *chanmode, unsigned long freq)
 
 	switch (chanmode->width) {
 	case NL80211_CHAN_WIDTH_80:
+	case NL80211_CHAN_WIDTH_80P80:
 	        /* setup center_freq1 */
 		for (j = 0; j < ARRAY_SIZE(bw80); j++) {
 			if (freq >= bw80[j] && freq < bw80[j] + 80)

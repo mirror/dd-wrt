@@ -162,6 +162,10 @@ static int print_link_sta(struct nl_msg *msg, void *arg)
 		[NL80211_STA_INFO_TX_BYTES] = { .type = NLA_U32 },
 		[NL80211_STA_INFO_RX_PACKETS] = { .type = NLA_U32 },
 		[NL80211_STA_INFO_TX_PACKETS] = { .type = NLA_U32 },
+		[NL80211_STA_INFO_RX_COMPRESSED] = { .type = NLA_U32 },
+		[NL80211_STA_INFO_TX_COMPRESSED] = { .type = NLA_U32 },
+		[NL80211_STA_INFO_RX_COMPRESSED_BYTES64] = { .type = NLA_U64 },
+		[NL80211_STA_INFO_TX_COMPRESSED_BYTES64] = { .type = NLA_U64 },
 		[NL80211_STA_INFO_SIGNAL] = { .type = NLA_U8 },
 		[NL80211_STA_INFO_RX_BITRATE] = { .type = NLA_NESTED },
 		[NL80211_STA_INFO_TX_BITRATE] = { .type = NLA_NESTED },
@@ -191,14 +195,43 @@ static int print_link_sta(struct nl_msg *msg, void *arg)
 		return NL_SKIP;
 	}
 
+	if (sinfo[NL80211_STA_INFO_RX_BYTES64] && sinfo[NL80211_STA_INFO_RX_PACKETS])
+		printf("\tRX: %llu bytes (%lu packets)\n",
+			nla_get_u64(sinfo[NL80211_STA_INFO_RX_BYTES64]),
+			nla_get_u32(sinfo[NL80211_STA_INFO_RX_PACKETS]));
+	else
 	if (sinfo[NL80211_STA_INFO_RX_BYTES] && sinfo[NL80211_STA_INFO_RX_PACKETS])
 		printf("\tRX: %u bytes (%u packets)\n",
 			nla_get_u32(sinfo[NL80211_STA_INFO_RX_BYTES]),
 			nla_get_u32(sinfo[NL80211_STA_INFO_RX_PACKETS]));
-	if (sinfo[NL80211_STA_INFO_TX_BYTES] && sinfo[NL80211_STA_INFO_TX_PACKETS])
+	if (sinfo[NL80211_STA_INFO_RX_COMPRESSED] && sinfo[NL80211_STA_INFO_RX_COMPRESSED_BYTES64])
+		printf("\tRX Compressed: %llu bytes (%u packets, %u)\n",
+			nla_get_u64(sinfo[NL80211_STA_INFO_RX_COMPRESSED_BYTES64]),
+			nla_get_u32(sinfo[NL80211_STA_INFO_RX_COMPRESSED]));
+	if (sinfo[NL80211_STA_INFO_RX_BYTES64] && sinfo[NL80211_STA_INFO_RX_COMPRESSED_BYTES64]) {
+		unsigned long long ratio = nla_get_u64(sinfo[NL80211_STA_INFO_RX_BYTES64]);
+		ratio *= 100;
+		ratio /= nla_get_u64(sinfo[NL80211_STA_INFO_RX_COMPRESSED_BYTES64]);
+		printf("\tRX Compressed Ratio: %u.%u\n",ratio / 100, ratio % 100);
+	}
+	if (sinfo[NL80211_STA_INFO_TX_BYTES64] && sinfo[NL80211_STA_INFO_TX_PACKETS])
+		printf("\tTX: %llu bytes (%u packets)\n",
+			nla_get_u64(sinfo[NL80211_STA_INFO_TX_BYTES64]),
+			nla_get_u32(sinfo[NL80211_STA_INFO_TX_PACKETS]));
+	else if (sinfo[NL80211_STA_INFO_TX_BYTES] && sinfo[NL80211_STA_INFO_TX_PACKETS])
 		printf("\tTX: %u bytes (%u packets)\n",
 			nla_get_u32(sinfo[NL80211_STA_INFO_TX_BYTES]),
 			nla_get_u32(sinfo[NL80211_STA_INFO_TX_PACKETS]));
+	if (sinfo[NL80211_STA_INFO_TX_COMPRESSED] && sinfo[NL80211_STA_INFO_TX_COMPRESSED_BYTES64])
+		printf("\tTX Compressed: %llu bytes (%u packets, %u)\n",
+			nla_get_u64(sinfo[NL80211_STA_INFO_TX_COMPRESSED_BYTES64]),
+			nla_get_u32(sinfo[NL80211_STA_INFO_TX_COMPRESSED]));
+	if (sinfo[NL80211_STA_INFO_TX_BYTES64] && sinfo[NL80211_STA_INFO_TX_COMPRESSED_BYTES64]) {
+		unsigned long long ratio = nla_get_u64(sinfo[NL80211_STA_INFO_TX_BYTES64]);
+		ratio *= 100;
+		ratio /= nla_get_u64(sinfo[NL80211_STA_INFO_TX_COMPRESSED_BYTES64]);
+		printf("\tTX Compressed Ratio: %u.%u\n",ratio / 100, ratio % 100);
+	}
 	if (sinfo[NL80211_STA_INFO_SIGNAL])
 		printf("\tsignal: %d dBm\n",
 			(int8_t)nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]));

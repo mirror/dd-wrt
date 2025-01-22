@@ -207,6 +207,12 @@ static int get_if_type(int *argc, char ***argv, enum nl80211_iftype *type,
 		*type = NL80211_IFTYPE_NAN;
 		return 0;
 	}
+#ifdef CONFIG_TDMA
+	 else if (strcmp(tpstr, "tdma") == 0) {
+		*type = NL80211_IFTYPE_TDMA;
+		return 0;
+	}
+#endif
 
 	fprintf(stderr, "invalid interface type %s\n", tpstr);
 	return 2;
@@ -218,6 +224,20 @@ static int parse_4addr_flag(const char *value, struct nl_msg *msg)
 		NLA_PUT_U8(msg, NL80211_ATTR_4ADDR, 1);
 	else if (strcmp(value, "off") == 0)
 		NLA_PUT_U8(msg, NL80211_ATTR_4ADDR, 0);
+	else
+		return 1;
+	return 0;
+
+nla_put_failure:
+	return 1;
+}
+
+static int parse_mtikwds_flag(const char *value, struct nl_msg *msg)
+{
+	if (strcmp(value, "on") == 0)
+		NLA_PUT_U8(msg, NL80211_ATTR_MTIKWDS, 1);
+	else if (strcmp(value, "off") == 0)
+		NLA_PUT_U8(msg, NL80211_ATTR_MTIKWDS, 0);
 	else
 		return 1;
 	return 0;
@@ -280,6 +300,15 @@ try_another:
 			}
 			argc--;
 			argv++;
+		} else if (strcmp(argv[0], "mtikwds") == 0) {
+			argc--;
+			argv++;
+			if (parse_mtikwds_flag(argv[0], msg)) {
+				fprintf(stderr, "mtikwds error\n");
+				return 2;
+			}
+			argc--;
+			argv++;
 		} else if (strcmp(argv[0], "flags") == 0) {
 			argc--;
 			argv++;
@@ -306,14 +335,14 @@ try_another:
  nla_put_failure:
 	return -ENOBUFS;
 }
-COMMAND(interface, add, "<name> type <type> [mesh_id <meshid>] [4addr on|off] [flags <flag>*] [addr <mac-addr>]",
+COMMAND(interface, add, "<name> type <type> [mesh_id <meshid>] [4addr on|off] [mtikwds on|off] [flags <flag>*] [addr <mac-addr>]",
 	NL80211_CMD_NEW_INTERFACE, 0, CIB_PHY, handle_interface_add,
 	"Add a new virtual interface with the given configuration.\n"
 	IFACE_TYPES "\n\n"
 	"The flags are only used for monitor interfaces, valid flags are:\n"
 	VALID_FLAGS "\n\n"
 	"The mesh_id is used only for mesh mode.");
-COMMAND(interface, add, "<name> type <type> [mesh_id <meshid>] [4addr on|off] [flags <flag>*] [addr <mac-addr>]",
+COMMAND(interface, add, "<name> type <type> [mesh_id <meshid>] [4addr on|off] [mtikwds on|off] [flags <flag>*] [addr <mac-addr>]",
 	NL80211_CMD_NEW_INTERFACE, 0, CIB_NETDEV, handle_interface_add, NULL);
 
 static int handle_interface_del(struct nl80211_state *state,
@@ -358,6 +387,8 @@ char *channel_width_name(enum nl80211_chan_width width)
 		return "80+80 MHz";
 	case NL80211_CHAN_WIDTH_160:
 		return "160 MHz";
+	case NL80211_CHAN_WIDTH_3:
+		return "2.5 MHz";
 	case NL80211_CHAN_WIDTH_5:
 		return "5 MHz";
 	case NL80211_CHAN_WIDTH_10:
@@ -467,6 +498,12 @@ static int print_iface_handler(struct nl_msg *msg, void *arg)
 			printf("%s\t4addr: on\n", indent);
 	}
 
+	if (tb_msg[NL80211_ATTR_MTIKWDS]) {
+		uint8_t use_mtikwds = nla_get_u8(tb_msg[NL80211_ATTR_MTIKWDS]);
+		if (use_mtikwds)
+			printf("%s\tMikrotik WDS: on\n", indent);
+	}
+	
 	if (tb_msg[NL80211_ATTR_MLO_LINKS]) {
 		struct nlattr *link;
 		int n;
@@ -619,6 +656,19 @@ COMMAND(set, 4addr, "<on|off>",
 	NL80211_CMD_SET_INTERFACE, 0, CIB_NETDEV, handle_interface_4addr,
 	"Set interface 4addr (WDS) mode.");
 
+static int handle_interface_mtikwds(struct nl80211_state *state,
+				  struct nl_msg *msg,
+				  int argc, char **argv,
+				  enum id_input id)
+{
+	if (argc != 1)
+		return 1;
+	return parse_mtikwds_flag(argv[0], msg);
+}
+COMMAND(set, mtikwds, "<on|off>",
+	NL80211_CMD_SET_INTERFACE, 0, CIB_NETDEV, handle_interface_mtikwds,
+	"Set interface Mikrotik-WDS mode.");
+
 static int handle_interface_noack_map(struct nl80211_state *state,
 				      struct nl_msg *msg,
 				      int argc, char **argv,
@@ -705,6 +755,60 @@ COMMAND(set, mcast_rate, "<rate in Mbps>",
 	NL80211_CMD_SET_MCAST_RATE, 0, CIB_NETDEV, set_mcast_rate,
 	"Set the multicast bitrate.");
 
+static int parse_compr_flag(const char *value, struct nl_msg *msg)
+{
+	if (strcmp(value, "on") == 0)
+		NLA_PUT_U8(msg, NL80211_ATTR_COMPR, 1);
+	else if (strcmp(value, "lzo") == 0)
+		NLA_PUT_U8(msg, NL80211_ATTR_COMPR, 1);
+	else if (strcmp(value, "lzma") == 0)
+		NLA_PUT_U8(msg, NL80211_ATTR_COMPR, 2);
+	else if (strcmp(value, "lz4") == 0)
+		NLA_PUT_U8(msg, NL80211_ATTR_COMPR, 3);
+	else if (strcmp(value, "zstd") == 0)
+		NLA_PUT_U8(msg, NL80211_ATTR_COMPR, 4);
+	else if (strcmp(value, "off") == 0)
+		NLA_PUT_U8(msg, NL80211_ATTR_COMPR, 0);
+	else
+		return 1;
+	return 0;
+
+nla_put_failure:
+	return 1;
+}
+
+static int handle_interface_compr(struct nl80211_state *state,
+				  struct nl_msg *msg,
+				  int argc, char **argv,
+				  enum id_input id)
+{
+	unsigned int frag;
+
+	if (argc < 1)
+		return 1;
+	if (parse_compr_flag(argv[0], msg))
+		return 1;
+
+	argc--;
+	argv++;
+	if ( argc) {
+		char *end;
+
+		if (!*argv[0])
+			return 1;
+		frag = strtoul(argv[0], &end, 10);
+		if (*end != '\0')
+			return 1;
+		NLA_PUT_U32(msg, NL80211_ATTR_COMPR_THRESHOLD, frag);
+	}
+	return 0;
+
+nla_put_failure:
+	return 1;
+}
+COMMAND(set, compr, "<off|lzo|lz4|lzma|zstd> [frame threshold in bytes]",
+	NL80211_CMD_SET_INTERFACE, 0, CIB_NETDEV, handle_interface_compr,
+	"Set compression mode for interface.");
 
 static int handle_chanfreq(struct nl80211_state *state, struct nl_msg *msg,
 			   bool chan, int argc, char **argv,
