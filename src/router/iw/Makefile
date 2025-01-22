@@ -13,8 +13,7 @@ cc-option = $(shell set -e ; $(CC) $(1) -c -x c /dev/null -o /dev/null >/dev/nul
 
 CFLAGS_EVAL := $(call cc-option,-Wstringop-overflow=4)
 
-CFLAGS ?= -O2 -g
-CFLAGS += -Wall -Wextra -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common
+CFLAGS += $(LTO) -I$(TOP)/shared -Wall -Wextra -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common
 CFLAGS += -Werror-implicit-function-declaration -Wsign-compare -Wno-unused-parameter
 CFLAGS += -Wdeclaration-after-statement
 CFLAGS += -D__SANE_USERSPACE_TYPES__
@@ -25,6 +24,12 @@ _OBJS := $(sort $(patsubst %.c,%.o,$(wildcard *.c)))
 VERSION_OBJS := $(filter-out version.o, $(_OBJS))
 OBJS := $(VERSION_OBJS) version.o
 
+OBJS_FULL = ocb offch cqm wowlan coalesce roc p2p vendor mgmt ap sha256 nan bloom measurements ftm
+ifdef IW_FULL
+  CFLAGS += -DIW_FULL
+else
+  OBJS:=$(filter-out $(patsubst %,%.o,$(OBJS_FULL)),$(OBJS))
+endif
 ALL = iw
 
 ifeq ($(NO_PKG_CONFIG),)
@@ -47,30 +52,30 @@ NLLIBNAME = libnl-1
 endif
 
 ifeq ($(NL2FOUND),Y)
-override CFLAGS += -DCONFIG_LIBNL20
-override LIBS += -lnl-genl
+CFLAGS += -DCONFIG_LIBNL20
+LIBS += -lnl-genl
 NLLIBNAME = libnl-2.0
 endif
 
 ifeq ($(NL3xFOUND),Y)
 # libnl 3.2 might be found as 3.2 and 3.0
 NL3FOUND = N
-override CFLAGS += -DCONFIG_LIBNL30
-override LIBS += -lnl-genl-3
+CFLAGS += -DCONFIG_LIBNL30
+LIBS += -lnl-genl-3
 NLLIBNAME = libnl-3.0
 endif
 
 ifeq ($(NL3FOUND),Y)
-override CFLAGS += -DCONFIG_LIBNL30
-override LIBS += -lnl-genl
+CFLAGS += -DCONFIG_LIBNL30
+LIBS += -lnl-genl
 NLLIBNAME = libnl-3.0
 endif
 
 # nl-3.1 has a broken libnl-gnl-3.1.pc file
 # as show by pkg-config --debug --libs --cflags --exact-version=3.1 libnl-genl-3.1;echo $?
 ifeq ($(NL31FOUND),Y)
-override CFLAGS += -DCONFIG_LIBNL30
-override LIBS += -lnl-genl
+CFLAGS += -DCONFIG_LIBNL30
+LIBS += -lnl-genl
 NLLIBNAME = libnl-3.1
 endif
 
@@ -78,8 +83,8 @@ ifeq ($(NLLIBNAME),)
 $(error Cannot find development files for any supported version of libnl)
 endif
 
-override LIBS += $(shell $(PKG_CONFIG) --libs $(NLLIBNAME))
-override CFLAGS += $(shell $(PKG_CONFIG) --cflags $(NLLIBNAME))
+LIBS += $(shell $(PKG_CONFIG) --libs $(NLLIBNAME))
+CFLAGS += $(shell $(PKG_CONFIG) --cflags $(NLLIBNAME))
 endif # NO_PKG_CONFIG
 
 ifeq ($(V),1)
@@ -92,23 +97,23 @@ endif
 
 all: $(ALL)
 
-version.c: version.sh $(patsubst %.o,%.c,$(VERSION_OBJS)) nl80211.h iw.h Makefile \
+version.c: version.sh $(patsubst %.o,%.c,$(VERSION_OBJS)) ../shared/nl80211.h iw.h Makefile \
 		$(wildcard .git/index .git/refs/tags)
 	@$(NQ) ' GEN ' $@
 	$(Q)./version.sh $@
 
-nl80211-commands.inc: nl80211.h
+nl80211-commands.inc: ../shared/nl80211.h
 	@$(NQ) ' GEN ' $@
-	$(Q)sed 's%^\tNL80211_CMD_%%;t n;d;:n s%^\([^=]*\),.*%\t[NL80211_CMD_\1] = \"\L\1\",%;t;d' nl80211.h | grep -v "reserved" > $@
+	$(Q)sed 's%^\tNL80211_CMD_%%;t n;d;:n s%^\([^=]*\),.*%\t[NL80211_CMD_\1] = \"\L\1\",%;t;d' ../shared/nl80211.h | grep -v "reserved" > $@
 
-%.o: %.c iw.h nl80211.h nl80211-commands.inc
+%.o: %.c iw.h ../shared/nl80211.h nl80211-commands.inc
 	@$(NQ) ' CC  ' $@
 	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
 ifeq ($(IW_ANDROID_BUILD),)
 iw:	$(OBJS)
 	@$(NQ) ' CC  ' iw
-	$(Q)$(CC) $(LDFLAGS) $(OBJS) $(LIBS) -o iw
+	$(Q)$(CC) $(LDFLAGS) $(LDLTO) $(OBJS) $(LIBS) -o iw
 endif
 
 check:

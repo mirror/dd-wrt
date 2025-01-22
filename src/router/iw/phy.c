@@ -394,6 +394,7 @@ err_out:
 		free(cac_trigger_argv);
 	return err;
 }
+#ifdef IW_FULL
 TOPLEVEL(cac, PARSE_CHAN_ARGS("channel ") "\n"
               PARSE_FREQ_ARGS("freq ", ""),
 	 0, 0, CIB_NETDEV, handle_cac, NULL);
@@ -410,6 +411,7 @@ COMMAND(cac, background,
 	NL80211_CMD_RADAR_DETECT, 0, CIB_NETDEV, handle_cac_background,
 	"Start background channel availability check (CAC) looking to look for\n"
 	"radars on the given channel.");
+#endif
 
 static int handle_fragmentation(struct nl80211_state *state,
 				struct nl_msg *msg,

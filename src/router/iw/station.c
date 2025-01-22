@@ -801,10 +801,12 @@ static int handle_station_set_plink(struct nl80211_state *state,
  nla_put_failure:
 	return -ENOBUFS;
 }
+#ifdef IW_FULL
 COMMAND_ALIAS(station, set, "<MAC address> plink_action <open|block>",
 	NL80211_CMD_SET_STATION, 0, CIB_NETDEV, handle_station_set_plink,
 	"Set mesh peer link action for this station (peer).",
 	select_station_cmd, station_set_plink);
+#endif
 
 static int handle_station_set_vlan(struct nl80211_state *state,
 				   struct nl_msg *msg,
@@ -899,11 +901,13 @@ static int handle_station_set_mesh_power_mode(struct nl80211_state *state,
 nla_put_failure:
 	return -ENOBUFS;
 }
+#ifdef IW_FULL
 COMMAND_ALIAS(station, set, "<MAC address> mesh_power_mode "
 	"<active|light|deep>", NL80211_CMD_SET_STATION, 0, CIB_NETDEV,
 	handle_station_set_mesh_power_mode,
 	"Set link-specific mesh power mode for this station",
 	select_station_cmd, station_set_mesh_power_mode);
+#endif
 
 static int handle_station_set_airtime_weight(struct nl80211_state *state,
 					     struct nl_msg *msg,

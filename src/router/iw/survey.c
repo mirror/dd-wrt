@@ -60,6 +60,9 @@ static int print_survey_handler(struct nl_msg *msg, void *arg)
 	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_RX])
 		printf("\tchannel receive time:\t\t%llu ms\n",
 			(unsigned long long)nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_RX]));
+	if (sinfo[NL80211_SURVEY_INFO_TIME_BSS_RX])
+		printf("\tchannel BSS receive time:\t%llu ms\n",
+			(unsigned long long)nla_get_u64(sinfo[NL80211_SURVEY_INFO_TIME_BSS_RX]));
 	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_TX])
 		printf("\tchannel transmit time:\t\t%llu ms\n",
 			(unsigned long long)nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_TX]));

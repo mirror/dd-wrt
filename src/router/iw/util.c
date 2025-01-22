@@ -153,6 +153,7 @@ static const char *commands[NL80211_CMD_MAX + 1] = {
 
 static char cmdbuf[100];
 
+#ifdef IW_FULL
 const char *command_name(enum nl80211_commands cmd)
 {
 	if (cmd <= NL80211_CMD_MAX && commands[cmd])
@@ -160,6 +161,7 @@ const char *command_name(enum nl80211_commands cmd)
 	sprintf(cmdbuf, "Unknown command (%d)", cmd);
 	return cmdbuf;
 }
+#endif
 
 int ieee80211_channel_to_frequency(int chan, enum nl80211_band band)
 {
@@ -313,6 +315,9 @@ int parse_keys(struct nl_msg *msg, char **argv[], int *argc)
 	char keybuf[13];
 	int pos = 0;
 
+#ifndef IW_FULL
+	return 1;
+#endif
 	if (!*argc)
 		return 1;
 

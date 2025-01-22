@@ -673,9 +673,11 @@ static int handle_interface_wds_peer(struct nl80211_state *state,
  nla_put_failure:
 	return -ENOBUFS;
 }
+#ifdef IW_FULL
 COMMAND(set, peer, "<MAC address>",
 	NL80211_CMD_SET_WDS_PEER, 0, CIB_NETDEV, handle_interface_wds_peer,
 	"Set interface WDS peer.");
+#endif
 
 static int set_mcast_rate(struct nl80211_state *state,
 			  struct nl_msg *msg,
@@ -765,6 +767,7 @@ static int handle_chan(struct nl80211_state *state, struct nl_msg *msg,
 	return handle_chanfreq(state, msg, true, argc, argv, id);
 }
 
+#ifdef IW_FULL
 SECTION(switch);
 COMMAND(switch, freq,
 	"<freq> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz] [beacons <count>] [block-tx]\n"
@@ -1036,3 +1039,4 @@ COMMAND(set, tidconf, "[peer <MAC address>] tids <mask> [override] [sretry <num>
 	"  $ iw dev wlan0 set tidconf peer xx:xx:xx:xx:xx:xx tids 0x2 bitrates auto\n"
 	"  $ iw dev wlan0 set tidconf peer xx:xx:xx:xx:xx:xx tids 0x2 bitrates limit vht-mcs-5 4:9\n"
 	);
+#endif

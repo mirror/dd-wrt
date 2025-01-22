@@ -1307,6 +1307,9 @@ static void print_ht_op(const uint8_t type, uint8_t len, const uint8_t *data,
 	printf("\t\t * secondary channel offset: %s\n",
 		ht_secondary_offset[data[1] & 0x3]);
 	printf("\t\t * STA channel width: %s\n", sta_chan_width[(data[1] & 0x4)>>2]);
+#ifndef IW_FULL
+	return;
+#endif
 	printf("\t\t * RIFS: %d\n", (data[1] & 0x8)>>3);
 	printf("\t\t * HT protection: %s\n", protection[data[2] & 0x3]);
 	printf("\t\t * non-GF present: %d\n", (data[2] & 0x4) >> 2);
@@ -1806,6 +1809,17 @@ static void print_ie(const struct ie_print *p, const uint8_t type, uint8_t len,
 static const struct ie_print ieprinters[] = {
 	[EID_SSID] = { "SSID", print_ssid, 0, 32,
 		       BIT(PRINT_SCAN) | BIT(PRINT_LINK) | BIT(PRINT_LINK_MLO_MLD), },
+#ifndef IW_FULL
+	[EID_BSS_LOAD] = { "BSS Load", print_bss_load, 5, 5, BIT(PRINT_SCAN), },
+	[EID_HT_CAPABILITY] = { "HT capabilities", print_ht_capa, 26, 26, BIT(PRINT_SCAN), },
+	[EID_RSN] = { "RSN", print_rsn, 2, 255, BIT(PRINT_SCAN), },
+	[EID_HT_OPERATION] = { "HT operation", print_ht_op, 22, 22, BIT(PRINT_SCAN), },
+	[EID_SECONDARY_CH_OFFSET] = { "Secondary Channel Offset",
+				      print_secchan_offs, 1, 1, BIT(PRINT_SCAN), },
+	[EID_MESH_ID] = { "MESH ID", print_ssid, 0, 32, BIT(PRINT_SCAN) | BIT(PRINT_LINK), },
+	[EID_VHT_CAPABILITY] = { "VHT capabilities", print_vht_capa, 12, 255, BIT(PRINT_SCAN), },
+	[EID_VHT_OPERATION] = { "VHT operation", print_vht_oper, 5, 255, BIT(PRINT_SCAN), },
+#else
 	[EID_SUPP_RATES] = { "Supported rates", print_supprates, 0, 255, BIT(PRINT_SCAN), },
 	[EID_DS_PARAMS] = { "DS Parameter set", print_ds, 1, 1, BIT(PRINT_SCAN), },
 	[EID_TIM] = { "TIM", print_tim, 4, 255, BIT(PRINT_SCAN), },
@@ -1852,6 +1866,7 @@ static const struct ie_print ieprinters[] = {
 					print_short_beacon_int, 2, 2, BIT(PRINT_SCAN), },
 	[EID_S1G_CAPABILITY] = { "S1G capabilities", print_s1g_capa, 15, 15, BIT(PRINT_SCAN), },
 	[EID_S1G_OPERATION] = { "S1G operation", print_s1g_oper, 6, 6, BIT(PRINT_SCAN), },
+#endif
 };
 
 static void print_wifi_wpa(const uint8_t type, uint8_t len, const uint8_t *data,
@@ -2187,8 +2202,10 @@ static void print_wifi_wps(const uint8_t type, uint8_t len, const uint8_t *data,
 
 static const struct ie_print wifiprinters[] = {
 	[1] = { "WPA", print_wifi_wpa, 2, 255, BIT(PRINT_SCAN), },
+#ifdef IW_FULL
 	[2] = { "WMM", print_wifi_wmm, 1, 255, BIT(PRINT_SCAN), },
 	[4] = { "WPS", print_wifi_wps, 0, 255, BIT(PRINT_SCAN), },
+#endif
 };
 
 static inline void print_p2p(const uint8_t type, uint8_t len,
@@ -2350,6 +2367,10 @@ static void print_vendor(unsigned char len, unsigned char *data,
 		printf("\n");
 		return;
 	}
+
+#ifdef IW_FULL
+	return;
+#endif
 
 	if (len >= 4 && memcmp(data, wfa_oui, 3) == 0) {
 		if (data[3] < ARRAY_SIZE(wfa_printers) &&
@@ -2516,6 +2537,7 @@ static void print_capa_non_dmg(__u16 capa)
 		printf(" ESS");
 	if (capa & WLAN_CAPABILITY_IBSS)
 		printf(" IBSS");
+#ifdef IW_FULL
 	if (capa & WLAN_CAPABILITY_CF_POLLABLE)
 		printf(" CfPollable");
 	if (capa & WLAN_CAPABILITY_CF_POLL_REQUEST)
@@ -2544,6 +2566,7 @@ static void print_capa_non_dmg(__u16 capa)
 		printf(" DelayedBACK");
 	if (capa & WLAN_CAPABILITY_IMM_BACK)
 		printf(" ImmediateBACK");
+#endif
 }
 
 static int print_bss_handler(struct nl_msg *msg, void *arg)
@@ -2634,8 +2657,10 @@ static int print_bss_handler(struct nl_msg *msg, void *arg)
 		else
 			printf("\tfreq: %d\n", freq);
 
+#ifdef IW_FULL
 		if (freq > 45000)
 			is_dmg = true;
+#endif
 	}
 	if (bss[NL80211_BSS_BEACON_INTERVAL])
 		printf("\tbeacon interval: %d TUs\n",
@@ -2829,6 +2854,7 @@ static int handle_stop_sched_scan(struct nl80211_state *state,
 	return 0;
 }
 
+#ifdef IW_FULL
 COMMAND(scan, sched_start,
 	SCHED_SCAN_OPTIONS,
 	NL80211_CMD_START_SCHED_SCAN, 0, CIB_NETDEV, handle_start_sched_scan,
@@ -2839,3 +2865,4 @@ COMMAND(scan, sched_start,
 COMMAND(scan, sched_stop, "",
 	NL80211_CMD_STOP_SCHED_SCAN, 0, CIB_NETDEV, handle_stop_sched_scan,
 	"Stop an ongoing scheduled scan.");
+#endif

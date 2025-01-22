@@ -525,6 +525,7 @@ next:
 				}
 			}
 
+#ifdef IW_FULL
 			if (tb_band[NL80211_BAND_ATTR_RATES]) {
 			printf("\t\tBitrates (non-HT):\n");
 			nla_for_each_nested(nl_rate, tb_band[NL80211_BAND_ATTR_RATES], rem_rate) {
@@ -541,6 +542,7 @@ next:
 				printf("\n");
 			}
 			}
+#endif
 		}
 	}
 
@@ -606,6 +608,7 @@ next:
 		printf("\tCoverage class: %d (up to %dm)\n", coverage, 450 * coverage);
 	}
 
+#ifdef IW_FULL
 	if (tb_msg[NL80211_ATTR_CIPHER_SUITES]) {
 		int num = nla_len(tb_msg[NL80211_ATTR_CIPHER_SUITES]) / sizeof(__u32);
 		int i;
@@ -617,6 +620,7 @@ next:
 					cipher_name(ciphers[i]));
 		}
 	}
+#endif
 
 	if (tb_msg[NL80211_ATTR_WIPHY_ANTENNA_AVAIL_TX] &&
 	    tb_msg[NL80211_ATTR_WIPHY_ANTENNA_AVAIL_RX])
@@ -634,9 +638,11 @@ next:
 		print_iftype_list("\tSupported interface modes", "\t\t",
 				  tb_msg[NL80211_ATTR_SUPPORTED_IFTYPES]);
 
+#ifdef IW_FULL
 	if (tb_msg[NL80211_ATTR_SOFTWARE_IFTYPES])
 		print_iftype_list("\tsoftware interface modes (can always be added)",
 				  "\t\t", tb_msg[NL80211_ATTR_SOFTWARE_IFTYPES]);
+#endif
 
 	if (tb_msg[NL80211_ATTR_INTERFACE_COMBINATIONS]) {
 		bool have_combinations = false;
@@ -650,6 +656,7 @@ next:
 			printf("\tinterface combinations are not supported\n");
 	}
 
+#ifdef IW_FULL
 	if (tb_msg[NL80211_ATTR_SUPPORTED_COMMANDS]) {
 		printf("\tSupported commands:\n");
 		nla_for_each_nested(nl_cmd, tb_msg[NL80211_ATTR_SUPPORTED_COMMANDS], rem_cmd)
@@ -747,6 +754,7 @@ next:
 				printf("\t\t * wake up on TCP connection\n");
 		}
 	}
+#endif
 
 	if (tb_msg[NL80211_ATTR_ROAM_SUPPORT])
 		printf("\tDevice supports roaming.\n");
@@ -785,6 +793,7 @@ next:
 		}
 	}
 
+#ifdef IW_FULL
 	if (tb_msg[NL80211_ATTR_FEATURE_FLAGS]) {
 		unsigned int features = nla_get_u32(tb_msg[NL80211_ATTR_FEATURE_FLAGS]);
 
@@ -849,6 +858,7 @@ next:
 		if (features & NL80211_FEATURE_ND_RANDOM_MAC_ADDR)
 			printf("\tDevice supports randomizing MAC-addr in net-detect scans.\n");
 	}
+#endif
 
 	if (tb_msg[NL80211_ATTR_TDLS_SUPPORT])
 		printf("\tDevice supports T-DLS.\n");
@@ -975,6 +985,7 @@ TOPLEVEL(list, NULL, NL80211_CMD_GET_WIPHY, NLM_F_DUMP, CIB_NONE, handle_info,
 	 "List all wireless devices and their capabilities.");
 TOPLEVEL(phy, NULL, NL80211_CMD_GET_WIPHY, NLM_F_DUMP, CIB_NONE, handle_info, NULL);
 
+#ifdef IW_FULL
 static int handle_commands(struct nl80211_state *state, struct nl_msg *msg,
 			   int argc, char **argv, enum id_input id)
 {
@@ -986,6 +997,7 @@ static int handle_commands(struct nl80211_state *state, struct nl_msg *msg,
 }
 TOPLEVEL(commands, NULL, NL80211_CMD_GET_WIPHY, 0, CIB_NONE, handle_commands,
 	 "list all known commands and their decimal & hex value");
+#endif
 
 static int print_feature_handler(struct nl_msg *msg, void *arg)
 {
