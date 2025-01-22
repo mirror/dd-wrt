@@ -194,6 +194,9 @@ IW_CFLAGS=-I$(TOP)/libnl-tiny/include \
 IW_LDFLAGS=-L$(TOP)/libnl-tiny/
 
 
+ifeq ($(CONFIG_IPQ6018),y)
+IW_CFLAGS+= -DIW_FULL
+endif
 
 ath9k-checkconfig:
 	cp $(REGPATH)/$(REGTXTORIG) $(REGPATH)/$(REGTXT)
