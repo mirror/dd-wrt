@@ -47,6 +47,7 @@
 static unsigned char ms_oui[3]		= { 0x00, 0x50, 0xf2 };
 static unsigned char ieee80211_oui[3]	= { 0x00, 0x0f, 0xac };
 static unsigned char wfa_oui[3]		= { 0x50, 0x6f, 0x9a };
+static unsigned char mtik_oui[3]	= { 0x00, 0x0c, 0x42 };
 
 struct scan_params {
 	bool unknown;
@@ -1487,6 +1488,38 @@ static void print_tim(const uint8_t type, uint8_t len, const uint8_t *data,
 	printf("\n");
 }
 
+struct ieee80211_mtik_ie_data {
+	uint8_t data1[2];          /* unknown yet 0x011e */
+	uint8_t flags;             /* 4(100) - wds, 1(1) - nstream, 8(1000) - pooling, 0 - none */
+	uint8_t data2[3];          /* unknown yet fill with zero */
+	uint8_t version[4];        /* little endian version. Use 0x1f660902 */
+	uint8_t pad1;              /* a kind of padding, 0xff */
+	uint8_t namelen;           /* length of radio name. Change with caution. 0x0f is safe value */
+	uint8_t radioname[15];     /* Radio name */
+	uint8_t pad2[5];           /* unknown. fill with zero */
+}  __attribute__ ((packed));
+
+struct ieee80211_mtik_ie {
+	uint8_t oui[3];            /* 0x00, 0x50, 0xf2 */
+	uint8_t type;              /* OUI type */
+	uint16_t version;          /* spec revision */
+	struct ieee80211_mtik_ie_data iedata;
+}  __attribute__ ((packed));
+
+static void print_mtik(const uint8_t *data)
+{
+	struct ieee80211_mtik_ie *mtik = (struct ieee80211_mtik_ie *)data;
+
+	if (memcmp(mtik->oui, mtik_oui, 3) == 0) {
+		char radioname[16];
+		memcpy(radioname, mtik->iedata.radioname, 15);
+		radioname[15] = 0;
+		if (mtik->iedata.namelen < 16)
+			mtik->iedata.radioname[mtik->iedata.namelen] = 0;
+		printf("\tMikrotik Radio Name: %s\n", radioname);
+	}
+}
+
 static void print_ibssatim(const uint8_t type, uint8_t len, const uint8_t *data,
 			   const struct ie_context *ctx)
 {
@@ -2337,6 +2370,8 @@ static const struct ie_print wfa_printers[] = {
 	[28] = { "OWE Transition Mode", print_wifi_owe_tarns, 7, 255, BIT(PRINT_SCAN), },
 };
 
+static unsigned char brcm_oui[3] = { 0x00, 0x10, 0x18 };
+
 static void print_vendor(unsigned char len, unsigned char *data,
 			 bool unknown, enum print_ie_type ptype)
 {
@@ -2388,6 +2423,18 @@ static void print_vendor(unsigned char len, unsigned char *data,
 			printf(" %.02x", data[i + 4]);
 		printf("\n");
 		return;
+	}
+
+	if (len >= 4 && memcmp(data, mtik_oui, 3) == 0) {
+		print_mtik(data);
+		return;
+	}
+
+	if (len >= 4 && !memcmp(data, brcm_oui, 3)) {
+		if (data[3] == 2) {
+			printf("\tNumber of Stations: %d\n", data[4]);
+			return;
+		}
 	}
 
 	if (!unknown)
