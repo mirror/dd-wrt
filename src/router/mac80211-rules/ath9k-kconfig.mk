@@ -195,7 +195,10 @@ IW_LDFLAGS=-L$(TOP)/libnl-tiny/
 
 
 ifeq ($(CONFIG_IPQ6018),y)
-IW_CFLAGS+= -DIW_FULL
+IW_FLAGS+= IW_FULL=y
+endif
+ifeq ($(CONFIG_IPQ806X),y)
+IW_FLAGS+= IW_FULL=y
 endif
 
 ath9k-checkconfig:

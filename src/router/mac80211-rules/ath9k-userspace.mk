@@ -1,8 +1,8 @@
 iw-clean:
-	make -C iw clean NL2FOUND=Y NL1FOUND= NLLIBNAME="libnl-tiny" CFLAGS="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections $(IW_CFLAGS)" LDFLAGS="$(COPT) $(IW_LDFLAGS)  -ffunction-sections -fdata-sections -Wl,--gc-sections" LIBS="-lm -lnl-tiny"
+	make -C iw clean $(IW_FLAGS) NL2FOUND=Y NL1FOUND= NLLIBNAME="libnl-tiny" CFLAGS="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections $(IW_CFLAGS)" LDFLAGS="$(COPT) $(IW_LDFLAGS)  -ffunction-sections -fdata-sections -Wl,--gc-sections" LIBS="-lm -lnl-tiny"
 
 iw: libnltiny
-	make -C iw NL2FOUND=Y NL1FOUND= NLLIBNAME="libnl-tiny" CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections $(IW_CFLAGS) -DNEED_PRINTF" LDFLAGS="$(IW_LDFLAGS) $(LDLTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections" LIBS="-lm -lnl-tiny"
+	make -C iw $(IW_FLAGS) NL2FOUND=Y NL1FOUND= NLLIBNAME="libnl-tiny" CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections $(IW_CFLAGS) -DNEED_PRINTF" LDFLAGS="$(IW_LDFLAGS) $(LDLTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections" LIBS="-lm -lnl-tiny"
 
 iw-install:
 ifneq ($(CONFIG_NOWIFI),y)
