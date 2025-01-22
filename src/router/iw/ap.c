@@ -28,7 +28,7 @@ static int handle_start_ap(struct nl80211_state *state,
 	argc--;
 
 	/* chandef */
-	res = parse_freqchan(&chandef, false, argc, argv, &parsed);
+	res = parse_freqchan(&chandef, false, argc, argv, &parsed, false);
 	if (res)
 		return res;
 	argc -= parsed;
@@ -144,12 +144,14 @@ static int handle_start_ap(struct nl80211_state *state,
  nla_put_failure:
 	return -ENOSPC;
 }
-COMMAND(ap, start, "",
-	NL80211_CMD_NEW_BEACON, 0, CIB_NETDEV, handle_start_ap,
-	"<SSID> <control freq> [5|10|20|40|80|80+80|160] [<center1_freq> [<center2_freq>]]"
+COMMAND(ap, start,
+	"<SSID> "
+	PARSE_FREQ_ARGS("<SSID> ",
 	" <beacon interval in TU> <DTIM period> [hidden-ssid|zeroed-ssid] head"
 	" <beacon head in hexadecimal> [tail <beacon tail in hexadecimal>]"
-	" [inactivity-time <inactivity time in seconds>] [key0:abcde d:1:6162636465]\n");
+	" [inactivity-time <inactivity time in seconds>] [key0:abcde d:1:6162636465]"),
+	NL80211_CMD_NEW_BEACON, 0, CIB_NETDEV, handle_start_ap,
+	"Start an AP. Note that this usually requires hostapd or similar.\n");
 
 static int handle_stop_ap(struct nl80211_state *state,
 			  struct nl_msg *msg,

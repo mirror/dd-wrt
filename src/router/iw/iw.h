@@ -47,6 +47,13 @@ enum nlmsgerr_attrs {
 #  define nl_sock nl_handle
 #endif
 
+#define MHZ_TO_KHZ(freq) ((freq) * 1000)
+#define KHZ_TO_MHZ(freq) ((freq) / 1000)
+#define DBI_TO_MBI(gain) ((gain) * 100)
+#define MBI_TO_DBI(gain) ((gain) / 100)
+#define DBM_TO_MBM(gain) ((gain) * 100)
+#define MBM_TO_DBM(gain) ((gain) / 100)
+
 struct nl80211_state {
 	struct nl_sock *nl_sock;
 	int nl80211_id;
@@ -102,8 +109,11 @@ struct chandef {
 	enum nl80211_chan_width width;
 
 	unsigned int control_freq;
+	unsigned int control_freq_offset;
 	unsigned int center_freq1;
+	unsigned int center_freq1_offset;
 	unsigned int center_freq2;
+	unsigned int punctured;
 };
 
 #define ARRAY_SIZE(ar) (sizeof(ar)/sizeof(ar[0]))
@@ -207,7 +217,21 @@ int parse_hex_mask(char *hexmask, unsigned char **result, size_t *result_len,
 unsigned char *parse_hex(char *hex, size_t *outlen);
 
 int parse_keys(struct nl_msg *msg, char **argv[], int *argc);
-int parse_freqchan(struct chandef *chandef, bool chan, int argc, char **argv, int *parsed);
+
+#define _PARSE_FREQ_ARGS_OPT1 "<freq> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz|160MHz|320MHz] [punct <bitmap>]"
+#define _PARSE_FREQ_ARGS_OPT2 "<control freq> [5|10|20|40|80|80+80|160|320] [<center1_freq> [<center2_freq>]] [punct <bitmap>]"
+#define PARSE_FREQ_ARGS(pfx, sfx) \
+	pfx _PARSE_FREQ_ARGS_OPT1 sfx "\n" \
+	pfx _PARSE_FREQ_ARGS_OPT2 sfx
+#define _PARSE_FREQ_KHZ_ARGS_OPT1 "<freq in KHz> [1MHz|2MHz|4MHz|8MHz|16MHz]"
+#define _PARSE_FREQ_KHZ_ARGS_OPT2 "<control freq in KHz> [1|2|4|8|16] [<center1_freq> [<center2_freq>]]"
+#define PARSE_FREQ_KHZ_ARGS(pfx, sfx) \
+	pfx _PARSE_FREQ_KHZ_ARGS_OPT1 sfx "\n" \
+	pfx _PARSE_FREQ_KHZ_ARGS_OPT2 sfx
+#define PARSE_CHAN_ARGS(pfx) \
+	pfx "<channel> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz|160MHz|320MHz] [punct <bitmap>]"
+int parse_freqchan(struct chandef *chandef, bool chan, int argc, char **argv,
+		    int *parsed, bool freq_in_khz);
 enum nl80211_chan_width str_to_bw(const char *str);
 int parse_txq_stats(char *buf, int buflen, struct nlattr *tid_stats_attr, int header,
 		    int tid, const char *indent);
@@ -219,8 +243,10 @@ void print_ampdu_spacing(__u8 spacing);
 void print_ht_capability(__u16 cap);
 void print_vht_info(__u32 capa, const __u8 *mcs);
 void print_he_capability(const uint8_t *ie, int len);
+void print_he_operation(const uint8_t *ie, int len);
 void print_he_info(struct nlattr *nl_iftype);
 void print_eht_info(struct nlattr *nl_iftype, int band);
+void print_s1g_capability(const uint8_t *caps);
 
 char *channel_width_name(enum nl80211_chan_width width);
 const char *iftype_name(enum nl80211_iftype iftype);
@@ -242,6 +268,8 @@ const char *get_status_str(uint16_t status);
 enum print_ie_type {
 	PRINT_SCAN,
 	PRINT_LINK,
+	PRINT_LINK_MLO_MLD,
+	PRINT_LINK_MLO_LINK,
 };
 
 #define BIT(x) (1ULL<<(x))
@@ -256,6 +284,9 @@ int get_cf1(const struct chanmode *chanmode, unsigned long freq);
 
 int parse_random_mac_addr(struct nl_msg *msg, char *addrs);
 
+char *s1g_ss_max_support(__u8 maxss);
+char *s1g_ss_min_support(__u8 minss);
+
 #define SCHED_SCAN_OPTIONS "[interval <in_msecs> | scan_plans [<interval_secs:iterations>*] <interval_secs>] "	\
 	"[delay <in_secs>] [freqs <freq>+] [matches [ssid <ssid>]+]] [active [ssid <ssid>]+|passive] "	\
 	"[randomise[=<addr>/<mask>]] [coloc] [flush]"
@@ -269,6 +300,7 @@ char *hex2bin(const char *hex, char *buf);
 int set_bitrates(struct nl_msg *msg, int argc, char **argv,
 		 enum nl80211_attrs attr);
 
+int calc_s1g_ch_center_freq(__u8 ch_index, __u8 s1g_oper_class);
 
 /* sections */
 DECLARE_SECTION(ap);

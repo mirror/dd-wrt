@@ -295,6 +295,8 @@ static void parse_wowlan_wake_event(struct nlattr **attrs)
 		printf("\t* TCP connection lost\n");
 	if (tb[NL80211_WOWLAN_TRIG_WAKEUP_TCP_NOMORETOKENS])
 		printf("\t* TCP connection ran out of tokens\n");
+	if (tb[NL80211_WOWLAN_TRIG_UNPROTECTED_DEAUTH_DISASSOC])
+		printf("\t* unprotected deauth/disassoc\n");
 }
 
 extern struct vendor_event *__start_vendor_event[];
@@ -971,7 +973,6 @@ static int print_event(struct nl_msg *msg, void *arg)
 	}
 
 	switch (gnlh->cmd) {
-#if 0
 	case NL80211_CMD_NEW_WIPHY:
 		printf("renamed to %s\n", nla_get_string(tb[NL80211_ATTR_WIPHY_NAME]));
 		break;
@@ -1007,7 +1008,6 @@ static int print_event(struct nl_msg *msg, void *arg)
 	case NL80211_CMD_SCHED_SCAN_RESULTS:
 		printf("got scheduled scan results\n");
 		break;
-#endif
 	case NL80211_CMD_WIPHY_REG_CHANGE:
 	case NL80211_CMD_REG_CHANGE:
 		if (gnlh->cmd == NL80211_CMD_WIPHY_REG_CHANGE)
@@ -1090,7 +1090,6 @@ static int print_event(struct nl_msg *msg, void *arg)
 		mac_addr_n2a(macbuf, nla_data(tb[NL80211_ATTR_MAC]));
 		printf("del station %s\n", macbuf);
 		break;
-#if 0
 	case NL80211_CMD_JOIN_IBSS:
 		mac_addr_n2a(macbuf, nla_data(tb[NL80211_ATTR_MAC]));
 		printf("IBSS %s joined\n", macbuf);
@@ -1298,10 +1297,9 @@ static int print_event(struct nl_msg *msg, void *arg)
 	case NL80211_CMD_ASSOC_COMEBACK: /* 147 */
 		parse_assoc_comeback(tb, gnlh->cmd);
 		break;
-#endif
 	default:
-		printf("unknown event %d\n",
-		       gnlh->cmd);
+		printf("unknown event %d (%s)\n",
+		       gnlh->cmd, command_name(gnlh->cmd));
 		break;
 	}
 

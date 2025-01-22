@@ -16,7 +16,7 @@ static int join_ocb(struct nl80211_state *state,
 	if (argc < 2)
 		return 1;
 
-	err = parse_freqchan(&chandef, false, argc, argv, &parsed);
+	err = parse_freqchan(&chandef, false, argc, argv, &parsed, false);
 
 	if (err)
 		return err;

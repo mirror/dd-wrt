@@ -241,6 +241,16 @@ void parse_bitrate(struct nlattr *bitrate_attr, char *buf, int buflen)
 		pos += snprintf(pos, buflen - (pos - buf), " 160MHz");
 	if (rinfo[NL80211_RATE_INFO_320_MHZ_WIDTH])
 		pos += snprintf(pos, buflen - (pos - buf), " 320MHz");
+	if (rinfo[NL80211_RATE_INFO_1_MHZ_WIDTH])
+		pos += snprintf(pos, buflen - (pos - buf), " 1MHz");
+	if (rinfo[NL80211_RATE_INFO_2_MHZ_WIDTH])
+		pos += snprintf(pos, buflen - (pos - buf), " 2MHz");
+	if (rinfo[NL80211_RATE_INFO_4_MHZ_WIDTH])
+		pos += snprintf(pos, buflen - (pos - buf), " 4MHz");
+	if (rinfo[NL80211_RATE_INFO_8_MHZ_WIDTH])
+		pos += snprintf(pos, buflen - (pos - buf), " 8MHz");
+	if (rinfo[NL80211_RATE_INFO_16_MHZ_WIDTH])
+		pos += snprintf(pos, buflen - (pos - buf), " 16MHz");
 	if (rinfo[NL80211_RATE_INFO_SHORT_GI])
 		pos += snprintf(pos, buflen - (pos - buf), " short GI");
 	if (rinfo[NL80211_RATE_INFO_VHT_NSS])
@@ -345,11 +355,6 @@ static int print_sta_handler(struct nl_msg *msg, void *arg)
 		[NL80211_STA_INFO_AIRTIME_LINK_METRIC] = { .type = NLA_U32 },
 		[NL80211_STA_INFO_CONNECTED_TO_AS] = { .type = NLA_U8 },
 		[NL80211_STA_INFO_CONNECTED_TO_GATE] = { .type = NLA_U8 },
-		[NL80211_STA_INFO_RX_COMPRESSED] = { .type = NLA_U32 },
-		[NL80211_STA_INFO_TX_COMPRESSED] = { .type = NLA_U32 },
-		[NL80211_STA_INFO_RX_COMPRESSED_BYTES64] = { .type = NLA_U64 },
-		[NL80211_STA_INFO_TX_COMPRESSED_BYTES64] = { .type = NLA_U64 },
-		[NL80211_STA_INFO_RADIONAME] = { .type = NLA_STRING },
 	};
 	char *chain;
 	struct timeval now;
@@ -392,42 +397,15 @@ static int print_sta_handler(struct nl_msg *msg, void *arg)
 	else if (sinfo[NL80211_STA_INFO_RX_BYTES])
 		printf("\n\trx bytes:\t%u",
 		       nla_get_u32(sinfo[NL80211_STA_INFO_RX_BYTES]));
-	if (sinfo[NL80211_STA_INFO_RX_COMPRESSED_BYTES64])
-		printf("\n\trx bytes compressed:\t%llu",
-			nla_get_u64(sinfo[NL80211_STA_INFO_RX_COMPRESSED_BYTES64]));
-	if (sinfo[NL80211_STA_INFO_RX_COMPRESSED_BYTES64] && sinfo[NL80211_STA_INFO_RX_BYTES64]) {
-		unsigned long long rxb = nla_get_u64(sinfo[NL80211_STA_INFO_RX_COMPRESSED_BYTES64]);
-		if (rxb) {
-			unsigned long long ratio = nla_get_u64(sinfo[NL80211_STA_INFO_RX_BYTES64]);
-			ratio *= 100;
-			ratio /= rxb;
-			printf("\n\trx compressed ratio:\t%lu.%u", ratio / 100, ratio % 100);
-		}
-	}
 	if (sinfo[NL80211_STA_INFO_RX_PACKETS])
 		printf("\n\trx packets:\t%u",
 			nla_get_u32(sinfo[NL80211_STA_INFO_RX_PACKETS]));
-	if (sinfo[NL80211_STA_INFO_RX_COMPRESSED])
-		printf("\n\trx packets compressed:\t%u",
-			nla_get_u32(sinfo[NL80211_STA_INFO_RX_COMPRESSED]));
 	if (sinfo[NL80211_STA_INFO_TX_BYTES64])
 		printf("\n\ttx bytes:\t%llu",
 		       (unsigned long long)nla_get_u64(sinfo[NL80211_STA_INFO_TX_BYTES64]));
 	else if (sinfo[NL80211_STA_INFO_TX_BYTES])
 		printf("\n\ttx bytes:\t%u",
 		       nla_get_u32(sinfo[NL80211_STA_INFO_TX_BYTES]));
-	if (sinfo[NL80211_STA_INFO_TX_COMPRESSED_BYTES64])
-		printf("\n\ttx bytes compressed:\t%llu",
-			nla_get_u64(sinfo[NL80211_STA_INFO_TX_COMPRESSED_BYTES64]));
-	if (sinfo[NL80211_STA_INFO_TX_COMPRESSED_BYTES64] && sinfo[NL80211_STA_INFO_TX_BYTES64]) {
-		unsigned long long txb = nla_get_u64(sinfo[NL80211_STA_INFO_TX_COMPRESSED_BYTES64]);
-		if (txb) {
-			unsigned long long ratio = nla_get_u64(sinfo[NL80211_STA_INFO_TX_BYTES64]);
-			ratio *= 100;
-			ratio /= txb;
-			printf("\n\ttx compressed ratio:\t%lu.%u", ratio / 100, ratio % 100);
-		}
-	}
 	if (sinfo[NL80211_STA_INFO_TX_PACKETS])
 		printf("\n\ttx packets:\t%u",
 			nla_get_u32(sinfo[NL80211_STA_INFO_TX_PACKETS]));
@@ -630,29 +608,7 @@ static int print_sta_handler(struct nl_msg *msg, void *arg)
 			else
 				printf("no");
 		}
-
-		if (sta_flags->mask & BIT(NL80211_STA_FLAG_PM)) {
-			printf("\n\tPowersave:\t");
-			if (sta_flags->set & BIT(NL80211_STA_FLAG_PM))
-				printf("yes");
-			else
-				printf("no");
-		}
-
-		if (sta_flags->mask & BIT(NL80211_STA_FLAG_HT40INTOL)) {
-			printf("\n\tHT40 Intollerant:\t");
-			if (sta_flags->set & BIT(NL80211_STA_FLAG_HT40INTOL))
-				printf("yes");
-			else
-				printf("no");
-		}
 	}
-
-	printf("\n\tCompression:\t");
-	if (sinfo[NL80211_STA_INFO_RX_COMPRESSED] && nla_get_u32(sinfo[NL80211_STA_INFO_RX_COMPRESSED]))
-		printf("yes");
-	else
-		printf("no");
 
 	if (sinfo[NL80211_STA_INFO_TID_STATS] && arg != NULL &&
 	    !strcmp((char *)arg, "-v"))
@@ -680,13 +636,6 @@ static int print_sta_handler(struct nl_msg *msg, void *arg)
 	}
 
 	printf("\n\tcurrent time:\t%llu ms\n", now_ms);
-
-	if (sinfo[NL80211_STA_INFO_RADIONAME]) {
-		char *radio = nla_data(sinfo[NL80211_STA_INFO_RADIONAME]);
-		if (*radio)
-		printf("\n\tRadio Name:\t%s",
-			radio);
-	}
 	return NL_SKIP;
 }
 
@@ -801,10 +750,10 @@ static const struct cmd *select_station_cmd(int argc, char **argv)
 		return station_set_vlan;
 	if (strcmp(argv[1], "mesh_power_mode") == 0)
 		return station_set_mesh_power_mode;
-//	if (strcmp(argv[1], "airtime_weight") == 0)
-//		return station_set_airtime_weight;
-//	if (strcmp(argv[1], "txpwr") == 0)
-//		return station_set_txpwr;
+	if (strcmp(argv[1], "airtime_weight") == 0)
+		return station_set_airtime_weight;
+	if (strcmp(argv[1], "txpwr") == 0)
+		return station_set_txpwr;
 	return NULL;
 }
 
@@ -999,11 +948,11 @@ static int handle_station_set_airtime_weight(struct nl80211_state *state,
 	return -ENOBUFS;
 
 }
-/*COMMAND_ALIAS(station, set, "<MAC address> airtime_weight <weight>",
+COMMAND_ALIAS(station, set, "<MAC address> airtime_weight <weight>",
 	NL80211_CMD_SET_STATION, 0, CIB_NETDEV, handle_station_set_airtime_weight,
 	"Set airtime weight for this station.",
 	select_station_cmd, station_set_airtime_weight);
-*/
+
 static int handle_station_set_txpwr(struct nl80211_state *state,
 				    struct nl_msg *msg,
 				    int argc, char **argv,

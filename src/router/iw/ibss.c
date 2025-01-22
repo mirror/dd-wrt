@@ -30,7 +30,7 @@ static int join_ibss(struct nl80211_state *state,
 	argv++;
 	argc--;
 
-	err = parse_freqchan(&chandef, false, argc, argv, &parsed);
+	err = parse_freqchan(&chandef, false, argc, argv, &parsed, false);
 	if (err)
 		return err;
 
