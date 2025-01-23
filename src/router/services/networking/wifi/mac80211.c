@@ -1149,6 +1149,11 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 					}
 					fprintf(fp, "ieee80211d=1\n");
 					fprintf(fp, "ieee80211h=1\n");
+					if (has_ax(prefix) && !has_hidden_ssid(prefix)) {
+						fprintf(fp, "mbssid=2\n");
+					} else {
+						fprintf(fp, "mbssid=0\n");
+					}
 				}
 				if (!strcmp(netmode, "ax-only")) {
 					if (!is_6ghz_freq_prefix(prefix, freq)) {
@@ -1166,6 +1171,11 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 					fprintf(fp, "ieee80211ac=1\n");
 				fprintf(fp, "ieee80211d=1\n");
 				fprintf(fp, "ieee80211h=1\n");
+				if (has_ax(prefix) && !has_hidden_ssid(prefix)) {
+					fprintf(fp, "mbssid=2\n");
+				} else {
+					fprintf(fp, "mbssid=0\n");
+				}
 			}
 
 			if (has_ax(prefix)) {
@@ -1298,6 +1308,11 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 					fprintf(fp, "he_su_beamformee=1\n");
 				}
 				fprintf(fp, "ieee80211ax=1\n");
+				if (has_ax(prefix) && !has_hidden_ssid(prefix)) {
+					fprintf(fp, "mbssid=2\n");
+				} else {
+					fprintf(fp, "mbssid=0\n");
+				}
 				fprintf(fp, "he_default_pe_duration=4\n");
 				fprintf(fp, "he_rts_threshold=1023\n");
 				fprintf(fp, "he_mu_edca_qos_info_param_count=0\n");
@@ -1388,12 +1403,6 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	fprintf(fp, "channel=%d\n", ieee80211_mhz2ieee(freq));
 	//	if (!has_ad(prefix))
 	fprintf(fp, "frequency=%d\n", freq);
-	if (has_ax(prefix) && !has_hidden_ssid(prefix)) {
-		fprintf(fp, "mbssid=2\n");
-	} else {
-		if (has_ax(prefix))
-			fprintf(fp, "mbssid=0\n");
-	}
 	if (is_6ghz_freq_prefix(prefix, freq)) {
 		switch (usebw) {
 		case 20:
