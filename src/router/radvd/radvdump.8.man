@@ -13,7 +13,7 @@
 .\"
 .\"
 .\"
-.TH RADVDUMP 8 "31 Mar 2008" "radvd @VERSION@" ""
+.TH RADVDUMP 8 "30 Dec 2024" "radvd @VERSION@" ""
 .SH NAME
 radvdump \- dump router advertisements
 .SH SYNOPSIS
@@ -76,11 +76,10 @@ suggestions please contact Reuben Hawkins <reubenhwk@gmail.com>.
 
 .BR radvd (8),
 .BR radvd.conf (5)
+
 .SH AUTHORS
 
 .nf
-Lars Fenneberg	<lf@elemental.net>	- previous maintainer
-Nathan Lutchansky <lutchann@litech.org> - previous maintainer
-Reuben Hawkins	<reubenhwk@gmail.com>	- current maintainer
-Marko Myllynen	<myllynen@lut.fi>	- Mobile IPv6 support
+See radvd.8 manpage for authors
+
 .fi

@@ -29,9 +29,11 @@ void iface_init_defaults(struct Interface *iface)
 	iface->AdvSendAdvert = DFLT_AdvSendAdv;
 	iface->MaxRtrAdvInterval = DFLT_MaxRtrAdvInterval;
 	iface->AdvSourceLLAddress = DFLT_AdvSourceLLAddress;
+	iface->RemoveAdvOnExit = DFLT_RemoveAdvOnExit;
 	iface->MinDelayBetweenRAs = DFLT_MinDelayBetweenRAs;
 	iface->MinRtrAdvInterval = -1;
 	iface->UnicastOnly = DFLT_UnicastOnly;
+	iface->UnrestrictedUnicast = DFLT_UnrestrictedUnicast;
 	iface->AdvRASolicitedUnicast = DFLT_AdvRASolicitedUnicast;
 
 	iface->ra_header_info.AdvDefaultPreference = DFLT_AdvDefaultPreference;
@@ -71,35 +73,35 @@ int setup_iface(int sock, struct Interface *iface)
 
 	/* Check IFF_UP, IFF_RUNNING and IFF_MULTICAST */
 	if (check_device(sock, iface) < 0) {
-		return -1;
+		return -2;
 	}
 
 	/* Set iface->max_mtu and iface hardware address */
 	if (update_device_info(sock, iface) < 0) {
-		return -1;
+		return -3;
 	}
 
 	/* Make sure the settings in the config file for this interface are ok (this depends
 	 * on iface->max_mtu already being set). */
 	if (check_iface(iface) < 0) {
-		return -1;
+		return -4;
 	}
 
 	/* Save the first link local address seen on the specified interface to
 	 * iface->props.if_addr and keep a list off all addrs in iface->props.if_addrs */
 	if (setup_iface_addrs(iface) < 0) {
-		return -1;
+		return -5;
 	}
 
 	/* Check if we a usable RA source address */
 	if (iface->props.if_addr_rasrc == NULL) {
 		dlog(LOG_DEBUG, 5, "no configured AdvRASrcAddress present, skipping send");
-		return -1;
+		return -6;
 	}
 
 	/* join the allrouters multicast group so we get the solicitations */
 	if (setup_allrouters_membership(sock, iface) < 0) {
-		return -1;
+		return -7;
 	}
 
 	iface->state_info.ready = 1;
@@ -109,6 +111,12 @@ int setup_iface(int sock, struct Interface *iface)
 	return 0;
 }
 
+int cleanup_iface(int sock, struct Interface *iface)
+{
+	/* leave the allrouters multicast group */
+	cleanup_allrouters_membership(sock, iface);
+	return 0;
+}
 void prefix_init_defaults(struct AdvPrefix *prefix)
 {
 	memset(prefix, 0, sizeof(struct AdvPrefix));
@@ -123,6 +131,15 @@ void prefix_init_defaults(struct AdvPrefix *prefix)
 
 	prefix->curr_validlft = prefix->AdvValidLifetime;
 	prefix->curr_preferredlft = prefix->AdvPreferredLifetime;
+}
+
+void nat64prefix_init_defaults(struct NAT64Prefix *prefix, struct Interface *iface)
+{
+	memset(prefix, 0, sizeof(struct NAT64Prefix));
+
+	prefix->AdvValidLifetime = min(DFLT_NAT64MaxValidLifetime, 3*(iface->MaxRtrAdvInterval));
+
+	prefix->curr_validlft = prefix->AdvValidLifetime;
 }
 
 void route_init_defaults(struct AdvRoute *route, struct Interface *iface)
@@ -261,7 +278,7 @@ int check_iface(struct Interface *iface)
 
 		if (prefix->AdvPreferredLifetime > prefix->AdvValidLifetime) {
 			flog(LOG_ERR, "AdvValidLifetime for %s (%u) must be "
-				      "greater than AdvPreferredLifetime for",
+				      "greater than or equal to AdvPreferredLifetime for",
 			     iface->props.name, prefix->AdvValidLifetime);
 			res = -1;
 		}
@@ -403,6 +420,7 @@ static void free_iface_list(struct Interface *iface)
 		while (rdnss) {
 			struct AdvRDNSS *next_rdnss = rdnss->next;
 
+			free(rdnss->AdvRDNSSAddr);
 			free(rdnss);
 			rdnss = next_rdnss;
 		}
@@ -419,6 +437,14 @@ static void free_iface_list(struct Interface *iface)
 			dnssl = next_dnssl;
 		}
 
+		struct AutogenIgnorePrefix *ignore_prefixes = iface->IgnorePrefixList;
+		while (ignore_prefixes) {
+			struct AutogenIgnorePrefix *next_ignore_prefix = ignore_prefixes->next;
+
+			free(ignore_prefixes);
+			ignore_prefixes = next_ignore_prefix;
+		}
+
 		struct Clients *clients = iface->ClientList;
 		while (clients) {
 			struct Clients *next_client = clients->next;
@@ -428,6 +454,8 @@ static void free_iface_list(struct Interface *iface)
 		}
 
 		free(iface->props.if_addrs);
+
+		free(iface->AdvCaptivePortalAPI);
 
 		free(iface);
 		iface = next_iface;

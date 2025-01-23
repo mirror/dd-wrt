@@ -13,7 +13,7 @@
  *
  */
 
-%option nounput noinput noyywrap yylineno
+%option nounput noinput noyywrap yylineno caseless
 
 %{
 #include "config.h"
@@ -34,6 +34,7 @@ addr1		{hexdigit}{1,4}":"({hexdigit}{1,4}":")*(":"{hexdigit}{1,4})+
 addr2		{hexdigit}{1,4}(":"{hexdigit}{1,4})*"::"
 addr3		({hexdigit}{1,4}":"){7}{hexdigit}{1,4}
 addr		({addr1}|{addr2}|{addr3}|"::")
+naddr		("!"{addr})
 whitespace	([ \t])+
 string		[a-zA-Z0-9`~!@#$%\^&*()_\-+=:\[\]<>,\.?\\]+|L?\"(\\.|[^\\"])*\"
 %%
@@ -50,6 +51,9 @@ DNSSL			{ return T_DNSSL; }
 clients			{ return T_CLIENTS; }
 lowpanco		{ return T_LOWPANCO; }
 abro			{ return T_ABRO; }
+nat64prefix		{ return T_NAT64PREFIX; }
+autoignoreprefixes	{ return T_AUTOIGNOREPREFIX; }
+
 AdvRASrcAddress	{ return T_RASRCADDRESS; }
 
 IgnoreIfMissing		{ return T_IgnoreIfMissing; }
@@ -66,6 +70,7 @@ AdvCurHopLimit		{ return T_AdvCurHopLimit; }
 AdvDefaultLifetime	{ return T_AdvDefaultLifetime; }
 AdvDefaultPreference	{ return T_AdvDefaultPreference; }
 AdvSourceLLAddress	{ return T_AdvSourceLLAddress; }
+RemoveAdvOnExit		{ return T_RemoveAdvOnExit; }
 
 AdvOnLink		{ return T_AdvOnLink; }
 AdvAutonomous		{ return T_AdvAutonomous; }
@@ -79,7 +84,9 @@ AdvHomeAgentFlag	{ return T_AdvHomeAgentFlag; }
 AdvIntervalOpt		{ return T_AdvIntervalOpt; }
 AdvHomeAgentInfo	{ return T_AdvHomeAgentInfo; }
 UnicastOnly		{ return T_UnicastOnly; }
+UnrestrictedUnicast	{ return T_UnrestrictedUnicast; }
 AdvRASolicitedUnicast	{ return T_AdvRASolicitedUnicast; }
+AdvCaptivePortalAPI	{ return T_AdvCaptivePortalAPI; }
 
 Base6Interface		{ return T_Base6Interface; }
 Base6to4Interface	{ return T_Base6to4Interface; }
@@ -111,7 +118,6 @@ AdvContextPrefix	{ return T_AdvContextPrefix; }
 
 AdvVersionLow		{ return T_AdvVersionLow; }
 AdvVersionHigh		{ return T_AdvVersionHigh; }
-AdvValidLifeTime	{ return T_AdvValidLifeTime; }
 Adv6LBRaddress		{ return T_Adv6LBRaddress; }
 
 {addr}		{
@@ -122,6 +128,16 @@ Adv6LBRaddress		{ return T_Adv6LBRaddress; }
 
 			yylval.addr = &addr;
 			return IPV6ADDR;
+		}
+
+{naddr}		{
+			static struct in6_addr addr;
+			if (inet_pton(AF_INET6, &yytext[1], &addr) < 1) {
+				return T_BAD_TOKEN;
+			}
+
+			yylval.addr = &addr;
+			return NOT_IPV6ADDR;
 		}
 
 {number}	{

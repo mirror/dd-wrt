@@ -13,7 +13,7 @@ dnl
 dnl
 
 dnl If adding rcX to version, be sure to separate with a '-' 
-AC_INIT(radvd, [2.19])
+AC_INIT(radvd, [2.20])
 AC_CONFIG_SRCDIR(radvd.c)
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE
@@ -49,6 +49,7 @@ esac
 dnl Determine CC and preset CFLAGS
 AC_PROG_CC_C99
 AC_PROG_RANLIB
+AM_PROG_AR
 
 AC_ARG_WITH([stack-protector], AS_HELP_STRING([--without-stack-protector], [Build without -fstack-protector]),[],[with_stack_protector=yes])
 AM_CONDITIONAL(HAVE_STACK_PROTECTOR, test x"$with_stack_protector" = xyes)
@@ -59,6 +60,7 @@ AS_IF([test "x$with_check" = "xyes"], [
         PKG_CHECK_MODULES([CHECK], [check >= 0.9.4])
     ])
 ])
+AM_CONDITIONAL(HAVE_CHECK, test x"$with_check" = xyes)
 
 dnl Determine of netlink is available
 AC_MSG_CHECKING(netlink)
@@ -91,6 +93,8 @@ AC_MSG_RESULT(no)
 
 dnl clock_gettime is in librt for glibc <2.17
 AC_SEARCH_LIBS(clock_gettime, rt)
+dnl strlcpy is in libbsd
+AC_SEARCH_LIBS(strlcpy, bsd)
 
 dnl Needed for normal compile
 AC_PROG_INSTALL
@@ -174,15 +178,19 @@ AC_HEADER_TIME
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_MSG_CHECKING(whether struct sockaddr_in6 has sin6_scope_id)
-AC_TRY_COMPILE([#include <sys/types.h>
-#include <netinet/in.h>], [static struct sockaddr_in6 ac_sin6; int ac_size = 
-sizeof (ac_sin6.sin6_scope_id);], [AC_MSG_RESULT(yes); AC_DEFINE([HAVE_SIN6_SCOPE_ID],
+AC_TRY_COMPILE([#include <stdint.h>
+#include <sys/types.h>
+#include <netinet/in.h>], [
+static struct sockaddr_in6 ac_sin6;
+uint32_t ac_size = sizeof (ac_sin6.sin6_scope_id);
+], [AC_MSG_RESULT(yes); AC_DEFINE([HAVE_SIN6_SCOPE_ID],
 1, [whether struct sockaddr_in6 has sin6_scope_id])],
 AC_MSG_RESULT(no))
 
 AC_MSG_CHECKING(whether struct in6_addr has u6_addrXX and defines s6_addrXX)
-AC_TRY_COMPILE([#include <netinet/in.h>], [static struct in6_addr in6_u; 
-int u =  in6_u.s6_addr16;], [AC_MSG_RESULT(yes); AC_DEFINE([HAVE_IN6_ADDR_S6_ADDR],
+AC_TRY_COMPILE([#include <stdint.h>
+#include <netinet/in.h>], [static struct in6_addr in6_u;
+uint16_t u =  in6_u.s6_addr16[0];], [AC_MSG_RESULT(yes); AC_DEFINE([HAVE_IN6_ADDR_S6_ADDR],
 1, [whether struct in6_addr has u6_addrXX and defines s6_addrXX])],
 AC_MSG_RESULT(no))
 

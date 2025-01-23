@@ -6,6 +6,7 @@
 Description=Router advertisement daemon for IPv6
 Documentation=man:radvd(8)
 After=network.target
+ConditionPathExists=/etc/radvd.conf
 
 [Service]
 Type=forking

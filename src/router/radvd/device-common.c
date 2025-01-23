@@ -22,7 +22,7 @@ int check_device(int sock, struct Interface *iface)
 {
 	struct ifreq ifr;
 	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, iface->props.name, IFNAMSIZ - 1);
+	strlcpy(ifr.ifr_name, iface->props.name, sizeof(ifr.ifr_name));
 
 	if (ioctl(sock, SIOCGIFFLAGS, &ifr) < 0) {
 		flog(LOG_ERR, "ioctl(SIOCGIFFLAGS) failed on %s: %s", iface->props.name, strerror(errno));
@@ -70,8 +70,7 @@ int get_v4addr(const char *ifn, unsigned int *dst)
 
 	struct ifreq ifr;
 	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, ifn, IFNAMSIZ - 1);
-	ifr.ifr_name[IFNAMSIZ - 1] = '\0';
+	strlcpy(ifr.ifr_name, ifn, sizeof(ifr.ifr_name));
 	ifr.ifr_addr.sa_family = AF_INET;
 
 	if (ioctl(fd, SIOCGIFADDR, &ifr) < 0) {

@@ -47,7 +47,9 @@
 #define DFLT_AdvDefaultPreference 0
 #define DFLT_AdvRAMTU RFC2460_MIN_MTU
 #define DFLT_UnicastOnly 0
+#define DFLT_UnrestrictedUnicast 0
 #define DFLT_AdvRASolicitedUnicast 1
+#define DFLT_RemoveAdvOnExit 1
 
 /* Options sent with RA */
 
@@ -62,18 +64,39 @@
 #define DFLT_DeprecatePrefixFlag 0
 #define DFLT_DecrementLifetimesFlag 0
 
+/* RFC8781 section 4.1; this is the non-scaled value (8191 << 3) */
+#define DFLT_NAT64MaxValidLifetime 65528 /* seconds */
+
 /* Each route has an associated: */
 #define DFLT_AdvRouteLifetime(iface) (3 * (iface)->MaxRtrAdvInterval)
 
 #define DFLT_AdvRoutePreference 0 /* medium */
 #define DFLT_RemoveRouteFlag 1
 
-/* RDNSS */
-#define DFLT_AdvRDNSSLifetime(iface) (iface)->MaxRtrAdvInterval
+/* RDNSS
+ * https://tools.ietf.org/html/rfc8106#section-5.1
+ * "The value of Lifetime SHOULD by default be at least 3 * MaxRtrAdvInterval"
+ * RFC8106 does NOT specify bounds
+ *
+ * Note: RFC6106 handled this differently:
+ * https://tools.ietf.org/html/rfc6106#section-5.1
+ * Specifies bounds of MaxRtrAdvInterval <= Lifetime <= 2*MaxRtrAdvInterval
+ * but does NOT specify a default value
+ */
+#define DFLT_AdvRDNSSLifetime(iface) (3 * (iface)->MaxRtrAdvInterval)
 #define DFLT_FlushRDNSSFlag 1
 
-/* DNSSL */
-#define DFLT_AdvDNSSLLifetime(iface) (iface)->MaxRtrAdvInterval
+/* DNSSL
+ * https://tools.ietf.org/html/rfc8106#section-5.2
+ * "Lifetime SHOULD by default be at least 3 * MaxRtrAdvInterval"
+ * RFC8106 does NOT specify bounds
+ *
+ * Note: RFC6106 handled this differently:
+ * https://tools.ietf.org/html/rfc6106#section-5.2
+ * Specifies bounds of MaxRtrAdvInterval <= Lifetime <= 2*MaxRtrAdvInterval
+ * but does NOT specify a default value
+ */
+#define DFLT_AdvDNSSLLifetime(iface) (3 * (iface)->MaxRtrAdvInterval)
 #define DFLT_FlushDNSSLFlag 1
 
 /* Protocol (RFC4861) constants: */
@@ -182,9 +205,7 @@ struct nd_opt_rdnss_info_local {
 	uint8_t nd_opt_rdnssi_len;
 	uint16_t nd_opt_rdnssi_pref_flag_reserved;
 	uint32_t nd_opt_rdnssi_lifetime;
-	struct in6_addr nd_opt_rdnssi_addr1;
-	struct in6_addr nd_opt_rdnssi_addr2;
-	struct in6_addr nd_opt_rdnssi_addr3;
+	struct in6_addr nd_opt_rdnssi_addr[];
 };
 /* pref/flag/reserved field : yyyyx00000000000 (big endian) - 00000000yyyyx000 (little indian); where yyyy = pref, x = flag */
 #if BYTE_ORDER == BIG_ENDIAN
@@ -221,6 +242,22 @@ struct nd_opt_dnssl_info_local {
 #define ND_OPT_RDNSSI_FLAG_S 0x0008
 #endif
 #endif
+
+/* Captive Portal RFC 8910 */
+
+#ifndef ND_OPT_CAPTIVE_PORTAL
+#define ND_OPT_CAPTIVE_PORTAL 37
+#endif
+
+/* TODO Secure ND CGA RFC 3971, 5.1 */
+/* TODO Secure ND RSA Signature RFC 3971, 5.2 */
+
+/* Secure ND Timestamp RFC 3971, 5.3.1 */
+#ifndef ND_OPT_TIMESTAMP
+#define ND_OPT_TIMESTAMP 13
+#endif
+
+/* TODO Secure ND Nonce RFC 3971, 5.3.2 */
 
 /* Configurable values */
 

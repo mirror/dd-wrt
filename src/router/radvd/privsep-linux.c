@@ -129,7 +129,8 @@ int privsep_interface_linkmtu(const char *iface, uint32_t mtu)
 {
 	struct privsep_command cmd;
 	cmd.type = SET_INTERFACE_LINKMTU;
-	strncpy(cmd.iface, iface, sizeof(cmd.iface));
+	memset(&cmd.iface, 0, sizeof(cmd.iface));
+	strlcpy(cmd.iface, iface, sizeof(cmd.iface));
 	cmd.val = mtu;
 
 	if (writen(pfd, &cmd, sizeof(cmd)) != sizeof(cmd))
@@ -141,7 +142,8 @@ int privsep_interface_curhlim(const char *iface, uint32_t hlim)
 {
 	struct privsep_command cmd;
 	cmd.type = SET_INTERFACE_CURHLIM;
-	strncpy(cmd.iface, iface, sizeof(cmd.iface));
+	memset(&cmd.iface, 0, sizeof(cmd.iface));
+	strlcpy(cmd.iface, iface, sizeof(cmd.iface));
 	cmd.val = hlim;
 	if (writen(pfd, &cmd, sizeof(cmd)) != sizeof(cmd))
 		return -1;
@@ -152,7 +154,8 @@ int privsep_interface_reachtime(const char *iface, uint32_t rtime)
 {
 	struct privsep_command cmd;
 	cmd.type = SET_INTERFACE_REACHTIME;
-	strncpy(cmd.iface, iface, sizeof(cmd.iface));
+	memset(&cmd.iface, 0, sizeof(cmd.iface));
+	strlcpy(cmd.iface, iface, sizeof(cmd.iface));
 	cmd.val = rtime;
 	if (writen(pfd, &cmd, sizeof(cmd)) != sizeof(cmd))
 		return -1;
@@ -163,7 +166,8 @@ int privsep_interface_retranstimer(const char *iface, uint32_t rettimer)
 {
 	struct privsep_command cmd;
 	cmd.type = SET_INTERFACE_RETRANSTIMER;
-	strncpy(cmd.iface, iface, sizeof(cmd.iface));
+	memset(&cmd.iface, 0, sizeof(cmd.iface));
+	strlcpy(cmd.iface, iface, sizeof(cmd.iface));
 	cmd.val = rettimer;
 	if (writen(pfd, &cmd, sizeof(cmd)) != sizeof(cmd))
 		return -1;

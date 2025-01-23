@@ -13,7 +13,7 @@
 .\"
 .\"
 .\"
-.TH RADVD.CONF 5 "4 Jan 2011" "radvd @VERSION@" ""
+.TH RADVD.CONF 5 "30 Dec 2024" "radvd @VERSION@" ""
 .SH NAME
 radvd.conf \- configuration file of the router advertisement daemon
 .B radvd
@@ -32,12 +32,14 @@ The file contains one or more interface definitions of the form:
 	list of RDNSS definitions
 	list of DNSSL definitions
 	list of ABRO definitions
+	list of NAT64 pref64 definitions
+	list of auto-ignore prefixes
 	list of acceptable RA source addresses
 .B };
 .fi
 
 All the possible interface specific options are detailed below.  Each
-option has to be terminated by a semicolon.
+option has to be terminated by a semicolon. Options are not case sensitive.
 
 Prefix definitions are of the form:
 
@@ -55,8 +57,9 @@ Special prefix "::/64" is also supported on systems that implement getifaddrs()
 (on other systems, configuration activation fails and radvd exits).
 When configured, radvd
 picks all non-link-local prefix assigned to the interface and starts advertising
-it.  This may be applicable in non-6to4 scenarios where the upstream prefix might
-change.  This option is incompatible with Base6to4Interface option.
+it (unless ignored with autoignoreprefixes).  This may be applicable in non-6to4
+scenarios where the upstream prefix might change.  This option is incompatible
+with Base6to4Interface option.
 AdvRouterAddr option is always enabled when this configuration is used.
 
 All the possible prefix specific options are described below.  Each
@@ -85,6 +88,10 @@ RDNSS (Recursive DNS server) definitions are of the form:
 .B };
 .fi
 
+Each RDNSS definition block has a maximum length of 2040 bytes including the header, this accomodates up to 127 addresses.
+
+If the length is exceeded, radvd will log a non-fatal error instead of sending the option.
+
 DNSSL (DNS Search List) definitions are of the form:
 
 .nf
@@ -93,10 +100,15 @@ DNSSL (DNS Search List) definitions are of the form:
 .B };
 .fi
 
+Each DNSSL definition block has a maximum length of 2040 bytes including the header, applied after the suffixes are encoded per RFC1035, section 3.1.
+
+If the length is exceeded, radvd will log a non-fatal error instead of sending the option.
+
 By default radvd will send multicast route advertisements so that every node on the link can use them.
 The list of clients (IPv6 address) to advertise to, and accept route solicitations from can be configured.
-If done, radvd does not send send messages to the multicast addresses but
-to the configured unicast addresses only.  Solicitations from other addresses are refused.
+If done, radvd does not send messages to the multicast addresses but
+to the configured unicast addresses only.  Solicitations from other addresses are refused unless
+UnrestrictedUnicast is enabled.
 This is similar to UnicastOnly but includes periodic messages and incoming client access
 configuration.  See examples section for a use case of this.
 
@@ -108,11 +120,15 @@ The definitions are of the form:
 .B };
 .fi
 
+Clients can be prefixed with "!" to ignore them completely and never send advertisements to them.
+
 By default radvd will use the first link-local address for the interface as the
 source address for route advertisements. This can be overwritten by manually
 setting the list of acceptable source addresses. If done, radvd will use the
 first address from the interface that is present in the configured source
-addresses only. This functionality will NOT spoof the source address, but may be useful in combination with VRRP or other functionality that 
+addresses only. This functionality will NOT spoof the source address, but may
+be useful in combination with VRRP or other functionality that do a
+virtual/failover MAC.
 
 .nf
 .BR AdvRASrcAddress " " {
@@ -125,6 +141,30 @@ ABRO (Authoritative Border Router Option) definitions are of the form:
 .nf
 .BR "abro " "IPv6-address " {
         list of abro specific options
+.B };
+.fi
+
+NAT64 pref64 (the NAT64 prefix included in the router advertisements):
+
+.nf
+.BR "nat64prefix " prefix / "length " {
+	list of NAT64 prefix specific options
+.B };
+.fi
+
+The value of
+.B length
+can only be one of /32, /40, /48, /56, /64, or /96.
+
+When using the special prefix "::/64" this option forms an ignore list for
+prefixes that should not be automatically generated and advertised. Has no
+effect on any other prefix definition.
+
+The definitions are of the form:
+
+.nf
+.BR autoignoreprefixes " " {
+        list of IPv6 prefixes
 .B };
 .fi
 
@@ -169,6 +209,18 @@ This will prevent unsolicited advertisements from being sent, and
 will cause solicited advertisements to be unicast to the
 soliciting node.  This option is necessary for non-broadcast,
 multiple-access links, such as ISATAP.
+
+Default: off
+
+.TP
+.BR UnrestrictedUnicast " " on | off
+
+A flag indicating whether or not to respond to router
+solicitations when there is a list of clients configured.
+
+This allows regular unsolicited advertisements to be sent
+to some clients without ignoring router solicitations from
+unknown clients.
 
 Default: off
 
@@ -249,7 +301,7 @@ Default: off
 .TP
 .BR "AdvLinkMTU " integer
 
-The MTU option is used in  router advertisement messages to insure
+The MTU option is used in  router advertisement messages to ensure
 that all nodes on a link use the same MTU value in those cases where
 the link MTU is not well known.
 
@@ -324,6 +376,13 @@ included in the RA.
 Default: on
 
 .TP
+.BR RemoveAdvOnExit " " on | off
+
+Upon shutdown, send a final advertisement with zero Router Lifetime. This should cause the router and routes to be immediately removed from the receiving end-nodes' route table. This may need to be disabled ("off") in an vrrp or carp setup.
+
+Default: on
+
+.TP
 .BR AdvHomeAgentFlag " " on | off
 
 When set, indicates that sending router is able to serve as Mobile
@@ -390,6 +449,19 @@ parameter except where this is less than 200ms.  In this case,
 the advertised interval is ( MaxRtrAdvInterval + 20ms ).
 
 Default: off
+
+.TP
+.BR AdvCaptivePortalAPI " " \[dq] URL \[dq]
+
+When set, advertise RFC8908 Captive-Portal API URL.
+
+See RFC8952 Captive Portal Architecture, RFC8910 Captive-Portal
+Identification in DHCP and Router Advertisements (RAs) and
+RFC8908 Captive Portal API for more information.
+
+Most likely you do not need this.
+
+Default: not included
 
 .SH PREFIX SPECIFIC OPTIONS
 
@@ -551,9 +623,11 @@ Default: on
 
 .TP
 .BR "AdvRDNSSLifetime " seconds | infinity
-The maximum duration how long the RDNSS entries are used for name resolution. A value of 0 means the nameserver must no longer be used. The value, if not 0, must be at least MaxRtrAdvInterval.  To ensure stale RDNSS info gets removed in a timely fashion, this should not be greater than 2*MaxRtrAdvInterval.
+The maximum duration how long the RDNSS entries are used for name resolution.
+A value of 0 means the nameserver must no longer be used.
+As described in RFC8106, the use of default value or a larger value ensures the reliability of an entry even under the loss of RAs on links with a relatively high rate of packet loss.
 
-Default: 2*MaxRtrAdvInterval
+Default: 3*MaxRtrAdvInterval
 
 .TP
 .BR FlushRDNSS " " on | off
@@ -568,11 +642,9 @@ Default: on
 .BR "AdvDNSSLLifetime " seconds | infinity;
 The maximum duration how long the DNSSL entries are used for name resolution.
 A value of 0 means the suffix should no longer be used.
-The value, if not 0, must be at least MaxRtrAdvInterval.  To ensure stale
-DNSSL info gets removed in a timely fashion, this should not be greater than
-2*MaxRtrAdvInterval.
+As described in RFC8106, the use of default value or a larger value ensures the reliability of an entry even under the loss of RAs on links with a relatively high rate of packet loss.
 
-Default: 2*MaxRtrAdvInterval
+Default: 3*MaxRtrAdvInterval
 
 .TP
 .BR FlushDNSSL " " on | off
@@ -584,13 +656,25 @@ Default: on
 .SH ABRO SPECIFIC OPTIONS
 
 .TP
-.BR "AdvValidLifeTime " seconds
+.BR "AdvValidLifetime " seconds
 The time in units of that the set of border router information is valid.
 A value of all zero bits assumes a default value of 10,000(~one week).
 
 .TP
 .BR "AdvVersionLow, AdvVersionHigh " unsigned integer
 Both forms 32-bit unsigned version number corresponding to the set of information contained in RA message.
+
+.SH NAT64 PREF64 SPECIFIC OPTIONS
+
+.TP
+.BR "AdvValidLifetime " seconds ""
+
+The length of time in seconds (relative to the time the packet is
+sent) that the prefix is valid for the purpose of NAT64 existence
+determination. In case the value is not a multiple of 8, the validity
+is rounded up to the next multiple of 8. The maximum is 65528 seconds.
+
+Default: the lesser value of 3 * MaxRtrAdvInterval, or 65528
 
 .SH EXAMPLES
 
@@ -707,7 +791,24 @@ interface lowpan0
 	abro fe80::a200:0:0:1/64 {
 		AdvVersionLow 10;
 		AdvVersionHigh 2;
-		AdvValidLifeTime 2;
+		AdvValidLifetime 2;
+	};
+};
+
+The NAT64 pref64 support
+.nf
+interface eth0
+{
+	prefix 2001:db8:100::/64 {
+		AdvOnLink on;
+		AdvAutonomous on;
+		AdvRouterAddr on;
+	};
+	nat64prefix 64:ff9b::/96 {
+		AdvValidLifetime 1800;
+	};
+	RDNSS 2001:db8:100::64 {
+		AdvRDNSSLifetime 1800;
 	};
 };
 
@@ -752,9 +853,6 @@ RFC 3775, June 2004.
 Devarapalli, V., Wakikawa, R., Petrescu, A., and P. Thubert "Network Mobility (NEMO) Basic Support Protocol",
 RFC 3963, January 2005.
 .PP
-J. Jeong, S. Park, L. Beloeil, and S. Madanapalli, "IPv6 Router Advertisement Options for DNS Configuration",
-RFC 6106, November 2010.
-.PP
 Z. Shelby, S. Chakrabarti, E. Nordmark and  C. Bormann " Neighbor Discovery Optimization for IPv6 over Low-Power 
 Wireless Personal Area Networks (6LoWPANs)", RFC 6775, November 2012.
 .PP
@@ -763,8 +861,20 @@ RFC 6980, August 2013.
 .PP
 Yourtchenko, A. and Colitti, L. "Reducing Energy Consumption of Router Advertisements",
 RFC 7772, February 2016.
+.PP
+J. Jeong, S. Park, L. Beloeil, and S. Madanapalli, "IPv6 Router Advertisement Options for DNS Configuration",
+RFC 8106, March 2017.
+.PP
+L. Colitti, and J. Linkova, "Discovering PREF64 in Router Advertisements",
+RFC 8781, April 2020.
 
 .SH "SEE ALSO"
 
 .BR radvd (8),
 .BR radvdump (8)
+.SH AUTHORS
+
+.nf
+See radvd.8 manpage for authors
+
+.fi

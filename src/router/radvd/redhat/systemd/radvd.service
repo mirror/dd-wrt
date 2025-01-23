@@ -2,6 +2,7 @@
 Description=Router advertisement daemon for IPv6
 After=network-online.target
 Wants=network-online.target
+ConditionPathExists=/etc/radvd.conf
 
 [Service]
 EnvironmentFile=/etc/sysconfig/radvd

@@ -1,0 +1,42 @@
+name: Buildroot
+on: [push, pull_request]
+
+jobs:
+  buildroot:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        defconfig_name:
+          - qemu_x86_defconfig
+          - qemu_x86_64_defconfig
+          - raspberrypi4_defconfig
+          - raspberrypi4_64_defconfig
+          - qemu_ppc64le_pseries_defconfig
+          - qemu_mips32r2_malta_defconfig
+          - qemu_mips64_malta_defconfig
+          - qemu_riscv32_virt_defconfig
+          - qemu_riscv64_virt_defconfig
+        libc_name:
+          - glibc
+          - uclibc
+          - musl
+    env:
+      CI_VERSION: v1.0
+      BUILDROOT_DIRECTORY_NAME: buildroot-${{ matrix.defconfig_name }}-${{ matrix.libc_name }}
+    steps:
+      - name: Retrieve prebuilt Buildroot image
+        working-directory: /home/runner
+        run: |
+          wget https://github.com/radvd-project/radvd-ci/releases/download/${{ env.CI_VERSION }}/${{ env.BUILDROOT_DIRECTORY_NAME }}.tar.zst
+          tar --zstd --strip-components=2 -xf ${{ env.BUILDROOT_DIRECTORY_NAME }}.tar.zst
+      - name: Select the latest radvd upstream version
+        working-directory: /home/runner/${{ env.BUILDROOT_DIRECTORY_NAME }}/package/radvd
+        run: |
+          # Get package sources from head of current branch
+          sed -i "/RADVD_VERSION =/c\\RADVD_VERSION = ${GITHUB_SHA}" radvd.mk
+      - name: Trigger a radvd package rebuild
+        working-directory: /home/runner/${{ env.BUILDROOT_DIRECTORY_NAME }}/output/build
+        run: rm -rf radvd*
+      - name: Build
+        working-directory: /home/runner/${{ env.BUILDROOT_DIRECTORY_NAME }}
+        run: make

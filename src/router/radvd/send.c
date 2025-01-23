@@ -16,6 +16,7 @@
 #include "config.h"
 #include "includes.h"
 #include "radvd.h"
+#include "netlink.h"
 
 static int really_send(int sock, struct in6_addr const *dest, struct properties const *props, struct safe_buffer const *sb);
 static int send_ra(int sock, struct Interface *iface, struct in6_addr const *dest);
@@ -27,6 +28,8 @@ static void update_iface_times(struct Interface *iface);
 
 // Option helpers
 static size_t serialize_domain_names(struct safe_buffer *safe_buffer, struct AdvDNSSL const *dnssl);
+static int get_prefix_lifetimes(struct AdvPrefix const *prefix, unsigned int *valid_lft, unsigned int *preferred_lft);
+static void limit_prefix_lifetimes(struct AdvPrefix *prefix);
 
 // Options that only need a single block
 static void add_ra_header(struct safe_buffer *sb, struct ra_header_info const *ra_header_info, int cease_adv);
@@ -37,11 +40,13 @@ static void add_ra_option_mipv6_rtr_adv_interval(struct safe_buffer *sb, double 
 static void add_ra_option_mipv6_home_agent_info(struct safe_buffer *sb, struct mipv6 const *mipv6);
 static void add_ra_option_lowpanco(struct safe_buffer *sb, struct AdvLowpanCo const *lowpanco);
 static void add_ra_option_abro(struct safe_buffer *sb, struct AdvAbro const *abroo);
+static void add_ra_option_capport(struct safe_buffer *sb, const char *captive_portal);
 
 // Options that generate 0 or more blocks
 static struct safe_buffer_list *add_ra_options_prefix(struct safe_buffer_list *sbl, struct Interface const *iface,
 						      char const *ifname, struct AdvPrefix const *prefix, int cease_adv,
 						      struct in6_addr const *dest);
+static struct safe_buffer_list *add_ra_options_nat64prefix(struct safe_buffer_list *sbl, struct NAT64Prefix const *prefix);
 static struct safe_buffer_list *add_ra_options_route(struct safe_buffer_list *sbl, struct Interface const *iface,
 						     struct AdvRoute const *route, int cease_adv, struct in6_addr const *dest);
 static struct safe_buffer_list *add_ra_options_rdnss(struct safe_buffer_list *sbl, struct Interface const *iface,
@@ -61,6 +66,7 @@ static int schedule_option_mipv6_rtr_adv_interval(struct in6_addr const *dest, s
 static int schedule_option_mipv6_home_agent_info(struct in6_addr const *dest, struct Interface const *iface);
 static int schedule_option_lowpanco(struct in6_addr const *dest, struct Interface const *iface);
 static int schedule_option_abro(struct in6_addr const *dest, struct Interface const *iface);
+static int schedule_option_capport(struct in6_addr const *dest, struct Interface const *iface);
 
 #ifdef UNIT_TEST
 #include "test/send.c"
@@ -82,7 +88,12 @@ int send_ra_forall(int sock, struct Interface *iface, struct in6_addr *dest)
 		return -1;
 	}
 
-	if (iface->state_info.racount < MAX_INITIAL_RTR_ADVERTISEMENTS)
+	// Ignore unicast request/response - otherwise rapid unicast
+	// requests during startup can cause multicast/broadcast RAs to *NOT* be
+	// sent on the desired schedule.
+	// racount is consumed in interface.c to calculate when to send the
+	// next non-unicast RA.
+	if (iface->state_info.racount < MAX_INITIAL_RTR_ADVERTISEMENTS && dest == NULL)
 		iface->state_info.racount++;
 
 	/* If no list of clients was specified for this interface, we broadcast */
@@ -100,6 +111,15 @@ int send_ra_forall(int sock, struct Interface *iface, struct in6_addr *dest)
 		if (dest != NULL && memcmp(dest, &current->Address, sizeof(struct in6_addr)) != 0)
 			continue;
 
+		/* Clients that should be ignored */
+		if (current->ignored) {
+			/* Don't allow fallback to UnrestrictedUnicast for direct queries */
+			if (dest != NULL)
+				return 0;
+
+			continue;
+		}
+
 		send_ra(sock, iface, &(current->Address));
 
 		/* If we should only send the RA to a specific address, we are done */
@@ -109,6 +129,11 @@ int send_ra_forall(int sock, struct Interface *iface, struct in6_addr *dest)
 
 	if (dest == NULL)
 		return 0;
+
+	/* Reply with advertisement to unlisted clients */
+	if (iface->UnrestrictedUnicast) {
+		return send_ra(sock, iface, dest);
+	}
 
 	/* If we refused a client's solicitation, log it if debugging is high enough */
 	if (get_debuglevel() >= 5) {
@@ -197,12 +222,7 @@ static void add_ra_header(struct safe_buffer *sb, struct ra_header_info const *r
 	/* Mobile IPv6 ext */
 	radvert.nd_ra_flags_reserved |= (ra_header_info->AdvHomeAgentFlag) ? ND_RA_FLAG_HOME_AGENT : 0;
 
-	if (cease_adv) {
-		radvert.nd_ra_router_lifetime = 0;
-	} else {
-		/* if forwarding is disabled, send zero router lifetime */
-		radvert.nd_ra_router_lifetime = !check_ip6_forwarding() ? htons(ra_header_info->AdvDefaultLifetime) : 0;
-	}
+	radvert.nd_ra_router_lifetime = cease_adv ? 0 : htons(ra_header_info->AdvDefaultLifetime);
 	radvert.nd_ra_flags_reserved |= (ra_header_info->AdvDefaultPreference << ND_OPT_RI_PRF_SHIFT) & ND_OPT_RI_PRF_MASK;
 
 	radvert.nd_ra_reachable = htonl(ra_header_info->AdvReachableTime);
@@ -244,6 +264,95 @@ static void add_ra_option_prefix(struct safe_buffer *sb, struct AdvPrefix const 
 	safe_buffer_append(sb, &pinfo, sizeof(pinfo));
 }
 
+static int get_prefix_lifetimes (struct AdvPrefix const *prefix, unsigned int *valid_lft, unsigned int *preferred_lft) {
+	unsigned int preferred = 0;
+	unsigned int valid = 0;
+	int ret = 0;
+
+#ifdef HAVE_NETLINK
+	/* Retrieve valid and current lifetimes of the prefix */
+	ret = netlink_get_address_lifetimes (prefix, &preferred, &valid);
+#endif
+
+	*valid_lft = valid;
+	*preferred_lft = preferred;
+	return ret;
+}
+
+static void limit_prefix_lifetimes(struct AdvPrefix *prefix) {
+  unsigned int valid, preferred;
+  int ret = get_prefix_lifetimes (prefix, &valid, &preferred);
+  /* Retrieve valid and current lifetimes of the prefix */
+  if(ret) {
+    prefix->curr_validlft = min(valid, prefix->curr_validlft);
+    prefix->curr_preferredlft = min(preferred, prefix->curr_preferredlft);
+  }
+}
+
+static void add_ra_option_nat64prefix(struct safe_buffer *sb, struct NAT64Prefix const *prefix)
+{
+	struct nd_opt_nat64prefix_info pinfo;
+	uint8_t prefix_length_code = 0;
+
+	memset(&pinfo, 0, sizeof(pinfo));
+
+	pinfo.nd_opt_pi_type = ND_OPT_PREF64;
+	pinfo.nd_opt_pi_len = 2;
+	/*
+	   PLC (Prefix Length Code):  3-bit unsigned integer.  This field
+          encodes the NAT64 Prefix Length defined in [RFC6052].  The PLC
+          field values 0, 1, 2, 3, 4, and 5 indicate the NAT64 prefix length
+          of 96, 64, 56, 48, 40, and 32 bits, respectively.  The receiver
+          MUST ignore the PREF64 option if the Prefix Length Code field is
+          not set to one of those values.
+	*/
+	switch (prefix->PrefixLen) {
+	case 96:
+		prefix_length_code = 0;
+		break;
+	case 64:
+		prefix_length_code = 1;
+		break;
+	case 56:
+		prefix_length_code = 2;
+		break;
+	case 48:
+		prefix_length_code = 3;
+		break;
+	case 40:
+		prefix_length_code = 4;
+		break;
+	case 32:
+		prefix_length_code = 5;
+		break;
+	}
+
+	/*
+       Scaled Lifetime:  13-bit unsigned integer.  The maximum time in units
+          of 8 seconds over which this NAT64 prefix MAY be used.  See
+          Section 4.1 for the Scaled Lifetime field processing rules.
+
+       Router vendors SHOULD allow administrators to specify nonzero
+         lifetime values that are not divisible by 8.  In such cases, the
+         router SHOULD round the provided value up to the nearest integer that
+         is divisible by 8 and smaller than 65536, then divide the result by 8
+         (or perform a logical right shift by 3) and set the Scaled Lifetime
+         field to the resulting value.  If a nonzero lifetime value that is to
+         be divided by 8 (or subjected to a logical right shift by 3) is less
+         than 8, then the Scaled Lifetime field SHOULD be set to 1.  This last
+         step ensures that lifetimes under 8 seconds are encoded as a nonzero
+         Scaled Lifetime.
+	*/
+	pinfo.nd_opt_pi_lifetime_preflen = htons(
+		((prefix->curr_validlft + 7) & 0xFFF8) |
+		(prefix_length_code & 0x7));
+
+	/* Only copy 96 bits of the prefix */
+	memcpy(&pinfo.nd_opt_pi_nat64prefix, &prefix->Prefix, 12);
+
+	safe_buffer_append(sb, &pinfo, sizeof(pinfo));
+}
+
 static struct safe_buffer_list *add_auto_prefixes_6to4(struct safe_buffer_list *sbl, struct Interface const *iface,
 						       char const *ifname, struct AdvPrefix const *prefix, int cease_adv,
 						       struct in6_addr const *dest)
@@ -251,6 +360,7 @@ static struct safe_buffer_list *add_auto_prefixes_6to4(struct safe_buffer_list *
 #ifdef HAVE_IFADDRS_H
 	struct AdvPrefix xprefix = *prefix;
 	unsigned int dst;
+
 	if (get_v4addr(prefix->if6to4, &dst) < 0) {
 		flog(LOG_ERR, "Base6to4interface %s has no IPv4 addresses", prefix->if6to4);
 	} else {
@@ -262,9 +372,10 @@ static struct safe_buffer_list *add_auto_prefixes_6to4(struct safe_buffer_list *
 		addrtostr(&xprefix.Prefix, pfx_str, sizeof(pfx_str));
 		dlog(LOG_DEBUG, 3, "auto-selected prefix %s/%d on interface %s", pfx_str, xprefix.PrefixLen, ifname);
 
-		/* TODO: Something must be done with these. */
-		(void)xprefix.curr_validlft;
-		(void)xprefix.curr_preferredlft;
+		/** We want to get the lowest value out of the configured lifetime (from /etc/radvd.conf) and the maximum lifetime on
+		 *  any address that is part of that prefix in the kernel to avoid advertising a prefix that might expire too soon */
+		// TODO: audit clobbers of prefixes based on original config?
+		limit_prefix_lifetimes(&xprefix);
 
 		if (cease_adv || schedule_option_prefix(dest, iface, &xprefix)) {
 			sbl = safe_buffer_list_append(sbl);
@@ -304,17 +415,34 @@ static struct safe_buffer_list *add_auto_prefixes(struct safe_buffer_list *sbl, 
 		if (IN6_IS_ADDR_LINKLOCAL(&s6->sin6_addr))
 			continue;
 
+		struct in6_addr prefix6 = get_prefix6(&s6->sin6_addr, &mask->sin6_addr);
+
+		int ignore = 0;
+		for (struct AutogenIgnorePrefix *current = iface->IgnorePrefixList; current; current = current->next) {
+			struct in6_addr candidatePrefix6 = get_prefix6(&current->Prefix, &current->Mask);
+
+			if (memcmp(&prefix6, &candidatePrefix6, sizeof(struct in6_addr)) == 0 &&
+			    memcmp(&mask->sin6_addr, &current->Mask, sizeof(struct in6_addr)) == 0) {
+				ignore = 1;
+				break;
+			}
+		}
+
+		if (ignore)
+			continue;
+
 		xprefix = *prefix;
-		xprefix.Prefix = get_prefix6(&s6->sin6_addr, &mask->sin6_addr);
+		xprefix.Prefix = prefix6;
 		xprefix.PrefixLen = count_mask(mask);
 
 		char pfx_str[INET6_ADDRSTRLEN];
 		addrtostr(&xprefix.Prefix, pfx_str, sizeof(pfx_str));
 		dlog(LOG_DEBUG, 3, "auto-selected prefix %s/%d on interface %s", pfx_str, xprefix.PrefixLen, ifname);
 
-		/* TODO: Something must be done with these. */
-		(void)xprefix.curr_validlft;
-		(void)xprefix.curr_preferredlft;
+		/** We want to get the lowest value out of the configured lifetime (from /etc/radvd.conf) and the maximum lifetime on
+		 *  any address that is part of that prefix in the kernel to avoid advertising a prefix that might expire too soon */
+		// TODO: audit clobbers of prefixes based on original config?
+		limit_prefix_lifetimes(&xprefix);
 
 		if (cease_adv || schedule_option_prefix(dest, iface, &xprefix)) {
 			sbl = safe_buffer_list_append(sbl);
@@ -325,6 +453,18 @@ static struct safe_buffer_list *add_auto_prefixes(struct safe_buffer_list *sbl, 
 	if (ifap)
 		freeifaddrs(ifap);
 #endif
+	return sbl;
+}
+
+static struct safe_buffer_list *add_ra_options_nat64prefix(struct safe_buffer_list *sbl, struct NAT64Prefix const *prefix)
+{
+	while (prefix) {
+		sbl = safe_buffer_list_append(sbl);
+		add_ra_option_nat64prefix(sbl->sb, prefix);
+
+		prefix = prefix->next;
+	}
+
 	return sbl;
 }
 
@@ -351,7 +491,13 @@ static struct safe_buffer_list *add_ra_options_prefix(struct safe_buffer_list *s
 			} else {
 				if (cease_adv || schedule_option_prefix(dest, iface, prefix)) {
 					sbl = safe_buffer_list_append(sbl);
-					add_ra_option_prefix(sbl->sb, prefix, cease_adv);
+
+		            /** We want to get the lowest value out of the configured lifetime (from /etc/radvd.conf) and the maximum lifetime on
+		             *  any address that is part of that prefix in the kernel to avoid advertising a prefix that might expire too soon */
+					// TODO: audit clobbers of prefixes based on original config?
+					struct AdvPrefix xprefix = *prefix;
+					limit_prefix_lifetimes(&xprefix);
+					add_ra_option_prefix(sbl->sb, &xprefix, cease_adv);
 				}
 			}
 		}
@@ -430,8 +576,13 @@ static struct safe_buffer_list *add_ra_options_route(struct safe_buffer_list *sb
 		memset(&rinfo, 0, sizeof(rinfo));
 
 		rinfo.nd_opt_ri_type = ND_OPT_ROUTE_INFORMATION;
-		/* XXX: the prefixes are allowed to be sent in smaller chunks as well */
-		rinfo.nd_opt_ri_len = 3;
+		if (route->PrefixLen == 0) {
+			rinfo.nd_opt_ri_len = 1;
+		} else if (route->PrefixLen > 0 && route->PrefixLen <= 64) {
+			rinfo.nd_opt_ri_len = 2;
+		} else if (route->PrefixLen > 64 && route->PrefixLen <= 128) {
+			rinfo.nd_opt_ri_len = 3;
+		}
 		rinfo.nd_opt_ri_prefix_len = route->PrefixLen;
 
 		rinfo.nd_opt_ri_flags_reserved = (route->AdvRoutePreference << ND_OPT_RI_PRF_SHIFT) & ND_OPT_RI_PRF_MASK;
@@ -444,7 +595,7 @@ static struct safe_buffer_list *add_ra_options_route(struct safe_buffer_list *sb
 		memcpy(&rinfo.nd_opt_ri_prefix, &route->Prefix, sizeof(struct in6_addr));
 
 		sbl = safe_buffer_list_append(sbl);
-		safe_buffer_append(sbl->sb, &rinfo, sizeof(rinfo));
+		safe_buffer_append(sbl->sb, &rinfo, rinfo.nd_opt_ri_len * 8);
 
 		route = route->next;
 	}
@@ -456,7 +607,6 @@ static struct safe_buffer_list *add_ra_options_rdnss(struct safe_buffer_list *sb
 {
 	while (rdnss) {
 		struct nd_opt_rdnss_info_local rdnssinfo;
-
 		if (!cease_adv && !schedule_option_rdnss(dest, iface, rdnss)) {
 			rdnss = rdnss->next;
 			continue;
@@ -464,8 +614,21 @@ static struct safe_buffer_list *add_ra_options_rdnss(struct safe_buffer_list *sb
 
 		memset(&rdnssinfo, 0, sizeof(rdnssinfo));
 
+		size_t const bytes = sizeof(rdnssinfo) + sizeof(struct in6_addr) * rdnss->AdvRDNSSNumber;
+		size_t const nd_opt_dnssli_len = bytes/8; // deliberate size_t, not uint_8; padding is NOT required for RDNSS
+		// dnsslinfo.nd_opt_rdnssi_len is uint8 count of 8-octet groups; min 3, max 255
+		// too many DNS servers could exceed it
+		// https://datatracker.ietf.org/doc/html/rfc8106#section-5.1
+		if(nd_opt_dnssli_len > 255) {
+			flog(LOG_ERR,
+				"Skipping option: RDNSS too long (%ld) for RA, must be <= %d bytes including header.",
+				bytes, (255*8));
+			rdnss = rdnss->next;
+			continue;
+		}
+
 		rdnssinfo.nd_opt_rdnssi_type = ND_OPT_RDNSS_INFORMATION;
-		rdnssinfo.nd_opt_rdnssi_len = 1 + 2 * rdnss->AdvRDNSSNumber;
+		rdnssinfo.nd_opt_rdnssi_len = (uint8_t) nd_opt_dnssli_len;
 		rdnssinfo.nd_opt_rdnssi_pref_flag_reserved = 0;
 
 		if (cease_adv && rdnss->FlushRDNSSFlag) {
@@ -474,13 +637,13 @@ static struct safe_buffer_list *add_ra_options_rdnss(struct safe_buffer_list *sb
 			rdnssinfo.nd_opt_rdnssi_lifetime = htonl(rdnss->AdvRDNSSLifetime);
 		}
 
-		memcpy(&rdnssinfo.nd_opt_rdnssi_addr1, &rdnss->AdvRDNSSAddr1, sizeof(struct in6_addr));
-		memcpy(&rdnssinfo.nd_opt_rdnssi_addr2, &rdnss->AdvRDNSSAddr2, sizeof(struct in6_addr));
-		memcpy(&rdnssinfo.nd_opt_rdnssi_addr3, &rdnss->AdvRDNSSAddr3, sizeof(struct in6_addr));
-
 		sbl = safe_buffer_list_append(sbl);
-		safe_buffer_append(sbl->sb, &rdnssinfo,
-				   sizeof(rdnssinfo) - (3 - rdnss->AdvRDNSSNumber) * sizeof(struct in6_addr));
+		safe_buffer_resize(sbl->sb, sbl->sb->used + bytes);
+		safe_buffer_append(sbl->sb, &rdnssinfo, sizeof(rdnssinfo));
+		for (int i = 0; i < rdnss->AdvRDNSSNumber; i++) {
+			safe_buffer_append(sbl->sb, &rdnss->AdvRDNSSAddr[i], sizeof(struct in6_addr));
+		}
+		// padding is only required for DNSSL
 
 		rdnss = rdnss->next;
 	}
@@ -506,13 +669,21 @@ static struct safe_buffer_list *add_ra_options_dnssl(struct safe_buffer_list *sb
 		serialized_domains->used = 0;
 		size_t const domain_name_bytes = serialize_domain_names(serialized_domains, dnssl);
 		size_t const bytes = sizeof(dnsslinfo) + domain_name_bytes;
-		if (bytes > (256 * 8)) {
-			flog(LOG_ERR, "DNSSL too long for RA option, must be < 2048 bytes.  Exiting.");
-			exit(1);
+		size_t const nd_opt_dnssli_len = (bytes + 7) / 8; // deliberate size_t, not uint_8
+		// dnsslinfo.nd_opt_dnssli_len is uint8 count of 8-octet groups; min 3, max 255
+		// too many long serialized domains could exceed it
+		// https://datatracker.ietf.org/doc/html/rfc8106#section-5.2
+		size_t const bytes_with_padding = nd_opt_dnssli_len * 8;
+		if(nd_opt_dnssli_len > 255) {
+			flog(LOG_ERR,
+				"Skipping option: DNSSL too long (%ld) for RA, must be <= %d bytes including header and padding.",
+				bytes_with_padding, (255*8));
+			dnssl = dnssl->next;
+			continue;
 		}
 
 		dnsslinfo.nd_opt_dnssli_type = ND_OPT_DNSSL_INFORMATION;
-		dnsslinfo.nd_opt_dnssli_len = (bytes + 7) / 8;
+		dnsslinfo.nd_opt_dnssli_len = (uint8_t) nd_opt_dnssli_len;
 		dnsslinfo.nd_opt_dnssli_reserved = 0;
 
 		if (cease_adv && dnssl->FlushDNSSLFlag) {
@@ -521,7 +692,7 @@ static struct safe_buffer_list *add_ra_options_dnssl(struct safe_buffer_list *sb
 			dnsslinfo.nd_opt_dnssli_lifetime = htonl(dnssl->AdvDNSSLLifetime);
 		}
 
-		size_t const padding = dnsslinfo.nd_opt_dnssli_len * 8 - bytes;
+		size_t const padding = bytes_with_padding - bytes;
 
 		sbl = safe_buffer_list_append(sbl);
 		safe_buffer_resize(sbl->sb, sbl->sb->used + sizeof(dnsslinfo) + domain_name_bytes + padding);
@@ -648,6 +819,20 @@ static void add_ra_option_abro(struct safe_buffer *sb, struct AdvAbro const *abr
 	safe_buffer_append(sb, &abro, sizeof(abro));
 }
 
+static void add_ra_option_capport(struct safe_buffer *sb, const char *captive_portal)
+{
+	/* +2 for the ND_OPT_CAPTIVE_PORTAL and the length (each occupy one byte) */
+	size_t const capport_strlen = strlen(captive_portal);
+	size_t const capport_bytes = capport_strlen + 2;
+	size_t const capport_len = (capport_bytes + 7) / 8;
+
+	uint8_t buff[2] = {ND_OPT_CAPTIVE_PORTAL, (uint8_t)capport_len};
+	safe_buffer_append(sb, buff, sizeof(buff));
+
+	safe_buffer_append(sb, captive_portal, capport_strlen);
+	safe_buffer_pad(sb, (capport_len * 8) - capport_bytes);
+}
+
 static struct safe_buffer_list *build_ra_options(struct Interface const *iface, struct in6_addr const *dest)
 {
 	struct safe_buffer_list *sbl = new_safe_buffer_list();
@@ -656,6 +841,10 @@ static struct safe_buffer_list *build_ra_options(struct Interface const *iface, 
 	if (iface->AdvPrefixList) {
 		cur =
 		    add_ra_options_prefix(cur, iface, iface->props.name, iface->AdvPrefixList, iface->state_info.cease_adv, dest);
+	}
+
+	if (iface->NAT64PrefixList) {
+		cur = add_ra_options_nat64prefix(cur, iface->NAT64PrefixList);
 	}
 
 	if (iface->AdvRouteList) {
@@ -708,6 +897,12 @@ static struct safe_buffer_list *build_ra_options(struct Interface const *iface, 
 		add_ra_option_abro(cur->sb, iface->AdvAbroList);
 	}
 
+	if (iface->AdvCaptivePortalAPI != NULL && schedule_option_capport(dest, iface)) {
+		cur->next = new_safe_buffer_list();
+		cur = cur->next;
+		add_ra_option_capport(cur->sb, iface->AdvCaptivePortalAPI);
+	}
+
 	// Return the root of the list
 	return sbl;
 }
@@ -734,7 +929,10 @@ static int send_ra(int sock, struct Interface *iface, struct in6_addr const *des
 
 	// Build RA header
 	struct safe_buffer *ra_hdr = new_safe_buffer();
-	add_ra_header(ra_hdr, &iface->ra_header_info, iface->state_info.cease_adv);
+	// if forwarding is disabled, send zero router lifetime
+	// the check_ip6 function is hoisted here to enable testing of add_ra_header
+	int cease_adv = iface->state_info.cease_adv || check_ip6_forwarding();
+	add_ra_header(ra_hdr, &iface->ra_header_info, cease_adv);
 	// Build RA option list
 	struct safe_buffer_list *ra_opts = build_ra_options(iface, dest);
 
@@ -744,7 +942,6 @@ static int send_ra(int sock, struct Interface *iface, struct in6_addr const *des
 
 	struct safe_buffer_list *cur = ra_opts;
 	struct safe_buffer *sb = new_safe_buffer();
-	unsigned long int total_seen_options = 0;
 	do {
 		unsigned long int option_count = 0;
 		sb->used = 0;
@@ -757,8 +954,6 @@ static int send_ra(int sock, struct Interface *iface, struct in6_addr const *des
 				cur = cur->next;
 				continue;
 			}
-			// Ok, it's more than 0 bytes in length
-			total_seen_options++;
 			// Not enough room for the next option in our buffer, just send the buffer now.
 			if (sb->used + cur->sb->used > iface->props.max_ra_option_size) {
 				// But make sure we send at least one option in each RA
@@ -777,8 +972,8 @@ static int send_ra(int sock, struct Interface *iface, struct in6_addr const *des
 			// should then ignore the DNSSL.
 			if (cur->sb->used > iface->props.max_ra_option_size) {
 				flog(LOG_WARNING,
-				     "send_ra: RA option (type=%hhd) too long for MTU, fragmenting anyway (violates RFC6980)",
-				     (unsigned char)(cur->sb->buffer[0]));
+				     "send_ra: RA option (type=%hhd) length %lu exceeds max RA option size %u, fragmenting anyway (violates RFC6980 section 2)",
+				     (unsigned char)(cur->sb->buffer[0]), cur->sb->used, iface->props.max_ra_option_size);
 			}
 			// Add this option to the buffer.
 			safe_buffer_append(sb, cur->sb->buffer, cur->sb->used);
@@ -904,6 +1099,11 @@ static int schedule_option_lowpanco(struct in6_addr const *dest, struct Interfac
 static int schedule_option_abro(struct in6_addr const *dest, struct Interface const *iface)
 {
 	return schedule_helper(dest, iface, iface->AdvAbroList->ValidLifeTime);
+}
+
+static int schedule_option_capport(struct in6_addr const *dest, struct Interface const *iface)
+{
+	return schedule_helper(dest, iface, iface->ra_header_info.AdvDefaultLifetime);
 }
 
 static int schedule_helper(struct in6_addr const *dest, struct Interface const *iface, int option_lifetime)

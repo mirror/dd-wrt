@@ -1,0 +1,20 @@
+name: BSD
+on: [push, pull_request]
+
+jobs:
+  freebsd:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v4
+    - name: Build
+      uses: vmactions/freebsd-vm@v1
+      with:
+        run: |
+          pkg update
+          pkg install -y autoconf automake bison flex pkgconf
+          ./autogen.sh
+          ./configure
+          make
+          make dist-xz
+          make install

@@ -5,7 +5,7 @@
 
 Summary: A Router Advertisement daemon
 Name: radvd
-Version: 2.19
+Version: 2.20
 Release: 1
 # The code includes the advertising clause, so it's GPL-incompatible
 License: BSD with advertising
@@ -16,7 +16,9 @@ Requires(postun):   chkconfig, initscripts
 Requires(preun):    chkconfig, initscripts
 Requires(post):     chkconfig
 Requires(pre):      /usr/sbin/useradd
-BuildRequires: flex, byacc
+# SuSE calls it libbsd0, Fedora calls it libbsd
+Requires: libbsd0
+BuildRequires: flex, byacc, libbsd-devel
 BuildRoot:          %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 %description

@@ -20,6 +20,10 @@
 
 #define YYERROR_VERBOSE 1
 
+int yylex (void);
+void yyset_in (FILE * _in_str);
+int yylex_destroy (void);
+
 #if 0 /* no longer necessary? */
 #ifndef HAVE_IN6_ADDR_S6_ADDR
 # ifdef __FreeBSD__
@@ -52,6 +56,8 @@
 %token		T_LOWPANCO
 %token		T_ABRO
 %token		T_RASRCADDRESS
+%token		T_NAT64PREFIX
+%token		T_AUTOIGNOREPREFIX
 
 %token	<str>	STRING
 %token	<num>	NUMBER
@@ -59,6 +65,7 @@
 %token	<dec>	DECIMAL
 %token	<num>	SWITCH
 %token	<addr>	IPV6ADDR
+%token	<addr>	NOT_IPV6ADDR
 %token 		INFINITY
 
 %token		T_IgnoreIfMissing
@@ -76,6 +83,7 @@
 %token		T_AdvDefaultLifetime
 %token		T_AdvDefaultPreference
 %token		T_AdvSourceLLAddress
+%token		T_RemoveAdvOnExit
 
 %token		T_AdvOnLink
 %token		T_AdvAutonomous
@@ -92,7 +100,9 @@
 %token		T_Base6Interface
 %token		T_Base6to4Interface
 %token		T_UnicastOnly
+%token		T_UnrestrictedUnicast
 %token		T_AdvRASolicitedUnicast
+%token		T_AdvCaptivePortalAPI
 
 %token		T_HomeAgentPreference
 %token		T_HomeAgentLifetime
@@ -119,7 +129,6 @@
 
 %token		T_AdvVersionLow
 %token		T_AdvVersionHigh
-%token		T_AdvValidLifeTime
 %token		T_Adv6LBRaddress
 
 %token		T_BAD_TOKEN
@@ -134,6 +143,8 @@
 %type   <abroinfo> abrodef
 %type   <num>	number_or_infinity
 %type	<rasrcaddressinfo> rasrcaddresslist v6addrlist_rasrcaddress
+%type	<nat64pinfo> nat64prefixdef
+%type	<igpinfo> ignoreprefixlist ignoreprefixes
 
 %union {
 	unsigned int		num;
@@ -149,6 +160,8 @@
 	struct AdvLowpanCo	*lowpancoinfo;
 	struct AdvAbro		*abroinfo;
 	struct AdvRASrcAddress	*rasrcaddressinfo;
+	struct NAT64Prefix	*nat64pinfo;
+	struct AutogenIgnorePrefix	*igpinfo;
 };
 
 %{
@@ -162,6 +175,7 @@ static struct AdvRDNSS *rdnss;
 static struct AdvDNSSL *dnssl;
 static struct AdvLowpanCo *lowpanco;
 static struct AdvAbro  *abro;
+static struct NAT64Prefix *nat64prefix;
 static void cleanup(void);
 #define ABORT	do { cleanup(); YYABORT; } while (0);
 static void yyerror(char const * msg);
@@ -207,8 +221,8 @@ ifacehead	: T_INTERFACE name
 			}
 
 			iface_init_defaults(iface);
-			strncpy(iface->props.name, $2, IFNAMSIZ-1);
-			iface->props.name[IFNAMSIZ-1] = '\0';
+			memset(&iface->props.name, 0, sizeof(iface->props.name));
+			strlcpy(iface->props.name, $2, sizeof(iface->props.name));
 			iface->lineno = num_lines;
 		}
 		;
@@ -233,6 +247,8 @@ ifaceparam 	: ifaceval
 		| lowpancodef   { ADD_TO_LL(struct AdvLowpanCo, AdvLowpanCoList, $1); }
 		| abrodef       { ADD_TO_LL(struct AdvAbro, AdvAbroList, $1); }
 		| rasrcaddresslist { ADD_TO_LL(struct AdvRASrcAddress, AdvRASrcAddressList, $1); }
+		| nat64prefixdef { ADD_TO_LL(struct NAT64Prefix, NAT64PrefixList, $1); }
+		| ignoreprefixlist { ADD_TO_LL(struct AutogenIgnorePrefix, IgnorePrefixList, $1); }
 		;
 
 ifaceval	: T_MinRtrAdvInterval NUMBER ';'
@@ -305,6 +321,10 @@ ifaceval	: T_MinRtrAdvInterval NUMBER ';'
 		{
 			iface->ra_header_info.AdvCurHopLimit = $2;
 		}
+		| T_RemoveAdvOnExit SWITCH ';'
+		{
+			iface->RemoveAdvOnExit = $2;
+		}
 		| T_AdvSourceLLAddress SWITCH ';'
 		{
 			iface->AdvSourceLLAddress = $2;
@@ -333,9 +353,47 @@ ifaceval	: T_MinRtrAdvInterval NUMBER ';'
 		{
 			iface->UnicastOnly = $2;
 		}
+		| T_UnrestrictedUnicast SWITCH ';'
+		{
+			iface->UnrestrictedUnicast = $2;
+		}
 		| T_AdvRASolicitedUnicast SWITCH ';'
 		{
 			iface->AdvRASolicitedUnicast = $2;
+		}
+		| T_AdvCaptivePortalAPI STRING ';'
+		{
+			const char *source = $2;
+			size_t len = strlen(source);
+
+			if (iface->AdvCaptivePortalAPI) {
+				flog(LOG_WARNING, "warning: AdvCaptivePortalAPI specified twice for interface "
+					"%s in %s, line %d", iface->props.name, filename, num_lines);
+
+				free(iface->AdvCaptivePortalAPI);
+				iface->AdvCaptivePortalAPI = NULL;
+			}
+
+			/* trim double-quotes from start and end of string */
+			if ((len > 0) && (source[0] == '"')) {
+				source++;
+				len--;
+			}
+			if ((len > 0) && (source[len-1] == '"')) {
+				len--;
+			}
+
+			if (len <= 0) {
+				flog(LOG_ERR, "AdvCaptivePortalAPI empty URL specified for interface %s.", iface->props.name);
+				ABORT;
+			}
+
+			iface->AdvCaptivePortalAPI = strndup(source, len);
+
+			if (!iface->AdvCaptivePortalAPI) {
+				flog(LOG_CRIT, "malloc failed: %s", strerror(errno));
+				ABORT;
+			}
 		}
 		| T_AdvMobRtrSupportFlag SWITCH ';'
 		{
@@ -358,6 +416,19 @@ v6addrlist_clients	: IPV6ADDR ';'
 			}
 
 			memcpy(&(new->Address), $1, sizeof(struct in6_addr));
+			new->ignored = 0;
+			$$ = new;
+		}
+		| NOT_IPV6ADDR ';'
+		{
+			struct Clients *new = calloc(1, sizeof(struct Clients));
+			if (new == NULL) {
+				flog(LOG_CRIT, "calloc failed: %s", strerror(errno));
+				ABORT;
+			}
+
+			memcpy(&(new->Address), $1, sizeof(struct in6_addr));
+			new->ignored = 1;
 			$$ = new;
 		}
 		| v6addrlist_clients IPV6ADDR ';'
@@ -369,6 +440,20 @@ v6addrlist_clients	: IPV6ADDR ';'
 			}
 
 			memcpy(&(new->Address), $2, sizeof(struct in6_addr));
+			new->ignored = 0;
+			new->next = $1;
+			$$ = new;
+		}
+		| v6addrlist_clients NOT_IPV6ADDR ';'
+		{
+			struct Clients *new = calloc(1, sizeof(struct Clients));
+			if (new == NULL) {
+				flog(LOG_CRIT, "calloc failed: %s", strerror(errno));
+				ABORT;
+			}
+
+			memcpy(&(new->Address), $2, sizeof(struct in6_addr));
+			new->ignored = 1;
 			new->next = $1;
 			$$ = new;
 		}
@@ -405,14 +490,153 @@ v6addrlist_rasrcaddress	: IPV6ADDR ';'
 		}
 		;
 
+nat64prefixdef	: nat64prefixhead optional_nat64prefixplist ';'
+		{
+			if (nat64prefix) {
+
+				if (nat64prefix->AdvValidLifetime > DFLT_NAT64MaxValidLifetime)
+				{
+					flog(LOG_ERR, "AdvValidLifetime must be "
+						"smaller or equal to %d in %s, line %d",
+						DFLT_NAT64MaxValidLifetime, filename, num_lines);
+					ABORT;
+				}
+				nat64prefix->curr_validlft = nat64prefix->AdvValidLifetime;
+			}
+			$$ = nat64prefix;
+			nat64prefix = NULL;
+		}
+		;
+
+nat64prefixhead	: T_NAT64PREFIX IPV6ADDR '/' NUMBER
+		{
+			struct in6_addr zeroaddr;
+			memset(&zeroaddr, 0, sizeof(zeroaddr));
+
+			if (!memcmp($2, &zeroaddr, sizeof(struct in6_addr))) {
+				flog(LOG_ERR, "invalid all-zeros nat64prefix in %s, line %d", filename, num_lines);
+				ABORT;
+			}
+
+			nat64prefix = malloc(sizeof(struct NAT64Prefix));
+
+			if (nat64prefix == NULL) {
+				flog(LOG_CRIT, "malloc failed: %s", strerror(errno));
+				ABORT;
+			}
+
+			nat64prefix_init_defaults(nat64prefix, iface);
+
+			if ($4 > MAX_PrefixLen)
+			{
+				flog(LOG_ERR, "invalid prefix length in %s, line %d", filename, num_lines);
+				ABORT;
+			}
+
+			/* RFC8781, section 4: only prefix lengths of 96, 64, 56, 48, 40, and 32 bits are valid */
+			switch ($4) {
+			case 32:
+			case 40:
+			case 48:
+			case 56:
+			case 64:
+			case 96:
+				break;
+			default:
+				flog(LOG_ERR, "only /96, /64, /56, /48, /40 and /32 are allowed for "
+						"nat64prefix in %s:%d", filename, num_lines);
+				ABORT;
+			}
+			nat64prefix->PrefixLen = $4;
+
+			memcpy(&nat64prefix->Prefix, $2, sizeof(struct in6_addr));
+		}
+		;
+
+optional_nat64prefixplist: /* empty */
+		| '{' /* somewhat empty */ '}'
+		| '{' nat64prefixplist '}'
+		;
+
+nat64prefixplist : nat64prefixplist nat64prefixparms
+		| nat64prefixparms
+		;
+
+nat64prefixparms : T_AdvValidLifetime NUMBER ';'
+		{
+			if ($2 > DFLT_NAT64MaxValidLifetime)
+			{
+				flog(LOG_ERR, "maximum for NAT64 AdvValidLifetime is %d (in %s, line %d)",
+					DFLT_NAT64MaxValidLifetime, filename, num_lines);
+				ABORT;
+			}
+			if (nat64prefix) {
+				nat64prefix->AdvValidLifetime = $2;
+			}
+		}
+		;
+
+ignoreprefixlist	: T_AUTOIGNOREPREFIX '{' ignoreprefixes '}' ';'
+		{
+			$$ = $3;
+		}
+		;
+
+ignoreprefixes	: IPV6ADDR '/' NUMBER ';'
+		{
+			struct AutogenIgnorePrefix *new = calloc(1, sizeof(struct AutogenIgnorePrefix));
+			if (new == NULL) {
+				flog(LOG_CRIT, "calloc failed: %s", strerror(errno));
+				ABORT;
+			}
+
+			memcpy(&(new->Prefix), $1, sizeof(struct in6_addr));
+
+			// Create subnet mask from CIDR notation
+			int fullOctets = $3 / 8;
+			for (int i = 0; i < fullOctets; ++i) {
+				new->Mask.s6_addr[i] = 0xff;
+			}
+
+			if (fullOctets != 16) {
+				new->Mask.s6_addr[fullOctets] = ~(1 << (8 - $3 % 8)) + 1;
+			}
+
+			$$ = new;
+		}
+		| ignoreprefixes IPV6ADDR '/' NUMBER ';'
+		{
+			struct AutogenIgnorePrefix *new = calloc(1, sizeof(struct AutogenIgnorePrefix));
+			if (new == NULL) {
+				flog(LOG_CRIT, "calloc failed: %s", strerror(errno));
+				ABORT;
+			}
+
+			memcpy(&(new->Prefix), $2, sizeof(struct in6_addr));
+
+			// Create subnet mask from CIDR notation
+			int fullOctets = $4 / 8;
+			for (int i = 0; i < fullOctets; ++i) {
+				new->Mask.s6_addr[i] = 0xff;
+			}
+
+			if (fullOctets != 16) {
+				new->Mask.s6_addr[fullOctets] = ~(1 << (8 - $4 % 8)) + 1;
+			}
+
+			new->next = $1;
+			$$ = new;
+		}
+		;
+
 prefixdef	: prefixhead optional_prefixplist ';'
 		{
 			if (prefix) {
 
 				if (prefix->AdvPreferredLifetime > prefix->AdvValidLifetime)
 				{
-					flog(LOG_ERR, "AdvValidLifeTime must be "
-						"greater than AdvPreferredLifetime in %s, line %d",
+					flog(LOG_ERR, "AdvValidLifetime must be "
+						"greater than or equal to AdvPreferredLifetime in %s, line %d",
 						filename, num_lines);
 					ABORT;
 				}
@@ -522,8 +746,8 @@ prefixparms	: T_AdvOnLink SWITCH ';'
 #else
 			if (prefix) {
 				dlog(LOG_DEBUG, 4, "using prefixes on interface %s for prefixes on interface %s", $2, iface->props.name);
-				strncpy(prefix->if6, $2, IFNAMSIZ-1);
-				prefix->if6[IFNAMSIZ-1] = '\0';
+				memset(&prefix->if6, 0, sizeof(prefix->if6));
+				strlcpy(prefix->if6, $2, sizeof(prefix->if6));
 			}
 #endif
 		}
@@ -536,8 +760,8 @@ prefixparms	: T_AdvOnLink SWITCH ';'
 #else
 			if (prefix) {
 				dlog(LOG_DEBUG, 4, "using interface %s for 6to4 prefixes on interface %s", $2, iface->props.name);
-				strncpy(prefix->if6to4, $2, IFNAMSIZ-1);
-				prefix->if6to4[IFNAMSIZ-1] = '\0';
+				memset(&prefix->if6to4, 0, sizeof(prefix->if6to4));
+				strlcpy(prefix->if6to4, $2, sizeof(prefix->if6to4));
 			}
 #endif
 		}
@@ -623,24 +847,19 @@ rdnssaddr	: IPV6ADDR
 				rdnss_init_defaults(rdnss, iface);
 			}
 
-			switch (rdnss->AdvRDNSSNumber) {
-				case 0:
-					memcpy(&rdnss->AdvRDNSSAddr1, $1, sizeof(struct in6_addr));
-					rdnss->AdvRDNSSNumber++;
-					break;
-				case 1:
-					memcpy(&rdnss->AdvRDNSSAddr2, $1, sizeof(struct in6_addr));
-					rdnss->AdvRDNSSNumber++;
-					break;
-				case 2:
-					memcpy(&rdnss->AdvRDNSSAddr3, $1, sizeof(struct in6_addr));
-					rdnss->AdvRDNSSNumber++;
-					break;
-				default:
-					flog(LOG_CRIT, "too many addresses in RDNSS section");
-					ABORT;
+			rdnss->AdvRDNSSNumber++;
+			if (rdnss->AdvRDNSSNumber > 127) {
+				flog(LOG_CRIT, "Too many RDNSS servers specified - upper limit is 127 based on RDNSSI length field being uint8, RFC8106, section 5.1");
+				ABORT;
 			}
-
+			rdnss->AdvRDNSSAddr =
+				realloc(rdnss->AdvRDNSSAddr,
+					rdnss->AdvRDNSSNumber * sizeof(struct in6_addr));
+			if (rdnss->AdvRDNSSAddr == NULL) {
+				flog(LOG_CRIT, "realloc failed: %s", strerror(errno));
+				ABORT;
+			}
+			memcpy(&rdnss->AdvRDNSSAddr[rdnss->AdvRDNSSNumber - 1], $1, sizeof(struct in6_addr));
 		}
 		;
 
@@ -672,17 +891,6 @@ rdnssparms	: T_AdvRDNSSPreference NUMBER ';'
 		}
 		| T_AdvRDNSSLifetime number_or_infinity ';'
 		{
-			if ($2 > 2*(iface->MaxRtrAdvInterval))
-				flog(LOG_WARNING, "warning: AdvRDNSSLifetime <= 2*MaxRtrAdvInterval would allow stale DNS servers to be deleted faster");
-			if ($2 < iface->MaxRtrAdvInterval && $2 != 0) {
-				flog(LOG_ERR, "AdvRDNSSLifetime must be at least MaxRtrAdvInterval");
-				rdnss->AdvRDNSSLifetime = iface->MaxRtrAdvInterval;
-			} else {
-				rdnss->AdvRDNSSLifetime = $2;
-			}
-			if ($2 > 2*(iface->MaxRtrAdvInterval))
-				flog(LOG_WARNING, "warning: (%s:%d) AdvRDNSSLifetime <= 2*MaxRtrAdvInterval would allow stale DNS servers to be deleted faster", filename, num_lines);
-
 			rdnss->AdvRDNSSLifetime = $2;
 		}
 		| T_FlushRDNSS SWITCH ';'
@@ -764,14 +972,7 @@ dnsslplist	: dnsslplist dnsslparms
 
 dnsslparms	: T_AdvDNSSLLifetime number_or_infinity ';'
 		{
-			if ($2 > 2*(iface->MaxRtrAdvInterval))
-				flog(LOG_WARNING, "warning: AdvDNSSLLifetime <= 2*MaxRtrAdvInterval would allow stale DNS suffixes to be deleted faster");
-			if ($2 < iface->MaxRtrAdvInterval && $2 != 0) {
-				flog(LOG_ERR, "AdvDNSSLLifetime must be at least MaxRtrAdvInterval");
-				dnssl->AdvDNSSLLifetime = iface->MaxRtrAdvInterval;
-			} else {
-				dnssl->AdvDNSSLLifetime = $2;
-			}
+			dnssl->AdvDNSSLLifetime = $2;
 
 		}
 		| T_FlushDNSSL SWITCH ';'
@@ -885,7 +1086,7 @@ abroparms	: T_AdvVersionLow NUMBER ';'
 		{
 			abro->Version[0] = $2;
 		}
-		| T_AdvValidLifeTime NUMBER ';'
+		| T_AdvValidLifetime NUMBER ';'
 		{
 			abro->ValidLifeTime = $2;
 		}
@@ -921,6 +1122,7 @@ static void cleanup(void)
 	}
 
 	if (rdnss) {
+		free(rdnss->AdvRDNSSAddr);
 		free(rdnss);
 		rdnss = 0;
 	}

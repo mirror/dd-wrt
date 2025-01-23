@@ -1,3 +1,56 @@
+2024/12/31  Release v2.20
+	build: annotated/signed tags need a tweak to verify correctly
+	build: need awk for newer autoconf
+	build: verify tag earlier
+	build: drop sha1, insecure
+	build: use BSD-style checksum tags
+	build: make sign & verify tighter
+	build: cleanup old tarballs first
+	docs: document formal release process
+	ci: Updated FreeBSD workflow to fix the boot loop issue.
+	ci: Removed Ubuntu 18.04 build.
+	docs: Expand on RELEASE-PROCESS.md
+	ci: Updated the checkout action version.
+	fix: Prevent null de-reference when using poll in main_loop
+	ci: use improved buildroot images.
+	fix(netlink): cleanup interfaces upon removal
+	fix: Add the socket option IPV6_MULTICAST_LOOP to prevent the interface from autoconfiguring using RA messages sent by itself.
+	ci: Added Ubuntu 24.04.
+	ci: Also use ubuntu-latest for the FreeBSD build
+	ci: Use latest v1 action in all cases
+	feat: implement setup_allrouters_membership() et al for FreeBSD #145
+	chore: remove unused 'total_seen_options' variable
+	feat: Change the Prefix field of the Route Information Option to be variable-length.
+	test: add more RDNSS testing for PR#193
+	feat: Support more addresses in RDNSS section
+	feat: improve warning about long RA options
+	fix: do not die on long DNSSL option
+	test: support older libcheck for ubuntu20.04
+	chore: document more testcases
+	chore: make RDNSS/DNSSL documentation and logic consistent
+	doc: update AUTHORS in manpage
+	doc: fix truncated sentence about VRRP
+	feat: handle long options better
+	fix: ensure send_ra_forall racount only increments for non-unicast
+	ci: radvd-autogen updates for ubuntu20.04
+	build: missing files from packages
+
+2023/11/16  Release v2.20_rc1
+		UnrestrictedUnicast option (respond to RS with configured clients)
+		Ignore clients w/ ! prefix
+		Build improvement, inc. containers for reproducible packaging
+		Captive-Portal API (RFC8910)
+		Default lifetime changes for RDNSS & DNSSL (RFC8106)
+		Prefix lifetime based on kernel lifetimes
+		Netlink fixes for simultaneous POLLERR & POLLIN
+		pwname fixes for root (Fixes #165)
+		Secure ND timestamp support for radvdump (RFC3971)
+		RemoveAdvOnExit for zero lifetime adv on exit
+		NAT64/pref64 support (RFC6052, RFC8781)
+		Case-insensitive config options
+		AutoIgnorePrefix
+		Fix net.ipv6.conf.all.forwarding cease_adv bug
+
 2020/09/23	Release v2.19
 		bug fixes
 		cleanups

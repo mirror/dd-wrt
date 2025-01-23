@@ -16,7 +16,9 @@ Requires(postun):   chkconfig, initscripts
 Requires(preun):    chkconfig, initscripts
 Requires(post):     chkconfig
 Requires(pre):      /usr/sbin/useradd
-BuildRequires: flex, byacc
+# SuSE calls it libbsd0, Fedora calls it libbsd
+Requires: libbsd0
+BuildRequires: flex, byacc, libbsd-devel
 BuildRoot:          %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 %description

@@ -39,7 +39,7 @@ int update_device_info(int sock, struct Interface *iface)
 {
 	struct ifreq ifr;
 	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, iface->props.name, IFNAMSIZ - 1);
+	strlcpy(ifr.ifr_name, iface->props.name, sizeof(ifr.ifr_name));
 
 	if (ioctl(sock, SIOCGIFMTU, &ifr) < 0) {
 		flog(LOG_ERR, "ioctl(SIOCGIFMTU) failed on %s: %s", iface->props.name, strerror(errno));
@@ -181,6 +181,22 @@ int setup_allrouters_membership(int sock, struct Interface *iface)
 			return -1;
 		}
 	}
+
+	return 0;
+}
+
+int cleanup_allrouters_membership(int sock, struct Interface *iface)
+{
+	struct ipv6_mreq mreq;
+
+	memset(&mreq, 0, sizeof(mreq));
+	mreq.ipv6mr_interface = iface->props.if_index;
+
+	/* ipv6-allrouters: ff02::2 */
+	mreq.ipv6mr_multiaddr.s6_addr32[0] = htonl(0xFF020000);
+	mreq.ipv6mr_multiaddr.s6_addr32[3] = htonl(0x2);
+
+	setsockopt(sock, SOL_IPV6, IPV6_DROP_MEMBERSHIP, &mreq, sizeof(mreq));
 
 	return 0;
 }

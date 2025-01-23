@@ -1,0 +1,107 @@
+name: Linux
+on: [push, pull_request]
+
+jobs:
+  alpine:
+    strategy:
+      matrix:
+        compiler: [clang, gcc]
+    runs-on: ubuntu-latest
+    container: alpine:latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - name: Build
+        env:
+          CC: ${{ matrix.compiler }}
+        run: |
+          test/test_build.sh alpine
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: alpine-${{ matrix.compiler }}-log-file
+          path: ./test-suite.log
+
+  debian:
+    strategy:
+      matrix:
+        compiler: [clang, gcc]
+    runs-on: ubuntu-latest
+    container: debian:stable
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - name: Build
+        env:
+          CC: ${{ matrix.compiler }}
+        run: |
+          test/test_build.sh debian
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: debian-${{ matrix.compiler }}-log-file
+          path: ./test-suite.log
+
+  fedora:
+    strategy:
+      matrix:
+        compiler: [clang, gcc]
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - name: Build
+        env:
+          CC: ${{ matrix.compiler }}
+        run: |
+          test/test_build.sh fedora
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fedora-${{ matrix.compiler }}-log-file
+          path: ./test-suite.log
+
+  opensuse:
+    strategy:
+      matrix:
+        compiler: [clang, gcc]
+    runs-on: ubuntu-latest
+    container: opensuse/leap:latest
+    steps:
+      - name: Install dependencies required by the checkout action
+        run: |
+          zypper --non-interactive refresh
+          zypper --non-interactive install gzip tar
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - name: Build
+        env:
+          CC: ${{ matrix.compiler }}
+        run: |
+          test/test_build.sh opensuse
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: opensuse-${{ matrix.compiler }}-log-file
+          path: ./test-suite.log
+
+  ubuntu:
+    strategy:
+      matrix:
+        ubuntu_version: [ubuntu-20.04, ubuntu-22.04, ubuntu-24.04]
+        compiler: [clang, gcc]
+    runs-on: ${{ matrix.ubuntu_version }}
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - name: Build
+        env:
+          CC: ${{ matrix.compiler }}
+        run: |
+          test/test_build.sh ubuntu
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.ubuntu_version }}-${{ matrix.compiler }}-log-file
+          path: ./test-suite.log

@@ -47,6 +47,118 @@ struct iplink_req {
 	char buf[1024];
 };
 
+struct ipaddr_req {
+	struct nlmsghdr n;
+	struct ifaddrmsg r;
+};
+
+int prefix_match(struct AdvPrefix const *prefix, struct in6_addr *addr) {
+	if ((prefix->PrefixLen % 8) == 0) {
+		return !memcmp(&prefix->Prefix, addr, prefix->PrefixLen/8);
+	} else {
+		int i;
+		for (i = 0; i < prefix->PrefixLen; i++) {
+			char mask = 1 << (8 - (i % 8));
+			int index = i / 8;
+			if ((prefix->Prefix.s6_addr[index] & mask) !=
+			    (addr->s6_addr[index] & mask))
+				return 0;
+		}
+		return 1;
+	}
+}
+
+int netlink_get_address_lifetimes(struct AdvPrefix const *prefix, unsigned int *preferred_lft, unsigned int *valid_lft) {
+	int ret = 0;
+	struct ipaddr_req req = {};
+	struct nlmsghdr *retmsg;
+	struct ifaddrmsg *retaddr;
+	struct rtattr *tb;
+	int attrlen;
+	char buf[32768];
+	unsigned int valid = 0;
+	unsigned int preferred = 0;
+	int sock = -1;
+	int len;
+
+	memset(&req, 0, sizeof(req));
+	req.n.nlmsg_len = NLMSG_LENGTH(sizeof(struct ifaddrmsg));
+	req.n.nlmsg_flags = NLM_F_REQUEST | NLM_F_ROOT;
+	req.n.nlmsg_type = RTM_GETADDR;
+	req.r.ifa_family = AF_INET6;
+
+	sock = netlink_socket();
+	if (sock == -1)
+		return ret;
+
+	/* Send and receive the netlink message */
+	len = send(sock, &req, req.n.nlmsg_len, 0);
+	if (len == -1) {
+		flog(LOG_ERR, "netlink: send for address lifetimes failed: %s", strerror(errno));
+		close (sock);
+		return ret;
+	}
+
+	len = recv(sock, buf, sizeof(buf), 0);
+	if (len == -1) {
+		flog(LOG_ERR, "netlink: recv for address lifetimes failed: %s", strerror(errno));
+		close (sock);
+		return ret;
+	}
+
+	retmsg = (struct nlmsghdr *)buf;
+
+	while NLMSG_OK(retmsg, len) {
+		retaddr = (struct ifaddrmsg *)NLMSG_DATA(retmsg);
+		tb = (struct rtattr *)IFA_RTA(retaddr);
+
+		attrlen = IFA_PAYLOAD(retmsg);
+
+		char addr[INET6_ADDRSTRLEN];
+		int found = 0;
+
+		while RTA_OK(tb, attrlen) {
+			if (tb->rta_type == IFA_ADDRESS) {
+				/* Test if the address matches the prefix we are searching for */
+				struct in6_addr *tmp = RTA_DATA(tb);
+				if (prefix_match(prefix, tmp)) {
+					inet_ntop(AF_INET6, RTA_DATA(tb), addr, sizeof(addr));
+					found = 1;
+				} else {
+					found = 0;
+				}
+			}
+
+			/**
+			 *  If we have matched an address, retrieve and update the valid and preferred lifetimes for that prefix.
+			 */
+			if(found && tb->rta_type == IFA_CACHEINFO) {
+				struct ifa_cacheinfo *cache_info = (struct ifa_cacheinfo *)RTA_DATA(tb);
+				if (cache_info->ifa_valid > valid) {
+					valid = cache_info->ifa_valid;
+				}
+
+				if (cache_info->ifa_prefered > preferred) {
+					preferred = cache_info->ifa_prefered;
+				}
+				/* Reset found flag, in case more than one address exists on the same prefix */
+				found = 0;
+				/* At lease 1 lifetime have been found, return value is true */
+				ret = 1;
+			}
+
+			tb = RTA_NEXT(tb, attrlen);
+		}
+		retmsg = NLMSG_NEXT(retmsg, len);
+	}
+
+	*valid_lft = valid;
+	*preferred_lft = preferred;
+
+	close (sock);
+	return ret;
+}
+
 int netlink_get_device_addr_len(struct Interface *iface)
 {
 	struct iplink_req req = {};
@@ -103,13 +215,13 @@ out:
 	return addr_len;
 }
 
-void process_netlink_msg(int sock, struct Interface *ifaces)
+void process_netlink_msg(int netlink_sock, struct Interface *ifaces, int icmp_sock)
 {
 	char buf[4096];
 	struct iovec iov = {buf, sizeof(buf)};
 	struct sockaddr_nl sa;
 	struct msghdr msg = {.msg_name=(void *)&sa, .msg_namelen=sizeof(sa), .msg_iov=&iov, .msg_iovlen=1, .msg_control=NULL, .msg_controllen=0, .msg_flags=0};
-	int len = recvmsg(sock, &msg, 0);
+	int len = recvmsg(netlink_sock, &msg, 0);
 	if (len == -1) {
 		flog(LOG_ERR, "netlink: recvmsg failed: %s", strerror(errno));
 	}
@@ -158,7 +270,13 @@ void process_netlink_msg(int sock, struct Interface *ifaces)
 				break;
 			}
 			if (iface) {
-				touch_iface(iface);
+				if (nh->nlmsg_type == RTM_DELLINK) {
+					dlog(LOG_INFO, 4, "netlink: %s removed, cleaning up", iface->props.name);
+					cleanup_iface(icmp_sock, iface);
+				}
+				else {
+					touch_iface(iface);
+				}
 			}
 
 		} else if (nh->nlmsg_type == RTM_NEWADDR || nh->nlmsg_type == RTM_DELADDR) {

@@ -2,8 +2,8 @@
 #include <check.h>
 
 /*
- * http://check.sourceforge.net/doc/check_html/check_3.html
- *
+ * https://libcheck.github.io/check/
+ * https://libcheck.github.io/check/doc/check_html/check_3.html
  * http://entrenchant.blogspot.com/2010/08/unit-testing-in-c.html
  */
 
@@ -14,7 +14,7 @@ START_TEST(test_safe_buffer)
 	ck_assert_int_eq(0, sb.allocated);
 	ck_assert_int_eq(0, sb.used);
 	ck_assert_int_eq(0, sb.should_free);
-	safe_buffer_free(&sb);
+	// safe_buffer_free(&sb); // Do not free non-malloc'd
 
 	struct safe_buffer *sbptr = new_safe_buffer();
 	ck_assert_ptr_eq(0, sbptr->buffer);
@@ -27,50 +27,50 @@ END_TEST
 
 START_TEST(test_safe_buffer_resize)
 {
-	struct safe_buffer sb = SAFE_BUFFER_INIT;
+	struct safe_buffer *sb = new_safe_buffer();
 	for (int i = 0; i < 5000; i += 17) {
-		safe_buffer_resize(&sb, i);
-		ck_assert_int_ge(sb.allocated, i);
+		safe_buffer_resize(sb, i);
+		ck_assert_int_ge(sb->allocated, i);
 	}
-	safe_buffer_free(&sb);
+	safe_buffer_free(sb);
 }
 END_TEST
 
 START_TEST(test_safe_buffer_append)
 {
-	struct safe_buffer sb = SAFE_BUFFER_INIT;
-	char array[] = {"This is a test"};
-	safe_buffer_append(&sb, array, sizeof(array));
-	ck_assert_str_eq(sb.buffer, array);
-	ck_assert_int_eq(sb.used, sizeof(array));
-	safe_buffer_free(&sb);
+	struct safe_buffer *sb = new_safe_buffer();
+	const char array[] = {"This is a test"};
+	safe_buffer_append(sb, array, sizeof(array));
+	ck_assert_str_eq((const char*)(sb->buffer), array);
+	ck_assert_int_eq(sb->used, sizeof(array));
+	safe_buffer_free(sb);
 }
 END_TEST
 
 START_TEST(test_safe_buffer_append2)
 {
-	struct safe_buffer sb = SAFE_BUFFER_INIT;
+	struct safe_buffer *sb = new_safe_buffer();
 	char array[] = {"This is a test"};
-	safe_buffer_append(&sb, array, sizeof(array));
-	safe_buffer_append(&sb, array, sizeof(array));
-	ck_assert_str_eq(sb.buffer, array);
-	ck_assert_str_eq(sb.buffer + sizeof(array), array);
-	ck_assert_int_eq(sb.used, 2 * sizeof(array));
+	safe_buffer_append(sb, array, sizeof(array));
+	safe_buffer_append(sb, array, sizeof(array));
+	ck_assert_str_eq((const char*)(sb->buffer), array);
+	ck_assert_str_eq((const char*)(sb->buffer + sizeof(array)), array);
+	ck_assert_int_eq(sb->used, 2 * sizeof(array));
 
-	safe_buffer_free(&sb);
+	safe_buffer_free(sb);
 }
 END_TEST
 
 START_TEST(test_safe_buffer_pad)
 {
-	struct safe_buffer sb = SAFE_BUFFER_INIT;
+	struct safe_buffer *sb = new_safe_buffer();
 	char array[] = {"This is a test"};
-	safe_buffer_append(&sb, array, sizeof(array));
-	safe_buffer_pad(&sb, 10);
-	ck_assert_str_eq(sb.buffer, array);
-	ck_assert_int_eq(sb.used, 10 + sizeof(array));
+	safe_buffer_append(sb, array, sizeof(array));
+	safe_buffer_pad(sb, 10);
+	ck_assert_str_eq((const char*)(sb->buffer), array);
+	ck_assert_int_eq(sb->used, 10 + sizeof(array));
 
-	safe_buffer_free(&sb);
+	safe_buffer_free(sb);
 }
 END_TEST
 
@@ -88,20 +88,20 @@ END_TEST
 START_TEST(test_safe_buffer_list_to_safe_buffer)
 {
 	struct safe_buffer_list *sbl = new_safe_buffer_list();
-	struct safe_buffer sb = SAFE_BUFFER_INIT;
+	struct safe_buffer *sb = new_safe_buffer();
 	char array[] = {"This is a test"};
 
 	safe_buffer_append(sbl->sb, array, sizeof(array));
 	sbl->next = new_safe_buffer_list();
 	safe_buffer_append(sbl->next->sb, array, sizeof(array));
 
-	safe_buffer_list_to_safe_buffer(sbl, &sb);
+	safe_buffer_list_to_safe_buffer(sbl, sb);
 
-	ck_assert_str_eq(sb.buffer, array);
-	ck_assert_str_eq(sb.buffer + sizeof(array), array);
-	ck_assert_int_eq(sb.used, 2 * sizeof(array));
+	ck_assert_str_eq((const char*)(sb->buffer), array);
+	ck_assert_str_eq((const char*)(sb->buffer + sizeof(array)), array);
+	ck_assert_int_eq(sb->used, 2 * sizeof(array));
 
-	safe_buffer_free(&sb);
+	safe_buffer_free(sb);
 	safe_buffer_list_free(sbl);
 }
 END_TEST
@@ -109,11 +109,7 @@ END_TEST
 START_TEST(test_addrtostr)
 {
 	char buffer[INET6_ADDRSTRLEN] = {""};
-	struct in6_addr addr = {
-	    {
-		0xfe, 0x80, 0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00, 0x12, 0x34,
-	    },
-	};
+	struct in6_addr addr = {{{0xfe, 0x80, 0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00, 0x12, 0x34}}};
 	addrtostr(&addr, buffer, sizeof(buffer));
 	ck_assert_str_eq(buffer, "fe80:fe80::ff00:1234");
 }
@@ -122,11 +118,7 @@ END_TEST
 START_TEST(test_addrtostr_overflow)
 {
 	char buffer[18] = {""};
-	struct in6_addr addr = {
-	    {
-		0xfe, 0x80, 0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00, 0x12, 0x34,
-	    },
-	};
+	struct in6_addr addr = {{{0xfe, 0x80, 0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00, 0x12, 0x34}}};
 	addrtostr(&addr, buffer, sizeof(buffer));
 	ck_assert_str_eq(buffer, "[invalid address]");
 }
@@ -213,20 +205,20 @@ START_TEST(test_check_rdnss_presence)
 	int rc;
 
 	/* The next three should be found */
-	addr = (struct in6_addr){0xff, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+	addr = (struct in6_addr){{{0xff, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}}};
 	rc = check_rdnss_presence(iface->AdvRDNSSList, &addr);
 	ck_assert_int_ne(0, rc);
 
-	addr = (struct in6_addr){0xff, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2};
+	addr = (struct in6_addr){{{0xff, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}}};
 	rc = check_rdnss_presence(iface->AdvRDNSSList, &addr);
 	ck_assert_int_ne(0, rc);
 
-	addr = (struct in6_addr){0xff, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3};
+	addr = (struct in6_addr){{{0xff, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3}}};
 	rc = check_rdnss_presence(iface->AdvRDNSSList, &addr);
 	ck_assert_int_ne(0, rc);
 
 	/* The next one should *not* be found */
-	addr = (struct in6_addr){0xff, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6};
+	addr = (struct in6_addr){{{0xff, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6}}};
 	rc = check_rdnss_presence(iface->AdvRDNSSList, &addr);
 	ck_assert_int_eq(0, rc);
 }
@@ -283,8 +275,8 @@ Suite *util_suite(void)
 	tcase_add_test(tc_safe_buffer, test_safe_buffer_pad);
 
 	TCase *tc_safe_buffer_list = tcase_create("safe_buffer_list");
-	tcase_add_test(tc_safe_buffer, test_safe_buffer_list);
-	tcase_add_test(tc_safe_buffer, test_safe_buffer_list_to_safe_buffer);
+	tcase_add_test(tc_safe_buffer_list, test_safe_buffer_list);
+	tcase_add_test(tc_safe_buffer_list, test_safe_buffer_list_to_safe_buffer);
 
 	TCase *tc_str = tcase_create("str");
 	tcase_add_test(tc_str, test_addrtostr);
@@ -306,6 +298,7 @@ Suite *util_suite(void)
 
 	Suite *s = suite_create("util");
 	suite_add_tcase(s, tc_safe_buffer);
+	suite_add_tcase(s, tc_safe_buffer_list);
 	suite_add_tcase(s, tc_str);
 	suite_add_tcase(s, tc_ion);
 	suite_add_tcase(s, tc_presence);

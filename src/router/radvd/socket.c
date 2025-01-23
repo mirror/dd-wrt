@@ -65,6 +65,13 @@ int open_icmpv6_socket(void)
 		flog(LOG_ERR, "setsockopt(IPV6_MULTICAST_HOPS): %s", strerror(errno));
 		return -1;
 	}
+
+        err = setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_LOOP, (int[]){0}, sizeof(int));
+        if (err < 0) {
+                flog(LOG_ERR, "setsockopt(IPV6_MULTICAST_LOOP): %s", strerror(errno));
+                return -1;
+        }
+
 #ifdef IPV6_RECVHOPLIMIT
 	err = setsockopt(sock, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, (int[]){1}, sizeof(int));
 	if (err < 0) {

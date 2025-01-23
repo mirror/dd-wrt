@@ -1,0 +1,14 @@
+FROM ubuntu:20.04
+# apt is meant to be used by humans, whereas apt-get is for scripting.
+RUN apt-get update && \
+	DEBIAN_FRONTEND=noninteractive apt-get install -qy \
+		autoconf \
+		automake \
+		gettext \
+		libtool \
+		gawk \
+		pkg-config \
+		make \
+		systemd
+VOLUME /workdir
+ENTRYPOINT cd /workdir && /bin/sh autogen.sh && ./configure -C && make distclean

@@ -119,6 +119,15 @@ interface lo
                 AdvDNSSLLifetime 30;
         };
 
+#
+# RFC8908 Captive-Portal API URL
+#
+# See RFC8952 Captive Portal Architecture, RFC8910 Captive-Portal
+# Identification in DHCP and Router Advertisements (RAs) and
+# RFC8908 Captive Portal API for more information.
+#
+
+	# AdvCaptivePortalAPI "https://portal.example.net/api/capport.json";
 
 };
 

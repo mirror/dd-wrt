@@ -29,6 +29,8 @@ extern int disableigmp6check;
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 
 struct AdvPrefix;
+struct NAT64Prefix;
+struct AutogenIgnorePrefix;
 struct Clients;
 
 #define HWADDR_MAX 16
@@ -58,15 +60,18 @@ struct Interface {
 	double MinRtrAdvInterval;
 	double MinDelayBetweenRAs;
 	int AdvSourceLLAddress;
+	int RemoveAdvOnExit;
 	int UnicastOnly;
+	int UnrestrictedUnicast;
 	int AdvRASolicitedUnicast;
+	char *AdvCaptivePortalAPI;
 	struct Clients *ClientList;
 
 	struct state_info {
 		int ready;   /* Info whether this interface has been initialized successfully */
 		int changed; /* Info whether this interface's settings have changed */
 		int cease_adv;
-		uint32_t racount;
+		uint32_t racount; // count of non-unicast initial router adv
 	} state_info;
 
 	struct properties {
@@ -101,6 +106,10 @@ struct Interface {
 	struct AdvRDNSS *AdvRDNSSList;
 	struct AdvDNSSL *AdvDNSSLList;
 
+	struct NAT64Prefix *NAT64PrefixList;
+
+	struct AutogenIgnorePrefix *IgnorePrefixList;
+
 	uint32_t AdvLinkMTU; /* XXX: sllao also has an if_maxmtu value...Why? */
 	uint32_t AdvRAMTU;   /* MTU used for RA */
 
@@ -133,6 +142,7 @@ struct Interface {
 
 struct Clients {
 	struct in6_addr Address;
+	int ignored;
 	struct Clients *next;
 };
 
@@ -162,6 +172,23 @@ struct AdvPrefix {
 	struct AdvPrefix *next;
 };
 
+struct NAT64Prefix {
+	struct in6_addr Prefix;
+	uint8_t PrefixLen;
+
+	uint32_t AdvValidLifetime;
+	uint32_t curr_validlft;
+
+	struct NAT64Prefix *next;
+};
+
+struct AutogenIgnorePrefix {
+	struct in6_addr Prefix;
+	struct in6_addr Mask;
+
+	struct AutogenIgnorePrefix *next;
+};
+
 /* More-Specific Routes extensions */
 
 struct AdvRoute {
@@ -181,9 +208,7 @@ struct AdvRDNSS {
 	int AdvRDNSSNumber;
 	uint32_t AdvRDNSSLifetime;
 	int FlushRDNSSFlag;
-	struct in6_addr AdvRDNSSAddr1;
-	struct in6_addr AdvRDNSSAddr2;
-	struct in6_addr AdvRDNSSAddr3;
+	struct in6_addr *AdvRDNSSAddr;
 
 	struct AdvRDNSS *next;
 };
@@ -265,6 +290,18 @@ struct nd_opt_6co {
 	struct in6_addr nd_opt_6co_con_prefix;
 }; /*Added by Bhadram */
 
+/* Pref64 option type (RFC8781, section 4) */
+#ifndef ND_OPT_PREF64
+#define ND_OPT_PREF64 38
+#endif
+
+struct nd_opt_nat64prefix_info {
+	uint8_t nd_opt_pi_type;
+	uint8_t nd_opt_pi_len;
+	uint16_t nd_opt_pi_lifetime_preflen;
+	unsigned char nd_opt_pi_nat64prefix[12];
+};
+
 /* gram.y */
 struct Interface *readin_config(char const *fname);
 
@@ -286,6 +323,7 @@ int set_interface_linkmtu(const char *, uint32_t);
 int set_interface_reachtime(const char *, uint32_t);
 int set_interface_retranstimer(const char *, uint32_t);
 int setup_allrouters_membership(int sock, struct Interface *);
+int cleanup_allrouters_membership(int sock, struct Interface *iface);
 int setup_iface_addrs(struct Interface *);
 int update_device_index(struct Interface *iface);
 int update_device_info(int sock, struct Interface *);
@@ -296,12 +334,14 @@ int get_iface_addrs(char const *name, struct in6_addr *if_addr, /* the first lin
 /* interface.c */
 int check_iface(struct Interface *);
 int setup_iface(int sock, struct Interface *iface);
+int cleanup_iface(int sock, struct Interface *iface);
 struct Interface *find_iface_by_index(struct Interface *iface, int index);
 struct Interface *find_iface_by_name(struct Interface *iface, const char *name);
 struct Interface *find_iface_by_time(struct Interface *iface_list);
 void dnssl_init_defaults(struct AdvDNSSL *, struct Interface *);
 void for_each_iface(struct Interface *ifaces, void (*foo)(struct Interface *iface, void *), void *data);
 void free_ifaces(struct Interface *ifaces);
+void nat64prefix_init_defaults(struct NAT64Prefix *, struct Interface *);
 void iface_init_defaults(struct Interface *);
 void prefix_init_defaults(struct AdvPrefix *);
 void rdnss_init_defaults(struct AdvRDNSS *, struct Interface *);

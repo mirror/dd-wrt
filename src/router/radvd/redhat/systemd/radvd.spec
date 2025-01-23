@@ -2,7 +2,7 @@
 
 Summary: A Router Advertisement daemon
 Name: radvd
-Version: 2.19
+Version: 2.20
 Release: 1%{?dist}
 # The code includes the advertising clause, so it's GPL-incompatible
 License: BSD with advertising
@@ -17,8 +17,11 @@ BuildRequires: flex-static
 BuildRequires: pkgconfig
 BuildRequires: check-devel
 BuildRequires: systemd
+BuildRequires: libbsd-devel
 %{?systemd_requires}
 Requires(pre): shadow-utils
+# SuSE calls it libbsd0, Fedora calls it libbsd
+Requires: libbsd0
 
 %description
 radvd is the router advertisement daemon for IPv6.  It listens to router

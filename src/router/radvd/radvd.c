@@ -93,6 +93,7 @@ static void reset_prefix_lifetimes(struct Interface *ifaces);
 static void reset_prefix_lifetimes_foo(struct Interface *iface, void *data);
 static void setup_iface_foo(struct Interface *iface, void *data);
 static void setup_ifaces(int sock, struct Interface *ifaces);
+static void cleanup_ifaces(int sock, struct Interface *ifaces);
 static void sighup_handler(int sig);
 static void sigint_handler(int sig);
 static void sigterm_handler(int sig);
@@ -435,6 +436,8 @@ int main(int argc, char *argv[])
 	setup_ifaces(sock, ifaces);
 	ifaces = main_loop(sock, ifaces, conf_path);
 	stop_adverts(sock, ifaces);
+	cleanup_ifaces(sock, ifaces);
+	close(sock);
 
 	flog(LOG_INFO, "removing %s", daemon_pid_file_ident);
 	unlink(daemon_pid_file_ident);
@@ -521,15 +524,17 @@ static struct Interface *main_loop(int sock, struct Interface *ifaces, char cons
 #ifdef HAVE_PPOLL
 		int rc = ppoll(fds, sizeof(fds) / sizeof(fds[0]), tsp, &sigempty);
 #else
-		int rc = poll(fds, sizeof(fds) / sizeof(fds[0]), 1000 * tsp->tv_sec);
+		// tsp could be NULL so check for this
+		int timeout_seconds = tsp != 0 ? 1000 * tsp->tv_sec : 0;
+		int rc = poll(fds, sizeof(fds) / sizeof(fds[0]), timeout_seconds);
 #endif
 
 		if (rc > 0) {
 #ifdef HAVE_NETLINK
-			if (fds[1].revents & (POLLERR | POLLHUP | POLLNVAL)) {
+			if (fds[1].revents & POLLIN) {
+				process_netlink_msg(fds[1].fd, ifaces, sock);
+			} else if (fds[1].revents & (POLLERR | POLLHUP | POLLNVAL)) {
 				flog(LOG_WARNING, "socket error on fds[1].fd");
-			} else if (fds[1].revents & POLLIN) {
-				process_netlink_msg(fds[1].fd, ifaces);
 			}
 #endif
 
@@ -741,7 +746,7 @@ static void kickoff_adverts(int sock, struct Interface *iface)
 
 static void stop_advert_foo(struct Interface *iface, void *data)
 {
-	if (!iface->UnicastOnly) {
+	if (!iface->UnicastOnly && iface->RemoveAdvOnExit) {
 		/* send a final advertisement with zero Router Lifetime */
 		dlog(LOG_DEBUG, 4, "stopping all adverts on %s", iface->props.name);
 		iface->state_info.cease_adv = 1;
@@ -763,13 +768,21 @@ static void setup_iface_foo(struct Interface *iface, void *data)
 {
 	int sock = *(int *)data;
 
-	if (setup_iface(sock, iface) < 0) {
+	int setup_iface_result = setup_iface(sock, iface);
+	if (setup_iface_result < 0) {
 		if (iface->IgnoreIfMissing) {
-			dlog(LOG_DEBUG, 4, "interface %s does not exist or is not set up properly, ignoring the interface",
-			     iface->props.name);
+			dlog(LOG_DEBUG, 4,
+					"interface %s does not exist or is not set up properly, ignoring the interface (setup_iface=%d)",
+					iface->props.name,
+					setup_iface_result
+					);
 			return;
 		} else {
-			flog(LOG_ERR, "interface %s does not exist or is not set up properly", iface->props.name);
+			flog(LOG_ERR,
+					"interface %s does not exist or is not set up properly (setup_iface=%d)",
+					iface->props.name,
+					setup_iface_result
+					);
 			exit(1);
 		}
 	}
@@ -778,10 +791,18 @@ static void setup_iface_foo(struct Interface *iface, void *data)
 	kickoff_adverts(sock, iface);
 }
 
+static void cleanup_iface_foo(struct Interface *iface, void *data)
+{
+	int sock = *(int *)data;
+	cleanup_iface(sock, iface);
+}
+
 static void setup_ifaces(int sock, struct Interface *ifaces) { for_each_iface(ifaces, setup_iface_foo, &sock); }
+static void cleanup_ifaces(int sock, struct Interface *ifaces) { for_each_iface(ifaces, cleanup_iface_foo, &sock); }
 
 static struct Interface *reload_config(int sock, struct Interface *ifaces, char const *conf_path)
 {
+	cleanup_ifaces(sock, ifaces);
 	free_ifaces(ifaces);
 
 	flog(LOG_INFO, "attempting to reread config file");
@@ -865,13 +886,6 @@ static int check_conffile_perm(const char *username, const char *conf_file)
 	}
 	fclose(fp);
 
-	if (!username)
-		username = "root";
-
-	struct passwd *pw = getpwnam(username);
-	if (!pw) {
-		return -1;
-	}
 
 	struct stat stbuf;
 	if (0 != stat(conf_file, &stbuf)) {
@@ -883,11 +897,19 @@ static int check_conffile_perm(const char *username, const char *conf_file)
 		return -1;
 	}
 
-	/* for non-root: must not be writable by self/own group */
-	if (strncmp(username, "root", 5) != 0 && ((stbuf.st_mode & S_IWGRP && pw->pw_gid == stbuf.st_gid) ||
-						  (stbuf.st_mode & S_IWUSR && pw->pw_uid == stbuf.st_uid))) {
-		flog(LOG_ERR, "Insecure file permissions (writable by self/group): %s", conf_file);
-		return -1;
+	if(username != NULL && strncmp(username, "root", 5) != 0) {
+		struct passwd *pw = getpwnam(username);
+		if (!pw) {
+			return -1;
+		}
+
+		/* for non-root: must not be writable by self/own group */
+		/* TODO: this should check supplementary groups as well, via getgroups and looping */
+		if ((stbuf.st_mode & S_IWGRP && pw->pw_gid == stbuf.st_gid) ||
+			(stbuf.st_mode & S_IWUSR && pw->pw_uid == stbuf.st_uid)) {
+			flog(LOG_ERR, "Insecure file permissions (writable by self/group): %s", conf_file);
+			return -1;
+		}
 	}
 
 	return 0;

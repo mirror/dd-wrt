@@ -30,12 +30,14 @@ struct safe_buffer *new_safe_buffer(void)
 
 void safe_buffer_free(struct safe_buffer *sb)
 {
-	if (sb->buffer) {
+	if (sb && sb->buffer) {
 		free(sb->buffer);
+		sb->buffer = NULL;
 	}
 
-	if (sb->should_free) {
+	if (sb && sb->should_free) {
 		free(sb);
+		sb = NULL;
 	}
 }
 
@@ -145,8 +147,10 @@ void safe_buffer_list_free(struct safe_buffer_list *sbl)
 {
 	struct safe_buffer_list *next;
 	for (struct safe_buffer_list *current = sbl; current; current = next) {
-		if (current->sb)
+		if (current->sb) {
 			safe_buffer_free(current->sb);
+			current->sb = NULL;
+		}
 		next = current->next;
 		free(current);
 	}
@@ -187,10 +191,10 @@ void addrtostr(struct in6_addr const *addr, char *str, size_t str_size)
 int check_rdnss_presence(struct AdvRDNSS *rdnss, struct in6_addr *addr)
 {
 	while (rdnss) {
-		if (!memcmp(&rdnss->AdvRDNSSAddr1, addr, sizeof(struct in6_addr)) ||
-		    !memcmp(&rdnss->AdvRDNSSAddr2, addr, sizeof(struct in6_addr)) ||
-		    !memcmp(&rdnss->AdvRDNSSAddr3, addr, sizeof(struct in6_addr)))
-			return 1; /* rdnss address found in the list */
+		for (int i = 0; i < rdnss->AdvRDNSSNumber; i++) {
+			if (!memcmp(&rdnss->AdvRDNSSAddr[i], addr, sizeof(struct in6_addr)))
+				return 1; /* rdnss address found in the list */
+		}
 		rdnss = rdnss->next;
 	}
 	return 0;

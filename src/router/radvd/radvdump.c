@@ -17,6 +17,12 @@
 #include "config.h"
 #include "includes.h"
 
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#define bswap64(y) (((uint64_t)ntohl(y)) << 32 | ntohl(y>>32))
+#else
+#define bswap64(y) (y)
+#endif
+
 static char usage_str[] = "[-vhfe] [-d level]";
 
 #ifdef HAVE_GETOPT_LONG
@@ -244,6 +250,29 @@ static void print_ff(unsigned char *msg, int len, struct sockaddr_in6 *addr, int
 				printf("\tHomeAgentLifetime %hu;\n", ntohs(ha_info->lifetime));
 			break;
 		}
+		case ND_OPT_CAPTIVE_PORTAL: {
+			char *opt_captive_portal = (char *)opt_str+2;
+			char *captive_portal = strndup(opt_captive_portal, optlen-2);
+
+			printf("\tAdvCaptivePortalAPI \"%s\";\n", captive_portal);
+
+			free(captive_portal);
+			break;
+		}
+		case ND_OPT_TIMESTAMP: {
+			char *opt_timestamp = (char *)opt_str+8; //tl + 6 bytes of resv
+			unsigned short fracs;
+			uint64_t secs;
+			uint64_t ts;
+
+			memcpy(&ts, opt_timestamp, sizeof(ts));
+			ts = bswap64(ts);
+			secs = ts >> 16;
+			fracs = ts & 0xffff;
+
+			printf("\tAdvTimestamp \"%lu secs, %hu fracs\";\n", secs, fracs);
+			break;
+		}
 		case ND_OPT_TARGET_LINKADDR:
 		case ND_OPT_REDIRECTED_HEADER:
 			flog(LOG_ERR, "invalid option %d in RA", (int)*opt_str);
@@ -255,6 +284,8 @@ static void print_ff(unsigned char *msg, int len, struct sockaddr_in6 *addr, int
 		case ND_OPT_RDNSS_INFORMATION:
 			break;
 		case ND_OPT_DNSSL_INFORMATION:
+			break;
+		case ND_OPT_PREF64:
 			break;
 		default:
 			dlog(LOG_DEBUG, 1, "unknown option %d in RA", (int)*opt_str);
@@ -369,28 +400,25 @@ static void print_ff(unsigned char *msg, int len, struct sockaddr_in6 *addr, int
 		case ND_OPT_RDNSS_INFORMATION: {
 			struct nd_opt_rdnss_info_local *rdnss_info = (struct nd_opt_rdnss_info_local *)opt_str;
 
-			printf("\n\tRDNSS");
 
-			addrtostr(&rdnss_info->nd_opt_rdnssi_addr1, prefix_str, sizeof(prefix_str));
-			printf(" %s", prefix_str);
-
-			if (rdnss_info->nd_opt_rdnssi_len >= 5) {
-				addrtostr(&rdnss_info->nd_opt_rdnssi_addr2, prefix_str, sizeof(prefix_str));
-				printf(" %s", prefix_str);
+			if (rdnss_info->nd_opt_rdnssi_len >= 3 && rdnss_info->nd_opt_rdnssi_len % 2 == 1) {
+				printf("\n\tRDNSS");
+				for (int i = 0; i < (rdnss_info->nd_opt_rdnssi_len - 1) / 2; i++) {
+					addrtostr(&rdnss_info->nd_opt_rdnssi_addr[i], prefix_str, sizeof(prefix_str));
+					printf(" %s", prefix_str);
+				}
+				printf("\n\t{\n");
+				/* as AdvRDNSSLifetime may depend on MaxRtrAdvInterval, it could change */
+				if (ntohl(rdnss_info->nd_opt_rdnssi_lifetime) == 0xffffffff)
+					printf("\t\tAdvRDNSSLifetime infinity; # (0xffffffff)\n");
+				else
+					printf("\t\tAdvRDNSSLifetime %u;\n", ntohl(rdnss_info->nd_opt_rdnssi_lifetime));
+				printf("\t}; # End of RDNSS definition\n\n");
+			} else {
+				flog(LOG_ERR, "Invalid RDNSS option length %d from %s", rdnss_info->nd_opt_rdnssi_len, addr_str);
+				printf("# Invalid RDNSS length %d, per RFC8106 section 5.1 ", rdnss_info->nd_opt_rdnssi_len);
 			}
-			if (rdnss_info->nd_opt_rdnssi_len >= 7) {
-				addrtostr(&rdnss_info->nd_opt_rdnssi_addr3, prefix_str, sizeof(prefix_str));
-				printf(" %s", prefix_str);
-			}
 
-			printf("\n\t{\n");
-			/* as AdvRDNSSLifetime may depend on MaxRtrAdvInterval, it could change */
-			if (ntohl(rdnss_info->nd_opt_rdnssi_lifetime) == 0xffffffff)
-				printf("\t\tAdvRDNSSLifetime infinity; # (0xffffffff)\n");
-			else
-				printf("\t\tAdvRDNSSLifetime %u;\n", ntohl(rdnss_info->nd_opt_rdnssi_lifetime));
-
-			printf("\t}; # End of RDNSS definition\n\n");
 			break;
 		}
 		case ND_OPT_DNSSL_INFORMATION: {
@@ -435,6 +463,53 @@ static void print_ff(unsigned char *msg, int len, struct sockaddr_in6 *addr, int
 				printf("\t\tAdvDNSSLLifetime %u;\n", ntohl(dnssl_info->nd_opt_dnssli_lifetime));
 
 			printf("\t}; # End of DNSSL definition\n\n");
+			break;
+		}
+		case ND_OPT_PREF64: {
+			if (optlen != sizeof(struct nd_opt_nat64prefix_info)) {
+				flog(LOG_ERR, "incorrect pref64 option length in RA from %s, skipping", addr_str);
+				break;
+			}
+
+			struct nd_opt_nat64prefix_info *pinfo = (struct nd_opt_nat64prefix_info *)opt_str;
+			uint16_t lifetime_preflen = ntohs(pinfo->nd_opt_pi_lifetime_preflen);
+			uint8_t prefix_length_code = lifetime_preflen & 7;
+			uint16_t prefix_lifetime = lifetime_preflen & 0xFFF8;
+			int prefix_size = -1;
+			struct in6_addr nat64prefix;
+
+			/* The option only contains the first 96 bits of the prefix */
+			memset(&nat64prefix, 0, sizeof(nat64prefix));
+			memcpy(&nat64prefix, &pinfo->nd_opt_pi_nat64prefix, 12);
+			addrtostr(&nat64prefix, prefix_str, sizeof(prefix_str));
+
+			switch (prefix_length_code) {
+			case 0:
+				prefix_size = 96;
+				break;
+			case 1:
+				prefix_size = 64;
+				break;
+			case 2:
+				prefix_size = 56;
+				break;
+			case 3:
+				prefix_size = 48;
+				break;
+			case 4:
+				prefix_size = 40;
+				break;
+			case 5:
+				prefix_size = 32;
+				break;
+			default:
+				flog(LOG_ERR, "Invalid (reserved) nat64prefix length code %d received", prefix_length_code);
+			}
+
+			printf("\n\tnat64prefix %s/%d\n\t{\n", prefix_str, prefix_size);
+			printf("\t\tAdvValidLifetime %u;\n", prefix_lifetime);
+			printf("\t}; # End of nat64prefix definition\n\n");
+
 			break;
 		}
 		default:

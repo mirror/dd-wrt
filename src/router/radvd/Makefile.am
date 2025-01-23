@@ -65,9 +65,6 @@ radvd_LDADD = \
 scanner.c: gram.h
 gram.h: gram.c
 
-libradvd_parser_a_CFLAGS = \
-	-Wno-implicit-function-declaration
-
 libradvd_parser_a_SOURCES = \
 	gram.h \
 	gram.y \
@@ -115,10 +112,21 @@ radvdump_SOURCES = \
 
 ### coverage ###
 
+if HAVE_CHECK
 cov: check
 	gcov *.c *.h *.l *.y
 	lcov --capture --directory . --output-file coverage.info
 	genhtml coverage.info --output-directory cov
+else
+cov:
+	$(error libcheck not available)
+endif
+
+if HAVE_CHECK
+else
+check:
+	$(error libcheck not available)
+endif
 
 ### man pages ###
 
@@ -146,51 +154,89 @@ indent:
 	clang-format -i *.c *.h test/*.c test/*.h
 
 EXTRA_DIST = \
+	autogen-container.sh \
+	autogen.sh \
 	CHANGES \
+	.clang-format \
+	contrib/95-radvd-gen \
+	contrib/unset_addrs.sh \
 	COPYRIGHT \
-	INTRO.html \
 	copyright.blurb \
+	Docker.autogen \
+	.github/workflows/bsd.yaml \
+	.github/workflows/buildroot.yaml \
+	.github/workflows/linux.yaml \
+	.gitignore \
+	INTRO.html \
 	radvd.8.man \
 	radvd.conf.5.man \
 	radvd.conf.example \
 	radvd.service.in \
 	radvdump.8.man \
-	redhat/SysV/radvd-tmpfs.conf \
+	README \
+	RELEASE-PROCESS.md \
+	redhat/systemd/radvd.service \
+	redhat/systemd/radvd.spec \
+	redhat/systemd/radvd-tmpfs.conf \
 	redhat/SysV/radvd.conf.empty \
 	redhat/SysV/radvd.init \
 	redhat/SysV/radvd.spec \
 	redhat/SysV/radvd.sysconfig \
-	redhat/systemd/radvd-tmpfs.conf \
-	redhat/systemd/radvd.service \
-	redhat/systemd/radvd.spec \
+	redhat/SysV/radvd-tmpfs.conf \
 	test/check.c \
 	test/print_safe_buffer.c \
 	test/print_safe_buffer.h \
 	test/send.c \
 	test/test1.conf \
+	test/test_build.sh \
+	test/test_dnssl1.conf \
+	test/test_dnssl2.conf \
+	test/test_dnssl3.conf \
+	test/test_dnssl4.conf \
+	test/test_dnssl5.conf \
+	test/test_dnssl6.conf \
 	test/test_rdnss.conf \
-	test/util.c
+	test/test_rdnss_long.conf \
+	test/util.c \
+	TODO \
+	.travis.yml
 
 EXTENSIONS = gz bz2 lz lzma xz tarZ shar zip
-HASHES = sha1 sha256 sha512
+HASHES = sha256 sha512
 
+# Generate clearsigned checksum files.
+# Generate detached signatures of the tarballs.
 sign:
 	$(AM_V_GEN)for e in $(EXTENSIONS); do \
 		if [ -f radvd-$(VERSION).tar.$$e ]; then \
+			gpg --armor --sign --detach-sign radvd-$(VERSION).tar.$$e; \
 			for h in $(HASHES); do \
-				$${h}sum radvd-$(VERSION).tar.$$e > radvd-$(VERSION).tar.$$e.$$h; \
+				$${h}sum --tag radvd-$(VERSION).tar.$$e > radvd-$(VERSION).tar.$$e.$$h || exit 1; \
+				gpg --clear-sign radvd-$(VERSION).tar.$$e.$$h || exit 1; \
+				mv -f radvd-$(VERSION).tar.$$e.$$h.asc radvd-$(VERSION).tar.$$e.$$h || exit 1; \
 			done; \
-			gpg -sba radvd-$(VERSION).tar.$$e; \
 		fi; \
 	done
 
+# Verify clearsigned checksum files.
+# Verify detached signatures of the tarballs.
+#
+# Be careful to verify the clearsign, take ONLY the signed part, and then
+# verify the checksum contained in that (ignore checksums OUTSIDE the
+# clearsigned part).
 verify:
 	$(AM_V_GEN)for e in $(EXTENSIONS); do \
 		if [ -f radvd-$(VERSION).tar.$$e ]; then \
-			for h in $(HASHES); do \
-				$${h}sum -c radvd-$(VERSION).tar.$$e.$$h; \
-			done; \
 			gpg --verify radvd-$(VERSION).tar.$$e.asc; \
+			for h in $(HASHES); do \
+				rm -f radvd-$(VERSION).tar.$$e.$$h.verified || exit 1; \
+				gpg --output radvd-$(VERSION).tar.$$e.$$h.verified --verify radvd-$(VERSION).tar.$$e.$$h || exit 1; \
+				if ! $${h}sum -c radvd-$(VERSION).tar.$$e.$$h.verified ; then \
+					rm -f radvd-$(VERSION).tar.$$e.$$h.verified; \
+					exit 1; \
+				fi; \
+				rm -f radvd-$(VERSION).tar.$$e.$$h.verified; \
+			done; \
 		fi; \
 	done
 
@@ -211,6 +257,8 @@ html:
 
 packages:
 	@if [[ "$$(git diff | wc -l)" != "0" ]] ; then printf "\n\n\tYou have local changes in the working copy...\n\n\n" && git diff && false ; fi
+	@if [[ "$$(git rev-parse HEAD)" != "$$(git rev-parse v$(VERSION)^{commit})" ]] ; then printf "\n\n\tv$(VERSION) tag missing, or not checked out...\n\n\n" && false ; fi
+	rm -f radvd-$(VERSION).tar*
 	$(MAKE) dist-gzip
 	rm -rf radvd-$(VERSION)
 	tar zfx radvd-$(VERSION).tar.gz
@@ -220,7 +268,6 @@ packages:
 	$(MAKE) sign
 	$(MAKE) verify
 	$(MAKE) html
-	@if [[ "$$(git rev-parse HEAD)" != "$$(git rev-parse v$(VERSION))" ]] ; then printf "\n\n\tv$(VERSION) tag missing, or not checked out...\n\n\n" && false ; fi
 	@printf "\n\n\tDont forget to push the v$(VERSION) tag and this branch to origin (git push origin v$(VERSION) master)\n\n\n"
 
 
