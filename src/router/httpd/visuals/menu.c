@@ -169,7 +169,7 @@ static struct menucontext *init_menu(webs_t wp)
 	for (a = 0; a < ifcount; a++) {
 		char check[32];
 		sprintf(check, "wlan%d", a);
-		if (has_ad(check))
+		if (has_ad(check) || is_ath10k(check) || is_ath11k(check) || is_brcmfmac(check) || is_mt76(check) || is_mvebu(prefix))
 			continue;
 		m->menu[MENU_WIRELESS][count + 8] = wdsmenu[a];
 		if (ifcount == 1)
