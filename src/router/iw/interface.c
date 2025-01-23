@@ -300,6 +300,7 @@ try_another:
 			}
 			argc--;
 			argv++;
+			goto try_another;
 		} else if (strcmp(argv[0], "mtikwds") == 0) {
 			argc--;
 			argv++;
@@ -309,6 +310,7 @@ try_another:
 			}
 			argc--;
 			argv++;
+			goto try_another;
 		} else if (strcmp(argv[0], "flags") == 0) {
 			argc--;
 			argv++;
