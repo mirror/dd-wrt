@@ -988,29 +988,6 @@ void start_initvlans(void)
 	}
 }
 
-static void set_linksys_defaults(int triband)
-{
-	nvram_default_get("wlan0_ssid", get_deviceinfo_linksys("default_ssid"));
-	nvram_default_get("wlan0_akm", "psk3");
-	nvram_default_get("wlan0_psk3", "1");
-	nvram_default_get("wlan0_ccmp", "1");
-	nvram_default_get("wlan0_security_mode", "wpa");
-	nvram_default_get("wlan0_sae_key", get_deviceinfo_linksys("default_passphrase"));
-	nvram_default_get("wlan1_ssid", get_deviceinfo_linksys("default_ssid"));
-	nvram_default_get("wlan1_akm", "psk3");
-	nvram_default_get("wlan1_psk3", "1");
-	nvram_default_get("wlan1_ccmp", "1");
-	nvram_default_get("wlan1_security_mode", "wpa");
-	nvram_default_get("wlan1_sae_key", get_deviceinfo_linksys("default_passphrase"));
-	if (triband) {
-		nvram_default_get("wlan2_ssid", get_deviceinfo_linksys("default_ssid"));
-		nvram_default_get("wlan2_akm", "psk3");
-		nvram_default_get("wlan2_psk3", "1");
-		nvram_default_get("wlan2_ccmp", "1");
-		nvram_default_get("wlan2_security_mode", "wpa");
-		nvram_default_get("wlan2_sae_key", get_deviceinfo_linksys("default_passphrase"));
-	}
-}
 static void setscaling(int maxfreq)
 {
 	char max[32];
@@ -1070,7 +1047,6 @@ void start_sysinit(void)
 		nvram_default_get("eth2_label", "lan3");
 		nvram_default_get("eth3_label", "lan4");
 		nvram_default_get("eth4_label", "wan");
-		set_linksys_defaults(0);
 		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		break;
 	case ROUTER_LINKSYS_MR7500:
@@ -1081,7 +1057,6 @@ void start_sysinit(void)
 		nvram_default_get("eth2_label", "lan2");
 		nvram_default_get("eth3_label", "lan3");
 		nvram_default_get("eth4_label", "lan4");
-		set_linksys_defaults(1);
 		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		break;
 	case ROUTER_FORTINET_FAP231F:
@@ -1154,7 +1129,6 @@ void start_sysinit(void)
 		nvram_default_get("eth2_label", "lan2");
 		nvram_default_get("eth3_label", "lan3");
 		nvram_default_get("eth4_label", "lan4");
-		set_linksys_defaults(1);
 		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		break;
 	case ROUTER_LINKSYS_MX8500:
@@ -1166,7 +1140,6 @@ void start_sysinit(void)
 		nvram_default_get("eth2_label", "lan2");
 		nvram_default_get("eth3_label", "lan3");
 		nvram_default_get("eth4_label", "lan4");
-		set_linksys_defaults(1);
 		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		break;
 	case ROUTER_LINKSYS_MX5300:
@@ -1178,7 +1151,6 @@ void start_sysinit(void)
 		nvram_default_get("eth2_label", "lan2");
 		nvram_default_get("eth3_label", "lan3");
 		nvram_default_get("eth4_label", "lan4");
-		set_linksys_defaults(1);
 		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		break;
 	case ROUTER_LINKSYS_MX4300:
@@ -1190,7 +1162,6 @@ void start_sysinit(void)
 		nvram_default_get("eth2_label", "lan2");
 		nvram_default_get("eth3_label", "lan3");
 		nvram_default_get("eth4_label", "lan4");
-		set_linksys_defaults(1);
 		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		break;
 	case ROUTER_LINKSYS_MX4200V1:
@@ -1201,7 +1172,6 @@ void start_sysinit(void)
 		nvram_default_get("eth2_label", "lan2");
 		nvram_default_get("eth3_label", "lan3");
 		nvram_default_get("eth4_label", "lan4");
-		set_linksys_defaults(1);
 		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		break;
 	case ROUTER_LINKSYS_MR5500:
@@ -1212,7 +1182,6 @@ void start_sysinit(void)
 		nvram_default_get("eth2_label", "lan2");
 		nvram_default_get("eth3_label", "lan3");
 		nvram_default_get("eth4_label", "lan4");
-		set_linksys_defaults(0);
 		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		break;
 	case ROUTER_LINKSYS_MX5500:
@@ -1223,7 +1192,6 @@ void start_sysinit(void)
 		nvram_default_get("eth3_label", "lan2");
 		nvram_default_get("eth4_label", "lan3");
 		nvram_default_get("eth5_label", "lan4");
-		set_linksys_defaults(0);
 		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		break;
 	default:
@@ -1837,6 +1805,51 @@ void start_sysshutdown(void)
 	start_deconfigurewifi();
 	rmmod("ath11k_ahb");
 }
+
+static void set_linksys_defaults(int triband)
+{
+	nvram_set("wlan0_ssid", get_deviceinfo_linksys("default_ssid"));
+	nvram_set("wlan0_akm", "psk3");
+	nvram_set("wlan0_psk3", "1");
+	nvram_set("wlan0_ccmp", "1");
+	nvram_set("wlan0_security_mode", "wpa");
+	nvram_set("wlan0_sae_key", get_deviceinfo_linksys("default_passphrase"));
+	nvram_set("wlan1_ssid", get_deviceinfo_linksys("default_ssid"));
+	nvram_set("wlan1_akm", "psk3");
+	nvram_set("wlan1_psk3", "1");
+	nvram_set("wlan1_ccmp", "1");
+	nvram_set("wlan1_security_mode", "wpa");
+	nvram_set("wlan1_sae_key", get_deviceinfo_linksys("default_passphrase"));
+	if (triband) {
+		nvram_set("wlan2_ssid", get_deviceinfo_linksys("default_ssid"));
+		nvram_set("wlan2_akm", "psk3");
+		nvram_set("wlan2_psk3", "1");
+		nvram_set("wlan2_ccmp", "1");
+		nvram_set("wlan2_security_mode", "wpa");
+		nvram_set("wlan2_sae_key", get_deviceinfo_linksys("default_passphrase"));
+	}
+}
+
+
 void start_arch_defaults(void)
 {
+	int brand = getRouterBrand();
+
+	switch (brand) {
+	case ROUTER_LINKSYS_MR7500:
+	case ROUTER_LINKSYS_MX4200V2:
+	case ROUTER_LINKSYS_MX8500:
+	case ROUTER_LINKSYS_MX5300:
+	case ROUTER_LINKSYS_MX4300:
+	case ROUTER_LINKSYS_MX4200V1:
+		set_linksys_defaults(1);
+		break;
+	case ROUTER_LINKSYS_MR7350:
+	case ROUTER_LINKSYS_MR5500:
+	case ROUTER_LINKSYS_MX5500:
+		set_linksys_defaults(0);
+		break;
+	default:
+		break;
+	}
 }
