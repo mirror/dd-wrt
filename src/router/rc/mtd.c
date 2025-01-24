@@ -360,7 +360,7 @@ static int write_main(int argc, char *argv[])
 	case ROUTER_LINKSYS_MX5500:
 		part = getUEnv("boot_part");
 		if (part) {
-			dd_loginfo("flash", "boot partiton is %s", part);
+			dd_loginfo("flash", "boot partition is %s", part);
 			if (!strcmp(part, "2")) {
 				mtd = "linux";
 			} else {
@@ -1000,7 +1000,7 @@ again:;
 	case ROUTER_LINKSYS_MX5500:
 		part = getUEnv("boot_part");
 		if (part) {
-			dd_loginfo("flash", "boot partiton is %s", part);
+			dd_loginfo("flash", "boot partition is %s", part);
 			if (!strcmp(part, "2")) {
 				eval("fw_setenv", "boot_part", "1");
 			} else {
@@ -1018,7 +1018,7 @@ again:;
 	case ROUTER_LINKSYS_EA8300:
 		part = getUEnv("boot_part");
 		if (part) {
-			dd_loginfo("flash", "boot partiton is %s", part);
+			dd_loginfo("flash", "boot partition is %s", part);
 			if (!strcmp(part, "2")) {
 				eval("ubootenv", "set", "boot_part", "1");
 			} else {
