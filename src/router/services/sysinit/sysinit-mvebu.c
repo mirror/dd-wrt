@@ -108,7 +108,6 @@ void start_sysinit(void)
 	insmod("sdhci-pxav3");
 	insmod("mvsdio");
 
-
 	int s;
 	struct ifreq ifr;
 	char *recovery = getUEnv("auto_recovery");

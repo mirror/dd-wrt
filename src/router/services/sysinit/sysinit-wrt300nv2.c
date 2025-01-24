@@ -58,7 +58,6 @@ void start_sysinit(void)
 	eval("mknod", "/dev/crypto", "c", "10", "70");
 	eval("mount", "-o", "remount,rw", "/");
 
-
 	/*
 	 * Setup console 
 	 */

@@ -1965,6 +1965,33 @@ void start_restore_defaults(void)
 	// }
 	struct nvram_param *srouter_defaults;
 	srouter_defaults = load_defaults();
+
+	nvram_default_get("ip_conntrack_tcp_timeouts", "3600");
+#ifdef HAVE_MICRO
+	/*
+		 * adjust ip_conntrack_max based on available memory size
+		 * some routers that can run micro only have 16MB memory
+		 */
+	if (getmemfree() > (8 * 1024 * 1024)) {
+		nvram_default_get("ip_conntrack_max", "4096");
+	} else {
+		nvram_default_get("ip_conntrack_max", "1024");
+	}
+	else
+#else
+	if (getmemfree() > (256 * 1024 * 1024)) {
+		nvram_default_get("ip_conntrack_max", "65536");
+	} else if (getmemfree() > (64 * 1024 * 1024)) {
+		nvram_default_get("ip_conntrack_max", "32768");
+	} else
+#endif
+		nvram_default_get("ip_conntrack_max", "4096");
+
+	if (getmemtotal() > 128 * 1024 * 1024) {
+		nvram_default_get("sshd_rw", "262144");
+	} else {
+		nvram_default_get("sshd_rw", "4096");
+	}
 #ifdef HAVE_RB500
 	linux_overrides = generic;
 	int brand = getRouterBrand();
@@ -1974,6 +2001,7 @@ void start_restore_defaults(void)
 	defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_RT2880) || defined(HAVE_LS2) || defined(HAVE_LS5) ||    \
 	defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || \
 	defined(HAVE_OPENRISC) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_CA8) || defined(HAVE_OCTEON)
+
 	int brand = getRouterBrand();
 	linux_overrides = generic;
 
@@ -2021,31 +2049,6 @@ void start_restore_defaults(void)
 		nvram_unset("wan_to_lan");
 		nvram_unset("wl_vifs");
 		nvram_unset("wl0_vifs");
-	}
-#ifdef HAVE_MICRO
-	/*
-		 * adjust ip_conntrack_max based on available memory size
-		 * some routers that can run micro only have 16MB memory
-		 */
-	if (getmemfree() > (8 * 1024 * 1024)) {
-		nvram_default_get("ip_conntrack_max", "4096");
-	} else {
-		nvram_default_get("ip_conntrack_max", "1024");
-	}
-	else
-#else
-	if (getmemfree() > (256 * 1024 * 1024)) {
-		nvram_default_get("ip_conntrack_max", "65536");
-	} else if (getmemfree() > (64 * 1024 * 1024)) {
-		nvram_default_get("ip_conntrack_max", "32768");
-	} else
-#endif
-		nvram_default_get("ip_conntrack_max", "4096");
-
-	if (getmemtotal() > 128 * 1024 * 1024) {
-		nvram_default_get("sshd_rw", "262144");
-	} else {
-		nvram_default_get("sshd_rw", "4096");
 	}
 
 	// }

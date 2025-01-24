@@ -184,14 +184,14 @@ void start_post_sysinit(void)
 #ifndef HAVE_ERC
 #ifndef HAVE_CORENET
 #ifdef HAVE_TMK
-	fprintf(fp, "KMT-WAS %s (c) " BUILD_YEAR " KMT GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION,
-		getRouterName());
+	fprintf(fp, "KMT-WAS %s (c) " BUILD_YEAR " KMT GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST,
+		SVN_REVISION, getRouterName());
 #elif HAVE_SANSFIL
-	fprintf(fp, "SANSFIL %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST,
-		SVN_REVISION, getRouterName());
+	fprintf(fp, "SANSFIL %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n",
+		DIST, SVN_REVISION, getRouterName());
 #elif HAVE_KORENRON
-	fprintf(fp, "KORENRON %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST,
-		SVN_REVISION, getRouterName());
+	fprintf(fp, "KORENRON %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n",
+		DIST, SVN_REVISION, getRouterName());
 #elif HAVE_TESTEM
 	fprintf(fp, "TESTEM %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST,
 		SVN_REVISION, getRouterName());
@@ -200,8 +200,8 @@ void start_post_sysinit(void)
 		SVN_REVISION, getRouterName());
 #elif HAVE_ONNET
 #ifdef HAVE_ONNET_BLANK
-	fprintf(fp, "Enterprise AP %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION,
-		getRouterName());
+	fprintf(fp, "Enterprise AP %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST,
+		SVN_REVISION, getRouterName());
 #elif HAVE_UNFY
 	//fprintf(fp, "UNIFY %s (c) 2013 \nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 	fprintf(fp, "Firmware %s (c) " BUILD_YEAR " \nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION,
@@ -211,27 +211,27 @@ void start_post_sysinit(void)
 		SVN_REVISION, getRouterName());
 #endif
 #elif HAVE_RAYTRONIK
-	fprintf(fp, "RAYTRONIK %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST,
-		SVN_REVISION, getRouterName());
+	fprintf(fp, "RAYTRONIK %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n",
+		DIST, SVN_REVISION, getRouterName());
 #elif HAVE_ANTAIRA
 	fprintf(fp, "Antaira %s\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
 #elif HAVE_HDWIFI
 	fprintf(fp, "HDWIFI %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST,
 		SVN_REVISION, getRouterName());
 #elif HAVE_NDTRADE
-	fprintf(fp, "ND TRADE %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST,
-		SVN_REVISION, getRouterName());
+	fprintf(fp, "ND TRADE %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n",
+		DIST, SVN_REVISION, getRouterName());
 #else
 #ifdef DIST
 	if (*(DIST))
-		fprintf(fp, "DD-WRT v3.0-r%s %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE "\nBoard: %s\n", SVN_REVISION,
-			DIST, getRouterName());
+		fprintf(fp, "DD-WRT v3.0-r%s %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE "\nBoard: %s\n",
+			SVN_REVISION, DIST, getRouterName());
 	else
-		fprintf(fp, "DD-WRT v3.0-r%s custom (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE "\nBoard: %s\n", SVN_REVISION,
-			getRouterName());
+		fprintf(fp, "DD-WRT v3.0-r%s custom (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE "\nBoard: %s\n",
+			SVN_REVISION, getRouterName());
 #else
-	fprintf(fp, "DD-WRT v3.0-r%s custom (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE "\nBoard: %s\n", SVN_REVISION,
-		getRouterName());
+	fprintf(fp, "DD-WRT v3.0-r%s custom (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE "\nBoard: %s\n",
+		SVN_REVISION, getRouterName());
 #endif
 #endif
 #endif
@@ -287,7 +287,6 @@ void start_init_stop(void)
 {
 	lcdmessage("STOPPING SERVICES");
 	killall("udhcpc", SIGKILL);
-
 
 	stop_services();
 	stop_service(radio_timer);

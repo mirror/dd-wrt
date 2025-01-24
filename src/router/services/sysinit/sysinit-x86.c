@@ -81,7 +81,6 @@ void start_sysinit(void)
 	}
 #endif
 
-
 	/*
 	 * Setup console 
 	 */
