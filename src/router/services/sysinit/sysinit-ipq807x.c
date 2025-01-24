@@ -1837,3 +1837,6 @@ void start_sysshutdown(void)
 	start_deconfigurewifi();
 	rmmod("ath11k_ahb");
 }
+void start_arch_defaults(void)
+{
+}

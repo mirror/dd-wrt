@@ -1082,3 +1082,6 @@ void start_wifi_drivers(void)
 		}
 	}
 }
+void start_arch_defaults(void)
+{
+}

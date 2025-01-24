@@ -341,3 +341,6 @@ void start_wifi_drivers(void)
 	writeprocsys("dev/wifi0/softled", "1");
 #endif
 }
+void start_arch_defaults(void)
+{
+}

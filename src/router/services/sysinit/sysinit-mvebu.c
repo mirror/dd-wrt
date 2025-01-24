@@ -235,3 +235,6 @@ void start_wifi_drivers(void)
 		wait_for_wifi(1);
 	}
 }
+void start_arch_defaults(void)
+{
+}

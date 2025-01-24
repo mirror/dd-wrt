@@ -347,3 +347,6 @@ void start_wifi_drivers(void)
 {
 	detect_wireless_devices(RADIO_ALL);
 }
+void start_arch_defaults(void)
+{
+}

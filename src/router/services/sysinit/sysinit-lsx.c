@@ -228,3 +228,6 @@ void start_wifi_drivers(void)
 	setWirelessLed(0, 2);
 #endif
 }
+void start_arch_defaults(void)
+{
+}

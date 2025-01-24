@@ -66,6 +66,7 @@
 #include <cy_conf.h>
 #include <utils.h>
 
+#include <services.h>
 #include <glob.h>
 #include <revision.h>
 
@@ -2229,6 +2230,9 @@ void start_restore_defaults(void)
 		}
 	}
 	free_defaults(srouter_defaults);
+	if (restore_defaults)
+	    start_arch_defaults();
+
 	if (!*(nvram_safe_get("http_username")) || nvram_match("http_username", "admin")) {
 		char passout[MD5_OUT_BUFSIZE];
 		nvram_set("http_username", DEFAULT_PASS);
