@@ -276,6 +276,11 @@ void hostapd_neighbor_set_own_report(struct hostapd_data *hapd)
 		bssid_info |= NEI_REP_BSSID_INFO_HE;
 	if (eht)
 		bssid_info |= NEI_REP_BSSID_INFO_EHT;
+
+	if (hapd->iconf->he_co_locate)
+		bssid_info |= NEI_REP_BSSID_INFO_HE_CO_LOCATED;
+
+
 	/* TODO: Set NEI_REP_BSSID_INFO_MOBILITY_DOMAIN if MDE is set */
 
 	if (ieee80211_freq_to_channel_ext(hapd->iface->freq,
