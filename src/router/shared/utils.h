@@ -1187,6 +1187,8 @@ extern void add_usermac(char *mac, int idx, int upstream, int downstream, int la
 extern void add_userip(char *ip, int idx, int upstream, int downstream, int lanstream);
 extern void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned int lanrate,
 			       unsigned int level);
+long getmemfree(void);
+long getmemtotal(void);
 
 void getHostName(char *buf, char *ip);
 int ishexit(char c);
