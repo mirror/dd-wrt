@@ -20,6 +20,3 @@
  * $Id:
  */
 #include "sysinit-fonera.c"
-void start_arch_defaults(void)
-{
-}

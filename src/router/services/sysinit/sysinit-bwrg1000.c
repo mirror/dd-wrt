@@ -20,6 +20,3 @@
  * $Id:
  */
 #include "sysinit-ls2.c"
-void start_arch_defaults(void)
-{
-}

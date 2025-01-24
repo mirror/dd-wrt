@@ -20,6 +20,3 @@
  * $Id:
  */
 #include "sysinit-ubntm.c"
-void start_arch_defaults(void)
-{
-}
