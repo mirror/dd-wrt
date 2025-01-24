@@ -1418,6 +1418,9 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 		}
 		fprintf(fp, "he_6ghz_reg_pwr_type=0\n");
 		fprintf(fp, "stationary_ap=1\n");
+		fprintf(fp, "he_co_locate=1\n");
+		fprintf(fp, "rrm_neighbor_report=1\n");
+		fprintf(fp, "rrm_beacon_report=1\n");
 		fprintf(fp, "rnr=1\n");
 	}
 
