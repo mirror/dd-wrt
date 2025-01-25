@@ -2315,7 +2315,8 @@ static int configured_fixed_chan_to_freq(struct hostapd_iface *iface)
 		for (i = 0; i < mode->num_channels; i++) {
 			struct hostapd_channel_data *chan = &mode->channels[i];
 
-			if (chan->freq == iface->conf->frequency) {
+			if (chan->freq == iface->conf->frequency &&
+			    !is_6ghz_freq(chan->freq)) {
 				iface->freq = chan->freq;
 				return 0;
 			}

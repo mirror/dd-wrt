@@ -306,6 +306,7 @@ u8 country_to_global_op_class(const char *country, u8 op_class);
 const struct oper_class_map * get_oper_class(const char *country, u8 op_class);
 int oper_class_bw_to_int(const struct oper_class_map *map);
 int center_idx_to_bw_6ghz(u8 idx);
+int center_freq_to_bw_6ghz(u16 idx);
 #ifdef CONFIG_IEEE80211AX
 bool is_6ghz_freq(int freq);
 bool is_6ghz_op_class(u8 op_class);

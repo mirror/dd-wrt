@@ -1662,11 +1662,6 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 		return HOSTAPD_MODE_IEEE80211A;
 	}
 
-	if (fcast >= 5000 && fcast < 7000) {
-		*channel = ((fcast - 5000) / 5) & 0xff;
-		*op_class = 0; /* TODO */
-		return HOSTAPD_MODE_IEEE80211A;
-	}
 
 	if (freq > 5950 && freq <= 7115) {
 		if ((freq - 5950) % 5)
@@ -1697,9 +1692,16 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 		return HOSTAPD_MODE_IEEE80211A;
 	}
 
+
 	if (freq == 5935) {
 		*op_class = 136;
 		*channel = (freq - 5925) / 5;
+		return HOSTAPD_MODE_IEEE80211A;
+	}
+
+	if (fcast >= 5000 && fcast < 7000) {
+		*channel = ((fcast - 5000) / 5) & 0xff;
+		*op_class = 0; /* TODO */
 		return HOSTAPD_MODE_IEEE80211A;
 	}
 
@@ -3045,6 +3047,32 @@ int center_idx_to_bw_6ghz(u8 idx)
 
 	return -1;
 }
+int ieee80211_frequency_to_channel(int freq);
+
+int center_freq_to_bw_6ghz(u16 freq)
+{
+	int idx = ieee80211_frequency_to_channel(freq);
+	/* Channel: 2 */
+	if (idx == 2)
+		return 0; /* 20 MHz */
+	/* channels: 1, 5, 9, 13... */
+	if ((idx & 0x3) == 0x1)
+		return 0; /* 20 MHz */
+	/* channels 3, 11, 19... */
+	if ((idx & 0x7) == 0x3)
+		return 1; /* 40 MHz */
+	/* channels 7, 23, 39.. */
+	if ((idx & 0xf) == 0x7)
+		return 2; /* 80 MHz */
+	/* channels 15, 47, 79...*/
+	if ((idx & 0x1f) == 0xf)
+		return 3; /* 160 MHz */
+	/* channels 31, 63, 95, 127, 159, 191 */
+	if ((idx & 0x1f) == 0x1f && idx < 192)
+		return 4; /* 320 MHz */
+
+	return -1;
+}
 
 
 #ifdef CONFIG_IEEE80211AX
@@ -3059,7 +3087,7 @@ bool is_6ghz_freq(int freq)
 	if (center_idx_to_bw_6ghz((freq - 5950) / 5) < 0)
 		return false;
 
-	return false;
+	return true;
 }
 
 

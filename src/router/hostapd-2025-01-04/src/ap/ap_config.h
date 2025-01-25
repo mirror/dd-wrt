@@ -1396,7 +1396,7 @@ hostapd_set_oper_centr_freq_seg0_idx_freq(struct hostapd_config *conf,
 #ifdef CONFIG_IEEE80211BE
 	if (conf->ieee80211be)
 		conf->eht_oper_centr_freq_seg0_idx_freq = oper_centr_freq_seg0_idx;
-	if (center_idx_to_bw_6ghz(oper_centr_freq_seg0_idx) == 4)
+	if (center_freq_to_bw_6ghz(oper_centr_freq_seg0_idx) == 4)
 		oper_centr_freq_seg0_idx +=
 			conf->frequency > oper_centr_freq_seg0_idx ? 16*5 : -16*5;
 #endif /* CONFIG_IEEE80211BE */

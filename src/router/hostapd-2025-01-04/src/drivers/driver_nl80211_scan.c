@@ -226,11 +226,11 @@ nl80211_scan_common(struct i802_bss *bss, u8 cmd,
 		 * 26.17.2.3 (Scanning in the 6 GHz band). Passive scanning of
 		 * all non-PSC channels would take a significant amount of time.
 		 */
-		if (!params->non_coloc_6ghz) {
-			wpa_printf(MSG_DEBUG,
-				   "nl80211: Scan co-located APs on 6 GHz");
-			scan_flags |= NL80211_SCAN_FLAG_COLOCATED_6GHZ;
-		}
+//		if (!params->non_coloc_6ghz) {
+//			wpa_printf(MSG_DEBUG,
+//				   "nl80211: Scan co-located APs on 6 GHz");
+//			scan_flags |= NL80211_SCAN_FLAG_COLOCATED_6GHZ;
+//		}
 	} else {
 		wpa_printf(MSG_DEBUG, "nl80211: Passive scan requested");
 	}

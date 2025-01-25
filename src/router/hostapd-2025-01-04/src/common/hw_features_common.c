@@ -522,7 +522,6 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 	else
 		data->bandwidth = 20;
 
-
 	hostapd_encode_edmg_chan(enable_edmg, edmg_channel, channel,
 				 &data->edmg);
 
@@ -549,7 +548,7 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 				data->center_freq1 = data->freq;
 		} else {
 			int freq1, freq2 = 0;
-			int bw = center_idx_to_bw_6ghz(center_segment0);
+			int bw = center_freq_to_bw_6ghz(center_segment0);
 			int opclass;
 
 			if (bw < 0) {
@@ -560,9 +559,11 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 
 			/* The 6 GHz channel 2 uses a different operating class
 			 */
-			opclass = center_segment0 == 2 ? 136 : 131;
-			freq1 = ieee80211_chan_to_freq(NULL, opclass,
-						       center_segment0);
+
+			opclass = ieee80211_frequency_to_channel(center_segment0) == 2 ? 136 : 131;
+//			freq1 = ieee80211_chan_to_freq(NULL, opclass,
+//						       center_segment0);
+			freq1 = center_segment0;
 			if (freq1 < 0) {
 				wpa_printf(MSG_ERROR,
 					   "Invalid segment 0 center frequency for 6 GHz");
@@ -570,15 +571,16 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 			}
 
 			if (center_segment1) {
-				if (center_idx_to_bw_6ghz(center_segment1) != 2 ||
+				if (center_freq_to_bw_6ghz(center_segment1) != 2 ||
 				    bw != 2) {
 					wpa_printf(MSG_ERROR,
 						   "6 GHz 80+80 MHz configuration doesn't use valid 80 MHz channels");
 					return -1;
 				}
 
-				freq2 = ieee80211_chan_to_freq(NULL, 131,
-							       center_segment1);
+//				freq2 = ieee80211_chan_to_freq(NULL, 131,
+//							       center_segment1);
+				freq2 = center_segment1;
 				if (freq2 < 0) {
 					wpa_printf(MSG_ERROR,
 						   "Invalid segment 1 center frequency for UHB");
@@ -680,9 +682,10 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 		break;
 	}
 
+
 	oper_chwidth_legacy = oper_chwidth;
-	seg0_legacy = center_segment0;
-	seg1_legacy = center_segment1;
+	seg0_legacy = ieee80211_frequency_to_channel(center_segment0);
+	seg1_legacy = ieee80211_frequency_to_channel(center_segment1);
 	if (punct_bitmap)
 		punct_update_legacy_bw(punct_bitmap, channel,
 				       &oper_chwidth_legacy,
@@ -867,6 +870,8 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 		break;
 	}
 
+
+	wpa_printf(MSG_DEBUG,"bandwidth config = %d oper %d\n", data->bandwidth, oper_chwidth);
 	return 0;
 }
 
