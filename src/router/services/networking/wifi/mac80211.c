@@ -659,7 +659,6 @@ void configure_single_ath9k(int count)
 		eval("iw", "dev", dev, "set", "compr", "off");
 	}
 }
-
 int has_hidden_ssid(const char *prefix)
 {
 	if (nvram_nmatch("1", "%s_closed", prefix))
@@ -675,6 +674,24 @@ int has_hidden_ssid(const char *prefix)
 
 	return 0;
 }
+
+int has_vaps(const char *prefix)
+{
+	if (nvram_nmatch("1", "%s_closed", prefix))
+		return 1;
+	char vap[32];
+	char *next;
+	char *vifs = nvram_nget("%s_vifs", prefix);
+	foreach(vap, vifs, next)
+	{
+		if (!nvram_nmatch("disabled", "%s_net_mode", vap) && !nvram_nmatch("disabled", "%s_mode", vap)) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 int is_6ghz_freq_prefix(const char *prefix, int freq)
 {
 	if (!is_ath11k(prefix))
@@ -1149,7 +1166,6 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 					}
 					fprintf(fp, "ieee80211d=1\n");
 					fprintf(fp, "ieee80211h=1\n");
-					
 				}
 				if (!strcmp(netmode, "ax-only")) {
 					if (!is_6ghz_freq_prefix(prefix, freq)) {
@@ -1427,7 +1443,8 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 		fprintf(fp, "rrm_neighbor_report=1\n");
 		fprintf(fp, "rrm_beacon_report=1\n");
 		fprintf(fp, "rnr=1\n");
-		fprintf(fp, "mbssid=2\n");
+		if (!has_hidden_ssid(prefix) && has_vaps(prefix))
+			fprintf(fp, "mbssid=2\n");
 	}
 #ifdef HAVE_ATH9K
 
