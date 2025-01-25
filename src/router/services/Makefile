@@ -1200,6 +1200,9 @@ endif
 ifeq ($(CONFIG_WG302V1),y)
   CFLAGS_EXTRA += -DHAVE_WG302V1
 endif
+ifeq ($(CONFIG_IPQ6018),y)
+ATH9KCFLAGS+=-DHAVE_IPQ6018
+endif
 
 ifeq ($(CONFIG_MADWIFI),y)
 MAD_FLAGS += -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
