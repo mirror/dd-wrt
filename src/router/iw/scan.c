@@ -518,8 +518,8 @@ static int handle_scan(struct nl80211_state *state,
 
 	if (have_freqs)
 		nla_put_nested(msg, NL80211_ATTR_SCAN_FREQUENCIES, freqs);
-	else
-		flags |=  NL80211_SCAN_FLAG_COLOCATED_6GHZ;
+//	else
+//		flags |=  NL80211_SCAN_FLAG_COLOCATED_6GHZ;
 	if (flags)
 		NLA_PUT_U32(msg, NL80211_ATTR_SCAN_FLAGS, flags);
 	if (duration)
