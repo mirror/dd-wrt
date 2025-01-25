@@ -1364,8 +1364,9 @@ hostapd_get_oper_centr_freq_seg0_idx(struct hostapd_config *conf)
 		return conf->eht_oper_centr_freq_seg0_idx;
 #endif /* CONFIG_IEEE80211BE */
 #ifdef CONFIG_IEEE80211AX
-	if (conf->ieee80211ax)
+	if (conf->ieee80211ax) {
 		return conf->he_oper_centr_freq_seg0_idx;
+	}
 #endif /* CONFIG_IEEE80211AX */
 	return conf->vht_oper_centr_freq_seg0_idx;
 }
@@ -1411,8 +1412,9 @@ static inline u8
 hostapd_get_oper_centr_freq_seg1_idx(struct hostapd_config *conf)
 {
 #ifdef CONFIG_IEEE80211AX
-	if (conf->ieee80211ax)
+	if (conf->ieee80211ax) {
 		return conf->he_oper_centr_freq_seg1_idx;
+	}
 #endif /* CONFIG_IEEE80211AX */
 	return conf->vht_oper_centr_freq_seg1_idx;
 }
@@ -1471,7 +1473,7 @@ hostapd_set_and_check_bw320_offset(struct hostapd_config *conf,
 			/* If the channel is set, then calculate bw320_offset
 			 * by center frequency segment 0.
 			 */
-			u8 seg0 = hostapd_get_oper_centr_freq_seg0_idx(conf);
+			u8 seg0 = ieee80211_frequency_to_channel(hostapd_get_oper_centr_freq_seg0_idx_freq(conf));
 
 			conf->eht_bw320_offset = (seg0 - 31) % 64 ? 2 : 1;
 		} else {

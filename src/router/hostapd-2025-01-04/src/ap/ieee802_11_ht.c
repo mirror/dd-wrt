@@ -106,7 +106,7 @@ static void set_ht_param(struct hostapd_data *hapd,
 	}
 
 	chan_bit_pos = (hapd->iconf->channel -
-			hostapd_get_oper_centr_freq_seg0_idx(hapd->iconf) +
+			ieee80211_frequency_to_channel(hostapd_get_oper_centr_freq_seg0_idx_freq(hapd->iconf)) +
 			offset) / 4;
 	/* Check if secondary channel is punctured */
 	if (bw >= 80 && punct_bitmap && secondary_channel &&

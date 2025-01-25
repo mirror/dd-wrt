@@ -292,12 +292,12 @@ void hostapd_neighbor_set_own_report(struct hostapd_data *hapd)
 		return;
 	width = hostapd_get_nr_chan_width(hapd, ht, vht, he);
 	if (vht) {
-		center_freq1_idx = hostapd_get_oper_centr_freq_seg0_idx(
-			hapd->iconf);
+		center_freq1_idx = ieee80211_frequency_to_channel(hostapd_get_oper_centr_freq_seg0_idx_freq(
+			hapd->iconf));
 		if (width == NR_CHAN_WIDTH_80P80)
 			center_freq2_idx =
-				hostapd_get_oper_centr_freq_seg1_idx(
-					hapd->iconf);
+				ieee80211_frequency_to_channel(hostapd_get_oper_centr_freq_seg1_idx_freq(
+					hapd->iconf));
 	} else if (ht) {
 		ieee80211_freq_to_chan(hapd->iface->freq +
 				       10 * hapd->iconf->secondary_channel,

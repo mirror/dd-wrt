@@ -219,12 +219,19 @@ u8 * hostapd_eid_he_operation(struct hostapd_data *hapd, u8 *eid)
 	/* TODO: conditional MaxBSSID Indicator subfield */
 
 	pos += 6; /* skip the fixed part */
-
 	if (is_6ghz_op_class(hapd->iconf->op_class)) {
 		enum oper_chan_width oper_chwidth =
 			hapd->iconf->he_oper_chwidth;
-		u8 seg0 = hapd->iconf->he_oper_centr_freq_seg0_idx;
-		u8 seg1 = hostapd_get_oper_centr_freq_seg1_idx(hapd->iconf);
+		u8 seg0 = 0;
+		if (hapd->iconf->he_oper_centr_freq_seg0_idx_freq)
+			seg0 = ieee80211_frequency_to_channel(hapd->iconf->he_oper_centr_freq_seg0_idx_freq);
+		else
+			seg0 = hapd->iconf->he_oper_centr_freq_seg0_idx;
+		u8 seg1 = 0;
+		if (hapd->iconf->he_oper_centr_freq_seg1_idx_freq)
+			seg1 = ieee80211_frequency_to_channel(hostapd_get_oper_centr_freq_seg1_idx_freq(hapd->iconf));
+		else
+			seg1 = hostapd_get_oper_centr_freq_seg1_idx(hapd->iconf);
 		u8 control;
 #ifdef CONFIG_IEEE80211BE
 		u16 punct_bitmap = hostapd_get_punct_bitmap(hapd);

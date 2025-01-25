@@ -245,7 +245,7 @@ u8 * hostapd_eid_eht_operation(struct hostapd_data *hapd, u8 *eid)
 		return pos + elen;
 
 	oper->oper_params |= EHT_OPER_INFO_PRESENT;
-	seg0 = hostapd_get_oper_centr_freq_seg0_idx(conf);
+	seg0 = ieee80211_frequency_to_channel(hostapd_get_oper_centr_freq_seg0_idx_freq(conf));
 
 	switch (chwidth) {
 	case CONF_OPER_CHWIDTH_320MHZ:
