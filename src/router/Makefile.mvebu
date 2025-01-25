@@ -146,8 +146,6 @@ install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $
 #	cp ../../opt/bin/functions.sh $(ARCH)-uclibc/target/lib
 	-cp ../../opt/bin/ddup $(ARCH)-uclibc/target/bin
 	cd  $(ARCH)-uclibc/target/lib
-	cp ./opt/etc/preinit $(ARCH)-uclibc/target/etc
-	cp ./opt/etc/postinit $(ARCH)-uclibc/target/etc
 	cp ./opt/etc/config/* $(ARCH)-uclibc/target/etc/config
 	cp ./opt/usr/lib/smb.conf $(ARCH)-uclibc/target/usr/lib
 	#ln -sf ../tmp/smbshare $(ARCH)-uclibc/target/www/smb

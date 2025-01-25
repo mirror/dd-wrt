@@ -194,8 +194,6 @@ install package: clean_target $(filter-out lib.i386-install,$(obj-install)) $(LI
 	cd  $(ARCH)-uclibc/target/lib
 #	ln -s libgcc_s.so.1 libgcc_s.so
 #	cd ../../../../../opt
-	cp ./opt/etc/preinit $(ARCH)-uclibc/target/etc
-	cp ./opt/etc/postinit $(ARCH)-uclibc/target/etc
 	cp ./opt/etc/config/* $(ARCH)-uclibc/target/etc/config
 	cp ./opt/usr/lib/smb.conf $(ARCH)-uclibc/target/usr/lib
 	ln -sf ../tmp/smbshare $(ARCH)-uclibc/target/www/smb

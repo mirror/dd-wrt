@@ -622,8 +622,6 @@ ifeq ($(CONFIG_KAID),y)
 endif
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin 
 	../../opt/loader-0.02/lzma e -lc3 -lp2 -pb2 -d25 mipsel-uclibc/vmlinux.bin mipsel-uclibc/vmlinuz
-	cp ../../opt/etc/preinit mipsel-uclibc/target/etc
-	cp ../../opt/etc/postinit mipsel-uclibc/target/etc
 	cp ../../opt/etc/config/* mipsel-uclibc/target/etc/config
 	../../tools/process_nvramconfigfile mipsel-uclibc/target/etc/config/*.nvramconfig
 
