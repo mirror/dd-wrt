@@ -350,8 +350,8 @@ int parse_sched_scan(struct nl_msg *msg, int *argc, char ***argv)
 		nla_put_nested(msg, NL80211_ATTR_SCAN_SSIDS, ssids);
 	if (have_freqs)
 		nla_put_nested(msg, NL80211_ATTR_SCAN_FREQUENCIES, freqs);
-	else
-		flags |= NL80211_SCAN_FLAG_COLOCATED_6GHZ;
+//	else
+//		flags |= NL80211_SCAN_FLAG_COLOCATED_6GHZ;
 	if (have_matchset)
 		nla_put_nested(msg, NL80211_ATTR_SCHED_SCAN_MATCH, matchset);
 	if (have_plans)
