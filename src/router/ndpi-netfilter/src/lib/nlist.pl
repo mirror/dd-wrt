@@ -16,7 +16,7 @@ foreach my $f (glob('inc_generated/*.c.inc')) {
 	next if $f eq 'inc_generated/ndpi_protonvpn_out_match.c.inc';
 	match_inc($f,"ndpi_protocol_.*_protocol_list");
 }
-
+if(0) {
 foreach my $proto (qw(AMAZON_AWS MICROSOFT_AZURE CLOUDFLARE MINING MICROSOFT_365 MS_ONE_DRIVE MS_OUTLOOK SKYPE_TEAMS TOR WHATSAPP ZOOM other)) {
 	my $f = 'ndpi_network_list_'.lc($proto).'.yaml';
 	if(-f $f) {
@@ -29,6 +29,7 @@ foreach my $proto (qw(AMAZON_AWS MICROSOFT_AZURE CLOUDFLARE MINING MICROSOFT_365
 	}
 	close(F);
 	print STDERR "Write $f OK\n";
+}
 }
 
 exit(0);
@@ -157,11 +158,15 @@ close(R);
 close(F);
 die "Missing host_protocol_list\n" if !$ev1;
 die "host_protocol_list not closed!\n" if !$ev2;
-my $rc = system("diff -q ${fn}.new ${fn}");
-if($rc == 256) {
+if(0) {
+  my $rc = system("diff -q ${fn}.new ${fn}");
+  if($rc == 256) {
 		system("mv ${fn}.new ${fn}");
-} else {
+  } else {
 		unlink "${fn}.new";
+  }
+} else {
+  unlink "${fn}.new";
 }
 }
 

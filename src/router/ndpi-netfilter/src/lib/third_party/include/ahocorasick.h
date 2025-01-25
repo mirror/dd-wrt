@@ -254,6 +254,7 @@ typedef void (*ALPHA_CALLBACK_f)(AC_AUTOMATA_t *, AC_NODE_t *,AC_NODE_t *,int ,v
 
 #define AC_FEATURE_DEBUG 1 
 #define AC_FEATURE_NO_ROOT_RANGE 2 
+#define AC_FEATURE_MATCH_DEBUG 0x2000
 #define AC_FEATURE_LC 0x4000
 /* match exactly */
 #define AC_FEATURE_EXACT 0x8000
@@ -272,9 +273,9 @@ NDPI_STATIC int             ac_automata_search   (AC_AUTOMATA_t * thiz,
 NDPI_STATIC int             ac_automata_exact_match(AC_PATTERNS_t *mp,int pos, AC_TEXT_t *);
 NDPI_STATIC void            ac_automata_clean    (AC_AUTOMATA_t * thiz);
 NDPI_STATIC void            ac_automata_release  (AC_AUTOMATA_t * thiz, uint8_t free_pattern);
-#ifndef __KERNEL__
 /* Global debug control. */
 NDPI_STATIC void            ac_automata_enable_debug (int debug);
+#ifndef __KERNEL__
 /* See man open_memstream() for get result as string */
 NDPI_STATIC void            ac_automata_dump     (AC_AUTOMATA_t * thiz, FILE *);
 #endif

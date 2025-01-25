@@ -725,8 +725,17 @@ static int addDefaultPort(struct ndpi_detection_module_struct *ndpi_str,
     }
 
     if(ret != node) {
-      NDPI_LOG_DBG(ndpi_str, "[NDPI] %s:%d found duplicate for port %u: overwriting it with new value\n",
+      if(node && node->proto && node->proto->protoName &&
+	 ret && ret->proto && ret->proto->protoName) {
+	 if(strcmp(node->proto->protoName,ret->proto->protoName))
+            NDPI_LOG_DBG(ndpi_str, "[NDPI] %s:%d found duplicate for port %u: %s overwriting %s\n",
+		   _func, _line, port,
+		   node->proto->protoName,
+		   ret->proto->protoName);
+      } else {
+            NDPI_LOG_DBG(ndpi_str, "[NDPI] %s:%d found duplicate for port %u: overwriting\n",
 		   _func, _line, port);
+      }
 
       ret->proto = def;
       ndpi_free(node);
@@ -3265,7 +3274,6 @@ void set_ndpi_flow_free(void (*__ndpi_flow_free)(void *ptr)) {
   _ndpi_flow_free = __ndpi_flow_free;
 }
 
-#ifndef __KERNEL__
 #ifdef NDPI_ENABLE_DEBUG_MESSAGES
 void ndpi_debug_printf(u_int16_t proto, struct ndpi_detection_module_struct *ndpi_str, ndpi_log_level_t log_level,
                        const char *file_name, const char *func_name, unsigned int line_number, const char *format, ...) {
@@ -3294,7 +3302,6 @@ void ndpi_debug_printf(u_int16_t proto, struct ndpi_detection_module_struct *ndp
 
 }
 #endif
-#endif // __KERNEL__
 
 /* ****************************************** */
 
@@ -4271,9 +4278,9 @@ static int ndpi_match_string_common(AC_AUTOMATA_t *automa, char *string_to_match
     return(-1);
   }
 
-  if(string_len & (AC_FEATURE_EXACT|AC_FEATURE_LC)) { 
-	ac_input_text.option = string_len & (AC_FEATURE_EXACT|AC_FEATURE_LC);
-	string_len &= ~(AC_FEATURE_EXACT|AC_FEATURE_LC);
+  if(string_len & (AC_FEATURE_EXACT|AC_FEATURE_LC|AC_FEATURE_MATCH_DEBUG)) { 
+	ac_input_text.option = string_len & (AC_FEATURE_EXACT|AC_FEATURE_LC|AC_FEATURE_MATCH_DEBUG);
+	string_len &= ~(AC_FEATURE_EXACT|AC_FEATURE_LC|AC_FEATURE_MATCH_DEBUG);
   } else
 	ac_input_text.option = 0;
   ac_input_text.astring = string_to_match; ac_input_text.length = string_len;
@@ -10699,7 +10706,6 @@ int ndpi_match_hostname_protocol(struct ndpi_detection_module_struct *ndpi_struc
 
   subproto = ndpi_match_host_subprotocol(ndpi_struct, flow, what, what_len,
 					 &ret_match, master_protocol);
-
   if(subproto != NDPI_PROTOCOL_UNKNOWN) {
     ndpi_set_detected_protocol(ndpi_struct, flow, subproto, master_protocol, NDPI_CONFIDENCE_DPI);
 #ifndef __KERNEL__

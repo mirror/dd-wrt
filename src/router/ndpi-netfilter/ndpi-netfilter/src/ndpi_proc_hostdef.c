@@ -38,7 +38,7 @@ do {
 		return ENOMEM; break;
 	}
 
-	n->host_ac = ndpi_init_automa();
+	n->host_ac = ndpi_init_automa_domain();
 
 	if(!n->host_ac) {
 		str_hosts_done(n->hosts_tmp);

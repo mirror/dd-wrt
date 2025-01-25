@@ -33,13 +33,14 @@ while(<F>) {
 close(F);
 my (@inclist,@iplist4,@iplist6,@iplist4_l,@iplist6_l);
 foreach my $ips (glob('inc_generated/*.c.inc')) {
+	next if $ips =~ /ndpi_crawlers_match/;
 	open(F,'<'.$ips) || die "open $ips $!";
 	my $found = 0;
 	foreach my $i (grep /^\s*static\s+(ndpi_network6?)\s+([a-zA-Z0-9_]+)\s*\[/,<F>) {
 		die "Bad $i" if $i !~ /^\s*static\s+(ndpi_network6?)\s+([a-zA-Z0-9_]+)\s*\[/;
 		if(!defined $L{$2}) {
-			print "SKIP $1 $2\n";
-			next;
+			#print "SKIP $1 $2\n";
+			#next;
 		}
 		if($1 eq 'ndpi_network') {
 			push @iplist4,"\&$2\[0\]";

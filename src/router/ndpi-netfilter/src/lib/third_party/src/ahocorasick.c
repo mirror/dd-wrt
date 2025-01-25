@@ -75,8 +75,8 @@ struct aho_dump_info {
 };
 
 static void dump_node_header(AC_NODE_t * n, struct aho_dump_info *);
-static int ac_automata_global_debug = 0;
 #endif
+static int ac_automata_global_debug = 0;
 
 /* Private function prototype */
 static int ac_automata_union_matchstrs (AC_NODE_t * node);
@@ -202,16 +202,14 @@ AC_ERROR_t ac_automata_feature (AC_AUTOMATA_t * thiz, unsigned int feature)
 AC_ERROR_t ac_automata_name (AC_AUTOMATA_t * thiz, char *name, int debug)
 {
   if(!thiz) return ACERR_ERROR;
-  strncpy(thiz->name,name,sizeof(thiz->name)-1);
+  if(name && name[0]) strncpy(thiz->name,name,sizeof(thiz->name)-1);
   thiz->debug = debug != 0;
   return ACERR_SUCCESS;
 }
 
-#ifndef __KERNEL__
 void ac_automata_enable_debug (int debug) {
     ac_automata_global_debug = debug != 0;
 }
-#endif
 
 /******************************************************************************
  * FUNCTION: ac_automata_add
@@ -447,9 +445,7 @@ int ac_automata_search (AC_AUTOMATA_t * thiz,
 {
   unsigned long position;
   int icase = 0,exact = 0,i;
-#ifndef __KERNEL__
   int debug=0;
-#endif
 
   AC_MATCH_t *match;
   AC_NODE_t *curr;
@@ -469,14 +465,12 @@ int ac_automata_search (AC_AUTOMATA_t * thiz,
   if(thiz->to_lc) icase = 1;
   if(txt->option & AC_FEATURE_LC) icase = 1;
   if(txt->option & AC_FEATURE_EXACT) exact = 1;
-#ifndef __KERNEL__
-  if(thiz->debug && ac_automata_global_debug) debug = 1;
+  if((thiz->debug || (txt->option & AC_FEATURE_MATCH_DEBUG)) && ac_automata_global_debug) debug = AC_FEATURE_DEBUG;
   if(debug) {
       txt->option = debug;  /* for callback */
       printf("aho %s: search %.*s %s %s\n", thiz->name[0] ? thiz->name:"unknown", txt->length, apos,
               icase ? "IC":"",exact ? "EXACT":"");
   }
-#endif
   match = &txt->match;
   memset((char*)match,0,sizeof(*match));
 

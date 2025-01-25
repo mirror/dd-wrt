@@ -288,7 +288,7 @@ static inline int flow_have_info( struct nf_ct_ext_ndpi *c) {
 
 static ndpi_protocol_nf proto_null = {NDPI_PROTOCOL_UNKNOWN , NDPI_PROTOCOL_UNKNOWN};
 
-static unsigned short MAGIC_CT = 0xa55a;
+static unsigned short MAGIC_CT = 0x00;
 
 static unsigned long int ndpi_flow_limit=10000000; // 4.3Gb
 static unsigned long int ndpi_enable_flow=0;
@@ -932,7 +932,7 @@ static int ndpi_init_host_ac(struct ndpi_net *n) {
 	if(automa->automata_open)
 		ac_automata_finalize(automa);
 
-	n->host_ac = ndpi_init_automa();
+	n->host_ac = ndpi_init_automa_domain();
 	if(!n->host_ac) {
 		pr_err("xt_ndpi: cant alloc host_ac\n");
 		return 0;
