@@ -122,9 +122,9 @@ struct __attribute__((__packed__)) chk_header {
 	uint32_t image_chksum;
 	uint32_t header_chksum;
 };
+#include <asm/posix_types.h>
 
 #ifndef MEMGETBADBLOCK
-#include <asm/posix_types.h>
 #define MEMGETBADBLOCK _IOW('M', 11, __kernel_loff_t)
 #endif
 static int mtdtype = 0;
