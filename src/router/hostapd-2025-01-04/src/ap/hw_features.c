@@ -71,40 +71,6 @@ static char * dfs_info(struct hostapd_channel_data *chan)
 }
 #endif /* CONFIG_NO_STDOUT_DEBUG */
 
-int ieee80211_frequency_to_channel(int freq)
-{
-	/* see 802.11-2007 17.3.8.3.2 and Annex J */
-	if (freq == 2484)
-		return 14;
-	// boes hack...
-	else if (freq == 2407)
-		return 0;
-	else if (freq < 2412)
-		return (freq - 2407) / 5 + 256;
-	else if (freq < 2484)
-		return (freq - 2407) / 5;
-	else if (freq < 2502 && freq > 2484)
-		return 14;
-	else if (freq < 2512 && freq > 2484)
-		return 15;
-	else if (freq > 2484 && freq < 4000 )
-		return (15 + ((freq - 2512) / 20)) & 0xff;
-	else if (freq < 4990 && freq > 4940)
-		return ((freq * 10) + (((freq % 5) == 2) ? 5 : 0) - 49400) / 5;
-	else if (freq > 4800 && freq < 5005)
-		return (freq - 4000) / 5;
-	else if (freq == 5935)
-		return (freq - 5925) / 5;
-	else if (freq > 5950 && freq <= 7115)
-		return (freq - 5950) / 5;
-	else if (freq <= 45000) /* DMG band lower limit */
-		return ((freq - 5000) / 5) & 0xff;
-	else if (freq >= 58320 && freq <= 64800)
-		return (freq - 56160) / 2160;
-	else
-		return 0;
-}
-
 int hostapd_get_hw_features(struct hostapd_iface *iface)
 {
 	struct hostapd_data *hapd = iface->bss[0];
