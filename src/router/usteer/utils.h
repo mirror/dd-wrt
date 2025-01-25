@@ -24,13 +24,9 @@
 #define MSG_CONT(_nr, _format, ...) debug_msg_cont(MSG_##_nr, _format, ##__VA_ARGS__)
 
 #define MAC_ADDR_FMT "%02x:%02x:%02x:%02x:%02x:%02x"
-#define MAC_ADDR_DATA(_a) \
-	((const uint8_t *)(_a))[0], \
-	((const uint8_t *)(_a))[1], \
-	((const uint8_t *)(_a))[2], \
-	((const uint8_t *)(_a))[3], \
-	((const uint8_t *)(_a))[4], \
-	((const uint8_t *)(_a))[5]
+#define MAC_ADDR_DATA(_a)                                                                                               \
+	((const uint8_t *)(_a))[0], ((const uint8_t *)(_a))[1], ((const uint8_t *)(_a))[2], ((const uint8_t *)(_a))[3], \
+		((const uint8_t *)(_a))[4], ((const uint8_t *)(_a))[5]
 
 enum usteer_debug {
 	MSG_FATAL,

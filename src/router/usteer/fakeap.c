@@ -58,11 +58,10 @@ static void gen_val(struct var *val)
 
 	if (fread(&v, sizeof(v), 1, r_fd) != sizeof(v))
 		fprintf(stderr, "short read\n");
-	val->cur += (((unsigned int) v) * delta) / 0xff;
+	val->cur += (((unsigned int)v) * delta) / 0xff;
 }
 
-static void
-blobmsg_add_macaddr(struct blob_buf *buf, const char *name, const uint8_t *addr)
+static void blobmsg_add_macaddr(struct blob_buf *buf, const char *name, const uint8_t *addr)
 {
 	char *s = blobmsg_alloc_string_buffer(buf, name, 20);
 	sprintf(s, MAC_ADDR_FMT, MAC_ADDR_DATA(addr));
@@ -81,8 +80,8 @@ static void sta_send_probe(struct sta_data *sta)
 	blobmsg_add_u32(&b, "signal", sig);
 	ret = ubus_notify(ubus_ctx, &bss_obj, type, b.head, 100);
 	if (verbose)
-		fprintf(stderr, "STA "MAC_ADDR_FMT" probe: %d (%d ms, signal: %d)\n",
-			MAC_ADDR_DATA(sta->addr), ret, sta->probe.cur, sig);
+		fprintf(stderr, "STA " MAC_ADDR_FMT " probe: %d (%d ms, signal: %d)\n", MAC_ADDR_DATA(sta->addr), ret,
+			sta->probe.cur, sig);
 }
 
 static void sta_schedule_probe(struct sta_data *sta)
@@ -126,7 +125,8 @@ static void create_stations(struct sta_data *ref, int n)
 
 static int usage(const char *prog)
 {
-	fprintf(stderr, "Usage: %s <options>\n"
+	fprintf(stderr,
+		"Usage: %s <options>\n"
 		"Options:\n"
 		"	-p <msec>[-<msec>]:             probing interval (fixed or min-max)\n"
 		"	-s <rssi>[-<rssi>]:             rssi (signal strength) (fixed or min-max)\n"
@@ -134,7 +134,8 @@ static int usage(const char *prog)
 		"	-f <freq>:			set operating frequency\n"
 		"	                                uses parameters set before this option\n"
 		"	-v:				verbose\n"
-		"\n", prog);
+		"\n",
+		prog);
 	return 1;
 }
 
@@ -157,10 +158,8 @@ static bool parse_var(struct var *var, const char *str)
 	return false;
 }
 
-static int
-hostapd_bss_get_clients(struct ubus_context *ctx, struct ubus_object *obj,
-			struct ubus_request_data *req, const char *method,
-			struct blob_attr *msg)
+static int hostapd_bss_get_clients(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req,
+				   const char *method, struct blob_attr *msg)
 {
 	blob_buf_init(&b, 0);
 	ubus_send_reply(ctx, req, b.head);
@@ -171,8 +170,7 @@ static const struct ubus_method bss_methods[] = {
 	UBUS_METHOD_NOARG("get_clients", hostapd_bss_get_clients),
 };
 
-static struct ubus_object_type bss_object_type =
-	UBUS_OBJECT_TYPE("hostapd_bss", bss_methods);
+static struct ubus_object_type bss_object_type = UBUS_OBJECT_TYPE("hostapd_bss", bss_methods);
 
 static struct ubus_object bss_obj = {
 	.name = "hostapd.wlan0",
@@ -200,7 +198,7 @@ int main(int argc, char **argv)
 	usteer_timeout_init(&tq);
 
 	while ((ch = getopt(argc, argv, "p:s:f:n:v")) != -1) {
-		switch(ch) {
+		switch (ch) {
 		case 'p':
 			if (!parse_var(&sdata.probe, optarg))
 				goto usage;

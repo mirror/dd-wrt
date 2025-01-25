@@ -19,8 +19,7 @@
 
 #include "usteer.h"
 
-static int
-avl_macaddr_cmp(const void *k1, const void *k2, void *ptr)
+static int avl_macaddr_cmp(const void *k1, const void *k2, void *ptr)
 {
 	return memcmp(k1, k2, 6);
 }
@@ -28,24 +27,20 @@ avl_macaddr_cmp(const void *k1, const void *k2, void *ptr)
 AVL_TREE(stations, avl_macaddr_cmp, false, NULL);
 static struct usteer_timeout_queue tq;
 
-static void
-usteer_sta_del(struct sta *sta)
+static void usteer_sta_del(struct sta *sta)
 {
-	MSG(DEBUG, "Delete station " MAC_ADDR_FMT "\n",
-	    MAC_ADDR_DATA(sta->addr));
+	MSG(DEBUG, "Delete station " MAC_ADDR_FMT "\n", MAC_ADDR_DATA(sta->addr));
 
 	avl_delete(&stations, &sta->avl);
 	usteer_measurement_report_sta_cleanup(sta);
 	free(sta);
 }
 
-static void
-usteer_sta_info_del(struct sta_info *si)
+static void usteer_sta_info_del(struct sta_info *si)
 {
 	struct sta *sta = si->sta;
 
-	MSG(DEBUG, "Delete station " MAC_ADDR_FMT " entry for node %s\n",
-	    MAC_ADDR_DATA(sta->addr), usteer_node_name(si->node));
+	MSG(DEBUG, "Delete station " MAC_ADDR_FMT " entry for node %s\n", MAC_ADDR_DATA(sta->addr), usteer_node_name(si->node));
 
 	usteer_timeout_cancel(&tq, &si->timeout);
 	list_del(&si->list);
@@ -56,8 +51,7 @@ usteer_sta_info_del(struct sta_info *si)
 		usteer_sta_del(sta);
 }
 
-void
-usteer_sta_node_cleanup(struct usteer_node *node)
+void usteer_sta_node_cleanup(struct usteer_node *node)
 {
 	struct sta_info *si, *tmp;
 
@@ -68,16 +62,14 @@ usteer_sta_node_cleanup(struct usteer_node *node)
 		usteer_sta_info_del(si);
 }
 
-static void
-usteer_sta_info_timeout(struct usteer_timeout_queue *q, struct usteer_timeout *t)
+static void usteer_sta_info_timeout(struct usteer_timeout_queue *q, struct usteer_timeout *t)
 {
 	struct sta_info *si = container_of(t, struct sta_info, timeout);
 
 	usteer_sta_info_del(si);
 }
 
-struct sta_info *
-usteer_sta_info_get(struct sta *sta, struct usteer_node *node, bool *create)
+struct sta_info *usteer_sta_info_get(struct sta *sta, struct usteer_node *node, bool *create)
 {
 	struct sta_info *si;
 
@@ -94,8 +86,7 @@ usteer_sta_info_get(struct sta *sta, struct usteer_node *node, bool *create)
 	if (!create)
 		return NULL;
 
-	MSG(DEBUG, "Create station " MAC_ADDR_FMT " entry for node %s\n",
-	    MAC_ADDR_DATA(sta->addr), usteer_node_name(node));
+	MSG(DEBUG, "Create station " MAC_ADDR_FMT " entry for node %s\n", MAC_ADDR_DATA(sta->addr), usteer_node_name(node));
 
 	si = calloc(1, sizeof(*si));
 	si->node = node;
@@ -111,9 +102,7 @@ usteer_sta_info_get(struct sta *sta, struct usteer_node *node, bool *create)
 	return si;
 }
 
-
-void
-usteer_sta_info_update_timeout(struct sta_info *si, int timeout)
+void usteer_sta_info_update_timeout(struct sta_info *si, int timeout)
 {
 	if (si->connected == STA_CONNECTED)
 		usteer_timeout_cancel(&tq, &si->timeout);
@@ -123,8 +112,7 @@ usteer_sta_info_update_timeout(struct sta_info *si, int timeout)
 		usteer_sta_info_del(si);
 }
 
-struct sta *
-usteer_sta_get(const uint8_t *addr, bool create)
+struct sta *usteer_sta_get(const uint8_t *addr, bool create)
 {
 	struct sta *sta;
 
@@ -154,8 +142,7 @@ void usteer_sta_disconnected(struct sta_info *si)
 	usteer_sta_info_update_timeout(si, config.local_sta_timeout);
 }
 
-void
-usteer_sta_info_update(struct sta_info *si, int signal, bool avg)
+void usteer_sta_info_update(struct sta_info *si, int signal, bool avg)
 {
 	/* ignore probe request signal when connected */
 	if (si->connected == STA_CONNECTED && si->signal != NO_SIGNAL && !avg)
@@ -176,9 +163,7 @@ usteer_sta_info_update(struct sta_info *si, int signal, bool avg)
 	usteer_sta_info_update_timeout(si, config.local_sta_timeout);
 }
 
-bool
-usteer_handle_sta_event(struct usteer_node *node, const uint8_t *addr,
-		       enum usteer_event_type type, int freq, int signal)
+bool usteer_handle_sta_event(struct usteer_node *node, const uint8_t *addr, enum usteer_event_type type, int freq, int signal)
 {
 	struct sta *sta;
 	struct sta_info *si;
@@ -213,23 +198,21 @@ usteer_handle_sta_event(struct usteer_node *node, const uint8_t *addr,
 	return ret;
 }
 
-bool
-usteer_sta_supports_beacon_measurement_mode(struct sta_info *si, enum usteer_beacon_measurement_mode mode)
+bool usteer_sta_supports_beacon_measurement_mode(struct sta_info *si, enum usteer_beacon_measurement_mode mode)
 {
 	switch (mode) {
-		case BEACON_MEASUREMENT_PASSIVE:
-			return si->rrm & (1 << 4);
-		case BEACON_MEASUREMENT_ACTIVE:
-			return si->rrm & (1 << 5);
-		case BEACON_MEASUREMENT_TABLE:
-			return si->rrm & (1 << 6);
+	case BEACON_MEASUREMENT_PASSIVE:
+		return si->rrm & (1 << 4);
+	case BEACON_MEASUREMENT_ACTIVE:
+		return si->rrm & (1 << 5);
+	case BEACON_MEASUREMENT_TABLE:
+		return si->rrm & (1 << 6);
 	}
 
 	return false;
 }
 
-bool
-usteer_sta_supports_link_measurement(struct sta_info *si)
+bool usteer_sta_supports_link_measurement(struct sta_info *si)
 {
 	return si->rrm & (1 << 0);
 }

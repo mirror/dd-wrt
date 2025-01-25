@@ -20,8 +20,7 @@
 LIST_HEAD(measurements);
 static struct usteer_timeout_queue tq;
 
-int
-usteer_measurement_get_rssi(struct usteer_measurement_report *report)
+int usteer_measurement_get_rssi(struct usteer_measurement_report *report)
 {
 	/* Apple devices always set the RSNI to 0, while
 	 * it should be set to 255 in case RSNI is unavailable.
@@ -35,8 +34,7 @@ usteer_measurement_get_rssi(struct usteer_measurement_report *report)
 	return (report->rcpi / 2) - 110;
 }
 
-void
-usteer_measurement_report_node_cleanup(struct usteer_node *node)
+void usteer_measurement_report_node_cleanup(struct usteer_node *node)
 {
 	struct usteer_measurement_report *mr, *tmp;
 
@@ -44,8 +42,7 @@ usteer_measurement_report_node_cleanup(struct usteer_node *node)
 		usteer_measurement_report_del(mr);
 }
 
-void
-usteer_measurement_report_sta_cleanup(struct sta *sta)
+void usteer_measurement_report_sta_cleanup(struct sta *sta)
 {
 	struct usteer_measurement_report *mr, *tmp;
 
@@ -53,8 +50,7 @@ usteer_measurement_report_sta_cleanup(struct sta *sta)
 		usteer_measurement_report_del(mr);
 }
 
-struct usteer_measurement_report *
-usteer_measurement_report_get(struct sta *sta, struct usteer_node *node, bool create)
+struct usteer_measurement_report *usteer_measurement_report_get(struct sta *sta, struct usteer_node *node, bool create)
 {
 	struct usteer_measurement_report *mr;
 
@@ -87,9 +83,8 @@ usteer_measurement_report_get(struct sta *sta, struct usteer_node *node, bool cr
 	return mr;
 }
 
-struct usteer_measurement_report *
-usteer_measurement_report_add(struct sta *sta, struct usteer_node *node,
-			      uint8_t rcpi, uint8_t rsni, uint64_t timestamp)
+struct usteer_measurement_report *usteer_measurement_report_add(struct sta *sta, struct usteer_node *node, uint8_t rcpi,
+								uint8_t rsni, uint64_t timestamp)
 {
 	struct usteer_measurement_report *mr = usteer_measurement_report_get(sta, node, true);
 
@@ -106,8 +101,7 @@ usteer_measurement_report_add(struct sta *sta, struct usteer_node *node,
 	return mr;
 }
 
-void
-usteer_measurement_report_del(struct usteer_measurement_report *mr)
+void usteer_measurement_report_del(struct usteer_measurement_report *mr)
 {
 	usteer_timeout_cancel(&tq, &mr->timeout);
 	list_del(&mr->node_list);
@@ -116,8 +110,7 @@ usteer_measurement_report_del(struct usteer_measurement_report *mr)
 	free(mr);
 }
 
-static void
-usteer_measurement_timeout(struct usteer_timeout_queue *q, struct usteer_timeout *t)
+static void usteer_measurement_timeout(struct usteer_timeout_queue *q, struct usteer_timeout *t)
 {
 	struct usteer_measurement_report *mr = container_of(t, struct usteer_measurement_report, timeout);
 

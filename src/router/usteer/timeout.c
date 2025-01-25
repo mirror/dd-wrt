@@ -25,9 +25,9 @@
 
 static int usteer_timeout_cmp(const void *k1, const void *k2, void *ptr)
 {
-	uint32_t ref = (uint32_t) (intptr_t) ptr;
-	int32_t t1 = (uint32_t) (intptr_t) k1 - ref;
-	int32_t t2 = (uint32_t) (intptr_t) k2 - ref;
+	uint32_t ref = (uint32_t)(intptr_t)ptr;
+	int32_t t1 = (uint32_t)(intptr_t)k1 - ref;
+	int32_t t2 = (uint32_t)(intptr_t)k2 - ref;
 
 	if (t1 < t2)
 		return -1;
@@ -39,7 +39,7 @@ static int usteer_timeout_cmp(const void *k1, const void *k2, void *ptr)
 
 static int32_t usteer_timeout_delta(struct usteer_timeout *t, uint32_t time)
 {
-	uint32_t val = (uint32_t) (intptr_t) t->node.key;
+	uint32_t val = (uint32_t)(intptr_t)t->node.key;
 	return val - time;
 }
 
@@ -86,7 +86,8 @@ static void usteer_timeout_cb(struct uloop_timeout *timeout)
 		found = false;
 		time = ampgr_timeout_current_time();
 
-		avl_for_each_element_safe(&q->tree, t, node, tmp) {
+		avl_for_each_element_safe(&q->tree, t, node, tmp)
+		{
 			if (usteer_timeout_delta(t, time) > 0)
 				break;
 
@@ -100,27 +101,24 @@ static void usteer_timeout_cb(struct uloop_timeout *timeout)
 	usteer_timeout_recalc(q, time);
 }
 
-
 void usteer_timeout_init(struct usteer_timeout_queue *q)
 {
 	avl_init(&q->tree, usteer_timeout_cmp, true, NULL);
 	q->timeout.cb = usteer_timeout_cb;
 }
 
-static void __usteer_timeout_cancel(struct usteer_timeout_queue *q,
-				   struct usteer_timeout *t)
+static void __usteer_timeout_cancel(struct usteer_timeout_queue *q, struct usteer_timeout *t)
 {
 	avl_delete(&q->tree, &t->node);
 }
 
-void usteer_timeout_set(struct usteer_timeout_queue *q, struct usteer_timeout *t,
-		       int msecs)
+void usteer_timeout_set(struct usteer_timeout_queue *q, struct usteer_timeout *t, int msecs)
 {
 	uint32_t time = ampgr_timeout_current_time();
 	uint32_t val = time + msecs;
 	bool recalc = false;
 
-	q->tree.cmp_ptr = (void *) (intptr_t) time;
+	q->tree.cmp_ptr = (void *)(intptr_t)time;
 	if (usteer_timeout_isset(t)) {
 		if (avl_is_first(&q->tree, &t->node))
 			recalc = true;
@@ -128,7 +126,7 @@ void usteer_timeout_set(struct usteer_timeout_queue *q, struct usteer_timeout *t
 		__usteer_timeout_cancel(q, t);
 	}
 
-	t->node.key = (void *) (intptr_t) val;
+	t->node.key = (void *)(intptr_t)val;
 	avl_insert(&q->tree, &t->node);
 	if (avl_is_first(&q->tree, &t->node))
 		recalc = true;
@@ -137,8 +135,7 @@ void usteer_timeout_set(struct usteer_timeout_queue *q, struct usteer_timeout *t
 		usteer_timeout_recalc(q, time);
 }
 
-void usteer_timeout_cancel(struct usteer_timeout_queue *q,
-			  struct usteer_timeout *t)
+void usteer_timeout_cancel(struct usteer_timeout_queue *q, struct usteer_timeout *t)
 {
 	if (!usteer_timeout_isset(t))
 		return;
@@ -152,7 +149,8 @@ void usteer_timeout_flush(struct usteer_timeout_queue *q)
 	struct usteer_timeout *t, *tmp;
 
 	uloop_timeout_cancel(&q->timeout);
-	avl_remove_all_elements(&q->tree, t, node, tmp) {
+	avl_remove_all_elements(&q->tree, t, node, tmp)
+	{
 		memset(&t->node.list, 0, sizeof(t->node.list));
 		if (q->cb)
 			q->cb(q, t);

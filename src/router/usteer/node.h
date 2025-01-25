@@ -22,14 +22,7 @@
 
 #include "usteer.h"
 
-enum local_req_state {
-	REQ_IDLE,
-	REQ_CLIENTS,
-	REQ_STATUS,
-	REQ_RRM_SET_LIST,
-	REQ_RRM_GET_OWN,
-	__REQ_MAX
-};
+enum local_req_state { REQ_IDLE, REQ_CLIENTS, REQ_STATUS, REQ_RRM_SET_LIST, REQ_RRM_GET_OWN, __REQ_MAX };
 
 struct usteer_local_node {
 	struct usteer_node node;
@@ -100,11 +93,8 @@ extern struct avl_tree local_nodes;
 extern struct list_head remote_nodes;
 extern struct avl_tree remote_hosts;
 
-#define for_each_local_node(node)			\
-	avl_for_each_element(&local_nodes, node, avl)	\
-		if (!node->disabled)
+#define for_each_local_node(node) avl_for_each_element(&local_nodes, node, avl) if (!node->disabled)
 
-#define for_each_remote_node(rn)			\
-	list_for_each_entry(rn, &remote_nodes, list)
+#define for_each_remote_node(rn) list_for_each_entry(rn, &remote_nodes, list)
 
 #endif

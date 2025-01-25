@@ -33,45 +33,42 @@ static int pkt_offset;
 
 /* IP header */
 struct ip_header {
-	uint8_t ip_vhl;		/* version << 4 | header length >> 2 */
-	uint8_t ip_tos;		/* type of service */
-	uint16_t ip_len;		/* total length */
-	uint16_t ip_id;		/* identification */
-	uint16_t ip_off;		/* fragment offset field */
-#define IP_RF 0x8000		/* reserved fragment flag */
-#define IP_DF 0x4000		/* dont fragment flag */
-#define IP_MF 0x2000		/* more fragments flag */
-#define IP_OFFMASK 0x1fff	/* mask for fragmenting bits */
-	uint8_t ip_ttl;		/* time to live */
-	uint8_t ip_p;		/* protocol */
-	uint16_t ip_sum;		/* checksum */
+	uint8_t ip_vhl; /* version << 4 | header length >> 2 */
+	uint8_t ip_tos; /* type of service */
+	uint16_t ip_len; /* total length */
+	uint16_t ip_id; /* identification */
+	uint16_t ip_off; /* fragment offset field */
+#define IP_RF 0x8000 /* reserved fragment flag */
+#define IP_DF 0x4000 /* dont fragment flag */
+#define IP_MF 0x2000 /* more fragments flag */
+#define IP_OFFMASK 0x1fff /* mask for fragmenting bits */
+	uint8_t ip_ttl; /* time to live */
+	uint8_t ip_p; /* protocol */
+	uint16_t ip_sum; /* checksum */
 	struct in_addr ip_src, ip_dst; /* source and dest address */
 };
-#define IP_HL(ip)		(((ip)->ip_vhl) & 0x0f)
-#define IP_V(ip)		(((ip)->ip_vhl) >> 4)
+#define IP_HL(ip) (((ip)->ip_vhl) & 0x0f)
+#define IP_V(ip) (((ip)->ip_vhl) >> 4)
 
 struct udp_header {
-	uint16_t uh_sport;       /* source port */
-	uint16_t uh_dport;       /* destination port */
-	uint16_t uh_ulen;        /* udp length */
-	uint16_t uh_sum;     /* udp checksum */
+	uint16_t uh_sport; /* source port */
+	uint16_t uh_dport; /* destination port */
+	uint16_t uh_ulen; /* udp length */
+	uint16_t uh_sum; /* udp checksum */
 };
 
-
-static void
-decode_sta(struct blob_attr *data)
+static void decode_sta(struct blob_attr *data)
 {
 	struct apmsg_sta msg;
 
 	if (!parse_apmsg_sta(&msg, data))
 		return;
 
-	fprintf(stderr, "\t\tSta "MAC_ADDR_FMT" signal=%d connected=%d timeout=%d\n",
-		MAC_ADDR_DATA(msg.addr), msg.signal, msg.connected, msg.timeout);
+	fprintf(stderr, "\t\tSta " MAC_ADDR_FMT " signal=%d connected=%d timeout=%d\n", MAC_ADDR_DATA(msg.addr), msg.signal,
+		msg.connected, msg.timeout);
 }
 
-static void
-decode_node(struct blob_attr *data)
+static void decode_node(struct blob_attr *data)
 {
 	struct apmsg_node msg;
 	struct blob_attr *cur;
@@ -80,11 +77,12 @@ decode_node(struct blob_attr *data)
 	if (!parse_apmsg_node(&msg, data))
 		return;
 
-	fprintf(stderr, "\tNode %s, freq=%d, n_assoc=%d, noise=%d load=%d max_assoc=%d\n",
-		msg.name, msg.freq, msg.n_assoc, msg.noise, msg.load, msg.max_assoc);
+	fprintf(stderr, "\tNode %s, freq=%d, n_assoc=%d, noise=%d load=%d max_assoc=%d\n", msg.name, msg.freq, msg.n_assoc,
+		msg.noise, msg.load, msg.max_assoc);
 	if (msg.rrm_nr) {
 		fprintf(stderr, "\t\tRRM:");
-		blobmsg_for_each_attr(cur, msg.rrm_nr, rem) {
+		blobmsg_for_each_attr(cur, msg.rrm_nr, rem)
+		{
 			if (!blobmsg_check_attr(cur, false))
 				continue;
 			if (blobmsg_type(cur) != BLOBMSG_TYPE_STRING)
@@ -100,12 +98,10 @@ decode_node(struct blob_attr *data)
 		free(data);
 	}
 
-	blob_for_each_attr(cur, msg.stations, rem)
-		decode_sta(cur);
+	blob_for_each_attr(cur, msg.stations, rem) decode_sta(cur);
 }
 
-static void
-decode_packet(struct blob_attr *data)
+static void decode_packet(struct blob_attr *data)
 {
 	struct apmsg msg;
 	struct blob_attr *cur;
@@ -123,13 +119,10 @@ decode_packet(struct blob_attr *data)
 		free(data);
 	}
 
-	blob_for_each_attr(cur, msg.nodes, rem)
-		decode_node(cur);
+	blob_for_each_attr(cur, msg.nodes, rem) decode_node(cur);
 }
 
-static void
-recv_packet(unsigned char *user, const struct pcap_pkthdr *hdr,
-	    const unsigned char *packet)
+static void recv_packet(unsigned char *user, const struct pcap_pkthdr *hdr, const unsigned char *packet)
 {
 	char addr[INET_ADDRSTRLEN];
 	struct ip_header *ip;
@@ -140,7 +133,7 @@ recv_packet(unsigned char *user, const struct pcap_pkthdr *hdr,
 
 	len -= pkt_offset;
 	packet += pkt_offset;
-	ip = (void *) packet;
+	ip = (void *)packet;
 
 	hdrlen = IP_HL(ip) * 4;
 	if (hdrlen < 20 || hdrlen >= len)
@@ -155,14 +148,14 @@ recv_packet(unsigned char *user, const struct pcap_pkthdr *hdr,
 	if (len <= hdrlen)
 		return;
 
-	uh = (void *) packet;
+	uh = (void *)packet;
 	packet += hdrlen;
 	len -= hdrlen;
 
 	if (uh->uh_dport != htons(APMGR_PORT))
 		return;
 
-	data = (void *) packet;
+	data = (void *)packet;
 
 	fprintf(stderr, "[%s]: len=%d ", addr, len);
 
@@ -186,11 +179,11 @@ int main(int argc, char **argv)
 
 	pcap = pcap_open_live(argv[1], APMGR_BUFLEN, 1, 1000, errbuf);
 	if (!pcap) {
-			fprintf(stderr, "Failed to open interface %s: %s\n", argv[1], errbuf);
-			return 1;
+		fprintf(stderr, "Failed to open interface %s: %s\n", argv[1], errbuf);
+		return 1;
 	}
 
-	pcap_compile(pcap, &fp, "port "APMGR_PORT_STR, 1, PCAP_NETMASK_UNKNOWN);
+	pcap_compile(pcap, &fp, "port " APMGR_PORT_STR, 1, PCAP_NETMASK_UNKNOWN);
 	pcap_setfilter(pcap, &fp);
 
 	switch (pcap_datalink(pcap)) {

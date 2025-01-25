@@ -33,17 +33,14 @@ struct usteer_timeout_queue {
 	void (*cb)(struct usteer_timeout_queue *q, struct usteer_timeout *t);
 };
 
-static inline bool
-usteer_timeout_isset(struct usteer_timeout *t)
+static inline bool usteer_timeout_isset(struct usteer_timeout *t)
 {
 	return t->node.list.prev != NULL;
 }
 
 void usteer_timeout_init(struct usteer_timeout_queue *q);
-void usteer_timeout_set(struct usteer_timeout_queue *q, struct usteer_timeout *t,
-		       int msecs);
-void usteer_timeout_cancel(struct usteer_timeout_queue *q,
-			  struct usteer_timeout *t);
+void usteer_timeout_set(struct usteer_timeout_queue *q, struct usteer_timeout *t, int msecs);
+void usteer_timeout_cancel(struct usteer_timeout_queue *q, struct usteer_timeout *t);
 void usteer_timeout_flush(struct usteer_timeout_queue *q);
 
 #endif

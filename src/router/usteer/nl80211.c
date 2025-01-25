@@ -21,7 +21,6 @@
 #include <linux/if_ether.h>
 #include <net/if.h>
 
-
 #include <stdio.h>
 #include <unistd.h>
 #include <stdbool.h>
@@ -70,14 +69,12 @@ static int nl80211_survey_result(struct nl_msg *msg, void *arg)
 	struct genlmsghdr *gnlh;
 
 	gnlh = nlmsg_data(nlmsg_hdr(msg));
-	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
-		  genlmsg_attrlen(gnlh, 0), NULL);
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 
 	if (!tb[NL80211_ATTR_SURVEY_INFO])
 		return NL_SKIP;
 
-	if (nla_parse_nested(tb_s, NL80211_SURVEY_INFO_MAX,
-			     tb[NL80211_ATTR_SURVEY_INFO], survey_policy))
+	if (nla_parse_nested(tb_s, NL80211_SURVEY_INFO_MAX, tb[NL80211_ATTR_SURVEY_INFO], survey_policy))
 		return NL_SKIP;
 
 	if (!tb_s[NL80211_SURVEY_INFO_FREQUENCY])
@@ -86,10 +83,9 @@ static int nl80211_survey_result(struct nl_msg *msg, void *arg)
 	data.freq = nla_get_u32(tb_s[NL80211_SURVEY_INFO_FREQUENCY]);
 
 	if (tb_s[NL80211_SURVEY_INFO_NOISE])
-		data.noise = (int8_t) nla_get_u8(tb_s[NL80211_SURVEY_INFO_NOISE]);
+		data.noise = (int8_t)nla_get_u8(tb_s[NL80211_SURVEY_INFO_NOISE]);
 
-	if (tb_s[NL80211_SURVEY_INFO_CHANNEL_TIME] &&
-	    tb_s[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]) {
+	if (tb_s[NL80211_SURVEY_INFO_CHANNEL_TIME] && tb_s[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]) {
 		data.time = nla_get_u64(tb_s[NL80211_SURVEY_INFO_CHANNEL_TIME]);
 		data.time_busy = nla_get_u64(tb_s[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]);
 	}
@@ -97,8 +93,7 @@ static int nl80211_survey_result(struct nl_msg *msg, void *arg)
 	return NL_SKIP;
 }
 
-static void nl80211_get_survey(struct usteer_node *node, void *priv,
-			       void (*cb)(void *priv, struct usteer_survey_data *d))
+static void nl80211_get_survey(struct usteer_node *node, void *priv, void (*cb)(void *priv, struct usteer_survey_data *d))
 {
 	struct usteer_local_node *ln = container_of(node, struct usteer_local_node, node);
 	struct nl80211_survey_req req = {
@@ -168,7 +163,7 @@ static void nl80211_update_node_result(void *priv, struct usteer_survey_data *d)
 		ln->load_ewma_total = ln->load_ewma_total * 0.25;
 	if (ln->node.cw == 40)
 		ln->load_ewma_total = ln->load_ewma_total * 0.5;
-	
+
 	ln->node.load = ln->load_ewma_total;
 	ln->node.nosurvey = 0;
 }
@@ -192,7 +187,7 @@ static void nl80211_init_node(struct usteer_node *node)
 
 	if (node->type != NODE_TYPE_LOCAL)
 		return;
-    
+
 	ln->nl80211.present = false;
 	ln->wiphy = -1;
 
@@ -218,8 +213,7 @@ static void nl80211_init_node(struct usteer_node *node)
 		return;
 
 	gnlh = nlmsg_data(nlmsg_hdr(msg));
-	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
-		  genlmsg_attrlen(gnlh, 0), NULL);
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 
 	if (!tb[NL80211_ATTR_WIPHY])
 		goto nla_put_failure;
@@ -281,19 +275,17 @@ static void nl80211_update_sta(struct usteer_node *node, struct sta_info *si)
 		return;
 
 	gnlh = nlmsg_data(nlmsg_hdr(msg));
-	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
-		  genlmsg_attrlen(gnlh, 0), NULL);
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 
 	if (!tb[NL80211_ATTR_STA_INFO])
 		goto nla_put_failure;
 
-	if (nla_parse_nested(tb_sta, NL80211_STA_INFO_MAX,
-			     tb[NL80211_ATTR_STA_INFO], NULL))
+	if (nla_parse_nested(tb_sta, NL80211_STA_INFO_MAX, tb[NL80211_ATTR_STA_INFO], NULL))
 		goto nla_put_failure;
 
 	if (tb_sta[NL80211_STA_INFO_SIGNAL_AVG])
-		signal = (int8_t) nla_get_u8(tb_sta[NL80211_STA_INFO_SIGNAL_AVG]);
-	
+		signal = (int8_t)nla_get_u8(tb_sta[NL80211_STA_INFO_SIGNAL_AVG]);
+
 	if (tb_sta[NL80211_STA_INFO_CONNECTED_TIME])
 		si->connected_since = current_time - (nla_get_u32(tb_sta[NL80211_STA_INFO_CONNECTED_TIME]) * 1000);
 
@@ -323,18 +315,15 @@ static int nl80211_scan_result(struct nl_msg *msg, void *arg)
 	uint8_t *ie;
 
 	gnlh = nlmsg_data(nlmsg_hdr(msg));
-	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
-		  genlmsg_attrlen(gnlh, 0), NULL);
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 
 	if (!tb[NL80211_ATTR_BSS])
 		return NL_SKIP;
 
-	if (nla_parse_nested(bss, NL80211_BSS_MAX, tb[NL80211_ATTR_BSS],
-			     bss_policy))
+	if (nla_parse_nested(bss, NL80211_BSS_MAX, tb[NL80211_ATTR_BSS], bss_policy))
 		return NL_SKIP;
 
-	if (!bss[NL80211_BSS_BSSID] ||
-	    !bss[NL80211_BSS_FREQUENCY])
+	if (!bss[NL80211_BSS_BSSID] || !bss[NL80211_BSS_FREQUENCY])
 		return NL_SKIP;
 
 	data.freq = nla_get_u32(bss[NL80211_BSS_FREQUENCY]);
@@ -352,10 +341,9 @@ static int nl80211_scan_result(struct nl_msg *msg, void *arg)
 	if (!ie_attr)
 		goto skip_ie;
 
-	ie = (uint8_t *) nla_data(ie_attr);
+	ie = (uint8_t *)nla_data(ie_attr);
 	ielen = nla_len(ie_attr);
-	for (; ielen >= 2 && ielen >= ie[1];
-	     ielen -= ie[1] + 2, ie += ie[1] + 2) {
+	for (; ielen >= 2 && ielen >= ie[1]; ielen -= ie[1] + 2, ie += ie[1] + 2) {
 		if (ie[0] == 0) { /* SSID */
 			if (ie[1] > 32)
 				continue;
@@ -384,8 +372,8 @@ static int nl80211_scan_event_cb(struct nl_msg *msg, void *data)
 	return NL_SKIP;
 }
 
-static int nl80211_scan(struct usteer_node *node, struct usteer_scan_request *req,
-			void *priv, void (*cb)(void *priv, struct usteer_scan_result *r))
+static int nl80211_scan(struct usteer_node *node, struct usteer_scan_request *req, void *priv,
+			void (*cb)(void *priv, struct usteer_scan_result *r))
 {
 	struct usteer_local_node *ln = container_of(node, struct usteer_local_node, node);
 	struct nl80211_scan_req reqdata = {
@@ -456,25 +444,21 @@ static int nl80211_wiphy_result(struct nl_msg *msg, void *arg)
 	int rem_freq;
 
 	gnlh = nlmsg_data(nlmsg_hdr(msg));
-	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
-		  genlmsg_attrlen(gnlh, 0), NULL);
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 
 	if (!tb[NL80211_ATTR_WIPHY_BANDS])
 		return NL_SKIP;
 
 	nla_for_each_nested(nl_band, tb[NL80211_ATTR_WIPHY_BANDS], rem_band) {
-		nla_parse(tb_band, NL80211_BAND_ATTR_MAX, nla_data(nl_band),
-			  nla_len(nl_band), NULL);
+		nla_parse(tb_band, NL80211_BAND_ATTR_MAX, nla_data(nl_band), nla_len(nl_band), NULL);
 
 		if (!tb_band[NL80211_BAND_ATTR_FREQS])
 			continue;
 
-		nla_for_each_nested(nl_freq, tb_band[NL80211_BAND_ATTR_FREQS],
-				    rem_freq) {
+		nla_for_each_nested(nl_freq, tb_band[NL80211_BAND_ATTR_FREQS], rem_freq) {
 			struct usteer_freq_data f = {};
 
-			nla_parse(tb_freq, NL80211_FREQUENCY_ATTR_MAX,
-				  nla_data(nl_freq), nla_len(nl_freq), NULL);
+			nla_parse(tb_freq, NL80211_FREQUENCY_ATTR_MAX, nla_data(nl_freq), nla_len(nl_freq), NULL);
 
 			if (tb_freq[NL80211_FREQUENCY_ATTR_DISABLED])
 				continue;
@@ -500,14 +484,10 @@ static int nl80211_wiphy_result(struct nl_msg *msg, void *arg)
 	return NL_SKIP;
 }
 
-static void nl80211_get_freqlist(struct usteer_node *node, void *priv,
-				 void (*cb)(void *priv, struct usteer_freq_data *f))
+static void nl80211_get_freqlist(struct usteer_node *node, void *priv, void (*cb)(void *priv, struct usteer_freq_data *f))
 {
 	struct usteer_local_node *ln = container_of(node, struct usteer_local_node, node);
-	struct nl80211_freqlist_req req = {
-		.priv = priv,
-		.cb = cb
-	};
+	struct nl80211_freqlist_req req = { .priv = priv, .cb = cb };
 	struct nl_msg *msg;
 
 	if (!ln->nl80211.present)

@@ -42,8 +42,7 @@ bool parse_apmsg(struct apmsg *msg, struct blob_attr *data)
 	return true;
 }
 
-static int
-get_int32(struct blob_attr *attr)
+static int get_int32(struct blob_attr *attr)
 {
 	if (!attr)
 		return 0;
@@ -54,33 +53,21 @@ get_int32(struct blob_attr *attr)
 bool parse_apmsg_node(struct apmsg_node *msg, struct blob_attr *data)
 {
 	static const struct blob_attr_info policy[__APMSG_NODE_MAX] = {
-		[APMSG_NODE_NAME] = { .type = BLOB_ATTR_STRING },
-		[APMSG_NODE_BSSID] = { .type = BLOB_ATTR_BINARY },
-		[APMSG_NODE_FREQ] = { .type = BLOB_ATTR_INT32 },
-		[APMSG_NODE_N_ASSOC] = { .type = BLOB_ATTR_INT32 },
-		[APMSG_NODE_MAX_ASSOC] = { .type = BLOB_ATTR_INT32 },
-		[APMSG_NODE_STATIONS] = { .type = BLOB_ATTR_NESTED },
-		[APMSG_NODE_NOISE] = { .type = BLOB_ATTR_INT32 },
-		[APMSG_NODE_LOAD] = { .type = BLOB_ATTR_INT32 },
-		[APMSG_NODE_RRM_NR] = { .type = BLOB_ATTR_NESTED },
-		[APMSG_NODE_NODE_INFO] = { .type = BLOB_ATTR_NESTED },
-		[APMSG_NODE_CHANNEL] = { .type = BLOB_ATTR_INT32 },
-		[APMSG_NODE_OP_CLASS] = { .type = BLOB_ATTR_INT32 },
-		[APMSG_NODE_N] = { .type = BLOB_ATTR_INT32 },
-		[APMSG_NODE_VHT] = { .type = BLOB_ATTR_INT32 },
+		[APMSG_NODE_NAME] = { .type = BLOB_ATTR_STRING },     [APMSG_NODE_BSSID] = { .type = BLOB_ATTR_BINARY },
+		[APMSG_NODE_FREQ] = { .type = BLOB_ATTR_INT32 },      [APMSG_NODE_N_ASSOC] = { .type = BLOB_ATTR_INT32 },
+		[APMSG_NODE_MAX_ASSOC] = { .type = BLOB_ATTR_INT32 }, [APMSG_NODE_STATIONS] = { .type = BLOB_ATTR_NESTED },
+		[APMSG_NODE_NOISE] = { .type = BLOB_ATTR_INT32 },     [APMSG_NODE_LOAD] = { .type = BLOB_ATTR_INT32 },
+		[APMSG_NODE_RRM_NR] = { .type = BLOB_ATTR_NESTED },   [APMSG_NODE_NODE_INFO] = { .type = BLOB_ATTR_NESTED },
+		[APMSG_NODE_CHANNEL] = { .type = BLOB_ATTR_INT32 },   [APMSG_NODE_OP_CLASS] = { .type = BLOB_ATTR_INT32 },
+		[APMSG_NODE_N] = { .type = BLOB_ATTR_INT32 },	      [APMSG_NODE_VHT] = { .type = BLOB_ATTR_INT32 },
 		[APMSG_NODE_HE] = { .type = BLOB_ATTR_INT32 },
 	};
 	struct blob_attr *tb[__APMSG_NODE_MAX];
 	struct blob_attr *cur;
 
 	blob_parse(data, tb, policy, __APMSG_NODE_MAX);
-	if (!tb[APMSG_NODE_NAME] ||
-	    !tb[APMSG_NODE_BSSID] ||
-	    blob_len(tb[APMSG_NODE_BSSID]) != 6 ||
-	    !tb[APMSG_NODE_FREQ] ||
-	    !tb[APMSG_NODE_N_ASSOC] ||
-	    !tb[APMSG_NODE_STATIONS] ||
-	    !tb[APMSG_NODE_SSID])
+	if (!tb[APMSG_NODE_NAME] || !tb[APMSG_NODE_BSSID] || blob_len(tb[APMSG_NODE_BSSID]) != 6 || !tb[APMSG_NODE_FREQ] ||
+	    !tb[APMSG_NODE_N_ASSOC] || !tb[APMSG_NODE_STATIONS] || !tb[APMSG_NODE_SSID])
 		return false;
 
 	msg->name = blob_data(tb[APMSG_NODE_NAME]);
@@ -95,13 +82,13 @@ bool parse_apmsg_node(struct apmsg_node *msg, struct blob_attr *data)
 	msg->max_assoc = get_int32(tb[APMSG_NODE_MAX_ASSOC]);
 	/* not mandatory */
 	if (tb[APMSG_NODE_N])
-	    msg->n = get_int32(tb[APMSG_NODE_N]);
+		msg->n = get_int32(tb[APMSG_NODE_N]);
 	if (tb[APMSG_NODE_VHT])
-	    msg->vht = get_int32(tb[APMSG_NODE_VHT]);
+		msg->vht = get_int32(tb[APMSG_NODE_VHT]);
 	if (tb[APMSG_NODE_HE])
-	    msg->he = get_int32(tb[APMSG_NODE_HE]);
+		msg->he = get_int32(tb[APMSG_NODE_HE]);
 	if (tb[APMSG_NODE_CW])
-	    msg->cw = get_int32(tb[APMSG_NODE_CW]);
+		msg->cw = get_int32(tb[APMSG_NODE_CW]);
 	msg->rrm_nr = NULL;
 
 	if (tb[APMSG_NODE_CHANNEL] && tb[APMSG_NODE_OP_CLASS]) {
@@ -110,13 +97,13 @@ bool parse_apmsg_node(struct apmsg_node *msg, struct blob_attr *data)
 	}
 
 	cur = tb[APMSG_NODE_RRM_NR];
-	if (cur && blob_len(cur) >= sizeof(struct blob_attr) &&
-	    blob_len(cur) >= blob_pad_len(blob_data(cur))) {
+	if (cur && blob_len(cur) >= sizeof(struct blob_attr) && blob_len(cur) >= blob_pad_len(blob_data(cur))) {
 		int rem;
 
 		msg->rrm_nr = blob_data(cur);
 
-		blobmsg_for_each_attr(cur, msg->rrm_nr, rem) {
+		blobmsg_for_each_attr(cur, msg->rrm_nr, rem)
+		{
 			if (blobmsg_check_attr(cur, false))
 				continue;
 			if (blobmsg_type(cur) == BLOBMSG_TYPE_STRING)
@@ -125,8 +112,7 @@ bool parse_apmsg_node(struct apmsg_node *msg, struct blob_attr *data)
 			break;
 		}
 
-		if (msg->rrm_nr &&
-		    blobmsg_type(msg->rrm_nr) != BLOBMSG_TYPE_ARRAY)
+		if (msg->rrm_nr && blobmsg_type(msg->rrm_nr) != BLOBMSG_TYPE_ARRAY)
 			msg->rrm_nr = NULL;
 	}
 
@@ -138,22 +124,15 @@ bool parse_apmsg_node(struct apmsg_node *msg, struct blob_attr *data)
 bool parse_apmsg_sta(struct apmsg_sta *msg, struct blob_attr *data)
 {
 	static const struct blob_attr_info policy[__APMSG_STA_MAX] = {
-		[APMSG_STA_ADDR] = { .type = BLOB_ATTR_BINARY },
-		[APMSG_STA_SIGNAL] = { .type = BLOB_ATTR_INT32 },
-		[APMSG_STA_SEEN] = { .type = BLOB_ATTR_INT32 },
-		[APMSG_STA_TIMEOUT] = { .type = BLOB_ATTR_INT32 },
-		[APMSG_STA_CONNECTED] = { .type = BLOB_ATTR_INT8 },
-		[APMSG_STA_LAST_CONNECTED] = { .type = BLOB_ATTR_INT32 },
+		[APMSG_STA_ADDR] = { .type = BLOB_ATTR_BINARY },    [APMSG_STA_SIGNAL] = { .type = BLOB_ATTR_INT32 },
+		[APMSG_STA_SEEN] = { .type = BLOB_ATTR_INT32 },	    [APMSG_STA_TIMEOUT] = { .type = BLOB_ATTR_INT32 },
+		[APMSG_STA_CONNECTED] = { .type = BLOB_ATTR_INT8 }, [APMSG_STA_LAST_CONNECTED] = { .type = BLOB_ATTR_INT32 },
 	};
 	struct blob_attr *tb[__APMSG_STA_MAX];
 
 	blob_parse(data, tb, policy, __APMSG_STA_MAX);
-	if (!tb[APMSG_STA_ADDR] ||
-	    !tb[APMSG_STA_SIGNAL] ||
-	    !tb[APMSG_STA_SEEN] ||
-	    !tb[APMSG_STA_TIMEOUT] ||
-	    !tb[APMSG_STA_CONNECTED] ||
-	    !tb[APMSG_STA_LAST_CONNECTED])
+	if (!tb[APMSG_STA_ADDR] || !tb[APMSG_STA_SIGNAL] || !tb[APMSG_STA_SEEN] || !tb[APMSG_STA_TIMEOUT] ||
+	    !tb[APMSG_STA_CONNECTED] || !tb[APMSG_STA_LAST_CONNECTED])
 		return false;
 
 	if (blob_len(tb[APMSG_STA_ADDR]) != sizeof(msg->addr))

@@ -31,16 +31,16 @@
 
 #define NO_SIGNAL 0xff
 
-#define __STR(x)		#x
-#define _STR(x)			__STR(x)
+#define __STR(x) #x
+#define _STR(x) __STR(x)
 
-#define APMGR_V6_MCAST_GROUP	"ff02::4150"
+#define APMGR_V6_MCAST_GROUP "ff02::4150"
 
-#define APMGR_PORT		16720 /* AP */
-#define APMGR_PORT_STR		_STR(APMGR_PORT)
-#define APMGR_BUFLEN		(64 * 1024)
+#define APMGR_PORT 16720 /* AP */
+#define APMGR_PORT_STR _STR(APMGR_PORT)
+#define APMGR_BUFLEN (64 * 1024)
 
-#define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
+#define DIV_ROUND_UP(n, d) (((n) + (d)-1) / (d))
 
 enum usteer_event_type {
 	EVENT_TYPE_PROBE,
@@ -140,12 +140,10 @@ struct usteer_node_handler {
 	void (*free_node)(struct usteer_node *);
 	void (*update_node)(struct usteer_node *);
 	void (*update_sta)(struct usteer_node *, struct sta_info *);
-	void (*get_survey)(struct usteer_node *, void *,
-			   void (*cb)(void *priv, struct usteer_survey_data *d));
-	void (*get_freqlist)(struct usteer_node *, void *,
-			     void (*cb)(void *priv, struct usteer_freq_data *f));
-	int (*scan)(struct usteer_node *, struct usteer_scan_request *,
-		    void *, void (*cb)(void *priv, struct usteer_scan_result *r));
+	void (*get_survey)(struct usteer_node *, void *, void (*cb)(void *priv, struct usteer_survey_data *d));
+	void (*get_freqlist)(struct usteer_node *, void *, void (*cb)(void *priv, struct usteer_freq_data *f));
+	int (*scan)(struct usteer_node *, struct usteer_scan_request *, void *,
+		    void (*cb)(void *priv, struct usteer_scan_result *r));
 };
 
 struct usteer_config {
@@ -197,7 +195,7 @@ struct usteer_config {
 	uint32_t roam_kick_delay;
 
 	uint32_t band_steering_interval;
-	int32_t band_steering_min_snr; 
+	int32_t band_steering_min_snr;
 
 	uint32_t link_measurement_interval;
 
@@ -318,13 +316,12 @@ extern struct list_head node_handlers;
 extern struct avl_tree stations;
 extern struct ubus_object usteer_obj;
 extern uint64_t current_time;
-extern const char * const event_types[__EVENT_TYPE_MAX];
+extern const char *const event_types[__EVENT_TYPE_MAX];
 extern struct blob_attr *host_info_blob;
 
 void usteer_update_time(void);
 void usteer_init_defaults(void);
-bool usteer_handle_sta_event(struct usteer_node *node, const uint8_t *addr,
-			    enum usteer_event_type type, int freq, int signal);
+bool usteer_handle_sta_event(struct usteer_node *node, const uint8_t *addr, enum usteer_event_type type, int freq, int signal);
 
 int usteer_snr_to_signal(struct usteer_node *node, int snr);
 int usteer_signal_to_snr(struct usteer_node *node, int signal);
@@ -345,12 +342,8 @@ void usteer_ubus_init(struct ubus_context *ctx);
 void usteer_ubus_kick_client(struct sta_info *si);
 int usteer_ubus_trigger_client_scan(struct sta_info *si);
 int usteer_ubus_band_steering_request(struct sta_info *si);
-int usteer_ubus_bss_transition_request(struct sta_info *si,
-				       uint8_t dialog_token,
-				       bool disassoc_imminent,
-				       bool abridged,
-				       uint8_t validity_period,
-				       struct usteer_node *target_node);
+int usteer_ubus_bss_transition_request(struct sta_info *si, uint8_t dialog_token, bool disassoc_imminent, bool abridged,
+				       uint8_t validity_period, struct usteer_node *target_node);
 
 struct sta *usteer_sta_get(const uint8_t *addr, bool create);
 struct sta_info *usteer_sta_info_get(struct sta *sta, struct usteer_node *node, bool *create);
@@ -398,14 +391,13 @@ void usteer_dump_host(struct blob_buf *buf, struct usteer_remote_host *host);
 
 int usteer_measurement_get_rssi(struct usteer_measurement_report *report);
 
-struct usteer_measurement_report * usteer_measurement_report_get(struct sta *sta, struct usteer_node *node, bool create);
+struct usteer_measurement_report *usteer_measurement_report_get(struct sta *sta, struct usteer_node *node, bool create);
 void usteer_measurement_report_node_cleanup(struct usteer_node *node);
 void usteer_measurement_report_sta_cleanup(struct sta *sta);
 void usteer_measurement_report_del(struct usteer_measurement_report *mr);
 
-struct usteer_measurement_report *
-usteer_measurement_report_add(struct sta *sta, struct usteer_node *node, uint8_t rcpi, uint8_t rsni, uint64_t timestamp);
-
+struct usteer_measurement_report *usteer_measurement_report_add(struct sta *sta, struct usteer_node *node, uint8_t rcpi,
+								uint8_t rsni, uint64_t timestamp);
 
 int usteer_ubus_trigger_link_measurement(struct sta_info *si);
 #endif

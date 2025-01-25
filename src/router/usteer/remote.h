@@ -22,13 +22,7 @@
 
 #include <libubox/blob.h>
 
-enum {
-	APMSG_ID,
-	APMSG_SEQ,
-	APMSG_NODES,
-	APMSG_HOST_INFO,
-	__APMSG_MAX
-};
+enum { APMSG_ID, APMSG_SEQ, APMSG_NODES, APMSG_HOST_INFO, __APMSG_MAX };
 
 struct apmsg {
 	uint32_t id;

@@ -37,18 +37,18 @@ bool usteer_band_steering_is_target(struct usteer_local_node *ln, struct usteer_
 
 	if (!usteer_policy_node_below_max_assoc(node))
 		return false;
-	
-	/* ToDo: Skip nodes with active load-kick */
-	
-	return true;
- }
 
+	/* ToDo: Skip nodes with active load-kick */
+
+	return true;
+}
 
 static bool usteer_band_steering_has_target_iface(struct usteer_local_node *ln)
 {
 	struct usteer_node *node;
 
-	for_each_local_node(node) {
+	for_each_local_node(node)
+	{
 		if (usteer_band_steering_is_target(ln, node))
 			return true;
 	}

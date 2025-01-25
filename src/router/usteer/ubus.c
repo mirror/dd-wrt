@@ -31,25 +31,23 @@
 static struct blob_buf b;
 static KVLIST(host_info, kvlist_blob_len);
 
-static void *
-blobmsg_open_table_mac(struct blob_buf *buf, uint8_t *addr)
+static void *blobmsg_open_table_mac(struct blob_buf *buf, uint8_t *addr)
 {
 	char str[20];
 	sprintf(str, MAC_ADDR_FMT, MAC_ADDR_DATA(addr));
 	return blobmsg_open_table(buf, str);
 }
 
-static int
-usteer_ubus_get_clients(struct ubus_context *ctx, struct ubus_object *obj,
-		       struct ubus_request_data *req, const char *method,
-		       struct blob_attr *msg)
+static int usteer_ubus_get_clients(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req,
+				   const char *method, struct blob_attr *msg)
 {
 	struct sta_info *si;
 	struct sta *sta;
 	void *_s, *_cur_n;
 
 	blob_buf_init(&b, 0);
-	avl_for_each_element(&stations, sta, avl) {
+	avl_for_each_element(&stations, sta, avl)
+	{
 		_s = blobmsg_open_table_mac(&b, sta->addr);
 		list_for_each_entry(si, &sta->nodes, list) {
 			_cur_n = blobmsg_open_table(&b, usteer_node_name(si->node));
@@ -66,11 +64,13 @@ usteer_ubus_get_clients(struct ubus_context *ctx, struct ubus_object *obj,
 }
 
 static struct blobmsg_policy client_arg[] = {
-	{ .name = "address", .type = BLOBMSG_TYPE_STRING, },
+	{
+		.name = "address",
+		.type = BLOBMSG_TYPE_STRING,
+	},
 };
 
-static void
-usteer_ubus_add_stats(struct sta_info_stats *stats, const char *name)
+static void usteer_ubus_add_stats(struct sta_info_stats *stats, const char *name)
 {
 	void *s;
 
@@ -81,10 +81,8 @@ usteer_ubus_add_stats(struct sta_info_stats *stats, const char *name)
 	blobmsg_close_table(&b, s);
 }
 
-static int
-usteer_ubus_get_client_info(struct ubus_context *ctx, struct ubus_object *obj,
-			   struct ubus_request_data *req, const char *method,
-			   struct blob_attr *msg)
+static int usteer_ubus_get_client_info(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req,
+				       const char *method, struct blob_attr *msg)
 {
 	struct sta_info *si;
 	struct sta *sta;
@@ -97,7 +95,7 @@ usteer_ubus_get_client_info(struct ubus_context *ctx, struct ubus_object *obj,
 	if (!mac_str)
 		return UBUS_STATUS_INVALID_ARGUMENT;
 
-	mac = (uint8_t *) ether_aton(blobmsg_data(mac_str));
+	mac = (uint8_t *)ether_aton(blobmsg_data(mac_str));
 	if (!mac)
 		return UBUS_STATUS_INVALID_ARGUMENT;
 
@@ -149,52 +147,21 @@ struct cfg_item {
 	} ptr;
 };
 
-#define __config_items \
-	_cfg(BOOL, syslog), \
-	_cfg(U32, debug_level), \
-	_cfg(BOOL, ipv6), \
-	_cfg(BOOL, local_mode), \
-	_cfg(U32, sta_block_timeout), \
-	_cfg(U32, local_sta_timeout), \
-	_cfg(U32, local_sta_update), \
-	_cfg(U32, max_neighbor_reports), \
-	_cfg(U32, max_retry_band), \
-	_cfg(U32, seen_policy_timeout), \
-	_cfg(U32, measurement_report_timeout), \
-	_cfg(U32, load_balancing_threshold), \
-	_cfg(U32, band_steering_threshold), \
-	_cfg(U32, remote_update_interval), \
-	_cfg(U32, remote_node_timeout), \
-	_cfg(BOOL, assoc_steering), \
-	_cfg(I32, min_connect_snr), \
-	_cfg(I32, min_snr), \
-	_cfg(U32, min_snr_kick_delay), \
-	_cfg(U32, steer_reject_timeout), \
-	_cfg(U32, roam_process_timeout), \
-	_cfg(I32, roam_scan_snr), \
-	_cfg(U32, roam_scan_tries), \
-	_cfg(U32, roam_scan_timeout), \
-	_cfg(U32, roam_scan_interval), \
-	_cfg(I32, roam_trigger_snr), \
-	_cfg(U32, roam_trigger_interval), \
-	_cfg(U32, roam_kick_delay), \
-	_cfg(U32, signal_diff_threshold), \
-	_cfg(U32, initial_connect_delay), \
-	_cfg(I32, budget_5ghz), \
-	_cfg(BOOL, prefer_5ghz), \
-	_cfg(BOOL, prefer_he), \
-	_cfg(BOOL, load_kick_enabled), \
-	_cfg(U32, load_kick_threshold), \
-	_cfg(U32, load_kick_delay), \
-	_cfg(U32, load_kick_min_clients), \
-	_cfg(U32, load_kick_reason_code), \
-	_cfg(U32, band_steering_interval), \
-	_cfg(I32, band_steering_min_snr), \
-	_cfg(U32, link_measurement_interval), \
-	_cfg(ARRAY_CB, interfaces), \
-	_cfg(STRING_CB, node_up_script), \
-	_cfg(ARRAY_CB, event_log_types), \
-	_cfg(ARRAY_CB, ssid_list)
+#define __config_items                                                                                                             \
+	_cfg(BOOL, syslog), _cfg(U32, debug_level), _cfg(BOOL, ipv6), _cfg(BOOL, local_mode), _cfg(U32, sta_block_timeout),        \
+		_cfg(U32, local_sta_timeout), _cfg(U32, local_sta_update), _cfg(U32, max_neighbor_reports),                        \
+		_cfg(U32, max_retry_band), _cfg(U32, seen_policy_timeout), _cfg(U32, measurement_report_timeout),                  \
+		_cfg(U32, load_balancing_threshold), _cfg(U32, band_steering_threshold), _cfg(U32, remote_update_interval),        \
+		_cfg(U32, remote_node_timeout), _cfg(BOOL, assoc_steering), _cfg(I32, min_connect_snr), _cfg(I32, min_snr),        \
+		_cfg(U32, min_snr_kick_delay), _cfg(U32, steer_reject_timeout), _cfg(U32, roam_process_timeout),                   \
+		_cfg(I32, roam_scan_snr), _cfg(U32, roam_scan_tries), _cfg(U32, roam_scan_timeout), _cfg(U32, roam_scan_interval), \
+		_cfg(I32, roam_trigger_snr), _cfg(U32, roam_trigger_interval), _cfg(U32, roam_kick_delay),                         \
+		_cfg(U32, signal_diff_threshold), _cfg(U32, initial_connect_delay), _cfg(I32, budget_5ghz),                        \
+		_cfg(BOOL, prefer_5ghz), _cfg(BOOL, prefer_he), _cfg(BOOL, load_kick_enabled), _cfg(U32, load_kick_threshold),     \
+		_cfg(U32, load_kick_delay), _cfg(U32, load_kick_min_clients), _cfg(U32, load_kick_reason_code),                    \
+		_cfg(U32, band_steering_interval), _cfg(I32, band_steering_min_snr), _cfg(U32, link_measurement_interval),         \
+		_cfg(ARRAY_CB, interfaces), _cfg(STRING_CB, node_up_script), _cfg(ARRAY_CB, event_log_types),                      \
+		_cfg(ARRAY_CB, ssid_list)
 
 enum cfg_items {
 #define _cfg(_type, _name) CFG_##_name
@@ -204,7 +171,7 @@ enum cfg_items {
 };
 
 static const struct blobmsg_policy config_policy[__CFG_MAX] = {
-#define _cfg_policy(_type, _name) [CFG_##_name] = { .name = #_name, .type = BLOBMSG_TYPE_ ## _type }
+#define _cfg_policy(_type, _name) [CFG_##_name] = { .name = #_name, .type = BLOBMSG_TYPE_##_type }
 #define _cfg_policy_BOOL(_name) _cfg_policy(BOOL, _name)
 #define _cfg_policy_U32(_name) _cfg_policy(INT32, _name)
 #define _cfg_policy_I32(_name) _cfg_policy(INT32, _name)
@@ -226,24 +193,20 @@ static const struct cfg_item config_data[__CFG_MAX] = {
 #undef _cfg
 };
 
-static int
-usteer_ubus_get_config(struct ubus_context *ctx, struct ubus_object *obj,
-		      struct ubus_request_data *req, const char *method,
-		      struct blob_attr *msg)
+static int usteer_ubus_get_config(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req,
+				  const char *method, struct blob_attr *msg)
 {
 	int i;
 
 	blob_buf_init(&b, 0);
 	for (i = 0; i < __CFG_MAX; i++) {
-		switch(config_data[i].type) {
+		switch (config_data[i].type) {
 		case CFG_BOOL:
-			blobmsg_add_u8(&b, config_policy[i].name,
-					*config_data[i].ptr.BOOL);
+			blobmsg_add_u8(&b, config_policy[i].name, *config_data[i].ptr.BOOL);
 			break;
 		case CFG_I32:
 		case CFG_U32:
-			blobmsg_add_u32(&b, config_policy[i].name,
-					*config_data[i].ptr.U32);
+			blobmsg_add_u32(&b, config_policy[i].name, *config_data[i].ptr.U32);
 			break;
 		case CFG_ARRAY_CB:
 		case CFG_STRING_CB:
@@ -255,10 +218,8 @@ usteer_ubus_get_config(struct ubus_context *ctx, struct ubus_object *obj,
 	return 0;
 }
 
-static int
-usteer_ubus_set_config(struct ubus_context *ctx, struct ubus_object *obj,
-		      struct ubus_request_data *req, const char *method,
-		      struct blob_attr *msg)
+static int usteer_ubus_set_config(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req,
+				  const char *method, struct blob_attr *msg)
 {
 	struct blob_attr *tb[__CFG_MAX];
 	int i;
@@ -268,7 +229,7 @@ usteer_ubus_set_config(struct ubus_context *ctx, struct ubus_object *obj,
 
 	blobmsg_parse(config_policy, __CFG_MAX, tb, blob_data(msg), blob_len(msg));
 	for (i = 0; i < __CFG_MAX; i++) {
-		switch(config_data[i].type) {
+		switch (config_data[i].type) {
 		case CFG_BOOL:
 			if (!tb[i])
 				continue;
@@ -313,13 +274,9 @@ void usteer_dump_node(struct blob_buf *buf, struct usteer_node *node)
 	blobmsg_close_table(buf, roam_events);
 
 	if (node->rrm_nr)
-		blobmsg_add_field(buf, BLOBMSG_TYPE_ARRAY, "rrm_nr",
-				  blobmsg_data(node->rrm_nr),
-				  blobmsg_data_len(node->rrm_nr));
+		blobmsg_add_field(buf, BLOBMSG_TYPE_ARRAY, "rrm_nr", blobmsg_data(node->rrm_nr), blobmsg_data_len(node->rrm_nr));
 	if (node->node_info)
-		blobmsg_add_field(buf, BLOBMSG_TYPE_TABLE, "node_info",
-				  blob_data(node->node_info),
-				  blob_len(node->node_info));
+		blobmsg_add_field(buf, BLOBMSG_TYPE_TABLE, "node_info", blob_data(node->node_info), blob_len(node->node_info));
 
 	blobmsg_close_table(buf, c);
 }
@@ -331,57 +288,47 @@ void usteer_dump_host(struct blob_buf *buf, struct usteer_remote_host *host)
 	c = blobmsg_open_table(buf, host->addr);
 	blobmsg_add_u32(buf, "id", (uint32_t)(uintptr_t)host->avl.key);
 	if (host->host_info)
-		blobmsg_add_field(buf, BLOBMSG_TYPE_TABLE, "host_info",
-				  blobmsg_data(host->host_info),
+		blobmsg_add_field(buf, BLOBMSG_TYPE_TABLE, "host_info", blobmsg_data(host->host_info),
 				  blobmsg_len(host->host_info));
 	blobmsg_close_table(buf, c);
 }
 
-static int
-usteer_ubus_local_info(struct ubus_context *ctx, struct ubus_object *obj,
-		      struct ubus_request_data *req, const char *method,
-		      struct blob_attr *msg)
+static int usteer_ubus_local_info(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req,
+				  const char *method, struct blob_attr *msg)
 {
 	struct usteer_node *node;
 
 	blob_buf_init(&b, 0);
 
-	for_each_local_node(node)
-		usteer_dump_node(&b, node);
+	for_each_local_node(node) usteer_dump_node(&b, node);
 
 	ubus_send_reply(ctx, req, b.head);
 
 	return 0;
 }
 
-static int
-usteer_ubus_remote_hosts(struct ubus_context *ctx, struct ubus_object *obj,
-			 struct ubus_request_data *req, const char *method,
-			 struct blob_attr *msg)
+static int usteer_ubus_remote_hosts(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req,
+				    const char *method, struct blob_attr *msg)
 {
 	struct usteer_remote_host *host;
 
 	blob_buf_init(&b, 0);
 
-	avl_for_each_element(&remote_hosts, host, avl)
-		usteer_dump_host(&b, host);
+	avl_for_each_element(&remote_hosts, host, avl) usteer_dump_host(&b, host);
 
 	ubus_send_reply(ctx, req, b.head);
 
 	return 0;
 }
 
-static int
-usteer_ubus_remote_info(struct ubus_context *ctx, struct ubus_object *obj,
-		       struct ubus_request_data *req, const char *method,
-		       struct blob_attr *msg)
+static int usteer_ubus_remote_info(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req,
+				   const char *method, struct blob_attr *msg)
 {
 	struct usteer_remote_node *rn;
 
 	blob_buf_init(&b, 0);
 
-	for_each_remote_node(rn)
-		usteer_dump_node(&b, &rn->node);
+	for_each_remote_node(rn) usteer_dump_node(&b, &rn->node);
 
 	ubus_send_reply(ctx, req, b.head);
 
@@ -391,20 +338,18 @@ usteer_ubus_remote_info(struct ubus_context *ctx, struct ubus_object *obj,
 static const char *usteer_get_roam_sm_name(enum roam_trigger_state state)
 {
 	switch (state) {
-		case ROAM_TRIGGER_IDLE:
-			return "ROAM_TRIGGER_IDLE";
-		case ROAM_TRIGGER_SCAN:
-			return "ROAM_TRIGGER_SCAN";
-		case ROAM_TRIGGER_SCAN_DONE:
-			return "ROAM_TRIGGER_SCAN_DONE";
+	case ROAM_TRIGGER_IDLE:
+		return "ROAM_TRIGGER_IDLE";
+	case ROAM_TRIGGER_SCAN:
+		return "ROAM_TRIGGER_SCAN";
+	case ROAM_TRIGGER_SCAN_DONE:
+		return "ROAM_TRIGGER_SCAN_DONE";
 	}
 	return "N/A";
 }
 
-static int
-usteer_ubus_get_connected_clients(struct ubus_context *ctx, struct ubus_object *obj,
-				  struct ubus_request_data *req, const char *method,
-				  struct blob_attr *msg)
+static int usteer_ubus_get_connected_clients(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req,
+					     const char *method, struct blob_attr *msg)
 {
 	struct usteer_measurement_report *mr;
 	struct usteer_node *node;
@@ -413,7 +358,8 @@ usteer_ubus_get_connected_clients(struct ubus_context *ctx, struct ubus_object *
 
 	blob_buf_init(&b, 0);
 
-	for_each_local_node(node) {
+	for_each_local_node(node)
+	{
 		n = blobmsg_open_table(&b, usteer_node_name(node));
 
 		list_for_each_entry(si, &node->sta_info, node_list) {
@@ -432,18 +378,21 @@ usteer_ubus_get_connected_clients(struct ubus_context *ctx, struct ubus_object *
 			blobmsg_close_table(&b, t);
 
 			t = blobmsg_open_table(&b, "roam-state-machine");
-			blobmsg_add_string(&b, "state",usteer_get_roam_sm_name(si->roam_state));
+			blobmsg_add_string(&b, "state", usteer_get_roam_sm_name(si->roam_state));
 			blobmsg_add_u32(&b, "tries", si->roam_tries);
 			blobmsg_add_u64(&b, "event", si->roam_event ? current_time - si->roam_event : 0);
 			blobmsg_add_u32(&b, "kick-count", si->kick_count);
 			blobmsg_add_u64(&b, "last-kick", si->roam_kick ? current_time - si->roam_kick : 0);
 			blobmsg_add_u64(&b, "scan_start", si->roam_scan_start ? current_time - si->roam_scan_start : 0);
-			blobmsg_add_u64(&b, "scan_timeout_start", si->roam_scan_timeout_start ? current_time - si->roam_scan_timeout_start : 0);
+			blobmsg_add_u64(&b, "scan_timeout_start",
+					si->roam_scan_timeout_start ? current_time - si->roam_scan_timeout_start : 0);
 			blobmsg_close_table(&b, t);
 
 			t = blobmsg_open_table(&b, "bss-transition-response");
 			blobmsg_add_u32(&b, "status-code", si->bss_transition_response.status_code);
-			blobmsg_add_u64(&b, "age", si->bss_transition_response.timestamp ? current_time - si->bss_transition_response.timestamp : 0);
+			blobmsg_add_u64(
+				&b, "age",
+				si->bss_transition_response.timestamp ? current_time - si->bss_transition_response.timestamp : 0);
 			blobmsg_close_table(&b, t);
 
 			/* Beacon measurement modes */
@@ -505,14 +454,13 @@ static const struct blobmsg_policy del_node_data_policy[] = {
 	[NODE_DATA_VALUES] = { "names", BLOBMSG_TYPE_ARRAY },
 };
 
-static void
-usteer_update_kvlist_data(struct kvlist *kv, struct blob_attr *data,
-			  bool delete)
+static void usteer_update_kvlist_data(struct kvlist *kv, struct blob_attr *data, bool delete)
 {
 	struct blob_attr *cur;
 	int rem;
 
-	blobmsg_for_each_attr(cur, data, rem) {
+	blobmsg_for_each_attr(cur, data, rem)
+	{
 		if (delete)
 			kvlist_delete(kv, blobmsg_get_string(cur));
 		else
@@ -520,16 +468,13 @@ usteer_update_kvlist_data(struct kvlist *kv, struct blob_attr *data,
 	}
 }
 
-static void
-usteer_update_kvlist_blob(struct blob_attr **dest, struct kvlist *kv)
+static void usteer_update_kvlist_blob(struct blob_attr **dest, struct kvlist *kv)
 {
 	struct blob_attr *val;
 	const char *name;
 
 	blob_buf_init(&b, 0);
-	kvlist_for_each(kv, name, val)
-		blobmsg_add_field(&b, blobmsg_type(val), name,
-				  blobmsg_data(val), blobmsg_len(val));
+	kvlist_for_each(kv, name, val) blobmsg_add_field(&b, blobmsg_type(val), name, blobmsg_data(val), blobmsg_len(val));
 
 	val = b.head;
 	if (!blobmsg_len(val))
@@ -538,10 +483,8 @@ usteer_update_kvlist_blob(struct blob_attr **dest, struct kvlist *kv)
 	usteer_node_set_blob(dest, val);
 }
 
-static int
-usteer_ubus_update_node_data(struct ubus_context *ctx, struct ubus_object *obj,
-			     struct ubus_request_data *req, const char *method,
-			     struct blob_attr *msg)
+static int usteer_ubus_update_node_data(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req,
+					const char *method, struct blob_attr *msg)
 {
 	const struct blobmsg_policy *policy;
 	struct blob_attr *tb[__NODE_DATA_MAX];
@@ -559,7 +502,7 @@ usteer_ubus_update_node_data(struct ubus_context *ctx, struct ubus_object *obj,
 
 	name = blobmsg_get_string(tb[NODE_DATA_NODE]);
 	val = tb[NODE_DATA_VALUES];
-	if (delete && blobmsg_check_array(val, BLOBMSG_TYPE_STRING) < 0)
+	if (delete &&blobmsg_check_array(val, BLOBMSG_TYPE_STRING) < 0)
 		return UBUS_STATUS_INVALID_ARGUMENT;
 
 	if (strcmp(name, "*") != 0) {
@@ -593,8 +536,7 @@ static const struct ubus_method usteer_methods[] = {
 	UBUS_METHOD("delete_node_data", usteer_ubus_update_node_data, del_node_data_policy),
 };
 
-static struct ubus_object_type usteer_obj_type =
-	UBUS_OBJECT_TYPE("usteer", usteer_methods);
+static struct ubus_object_type usteer_obj_type = UBUS_OBJECT_TYPE("usteer", usteer_methods);
 
 struct ubus_object usteer_obj = {
 	.name = "usteer",
@@ -603,8 +545,7 @@ struct ubus_object usteer_obj = {
 	.n_methods = ARRAY_SIZE(usteer_methods),
 };
 
-static bool
-usteer_add_nr_entry(struct usteer_node *ln, struct usteer_node *node)
+static bool usteer_add_nr_entry(struct usteer_node *ln, struct usteer_node *node)
 {
 	struct blobmsg_policy policy[3] = {
 		{ .type = BLOBMSG_TYPE_STRING },
@@ -622,21 +563,16 @@ usteer_add_nr_entry(struct usteer_node *ln, struct usteer_node *node)
 	if (!usteer_policy_node_below_max_assoc(node))
 		return false;
 
-	blobmsg_parse_array(policy, ARRAY_SIZE(tb), tb,
-			    blobmsg_data(node->rrm_nr),
-			    blobmsg_data_len(node->rrm_nr));
+	blobmsg_parse_array(policy, ARRAY_SIZE(tb), tb, blobmsg_data(node->rrm_nr), blobmsg_data_len(node->rrm_nr));
 	if (!tb[2])
 		return false;
 
-	blobmsg_add_field(&b, BLOBMSG_TYPE_STRING, "",
-			  blobmsg_data(tb[2]),
-			  blobmsg_data_len(tb[2]));
-	
+	blobmsg_add_field(&b, BLOBMSG_TYPE_STRING, "", blobmsg_data(tb[2]), blobmsg_data_len(tb[2]));
+
 	return true;
 }
 
-static void
-usteer_ubus_disassoc_add_neighbor(struct sta_info *si, struct usteer_node *node)
+static void usteer_ubus_disassoc_add_neighbor(struct sta_info *si, struct usteer_node *node)
 {
 	void *c;
 
@@ -645,15 +581,15 @@ usteer_ubus_disassoc_add_neighbor(struct sta_info *si, struct usteer_node *node)
 	blobmsg_close_array(&b, c);
 }
 
-static void
-usteer_ubus_disassoc_add_neighbors(struct sta_info *si)
+static void usteer_ubus_disassoc_add_neighbors(struct sta_info *si)
 {
 	struct usteer_node *node, *last_remote_neighbor = NULL;
 	int i = 0;
 	void *c;
 
 	c = blobmsg_open_array(&b, "neighbors");
-	for_each_local_node(node) {
+	for_each_local_node(node)
+	{
 		if (i >= config.max_neighbor_reports)
 			break;
 		if (si->node == node)
@@ -676,12 +612,8 @@ usteer_ubus_disassoc_add_neighbors(struct sta_info *si)
 	blobmsg_close_array(&b, c);
 }
 
-int usteer_ubus_bss_transition_request(struct sta_info *si,
-				       uint8_t dialog_token,
-				       bool disassoc_imminent,
-				       bool abridged,
-				       uint8_t validity_period,
-				       struct usteer_node *target_node)
+int usteer_ubus_bss_transition_request(struct sta_info *si, uint8_t dialog_token, bool disassoc_imminent, bool abridged,
+				       uint8_t validity_period, struct usteer_node *target_node)
 {
 	struct usteer_local_node *ln = container_of(si->node, struct usteer_local_node, node);
 
@@ -713,10 +645,11 @@ int usteer_ubus_band_steering_request(struct sta_info *si)
 	blobmsg_add_u32(&b, "validity_period", 100);
 
 	c = blobmsg_open_array(&b, "neighbors");
-	for_each_local_node(node) {
+	for_each_local_node(node)
+	{
 		if (!usteer_band_steering_is_target(ln, node))
 			continue;
-	
+
 		usteer_add_nr_entry(si->node, node);
 	}
 	blobmsg_close_array(&b, c);
@@ -741,7 +674,7 @@ int usteer_ubus_trigger_link_measurement(struct sta_info *si)
 int usteer_ubus_trigger_client_scan(struct sta_info *si)
 {
 	struct usteer_local_node *ln = container_of(si->node, struct usteer_local_node, node);
-	int op_classes[3]={1,12,131};
+	int op_classes[3] = { 1, 12, 131 };
 	if (!usteer_sta_supports_beacon_measurement_mode(si, BEACON_MEASUREMENT_ACTIVE)) {
 		MSG(DEBUG, "STA does not support beacon measurement sta=" MAC_ADDR_FMT "\n", MAC_ADDR_DATA(si->sta->addr));
 		return 0;
@@ -755,7 +688,7 @@ int usteer_ubus_trigger_client_scan(struct sta_info *si)
 	blobmsg_add_u32(&b, "mode", BEACON_MEASUREMENT_ACTIVE);
 	blobmsg_add_u32(&b, "duration", config.roam_scan_interval / 100);
 	blobmsg_add_u32(&b, "channel", 0);
-	blobmsg_add_u32(&b, "op_class", op_classes[si->scan_band%3]);
+	blobmsg_add_u32(&b, "op_class", op_classes[si->scan_band % 3]);
 	return ubus_invoke(ubus_ctx, ln->obj_id, "rrm_beacon_req", b.head, NULL, 0, 100);
 }
 

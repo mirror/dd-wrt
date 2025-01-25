@@ -35,7 +35,7 @@ static int dump_time;
 
 LIST_HEAD(node_handlers);
 
-const char * const event_types[__EVENT_TYPE_MAX] = {
+const char *const event_types[__EVENT_TYPE_MAX] = {
 	[EVENT_TYPE_PROBE] = "probe",
 	[EVENT_TYPE_AUTH] = "auth",
 	[EVENT_TYPE_ASSOC] = "assoc",
@@ -65,7 +65,6 @@ void debug_msg(int level, const char *func, int line, const char *format, ...)
 	else
 		vfprintf(stderr, format, ap);
 	va_end(ap);
-
 }
 
 void debug_msg_cont(int level, const char *format, ...)
@@ -132,12 +131,13 @@ void usteer_update_time(void)
 	struct timespec ts;
 
 	clock_gettime(CLOCK_MONOTONIC, &ts);
-	current_time = (uint64_t) ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+	current_time = (uint64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 }
 
 static int usage(const char *prog)
 {
-	fprintf(stderr, "Usage: %s [options]\n"
+	fprintf(stderr,
+		"Usage: %s [options]\n"
 		"Options:\n"
 		" -v:           Increase debug level (repeat for more messages):\n"
 		"               1: info messages\n"
@@ -149,12 +149,12 @@ static int usage(const char *prog)
 		" -s:		Output log messages via syslog instead of stderr\n"
 		" -D <n>:	Do not daemonize, wait for <n> seconds and print\n"
 		"		remote hosts and nodes\n"
-		"\n", prog);
+		"\n",
+		prog);
 	return 1;
 }
 
-static void
-usteer_dump_timeout(struct uloop_timeout *t)
+static void usteer_dump_timeout(struct uloop_timeout *t)
 {
 	struct usteer_remote_host *host;
 	struct usteer_remote_node *rn;
@@ -165,13 +165,11 @@ usteer_dump_timeout(struct uloop_timeout *t)
 	blob_buf_init(&b, 0);
 
 	c = blobmsg_open_table(&b, "hosts");
-	avl_for_each_element(&remote_hosts, host, avl)
-		usteer_dump_host(&b, host);
+	avl_for_each_element(&remote_hosts, host, avl) usteer_dump_host(&b, host);
 	blobmsg_close_table(&b, c);
 
 	c = blobmsg_open_table(&b, "nodes");
-	for_each_remote_node(rn)
-		usteer_dump_node(&b, &rn->node);
+	for_each_remote_node(rn) usteer_dump_node(&b, &rn->node);
 	blobmsg_close_table(&b, c);
 
 	str = blobmsg_format_json(b.head, true);
@@ -191,7 +189,7 @@ int main(int argc, char **argv)
 	usteer_init_defaults();
 
 	while ((ch = getopt(argc, argv, "D:i:sv")) != -1) {
-		switch(ch) {
+		switch (ch) {
 		case 'v':
 			config.debug_level++;
 			break;

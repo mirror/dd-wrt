@@ -22,8 +22,7 @@
 
 static struct blob_buf b;
 
-static void
-netifd_parse_interface_config(struct usteer_local_node *ln, struct blob_attr *msg)
+static void netifd_parse_interface_config(struct usteer_local_node *ln, struct blob_attr *msg)
 {
 	static const struct blobmsg_policy policy = {
 		.name = "maxassoc",
@@ -40,14 +39,9 @@ netifd_parse_interface_config(struct usteer_local_node *ln, struct blob_attr *ms
 	ln->netifd.status_complete = true;
 }
 
-static void
-netifd_parse_interface(struct usteer_local_node *ln, struct blob_attr *msg)
+static void netifd_parse_interface(struct usteer_local_node *ln, struct blob_attr *msg)
 {
-	enum {
-		N_IF_CONFIG,
-		N_IF_NAME,
-		__N_IF_MAX
-	};
+	enum { N_IF_CONFIG, N_IF_NAME, __N_IF_MAX };
 	static const struct blobmsg_policy policy[__N_IF_MAX] = {
 		[N_IF_CONFIG] = { .name = "config", .type = BLOBMSG_TYPE_TABLE },
 		[N_IF_NAME] = { .name = "ifname", .type = BLOBMSG_TYPE_STRING },
@@ -67,8 +61,7 @@ netifd_parse_interface(struct usteer_local_node *ln, struct blob_attr *msg)
 	netifd_parse_interface_config(ln, tb[N_IF_CONFIG]);
 }
 
-static void
-netifd_parse_radio(struct usteer_local_node *ln, struct blob_attr *msg)
+static void netifd_parse_radio(struct usteer_local_node *ln, struct blob_attr *msg)
 {
 	static const struct blobmsg_policy policy = {
 		.name = "interfaces",
@@ -84,12 +77,10 @@ netifd_parse_radio(struct usteer_local_node *ln, struct blob_attr *msg)
 	if (!iface)
 		return;
 
-	blobmsg_for_each_attr(cur, iface, rem)
-		netifd_parse_interface(ln, cur);
+	blobmsg_for_each_attr(cur, iface, rem) netifd_parse_interface(ln, cur);
 }
 
-static void
-netifd_status_cb(struct ubus_request *req, int type, struct blob_attr *msg)
+static void netifd_status_cb(struct ubus_request *req, int type, struct blob_attr *msg)
 {
 	struct usteer_local_node *ln;
 	struct blob_attr *cur;
@@ -98,8 +89,7 @@ netifd_status_cb(struct ubus_request *req, int type, struct blob_attr *msg)
 	ln = container_of(req, struct usteer_local_node, netifd.req);
 	ln->netifd.req_pending = false;
 
-	blobmsg_for_each_attr(cur, msg, rem)
-		netifd_parse_radio(ln, cur);
+	blobmsg_for_each_attr(cur, msg, rem) netifd_parse_radio(ln, cur);
 }
 
 static void netifd_update_node(struct usteer_node *node)

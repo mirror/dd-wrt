@@ -19,10 +19,10 @@
 #include "usteer.h"
 #include "event.h"
 
-#define UEV_LOG_MAXLEN	256
+#define UEV_LOG_MAXLEN 256
 
 static struct blob_buf b;
-static const char * const uev_name[] = {
+static const char *const uev_name[] = {
 	[UEV_PROBE_REQ_ACCEPT] = "probe_req_accept",
 	[UEV_PROBE_REQ_DENY] = "probe_req_deny",
 	[UEV_AUTH_REQ_ACCEPT] = "auth_req_accept",
@@ -37,7 +37,7 @@ static const char * const uev_name[] = {
 	[UEV_SIGNAL_KICK] = "signal_kick",
 
 };
-static const char * const uev_reason[] = {
+static const char *const uev_reason[] = {
 	[UEV_REASON_NONE] = "none",
 	[UEV_REASON_RETRY_EXCEEDED] = "retry_exceeded",
 	[UEV_REASON_LOW_SIGNAL] = "low_signal",
@@ -45,21 +45,19 @@ static const char * const uev_reason[] = {
 	[UEV_REASON_BETTER_CANDIDATE] = "better_candidate",
 };
 
-static const char * const uev_select_reason[] = {
+static const char *const uev_select_reason[] = {
 	[UEV_SELECT_REASON_NUM_ASSOC] = "n_assoc",
 	[UEV_SELECT_REASON_SIGNAL] = "signal",
 	[UEV_SELECT_REASON_LOAD] = "load",
 };
 
-static void
-usteer_event_add_node_status(struct usteer_node *node)
+static void usteer_event_add_node_status(struct usteer_node *node)
 {
 	blobmsg_add_u32(&b, "load", node->load);
 	blobmsg_add_u32(&b, "assoc", node->n_assoc);
 }
 
-static void
-usteer_event_send_ubus(struct uevent *ev)
+static void usteer_event_send_ubus(struct uevent *ev)
 {
 	void *c;
 	int i;
@@ -93,8 +91,7 @@ usteer_event_send_ubus(struct uevent *ev)
 	if (ev->select_reasons) {
 		c = blobmsg_open_array(&b, "select_reason");
 		for (i = 0; i < ARRAY_SIZE(uev_select_reason); i++) {
-			if (!(ev->select_reasons & (1 << i)) ||
-				!uev_select_reason[i])
+			if (!(ev->select_reasons & (1 << i)) || !uev_select_reason[i])
 				continue;
 
 			blobmsg_add_string(&b, NULL, uev_select_reason[i]);
@@ -126,21 +123,17 @@ usteer_event_send_ubus(struct uevent *ev)
 	ubus_notify(ubus_ctx, &usteer_obj, uev_name[ev->type], b.head, -1);
 }
 
-static int
-usteer_event_log_node(char *buf, int len, const char *prefix, struct usteer_node *node)
+static int usteer_event_log_node(char *buf, int len, const char *prefix, struct usteer_node *node)
 {
 	char *cur = buf;
 	char *end = buf + len;
 
-	cur += snprintf(cur, end - cur, " %sassoc=%d %sload=%d",
-			prefix, node->n_assoc,
-			prefix, node->load);
+	cur += snprintf(cur, end - cur, " %sassoc=%d %sload=%d", prefix, node->n_assoc, prefix, node->load);
 
 	return cur - buf;
 }
 
-static void
-usteer_event_log(struct uevent *ev)
+static void usteer_event_log(struct uevent *ev)
 {
 	char *str, *cur, *end;
 	int i;
@@ -175,20 +168,17 @@ usteer_event_log(struct uevent *ev)
 
 		cur += snprintf(cur, end - cur, " select_reason");
 		for (i = 0; i < ARRAY_SIZE(uev_select_reason); i++) {
-			if (!(ev->select_reasons & (1 << i)) ||
-				!uev_select_reason[i])
+			if (!(ev->select_reasons & (1 << i)) || !uev_select_reason[i])
 				continue;
 
-			cur += snprintf(cur, end - cur, "%c%s", first ? '=' : ',',
-						    uev_select_reason[i]);
+			cur += snprintf(cur, end - cur, "%c%s", first ? '=' : ',', uev_select_reason[i]);
 			first = false;
 		}
 	}
 	if (ev->node_other) {
 		cur += snprintf(cur, end - cur, " remote=%s", usteer_node_name(ev->node_other));
 		if (ev->si_other)
-			cur += snprintf(cur, end - cur, " remote_signal=%d",
-					ev->si_other->signal);
+			cur += snprintf(cur, end - cur, " remote_signal=%d", ev->si_other->signal);
 		cur += usteer_event_log_node(cur, end - cur, "remote_", ev->node_other);
 	}
 
@@ -228,20 +218,12 @@ void config_set_event_log_types(struct blob_attr *attr)
 	config.event_log_mask = 0;
 	if (!attr) {
 		static const uint32_t default_log[] = {
-			[MSG_INFO] =
-				(1 << UEV_LOAD_KICK_CLIENT) |
-				(1 << UEV_SIGNAL_KICK) |
-				(1 << UEV_AUTH_REQ_DENY) |
-				(1 << UEV_ASSOC_REQ_DENY),
-			[MSG_VERBOSE] =
-				(1 << UEV_PROBE_REQ_DENY),
-			[MSG_DEBUG] =
-				(1 << UEV_AUTH_REQ_ACCEPT) |
-				(1 << UEV_ASSOC_REQ_ACCEPT) |
-				(1 << UEV_LOAD_KICK_TRIGGER) |
-				(1 << UEV_LOAD_KICK_RESET) |
-				(1 << UEV_LOAD_KICK_MIN_CLIENTS) |
-				(1 << UEV_LOAD_KICK_NO_CLIENT),
+			[MSG_INFO] = (1 << UEV_LOAD_KICK_CLIENT) | (1 << UEV_SIGNAL_KICK) | (1 << UEV_AUTH_REQ_DENY) |
+				     (1 << UEV_ASSOC_REQ_DENY),
+			[MSG_VERBOSE] = (1 << UEV_PROBE_REQ_DENY),
+			[MSG_DEBUG] = (1 << UEV_AUTH_REQ_ACCEPT) | (1 << UEV_ASSOC_REQ_ACCEPT) | (1 << UEV_LOAD_KICK_TRIGGER) |
+				      (1 << UEV_LOAD_KICK_RESET) | (1 << UEV_LOAD_KICK_MIN_CLIENTS) |
+				      (1 << UEV_LOAD_KICK_NO_CLIENT),
 		};
 
 		if (config.debug_level >= MSG_DEBUG_ALL) {
@@ -258,7 +240,8 @@ void config_set_event_log_types(struct blob_attr *attr)
 	if (blobmsg_check_array(attr, BLOBMSG_TYPE_STRING) < 0)
 		return;
 
-	blobmsg_for_each_attr(cur, attr, rem) {
+	blobmsg_for_each_attr(cur, attr, rem)
+	{
 		const char *name = blobmsg_get_string(cur);
 
 		for (i = 0; i < ARRAY_SIZE(uev_name); i++) {

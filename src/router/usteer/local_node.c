@@ -35,8 +35,7 @@ AVL_TREE(local_nodes, avl_strcmp, false, NULL);
 static struct blob_buf b;
 static char *node_up_script;
 
-static void
-usteer_local_node_state_reset(struct usteer_local_node *ln)
+static void usteer_local_node_state_reset(struct usteer_local_node *ln)
 {
 	if (ln->req_state == REQ_IDLE)
 		return;
@@ -46,8 +45,7 @@ usteer_local_node_state_reset(struct usteer_local_node *ln)
 	ln->req_state = REQ_IDLE;
 }
 
-static void
-usteer_local_node_pending_bss_tm_free(struct usteer_local_node *ln)
+static void usteer_local_node_pending_bss_tm_free(struct usteer_local_node *ln)
 {
 	struct usteer_bss_tm_query *query, *tmp;
 
@@ -57,8 +55,7 @@ usteer_local_node_pending_bss_tm_free(struct usteer_local_node *ln)
 	}
 }
 
-static void
-usteer_free_node(struct ubus_context *ctx, struct usteer_local_node *ln)
+static void usteer_free_node(struct ubus_context *ctx, struct usteer_local_node *ln)
 {
 	struct usteer_node_handler *h;
 
@@ -80,11 +77,13 @@ usteer_free_node(struct ubus_context *ctx, struct usteer_local_node *ln)
 	free(ln);
 }
 
-struct usteer_local_node *usteer_local_node_by_bssid(uint8_t *bssid) {
+struct usteer_local_node *usteer_local_node_by_bssid(uint8_t *bssid)
+{
 	struct usteer_local_node *ln;
 	struct usteer_node *n;
 
-	for_each_local_node(n) {
+	for_each_local_node(n)
+	{
 		ln = container_of(n, struct usteer_local_node, node);
 		if (!memcmp(n->bssid, bssid, 6))
 			return ln;
@@ -93,24 +92,16 @@ struct usteer_local_node *usteer_local_node_by_bssid(uint8_t *bssid) {
 	return NULL;
 }
 
-static void
-usteer_handle_remove(struct ubus_context *ctx, struct ubus_subscriber *s,
-		    uint32_t id)
+static void usteer_handle_remove(struct ubus_context *ctx, struct ubus_subscriber *s, uint32_t id)
 {
 	struct usteer_local_node *ln = container_of(s, struct usteer_local_node, ev);
 
 	usteer_free_node(ctx, ln);
 }
 
-static int
-usteer_handle_bss_tm_query(struct usteer_local_node *ln, struct blob_attr *msg)
+static int usteer_handle_bss_tm_query(struct usteer_local_node *ln, struct blob_attr *msg)
 {
-	enum {
-		BSS_TM_QUERY_ADDRESS,
-		BSS_TM_QUERY_DIALOG_TOKEN,
-		BSS_TM_QUERY_CANDIDATE_LIST,
-		__BSS_TM_QUERY_MAX
-	};
+	enum { BSS_TM_QUERY_ADDRESS, BSS_TM_QUERY_DIALOG_TOKEN, BSS_TM_QUERY_CANDIDATE_LIST, __BSS_TM_QUERY_MAX };
 	struct blobmsg_policy policy[__BSS_TM_QUERY_MAX] = {
 		[BSS_TM_QUERY_ADDRESS] = { .name = "address", .type = BLOBMSG_TYPE_STRING },
 		[BSS_TM_QUERY_DIALOG_TOKEN] = { .name = "dialog-token", .type = BLOBMSG_TYPE_INT8 },
@@ -131,7 +122,7 @@ usteer_handle_bss_tm_query(struct usteer_local_node *ln, struct blob_attr *msg)
 
 	query->dialog_token = blobmsg_get_u8(tb[BSS_TM_QUERY_DIALOG_TOKEN]);
 
-	sta_addr = (uint8_t *) ether_aton(blobmsg_get_string(tb[BSS_TM_QUERY_ADDRESS]));
+	sta_addr = (uint8_t *)ether_aton(blobmsg_get_string(tb[BSS_TM_QUERY_ADDRESS]));
 	if (!sta_addr)
 		return 0;
 
@@ -143,14 +134,9 @@ usteer_handle_bss_tm_query(struct usteer_local_node *ln, struct blob_attr *msg)
 	return 1;
 }
 
-static int
-usteer_handle_bss_tm_response(struct usteer_local_node *ln, struct blob_attr *msg)
+static int usteer_handle_bss_tm_response(struct usteer_local_node *ln, struct blob_attr *msg)
 {
-	enum {
-		BSS_TM_RESPONSE_ADDRESS,
-		BSS_TM_RESPONSE_STATUS_CODE,
-		__BSS_TM_RESPONSE_MAX
-	};
+	enum { BSS_TM_RESPONSE_ADDRESS, BSS_TM_RESPONSE_STATUS_CODE, __BSS_TM_RESPONSE_MAX };
 	struct blobmsg_policy policy[__BSS_TM_RESPONSE_MAX] = {
 		[BSS_TM_RESPONSE_ADDRESS] = { .name = "address", .type = BLOBMSG_TYPE_STRING },
 		[BSS_TM_RESPONSE_STATUS_CODE] = { .name = "status-code", .type = BLOBMSG_TYPE_INT8 },
@@ -165,7 +151,7 @@ usteer_handle_bss_tm_response(struct usteer_local_node *ln, struct blob_attr *ms
 	if (!tb[BSS_TM_RESPONSE_ADDRESS] || !tb[BSS_TM_RESPONSE_STATUS_CODE])
 		return 0;
 
-	sta_addr = (uint8_t *) ether_aton(blobmsg_get_string(tb[BSS_TM_RESPONSE_ADDRESS]));
+	sta_addr = (uint8_t *)ether_aton(blobmsg_get_string(tb[BSS_TM_RESPONSE_ADDRESS]));
 	if (!sta_addr)
 		return 0;
 
@@ -188,16 +174,9 @@ usteer_handle_bss_tm_response(struct usteer_local_node *ln, struct blob_attr *ms
 	return 0;
 }
 
-static int
-usteer_local_node_handle_beacon_report(struct usteer_local_node *ln, struct blob_attr *msg)
+static int usteer_local_node_handle_beacon_report(struct usteer_local_node *ln, struct blob_attr *msg)
 {
-	enum {
-		BR_ADDRESS,
-		BR_BSSID,
-		BR_RCPI,
-		BR_RSNI,
-		__BR_MAX
-	};
+	enum { BR_ADDRESS, BR_BSSID, BR_RCPI, BR_RSNI, __BR_MAX };
 	struct blobmsg_policy policy[__BR_MAX] = {
 		[BR_ADDRESS] = { .name = "address", .type = BLOBMSG_TYPE_STRING },
 		[BR_BSSID] = { .name = "bssid", .type = BLOBMSG_TYPE_STRING },
@@ -213,7 +192,7 @@ usteer_local_node_handle_beacon_report(struct usteer_local_node *ln, struct blob
 	if (!tb[BR_ADDRESS] || !tb[BR_BSSID] || !tb[BR_RCPI] || !tb[BR_RSNI])
 		return 0;
 
-	addr = (uint8_t *) ether_aton(blobmsg_get_string(tb[BR_ADDRESS]));
+	addr = (uint8_t *)ether_aton(blobmsg_get_string(tb[BR_ADDRESS]));
 	if (!addr)
 		return 0;
 
@@ -221,7 +200,7 @@ usteer_local_node_handle_beacon_report(struct usteer_local_node *ln, struct blob
 	if (!sta)
 		return 0;
 
-	addr = (uint8_t *) ether_aton(blobmsg_get_string(tb[BR_BSSID]));
+	addr = (uint8_t *)ether_aton(blobmsg_get_string(tb[BR_BSSID]));
 	if (!addr)
 		return 0;
 
@@ -229,22 +208,14 @@ usteer_local_node_handle_beacon_report(struct usteer_local_node *ln, struct blob
 	if (!node)
 		return 0;
 
-	usteer_measurement_report_add(sta, node,
-				      (uint8_t)blobmsg_get_u16(tb[BR_RCPI]),
-				      (uint8_t)blobmsg_get_u16(tb[BR_RSNI]),
+	usteer_measurement_report_add(sta, node, (uint8_t)blobmsg_get_u16(tb[BR_RCPI]), (uint8_t)blobmsg_get_u16(tb[BR_RSNI]),
 				      current_time);
 	return 0;
 }
 
-static int
-usteer_local_node_handle_link_measurement_report(struct usteer_local_node *ln, struct blob_attr *msg)
+static int usteer_local_node_handle_link_measurement_report(struct usteer_local_node *ln, struct blob_attr *msg)
 {
-	enum {
-		LMR_ADDRESS,
-		LMR_RCPI,
-		LMR_RSNI,
-		__LMR_MAX
-	};
+	enum { LMR_ADDRESS, LMR_RCPI, LMR_RSNI, __LMR_MAX };
 	struct blobmsg_policy policy[__LMR_MAX] = {
 		[LMR_ADDRESS] = { .name = "address", .type = BLOBMSG_TYPE_STRING },
 		[LMR_RCPI] = { .name = "rcpi", .type = BLOBMSG_TYPE_INT16 },
@@ -258,7 +229,7 @@ usteer_local_node_handle_link_measurement_report(struct usteer_local_node *ln, s
 	if (!tb[LMR_ADDRESS] || !tb[LMR_RCPI] || !tb[LMR_RSNI])
 		return 0;
 
-	addr = (uint8_t *) ether_aton(blobmsg_get_string(tb[LMR_ADDRESS]));
+	addr = (uint8_t *)ether_aton(blobmsg_get_string(tb[LMR_ADDRESS]));
 	if (!addr)
 		return 0;
 
@@ -266,25 +237,15 @@ usteer_local_node_handle_link_measurement_report(struct usteer_local_node *ln, s
 	if (!sta)
 		return 0;
 
-	usteer_measurement_report_add(sta, &ln->node,
-				      (uint8_t)blobmsg_get_u16(tb[LMR_RCPI]),
-				      (uint8_t)blobmsg_get_u16(tb[LMR_RSNI]),
-				      current_time);
+	usteer_measurement_report_add(sta, &ln->node, (uint8_t)blobmsg_get_u16(tb[LMR_RCPI]),
+				      (uint8_t)blobmsg_get_u16(tb[LMR_RSNI]), current_time);
 	return 0;
 }
 
-static int
-usteer_handle_event(struct ubus_context *ctx, struct ubus_object *obj,
-		   struct ubus_request_data *req, const char *method,
-		   struct blob_attr *msg)
+static int usteer_handle_event(struct ubus_context *ctx, struct ubus_object *obj, struct ubus_request_data *req, const char *method,
+			       struct blob_attr *msg)
 {
-	enum {
-		EVENT_ADDR,
-		EVENT_SIGNAL,
-		EVENT_TARGET,
-		EVENT_FREQ,
-		__EVENT_MAX
-	};
+	enum { EVENT_ADDR, EVENT_SIGNAL, EVENT_TARGET, EVENT_FREQ, __EVENT_MAX };
 	struct blobmsg_policy policy[__EVENT_MAX] = {
 		[EVENT_ADDR] = { .name = "address", .type = BLOBMSG_TYPE_STRING },
 		[EVENT_SIGNAL] = { .name = "signal", .type = BLOBMSG_TYPE_INT32 },
@@ -306,13 +267,13 @@ usteer_handle_event(struct ubus_context *ctx, struct ubus_object *obj,
 
 	ln = container_of(obj, struct usteer_local_node, ev.obj);
 
-	if(!strcmp(method, "bss-transition-query")) {
+	if (!strcmp(method, "bss-transition-query")) {
 		return usteer_handle_bss_tm_query(ln, msg);
-	} else if(!strcmp(method, "bss-transition-response")) {
+	} else if (!strcmp(method, "bss-transition-response")) {
 		return usteer_handle_bss_tm_response(ln, msg);
-	} else if(!strcmp(method, "beacon-report")) {
+	} else if (!strcmp(method, "beacon-report")) {
 		return usteer_local_node_handle_beacon_report(ln, msg);
-	} else if(!strcmp(method, "link-measurement-report")) {
+	} else if (!strcmp(method, "link-measurement-report")) {
 		return usteer_local_node_handle_link_measurement_report(ln, msg);
 	}
 
@@ -331,26 +292,25 @@ usteer_handle_event(struct ubus_context *ctx, struct ubus_object *obj,
 		return UBUS_STATUS_INVALID_ARGUMENT;
 
 	if (tb[EVENT_SIGNAL])
-		signal = (int32_t) blobmsg_get_u32(tb[EVENT_SIGNAL]);
+		signal = (int32_t)blobmsg_get_u32(tb[EVENT_SIGNAL]);
 
 	if (tb[EVENT_FREQ])
 		freq = blobmsg_get_u32(tb[EVENT_FREQ]);
 
 	addr_str = blobmsg_data(tb[EVENT_ADDR]);
-	addr = (uint8_t *) ether_aton(addr_str);
+	addr = (uint8_t *)ether_aton(addr_str);
 	if (!addr)
 		return UBUS_STATUS_INVALID_ARGUMENT;
 
 	ret = usteer_handle_sta_event(node, addr, ev_type, freq, signal);
 
-	MSG(DEBUG, "received %s event from %s, signal=%d, freq=%d, handled:%s\n",
-	    method, addr_str, signal, freq, ret ? "true" : "false");
+	MSG(DEBUG, "received %s event from %s, signal=%d, freq=%d, handled:%s\n", method, addr_str, signal, freq,
+	    ret ? "true" : "false");
 
 	return ret ? 0 : 17 /* WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA */;
 }
 
-static void
-usteer_local_node_assoc_update(struct sta_info *si, struct blob_attr *data)
+static void usteer_local_node_assoc_update(struct sta_info *si, struct blob_attr *data)
 {
 	enum {
 		MSG_ASSOC,
@@ -367,7 +327,8 @@ usteer_local_node_assoc_update(struct sta_info *si, struct blob_attr *data)
 	if (tb[MSG_ASSOC] && blobmsg_get_u8(tb[MSG_ASSOC])) {
 		if (si->connected == STA_NOT_CONNECTED) {
 			/* New connection. Check if STA roamed. */
-			for_each_remote_node(rn) {
+			for_each_remote_node(rn)
+			{
 				remote_si = usteer_sta_info_get(si->sta, &rn->node, NULL);
 				if (!remote_si)
 					continue;
@@ -385,8 +346,7 @@ usteer_local_node_assoc_update(struct sta_info *si, struct blob_attr *data)
 	}
 }
 
-static void
-usteer_local_node_update_sta_rrm_wnm(struct sta_info *si, struct blob_attr *client_attr)
+static void usteer_local_node_update_sta_rrm_wnm(struct sta_info *si, struct blob_attr *client_attr)
 {
 	static const struct blobmsg_policy mbo_policy = {
 		.name = "mbo",
@@ -424,10 +384,11 @@ usteer_local_node_update_sta_rrm_wnm(struct sta_info *si, struct blob_attr *clie
 	if (!wnm_blob)
 		return;
 
-	blobmsg_for_each_attr(cur, wnm_blob, rem) {
+	blobmsg_for_each_attr(cur, wnm_blob, rem)
+	{
 		if (blobmsg_type(cur) != BLOBMSG_TYPE_INT32)
 			return;
-		
+
 		if (i == 2) {
 			if (blobmsg_get_u32(cur) & (1 << 3))
 				si->bss_transition = true;
@@ -437,8 +398,7 @@ usteer_local_node_update_sta_rrm_wnm(struct sta_info *si, struct blob_attr *clie
 	}
 }
 
-static void
-usteer_local_node_set_assoc(struct usteer_local_node *ln, struct blob_attr *cl)
+static void usteer_local_node_set_assoc(struct usteer_local_node *ln, struct blob_attr *cl)
 {
 	struct usteer_node *node = &ln->node;
 	struct usteer_node_handler *h;
@@ -455,8 +415,9 @@ usteer_local_node_set_assoc(struct usteer_local_node *ln, struct blob_attr *cl)
 			si->connected = STA_DISCONNECTED;
 	}
 
-	blobmsg_for_each_attr(cur, cl, rem) {
-		uint8_t *addr = (uint8_t *) ether_aton(blobmsg_name(cur));
+	blobmsg_for_each_attr(cur, cl, rem)
+	{
+		uint8_t *addr = (uint8_t *)ether_aton(blobmsg_name(cur));
 		bool create;
 
 		if (!addr)
@@ -487,13 +448,12 @@ usteer_local_node_set_assoc(struct usteer_local_node *ln, struct blob_attr *cl)
 			continue;
 
 		usteer_sta_disconnected(si);
-		MSG(VERBOSE, "station "MAC_ADDR_FMT" disconnected from node %s\n",
-			MAC_ADDR_DATA(si->sta->addr), usteer_node_name(node));
+		MSG(VERBOSE, "station " MAC_ADDR_FMT " disconnected from node %s\n", MAC_ADDR_DATA(si->sta->addr),
+		    usteer_node_name(node));
 	}
 }
 
-static void
-usteer_local_node_list_cb(struct ubus_request *req, int type, struct blob_attr *msg)
+static void usteer_local_node_list_cb(struct ubus_request *req, int type, struct blob_attr *msg)
 {
 	enum {
 		MSG_FREQ,
@@ -519,8 +479,7 @@ usteer_local_node_list_cb(struct ubus_request *req, int type, struct blob_attr *
 	usteer_local_node_set_assoc(ln, tb[MSG_CLIENTS]);
 }
 
-static void
-usteer_local_node_status_cb(struct ubus_request *req, int type, struct blob_attr *msg)
+static void usteer_local_node_status_cb(struct ubus_request *req, int type, struct blob_attr *msg)
 {
 	enum {
 		MSG_FREQ,
@@ -568,10 +527,10 @@ usteer_local_node_status_cb(struct ubus_request *req, int type, struct blob_attr
 	if (tb[MSG_CHANNEL])
 		node->channel = blobmsg_get_u32(tb[MSG_CHANNEL]);
 	if (tb[MSG_OP_CLASS])
-		node->op_class = blobmsg_get_u32(tb[MSG_OP_CLASS]);	
+		node->op_class = blobmsg_get_u32(tb[MSG_OP_CLASS]);
 	if (tb[MSG_BSSID]) {
-		uint8_t *addr = (uint8_t *) ether_aton(blobmsg_get_string(tb[MSG_BSSID]));
-		memcpy(node->bssid, addr, 6);	
+		uint8_t *addr = (uint8_t *)ether_aton(blobmsg_get_string(tb[MSG_BSSID]));
+		memcpy(node->bssid, addr, 6);
 	}
 	if (tb[MSG_SSID]) {
 		char *ssid = blobmsg_get_string(tb[MSG_SSID]);
@@ -582,12 +541,9 @@ usteer_local_node_status_cb(struct ubus_request *req, int type, struct blob_attr
 		ln->beacon_interval = blobmsg_get_u32(tb[MSG_BEACON_INTERVAL]);
 }
 
-static void
-usteer_local_node_rrm_nr_cb(struct ubus_request *req, int type, struct blob_attr *msg)
+static void usteer_local_node_rrm_nr_cb(struct ubus_request *req, int type, struct blob_attr *msg)
 {
-	static const struct blobmsg_policy policy = {
-		"value", BLOBMSG_TYPE_ARRAY
-	};
+	static const struct blobmsg_policy policy = { "value", BLOBMSG_TYPE_ARRAY };
 	struct usteer_local_node *ln;
 	struct blob_attr *tb;
 
@@ -600,8 +556,7 @@ usteer_local_node_rrm_nr_cb(struct ubus_request *req, int type, struct blob_attr
 	usteer_node_set_blob(&ln->node.rrm_nr, tb);
 }
 
-static void
-usteer_local_node_req_cb(struct ubus_request *req, int ret)
+static void usteer_local_node_req_cb(struct ubus_request *req, int ret)
 {
 	struct usteer_local_node *ln;
 
@@ -609,8 +564,7 @@ usteer_local_node_req_cb(struct ubus_request *req, int ret)
 	uloop_timeout_set(&ln->req_timer, 1);
 }
 
-static bool
-usteer_add_rrm_data(struct usteer_local_node *ln, struct usteer_node *node)
+static bool usteer_add_rrm_data(struct usteer_local_node *ln, struct usteer_node *node)
 {
 	if (node == &ln->node)
 		return false;
@@ -622,22 +576,20 @@ usteer_add_rrm_data(struct usteer_local_node *ln, struct usteer_node *node)
 	if (strcmp(ln->node.ssid, node->ssid) != 0)
 		return false;
 
-	blobmsg_add_field(&b, BLOBMSG_TYPE_ARRAY, "",
-			  blobmsg_data(node->rrm_nr),
-			  blobmsg_data_len(node->rrm_nr));
+	blobmsg_add_field(&b, BLOBMSG_TYPE_ARRAY, "", blobmsg_data(node->rrm_nr), blobmsg_data_len(node->rrm_nr));
 
 	return true;
 }
 
-static void
-usteer_local_node_prepare_rrm_set(struct usteer_local_node *ln)
+static void usteer_local_node_prepare_rrm_set(struct usteer_local_node *ln)
 {
 	struct usteer_node *node, *last_remote_neighbor = NULL;
 	int i = 0;
 	void *c;
 
 	c = blobmsg_open_array(&b, "list");
-	for_each_local_node(node) {
+	for_each_local_node(node)
+	{
 		if (i >= config.max_neighbor_reports)
 			break;
 		if (usteer_add_rrm_data(ln, node))
@@ -655,12 +607,11 @@ usteer_local_node_prepare_rrm_set(struct usteer_local_node *ln)
 		if (usteer_add_rrm_data(ln, node))
 			i++;
 	}
-		
+
 	blobmsg_close_array(&b, c);
 }
 
-static void
-usteer_local_node_state_next(struct uloop_timeout *timeout)
+static void usteer_local_node_state_next(struct uloop_timeout *timeout)
 {
 	struct usteer_local_node *ln;
 
@@ -698,8 +649,7 @@ usteer_local_node_state_next(struct uloop_timeout *timeout)
 	ubus_complete_request_async(ubus_ctx, &ln->req);
 }
 
-static void
-usteer_local_node_request_link_measurement(struct usteer_local_node *ln)
+static void usteer_local_node_request_link_measurement(struct usteer_local_node *ln)
 {
 	unsigned int min_count = DIV_ROUND_UP(config.link_measurement_interval, config.local_sta_update);
 	struct usteer_node *node;
@@ -711,7 +661,7 @@ usteer_local_node_request_link_measurement(struct usteer_local_node *ln)
 		ln->link_measurement_tries++;
 		return;
 	}
-	
+
 	ln->link_measurement_tries = 0;
 
 	if (!config.link_measurement_interval)
@@ -725,8 +675,7 @@ usteer_local_node_request_link_measurement(struct usteer_local_node *ln)
 	}
 }
 
-static void
-usteer_local_node_update(struct uloop_timeout *timeout)
+static void usteer_local_node_update(struct uloop_timeout *timeout)
 {
 	struct usteer_local_node *ln;
 	struct usteer_node_handler *h;
@@ -751,8 +700,7 @@ usteer_local_node_update(struct uloop_timeout *timeout)
 	uloop_timeout_set(timeout, config.local_sta_update);
 }
 
-static void
-usteer_local_node_process_bss_tm_queries(struct uloop_timeout *timeout)
+static void usteer_local_node_process_bss_tm_queries(struct uloop_timeout *timeout)
 {
 	struct usteer_bss_tm_query *query, *tmp;
 	struct usteer_local_node *ln;
@@ -782,8 +730,7 @@ usteer_local_node_process_bss_tm_queries(struct uloop_timeout *timeout)
 	usteer_local_node_pending_bss_tm_free(ln);
 }
 
-static struct usteer_local_node *
-usteer_get_node(struct ubus_context *ctx, const char *name)
+static struct usteer_local_node *usteer_get_node(struct ubus_context *ctx, const char *name)
 {
 	struct usteer_local_node *ln;
 	struct usteer_node *node;
@@ -813,8 +760,7 @@ usteer_get_node(struct ubus_context *ctx, const char *name)
 	return ln;
 }
 
-static void
-usteer_node_run_update_script(struct usteer_node *node)
+static void usteer_node_run_update_script(struct usteer_node *node)
 {
 	struct usteer_local_node *ln = container_of(node, struct usteer_local_node, node);
 	char *val;
@@ -828,14 +774,14 @@ usteer_node_run_update_script(struct usteer_node *node)
 		MSG(INFO, "failed to execute %s\n", val);
 }
 
-static void
-usteer_check_node_enabled(struct usteer_local_node *ln)
+static void usteer_check_node_enabled(struct usteer_local_node *ln)
 {
 	bool ssid_disabled = config.ssid_list;
 	struct blob_attr *cur;
 	int rem;
 
-	blobmsg_for_each_attr(cur, config.ssid_list, rem) {
+	blobmsg_for_each_attr(cur, config.ssid_list, rem)
+	{
 		char *config_ssid = blobmsg_get_string(cur);
 		char *ssid = ln->node.ssid;
 		if (strcmp(config_ssid, ssid) != 0)
@@ -865,8 +811,7 @@ usteer_check_node_enabled(struct usteer_local_node *ln)
 	usteer_node_run_update_script(&ln->node);
 }
 
-static void
-usteer_register_node(struct ubus_context *ctx, const char *name, uint32_t id)
+static void usteer_register_node(struct ubus_context *ctx, const char *name, uint32_t id)
 {
 	struct usteer_local_node *ln;
 	struct usteer_node_handler *h;
@@ -905,9 +850,7 @@ usteer_register_node(struct ubus_context *ctx, const char *name, uint32_t id)
 	usteer_check_node_enabled(ln);
 }
 
-static void
-usteer_event_handler(struct ubus_context *ctx, struct ubus_event_handler *ev,
-		    const char *type, struct blob_attr *msg)
+static void usteer_event_handler(struct ubus_context *ctx, struct ubus_event_handler *ev, const char *type, struct blob_attr *msg)
 {
 	static const struct blobmsg_policy policy[2] = {
 		{ .name = "id", .type = BLOBMSG_TYPE_INT32 },
@@ -925,24 +868,19 @@ usteer_event_handler(struct ubus_context *ctx, struct ubus_event_handler *ev,
 	usteer_register_node(ctx, path, blobmsg_get_u32(tb[0]));
 }
 
-static void
-usteer_register_events(struct ubus_context *ctx)
+static void usteer_register_events(struct ubus_context *ctx)
 {
-	static struct ubus_event_handler handler = {
-	    .cb = usteer_event_handler
-	};
+	static struct ubus_event_handler handler = { .cb = usteer_event_handler };
 
 	ubus_register_event_handler(ctx, &handler, "ubus.object.add");
 }
 
-static void
-node_list_cb(struct ubus_context *ctx, struct ubus_object_data *obj, void *priv)
+static void node_list_cb(struct ubus_context *ctx, struct ubus_object_data *obj, void *priv)
 {
 	usteer_register_node(ctx, obj->path, obj->id);
 }
 
-int
-usteer_local_node_get_beacon_interval(struct usteer_local_node *ln)
+int usteer_local_node_get_beacon_interval(struct usteer_local_node *ln)
 {
 	/* Check if beacon-interval is not available (pre-21.02+) */
 	if (ln->beacon_interval < 1)
@@ -972,8 +910,7 @@ void config_set_node_up_script(struct blob_attr *data)
 
 	node_up_script = strdup(val);
 
-	for_each_local_node(node)
-		usteer_node_run_update_script(node);
+	for_each_local_node(node) usteer_node_run_update_script(node);
 }
 
 void config_get_node_up_script(struct blob_buf *buf)
@@ -987,7 +924,7 @@ void config_get_node_up_script(struct blob_buf *buf)
 void config_set_ssid_list(struct blob_attr *data)
 {
 	struct usteer_local_node *ln;
-	
+
 	if (config.ssid_list)
 		free(config.ssid_list);
 
@@ -996,8 +933,7 @@ void config_set_ssid_list(struct blob_attr *data)
 	else
 		config.ssid_list = NULL;
 
-	avl_for_each_element(&local_nodes, ln, node.avl)
-		usteer_check_node_enabled(ln);
+	avl_for_each_element(&local_nodes, ln, node.avl) usteer_check_node_enabled(ln);
 }
 
 void config_get_ssid_list(struct blob_buf *buf)
@@ -1006,8 +942,7 @@ void config_get_ssid_list(struct blob_buf *buf)
 		blobmsg_add_blob(buf, config.ssid_list);
 }
 
-void
-usteer_local_nodes_init(struct ubus_context *ctx)
+void usteer_local_nodes_init(struct ubus_context *ctx)
 {
 	usteer_register_events(ctx);
 	ubus_lookup(ctx, "hostapd.*", node_list_cb, NULL);

@@ -20,10 +20,12 @@
 #include "node.h"
 #include "usteer.h"
 
-struct usteer_remote_node *usteer_remote_node_by_bssid(uint8_t *bssid) {
+struct usteer_remote_node *usteer_remote_node_by_bssid(uint8_t *bssid)
+{
 	struct usteer_remote_node *rn;
 
-	for_each_remote_node(rn) {
+	for_each_remote_node(rn)
+	{
 		if (!memcmp(rn->node.bssid, bssid, 6))
 			return rn;
 	}
@@ -31,7 +33,8 @@ struct usteer_remote_node *usteer_remote_node_by_bssid(uint8_t *bssid) {
 	return NULL;
 }
 
-struct usteer_node *usteer_node_by_bssid(uint8_t *bssid) {
+struct usteer_node *usteer_node_by_bssid(uint8_t *bssid)
+{
 	struct usteer_remote_node *rn;
 	struct usteer_local_node *ln;
 
@@ -64,8 +67,7 @@ void usteer_node_set_blob(struct blob_attr **dest, struct blob_attr *val)
 	memcpy(*dest, val, new_len);
 }
 
-static struct usteer_node *
-usteer_node_higher_bssid(struct usteer_node *node1, struct usteer_node *node2)
+static struct usteer_node *usteer_node_higher_bssid(struct usteer_node *node1, struct usteer_node *node2)
 {
 	int i;
 
@@ -81,13 +83,14 @@ usteer_node_higher_bssid(struct usteer_node *node1, struct usteer_node *node2)
 	return node1;
 }
 
-static struct usteer_node *
-usteer_node_higher_roamability(struct usteer_node *node, struct usteer_node *ref)
+static struct usteer_node *usteer_node_higher_roamability(struct usteer_node *node, struct usteer_node *ref)
 {
 	uint64_t roamability_node, roamability_ref;
 
-	roamability_node = ((uint64_t)(node->roam_events.source + node->roam_events.target)) * current_time / ((current_time - node->created) + 1);
-	roamability_ref = ((uint64_t)(ref->roam_events.source + ref->roam_events.target)) * current_time / ((current_time - ref->created) + 1);
+	roamability_node = ((uint64_t)(node->roam_events.source + node->roam_events.target)) * current_time /
+			   ((current_time - node->created) + 1);
+	roamability_ref = ((uint64_t)(ref->roam_events.source + ref->roam_events.target)) * current_time /
+			  ((current_time - ref->created) + 1);
 
 	if (roamability_node < roamability_ref)
 		return ref;
@@ -95,8 +98,7 @@ usteer_node_higher_roamability(struct usteer_node *node, struct usteer_node *ref
 	return node;
 }
 
-static struct usteer_node *
-usteer_node_better_neighbor(struct usteer_node *node, struct usteer_node *ref)
+static struct usteer_node *usteer_node_better_neighbor(struct usteer_node *node, struct usteer_node *ref)
 {
 	struct usteer_node *n1, *n2;
 
@@ -127,13 +129,13 @@ usteer_node_better_neighbor(struct usteer_node *node, struct usteer_node *ref)
 	return node;
 }
 
-struct usteer_node *
-usteer_node_get_next_neighbor(struct usteer_node *current_node, struct usteer_node *last)
+struct usteer_node *usteer_node_get_next_neighbor(struct usteer_node *current_node, struct usteer_node *last)
 {
 	struct usteer_remote_node *rn;
 	struct usteer_node *next = NULL, *n1, *n2;
 
-	for_each_remote_node(rn) {
+	for_each_remote_node(rn)
+	{
 		if (next == &rn->node)
 			continue;
 
@@ -166,7 +168,7 @@ usteer_node_get_next_neighbor(struct usteer_node *current_node, struct usteer_no
 			continue;
 		}
 
-		next = n1;		
+		next = n1;
 	}
 
 	return next;
