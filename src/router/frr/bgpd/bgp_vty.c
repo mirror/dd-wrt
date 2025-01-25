@@ -3517,11 +3517,6 @@ DEFUN (bgp_neighbor_graceful_restart_set,
 	peer = peer_and_group_lookup_vty(vty, argv[idx_peer]->arg);
 	if (!peer)
 		return CMD_WARNING_CONFIG_FAILED;
-	if (CHECK_FLAG(peer->sflags, PEER_STATUS_GROUP)) {
-		vty_out(vty,
-			"Per peer-group graceful-restart configuration is not yet supported\n");
-		return CMD_WARNING_CONFIG_FAILED;
-	}
 
 	result = bgp_neighbor_graceful_restart(peer, PEER_GR_CMD);
 	if (result == BGP_GR_SUCCESS) {
@@ -3552,11 +3547,6 @@ DEFUN (no_bgp_neighbor_graceful_restart,
 	peer = peer_and_group_lookup_vty(vty, argv[idx_peer]->arg);
 	if (!peer)
 		return CMD_WARNING_CONFIG_FAILED;
-	if (CHECK_FLAG(peer->sflags, PEER_STATUS_GROUP)) {
-		vty_out(vty,
-			"Per peer-group graceful-restart configuration is not yet supported\n");
-		return CMD_WARNING_CONFIG_FAILED;
-	}
 
 	result = bgp_neighbor_graceful_restart(peer, NO_PEER_GR_CMD);
 	if (ret == BGP_GR_SUCCESS) {
@@ -3586,11 +3576,6 @@ DEFUN (bgp_neighbor_graceful_restart_helper_set,
 	peer = peer_and_group_lookup_vty(vty, argv[idx_peer]->arg);
 	if (!peer)
 		return CMD_WARNING_CONFIG_FAILED;
-	if (CHECK_FLAG(peer->sflags, PEER_STATUS_GROUP)) {
-		vty_out(vty,
-			"Per peer-group graceful-restart configuration is not yet supported\n");
-		return CMD_WARNING_CONFIG_FAILED;
-	}
 
 	ret = bgp_neighbor_graceful_restart(peer, PEER_HELPER_CMD);
 	if (ret == BGP_GR_SUCCESS) {
@@ -3621,11 +3606,6 @@ DEFUN (no_bgp_neighbor_graceful_restart_helper,
 	peer = peer_and_group_lookup_vty(vty, argv[idx_peer]->arg);
 	if (!peer)
 		return CMD_WARNING_CONFIG_FAILED;
-	if (CHECK_FLAG(peer->sflags, PEER_STATUS_GROUP)) {
-		vty_out(vty,
-			"Per peer-group graceful-restart configuration is not yet supported\n");
-		return CMD_WARNING_CONFIG_FAILED;
-	}
 
 	ret = bgp_neighbor_graceful_restart(peer, NO_PEER_HELPER_CMD);
 	if (ret == BGP_GR_SUCCESS) {
@@ -3655,11 +3635,6 @@ DEFUN (bgp_neighbor_graceful_restart_disable_set,
 	peer = peer_and_group_lookup_vty(vty, argv[idx_peer]->arg);
 	if (!peer)
 		return CMD_WARNING_CONFIG_FAILED;
-	if (CHECK_FLAG(peer->sflags, PEER_STATUS_GROUP)) {
-		vty_out(vty,
-			"Per peer-group graceful-restart configuration is not yet supported\n");
-		return CMD_WARNING_CONFIG_FAILED;
-	}
 
 	ret = bgp_neighbor_graceful_restart(peer, PEER_DISABLE_CMD);
 	if (ret == BGP_GR_SUCCESS) {
@@ -3691,11 +3666,6 @@ DEFUN (no_bgp_neighbor_graceful_restart_disable,
 	peer = peer_and_group_lookup_vty(vty, argv[idx_peer]->arg);
 	if (!peer)
 		return CMD_WARNING_CONFIG_FAILED;
-	if (CHECK_FLAG(peer->sflags, PEER_STATUS_GROUP)) {
-		vty_out(vty,
-			"Per peer-group graceful-restart configuration is not yet supported\n");
-		return CMD_WARNING_CONFIG_FAILED;
-	}
 
 	ret = bgp_neighbor_graceful_restart(peer, NO_PEER_DISABLE_CMD);
 	if (ret == BGP_GR_SUCCESS) {
@@ -5273,7 +5243,7 @@ DEFUN (neighbor_peer_group,
 
 DEFUN (no_neighbor,
        no_neighbor_cmd,
-       "no neighbor <WORD|<A.B.C.D|X:X::X:X> [remote-as <(1-4294967295)|internal|external|auto>]>",
+       "no neighbor <WORD|<A.B.C.D|X:X::X:X> [remote-as <ASNUM|internal|external|auto>]>",
        NO_STR
        NEIGHBOR_STR
        NEIGHBOR_ADDR_STR2
@@ -5352,7 +5322,7 @@ DEFUN (no_neighbor,
 
 DEFUN (no_neighbor_interface_config,
        no_neighbor_interface_config_cmd,
-       "no neighbor WORD interface [v6only] [peer-group PGNAME] [remote-as <(1-4294967295)|internal|external|auto>]",
+       "no neighbor WORD interface [v6only] [peer-group PGNAME] [remote-as <ASNUM|internal|external|auto>]",
        NO_STR
        NEIGHBOR_STR
        "Interface name\n"
@@ -9846,6 +9816,8 @@ DEFPY (af_rd_vpn_export,
 			   bgp_get_default(), bgp);
 
 	if (yes) {
+		if (bgp->vpn_policy[afi].tovpn_rd_pretty)
+			XFREE(MTYPE_BGP_NAME, bgp->vpn_policy[afi].tovpn_rd_pretty);
 		bgp->vpn_policy[afi].tovpn_rd_pretty = XSTRDUP(MTYPE_BGP_NAME,
 							       rd_str);
 		bgp->vpn_policy[afi].tovpn_rd = prd;
@@ -14935,22 +14907,31 @@ static void bgp_show_peer(struct vty *vty, struct peer *p, bool use_json,
 			if (CHECK_FLAG(p->cap, PEER_CAP_RESTART_RCV) ||
 			    CHECK_FLAG(p->cap, PEER_CAP_RESTART_ADV)) {
 				if (CHECK_FLAG(p->cap, PEER_CAP_RESTART_ADV) &&
-				    CHECK_FLAG(p->cap, PEER_CAP_RESTART_RCV))
+				    CHECK_FLAG(p->cap, PEER_CAP_RESTART_RCV)) {
 					json_object_string_add(
 						json_cap, "gracefulRestart",
 						"advertisedAndReceived");
-				else if (CHECK_FLAG(p->cap,
-						    PEER_CAP_RESTART_ADV))
+				} else if (CHECK_FLAG(p->cap, PEER_CAP_RESTART_ADV)) {
+					json_object_string_add(json_cap, "gracefulRestart",
+							       "advertised");
+#if CONFDATE > 20250525
+CPP_NOTICE("Remove `gracefulRestartCapability` JSON field")
+#endif
 					json_object_string_add(
 						json_cap,
 						"gracefulRestartCapability",
 						"advertised");
-				else if (CHECK_FLAG(p->cap,
-						    PEER_CAP_RESTART_RCV))
+				} else if (CHECK_FLAG(p->cap, PEER_CAP_RESTART_RCV)) {
+					json_object_string_add(json_cap, "gracefulRestart",
+							       "received");
+#if CONFDATE > 20250525
+CPP_NOTICE("Remove `gracefulRestartCapability` JSON field")
+#endif
 					json_object_string_add(
 						json_cap,
 						"gracefulRestartCapability",
 						"received");
+				}
 
 				if (CHECK_FLAG(p->cap, PEER_CAP_RESTART_RCV)) {
 					int restart_af_count = 0;
@@ -18831,7 +18812,11 @@ static void bgp_config_write_peer_global(struct vty *vty, struct bgp *bgp,
 
 	/* enforce-first-as */
 	if (CHECK_FLAG(bgp->flags, BGP_FLAG_ENFORCE_FIRST_AS)) {
-		if (!peergroup_flag_check(peer, PEER_FLAG_ENFORCE_FIRST_AS))
+		/* The `no` form is printed because by default this enforcing
+		 * is enabled, thus we need to print it inverted.
+		 * See peer_new().
+		 */
+		if (peergroup_flag_check(peer, PEER_FLAG_ENFORCE_FIRST_AS))
 			vty_out(vty, " no neighbor %s enforce-first-as\n", addr);
 	} else {
 		if (peergroup_flag_check(peer, PEER_FLAG_ENFORCE_FIRST_AS))

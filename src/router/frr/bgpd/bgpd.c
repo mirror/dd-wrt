@@ -462,6 +462,10 @@ void bgp_suppress_fib_pending_set(struct bgp *bgp, bool set)
 	if (bgp->inst_type == BGP_INSTANCE_TYPE_VIEW)
 		return;
 
+	/* Do nothing if already in a desired state */
+	if (set == !!CHECK_FLAG(bgp->flags, BGP_FLAG_SUPPRESS_FIB_PENDING))
+		return;
+
 	if (set) {
 		SET_FLAG(bgp->flags, BGP_FLAG_SUPPRESS_FIB_PENDING);
 		/* Send msg to zebra for the first instance of bgp enabled
@@ -1251,8 +1255,6 @@ static void peer_free(struct peer *peer)
 	bgp_reads_off(peer->connection);
 	bgp_writes_off(peer->connection);
 	event_cancel_event_ready(bm->master, peer->connection);
-	FOREACH_AFI_SAFI (afi, safi)
-		EVENT_OFF(peer->t_revalidate_all[afi][safi]);
 	assert(!peer->connection->t_write);
 	assert(!peer->connection->t_read);
 
@@ -1592,8 +1594,13 @@ struct peer *peer_new(struct bgp *bgp)
 
 	SET_FLAG(peer->sflags, PEER_STATUS_CAPABILITY_OPEN);
 
-	if (CHECK_FLAG(bgp->flags, BGP_FLAG_ENFORCE_FIRST_AS))
-		peer_flag_set(peer, PEER_FLAG_ENFORCE_FIRST_AS);
+	/* By default this is enabled, thus we need to mark it as
+	 * inverted in order to display correctly in the configuration.
+	 */
+	if (CHECK_FLAG(bgp->flags, BGP_FLAG_ENFORCE_FIRST_AS)) {
+		SET_FLAG(peer->flags_invert, PEER_FLAG_ENFORCE_FIRST_AS);
+		SET_FLAG(peer->flags, PEER_FLAG_ENFORCE_FIRST_AS);
+	}
 
 	if (CHECK_FLAG(bgp->flags, BGP_FLAG_SOFT_VERSION_CAPABILITY))
 		peer_flag_set(peer, PEER_FLAG_CAPABILITY_SOFT_VERSION);
@@ -2191,8 +2198,7 @@ int peer_remote_as(struct bgp *bgp, union sockunion *su, const char *conf_if,
 		/* When this peer is a member of peer-group.  */
 		if (peer->group) {
 			/* peer-group already has AS number/internal/external */
-			if (peer->group->conf->as
-			    || peer->group->conf->as_type) {
+			if (peer->group->conf->as || peer->group->conf->as_type != AS_UNSPECIFIED) {
 				/* Return peer group's AS number.  */
 				*as = peer->group->conf->as;
 				return BGP_ERR_PEER_GROUP_MEMBER;
@@ -2720,8 +2726,6 @@ int peer_delete(struct peer *peer)
 	bgp_reads_off(peer->connection);
 	bgp_writes_off(peer->connection);
 	event_cancel_event_ready(bm->master, peer->connection);
-	FOREACH_AFI_SAFI (afi, safi)
-		EVENT_OFF(peer->t_revalidate_all[afi][safi]);
 	assert(!CHECK_FLAG(peer->connection->thread_flags,
 			   PEER_THREAD_WRITES_ON));
 	assert(!CHECK_FLAG(peer->connection->thread_flags,
@@ -2902,6 +2906,7 @@ struct peer_group *peer_group_get(struct bgp *bgp, const char *name)
 	group->conf->host = XSTRDUP(MTYPE_BGP_PEER_HOST, name);
 	group->conf->group = group;
 	group->conf->as = 0;
+	group->conf->as_type = AS_UNSPECIFIED;
 	group->conf->ttl = BGP_DEFAULT_TTL;
 	group->conf->gtsm_hops = BGP_GTSM_HOPS_DISABLED;
 	group->conf->v_routeadv = BGP_DEFAULT_EBGP_ROUTEADV;
@@ -3023,6 +3028,7 @@ static void peer_group2peer_config_copy(struct peer_group *group,
 	PEER_ATTR_INHERIT(peer, group, local_role);
 
 	/* Update GR flags for the peer. */
+	PEER_ATTR_INHERIT(peer, group, peer_gr_new_status_flag);
 	bgp_peer_gr_flags_update(peer);
 
 	/* Apply BFD settings from group to peer if it exists. */

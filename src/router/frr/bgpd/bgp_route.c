@@ -2960,7 +2960,10 @@ void bgp_best_selection(struct bgp *bgp, struct bgp_dest *dest,
 
 	old_select = NULL;
 	pi = bgp_dest_get_bgp_path_info(dest);
-	while (pi && CHECK_FLAG(pi->flags, BGP_PATH_UNSORTED)) {
+	while (pi && (CHECK_FLAG(pi->flags, BGP_PATH_UNSORTED) ||
+		      (pi->peer != bgp->peer_self &&
+		       !CHECK_FLAG(pi->peer->sflags, PEER_STATUS_NSF_WAIT) &&
+		       !peer_established(pi->peer->connection)))) {
 		struct bgp_path_info *next = pi->next;
 
 		if (CHECK_FLAG(pi->flags, BGP_PATH_SELECTED))
@@ -3051,6 +3054,30 @@ void bgp_best_selection(struct bgp *bgp, struct bgp_dest *dest,
 
 				UNSET_FLAG(first->flags, BGP_PATH_UNSORTED);
 			}
+			continue;
+		}
+
+		if (first->peer && first->peer != bgp->peer_self &&
+		    !CHECK_FLAG(first->peer->sflags, PEER_STATUS_NSF_WAIT) &&
+		    !peer_established(first->peer->connection)) {
+			if (debug)
+				zlog_debug("%s: %pBD(%s) pi %p from %s is not in established state",
+					   __func__, dest, bgp->name_pretty, first,
+					   first->peer->host);
+
+			/*
+			 * Peer is not in established state we cannot sort this
+			 * item yet.  Let's wait, so hold this one to the side
+			 */
+			if (unsorted_holddown) {
+				first->next = unsorted_holddown;
+				unsorted_holddown->prev = first;
+				unsorted_holddown = first;
+			} else
+				unsorted_holddown = first;
+
+			UNSET_FLAG(first->flags, BGP_PATH_UNSORTED);
+
 			continue;
 		}
 
@@ -4406,7 +4433,7 @@ bool bgp_update_martian_nexthop(struct bgp *bgp, afi_t afi, safi_t safi,
 				uint8_t type, uint8_t stype, struct attr *attr,
 				struct bgp_dest *dest)
 {
-	bool ret = false;
+	bool nh_invalid = false;
 	bool is_bgp_static_route =
 		(type == ZEBRA_ROUTE_BGP && stype == BGP_ROUTE_STATIC) ? true
 								       : false;
@@ -4428,13 +4455,15 @@ bool bgp_update_martian_nexthop(struct bgp *bgp, afi_t afi, safi_t safi,
 	    (safi != SAFI_UNICAST && safi != SAFI_MULTICAST && safi != SAFI_EVPN))
 		return false;
 
-	/* If NEXT_HOP is present, validate it. */
-	if (attr->flag & ATTR_FLAG_BIT(BGP_ATTR_NEXT_HOP)) {
-		if (attr->nexthop.s_addr == INADDR_ANY ||
-		    !ipv4_unicast_valid(&attr->nexthop) ||
-		    bgp_nexthop_self(bgp, afi, type, stype, attr, dest))
-			return true;
-	}
+	/* If NEXT_HOP is present, validate it:
+	 * The route can have both nexthop + mp_nexthop encoded as multiple NLRIs,
+	 * and we MUST check if at least one of them is valid.
+	 * E.g.: IPv6 prefix can be with nexthop: 0.0.0.0, and mp_nexthop: fc00::1.
+	 */
+	if (CHECK_FLAG(attr->flag, ATTR_FLAG_BIT(BGP_ATTR_NEXT_HOP)))
+		nh_invalid = (attr->nexthop.s_addr == INADDR_ANY ||
+			      !ipv4_unicast_valid(&attr->nexthop) ||
+			      bgp_nexthop_self(bgp, afi, type, stype, attr, dest));
 
 	/* If MP_NEXTHOP is present, validate it. */
 	/* Note: For IPv6 nexthops, we only validate the global (1st) nexthop;
@@ -4449,39 +4478,31 @@ bool bgp_update_martian_nexthop(struct bgp *bgp, afi_t afi, safi_t safi,
 		switch (attr->mp_nexthop_len) {
 		case BGP_ATTR_NHLEN_IPV4:
 		case BGP_ATTR_NHLEN_VPNV4:
-			ret = (attr->mp_nexthop_global_in.s_addr ==
-				       INADDR_ANY ||
-			       !ipv4_unicast_valid(
-				       &attr->mp_nexthop_global_in) ||
-			       bgp_nexthop_self(bgp, afi, type, stype, attr,
-						dest));
+			nh_invalid = (attr->mp_nexthop_global_in.s_addr == INADDR_ANY ||
+				      !ipv4_unicast_valid(&attr->mp_nexthop_global_in) ||
+				      bgp_nexthop_self(bgp, afi, type, stype, attr, dest));
 			break;
 
 		case BGP_ATTR_NHLEN_IPV6_GLOBAL:
 		case BGP_ATTR_NHLEN_VPNV6_GLOBAL:
-			ret = (IN6_IS_ADDR_UNSPECIFIED(
-					&attr->mp_nexthop_global)
-			       || IN6_IS_ADDR_LOOPBACK(&attr->mp_nexthop_global)
-			       || IN6_IS_ADDR_MULTICAST(
-				       &attr->mp_nexthop_global)
-			       || bgp_nexthop_self(bgp, afi, type, stype, attr,
-						   dest));
+			nh_invalid = (IN6_IS_ADDR_UNSPECIFIED(&attr->mp_nexthop_global) ||
+				      IN6_IS_ADDR_LOOPBACK(&attr->mp_nexthop_global) ||
+				      IN6_IS_ADDR_MULTICAST(&attr->mp_nexthop_global) ||
+				      bgp_nexthop_self(bgp, afi, type, stype, attr, dest));
 			break;
 		case BGP_ATTR_NHLEN_IPV6_GLOBAL_AND_LL:
-			ret = (IN6_IS_ADDR_LOOPBACK(&attr->mp_nexthop_global)
-			       || IN6_IS_ADDR_MULTICAST(
-				       &attr->mp_nexthop_global)
-			       || bgp_nexthop_self(bgp, afi, type, stype, attr,
-						   dest));
+			nh_invalid = (IN6_IS_ADDR_LOOPBACK(&attr->mp_nexthop_global) ||
+				      IN6_IS_ADDR_MULTICAST(&attr->mp_nexthop_global) ||
+				      bgp_nexthop_self(bgp, afi, type, stype, attr, dest));
 			break;
 
 		default:
-			ret = true;
+			nh_invalid = true;
 			break;
 		}
 	}
 
-	return ret;
+	return nh_invalid;
 }
 
 static void bgp_attr_add_no_export_community(struct attr *attr)
@@ -7411,7 +7432,7 @@ static void bgp_purge_af_static_redist_routes(struct bgp *bgp, afi_t afi,
 {
 	struct bgp_table *table;
 	struct bgp_dest *dest;
-	struct bgp_path_info *pi;
+	struct bgp_path_info *pi, *next;
 
 	/* Do not install the aggregate route if BGP is in the
 	 * process of termination.
@@ -7422,7 +7443,8 @@ static void bgp_purge_af_static_redist_routes(struct bgp *bgp, afi_t afi,
 
 	table = bgp->rib[afi][safi];
 	for (dest = bgp_table_top(table); dest; dest = bgp_route_next(dest)) {
-		for (pi = bgp_dest_get_bgp_path_info(dest); pi; pi = pi->next) {
+		for (pi = bgp_dest_get_bgp_path_info(dest); (pi != NULL) && (next = pi->next, 1);
+		     pi = next) {
 			if (pi->peer == bgp->peer_self
 			    && ((pi->type == ZEBRA_ROUTE_BGP
 				 && pi->sub_type == BGP_ROUTE_STATIC)
@@ -7922,7 +7944,7 @@ void bgp_aggregate_toggle_suppressed(struct bgp_aggregate *aggregate,
 	struct bgp_table *table = bgp->rib[afi][safi];
 	const struct prefix *dest_p;
 	struct bgp_dest *dest, *top;
-	struct bgp_path_info *pi;
+	struct bgp_path_info *pi, *next;
 
 	/* We've found a different MED we must revert any suppressed routes. */
 	top = bgp_node_get(table, p);
@@ -7932,7 +7954,8 @@ void bgp_aggregate_toggle_suppressed(struct bgp_aggregate *aggregate,
 		if (dest_p->prefixlen <= p->prefixlen)
 			continue;
 
-		for (pi = bgp_dest_get_bgp_path_info(dest); pi; pi = pi->next) {
+		for (pi = bgp_dest_get_bgp_path_info(dest); (pi != NULL) && (next = pi->next, 1);
+		     pi = next) {
 			if (BGP_PATH_HOLDDOWN(pi))
 				continue;
 			if (pi->sub_type == BGP_ROUTE_AGGREGATE)
@@ -8007,7 +8030,7 @@ bool bgp_aggregate_route(struct bgp *bgp, const struct prefix *p, afi_t afi,
 	struct community *community = NULL;
 	struct ecommunity *ecommunity = NULL;
 	struct lcommunity *lcommunity = NULL;
-	struct bgp_path_info *pi;
+	struct bgp_path_info *pi, *next;
 	uint8_t atomic_aggregate = 0;
 
 	/* If the bgp instance is being deleted or self peer is deleted
@@ -8057,7 +8080,8 @@ bool bgp_aggregate_route(struct bgp *bgp, const struct prefix *p, afi_t afi,
 		if (!bgp_check_advertise(bgp, dest, safi))
 			continue;
 
-		for (pi = bgp_dest_get_bgp_path_info(dest); pi; pi = pi->next) {
+		for (pi = bgp_dest_get_bgp_path_info(dest); (pi != NULL) && (next = pi->next, 1);
+		     pi = next) {
 			if (BGP_PATH_HOLDDOWN(pi))
 				continue;
 
@@ -8215,7 +8239,7 @@ void bgp_aggregate_delete(struct bgp *bgp, const struct prefix *p, afi_t afi,
 	struct bgp_table *table;
 	struct bgp_dest *top;
 	struct bgp_dest *dest;
-	struct bgp_path_info *pi;
+	struct bgp_path_info *pi, *next;
 
 	table = bgp->rib[afi][safi];
 
@@ -8228,7 +8252,8 @@ void bgp_aggregate_delete(struct bgp *bgp, const struct prefix *p, afi_t afi,
 		if (dest_p->prefixlen <= p->prefixlen)
 			continue;
 
-		for (pi = bgp_dest_get_bgp_path_info(dest); pi; pi = pi->next) {
+		for (pi = bgp_dest_get_bgp_path_info(dest); (pi != NULL) && (next = pi->next, 1);
+		     pi = next) {
 			if (BGP_PATH_HOLDDOWN(pi))
 				continue;
 
@@ -12321,8 +12346,7 @@ void route_vty_out_detail_header(struct vty *vty, struct bgp *bgp,
 		} else {
 			if (incremental_print) {
 				vty_out(vty, "\"prefix\": \"%pFX\",\n", p);
-				vty_out(vty, "\"version\": \"%" PRIu64 "\",",
-					dest->version);
+				vty_out(vty, "\"version\": %" PRIu64 ",", dest->version);
 			} else {
 				json_object_string_addf(json, "prefix", "%pFX",
 							p);
