@@ -741,13 +741,13 @@ int usteer_ubus_trigger_link_measurement(struct sta_info *si)
 int usteer_ubus_trigger_client_scan(struct sta_info *si)
 {
 	struct usteer_local_node *ln = container_of(si->node, struct usteer_local_node, node);
-
+	int op_classes[3]={1,12,131};
 	if (!usteer_sta_supports_beacon_measurement_mode(si, BEACON_MEASUREMENT_ACTIVE)) {
 		MSG(DEBUG, "STA does not support beacon measurement sta=" MAC_ADDR_FMT "\n", MAC_ADDR_DATA(si->sta->addr));
 		return 0;
 	}
 
-	si->scan_band = !si->scan_band;
+	si->scan_band++;
 
 	blob_buf_init(&b, 0);
 	blobmsg_printf(&b, "addr", MAC_ADDR_FMT, MAC_ADDR_DATA(si->sta->addr));
@@ -755,7 +755,7 @@ int usteer_ubus_trigger_client_scan(struct sta_info *si)
 	blobmsg_add_u32(&b, "mode", BEACON_MEASUREMENT_ACTIVE);
 	blobmsg_add_u32(&b, "duration", config.roam_scan_interval / 100);
 	blobmsg_add_u32(&b, "channel", 0);
-	blobmsg_add_u32(&b, "op_class", si->scan_band ? 1 : 12);
+	blobmsg_add_u32(&b, "op_class", op_classes[si->scan_band%3]);
 	return ubus_invoke(ubus_ctx, ln->obj_id, "rrm_beacon_req", b.head, NULL, 0, 100);
 }
 
