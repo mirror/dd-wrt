@@ -1,0 +1,1771 @@
+diff -urpN frr-frr-10.2/bfdd/dplane.c frr-frr-10.2.1/bfdd/dplane.c
+--- frr-frr-10.2/bfdd/dplane.c	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/bfdd/dplane.c	2024-12-24 03:47:55.000000000 +0700
+@@ -948,6 +948,9 @@ static void bfd_dplane_client_connect(st
+ 		_bfd_dplane_client_bootstrap(bdc);
+ 	}
+ 
++	/* Continue with the connection */
++	return;
++
+ reschedule_connect:
+ 	EVENT_OFF(bdc->inbufev);
+ 	EVENT_OFF(bdc->outbufev);
+diff -urpN frr-frr-10.2/bgpd/bgp_bmp.c frr-frr-10.2.1/bgpd/bgp_bmp.c
+--- frr-frr-10.2/bgpd/bgp_bmp.c	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/bgpd/bgp_bmp.c	2024-12-24 03:47:55.000000000 +0700
+@@ -2434,8 +2434,11 @@ DEFPY(bmp_connect,
+ 	}
+ 
+ 	ba = bmp_active_get(bt, hostname, port);
+-	if (srcif)
++	if (srcif) {
++		if (ba->ifsrc)
++			XFREE(MTYPE_TMP, ba->ifsrc);
+ 		ba->ifsrc = XSTRDUP(MTYPE_TMP, srcif);
++	}
+ 	if (min_retry_str)
+ 		ba->minretry = min_retry;
+ 	if (max_retry_str)
+diff -urpN frr-frr-10.2/bgpd/bgp_evpn.c frr-frr-10.2.1/bgpd/bgp_evpn.c
+--- frr-frr-10.2/bgpd/bgp_evpn.c	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/bgpd/bgp_evpn.c	2024-12-24 03:47:55.000000000 +0700
+@@ -5112,6 +5112,33 @@ static void evpn_mpattr_encode_type5(str
+ }
+ 
+ /*
++ * In cases such as 'no advertise-all-vni' and L2 VNI DELETE, we need to
++ * pop all the VPN routes present in the bgp_zebra_announce FIFO yet to
++ * be processed regardless of VNI is configured or not.
++ *
++ * NOTE: NO need to pop the VPN routes in two cases
++ *  1) In free_vni_entry
++ *     - Called by bgp_free()->bgp_evpn_cleanup().
++ *     - Since bgp_delete is called before bgp_free and we pop all the dest
++ *       pertaining to bgp under delete.
++ *  2) evpn_delete_vni() when user configures "no vni" since the withdraw
++ *     of all routes happen in normal cycle.
++ */
++void bgp_zebra_evpn_pop_items_from_announce_fifo(struct bgpevpn *vpn)
++{
++	struct bgp_dest *dest = NULL;
++	struct bgp_dest *dest_next = NULL;
++
++	for (dest = zebra_announce_first(&bm->zebra_announce_head); dest; dest = dest_next) {
++		dest_next = zebra_announce_next(&bm->zebra_announce_head, dest);
++		if (dest->za_vpn == vpn) {
++			zebra_announce_del(&bm->zebra_announce_head, dest);
++			bgp_path_info_unlock(dest->za_bgp_pi);
++			bgp_dest_unlock_node(dest);
++		}
++	}
++}
++/*
+  * Cleanup specific VNI upon EVPN (advertise-all-vni) being disabled.
+  */
+ static void cleanup_vni_on_disable(struct hash_bucket *bucket, struct bgp *bgp)
+@@ -5123,6 +5150,8 @@ static void cleanup_vni_on_disable(struc
+ 
+ 	/* Clear "live" flag and see if hash needs to be freed. */
+ 	UNSET_FLAG(vpn->flags, VNI_FLAG_LIVE);
++	/* Pop items from bgp_zebra_announce FIFO for any VPN routes pending*/
++	bgp_zebra_evpn_pop_items_from_announce_fifo(vpn);
+ 	if (!is_vni_configured(vpn))
+ 		bgp_evpn_free(bgp, vpn);
+ }
+@@ -6354,19 +6383,6 @@ struct bgpevpn *bgp_evpn_new(struct bgp
+  */
+ void bgp_evpn_free(struct bgp *bgp, struct bgpevpn *vpn)
+ {
+-	struct bgp_dest *dest = NULL;
+-	struct bgp_dest *dest_next = NULL;
+-
+-	for (dest = zebra_announce_first(&bm->zebra_announce_head); dest;
+-	     dest = dest_next) {
+-		dest_next = zebra_announce_next(&bm->zebra_announce_head, dest);
+-		if (dest->za_vpn == vpn) {
+-			zebra_announce_del(&bm->zebra_announce_head, dest);
+-			bgp_path_info_unlock(dest->za_bgp_pi);
+-			bgp_dest_unlock_node(dest);
+-		}
+-	}
+-
+ 	bgp_evpn_remote_ip_hash_destroy(vpn);
+ 	bgp_evpn_vni_es_cleanup(vpn);
+ 	bgpevpn_unlink_from_l3vni(vpn);
+@@ -7047,6 +7063,8 @@ int bgp_evpn_local_vni_del(struct bgp *b
+ 
+ 	/* Clear "live" flag and see if hash needs to be freed. */
+ 	UNSET_FLAG(vpn->flags, VNI_FLAG_LIVE);
++	/* Pop items from bgp_zebra_announce FIFO for any VPN routes pending*/
++	bgp_zebra_evpn_pop_items_from_announce_fifo(vpn);
+ 	if (!is_vni_configured(vpn))
+ 		bgp_evpn_free(bgp, vpn);
+ 
+diff -urpN frr-frr-10.2/bgpd/bgp_evpn.h frr-frr-10.2.1/bgpd/bgp_evpn.h
+--- frr-frr-10.2/bgpd/bgp_evpn.h	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/bgpd/bgp_evpn.h	2024-12-24 03:47:55.000000000 +0700
+@@ -199,4 +199,5 @@ bool bgp_evpn_skip_vrf_import_of_local_e
+ 					  struct bgp_path_info *pi, int install);
+ int uninstall_evpn_route_entry_in_vrf(struct bgp *bgp_vrf, const struct prefix_evpn *evp,
+ 				      struct bgp_path_info *parent_pi);
++extern void bgp_zebra_evpn_pop_items_from_announce_fifo(struct bgpevpn *vpn);
+ #endif /* _QUAGGA_BGP_EVPN_H */
+diff -urpN frr-frr-10.2/bgpd/bgp_flowspec_vty.c frr-frr-10.2.1/bgpd/bgp_flowspec_vty.c
+--- frr-frr-10.2/bgpd/bgp_flowspec_vty.c	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/bgpd/bgp_flowspec_vty.c	2024-12-24 03:47:55.000000000 +0700
+@@ -441,7 +441,7 @@ int bgp_show_table_flowspec(struct vty *
+ 	}
+ 	if (total_count && !use_json)
+ 		vty_out(vty,
+-			"\nDisplayed  %ld flowspec entries\n",
++			"\nDisplayed %ld flowspec entries\n",
+ 			total_count);
+ 	return CMD_SUCCESS;
+ }
+diff -urpN frr-frr-10.2/bgpd/bgp_fsm.c frr-frr-10.2.1/bgpd/bgp_fsm.c
+--- frr-frr-10.2/bgpd/bgp_fsm.c	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/bgpd/bgp_fsm.c	2024-12-24 03:47:55.000000000 +0700
+@@ -661,7 +661,7 @@ static void bgp_llgr_stale_timer_expire(
+ static void bgp_set_llgr_stale(struct peer *peer, afi_t afi, safi_t safi)
+ {
+ 	struct bgp_dest *dest;
+-	struct bgp_path_info *pi;
++	struct bgp_path_info *pi, *next;
+ 	struct bgp_table *table;
+ 	struct attr attr;
+ 
+@@ -676,8 +676,8 @@ static void bgp_set_llgr_stale(struct pe
+ 
+ 			for (rm = bgp_table_top(table); rm;
+ 			     rm = bgp_route_next(rm))
+-				for (pi = bgp_dest_get_bgp_path_info(rm); pi;
+-				     pi = pi->next) {
++				for (pi = bgp_dest_get_bgp_path_info(rm);
++				     (pi != NULL) && (next = pi->next, 1); pi = next) {
+ 					if (pi->peer != peer)
+ 						continue;
+ 
+@@ -708,8 +708,8 @@ static void bgp_set_llgr_stale(struct pe
+ 	} else {
+ 		for (dest = bgp_table_top(peer->bgp->rib[afi][safi]); dest;
+ 		     dest = bgp_route_next(dest))
+-			for (pi = bgp_dest_get_bgp_path_info(dest); pi;
+-			     pi = pi->next) {
++			for (pi = bgp_dest_get_bgp_path_info(dest);
++			     (pi != NULL) && (next = pi->next, 1); pi = next) {
+ 				if (pi->peer != peer)
+ 					continue;
+ 
+@@ -2724,33 +2724,55 @@ static void bgp_gr_update_mode_of_all_pe
+ 	struct listnode *node = {0};
+ 	struct listnode *nnode = {0};
+ 	enum peer_mode peer_old_state = PEER_INVALID;
+-
+-	/* TODO: Need to handle peer-groups. */
++	struct peer_group *group;
++	struct peer *member;
+ 
+ 	for (ALL_LIST_ELEMENTS(bgp->peer, node, nnode, peer)) {
+-		peer_old_state = bgp_peer_gr_mode_get(peer);
+-		if (peer_old_state != PEER_GLOBAL_INHERIT)
+-			continue;
++		if (!CHECK_FLAG(peer->sflags, PEER_STATUS_GROUP)) {
++			peer_old_state = bgp_peer_gr_mode_get(peer);
++			if (peer_old_state != PEER_GLOBAL_INHERIT)
++				continue;
+ 
+-		bgp_peer_inherit_global_gr_mode(peer, global_new_state);
+-		bgp_peer_gr_flags_update(peer);
++			bgp_peer_inherit_global_gr_mode(peer, global_new_state);
++			bgp_peer_gr_flags_update(peer);
+ 
+-		if (BGP_DEBUG(graceful_restart, GRACEFUL_RESTART))
+-			zlog_debug("%pBP: Inherited Global GR mode, GR flags 0x%x peer flags 0x%" PRIx64
+-				   "...resetting session",
+-				   peer, peer->peer_gr_new_status_flag,
+-				   peer->flags);
++			if (BGP_DEBUG(graceful_restart, GRACEFUL_RESTART))
++				zlog_debug("%pBP: Inherited Global GR mode, GR flags 0x%x peer flags 0x%" PRIx64
++					   "...resetting session",
++					   peer, peer->peer_gr_new_status_flag, peer->flags);
++
++			peer->last_reset = PEER_DOWN_CAPABILITY_CHANGE;
++
++			if (BGP_IS_VALID_STATE_FOR_NOTIF(peer->connection->status))
++				bgp_notify_send(peer->connection, BGP_NOTIFY_CEASE,
++						BGP_NOTIFY_CEASE_CONFIG_CHANGE);
++			else
++				bgp_session_reset_safe(peer, &nnode);
++		} else {
++			group = peer->group;
++			for (ALL_LIST_ELEMENTS(group->peer, node, nnode, member)) {
++				peer_old_state = bgp_peer_gr_mode_get(member);
++				if (peer_old_state != PEER_GLOBAL_INHERIT)
++					continue;
+ 
+-		peer->last_reset = PEER_DOWN_CAPABILITY_CHANGE;
++				bgp_peer_inherit_global_gr_mode(member, global_new_state);
++				bgp_peer_gr_flags_update(member);
+ 
+-		/* Reset session to match with behavior for other peer
+-		 * configs that require the session to be re-setup.
+-		 */
+-		if (BGP_IS_VALID_STATE_FOR_NOTIF(peer->connection->status))
+-			bgp_notify_send(peer->connection, BGP_NOTIFY_CEASE,
+-					BGP_NOTIFY_CEASE_CONFIG_CHANGE);
+-		else
+-			bgp_session_reset_safe(peer, &nnode);
++				if (BGP_DEBUG(graceful_restart, GRACEFUL_RESTART))
++					zlog_debug("%pBP: Inherited Global GR mode, GR flags 0x%x peer flags 0x%" PRIx64
++						   "...resetting session",
++						   member, member->peer_gr_new_status_flag,
++						   member->flags);
++
++				member->last_reset = PEER_DOWN_CAPABILITY_CHANGE;
++
++				if (BGP_IS_VALID_STATE_FOR_NOTIF(member->connection->status))
++					bgp_notify_send(member->connection, BGP_NOTIFY_CEASE,
++							BGP_NOTIFY_CEASE_CONFIG_CHANGE);
++				else
++					bgp_session_reset(member);
++			}
++		}
+ 	}
+ }
+ 
+@@ -2936,6 +2958,9 @@ unsigned int bgp_peer_gr_action(struct p
+ {
+ 	enum global_mode global_gr_mode;
+ 	bool session_reset = true;
++	struct peer_group *group;
++	struct peer *member;
++	struct listnode *node, *nnode;
+ 
+ 	if (old_state == new_state)
+ 		return BGP_GR_NO_OPERATION;
+@@ -2970,16 +2995,27 @@ unsigned int bgp_peer_gr_action(struct p
+ 	bgp_peer_move_to_gr_mode(peer, new_state);
+ 
+ 	if (session_reset) {
+-		peer->last_reset = PEER_DOWN_CAPABILITY_CHANGE;
++		if (!CHECK_FLAG(peer->sflags, PEER_STATUS_GROUP)) {
++			peer->last_reset = PEER_DOWN_CAPABILITY_CHANGE;
+ 
+-		/* Reset session to match with behavior for other peer
+-		 * configs that require the session to be re-setup.
+-		 */
+-		if (BGP_IS_VALID_STATE_FOR_NOTIF(peer->connection->status))
+-			bgp_notify_send(peer->connection, BGP_NOTIFY_CEASE,
+-					BGP_NOTIFY_CEASE_CONFIG_CHANGE);
+-		else
+-			bgp_session_reset(peer);
++			if (BGP_IS_VALID_STATE_FOR_NOTIF(peer->connection->status))
++				bgp_notify_send(peer->connection, BGP_NOTIFY_CEASE,
++						BGP_NOTIFY_CEASE_CONFIG_CHANGE);
++			else
++				bgp_session_reset(peer);
++		} else {
++			group = peer->group;
++			for (ALL_LIST_ELEMENTS(group->peer, node, nnode, member)) {
++				member->last_reset = PEER_DOWN_CAPABILITY_CHANGE;
++				bgp_peer_move_to_gr_mode(member, new_state);
++
++				if (BGP_IS_VALID_STATE_FOR_NOTIF(member->connection->status))
++					bgp_notify_send(member->connection, BGP_NOTIFY_CEASE,
++							BGP_NOTIFY_CEASE_CONFIG_CHANGE);
++				else
++					bgp_session_reset(member);
++			}
++		}
+ 	}
+ 
+ 	return BGP_GR_SUCCESS;
+diff -urpN frr-frr-10.2/bgpd/bgp_mplsvpn.c frr-frr-10.2.1/bgpd/bgp_mplsvpn.c
+--- frr-frr-10.2/bgpd/bgp_mplsvpn.c	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/bgpd/bgp_mplsvpn.c	2024-12-24 03:47:55.000000000 +0700
+@@ -2158,6 +2158,8 @@ static void vpn_leak_to_vrf_update_onevr
+ 	struct interface *ifp = NULL;
+ 	char rd_buf[RD_ADDRSTRLEN];
+ 	struct aspath *new_aspath;
++	int32_t aspath_loop_count = 0;
++	struct peer *peer = path_vpn->peer;
+ 
+ 	int debug = BGP_DEBUG(vpn, VPN_LEAK_TO_VRF);
+ 
+@@ -2218,7 +2220,9 @@ static void vpn_leak_to_vrf_update_onevr
+ 	bn = bgp_afi_node_get(to_bgp->rib[afi][safi], afi, safi, p, NULL);
+ 
+ 	/* Check if leaked route has our asn. If so, don't import it. */
+-	if (aspath_loop_check(path_vpn->attr->aspath, to_bgp->as)) {
++	if (CHECK_FLAG(peer->af_flags[afi][SAFI_MPLS_VPN], PEER_FLAG_ALLOWAS_IN))
++		aspath_loop_count = peer->allowas_in[afi][SAFI_MPLS_VPN];
++	if (aspath_loop_check(path_vpn->attr->aspath, to_bgp->as) > aspath_loop_count) {
+ 		for (bpi = bgp_dest_get_bgp_path_info(bn); bpi;
+ 		     bpi = bpi->next) {
+ 			if (bpi->extra && bpi->extra->vrfleak &&
+diff -urpN frr-frr-10.2/bgpd/bgp_route.c frr-frr-10.2.1/bgpd/bgp_route.c
+--- frr-frr-10.2/bgpd/bgp_route.c	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/bgpd/bgp_route.c	2024-12-24 03:47:55.000000000 +0700
+@@ -2960,7 +2960,10 @@ void bgp_best_selection(struct bgp *bgp,
+ 
+ 	old_select = NULL;
+ 	pi = bgp_dest_get_bgp_path_info(dest);
+-	while (pi && CHECK_FLAG(pi->flags, BGP_PATH_UNSORTED)) {
++	while (pi && (CHECK_FLAG(pi->flags, BGP_PATH_UNSORTED) ||
++		      (pi->peer != bgp->peer_self &&
++		       !CHECK_FLAG(pi->peer->sflags, PEER_STATUS_NSF_WAIT) &&
++		       !peer_established(pi->peer->connection)))) {
+ 		struct bgp_path_info *next = pi->next;
+ 
+ 		if (CHECK_FLAG(pi->flags, BGP_PATH_SELECTED))
+@@ -3054,6 +3057,30 @@ void bgp_best_selection(struct bgp *bgp,
+ 			continue;
+ 		}
+ 
++		if (first->peer && first->peer != bgp->peer_self &&
++		    !CHECK_FLAG(first->peer->sflags, PEER_STATUS_NSF_WAIT) &&
++		    !peer_established(first->peer->connection)) {
++			if (debug)
++				zlog_debug("%s: %pBD(%s) pi %p from %s is not in established state",
++					   __func__, dest, bgp->name_pretty, first,
++					   first->peer->host);
++
++			/*
++			 * Peer is not in established state we cannot sort this
++			 * item yet.  Let's wait, so hold this one to the side
++			 */
++			if (unsorted_holddown) {
++				first->next = unsorted_holddown;
++				unsorted_holddown->prev = first;
++				unsorted_holddown = first;
++			} else
++				unsorted_holddown = first;
++
++			UNSET_FLAG(first->flags, BGP_PATH_UNSORTED);
++
++			continue;
++		}
++
+ 		bgp_path_info_unset_flag(dest, first, BGP_PATH_DMED_CHECK);
+ 
+ 		worse = NULL;
+@@ -4406,7 +4433,7 @@ bool bgp_update_martian_nexthop(struct b
+ 				uint8_t type, uint8_t stype, struct attr *attr,
+ 				struct bgp_dest *dest)
+ {
+-	bool ret = false;
++	bool nh_invalid = false;
+ 	bool is_bgp_static_route =
+ 		(type == ZEBRA_ROUTE_BGP && stype == BGP_ROUTE_STATIC) ? true
+ 								       : false;
+@@ -4428,13 +4455,15 @@ bool bgp_update_martian_nexthop(struct b
+ 	    (safi != SAFI_UNICAST && safi != SAFI_MULTICAST && safi != SAFI_EVPN))
+ 		return false;
+ 
+-	/* If NEXT_HOP is present, validate it. */
+-	if (attr->flag & ATTR_FLAG_BIT(BGP_ATTR_NEXT_HOP)) {
+-		if (attr->nexthop.s_addr == INADDR_ANY ||
+-		    !ipv4_unicast_valid(&attr->nexthop) ||
+-		    bgp_nexthop_self(bgp, afi, type, stype, attr, dest))
+-			return true;
+-	}
++	/* If NEXT_HOP is present, validate it:
++	 * The route can have both nexthop + mp_nexthop encoded as multiple NLRIs,
++	 * and we MUST check if at least one of them is valid.
++	 * E.g.: IPv6 prefix can be with nexthop: 0.0.0.0, and mp_nexthop: fc00::1.
++	 */
++	if (CHECK_FLAG(attr->flag, ATTR_FLAG_BIT(BGP_ATTR_NEXT_HOP)))
++		nh_invalid = (attr->nexthop.s_addr == INADDR_ANY ||
++			      !ipv4_unicast_valid(&attr->nexthop) ||
++			      bgp_nexthop_self(bgp, afi, type, stype, attr, dest));
+ 
+ 	/* If MP_NEXTHOP is present, validate it. */
+ 	/* Note: For IPv6 nexthops, we only validate the global (1st) nexthop;
+@@ -4449,39 +4478,31 @@ bool bgp_update_martian_nexthop(struct b
+ 		switch (attr->mp_nexthop_len) {
+ 		case BGP_ATTR_NHLEN_IPV4:
+ 		case BGP_ATTR_NHLEN_VPNV4:
+-			ret = (attr->mp_nexthop_global_in.s_addr ==
+-				       INADDR_ANY ||
+-			       !ipv4_unicast_valid(
+-				       &attr->mp_nexthop_global_in) ||
+-			       bgp_nexthop_self(bgp, afi, type, stype, attr,
+-						dest));
++			nh_invalid = (attr->mp_nexthop_global_in.s_addr == INADDR_ANY ||
++				      !ipv4_unicast_valid(&attr->mp_nexthop_global_in) ||
++				      bgp_nexthop_self(bgp, afi, type, stype, attr, dest));
+ 			break;
+ 
+ 		case BGP_ATTR_NHLEN_IPV6_GLOBAL:
+ 		case BGP_ATTR_NHLEN_VPNV6_GLOBAL:
+-			ret = (IN6_IS_ADDR_UNSPECIFIED(
+-					&attr->mp_nexthop_global)
+-			       || IN6_IS_ADDR_LOOPBACK(&attr->mp_nexthop_global)
+-			       || IN6_IS_ADDR_MULTICAST(
+-				       &attr->mp_nexthop_global)
+-			       || bgp_nexthop_self(bgp, afi, type, stype, attr,
+-						   dest));
++			nh_invalid = (IN6_IS_ADDR_UNSPECIFIED(&attr->mp_nexthop_global) ||
++				      IN6_IS_ADDR_LOOPBACK(&attr->mp_nexthop_global) ||
++				      IN6_IS_ADDR_MULTICAST(&attr->mp_nexthop_global) ||
++				      bgp_nexthop_self(bgp, afi, type, stype, attr, dest));
+ 			break;
+ 		case BGP_ATTR_NHLEN_IPV6_GLOBAL_AND_LL:
+-			ret = (IN6_IS_ADDR_LOOPBACK(&attr->mp_nexthop_global)
+-			       || IN6_IS_ADDR_MULTICAST(
+-				       &attr->mp_nexthop_global)
+-			       || bgp_nexthop_self(bgp, afi, type, stype, attr,
+-						   dest));
++			nh_invalid = (IN6_IS_ADDR_LOOPBACK(&attr->mp_nexthop_global) ||
++				      IN6_IS_ADDR_MULTICAST(&attr->mp_nexthop_global) ||
++				      bgp_nexthop_self(bgp, afi, type, stype, attr, dest));
+ 			break;
+ 
+ 		default:
+-			ret = true;
++			nh_invalid = true;
+ 			break;
+ 		}
+ 	}
+ 
+-	return ret;
++	return nh_invalid;
+ }
+ 
+ static void bgp_attr_add_no_export_community(struct attr *attr)
+@@ -7411,7 +7432,7 @@ static void bgp_purge_af_static_redist_r
+ {
+ 	struct bgp_table *table;
+ 	struct bgp_dest *dest;
+-	struct bgp_path_info *pi;
++	struct bgp_path_info *pi, *next;
+ 
+ 	/* Do not install the aggregate route if BGP is in the
+ 	 * process of termination.
+@@ -7422,7 +7443,8 @@ static void bgp_purge_af_static_redist_r
+ 
+ 	table = bgp->rib[afi][safi];
+ 	for (dest = bgp_table_top(table); dest; dest = bgp_route_next(dest)) {
+-		for (pi = bgp_dest_get_bgp_path_info(dest); pi; pi = pi->next) {
++		for (pi = bgp_dest_get_bgp_path_info(dest); (pi != NULL) && (next = pi->next, 1);
++		     pi = next) {
+ 			if (pi->peer == bgp->peer_self
+ 			    && ((pi->type == ZEBRA_ROUTE_BGP
+ 				 && pi->sub_type == BGP_ROUTE_STATIC)
+@@ -7922,7 +7944,7 @@ void bgp_aggregate_toggle_suppressed(str
+ 	struct bgp_table *table = bgp->rib[afi][safi];
+ 	const struct prefix *dest_p;
+ 	struct bgp_dest *dest, *top;
+-	struct bgp_path_info *pi;
++	struct bgp_path_info *pi, *next;
+ 
+ 	/* We've found a different MED we must revert any suppressed routes. */
+ 	top = bgp_node_get(table, p);
+@@ -7932,7 +7954,8 @@ void bgp_aggregate_toggle_suppressed(str
+ 		if (dest_p->prefixlen <= p->prefixlen)
+ 			continue;
+ 
+-		for (pi = bgp_dest_get_bgp_path_info(dest); pi; pi = pi->next) {
++		for (pi = bgp_dest_get_bgp_path_info(dest); (pi != NULL) && (next = pi->next, 1);
++		     pi = next) {
+ 			if (BGP_PATH_HOLDDOWN(pi))
+ 				continue;
+ 			if (pi->sub_type == BGP_ROUTE_AGGREGATE)
+@@ -8007,7 +8030,7 @@ bool bgp_aggregate_route(struct bgp *bgp
+ 	struct community *community = NULL;
+ 	struct ecommunity *ecommunity = NULL;
+ 	struct lcommunity *lcommunity = NULL;
+-	struct bgp_path_info *pi;
++	struct bgp_path_info *pi, *next;
+ 	uint8_t atomic_aggregate = 0;
+ 
+ 	/* If the bgp instance is being deleted or self peer is deleted
+@@ -8057,7 +8080,8 @@ bool bgp_aggregate_route(struct bgp *bgp
+ 		if (!bgp_check_advertise(bgp, dest, safi))
+ 			continue;
+ 
+-		for (pi = bgp_dest_get_bgp_path_info(dest); pi; pi = pi->next) {
++		for (pi = bgp_dest_get_bgp_path_info(dest); (pi != NULL) && (next = pi->next, 1);
++		     pi = next) {
+ 			if (BGP_PATH_HOLDDOWN(pi))
+ 				continue;
+ 
+@@ -8215,7 +8239,7 @@ void bgp_aggregate_delete(struct bgp *bg
+ 	struct bgp_table *table;
+ 	struct bgp_dest *top;
+ 	struct bgp_dest *dest;
+-	struct bgp_path_info *pi;
++	struct bgp_path_info *pi, *next;
+ 
+ 	table = bgp->rib[afi][safi];
+ 
+@@ -8228,7 +8252,8 @@ void bgp_aggregate_delete(struct bgp *bg
+ 		if (dest_p->prefixlen <= p->prefixlen)
+ 			continue;
+ 
+-		for (pi = bgp_dest_get_bgp_path_info(dest); pi; pi = pi->next) {
++		for (pi = bgp_dest_get_bgp_path_info(dest); (pi != NULL) && (next = pi->next, 1);
++		     pi = next) {
+ 			if (BGP_PATH_HOLDDOWN(pi))
+ 				continue;
+ 
+@@ -12321,8 +12346,7 @@ void route_vty_out_detail_header(struct
+ 		} else {
+ 			if (incremental_print) {
+ 				vty_out(vty, "\"prefix\": \"%pFX\",\n", p);
+-				vty_out(vty, "\"version\": \"%" PRIu64 "\",",
+-					dest->version);
++				vty_out(vty, "\"version\": %" PRIu64 ",", dest->version);
+ 			} else {
+ 				json_object_string_addf(json, "prefix", "%pFX",
+ 							p);
+diff -urpN frr-frr-10.2/bgpd/bgp_rpki.c frr-frr-10.2.1/bgpd/bgp_rpki.c
+--- frr-frr-10.2/bgpd/bgp_rpki.c	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/bgpd/bgp_rpki.c	2024-12-24 03:47:55.000000000 +0700
+@@ -155,7 +155,6 @@ static enum route_map_cmd_result_t route
+ 					       void *object);
+ static void *route_match_compile(const char *arg);
+ static void revalidate_bgp_node(struct bgp_dest *dest, afi_t afi, safi_t safi);
+-static void revalidate_all_routes(struct rpki_vrf *rpki_vrf);
+ 
+ static bool rpki_debug_conf, rpki_debug_term;
+ 
+@@ -586,48 +585,10 @@ static void rpki_revalidate_prefix(struc
+ 	XFREE(MTYPE_BGP_RPKI_REVALIDATE, rrp);
+ }
+ 
+-static void bgpd_sync_callback(struct event *thread)
++static void revalidate_single_prefix(struct vrf *vrf, struct prefix prefix, afi_t afi)
+ {
+ 	struct bgp *bgp;
+ 	struct listnode *node;
+-	struct prefix prefix;
+-	struct pfx_record rec;
+-	struct rpki_vrf *rpki_vrf = EVENT_ARG(thread);
+-	struct vrf *vrf = NULL;
+-
+-	event_add_read(bm->master, bgpd_sync_callback, rpki_vrf,
+-		       rpki_vrf->rpki_sync_socket_bgpd, NULL);
+-
+-	if (atomic_load_explicit(&rpki_vrf->rtr_update_overflow,
+-				 memory_order_seq_cst)) {
+-		while (read(rpki_vrf->rpki_sync_socket_bgpd, &rec,
+-			    sizeof(struct pfx_record)) != -1)
+-			;
+-
+-		atomic_store_explicit(&rpki_vrf->rtr_update_overflow, 0,
+-				      memory_order_seq_cst);
+-		revalidate_all_routes(rpki_vrf);
+-		return;
+-	}
+-
+-	int retval = read(rpki_vrf->rpki_sync_socket_bgpd, &rec,
+-			  sizeof(struct pfx_record));
+-	if (retval != sizeof(struct pfx_record)) {
+-		RPKI_DEBUG("Could not read from rpki_sync_socket_bgpd");
+-		return;
+-	}
+-	pfx_record_to_prefix(&rec, &prefix);
+-
+-	afi_t afi = (rec.prefix.ver == LRTR_IPV4) ? AFI_IP : AFI_IP6;
+-
+-	if (rpki_vrf->vrfname) {
+-		vrf = vrf_lookup_by_name(rpki_vrf->vrfname);
+-		if (!vrf) {
+-			zlog_err("%s(): vrf for rpki %s not found", __func__,
+-				 rpki_vrf->vrfname);
+-			return;
+-		}
+-	}
+ 
+ 	for (ALL_LIST_ELEMENTS_RO(bm->bgp, node, bgp)) {
+ 		safi_t safi;
+@@ -655,101 +616,76 @@ static void bgpd_sync_callback(struct ev
+ 	}
+ }
+ 
+-static void revalidate_bgp_node(struct bgp_dest *bgp_dest, afi_t afi,
+-				safi_t safi)
++static void bgpd_sync_callback(struct event *thread)
+ {
+-	struct bgp_adj_in *ain;
+-	mpls_label_t *label;
+-	uint8_t num_labels;
+-
+-	for (ain = bgp_dest->adj_in; ain; ain = ain->next) {
+-		struct bgp_path_info *path =
+-			bgp_dest_get_bgp_path_info(bgp_dest);
+-
+-		num_labels = BGP_PATH_INFO_NUM_LABELS(path);
+-		label = num_labels ? path->extra->labels->label : NULL;
+-
+-		(void)bgp_update(ain->peer, bgp_dest_get_prefix(bgp_dest),
+-				 ain->addpath_rx_id, ain->attr, afi, safi,
+-				 ZEBRA_ROUTE_BGP, BGP_ROUTE_NORMAL, NULL, label,
+-				 num_labels, 1, NULL);
+-	}
+-}
+-
+-/*
+- * The act of a soft reconfig in revalidation is really expensive
+- * coupled with the fact that the download of a full rpki state
+- * from a rpki server can be expensive, let's break up the revalidation
+- * to a point in time in the future to allow other bgp events
+- * to take place too.
+- */
+-struct rpki_revalidate_peer {
++	struct prefix prefix;
++	struct pfx_record rec;
++	struct rpki_vrf *rpki_vrf = EVENT_ARG(thread);
++	struct vrf *vrf = NULL;
+ 	afi_t afi;
+-	safi_t safi;
+-	struct peer *peer;
+-};
+-
+-static void bgp_rpki_revalidate_peer(struct event *thread)
+-{
+-	struct rpki_revalidate_peer *rvp = EVENT_ARG(thread);
+-
+-	/*
+-	 * Here's the expensive bit of gnomish deviousness
+-	 */
+-	bgp_soft_reconfig_in(rvp->peer, rvp->afi, rvp->safi);
++	int retval;
+ 
+-	XFREE(MTYPE_BGP_RPKI_REVALIDATE, rvp);
+-}
+-
+-static void revalidate_all_routes(struct rpki_vrf *rpki_vrf)
+-{
+-	struct bgp *bgp;
+-	struct listnode *node;
+-	struct vrf *vrf = NULL;
++	event_add_read(bm->master, bgpd_sync_callback, rpki_vrf, rpki_vrf->rpki_sync_socket_bgpd,
++		       NULL);
+ 
+ 	if (rpki_vrf->vrfname) {
+ 		vrf = vrf_lookup_by_name(rpki_vrf->vrfname);
+ 		if (!vrf) {
+-			zlog_err("%s(): vrf for rpki %s not found", __func__,
+-				 rpki_vrf->vrfname);
++			zlog_err("%s(): vrf for rpki %s not found", __func__, rpki_vrf->vrfname);
+ 			return;
+ 		}
+ 	}
+ 
+-	for (ALL_LIST_ELEMENTS_RO(bm->bgp, node, bgp)) {
+-		struct peer *peer;
+-		struct listnode *peer_listnode;
++	if (atomic_load_explicit(&rpki_vrf->rtr_update_overflow, memory_order_seq_cst)) {
++		ssize_t size = 0;
+ 
+-		if (!vrf && bgp->vrf_id != VRF_DEFAULT)
+-			continue;
+-		if (vrf && bgp->vrf_id != vrf->vrf_id)
+-			continue;
++		retval = read(rpki_vrf->rpki_sync_socket_bgpd, &rec, sizeof(struct pfx_record));
++		while (retval != -1) {
++			if (retval != sizeof(struct pfx_record))
++				break;
++
++			size += retval;
++			pfx_record_to_prefix(&rec, &prefix);
++			afi = (rec.prefix.ver == LRTR_IPV4) ? AFI_IP : AFI_IP6;
++			revalidate_single_prefix(vrf, prefix, afi);
+ 
+-		for (ALL_LIST_ELEMENTS_RO(bgp->peer, peer_listnode, peer)) {
+-			afi_t afi;
+-			safi_t safi;
++			retval = read(rpki_vrf->rpki_sync_socket_bgpd, &rec,
++				      sizeof(struct pfx_record));
++		}
+ 
+-			FOREACH_AFI_SAFI (afi, safi) {
+-				struct rpki_revalidate_peer *rvp;
++		RPKI_DEBUG("Socket overflow detected (%zu), revalidating affected prefixes", size);
+ 
+-				if (!bgp->rib[afi][safi])
+-					continue;
++		atomic_store_explicit(&rpki_vrf->rtr_update_overflow, 0, memory_order_seq_cst);
++		return;
++	}
+ 
+-				if (!peer_established(peer->connection))
+-					continue;
++	retval = read(rpki_vrf->rpki_sync_socket_bgpd, &rec, sizeof(struct pfx_record));
++	if (retval != sizeof(struct pfx_record)) {
++		RPKI_DEBUG("Could not read from rpki_sync_socket_bgpd");
++		return;
++	}
++	pfx_record_to_prefix(&rec, &prefix);
+ 
+-				rvp = XCALLOC(MTYPE_BGP_RPKI_REVALIDATE,
+-					      sizeof(*rvp));
+-				rvp->peer = peer;
+-				rvp->afi = afi;
+-				rvp->safi = safi;
+-
+-				event_add_event(
+-					bm->master, bgp_rpki_revalidate_peer,
+-					rvp, 0,
+-					&peer->t_revalidate_all[afi][safi]);
+-			}
+-		}
++	afi = (rec.prefix.ver == LRTR_IPV4) ? AFI_IP : AFI_IP6;
++
++	revalidate_single_prefix(vrf, prefix, afi);
++}
++
++static void revalidate_bgp_node(struct bgp_dest *bgp_dest, afi_t afi, safi_t safi)
++{
++	struct bgp_adj_in *ain;
++	mpls_label_t *label;
++	uint8_t num_labels;
++
++	for (ain = bgp_dest->adj_in; ain; ain = ain->next) {
++		struct bgp_path_info *path = bgp_dest_get_bgp_path_info(bgp_dest);
++
++		num_labels = BGP_PATH_INFO_NUM_LABELS(path);
++		label = num_labels ? path->extra->labels->label : NULL;
++
++		(void)bgp_update(ain->peer, bgp_dest_get_prefix(bgp_dest), ain->addpath_rx_id,
++				 ain->attr, afi, safi, ZEBRA_ROUTE_BGP, BGP_ROUTE_NORMAL, NULL,
++				 label, num_labels, 1, NULL);
+ 	}
+ }
+ 
+diff -urpN frr-frr-10.2/bgpd/bgp_vty.c frr-frr-10.2.1/bgpd/bgp_vty.c
+--- frr-frr-10.2/bgpd/bgp_vty.c	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/bgpd/bgp_vty.c	2024-12-24 03:47:55.000000000 +0700
+@@ -3517,11 +3517,6 @@ DEFUN (bgp_neighbor_graceful_restart_set
+ 	peer = peer_and_group_lookup_vty(vty, argv[idx_peer]->arg);
+ 	if (!peer)
+ 		return CMD_WARNING_CONFIG_FAILED;
+-	if (CHECK_FLAG(peer->sflags, PEER_STATUS_GROUP)) {
+-		vty_out(vty,
+-			"Per peer-group graceful-restart configuration is not yet supported\n");
+-		return CMD_WARNING_CONFIG_FAILED;
+-	}
+ 
+ 	result = bgp_neighbor_graceful_restart(peer, PEER_GR_CMD);
+ 	if (result == BGP_GR_SUCCESS) {
+@@ -3552,11 +3547,6 @@ DEFUN (no_bgp_neighbor_graceful_restart,
+ 	peer = peer_and_group_lookup_vty(vty, argv[idx_peer]->arg);
+ 	if (!peer)
+ 		return CMD_WARNING_CONFIG_FAILED;
+-	if (CHECK_FLAG(peer->sflags, PEER_STATUS_GROUP)) {
+-		vty_out(vty,
+-			"Per peer-group graceful-restart configuration is not yet supported\n");
+-		return CMD_WARNING_CONFIG_FAILED;
+-	}
+ 
+ 	result = bgp_neighbor_graceful_restart(peer, NO_PEER_GR_CMD);
+ 	if (ret == BGP_GR_SUCCESS) {
+@@ -3586,11 +3576,6 @@ DEFUN (bgp_neighbor_graceful_restart_hel
+ 	peer = peer_and_group_lookup_vty(vty, argv[idx_peer]->arg);
+ 	if (!peer)
+ 		return CMD_WARNING_CONFIG_FAILED;
+-	if (CHECK_FLAG(peer->sflags, PEER_STATUS_GROUP)) {
+-		vty_out(vty,
+-			"Per peer-group graceful-restart configuration is not yet supported\n");
+-		return CMD_WARNING_CONFIG_FAILED;
+-	}
+ 
+ 	ret = bgp_neighbor_graceful_restart(peer, PEER_HELPER_CMD);
+ 	if (ret == BGP_GR_SUCCESS) {
+@@ -3621,11 +3606,6 @@ DEFUN (no_bgp_neighbor_graceful_restart_
+ 	peer = peer_and_group_lookup_vty(vty, argv[idx_peer]->arg);
+ 	if (!peer)
+ 		return CMD_WARNING_CONFIG_FAILED;
+-	if (CHECK_FLAG(peer->sflags, PEER_STATUS_GROUP)) {
+-		vty_out(vty,
+-			"Per peer-group graceful-restart configuration is not yet supported\n");
+-		return CMD_WARNING_CONFIG_FAILED;
+-	}
+ 
+ 	ret = bgp_neighbor_graceful_restart(peer, NO_PEER_HELPER_CMD);
+ 	if (ret == BGP_GR_SUCCESS) {
+@@ -3655,11 +3635,6 @@ DEFUN (bgp_neighbor_graceful_restart_dis
+ 	peer = peer_and_group_lookup_vty(vty, argv[idx_peer]->arg);
+ 	if (!peer)
+ 		return CMD_WARNING_CONFIG_FAILED;
+-	if (CHECK_FLAG(peer->sflags, PEER_STATUS_GROUP)) {
+-		vty_out(vty,
+-			"Per peer-group graceful-restart configuration is not yet supported\n");
+-		return CMD_WARNING_CONFIG_FAILED;
+-	}
+ 
+ 	ret = bgp_neighbor_graceful_restart(peer, PEER_DISABLE_CMD);
+ 	if (ret == BGP_GR_SUCCESS) {
+@@ -3691,11 +3666,6 @@ DEFUN (no_bgp_neighbor_graceful_restart_
+ 	peer = peer_and_group_lookup_vty(vty, argv[idx_peer]->arg);
+ 	if (!peer)
+ 		return CMD_WARNING_CONFIG_FAILED;
+-	if (CHECK_FLAG(peer->sflags, PEER_STATUS_GROUP)) {
+-		vty_out(vty,
+-			"Per peer-group graceful-restart configuration is not yet supported\n");
+-		return CMD_WARNING_CONFIG_FAILED;
+-	}
+ 
+ 	ret = bgp_neighbor_graceful_restart(peer, NO_PEER_DISABLE_CMD);
+ 	if (ret == BGP_GR_SUCCESS) {
+@@ -5273,7 +5243,7 @@ DEFUN (neighbor_peer_group,
+ 
+ DEFUN (no_neighbor,
+        no_neighbor_cmd,
+-       "no neighbor <WORD|<A.B.C.D|X:X::X:X> [remote-as <(1-4294967295)|internal|external|auto>]>",
++       "no neighbor <WORD|<A.B.C.D|X:X::X:X> [remote-as <ASNUM|internal|external|auto>]>",
+        NO_STR
+        NEIGHBOR_STR
+        NEIGHBOR_ADDR_STR2
+@@ -5352,7 +5322,7 @@ DEFUN (no_neighbor,
+ 
+ DEFUN (no_neighbor_interface_config,
+        no_neighbor_interface_config_cmd,
+-       "no neighbor WORD interface [v6only] [peer-group PGNAME] [remote-as <(1-4294967295)|internal|external|auto>]",
++       "no neighbor WORD interface [v6only] [peer-group PGNAME] [remote-as <ASNUM|internal|external|auto>]",
+        NO_STR
+        NEIGHBOR_STR
+        "Interface name\n"
+@@ -9846,6 +9816,8 @@ DEFPY (af_rd_vpn_export,
+ 			   bgp_get_default(), bgp);
+ 
+ 	if (yes) {
++		if (bgp->vpn_policy[afi].tovpn_rd_pretty)
++			XFREE(MTYPE_BGP_NAME, bgp->vpn_policy[afi].tovpn_rd_pretty);
+ 		bgp->vpn_policy[afi].tovpn_rd_pretty = XSTRDUP(MTYPE_BGP_NAME,
+ 							       rd_str);
+ 		bgp->vpn_policy[afi].tovpn_rd = prd;
+@@ -14935,22 +14907,31 @@ static void bgp_show_peer(struct vty *vt
+ 			if (CHECK_FLAG(p->cap, PEER_CAP_RESTART_RCV) ||
+ 			    CHECK_FLAG(p->cap, PEER_CAP_RESTART_ADV)) {
+ 				if (CHECK_FLAG(p->cap, PEER_CAP_RESTART_ADV) &&
+-				    CHECK_FLAG(p->cap, PEER_CAP_RESTART_RCV))
++				    CHECK_FLAG(p->cap, PEER_CAP_RESTART_RCV)) {
+ 					json_object_string_add(
+ 						json_cap, "gracefulRestart",
+ 						"advertisedAndReceived");
+-				else if (CHECK_FLAG(p->cap,
+-						    PEER_CAP_RESTART_ADV))
++				} else if (CHECK_FLAG(p->cap, PEER_CAP_RESTART_ADV)) {
++					json_object_string_add(json_cap, "gracefulRestart",
++							       "advertised");
++#if CONFDATE > 20250525
++CPP_NOTICE("Remove `gracefulRestartCapability` JSON field")
++#endif
+ 					json_object_string_add(
+ 						json_cap,
+ 						"gracefulRestartCapability",
+ 						"advertised");
+-				else if (CHECK_FLAG(p->cap,
+-						    PEER_CAP_RESTART_RCV))
++				} else if (CHECK_FLAG(p->cap, PEER_CAP_RESTART_RCV)) {
++					json_object_string_add(json_cap, "gracefulRestart",
++							       "received");
++#if CONFDATE > 20250525
++CPP_NOTICE("Remove `gracefulRestartCapability` JSON field")
++#endif
+ 					json_object_string_add(
+ 						json_cap,
+ 						"gracefulRestartCapability",
+ 						"received");
++				}
+ 
+ 				if (CHECK_FLAG(p->cap, PEER_CAP_RESTART_RCV)) {
+ 					int restart_af_count = 0;
+@@ -18831,7 +18812,11 @@ static void bgp_config_write_peer_global
+ 
+ 	/* enforce-first-as */
+ 	if (CHECK_FLAG(bgp->flags, BGP_FLAG_ENFORCE_FIRST_AS)) {
+-		if (!peergroup_flag_check(peer, PEER_FLAG_ENFORCE_FIRST_AS))
++		/* The `no` form is printed because by default this enforcing
++		 * is enabled, thus we need to print it inverted.
++		 * See peer_new().
++		 */
++		if (peergroup_flag_check(peer, PEER_FLAG_ENFORCE_FIRST_AS))
+ 			vty_out(vty, " no neighbor %s enforce-first-as\n", addr);
+ 	} else {
+ 		if (peergroup_flag_check(peer, PEER_FLAG_ENFORCE_FIRST_AS))
+diff -urpN frr-frr-10.2/bgpd/bgp_zebra.c frr-frr-10.2.1/bgpd/bgp_zebra.c
+--- frr-frr-10.2/bgpd/bgp_zebra.c	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/bgpd/bgp_zebra.c	2024-12-24 03:47:55.000000000 +0700
+@@ -1187,9 +1187,10 @@ static bool update_ipv6nh_for_route_inst
+ 					ifindex =
+ 						pi->peer->nexthop.ifp->ifindex;
+ 			if (!ifindex) {
+-				if (pi->peer->conf_if)
+-					ifindex = pi->peer->ifp->ifindex;
+-				else if (pi->peer->ifname)
++				if (pi->peer->conf_if) {
++					if (pi->peer->ifp)
++						ifindex = pi->peer->ifp->ifindex;
++				} else if (pi->peer->ifname)
+ 					ifindex = ifname2ifindex(
+ 						pi->peer->ifname,
+ 						pi->peer->bgp->vrf_id);
+diff -urpN frr-frr-10.2/bgpd/bgpd.c frr-frr-10.2.1/bgpd/bgpd.c
+--- frr-frr-10.2/bgpd/bgpd.c	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/bgpd/bgpd.c	2024-12-24 03:47:55.000000000 +0700
+@@ -462,6 +462,10 @@ void bgp_suppress_fib_pending_set(struct
+ 	if (bgp->inst_type == BGP_INSTANCE_TYPE_VIEW)
+ 		return;
+ 
++	/* Do nothing if already in a desired state */
++	if (set == !!CHECK_FLAG(bgp->flags, BGP_FLAG_SUPPRESS_FIB_PENDING))
++		return;
++
+ 	if (set) {
+ 		SET_FLAG(bgp->flags, BGP_FLAG_SUPPRESS_FIB_PENDING);
+ 		/* Send msg to zebra for the first instance of bgp enabled
+@@ -1251,8 +1255,6 @@ static void peer_free(struct peer *peer)
+ 	bgp_reads_off(peer->connection);
+ 	bgp_writes_off(peer->connection);
+ 	event_cancel_event_ready(bm->master, peer->connection);
+-	FOREACH_AFI_SAFI (afi, safi)
+-		EVENT_OFF(peer->t_revalidate_all[afi][safi]);
+ 	assert(!peer->connection->t_write);
+ 	assert(!peer->connection->t_read);
+ 
+@@ -1592,8 +1594,13 @@ struct peer *peer_new(struct bgp *bgp)
+ 
+ 	SET_FLAG(peer->sflags, PEER_STATUS_CAPABILITY_OPEN);
+ 
+-	if (CHECK_FLAG(bgp->flags, BGP_FLAG_ENFORCE_FIRST_AS))
+-		peer_flag_set(peer, PEER_FLAG_ENFORCE_FIRST_AS);
++	/* By default this is enabled, thus we need to mark it as
++	 * inverted in order to display correctly in the configuration.
++	 */
++	if (CHECK_FLAG(bgp->flags, BGP_FLAG_ENFORCE_FIRST_AS)) {
++		SET_FLAG(peer->flags_invert, PEER_FLAG_ENFORCE_FIRST_AS);
++		SET_FLAG(peer->flags, PEER_FLAG_ENFORCE_FIRST_AS);
++	}
+ 
+ 	if (CHECK_FLAG(bgp->flags, BGP_FLAG_SOFT_VERSION_CAPABILITY))
+ 		peer_flag_set(peer, PEER_FLAG_CAPABILITY_SOFT_VERSION);
+@@ -2191,8 +2198,7 @@ int peer_remote_as(struct bgp *bgp, unio
+ 		/* When this peer is a member of peer-group.  */
+ 		if (peer->group) {
+ 			/* peer-group already has AS number/internal/external */
+-			if (peer->group->conf->as
+-			    || peer->group->conf->as_type) {
++			if (peer->group->conf->as || peer->group->conf->as_type != AS_UNSPECIFIED) {
+ 				/* Return peer group's AS number.  */
+ 				*as = peer->group->conf->as;
+ 				return BGP_ERR_PEER_GROUP_MEMBER;
+@@ -2720,8 +2726,6 @@ int peer_delete(struct peer *peer)
+ 	bgp_reads_off(peer->connection);
+ 	bgp_writes_off(peer->connection);
+ 	event_cancel_event_ready(bm->master, peer->connection);
+-	FOREACH_AFI_SAFI (afi, safi)
+-		EVENT_OFF(peer->t_revalidate_all[afi][safi]);
+ 	assert(!CHECK_FLAG(peer->connection->thread_flags,
+ 			   PEER_THREAD_WRITES_ON));
+ 	assert(!CHECK_FLAG(peer->connection->thread_flags,
+@@ -2902,6 +2906,7 @@ struct peer_group *peer_group_get(struct
+ 	group->conf->host = XSTRDUP(MTYPE_BGP_PEER_HOST, name);
+ 	group->conf->group = group;
+ 	group->conf->as = 0;
++	group->conf->as_type = AS_UNSPECIFIED;
+ 	group->conf->ttl = BGP_DEFAULT_TTL;
+ 	group->conf->gtsm_hops = BGP_GTSM_HOPS_DISABLED;
+ 	group->conf->v_routeadv = BGP_DEFAULT_EBGP_ROUTEADV;
+@@ -3023,6 +3028,7 @@ static void peer_group2peer_config_copy(
+ 	PEER_ATTR_INHERIT(peer, group, local_role);
+ 
+ 	/* Update GR flags for the peer. */
++	PEER_ATTR_INHERIT(peer, group, peer_gr_new_status_flag);
+ 	bgp_peer_gr_flags_update(peer);
+ 
+ 	/* Apply BFD settings from group to peer if it exists. */
+diff -urpN frr-frr-10.2/bgpd/bgpd.h frr-frr-10.2.1/bgpd/bgpd.h
+--- frr-frr-10.2/bgpd/bgpd.h	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/bgpd/bgpd.h	2024-12-24 03:47:55.000000000 +0700
+@@ -1646,7 +1646,6 @@ struct peer {
+ 
+ 	/* Threads. */
+ 	struct event *t_llgr_stale[AFI_MAX][SAFI_MAX];
+-	struct event *t_revalidate_all[AFI_MAX][SAFI_MAX];
+ 	struct event *t_refresh_stalepath;
+ 
+ 	/* Thread flags. */
+diff -urpN frr-frr-10.2/configure.ac frr-frr-10.2.1/configure.ac
+--- frr-frr-10.2/configure.ac	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/configure.ac	2024-12-24 03:47:55.000000000 +0700
+@@ -7,7 +7,7 @@
+ ##
+ AC_PREREQ([2.69])
+ 
+-AC_INIT([frr], [10.2], [https://github.com/frrouting/frr/issues])
++AC_INIT([frr], [10.2.1], [https://github.com/frrouting/frr/issues])
+ PACKAGE_URL="https://frrouting.org/"
+ AC_SUBST([PACKAGE_URL])
+ PACKAGE_FULLNAME="FRRouting"
+diff -urpN frr-frr-10.2/debian/changelog frr-frr-10.2.1/debian/changelog
+--- frr-frr-10.2/debian/changelog	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/debian/changelog	2024-12-24 03:47:55.000000000 +0700
+@@ -1,3 +1,9 @@
++frr (10.2.1-0) unstable; urgency=medium
++
++  * New upstream release FRR 10.2.1
++
++ -- Donatas Abraitis <donatas@opensourcerouting.org>  Mon, 23 Dec 2024 22:35:00 +0300
++
+ frr (10.2-0) unstable; urgency=medium
+ 
+   * New upstream release FRR 10.2
+diff -urpN frr-frr-10.2/lib/bfd.c frr-frr-10.2.1/lib/bfd.c
+--- frr-frr-10.2/lib/bfd.c	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/lib/bfd.c	2024-12-24 03:47:55.000000000 +0700
+@@ -32,6 +32,8 @@ enum bfd_session_event {
+ 	BSE_UNINSTALL,
+ 	/** Install the BFD session configuration. */
+ 	BSE_INSTALL,
++	/** We should install but it couldn't because of a error talking to zebra */
++	BSE_VALID_FOR_INSTALL,
+ };
+ 
+ /**
+@@ -527,6 +529,10 @@ static void _bfd_sess_send(struct event
+ 			vrf_id_to_name(bsp->args.vrf_id), bsp->args.vrf_id,
+ 			bsp->lastev == BSE_INSTALL ? "installed"
+ 						   : "uninstalled");
++
++		bsp->installed = false;
++		if (bsp->lastev == BSE_INSTALL)
++			bsp->lastev = BSE_VALID_FOR_INSTALL;
+ 	}
+ }
+ 
+@@ -883,7 +889,7 @@ int zclient_bfd_session_replay(ZAPI_CALL
+ 	/* Replay all activated peers. */
+ 	TAILQ_FOREACH (bsp, &bsglobal.bsplist, entry) {
+ 		/* Skip not installed sessions. */
+-		if (!bsp->installed)
++		if (!bsp->installed && bsp->lastev != BSE_VALID_FOR_INSTALL)
+ 			continue;
+ 
+ 		/* We are reconnecting, so we must send installation. */
+diff -urpN frr-frr-10.2/lib/plist.c frr-frr-10.2.1/lib/plist.c
+--- frr-frr-10.2/lib/plist.c	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/lib/plist.c	2024-12-24 03:47:55.000000000 +0700
+@@ -1136,8 +1136,10 @@ static int vty_show_prefix_list_prefix(s
+ 		match = 0;
+ 
+ 		if (type == normal_display || type == first_match_display)
+-			if (prefix_same(&p, &pentry->prefix))
++			if (prefix_list_entry_match(pentry, &p, false)) {
++				pentry->hitcnt++;
+ 				match = 1;
++			}
+ 
+ 		if (type == longer_display) {
+ 			if ((p.family == pentry->prefix.family)
+diff -urpN frr-frr-10.2/lib/sockopt.c frr-frr-10.2.1/lib/sockopt.c
+--- frr-frr-10.2/lib/sockopt.c	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/lib/sockopt.c	2024-12-24 03:47:55.000000000 +0700
+@@ -19,7 +19,7 @@
+ #define HAVE_BSD_STRUCT_IP_MREQ_HACK
+ #endif
+ 
+-void setsockopt_so_recvbuf(int sock, int size)
++int setsockopt_so_recvbuf(int sock, int size)
+ {
+ 	int orig_req = size;
+ 
+@@ -34,9 +34,11 @@ void setsockopt_so_recvbuf(int sock, int
+ 		flog_err(EC_LIB_SOCKET,
+ 			 "%s: fd %d: SO_RCVBUF set to %d (requested %d)",
+ 			 __func__, sock, size, orig_req);
++
++	return size;
+ }
+ 
+-void setsockopt_so_sendbuf(const int sock, int size)
++int setsockopt_so_sendbuf(const int sock, int size)
+ {
+ 	int orig_req = size;
+ 
+@@ -51,6 +53,8 @@ void setsockopt_so_sendbuf(const int soc
+ 		flog_err(EC_LIB_SOCKET,
+ 			 "%s: fd %d: SO_SNDBUF set to %d (requested %d)",
+ 			 __func__, sock, size, orig_req);
++
++	return size;
+ }
+ 
+ int getsockopt_so_sendbuf(const int sock)
+diff -urpN frr-frr-10.2/lib/sockopt.h frr-frr-10.2.1/lib/sockopt.h
+--- frr-frr-10.2/lib/sockopt.h	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/lib/sockopt.h	2024-12-24 03:47:55.000000000 +0700
+@@ -12,8 +12,8 @@
+ extern "C" {
+ #endif
+ 
+-extern void setsockopt_so_recvbuf(int sock, int size);
+-extern void setsockopt_so_sendbuf(const int sock, int size);
++extern int setsockopt_so_recvbuf(int sock, int size);
++extern int setsockopt_so_sendbuf(const int sock, int size);
+ extern int getsockopt_so_sendbuf(const int sock);
+ extern int getsockopt_so_recvbuf(const int sock);
+ 
+diff -urpN frr-frr-10.2/lib/vty.c frr-frr-10.2.1/lib/vty.c
+--- frr-frr-10.2/lib/vty.c	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/lib/vty.c	2024-12-24 03:47:55.000000000 +0700
+@@ -43,6 +43,7 @@
+ #include "northbound_cli.h"
+ #include "printfrr.h"
+ #include "json.h"
++#include "sockopt.h"
+ 
+ #include <arpa/telnet.h>
+ #include <termios.h>
+@@ -352,7 +353,7 @@ int vty_out(struct vty *vty, const char
+ 		 * put the data of collective vty->obuf Linked List items on the
+ 		 * socket and free the vty->obuf data.
+ 		 */
+-		if (vty->vty_buf_size_accumulated >= VTY_MAX_INTERMEDIATE_FLUSH) {
++		if (vty->vty_buf_size_accumulated >= vty->buf_size_intermediate) {
+ 			vty->vty_buf_size_accumulated = 0;
+ 			vtysh_flush(vty);
+ 		}
+@@ -2157,15 +2158,15 @@ static void vtysh_accept(struct event *t
+ 	 * Increasing the SEND socket buffer size so that the socket can hold
+ 	 * before sending it to VTY shell.
+ 	 */
+-	ret = setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (char *)&sndbufsize,
+-			 sizeof(sndbufsize));
+-	if (ret < 0) {
++	ret = setsockopt_so_sendbuf(sock, sndbufsize);
++	if (ret <= 0) {
+ 		flog_err(EC_LIB_SOCKET,
+ 			 "Cannot set socket %d send buffer size, %s", sock,
+ 			 safe_strerror(errno));
+ 		close(sock);
+ 		return;
+ 	}
++
+ 	set_cloexec(sock);
+ 
+ #ifdef VTYSH_DEBUG
+@@ -2173,6 +2174,13 @@ static void vtysh_accept(struct event *t
+ #endif /* VTYSH_DEBUG */
+ 
+ 	vty = vty_new();
++
++	vty->buf_size_set = ret;
++	if (vty->buf_size_set < VTY_MAX_INTERMEDIATE_FLUSH)
++		vty->buf_size_intermediate = vty->buf_size_set / 2;
++	else
++		vty->buf_size_intermediate = VTY_MAX_INTERMEDIATE_FLUSH;
++
+ 	vty->fd = sock;
+ 	vty->wfd = sock;
+ 	vty->type = VTY_SHELL_SERV;
+diff -urpN frr-frr-10.2/lib/vty.h frr-frr-10.2.1/lib/vty.h
+--- frr-frr-10.2/lib/vty.h	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/lib/vty.h	2024-12-24 03:47:55.000000000 +0700
+@@ -237,6 +237,9 @@ struct vty {
+ 	bool mgmt_locked_candidate_ds;
+ 	bool mgmt_locked_running_ds;
+ 	uint64_t vty_buf_size_accumulated;
++
++	int buf_size_set;
++	uint64_t buf_size_intermediate;
+ };
+ 
+ static inline void vty_push_context(struct vty *vty, int node, uint64_t id)
+diff -urpN frr-frr-10.2/ospfd/ospf_asbr.c frr-frr-10.2.1/ospfd/ospf_asbr.c
+--- frr-frr-10.2/ospfd/ospf_asbr.c	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/ospfd/ospf_asbr.c	2024-12-24 03:47:55.000000000 +0700
+@@ -168,6 +168,38 @@ void ospf_external_info_delete(struct os
+ 	}
+ }
+ 
++/*
++ * ospf_external_info_delete_multi_instance
++ *
++ * Delete instances of the external route information for a given route type.
++ * The preserve_instance parameter may be used to prevent the current instance
++ * from being deleted.
++ */
++void ospf_external_info_delete_multi_instance(struct ospf *ospf, uint8_t type, struct prefix_ipv4 p,
++					      unsigned long preserve_instance)
++{
++	struct route_node *rn;
++	struct ospf_external *ext;
++	struct list *ext_list;
++	struct listnode *node;
++
++	ext_list = ospf->external[type];
++	if (!ext_list)
++		return;
++
++	for (ALL_LIST_ELEMENTS_RO(ext_list, node, ext)) {
++		if (ext->instance != preserve_instance) {
++			rn = route_node_lookup(EXTERNAL_INFO(ext), (struct prefix *)&p);
++			if (rn) {
++				ospf_external_info_free(rn->info);
++				rn->info = NULL;
++				route_unlock_node(rn);
++				route_unlock_node(rn);
++			}
++		}
++	}
++}
++
+ struct external_info *ospf_external_info_lookup(struct ospf *ospf, uint8_t type,
+ 						unsigned short instance,
+ 						struct prefix_ipv4 *p)
+@@ -187,6 +219,44 @@ struct external_info *ospf_external_info
+ 	}
+ 
+ 	return NULL;
++}
++
++/*
++ * ospf_external_info_default_lookup
++ *
++ * For default information criteria, we really don't care about the
++ * source of the route and there only should be one.
++ */
++struct external_info *ospf_external_info_default_lookup(struct ospf *ospf)
++{
++	struct ospf_external *ext;
++	struct external_info *ei;
++	struct list *ext_list;
++	struct listnode *node;
++	struct route_node *rn;
++	struct prefix_ipv4 p = {
++		.family = AF_INET,
++		.prefixlen = 0,
++		.prefix.s_addr = INADDR_ANY,
++	};
++
++	ext_list = ospf->external[DEFAULT_ROUTE];
++	if (!ext_list)
++		return (NULL);
++
++	for (ALL_LIST_ELEMENTS_RO(ext_list, node, ext)) {
++		rn = route_node_lookup(EXTERNAL_INFO(ext), (struct prefix *)&p);
++		if (rn) {
++			route_unlock_node(rn);
++			if (rn->info) {
++				ei = rn->info;
++				if (ei->type != ZEBRA_ROUTE_OSPF || ei->instance != ospf->instance)
++					return ei;
++			}
++		}
++	}
++
++	return NULL;
+ }
+ 
+ struct ospf_lsa *ospf_external_info_find_lsa(struct ospf *ospf,
+diff -urpN frr-frr-10.2/ospfd/ospf_asbr.h frr-frr-10.2.1/ospfd/ospf_asbr.h
+--- frr-frr-10.2/ospfd/ospf_asbr.h	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/ospfd/ospf_asbr.h	2024-12-24 03:47:55.000000000 +0700
+@@ -109,6 +109,10 @@ ospf_external_info_add(struct ospf *, ui
+ 		       route_tag_t, uint32_t metric);
+ extern void ospf_external_info_delete(struct ospf *, uint8_t, unsigned short,
+ 				      struct prefix_ipv4);
++extern void ospf_external_info_delete_multi_instance(struct ospf *ospf, uint8_t type,
++						     struct prefix_ipv4 p,
++						     unsigned long preserve_instance);
++#define OSPF_DELETE_ANY_INSTANCE 0xffffffff
+ extern struct external_info *ospf_external_info_lookup(struct ospf *, uint8_t,
+ 						       unsigned short,
+ 						       struct prefix_ipv4 *);
+diff -urpN frr-frr-10.2/ospfd/ospf_lsa.c frr-frr-10.2.1/ospfd/ospf_lsa.c
+--- frr-frr-10.2/ospfd/ospf_lsa.c	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/ospfd/ospf_lsa.c	2024-12-24 03:47:55.000000000 +0700
+@@ -2396,15 +2396,10 @@ struct ospf_lsa *ospf_nssa_lsa_refresh(s
+ static struct external_info *ospf_default_external_info(struct ospf *ospf)
+ {
+ 	int type;
+-	struct prefix_ipv4 p;
+ 	struct external_info *default_ei;
+ 	int ret = 0;
+ 
+-	p.family = AF_INET;
+-	p.prefix.s_addr = 0;
+-	p.prefixlen = 0;
+-
+-	default_ei = ospf_external_info_lookup(ospf, DEFAULT_ROUTE, 0, &p);
++	default_ei = ospf_external_info_default_lookup(ospf);
+ 	if (!default_ei)
+ 		return NULL;
+ 
+diff -urpN frr-frr-10.2/ospfd/ospf_vty.c frr-frr-10.2.1/ospfd/ospf_vty.c
+--- frr-frr-10.2/ospfd/ospf_vty.c	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/ospfd/ospf_vty.c	2024-12-24 03:47:55.000000000 +0700
+@@ -7368,6 +7368,9 @@ DEFPY (show_ip_ospf_database,
+ 	struct in_addr *adv_router_p = NULL;
+ 	json_object *json = NULL;
+ 
++	if (instance_id != ospf_instance)
++		return CMD_NOT_MY_INSTANCE;
++
+ 	if (uj)
+ 		json = json_object_new_object();
+ 	if (lsid_str)
+diff -urpN frr-frr-10.2/ospfd/ospf_zebra.c frr-frr-10.2.1/ospfd/ospf_zebra.c
+--- frr-frr-10.2/ospfd/ospf_zebra.c	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/ospfd/ospf_zebra.c	2024-12-24 03:47:55.000000000 +0700
+@@ -1292,15 +1292,14 @@ static int ospf_zebra_read_route(ZAPI_CA
+ 	 * originate)ZEBRA_ROUTE_MAX is used to delete the ex-info.
+ 	 * Resolved this inconsistency by maintaining same route type.
+ 	 */
+-	if ((is_default_prefix(&pgen)) && (api.type != ZEBRA_ROUTE_OSPF))
++	if ((is_default_prefix(&pgen)) &&
++	    ((api.type != ZEBRA_ROUTE_OSPF) || (api.instance != ospf->instance)))
+ 		rt_type = DEFAULT_ROUTE;
+ 
+ 	if (IS_DEBUG_OSPF(zebra, ZEBRA_REDISTRIBUTE))
+-		zlog_debug("%s: cmd %s from client %s: vrf %s(%u), p %pFX, metric %d",
+-			   __func__, zserv_command_string(cmd),
+-			   zebra_route_string(api.type),
+-			   ospf_vrf_id_to_name(vrf_id), vrf_id, &api.prefix,
+-			   api.metric);
++		zlog_debug("%s: cmd %s from client %s-%d: vrf %s(%u), p %pFX, metric %d", __func__,
++			   zserv_command_string(cmd), zebra_route_string(api.type), api.instance,
++			   ospf_vrf_id_to_name(vrf_id), vrf_id, &api.prefix, api.metric);
+ 
+ 	if (cmd == ZEBRA_REDISTRIBUTE_ROUTE_ADD) {
+ 		/* XXX|HACK|TODO|FIXME:
+@@ -1315,16 +1314,17 @@ static int ospf_zebra_read_route(ZAPI_CA
+ 			api.tag = ospf->dtag[rt_type];
+ 
+ 		/*
+-		 * Given zebra sends update for a prefix via ADD message, it
+-		 * should
+-		 * be considered as an implicit DEL for that prefix with other
+-		 * source
+-		 * types.
++		 * Given zebra sends an update for a prefix via an ADD message, it
++		 * will be considered as an impilict DELETE for that prefix for other
++		 * types and instances other than the type and instance associated with
++		 * the prefix.
+ 		 */
+-		for (i = 0; i <= ZEBRA_ROUTE_MAX; i++)
+-			if (i != rt_type)
+-				ospf_external_info_delete(ospf, i, api.instance,
+-							  p);
++		for (i = 0; i <= ZEBRA_ROUTE_MAX; i++) {
++			unsigned long preserve_instance;
++
++			preserve_instance = (i == rt_type) ? api.instance : OSPF_DELETE_ANY_INSTANCE;
++			ospf_external_info_delete_multi_instance(ospf, i, p, preserve_instance);
++		}
+ 
+ 		ei = ospf_external_info_add(ospf, rt_type, api.instance, p,
+ 					    ifindex, nexthop, api.tag,
+diff -urpN frr-frr-10.2/ospfd/ospf_zebra.h frr-frr-10.2.1/ospfd/ospf_zebra.h
+--- frr-frr-10.2/ospfd/ospf_zebra.h	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/ospfd/ospf_zebra.h	2024-12-24 03:47:55.000000000 +0700
+@@ -47,6 +47,9 @@ extern uint8_t ospf_distance_apply(struc
+ 				   struct ospf_route *);
+ extern struct ospf_external *ospf_external_lookup(struct ospf *, uint8_t,
+ 						  unsigned short);
++
++extern struct external_info *ospf_external_info_default_lookup(struct ospf *ospf);
++
+ extern struct ospf_external *ospf_external_add(struct ospf *, uint8_t,
+ 					       unsigned short);
+ 
+diff -urpN frr-frr-10.2/pimd/pim_autorp.c frr-frr-10.2.1/pimd/pim_autorp.c
+--- frr-frr-10.2/pimd/pim_autorp.c	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/pimd/pim_autorp.c	2024-12-24 03:47:55.000000000 +0700
+@@ -1014,12 +1014,13 @@ void pim_autorp_init(struct pim_instance
+ 	autorp->announce_interval = DEFAULT_ANNOUNCE_INTERVAL;
+ 	autorp->announce_holdtime = DEFAULT_ANNOUNCE_HOLDTIME;
+ 
++	pim->autorp = autorp;
++
+ 	if (!pim_autorp_socket_enable(autorp)) {
+-		zlog_err("%s: AutoRP failed to initialize", __func__);
++		zlog_err("%s: AutoRP failed to initialize, feature will not work correctly", __func__);
+ 		return;
+ 	}
+ 
+-	pim->autorp = autorp;
+ 	if (PIM_DEBUG_AUTORP)
+ 		zlog_debug("%s: AutoRP Initialized", __func__);
+ 
+diff -urpN frr-frr-10.2/pimd/pim_iface.c frr-frr-10.2.1/pimd/pim_iface.c
+--- frr-frr-10.2/pimd/pim_iface.c	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/pimd/pim_iface.c	2024-12-24 03:47:55.000000000 +0700
+@@ -1464,8 +1464,7 @@ static void pim_if_gm_join_del_all(struc
+ 		return;
+ 
+ 	for (ALL_LIST_ELEMENTS(pim_ifp->gm_join_list, node, nextnode, ij))
+-		pim_if_gm_join_del(ifp, ij->group_addr, ij->source_addr,
+-				   GM_JOIN_STATIC);
++		pim_if_gm_join_del(ifp, ij->group_addr, ij->source_addr, ij->join_type);
+ }
+ 
+ ferr_r pim_if_static_group_add(struct interface *ifp, pim_addr group_addr,
+diff -urpN frr-frr-10.2/pimd/pim_vty.c frr-frr-10.2.1/pimd/pim_vty.c
+--- frr-frr-10.2/pimd/pim_vty.c	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/pimd/pim_vty.c	2024-12-24 03:47:55.000000000 +0700
+@@ -325,6 +325,9 @@ static int gm_config_write(struct vty *v
+ 		struct listnode *node;
+ 		struct gm_join *ij;
+ 		for (ALL_LIST_ELEMENTS_RO(pim_ifp->gm_join_list, node, ij)) {
++			if (ij->join_type == GM_JOIN_PROXY)
++				continue;
++
+ 			if (pim_addr_is_any(ij->source_addr))
+ 				vty_out(vty, " ip igmp join-group %pPAs\n",
+ 					&ij->group_addr);
+@@ -395,6 +398,9 @@ static int gm_config_write(struct vty *v
+ 		struct gm_join *ij;
+ 
+ 		for (ALL_LIST_ELEMENTS_RO(pim_ifp->gm_join_list, node, ij)) {
++			if (ij->join_type == GM_JOIN_PROXY)
++				continue;
++
+ 			if (pim_addr_is_any(ij->source_addr))
+ 				vty_out(vty, " ipv6 mld join-group %pPAs\n",
+ 					&ij->group_addr);
+diff -urpN frr-frr-10.2/pimd/pimd.c frr-frr-10.2.1/pimd/pimd.c
+--- frr-frr-10.2/pimd/pimd.c	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/pimd/pimd.c	2024-12-24 03:47:55.000000000 +0700
+@@ -17,6 +17,7 @@
+ #include "vrf.h"
+ #include "lib_errors.h"
+ #include "bfd.h"
++#include "filter.h"
+ 
+ #include "pimd.h"
+ #if PIM_IPV == 4
+@@ -143,6 +144,7 @@ void pim_terminate(void)
+ 	prefix_list_add_hook(NULL);
+ 	prefix_list_delete_hook(NULL);
+ 	prefix_list_reset();
++	access_list_reset();
+ 
+ 	pim_vxlan_terminate();
+ 	pim_vrf_terminate();
+diff -urpN frr-frr-10.2/redhat/frr.spec.in frr-frr-10.2.1/redhat/frr.spec.in
+--- frr-frr-10.2/redhat/frr.spec.in	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/redhat/frr.spec.in	2024-12-24 03:47:55.000000000 +0700
+@@ -834,7 +834,42 @@ sed -i 's/ -M rpki//' %{_sysconfdir}/frr
+ 
+ %changelog
+ 
+-* Tue Nov 12 2024 Jafar Al-Gharaibeh <jafar@atcorp.com> - %{version}
++* Mon Dec 23 2024 Donatas Abraitis <donatas@opensourcerouting.org> - %{version}
++
++* Mon Dec 23 2024  Donatas Abraitis <donatas@opensourcerouting.org> - 10.2.1
++- bfdd
++-   retain remote dplane client socket
++- bgpd
++-   Fix to pop items off zebra_announce FIFO for few EVPN triggers
++-   Check if as_type is not specified when peer is a peer-group member
++-   Do not reset peers on suppress-fib toggling
++-   Fix bgp core with a possible Intf delete
++-   Fix `enforce-first-as` per peer-group removal
++-   Fix evpn bestpath calculation when path is not established
++-   Fix graceful-restart for peer-groups
++-   Fix memory leak when creating BMP connection with a source interface
++-   Fix memory leak when reconfiguring a route distinguisher
++-   Fix unconfigure asdot neighbor
++-   Fix use single whitespace when displaying flowspec entries
++-   Fix version attribute is an int, not a string
++-   Import allowed routes with self AS if desired
++-   Initialize as_type for peer-group as AS_UNSPECIFIED
++-   Use gracefulRestart JSON field
++-   Validate both nexthop information (NEXTHOP and NLRI)
++-   Validate only affected RPKI prefixes instead of a full RIB
++-   When calling bgp_process, prevent infinite loop
++- lib
++-   Allow setsockopt functions to return size set
++-   Fix session re-establishment
++-   Take ge/le into consideration when checking the prefix with the prefix-list
++-   Use backoff setsockopt option for freebsd
++- ospfd
++-   OSPF multi-instance default origination fixes
++- pimd
++-   Fix access-list memory leak in pimd
++-   Free igmp proxy joins on interface deletion
++-   igmp proxy joins should not be written as part of config
++-   Prevent crash of pim when auto-rp's socket is not initialized
+ 
+ * Tue Nov 12 2024 Jafar Al-Gharaibeh <jafar@atcorp.com> - 10.2
+ -   PIM candidate BSR/RP [#16438]
+diff -urpN frr-frr-10.2/tests/topotests/bgp_peer_group/r1/bgpd.conf frr-frr-10.2.1/tests/topotests/bgp_peer_group/r1/bgpd.conf
+--- frr-frr-10.2/tests/topotests/bgp_peer_group/r1/bgpd.conf	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/tests/topotests/bgp_peer_group/r1/bgpd.conf	1970-01-01 07:00:00.000000000 +0700
+@@ -1,12 +0,0 @@
+-!
+-router bgp 65001
+-  neighbor PG peer-group
+-  neighbor PG remote-as external
+-  neighbor PG timers 3 10
+-  neighbor 192.168.255.3 peer-group PG
+-  neighbor r1-eth0 interface peer-group PG
+-  neighbor PG1 peer-group
+-  neighbor PG1 remote-as external
+-  neighbor PG1 timers 3 20
+-  neighbor 192.168.251.2 peer-group PG1
+-!
+diff -urpN frr-frr-10.2/tests/topotests/bgp_peer_group/r1/frr.conf frr-frr-10.2.1/tests/topotests/bgp_peer_group/r1/frr.conf
+--- frr-frr-10.2/tests/topotests/bgp_peer_group/r1/frr.conf	1970-01-01 07:00:00.000000000 +0700
++++ frr-frr-10.2.1/tests/topotests/bgp_peer_group/r1/frr.conf	2024-12-24 03:47:55.000000000 +0700
+@@ -0,0 +1,21 @@
++!
++interface r1-eth0
++ ip address 192.168.255.1/24
++!
++interface r1-eth1
++ ip address 192.168.251.1/30
++!
++ip forwarding
++!
++router bgp 65001
++ neighbor PG peer-group
++ neighbor PG remote-as external
++ neighbor PG timers 3 10
++ neighbor 192.168.255.3 peer-group PG
++ neighbor r1-eth0 interface peer-group PG
++ neighbor PG1 peer-group
++ neighbor PG1 remote-as external
++ neighbor PG1 timers 3 20
++ neighbor PG1 graceful-restart-disable
++ neighbor 192.168.251.2 peer-group PG1
++!
+diff -urpN frr-frr-10.2/tests/topotests/bgp_peer_group/r1/zebra.conf frr-frr-10.2.1/tests/topotests/bgp_peer_group/r1/zebra.conf
+--- frr-frr-10.2/tests/topotests/bgp_peer_group/r1/zebra.conf	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/tests/topotests/bgp_peer_group/r1/zebra.conf	1970-01-01 07:00:00.000000000 +0700
+@@ -1,9 +0,0 @@
+-!
+-interface r1-eth0
+- ip address 192.168.255.1/24
+-!
+-interface r1-eth1
+- ip address 192.168.251.1/30
+-!
+-ip forwarding
+-!
+diff -urpN frr-frr-10.2/tests/topotests/bgp_peer_group/r2/bgpd.conf frr-frr-10.2.1/tests/topotests/bgp_peer_group/r2/bgpd.conf
+--- frr-frr-10.2/tests/topotests/bgp_peer_group/r2/bgpd.conf	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/tests/topotests/bgp_peer_group/r2/bgpd.conf	1970-01-01 07:00:00.000000000 +0700
+@@ -1,11 +0,0 @@
+-!
+-router bgp 65002
+-  neighbor PG peer-group
+-  neighbor PG remote-as external
+-  neighbor PG timers 3 10
+-  neighbor r2-eth0 interface peer-group PG
+-  neighbor PG1 peer-group
+-  neighbor PG1 remote-as external
+-  neighbor PG1 timers 3 20
+-  neighbor 192.168.251.1 peer-group PG1
+-!
+diff -urpN frr-frr-10.2/tests/topotests/bgp_peer_group/r2/frr.conf frr-frr-10.2.1/tests/topotests/bgp_peer_group/r2/frr.conf
+--- frr-frr-10.2/tests/topotests/bgp_peer_group/r2/frr.conf	1970-01-01 07:00:00.000000000 +0700
++++ frr-frr-10.2.1/tests/topotests/bgp_peer_group/r2/frr.conf	2024-12-24 03:47:55.000000000 +0700
+@@ -0,0 +1,19 @@
++!
++interface r2-eth0
++ ip address 192.168.255.2/24
++!
++interface r2-eth1
++ ip address 192.168.251.2/30
++!
++ip forwarding
++!
++router bgp 65002
++ neighbor PG peer-group
++ neighbor PG remote-as external
++ neighbor PG timers 3 10
++ neighbor r2-eth0 interface peer-group PG
++ neighbor PG1 peer-group
++ neighbor PG1 remote-as external
++ neighbor PG1 timers 3 20
++ neighbor 192.168.251.1 peer-group PG1
++!
+diff -urpN frr-frr-10.2/tests/topotests/bgp_peer_group/r2/zebra.conf frr-frr-10.2.1/tests/topotests/bgp_peer_group/r2/zebra.conf
+--- frr-frr-10.2/tests/topotests/bgp_peer_group/r2/zebra.conf	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/tests/topotests/bgp_peer_group/r2/zebra.conf	1970-01-01 07:00:00.000000000 +0700
+@@ -1,9 +0,0 @@
+-!
+-interface r2-eth0
+- ip address 192.168.255.2/24
+-!
+-interface r2-eth1
+- ip address 192.168.251.2/30
+-!
+-ip forwarding
+-!
+diff -urpN frr-frr-10.2/tests/topotests/bgp_peer_group/r3/bgpd.conf frr-frr-10.2.1/tests/topotests/bgp_peer_group/r3/bgpd.conf
+--- frr-frr-10.2/tests/topotests/bgp_peer_group/r3/bgpd.conf	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/tests/topotests/bgp_peer_group/r3/bgpd.conf	1970-01-01 07:00:00.000000000 +0700
+@@ -1,11 +0,0 @@
+-!
+-router bgp 65003
+- no bgp ebgp-requires-policy
+- neighbor PG peer-group
+- neighbor PG remote-as external
+- neighbor PG timers 3 10
+- neighbor 192.168.255.1 peer-group PG
+- address-family ipv4 unicast
+-  redistribute connected
+- exit-address-family
+-!
+diff -urpN frr-frr-10.2/tests/topotests/bgp_peer_group/r3/frr.conf frr-frr-10.2.1/tests/topotests/bgp_peer_group/r3/frr.conf
+--- frr-frr-10.2/tests/topotests/bgp_peer_group/r3/frr.conf	1970-01-01 07:00:00.000000000 +0700
++++ frr-frr-10.2.1/tests/topotests/bgp_peer_group/r3/frr.conf	2024-12-24 03:47:55.000000000 +0700
+@@ -0,0 +1,16 @@
++!
++interface r3-eth0
++ ip address 192.168.255.3/24
++!
++ip forwarding
++!
++router bgp 65003
++ no bgp ebgp-requires-policy
++ neighbor PG peer-group
++ neighbor PG remote-as external
++ neighbor PG timers 3 10
++ neighbor 192.168.255.1 peer-group PG
++ address-family ipv4 unicast
++  redistribute connected
++ exit-address-family
++!
+diff -urpN frr-frr-10.2/tests/topotests/bgp_peer_group/r3/zebra.conf frr-frr-10.2.1/tests/topotests/bgp_peer_group/r3/zebra.conf
+--- frr-frr-10.2/tests/topotests/bgp_peer_group/r3/zebra.conf	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/tests/topotests/bgp_peer_group/r3/zebra.conf	1970-01-01 07:00:00.000000000 +0700
+@@ -1,6 +0,0 @@
+-!
+-interface r3-eth0
+- ip address 192.168.255.3/24
+-!
+-ip forwarding
+-!
+diff -urpN frr-frr-10.2/tests/topotests/bgp_peer_group/test_bgp_peer-group.py frr-frr-10.2.1/tests/topotests/bgp_peer_group/test_bgp_peer-group.py
+--- frr-frr-10.2/tests/topotests/bgp_peer_group/test_bgp_peer-group.py	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/tests/topotests/bgp_peer_group/test_bgp_peer-group.py	2024-12-24 03:47:55.000000000 +0700
+@@ -2,12 +2,14 @@
+ # SPDX-License-Identifier: ISC
+ 
+ #
+-# Copyright (c) 2021 by
++# Copyright (c) 2021-2024 by
+ # Donatas Abraitis <donatas.abraitis@gmail.com>
++# Donatas Abraitis <donatas@opensourcerouting.org>
+ #
+ 
+ """
+-Test if peer-group works for numbered and unnumbered configurations.
++Test if various random settings with peer-group works for
++numbered and unnumbered configurations.
+ """
+ 
+ import os
+@@ -21,7 +23,7 @@ sys.path.append(os.path.join(CWD, "../")
+ 
+ # pylint: disable=C0413
+ from lib import topotest
+-from lib.topogen import Topogen, TopoRouter, get_topogen
++from lib.topogen import Topogen, get_topogen
+ from lib.topolog import logger
+ 
+ pytestmark = [pytest.mark.bgpd]
+@@ -48,12 +50,7 @@ def setup_module(mod):
+     router_list = tgen.routers()
+ 
+     for _, (rname, router) in enumerate(router_list.items(), 1):
+-        router.load_config(
+-            TopoRouter.RD_ZEBRA, os.path.join(CWD, "{}/zebra.conf".format(rname))
+-        )
+-        router.load_config(
+-            TopoRouter.RD_BGP, os.path.join(CWD, "{}/bgpd.conf".format(rname))
+-        )
++        router.load_frr_config(os.path.join(CWD, "{}/frr.conf".format(rname)))
+ 
+     tgen.start_router()
+ 
+@@ -72,14 +69,26 @@ def test_bgp_peer_group():
+     def _bgp_peer_group_configured():
+         output = json.loads(tgen.gears["r1"].vtysh_cmd("show ip bgp neighbor json"))
+         expected = {
+-            "r1-eth0": {"peerGroup": "PG", "bgpState": "Established"},
+-            "192.168.255.3": {"peerGroup": "PG", "bgpState": "Established"},
+-            "192.168.251.2": {"peerGroup": "PG1", "bgpState": "Established"},
++            "r1-eth0": {
++                "peerGroup": "PG",
++                "bgpState": "Established",
++                "neighborCapabilities": {"gracefulRestart": "advertisedAndReceived"},
++            },
++            "192.168.255.3": {
++                "peerGroup": "PG",
++                "bgpState": "Established",
++                "neighborCapabilities": {"gracefulRestart": "advertisedAndReceived"},
++            },
++            "192.168.251.2": {
++                "peerGroup": "PG1",
++                "bgpState": "Established",
++                "neighborCapabilities": {"gracefulRestart": "received"},
++            },
+         }
+         return topotest.json_cmp(output, expected)
+ 
+     test_func = functools.partial(_bgp_peer_group_configured)
+-    _, result = topotest.run_and_expect(test_func, None, count=60, wait=0.5)
++    _, result = topotest.run_and_expect(test_func, None, count=30, wait=1)
+     assert result is None, "Failed bgp convergence in r1"
+ 
+     def _bgp_peer_group_check_advertised_routes():
+@@ -97,7 +106,7 @@ def test_bgp_peer_group():
+         return topotest.json_cmp(output, expected)
+ 
+     test_func = functools.partial(_bgp_peer_group_check_advertised_routes)
+-    _, result = topotest.run_and_expect(test_func, None, count=60, wait=0.5)
++    _, result = topotest.run_and_expect(test_func, None, count=30, wait=1)
+     assert result is None, "Failed checking advertised routes from r3"
+ 
+ 
+@@ -122,7 +131,7 @@ def test_bgp_peer_group_remote_as_del_re
+         return topotest.json_cmp(output, expected)
+ 
+     test_func = functools.partial(_bgp_peer_group_remoteas_del)
+-    _, result = topotest.run_and_expect(test_func, None, count=60, wait=0.5)
++    _, result = topotest.run_and_expect(test_func, None, count=30, wait=1)
+     assert result is None, "Failed bgp convergence in r1"
+ 
+     logger.info("Re-add bgp peer-group PG1 remote-as neighbor should be established")
+@@ -139,7 +148,7 @@ def test_bgp_peer_group_remote_as_del_re
+         return topotest.json_cmp(output, expected)
+ 
+     test_func = functools.partial(_bgp_peer_group_remoteas_add)
+-    _, result = topotest.run_and_expect(test_func, None, count=60, wait=0.5)
++    _, result = topotest.run_and_expect(test_func, None, count=30, wait=1)
+     assert result is None, "Failed bgp convergence in r1"
+ 
+ 
+diff -urpN frr-frr-10.2/vtysh/vtysh.c frr-frr-10.2.1/vtysh/vtysh.c
+--- frr-frr-10.2/vtysh/vtysh.c	2024-11-12 23:20:46.000000000 +0700
++++ frr-frr-10.2.1/vtysh/vtysh.c	2024-12-24 03:47:55.000000000 +0700
+@@ -39,6 +39,7 @@
+ #include "frrstr.h"
+ #include "json.h"
+ #include "ferr.h"
++#include "sockopt.h"
+ 
+ DEFINE_MTYPE_STATIC(MVTYSH, VTYSH_CMD, "Vtysh cmd copy");
+ 
+@@ -4694,9 +4695,8 @@ static int vtysh_connect(struct vtysh_cl
+ 	 * Increasing the RECEIVE socket buffer size so that the socket can hold
+ 	 * after receving from other process.
+ 	 */
+-	ret = setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char *)&rcvbufsize,
+-			 sizeof(rcvbufsize));
+-	if (ret < 0) {
++	ret = setsockopt_so_recvbuf(sock, rcvbufsize);
++	if (ret <= 0) {
+ #ifdef DEBUG
+ 		fprintf(stderr, "Cannot set socket %d rcv buffer size, %s\n",
+ 			sock, safe_strerror(errno));
