@@ -1239,7 +1239,8 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 					}
 				}
 			}
-			fprintf(fp, "no_country_ie=1\n");
+			if (!has_ax(prefix))
+				fprintf(fp, "no_country_ie=1\n");
 
 			if (!is_6ghz_freq_prefix(prefix, freq)) {
 				switch (usebw) {
@@ -1650,7 +1651,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			}
 		}
 	}
-	fprintf(fp, "no_country_ie=1\n");
+	if (!has_ax(ifname))
+			fprintf(fp, "no_country_ie=1\n");
 	if (has_qam256(ifname) && has_2ghz(ifname) && (usebw < 80 || cansuperchannel(maininterface))) {
 		if (nvram_nmatch("1", "%s_turbo_qam", maininterface)) {
 			fprintf(fp, "vendor_vht=1\n");
