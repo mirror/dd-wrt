@@ -1,4 +1,20 @@
 ------------------------------------------------------------------------
+r8258 | brainslayer | 2025-01-26 02:21:40 +0700 (Sun, 26 Jan 2025) | 1 line
+
+adjust scan flags
+------------------------------------------------------------------------
+r8257 | brainslayer | 2025-01-26 02:21:06 +0700 (Sun, 26 Jan 2025) | 1 line
+
+fix 6 ghz channel mapping, so we can get client mode working
+------------------------------------------------------------------------
+r8256 | brainslayer | 2025-01-26 02:18:19 +0700 (Sun, 26 Jan 2025) | 1 line
+
+fix 6 ghz channel mapping, so we can get client mode working
+------------------------------------------------------------------------
+r8255 | brainslayer | 2025-01-25 16:30:45 +0700 (Sat, 25 Jan 2025) | 1 line
+
+support european 6ghz channels (needs small hack in calibration data
+------------------------------------------------------------------------
 r8254 | brainslayer | 2025-01-25 03:25:19 +0700 (Sat, 25 Jan 2025) | 1 line
 
 adapt nl80211 changes
