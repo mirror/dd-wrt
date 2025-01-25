@@ -501,7 +501,6 @@ void start_init_start(void)
 #ifdef HAVE_WIFIDOG
 	start_service(wifidog);
 #endif
-	system("/etc/postinit&");
 	start_service(httpd);
 	led_control(LED_DIAG, LED_OFF);
 	lcdmessage("System Ready");
