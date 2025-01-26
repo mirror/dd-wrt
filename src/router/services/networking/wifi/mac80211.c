@@ -1425,7 +1425,10 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	if (is_6ghz_freq_prefix(prefix, freq)) {
 		switch (usebw) {
 		case 20:
-			fprintf(fp, "op_class=131\n");
+			if (freq == 5935)
+				fprintf(fp, "op_class=136\n");
+			else
+				fprintf(fp, "op_class=131\n");
 			break;
 		case 40:
 			fprintf(fp, "op_class=132\n");
