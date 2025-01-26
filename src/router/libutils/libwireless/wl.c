@@ -1328,6 +1328,7 @@ long long wifi_getrate(char *ifname)
 		if (nvram_nmatch("mixed", "%s_net_mode", physical) || //
 		    nvram_nmatch("ac-only", "%s_net_mode", physical) || //
 		    nvram_nmatch("ax-only", "%s_net_mode", physical) || //
+		    nvram_nmatch("ax6-only", "%s_net_mode", physical) || //
 		    nvram_nmatch("xacn-mixed", "%s_net_mode", physical) || //
 		    nvram_nmatch("1", "%s_turbo_qam", physical) || //
 		    nvram_nmatch("acn-mixed", "%s_net_mode", physical)) //
