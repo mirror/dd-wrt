@@ -816,7 +816,7 @@ static int do_file_2(unsigned char method, struct mime_handler *handler, char *p
 }
 
 int do_file(unsigned char method, struct mime_handler *handler, char *path,
-	webs_t stream) //jimmy, https, 8/4/2003
+	    webs_t stream) //jimmy, https, 8/4/2003
 {
 	return do_file_2(method, handler, path, stream, NULL);
 }

@@ -225,8 +225,7 @@ void show_custominputlabel(webs_t wp, char *labelname, char *propertyname, char 
 #else
 #define ATH9K_ENABLED() 0
 #endif
-int do_file(unsigned char method, struct mime_handler *handler, char *path,
-	webs_t stream);
+int do_file(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
 int is_ap(const char *prefix);
 
 void delete_old_routes(void);
