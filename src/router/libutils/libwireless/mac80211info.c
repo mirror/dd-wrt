@@ -1916,8 +1916,10 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 #endif
 							if (checkband == 2 && band->nla_type != NL80211_BAND_2GHZ)
 								continue;
-							if (checkband == 5 && band->nla_type != NL80211_BAND_5GHZ &&
+							if (checkband == 56 && band->nla_type != NL80211_BAND_5GHZ &&
 							    band->nla_type != NL80211_BAND_6GHZ)
+								continue;
+							if (checkband == 5 && band->nla_type != NL80211_BAND_5GHZ)
 								continue;
 							if (checkband == 6 && band->nla_type != NL80211_BAND_6GHZ)
 								continue;
