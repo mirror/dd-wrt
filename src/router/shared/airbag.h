@@ -88,7 +88,7 @@ void airbag_setpostinfo(const char *string);
 	do {                         \
 	} while (0)
 #define airbag_deinit(string) \
-	do {                       \
+	do {                  \
 	} while (0)
 #endif
 

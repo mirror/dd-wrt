@@ -160,7 +160,6 @@ void bailoute(const char *msg, ...);
 void set_discmessage_on(void);
 void set_discmessage_off(void);
 
-
 /* in amiga.c */
 int detect_amiga_partmap(SECTION *section, int level);
 int detect_amiga_fs(SECTION *section, int level);

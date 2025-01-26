@@ -34,7 +34,7 @@ l7filters filters_list[] = {
 	{ "accuweather", NDPI_ONLY, 0, NULL },
 	{ "activision", NDPI_ONLY, 0, NULL },
 #endif
-	{ "ad-telemetry", FILTER_CUSTOM,0, NULL },
+	{ "ad-telemetry", FILTER_CUSTOM, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "ads_analytics_track", NDPI_ONLY, 0, NULL },
 	{ "adobe_connect", NDPI_ONLY, 0, NULL },
@@ -672,7 +672,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "softether", NDPI_ONLY, 0, NULL },
 	{ "someip", NDPI_ONLY, 0, NULL },
-	{ "sonos", NDPI_ONLY, 0, NULL },	
+	{ "sonos", NDPI_ONLY, 0, NULL },
 #endif
 	{ "soribada", L7_ONLY, 0, NULL },
 	{ "soulseek", PDPI_ONLY, 0, NULL },
@@ -782,7 +782,7 @@ l7filters filters_list[] = {
 	{ "twitch", NDPI_ONLY, 0, NULL },
 	{ "twitter", NDPI_ONLY, 0, NULL },
 #endif
-	{ "ubnt-telemetry", FILTER_CUSTOM,0,NULL },
+	{ "ubnt-telemetry", FILTER_CUSTOM, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "ubntac2", NDPI_ONLY, 0, NULL },
 	{ "ubuntuone", NDPI_ONLY, 0, NULL },
@@ -849,7 +849,7 @@ l7filters filters_list[] = {
 	{ "whois-das", NDPI_ONLY, 0, NULL },
 	{ "wikipedia", NDPI_ONLY, 0, NULL },
 #endif
-	{ "windows-telemetry", FILTER_CUSTOM,0,NULL },
+	{ "windows-telemetry", FILTER_CUSTOM, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "windowsupdate", NDPI_ONLY, 0, NULL },
 	{ "windscribe", NDPI_ONLY, 0, NULL },

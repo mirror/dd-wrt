@@ -143,7 +143,7 @@ struct switch_val {
 		char *s;
 		int i;
 		struct switch_port *ports;
-	struct switch_ext *ext_val;
+		struct switch_ext *ext_val;
 		struct switch_port_link *link;
 	} value;
 };

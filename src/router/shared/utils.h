@@ -803,7 +803,6 @@
 
 #define ROUTER_LINKSYS_MX4200V2 0x115134
 
-
 #define ROUTER_DYNALINK_DLWRX36 0x116122
 
 #define ROUTER_LINKSYS_MR5500 0x11711c
@@ -1321,7 +1320,6 @@ static inline int has_ar900b(const char *prefix)
 {
 	return 0;
 }
-
 
 static inline int has_dualband(const char *prefix)
 {
