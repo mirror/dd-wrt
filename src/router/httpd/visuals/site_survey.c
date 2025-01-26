@@ -335,8 +335,8 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 			}
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
-				if (hasax && hasac)
-					sprintf(rates, "%s(b/g/n/ac/ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+				if (hasax && !hasac)
+					sprintf(rates, "%s(ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else if (hasax)
 					sprintf(rates, "%s(b/g/n/ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else if (hasac)
@@ -344,37 +344,15 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 				else
 					sprintf(rates, "%s(b/g/n)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 			} else {
-				if (hasax)
+				if (hasax && !hasac)
+					sprintf(rates, "%s(ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+				else if (hasax)
 					sprintf(rates, "%s(a/n/ac/ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else if (hasac)
 					sprintf(rates, "%s(a/n/ac)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else
 					sprintf(rates, "%s(a/n)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 			}
-
-		} else if (site_survey_lists[i].extcap & CAP_AX) {
-			int cbw = site_survey_lists[i].channel & 0x300;
-			cbw = 0x300; // fix for now
-			int s = 20;
-			int speed = site_survey_lists[i].rate_count;
-			switch (cbw) {
-			case 0x0:
-				if (site_survey_lists[i].extcap & CAP_SECCHANNEL)
-					speed = getrate(speed, s * 2, 1, 1);
-				else
-					speed = getrate(speed, s, 1, 1);
-				break;
-			case 0x100:
-				speed = getrate(speed, s * 4, 1, 1);
-				break;
-			case 0x200:
-			case 0x300:
-				speed = getrate(speed, s * 8, 1, 1);
-				break;
-			default:
-				speed = speed * 10;
-			}
-			sprintf(rates, "%s(ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 
 		} else if (site_survey_lists[i].channel & 0x2000) {
 			int speed = 0;
