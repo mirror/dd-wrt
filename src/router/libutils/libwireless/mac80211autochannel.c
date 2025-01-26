@@ -357,9 +357,10 @@ struct wifi_channels *get_chan(struct wifi_channels *wifi_channels, int freq, co
 		    (nvram_nmatch("ng-only", "%s_net_mode", interface) || nvram_nmatch("n2-only", "%s_net_mode", interface) ||
 		     nvram_nmatch("bg-mixed", "%s_net_mode", interface) || nvram_nmatch("ng-mixed", "%s_net_mode", interface) ||
 		     nvram_nmatch("b-only", "%s_net_mode", interface) || nvram_nmatch("g-only", "%s_net_mode", interface) ||
-		     nvram_nmatch("a-only", "%s_net_mode", interface) || nvram_nmatch("na-only", "%s_net_mode", interface) ||
-		     nvram_nmatch("ac-only", "%s_net_mode", interface) || nvram_nmatch("acn-mixed", "%s_net_mode", interface) ||
-		     nvram_nmatch("xacn-mixed", "%s_net_mode", interface) || nvram_nmatch("n5-only", "%s_net_mode", interface))) {
+		     nvram_nmatch("a-only", "%s_net_mode", interface) || nvram_nmatch("ax5-only", "%s_net_mode", interface) ||
+		     nvram_nmatch("na-only", "%s_net_mode", interface) || nvram_nmatch("ac-only", "%s_net_mode", interface) ||
+		     nvram_nmatch("acn-mixed", "%s_net_mode", interface) || nvram_nmatch("xacn-mixed", "%s_net_mode", interface) ||
+		     nvram_nmatch("n5-only", "%s_net_mode", interface))) {
 			dd_loginfo("autochannel", "%s: %d not valid, ignore", interface, chan->freq);
 			chan->freq = CHANNEL_DISABLED;
 		}
