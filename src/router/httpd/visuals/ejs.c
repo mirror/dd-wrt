@@ -2169,6 +2169,8 @@ EJ_VISIBLE void ej_getwirelessnetmode(webs_t wp, int argc, char_t **argv)
 			websWrite(wp, "Capture(wl_basic.ac)");
 		if (nvram_match(netmode, "ax-only"))
 			websWrite(wp, "Capture(wl_basic.ax)");
+		if (nvram_match(netmode, "ax6-only"))
+			websWrite(wp, "Capture(wl_basic.ax6)");
 		if (nvram_match(netmode, "axg-only"))
 			websWrite(wp, "Capture(wl_basic.axg)");
 		if (nvram_match(netmode, "ad-only"))
