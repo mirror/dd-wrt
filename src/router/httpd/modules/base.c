@@ -3141,7 +3141,6 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 {
 	int i, j, match;
 
-
 	struct pattern {
 		char ch;
 		char *string;

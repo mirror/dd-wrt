@@ -40,7 +40,6 @@
 #include <dd_defs.h>
 #include <revision.h>
 
-
 //debug
 #include <syslog.h>
 #include <shutils.h>

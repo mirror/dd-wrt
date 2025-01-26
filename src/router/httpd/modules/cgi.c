@@ -75,7 +75,6 @@ static void set_cgi(webs_t wp, char *name, char *value)
 {
 	ENTRY e, *ep;
 
-
 #if defined(__UCLIBC__) || defined(__GLIBC__)
 	if (!wp->htab.table)
 		return;
@@ -99,7 +98,6 @@ static void init_cgi(webs_t wp, char *query)
 {
 	int len, nel;
 	char *q, *name, *value;
-
 
 	/* Clear variables */
 	if (!query) {
