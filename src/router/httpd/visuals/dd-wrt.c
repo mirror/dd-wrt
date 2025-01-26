@@ -1522,7 +1522,8 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				int freq = chan[i].freq;
 				char eirp[32] = { 0 };
 				if (chan[i].hw_eirp)
-					snprintf(eirp, sizeof(eirp), " (%d dBm%s)", chan[i].hw_eirp + poffset,is_6ghz_psc_frequency(freq) ? ", PSC":"");
+					snprintf(eirp, sizeof(eirp), " (%d dBm%s)", chan[i].hw_eirp + poffset,
+						 is_6ghz_psc_frequency(freq) ? ", PSC" : "");
 				if (freq != -1) {
 					if (is_mac80211(prefix) && !is_ath5k(prefix)) {
 						websWrite(
