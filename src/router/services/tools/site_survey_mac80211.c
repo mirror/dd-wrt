@@ -826,7 +826,7 @@ static void print_vendor(unsigned char len, unsigned char *data, bool unknown, e
 		if (data[3] == 2) {
 			site_survey_lists[sscount].numsta = data[4];
 			if (data[6] & 0x80)
-				site_survey_lists[sscount].extcap = CAP_DWDS;
+				site_survey_lists[sscount].extcap |= CAP_DWDS;
 		}
 	}
 	if (len >= 4 && !memcmp(data, mtik_oui, 3)) {
@@ -835,7 +835,7 @@ static void print_vendor(unsigned char len, unsigned char *data, bool unknown, e
 			memcpy(site_survey_lists[sscount].radioname, ie->iedata.radioname, ie->iedata.namelen);
 		}
 		if (ie->iedata.flags & 0x4)
-			site_survey_lists[sscount].extcap = CAP_MTIKWDS;
+			site_survey_lists[sscount].extcap |= CAP_MTIKWDS;
 	}
 	if (len >= 4 && memcmp(data, wifi_oui, 3) == 0) {
 		if (data[3] < ARRAY_SIZE(wifiprinters) && wifiprinters[data[3]].name && wifiprinters[data[3]].flags & BIT(ptype)) {
@@ -1634,6 +1634,7 @@ void mac80211_site_survey(char *interface)
 	bzero(site_survey_lists, sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
 	for (i = 0; i < SITE_SURVEY_NUM; i++) {
 		site_survey_lists[i].numsta = -1;
+		site_survey_lists[i].extcap = 0;
 	}
 	sysprintf("iw dev %s scan>/dev/null 2>&1", interface);
 	mac80211_scan(&unl, interface);
@@ -1645,14 +1646,14 @@ void mac80211_site_survey(char *interface)
 		}
 
 		fprintf(stderr,
-			"[%2d] SSID[%20s] BSSID[%s] channel[%2d/%4d] frequency[%4d] numsta[%d] rssi[%d] noise[%d] active[%llu] busy[%llu] quality[%llu] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
+			"[%2d] SSID[%20s] BSSID[%s] channel[%2d/%4d] frequency[%4d] numsta[%d] rssi[%d] noise[%d] active[%llu] busy[%llu] quality[%llu] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s] extcap[0x%02X]\n",
 			i, site_survey_lists[i].SSID, site_survey_lists[i].BSSID, site_survey_lists[i].channel & 0xff,
 			site_survey_lists[i].channel, site_survey_lists[i].frequency, site_survey_lists[i].numsta,
 			site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise, site_survey_lists[i].active,
 			site_survey_lists[i].busy,
 			site_survey_lists[i].active ? (100 - (site_survey_lists[i].busy * 100 / site_survey_lists[i].active)) : 100,
 			site_survey_lists[i].beacon_period, site_survey_lists[i].capability, site_survey_lists[i].dtim_period,
-			site_survey_lists[i].rate_count, site_survey_lists[i].ENCINFO);
+			site_survey_lists[i].rate_count, site_survey_lists[i].ENCINFO, site_survey_lists[i].extcap);
 	}
 	free(site_survey_lists);
 	unl_free(&unl);
