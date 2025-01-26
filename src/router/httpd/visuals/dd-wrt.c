@@ -1444,13 +1444,12 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			    nvram_nmatch("axg-only", "%s_net_mode", prefix)) {
 				checkband = 2;
 			}
-			if (nvram_nmatch("a-only", "%s_net_mode", prefix) || nvram_nmatch("na-only", "%s_net_mode", prefix) ||
-			    nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
-			    nvram_nmatch("ax-only", "%s_net_mode", prefix) || nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) ||
-			    nvram_nmatch("n5-only", "%s_net_mode", prefix)) {
+			if (nvram_nmatch("ax-only", "%s_net_mode", prefix) || nvram_nmatch("xacn-mixed", "%s_net_mode", prefix)) {
 				checkband = 56;
 			}
-			if (nvram_nmatch("ax5-only", "%s_net_mode", prefix))
+			if (nvram_nmatch("n5-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
+			    nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("na-only", "%s_net_mode", prefix) ||
+			    nvram_nmatch("ax5-only", "%s_net_mode", prefix) || nvram_nmatch("a-only", "%s_net_mode", prefix))
 				checkband = 5;
 			if (nvram_nmatch("ax6-only", "%s_net_mode", prefix))
 				checkband = 6;
