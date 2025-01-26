@@ -359,7 +359,6 @@ static uint8_t load8(const void *_p, uint8_t *v)
 	return 0;
 }
 
-
 /* some loaned from musl libc, modified to fix crash problem in signal context */
 static const struct {
 	short sun_family;
@@ -396,7 +395,7 @@ static void slog(int priority, const char *message)
 	}
 	if (!(priority & LOG_FACMASK))
 		priority |= log_facility;
-	pid =  0;
+	pid = 0;
 	l = 0;
 	l = asprintf(&buf, "<%d>%n%s%s%.0d%s: %s", priority, &hlen, log_ident, "[" + !pid, pid, "]" + !pid, message);
 	errno = errno_save;
@@ -404,7 +403,7 @@ static void slog(int priority, const char *message)
 		if (send(log_fd, buf, l, 0) < 0 &&
 		    (!is_lost_conn(errno) || connect(log_fd, (void *)&log_addr, sizeof log_addr) < 0 ||
 		     send(log_fd, buf, l, 0) < 0)) {
-		    }
+		}
 	}
 	if (buf)
 		free(buf);
@@ -436,7 +435,6 @@ static int airbag_printf(char *fmt, ...)
 	}
 	return size;
 }
-
 
 static uint32_t load32(const void *_p, INSTLEN *_v)
 {
@@ -786,7 +784,7 @@ backward:
 	char fname[257];
 
 	if (pc & 1 || load32((void *)pc, NULL)) {
-		airbag_printf("%sCalled through bad function pointer %p (LR = %p); assuming PC <- LR.\n", comment, pc,lr);
+		airbag_printf("%sCalled through bad function pointer %p (LR = %p); assuming PC <- LR.\n", comment, pc, lr);
 		pc = MCTX_PC(uc) = lr;
 	}
 	buffer[depth] = (void *)pc;

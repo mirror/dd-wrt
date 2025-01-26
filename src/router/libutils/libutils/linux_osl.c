@@ -47,7 +47,6 @@ int ifconfig(char *name, int flags, char *addr, char *netmask)
 	struct ifreq ifr;
 	struct in_addr in_addr, in_netmask, in_broadaddr;
 
-
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
 		goto err2; // override socket close
 
