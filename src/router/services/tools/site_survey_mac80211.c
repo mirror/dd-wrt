@@ -902,7 +902,7 @@ static void __print_he_capa(const __u16 *mac_cap, const __u16 *phy_cap, const __
 		
 	int antennacount = 0;
 	mcs_used = 0;
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < 1; i++) {
 		__u8 phy_cap_support[] = { BIT(1) | BIT(2), BIT(3), BIT(4) };
 		char *bw[] = { "<= 80", "160", "80+80" };
 		int j;
@@ -914,7 +914,7 @@ static void __print_he_capa(const __u16 *mac_cap, const __u16 *phy_cap, const __
 		if ((i * 2 + 2) * sizeof(mcs_set[0]) >= mcs_len)
 			return;
 
-		for (j = 0; j < 2; j++) {
+		for (j = 0; j < 1; j++) {
 			int k;
 			printf("%s\t\tHE %s MCS and NSS set %s MHz\n", pre, j ? "TX" : "RX", bw[i]);
 			for (k = 0; k < 8; k++) {
