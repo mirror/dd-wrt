@@ -285,11 +285,11 @@ static void unmount_fs(void)
 	}
 #endif
 }
-static char *critical_programs[] = { "service", "upnpd",	     "transmissiond", "process_monitor", "cron",    "proftpd",	  "dnsmasq",
-				     "ksmbd.mountd", "hotplug2",      "ubusd",		 "rpcbind", "rpc.mountd", "httpd",
-				     "minidlna",     "rsyncd",	      "dropbear",	 "wland",   "smartd",	  "rpc.statd",
-				     "/bin/sh",	     "telnetd",	      "mactelnetd",	 "syslogd", "klogd",	  "wsdd2",
-				     "udhcpc",	     "async_commit" };
+static char *critical_programs[] = { "service",	  "upnpd",	  "transmissiond", "process_monitor", "cron",	 "proftpd",
+				     "dnsmasq",	  "ksmbd.mountd", "hotplug2",	   "ubusd",	      "rpcbind", "rpc.mountd",
+				     "httpd",	  "minidlna",	  "rsyncd",	   "dropbear",	      "wland",	 "smartd",
+				     "rpc.statd", "/bin/sh",	  "telnetd",	   "mactelnetd",      "syslogd", "klogd",
+				     "wsdd2",	  "udhcpc",	  "async_commit" };
 void shutdown_system(void)
 {
 	int sig;
