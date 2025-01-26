@@ -371,8 +371,8 @@ void addvhtcaps(const char *prefix, FILE *fp)
 	    is_mt7921(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x2(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		if ((has_ac(prefix) || has_ax(prefix)) &&
-		    (!strcmp(netmode, "ac-only") || strcmp(netmode, "ax-only") || !strcmp(netmode, "acn-mixed") ||
-		     !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "mixed") ||
+		    (!strcmp(netmode, "ac-only") || !strcmp(netmode, "ax-only") || !strcmp(netmode, "ax5-only") ||
+		     !strcmp(netmode, "acn-mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "mixed") ||
 		     (cansuperchannel(prefix) && nvram_nmatch("1", "%s_turbo_qam", prefix)))) {
 			char shortgi[32];
 			sprintf(shortgi, "%s_shortgi", prefix);
