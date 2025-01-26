@@ -873,14 +873,230 @@ static void print_vendor(unsigned char len, unsigned char *data, bool unknown, e
 		printf(" %.2x", data[i]);
 	printf("\n");
 }
+static void __print_he_capa(const __u16 *mac_cap, const __u16 *phy_cap, const __u16 *mcs_set, size_t mcs_len, const __u8 *ppet,
+			    int ppet_len, bool indent)
+{
+	size_t mcs_used;
+	int i;
+	const char *pre = indent ? "\t" : "";
+
+	if (phy_cap[0] & BIT(1+8)) {
+		site_survey_lists[sscount].channel |= 0x1000;
+		fillENC("HE40");
+	}
+	if (phy_cap[0] & BIT(2+8)) {
+		site_survey_lists[sscount].channel |= 0x1000;
+		site_survey_lists[sscount].channel |= 0x100;
+		fillENC("HE40");
+		fillENC("HE80");
+	}
+	if (phy_cap[0] & BIT(3+8)) {
+		site_survey_lists[sscount].channel |= 0x200;
+		fillENC("HE160");
+	} 
+	if (phy_cap[0] & BIT(4+8)) {
+		site_survey_lists[sscount].channel |= 0x200;
+		fillENC("HE80+80");
+	}
+
+		
+	int antennacount = 0;
+	mcs_used = 0;
+	for (i = 0; i < 3; i++) {
+		__u8 phy_cap_support[] = { BIT(1) | BIT(2), BIT(3), BIT(4) };
+		char *bw[] = { "<= 80", "160", "80+80" };
+		int j;
+
+		if ((phy_cap[0] & (phy_cap_support[i] << 8)) == 0)
+			continue;
+
+		/* Supports more, but overflow? Abort. */
+		if ((i * 2 + 2) * sizeof(mcs_set[0]) >= mcs_len)
+			return;
+
+		for (j = 0; j < 2; j++) {
+			int k;
+			printf("%s\t\tHE %s MCS and NSS set %s MHz\n", pre, j ? "TX" : "RX", bw[i]);
+			for (k = 0; k < 8; k++) {
+				__u16 mcs = mcs_set[(i * 2) + j];
+				mcs >>= k * 2;
+				mcs &= 0x3;
+				printf("%s\t\t\t%d streams: ", pre, k + 1);
+				if (mcs == 3)
+					printf("not supported\n");
+				else {
+					antennacount++;
+					printf("MCS 0-%d\n", 7 + (mcs * 2));
+				}
+			}
+		}
+		mcs_used += 2 * sizeof(mcs_set[0]);
+	}
+	rate_count = 150 * antennacount;
+
+	/* Caller didn't provide ppet; infer it, if there's trailing space. */
+	if (!ppet) {
+		ppet = (const void *)((const __u8 *)mcs_set + mcs_used);
+		if (mcs_used < mcs_len)
+			ppet_len = mcs_len - mcs_used;
+		else
+			ppet_len = 0;
+	}
+
+	if (ppet_len && (phy_cap[3] & BIT(15))) {
+		printf("%s\t\tPPE Threshold ", pre);
+		for (i = 0; i < ppet_len; i++)
+			if (ppet[i])
+				printf("0x%02x ", ppet[i]);
+		printf("\n");
+	}
+}
+
+void print_he_capability(const uint8_t *ie, int len)
+{
+	const void *mac_cap, *phy_cap, *mcs_set;
+	int mcs_len;
+	int i = 0;
+
+	mac_cap = &ie[i];
+	i += 6;
+
+	phy_cap = &ie[i];
+	i += 11;
+
+	mcs_set = &ie[i];
+	mcs_len = len - i;
+
+	__print_he_capa(mac_cap, phy_cap - 1, mcs_set, mcs_len, NULL, 0, false);
+}
+
+void print_he_operation(const uint8_t *ie, int len)
+{
+	uint8_t oper_parameters[3] = { ie[0], ie[1], ie[2] };
+	uint8_t bss_color = ie[3];
+	uint16_t nss_mcs_set = *(uint16_t *)(&ie[4]);
+	uint8_t vht_oper_present = oper_parameters[1] & 0x40;
+	uint8_t co_hosted_bss_present = oper_parameters[1] & 0x80;
+	uint8_t uhb_operation_info_present = oper_parameters[2] & 0x02;
+	uint8_t offset = 6;
+
+	printf("\t\tHE Operation Parameters: (0x%02x%02x%02x)\n", oper_parameters[2], oper_parameters[1], oper_parameters[0]);
+	printf("\t\t\tDefault PE Duration: %hhu\n", oper_parameters[0] & 0x07);
+	if (oper_parameters[0] & 0x08)
+		printf("\t\t\tTWT Required\n");
+
+	printf("\t\t\tTXOP Duration RTS Threshold: %hu\n", (*(uint16_t *)(oper_parameters)) >> 4 & 0x03ff);
+	if (oper_parameters[1] & 0x40)
+		printf("\t\t\tVHT Operation Information Present\n");
+
+	if (oper_parameters[1] & 0x80)
+		printf("\t\t\tCo-Hosted BSS\n");
+
+	if (oper_parameters[2] & 0x01)
+		printf("\t\t\tER SU Disable\n");
+
+	if (oper_parameters[2] & 0x02)
+		printf("\t\t\t6 GHz Operation Information Present\n");
+
+	printf("\t\tBSS Color: %hhu\n", bss_color & 0x3F);
+	if (bss_color & 0x40)
+		printf("\t\tPartial BSS Color\n");
+
+	if (bss_color & 0x80)
+		printf("\t\tBSS Color Disabled\n");
+
+	printf("\t\tBasic HE-MCS NSS Set: 0x%04x\n", nss_mcs_set);
+	for (int k = 0; k < 8; k++) {
+		__u16 mcs = nss_mcs_set;
+
+		mcs >>= k * 2;
+		mcs &= 0x3;
+		printf("\t\t\t%d streams: ", k + 1);
+		if (mcs == 3)
+			printf("not supported\n");
+		else
+			printf("MCS 0-%d\n", 7 + (mcs * 2));
+	}
+
+	if (vht_oper_present) {
+		if (len - offset < 3) {
+			printf("\t\tVHT Operation Info: Invalid\n");
+			return;
+		}
+
+		printf("\t\tVHT Operation Info: 0x%02x%02x%02x\n", ie[offset + 2], ie[offset + 1], ie[offset + 0]);
+		offset += 3;
+	}
+
+	if (co_hosted_bss_present) {
+		if (len - offset < 1) {
+			printf("\t\tMax Co-Hosted BSSID: Invalid\n");
+			return;
+		}
+
+		printf("\t\tMax Co-Hosted BSSID: %hhu\n", ie[offset]);
+		offset += 1;
+	}
+
+	if (uhb_operation_info_present) {
+		if (len - offset < 5) {
+			printf("\t\t6 GHz Operation Info: Invalid\n");
+			return;
+		} else {
+			const uint8_t control = ie[offset + 1];
+
+			printf("\t\t6 Ghz Operation Information: 0x");
+			for (uint8_t i = 0; i < 5; i++)
+				printf("%02x", ie[offset + i]);
+
+			printf("\n");
+			printf("\t\t\tPrimary Channel: %hhu\n", ie[offset]);
+			printf("\t\t\tChannel Width: ");
+			switch (control & 0x3) {
+			case 0:
+				printf("20 MHz\n");
+				break;
+			case 1:
+				printf("40 MHz\n");
+				site_survey_lists[sscount].channel |= 0x1000;
+				break;
+			case 2:
+				printf("80 MHz\n");
+				site_survey_lists[sscount].channel |= 0x1100;
+				break;
+			case 3:
+				printf("80+80 or 160 MHz\n");
+				site_survey_lists[sscount].channel |= 0x1200;
+
+				break;
+			}
+
+			if (control & 0x4)
+				printf("\t\t\tDuplicate Beacon: True\n");
+
+			printf("\t\t\tRegulatory Info: %hhu\n", (control >> 3) & 0xf);
+			printf("\t\t\tCenter Frequency Segment 0: %hhu\n", ie[offset + 2]);
+			printf("\t\t\tCenter Frequency Segment 1: %hhu\n", ie[offset + 3]);
+			printf("\t\t\tMinimum Rate: %hhu\n", ie[offset + 4]);
+		}
+	}
+}
 
 static void print_he_capa(const uint8_t type, uint8_t len, const uint8_t *data)
 {
 	site_survey_lists[sscount].extcap |= CAP_AX; // AX capable
+	print_he_capability(data, len);
+}
+
+static void print_he_oper(const uint8_t type, uint8_t len, const uint8_t *data)
+{
+	site_survey_lists[sscount].extcap |= CAP_AX; // AX capable
+	print_he_operation(data, len);
 }
 
 static const struct ie_print ext_printers[] = {
 	[35] = { "HE capabilities", print_he_capa, 21, 54, BIT(PRINT_SCAN), },
+	[36] = { "HE Operation", print_he_oper, 6, 15, BIT(PRINT_SCAN), },
 };
 
 static void print_extension(unsigned char len, unsigned char *ie, bool unknown, enum print_ie_type ptype)

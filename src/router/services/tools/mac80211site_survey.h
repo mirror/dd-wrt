@@ -50,7 +50,7 @@
 
 #define IEEE80211_COUNTRY_EXTENSION_ID 201
 
-#define ARRAY_SIZE(ar) (sizeof(ar) / sizeof(ar[0]))
+//#define ARRAY_SIZE(ar) (sizeof(ar) / sizeof(ar[0]))
 
 union ieee80211_country_ie_triplet {
 	struct {
