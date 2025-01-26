@@ -1919,6 +1919,8 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 							if (checkband == 5 && band->nla_type != NL80211_BAND_5GHZ &&
 							    band->nla_type != NL80211_BAND_6GHZ)
 								continue;
+							if (checkband == 6 && band->nla_type != NL80211_BAND_6GHZ)
+								continue;
 							if (max_bandwidth_khz > regmaxbw)
 								continue;
 							list[count].channel = ieee80211_mhz2ieee(freq_mhz);
