@@ -2007,7 +2007,7 @@ static void show_netmode(webs_t wp, char *prefix)
 			websWrite(wp, "document.write(\"<option value=\\\"ax-only\\\" %s>\" + wl_basic.ax + \"</option>\");\n",
 				  nvram_match(wl_net_mode, "ax-only") ? "selected=\\\"selected\\\"" : "");
 		}
-		if (has_6ghz(prefix) || has_5ghz(prefix))
+		if (has_6ghz(prefix) && has_5ghz(prefix))
 			websWrite(wp, "document.write(\"<option value=\\\"ax5-only\\\" %s>\" + wl_basic.ax5 + \"</option>\");\n",
 				  nvram_match(wl_net_mode, "ax5-only") ? "selected=\\\"selected\\\"" : "");
 		if (has_6ghz(prefix))
@@ -2062,7 +2062,7 @@ static void show_netmode(webs_t wp, char *prefix)
 					  "document.write(\"<option value=\\\"ax-only\\\" %s>\" + wl_basic.ax + \"</option>\");\n",
 					  nvram_match(wl_net_mode, "ax-only") ? "selected=\\\"selected\\\"" : "");
 			}
-			if (has_6ghz(prefix) || has_5ghz(prefix))
+			if (has_6ghz(prefix) && has_5ghz(prefix))
 				websWrite(
 					wp,
 					"document.write(\"<option value=\\\"ax5-only\\\" %s>\" + wl_basic.ax5 + \"</option>\");\n",
