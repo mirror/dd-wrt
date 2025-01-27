@@ -1528,17 +1528,6 @@ void start_sysinit(void)
 		     "aq_load_fw; if test $auto_recovery = no; then bootipq; elif test $boot_part = 1; then run bootpart1; else run bootpart2; fi");
 
 		//reload firmware
-		/*		eval("ssdk_sh", "debug", "phy", "set", "0x8", "0x401e2680", "0x1");
-		usleep(100 * 1000);
-		eval("aq-fw-download", "/lib/firmware/marvell/AQR114C.cld", "eth0", "8");
-		sleep(1);
-		eval("ssdk_sh", "port", "autoneg", "restart", "5");
-		sleep(2);
-		eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec430", "0xc0ef");
-		eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec431", "0xc0e0");
-		eval("ssdk_sh", "debug", "phy", "set", "8", "0x40070010", "0x9de1");
-		sleep(1);
-		eval("ssdk_sh", "debug", "phy", "set", "8", "0x40070000", "0x3200");*/
 
 		/*
 		// for reference only 
@@ -1715,6 +1704,17 @@ void start_wifi_drivers(void)
 			minif = 3;
 			break;
 		case ROUTER_LINKSYS_MR7500:
+			eval("ssdk_sh", "debug", "phy", "set", "0x8", "0x401e2680", "0x1");
+			usleep(100 * 1000);
+			eval("aq-fw-download", "/lib/firmware/marvell/AQR114C.cld", "eth0", "8");
+			sleep(1);
+			eval("ssdk_sh", "port", "autoneg", "restart", "5");
+			sleep(2);
+			eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec430", "0xc0ef");
+			eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec431", "0xc0e0");
+			eval("ssdk_sh", "debug", "phy", "set", "8", "0x40070010", "0x9de1");
+			sleep(1);
+			eval("ssdk_sh", "debug", "phy", "set", "8", "0x40070000", "0x3200");
 			//			char *cert_region = get_deviceinfo_linksys("cert_region");
 			//			if (!cert_region)
 			load_ath11k_internal(profile, 1, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode,
@@ -1829,7 +1829,6 @@ static void set_linksys_defaults(int triband)
 		nvram_set("wlan2_sae_key", get_deviceinfo_linksys("default_passphrase"));
 	}
 }
-
 
 void start_arch_defaults(void)
 {
