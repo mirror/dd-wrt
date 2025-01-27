@@ -1762,11 +1762,11 @@ static unsigned long getmeminfo(int linenr)
 }
 long getmemfree(void)
 {
-	return getmeminfo(1);
+	return getmeminfo(2);
 }
 long getmemtotal(void)
 {
-	return getmeminfo(0);
+	return getmeminfo(1);
 }
 
 #ifdef MEMDEBUG
