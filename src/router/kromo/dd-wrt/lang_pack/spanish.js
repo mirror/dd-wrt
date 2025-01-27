@@ -423,7 +423,7 @@ bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Redireccionar Rango de Puertos";
 bmenu.applicationspforwarding="Redireccionamiento de Puertos";
 bmenu.applicationsptriggering="Mapeado de Puertos";
-bmenu.applicationsUpnp="UPnP";
+bmenu.applicationsUpnp="UPnP IGD";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 bmenu.applicationsP2P="P2P";
@@ -1552,12 +1552,11 @@ hupgrad.right2="Haz clic en el botón <em>Explorar...</em> para elegir el archiv
 
 
 // ** UPnP.asp **//
-upnp.titl="UPnP";
-upnp.h2="Universal Plug and Play (UPnP)";
+upnp.titl="UPnP IGD";
+upnp.h2="Servicio UPnP IGD";
 upnp.legend="Redirección";
 upnp.legend2="Configuración UPnP";
-upnp.serv="Servicio UPnP";
-upnp.url="Enviar URL de Presentación";
+upnp.serv="Servicio UPnP IGD";
 upnp.msg1="Clic para borrar Lease";
 upnp.msg2="¿Borrar Entradas?";
 

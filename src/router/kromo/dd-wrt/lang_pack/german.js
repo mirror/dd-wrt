@@ -518,7 +518,7 @@ bmenu.applicationsprforwarding="Port-Bereichs-Weiterleitung";
 bmenu.applicationspforwarding="Port-Weiterleitung";
 bmenu.applicationsipforwarding="IP-Weiterleitung (1:1 NAT)";
 bmenu.applicationsptriggering="Port-Triggering";
-bmenu.applicationsUpnp="UPnP";
+bmenu.applicationsUpnp="UPnP IGD";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 bmenu.applicationsP2P="P2P";
@@ -2270,14 +2270,13 @@ hupgrad.right2="Klicken Sie auf den <em>Durchsuchen...</em>-Button, um eine Firm
 
 // ** UPnP.asp **//
 
-upnp.titl="UPnP";
-upnp.h2="Universal Plug and Play (UPnP)";
-upnp.legend="Weiterleitungen";
-upnp.legend2="UPnP-Konfiguration";
-upnp.serv="UPnP-Dienst";
-upnp.url="Sende Präsentations-URL";
-upnp.msg1="Klicken Sie hier, um die Lease zu löschen";
-upnp.msg2="Alle Einträge löschen?";
+upnp.titl="UPnP IGD";
+upnp.h2="UPnP IGD Dienst";
+upnp.legend="Aktive Port-Weiterleitungen";
+upnp.legend2="Dienst-Konfiguration";
+upnp.serv="UPnP IGD Dienst";
+upnp.msg1="Klicken Sie hier, um die Port-Weiterleitung zu löschen";
+upnp.msg2="Alle Port-Weiterleitungen löschen?";
 
 //help container
 
