@@ -1990,7 +1990,7 @@ void start_restore_defaults(void)
 	if (getmemtotal() > 128 * 1024 * 1024) {
 		nvram_default_get("sshd_rw", "262144");
 	} else {
-		nvram_default_get("sshd_rw", "4096");
+		nvram_default_get("sshd_rw", "24576");
 	}
 #ifdef HAVE_RB500
 	linux_overrides = generic;
