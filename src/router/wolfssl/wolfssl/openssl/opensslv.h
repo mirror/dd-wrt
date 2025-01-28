@@ -35,6 +35,10 @@
     defined(OPENSSL_VERSION_NUMBER) && (OPENSSL_VERSION_NUMBER == 0x10100000L) ||\
     defined(OPENSSL_VERSION_NUMBER) && (OPENSSL_VERSION_NUMBER == 0x10001040L)
     /* valid version */
+#elif defined(WOLFSSL_OPENVPN)
+     /* version number can be increased for Lighty after compatibility for ECDH
+        is added */
+     #define OPENSSL_VERSION_NUMBER 0x10001040L
 #elif defined(OPENSSL_VERSION_NUMBER)
     /* unrecognized version, but continue. */
     #define WOLFSSL_OPENSSL_VERSION_NUMBER_UNRECOGNIZED
