@@ -7974,10 +7974,8 @@ static bool hostapd_eid_rnr_bss(struct hostapd_data *hapd,
 	if (!bss || !bss->conf || !bss->started ||
 	    bss == reporting_hapd || bss->conf->ignore_broadcast_ssid)
 		return false;
-	fprintf(stderr, "%s:start\n", __func__);
 	if (hostapd_skip_rnr(i, skip_profiles, ap_mld, tbtt_info_len,
 			     mld_update, reporting_hapd, bss)) {
-	fprintf(stderr, "%s:skip rnr\n", __func__);
 	    return false;
 	}
 
@@ -7986,11 +7984,9 @@ static bool hostapd_eid_rnr_bss(struct hostapd_data *hapd,
 	    	fprintf(stderr, "%s:too much\n", __func__);
 		return true;
 	}
-	fprintf(stderr, "%s:start %d\n", __func__, __LINE__);
 	if (!(*tbtt_count)) {
 		/* Add neighbor report header info only if there is at least
 		 * one TBTT info available. */
-	fprintf(stderr, "%s:add channel %d\n", __func__, bss->iconf->channel);
 		*tbtt_count_pos = eid++;
 		*eid++ = tbtt_info_len;
 		*eid++ = op_class;
@@ -8004,7 +8000,6 @@ static bool hostapd_eid_rnr_bss(struct hostapd_data *hapd,
 	os_memcpy(eid, &bss->conf->ssid.short_ssid, 4);
 	eid += 4;
 	if (bss->conf->ssid.short_ssid == reporting_hapd->conf->ssid.short_ssid) {
-	fprintf(stderr, "%s:same ssid %d\n", __func__, __LINE__);
 		bss_param |= RNR_BSS_PARAM_SAME_SSID;
 	}
 
