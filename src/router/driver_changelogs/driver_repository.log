@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r8274 | brainslayer | 2025-01-28 17:34:13 +0700 (Tue, 28 Jan 2025) | 1 line
+
+auto patch regdb to allow user defined power settings
+------------------------------------------------------------------------
 r8273 | brainslayer | 2025-01-28 10:52:51 +0700 (Tue, 28 Jan 2025) | 1 line
 
 calibrated power check
