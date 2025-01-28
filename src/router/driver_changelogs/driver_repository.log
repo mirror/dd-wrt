@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r8273 | brainslayer | 2025-01-28 10:52:51 +0700 (Tue, 28 Jan 2025) | 1 line
+
+calibrated power check
+------------------------------------------------------------------------
+r8272 | brainslayer | 2025-01-28 09:38:31 +0700 (Tue, 28 Jan 2025) | 1 line
+
+the 12 db limitation is for station 20 mhz only. it makes no sense to restrict it that way
+------------------------------------------------------------------------
 r8271 | brainslayer | 2025-01-27 12:36:56 +0700 (Mon, 27 Jan 2025) | 1 line
 
 turn off 5 ghz band again. firmware cannot handle full channel list
