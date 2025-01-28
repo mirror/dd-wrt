@@ -16,7 +16,8 @@ jobs:
   build_wolfssl:
     name: Build wolfSSL
     # Just to keep it the same as the testing target
-    runs-on: ubuntu-latest
+    if: github.repository_owner == 'wolfssl'
+    runs-on: ubuntu-22.04
     # This should be a safe limit for the tests to run.
     timeout-minutes: 4
     steps:
@@ -29,11 +30,14 @@ jobs:
           # Don't run tests as this config is tested in many other places
           check: false
 
+      - name: tar build-dir
+        run: tar -zcf build-dir.tgz build-dir
+
       - name: Upload built lib
         uses: actions/upload-artifact@v4
         with:
           name: wolf-install-libvncserver
-          path: build-dir
+          path: build-dir.tgz
           retention-days: 5
 
   build_libvncserver:
@@ -42,14 +46,17 @@ jobs:
       matrix:
         ref: [ 0.9.13 ]
     name: ${{ matrix.ref }}
-    runs-on: ubuntu-latest
+    if: github.repository_owner == 'wolfssl'
+    runs-on: ubuntu-22.04
     needs: build_wolfssl
     steps:
       - name: Download lib
         uses: actions/download-artifact@v4
         with:
           name: wolf-install-libvncserver
-          path: build-dir
+
+      - name: untar build-dir
+        run: tar -xf build-dir.tgz
 
       - name: Checkout OSP
         uses: actions/checkout@v4

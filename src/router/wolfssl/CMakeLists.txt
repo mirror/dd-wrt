@@ -34,7 +34,7 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
      You must delete them, or cmake will refuse to work.")
 endif()
 
-project(wolfssl VERSION 5.7.2 LANGUAGES C ASM)
+project(wolfssl VERSION 5.7.6 LANGUAGES C ASM)
 
 # Set WOLFSSL_ROOT if not already defined
 if ("${WOLFSSL_ROOT}" STREQUAL "")
@@ -49,11 +49,11 @@ endif()
 
 # shared library versioning
 # increment if interfaces have been removed or changed
-set(WOLFSSL_LIBRARY_VERSION_FIRST 42)
+set(WOLFSSL_LIBRARY_VERSION_FIRST 43)
 
 # increment if interfaces have been added
 # set to zero if WOLFSSL_LIBRARY_VERSION_FIRST is incremented
-set(WOLFSSL_LIBRARY_VERSION_SECOND 2)
+set(WOLFSSL_LIBRARY_VERSION_SECOND 0)
 
 # increment if source code has changed
 # set to zero if WOLFSSL_LIBRARY_VERSION_FIRST is incremented or
@@ -131,6 +131,7 @@ check_type_size("__uint128_t" __UINT128_T)
 check_type_size("long long" SIZEOF_LONG_LONG)
 check_type_size("long" SIZEOF_LONG)
 check_type_size("time_t" SIZEOF_TIME_T)
+check_type_size("uintptr_t" HAVE_UINTPTR_T)
 
 # By default, HAVE___UINT128_T gets defined as TRUE,
 # but we want it as 1.
@@ -419,16 +420,17 @@ if(WOLFSSL_CURL)
     set(WOLFSSL_MD4 "yes")
     set(WOLFSSL_DES3 "yes")
     set(WOLFSSL_ALPN "yes")
+    set(WOLFSSL_WOLFSSH "yes")
     set(WOLFSSL_OPENSSLEXTRA "yes")
     set(WOLFSSL_CRL "yes")
     set(WOLFSSL_OCSP "yes")
     set(WOLFSSL_OCSPSTAPLING "yes")
     set(WOLFSSL_OCSPSTAPLING_V2 "yes")
+    # Note: OCSP sets requisite HAVE_TLS_EXTENSIONS and HAVE_CERTIFICATE_STATUS_REQUEST(_V2)
     set(WOLFSSL_SNI "yes")
     set(WOLFSSL_ALT_CERT_CHAINS "yes")
     set(WOLFSSL_IP_ALT_NAME "yes")
     set(WOLFSSL_SESSION_TICKET "yes")
-    set(WOLFSSL_WOLFSSH "yes")
     list(APPEND WOLFSSL_DEFINITIONS
         "-DNO_SESSION_CACHE_REF" "-DWOLFSSL_DES_ECB")
 endif()
@@ -945,12 +947,28 @@ if(WOLFSSL_ECC)
     endif()
 endif()
 
-# TODO: - ECC custom curves
-#       - Compressed key
+# TODO: - Compressed key
 #       - FP ECC, fixed point cache ECC
 #       - ECC encrypt
 #       - PSK
 #       - Single PSK identity
+
+# ECC custom curves
+add_option("WOLFSSL_ECCCUSTCURVES"
+    "Enable ECC Custom Curves (default: disabled)"
+    "no" "yes;no;all")
+
+if(WOLFSSL_ECCCUSTCURVES)
+    if("${WOLFSSL_ECCCUSTCURVES}" STREQUAL "all")
+        list(APPEND WOLFSSL_DEFINITIONS "-DHAVE_ECC_SECPR2")
+        list(APPEND WOLFSSL_DEFINITIONS "-DHAVE_ECC_SECPR3")
+        list(APPEND WOLFSSL_DEFINITIONS "-DHAVE_ECC_BRAINPOOL")
+        list(APPEND WOLFSSL_DEFINITIONS "-DHAVE_ECC_KOBLITZ")
+        list(APPEND WOLFSSL_DEFINITIONS "-DHAVE_ECC_CDH")
+    endif()
+
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_CUSTOM_CURVES")
+endif()
 
 # CURVE25519
 set(WOLFSSL_CURVE25519_SMALL "no")
@@ -1877,6 +1895,10 @@ add_option("WOLFSSL_CRYPTOCB"
     "Enable crypto callbacks (default: disabled)"
     "no" "yes;no")
 
+add_option("WOLFSSL_CRYPTOCB_NO_SW_TEST"
+    "Disable crypto callback SW testing (default: disabled)"
+    "no" "yes;no")
+
 add_option("WOLFSSL_PKCALLBACKS"
     "Enable public key callbacks (default: disabled)"
     "no" "yes;no")
@@ -2078,6 +2100,10 @@ endif()
 
 if(WOLFSSL_CRYPTOCB)
     list(APPEND WOLFSSL_DEFINITIONS "-DWOLF_CRYPTO_CB")
+endif()
+
+if(WOLFSSL_CRYPTOCB_NO_SW_TEST)
+    list(APPEND WOLFSSL_DEFINITIONS "-DWC_TEST_NO_CRYPTOCB_SW_TEST")
 endif()
 
 # Public Key Callbacks
@@ -2335,7 +2361,7 @@ endif()
 
 foreach(DEF IN LISTS WOLFSSL_DEFINITIONS)
     string(REGEX MATCH "^(-D)?([^=]+)(=(.*))?$" DEF_MATCH ${DEF})
-    if (DEFINED CMAKE_MATCH_4)
+    if (NOT "${CMAKE_MATCH_4}" STREQUAL "")
         set(${CMAKE_MATCH_2} ${CMAKE_MATCH_4})
         # message("set(${CMAKE_MATCH_2} ${CMAKE_MATCH_4})")
     else()

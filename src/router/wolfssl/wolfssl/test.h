@@ -1,6 +1,6 @@
 /* test.h
  *
- * Copyright (C) 2006-2023 wolfSSL Inc.
+ * Copyright (C) 2006-2024 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -29,6 +29,12 @@
 #define wolfSSL_TEST_H
 
 #include <wolfssl/wolfcrypt/settings.h>
+
+#undef TEST_OPENSSL_COEXIST /* can't use this option with this example */
+#if defined(OPENSSL_EXTRA) && defined(OPENSSL_COEXIST)
+    #error "Example apps built with OPENSSL_EXTRA can't also be built with OPENSSL_COEXIST."
+#endif
+
 #include <wolfssl/wolfcrypt/wc_port.h>
 
 #ifdef FUSION_RTOS
@@ -203,7 +209,9 @@
     #include <netinet/in.h>
     #include <netinet/tcp.h>
     #include <arpa/inet.h>
-    #include <sys/ioctl.h>
+    #ifndef WOLFSSL_NDS
+        #include <sys/ioctl.h>
+    #endif
     #include <sys/time.h>
     #include <sys/socket.h>
     #ifdef HAVE_PTHREAD
@@ -1099,10 +1107,11 @@ static WC_INLINE void ShowX509Ex(WOLFSSL_X509* x509, const char* hdr,
         char serialMsg[80];
 
         /* testsuite has multiple threads writing to stdout, get output
-           message ready to write once */
-        strLen = sprintf(serialMsg, " %s", words[3]);
+         * message ready to write once */
+        strLen = XSNPRINTF(serialMsg, sizeof(serialMsg), " %s", words[3]);
         for (i = 0; i < sz; i++)
-            sprintf(serialMsg + strLen + (i*3), ":%02x ", serial[i]);
+            strLen = XSNPRINTF(serialMsg + strLen,
+                sizeof(serialMsg) - (size_t)strLen, ":%02x ", serial[i]);
         printf("%s\n", serialMsg);
     }
 
@@ -1850,7 +1859,8 @@ static WC_INLINE unsigned int my_psk_client_cb(WOLFSSL* ssl, const char* hint,
     /* see internal.h MAX_PSK_ID_LEN for PSK identity limit */
     XSTRNCPY(identity, kIdentityStr, id_max_len);
 
-    if (wolfSSL_GetVersion(ssl) < WOLFSSL_TLSV1_3) {
+    if (wolfSSL_GetVersion(ssl) != WOLFSSL_TLSV1_3 &&
+            wolfSSL_GetVersion(ssl) != WOLFSSL_DTLSV1_3) {
         /* test key in hex is 0x1a2b3c4d , in decimal 439,041,101 , we're using
          * unsigned binary */
         key[0] = 0x1a;
@@ -1894,7 +1904,8 @@ static WC_INLINE unsigned int my_psk_server_cb(WOLFSSL* ssl, const char* identit
     if (XSTRCMP(identity, kIdentityStr) != 0)
         return 0;
 
-    if (wolfSSL_GetVersion(ssl) < WOLFSSL_TLSV1_3) {
+    if (wolfSSL_GetVersion(ssl) != WOLFSSL_TLSV1_3 &&
+            wolfSSL_GetVersion(ssl) != WOLFSSL_DTLSV1_3) {
         /* test key in hex is 0x1a2b3c4d , in decimal 439,041,101 , we're using
          * unsigned binary */
         key[0] = 0x1a;
@@ -1947,7 +1958,11 @@ static WC_INLINE unsigned int my_psk_client_tls13_cb(WOLFSSL* ssl,
         key[i] = (unsigned char) b;
     }
 
+#if defined(WOLFSSL_SHA384) && defined(WOLFSSL_AES_256)
+    *ciphersuite = userCipher ? userCipher : "TLS13-AES256-GCM-SHA384";
+#else
     *ciphersuite = userCipher ? userCipher : "TLS13-AES128-GCM-SHA256";
+#endif
 
     ret = 32;   /* length of key in octets or 0 for error */
 
@@ -1986,7 +2001,11 @@ static WC_INLINE unsigned int my_psk_server_tls13_cb(WOLFSSL* ssl,
         key[i] = (unsigned char) b;
     }
 
+#if defined(WOLFSSL_SHA384) && defined(WOLFSSL_AES_256)
+    *ciphersuite = userCipher ? userCipher : "TLS13-AES256-GCM-SHA384";
+#else
     *ciphersuite = userCipher ? userCipher : "TLS13-AES128-GCM-SHA256";
+#endif
 
     ret = 32;   /* length of key in octets or 0 for error */
 
@@ -2000,16 +2019,13 @@ static WC_INLINE unsigned int my_psk_server_tls13_cb(WOLFSSL* ssl,
 }
 #endif
 
-#if defined(OPENSSL_ALL) && !defined(NO_CERTS) && \
-       !defined(NO_FILESYSTEM)
-static unsigned char local_psk[32];
-#endif
+#ifdef OPENSSL_EXTRA
 static WC_INLINE int my_psk_use_session_cb(WOLFSSL* ssl,
             const WOLFSSL_EVP_MD* md, const unsigned char **id,
             size_t* idlen,  WOLFSSL_SESSION **sess)
 {
-#if defined(OPENSSL_ALL) && !defined(NO_CERTS) && \
-       !defined(NO_FILESYSTEM)
+#if defined(OPENSSL_ALL) && !defined(NO_CERTS) && !defined(NO_FILESYSTEM)
+    static unsigned char local_psk[32];
     int i;
     WOLFSSL_SESSION* lsess;
     char buf[256];
@@ -2072,6 +2088,7 @@ static WC_INLINE int my_psk_use_session_cb(WOLFSSL* ssl,
     return 0;
 #endif
 }
+#endif /* OPENSSL_EXTRA */
 
 static WC_INLINE unsigned int my_psk_client_cs_cb(WOLFSSL* ssl,
         const char* hint, char* identity, unsigned int id_max_len,
@@ -2392,7 +2409,7 @@ static WC_INLINE void OCSPRespFreeCb(void* ioCtx, unsigned char* response)
 enum {
     VERIFY_OVERRIDE_ERROR,
     VERIFY_FORCE_FAIL,
-    VERIFY_USE_PREVERFIY,
+    VERIFY_USE_PREVERIFY,
     VERIFY_OVERRIDE_DATE_ERR,
 };
 static THREAD_LS_T int myVerifyAction = VERIFY_OVERRIDE_ERROR;
@@ -2558,7 +2575,7 @@ static WC_INLINE void CRL_CallBack(const char* url)
 #endif
 
 #ifndef NO_DH
-#if defined(WOLFSSL_SP_MATH) && !defined(WOLFSS_SP_MATH_ALL)
+#if defined(WOLFSSL_SP_MATH) && !defined(WOLFSSL_SP_MATH_ALL)
     /* dh2048 p */
     static const unsigned char test_dh_p[] =
     {
@@ -3341,8 +3358,9 @@ static WC_INLINE int myEccSharedSecret(WOLFSSL* ssl, ecc_key* otherKey,
         ret = BAD_FUNC_ARG;
     }
 
-#if defined(ECC_TIMING_RESISTANT) && !defined(HAVE_FIPS) && \
-                                                         !defined(HAVE_SELFTEST)
+#if defined(ECC_TIMING_RESISTANT) && (!defined(HAVE_FIPS) || \
+    (!defined(HAVE_FIPS_VERSION) || (HAVE_FIPS_VERSION != 2))) && \
+    !defined(HAVE_SELFTEST)
     if (ret == 0) {
         ret = wc_ecc_set_rng(privKey, wolfSSL_GetRNG(ssl));
     }
@@ -3901,9 +3919,11 @@ static WC_INLINE int myRsaPssSign(WOLFSSL* ssl, const byte* in, word32 inSz,
 {
     enum wc_HashType hashType = WC_HASH_TYPE_NONE;
     WC_RNG           rng;
-    int              ret;
+    int              ret = 0;
     word32           idx = 0;
     RsaKey           myKey;
+    byte*            inBuf = (byte*)in;
+    word32           inBufSz = inSz;
     byte*            keyBuf = (byte*)key;
     PkCbInfo* cbInfo = (PkCbInfo*)ctx;
 
@@ -3941,17 +3961,40 @@ static WC_INLINE int myRsaPssSign(WOLFSSL* ssl, const byte* in, word32 inSz,
     if (ret != 0)
         return ret;
 
-    ret = wc_InitRsaKey(&myKey, NULL);
+    #ifdef TLS13_RSA_PSS_SIGN_CB_NO_PREHASH
+        /* With this defined, RSA-PSS sign callback when used from TLS 1.3
+         * does not hash data before giving to this callback. User must
+         * compute hash themselves. */
+        if (wolfSSL_GetVersion(ssl) == WOLFSSL_TLSV1_3) {
+            inBufSz = wc_HashGetDigestSize(hashType);
+            inBuf = (byte*)XMALLOC(inBufSz, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+            if (inBuf == NULL) {
+                ret = MEMORY_E;
+            }
+            if (ret == 0) {
+                ret = wc_Hash(hashType, in, inSz, inBuf, inBufSz);
+            }
+        }
+    #endif
+
+    if (ret == 0) {
+        ret = wc_InitRsaKey(&myKey, NULL);
+    }
     if (ret == 0) {
         ret = wc_RsaPrivateKeyDecode(keyBuf, &idx, &myKey, keySz);
         if (ret == 0) {
-            ret = wc_RsaPSS_Sign(in, inSz, out, *outSz, hashType, mgf, &myKey,
-                                 &rng);
+            ret = wc_RsaPSS_Sign(inBuf, inBufSz, out, *outSz, hashType, mgf,
+                                 &myKey, &rng);
         }
         if (ret > 0) {  /* save and convert to 0 success */
             *outSz = (word32) ret;
             ret = 0;
         }
+    #ifdef TLS13_RSA_PSS_SIGN_CB_NO_PREHASH
+        if ((inBuf != NULL) && (wolfSSL_GetVersion(ssl) == WOLFSSL_TLSV1_3)) {
+            XFREE(inBuf, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        }
+    #endif
         wc_FreeRsaKey(&myKey);
     }
     wc_FreeRng(&rng);
@@ -4654,7 +4697,7 @@ static WC_INLINE int myTicketEncCb(WOLFSSL* ssl,
                                               mac);
         #elif defined(HAVE_AESGCM)
             ret = wc_AesGcmEncrypt(&tickCtx->aes, ticket, ticket, inLen,
-                                   iv, GCM_NONCE_MID_SZ, mac, AES_BLOCK_SIZE,
+                                   iv, GCM_NONCE_MID_SZ, mac, WC_AES_BLOCK_SIZE,
                                    tickCtx->aad, aadSz);
         #endif
         }
@@ -4668,7 +4711,7 @@ static WC_INLINE int myTicketEncCb(WOLFSSL* ssl,
                                               ticket);
         #elif defined(HAVE_AESGCM)
             ret = wc_AesGcmDecrypt(&tickCtx->aes, ticket, ticket, inLen,
-                                   iv, GCM_NONCE_MID_SZ, mac, AES_BLOCK_SIZE,
+                                   iv, GCM_NONCE_MID_SZ, mac, WC_AES_BLOCK_SIZE,
                                    tickCtx->aad, aadSz);
         #endif
         }
@@ -4825,5 +4868,24 @@ void DEBUG_WRITE_DER(const byte* der, int derSz, const char* fileName);
 #endif
 
 #define DTLS_CID_BUFFER_SIZE 256
+
+static WC_MAYBE_UNUSED void *mymemmem(const void *haystack, size_t haystacklen,
+                                      const void *needle, size_t needlelen)
+{
+    size_t i, j;
+    const char* h = (const char*)haystack;
+    const char* n = (const char*)needle;
+    if (needlelen > haystacklen)
+        return NULL;
+    for (i = 0; i <= haystacklen - needlelen; i++) {
+        for (j = 0; j < needlelen; j++) {
+            if (h[i + j] != n[j])
+                break;
+        }
+        if (j == needlelen)
+            return (void*)(h + i);
+    }
+    return NULL;
+}
 
 #endif /* wolfSSL_TEST_H */

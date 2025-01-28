@@ -1,6 +1,6 @@
 /* thumb2-curve25519
  *
- * Copyright (C) 2006-2023 wolfSSL Inc.
+ * Copyright (C) 2006-2024 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -31,7 +31,7 @@
 #include <wolfssl/wolfcrypt/error-crypt.h>
 
 #ifdef WOLFSSL_ARMASM
-#if !defined(__aarch64__) && defined(__thumb__)
+#ifdef WOLFSSL_ARMASM_THUMB2
 #ifdef WOLFSSL_ARMASM_INLINE
 
 #ifdef __IAR_SYSTEMS_ICC__
@@ -533,7 +533,7 @@ int fe_isnonzero(const fe a)
         :
         : "memory", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "cc"
     );
-    return (uint32_t)(size_t)a;
+    return (word32)(size_t)a;
 }
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -565,7 +565,7 @@ int fe_isnegative(const fe a)
         :
         : "memory", "r1", "r2", "r3", "r4", "r5", "cc"
     );
-    return (uint32_t)(size_t)a;
+    return (word32)(size_t)a;
 }
 
 #if defined(HAVE_ED25519_MAKE_KEY) || defined(HAVE_ED25519_SIGN)
@@ -1667,7 +1667,7 @@ void fe_cmov_table(fe* r, fe* base, signed char b)
 #endif /* WC_NO_CACHE_RESISTANT */
 #endif /* HAVE_ED25519_MAKE_KEY || HAVE_ED25519_SIGN */
 #endif /* HAVE_ED25519 */
-#ifdef WOLFSSL_SP_NO_UMAAL
+#ifdef WOLFSSL_ARM_ARCH_7M
 void fe_mul_op(void);
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
 void fe_mul_op()
@@ -2193,7 +2193,7 @@ void fe_mul_op()
     );
 }
 
-#endif /* WOLFSSL_SP_NO_UMAAL */
+#endif /* WOLFSSL_ARM_ARCH_7M */
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
 void fe_mul(fe r_p, const fe a_p, const fe b_p)
 #else
@@ -2214,7 +2214,7 @@ void fe_mul(fe r, const fe a, const fe b)
     );
 }
 
-#ifdef WOLFSSL_SP_NO_UMAAL
+#ifdef WOLFSSL_ARM_ARCH_7M
 void fe_sq_op(void);
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
 void fe_sq_op()
@@ -2619,7 +2619,7 @@ void fe_sq_op()
     );
 }
 
-#endif /* WOLFSSL_SP_NO_UMAAL */
+#endif /* WOLFSSL_ARM_ARCH_7M */
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
 void fe_sq(fe r_p, const fe a_p)
 #else
@@ -2640,7 +2640,7 @@ void fe_sq(fe r, const fe a)
 }
 
 #ifdef HAVE_CURVE25519
-#ifdef WOLFSSL_SP_NO_UMAAL
+#ifdef WOLFSSL_ARM_ARCH_7M
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
 void fe_mul121666(fe r_p, fe a_p)
 #else
@@ -2745,7 +2745,7 @@ void fe_mul121666(fe r, fe a)
     );
 }
 
-#endif /* WOLFSSL_SP_NO_UMAAL */
+#endif /* WOLFSSL_ARM_ARCH_7M */
 #ifndef WC_NO_CACHE_RESISTANT
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
 int curve25519(byte* r_p, const byte* n_p, const byte* a_p)
@@ -2789,9 +2789,17 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "MOV	%[a], #0x1c\n\t"
         "STR	%[a], [sp, #176]\n\t"
         "\n"
-    "L_curve25519_words%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_curve25519_words:\n\t"
+#else
+    "L_curve25519_words_%=:\n\t"
+#endif
         "\n"
-    "L_curve25519_bits%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_curve25519_bits:\n\t"
+#else
+    "L_curve25519_bits_%=:\n\t"
+#endif
         "LDR	%[n], [sp, #164]\n\t"
         "LDR	%[a], [%[n], r2]\n\t"
         "LDR	%[n], [sp, #180]\n\t"
@@ -2971,19 +2979,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "LDR	%[n], [sp, #180]\n\t"
         "SUBS	%[n], %[n], #0x1\n\t"
         "STR	%[n], [sp, #180]\n\t"
-#ifdef __GNUC__
-        "BGE	L_curve25519_bits%=\n\t"
+#if defined(__GNUC__)
+        "BGE	L_curve25519_bits_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BGE.W	L_curve25519_bits\n\t"
 #else
-        "BGE.W	L_curve25519_bits%=\n\t"
+        "BGE.W	L_curve25519_bits_%=\n\t"
 #endif
         "MOV	%[n], #0x1f\n\t"
         "STR	%[n], [sp, #180]\n\t"
         "SUBS	%[a], %[a], #0x4\n\t"
         "STR	%[a], [sp, #176]\n\t"
-#ifdef __GNUC__
-        "BGE	L_curve25519_words%=\n\t"
+#if defined(__GNUC__)
+        "BGE	L_curve25519_words_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BGE.W	L_curve25519_words\n\t"
 #else
-        "BGE.W	L_curve25519_words%=\n\t"
+        "BGE.W	L_curve25519_words_%=\n\t"
 #endif
         /* Invert */
         "ADD	r1, sp, #0x0\n\t"
@@ -3015,17 +3027,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x4\n\t"
         "\n"
-    "L_curve25519_inv_1%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_curve25519_inv_1:\n\t"
+#else
+    "L_curve25519_inv_1_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x60\n\t"
         "ADD	r0, sp, #0x60\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_1%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_1_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_curve25519_inv_1\n\t"
 #else
-        "BNE.N	L_curve25519_inv_1%=\n\t"
+        "BNE.N	L_curve25519_inv_1_%=\n\t"
 #endif
         "ADD	r2, sp, #0x40\n\t"
         "ADD	r1, sp, #0x60\n\t"
@@ -3036,17 +3054,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x9\n\t"
         "\n"
-    "L_curve25519_inv_2%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_curve25519_inv_2:\n\t"
+#else
+    "L_curve25519_inv_2_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x60\n\t"
         "ADD	r0, sp, #0x60\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_2%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_2_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_curve25519_inv_2\n\t"
 #else
-        "BNE.N	L_curve25519_inv_2%=\n\t"
+        "BNE.N	L_curve25519_inv_2_%=\n\t"
 #endif
         "ADD	r2, sp, #0x40\n\t"
         "ADD	r1, sp, #0x60\n\t"
@@ -3057,17 +3081,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x13\n\t"
         "\n"
-    "L_curve25519_inv_3%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_curve25519_inv_3:\n\t"
+#else
+    "L_curve25519_inv_3_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x80\n\t"
         "ADD	r0, sp, #0x80\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_3%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_3_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_curve25519_inv_3\n\t"
 #else
-        "BNE.N	L_curve25519_inv_3%=\n\t"
+        "BNE.N	L_curve25519_inv_3_%=\n\t"
 #endif
         "ADD	r2, sp, #0x60\n\t"
         "ADD	r1, sp, #0x80\n\t"
@@ -3075,17 +3105,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_mul_op\n\t"
         "MOV	r12, #0xa\n\t"
         "\n"
-    "L_curve25519_inv_4%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_curve25519_inv_4:\n\t"
+#else
+    "L_curve25519_inv_4_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x60\n\t"
         "ADD	r0, sp, #0x60\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_4%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_4_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_curve25519_inv_4\n\t"
 #else
-        "BNE.N	L_curve25519_inv_4%=\n\t"
+        "BNE.N	L_curve25519_inv_4_%=\n\t"
 #endif
         "ADD	r2, sp, #0x40\n\t"
         "ADD	r1, sp, #0x60\n\t"
@@ -3096,17 +3132,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x31\n\t"
         "\n"
-    "L_curve25519_inv_5%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_curve25519_inv_5:\n\t"
+#else
+    "L_curve25519_inv_5_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x60\n\t"
         "ADD	r0, sp, #0x60\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_5%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_5_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_curve25519_inv_5\n\t"
 #else
-        "BNE.N	L_curve25519_inv_5%=\n\t"
+        "BNE.N	L_curve25519_inv_5_%=\n\t"
 #endif
         "ADD	r2, sp, #0x40\n\t"
         "ADD	r1, sp, #0x60\n\t"
@@ -3117,17 +3159,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x63\n\t"
         "\n"
-    "L_curve25519_inv_6%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_curve25519_inv_6:\n\t"
+#else
+    "L_curve25519_inv_6_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x80\n\t"
         "ADD	r0, sp, #0x80\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_6%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_6_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_curve25519_inv_6\n\t"
 #else
-        "BNE.N	L_curve25519_inv_6%=\n\t"
+        "BNE.N	L_curve25519_inv_6_%=\n\t"
 #endif
         "ADD	r2, sp, #0x60\n\t"
         "ADD	r1, sp, #0x80\n\t"
@@ -3135,17 +3183,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_mul_op\n\t"
         "MOV	r12, #0x32\n\t"
         "\n"
-    "L_curve25519_inv_7%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_curve25519_inv_7:\n\t"
+#else
+    "L_curve25519_inv_7_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x60\n\t"
         "ADD	r0, sp, #0x60\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_7%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_7_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_curve25519_inv_7\n\t"
 #else
-        "BNE.N	L_curve25519_inv_7%=\n\t"
+        "BNE.N	L_curve25519_inv_7_%=\n\t"
 #endif
         "ADD	r2, sp, #0x40\n\t"
         "ADD	r1, sp, #0x60\n\t"
@@ -3153,17 +3207,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_mul_op\n\t"
         "MOV	r12, #0x5\n\t"
         "\n"
-    "L_curve25519_inv_8%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_curve25519_inv_8:\n\t"
+#else
+    "L_curve25519_inv_8_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x40\n\t"
         "ADD	r0, sp, #0x40\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_8%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_8_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_curve25519_inv_8\n\t"
 #else
-        "BNE.N	L_curve25519_inv_8%=\n\t"
+        "BNE.N	L_curve25519_inv_8_%=\n\t"
 #endif
         "ADD	r2, sp, #0x20\n\t"
         "ADD	r1, sp, #0x40\n\t"
@@ -3179,7 +3239,7 @@ int curve25519(byte* r, const byte* n, const byte* a)
         :
         : "memory", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r3", "r12", "lr", "cc"
     );
-    return (uint32_t)(size_t)r;
+    return (word32)(size_t)r;
 }
 
 #else
@@ -3227,7 +3287,11 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "STM	r3, {r4, r5, r6, r7, r8, r9, r10, r11}\n\t"
         "MOV	%[a], #0xfe\n\t"
         "\n"
-    "L_curve25519_bits%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_curve25519_bits:\n\t"
+#else
+    "L_curve25519_bits_%=:\n\t"
+#endif
         "STR	%[a], [sp, #168]\n\t"
         "LDR	%[n], [sp, #160]\n\t"
         "AND	r4, %[a], #0x1f\n\t"
@@ -3312,10 +3376,12 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_mul_op\n\t"
         "LDR	%[a], [sp, #168]\n\t"
         "SUBS	%[a], %[a], #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BGE	L_curve25519_bits%=\n\t"
+#if defined(__GNUC__)
+        "BGE	L_curve25519_bits_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BGE.N	L_curve25519_bits\n\t"
 #else
-        "BGE.N	L_curve25519_bits%=\n\t"
+        "BGE.N	L_curve25519_bits_%=\n\t"
 #endif
         /*   Cycle Count: 171 */
         "LDR	%[n], [sp, #184]\n\t"
@@ -3352,17 +3418,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x4\n\t"
         "\n"
-    "L_curve25519_inv_1%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_curve25519_inv_1:\n\t"
+#else
+    "L_curve25519_inv_1_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x60\n\t"
         "ADD	r0, sp, #0x60\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_1%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_1_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_curve25519_inv_1\n\t"
 #else
-        "BNE.N	L_curve25519_inv_1%=\n\t"
+        "BNE.N	L_curve25519_inv_1_%=\n\t"
 #endif
         "ADD	r2, sp, #0x40\n\t"
         "ADD	r1, sp, #0x60\n\t"
@@ -3373,17 +3445,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x9\n\t"
         "\n"
-    "L_curve25519_inv_2%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_curve25519_inv_2:\n\t"
+#else
+    "L_curve25519_inv_2_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x60\n\t"
         "ADD	r0, sp, #0x60\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_2%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_2_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_curve25519_inv_2\n\t"
 #else
-        "BNE.N	L_curve25519_inv_2%=\n\t"
+        "BNE.N	L_curve25519_inv_2_%=\n\t"
 #endif
         "ADD	r2, sp, #0x40\n\t"
         "ADD	r1, sp, #0x60\n\t"
@@ -3394,17 +3472,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x13\n\t"
         "\n"
-    "L_curve25519_inv_3%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_curve25519_inv_3:\n\t"
+#else
+    "L_curve25519_inv_3_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x80\n\t"
         "ADD	r0, sp, #0x80\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_3%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_3_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_curve25519_inv_3\n\t"
 #else
-        "BNE.N	L_curve25519_inv_3%=\n\t"
+        "BNE.N	L_curve25519_inv_3_%=\n\t"
 #endif
         "ADD	r2, sp, #0x60\n\t"
         "ADD	r1, sp, #0x80\n\t"
@@ -3412,17 +3496,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_mul_op\n\t"
         "MOV	r12, #0xa\n\t"
         "\n"
-    "L_curve25519_inv_4%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_curve25519_inv_4:\n\t"
+#else
+    "L_curve25519_inv_4_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x60\n\t"
         "ADD	r0, sp, #0x60\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_4%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_4_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_curve25519_inv_4\n\t"
 #else
-        "BNE.N	L_curve25519_inv_4%=\n\t"
+        "BNE.N	L_curve25519_inv_4_%=\n\t"
 #endif
         "ADD	r2, sp, #0x40\n\t"
         "ADD	r1, sp, #0x60\n\t"
@@ -3433,17 +3523,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x31\n\t"
         "\n"
-    "L_curve25519_inv_5%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_curve25519_inv_5:\n\t"
+#else
+    "L_curve25519_inv_5_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x60\n\t"
         "ADD	r0, sp, #0x60\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_5%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_5_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_curve25519_inv_5\n\t"
 #else
-        "BNE.N	L_curve25519_inv_5%=\n\t"
+        "BNE.N	L_curve25519_inv_5_%=\n\t"
 #endif
         "ADD	r2, sp, #0x40\n\t"
         "ADD	r1, sp, #0x60\n\t"
@@ -3454,17 +3550,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x63\n\t"
         "\n"
-    "L_curve25519_inv_6%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_curve25519_inv_6:\n\t"
+#else
+    "L_curve25519_inv_6_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x80\n\t"
         "ADD	r0, sp, #0x80\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_6%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_6_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_curve25519_inv_6\n\t"
 #else
-        "BNE.N	L_curve25519_inv_6%=\n\t"
+        "BNE.N	L_curve25519_inv_6_%=\n\t"
 #endif
         "ADD	r2, sp, #0x60\n\t"
         "ADD	r1, sp, #0x80\n\t"
@@ -3472,17 +3574,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_mul_op\n\t"
         "MOV	r12, #0x32\n\t"
         "\n"
-    "L_curve25519_inv_7%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_curve25519_inv_7:\n\t"
+#else
+    "L_curve25519_inv_7_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x60\n\t"
         "ADD	r0, sp, #0x60\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_7%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_7_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_curve25519_inv_7\n\t"
 #else
-        "BNE.N	L_curve25519_inv_7%=\n\t"
+        "BNE.N	L_curve25519_inv_7_%=\n\t"
 #endif
         "ADD	r2, sp, #0x40\n\t"
         "ADD	r1, sp, #0x60\n\t"
@@ -3490,17 +3598,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_mul_op\n\t"
         "MOV	r12, #0x5\n\t"
         "\n"
-    "L_curve25519_inv_8%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_curve25519_inv_8:\n\t"
+#else
+    "L_curve25519_inv_8_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x40\n\t"
         "ADD	r0, sp, #0x40\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_8%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_8_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_curve25519_inv_8\n\t"
 #else
-        "BNE.N	L_curve25519_inv_8%=\n\t"
+        "BNE.N	L_curve25519_inv_8_%=\n\t"
 #endif
         "ADD	r2, sp, #0x20\n\t"
         "ADD	r1, sp, #0x40\n\t"
@@ -3531,7 +3645,7 @@ int curve25519(byte* r, const byte* n, const byte* a)
         :
         : "memory", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r3", "r12", "lr", "cc"
     );
-    return (uint32_t)(size_t)r;
+    return (word32)(size_t)r;
 }
 
 #endif /* WC_NO_CACHE_RESISTANT */
@@ -3582,17 +3696,23 @@ void fe_invert(fe r, const fe a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x4\n\t"
         "\n"
-    "L_fe_invert1%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_fe_invert1:\n\t"
+#else
+    "L_fe_invert1_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x40\n\t"
         "ADD	r0, sp, #0x40\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_invert1%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_fe_invert1_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_fe_invert1\n\t"
 #else
-        "BNE.N	L_fe_invert1%=\n\t"
+        "BNE.N	L_fe_invert1_%=\n\t"
 #endif
         "ADD	r2, sp, #0x20\n\t"
         "ADD	r1, sp, #0x40\n\t"
@@ -3603,17 +3723,23 @@ void fe_invert(fe r, const fe a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x9\n\t"
         "\n"
-    "L_fe_invert2%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_fe_invert2:\n\t"
+#else
+    "L_fe_invert2_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x40\n\t"
         "ADD	r0, sp, #0x40\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_invert2%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_fe_invert2_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_fe_invert2\n\t"
 #else
-        "BNE.N	L_fe_invert2%=\n\t"
+        "BNE.N	L_fe_invert2_%=\n\t"
 #endif
         "ADD	r2, sp, #0x20\n\t"
         "ADD	r1, sp, #0x40\n\t"
@@ -3624,17 +3750,23 @@ void fe_invert(fe r, const fe a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x13\n\t"
         "\n"
-    "L_fe_invert3%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_fe_invert3:\n\t"
+#else
+    "L_fe_invert3_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x60\n\t"
         "ADD	r0, sp, #0x60\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_invert3%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_fe_invert3_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_fe_invert3\n\t"
 #else
-        "BNE.N	L_fe_invert3%=\n\t"
+        "BNE.N	L_fe_invert3_%=\n\t"
 #endif
         "ADD	r2, sp, #0x40\n\t"
         "ADD	r1, sp, #0x60\n\t"
@@ -3642,17 +3774,23 @@ void fe_invert(fe r, const fe a)
         "BL	fe_mul_op\n\t"
         "MOV	r12, #0xa\n\t"
         "\n"
-    "L_fe_invert4%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_fe_invert4:\n\t"
+#else
+    "L_fe_invert4_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x40\n\t"
         "ADD	r0, sp, #0x40\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_invert4%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_fe_invert4_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_fe_invert4\n\t"
 #else
-        "BNE.N	L_fe_invert4%=\n\t"
+        "BNE.N	L_fe_invert4_%=\n\t"
 #endif
         "ADD	r2, sp, #0x20\n\t"
         "ADD	r1, sp, #0x40\n\t"
@@ -3663,17 +3801,23 @@ void fe_invert(fe r, const fe a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x31\n\t"
         "\n"
-    "L_fe_invert5%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_fe_invert5:\n\t"
+#else
+    "L_fe_invert5_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x40\n\t"
         "ADD	r0, sp, #0x40\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_invert5%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_fe_invert5_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_fe_invert5\n\t"
 #else
-        "BNE.N	L_fe_invert5%=\n\t"
+        "BNE.N	L_fe_invert5_%=\n\t"
 #endif
         "ADD	r2, sp, #0x20\n\t"
         "ADD	r1, sp, #0x40\n\t"
@@ -3684,17 +3828,23 @@ void fe_invert(fe r, const fe a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x63\n\t"
         "\n"
-    "L_fe_invert6%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_fe_invert6:\n\t"
+#else
+    "L_fe_invert6_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x60\n\t"
         "ADD	r0, sp, #0x60\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_invert6%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_fe_invert6_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_fe_invert6\n\t"
 #else
-        "BNE.N	L_fe_invert6%=\n\t"
+        "BNE.N	L_fe_invert6_%=\n\t"
 #endif
         "ADD	r2, sp, #0x40\n\t"
         "ADD	r1, sp, #0x60\n\t"
@@ -3702,17 +3852,23 @@ void fe_invert(fe r, const fe a)
         "BL	fe_mul_op\n\t"
         "MOV	r12, #0x32\n\t"
         "\n"
-    "L_fe_invert7%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_fe_invert7:\n\t"
+#else
+    "L_fe_invert7_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x40\n\t"
         "ADD	r0, sp, #0x40\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_invert7%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_fe_invert7_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_fe_invert7\n\t"
 #else
-        "BNE.N	L_fe_invert7%=\n\t"
+        "BNE.N	L_fe_invert7_%=\n\t"
 #endif
         "ADD	r2, sp, #0x20\n\t"
         "ADD	r1, sp, #0x40\n\t"
@@ -3720,17 +3876,23 @@ void fe_invert(fe r, const fe a)
         "BL	fe_mul_op\n\t"
         "MOV	r12, #0x5\n\t"
         "\n"
-    "L_fe_invert8%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_fe_invert8:\n\t"
+#else
+    "L_fe_invert8_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x20\n\t"
         "ADD	r0, sp, #0x20\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_invert8%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_fe_invert8_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_fe_invert8\n\t"
 #else
-        "BNE.N	L_fe_invert8%=\n\t"
+        "BNE.N	L_fe_invert8_%=\n\t"
 #endif
         "MOV	r2, sp\n\t"
         "ADD	r1, sp, #0x20\n\t"
@@ -3745,7 +3907,7 @@ void fe_invert(fe r, const fe a)
     );
 }
 
-#ifdef WOLFSSL_SP_NO_UMAAL
+#ifdef WOLFSSL_ARM_ARCH_7M
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
 void fe_sq2(fe r_p, const fe a_p)
 #else
@@ -4222,7 +4384,7 @@ void fe_sq2(fe r, const fe a)
     );
 }
 
-#endif /* WOLFSSL_SP_NO_UMAAL */
+#endif /* WOLFSSL_ARM_ARCH_7M */
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
 void fe_pow22523(fe r_p, const fe a_p)
 #else
@@ -4268,17 +4430,23 @@ void fe_pow22523(fe r, const fe a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x4\n\t"
         "\n"
-    "L_fe_pow22523_1%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_fe_pow22523_1:\n\t"
+#else
+    "L_fe_pow22523_1_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x20\n\t"
         "ADD	r0, sp, #0x20\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_pow22523_1%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_fe_pow22523_1_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_fe_pow22523_1\n\t"
 #else
-        "BNE.N	L_fe_pow22523_1%=\n\t"
+        "BNE.N	L_fe_pow22523_1_%=\n\t"
 #endif
         "MOV	r2, sp\n\t"
         "ADD	r1, sp, #0x20\n\t"
@@ -4289,17 +4457,23 @@ void fe_pow22523(fe r, const fe a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x9\n\t"
         "\n"
-    "L_fe_pow22523_2%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_fe_pow22523_2:\n\t"
+#else
+    "L_fe_pow22523_2_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x20\n\t"
         "ADD	r0, sp, #0x20\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_pow22523_2%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_fe_pow22523_2_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_fe_pow22523_2\n\t"
 #else
-        "BNE.N	L_fe_pow22523_2%=\n\t"
+        "BNE.N	L_fe_pow22523_2_%=\n\t"
 #endif
         "MOV	r2, sp\n\t"
         "ADD	r1, sp, #0x20\n\t"
@@ -4310,17 +4484,23 @@ void fe_pow22523(fe r, const fe a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x13\n\t"
         "\n"
-    "L_fe_pow22523_3%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_fe_pow22523_3:\n\t"
+#else
+    "L_fe_pow22523_3_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x40\n\t"
         "ADD	r0, sp, #0x40\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_pow22523_3%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_fe_pow22523_3_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_fe_pow22523_3\n\t"
 #else
-        "BNE.N	L_fe_pow22523_3%=\n\t"
+        "BNE.N	L_fe_pow22523_3_%=\n\t"
 #endif
         "ADD	r2, sp, #0x20\n\t"
         "ADD	r1, sp, #0x40\n\t"
@@ -4328,17 +4508,23 @@ void fe_pow22523(fe r, const fe a)
         "BL	fe_mul_op\n\t"
         "MOV	r12, #0xa\n\t"
         "\n"
-    "L_fe_pow22523_4%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_fe_pow22523_4:\n\t"
+#else
+    "L_fe_pow22523_4_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x20\n\t"
         "ADD	r0, sp, #0x20\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_pow22523_4%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_fe_pow22523_4_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_fe_pow22523_4\n\t"
 #else
-        "BNE.N	L_fe_pow22523_4%=\n\t"
+        "BNE.N	L_fe_pow22523_4_%=\n\t"
 #endif
         "MOV	r2, sp\n\t"
         "ADD	r1, sp, #0x20\n\t"
@@ -4349,17 +4535,23 @@ void fe_pow22523(fe r, const fe a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x31\n\t"
         "\n"
-    "L_fe_pow22523_5%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_fe_pow22523_5:\n\t"
+#else
+    "L_fe_pow22523_5_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x20\n\t"
         "ADD	r0, sp, #0x20\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_pow22523_5%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_fe_pow22523_5_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_fe_pow22523_5\n\t"
 #else
-        "BNE.N	L_fe_pow22523_5%=\n\t"
+        "BNE.N	L_fe_pow22523_5_%=\n\t"
 #endif
         "MOV	r2, sp\n\t"
         "ADD	r1, sp, #0x20\n\t"
@@ -4370,17 +4562,23 @@ void fe_pow22523(fe r, const fe a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x63\n\t"
         "\n"
-    "L_fe_pow22523_6%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_fe_pow22523_6:\n\t"
+#else
+    "L_fe_pow22523_6_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x40\n\t"
         "ADD	r0, sp, #0x40\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_pow22523_6%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_fe_pow22523_6_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_fe_pow22523_6\n\t"
 #else
-        "BNE.N	L_fe_pow22523_6%=\n\t"
+        "BNE.N	L_fe_pow22523_6_%=\n\t"
 #endif
         "ADD	r2, sp, #0x20\n\t"
         "ADD	r1, sp, #0x40\n\t"
@@ -4388,17 +4586,23 @@ void fe_pow22523(fe r, const fe a)
         "BL	fe_mul_op\n\t"
         "MOV	r12, #0x32\n\t"
         "\n"
-    "L_fe_pow22523_7%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_fe_pow22523_7:\n\t"
+#else
+    "L_fe_pow22523_7_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x20\n\t"
         "ADD	r0, sp, #0x20\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_pow22523_7%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_fe_pow22523_7_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_fe_pow22523_7\n\t"
 #else
-        "BNE.N	L_fe_pow22523_7%=\n\t"
+        "BNE.N	L_fe_pow22523_7_%=\n\t"
 #endif
         "MOV	r2, sp\n\t"
         "ADD	r1, sp, #0x20\n\t"
@@ -4406,17 +4610,23 @@ void fe_pow22523(fe r, const fe a)
         "BL	fe_mul_op\n\t"
         "MOV	r12, #0x2\n\t"
         "\n"
-    "L_fe_pow22523_8%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_fe_pow22523_8:\n\t"
+#else
+    "L_fe_pow22523_8_%=:\n\t"
+#endif
         "MOV	r1, sp\n\t"
         "MOV	r0, sp\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_pow22523_8%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_fe_pow22523_8_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.N	L_fe_pow22523_8\n\t"
 #else
-        "BNE.N	L_fe_pow22523_8%=\n\t"
+        "BNE.N	L_fe_pow22523_8_%=\n\t"
 #endif
         "LDR	r2, [sp, #100]\n\t"
         "MOV	r1, sp\n\t"
@@ -4916,7 +5126,7 @@ void ge_sub(ge_p1p1 * r, const ge_p3 * p, const ge_cached* q)
     );
 }
 
-#ifdef WOLFSSL_SP_NO_UMAAL
+#ifdef WOLFSSL_ARM_ARCH_7M
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
 void sc_reduce(byte* s_p)
 #else
@@ -5655,9 +5865,9 @@ void sc_reduce(byte* s)
     );
 }
 
-#endif /* WOLFSSL_SP_NO_UMAAL */
+#endif /* WOLFSSL_ARM_ARCH_7M */
 #ifdef HAVE_ED25519_SIGN
-#ifdef WOLFSSL_SP_NO_UMAAL
+#ifdef WOLFSSL_ARM_ARCH_7M
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
 void sc_muladd(byte* s_p, const byte* a_p, const byte* b_p, const byte* c_p)
 #else
@@ -6889,12 +7099,12 @@ void sc_muladd(byte* s, const byte* a, const byte* b, const byte* c)
     );
 }
 
-#endif /* WOLFSSL_SP_NO_UMAAL */
+#endif /* WOLFSSL_ARM_ARCH_7M */
 #endif /* HAVE_ED25519_SIGN */
 #endif /* HAVE_ED25519 */
 
 #endif /* !CURVE25519_SMALL || !ED25519_SMALL */
 #endif /* HAVE_CURVE25519 || HAVE_ED25519 */
-#endif /* !__aarch64__ && __thumb__ */
+#endif /* WOLFSSL_ARMASM_THUMB2 */
 #endif /* WOLFSSL_ARMASM */
 #endif /* WOLFSSL_ARMASM_INLINE */

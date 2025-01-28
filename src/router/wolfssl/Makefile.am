@@ -139,6 +139,7 @@ ACLOCAL_AMFLAGS= -I m4
 EXTRA_DIST+= .cyignore
 EXTRA_DIST+= wolfssl.vcproj
 EXTRA_DIST+= wolfssl.vcxproj
+EXTRA_DIST+= wolfssl-VS2022.vcxproj
 EXTRA_DIST+= wolfssl64.sln
 EXTRA_DIST+= valgrind-error.sh
 EXTRA_DIST+= valgrind-bash.supp
@@ -205,7 +206,8 @@ if BUILD_LINUXKM
     SUBDIRS_OPT += linuxkm
     DIST_SUBDIRS_OPT += linuxkm
 
-    export KERNEL_ROOT KERNEL_ARCH KERNEL_EXTRA_CFLAGS \
+    export build_triplet host_triplet CC AS LD \
+        KERNEL_ROOT KERNEL_ARCH KERNEL_EXTRA_CFLAGS \
         EXTRA_CFLAGS EXTRA_CPPFLAGS EXTRA_CCASFLAGS EXTRA_LDFLAGS \
 	AM_CPPFLAGS CPPFLAGS AM_CFLAGS CFLAGS \
         AM_CCASFLAGS CCASFLAGS \

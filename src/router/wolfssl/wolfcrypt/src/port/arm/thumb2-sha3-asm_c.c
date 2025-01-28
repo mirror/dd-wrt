@@ -1,6 +1,6 @@
 /* thumb2-sha3-asm
  *
- * Copyright (C) 2006-2023 wolfSSL Inc.
+ * Copyright (C) 2006-2024 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -31,7 +31,7 @@
 #include <wolfssl/wolfcrypt/error-crypt.h>
 
 #ifdef WOLFSSL_ARMASM
-#if !defined(__aarch64__) && defined(__thumb__)
+#ifdef WOLFSSL_ARMASM_THUMB2
 #ifdef WOLFSSL_ARMASM_INLINE
 
 #ifdef __IAR_SYSTEMS_ICC__
@@ -44,7 +44,7 @@
 #define __volatile__   volatile
 #endif /* __KEIL__ */
 #ifdef WOLFSSL_SHA3
-static const uint64_t L_sha3_thumb2_rt[] = {
+static const word64 L_sha3_thumb2_rt[] = {
     0x0000000000000001UL, 0x0000000000008082UL,
     0x800000000000808aUL, 0x8000000080008000UL,
     0x000000000000808bUL, 0x0000000080000001UL,
@@ -69,7 +69,7 @@ void BlockSha3(word64* state)
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
     register word64* state __asm__ ("r0") = (word64*)state_p;
-    register uint64_t* L_sha3_thumb2_rt_c __asm__ ("r1") = (uint64_t*)&L_sha3_thumb2_rt;
+    register word64* L_sha3_thumb2_rt_c __asm__ ("r1") = (word64*)&L_sha3_thumb2_rt;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -77,7 +77,11 @@ void BlockSha3(word64* state)
         "MOV	r1, %[L_sha3_thumb2_rt]\n\t"
         "MOV	r2, #0xc\n\t"
         "\n"
-    "L_sha3_thumb2_begin%=:\n\t"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+    "L_sha3_thumb2_begin:\n\t"
+#else
+    "L_sha3_thumb2_begin_%=:\n\t"
+#endif
         "STR	r2, [sp, #200]\n\t"
         /* Round even */
         /* Calc b[4] */
@@ -1137,10 +1141,12 @@ void BlockSha3(word64* state)
         "STR	lr, [%[state], #164]\n\t"
         "LDR	r2, [sp, #200]\n\t"
         "SUBS	r2, r2, #0x1\n\t"
-#ifdef __GNUC__
-        "BNE	L_sha3_thumb2_begin%=\n\t"
+#if defined(__GNUC__)
+        "BNE	L_sha3_thumb2_begin_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
+        "BNE.W	L_sha3_thumb2_begin\n\t"
 #else
-        "BNE.W	L_sha3_thumb2_begin%=\n\t"
+        "BNE.W	L_sha3_thumb2_begin_%=\n\t"
 #endif
         "ADD	sp, sp, #0xcc\n\t"
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -1157,6 +1163,6 @@ void BlockSha3(word64* state)
 }
 
 #endif /* WOLFSSL_SHA3 */
-#endif /* !__aarch64__ && __thumb__ */
+#endif /* WOLFSSL_ARMASM_THUMB2 */
 #endif /* WOLFSSL_ARMASM */
 #endif /* WOLFSSL_ARMASM_INLINE */

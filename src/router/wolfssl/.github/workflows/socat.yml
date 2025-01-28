@@ -15,7 +15,8 @@ concurrency:
 jobs:
   build_wolfssl:
     name: Build wolfSSL
-    runs-on: ubuntu-latest
+    if: github.repository_owner == 'wolfssl'
+    runs-on: ubuntu-22.04
     timeout-minutes: 4
     steps:
       - name: Build wolfSSL
@@ -25,18 +26,20 @@ jobs:
           configure: --enable-maxfragment --enable-opensslall --enable-opensslextra --enable-dtls --enable-oldtls --enable-tlsv10 --enable-ipv6 'CPPFLAGS=-DWOLFSSL_NO_DTLS_SIZE_CHECK -DOPENSSL_COMPATIBLE_DEFAULTS'
           install: true
 
+      - name: tar build-dir
+        run: tar -zcf build-dir.tgz build-dir
+
       - name: Upload built lib
         uses: actions/upload-artifact@v4
         with:
           name: wolf-install-socat
-          path: build-dir
-          retention-days: 3
+          path: build-dir.tgz
+          retention-days: 5
 
 
   socat_check:
-    strategy:
-      fail-fast: false
-    runs-on: ubuntu-latest
+    if: github.repository_owner == 'wolfssl'
+    runs-on: ubuntu-22.04
     # This should be a safe limit for the tests to run.
     timeout-minutes: 30
     needs: build_wolfssl
@@ -49,7 +52,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: wolf-install-socat
-          path: build-dir
+
+      - name: untar build-dir
+        run: tar -xf build-dir.tgz
 
       - name: Download socat
         run: curl -O http://www.dest-unreach.org/socat/download/socat-1.8.0.0.tar.gz && tar xvf socat-1.8.0.0.tar.gz
@@ -65,7 +70,7 @@ jobs:
         run: |
           patch -p1 < ../osp/socat/1.8.0.0/socat-1.8.0.0.patch
           autoreconf -vfi
-          ./configure --with-wolfssl=$GITHUB_WORKSPACE/build-dir
+          ./configure --with-wolfssl=$GITHUB_WORKSPACE/build-dir --enable-default-ipv=4
           make
 
       - name: Run socat tests
@@ -73,4 +78,4 @@ jobs:
         run: |
           export LD_LIBRARY_PATH=$GITHUB_WORKSPACE/build-dir/lib:$LD_LIBRARY_PATH
           export SHELL=/bin/bash
-          SOCAT=$GITHUB_WORKSPACE/socat-1.8.0.0/socat ./test.sh -t 0.5 --expect-fail 146,216,309,310,386,399,402,459,460,467,468,478,492,528,530
+          SOCAT=$GITHUB_WORKSPACE/socat-1.8.0.0/socat ./test.sh -t 0.5 --expect-fail 36,64,146,214,216,217,309,310,386,399,402,403,459,460,467,468,475,478,492,528,530

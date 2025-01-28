@@ -15,7 +15,8 @@ concurrency:
 jobs:
   build_wolfssl:
     name: Build wolfSSL
-    runs-on: ubuntu-latest
+    if: github.repository_owner == 'wolfssl'
+    runs-on: ubuntu-22.04
     # This should be a safe limit for the tests to run.
     timeout-minutes: 4
     steps:
@@ -26,16 +27,20 @@ jobs:
           configure: --enable-curl
           install: true
 
+      - name: tar build-dir
+        run: tar -zcf build-dir.tgz build-dir
+
       - name: Upload built lib
         uses: actions/upload-artifact@v4
         with:
           name: wolf-install-curl
-          path: build-dir
+          path: build-dir.tgz
           retention-days: 5
 
   test_curl:
     name: ${{ matrix.curl_ref }}
-    runs-on: ubuntu-latest
+    if: github.repository_owner == 'wolfssl'
+    runs-on: ubuntu-22.04
     # This should be a safe limit for the tests to run.
     timeout-minutes: 15
     needs: build_wolfssl
@@ -47,14 +52,15 @@ jobs:
     - name: Install test dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install nghttp2 libpsl5 libpsl-dev
-        sudo pip install impacket
+        sudo apt-get install nghttp2 libpsl5 libpsl-dev python3-impacket
 
     - name: Download lib
       uses: actions/download-artifact@v4
       with:
         name: wolf-install-curl
-        path: build-dir
+
+    - name: untar build-dir
+      run: tar -xf build-dir.tgz
 
     - name: Build curl
       uses: wolfSSL/actions-build-autotools-project@v1
@@ -67,4 +73,4 @@ jobs:
 
     - name: Test curl
       working-directory: curl
-      run: make -j test-ci
+      run: make -j $(nproc) test-ci

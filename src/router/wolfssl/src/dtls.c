@@ -1,6 +1,6 @@
 /* dtls.c
  *
- * Copyright (C) 2006-2023 wolfSSL Inc.
+ * Copyright (C) 2006-2024 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -101,6 +101,15 @@ void DtlsResetState(WOLFSSL* ssl)
     ssl->options.tls = 0;
     ssl->options.tls1_1 = 0;
     ssl->options.tls1_3 = 0;
+#if defined(WOLFSSL_DTLS) && defined(WOLFSSL_DTLS_CID)
+    ssl->buffers.dtlsCtx.processingPendingRecord = 0;
+    /* Clear the pending peer in case user set */
+    XFREE(ssl->buffers.dtlsCtx.pendingPeer.sa, ssl->heap,
+          DYNAMIC_TYPE_SOCKADDR);
+    ssl->buffers.dtlsCtx.pendingPeer.sa = NULL;
+    ssl->buffers.dtlsCtx.pendingPeer.sz = 0;
+    ssl->buffers.dtlsCtx.pendingPeer.bufSz = 0;
+#endif
 }
 
 int DtlsIgnoreError(int err)
@@ -221,6 +230,7 @@ static int CreateDtls12Cookie(const WOLFSSL* ssl, const WolfSSL_CH* ch,
             ssl->buffers.dtlsCookieSecret.buffer,
             ssl->buffers.dtlsCookieSecret.length);
         if (ret == 0) {
+            /* peerLock not necessary. Still in handshake phase. */
             ret = wc_HmacUpdate(&cookieHmac,
                    (const byte*)ssl->buffers.dtlsCtx.peer.sa,
                                 ssl->buffers.dtlsCtx.peer.sz);
@@ -716,9 +726,14 @@ static int SendStatelessReplyDtls13(const WOLFSSL* ssl, WolfSSL_CH* ch)
          * and if they don't match we will error out there anyway. */
         byte modes;
 
+        /* TLSX_PreSharedKey_Parse_ClientHello uses word16 length */
+        if (tlsx.size > WOLFSSL_MAX_16BIT) {
+            ERROR_OUT(BUFFER_ERROR, dtls13_cleanup);
+        }
+
         /* Ask the user for the ciphersuite matching this identity */
         if (TLSX_PreSharedKey_Parse_ClientHello(&parsedExts,
-                tlsx.elements, tlsx.size, ssl->heap) == 0)
+                tlsx.elements, (word16)tlsx.size, ssl->heap) == 0)
             FindPskSuiteFromExt(ssl, parsedExts, &pskInfo, &suites);
         /* Revert to full handshake if PSK parsing failed */
 
@@ -729,8 +744,8 @@ static int SendStatelessReplyDtls13(const WOLFSSL* ssl, WolfSSL_CH* ch)
                 goto dtls13_cleanup;
             if (!tlsxFound)
                 ERROR_OUT(PSK_KEY_ERROR, dtls13_cleanup);
-            ret = TLSX_PskKeyModes_Parse_Modes(tlsx.elements, tlsx.size,
-                                              client_hello, &modes);
+            ret = TLSX_PskKeyModes_Parse_Modes(tlsx.elements, (word16)tlsx.size,
+                                               client_hello, &modes);
             if (ret != 0)
                 goto dtls13_cleanup;
             if ((modes & (1 << PSK_DHE_KE)) &&
@@ -953,8 +968,13 @@ int DoClientHelloStateless(WOLFSSL* ssl, const byte* input, word32 helloSz,
             int tlsxFound;
             ret = FindExtByType(&ch.cookieExt, TLSX_COOKIE, ch.extension,
                                  &tlsxFound);
-            if (ret != 0)
+            if (ret != 0) {
+                if (isFirstCHFrag) {
+                    WOLFSSL_MSG("\t\tCookie probably missing from first "
+                                "fragment. Dropping.");
+                }
                 return ret;
+            }
         }
     }
 #endif
@@ -1033,22 +1053,6 @@ int DoClientHelloStateless(WOLFSSL* ssl, const byte* input, word32 helloSz,
 
 #if defined(WOLFSSL_DTLS_CID)
 
-typedef struct ConnectionID {
-    byte length;
-/* Ignore "nonstandard extension used : zero-sized array in struct/union"
- * MSVC warning */
-#ifdef _MSC_VER
-#pragma warning(disable: 4200)
-#endif
-    byte id[];
-} ConnectionID;
-
-typedef struct CIDInfo {
-    ConnectionID* tx;
-    ConnectionID* rx;
-    byte negotiated : 1;
-} CIDInfo;
-
 static ConnectionID* DtlsCidNew(const byte* cid, byte size, void* heap)
 {
     ConnectionID* ret;
@@ -1114,6 +1118,26 @@ static int DtlsCidGet(WOLFSSL* ssl, unsigned char* buf, int bufferSz, int rx)
     return WOLFSSL_SUCCESS;
 }
 
+static int DtlsCidGet0(WOLFSSL* ssl, unsigned char** cid, int rx)
+{
+    ConnectionID* id;
+    CIDInfo* info;
+
+    if (ssl == NULL || cid == NULL)
+        return BAD_FUNC_ARG;
+
+    info = DtlsCidGetInfo(ssl);
+    if (info == NULL)
+        return WOLFSSL_FAILURE;
+
+    id = rx ? info->rx : info->tx;
+    if (id == NULL || id->length == 0)
+        return WOLFSSL_SUCCESS;
+
+    *cid = id->id;
+    return WOLFSSL_SUCCESS;
+}
+
 static CIDInfo* DtlsCidGetInfoFromExt(byte* ext)
 {
     WOLFSSL** sslPtr;
@@ -1150,10 +1174,8 @@ void TLSX_ConnectionID_Free(byte* ext, void* heap)
     info = DtlsCidGetInfoFromExt(ext);
     if (info == NULL)
         return;
-    if (info->rx != NULL)
-        XFREE(info->rx, heap, DYNAMIC_TYPE_TLSX);
-    if (info->tx != NULL)
-        XFREE(info->tx, heap, DYNAMIC_TYPE_TLSX);
+    XFREE(info->rx, heap, DYNAMIC_TYPE_TLSX);
+    XFREE(info->tx, heap, DYNAMIC_TYPE_TLSX);
     XFREE(info, heap, DYNAMIC_TYPE_TLSX);
     DtlsCidUnsetInfoFromExt(ext);
     XFREE(ext, heap, DYNAMIC_TYPE_TLSX);
@@ -1228,9 +1250,8 @@ int TLSX_ConnectionID_Use(WOLFSSL* ssl)
 int TLSX_ConnectionID_Parse(WOLFSSL* ssl, const byte* input, word16 length,
     byte isRequest)
 {
-    ConnectionID* id;
     CIDInfo* info;
-    byte cidSize;
+    byte cidSz;
     TLSX* ext;
 
     ext = TLSX_Find(ssl->extensions, TLSX_CONNECTION_ID);
@@ -1246,35 +1267,41 @@ int TLSX_ConnectionID_Parse(WOLFSSL* ssl, const byte* input, word16 length,
         }
     }
 
+    if (length < OPAQUE8_LEN)
+        return BUFFER_ERROR;
+
+    cidSz = *input;
+    if (cidSz + OPAQUE8_LEN > length)
+        return BUFFER_ERROR;
+
     info = DtlsCidGetInfo(ssl);
     if (info == NULL)
         return BAD_STATE_E;
 
     /* it may happen if we process two ClientHello because the server sent an
-     * HRR request */
-    if (info->tx != NULL) {
+     * HRR/HVR request */
+    if (info->tx != NULL || info->negotiated) {
         if (ssl->options.side != WOLFSSL_SERVER_END &&
-            ssl->options.serverState != SERVER_HELLO_RETRY_REQUEST_COMPLETE)
+            ssl->options.serverState != SERVER_HELLO_RETRY_REQUEST_COMPLETE &&
+            !IsSCR(ssl))
             return BAD_STATE_E;
 
-        XFREE(info->tx, ssl->heap, DYNAMIC_TYPE_TLSX);
-        info->tx = NULL;
+        /* Should not be null if negotiated */
+        if (info->tx == NULL)
+            return BAD_STATE_E;
+
+        /* For now we don't support changing the CID on a rehandshake */
+        if (cidSz != info->tx->length ||
+                XMEMCMP(info->tx->id, input + OPAQUE8_LEN, cidSz) != 0)
+            return DTLS_CID_ERROR;
     }
-
-    if (length < OPAQUE8_LEN)
-        return BUFFER_ERROR;
-
-    cidSize = *input;
-    if (cidSize + OPAQUE8_LEN > length)
-        return BUFFER_ERROR;
-
-    if (cidSize > 0) {
-        id = (ConnectionID*)XMALLOC(sizeof(*id) + cidSize, ssl->heap,
-            DYNAMIC_TYPE_TLSX);
+    else if (cidSz > 0) {
+        ConnectionID* id = (ConnectionID*)XMALLOC(sizeof(*id) + cidSz,
+                ssl->heap, DYNAMIC_TYPE_TLSX);
         if (id == NULL)
             return MEMORY_ERROR;
-        XMEMCPY(id->id, input + OPAQUE8_LEN, cidSize);
-        id->length = cidSize;
+        XMEMCPY(id->id, input + OPAQUE8_LEN, cidSz);
+        id->length = cidSz;
         info->tx = id;
     }
 
@@ -1314,10 +1341,6 @@ int wolfSSL_dtls_cid_use(WOLFSSL* ssl)
 {
     int ret;
 
-    /* CID is supported on DTLSv1.3 only */
-    if (!IsAtLeastTLSv1_3(ssl->version))
-        return WOLFSSL_FAILURE;
-
     ssl->options.useDtlsCID = 1;
     ret = TLSX_ConnectionID_Use(ssl);
     if (ret != 0)
@@ -1343,8 +1366,9 @@ int wolfSSL_dtls_cid_set(WOLFSSL* ssl, unsigned char* cid, unsigned int size)
         return WOLFSSL_FAILURE;
 
     if (cidInfo->rx != NULL) {
-        XFREE(cidInfo->rx, ssl->heap, DYNAMIC_TYPE_TLSX);
-        cidInfo->rx = NULL;
+        WOLFSSL_MSG("wolfSSL doesn't support changing the CID during a "
+                    "connection");
+        return WOLFSSL_FAILURE;
     }
 
     /* empty CID */
@@ -1372,6 +1396,11 @@ int wolfSSL_dtls_cid_get_rx(WOLFSSL* ssl, unsigned char* buf,
     return DtlsCidGet(ssl, buf, bufferSz, 1);
 }
 
+int wolfSSL_dtls_cid_get0_rx(WOLFSSL* ssl, unsigned char** cid)
+{
+    return DtlsCidGet0(ssl, cid, 1);
+}
+
 int wolfSSL_dtls_cid_get_tx_size(WOLFSSL* ssl, unsigned int* size)
 {
     return DtlsCidGetSize(ssl, size, 0);
@@ -1383,7 +1412,77 @@ int wolfSSL_dtls_cid_get_tx(WOLFSSL* ssl, unsigned char* buf,
     return DtlsCidGet(ssl, buf, bufferSz, 0);
 }
 
+int wolfSSL_dtls_cid_get0_tx(WOLFSSL* ssl, unsigned char** cid)
+{
+    return DtlsCidGet0(ssl, cid, 0);
+}
+
+int wolfSSL_dtls_cid_max_size(void)
+{
+    return DTLS_CID_MAX_SIZE;
+}
+
+const unsigned char* wolfSSL_dtls_cid_parse(const unsigned char* msg,
+        unsigned int msgSz, unsigned int cidSz)
+{
+    /* we need at least the first byte to check version */
+    if (msg == NULL || cidSz == 0 || msgSz < OPAQUE8_LEN + cidSz)
+        return NULL;
+    if (msg[0] == dtls12_cid) {
+        /* DTLS 1.2 CID packet */
+        if (msgSz < DTLS_RECORD_HEADER_SZ + cidSz)
+            return NULL;
+        /* content type(1) + version(2) + epoch(2) + sequence(6) */
+        return msg + ENUM_LEN + VERSION_SZ + OPAQUE16_LEN + OPAQUE16_LEN +
+                OPAQUE32_LEN;
+    }
+#ifdef WOLFSSL_DTLS13
+    else if (Dtls13UnifiedHeaderCIDPresent(msg[0])) {
+        /* DTLS 1.3 CID packet */
+        if (msgSz < OPAQUE8_LEN + cidSz)
+            return NULL;
+        return msg + OPAQUE8_LEN;
+    }
+#endif
+    return NULL;
+}
 #endif /* WOLFSSL_DTLS_CID */
+
+byte DtlsGetCidTxSize(WOLFSSL* ssl)
+{
+#ifdef WOLFSSL_DTLS_CID
+    unsigned int cidSz;
+    int ret;
+    ret = wolfSSL_dtls_cid_get_tx_size(ssl, &cidSz);
+    if (ret != WOLFSSL_SUCCESS)
+        return 0;
+    return (byte)cidSz;
+#else
+    (void)ssl;
+    return 0;
+#endif
+}
+
+byte DtlsGetCidRxSize(WOLFSSL* ssl)
+{
+#ifdef WOLFSSL_DTLS_CID
+    unsigned int cidSz;
+    int ret;
+    ret = wolfSSL_dtls_cid_get_rx_size(ssl, &cidSz);
+    if (ret != WOLFSSL_SUCCESS)
+        return 0;
+    return (byte)cidSz;
+#else
+    (void)ssl;
+    return 0;
+#endif
+}
+
+byte wolfSSL_is_stateful(WOLFSSL* ssl)
+{
+    return (byte)(ssl != NULL ? ssl->options.dtlsStateful : 0);
+}
+
 #endif /* WOLFSSL_DTLS */
 
 #endif /* WOLFCRYPT_ONLY */

@@ -1,6 +1,6 @@
 /* quic.c QUIC unit tests
  *
- * Copyright (C) 2006-2023 wolfSSL Inc.
+ * Copyright (C) 2006-2024 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -19,11 +19,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
-
 #ifdef HAVE_CONFIG_H
     #include <config.h>
 #endif
-
+#ifndef WOLFSSL_USER_SETTINGS
+    #include <wolfssl/options.h>
+#endif
 #include <wolfssl/wolfcrypt/settings.h>
 
 #include <tests/unit.h>
@@ -41,6 +42,11 @@
 #include <wolfssl/error-ssl.h>
 #include <wolfssl/internal.h>
 
+#if defined(WOLFSSL_SHA384) && defined(WOLFSSL_AES_256)
+    #define DEFAULT_TLS_DIGEST_SZ WC_SHA384_DIGEST_SIZE
+#else
+    #define DEFAULT_TLS_DIGEST_SZ WC_SHA256_DIGEST_SIZE
+#endif
 
 #define testingFmt "   %s:"
 #define resultFmt  " %s\n"
@@ -848,7 +854,7 @@ static void check_crypto_records(QuicTestContext *from, OutputBuffer *out, int i
                 rec_name = "Finished";
                 break;
             default:
-                sprintf(lbuffer, "%d", rec_type);
+                (void)XSNPRINTF(lbuffer, sizeof(lbuffer), "%d", rec_type);
                 rec_name = lbuffer;
                 break;
         }
@@ -944,7 +950,7 @@ static int QuicConversation_start(QuicConversation *conv, const byte *data,
     else {
         ret = wolfSSL_connect(conv->client->ssl);
         if (ret != WOLFSSL_SUCCESS) {
-            AssertIntEQ(wolfSSL_get_error(conv->client->ssl, 0), SSL_ERROR_WANT_READ);
+            AssertIntEQ(wolfSSL_get_error(conv->client->ssl, 0), WC_NO_ERR_TRACE(SSL_ERROR_WANT_READ));
         }
         if (pwritten) *pwritten = 0;
     }
@@ -959,9 +965,9 @@ static int QuicConversation_step(QuicConversation *conv, int may_fail)
     if (!conv->started) {
         n = wolfSSL_connect(conv->client->ssl);
         if (n != WOLFSSL_SUCCESS
-            && wolfSSL_get_error(conv->client->ssl, 0) != SSL_ERROR_WANT_READ) {
+            && wolfSSL_get_error(conv->client->ssl, 0) != WC_NO_ERR_TRACE(SSL_ERROR_WANT_READ)) {
             if (may_fail) return 0;
-            AssertIntEQ(SSL_ERROR_WANT_READ, wolfSSL_get_error(conv->client->ssl, 0));
+            AssertIntEQ(WC_NO_ERR_TRACE(SSL_ERROR_WANT_READ), wolfSSL_get_error(conv->client->ssl, 0));
         }
         conv->started = 1;
     }
@@ -969,9 +975,9 @@ static int QuicConversation_step(QuicConversation *conv, int may_fail)
         QuicTestContext_forward(conv->server, conv->client, conv->rec_log, sizeof(conv->rec_log));
         n = wolfSSL_quic_read_write(conv->client->ssl);
         if (n != WOLFSSL_SUCCESS
-            && wolfSSL_get_error(conv->client->ssl, 0) != SSL_ERROR_WANT_READ) {
+            && wolfSSL_get_error(conv->client->ssl, 0) != WC_NO_ERR_TRACE(SSL_ERROR_WANT_READ)) {
             if (may_fail) return 0;
-            AssertIntEQ(SSL_ERROR_WANT_READ, wolfSSL_get_error(conv->client->ssl, 0));
+            AssertIntEQ(WC_NO_ERR_TRACE(SSL_ERROR_WANT_READ), wolfSSL_get_error(conv->client->ssl, 0));
         }
         return 1;
     }
@@ -985,9 +991,9 @@ static int QuicConversation_step(QuicConversation *conv, int may_fail)
                                         (int)(sizeof(conv->early_data) - conv->early_data_len),
                                         &written);
             if (n < 0) {
-                if (wolfSSL_get_error(conv->server->ssl, 0) != SSL_ERROR_WANT_READ) {
+                if (wolfSSL_get_error(conv->server->ssl, 0) != WC_NO_ERR_TRACE(SSL_ERROR_WANT_READ)) {
                     if (may_fail) return 0;
-                    AssertIntEQ(wolfSSL_get_error(conv->server->ssl, 0), SSL_ERROR_WANT_READ);
+                    AssertIntEQ(wolfSSL_get_error(conv->server->ssl, 0), WC_NO_ERR_TRACE(SSL_ERROR_WANT_READ));
                 }
             }
             else if (n > 0) {
@@ -1001,9 +1007,9 @@ static int QuicConversation_step(QuicConversation *conv, int may_fail)
         {
             n = wolfSSL_quic_read_write(conv->server->ssl);
             if (n != WOLFSSL_SUCCESS
-                && wolfSSL_get_error(conv->server->ssl, 0) != SSL_ERROR_WANT_READ) {
+                && wolfSSL_get_error(conv->server->ssl, 0) != WC_NO_ERR_TRACE(SSL_ERROR_WANT_READ)) {
                 if (may_fail) return 0;
-                AssertIntEQ(wolfSSL_get_error(conv->server->ssl, 0), SSL_ERROR_WANT_READ);
+                AssertIntEQ(wolfSSL_get_error(conv->server->ssl, 0), WC_NO_ERR_TRACE(SSL_ERROR_WANT_READ));
             }
         }
         return 1;
@@ -1065,7 +1071,7 @@ static int test_quic_client_hello(int verbose) {
     /* Without any QUIC transport params, this needs to fail */
     AssertTrue(wolfSSL_set_quic_transport_params(tctx.ssl, NULL, 0) == WOLFSSL_SUCCESS);
     AssertTrue(wolfSSL_quic_read_write(tctx.ssl) != 0);
-    AssertIntEQ(wolfSSL_get_error(tctx.ssl, 0), QUIC_TP_MISSING_E);
+    AssertIntEQ(wolfSSL_get_error(tctx.ssl, 0), WC_NO_ERR_TRACE(QUIC_TP_MISSING_E));
     QuicTestContext_free(&tctx);
 
     /* Set transport params, expect both extensions */
@@ -1075,7 +1081,7 @@ static int test_quic_client_hello(int verbose) {
                    "wolfssl.com", sizeof("wolfssl.com")-1);
 #endif
     AssertTrue(wolfSSL_connect(tctx.ssl) != 0);
-    AssertIntEQ(wolfSSL_get_error(tctx.ssl, 0), SSL_ERROR_WANT_READ);
+    AssertIntEQ(wolfSSL_get_error(tctx.ssl, 0), WC_NO_ERR_TRACE(SSL_ERROR_WANT_READ));
     check_quic_client_hello_tp(&tctx.output, 1, 1);
     QuicTestContext_free(&tctx);
 
@@ -1126,13 +1132,16 @@ static int test_quic_server_hello(int verbose) {
     QuicConversation_step(&conv, 0);
     /* check established/missing secrets */
     check_secrets(&tserver, wolfssl_encryption_initial, 0, 0);
-    check_secrets(&tserver, wolfssl_encryption_handshake, 32, 32);
-    check_secrets(&tserver, wolfssl_encryption_application, 32, 32);
+    check_secrets(&tserver, wolfssl_encryption_handshake,
+        DEFAULT_TLS_DIGEST_SZ, DEFAULT_TLS_DIGEST_SZ);
+    check_secrets(&tserver, wolfssl_encryption_application,
+        DEFAULT_TLS_DIGEST_SZ, DEFAULT_TLS_DIGEST_SZ);
     check_secrets(&tclient, wolfssl_encryption_handshake, 0, 0);
     /* feed the server data to the client */
     QuicConversation_step(&conv, 0);
     /* client has generated handshake secret */
-    check_secrets(&tclient, wolfssl_encryption_handshake, 32, 32);
+    check_secrets(&tclient, wolfssl_encryption_handshake,
+        DEFAULT_TLS_DIGEST_SZ, DEFAULT_TLS_DIGEST_SZ);
     /* continue the handshake till done */
     conv.started = 1;
     /* run till end */
@@ -1155,8 +1164,10 @@ static int test_quic_server_hello(int verbose) {
     /* the last client write (FINISHED) was at handshake level */
     AssertTrue(tclient.output.level == wolfssl_encryption_handshake);
     /* we have the app secrets */
-    check_secrets(&tclient, wolfssl_encryption_application, 32, 32);
-    check_secrets(&tserver, wolfssl_encryption_application, 32, 32);
+    check_secrets(&tclient, wolfssl_encryption_application,
+        DEFAULT_TLS_DIGEST_SZ, DEFAULT_TLS_DIGEST_SZ);
+    check_secrets(&tserver, wolfssl_encryption_application,
+        DEFAULT_TLS_DIGEST_SZ, DEFAULT_TLS_DIGEST_SZ);
     /* verify client and server have the same secrets established */
     assert_secrets_EQ(&tclient, &tserver, wolfssl_encryption_handshake);
     assert_secrets_EQ(&tclient, &tserver, wolfssl_encryption_application);
@@ -1339,8 +1350,8 @@ static int test_quic_key_share(int verbose) {
                == WOLFSSL_SUCCESS);
     QuicConversation_init(&conv, &tclient, &tserver);
     QuicConversation_fail(&conv);
-    AssertIntEQ(wolfSSL_get_error(tserver.ssl, 0), SSL_ERROR_WANT_READ);
-    AssertIntEQ(wolfSSL_get_error(tclient.ssl, 0), BAD_KEY_SHARE_DATA);
+    AssertIntEQ(wolfSSL_get_error(tserver.ssl, 0), WC_NO_ERR_TRACE(SSL_ERROR_WANT_READ));
+    AssertIntEQ(wolfSSL_get_error(tclient.ssl, 0), WC_NO_ERR_TRACE(BAD_KEY_SHARE_DATA));
     QuicTestContext_free(&tclient);
     QuicTestContext_free(&tserver);
     printf("    test_quic_key_share: no match ok\n");

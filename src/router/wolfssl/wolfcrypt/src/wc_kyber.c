@@ -47,14 +47,15 @@
 /******************************************************************************/
 
 /* Use SHA3-256 to generate 32-bytes of hash. */
-#define KYBER_HASH_H            wc_Sha3_256Hash
+#define KYBER_HASH_H            kyber_hash256
 /* Use SHA3-512 to generate 64-bytes of hash. */
-#define KYBER_HASH_G            wc_Sha3_512Hash
+#define KYBER_HASH_G            kyber_hash512
 /* Use SHAKE-256 as a key derivation function (KDF). */
-#ifdef USE_INTEL_SPEEDUP
-#define KYBER_KDF               kyber_kdf
+#if defined(USE_INTEL_SPEEDUP) || \
+        (defined(WOLFSSL_ARMASM) && defined(__aarch64__))
+    #define KYBER_KDF               kyber_kdf
 #else
-#define KYBER_KDF               wc_Shake256Hash
+    #define KYBER_KDF               wc_Shake256Hash
 #endif
 
 /******************************************************************************/
@@ -67,7 +68,9 @@ volatile sword16 kyber_opt_blocker = 0;
 /**
  * Initialize the Kyber key.
  *
- * @param  [in]   type   Type of key: KYBER512, KYBER768, KYBER1024.
+ * @param  [in]   type   Type of key:
+ *                         WC_ML_KEM_512, WC_ML_KEM_768, WC_ML_KEM_1024,
+ *                         KYBER512, KYBER768, KYBER1024.
  * @param  [out]  key    Kyber key object to initialize.
  * @param  [in]   heap   Dynamic memory hint.
  * @param  [in]   devId  Device Id.
@@ -86,6 +89,27 @@ int wc_KyberKey_Init(int type, KyberKey* key, void* heap, int devId)
     if (ret == 0) {
         /* Validate type. */
         switch (type) {
+    #ifndef WOLFSSL_NO_ML_KEM
+        case WC_ML_KEM_512:
+        #ifndef WOLFSSL_WC_ML_KEM_512
+            /* Code not compiled in for Kyber-512. */
+            ret = NOT_COMPILED_IN;
+        #endif
+            break;
+        case WC_ML_KEM_768:
+        #ifndef WOLFSSL_WC_ML_KEM_768
+            /* Code not compiled in for Kyber-768. */
+            ret = NOT_COMPILED_IN;
+        #endif
+            break;
+        case WC_ML_KEM_1024:
+        #ifndef WOLFSSL_WC_ML_KEM_1024
+            /* Code not compiled in for Kyber-1024. */
+            ret = NOT_COMPILED_IN;
+        #endif
+            break;
+    #endif
+    #ifdef WOLFSSL_KYBER_ORIGINAL
         case KYBER512:
         #ifndef WOLFSSL_KYBER512
             /* Code not compiled in for Kyber-512. */
@@ -104,6 +128,7 @@ int wc_KyberKey_Init(int type, KyberKey* key, void* heap, int devId)
             ret = NOT_COMPILED_IN;
         #endif
             break;
+    #endif
         default:
             /* No other values supported. */
             ret = BAD_FUNC_ARG;
@@ -123,6 +148,10 @@ int wc_KyberKey_Init(int type, KyberKey* key, void* heap, int devId)
         key->devId = devId;
     #endif
 
+        /* Initialize the hash algorithm object. */
+        ret = kyber_hash_new(&key->hash, heap, devId);
+    }
+    if (ret == 0) {
         /* Initialize the PRF algorithm object. */
         ret = kyber_prf_new(&key->prf, heap, devId);
     }
@@ -145,6 +174,8 @@ void wc_KyberKey_Free(KyberKey* key)
     if (key != NULL) {
         /* Dispose of PRF object. */
         kyber_prf_free(&key->prf);
+        /* Dispose of hash object. */
+        kyber_hash_free(&key->hash);
         /* Ensure all private data is zeroed. */
         ForceZero(key, sizeof(*key));
     }
@@ -223,6 +254,24 @@ int wc_KyberKey_MakeKeyWithRandom(KyberKey* key, const unsigned char* rand,
     if (ret == 0) {
         /* Establish parameters based on key type. */
         switch (key->type) {
+#ifndef WOLFSSL_NO_ML_KEM
+    #ifdef WOLFSSL_WC_ML_KEM_512
+        case WC_ML_KEM_512:
+            kp = WC_ML_KEM_512_K;
+            break;
+    #endif
+    #ifdef WOLFSSL_WC_ML_KEM_768
+        case WC_ML_KEM_768:
+            kp = WC_ML_KEM_768_K;
+            break;
+    #endif
+    #ifdef WOLFSSL_WC_ML_KEM_1024
+        case WC_ML_KEM_1024:
+            kp = WC_ML_KEM_1024_K;
+            break;
+    #endif
+#endif
+#ifdef WOLFSSL_KYBER_ORIGINAL
     #ifdef WOLFSSL_KYBER512
         case KYBER512:
             kp = KYBER512_K;
@@ -238,6 +287,7 @@ int wc_KyberKey_MakeKeyWithRandom(KyberKey* key, const unsigned char* rand,
             kp = KYBER1024_K;
             break;
     #endif
+#endif
         default:
             /* No other values supported. */
             ret = NOT_COMPILED_IN;
@@ -254,18 +304,39 @@ int wc_KyberKey_MakeKeyWithRandom(KyberKey* key, const unsigned char* rand,
         }
     }
     if (ret == 0) {
+        const byte* d = rand;
+
         /* Error vector allocated at end of a. */
         e = a + (kp * kp * KYBER_N);
 
-        /* Expand 16 bytes of random to 32. */
-        ret = KYBER_HASH_G(rand, KYBER_SYM_SZ, buf);
+#if defined(WOLFSSL_KYBER_ORIGINAL) && !defined(WOLFSSL_NO_ML_KEM)
+        if (key->type & KYBER_ORIGINAL)
+#endif
+#ifdef WOLFSSL_KYBER_ORIGINAL
+        {
+            /* Expand 32 bytes of random to 32. */
+            ret = KYBER_HASH_G(&key->hash, d, KYBER_SYM_SZ, NULL, 0, buf);
+        }
+#endif
+#if defined(WOLFSSL_KYBER_ORIGINAL) && !defined(WOLFSSL_NO_ML_KEM)
+        else
+#endif
+#ifndef WOLFSSL_NO_ML_KEM
+        {
+            buf[0] = kp;
+            /* Expand 33 bytes of random to 32. */
+            ret = KYBER_HASH_G(&key->hash, d, KYBER_SYM_SZ, buf, 1, buf);
+        }
+#endif
     }
     if (ret == 0) {
+        const byte* z = rand + KYBER_SYM_SZ;
+
         /* Cache the public seed for use in encapsulation and encoding public
          * key. */
         XMEMCPY(key->pubSeed, pubSeed, KYBER_SYM_SZ);
         /* Cache the z value for decapsulation and encoding private key. */
-        XMEMCPY(key->z, rand + KYBER_SYM_SZ, sizeof(key->z));
+        XMEMCPY(key->z, z, sizeof(key->z));
 
         /* Generate the matrix A. */
         ret = kyber_gen_matrix(&key->prf, a, kp, pubSeed, 0);
@@ -286,7 +357,9 @@ int wc_KyberKey_MakeKeyWithRandom(KyberKey* key, const unsigned char* rand,
     }
 
     /* Free dynamic memory allocated in function. */
-    XFREE(a, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
+    if (key != NULL) {
+        XFREE(a, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
+    }
 
     return ret;
 }
@@ -314,6 +387,24 @@ int wc_KyberKey_CipherTextSize(KyberKey* key, word32* len)
     if (ret == 0) {
         /* Return in 'len' size of the cipher text for the type of this key. */
         switch (key->type) {
+#ifndef WOLFSSL_NO_ML_KEM
+    #ifdef WOLFSSL_WC_ML_KEM_512
+        case WC_ML_KEM_512:
+            *len = WC_ML_KEM_512_CIPHER_TEXT_SIZE;
+            break;
+    #endif
+    #ifdef WOLFSSL_WC_ML_KEM_768
+        case WC_ML_KEM_768:
+            *len = WC_ML_KEM_768_CIPHER_TEXT_SIZE;
+            break;
+    #endif
+    #ifdef WOLFSSL_WC_ML_KEM_1024
+        case WC_ML_KEM_1024:
+            *len = WC_ML_KEM_1024_CIPHER_TEXT_SIZE;
+            break;
+    #endif
+#endif
+#ifdef WOLFSSL_KYBER_ORIGINAL
     #ifdef WOLFSSL_KYBER512
         case KYBER512:
             *len = KYBER512_CIPHER_TEXT_SIZE;
@@ -329,6 +420,7 @@ int wc_KyberKey_CipherTextSize(KyberKey* key, word32* len)
             *len = KYBER1024_CIPHER_TEXT_SIZE;
             break;
     #endif
+#endif
         default:
             /* No other values supported. */
             ret = NOT_COMPILED_IN;
@@ -375,14 +467,31 @@ static int kyberkey_encapsulate(KyberKey* key, const byte* msg, byte* coins,
     sword16* epp = NULL;
     unsigned int kp = 0;
     unsigned int compVecSz = 0;
-#ifndef USE_INTEL_SPEEDUP
     sword16* at = NULL;
-#else
-    sword16 at[((KYBER_MAX_K + 3) * KYBER_MAX_K + 3) * KYBER_N];
-#endif
 
     /* Establish parameters based on key type. */
     switch (key->type) {
+#ifndef WOLFSSL_NO_ML_KEM
+#ifdef WOLFSSL_WC_ML_KEM_512
+    case WC_ML_KEM_512:
+        kp = WC_ML_KEM_512_K;
+        compVecSz = WC_ML_KEM_512_POLY_VEC_COMPRESSED_SZ;
+        break;
+#endif
+#ifdef WOLFSSL_WC_ML_KEM_768
+    case WC_ML_KEM_768:
+        kp = WC_ML_KEM_768_K;
+        compVecSz = WC_ML_KEM_768_POLY_VEC_COMPRESSED_SZ;
+        break;
+#endif
+#ifdef WOLFSSL_WC_ML_KEM_1024
+    case WC_ML_KEM_1024:
+        kp = WC_ML_KEM_1024_K;
+        compVecSz = WC_ML_KEM_1024_POLY_VEC_COMPRESSED_SZ;
+        break;
+#endif
+#endif
+#ifdef WOLFSSL_KYBER_ORIGINAL
 #ifdef WOLFSSL_KYBER512
     case KYBER512:
         kp = KYBER512_K;
@@ -401,13 +510,13 @@ static int kyberkey_encapsulate(KyberKey* key, const byte* msg, byte* coins,
         compVecSz = KYBER1024_POLY_VEC_COMPRESSED_SZ;
         break;
 #endif
+#endif
     default:
         /* No other values supported. */
         ret = NOT_COMPILED_IN;
         break;
     }
 
-#ifndef USE_INTEL_SPEEDUP
     if (ret == 0) {
         /* Allocate dynamic memory for all matrices, vectors and polynomials. */
         at = (sword16*)XMALLOC(((kp + 3) * kp + 3) * KYBER_N * sizeof(sword16),
@@ -416,7 +525,6 @@ static int kyberkey_encapsulate(KyberKey* key, const byte* msg, byte* coins,
             ret = MEMORY_E;
         }
     }
-#endif
 
     if (ret == 0) {
         /* Assign allocated dynamic memory to pointers.
@@ -450,19 +558,19 @@ static int kyberkey_encapsulate(KyberKey* key, const byte* msg, byte* coins,
         /* Perform encapsulation maths. */
         kyber_encapsulate(key->pub, bp, v, at, sp, ep, epp, k, kp);
 
-    #ifdef WOLFSSL_KYBER512
+    #if defined(WOLFSSL_KYBER512) || defined(WOLFSSL_WC_ML_KEM_512)
         if (kp == KYBER512_K) {
             kyber_vec_compress_10(ct, bp, kp);
             kyber_compress_4(ct + compVecSz, v);
         }
     #endif
-    #ifdef WOLFSSL_KYBER768
+    #if defined(WOLFSSL_KYBER768) || defined(WOLFSSL_WC_ML_KEM_768)
         if (kp == KYBER768_K) {
             kyber_vec_compress_10(ct, bp, kp);
             kyber_compress_4(ct + compVecSz, v);
         }
     #endif
-    #ifdef WOLFSSL_KYBER1024
+    #if defined(WOLFSSL_KYBER1024) || defined(WOLFSSL_WC_ML_KEM_1024)
         if (kp == KYBER1024_K) {
             kyber_vec_compress_11(ct, bp);
             kyber_compress_5(ct + compVecSz, v);
@@ -470,10 +578,8 @@ static int kyberkey_encapsulate(KyberKey* key, const byte* msg, byte* coins,
     #endif
     }
 
-#ifndef USE_INTEL_SPEEDUP
     /* Dispose of dynamic memory allocated in function. */
     XFREE(at, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
-#endif
 
     return ret;
 }
@@ -530,10 +636,12 @@ int wc_KyberKey_Encapsulate(KyberKey* key, unsigned char* ct, unsigned char* ss,
 int wc_KyberKey_EncapsulateWithRandom(KyberKey* key, unsigned char* ct,
     unsigned char* ss, const unsigned char* rand, int len)
 {
-    byte msg[2 * KYBER_SYM_SZ];
+#ifdef WOLFSSL_KYBER_ORIGINAL
+    byte msg[KYBER_SYM_SZ];
+#endif
     byte kr[2 * KYBER_SYM_SZ + 1];
     int ret = 0;
-#ifndef WOLFSSL_ML_KEM
+#ifdef WOLFSSL_KYBER_ORIGINAL
     unsigned int ctSz = 0;
 #endif
 
@@ -545,10 +653,22 @@ int wc_KyberKey_EncapsulateWithRandom(KyberKey* key, unsigned char* ct,
         ret = BUFFER_E;
     }
 
-#ifndef WOLFSSL_ML_KEM
+#ifdef WOLFSSL_KYBER_ORIGINAL
     if (ret == 0) {
         /* Establish parameters based on key type. */
         switch (key->type) {
+#ifndef WOLFSSL_NO_ML_KEM
+    #ifdef WOLFSSL_WC_ML_KEM_512
+        case WC_ML_KEM_512:
+    #endif
+    #ifdef WOLFSSL_WC_ML_KEM_768
+        case WC_ML_KEM_768:
+    #endif
+    #ifdef WOLFSSL_WC_ML_KEM_1024
+        case WC_ML_KEM_1024:
+    #endif
+            break;
+#endif
     #ifdef WOLFSSL_KYBER512
         case KYBER512:
             ctSz = KYBER512_CIPHER_TEXT_SIZE;
@@ -599,39 +719,82 @@ int wc_KyberKey_EncapsulateWithRandom(KyberKey* key, unsigned char* ct,
         ret = BAD_STATE_E;
     }
 
+#ifdef WOLFSSL_KYBER_ORIGINAL
     if (ret == 0) {
-#ifndef WOLFSSL_ML_KEM
-        /* Hash random to anonymize as seed data. */
-        ret = KYBER_HASH_H(rand, KYBER_SYM_SZ, msg);
-#else
-        XMEMCPY(msg, rand, KYBER_SYM_SZ);
+#ifndef WOLFSSL_NO_ML_KEM
+        if (key->type & KYBER_ORIGINAL)
 #endif
+        {
+            /* Hash random to anonymize as seed data. */
+            ret = KYBER_HASH_H(&key->hash, rand, KYBER_SYM_SZ, msg);
+        }
     }
+#endif
     if (ret == 0) {
-        /* Copy the hash of the public key into msg. */
-        XMEMCPY(msg + KYBER_SYM_SZ, key->h, KYBER_SYM_SZ);
-
         /* Hash message into seed buffer. */
-        ret = KYBER_HASH_G(msg, 2 * KYBER_SYM_SZ, kr);
+#if defined(WOLFSSL_KYBER_ORIGINAL) && !defined(WOLFSSL_NO_ML_KEM)
+        if (key->type & KYBER_ORIGINAL)
+#endif
+#ifdef WOLFSSL_KYBER_ORIGINAL
+        {
+            ret = KYBER_HASH_G(&key->hash, msg, KYBER_SYM_SZ, key->h,
+                KYBER_SYM_SZ, kr);
+        }
+#endif
+#if defined(WOLFSSL_KYBER_ORIGINAL) && !defined(WOLFSSL_NO_ML_KEM)
+        else
+#endif
+#ifndef WOLFSSL_NO_ML_KEM
+        {
+            ret = KYBER_HASH_G(&key->hash, rand, KYBER_SYM_SZ, key->h,
+                KYBER_SYM_SZ, kr);
+        }
+#endif
     }
 
     if (ret == 0) {
         /* Encapsulate the message using the key and the seed (coins). */
-        ret = kyberkey_encapsulate(key, msg, kr + KYBER_SYM_SZ, ct);
+#if defined(WOLFSSL_KYBER_ORIGINAL) && !defined(WOLFSSL_NO_ML_KEM)
+        if (key->type & KYBER_ORIGINAL)
+#endif
+#ifdef WOLFSSL_KYBER_ORIGINAL
+        {
+            ret = kyberkey_encapsulate(key, msg, kr + KYBER_SYM_SZ, ct);
+        }
+#endif
+#if defined(WOLFSSL_KYBER_ORIGINAL) && !defined(WOLFSSL_NO_ML_KEM)
+        else
+#endif
+#ifndef WOLFSSL_NO_ML_KEM
+        {
+            ret = kyberkey_encapsulate(key, rand, kr + KYBER_SYM_SZ, ct);
+        }
+#endif
     }
 
-#ifndef WOLFSSL_ML_KEM
-    if (ret == 0) {
-        /* Hash the cipher text after the seed. */
-        ret = KYBER_HASH_H(ct, ctSz, kr + KYBER_SYM_SZ);
+#if defined(WOLFSSL_KYBER_ORIGINAL) && !defined(WOLFSSL_NO_ML_KEM)
+    if (key->type & KYBER_ORIGINAL)
+#endif
+#ifdef WOLFSSL_KYBER_ORIGINAL
+    {
+        if (ret == 0) {
+            /* Hash the cipher text after the seed. */
+            ret = KYBER_HASH_H(&key->hash, ct, ctSz, kr + KYBER_SYM_SZ);
+        }
+        if (ret == 0) {
+            /* Derive the secret from the seed and hash of cipher text. */
+            ret = KYBER_KDF(kr, 2 * KYBER_SYM_SZ, ss, KYBER_SS_SZ);
+        }
     }
-    if (ret == 0) {
-        /* Derive the secret from the seed and hash of cipher text. */
-        ret = KYBER_KDF(kr, 2 * KYBER_SYM_SZ, ss, KYBER_SS_SZ);
-    }
-#else
-    if (ret == 0) {
-        XMEMCPY(ss, kr, KYBER_SS_SZ);
+#endif
+#if defined(WOLFSSL_KYBER_ORIGINAL) && !defined(WOLFSSL_NO_ML_KEM)
+    else
+#endif
+#ifndef WOLFSSL_NO_ML_KEM
+    {
+        if (ret == 0) {
+            XMEMCPY(ss, kr, KYBER_SS_SZ);
+        }
     }
 #endif
 
@@ -665,6 +828,27 @@ static KYBER_NOINLINE int kyberkey_decapsulate(KyberKey* key,
 
     /* Establish parameters based on key type. */
     switch (key->type) {
+#ifndef WOLFSSL_NO_ML_KEM
+#ifdef WOLFSSL_WC_ML_KEM_512
+    case WC_ML_KEM_512:
+        kp = WC_ML_KEM_512_K;
+        compVecSz = WC_ML_KEM_512_POLY_VEC_COMPRESSED_SZ;
+        break;
+#endif
+#ifdef WOLFSSL_WC_ML_KEM_768
+    case WC_ML_KEM_768:
+        kp = WC_ML_KEM_768_K;
+        compVecSz = WC_ML_KEM_768_POLY_VEC_COMPRESSED_SZ;
+        break;
+#endif
+#ifdef WOLFSSL_WC_ML_KEM_1024
+    case WC_ML_KEM_1024:
+        kp = WC_ML_KEM_1024_K;
+        compVecSz = WC_ML_KEM_1024_POLY_VEC_COMPRESSED_SZ;
+        break;
+#endif
+#endif
+#ifdef WOLFSSL_KYBER_ORIGINAL
 #ifdef WOLFSSL_KYBER512
     case KYBER512:
         kp = KYBER512_K;
@@ -682,6 +866,7 @@ static KYBER_NOINLINE int kyberkey_decapsulate(KyberKey* key,
         kp = KYBER1024_K;
         compVecSz = KYBER1024_POLY_VEC_COMPRESSED_SZ;
         break;
+#endif
 #endif
     default:
         /* No other values supported. */
@@ -705,19 +890,19 @@ static KYBER_NOINLINE int kyberkey_decapsulate(KyberKey* key,
         v = bp + kp * KYBER_N;
         mp = v + KYBER_N;
 
-    #ifdef WOLFSSL_KYBER512
+    #if defined(WOLFSSL_KYBER512) || defined(WOLFSSL_WC_ML_KEM_512)
         if (kp == KYBER512_K) {
             kyber_vec_decompress_10(bp, ct, kp);
             kyber_decompress_4(v, ct + compVecSz);
         }
     #endif
-    #ifdef WOLFSSL_KYBER768
+    #if defined(WOLFSSL_KYBER768) || defined(WOLFSSL_WC_ML_KEM_768)
         if (kp == KYBER768_K) {
             kyber_vec_decompress_10(bp, ct, kp);
             kyber_decompress_4(v, ct + compVecSz);
         }
     #endif
-    #ifdef WOLFSSL_KYBER1024
+    #if defined(WOLFSSL_KYBER1024) || defined(WOLFSSL_WC_ML_KEM_1024)
         if (kp == KYBER1024_K) {
             kyber_vec_decompress_11(bp, ct);
             kyber_decompress_5(v, ct + compVecSz);
@@ -739,7 +924,7 @@ static KYBER_NOINLINE int kyberkey_decapsulate(KyberKey* key,
     return ret;
 }
 
-#ifdef WOLFSSL_ML_KEM
+#ifndef WOLFSSL_NO_ML_KEM
 /* Derive the secret from z and cipher text.
  *
  * @param [in]  z     Implicit rejection value.
@@ -790,7 +975,7 @@ static int kyber_derive_secret(const byte* z, const byte* ct, word32 ctSz,
 int wc_KyberKey_Decapsulate(KyberKey* key, unsigned char* ss,
     const unsigned char* ct, word32 len)
 {
-    byte msg[2 * KYBER_SYM_SZ];
+    byte msg[KYBER_SYM_SZ];
     byte kr[2 * KYBER_SYM_SZ + 1];
     int ret = 0;
     unsigned int ctSz = 0;
@@ -810,6 +995,24 @@ int wc_KyberKey_Decapsulate(KyberKey* key, unsigned char* ss,
     if (ret == 0) {
         /* Establish cipher text size based on key type. */
         switch (key->type) {
+#ifndef WOLFSSL_NO_ML_KEM
+    #ifdef WOLFSSL_WC_ML_KEM_512
+        case WC_ML_KEM_512:
+            ctSz = WC_ML_KEM_512_CIPHER_TEXT_SIZE;
+            break;
+    #endif
+    #ifdef WOLFSSL_WC_ML_KEM_768
+        case WC_ML_KEM_768:
+            ctSz = WC_ML_KEM_768_CIPHER_TEXT_SIZE;
+            break;
+    #endif
+    #ifdef WOLFSSL_WC_ML_KEM_1024
+        case WC_ML_KEM_1024:
+            ctSz = WC_ML_KEM_1024_CIPHER_TEXT_SIZE;
+            break;
+    #endif
+#endif
+#ifdef WOLFSSL_KYBER_ORIGINAL
     #ifdef WOLFSSL_KYBER512
         case KYBER512:
             ctSz = KYBER512_CIPHER_TEXT_SIZE;
@@ -825,6 +1028,7 @@ int wc_KyberKey_Decapsulate(KyberKey* key, unsigned char* ss,
             ctSz = KYBER1024_CIPHER_TEXT_SIZE;
             break;
     #endif
+#endif
         default:
             /* No other values supported. */
             ret = NOT_COMPILED_IN;
@@ -852,10 +1056,9 @@ int wc_KyberKey_Decapsulate(KyberKey* key, unsigned char* ss,
         ret = kyberkey_decapsulate(key, msg, ct);
     }
     if (ret == 0) {
-        /* Copy public hash over after the seed. */
-        XMEMCPY(msg + KYBER_SYM_SZ, key->h, KYBER_SYM_SZ);
         /* Hash message into seed buffer. */
-        ret = KYBER_HASH_G(msg, 2 * KYBER_SYM_SZ, kr);
+        ret = KYBER_HASH_G(&key->hash, msg, KYBER_SYM_SZ, key->h, KYBER_SYM_SZ,
+            kr);
     }
     if (ret == 0) {
         /* Encapsulate the message. */
@@ -865,32 +1068,45 @@ int wc_KyberKey_Decapsulate(KyberKey* key, unsigned char* ss,
         /* Compare generated cipher text with that passed in. */
         fail = kyber_cmp(ct, cmp, ctSz);
 
-#ifndef WOLFSSL_ML_KEM
-        /* Hash the cipher text after the seed. */
-        ret = KYBER_HASH_H(ct, ctSz, kr + KYBER_SYM_SZ);
-    }
-    if (ret == 0) {
-        /* Change seed to z on comparison failure. */
-        for (i = 0; i < KYBER_SYM_SZ; i++) {
-            kr[i] ^= (kr[i] ^ key->z[i]) & fail;
-        }
+#if defined(WOLFSSL_KYBER_ORIGINAL) && !defined(WOLFSSL_NO_ML_KEM)
+        if (key->type & KYBER_ORIGINAL)
+#endif
+#ifdef WOLFSSL_KYBER_ORIGINAL
+        {
+            /* Hash the cipher text after the seed. */
+            ret = KYBER_HASH_H(&key->hash, ct, ctSz, kr + KYBER_SYM_SZ);
+            if (ret == 0) {
+                /* Change seed to z on comparison failure. */
+                for (i = 0; i < KYBER_SYM_SZ; i++) {
+                    kr[i] ^= (kr[i] ^ key->z[i]) & fail;
+                }
 
-        /* Derive the secret from the seed and hash of cipher text. */
-        ret = KYBER_KDF(kr, 2 * KYBER_SYM_SZ, ss, KYBER_SS_SZ);
-#else
-        ret = kyber_derive_secret(key->z, ct, ctSz, msg);
-     }
-     if (ret == 0) {
-        /* Change seed to z on comparison failure. */
-        for (i = 0; i < KYBER_SYM_SZ; i++) {
-            ss[i] = kr[i] ^ ((kr[i] ^ msg[i]) & fail);
+                /* Derive the secret from the seed and hash of cipher text. */
+                ret = KYBER_KDF(kr, 2 * KYBER_SYM_SZ, ss, KYBER_SS_SZ);
+            }
+        }
+#endif
+#if defined(WOLFSSL_KYBER_ORIGINAL) && !defined(WOLFSSL_NO_ML_KEM)
+        else
+#endif
+#ifndef WOLFSSL_NO_ML_KEM
+        {
+            ret = kyber_derive_secret(key->z, ct, ctSz, msg);
+            if (ret == 0) {
+               /* Change seed to z on comparison failure. */
+               for (i = 0; i < KYBER_SYM_SZ; i++) {
+                   ss[i] = kr[i] ^ ((kr[i] ^ msg[i]) & fail);
+               }
+            }
         }
 #endif
     }
 
 #ifndef USE_INTEL_SPEEDUP
     /* Dispose of dynamic memory allocated in function. */
-    XFREE(cmp, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
+    if (key != NULL) {
+        XFREE(cmp, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
+    }
 #endif
 
     return ret;
@@ -928,6 +1144,30 @@ int wc_KyberKey_DecodePrivateKey(KyberKey* key, const unsigned char* in,
     if (ret == 0) {
         /* Establish parameters based on key type. */
         switch (key->type) {
+#ifndef WOLFSSL_NO_ML_KEM
+    #ifdef WOLFSSL_WC_ML_KEM_512
+        case WC_ML_KEM_512:
+            k = WC_ML_KEM_512_K;
+            privLen = WC_ML_KEM_512_PRIVATE_KEY_SIZE;
+            pubLen = WC_ML_KEM_512_PUBLIC_KEY_SIZE;
+            break;
+    #endif
+    #ifdef WOLFSSL_WC_ML_KEM_768
+        case WC_ML_KEM_768:
+            k = WC_ML_KEM_768_K;
+            privLen = WC_ML_KEM_768_PRIVATE_KEY_SIZE;
+            pubLen = WC_ML_KEM_768_PUBLIC_KEY_SIZE;
+            break;
+    #endif
+    #ifdef WOLFSSL_WC_ML_KEM_1024
+        case WC_ML_KEM_1024:
+            k = WC_ML_KEM_1024_K;
+            privLen = WC_ML_KEM_1024_PRIVATE_KEY_SIZE;
+            pubLen = WC_ML_KEM_1024_PUBLIC_KEY_SIZE;
+            break;
+    #endif
+#endif
+#ifdef WOLFSSL_KYBER_ORIGINAL
     #ifdef WOLFSSL_KYBER512
         case KYBER512:
             k = KYBER512_K;
@@ -949,6 +1189,7 @@ int wc_KyberKey_DecodePrivateKey(KyberKey* key, const unsigned char* in,
             pubLen = KYBER1024_PUBLIC_KEY_SIZE;
             break;
     #endif
+#endif
         default:
             /* No other values supported. */
             ret = NOT_COMPILED_IN;
@@ -1011,6 +1252,27 @@ int wc_KyberKey_DecodePublicKey(KyberKey* key, const unsigned char* in,
     if (ret == 0) {
         /* Establish parameters based on key type. */
         switch (key->type) {
+#ifndef WOLFSSL_NO_ML_KEM
+    #ifdef WOLFSSL_WC_ML_KEM_512
+        case WC_ML_KEM_512:
+            k = WC_ML_KEM_512_K;
+            pubLen = WC_ML_KEM_512_PUBLIC_KEY_SIZE;
+            break;
+    #endif
+    #ifdef WOLFSSL_WC_ML_KEM_768
+        case WC_ML_KEM_768:
+            k = WC_ML_KEM_768_K;
+            pubLen = WC_ML_KEM_768_PUBLIC_KEY_SIZE;
+            break;
+    #endif
+    #ifdef WOLFSSL_WC_ML_KEM_1024
+        case WC_ML_KEM_1024:
+            k = WC_ML_KEM_1024_K;
+            pubLen = WC_ML_KEM_1024_PUBLIC_KEY_SIZE;
+            break;
+    #endif
+#endif
+#ifdef WOLFSSL_KYBER_ORIGINAL
     #ifdef WOLFSSL_KYBER512
         case KYBER512:
             k = KYBER512_K;
@@ -1029,6 +1291,7 @@ int wc_KyberKey_DecodePublicKey(KyberKey* key, const unsigned char* in,
             pubLen = KYBER1024_PUBLIC_KEY_SIZE;
             break;
     #endif
+#endif
         default:
             /* No other values supported. */
             ret = NOT_COMPILED_IN;
@@ -1052,7 +1315,7 @@ int wc_KyberKey_DecodePublicKey(KyberKey* key, const unsigned char* in,
             key->pubSeed[i] = p[i];
         }
         /* Calculate public hash. */
-        ret = KYBER_HASH_H(in, len, key->h);
+        ret = KYBER_HASH_H(&key->hash, in, len, key->h);
     }
     if (ret == 0) {
         /* Record public key and public hash set. */
@@ -1084,6 +1347,24 @@ int wc_KyberKey_PrivateKeySize(KyberKey* key, word32* len)
         /* Return in 'len' size of the encoded private key for the type of this
          * key. */
         switch (key->type) {
+#ifndef WOLFSSL_NO_ML_KEM
+    #ifdef WOLFSSL_WC_ML_KEM_512
+        case WC_ML_KEM_512:
+            *len = WC_ML_KEM_512_PRIVATE_KEY_SIZE;
+            break;
+    #endif
+    #ifdef WOLFSSL_WC_ML_KEM_768
+        case WC_ML_KEM_768:
+            *len = WC_ML_KEM_768_PRIVATE_KEY_SIZE;
+            break;
+    #endif
+    #ifdef WOLFSSL_WC_ML_KEM_1024
+        case WC_ML_KEM_1024:
+            *len = WC_ML_KEM_1024_PRIVATE_KEY_SIZE;
+            break;
+    #endif
+#endif
+#ifdef WOLFSSL_KYBER_ORIGINAL
     #ifdef WOLFSSL_KYBER512
         case KYBER512:
             *len = KYBER512_PRIVATE_KEY_SIZE;
@@ -1099,6 +1380,7 @@ int wc_KyberKey_PrivateKeySize(KyberKey* key, word32* len)
             *len = KYBER1024_PRIVATE_KEY_SIZE;
             break;
     #endif
+#endif
         default:
             /* No other values supported. */
             ret = NOT_COMPILED_IN;
@@ -1131,6 +1413,24 @@ int wc_KyberKey_PublicKeySize(KyberKey* key, word32* len)
         /* Return in 'len' size of the encoded public key for the type of this
          * key. */
         switch (key->type) {
+#ifndef WOLFSSL_NO_ML_KEM
+    #ifdef WOLFSSL_WC_ML_KEM_512
+        case WC_ML_KEM_512:
+            *len = WC_ML_KEM_512_PUBLIC_KEY_SIZE;
+            break;
+    #endif
+    #ifdef WOLFSSL_WC_ML_KEM_768
+        case WC_ML_KEM_768:
+            *len = WC_ML_KEM_768_PUBLIC_KEY_SIZE;
+            break;
+    #endif
+    #ifdef WOLFSSL_WC_ML_KEM_1024
+        case WC_ML_KEM_1024:
+            *len = WC_ML_KEM_1024_PUBLIC_KEY_SIZE;
+            break;
+    #endif
+#endif
+#ifdef WOLFSSL_KYBER_ORIGINAL
     #ifdef WOLFSSL_KYBER512
         case KYBER512:
             *len = KYBER512_PUBLIC_KEY_SIZE;
@@ -1146,6 +1446,7 @@ int wc_KyberKey_PublicKeySize(KyberKey* key, word32* len)
             *len = KYBER1024_PUBLIC_KEY_SIZE;
             break;
     #endif
+#endif
         default:
             /* No other values supported. */
             ret = NOT_COMPILED_IN;
@@ -1187,6 +1488,30 @@ int wc_KyberKey_EncodePrivateKey(KyberKey* key, unsigned char* out, word32 len)
 
     if (ret == 0) {
         switch (key->type) {
+#ifndef WOLFSSL_NO_ML_KEM
+    #ifdef WOLFSSL_WC_ML_KEM_512
+        case WC_ML_KEM_512:
+            k = WC_ML_KEM_512_K;
+            pubLen = WC_ML_KEM_512_PUBLIC_KEY_SIZE;
+            privLen = WC_ML_KEM_512_PRIVATE_KEY_SIZE;
+            break;
+    #endif
+    #ifdef WOLFSSL_WC_ML_KEM_768
+        case WC_ML_KEM_768:
+            k = WC_ML_KEM_768_K;
+            pubLen = WC_ML_KEM_768_PUBLIC_KEY_SIZE;
+            privLen = WC_ML_KEM_768_PRIVATE_KEY_SIZE;
+            break;
+    #endif
+    #ifdef WOLFSSL_WC_ML_KEM_1024
+        case WC_ML_KEM_1024:
+            k = WC_ML_KEM_1024_K;
+            pubLen = WC_ML_KEM_1024_PUBLIC_KEY_SIZE;
+            privLen = WC_ML_KEM_1024_PRIVATE_KEY_SIZE;
+            break;
+    #endif
+#endif
+#ifdef WOLFSSL_KYBER_ORIGINAL
     #ifdef WOLFSSL_KYBER512
         case KYBER512:
             k = KYBER512_K;
@@ -1208,6 +1533,7 @@ int wc_KyberKey_EncodePrivateKey(KyberKey* key, unsigned char* out, word32 len)
             privLen = KYBER1024_PRIVATE_KEY_SIZE;
             break;
     #endif
+#endif
         default:
             /* No other values supported. */
             ret = NOT_COMPILED_IN;
@@ -1230,7 +1556,7 @@ int wc_KyberKey_EncodePrivateKey(KyberKey* key, unsigned char* out, word32 len)
     }
     /* Ensure hash of public key is available. */
     if ((ret == 0) && ((key->flags & KYBER_FLAG_H_SET) == 0)) {
-        ret = KYBER_HASH_H(p - pubLen, pubLen, key->h);
+        ret = KYBER_HASH_H(&key->hash, p - pubLen, pubLen, key->h);
     }
     if (ret == 0) {
         /* Public hash is available. */
@@ -1274,6 +1600,27 @@ int wc_KyberKey_EncodePublicKey(KyberKey* key, unsigned char* out, word32 len)
 
     if (ret == 0) {
         switch (key->type) {
+#ifndef WOLFSSL_NO_ML_KEM
+    #ifdef WOLFSSL_WC_ML_KEM_512
+        case WC_ML_KEM_512:
+            k = WC_ML_KEM_512_K;
+            pubLen = WC_ML_KEM_512_PUBLIC_KEY_SIZE;
+            break;
+    #endif
+    #ifdef WOLFSSL_WC_ML_KEM_768
+        case WC_ML_KEM_768:
+            k = WC_ML_KEM_768_K;
+            pubLen = WC_ML_KEM_768_PUBLIC_KEY_SIZE;
+            break;
+    #endif
+    #ifdef WOLFSSL_WC_ML_KEM_1024
+        case WC_ML_KEM_1024:
+            k = WC_ML_KEM_1024_K;
+            pubLen = WC_ML_KEM_1024_PUBLIC_KEY_SIZE;
+            break;
+    #endif
+#endif
+#ifdef WOLFSSL_KYBER_ORIGINAL
     #ifdef WOLFSSL_KYBER512
         case KYBER512:
             k = KYBER512_K;
@@ -1292,6 +1639,7 @@ int wc_KyberKey_EncodePublicKey(KyberKey* key, unsigned char* out, word32 len)
             pubLen = KYBER1024_PUBLIC_KEY_SIZE;
             break;
     #endif
+#endif
         default:
             /* No other values supported. */
             ret = NOT_COMPILED_IN;
@@ -1317,7 +1665,7 @@ int wc_KyberKey_EncodePublicKey(KyberKey* key, unsigned char* out, word32 len)
 
         /* Make sure public hash is set. */
         if ((key->flags & KYBER_FLAG_H_SET) == 0) {
-            ret = KYBER_HASH_H(out, len, key->h);
+            ret = KYBER_HASH_H(&key->hash, out, len, key->h);
         }
     }
     if (ret == 0) {

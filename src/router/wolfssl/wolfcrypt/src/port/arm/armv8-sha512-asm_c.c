@@ -1,6 +1,6 @@
 /* armv8-sha512-asm
  *
- * Copyright (C) 2006-2023 wolfSSL Inc.
+ * Copyright (C) 2006-2024 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -35,8 +35,7 @@
 #include <wolfssl/wolfcrypt/sha512.h>
 
 #ifdef WOLFSSL_SHA512
-#ifndef WOLFSSL_ARMASM_CRYPTO_SHA512
-static const uint64_t L_SHA512_transform_neon_len_k[] = {
+static const word64 L_SHA512_transform_neon_len_k[] = {
     0x428a2f98d728ae22UL,
     0x7137449123ef65cdUL,
     0xb5c0fbcfec4d3b2fUL,
@@ -119,7 +118,7 @@ static const uint64_t L_SHA512_transform_neon_len_k[] = {
     0x6c44198c4a475817UL,
 };
 
-static const uint64_t L_SHA512_transform_neon_len_ror8[] = {
+static const word64 L_SHA512_transform_neon_len_ror8[] = {
     0x7060504030201UL,
     0x80f0e0d0c0b0a09UL,
 };
@@ -1053,8 +1052,8 @@ void Transform_Sha512_Len_neon(wc_Sha512* sha512, const byte* data, word32 len)
     );
 }
 
-#else
-static const uint64_t L_SHA512_transform_crypto_len_k[] = {
+#ifdef WOLFSSL_ARMASM_CRYPTO_SHA512
+static const word64 L_SHA512_transform_crypto_len_k[] = {
     0x428a2f98d728ae22UL,
     0x7137449123ef65cdUL,
     0xb5c0fbcfec4d3b2fUL,

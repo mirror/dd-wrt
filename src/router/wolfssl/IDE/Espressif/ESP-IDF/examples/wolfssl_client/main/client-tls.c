@@ -18,6 +18,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
+
 #include "client-tls.h"
 
 /* Espressif FreeRTOS */
@@ -36,6 +37,8 @@
 
 /* wolfSSL */
 #include <wolfssl/wolfcrypt/settings.h>
+/* This project not yet using the library */
+#undef USE_WOLFSSL_ESP_SDK_WIFI
 #include <wolfssl/ssl.h>
 
 #if defined(WOLFSSL_WC_KYBER)
@@ -204,7 +207,6 @@ WOLFSSL_ESP_TASK tls_smp_client_task(void* args)
 
     size_t len;
 
-    wolfSSL_Debugging_ON();
     WOLFSSL_ENTER(TLS_SMP_CLIENT_TASK_NAME);
 
     doPeerCheck = 1;
@@ -238,8 +240,8 @@ WOLFSSL_ESP_TASK tls_smp_client_task(void* args)
     /* Create and initialize WOLFSSL_CTX */
     ctx = wolfSSL_CTX_new(wolfSSLv23_client_method()); /* SSL 3.0 - TLS 1.3. */
     /*   options:   */
-    /* ctx = wolfSSL_CTX_new(wolfTLSv1_2_client_method());      only TLS 1.2 */
-    /* ctx = wolfSSL_CTX_new(wolfTLSv1_3_client_method());      only TLS 1.3 */
+    /* ctx = wolfSSL_CTX_new(wolfSSLv1_2_client_method());      only TLS 1.2 */
+    /* ctx = wolfSSL_CTX_new(wolfSSLv1_3_client_method());      only TLS 1.3 */
     /* wolfSSL_CTX_NoTicketTLSv12(); */
     /* wolfSSL_NoTicketTLSv12();     */
     if (ctx == NULL) {
@@ -297,19 +299,19 @@ WOLFSSL_ESP_TASK tls_smp_client_task(void* args)
 
 /* see user_settings PROJECT_DH for HAVE_DH and HAVE_FFDHE_2048 */
 #ifndef NO_DH
-    ret = wolfSSL_CTX_SetMinDhKey_Sz(ctx, (word16)minDhKeyBits);
-     if (ret != WOLFSSL_SUCCESS) {
+    ret_i = wolfSSL_CTX_SetMinDhKey_Sz(ctx, (word16)minDhKeyBits);
+     if (ret_i != WOLFSSL_SUCCESS) {
         ESP_LOGE(TAG, "Error setting minimum DH key size");
     }
 #endif
 
     /* no peer check */
     if (doPeerCheck == 0) {
-        ESP_LOGW(TAG, "doPeerCheck == 0");
+        ESP_LOGW(TAG, "doPeerCheck == 0; WOLFSSL_VERIFY_NONE");
         wolfSSL_CTX_set_verify(ctx, WOLFSSL_VERIFY_NONE, 0);
     }
     else {
-        ESP_LOGW(TAG, "doPeerCheck != 0");
+        ESP_LOGI(TAG, "doPeerCheck != 0");
         WOLFSSL_MSG("Loading... our cert");
         /* load our certificate */
         ret_i = wolfSSL_CTX_use_certificate_chain_buffer_format(ctx,
@@ -460,6 +462,9 @@ WOLFSSL_ESP_TASK tls_smp_client_task(void* args)
     }
 
     ESP_LOGI(TAG, "Connect to wolfSSL server...");
+    #ifdef DEBUG_WOLFSSL
+        wolfSSL_Debugging_ON();
+    #endif
     ret_i = wolfSSL_connect(ssl);
 #ifdef DEBUG_WOLFSSL
     this_heap = esp_get_free_heap_size();
@@ -570,7 +575,7 @@ WOLFSSL_ESP_TASK tls_smp_client_init(void* args)
 #else
     xTaskHandle _handle;
 #endif
-    /* See https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/freertos_idf.html#functions  */
+    /* See Espressif api-reference/system/freertos_idf.html#functions  */
     if (TLS_SMP_CLIENT_TASK_BYTES < (6 * 1024)) {
         /* Observed approximately 6KB limit for the RTOS task stack size.
          * Reminder parameter is bytes, not words as with generic FreeRTOS. */
@@ -582,8 +587,7 @@ WOLFSSL_ESP_TASK tls_smp_client_init(void* args)
 #endif
 
     /* Note that despite vanilla FreeRTOS using WORDS for a parameter,
-     * Espressif uses BYTES for the task stack size here.
-     * See https://docs.espressif.com/projects/esp-idf/en/v4.3/esp32/api-reference/system/freertos.html */
+     * Espressif uses BYTES for the task stack size here. */
     ret = xTaskCreate(tls_smp_client_task,
                       TLS_SMP_CLIENT_TASK_NAME,
                       TLS_SMP_CLIENT_TASK_BYTES,

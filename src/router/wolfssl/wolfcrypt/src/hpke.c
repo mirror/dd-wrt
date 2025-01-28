@@ -1,6 +1,6 @@
 /* hpke.c
  *
- * Copyright (C) 2006-2022 wolfSSL Inc.
+ * Copyright (C) 2006-2024 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -256,13 +256,13 @@ int wc_HpkeInit(Hpke* hpke, int kem, int kdf, int aead, void* heap)
         case HPKE_AES_128_GCM:
             hpke->Nk = AES_128_KEY_SIZE;
             hpke->Nn = GCM_NONCE_MID_SZ;
-            hpke->Nt = AES_BLOCK_SIZE;
+            hpke->Nt = WC_AES_BLOCK_SIZE;
             break;
 
         case HPKE_AES_256_GCM:
             hpke->Nk = AES_256_KEY_SIZE;
             hpke->Nn = GCM_NONCE_MID_SZ;
-            hpke->Nt = AES_BLOCK_SIZE;
+            hpke->Nt = WC_AES_BLOCK_SIZE;
             break;
 
         default:

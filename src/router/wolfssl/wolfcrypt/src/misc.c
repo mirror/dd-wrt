@@ -1,6 +1,6 @@
 /* misc.c
  *
- * Copyright (C) 2006-2023 wolfSSL Inc.
+ * Copyright (C) 2006-2024 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -115,22 +115,18 @@ masking and clearing memory logic.
 
 #endif
 
-#ifdef WC_RC2
-
 /* This routine performs a left circular arithmetic shift of <x> by <y> value */
 WC_MISC_STATIC WC_INLINE word16 rotlFixed16(word16 x, word16 y)
 {
-    return (x << y) | (x >> (sizeof(x) * 8 - y));
+    return (word16)((x << y) | (x >> (sizeof(x) * 8U - y)));
 }
 
 
 /* This routine performs a right circular arithmetic shift of <x> by <y> value */
 WC_MISC_STATIC WC_INLINE word16 rotrFixed16(word16 x, word16 y)
 {
-    return (x >> y) | (x << (sizeof(x) * 8 - y));
+    return (word16)((x >> y) | (x << (sizeof(x) * 8U - y)));
 }
-
-#endif /* WC_RC2 */
 
 /* This routine performs a byte swap of 32-bit word value. */
 #if defined(__CCRX__) && !defined(NO_INLINE) /* shortest version for CC-RX */
@@ -200,7 +196,7 @@ WC_MISC_STATIC WC_INLINE void ByteReverseWords(word32* out, const word32* in,
 
         byteCount &= ~0x3U;
 
-        for (i = 0; i < byteCount; i += sizeof(word32)) {
+        for (i = 0; i < byteCount; i += (word32)sizeof(word32)) {
             XMEMCPY(&scratch, in_bytes + i, sizeof(scratch));
             scratch = ByteReverseWord32(scratch);
             XMEMCPY(out_bytes + i, &scratch, sizeof(scratch));
@@ -209,8 +205,101 @@ WC_MISC_STATIC WC_INLINE void ByteReverseWords(word32* out, const word32* in,
 #endif
 }
 
+WC_MISC_STATIC WC_INLINE word32 readUnalignedWord32(const byte *in)
+{
+    if (((wc_ptr_t)in & (wc_ptr_t)(sizeof(word32) - 1U)) == (wc_ptr_t)0)
+        return *(word32 *)in;
+    else {
+        word32 out = 0; /* else CONFIG_FORTIFY_SOURCE -Wmaybe-uninitialized */
+        XMEMCPY(&out, in, sizeof(out));
+        return out;
+    }
+}
+
+WC_MISC_STATIC WC_INLINE word32 writeUnalignedWord32(void *out, word32 in)
+{
+    if (((wc_ptr_t)out & (wc_ptr_t)(sizeof(word32) - 1U)) == (wc_ptr_t)0)
+        *(word32 *)out = in;
+    else {
+        XMEMCPY(out, &in, sizeof(in));
+    }
+    return in;
+}
+
+WC_MISC_STATIC WC_INLINE void readUnalignedWords32(word32 *out, const byte *in,
+                                                   size_t count)
+{
+    if (((wc_ptr_t)in & (wc_ptr_t)(sizeof(word32) - 1U)) == (wc_ptr_t)0) {
+        const word32 *in_word32 = (const word32 *)in;
+        while (count-- > 0)
+            *out++ = *in_word32++;
+    }
+    else {
+        XMEMCPY(out, in, count * sizeof(*out));
+    }
+}
+
+WC_MISC_STATIC WC_INLINE void writeUnalignedWords32(byte *out, const word32 *in,
+                                                    size_t count)
+{
+    if (((wc_ptr_t)out & (wc_ptr_t)(sizeof(word32) - 1U)) == (wc_ptr_t)0) {
+        word32 *out_word32 = (word32 *)out;
+        while (count-- > 0)
+            *out_word32++ = *in++;
+    }
+    else {
+        XMEMCPY(out, in, count * sizeof(*in));
+    }
+}
+
 #if defined(WORD64_AVAILABLE) && !defined(WOLFSSL_NO_WORD64_OPS)
 
+WC_MISC_STATIC WC_INLINE word64 readUnalignedWord64(const byte *in)
+{
+    if (((wc_ptr_t)in & (wc_ptr_t)(sizeof(word64) - 1U)) == (wc_ptr_t)0)
+        return *(word64 *)in;
+    else {
+        word64 out = 0; /* else CONFIG_FORTIFY_SOURCE -Wmaybe-uninitialized */
+        XMEMCPY(&out, in, sizeof(out));
+        return out;
+    }
+}
+
+WC_MISC_STATIC WC_INLINE word64 writeUnalignedWord64(void *out, word64 in)
+{
+    if (((wc_ptr_t)out & (wc_ptr_t)(sizeof(word64) - 1U)) == (wc_ptr_t)0)
+        *(word64 *)out = in;
+    else {
+        XMEMCPY(out, &in, sizeof(in));
+    }
+    return in;
+}
+
+WC_MISC_STATIC WC_INLINE void readUnalignedWords64(word64 *out, const byte *in,
+                                                   size_t count)
+{
+    if (((wc_ptr_t)in & (wc_ptr_t)(sizeof(word64) - 1U)) == (wc_ptr_t)0) {
+        const word64 *in_word64 = (const word64 *)in;
+        while (count-- > 0)
+            *out++ = *in_word64++;
+    }
+    else {
+        XMEMCPY(out, in, count * sizeof(*out));
+    }
+}
+
+WC_MISC_STATIC WC_INLINE void writeUnalignedWords64(byte *out, const word64 *in,
+                                                    size_t count)
+{
+    if (((wc_ptr_t)out & (wc_ptr_t)(sizeof(word64) - 1U)) == (wc_ptr_t)0) {
+        word64 *out_word64 = (word64 *)out;
+        while (count-- > 0)
+            *out_word64++ = *in++;
+    }
+    else {
+        XMEMCPY(out, in, count * sizeof(*in));
+    }
+}
 
 WC_MISC_STATIC WC_INLINE word64 rotlFixed64(word64 x, word64 y)
 {
@@ -530,11 +619,11 @@ WC_MISC_STATIC WC_INLINE signed char HexCharToByte(char ch)
 {
     signed char ret = (signed char)ch;
     if (ret >= '0' && ret <= '9')
-        ret -= '0';
+        ret = (signed char)(ret - '0');
     else if (ret >= 'A' && ret <= 'F')
-        ret -= 'A' - 10;
+        ret = (signed char)(ret - ('A' - 10));
     else if (ret >= 'a' && ret <= 'f')
-        ret -= 'a' - 10;
+        ret = (signed char)(ret - ('a' - 10));
     else
         ret = -1; /* error case - return code must be signed */
     return ret;
@@ -709,8 +798,18 @@ WC_MISC_STATIC WC_INLINE void w64SetLow32(w64wrapper *n, word32 low) {
 
 WC_MISC_STATIC WC_INLINE w64wrapper w64Add32(w64wrapper a, word32 b, byte *wrap)
 {
-    a.n = a.n + b;
+    a.n += b;
     if (a.n < b && wrap != NULL)
+        *wrap = 1;
+
+    return a;
+}
+
+WC_MISC_STATIC WC_INLINE w64wrapper w64Add(w64wrapper a, w64wrapper b,
+    byte *wrap)
+{
+    a.n += b.n;
+    if (a.n < b.n && wrap != NULL)
         *wrap = 1;
 
     return a;
@@ -796,6 +895,13 @@ WC_MISC_STATIC WC_INLINE w64wrapper w64ShiftLeft(w64wrapper a, int shift)
     return a;
 }
 
+WC_MISC_STATIC WC_INLINE w64wrapper w64Mul(word32 a, word32 b)
+{
+    w64wrapper ret;
+    ret.n = (word64)a * (word64)b;
+    return ret;
+}
+
 #else
 
 WC_MISC_STATIC WC_INLINE void w64Increment(w64wrapper *n)
@@ -831,11 +937,29 @@ WC_MISC_STATIC WC_INLINE void w64SetLow32(w64wrapper *n, word32 low)
 
 WC_MISC_STATIC WC_INLINE w64wrapper w64Add32(w64wrapper a, word32 b, byte *wrap)
 {
-    a.n[1] = a.n[1] + b;
+    a.n[1] += b;
     if (a.n[1] < b) {
         a.n[0]++;
         if (wrap != NULL && a.n[0] == 0)
                 *wrap = 1;
+    }
+
+    return a;
+}
+
+WC_MISC_STATIC WC_INLINE w64wrapper w64Add(w64wrapper a, w64wrapper b,
+    byte *wrap)
+{
+    a.n[1] += b.n[1];
+    if (a.n[1] < b.n[1]) {
+        a.n[0]++;
+        if (wrap != NULL && a.n[0] == 0)
+                *wrap = 1;
+    }
+
+    a.n[0] += b.n[0];
+    if (wrap != NULL && a.n[0] < b.n[0]) {
+        *wrap = 1;
     }
 
     return a;
@@ -894,7 +1018,7 @@ WC_MISC_STATIC WC_INLINE byte w64IsZero(w64wrapper a)
     return a.n[0] == 0 && a.n[1] == 0;
 }
 
-WC_MISC_STATIC WC_INLINE void c64toa(w64wrapper *a, byte *out)
+WC_MISC_STATIC WC_INLINE void c64toa(const w64wrapper *a, byte *out)
 {
 #ifdef BIG_ENDIAN_ORDER
     word32 *_out = (word32*)(out);
@@ -939,7 +1063,7 @@ WC_MISC_STATIC WC_INLINE byte w64LT(w64wrapper a, w64wrapper b)
 WC_MISC_STATIC WC_INLINE w64wrapper w64ShiftRight(w64wrapper a, int shift)
 {
      if (shift < 32) {
-         a.n[1] = (a.n[1] >> shift) || (a.n[0] << (32 - shift));
+         a.n[1] = (a.n[1] >> shift) | (a.n[0] << (32 - shift));
          a.n[0] >>= shift;
      }
      else {
@@ -951,7 +1075,7 @@ WC_MISC_STATIC WC_INLINE w64wrapper w64ShiftRight(w64wrapper a, int shift)
 WC_MISC_STATIC WC_INLINE w64wrapper w64ShiftLeft(w64wrapper a, int shift)
 {
      if (shift < 32) {
-         a.n[0] = (a.n[0] << shift) || (a.n[1] >> (32 - shift));
+         a.n[0] = (a.n[0] << shift) | (a.n[1] >> (32 - shift));
          a.n[1] <<= shift;
      }
      else {
@@ -959,6 +1083,30 @@ WC_MISC_STATIC WC_INLINE w64wrapper w64ShiftLeft(w64wrapper a, int shift)
          a.n[1] = 0;
      }
      return a;
+}
+
+WC_MISC_STATIC WC_INLINE w64wrapper w64Mul(word32 a, word32 b)
+{
+    w64wrapper ret;
+    word16 ltlA, ltlB, ltlC, ltlD;
+    word32 bigA, bigB, bigC, bigD;
+
+    ltlA = a & 0xFFFF;
+    ltlB = (a >> 16) & 0xFFFF;
+    ltlC = b & 0xFFFF;
+    ltlD = (b >> 16) & 0xFFFF;
+
+    bigA = (word32)ltlA * (word32)ltlC;
+    bigC = (word32)ltlB * (word32)ltlC;
+    bigD = (word32)ltlA * (word32)ltlD;
+    bigB = (word32)ltlB * (word32)ltlD;
+
+    ret = w64From32(0, bigB);
+    ret = w64ShiftLeft(ret, 16);
+    ret = w64Add32(ret, bigD, NULL);
+    ret = w64Add32(ret, bigC, NULL);
+    ret = w64ShiftLeft(ret, 16);
+    return w64Add32(ret, bigA, NULL);
 }
 
 #endif /* WORD64_AVAILABLE && !WOLFSSL_W64_WRAPPER_TEST */

@@ -1,6 +1,6 @@
 /* sp_cdsp_signed.c
  *
- * Copyright (C) 2006-2023 wolfSSL Inc.
+ * Copyright (C) 2006-2024 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -296,9 +296,7 @@ static int sp_256_mod_mul_norm_10(sp_digit* r, const sp_digit* a, const sp_digit
     }
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
-    if (td != NULL) {
-        XFREE(td, NULL, DYNAMIC_TYPE_ECC);
-    }
+    XFREE(td, NULL, DYNAMIC_TYPE_ECC);
 #endif
 
     return err;
@@ -1311,7 +1309,7 @@ static void sp_256_mont_sqr_n_10(sp_digit* r, const sp_digit* a, int n,
 #endif /* !WOLFSSL_SP_SMALL || HAVE_COMP_KEY */
 #ifdef WOLFSSL_SP_SMALL
 /* Mod-2 for the P256 curve. */
-static const uint32_t p256_mod_2[8] = {
+static const word32 p256_mod_2[8] = {
     0xfffffffdU,0xffffffffU,0xffffffffU,0x00000000U,0x00000000U,0x00000000U,
     0x00000001U,0xffffffffU
 };
@@ -1392,10 +1390,10 @@ static void sp_256_mont_inv_10(sp_digit* r, const sp_digit* a, sp_digit* td)
 }
 
 
-/* Map the Montgomery form projective co-ordinate point to an affine point.
+/* Map the Montgomery form projective coordinate point to an affine point.
  *
- * r  Resulting affine co-ordinate point.
- * p  Montgomery form projective co-ordinate point.
+ * r  Resulting affine coordinate point.
+ * p  Montgomery form projective coordinate point.
  * t  Temporary ordinate data.
  */
 static void sp_256_map_10(sp_point* r, const sp_point* p, sp_digit* t)
@@ -1912,7 +1910,7 @@ static void sp_256_proj_point_add_10(sp_point* r, const sp_point* p, const sp_po
 
 #ifdef WOLFSSL_SP_SMALL
 /* Multiply the point by the scalar and return the result.
- * If map is true then convert result to affine co-ordinates.
+ * If map is true then convert result to affine coordinates.
  *
  * r     Resulting point.
  * g     Point to multiply.
@@ -2008,7 +2006,7 @@ static int sp_256_ecc_mulmod_10(sp_point* r, const sp_point* g, const sp_digit* 
 
 #elif !defined(WC_NO_CACHE_RESISTANT)
 /* Multiply the point by the scalar and return the result.
- * If map is true then convert result to affine co-ordinates.
+ * If map is true then convert result to affine coordinates.
  *
  * r     Resulting point.
  * g     Point to multiply.
@@ -2121,7 +2119,7 @@ typedef struct sp_table_entry {
 } sp_table_entry;
 
 /* Multiply the point by the scalar and return the result.
- * If map is true then convert result to affine co-ordinates.
+ * If map is true then convert result to affine coordinates.
  *
  * r     Resulting point.
  * g     Point to multiply.
@@ -2519,7 +2517,7 @@ static int sp_256_gen_stripe_table_10(const sp_point* a,
 
 #endif /* FP_ECC */
 /* Multiply the point by the scalar and return the result.
- * If map is true then convert result to affine co-ordinates.
+ * If map is true then convert result to affine coordinates.
  *
  * r     Resulting point.
  * k     Scalar to multiply by.
@@ -2592,9 +2590,7 @@ static int sp_256_ecc_mulmod_stripe_10(sp_point* r, const sp_point* g,
     }
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
-    if (t != NULL) {
-        XFREE(t, heap, DYNAMIC_TYPE_ECC);
-    }
+    XFREE(t, heap, DYNAMIC_TYPE_ECC);
 #endif
     sp_ecc_point_free(p, 0, heap);
     sp_ecc_point_free(rt, 0, heap);
@@ -2611,7 +2607,7 @@ typedef struct sp_cache_t {
     sp_digit x[10] __attribute__((aligned(128)));
     sp_digit y[10] __attribute__((aligned(128)));
     sp_table_entry table[256] __attribute__((aligned(128)));
-    uint32_t cnt;
+    word32 cnt;
     int set;
 } sp_cache_t;
 
@@ -2629,7 +2625,7 @@ static THREAD_LS_T int sp_cache_inited = 0;
 static void sp_ecc_get_cache(const sp_point* g, sp_cache_t** cache)
 {
     int i, j;
-    uint32_t least;
+    word32 least;
 
     if (sp_cache_inited == 0) {
         for (i=0; i<FP_ENTRIES; i++) {
@@ -2683,7 +2679,7 @@ static void sp_ecc_get_cache(const sp_point* g, sp_cache_t** cache)
 #endif /* FP_ECC */
 
 /* Multiply the base point of P256 by the scalar and return the result.
- * If map is true then convert result to affine co-ordinates.
+ * If map is true then convert result to affine coordinates.
  *
  * r     Resulting point.
  * g     Point to multiply.
@@ -2739,7 +2735,7 @@ static int sp_256_ecc_mulmod_10(sp_point* r, const sp_point* g, const sp_digit* 
 
 #ifdef WOLFSSL_SP_SMALL
 /* Multiply the base point of P256 by the scalar and return the result.
- * If map is true then convert result to affine co-ordinates.
+ * If map is true then convert result to affine coordinates.
  *
  * r     Resulting point.
  * k     Scalar to multiply by.
@@ -4037,7 +4033,7 @@ static const sp_table_entry p256_table[256] = {
 };
 
 /* Multiply the base point of P256 by the scalar and return the result.
- * If map is true then convert result to affine co-ordinates.
+ * If map is true then convert result to affine coordinates.
  *
  * r     Resulting point.
  * k     Scalar to multiply by.
@@ -4233,9 +4229,7 @@ static int sp_256_div_10(const sp_digit* a, const sp_digit* d, sp_digit* m,
     }
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
-    if (td != NULL) {
-        XFREE(td, NULL, DYNAMIC_TYPE_TMP_BUFFER);
-    }
+    XFREE(td, NULL, DYNAMIC_TYPE_TMP_BUFFER);
 #endif
 
     return err;
@@ -4257,13 +4251,13 @@ static int sp_256_mod_10(sp_digit* r, const sp_digit* a, const sp_digit* m)
 #if defined(HAVE_ECC_SIGN) || defined(HAVE_ECC_VERIFY)
 #ifdef WOLFSSL_SP_SMALL
 /* Order-2 for the P256 curve. */
-static const uint32_t p256_order_2[8] = {
+static const word32 p256_order_2[8] = {
     0xfc63254fU,0xf3b9cac2U,0xa7179e84U,0xbce6faadU,0xffffffffU,0xffffffffU,
     0x00000000U,0xffffffffU
 };
 #else
 /* The low half of the order-2 of the P256 curve. */
-static const uint32_t p256_order_low[4] = {
+static const word32 p256_order_low[4] = {
     0xfc63254fU,0xf3b9cac2U,0xa7179e84U,0xbce6faadU
 };
 #endif /* WOLFSSL_SP_SMALL */
@@ -4530,8 +4524,7 @@ int wolfSSL_DSP_ECC_Verify_256(remote_handle64 h, int32 *u1, int hashLen, int32*
     }
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
-    if (d != NULL)
-        XFREE(d, heap, DYNAMIC_TYPE_ECC);
+    XFREE(d, heap, DYNAMIC_TYPE_ECC);
 #endif
     sp_ecc_point_free(p1, 0, heap);
     sp_ecc_point_free(p2, 0, heap);
@@ -4545,21 +4538,21 @@ void wc_ecc_fp_free(void)
 }
 
 
-AEEResult wolfSSL_open(const char *uri, remote_handle64 *handle) 
+AEEResult wolfSSL_open(const char *uri, remote_handle64 *handle)
 {
   /* can be any value or ignored, rpc layer doesn't care
    * also ok
    * *handle = 0;
    * *handle = 0xdeadc0de;
    */
-   *handle = (remote_handle64)malloc(1);
+   *handle = (remote_handle64)XMALLOC(1, NULL, DYNAMIC_TYPE_ECC);
    return 0;
 }
 
-AEEResult wolfSSL_close(remote_handle64 handle) 
+AEEResult wolfSSL_close(remote_handle64 handle)
 {
    if (handle)
-      free((void*)handle);
+      XFREE((void*)handle, NULL, DYNAMIC_TYPE_ECC);
    return 0;
 }
 #endif /* HAVE_ECC_VERIFY */
@@ -4631,9 +4624,7 @@ int sp_ecc_proj_add_point_256(mp_int* pX, mp_int* pY, mp_int* pZ,
     }
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
-    if (tmp != NULL) {
-        XFREE(tmp, NULL, DYNAMIC_TYPE_ECC);
-    }
+    XFREE(tmp, NULL, DYNAMIC_TYPE_ECC);
 #endif
     sp_ecc_point_free(q, 0, NULL);
     sp_ecc_point_free(p, 0, NULL);
@@ -4696,9 +4687,7 @@ int sp_ecc_proj_dbl_point_256(mp_int* pX, mp_int* pY, mp_int* pZ,
     }
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
-    if (tmp != NULL) {
-        XFREE(tmp, NULL, DYNAMIC_TYPE_ECC);
-    }
+    XFREE(tmp, NULL, DYNAMIC_TYPE_ECC);
 #endif
     sp_ecc_point_free(p, 0, NULL);
 
@@ -4754,9 +4743,7 @@ int sp_ecc_map_256(mp_int* pX, mp_int* pY, mp_int* pZ)
     }
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
-    if (tmp != NULL) {
-        XFREE(tmp, NULL, DYNAMIC_TYPE_ECC);
-    }
+    XFREE(tmp, NULL, DYNAMIC_TYPE_ECC);
 #endif
     sp_ecc_point_free(p, 0, NULL);
 
@@ -4831,9 +4818,7 @@ static int sp_256_mont_sqrt_10(sp_digit* y)
     }
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
-    if (d != NULL) {
-        XFREE(d, NULL, DYNAMIC_TYPE_ECC);
-    }
+    XFREE(d, NULL, DYNAMIC_TYPE_ECC);
 #endif
 
     return err;
@@ -4906,9 +4891,7 @@ int sp_ecc_uncompress_256(mp_int* xm, int odd, mp_int* ym)
     }
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
-    if (d != NULL) {
-        XFREE(d, NULL, DYNAMIC_TYPE_ECC);
-    }
+    XFREE(d, NULL, DYNAMIC_TYPE_ECC);
 #endif
 
     return err;

@@ -1,6 +1,6 @@
 /* suites.c
  *
- * Copyright (C) 2006-2023 wolfSSL Inc.
+ * Copyright (C) 2006-2024 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -20,11 +20,7 @@
  */
 
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-#include <wolfssl/wolfcrypt/settings.h>
+#include <tests/unit.h>
 
 #ifdef NO_INLINE
     #include <wolfssl/wolfcrypt/misc.h>
@@ -37,7 +33,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <wolfssl/ssl.h>
-#include <tests/unit.h>
+
 #if defined(HAVE_ECC) && defined(FP_ECC) && defined(HAVE_THREAD_LS) \
                       && (defined(NO_MAIN_DRIVER) || defined(HAVE_STACK_SIZE))
 #include <wolfssl/wolfcrypt/ecc.h>
@@ -62,7 +58,7 @@
 #include "examples/server/server.h"
 
 #if !defined(NO_WOLFSSL_SERVER) && !defined(NO_WOLFSSL_CLIENT) && \
-    !defined(SINGLE_THREADED)
+    !defined(NO_TLS) && !defined(SINGLE_THREADED)
 static WOLFSSL_CTX* cipherSuiteCtx = NULL;
 static char nonblockFlag[] = "-N";
 static char noVerifyFlag[] = "-d";
@@ -171,6 +167,64 @@ static int IsValidCipherSuite(const char* line, char *suite, size_t suite_spc)
 
     return valid;
 }
+
+#ifdef WOLFSSL_HAVE_KYBER
+static int IsKyberLevelAvailable(const char* line)
+{
+    int available = 0;
+    const char* find = "--pqc ";
+    const char* begin = strstr(line, find);
+    const char* end;
+
+    if (begin != NULL) {
+        begin += 6;
+        end = XSTRSTR(begin, " ");
+
+    #ifndef WOLFSSL_NO_ML_KEM
+        if ((size_t)end - (size_t)begin == 10) {
+        #ifndef WOLFSSL_NO_ML_KEM_512
+            if (XSTRNCMP(begin, "ML_KEM_512", 10) == 0) {
+                available = 1;
+            }
+        #endif
+        #ifndef WOLFSSL_NO_ML_KEM_768
+            if (XSTRNCMP(begin, "ML_KEM_768", 10) == 0) {
+                available = 1;
+            }
+        #endif
+        }
+        #ifndef WOLFSSL_NO_ML_KEM_1024
+        if ((size_t)end - (size_t)begin == 11) {
+            if (XSTRNCMP(begin, "ML_KEM_1024", 11) == 0) {
+                available = 1;
+            }
+        }
+        #endif
+    #endif
+    #ifdef WOLFSSL_KYBER_ORIGINAL
+        if ((size_t)end - (size_t)begin == 12) {
+        #ifndef WOLFSSL_NO_KYBER512
+            if (XSTRNCMP(begin, "KYBER_LEVEL1", 12) == 0) {
+                available = 1;
+            }
+        #endif
+        #ifndef WOLFSSL_NO_KYBER768
+            if (XSTRNCMP(begin, "KYBER_LEVEL3", 12) == 0) {
+                available = 1;
+            }
+        #endif
+        #ifndef WOLFSSL_NO_KYBER1024
+            if (XSTRNCMP(begin, "KYBER_LEVEL5", 12) == 0) {
+                available = 1;
+            }
+        #endif
+        }
+    #endif
+    }
+
+    return (begin == NULL) || available;
+}
+#endif
 
 static int IsValidCert(const char* line)
 {
@@ -356,6 +410,14 @@ static int execute_test_case(int svr_argc, char** svr_argv,
         #endif
         return NOT_BUILT_IN;
     }
+#ifdef WOLFSSL_HAVE_KYBER
+    if (!IsKyberLevelAvailable(commandLine)) {
+        #ifdef DEBUG_SUITE_TESTS
+            printf("Kyber level not supported in build: %s\n", commandLine);
+        #endif
+        return NOT_BUILT_IN;
+    }
+#endif
     if (!IsValidCert(commandLine)) {
         #ifdef DEBUG_SUITE_TESTS
             printf("certificate %s not supported in build\n", commandLine);
@@ -796,8 +858,8 @@ static void test_harness(void* vargs)
 int SuiteTest(int argc, char** argv)
 {
 #if !defined(NO_WOLFSSL_SERVER) && !defined(NO_WOLFSSL_CLIENT) && \
-    !defined(WOLF_CRYPTO_CB_ONLY_RSA) && !defined(WOLF_CRYPTO_CB_ONLY_ECC) && \
-    !defined(SINGLE_THREADED)
+    !defined(NO_TLS) && !defined(SINGLE_THREADED) && \
+    !defined(WOLF_CRYPTO_CB_ONLY_RSA) && !defined(WOLF_CRYPTO_CB_ONLY_ECC)
     func_args args;
     char argv0[3][80];
     char* myArgv[3];
@@ -1060,7 +1122,9 @@ int SuiteTest(int argc, char** argv)
 #if defined(HAVE_ECC) && !defined(NO_SHA256) && defined(WOLFSSL_CUSTOM_CURVES) && \
     defined(HAVE_ECC_KOBLITZ) && defined(HAVE_ECC_BRAINPOOL) && \
         /* Intel QuickAssist and Cavium Nitrox do not support custom curves */ \
-        !defined(HAVE_INTEL_QA) && !defined(HAVE_CAVIUM_V)
+        !defined(HAVE_INTEL_QA) && !defined(HAVE_CAVIUM_V) && \
+        /* only supported with newer ASN template code */ \
+        defined(WOLFSSL_ASN_TEMPLATE)
 
     /* TLS non-NIST curves (Koblitz / Brainpool) */
     XSTRLCPY(argv0[1], "tests/test-ecc-cust-curves.conf", sizeof(argv0[1]));
@@ -1301,7 +1365,7 @@ int SuiteTest(int argc, char** argv)
         args.return_code = EXIT_FAILURE;
         goto exit;
     }
-#endif /* HAVE_RSA and HAVE_ECC */
+#endif /* !NO__RSA and HAVE_ECC */
 #endif /* !WC_STRICT_SIG */
 #if defined(WOLFSSL_SM2) && defined(WOLFSSL_SM3) && \
     (defined(WOLFSSL_SM4_GCM) || defined(WOLFSSL_SM4_CCM))
@@ -1458,5 +1522,5 @@ exit:
     (void)argc;
     (void)argv;
     return NOT_COMPILED_IN;
-#endif /* !NO_WOLFSSL_SERVER && !NO_WOLFSSL_CLIENT */
+#endif /* !NO_WOLFSSL_SERVER && !NO_WOLFSSL_CLIENT && !NO_TLS */
 }

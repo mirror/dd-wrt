@@ -1,6 +1,6 @@
 /* random.c
  *
- * Copyright (C) 2006-2023 wolfSSL Inc.
+ * Copyright (C) 2006-2024 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -110,7 +110,9 @@ This library contains implementation for the random number generator.
     #include <basictypes.h>
     #include <random.h>
 #elif defined(WOLFSSL_XILINX_CRYPT_VERSAL)
-#include "wolfssl/wolfcrypt/port/xilinx/xil-versal-trng.h"
+    #include "wolfssl/wolfcrypt/port/xilinx/xil-versal-trng.h"
+#elif defined(WOLFSSL_RPIPICO)
+    #include "wolfssl/wolfcrypt/port/rpi_pico/pico.h"
 #elif defined(NO_DEV_RANDOM)
 #elif defined(CUSTOM_RAND_GENERATE)
 #elif defined(CUSTOM_RAND_GENERATE_BLOCK)
@@ -126,6 +128,9 @@ This library contains implementation for the random number generator.
 #elif defined(WOLFSSL_PB)
 #elif defined(WOLFSSL_ZEPHYR)
 #elif defined(WOLFSSL_TELIT_M2MB)
+#elif defined(WOLFSSL_RENESAS_TSIP)
+    /* for wc_tsip_GenerateRandBlock */
+    #include "wolfssl/wolfcrypt/port/Renesas/renesas-tsip-crypt.h"
 #elif defined(WOLFSSL_SCE) && !defined(WOLFSSL_SCE_NO_TRNG)
 #elif defined(WOLFSSL_IMXRT1170_CAAM)
 #elif defined(CY_USING_HAL) && defined(COMPONENT_WOLFSSL)
@@ -133,6 +138,8 @@ This library contains implementation for the random number generator.
 #elif defined(WOLFSSL_GETRANDOM)
     #include <errno.h>
     #include <sys/random.h>
+#elif defined(WOLFSSL_MAX3266X) || defined(WOLFSSL_MAX3266X_OLD)
+    #include "wolfssl/wolfcrypt/port/maxim/max3266x.h"
 #else
     /* include headers that may be needed to get good seed */
     #include <fcntl.h>
@@ -591,14 +598,14 @@ static WC_INLINE void array_add(byte* d, word32 dLen, const byte* s, word32 sLen
 
         dIdx = (int)dLen - 1;
         for (sIdx = (int)sLen - 1; sIdx >= 0; sIdx--) {
-            carry += (word16)(d[dIdx] + s[sIdx]);
+            carry = (word16)(carry + d[dIdx] + s[sIdx]);
             d[dIdx] = (byte)carry;
             carry >>= 8;
             dIdx--;
         }
 
         for (; dIdx >= 0; dIdx--) {
-            carry += (word16)d[dIdx];
+            carry = (word16)(carry + d[dIdx]);
             d[dIdx] = (byte)carry;
             carry >>= 8;
         }
@@ -1697,7 +1704,7 @@ static int _InitRng(WC_RNG* rng, byte* nonce, word32 nonceSz,
 
         if (ret != 0) {
 #if defined(DEBUG_WOLFSSL)
-            WOLFSSL_MSG_EX("_InitRng failed. err = ", ret);
+            WOLFSSL_MSG_EX("_InitRng failed. err = %d", ret);
 #endif
         }
         else {
@@ -2963,7 +2970,6 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
         }
         return RAN_BLOCK_E;
     }
-
 #elif !defined(WOLFSSL_CAAM) && \
     (defined(FREESCALE_MQX) || defined(FREESCALE_KSDK_MQX) || \
      defined(FREESCALE_KSDK_BM) || defined(FREESCALE_FREE_RTOS))
@@ -3652,6 +3658,14 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
         return 0;
     }
 
+#elif defined(WOLFSSL_RENESAS_TSIP)
+
+    int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
+    {
+        (void)os;
+        return wc_tsip_GenerateRandBlock(output, sz);
+    }
+
 
 #elif defined(WOLFSSL_SCE) && !defined(WOLFSSL_SCE_NO_TRNG)
     #include "hal_data.h"
@@ -3804,7 +3818,7 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
         return ret;
     }
 
-#elif defined(DOLPHIN_EMULATOR)
+#elif defined(DOLPHIN_EMULATOR) || defined (WOLFSSL_NDS)
 
         int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
         {
@@ -3823,6 +3837,38 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
 
         return maxq10xx_random(output, sz);
     }
+#elif defined(MAX3266X_RNG)
+    int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
+    {
+        #ifdef WOLFSSL_MAX3266X
+        int status;
+        #endif /* WOLFSSL_MAX3266X */
+        static int initDone = 0;
+        (void)os;
+        if (initDone == 0) {
+            #ifdef WOLFSSL_MAX3266X
+            status = wolfSSL_HwRngMutexLock();
+            if (status != 0) {
+                return status;
+            }
+            #endif /* WOLFSSL_MAX3266X */
+            if(MXC_TRNG_HealthTest() != 0) {
+                #ifdef DEBUG_WOLFSSL
+                WOLFSSL_MSG("TRNG HW Health Test Failed");
+                #endif /* DEBUG_WOLFSSL */
+                #ifdef WOLFSSL_MAX3266X
+                wolfSSL_HwRngMutexUnLock();
+                #endif /* WOLFSSL_MAX3266X */
+                return WC_HW_E;
+            }
+            #ifdef WOLFSSL_MAX3266X
+            wolfSSL_HwRngMutexUnLock();
+            #endif /* WOLFSSL_MAX3266X */
+            initDone = 1;
+        }
+        return wc_MXC_TRNG_Random(output, sz);
+    }
+
 #elif defined(WOLFSSL_GETRANDOM)
 
     /* getrandom() was added to the Linux kernel in version 3.17.
@@ -4044,7 +4090,7 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
     {
         word32 i;
         for (i = 0; i < sz; i++ )
-            output[i] = i;
+            output[i] = (byte)i;
 
         (void)os;
 

@@ -15,8 +15,9 @@ concurrency:
 jobs:
   build_wolfssl:
     name: Build wolfSSL
+    if: github.repository_owner == 'wolfssl'
     # Just to keep it the same as the testing target
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     # This should be a safe limit for the tests to run.
     timeout-minutes: 4
     steps:
@@ -27,11 +28,14 @@ jobs:
           configure: --enable-openvpn
           install: true
 
+      - name: tar build-dir
+        run: tar -zcf build-dir.tgz build-dir
+
       - name: Upload built lib
         uses: actions/upload-artifact@v4
         with:
           name: wolf-install-openvpn
-          path: build-dir
+          path: build-dir.tgz
           retention-days: 5
 
   openvpn_check:
@@ -39,9 +43,10 @@ jobs:
       fail-fast: false
       matrix:
         # List of refs to test
-        ref: [ release/2.6, v2.6.0, master ]
+        ref: [ release/2.6, master ]
     name: ${{ matrix.ref }}
-    runs-on: ubuntu-latest
+    if: github.repository_owner == 'wolfssl'
+    runs-on: ubuntu-22.04
     # This should be a safe limit for the tests to run.
     timeout-minutes: 10
     needs: build_wolfssl
@@ -50,7 +55,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: wolf-install-openvpn
-          path: build-dir
+
+      - name: untar build-dir
+        run: tar -xf build-dir.tgz
 
       - name: Install dependencies
         run: |

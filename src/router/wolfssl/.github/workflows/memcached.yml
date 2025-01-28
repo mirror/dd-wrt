@@ -16,7 +16,8 @@ jobs:
   build_wolfssl:
     name: Build wolfSSL
     # Just to keep it the same as the testing target
-    runs-on: ubuntu-latest
+    if: github.repository_owner == 'wolfssl'
+    runs-on: ubuntu-22.04
     steps:
       - name: Build wolfSSL
         uses: wolfSSL/actions-build-autotools-project@v1
@@ -28,11 +29,14 @@ jobs:
       - name: Bundle Docker entry point
         run: cp wolfssl/.github/workflows/memcached.sh build-dir/bin
 
+      - name: tar build-dir
+        run: tar -zcf build-dir.tgz build-dir
+
       - name: Upload built lib
         uses: actions/upload-artifact@v4
         with:
           name: wolf-install-memcached
-          path: build-dir
+          path: build-dir.tgz
           retention-days: 5
 
   memcached_check:
@@ -43,14 +47,17 @@ jobs:
         include:
           - ref: 1.6.22
     name: ${{ matrix.ref }}
-    runs-on: ubuntu-latest
+    if: github.repository_owner == 'wolfssl'
+    runs-on: ubuntu-22.04
     needs: build_wolfssl
     steps:
       - name: Download lib
         uses: actions/download-artifact@v4
         with:
           name: wolf-install-memcached
-          path: build-dir
+
+      - name: untar build-dir
+        run: tar -xf build-dir.tgz
 
       - name: Checkout OSP
         uses: actions/checkout@v4

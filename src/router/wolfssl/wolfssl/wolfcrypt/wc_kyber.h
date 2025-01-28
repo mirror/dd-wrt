@@ -103,6 +103,9 @@ enum {
 
 
 
+/* The data type of the hash function. */
+#define KYBER_HASH_T    wc_Sha3
+
 /* The data type of the pseudo-random function. */
 #define KYBER_PRF_T     wc_Shake
 
@@ -119,6 +122,8 @@ struct KyberKey {
     /* Flags indicating what is stored in the key. */
     int flags;
 
+    /* A pseudo-random function object. */
+    KYBER_HASH_T hash;
     /* A pseudo-random function object. */
     KYBER_PRF_T prf;
 
@@ -158,10 +163,23 @@ WOLFSSL_LOCAL
 int kyber_get_noise(KYBER_PRF_T* prf, int kp, sword16* vec1, sword16* vec2,
     sword16* poly, byte* seed);
 
-#ifdef USE_INTEL_SPEEDUP
+#if defined(USE_INTEL_SPEEDUP) || \
+        (defined(WOLFSSL_ARMASM) && defined(__aarch64__))
 WOLFSSL_LOCAL
 int kyber_kdf(byte* seed, int seedLen, byte* out, int outLen);
 #endif
+WOLFSSL_LOCAL
+void kyber_hash_init(KYBER_HASH_T* hash);
+WOLFSSL_LOCAL
+int kyber_hash_new(KYBER_HASH_T* hash, void* heap, int devId);
+WOLFSSL_LOCAL
+void kyber_hash_free(KYBER_HASH_T* hash);
+WOLFSSL_LOCAL
+int kyber_hash256(wc_Sha3* hash, const byte* data, word32 dataLen, byte* out);
+WOLFSSL_LOCAL
+int kyber_hash512(wc_Sha3* hash, const byte* data1, word32 data1Len,
+    const byte* data2, word32 data2Len, byte* out);
+
 WOLFSSL_LOCAL
 void kyber_prf_init(KYBER_PRF_T* prf);
 WOLFSSL_LOCAL
@@ -271,6 +289,59 @@ void kyber_decompress_5_avx2(sword16* p, const byte* r);
 
 WOLFSSL_LOCAL
 int kyber_cmp_avx2(const byte* a, const byte* b, int sz);
+#elif defined(__aarch64__) && defined(WOLFSSL_ARMASM)
+WOLFSSL_LOCAL void kyber_ntt(sword16* r);
+WOLFSSL_LOCAL void kyber_invntt(sword16* r);
+WOLFSSL_LOCAL void kyber_basemul_mont(sword16* r, const sword16* a,
+    const sword16* b);
+WOLFSSL_LOCAL void kyber_basemul_mont_add(sword16* r, const sword16* a,
+    const sword16* b);
+WOLFSSL_LOCAL void kyber_add_reduce(sword16* r, const sword16* a);
+WOLFSSL_LOCAL void kyber_add3_reduce(sword16* r, const sword16* a,
+    const sword16* b);
+WOLFSSL_LOCAL void kyber_rsub_reduce(sword16* r, const sword16* a);
+WOLFSSL_LOCAL void kyber_to_mont(sword16* p);
+WOLFSSL_LOCAL void kyber_sha3_blocksx3_neon(word64* state);
+WOLFSSL_LOCAL void kyber_shake128_blocksx3_seed_neon(word64* state, byte* seed);
+WOLFSSL_LOCAL void kyber_shake256_blocksx3_seed_neon(word64* state, byte* seed);
+WOLFSSL_LOCAL unsigned int kyber_rej_uniform_neon(sword16* p, unsigned int len,
+    const byte* r, unsigned int rLen);
+WOLFSSL_LOCAL int kyber_cmp_neon(const byte* a, const byte* b, int sz);
+WOLFSSL_LOCAL void kyber_csubq_neon(sword16* p);
+WOLFSSL_LOCAL void kyber_from_msg_neon(sword16* p, const byte* msg);
+WOLFSSL_LOCAL void kyber_to_msg_neon(byte* msg, sword16* p);
+#elif defined(WOLFSSL_ARMASM_THUMB2) && defined(WOLFSSL_ARMASM)
+#define kyber_ntt                   kyber_thumb2_ntt
+#define kyber_invntt                kyber_thumb2_invntt
+#define kyber_basemul_mont          kyber_thumb2_basemul_mont
+#define kyber_basemul_mont_add      kyber_thumb2_basemul_mont_add
+#define kyber_rej_uniform_c         kyber_thumb2_rej_uniform
+
+WOLFSSL_LOCAL void kyber_thumb2_ntt(sword16* r);
+WOLFSSL_LOCAL void kyber_thumb2_invntt(sword16* r);
+WOLFSSL_LOCAL void kyber_thumb2_basemul_mont(sword16* r, const sword16* a,
+    const sword16* b);
+WOLFSSL_LOCAL void kyber_thumb2_basemul_mont_add(sword16* r, const sword16* a,
+    const sword16* b);
+WOLFSSL_LOCAL void kyber_thumb2_csubq(sword16* p);
+WOLFSSL_LOCAL unsigned int kyber_thumb2_rej_uniform(sword16* p,
+    unsigned int len, const byte* r, unsigned int rLen);
+#elif defined(WOLFSSL_ARMASM)
+#define kyber_ntt                   kyber_arm32_ntt
+#define kyber_invntt                kyber_arm32_invntt
+#define kyber_basemul_mont          kyber_arm32_basemul_mont
+#define kyber_basemul_mont_add      kyber_arm32_basemul_mont_add
+#define kyber_rej_uniform_c         kyber_arm32_rej_uniform
+
+WOLFSSL_LOCAL void kyber_arm32_ntt(sword16* r);
+WOLFSSL_LOCAL void kyber_arm32_invntt(sword16* r);
+WOLFSSL_LOCAL void kyber_arm32_basemul_mont(sword16* r, const sword16* a,
+    const sword16* b);
+WOLFSSL_LOCAL void kyber_arm32_basemul_mont_add(sword16* r, const sword16* a,
+    const sword16* b);
+WOLFSSL_LOCAL void kyber_arm32_csubq(sword16* p);
+WOLFSSL_LOCAL unsigned int kyber_arm32_rej_uniform(sword16* p, unsigned int len,
+    const byte* r, unsigned int rLen);
 #endif
 
 #ifdef __cplusplus

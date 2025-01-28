@@ -1,6 +1,6 @@
 /* linuxkm_wc_port.h
  *
- * Copyright (C) 2006-2023 wolfSSL Inc.
+ * Copyright (C) 2006-2024 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -118,6 +118,11 @@
     _Pragma("GCC diagnostic ignored \"-Wcast-function-type\""); /* needed for kernel 4.14.336 */
 
     #include <linux/kconfig.h>
+
+    #if defined(__PIE__) && defined(CONFIG_ARM64)
+        #define alt_cb_patch_nops my__alt_cb_patch_nops
+    #endif
+
     #include <linux/kernel.h>
     #include <linux/ctype.h>
 
@@ -461,8 +466,27 @@
         struct Signer *GetCA(void *signers, unsigned char *hash);
         #ifndef NO_SKID
             struct Signer *GetCAByName(void* signers, unsigned char *hash);
-        #endif
-    #endif
+            #ifdef HAVE_OCSP
+                struct Signer* GetCAByKeyHash(void* vp, const unsigned char* keyHash);
+            #endif /* HAVE_OCSP */
+            #ifdef WOLFSSL_AKID_NAME
+                struct Signer* GetCAByAKID(void* vp, const unsigned char* issuer,
+                                           unsigned int issuerSz,
+                                           const unsigned char* serial,
+                                           unsigned int serialSz);
+            #endif
+        #endif /* NO_SKID */
+
+        #if defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL)
+            struct WOLFSSL_X509_NAME;
+            extern int wolfSSL_X509_NAME_add_entry_by_NID(struct WOLFSSL_X509_NAME *name, int nid,
+                                               int type, const unsigned char *bytes,
+                                               int len, int loc, int set);
+            extern void wolfSSL_X509_NAME_free(struct WOLFSSL_X509_NAME* name);
+            extern struct WOLFSSL_X509_NAME* wolfSSL_X509_NAME_new_ex(void *heap);
+        #endif /* OPENSSL_EXTRA || OPENSSL_EXTRA_X509_SMALL */
+
+    #endif /* !WOLFCRYPT_ONLY && !NO_CERTS */
 
     #if defined(__PIE__) && !defined(USE_WOLFSSL_LINUXKM_PIE_REDIRECT_TABLE)
         #error "compiling -fPIE requires PIE redirect table."
@@ -533,7 +557,13 @@
 
         const unsigned char *_ctype;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 11, 0)
+        typeof(kmalloc_noprof) *kmalloc_noprof;
+        typeof(krealloc_noprof) *krealloc_noprof;
+        typeof(kzalloc_noprof) *kzalloc_noprof;
+        typeof(__kvmalloc_node_noprof) *__kvmalloc_node_noprof;
+        typeof(__kmalloc_cache_noprof) *__kmalloc_cache_noprof;
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
         typeof(kmalloc_noprof) *kmalloc_noprof;
         typeof(krealloc_noprof) *krealloc_noprof;
         typeof(kzalloc_noprof) *kzalloc_noprof;
@@ -623,6 +653,35 @@
         typeof(GetCA) *GetCA;
         #ifndef NO_SKID
         typeof(GetCAByName) *GetCAByName;
+        #ifdef HAVE_OCSP
+        typeof(GetCAByKeyHash) *GetCAByKeyHash;
+        #endif /* HAVE_OCSP */
+        #endif /* NO_SKID */
+        #ifdef WOLFSSL_AKID_NAME
+        typeof(GetCAByAKID) *GetCAByAKID;
+        #endif /* WOLFSSL_AKID_NAME */
+
+        #if defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL)
+        typeof(wolfSSL_X509_NAME_add_entry_by_NID) *wolfSSL_X509_NAME_add_entry_by_NID;
+        typeof(wolfSSL_X509_NAME_free) *wolfSSL_X509_NAME_free;
+        typeof(wolfSSL_X509_NAME_new_ex) *wolfSSL_X509_NAME_new_ex;
+        #endif /* OPENSSL_EXTRA || OPENSSL_EXTRA_X509_SMALL */
+
+        #endif /* !WOLFCRYPT_ONLY && !NO_CERTS */
+
+        #ifdef WOLFSSL_DEBUG_BACKTRACE_ERROR_CODES
+        typeof(dump_stack) *dump_stack;
+        #endif
+
+        #ifdef CONFIG_ARM64
+        #ifdef __PIE__
+            /* alt_cb_patch_nops defined early to allow shimming in system
+             * headers, but now we need the native one.
+             */
+            #undef alt_cb_patch_nops
+            typeof(my__alt_cb_patch_nops) *alt_cb_patch_nops;
+        #else
+            typeof(alt_cb_patch_nops) *alt_cb_patch_nops;
         #endif
         #endif
 
@@ -685,7 +744,14 @@
 
     #define _ctype (wolfssl_linuxkm_get_pie_redirect_table()->_ctype)
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 11, 0)
+    /* see include/linux/alloc_tag.h and include/linux/slab.h */
+    #define kmalloc_noprof (wolfssl_linuxkm_get_pie_redirect_table()->kmalloc_noprof)
+    #define krealloc_noprof (wolfssl_linuxkm_get_pie_redirect_table()->krealloc_noprof)
+    #define kzalloc_noprof (wolfssl_linuxkm_get_pie_redirect_table()->kzalloc_noprof)
+    #define __kvmalloc_node_noprof (wolfssl_linuxkm_get_pie_redirect_table()->__kvmalloc_node_noprof)
+    #define __kmalloc_cache_noprof (wolfssl_linuxkm_get_pie_redirect_table()->__kmalloc_cache_noprof)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
     /* see include/linux/alloc_tag.h and include/linux/slab.h */
     #define kmalloc_noprof (wolfssl_linuxkm_get_pie_redirect_table()->kmalloc_noprof)
     #define krealloc_noprof (wolfssl_linuxkm_get_pie_redirect_table()->krealloc_noprof)
@@ -761,7 +827,24 @@
         #define GetCA (wolfssl_linuxkm_get_pie_redirect_table()->GetCA)
         #ifndef NO_SKID
             #define GetCAByName (wolfssl_linuxkm_get_pie_redirect_table()->GetCAByName)
+            #ifdef HAVE_OCSP
+                #define GetCAByKeyHash (wolfssl_linuxkm_get_pie_redirect_table()->GetCAByKeyHash)
+            #endif /* HAVE_OCSP */
+        #endif /* NO_SKID */
+        #ifdef WOLFSSL_AKID_NAME
+            #define GetCAByAKID (wolfssl_linuxkm_get_pie_redirect_table()->GetCAByAKID)
         #endif
+
+        #if defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL)
+            #define wolfSSL_X509_NAME_add_entry_by_NID (wolfssl_linuxkm_get_pie_redirect_table()->wolfSSL_X509_NAME_add_entry_by_NID)
+            #define wolfSSL_X509_NAME_free (wolfssl_linuxkm_get_pie_redirect_table()->wolfSSL_X509_NAME_free)
+            #define wolfSSL_X509_NAME_new_ex (wolfssl_linuxkm_get_pie_redirect_table()->wolfSSL_X509_NAME_new_ex)
+        #endif /* OPENSSL_EXTRA || OPENSSL_EXTRA_X509_SMALL */
+
+    #endif /* !WOLFCRYPT_ONLY && !NO_CERTS */
+
+    #ifdef WOLFSSL_DEBUG_BACKTRACE_ERROR_CODES
+        #define dump_stack (wolfssl_linuxkm_get_pie_redirect_table()->dump_stack)
     #endif
 
     #endif /* __PIE__ */
@@ -875,6 +958,13 @@
 #endif
 
     #include <linux/limits.h>
+
+    #ifndef INT32_MAX
+        #define INT32_MAX INT_MAX
+    #endif
+    #ifndef UINT32_MAX
+        #define UINT32_MAX UINT_MAX
+    #endif
 
     /* Linux headers define these using C expressions, but we need
      * them to be evaluable by the preprocessor, for use in sp_int.h.

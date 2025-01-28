@@ -25,12 +25,12 @@
 #endif
 
 #include <wolfssl/wolfcrypt/settings.h>
-#include <wolfssl/wolfcrypt/port/autosar/Csm.h>
-#include <wolfssl/wolfcrypt/port/autosar/Crypto.h>
 
 #ifdef WOLFSSL_AUTOSAR
 #ifndef NO_WOLFSSL_AUTOSAR_CRYPTO
 
+#include <wolfssl/wolfcrypt/port/autosar/Csm.h>
+#include <wolfssl/wolfcrypt/port/autosar/Crypto.h>
 #include <wolfssl/wolfcrypt/logging.h>
 #include <wolfssl/wolfcrypt/aes.h>
 #include <wolfssl/wolfcrypt/random.h>
@@ -250,7 +250,7 @@ Std_ReturnType wolfSSL_Crypto_CBC(Crypto_JobType* job)
             return E_NOT_OK;
         }
 
-        if (iv != NULL && ivSz < AES_BLOCK_SIZE) {
+        if (iv != NULL && ivSz < WC_AES_BLOCK_SIZE) {
             WOLFSSL_MSG("Error IV is too small");
             return E_NOT_OK;
         }

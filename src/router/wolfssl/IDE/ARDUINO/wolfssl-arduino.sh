@@ -20,7 +20,7 @@
 # Reminder there's typically no $USER for GitHub actions, but:
 # ROOT_DIR="/mnt/c/Users/$USER/Documents/Arduino/libraries"
 #
-# The company name is "wolfSSL Inc."; There’s a space, no comma, and a period after "Inc."
+# The company name is "wolfSSL Inc."; There's a space, no comma, and a period after "Inc."
 # The Arduino library name is "wolfssl" (all lower case)
 # The Arduino library directory name is "wolfssl" (all lower case)
 # The Arduino library include file is "wolfssl.h" (all lower case)
@@ -29,7 +29,7 @@
 ROOT_DIR="/wolfssl"
 
 # The Arduino Version will initially have a suffix appended during fine tuning stage.
-WOLFSSL_VERSION_ARUINO_SUFFIX="-Arduino.3"
+WOLFSSL_VERSION_ARUINO_SUFFIX=""
 
 # For verbose copy, set CP_CMD="-v", otherwise clear it: CP_CMD="cp"
 # Do not set to empty string, as copy will fail with this: CP_CMD=""
@@ -65,6 +65,11 @@ if ! [ "$CP_CMD" = "cp " ]; then
     fi
 fi
 
+if [ "$ROOT_DIR" = "" ]; then
+    echo "ERROR: ROOT_DIR cannot be blank"
+    exit 1
+fi
+
 # Check environment
 if [ -n "$WSL_DISTRO_NAME" ]; then
     # we found a non-blank WSL environment distro name
@@ -84,6 +89,11 @@ if [ $# -gt 0 ]; then
     if [ "$THIS_OPERATION" = "INSTALL" ]; then
         THIS_INSTALL_DIR=$2
 
+        if [ "$THIS_INSTALL_DIR" = "/" ]; then
+            echo "ERROR: THIS_INSTALL_DIR cannot be /"
+            exit 1
+        fi
+
         echo "Install is active."
 
         if [ "$THIS_INSTALL_DIR" = "" ]; then
@@ -96,10 +106,10 @@ if [ $# -gt 0 ]; then
         else
             echo "Installing to $THIS_INSTALL_DIR"
             if [ -d "$THIS_INSTALL_DIR/.git" ];then
-                echo "Target is a GitHub repository."
+                echo "Target is a GitHub root repository."
                 THIS_INSTALL_IS_GITHUB="true"
             else
-                echo "Target is NOT a GitHub repository."
+                echo "Target is NOT a GitHub root directory repository. (e.g. not wolfssl/Arduino-wolfssl)"
             fi
         fi
     else
@@ -300,24 +310,33 @@ echo ""
 # Note we should have exited above if a problem was encountered,
 # as we'll never want to install a bad library.
 if [ "$THIS_OPERATION" = "INSTALL" ]; then
+    echo "Config:"
+    echo "cp ../../examples/configs/user_settings_arduino.h  ".${ROOT_SRC_DIR}"/user_settings.h"
+    # Nearly an ordinary copy, but we remove any lines with ">>" (typically edit with caution warning in comments)
+    grep -v '>>' ../../examples/configs/user_settings_arduino.h > ".${ROOT_SRC_DIR}"/user_settings.h || exit 1
+
+    # Show the user_settings.h revision string:
+    grep "WOLFSSL_USER_SETTINGS_ID" ."${ROOT_SRC_DIR}/user_settings.h"
+    echo ""
+
     if [ "$THIS_INSTALL_IS_GITHUB" = "true" ]; then
         echo "Installing to GitHub directory: $THIS_INSTALL_DIR"
         cp -r ."$ROOT_DIR"/* "$THIS_INSTALL_DIR" || exit 1
+        echo "Removing workspace library directory: .$ROOT_DIR"
+        rm -rf ".$ROOT_DIR"
     else
-        echo "Config:"
-        echo "cp ../../examples/configs/user_settings_arduino.h  ".${ROOT_SRC_DIR}"/user_settings.h"
-        # Nearly an ordinary copy, but we remove any lines with ">>" (typically edit with caution warning in comments)
-        grep -v '>>' ../../examples/configs/user_settings_arduino.h > ".${ROOT_SRC_DIR}"/user_settings.h || exit 1
 
-        # Show the user_settings.h revision string:
-        grep "WOLFSSL_USER_SETTINGS_ID" ."${ROOT_SRC_DIR}/user_settings.h"
-        echo ""
+        echo "Installing to local directory:"
+        if [ "$THIS_INSTALL_DIR" = "" ]; then
+            echo "mv .$ROOT_DIR $ARDUINO_ROOT"
+            mv  ."$ROOT_DIR" "$ARDUINO_ROOT" || exit 1
 
-        echo "Install:"
-        echo "mv .$ROOT_DIR $ARDUINO_ROOT"
-        mv  ."$ROOT_DIR" "$ARDUINO_ROOT" || exit 1
-
-        echo "Arduino wolfSSL Version: $WOLFSSL_VERSION$WOLFSSL_VERSION_ARUINO_SUFFIX"
+            echo "Arduino wolfSSL Version: $WOLFSSL_VERSION$WOLFSSL_VERSION_ARUINO_SUFFIX"
+        else
+            echo "cp -r .\"$ROOT_DIR\"/* \"$THIS_INSTALL_DIR\""
+            mkdir -p "$THIS_INSTALL_DIR" || exit 1
+            cp -r ."$ROOT_DIR"/* "$THIS_INSTALL_DIR" || exit 1
+        fi
     fi
 fi
 
