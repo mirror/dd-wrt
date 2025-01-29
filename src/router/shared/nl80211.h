@@ -1333,6 +1333,13 @@
  *	This event is used to update dynamic MU-EDCA parameters in Beacon frame,
  *	coming from driver and now need to be reflected in Beacon frame.
  *
+ * @NL80211_CMD_ASSOC_MLO_RECONF: For a non-AP MLD station, request to
+ *      add/remove links to/from the association.
+ *
+ * @NL80211_CMD_EPCS_CFG: EPCS configuration for a station. Used by userland to
+ *	control EPCS configuration. Used to notify userland on the current state
+ *	of EPCS.
+ *
  * @NL80211_CMD_MAX: highest used command number
  * @__NL80211_CMD_AFTER_LAST: internal use
  */
@@ -1589,6 +1596,9 @@ enum nl80211_commands {
 	NL80211_CMD_LINKS_REMOVED,
 
 	NL80211_CMD_SET_TID_TO_LINK_MAPPING,
+
+	NL80211_CMD_ASSOC_MLO_RECONF,
+	NL80211_CMD_EPCS_CFG,
 
 	NL80211_CMD_UPDATE_HE_MUEDCA_PARAMS,
 	/* add new commands above here */
@@ -3433,6 +3443,11 @@ enum nl80211_attrs {
 
 	NL80211_ATTR_HE_MUEDCA_PARAMS,
 
+	NL80211_ATTR_SUPPORTED_SELECTORS,
+
+	NL80211_ATTR_MLO_RECONF_REM_LINKS,
+	NL80211_ATTR_EPCS,
+
 	/* add attributes here, update the policy in nl80211.c */
 	NL80211_ATTR_BEACON_TX_MODE,
 
@@ -3508,6 +3523,7 @@ enum nl80211_attrs {
 #define NL80211_WIPHY_NAME_MAXLEN 64
 
 #define NL80211_MAX_SUPP_RATES 32
+#define NL80211_MAX_SUPP_SELECTORS		128
 #define NL80211_MAX_SUPP_HT_RATES 77
 #define NL80211_MAX_SUPP_REG_RULES 128
 #define NL80211_TKIP_DATA_OFFSET_ENCR_KEY 0
