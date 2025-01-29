@@ -270,11 +270,11 @@ endif
 	# copy openwrt rootfs to image
 	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -sort tools/sort.txt -root-owned -noappend -Xbcj arm64 -b 262144
 
-#mr7350
 	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
 	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
-	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
-	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
+	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.deflate
+#mr7350
+	cp $(ARCH)-uclibc/Image.itb.deflate $(ARCH)-uclibc/Image.itb
 	tools/qcom/mkits.sh  -D linksys_mr7350 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq6000-mr7350.dtb -a 0x41000000 -e 0x41000000 -c config@1 -A arm64 -v $(KERNELRELEASE)
 	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
@@ -290,10 +290,7 @@ endif
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/linksys_mr7350-webflash.bin $(ARCH)-uclibc/Image-factory.bin
 
 #mr7500
-	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
-	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
-	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
-	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
+	cp $(ARCH)-uclibc/Image.itb.deflate $(ARCH)-uclibc/Image.itb
 	tools/qcom/mkits.sh  -D linksys_mr7500 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq6018-mr7500.dtb -a 0x41000000 -e 0x41000000 -c config@1 -A arm64 -v $(KERNELRELEASE)
 	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
@@ -309,10 +306,7 @@ endif
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/linksys_mr7500-webflash.bin $(ARCH)-uclibc/Image-factory.bin
 
 #mx4200 v1
-	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
-	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
-	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
-	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
+	cp $(ARCH)-uclibc/Image.itb.deflate $(ARCH)-uclibc/Image.itb
 	tools/qcom/mkits.sh  -D linksys_mx4200v1 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8174-mx4200v1.dtb -a 0x41000000 -e 0x41000000 -c config@1 -A arm64 -v $(KERNELRELEASE)
 	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
@@ -328,10 +322,7 @@ endif
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/linksys_mx4200v1-webflash.bin $(ARCH)-uclibc/Image-factory.bin
 
 #mx4200 v2
-	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
-	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
-	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
-	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
+	cp $(ARCH)-uclibc/Image.itb.deflate $(ARCH)-uclibc/Image.itb
 	tools/qcom/mkits.sh  -D linksys_mx4200v2 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8174-mx4200v2.dtb -a 0x41000000 -e 0x41000000 -c config@1 -A arm64 -v $(KERNELRELEASE)
 	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
@@ -348,10 +339,7 @@ endif
 
 
 #mx4300
-	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
-	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
-	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
-	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
+	cp $(ARCH)-uclibc/Image.itb.deflate $(ARCH)-uclibc/Image.itb
 	tools/qcom/mkits.sh  -D linksys_mx4300 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8174-mx4300.dtb -a 0x41000000 -e 0x41000000 -c config@1 -A arm64 -v $(KERNELRELEASE)
 	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
@@ -367,10 +355,7 @@ endif
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/linksys_mx4300-webflash.bin $(ARCH)-uclibc/Image-factory.bin
 
 #mx8500
-	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
-	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
-	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
-	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
+	cp $(ARCH)-uclibc/Image.itb.deflate $(ARCH)-uclibc/Image.itb
 	tools/qcom/mkits.sh  -D linksys_mx8500 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8072-mx8500.dtb -a 0x41000000 -e 0x41000000 -c config@1 -A arm64 -v $(KERNELRELEASE)
 	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
@@ -386,10 +371,7 @@ endif
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/linksys_mx8500-webflash.bin $(ARCH)-uclibc/Image-factory.bin
 
 #mx5300
-	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
-	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
-	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
-	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
+	cp $(ARCH)-uclibc/Image.itb.deflate $(ARCH)-uclibc/Image.itb
 	tools/qcom/mkits.sh  -D linksys_mx5300 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8072-mx5300.dtb -a 0x41000000 -e 0x41000000 -c config@1 -A arm64 -v $(KERNELRELEASE)
 	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
@@ -405,10 +387,7 @@ endif
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/linksys_mx5300-webflash.bin $(ARCH)-uclibc/Image-factory.bin
 
 #dynalink wrx36
-	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
-	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
-	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
-	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
+	cp $(ARCH)-uclibc/Image.itb.deflate $(ARCH)-uclibc/Image.itb
 	tools/qcom/mkits.sh  -D dynalink_dl-wrx36 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8072-dl-wrx36.dtb -a 0x41000000 -e 0x41000000 -c config@rt5010w-d350-rev0 -A arm64 -v $(KERNELRELEASE)
 	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
@@ -417,10 +396,7 @@ endif
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/dynalink_dlwrx36-webflash.bin $(TOP)/$(ARCH)-uclibc/dynalink_dlwrx36.ubi
 
 #mr5500
-	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
-	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
-	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
-	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
+	cp $(ARCH)-uclibc/Image.itb.deflate $(ARCH)-uclibc/Image.itb
 	tools/qcom/mkits.sh  -D linksys_mr5500 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq5018-mr5500.dtb -a 0x41000000 -e 0x41000000 -c config@1 -A arm64 -v $(KERNELRELEASE)
 	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
@@ -436,10 +412,7 @@ endif
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/linksys_mr5500-webflash.bin $(ARCH)-uclibc/Image-factory.bin
 
 #mx5500
-	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
-	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
-	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
-	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
+	cp $(ARCH)-uclibc/Image.itb.deflate $(ARCH)-uclibc/Image.itb
 	tools/qcom/mkits.sh  -D linksys_mx5500 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq5018-mx5500.dtb -a 0x41000000 -e 0x41000000 -c config@1 -A arm64 -v $(KERNELRELEASE)
 	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
@@ -456,9 +429,7 @@ endif
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/linksys_mx5500-webflash.bin $(ARCH)-uclibc/Image-factory.bin
 
 #ax89
-	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
-	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
-	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
+	cp $(ARCH)-uclibc/Image.itb.deflate $(ARCH)-uclibc/Image.itb.new
 	mkimage -A arm64 -O linux -T multi -C gzip -a 0x41000000 -n 'ARM64 DD-WRT Linux' -d $(ARCH)-uclibc/Image.itb.new:$(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8074-rt-ax89x.dtb:$(TOP)/$(ARCH)-uclibc/root.fs $(ARCH)-uclibc/asus-rt-ax89x-upgrade.bin
 	./tools/asus/asusuimage -v 2 -n RT-AX89U -b 388 -e 4900 -i $(ARCH)-uclibc/asus-rt-ax89x-upgrade.bin -o $(ARCH)-uclibc/asus-rt-ax89x-upgrade.trx
 	cp $(ARCH)-uclibc/asus-rt-ax89x-upgrade.trx $(ARCH)-uclibc/asus-rt-ax89x-upgrade2.trx
@@ -468,10 +439,7 @@ endif
 
 
 #fortinet
-	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
-	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
-	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
-	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
+	cp $(ARCH)-uclibc/Image.itb.deflate $(ARCH)-uclibc/Image.itb
 	tools/qcom/mkits.sh  -D fortinet_fap231f -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq6000-fap-231f.dtb -a 0x41000000 -e 0x41000000 -c config@cp03-c1 -A arm64 -v $(KERNELRELEASE)
 	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
@@ -480,11 +448,7 @@ endif
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/fortinet_fap231f-webflash.bin $(TOP)/$(ARCH)-uclibc/fortinet_fap231f.ubi
 
 #buffalo wxr
-	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
-	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
-	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
-	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
-
+	cp $(ARCH)-uclibc/Image.itb.deflate $(ARCH)-uclibc/Image.itb
 	tools/qcom/mkits.sh  -D buffalo-wxr-5950ax12 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8074-wxr-5950ax12.dtb -a 0x41000000 -e 0x41000000 -c config@hk01 -A arm64 -v $(KERNELRELEASE)
 	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
@@ -495,11 +459,7 @@ endif
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/buffalo-wxr-5950ax12-webflash.bin $(TOP)/$(ARCH)-uclibc/buffalo-wxr-5950ax12.ubi
 
 
-	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
-	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
-	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
-	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
-
+	cp $(ARCH)-uclibc/Image.itb.deflate $(ARCH)-uclibc/Image.itb
 	tools/qcom/mkits.sh  -D buffalo-wxr-6000ax12s -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8074-wxr-6000ax12s.dtb -a 0x41000000 -e 0x41000000 -c config@hk01 -A arm64 -v $(KERNELRELEASE)
 	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
@@ -510,10 +470,7 @@ endif
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/buffalo-wxr-6000ax12s-webflash.bin $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12s.ubi
 
 
-	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
-	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
-	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
-	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
+	cp $(ARCH)-uclibc/Image.itb.deflate $(ARCH)-uclibc/Image.itb
 
 	tools/qcom/mkits.sh  -D buffalo-wxr-6000ax12b -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8074-wxr-6000ax12b.dtb -a 0x41000000 -e 0x41000000 -c config@hk01 -A arm64 -v $(KERNELRELEASE)
 	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
@@ -525,10 +482,7 @@ endif
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/buffalo-wxr-6000ax12b-webflash.bin $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12b.ubi
 
 
-	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
-	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
-	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
-	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
+	cp $(ARCH)-uclibc/Image.itb.deflate $(ARCH)-uclibc/Image.itb
 
 	tools/qcom/mkits.sh  -D buffalo-wxr-6000ax12p -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8074-wxr-6000ax12p.dtb -a 0x41000000 -e 0x41000000 -c config@hk01 -A arm64 -v $(KERNELRELEASE)
 	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
