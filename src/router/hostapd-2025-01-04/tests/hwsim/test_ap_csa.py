@@ -173,6 +173,17 @@ def test_ap_csa_ecsa_only(dev, apdev):
     hwsim_utils.test_connectivity(dev[0], ap)
 
 @remote_compatible
+def test_ap_csa_csa_only(dev, apdev):
+    """AP Channel Switch, one switch with only CSA IE"""
+    csa_supported(dev[0])
+    ap = connect(dev[0], apdev, csa_ie_only="1")
+
+    hwsim_utils.test_connectivity(dev[0], ap)
+    switch_channel(ap, 10, 2462, extra="ht")
+    wait_channel_switch(dev[0], 2462)
+    hwsim_utils.test_connectivity(dev[0], ap)
+
+@remote_compatible
 def test_ap_csa_invalid(dev, apdev):
     """AP Channel Switch - invalid channel"""
     csa_supported(dev[0])

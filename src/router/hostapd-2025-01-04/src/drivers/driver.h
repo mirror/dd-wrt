@@ -1410,6 +1410,11 @@ struct wpa_driver_associate_params {
 	bool rsn_overriding;
 
 	/**
+	 * spp_amsdu - SPP A-MSDU used on this connection
+	 */
+	bool spp_amsdu;
+
+	/**
 	 * Beacon Tx mode - To configure STAGGERED or BURST mode
 	 * 1 = STAGGERED beacon tx mode
 	 * 2 = BURST beacon tx mode
@@ -2395,6 +2400,8 @@ struct wpa_driver_capa {
 #define WPA_DRIVER_FLAGS2_RSN_OVERRIDE_STA	0x0000000000400000ULL
 /** Driver supports NAN offload */
 #define WPA_DRIVER_FLAGS2_NAN_OFFLOAD		0x0000000000800000ULL
+/** Driver/device supports SPP A-MSDUs */
+#define WPA_DRIVER_FLAGS2_SPP_AMSDU		0x0000000001000000ULL
 	u64 flags2;
 
 #define FULL_AP_CLIENT_STATE_SUPP(drv_flags) \
@@ -2676,6 +2683,7 @@ struct wpa_bss_params {
 #define WPA_STA_TDLS_PEER BIT(4)
 #define WPA_STA_AUTHENTICATED BIT(5)
 #define WPA_STA_ASSOCIATED BIT(6)
+#define WPA_STA_SPP_AMSDU BIT(7)
 
 enum tdls_oper {
 	TDLS_DISCOVERY_REQ,

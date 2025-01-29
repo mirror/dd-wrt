@@ -129,7 +129,7 @@ HOBJS += ../src/utils/trace.o
 LDFLAGS += -rdynamic
 CFLAGS += -funwind-tables
 ifdef CONFIG_WPA_TRACE_BFD
-CFLAGS += -DPACKAGE="hostapd" -DWPA_TRACE_BFD
+CFLAGS += -DPACKAGE="hostapd" -DWPA_TRACE_BFD -fno-inline -fno-optimize-sibling-calls
 LIBS += -lbfd -ldl -liberty -lz
 LIBS_c += -lbfd -ldl -liberty -lz
 LIBS_h += -lbfd -ldl -liberty -lz

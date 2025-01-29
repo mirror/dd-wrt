@@ -418,6 +418,20 @@ void p2p_buf_add_service_hash(struct wpabuf *buf, struct p2p_data *p2p)
 }
 
 
+void p2p_buf_add_usd_service_hash(struct wpabuf *buf, struct p2p_data *p2p)
+{
+	if (!p2p)
+		return;
+
+	/* USD Service Hash */
+	wpabuf_put_u8(buf, P2P_ATTR_SERVICE_HASH);
+	wpabuf_put_le16(buf, P2PS_HASH_LEN);
+	wpabuf_put_data(buf, p2p->p2p_service_hash, P2PS_HASH_LEN);
+	wpa_hexdump(MSG_DEBUG, "P2P: * Service Hash",
+		    p2p->p2p_service_hash, P2PS_HASH_LEN);
+}
+
+
 void p2p_buf_add_session_info(struct wpabuf *buf, const char *info)
 {
 	size_t info_len = 0;

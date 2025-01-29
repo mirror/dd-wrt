@@ -120,6 +120,9 @@ void nan_de_cancel_publish(struct nan_de *de, int publish_id);
 int nan_de_update_publish(struct nan_de *de, int publish_id,
 			  const struct wpabuf *ssi);
 
+int nan_de_unpause_publish(struct nan_de *de, int publish_id,
+			   u8 peer_instance_id, const u8 *peer_addr);
+
 struct nan_subscribe_params {
 	/* configuration_parameters */
 

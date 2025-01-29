@@ -22,6 +22,7 @@
 /* STA flags */
 #define WLAN_STA_AUTH BIT(0)
 #define WLAN_STA_ASSOC BIT(1)
+#define WLAN_STA_SPP_AMSDU BIT(2)
 #define WLAN_STA_AUTHORIZED BIT(5)
 #define WLAN_STA_PENDING_POLL BIT(6) /* pending activity poll not ACKed */
 #define WLAN_STA_SHORT_PREAMBLE BIT(7)
@@ -322,6 +323,9 @@ struct sta_info {
 
 	u16 max_idle_period; /* if nonzero, the granted BSS max idle period in
 			      * units of 1000 TUs */
+
+	u64 last_known_sta_id_timestamp;
+
 	int sig_drop_strikes;  /* Number of times signal was below threshold. */
 };
 

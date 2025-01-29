@@ -929,7 +929,7 @@ DBusMessage * wpas_dbus_handler_p2p_prov_disc_req(DBusMessage *message,
 	if (!wpa_s)
 		return wpas_dbus_error_no_p2p_mgmt_iface(message);
 
-	if (wpas_p2p_prov_disc(wpa_s, peer_addr, config_method,
+	if (wpas_p2p_prov_disc(wpa_s, peer_addr, config_method, 0,
 			       WPAS_P2P_PD_FOR_GO_NEG, NULL) < 0)
 		return wpas_dbus_error_unknown_error(message,
 				"Failed to send provision discovery request");

@@ -863,22 +863,23 @@ def test_p2ps_connect_adv_go_persistent(dev):
 
 def test_p2ps_stale_group_removal(dev):
     """P2PS stale group removal"""
-    go_neg_pin_authorized_persistent(i_dev=dev[0], i_intent=15,
-                                     r_dev=dev[1], r_intent=0)
+    ssid_1 = go_neg_pin_authorized_persistent(i_dev=dev[0], i_intent=15,
+                                              r_dev=dev[1], r_intent=0)[0]['ssid']
     dev[0].remove_group()
     dev[1].wait_go_ending_session()
 
     # Drop the first persistent group on dev[1] and form new persistent groups
     # on both devices.
     dev[1].p2pdev_request("FLUSH")
-    go_neg_pin_authorized_persistent(i_dev=dev[0], i_intent=15,
-                                     r_dev=dev[1], r_intent=0)
+    ssid_2 = go_neg_pin_authorized_persistent(i_dev=dev[0], i_intent=15,
+                                              r_dev=dev[1], r_intent=0)[0]['ssid']
     dev[0].remove_group()
     dev[1].wait_go_ending_session()
 
     # The GO now has a stale persistent group as the first entry. Try to go
     # through P2PS sequence to hit stale group removal.
-    if len(dev[0].list_networks(p2p=True)) != 2:
+    # Only a single entry in the unlikely event that the SSIDs are equal
+    if len(dev[0].list_networks(p2p=True)) != 2 if ssid_1 != ssid_2 else 1:
         raise Exception("Unexpected number of networks on dev[0]")
     if len(dev[1].list_networks(p2p=True)) != 1:
         raise Exception("Unexpected number of networks on dev[1]")
@@ -902,22 +903,23 @@ def test_p2ps_stale_group_removal(dev):
 
 def test_p2ps_stale_group_removal2(dev):
     """P2PS stale group removal (2)"""
-    go_neg_pin_authorized_persistent(i_dev=dev[0], i_intent=0,
-                                     r_dev=dev[1], r_intent=15)
+    ssid_1 = go_neg_pin_authorized_persistent(i_dev=dev[0], i_intent=0,
+                                              r_dev=dev[1], r_intent=15)[0]['ssid']
     dev[1].remove_group()
     dev[0].wait_go_ending_session()
 
     # Drop the first persistent group on dev[1] and form new persistent groups
     # on both devices.
     dev[1].p2pdev_request("FLUSH")
-    go_neg_pin_authorized_persistent(i_dev=dev[0], i_intent=0,
-                                     r_dev=dev[1], r_intent=15)
+    ssid_2 = go_neg_pin_authorized_persistent(i_dev=dev[0], i_intent=0,
+                                              r_dev=dev[1], r_intent=15)[0]['ssid']
     dev[1].remove_group()
     dev[0].wait_go_ending_session()
 
     # The P2P Client now has a stale persistent group as the first entry. Try
     # to go through P2PS sequence to hit stale group removal.
-    if len(dev[0].list_networks(p2p=True)) != 2:
+    # Only a single entry in the unlikely event that the SSIDs are equal
+    if len(dev[0].list_networks(p2p=True)) != 2 if ssid_1 != ssid_2 else 1:
         raise Exception("Unexpected number of networks on dev[0]")
     if len(dev[1].list_networks(p2p=True)) != 1:
         raise Exception("Unexpected number of networks on dev[1]")

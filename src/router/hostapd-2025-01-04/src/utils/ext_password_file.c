@@ -83,6 +83,7 @@ static struct wpabuf * ext_password_file_get(void *ctx, const char *name)
 	struct ext_password_file_data *data = ctx;
 	struct wpabuf *password = NULL;
 	char buf[512], *pos;
+	size_t name_len;
 	int line = 0;
 	FILE *f;
 
@@ -93,6 +94,8 @@ static struct wpabuf * ext_password_file_get(void *ctx, const char *name)
 			   data->path, strerror(errno));
 		return NULL;
 	}
+
+	name_len = os_strlen(name);
 
 	wpa_printf(MSG_DEBUG, "EXT PW FILE: get(%s)", name);
 
@@ -121,7 +124,8 @@ static struct wpabuf * ext_password_file_get(void *ctx, const char *name)
 
 		}
 
-		if (os_strncmp(name, pos, sep - pos) != 0)
+		if (name_len != (size_t) (sep - pos) ||
+		    os_strncmp(name, pos, sep - pos) != 0)
 			continue;
 
 		password = wpabuf_alloc_copy(sep + 1, os_strlen(sep + 1));

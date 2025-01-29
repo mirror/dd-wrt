@@ -117,7 +117,9 @@ static struct wpabuf * p2p_build_invitation_resp(struct p2p_data *p2p,
 						 u8 dialog_token, u8 status,
 						 const u8 *group_bssid,
 						 u8 reg_class, u8 channel,
-						 struct p2p_channels *channels)
+						 struct p2p_channels *channels,
+						 const u8 *ssid,
+						 size_t ssid_len)
 {
 	struct wpabuf *buf;
 	u8 *len;
@@ -162,6 +164,18 @@ static struct wpabuf * p2p_build_invitation_resp(struct p2p_data *p2p,
 					      reg_class, channel);
 	if (group_bssid)
 		p2p_buf_add_group_bssid(buf, group_bssid);
+
+	if (ssid_len && ssid) {
+		const u8 *dev_addr;
+
+		if (p2p->inv_role == P2P_INVITE_ROLE_CLIENT)
+			dev_addr = peer->info.p2p_device_addr;
+		else
+			dev_addr = p2p->cfg->dev_addr;
+
+		p2p_buf_add_group_id(buf, dev_addr, ssid, ssid_len);
+	}
+
 	if (channels) {
 		bool is_6ghz_capab;
 
@@ -196,6 +210,8 @@ struct wpabuf * p2p_process_invitation_req(struct p2p_data *p2p, const u8 *sa,
 	u8 group_bssid[ETH_ALEN], *bssid;
 	int op_freq = 0;
 	u8 reg_class = 0, channel = 0;
+	const u8 *new_ssid;
+	size_t new_ssid_len = 0;
 	struct p2p_channels all_channels, intersection, *channels = NULL;
 	int persistent;
 
@@ -272,7 +288,7 @@ struct wpabuf * p2p_process_invitation_req(struct p2p_data *p2p, const u8 *sa,
 			msg.group_id + ETH_ALEN, msg.group_id_len - ETH_ALEN,
 			&go, group_bssid, &op_freq, persistent, &intersection,
 			msg.dev_password_id_present ? msg.dev_password_id : -1,
-			p2p2);
+			p2p2, &new_ssid, &new_ssid_len);
 	}
 
 	if (go) {
@@ -401,7 +417,8 @@ fail:
 	else
 		bssid = NULL;
 	resp = p2p_build_invitation_resp(p2p, dev, msg.dialog_token, status,
-					 bssid, reg_class, channel, channels);
+					 bssid, reg_class, channel, channels,
+					 new_ssid, new_ssid_len);
 
 	/*
 	 * Store copy of invitation data to be used when processing TX status
@@ -413,7 +430,12 @@ fail:
 		p2p->inv_group_bssid_ptr = p2p->inv_group_bssid;
 	} else
 		p2p->inv_group_bssid_ptr = NULL;
-	if (msg.group_id) {
+
+	if (p2p2 && new_ssid_len) {
+		os_memcpy(p2p->inv_ssid, new_ssid, new_ssid_len);
+		p2p->inv_ssid_len = new_ssid_len;
+		os_memcpy(p2p->inv_go_dev_addr, p2p->cfg->dev_addr, ETH_ALEN);
+	} else if (msg.group_id) {
 		if (msg.group_id_len - ETH_ALEN <= SSID_MAX_LEN) {
 			os_memcpy(p2p->inv_ssid, msg.group_id + ETH_ALEN,
 				  msg.group_id_len - ETH_ALEN);
@@ -593,10 +615,17 @@ void p2p_process_invitation_resp(struct p2p_data *p2p, const u8 *sa,
 			if (msg.group_bssid)
 				os_memcpy(dev->inv_bssid, msg.group_bssid,
 					  ETH_ALEN);
+			if (msg.group_id) {
+				dev->inv_ssid_len = msg.group_id_len - ETH_ALEN;
+				os_memcpy(dev->inv_ssid,
+					  msg.group_id + ETH_ALEN,
+					  dev->inv_ssid_len);
+			}
 			goto out;
 		}
 
 		p2p->cfg->invitation_result(p2p->cfg->cb_ctx, *msg.status,
+					    NULL, 0,
 					    msg.group_bssid, channels, sa,
 					    freq, peer_oper_freq, NULL, NULL,
 					    0);
@@ -638,6 +667,7 @@ void p2p_start_invitation_connect(struct p2p_data *p2p, struct p2p_device *dev)
 	p2p_dbg(p2p, "Invitation connect: msg status %d", dev->inv_status);
 	if (p2p->cfg->invitation_result)
 		p2p->cfg->invitation_result(p2p->cfg->cb_ctx, dev->inv_status,
+					    dev->inv_ssid, dev->inv_ssid_len,
 					    dev->inv_bssid, inv_channels,
 					    dev->info.p2p_device_addr,
 					    dev->inv_freq,
@@ -650,6 +680,8 @@ void p2p_start_invitation_connect(struct p2p_data *p2p, struct p2p_device *dev)
 
 	p2p_clear_timeout(p2p);
 	p2p_set_state(p2p, P2P_IDLE);
+	os_memset(dev->inv_ssid, 0, sizeof(dev->inv_ssid));
+	dev->inv_ssid_len = 0;
 	p2p->invite_peer = NULL;
 }
 #endif /* CONFIG_PASN */

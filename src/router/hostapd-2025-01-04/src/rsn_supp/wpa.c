@@ -3427,6 +3427,28 @@ failed:
 }
 
 
+static void wpa_sm_tptk_to_ptk(struct wpa_sm *sm)
+{
+	sm->tptk_set = 0;
+	sm->ptk_set = 1;
+	os_memcpy(&sm->ptk, &sm->tptk, sizeof(sm->ptk));
+	os_memset(&sm->tptk, 0, sizeof(sm->tptk));
+
+	if (wpa_sm_pmf_enabled(sm)) {
+		os_memcpy(sm->last_kck, sm->ptk.kck, sm->ptk.kck_len);
+		sm->last_kck_len = sm->ptk.kck_len;
+		sm->last_kck_pmk_len = sm->pmk_len;
+		sm->last_kck_key_mgmt = sm->key_mgmt;
+		sm->last_kck_eapol_key_ver = sm->last_eapol_key_ver;
+		os_memcpy(sm->last_kck_aa, wpa_sm_get_auth_addr(sm), ETH_ALEN);
+	} else {
+		os_memset(sm->last_kck, 0, sizeof(sm->last_kck));
+		sm->last_kck_len = 0;
+		os_memset(sm->last_kck_aa, 0, ETH_ALEN);
+	}
+}
+
+
 static int wpa_supplicant_verify_eapol_key_mic(struct wpa_sm *sm,
 					       struct wpa_eapol_key *key,
 					       u16 ver,
@@ -3456,10 +3478,7 @@ static int wpa_supplicant_verify_eapol_key_mic(struct wpa_sm *sm,
 		continue_fuzz:
 #endif /* TEST_FUZZ */
 			ok = 1;
-			sm->tptk_set = 0;
-			sm->ptk_set = 1;
-			os_memcpy(&sm->ptk, &sm->tptk, sizeof(sm->ptk));
-			os_memset(&sm->tptk, 0, sizeof(sm->tptk));
+			wpa_sm_tptk_to_ptk(sm);
 			/*
 			 * This assures the same TPTK in sm->tptk can never be
 			 * copied twice to sm->ptk as the new PTK. In
@@ -3712,12 +3731,8 @@ static int wpa_supp_aead_decrypt(struct wpa_sm *sm, u8 *buf, size_t buf_len,
 	WPA_PUT_BE16(pos, *key_data_len);
 	bin_clear_free(tmp, *key_data_len);
 
-	if (sm->tptk_set) {
-		sm->tptk_set = 0;
-		sm->ptk_set = 1;
-		os_memcpy(&sm->ptk, &sm->tptk, sizeof(sm->ptk));
-		os_memset(&sm->tptk, 0, sizeof(sm->tptk));
-	}
+	if (sm->tptk_set)
+		wpa_sm_tptk_to_ptk(sm);
 
 	os_memcpy(sm->rx_replay_counter, key->replay_counter,
 		  WPA_REPLAY_COUNTER_LEN);
@@ -4041,6 +4056,8 @@ int wpa_sm_rx_eapol(struct wpa_sm *sm, const u8 *src_addr,
 			ver);
 		goto out;
 	}
+
+	sm->last_eapol_key_ver = ver;
 
 	if ((key_info & WPA_KEY_INFO_MIC) &&
 	    wpa_supplicant_verify_eapol_key_mic(sm, key, ver, tmp, data_len))
@@ -4395,6 +4412,7 @@ void wpa_sm_deinit(struct wpa_sm *sm)
 #ifdef CONFIG_DPP2
 	wpabuf_clear_free(sm->dpp_z);
 #endif /* CONFIG_DPP2 */
+	os_memset(sm->last_kck, 0, sizeof(sm->last_kck));
 	os_free(sm);
 }
 
@@ -4955,6 +4973,9 @@ int wpa_sm_set_param(struct wpa_sm *sm, enum wpa_sm_conf_params param,
 		break;
 	case WPA_PARAM_USE_EXT_KEY_ID:
 		sm->use_ext_key_id = value;
+		break;
+	case WPA_PARAM_SPP_AMSDU:
+		sm->spp_amsdu = !!value;
 		break;
 #ifdef CONFIG_TESTING_OPTIONS
 	case WPA_PARAM_FT_RSNXE_USED:
@@ -7187,6 +7208,12 @@ void wpa_sm_pmksa_cache_reconfig(struct wpa_sm *sm)
 }
 
 
+bool wpa_sm_uses_spp_amsdu(struct wpa_sm *sm)
+{
+	return sm ? sm->spp_amsdu : false;
+}
+
+
 struct rsn_pmksa_cache * wpa_sm_get_pmksa_cache(struct wpa_sm *sm)
 {
 	return sm ? sm->pmksa : NULL;
@@ -7206,4 +7233,42 @@ void wpa_sm_set_driver_bss_selection(struct wpa_sm *sm,
 {
 	if (sm)
 		sm->driver_bss_selection = driver_bss_selection;
+}
+
+
+struct wpabuf * wpa_sm_known_sta_identification(struct wpa_sm *sm, const u8 *aa,
+						u64 timestamp)
+{
+	struct wpabuf *ie;
+	unsigned int mic_len;
+	const u8 *start;
+	u8 *mic;
+
+	if (!sm || sm->last_kck_len == 0)
+		return NULL;
+
+	if (!ether_addr_equal(aa, sm->last_kck_aa))
+		return NULL;
+
+	mic_len = wpa_mic_len(sm->last_kck_key_mgmt, sm->last_kck_pmk_len);
+
+	ie = wpabuf_alloc(3 + 8 + 1 + mic_len);
+	if (!ie)
+		return NULL;
+
+	wpabuf_put_u8(ie, WLAN_EID_EXTENSION);
+	wpabuf_put_u8(ie, 1 + 8 + 1 + mic_len);
+	wpabuf_put_u8(ie, WLAN_EID_EXT_KNOWN_STA_IDENTIFICATION);
+	start = wpabuf_put(ie, 0);
+	wpabuf_put_le64(ie, timestamp);
+	wpabuf_put_u8(ie, mic_len);
+	mic = wpabuf_put(ie, mic_len);
+	if (wpa_eapol_key_mic(sm->last_kck, sm->last_kck_len,
+			      sm->last_kck_key_mgmt, sm->last_kck_eapol_key_ver,
+			      start, 8, mic) < 0) {
+		wpabuf_free(ie);
+		return NULL;
+	}
+
+	return ie;
 }

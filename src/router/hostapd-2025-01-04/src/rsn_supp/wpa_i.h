@@ -113,6 +113,7 @@ struct wpa_sm {
 	unsigned int secure_rtt:1;
 	unsigned int prot_range_neg:1;
 	unsigned int ssid_protection:1;
+	unsigned int spp_amsdu:1;
 
 	u8 *assoc_wpa_ie; /* Own WPA/RSN IE from (Re)AssocReq */
 	size_t assoc_wpa_ie_len;
@@ -238,6 +239,14 @@ struct wpa_sm {
 
 	bool rsn_override_support;
 	enum wpa_rsn_override rsn_override;
+
+	u8 last_kck[WPA_KCK_MAX_LEN];
+	size_t last_kck_len;
+	size_t last_kck_pmk_len;
+	unsigned int last_kck_key_mgmt;
+	int last_kck_eapol_key_ver;
+	u8 last_kck_aa[ETH_ALEN];
+	int last_eapol_key_ver;
 };
 
 

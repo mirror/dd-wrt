@@ -5587,7 +5587,7 @@ static int wpa_gtk_update(struct wpa_authenticator *wpa_auth,
 	wpa_hexdump_key(MSG_DEBUG, "GTK",
 			group->GTK[group->GN - 1], group->GTK_len);
 
-	if (conf->ieee80211w != NO_MGMT_FRAME_PROTECTION) {
+	if (wpa_auth_pmf_enabled(conf)) {
 		len = wpa_cipher_key_len(conf->group_mgmt_cipher);
 		os_memcpy(group->GNonce, group->Counter, WPA_NONCE_LEN);
 		inc_byte_array(group->Counter, WPA_NONCE_LEN);
@@ -5600,7 +5600,7 @@ static int wpa_gtk_update(struct wpa_authenticator *wpa_auth,
 	}
 
 	if (!wpa_auth->non_tx_beacon_prot &&
-	    conf->ieee80211w == NO_MGMT_FRAME_PROTECTION)
+	     !wpa_auth_pmf_enabled(conf))
 		return ret;
 	if (!conf->beacon_prot)
 		return ret;
@@ -5921,7 +5921,7 @@ static int wpa_group_config_group_keys(struct wpa_authenticator *wpa_auth,
 			     KEY_FLAG_GROUP_TX_DEFAULT) < 0)
 		ret = -1;
 
-	if (conf->ieee80211w != NO_MGMT_FRAME_PROTECTION) {
+	if (wpa_auth_pmf_enabled(conf)) {
 		enum wpa_alg alg;
 		size_t len;
 
@@ -7501,4 +7501,50 @@ void wpa_auth_set_ml_info(struct wpa_state_machine *sm,
 				   link_id);
 	}
 #endif /* CONFIG_IEEE80211BE */
+}
+
+
+bool wpa_auth_sm_known_sta_identification(struct wpa_state_machine *sm,
+					  const u8 *timestamp,
+					  const u8 *mic, size_t mic_len)
+{
+	size_t exp_mic_len;
+	u8 exp_mic[WPA_EAPOL_KEY_MIC_MAX_LEN];
+	int ver;
+
+	if (!sm)
+		return false;
+
+	if (!sm->PTK_valid || !mic_len || sm->PTK.kck_len == 0) {
+		wpa_printf(MSG_DEBUG,
+			   "RSN: No KCK to verify Known STA Identification");
+		return false;
+	}
+
+	exp_mic_len = wpa_mic_len(sm->wpa_key_mgmt, sm->pmk_len);
+	if (mic_len != exp_mic_len) {
+		wpa_printf(MSG_DEBUG,
+			   "RSN: MIC length mismatch in Known STA Identification (received %zu, expected %zu)",
+			   mic_len, exp_mic_len);
+		return false;
+	}
+
+	if (wpa_use_akm_defined(sm->wpa_key_mgmt))
+		ver = WPA_KEY_INFO_TYPE_AKM_DEFINED;
+	else if (wpa_use_cmac(sm->wpa_key_mgmt))
+		ver = WPA_KEY_INFO_TYPE_AES_128_CMAC;
+	else if (sm->pairwise != WPA_CIPHER_TKIP)
+		ver = WPA_KEY_INFO_TYPE_HMAC_SHA1_AES;
+	else
+		ver = WPA_KEY_INFO_TYPE_HMAC_MD5_RC4;
+
+	if (wpa_eapol_key_mic(sm->PTK.kck, sm->PTK.kck_len, sm->wpa_key_mgmt,
+			      ver, timestamp, 8, exp_mic) ||
+	    os_memcmp_const(mic, exp_mic, exp_mic_len) != 0) {
+		wpa_printf(MSG_DEBUG,
+			   "RSN: Invalid MIC in Known STA Identification");
+		return false;
+	}
+
+	return true;
 }

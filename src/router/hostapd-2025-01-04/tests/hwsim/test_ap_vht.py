@@ -211,17 +211,21 @@ def test_ap_vht80_params(dev, apdev):
                   "require_vht": "1"}
         hapd = hostapd.add_ap(apdev[0], params)
 
-        dev[1].connect("vht", key_mgmt="NONE", scan_freq="5180",
-                       disable_vht="1", wait_connect=False)
+        wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
+        wpas.interface_add("wlan5",
+                           drv_params="extra_bss_membership_selectors=126")
+
+        wpas.connect("vht", key_mgmt="NONE", scan_freq="5180",
+                     disable_vht="1", wait_connect=False)
         dev[0].connect("vht", key_mgmt="NONE", scan_freq="5180")
         dev[2].connect("vht", key_mgmt="NONE", scan_freq="5180",
                        disable_sgi="1")
-        ev = dev[1].wait_event(["CTRL-EVENT-ASSOC-REJECT"])
+        ev = wpas.wait_event(["CTRL-EVENT-ASSOC-REJECT"])
         if ev is None:
             raise Exception("Association rejection timed out")
         if "status_code=104" not in ev:
             raise Exception("Unexpected rejection status code")
-        dev[1].request("DISCONNECT")
+        wpas.request("DISCONNECT")
         hwsim_utils.test_connectivity(dev[0], hapd)
         sta0 = hapd.get_sta(dev[0].own_addr())
         sta2 = hapd.get_sta(dev[2].own_addr())

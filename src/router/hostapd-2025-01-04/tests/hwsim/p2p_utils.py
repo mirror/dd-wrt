@@ -335,7 +335,7 @@ def go_neg_init_pbc(i_dev, r_dev, i_intent, res, freq, provdisc, timeout=20):
     res.put(i_res)
 
 def go_neg_pbc(i_dev, r_dev, i_intent=None, r_intent=None, i_freq=None,
-               r_freq=None, provdisc=False, r_listen=False, timeout=20):
+               r_freq=None, provdisc=False, r_listen=False, timeout=30):
     if r_listen:
         r_dev.p2p_listen()
     else:

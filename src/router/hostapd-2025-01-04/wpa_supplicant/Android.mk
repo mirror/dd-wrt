@@ -138,7 +138,7 @@ OBJS_c += src/utils/trace.c
 LDFLAGS += -rdynamic
 L_CFLAGS += -funwind-tables
 ifdef CONFIG_WPA_TRACE_BFD
-L_CFLAGS += -DWPA_TRACE_BFD
+L_CFLAGS += -DWPA_TRACE_BFD -fno-inline -fno-optimize-sibling-calls
 LIBS += -lbfd
 LIBS_p += -lbfd
 LIBS_c += -lbfd

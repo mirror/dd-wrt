@@ -394,6 +394,8 @@ int wpa_gen_rsnxe(struct wpa_sm *sm, u8 *rsnxe, size_t rsnxe_len)
 		capab |= BIT(WLAN_RSNX_CAPAB_URNM_MFPR);
 	if (sm->ssid_protection)
 		capab |= BIT(WLAN_RSNX_CAPAB_SSID_PROTECTION);
+	if (sm->spp_amsdu)
+		capab |= BIT(WLAN_RSNX_CAPAB_SPP_A_MSDU);
 
 	if (!capab)
 		return 0; /* no supported extended RSN capabilities */

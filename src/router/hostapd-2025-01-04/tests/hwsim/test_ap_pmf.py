@@ -439,6 +439,36 @@ def test_ap_pmf_ap_dropping_sa(dev, apdev):
     if ev is None or "locally_generated=1" not in ev:
         raise Exception("Locally generated disconnection not reported")
 
+def test_ap_pmf_known_sta_id(dev, apdev):
+    """WPA2-PSK AP and Known STA Identification to avoid association comeback"""
+    ssid = "assoc-comeback"
+    params = hostapd.wpa2_params(ssid=ssid, passphrase="12345678")
+    params["wpa_key_mgmt"] = "WPA-PSK-SHA256"
+    params["ieee80211w"] = "2"
+    params["known_sta_identification"] = "1"
+    hapd = hostapd.add_ap(apdev[0], params)
+    Wlantest.setup(hapd)
+    wt = Wlantest()
+    wt.flush()
+    wt.add_passphrase("12345678")
+    dev[0].connect(ssid, psk="12345678", ieee80211w="2",
+                   key_mgmt="WPA-PSK-SHA256", proto="WPA2",
+                   scan_freq="2412")
+    hapd.wait_sta(wait_4way_hs=True)
+    hapd.set("ext_mgmt_frame_handling", "1")
+    dev[0].request("DISCONNECT")
+    dev[0].wait_disconnected(timeout=10)
+    ev = hapd.wait_event(["MGMT-RX"], timeout=1)
+    if ev is None:
+        raise Exception("Deauthentication frame RX not reported")
+    hapd.set("ext_mgmt_frame_handling", "0")
+    dev[0].request("REASSOCIATE")
+    dev[0].wait_connected(timeout=20, error="Timeout on re-connection")
+    hapd.wait_4way_hs()
+    if wt.get_sta_counter("assocresp_comeback", apdev[0]['bssid'],
+                          dev[0].own_addr()) > 0:
+        raise Exception("AP used association comeback request")
+
 def test_ap_pmf_valid_broadcast_deauth(dev, apdev):
     """WPA2-PSK PMF AP sending valid broadcast deauth without dropping SA"""
     run_ap_pmf_valid(dev, apdev, False, True)

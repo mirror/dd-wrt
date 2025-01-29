@@ -133,6 +133,15 @@ static inline int wpa_key_mgmt_sae_ext_key(int akm)
 			 WPA_KEY_MGMT_FT_SAE_EXT_KEY));
 }
 
+static inline int wpa_key_mgmt_only_sae(int akm)
+{
+	return wpa_key_mgmt_sae(akm) &&
+		!(akm & ~(WPA_KEY_MGMT_SAE |
+			  WPA_KEY_MGMT_SAE_EXT_KEY |
+			  WPA_KEY_MGMT_FT_SAE |
+			  WPA_KEY_MGMT_FT_SAE_EXT_KEY));
+}
+
 static inline int wpa_key_mgmt_fils(int akm)
 {
 	return !!(akm & (WPA_KEY_MGMT_FILS_SHA256 |

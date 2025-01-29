@@ -511,6 +511,26 @@ struct p2p_peer_info {
 	 * p2p_pairing_config - P2P pairing configuration
 	 */
 	struct p2p_pairing_config pairing_config;
+
+	/**
+	 * dik_id - For paired peers Identity block ID with PMK
+	 */
+	int dik_id;
+
+	/**
+	 * nonce_tag_valid - Whether nonce and tag are valid
+	 */
+	bool nonce_tag_valid;
+
+	/**
+	 * nonce - Valid nonce received in a recent discovery frame
+	 */
+	u8 nonce[DEVICE_IDENTITY_NONCE_LEN];
+
+	/**
+	 * tag - Valid tag received in a recent discovery frame
+	 */
+	u8 tag[DEVICE_IDENTITY_TAG_LEN];
 };
 
 enum p2p_prov_disc_status {
@@ -1086,6 +1106,8 @@ struct p2p_config {
 	 *	used
 	 * @p2p2: Whether invitation request was wrapped in PASN authentication
 	 * received from a P2P2 device
+	 * @new_ssid: Pointer to hold new SSID
+	 * @new_ssid_len: Length of new SSID buffer in octets
 	 * Returns: Status code (P2P_SC_*)
 	 *
 	 * This optional callback can be used to implement persistent reconnect
@@ -1108,7 +1130,8 @@ struct p2p_config {
 				 size_t ssid_len, int *go, u8 *group_bssid,
 				 int *force_freq, int persistent_group,
 				 const struct p2p_channels *channels,
-				 int dev_pw_id, bool p2p2);
+				 int dev_pw_id, bool p2p2, const u8 **new_ssid,
+				 size_t *new_ssid_len);
 
 	/**
 	 * invitation_received - Callback on Invitation Request RX
@@ -1137,6 +1160,8 @@ struct p2p_config {
 	 * invitation_result - Callback on Invitation result
 	 * @ctx: Callback context from cb_ctx
 	 * @status: Negotiation result (Status Code)
+	 * @new_ssid: New SSID received in invitation response
+	 * @new_ssid_len: Length of new SSID received
 	 * @bssid: P2P Group BSSID or %NULL if not received
 	 * @channels: Available operating channels for the group
 	 * @addr: Peer address
@@ -1150,7 +1175,8 @@ struct p2p_config {
 	 * (P2P_SC_SUCCESS) indicating success or -1 to indicate a timeout or a
 	 * local failure in transmitting the Invitation Request.
 	 */
-	void (*invitation_result)(void *ctx, int status, const u8 *bssid,
+	void (*invitation_result)(void *ctx, int status, const u8 *new_ssid,
+				  size_t new_ssid_len, const u8 *bssid,
 				  const struct p2p_channels *channels,
 				  const u8 *addr, int freq, int peer_oper_freq,
 				  const u8 *pmkid, const u8 *pmk,
@@ -1344,16 +1370,17 @@ struct p2p_config {
 	 *	list of available device identity keys
 	 * @ctx: Callback context from cb_ctx
 	 * @peer_addr: P2P Device address of the peer
-	 * @dira: DIRA attribute present in the USD frames
-	 * @dira_len: Length of DIRA
+	 * @dira_nonce: DIRA Nonce
+	 * @dira_tag: DIRA Tag
+	 * Returns: Identity block ID on success, 0 on failure
 	 *
 	 * This function can be used to validate DIRA and configure PMK of a
 	 * paired/persistent peer from configuration. The handler function is
 	 * expected to call p2p_pasn_pmksa_set_pmk() to set the PMK/PMKID in
 	 * case a matching entry is found.
 	 */
-	void (*validate_dira)(void *ctx, const u8 *peer_addr,
-			      const u8 *dira, size_t dira_len);
+	int (*validate_dira)(void *ctx, const u8 *peer_addr,
+			     const u8 *dira_nonce, const u8 *dira_tag);
 
 	/**
 	 * pasn_send_mgmt - Function handler to transmit a Management frame
@@ -1385,6 +1412,15 @@ struct p2p_config {
 	 * Returns: 0 on success, -1 on failure
 	 */
 	int (*parse_data_element)(void *ctx, const u8 *data, size_t len);
+
+	/**
+	 * pasn_validate_pmkid - Function handler to validate RSN PMKID
+	 * @ctx: Callback context from cb_ctx
+	 * @addr: Peer MAC address
+	 * @pmkid: PMKID in the PASN frame
+	 * Returns: 0 on success, -1 on failure
+	 */
+	int (*pasn_validate_pmkid)(void *ctx, const u8 *addr, const u8 *pmkid);
 };
 
 
@@ -1621,6 +1657,17 @@ int p2p_authorize(struct p2p_data *p2p, const u8 *peer_addr,
  * Returns: 0 on success, -1 on failure
  */
 int p2p_reject(struct p2p_data *p2p, const u8 *peer_addr);
+
+/**
+ * p2p_set_req_bootstrap_method - Send Provision Discovery Request to initiate
+ *	 bootstrapping
+ * @p2p: P2P module context from p2p_init()
+ * @peer_addr: MAC address of the peer P2P client
+ * @boostrap: Bootstrapping method
+ * Returns: 0 on success, -1 on failure
+ */
+int p2p_set_req_bootstrap_method(struct p2p_data *p2p, const u8 *peer_addr,
+				 u16 bootstrap);
 
 /**
  * p2p_prov_disc_req - Send Provision Discovery Request
@@ -2209,6 +2256,14 @@ void p2p_scan_ie(struct p2p_data *p2p, struct wpabuf *ies, const u8 *dev_id,
 size_t p2p_scan_ie_buf_len(struct p2p_data *p2p);
 
 /**
+ * p2p_build_ssid - Generate a random P2P SSID
+ * @p2p: P2P module context from p2p_init()
+ * @ssid: Buffer for SSID
+ * @ssid_len: Pointer to hold SSID length
+ */
+void p2p_build_ssid(struct p2p_data *p2p, u8 *ssid, size_t *ssid_len);
+
+/**
  * p2p_go_params - Generate random P2P group parameters
  * @p2p: P2P module context from p2p_init()
  * @params: Buffer for parameters
@@ -2711,6 +2766,7 @@ int p2p_channel_to_freq(int op_class, int channel);
 struct wpabuf * p2p_usd_elems(struct p2p_data *p2p);
 void p2p_process_usd_elems(struct p2p_data *p2p, const u8 *ies, u16 ies_len,
 			   const u8 *peer_addr, unsigned int freq);
+int p2p_get_dik_id(struct p2p_data *p2p, const u8 *peer);
 
 void p2p_set_pairing_setup(struct p2p_data *p2p, int pairing_setup);
 void p2p_set_pairing_cache(struct p2p_data *p2p, int pairing_cache);
@@ -2734,6 +2790,8 @@ int p2p_pasn_auth_rx(struct p2p_data *p2p, const struct ieee80211_mgmt *mgmt,
 		     size_t len, int freq);
 int p2p_prepare_data_element(struct p2p_data *p2p, const u8 *peer_addr);
 int p2p_parse_data_element(struct p2p_data *p2p, const u8 *data, size_t len);
+int p2p_pasn_validate_and_update_pmkid(struct p2p_data *p2p, const u8 *addr,
+				       const u8 *pmkid);
 int p2p_pasn_auth_tx_status(struct p2p_data *p2p, const u8 *data,
 			    size_t data_len, bool acked, bool verify);
 int p2p_config_sae_password(struct p2p_data *p2p, const char *pw);
@@ -2742,5 +2800,7 @@ void p2p_pasn_pmksa_set_pmk(struct p2p_data *p2p, const u8 *src, const u8 *dst,
 void p2p_set_store_pasn_ptk(struct p2p_data *p2p, u8 val);
 void p2p_pasn_store_ptk(struct p2p_data *p2p, struct wpa_ptk *ptk);
 int p2p_pasn_get_ptk(struct p2p_data *p2p, const u8 **buf, size_t *buf_len);
+void p2p_usd_service_hash(struct p2p_data *p2p, const char *service_name);
+int p2p_get_dira_info(struct p2p_data *p2p, char *buf, size_t buflen);
 
 #endif /* P2P_H */

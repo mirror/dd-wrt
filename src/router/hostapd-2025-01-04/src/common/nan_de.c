@@ -1426,6 +1426,32 @@ int nan_de_update_publish(struct nan_de *de, int publish_id,
 }
 
 
+int nan_de_unpause_publish(struct nan_de *de, int publish_id,
+			   u8 peer_instance_id, const u8 *peer_addr)
+{
+	struct nan_de_service *srv;
+
+	wpa_printf(MSG_DEBUG,
+		   "NAN: UnpausePublish(publish_id=%d, peer_instance_id=%d peer_addr="
+		   MACSTR ")",
+		   publish_id, peer_instance_id, MAC2STR(peer_addr));
+
+	if (publish_id < 1 || publish_id > NAN_DE_MAX_SERVICE)
+		return -1;
+	srv = de->service[publish_id - 1];
+	if (!srv || srv->type != NAN_DE_PUBLISH)
+		return -1;
+
+	if (srv->sel_peer_id != peer_instance_id ||
+	    !ether_addr_equal(peer_addr, srv->sel_peer_addr) ||
+	    !os_reltime_initialized(&srv->pause_state_end))
+		return -1;
+
+	nan_de_unpause_state(srv);
+	return 0;
+}
+
+
 int nan_de_subscribe(struct nan_de *de, const char *service_name,
 		     enum nan_service_protocol_type srv_proto_type,
 		     const struct wpabuf *ssi, const struct wpabuf *elems,
