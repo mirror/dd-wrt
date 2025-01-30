@@ -87,23 +87,38 @@ def _run_tshark(filename, filter, display=None, wait=True):
                     continue
             raise UnknownFieldsException(fields)
 
+    if res != 0:
+        raise AssertionError('tshark reported an error: ' + out1)
+
     return out
 
-def run_tshark(filename, filter, display=None, wait=True):
+def run_tshark(filename, filters, display=None, wait=True):
     if display is None: display = []
-    try:
-        return _run_tshark(filename, filter.replace('wlan_mgt', 'wlan'),
-                           [x.replace('wlan_mgt', 'wlan') for x in display],
-                           wait)
-    except UnknownFieldsException as e:
-        all_wlan_mgt = True
-        for f in e.fields:
-            if not f.startswith('wlan_mgt.'):
-                all_wlan_mgt = False
-                break
-        if not all_wlan_mgt:
-            raise
-        return _run_tshark(filename, filter, display, wait)
+
+    if not isinstance(filters, list) and not isinstance(filters, tuple):
+        filters = [filters]
+
+    last_exception = None
+    for filter in filters:
+        try:
+            return _run_tshark(filename, filter.replace('wlan_mgt', 'wlan'),
+                               [x.replace('wlan_mgt', 'wlan') for x in display],
+                               wait)
+        except UnknownFieldsException as e:
+            all_wlan_mgt = True
+            for f in e.fields:
+                if not f.startswith('wlan_mgt.'):
+                    all_wlan_mgt = False
+                    break
+            if not all_wlan_mgt:
+                raise
+            return _run_tshark(filename, filter, display, wait)
+
+        except AssertionError as e:
+            # Catch the error (and try the next provided filter)
+            last_exception = e
+
+    raise last_exception
 
 def run_tshark_json(filename, filter):
     arg = ["tshark", "-r", filename,

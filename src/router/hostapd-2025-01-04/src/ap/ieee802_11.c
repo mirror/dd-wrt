@@ -141,7 +141,7 @@ u8 * hostapd_eid_supp_rates(struct hostapd_data *hapd, u8 *eid)
 	h2e_required = (hapd->conf->sae_pwe == SAE_PWE_HASH_TO_ELEMENT ||
 			hostapd_sae_pw_id_in_use(hapd->conf) == 2) &&
 		hapd->conf->sae_pwe != SAE_PWE_FORCE_HUNT_AND_PECK &&
-		wpa_key_mgmt_sae(hapd->conf->wpa_key_mgmt);
+		wpa_key_mgmt_only_sae(hapd->conf->wpa_key_mgmt);
 	if (h2e_required)
 		num++;
 	if (num > 8) {
@@ -208,7 +208,7 @@ u8 * hostapd_eid_ext_supp_rates(struct hostapd_data *hapd, u8 *eid)
 	h2e_required = (hapd->conf->sae_pwe == SAE_PWE_HASH_TO_ELEMENT ||
 			hostapd_sae_pw_id_in_use(hapd->conf) == 2) &&
 		hapd->conf->sae_pwe != SAE_PWE_FORCE_HUNT_AND_PECK &&
-		wpa_key_mgmt_sae(hapd->conf->wpa_key_mgmt);
+		wpa_key_mgmt_only_sae(hapd->conf->wpa_key_mgmt);
 	if (h2e_required)
 		num++;
 	if (num <= 8)
@@ -3984,8 +3984,58 @@ end:
 #endif /* CONFIG_OWE */
 
 
+static bool hapd_is_known_sta(struct hostapd_data *hapd, struct sta_info *sta,
+			      const u8 *ies, size_t ies_len)
+{
+	const u8 *ie, *pos, *end, *timestamp_pos, *mic;
+	u64 timestamp;
+	u8 mic_len;
+
+	if (!hapd->conf->known_sta_identification)
+		return false;
+
+	ie = get_ie_ext(ies, ies_len, WLAN_EID_EXT_KNOWN_STA_IDENTIFICATION);
+	if (!ie)
+		return false;
+
+	pos = ie + 3;
+	end = &ie[2 + ie[1]];
+	if (end - pos < 8 + 1)
+		return false; /* truncated element */
+	timestamp_pos = pos;
+	timestamp = WPA_GET_LE64(pos);
+	pos += 8;
+	mic_len = *pos++;
+	if (mic_len > end - pos)
+		return false; /* truncated element */
+	mic = pos;
+
+	wpa_printf(MSG_DEBUG, "RSN: STA " MACSTR
+		   " included Known STA Identification element: Timestamp=0x%llx mic_len=%u",
+		   MAC2STR(sta->addr), (unsigned long long) timestamp, mic_len);
+
+	if (timestamp <= sta->last_known_sta_id_timestamp) {
+		wpa_printf(MSG_DEBUG,
+			   "RSN: Ignore reused or old Known STA Identification");
+		return false;
+	}
+
+	if (!wpa_auth_sm_known_sta_identification(sta->wpa_sm, timestamp_pos,
+						  mic, mic_len)) {
+		wpa_printf(MSG_DEBUG,
+			   "RSN: Ignore Known STA Identification with invalid MIC or due to KCK not available");
+		return false;
+	}
+
+	wpa_printf(MSG_DEBUG, "RSN: Valid Known STA Identification");
+	sta->last_known_sta_id_timestamp = timestamp;
+
+	return true;
+}
+
+
 static bool check_sa_query(struct hostapd_data *hapd, struct sta_info *sta,
-			   int reassoc)
+			   int reassoc, const u8 *ies, size_t ies_len)
 {
 	if ((sta->flags &
 	     (WLAN_STA_ASSOC | WLAN_STA_MFP | WLAN_STA_AUTHORIZED)) !=
@@ -3997,6 +4047,9 @@ static bool check_sa_query(struct hostapd_data *hapd, struct sta_info *sta,
 
 	if (!sta->sa_query_timed_out &&
 	    (!reassoc || sta->auth_alg != WLAN_AUTH_FT)) {
+		if (hapd_is_known_sta(hapd, sta, ies, ies_len))
+			return false;
+
 		/*
 		 * STA has already been associated with MFP and SA Query timeout
 		 * has not been reached. Reject the association attempt
@@ -4244,6 +4297,11 @@ static int __check_assoc_ies(struct hostapd_data *hapd, struct sta_info *sta,
 			sta->flags |= WLAN_STA_MFP;
 		else
 			sta->flags &= ~WLAN_STA_MFP;
+
+		if (wpa_auth_uses_spp_amsdu(sta->wpa_sm))
+			sta->flags |= WLAN_STA_SPP_AMSDU;
+		else
+			sta->flags &= ~WLAN_STA_SPP_AMSDU;
 
 #ifdef CONFIG_IEEE80211R_AP
 		if (sta->auth_alg == WLAN_AUTH_FT) {
@@ -5656,7 +5714,7 @@ static void handle_assoc(struct hostapd_data *hapd,
 		goto fail;
 	}
 
-	if (hapd->conf->wpa && check_sa_query(hapd, sta, reassoc)) {
+	if (hapd->conf->wpa && check_sa_query(hapd, sta, reassoc, pos, left)) {
 		resp = WLAN_STATUS_ASSOC_REJECTED_TEMPORARILY;
 		goto fail;
 	}

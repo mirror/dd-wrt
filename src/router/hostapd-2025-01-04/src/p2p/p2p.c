@@ -4304,7 +4304,8 @@ static void p2p_timeout_invite_listen(struct p2p_data *p2p)
 			p2p_dbg(p2p, "Invitation Request retry limit reached");
 			if (p2p->cfg->invitation_result)
 				p2p->cfg->invitation_result(
-					p2p->cfg->cb_ctx, -1, NULL, NULL,
+					p2p->cfg->cb_ctx, -1, NULL, 0, NULL,
+					NULL,
 					p2p->invite_peer->info.p2p_device_addr,
 					0, 0, NULL, NULL, 0);
 		}
@@ -6041,13 +6042,49 @@ static int p2p_derive_nonce_tag(struct p2p_data *p2p)
 }
 
 
-static void p2p_validate_dira(struct p2p_data *p2p, struct p2p_device *dev,
-			      const u8 *dira, u16 dira_len)
+static int p2p_validate_dira(struct p2p_data *p2p, struct p2p_device *dev,
+			     const u8 *dira, u16 dira_len)
 {
-	if (p2p->cfg->validate_dira)
-		p2p->cfg->validate_dira(p2p->cfg->cb_ctx,
-					dev->info.p2p_device_addr,
-					dira, dira_len);
+	if (dira_len < 1 || dira[0] != DIRA_CIPHER_VERSION_128) {
+		p2p_dbg(p2p, "Unsupported DIRA cipher version %d",
+			dira[0]);
+		return 0;
+	}
+
+	if (dira_len < 1 + DEVICE_IDENTITY_NONCE_LEN + DEVICE_IDENTITY_TAG_LEN)
+	{
+		p2p_dbg(p2p, "Truncated DIRA (length %u)", dira_len);
+		return 0;
+	}
+
+	if (p2p->cfg->validate_dira) {
+		const u8 *nonce = &dira[1];;
+		const u8 *tag = &dira[1 + DEVICE_IDENTITY_NONCE_LEN];
+
+		return p2p->cfg->validate_dira(p2p->cfg->cb_ctx,
+					       dev->info.p2p_device_addr,
+					       nonce, tag);
+	}
+
+	return 0;
+}
+
+
+void p2p_usd_service_hash(struct p2p_data *p2p, const char *service_name)
+{
+	u8 buf[P2PS_HASH_LEN];
+
+	p2p->usd_service = false;
+
+	if (!service_name)
+		return;
+
+	if (!p2ps_gen_hash(p2p, service_name, buf))
+		return;
+	p2p_dbg(p2p, "USD service %s hash " MACSTR,
+		service_name, MAC2STR(buf));
+	p2p->usd_service = true;
+	os_memcpy(&p2p->p2p_service_hash, buf, P2PS_HASH_LEN);
 }
 
 
@@ -6161,8 +6198,20 @@ void p2p_process_usd_elems(struct p2p_data *p2p, const u8 *ies, u16 ies_len,
 	if (!ether_addr_equal(peer_addr, p2p_dev_addr))
 		os_memcpy(dev->interface_addr, peer_addr, ETH_ALEN);
 
-	if (msg.dira && msg.dira_len)
-		p2p_validate_dira(p2p, dev, msg.dira, msg.dira_len);
+	if (msg.dira && msg.dira_len) {
+		dev->info.nonce_tag_valid = false;
+		dev->info.dik_id = p2p_validate_dira(p2p, dev, msg.dira,
+						     msg.dira_len);
+		if (dev->info.dik_id) {
+			os_memcpy(dev->info.nonce, &msg.dira[1],
+				  DEVICE_IDENTITY_NONCE_LEN);
+			os_memcpy(dev->info.tag,
+				  &msg.dira[1 + DEVICE_IDENTITY_NONCE_LEN],
+				  DEVICE_IDENTITY_TAG_LEN);
+			dev->info.pairing_config.dik_cipher = msg.dira[0];
+			dev->info.nonce_tag_valid = true;
+		}
+	}
 
 	p2p_dbg(p2p, "Updated device entry based on USD frame: " MACSTR
 		" dev_capab=0x%x group_capab=0x%x listen_freq=%d",
@@ -6174,6 +6223,18 @@ void p2p_process_usd_elems(struct p2p_data *p2p, const u8 *ies, u16 ies_len,
 	dev->flags |= P2P_DEV_REPORTED | P2P_DEV_REPORTED_ONCE;
 
 	p2p_parse_free(&msg);
+}
+
+
+int p2p_get_dik_id(struct p2p_data *p2p, const u8 *peer)
+{
+	struct p2p_device *dev;
+
+	dev = p2p_get_device(p2p, peer);
+	if (!dev)
+		return 0;
+
+	return dev->info.dik_id;
 }
 
 
@@ -6192,7 +6253,7 @@ int p2p_config_sae_password(struct p2p_data *p2p, const char *pw)
 
 static int p2p_prepare_pasn_extra_ie(struct p2p_data *p2p,
 				     struct wpabuf *extra_ies,
-				     const struct wpabuf *frame)
+				     const struct wpabuf *frame, bool add_dira)
 {
 	struct wpabuf *buf, *buf2;
 	size_t len;
@@ -6206,6 +6267,11 @@ static int p2p_prepare_pasn_extra_ie(struct p2p_data *p2p,
 
 	/* P2P Capability Extension attribute */
 	p2p_buf_add_pcea(buf, p2p);
+
+	if (add_dira) {
+		/* Device Identity Resolution attribute */
+		p2p_buf_add_dira(buf, p2p);
+	}
 
 	if (frame) {
 		p2p_dbg(p2p, "Add Action frame wrapper for PASN");
@@ -6226,6 +6292,30 @@ static int p2p_prepare_pasn_extra_ie(struct p2p_data *p2p,
 	wpabuf_free(buf2);
 
 	return 0;
+}
+
+
+static struct wpabuf * p2p_pasn_service_hash(struct p2p_data *p2p,
+					     struct wpabuf *extra_ies)
+{
+	struct wpabuf *buf;
+	u8 *ie_len = NULL;
+
+	if (!p2p->usd_service)
+		return extra_ies;
+
+	p2p_dbg(p2p, "Add P2P2 USD service hash in extra IE");
+	buf = wpabuf_alloc(100);
+	if (!buf) {
+		wpabuf_free(extra_ies);
+		return NULL;
+	}
+
+	ie_len = p2p_buf_add_ie_hdr(buf);
+	p2p_buf_add_usd_service_hash(buf, p2p);
+	p2p_buf_update_ie_hdr(buf, ie_len);
+
+	return wpabuf_concat(buf, extra_ies);
 }
 
 
@@ -6376,6 +6466,7 @@ void p2p_pasn_initialize(struct p2p_data *p2p, struct p2p_device *dev,
 	pasn->send_mgmt = p2p->cfg->pasn_send_mgmt;
 	pasn->prepare_data_element = p2p->cfg->prepare_data_element;
 	pasn->parse_data_element = p2p->cfg->parse_data_element;
+	pasn->validate_custom_pmkid = p2p->cfg->pasn_validate_pmkid;
 
 	pasn->freq = freq;
 }
@@ -6420,6 +6511,7 @@ int p2p_initiate_pasn_verify(struct p2p_data *p2p, const u8 *peer_addr,
 	struct wpabuf *extra_ies, *req;
 	int ret = 0;
 	u8 *pasn_extra_ies = NULL;
+	u8 pmkid[PMKID_LEN];
 
 	if (!peer_addr) {
 		p2p_dbg(p2p, "Peer address NULL");
@@ -6458,11 +6550,25 @@ int p2p_initiate_pasn_verify(struct p2p_data *p2p, const u8 *peer_addr,
 		return -1;
 	}
 
-	if (p2p_prepare_pasn_extra_ie(p2p, extra_ies, req)) {
+	if (os_get_random(pmkid, PMKID_LEN) < 0) {
+		wpabuf_free(req);
+		wpabuf_free(extra_ies);
+		return -1;
+	}
+	wpa_hexdump(MSG_DEBUG,
+		    "P2P2: Use new random PMKID for pairing verification",
+		    pmkid, PMKID_LEN);
+	pasn_set_custom_pmkid(pasn, pmkid);
+
+	if (p2p_prepare_pasn_extra_ie(p2p, extra_ies, req, true)) {
 		p2p_dbg(p2p, "Prepare PASN extra IEs failed");
 		ret = -1;
 		goto out;
 	}
+
+	extra_ies = p2p_pasn_service_hash(p2p, extra_ies);
+	if (!extra_ies)
+		goto out;
 
 	pasn_extra_ies = os_memdup(wpabuf_head_u8(extra_ies),
 				   wpabuf_len(extra_ies));
@@ -6514,6 +6620,9 @@ int p2p_initiate_pasn_auth(struct p2p_data *p2p, const u8 *addr, int freq)
 		return -1;
 	}
 
+	if (freq == 0)
+		freq = dev->listen_freq > 0 ? dev->listen_freq : dev->oper_freq;
+
 	dev->role = P2P_ROLE_PAIRING_INITIATOR;
 	p2p_pasn_initialize(p2p, dev, addr, freq, false, true);
 	pasn = dev->pasn;
@@ -6533,11 +6642,15 @@ int p2p_initiate_pasn_auth(struct p2p_data *p2p, const u8 *addr, int freq)
 		return -1;
 	}
 
-	if (p2p_prepare_pasn_extra_ie(p2p, extra_ies, req)) {
+	if (p2p_prepare_pasn_extra_ie(p2p, extra_ies, req, false)) {
 		p2p_dbg(p2p, "Failed to prepare PASN extra elements");
 		ret = -1;
 		goto out;
 	}
+
+	extra_ies = p2p_pasn_service_hash(p2p, extra_ies);
+	if (!extra_ies)
+		goto out;
 
 	ies_len = wpabuf_len(extra_ies);
 	ies = os_memdup(wpabuf_head_u8(extra_ies), ies_len);
@@ -6641,6 +6754,18 @@ static int p2p_pasn_handle_action_wrapper(struct p2p_data *p2p,
 					    derive_kek);
 			wpabuf_free(dev->action_frame_wrapper);
 			dev->action_frame_wrapper = resp;
+			if (msg.dira && msg.dira_len &&
+			    p2p_validate_dira(p2p, dev, msg.dira,
+					      msg.dira_len)) {
+				struct wpa_ie_data rsn_data;
+
+				if (wpa_parse_wpa_ie_rsn(elems.rsn_ie - 2,
+							 elems.rsn_ie_len + 2,
+							 &rsn_data) == 0 &&
+				    rsn_data.num_pmkid)
+					pasn_set_custom_pmkid(dev->pasn,
+							      rsn_data.pmkid);
+			}
 		} else if (data && data_len >= 1 && data[0] == P2P_GO_NEG_REQ) {
 			struct wpabuf *resp;
 
@@ -6780,7 +6905,7 @@ int p2p_prepare_data_element(struct p2p_data *p2p, const u8 *peer_addr)
 	extra_ies = wpabuf_alloc(1500);
 	if (!extra_ies ||
 	    p2p_prepare_pasn_extra_ie(p2p, extra_ies,
-				      dev->action_frame_wrapper)) {
+				      dev->action_frame_wrapper, false)) {
 		p2p_dbg(p2p, "Failed to prepare PASN extra elements");
 		goto out;
 	}
@@ -6896,6 +7021,72 @@ int p2p_parse_data_element(struct p2p_data *p2p, const u8 *data, size_t len)
 		pos = next;
 	}
 
+	return 0;
+}
+
+
+static int p2p_validate_custom_pmkid(struct p2p_data *p2p,
+				     struct p2p_device *dev, const u8 *pmkid)
+{
+	if (dev->pasn->custom_pmkid_valid &&
+	    os_memcmp(dev->pasn->custom_pmkid, pmkid, PMKID_LEN) == 0) {
+		p2p_dbg(p2p, "Customized PMKID valid");
+		return 0;
+	}
+	return -1;
+}
+
+
+static int p2p_pasn_pmksa_get_pmk(struct p2p_data *p2p, const u8 *addr,
+				  u8 *pmkid, u8 *pmk, size_t *pmk_len)
+{
+	struct p2p_device *dev;
+
+	dev = p2p_get_device(p2p, addr);
+	if (!dev) {
+		p2p_dbg(p2p, "PASN: Peer not found " MACSTR, MAC2STR(addr));
+		return -1;
+	}
+
+	if (dev->role == P2P_ROLE_PAIRING_INITIATOR)
+		return pasn_initiator_pmksa_cache_get(p2p->initiator_pmksa,
+						      addr, pmkid, pmk,
+						      pmk_len);
+	else
+		return pasn_responder_pmksa_cache_get(p2p->responder_pmksa,
+						      addr, pmkid, pmk,
+						      pmk_len);
+}
+
+
+int p2p_pasn_validate_and_update_pmkid(struct p2p_data *p2p, const u8 *addr,
+				       const u8 *rsn_pmkid)
+{
+	size_t pmk_len;
+	u8 pmkid[PMKID_LEN];
+	u8 pmk[PMK_LEN_MAX];
+	struct p2p_device *dev;
+
+	if (!p2p)
+		return -1;
+
+	dev = p2p_get_device(p2p, addr);
+	if (!dev || !dev->pasn) {
+		p2p_dbg(p2p, "P2P PASN: Peer not found " MACSTR,
+			MAC2STR(addr));
+		return -1;
+	}
+
+	if (p2p_validate_custom_pmkid(p2p, dev, rsn_pmkid))
+		return -1;
+
+	if (p2p_pasn_pmksa_get_pmk(p2p, addr, pmkid, pmk, &pmk_len)) {
+		p2p_dbg(p2p, "P2P PASN: Failed to get PMK from cache");
+		return -1;
+	}
+
+	p2p_pasn_pmksa_set_pmk(p2p, p2p->cfg->dev_addr, addr, pmk, pmk_len,
+			       rsn_pmkid);
 	return 0;
 }
 
@@ -7059,7 +7250,8 @@ int p2p_pasn_auth_rx(struct p2p_data *p2p, const struct ieee80211_mgmt *mgmt,
 	pasn->frame = NULL;
 
 	pasn_register_callbacks(pasn, p2p->cfg->cb_ctx,
-				p2p->cfg->pasn_send_mgmt, NULL);
+				p2p->cfg->pasn_send_mgmt,
+				p2p->cfg->pasn_validate_pmkid);
 	auth_transaction = le_to_host16(mgmt->u.auth.auth_transaction);
 
 	if (dev->role == P2P_ROLE_PAIRING_INITIATOR && auth_transaction == 2) {
@@ -7141,3 +7333,52 @@ int p2p_pasn_get_ptk(struct p2p_data *p2p, const u8 **buf, size_t *buf_len)
 #endif /* CONFIG_TESTING_OPTIONS */
 
 #endif /* CONFIG_PASN */
+
+
+int p2p_get_dira_info(struct p2p_data *p2p, char *buf, size_t buflen)
+{
+	int res;
+	char *pos, *end;
+	struct p2p_id_key *dev_ik;
+
+	if (!p2p->pairing_info ||
+	    !p2p->cfg->pairing_config.pairing_capable ||
+	    !p2p->cfg->pairing_config.enable_pairing_cache)
+		return 0;
+
+	if (p2p_derive_nonce_tag(p2p))
+		return 0;
+
+	pos = buf;
+	end = buf + buflen;
+	dev_ik = &p2p->pairing_info->dev_ik;
+
+	res = os_snprintf(pos, end - pos, MACSTR,
+			  MAC2STR(p2p->cfg->dev_addr));
+	if (os_snprintf_error(end - pos, res))
+		return pos - buf;
+	pos += res;
+
+	res = os_snprintf(pos, end - pos, " ");
+	if (os_snprintf_error(end - pos, res))
+		return pos - buf;
+	pos += res;
+
+	pos += wpa_snprintf_hex(pos, end - pos, dev_ik->dira_nonce,
+				dev_ik->dira_nonce_len);
+
+	res = os_snprintf(pos, end - pos, " ");
+	if (os_snprintf_error(end - pos, res))
+		return pos - buf;
+	pos += res;
+
+	pos += wpa_snprintf_hex(pos, end - pos, dev_ik->dira_tag,
+				dev_ik->dira_tag_len);
+
+	res = os_snprintf(pos, end - pos, "\n");
+	if (os_snprintf_error(end - pos, res))
+		return pos - buf;
+	pos += res;
+
+	return pos - buf;
+}

@@ -203,6 +203,8 @@ struct p2p_device {
 	int inv_freq;
 	int inv_peer_oper_freq;
 	u8 inv_bssid[ETH_ALEN];
+	u8 inv_ssid[SSID_MAX_LEN];
+	size_t inv_ssid_len;
 	bool inv_all_channels;
 };
 
@@ -690,6 +692,9 @@ struct p2p_data {
 	 */
 	size_t pasn_ptk_len;
 #endif /* CONFIG_TESTING_OPTIONS */
+
+	bool usd_service;
+	u8 p2p_service_hash[P2PS_HASH_LEN];
 };
 
 /**
@@ -1063,7 +1068,6 @@ int dev_type_list_match(const u8 *dev_type, const u8 *req_dev_type[],
 struct wpabuf * p2p_build_probe_resp_ies(struct p2p_data *p2p,
 					 const u8 *query_hash,
 					 u8 query_count);
-void p2p_build_ssid(struct p2p_data *p2p, u8 *ssid, size_t *ssid_len);
 int p2p_send_action(struct p2p_data *p2p, unsigned int freq, const u8 *dst,
 		    const u8 *src, const u8 *bssid, const u8 *buf,
 		    size_t len, unsigned int wait_time);
@@ -1083,6 +1087,7 @@ void p2p_sd_query_cb(struct p2p_data *p2p, int success);
 void p2p_pasn_initialize(struct p2p_data *p2p, struct p2p_device *dev,
 			 const u8 *addr, int freq, bool verify,
 			 bool derive_kek);
+void p2p_buf_add_usd_service_hash(struct wpabuf *buf, struct p2p_data *p2p);
 
 void p2p_dbg(struct p2p_data *p2p, const char *fmt, ...)
 PRINTF_FORMAT(2, 3);

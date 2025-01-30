@@ -443,6 +443,28 @@ static bool is_p2p_pending_bss(struct wpa_supplicant *wpa_s,
 }
 
 
+#ifdef CONFIG_OWE
+static int wpa_bss_owe_trans_known(struct wpa_supplicant *wpa_s,
+				   struct wpa_bss *bss,
+				   const u8 *entry_ssid, size_t entry_ssid_len)
+{
+	const u8 *owe, *owe_bssid, *owe_ssid;
+	size_t owe_ssid_len;
+
+	owe = wpa_bss_get_vendor_ie(bss, OWE_IE_VENDOR_TYPE);
+	if (!owe)
+		return 0;
+
+	if (wpas_get_owe_trans_network(owe, &owe_bssid, &owe_ssid,
+				       &owe_ssid_len))
+		return 0;
+
+	return entry_ssid_len == owe_ssid_len &&
+		os_memcmp(owe_ssid, entry_ssid, owe_ssid_len) == 0;
+}
+#endif /* CONFIG_OWE */
+
+
 static int wpa_bss_known(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
 {
 	struct wpa_ssid *ssid;
@@ -456,6 +478,11 @@ static int wpa_bss_known(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
 		if (ssid->ssid_len == bss->ssid_len &&
 		    os_memcmp(ssid->ssid, bss->ssid, ssid->ssid_len) == 0)
 			return 1;
+#ifdef CONFIG_OWE
+		if (wpa_bss_owe_trans_known(wpa_s, bss, ssid->ssid,
+					    ssid->ssid_len))
+			return 1;
+#endif /* CONFIG_OWE */
 	}
 
 	return 0;
@@ -506,6 +533,7 @@ static int wpa_bss_remove_oldest_unknown(struct wpa_supplicant *wpa_s)
 
 	dl_list_for_each(bss, &wpa_s->bss, struct wpa_bss, list) {
 		if (!wpa_bss_known(wpa_s, bss) &&
+		    !wpa_bss_in_use(wpa_s, bss) &&
 		    !wpa_bss_is_wps_candidate(wpa_s, bss)) {
 			wpa_bss_remove(wpa_s, bss, __func__);
 			return 0;

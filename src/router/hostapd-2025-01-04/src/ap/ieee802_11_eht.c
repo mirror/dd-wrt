@@ -1236,6 +1236,12 @@ u16 hostapd_process_ml_assoc_req(struct hostapd_data *hapd,
 		goto out;
 	}
 
+	if (ml_control & BASIC_MULTI_LINK_CTRL_PRES_EXT_MLD_CAP) {
+		common_info_len += 2;
+	} else {
+		wpa_printf(MSG_DEBUG, "MLD: EXT ML capabilities not present");
+	}
+
 	wpa_printf(MSG_DEBUG, "MLD: expected_common_info_len=%lu",
 		   common_info_len);
 
@@ -1265,6 +1271,10 @@ u16 hostapd_process_ml_assoc_req(struct hostapd_data *hapd,
 
 	info->common_info.mld_capa = WPA_GET_LE16(pos);
 	pos += 2;
+
+	if (ml_control & BASIC_MULTI_LINK_CTRL_PRES_EXT_MLD_CAP) {
+		pos += 2;
+	}
 
 	wpa_printf(MSG_DEBUG, "MLD: addr=" MACSTR ", eml=0x%x, mld=0x%x",
 		   MAC2STR(info->common_info.mld_addr),

@@ -140,6 +140,7 @@ enum wpa_sm_conf_params {
 	WPA_PARAM_RSN_OVERRIDE,
 	WPA_PARAM_RSN_OVERRIDE_SUPPORT,
 	WPA_PARAM_EAPOL_2_KEY_INFO_SET_MASK,
+	WPA_PARAM_SPP_AMSDU,
 };
 
 enum wpa_rsn_override {
@@ -279,6 +280,7 @@ void wpa_sm_pmksa_cache_reconfig(struct wpa_sm *sm);
 int wpa_sm_set_mlo_params(struct wpa_sm *sm, const struct wpa_sm_mlo *mlo);
 void wpa_sm_set_driver_bss_selection(struct wpa_sm *sm,
 				     bool driver_bss_selection);
+bool wpa_sm_uses_spp_amsdu(struct wpa_sm *sm);
 
 #else /* CONFIG_NO_WPA */
 
@@ -527,6 +529,11 @@ static inline void wpa_sm_set_driver_bss_selection(struct wpa_sm *sm,
 {
 }
 
+static inline bool wpa_sm_uses_spp_amsdu(struct wpa_sm *sm)
+{
+	return false;
+}
+
 #endif /* CONFIG_NO_WPA */
 
 #ifdef CONFIG_IEEE80211R
@@ -667,5 +674,7 @@ struct rsn_pmksa_cache * wpa_sm_get_pmksa_cache(struct wpa_sm *sm);
 void wpa_sm_set_cur_pmksa(struct wpa_sm *sm,
 			  struct rsn_pmksa_cache_entry *entry);
 const u8 * wpa_sm_get_auth_addr(struct wpa_sm *sm);
+struct wpabuf * wpa_sm_known_sta_identification(struct wpa_sm *sm, const u8 *aa,
+						u64 timestamp);
 
 #endif /* WPA_H */

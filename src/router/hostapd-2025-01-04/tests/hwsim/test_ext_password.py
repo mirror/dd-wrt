@@ -123,6 +123,33 @@ def test_ext_password_file_psk_with_hash(dev, apdev):
     dev[0].request("SET ext_password_backend file:%s" % fn)
     dev[0].connect("ext-pw-psk", raw_psk="ext:psk1", scan_freq="2412")
 
+def test_ext_password_file_with_partially_matching_keys(dev, apdev):
+    """External password (file) storage with partially matching keys"""
+    params = hostapd.wpa2_params(ssid="ext-pw-psk", passphrase="12345678")
+    hostapd.add_ap(apdev[0], params)
+    fd, fn = tempfile.mkstemp()
+    with open(fn, "w") as f:
+        f.write("psk=password\n")
+        f.write("psk1=12345678\n")
+    os.close(fd)
+    dev[0].set("ext_password_backend", "file:%s" % fn)
+    dev[0].connect("ext-pw-psk", raw_psk="ext:psk1", scan_freq="2412")
+    for i in range(2):
+        dev[0].request("REMOVE_NETWORK all")
+        if i == 0:
+            dev[0].wait_disconnected()
+            dev[0].connect("ext-pw-psk", raw_psk="ext:psk12", scan_freq="2412",
+                           wait_connect=False)
+        else:
+            dev[0].connect("ext-pw-psk", raw_psk="ext:ps", scan_freq="2412",
+                           wait_connect=False)
+        ev = dev[0].wait_event(["EXT PW: No PSK found from external storage"],
+                               timeout=10)
+        if ev is None:
+            raise Exception("No connection result reported")
+    dev[0].request("REMOVE_NETWORK all")
+    os.unlink(fn)
+
 @remote_compatible
 def test_ext_password_sae(dev, apdev):
     """External password storage for SAE"""

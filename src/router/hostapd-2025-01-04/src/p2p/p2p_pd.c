@@ -780,9 +780,6 @@ static void p2p_process_prov_disc_bootstrap_req(struct p2p_data *p2p,
 
 		if (!dev->req_bootstrap_method) {
 			status = P2P_SC_COMEBACK;
-			if (p2p->cfg->bootstrap_req_rx)
-				p2p->cfg->bootstrap_req_rx(p2p->cfg->cb_ctx,
-							   sa, bootstrap);
 			goto out;
 		}
 	} else {
@@ -2113,6 +2110,24 @@ int p2p_send_prov_disc_req(struct p2p_data *p2p, struct p2p_device *dev,
 	os_memcpy(p2p->pending_pd_devaddr, dev->info.p2p_device_addr, ETH_ALEN);
 
 	wpabuf_free(req);
+	return 0;
+}
+
+
+int p2p_set_req_bootstrap_method(struct p2p_data *p2p, const u8 *peer_addr,
+				 u16 bootstrap)
+{
+	struct p2p_device *dev;
+
+	dev = p2p_get_device(p2p, peer_addr);
+	if (!dev) {
+		p2p_dbg(p2p, "Bootstrap request for peer " MACSTR
+			" not yet known", MAC2STR(peer_addr));
+		return -1;
+	}
+
+	dev->p2p2 = 1;
+	dev->req_bootstrap_method = bootstrap;
 	return 0;
 }
 

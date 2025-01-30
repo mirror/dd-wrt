@@ -1045,6 +1045,7 @@ struct wpa_supplicant {
 		u8 sched_obss_scan;
 		u16 obss_scan_int;
 		u16 bss_max_idle_period;
+		bool spp_amsdu;
 #ifdef CONFIG_SAE
 		struct sae_data sae;
 		struct wpabuf *sae_token;

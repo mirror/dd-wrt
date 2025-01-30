@@ -1285,13 +1285,6 @@ static void radius_client_receive(int sock, void *eloop_ctx, void *sock_ctx)
 		       roundtrip / 100, roundtrip % 100);
 	rconf->round_trip_time = roundtrip;
 
-	/* Remove ACKed RADIUS packet from retransmit list */
-	if (prev_req)
-		prev_req->next = req->next;
-	else
-		radius->msgs = req->next;
-	radius->num_msgs--;
-
 	for (i = 0; i < num_handlers; i++) {
 		RadiusRxResult res;
 		res = handlers[i].handler(msg, req->msg, req->shared_secret,
@@ -1302,6 +1295,13 @@ static void radius_client_receive(int sock, void *eloop_ctx, void *sock_ctx)
 			radius_msg_free(msg);
 			/* fall through */
 		case RADIUS_RX_QUEUED:
+			/* Remove ACKed RADIUS packet from retransmit list */
+			if (prev_req)
+				prev_req->next = req->next;
+			else
+				radius->msgs = req->next;
+			radius->num_msgs--;
+
 			radius_client_msg_free(req);
 			return;
 		case RADIUS_RX_INVALID_AUTHENTICATOR:
@@ -1323,7 +1323,6 @@ static void radius_client_receive(int sock, void *eloop_ctx, void *sock_ctx)
 		       msg_type, hdr->code, hdr->identifier,
 		       invalid_authenticator ? " [INVALID AUTHENTICATOR]" :
 		       "");
-	radius_client_msg_free(req);
 
  fail:
 	radius_msg_free(msg);

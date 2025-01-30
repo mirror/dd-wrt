@@ -427,13 +427,44 @@ def test_nan_usd_publish_multi_chan_pause(dev, apdev):
     if "FAIL" in id2:
         raise Exception("NAN_SUBSCRIBE failed")
 
-    ev = dev[1].wait_event(["NAN-DISCOVERY-RESULT"], timeout=5)
+    ev = dev[0].wait_event(["NAN-RECEIVE"], timeout=10)
+    if ev is None:
+        raise Exception("Receive event not seen")
+    if "address=" + dev[1].own_addr() in ev.split():
+        dev1 = dev[1]
+        dev2 = dev[2]
+    elif "address=" + dev[2].own_addr() in ev.split():
+        dev1 = dev[2]
+        dev2 = dev[1]
+    else:
+        raise Exception("Unexpected address in NAN-RECEIVE: " + ev)
+
+    ev = dev1.wait_event(["NAN-DISCOVERY-RESULT"], timeout=5)
     if ev is None:
         raise Exception("DiscoveryResult event not seen (1)")
+    vals = split_nan_event(ev)
 
-    ev = dev[2].wait_event(["NAN-DISCOVERY-RESULT"], timeout=5)
+    cmd = "NAN_TRANSMIT handle={} req_instance_id={} address={} ssi=8899".format(vals['subscribe_id'], vals['publish_id'], dev[0].own_addr())
+    if "FAIL" in dev1.request(cmd):
+        raise Exception("NAN_TRANSMIT failed")
+    ev = dev[0].wait_event(["NAN-RECEIVE"], timeout=5)
+    if ev is None:
+        raise Exception("Receive event not seen for follow-up (1)")
+    vals = split_nan_event(ev)
+    cmd = "NAN_UNPAUSE_PUBLISH publish_id={} peer_instance_id={} peer={}".format(vals['id'], vals['peer_instance_id'], vals['address'])
+    if "OK" not in dev[0].request(cmd):
+        raise Exception("NAN_UNPAUSE_PUBLISH failed")
+
+    ev = dev2.wait_event(["NAN-DISCOVERY-RESULT"], timeout=5)
     if ev is None:
         raise Exception("DiscoveryResult event not seen (2)")
+    vals = split_nan_event(ev)
+    cmd = "NAN_TRANSMIT handle={} req_instance_id={} address={} ssi=8899".format(vals['subscribe_id'], vals['publish_id'], dev[0].own_addr())
+    if "FAIL" in dev2.request(cmd):
+        raise Exception("NAN_TRANSMIT failed")
+    ev = dev[0].wait_event(["NAN-RECEIVE"], timeout=5)
+    if ev is None:
+        raise Exception("Receive event not seen for follow-up (2)")
 
     ev = dev[0].wait_event(["NAN-PUBLISH-TERMINATED"], timeout=15)
     if ev is None:

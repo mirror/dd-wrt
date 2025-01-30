@@ -1921,6 +1921,8 @@ void wpa_config_foreach_network(struct wpa_config *config,
 				void (*func)(void *, struct wpa_ssid *),
 				void *arg);
 struct wpa_ssid * wpa_config_get_network(struct wpa_config *config, int id);
+struct wpa_ssid * wpa_config_get_network_with_dik_id(struct wpa_config *config,
+						     int dik_id);
 struct wpa_ssid * wpa_config_add_network(struct wpa_config *config);
 int wpa_config_remove_network(struct wpa_config *config, int id);
 void wpa_config_set_network_defaults(struct wpa_ssid *ssid);

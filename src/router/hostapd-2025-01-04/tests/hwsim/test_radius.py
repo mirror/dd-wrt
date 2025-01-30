@@ -1206,7 +1206,8 @@ def build_tunnel_password(secret, authenticator, psk):
     return data
 
 def start_radius_psk_server(psk, invalid_code=False, acct_interim_interval=0,
-                            session_timeout=0, reject=False):
+                            session_timeout=0, reject=False,
+                            inject_invalid=False):
     try:
         import pyrad.server
         import pyrad.packet
@@ -1218,6 +1219,13 @@ def start_radius_psk_server(psk, invalid_code=False, acct_interim_interval=0,
         def _HandleAuthPacket(self, pkt):
             pyrad.server.Server._HandleAuthPacket(self, pkt)
             logger.info("Received authentication request")
+
+            if self.t_events['inject_invalid']:
+                reply = self.CreateReplyPacket(pkt)
+                reply.code = pyrad.packet.AccessAccept
+                build_message_auth(pkt, reply, secret=b'\x00')
+                self.SendReplyPacket(pkt.fd, reply)
+
             reply = self.CreateReplyPacket(pkt)
             reply.code = pyrad.packet.AccessAccept
             if self.t_events['invalid_code']:
@@ -1272,6 +1280,7 @@ def start_radius_psk_server(psk, invalid_code=False, acct_interim_interval=0,
     t_events['acct_interim_interval'] = acct_interim_interval
     t_events['session_timeout'] = session_timeout
     t_events['reject'] = reject
+    t_events['inject_invalid'] = inject_invalid
     t = threading.Thread(target=run_pyrad_server, args=(srv, t_events))
     t.start()
     return t, t_events
@@ -1429,6 +1438,21 @@ def test_radius_psk_oom(dev, apdev):
             dev[0].connect("test-wpa2-psk", psk="12345678", scan_freq="2412",
                            wait_connect=False)
             wait_fail_trigger(hapd, "GET_ALLOC_FAIL")
+    finally:
+        t_events['stop'].set()
+        t.join()
+
+def test_radius_psk_discard(dev, apdev):
+    """WPA2 with PSK from RADIUS and discarding invalid RADIUS messages"""
+    t, t_events = start_radius_psk_server("12345678", inject_invalid=True)
+
+    try:
+        params = hostapd_radius_psk_test_params()
+        hapd = hostapd.add_ap(apdev[0], params)
+        dev[0].connect("test-wpa2-psk", psk="12345678", scan_freq="2412")
+        t_events['psk'] = "0123456789abcdef"
+        dev[1].connect("test-wpa2-psk", psk="0123456789abcdef",
+                       scan_freq="2412")
     finally:
         t_events['stop'].set()
         t.join()

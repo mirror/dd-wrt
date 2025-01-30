@@ -184,7 +184,15 @@ def test_owe_transition_mode_mismatch3(dev, apdev):
     run_owe_transition_mode(dev, apdev, adv_bssid0="02:11:22:33:44:55",
                             adv_bssid1="02:11:22:33:44:66")
 
-def run_owe_transition_mode(dev, apdev, adv_bssid0=None, adv_bssid1=None):
+def test_owe_transition_mode_bss_limit(dev, apdev):
+    """Opportunistic Wireless Encryption transition mode (BSS limit)"""
+    try:
+        run_owe_transition_mode(dev, apdev, bss_limit=True)
+    finally:
+        dev[0].set("bss_max_count", "200")
+
+def run_owe_transition_mode(dev, apdev, adv_bssid0=None, adv_bssid1=None,
+                            bss_limit=False):
     if "OWE" not in dev[0].get_capability("key_mgmt"):
         raise HwsimSkip("OWE not supported")
     dev[0].flush_scan_cache()
@@ -227,6 +235,27 @@ def run_owe_transition_mode(dev, apdev, adv_bssid0=None, adv_bssid1=None):
     val = dev[0].get_status_field("key_mgmt")
     if val != "OWE":
         raise Exception("Unexpected key_mgmt: " + val)
+
+    if bss_limit:
+        id = dev[1].add_network()
+        dev[1].set_network(id, "mode", "2")
+        dev[1].set_network_quoted(id, "ssid", "owe-test")
+        dev[1].set_network(id, "key_mgmt", "NONE")
+        dev[1].set_network(id, "frequency", "2412")
+        dev[1].set_network(id, "scan_freq", "2412")
+        dev[1].select_network(id)
+        dev[1].wait_connected()
+
+        # Verify that wpa_s->current_bss does not become invalid if oldest BSS
+        # entries need to be removed.
+        dev[0].set("bss_max_count", "1")
+        dev[0].scan(freq=2412, type="ONLY")
+        dev[0].scan(freq=2412, type="ONLY")
+        logger.info("STATUS:\n" + dev[0].request("STATUS"))
+        logger.info("STATUS:\n" + dev[0].request("BSS CURRENT"))
+
+        dev[1].request("DISCONNECT")
+        dev[1].wait_disconnected()
 
     logger.info("Move to OWE only mode (disable transition mode)")
 
@@ -749,11 +778,13 @@ def test_owe_assoc_reject(dev, apdev):
     bssid = hapd.own_addr()
 
     # First, reject two associations with HT-required (i.e., not OWE related)
-    dev[0].scan_for_bss(bssid, freq="2412")
-    dev[0].connect("owe", key_mgmt="OWE", ieee80211w="2",
-                   disable_ht="1", scan_freq="2412", wait_connect=False)
+    wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
+    wpas.interface_add("wlan5", drv_params="extra_bss_membership_selectors=127")
+    wpas.scan_for_bss(bssid, freq="2412")
+    wpas.connect("owe", key_mgmt="OWE", ieee80211w="2",
+                 disable_ht="1", scan_freq="2412", wait_connect=False)
     for i in range(0, 2):
-        ev = dev[0].wait_event(["CTRL-EVENT-ASSOC-REJECT"], timeout=10)
+        ev = wpas.wait_event(["CTRL-EVENT-ASSOC-REJECT"], timeout=10)
         if ev is None:
             raise Exception("Association rejection not reported")
 
@@ -761,8 +792,8 @@ def test_owe_assoc_reject(dev, apdev):
     # attempt instead of having moved to testing another group.
     hapd.set("require_ht", "0")
     for i in range(0, 2):
-        ev = dev[0].wait_event(["CTRL-EVENT-ASSOC-REJECT",
-                                "CTRL-EVENT-CONNECTED"], timeout=10)
+        ev = wpas.wait_event(["CTRL-EVENT-ASSOC-REJECT",
+                             "CTRL-EVENT-CONNECTED"], timeout=10)
         if ev is None:
             raise Exception("Association result not reported")
         if "CTRL-EVENT-CONNECTED" in ev:

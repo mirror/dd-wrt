@@ -197,6 +197,18 @@ static void parse_basic_ml(const u8 *ie, size_t len, bool ap,
 		pos++;
 	}
 
+	if (ctrl & BASIC_MULTI_LINK_CTRL_PRES_EXT_MLD_CAP) {
+		if (ci_end - pos < 2) {
+			wpa_printf(MSG_INFO,
+				   "No room for Extended MLD Capabilities And Operations in Multi-Link Common Info");
+			return;
+		}
+		wpa_printf(MSG_DEBUG,
+			   "Extended MLD Capabilities And Operations: 0x%x",
+			   WPA_GET_LE16(pos));
+		pos += 2;
+	}
+
 	if (pos < ci_end) {
 		wpa_hexdump(MSG_INFO,
 			    "Extra information at the end of Common Info",
@@ -394,6 +406,281 @@ static void parse_basic_ml_elems(struct ieee802_11_elems *elems, bool ap,
 	if (mlbuf) {
 		parse_basic_ml(wpabuf_head(mlbuf), wpabuf_len(mlbuf), ap, sta,
 			       fields_len);
+		wpabuf_free(mlbuf);
+	}
+}
+
+
+static void parse_reconfig_ml(const u8 *ie, size_t len,
+			      struct wlantest_sta *sta)
+{
+	const u8 *pos, *end, *ci_end, *info_end, *li_end;
+	u16 ctrl, eml, cap, bitmap;
+	const struct element *elem;
+	struct wpabuf *profile = NULL;
+	size_t fields_len = 2;
+
+	wpa_hexdump(MSG_MSGDUMP, "Reconfiguration MLE", ie, len);
+	pos = ie;
+	end = ie + len;
+
+	if (end - pos < 2)
+		return;
+	ctrl = WPA_GET_LE16(pos);
+	bitmap = ctrl >> 4;
+	wpa_printf(MSG_DEBUG,
+		   "Multi-Link Control: Type=%u Reserved=%u Presence Bitmap=0x%x",
+		   ctrl & MULTI_LINK_CONTROL_TYPE_MASK,
+		   ctrl & BIT(3),
+		   bitmap);
+	pos += 2;
+
+	/* Common Info */
+
+	if (end - pos < 1)
+		return;
+	len = *pos;
+	if (len > end - pos) {
+		wpa_printf(MSG_INFO,
+			   "Truncated Multi-Link Common Info (len=%zu left=%zu)",
+			   len, (size_t) (end - pos));
+		return;
+	}
+	if (len < 1) {
+		wpa_printf(MSG_INFO, "Too short Multi-Link Common Info");
+		return;
+	}
+	ci_end = pos + len;
+
+	pos++;
+	wpa_hexdump(MSG_MSGDUMP, "Reconfiguration MLE - Common Info",
+		    pos, ci_end - pos);
+
+	if (bitmap & RECONF_MULTI_LINK_CTRL_PRES_MLD_MAC_ADDR) {
+		if (ci_end - pos < ETH_ALEN) {
+			wpa_printf(MSG_INFO,
+				   "No room for MLD MAC Address in Multi-Link Common Info");
+			return;
+		}
+		wpa_printf(MSG_DEBUG, "MLD MAC Address: " MACSTR, MAC2STR(pos));
+		if (sta && is_zero_ether_addr(sta->mld_mac_addr)) {
+			os_memcpy(sta->mld_mac_addr, pos, ETH_ALEN);
+			wpa_printf(MSG_DEBUG,
+				   "Learned non-AP STA MLD MAC Address from Reconfig MLE: "
+				   MACSTR, MAC2STR(sta->mld_mac_addr));
+		}
+		pos += ETH_ALEN;
+	}
+
+	if (bitmap & RECONF_MULTI_LINK_CTRL_PRES_EML_CAPA) {
+		if (ci_end - pos < 2) {
+			wpa_printf(MSG_INFO,
+				   "No room for EML Capabilities in Multi-Link Common Info");
+			return;
+		}
+		eml = WPA_GET_LE16(pos);
+		pos += 2;
+		wpa_printf(MSG_DEBUG,
+			   "EML Capabilities: 0x%x (EMLSR=%u EMLSR_Padding_Delay=%u EMLSR_Transition_Delay=%u EMLMR=%u EMLMR_Delay=%u Transition_Timeout=%u Reserved=%u)",
+			   eml,
+			   !!(eml & EHT_ML_EML_CAPA_EMLSR_SUPP),
+			   (eml & EHT_ML_EML_CAPA_EMLSR_PADDING_DELAY_MASK) >>
+			   1,
+			   (eml & EHT_ML_EML_CAPA_EMLSR_TRANS_DELAY_MASK) >> 4,
+			   !!(eml & EHT_ML_EML_CAPA_EMLMR_SUPP),
+			   (eml & EHT_ML_EML_CAPA_EMLMR_DELAY_MASK) >> 8,
+			   (eml & EHT_ML_EML_CAPA_TRANSITION_TIMEOUT_MASK) >>
+			   11,
+			   !!(eml & BIT(15)));
+	}
+
+	if (bitmap & RECONF_MULTI_LINK_CTRL_PRES_MLD_CAPA) {
+		if (ci_end - pos < 2) {
+			wpa_printf(MSG_INFO,
+				   "No room for MLD Capabilities and Operations in Multi-Link Common Info");
+			return;
+		}
+		cap = WPA_GET_LE16(pos);
+		pos += 2;
+		wpa_printf(MSG_DEBUG,
+			   "MLD Capabilities and Operations: 0x%x (Max_Simultaneous_Links=%u SRS=%u T2L=0x%x Freq_Sep_STR=0x%x AAR=%u Reserved=0x%x)",
+			   cap,
+			   cap & EHT_ML_MLD_CAPA_MAX_NUM_SIM_LINKS_MASK,
+			   !!(cap & EHT_ML_MLD_CAPA_SRS_SUPP),
+			   (cap &
+			    EHT_ML_MLD_CAPA_TID_TO_LINK_MAP_NEG_SUPP_MSK) >> 5,
+			   (cap & EHT_ML_MLD_CAPA_FREQ_SEP_FOR_STR_MASK) >> 7,
+			   !!(cap & EHT_ML_MLD_CAPA_AAR_SUPP),
+			   (cap & 0xe000) >> 13);
+	}
+
+	if (bitmap & RECONF_MULTI_LINK_CTRL_PRES_EXT_MLD_CAP) {
+		if (ci_end - pos < 2) {
+			wpa_printf(MSG_INFO,
+				   "No room for Extended MLD Capabilities And Operations in Multi-Link Common Info");
+			return;
+		}
+		wpa_printf(MSG_DEBUG,
+			   "Extended MLD Capabilities And Operations: 0x%x",
+			   WPA_GET_LE16(pos));
+		pos += 2;
+	}
+
+	if (pos < ci_end) {
+		wpa_hexdump(MSG_INFO,
+			    "Extra information at the end of Common Info",
+			    pos, ci_end - pos);
+		pos = ci_end;
+	}
+
+	/* Link Info */
+	wpa_hexdump(MSG_MSGDUMP, "Reconfiguration MLE - Link Info",
+		    pos, end - pos);
+
+	li_end = end;
+	for_each_element(elem, pos, li_end - pos) {
+		u8 link_id;
+		const u8 *fpos;
+		u8 flen;
+
+		if (elem->id == EHT_ML_SUB_ELEM_FRAGMENT)
+			continue;
+
+		if (elem->id != EHT_ML_SUB_ELEM_PER_STA_PROFILE) {
+			wpa_printf(MSG_DEBUG, "Link Info subelement id=%u",
+				   elem->id);
+			wpa_hexdump(MSG_DEBUG, "Link Info subelement data",
+				    elem->data, elem->datalen);
+			continue;
+		}
+
+		wpabuf_free(profile);
+		profile = wpabuf_alloc_copy(elem->data, elem->datalen);
+		if (!profile)
+			continue;
+		flen = elem->datalen;
+		fpos = elem->data + flen;
+		while (flen == 255 && li_end - fpos >= 2 &&
+		       *fpos == EHT_ML_SUB_ELEM_FRAGMENT &&
+		       li_end - fpos >= 2 + fpos[1]) {
+			/* Reassemble truncated subelement */
+			fpos++;
+			flen = *fpos++;
+			if (wpabuf_resize(&profile, flen) < 0)
+				continue;
+			wpabuf_put_data(profile, fpos, flen);
+			fpos += flen;
+		}
+		pos = wpabuf_head(profile);
+		end = pos + wpabuf_len(profile);
+
+		if (end - pos < 2) {
+			wpa_printf(MSG_INFO,
+				   "Truncated Per-STA Profile subelement");
+			continue;
+		}
+		wpa_hexdump(MSG_MSGDUMP,
+			    "Reconfiguration MLE - Per-STA Profile",
+			    pos, end - pos);
+		ctrl = WPA_GET_LE16(pos);
+		pos += 2;
+
+		link_id = ctrl & EHT_PER_STA_RECONF_CTRL_LINK_ID_MSK;
+		wpa_printf(MSG_DEBUG, "Per-STA Profile: len=%zu Link_ID=%u Complete=%u Reserved=0x%x",
+			   wpabuf_len(profile),
+			   link_id,
+			   !!(ctrl & EHT_PER_STA_RECONF_CTRL_COMPLETE_PROFILE),
+			   (ctrl & 0xc000) >> 14);
+
+		if (end - pos < 1) {
+			wpa_printf(MSG_INFO, "No room for STA Info field");
+			continue;
+		}
+		len = *pos;
+		if (len < 1 || len > end - pos) {
+			wpa_printf(MSG_INFO, "Truncated STA Info field");
+			continue;
+		}
+		info_end = pos + len;
+		pos++;
+
+		if (ctrl & EHT_PER_STA_RECONF_CTRL_MAC_ADDR) {
+			if (info_end - pos < ETH_ALEN) {
+				wpa_printf(MSG_INFO,
+					   "Truncated STA MAC Address in STA Info");
+				continue;
+			}
+			wpa_printf(MSG_DEBUG, "STA MAC Address: " MACSTR,
+				   MAC2STR(pos));
+			if (sta && link_id < MAX_NUM_MLD_LINKS) {
+				os_memcpy(sta->link_addr[link_id], pos,
+					  ETH_ALEN);
+				wpa_printf(MSG_DEBUG,
+					   "Learned Link ID %u MAC address "
+					   MACSTR
+					   " from Link Reconfiguration Request",
+					   link_id, MAC2STR(pos));
+			}
+			pos += ETH_ALEN;
+		}
+
+		if (ctrl & EHT_PER_STA_RECONF_CTRL_AP_REMOVAL_TIMER) {
+			if (info_end - pos < 2) {
+				wpa_printf(MSG_INFO,
+					   "Truncated AP Removal Timer in STA Info");
+				continue;
+			}
+			pos += 2;
+		}
+
+		if (ctrl & EHT_PER_STA_RECONF_CTRL_OP_PARAMS) {
+			if (info_end - pos < 3) {
+				wpa_printf(MSG_INFO,
+					   "Truncated Operation Parameters in STA Info");
+				continue;
+			}
+			pos += 3;
+		}
+
+		if (info_end > pos) {
+			wpa_hexdump(MSG_INFO,
+				    "Extra information at the end of STA Info",
+				    pos, ci_end - pos);
+			pos = info_end;
+		}
+
+		wpa_hexdump(MSG_DEBUG, "STA Profile", pos, end - pos);
+		if (end - pos > fields_len) {
+			struct ieee802_11_elems elems;
+
+			if (ieee802_11_parse_elems(pos + fields_len,
+						   end - pos - fields_len,
+						   &elems, 0) != ParseFailed) {
+				if (elems.rsn_ie)
+					wpa_hexdump(MSG_DEBUG, "RSNE",
+						    elems.rsn_ie,
+						    elems.rsn_ie_len);
+				if (elems.rsnxe)
+					wpa_hexdump(MSG_DEBUG, "RSNXE",
+						    elems.rsnxe,
+						    elems.rsnxe_len);
+			}
+		}
+	}
+
+	wpabuf_free(profile);
+}
+
+
+static void parse_reconfig_ml_elems(struct ieee802_11_elems *elems,
+				    struct wlantest_sta *sta)
+{
+	struct wpabuf *mlbuf;
+
+	mlbuf = ieee802_11_defrag(elems->reconf_mle, elems->reconf_mle_len,
+				  true);
+	if (mlbuf) {
+		parse_reconfig_ml(wpabuf_head(mlbuf), wpabuf_len(mlbuf), sta);
 		wpabuf_free(mlbuf);
 	}
 }
@@ -2894,6 +3181,136 @@ static void rx_mgmt_action_sa_query(struct wlantest *wt,
 }
 
 
+static void rx_mgmt_action_link_reconfig_request(struct wlantest *wt,
+						 struct wlantest_sta *sta,
+						 const u8 *pos, const u8 *end)
+{
+	struct ieee802_11_elems elems;
+	const u8 *ml;
+
+	wpa_printf(MSG_DEBUG, "Link Reconfiguration Request");
+	if (end - pos < 1 + 3)
+		return;
+
+	wpa_printf(MSG_DEBUG, "Dialog token: %u", *pos);
+	pos++;
+
+	if (pos[0] != WLAN_EID_EXTENSION ||
+	    pos[1] < 1 + 2 ||
+	    2 + pos[1] > end - pos ||
+	    pos[2] != WLAN_EID_EXT_MULTI_LINK ||
+	    (WPA_GET_LE16(&pos[3]) & 0x0007) !=
+	    MULTI_LINK_CONTROL_TYPE_RECONF) {
+		wpa_printf(MSG_INFO,
+			   "No valid Reconfiguration Multi-Link element in Link Reconfiguration Request");
+		return;
+	}
+	wpa_hexdump(MSG_MSGDUMP, "Reconfiguration Multi-Link element",
+		    pos, 2 + pos[0]);
+	ml = get_ml_ie(pos, end - pos, MULTI_LINK_CONTROL_TYPE_RECONF);
+	if (ml &&
+	    ieee802_11_parse_elems(pos, end - pos, &elems, 0) != ParseFailed) {
+		parse_reconfig_ml_elems(&elems, sta);
+		dump_mld_info(wt, sta);
+	}
+}
+
+
+static void rx_mgmt_action_link_reconfig_response(struct wlantest *wt,
+						  struct wlantest_sta *sta,
+						  const u8 *pos, const u8 *end)
+{
+	u8 count;
+	struct ieee802_11_elems elems;
+	const u8 *ml;
+
+	wpa_printf(MSG_DEBUG, "Link Reconfiguration Response");
+	if (end - pos < 1 + 1)
+		return;
+
+	wpa_printf(MSG_DEBUG, "Dialog token: %u", *pos);
+	pos++;
+
+	count = *pos++;
+	if (count * 3 > end - pos) {
+		wpa_printf(MSG_INFO,
+			   "No room for %u Reconfiguration Status List duples in Link Reconfiguraiton Response",
+			   count);
+		return;
+	}
+	while (count > 0) {
+		count--;
+		wpa_printf(MSG_DEBUG, "Link ID %u - Status %u",
+			   pos[0] & 0x0f, WPA_GET_LE16(&pos[1]));
+		pos += 3;
+	}
+
+	/* Group Key Data (optional) */
+	if (end - pos > 1 + 2 + 4 &&
+	    end - pos >= 1 + pos[0] &&
+	    pos[1] == 0xdd) {
+		wpa_hexdump(MSG_MSGDUMP, "Group Key Data KDEs",
+			    pos + 1, pos[0]);
+		/* TODO: Update group keys in BSS entries */
+		pos += 1 + pos[0];
+	}
+
+	/* OCI element (optional) */
+	if (end - pos > 3 &&
+	    end - pos >= 2 + pos[1] &&
+	    pos[0] == WLAN_EID_EXTENSION &&
+	    pos[1] >= 1 &&
+	    pos[2] == WLAN_EID_EXT_OCV_OCI) {
+		wpa_hexdump(MSG_MSGDUMP, "OCI", pos, 2 + pos[1]);
+		pos += 2 + pos[1];
+	}
+
+	wpa_hexdump(MSG_MSGDUMP,
+		    "Basic Multi-Link element in Link Reconfiguration Response",
+		    pos, end - pos);
+	ml = get_ml_ie(pos, end - pos, MULTI_LINK_CONTROL_TYPE_BASIC);
+	if (ml &&
+	    ieee802_11_parse_elems(pos, end - pos, &elems, 0) != ParseFailed)
+		parse_basic_ml_elems(&elems, true, NULL, 4);
+}
+
+
+static void rx_mgmt_action_protected_eht(struct wlantest *wt,
+					 struct wlantest_sta *sta,
+					 const struct ieee80211_mgmt *mgmt,
+					 size_t len, int valid)
+{
+	const u8 *pos, *end;
+	u8 action;
+
+	if (!valid)
+		return;
+
+	pos = (const u8 *) &mgmt->u.action;
+	end = ((const u8 *) mgmt) + len;
+
+	pos++; /* category */
+	action = *pos++;
+	wpa_printf(MSG_DEBUG, "Protected EHT Action %u from " MACSTR,
+		   action, MAC2STR(mgmt->sa));
+	wpa_hexdump(MSG_DEBUG, "Protected EHT Action payload", pos, end - pos);
+
+	switch (action) {
+	case WLAN_PROT_EHT_LINK_RECONFIG_REQUEST:
+		rx_mgmt_action_link_reconfig_request(wt, sta, pos, end);
+		break;
+	case WLAN_PROT_EHT_LINK_RECONFIG_RESPONSE:
+		rx_mgmt_action_link_reconfig_response(wt, sta, pos, end);
+		break;
+	default:
+		add_note(wt, MSG_INFO,
+			 "Unknown Protected EHT Action value %u from " MACSTR,
+			 action, MAC2STR(mgmt->sa));
+		break;
+	}
+}
+
+
 static void
 rx_mgmt_location_measurement_report(struct wlantest *wt,
 				    const struct ieee80211_mgmt *mgmt,
@@ -3074,6 +3491,9 @@ static void rx_mgmt_action(struct wlantest *wt, const u8 *data, size_t len,
 		break;
 	case WLAN_ACTION_SA_QUERY:
 		rx_mgmt_action_sa_query(wt, sta, mgmt, len, valid);
+		break;
+	case WLAN_ACTION_PROTECTED_EHT:
+		rx_mgmt_action_protected_eht(wt, sta, mgmt, len, valid);
 		break;
 	}
 }

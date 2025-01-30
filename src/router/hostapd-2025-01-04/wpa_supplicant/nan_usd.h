@@ -26,6 +26,8 @@ int wpas_nan_usd_publish(struct wpa_supplicant *wpa_s, const char *service_name,
 void wpas_nan_usd_cancel_publish(struct wpa_supplicant *wpa_s, int publish_id);
 int wpas_nan_usd_update_publish(struct wpa_supplicant *wpa_s, int publish_id,
 				const struct wpabuf *ssi);
+int wpas_nan_usd_unpause_publish(struct wpa_supplicant *wpa_s, int publish_id,
+				 u8 peer_instance_id, const u8 *peer_addr);
 int wpas_nan_usd_subscribe(struct wpa_supplicant *wpa_s,
 			   const char *service_name,
 			   enum nan_service_protocol_type srv_proto_type,
