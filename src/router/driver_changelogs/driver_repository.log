@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r8286 | brainslayer | 2025-01-30 08:16:28 +0700 (Thu, 30 Jan 2025) | 1 line
+
+port fixes
+------------------------------------------------------------------------
+r8285 | brainslayer | 2025-01-30 08:04:43 +0700 (Thu, 30 Jan 2025) | 1 line
+
+use previous ath11k tree and backport my enhancements. latest one has some problems with mac80211 based stations. reason unknown
+------------------------------------------------------------------------
 r8284 | brainslayer | 2025-01-29 18:45:59 +0700 (Wed, 29 Jan 2025) | 1 line
 
 must be const
