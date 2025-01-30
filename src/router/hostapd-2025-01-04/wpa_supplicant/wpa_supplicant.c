@@ -2345,16 +2345,6 @@ int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
 		wpa_sm_set_param(wpa_s->wpa, WPA_PARAM_SSID_PROTECTION, false);
 	}
 
-	wpa_sm_set_param(wpa_s->wpa, WPA_PARAM_SPP_AMSDU,
-			 (wpa_s->drv_flags2 & WPA_DRIVER_FLAGS2_SPP_AMSDU) &&
-			 ieee802_11_rsnx_capab(bss_rsnx,
-					       WLAN_RSNX_CAPAB_SPP_A_MSDU) &&
-			 wpa_s->pairwise_cipher & (WPA_CIPHER_CCMP_256 |
-						   WPA_CIPHER_GCMP_256 |
-						   WPA_CIPHER_CCMP |
-						   WPA_CIPHER_GCMP) &&
-			 (wpa_s->wpa_proto & WPA_PROTO_RSN));
-
 	if (!skip_default_rsne) {
 		if (wpa_sm_set_assoc_wpa_ie_default(wpa_s->wpa, wpa_ie,
 						    wpa_ie_len)) {

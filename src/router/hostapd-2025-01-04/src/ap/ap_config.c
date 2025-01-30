@@ -1516,13 +1516,6 @@ static int hostapd_config_check_bss(struct hostapd_bss_config *bss,
 		wpa_printf(MSG_INFO,
 			   "Disabling IEEE 802.11be as IEEE 802.11ax is disabled for this BSS");
 	}
-
-	if (full_config && conf->ieee80211be && !bss->disable_11be &&
-	    !bss->beacon_prot && ap_pmf_enabled(bss)) {
-		bss->beacon_prot = 1;
-		wpa_printf(MSG_INFO,
-			   "Enabling beacon protection as IEEE 802.11be is enabled for this BSS");
-	}
 #endif /* CONFIG_IEEE80211BE */
 
 	if (full_config && bss->ignore_broadcast_ssid && conf->mbssid) {
@@ -1530,13 +1523,6 @@ static int hostapd_config_check_bss(struct hostapd_bss_config *bss,
 			   "Hidden SSID is not suppored when MBSSID is enabled");
 		return -1;
 	}
-
-	/* Do not advertise SPP A-MSDU support if not using CCMP/GCMP */
-	if (full_config && bss->spp_amsdu &&
-	    !(bss->wpa &&
-	      bss->rsn_pairwise & (WPA_CIPHER_CCMP_256 | WPA_CIPHER_CCMP |
-				   WPA_CIPHER_GCMP_256 | WPA_CIPHER_GCMP)))
-		bss->spp_amsdu = false;
 
 	return 0;
 }

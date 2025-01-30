@@ -196,11 +196,6 @@ def test_wpas_config_file(dev, apdev, params):
             f.write('\tssid="hello"\n')
             f.write('\tgroup=GCMP # "foo"\n')
             f.write("}\n")
-            f.write("network={\n")
-            f.write("\tdisabled=2\n")
-            f.write("\tkey_mgmt=NONE\n")
-            f.write("\tp2p2_client_list=1 4 7 9 900\n")
-            f.write("}\n")
 
         wpas.interface_add("wlan5", config=config)
         capa = {}
@@ -254,11 +249,9 @@ def test_wpas_config_file(dev, apdev, params):
         data1 = check_config(capa, config)
         if "group=GCMP" not in data1:
             raise Exception("Network block group parameter with a comment not present")
-        if "p2p2_client_list=1 4 7 9 900" not in data1:
-            raise Exception("p2p2_client_list was not present")
 
         wpas.interface_add("wlan5", config=config)
-        if len(wpas.list_networks()) != 3:
+        if len(wpas.list_networks()) != 2:
             raise Exception("Unexpected number of networks")
         res = wpas.request("LIST_CREDS")
         logger.info("Credentials:\n" + res)

@@ -479,9 +479,6 @@ static void hostapd_ext_capab_byte(struct hostapd_data *hapd, u8 *pos, int idx,
 	case 12: /* Bits 96-103 */
 		if (hapd->iconf->peer_to_peer_twt)
 			*pos |= 0x10; /* Bit 100 - Peer to Peer TWT */
-		if (hapd->conf->known_sta_identification)
-			*pos |= 0x40; /* Bit 102 - Known STA Identification
-				       * Enabled */
 		break;
 	case 13: /* Bits 104-111 */
 		if (hapd->iconf->channel_usage)
@@ -1139,9 +1136,6 @@ u8 * hostapd_eid_rsnxe(struct hostapd_data *hapd, u8 *eid, size_t len)
 		capab |= BIT(WLAN_RSNX_CAPAB_URNM_MFPR);
 	if (hapd->conf->ssid_protection)
 		capab |= BIT(WLAN_RSNX_CAPAB_SSID_PROTECTION);
-	if ((hapd->iface->drv_flags2 & WPA_DRIVER_FLAGS2_SPP_AMSDU) &&
-	    hapd->conf->spp_amsdu)
-		capab |= BIT(WLAN_RSNX_CAPAB_SPP_A_MSDU);
 
 	if (!capab)
 		return eid; /* no supported extended RSN capabilities */

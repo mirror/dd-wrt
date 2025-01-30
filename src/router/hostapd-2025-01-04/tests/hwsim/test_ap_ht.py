@@ -871,14 +871,11 @@ def test_ap_require_ht(dev, apdev):
               "require_ht": "1"}
     hapd = hostapd.add_ap(apdev[0], params)
 
-    wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
-    wpas.interface_add("wlan5", drv_params="extra_bss_membership_selectors=127")
-
-    wpas.connect("require-ht", key_mgmt="NONE", scan_freq="2412",
-                 disable_ht="1", wait_connect=False)
+    dev[1].connect("require-ht", key_mgmt="NONE", scan_freq="2412",
+                   disable_ht="1", wait_connect=False)
     dev[0].connect("require-ht", key_mgmt="NONE", scan_freq="2412")
-    ev = wpas.wait_event(["CTRL-EVENT-ASSOC-REJECT"])
-    wpas.request("DISCONNECT")
+    ev = dev[1].wait_event(["CTRL-EVENT-ASSOC-REJECT"])
+    dev[1].request("DISCONNECT")
     if ev is None:
         raise Exception("Association rejection timed out")
     if "status_code=27" not in ev:
@@ -915,14 +912,11 @@ def test_ap_require_ht_limited_rates(dev, apdev):
               "require_ht": "1"}
     hapd = hostapd.add_ap(apdev[0], params)
 
-    wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
-    wpas.interface_add("wlan5", drv_params="extra_bss_membership_selectors=127")
-
-    wpas.connect("require-ht", key_mgmt="NONE", scan_freq="2412",
-                 disable_ht="1", wait_connect=False)
+    dev[1].connect("require-ht", key_mgmt="NONE", scan_freq="2412",
+                   disable_ht="1", wait_connect=False)
     dev[0].connect("require-ht", key_mgmt="NONE", scan_freq="2412")
-    ev = wpas.wait_event(["CTRL-EVENT-ASSOC-REJECT"])
-    wpas.request("DISCONNECT")
+    ev = dev[1].wait_event(["CTRL-EVENT-ASSOC-REJECT"])
+    dev[1].request("DISCONNECT")
     if ev is None:
         raise Exception("Association rejection timed out")
     if "status_code=27" not in ev:

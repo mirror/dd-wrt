@@ -3764,8 +3764,6 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		bss->rsn_override_mfp = atoi(pos);
 	} else if (os_strcmp(buf, "rsn_override_mfp_2") == 0) {
 		bss->rsn_override_mfp_2 = atoi(pos);
-	} else if (os_strcmp(buf, "spp_amsdu") == 0) {
-		bss->spp_amsdu = !!atoi(pos);
 	} else if (os_strcmp(buf, "group_mgmt_cipher") == 0) {
 		if (os_strcmp(pos, "AES-128-CMAC") == 0) {
 			bss->group_mgmt_cipher = WPA_CIPHER_AES_128_CMAC;
@@ -4586,8 +4584,6 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 	PARSE_TEST_PROBABILITY(corrupt_gtk_rekey_mic_probability)
 	} else if (os_strcmp(buf, "ecsa_ie_only") == 0) {
 		conf->ecsa_ie_only = atoi(pos);
-	} else if (os_strcmp(buf, "csa_ie_only") == 0) {
-		conf->csa_ie_only = atoi(pos);
 	} else if (os_strcmp(buf, "bss_load_test") == 0) {
 		WPA_PUT_LE16(bss->bss_load_test, atoi(pos));
 		pos = os_strchr(pos, ':');
@@ -5226,12 +5222,6 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		if (val < 0 || val > 1)
 			return 1;
 		bss->ssid_protection = val;
-	} else if (os_strcmp(buf, "known_sta_identification") == 0) {
-		int val = atoi(pos);
-
-		if (val < 0 || val > 1)
-			return 1;
-		bss->known_sta_identification = val;
 	} else if (os_strcmp(buf, "channel_usage") == 0) {
 		conf->channel_usage = atoi(pos);
 	} else if (os_strcmp(buf, "peer_to_peer_twt") == 0) {

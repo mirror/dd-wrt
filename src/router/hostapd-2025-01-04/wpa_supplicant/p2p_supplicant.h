@@ -67,7 +67,7 @@ enum wpas_p2p_prov_disc_use {
 	WPAS_P2P_PD_FOR_ASP
 };
 int wpas_p2p_prov_disc(struct wpa_supplicant *wpa_s, const u8 *peer_addr,
-		       const char *config_method, u16 bootstrap,
+		       const char *config_method,
 		       enum wpas_p2p_prov_disc_use use,
 		       struct p2ps_provision *p2ps_prov);
 void wpas_send_action_tx_status(struct wpa_supplicant *wpa_s, const u8 *dst,
@@ -236,17 +236,13 @@ int wpas_p2p_lo_start(struct wpa_supplicant *wpa_s, unsigned int freq,
 		      unsigned int count);
 int wpas_p2p_lo_stop(struct wpa_supplicant *wpa_s);
 int wpas_p2p_mac_setup(struct wpa_supplicant *wpa_s);
-struct wpabuf * wpas_p2p_usd_elems(struct wpa_supplicant *wpa_s,
-				   const char *service_name);
+struct wpabuf * wpas_p2p_usd_elems(struct wpa_supplicant *wpa_s);
 void wpas_p2p_update_dev_addr(struct wpa_supplicant *wpa_s);
 int wpas_p2p_pasn_auth_rx(struct wpa_supplicant *wpa_s,
 			  const struct ieee80211_mgmt *mgmt, size_t len,
 			  int freq);
 int wpas_p2p_get_pasn_ptk(struct wpa_supplicant *wpa_s, const u8 **ptk,
 			  size_t *ptk_len);
-int wpas_p2p_get_dira(struct wpa_supplicant *wpa_s, char *buf, size_t buf_len);
-int wpas_p2p_validate_dira(struct wpa_supplicant *wpa_s, const u8 *addr,
-			   u8 cipher, const u8 *nonce, const u8 *tag);
 
 #else /* CONFIG_P2P */
 

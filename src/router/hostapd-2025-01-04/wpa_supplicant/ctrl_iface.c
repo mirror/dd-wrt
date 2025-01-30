@@ -6322,7 +6322,7 @@ static int p2p_ctrl_asp_provision_resp(struct wpa_supplicant *wpa_s, char *cmd)
 		return -1;
 	}
 
-	return wpas_p2p_prov_disc(wpa_s, addr, NULL, 0, WPAS_P2P_PD_FOR_ASP,
+	return wpas_p2p_prov_disc(wpa_s, addr, NULL, WPAS_P2P_PD_FOR_ASP,
 				  p2ps_prov);
 }
 
@@ -6351,7 +6351,7 @@ static int p2p_ctrl_asp_provision(struct wpa_supplicant *wpa_s, char *cmd)
 
 	p2ps_prov->pd_seeker = 1;
 
-	return wpas_p2p_prov_disc(wpa_s, addr, NULL, 0, WPAS_P2P_PD_FOR_ASP,
+	return wpas_p2p_prov_disc(wpa_s, addr, NULL, WPAS_P2P_PD_FOR_ASP,
 				  p2ps_prov);
 }
 
@@ -6531,6 +6531,7 @@ static int p2p_ctrl_connect(struct wpa_supplicant *wpa_s, char *cmd,
 	if (pos2) {
 		pos2 += 13;
 		bootstrap = atoi(pos2);
+		pd = true;
 	}
 
 	while ((token = str_token(pos, " ", &context))) {
@@ -6589,11 +6590,10 @@ static int p2p_ctrl_listen(struct wpa_supplicant *wpa_s, char *cmd)
 static int p2p_ctrl_prov_disc(struct wpa_supplicant *wpa_s, char *cmd)
 {
 	u8 addr[ETH_ALEN];
-	char *pos, *pos2;
+	char *pos;
 	enum wpas_p2p_prov_disc_use use = WPAS_P2P_PD_FOR_GO_NEG;
-	u16 bootstrap = 0;
 
-	/* <addr> <config method> [join|auto] [bstrapmethod=<value>] */
+	/* <addr> <config method> [join|auto] */
 
 	if (hwaddr_aton(cmd, addr))
 		return -1;
@@ -6608,13 +6608,7 @@ static int p2p_ctrl_prov_disc(struct wpa_supplicant *wpa_s, char *cmd)
 	else if (os_strstr(pos, " auto") != NULL)
 		use = WPAS_P2P_PD_AUTO;
 
-	pos2 = os_strstr(pos, "bstrapmethod=");
-	if (pos2) {
-		pos2 += 13;
-		bootstrap = atoi(pos2);
-	}
-
-	return wpas_p2p_prov_disc(wpa_s, addr, pos, bootstrap, use, NULL);
+	return wpas_p2p_prov_disc(wpa_s, addr, pos, use, NULL);
 }
 
 
@@ -6629,38 +6623,6 @@ static int p2p_get_passphrase(struct wpa_supplicant *wpa_s, char *buf,
 
 	os_strlcpy(buf, ssid->passphrase, buflen);
 	return os_strlen(buf);
-}
-
-
-static int p2p_ctrl_validate_dira(struct wpa_supplicant *wpa_s, char *cmd)
-{
-	char *pos, *pos2;
-	u8 addr[ETH_ALEN];
-	u8 nonce[DEVICE_IDENTITY_NONCE_LEN];
-	u8 tag[DEVICE_IDENTITY_TAG_LEN];
-
-	if (hwaddr_aton(cmd, addr))
-		return -1;
-
-	pos = cmd + 17;
-	if (*pos != ' ')
-		return -1;
-
-	pos2 = os_strstr(pos, "nonce=");
-	if (pos2) {
-		pos2 += 6;
-		if (hexstr2bin(pos2, nonce, sizeof(nonce)) < 0)
-			return -1;
-	}
-
-	pos2 = os_strstr(pos, "tag=");
-	if (pos2) {
-		pos2 += 4;
-		if (hexstr2bin(pos2, tag, sizeof(tag)) < 0)
-			return -1;
-	}
-
-	return wpas_p2p_validate_dira(wpa_s, addr, 0, nonce, tag);
 }
 
 
@@ -7137,7 +7099,7 @@ static int p2p_ctrl_invite_persistent(struct wpa_supplicant *wpa_s, char *cmd)
 {
 	char *pos;
 	int id;
-	struct wpa_ssid *ssid = NULL;
+	struct wpa_ssid *ssid;
 	u8 *_peer = NULL, peer[ETH_ALEN];
 	int freq = 0, pref_freq = 0;
 	int ht40, vht, he, max_oper_chwidth, chwidth = 0, freq2 = 0;
@@ -7145,8 +7107,7 @@ static int p2p_ctrl_invite_persistent(struct wpa_supplicant *wpa_s, char *cmd)
 	bool allow_6ghz;
 	bool p2p2;
 
-	p2p2 = os_strstr(cmd, " p2p2") != NULL;
-
+	id = atoi(cmd);
 	pos = os_strstr(cmd, " peer=");
 	if (pos) {
 		pos += 6;
@@ -7154,19 +7115,11 @@ static int p2p_ctrl_invite_persistent(struct wpa_supplicant *wpa_s, char *cmd)
 			return -1;
 		_peer = peer;
 	}
-
-	if (os_strncmp(cmd, "persistent=", 11) == 0) {
-		id = atoi(cmd + 11);
-		ssid = wpa_config_get_network(wpa_s->conf, id);
-		if (!ssid || ssid->disabled != 2) {
-			wpa_printf(MSG_DEBUG,
-				   "CTRL_IFACE: Could not find SSID id=%d for persistent P2P group",
-				   id);
-			return -1;
-		}
-	} else if (p2p2 && !_peer) {
-		wpa_printf(MSG_DEBUG,
-			   "CTRL_IFACE: Could not find peer for persistent P2P group");
+	ssid = wpa_config_get_network(wpa_s->conf, id);
+	if (ssid == NULL || ssid->disabled != 2) {
+		wpa_printf(MSG_DEBUG, "CTRL_IFACE: Could not find SSID id=%d "
+			   "for persistent P2P group",
+			   id);
 		return -1;
 	}
 
@@ -7208,6 +7161,8 @@ static int p2p_ctrl_invite_persistent(struct wpa_supplicant *wpa_s, char *cmd)
 
 	if (allow_6ghz && chwidth == 40)
 		max_oper_chwidth = CONF_OPER_CHWIDTH_40MHZ_6GHZ;
+
+	p2p2 = os_strstr(cmd, " p2p2") != NULL;
 
 	return wpas_p2p_invite(wpa_s, _peer, ssid, NULL, freq, freq2, ht40, vht,
 			       max_oper_chwidth, pref_freq, he, edmg,
@@ -7251,8 +7206,8 @@ static int p2p_ctrl_invite_group(struct wpa_supplicant *wpa_s, char *cmd)
 
 static int p2p_ctrl_invite(struct wpa_supplicant *wpa_s, char *cmd)
 {
-	if (os_strncmp(cmd, "persistent", 10) == 0)
-		return p2p_ctrl_invite_persistent(wpa_s, cmd);
+	if (os_strncmp(cmd, "persistent=", 11) == 0)
+		return p2p_ctrl_invite_persistent(wpa_s, cmd + 11);
 	if (os_strncmp(cmd, "group=", 6) == 0)
 		return p2p_ctrl_invite_group(wpa_s, cmd + 6);
 
@@ -10549,7 +10504,6 @@ static int wpas_ctrl_resend_assoc(struct wpa_supplicant *wpa_s)
 	params.key_mgmt_suite = wpa_s->key_mgmt;
 	params.wpa_proto = wpa_s->wpa_proto;
 	params.mgmt_frame_protection = wpa_s->sme.mfp;
-	params.spp_amsdu = wpa_s->sme.spp_amsdu;
 	params.rrm_used = wpa_s->rrm.rrm_used;
 	if (wpa_s->sme.prev_bssid_set)
 		params.prev_bssid = wpa_s->sme.prev_bssid;
@@ -12771,53 +12725,6 @@ fail:
 	return ret;
 }
 
-
-static int wpas_ctrl_nan_unpause_publish(struct wpa_supplicant *wpa_s,
-					 char *cmd)
-{
-	char *token, *context = NULL;
-	int publish_id = 0;
-	int peer_instance_id = 0;
-	u8 peer_addr[ETH_ALEN];
-
-	os_memset(peer_addr, 0, ETH_ALEN);
-
-	while ((token = str_token(cmd, " ", &context))) {
-		if (sscanf(token, "publish_id=%i", &publish_id) == 1)
-			continue;
-
-		if (sscanf(token, "peer_instance_id=%i",
-			   &peer_instance_id) == 1)
-			continue;
-
-		if (os_strncmp(token, "peer=", 5) == 0) {
-			if (hwaddr_aton(token + 5, peer_addr) < 0)
-				return -1;
-			continue;
-		}
-
-		wpa_printf(MSG_INFO,
-			   "CTRL: Invalid NAN_UNPAUSE_PUBLISH parameter: %s",
-			   token);
-		return -1;
-	}
-
-	if (publish_id <= 0) {
-		wpa_printf(MSG_INFO,
-			   "CTRL: Invalid or missing NAN_UNPAUSE_PUBLIH publish_id");
-		return -1;
-	}
-
-	if (is_zero_ether_addr(peer_addr)) {
-		wpa_printf(MSG_INFO,
-			   "CTRL: Invalid or missing NAN_UNPAUSE_PUBLISH address");
-		return -1;
-	}
-
-	return wpas_nan_usd_unpause_publish(wpa_s, publish_id, peer_instance_id,
-					    peer_addr);
-}
-
 #endif /* CONFIG_NAN_USD */
 
 
@@ -13122,11 +13029,6 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
 			reply_len = -1;
 	} else if (os_strcmp(buf, "P2P_GET_PASSPHRASE") == 0) {
 		reply_len = p2p_get_passphrase(wpa_s, reply, reply_size);
-	} else if (os_strcmp(buf, "P2P_GET_DIRA") == 0) {
-		reply_len = wpas_p2p_get_dira(wpa_s, reply, reply_size);
-	} else if (os_strncmp(buf, "P2P_VALIDATE_DIRA ", 18) == 0) {
-		if (p2p_ctrl_validate_dira(wpa_s, buf + 18) < 0)
-			reply_len = -1;
 #ifdef CONFIG_PASN
 #ifdef CONFIG_TESTING_OPTIONS
 	} else if (os_strcmp(buf, "P2P_GET_PASNPTK") == 0) {
@@ -13870,9 +13772,6 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
 	} else if (os_strncmp(buf, "NAN_TRANSMIT ", 13) == 0) {
 		if (wpas_ctrl_nan_transmit(wpa_s, buf + 13) < 0)
 			reply_len = -1;
-	} else if (os_strncmp(buf, "NAN_UNPAUSE_PUBLISH ", 20) == 0) {
-		if (wpas_ctrl_nan_unpause_publish(wpa_s, buf + 20) < 0)
-			reply_len = -1;
 	} else if (os_strcmp(buf, "NAN_FLUSH") == 0) {
 		wpas_nan_usd_flush(wpa_s);
 #endif /* CONFIG_NAN_USD */
@@ -14238,8 +14137,6 @@ static char * wpas_global_ctrl_iface_redir_p2p(struct wpa_global *global,
 #ifdef CONFIG_AP
 		"STA-FIRST",
 #endif /* CONFIG_AP */
-		"P2P_GET_DIRA",
-		"P2P_VALIDATE_DIRA",
 		NULL
 	};
 	static const char * prefix[] = {

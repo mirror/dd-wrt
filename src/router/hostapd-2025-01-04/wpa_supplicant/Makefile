@@ -161,7 +161,7 @@ LIBCTRLSO += ../src/utils/trace.c
 LDFLAGS += -rdynamic
 CFLAGS += -funwind-tables
 ifdef CONFIG_WPA_TRACE_BFD
-CFLAGS += -DPACKAGE="wpa_supplicant" -DWPA_TRACE_BFD -fno-inline -fno-optimize-sibling-calls
+CFLAGS += -DPACKAGE="wpa_supplicant" -DWPA_TRACE_BFD
 LIBS += -lbfd -ldl -liberty -lz
 LIBS_p += -lbfd -ldl -liberty -lz
 LIBS_c += -lbfd -ldl -liberty -lz

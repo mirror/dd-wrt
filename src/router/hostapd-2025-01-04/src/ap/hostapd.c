@@ -403,7 +403,7 @@ static void hostapd_broadcast_key_clear_iface(struct hostapd_data *hapd,
 				   ifname, i);
 		}
 	}
-	if (ap_pmf_enabled(hapd->conf)) {
+	if (hapd->conf->ieee80211w) {
 		for (i = NUM_WEP_KEYS; i < NUM_WEP_KEYS + 2; i++) {
 			if (hostapd_drv_set_key(ifname, hapd, WPA_ALG_NONE,
 						NULL, i, 0, 0, NULL,
@@ -2907,7 +2907,7 @@ dfs_offload:
 		hostapd_neighbor_set_own_report(iface->bss[j]);
 
 	if (iface->interfaces && iface->interfaces->count > 1)
-		ieee802_11_update_beacons(iface);
+		ieee802_11_set_beacons(iface);
 
 	return 0;
 

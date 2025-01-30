@@ -35,8 +35,7 @@
 #include "wpa_auth_glue.h"
 
 
-static void hostapd_wpa_auth_conf(struct hostapd_iface *iface,
-				  struct hostapd_bss_config *conf,
+static void hostapd_wpa_auth_conf(struct hostapd_bss_config *conf,
 				  struct hostapd_config *iconf,
 				  struct wpa_auth_config *wconf)
 {
@@ -278,8 +277,6 @@ static void hostapd_wpa_auth_conf(struct hostapd_iface *iface,
 		conf->no_disconnect_on_group_keyerror;
 
 	wconf->rsn_override_omit_rsnxe = conf->rsn_override_omit_rsnxe;
-	wconf->spp_amsdu = conf->spp_amsdu &&
-		(iface->drv_flags2 & WPA_DRIVER_FLAGS2_SPP_AMSDU);
 }
 
 
@@ -1718,7 +1715,7 @@ int hostapd_setup_wpa(struct hostapd_data *hapd)
 	size_t wpa_ie_len;
 	struct hostapd_data *tx_bss;
 
-	hostapd_wpa_auth_conf(hapd->iface, hapd->conf, hapd->iconf, &_conf);
+	hostapd_wpa_auth_conf(hapd->conf, hapd->iconf, &_conf);
 	_conf.msg_ctx = hapd->msg_ctx;
 	tx_bss = hostapd_mbssid_get_tx_bss(hapd);
 	if (tx_bss != hapd)
@@ -1848,9 +1845,7 @@ int hostapd_setup_wpa(struct hostapd_data *hapd)
 void hostapd_reconfig_wpa(struct hostapd_data *hapd)
 {
 	struct wpa_auth_config wpa_auth_conf;
-
-	hostapd_wpa_auth_conf(hapd->iface, hapd->conf, hapd->iconf,
-			      &wpa_auth_conf);
+	hostapd_wpa_auth_conf(hapd->conf, hapd->iconf, &wpa_auth_conf);
 	wpa_reconfig(hapd->wpa_auth, &wpa_auth_conf);
 }
 

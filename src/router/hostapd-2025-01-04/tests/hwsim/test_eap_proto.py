@@ -82,10 +82,8 @@ def add_message_authenticator_attr(reply, digest):
         digest = b"0x" + binascii.hexlify(digest)
     reply.AddAttribute("Message-Authenticator", digest)
 
-def build_message_auth(pkt, reply, secret=None):
-    if secret is None:
-        secret = reply.secret
-    hmac_obj = hmac.new(secret, digestmod=hashlib.md5)
+def build_message_auth(pkt, reply):
+    hmac_obj = hmac.new(reply.secret, digestmod=hashlib.md5)
     hmac_obj.update(struct.pack("B", reply.code))
     hmac_obj.update(struct.pack("B", reply.id))
 

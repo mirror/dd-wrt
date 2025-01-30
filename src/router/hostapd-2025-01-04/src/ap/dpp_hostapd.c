@@ -2958,10 +2958,6 @@ void hostapd_dpp_rx_action(struct hostapd_data *hapd, const u8 *src,
 	const u8 *hdr;
 	unsigned int pkex_t;
 
-	/* Discard DPP Action frames if there is no global DPP context */
-	if (!hapd->iface->interfaces || !hapd->iface->interfaces->dpp)
-		return;
-
 	if (len < DPP_HDR_LEN)
 		return;
 	if (WPA_GET_BE24(buf) != OUI_WFA || buf[3] != DPP_OUI_TYPE)

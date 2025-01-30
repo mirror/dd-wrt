@@ -918,11 +918,4 @@ static inline bool hostapd_mld_is_first_bss(struct hostapd_data *hapd)
 
 u16 hostapd_get_punct_bitmap(struct hostapd_data *hapd);
 
-static inline bool ap_pmf_enabled(struct hostapd_bss_config *conf)
-{
-	return conf->ieee80211w != NO_MGMT_FRAME_PROTECTION ||
-		conf->rsn_override_mfp != NO_MGMT_FRAME_PROTECTION ||
-		conf->rsn_override_mfp_2 != NO_MGMT_FRAME_PROTECTION;
-}
-
 #endif /* HOSTAPD_H */

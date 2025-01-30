@@ -319,8 +319,6 @@ struct wpa_auth_config {
 	bool ssid_protection;
 
 	int rsn_override_omit_rsnxe;
-
-	bool spp_amsdu;
 };
 
 typedef enum {
@@ -461,7 +459,6 @@ int wpa_validate_osen(struct wpa_authenticator *wpa_auth,
 		      struct wpa_state_machine *sm,
 		      const u8 *osen_ie, size_t osen_ie_len);
 int wpa_auth_uses_mfp(struct wpa_state_machine *sm);
-int wpa_auth_uses_spp_amsdu(struct wpa_state_machine *sm);
 void wpa_auth_set_ocv(struct wpa_state_machine *sm, int ocv);
 int wpa_auth_uses_ocv(struct wpa_state_machine *sm);
 struct wpa_state_machine *
@@ -688,16 +685,5 @@ void wpa_release_link_auth_ref(struct wpa_state_machine *sm,
 		if (sm->mld_links[link_id].valid &&			\
 		    sm->mld_links[link_id].wpa_auth &&			\
 		    sm->wpa_auth != sm->mld_links[link_id].wpa_auth)
-
-static inline bool wpa_auth_pmf_enabled(struct wpa_auth_config *conf)
-{
-	return conf->ieee80211w != NO_MGMT_FRAME_PROTECTION ||
-		conf->rsn_override_mfp != NO_MGMT_FRAME_PROTECTION ||
-		conf->rsn_override_mfp_2 != NO_MGMT_FRAME_PROTECTION;
-}
-
-bool wpa_auth_sm_known_sta_identification(struct wpa_state_machine *sm,
-					  const u8 *timestamp,
-					  const u8 *mic, size_t mic_len);
 
 #endif /* WPA_AUTH_H */

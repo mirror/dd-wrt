@@ -986,7 +986,6 @@ struct hostapd_bss_config {
 	bool xrates_supported;
 
 	bool ssid_protection;
-	bool known_sta_identification;
 
 #ifdef CONFIG_IEEE80211BE
 	/* The AP is part of an AP MLD */
@@ -1007,9 +1006,6 @@ struct hostapd_bss_config {
 #endif /* CONFIG_TESTING_OPTIONS */
 #endif /* CONFIG_IEEE80211BE */
 	int mbssid_index;
-
-	bool spp_amsdu;
-
 #ifdef CONFIG_APUP
 	/**
 	 * Access Point Micro Peering
@@ -1208,7 +1204,6 @@ struct hostapd_config {
 	double ignore_reassoc_probability;
 	double corrupt_gtk_rekey_mic_probability;
 	int ecsa_ie_only;
-	int csa_ie_only;
 	bool delay_eapol_tx;
 #endif /* CONFIG_TESTING_OPTIONS */
 

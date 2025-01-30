@@ -327,25 +327,21 @@ def test_he80_params(dev, apdev):
                   "he_rts_threshold":"1"}
         hapd = hostapd.add_ap(apdev[0], params)
 
-        wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
-        wpas.interface_add("wlan5",
-                           drv_params="extra_bss_membership_selectors=126,122")
-
-        wpas.connect("he", key_mgmt="NONE", scan_freq="5180",
-                     disable_vht="1", wait_connect=False)
+        dev[1].connect("he", key_mgmt="NONE", scan_freq="5180",
+                       disable_vht="1", wait_connect=False)
         dev[0].connect("he", key_mgmt="NONE", scan_freq="5180")
         dev[2].connect("he", key_mgmt="NONE", scan_freq="5180",
                        disable_sgi="1")
-        ev = wpas.wait_event(["CTRL-EVENT-ASSOC-REJECT"])
+        ev = dev[1].wait_event(["CTRL-EVENT-ASSOC-REJECT"])
         if ev is None:
             raise Exception("Association rejection timed out")
         if "status_code=104" not in ev:
             raise Exception("Unexpected rejection status code")
-        wpas.request("DISCONNECT")
-        wpas.request("REMOVE_NETWORK all")
-        wpas.dump_monitor()
-        wpas.connect("he", key_mgmt="NONE", scan_freq="5180",
-                     disable_he="1", wait_connect=False)
+        dev[1].request("DISCONNECT")
+        dev[1].request("REMOVE_NETWORK all")
+        dev[1].dump_monitor()
+        dev[1].connect("he", key_mgmt="NONE", scan_freq="5180",
+                       disable_he="1", wait_connect=False)
         hwsim_utils.test_connectivity(dev[0], hapd)
         sta0 = hapd.get_sta(dev[0].own_addr())
         sta2 = hapd.get_sta(dev[2].own_addr())
@@ -355,7 +351,7 @@ def test_he80_params(dev, apdev):
             raise Exception("dev[0] did not support SGI")
         if capab2 & 0x60 != 0:
             raise Exception("dev[2] claimed support for SGI")
-        ev = wpas.wait_event(["CTRL-EVENT-ASSOC-REJECT"])
+        ev = dev[1].wait_event(["CTRL-EVENT-ASSOC-REJECT"])
         if ev is None:
             raise Exception("Association rejection timed out (2)")
         if "status_code=124" not in ev:
