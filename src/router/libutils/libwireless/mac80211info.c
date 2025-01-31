@@ -1482,17 +1482,14 @@ int mac80211_check_band(const char *interface, int checkband)
 	int rem, rem2, freq_mhz;
 	int phy;
 	int bandfound = 0;
-	lock();
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1) {
-		unlock();
 		return 0;
 	}
 
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
-		unlock();
 		return 0;
 	}
 	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
@@ -1524,12 +1521,10 @@ int mac80211_check_band(const char *interface, int checkband)
 #endif
 	}
 	nlmsg_free(msg);
-	unlock();
 	return bandfound;
 out:
 nla_put_failure:
 	nlmsg_free(msg);
-	unlock();
 	return 0;
 }
 
