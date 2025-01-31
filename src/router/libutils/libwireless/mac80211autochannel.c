@@ -529,8 +529,9 @@ void mac80211autochannel_cleanup(void)
 			continue;
 		char ifname[32];
 		sprintf(ifname, "wlan%d", i);
-		radioresulta[c].ifname = strdup(ifname);
+		radioresults[c].ifname = strdup(ifname);
 		radioresults[c].freq = nvram_ngeti("wlan%d_channel", i);
+		c++;
 	}
 }
 // leave space for enhencements with more cards and already chosen channels...
