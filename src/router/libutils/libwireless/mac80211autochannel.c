@@ -519,6 +519,19 @@ out:
 void mac80211autochannel_cleanup(void)
 {
 	memset(radioresults, 0, sizeof(radioresults));
+	int i;
+	int count = getdevicecount();
+	int c = 0;
+	for (i = 0; i < count; i++) {
+		if (nvram_nmatch("disabled", "wlan%d_net_mode", i))
+			continue;
+		if (nvram_nmatch("0", "wlan%d_channel", i))
+			continue;
+		char ifname[32];
+		sprintf(ifname, "wlan%d", i);
+		radioresulta[c].ifname = strdup(ifname);
+		radioresults[c].freq = nvram_ngeti("wlan%d_channel", i);
+	}
 }
 // leave space for enhencements with more cards and already chosen channels...
 struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range, int scans, int enable_passive, int htflags)
