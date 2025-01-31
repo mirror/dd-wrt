@@ -125,10 +125,15 @@ function setPacketInfo(val) {
 }
 
 function OpenSiteSurvey () {
-	if( "<% radio_on(); %>" == "1" ) {
+
+	if( "<% radio_on(); %>" == "1" && <% is_6ghz(); %> == "0") {
 		openWindow('Site_Survey.asp', 1024, 700);
 	}
-	else {
+	else if ( <% is_6ghz(); %> == "1") {
+	
+	} else {
+		alert(errmsg.err59);	 
+	{
 		alert(errmsg.err59);
 	};
 }
