@@ -33,7 +33,12 @@
 #define CHANNEL_EOF -1
 #define CHANNEL_DISABLED -2
 
-static struct radioresults[16];
+struct RADIORESULTS {
+	const char *ifname;
+	int freq;
+};
+
+static struct RADIORESULTS radioresults[16];
 static struct mac80211_ac *add_to_mac80211_ac(struct mac80211_ac *list_root);
 void free_mac80211_ac(struct mac80211_ac *acs);
 
@@ -510,11 +515,6 @@ out:
 	mac80211_unlock();
 	return ret;
 }
-struct radioresults {
-	const char *ifname;
-	int freq;
-}
-
 
 void mac80211autochannel_cleanup(void)
 {
@@ -931,7 +931,7 @@ out:
 		for (i = 0; i < ARRAY_SIZE(radioresults); i++) {
 			if (!radioresults[i].ifname || !strcmp(radioresults[i].ifname, interface)) {
 				radioresults[i].ifname = strdup(interface);
-				radioresults[i].freq = freq;
+				radioresults[i].freq = racs->freq;
 				break;
 			}
 		}
