@@ -474,6 +474,11 @@ EJ_VISIBLE void ej_update_acktiming(webs_t wp, int argc, char_t **argv)
 	return;
 }
 
+EJ_VISIBLE void ej_is_6ghz(webs_t wp, int argc, char_t **argv)
+{
+	websWrite(wp, "0");
+}
+
 EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 {
 	channel_info_t ci;

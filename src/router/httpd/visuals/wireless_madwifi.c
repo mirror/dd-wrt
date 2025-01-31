@@ -488,6 +488,23 @@ EJ_VISIBLE void ej_get_currate(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "%s", live_translate(wp, "share.auto"));
 }
 
+EJ_VISIBLE void ej_is_6ghz(webs_t wp, int argc, char_t **argv)
+{
+	char *prefix = nvram_safe_get("wifi_display");
+	char base[32];
+	strncpy(base, prefix, 32);
+	strchr(base, '.');
+	int channel = wifi_getchannel(base);
+	if (channel >= 0 && channel < 1000) {
+		struct wifi_interface *interface = wifi_getfreq(base);
+		if (interface)
+			websWrite(wp, "%d", is_6ghz_freq(interface->freq));
+		else
+			websWrite(wp, "0");
+	} else
+		websWrite(wp, "0");
+}
+
 EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 {
 	char *prefix = nvram_safe_get("wifi_display");
