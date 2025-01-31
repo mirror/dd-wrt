@@ -1663,6 +1663,7 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 	}
 
 
+#ifdef CONFIG_IEEE80211AX
 	if (freq > 5950 && freq <= 7115) {
 		if ((freq - 5950) % 5)
 			return NUM_HOSTAPD_MODES;
@@ -1698,6 +1699,7 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 		*channel = (freq - 5925) / 5;
 		return HOSTAPD_MODE_IEEE80211A;
 	}
+#endif
 
 	if (fcast >= 5000 && fcast < 7000) {
 		*channel = ((fcast - 5000) / 5) & 0xff;
@@ -3045,10 +3047,12 @@ int ieee80211_frequency_to_channel(int freq)
 		return ((freq * 10) + (((freq % 5) == 2) ? 5 : 0) - 49400) / 5;
 	else if (freq > 4800 && freq < 5005)
 		return (freq - 4000) / 5;
+#ifdef CONFIG_IEEE80211AX
 	else if (freq == 5935)
 		return (freq - 5925) / 5;
 	else if (freq > 5950 && freq <= 7115)
 		return (freq - 5950) / 5;
+#endif
 	else if (freq <= 45000) /* DMG band lower limit */
 		return ((freq - 5000) / 5) & 0xff;
 	else if (freq >= 58320 && freq <= 64800)
