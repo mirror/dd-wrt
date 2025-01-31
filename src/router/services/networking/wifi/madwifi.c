@@ -2972,6 +2972,7 @@ void configure_wifi(void) // madwifi implementation for atheros based
 	char cmpstring[128] = { 0 };
 	int changed = 0;
 #ifdef HAVE_ATH9K
+	mac80211autochannel_cleanup();
 	char dev[32];
 	int hasath9k = 0;
 	for (i = 0; i < c; i++) {
