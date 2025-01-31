@@ -70,7 +70,7 @@ int getValueFromPath(char *path, int dev, char *fmt, int *err)
  * DD-WRT addition (loaned from radauth) 
  */
 
-int ieee80211_mhz2ieee(int freq)
+int ieee80211_mhz2ieee(char *prefix, int freq)
 {
 	if (freq == 2484)
 		return 14;
@@ -94,10 +94,12 @@ int ieee80211_mhz2ieee(int freq)
 		return (freq - 4000) / 5;
 	if (freq < 5000)
 		return 15 + ((freq - 2512) / 20);
-	if (freq == 5935)
-		return (freq - 5925) / 5;
-	if (freq > 5950 && freq <= 7115)
-		return (freq - 5950) / 5;
+	if (has_6ghz(prefix)) {
+		if (freq == 5935)
+			return (freq - 5925) / 5;
+		if (freq > 5950 && freq <= 7115)
+			return (freq - 5950) / 5;
+	}
 	if (freq == 58320)
 		return 1;
 	if (freq == 60480)
@@ -220,8 +222,14 @@ int has_vht80plus80(const char *prefix)
 
 #ifndef HAVE_MADWIFI
 
-unsigned int ieee80211_ieee2mhz(unsigned int chan)
+unsigned int ieee80211_ieee2mhz(const char *prefix, unsigned int chan)
 {
+	if (has_6ghz(prefix)) {
+		if (chan == 2)
+			return 5935;
+		if (chan <= 233)
+			return 5950 + chan * 5;
+	}
 	if (chan == 14)
 		return 2484;
 	if (chan < 14)
@@ -412,7 +420,7 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	freq = wrq.u.freq.m;
 	struct wifi_interface *interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
 	if (freq < 1000) {
-		interface->freq = ieee80211_ieee2mhz(freq);
+		interface->freq = ieee80211_ieee2mhz(ifname, freq);
 		return interface;
 	}
 	interface->freq = wrqfreq_to_int(&wrq);
@@ -423,7 +431,7 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 int wifi_getchannel(char *ifname)
 {
 	struct wifi_interface *interface = wifi_getfreq(ifname);
-	int channel = ieee80211_mhz2ieee(interface->freq);
+	int channel = ieee80211_mhz2ieee(ifname, interface->freq);
 	free(interface);
 	return channel;
 }
@@ -1761,7 +1769,7 @@ int wifi_getchannel(char *ifname)
 	struct wifi_interface *interface = wifi_getfreq(ifname);
 	if (!interface)
 		return 0;
-	int channel = ieee80211_mhz2ieee(interface->freq);
+	int channel = ieee80211_mhz2ieee(ifname, interface->freq);
 	free(interface);
 	return channel;
 }
