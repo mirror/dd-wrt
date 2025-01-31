@@ -1449,7 +1449,7 @@ int writeproc(char *path, char *value)
 	int fd;
 	fd = open(path, O_WRONLY);
 	if (fd == -1) {
-		fprintf(stderr, "cannot open %s\n", path);
+		dd_debug(DEBUG_CONSOLE "cannot open %s\n", path);
 		return -1;
 	}
 	write(fd, value, strlen(value));
