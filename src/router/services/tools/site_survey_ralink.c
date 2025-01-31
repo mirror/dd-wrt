@@ -165,7 +165,7 @@ int site_survey_main(int argc, char *argv[])
 		else
 			strncpy(b7, ext, 31);
 		site_survey_lists[i].channel = atoi(b1); // channel
-		site_survey_lists[i].frequency = ieee80211_ieee2mhz(site_survey_lists[i].channel);
+		site_survey_lists[i].frequency = ieee80211_ieee2mhz(ifn, site_survey_lists[i].channel);
 		strcpy(site_survey_lists[i].SSID, b2); //SSID
 		strcpy(site_survey_lists[i].BSSID, b3); //BSSID
 		site_survey_lists[i].phy_noise = -95; // no way
