@@ -1925,7 +1925,7 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 								continue;
 							if (max_bandwidth_khz > regmaxbw)
 								continue;
-							list[count].channel = ieee80211_mhz2ieee(freq_mhz);
+							list[count].channel = ieee80211_mhz2ieee(interface, freq_mhz);
 							list[count].freq = freq_mhz;
 							if (nooverlap && max_bandwidth_khz > 40)
 								list[count].band = newband;
