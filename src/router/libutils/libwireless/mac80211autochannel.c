@@ -33,6 +33,7 @@
 #define CHANNEL_EOF -1
 #define CHANNEL_DISABLED -2
 
+static struct radioresults[16];
 static struct mac80211_ac *add_to_mac80211_ac(struct mac80211_ac *list_root);
 void free_mac80211_ac(struct mac80211_ac *acs);
 
@@ -444,6 +445,15 @@ static int freq_quality(struct wifi_channels *wifi_channels, int _max_eirp, int 
 		if (list[i].frequency == f->freq)
 			c -= 5; // reduce quality if another network has been found on the same channel
 	}
+	for (i = 0; i < ARRAY_SIZE(radioresults); i++) {
+		if (radioresults[i].ifname && strcmp(radioresults[i].ifname, interface) && radioresults[i].freq == f->freq) {
+			/*
+			 * if device has multiple radios we should avoid to assign the same frequency on the, so we need to take care 
+			 * what has already been selected by another radio. so we consider it in our quality measure
+			*/
+			c -= 10;
+		}
+	}
 
 	if (c < 0)
 		c = 0;
@@ -500,7 +510,16 @@ out:
 	mac80211_unlock();
 	return ret;
 }
+struct radioresults {
+	const char *ifname;
+	int freq;
+}
 
+
+void mac80211autochannel_cleanup(void)
+{
+	memset(radioresults, 0, sizeof(radioresults));
+}
 // leave space for enhencements with more cards and already chosen channels...
 struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range, int scans, int enable_passive, int htflags)
 {
@@ -907,9 +926,16 @@ out:
 		free(list);
 	if (wifi_channels)
 		free(wifi_channels);
-	if (racs)
+	if (racs) {
 		dd_loginfo("autochannel", "%s: selected: %d", interface, racs->freq);
-
+		for (i = 0; i < ARRAY_SIZE(radioresults); i++) {
+			if (!radioresults[i].ifname || !strcmp(radioresults[i].ifname, interface)) {
+				radioresults[i].ifname = strdup(interface);
+				radioresults[i].freq = freq;
+				break;
+			}
+		}
+	}
 	return racs;
 }
 
