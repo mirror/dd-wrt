@@ -290,7 +290,7 @@ EJ_VISIBLE void ej_dump_channel_survey(webs_t wp, int argc, char_t **argv)
 			websWrite(wp, "%c\"[%d]\"", !first_survey ? ' ' : ',', f->freq);
 		else
 			websWrite(wp, "%c\"%d\"", !first_survey ? ' ' : ',', f->freq);
-		websWrite(wp, ",\"%d\"", ieee80211_mhz2ieee(f->freq));
+		websWrite(wp, ",\"%d\"", ieee80211_mhz2ieee(interface, f->freq));
 		first_survey = 1;
 		if (f->noise_count)
 			websWrite(wp, ",\"%d\"", f->noise / f->noise_count);

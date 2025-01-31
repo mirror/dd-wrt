@@ -506,11 +506,11 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 		int freq = get_wififreq(base,
 					interface->freq); // translation for special frequency devices
 		if (is_mac80211(base)) {
-			websWrite(wp, "%d", ieee80211_mhz2ieee(interface->freq));
+			websWrite(wp, "%d", ieee80211_mhz2ieee(prefix, interface->freq));
 			if (interface->center1 != -1 && interface->center1 != interface->freq)
-				websWrite(wp, " + %d", ieee80211_mhz2ieee(interface->center1));
+				websWrite(wp, " + %d", ieee80211_mhz2ieee(prefix, interface->center1));
 			if (interface->center2 != -1 && interface->center1 != interface->freq)
-				websWrite(wp, " + %d", ieee80211_mhz2ieee(interface->center2));
+				websWrite(wp, " + %d", ieee80211_mhz2ieee(prefix, interface->center2));
 		} else {
 			websWrite(wp, "%d", channel);
 		}
