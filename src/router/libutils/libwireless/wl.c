@@ -94,7 +94,7 @@ int ieee80211_mhz2ieee(const char *prefix, int freq)
 		return (freq - 4000) / 5;
 	if (freq < 5000)
 		return 15 + ((freq - 2512) / 20);
-	if (has_6ghz(prefix)) {
+	if (prefix && has_6ghz(prefix)) {
 		if (freq == 5935)
 			return (freq - 5925) / 5;
 		if (freq > 5950 && freq <= 7115)
@@ -224,7 +224,7 @@ int has_vht80plus80(const char *prefix)
 
 unsigned int ieee80211_ieee2mhz(const char *prefix, unsigned int chan)
 {
-	if (has_6ghz(prefix)) {
+	if (prefix && has_6ghz(prefix)) {
 		if (chan == 2)
 			return 5935;
 		if (chan <= 233)

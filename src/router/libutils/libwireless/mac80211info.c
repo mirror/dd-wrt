@@ -1909,8 +1909,8 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 							char *sa_region = getUEnv("region");
 							if (sa_region != NULL &&
 							    (!strcmp(sa_region, "AP") || !strcmp(sa_region, "US")) &&
-							    ieee80211_mhz2ieee(freq_mhz) > 11 &&
-							    ieee80211_mhz2ieee(freq_mhz) < 14 &&
+							    ieee80211_mhz2ieee(interface, freq_mhz) > 11 &&
+							    ieee80211_mhz2ieee(interface, freq_mhz) < 14 &&
 							    nvram_default_match("region", "SA", ""))
 								continue;
 #endif
