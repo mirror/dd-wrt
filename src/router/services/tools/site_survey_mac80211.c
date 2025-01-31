@@ -344,7 +344,7 @@ static int print_bss_handler(struct nl_msg *msg, void *arg)
 	site_survey_lists[sscount].active = active[freq];
 	site_survey_lists[sscount].busy = busy[freq];
 	if ((site_survey_lists[sscount].channel & 0xff) == 0) {
-		site_survey_lists[sscount].channel |= (ieee80211_mhz2ieee(site_survey_lists[sscount].frequency) & 0xff);
+		site_survey_lists[sscount].channel |= (ieee80211_mhz2ieee(nvram_safe_get("wifi_display"), site_survey_lists[sscount].frequency) & 0xff);
 	}
 	sscount++;
 

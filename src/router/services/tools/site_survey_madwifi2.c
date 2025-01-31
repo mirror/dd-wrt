@@ -145,7 +145,7 @@ int site_survey_main(int argc, char *argv[])
 		memset(ssid, 0, sizeof(ssid));
 		strncpy(site_survey_lists[i].SSID, vp, sr->isr_ssid_len);
 		strcpy(site_survey_lists[i].BSSID, ieee80211_ntoa(sr->isr_bssid));
-		site_survey_lists[i].channel = ieee80211_mhz2ieee(sr->isr_freq);
+		site_survey_lists[i].channel = ieee80211_mhz2ieee("wlan0", sr->isr_freq);
 		site_survey_lists[i].frequency = sr->isr_freq;
 		int noise = 256;
 

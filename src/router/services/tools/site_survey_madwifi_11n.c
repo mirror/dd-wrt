@@ -277,7 +277,7 @@ int site_survey_main_11n(int argc, char *argv[])
 				     sr->isr_ssid_len) && //
 			    !strcmp(site_survey_lists[c].BSSID,
 				    ieee80211_ntoa(sr->isr_bssid)) && //
-			    site_survey_lists[c].channel == ieee80211_mhz2ieee(sr->isr_freq)) {
+			    site_survey_lists[c].channel == ieee80211_mhz2ieee(nvram_safe_get("wifi_display"), sr->isr_freq)) {
 				// entry already exists, skip
 				cp += sr->isr_len;
 				len -= sr->isr_len;
@@ -286,7 +286,7 @@ int site_survey_main_11n(int argc, char *argv[])
 		}
 		strncpy(site_survey_lists[i].SSID, vp, sr->isr_ssid_len);
 		strcpy(site_survey_lists[i].BSSID, ieee80211_ntoa(sr->isr_bssid));
-		site_survey_lists[i].channel = ieee80211_mhz2ieee(sr->isr_freq);
+		site_survey_lists[i].channel = ieee80211_mhz2ieee(sta, sr->isr_freq);
 		site_survey_lists[i].frequency = sr->isr_freq;
 		int noise = 256;
 		noise -= (int)sr->isr_noise;

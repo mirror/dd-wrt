@@ -1435,7 +1435,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	}
 
 	MAC80211DEBUG();
-	fprintf(fp, "channel=%d\n", ieee80211_mhz2ieee(freq));
+	fprintf(fp, "channel=%d\n", ieee80211_mhz2ieee(prefix, freq));
 	//	if (!has_ad(prefix))
 	fprintf(fp, "frequency=%d\n", freq);
 	if (is_6ghz_freq_prefix(prefix, freq)) {
