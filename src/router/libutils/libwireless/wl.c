@@ -70,7 +70,7 @@ int getValueFromPath(char *path, int dev, char *fmt, int *err)
  * DD-WRT addition (loaned from radauth) 
  */
 
-int ieee80211_mhz2ieee(char *prefix, int freq)
+int ieee80211_mhz2ieee(const char *prefix, int freq)
 {
 	if (freq == 2484)
 		return 14;
