@@ -130,12 +130,10 @@ function OpenSiteSurvey () {
 		openWindow('Site_Survey.asp', 1024, 700);
 	}
 	else if ( <% is_6ghz(); %> == "1") {
-	
+		alert(errmsg.err104);
 	} else {
-		alert(errmsg.err59);	 
-	{
 		alert(errmsg.err59);
-	};
+	}
 }
 
 function OpenChannelSurvey () {
@@ -144,7 +142,7 @@ function OpenChannelSurvey () {
 	}
 	else {
 		alert(errmsg.err59);
-	};
+	}
 }
 
 function OpenSpectral () {
