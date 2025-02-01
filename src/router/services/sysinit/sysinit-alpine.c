@@ -351,6 +351,7 @@ void start_devinit_arch(void)
 void start_wifi_drivers(void)
 {
 	if (!detect_wireless_devices(RADIO_ALL)) {
+		wait_for_wifi(2);
 		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
 		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
 		set_named_smp_affinity("ath10k_pci", 2, 1);

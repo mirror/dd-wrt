@@ -407,6 +407,7 @@ static int detect_wireless_devices(int mask)
 	int loadath9k = 1;
 	int loadlegacy = 1;
 	int loadath5k = 0;
+	int num=0;
 #ifdef HAVE_RT61
 	if (!strcmp(has_device("0e.0"), "0x3592"))
 		nvram_set("rtchip", "3062");
@@ -513,7 +514,8 @@ static int detect_wireless_devices(int mask)
 	}
 #endif
 #ifndef HAVE_NOWIFI
-	load_mac80211();
+	if (load_mac80211())
+	    return -1;
 	// some are just for future use and not (yet) there
 	insmod("ath");
 

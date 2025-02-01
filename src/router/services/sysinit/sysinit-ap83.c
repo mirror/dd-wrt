@@ -361,6 +361,7 @@ void start_devinit_arch(void)
 void start_wifi_drivers(void)
 {
 	if (!detect_wireless_devices(RADIO_ALL)) {
+		wait_for_wifi(2);
 #ifdef HAVE_RS
 		setWirelessLed(0, 2);
 		setWirelessLed(1, 2);

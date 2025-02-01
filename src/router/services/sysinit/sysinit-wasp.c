@@ -974,6 +974,7 @@ void start_devinit_arch(void)
 void start_wifi_drivers(void)
 {
 	if (!detect_wireless_devices(RADIO_ALL)) {
+		wait_for_wifi(2);
 #ifdef HAVE_PERU
 #elif HAVE_DW02_412H
 //      don't use setWirelessLed since we only have one LED for two distinct radio's
