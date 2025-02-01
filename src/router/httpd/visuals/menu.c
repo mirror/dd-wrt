@@ -170,13 +170,17 @@ static struct menucontext *init_menu(webs_t wp)
 		char check[32];
 		sprintf(check, "wlan%d", a);
 		if (has_ad(check) || is_ath10k(check) || is_ath11k(check) || is_brcmfmac(check) || is_mt76(check) ||
-		    is_mvebu(check))
-			continue;
-		m->menu[MENU_WIRELESS][count + 8] = wdsmenu[a];
-		if (ifcount == 1)
-			m->menuname[MENU_WIRELESS][count + 9] = "wirelessWds";
-		else
-			m->menuname[MENU_WIRELESS][count + 9] = tran_wdsmenu[a];
+		    is_mvebu(check)) {
+			m->menu[MENU_WIRELESS][count + 8] = "";
+			m->menuname[MENU_WIRELESS][count + 9] = "";
+
+		} else {
+			m->menu[MENU_WIRELESS][count + 8] = wdsmenu[a];
+			if (ifcount == 1)
+				m->menuname[MENU_WIRELESS][count + 9] = "wirelessWds";
+			else
+				m->menuname[MENU_WIRELESS][count + 9] = tran_wdsmenu[a];
+		}
 		count++;
 	}
 #endif
