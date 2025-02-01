@@ -328,6 +328,19 @@ int br_add_interface(const char *br, const char *dev)
 	char *sep = NULL;
 	char mainif[32];
 	strncpy(mainif, dev, 31);
+	char check[64];
+	sprintf(check, "/sys/class/net/%s/brport/multicast_to_unicast", dev);
+	int cnt = 10;
+	while (cnt--)
+	{
+		FILE *fp = fopen(check, "rb");
+		if (!fp) {
+			sleep(1);
+			continue;
+		}
+		break;
+	}
+	fclose(fp);
 	if (!strncmp(dev, "wlan", 4) && (sep = strstr(mainif, ".sta"))) {
 		*sep = 0;
 		sysprintf("echo %d > /sys/class/net/%s/brport/multicast_to_unicast", nvram_default_ngeti(0, "%s_m2u", mainif), dev);
