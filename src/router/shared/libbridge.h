@@ -93,4 +93,6 @@ extern int br_set_bridge_priority(const char *br, int bridge_priority);
 extern int br_set_port_priority(const char *br, const char *p, int port_priority);
 extern int br_set_path_cost(const char *br, const char *p, int path_cost);
 extern int br_read_fdb(const char *br, struct fdb_entry *fdbs, unsigned long skip, int num);
+extern void set_multicast_to_unicast(const char *ifname);
+extern void sync_multicast_to_unicast(void);
 #endif

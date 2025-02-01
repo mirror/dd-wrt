@@ -3310,6 +3310,7 @@ void configure_wifi(void) // madwifi implementation for atheros based
 		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy1/ath11k/ext_rx_stats");
 	if (is_ath11k("wlan2"))
 		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy2/ath11k/ext_rx_stats");
+	sync_multicast_to_unicast();
 }
 
 void start_deconfigurewifi(void)

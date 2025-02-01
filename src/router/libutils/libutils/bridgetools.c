@@ -280,6 +280,25 @@ int br_del_bridge(const char *brname)
 	return eval("brctl", "delbr", brname);
 }
 
+void set_multicast_to_unicast(const char *dev)
+{
+	if (isbridged(dev)) {
+		dd_loginfo("bridge", "set multicast to unicast for %s\n", dev);
+		char *sep = NULL;
+		char mainif[32];
+		strncpy(mainif, dev, 31);
+
+		if (!strncmp(dev, "wlan", 4) && (sep = strstr(mainif, ".sta"))) {
+			*sep = 0;
+			sysprintf("echo %d > /sys/class/net/%s/brport/multicast_to_unicast",
+				  nvram_default_ngeti(0, "%s_m2u", mainif) | nvram_nmatch("1", "%s_usteer", mainif), dev);
+		} else {
+			sysprintf("echo %d > /sys/class/net/%s/brport/multicast_to_unicast",
+				  nvram_default_ngeti(0, "%s_m2u", dev) | nvram_nmatch("1", "%s_usteer", dev), dev);
+		}
+	}
+}
+
 int br_add_interface(const char *br, const char *dev)
 {
 	char eabuf[32];
@@ -325,35 +344,20 @@ int br_add_interface(const char *br, const char *dev)
 		nvram_nset(eabuf, "%s_hwaddr", br); // safe for gui
 		set_hwaddr(br, eabuf);
 	}
-	char *sep = NULL;
-	char mainif[32];
-	strncpy(mainif, dev, 31);
-	char check[64];
-	sprintf(check, "/sys/class/net/%s/brport/multicast_to_unicast", dev);
-	int cnt = 10;
-	while (cnt--)
-	{
-		FILE *fp = fopen(check, "rb");
-		if (!fp) {
-			sleep(1);
-			continue;
-		}
-		break;
-	}
-	fclose(fp);
-	if (!strncmp(dev, "wlan", 4) && (sep = strstr(mainif, ".sta"))) {
-		*sep = 0;
-		sysprintf("echo %d > /sys/class/net/%s/brport/multicast_to_unicast", nvram_default_ngeti(0, "%s_m2u", mainif), dev);
-		if (nvram_nmatch("1", "%s_usteer", mainif))
-			sysprintf("echo 1 > /sys/class/net/%s/brport/multicast_to_unicast", dev);
-	} else {
-		sysprintf("echo %d > /sys/class/net/%s/brport/multicast_to_unicast", nvram_default_ngeti(0, "%s_m2u", dev), dev);
-		if (nvram_nmatch("1", "%s_usteer", dev))
-			sysprintf("echo 1 > /sys/class/net/%s/brport/multicast_to_unicast", dev);
-	}
+	set_multicast_to_unicast(dev);
 	return ret;
 }
 
+void sync_multicast_to_unicast(void)
+{
+	char vifs[256];
+	getIfLists(vifs, 256);
+	char var[256], *wordlist, *next;
+	foreach(var, vifs, next)
+	{
+		set_multicast_to_unicast(var);
+	}
+}
 int br_del_interface(const char *br, const char *dev)
 {
 	if (!ifexists(dev))

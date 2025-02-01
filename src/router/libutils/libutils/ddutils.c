@@ -1698,7 +1698,7 @@ void rep(char *in, char from, char to)
 			in[i] = to;
 }
 
-#include "l7protocols.h"
+#include "l7filters.h"
 
 int get_risk_by_name(char *name)
 {
