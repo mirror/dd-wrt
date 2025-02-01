@@ -193,7 +193,7 @@ int site_survey_main(int argc, char *argv[])
 	char ssid[31];
 	unsigned char *cp;
 	int len;
-	sta = argc > 1 ? argv[1] : nvram_safe_get("wifi_display");	
+	char *sta = argc > 1 ? argv[1] : nvram_safe_get("wifi_display");	
 #ifndef HAVE_NOWIFI
 	if (is_mac80211(sta)) {
 		extern int site_survey_main_mac802211(int argc, char *argv[]);
