@@ -70,6 +70,7 @@ static int *noise;
 static unsigned long long *active;
 static unsigned long long *busy;
 
+static const char *global_ifname;
 static struct scan_params scan_params;
 
 struct ie_print {
@@ -344,7 +345,7 @@ static int print_bss_handler(struct nl_msg *msg, void *arg)
 	site_survey_lists[sscount].active = active[freq];
 	site_survey_lists[sscount].busy = busy[freq];
 	if ((site_survey_lists[sscount].channel & 0xff) == 0) {
-		site_survey_lists[sscount].channel |= (ieee80211_mhz2ieee(nvram_safe_get("wifi_display"), site_survey_lists[sscount].frequency) & 0xff);
+		site_survey_lists[sscount].channel |= (ieee80211_mhz2ieee(global_ifname, site_survey_lists[sscount].frequency) & 0xff);
 	}
 	sscount++;
 
@@ -952,10 +953,8 @@ static int local_open_site_survey(void)
 
 int site_survey_main_mac802211(int argc, char *argv[])
 {
-	char *sta = NULL;
-
 	unlink(SITE_SURVEY_DB);
-	sta = argc > 1 ? argv[1] : nvram_safe_get("wifi_display");
-	mac80211_site_survey(sta);
+	global_ifname = argc > 1 ? argv[1] : nvram_safe_get("wifi_display");	
+	mac80211_site_survey(global_ifname);
 	return 0;
 }
