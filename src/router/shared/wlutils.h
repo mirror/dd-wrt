@@ -563,6 +563,7 @@ struct wifi_channels *mac80211_get_channels_simple(const char *interface, const 
 #define AUTO_FORCEVHT160 4
 #define AUTO_ALL 0
 
+void mac80211autochannel_cleanup(void);
 extern struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range, int scans, int enable_passive, int htflags);
 extern void mac80211_set_antennas(const char *prefix, uint32_t tx_ant, uint32_t rx_ant);
 extern int mac80211_get_avail_tx_antenna(const char *prefix);
@@ -626,7 +627,7 @@ unsigned int getCountry(char *country);
 const char *getCountryByIso(char *iso);
 
 #endif
-int ieee80211_mhz2ieee(int freq);
+int ieee80211_mhz2ieee(const char *prefix, int freq);
 #if defined(HAVE_RT2880) || defined(HAVE_RT61) || defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
 int wifi_getchannel(char *ifname);
 struct wifi_interface *wifi_getfreq(char *ifname);
