@@ -538,6 +538,7 @@ void mac80211autochannel_cleanup(void)
 struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range, int scans, int enable_passive, int htflags)
 {
 	struct mac80211_ac *acs = NULL;
+	struct mac80211_ac *racs = NULL;
 	struct frequency *f, *ftmp;
 	int verbose = 0;
 	int i, ch;
@@ -559,9 +560,12 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 		bw = 40;
 	/* get maximum eirp possible in channel list */
 	if (getsurveystats(&frequencies, &wifi_channels, interface, freq_range, scans, bw))
-		goto out;
-	if (!(list = open_site_survey(interface)))
-		goto out;
+		return NULL;
+	if (!(list = open_site_survey(interface))) {
+		if (wifi_channels)
+			free(wifi_channels);
+		return NULL;
+	}
 	_max_eirp = get_max_eirp(wifi_channels);
 	bzero(&sdata, sizeof(sdata));
 	dd_list_for_each_entry(f, &frequencies, list)
@@ -911,7 +915,6 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 		free(f);
 	}
 	int lastq = -1;
-	struct mac80211_ac *racs = NULL;
 	struct mac80211_ac *head = acs;
 	while (acs) {
 		struct mac80211_ac *next = acs->next;
