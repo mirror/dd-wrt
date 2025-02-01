@@ -27,7 +27,7 @@ typedef struct _l7filters {
 #endif
 //Added ,  (in extra), dazhihui, .
 
-l7filters filters_list[] = {
+static l7filters filters_list[] = {
 	{ "100bao", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "1kxun", NDPI_ONLY, 0, NULL },
