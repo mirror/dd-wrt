@@ -1623,7 +1623,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fp = fopen(fstr, "ab");
 		fprintf(fp, "bss=%s\n", ifname);
 	}
-	if (nvram_default_nmatchi(1, 0, "%s_m2u", ifname))
+	if (nvram_default_nmatchi(1, 0, "%s_m2u", ifname) || nvram_nmatch("1", "%s_usteer", ifname))
 		fprintf(fp, "multicast_to_unicast=1\n");
 	else
 		fprintf(fp, "multicast_to_unicast=0\n");
