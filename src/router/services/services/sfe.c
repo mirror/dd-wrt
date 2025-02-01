@@ -45,7 +45,7 @@ void start_sfe(void)
 		rmmod("hyfi-bridging");
 		rmmod("qca-nss-sfe");
 		sysprintf("echo 1 > /sys/fast_classifier/skip_to_bridge_ingress");
-#if !defined(HAVE_IPQ6018)
+#if !defined(HAVE_IPQ6018) && defined(HAVE_IPQ806X)
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
 #endif
 		dd_loginfo("sfe", "shortcut (SFE) forwarding engine successfully started");
@@ -60,7 +60,7 @@ void start_sfe(void)
 		rmmod("hyfi-bridging");
 		rmmod("qca-nss-sfe");
 		writeproc("/proc/ctf", "1");
-#if !defined(HAVE_IPQ6018)
+#if !defined(HAVE_IPQ6018) && defined(HAVE_IPQ806X)
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
 #endif
 		dd_loginfo("ctf", "fast path (CTF) forwarding successfully started");
@@ -72,7 +72,7 @@ void start_sfe(void)
 		eval("insmod", "qca-nss-sfe");
 		insmod("hyfi-bridging");
 		eval("insmod", "ecm", "front_end_selection=1");
-#if !defined(HAVE_IPQ6018)
+#if !defined(HAVE_IPQ6018) && defined(HAVE_IPQ806X)
 		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect");
 #endif
 		dd_loginfo("ecm-nss", "Enhanced Connection Manager (ECM) forwarding engine successfully started");
@@ -84,7 +84,7 @@ void start_sfe(void)
 		eval("insmod", "qca-nss-sfe");
 		insmod("hyfi-bridging");
 		eval("insmod", "ecm", "front_end_selection=2");
-#if !defined(HAVE_IPQ6018)
+#if !defined(HAVE_IPQ6018) && defined(HAVE_IPQ806X)
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
 #endif
 		dd_loginfo("ecm-nss", "shortcut (NSS-SFE) forwarding engine successfully started");
@@ -96,7 +96,7 @@ void start_sfe(void)
 		eval("insmod", "qca-nss-sfe");
 		insmod("hyfi-bridging");
 		eval("insmod", "ecm", "front_end_selection=4");
-#if !defined(HAVE_IPQ6018)
+#if !defined(HAVE_IPQ6018) && defined(HAVE_IPQ806X)
 		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect");
 #endif
 		dd_loginfo("ecm-nss", "Enhanced Connection Manager (ECM+NSS-SFE) forwarding engine successfully started");
@@ -108,7 +108,7 @@ void start_sfe(void)
 		sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop");
 		sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop");
 		sysprintf("echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all");
-#if !defined(HAVE_IPQ6018)
+#if !defined(HAVE_IPQ6018) && defined(HAVE_IPQ806X)
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
 #endif
 
@@ -129,7 +129,7 @@ void stop_sfe(void)
 	sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop");
 	sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop");
 	sysprintf("echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all");
-#if !defined(HAVE_IPQ6018)
+#if !defined(HAVE_IPQ6018) && defined(HAVE_IPQ806X)
 	sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
 #endif
 	rmmod("ecm");

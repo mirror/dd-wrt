@@ -375,15 +375,21 @@ void configure_single_ath9k(int count)
 	}
 	MAC80211DEBUG();
 	if (nvram_nmatch("1", "%s_turbo_qam", dev)) {
-		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/ath10k/turboqam", wif);
-		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/mt76/turboqam", wif);
-		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/brcmfmac/turboqam", wif);
+		if (is_ath10k(wif))
+			sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/ath10k/turboqam", wif);
+		if (is_mt76(wif))
+			sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/mt76/turboqam", wif);
+		if (is_brcmfmac(wif))
+			sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/brcmfmac/turboqam", wif);
 		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/turboqam", wif);
 	} else {
-		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/ath10k/turboqam", wif);
-		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/mt76/turboqam", wif);
+		if (is_ath10k(wif))
+			sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/ath10k/turboqam", wif);
+		if (is_mt76(wif))
+			sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/mt76/turboqam", wif);
+		if (is_brcmfmac(wif))
+			sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/brcmfmac/turboqam", wif);
 		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/turboqam", wif);
-		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/brcmfmac/turboqam", wif);
 	}
 	if (isath10k && has_fwswitch(dev)) {
 		char fwtype[32];

@@ -2943,7 +2943,7 @@ void configure_wifi(void) // madwifi implementation for atheros based
 	// cards
 {
 	start_wifi_drivers();
-#if !defined(HAVE_IPQ6018)
+#if !defined(HAVE_IPQ6018) && defined(HAVE_IPQ806X)
 	if (nvram_match("sfe", "1")) {
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
 	} else if (nvram_match("sfe", "2")) {
@@ -3304,9 +3304,12 @@ void configure_wifi(void) // madwifi implementation for atheros based
 #endif
 	reset_hwaddr(nvram_safe_get("lan_ifname"));
 	eval("startservice", "resetleds", "-f");
-	sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy0/ath11k/ext_rx_stats");
-	sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy1/ath11k/ext_rx_stats");
-	sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy2/ath11k/ext_rx_stats");
+	if (is_ath11k("wlan0"))
+		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy0/ath11k/ext_rx_stats");
+	if (is_ath11k("wlan1"))
+		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy1/ath11k/ext_rx_stats");
+	if (is_ath11k("wlan2"))
+		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy2/ath11k/ext_rx_stats");
 }
 
 void start_deconfigurewifi(void)
