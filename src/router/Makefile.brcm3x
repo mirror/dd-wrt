@@ -257,6 +257,7 @@ ifneq ($(CONFIG_USB),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext4
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/fat
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd2
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/msdos
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/xfs
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/vfat
