@@ -173,7 +173,7 @@ static struct menucontext *init_menu(webs_t wp)
 		    is_mvebu(check)) {
 			m->menu[MENU_WIRELESS][count + 8] = "";
 			m->menuname[MENU_WIRELESS][count + 9] = "";
-
+			continue;
 		} else {
 			m->menu[MENU_WIRELESS][count + 8] = wdsmenu[a];
 			if (ifcount == 1)
