@@ -36,7 +36,7 @@ frr-configure: ncurses json-c readline libyang libcap libcares protobuf-c-config
 	cd frr && chmod 777 configure
 	rm -rf frr/build
 	-mkdir -p frr/build
-	cd frr/build && ../configure CC="" CFLAGS="" LDFLAGS="" LD="" --with-vtysh-pager=less --disable-eigrpd --disable-ldpd --enable-shared --disable-pbrd --disable-rfptest --disable-ssd  --disable-doc --enable-clippy-only --enable-shared --disable-zeromq --enable-opaque-lsa --disable-nhrpd --enable-ospf-te --disable-ospfclient --enable-multipath=64  --enable-ipv6 --prefix=/usr --sysconfdir=/tmp --disable-ospf6d  --enable-vtysh --enable-user=root --enable-group=root --disable-ospfapi --disable-isisd --disable-pimd --disable-nhrpd --disable-staticd --disable-bfdd --disable-babeld --disable-protobuf --enable-pie=no PYTHON=/usr/bin/python3
+	cd frr/build && ../configure CC="" CFLAGS="" LDFLAGS="" LD="" --with-vtysh-pager=less --disable-eigrpd --disable-ldpd --enable-shared --disable-pbrd --disable-rfptest --disable-ssd  --disable-doc --enable-clippy-only --enable-shared --disable-zeromq --enable-opaque-lsa --disable-nhrpd --enable-ospf-te --disable-ospfclient --enable-multipath=64  --enable-ipv6 --prefix=/usr --sysconfdir=/tmp --disable-ospf6d  --enable-vtysh --enable-user=root --enable-group=root --disable-ospfapi --disable-isisd --disable-pimd --disable-pim6d --disable-nhrpd --disable-staticd --disable-bfdd --disable-babeld --disable-protobuf --enable-pie=no PYTHON=/usr/bin/python3
 	make -C frr/build lib/clippy
 	-mkdir -p frr/build/hosttools/lib
 	cd frr/build && cp -vR lib/* hosttools/lib
@@ -62,7 +62,7 @@ frr-configure: ncurses json-c readline libyang libcap libcares protobuf-c-config
 		--disable-vrrpd \
 		--disable-pathd \
 		--enable-ospf-te --disable-ospfclient --enable-multipath=64  --enable-ipv6 --prefix=/usr --sysconfdir=/tmp --disable-ospf6d \
-		--enable-vtysh --enable-user=root --enable-group=root --disable-ospfapi --disable-isisd --disable-pimd --disable-nhrpd \
+		--enable-vtysh --enable-user=root --enable-group=root --disable-ospfapi --disable-isisd --disable-pim6d --disable-pimd --disable-nhrpd \
 		--disable-staticd --enable-bfdd --disable-babeld --enable-pie=no --with-libreadline=$(TOP)/readline \
 		CFLAGS="-fno-strict-aliasing -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/libcap/libcap/include -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) $(THUMB) -I$(TOP)/libcares/include -I$(TOP)/ -Drpl_malloc=malloc -Drpl_realloc=realloc -I$(TOP)/_staging/usr/include -I$(TOP)/frr/build -I$(TOP)/libyang/build -I$(TOP)/libyang/build/src -I$(TOP)/libyang/src/plugins_exts -I$(TOP)/libyang/src -I$(TOP)/protobuf-c" \
 		CPPFLAGS="-fno-strict-aliasing -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/libcap/libcap/include -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) $(THUMB) -I$(TOP)/libcares/include -I$(TOP)/ -Drpl_malloc=malloc -Drpl_realloc=realloc -I$(TOP)/_staging/usr/include -I$(TOP)/frr/build -I$(TOP)/libyang/build -I$(TOP)/libyang/build/src -I$(TOP)/libyang/src/plugins_exts -I$(TOP)/libyang/src" \
