@@ -20,7 +20,6 @@
  * $Id:
  */
 
-
 typedef struct _l7filters {
 	char *name;
 	unsigned short protocol : 3; // 1=p2p, 0=l7, 2=opendpi
@@ -41,4 +40,3 @@ typedef struct _l7filters {
 #define PDPI 1 //default p2p
 #endif
 //Added ,  (in extra), dazhihui, .
-

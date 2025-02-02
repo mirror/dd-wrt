@@ -903,4 +903,3 @@ static l7filters filters_list[] = {
 #endif
 	{ 0, 0, 0, NULL },
 };
-
