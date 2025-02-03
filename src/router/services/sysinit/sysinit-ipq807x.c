@@ -1704,7 +1704,7 @@ void start_wifi_drivers(void)
 			minif = 3;
 			break;
 		case ROUTER_LINKSYS_MR7500:
-/*			eval("ssdk_sh", "debug", "phy", "set", "0x8", "0x401e2680", "0x1");
+			/*			eval("ssdk_sh", "debug", "phy", "set", "0x8", "0x401e2680", "0x1");
 			usleep(100 * 1000);
 			eval("aq-fw-download", "/lib/firmware/marvell/AQR114C.cld", "eth0", "8");
 			sleep(1);
@@ -1792,11 +1792,19 @@ void start_devinit_arch(void)
 void start_resetbc(void)
 {
 	int brand = getRouterBrand();
-	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MR7500 || brand == ROUTER_LINKSYS_MX8500 ||
-	    brand == ROUTER_LINKSYS_MX5300 || brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_LINKSYS_MX5500 ||
-	    brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2 || brand == ROUTER_LINKSYS_MX4300) {
+	switch (brand) {
+	case ROUTER_LINKSYS_MR7350:
+	case ROUTER_LINKSYS_MR7500:
+	case ROUTER_LINKSYS_MX8500:
+	case ROUTER_LINKSYS_MX5300:
+	case ROUTER_LINKSYS_MR5500:
+	case ROUTER_LINKSYS_MX5500:
+	case ROUTER_LINKSYS_MX4200V1:
+	case ROUTER_LINKSYS_MX4200V2:
+	case ROUTER_LINKSYS_MX4300:
 		if (!nvram_match("nobcreset", "1"))
 			eval_silence("mtd", "resetbc", "s_env");
+	break;
 	}
 }
 
