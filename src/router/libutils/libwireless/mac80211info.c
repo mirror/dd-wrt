@@ -1705,7 +1705,7 @@ static void sort_channels(struct wifi_channels *list, int count)
 	}
 }
 struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *interface, const char *country,
-					    int max_bandwidth_khz, unsigned char checkband, int nocache)
+					    int max_bandwidth_mhz, unsigned char checkband, int nocache)
 {
 	struct nlattr *tb[NL80211_FREQUENCY_ATTR_MAX + 1];
 	struct nlattr *tb_band[NL80211_BAND_ATTR_MAX + 1];
@@ -1807,12 +1807,12 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 				if (skip && tb[NL80211_FREQUENCY_ATTR_DISABLED])
 					continue;
 				regfound = 0;
-				if (max_bandwidth_khz == 40 || max_bandwidth_khz == 80 || max_bandwidth_khz == 160 ||
-				    max_bandwidth_khz == 20)
+				if (max_bandwidth_mhz == 40 || max_bandwidth_mhz == 80 || max_bandwidth_mhz == 160 ||
+				    max_bandwidth_mhz == 20)
 					range = 10;
 				else
 					// for 10/5mhz this should be fine
-					range = max_bandwidth_khz / 2;
+					range = max_bandwidth_mhz / 2;
 				freq_mhz = (int)nla_get_u32(tb[NL80211_FREQUENCY_ATTR_FREQ]);
 				int eirp = 0;
 				if (tb[NL80211_FREQUENCY_ATTR_MAX_TX_POWER] && !tb[NL80211_FREQUENCY_ATTR_DISABLED])
@@ -1897,15 +1897,15 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 									firstchan = freq_mhz;
 								lastband = ccidx;
 								int offset = freq_mhz - firstchan;
-								if ((offset % max_bandwidth_khz) >= (max_bandwidth_khz - 20))
+								if ((offset % max_bandwidth_mhz) >= (max_bandwidth_mhz - 20))
 									bandcounter += 10;
-								//                                                              fprintf(stderr, "[%d:%d}: (band %d) %d %d\n", regfreq.start_freq_khz / 1000, freq_mhz, cc, offset%max_bandwidth_khz ,band);
+								//                                                              fprintf(stderr, "[%d:%d}: (band %d) %d %d\n", regfreq.start_freq_khz / 1000, freq_mhz, cc, offset%max_bandwidth_mhz ,band);
 							}
 							ccidx++;
 						}
 					}
 
-					//                                      fprintf(stderr, "pre: run %d, freq %d, startfreq %d stopfreq %d, regmaxbw %d maxbw %d\n", run, freq_mhz, startfreq, stopfreq, regmaxbw, max_bandwidth_khz);
+					//                                      fprintf(stderr, "pre: run %d, freq %d, startfreq %d stopfreq %d, regmaxbw %d maxbw %d\n", run, freq_mhz, startfreq, stopfreq, regmaxbw, max_bandwidth_mhz);
 
 					//                                      regfreq = rd->reg_rules[rrc].freq_range;
 					//                                      startfreq = regfreq.start_freq_khz / 1000;
@@ -1932,11 +1932,14 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 								continue;
 							if (checkband == 6 && band->nla_type != NL80211_BAND_6GHZ)
 								continue;
-							if (max_bandwidth_khz > regmaxbw)
+							if (band->nla_type == NL80211_BAND_6GHZ && freq_mhz == 5935)
+								regmaxbw = 20;
+							
+							if (max_bandwidth_mhz > regmaxbw)
 								continue;
 							list[count].channel = ieee80211_mhz2ieee(interface, freq_mhz);
 							list[count].freq = freq_mhz;
-							if (nooverlap && max_bandwidth_khz > 40)
+							if (nooverlap && max_bandwidth_mhz > 40)
 								list[count].band = newband;
 							// todo: wenn wir das ueberhaupt noch verwenden
 							list[count].noise = 0;
@@ -1969,14 +1972,14 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 							list[count].uul = 0;
 							list[count].uuu = 0;
 							//                                                      fprintf(stderr,"freq %d, htrange %d, startfreq %d, stopfreq %d\n", freq_mhz, range, startfreq, stopfreq);
-							if (((freq_mhz - range) - (max_bandwidth_khz / 2)) >=
+							if (((freq_mhz - range) - (max_bandwidth_mhz / 2)) >=
 							    startfreq) { // 5510 -         5470
 								list[count].lll = 1;
 								list[count].llu = 1;
 								list[count].lul = 1;
 								list[count].luu = 1;
 							}
-							if (((freq_mhz + range) + (max_bandwidth_khz / 2)) <= stopfreq) {
+							if (((freq_mhz + range) + (max_bandwidth_mhz / 2)) <= stopfreq) {
 								list[count].ull = 1;
 								list[count].ulu = 1;
 								list[count].uul = 1;
@@ -1991,19 +1994,19 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 								list[count].ull = 0;
 								list[count].ht40 = false;
 							}
-							if (regmaxbw < 40 && max_bandwidth_khz == 40) {
+							if (regmaxbw < 40 && max_bandwidth_mhz == 40) {
 								list[count].luu = 0;
 								list[count].ull = 0;
 								list[count].ht40 = false;
 							}
-							if (regmaxbw < 80 && max_bandwidth_khz == 80) {
+							if (regmaxbw < 80 && max_bandwidth_mhz == 80) {
 								list[count].ull = 0;
 								list[count].uul = 0;
 								list[count].lul = 0;
 								list[count].ulu = 0;
 								list[count].vht80 = false;
 							}
-							if (regmaxbw < 160 && max_bandwidth_khz == 160) {
+							if (regmaxbw < 160 && max_bandwidth_mhz == 160) {
 								list[count].luu = 0;
 								list[count].ull = 0;
 								list[count].ulu = 0;
@@ -2014,8 +2017,8 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 								list[count].lll = 0;
 								list[count].vht160 = false;
 							}
-							if (regmaxbw > 20 && regmaxbw >= max_bandwidth_khz) {
-								//      fprintf(stderr, "freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d hw_eirp %d max_eirp %d ht40plus %d ht40minus %d\n", freq_mhz, max_bandwidth_khz,
+							if (regmaxbw > 20 && regmaxbw >= max_bandwidth_mhz) {
+								//      fprintf(stderr, "freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d hw_eirp %d max_eirp %d ht40plus %d ht40minus %d\n", freq_mhz, max_bandwidth_mhz,
 								//              startfreq, stopfreq, regmaxbw, eirp, regpower.max_eirp, list[count].ht40plus, list[count].ht40minus);
 							}
 							count++;
@@ -2032,7 +2035,7 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 	if (rd)
 		free(rd);
 	nlmsg_free(msg);
-	check_validchannels(list, max_bandwidth_khz, nooverlap);
+	check_validchannels(list, max_bandwidth_mhz, nooverlap);
 	sort_channels(list, count);
 	if (!nocache)
 		addcache(interface, country, list);
@@ -2043,11 +2046,11 @@ nla_put_failure:
 	return NULL;
 }
 
-struct wifi_channels *mac80211_get_channels_simple(const char *interface, const char *country, int max_bandwidth_khz,
+struct wifi_channels *mac80211_get_channels_simple(const char *interface, const char *country, int max_bandwidth_mhz,
 						   unsigned char checkband)
 {
 	lock();
-	struct wifi_channels *chan = mac80211_get_channels(&unl, interface, country, max_bandwidth_khz, checkband, 1);
+	struct wifi_channels *chan = mac80211_get_channels(&unl, interface, country, max_bandwidth_mhz, checkband, 1);
 	unlock();
 	return chan;
 }

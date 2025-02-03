@@ -283,7 +283,7 @@ int br_del_bridge(const char *brname)
 void set_multicast_to_unicast(const char *dev)
 {
 	if (isbridged(dev)) {
-		dd_loginfo("bridge", "set multicast to unicast for %s\n", dev);
+		dd_loginfo("bridge", "set multicast to unicast for %s", dev);
 		char *sep = NULL;
 		char mainif[32];
 		strncpy(mainif, dev, 31);
