@@ -1653,6 +1653,7 @@ def he_verify_wifi_version(dev):
 
 def test_he_6ghz_reg(dev, apdev):
     """TX power control on 6 GHz"""
+    check_sae_capab(dev[0])
     try:
         ssid = "HE_6GHz_regulatory"
         freq = 5975

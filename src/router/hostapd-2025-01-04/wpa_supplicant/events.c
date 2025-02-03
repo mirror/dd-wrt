@@ -3111,7 +3111,7 @@ static void wpa_supplicant_set_4addr_mode(struct wpa_supplicant *wpa_s)
 		goto fail;
 	}
 	wpa_s->enabled_4addr_mode = 1;
-	wpa_msg(wpa_s, MSG_INFO, "Successfully set 4addr mode");
+	wpa_dbg(wpa_s, MSG_DEBUG, "Successfully set 4addr mode");
 	return;
 
 fail:

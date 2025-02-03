@@ -15113,6 +15113,56 @@ enum qca_wlan_vendor_pasn_action {
  *	If present, it indicates the successful PASN handshake with the peer. If
  *	this flag is not present, it indicates that the PASN handshake with the
  *	peer device failed.
+ * @QCA_WLAN_VENDOR_ATTR_PASN_PEER_AKM: Optional u32 attribute. It indicates the
+ *	AKM suite that is preferred in the PASN handshake in the event from the
+ *	driver to userspace when %QCA_WLAN_VENDOR_ATTR_PASN_ACTION is set to
+ *	%QCA_WLAN_VENDOR_PASN_ACTION_AUTH. In the status report from userspace
+ *	to the driver, it indicates the actual AKM suite used in the handshake.
+ *	Userspace can select the AKM based on the AP's capabilities, if the
+ *	given AKM suite is not applicable. Possible values are defined in
+ *	IEEE Std 802.11-2020, 9.4.2.24.3 (AKM suites) (e.g., 0x000FAC04)
+ * @QCA_WLAN_VENDOR_ATTR_PASN_PEER_CIPHER: Optional u32 attribute. It indicates
+ *	the pairwise cipher suite that is preferred in the PASN handshake in
+ *	the event from the driver to userspace when
+ *	%QCA_WLAN_VENDOR_ATTR_PASN_ACTION is set to
+ *	%QCA_WLAN_VENDOR_PASN_ACTION_AUTH. In the status report from userspace
+ *	to the driver, it indicates the actual cipher used in the handshake.
+ *	Userspace can select the cipher suite based on the capabilities of the
+ *	P, if the given cipher suite is not applicable. Possible values are
+ *	defined in IEEE Std 802.11-2020, 9.4.2.24.2 (Cipher suites)
+ *	(e.g., 0x000FAC04).
+ * @QCA_WLAN_VENDOR_ATTR_PASN_PEER_PASSWORD: This is a variable length byte
+ *	array attribute. This attribute is present if the AKM suite specified
+ *	in %QCA_WLAN_VENDOR_ATTR_PASN_PEER_AKM requires a password. The
+ *	password is used in PASN handshake request in an event from the driver
+ *	to userspace when %QCA_WLAN_VENDOR_ATTR_PASN_ACTION is set to
+ *	%QCA_WLAN_VENDOR_PASN_ACTION_AUTH.
+ * @QCA_WLAN_VENDOR_ATTR_PASN_PEER_PMKID: This is a byte array attribute with a
+ *	size of 16 bytes. When this attribute is present this PMKSA caching
+ *	using the PMKSA identified by this PMKID is preferred to be used with
+ *	PASN. This attribute is sent along with PASN handshake request in an
+ *	event from the driver to userspace when
+ *	%QCA_WLAN_VENDOR_ATTR_PASN_ACTION is set to
+ *	%QCA_WLAN_VENDOR_PASN_ACTION_AUTH.
+ * @QCA_WLAN_VENDOR_ATTR_PASN_PEER_COMEBACK_AFTER: u16 attribute in units for
+ *	TUs (1024 microseconds). This attribute is sent from userspace along
+ *	with the attribute %QCA_WLAN_VENDOR_ATTR_PASN_PEER_COOKIE to the
+ *	driver in the status report using the %QCA_NL80211_VENDOR_SUBCMD_PASN
+ *	subcommand when the AP request PASN to be retried later.
+ * @QCA_WLAN_VENDOR_ATTR_PASN_PEER_COOKIE: This is a variable length byte array
+ *	attribute. In case an AP refused PASN temporarily, the STA can retry
+ *	PASN handshake by attaching this attribute data to PASN request after
+ *	the time period mentioned in the attribute
+ *	%QCA_WLAN_VENDOR_ATTR_PASN_PEER_COMEBACK_AFTER.
+ *	In case the AP refused the PASN handshake temporarily, cookie data is
+ *	received from the AP and it is sent from userspace to the driver along
+ *	with the attribute %QCA_WLAN_VENDOR_ATTR_PASN_PEER_COMEBACK_AFTER in
+ *	the status report using the %QCA_NL80211_VENDOR_SUBCMD_PASN subcommand.
+ *	When the driver wants to retry PASN with the same AP after having
+ *	received this information, this attribute must be sent along with PASN
+ *	handshake request in an event from the driver to
+ *	userspace when %QCA_WLAN_VENDOR_ATTR_PASN_ACTION is set to
+ *	%QCA_WLAN_VENDOR_PASN_ACTION_AUTH.
  */
 enum qca_wlan_vendor_attr_pasn_peer {
 	QCA_WLAN_VENDOR_ATTR_PASN_PEER_INVALID = 0,
@@ -15120,6 +15170,12 @@ enum qca_wlan_vendor_attr_pasn_peer {
 	QCA_WLAN_VENDOR_ATTR_PASN_PEER_MAC_ADDR = 2,
 	QCA_WLAN_VENDOR_ATTR_PASN_PEER_LTF_KEYSEED_REQUIRED = 3,
 	QCA_WLAN_VENDOR_ATTR_PASN_PEER_STATUS_SUCCESS = 4,
+	QCA_WLAN_VENDOR_ATTR_PASN_PEER_AKM = 5,
+	QCA_WLAN_VENDOR_ATTR_PASN_PEER_CIPHER = 6,
+	QCA_WLAN_VENDOR_ATTR_PASN_PEER_PASSWORD = 7,
+	QCA_WLAN_VENDOR_ATTR_PASN_PEER_PMKID = 8,
+	QCA_WLAN_VENDOR_ATTR_PASN_PEER_COMEBACK_AFTER = 9,
+	QCA_WLAN_VENDOR_ATTR_PASN_PEER_COOKIE = 10,
 
 	/* keep last */
 	QCA_WLAN_VENDOR_ATTR_PASN_PEER_AFTER_LAST,

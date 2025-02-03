@@ -153,6 +153,7 @@ def test_he_ap_mbssid_open(dev, apdev, params):
 
 def test_he_ap_mbssid_same_security(dev, apdev, params):
     """HE AP MBSSID all SAE"""
+    check_sae_capab(dev[0])
     f, fname, ifname = mbssid_create_cfg_file(apdev, params)
 
     sae_params = {"wpa": "2", "wpa_passphrase": "12345678",
@@ -177,6 +178,7 @@ def test_he_ap_mbssid_same_security(dev, apdev, params):
 
 def test_he_ap_mbssid_mixed_security1(dev, apdev, params):
     """HE AP MBSSID with mixed security (STA SAE)"""
+    check_sae_capab(dev[0])
     f, fname, ifname = mbssid_create_cfg_file(apdev, params)
 
     psk_params = {"wpa": "2", "wpa_passphrase": "12345678",
@@ -212,6 +214,7 @@ def test_he_ap_mbssid_mixed_security1(dev, apdev, params):
 
 def test_he_ap_mbssid_mixed_security2(dev, apdev, params):
     """HE AP MBSSID with mixed security (STA open)"""
+    check_sae_capab(dev[0])
     f, fname, ifname = mbssid_create_cfg_file(apdev, params)
 
     psk_params = {"wpa": "2", "wpa_passphrase": "12345678",
@@ -243,6 +246,7 @@ def test_he_ap_mbssid_mixed_security2(dev, apdev, params):
 
 def test_he_ap_mbssid_mixed_security3(dev, apdev, params):
     """HE AP MBSSID with mixed security (WPA2-Personal + WPA3-Personal)"""
+    check_sae_capab(dev[0])
     f, fname, ifname = mbssid_create_cfg_file(apdev, params)
 
     psk_params = {"wpa": "2", "wpa_passphrase": "12345678",
@@ -273,6 +277,7 @@ def test_he_ap_mbssid_mixed_security3(dev, apdev, params):
 
 def test_he_ap_mbssid_mixed_security4(dev, apdev, params):
     """HE AP MBSSID with mixed security (WPA2-Personal + WPA3-Personal+beacon prot)"""
+    check_sae_capab(dev[0])
     f, fname, ifname = mbssid_create_cfg_file(apdev, params)
 
     psk_params = {"wpa": "2", "wpa_passphrase": "12345678",
@@ -321,6 +326,7 @@ def test_he_ap_mbssid_mixed_security4(dev, apdev, params):
 
 def test_he_ap_mbssid_single_ssid(dev, apdev, params):
     """HE AP MBSSID with mixed security and single SSID"""
+    check_sae_capab(dev[0])
     f, fname, ifname = mbssid_create_cfg_file(apdev, params)
 
     psk_params = {"wpa": "2", "wpa_passphrase": "12345678",
@@ -352,6 +358,7 @@ def test_he_ap_mbssid_single_ssid(dev, apdev, params):
 
 def test_he_ap_mbssid_single_ssid_tm(dev, apdev, params):
     """HE AP MBSSID with mixed security and single SSID and transition mode"""
+    check_sae_capab(dev[0])
     f, fname, ifname = mbssid_create_cfg_file(apdev, params)
 
     psk_params = {"wpa": "2", "wpa_passphrase": "12345678",
@@ -386,6 +393,7 @@ def test_he_ap_mbssid_single_ssid_tm(dev, apdev, params):
 
 def test_he_ap_ema(dev, apdev, params):
     """HE EMA AP"""
+    check_sae_capab(dev[0])
     f, fname, ifname = mbssid_create_cfg_file(apdev, params, 2)
 
     sae_params = {"wpa": "2", "wpa_passphrase": "12345678",

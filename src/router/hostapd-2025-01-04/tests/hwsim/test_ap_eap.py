@@ -42,42 +42,20 @@ def check_eap_capa(dev, method):
     res = dev.get_capability("eap")
     if method not in res:
         raise HwsimSkip("EAP method %s not supported in the build" % method)
-    if method == "FAST" or method == "TEAP":
-        tls = dev.request("GET tls_library")
-        if tls.startswith("mbed TLS"):
-            raise HwsimSkip("EAP-%s not supported with this TLS library: " % method + tls)
 
 def check_subject_match_support(dev):
     tls = dev.request("GET tls_library")
-    if tls.startswith("OpenSSL"):
-        return
-    elif tls.startswith("wolfSSL"):
-        return
-    elif tls.startswith("mbed TLS"):
-        return
-    else:
+    if not tls.startswith("OpenSSL") and not tls.startswith("wolfSSL"):
         raise HwsimSkip("subject_match not supported with this TLS library: " + tls)
 
 def check_check_cert_subject_support(dev):
     tls = dev.request("GET tls_library")
-    if tls.startswith("OpenSSL"):
-        return
-    elif tls.startswith("wolfSSL"):
-        return
-    elif tls.startswith("mbed TLS"):
-        return
-    else:
+    if not tls.startswith("OpenSSL") and not tls.startswith("wolfSSL"):
         raise HwsimSkip("check_cert_subject not supported with this TLS library: " + tls)
 
 def check_altsubject_match_support(dev):
     tls = dev.request("GET tls_library")
-    if tls.startswith("OpenSSL"):
-        return
-    elif tls.startswith("wolfSSL"):
-        return
-    elif tls.startswith("mbed TLS"):
-        return
-    else:
+    if not tls.startswith("OpenSSL") and not tls.startswith("wolfSSL"):
         raise HwsimSkip("altsubject_match not supported with this TLS library: " + tls)
 
 def check_domain_match(dev):
@@ -92,13 +70,7 @@ def check_domain_suffix_match(dev):
 
 def check_domain_match_full(dev):
     tls = dev.request("GET tls_library")
-    if tls.startswith("OpenSSL"):
-        return
-    elif tls.startswith("wolfSSL"):
-        return
-    elif tls.startswith("mbed TLS"):
-        return
-    else:
+    if not tls.startswith("OpenSSL") and not tls.startswith("wolfSSL"):
         raise HwsimSkip("domain_suffix_match requires full match with this TLS library: " + tls)
 
 def check_cert_probe_support(dev):
@@ -107,15 +79,8 @@ def check_cert_probe_support(dev):
         raise HwsimSkip("Certificate probing not supported with this TLS library: " + tls)
 
 def check_ext_cert_check_support(dev):
-    if not openssl_imported:
-        raise HwsimSkip("OpenSSL python method not available")
-
     tls = dev.request("GET tls_library")
-    if tls.startswith("OpenSSL"):
-        return
-    elif tls.startswith("mbed TLS"):
-        return
-    else:
+    if not tls.startswith("OpenSSL"):
         raise HwsimSkip("ext_cert_check not supported with this TLS library: " + tls)
 
 def check_ocsp_support(dev):
@@ -126,20 +91,15 @@ def check_ocsp_support(dev):
     #    raise HwsimSkip("OCSP not supported with this TLS library: " + tls)
     #if tls.startswith("wolfSSL"):
     #    raise HwsimSkip("OCSP not supported with this TLS library: " + tls)
-    if tls.startswith("mbed TLS"):
-        raise HwsimSkip("OCSP not supported with this TLS library: " + tls)
 
 def check_pkcs5_v15_support(dev):
     tls = dev.request("GET tls_library")
-    if "BoringSSL" in tls or "GnuTLS" in tls or "mbed TLS" in tls:
+    if "BoringSSL" in tls or "GnuTLS" in tls:
         raise HwsimSkip("PKCS#5 v1.5 not supported with this TLS library: " + tls)
 
 def check_tls13_support(dev):
     tls = dev.request("GET tls_library")
-    if tls.startswith("mbed TLS"):
-        raise HwsimSkip("TLS v1.3 not supported")
-    ok = ['run=OpenSSL 1.1.1', 'run=OpenSSL 3.0', 'run=OpenSSL 3.1',
-          'run=OpenSSL 3.2', 'run=OpenSSL 3.3', 'wolfSSL']
+    ok = ['run=OpenSSL 1.1.1', 'run=OpenSSL 3.', 'wolfSSL']
     for s in ok:
         if s in tls:
             return
@@ -161,14 +121,10 @@ def check_pkcs12_support(dev):
     #    raise HwsimSkip("PKCS#12 not supported with this TLS library: " + tls)
     if tls.startswith("wolfSSL"):
         raise HwsimSkip("PKCS#12 not supported with this TLS library: " + tls)
-    if tls.startswith("mbed TLS"):
-        raise HwsimSkip("PKCS#12 not supported with this TLS library: " + tls)
 
 def check_dh_dsa_support(dev):
     tls = dev.request("GET tls_library")
     if tls.startswith("internal"):
-        raise HwsimSkip("DH DSA not supported with this TLS library: " + tls)
-    if tls.startswith("mbed TLS"):
         raise HwsimSkip("DH DSA not supported with this TLS library: " + tls)
 
 def check_ec_support(dev):
@@ -1784,7 +1740,7 @@ def test_ap_wpa2_eap_ttls_pap_subject_match(dev, apdev):
     eap_connect(dev[0], hapd, "TTLS", "pap user",
                 anonymous_identity="ttls", password="password",
                 ca_cert="auth_serv/ca.pem", phase2="auth=PAP",
-                check_cert_subject="/C=FI/O=w1.fi/CN=server.w1.fi",
+                subject_match="/C=FI/O=w1.fi/CN=server.w1.fi",
                 altsubject_match="EMAIL:noone@example.com;DNS:server.w1.fi;URI:http://example.com/")
     eap_reauth(dev[0], "TTLS")
 
@@ -3019,7 +2975,6 @@ def test_ap_wpa2_eap_tls_neg_domain_match(dev, apdev):
 
 def test_ap_wpa2_eap_tls_neg_subject_match(dev, apdev):
     """WPA2-Enterprise negative test - subject mismatch"""
-    check_subject_match_support(dev[0])
     params = hostapd.wpa2_eap_params(ssid="test-wpa2-eap")
     hostapd.add_ap(apdev[0], params)
     dev[0].connect("test-wpa2-eap", key_mgmt="WPA-EAP", eap="TTLS",
@@ -3080,7 +3035,6 @@ def test_ap_wpa2_eap_tls_neg_subject_match(dev, apdev):
 
 def test_ap_wpa2_eap_tls_neg_altsubject_match(dev, apdev):
     """WPA2-Enterprise negative test - altsubject mismatch"""
-    check_altsubject_match_support(dev[0])
     params = hostapd.wpa2_eap_params(ssid="test-wpa2-eap")
     hostapd.add_ap(apdev[0], params)
 
@@ -3627,7 +3581,7 @@ def test_ap_wpa2_eap_ikev2_oom(dev, apdev):
             dev[0].request("REMOVE_NETWORK all")
 
     tls = dev[0].request("GET tls_library")
-    if not tls.startswith("wolfSSL") and not tls.startswith("mbed TLS"):
+    if not tls.startswith("wolfSSL"):
         tests = [(1, "os_get_random;dh_init")]
     else:
         tests = [(1, "crypto_dh_init;dh_init")]
@@ -4293,9 +4247,12 @@ def test_ap_wpa2_eap_fast_prf_oom(dev, apdev):
     """WPA2-Enterprise connection using EAP-FAST and OOM in PRF"""
     check_eap_capa(dev[0], "FAST")
     tls = dev[0].request("GET tls_library")
-    if tls.startswith("OpenSSL") or tls.startswith("wolfSSL"):
+    if tls.startswith("OpenSSL"):
         func = "tls_connection_get_eap_fast_key"
         count = 2
+    elif tls.startswith("wolfSSL"):
+        func = "tls_connection_get_eap_fast_key"
+        count = 1
     elif tls.startswith("internal"):
         func = "tls_connection_prf"
         count = 1
@@ -4319,6 +4276,9 @@ def test_ap_wpa2_eap_fast_prf_oom(dev, apdev):
 def test_ap_wpa2_eap_fast_server_oom(dev, apdev):
     """EAP-FAST/MSCHAPv2 and server OOM"""
     check_eap_capa(dev[0], "FAST")
+    tls = dev[0].request("GET tls_library")
+    if not tls.startswith("OpenSSL"):
+        raise HwsimSkip("TLS library is not OpenSSL: " + tls)
 
     params = int_eap_server_params()
     params['dh_file'] = 'auth_serv/dh.conf'
@@ -4383,7 +4343,7 @@ def test_ap_wpa2_eap_fast_cipher_suites(dev, apdev):
             if cipher == "RC4-SHA" and \
                ("Could not select EAP method" in str(e) or \
                 "EAP failed" in str(e)):
-                if "run=OpenSSL" in tls:
+                if "run=OpenSSL" in tls or "wolfSSL" in tls:
                     logger.info("Allow failure due to missing TLS library support")
                     dev[0].request("REMOVE_NETWORK all")
                     dev[0].wait_disconnected()
@@ -4941,7 +4901,7 @@ def test_ap_wpa2_eap_tls_intermediate_ca(dev, apdev, params):
     params["private_key"] = "auth_serv/iCA-server/server.key"
     hostapd.add_ap(apdev[0], params)
     tls = dev[0].request("GET tls_library")
-    if "GnuTLS" in tls or "wolfSSL" in tls or "mbed TLS" in tls:
+    if "GnuTLS" in tls or "wolfSSL" in tls:
         ca_cert = "auth_serv/iCA-user/ca-and-root.pem"
         client_cert = "auth_serv/iCA-user/user_and_ica.pem"
     else:
@@ -5007,7 +4967,6 @@ def test_ap_wpa2_eap_tls_intermediate_ca_ocsp_sha1(dev, apdev, params):
     run_ap_wpa2_eap_tls_intermediate_ca_ocsp(dev, apdev, params, "-sha1")
 
 def run_ap_wpa2_eap_tls_intermediate_ca_ocsp(dev, apdev, params, md):
-    check_ocsp_support(dev[0])
     params = int_eap_server_params()
     params["ca_cert"] = "auth_serv/iCA-server/ca-and-root.pem"
     params["server_cert"] = "auth_serv/iCA-server/server.pem"
@@ -5017,7 +4976,7 @@ def run_ap_wpa2_eap_tls_intermediate_ca_ocsp(dev, apdev, params, md):
     try:
         hostapd.add_ap(apdev[0], params)
         tls = dev[0].request("GET tls_library")
-        if "GnuTLS" in tls or "wolfSSL" in tls or "mbed TLS" in tls:
+        if "GnuTLS" in tls or "wolfSSL" in tls:
             ca_cert = "auth_serv/iCA-user/ca-and-root.pem"
             client_cert = "auth_serv/iCA-user/user_and_ica.pem"
         else:
@@ -5053,7 +5012,7 @@ def run_ap_wpa2_eap_tls_intermediate_ca_ocsp_revoked(dev, apdev, params, md):
     try:
         hostapd.add_ap(apdev[0], params)
         tls = dev[0].request("GET tls_library")
-        if "GnuTLS" in tls or "wolfSSL" in tls or "mbed TLS" in tls:
+        if "GnuTLS" in tls or "wolfSSL" in tls:
             ca_cert = "auth_serv/iCA-user/ca-and-root.pem"
             client_cert = "auth_serv/iCA-user/user_and_ica.pem"
         else:
@@ -5103,7 +5062,7 @@ def test_ap_wpa2_eap_tls_intermediate_ca_ocsp_multi_missing_resp(dev, apdev, par
     try:
         hostapd.add_ap(apdev[0], params)
         tls = dev[0].request("GET tls_library")
-        if "GnuTLS" in tls or "wolfSSL" in tls or "mbed TLS" in tls:
+        if "GnuTLS" in tls or "wolfSSL" in tls:
             ca_cert = "auth_serv/iCA-user/ca-and-root.pem"
             client_cert = "auth_serv/iCA-user/user_and_ica.pem"
         else:
@@ -5170,7 +5129,7 @@ def test_ap_wpa2_eap_tls_intermediate_ca_ocsp_multi(dev, apdev, params):
 
         hostapd.add_ap(apdev[0], params)
         tls = dev[0].request("GET tls_library")
-        if "GnuTLS" in tls or "wolfSSL" in tls or "mbed TLS" in tls:
+        if "GnuTLS" in tls or "wolfSSL" in tls:
             ca_cert = "auth_serv/iCA-user/ca-and-root.pem"
             client_cert = "auth_serv/iCA-user/user_and_ica.pem"
         else:
@@ -5428,7 +5387,6 @@ def test_ap_wpa2_eap_ttls_server_cert_eku_client_server(dev, apdev):
 
 def test_ap_wpa2_eap_ttls_server_pkcs12(dev, apdev):
     """WPA2-Enterprise using EAP-TTLS and server PKCS#12 file"""
-    check_pkcs12_support(dev[0])
     skip_with_fips(dev[0])
     params = int_eap_server_params()
     del params["server_cert"]
@@ -5441,7 +5399,6 @@ def test_ap_wpa2_eap_ttls_server_pkcs12(dev, apdev):
 
 def test_ap_wpa2_eap_ttls_server_pkcs12_extra(dev, apdev):
     """EAP-TTLS and server PKCS#12 file with extra certs"""
-    check_pkcs12_support(dev[0])
     skip_with_fips(dev[0])
     params = int_eap_server_params()
     del params["server_cert"]
@@ -5464,7 +5421,6 @@ def test_ap_wpa2_eap_ttls_dh_params_server(dev, apdev):
 
 def test_ap_wpa2_eap_ttls_dh_params_dsa_server(dev, apdev):
     """WPA2-Enterprise using EAP-TTLS and alternative server dhparams (DSA)"""
-    check_dh_dsa_support(dev[0])
     params = int_eap_server_params()
     params["dh_file"] = "auth_serv/dsaparam.pem"
     hapd = hostapd.add_ap(apdev[0], params)
@@ -5776,8 +5732,8 @@ def test_ap_wpa2_eap_non_ascii_identity2(dev, apdev):
 def test_openssl_cipher_suite_config_wpas(dev, apdev):
     """OpenSSL cipher suite configuration on wpa_supplicant"""
     tls = dev[0].request("GET tls_library")
-    if not tls.startswith("OpenSSL") and not tls.startswith("mbed TLS"):
-        raise HwsimSkip("TLS library is not OpenSSL or mbed TLS: " + tls)
+    if not tls.startswith("OpenSSL"):
+        raise HwsimSkip("TLS library is not OpenSSL: " + tls)
     params = hostapd.wpa2_eap_params(ssid="test-wpa2-eap")
     hapd = hostapd.add_ap(apdev[0], params)
     eap_connect(dev[0], hapd, "TTLS", "pap user",
@@ -5803,14 +5759,14 @@ def test_openssl_cipher_suite_config_wpas(dev, apdev):
 def test_openssl_cipher_suite_config_hapd(dev, apdev):
     """OpenSSL cipher suite configuration on hostapd"""
     tls = dev[0].request("GET tls_library")
-    if not tls.startswith("OpenSSL") and not tls.startswith("mbed TLS"):
-        raise HwsimSkip("wpa_supplicant TLS library is not OpenSSL or mbed TLS: " + tls)
+    if not tls.startswith("OpenSSL"):
+        raise HwsimSkip("wpa_supplicant TLS library is not OpenSSL: " + tls)
     params = int_eap_server_params()
     params['openssl_ciphers'] = "AES256"
     hapd = hostapd.add_ap(apdev[0], params)
     tls = hapd.request("GET tls_library")
-    if not tls.startswith("OpenSSL") and not tls.startswith("mbed TLS"):
-        raise HwsimSkip("hostapd TLS library is not OpenSSL or mbed TLS: " + tls)
+    if not tls.startswith("OpenSSL"):
+        raise HwsimSkip("hostapd TLS library is not OpenSSL: " + tls)
     eap_connect(dev[0], hapd, "TTLS", "pap user",
                 anonymous_identity="ttls", password="password",
                 ca_cert="auth_serv/ca.pem", phase2="auth=PAP")
@@ -6251,23 +6207,17 @@ def test_ap_wpa2_eap_tls_versions(dev, apdev):
                           "tls_disable_tlsv1_0=1 tls_disable_tlsv1_1=1",
                           "TLSv1.2")
     if tls.startswith("wolfSSL"):
-        if ("build=3.10.0" in tls and "run=3.10.0" in tls) or \
-           ("build=3.13.0" in tls and "run=3.13.0" in tls):
-            check_tls_ver(dev[0], hapd,
-                          "tls_disable_tlsv1_0=1 tls_disable_tlsv1_1=1",
-                          "TLSv1.2")
-    elif tls.startswith("internal") or tls.startswith("mbed TLS"):
         check_tls_ver(dev[0], hapd,
                       "tls_disable_tlsv1_0=1 tls_disable_tlsv1_1=1", "TLSv1.2")
-    if tls.startswith("mbed TLS"):
-        check_tls_ver(dev[2], hapd,
-                      "tls_disable_tlsv1_0=0 tls_disable_tlsv1_1=1 tls_disable_tlsv1_2=1", "TLSv1.0")
-    else:
-        check_tls_ver(dev[1], hapd,
-                      "tls_disable_tlsv1_0=1 tls_disable_tlsv1_1=0 tls_disable_tlsv1_2=1", "TLSv1.1")
-        check_tls_ver(dev[2], hapd,
-                      "tls_disable_tlsv1_0=0 tls_disable_tlsv1_1=1 tls_disable_tlsv1_2=1", "TLSv1")
-    if "run=OpenSSL 1.1.1" in tls or "run=OpenSSL 3." in tls:
+    elif tls.startswith("internal"):
+        check_tls_ver(dev[0], hapd,
+                      "tls_disable_tlsv1_0=1 tls_disable_tlsv1_1=1", "TLSv1.2")
+    check_tls_ver(dev[1], hapd,
+                  "tls_disable_tlsv1_0=1 tls_disable_tlsv1_1=0 tls_disable_tlsv1_2=1", "TLSv1.1")
+    check_tls_ver(dev[2], hapd,
+                  "tls_disable_tlsv1_0=0 tls_disable_tlsv1_1=1 tls_disable_tlsv1_2=1", "TLSv1")
+    if "run=OpenSSL 1.1.1" in tls or "run=OpenSSL 3." in tls or \
+       tls.startswith("wolfSSL"):
         check_tls_ver(dev[0], hapd,
                       "tls_disable_tlsv1_0=1 tls_disable_tlsv1_1=1 tls_disable_tlsv1_2=1 tls_disable_tlsv1_3=0", "TLSv1.3")
 
@@ -6288,11 +6238,6 @@ def test_ap_wpa2_eap_tls_versions_server(dev, apdev):
     tests = [("TLSv1", "[ENABLE-TLSv1.0][DISABLE-TLSv1.1][DISABLE-TLSv1.2][DISABLE-TLSv1.3]"),
              ("TLSv1.1", "[ENABLE-TLSv1.0][ENABLE-TLSv1.1][DISABLE-TLSv1.2][DISABLE-TLSv1.3]"),
              ("TLSv1.2", "[ENABLE-TLSv1.0][ENABLE-TLSv1.1][ENABLE-TLSv1.2][DISABLE-TLSv1.3]")]
-    tls = dev[0].request("GET tls_library")
-    if tls.startswith("mbed TLS"):
-        tests = [#("TLSv1.0", "[ENABLE-TLSv1.0][DISABLE-TLSv1.1][DISABLE-TLSv1.2][DISABLE-TLSv1.3]"),
-                 #("TLSv1.1", "[ENABLE-TLSv1.0][ENABLE-TLSv1.1][DISABLE-TLSv1.2][DISABLE-TLSv1.3]"),
-                 ("TLSv1.2", "[ENABLE-TLSv1.0][ENABLE-TLSv1.1][ENABLE-TLSv1.2][DISABLE-TLSv1.3]")]
     for exp, flags in tests:
         hapd.disable()
         hapd.set("tls_flags", flags)
@@ -6462,6 +6407,11 @@ def test_ap_wpa2_eap_tls_rsa_and_ec(dev, apdev, params):
     dev[0].request("REMOVE_NETWORK all")
     dev[0].wait_disconnected()
 
+    tls = dev[1].request("GET tls_library")
+    if tls.startswith("wolfSSL"):
+        ciphers = "RSA"
+    else:
+        ciphers = "DEFAULT:-aECDH:-aECDSA"
     # TODO: Make wpa_supplicant automatically filter out cipher suites that
     # would require ECDH/ECDSA keys when those are not configured in the
     # selected client certificate. And for no-client-cert case, deprioritize
@@ -6469,7 +6419,7 @@ def test_ap_wpa2_eap_tls_rsa_and_ec(dev, apdev, params):
     # likely to work cipher suites are selected by the server. Only do these
     # when an explicit openssl_ciphers parameter is not set.
     eap_connect(dev[1], hapd, "TLS", "tls user",
-                openssl_ciphers="DEFAULT:-aECDH:-aECDSA",
+                openssl_ciphers=ciphers,
                 ca_cert="auth_serv/ca.pem",
                 client_cert="auth_serv/user.pem",
                 private_key="auth_serv/user.key")
@@ -6506,6 +6456,11 @@ def test_ap_wpa2_eap_tls_ec_and_rsa(dev, apdev, params):
     dev[0].request("REMOVE_NETWORK all")
     dev[0].wait_disconnected()
 
+    tls = dev[1].request("GET tls_library")
+    if tls.startswith("wolfSSL"):
+        ciphers = "RSA"
+    else:
+        ciphers = "DEFAULT:-aECDH:-aECDSA"
     # TODO: Make wpa_supplicant automatically filter out cipher suites that
     # would require ECDH/ECDSA keys when those are not configured in the
     # selected client certificate. And for no-client-cert case, deprioritize
@@ -6513,7 +6468,7 @@ def test_ap_wpa2_eap_tls_ec_and_rsa(dev, apdev, params):
     # likely to work cipher suites are selected by the server. Only do these
     # when an explicit openssl_ciphers parameter is not set.
     eap_connect(dev[1], hapd, "TLS", "tls user",
-                openssl_ciphers="DEFAULT:-aECDH:-aECDSA",
+                openssl_ciphers=ciphers,
                 ca_cert="auth_serv/ca.pem",
                 client_cert="auth_serv/user.pem",
                 private_key="auth_serv/user.key")
@@ -7363,7 +7318,6 @@ def test_ap_wpa2_eap_assoc_rsn(dev, apdev):
 def test_eap_tls_ext_cert_check(dev, apdev):
     """EAP-TLS and external server certification validation"""
     # With internal server certificate chain validation
-    check_ext_cert_check_support(dev[0])
     id = dev[0].connect("test-wpa2-eap", key_mgmt="WPA-EAP", eap="TLS",
                         identity="tls user",
                         ca_cert="auth_serv/ca.pem",
@@ -7376,7 +7330,6 @@ def test_eap_tls_ext_cert_check(dev, apdev):
 def test_eap_ttls_ext_cert_check(dev, apdev):
     """EAP-TTLS and external server certification validation"""
     # Without internal server certificate chain validation
-    check_ext_cert_check_support(dev[0])
     id = dev[0].connect("test-wpa2-eap", key_mgmt="WPA-EAP", eap="TTLS",
                         identity="pap user", anonymous_identity="ttls",
                         password="password", phase2="auth=PAP",
@@ -7387,7 +7340,6 @@ def test_eap_ttls_ext_cert_check(dev, apdev):
 def test_eap_peap_ext_cert_check(dev, apdev):
     """EAP-PEAP and external server certification validation"""
     # With internal server certificate chain validation
-    check_ext_cert_check_support(dev[0])
     id = dev[0].connect("test-wpa2-eap", key_mgmt="WPA-EAP", eap="PEAP",
                         identity="user", anonymous_identity="peap",
                         ca_cert="auth_serv/ca.pem",
@@ -7398,7 +7350,6 @@ def test_eap_peap_ext_cert_check(dev, apdev):
 
 def test_eap_fast_ext_cert_check(dev, apdev):
     """EAP-FAST and external server certification validation"""
-    check_ext_cert_check_support(dev[0])
     check_eap_capa(dev[0], "FAST")
     # With internal server certificate chain validation
     dev[0].request("SET blob fast_pac_auth_ext ")
@@ -7413,6 +7364,10 @@ def test_eap_fast_ext_cert_check(dev, apdev):
     run_ext_cert_check(dev, apdev, id)
 
 def run_ext_cert_check(dev, apdev, net_id):
+    check_ext_cert_check_support(dev[0])
+    if not openssl_imported:
+        raise HwsimSkip("OpenSSL python method not available")
+
     params = hostapd.wpa2_eap_params(ssid="test-wpa2-eap")
     hapd = hostapd.add_ap(apdev[0], params)
 
@@ -7960,3 +7915,39 @@ def test_ap_wpa2_eap_sha384_psk(dev, apdev):
         raise Exception("Could not get BSS flags from BSS table")
     if "[WPA2-EAP-SHA384-CCMP]" not in bss['flags']:
         raise Exception("Unexpected BSS flags: " + bss['flags'])
+
+@long_duration_test
+def test_ap_wpa2_eap_timeout(dev, apdev):
+    """hostapd internal EAP server and timeout triggering disconnection"""
+    params = int_eap_server_params()
+    params['disable_pmksa_caching'] = '1'
+    hapd = hostapd.add_ap(apdev[0], params)
+    dev[0].connect("test-wpa2-eap", key_mgmt="WPA-EAP WPA-EAP-SHA256",
+                   eap="TTLS", identity="user",
+                   anonymous_identity="ttls", password="password",
+                   ca_cert="auth_serv/ca.pem", phase2="autheap=GTC",
+                   scan_freq="2412")
+
+    # Start a new connection and EAP authentication, but force a timeout during
+    # EAP exchange so that hostapd will go through the special case of EAP
+    # state machine triggering disconnection of the STA.
+    hapd.set("ext_eapol_frame_io", "1")
+    dev[0].set("ext_eapol_frame_io", "1")
+    dev[0].request("REASSOCIATE")
+    from test_eap_proto import proxy_msg
+    proxy_msg(hapd, dev[0]) # EAP-Identity/Request
+    proxy_msg(dev[0], hapd) # EAP-Identity/Response
+    time.sleep(1)
+    dev[0].set("radio_disabled", "1")
+    time.sleep(1)
+    dev[0].request("DISCONNECT")
+    ev = hapd.wait_event(["CTRL-EVENT-EAP-TIMEOUT-FAILURE"], timeout=120)
+    hapd.set("ext_eapol_frame_io", "0")
+    dev[0].set("ext_eapol_frame_io", "0")
+    if ev is None:
+        raise Exception("EAP timeout not reported")
+    time.sleep(1)
+
+    # Verify that connection can still be established
+    dev[0].request("RECONNECT")
+    dev[0].wait_connected()

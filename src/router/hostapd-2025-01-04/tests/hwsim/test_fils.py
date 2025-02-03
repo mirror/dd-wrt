@@ -18,6 +18,7 @@ from tshark import run_tshark
 from wpasupplicant import WpaSupplicant
 import hwsim_utils
 from utils import *
+from test_eap import check_eap_capa
 from test_erp import start_erp_as
 from test_ap_hs20 import ip_checksum
 
@@ -1492,10 +1493,6 @@ def check_ec_group(dev, group):
     tls = dev.request("GET tls_library")
     if tls.startswith("wolfSSL"):
         return
-    elif tls.startswith("mbed TLS"):
-        if int(group) == 27:
-            raise HwsimSkip("Brainpool EC group 27 not supported by mbed TLS")
-        return
     if int(group) in [25]:
         if not (tls.startswith("OpenSSL") and ("build=OpenSSL 1.0.2" in tls or "build=OpenSSL 1.1" in tls or "build=OpenSSL 3." in tls) and ("run=OpenSSL 1.0.2" in tls or "run=OpenSSL 1.1" in tls or "run=OpenSSL 3." in tls)):
             raise HwsimSkip("EC group not supported")
@@ -2272,6 +2269,7 @@ def test_fils_sk_erp_radius_ext(dev, apdev, params):
 def run_fils_sk_erp_radius_ext(dev, apdev, params):
     check_fils_capa(dev[0])
     check_erp_capa(dev[0])
+    check_eap_capa(dev[0], "PWD")
 
     bssid = apdev[0]['bssid']
     params = hostapd.wpa2_eap_params(ssid="fils")
@@ -2325,6 +2323,7 @@ def test_fils_sk_erp_radius_roam(dev, apdev):
 def run_fils_sk_erp_radius_roam(dev, apdev):
     check_fils_capa(dev[0])
     check_erp_capa(dev[0])
+    check_eap_capa(dev[0], "PWD")
 
     bssid = apdev[0]['bssid']
     params = hostapd.wpa2_eap_params(ssid="fils")

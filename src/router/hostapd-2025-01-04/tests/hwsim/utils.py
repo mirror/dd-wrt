@@ -122,6 +122,10 @@ def check_sae_pk_capab(dev):
     if capab is None or "PK" not in capab:
         raise HwsimSkip("SAE-PK not supported")
 
+def check_owe_capab(dev):
+    if "OWE" not in dev.get_capability("key_mgmt"):
+        raise HwsimSkip("OWE not supported")
+
 def check_erp_capa(dev):
     capab = dev.get_capability("erp")
     if not capab or 'ERP' not in capab:
@@ -145,13 +149,9 @@ def check_imsi_privacy_support(dev):
 
 def check_tls_tod(dev):
     tls = dev.request("GET tls_library")
-    if tls.startswith("OpenSSL"):
-        return
-    elif tls.startswith("internal"):
-        return
-    elif tls.startswith("mbed TLS"):
-        return
-    else:
+    if not tls.startswith("OpenSSL") and \
+       not tls.startswith("wolfSSL") and \
+       not tls.startswith("internal"):
         raise HwsimSkip("TLS TOD-TOFU/STRICT not supported with this TLS library: " + tls)
 
 def vht_supported():

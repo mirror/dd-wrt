@@ -840,6 +840,7 @@ endif
 endif
 
 ifdef CONFIG_EAP_PWD
+CFLAGS += -DCRYPTO_RSA_OAEP_SHA256
 CFLAGS += -DEAP_PWD
 ifeq ($(CONFIG_TLS), wolfssl)
 CFLAGS += -DCONFIG_ECC

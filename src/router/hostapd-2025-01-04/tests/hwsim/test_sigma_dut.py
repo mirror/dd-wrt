@@ -1153,8 +1153,7 @@ def test_sigma_dut_ap_psk_sae_ft(dev, apdev, params):
 
 def test_sigma_dut_owe(dev, apdev):
     """sigma_dut controlled OWE station"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
 
     ifname = dev[0].ifname
     with SigmaDut(ifname) as dut:
@@ -1214,8 +1213,7 @@ def test_sigma_dut_owe(dev, apdev):
 
 def test_sigma_dut_owe_ptk_workaround(dev, apdev):
     """sigma_dut controlled OWE station with PTK workaround"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
 
     params = {"ssid": "owe",
               "wpa": "2",
@@ -1240,8 +1238,7 @@ def test_sigma_dut_ap_owe(dev, apdev, params):
     """sigma_dut controlled AP with OWE"""
     logdir = os.path.join(params['logdir'],
                           "sigma_dut_ap_owe.sigma-hostapd")
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     with HWSimRadio() as (radio, iface), \
          SigmaDut(iface, hostapd_logdir=logdir) as dut:
         dut.cmd_check("ap_reset_default,NAME,AP,Program,WPA3")
@@ -1261,8 +1258,7 @@ def test_sigma_dut_ap_owe(dev, apdev, params):
 
 def test_sigma_dut_ap_owe_ecgroupid(dev, apdev, params):
     """sigma_dut controlled AP with OWE and ECGroupID"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     logdir = params['prefix'] + ".sigma-hostapd"
     with HWSimRadio() as (radio, iface), \
          SigmaDut(iface, hostapd_logdir=logdir) as dut:
@@ -1293,8 +1289,7 @@ def test_sigma_dut_ap_owe_ecgroupid(dev, apdev, params):
 
 def test_sigma_dut_ap_owe_ptk_workaround(dev, apdev, params):
     """sigma_dut controlled AP with OWE PTK workaround"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     logdir = params['prefix'] + ".sigma-hostapd"
     with HWSimRadio() as (radio, iface), \
          SigmaDut(iface, owe_ptk_workaround=True, hostapd_logdir=logdir) as dut:
@@ -1309,8 +1304,7 @@ def test_sigma_dut_ap_owe_ptk_workaround(dev, apdev, params):
 
 def test_sigma_dut_ap_owe_transition_mode(dev, apdev, params):
     """sigma_dut controlled AP with OWE and transition mode"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     logdir = os.path.join(params['logdir'],
                           "sigma_dut_ap_owe_transition_mode.sigma-hostapd")
     with HWSimRadio() as (radio, iface), \
@@ -1335,8 +1329,7 @@ def test_sigma_dut_ap_owe_transition_mode(dev, apdev, params):
 
 def test_sigma_dut_ap_owe_transition_mode_2(dev, apdev, params):
     """sigma_dut controlled AP with OWE and transition mode (2)"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     logdir = os.path.join(params['logdir'],
                           "sigma_dut_ap_owe_transition_mode_2.sigma-hostapd")
     with HWSimRadio() as (radio, iface), \

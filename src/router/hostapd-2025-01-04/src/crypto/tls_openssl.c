@@ -33,6 +33,8 @@
 #include <openssl/core_names.h>
 #include <openssl/decoder.h>
 #include <openssl/param_build.h>
+#include <openssl/store.h>
+#include <openssl/provider.h>
 #else /* OpenSSL version >= 3.0 */
 #ifndef OPENSSL_NO_DSA
 #include <openssl/dsa.h>
@@ -244,8 +246,8 @@ struct tls_connection {
 	BIO *ssl_in, *ssl_out;
 #if defined(ANDROID) || !defined(OPENSSL_NO_ENGINE)
 	ENGINE *engine;        /* functional reference to the engine */
-	EVP_PKEY *private_key; /* the private key if using engine */
 #endif /* OPENSSL_NO_ENGINE */
+	EVP_PKEY *private_key; /* the private key if using engine/provider */
 	char *subject_match, *altsubject_match, *suffix_match, *domain_match;
 	char *check_cert_subject;
 	int read_alerts, write_alerts, failed;
@@ -355,6 +357,149 @@ static X509_STORE * tls_crl_cert_reload(const char *ca_cert, int check_crl)
 
 	return store;
 }
+
+
+#ifdef OPENSSL_NO_ENGINE
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+static OSSL_PROVIDER *openssl_pkcs11_provider = NULL;
+#endif /* OpenSSL version >= 3.0 */
+
+static void openssl_load_pkcs11_provider(void)
+{
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+	if (openssl_pkcs11_provider)
+		return;
+
+	openssl_pkcs11_provider = OSSL_PROVIDER_try_load(NULL, "pkcs11", 1);
+	if (!openssl_pkcs11_provider)
+		wpa_printf(MSG_WARNING, "PKCS11 provider not present");
+#endif /* OpenSSL version >= 3.0 */
+}
+
+
+static void openssl_unload_pkcs11_provider(void)
+{
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+	if (openssl_pkcs11_provider) {
+		OSSL_PROVIDER_unload(openssl_pkcs11_provider);
+		openssl_pkcs11_provider = NULL;
+	}
+#endif /* OpenSSL version >= 3.0 */
+}
+
+
+static bool openssl_can_use_provider(const char *engine_id, const char *req)
+{
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+	if (!os_strcmp(engine_id, "pkcs11") && openssl_pkcs11_provider)
+		return true;
+
+	wpa_printf(MSG_ERROR,
+		   "Cannot find OpenSSL provider for '%s' (missing '%s')",
+		   req, engine_id);
+#endif /* OpenSSL version >= 3.0 */
+	return false;
+}
+
+
+static EVP_PKEY * provider_load_key(const char *uri)
+{
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+	OSSL_STORE_CTX *store;
+	OSSL_STORE_INFO *info;
+	EVP_PKEY *key = NULL;
+
+	if (!uri) {
+		tls_show_errors(MSG_ERROR, __func__,
+				"Invalid NULL uri for key");
+		goto err_key;
+	}
+
+	store = OSSL_STORE_open(uri, NULL, NULL, NULL, NULL);
+	if (!store) {
+		wpa_printf(MSG_DEBUG, "Bad uri for private key:%s", uri);
+
+		tls_show_errors(MSG_ERROR, __func__,
+				"Failed to open key store");
+		goto err_key;
+	}
+
+	if (os_strncmp(uri, "pkcs11:", 7) &&
+	    os_strstr(uri, "type=private") == NULL) {
+		/* This is a workaround for OpenSSL < 3.2.0 where the code fails
+		 * to correctly source public keys unless explicitly requested
+		 * via an expect hint. */
+		if (OSSL_STORE_expect(store, OSSL_STORE_INFO_PUBKEY) != 1) {
+			tls_show_errors(MSG_ERROR, __func__,
+					"Failed to expect Public Key File");
+			goto err_store;
+		}
+	}
+
+	while (!OSSL_STORE_eof(store)) {
+		info = OSSL_STORE_load(store);
+		if ((OSSL_STORE_INFO_get_type(info)) == OSSL_STORE_INFO_PKEY)
+			key = OSSL_STORE_INFO_get1_PKEY(info);
+
+		OSSL_STORE_INFO_free(info);
+		if (key)
+			break;
+	}
+
+err_store:
+	OSSL_STORE_close(store);
+err_key:
+	if (!key)
+		wpa_printf(MSG_ERROR, "OpenSSL: Failed to load key from URI");
+
+	return key;
+#else /* OpenSSL version >= 3.0 */
+	return NULL;
+#endif /* OpenSSL version >= 3.0 */
+}
+
+
+static X509 * provider_load_cert(const char *cert_id)
+{
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+	OSSL_STORE_CTX *store;
+	OSSL_STORE_INFO *info;
+	X509 *cert = NULL;
+
+	if (!cert_id) {
+		tls_show_errors(MSG_ERROR, __func__, "Invalid NULL uri");
+		goto err_cert;
+	}
+
+	store = OSSL_STORE_open(cert_id, NULL, NULL, NULL, NULL);
+	if (!store) {
+		tls_show_errors(MSG_ERROR, __func__, "Failed to open store");
+		goto err_cert;
+	}
+
+	while (!OSSL_STORE_eof(store)) {
+		info = OSSL_STORE_load(store);
+		if ((OSSL_STORE_INFO_get_type(info)) == OSSL_STORE_INFO_CERT)
+			cert = OSSL_STORE_INFO_get1_CERT(info);
+
+		OSSL_STORE_INFO_free(info);
+		if (cert)
+			break;
+	}
+	OSSL_STORE_close(store);
+
+err_cert:
+	if (!cert)
+		tls_show_errors(MSG_ERROR, __func__,
+				"Failed to load cert from URI");
+	return cert;
+#else /* OpenSSL version >= 3.0 */
+	return NULL;
+#endif /* OpenSSL version >= 3.0 */
+}
+
+#endif /* OPENSSL_NO_ENGINE */
 
 
 #ifdef CONFIG_NATIVE_WINDOWS
@@ -1020,6 +1165,9 @@ void * tls_init(const struct tls_config *conf)
 		void openssl_load_legacy_provider(void);
 
 		openssl_load_legacy_provider();
+#ifdef OPENSSL_NO_ENGINE
+		openssl_load_pkcs11_provider();
+#endif /* OPENSSL_NO_ENGINE */
 
 		tls_global = context = tls_context_new(conf);
 		if (context == NULL)
@@ -1211,6 +1359,9 @@ void tls_deinit(void *ssl_ctx)
 
 	tls_openssl_ref_count--;
 	if (tls_openssl_ref_count == 0) {
+#ifdef OPENSSL_NO_ENGINE
+		openssl_unload_pkcs11_provider();
+#endif /* OPENSSL_NO_ENGINE */
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 #ifndef OPENSSL_NO_ENGINE
 		ENGINE_cleanup();
@@ -1369,6 +1520,10 @@ err:
 
 	return ret;
 #else /* OPENSSL_NO_ENGINE */
+	conn->private_key = provider_load_key(key_id);
+	if (!conn->private_key)
+		return -1;
+
 	return 0;
 #endif /* OPENSSL_NO_ENGINE */
 }
@@ -1376,12 +1531,12 @@ err:
 
 static void tls_engine_deinit(struct tls_connection *conn)
 {
-#if defined(ANDROID) || !defined(OPENSSL_NO_ENGINE)
-	wpa_printf(MSG_DEBUG, "ENGINE: engine deinit");
 	if (conn->private_key) {
 		EVP_PKEY_free(conn->private_key);
 		conn->private_key = NULL;
 	}
+#if defined(ANDROID) || !defined(OPENSSL_NO_ENGINE)
+	wpa_printf(MSG_DEBUG, "ENGINE: engine deinit");
 	if (conn->engine) {
 #if !defined(OPENSSL_IS_BORINGSSL)
 		ENGINE_finish(conn->engine);
@@ -3799,11 +3954,16 @@ static int tls_engine_get_cert(struct tls_connection *conn,
 static int tls_connection_engine_client_cert(struct tls_connection *conn,
 					     const char *cert_id)
 {
-#ifndef OPENSSL_NO_ENGINE
 	X509 *cert;
 
+#ifndef OPENSSL_NO_ENGINE
 	if (tls_engine_get_cert(conn, cert_id, &cert))
 		return -1;
+#else /* OPENSSL_NO_ENGINE */
+	cert = provider_load_cert(cert_id);
+	if (!cert)
+		return -1;
+#endif /* OPENSSL_NO_ENGINE */
 
 	if (!SSL_use_certificate(conn->ssl, cert)) {
 		tls_show_errors(MSG_ERROR, __func__,
@@ -3812,13 +3972,9 @@ static int tls_connection_engine_client_cert(struct tls_connection *conn,
 		return -1;
 	}
 	X509_free(cert);
-	wpa_printf(MSG_DEBUG, "ENGINE: SSL_use_certificate --> "
+	wpa_printf(MSG_DEBUG, "ENGINE/provider: SSL_use_certificate --> "
 		   "OK");
 	return 0;
-
-#else /* OPENSSL_NO_ENGINE */
-	return -1;
-#endif /* OPENSSL_NO_ENGINE */
 }
 
 
@@ -3826,13 +3982,18 @@ static int tls_connection_engine_ca_cert(struct tls_data *data,
 					 struct tls_connection *conn,
 					 const char *ca_cert_id)
 {
-#ifndef OPENSSL_NO_ENGINE
 	X509 *cert;
 	SSL_CTX *ssl_ctx = data->ssl;
 	X509_STORE *store;
 
+#ifndef OPENSSL_NO_ENGINE
 	if (tls_engine_get_cert(conn, ca_cert_id, &cert))
 		return -1;
+#else /* OPENSSL_NO_ENGINE */
+	cert = provider_load_cert(ca_cert_id);
+	if (!cert)
+		return -1;
+#endif /* OPENSSL_NO_ENGINE */
 
 	/* start off the same as tls_connection_ca_cert */
 	store = X509_STORE_new();
@@ -3846,7 +4007,7 @@ static int tls_connection_engine_ca_cert(struct tls_data *data,
 	if (!X509_STORE_add_cert(store, cert)) {
 		unsigned long err = ERR_peek_error();
 		tls_show_errors(MSG_WARNING, __func__,
-				"Failed to add CA certificate from engine "
+				"Failed to add CA certificate from engine/provider "
 				"to certificate store");
 		if (ERR_GET_LIB(err) == ERR_LIB_X509 &&
 		    ERR_GET_REASON(err) == X509_R_CERT_ALREADY_IN_HASH_TABLE) {
@@ -3859,25 +4020,21 @@ static int tls_connection_engine_ca_cert(struct tls_data *data,
 		}
 	}
 	X509_free(cert);
-	wpa_printf(MSG_DEBUG, "OpenSSL: %s - added CA certificate from engine "
-		   "to certificate store", __func__);
+	wpa_printf(MSG_DEBUG,
+		   "OpenSSL: %s - added CA certificate from engine/provider to certificate store",
+		   __func__);
 	SSL_set_verify(conn->ssl, SSL_VERIFY_PEER, tls_verify_cb);
 	conn->ca_cert_verify = 1;
 
 	return 0;
-
-#else /* OPENSSL_NO_ENGINE */
-	return -1;
-#endif /* OPENSSL_NO_ENGINE */
 }
 
 
 static int tls_connection_engine_private_key(struct tls_connection *conn)
 {
-#if defined(ANDROID) || !defined(OPENSSL_NO_ENGINE)
 	if (SSL_use_PrivateKey(conn->ssl, conn->private_key) != 1) {
 		tls_show_errors(MSG_ERROR, __func__,
-				"ENGINE: cannot use private key for TLS");
+				"ENGINE/provider: cannot use private key for TLS");
 		return -1;
 	}
 	if (!SSL_check_private_key(conn->ssl)) {
@@ -3886,11 +4043,6 @@ static int tls_connection_engine_private_key(struct tls_connection *conn)
 		return -1;
 	}
 	return 0;
-#else /* OPENSSL_NO_ENGINE */
-	wpa_printf(MSG_ERROR, "SSL: Configuration uses engine, but "
-		   "engine support was not compiled in");
-	return -1;
-#endif /* OPENSSL_NO_ENGINE */
 }
 
 
@@ -5437,6 +5589,10 @@ int tls_connection_set_params(void *tls_ctx, struct tls_connection *conn,
 		return -1;
 
 	if (engine_id && ca_cert_id) {
+#ifdef OPENSSL_NO_ENGINE
+		if (!openssl_can_use_provider(engine_id, ca_cert_id))
+			return TLS_SET_PARAMS_ENGINE_PRV_INIT_FAILED;
+#endif /* OPENSSL_NO_ENGINE */
 		if (tls_connection_engine_ca_cert(data, conn, ca_cert_id))
 			return TLS_SET_PARAMS_ENGINE_PRV_VERIFY_FAILED;
 	} else if (tls_connection_ca_cert(data, conn, params->ca_cert,
@@ -5446,6 +5602,10 @@ int tls_connection_set_params(void *tls_ctx, struct tls_connection *conn,
 		return -1;
 
 	if (engine_id && cert_id) {
+#ifdef OPENSSL_NO_ENGINE
+		if (!openssl_can_use_provider(engine_id, cert_id))
+			return TLS_SET_PARAMS_ENGINE_PRV_INIT_FAILED;
+#endif /* OPENSSL_NO_ENGINE */
 		if (tls_connection_engine_client_cert(conn, cert_id))
 			return TLS_SET_PARAMS_ENGINE_PRV_VERIFY_FAILED;
 	} else if (tls_connection_client_cert(conn, params->client_cert,
@@ -5454,7 +5614,12 @@ int tls_connection_set_params(void *tls_ctx, struct tls_connection *conn,
 		return -1;
 
 	if (engine_id && key_id) {
-		wpa_printf(MSG_DEBUG, "TLS: Using private key from engine");
+#ifdef OPENSSL_NO_ENGINE
+		if (!openssl_can_use_provider(engine_id, key_id))
+			return TLS_SET_PARAMS_ENGINE_PRV_INIT_FAILED;
+#endif /* OPENSSL_NO_ENGINE */
+		wpa_printf(MSG_DEBUG,
+			   "TLS: Using private key from engine/provider");
 		if (tls_connection_engine_private_key(conn))
 			return TLS_SET_PARAMS_ENGINE_PRV_VERIFY_FAILED;
 	} else if (tls_connection_private_key(data, conn,

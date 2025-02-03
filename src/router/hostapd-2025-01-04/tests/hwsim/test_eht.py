@@ -412,6 +412,7 @@ def _eht_mld_owe_two_links(dev, apdev, second_link_disabled=False,
 
         wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
         wpas.interface_add(wpas_iface)
+        check_owe_capab(wpas)
 
         ssid = "mld_ap_owe_two_link"
         params = eht_mld_ap_wpa2_params(ssid, key_mgmt="OWE", mfp="2")
@@ -476,6 +477,7 @@ def run_eht_mld_sae_single_link(dev, apdev, anti_clogging_token=False):
             HWSimRadio(use_mlo=True) as (wpas_radio, wpas_iface):
         wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
         wpas.interface_add(wpas_iface)
+        check_sae_capab(wpas)
 
         passphrase = 'qwertyuiop'
         ssid = "mld_ap_sae_single_link"
@@ -502,6 +504,7 @@ def run_eht_mld_sae_two_links(dev, apdev, beacon_prot="1",
 
         wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
         wpas.interface_add(wpas_iface)
+        check_sae_capab(wpas)
 
         passphrase = 'qwertyuiop'
         ssid = "mld_ap_sae_two_link"
@@ -603,6 +606,7 @@ def test_eht_mld_sae_ext_one_link(dev, apdev):
 
         wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
         wpas.interface_add(wpas_iface)
+        check_sae_capab(wpas)
 
         passphrase = 'qwertyuiop'
         ssid = "mld_ap_sae_ext_single_link"
@@ -625,6 +629,7 @@ def test_eht_mld_sae_ext_two_links(dev, apdev):
 
         wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
         wpas.interface_add(wpas_iface)
+        check_sae_capab(wpas)
 
         passphrase = 'qwertyuiop'
         ssid = "mld_ap_sae_two_link"
@@ -648,6 +653,7 @@ def test_eht_mld_sae_ext_two_links(dev, apdev):
 
 def test_eht_mld_sae_legacy_client(dev, apdev):
     """EHT MLD AP with legacy client SAE H2E connection"""
+    check_sae_capab(dev[0])
     with HWSimRadio(use_mlo=True) as (hapd_radio, hapd_iface):
         passphrase = 'qwertyuiop'
         ssid = "mld_ap_sae_two_link"
@@ -687,6 +693,7 @@ def test_eht_mld_sae_transition(dev, apdev):
 
         wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
         wpas.interface_add(wpas_iface)
+        check_sae_capab(wpas)
 
         passphrase = 'qwertyuiop'
         ssid = "mld_ap_sae_two_link"
@@ -722,6 +729,7 @@ def test_eht_mld_ptk_rekey(dev, apdev):
 
         wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
         wpas.interface_add(wpas_iface)
+        check_sae_capab(wpas)
 
         passphrase = 'qwertyuiop'
         ssid = "mld_ap_sae_two_link"
@@ -762,6 +770,7 @@ def test_eht_mld_gtk_rekey(dev, apdev):
 
         wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
         wpas.interface_add(wpas_iface)
+        check_sae_capab(wpas)
 
         passphrase = 'qwertyuiop'
         ssid = "mld_ap_sae_two_link"
@@ -803,6 +812,7 @@ def test_eht_mld_gtk_rekey_failure(dev, apdev):
 
         wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
         wpas.interface_add(wpas_iface)
+        check_sae_capab(wpas)
 
         passphrase = 'qwertyuiop'
         ssid = "mld_ap_sae_two_link"
@@ -889,6 +899,7 @@ def test_eht_mld_connect_probes(dev, apdev, params):
 
         wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
         wpas.interface_add(wpas_iface)
+        check_sae_capab(wpas)
 
         ssid = "mld_ap"
         passphrase = 'qwertyuiop'
@@ -935,6 +946,7 @@ def test_eht_tx_link_rejected_connect_other(dev, apdev, params):
 
         wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
         wpas.interface_add(wpas_iface)
+        check_sae_capab(wpas)
 
         ssid = "mld_ap"
         passphrase = 'qwertyuiop'
@@ -965,6 +977,7 @@ def test_eht_all_links_rejected(dev, apdev, params):
 
         wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
         wpas.interface_add(wpas_iface)
+        check_sae_capab(wpas)
 
         ssid = "mld_ap"
         passphrase = 'qwertyuiop'
@@ -1006,6 +1019,7 @@ def test_eht_connect_invalid_link(dev, apdev, params):
 
         wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
         wpas.interface_add(wpas_iface)
+        check_sae_capab(wpas)
 
         ssid = "mld_ap"
         passphrase = 'qwertyuiop'
@@ -1048,6 +1062,7 @@ def test_eht_mld_link_removal(dev, apdev):
 
         wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
         wpas.interface_add(wpas_iface)
+        check_owe_capab(wpas)
 
         ssid = "mld_ap_owe_two_link"
         params = eht_mld_ap_wpa2_params(ssid, key_mgmt="OWE", mfp="2")
@@ -1098,6 +1113,7 @@ def test_eht_mld_bss_trans_mgmt_link_removal_imminent(dev, apdev):
 
         wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
         wpas.interface_add(wpas_iface)
+        check_owe_capab(wpas)
 
         ssid = "mld_ap_owe_two_link"
         params = eht_mld_ap_wpa2_params(ssid, key_mgmt="OWE", mfp="2")
@@ -1536,6 +1552,7 @@ def test_eht_mld_gas(dev, apdev):
 
         wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
         wpas.interface_add(wpas_iface)
+        check_owe_capab(wpas)
         wpas.scan_for_bss(bssid, freq="2462")
 
         ssid = "owe_two_link"
@@ -1605,6 +1622,7 @@ def _eht_mld_disconnect(dev, apdev, disassoc=True):
 
         wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
         wpas.interface_add(wpas_iface)
+        check_owe_capab(wpas)
 
         ssid = "mld_ap_owe_two_link"
         params = eht_mld_ap_wpa2_params(ssid, key_mgmt="OWE", mfp="2")
@@ -1659,6 +1677,7 @@ def test_eht_mld_non_pref_chan(dev, apdev):
 
         wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
         wpas.interface_add(wpas_iface)
+        check_owe_capab(wpas)
 
         # Start the first AP
         ssid = "mld_ap_one_link_mbo"
@@ -1746,6 +1765,7 @@ def test_eht_mld_rrm_beacon_req(dev, apdev):
 
         wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
         wpas.interface_add(wpas_iface)
+        check_owe_capab(wpas)
 
         # Start the first AP and connect
         ssid = "mld_ap_one_link_rrm1"
@@ -1905,6 +1925,7 @@ def test_eht_mlo_csa(dev, apdev):
 
             wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
             wpas.interface_add(wpas_iface)
+            check_sae_capab(wpas)
 
             ssid = "mld_ap"
             passphrase = 'qwertyuiop'

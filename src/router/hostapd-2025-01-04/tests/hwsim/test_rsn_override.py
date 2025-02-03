@@ -137,6 +137,7 @@ def run_rsn_override_mld(dev, apdev, mixed, only_sta=False,
 
         wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
         wpas.interface_add(wpas_iface)
+        check_sae_capab(wpas)
 
         passphrase = 'qwertyuiop'
         ssid = "AP MLD RSN override"

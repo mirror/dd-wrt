@@ -39,8 +39,7 @@ def check_dpp_capab(dev, brainpool=False, min_ver=1):
         raise HwsimSkip("DPP not supported")
     if brainpool:
         tls = dev.request("GET tls_library")
-        if (not tls.startswith("OpenSSL") or "run=BoringSSL" in tls) and not tls.startswith("wolfSSL") \
-                                                                     and not tls.startswith("mbed TLS"):
+        if (not tls.startswith("OpenSSL") or "run=BoringSSL" in tls) and not tls.startswith("wolfSSL"):
             raise HwsimSkip("Crypto library does not support Brainpool curves: " + tls)
     capa = dev.request("GET_CAPABILITY dpp")
     ver = 1
@@ -3926,9 +3925,6 @@ def test_dpp_proto_auth_req_no_i_proto_key(dev, apdev):
 
 def test_dpp_proto_auth_req_invalid_i_proto_key(dev, apdev):
     """DPP protocol testing - invalid I-proto key in Auth Req"""
-    tls = dev[0].request("GET tls_library")
-    if tls.startswith("mbed TLS"):
-        raise HwsimSkip("mbed TLS crypto_ecdh_set_peerkey() properly detects invalid key; no response")
     run_dpp_proto_auth_req_missing(dev, 66, "Invalid Initiator Protocol Key")
 
 def test_dpp_proto_auth_req_no_i_nonce(dev, apdev):
@@ -4024,12 +4020,7 @@ def test_dpp_proto_auth_resp_no_r_proto_key(dev, apdev):
 
 def test_dpp_proto_auth_resp_invalid_r_proto_key(dev, apdev):
     """DPP protocol testing - invalid R-Proto Key in Auth Resp"""
-    tls = dev[0].request("GET tls_library")
-    if tls.startswith("mbed TLS"):
-        # mbed TLS crypto_ecdh_set_peerkey() properly detects invalid key
-        run_dpp_proto_auth_resp_missing(dev, 67, "Failed to derive ECDH shared secret")
-    else:
-        run_dpp_proto_auth_resp_missing(dev, 67, "Invalid Responder Protocol Key")
+    run_dpp_proto_auth_resp_missing(dev, 67, "Invalid Responder Protocol Key")
 
 def test_dpp_proto_auth_resp_no_r_nonce(dev, apdev):
     """DPP protocol testing - no R-nonce in Auth Resp"""
@@ -4391,17 +4382,11 @@ def test_dpp_proto_pkex_exchange_resp_invalid_status(dev, apdev):
 
 def test_dpp_proto_pkex_cr_req_invalid_bootstrap_key(dev, apdev):
     """DPP protocol testing - invalid Bootstrap Key in PKEX Commit-Reveal Request"""
-    tls = dev[0].request("GET tls_library")
-    if tls.startswith("mbed TLS"):
-        raise HwsimSkip("mbed TLS crypto_ecdh_set_peerkey() properly detects invalid key; no response")
     run_dpp_proto_pkex_req_missing(dev, 47,
                                    "Peer bootstrapping key is invalid")
 
 def test_dpp_proto_pkex_cr_resp_invalid_bootstrap_key(dev, apdev):
     """DPP protocol testing - invalid Bootstrap Key in PKEX Commit-Reveal Response"""
-    tls = dev[0].request("GET tls_library")
-    if tls.startswith("mbed TLS"):
-        raise HwsimSkip("mbed TLS crypto_ecdh_set_peerkey() properly detects invalid key; no response")
     run_dpp_proto_pkex_resp_missing(dev, 48,
                                     "Peer bootstrapping key is invalid")
 

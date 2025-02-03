@@ -1434,6 +1434,7 @@ void handle_probe_req(struct hostapd_data *hapd,
 	size_t csa_offs_len;
 	struct radius_sta rad_info;
 	struct probe_resp_params params;
+	char *hex = NULL;
 #ifdef CONFIG_IEEE80211BE
 	int mld_id;
 	u16 links;
@@ -1684,8 +1685,20 @@ void handle_probe_req(struct hostapd_data *hapd,
 	if (hapd != hostapd_mbssid_get_tx_bss(hapd) && res != EXACT_SSID_MATCH)
 		return;
 
+	if (hapd->conf->notify_mgmt_frames) {
+		size_t hex_len;
+
+		hex_len = len * 2 + 1;
+		hex = os_malloc(hex_len);
+		if (hex)
+			wpa_snprintf_hex(hex, hex_len, (const u8 *) mgmt, len);
+	}
+
 	wpa_msg_ctrl(hapd->msg_ctx, MSG_INFO, RX_PROBE_REQUEST "sa=" MACSTR
-		     " signal=%d", MAC2STR(mgmt->sa), ssi_signal);
+		     " signal=%d%s%s", MAC2STR(mgmt->sa), ssi_signal,
+		     hex ? " buf=" : "", hex ? hex : "");
+
+	os_free(hex);
 
 	os_memset(&params, 0, sizeof(params));
 

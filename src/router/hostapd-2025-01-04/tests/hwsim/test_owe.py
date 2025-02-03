@@ -16,13 +16,12 @@ from wpasupplicant import WpaSupplicant
 from hwsim import HWSimRadio
 import hwsim_utils
 from tshark import run_tshark
-from utils import HwsimSkip, fail_test, alloc_fail, wait_fail_trigger
+from utils import *
 from test_ap_acs import wait_acs
 
 def test_owe(dev, apdev):
     """Opportunistic Wireless Encryption"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     params = {"ssid": "owe",
               "wpa": "2",
               "ieee80211w": "2",
@@ -53,8 +52,7 @@ def test_owe(dev, apdev):
 
 def test_owe_groups(dev, apdev):
     """Opportunistic Wireless Encryption - DH groups"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     params = {"ssid": "owe",
               "wpa": "2",
               "wpa_key_mgmt": "OWE",
@@ -89,8 +87,7 @@ def test_owe_pmksa_caching_connect_cmd(dev, apdev):
         wpas.set("reassoc_same_bss_optim", "0")
 
 def run_owe_pmksa_caching(dev, apdev):
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     params = {"ssid": "owe",
               "wpa": "2",
               "wpa_key_mgmt": "OWE",
@@ -141,8 +138,7 @@ def run_owe_pmksa_caching(dev, apdev):
 
 def test_owe_and_psk(dev, apdev):
     """Opportunistic Wireless Encryption and WPA2-PSK enabled"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     params = {"ssid": "owe+psk",
               "wpa": "2",
               "wpa_key_mgmt": "OWE WPA-PSK",
@@ -193,8 +189,7 @@ def test_owe_transition_mode_bss_limit(dev, apdev):
 
 def run_owe_transition_mode(dev, apdev, adv_bssid0=None, adv_bssid1=None,
                             bss_limit=False):
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     dev[0].flush_scan_cache()
     adv_bssid = adv_bssid0 if adv_bssid0 else apdev[1]['bssid']
     params = {"ssid": "owe-random",
@@ -279,8 +274,7 @@ def run_owe_transition_mode(dev, apdev, adv_bssid0=None, adv_bssid1=None,
 
 def test_owe_transition_mode_ifname(dev, apdev):
     """Opportunistic Wireless Encryption transition mode (ifname)"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     dev[0].flush_scan_cache()
     params = {"ssid": "owe-random",
               "wpa": "2",
@@ -315,8 +309,7 @@ def test_owe_transition_mode_ifname_acs2(dev, apdev):
     run_owe_transition_mode_ifname_acs(dev, apdev, wait_first=True)
 
 def run_owe_transition_mode_ifname_acs(dev, apdev, wait_first):
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     dev[0].flush_scan_cache()
     params = {"ssid": "owe-random",
               "channel": "0",
@@ -367,8 +360,7 @@ def run_owe_transition_mode_ifname_acs(dev, apdev, wait_first):
 
 def test_owe_transition_mode_multi_assoc(dev, apdev):
     """Opportunistic Wireless Encryption transition mode and multiple associations"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     dev[0].flush_scan_cache()
     params = {"ssid": "owe-random",
               "wpa": "2",
@@ -422,8 +414,7 @@ def test_owe_transition_mode_multi_assoc(dev, apdev):
 
 def test_owe_transition_mode_open_only_ap(dev, apdev):
     """Opportunistic Wireless Encryption transition mode connect to open-only AP"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     dev[0].flush_scan_cache()
     params = {"ssid": "owe-test-open"}
     hapd = hostapd.add_ap(apdev[0], params)
@@ -442,8 +433,7 @@ def test_owe_transition_mode_open_only_ap(dev, apdev):
 
 def test_owe_only_sta(dev, apdev):
     """Opportunistic Wireless Encryption transition mode disabled on STA"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     dev[0].flush_scan_cache()
     params = {"ssid": "owe-test-open"}
     hapd = hostapd.add_ap(apdev[0], params)
@@ -472,8 +462,7 @@ def test_owe_only_sta(dev, apdev):
 
 def test_owe_only_sta_tm_ap(dev, apdev):
     """Opportunistic Wireless Encryption transition mode disabled on STA and AP using transition mode"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     dev[0].flush_scan_cache()
 
     adv_bssid = apdev[1]['bssid']
@@ -502,8 +491,7 @@ def test_owe_only_sta_tm_ap(dev, apdev):
 
 def test_owe_transition_mode_open_multiple_scans(dev, apdev):
     """Opportunistic Wireless Encryption transition mode and need for multiple scans"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     dev[0].flush_scan_cache()
     params = {"ssid": "owe-test",
               "owe_transition_bssid": apdev[0]['bssid'],
@@ -543,8 +531,7 @@ def test_owe_transition_mode_multi_bss(dev, apdev):
         dev[0].request("SCAN_INTERVAL 5")
 
 def run_owe_transition_mode_multi_bss(dev, apdev):
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     ifname1 = apdev[0]['ifname']
     ifname2 = apdev[0]['ifname'] + '-2'
     hapd1 = hostapd.add_bss(apdev[0], ifname1, 'owe-bss-1.conf')
@@ -573,8 +560,7 @@ def run_owe_transition_mode_multi_bss(dev, apdev):
 
 def test_owe_transition_mode_rsne_mismatch(dev, apdev):
     """Opportunistic Wireless Encryption transition mode and RSNE mismatch"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     dev[0].flush_scan_cache()
     params = {"ssid": "owe-random",
               "wpa": "2",
@@ -635,8 +621,7 @@ def test_owe_unsupported_group_connect_cmd(dev, apdev):
             wpas.request("VENDOR_ELEM_REMOVE 13 *")
 
 def run_owe_unsupported_group(dev, apdev):
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     # Override OWE Dh Parameters element with a payload that uses invalid group
     # 0 (and actual group 19 data) to make the AP reject this with the specific
     # status code 77.
@@ -660,8 +645,7 @@ def run_owe_unsupported_group(dev, apdev):
 
 def test_owe_limited_group_set(dev, apdev):
     """Opportunistic Wireless Encryption and limited group set"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     params = {"ssid": "owe",
               "wpa": "2",
               "wpa_key_mgmt": "OWE",
@@ -688,8 +672,7 @@ def test_owe_limited_group_set(dev, apdev):
 
 def test_owe_limited_group_set_pmf(dev, apdev, params):
     """Opportunistic Wireless Encryption and limited group set (PMF)"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     pcapng = os.path.join(params['logdir'], "hwsim0.pcapng")
 
     params = {"ssid": "owe",
@@ -750,8 +733,7 @@ def test_owe_group_negotiation_connect_cmd(dev, apdev):
     run_owe_group_negotiation(wpas, apdev)
 
 def run_owe_group_negotiation(dev, apdev):
-    if "OWE" not in dev.get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev)
     params = {"ssid": "owe",
               "wpa": "2",
               "wpa_key_mgmt": "OWE",
@@ -765,8 +747,7 @@ def run_owe_group_negotiation(dev, apdev):
 
 def test_owe_assoc_reject(dev, apdev):
     """Opportunistic Wireless Encryption association rejection handling"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     params = {"ssid": "owe",
               "require_ht": "1",
               "wpa": "2",
@@ -805,8 +786,7 @@ def test_owe_assoc_reject(dev, apdev):
 
 def test_owe_local_errors(dev, apdev):
     """Opportunistic Wireless Encryption - local errors on supplicant"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     params = {"ssid": "owe",
               "wpa": "2",
               "ieee80211w": "2",
@@ -908,8 +888,7 @@ def hapd_assoc(hapd, extra):
 
 def test_owe_invalid_assoc_resp(dev, apdev):
     """Opportunistic Wireless Encryption - invalid Association Response frame"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     params = {"ssid": "owe",
               "wpa": "2",
               "ieee80211w": "2",
@@ -954,8 +933,7 @@ def test_owe_invalid_assoc_resp(dev, apdev):
 
 def test_owe_double_assoc(dev, apdev):
     """Opportunistic Wireless Encryption - duplicated association attempt"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     params = {"ssid": "owe",
               "wpa": "2",
               "ieee80211w": "2",
@@ -1019,8 +997,7 @@ def test_owe_double_assoc(dev, apdev):
     dev[0].wait_connected()
 
 def start_owe(dev, apdev, workaround=0):
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     params = {"ssid": "owe",
               "wpa": "2",
               "ieee80211w": "2",
@@ -1074,8 +1051,7 @@ def test_owe_ptk_hash(dev, apdev):
 
 def test_owe_transition_mode_disable(dev, apdev):
     """Opportunistic Wireless Encryption transition mode disable"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     dev[0].flush_scan_cache()
     params = {"ssid": "owe-random",
               "wpa": "2",
@@ -1118,8 +1094,7 @@ def test_owe_transition_mode_disable(dev, apdev):
 
 def test_owe_transition_mode_roam(dev, apdev):
     """Opportunistic Wireless Encryption transition mode roaming"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     dev[0].flush_scan_cache()
 
     with HWSimRadio() as (radio, iface):
@@ -1194,8 +1169,7 @@ def test_owe_transition_mode_roam(dev, apdev):
 
 def test_owe_sa_query(dev, apdev):
     """Opportunistic Wireless Encryption - SA Query"""
-    if "OWE" not in dev[0].get_capability("key_mgmt"):
-        raise HwsimSkip("OWE not supported")
+    check_owe_capab(dev[0])
     params = {"ssid": "owe",
               "wpa": "2",
               "ieee80211w": "2",
