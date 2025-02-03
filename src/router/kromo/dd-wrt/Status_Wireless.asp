@@ -137,7 +137,7 @@ function OpenSiteSurvey () {
 }
 
 function OpenChannelSurvey () {
-	if( "<% radio_on(); %>" == "1" ) {
+	if( "<% radio_on(); %>" == "1" && <% is_6ghz(); %> == "0" ) {
 		openWindow('Channel_Survey.asp', 980, 700);
 	} else if ( <% is_6ghz(); %> == "1") {
 		alert(errmsg.err104);
