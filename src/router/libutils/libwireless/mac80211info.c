@@ -1690,6 +1690,20 @@ static struct wifi_channels ghz60channels[] = {
 	{ .channel = -1, .freq = -1, .max_eirp = -1, .hw_eirp = -1 },
 };
 
+static void sort_channels(struct wifi_channels *list, int count)
+{
+	int i, j;
+	for (j = 0; j < count; j++) {
+		for (i = 1; i < count; i++) {
+			if (list[i].freq < list[i - 1].freq) {
+				struct wifi_channels a;
+				memcpy(&a, &list[i - 1], sizeof(a));
+				memcpy(&list[i - 1], &list[i], sizeof(a));
+				memcpy(&list[i], &a, sizeof(a));
+			}
+		}
+	}
+}
 struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *interface, const char *country,
 					    int max_bandwidth_khz, unsigned char checkband, int nocache)
 {
@@ -1971,7 +1985,12 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 							list[count].ht40 = true;
 							list[count].vht80 = true;
 							list[count].vht160 = true;
-							//                                                      fprintf(stderr, "%d %d %d\n", freq_mhz, band, max_bandwidth_khz);
+
+							if (band->nla_type == NL80211_BAND_6GHZ && freq_mhz == 5935) {
+								list[count].luu = 0;
+								list[count].ull = 0;
+								list[count].ht40 = false;
+							}
 							if (regmaxbw < 40 && max_bandwidth_khz == 40) {
 								list[count].luu = 0;
 								list[count].ull = 0;
@@ -2014,6 +2033,7 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 		free(rd);
 	nlmsg_free(msg);
 	check_validchannels(list, max_bandwidth_khz, nooverlap);
+	sort_channels(list, count);
 	if (!nocache)
 		addcache(interface, country, list);
 	return list;
