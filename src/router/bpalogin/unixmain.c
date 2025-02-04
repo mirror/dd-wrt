@@ -21,7 +21,7 @@
 #include "bpalogin.h"
 #include "ddns3-client/ctx.h"
 #include <errno.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 
 struct session s;
 int debug_level = DEFAULT_DEBUG;
