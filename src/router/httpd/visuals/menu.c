@@ -40,6 +40,18 @@ struct menucontext {
 #define MENU_STATUS 7
 int iscpe(void);
 
+#ifdef HAVE_MVEBU
+static inline int nowds(void)
+{
+	return 1;
+}
+#else
+static inline int nowds(void)
+{
+	return 0;
+}
+#endif
+
 static struct menucontext *init_menu(webs_t wp)
 {
 	static struct menucontext *m = NULL;
@@ -169,7 +181,7 @@ static struct menucontext *init_menu(webs_t wp)
 	for (a = 0; a < ifcount; a++) {
 		char check[32];
 		sprintf(check, "wlan%d", a);
-		if (has_ad(check) || is_ath10k(check) || is_ath11k(check) || is_brcmfmac(check) || is_mt76(check) ||
+		if (has_ad(check) || is_ath10k(check) || is_ath11k(check) || is_brcmfmac(check) || is_mt76(check) || nowds() ||
 		    is_mvebu(check)) {
 			m->menu[MENU_WIRELESS][count + 8] = "";
 			m->menuname[MENU_WIRELESS][count + 9] = "";
