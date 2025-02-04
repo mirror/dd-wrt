@@ -309,7 +309,7 @@ static void loadWlModule(void) // set wled params, get boardflags,
 	case ROUTER_LINKSYS_EA6500:
 		if (!sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr")) ||
 		    startswith(nvram_safe_get("pci/2/1/macaddr"), "00:90:4C")) {
-			char mac[20];
+			char mac[32];
 			strcpy(mac, nvram_safe_get("et0macaddr"));
 			MAC_ADD(mac);
 			MAC_ADD(mac);
@@ -809,7 +809,7 @@ void start_sysinit(void)
 		    startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C") ||
 		    !sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr")) ||
 		    startswith(nvram_safe_get("pci/2/1/macaddr"), "00:90:4C")) {
-			char mac[20];
+			char mac[32];
 			strcpy(mac, nvram_safe_get("et0macaddr"));
 			MAC_ADD(mac);
 			MAC_ADD(mac);
@@ -1442,7 +1442,7 @@ void start_sysinit(void)
 		}
 		if (startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4") ||
 		    startswith(nvram_safe_get("sb/1/macaddr"), "00:90:4")) {
-			char mac[20];
+			char mac[32];
 			strcpy(mac, nvram_safe_get("et0macaddr"));
 			MAC_ADD(mac);
 			MAC_ADD(mac);
@@ -1603,7 +1603,7 @@ void start_sysinit(void)
 		if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr")) ||
 		    startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C") || !sv_valid_hwaddr(nvram_safe_get("sb/1/macaddr")) ||
 		    startswith(nvram_safe_get("sb/1/macaddr"), "00:90:4C")) {
-			char mac[20];
+			char mac[32];
 			strcpy(mac, nvram_safe_get("et0macaddr"));
 			MAC_ADD(mac);
 			MAC_ADD(mac);
@@ -1817,7 +1817,7 @@ void start_sysinit(void)
 		if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr")) ||
 		    startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C") || !sv_valid_hwaddr(nvram_safe_get("sb/1/macaddr")) ||
 		    startswith(nvram_safe_get("sb/1/macaddr"), "00:90:4C")) {
-			char mac[20];
+			char mac[32];
 			strcpy(mac, nvram_safe_get("et0macaddr"));
 			MAC_ADD(mac);
 			MAC_ADD(mac);
@@ -2267,7 +2267,7 @@ void start_sysinit(void)
 		if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr")) ||
 		    startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C") || !sv_valid_hwaddr(nvram_safe_get("sb/1/macaddr")) ||
 		    startswith(nvram_safe_get("sb/1/macaddr"), "00:90:4C")) {
-			char mac[20];
+			char mac[32];
 
 			strcpy(mac, nvram_safe_get("et0macaddr"));
 			MAC_ADD(mac);
@@ -2347,7 +2347,7 @@ void start_sysinit(void)
 		set_gpio(7, 0);
 
 		if (!nvram_exists("pci/1/1/macaddr") || !nvram_exists("pci/1/3/macaddr")) {
-			char mac[20];
+			char mac[32];
 
 			strcpy(mac, nvram_safe_get("et0macaddr"));
 			MAC_ADD(mac);
@@ -2582,7 +2582,7 @@ void start_sysinit(void)
 		if (!nvram_matchi("bootnv_ver", 6)) {
 			if (startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C") ||
 			    startswith(nvram_safe_get("pci/1/2/macaddr"), "00:90:4C")) {
-				char mac[20];
+				char mac[32];
 				strcpy(mac, nvram_safe_get("et0macaddr"));
 				MAC_ADD(mac);
 				MAC_ADD(mac);
@@ -2604,7 +2604,7 @@ void start_sysinit(void)
 			nvram_set("vlan1ports", "4 3 2 1 8*");
 		if (startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C") ||
 		    startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4c")) {
-			char mac[20];
+			char mac[32];
 			strcpy(mac, nvram_safe_get("et0macaddr"));
 			MAC_ADD(mac);
 			MAC_ADD(mac);
@@ -2753,7 +2753,7 @@ void start_sysinit(void)
 	if (!nvram_exists("il0macaddr"))
 		need_reboot = 1;
 
-	char mac[20];
+	char mac[32];
 
 	if (nvram_matchi("port_swap", 1))
 		strcpy(mac, nvram_safe_get("et1macaddr"));

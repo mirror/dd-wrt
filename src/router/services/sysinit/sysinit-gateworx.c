@@ -215,7 +215,7 @@ void start_sysinit(void)
 
 		fseek(file, 0x422, SEEK_SET);
 		fread(&buf[0], 6, 1, file);
-		char mac[20];
+		char mac[32];
 		unsigned int copy[20];
 
 		for (i = 0; i < 6; i++)
@@ -250,7 +250,7 @@ void start_sysinit(void)
 		unsigned char buf[20];
 
 		fread(&buf[0], 16, 1, file);
-		char mac[20];
+		char mac[32];
 
 		unsigned int copy[20];
 		int i;
@@ -306,7 +306,7 @@ void start_sysinit(void)
 
 			fseek(file, 0x1f810, SEEK_SET);
 			fread(&buf[0], 6, 1, file);
-			char mac[20];
+			char mac[32];
 			int i;
 
 			unsigned int copy[20];

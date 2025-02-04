@@ -1954,7 +1954,7 @@ void start_restore_defaults(void)
 	char *et0mac = nvram_safe_get("et0macaddr");
 	char *et1mac = nvram_safe_get("et1macaddr");
 
-	// unsigned char mac[20];
+	// unsigned char mac[32];
 	// if (getRouterBrand () == ROUTER_BUFFALO_WZRG144NH)
 	// {
 	// if (nvram_get ("il0macaddr") == NULL)

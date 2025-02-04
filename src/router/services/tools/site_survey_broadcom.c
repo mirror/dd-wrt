@@ -535,7 +535,7 @@ int site_survey_main(int argc, char *argv[])
 	unsigned char buf[10000];
 	wl_scan_results_t *scan_res = (wl_scan_results_t *)buf;
 	wl_bss_info_t *bss_info;
-	unsigned char mac[20];
+	char mac[32];
 	int i;
 	char *dev = name;
 

@@ -687,7 +687,7 @@ void reset_hwaddr(char *ifname)
 
 void start_lan(void)
 {
-	char mac[20];
+	char mac[32];
 	int s;
 	struct ifreq ifr;
 #ifdef HAVE_DHDAP
@@ -2104,7 +2104,7 @@ void start_lan(void)
 	config_macs(wl_face);
 #endif
 	if (getSTA()) {
-		char mac[20];
+		char mac[32];
 
 		getWANMac(mac);
 
@@ -2936,6 +2936,7 @@ static void vdsl_fuckup(char *ifname)
 void run_wan(int status)
 {
 	FILE *fp;
+	char mac[32];
 	char wan_if_buffer[33];
 	char *wan_ifname = safe_get_wan_face(wan_if_buffer);
 	char *wan_proto = nvram_safe_get("wan_proto");
@@ -3037,7 +3038,6 @@ void run_wan(int status)
 		wlifname = getWET();
 	}
 
-	char mac[20];
 
 	if (nvram_matchi("mac_clone_enable", 1) && nvram_invmatch("def_hwaddr", "00:00:00:00:00:00") &&
 	    nvram_invmatch("def_hwaddr", "")) {

@@ -183,7 +183,7 @@ int site_survey_main_11n(int argc, char *argv[]);
 int site_survey_main(int argc, char *argv[])
 {
 	char *name = nvram_safe_get("wl0_ifname");
-	unsigned char mac[20];
+	char mac[32];
 	int i = 0;
 	char *dev = name;
 

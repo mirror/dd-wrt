@@ -115,7 +115,7 @@ static const char *ieee80211_ntoa(const uint8_t mac[IEEE80211_ADDR_LEN])
 int site_survey_main(int argc, char *argv[])
 {
 	char *name = nvram_safe_get("wl0_ifname");
-	unsigned char mac[20];
+	char mac[32];
 	int i = 0;
 	char *dev = name;
 

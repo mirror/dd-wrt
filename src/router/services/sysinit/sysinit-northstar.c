@@ -5269,7 +5269,7 @@ void start_sysinit(void)
 			    startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C") ||
 			    !sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr")) ||
 			    startswith(nvram_safe_get("pci/2/1/macaddr"), "00:90:4C")) {
-				char mac[20];
+				char mac[32];
 				strcpy(mac, nvram_safe_get("et0macaddr"));
 				MAC_ADD(mac);
 				MAC_ADD(mac);
@@ -5303,7 +5303,7 @@ void start_sysinit(void)
 	case ROUTER_NETGEAR_R6250:
 
 		if (!nvram_exists("pci/1/1/ddwrt")) {
-			char mac[20];
+			char mac[32];
 			strcpy(mac, nvram_safe_get("et0macaddr"));
 			MAC_ADD(mac);
 			MAC_ADD(mac);
@@ -5339,7 +5339,7 @@ void start_sysinit(void)
 			    startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C") ||
 			    !sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr")) ||
 			    startswith(nvram_safe_get("pci/2/1/macaddr"), "00:90:4C")) {
-				char mac[20];
+				char mac[32];
 				strcpy(mac, nvram_safe_get("et0macaddr"));
 				MAC_ADD(mac);
 				MAC_ADD(mac);
@@ -5377,7 +5377,7 @@ void start_sysinit(void)
 			    startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C") ||
 			    !sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr")) ||
 			    startswith(nvram_safe_get("pci/2/1/macaddr"), "00:90:4C")) {
-				char mac[20];
+				char mac[32];
 				strcpy(mac, nvram_safe_get("et0macaddr"));
 				MAC_ADD(mac);
 				MAC_ADD(mac);
@@ -5423,7 +5423,7 @@ void start_sysinit(void)
 			    startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C") ||
 			    !sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr")) ||
 			    startswith(nvram_safe_get("pci/2/1/macaddr"), "00:90:4C")) {
-				char mac[20];
+				char mac[32];
 				strcpy(mac, nvram_safe_get("et0macaddr"));
 				MAC_ADD(mac);
 				MAC_ADD(mac);
@@ -5459,7 +5459,7 @@ void start_sysinit(void)
 		if (!nvram_exists("0:ddwrt")) {
 			if (!sv_valid_hwaddr(nvram_safe_get("0:macaddr")) || startswith(nvram_safe_get("0:macaddr"), "00:90:4C") ||
 			    !sv_valid_hwaddr(nvram_safe_get("1:macaddr")) || startswith(nvram_safe_get("1:macaddr"), "00:90:4C")) {
-				char mac[20];
+				char mac[32];
 				strcpy(mac, nvram_safe_get("et0macaddr"));
 				MAC_ADD(mac);
 				MAC_ADD(mac);
@@ -5486,7 +5486,7 @@ void start_sysinit(void)
 		break;
 	case ROUTER_NETGEAR_R8000:
 		if (!nvram_exists("0:ddwrt")) {
-			char mac[20];
+			char mac[32];
 			strcpy(mac, nvram_safe_get("et2macaddr"));
 			MAC_ADD(mac);
 			MAC_ADD(mac);
@@ -5516,7 +5516,7 @@ void start_sysinit(void)
 		break;
 	case ROUTER_NETGEAR_R8500:
 		if (!nvram_exists("0:ddwrt")) {
-			char mac[20];
+			char mac[32];
 			strcpy(mac, nvram_safe_get("et2macaddr"));
 			MAC_ADD(mac);
 			MAC_ADD(mac);
@@ -5549,7 +5549,7 @@ void start_sysinit(void)
 		break;
 	case ROUTER_NETGEAR_R7000P:
 		if (!nvram_exists("0:ddwrt")) {
-			char mac[20];
+			char mac[32];
 			strcpy(mac, nvram_safe_get("et0macaddr"));
 			MAC_ADD(mac);
 			MAC_ADD(mac);

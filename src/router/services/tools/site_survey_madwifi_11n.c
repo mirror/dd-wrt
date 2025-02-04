@@ -236,7 +236,7 @@ int site_survey_main_11n(int argc, char *argv[])
 {
 	site_survey_lists = calloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1);
 	char *name = nvram_safe_get("wl0_ifname");
-	unsigned char mac[20];
+	char mac[32];
 	int i = 0, c;
 	char *dev = name;
 

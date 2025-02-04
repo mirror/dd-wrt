@@ -532,8 +532,7 @@ void start_setup_vlans(void)
 		memset(portsettings[i], 0, 32);
 	}
 	char tagged[18];
-	unsigned char mac[20];
-	;
+	char mac[32];
 	struct ifreq ifr;
 	char *phy = getPhyDev();
 

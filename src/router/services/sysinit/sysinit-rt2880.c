@@ -102,7 +102,7 @@ void start_sysinit(void)
 	else
 		in = fopen("/dev/mtdblock/2", "rb");
 
-	unsigned char mac[32];
+	char mac[32];
 	if (in != NULL) {
 		if (brand == ROUTER_DIR810L)
 			fseek(in, 0x28, SEEK_SET);
@@ -405,7 +405,7 @@ void start_sysinit(void)
 #endif
 #if defined(HAVE_RT10N) || defined(HAVE_F5D8235) || defined(HAVE_RT15N) || defined(HAVE_WCRGN) && !defined(HAVE_HAMEA15)
 	FILE *in = fopen("/dev/mtdblock/2", "rb");
-	unsigned char mac[32];
+	char mac[32];
 	if (in != NULL) {
 		fseek(in, 4, SEEK_SET);
 		fread(mac, 6, 1, in);

@@ -97,7 +97,7 @@ void start_sysinit(void)
 
 		fseek(file, 0x5ffa0, SEEK_SET); // point of mac address
 		fread(&buf[0], 6, 1, file);
-		char mac[20];
+		char mac[32];
 
 		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]);
 		fprintf(stderr, "configure primary mac %s\n", mac);

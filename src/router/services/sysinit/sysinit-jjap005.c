@@ -74,7 +74,7 @@ void start_sysinit(void)
 		fseek(fp, DDMACOFFSET, SEEK_SET);
 		unsigned char buf[20];
 		fread(&buf[0], 6, 1, fp);
-		char mac[20];
+		char mac[32];
 		int i;
 		unsigned int copy[20];
 		for (i = 0; i < 12; i++)
