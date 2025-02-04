@@ -15,7 +15,7 @@
 #include <upnp.h>
 
 #include <stdlib.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 
 /*
  * Change PresentationURL to specific interface IP address.
