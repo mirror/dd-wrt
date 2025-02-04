@@ -33,7 +33,7 @@
 #include <sys/mman.h>
 #include <malloc.h>
 #include <bcmtypedefs.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <nvram_convert.h>
 
 /* Globals */

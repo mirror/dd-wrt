@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 
 int main(int argc, char *argv[])
 {

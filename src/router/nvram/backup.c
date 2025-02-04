@@ -34,7 +34,7 @@
 
 #include <bcmtypedefs.h>
 //#include <netconf.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 //#include <shutils.h>
 //#include <utils.h>
 #define NVROUTER "DD_BOARD"

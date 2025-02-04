@@ -26,7 +26,7 @@
 
 #define FROM_NVRAM
 #include <bcmtypedefs.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <nvram_convert.h>
 #include <malloc.h>
