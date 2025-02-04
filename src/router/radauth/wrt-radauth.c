@@ -28,7 +28,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <wlutils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 //#include <net/ethernet.h>
 
 #include <unistd.h>
