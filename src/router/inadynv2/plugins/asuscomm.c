@@ -35,7 +35,7 @@
 #include <arpa/inet.h>
 
 #ifdef ASUSWRT
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #endif
 
 #define ASUSDDNS_IP_SERVER "ns1.asuscomm.com"
