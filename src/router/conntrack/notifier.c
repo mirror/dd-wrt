@@ -24,7 +24,7 @@
 #include <malloc.h>
 #include <stdlib.h>
 #include <string.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <utils.h>
 #include <unistd.h>
 
