@@ -48,7 +48,7 @@
 // #include <net/ethernet.h>
 
 /* nvram */
-#include <bcmnvram.h>
+#include <ddnvram.h>
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
