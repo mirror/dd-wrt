@@ -9,11 +9,11 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: bcmnvram.h,v 1.12 2004/08/29 16:30:18 honor Exp $
+ * $Id: ddnvram.h,v 1.12 2004/08/29 16:30:18 honor Exp $
  */
 
-#ifndef _bcmnvram_h_
-#define _bcmnvram_h_
+#ifndef _ddnvram_h_
+#define _ddnvram_h_
 
 #ifndef _LANGUAGE_ASSEMBLY
 
@@ -219,4 +219,4 @@ extern int write_nvram(char *name, char *nv);
 #define NVRAM_MAX_VALUE_LEN 255
 #define NVRAM_MAX_PARAM_LEN 64
 
-#endif /* _bcmnvram_h_ */
+#endif /* _ddnvram_h_ */

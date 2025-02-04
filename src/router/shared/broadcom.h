@@ -3,7 +3,7 @@
 
 #include <httpd.h>
 #include <typedefs.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <code_pattern.h>
 #include <cy_conf.h>
