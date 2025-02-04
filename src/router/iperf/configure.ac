@@ -25,7 +25,7 @@
 
 # Initialize the autoconf system for the specified tool, version and mailing list
 AC_PREREQ([2.00])
-AC_INIT([iperf],[3.17.1],[https://github.com/esnet/iperf],[iperf],[https://software.es.net/iperf/])
+AC_INIT([iperf],[3.18],[https://github.com/esnet/iperf],[iperf],[https://software.es.net/iperf/])
 m4_include([config/ax_check_openssl.m4])
 m4_include([config/iperf_config_static_bin.m4])
 AC_LANG(C)
@@ -340,6 +340,15 @@ fi
 AC_SEARCH_LIBS(clock_gettime, [rt posix4])
 # Check for clock_gettime support
 AC_CHECK_FUNCS([clock_gettime])
+
+# Check if we need -lrt for nanosleep
+AC_SEARCH_LIBS(nanosleep, [rt posix4])
+# Check for nanosleep support
+AC_CHECK_FUNCS([nanosleep])
+# Check if we need -lrt for clock_nanosleep
+AC_SEARCH_LIBS(clock_nanosleep, [rt posix4])
+# Check for clock_nanosleep support
+AC_CHECK_FUNCS([clock_nanosleep])
 
 AC_CONFIG_FILES([Makefile src/Makefile src/version.h examples/Makefile iperf3.spec])
 AC_OUTPUT

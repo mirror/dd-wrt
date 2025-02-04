@@ -145,7 +145,6 @@ create_socket(int domain, int proto, const char *local, const char *bind_dev, in
     if ((gerror = getaddrinfo(server, portstr, &hints, &server_res)) != 0) {
 	if (local)
 	    freeaddrinfo(local_res);
-        freeaddrinfo(server_res);
         return -1;
     }
 
@@ -453,6 +452,33 @@ Nread(int fd, char *buf, size_t count, int prot)
     return count - nleft;
 }
 
+/********************************************************************/
+/* reads 'count' bytes from a socket - but without using select()   */
+/********************************************************************/
+int
+Nread_no_select(int fd, char *buf, size_t count, int prot)
+{
+    register ssize_t r;
+    register size_t nleft = count;
+
+    while (nleft > 0) {
+        r = read(fd, buf, nleft);
+        if (r < 0) {
+            /* XXX EWOULDBLOCK can't happen without non-blocking sockets */
+            if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK)
+                break;
+            else
+                return NET_HARDERROR;
+        } else if (r == 0)
+            break;
+
+        nleft -= r;
+        buf += r;
+
+    }
+    return count - nleft;
+}
+
 
 /*
  *                      N W R I T E
@@ -474,12 +500,14 @@ Nwrite(int fd, const char *buf, size_t count, int prot)
                     /* XXX EWOULDBLOCK can't happen without non-blocking sockets */
 		case EWOULDBLOCK:
 #endif
+		if (count == nleft)
+		    return NET_SOFTERROR;
 		return count - nleft;
 
-		case ENOBUFS:
-		return NET_SOFTERROR;
+                case ENOBUFS :
+                return NET_SOFTERROR;
 
-		default:
+                default:
 		return NET_HARDERROR;
 	    }
 	} else if (r == 0)

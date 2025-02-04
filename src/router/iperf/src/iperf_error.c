@@ -60,11 +60,11 @@ iperf_err(struct iperf_test *test, const char *format, ...)
     if (test != NULL && test->json_output && test->json_top != NULL)
 	cJSON_AddStringToObject(test->json_top, "error", str);
     else {
-        if (pthread_mutex_lock(&(test->print_mutex)) != 0) {
+        if (test != NULL && pthread_mutex_lock(&(test->print_mutex)) != 0) {
             perror("iperf_err: pthread_mutex_lock");
         }
 
-	if (test && test->outfile && test->outfile != stdout) {
+	if (test != NULL && test->outfile != NULL && test->outfile != stdout) {
 	    if (ct) {
 		fprintf(test->outfile, "%s", ct);
 	    }
@@ -77,7 +77,7 @@ iperf_err(struct iperf_test *test, const char *format, ...)
 	    fprintf(stderr, "iperf3: %s\n", str);
 	}
 
-        if (pthread_mutex_unlock(&(test->print_mutex)) != 0) {
+        if (test != NULL && pthread_mutex_unlock(&(test->print_mutex)) != 0) {
             perror("iperf_err: pthread_mutex_unlock");
         }
 
@@ -99,7 +99,7 @@ iperf_errexit(struct iperf_test *test, const char *format, ...)
     if (test != NULL && test->timestamps) {
 	time(&now);
 	ltm = localtime(&now);
-	strftime(iperf_timestrerr, sizeof(iperf_timestrerr), "%c ", ltm);
+	strftime(iperf_timestrerr, sizeof(iperf_timestrerr), iperf_get_test_timestamp_format(test), ltm);
 	ct = iperf_timestrerr;
     }
 
@@ -213,7 +213,7 @@ iperf_strerror(int int_errno)
             snprintf(errstr, len, "this OS does not support sendfile");
             break;
         case IEOMIT:
-            snprintf(errstr, len, "bogus value for --omit");
+            snprintf(errstr, len, "bogus value for --omit (maximum = %d seconds)", MAX_OMIT_TIME);
             break;
         case IEUNIMP:
             snprintf(errstr, len, "an option you are trying to set is not implemented yet");
@@ -505,6 +505,9 @@ iperf_strerror(int int_errno)
             snprintf(errstr, len, "unable to create thread attributes");
             perr = 1;
             break;
+	case IEPTHREADSIGMASK:
+	    snprintf(errstr, len, "unable to change mask of blocked signals");
+	    break;
 	case IEPTHREADATTRDESTROY:
             snprintf(errstr, len, "unable to destroy thread attributes");
             perr = 1;

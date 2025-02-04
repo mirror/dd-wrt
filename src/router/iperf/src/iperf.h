@@ -83,6 +83,14 @@ typedef atomic_uint_fast64_t atomic_iperf_size_t;
 typedef unsigned int uint
 #endif // __vxworks or __VXWORKS__
 
+struct iperf_sctp_info
+{
+    long rtt;
+    long pmtu;
+    uint32_t wnd;
+    uint32_t cwnd;
+};
+
 struct iperf_interval_results
 {
     atomic_iperf_size_t bytes_transferred; /* bytes transferred in this interval */
@@ -107,6 +115,9 @@ struct iperf_interval_results
     /* Just placeholders, never accessed. */
     char *tcpInfo;
 #endif
+#if defined(HAVE_SCTP_H)
+    struct iperf_sctp_info sctp_info;
+#endif /* HAVE_SCTP_H */
     long interval_retrans;
     long snd_cwnd;
     long snd_wnd;
@@ -183,6 +194,7 @@ struct iperf_stream
     struct iperf_test* test;
 
     pthread_t thr;
+    int thread_created;
     int       done;
 
     /* configurable members */
@@ -426,6 +438,8 @@ struct iperf_test
 
 #define UDP_BUFFER_EXTRA 1024
 
+#define MAX_PARAMS_JSON_STRING 8 * 1024
+
 /* constants for command line arg sanity checks */
 #define MB (1024 * 1024)
 #define MAX_TCP_BUFFER (512 * MB)
@@ -437,6 +451,7 @@ struct iperf_test
 #define MIN_INTERVAL 0.1
 #define MAX_INTERVAL 60.0
 #define MAX_TIME 86400
+#define MAX_OMIT_TIME 600
 #define MAX_BURST 1000
 #define MAX_MSS (9 * 1024)
 #define MAX_STREAMS 128

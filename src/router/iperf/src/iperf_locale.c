@@ -163,7 +163,8 @@ const char usage_longstr[] = "Usage: iperf3 [-s|-c host] [options]\n"
                            "  -b, --bitrate #[KMG][/#]  target bitrate in bits/sec (0 for unlimited)\n"
                            "                            (default %d Mbit/sec for UDP, unlimited for TCP)\n"
                            "                            (optional slash and packet count for burst mode)\n"
-			   "  --pacing-timer #[KMG]     set the timing for pacing, in microseconds (default %d)\n"
+			   "  --pacing-timer #[KMG]     set the Server timing for pacing, in microseconds (default %d)\n"
+                           "                            (deprecated - for servers using older versions ackward compatibility)\n"
 #if defined(HAVE_SO_MAX_PACING_RATE)
                            "  --fq-rate #[KMG]          enable fair-queuing based socket pacing in\n"
 			   "                            bits/sec (Linux only)\n"
@@ -293,10 +294,10 @@ const char test_start_time[] =
 "Starting Test: protocol: %s, %d streams, %d byte blocks, omitting %d seconds, %d second test, tos %d\n";
 
 const char test_start_bytes[] =
-"Starting Test: protocol: %s, %d streams, %d byte blocks, omitting %d seconds, %llu bytes to send, tos %d\n";
+"Starting Test: protocol: %s, %d streams, %d byte blocks, omitting %d seconds, %"PRIuFAST64" bytes to send, tos %d\n";
 
 const char test_start_blocks[] =
-"Starting Test: protocol: %s, %d streams, %d byte blocks, omitting %d seconds, %d blocks to send, tos %d\n";
+"Starting Test: protocol: %s, %d streams, %d byte blocks, omitting %d seconds, %"PRIuFAST64" bytes to send, tos %d\n";
 
 
 /* -------------------------------------------------------------------
@@ -310,10 +311,10 @@ const char report_connecting[] =
 "Connecting to host %s, port %d\n";
 
 const char report_authentication_succeeded[] =
-"Authentication succeeded for user '%s' ts %ld\n";
+"Authentication succeeded for user '%s' ts %" PRIu64 "\n";
 
 const char report_authentication_failed[] =
-"Authentication failed with return code %d for user '%s' ts %ld\n";
+"Authentication failed with return code %d for user '%s' ts %" PRIu64 "\n";
 
 const char report_reverse[] =
 "Reverse mode, remote host %s is sending\n";
@@ -382,10 +383,10 @@ const char report_bw_format[] =
 "[%3d]%s %6.2f-%-6.2f sec  %ss  %ss/sec                  %s\n";
 
 const char report_bw_retrans_format[] =
-"[%3d]%s %6.2f-%-6.2f sec  %ss  %ss/sec  %3u             %s\n";
+"[%3d]%s %6.2f-%-6.2f sec  %ss  %ss/sec  %3ld            %s\n";
 
 const char report_bw_retrans_cwnd_format[] =
-"[%3d]%s %6.2f-%-6.2f sec  %ss  %ss/sec  %3u   %ss       %s\n";
+"[%3d]%s %6.2f-%-6.2f sec  %ss  %ss/sec  %3ld   %ss       %s\n";
 
 const char report_bw_udp_format[] =
 "[%3d]%s %6.2f-%-6.2f sec  %ss  %ss/sec  %5.3f ms  %" PRId64 "/%" PRId64 " (%.2g%%)  %s\n";
@@ -403,7 +404,7 @@ const char report_sum_bw_format[] =
 "[SUM]%s %6.2f-%-6.2f sec  %ss  %ss/sec                  %s\n";
 
 const char report_sum_bw_retrans_format[] =
-"[SUM]%s %6.2f-%-6.2f sec  %ss  %ss/sec  %3d             %s\n";
+"[SUM]%s %6.2f-%-6.2f sec  %ss  %ss/sec  %3"PRId64"             %s\n";
 
 const char report_sum_bw_udp_format[] =
 "[SUM]%s %6.2f-%-6.2f sec  %ss  %ss/sec  %5.3f ms  %" PRId64 "/%" PRId64 " (%.2g%%)  %s\n";
@@ -420,7 +421,7 @@ const char report_outoforder[] =
 "[%3d]%s %4.1f-%4.1f sec  %d datagrams received out-of-order\n";
 
 const char report_sum_outoforder[] =
-"[SUM]%s %4.1f-%4.1f sec  %d datagrams received out-of-order\n";
+"[SUM]%s %4.1f-%4.1f sec  %"PRIu64" datagrams received out-of-order\n";
 
 const char report_peer[] =
 "[%3d] local %s port %u connected with %s port %u\n";
