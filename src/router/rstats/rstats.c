@@ -19,7 +19,7 @@
 #include <stdint.h>
 #include <syslog.h>
 
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <utils.h>
 #include <shared.h>

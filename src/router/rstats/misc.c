@@ -17,7 +17,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include "shutils.h"
 #include "shared.h"
 #include "utils.h"
