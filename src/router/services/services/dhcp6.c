@@ -41,7 +41,7 @@
 #include <sys/types.h>
 #include <signal.h>
 
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <bcmconfig.h>
 #include <netconf.h>
 #include <shutils.h>

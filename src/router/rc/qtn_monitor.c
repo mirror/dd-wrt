@@ -29,7 +29,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <wlutils.h>
 #include <utils.h>

@@ -47,7 +47,7 @@
 #include <netdb.h>
 #include <utils.h>
 #include <wlutils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <disc.h>
 
 /* simply check for availability of the required filesystem tools */

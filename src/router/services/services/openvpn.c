@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/stat.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <syslog.h>
 #include <services.h>

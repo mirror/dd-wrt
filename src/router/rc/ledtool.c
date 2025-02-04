@@ -27,7 +27,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <netconf.h>
 #include <shutils.h>
 #include <wlutils.h>

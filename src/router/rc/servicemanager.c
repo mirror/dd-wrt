@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/mman.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <utils.h>
 
 #define SERVICE_MODULE "/lib/services.so"

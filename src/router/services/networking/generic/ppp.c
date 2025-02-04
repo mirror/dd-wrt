@@ -33,7 +33,7 @@
 #include <errno.h>
 #include <time.h>
 
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <netconf.h>
 #include <shutils.h>
 #include <rc.h>

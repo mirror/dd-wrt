@@ -40,7 +40,7 @@
 #include <net/if.h>
 #include <dirent.h>
 #include <sys/mman.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <utils.h>
 

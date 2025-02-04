@@ -44,7 +44,7 @@
 #include <dirent.h>
 #include <netdb.h>
 #include <utils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <revision.h>
 #include <shutils.h>
 #ifdef HAVE_SAMBA_SERVER

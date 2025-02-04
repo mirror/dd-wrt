@@ -24,7 +24,7 @@
 #include <string.h>
 #include <shutils.h>
 #include <utils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 
 #define YES 1
 #define NO 0

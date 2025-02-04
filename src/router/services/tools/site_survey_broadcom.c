@@ -26,7 +26,7 @@
 #include <signal.h>
 
 #include <typedefs.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <wlioctl.h>
 #include <wlutils.h>

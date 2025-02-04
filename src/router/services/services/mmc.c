@@ -20,7 +20,7 @@
  * $Id:
  */
 #ifdef HAVE_MMC
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <utils.h>
 #include <sys/mount.h>

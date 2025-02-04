@@ -27,7 +27,7 @@
 #include <utils.h>
 #include <wlutils.h>
 #include <errno.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 
 int isregistered_real(void);

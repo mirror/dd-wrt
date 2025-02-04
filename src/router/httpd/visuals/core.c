@@ -26,7 +26,7 @@
 #include <netdb.h>
 #include <utils.h>
 #include <wlutils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 
 void show_caption(webs_t wp, const char *class, const char *caption, const char *ext)
 {

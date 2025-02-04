@@ -25,7 +25,7 @@
 #include <utils.h>
 #include <shutils.h>
 #include <syslog.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 
 #include "libbridge.h"
 #include "libbridge_private.h"

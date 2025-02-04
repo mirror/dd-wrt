@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 // #include <snmp.h>
 #include <signal.h>

@@ -20,7 +20,7 @@
  * $Id:
  */
 #include <samba3.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <string.h>
 
 struct samba3_shareuser *getsamba3shareuser(const char *username)

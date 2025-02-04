@@ -35,7 +35,7 @@
 #include <sys/wait.h>
 
 #include <bcmdevs.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <netconf.h>
 #include <shutils.h>
 #include <utils.h>

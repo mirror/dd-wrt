@@ -19,7 +19,7 @@
  *
  * $Id:
  */
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <utils.h>
 #include <shutils.h>
 

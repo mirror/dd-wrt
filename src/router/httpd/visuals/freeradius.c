@@ -48,7 +48,7 @@
 #include <netdb.h>
 #include <utils.h>
 #include <wlutils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 
 EJ_VISIBLE void ej_show_certificate_status(webs_t wp, int argc, char_t **argv)
 {

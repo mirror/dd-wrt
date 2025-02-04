@@ -37,7 +37,7 @@
 #include <syslog.h>
 #include <wait.h>
 
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <netconf.h>
 #include <shutils.h>
 #include <rc.h>

@@ -28,7 +28,7 @@
 #include <errno.h>
 #include <shutils.h>
 #include <utils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 
 static int run_wiviz_main(int argc, char **argv)
 {

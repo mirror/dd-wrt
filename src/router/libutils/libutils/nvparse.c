@@ -27,7 +27,7 @@
 
 #include <typedefs.h>
 #include <netconf.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <nvparse.h>
 #include <utils.h>

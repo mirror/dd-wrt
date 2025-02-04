@@ -45,7 +45,7 @@
 #include <dirent.h>
 
 #include <epivers.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <mtd.h>
 #include <shutils.h>
 #include <rc.h>
@@ -60,7 +60,7 @@
 #include <cy_conf.h>
 // #include <mkfiles.h>
 #include <typedefs.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <wlutils.h>
 #include <cy_conf.h>

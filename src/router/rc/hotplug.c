@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <cy_conf.h>
 #include <rc.h>
 #include <shutils.h>

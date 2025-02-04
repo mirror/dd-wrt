@@ -10,7 +10,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <cy_conf.h>
 #include <rc.h>
 #include <shutils.h>

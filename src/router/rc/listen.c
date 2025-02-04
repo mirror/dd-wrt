@@ -48,7 +48,7 @@
 
 #include <utils.h>
 #include <shutils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <rc.h>
 
 // for PF_PACKET

@@ -25,7 +25,7 @@
 #include <string.h>
 
 #include <typedefs.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <utils.h>
 
 static int NVRAMSPACE;

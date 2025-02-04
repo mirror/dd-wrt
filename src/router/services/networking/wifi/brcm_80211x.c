@@ -20,7 +20,7 @@
  * $Id:
  */
 #include <stdio.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <utils.h>
 #include <shutils.h>
 void addbssid(FILE *fp, char *prefix)

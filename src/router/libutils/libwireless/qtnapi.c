@@ -26,7 +26,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <wlioctl.h>
 #include <wlutils.h>
 

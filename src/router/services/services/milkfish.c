@@ -22,7 +22,7 @@
 #ifdef HAVE_MILKFISH
 #include <sys/stat.h>
 #include <stdlib.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <utils.h>
 #include <syslog.h>

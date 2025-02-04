@@ -47,7 +47,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <utils.h>
 #include <shutils.h>
 #include <utils.h>

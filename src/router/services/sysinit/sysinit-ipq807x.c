@@ -49,7 +49,7 @@
 #include <linux/sockios.h>
 #include <linux/mii.h>
 
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <utils.h>
 #include <ctype.h>

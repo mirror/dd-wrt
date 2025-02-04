@@ -23,7 +23,7 @@
 #ifdef HAVE_UDPXY
 #include <stdlib.h>
 #include <stdio.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <utils.h>
 #include <syslog.h>

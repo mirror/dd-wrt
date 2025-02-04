@@ -35,7 +35,7 @@
 #include <err.h>
 #include <shutils.h>
 #include <wlutils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 
 static int copy_essid(char buf[], size_t bufsize, const u_int8_t *essid, size_t essid_len)
 {

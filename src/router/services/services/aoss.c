@@ -21,7 +21,7 @@
  */
 #if defined(HAVE_AOSS) || defined(HAVE_WPS)
 #include <stdlib.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <utils.h>
 #include <syslog.h>

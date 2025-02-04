@@ -23,7 +23,7 @@
 #ifdef HAVE_PPPOESERVER
 #include <stdio.h>
 #include <signal.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <utils.h>
 #include <malloc.h>

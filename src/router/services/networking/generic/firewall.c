@@ -47,7 +47,7 @@
 #include <l7protocols.h>
 
 #ifndef DEVELOPE_ENV
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <rc.h>
 #include <code_pattern.h>

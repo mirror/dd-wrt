@@ -47,7 +47,7 @@
 #include <sys/socket.h>
 #include <linux/sockios.h>
 
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <bcmdevs.h>
 #include <shutils.h>
 #include <utils.h>

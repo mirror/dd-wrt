@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <string.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <utils.h>
 #include <rc.h>

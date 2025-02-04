@@ -21,7 +21,7 @@
  */
 #include <stdlib.h>
 #include <stdio.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <utils.h>
 #include <syslog.h>
@@ -72,7 +72,7 @@
 //#include <linux/ethtool.h>
 //#include <libbridge.h>
 
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <netconf.h>
 #include <shutils.h>
 #include <code_pattern.h>

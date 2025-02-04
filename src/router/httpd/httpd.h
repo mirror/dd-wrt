@@ -37,7 +37,7 @@ typedef char dd_atomic8_t;
 extern BIO *bio_err;
 #endif
 
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <utils.h>
 #if defined(linux)
 /* Use SVID search */

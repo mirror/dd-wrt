@@ -30,7 +30,7 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <net/ethernet.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 
 #include "wireless.h"
 #include "net80211/ieee80211.h"
@@ -135,7 +135,7 @@ void kick_mac(char *iface, char *mac)
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <net/ethernet.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <stdio.h>
 
 struct maclist {
@@ -195,7 +195,7 @@ void kick_mac(char *iface, char *mac)
 #include <wlutils.h>
 #include <wlioctl.h>
 
-#include <bcmnvram.h>
+#include <ddnvram.h>
 void set_maclist(char *iface, char *buf)
 {
 	wl_ioctl(iface, WLC_SET_MACLIST, buf, WLC_IOCTL_MAXLEN);

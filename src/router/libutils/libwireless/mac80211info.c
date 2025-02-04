@@ -21,7 +21,7 @@
 #include <fcntl.h>
 #include <stdbool.h>
 #include <glob.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <utils.h>
 #include <pthread.h>

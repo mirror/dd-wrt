@@ -38,7 +38,7 @@
 #include <utils.h>
 
 #include <typedefs.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 
 #ifndef __UCLIBC__
 /* Convenience types.  */

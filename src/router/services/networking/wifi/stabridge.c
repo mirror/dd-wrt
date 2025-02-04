@@ -33,7 +33,7 @@
 #include <unistd.h>
 #include <sys/sysinfo.h>
 
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <netconf.h>
 #include <shutils.h>
 #include <rc.h>

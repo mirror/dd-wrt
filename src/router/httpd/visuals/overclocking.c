@@ -48,7 +48,7 @@
 #include <netdb.h>
 #include <utils.h>
 #include <wlutils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 
 #ifdef HAVE_OVERCLOCKING
 #ifdef HAVE_HABANERO

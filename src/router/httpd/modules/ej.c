@@ -26,7 +26,7 @@
 #include <string.h>
 #include <dlfcn.h>
 #include <ctype.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <endian.h>
 #include <unistd.h>

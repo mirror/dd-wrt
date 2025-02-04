@@ -32,7 +32,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <netconf.h>
 #include <shutils.h>
 #include <rc.h>

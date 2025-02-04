@@ -20,7 +20,7 @@
  * $Id:
  */
 
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <utils.h>
 
 #define GPIO_VOID 0xffff

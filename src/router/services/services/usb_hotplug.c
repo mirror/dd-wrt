@@ -30,7 +30,7 @@
 #include <typedefs.h>
 #include <shutils.h>
 #include <utils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <md5.h>
 
 static bool usb_ufd_connected(char *str);

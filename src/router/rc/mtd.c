@@ -56,7 +56,7 @@
 
 #include <trxhdr.h>
 #include <crc.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 
 #include <cy_conf.h>

@@ -20,7 +20,7 @@
  * $Id:
  */
 #include <dlna.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <string.h>
 
 #ifndef HAVE_SAMBA3

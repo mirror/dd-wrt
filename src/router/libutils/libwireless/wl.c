@@ -19,7 +19,7 @@
 #include <wlutils.h>
 #include <shutils.h>
 #include <utils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <syslog.h>
 #include <fcntl.h>
 #include <glob.h>

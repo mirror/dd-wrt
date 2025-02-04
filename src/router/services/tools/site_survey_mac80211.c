@@ -55,7 +55,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <ctype.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <wlutils.h>
 

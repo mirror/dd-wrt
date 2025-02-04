@@ -34,7 +34,7 @@
 #include <getopt.h>
 #include <err.h>
 #include <shutils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <utils.h>
 #include <wlutils.h>
 

@@ -45,7 +45,7 @@
 #include "rc.h"
 #include <cyutils.h>
 #include <revision.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 
 int isregistered_real(void);
 

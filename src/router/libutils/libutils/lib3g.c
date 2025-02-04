@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #include <shutils.h>
 #include <utils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <glob.h>
 #include <utils.h>
 

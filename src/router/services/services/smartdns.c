@@ -30,7 +30,7 @@
 #include <sys/stat.h>
 #include <syslog.h>
 #include <utils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <wlutils.h>
 #include <services.h>

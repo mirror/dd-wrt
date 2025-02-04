@@ -34,7 +34,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <shutils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 
 /*
  * to prevent bricks and other troubles you should use this tool only

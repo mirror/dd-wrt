@@ -30,7 +30,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 
 extern int http_post(const char *server, char *buf, size_t count);

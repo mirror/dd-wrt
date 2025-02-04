@@ -44,7 +44,7 @@
 #include <netdb.h>
 #include <utils.h>
 #include <wlutils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 
 #include "wireless_generic.c"
 

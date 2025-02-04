@@ -39,7 +39,7 @@
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <utils.h>
 

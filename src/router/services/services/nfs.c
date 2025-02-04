@@ -31,7 +31,7 @@
 #include <syslog.h>
 #include <signal.h>
 #include <utils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <services.h>
 #include <nfs.h>

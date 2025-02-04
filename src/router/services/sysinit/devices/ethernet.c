@@ -24,7 +24,7 @@
 #include <malloc.h>
 #include <shutils.h>
 #include <utils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 
 static char *pcidrivers[] = { "hv_netvsc",
 			      "vmxnet3",

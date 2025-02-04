@@ -27,7 +27,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <shutils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <utils.h>
 #include <sys/wait.h>
 

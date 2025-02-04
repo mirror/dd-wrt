@@ -22,7 +22,7 @@
 
 #include <utils.h>
 #include <stdlib.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 
 TIMEZONE_TO_TZSTRING allTimezones[] = { { "Africa/Abidjan", "GMT0" },
 					{ "Africa/Accra", "GMT0" },

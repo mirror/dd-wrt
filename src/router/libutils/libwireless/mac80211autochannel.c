@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <stdbool.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <utils.h>
 #include <pthread.h>
 

@@ -42,7 +42,7 @@
 #include <sys/utsname.h>
 #include <sys/wait.h>
 
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <utils.h>
 

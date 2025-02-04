@@ -22,7 +22,7 @@
 #define FROM_NVRAM
 #include <epivers.h>
 #include <string.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <utils.h>
 #include <typedefs.h>

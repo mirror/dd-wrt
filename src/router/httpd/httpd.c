@@ -68,7 +68,7 @@ static void send_authenticate(webs_t conn_fp);
 #include <syslog.h>
 #include <cy_conf.h>
 #include "httpd.h"
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <code_pattern.h>
 #include <utils.h>
 #include <shutils.h>

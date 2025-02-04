@@ -21,7 +21,7 @@
  */
 
 #ifdef HAVE_JFFS2
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <shutils.h>
 #include <utils.h>
 #include <sys/mount.h>

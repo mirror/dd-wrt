@@ -27,7 +27,7 @@
 #include <wlutils.h>
 #include <shutils.h>
 #include <utils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 //#include <math.h>
 
 #if (defined(HAVE_RT2880) || defined(HAVE_RT61)) && !defined(HAVE_MT76)

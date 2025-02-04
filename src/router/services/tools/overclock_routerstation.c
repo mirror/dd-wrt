@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <shutils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 
 int overclock(FILE *out, char *freq, int value)
 {

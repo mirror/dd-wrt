@@ -29,7 +29,7 @@
 #include <wlutils.h>
 #include <shutils.h>
 #include <utils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 
 #include <unistd.h>
 #include <sys/types.h>

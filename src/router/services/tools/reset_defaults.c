@@ -27,7 +27,7 @@
 #include <fcntl.h>
 #include <shutils.h>
 #include <wlutils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 
 extern struct nvram_param *load_defaults(void);
 extern void free_defaults(struct nvram_param *);

@@ -65,12 +65,6 @@ LDFLAGS += -lpthread
 endif
 endif
 
-ifeq ($(CONFIG_80211AC),y)
-BCFLAGS	= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall
-HCFLAGS	= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall
-BCFLAGS += -I. -I$(LINUXDIR)/brcm/$(ARCH)/common/include
-HCFLAGS += -I. -I$(LINUXDIR)/brcm/$(ARCH)/common/include
-endif
 
 COPTS += $(MIPS16_OPT) -D_GNU_SOURCE $(THUMB)
 
@@ -78,6 +72,12 @@ cc-option = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null \
              > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)
 COPTS +=$(call cc-option,-Werror=return-local-addr,)
 
+ifeq ($(CONFIG_80211AC),y)
+BCFLAGS	= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall
+HCFLAGS	= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall
+BCFLAGS += -I. -I$(LINUXDIR)/brcm/$(ARCH)/common/include
+HCFLAGS += -I. -I$(LINUXDIR)/brcm/$(ARCH)/common/include
+endif
 
 # -Werror=maybe-uninitialized -Werror=int-conversion -Werror=array-bounds
 
@@ -86,6 +86,7 @@ BCFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libi
 BCFLAGS  += -I$(TOP)/services/include $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections
 BCFLAGS  += -DARCH_$(ARCHITECTURE)
 BCFLAGS  += -DBUILD_YEAR="\"$(shell date +%Y)\""
+
 
 ifeq ($(CONFIG_DIST),"micro")
 #BCFLAGS += -DNEED_NOPRINTF

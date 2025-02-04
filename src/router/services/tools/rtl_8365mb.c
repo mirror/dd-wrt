@@ -22,7 +22,7 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 
 #include <utils.h>
 #include <shutils.h>

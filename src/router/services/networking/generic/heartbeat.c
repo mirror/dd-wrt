@@ -31,7 +31,7 @@
 #include <sys/types.h>
 
 #include <shutils.h>
-#include <bcmnvram.h>
+#include <ddnvram.h>
 #include <rc.h>
 #include <code_pattern.h>
 #include <cy_conf.h>
