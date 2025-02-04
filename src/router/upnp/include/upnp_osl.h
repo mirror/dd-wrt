@@ -24,6 +24,6 @@
 #endif
 #include "typedefs.h"
 
-#include <bcmnvram.h>
+#include <ddnvram.h>
 
 #endif /* __UPNP_OSL_H__ */
