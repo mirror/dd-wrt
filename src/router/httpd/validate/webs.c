@@ -848,13 +848,13 @@ void generate_wep_key_single(webs_t wp, char *prefix, char *passphrase, char *bi
 		char key4[27] = "";
 
 		for (i = 0; i < 5; i++)
-			snprintf(key1 + (i << 1), sizeof(key1) - (i << 1), "%02X", key64[0][i]);
+			snprintf(key1 + (i << 1), sizeof(key1) - (i << 1), "%02X", key64[0][i]&0xff);
 		for (i = 0; i < 5; i++)
-			snprintf(key2 + (i << 1), sizeof(key2) - (i << 1), "%02X", key64[1][i]);
+			snprintf(key2 + (i << 1), sizeof(key2) - (i << 1), "%02X", key64[1][i]&0xff);
 		for (i = 0; i < 5; i++)
-			snprintf(key3 + (i << 1), sizeof(key3) - (i << 1), "%02X", key64[2][i]);
+			snprintf(key3 + (i << 1), sizeof(key3) - (i << 1), "%02X", key64[2][i]&0xff);
 		for (i = 0; i < 5; i++)
-			snprintf(key4 + (i << 1), sizeof(key4) - (i << 1), "%02X", key64[3][i]);
+			snprintf(key4 + (i << 1), sizeof(key4) - (i << 1), "%02X", key64[3][i]&0xff);
 
 		snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:%s", passphrase, key1, key2, key3, key4, tx);
 		// nvram_set("wl_wep_gen_64",buf);
@@ -872,19 +872,19 @@ void generate_wep_key_single(webs_t wp, char *prefix, char *passphrase, char *bi
 		char key4[27] = "";
 
 		for (i = 0; i < 13; i++)
-			snprintf(key1 + (i << 1), sizeof(key1) - (i << 1), "%02X", key128[0][i]);
+			snprintf(key1 + (i << 1), sizeof(key1) - (i << 1), "%02X", key128[0][i]&0xff);
 		key1[26] = 0;
 
 		for (i = 0; i < 13; i++)
-			snprintf(key2 + (i << 1), sizeof(key2) - (i << 1), "%02X", key128[1][i]);
+			snprintf(key2 + (i << 1), sizeof(key2) - (i << 1), "%02X", key128[1][i]&0xff);
 		key2[26] = 0;
 
 		for (i = 0; i < 13; i++)
-			snprintf(key3 + (i << 1), sizeof(key3) - (i << 1), "%02X", key128[2][i]);
+			snprintf(key3 + (i << 1), sizeof(key3) - (i << 1), "%02X", key128[2][i]&0xff);
 		key3[26] = 0;
 
 		for (i = 0; i < 13; i++)
-			snprintf(key4 + (i << 1), sizeof(key4) - (i << 1), "%02X", key128[3][i]);
+			snprintf(key4 + (i << 1), sizeof(key4) - (i << 1), "%02X", key128[3][i]&0xff);
 		key4[26] = 0;
 		// filter_name(passphrase, new_passphrase, sizeof(new_passphrase),
 		// SET);
@@ -6263,7 +6263,7 @@ char *request_freedns(char *user, char *password)
 	int i;
 
 	for (i = 0; i < 20; i++)
-		sprintf(request, "%s%02x", request, final[i]);
+		sprintf(request, "%s%02x", request, final[i]&0xff);
 	unlink("/tmp/.hash");
 	char url[128];
 	snprintf(url, sizeof(url), "http://freedns.afraid.org/api/?action=getdyndns&sha=%s", request);

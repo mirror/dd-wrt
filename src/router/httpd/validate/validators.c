@@ -1340,10 +1340,10 @@ EJ_VISIBLE void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
 #endif
 		if (strlen(mac) == 12) {
 			sscanf(mac, "%02X%02X%02X%02X%02X%02X", &m[0], &m[1], &m[2], &m[3], &m[4], &m[5]);
-			sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", m[0], m[1], m[2], m[3], m[4], m[5]);
+			sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", m[0]&0xff, m[1]&0xff, m[2]&0xff, m[3]&0xff, m[4]&0xff, m[5]&0xff);
 		} else if (strlen(mac) == 17) {
 			sscanf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", &m[0], &m[1], &m[2], &m[3], &m[4], &m[5]);
-			sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", m[0], m[1], m[2], m[3], m[4], m[5]);
+			sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", m[0]&0xff, m[1]&0xff, m[2]&0xff, m[3]&0xff, m[4]&0xff, m[5]&0xff);
 		} else {
 			mac1[0] = 0;
 		}
@@ -2932,7 +2932,7 @@ EJ_VISIBLE void validate_filter_mac_grp(webs_t wp, char *value, struct variable 
 					h = (unsigned char)strtoul(hex, NULL, 16);
 					if (*(mac1))
 						snprintf(mac1 + strlen(mac1), sizeof(mac1) - strlen(mac1), ":");
-					snprintf(mac1 + strlen(mac1), sizeof(mac1) - strlen(mac1), "%02X", h);
+					snprintf(mac1 + strlen(mac1), sizeof(mac1) - strlen(mac1), "%02X", h&0xff);
 					mac += 2;
 				}
 				mac1[17] = '\0';
