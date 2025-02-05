@@ -2715,35 +2715,19 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 			ctrl = last;
 			if (ctrl == 0)
 				goto skip;
-			if (!nvram_match(wmode, "mesh") && !nvram_match(wmode, "infra")) {
-				/* do not start hostapd before wpa_supplicant in mesh mode, it will fail to initialize the ap interface once mesh is running */
-				sprintf(fstr, "/tmp/%s_hostap.conf", dev);
-				char *fstrarr[2] = { fstr, NULL };
-				do_hostapd(fstrarr, dev);
-			}
+			sprintf(fstr, "/tmp/%s_hostap.conf", dev);
+			configs[*configidx] = strdup(fstr);
+			configidx[0]++;
+			configs[*configidx] = NULL;
 			sprintf(ctrliface, "/var/run/hostapd/%s.%d", dev, ctrl);
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
-			if (!nvram_match(wmode, "mesh") && !nvram_match(wmode, "infra")) {
-				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") ||
-				     nvram_match(wmode, "wdsta_mtik") || wet) &&
-				    nvram_matchi(bridged, 1))
-					log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background, "-Dnl80211",
-						 subinterface, "-H", ctrliface, "-c", fstr);
-				else
-					log_eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-H",
-						 ctrliface, "-c", fstr);
-			} else {
+			if (nvram_match(wmode, "mesh") || nvram_match(wmode, "infra")) {
 				/* for mesh mode we dont need ctrl interface since it has a static channel configuration */
 				if (nvram_matchi(bridged, 1))
 					log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background, "-Dnl80211",
 						 subinterface, "-c", fstr);
 				else
 					log_eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-c", fstr);
-				/* now start hostapd once wpa_supplicant has been started */
-				sprintf(fstr, "/tmp/%s_hostap.conf", dev);
-				configs[*configidx] = strdup(fstr);
-				configidx[0]++;
-				configs[*configidx] = NULL;
 			}
 		} else {
 skip:;
@@ -2776,14 +2760,26 @@ void post_hostapd_actions(int count)
 	char wif[10];
 	char power[32];
 	char wifivifs[32];
+	char ctrliface[32] = "";
+	char wmode[32];
+	char bridged[32];
+
 	sprintf(wif, "phy%d", get_ath9k_phy_idx(count));
 
 	sprintf(wl, "wlan%d_mode", count);
 	char *apm = nvram_safe_get(wl);
 
 	sprintf(dev, "wlan%d", count);
+	sprintf(wmode, "%s_mode", dev);
 	sprintf(power, "%s_txpwrdbm", dev);
+	sprintf(bridged, "%s_bridged", dev);
 	sprintf(wifivifs, "%s_vifs", dev);
+	int wet = 0;
+#ifndef HAVE_RELAYD
+	wet = nvram_match(wmode, "wet");
+#endif
+	char pid[64];
+	sprintf(pid, "/var/run/%s_wpa_supplicant.pid", dev);
 	vifs = nvram_safe_get(wifivifs);
 	int debug = nvram_ngeti("%s_wpa_debug", dev);
 	char *background = "-B";
@@ -2796,6 +2792,35 @@ void post_hostapd_actions(int count)
 		background = "-Bddds";
 	if (has_ad(dev))
 		sprintf(dev, "giwifi0");
+
+	if (*vifs) {
+		int ctrl = 0;
+		int last = 0;
+		foreach(var, vifs, next)
+		{
+			ctrl++;
+			if (nvram_nmatch("disabled", "%s_net_mode", var) || nvram_nmatch("disabled", "%s_mode", var))
+				continue;
+			last = ctrl;
+			if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var))
+				break;
+		}
+		ctrl = last;
+		if (ctrl == 0)
+			goto skip;
+		sprintf(ctrliface, "/var/run/hostapd/%s.%d", dev, ctrl);
+		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
+		if (!nvram_match(wmode, "mesh") && !nvram_match(wmode, "infra")) {
+			if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wdsta_mtik") || wet) && nvram_matchi(bridged, 1))
+				log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background, "-Dnl80211",
+					 subinterface, "-H", ctrliface, "-c", fstr);
+			else
+				log_eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-H", ctrliface, "-c",
+					 fstr);
+		}
+	}
+skip:;
+
 #ifdef HAVE_RELAYD
 	if (strcmp(apm, "sta") && strcmp(apm, "wet")) {
 #else
