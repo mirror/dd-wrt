@@ -220,7 +220,7 @@ void start_sysinit(void)
 
 		for (i = 0; i < 6; i++)
 			copy[i] = buf[i] & 0xff;
-		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0]&0xff, copy[1]&0xff, copy[2]&0xff, copy[3]&0xff, copy[4]&0xff, copy[5]&0xff);
 		fprintf(stderr, "configure IXP0 to %s\n", mac);
 		nvram_set("et0macaddr_safe", mac);
 		nvram_set("et0macaddr", mac);
@@ -229,7 +229,7 @@ void start_sysinit(void)
 		fread(&buf[6], 6, 1, file);
 		for (i = 0; i < 12; i++)
 			copy[i] = buf[i] & 0xff;
-		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6], copy[7], copy[8], copy[9], copy[10], copy[11]);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6]&0xff, copy[7]&0xff, copy[8]&0xff, copy[9]&0xff, copy[10]&0xff, copy[11]&0xff);
 		fprintf(stderr, "configure IXP1 to %s\n", mac);
 		set_hwaddr("ixp1", mac);
 		fclose(file);
@@ -257,11 +257,11 @@ void start_sysinit(void)
 
 		for (i = 0; i < 12; i++)
 			copy[i] = buf[i] & 0xff;
-		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0]&0xff, copy[1]&0xff, copy[2]&0xff, copy[3]&0xff, copy[4]&0xff, copy[5]&0xff);
 		nvram_set("et0macaddr_safe", mac);
 		nvram_set("et0macaddr", mac);
 		set_hwaddr("ixp0", mac);
-		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6], copy[7], copy[8], copy[9], copy[10], copy[11]);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6]&0xff, copy[7]&0xff, copy[8]&0xff, copy[9]&0xff, copy[10]&0xff, copy[11]&0xff);
 		set_hwaddr("ixp1", mac);
 
 		fclose(file);
@@ -314,7 +314,7 @@ void start_sysinit(void)
 			for (i = 0; i < 12; i++)
 				copy[i] = buf[i] & 0xff;
 
-			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0]&0xff, copy[1]&0xff, copy[2]&0xff, copy[3]&0xff, copy[4]&0xff, copy[5]&0xff);
 			fprintf(stderr, "configure IXP0 to %s\n", mac);
 			nvram_set("et0macaddr_safe", mac);
 			nvram_set("et0macaddr", mac);
@@ -323,7 +323,7 @@ void start_sysinit(void)
 			fread(&buf[6], 6, 1, file);
 			for (i = 0; i < 12; i++)
 				copy[i] = buf[i] & 0xff;
-			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6], copy[7], copy[8], copy[9], copy[10], copy[11]);
+			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6]&0xff, copy[7]&0xff, copy[8]&0xff, copy[9]&0xff, copy[10]&0xff, copy[11]&0xff);
 			fprintf(stderr, "configure IXP1 to %s\n", mac);
 			set_hwaddr("ixp1", mac);
 			eval("ifconfig", "ixp0", "0.0.0.0", "up");

@@ -76,7 +76,7 @@ static void run_on_mount(char *p)
 		dd_md5_end((unsigned char *)hash, &MD);
 		int i;
 		for (i = 0; i < size; i++)
-			sprintf(&shash[2 * i], "%02x", hash[i]);
+			sprintf(&shash[2 * i], "%02x", hash[i]&0xff);
 
 		if (!nvram_match("backup_hash", shash)) {
 			nvram_restore(path, 0);

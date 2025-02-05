@@ -65,7 +65,7 @@ void start_milkfish_boot(void)
 		int i;
 
 		for (i = 0; i < 16; i++)
-			sprintf(&request[2 * i], "%02x", hash[i]);
+			sprintf(&request[2 * i], "%02x", hash[i]&0xff);
 		nvram_set("milkfish_routerid", request);
 		nvram_seti("need_commit", 1);
 	}

@@ -1164,8 +1164,8 @@ void get_uuid(char *uuid_str)
 	sprintf(uuid_str,
 		"%02x%02x%02x%02x-%02x%02x-%02x%02x-"
 		"%02x%02x-%02x%02x%02x%02x%02x%02x",
-		bin[0], bin[1], bin[2], bin[3], bin[4], bin[5], bin[6], bin[7], bin[8], bin[9], bin[10], bin[11], bin[12], bin[13],
-		bin[14], bin[15]);
+		bin[0]&0xff, bin[1]&0xff, bin[2]&0xff, bin[3]&0xff, bin[4]&0xff, bin[5]&0xff, bin[6]&0xff, bin[7]&0xff, bin[8]&0xff, bin[9]&0xff, bin[10]&0xff, bin[11]&0xff, bin[12]&0xff, bin[13]&0xff,
+		bin[14]&0xff, bin[15]&0xff);
 }
 
 #endif
@@ -2559,8 +2559,8 @@ static void configure_single(int count, char **configs, int *configidx)
 			char cellidtemp[5];
 			bzero(cellidtemp, 5);
 			strncpy(cellidtemp, nvram_safe_get(ssid), 5);
-			sysprintf("iwconfig %s ap 02:%02x:%02x:%02x:%02x:%02x", dev, cellidtemp[0], cellidtemp[1], cellidtemp[2],
-				  cellidtemp[3], cellidtemp[4]);
+			sysprintf("iwconfig %s ap 02:%02x:%02x:%02x:%02x:%02x", dev, cellidtemp[0]&0xff, cellidtemp[1]&0xff, cellidtemp[2]&0xff,
+				  cellidtemp[3]&0xff, cellidtemp[4]&0xff);
 		}
 #endif
 	}

@@ -146,7 +146,7 @@ char *getMacAddr(char *ifname, char *mac, size_t len)
 
 	if (i < 0)
 		return NULL;
-	snprintf(mac, len, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0], hwbuff[1], hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
+	snprintf(mac, len, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0]&0xff, hwbuff[1]&0xff, hwbuff[2]&0xff, hwbuff[3]&0xff, hwbuff[4]&0xff, hwbuff[5]&0xff);
 	return mac;
 }
 
@@ -423,7 +423,7 @@ void run_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int leas
 			s_userclass = malloc(slen); // 5 bytes trailer, 2*string lenght for hex values + 1 zero termination
 			snprintf(s_userclass, slen, "0x4d:");
 			for (c = 0; c < strlen(userclass); c++) {
-				snprintf(s_userclass, slen, "%s%02X", s_userclass, userclass[c]);
+				snprintf(s_userclass, slen, "%s%02X", s_userclass, userclass[c]&0xff);
 			}
 			dhcp_argv[i++] = s_userclass;
 		}
