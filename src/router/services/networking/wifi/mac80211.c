@@ -1540,19 +1540,6 @@ static void setMacFilter(FILE *fp, char *iface)
 }
 int isregistered(void);
 
-static int ieee80211_aton(char *str, unsigned char mac[6])
-{
-	unsigned int addr[6];
-	int i;
-	if (sscanf(str, "%02x:%02x:%02x:%02x:%02x:%02x", &addr[0], &addr[1], &addr[2], &addr[3], &addr[4], &addr[5]) != 6)
-		return -1;
-	/*
-	 * sscanf needs an unsigned int, but mac address bytes cannot exceed 0xff
-	 */
-	for (i = 0; i < 6; i++)
-		mac[i] = addr[i] & 0xff;
-	return 0;
-}
 extern char *hostapd_eap_get_types(void);
 extern void addWPS(FILE *fp, const char *prefix, int configured);
 extern void setupHS20(FILE *fp, char *prefix);
@@ -1707,7 +1694,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		strcpy(macaddr, nvram_safe_get("def_whwaddr"));
 	} else {
 		char *wifimac = nvram_nget("%s_hwaddr", maininterface);
-		if (!*wifimac || ieee80211_aton(wifimac, hwbuff) < 0) {
+		if (!*wifimac || !ether_atoe(wifimac, hwbuff)) {
 			wl_hwaddr(maininterface, hwbuff);
 			sprintf(macaddr, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0], hwbuff[1], hwbuff[2], hwbuff[3], hwbuff[4],
 				hwbuff[5]);
