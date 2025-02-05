@@ -1983,7 +1983,7 @@ void start_restore_defaults(void)
 		nvram_default_get("ip_conntrack_max", "65536");
 	} else if (getmemfree() > (64 * 1024 * 1024)) {
 		nvram_default_get("ip_conntrack_max", "32768");
-	} else 
+	} else
 		nvram_default_get("ip_conntrack_max", "4096");
 #endif
 
@@ -2230,7 +2230,7 @@ void start_restore_defaults(void)
 	}
 	free_defaults(srouter_defaults);
 	if (restore_defaults)
-	    start_arch_defaults();
+		start_arch_defaults();
 
 	if (!*(nvram_safe_get("http_username")) || nvram_match("http_username", "admin")) {
 		char passout[MD5_OUT_BUFSIZE];

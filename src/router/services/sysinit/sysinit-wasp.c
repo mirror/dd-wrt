@@ -418,7 +418,8 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
-		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0]&0xff, copy[1]&0xff, copy[2]&0xff, copy[3]&0xff, copy[4]&0xff, copy[5]&0xff);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0] & 0xff, copy[1] & 0xff, copy[2] & 0xff, copy[3] & 0xff,
+			copy[4] & 0xff, copy[5] & 0xff);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		set_hwaddr("eth0", mac);
 	}
@@ -433,10 +434,12 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
-		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0]&0xff, copy[1]&0xff, copy[2]&0xff, copy[3]&0xff, copy[4]&0xff, copy[5]&0xff);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0] & 0xff, copy[1] & 0xff, copy[2] & 0xff, copy[3] & 0xff,
+			copy[4] & 0xff, copy[5] & 0xff);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		set_hwaddr("eth0", mac);
-		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6]&0xff, copy[7]&0xff, copy[8]&0xff, copy[9]&0xff, copy[10]&0xff, copy[11]&0xff);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6] & 0xff, copy[7] & 0xff, copy[8] & 0xff, copy[9] & 0xff,
+			copy[10] & 0xff, copy[11] & 0xff);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
 		set_hwaddr("eth1", mac);
 	}
@@ -450,7 +453,8 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
-		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0]&0xff, copy[1]&0xff, copy[2]&0xff, copy[3]&0xff, copy[4]&0xff, copy[5]&0xff);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0] & 0xff, copy[1] & 0xff, copy[2] & 0xff, copy[3] & 0xff,
+			copy[4] & 0xff, copy[5] & 0xff);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		set_hwaddr("eth0", mac);
 	}
@@ -463,10 +467,12 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
-		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0]&0xff, copy[1]&0xff, copy[2]&0xff, copy[3]&0xff, copy[4]&0xff, copy[5]&0xff);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0] & 0xff, copy[1] & 0xff, copy[2] & 0xff, copy[3] & 0xff,
+			copy[4] & 0xff, copy[5] & 0xff);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		set_hwaddr("eth0", mac);
-		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6]&0xff, copy[7]&0xff, copy[8]&0xff, copy[9]&0xff, copy[10]&0xff, copy[11]&0xff);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6] & 0xff, copy[7] & 0xff, copy[8] & 0xff, copy[9] & 0xff,
+			copy[10] & 0xff, copy[11] & 0xff);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
 		set_hwaddr("eth1", mac);
 #ifdef HAVE_ATH10K
@@ -497,7 +503,8 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
-		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0]&0xff, copy[1]&0xff, copy[2]&0xff, copy[3]&0xff, copy[4]&0xff, copy[5]&0xff);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0] & 0xff, copy[1] & 0xff, copy[2] & 0xff, copy[3] & 0xff,
+			copy[4] & 0xff, copy[5] & 0xff);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		set_hwaddr("eth0", mac);
 out:;

@@ -220,7 +220,8 @@ void start_sysinit(void)
 			copy[i] = mactmp[i];
 		for (i = 0; i < 6; i++)
 			copy[i] &= 0xff;
-		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0]&0xff, copy[1]&0xff, copy[2]&0xff, copy[3]&0xff, copy[4]&0xff, copy[5]&0xff);
+		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0] & 0xff, copy[1] & 0xff, copy[2] & 0xff, copy[3] & 0xff,
+			copy[4] & 0xff, copy[5] & 0xff);
 		set_hwaddr("wifi0", mac1);
 		fclose(fp);
 	}

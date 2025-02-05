@@ -62,9 +62,9 @@ void getWirelessMac(char *newmac, int instance, size_t len)
 {
 #ifdef HAVE_BUFFALO
 #ifdef HAVE_BCMMODERN
-	strlcpy(newmac, nvram_safe_get("et0macaddr"),len);
+	strlcpy(newmac, nvram_safe_get("et0macaddr"), len);
 #else
-	strlcpy(newmac, nvram_safe_get("il0macaddr"),len);
+	strlcpy(newmac, nvram_safe_get("il0macaddr"), len);
 #endif
 #else
 	if (instance < 0)
@@ -76,11 +76,11 @@ void getWirelessMac(char *newmac, int instance, size_t len)
 		// et1macaddr
 		// not there?
 		{
-			strlcpy(newmac, nvram_safe_get("et1macaddr"),len);
+			strlcpy(newmac, nvram_safe_get("et1macaddr"), len);
 			MAC_ADD(newmac); // et1macaddr +2
 			MAC_ADD(newmac);
 		} else {
-			strlcpy(newmac, nvram_safe_get("et0macaddr"),len);
+			strlcpy(newmac, nvram_safe_get("et0macaddr"), len);
 			MAC_ADD(newmac); // et0macaddr +3
 			MAC_ADD(newmac);
 			MAC_ADD(newmac);
@@ -89,10 +89,10 @@ void getWirelessMac(char *newmac, int instance, size_t len)
 		if (getRouterBrand() == ROUTER_ASUS_AC66U) {
 			switch (instance) {
 			case 0:
-				strlcpy(newmac, nvram_safe_get("pci/1/1/macaddr"),len);
+				strlcpy(newmac, nvram_safe_get("pci/1/1/macaddr"), len);
 				break;
 			case 1:
-				strlcpy(newmac, nvram_safe_get("pci/2/1/macaddr"),len);
+				strlcpy(newmac, nvram_safe_get("pci/2/1/macaddr"), len);
 				break;
 			}
 
@@ -112,13 +112,13 @@ void getWirelessMac(char *newmac, int instance, size_t len)
 	if (instance < 0)
 		instance = 0;
 
-	strlcpy(newmac, nvram_safe_get("et0macaddr"),len);
+	strlcpy(newmac, nvram_safe_get("et0macaddr"), len);
 	MAC_ADD(newmac);
 	MAC_ADD(newmac);
 	if (instance)
 		MAC_ADD(newmac);
 	if (*nvram_nget("wlan%d_hwaddr", instance))
-		strlcpy(newmac, nvram_nget("wlan%d_hwaddr", instance),len);
+		strlcpy(newmac, nvram_nget("wlan%d_hwaddr", instance), len);
 
 #endif
 	return;

@@ -173,7 +173,7 @@ void start_dhcp6c(void)
 						strlen(vendorclass) & 0xff); // 00:00:04:0e enterprise id for sagecom
 					int i;
 					for (i = 0; i < strlen(vendorclass); i++)
-						fprintf(fpc, ":%02X", vendorclass[i]&0xff);
+						fprintf(fpc, ":%02X", vendorclass[i] & 0xff);
 					fprintf(fpc, ";\n");
 				}
 				if (*userclass) {
@@ -181,7 +181,7 @@ void start_dhcp6c(void)
 						strlen(userclass) & 0xff); // must convert to hex
 					int i;
 					for (i = 0; i < strlen(userclass); i++)
-						fprintf(fpc, ":%02X", userclass[i]&0xff);
+						fprintf(fpc, ":%02X", userclass[i] & 0xff);
 					fprintf(fpc, ";\n");
 				}
 			}

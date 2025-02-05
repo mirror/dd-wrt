@@ -95,20 +95,23 @@ void start_sysinit(void)
 			copy[i] = mactmp[i];
 		for (i = 0; i < 6; i++)
 			copy[i] &= 0xff;
-		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0]&0xff, copy[1]&0xff, copy[2]&0xff, copy[3]&0xff, copy[4]&0xff, copy[5]&0xff);
+		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0] & 0xff, copy[1] & 0xff, copy[2] & 0xff, copy[3] & 0xff,
+			copy[4] & 0xff, copy[5] & 0xff);
 		fread(mactmp, 6, 1, fp);
 		for (i = 0; i < 6; i++)
 			copy[i] = mactmp[i];
 		for (i = 0; i < 6; i++)
 			copy[i] &= 0xff;
-		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0]&0xff, copy[1]&0xff, copy[2]&0xff, copy[3]&0xff, copy[4]&0xff, copy[5]&0xff);
+		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0] & 0xff, copy[1] & 0xff, copy[2] & 0xff, copy[3] & 0xff,
+			copy[4] & 0xff, copy[5] & 0xff);
 		fread(mactmp, 6, 1, fp);
 		fclose(fp);
 		for (i = 0; i < 6; i++)
 			copy[i] = mactmp[i];
 		for (i = 0; i < 6; i++)
 			copy[i] &= 0xff;
-		sprintf(wmac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0]&0xff, copy[1]&0xff, copy[2]&0xff, copy[3]&0xff, copy[4]&0xff, copy[5]&0xff);
+		sprintf(wmac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0] & 0xff, copy[1] & 0xff, copy[2] & 0xff, copy[3] & 0xff,
+			copy[4] & 0xff, copy[5] & 0xff);
 #elif HAVE_WZRHPAG300NH
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
@@ -129,8 +132,10 @@ void start_sysinit(void)
 			copy[i] = mactmp[i];
 		for (i = 0; i < 6; i++)
 			copy[i] &= 0xff;
-		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0]&0xff, copy[1]&0xff, copy[2]&0xff, copy[3]&0xff, copy[4]&0xff, copy[5]&0xff);
-		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0]&0xff, copy[1]&0xff, copy[2]&0xff, copy[3]&0xff, copy[4]&0xff, copy[5]&0xff);
+		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0] & 0xff, copy[1] & 0xff, copy[2] & 0xff, copy[3] & 0xff,
+			copy[4] & 0xff, copy[5] & 0xff);
+		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0] & 0xff, copy[1] & 0xff, copy[2] & 0xff, copy[3] & 0xff,
+			copy[4] & 0xff, copy[5] & 0xff);
 		MAC_ADD(mac2);
 //              eval("gpio","enable","2");
 #elif HAVE_WZRG300NH2
@@ -144,8 +149,10 @@ void start_sysinit(void)
 			copy[i] = mactmp[i];
 		for (i = 0; i < 6; i++)
 			copy[i] &= 0xff;
-		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0]&0xff, copy[1]&0xff, copy[2]&0xff, copy[3]&0xff, copy[4]&0xff, copy[5]&0xff);
-		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0]&0xff, copy[1]&0xff, copy[2]&0xff, copy[3]&0xff, copy[4]&0xff, copy[5]&0xff);
+		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0] & 0xff, copy[1] & 0xff, copy[2] & 0xff, copy[3] & 0xff,
+			copy[4] & 0xff, copy[5] & 0xff);
+		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0] & 0xff, copy[1] & 0xff, copy[2] & 0xff, copy[3] & 0xff,
+			copy[4] & 0xff, copy[5] & 0xff);
 //              eval("gpio","enable","13");
 #ifdef HAVE_SWCONFIG
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
@@ -185,8 +192,10 @@ void start_sysinit(void)
 			copy[i] = mactmp[i];
 		for (i = 0; i < 6; i++)
 			copy[i] &= 0xff;
-		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0]&0xff, copy[1]&0xff, copy[2]&0xff, copy[3]&0xff, copy[4]&0xff, copy[5]&0xff);
-		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0]&0xff, copy[1]&0xff, copy[2]&0xff, copy[3]&0xff, copy[4]&0xff, copy[5]&0xff);
+		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0] & 0xff, copy[1] & 0xff, copy[2] & 0xff, copy[3] & 0xff,
+			copy[4] & 0xff, copy[5] & 0xff);
+		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0] & 0xff, copy[1] & 0xff, copy[2] & 0xff, copy[3] & 0xff,
+			copy[4] & 0xff, copy[5] & 0xff);
 //              mac1[0] |= 0x02; // add private bit
 //              mac2[0] |= 0x02;
 //              eval("gpio","disable","16");
@@ -229,8 +238,10 @@ void start_sysinit(void)
 			copy[i] = mactmp[i];
 		for (i = 0; i < 6; i++)
 			copy[i] &= 0xff;
-		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0]&0xff, copy[1]&0xff, copy[2]&0xff, copy[3]&0xff, copy[4]&0xff, copy[5]&0xff);
-		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0]&0xff, copy[1]&0xff, copy[2]&0xff, copy[3]&0xff, copy[4]&0xff, copy[5]&0xff);
+		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0] & 0xff, copy[1] & 0xff, copy[2] & 0xff, copy[3] & 0xff,
+			copy[4] & 0xff, copy[5] & 0xff);
+		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0] & 0xff, copy[1] & 0xff, copy[2] & 0xff, copy[3] & 0xff,
+			copy[4] & 0xff, copy[5] & 0xff);
 		MAC_ADD(mac2);
 #endif
 

@@ -174,7 +174,8 @@ static const char *ieee80211_ntoa(const uint8_t mac[IEEE80211_ADDR_LEN])
 	static char a[18];
 	int i;
 
-	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0]&0xff, mac[1]&0xff, mac[2]&0xff, mac[3]&0xff, mac[4]&0xff, mac[5]&0xff);
+	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0] & 0xff, mac[1] & 0xff, mac[2] & 0xff, mac[3] & 0xff,
+		     mac[4] & 0xff, mac[5] & 0xff);
 	return (i < 17 ? NULL : a);
 }
 
@@ -193,7 +194,7 @@ int site_survey_main(int argc, char *argv[])
 	char ssid[31];
 	unsigned char *cp;
 	int len;
-	char *sta = argc > 1 ? argv[1] : nvram_safe_get("wifi_display");	
+	char *sta = argc > 1 ? argv[1] : nvram_safe_get("wifi_display");
 #ifndef HAVE_NOWIFI
 	if (is_mac80211(sta)) {
 		extern int site_survey_main_mac802211(int argc, char *argv[]);

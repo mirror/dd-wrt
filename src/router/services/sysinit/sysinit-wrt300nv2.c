@@ -99,7 +99,8 @@ void start_sysinit(void)
 		fread(&buf[0], 6, 1, file);
 		char mac[32];
 
-		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", buf[0] & 0xff, buf[1] & 0xff, buf[2] & 0xff, buf[3] & 0xff,
+			buf[4] & 0xff, buf[5] & 0xff);
 		fprintf(stderr, "configure primary mac %s\n", mac);
 		set_hwaddr("ixp0", mac);
 		set_hwaddr("wifi0", mac);

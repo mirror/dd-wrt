@@ -86,7 +86,8 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
-		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0]&0xff, copy[1]&0xff, copy[2]&0xff, copy[3]&0xff, copy[4]&0xff, copy[5]&0xff);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0] & 0xff, copy[1] & 0xff, copy[2] & 0xff, copy[3] & 0xff,
+			copy[4] & 0xff, copy[5] & 0xff);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		set_hwaddr("eth0", mac);
 		MAC_ADD(mac);
@@ -100,7 +101,8 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
-		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0]&0xff, copy[1]&0xff, copy[2]&0xff, copy[3]&0xff, copy[4]&0xff, copy[5]&0xff);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0] & 0xff, copy[1] & 0xff, copy[2] & 0xff, copy[3] & 0xff,
+			copy[4] & 0xff, copy[5] & 0xff);
 		MAC_ADD(mac);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		set_hwaddr("eth0", mac);

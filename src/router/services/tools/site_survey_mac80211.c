@@ -193,7 +193,6 @@ nla_put_failure:
 	return;
 }
 
-
 static void print_mcs_index(const __u8 *mcs)
 {
 	unsigned int mcs_bit, prev_bit = -2, prev_cont = 0;
@@ -251,7 +250,6 @@ static void print_ht_mcs(const __u8 *mcs)
 			print_mcs_index(mcs);
 		} else {
 			print_mcs_index(mcs);
-
 		}
 	} else {
 		print_mcs_index(mcs);
@@ -260,9 +258,8 @@ static void print_ht_mcs(const __u8 *mcs)
 
 static void print_wifi_wpa(const uint8_t type, uint8_t len, const uint8_t *data)
 {
-	print_rsn_ie("TKIP", "IEEE 802.1X",len, data, 0);
+	print_rsn_ie("TKIP", "IEEE 802.1X", len, data, 0);
 }
-
 
 static void print_ssid(const uint8_t type, uint8_t len, const uint8_t *data)
 {
@@ -345,7 +342,8 @@ static int print_bss_handler(struct nl_msg *msg, void *arg)
 	site_survey_lists[sscount].active = active[freq];
 	site_survey_lists[sscount].busy = busy[freq];
 	if ((site_survey_lists[sscount].channel & 0xff) == 0) {
-		site_survey_lists[sscount].channel |= (ieee80211_mhz2ieee(global_ifname, site_survey_lists[sscount].frequency) & 0xff);
+		site_survey_lists[sscount].channel |=
+			(ieee80211_mhz2ieee(global_ifname, site_survey_lists[sscount].frequency) & 0xff);
 	}
 	sscount++;
 
@@ -503,7 +501,6 @@ void print_he_operation(const uint8_t *ie, int len)
 	uint8_t co_hosted_bss_present = oper_parameters[1] & 0x80;
 	uint8_t uhb_operation_info_present = oper_parameters[2] & 0x02;
 	uint8_t offset = 6;
-
 
 	if (uhb_operation_info_present) {
 		if (len - offset < 5) {
@@ -769,7 +766,6 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 	int i;
 	site_survey_lists[sscount].extcap |= CAP_VHT; // vht
 
-
 	switch ((capa >> 2) & 3) {
 	case 0:
 		if (capa & BIT(5)) {
@@ -801,10 +797,10 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 		case 0:
 		case 1:
 		case 2:
-		antennacount++;
-		break;
+			antennacount++;
+			break;
 		case 3:
-		break;
+			break;
 		}
 	}
 	rate_count = 150 * antennacount;
@@ -954,7 +950,7 @@ static int local_open_site_survey(void)
 int site_survey_main_mac802211(int argc, char *argv[])
 {
 	unlink(SITE_SURVEY_DB);
-	global_ifname = argc > 1 ? argv[1] : nvram_safe_get("wifi_display");	
+	global_ifname = argc > 1 ? argv[1] : nvram_safe_get("wifi_display");
 	mac80211_site_survey(global_ifname);
 	return 0;
 }

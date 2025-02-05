@@ -1804,7 +1804,7 @@ void start_resetbc(void)
 	case ROUTER_LINKSYS_MX4300:
 		if (!nvram_match("nobcreset", "1"))
 			eval_silence("mtd", "resetbc", "s_env");
-	break;
+		break;
 	}
 }
 

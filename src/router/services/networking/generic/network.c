@@ -146,7 +146,8 @@ char *getMacAddr(char *ifname, char *mac, size_t len)
 
 	if (i < 0)
 		return NULL;
-	snprintf(mac, len, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0]&0xff, hwbuff[1]&0xff, hwbuff[2]&0xff, hwbuff[3]&0xff, hwbuff[4]&0xff, hwbuff[5]&0xff);
+	snprintf(mac, len, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0] & 0xff, hwbuff[1] & 0xff, hwbuff[2] & 0xff, hwbuff[3] & 0xff,
+		 hwbuff[4] & 0xff, hwbuff[5] & 0xff);
 	return mac;
 }
 
@@ -423,7 +424,7 @@ void run_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int leas
 			s_userclass = malloc(slen); // 5 bytes trailer, 2*string lenght for hex values + 1 zero termination
 			snprintf(s_userclass, slen, "0x4d:");
 			for (c = 0; c < strlen(userclass); c++) {
-				snprintf(s_userclass, slen, "%s%02X", s_userclass, userclass[c]&0xff);
+				snprintf(s_userclass, slen, "%s%02X", s_userclass, userclass[c] & 0xff);
 			}
 			dhcp_argv[i++] = s_userclass;
 		}
@@ -511,7 +512,6 @@ static int enable_dhcprelay(char *ifname)
 #ifdef HAVE_DHDAP
 	int is_dhd;
 #endif /* __CONFIG_DHDAP__ */
-
 
 	/*
 	 * WET interface is meaningful only in bridged environment 
@@ -3037,7 +3037,6 @@ void run_wan(int status)
 	if (!wlifname) {
 		wlifname = getWET();
 	}
-
 
 	if (nvram_matchi("mac_clone_enable", 1) && nvram_invmatch("def_hwaddr", "00:00:00:00:00:00") &&
 	    nvram_invmatch("def_hwaddr", "")) {
