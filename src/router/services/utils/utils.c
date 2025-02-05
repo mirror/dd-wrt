@@ -37,9 +37,9 @@
 #define SIOCGMIIREG 0x8948 /* Read MII PHY register.  */
 #define SIOCSMIIREG 0x8949 /* Write MII PHY register.  */
 
-void getLANMac(char *newmac)
+void getLANMac(char *newmac, size_t len)
 {
-	getSystemMac(newmac);
+	getSystemMac(newmac, len);
 
 #ifndef HAVE_BUFFALO
 
@@ -49,7 +49,7 @@ void getLANMac(char *newmac)
 		// et1macaddr
 		// not there?
 		{
-			strcpy(newmac, nvram_safe_get("et1macaddr"));
+			strlcpy(newmac, nvram_safe_get("et1macaddr"), len);
 		} else {
 			MAC_ADD(newmac); // et0macaddr +1
 		}
@@ -58,13 +58,13 @@ void getLANMac(char *newmac)
 	return;
 }
 
-void getWirelessMac(char *newmac, int instance)
+void getWirelessMac(char *newmac, int instance, size_t len)
 {
 #ifdef HAVE_BUFFALO
 #ifdef HAVE_BCMMODERN
-	strcpy(newmac, nvram_safe_get("et0macaddr"));
+	strlcpy(newmac, nvram_safe_get("et0macaddr"),len);
 #else
-	strcpy(newmac, nvram_safe_get("il0macaddr"));
+	strlcpy(newmac, nvram_safe_get("il0macaddr"),len);
 #endif
 #else
 	if (instance < 0)
@@ -76,11 +76,11 @@ void getWirelessMac(char *newmac, int instance)
 		// et1macaddr
 		// not there?
 		{
-			strcpy(newmac, nvram_safe_get("et1macaddr"));
+			strlcpy(newmac, nvram_safe_get("et1macaddr"),len);
 			MAC_ADD(newmac); // et1macaddr +2
 			MAC_ADD(newmac);
 		} else {
-			strcpy(newmac, nvram_safe_get("et0macaddr"));
+			strlcpy(newmac, nvram_safe_get("et0macaddr"),len);
 			MAC_ADD(newmac); // et0macaddr +3
 			MAC_ADD(newmac);
 			MAC_ADD(newmac);
@@ -89,15 +89,15 @@ void getWirelessMac(char *newmac, int instance)
 		if (getRouterBrand() == ROUTER_ASUS_AC66U) {
 			switch (instance) {
 			case 0:
-				strcpy(newmac, nvram_safe_get("pci/1/1/macaddr"));
+				strlcpy(newmac, nvram_safe_get("pci/1/1/macaddr"),len);
 				break;
 			case 1:
-				strcpy(newmac, nvram_safe_get("pci/2/1/macaddr"));
+				strlcpy(newmac, nvram_safe_get("pci/2/1/macaddr"),len);
 				break;
 			}
 
 		} else {
-			getSystemMac(newmac);
+			getSystemMac(newmac, len);
 			MAC_ADD(newmac); // et0macaddr +2
 			MAC_ADD(newmac);
 			if (instance > 0)
@@ -112,19 +112,19 @@ void getWirelessMac(char *newmac, int instance)
 	if (instance < 0)
 		instance = 0;
 
-	strcpy(newmac, nvram_safe_get("et0macaddr"));
+	strlcpy(newmac, nvram_safe_get("et0macaddr"),len);
 	MAC_ADD(newmac);
 	MAC_ADD(newmac);
 	if (instance)
 		MAC_ADD(newmac);
 	if (*nvram_nget("wlan%d_hwaddr", instance))
-		strcpy(newmac, nvram_nget("wlan%d_hwaddr", instance));
+		strlcpy(newmac, nvram_nget("wlan%d_hwaddr", instance),len);
 
 #endif
 	return;
 }
 
-void getWANMac(char *newmac)
+void getWANMac(char *newmac, size_t len)
 {
 // This should be done for more routers that have a true wan-ethernet port with an own mac-adddress
 #if defined(HAVE_HORNET)
@@ -137,17 +137,17 @@ void getWANMac(char *newmac)
 
 			strncpy(ifr.ifr_name, nvram_safe_get("wan_ifname"), IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
-			strcpy(newmac, ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+			strlcpy(newmac, ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf), len);
 			close(s);
 		}
 		return;
 	} else {
-		strcpy(newmac, nvram_safe_get("et0macaddr"));
+		strlcpy(newmac, nvram_safe_get("et0macaddr"), len);
 		MAC_ADD(newmac); // et0macaddr +1
 		return;
 	}
 #endif
-	getSystemMac(newmac);
+	getSystemMac(newmac, len);
 
 #if !defined(HAVE_BUFFALO) && !defined(HAVE_WZRG300NH) && !defined(HAVE_WHRHPGN)
 	if (getRouterBrand() != ROUTER_ASUS_AC66U) {
@@ -160,7 +160,7 @@ void getWANMac(char *newmac)
 				// et1macaddr
 				// not there?
 				{
-					strcpy(newmac, nvram_safe_get("et1macaddr"));
+					strlcpy(newmac, nvram_safe_get("et1macaddr"), len);
 					MAC_ADD(newmac); // et1macaddr +1
 				} else {
 					MAC_ADD(newmac); // et0macaddr +2

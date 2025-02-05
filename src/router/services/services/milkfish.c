@@ -53,8 +53,8 @@ void start_milkfish_boot(void)
 
 	if (strlen(nvram_safe_get("milkfish_routerid")) != 32) {
 		unsigned char hash[32];
-		char et0[18];
-		getLANMac(et0);
+		char et0[32];
+		getLANMac(et0, sizeof(et0));
 		if (!*et0)
 			strcpy(et0, nvram_safe_get("et0macaddr_safe"));
 

@@ -499,8 +499,8 @@ void start_sysinit(void)
 				nvram_set("et0macaddr_safe", macaddr);
 			}
 
-			getWirelessMac(mac1, 0);
-			getWirelessMac(mac2, 1);
+			getWirelessMac(mac1, 0, sizeof(mac1));
+			getWirelessMac(mac2, 1, sizeof(mac2));
 			sscanf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
 			       &newmac[5]);
 			int i;

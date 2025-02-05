@@ -539,7 +539,7 @@ void configure_single_ath9k(int count)
 	} else if (board == ROUTER_ASUS_AC58U || board == ROUTER_LINKSYS_EA8300) {
 		getMacAddr(dev, macaddr, sizeof(macaddr));
 	} else {
-		getWirelessMac(macaddr, count);
+		getWirelessMac(macaddr, count, sizeof(macaddr));
 		set_hwaddr(dev, macaddr);
 	}
 #else

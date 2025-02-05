@@ -88,8 +88,8 @@ int mk_nocat_conf(void)
 	fprintf(fp, "InternalDevice\t%s\n", nvram_default_get("NC_ifname", nvram_safe_get("lan_ifname")));
 	fprintf(fp, "GatewayPort\t%s\n", nvram_safe_get("NC_GatewayPort"));
 
-	char mac[18];
-	getLANMac(mac);
+	char mac[32];
+	getLANMac(mac, sizeof(mac));
 	if (!*mac)
 		strcpy(mac, nvram_safe_get("et0macaddr_safe"));
 

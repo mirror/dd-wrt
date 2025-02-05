@@ -95,8 +95,8 @@ void start_dhcp6c(void)
 	nvram_unset("ipv6_rtr_addr");
 	nvram_unset("ipv6_get_dns");
 
-	char mac[18];
-	getLANMac(mac);
+	char mac[32];
+	getLANMac(mac, sizeof(mac));
 	if (!*mac)
 		strcpy(mac, nvram_safe_get("et0macaddr_safe"));
 

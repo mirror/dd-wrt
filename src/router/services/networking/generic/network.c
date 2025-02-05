@@ -2081,7 +2081,7 @@ void start_lan(void)
 
 	} else {
 		int instance = get_wl_instance(wl_face);
-		getWirelessMac(mac, instance);
+		getWirelessMac(mac, instance, sizeof(mac));
 
 		ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
 
@@ -2106,7 +2106,7 @@ void start_lan(void)
 	if (getSTA()) {
 		char mac[32];
 
-		getWANMac(mac);
+		getWANMac(mac, sizeof(mac));
 
 		nvram_set("wan_hwaddr", mac);
 	}
@@ -2247,7 +2247,7 @@ void start_lan(void)
 
 				} else {
 					int instance = get_wl_instance(name);
-					getWirelessMac(mac, instance);
+					getWirelessMac(mac, instance, sizeof(mac));
 
 					ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
 
@@ -3049,16 +3049,16 @@ void run_wan(int status)
 		{
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 			int instance = get_wl_instance(wlifname);
-			getWirelessMac(mac, instance);
+			getWirelessMac(mac, instance, sizeof(mac));
 #else
-			getWirelessMac(mac, 0);
+			getWirelessMac(mac, 0, sizeof(mac));
 #endif
 			ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
 		} else {
 #ifdef HAVE_X86
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 #else
-			getWANMac(mac);
+			getWANMac(mac, sizeof(mac));
 			ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
 #endif
 		}

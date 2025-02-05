@@ -915,9 +915,9 @@ extern void decode(char *buf, int len);
 #define MD5_OUT_BUFSIZE 36
 extern char *zencrypt(char *passwd, char *passout);
 
-extern void getLANMac(char *newmac);
-extern void getWirelessMac(char *newmac, int instance);
-extern void getWANMac(char *newmac);
+extern void getLANMac(char *newmac, size_t len);
+extern void getWirelessMac(char *newmac, int instance, size_t len);
+extern void getWANMac(char *newmac, size_t len);
 extern char *cpustring(void);
 extern int find_pattern(const char *data, size_t dlen, const char *pattern, size_t plen, char term, unsigned int *numoff,
 			unsigned int *numlen);
@@ -1555,7 +1555,7 @@ const char *getdefaultconfig(char *service, char *path, size_t len, char *config
 
 void nvram_clear(void);
 int nvram_critical(char *name);
-void getSystemMac(char *mac);
+void getSystemMac(char *mac, size_t len);
 
 int do80211priv(const char *ifname, int op, void *data, size_t len);
 int getsocket(void);

@@ -253,8 +253,8 @@ void start_udhcpd(void)
 		perror("/tmp/udhcpd.statics");
 		return;
 	}
-	char mac[18];
-	getLANMac(mac);
+	char mac[32];
+	getLANMac(mac,sizeof(mac));
 	if (!*mac)
 		strcpy(mac, nvram_safe_get("et0macaddr_safe"));
 
