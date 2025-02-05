@@ -7058,7 +7058,7 @@ EJ_VISIBLE void ej_get_wds_mac(webs_t wp, int argc, char_t **argv)
 	c = nvram_safe_get(wds_var);
 	if (c) {
 		mac = get_single_mac(c, mac_idx);
-		websWrite(wp, "%02X", mac&0xff);
+		websWrite(wp, "%02X", mac & 0xff);
 	} else
 		websWrite(wp, "00");
 	return;
@@ -7347,7 +7347,7 @@ EJ_VISIBLE void ej_get_clone_wmac(webs_t wp, int argc, char_t **argv)
 		c = nvram_safe_get("def_whwaddr");
 	if (c) {
 		mac = get_single_mac(c, which);
-		websWrite(wp, "%02X", mac&0xff);
+		websWrite(wp, "%02X", mac & 0xff);
 	} else
 		websWrite(wp, "00");
 	return;

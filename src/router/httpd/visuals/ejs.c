@@ -312,7 +312,7 @@ EJ_VISIBLE void ej_get_single_mac(webs_t wp, int argc, char_t **argv)
 	c = nvram_safe_get(argv[0]);
 	if (c) {
 		mac = get_single_mac(c, atoi(argv[1]));
-		websWrite(wp, "%02X", mac&0xff);
+		websWrite(wp, "%02X", mac & 0xff);
 	} else
 		websWrite(wp, "00");
 

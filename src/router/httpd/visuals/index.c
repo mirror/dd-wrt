@@ -84,7 +84,7 @@ EJ_VISIBLE void ej_get_clone_mac(webs_t wp, int argc, char_t **argv)
 
 	if (c) {
 		mac = get_single_mac(c, which);
-		websWrite(wp, "%02X", mac&0xff);
+		websWrite(wp, "%02X", mac & 0xff);
 	} else
 		websWrite(wp, "00");
 }
