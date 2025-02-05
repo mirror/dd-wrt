@@ -3101,6 +3101,13 @@ void configure_wifi(void) // madwifi implementation for atheros based
 #endif
 	}
 #endif
+#ifdef HAVE_ATH9K
+	void post_hostapd_actions(int count);
+
+	for (i = 0; i < c; i++) {
+		post_hostapd_actions(i);
+	}
+#endif
 	invalidate_channelcache();
 #if 0
 	int dead = 10 * 60;	// after 30 seconds, we can assume that something is hanging

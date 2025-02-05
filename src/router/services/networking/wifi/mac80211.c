@@ -2719,6 +2719,7 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 				/* do not start hostapd before wpa_supplicant in mesh mode, it will fail to initialize the ap interface once mesh is running */
 				sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 				char *fstrarr[2] = { fstr, NULL };
+				do_hostapd(fstrarr, dev);
 			}
 			sprintf(ctrliface, "/var/run/hostapd/%s.%d", dev, ctrl);
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
@@ -2761,6 +2762,39 @@ skip:;
 			}
 		}
 	}
+}
+
+void post_hostapd_actions(int count)
+{
+	char dev[32];
+	char wl[32];
+	char subinterface[32];
+	char tmp[256];
+	char var[80];
+	char *next, *vifs;
+	char mode[80];
+	char fstr[32];
+	char wif[10];
+	char power[32];
+	char wifivifs[32];
+	sprintf(wif, "phy%d", get_ath9k_phy_idx(count));
+
+	sprintf(wl, "wlan%d_mode", count);
+	char *apm = nvram_safe_get(wl);
+
+	sprintf(dev, "wlan%d", count);
+	sprintf(power, "%s_txpwrdbm", dev);
+	sprintf(wifivifs, "%s_vifs", dev);
+	vifs = nvram_safe_get(wifivifs);
+	int debug = nvram_ngeti("%s_wpa_debug", dev);
+	char *background = "-B";
+
+	if (debug == 1)
+		background = "-Bds";
+	else if (debug == 2)
+		background = "-Bdds";
+	else if (debug == 3)
+		background = "-Bddds";
 	if (has_ad(dev))
 		sprintf(dev, "giwifi0");
 #ifdef HAVE_RELAYD
