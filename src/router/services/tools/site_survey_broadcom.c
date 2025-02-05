@@ -199,7 +199,7 @@ static void wl_rsn_ie_dump(bcm_tlv_t *ie, char *sum)
 				break;
 			}
 		} else {
-			sprintf(sum, "%s Unknown-%02X:%02X:%02X(#%d) ", sum & 0xff, rsn_info.mcast->oui[0] & 0xff,
+			sprintf(sum, "%s Unknown-%02X:%02X:%02X(#%d) ", sum, rsn_info.mcast->oui[0] & 0xff,
 				rsn_info.mcast->oui[1] & 0xff, rsn_info.mcast->oui[2] & 0xff, rsn_info.mcast->type);
 		}
 	}
