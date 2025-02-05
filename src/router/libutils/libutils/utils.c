@@ -1866,29 +1866,29 @@ void getPortMapping(int *vlanmap)
 	}
 }
 
-void getSystemMac(char *newmac)
+void getSystemMac(char *newmac, size_t len)
 {
 	int brand = getRouterBrand();
 	switch (brand) {
 	case ROUTER_ASUS_AC87U:
 	case ROUTER_ASUS_AC88U:
 	case ROUTER_ASUS_AC5300:
-		strcpy(newmac, nvram_safe_get("et1macaddr"));
+		strlcpy(newmac, nvram_safe_get("et1macaddr"), len);
 		break;
 	case ROUTER_NETGEAR_R8000:
 	case ROUTER_NETGEAR_R8500:
 	case ROUTER_TRENDNET_TEW828:
 	case ROUTER_ASUS_AC3100:
-		strcpy(newmac, nvram_safe_get("et2macaddr"));
+		strlcpy(newmac, nvram_safe_get("et2macaddr"), len);
 		break;
 	case ROUTER_DLINK_DIR885:
 		if (nvram_exists("et0macaddr"))
-			strcpy(newmac, nvram_safe_get("et0macaddr"));
+			strlcpy(newmac, nvram_safe_get("et0macaddr"),len);
 		else
-			strcpy(newmac, nvram_safe_get("et2macaddr"));
+			strlcpy(newmac, nvram_safe_get("et2macaddr"),len);
 		break;
 	default:
-		strcpy(newmac, nvram_safe_get("et0macaddr"));
+		strlcpy(newmac, nvram_safe_get("et0macaddr"),len);
 		break;
 	}
 }
