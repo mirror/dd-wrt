@@ -7335,7 +7335,7 @@ EJ_VISIBLE void ej_get_clone_wmac(webs_t wp, int argc, char_t **argv)
 			}
 		} else {
 			c = &buf[0];
-			getSystemMac(c);
+			getSystemMac(c, sizeof(buf));
 		}
 
 		if (c) {

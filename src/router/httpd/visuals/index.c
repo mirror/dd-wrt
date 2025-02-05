@@ -73,7 +73,7 @@ EJ_VISIBLE void ej_get_clone_mac(webs_t wp, int argc, char_t **argv)
 				c = strdup(nvram_safe_get("et1macaddr"));
 			else {
 				c = &buf[0];
-				getSystemMac(c);
+				getSystemMac(c, sizeof(buf));
 			}
 			if (c) {
 				MAC_ADD(c);
