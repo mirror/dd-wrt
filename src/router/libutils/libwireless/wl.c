@@ -3743,6 +3743,7 @@ int is_ap8x(const char *prefix)
 IS_DRIVER(iwlwifi, "pci:iwlwifi");
 IS_DRIVER(iwl4965, "pci:iwl4965");
 IS_DRIVER(iwl3945, "pci:iwl3945");
+IS_DRIVER(mwifiex, "sdio:mwifiex_sdio");
 #endif
 #ifdef HAVE_MVEBU
 IS_DRIVER(mvebu, "pci:mwlwifi");
