@@ -2715,7 +2715,7 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 			ctrl = last;
 			if (ctrl == 0)
 				goto skip;
-			if (!nvram_match(wmode, "mesh")) {
+			if (!nvram_match(wmode, "mesh") && !nvram_match(wmode, "infra")) {
 				/* do not start hostapd before wpa_supplicant in mesh mode, it will fail to initialize the ap interface once mesh is running */
 				sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 				char *fstrarr[2] = { fstr, NULL };
