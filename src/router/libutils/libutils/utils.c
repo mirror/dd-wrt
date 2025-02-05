@@ -2030,7 +2030,7 @@ static void s_MAC_ADD(char *mac, int inc)
 		m[j] = mac[i] * 16 + mac[i + 1];
 	}
 	s_mac_add(m, inc);
-	sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", m[0], m[1], m[2], m[3], m[4], m[5]);
+	sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", m[0]&0xff, m[1]&0xff, m[2]&0xff, m[3]&0xff, m[4]&0xff, m[5]&0xff);
 }
 
 void MAC_ADD(char *mac)
