@@ -182,7 +182,7 @@ static struct menucontext *init_menu(webs_t wp)
 		char check[32];
 		sprintf(check, "wlan%d", a);
 		if (has_ad(check) || is_ath10k(check) || is_ath11k(check) || is_brcmfmac(check) || is_mt76(check) || nowds() ||
-		    is_mwifiex() || is_mvebu(check)) {
+		    is_mwifiex(check) || is_mvebu(check)) {
 			m->menu[MENU_WIRELESS][count + 8] = "";
 			m->menuname[MENU_WIRELESS][count + 9] = "";
 			continue;
