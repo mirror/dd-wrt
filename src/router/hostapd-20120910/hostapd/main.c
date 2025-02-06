@@ -148,13 +148,18 @@ static void hostapd_logger_cb(void *ctx, const u8 *addr, unsigned int module,
 }
 #endif /* CONFIG_NO_HOSTAPD_LOGGER */
 
+int configcount=0;
 static void hostapd_setup_complete_cb(void *ctx)
 {
-	if (daemonize && os_daemonize(pid_file)) {
-		perror("daemon");
-		return;
+	static int cur=0;
+	cur++;
+	if (cur == configcount) {
+		if (daemonize && os_daemonize(pid_file)) {
+			perror("daemon");
+			return;
+		}
+		daemonize = 0;
 	}
-	daemonize = 0;
 }
 
 /**
@@ -619,7 +624,8 @@ int main(int argc, char *argv[])
 	if (log_file)
 		wpa_debug_open_file(log_file);
 
-	interfaces.count = argc - optind;
+	extern int configcount;
+	configcount = interfaces.count = argc - optind;
 	if (interfaces.count) {
 		interfaces.iface = os_calloc(interfaces.count,
 					     sizeof(struct hostapd_iface *));
