@@ -2780,30 +2780,34 @@ void post_hostapd_actions(int count)
 	if (has_ad(dev))
 		sprintf(dev, "giwifi0");
 
-	if (*vifs) {
-		int ctrl = 0;
-		int last = 0;
-		foreach(var, vifs, next)
-		{
-			ctrl++;
-			if (nvram_nmatch("disabled", "%s_net_mode", var) || nvram_nmatch("disabled", "%s_mode", var))
-				continue;
-			last = ctrl;
-			if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var))
-				break;
-		}
-		ctrl = last;
-		if (ctrl == 0)
-			goto skip;
-		sprintf(ctrliface, "/var/run/hostapd/%s.%d", dev, ctrl);
-		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
-		if (!nvram_match(wmode, "mesh") && !nvram_match(wmode, "infra")) {
-			if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wdsta_mtik") || wet) && nvram_matchi(bridged, 1))
-				log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background, "-Dnl80211",
-					 subinterface, "-H", ctrliface, "-c", fstr);
-			else
-				log_eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-H", ctrliface, "-c",
-					 fstr);
+	if (!strcmp(apm, "sta") || !strcmp(apm, "wdssta") || !strcmp(apm, "wdssta_mtik") || !strcmp(apm, "infra") ||
+	    !strcmp(apm, "mesh") || !strcmp(apm, "tdma") || !strcmp(apm, "wet")) {
+		if (*vifs) {
+			int ctrl = 0;
+			int last = 0;
+			foreach(var, vifs, next)
+			{
+				ctrl++;
+				if (nvram_nmatch("disabled", "%s_net_mode", var) || nvram_nmatch("disabled", "%s_mode", var))
+					continue;
+				last = ctrl;
+				if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var))
+					break;
+			}
+			ctrl = last;
+			if (ctrl == 0)
+				goto skip;
+			sprintf(ctrliface, "/var/run/hostapd/%s.%d", dev, ctrl);
+			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
+			if (!nvram_match(wmode, "mesh") && !nvram_match(wmode, "infra")) {
+				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wdsta_mtik") || wet) &&
+				    nvram_matchi(bridged, 1))
+					log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background, "-Dnl80211",
+						 subinterface, "-H", ctrliface, "-c", fstr);
+				else
+					log_eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-H",
+						 ctrliface, "-c", fstr);
+			}
 		}
 	}
 skip:;
