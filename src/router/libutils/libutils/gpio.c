@@ -1610,7 +1610,7 @@ int main(int argc, char **argv)
 		while (1) {
 			gpio = get_gpio(pin);
 			if (gpio != old_gpio)
-				fprintf(stdout, "%02X\n", gpio&0xff);
+				fprintf(stdout, "%02X\n", gpio & 0xff);
 			old_gpio = gpio;
 		}
 	} else if (!strcmp(argv[1], "init")) {

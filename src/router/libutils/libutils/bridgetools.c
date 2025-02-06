@@ -291,10 +291,10 @@ void set_multicast_to_unicast(const char *dev)
 		if (!strncmp(dev, "wlan", 4) && (sep = strstr(mainif, ".sta"))) {
 			*sep = 0;
 			sysprintf("echo %d > /sys/class/net/%s/brport/multicast_to_unicast",
-				  nvram_default_ngeti(0, "%s_m2u", mainif) | nvram_nmatch("1", "%s_usteer", mainif), dev);
+				  nvram_default_ngeti(0, "%s_m2u", mainif) | (nvram_nmatch("1", "%s_usteer", mainif) && is_mac80211(mainif)), dev);
 		} else {
 			sysprintf("echo %d > /sys/class/net/%s/brport/multicast_to_unicast",
-				  nvram_default_ngeti(0, "%s_m2u", dev) | nvram_nmatch("1", "%s_usteer", dev), dev);
+				  nvram_default_ngeti(0, "%s_m2u", dev), dev);
 		}
 	}
 }
