@@ -414,7 +414,7 @@ bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="アドレス変換(Port範囲)";
 bmenu.applicationspforwarding="アドレス変換(Port)";
 bmenu.applicationsptriggering="アドレス変換(Trigger指定)";
-bmenu.applicationsUpnp="UPnP";
+bmenu.applicationsUpnp="UPnP IGD";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 bmenu.applicationsP2P="P2P";
@@ -1549,12 +1549,11 @@ hupgrad.right2="ファームウェアの更新を行います。<em>参照...</e
 
 // ** UPnP.asp **//
 
-upnp.titl="UPnP";
-upnp.h2="UPnP設定";
+upnp.titl="UPnP IGD";
+upnp.h2="UPnP IGD サービス";
 upnp.legend="ポート変換リスト";
 upnp.legend2="UPnP 設定";
-upnp.serv="UPnP サービス";
-upnp.url="Presentation URLを送る";
+upnp.serv="UPnP IGD サービス";
 upnp.msg1="消去";
 upnp.msg2="すべて消去してもよろしいですか？";
 

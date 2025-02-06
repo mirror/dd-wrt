@@ -409,7 +409,7 @@ bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Poort Bereik Forwarden";
 bmenu.applicationspforwarding="Enkele Poort Forwarden";
 bmenu.applicationsptriggering="Poort Triggering";
-bmenu.applicationsUpnp="UPnP";
+bmenu.applicationsUpnp="UPnP IGD";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 bmenu.applicationsP2P="P2P";
@@ -1525,12 +1525,11 @@ hupgrad.right2="Klik op de <em>Bladeren...</em> knop om het firmware bestand te 
 
 // ******************************************* UPnP.asp *******************************************//
 
-upnp.titl="UPnP";
-upnp.h2="Universal Plug en Play (UPnP)";
-upnp.legend="Forwards";
+upnp.titl="UPnP IGD";
+upnp.h2="UPnP IGD Service";
+upnp.legend="Active Port Forwards";
 upnp.legend2="UPnP Configuratie";
-upnp.serv="UPnP Service";
-upnp.url="Presentatie URL zenden";
+upnp.serv="UPnP IGD Service";
 upnp.msg1="Klik om de waarde te verwijderen";
 upnp.msg2="Alle waarden verwijderen?";
 

@@ -385,7 +385,7 @@ bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Port Range Forwarding";
 bmenu.applicationspforwarding="Port Forwarding";
 bmenu.applicationsptriggering="Port Triggering";
-bmenu.applicationsUpnp="UPnP";
+bmenu.applicationsUpnp="UPnP IGD";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 bmenu.applicationsP2P="P2P";
@@ -1407,14 +1407,13 @@ hupgrad.right2="Click on the <em>Browse...</em> button to select the firmware fi
 
 // ** UPnP.asp **//
 
-upnp.titl="UPnP";
-upnp.h2="Universal Plug and Play (UPnP)";
-upnp.legend="Forwards";
-upnp.legend2="UPnP Configuration";
-upnp.serv="UPnP Service";
-upnp.url="Send presentation URL";
-upnp.msg1="Click to delete entry";
-upnp.msg2="Delete all entries?";
+upnp.titl="UPnP IGD";
+upnp.h2="UPnP IGD Service";
+upnp.legend="Active Port Forwards";
+upnp.legend2="Service Configuration";
+upnp.serv="UPnP IGD Service";
+upnp.msg1="Click to delete port forward";
+upnp.msg2="Delete all port forwards?";
 
 //help container
 
