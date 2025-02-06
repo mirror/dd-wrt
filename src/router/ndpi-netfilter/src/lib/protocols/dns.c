@@ -485,7 +485,7 @@ static int search_valid_dns(struct ndpi_detection_module_struct *ndpi_struct,
 		    flow->protos.dns.rsp_addr_ttl[flow->protos.dns.num_rsp_addr] = ttl;
 		    
 		    if(ndpi_struct->cfg.address_cache_size) {
-		    #if !defined(CONFIG_64BIT)
+		    #if defined(__KERNEL__) && !defined(CONFIG_64BIT)
 		      time = packet->current_time_ms;
 		      do_div(time, 1000);
 		    #else
@@ -494,7 +494,7 @@ static int search_valid_dns(struct ndpi_detection_module_struct *ndpi_struct,
 		      ndpi_cache_address(ndpi_struct,
 				         flow->protos.dns.rsp_addr[flow->protos.dns.num_rsp_addr],
 				         flow->host_server_name,
-				         c,
+				         time,
 				         flow->protos.dns.rsp_addr_ttl[flow->protos.dns.num_rsp_addr]);
 		    }
 		    ++flow->protos.dns.num_rsp_addr;
