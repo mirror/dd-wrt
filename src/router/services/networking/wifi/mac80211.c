@@ -2853,7 +2853,7 @@ skip:;
 			char *m2 = nvram_safe_get(mode);
 			char bridged[32];
 			sprintf(bridged, "%s_bridged", var);
-			if (!strcmp(m2, "mesh")) {
+			if (!strcmp(m2, "mesh") || !strcmp(m2, "infra")) {
 				sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", var);
 				sprintf(subinterface, "-i%s", var);
 				if (nvram_matchi(bridged, 1))
