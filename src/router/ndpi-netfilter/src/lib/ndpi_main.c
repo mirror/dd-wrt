@@ -7000,7 +7000,7 @@ void ndpi_free_flow_data(struct ndpi_flow_struct* flow) {
 }
 
 static inline uint32_t get_timestamp(uint64_t ts_l,uint32_t divisor) {
-#ifdef __KERNEL__
+#if defined(__KERNEL__) && !defined(CONFIG_64BIT)
 	do_div(ts_l,divisor);
 	return (uint32_t)ts_l;
 #else

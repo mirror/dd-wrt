@@ -278,7 +278,7 @@ static int search_valid_dns(struct ndpi_detection_module_struct *ndpi_struct,
 			    u_int8_t ignore_checks) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int x = payload_offset;
-  u_int64_t a,b,c; 
+  u_int64_t time; 
   memcpy(dns_header, (struct ndpi_dns_packet_header*)&packet->payload[x],
 	 sizeof(struct ndpi_dns_packet_header));
 
@@ -485,8 +485,12 @@ static int search_valid_dns(struct ndpi_detection_module_struct *ndpi_struct,
 		    flow->protos.dns.rsp_addr_ttl[flow->protos.dns.num_rsp_addr] = ttl;
 		    
 		    if(ndpi_struct->cfg.address_cache_size) {
-		      c = packet->current_time_ms;
-		      do_div(c, 1000);
+		    #if !defined(CONFIG_64BIT)
+		      time = packet->current_time_ms;
+		      do_div(time, 1000);
+		    #else
+		      time = packet->current_time_ms / 1000;
+		    #endif
 		      ndpi_cache_address(ndpi_struct,
 				         flow->protos.dns.rsp_addr[flow->protos.dns.num_rsp_addr],
 				         flow->host_server_name,
