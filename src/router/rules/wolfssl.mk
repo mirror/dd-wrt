@@ -10,7 +10,7 @@ wolfssl-configure:
 	mkdir -p wolfssl/minimal
 	mkdir -p wolfssl/standard
 	mkdir -p wolfssl/standard_static
-	cd wolfssl/standard && ../configure $(NO_TLS)  --prefix=/usr --libdir=/usr/lib --host=$(ARCH)-linux --disable-crypttests --disable-examples --disable-benchmark --disable-examples --enable-opensslextra --enable-opensslall --enable-shared --enable-fastmath --disable-static -disable-errorstrings   --enable-ocsp --enable-lowresource --disable-oldtls --enable-aesgcm  --enable-aesccm --enable-poly1305 --enable-chacha --enable-ecc --disable-sslv3 --enable-des3 --enable-md4 --enable-stunnel --enable-tls13 --enable-session-ticket --enable-wpas --enable-cmac --enable-dh CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	cd wolfssl/standard && ../configure $(NO_TLS)  --prefix=/usr --libdir=/usr/lib --host=$(ARCH)-linux --disable-crypttests --disable-examples --disable-benchmark --disable-examples --enable-opensslextra --enable-opensslall --enable-shared --enable-fastmath --disable-static -disable-errorstrings   --enable-ocsp --enable-lowresource --disable-oldtls --enable-aesgcm  --enable-aesccm --enable-poly1305 --enable-chacha --enable-ecc --disable-sslv3 --enable-des3 --enable-md4 --enable-stunnel --enable-tls13 --enable-session-ticket --enable-wpas --enable-cmac --enable-dh --enable-certgen --enable-certreq --enable-sha CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	    AR_FLAGS="cru $(LTOPLUGIN)" \
 	    RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
