@@ -33,6 +33,7 @@
 #include <signal.h>
 #ifdef HAVE_OPENSSL
 #include <openssl/sha.h>
+#include <openssl/ssl.h>
 #else
 #include <gcrypt.h>
 #endif
