@@ -18,6 +18,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 # $Id: Makefile 236 2007-09-05 20:40:59Z Joerg Mayer $
+include $(TOP)/.config
 
 DESTDIR=$(INSTALLDIR)
 PREFIX=/usr
@@ -49,9 +50,13 @@ RELEASE_VERSION := $(shell cat VERSION)
 #OPENSSL_GPL_VIOLATION = -DOPENSSL_GPL_VIOLATION
 #OPENSSLLIBS = -lcrypto
 
-CFLAGS += -W -Wall $(COPTS) -Wmissing-declarations -Wwrite-strings -I$(INSTALLDIR)/vpnc/usr/include -I$(SSLPATH)/include 
+ifneq ($(CONFIG_WOLFSSL),y)
+CFLAGS += -W -Wall $(LTO) $(COPTS) -Wmissing-declarations -Wwrite-strings -I$(INSTALLDIR)/vpnc/usr/include -I$(SSLPATH)/include 
+else
+CFLAGS += -W -Wall $(LTO) $(COPTS) -Wmissing-declarations -Wwrite-strings -I$(INSTALLDIR)/vpnc/usr/include -DWOLFSSL_USE_OPTIONS_H -I$(TOP)/wolfssl/standard -I$(TOP)/wolfssl/ -I$(TOP)/wolfssl/wolfssl 
+endif
 CPPFLAGS = -DVERSION=\"$(VERSION)\" $(OPENSSL_GPL_VIOLATION)
-LDFLAGS = -L$(INSTALLDIR)/vpnc/usr/lib -pthread
+LDFLAGS = $(LDLTO) -L$(INSTALLDIR)/vpnc/usr/lib -pthread
 CFLAGS +=  -L$(INSTALLDIR)/vpnc/usr/lib 
 
 ifeq ($(shell uname -s), SunOS)
@@ -76,7 +81,13 @@ gnupg :
 
 
 vpnc : $(OBJS) vpnc.o
+ifneq ($(CONFIG_WOLFSSL),y)
 	$(CC) -o $@ $^ $(LDFLAGS) $(INSTALLDIR)/vpnc/usr/lib/libgcrypt.a  $(INSTALLDIR)/vpnc/usr/lib/libgpg-error.a -L$(SSLPATH) -lcrypto
+	cp vpnc vpnc.openssl
+else
+	$(CC) -o $@ $^ $(LDFLAGS) $(INSTALLDIR)/vpnc/usr/lib/libgcrypt.a  $(INSTALLDIR)/vpnc/usr/lib/libgpg-error.a -L$(TOP)/wolfssl/standard/src/.libs -lwolfssl
+	cp vpnc vpnc.wolfssl
+endif
 
 vpnc.8 : vpnc.8.template makeman.pl vpnc
 	./makeman.pl
@@ -133,8 +144,11 @@ install-common:
 	install -m755 pcf2vpnc $(DESTDIR)$(BINDIR)
 
 install : install-common
-	install -m755 vpnc $(DESTDIR)$(SBINDIR)
-	-rm -rf $(DESTDIR)/usr/share
+ifneq ($(CONFIG_WOLFSSL),y)
+	install -m755 vpnc.openssl $(DESTDIR)$(SBINDIR)
+else
+	install -m755 vpnc.wolfssl $(DESTDIR)$(SBINDIR)
+endif	-rm -rf $(DESTDIR)/usr/share
 	-rm -rf $(DESTDIR)/usr/include
 	-rm -rf $(DESTDIR)/usr/lib
 	-rm -f $(DESTDIR)/usr/bin/gpg-error*
