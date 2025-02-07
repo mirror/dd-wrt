@@ -73,6 +73,7 @@ configure:
 	rm -f libgpg-error/Makefile
 	rm -f libgcrypt/Makefile
 gnupg :
+	rm -f vpnc
 	if test ! -e "libgpg-error/Makefile"; then cd libgpg-error && ./configure --host=$(ARCH)-linux --prefix=/usr --disable-shared --enable-static  --libdir=/usr/lib --disable-nls AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"; fi
 	make -C libgpg-error
 	make -C libgpg-error install DESTDIR=$(INSTALLDIR)/vpnc
