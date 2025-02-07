@@ -51,9 +51,9 @@ RELEASE_VERSION := $(shell cat VERSION)
 #OPENSSLLIBS = -lcrypto
 
 ifneq ($(CONFIG_WOLFSSL),y)
-CFLAGS += -W -Wall $(LTO) $(COPTS) -Wmissing-declarations -Wwrite-strings -I$(INSTALLDIR)/vpnc/usr/include -I$(SSLPATH)/include 
+CFLAGS += -W -Wall $(LTO) -fPIC $(COPTS) -Wmissing-declarations -Wwrite-strings -I$(INSTALLDIR)/vpnc/usr/include -I$(SSLPATH)/include 
 else
-CFLAGS += -W -Wall $(LTO) $(COPTS) -Wmissing-declarations -Wwrite-strings -I$(INSTALLDIR)/vpnc/usr/include -DWOLFSSL_USE_OPTIONS_H -I$(TOP)/wolfssl/standard -I$(TOP)/wolfssl/ -I$(TOP)/wolfssl/wolfssl 
+CFLAGS += -W -Wall $(LTO) -fPIC  $(COPTS) -Wmissing-declarations -Wwrite-strings -I$(INSTALLDIR)/vpnc/usr/include -DWOLFSSL_USE_OPTIONS_H -I$(TOP)/wolfssl/standard -I$(TOP)/wolfssl/ -I$(TOP)/wolfssl/wolfssl 
 endif
 CPPFLAGS = -DVERSION=\"$(VERSION)\" $(OPENSSL_GPL_VIOLATION)
 LDFLAGS = $(LDLTO) -L$(INSTALLDIR)/vpnc/usr/lib -pthread
@@ -73,10 +73,11 @@ configure:
 	rm -f libgpg-error/Makefile
 	rm -f libgcrypt/Makefile
 gnupg :
-	if test ! -e "libgpg-error/Makefile"; then cd libgpg-error && ./configure --host=$(ARCH)-linux --prefix=/usr  --libdir=/usr/lib --disable-nls; fi
+	if test ! -e "libgpg-error/Makefile"; then cd libgpg-error && ./configure --host=$(ARCH)-linux --prefix=/usr --disable-shared --enable-static  --libdir=/usr/lib --disable-nls AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"; fi
 	make -C libgpg-error
 	make -C libgpg-error install DESTDIR=$(INSTALLDIR)/vpnc
-	if test ! -e "libgcrypt/Makefile"; then cd libgcrypt && CFLAGS="$(COPTS) -std=gnu89 -I$(INSTALLDIR)/vpnc/usr/include -I$(SSLPATH)/include" && ./configure --host=$(ARCH)-linux --enable-static --disable-shared --prefix=/usr --libdir=/usr/lib --with-gpg-error-prefix=$(INSTALLDIR)/vpnc/usr; fi
+	if test ! -e "libgcrypt/Makefile"; then cd libgcrypt && CFLAGS="$(COPTS) -std=gnu89 -I$(INSTALLDIR)/vpnc/usr/include -I$(SSLPATH)/include" && ./configure --host=$(ARCH)-linux --enable-static --disable-shared --prefix=/usr --libdir=/usr/lib --with-gpg-error-prefix=$(INSTALLDIR)/vpnc/usr AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"; fi 
+
 	make -C libgcrypt install DESTDIR=$(INSTALLDIR)/vpnc
 
 
