@@ -71,6 +71,9 @@ typedef void (WINAPI *GetSystemTimePreciseAsFileTime_fn_t) (LPFILETIME);
 int
 evutil_gettimeofday(struct timeval *tv, struct timezone *tz)
 {
+	static GetSystemTimePreciseAsFileTime_fn_t GetSystemTimePreciseAsFileTime_fn = NULL;
+	static int check_precise = 1;
+
 #ifdef _MSC_VER
 #define U64_LITERAL(n) n##ui64
 #else
@@ -92,9 +95,6 @@ evutil_gettimeofday(struct timeval *tv, struct timezone *tz)
 
 	if (tv == NULL)
 		return -1;
-
-	static GetSystemTimePreciseAsFileTime_fn_t GetSystemTimePreciseAsFileTime_fn = NULL;
-	static int check_precise = 1;
 
 	if (EVUTIL_UNLIKELY(check_precise)) {
 		HMODULE h = evutil_load_windows_system_library_(TEXT("kernel32.dll"));
@@ -315,6 +315,8 @@ evutil_configure_monotonic_time_(struct evutil_monotonic_timer *base,
 #endif
 	const int fallback = flags & EV_MONOT_FALLBACK;
 	struct timespec	ts;
+
+	memset(base, 0, sizeof(*base));
 
 #ifdef CLOCK_MONOTONIC_COARSE
 	if (CLOCK_MONOTONIC_COARSE < 0) {
@@ -574,7 +576,7 @@ evutil_gettime_monotonic_(struct evutil_monotonic_timer *base,
 			/* It appears that the QueryPerformanceCounter()
 			 * result is more than 1 second away from
 			 * GetTickCount() result. Let's adjust it to be as
-			 * accurate as we can; adjust_monotnonic_time() below
+			 * accurate as we can; adjust_monotonic_time() below
 			 * will keep it monotonic. */
 			counter_usec_elapsed = ticks_elapsed * 1000;
 			base->first_counter = (ev_uint64_t) (counter.QuadPart - counter_usec_elapsed / base->usec_per_count);

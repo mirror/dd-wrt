@@ -192,9 +192,11 @@ thread_basic(void *arg)
 		/* This piggybacks on the th_notify_fd weirdly, and looks
 		 * inside libevent internals.  Not a good idea in non-testing
 		 * code! */
+		tt_assert(sigchld_event);
 		notification_event = event_new(base,
 		    base->th_notify_fd[0], EV_READ|EV_PERSIST, notify_fd_cb,
 		    NULL);
+		tt_assert(notification_event);
 		event_add(sigchld_event, NULL);
 		event_add(notification_event, NULL);
 
@@ -574,6 +576,9 @@ struct testcase_t thread_testcases[] = {
 #ifndef _WIN32
 	{ "forking", thread_basic, TT_FORK|TT_NEED_THREADS|TT_NEED_BASE,
 	  &basic_setup, (char*)"forking" },
+	{ "priority_inheritance", thread_basic,
+	  TT_FORK|TT_NEED_THREADS|TT_NEED_BASE|TT_ENABLE_PRIORITY_INHERITANCE,
+	  &basic_setup, (char*)"priority_inheritance" },
 #endif
 	TEST(conditions_simple, TT_RETRIABLE),
 	{ "deferred_cb_skew", thread_deferred_cb_skew,

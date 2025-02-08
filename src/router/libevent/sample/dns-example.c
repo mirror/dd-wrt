@@ -60,6 +60,11 @@ main_callback(int result, char type, int count, int ttl,
 			  void *addrs, void *orig) {
 	char *n = (char*)orig;
 	int i;
+
+	if (type == DNS_CNAME) {
+		printf("%s: %s (CNAME)\n", n, (char*)addrs);
+	}
+
 	for (i = 0; i < count; ++i) {
 		if (type == DNS_IPv4_A) {
 			printf("%s: %s\n", n, debug_ntoa(((u32*)addrs)[i]));
@@ -191,7 +196,17 @@ main(int c, char **v) {
 #endif
 
 	event_base = event_base_new();
+	if (event_base == NULL) {
+		fprintf(stderr, "Couldn't create new event_base\n");
+		return 1;
+	}
 	evdns_base = evdns_base_new(event_base, EVDNS_BASE_DISABLE_WHEN_INACTIVE);
+	if (evdns_base == NULL) {
+		event_base_free(event_base);
+		fprintf(stderr, "Couldn't create new evdns_base\n");
+		return 1;
+	}
+	
 	evdns_set_log_fn(logfn);
 
 	if (o.servertest) {
@@ -252,7 +267,7 @@ main(int c, char **v) {
 			    gai_callback, v[optind]);
 		} else {
 			fprintf(stderr, "resolving (fwd) %s...\n",v[optind]);
-			evdns_base_resolve_ipv4(evdns_base, v[optind], 0, main_callback, v[optind]);
+			evdns_base_resolve_ipv4(evdns_base, v[optind], DNS_CNAME_CALLBACK, main_callback, v[optind]);
 		}
 	}
 	fflush(stdout);

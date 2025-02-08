@@ -22,6 +22,7 @@
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <signal.h>
 #endif
 
 #include <event2/bufferevent_ssl.h>
@@ -112,10 +113,15 @@ eventcb(struct bufferevent *bev, short what, void *ctx)
 				    ERR_reason_error_string(err);
 				const char *lib = (const char*)
 				    ERR_lib_error_string(err);
+#if OPENSSL_VERSION_NUMBER >= 0x30000000
+				fprintf(stderr,
+					"%s in %s\n", msg, lib);
+#else
 				const char *func = (const char*)
 				    ERR_func_error_string(err);
 				fprintf(stderr,
 				    "%s in %s %s\n", msg, lib, func);
+#endif
 			}
 			if (errno)
 				perror("connection error");
@@ -217,10 +223,17 @@ main(int argc, char **argv)
 	struct evconnlistener *listener;
 
 #ifdef _WIN32
-	WORD wVersionRequested;
-	WSADATA wsaData;
-	wVersionRequested = MAKEWORD(2, 2);
-	(void) WSAStartup(wVersionRequested, &wsaData);
+	{
+		WORD wVersionRequested;
+		WSADATA wsaData;
+		wVersionRequested = MAKEWORD(2, 2);
+		(void) WSAStartup(wVersionRequested, &wsaData);
+	}
+#else
+	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
+		perror("signal()");
+		return 1;
+	}
 #endif
 
 	if (argc < 3)

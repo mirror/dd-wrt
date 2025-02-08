@@ -4,10 +4,6 @@
 #
 # See LICENSE for copying information.
 
-# 'foreign' means that we're not enforcing GNU package rules strictly.
-# '1.13' means that we need automake 1.13 or later (and we do).
-AUTOMAKE_OPTIONS = foreign 1.13 subdir-objects
-
 ACLOCAL_AMFLAGS = -I m4
 
 # This is the "Release" of the Libevent ABI.  It takes precedence over
@@ -18,7 +14,7 @@ ACLOCAL_AMFLAGS = -I m4
 # will increment for each series until we revise our interfaces enough
 # that we can seriously expect ABI compatibility between series.
 #
-RELEASE = -release 2.1
+RELEASE = -release 2.2
 
 # This is the version info for the libevent binary API.  It has three
 # numbers:
@@ -38,7 +34,7 @@ RELEASE = -release 2.1
 #
 # Once an RC is out, DO NOT MAKE ANY ABI-BREAKING CHANGES IN THAT SERIES
 # UNLESS YOU REALLY REALLY HAVE TO.
-VERSION_INFO = 7:1:0
+VERSION_INFO = 1:0:0
 
 # History:          RELEASE    VERSION_INFO
 #  2.0.1-alpha --     2.0        1:0:0
@@ -71,11 +67,10 @@ VERSION_INFO = 7:1:0
 #  2.1.5-beta  --     2.1        5:0:0 (ABI changed slightly)
 #  2.1.6-beta  --     2.1        6:0:0 (ABI changed slightly)
 #  2.1.7-beta  --     2.1        6:1:0 (ABI changed slightly)
-#  2.1.8-stable--     2.1        6:2:0 (No ABI change)
-#  2.1.9-beta--       2.1        6:3:0 (No ABI change)
-#  2.1.10-stable--    2.1        6:4:0 (No ABI change, WRONG)
-#  2.1.11-stable--    2.1        7:0:0 (ABI changed)
-#  2.1.12-stable--    2.1        7:1:0 (No ABI change)
+#  2.1.8-stable--     2.1        6:2:0 (ABI changed slightly)
+#
+# For Libevent 2.2:
+#  2.2.1-alpha --     2.2        1:0:0
 
 # ABI version history for this package effectively restarts every time
 # we change RELEASE.  Version 1.4.x had RELEASE of 1.4.
@@ -106,10 +101,14 @@ LIBEVENT_PKGCONFIG=libevent.pc libevent_core.pc libevent_extra.pc
 # included from other files.
 PLATFORM_DEPENDENT_SRC = \
 	arc4random.c \
-	epoll_sub.c
+	bufferevent_ssl.c \
+	epoll_sub.c \
+	PrivacyInfo.xcprivacy \
+	test/regress_ssl.c
 
 CMAKE_FILES = \
 	cmake/AddCompilerFlags.cmake \
+	cmake/AddLinkerFlags.cmake \
 	cmake/AddEventLibrary.cmake \
 	cmake/CheckConstExists.cmake \
 	cmake/CheckFileOffsetBits.c \
@@ -121,6 +120,7 @@ CMAKE_FILES = \
 	cmake/CodeCoverage.cmake \
 	cmake/COPYING-CMAKE-SCRIPTS \
 	cmake/Copyright.txt \
+	cmake/FindMbedTLS.cmake \
 	cmake/LibeventConfig.cmake.in \
 	cmake/LibeventConfigVersion.cmake.in \
 	cmake/Macros.cmake \
@@ -131,12 +131,16 @@ CMAKE_FILES = \
 	evconfig-private.h.cmake \
 	CMakeLists.txt
 
+DOCUMENTATION_FILES = \
+	Documentation/Building.md
+
 EXTRA_DIST = \
 	ChangeLog-1.4 \
 	ChangeLog-2.0 \
+	ChangeLog-2.1 \
+	ChangeLog \
 	Doxyfile \
 	LICENSE \
-	Makefile.nmake test/Makefile.nmake \
 	autogen.sh \
 	event_rpcgen.py \
 	libevent.pc.in \
@@ -145,6 +149,7 @@ EXTRA_DIST = \
 	whatsnew-2.1.txt \
 	README.md \
 	$(CMAKE_FILES) \
+	$(DOCUMENTATION_FILES) \
 	$(PLATFORM_DEPENDENT_SRC)
 
 LIBEVENT_LIBS_LA = libevent.la libevent_core.la libevent_extra.la
@@ -155,6 +160,10 @@ endif
 if OPENSSL
 LIBEVENT_LIBS_LA += libevent_openssl.la
 LIBEVENT_PKGCONFIG += libevent_openssl.pc
+endif
+if MBEDTLS
+LIBEVENT_LIBS_LA += libevent_mbedtls.la
+LIBEVENT_PKGCONFIG += libevent_mbedtls.pc
 endif
 
 if INSTALL_LIBEVENT
@@ -178,10 +187,10 @@ include test/include.am
 if BUILD_WIN32
 
 SYS_CORE_LIBS = -liphlpapi
-SYS_LIBS = -lws2_32 -lshell32 -ladvapi32
+SYS_LIBS = -lws2_32 -lshell32 -ladvapi32 -lbcrypt
 SYS_SRC = win32select.c buffer_iocp.c event_iocp.c \
 	bufferevent_async.c
-SYS_INCLUDES = -IWIN32-Code -IWIN32-Code/nmake
+SYS_INCLUDES = -IWIN32-Code
 
 if THREADS
 SYS_SRC += evthread_win32.c
@@ -217,8 +226,15 @@ endif
 if EVPORT_BACKEND
 SYS_SRC += evport.c
 endif
+if WEPOLL_BACKEND
+SYS_SRC += epoll.c
+SYS_SRC += wepoll.c
+endif
 if SIGNAL_SUPPORT
 SYS_SRC += signal.c
+endif
+if SIGNALFD_SUPPORT
+SYS_SRC += signalfd.c
 endif
 
 BUILT_SOURCES += include/event2/event-config.h
@@ -241,6 +257,7 @@ CORE_SRC =					\
 	evutil.c				\
 	evutil_rand.c				\
 	evutil_time.c				\
+	watch.c					\
 	listener.c				\
 	log.c					\
 	$(SYS_SRC)
@@ -249,6 +266,8 @@ EXTRAS_SRC =					\
 	evdns.c					\
 	event_tagging.c				\
 	evrpc.c					\
+	sha1.c					\
+	ws.c					\
 	http.c
 
 if BUILD_WITH_NO_UNDEFINED
@@ -284,15 +303,20 @@ libevent_extra_la_LIBADD = $(MAYBE_CORE) $(SYS_LIBS)
 libevent_extra_la_LDFLAGS = $(GENERIC_LDFLAGS)
 
 if OPENSSL
-libevent_openssl_la_SOURCES = bufferevent_openssl.c
+libevent_openssl_la_SOURCES = bufferevent_openssl.c bufferevent_ssl.c
 libevent_openssl_la_LIBADD = $(MAYBE_CORE) $(OPENSSL_LIBS)
 libevent_openssl_la_LDFLAGS = $(GENERIC_LDFLAGS)
 libevent_openssl_la_CPPFLAGS = $(AM_CPPFLAGS) $(OPENSSL_INCS)
 endif
 
+if MBEDTLS
+libevent_mbedtls_la_SOURCES = bufferevent_mbedtls.c bufferevent_ssl.c
+libevent_mbedtls_la_LIBADD = $(MAYBE_CORE) $(MBEDTLS_LIBS)
+libevent_mbedtls_la_LDFLAGS = $(GENERIC_LDFLAGS)
+libevent_mbedtls_la_CPPFLAGS = $(AM_CPPFLAGS) $(MBEDTLS_INCS)
+endif
+
 noinst_HEADERS +=				\
-	WIN32-Code/nmake/evconfig-private.h	\
-	WIN32-Code/nmake/event2/event-config.h	\
 	WIN32-Code/getopt.h			\
 	WIN32-Code/getopt.c			\
 	WIN32-Code/getopt_long.c	\
@@ -300,6 +324,7 @@ noinst_HEADERS +=				\
 	bufferevent-internal.h		\
 	changelist-internal.h		\
 	compat/sys/queue.h			\
+	compat/sys/tree.h			\
 	defer-internal.h			\
 	epolltable-internal.h		\
 	evbuffer-internal.h			\
@@ -308,6 +333,7 @@ noinst_HEADERS +=				\
 	evrpc-internal.h			\
 	evsignal-internal.h			\
 	evthread-internal.h			\
+	evdns-internal.h			\
 	ht-internal.h				\
 	http-internal.h				\
 	iocp-internal.h				\
@@ -321,7 +347,11 @@ noinst_HEADERS +=				\
 	strlcpy-internal.h			\
 	time-internal.h				\
 	util-internal.h				\
-	openssl-compat.h
+	openssl-compat.h			\
+	mbedtls-compat.h			\
+	sha1.h						\
+	ssl-compat.h			    \
+	wepoll.h
 
 EVENT1_HDRS = \
 	include/evdns.h \

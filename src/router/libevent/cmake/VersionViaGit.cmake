@@ -1,6 +1,6 @@
 # This module defines the following variables utilizing
 # git to determine the parent tag. And if found the macro
-# will attempt to parse them in the github tag fomat
+# will attempt to parse them in the github tag format
 #
 # Useful for auto-versioning in our CMakeLists
 #
@@ -22,9 +22,9 @@ include(FindGit)
 macro(event_fuzzy_version_from_git)
 	# set our defaults.
 	set(EVENT_GIT___VERSION_MAJOR 2)
-	set(EVENT_GIT___VERSION_MINOR 1)
-	set(EVENT_GIT___VERSION_PATCH 12)
-	set(EVENT_GIT___VERSION_STAGE "stable")
+	set(EVENT_GIT___VERSION_MINOR 2)
+	set(EVENT_GIT___VERSION_PATCH 1)
+	set(EVENT_GIT___VERSION_STAGE "alpha-dev")
 
 	find_package(Git)
 
