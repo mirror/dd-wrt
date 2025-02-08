@@ -1,6 +1,7 @@
 #ifndef OPENSSL_COMPAT_H
 #define OPENSSL_COMPAT_H
 
+#include <openssl/ssl.h>
 #include <openssl/bio.h>
 #include "util-internal.h"
 
