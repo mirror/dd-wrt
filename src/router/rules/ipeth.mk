@@ -37,6 +37,7 @@ ipeth-configure:
 
 	cd $(TOP)/ipeth/libimobiledevice/openssl && make
 
+	$(MAKE) -C wolfssl/standard
 	-mkdir $(TOP)/ipeth/libimobiledevice/wolfssl
 	cd $(TOP)/ipeth/libimobiledevice/wolfssl && ../configure --without-cython --host=$(ARCH)-linux \
 		ac_cv_sys_file_offset_bits=64 \
