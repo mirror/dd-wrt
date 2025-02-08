@@ -320,6 +320,10 @@ static int print_bss_handler(struct nl_msg *msg, void *arg)
 	if (bss[NL80211_BSS_BEACON_INTERVAL]) {
 		site_survey_lists[sscount].beacon_period = nla_get_u16(bss[NL80211_BSS_BEACON_INTERVAL]);
 	}
+	if (bss[NL80211_BSS_CAPABILITY]) {
+		__u16 capa = nla_get_u16(bss[NL80211_BSS_CAPABILITY]);
+		site_survey_lists[sscount].capability = capa;
+	}
 	if (bss[NL80211_BSS_SIGNAL_MBM]) {
 		int s = nla_get_u32(bss[NL80211_BSS_SIGNAL_MBM]);
 		site_survey_lists[sscount].RSSI = s / 100;
