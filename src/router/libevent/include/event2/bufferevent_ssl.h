@@ -30,6 +30,7 @@
 
     @brief OpenSSL support for bufferevents.
  */
+#include <openssl/ssl.h>
 #include <event2/visibility.h>
 #include <event2/event-config.h>
 #include <event2/bufferevent.h>
@@ -108,7 +109,6 @@ ev_uint64_t bufferevent_ssl_clear_flags(struct bufferevent *bev, ev_uint64_t fla
 
 #if defined(EVENT__HAVE_OPENSSL) || defined(EVENT_IN_DOXYGEN_)
 /* This is what openssl's SSL objects are underneath. */
-struct ssl_st;
 
 /**
    Create a new SSL bufferevent to send its data over another bufferevent.
@@ -125,7 +125,7 @@ EVENT2_EXPORT_SYMBOL
 struct bufferevent *
 bufferevent_openssl_filter_new(struct event_base *base,
     struct bufferevent *underlying,
-    struct ssl_st *ssl,
+    SSL *ssl,
     enum bufferevent_ssl_state state,
     int options);
 
@@ -143,7 +143,7 @@ EVENT2_EXPORT_SYMBOL
 struct bufferevent *
 bufferevent_openssl_socket_new(struct event_base *base,
     evutil_socket_t fd,
-    struct ssl_st *ssl,
+    SSL *ssl,
     enum bufferevent_ssl_state state,
     int options);
 
@@ -169,7 +169,7 @@ void bufferevent_openssl_set_allow_dirty_shutdown(struct bufferevent *bev,
 
 /** Return the underlying openssl SSL * object for an SSL bufferevent. */
 EVENT2_EXPORT_SYMBOL
-struct ssl_st *
+SSL *
 bufferevent_openssl_get_ssl(struct bufferevent *bufev);
 
 /** Tells a bufferevent to begin SSL renegotiation. */

@@ -464,10 +464,10 @@ main(int argc, char **argv)
 			goto error;
 		}
 #else // _WIN32
-		if (X509_STORE_set_default_paths(store) != 1) {
-			err_openssl("X509_STORE_set_default_paths");
-			goto error;
-		}
+//		if (X509_STORE_set_default_paths(store) != 1) {
+//			err_openssl("X509_STORE_set_default_paths");
+//			goto error;
+//		}
 #endif // _WIN32
 	} else {
 		if (SSL_CTX_load_verify_locations(ssl_ctx, crt, NULL) != 1) {

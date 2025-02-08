@@ -135,7 +135,6 @@ test_regress_SOURCES = 				\
 	test/regress_finalize.c				\
 	test/regress_http.c				\
 	test/regress_http.h				\
-	test/regress_listener.c			\
 	test/regress_main.c				\
 	test/regress_minheap.c			\
 	test/regress_rpc.c				\
@@ -170,11 +169,6 @@ test_regress_LDADD = $(LIBEVENT_GC_SECTIONS) libevent_core.la libevent_extra.la 
 test_regress_CPPFLAGS = $(AM_CPPFLAGS) $(PTHREAD_CFLAGS) $(ZLIB_CFLAGS) -Itest
 test_regress_LDFLAGS = $(PTHREAD_CFLAGS)
 
-if OPENSSL
-test_regress_SOURCES += test/regress_openssl.c
-test_regress_CPPFLAGS += $(OPENSSL_INCS)
-test_regress_LDADD += libevent_openssl.la $(OPENSSL_LIBS) ${OPENSSL_LIBADD}
-endif
 
 if MBEDTLS
 test_regress_SOURCES += test/regress_mbedtls.c
