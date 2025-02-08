@@ -19,6 +19,7 @@ libevent-clean:
 	$(MAKE) -C libevent clean
 
 libevent-configure: openssl
+	cd libevent && ./autogen.sh
 	cd libevent && ./configure  --disable-debug-mode --prefix=/usr ac_cv_host=$(ARCH)-uclibc-linux --libdir=/usr/lib --target=$(ARCH)-linux --host=$(ARCH) CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -I$(SSLPATH)/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -L$(SSLPATH)" 
