@@ -47,14 +47,9 @@ case "$enable_openssl" in
      '')
 	;;
      *)
-	OPENSSL_LIBS=`$PKG_CONFIG --libs openssl 2>/dev/null`
-	case "$OPENSSL_LIBS" in
-	 '') ;;
-	 *) OPENSSL_LIBS="$OPENSSL_LIBS $EV_LIB_GDI $EV_LIB_WS32 $OPENSSL_LIBADD"
-	    have_openssl=yes
-	    ;;
-	esac
-	OPENSSL_INCS=`$PKG_CONFIG --cflags openssl 2>/dev/null`
+	OPENSSL_LIBS=
+	have_openssl=yes
+	OPENSSL_INCS=
 	;;
     esac
     case "$have_openssl" in
