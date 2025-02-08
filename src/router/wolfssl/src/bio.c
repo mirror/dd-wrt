@@ -3563,6 +3563,11 @@ void wolfSSL_BIO_set_init(WOLFSSL_BIO* bio, int init)
     (void)bio;
     (void)init;
 }
+int wolfSSL_BIO_get_init(WOLFSSL_BIO* bio)
+{
+    WOLFSSL_STUB("wolfSSL_BIO_get_init");
+    (void)bio;
+}
 #endif /* NO_WOLFSSL_STUB */
 
 void wolfSSL_BIO_set_shutdown(WOLFSSL_BIO* bio, int shut)
