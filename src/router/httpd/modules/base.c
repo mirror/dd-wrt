@@ -889,11 +889,12 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 	char dest[64];
 	sprintf(dest, "%s/spectral_count", path);
 	writestr(dest, nvram_default_get("spectral_count", "1"));
-	sprintf(dest, "%s/spectral_scan0", path);
+	FILE *fp;
+/*	sprintf(dest, "%s/spectral_scan0", path);
 	FILE *fp = fopen(dest, "rb");
 	while (!feof(fp))
 		getc(fp);
-	fclose(fp);
+	fclose(fp);*/
 	if (is_ath10k(ifname) && has_wave2(ifname)) {
 		sprintf(dest, "%s/spectral_bins", path);
 		writestr(dest, "256");
