@@ -2,7 +2,7 @@ BIN=fft_eval
 OBJ=fft_eval.o
 .SUFFIXES: .o .c
 .c.o:
-	$(CC) $(LTO) $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -c -o $@ $<
+	$(CC) $(LTO) $(COPTS) $(MIPS16_OPT) -c -o $@ $<
 
 default:	all
 all:	$(BIN)

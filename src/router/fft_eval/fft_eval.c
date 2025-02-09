@@ -37,14 +37,14 @@
 #include <stdbool.h>
 
 #define _BSD_SOURCE
-#ifdef	__FreeBSD__
+#ifdef __FreeBSD__
 #include <sys/endian.h>
 #else
 #include <endian.h>
-#endif				/* __FreeBSD__ */
-#define CONVERT_BE16(val)	val = be16toh(val)
-#define CONVERT_BE32(val)	val = be32toh(val)
-#define CONVERT_BE64(val)	val = be64toh(val)
+#endif /* __FreeBSD__ */
+#define CONVERT_BE16(val) val = be16toh(val)
+#define CONVERT_BE32(val) val = be32toh(val)
+#define CONVERT_BE64(val) val = be64toh(val)
 
 typedef int8_t s8;
 typedef uint8_t u8;
@@ -52,8 +52,8 @@ typedef uint16_t u16;
 typedef uint64_t u64;
 
 /* taken from ath9k.h */
-#define SPECTRAL_HT20_NUM_BINS          56
-#define SPECTRAL_HT20_40_NUM_BINS		128
+#define SPECTRAL_HT20_NUM_BINS 56
+#define SPECTRAL_HT20_40_NUM_BINS 128
 
 enum ath_fft_sample_type {
 	ATH_FFT_SAMPLE_HT20 = 1,
@@ -62,15 +62,10 @@ enum ath_fft_sample_type {
 	ATH_FFT_SAMPLE_ATH11K = 4,
 };
 
-enum nl80211_channel_type {
-	NL80211_CHAN_NO_HT,
-	NL80211_CHAN_HT20,
-	NL80211_CHAN_HT40MINUS,
-	NL80211_CHAN_HT40PLUS
-};
+enum nl80211_channel_type { NL80211_CHAN_NO_HT, NL80211_CHAN_HT20, NL80211_CHAN_HT40MINUS, NL80211_CHAN_HT40PLUS };
 
 struct fft_sample_tlv {
-	u8 type;		/* see ath_fft_sample */
+	u8 type; /* see ath_fft_sample */
 	u16 length;
 	/* type dependent data follows */
 } __attribute__((packed));
@@ -125,8 +120,8 @@ struct fft_sample_ht20_40 {
  * ath10k spectral sample definition
  */
 
-#define SPECTRAL_ATH10K_MAX_NUM_BINS            256
-#define SPECTRAL_ATH11K_MAX_NUM_BINS            1024
+#define SPECTRAL_ATH10K_MAX_NUM_BINS 256
+#define SPECTRAL_ATH11K_MAX_NUM_BINS 1024
 
 struct fft_sample_ath10k {
 	struct fft_sample_tlv tlv;
@@ -197,20 +192,19 @@ static struct resultsort *initbins(int bins)
 		b[i].signal = INFINITY;
 	}
 	return b;
-
 }
 
 static int notvalid(float value)
 {
-    return isinf(value) | isnan(value);
+	return isinf(value) | isnan(value);
 }
 
 static void insert(struct resultsort *b, int bins, float freq, float signal)
 {
 	int i;
 	if (notvalid(signal))
-		return;		// ignore
-/* seek for already existing frequency, in case order is incorrect */
+		return; // ignore
+	/* seek for already existing frequency, in case order is incorrect */
 	for (i = 0; i < bins; i++) {
 		if (b[i].freq == freq) {
 			b[i].signal += signal;
@@ -218,7 +212,7 @@ static void insert(struct resultsort *b, int bins, float freq, float signal)
 			return;
 		}
 	}
-/* insert new slot */
+	/* insert new slot */
 	for (i = 0; i < bins; i++) {
 		if (notvalid(b[i].signal)) {
 			b[i].freq = freq;
@@ -237,41 +231,41 @@ static int print_values()
 	struct scanresult *result;
 	struct resultsort *b = NULL;
 	int bins;
-	printf("[");
+	fprintf(stdout, "[");
 	rnum = 0;
 	for (result = result_list; result; result = result->next) {
-
 		switch (result->sample.tlv.type) {
+		case ATH_FFT_SAMPLE_HT20: {
+			int datamax = 0, datamin = 65536;
+			int datasquaresum = 0;
 
-		case ATH_FFT_SAMPLE_HT20:
-			{
-				int datamax = 0, datamin = 65536;
-				int datasquaresum = 0;
-
-				/* prints some statistical data about the
+			/* prints some statistical data about the
 				 * data sample and auxiliary data. */
-				for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++) {
-					int data;
-					data = (result->sample.ht20.data[i] << result->sample.ht20.max_exp);
-					data *= data;
-					datasquaresum += data;
-					if (data > datamax)
-						datamax = data;
-					if (data < datamin)
-						datamin = data;
-				}
-				if (!rnum)
-					printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n", result->sample.ht20.tsf, result->sample.ht20.freq,
-					       result->sample.ht20.rssi, result->sample.ht20.noise);
-				bins = SPECTRAL_HT20_NUM_BINS;
-				if (!b)
-					b = initbins(bins);
+			for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++) {
+				int data;
+				data = (result->sample.ht20.data[i] << result->sample.ht20.max_exp);
+				data *= data;
+				datasquaresum += data;
+				if (data > datamax)
+					datamax = data;
+				if (data < datamin)
+					datamin = data;
+			}
+			if (!rnum)
+				fprintf(stdout,
+					"\n{ \"tsf\": %" PRIu64
+					", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n",
+					result->sample.ht20.tsf, result->sample.ht20.freq, result->sample.ht20.rssi,
+					result->sample.ht20.noise);
+			bins = SPECTRAL_HT20_NUM_BINS;
+			if (!b)
+				b = initbins(bins);
 
-				for (i = 0; i < bins; i++) {
-					float freq;
-					float signal;
-					int data;
-					/*
+			for (i = 0; i < bins; i++) {
+				float freq;
+				float signal;
+				int data;
+				/*
 					 * According to Dave Aragon from University of Washington,
 					 * formerly Trapeze/Juniper Networks, in 2.4 GHz it should
 					 * divide 22 MHz channel width into 64 subcarriers but
@@ -283,199 +277,206 @@ static int print_values()
 					 * Since all these calculations map pretty much to -10/+10 MHz,
 					 * and we don't know better, use this assumption as well in 5 GHz.
 					 */
-					freq = result->sample.ht20.freq - (22.0 * bins / 64.0) / 2 + (22.0 * (i + 0.5) / 64.0);
+				freq = result->sample.ht20.freq - (22.0 * bins / 64.0) / 2 + (22.0 * (i + 0.5) / 64.0);
 
-					/* This is where the "magic" happens: interpret the signal
+				/* This is where the "magic" happens: interpret the signal
 					 * to output some kind of data which looks useful.  */
 
-					data = result->sample.ht20.data[i] << result->sample.ht20.max_exp;
-					if (data == 0)
-						data = 1;
-					signal = result->sample.ht20.noise + result->sample.ht20.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
-					insert(b, bins, freq, signal);
-				}
+				data = result->sample.ht20.data[i] << result->sample.ht20.max_exp;
+				if (data == 0)
+					data = 1;
+				signal = result->sample.ht20.noise + result->sample.ht20.rssi + 20 * log10f(data) -
+					 log10f(datasquaresum) * 10;
+				insert(b, bins, freq, signal);
 			}
-			break;
-		case ATH_FFT_SAMPLE_HT20_40:
-			{
-				int datamax = 0, datamin = 65536;
-				int datasquaresum_lower = 0;
-				int datasquaresum_upper = 0;
-				int datasquaresum;
-				int i;
-				int centerfreq;
-				s8 noise;
-				s8 rssi;
-				//todo build average
-				bins = SPECTRAL_HT20_40_NUM_BINS;
+		} break;
+		case ATH_FFT_SAMPLE_HT20_40: {
+			int datamax = 0, datamin = 65536;
+			int datasquaresum_lower = 0;
+			int datasquaresum_upper = 0;
+			int datasquaresum;
+			int i;
+			int centerfreq;
+			s8 noise;
+			s8 rssi;
+			//todo build average
+			bins = SPECTRAL_HT20_40_NUM_BINS;
 
-				for (i = 0; i < bins / 2; i++) {
-					int data;
+			for (i = 0; i < bins / 2; i++) {
+				int data;
 
-					data = result->sample.ht40.data[i];
-					data <<= result->sample.ht40.max_exp;
-					data *= data;
-					datasquaresum_lower += data;
+				data = result->sample.ht40.data[i];
+				data <<= result->sample.ht40.max_exp;
+				data *= data;
+				datasquaresum_lower += data;
 
-					if (data > datamax)
-						datamax = data;
-					if (data < datamin)
-						datamin = data;
-				}
-
-				for (i = bins / 2; i < bins; i++) {
-					int data;
-
-					data = result->sample.ht40.data[i];
-					data <<= result->sample.ht40.max_exp;
-					data *= data;
-					datasquaresum_upper += data;
-
-					if (data > datamax)
-						datamax = data;
-					if (data < datamin)
-						datamin = data;
-				}
-
-				switch (result->sample.ht40.channel_type) {
-				case NL80211_CHAN_HT40PLUS:
-					centerfreq = result->sample.ht40.freq + 10;
-					break;
-				case NL80211_CHAN_HT40MINUS:
-					centerfreq = result->sample.ht40.freq - 10;
-					break;
-				default:
-					return -1;
-				}
-
-				if (!rnum)
-					printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n", result->sample.ht40.tsf, centerfreq, result->sample.ht40.lower_rssi,
-					       result->sample.ht40.lower_noise);
-
-				if (!b)
-					b = initbins(bins);
-
-				for (i = 0; i < bins; i++) {
-					float freq;
-					int data;
-
-					freq = centerfreq - (40.0 * bins / 128.0) / 2 + (40.0 * (i + 0.5) / 128.0);
-
-					if (i < bins / 2) {
-						noise = result->sample.ht40.lower_noise;
-						datasquaresum = datasquaresum_lower;
-						rssi = result->sample.ht40.lower_rssi;
-					} else {
-						noise = result->sample.ht40.upper_noise;
-						datasquaresum = datasquaresum_upper;
-						rssi = result->sample.ht40.upper_rssi;
-					}
-
-					data = result->sample.ht40.data[i];
-					data <<= result->sample.ht40.max_exp;
-
-					if (data == 0)
-						data = 1;
-					float signal = noise + rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
-					insert(b, bins, freq, signal);
-				}
+				if (data > datamax)
+					datamax = data;
+				if (data < datamin)
+					datamin = data;
 			}
-			break;
-		case ATH_FFT_SAMPLE_ATH10K:
-			{
-				int datamax = 0, datamin = 65536;
-				int datasquaresum = 0;
-				int i;
-				if (!rnum)
-					printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n", result->sample.ath10k.header.tsf, result->sample.ath10k.header.freq1,
-					       result->sample.ath10k.header.rssi, result->sample.ath10k.header.noise);
 
-				bins = result->sample.tlv.length - (sizeof(result->sample.ath10k.header) - sizeof(result->sample.ath10k.header.tlv));
+			for (i = bins / 2; i < bins; i++) {
+				int data;
 
-				for (i = 0; i < bins; i++) {
-					int data;
+				data = result->sample.ht40.data[i];
+				data <<= result->sample.ht40.max_exp;
+				data *= data;
+				datasquaresum_upper += data;
 
-					data = (result->sample.ath10k.data[i] << result->sample.ath10k.header.max_exp);
-					data *= data;
-					datasquaresum += data;
-					if (data > datamax)
-						datamax = data;
-					if (data < datamin)
-						datamin = data;
-				}
-
-				if (!b)
-					b = initbins(bins);
-
-				for (i = 0; i < bins; i++) {
-					float freq;
-					int data;
-					float signal;
-					freq = result->sample.ath10k.header.freq1 - (result->sample.ath10k.header.chan_width_mhz) / 2 + (result->sample.ath10k.header.chan_width_mhz * (i + 0.5) / bins);
-
-					data = result->sample.ath10k.data[i] << result->sample.ath10k.header.max_exp;
-					if (data == 0)
-						data = 1;
-					signal = result->sample.ath10k.header.noise + result->sample.ath10k.header.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
-
-					insert(b, bins, freq, signal);
-				}
-
+				if (data > datamax)
+					datamax = data;
+				if (data < datamin)
+					datamin = data;
 			}
-			break;
-		case ATH_FFT_SAMPLE_ATH11K:
-			{
-				int datamax = 0, datamin = 65536;
-				int datasquaresum = 0;
-				unsigned short frequency;
-				unsigned char width;
-				int i;
-				if (!rnum)
-					printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n", result->sample.ath11k.header.tsf, result->sample.ath11k.header.freq1,
-					       result->sample.ath11k.header.rssi, result->sample.ath11k.header.noise);
 
-				bins = result->sample.tlv.length - (sizeof(result->sample.ath11k.header) - sizeof(result->sample.ath11k.header.tlv));
-				/* If freq2 is non zero and not equal to freq1 then the scan results are fragmented */
-				if (result->sample.ath11k.header.freq2 &&
-				    result->sample.ath11k.header.freq1 != result->sample.ath11k.header.freq2) {
-					width = result->sample.ath11k.header.chan_width_mhz / 2;
-					if (result->sample.ath11k.header.is_primary)
-						frequency = result->sample.ath11k.header.freq1;
-					else
-			    			frequency = result->sample.ath11k.header.freq2;
-				}  else {
+			switch (result->sample.ht40.channel_type) {
+			case NL80211_CHAN_HT40PLUS:
+				centerfreq = result->sample.ht40.freq + 10;
+				break;
+			case NL80211_CHAN_HT40MINUS:
+				centerfreq = result->sample.ht40.freq - 10;
+				break;
+			default:
+				return -1;
+			}
+
+			if (!rnum)
+				fprintf(stdout,
+					"\n{ \"tsf\": %" PRIu64
+					", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n",
+					result->sample.ht40.tsf, centerfreq, result->sample.ht40.lower_rssi,
+					result->sample.ht40.lower_noise);
+
+			if (!b)
+				b = initbins(bins);
+
+			for (i = 0; i < bins; i++) {
+				float freq;
+				int data;
+
+				freq = centerfreq - (40.0 * bins / 128.0) / 2 + (40.0 * (i + 0.5) / 128.0);
+
+				if (i < bins / 2) {
+					noise = result->sample.ht40.lower_noise;
+					datasquaresum = datasquaresum_lower;
+					rssi = result->sample.ht40.lower_rssi;
+				} else {
+					noise = result->sample.ht40.upper_noise;
+					datasquaresum = datasquaresum_upper;
+					rssi = result->sample.ht40.upper_rssi;
+				}
+
+				data = result->sample.ht40.data[i];
+				data <<= result->sample.ht40.max_exp;
+
+				if (data == 0)
+					data = 1;
+				float signal = noise + rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
+				insert(b, bins, freq, signal);
+			}
+		} break;
+		case ATH_FFT_SAMPLE_ATH10K: {
+			int datamax = 0, datamin = 65536;
+			int datasquaresum = 0;
+			int i;
+			if (!rnum)
+				fprintf(stdout,
+					"\n{ \"tsf\": %" PRIu64
+					", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n",
+					result->sample.ath10k.header.tsf, result->sample.ath10k.header.freq1,
+					result->sample.ath10k.header.rssi, result->sample.ath10k.header.noise);
+
+			bins = result->sample.tlv.length -
+			       (sizeof(result->sample.ath10k.header) - sizeof(result->sample.ath10k.header.tlv));
+
+			for (i = 0; i < bins; i++) {
+				int data;
+
+				data = (result->sample.ath10k.data[i] << result->sample.ath10k.header.max_exp);
+				data *= data;
+				datasquaresum += data;
+				if (data > datamax)
+					datamax = data;
+				if (data < datamin)
+					datamin = data;
+			}
+
+			if (!b)
+				b = initbins(bins);
+
+			for (i = 0; i < bins; i++) {
+				float freq;
+				int data;
+				float signal;
+				freq = result->sample.ath10k.header.freq1 - (result->sample.ath10k.header.chan_width_mhz) / 2 +
+				       (result->sample.ath10k.header.chan_width_mhz * (i + 0.5) / bins);
+
+				data = result->sample.ath10k.data[i] << result->sample.ath10k.header.max_exp;
+				if (data == 0)
+					data = 1;
+				signal = result->sample.ath10k.header.noise + result->sample.ath10k.header.rssi +
+					 20 * log10f(data) - log10f(datasquaresum) * 10;
+
+				insert(b, bins, freq, signal);
+			}
+
+		} break;
+		case ATH_FFT_SAMPLE_ATH11K: {
+			int datamax = 0, datamin = 65536;
+			int datasquaresum = 0;
+			unsigned short frequency;
+			unsigned char width;
+			int i;
+			if (!rnum)
+				fprintf(stdout,
+					"\n{ \"tsf\": %" PRIu64
+					", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n",
+					result->sample.ath11k.header.tsf, result->sample.ath11k.header.freq1,
+					result->sample.ath11k.header.rssi, result->sample.ath11k.header.noise);
+
+			bins = result->sample.tlv.length -
+			       (sizeof(result->sample.ath11k.header) - sizeof(result->sample.ath11k.header.tlv));
+			/* If freq2 is non zero and not equal to freq1 then the scan results are fragmented */
+			if (result->sample.ath11k.header.freq2 &&
+			    result->sample.ath11k.header.freq1 != result->sample.ath11k.header.freq2) {
+				width = result->sample.ath11k.header.chan_width_mhz / 2;
+				if (result->sample.ath11k.header.is_primary)
 					frequency = result->sample.ath11k.header.freq1;
-					width = result->sample.ath11k.header.chan_width_mhz;
-				}
-				for (i = 0; i < bins; i++) {
-					int data;
-
-					data = result->sample.ath11k.data[i];
-					data *= data;
-					datasquaresum += data;
-					if (data > datamax)
-						datamax = data;
-					if (data < datamin)
-						datamin = data;
-				}
-				if (!b)
-					b = initbins(bins);
-
-				for (i = 0; i < bins; i++) {
-					float freq;
-					int data;
-					float signal;
-
-					freq = frequency - width / 2 + (width * (i + 0.5) / bins);
-					data = result->sample.ath11k.data[i];
-					if (data == 0)
-						data = 1;
-					signal = result->sample.ath11k.header.noise + result->sample.ath11k.header.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
-					insert(b, bins, freq, signal);
-				}
+				else
+					frequency = result->sample.ath11k.header.freq2;
+			} else {
+				frequency = result->sample.ath11k.header.freq1;
+				width = result->sample.ath11k.header.chan_width_mhz;
 			}
-			break;
+			for (i = 0; i < bins; i++) {
+				int data;
 
+				data = result->sample.ath11k.data[i];
+				data *= data;
+				datasquaresum += data;
+				if (data > datamax)
+					datamax = data;
+				if (data < datamin)
+					datamin = data;
+			}
+			if (!b)
+				b = initbins(bins);
+
+			for (i = 0; i < bins; i++) {
+				float freq;
+				int data;
+				float signal;
+
+				freq = frequency - width / 2 + (width * (i + 0.5) / bins);
+				data = result->sample.ath11k.data[i];
+				if (data == 0)
+					data = 1;
+				signal = result->sample.ath11k.header.noise + result->sample.ath11k.header.rssi +
+					 20 * log10f(data) - log10f(datasquaresum) * 10;
+				insert(b, bins, freq, signal);
+			}
+		} break;
 		}
 
 		rnum++;
@@ -483,17 +484,16 @@ static int print_values()
 	if (b) {
 		for (i = 0; i < bins; i++) {
 			if (!notvalid(b[i].signal)) {
-				printf("[ %f, %f ]", b[i].freq, b[i].signal);
+				fprintf(stdout, "[ %f, %f ]", b[i].freq, b[i].signal);
 				if (i < (bins - 1))
-					printf(", ");
+					fprintf(stdout, ", ");
 			}
 		}
-		printf("\n");
+		fprintf(stdout, "\n");
 		free(b);
-
 	}
-	printf(" ] }");
-	printf("\n]\n");
+	fprintf(stdout, " ] }");
+	fprintf(stdout, "\n]\n");
 
 	return 0;
 }
@@ -517,7 +517,6 @@ char *read_file(char *fname, size_t *size)
 
 	*size = 0;
 	while (!feof(fp)) {
-
 		buf = realloc(buf, *size + 4097);
 		if (!buf)
 			return NULL;
@@ -554,7 +553,7 @@ static int read_scandata(char *fname)
 
 	pos = scandata;
 
-	while ((uintptr_t) (pos - scandata) < len) {
+	while ((uintptr_t)(pos - scandata) < len) {
 		tlv = (struct fft_sample_tlv *)pos;
 		CONVERT_BE16(tlv->length);
 		sample_len = sizeof(*tlv) + tlv->length;
@@ -626,7 +625,8 @@ static int read_scandata(char *fname)
 			break;
 		case ATH_FFT_SAMPLE_ATH11K:
 			if (sample_len < sizeof(result->sample.ath11k.header)) {
-				fprintf(stderr, "wrong sample length (have %zd, expected at least %zd)\n", sample_len, sizeof(result->sample.ath11k.header));
+				fprintf(stderr, "wrong sample length (have %zd, expected at least %zd)\n", sample_len,
+					sizeof(result->sample.ath11k.header));
 				break;
 			}
 
@@ -673,7 +673,7 @@ static int read_scandata(char *fname)
 		scanresults_n++;
 	}
 
-//      fprintf(stderr, "read %d scan results\n", scanresults_n);
+	//      fprintf(stderr, "read %d scan results\n", scanresults_n);
 	free(scandata);
 
 	return 0;
@@ -681,39 +681,38 @@ static int read_scandata(char *fname)
 
 void usage(int argc, char *argv[])
 {
-	fprintf(stderr, "\n");
-	fprintf(stderr, "scanfile is generated by the spectral analyzer feature\n");
-	fprintf(stderr, "of your wifi card. If you have a AR92xx or AR93xx based\n");
-	fprintf(stderr, "card, try:\n");
-	fprintf(stderr, "\n");
-	fprintf(stderr, "ip link set dev wlan0 up\n");
-	fprintf(stderr, "echo chanscan > /sys/kernel/debug/ieee80211/phy0/ath9k/spectral_scan_ctl\n");
-	fprintf(stderr, "iw dev wlan0 scan\n");
-	fprintf(stderr, "cat /sys/kernel/debug/ieee80211/phy0/ath9k/spectral_scan0 > /tmp/fft_results\n");
-	fprintf(stderr, "echo disable > /sys/kernel/debug/ieee80211/phy0/ath9k/spectral_scan_ctl\n");
-	fprintf(stderr, "%s /tmp/fft_results\n", argv[0]);
-	fprintf(stderr, "\n");
-	fprintf(stderr, "for AR98xx based cards, you may use:\n");
-	fprintf(stderr, "ip link set dev wlan0 up\n");
-	fprintf(stderr, "echo background > /sys/kernel/debug/ieee80211/phy0/ath10k/spectral_scan_ctl\n");
-	fprintf(stderr, "echo trigger > /sys/kernel/debug/ieee80211/phy0/ath10k/spectral_scan_ctl\n");
-	fprintf(stderr, "iw dev wlan0 scan\n");
-	fprintf(stderr, "echo disable > /sys/kernel/debug/ieee80211/phy0/ath10k/spectral_scan_ctl\n");
-	fprintf(stderr, "cat /sys/kernel/debug/ieee80211/phy0/ath10k/spectral_scan0 > samples\n");
-	fprintf(stderr, "\n");
-	fprintf(stderr, "(NOTE: maybe debugfs must be mounted first: mount -t debugfs none /sys/kernel/debug/ )\n");
-	fprintf(stderr, "\n");
-	fprintf(stderr, "For ath11k based cards, use:\n");
-	fprintf(stderr, "ip link set dev wlan0 up\n");
-	fprintf(stderr, "echo background > /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan_ctl\n");
-	fprintf(stderr, "echo trigger > /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan_ctl\n");
-	fprintf(stderr, "iw dev wlan0 scan\n");
-	fprintf(stderr, "echo disable > /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan_ctl\n");
-	fprintf(stderr, "cat /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan0 > samples\n");
-	fprintf(stderr, "\n");
-	fprintf(stderr, "(NOTE: maybe debugfs must be mounted first: mount -t debugfs none /sys/kernel/debug/ )\n");
-	fprintf(stderr, "\n");
-
+	printf("\n");
+	printf("scanfile is generated by the spectral analyzer feature\n");
+	printf("of your wifi card. If you have a AR92xx or AR93xx based\n");
+	printf("card, try:\n");
+	printf("\n");
+	printf("ip link set dev wlan0 up\n");
+	printf("echo chanscan > /sys/kernel/debug/ieee80211/phy0/ath9k/spectral_scan_ctl\n");
+	printf("iw dev wlan0 scan\n");
+	printf("cat /sys/kernel/debug/ieee80211/phy0/ath9k/spectral_scan0 > /tmp/fft_results\n");
+	printf("echo disable > /sys/kernel/debug/ieee80211/phy0/ath9k/spectral_scan_ctl\n");
+	printf("%s /tmp/fft_results\n", argv[0]);
+	printf("\n");
+	printf("for AR98xx based cards, you may use:\n");
+	printf("ip link set dev wlan0 up\n");
+	printf("echo background > /sys/kernel/debug/ieee80211/phy0/ath10k/spectral_scan_ctl\n");
+	printf("echo trigger > /sys/kernel/debug/ieee80211/phy0/ath10k/spectral_scan_ctl\n");
+	printf("iw dev wlan0 scan\n");
+	printf("echo disable > /sys/kernel/debug/ieee80211/phy0/ath10k/spectral_scan_ctl\n");
+	printf("cat /sys/kernel/debug/ieee80211/phy0/ath10k/spectral_scan0 > samples\n");
+	printf("\n");
+	printf("(NOTE: maybe debugfs must be mounted first: mount -t debugfs none /sys/kernel/debug/ )\n");
+	printf("\n");
+	printf("For ath11k based cards, use:\n");
+	printf("ip link set dev wlan0 up\n");
+	printf("echo background > /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan_ctl\n");
+	printf("echo trigger > /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan_ctl\n");
+	printf("iw dev wlan0 scan\n");
+	printf("echo disable > /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan_ctl\n");
+	printf("cat /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan0 > samples\n");
+	printf("\n");
+	printf("(NOTE: maybe debugfs must be mounted first: mount -t debugfs none /sys/kernel/debug/ )\n");
+	printf("\n");
 }
 
 int main(int argc, char *argv[])
@@ -722,10 +721,10 @@ int main(int argc, char *argv[])
 		usage(argc, argv);
 		return -1;
 	}
-//      fprintf(stderr, "WARNING: Experimental Software! Don't trust anything you see. :)\n");
-//      fprintf(stderr, "\n");
+	//      printf( "WARNING: Experimental Software! Don't trust anything you see. :)\n");
+	//      printf( "\n");
 	if (read_scandata(argv[1]) < 0) {
-		fprintf(stderr, "Couldn't read scanfile ...\n");
+		printf("Couldn't read scanfile ...\n");
 		usage(argc, argv);
 		return -1;
 	}
