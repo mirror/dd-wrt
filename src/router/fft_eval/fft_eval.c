@@ -2,7 +2,7 @@
  * Copyright (C) 2012 Simon Wunderlich <siwu@hrz.tu-chemnitz.de>
  * Copyright (C) 2012 Fraunhofer-Gesellschaft zur Foerderung der angewandten Forschung e.V.
  * Copyright (C) 2013 Gui Iribarren <gui@altermundi.net>
- * Copyright (C) 2016 Sebastian Gottschall <s.gottschall@dd-wrt.com>
+ * Copyright (C) 2016 - 2025 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of version 2 of the GNU General Public
@@ -126,7 +126,7 @@ struct fft_sample_ht20_40 {
  */
 
 #define SPECTRAL_ATH10K_MAX_NUM_BINS            256
-#define SPECTRAL_ATH11K_MAX_NUM_BINS            512
+#define SPECTRAL_ATH11K_MAX_NUM_BINS            1024
 
 struct fft_sample_ath10k {
 	struct fft_sample_tlv tlv;
