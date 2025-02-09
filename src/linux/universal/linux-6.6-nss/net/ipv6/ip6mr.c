@@ -602,8 +602,8 @@ int ip6mr_mfc_stats_update(struct net *net, struct in6_addr *origin,
 
 	mrt->vif_table[vif].pkt_in += pkts_in;
 	mrt->vif_table[vif].bytes_in += bytes_in;
-	cache->_c.mfc_un.res.pkt += pkts_out;
-	cache->_c.mfc_un.res.bytes += bytes_out;
+	atomic_long_add(pkts_out, &cache->_c.mfc_un.res.pkt);
+	atomic_long_add(bytes_out, &cache->_c.mfc_un.res.bytes);
 
 	for (vifi = cache->_c.mfc_un.res.minvif;
 			vifi < cache->_c.mfc_un.res.maxvif; vifi++) {
