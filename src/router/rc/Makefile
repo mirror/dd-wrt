@@ -1269,6 +1269,9 @@ endif
 ifeq ($(CONFIG_WIVIZ),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc autokill_wiviz
 endif
+ifeq ($(CONFIG_ATH9K),y)
+	cd $(INSTALLDIR)/sbin && ln -sf rc disable_fft
+endif
 ifeq ($(CONFIG_ARP),y)
 	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox arp
 endif

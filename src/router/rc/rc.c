@@ -99,6 +99,9 @@
 #ifdef HAVE_WIVIZ
 #include "autokill_wiviz.c"
 #endif
+#ifdef HAVE_ATH9K
+#include "disable_fft.c"
+#endif
 #ifdef HAVE_QTN
 #include "qtn_monitor.c"
 #endif
@@ -248,6 +251,9 @@ static struct MAIN maincalls[] = {
 // {"ttraf", NULL, &ttraff_main},
 #ifdef HAVE_WIVIZ
 	{ "autokill_wiviz", NULL, &autokill_wiviz_main },
+#endif
+#ifdef HAVE_ATH9K
+	{ "disable_fft", NULL, &disable_fft_main },
 #endif
 	{ "site_survey", "site_survey", NULL },
 #ifdef HAVE_WOL
