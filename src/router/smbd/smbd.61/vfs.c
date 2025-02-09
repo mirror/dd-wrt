@@ -15,9 +15,6 @@
 #include <linux/writeback.h>
 #include <linux/xattr.h>
 #include <linux/falloc.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)
-#include <linux/genhd.h>
-#endif
 #include <linux/fsnotify.h>
 #include <linux/dcache.h>
 #include <linux/slab.h>
@@ -2850,6 +2847,8 @@ int ksmbd_vfs_kern_path_locked(struct ksmbd_work *work, char *name,
 					      filepath,
 					      flags,
 					      path);
+			if (!is_last)
+				next[0] = '/';
 			if (err)
 				goto out2;
 			else if (is_last)
@@ -2857,7 +2856,6 @@ int ksmbd_vfs_kern_path_locked(struct ksmbd_work *work, char *name,
 			path_put(parent_path);
 			*parent_path = *path;
 
-			next[0] = '/';
 			remain_len -= filename_len + 1;
 		}
 
