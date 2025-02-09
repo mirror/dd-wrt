@@ -890,11 +890,6 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 	sprintf(dest, "%s/spectral_count", path);
 	writestr(dest, nvram_default_get("spectral_count", "1"));
 	FILE *fp;
-/*	sprintf(dest, "%s/spectral_scan0", path);
-	FILE *fp = fopen(dest, "rb");
-	while (!feof(fp))
-		getc(fp);
-	fclose(fp);*/
 	if (is_ath10k(ifname) && has_wave2(ifname)) {
 		sprintf(dest, "%s/spectral_bins", path);
 		writestr(dest, "256");
@@ -910,14 +905,19 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 	} else if (is_ath11k(ifname)) {
 		sprintf(dest, "%s/spectral_bins", path);
 		writestr(dest, "512");
-//		writestr(dest, "1024"); // QCN90xx supports 1024. but i dont think we need that
+		//		writestr(dest, "1024"); // QCN90xx supports 1024. but i dont think we need that
 		sprintf(dest, "%s/spectral_scan_ctl", path);
-		writestr(dest, "background");
-		writestr(dest, "trigger");
+		if (pidof("disable_fft") < 0) {
+			writestr(dest, "background");
+			writestr(dest, "trigger");
+		}
 	} else {
 		sprintf(dest, "%s/spectral_scan_ctl", path);
 		writestr(dest, "chanscan");
 	}
+	killall("disable_fft", SIGKILL);
+	eval("disable_fft");
+
 	eval("iw", ifname, "scan");
 	char *exec;
 	asprintf(&exec, "fft_eval \"%s/spectral_scan0\"", path);
@@ -940,8 +940,6 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 		websWrite(stream, "%s", buffer);
 	}
 	pclose(fp);
-	sprintf(dest, "%s/spectral_scan_ctl", path);
-	writestr(dest, "disable");
 
 	debug_free(buffer);
 	debug_free(path);
