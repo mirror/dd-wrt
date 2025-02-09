@@ -200,10 +200,15 @@ static struct resultsort *initbins(int bins)
 
 }
 
+static int notvalid(float value)
+{
+    return isinf(value) | isnan(value);
+}
+
 static void insert(struct resultsort *b, int bins, float freq, float signal)
 {
 	int i;
-	if (signal == INFINITY)
+	if (notvalid(signal))
 		return;		// ignore
 /* seek for already existing frequency, in case order is incorrect */
 	for (i = 0; i < bins; i++) {
@@ -215,7 +220,7 @@ static void insert(struct resultsort *b, int bins, float freq, float signal)
 	}
 /* insert new slot */
 	for (i = 0; i < bins; i++) {
-		if (b[i].signal == INFINITY) {
+		if (notvalid(b[i].signal)) {
 			b[i].freq = freq;
 			b[i].signal = signal;
 			return;
@@ -430,7 +435,6 @@ static int print_values()
 					       result->sample.ath11k.header.rssi, result->sample.ath11k.header.noise);
 
 				bins = result->sample.tlv.length - (sizeof(result->sample.ath11k.header) - sizeof(result->sample.ath11k.header.tlv));
-
 				/* If freq2 is non zero and not equal to freq1 then the scan results are fragmented */
 				if (result->sample.ath11k.header.freq2 &&
 				    result->sample.ath11k.header.freq1 != result->sample.ath11k.header.freq2) {
@@ -443,7 +447,6 @@ static int print_values()
 					frequency = result->sample.ath11k.header.freq1;
 					width = result->sample.ath11k.header.chan_width_mhz;
 				}
-
 				for (i = 0; i < bins; i++) {
 					int data;
 
@@ -464,7 +467,6 @@ static int print_values()
 					float signal;
 
 					freq = frequency - width / 2 + (width * (i + 0.5) / bins);
-
 					data = result->sample.ath11k.data[i];
 					if (data == 0)
 						data = 1;
@@ -480,7 +482,7 @@ static int print_values()
 	}
 	if (b) {
 		for (i = 0; i < bins; i++) {
-			if (b[i].signal != INFINITY) {
+			if (!notvalid(b[i].signal)) {
 				printf("[ %f, %f ]", b[i].freq, b[i].signal);
 				if (i < (bins - 1))
 					printf(", ");
