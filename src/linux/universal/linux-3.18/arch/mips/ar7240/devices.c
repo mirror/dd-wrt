@@ -585,7 +585,7 @@ static void qca955x_set_speed_xmii(int speed)
 	void __iomem *base;
 	u32 val = ar71xx_get_eth_pll(0, speed);
 
-	printk(KERN_EMERG "%s: set pll %08X\n", __func__, val);
+//	printk(KERN_EMERG "%s: set pll %08X\n", __func__, val);
 	base = ioremap_nocache(AR71XX_PLL_BASE, AR71XX_PLL_SIZE);
 	__raw_writel(val, base + QCA955X_PLL_ETH_XMII_CONTROL_REG);
 	iounmap(base);
@@ -595,7 +595,7 @@ static void qca955x_set_speed_sgmii_ge0(int speed)
 {
 	void __iomem *base;
 	u32 val = ar71xx_get_eth_pll(0, speed);
-	printk(KERN_EMERG "%s: set pll %08X\n", __func__, val);
+//	printk(KERN_EMERG "%s: set pll %08X\n", __func__, val);
 	base = ioremap_nocache(AR71XX_PLL_BASE, AR71XX_PLL_SIZE);
 	__raw_writel(val, base + QCA955X_PLL_ETH_SGMII_CONTROL_REG);
 	iounmap(base);
@@ -606,7 +606,7 @@ static void qca955x_set_speed_sgmii_ge1(int speed)
 {
 	void __iomem *base;
 	u32 val = ar71xx_get_eth_pll(1, speed);
-	printk(KERN_EMERG "%s: set pll %08X\n", __func__, val);
+//	printk(KERN_EMERG "%s: set pll %08X\n", __func__, val);
 	base = ioremap_nocache(AR71XX_PLL_BASE, AR71XX_PLL_SIZE);
 	__raw_writel(val, base + QCA955X_PLL_ETH_SGMII_CONTROL_REG);
 	iounmap(base);
@@ -618,7 +618,7 @@ static void qca956x_set_speed_sgmii(int speed)
 	void __iomem *base;
 	u32 val = ar71xx_get_eth_pll(0, speed);
 
-	printk(KERN_EMERG "%s: set pll %08X\n", __func__, val);
+//	printk(KERN_EMERG "%s: set pll %08X\n", __func__, val);
 	base = ioremap_nocache(AR71XX_PLL_BASE, AR71XX_PLL_SIZE);
 	__raw_writel(val, base + QCA955X_PLL_ETH_SGMII_CONTROL_REG);
 	iounmap(base);
