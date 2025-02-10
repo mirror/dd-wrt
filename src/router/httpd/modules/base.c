@@ -904,8 +904,8 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 		writestr(dest, "trigger");
 	} else if (is_ath11k(ifname)) {
 		sprintf(dest, "%s/spectral_bins", path);
-		writestr(dest, "512");
-		writestr(dest, "1024");
+		writestr(dest, "256");
+//		writestr(dest, "1024");
 		//		writestr(dest, "1024"); // QCN90xx supports 1024. but i dont think we need that
 		sprintf(dest, "%s/spectral_scan_ctl", path);
 		if (pidof("disable_fft") < 0) {
