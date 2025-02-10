@@ -280,7 +280,7 @@ static int print_values()
 
 			for (i = 0; i < bins; i++) {
 				int freq;
-				int signal;
+				float signal;
 				int data;
 				/*
 					 * According to Dave Aragon from University of Washington,
@@ -389,7 +389,7 @@ static int print_values()
 
 				if (data == 0)
 					data = 1;
-				int signal = noise + rssi + 20.0 * log10f(data) - log10f(datasquaresum) * 10.0;
+				float signal = noise + rssi + 20.0 * log10f(data) - log10f(datasquaresum) * 10.0;
 				insert(b, bins, freq, signal);
 			}
 		} break;
@@ -425,7 +425,7 @@ static int print_values()
 			for (i = 0; i < bins; i++) {
 				int freq;
 				int data;
-				int signal;
+				float signal;
 				freq = result->sample.ath10k.header.freq1 - (result->sample.ath10k.header.chan_width_mhz) / 2 +
 				       ((result->sample.ath10k.header.chan_width_mhz * ((i * 10) + 5) / bins) / 10);
 
@@ -483,7 +483,7 @@ static int print_values()
 			for (i = 0; i < bins; i++) {
 				int freq;
 				int data;
-				int signal;
+				float signal;
 
 				freq = frequency - width / 2 + ((width * ((i * 10) + 5) / bins) / 10);
 				data = result->sample.ath11k.data[i];
