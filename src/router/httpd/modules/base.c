@@ -892,16 +892,20 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 	FILE *fp;
 	if (is_ath10k(ifname) && has_wave2(ifname)) {
 		sprintf(dest, "%s/spectral_bins", path);
-		writestr(dest, "256");
+		writestr(dest, "512");
 		sprintf(dest, "%s/spectral_scan_ctl", path);
+		//		if (pidof("disable_fft") < 0) {
 		writestr(dest, "manual");
 		writestr(dest, "trigger");
+		//		}
 	} else if (is_ath10k(ifname)) {
 		sprintf(dest, "%s/spectral_bins", path);
-		writestr(dest, "256");
+		writestr(dest, "512");
 		sprintf(dest, "%s/spectral_scan_ctl", path);
+		//		if (pidof("disable_fft") < 0) {
 		writestr(dest, "manual");
 		writestr(dest, "trigger");
+		//		}
 	} else if (is_ath11k(ifname)) {
 		sprintf(dest, "%s/spectral_bins", path);
 		writestr(dest, "512");
@@ -911,13 +915,13 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 		if (pidof("disable_fft") < 0) {
 			writestr(dest, "background");
 			writestr(dest, "trigger");
+			killall("disable_fft", SIGKILL);
+			eval("disable_fft");
 		}
 	} else {
 		sprintf(dest, "%s/spectral_scan_ctl", path);
 		writestr(dest, "chanscan");
 	}
-	killall("disable_fft", SIGKILL);
-	eval("disable_fft");
 
 	eval("iw", ifname, "scan");
 	char *exec;
@@ -941,11 +945,16 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 		websWrite(stream, "%s", buffer);
 	}
 	pclose(fp);
+	if (pidof("disable_fft") < 0) {
+		sprintf(dest, "%s/spectral_scan_ctl", path);
+		writestr(dest, "disable");
+	}
 
 	debug_free(buffer);
 	debug_free(path);
 
 	websWrite(stream, "}");
+
 	return 0;
 }
 #endif
