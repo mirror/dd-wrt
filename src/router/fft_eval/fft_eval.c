@@ -30,6 +30,8 @@
 #include <endian.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdint.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -179,8 +181,8 @@ struct scanresult *result_list;
 int scanresults_n = 0;
 
 struct resultsort {
-	float freq;
-	float signal;
+	int freq;
+	int signal;
 };
 
 static struct resultsort *initbins(int bins)
@@ -189,17 +191,32 @@ static struct resultsort *initbins(int bins)
 	int i;
 	b = malloc(sizeof(struct resultsort) * bins);
 	for (i = 0; i < bins; i++) {
-		b[i].signal = INFINITY;
+		b[i].signal = -1;
 	}
 	return b;
 }
 
-static int notvalid(float value)
+static int notvalid(int val)
 {
-	return isinf(value) | isnan(value);
+	return val == -1;
 }
 
-static void insert(struct resultsort *b, int bins, float freq, float signal)
+static inline unsigned msb(const unsigned int x)
+{
+	unsigned int lz;
+	lz = __builtin_clz(x);
+	return ((sizeof(x) * CHAR_BIT) - 1) - lz;
+}
+
+static unsigned int fast_log10(const unsigned int x)
+{
+	static const uint16_t lut[8] = { 0, 2, 13, 69, 347, 1736, 8680, 43402 };
+	const unsigned int shr = (msb(x | 1) & ((sizeof(x) * CHAR_BIT) - 2)) << 1, dig = (0x8877665433221100ull >> shr) & 0xF,
+			   val = lut[(0x07D63440u >> (dig * 3)) & 0x7],
+			   p10 = ((val << dig) + (~((unsigned)-1 << dig) & 0xC7)) * 90 + 10;
+	return dig + (x >= p10 ? 2 : 1);
+}
+static void insert(struct resultsort *b, int bins, int freq, int signal)
 {
 	int i;
 	if (notvalid(signal))
@@ -262,8 +279,8 @@ static int print_values()
 				b = initbins(bins);
 
 			for (i = 0; i < bins; i++) {
-				float freq;
-				float signal;
+				int freq;
+				int signal;
 				int data;
 				/*
 					 * According to Dave Aragon from University of Washington,
@@ -277,7 +294,7 @@ static int print_values()
 					 * Since all these calculations map pretty much to -10/+10 MHz,
 					 * and we don't know better, use this assumption as well in 5 GHz.
 					 */
-				freq = result->sample.ht20.freq - (22.0 * bins / 64.0) / 2 + (22.0 * (i + 0.5) / 64.0);
+				freq = result->sample.ht20.freq - (22 * bins / 64) / 2 + (22 * (((i * 10) + 5) / 64) / 10);
 
 				/* This is where the "magic" happens: interpret the signal
 					 * to output some kind of data which looks useful.  */
@@ -285,8 +302,8 @@ static int print_values()
 				data = result->sample.ht20.data[i] << result->sample.ht20.max_exp;
 				if (data == 0)
 					data = 1;
-				signal = result->sample.ht20.noise + result->sample.ht20.rssi + 20 * log10f(data) -
-					 log10f(datasquaresum) * 10;
+				signal = result->sample.ht20.noise + result->sample.ht20.rssi + 20 * fast_log10(data) -
+					 fast_log10(datasquaresum) * 10;
 				insert(b, bins, freq, signal);
 			}
 		} break;
@@ -352,10 +369,10 @@ static int print_values()
 				b = initbins(bins);
 
 			for (i = 0; i < bins; i++) {
-				float freq;
+				int freq;
 				int data;
 
-				freq = centerfreq - (40.0 * bins / 128.0) / 2 + (40.0 * (i + 0.5) / 128.0);
+				freq = centerfreq - (40 * bins / 128) / 2 + (40 * (((i * 10) + 5) / 128) / 10);
 
 				if (i < bins / 2) {
 					noise = result->sample.ht40.lower_noise;
@@ -372,7 +389,7 @@ static int print_values()
 
 				if (data == 0)
 					data = 1;
-				float signal = noise + rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
+				int signal = noise + rssi + 20 * fast_log10(data) - fast_log10(datasquaresum) * 10;
 				insert(b, bins, freq, signal);
 			}
 		} break;
@@ -406,17 +423,17 @@ static int print_values()
 				b = initbins(bins);
 
 			for (i = 0; i < bins; i++) {
-				float freq;
+				int freq;
 				int data;
-				float signal;
+				int signal;
 				freq = result->sample.ath10k.header.freq1 - (result->sample.ath10k.header.chan_width_mhz) / 2 +
-				       (result->sample.ath10k.header.chan_width_mhz * (i + 0.5) / bins);
+				       ((result->sample.ath10k.header.chan_width_mhz * ((i * 10) + 5) / bins) / 10);
 
 				data = result->sample.ath10k.data[i] << result->sample.ath10k.header.max_exp;
 				if (data == 0)
 					data = 1;
 				signal = result->sample.ath10k.header.noise + result->sample.ath10k.header.rssi +
-					 20 * log10f(data) - log10f(datasquaresum) * 10;
+					 20 * fast_log10(data) - fast_log10(datasquaresum) * 10;
 
 				insert(b, bins, freq, signal);
 			}
@@ -464,16 +481,16 @@ static int print_values()
 				b = initbins(bins);
 
 			for (i = 0; i < bins; i++) {
-				float freq;
+				int freq;
 				int data;
-				float signal;
+				int signal;
 
-				freq = frequency - width / 2 + (width * (i + 0.5) / bins);
+				freq = frequency - width / 2 + ((width * ((i * 10) + 5) / bins) / 10);
 				data = result->sample.ath11k.data[i];
 				if (data == 0)
 					data = 1;
 				signal = result->sample.ath11k.header.noise + result->sample.ath11k.header.rssi +
-					 20 * log10f(data) - log10f(datasquaresum) * 10;
+					 20 * fast_log10(data) - fast_log10(datasquaresum) * 10;
 				insert(b, bins, freq, signal);
 			}
 		} break;
@@ -484,7 +501,7 @@ static int print_values()
 	if (b) {
 		for (i = 0; i < bins; i++) {
 			if (!notvalid(b[i].signal)) {
-				fprintf(stdout, "[ %f, %f ]", b[i].freq, b[i].signal);
+				fprintf(stdout, "[ %d, %d ]", b[i].freq, b[i].signal);
 				if (i < (bins - 1))
 					fprintf(stdout, ", ");
 			}
@@ -601,8 +618,8 @@ static int read_scandata(char *fname)
 		case ATH_FFT_SAMPLE_ATH10K:
 			bins = sample_len - sizeof(result->sample.ath10k.header);
 
-			if (bins != 64 && bins != 128 && bins != 256) {
-				//      fprintf(stderr, "invalid bin length %d\n", bins);
+			if (bins != 64 && bins != 128 && bins != 256 && bins != 512) {
+				fprintf(stderr, "invalid bin length %d\n", bins);
 				break;
 			}
 
