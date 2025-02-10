@@ -302,8 +302,8 @@ static int print_values()
 				data = result->sample.ht20.data[i] << result->sample.ht20.max_exp;
 				if (data == 0)
 					data = 1;
-				signal = result->sample.ht20.noise + result->sample.ht20.rssi + 20 * fast_log10(data) -
-					 fast_log10(datasquaresum) * 10;
+				signal = result->sample.ht20.noise + result->sample.ht20.rssi + 20.0 * log10f(data) -
+					 log10f(datasquaresum) * 10.0;
 				insert(b, bins, freq, signal);
 			}
 		} break;
@@ -389,7 +389,7 @@ static int print_values()
 
 				if (data == 0)
 					data = 1;
-				int signal = noise + rssi + 20 * fast_log10(data) - fast_log10(datasquaresum) * 10;
+				int signal = noise + rssi + 20.0 * log10f(data) - log10f(datasquaresum) * 10.0;
 				insert(b, bins, freq, signal);
 			}
 		} break;
@@ -433,7 +433,7 @@ static int print_values()
 				if (data == 0)
 					data = 1;
 				signal = result->sample.ath10k.header.noise + result->sample.ath10k.header.rssi +
-					 20 * fast_log10(data) - fast_log10(datasquaresum) * 10;
+					 20.0 * log10(data) - log10f(datasquaresum) * 10.0;
 
 				insert(b, bins, freq, signal);
 			}
@@ -490,7 +490,7 @@ static int print_values()
 				if (data == 0)
 					data = 1;
 				signal = result->sample.ath11k.header.noise + result->sample.ath11k.header.rssi +
-					 20 * fast_log10(data) - fast_log10(datasquaresum) * 10;
+					 20.0 * log10f(data) - log10f(datasquaresum) * 10.0;
 				insert(b, bins, freq, signal);
 			}
 		} break;
