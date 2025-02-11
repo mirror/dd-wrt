@@ -3809,8 +3809,12 @@ int getmaxvaps(const char *prefix)
 		return 8;
 	if (is_ath10k(prefix))
 		return 16;
-	if (is_ath11k(prefix))
-		return 16;
+	if (is_ath11k(prefix)) {
+		if (nvram_match("mem_profile","1024"))
+			return 16;
+		else
+			return 8;
+	}
 	if (is_ath5k(prefix))
 		return 4;
 	if (is_mt7615(prefix))
