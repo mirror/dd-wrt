@@ -1677,6 +1677,7 @@ void start_wifi_drivers(void)
 		dd_loginfo("sysinit", "load ATH/QCA 802.11ax Driver");
 		int brand = getRouterBrand();
 		int profile = 512;
+		nvram_set("mem_profile","512");
 		switch (brand) {
 		case ROUTER_FORTINET_FAP231F:
 		case ROUTER_DYNALINK_DLWRX36:
@@ -1685,6 +1686,7 @@ void start_wifi_drivers(void)
 		case ROUTER_LINKSYS_MX4200V2:
 		case ROUTER_LINKSYS_MX4300:
 			profile = 1024;
+			nvram_set("mem_profile","1024");
 			break;
 		}
 		insmod("compat_firmware_class");
