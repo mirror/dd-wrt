@@ -495,6 +495,12 @@ EJ_VISIBLE void ej_is_6ghz(webs_t wp, int argc, char_t **argv)
 	char base[32];
 	strncpy(base, prefix, 32);
 	strchr(base, '.');
+	if (nvram_nmatch("sta", "%s_mode", base) || nvram_nmatch("wdssta", "%s_mode", base) ||
+	    nvram_nmatch("wet", "%s_mode", base) || nvram_nmatch("mesh", "%s_mode", base) ||
+	    nvram_nmatch("infra", "%s_mode", base) || nvram_nmatch("wdssta_mtik", "%s_mode", base)) {
+		websWrite(wp, "0");
+		return;
+	}
 	int channel = wifi_getchannel(base);
 	if (channel >= 0 && channel < 1000) {
 		struct wifi_interface *interface = wifi_getfreq(base);
