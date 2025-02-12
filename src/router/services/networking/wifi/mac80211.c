@@ -2757,6 +2757,9 @@ void post_hostapd_actions(int count)
 	char *apm = nvram_safe_get(wl);
 
 	sprintf(dev, "wlan%d", count);
+	sprintf(subinterface, "-i%s", dev);
+	if (has_ad(dev))
+		sprintf(subinterface, "-igiwifi0");
 	sprintf(wmode, "%s_mode", dev);
 	sprintf(power, "%s_txpwrdbm", dev);
 	sprintf(bridged, "%s_bridged", dev);
