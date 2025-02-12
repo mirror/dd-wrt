@@ -1458,6 +1458,8 @@ void start_sysinit(void)
 		patch(ethaddr, 20);
 		MAC_ADD(ethaddr);
 		nvram_set("wlan2_hwaddr", ethaddr);
+		removeregdomain("/tmp/caldata.bin", IPQ8074);
+		removeregdomain("/tmp/board.bin", IPQ8074);
 		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
 		break;
 	case ROUTER_LINKSYS_MX4200V1:
@@ -1685,6 +1687,8 @@ void start_wifi_drivers(void)
 		case ROUTER_ASUS_AX89X:
 		case ROUTER_LINKSYS_MX4200V2:
 		case ROUTER_LINKSYS_MX4300:
+		case ROUTER_LINKSYS_MX8500:
+		case ROUTER_LINKSYS_MX8300:
 			profile = 1024;
 			nvram_set("mem_profile","1024");
 			break;
