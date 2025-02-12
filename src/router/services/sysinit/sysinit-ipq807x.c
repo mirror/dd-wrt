@@ -1134,7 +1134,7 @@ void start_sysinit(void)
 		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		break;
 	case ROUTER_LINKSYS_MX8500:
-		set_gpio(44,1);
+		set_gpio(44, 1);
 		sleep(2);
 		insmod("aquantia");
 		profile = 1024;
@@ -1684,7 +1684,7 @@ void start_wifi_drivers(void)
 		dd_loginfo("sysinit", "load ATH/QCA 802.11ax Driver");
 		int brand = getRouterBrand();
 		int profile = 512;
-		nvram_set("mem_profile","512");
+		nvram_set("mem_profile", "512");
 		switch (brand) {
 		case ROUTER_FORTINET_FAP231F:
 		case ROUTER_DYNALINK_DLWRX36:
@@ -1695,7 +1695,7 @@ void start_wifi_drivers(void)
 		case ROUTER_LINKSYS_MX8500:
 		case ROUTER_LINKSYS_MX5300:
 			profile = 1024;
-			nvram_set("mem_profile","1024");
+			nvram_set("mem_profile", "1024");
 			break;
 		}
 		insmod("compat_firmware_class");
