@@ -2128,6 +2128,9 @@ void tunnel_save(webs_t wp)
 		copytonv(wp, "oet%d_mtu", i);
 		copytonv(wp, "oet%d_spbr_ip", i);
 		copytonv(wp, "oet%d_dpbr_ip", i);
+		copytonv(wp, "oet%d_ipsetfile", i);
+		copytonv(wp, "oet%d_ipsetsave", i);
+		copytonv(wp, "oet%d_ipsetdomains", i);
 		copytonv(wp, "oet%d_dns", i);
 		copytonv(wp, "oet%d_public", i);
 		copytonv(wp, "oet%d_private", i);
@@ -2438,6 +2441,9 @@ void add_tunnel(webs_t wp)
 	default_seti("natout", 1);
 	default_set("spbr_ip", "");
 	default_set("dpbr_ip", "");
+	default_set("ipsetfile", "");
+	default_set("ipsetsave", 0);
+	default_set("ipsetdomains", "");
 	default_set("dns", "");
 	default_set("public", "");
 	default_set("private", "");
@@ -2601,6 +2607,9 @@ void del_tunnel(webs_t wp)
 		copytunvalue("natout", i, i - 1);
 		copytunvalue("spbr_ip", i, i - 1);
 		copytunvalue("dpbr_ip", i, i - 1);
+		copytunvalue("ipsetfile", i, i - 1);
+		copytunvalue("ipsetsave", i, i - 1);
+		copytunvalue("ipsetdomains", i, i - 1);
 		copytunvalue("dns", i, i - 1);
 		copytunvalue("public", i, i - 1);
 		copytunvalue("private", i, i - 1);
@@ -2683,6 +2692,9 @@ void del_tunnel(webs_t wp)
 	deltunvalue("natout", tunnels);
 	deltunvalue("spbr_ip", tunnels);
 	deltunvalue("dpbr_ip", tunnels);
+	deltunvalue("ipsetfile", tunnels);
+	deltunvalue("ipsetsave", tunnels);
+	deltunvalue("ipsetdomains", tunnels);
 	deltunvalue("dns", tunnels);
 	deltunvalue("public", tunnels);
 	deltunvalue("private", tunnels);

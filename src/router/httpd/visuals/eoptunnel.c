@@ -399,6 +399,17 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 					{ //egc: DPBR input box
 						show_oet_textfield(wp, 0, "eoip.wireguard_oet_dpbr_ip", 78, 1024, "", tun, NULL,
 								   "oet%d_dpbr_ip", tun);
+#ifdef HAVE_IPSET
+						// page (wp), default, label, input size, max length, default, tun, extra attrib, name=id, tun
+						// ipset file name
+						show_oet_textfield(wp, 0, "eoip.wireguard_oet_ipsetfile", 32, 64, "", tun, NULL, "oet%d_ipsetfile", tun);
+						
+						// checkbox save ipset file
+						show_oet_checkbox(wp, "eoip.wireguard_oet_ipsetsave", "oet%d_ipsetsave", tun, 0, NULL);
+						
+						// ipset domains
+						show_oet_textfield(wp, 0, "eoip.wireguard_oet_ipsetdomains", 78, 1024, "", tun, NULL, "oet%d_ipsetdomains", tun);
+#endif
 					}
 					websWrite(wp,
 						  "</div>\n"); //end show hide dpbr

@@ -995,6 +995,54 @@ void start_dnsmasq(void)
 	if (nvram_matchi("dns_redirectdot", 1)) {
 		fprintf(fp, "address=/use-application-dns.net/mask.icloud.com/mask-h2.icloud.com/\n");
 	}
+	
+#ifdef HAVE_IPSET
+	//egc use ipset from WireGuard
+	char *ipsetfile = 0;
+	char *ipsetbasename = 0;
+	char oet_ipsetfile[32] = { 0 };
+	char str_ipsetdomains[512] = { 0 };
+	char oet_ipsetdomains[32] = { 0 };
+	int maxitunnels = nvram_geti("oet_tunnels");
+	char oet_dpbr[16] = { 0 };
+	int dpbr = 0;
+	char oet_en[16] = { 0 };
+	int en = 0;
+	//int i = 0;  //already declared
+	for (i = 1; i <= maxitunnels; ++i) {
+		snprintf(oet_en, sizeof(oet_en), "oet%d_en", i);
+		en = nvram_geti(oet_en);
+		snprintf(oet_dpbr, sizeof(oet_dpbr), "oet%d_dpbr", i);
+		dpbr = nvram_geti(oet_dpbr);
+		//syslog(LOG_INFO, "dnsmasq: ipset tunnel started, i:[%d]\n", i);
+		if (en && dpbr) {
+			char dnsm_ipset[512] = { 0 };
+			snprintf(oet_ipsetfile, sizeof(oet_ipsetfile), "oet%d_ipsetfile", i);
+			ipsetfile = nvram_safe_get(oet_ipsetfile);
+			snprintf(oet_ipsetdomains, sizeof(oet_ipsetdomains), "oet%d_ipsetdomains", i);
+			strlcpy(str_ipsetdomains, nvram_safe_get(oet_ipsetdomains), sizeof(str_ipsetdomains));
+			if (str_ipsetdomains[0] != '\0') {
+				char delim[] = " ,/";
+				char *ptr = strtok(str_ipsetdomains, delim);
+				char dnsm_ipset_t[64] = { 0 };
+				while (ptr != NULL)
+				{
+					snprintf(dnsm_ipset_t, sizeof(dnsm_ipset_t), "%s/", ptr);
+					strlcat(dnsm_ipset, dnsm_ipset_t, sizeof(dnsm_ipset));
+					ptr = strtok(NULL, delim);
+				}
+			}
+			if (ipsetfile[0] != '\0') {
+				ipsetbasename = basename(ipsetfile);
+				if (ipsetbasename[0] != '\0' && dnsm_ipset[0] != '\0') {
+					fprintf(fp, "ipset=/%s%s\n", dnsm_ipset, ipsetbasename);
+					dd_loginfo("dnsmasq", "ipset=/%s%s\n", dnsm_ipset, ipsetbasename);
+				}
+			} 
+		}
+	}
+#endif
+	
 	/*
 	 * Additional options 
 	 */

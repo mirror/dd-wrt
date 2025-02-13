@@ -1983,7 +1983,6 @@ service.plex_legend="Medien Server";
 service.plex_srv="Plex Medien Server";
 
 // ** eop-tunnel.asp **//
-
 eoip.titl="Tunnel";
 eoip.tunnel="Tunnel";
 eoip.legend="Ethernet Über IP tunneln";
@@ -2032,6 +2031,9 @@ eoip.wireguard_dpbr="Ziel Routing";
 eoip.wireguard_dpbr0="Route all destinations via default route";
 eoip.wireguard_dpbr1="Route definierte Ziele via VPN";
 eoip.wireguard_dpbr2="Route definierte Ziele via WAN";
+eoip.wireguard_oet_ipsetfile="Ipset path and filename";
+eoip.wireguard_oet_ipsetsave="Ipset restore from file";
+eoip.wireguard_oet_ipsetdomains="Ipset domains";
 eoip.wireguard_genpsk="Erzeuge Pre-shared Key";
 eoip.wireguard_usepsk="Nutze Pre-shared Key";
 eoip.wireguard_oet_status="WireGuard Status (F5: Aktualisierung)";
