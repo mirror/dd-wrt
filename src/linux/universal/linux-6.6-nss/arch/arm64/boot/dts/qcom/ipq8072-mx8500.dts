@@ -357,7 +357,7 @@
 
 	pinctrl-0 = <&mdio_pins>;
 	pinctrl-names = "default";
-	reset-gpios = <&tlmm 44 GPIO_ACTIVE_LOW>;
+	reset-gpios = <&tlmm 37 GPIO_ACTIVE_LOW>;
 
 	ethernet-phy-package@0 {
 		#address-cells = <1>;
