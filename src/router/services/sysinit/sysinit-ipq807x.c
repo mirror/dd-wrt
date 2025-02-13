@@ -1579,6 +1579,9 @@ void start_sysinit(void)
 		setscaling(0);
 		disableportlearn();
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
+		eval("fw_setenv", "bootcmd",
+		     "aq_load_fw; if test $auto_recovery = no; then bootipq; elif test $boot_part = 1; then run bootpart1; else run bootpart2; fi");
+
 		break;
 	case ROUTER_LINKSYS_MX5300:
 		setscaling(0);
