@@ -36,6 +36,7 @@
 #include <shutils.h>
 #include <wlutils.h>
 #include <services.h>
+#include <libgen.h>
 
 extern int usejffs;
 
@@ -855,10 +856,10 @@ void start_dnsmasq(void)
 					}
 					//dd_loginfo("dnsipv6", "buffdns6: %s", buffdns6);
 					//dd_loginfo("dnsipv6", "buffdns: %s", buffdns);
-					if (nvram_matchi("ipv6_enable", 1) && nvram_matchi("dnsipv6_enable", 1) && buffdns6) {
+					if (nvram_matchi("ipv6_enable", 1) && nvram_matchi("dnsipv6_enable", 1) && buffdns6[0]) {
 						fprintf(fp, "dhcp-option=option6:dns-server%s\n", buffdns6);
 					}
-					if (buffdns) {
+					if (buffdns[0]) {
 						fprintf(fp, "dhcp-option=option:dns-server%s\n", buffdns);
 					}
 				}
