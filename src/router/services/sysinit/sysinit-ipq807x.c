@@ -1134,8 +1134,6 @@ void start_sysinit(void)
 		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		break;
 	case ROUTER_LINKSYS_MX8500:
-		set_gpio(44, 1);
-		sleep(2);
 		insmod("aquantia");
 		profile = 1024;
 		fwlen = 0x20000;
