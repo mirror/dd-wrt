@@ -995,7 +995,7 @@ void start_dnsmasq(void)
 	if (nvram_matchi("dns_redirectdot", 1)) {
 		fprintf(fp, "address=/use-application-dns.net/mask.icloud.com/mask-h2.icloud.com/\n");
 	}
-	
+
 #ifdef HAVE_IPSET
 	//egc use ipset from WireGuard
 	char *ipsetfile = 0;
@@ -1025,8 +1025,7 @@ void start_dnsmasq(void)
 				char delim[] = " ,/";
 				char *ptr = strtok(str_ipsetdomains, delim);
 				char dnsm_ipset_t[64] = { 0 };
-				while (ptr != NULL)
-				{
+				while (ptr != NULL) {
 					snprintf(dnsm_ipset_t, sizeof(dnsm_ipset_t), "%s/", ptr);
 					strlcat(dnsm_ipset, dnsm_ipset_t, sizeof(dnsm_ipset));
 					ptr = strtok(NULL, delim);
@@ -1038,11 +1037,11 @@ void start_dnsmasq(void)
 					fprintf(fp, "ipset=/%s%s\n", dnsm_ipset, ipsetbasename);
 					dd_loginfo("dnsmasq", "ipset=/%s%s\n", dnsm_ipset, ipsetbasename);
 				}
-			} 
+			}
 		}
 	}
 #endif
-	
+
 	/*
 	 * Additional options 
 	 */
