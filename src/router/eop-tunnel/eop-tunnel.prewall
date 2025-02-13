@@ -86,6 +86,8 @@ if [[ -f "$WGDELRT" ]]; then
 fi
 for i in $(seq 1 $tunnels); do
 	if [[ -e "${i}.pid" ]]; then
+		#Save ipset file
+		[[ $($nv get oet${i}_ipsetsave) -eq 1 ]] && ipset save -! > $($nv get oet${i}_ipsetfile)
 		{
 		emf del iface $(getbridge oet${i}) oet${i}
 		brctl delif $(getbridge oet${i}) oet${i}
@@ -118,9 +120,14 @@ for i in $(seq 1 $tunnels); do
 			(while read dnsrt; do $dnsrt >/dev/null 2>&1; done < $WGDNSRT)
 			rm $WGDNSRT
 		fi
+		#IPSET flush table delete rule
+		for z in $(seq 1 2); do
+			ip route flush table $z$TID >/dev/null 2>&1
+			ip rule del table $z$TID fwmark $TID >/dev/null 2>&1
+		done
 		$IP route flush cache
 		if [[ $ipv6_en -eq 1 ]]; then 
-		    $IP6 route flush cache >/dev/null 2>&1
+			$IP6 route flush cache >/dev/null 2>&1
 		fi
 	fi
 done

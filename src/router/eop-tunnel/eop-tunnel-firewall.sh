@@ -73,6 +73,13 @@ for i in $(seq 1 $tunnels); do
 			(while read route; do $route; done < $WGDELRT)
 			rm $WGDELRT
 		fi
+		#delete IPSET
+		FWMARK=$((20+$i))
+		#IPSET=$(basename $($nv get oet${i}_ipsetfile))
+		#does not work if IPSET name is deleted from conf, alternative parse iptables for fwmark
+		FWMARKH="set $(printf "%#04x" $FWMARK)"
+		IPSET=$(iptables -L PREROUTING -t mangle | grep -E "$FWMARKH" | awk '{print $7}')
+		iptables -t mangle -D PREROUTING -m set --match-set $IPSET dst -j MARK --set-mark $FWMARK
 		# remove because FW sets it by default
 		$ipt -D FORWARD -i oet${i} $FW_STATE -j $ACCEPT
 		$ip6t -D FORWARD -i oet${i} -m conntrack --ctstate NEW -j $ACCEPT
@@ -344,6 +351,14 @@ for i in $(seq 1 $tunnels); do
 				logger -p user.info "WireGuard Inbound Firewall deactivated on oet${i}"
 			fi
 			#end inbound firewall
+			#IPSET
+			if [[ $($nv get oet${i}_dpbr) -ne 0 && ! -z "$($nv get oet${i}_ipsetfile | sed '/^[[:blank:]]*#/d')" ]]; then
+				FWMARK=$((20+$i))
+				IPSET=$(basename $($nv get oet${i}_ipsetfile))
+				iptables -t mangle -A PREROUTING -m set --match-set $IPSET dst -j MARK --set-mark $FWMARK
+				# packets from router are not marked for this set OUTPUT
+				iptables -t mangle -A OUTPUT -m set --match-set $IPSET dst -j MARK --set-mark $FWMARK
+			fi
 			# todo make escape rules for destination based routing on by default
 			# use wgdpbrip_oetx but wait till file is made
 		fi

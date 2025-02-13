@@ -5,6 +5,10 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
 
+#ifeq ($(CONFIG_IPSET),y)
+#CFLAGS_EXTRA += -DHAVE_IPSET
+#endif
+
 MODULE:=eop-tunnel
 
 all: install
@@ -21,6 +25,11 @@ install: all
 	cp $(MODULE)*.prewall $(INSTALLDIR)/etc/config
 	# cp $(MODULE)*.firewall $(INSTALLDIR)/etc/config
 	cp $(MODULE)*.sh $(INSTALLDIR)/usr/bin
+ifeq ($(CONFIG_IPSET),y)
+	-install -d $(INSTALLDIR)/etc/config
+	install -c K*.sh $(INSTALLDIR)/etc/config
+	chmod 700 $(INSTALLDIR)/etc/config/K*.sh
+endif
 	chmod 700 $(INSTALLDIR)/usr/bin/$(MODULE)*.sh
 	# chmod 700 $(INSTALLDIR)/etc/config/$(MODULE)*.firewall
 	chmod 700 $(INSTALLDIR)/etc/config/$(MODULE)*.prewall
@@ -35,5 +44,4 @@ www-install:
 	install -d $(INSTALLDIR)/../www
 	install -d $(INSTALLDIR)/../www/www
 	cp $(MODULE)*.asp $(INSTALLDIR)/../www/www
-
 

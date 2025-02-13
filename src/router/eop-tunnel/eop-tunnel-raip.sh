@@ -58,6 +58,7 @@ waitfortime () {
 	#logger -p user.info "WireGuard debug at end of time check: ntp_success: $($nv get ntp_success); ntp_done:$($nv get ntp_done) "
 }
 waitfortime
+restartdns=$($nv get wg_restart_dnsmasq); [[ -z $restartdns ]] && restartdns=0
 for i in $(seq 1 $tunnels); do
 	if [[ $($nv get oet${i}_en) -eq 1 ]]; then
 		if [[ $($nv get oet${i}_proto) -eq 2 ]] && [[ $($nv get oet${i}_failgrp) -ne 1 || $($nv get oet${i}_failstate) -eq 2 ]]; then
@@ -144,6 +145,37 @@ for i in $(seq 1 $tunnels); do
 			done
 			# Destination based routing
 			if [[ $($nv get oet${i}_dpbr) -ne 0 ]]; then
+				#add IPSET
+				if [[ ! -z "$($nv get oet${i}_ipsetfile | sed '/^[[:blank:]]*#/d')" ]]; then
+					restartdns=1
+					#ipset -! -N $(basename $($nv get oet${i}_ipsetfile)) hash:ip
+					IPSET_F=$($nv get oet${i}_ipsetfile)
+					#IPSET="$(basename $IPSET_F)"
+					IPSET=${IPSET_F##*/}
+					if [[ $($nv get oet${i}_ipsetsave) -eq 1 ]]; then
+						if is-mounted $(dirname $IPSET_F) 25 && [[ -s $IPSET_F ]]; then
+							ipset restore -! < $IPSET_F
+							logger -p user.info "WireGuard IPSET: $IPSET restored from $IPSET_F for oet${i}"
+						else
+							logger -p user.err "WireGuard IPSET: oet${i} $IPSET_F is missing or empty, creating new $IPSET"
+							ipset -N $IPSET hash:ip >/dev/null 2>&1
+						fi
+					else
+						ipset -N $IPSET hash:ip >/dev/null 2>&1
+						logger -p user.info "WireGuard IPSET: $IPSET created for oet${i}"
+					fi
+					#make tables and rule
+					if [[ $($nv get oet${i}_dpbr) -eq 2 ]];then 
+						TABLE=2$TID
+						ip route add default via $($nv get wan_gateway) table $TABLE >/dev/null 2>&1
+					else 
+						TABLE=1$TID
+						ip route add default dev oet${i} table $TABLE >/dev/null 2>&1
+					fi
+					ip rule del table $TABLE fwmark $TID >/dev/null 2>&1
+					ip rule add table $TABLE fwmark $TID
+					logger -p user.info "WireGuard IPSET: $IPSET fwmark:$TID set to table:$TABLE"
+				fi
 				#WGDELDPBR="/tmp/wgdeldpbr_oet${i}"
 				WGDPBRIP="/tmp/wgdpbrip_oet${i}"
 				rm $WGDPBRIP >/dev/null 2>&1
@@ -318,8 +350,10 @@ for i in $(seq 1 $tunnels); do
 			fi
 			#restart dnsmasq when the last tunnel has been setup to reread resolv.dnsmasq, due to a bug this does not happen on change of resolv.dnsmasq
 			# for now disabled waiting for DNSMasq to be repaired 2.86 works but 287test4 is buggy and does not want to replace a DNS resolver which is already in memory
-			#restart=$(nvram get wg_restart_dnsmasq)
-			#[[ $i -eq $x && $restart -ge 1 ]] && { sleep $restart; restart dnsmasq; }
+			#restartdns=$($nv get wg_restart_dnsmasq); [[ -z $restartdns ]] && restartdns=0 #moved to begin
+			#[[ $i -eq $x && $restartdns -ge 1 ]] && { sleep $restartdns; restart dnsmasq; }
+			# restart dnsmasq if ipset is set
+			[[ $i -eq $x && $restartdns -ge 1 ]] && { logger -p user.info "WireGuard: DNSMasq restarted due to active ipset"; restart dnsmasq; } &
 			# reload but not restart works of resolv.dnsmasq only if "no-poll" is set
 			#[[ $i -eq $x && $restart -ge 1 ]] && { sleep $restart; kill -1 $(pidof dnsmasq); }
 		fi
