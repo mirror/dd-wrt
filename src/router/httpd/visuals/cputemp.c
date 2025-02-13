@@ -62,6 +62,8 @@ static SENSORMAPS maps[] = {
 	{ "Thermal Zone8", "cpu1" },
 	{ "Thermal Zone9", "nss0" },
 	{ "Thermal Zone10", "nss1" },
+	{ "90000mdio100","Aquantia Phy0" },
+	{ "90000mdio108","Aquantia Phy1" },
 };
 
 static char *getmappedname(char *name)
