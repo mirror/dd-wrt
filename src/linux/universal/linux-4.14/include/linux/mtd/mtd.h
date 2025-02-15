@@ -293,6 +293,7 @@ struct mtd_info {
 	 */
 	int numeraseregions;
 	struct mtd_erase_region_info *eraseregions;
+	loff_t fixup_offset;
 
 	/*
 	 * Do not call via these pointers, use corresponding mtd_*()
@@ -361,7 +362,6 @@ struct mtd_info {
 	struct device dev;
 	int usecount;
 	struct mtd_debug_info dbg;
-	loff_t fixup_offset;
 };
 
 int mtd_ooblayout_ecc(struct mtd_info *mtd, int section,
