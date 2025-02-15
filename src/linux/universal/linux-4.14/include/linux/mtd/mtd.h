@@ -293,7 +293,6 @@ struct mtd_info {
 	 */
 	int numeraseregions;
 	struct mtd_erase_region_info *eraseregions;
-	loff_t fixup_offset;
 
 	/*
 	 * Do not call via these pointers, use corresponding mtd_*()
