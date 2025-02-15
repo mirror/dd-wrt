@@ -1330,7 +1330,7 @@ static void __init ubi_auto_attach(void)
 		size_t len;
 		loff_t i;
 		char magic[4];
-		struct mtd_info *copy;
+//		struct mtd_info *copy;
 		/* check for a valid ubi magic */
 		pr_notice("scan for ubi\n");
 		for (i = 0;i < mtd->size;i += mtd->erasesize) {
@@ -1344,9 +1344,9 @@ static void __init ubi_auto_attach(void)
 			return;
 		}
 		pr_notice("found UBI with offset %lld\n", i);
-		copy = kmalloc(sizeof(*mtd), GFP_KERNEL);
-		memcpy(copy, mtd, sizeof(*mtd));
-		mtd = copy;
+//		copy = kmalloc(sizeof(*mtd), GFP_KERNEL);
+//		memcpy(copy, mtd, sizeof(*mtd));
+//		mtd = copy;
 		mtd->fixup_offset = i;
 
 		/* auto-add only media types where UBI makes sense */
