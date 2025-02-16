@@ -213,8 +213,10 @@ static struct inode *ocfs2_get_init_inode(struct inode *dir, umode_t mode)
 		set_nlink(inode, 2);
 	inode_init_owner(inode, dir, mode);
 	status = dquot_initialize(inode);
-	if (status)
+	if (status) {
+		iput(inode);
 		return ERR_PTR(status);
+	}
 
 	return inode;
 }

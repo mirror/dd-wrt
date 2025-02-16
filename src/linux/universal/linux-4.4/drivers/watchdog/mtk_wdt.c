@@ -72,9 +72,15 @@ static int mtk_reset_handler(struct notifier_block *this, unsigned long mode,
 {
 	struct mtk_wdt_dev *mtk_wdt;
 	void __iomem *wdt_base;
+	u32 reg;
 
 	mtk_wdt = container_of(this, struct mtk_wdt_dev, restart_handler);
 	wdt_base = mtk_wdt->wdt_base;
+
+	/* Enable reset in order to issue a system reset instead of an IRQ */
+	reg = readl(wdt_base + WDT_MODE);
+	reg &= ~WDT_MODE_IRQ_EN;
+	writel(reg | WDT_MODE_KEY, wdt_base + WDT_MODE);
 
 	while (1) {
 		writel(WDT_SWRST_KEY, wdt_base + WDT_SWRST);

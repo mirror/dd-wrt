@@ -99,7 +99,7 @@ struct led_classdev {
 	bool			activated;
 #endif
 
-	/* Ensures consistent access to the LED Flash Class device */
+	/* Ensures consistent access to the LED class device */
 	struct mutex		led_access;
 };
 

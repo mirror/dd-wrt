@@ -45,7 +45,7 @@ struct inode *efivarfs_get_inode(struct super_block *sb,
  *
  *	VariableName-12345678-1234-1234-1234-1234567891bc
  */
-bool efivarfs_valid_name(const char *str, int len)
+static bool efivarfs_valid_name(const char *str, int len)
 {
 	static const char dashes[EFI_VARIABLE_GUID_LEN] = {
 		[8] = 1, [13] = 1, [18] = 1, [23] = 1
