@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2024 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2018-2025 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -122,7 +122,11 @@ static int by_store_ctrl_ex(X509_LOOKUP *ctx, int cmd, const char *argp,
                 uris = sk_OPENSSL_STRING_new_null();
                 X509_LOOKUP_set_method_data(ctx, uris);
             }
-            return sk_OPENSSL_STRING_push(uris, data) > 0;
+            if (sk_OPENSSL_STRING_push(uris, data) <= 0) {
+                OPENSSL_free(data);
+                return 0;
+            }
+            return 1;
         }
         /* NOP if no URI is given. */
         return 1;

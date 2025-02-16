@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2024 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2016-2025 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -763,7 +763,8 @@ static int test_client_hello_cb(void)
 
     /* The gimpy cipher list we configure can't do TLS 1.3. */
     SSL_CTX_set_max_proto_version(cctx, TLS1_2_VERSION);
-
+    /* Avoid problems where the default seclevel has been changed */
+    SSL_CTX_set_security_level(cctx, 2);
     if (!TEST_true(SSL_CTX_set_cipher_list(cctx,
                         "AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384"))
             || !TEST_true(create_ssl_objects(sctx, cctx, &serverssl,
@@ -12147,6 +12148,7 @@ static int npn_advert_cb(SSL *ssl, const unsigned char **out,
         return SSL_TLSEXT_ERR_OK;
 
     case 1:
+        *out = NULL;
         *outlen = 0;
         return SSL_TLSEXT_ERR_OK;
 

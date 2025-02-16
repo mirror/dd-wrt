@@ -430,7 +430,7 @@ static void *dsa_gen_init(void *provctx, int selection,
         OSSL_FIPS_IND_INIT(gctx)
     }
     if (!dsa_gen_set_params(gctx, params)) {
-        OPENSSL_free(gctx);
+        dsa_gen_cleanup(gctx);
         gctx = NULL;
     }
     return gctx;
@@ -631,7 +631,7 @@ static void *dsa_gen(void *genctx, OSSL_CALLBACK *osslcb, void *cbarg)
                     && (gctx->gen_type <= DSA_PARAMGEN_TYPE_FIPS_DEFAULT))) {
         ERR_raise_data(ERR_LIB_PROV, ERR_R_INTERNAL_ERROR,
                        "gen_type set to unsupported value %d", gctx->gen_type);
-        return NULL;
+        goto end;
     }
 
     gctx->cb = osslcb;

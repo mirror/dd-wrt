@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2015-2025 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -202,7 +202,13 @@ static int ctrladd(STACK_OF(OPENSSL_STRING) *controls, const char *value)
 
     if (data == NULL)
         return -1;
-    return sk_OPENSSL_STRING_push(controls, data) > 0;
+
+    if (sk_OPENSSL_STRING_push(controls, data) <= 0) {
+        OPENSSL_free(data);
+        return -1;
+    }
+
+    return 1;
 }
 
 /* Because OPENSSL_free is a macro, it can't be passed as a function pointer */

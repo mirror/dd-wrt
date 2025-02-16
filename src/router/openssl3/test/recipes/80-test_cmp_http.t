@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 2007-2024 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2007-2025 The OpenSSL Project Authors. All Rights Reserved.
 # Copyright Nokia 2007-2019
 # Copyright Siemens AG 2015-2019
 #
@@ -130,11 +130,10 @@ my @all_aspects = ("connection", "verification", "credentials", "commands", "enr
 @all_aspects = split /\s+/, $ENV{OPENSSL_CMP_ASPECTS} if $ENV{OPENSSL_CMP_ASPECTS};
 # set env variable, e.g., OPENSSL_CMP_ASPECTS="commands enrollment" to select specific aspects
 
+my $Mock_serverlog;
 my $faillog;
-my $file = $ENV{HARNESS_FAILLOG}; # pathname relative to result_dir
-if ($file) {
-    open($faillog, ">", $file) or die "Cannot open '$file' for writing: $!";
-}
+my $faillog_file = $ENV{HARNESS_FAILLOG} // "failed_client_invocations.txt"; # pathname relative to result_dir
+open($faillog, ">", $faillog_file) or die "Cannot open '$faillog_file' for writing: $!";
 
 sub test_cmp_http {
     my $server_name = shift;
@@ -177,6 +176,17 @@ sub test_cmp_http_aspect {
     # not unlinking test.cert.pem, test.cacerts.pem, and test.extracerts.pem
 }
 
+sub print_file_prefixed {
+    my ($file, $desc) = @_;
+    print "$desc (each line prefixed by \"# \"):\n";
+    if (open F, $file) {
+        while (<F>) {
+            print "# $_";
+        }
+        close F;
+    }
+}
+
 # The input files for the tests done here dynamically depend on the test server
 # selected (where the mock server used by default is just one possibility).
 # On the other hand the main test configuration file test.cnf, which references
@@ -215,14 +225,28 @@ indir data_dir() => sub {
                     test_cmp_http_aspect($server_name, $aspect, $tests);
                 };
             };
-            stop_server($server_name, $pid) if $pid;
-            ok(1, "$server_name server has terminated");
+
+            if ($server_name eq "Mock") {
+                stop_server($server_name, $pid) if $pid;
+                ok(1, "$server_name server has terminated");
+
+                if (-s $faillog) {
+                    indir "Mock" => sub {
+                        print_file_prefixed($Mock_serverlog, "$server_name server STDERR output is");
+                    }
+                }
+            }
           }
         }
     };
 };
 
 close($faillog) if $faillog;
+if (-s $faillog_file) {
+    print "# ------------------------------------------------------------------------------\n";
+    print_file_prefixed($faillog_file, "Failed client invocations are");
+    print "# ------------------------------------------------------------------------------\n";
+}
 
 sub load_tests {
     my $server_name = shift;
@@ -293,7 +317,8 @@ sub start_server {
                           $args ? $args : ()]), display => 1);
     print "Current directory is ".getcwd()."\n";
     print "Launching $server_name server: $cmd\n";
-    my $pid = open($server_fh, "$cmd|");
+    $Mock_serverlog = result_dir()."/Mock_server_STDERR.txt";
+    my $pid = open($server_fh, "$cmd 2>$Mock_serverlog |");
     unless ($pid) {
         print "Error launching $cmd, cannot obtain $server_name server PID";
         return 0;

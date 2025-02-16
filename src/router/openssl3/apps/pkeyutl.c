@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2024 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2006-2025 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -65,7 +65,7 @@ const OPTIONS pkeyutl_options[] = {
     {"verify", OPT_VERIFY, '-', "Verify with public key"},
     {"encrypt", OPT_ENCRYPT, '-', "Encrypt input data with public key"},
     {"decrypt", OPT_DECRYPT, '-', "Decrypt input data with private key"},
-    {"derive", OPT_DERIVE, '-', "Derive shared secret"},
+    {"derive", OPT_DERIVE, '-', "Derive shared secret from own and peer (EC)DH keys"},
     {"decap", OPT_DECAP, '-', "Decapsulate shared secret"},
     {"encap", OPT_ENCAP, '-', "Encapsulate shared secret"},
     OPT_CONFIG_OPTION,
@@ -86,10 +86,11 @@ const OPTIONS pkeyutl_options[] = {
     OPT_SECTION("Output"),
     {"out", OPT_OUT, '>', "Output file - default stdout"},
     {"secret", OPT_SECOUT, '>', "File to store secret on encapsulation"},
-    {"asn1parse", OPT_ASN1PARSE, '-', "asn1parse the output data"},
+    {"asn1parse", OPT_ASN1PARSE, '-',
+     "parse the output as ASN.1 data to check its DER encoding and print errors"},
     {"hexdump", OPT_HEXDUMP, '-', "Hex dump output"},
     {"verifyrecover", OPT_VERIFYRECOVER, '-',
-     "Verify with public key, recover original data"},
+     "Verify RSA signature, recovering original signature input data"},
 
     OPT_SECTION("Signing/Derivation/Encapsulation"),
     {"digest", OPT_DIGEST, 's',
@@ -309,7 +310,11 @@ int pkeyutl_main(int argc, char **argv)
         goto opthelp;
     } else if (peerkey != NULL && pkey_op != EVP_PKEY_OP_DERIVE) {
         BIO_printf(bio_err,
-                   "%s: no peer key given (-peerkey parameter).\n", prog);
+                   "%s: -peerkey option not allowed without -derive.\n", prog);
+        goto opthelp;
+    } else if (peerkey == NULL && pkey_op == EVP_PKEY_OP_DERIVE) {
+        BIO_printf(bio_err,
+                   "%s: missing -peerkey option for -derive operation.\n", prog);
         goto opthelp;
     }
 
@@ -705,9 +710,10 @@ static EVP_PKEY_CTX *init_ctx(const char *kdfalg, int *pkeysize,
 static int setup_peer(EVP_PKEY_CTX *ctx, int peerform, const char *file,
                       ENGINE *e)
 {
+    EVP_PKEY *pkey = EVP_PKEY_CTX_get0_pkey(ctx);
     EVP_PKEY *peer = NULL;
     ENGINE *engine = NULL;
-    int ret;
+    int ret = 1;
 
     if (peerform == FORMAT_ENGINE)
         engine = e;
@@ -716,8 +722,14 @@ static int setup_peer(EVP_PKEY_CTX *ctx, int peerform, const char *file,
         BIO_printf(bio_err, "Error reading peer key %s\n", file);
         return 0;
     }
-
-    ret = EVP_PKEY_derive_set_peer(ctx, peer) > 0;
+    if (strcmp(EVP_PKEY_get0_type_name(peer), EVP_PKEY_get0_type_name(pkey)) != 0) {
+        BIO_printf(bio_err,
+                   "Type of peer public key: %s does not match type of private key: %s\n",
+                   EVP_PKEY_get0_type_name(peer), EVP_PKEY_get0_type_name(pkey));
+        ret = 0;
+    } else {
+        ret = EVP_PKEY_derive_set_peer(ctx, peer) > 0;
+    }
 
     EVP_PKEY_free(peer);
     return ret;
