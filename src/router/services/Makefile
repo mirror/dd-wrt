@@ -2038,7 +2038,7 @@ OBJS += dbus.o
 endif
 ifeq ($(CONFIG_BLUEZ),y)
 CFLAGS_EXTRA += -DHAVE_DBUS -DHAVE_BLUEZ
-OBJS += dbus.o
+OBJS += dbus.o bluetooth.o
 endif
 
 ifeq ($(CONFIG_ATH10K_CT),y)

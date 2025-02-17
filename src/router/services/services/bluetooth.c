@@ -1,5 +1,5 @@
 /*
- * dbus.c
+ * bluetooth.c
  *
  * Copyright (C) 2009 - 2025 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *
@@ -35,30 +35,29 @@
 #include <shutils.h>
 #include <services.h>
 
-void start_dbus(void)
+void start_bluetooth(void)
 {
 	char path[64];
 	char conffile[64];
-	if (!nvram_matchi("mdns_enable", 1) && !nvram_matchi("bt_enable", 1)) {
-		stop_dbus();
+	if (!nvram_matchi("bt_enable", 1)) {
+		stop_bluetooth();
 		return;
 	}
-
-	if (pidof("dbus-daemon") > 0) {
-		dd_loginfo("dbus-daemon", "dbus-daemon already running");
-	} else {
-		log_eval("dbus-daemon", "--syslog", "--fork", "--print-pid","4", "--print-address","6", "--system");
-	}
+	eval("modprobe","bluetooth");
+	eval("modprobe","rfcomm");
+	eval("modprobe","bnep");
+	eval("modprobe","hidp");
+	eval("modprobe","hci_uart");
+	eval("modprobe","btusb");
 	return;
 }
 
-void restart_dbus(void)
+void restart_bluetooth(void)
 {
-	start_dbus();
+	start_bluetooth();
 }
 
-void stop_dbus(void)
+void stop_bluetooth(void)
 {
-	stop_process("dbus-daemon", "dbus-daemon");
 	return;
 }
