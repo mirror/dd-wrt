@@ -644,9 +644,6 @@ object_bit_unlock (GObject *object, guint lock_bit)
   _object_bit_is_locked = 0;
 #endif
 
-  /* Warning: after unlock, @object may be a dangling pointer (destroyed on
-   * another thread) and must not be touched anymore. */
-
   g_bit_unlock ((gint *) object_get_optional_flags_p (object), _OPTIONAL_BIT_LOCK);
 }
 
@@ -1020,7 +1017,7 @@ g_object_do_class_init (GObjectClass *class)
    * ]|
    *
    * It is important to note that you must use
-   * [canonical parameter names][class@GObject.ParamSpec#parameter-names] as
+   * [canonical parameter names][canonical-parameter-names] as
    * detail strings for the notify signal.
    */
   gobject_signals[NOTIFY] =
@@ -2992,7 +2989,7 @@ g_object_constructor (GType                  type,
 	  GParamSpec *pspec = construct_params->pspec;
 
 	  construct_params++;
-	  object_set_property (object, pspec, value, nqueue, FALSE);
+	  object_set_property (object, pspec, value, nqueue, TRUE);
 	}
       g_object_notify_queue_thaw (object, nqueue, FALSE);
       /* the notification queue is still frozen from g_object_init(), so
@@ -3466,37 +3463,35 @@ g_object_get_property (GObject	   *object,
  * g_object_connect: (skip)
  * @object: (type GObject.Object): a #GObject
  * @signal_spec: the spec for the first signal
- * @...: [type@GObject.Callback] for the first signal, followed by data for the
- *   first signal, followed optionally by more signal
- *   spec/callback/data triples, followed by `NULL`
+ * @...: #GCallback for the first signal, followed by data for the
+ *       first signal, followed optionally by more signal
+ *       spec/callback/data triples, followed by %NULL
  *
  * A convenience function to connect multiple signals at once.
  *
  * The signal specs expected by this function have the form
- * `modifier::signal_name`, where `modifier` can be one of the
- * following:
+ * "modifier::signal_name", where modifier can be one of the following:
+ * - signal: equivalent to g_signal_connect_data (..., NULL, G_CONNECT_DEFAULT)
+ * - object-signal, object_signal: equivalent to g_signal_connect_object (..., G_CONNECT_DEFAULT)
+ * - swapped-signal, swapped_signal: equivalent to g_signal_connect_data (..., NULL, G_CONNECT_SWAPPED)
+ * - swapped_object_signal, swapped-object-signal: equivalent to g_signal_connect_object (..., G_CONNECT_SWAPPED)
+ * - signal_after, signal-after: equivalent to g_signal_connect_data (..., NULL, G_CONNECT_AFTER)
+ * - object_signal_after, object-signal-after: equivalent to g_signal_connect_object (..., G_CONNECT_AFTER)
+ * - swapped_signal_after, swapped-signal-after: equivalent to g_signal_connect_data (..., NULL, G_CONNECT_SWAPPED | G_CONNECT_AFTER)
+ * - swapped_object_signal_after, swapped-object-signal-after: equivalent to g_signal_connect_object (..., G_CONNECT_SWAPPED | G_CONNECT_AFTER)
  *
- * - `signal`: equivalent to `g_signal_connect_data (..., NULL, G_CONNECT_DEFAULT)`
- * - `object-signal`, `object_signal`: equivalent to `g_signal_connect_object (..., G_CONNECT_DEFAULT)`
- * - `swapped-signal`, `swapped_signal`: equivalent to `g_signal_connect_data (..., NULL, G_CONNECT_SWAPPED)`
- * - `swapped_object_signal`, `swapped-object-signal`: equivalent to `g_signal_connect_object (..., G_CONNECT_SWAPPED)`
- * - `signal_after`, `signal-after`: equivalent to `g_signal_connect_data (..., NULL, G_CONNECT_AFTER)`
- * - `object_signal_after`, `object-signal-after`: equivalent to `g_signal_connect_object (..., G_CONNECT_AFTER)`
- * - `swapped_signal_after`, `swapped-signal-after`: equivalent to `g_signal_connect_data (..., NULL, G_CONNECT_SWAPPED | G_CONNECT_AFTER)`
- * - `swapped_object_signal_after`, `swapped-object-signal-after`: equivalent to `g_signal_connect_object (..., G_CONNECT_SWAPPED | G_CONNECT_AFTER)`
+ * |[<!-- language="C" --> 
+ *   menu->toplevel = g_object_connect (g_object_new (GTK_TYPE_WINDOW,
+ * 						   "type", GTK_WINDOW_POPUP,
+ * 						   "child", menu,
+ * 						   NULL),
+ * 				     "signal::event", gtk_menu_window_event, menu,
+ * 				     "signal::size_request", gtk_menu_window_size_request, menu,
+ * 				     "signal::destroy", gtk_widget_destroyed, &menu->toplevel,
+ * 				     NULL);
+ * ]|
  *
- * ```c
- * menu->toplevel = g_object_connect (g_object_new (GTK_TYPE_WINDOW,
- *                                                  "type", GTK_WINDOW_POPUP,
- *                                                  "child", menu,
- *                                                  NULL),
- *                                    "signal::event", gtk_menu_window_event, menu,
- *                                    "signal::size_request", gtk_menu_window_size_request, menu,
- *                                    "signal::destroy", gtk_widget_destroyed, &menu->toplevel,
- *                                    NULL);
- * ```
- *
- * Returns: (transfer none) (type GObject.Object): the object
+ * Returns: (transfer none) (type GObject.Object): @object
  */
 gpointer
 g_object_connect (gpointer     _object,
@@ -3897,7 +3892,7 @@ gpointer
  *
  * Using this function on the return value of the user's callback allows
  * the user to do whichever is more convenient for them. The caller will
- * always receives exactly one full reference to the value: either the
+ * alway receives exactly one full reference to the value: either the
  * one that was returned in the first place, or a floating reference
  * that has been converted to a full reference.
  *
@@ -3954,68 +3949,25 @@ typedef struct {
   } toggle_refs[1];  /* flexible array */
 } ToggleRefStack;
 
-G_ALWAYS_INLINE static inline gboolean
-toggle_refs_check_and_ref_or_deref (GObject *object,
-                                    gboolean is_ref,
-                                    gint *old_ref,
-                                    GToggleNotify *toggle_notify,
-                                    gpointer *toggle_data)
+static GToggleNotify
+toggle_refs_get_notify_unlocked (GObject *object,
+                                 gpointer *out_data)
 {
-  const gint ref_curr = is_ref ? 1 : 2;
-  const gint ref_next = is_ref ? 2 : 1;
-  gboolean success;
+  ToggleRefStack *tstackptr;
 
-#if G_ENABLE_DEBUG
-  g_assert (ref_curr == *old_ref);
-#endif
+  if (!OBJECT_HAS_TOGGLE_REF (object))
+    return NULL;
 
-  *toggle_notify = NULL;
-  *toggle_data = NULL;
+  tstackptr = g_datalist_id_get_data (&object->qdata, quark_toggle_refs);
 
-  object_bit_lock (object, OPTIONAL_BIT_LOCK_TOGGLE_REFS);
-
-  /* @old_ref is mainly an (out) parameter. On failure to compare-and-exchange,
-   * we MUST return the new value which the caller will use for retry.*/
-
-  success = g_atomic_int_compare_and_exchange_full ((int *) &object->ref_count,
-                                                    ref_curr,
-                                                    ref_next,
-                                                    old_ref);
-
-  /* Note that if we are called during g_object_unref (@is_ref set to FALSE),
-   * then we drop the ref count from 2 to 1 and give up our reference. We thus
-   * no longer hold a strong reference and another thread may race against
-   * destroying the object.
-   *
-   * After this point with is_ref=FALSE and success=TRUE, @object must no
-   * longer be accessed.
-   *
-   * The exception is here. While we still hold the object lock, we know that
-   * @object could not be destroyed, because g_object_unref() also needs to
-   * acquire the same lock during g_object_notify_queue_freeze(). Thus, we know
-   * object cannot yet be destroyed and we can access it until the unlock
-   * below. */
-
-  if (success && OBJECT_HAS_TOGGLE_REF (object))
+  if (tstackptr->n_toggle_refs != 1)
     {
-      ToggleRefStack *tstackptr;
-
-      tstackptr = g_datalist_id_get_data (&object->qdata, quark_toggle_refs);
-
-      if (tstackptr->n_toggle_refs != 1)
-        {
-          g_critical ("Unexpected number of toggle-refs. g_object_add_toggle_ref() must be paired with g_object_remove_toggle_ref()");
-        }
-      else
-        {
-          *toggle_notify = tstackptr->toggle_refs[0].notify;
-          *toggle_data = tstackptr->toggle_refs[0].data;
-        }
+      g_critical ("Unexpected number of toggle-refs. g_object_add_toggle_ref() must be paired with g_object_remove_toggle_ref()");
+      return NULL;
     }
 
-  object_bit_unlock (object, OPTIONAL_BIT_LOCK_TOGGLE_REFS);
-
-  return success;
+  *out_data = tstackptr->toggle_refs[0].data;
+  return tstackptr->toggle_refs[0].notify;
 }
 
 /**
@@ -4196,8 +4148,15 @@ retry:
     }
   else if (old_ref == 1)
     {
+      gboolean do_retry;
+
       /* With ref count 1, check whether we need to emit a toggle notification. */
-      if (!toggle_refs_check_and_ref_or_deref (object, TRUE, &old_ref, &toggle_notify, &toggle_data))
+      object_bit_lock (object, OPTIONAL_BIT_LOCK_TOGGLE_REFS);
+      toggle_notify = toggle_refs_get_notify_unlocked (object, &toggle_data);
+      do_retry = !g_atomic_int_compare_and_exchange_full ((int *) &object->ref_count,
+                                                          old_ref, old_ref + 1, &old_ref);
+      object_bit_unlock (object, OPTIONAL_BIT_LOCK_TOGGLE_REFS);
+      if (do_retry)
         goto retry;
     }
   else
@@ -4322,6 +4281,7 @@ g_object_unref (gpointer _object)
   GToggleNotify toggle_notify;
   gpointer toggle_data;
   GObjectNotifyQueue *nqueue;
+  gboolean do_retry;
   GType obj_gtype;
 
   g_return_if_fail (G_IS_OBJECT (object));
@@ -4370,8 +4330,18 @@ retry_beginning:
        *
        * We need to take a lock, to avoid races. */
 
-      if (!toggle_refs_check_and_ref_or_deref (object, FALSE, &old_ref, &toggle_notify, &toggle_data))
-        goto retry_beginning;
+      object_bit_lock (object, OPTIONAL_BIT_LOCK_TOGGLE_REFS);
+
+      toggle_notify = toggle_refs_get_notify_unlocked (object, &toggle_data);
+
+      if (!g_atomic_int_compare_and_exchange_full ((int *) &object->ref_count,
+                                                   old_ref, old_ref - 1, &old_ref))
+        {
+          object_bit_unlock (object, OPTIONAL_BIT_LOCK_TOGGLE_REFS);
+          goto retry_beginning;
+        }
+
+      object_bit_unlock (object, OPTIONAL_BIT_LOCK_TOGGLE_REFS);
 
       /* Beware: object might be a dangling pointer. */
       TRACE (GOBJECT_OBJECT_UNREF (object, obj_gtype, old_ref));
@@ -4404,10 +4374,6 @@ retry_beginning:
    * notifications. If the instance gets through to finalize(), the
    * notification queue gets automatically drained when g_object_finalize() is
    * reached and the qdata is cleared.
-   *
-   * Important: Note that g_object_notify_queue_freeze() takes a object_bit_lock(),
-   * which happens to be the same lock that is also taken by toggle_refs_check_and_ref(),
-   * that is very important. See also the code comment in toggle_refs_check_and_ref().
    */
   nqueue = g_object_notify_queue_freeze (object);
 
@@ -4459,7 +4425,14 @@ retry_decrement:
        * notification. Take a lock and check for that.
        *
        * In that case, we need a lock to get the toggle notification. */
-      if (!toggle_refs_check_and_ref_or_deref (object, FALSE, &old_ref, &toggle_notify, &toggle_data))
+      object_bit_lock (object, OPTIONAL_BIT_LOCK_TOGGLE_REFS);
+      toggle_notify = toggle_refs_get_notify_unlocked (object, &toggle_data);
+      do_retry = !g_atomic_int_compare_and_exchange_full ((int *) &object->ref_count,
+                                                          old_ref, old_ref - 1,
+                                                          &old_ref);
+      object_bit_unlock (object, OPTIONAL_BIT_LOCK_TOGGLE_REFS);
+
+      if (do_retry)
         goto retry_decrement;
 
       /* Beware: object might be a dangling pointer. */
@@ -5155,14 +5128,6 @@ g_value_dup_object (const GValue *value)
  * emitting a signal while @gobject is being destroyed in another thread
  * is not safe).
  *
- * This function cannot fail. If the given signal name doesn’t exist,
- * a critical warning is emitted. No validation is performed on the
- * "detail" string when specified in @detailed_signal, other than a
- * non-empty check.
- *
- * Refer to the [signals documentation](signals.html) for more
- * details.
- *
  * Returns: the handler id.
  */
 gulong
@@ -5614,7 +5579,6 @@ _weak_ref_set (GWeakRef *weak_ref,
   if (new_object)
     {
 #if G_ENABLE_DEBUG
-      g_assert (new_wrdata != NULL);
       g_assert (weak_ref_data_list_find (new_wrdata, weak_ref) < 0);
 #endif
       if (g_atomic_int_get (&new_object->ref_count) < 1)
@@ -5640,7 +5604,8 @@ _weak_ref_set (GWeakRef *weak_ref,
 
 /**
  * g_weak_ref_init: (skip)
- * @weak_ref: uninitialized or empty location for a weak reference
+ * @weak_ref: (inout): uninitialized or empty location for a weak
+ *    reference
  * @object: (type GObject.Object) (nullable): a #GObject or %NULL
  *
  * Initialise a non-statically-allocated #GWeakRef.
@@ -5674,7 +5639,7 @@ g_weak_ref_init (GWeakRef *weak_ref,
 
 /**
  * g_weak_ref_clear: (skip)
- * @weak_ref: location of a weak reference, which
+ * @weak_ref: (inout): location of a weak reference, which
  *  may be empty
  *
  * Frees resources associated with a non-statically-allocated #GWeakRef.
@@ -5696,7 +5661,7 @@ g_weak_ref_clear (GWeakRef *weak_ref)
 
 /**
  * g_weak_ref_get: (skip)
- * @weak_ref: location of a weak reference to a #GObject
+ * @weak_ref: (inout): location of a weak reference to a #GObject
  *
  * If @weak_ref is not empty, atomically acquire a strong
  * reference to the object it points to, and return that reference.

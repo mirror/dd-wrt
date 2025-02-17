@@ -34,11 +34,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "glib.h"
-#include "gutilsprivate.h"
 
 #if defined (_MSC_VER) && (_MSC_VER <= 1800)
+#define isnan(x) _isnan(x)
+
 #ifndef NAN
 static const unsigned long __nan[2] = {0xffffffff, 0x7fffffff};
 #define NAN (*(const float *) __nan)
@@ -1625,7 +1625,7 @@ check_strtod_string (gchar    *number,
 
       setlocale (LC_NUMERIC, locales[l]);
       d = g_ascii_strtod (number, &end);
-      g_assert_true (g_isnan (res) ? g_isnan (d) : (d == res));
+      g_assert_true (isnan (res) ? isnan (d) : (d == res));
       g_assert_true ((gsize) (end - number) ==
                      (check_end ? correct_len : strlen (number)));
     }
@@ -1660,7 +1660,7 @@ test_ascii_strtod (void)
   /* Do this before any call to setlocale.  */
   our_nan = atof ("NaN");
 #endif
-  g_assert_true (g_isnan (our_nan));
+  g_assert_true (isnan (our_nan));
 
 #ifdef INFINITY
   our_inf = INFINITY;
@@ -2719,27 +2719,6 @@ test_set_str (void)
   g_free (str);
 }
 
-static void
-test_str_is_ascii (void)
-{
-  const char *ascii_strings[] = {
-    "",
-    "hello",
-    "is it me you're looking for",
-  };
-  const char *non_ascii_strings[] = {
-    "is it me you’re looking for",
-    "áccents",
-    "☺️",
-  };
-
-  for (size_t i = 0; i < G_N_ELEMENTS (ascii_strings); i++)
-    g_assert_true (g_str_is_ascii (ascii_strings[i]));
-
-  for (size_t i = 0; i < G_N_ELEMENTS (non_ascii_strings); i++)
-    g_assert_false (g_str_is_ascii (non_ascii_strings[i]));
-}
-
 int
 main (int   argc,
       char *argv[])
@@ -2796,7 +2775,6 @@ main (int   argc,
   g_test_add_func ("/strfuncs/test-is-to-digit", test_is_to_digit);
   g_test_add_func ("/strfuncs/transliteration", test_transliteration);
   g_test_add_func ("/strfuncs/str-equal", test_str_equal);
-  g_test_add_func ("/strfuncs/str-is-ascii", test_str_is_ascii);
 
   return g_test_run();
 }

@@ -37,7 +37,7 @@
  * One useful application of this interface is to map the
  * names of actions from various action groups to unique,
  * prefixed names (e.g. by prepending "app." or "win.").
- * This is the motivation for the ‘Map’ part of the interface
+ * This is the motivation for the 'Map' part of the interface
  * name.
  *
  * Since: 2.32
@@ -45,14 +45,11 @@
 
 /**
  * GActionMapInterface:
- * @lookup_action: the virtual function pointer for
- *   [method@Gio.ActionMap.lookup_action]
- * @add_action: the virtual function pointer for
- *   [method@Gio.ActionMap.add_action]
- * @remove_action: the virtual function pointer for
- *   [method@Gio.ActionMap.remove_action]
+ * @lookup_action: the virtual function pointer for g_action_map_lookup_action()
+ * @add_action: the virtual function pointer for g_action_map_add_action()
+ * @remove_action: the virtual function pointer for g_action_map_remove_action()
  *
- * The virtual function table for [iface@Gio.ActionMap].
+ * The virtual function table for #GActionMap.
  *
  * Since: 2.32
  **/
@@ -66,14 +63,14 @@ g_action_map_default_init (GActionMapInterface *iface)
 
 /**
  * g_action_map_lookup_action:
- * @action_map: an action map
+ * @action_map: a #GActionMap
  * @action_name: the name of an action
  *
  * Looks up the action with the name @action_name in @action_map.
  *
- * If no such action exists, returns `NULL`.
+ * If no such action exists, returns %NULL.
  *
- * Returns: (nullable) (transfer none): a [iface@Gio.Action]
+ * Returns: (nullable) (transfer none): a #GAction, or %NULL
  *
  * Since: 2.32
  */
@@ -87,8 +84,8 @@ g_action_map_lookup_action (GActionMap  *action_map,
 
 /**
  * g_action_map_add_action:
- * @action_map: an action map
- * @action: a [iface@Gio.Action]
+ * @action_map: a #GActionMap
+ * @action: a #GAction
  *
  * Adds an action to the @action_map.
  *
@@ -108,7 +105,7 @@ g_action_map_add_action (GActionMap *action_map,
 
 /**
  * g_action_map_remove_action:
- * @action_map: an action map
+ * @action_map: a #GActionMap
  * @action_name: the name of the action
  *
  * Removes the named action from the action map.
@@ -127,49 +124,51 @@ g_action_map_remove_action (GActionMap  *action_map,
 /**
  * GActionEntry:
  * @name: the name of the action
- * @activate: the callback to connect to the "activate" signal of the action.
- *   Since GLib 2.40, this can be `NULL` for stateful actions, in which case
- *   the default handler is used. For boolean-stated actions with no
- *   parameter, this is a toggle. For other state types (and parameter type
- *   equal to the state type) this will be a function that just calls
- *   @change_state (which you should provide).
+ * @activate: the callback to connect to the "activate" signal of the
+ *            action.  Since GLib 2.40, this can be %NULL for stateful
+ *            actions, in which case the default handler is used.  For
+ *            boolean-stated actions with no parameter, this is a
+ *            toggle.  For other state types (and parameter type equal
+ *            to the state type) this will be a function that
+ *            just calls @change_state (which you should provide).
  * @parameter_type: the type of the parameter that must be passed to the
- *   activate function for this action, given as a single GVariant type string
- *   (or `NULL` for no parameter)
+ *                  activate function for this action, given as a single
+ *                  GVariant type string (or %NULL for no parameter)
  * @state: the initial state for this action, given in
- *   [GVariant text format](gvariant-text-format.html).  The state is parsed
- *   with no extra type information, so type tags must be added to the string
- *   if they are necessary.  Stateless actions should give `NULL` here.
- * @change_state: the callback to connect to the "change-state" signal of the
- *   action.  All stateful actions should provide a handler here; stateless
- *   actions should not.
+ *         [GVariant text format][gvariant-text].  The state is parsed
+ *         with no extra type information, so type tags must be added to
+ *         the string if they are necessary.  Stateless actions should
+ *         give %NULL here.
+ * @change_state: the callback to connect to the "change-state" signal
+ *                of the action.  All stateful actions should provide a
+ *                handler here; stateless actions should not.
  *
  * This struct defines a single action.  It is for use with
- * [method@Gio.ActionMap.add_action_entries].
+ * g_action_map_add_action_entries().
  *
  * The order of the items in the structure are intended to reflect
  * frequency of use.  It is permissible to use an incomplete initialiser
- * in order to leave some of the later values as `NULL`.  All values
+ * in order to leave some of the later values as %NULL.  All values
  * after @name are optional.  Additional optional fields may be added in
  * the future.
  *
- * See [method@Gio.ActionMap.add_action_entries] for an example.
+ * See g_action_map_add_action_entries() for an example.
  **/
 
 /**
  * g_action_map_add_action_entries:
- * @action_map: an action map
+ * @action_map: a #GActionMap
  * @entries: (array length=n_entries) (element-type GActionEntry): a pointer to
- *   the first item in an array of [struct@Gio.ActionEntry] structs
- * @n_entries: the length of @entries, or -1 if @entries is `NULL`-terminated
+ *           the first item in an array of #GActionEntry structs
+ * @n_entries: the length of @entries, or -1 if @entries is %NULL-terminated
  * @user_data: the user data for signal connections
  *
- * A convenience function for creating multiple [class@Gio.SimpleAction]
- * instances and adding them to a [iface@Gio.ActionMap].
+ * A convenience function for creating multiple #GSimpleAction instances
+ * and adding them to a #GActionMap.
  *
- * Each action is constructed as per one [struct@Gio.ActionEntry].
+ * Each action is constructed as per one #GActionEntry.
  *
- * ```c
+ * |[<!-- language="C" -->
  * static void
  * activate_quit (GSimpleAction *simple,
  *                GVariant      *parameter,
@@ -200,7 +199,7 @@ g_action_map_remove_action (GActionMap  *action_map,
  *
  *   return G_ACTION_GROUP (group);
  * }
- * ```
+ * ]|
  *
  * Since: 2.32
  */
@@ -279,16 +278,16 @@ g_action_map_add_action_entries (GActionMap         *action_map,
 
 /**
  * g_action_map_remove_action_entries:
- * @action_map: The [iface@Gio.ActionMap]
+ * @action_map: The #GActionMap
  * @entries: (array length=n_entries) (element-type GActionEntry): a pointer to
- *   the first item in an array of [struct@Gio.ActionEntry] structs
- * @n_entries: the length of @entries, or -1 if @entries is `NULL`-terminated
+ *           the first item in an array of #GActionEntry structs
+ * @n_entries: the length of @entries, or -1 if @entries is %NULL-terminated
  *
- * Remove actions from a [iface@Gio.ActionMap]. This is meant as the reverse of
- * [method@Gio.ActionMap.add_action_entries].
+ * Remove actions from a #GActionMap. This is meant as the reverse of
+ * g_action_map_add_action_entries().
  *
  *
- * ```c
+ * |[<!-- language="C" -->
  * static const GActionEntry entries[] = {
  *     { "quit",         activate_quit              },
  *     { "print-string", activate_print_string, "s" }
@@ -305,7 +304,7 @@ g_action_map_add_action_entries (GActionMap         *action_map,
  * {
  *   g_action_map_remove_action_entries (map, entries, G_N_ELEMENTS (entries));
  * }
- * ```
+ * ]|
  *
  * Since: 2.78
  */

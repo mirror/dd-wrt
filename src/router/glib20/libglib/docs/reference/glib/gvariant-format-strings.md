@@ -73,10 +73,9 @@ The equivalent C types are as follows:
 | `u`       | `guint32`         |
 | `x`       | `gint64`          |
 | `t`       | `guint64`         |
-| `h`       | `gint32` (handle) |
+| `h`       | `gint32`          |
 | `d`       | `gdouble`         |
 
-<a id="varargs"></a>
 Note that in C, small integer types in variable argument lists are promoted
 up to `int` or `unsigned int` as appropriate, and read back accordingly. `int`
 is 32 bits on every platform on which GLib is currently supported. This

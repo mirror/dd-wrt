@@ -82,11 +82,15 @@
 #include "gtestutils.h"
 #include "gthread.h"
 #include "gtimezone.h"
-#include "gutilsprivate.h"
 
 #ifndef G_OS_WIN32
 #include <sys/time.h>
 #include <time.h>
+#else
+#if defined (_MSC_VER) && (_MSC_VER < 1800)
+/* fallback implementation for isnan() on VS2012 and earlier */
+#define isnan _isnan
+#endif
 #endif /* !G_OS_WIN32 */
 
 struct _GDateTime
@@ -1491,7 +1495,7 @@ parse_iso8601_time (const gchar *text, gsize length,
  *
  * Creates a #GDateTime corresponding to the given
  * [ISO 8601 formatted string](https://en.wikipedia.org/wiki/ISO_8601)
- * @text. ISO 8601 strings of the form `<date><sep><time><tz>` are supported, with
+ * @text. ISO 8601 strings of the form <date><sep><time><tz> are supported, with
  * some extensions from [RFC 3339](https://tools.ietf.org/html/rfc3339) as
  * mentioned below.
  *
@@ -1499,11 +1503,11 @@ parse_iso8601_time (const gchar *text, gsize length,
  * in an ISO-8601 string will be ignored, so a `23:59:60` time would be parsed as
  * `23:59:59`.
  *
- * `<sep>` is the separator and can be either 'T', 't' or ' '. The latter two
+ * <sep> is the separator and can be either 'T', 't' or ' '. The latter two
  * separators are an extension from
  * [RFC 3339](https://tools.ietf.org/html/rfc3339#section-5.6).
  *
- * `<date>` is in the form:
+ * <date> is in the form:
  *
  * - `YYYY-MM-DD` - Year/month/day, e.g. 2016-08-24.
  * - `YYYYMMDD` - Same as above without dividers.
@@ -1513,12 +1517,12 @@ parse_iso8601_time (const gchar *text, gsize length,
  *   e.g. 2016-W34-3.
  * - `YYYYWwwD` - Same as above without dividers.
  *
- * `<time>` is in the form:
+ * <time> is in the form:
  *
  * - `hh:mm:ss(.sss)` - Hours, minutes, seconds (subseconds), e.g. 22:10:42.123.
  * - `hhmmss(.sss)` - Same as above without dividers.
  *
- * `<tz>` is an optional timezone suffix of the form:
+ * <tz> is an optional timezone suffix of the form:
  *
  * - `Z` - UTC.
  * - `+hh:mm` or `-hh:mm` - Offset from UTC in hours and minutes, e.g. +12:00.
@@ -1641,7 +1645,7 @@ g_date_time_new (GTimeZone *tz,
       day < 1 || day > days_in_months[GREGORIAN_LEAP (year)][month] ||
       hour < 0 || hour > 23 ||
       minute < 0 || minute > 59 ||
-      g_isnan (seconds) ||
+      isnan (seconds) ||
       seconds < 0.0 || seconds >= 60.0)
     return NULL;
 
@@ -1666,7 +1670,7 @@ g_date_time_new (GTimeZone *tz,
    * is 1000000.  This is not a problem with precision, it's just how
    * FP numbers work.
    * See https://bugzilla.gnome.org/show_bug.cgi?id=697715. */
-  usec = (gint64) (seconds * USEC_PER_SECOND);
+  usec = seconds * USEC_PER_SECOND;
   usecd = (usec + 1) * 1e-6;
   if (usecd <= seconds) {
     usec++;
@@ -1969,7 +1973,7 @@ GDateTime*
 g_date_time_add_seconds (GDateTime *datetime,
                          gdouble    seconds)
 {
-  return g_date_time_add (datetime, (GTimeSpan) (seconds * USEC_PER_SECOND));
+  return g_date_time_add (datetime, seconds * USEC_PER_SECOND);
 }
 
 /**
@@ -3100,7 +3104,7 @@ format_number (GString     *str,
     "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
   };
   const gchar * const *digits = ascii_digits;
-  const gchar *tmp[10] = { NULL, };
+  const gchar *tmp[10];
   gint i = 0;
 #ifdef HAVE_LANGINFO_OUTDIGIT
   static GMutex alt_digits_mutex;
@@ -3264,7 +3268,7 @@ g_date_time_format_utf8 (GDateTime   *datetime,
 			 GString     *outstr,
 			 gboolean     locale_is_utf8)
 {
-  size_t len;
+  guint     len;
   guint     colons;
   gunichar  c;
   gboolean  alt_digits = FALSE;
@@ -3603,7 +3607,7 @@ g_date_time_format_utf8 (GDateTime   *datetime,
           if (mod_case && g_strcmp0 (mod, "#") == 0)
             tz = tmp = g_utf8_strdown (tz, -1);
           g_string_append (outstr, tz);
-          g_clear_pointer (&tmp, g_free);
+          g_free (tmp);
 	  break;
 	case '%':
 	  g_string_append_c (outstr, '%');

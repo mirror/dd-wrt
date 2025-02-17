@@ -277,70 +277,6 @@
  *
  * ## Build system integration
  *
- * ### Meson
- *
- * GSettings is natively supported by Meson's [GNOME module](https://mesonbuild.com/Gnome-module.html).
- *
- * You can install the schemas as any other data file:
- *
- * ```
- * install_data(
- *   'org.foo.MyApp.gschema.xml',
- *   install_dir: get_option('datadir') / 'glib-2.0/schemas',
- * )
- * ```
- *
- * You can use `gnome.post_install()` function to compile the schemas on
- * installation:
- *
- * ```
- * gnome = import('gnome')
- * gnome.post_install(
- *   glib_compile_schemas: true,
- * )
- * ```
- *
- * If an enumerated type defined in a C header file is to be used in a GSettings
- * schema, it can either be defined manually using an `<enum>` element in the
- * schema XML, or it can be extracted automatically from the C header. This
- * approach is preferred, as it ensures the two representations are always
- * synchronised. To do so, you will need to use the `gnome.mkenums()` function
- * with the following templates:
- *
- * ```
- * schemas_enums = gnome.mkenums('org.foo.MyApp.enums.xml',
- *   comments: '<!-- @comment@ -->',
- *   fhead: '<schemalist>',
- *   vhead: '  <@type@ id="org.foo.MyApp.@EnumName@">',
- *   vprod: '    <value nick="@valuenick@" value="@valuenum@"/>',
- *   vtail: '  </@type@>',
- *   ftail: '</schemalist>',
- *   sources: enum_sources,
- *   install_header: true,
- *   install_dir: get_option('datadir') / 'glib-2.0/schemas',
- * )
- * ```
- *
- * It is recommended to validate your schemas as part of the test suite for
- * your application:
- *
- * ```
- * test('validate-schema',
- *   find_program('glib-compile-schemas'),
- *   args: ['--strict', '--dry-run', meson.current_source_dir()],
- * )
- * ```
- *
- * If your application allows running uninstalled, you should also use the
- * `gnome.compile_schemas()` function to compile the schemas in the current
- * build directory:
- *
- * ```
- * gnome.compile_schemas()
- * ```
- *
- * ### Autotools
- *
  * GSettings comes with autotools integration to simplify compiling and
  * installing schemas. To add GSettings support to an application, add the
  * following to your `configure.ac`:
@@ -356,6 +292,25 @@
  *
  * @GSETTINGS_RULES@
  * ```
+ *
+ * No changes are needed to the build system to mark a schema XML file for
+ * translation. Assuming it sets the `gettext-domain` attribute, a schema may
+ * be marked for translation by adding it to `POTFILES.in`, assuming gettext
+ * 0.19 is in use (the preferred method for translation):
+ * ```
+ * data/org.foo.MyApp.gschema.xml
+ * ```
+ *
+ * Alternatively, if intltool 0.50.1 is in use:
+ * ```
+ * [type: gettext/gsettings]data/org.foo.MyApp.gschema.xml
+ * ```
+ *
+ * GSettings will use gettext to look up translations for the `<summary>` and
+ * `<description>` elements, and also any `<default>` elements which have a
+ * `l10n` attribute set. Translations must not be included in the `.gschema.xml`
+ * file by the build system, for example by using intltool XML rules with a
+ * `.gschema.xml.in` template.
  *
  * If an enumerated type defined in a C header file is to be used in a GSettings
  * schema, it can either be defined manually using an `<enum>` element in the
@@ -373,28 +328,6 @@
  * automatically included in the schema compilation, install and uninstall
  * rules. It should not be committed to version control or included in
  * `EXTRA_DIST`.
- *
- * ## Localization
- *
- * No changes are needed to the build system to mark a schema XML file for
- * translation. Assuming it sets the `gettext-domain` attribute, a schema may
- * be marked for translation by adding it to `POTFILES.in`, assuming gettext
- * 0.19 or newer is in use (the preferred method for translation):
- * ```
- * data/org.foo.MyApp.gschema.xml
- * ```
- *
- * Alternatively, if intltool 0.50.1 is in use:
- * ```
- * [type: gettext/gsettings]data/org.foo.MyApp.gschema.xml
- * ```
- *
- * GSettings will use gettext to look up translations for the `<summary>` and
- * `<description>` elements, and also any `<default>` elements which have a
- * `l10n` attribute set.
- *
- * Translations **must not** be included in the `.gschema.xml` file by the build
- * system, for example by using a rule to generate the XML file from a template.
  */
 
 struct _GSettingsPrivate
@@ -3056,148 +2989,6 @@ g_settings_bind_with_mapping (GSettings               *settings,
   binding_quark = g_settings_binding_quark (binding->property->name);
   g_object_set_qdata_full (object, binding_quark,
                            binding, g_settings_binding_free);
-}
-
-typedef struct _BindWithMappingClosuresData
-{
-  GClosure *get_mapping_closure;
-  GClosure *set_mapping_closure;
-} BindWithMappingClosuresData;
-
-static BindWithMappingClosuresData *
-bind_with_mapping_closures_data_new (GClosure *get_mapping_closure,
-                                     GClosure *set_mapping_closure)
-{
-  BindWithMappingClosuresData *data;
-
-  data = g_new0 (BindWithMappingClosuresData, 1);
-
-  if (get_mapping_closure != NULL)
-    {
-      data->get_mapping_closure = g_closure_ref (get_mapping_closure);
-      g_closure_sink (get_mapping_closure);
-      if (G_CLOSURE_NEEDS_MARSHAL (get_mapping_closure))
-        g_closure_set_marshal (get_mapping_closure, g_cclosure_marshal_generic);
-    }
-
-  if (set_mapping_closure != NULL)
-    {
-      data->set_mapping_closure = g_closure_ref (set_mapping_closure);
-      g_closure_sink (set_mapping_closure);
-      if (G_CLOSURE_NEEDS_MARSHAL (set_mapping_closure))
-        g_closure_set_marshal (set_mapping_closure, g_cclosure_marshal_generic);
-    }
-
-  return data;
-}
-
-static void
-bind_with_mapping_closures_data_free (BindWithMappingClosuresData *data)
-{
-  if (data->get_mapping_closure != NULL)
-    g_closure_unref (data->get_mapping_closure);
-
-  if (data->set_mapping_closure != NULL)
-    g_closure_unref (data->set_mapping_closure);
-
-  g_free (data);
-}
-
-static gboolean
-bind_with_mapping_invoke_get (GValue *value,
-                              GVariant *variant,
-                              void *user_data)
-{
-  BindWithMappingClosuresData *data = (BindWithMappingClosuresData *) user_data;
-  GValue params[2] = { G_VALUE_INIT, G_VALUE_INIT };
-  GValue out = G_VALUE_INIT;
-  gboolean retval;
-
-  g_value_init (&params[0], G_TYPE_VALUE);
-  g_value_set_boxed (&params[0], value);
-  g_value_init (&params[1], G_TYPE_VARIANT);
-  g_value_set_variant (&params[1], variant);
-  g_value_init (&out, G_TYPE_BOOLEAN);
-
-  g_closure_invoke (data->get_mapping_closure, &out, 2, params, /* hint = */ NULL);
-
-  retval = g_value_get_boolean (&out);
-
-  g_value_unset (&out);
-  g_value_unset (&params[0]);
-  g_value_unset (&params[1]);
-
-  return retval;
-}
-
-static GVariant *
-bind_with_mapping_invoke_set (const GValue *value,
-                              const GVariantType *expected_type,
-                              void *user_data)
-{
-  BindWithMappingClosuresData *data = (BindWithMappingClosuresData *) user_data;
-  GValue params[2] = { G_VALUE_INIT, G_VALUE_INIT };
-  GValue out = G_VALUE_INIT;
-  GVariant *retval;
-
-  g_value_init (&params[0], G_TYPE_VALUE);
-  g_value_set_boxed (&params[0], value);
-  g_value_init (&params[1], G_TYPE_VARIANT_TYPE);
-  g_value_set_boxed (&params[1], expected_type);
-  g_value_init (&out, G_TYPE_VARIANT);
-
-  g_closure_invoke (data->set_mapping_closure, &out, 2, params, /* hint = */ NULL);
-
-  retval = g_value_dup_variant (&out);
-
-  g_value_unset (&out);
-  g_value_unset (&params[0]);
-  g_value_unset (&params[1]);
-
-  return retval;
-}
-
-static void
-bind_with_mapping_destroy (void *user_data)
-{
-  BindWithMappingClosuresData *data = (BindWithMappingClosuresData *) user_data;
-  bind_with_mapping_closures_data_free (data);
-}
-
-/**
- * g_settings_bind_with_mapping_closures: (rename-to g_settings_bind_with_mapping):
- * @settings: a #GSettings object
- * @key: the key to bind
- * @object: a #GObject
- * @property: the name of the property to bind
- * @flags: flags for the binding
- * @get_mapping: (nullable): a function that gets called to convert values
- *     from @settings to @object, or %NULL to use the default GIO mapping
- * @set_mapping: (nullable): a function that gets called to convert values
- *     from @object to @settings, or %NULL to use the default GIO mapping
- *
- * Version of g_settings_bind_with_mapping() using closures instead of callbacks
- * for easier binding in other languages.
- *
- * Since: 2.82
- */
-void
-g_settings_bind_with_mapping_closures (GSettings *settings,
-                                       const char *key,
-                                       GObject *object,
-                                       const char *property,
-                                       GSettingsBindFlags flags,
-                                       GClosure *get_mapping,
-                                       GClosure *set_mapping)
-{
-  BindWithMappingClosuresData *data;
-
-  data = bind_with_mapping_closures_data_new (get_mapping, set_mapping);
-
-  g_settings_bind_with_mapping (settings, key, object, property, flags,
-                                bind_with_mapping_invoke_get,
-                                bind_with_mapping_invoke_set, data,
-                                bind_with_mapping_destroy);
 }
 
 /* Writability binding {{{1 */

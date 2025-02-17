@@ -205,7 +205,7 @@ static gchar*
 _g_module_build_path (const gchar *directory,
 		      const gchar *module_name)
 {
-  size_t k;
+  gint k;
 
   k = strlen (module_name);
     

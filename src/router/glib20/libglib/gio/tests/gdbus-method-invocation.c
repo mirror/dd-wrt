@@ -25,7 +25,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "gdbusprivate.h"
 #include "gdbus-tests.h"
 
 static const GDBusArgInfo foo_get_fds_in_args =
@@ -142,7 +141,7 @@ test_method_invocation_return_method_call (GDBusConnection       *connection,
 {
   gboolean no_reply = g_dbus_message_get_flags (g_dbus_method_invocation_get_message (invocation)) & G_DBUS_MESSAGE_FLAGS_NO_REPLY_EXPECTED;
 
-  if (g_str_equal (interface_name, DBUS_INTERFACE_PROPERTIES) &&
+  if (g_str_equal (interface_name, "org.freedesktop.DBus.Properties") &&
       g_str_equal (method_name, "Get"))
     {
       const gchar *iface_name, *prop_name;
@@ -179,7 +178,7 @@ test_method_invocation_return_method_call (GDBusConnection       *connection,
 
       g_test_assert_expected_messages ();
     }
-  else if (g_str_equal (interface_name, DBUS_INTERFACE_PROPERTIES) &&
+  else if (g_str_equal (interface_name, "org.freedesktop.DBus.Properties") &&
            g_str_equal (method_name, "Set"))
     {
       const gchar *iface_name, *prop_name;
@@ -203,7 +202,7 @@ test_method_invocation_return_method_call (GDBusConnection       *connection,
       g_test_assert_expected_messages ();
       g_variant_unref (value);
     }
-  else if (g_str_equal (interface_name, DBUS_INTERFACE_PROPERTIES) &&
+  else if (g_str_equal (interface_name, "org.freedesktop.DBus.Properties") &&
            g_str_equal (method_name, "GetAll"))
     {
       const gchar *iface_name;
@@ -326,11 +325,11 @@ test_method_invocation_return (void)
         }
       calls[] =
         {
-          { DBUS_INTERFACE_PROPERTIES, "Get", "('org.example.Foo', 'InvalidType')", TRUE },
-          { DBUS_INTERFACE_PROPERTIES, "Get", "('org.example.Foo', 'InvalidTypeNull')", TRUE },
-          { DBUS_INTERFACE_PROPERTIES, "Get", "('org.example.Foo', 'InvalidValueType')", TRUE },
-          { DBUS_INTERFACE_PROPERTIES, "Set", "('org.example.Foo', 'InvalidType', <'irrelevant'>)", TRUE },
-          { DBUS_INTERFACE_PROPERTIES, "GetAll", "('org.example.Foo',)", TRUE },
+          { "org.freedesktop.DBus.Properties", "Get", "('org.example.Foo', 'InvalidType')", TRUE },
+          { "org.freedesktop.DBus.Properties", "Get", "('org.example.Foo', 'InvalidTypeNull')", TRUE },
+          { "org.freedesktop.DBus.Properties", "Get", "('org.example.Foo', 'InvalidValueType')", TRUE },
+          { "org.freedesktop.DBus.Properties", "Set", "('org.example.Foo', 'InvalidType', <'irrelevant'>)", TRUE },
+          { "org.freedesktop.DBus.Properties", "GetAll", "('org.example.Foo',)", TRUE },
           { "org.example.Foo", "WrongReturnType", "()", TRUE },
           { "org.example.Foo", "GetFDs", "('Valid',)", FALSE },
           { "org.example.Foo", "GetFDs", "('WrongNumber',)", TRUE },

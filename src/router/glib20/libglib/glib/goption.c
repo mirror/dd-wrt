@@ -56,7 +56,7 @@ typedef struct
   gpointer arg_data;
   union
   {
-    gboolean boolean;
+    gboolean bool;
     gint integer;
     gchar *str;
     gchar **array;
@@ -1461,7 +1461,7 @@ parse_long_option (GOptionContext *context,
         }
       else
         {
-          size_t len = strlen (group->entries[j].long_name);
+          gint len = strlen (group->entries[j].long_name);
 
           if (strncmp (arg, group->entries[j].long_name, len) == 0 &&
               (arg[len] == '=' || arg[len] == 0))
@@ -1585,7 +1585,7 @@ free_changes_list (GOptionContext *context,
           switch (change->arg_type)
             {
             case G_OPTION_ARG_NONE:
-              *(gboolean *)change->arg_data = change->prev.boolean;
+              *(gboolean *)change->arg_data = change->prev.bool;
               break;
             case G_OPTION_ARG_INT:
               *(gint *)change->arg_data = change->prev.integer;
@@ -2559,7 +2559,7 @@ g_option_context_get_description (GOptionContext *context)
 /**
  * g_option_context_parse_strv:
  * @context: a #GOptionContext
- * @arguments: (inout) (array zero-terminated=1) (optional): a pointer
+ * @arguments: (inout) (array null-terminated=1) (optional): a pointer
  *    to the command line arguments (which must be in UTF-8 on Windows).
  *    Starting with GLib 2.62, @arguments can be %NULL, which matches
  *    g_option_context_parse().

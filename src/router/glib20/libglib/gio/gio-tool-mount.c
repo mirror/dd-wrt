@@ -71,8 +71,8 @@ static const GOptionEntry entries[] =
   { "force", 'f', 0, G_OPTION_ARG_NONE, &force, N_("Ignore outstanding file operations when unmounting or ejecting"), NULL },
   { "anonymous", 'a', 0, G_OPTION_ARG_NONE, &anonymous, N_("Use an anonymous user when authenticating"), NULL },
   /* Translator: List here is a verb as in 'List all mounts' */
-  { "list", 'l', 0, G_OPTION_ARG_NONE, &mount_list, N_("List user-interesting volumes, drives and mounts"), NULL},
-  { "monitor", 'o', 0, G_OPTION_ARG_NONE, &mount_monitor, N_("Monitor user-interesting volume, drive and mount events"), NULL},
+  { "list", 'l', 0, G_OPTION_ARG_NONE, &mount_list, N_("List"), NULL},
+  { "monitor", 'o', 0, G_OPTION_ARG_NONE, &mount_monitor, N_("Monitor events"), NULL},
   { "detail", 'i', 0, G_OPTION_ARG_NONE, &extra_detail, N_("Show extra information"), NULL},
   { "tcrypt-pim", 0, 0, G_OPTION_ARG_INT, &tcrypt_pim, N_("The numeric PIM when unlocking a VeraCrypt volume"), N_("PIM")},
   { "tcrypt-hidden", 0, 0, G_OPTION_ARG_NONE, &tcrypt_hidden, N_("Mount a TCRYPT hidden volume"), NULL},
@@ -89,7 +89,7 @@ prompt_for (const char *prompt, const char *default_value, gboolean echo)
   gboolean restore_flags;
 #endif
   char data[256];
-  size_t len;
+  int len;
 
   if (default_value && *default_value != 0)
     g_print ("%s [%s]: ", prompt, default_value);

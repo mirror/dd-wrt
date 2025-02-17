@@ -22,23 +22,6 @@
 #include "glib.h"
 #include "girepository.h"
 
-static char *
-test_repository_search_paths_get_expected_libdir_path (void)
-{
-#if defined(G_PLATFORM_WIN32)
-  const char *tests_build_dir = g_getenv ("G_TEST_BUILDDIR");
-  char *expected_rel_path = g_build_filename (tests_build_dir, "lib", "girepository-1.0", NULL);
-#elif defined(__APPLE__)
-  const char *tests_build_dir = g_getenv ("G_TEST_BUILDDIR");
-  char *expected_rel_path = g_build_filename (tests_build_dir, "..", "girepository-1.0", NULL);
-#else /* !G_PLATFORM_WIN32 && !__APPLE__ */
-  char *expected_rel_path = g_build_filename (GOBJECT_INTROSPECTION_LIBDIR, "girepository-1.0", NULL);
-#endif
-  char *expected_path = g_canonicalize_filename (expected_rel_path, NULL);
-  g_clear_pointer (&expected_rel_path, g_free);
-  return expected_path;
-}
-
 static void
 test_repository_search_paths_default (void)
 {
@@ -54,9 +37,11 @@ test_repository_search_paths_default (void)
 
   g_assert_cmpstr (search_paths[0], ==, g_get_tmp_dir ());
 
-  char *expected_path = test_repository_search_paths_get_expected_libdir_path ();
+#ifndef G_PLATFORM_WIN32
+  char *expected_path = g_build_filename (GOBJECT_INTROSPECTION_LIBDIR, "girepository-1.0", NULL);
   g_assert_cmpstr (search_paths[1], ==, expected_path);
   g_clear_pointer (&expected_path, g_free);
+#endif
 
   g_clear_object (&repository);
 }
@@ -78,9 +63,11 @@ test_repository_search_paths_prepend (void)
   g_assert_cmpstr (search_paths[0], ==, g_test_get_dir (G_TEST_BUILT));
   g_assert_cmpstr (search_paths[1], ==, g_get_tmp_dir ());
 
-  char *expected_path = test_repository_search_paths_get_expected_libdir_path ();
+#ifndef G_PLATFORM_WIN32
+  char *expected_path = g_build_filename (GOBJECT_INTROSPECTION_LIBDIR, "girepository-1.0", NULL);
   g_assert_cmpstr (search_paths[2], ==, expected_path);
   g_clear_pointer (&expected_path, g_free);
+#endif
 
   gi_repository_prepend_search_path (repository, g_test_get_dir (G_TEST_DIST));
   search_paths = gi_repository_get_search_path (repository, &n_search_paths);
@@ -91,9 +78,11 @@ test_repository_search_paths_prepend (void)
   g_assert_cmpstr (search_paths[1], ==, g_test_get_dir (G_TEST_BUILT));
   g_assert_cmpstr (search_paths[2], ==, g_get_tmp_dir ());
 
-  expected_path = test_repository_search_paths_get_expected_libdir_path ();
+#ifndef G_PLATFORM_WIN32
+  expected_path = g_build_filename (GOBJECT_INTROSPECTION_LIBDIR, "girepository-1.0", NULL);
   g_assert_cmpstr (search_paths[3], ==, expected_path);
   g_clear_pointer (&expected_path, g_free);
+#endif
 
   g_clear_object (&repository);
 }

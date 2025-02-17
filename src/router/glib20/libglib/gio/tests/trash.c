@@ -26,7 +26,6 @@
 #include <glib/gstdio.h>
 #include <gio/gio.h>
 #include <gio/gunixmounts.h>
-#include <fcntl.h>
 
 /* Test that g_file_trash() returns G_IO_ERROR_NOT_SUPPORTED for files on system mounts. */
 static void
@@ -66,10 +65,10 @@ test_trash_not_supported (void)
       return;
     }
 
-  mount = g_unix_mount_entry_for (g_file_peek_path (file), NULL);
-  g_assert_true (mount == NULL || g_unix_mount_entry_is_system_internal (mount));
-  g_test_message ("Mount: %s", (mount != NULL) ? g_unix_mount_entry_get_mount_path (mount) : "(null)");
-  g_clear_pointer (&mount, g_unix_mount_entry_free);
+  mount = g_unix_mount_for (g_file_peek_path (file), NULL);
+  g_assert_true (mount == NULL || g_unix_mount_is_system_internal (mount));
+  g_test_message ("Mount: %s", (mount != NULL) ? g_unix_mount_get_mount_path (mount) : "(null)");
+  g_clear_pointer (&mount, g_unix_mount_free);
 
   /* g_file_trash() shouldn't be supported on system internal mounts,
    * because those are not monitored by gvfsd-trash.
@@ -119,7 +118,7 @@ test_trash_symlinks (void)
       return;
     }
 
-  target_mount = g_unix_mount_entry_for (target, NULL);
+  target_mount = g_unix_mount_for (target, NULL);
 
   if (target_mount == NULL)
     {
@@ -129,32 +128,32 @@ test_trash_symlinks (void)
     }
 
   g_assert_nonnull (target_mount);
-  g_test_message ("Target: %s (mount: %s)", target, g_unix_mount_entry_get_mount_path (target_mount));
+  g_test_message ("Target: %s (mount: %s)", target, g_unix_mount_get_mount_path (target_mount));
 
   tmp = g_dir_make_tmp ("test-trashXXXXXX", &error);
   g_assert_no_error (error);
   g_assert_nonnull (tmp);
-  tmp_mount = g_unix_mount_entry_for (tmp, NULL);
+  tmp_mount = g_unix_mount_for (tmp, NULL);
 
   if (tmp_mount == NULL)
     {
       g_test_skip_printf ("Unable to determine mount point for %s", tmp);
-      g_unix_mount_entry_free (target_mount);
+      g_unix_mount_free (target_mount);
       g_free (target);
       g_free (tmp);
       return;
     }
 
   g_assert_nonnull (tmp_mount);
-  g_test_message ("Tmp: %s (mount: %s)", tmp, g_unix_mount_entry_get_mount_path (tmp_mount));
+  g_test_message ("Tmp: %s (mount: %s)", tmp, g_unix_mount_get_mount_path (tmp_mount));
 
-  if (g_unix_mount_entry_compare (target_mount, tmp_mount) == 0)
+  if (g_unix_mount_compare (target_mount, tmp_mount) == 0)
     {
       g_test_skip ("The tmp has to be on another mount than the home to run this test");
 
-      g_unix_mount_entry_free (tmp_mount);
+      g_unix_mount_free (tmp_mount);
       g_free (tmp);
-      g_unix_mount_entry_free (target_mount);
+      g_unix_mount_free (target_mount);
       g_free (target);
 
       return;
@@ -164,102 +163,29 @@ test_trash_symlinks (void)
   g_file_make_symbolic_link (symlink, g_get_home_dir (), NULL, &error);
   g_assert_no_error (error);
 
-  symlink_mount = g_unix_mount_entry_for (g_file_peek_path (symlink), NULL);
+  symlink_mount = g_unix_mount_for (g_file_peek_path (symlink), NULL);
   g_assert_nonnull (symlink_mount);
-  g_test_message ("Symlink: %s (mount: %s)", g_file_peek_path (symlink), g_unix_mount_entry_get_mount_path (symlink_mount));
+  g_test_message ("Symlink: %s (mount: %s)", g_file_peek_path (symlink), g_unix_mount_get_mount_path (symlink_mount));
 
-  g_assert_cmpint (g_unix_mount_entry_compare (symlink_mount, tmp_mount), ==, 0);
+  g_assert_cmpint (g_unix_mount_compare (symlink_mount, tmp_mount), ==, 0);
 
   target_over_symlink = g_build_filename (g_file_peek_path (symlink),
                                           ".local",
                                           NULL);
-  target_over_symlink_mount = g_unix_mount_entry_for (target_over_symlink, NULL);
+  target_over_symlink_mount = g_unix_mount_for (target_over_symlink, NULL);
   g_assert_nonnull (symlink_mount);
-  g_test_message ("Target over symlink: %s (mount: %s)", target_over_symlink, g_unix_mount_entry_get_mount_path (target_over_symlink_mount));
+  g_test_message ("Target over symlink: %s (mount: %s)", target_over_symlink, g_unix_mount_get_mount_path (target_over_symlink_mount));
 
-  g_assert_cmpint (g_unix_mount_entry_compare (target_over_symlink_mount, target_mount), ==, 0);
+  g_assert_cmpint (g_unix_mount_compare (target_over_symlink_mount, target_mount), ==, 0);
 
-  g_unix_mount_entry_free (target_over_symlink_mount);
-  g_unix_mount_entry_free (symlink_mount);
+  g_unix_mount_free (target_over_symlink_mount);
+  g_unix_mount_free (symlink_mount);
   g_free (target_over_symlink);
   g_object_unref (symlink);
-  g_unix_mount_entry_free (tmp_mount);
+  g_unix_mount_free (tmp_mount);
   g_free (tmp);
-  g_unix_mount_entry_free (target_mount);
+  g_unix_mount_free (target_mount);
   g_free (target);
-}
-
-/* Test that long filename are handled correctly */
-static void
-test_trash_long_filename (void)
-{
-  const gchar *long_filename = "test_trash_long_filename_aaaaaaaaaaaaaaaaaaaaaaaaa" \
-    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
-    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
-    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
-    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
-    "aaaaa"; /* 255 bytes */
-  gchar *filepath;
-  int fd;
-  GFile *file;
-  GError *error = NULL;
-
-  /* The test assumes that test file is located on ext fs. */
-  filepath = g_build_filename (g_get_home_dir (), long_filename, NULL);
-  fd = g_open (filepath, O_CREAT | O_RDONLY, 0666);
-  if (fd == -1)
-    {
-      g_test_skip ("Failed to create test file");
-      g_free (filepath);
-      return;
-    }
-  (void) g_close (fd, NULL);
-  file = g_file_new_for_path (filepath);
-  g_file_trash (file, NULL, &error);
-  g_unlink (filepath);
-  g_assert_no_error (error);
-
-  /* Delete trashed version of test file */
-  {
-    GFileEnumerator *enumerator;
-    GFile *trash;
-
-    trash = g_file_new_for_uri ("trash:///");
-    enumerator = g_file_enumerate_children (trash,
-                                            G_FILE_ATTRIBUTE_STANDARD_NAME ","
-                                            G_FILE_ATTRIBUTE_TRASH_ORIG_PATH,
-                                            G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
-                                            NULL, NULL);
-
-    if (enumerator)
-      {
-        GFileInfo *info;
-
-        while ((info = g_file_enumerator_next_file (enumerator, NULL, NULL)) != NULL)
-          {
-            const char *origpath = g_file_info_get_attribute_byte_string (info, G_FILE_ATTRIBUTE_TRASH_ORIG_PATH);
-
-            if (strcmp (filepath, origpath) == 0)
-              {
-                GFile *item = g_file_get_child (trash, g_file_info_get_name (info));
-                g_file_delete (item, NULL, NULL);
-                g_object_unref (item);
-                g_object_unref (info);
-                break;
-              }
-
-            g_object_unref (info);
-          }
-
-        g_file_enumerator_close (enumerator, NULL, NULL);
-        g_object_unref (enumerator);
-      }
-    g_object_unref (trash);
-  }
-
-  g_free (filepath);
-  g_object_unref (file);
-  g_clear_error (&error);
 }
 
 int
@@ -269,7 +195,6 @@ main (int argc, char *argv[])
 
   g_test_add_func ("/trash/not-supported", test_trash_not_supported);
   g_test_add_func ("/trash/symlinks", test_trash_symlinks);
-  g_test_add_func ("/trash/long-filename", test_trash_long_filename);
 
   return g_test_run ();
 }

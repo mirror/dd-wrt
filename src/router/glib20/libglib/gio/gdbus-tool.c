@@ -37,9 +37,8 @@
 
 #ifdef G_OS_WIN32
 #include "glib/glib-private.h"
-#endif
-
 #include "gdbusprivate.h"
+#endif
 
 /* ---------------------------------------------------------------------------------------------------- */
 
@@ -192,7 +191,7 @@ print_methods_and_signals (GDBusConnection *c,
   result = g_dbus_connection_call_sync (c,
                                         name,
                                         path,
-                                        DBUS_INTERFACE_INTROSPECTABLE,
+                                        "org.freedesktop.DBus.Introspectable",
                                         "Introspect",
                                         NULL,
                                         G_VARIANT_TYPE ("(s)"),
@@ -264,7 +263,7 @@ print_paths (GDBusConnection *c,
   result = g_dbus_connection_call_sync (c,
                                         name,
                                         path,
-                                        DBUS_INTERFACE_INTROSPECTABLE,
+                                        "org.freedesktop.DBus.Introspectable",
                                         "Introspect",
                                         NULL,
                                         G_VARIANT_TYPE ("(s)"),
@@ -333,9 +332,9 @@ print_names (GDBusConnection *c,
 
   error = NULL;
   result = g_dbus_connection_call_sync (c,
-                                        DBUS_SERVICE_DBUS,
-                                        DBUS_PATH_DBUS,
-                                        DBUS_INTERFACE_DBUS,
+                                        "org.freedesktop.DBus",
+                                        "/org/freedesktop/DBus",
+                                        "org.freedesktop.DBus",
                                         "ListNames",
                                         NULL,
                                         G_VARIANT_TYPE ("(as)"),
@@ -357,9 +356,9 @@ print_names (GDBusConnection *c,
 
   error = NULL;
   result = g_dbus_connection_call_sync (c,
-                                        DBUS_SERVICE_DBUS,
-                                        DBUS_PATH_DBUS,
-                                        DBUS_INTERFACE_DBUS,
+                                        "org.freedesktop.DBus",
+                                        "/org/freedesktop/DBus",
+                                        "org.freedesktop.DBus",
                                         "ListActivatableNames",
                                         NULL,
                                         G_VARIANT_TYPE ("(as)"),
@@ -502,7 +501,7 @@ call_helper_get_method_in_signature (GDBusConnection  *c,
   result = g_dbus_connection_call_sync (c,
                                         dest,
                                         path,
-                                        DBUS_INTERFACE_INTROSPECTABLE,
+                                        "org.freedesktop.DBus.Introspectable",
                                         "Introspect",
                                         NULL,
                                         G_VARIANT_TYPE ("(s)"),
@@ -802,7 +801,7 @@ handle_emit (gint        *argc,
     }
 
   /* Read parameters */
-  g_variant_builder_init_static (&builder, G_VARIANT_TYPE_TUPLE);
+  g_variant_builder_init (&builder, G_VARIANT_TYPE_TUPLE);
   skip_dashes = TRUE;
   parm = 0;
   for (n = 1; n < (guint) *argc; n++)
@@ -1114,7 +1113,7 @@ handle_call (gint        *argc,
     }
 
   /* Read parameters */
-  g_variant_builder_init_static (&builder, G_VARIANT_TYPE_TUPLE);
+  g_variant_builder_init (&builder, G_VARIANT_TYPE_TUPLE);
   skip_dashes = TRUE;
   parm = 0;
   for (n = 1; n < (guint) *argc; n++)
@@ -1374,7 +1373,7 @@ dump_method (const GDBusMethodInfo *o,
 {
   guint n;
   guint m;
-  size_t name_len;
+  guint name_len;
   guint total_num_args;
 
   for (n = 0; o->annotations != NULL && o->annotations[n] != NULL; n++)
@@ -1501,7 +1500,7 @@ dump_interface (GDBusConnection          *c,
       result = g_dbus_connection_call_sync (c,
                                             name,
                                             object_path,
-                                            DBUS_INTERFACE_PROPERTIES,
+                                            "org.freedesktop.DBus.Properties",
                                             "GetAll",
                                             g_variant_new ("(s)", o->name),
                                             NULL,
@@ -1539,7 +1538,7 @@ dump_interface (GDBusConnection          *c,
               result = g_dbus_connection_call_sync (c,
                                                     name,
                                                     object_path,
-                                                    DBUS_INTERFACE_PROPERTIES,
+                                                    "org.freedesktop.DBus.Properties",
                                                     "Get",
                                                     g_variant_new ("(ss)", o->name, o->properties[n]->name),
                                                     G_VARIANT_TYPE ("(v)"),
@@ -1721,7 +1720,7 @@ introspect_do (GDBusConnection *c,
   result = g_dbus_connection_call_sync (c,
                                         opt_introspect_dest,
                                         object_path,
-                                        DBUS_INTERFACE_INTROSPECTABLE,
+                                        "org.freedesktop.DBus.Introspectable",
                                         "Introspect",
                                         NULL,
                                         G_VARIANT_TYPE ("(s)"),
@@ -1984,7 +1983,10 @@ monitor_on_name_vanished (GDBusConnection *connection,
   g_print ("The name %s does not have an owner\n", name);
 
   if (monitor_filter_id != 0)
-    g_dbus_connection_signal_unsubscribe (connection, g_steal_handle_id (&monitor_filter_id));
+    {
+      g_dbus_connection_signal_unsubscribe (connection, monitor_filter_id);
+      monitor_filter_id = 0;
+    }
 }
 
 static const GOptionEntry monitor_entries[] =

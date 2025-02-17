@@ -187,11 +187,11 @@ lookup_item_id_for_locale (const gchar *locale)
 {
   gchar key[MAX_LOCALE_NAME + 1];
   const gchar *language;
-  size_t language_len;
+  guint language_len;
   const gchar *territory = NULL;
-  size_t territory_len = 0;
+  guint territory_len = 0;
   const gchar *modifier = NULL;
-  size_t modifier_len = 0;
+  guint modifier_len = 0;
   const gchar *next_char;
   guint id;
 

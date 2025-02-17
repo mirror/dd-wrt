@@ -38,7 +38,7 @@
 #include "deprecated/gthread.h"
 
 /**
- * GAsyncQueue: (copy-func g_async_queue_ref) (free-func g_async_queue_unref)
+ * GAsyncQueue:
  *
  * An opaque data structure which represents an asynchronous queue.
  *

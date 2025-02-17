@@ -24,7 +24,6 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "gdbusprivate.h"
 #include "gdbus-tests.h"
 
 /* all tests rely on a shared mainloop */
@@ -758,9 +757,9 @@ kill_test_service (GDBusConnection *connection)
   gboolean name_disappeared = FALSE;
 
   ret = g_dbus_connection_call_sync (connection,
-                                     DBUS_SERVICE_DBUS,
-                                     DBUS_PATH_DBUS,
-                                     DBUS_INTERFACE_DBUS,
+                                     "org.freedesktop.DBus",
+                                     "/org/freedesktop/DBus",
+                                     "org.freedesktop.DBus",
                                      "GetConnectionUnixProcessID",
                                      g_variant_new ("(s)", name),
                                      NULL,
@@ -780,12 +779,6 @@ kill_test_service (GDBusConnection *connection)
 
   while (!name_disappeared)
     g_main_context_iteration (NULL, TRUE);
-
-  /* GDBusConnection doesn't guarantee that different subscriptions to the
-   * same signal will get their callbacks scheduled in any particular order,
-   * so make sure they have all happened */
-  while (g_main_context_iteration (NULL, FALSE))
-    continue;
 
   g_bus_unwatch_name (watch_id);
 #else
@@ -978,9 +971,9 @@ add_or_remove_match_rule (GDBusConnection *connection,
   GDBusMessage *message = NULL;
   GError *error = NULL;
 
-  message = g_dbus_message_new_method_call (DBUS_SERVICE_DBUS,
-                                            DBUS_PATH_DBUS,
-                                            DBUS_INTERFACE_DBUS,
+  message = g_dbus_message_new_method_call ("org.freedesktop.DBus", /* name */
+                                            "/org/freedesktop/DBus", /* path */
+                                            "org.freedesktop.DBus", /* interface */
                                             (add_or_remove == ADD_MATCH) ? "AddMatch" : "RemoveMatch");
   g_dbus_message_set_body (message, match_rule);
   g_dbus_connection_send_message (connection,

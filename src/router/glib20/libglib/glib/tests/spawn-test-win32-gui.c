@@ -36,8 +36,7 @@ WinMain (struct HINSTANCE__ *hInstance,
     {
       int infd = atoi (__argv[2]);
       int outfd = atoi (__argv[3]);
-      SSIZE_T k;
-      size_t n;
+      int k, n;
       char buf[100] = {0};
 
       if (infd < 0 || outfd < 0)
@@ -56,28 +55,22 @@ WinMain (struct HINSTANCE__ *hInstance,
 	  exit (1);
 	}
 
-      k = read (infd, &n, sizeof (n));
-      if (k < 0 || (size_t) k != sizeof (n))
+      if ((k = read (infd, &n, sizeof (n))) != sizeof (n))
 	{
-	  int errsv = errno;
-	  if (k < 0)
-            fprintf (stderr, "spawn-test-win32-gui: Read error: %s\n", strerror (errsv));
-	  else
-            fprintf (stderr, "spawn-test-win32-gui: Got only %zu bytes, wanted %zu\n",
-                     (size_t) k, sizeof (n));
+          fprintf (stderr, "spawn-test-win32-gui: Got only %d bytes, wanted %d\n",
+		   k, (int)sizeof (n));
 	  exit (1);
 	}
 
-      fprintf (stderr, "spawn-test-win32-gui: Parent says %zu bytes to read\n", n);
+      fprintf (stderr, "spawn-test-win32-gui: Parent says %d bytes to read\n", n);
 
-      k = read (infd, buf, n);
-      if (k < 0 || (size_t) k != n)
+      if ((k = read (infd, buf, n)) != n)
 	{
 	  int errsv = errno;
-	  if (k < 0)
+	  if (k == -1)
             fprintf (stderr, "spawn-test-win32-gui: Read error: %s\n", strerror (errsv));
 	  else
-            fprintf (stderr, "spawn-test-win32-gui: Got only %zu bytes\n", (size_t) k);
+            fprintf (stderr, "spawn-test-win32-gui: Got only %d bytes\n", k);
 	  exit (1);
 	}
 

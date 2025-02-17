@@ -42,10 +42,10 @@ static const GOptionEntry entries[] = {
 static char *
 hex_unescape (const char *str)
 {
-  size_t i;
+  int i;
   char *unescaped_str, *p;
   unsigned char c;
-  size_t len;
+  int len;
 
   len = strlen (str);
   unescaped_str = g_malloc (len + 1);

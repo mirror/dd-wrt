@@ -3,7 +3,7 @@
 # the list of reviewers
 
 # The syntax of this file is defined by GitLab:
-#   https://docs.gitlab.com/ee/user/project/codeowners/reference.html
+#   https://docs.gitlab.com/ee/user/project/code_owners.html
 # Which, in turn, is similar to the .gitignore and .gitattributes files:
 #
 #  - comments start with `#`
@@ -27,16 +27,11 @@
 
 # Build system
 meson.build		@xclaesse @nirbheek @pwithnall
-meson.options		@xclaesse @nirbheek @pwithnall
+meson_options.txt	@xclaesse @nirbheek @pwithnall
 subprojects/		@xclaesse @nirbheek @pwithnall
 
 # CI integration
-#  - @pwithnall and @xclaesse maintain the CI configuration overall
-#  - @creiter maintains the Windows CI runners (tagged `win32-ps`)
-#  - @sthibaul maintains the Hurd runner (tagged `hurd`)
-#  - @lantw maintains the FreeBSD runner (tagged `freebsd-13`)
-#  - @dehesselle maintains the macOS runner (tagged `macosarm`)
-.gitlab-ci*	@pwithnall @xclaesse @creiter @sthibaul @lantw @dehesselle
+.gitlab-ci*	@pwithnall @xclaesse @creiter
 
 # macOS support
 *osx*	@jralls @pwithnall @sdroege

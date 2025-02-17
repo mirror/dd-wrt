@@ -1,24 +1,3 @@
-/* GLib testing framework examples and tests
- *
- * Copyright © 2011, 2014, 2024 Red Hat, Inc.
- * Copyright © 2022 Peter Bloomfield
- *
- * SPDX-License-Identifier: LGPL-2.1-or-later
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
- */
-
 #include <glib.h>
 #include <stdlib.h>
 
@@ -33,14 +12,14 @@ test_quark_basic (void)
   const gchar *str;
 
   quark = g_quark_try_string ("no-such-quark");
-  g_assert_cmpuint (quark, ==, 0);
+  g_assert (quark == 0);
 
   copy = g_strdup (orig);
   quark = g_quark_from_static_string (orig);
-  g_assert_cmpuint (quark, !=, 0);
-  g_assert_cmpuint (g_quark_from_string (orig), ==, quark);
-  g_assert_cmpuint (g_quark_from_string (copy), ==, quark);
-  g_assert_cmpuint (g_quark_try_string (orig), ==, quark);
+  g_assert (quark != 0);
+  g_assert (g_quark_from_string (orig) == quark);
+  g_assert (g_quark_from_string (copy) == quark);
+  g_assert (g_quark_try_string (orig) == quark);
 
   str = g_quark_to_string (quark);
   g_assert_cmpstr (str, ==, orig);
@@ -60,10 +39,8 @@ test_quark_string (void)
 
   str1 = g_intern_static_string (orig);
   str2 = g_intern_string (copy);
-  g_assert_cmpstr (str1, ==, str2);
-  g_assert_true (str1 == str2);  /* also compare pointers */
-  g_assert_cmpstr (str1, ==, orig);
-  g_assert_true (str1 == orig);
+  g_assert (str1 == str2);
+  g_assert (str1 == orig);
 
   g_free (copy);
 }
@@ -79,27 +56,27 @@ test_dataset_basic (void)
   g_dataset_set_data (location, "test1", data);
 
   ret = g_dataset_get_data (location, "test1");
-  g_assert_true (ret == data);
+  g_assert (ret == data);
 
   ret = g_dataset_get_data (location, "test2");
-  g_assert_null (ret);
+  g_assert (ret == NULL);
 
   ret = g_dataset_get_data (other, "test1");
-  g_assert_null (ret);
+  g_assert (ret == NULL);
 
   g_dataset_set_data (location, "test1", "new-value");
   ret = g_dataset_get_data (location, "test1");
-  g_assert_true (ret != data);
+  g_assert (ret != data);
 
   g_dataset_remove_data (location, "test1");
   ret = g_dataset_get_data (location, "test1");
-  g_assert_null (ret);
+  g_assert (ret == NULL);
 
   ret = g_dataset_get_data (location, NULL);
-  g_assert_null (ret);
+  g_assert (ret == NULL);
 }
 
-static guint destroy_count;
+static gint destroy_count;
 
 static void
 notify (gpointer data)
@@ -116,19 +93,19 @@ test_dataset_full (void)
 
   destroy_count = 0;
   g_dataset_set_data (location, "test1", NULL);
-  g_assert_cmpuint (destroy_count, ==, 1);
+  g_assert (destroy_count == 1);
 
   g_dataset_set_data_full (location, "test1", "test1", notify);
 
   destroy_count = 0;
   g_dataset_remove_data (location, "test1");
-  g_assert_cmpuint (destroy_count, ==, 1);
+  g_assert (destroy_count == 1);
 
   g_dataset_set_data_full (location, "test1", "test1", notify);
 
   destroy_count = 0;
   g_dataset_remove_no_notify (location, "test1");
-  g_assert_cmpuint (destroy_count, ==, 0);
+  g_assert (destroy_count == 0);
 }
 
 static void
@@ -136,7 +113,7 @@ foreach (GQuark   id,
          gpointer data,
          gpointer user_data)
 {
-  guint *counter = user_data;
+  gint *counter = user_data;
 
   *counter += 1;
 }
@@ -145,14 +122,14 @@ static void
 test_dataset_foreach (void)
 {
   gpointer location = (gpointer)test_dataset_foreach;
-  guint my_count;
+  gint my_count;
 
   my_count = 0;
   g_dataset_set_data_full (location, "test1", "test1", notify);
   g_dataset_set_data_full (location, "test2", "test2", notify);
   g_dataset_set_data_full (location, "test3", "test3", notify);
   g_dataset_foreach (location, foreach, &my_count);
-  g_assert_cmpuint (my_count, ==, 3);
+  g_assert (my_count == 3);
 
   g_dataset_destroy (location);
 }
@@ -167,7 +144,7 @@ test_dataset_destroy (void)
   g_dataset_set_data_full (location, "test2", "test2", notify);
   g_dataset_set_data_full (location, "test3", "test3", notify);
   g_dataset_destroy (location);
-  g_assert_cmpuint (destroy_count, ==, 3);
+  g_assert (destroy_count == 3);
 }
 
 static void
@@ -184,24 +161,24 @@ test_dataset_id (void)
   g_dataset_id_set_data (location, quark, data);
 
   ret = g_dataset_id_get_data (location, quark);
-  g_assert_true (ret == data);
+  g_assert (ret == data);
 
   ret = g_dataset_id_get_data (location, g_quark_from_string ("test2"));
-  g_assert_null (ret);
+  g_assert (ret == NULL);
 
   ret = g_dataset_id_get_data (other, quark);
-  g_assert_null (ret);
+  g_assert (ret == NULL);
 
   g_dataset_id_set_data (location, quark, "new-value");
   ret = g_dataset_id_get_data (location, quark);
-  g_assert_true (ret != data);
+  g_assert (ret != data);
 
   g_dataset_id_remove_data (location, quark);
   ret = g_dataset_id_get_data (location, quark);
-  g_assert_null (ret);
+  g_assert (ret == NULL);
 
   ret = g_dataset_id_get_data (location, 0);
-  g_assert_null (ret);
+  g_assert (ret == NULL);
 }
 
 static GData *global_list;
@@ -216,11 +193,19 @@ free_one (gpointer data)
 static void
 test_datalist_clear (void)
 {
-  g_datalist_init (&global_list);
-  g_datalist_set_data_full (&global_list, "one", GINT_TO_POINTER (1), free_one);
-  g_datalist_set_data_full (&global_list, "two", GINT_TO_POINTER (2), NULL);
-  g_datalist_clear (&global_list);
-  g_assert_null (global_list);
+  /* Need to use a subprocess because it will deadlock if it fails */
+  if (g_test_subprocess ())
+    {
+      g_datalist_init (&global_list);
+      g_datalist_set_data_full (&global_list, "one", GINT_TO_POINTER (1), free_one);
+      g_datalist_set_data_full (&global_list, "two", GINT_TO_POINTER (2), NULL);
+      g_datalist_clear (&global_list);
+      g_assert (global_list == NULL);
+      return;
+    }
+
+  g_test_trap_subprocess (NULL, 500000, G_TEST_SUBPROCESS_DEFAULT);
+  g_test_trap_assert_passed ();
 }
 
 static void
@@ -234,13 +219,13 @@ test_datalist_basic (void)
   data = "one";
   g_datalist_set_data (&list, "one", data);
   ret = g_datalist_get_data (&list, "one");
-  g_assert_true (ret == data);
+  g_assert (ret == data);
 
   ret = g_datalist_get_data (&list, "two");
-  g_assert_null (ret);
+  g_assert (ret == NULL);
 
   ret = g_datalist_get_data (&list, NULL);
-  g_assert_null (ret);
+  g_assert (ret == NULL);
 
   g_datalist_clear (&list);
 }
@@ -256,13 +241,13 @@ test_datalist_id (void)
   data = "one";
   g_datalist_id_set_data (&list, g_quark_from_string ("one"), data);
   ret = g_datalist_id_get_data (&list, g_quark_from_string ("one"));
-  g_assert_true (ret == data);
+  g_assert (ret == data);
 
   ret = g_datalist_id_get_data (&list, g_quark_from_string ("two"));
-  g_assert_null (ret);
+  g_assert (ret == NULL);
 
   ret = g_datalist_id_get_data (&list, 0);
-  g_assert_null (ret);
+  g_assert (ret == NULL);
 
   g_datalist_clear (&list);
 }
@@ -291,13 +276,13 @@ test_datalist_id_remove_multiple (void)
 
   destroy_count = 0;
   g_datalist_foreach (&list, (GDataForeachFunc) notify, NULL);
-  g_assert_cmpuint (destroy_count, ==, 3);
+  g_assert_cmpint (destroy_count, ==, 3);
 
   g_datalist_id_remove_multiple (&list, keys, G_N_ELEMENTS (keys));
 
   destroy_count = 0;
   g_datalist_foreach (&list, (GDataForeachFunc) notify, NULL);
-  g_assert_cmpuint (destroy_count, ==, 0);
+  g_assert_cmpint (destroy_count, ==, 0);
 }
 
 static void
@@ -305,7 +290,6 @@ test_datalist_id_remove_multiple_resize (void)
 {
   GQuark *quarks;
   GQuark *quarks2;
-  gboolean *has;
   const guint N = 1000;
   const guint PRIME = 1048583u;
   guint i;
@@ -315,7 +299,6 @@ test_datalist_id_remove_multiple_resize (void)
 
   quarks = g_new (GQuark, N);
   quarks2 = g_new (GQuark, N);
-  has = g_new0 (gboolean, N);
 
   for (i = 0; i < N; i++)
     {
@@ -324,15 +307,12 @@ test_datalist_id_remove_multiple_resize (void)
     }
 
   for (i = 0; i < N; i++)
-    {
-      g_datalist_id_set_data (&list, quarks[i], (gpointer) g_quark_to_string (quarks[i]));
-      has[i] = TRUE;
-    }
+    g_datalist_id_set_data (&list, quarks[i], GINT_TO_POINTER (i));
 
   /* Now we perform a list of random operations (remove/add quarks). */
   for (i_run = 0; TRUE; i_run++)
     {
-      int MODE = ((guint) g_test_rand_int ()) % 6;
+      int MODE = ((guint) g_test_rand_int ()) % 4;
       guint n;
       guint j;
 
@@ -360,15 +340,9 @@ test_datalist_id_remove_multiple_resize (void)
             {
               j = (j + PRIME) % N;
               if (MODE == 0)
-                {
-                  g_datalist_id_remove_data (&list, quarks[j]);
-                  has[j] = FALSE;
-                }
+                g_datalist_id_remove_data (&list, quarks[j]);
               else
-                {
-                  g_datalist_id_set_data (&list, quarks[j], (gpointer) g_quark_to_string (quarks[j]));
-                  has[j] = TRUE;
-                }
+                g_datalist_id_set_data (&list, quarks[j], GINT_TO_POINTER (j));
             }
           break;
         case 3:
@@ -377,66 +351,22 @@ test_datalist_id_remove_multiple_resize (void)
             {
               j = (j + PRIME) % N;
               quarks2[i] = quarks[j];
-              has[j] = FALSE;
             }
 
           g_datalist_id_remove_multiple (&list, quarks2, n);
           break;
-        case 4:
-          /* Mode: lookup string via g_datalist_get_data()*/
-          for (i = 0; i < n; i++)
-            {
-              const char *data;
-              const char *data2;
-              const char *key;
-
-              j = (j + PRIME) % N;
-
-              key = g_quark_to_string (quarks[j]);
-
-              data = g_datalist_id_get_data (&list, quarks[j]);
-              data2 = g_datalist_get_data (&list, key);
-              g_assert_true (data == data2);
-              if (data)
-                g_assert_true (data == key);
-              g_assert_true ((!!data) == has[j]);
-            }
-          break;
-        case 5:
-          /* Fill/empty the list completely. */
-          switch (((guint) g_test_rand_int ()) % 5)
-            {
-            case 0:
-              g_datalist_clear (&list);
-              for (i = 0; i < N; i++)
-                has[i] = FALSE;
-              break;
-            case 1:
-              for (i = 0; i < N; i++)
-                {
-                  j = (j + PRIME) % N;
-                  g_datalist_id_set_data (&list, quarks[j], (gpointer) g_quark_to_string (quarks[j]));
-                  has[i] = TRUE;
-                }
-              break;
-            default:
-              /* Most of the time we do nothing. The case where we fill/empty
-               * the list entirely is less interesting. */
-              break;
-            }
         }
     }
 
   g_free (quarks);
   g_free (quarks2);
-  g_free (has);
 }
 
 static void
 destroy_func (gpointer data)
 {
   destroy_count++;
-  g_assert_cmpuint (GPOINTER_TO_UINT (data), ==, destroy_count);
+  g_assert_cmpint (GPOINTER_TO_INT (data), ==, destroy_count);
 }
 
 static void
@@ -458,14 +388,14 @@ test_datalist_id_remove_multiple_destroy_order (void)
 
   g_datalist_init (&list);
 
-  g_datalist_id_set_data_full (&list, two, GUINT_TO_POINTER (2), destroy_func);
-  g_datalist_id_set_data_full (&list, three, GUINT_TO_POINTER (3), destroy_func);
-  g_datalist_id_set_data_full (&list, one, GUINT_TO_POINTER (1), destroy_func);
+  g_datalist_id_set_data_full (&list, two, GINT_TO_POINTER (2), destroy_func);
+  g_datalist_id_set_data_full (&list, three, GINT_TO_POINTER (3), destroy_func);
+  g_datalist_id_set_data_full (&list, one, GINT_TO_POINTER (1), destroy_func);
 
   destroy_count = 0;
   g_datalist_id_remove_multiple (&list, keys, G_N_ELEMENTS (keys));
   /* This verifies that destroy_func() was called three times: */
-  g_assert_cmpuint (destroy_count, ==, 3);
+  g_assert_cmpint (destroy_count, ==, 3);
 }
 
 static gpointer

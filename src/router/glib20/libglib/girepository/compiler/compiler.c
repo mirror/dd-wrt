@@ -218,7 +218,6 @@ main (int argc, char **argv)
       char *message = g_strdup_printf (_("Error parsing file ‘%s’: %s"), input[0], error->message);
       g_fprintf (stderr, "%s\n", message);
       g_free (message);
-      gi_ir_parser_free (parser);
 
       return 1;
     }
@@ -254,7 +253,10 @@ main (int argc, char **argv)
 
   g_debug ("[building] done");
 
+#if 0
+  /* No point */
   gi_ir_parser_free (parser);
+#endif
 
   return 0;
 }

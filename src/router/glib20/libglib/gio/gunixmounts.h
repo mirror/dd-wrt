@@ -24,14 +24,13 @@
 #define __G_UNIX_MOUNTS_H__
 
 #include <gio/gio.h>
-#include <stdint.h>
 
 G_BEGIN_DECLS
 
 /**
  * GUnixMountEntry:
  *
- * Defines a Unix mount entry (e.g. `/media/cdrom`).
+ * Defines a Unix mount entry (e.g. <filename>/media/cdrom</filename>).
  * This corresponds roughly to a mtab entry.
  **/
 typedef struct _GUnixMountEntry GUnixMountEntry;
@@ -43,7 +42,7 @@ GType g_unix_mount_entry_get_type (void) G_GNUC_CONST;
 /**
  * GUnixMountPoint:
  *
- * Defines a Unix mount point (e.g. `/dev`).
+ * Defines a Unix mount point (e.g. <filename>/dev</filename>).
  * This corresponds roughly to a fstab entry.
  **/
 typedef struct _GUnixMountPoint GUnixMountPoint;
@@ -55,14 +54,7 @@ GType g_unix_mount_point_get_type (void) G_GNUC_CONST;
 /**
  * GUnixMountMonitor:
  *
- * Watches for changes to the set of mount entries and mount points in the
- * system.
- *
- * Connect to the [signal@GioUnix.MountMonitor::mounts-changed] signal to be
- * notified of changes to the [struct@GioUnix.MountEntry] list.
- *
- * Connect to the [signal@GioUnix.MountMonitor::mountpoints-changed] signal to
- * be notified of changes to the [struct@GioUnix.MountPoint] list.
+ * Watches #GUnixMounts for changes.
  **/
 typedef struct _GUnixMountMonitor      GUnixMountMonitor;
 typedef struct _GUnixMountMonitorClass GUnixMountMonitorClass;
@@ -74,89 +66,43 @@ typedef struct _GUnixMountMonitorClass GUnixMountMonitorClass;
 #define G_IS_UNIX_MOUNT_MONITOR_CLASS(k) (G_TYPE_CHECK_CLASS_TYPE ((k), G_TYPE_UNIX_MOUNT_MONITOR))
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GUnixMountMonitor, g_object_unref)
 
-GIO_DEPRECATED_IN_2_84_FOR(g_unix_mount_entry_free)
+GIO_AVAILABLE_IN_ALL
 void           g_unix_mount_free                    (GUnixMountEntry    *mount_entry);
-GIO_AVAILABLE_IN_2_84
-void           g_unix_mount_entry_free              (GUnixMountEntry    *mount_entry);
-
-GIO_DEPRECATED_IN_2_84_FOR(g_unix_mount_entry_copy)
+GIO_AVAILABLE_IN_2_54
 GUnixMountEntry *g_unix_mount_copy                  (GUnixMountEntry    *mount_entry);
-GIO_AVAILABLE_IN_2_84
-GUnixMountEntry *g_unix_mount_entry_copy            (GUnixMountEntry    *mount_entry);
-
 GIO_AVAILABLE_IN_ALL
 void           g_unix_mount_point_free              (GUnixMountPoint    *mount_point);
 GIO_AVAILABLE_IN_2_54
 GUnixMountPoint *g_unix_mount_point_copy            (GUnixMountPoint    *mount_point);
-
-GIO_DEPRECATED_IN_2_84_FOR(g_unix_mount_entry_compare)
+GIO_AVAILABLE_IN_ALL
 gint           g_unix_mount_compare                 (GUnixMountEntry    *mount1,
-                                                     GUnixMountEntry    *mount2);
-GIO_AVAILABLE_IN_2_84
-gint           g_unix_mount_entry_compare           (GUnixMountEntry    *mount1,
-                                                     GUnixMountEntry    *mount2);
-
-GIO_DEPRECATED_IN_2_84_FOR(g_unix_mount_entry_get_mount_path)
+						     GUnixMountEntry    *mount2);
+GIO_AVAILABLE_IN_ALL
 const char *   g_unix_mount_get_mount_path          (GUnixMountEntry    *mount_entry);
-GIO_AVAILABLE_IN_2_84
-const char *   g_unix_mount_entry_get_mount_path    (GUnixMountEntry    *mount_entry);
-
-GIO_DEPRECATED_IN_2_84_FOR(g_unix_mount_entry_get_device_path)
+GIO_AVAILABLE_IN_ALL
 const char *   g_unix_mount_get_device_path         (GUnixMountEntry    *mount_entry);
-GIO_AVAILABLE_IN_2_84
-const char *   g_unix_mount_entry_get_device_path   (GUnixMountEntry    *mount_entry);
-
-GIO_DEPRECATED_IN_2_84_FOR(g_unix_mount_entry_get_root_path)
+GIO_AVAILABLE_IN_2_60
 const char *   g_unix_mount_get_root_path           (GUnixMountEntry    *mount_entry);
-GIO_AVAILABLE_IN_2_84
-const char *   g_unix_mount_entry_get_root_path     (GUnixMountEntry    *mount_entry);
-
-GIO_DEPRECATED_IN_2_84_FOR(g_unix_mount_entry_get_fs_type)
+GIO_AVAILABLE_IN_ALL
 const char *   g_unix_mount_get_fs_type             (GUnixMountEntry    *mount_entry);
-GIO_AVAILABLE_IN_2_84
-const char *   g_unix_mount_entry_get_fs_type       (GUnixMountEntry    *mount_entry);
-
-GIO_DEPRECATED_IN_2_84_FOR(g_unix_mount_entry_get_options)
+GIO_AVAILABLE_IN_2_58
 const char *   g_unix_mount_get_options             (GUnixMountEntry    *mount_entry);
-GIO_AVAILABLE_IN_2_84
-const char *   g_unix_mount_entry_get_options       (GUnixMountEntry    *mount_entry);
-
-GIO_DEPRECATED_IN_2_84_FOR(g_unix_mount_entry_is_readonly)
+GIO_AVAILABLE_IN_ALL
 gboolean       g_unix_mount_is_readonly             (GUnixMountEntry    *mount_entry);
-GIO_AVAILABLE_IN_2_84
-gboolean       g_unix_mount_entry_is_readonly       (GUnixMountEntry    *mount_entry);
-
-GIO_DEPRECATED_IN_2_84_FOR(g_unix_mount_entry_is_system_internal)
+GIO_AVAILABLE_IN_ALL
 gboolean       g_unix_mount_is_system_internal      (GUnixMountEntry    *mount_entry);
-GIO_AVAILABLE_IN_2_84
-gboolean       g_unix_mount_entry_is_system_internal(GUnixMountEntry    *mount_entry);
-
-GIO_DEPRECATED_IN_2_84_FOR(g_unix_mount_entry_guess_can_eject)
+GIO_AVAILABLE_IN_ALL
 gboolean       g_unix_mount_guess_can_eject         (GUnixMountEntry    *mount_entry);
-GIO_AVAILABLE_IN_2_84
-gboolean       g_unix_mount_entry_guess_can_eject   (GUnixMountEntry    *mount_entry);
-
-GIO_DEPRECATED_IN_2_84_FOR(g_unix_mount_entry_guess_should_display)
+GIO_AVAILABLE_IN_ALL
 gboolean       g_unix_mount_guess_should_display    (GUnixMountEntry    *mount_entry);
-GIO_AVAILABLE_IN_2_84
-gboolean       g_unix_mount_entry_guess_should_display(GUnixMountEntry  *mount_entry);
-
-GIO_DEPRECATED_IN_2_84_FOR(g_unix_mount_entry_guess_name)
+GIO_AVAILABLE_IN_ALL
 char *         g_unix_mount_guess_name              (GUnixMountEntry    *mount_entry);
-GIO_AVAILABLE_IN_2_84
-char *         g_unix_mount_entry_guess_name        (GUnixMountEntry    *mount_entry);
-
-GIO_DEPRECATED_IN_2_84_FOR(g_unix_mount_entry_guess_icon)
+GIO_AVAILABLE_IN_ALL
 GIcon *        g_unix_mount_guess_icon              (GUnixMountEntry    *mount_entry);
-GIO_AVAILABLE_IN_2_84
-GIcon *        g_unix_mount_entry_guess_icon        (GUnixMountEntry    *mount_entry);
-
-GIO_DEPRECATED_IN_2_84_FOR(g_unix_mount_entry_guess_symbolic_icon)
+GIO_AVAILABLE_IN_ALL
 GIcon *        g_unix_mount_guess_symbolic_icon     (GUnixMountEntry    *mount_entry);
-GIO_AVAILABLE_IN_2_84
-GIcon *        g_unix_mount_entry_guess_symbolic_icon(GUnixMountEntry   *mount_entry);
 
-G_DEFINE_AUTOPTR_CLEANUP_FUNC(GUnixMountEntry, g_unix_mount_entry_free)
+G_DEFINE_AUTOPTR_CLEANUP_FUNC(GUnixMountEntry, g_unix_mount_free)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GUnixMountPoint, g_unix_mount_point_free)
 
 GIO_AVAILABLE_IN_ALL
@@ -188,46 +134,19 @@ GIcon *        g_unix_mount_point_guess_symbolic_icon (GUnixMountPoint    *mount
 
 GIO_AVAILABLE_IN_ALL
 GList *        g_unix_mount_points_get              (guint64            *time_read);
-GIO_AVAILABLE_IN_2_82
-GUnixMountPoint **g_unix_mount_points_get_from_file (const char         *table_path,
-                                                     uint64_t           *time_read_out,
-                                                     size_t             *n_points_out);
 GIO_AVAILABLE_IN_2_66
 GUnixMountPoint *g_unix_mount_point_at              (const char         *mount_path,
                                                      guint64            *time_read);
-GIO_DEPRECATED_IN_2_84_FOR(g_unix_mount_entries_get)
+GIO_AVAILABLE_IN_ALL
 GList *        g_unix_mounts_get                    (guint64            *time_read);
-GIO_AVAILABLE_IN_2_84
-GList *        g_unix_mount_entries_get             (guint64            *time_read);
-
-GIO_DEPRECATED_IN_2_84_FOR(g_unix_mount_entries_get_from_file)
-GUnixMountEntry **g_unix_mounts_get_from_file      (const char          *table_path,
-                                                    uint64_t            *time_read_out,
-                                                    size_t              *n_entries_out);
-GIO_AVAILABLE_IN_2_84
-GUnixMountEntry **g_unix_mount_entries_get_from_file(const char          *table_path,
-                                                     uint64_t            *time_read_out,
-                                                     size_t              *n_entries_out);
-
-GIO_DEPRECATED_IN_2_84_FOR(g_unix_mount_entry_at)
+GIO_AVAILABLE_IN_ALL
 GUnixMountEntry *g_unix_mount_at                    (const char         *mount_path,
 						     guint64            *time_read);
-GIO_AVAILABLE_IN_2_84
-GUnixMountEntry *g_unix_mount_entry_at              (const char         *mount_path,
-						     guint64            *time_read);
-
-GIO_DEPRECATED_IN_2_84_FOR(g_unix_mount_entry_for)
+GIO_AVAILABLE_IN_2_52
 GUnixMountEntry *g_unix_mount_for                   (const char         *file_path,
                                                      guint64            *time_read);
-GIO_AVAILABLE_IN_2_84
-GUnixMountEntry *g_unix_mount_entry_for             (const char         *file_path,
-                                                     guint64            *time_read);
-
-GIO_DEPRECATED_IN_2_84_FOR(g_unix_mount_entries_changed_since)
+GIO_AVAILABLE_IN_ALL
 gboolean       g_unix_mounts_changed_since          (guint64             time);
-GIO_AVAILABLE_IN_2_84
-gboolean       g_unix_mount_entries_changed_since   (guint64             time);
-
 GIO_AVAILABLE_IN_ALL
 gboolean       g_unix_mount_points_changed_since    (guint64             time);
 

@@ -46,6 +46,8 @@
 #endif
 
 #ifdef G_OS_WIN32
+
+#define STRICT
 #include <windows.h>
 #include <wchar.h>
 #endif
@@ -278,7 +280,6 @@ again:
 GTimeZone *
 g_time_zone_ref (GTimeZone *tz)
 {
-  g_return_val_if_fail (tz != NULL, NULL);
   g_assert (tz->ref_count > 0);
 
   g_atomic_int_inc (&tz->ref_count);

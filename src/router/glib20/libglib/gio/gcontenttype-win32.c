@@ -28,7 +28,6 @@
 #include <string.h>
 #include <stdio.h>
 #include "gcontenttype.h"
-#include "gcontenttypeprivate.h"
 #include "gthemedicon.h"
 #include "gicon.h"
 #include "glibintl.h"
@@ -88,22 +87,22 @@ get_registry_classes_key (const char    *subdir,
 
 /*< private >*/
 void
-g_content_type_set_mime_dirs_impl (const gchar * const *dirs)
+g_content_type_set_mime_dirs (const gchar * const *dirs)
 {
   /* noop on Windows */
 }
 
 /*< private >*/
 const gchar * const *
-g_content_type_get_mime_dirs_impl (void)
+g_content_type_get_mime_dirs (void)
 {
   const gchar * const *mime_dirs = { NULL };
   return mime_dirs;
 }
 
 gboolean
-g_content_type_equals_impl (const gchar *type1,
-                            const gchar *type2)
+g_content_type_equals (const gchar *type1,
+                       const gchar *type2)
 {
   char *progid1, *progid2;
   gboolean res;
@@ -127,8 +126,8 @@ g_content_type_equals_impl (const gchar *type1,
 }
 
 gboolean
-g_content_type_is_a_impl (const gchar *type,
-                          const gchar *supertype)
+g_content_type_is_a (const gchar *type,
+                     const gchar *supertype)
 {
   gboolean res;
   char *perceived_type;
@@ -153,8 +152,8 @@ g_content_type_is_a_impl (const gchar *type,
 }
 
 gboolean
-g_content_type_is_mime_type_impl (const gchar *type,
-                                  const gchar *mime_type)
+g_content_type_is_mime_type (const gchar *type,
+                             const gchar *mime_type)
 {
   gchar *content_type;
   gboolean ret;
@@ -170,7 +169,7 @@ g_content_type_is_mime_type_impl (const gchar *type,
 }
 
 gboolean
-g_content_type_is_unknown_impl (const gchar *type)
+g_content_type_is_unknown (const gchar *type)
 {
   g_return_val_if_fail (type != NULL, FALSE);
 
@@ -178,7 +177,7 @@ g_content_type_is_unknown_impl (const gchar *type)
 }
 
 gchar *
-g_content_type_get_description_impl (const gchar *type)
+g_content_type_get_description (const gchar *type)
 {
   char *progid;
   char *description;
@@ -202,7 +201,7 @@ g_content_type_get_description_impl (const gchar *type)
 }
 
 gchar *
-g_content_type_get_mime_type_impl (const gchar *type)
+g_content_type_get_mime_type (const gchar *type)
 {
   char *mime;
 
@@ -226,7 +225,7 @@ G_LOCK_DEFINE_STATIC (_type_icons);
 static GHashTable *_type_icons = NULL;
 
 GIcon *
-g_content_type_get_icon_impl (const gchar *type)
+g_content_type_get_icon (const gchar *type)
 {
   GIcon *themed_icon;
   char *name = NULL;
@@ -284,19 +283,19 @@ g_content_type_get_icon_impl (const gchar *type)
 }
 
 GIcon *
-g_content_type_get_symbolic_icon_impl (const gchar *type)
+g_content_type_get_symbolic_icon (const gchar *type)
 {
   return g_content_type_get_icon (type);
 }
 
 gchar *
-g_content_type_get_generic_icon_name_impl (const gchar *type)
+g_content_type_get_generic_icon_name (const gchar *type)
 {
   return NULL;
 }
 
 gboolean
-g_content_type_can_be_executable_impl (const gchar *type)
+g_content_type_can_be_executable (const gchar *type)
 {
   g_return_val_if_fail (type != NULL, FALSE);
 
@@ -335,7 +334,7 @@ looks_like_text (const guchar *data,
 }
 
 gchar *
-g_content_type_from_mime_type_impl (const gchar *mime_type)
+g_content_type_from_mime_type (const gchar *mime_type)
 {
   char *key, *content_type;
 
@@ -354,10 +353,10 @@ g_content_type_from_mime_type_impl (const gchar *mime_type)
 }
 
 gchar *
-g_content_type_guess_impl (const gchar  *filename,
-                           const guchar *data,
-                           gsize         data_size,
-                           gboolean     *result_uncertain)
+g_content_type_guess (const gchar  *filename,
+                      const guchar *data,
+                      gsize         data_size,
+                      gboolean     *result_uncertain)
 {
   char *basename;
   char *type;
@@ -402,7 +401,7 @@ g_content_type_guess_impl (const gchar  *filename,
 }
 
 GList *
-g_content_types_get_registered_impl (void)
+g_content_types_get_registered (void)
 {
   DWORD index;
   wchar_t keyname[256];
@@ -438,7 +437,7 @@ g_content_types_get_registered_impl (void)
 }
 
 gchar **
-g_content_type_guess_for_tree_impl (GFile *root)
+g_content_type_guess_for_tree (GFile *root)
 {
   /* FIXME: implement */
   return NULL;

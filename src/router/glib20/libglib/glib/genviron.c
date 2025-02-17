@@ -647,7 +647,7 @@ g_get_environ (void)
 {
   gunichar2 *strings;
   gchar **result;
-  size_t i, n;
+  gint i, n;
 
   strings = GetEnvironmentStringsW ();
   for (n = 0, i = 0; strings[n]; i++)

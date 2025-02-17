@@ -102,74 +102,6 @@ test_refstring_intern (void)
   g_ref_string_release (s);
 }
 
-static void
-test_refstring_hash_equal (void)
-{
-  GHashTable *ht = g_hash_table_new (g_str_hash, (GEqualFunc)g_ref_string_equal);
-  char *ref1 = g_ref_string_new ("string one");
-  char *ref2 = g_ref_string_new ("string 2");
-  char *ref3 = g_ref_string_new ("string one");
-  char *ref4 = g_ref_string_new ("string two");
-
-  g_test_summary ("Test g_ref_string_equal() in GHashTable");
-
-  g_hash_table_add (ht, ref1);
-
-  g_assert_true (g_hash_table_contains (ht, ref1));
-  g_assert_false (g_hash_table_contains (ht, ref2));
-  g_assert_true (g_hash_table_contains (ht, ref3));
-  g_assert_false (g_hash_table_contains (ht, ref4));
-
-  g_hash_table_unref (ht);
-  g_ref_string_release (ref1);
-  g_ref_string_release (ref2);
-  g_ref_string_release (ref3);
-  g_ref_string_release (ref4);
-}
-
-static void
-test_refstring_equal (void)
-{
-  char *ref1 = g_ref_string_new ("string one");
-  char *ref2 = g_ref_string_new ("string 2");
-  char *ref3 = g_ref_string_new ("string one");
-
-  g_test_summary ("Test g_ref_string_equal() standalone");
-
-  g_assert_true (g_ref_string_equal (ref1, ref1));
-  g_assert_false (g_ref_string_equal (ref1, ref2));
-  g_assert_true (g_ref_string_equal (ref1, ref3));
-
-  g_ref_string_release (ref1);
-  g_ref_string_release (ref2);
-  g_ref_string_release (ref3);
-}
-
-static gpointer
-intern_ref_unref (gpointer data)
-{
-  for (int i = 0; i < 1000000; i++)
-    {
-      char *s = g_ref_string_new_intern ("test!");
-      g_ref_string_release (s);
-    }
-
-  return NULL;
-}
-
-/* test_refstring_intern: Test that interning of GRefString is thread-safe */
-static void
-test_refstring_intern_thread_safety (void)
-{
-  GThread *a, *b;
-
-  a = g_thread_new (NULL, intern_ref_unref, NULL);
-  b = g_thread_new (NULL, intern_ref_unref, NULL);
-
-  g_thread_join (a);
-  g_thread_join (b);
-}
-
 int
 main (int   argc,
       char *argv[])
@@ -181,9 +113,6 @@ main (int   argc,
   g_test_add_func ("/refstring/length-auto", test_refstring_length_auto);
   g_test_add_func ("/refstring/length-nuls", test_refstring_length_nuls);
   g_test_add_func ("/refstring/intern", test_refstring_intern);
-  g_test_add_func ("/refstring/hash_equal", test_refstring_hash_equal);
-  g_test_add_func ("/refstring/equal", test_refstring_equal);
-  g_test_add_func ("/refstring/intern-thread-safety", test_refstring_intern_thread_safety);
 
   return g_test_run ();
 }

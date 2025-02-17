@@ -128,10 +128,7 @@ g_dbus_method_invocation_init (GDBusMethodInvocation *invocation)
  *
  * Gets the bus name that invoked the method.
  *
- * This can return %NULL if not specified by the caller, e.g. on peer-to-peer
- * connections.
- *
- * Returns: (nullable): A string. Do not free, it is owned by @invocation.
+ * Returns: A string. Do not free, it is owned by @invocation.
  *
  * Since: 2.26
  */
@@ -165,17 +162,12 @@ g_dbus_method_invocation_get_object_path (GDBusMethodInvocation *invocation)
  *
  * Gets the name of the D-Bus interface the method was invoked on.
  *
- * This can be `NULL` if it was not specified by the sender. See
- * [callback@Gio.DBusInterfaceMethodCallFunc] or the
- * [D-Bus Specification](https://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-types-method)
- * for details on when this can happen and how it should be handled.
- *
  * If this method call is a property Get, Set or GetAll call that has
  * been redirected to the method call handler then
  * "org.freedesktop.DBus.Properties" will be returned.  See
  * #GDBusInterfaceVTable for more information.
  *
- * Returns: (nullable): A string. Do not free, it is owned by @invocation.
+ * Returns: A string. Do not free, it is owned by @invocation.
  *
  * Since: 2.26
  */
@@ -472,7 +464,7 @@ g_dbus_method_invocation_return_value_internal (GDBusMethodInvocation *invocatio
       else
         g_assert_not_reached ();
     }
-  else if (g_str_equal (invocation->interface_name, DBUS_INTERFACE_PROPERTIES) &&
+  else if (g_str_equal (invocation->interface_name, "org.freedesktop.DBus.Properties") &&
            g_str_equal (invocation->method_name, "GetAll"))
     {
       if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(a{sv})")))

@@ -89,9 +89,9 @@ client_unref (Client *client)
           if (client->disconnected_signal_handler_id > 0)
             g_signal_handler_disconnect (client->connection, client->disconnected_signal_handler_id);
           if (client->name_acquired_subscription_id > 0)
-            g_dbus_connection_signal_unsubscribe (client->connection, g_steal_handle_id (&client->name_acquired_subscription_id));
+            g_dbus_connection_signal_unsubscribe (client->connection, client->name_acquired_subscription_id);
           if (client->name_lost_subscription_id > 0)
-            g_dbus_connection_signal_unsubscribe (client->connection, g_steal_handle_id (&client->name_lost_subscription_id));
+            g_dbus_connection_signal_unsubscribe (client->connection, client->name_lost_subscription_id);
           g_object_unref (client->connection);
         }
       g_main_context_unref (client->main_context);
@@ -258,9 +258,9 @@ on_name_lost_or_acquired (GDBusConnection  *connection,
   Client *client = user_data;
   const gchar *name;
 
-  if (g_strcmp0 (object_path, DBUS_PATH_DBUS) != 0 ||
-      g_strcmp0 (interface_name, DBUS_INTERFACE_DBUS) != 0 ||
-      g_strcmp0 (sender_name, DBUS_SERVICE_DBUS) != 0)
+  if (g_strcmp0 (object_path, "/org/freedesktop/DBus") != 0 ||
+      g_strcmp0 (interface_name, "org.freedesktop.DBus") != 0 ||
+      g_strcmp0 (sender_name, "org.freedesktop.DBus") != 0)
     goto out;
 
   if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(s)")))
@@ -319,20 +319,20 @@ request_name_cb (GObject      *source_object,
 
   switch (request_name_reply)
     {
-    case DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER:
+    case 1: /* DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER */
       /* We got the name - now listen for NameLost and NameAcquired */
       call_acquired_handler (client);
       break;
 
-    case DBUS_REQUEST_NAME_REPLY_IN_QUEUE:
+    case 2: /* DBUS_REQUEST_NAME_REPLY_IN_QUEUE */
       /* Waiting in line - listen for NameLost and NameAcquired */
       call_lost_handler (client);
       break;
 
     default:
       /* assume we couldn't get the name - explicit fallthrough */
-    case DBUS_REQUEST_NAME_REPLY_EXISTS:
-    case DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER:
+    case 3: /* DBUS_REQUEST_NAME_REPLY_EXISTS */
+    case 4: /* DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER */
       /* Some other part of the process is already owning the name */
       call_lost_handler (client);
       unsubscribe = TRUE;
@@ -357,9 +357,11 @@ request_name_cb (GObject      *source_object,
       if (connection != NULL)
         {
           if (client->name_acquired_subscription_id > 0)
-            g_dbus_connection_signal_unsubscribe (client->connection, g_steal_handle_id (&client->name_acquired_subscription_id));
+            g_dbus_connection_signal_unsubscribe (client->connection, client->name_acquired_subscription_id);
           if (client->name_lost_subscription_id > 0)
-            g_dbus_connection_signal_unsubscribe (client->connection, g_steal_handle_id (&client->name_lost_subscription_id));
+            g_dbus_connection_signal_unsubscribe (client->connection, client->name_lost_subscription_id);
+          client->name_acquired_subscription_id = 0;
+          client->name_lost_subscription_id = 0;
 
           g_object_unref (connection);
         }
@@ -381,11 +383,13 @@ on_connection_disconnected (GDBusConnection *connection,
   if (client->disconnected_signal_handler_id > 0)
     g_signal_handler_disconnect (client->connection, client->disconnected_signal_handler_id);
   if (client->name_acquired_subscription_id > 0)
-    g_dbus_connection_signal_unsubscribe (client->connection, g_steal_handle_id (&client->name_acquired_subscription_id));
+    g_dbus_connection_signal_unsubscribe (client->connection, client->name_acquired_subscription_id);
   if (client->name_lost_subscription_id > 0)
-    g_dbus_connection_signal_unsubscribe (client->connection, g_steal_handle_id (&client->name_lost_subscription_id));
+    g_dbus_connection_signal_unsubscribe (client->connection, client->name_lost_subscription_id);
   g_object_unref (client->connection);
   client->disconnected_signal_handler_id = 0;
+  client->name_acquired_subscription_id = 0;
+  client->name_lost_subscription_id = 0;
   client->connection = NULL;
 
   call_lost_handler (client);
@@ -415,10 +419,10 @@ has_connection (Client *client)
    * ensure that the user callbacks get called an appropriate number of times. */
   client->name_lost_subscription_id =
     g_dbus_connection_signal_subscribe (client->connection,
-                                        DBUS_SERVICE_DBUS,
-                                        DBUS_INTERFACE_DBUS,
+                                        "org.freedesktop.DBus",
+                                        "org.freedesktop.DBus",
                                         "NameLost",
-                                        DBUS_PATH_DBUS,
+                                        "/org/freedesktop/DBus",
                                         client->name,
                                         G_DBUS_SIGNAL_FLAGS_NONE,
                                         on_name_lost_or_acquired,
@@ -426,10 +430,10 @@ has_connection (Client *client)
                                         (GDestroyNotify) client_unref);
   client->name_acquired_subscription_id =
     g_dbus_connection_signal_subscribe (client->connection,
-                                        DBUS_SERVICE_DBUS,
-                                        DBUS_INTERFACE_DBUS,
+                                        "org.freedesktop.DBus",
+                                        "org.freedesktop.DBus",
                                         "NameAcquired",
-                                        DBUS_PATH_DBUS,
+                                        "/org/freedesktop/DBus",
                                         client->name,
                                         G_DBUS_SIGNAL_FLAGS_NONE,
                                         on_name_lost_or_acquired,
@@ -439,9 +443,9 @@ has_connection (Client *client)
   /* attempt to acquire the name */
   client->needs_release = TRUE;
   g_dbus_connection_call (client->connection,
-                          DBUS_SERVICE_DBUS,
-                          DBUS_PATH_DBUS,
-                          DBUS_INTERFACE_DBUS,
+                          "org.freedesktop.DBus",  /* bus name */
+                          "/org/freedesktop/DBus", /* object path */
+                          "org.freedesktop.DBus",  /* interface name */
                           "RequestName",           /* method name */
                           g_variant_new ("(su)",
                                          client->name,
@@ -932,9 +936,9 @@ g_bus_unown_name (guint owner_id)
            */
           error = NULL;
           result = g_dbus_connection_call_sync (client->connection,
-                                                DBUS_SERVICE_DBUS,
-                                                DBUS_PATH_DBUS,
-                                                DBUS_INTERFACE_DBUS,
+                                                "org.freedesktop.DBus",  /* bus name */
+                                                "/org/freedesktop/DBus", /* object path */
+                                                "org.freedesktop.DBus",  /* interface name */
                                                 "ReleaseName",           /* method name */
                                                 g_variant_new ("(s)", client->name),
                                                 G_VARIANT_TYPE ("(u)"),
@@ -950,7 +954,7 @@ g_bus_unown_name (guint owner_id)
           else
             {
               g_variant_get (result, "(u)", &release_name_reply);
-              if (release_name_reply != DBUS_RELEASE_NAME_REPLY_RELEASED)
+              if (release_name_reply != 1 /* DBUS_RELEASE_NAME_REPLY_RELEASED */)
                 {
                   g_warning ("Unexpected reply %d when releasing name %s", release_name_reply, client->name);
                 }
@@ -965,10 +969,12 @@ g_bus_unown_name (guint owner_id)
       if (client->disconnected_signal_handler_id > 0)
         g_signal_handler_disconnect (client->connection, client->disconnected_signal_handler_id);
       if (client->name_acquired_subscription_id > 0)
-        g_dbus_connection_signal_unsubscribe (client->connection, g_steal_handle_id (&client->name_acquired_subscription_id));
+        g_dbus_connection_signal_unsubscribe (client->connection, client->name_acquired_subscription_id);
       if (client->name_lost_subscription_id > 0)
-        g_dbus_connection_signal_unsubscribe (client->connection, g_steal_handle_id (&client->name_lost_subscription_id));
+        g_dbus_connection_signal_unsubscribe (client->connection, client->name_lost_subscription_id);
       client->disconnected_signal_handler_id = 0;
+      client->name_acquired_subscription_id = 0;
+      client->name_lost_subscription_id = 0;
       if (client->connection != NULL)
         {
           g_object_unref (client->connection);

@@ -1,9 +1,6 @@
-# SPDX-FileCopyrightText: 2022 Endless OS Foundation, LLC
-# SPDX-License-Identifier: LGPL-2.1-or-later
-
 project('gvdb', 'c',
     version: '0.0',
-    meson_version: '>=1.1',
+    meson_version: '>=0.54.0',
 )
 
 libgvdb_sources = files(
@@ -16,7 +13,3 @@ gvdb_dep = declare_dependency(
   include_directories: include_directories('.'),
 )
 meson.override_dependency('gvdb', gvdb_dep)
-
-if get_option('tests')
-  subdir('gvdb/tests')
-endif

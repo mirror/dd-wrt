@@ -32,7 +32,6 @@
 #include "gdbusconnection.h"
 #include "gdbusintrospection.h"
 #include "gdbuserror.h"
-#include "gdbusprivate.h"
 #include "glib/gstdio.h"
 
 #include <string.h>
@@ -156,7 +155,7 @@ send_property_change (GApplicationImpl *impl)
 {
   GVariantBuilder builder;
 
-  g_variant_builder_init_static (&builder, G_VARIANT_TYPE_ARRAY);
+  g_variant_builder_init (&builder, G_VARIANT_TYPE_ARRAY);
   g_variant_builder_add (&builder,
                          "{sv}",
                          "Busy", g_variant_new_boolean (impl->busy));
@@ -164,7 +163,7 @@ send_property_change (GApplicationImpl *impl)
   g_dbus_connection_emit_signal (impl->session_bus,
                                  NULL,
                                  impl->object_path,
-                                 DBUS_INTERFACE_PROPERTIES,
+                                 "org.freedesktop.DBus.Properties",
                                  "PropertiesChanged",
                                  g_variant_new ("(sa{sv}as)",
                                                 "org.gtk.Application",
@@ -292,6 +291,8 @@ g_application_impl_method_call (GDBusConnection       *connection,
       /* Only on the freedesktop interface */
 
       g_variant_get (parameters, "(&sav@a{sv})", &name, &iter, &platform_data);
+      g_variant_iter_next (iter, "v", &parameter);
+      g_variant_iter_free (iter);
 
       /* Check the action exists and the parameter type matches. */
       if (!g_action_group_query_action (impl->exported_actions,
@@ -300,32 +301,10 @@ g_application_impl_method_call (GDBusConnection       *connection,
         {
           g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
                                                  "Unknown action ‘%s’", name);
-          g_variant_iter_free (iter);
+          g_clear_pointer (&parameter, g_variant_unref);
           g_variant_unref (platform_data);
           return;
         }
-
-      /* Accept multiple parameters as a tuple with the exact number of parameters */
-      if (g_variant_iter_n_children (iter) > 1)
-        {
-          GVariant *value = NULL;
-          GVariantBuilder builder;
-
-          g_variant_builder_init_static (&builder, G_VARIANT_TYPE_TUPLE);
-
-          while (g_variant_iter_loop (iter, "v", &value))
-            {
-              g_variant_builder_add_value (&builder, value);
-            }
-
-          parameter = g_variant_ref_sink (g_variant_builder_end (&builder));
-        }
-      else
-        {
-          g_variant_iter_next (iter, "v", &parameter);
-        }
-
-      g_variant_iter_free (iter);
 
       if (!((parameter_type == NULL && parameter == NULL) ||
             (parameter_type != NULL && parameter != NULL && g_variant_is_of_type (parameter, parameter_type))))
@@ -511,10 +490,10 @@ g_application_impl_attempt_primary (GApplicationImpl  *impl,
   if (app_flags & G_APPLICATION_ALLOW_REPLACEMENT)
     {
       impl->name_lost_signal = g_dbus_connection_signal_subscribe (impl->session_bus,
-                                                                   DBUS_SERVICE_DBUS,
-                                                                   DBUS_INTERFACE_DBUS,
+                                                                   "org.freedesktop.DBus",
+                                                                   "org.freedesktop.DBus",
                                                                    "NameLost",
-                                                                   DBUS_PATH_DBUS,
+                                                                   "/org/freedesktop/DBus",
                                                                    impl->bus_name,
                                                                    G_DBUS_SIGNAL_FLAGS_NONE,
                                                                    name_lost,
@@ -527,9 +506,9 @@ g_application_impl_attempt_primary (GApplicationImpl  *impl,
     name_owner_flags |= G_BUS_NAME_OWNER_FLAGS_REPLACE;
 
   reply = g_dbus_connection_call_sync (impl->session_bus,
-                                       DBUS_SERVICE_DBUS,
-                                       DBUS_PATH_DBUS,
-                                       DBUS_INTERFACE_DBUS,
+                                       "org.freedesktop.DBus",
+                                       "/org/freedesktop/DBus",
+                                       "org.freedesktop.DBus",
                                        "RequestName",
                                        g_variant_new ("(su)", impl->bus_name, name_owner_flags),
                                        G_VARIANT_TYPE ("(u)"),
@@ -541,10 +520,14 @@ g_application_impl_attempt_primary (GApplicationImpl  *impl,
   g_variant_get (reply, "(u)", &rval);
   g_variant_unref (reply);
 
-  impl->primary = (rval != DBUS_REQUEST_NAME_REPLY_EXISTS);
+  /* DBUS_REQUEST_NAME_REPLY_EXISTS: 3 */
+  impl->primary = (rval != 3);
 
   if (!impl->primary && impl->name_lost_signal)
-    g_dbus_connection_signal_unsubscribe (impl->session_bus, g_steal_handle_id (&impl->name_lost_signal));
+    {
+      g_dbus_connection_signal_unsubscribe (impl->session_bus, impl->name_lost_signal);
+      impl->name_lost_signal = 0;
+    }
 
   return TRUE;
 }
@@ -589,12 +572,15 @@ g_application_impl_stop_primary (GApplicationImpl *impl)
     }
 
   if (impl->name_lost_signal)
-    g_dbus_connection_signal_unsubscribe (impl->session_bus, g_steal_handle_id (&impl->name_lost_signal));
+    {
+      g_dbus_connection_signal_unsubscribe (impl->session_bus, impl->name_lost_signal);
+      impl->name_lost_signal = 0;
+    }
 
   if (impl->primary && impl->bus_name)
     {
-      g_dbus_connection_call (impl->session_bus, DBUS_SERVICE_DBUS,
-                              DBUS_PATH_DBUS, DBUS_INTERFACE_DBUS,
+      g_dbus_connection_call (impl->session_bus, "org.freedesktop.DBus",
+                              "/org/freedesktop/DBus", "org.freedesktop.DBus",
                               "ReleaseName", g_variant_new ("(s)", impl->bus_name),
                               NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL, NULL);
       impl->primary = FALSE;
@@ -730,7 +716,7 @@ g_application_impl_open (GApplicationImpl  *impl,
   GVariantBuilder builder;
   gint i;
 
-  g_variant_builder_init_static (&builder, G_VARIANT_TYPE ("(assa{sv})"));
+  g_variant_builder_init (&builder, G_VARIANT_TYPE ("(assa{sv})"));
   g_variant_builder_open (&builder, G_VARIANT_TYPE_STRING_ARRAY);
   for (i = 0; i < n_files; i++)
     {

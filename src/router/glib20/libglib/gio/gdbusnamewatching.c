@@ -95,7 +95,7 @@ client_unref (Client *client)
       if (client->connection != NULL)
         {
           if (client->name_owner_changed_subscription_id > 0)
-            g_dbus_connection_signal_unsubscribe (client->connection, g_steal_handle_id (&client->name_owner_changed_subscription_id));
+            g_dbus_connection_signal_unsubscribe (client->connection, client->name_owner_changed_subscription_id);
           if (client->disconnected_signal_handler_id > 0)
             g_signal_handler_disconnect (client->connection, client->disconnected_signal_handler_id);
           g_object_unref (client->connection);
@@ -306,11 +306,12 @@ on_connection_disconnected (GDBusConnection *connection,
     return;
 
   if (client->name_owner_changed_subscription_id > 0)
-    g_dbus_connection_signal_unsubscribe (client->connection, g_steal_handle_id (&client->name_owner_changed_subscription_id));
+    g_dbus_connection_signal_unsubscribe (client->connection, client->name_owner_changed_subscription_id);
   if (client->disconnected_signal_handler_id > 0)
     g_signal_handler_disconnect (client->connection, client->disconnected_signal_handler_id);
   g_object_unref (client->connection);
   client->disconnected_signal_handler_id = 0;
+  client->name_owner_changed_subscription_id = 0;
   client->connection = NULL;
 
   call_vanished_handler (client);
@@ -343,9 +344,9 @@ on_name_owner_changed (GDBusConnection *connection,
   if (!client->initialized)
     goto out;
 
-  if (g_strcmp0 (object_path, DBUS_PATH_DBUS) != 0 ||
-      g_strcmp0 (interface_name, DBUS_INTERFACE_DBUS) != 0 ||
-      g_strcmp0 (sender_name, DBUS_SERVICE_DBUS) != 0)
+  if (g_strcmp0 (object_path, "/org/freedesktop/DBus") != 0 ||
+      g_strcmp0 (interface_name, "org.freedesktop.DBus") != 0 ||
+      g_strcmp0 (sender_name, "org.freedesktop.DBus") != 0)
     goto out;
 
   g_variant_get (parameters,
@@ -423,9 +424,9 @@ static void
 invoke_get_name_owner (Client *client)
 {
   g_dbus_connection_call (client->connection,
-                          DBUS_SERVICE_DBUS,
-                          DBUS_PATH_DBUS,
-                          DBUS_INTERFACE_DBUS,
+                          "org.freedesktop.DBus",  /* bus name */
+                          "/org/freedesktop/DBus", /* object path */
+                          "org.freedesktop.DBus",  /* interface name */
                           "GetNameOwner",          /* method name */
                           g_variant_new ("(s)", client->name),
                           G_VARIANT_TYPE ("(s)"),
@@ -456,11 +457,11 @@ start_service_by_name_cb (GObject      *source_object,
       guint32 start_service_result;
       g_variant_get (result, "(u)", &start_service_result);
 
-      if (start_service_result == DBUS_START_REPLY_SUCCESS)
+      if (start_service_result == 1) /* DBUS_START_REPLY_SUCCESS */
         {
           invoke_get_name_owner (client);
         }
-      else if (start_service_result == DBUS_START_REPLY_ALREADY_RUNNING)
+      else if (start_service_result == 2) /* DBUS_START_REPLY_ALREADY_RUNNING */
         {
           invoke_get_name_owner (client);
         }
@@ -503,10 +504,10 @@ has_connection (Client *client)
 
   /* start listening to NameOwnerChanged messages immediately */
   client->name_owner_changed_subscription_id = g_dbus_connection_signal_subscribe (client->connection,
-                                                                                   DBUS_SERVICE_DBUS,
-                                                                                   DBUS_INTERFACE_DBUS,
+                                                                                   "org.freedesktop.DBus",  /* name */
+                                                                                   "org.freedesktop.DBus",  /* if */
                                                                                    "NameOwnerChanged",      /* signal */
-                                                                                   DBUS_PATH_DBUS,
+                                                                                   "/org/freedesktop/DBus", /* path */
                                                                                    client->name,
                                                                                    G_DBUS_SIGNAL_FLAGS_NONE,
                                                                                    on_name_owner_changed,
@@ -516,9 +517,9 @@ has_connection (Client *client)
   if (client->flags & G_BUS_NAME_WATCHER_FLAGS_AUTO_START)
     {
       g_dbus_connection_call (client->connection,
-                              DBUS_SERVICE_DBUS,
-                              DBUS_PATH_DBUS,
-                              DBUS_INTERFACE_DBUS,
+                              "org.freedesktop.DBus",  /* bus name */
+                              "/org/freedesktop/DBus", /* object path */
+                              "org.freedesktop.DBus",  /* interface name */
                               "StartServiceByName",    /* method name */
                               g_variant_new ("(su)", client->name, 0),
                               G_VARIANT_TYPE ("(u)"),

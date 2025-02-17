@@ -156,7 +156,7 @@ g_dir_open (const gchar  *path,
 
   dir = g_dir_open_with_errno (path, flags);
 
-  if (dir == NULL && error != NULL)
+  if (dir == NULL)
     {
       gchar *utf8_path;
 

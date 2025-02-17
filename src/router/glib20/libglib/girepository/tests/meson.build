@@ -5,9 +5,6 @@ girepository_tests = {
   'cmph-bdz': {
     'dependencies': [cmph_dep],
   },
-  'dump' : {
-    'export_dynamic': true,
-  },
   'gthash' : {
     'dependencies': [girepo_gthash_dep],
   },
@@ -15,72 +12,40 @@ girepository_tests = {
 
 # Some tests require GIR files to have been generated
 if enable_gir
-  glib_gir_testing_dep = glib_gir
-  gobject_gir_testing_dep = [
-    glib_gir_testing_dep,
-    gobject_gir,
-  ]
-
-  gmodule_gir_testing_dep = [
-    glib_gir_testing_dep,
-    gmodule_gir,
-  ]
-
-  gio_gir_testing_dep = [
-    gobject_gir_testing_dep,
-    gmodule_gir_testing_dep,
-    gio_gir,
-  ]
-
-  gio_platform_gir_testing_dep = [
-    gio_gir_testing_dep,
-    gio_platform_gir,
-  ]
-
-  girepository_gir_testing_dep = [
-    gio_gir_testing_dep,
-    girepository_gir,
-  ]
-
   girepository_tests += {
-    'callable-info' : {
-      'depends': gio_gir_testing_dep,
-    },
     'function-info' : {
       'dependencies': [libffi_dep],
-      'depends': glib_gir_testing_dep,
+      'depends': [glib_gir],
     },
     'object-info' : {
-      'depends': gio_gir_testing_dep,
+      'depends': [gio_gir],
     },
     'registered-type-info' : {
-      'depends': gobject_gir_testing_dep,
+      'depends': [gobject_gir],
     },
     'repository' : {
-      'depends': [gio_gir_testing_dep, gio_platform_gir_testing_dep],
-      'dependencies': [libgio_dep],
+      'depends': [glib_gir, gio_gir, gobject_gir],
     },
     'repository-search-paths' : {
       'c_args': '-DGOBJECT_INTROSPECTION_LIBDIR="@0@"'.format(glib_libdir),
-      'depends': glib_gir_testing_dep,
+      'depends': [glib_gir],
     },
     'struct-info' : {
-      'depends': gobject_gir_testing_dep,
+      'depends': [gobject_gir],
     },
     'throws' : {
-      'depends': gio_gir_testing_dep,
+      'depends': [glib_gir, gio_gir],
     },
     'union-info' : {
-      'depends': glib_gir_testing_dep,
+      'depends': [glib_gir],
     },
   }
 
   if cc.get_id() != 'msvc'
     girepository_tests += {
       'autoptr-girepository' : {
-        'dependencies': [libffi_dep],
         'source' : 'autoptr.c',
-        'depends': gio_gir_testing_dep,
+        'depends': [glib_gir, gio_gir],
       },
     }
   endif
@@ -128,7 +93,6 @@ foreach test_name, extra_args : girepository_tests
     override_options: extra_args.get('override_options', []),
     dependencies: test_deps + extra_args.get('dependencies', []),
     link_with: extra_args.get('link_with', []),
-    export_dynamic: extra_args.get('export_dynamic', false),
     install_dir: installed_tests_execdir,
     install_tag: 'tests',
     install: install,

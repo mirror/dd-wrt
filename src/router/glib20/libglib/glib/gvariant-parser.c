@@ -327,10 +327,10 @@ static gboolean
 token_stream_peek_string (TokenStream *stream,
                           const gchar *token)
 {
-  size_t length = strlen (token);
+  gint length = strlen (token);
 
   return token_stream_prepare (stream) &&
-         (size_t) (stream->stream - stream->this) == length &&
+         stream->stream - stream->this == length &&
          memcmp (stream->this, token, length) == 0;
 }
 
@@ -401,8 +401,6 @@ token_stream_end_ref (TokenStream *stream,
   ref->end = stream->stream - stream->start;
 }
 
-/* This is guaranteed to write exactly as many bytes to `out` as it consumes
- * from `in`. i.e. The `out` buffer doesn’t need to be any longer than `in`. */
 static void
 pattern_copy (gchar       **out,
               const gchar **in)
@@ -433,22 +431,15 @@ pattern_coalesce (const gchar *left,
 {
   gchar *result;
   gchar *out;
-  size_t buflen;
-  size_t left_len = strlen (left), right_len = strlen (right);
 
   /* the length of the output is loosely bound by the sum of the input
    * lengths, not simply the greater of the two lengths.
    *
-   *   (*(iii)) + ((iii)*) = ((iii)(iii))
+   *   (*(iii)) + ((iii)*) ((iii)(iii))
    *
-   *      8     +    8     = 12
-   *
-   * This can be proven by the fact that `out` is never incremented by more
-   * bytes than are consumed from `left` or `right` in each iteration.
+   *      8     +    8    =  12
    */
-  g_assert (left_len < G_MAXSIZE - right_len);
-  buflen = left_len + right_len + 1;
-  out = result = g_malloc (buflen);
+  out = result = g_malloc (strlen (left) + strlen (right));
 
   while (*left && *right)
     {
@@ -501,9 +492,6 @@ pattern_coalesce (const gchar *left,
             break;
         }
     }
-
-  /* Need at least one byte remaining for trailing nul. */
-  g_assert (out < result + buflen);
 
   if (*left || *right)
     {
@@ -1007,7 +995,7 @@ array_get_value (AST                 *ast,
   if (!g_variant_type_is_array (type))
     return ast_type_error (ast, type, error);
 
-  g_variant_builder_init_static (&builder, type);
+  g_variant_builder_init (&builder, type);
   childtype = g_variant_type_element (type);
 
   for (i = 0; i < array->n_children; i++)
@@ -1133,7 +1121,7 @@ tuple_get_value (AST                 *ast,
   if (!g_variant_type_is_tuple (type))
     return ast_type_error (ast, type, error);
 
-  g_variant_builder_init_static (&builder, type);
+  g_variant_builder_init (&builder, type);
   childtype = g_variant_type_first (type);
 
   for (i = 0; i < tuple->n_children; i++)
@@ -1391,7 +1379,7 @@ dictionary_get_value (AST                 *ast,
       if (!g_variant_type_is_dict_entry (type))
         return ast_type_error (ast, type, error);
 
-      g_variant_builder_init_static (&builder, type);
+      g_variant_builder_init (&builder, type);
 
       subtype = g_variant_type_key (type);
       if (!(subvalue = ast_get_value (dict->keys[0], subtype, error)))
@@ -1424,7 +1412,7 @@ dictionary_get_value (AST                 *ast,
       key = g_variant_type_key (entry);
       val = g_variant_type_value (entry);
 
-      g_variant_builder_init_static (&builder, type);
+      g_variant_builder_init (&builder, type);
 
       for (i = 0; i < dict->n_children; i++)
         {
@@ -1630,11 +1618,7 @@ string_free (AST *ast)
 }
 
 /* Accepts exactly @length hexadecimal digits. No leading sign or `0x`/`0X` prefix allowed.
- * No leading/trailing space allowed.
- *
- * It's OK to pass a length greater than the actual length of the src buffer,
- * provided src must be null-terminated.
- */
+ * No leading/trailing space allowed. */
 static gboolean
 unicode_unescape (const gchar  *src,
                   gint         *src_ofs,
@@ -1708,9 +1692,6 @@ string_parse (TokenStream  *stream,
   length = strlen (token);
   quote = token[0];
 
-  /* The output will always be at least one byte smaller than the input,
-   * because we skip over the initial quote character.
-   */
   str = g_malloc (length);
   g_assert (quote == '"' || quote == '\'');
   j = 0;
@@ -1842,9 +1823,6 @@ bytestring_parse (TokenStream  *stream,
   length = strlen (token);
   quote = token[1];
 
-  /* The output will always be smaller than the input, because we skip over the
-   * initial b and the quote character.
-   */
   str = g_malloc (length);
   g_assert (quote == '"' || quote == '\'');
   j = 0;
@@ -2609,7 +2587,7 @@ g_variant_parse (const GVariantType  *type,
  *
  * Note that the arguments in @app must be of the correct width for their types
  * specified in @format when collected into the #va_list. See
- * the [GVariant varargs documentation](gvariant-format-strings.html#varargs).
+ * the [GVariant varargs documentation][gvariant-varargs].
  *
  * In order to behave correctly in all cases it is necessary for the
  * calling function to g_variant_ref_sink() the return result before
@@ -2668,7 +2646,7 @@ g_variant_new_parsed_va (const gchar *format,
  *
  * Note that the arguments must be of the correct width for their types
  * specified in @format. This can be achieved by casting them. See
- * the [GVariant varargs documentation](gvariant-format-strings.html#varargs).
+ * the [GVariant varargs documentation][gvariant-varargs].
  *
  * Consider this simple example:
  * |[<!-- language="C" --> 
@@ -2721,7 +2699,7 @@ g_variant_new_parsed (const gchar *format,
  *
  * Note that the arguments must be of the correct width for their types
  * specified in @format_string. This can be achieved by casting them. See
- * the [GVariant varargs documentation](gvariant-format-strings.html#varargs).
+ * the [GVariant varargs documentation][gvariant-varargs].
  *
  * This function might be used as follows:
  *
@@ -2732,7 +2710,7 @@ g_variant_new_parsed (const gchar *format,
  *   GVariantBuilder builder;
  *   int i;
  *
- *   g_variant_builder_init_static (&builder, G_VARIANT_TYPE_ARRAY);
+ *   g_variant_builder_init (&builder, G_VARIANT_TYPE_ARRAY);
  *   g_variant_builder_add_parsed (&builder, "{'width', <%i>}", 600);
  *   g_variant_builder_add_parsed (&builder, "{'title', <%s>}", "foo");
  *   g_variant_builder_add_parsed (&builder, "{'transparency', <0.5>}");

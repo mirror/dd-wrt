@@ -2258,7 +2258,6 @@ win32_strftime_helper (const GDate     *d,
   gchar *convbuf;
   glong convlen = 0;
   gsize retval;
-  size_t format_len = strlen (format);
 
   systemtime.wYear = tm->tm_year + 1900;
   systemtime.wMonth = tm->tm_mon + 1;
@@ -2270,8 +2269,7 @@ win32_strftime_helper (const GDate     *d,
   systemtime.wMilliseconds = 0;
   
   lcid = GetThreadLocale ();
-  result = g_array_sized_new (FALSE, FALSE, sizeof (wchar_t),
-                              (format_len <= 64) ? (guint) format_len * 2 : 128);
+  result = g_array_sized_new (FALSE, FALSE, sizeof (wchar_t), MAX (128, strlen (format) * 2));
 
   p = format;
   while (*p)
@@ -2643,7 +2641,7 @@ win32_strftime_helper (const GDate     *d,
  * make the \%F provided by the C99 strftime() work on Windows
  * where the C library only complies to C89.
  *
- * Returns: number of characters written to the buffer, or `0` if the buffer was too small
+ * Returns: number of characters written to the buffer, or 0 the buffer was too small
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"

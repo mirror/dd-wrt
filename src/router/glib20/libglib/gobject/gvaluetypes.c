@@ -190,8 +190,7 @@ value_collect_float (GValue      *value,
 		     GTypeCValue *collect_values,
 		     guint        collect_flags)
 {
-  /* This necessarily loses precision */
-  value->data[0].v_float = (gfloat) collect_values[0].v_double;
+  value->data[0].v_float = collect_values[0].v_double;
   
   return NULL;
 }

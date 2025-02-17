@@ -24,7 +24,6 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "gdbusprivate.h"
 #include "gdbus-tests.h"
 
 /* all tests rely on a shared mainloop */
@@ -51,7 +50,7 @@ test_introspection (GDBusProxy *proxy)
    * Invoke Introspect(), then parse the output.
    */
   result = g_dbus_proxy_call_sync (proxy,
-                                   DBUS_INTERFACE_INTROSPECTABLE ".Introspect",
+                                   "org.freedesktop.DBus.Introspectable.Introspect",
                                    NULL,
                                    G_DBUS_CALL_FLAGS_NONE,
                                    -1,
@@ -70,7 +69,7 @@ test_introspection (GDBusProxy *proxy)
   interface_info = g_dbus_node_info_lookup_interface (node_info, "com.example.NonExistantInterface");
   g_assert (interface_info == NULL);
 
-  interface_info = g_dbus_node_info_lookup_interface (node_info, DBUS_INTERFACE_INTROSPECTABLE);
+  interface_info = g_dbus_node_info_lookup_interface (node_info, "org.freedesktop.DBus.Introspectable");
   g_assert (interface_info != NULL);
   method_info = g_dbus_interface_info_lookup_method (interface_info, "NonExistantMethod");
   g_assert (method_info == NULL);

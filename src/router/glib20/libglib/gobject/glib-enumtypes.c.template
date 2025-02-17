@@ -14,7 +14,7 @@ G_GNUC_END_IGNORE_DEPRECATIONS
 /*** END file-tail ***/
 
 /*** BEGIN file-production ***/
-/* enumerations from "@basename@" */
+/* enumerations from "@filename@" */
 
 /*** END file-production ***/
 

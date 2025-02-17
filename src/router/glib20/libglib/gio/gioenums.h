@@ -290,8 +290,8 @@ typedef enum /*< flags >*/ {
  *    assemble/disassemble a virtual drive from several physical
  *    drives.
  * @G_DRIVE_START_STOP_TYPE_PASSWORD: The start/stop methods will
- *    unlock/lock the disk (for example using the ATA `SECURITY UNLOCK
- *    DEVICE` command)
+ *    unlock/lock the disk (for example using the ATA <quote>SECURITY
+ *    UNLOCK DEVICE</quote> command)
  *
  * Enumeration describing how a drive can be started/stopped.
  *
@@ -1496,6 +1496,9 @@ typedef enum
 
 /**
  * GApplicationFlags:
+ * @G_APPLICATION_FLAGS_NONE: Default. Deprecated in 2.74, use
+ *   %G_APPLICATION_DEFAULT_FLAGS instead
+ * @G_APPLICATION_DEFAULT_FLAGS: Default flags. Since: 2.74
  * @G_APPLICATION_IS_SERVICE: Run as a service. In this mode, registration
  *      fails if the service is already running, and the application
  *      will initially wait up to 10 seconds for an initial activation
@@ -1536,20 +1539,6 @@ typedef enum
  * Flags used to define the behaviour of a #GApplication.
  *
  * Since: 2.28
- **/
-/**
- * G_APPLICATION_FLAGS_NONE:
- *
- * Default flags.
- *
- * Deprecated: 2.74: Use [flags@Gio.ApplicationFlags.DEFAULT_FLAGS].
- **/
-/**
- * G_APPLICATION_DEFAULT_FLAGS:
- *
- * Default flags.
- *
- * Since: 2.74
  **/
 typedef enum /*< prefix=G_APPLICATION >*/
 {

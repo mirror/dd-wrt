@@ -1026,7 +1026,7 @@ signal_cb (GDBusConnection *connection,
   //g_debug ("yay, signal_cb %s %s: %s\n", signal_name, object_path, g_variant_print (parameters, TRUE));
 
   g_object_ref (manager);
-  if (g_strcmp0 (interface_name, DBUS_INTERFACE_PROPERTIES) == 0)
+  if (g_strcmp0 (interface_name, "org.freedesktop.DBus.Properties") == 0)
     {
       if (g_strcmp0 (signal_name, "PropertiesChanged") == 0)
         {
@@ -1145,9 +1145,9 @@ subscribe_signals (GDBusObjectManagerClient *manager,
       /* The bus daemon may not implement path_namespace so gracefully
        * handle this by using a fallback triggered if @error is set. */
       ret = g_dbus_connection_call_sync (manager->priv->connection,
-                                         DBUS_SERVICE_DBUS,
-                                         DBUS_PATH_DBUS,
-                                         DBUS_INTERFACE_DBUS,
+                                         "org.freedesktop.DBus",
+                                         "/org/freedesktop/DBus",
+                                         "org.freedesktop.DBus",
                                          "AddMatch",
                                          g_variant_new ("(s)",
                                                         manager->priv->match_rule),
@@ -1218,8 +1218,11 @@ maybe_unsubscribe_signals (GDBusObjectManagerClient *manager)
   g_return_if_fail (G_IS_DBUS_OBJECT_MANAGER_CLIENT (manager));
 
   if (manager->priv->signal_subscription_id > 0)
-    g_dbus_connection_signal_unsubscribe (manager->priv->connection,
-                                          g_steal_handle_id (&manager->priv->signal_subscription_id));
+    {
+      g_dbus_connection_signal_unsubscribe (manager->priv->connection,
+                                            manager->priv->signal_subscription_id);
+      manager->priv->signal_subscription_id = 0;
+    }
 
   if (manager->priv->match_rule != NULL)
     {
@@ -1227,9 +1230,9 @@ maybe_unsubscribe_signals (GDBusObjectManagerClient *manager)
        * fail - therefore, don't bother checking the return value
        */
       g_dbus_connection_call (manager->priv->connection,
-                              DBUS_SERVICE_DBUS,
-                              DBUS_PATH_DBUS,
-                              DBUS_INTERFACE_DBUS,
+                              "org.freedesktop.DBus",
+                              "/org/freedesktop/DBus",
+                              "org.freedesktop.DBus",
                               "RemoveMatch",
                               g_variant_new ("(s)",
                                              manager->priv->match_rule),
@@ -1416,7 +1419,7 @@ initable_init (GInitable     *initable,
                                                         NULL, /* GDBusInterfaceInfo* */
                                                         manager->priv->name,
                                                         manager->priv->object_path,
-                                                        DBUS_INTERFACE_OBJECT_MANAGER,
+                                                        "org.freedesktop.DBus.ObjectManager",
                                                         cancellable,
                                                         error);
   if (manager->priv->control_proxy == NULL)

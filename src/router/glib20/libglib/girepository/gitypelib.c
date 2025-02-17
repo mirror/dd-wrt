@@ -316,8 +316,7 @@ strsplit_iter_next (StrSplitIter  *iter,
     }
   else
     {
-      g_string_overwrite_len (&iter->buf, 0, s, (gssize)len + 1);
-      iter->buf.str[len] = '\0';
+      g_string_overwrite_len (&iter->buf, 0, s, (gssize)len);
       *out_val = iter->buf.str;
     }
   return TRUE;

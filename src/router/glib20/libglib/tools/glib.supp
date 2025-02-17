@@ -390,12 +390,12 @@
 {
 	g-io-module-default-singleton-calloc
 	Memcheck:Leak
-	match-leak-kinds:reachable,definite
+	match-leak-kinds:reachable
 	fun:calloc
 	...
 	fun:g_type_create_instance
 	...
-	fun:_g_io_module_get_default*
+	fun:_g_io_module_get_default
 }
 
 # This one seems to show up sometimes with g_type_create_instance() at the top
@@ -821,7 +821,7 @@
 {
 	g_set_user_dirs_str
 	Memcheck:Leak
-	match-leak-kinds:definite,reachable,possible
+	match-leak-kinds:definite,reachable
 	fun:malloc
 	...
 	fun:set_str_if_different
@@ -833,7 +833,7 @@
 {
 	g_set_user_dirs_strv
 	Memcheck:Leak
-	match-leak-kinds:definite,reachable,possible
+	match-leak-kinds:definite,reachable
 	fun:malloc
 	...
 	fun:set_strv_if_different
@@ -896,7 +896,7 @@
 	fun:g_get_home_dir
 }
 
-# gcontenttype-fdo.c caches a one-time allocation global array of @global_mime_dirs.
+# gcontenttype.c caches a one-time allocation global array of @global_mime_dirs.
 {
 	content_type_mime_dirs_realloc
 	Memcheck:Leak
@@ -1321,14 +1321,4 @@
 	fun:g_rw_lock_get_impl
 	fun:g_rw_lock_writer_lock
 	fun:g_log_writer_default_set_debug_domains
-}
-
-# This can be removed when versions of valgrind including the fix are widely used.
-# See https://gitlab.gnome.org/GNOME/glib/-/issues/3292
-{
-   g_utf8_collate_key wcsxfrm false-positive
-   Memcheck:Addr32
-   ...
-   fun:wcsxfrm*
-   fun:g_utf8_collate_key
 }

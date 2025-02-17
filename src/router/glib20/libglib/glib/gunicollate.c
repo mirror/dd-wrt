@@ -372,16 +372,11 @@ carbon_collate_key_for_filename (const gchar *str,
  * The results of comparing the collation keys of two strings 
  * with strcmp() will always be the same as comparing the two 
  * original keys with g_utf8_collate().
- *
- * Note that this function depends on the [current locale][setlocale].
- *
- * Note that the returned string is not guaranteed to be in any
- * encoding, especially UTF-8. The returned value is meant to be
- * used only for comparisons.
  * 
- * Returns: (transfer full) (type filename): a newly allocated string.
- *   The contents of the string are only meant to be used when sorting.
- *   This string should be freed with g_free() when you are done with it.
+ * Note that this function depends on the [current locale][setlocale].
+ * 
+ * Returns: a newly allocated string. This string should
+ *   be freed with g_free() when you are done with it.
  **/
 gchar *
 g_utf8_collate_key (const gchar *str,
@@ -509,13 +504,8 @@ g_utf8_collate_key (const gchar *str,
  * 
  * Note that this function depends on the [current locale][setlocale].
  *
- * Note that the returned string is not guaranteed to be in any
- * encoding, especially UTF-8. The returned value is meant to be
- * used only for comparisons.
- *
- * Returns: (transfer full) (type filename): a newly allocated string.
- *   The contents of the string are only meant to be used when sorting.
- *   This string should be freed with g_free() when you are done with it.
+ * Returns: a newly allocated string. This string should
+ *   be freed with g_free() when you are done with it.
  *
  * Since: 2.8
  */

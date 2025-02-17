@@ -1,8 +1,6 @@
 #include <gio/gio.h>
 #include <stdlib.h>
 
-#include "gdbusprivate.h"
-
 static GDBusNodeInfo *introspection_data = NULL;
 static GMainLoop *loop = NULL;
 static GHashTable *properties = NULL;
@@ -327,7 +325,7 @@ handle_method_call (GDBusConnection       *connection,
       gsize i, j;
       GVariantBuilder ret;
 
-      g_variant_builder_init_static (&ret, G_VARIANT_TYPE ("(ayabanaqaiauaxatad)"));
+      g_variant_builder_init (&ret, G_VARIANT_TYPE ("(ayabanaqaiauaxatad)"));
 
       v = g_variant_get_child_value (parameters, 0);
       bytes = g_variant_get_fixed_array (v, &n_elts, 1);
@@ -423,7 +421,7 @@ handle_method_call (GDBusConnection       *connection,
       const gchar *s;
       gint i;
 
-      g_variant_builder_init_static (&ret, G_VARIANT_TYPE ("(asaoag)"));
+      g_variant_builder_init (&ret, G_VARIANT_TYPE ("(asaoag)"));
       g_variant_get (parameters, "(asaoag)", &iter1, &iter2, &iter3);
 
       g_variant_builder_open (&ret, G_VARIANT_TYPE ("as"));
@@ -479,7 +477,7 @@ handle_method_call (GDBusConnection       *connection,
       gdouble d1, d2;
       gchar *s1, *s2;
 
-      g_variant_builder_init_static (&ret, G_VARIANT_TYPE ("(a{yy}a{bb}a{nn}a{qq}a{ii}a{uu}a{xx}a{tt}a{dd}a{ss}a{oo}a{gg})"));
+      g_variant_builder_init (&ret, G_VARIANT_TYPE ("(a{yy}a{bb}a{nn}a{qq}a{ii}a{uu}a{xx}a{tt}a{dd}a{ss}a{oo}a{gg})"));
 
       g_variant_builder_open (&ret, G_VARIANT_TYPE ("a{yy}"));
       v = g_variant_get_child_value (parameters, 0);
@@ -617,7 +615,7 @@ handle_method_call (GDBusConnection       *connection,
 
       desc_ret = g_strconcat (desc, "... in bed!", NULL);
 
-      g_variant_builder_init_static (&ret1, G_VARIANT_TYPE ("ay"));
+      g_variant_builder_init (&ret1, G_VARIANT_TYPE ("ay"));
       iter = g_variant_iter_copy (iter1);
       while (g_variant_iter_loop (iter1, "y", &v))
         g_variant_builder_add (&ret1, "y", v);
@@ -626,7 +624,7 @@ handle_method_call (GDBusConnection       *connection,
       g_variant_iter_free (iter);
       g_variant_iter_free (iter1);
 
-      g_variant_builder_init_static (&ret2, G_VARIANT_TYPE ("a{ss}"));
+      g_variant_builder_init (&ret2, G_VARIANT_TYPE ("a{ss}"));
       while (g_variant_iter_loop (iter1, "ss", &s1, &s2))
         {
           gchar *tmp;
@@ -690,7 +688,7 @@ handle_method_call (GDBusConnection       *connection,
       g_dbus_connection_emit_signal (connection,
                                      NULL,
                                      "/com/example/TestObject",
-                                     DBUS_INTERFACE_PROPERTIES,
+                                     "org.freedesktop.DBus.Properties",
                                      "PropertiesChanged",
                                      g_variant_new_parsed ("('com.example.Frob', [{%s, %v}], @as [])", name, value),
                                      NULL);
@@ -705,7 +703,7 @@ handle_method_call (GDBusConnection       *connection,
       g_dbus_connection_emit_signal (connection,
                                      NULL,
                                      "/com/example/TestObject",
-                                     DBUS_INTERFACE_PROPERTIES,
+                                     "org.freedesktop.DBus.Properties",
                                      "PropertiesChanged",
                                      g_variant_new_parsed ("('com.example.Frob', @a{sv} [], ['PropertyThatWillBeInvalidated'])"),
                                      NULL);

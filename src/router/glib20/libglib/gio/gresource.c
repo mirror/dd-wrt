@@ -218,7 +218,7 @@ G_DEFINE_BOXED_TYPE (GResource, g_resource, g_resource_ref, g_resource_unref)
 /**
  * GStaticResource:
  *
- * `GStaticResource` is an opaque data structure and can only be accessed
+ * #GStaticResource is an opaque data structure and can only be accessed
  * using the following functions.
  **/
 typedef gboolean (* CheckCandidate) (const gchar *candidate, gpointer user_data);
@@ -352,7 +352,7 @@ g_resource_find_overlay (const gchar    *path,
   /* This is a null-terminated array of replacement strings (with '=' inside) */
   static const gchar * const *overlay_dirs;
   gboolean res = FALSE;
-  size_t path_len = 0;
+  gint path_len = -1;
   gint i;
 
   /* We try to be very fast in case there are no overlays.  Otherwise,
@@ -449,9 +449,9 @@ g_resource_find_overlay (const gchar    *path,
   for (i = 0; overlay_dirs[i]; i++)
     {
       const gchar *src;
-      size_t src_len;
+      gint src_len;
       const gchar *dst;
-      size_t dst_len;
+      gint dst_len;
       gchar *candidate;
 
       {
@@ -466,7 +466,7 @@ g_resource_find_overlay (const gchar    *path,
         /* hold off on dst_len because we will probably fail the checks below */
       }
 
-      if (i == 0)
+      if (path_len == -1)
         path_len = strlen (path);
 
       /* The entire path is too short to match the source */
@@ -509,9 +509,9 @@ g_resource_find_overlay (const gchar    *path,
 /**
  * g_resource_error_quark:
  *
- * Gets the [struct@Gio.Resource] Error Quark.
+ * Gets the #GResource Error Quark.
  *
- * Returns: a [type@GLib.Quark]
+ * Returns: a #GQuark
  *
  * Since: 2.32
  */
@@ -519,13 +519,12 @@ G_DEFINE_QUARK (g-resource-error-quark, g_resource_error)
 
 /**
  * g_resource_ref:
- * @resource: A [struct@Gio.Resource]
+ * @resource: A #GResource
  *
- * Atomically increments the reference count of @resource by one.
+ * Atomically increments the reference count of @resource by one. This
+ * function is MT-safe and may be called from any thread.
  *
- * This function is threadsafe and may be called from any thread.
- *
- * Returns: The passed in [struct@Gio.Resource]
+ * Returns: The passed in #GResource
  *
  * Since: 2.32
  **/
@@ -538,12 +537,11 @@ g_resource_ref (GResource *resource)
 
 /**
  * g_resource_unref:
- * @resource: A [struct@Gio.Resource]
+ * @resource: A #GResource
  *
- * Atomically decrements the reference count of @resource by one.
- *
- * If the reference count drops to 0, all memory allocated by the resource is
- * released. This function is threadsafe and may be called from any
+ * Atomically decrements the reference count of @resource by one. If the
+ * reference count drops to 0, all memory allocated by the resource is
+ * released. This function is MT-safe and may be called from any
  * thread.
  *
  * Since: 2.32
@@ -591,16 +589,15 @@ g_resource_error_from_gvdb_table_error (GError **g_resource_error,
 
 /**
  * g_resource_new_from_data:
- * @data: A [struct@GLib.Bytes]
- * @error: return location for a [type@GLib.Error], or `NULL`
+ * @data: A #GBytes
+ * @error: return location for a #GError, or %NULL
  *
- * Creates a [struct@Gio.Resource] from a reference to the binary resource bundle.
- *
+ * Creates a GResource from a reference to the binary resource bundle.
  * This will keep a reference to @data while the resource lives, so
  * the data should not be modified or freed.
  *
  * If you want to use this resource in the global resource namespace you need
- * to register it with [func@Gio.resources_register].
+ * to register it with g_resources_register().
  *
  * Note: @data must be backed by memory that is at least pointer aligned.
  * Otherwise this function will internally create a copy of the memory since
@@ -608,7 +605,7 @@ g_resource_error_from_gvdb_table_error (GError **g_resource_error,
  *
  * If @data is empty or corrupt, %G_RESOURCE_ERROR_INTERNAL will be returned.
  *
- * Returns: (transfer full): a new [struct@Gio.Resource], or `NULL` on error
+ * Returns: (transfer full): a new #GResource, or %NULL on error
  *
  * Since: 2.32
  **/
@@ -644,20 +641,20 @@ g_resource_new_from_data (GBytes  *data,
 /**
  * g_resource_load:
  * @filename: (type filename): the path of a filename to load, in the GLib filename encoding
- * @error: return location for a [type@GLib.Error], or `NULL`
+ * @error: return location for a #GError, or %NULL
  *
- * Loads a binary resource bundle and creates a [struct@Gio.Resource]
- * representation of it, allowing you to query it for data.
+ * Loads a binary resource bundle and creates a #GResource representation of it, allowing
+ * you to query it for data.
  *
  * If you want to use this resource in the global resource namespace you need
- * to register it with [func@Gio.resources_register].
+ * to register it with g_resources_register().
  *
  * If @filename is empty or the data in it is corrupt,
  * %G_RESOURCE_ERROR_INTERNAL will be returned. If @filename doesn’t exist, or
- * there is an error in reading it, an error from [ctor@GLib.MappedFile.new]
- * will be returned.
+ * there is an error in reading it, an error from g_mapped_file_new() will be
+ * returned.
  *
- * Returns: (transfer full): a new [struct@Gio.Resource], or `NULL` on error
+ * Returns: (transfer full): a new #GResource, or %NULL on error
  *
  * Since: 2.32
  **/
@@ -678,18 +675,6 @@ g_resource_load (const gchar  *filename,
   return g_resource_new_from_table (table);
 }
 
-static void
-set_error_not_found (GError     **error,
-                     const char  *path)
-{
-  /* Avoid looking up the translation if it’s not going to be used. This is a hot path. */
-  if (error != NULL)
-    g_set_error (error, G_RESOURCE_ERROR, G_RESOURCE_ERROR_NOT_FOUND,
-                 _("The resource at “%s” does not exist"),
-                 path);
-}
-
-/* The only error this can return is %G_RESOURCE_ERROR_NOT_FOUND. */
 static gboolean
 do_lookup (GResource             *resource,
            const gchar           *path,
@@ -717,7 +702,9 @@ do_lookup (GResource             *resource,
 
   if (value == NULL)
     {
-      set_error_not_found (error, path);
+      g_set_error (error, G_RESOURCE_ERROR, G_RESOURCE_ERROR_NOT_FOUND,
+                   _("The resource at “%s” does not exist"),
+                   path);
     }
   else
     {
@@ -758,20 +745,18 @@ do_lookup (GResource             *resource,
 
 /**
  * g_resource_open_stream:
- * @resource: A [struct@Gio.Resource]
- * @path: A path name inside the resource
- * @lookup_flags: A [flags@Gio.ResourceLookupFlags]
- * @error: return location for a [type@GLib.Error], or `NULL`
+ * @resource: A #GResource
+ * @path: A pathname inside the resource
+ * @lookup_flags: A #GResourceLookupFlags
+ * @error: return location for a #GError, or %NULL
  *
  * Looks for a file at the specified @path in the resource and
- * returns a [class@Gio.InputStream] that lets you read the data.
+ * returns a #GInputStream that lets you read the data.
  *
  * @lookup_flags controls the behaviour of the lookup.
  *
- * The only error this can return is %G_RESOURCE_ERROR_NOT_FOUND, if @path was
- * not found in @resource.
- *
- * Returns: (transfer full): [class@Gio.InputStream] or `NULL` on error
+ * Returns: (transfer full): #GInputStream or %NULL on error.
+ *     Free the returned object with g_object_unref()
  *
  * Since: 2.32
  **/
@@ -808,41 +793,30 @@ g_resource_open_stream (GResource             *resource,
   return stream;
 }
 
-static GBytes *resource_to_bytes (GResource   *resource,
-                                  const char  *path,
-                                  size_t       size,
-                                  const void  *data,
-                                  size_t       data_size,
-                                  guint32      flags,
-                                  GError     **error);
-
 /**
  * g_resource_lookup_data:
- * @resource: A [struct@Gio.Resource]
- * @path: A path name inside the resource
- * @lookup_flags: A [flags@Gio.ResourceLookupFlags]
- * @error: return location for a [type@GLib.Error], or `NULL`
+ * @resource: A #GResource
+ * @path: A pathname inside the resource
+ * @lookup_flags: A #GResourceLookupFlags
+ * @error: return location for a #GError, or %NULL
  *
  * Looks for a file at the specified @path in the resource and
- * returns a [struct@GLib.Bytes] that lets you directly access the data in
+ * returns a #GBytes that lets you directly access the data in
  * memory.
  *
  * The data is always followed by a zero byte, so you
  * can safely use the data as a C string. However, that byte
- * is not included in the size of the [struct@GLib.Bytes].
+ * is not included in the size of the GBytes.
  *
  * For uncompressed resource files this is a pointer directly into
- * the resource bundle, which is typically in some read-only data section
- * in the program binary. For compressed files, memory is allocated on
- * the heap and the data is automatically uncompressed.
+ * the resource bundle, which is typically in some readonly data section
+ * in the program binary. For compressed files we allocate memory on
+ * the heap and automatically uncompress the data.
  *
  * @lookup_flags controls the behaviour of the lookup.
  *
- * This can return error %G_RESOURCE_ERROR_NOT_FOUND if @path was not found in
- * @resource, or %G_RESOURCE_ERROR_INTERNAL if decompression of a compressed
- * resource failed.
- *
- * Returns: (transfer full): [struct@GLib.Bytes] or `NULL` on error
+ * Returns: (transfer full): #GBytes or %NULL on error.
+ *     Free the returned object with g_bytes_unref()
  *
  * Since: 2.32
  **/
@@ -860,18 +834,6 @@ g_resource_lookup_data (GResource             *resource,
   if (!do_lookup (resource, path, lookup_flags, &size, &flags, &data, &data_size, error))
     return NULL;
 
-  return resource_to_bytes (resource, path, size, data, data_size, flags, error);
-}
-
-static GBytes *
-resource_to_bytes (GResource   *resource,
-                   const char  *path,
-                   size_t       size,
-                   const void  *data,
-                   size_t       data_size,
-                   guint32      flags,
-                   GError     **error)
-{
   if (size == 0)
     return g_bytes_new_with_free_func ("", 0, (GDestroyNotify) g_resource_unref, g_resource_ref (resource));
   else if (flags & G_RESOURCE_FLAGS_COMPRESSED)
@@ -932,24 +894,21 @@ resource_to_bytes (GResource   *resource,
 
 /**
  * g_resource_get_info:
- * @resource: A [struct@Gio.Resource]
- * @path: A path name inside the resource
- * @lookup_flags: A [flags@Gio.ResourceLookupFlags]
+ * @resource: A #GResource
+ * @path: A pathname inside the resource
+ * @lookup_flags: A #GResourceLookupFlags
  * @size:  (out) (optional): a location to place the length of the contents of the file,
- *    or `NULL` if the length is not needed
+ *    or %NULL if the length is not needed
  * @flags:  (out) (optional): a location to place the flags about the file,
- *    or `NULL` if the length is not needed
- * @error: return location for a [type@GLib.Error], or `NULL`
+ *    or %NULL if the length is not needed
+ * @error: return location for a #GError, or %NULL
  *
  * Looks for a file at the specified @path in the resource and
  * if found returns information about it.
  *
  * @lookup_flags controls the behaviour of the lookup.
  *
- * The only error this can return is %G_RESOURCE_ERROR_NOT_FOUND, if @path was
- * not found in @resource.
- *
- * Returns: `TRUE` if the file was found, `FALSE` if there were errors
+ * Returns: %TRUE if the file was found. %FALSE if there were errors
  *
  * Since: 2.32
  **/
@@ -964,57 +923,18 @@ g_resource_get_info (GResource             *resource,
   return do_lookup (resource, path, lookup_flags, size, flags, NULL, NULL, error);
 }
 
-static inline const char *
-ensure_slash_suffix (const char  *path,
-                     char        *local_str,
-                     gsize        len,
-                     char       **free_path)
-{
-  gsize path_len;
-
-  path_len = strlen (path);
-
-  if G_UNLIKELY (path[path_len-1] != '/')
-    {
-      if (path_len < len - 2)
-        {
-          /*
-           * We got a path that does not have a trailing /. It is not the
-           * ideal use of this API as we require trailing / for our lookup
-           * into gvdb. Some degenerate application configurations can hit
-           * this code path quite a bit, so we try to avoid using the
-           * g_strconcat()/g_free().
-           */
-          memcpy (local_str, path, path_len);
-          local_str[path_len] = '/';
-          local_str[path_len+1] = 0;
-          return local_str;
-        }
-      else
-        {
-          *free_path = g_strconcat (path, "/", NULL);
-          return *free_path;
-        }
-    }
-  else
-    {
-      return path;
-    }
-}
-
 /**
  * g_resource_enumerate_children:
- * @resource: A [struct@Gio.Resource]
- * @path: A path name inside the resource
- * @lookup_flags: A [flags@Gio.ResourceLookupFlags]
- * @error: return location for a [type@GLib.Error], or `NULL`
+ * @resource: A #GResource
+ * @path: A pathname inside the resource
+ * @lookup_flags: A #GResourceLookupFlags
+ * @error: return location for a #GError, or %NULL
  *
  * Returns all the names of children at the specified @path in the resource.
+ * The return result is a %NULL terminated list of strings which should
+ * be released with g_strfreev().
  *
- * The return result is a `NULL` terminated list of strings which should
- * be released with [func@GLib.strfreev].
- *
- * If @path is invalid or does not exist in the [struct@Gio.Resource],
+ * If @path is invalid or does not exist in the #GResource,
  * %G_RESOURCE_ERROR_NOT_FOUND will be returned.
  *
  * @lookup_flags controls the behaviour of the lookup.
@@ -1029,71 +949,68 @@ g_resource_enumerate_children (GResource             *resource,
                                GResourceLookupFlags   lookup_flags,
                                GError               **error)
 {
-  /* Size of 256 is arbitrarily chosen based on being large enough
+  gchar local_str[256];
+  const gchar *path_with_slash;
+  gchar **children;
+  gchar *free_path = NULL;
+  gsize path_len;
+
+  /*
+   * Size of 256 is arbitrarily chosen based on being large enough
    * for pretty much everything we come across, but not cumbersome
    * on the stack. It also matches common cacheline sizes.
    */
-  gchar local_str[256];
-  const char *path_with_slash;
-  char *free_path = NULL;
-  gchar **children;
 
   if (*path == 0)
     {
-      set_error_not_found (error, path);
+      if (error)
+        g_set_error (error, G_RESOURCE_ERROR, G_RESOURCE_ERROR_NOT_FOUND,
+                     _("The resource at “%s” does not exist"),
+                     path);
       return NULL;
     }
 
-  path_with_slash = ensure_slash_suffix (path, local_str, sizeof (local_str), &free_path);
+  path_len = strlen (path);
+
+  if G_UNLIKELY (path[path_len-1] != '/')
+    {
+      if (path_len < sizeof (local_str) - 2)
+        {
+          /*
+           * We got a path that does not have a trailing /. It is not the
+           * ideal use of this API as we require trailing / for our lookup
+           * into gvdb. Some degenerate application configurations can hit
+           * this code path quite a bit, so we try to avoid using the
+           * g_strconcat()/g_free().
+           */
+          memcpy (local_str, path, path_len);
+          local_str[path_len] = '/';
+          local_str[path_len+1] = 0;
+          path_with_slash = local_str;
+        }
+      else
+        {
+          path_with_slash = free_path = g_strconcat (path, "/", NULL);
+        }
+    }
+  else
+    {
+      path_with_slash = path;
+    }
 
   children = gvdb_table_list (resource->table, path_with_slash);
-
   g_free (free_path);
 
   if (children == NULL)
     {
-      set_error_not_found (error, path);
+      if (error)
+        g_set_error (error, G_RESOURCE_ERROR, G_RESOURCE_ERROR_NOT_FOUND,
+                     _("The resource at “%s” does not exist"),
+                     path);
       return NULL;
     }
 
   return children;
-}
-
-/**
- * g_resource_has_children:
- * @resource: A #GResource
- * @path: A pathname inside the resource
- *
- * Returns whether the specified @path in the resource
- * has children.
- *
- * Returns: %TRUE if @path has children
- *
- * Since: 2.84
- */
-gboolean
-g_resource_has_children (GResource  *resource,
-                         const char *path)
-{
-  /* Size of 256 is arbitrarily chosen based on being large enough
-   * for pretty much everything we come across, but not cumbersome
-   * on the stack. It also matches common cacheline sizes.
-   */
-  char local_str[256];
-  const char *path_with_slash;
-  guint n;
-  char *freeme = NULL;
-
-  if (*path == 0)
-    return FALSE;
-
-  path_with_slash = ensure_slash_suffix (path, local_str, sizeof (local_str), &freeme);
-
-  n = gvdb_table_n_children (resource->table, path_with_slash);
-
-  g_free (freeme);
-
-  return n > 0;
 }
 
 static GRWLock resources_lock;
@@ -1112,28 +1029,24 @@ g_resources_register_unlocked (GResource *resource)
 static void
 g_resources_unregister_unlocked (GResource *resource)
 {
-  GList *resource_link = g_list_find (registered_resources, resource);
-
-  if (resource_link == NULL)
+  if (g_list_find (registered_resources, resource) == NULL)
     {
       g_warning ("Tried to remove not registered resource");
     }
   else
     {
-      g_resource_unref (resource_link->data);
-      registered_resources = g_list_delete_link (registered_resources, resource_link);
+      registered_resources = g_list_remove (registered_resources, resource);
+      g_resource_unref (resource);
     }
 }
 
 /**
  * g_resources_register:
- * @resource: A [struct@Gio.Resource]
+ * @resource: A #GResource
  *
  * Registers the resource with the process-global set of resources.
- *
  * Once a resource is registered the files in it can be accessed
- * with the global resource lookup functions like
- * [func@Gio.resources_lookup_data].
+ * with the global resource lookup functions like g_resources_lookup_data().
  *
  * Since: 2.32
  **/
@@ -1147,7 +1060,7 @@ g_resources_register (GResource *resource)
 
 /**
  * g_resources_unregister:
- * @resource: A [struct@Gio.Resource]
+ * @resource: A #GResource
  *
  * Unregisters the resource from the process-global set of resources.
  *
@@ -1163,17 +1076,18 @@ g_resources_unregister (GResource *resource)
 
 /**
  * g_resources_open_stream:
- * @path: A path name inside the resource
- * @lookup_flags: A [flags@Gio.ResourceLookupFlags]
- * @error: return location for a [type@GLib.Error], or `NULL`
+ * @path: A pathname inside the resource
+ * @lookup_flags: A #GResourceLookupFlags
+ * @error: return location for a #GError, or %NULL
  *
  * Looks for a file at the specified @path in the set of
- * globally registered resources and returns a [class@Gio.InputStream]
+ * globally registered resources and returns a #GInputStream
  * that lets you read the data.
  *
  * @lookup_flags controls the behaviour of the lookup.
  *
- * Returns: (transfer full): [class@Gio.InputStream] or `NULL` on error
+ * Returns: (transfer full): #GInputStream or %NULL on error.
+ *     Free the returned object with g_object_unref()
  *
  * Since: 2.32
  **/
@@ -1196,22 +1110,27 @@ g_resources_open_stream (const gchar           *path,
   for (l = registered_resources; l != NULL; l = l->next)
     {
       GResource *r = l->data;
+      GError *my_error = NULL;
 
-      stream = g_resource_open_stream (r, path, lookup_flags, NULL);
-      if (stream == NULL)
+      stream = g_resource_open_stream (r, path, lookup_flags, &my_error);
+      if (stream == NULL &&
+          g_error_matches (my_error, G_RESOURCE_ERROR, G_RESOURCE_ERROR_NOT_FOUND))
         {
-          /* g_resource_open_stream() guarantees it only fails with
-           * %G_RESOURCE_ERROR_NOT_FOUND */
+          g_clear_error (&my_error);
         }
       else
         {
+          if (stream == NULL)
+            g_propagate_error (error, my_error);
           res = stream;
           break;
         }
     }
 
   if (l == NULL)
-    set_error_not_found (error, path);
+    g_set_error (error, G_RESOURCE_ERROR, G_RESOURCE_ERROR_NOT_FOUND,
+                 _("The resource at “%s” does not exist"),
+                 path);
 
   g_rw_lock_reader_unlock (&resources_lock);
 
@@ -1220,26 +1139,27 @@ g_resources_open_stream (const gchar           *path,
 
 /**
  * g_resources_lookup_data:
- * @path: A path name inside the resource
- * @lookup_flags: A [flags@Gio.ResourceLookupFlags]
- * @error: return location for a [type@GLib.Error], or `NULL`
+ * @path: A pathname inside the resource
+ * @lookup_flags: A #GResourceLookupFlags
+ * @error: return location for a #GError, or %NULL
  *
  * Looks for a file at the specified @path in the set of
- * globally registered resources and returns a [struct@GLib.Bytes] that
+ * globally registered resources and returns a #GBytes that
  * lets you directly access the data in memory.
  *
  * The data is always followed by a zero byte, so you
  * can safely use the data as a C string. However, that byte
- * is not included in the size of the [struct@GLib.Bytes].
+ * is not included in the size of the GBytes.
  *
  * For uncompressed resource files this is a pointer directly into
- * the resource bundle, which is typically in some read-only data section
+ * the resource bundle, which is typically in some readonly data section
  * in the program binary. For compressed files we allocate memory on
  * the heap and automatically uncompress the data.
  *
  * @lookup_flags controls the behaviour of the lookup.
  *
- * Returns: (transfer full): [struct@GLib.Bytes] or `NULL` on error
+ * Returns: (transfer full): #GBytes or %NULL on error.
+ *     Free the returned object with g_bytes_unref()
  *
  * Since: 2.32
  **/
@@ -1250,6 +1170,7 @@ g_resources_lookup_data (const gchar           *path,
 {
   GBytes *res = NULL;
   GList *l;
+  GBytes *data;
 
   if (g_resource_find_overlay (path, get_overlay_bytes, &res))
     return res;
@@ -1261,22 +1182,27 @@ g_resources_lookup_data (const gchar           *path,
   for (l = registered_resources; l != NULL; l = l->next)
     {
       GResource *r = l->data;
-      const void *data;
-      guint32 flags;
-      gsize data_size;
-      gsize size;
+      GError *my_error = NULL;
 
-      /* This is essentially g_resource_lookup_data(), but split up so we can
-       * avoid allocating a #GError if the resource is not found. */
-      if (do_lookup (r, path, lookup_flags, &size, &flags, &data, &data_size, NULL))
+      data = g_resource_lookup_data (r, path, lookup_flags, &my_error);
+      if (data == NULL &&
+          g_error_matches (my_error, G_RESOURCE_ERROR, G_RESOURCE_ERROR_NOT_FOUND))
         {
-          res = resource_to_bytes (r, path, size, data, data_size, flags, error);
+          g_clear_error (&my_error);
+        }
+      else
+        {
+          if (data == NULL)
+            g_propagate_error (error, my_error);
+          res = data;
           break;
         }
     }
 
   if (l == NULL)
-    set_error_not_found (error, path);
+    g_set_error (error, G_RESOURCE_ERROR, G_RESOURCE_ERROR_NOT_FOUND,
+                 _("The resource at “%s” does not exist"),
+                 path);
 
   g_rw_lock_reader_unlock (&resources_lock);
 
@@ -1285,15 +1211,14 @@ g_resources_lookup_data (const gchar           *path,
 
 /**
  * g_resources_enumerate_children:
- * @path: A path name inside the resource
- * @lookup_flags: A [flags@Gio.ResourceLookupFlags]
- * @error: return location for a [type@GLib.Error], or `NULL`
+ * @path: A pathname inside the resource
+ * @lookup_flags: A #GResourceLookupFlags
+ * @error: return location for a #GError, or %NULL
  *
  * Returns all the names of children at the specified @path in the set of
  * globally registered resources.
- *
- * The return result is a `NULL` terminated list of strings which should
- * be released with [func@GLib.strfreev].
+ * The return result is a %NULL terminated list of strings which should
+ * be released with g_strfreev().
  *
  * @lookup_flags controls the behaviour of the lookup.
  *
@@ -1348,7 +1273,10 @@ g_resources_enumerate_children (const gchar           *path,
 
   if (hash == NULL)
     {
-      set_error_not_found (error, path);
+      if (error)
+        g_set_error (error, G_RESOURCE_ERROR, G_RESOURCE_ERROR_NOT_FOUND,
+                     _("The resource at “%s” does not exist"),
+                     path);
       return NULL;
     }
   else
@@ -1362,54 +1290,21 @@ g_resources_enumerate_children (const gchar           *path,
 }
 
 /**
- * g_resources_has_children:
- * @path: A pathname
- *
- * Returns whether the specified @path in the set of
- * globally registered resources has children.
- *
- * Returns: %TRUE if @patch has children
- *
- * Since: 2.84
- */
-gboolean
-g_resources_has_children (const char *path)
-{
-  register_lazy_static_resources ();
-
-  g_rw_lock_reader_lock (&resources_lock);
-
-  for (GList *l = registered_resources; l != NULL; l = l->next)
-    {
-      GResource *r = l->data;
-
-      if (g_resource_has_children (r, path))
-        {
-          g_rw_lock_reader_unlock (&resources_lock);
-          return TRUE;
-        }
-    }
-
-  g_rw_lock_reader_unlock (&resources_lock);
-  return FALSE;
-}
-
-/**
  * g_resources_get_info:
- * @path: A path name inside the resource
- * @lookup_flags: A [flags@Gio.ResourceLookupFlags]
+ * @path: A pathname inside the resource
+ * @lookup_flags: A #GResourceLookupFlags
  * @size:  (out) (optional): a location to place the length of the contents of the file,
- *    or `NULL` if the length is not needed
- * @flags:  (out) (optional): a location to place the [flags@Gio.ResourceFlags] about the file,
- *    or `NULL` if the flags are not needed
- * @error: return location for a [type@GLib.Error], or `NULL`
+ *    or %NULL if the length is not needed
+ * @flags:  (out) (optional): a location to place the #GResourceFlags about the file,
+ *    or %NULL if the flags are not needed
+ * @error: return location for a #GError, or %NULL
  *
  * Looks for a file at the specified @path in the set of
  * globally registered resources and if found returns information about it.
  *
  * @lookup_flags controls the behaviour of the lookup.
  *
- * Returns: `TRUE` if the file was found, `FALSE` if there were errors
+ * Returns: %TRUE if the file was found. %FALSE if there were errors
  *
  * Since: 2.32
  **/
@@ -1422,6 +1317,7 @@ g_resources_get_info (const gchar           *path,
 {
   gboolean res = FALSE;
   GList *l;
+  gboolean r_res;
   InfoData info;
 
   if (g_resource_find_overlay (path, get_overlay_info, &info))
@@ -1441,16 +1337,27 @@ g_resources_get_info (const gchar           *path,
   for (l = registered_resources; l != NULL; l = l->next)
     {
       GResource *r = l->data;
+      GError *my_error = NULL;
 
-      if (g_resource_get_info (r, path, lookup_flags, size, flags, NULL))
+      r_res = g_resource_get_info (r, path, lookup_flags, size, flags, &my_error);
+      if (!r_res &&
+          g_error_matches (my_error, G_RESOURCE_ERROR, G_RESOURCE_ERROR_NOT_FOUND))
         {
-          res = TRUE;
+          g_clear_error (&my_error);
+        }
+      else
+        {
+          if (!r_res)
+            g_propagate_error (error, my_error);
+          res = r_res;
           break;
         }
     }
 
   if (l == NULL)
-    set_error_not_found (error, path);
+    g_set_error (error, G_RESOURCE_ERROR, G_RESOURCE_ERROR_NOT_FOUND,
+                 _("The resource at “%s” does not exist"),
+                 path);
 
   g_rw_lock_reader_unlock (&resources_lock);
 
@@ -1513,13 +1420,13 @@ register_lazy_static_resources (void)
 
 /**
  * g_static_resource_init:
- * @static_resource: pointer to a static [struct@Gio.StaticResource]
+ * @static_resource: pointer to a static #GStaticResource
  *
- * Initializes a [struct@Gio.Resource] from static data using a
- * [struct@Gio.StaticResource].
+ * Initializes a GResource from static data using a
+ * GStaticResource.
  *
  * This is normally used by code generated by
- * [`glib-compile-resources`](glib-compile-resources.html)
+ * [glib-compile-resources][glib-compile-resources]
  * and is not typically used by other code.
  *
  * Since: 2.32
@@ -1528,10 +1435,6 @@ void
 g_static_resource_init (GStaticResource *static_resource)
 {
   GStaticResource *next;
-
-  g_return_if_fail (static_resource != NULL);
-  g_return_if_fail (static_resource->next == NULL);
-  g_return_if_fail (static_resource != g_atomic_pointer_get (&lazy_register_resources));
 
   do
     {
@@ -1543,13 +1446,12 @@ g_static_resource_init (GStaticResource *static_resource)
 
 /**
  * g_static_resource_fini:
- * @static_resource: pointer to a static [struct@Gio.StaticResource]
+ * @static_resource: pointer to a static #GStaticResource
  *
- * Finalizes a [struct@Gio.Resource] initialized by
- * [method@Gio.StaticResource.init].
+ * Finalized a GResource initialized by g_static_resource_init().
  *
  * This is normally used by code generated by
- * [`glib-compile-resources`](glib-compile-resources.html)
+ * [glib-compile-resources][glib-compile-resources]
  * and is not typically used by other code.
  *
  * Since: 2.32
@@ -1579,16 +1481,15 @@ g_static_resource_fini (GStaticResource *static_resource)
 
 /**
  * g_static_resource_get_resource:
- * @static_resource: pointer to a static [struct@Gio.StaticResource]
+ * @static_resource: pointer to a static #GStaticResource
  *
- * Gets the [struct@Gio.Resource] that was registered by a call to
- * [method@Gio.StaticResource.init].
+ * Gets the GResource that was registered by a call to g_static_resource_init().
  *
  * This is normally used by code generated by
- * [`glib-compile-resources`](glib-compile-resources.html)
+ * [glib-compile-resources][glib-compile-resources]
  * and is not typically used by other code.
  *
- * Returns:  (transfer none): a [struct@Gio.Resource]
+ * Returns:  (transfer none): a #GResource
  *
  * Since: 2.32
  **/

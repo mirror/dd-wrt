@@ -1,5 +1,4 @@
-ARG ARCHITECTURE_PREFIX=
-FROM ${ARCHITECTURE_PREFIX}debian:bookworm
+FROM debian:bookworm
 
 RUN apt-get update -qq && apt-get install --no-install-recommends -qq -y \
     bindfs \
@@ -38,6 +37,7 @@ RUN apt-get update -qq && apt-get install --no-install-recommends -qq -y \
     locales \
     ninja-build \
     python3 \
+    python3-packaging \
     python3-pip \
     python3-setuptools \
     python3-wheel \
@@ -72,7 +72,7 @@ RUN locale-gen de_DE.UTF-8 \
 
 ENV LANG=C.UTF-8 LANGUAGE=C.UTF-8 LC_ALL=C.UTF-8
 
-RUN pip3 install --break-system-packages meson==1.4.2
+RUN pip3 install --break-system-packages meson==1.2.3
 
 ARG HOST_USER_ID=5555
 ENV HOST_USER_ID ${HOST_USER_ID}

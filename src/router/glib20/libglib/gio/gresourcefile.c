@@ -354,7 +354,7 @@ static const char *
 match_prefix (const char *path,
 	      const char *prefix)
 {
-  size_t prefix_len;
+  int prefix_len;
 
   prefix_len = strlen (prefix);
   if (strncmp (path, prefix, prefix_len) != 0)
@@ -455,14 +455,21 @@ g_resource_file_query_info (GFile                *file,
   gboolean res;
   gsize size = 0;
   guint32 resource_flags = 0;
+  char **children;
   gboolean is_dir;
   char *base;
+
+  is_dir = FALSE;
+  children = g_resources_enumerate_children (resource->path, 0, NULL);
+  if (children != NULL)
+    {
+      g_strfreev (children);
+      is_dir = TRUE;
+    }
 
   /* root is always there */
   if (strcmp ("/", resource->path) == 0)
     is_dir = TRUE;
-  else
-    is_dir = g_resources_has_children (resource->path);
 
   if (!is_dir)
     {
@@ -657,15 +664,6 @@ g_resource_file_set_display_name (GFile         *file,
   return NULL;
 }
 
-static gboolean
-g_resource_file_query_exists (GFile        *file,
-                              GCancellable *cancellable)
-{
-  GResourceFile *resource = G_RESOURCE_FILE (file);
-
-  return g_resources_get_info (resource->path, 0, NULL, NULL, NULL);
-}
-
 static void
 g_resource_file_file_iface_init (GFileIface *iface)
 {
@@ -692,7 +690,6 @@ g_resource_file_file_iface_init (GFileIface *iface)
   iface->query_writable_namespaces = g_resource_file_query_writable_namespaces;
   iface->read_fn = g_resource_file_read;
   iface->monitor_file = g_resource_file_monitor_file;
-  iface->query_exists = g_resource_file_query_exists;
 
   iface->supports_thread_contexts = TRUE;
 }

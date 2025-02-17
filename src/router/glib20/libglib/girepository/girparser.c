@@ -28,17 +28,10 @@
 
 #include "girnode-private.h"
 #include "gitypelib-internal.h"
-#include "glib-private.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <time.h>       /* For time_t */
-#include <sys/types.h>  /* For off_t on both Unix and Windows */
-
-#ifdef G_OS_UNIX
-#include <sys/socket.h> /* For socklen_t */
-#endif
 
 /* This is a "major" version in the sense that it's only bumped
  * for incompatible changes.
@@ -121,7 +114,7 @@ struct _ParseContext
 
   GList *modules;
   GList *include_modules;
-  GPtrArray *dependencies;
+  GList *dependencies;
   GHashTable *aliases;
   GHashTable *disguised_structures;
   GHashTable *pointer_structures;
@@ -213,10 +206,13 @@ gi_ir_parser_set_debug (GIIrParser     *parser,
 void
 gi_ir_parser_free (GIIrParser *parser)
 {
+  GList *l;
+
   g_strfreev (parser->includes);
   g_strfreev (parser->gi_gir_path);
 
-  g_clear_list (&parser->parsed_modules, (GDestroyNotify) gi_ir_module_free);
+  for (l = parser->parsed_modules; l; l = l->next)
+    gi_ir_module_free (l->data);
 
   g_slice_free (GIIrParser, parser);
 }
@@ -391,17 +387,6 @@ locate_gir (GIIrParser *parser,
                  line_number, char_number, attribute, element);                \
   } while (0)
 
-#define INVALID_ATTRIBUTE(context,error,element,attribute,reason)                                \
-  do {                                                                          \
-    int line_number, char_number;                                                \
-    g_markup_parse_context_get_position (context, &line_number, &char_number);  \
-    g_set_error (error,                                                         \
-                    G_MARKUP_ERROR,                                                \
-                 G_MARKUP_ERROR_INVALID_CONTENT,                                \
-                 "Line %d, character %d: The attribute '%s' on the element '%s' is not valid: %s",    \
-                 line_number, char_number, attribute, element, reason);                \
-  } while (0)
-
 static const char *
 find_attribute (const char   *name,
                 const char **attribute_names,
@@ -464,33 +449,18 @@ typedef struct {
 } IntegerAliasInfo;
 
 static IntegerAliasInfo integer_aliases[] = {
-  /* It is platform-dependent whether gchar is signed or unsigned, but
-   * GObject-Introspection has traditionally treated it as signed,
-   * so continue to hard-code that instead of using INTEGER_ALIAS */
-  { "gchar", sizeof (gchar), 1 },
-
-#define INTEGER_ALIAS(T) { #T, sizeof (T), G_SIGNEDNESS_OF (T) }
-  INTEGER_ALIAS (guchar),
-  INTEGER_ALIAS (gshort),
-  INTEGER_ALIAS (gushort),
-  INTEGER_ALIAS (gint),
-  INTEGER_ALIAS (guint),
-  INTEGER_ALIAS (glong),
-  INTEGER_ALIAS (gulong),
-  INTEGER_ALIAS (gssize),
-  INTEGER_ALIAS (gsize),
-  INTEGER_ALIAS (gintptr),
-  INTEGER_ALIAS (guintptr),
-  INTEGER_ALIAS (off_t),
-  INTEGER_ALIAS (time_t),
-#ifdef G_OS_UNIX
-  INTEGER_ALIAS (dev_t),
-  INTEGER_ALIAS (gid_t),
-  INTEGER_ALIAS (pid_t),
-  INTEGER_ALIAS (socklen_t),
-  INTEGER_ALIAS (uid_t),
-#endif
-#undef INTEGER_ALIAS
+  { "gchar",    SIZEOF_CHAR,      1 },
+  { "guchar",   SIZEOF_CHAR,      0 },
+  { "gshort",   SIZEOF_SHORT,     1 },
+  { "gushort",  SIZEOF_SHORT,     0 },
+  { "gint",     SIZEOF_INT,       1 },
+  { "guint",    SIZEOF_INT,       0 },
+  { "glong",    SIZEOF_LONG,      1 },
+  { "gulong",   SIZEOF_LONG,      0 },
+  { "gssize",   GLIB_SIZEOF_SIZE_T,    1 },
+  { "gsize",    GLIB_SIZEOF_SIZE_T,    0 },
+  { "gintptr",  GLIB_SIZEOF_SIZE_T,    1 },
+  { "guintptr", GLIB_SIZEOF_SIZE_T,    0 },
 };
 
 typedef struct {
@@ -672,9 +642,6 @@ parse_type_internal (GIIrModule   *module,
       type->is_error = TRUE;
       type->is_pointer = TRUE;
       str += strlen ("Error");
-
-      /* Silence a scan-build false positive */
-      g_assert (str != NULL);
 
       if (*str == '<')
         {
@@ -912,9 +879,6 @@ start_function (GMarkupParseContext  *context,
   const char *throws;
   const char *set_property;
   const char *get_property;
-  const char *finish_func;
-  const char *async_func;
-  const char *sync_func;
   GIIrNodeFunction *function;
   gboolean found = FALSE;
   ParseState in_embedded_state = STATE_NONE;
@@ -965,9 +929,6 @@ start_function (GMarkupParseContext  *context,
   throws = find_attribute ("throws", attribute_names, attribute_values);
   set_property = find_attribute ("glib:set-property", attribute_names, attribute_values);
   get_property = find_attribute ("glib:get-property", attribute_names, attribute_values);
-  finish_func = find_attribute ("glib:finish-func", attribute_names, attribute_values);
-  sync_func = find_attribute ("glib:sync-func", attribute_names, attribute_values);
-  async_func = find_attribute ("glib:async-func", attribute_names, attribute_values);
 
   if (name == NULL)
     {
@@ -993,55 +954,6 @@ start_function (GMarkupParseContext  *context,
     function->deprecated = TRUE;
   else
     function->deprecated = FALSE;
-
-  function->is_async = FALSE;
-  function->async_func = NULL;
-  function->sync_func = NULL;
-  function->finish_func = NULL;
-
-  // Only asynchronous functions have a glib:sync-func defined
-  if (sync_func != NULL)
-    {
-      if (G_UNLIKELY (async_func != NULL))
-        {
-          INVALID_ATTRIBUTE (context, error, element_name, "glib:sync-func", "glib:sync-func should only be defined with asynchronous "
-                 "functions");
-        
-          return FALSE;
-        }
-
-      function->is_async = TRUE;
-      function->sync_func = g_strdup (sync_func);
-    }
-
-  // Only synchronous functions have a glib:async-func defined
-  if (async_func != NULL)
-    {
-      if (G_UNLIKELY (sync_func != NULL))
-        {
-          INVALID_ATTRIBUTE (context, error, element_name, "glib:async-func", "glib:async-func should only be defined with synchronous "
-                 "functions");
-        
-          return FALSE;
-        }
-
-      function->is_async = FALSE;
-      function->async_func = g_strdup (async_func);
-    }
-
-  if (finish_func != NULL)
-    {
-      if (G_UNLIKELY (async_func != NULL))
-        {
-          INVALID_ATTRIBUTE (context, error, element_name, "glib:finish-func", "glib:finish-func should only be defined with asynchronous "
-                 "functions");
-        
-          return FALSE;
-        }
-
-      function->is_async = TRUE;
-      function->finish_func = g_strdup (finish_func);
-    }
 
   if (strcmp (element_name, "method") == 0 ||
       strcmp (element_name, "constructor") == 0)
@@ -1410,6 +1322,8 @@ start_parameter (GMarkupParseContext  *context,
 
   param->closure = closure ? atoi (closure) : -1;
   param->destroy = destroy ? atoi (destroy) : -1;
+
+  ((GIIrNode *)param)->name = g_strdup (name);
 
   switch (CURRENT_NODE (ctx)->type)
     {
@@ -2660,9 +2574,6 @@ start_vfunc (GMarkupParseContext  *context,
   const char *offset;
   const char *invoker;
   const char *throws;
-  const char *finish_func;
-  const char *async_func;
-  const char *sync_func;
   GIIrNodeInterface *iface;
   GIIrNodeVFunc *vfunc;
   guint64 parsed_offset;
@@ -2682,9 +2593,6 @@ start_vfunc (GMarkupParseContext  *context,
   offset = find_attribute ("offset", attribute_names, attribute_values);
   invoker = find_attribute ("invoker", attribute_names, attribute_values);
   throws = find_attribute ("throws", attribute_names, attribute_values);
-  finish_func = find_attribute ("glib:finish-func", attribute_names, attribute_values);
-  sync_func = find_attribute ("glib:sync-func", attribute_names, attribute_values);
-  async_func = find_attribute ("glib:async-func", attribute_names, attribute_values);
 
   if (name == NULL)
     {
@@ -2737,56 +2645,6 @@ start_vfunc (GMarkupParseContext  *context,
       gi_ir_node_free ((GIIrNode *) vfunc);
       return FALSE;
     }
-
-  vfunc->is_async = FALSE;
-  vfunc->async_func = NULL;
-  vfunc->sync_func = NULL;
-  vfunc->finish_func = NULL;
-
-  // Only asynchronous functions have a glib:sync-func defined
-  if (sync_func != NULL)
-    {
-      if (G_UNLIKELY (async_func != NULL))
-        {
-          INVALID_ATTRIBUTE (context, error, element_name, "glib:sync-func", "glib:sync-func should only be defined with asynchronous "
-                 "functions");
-        
-          return FALSE;
-        }
-
-      vfunc->is_async = TRUE;
-      vfunc->sync_func = g_strdup (sync_func);
-    }
-
-  // Only synchronous functions have a glib:async-func defined
-  if (async_func != NULL)
-    {
-      if (G_UNLIKELY (sync_func != NULL))
-        {
-          INVALID_ATTRIBUTE (context, error, element_name, "glib:async-func", "glib:async-func should only be defined with synchronous "
-                 "functions");
-        
-          return FALSE;
-        }
-
-      vfunc->is_async = FALSE;
-      vfunc->async_func = g_strdup (async_func);
-    }
-
-  if (finish_func != NULL)
-    {
-      if (G_UNLIKELY (async_func != NULL))
-        {
-          INVALID_ATTRIBUTE (context, error, element_name, "glib:finish-func", "glib:finish-func should only be defined with asynchronous "
-                 "functions");
-        
-          return FALSE;
-        }
-
-      vfunc->is_async = TRUE;
-      vfunc->finish_func = g_strdup (finish_func);
-    }
-
 
   vfunc->invoker = g_strdup (invoker);
 
@@ -3160,8 +3018,7 @@ start_element_handler (GMarkupParseContext  *context,
       break;
 
     case 'f':
-      if (strcmp ("function-macro", element_name) == 0 ||
-          strcmp ("function-inline", element_name) == 0)
+      if (strcmp ("function-macro", element_name) == 0)
         {
           state_switch (ctx, STATE_PASSTHROUGH);
           goto out;
@@ -3219,8 +3076,9 @@ start_element_handler (GMarkupParseContext  *context,
               return;
             }
 
-          g_ptr_array_insert (ctx->dependencies, 0,
-                              g_strdup_printf ("%s-%s", name, version));
+          ctx->dependencies = g_list_prepend (ctx->dependencies,
+                                              g_strdup_printf ("%s-%s", name, version));
+
 
           state_switch (ctx, STATE_INCLUDE);
           goto out;
@@ -3245,12 +3103,7 @@ start_element_handler (GMarkupParseContext  *context,
       break;
 
     case 'm':
-      if (strcmp (element_name, "method-inline") == 0)
-        {
-          state_switch (ctx, STATE_PASSTHROUGH);
-          goto out;
-        }
-      else if (start_function (context, element_name,
+      if (start_function (context, element_name,
                           attribute_names, attribute_values,
                           ctx, error))
         goto out;
@@ -3313,12 +3166,7 @@ start_element_handler (GMarkupParseContext  *context,
               ctx->include_modules = NULL;
 
               ctx->modules = g_list_append (ctx->modules, ctx->current_module);
-
-              if (ctx->current_module->dependencies != ctx->dependencies)
-                {
-                  g_clear_pointer (&ctx->current_module->dependencies, g_ptr_array_unref);
-                  ctx->current_module->dependencies = g_ptr_array_ref (ctx->dependencies);
-                }
+              ctx->current_module->dependencies = ctx->dependencies;
 
               state_switch (ctx, STATE_NAMESPACE);
               goto out;
@@ -3500,19 +3348,13 @@ state_switch_end_struct_or_union (GMarkupParseContext  *context,
                                   const char           *element_name,
                                   GError              **error)
 {
-  GIIrNode *node = pop_node (ctx);
-
+  pop_node (ctx);
   if (ctx->node_stack == NULL)
     {
       state_switch (ctx, STATE_NAMESPACE);
     }
   else
     {
-      /* In this case the node was not tracked by any other node, so we need
-       * to free the node, or we'd leak.
-       */
-      g_clear_pointer (&node, gi_ir_node_free);
-
       if (CURRENT_NODE (ctx)->type == GI_IR_NODE_STRUCT)
         state_switch (ctx, STATE_STRUCT);
       else if (CURRENT_NODE (ctx)->type == GI_IR_NODE_UNION)
@@ -3864,8 +3706,6 @@ cleanup (GMarkupParseContext *context,
   ParseContext *ctx = user_data;
   GList *m;
 
-  g_clear_slist (&ctx->node_stack, NULL);
-
   for (m = ctx->modules; m; m = m->next)
     gi_ir_module_free (m->data);
   g_list_free (ctx->modules);
@@ -3900,7 +3740,6 @@ gi_ir_parser_parse_string (GIIrParser   *parser,
 {
   ParseContext ctx = { 0 };
   GMarkupParseContext *context;
-  GIIrModule *module = NULL;
 
   ctx.parser = parser;
   ctx.state = STATE_START;
@@ -3911,7 +3750,7 @@ gi_ir_parser_parse_string (GIIrParser   *parser,
   ctx.disguised_structures = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
   ctx.pointer_structures = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
   ctx.type_depth = 0;
-  ctx.dependencies = g_ptr_array_new_with_free_func (g_free);
+  ctx.dependencies = NULL;
   ctx.current_module = NULL;
 
   context = g_markup_parse_context_new (&firstpass_parser, 0, &ctx, NULL);
@@ -3932,15 +3771,12 @@ gi_ir_parser_parse_string (GIIrParser   *parser,
   if (!g_markup_parse_context_end_parse (context, error))
     goto out;
 
-  if (ctx.modules)
-    module = ctx.modules->data;
-
-  parser->parsed_modules = g_list_concat (g_steal_pointer (&ctx.modules),
+  parser->parsed_modules = g_list_concat (g_list_copy (ctx.modules),
                                           parser->parsed_modules);
 
  out:
 
-  if (module == NULL)
+  if (ctx.modules == NULL)
     {
       /* An error occurred before we created a module, so we haven't
        * transferred ownership of these hash tables to the module.
@@ -3948,16 +3784,13 @@ gi_ir_parser_parse_string (GIIrParser   *parser,
       g_clear_pointer (&ctx.aliases, g_hash_table_unref);
       g_clear_pointer (&ctx.disguised_structures, g_hash_table_unref);
       g_clear_pointer (&ctx.pointer_structures, g_hash_table_unref);
-      g_clear_list (&ctx.modules, (GDestroyNotify) gi_ir_module_free);
       g_list_free (ctx.include_modules);
     }
 
-  g_clear_slist (&ctx.node_stack, NULL);
-  g_clear_pointer (&ctx.dependencies, g_ptr_array_unref);
   g_markup_parse_context_free (context);
 
-  if (module)
-    return module;
+  if (ctx.modules)
+    return ctx.modules->data;
 
   if (error && *error == NULL)
     g_set_error (error,

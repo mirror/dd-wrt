@@ -196,7 +196,7 @@ g_find_program_in_path (const gchar *program)
       strchr (last_dot, '\\') != NULL ||
       strchr (last_dot, '/') != NULL)
     {
-      const size_t program_length = strlen (program);
+      const gint program_length = strlen (program);
       gchar *pathext = g_build_path (";",
 				     ".exe;.cmd;.bat;.com",
 				     g_getenv ("PATHEXT"),
@@ -1940,7 +1940,6 @@ g_build_user_config_dir (void)
   if (!config_dir || !config_dir[0])
     {
       gchar *home_dir = g_build_home_dir ();
-      g_free (config_dir);
       config_dir = g_build_filename (home_dir, ".config", NULL);
       g_free (home_dir);
     }
@@ -2004,7 +2003,6 @@ g_build_user_cache_dir (void)
   if (!cache_dir || !cache_dir[0])
     {
       gchar *home_dir = g_build_home_dir ();
-      g_free (cache_dir);
       cache_dir = g_build_filename (home_dir, ".cache", NULL);
       g_free (home_dir);
     }
@@ -2067,7 +2065,6 @@ g_build_user_state_dir (void)
   if (!state_dir || !state_dir[0])
     {
       gchar *home_dir = g_build_home_dir ();
-      g_free (state_dir);
       state_dir = g_build_filename (home_dir, ".local/state", NULL);
       g_free (home_dir);
     }
@@ -3284,7 +3281,7 @@ g_check_setuid (void)
   if (errsv)
     g_error ("getauxval () failed: %s", g_strerror (errsv));
   return value;
-#elif defined(HAVE_ISSETUGID) && !defined(__ANDROID__)
+#elif defined(HAVE_ISSETUGID) && !defined(__BIONIC__)
   /* BSD: http://www.freebsd.org/cgi/man.cgi?query=issetugid&sektion=2 */
 
   /* Android had it in older versions but the new 64 bit ABI does not

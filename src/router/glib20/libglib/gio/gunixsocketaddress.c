@@ -472,21 +472,15 @@ g_unix_socket_address_new_with_type (const gchar            *path,
 {
   GSocketAddress *address;
   GByteArray *array;
-  size_t path_len_unsigned;
 
   if (type == G_UNIX_SOCKET_ADDRESS_ANONYMOUS)
-    path_len_unsigned = 0;
-  else if (path_len < 0)
-    path_len_unsigned = strlen (path);
-  else
-    path_len_unsigned = (size_t) path_len;
+    path_len = 0;
+  else if (path_len == -1)
+    path_len = strlen (path);
 
-  /* The code below can’t handle anything longer. */
-  g_return_val_if_fail (path_len_unsigned <= G_MAXUINT, NULL);
+  array = g_byte_array_sized_new (path_len);
 
-  array = g_byte_array_sized_new (path_len_unsigned);
-
-  g_byte_array_append (array, (guint8 *)path, path_len_unsigned);
+  g_byte_array_append (array, (guint8 *)path, path_len);
 
   address = g_object_new (G_TYPE_UNIX_SOCKET_ADDRESS,
 			  "path-as-array", array,

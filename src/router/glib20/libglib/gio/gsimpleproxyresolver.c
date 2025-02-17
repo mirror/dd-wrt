@@ -26,7 +26,6 @@
 
 #include "gsimpleproxyresolver.h"
 #include "ginetaddress.h"
-#include "ginetsocketaddress.h"
 #include "ginetaddressmask.h"
 #include "gnetworkingprivate.h"
 #include "gtask.h"
@@ -265,13 +264,9 @@ ignore_host (GSimpleProxyResolver *resolver,
   if (priv->ignore_ips)
     {
       GInetAddress *iaddr;
-      GInetSocketAddress *isaddr = NULL;
 
-      /* Grab the GInetAddress from the GInetSocketAddress in order to support
-       * scope ID. */
-      isaddr = (GInetSocketAddress *) g_inet_socket_address_new_from_string (host, 0);
-      iaddr = (isaddr != NULL) ? g_inet_socket_address_get_address (isaddr) : NULL;
-      if (iaddr != NULL)
+      iaddr = g_inet_address_new_from_string (host);
+      if (iaddr)
 	{
 	  for (i = 0; i < priv->ignore_ips->len; i++)
 	    {
@@ -283,12 +278,11 @@ ignore_host (GSimpleProxyResolver *resolver,
 		  break;
 		}
 	    }
+
+	  g_object_unref (iaddr);
+	  if (ignore)
+	    return TRUE;
 	}
-
-      g_clear_object (&isaddr);
-
-      if (ignore)
-        return TRUE;
     }
 
   if (priv->ignore_domains)

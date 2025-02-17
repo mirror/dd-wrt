@@ -37,7 +37,7 @@
 #include "gvaluearray.h"
 
 
-#define	G_FLOAT_EPSILON		(1e-30f)
+#define	G_FLOAT_EPSILON		(1e-30)
 #define	G_DOUBLE_EPSILON	(1e-90)
 
 
@@ -691,7 +691,7 @@ param_double_is_valid (GParamSpec   *pspec,
                        const GValue *value)
 {
   GParamSpecDouble *dspec = G_PARAM_SPEC_DOUBLE (pspec);
-  gdouble oval = value->data[0].v_double;
+  gfloat oval = value->data[0].v_double;
   
   return dspec->minimum <= oval && oval <= dspec->maximum;
 }
@@ -1018,7 +1018,7 @@ param_value_array_validate (GParamSpec *pspec,
   guint changed = 0;
 
   if (!value->data[0].v_pointer && aspec->fixed_n_elements)
-    value_array = value->data[0].v_pointer = g_value_array_new (aspec->fixed_n_elements);
+    value->data[0].v_pointer = g_value_array_new (aspec->fixed_n_elements);
 
   if (value->data[0].v_pointer)
     {

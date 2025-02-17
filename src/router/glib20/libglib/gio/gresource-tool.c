@@ -83,7 +83,7 @@ list_resource (GResource   *resource,
   gint i;
   gchar *child;
   GError *error = NULL;
-  size_t len;
+  gint len;
 
   children = g_resource_enumerate_children (resource, path, 0, &error);
   if (error)

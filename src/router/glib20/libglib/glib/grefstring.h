@@ -56,8 +56,4 @@ gsize   g_ref_string_length     (char       *str);
  */
 typedef char GRefString;
 
-GLIB_AVAILABLE_IN_2_84
-gboolean g_ref_string_equal (const char *str1,
-                             const char *str2);
-
 G_END_DECLS

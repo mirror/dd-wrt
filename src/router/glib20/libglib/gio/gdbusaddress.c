@@ -619,12 +619,8 @@ g_dbus_address_connect (const gchar   *address_entry,
           g_set_error (error,
                        G_IO_ERROR,
                        G_IO_ERROR_INVALID_ARGUMENT,
-                       /* Translators: The first placeholder is a D-Bus connection address,
-                        * the second is the literal name of an attribute in the address.
-                        */
-                       _("Error in address “%s” — the %s attribute is missing or malformed"),
-                       address_entry,
-                       "host");
+                       _("Error in address “%s” — the host attribute is missing or malformed"),
+                       address_entry);
           goto out;
         }
 
@@ -637,9 +633,8 @@ g_dbus_address_connect (const gchar   *address_entry,
           g_set_error (error,
                        G_IO_ERROR,
                        G_IO_ERROR_INVALID_ARGUMENT,
-                       _("Error in address “%s” — the %s attribute is missing or malformed"),
-                       address_entry,
-                       "port");
+                       _("Error in address “%s” — the port attribute is missing or malformed"),
+                       address_entry);
           goto out;
         }
 
@@ -652,9 +647,8 @@ g_dbus_address_connect (const gchar   *address_entry,
               g_set_error (error,
                            G_IO_ERROR,
                            G_IO_ERROR_INVALID_ARGUMENT,
-                           _("Error in address “%s” — the %s attribute is missing or malformed"),
-                           address_entry,
-                           "noncefile");
+                           _("Error in address “%s” — the noncefile attribute is missing or malformed"),
+                           address_entry);
               goto out;
             }
         }

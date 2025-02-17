@@ -877,31 +877,26 @@ g_io_channel_set_line_term (GIOChannel	*channel,
                             const gchar	*line_term,
 			    gint         length)
 {
+  guint length_unsigned;
+
   g_return_if_fail (channel != NULL);
   g_return_if_fail (line_term == NULL || length != 0); /* Disallow "" */
 
-  g_free (channel->line_term);
-
   if (line_term == NULL)
-    {
-      channel->line_term = NULL;
-      channel->line_term_len = 0;
-    }
+    length_unsigned = 0;
   else if (length >= 0)
-    {
-      /* We store the value nul-terminated even if the input is not */
-      channel->line_term = g_malloc0 (length + 1);
-      memcpy (channel->line_term, line_term, length);
-      channel->line_term_len = (guint) length;
-    }
+    length_unsigned = (guint) length;
   else
     {
-      /* We’re constrained by line_term_len being a guint here */
+      /* FIXME: We’re constrained by line_term_len being a guint here */
       gsize length_size = strlen (line_term);
       g_return_if_fail (length_size <= G_MAXUINT);
-      channel->line_term = g_strdup (line_term);
-      channel->line_term_len = (guint) length_size;
+      length_unsigned = (guint) length_size;
     }
+
+  g_free (channel->line_term);
+  channel->line_term = line_term ? g_memdup2 (line_term, length_unsigned) : NULL;
+  channel->line_term_len = length_unsigned;
 }
 
 /**
@@ -911,8 +906,7 @@ g_io_channel_set_line_term (GIOChannel	*channel,
  *
  * This returns the string that #GIOChannel uses to determine
  * where in the file a line break occurs. A value of %NULL
- * indicates autodetection. Since 2.84, the return value is always
- * nul-terminated.
+ * indicates autodetection.
  *
  * Returns: The line termination string. This value
  *   is owned by GLib and must not be freed.

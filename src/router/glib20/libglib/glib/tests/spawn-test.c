@@ -198,7 +198,7 @@ test_spawn_basics (void)
   gchar *output = NULL;
   gchar *erroutput = NULL;
 #ifdef G_OS_WIN32
-  size_t n;
+  int n;
   char buf[100];
   int pipedown[2], pipeup[2];
   gchar **argv = NULL;

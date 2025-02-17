@@ -14,9 +14,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this library; if not, see <http://www.gnu.org/licenses/>.
 #
-# SPDX-License-Identifier: LGPL-2.1-or-later
-
-# shellcheck shell=bash
 
 # Check for bash
 [ -z "$BASH_VERSION" ] && return
@@ -38,8 +35,6 @@ __gio_has_common_prefix() {
 
 # Complete file location
 __gio_location() {
-    local gio_binary
-    gio_binary="$1"
     # Prevent breaking on colons, we have to work with uris
     local cur
     _get_comp_words_by_ref -n : cur
@@ -50,19 +45,19 @@ __gio_location() {
         dir="$cur"
     elif [[ $cur =~ "/" ]]; then
         # Subtract basename because dirname cmd doesn't work well with schemes
-        dir=${cur%"$(basename "$cur")"}
+        dir=${cur%$(basename "$cur")}
     fi
 
     # List volumes and mounts
     local mounts=( )
     local mount
-    while IFS=$'\n' read -r mount; do
+    while IFS=$'\n' read mount; do
         # Do not care about local mounts
         [[ "$mount" =~ ^"file:" ]] && continue
 
         # Use only matching mounts
         [[ "$mount" =~ ^"$cur" && "$mount" != "$cur" ]] && mounts+=("$mount")
-    done < <("$gio_binary" mount -li | sed -n -r 's/^ *(default_location|activation_root)=(.*)$/\2/p' | sort -u)
+    done < <(gio mount -li | sed -n -r 's/^ *(default_location|activation_root)=(.*)$/\2/p' | sort -u)
 
     # Workaround to unescape dir name (e.g. "\ " -> " ")
     local -a tmp="( ${dir} )"
@@ -71,11 +66,10 @@ __gio_location() {
     # List files
     local files=()
     local names=()
-    local name type
-    while IFS=$'\t' read -r name _ type; do
+    local name size type
+    while IFS=$'\t' read name size type; do
         # Escape name properly
-        local escaped_name
-        escaped_name="$(printf "%q" "$name")"
+        local escaped_name="$(printf "%q" "$name")"
 
         # Append slash for directories and space for files
         if [[ "$type" == "(directory)" ]]; then
@@ -91,7 +85,7 @@ __gio_location() {
             files+=("$path")
             names+=("$escaped_name")
         fi
-    done < <("$gio_binary" list -hl "$unescaped_dir" 2> /dev/null)
+    done < <(gio list -hl "$unescaped_dir" 2> /dev/null)
 
     COMPREPLY=("${files[@]}" "${mounts[@]}")
 
@@ -113,15 +107,14 @@ __gio_location() {
 
 __gio() {
     # Complete subcommands
-    if (( COMP_CWORD == 1 )); then
-        # shellcheck disable=SC2207
+    if (( ${COMP_CWORD} == 1 )); then
         COMPREPLY=($(compgen -W "help version cat copy info launch list mime mkdir monitor mount move open rename remove save set trash tree" -- "${COMP_WORDS[1]}"))
         compopt +o nospace
         return 0
     fi
 
     # Complete file locations
-    __gio_location "$1"
+    __gio_location
 }
 
 ####################################################################################################

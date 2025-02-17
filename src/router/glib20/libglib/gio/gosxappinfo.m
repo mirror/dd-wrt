@@ -22,13 +22,11 @@
 #include "config.h"
 
 #include "gappinfo.h"
-#include "gappinfoprivate.h"
 #include "gosxappinfo.h"
 #include "gcontenttype.h"
 #include "gfile.h"
 #include "gfileicon.h"
 #include "gioerror.h"
-#include "gtask.h"
 
 #import <CoreFoundation/CoreFoundation.h>
 #import <Foundation/Foundation.h>
@@ -120,7 +118,7 @@ g_osx_app_info_dup (GAppInfo *appinfo)
 
 static gboolean
 g_osx_app_info_equal (GAppInfo *appinfo1,
-                      GAppInfo *appinfo2)
+                           GAppInfo *appinfo2)
 {
   const gchar *str1, *str2;
 
@@ -272,25 +270,38 @@ create_url_list_from_glist (GList    *uris,
   return (CFArrayRef)array;
 }
 
-static void
-fill_urlspec_for_appinfo (LSLaunchURLSpec *urlspec,
-                          GOsxAppInfo     *info,
-                          GList           *uris,
-                          gboolean         are_files)
+static LSLaunchURLSpec *
+create_urlspec_for_appinfo (GOsxAppInfo *info,
+                            GList            *uris,
+                            gboolean          are_files)
 {
-  urlspec->appURL = (CFURLRef) [NSURL fileURLWithPath:[info->bundle bundlePath]];
-  urlspec->itemURLs = create_url_list_from_glist (uris, are_files);
+  LSLaunchURLSpec *urlspec = NULL;
+  const gchar *app_cstr;
+
+  g_return_val_if_fail (G_IS_OSX_APP_INFO (info), NULL);
+
+  urlspec = g_new0 (LSLaunchURLSpec, 1);
+  app_cstr = g_osx_app_info_get_filename (info);
+  g_assert (app_cstr != NULL);
+
+  /* Strip file:// from app url but ensure filesystem url */
+  urlspec->appURL = create_url_from_cstr (app_cstr + strlen ("file://"), TRUE);
   urlspec->launchFlags = kLSLaunchDefaults;
+  urlspec->itemURLs = create_url_list_from_glist (uris, are_files);
+
+  return urlspec;
 }
 
 static void
-clear_urlspec (LSLaunchURLSpec *urlspec)
+free_urlspec (LSLaunchURLSpec *urlspec)
 {
   if (urlspec->itemURLs)
     {
-      CFArrayRemoveAllValues ((CFMutableArrayRef) urlspec->itemURLs);
+      CFArrayRemoveAllValues ((CFMutableArrayRef)urlspec->itemURLs);
       CFRelease (urlspec->itemURLs);
     }
+  CFRelease (urlspec->appURL);
+  g_free (urlspec);
 }
 
 static NSBundle *
@@ -313,6 +324,7 @@ get_bundle_for_id (CFStringRef bundle_id)
   CFURLRef app_url;
   NSBundle *bundle;
 
+#ifdef AVAILABLE_MAC_OS_X_VERSION_10_10_AND_LATER
   CFArrayRef urls = LSCopyApplicationURLsForBundleIdentifier (bundle_id, NULL);
   if (urls)
     {
@@ -324,6 +336,9 @@ get_bundle_for_id (CFStringRef bundle_id)
       CFRelease (urls);
     }
   else
+#else
+  if (LSFindApplicationForInfo (kLSUnknownCreator, bundle_id, NULL, NULL, &app_url) == kLSApplicationNotFoundErr)
+#endif
     {
 #ifdef G_ENABLE_DEBUG /* This can fail often, no reason to alloc strings */
       gchar *id_str = create_cstr_from_cfstring (bundle_id);
@@ -442,20 +457,20 @@ g_osx_app_info_get_icon (GAppInfo *appinfo)
 
 static gboolean
 g_osx_app_info_launch_internal (GAppInfo  *appinfo,
-                                GList     *uris,
-                                gboolean   are_files,
-                                GError   **error)
+                                     GList     *uris,
+                                     gboolean   are_files,
+                                     GError   **error)
 {
   GOsxAppInfo *info = G_OSX_APP_INFO (appinfo);
-  LSLaunchURLSpec urlspec = { 0 };
+  LSLaunchURLSpec *urlspec;
   gint ret, success = TRUE;
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
   g_return_val_if_fail (G_IS_OSX_APP_INFO (appinfo), FALSE);
+  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-  fill_urlspec_for_appinfo (&urlspec, info, uris, are_files);
+  urlspec = create_urlspec_for_appinfo (info, uris, are_files);
 
-  if ((ret = LSOpenFromURLSpec (&urlspec, NULL)))
+  if ((ret = LSOpenFromURLSpec (urlspec, NULL)))
     {
       /* TODO: Better error codes */
       g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
@@ -463,8 +478,7 @@ g_osx_app_info_launch_internal (GAppInfo  *appinfo,
       success = FALSE;
     }
 
-  clear_urlspec (&urlspec);
-  [pool drain];
+  free_urlspec (urlspec);
   return success;
 }
 
@@ -482,86 +496,20 @@ g_osx_app_info_supports_files (GAppInfo *appinfo)
 
 static gboolean
 g_osx_app_info_launch (GAppInfo           *appinfo,
-                       GList              *files,
-                       GAppLaunchContext  *launch_context,
-                       GError            **error)
+                            GList              *files,
+                            GAppLaunchContext  *launch_context,
+                            GError            **error)
 {
   return g_osx_app_info_launch_internal (appinfo, files, TRUE, error);
 }
 
 static gboolean
 g_osx_app_info_launch_uris (GAppInfo           *appinfo,
-                            GList              *uris,
-                            GAppLaunchContext  *launch_context,
-                            GError            **error)
+                                 GList              *uris,
+                                 GAppLaunchContext  *launch_context,
+                                 GError            **error)
 {
   return g_osx_app_info_launch_internal (appinfo, uris, FALSE, error);
-}
-
-typedef struct
-{
-  GList *uris;  /* (element-type utf8) (owned) (nullable) */
-  GAppLaunchContext *context;  /* (owned) (nullable) */
-} LaunchUrisData;
-
-static void
-launch_uris_data_free (LaunchUrisData *data)
-{
-  g_clear_object (&data->context);
-  g_list_free_full (data->uris, g_free);
-  g_free (data);
-}
-
-static void
-launch_uris_async_thread (GTask         *task,
-                          gpointer       source_object,
-                          gpointer       task_data,
-                          GCancellable  *cancellable)
-{
-  GAppInfo *appinfo = G_APP_INFO (source_object);
-  LaunchUrisData *data = task_data;
-  GError *local_error = NULL;
-  gboolean succeeded;
-
-  succeeded = g_osx_app_info_launch_internal (appinfo, data->uris, FALSE, &local_error);
-
-  if (local_error != NULL)
-    g_task_return_error (task, g_steal_pointer (&local_error));
-  else
-    g_task_return_boolean (task, succeeded);
-}
-
-static void
-g_osx_app_info_launch_uris_async (GAppInfo           *appinfo,
-                                  GList              *uris,
-                                  GAppLaunchContext  *context,
-                                  GCancellable       *cancellable,
-                                  GAsyncReadyCallback callback,
-                                  gpointer            user_data)
-{
-  GTask *task;
-  LaunchUrisData *data;
-
-  task = g_task_new (appinfo, cancellable, callback, user_data);
-  g_task_set_source_tag (task, g_osx_app_info_launch_uris_async);
-
-  data = g_new0 (LaunchUrisData, 1);
-  data->uris = g_list_copy_deep (uris, (GCopyFunc) g_strdup, NULL);
-  g_set_object (&data->context, context);
-  g_task_set_task_data (task, g_steal_pointer (&data), (GDestroyNotify) launch_uris_data_free);
-
-  g_task_run_in_thread (task, launch_uris_async_thread);
-  g_object_unref (task);
-}
-
-static gboolean
-g_osx_app_info_launch_uris_finish (GAppInfo     *appinfo,
-                                   GAsyncResult *result,
-                                   GError      **error)
-{
-  g_return_val_if_fail (g_task_is_valid (result, appinfo), FALSE);
-
-  return g_task_propagate_boolean (G_TASK (result), error);
 }
 
 static gboolean
@@ -573,8 +521,8 @@ g_osx_app_info_should_show (GAppInfo *appinfo)
 
 static gboolean
 g_osx_app_info_set_as_default_for_type (GAppInfo    *appinfo,
-                                        const char  *content_type,
-                                        GError     **error)
+                                             const char  *content_type,
+                                             GError     **error)
 {
   return FALSE;
 }
@@ -588,8 +536,8 @@ g_osx_app_info_get_supported_types (GAppInfo *appinfo)
 
 static gboolean
 g_osx_app_info_set_as_last_used_for_type (GAppInfo   *appinfo,
-                                          const char  *content_type,
-                                          GError     **error)
+                                               const char  *content_type,
+                                               GError     **error)
 {
   /* Not supported. */
   return FALSE;
@@ -621,8 +569,7 @@ g_osx_app_info_iface_init (GAppInfoIface *iface)
 
   iface->launch = g_osx_app_info_launch;
   iface->launch_uris = g_osx_app_info_launch_uris;
-  iface->launch_uris_async = g_osx_app_info_launch_uris_async;
-  iface->launch_uris_finish = g_osx_app_info_launch_uris_finish;
+
   iface->supports_uris = g_osx_app_info_supports_uris;
   iface->supports_files = g_osx_app_info_supports_files;
   iface->should_show = g_osx_app_info_should_show;
@@ -630,10 +577,10 @@ g_osx_app_info_iface_init (GAppInfoIface *iface)
 }
 
 GAppInfo *
-g_app_info_create_from_commandline_impl (const char           *commandline,
-                                         const char           *application_name,
-                                         GAppInfoCreateFlags   flags,
-                                         GError              **error)
+g_app_info_create_from_commandline (const char           *commandline,
+                                    const char           *application_name,
+                                    GAppInfoCreateFlags   flags,
+                                    GError              **error)
 {
   g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
                        "Creating an app info from a command line not currently supported");
@@ -651,10 +598,7 @@ g_osx_app_info_get_all_for_scheme (const char *cscheme)
   gint i;
   
   scheme = create_cfstring_from_cstr (cscheme);
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  /* first deprecated in macOS 10.15 - Use LSCopyApplicationURLsForURL() instead */
   bundle_list = LSCopyAllHandlersForURLScheme (scheme);
-  G_GNUC_END_IGNORE_DEPRECATIONS
   CFRelease (scheme);
 
   if (!bundle_list)
@@ -678,7 +622,7 @@ g_osx_app_info_get_all_for_scheme (const char *cscheme)
 }
 
 GList *
-g_app_info_get_all_for_type_impl (const char *content_type)
+g_app_info_get_all_for_type (const char *content_type)
 {
   gchar *mime_type;
   CFArrayRef bundle_list;
@@ -723,25 +667,29 @@ g_app_info_get_all_for_type_impl (const char *content_type)
 }
 
 GList *
-g_app_info_get_recommended_for_type_impl (const char *content_type)
+g_app_info_get_recommended_for_type (const char *content_type)
 {
   return g_app_info_get_all_for_type (content_type);
 }
 
 GList *
-g_app_info_get_fallback_for_type_impl (const char *content_type)
+g_app_info_get_fallback_for_type (const char *content_type)
 {
   return g_app_info_get_all_for_type (content_type);
 }
 
 GAppInfo *
-g_app_info_get_default_for_type_impl (const char *content_type,
-                                      gboolean    must_support_uris)
+g_app_info_get_default_for_type (const char *content_type,
+                                 gboolean    must_support_uris)
 {
   gchar *mime_type;
   CFStringRef type;
   NSBundle *bundle;
+#ifdef AVAILABLE_MAC_OS_X_VERSION_10_10_AND_LATER
   CFURLRef bundle_id;
+#else
+  CFStringRef bundle_id;
+#endif
 
   mime_type = g_content_type_get_mime_type (content_type);
   if (g_str_has_prefix (mime_type, "x-scheme-handler/"))
@@ -756,7 +704,11 @@ g_app_info_get_default_for_type_impl (const char *content_type,
 
   type = create_cfstring_from_cstr (content_type);
 
+#ifdef AVAILABLE_MAC_OS_X_VERSION_10_10_AND_LATER
   bundle_id = LSCopyDefaultApplicationURLForContentType (type, kLSRolesAll, NULL);
+#else
+  bundle_id = LSCopyDefaultRoleHandlerForContentType (type, kLSRolesAll);
+#endif
   CFRelease (type);
 
   if (!bundle_id)
@@ -765,7 +717,11 @@ g_app_info_get_default_for_type_impl (const char *content_type,
       return NULL;
     }
 
+#ifdef AVAILABLE_MAC_OS_X_VERSION_10_10_AND_LATER
   bundle = get_bundle_for_url (bundle_id);
+#else
+  bundle = get_bundle_for_id (bundle_id);
+#endif
   CFRelease (bundle_id);
 
   if (!bundle)
@@ -775,21 +731,18 @@ g_app_info_get_default_for_type_impl (const char *content_type,
 }
 
 GAppInfo *
-g_app_info_get_default_for_uri_scheme_impl (const char *uri_scheme)
+g_app_info_get_default_for_uri_scheme (const char *uri_scheme)
 {
   CFStringRef scheme, bundle_id;
   NSBundle *bundle;
 
   scheme = create_cfstring_from_cstr (uri_scheme);
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  /* first deprecated in macOS 10.15 - Use LSCopyDefaultApplicationURLForURL() instead. */
   bundle_id = LSCopyDefaultHandlerForURLScheme (scheme);
-  G_GNUC_END_IGNORE_DEPRECATIONS
   CFRelease (scheme);
 
   if (!bundle_id)
     {
-      g_info ("No default handler found for url scheme '%s'.", uri_scheme);
+      g_warning ("No default handler found for url scheme '%s'.", uri_scheme);
       return NULL;
     }
 
@@ -803,7 +756,7 @@ g_app_info_get_default_for_uri_scheme_impl (const char *uri_scheme)
 }
 
 GList *
-g_app_info_get_all_impl (void)
+g_app_info_get_all (void)
 {
   /* There is no API for this afaict
    * could manually do it...
@@ -812,6 +765,6 @@ g_app_info_get_all_impl (void)
 }
 
 void
-g_app_info_reset_type_associations_impl (const char *content_type)
+g_app_info_reset_type_associations (const char *content_type)
 {
 }

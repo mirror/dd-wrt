@@ -25,7 +25,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "gdbusprivate.h"
 #include "gdbus-tests.h"
 #include "gstdio.h"
 
@@ -1512,7 +1511,7 @@ introspect (GDBusConnection  *connection,
   g_dbus_connection_call (connection,
                           name,
                           object_path,
-                          DBUS_INTERFACE_INTROSPECTABLE,
+                          "org.freedesktop.DBus.Introspectable",
                           "Introspect",
                           NULL, /* params */
                           G_VARIANT_TYPE ("(s)"),
@@ -1604,7 +1603,7 @@ om_check_get_all (GDBusConnection *c,
   g_dbus_connection_call (c,
                           g_dbus_connection_get_unique_name (c),
                           "/managed",
-                          DBUS_INTERFACE_OBJECT_MANAGER,
+                          "org.freedesktop.DBus.ObjectManager",
                           "GetManagedObjects",
                           NULL, /* params */
                           G_VARIANT_TYPE ("(a{oa{sa{sv}}})"),
@@ -2017,7 +2016,7 @@ check_object_manager (void)
 
   om_signal_id = g_dbus_connection_signal_subscribe (c,
                                                      NULL, /* sender */
-                                                     DBUS_INTERFACE_OBJECT_MANAGER,
+                                                     "org.freedesktop.DBus.ObjectManager",
                                                      NULL, /* member */
                                                      NULL, /* object_path */
                                                      NULL, /* arg0 */
@@ -2061,7 +2060,7 @@ check_object_manager (void)
   /* Check that the manager object is visible */
   info = introspect (c, g_dbus_connection_get_unique_name (c), "/managed", loop);
   g_assert_cmpint (count_interfaces (info), ==, 4); /* ObjectManager + Properties,Introspectable,Peer */
-  g_assert (has_interface (info, DBUS_INTERFACE_OBJECT_MANAGER));
+  g_assert (has_interface (info, "org.freedesktop.DBus.ObjectManager"));
   g_assert_cmpint (count_nodes (info), ==, 0);
   g_dbus_node_info_unref (info);
 

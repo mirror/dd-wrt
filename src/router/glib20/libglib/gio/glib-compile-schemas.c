@@ -653,7 +653,7 @@ key_state_serialise (KeyState *state)
           checked = key_state_check (state, NULL);
           g_assert (checked);
 
-          g_variant_builder_init_static (&builder, G_VARIANT_TYPE_TUPLE);
+          g_variant_builder_init (&builder, G_VARIANT_TYPE_TUPLE);
 
           /* default value */
           g_variant_builder_add_value (&builder, state->default_value);
@@ -680,7 +680,7 @@ key_state_serialise (KeyState *state)
 
               if (state->l10n_context)
                 {
-                  size_t len;
+                  gint len;
 
                   /* Contextified messages are supported by prepending
                    * the context, followed by '\004' to the start of the

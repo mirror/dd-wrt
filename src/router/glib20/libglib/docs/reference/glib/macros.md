@@ -276,8 +276,7 @@ by application programmers.
     It avoids possible compiler warnings.
 
     For functions, place the attribute after the declaration, just before the
-    semicolon. It cannot go in the definition of a function, only the
-    declaration. For arguments, place the attribute at the beginning of the
+    semicolon. For arguments, place the attribute at the beginning of the
     argument declaration.
 
         void my_unused_function (G_GNUC_UNUSED gint unused_argument,
