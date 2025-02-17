@@ -4,8 +4,8 @@ dbus-configure:
 	rm -f dbus/config.cache
 	cd dbus && ./autogen.sh --prefix=/usr --host=$(ARCH)-linux \
 	--disable-Werror --disable-selinux --disable-tests \
-	--sysconfdir=/tmp \
-	--localstatedir=/tmp/var \
+	--sysconfdir=/etc \
+	--localstatedir=/var \
 	--disable-xml-docs \
 	--without-x \
 	--enable-systemd=no \
@@ -25,13 +25,13 @@ dbus-configure:
 
 dbus:
 	$(MAKE) -C dbus
-	#$(MAKE) -C dbus DESTDIR=$(TOP)/dbus/staged install
+#	$(MAKE) -C dbus DESTDIR=$(TOP)/dbus/staged install
 
 dbus-install:
 	install -D dbus/bus/.libs/dbus-daemon $(INSTALLDIR)/dbus/usr/sbin/dbus-daemon
 	install -D dbus/tools/.libs/dbus-launch $(INSTALLDIR)/dbus/usr/sbin/dbus-launch
 	install -D dbus/tools/.libs/dbus-uuidgen $(INSTALLDIR)/dbus/usr/sbin/dbus-uuidgen
-
+	cp -urv dbus/configs/* $(INSTALLDIR)/dbus
 	# this is the dbus-daemon wrapper should not be installed!
 	#install -D dbus/bus/dbus-daemon $(INSTALLDIR)/dbus/usr/sbin/dbus-daemon.sh
 
