@@ -8,7 +8,7 @@ avahi-configure: expat-configure expat dbus-configure dbus libdaemon-configure l
 	mkdir -p avahi/build_normal
 	cd avahi && ./autogen.sh NOCONFIGURE=1
 	cd avahi/build_utils && ../configure --prefix=/usr --host=$(ARCH)-linux \
-		--sysconfdir=/etc \
+		--sysconfdir=/tmp \
 		--localstatedir=/var \
 		--with-distro=none \
 		--enable-introspection=no \
