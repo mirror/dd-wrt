@@ -1073,13 +1073,13 @@ g_resolver_records_from_res_query (const gchar      *rrname,
           record = parse_res_txt (answer, p + rdlength, &p, &parsing_error);
           break;
         default:
-          g_debug ("Unrecognised DNS record type %u", rrtype);
+          g_debug ("Unrecognized DNS record type %u", rrtype);
           record = NULL;
           break;
         }
 
       if (record != NULL)
-        records = g_list_prepend (records, record);
+        records = g_list_prepend (records, g_variant_ref_sink (record));
 
       if (parsing_error != NULL)
         break;

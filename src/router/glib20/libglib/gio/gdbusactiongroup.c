@@ -376,7 +376,7 @@ g_dbus_action_group_activate_action_full (GRemoteActionGroup *remote,
   GDBusActionGroup *group = G_DBUS_ACTION_GROUP (remote);
   GVariantBuilder builder;
 
-  g_variant_builder_init (&builder, G_VARIANT_TYPE ("av"));
+  g_variant_builder_init_static (&builder, G_VARIANT_TYPE ("av"));
 
   if (parameter)
     g_variant_builder_add (&builder, "v", parameter);
@@ -423,7 +423,7 @@ g_dbus_action_group_finalize (GObject *object)
   GDBusActionGroup *group = G_DBUS_ACTION_GROUP (object);
 
   if (group->subscription_id)
-    g_dbus_connection_signal_unsubscribe (group->connection, group->subscription_id);
+    g_dbus_connection_signal_unsubscribe (group->connection, g_steal_handle_id (&group->subscription_id));
 
   if (group->actions)
     g_hash_table_unref (group->actions);

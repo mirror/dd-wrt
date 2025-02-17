@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <gio/gio.h>
 #include <gio/gfiledescriptorbased.h>
+#include <glib/gstdio.h>
 #ifdef G_OS_UNIX
 #include <sys/stat.h>
 #endif
@@ -2468,7 +2469,7 @@ test_copy_preserve_mode (void)
   /* Reset the umask after querying it above. There’s no way to query it without
    * changing it. */
   umask (current_umask);
-  g_test_message ("Current umask: %u", current_umask);
+  g_test_message ("Current umask: %u", (unsigned int) current_umask);
 
   for (i = 0; i < G_N_ELEMENTS (vectors); i++)
     {
@@ -2604,6 +2605,119 @@ test_copy_progress (void)
 
   g_clear_object (&src_tmpfile);
   g_clear_object (&dest_tmpfile);
+}
+
+typedef struct
+{
+  GError *error;
+  gboolean done;
+  gboolean res;
+} CopyAsyncData;
+
+static void
+test_copy_async_cb (GObject *object,
+                    GAsyncResult *result,
+                    void *user_data)
+{
+  GFile *file = G_FILE (object);
+  CopyAsyncData *data = user_data;
+  GError *error = NULL;
+
+  data->res = g_file_move_finish (file, result, &error);
+  data->error = g_steal_pointer (&error);
+  data->done = TRUE;
+}
+
+typedef struct
+{
+  goffset total_num_bytes;
+} CopyAsyncProgressData;
+
+static void
+test_copy_async_progress_cb (goffset current_num_bytes,
+                             goffset total_num_bytes,
+                             void *user_data)
+{
+  CopyAsyncProgressData *data = user_data;
+  data->total_num_bytes = total_num_bytes;
+}
+
+/* Exercise copy_async_with_closures() */
+static void
+test_copy_async_with_closures (void)
+{
+  CopyAsyncData data = { 0 };
+  CopyAsyncProgressData progress_data = { 0 };
+  GFile *source;
+  GFileIOStream *iostream;
+  GOutputStream *ostream;
+  GFile *destination;
+  gchar *destination_path;
+  GError *error = NULL;
+  gboolean res;
+  const guint8 buffer[] = { 1, 2, 3, 4, 5 };
+  GClosure *progress_closure;
+  GClosure *ready_closure;
+
+  source = g_file_new_tmp ("g_file_copy_async_with_closures_XXXXXX", &iostream, NULL);
+
+  destination_path = g_build_path (G_DIR_SEPARATOR_S, g_get_tmp_dir (), "g_file_copy_async_with_closures_target", NULL);
+  destination = g_file_new_for_path (destination_path);
+
+  g_assert_nonnull (source);
+  g_assert_nonnull (iostream);
+
+  res = g_file_query_exists (source, NULL);
+  g_assert_true (res);
+  res = g_file_query_exists (destination, NULL);
+  g_assert_false (res);
+
+  /* Write a known number of bytes to the file, so we can test the progress
+   * callback against it */
+  ostream = g_io_stream_get_output_stream (G_IO_STREAM (iostream));
+  g_output_stream_write (ostream, buffer, sizeof (buffer), NULL, &error);
+  g_assert_no_error (error);
+
+  progress_closure = g_cclosure_new (G_CALLBACK (test_copy_async_progress_cb), &progress_data, NULL);
+  ready_closure = g_cclosure_new (G_CALLBACK (test_copy_async_cb), &data, NULL);
+
+  g_file_copy_async_with_closures (source,
+                                   destination,
+                                   G_FILE_COPY_NONE,
+                                   0,
+                                   NULL,
+                                   progress_closure,
+                                   ready_closure);
+
+  while (!data.done)
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert_no_error (data.error);
+  g_assert_true (data.res);
+  g_assert_cmpuint (progress_data.total_num_bytes, ==, sizeof (buffer));
+
+  res = g_file_query_exists (source, NULL);
+  g_assert_true (res);
+  res = g_file_query_exists (destination, NULL);
+  g_assert_true (res);
+
+  res = g_io_stream_close (G_IO_STREAM (iostream), NULL, &error);
+  g_assert_no_error (error);
+  g_assert_true (res);
+  g_object_unref (iostream);
+
+  res = g_file_delete (source, NULL, &error);
+  g_assert_no_error (error);
+  g_assert_true (res);
+
+  res = g_file_delete (destination, NULL, &error);
+  g_assert_no_error (error);
+  g_assert_true (res);
+
+  g_object_unref (source);
+  g_object_unref (destination);
+
+  g_free (destination_path);
 }
 
 static void
@@ -2742,7 +2856,8 @@ test_load_bytes (void)
   len = strlen ("test_load_bytes");
   ret = write (fd, "test_load_bytes", len);
   g_assert_cmpint (ret, ==, len);
-  close (fd);
+  g_clear_fd (&fd, &error);
+  g_assert_no_error (error);
 
   file = g_file_new_for_path (filename);
   bytes = g_file_load_bytes (file, NULL, NULL, &error);
@@ -2785,6 +2900,7 @@ test_load_bytes_async (void)
 {
   LoadBytesAsyncData data = { 0 };
   gchar filename[] = "g_file_load_bytes_XXXXXX";
+  GError *error = NULL;
   int len;
   int fd;
   int ret;
@@ -2794,7 +2910,8 @@ test_load_bytes_async (void)
   len = strlen ("test_load_bytes_async");
   ret = write (fd, "test_load_bytes_async", len);
   g_assert_cmpint (ret, ==, len);
-  close (fd);
+  g_clear_fd (&fd, &error);
+  g_assert_no_error (error);
 
   data.main_loop = g_main_loop_new (NULL, FALSE);
   data.file = g_file_new_for_path (filename);
@@ -2809,6 +2926,158 @@ test_load_bytes_async (void)
   g_object_unref (data.file);
   g_bytes_unref (data.bytes);
   g_main_loop_unref (data.main_loop);
+}
+
+#if GLIB_SIZEOF_SIZE_T > 4
+static const gsize testfile_4gb_size = ((gsize) 1 << 32) + (1 << 16); /* 4GB + a bit */
+#else
+/* Have to make do with something smaller on 32-bit platforms */
+static const gsize testfile_4gb_size = G_MAXSIZE;
+#endif
+
+/* @filename will be modified as per g_mkstemp() */
+static gboolean
+create_testfile_4gb_or_skip (char *filename)
+{
+  GError *error = NULL;
+  int fd;
+  int ret;
+
+  /* Reading each 4GB test file takes about 5s on a fast machine, and another 7s
+   * to compare its contents once it’s been read. That’s too slow for a normal
+   * test run, and there’s no way to speed it up. */
+  if (!g_test_slow ())
+    {
+      g_test_skip ("Skipping slow >4GB file test");
+      return FALSE;
+    }
+
+  fd = g_mkstemp (filename);
+  g_assert_cmpint (fd, !=, -1);
+  ret = ftruncate (fd, testfile_4gb_size);
+  g_clear_fd (&fd, &error);
+  g_assert_no_error (error);
+  if (ret == 1)
+    {
+      g_test_skip ("Could not create testfile >4GB");
+      g_assert_no_errno (g_unlink (filename));
+      return FALSE;
+    }
+
+  return TRUE;
+}
+
+static void
+check_testfile_4gb_contents (const char *data,
+                             gsize       len)
+{
+  gsize i;
+
+  g_assert_nonnull (data);
+  g_assert_cmpuint (testfile_4gb_size, ==, len);
+
+  for (i = 0; i < testfile_4gb_size; i++)
+    {
+      if (data[i] != 0)
+        break;
+    }
+  g_assert_cmpint (i, ==, testfile_4gb_size);
+}
+
+static void
+test_load_contents_4gb (void)
+{
+  char filename[] = "g_file_load_contents_4gb_XXXXXX";
+  GError *error = NULL;
+  gboolean result;
+  char *data;
+  gsize len;
+  GFile *file;
+
+  if (!create_testfile_4gb_or_skip (filename))
+    return;
+
+  file = g_file_new_for_path (filename);
+  result = g_file_load_contents (file, NULL, &data, &len, NULL, &error);
+  g_assert_no_error (error);
+  g_assert_true (result);
+
+  check_testfile_4gb_contents (data, len);
+
+  g_file_delete (file, NULL, NULL);
+
+  g_free (data);
+  g_object_unref (file);
+}
+
+static void
+load_contents_4gb_cb (GObject      *object,
+                      GAsyncResult *result,
+                      gpointer      user_data)
+{
+  GAsyncResult **result_out = user_data;
+
+  g_assert (*result_out == NULL);
+  *result_out = g_object_ref (result);
+
+  g_main_context_wakeup (NULL);
+}
+
+static void
+test_load_contents_4gb_async (void)
+{
+  char filename[] = "g_file_load_contents_4gb_async_XXXXXX";
+  GFile *file;
+  GAsyncResult *async_result = NULL;
+  GError *error = NULL;
+  char *data;
+  gsize len;
+  gboolean ret;
+
+  if (!create_testfile_4gb_or_skip (filename))
+    return;
+
+  file = g_file_new_for_path (filename);
+  g_file_load_contents_async (file, NULL, load_contents_4gb_cb, &async_result);
+
+  while (async_result == NULL)
+    g_main_context_iteration (NULL, TRUE);
+
+  ret = g_file_load_contents_finish (file, async_result, &data, &len, NULL, &error);
+  g_assert_no_error (error);
+  g_assert_true (ret);
+
+  check_testfile_4gb_contents (data, len);
+
+  g_file_delete (file, NULL, NULL);
+
+  g_free (data);
+  g_object_unref (async_result);
+  g_object_unref (file);
+}
+
+static void
+test_load_bytes_4gb (void)
+{
+  char filename[] = "g_file_load_bytes_4gb_XXXXXX";
+  GError *error = NULL;
+  GBytes *bytes;
+  GFile *file;
+
+  if (!create_testfile_4gb_or_skip (filename))
+    return;
+
+  file = g_file_new_for_path (filename);
+  bytes = g_file_load_bytes (file, NULL, NULL, &error);
+  g_assert_no_error (error);
+  g_assert_true (bytes);
+
+  check_testfile_4gb_contents (g_bytes_get_data (bytes, NULL), g_bytes_get_size (bytes));
+
+  g_file_delete (file, NULL, NULL);
+
+  g_bytes_unref (bytes);
+  g_object_unref (file);
 }
 
 static void
@@ -3577,6 +3846,80 @@ test_move_async (void)
   g_free (destination_path);
 }
 
+/* Same test as for move_async(), but for move_async_with_closures() */
+static void
+test_move_async_with_closures (void)
+{
+  MoveAsyncData data = { 0 };
+  MoveAsyncProgressData progress_data = { 0 };
+  GFile *source;
+  GFileIOStream *iostream;
+  GOutputStream *ostream;
+  GFile *destination;
+  gchar *destination_path;
+  GError *error = NULL;
+  gboolean res;
+  const guint8 buffer[] = { 1, 2, 3, 4, 5 };
+  GClosure *progress_closure;
+  GClosure *ready_closure;
+
+  source = g_file_new_tmp ("g_file_move_async_with_closures_XXXXXX", &iostream, NULL);
+
+  destination_path = g_build_path (G_DIR_SEPARATOR_S, g_get_tmp_dir (), "g_file_move_async_with_closures_target", NULL);
+  destination = g_file_new_for_path (destination_path);
+
+  g_assert_nonnull (source);
+  g_assert_nonnull (iostream);
+
+  res = g_file_query_exists (source, NULL);
+  g_assert_true (res);
+  res = g_file_query_exists (destination, NULL);
+  g_assert_false (res);
+
+  /* Write a known number of bytes to the file, so we can test the progress
+   * callback against it */
+  ostream = g_io_stream_get_output_stream (G_IO_STREAM (iostream));
+  g_output_stream_write (ostream, buffer, sizeof (buffer), NULL, &error);
+  g_assert_no_error (error);
+
+  progress_closure = g_cclosure_new (G_CALLBACK (test_move_async_progress_cb), &progress_data, NULL);
+  ready_closure = g_cclosure_new (G_CALLBACK (test_move_async_cb), &data, NULL);
+
+  g_file_move_async_with_closures (source,
+                                   destination,
+                                   G_FILE_COPY_NONE,
+                                   0,
+                                   NULL,
+                                   progress_closure,
+                                   ready_closure);
+
+  while (!data.done)
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert_no_error (data.error);
+  g_assert_true (data.res);
+  g_assert_cmpuint (progress_data.total_num_bytes, ==, sizeof (buffer));
+
+  res = g_file_query_exists (source, NULL);
+  g_assert_false (res);
+  res = g_file_query_exists (destination, NULL);
+  g_assert_true (res);
+
+  res = g_io_stream_close (G_IO_STREAM (iostream), NULL, &error);
+  g_assert_no_error (error);
+  g_assert_true (res);
+  g_object_unref (iostream);
+
+  res = g_file_delete (destination, NULL, &error);
+  g_assert_no_error (error);
+  g_assert_true (res);
+
+  g_object_unref (source);
+  g_object_unref (destination);
+
+  g_free (destination_path);
+}
+
 static GAppInfo *
 create_command_line_app_info (const char *name,
                               const char *command_line,
@@ -3597,6 +3940,20 @@ create_command_line_app_info (const char *name,
   return g_steal_pointer (&info);
 }
 
+static gboolean
+skip_missing_update_desktop_database (void)
+{
+  gchar *path = g_find_program_in_path ("update-desktop-database");
+
+  if (path == NULL)
+    {
+      g_test_skip ("update-desktop-database is required to run this test");
+      return TRUE;
+    }
+  g_free (path);
+  return FALSE;
+}
+
 static void
 test_query_default_handler_uri (void)
 {
@@ -3606,10 +3963,8 @@ test_query_default_handler_uri (void)
   GFile *file;
   GFile *invalid_file;
 
-#if defined(G_OS_WIN32) || defined(__APPLE__)
-  g_test_skip ("Default URI handlers are not currently supported on Windows or macOS");
-  return;
-#endif
+  if (skip_missing_update_desktop_database ())
+    return;
 
   info = create_command_line_app_info ("Gio File Handler", "true",
                                        "x-scheme-handler/gio-file");
@@ -3691,10 +4046,8 @@ test_query_default_handler_file (void)
   const char buffer[] = "Text file!\n";
   const guint8 binary_buffer[] = "\xde\xad\xbe\xff";
 
-#if defined(G_OS_WIN32) || defined(__APPLE__)
-  g_test_skip ("Default URI handlers are not currently supported on Windows or macOS");
-  return;
-#endif
+  if (skip_missing_update_desktop_database ())
+    return;
 
   text_file = g_file_new_tmp ("query-default-handler-XXXXXX", &iostream, &error);
   g_assert_no_error (error);
@@ -3787,10 +4140,8 @@ test_query_default_handler_file_async (void)
   const guint8 binary_buffer[] = "\xde\xad\xbe\xff";
   GError *error = NULL;
 
-#if defined(G_OS_WIN32) || defined(__APPLE__)
-  g_test_skip ("Default URI handlers are not currently supported on Windows or macOS");
-  return;
-#endif
+  if (skip_missing_update_desktop_database ())
+    return;
 
   data.loop = g_main_loop_new (NULL, FALSE);
 
@@ -3877,10 +4228,8 @@ test_query_default_handler_uri_async (void)
   GFile *file;
   GFile *invalid_file;
 
-#if defined(G_OS_WIN32) || defined(__APPLE__)
-  g_test_skip ("Default URI handlers are not currently supported on Windows or macOS");
-  return;
-#endif
+  if (skip_missing_update_desktop_database ())
+    return;
 
   info = create_command_line_app_info ("Gio File Handler", "true",
                                        "x-scheme-handler/gio-file");
@@ -4028,10 +4377,14 @@ main (int argc, char *argv[])
   g_test_add_func ("/file/async-make-symlink", test_async_make_symlink);
   g_test_add_func ("/file/copy-preserve-mode", test_copy_preserve_mode);
   g_test_add_func ("/file/copy/progress", test_copy_progress);
+  g_test_add_func ("/file/copy-async-with-closures", test_copy_async_with_closures);
   g_test_add_func ("/file/measure", test_measure);
   g_test_add_func ("/file/measure-async", test_measure_async);
   g_test_add_func ("/file/load-bytes", test_load_bytes);
   g_test_add_func ("/file/load-bytes-async", test_load_bytes_async);
+  g_test_add_func ("/file/load-bytes-4gb", test_load_bytes_4gb);
+  g_test_add_func ("/file/load-contents-4gb", test_load_contents_4gb);
+  g_test_add_func ("/file/load-contents-4gb-async", test_load_contents_4gb_async);
   g_test_add_func ("/file/writev", test_writev);
   g_test_add_func ("/file/writev/no-bytes-written", test_writev_no_bytes_written);
   g_test_add_func ("/file/writev/no-vectors", test_writev_no_vectors);
@@ -4045,6 +4398,7 @@ main (int argc, char *argv[])
   g_test_add_func ("/file/writev/async_all-cancellation", test_writev_async_all_cancellation);
   g_test_add_func ("/file/build-attribute-list-for-copy", test_build_attribute_list_for_copy);
   g_test_add_func ("/file/move_async", test_move_async);
+  g_test_add_func ("/file/move-async-with-closures", test_move_async_with_closures);
   g_test_add_func ("/file/query-zero-length-content-type", test_query_zero_length_content_type);
   g_test_add_func ("/file/query-default-handler-file", test_query_default_handler_file);
   g_test_add_func ("/file/query-default-handler-file-async", test_query_default_handler_file_async);

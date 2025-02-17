@@ -292,7 +292,7 @@ call_notify (GDBusConnection     *con,
   const gchar *body;
   guchar urgency;
 
-  g_variant_builder_init (&action_builder, G_VARIANT_TYPE_STRING_ARRAY);
+  g_variant_builder_init_static (&action_builder, G_VARIANT_TYPE_STRING_ARRAY);
   if (g_notification_get_default_action (notification, NULL, NULL))
     {
       g_variant_builder_add (&action_builder, "s", "default");
@@ -329,7 +329,7 @@ call_notify (GDBusConnection     *con,
         g_variant_unref (target);
     }
 
-  g_variant_builder_init (&hints_builder, G_VARIANT_TYPE ("a{sv}"));
+  g_variant_builder_init_static (&hints_builder, G_VARIANT_TYPE ("a{sv}"));
   g_variant_builder_add (&hints_builder, "{sv}", "desktop-entry",
                          g_variant_new_string (g_application_get_application_id (app)));
   urgency = urgency_from_priority (g_notification_get_priority (notification));
@@ -437,8 +437,7 @@ g_fdo_notification_backend_dispose (GObject *object)
       GDBusConnection *session_bus;
 
       session_bus = G_NOTIFICATION_BACKEND (backend)->dbus_connection;
-      g_dbus_connection_signal_unsubscribe (session_bus, backend->notify_subscription);
-      backend->notify_subscription = 0;
+      g_dbus_connection_signal_unsubscribe (session_bus, g_steal_handle_id (&backend->notify_subscription));
     }
 
   if (backend->notifications)

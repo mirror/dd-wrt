@@ -32,13 +32,8 @@
 #include <stdlib.h>
 
 #ifdef G_OS_WIN32
-#include "win_iconv.c"
-#endif
-
-#ifdef G_PLATFORM_WIN32
-#define STRICT
 #include <windows.h>
-#undef STRICT
+#include "win_iconv.c"
 #endif
 
 #include "gconvert.h"
@@ -76,7 +71,7 @@ try_conversion (const char *to_codeset,
 
 #if defined(__FreeBSD__) && defined(ICONV_SET_ILSEQ_INVALID)
   /* On FreeBSD request GNU iconv compatible handling of characters that cannot
-   * be repesented in the destination character set.
+   * be represented in the destination character set.
    * See https://cgit.freebsd.org/src/commit/?id=7c5b23111c5fd1992047922d4247c4a1ce1bb6c3
    */
   int value = 1;

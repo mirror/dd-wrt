@@ -392,16 +392,15 @@ if host_system != 'windows'
 
   if glib_have_cocoa
     settings_sources += files('gnextstepsettingsbackend.m')
-    contenttype_sources += files('gosxcontenttype.m')
+    contenttype_sources += files('gcontenttype-osx.m')
     unix_sources += files('gosxappinfo.m')
     framework_dep = dependency('appleframeworks', modules : ['Foundation', 'CoreFoundation', 'AppKit'])
     platform_deps += [framework_dep]
-    if glib_have_os_x_9_or_later
-      unix_sources += files('gcocoanotificationbackend.m')
-    endif
+    unix_sources += files('gcocoanotificationbackend.m')
+    unix_sources += files('gosxnetworkmonitor.c')
     application_headers += files('gosxappinfo.h')
   else
-    contenttype_sources += files('gcontenttype.c')
+    contenttype_sources += files('gcontenttype-fdo.c')
     unix_sources += files('gdesktopappinfo.c')
     gio_unix_include_headers += files('gdesktopappinfo.h')
     launch_desktop_sources = files('gio-launch-desktop.c')
@@ -485,6 +484,7 @@ gio_base_sources = files(
   'gbytesicon.c',
   'gcancellable.c',
   'gcharsetconverter.c',
+  'gcontenttype.c',
   'gcontextspecificgroup.c',
   'gconverter.c',
   'gconverterinputstream.c',
@@ -756,8 +756,6 @@ gio_visibility_h = custom_target(
   command: [gen_visibility_macros, meson.project_version(), 'visibility-macros', 'GIO', '@OUTPUT@'],
   install: true,
   install_dir: gio_includedir,
-  # FIXME: Not needed with Meson >= 0.64.0
-  install_tag: 'devel',
 )
 gio_sources += gio_visibility_h
 
@@ -774,8 +772,6 @@ gioenumtypes_h = custom_target('gioenumtypes_h',
   input : gio_headers,
   install : true,
   install_dir : gio_includedir,
-  # FIXME: Not needed with Meson >= 0.64.0
-  install_tag: 'devel',
   command : [python, glib_mkenums,
              '--template', files('gioenumtypes.h.template'),
              '@INPUT@', gnetworking_h])
@@ -791,19 +787,41 @@ gioenumtypes_c = custom_target('gioenumtypes_c',
 
 gioenumtypes_dep = declare_dependency(sources : [gioenumtypes_h, glib_enumtypes_h, gio_visibility_h])
 
+file_monitor_backend = get_option('file_monitor_backend')
+if file_monitor_backend == 'auto'
+  if glib_conf.has('HAVE_SYS_INOTIFY_H') and have_func_inotify_init1
+    file_monitor_backend = 'inotify'
+  elif have_func_kqueue and have_func_kevent
+    file_monitor_backend = 'kqueue'
+  elif host_system == 'windows'
+    file_monitor_backend = 'win32'
+  endif
+endif
+
 # inotify
-if glib_conf.has('HAVE_SYS_INOTIFY_H') and have_func_inotify_init1
+if file_monitor_backend == 'inotify'
+  glib_conf.set('FILE_MONITOR_BACKEND_INOTIFY', 1)
+  subdir('inotify')
+  internal_deps += [ inotify_lib ]
+endif
+
+# libinotify-kqueue
+# uses the same code as inotify, but changes some functions behavior via #ifdef's
+if file_monitor_backend == 'libinotify-kqueue'
+  glib_conf.set('FILE_MONITOR_BACKEND_LIBINOTIFY_KQUEUE', 1)
   subdir('inotify')
   internal_deps += [ inotify_lib ]
 endif
 
 # kevent
-if have_func_kqueue and have_func_kevent
+if file_monitor_backend == 'kqueue'
+  glib_conf.set('FILE_MONITOR_BACKEND_KQUEUE', 1)
   subdir('kqueue')
   internal_deps += [ kqueue_lib ]
 endif
 
-if host_system == 'windows'
+if file_monitor_backend == 'win32'
+  glib_conf.set('FILE_MONITOR_BACKEND_WIN32', 1)
   subdir('win32')
   internal_deps += [ giowin32_lib ]
 endif
@@ -894,6 +912,16 @@ pkg.generate(libgio,
     'gdbus_codegen=' + '${bindir}' / 'gdbus-codegen',
     'gresource=' + '${bindir}' / 'gresource',
     'gsettings=' + '${bindir}' / 'gsettings',
+  ],
+  uninstalled_variables : [
+    'gio=${prefix}/gio/gio',
+    'gio_querymodules=${prefix}/gio/gio-querymodules',
+    'glib_compile_schemas=${prefix}/gio/glib-compile-schemas',
+    'glib_compile_resources=${prefix}/gio/glib-compile-resources',
+    'gdbus=${prefix}/gio/gdbus',
+    'gdbus_codegen=${prefix}/gio/gdbus-2.0/codegen/gdbus-codegen',
+    'gresource=${prefix}/gio/gresource',
+    'gsettings=${prefix}/gio/gsettings',
   ],
   version : glib_version,
   install_dir : glib_pkgconfigreldir,

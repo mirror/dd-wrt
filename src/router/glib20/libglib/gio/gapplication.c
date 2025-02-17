@@ -160,7 +160,7 @@
  *
  * To parse commandline arguments you may handle the
  * [signal@Gio.Application::command-line] signal or override the
- * [vfunc@Gio.Application.local_command_line] virtual funcion, to parse them in
+ * [vfunc@Gio.Application.local_command_line] virtual function, to parse them in
  * either the primary instance or the local instance, respectively.
  *
  * For an example of opening files with a `GApplication`, see
@@ -459,7 +459,7 @@ g_application_pack_option_entries (GApplication *application,
           break;
 
         case G_OPTION_ARG_DOUBLE:
-          if (*(gdouble *) entry->arg_data)
+          if (*(gdouble *) entry->arg_data != 0.0)
             value = g_variant_new_double (*(gdouble *) entry->arg_data);
           break;
 
@@ -709,8 +709,8 @@ add_packed_option (GApplication *application,
  * was to send all of the commandline arguments (options and all) to the
  * primary instance for handling.  #GApplication ignored them completely
  * on the local side.  Calling this function "opts in" to the new
- * behaviour, and in particular, means that unrecognised options will be
- * treated as errors.  Unrecognised options have never been ignored when
+ * behaviour, and in particular, means that unrecognized options will be
+ * treated as errors.  Unrecognized options have never been ignored when
  * %G_APPLICATION_HANDLES_COMMAND_LINE is unset.
  *
  * If #GApplication::handle-local-options needs to see the list of
@@ -851,7 +851,7 @@ g_application_add_main_option (GApplication *application,
  *
  * Calling this function will cause the options in the supplied option
  * group to be parsed, but it does not cause you to be "opted in" to the
- * new functionality whereby unrecognised options are rejected even if
+ * new functionality whereby unrecognized options are rejected even if
  * %G_APPLICATION_HANDLES_COMMAND_LINE was given.
  *
  * Since: 2.40
@@ -1614,6 +1614,9 @@ g_application_class_init (GApplicationClass *class)
    * The group of actions that the application exports.
    *
    * Since: 2.28
+   * Deprecated: 2.32: Use the [iface@Gio.ActionMap] interface instead.
+   *   Never ever mix use of this API with use of `GActionMap` on the
+   *   same @application or things will go very badly wrong.
    */
   g_object_class_install_property (object_class, PROP_ACTION_GROUP,
     g_param_spec_object ("action-group", NULL, NULL,
@@ -3074,11 +3077,11 @@ g_application_get_is_busy (GApplication *application)
  * notification. This works even for notifications sent from a previous
  * execution of the application, as long as @id is the same string.
  *
- * @id may be %NULL, but it is impossible to replace or withdraw
+ * @id may be `NULL`, but it is impossible to replace or withdraw
  * notifications without an id.
  *
  * If @notification is no longer relevant, it can be withdrawn with
- * g_application_withdraw_notification().
+ * [method@Gio.Application.withdraw_notification].
  *
  * It is an error to call this function if @application has no
  * application ID.

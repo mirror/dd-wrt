@@ -36,6 +36,9 @@ name = "basic"
 show_index_summary = true
 show_class_hierarchy = true
 
+[source-location]
+base_url = "https://gitlab.gnome.org/GNOME/glib/-/blob/main/"
+
 [extra]
 urlmap_file = "../urlmap.js"
 # The same order will be used when generating the index
@@ -96,6 +99,10 @@ content_images = [
   "Sorted_binary_tree_inorder.svg",
   "Sorted_binary_tree_postorder.svg",
   "Sorted_binary_tree_preorder.svg",
+  "Sorted_binary_tree_breadth-first_traversal-dark.svg",
+  "Sorted_binary_tree_inorder-dark.svg",
+  "Sorted_binary_tree_postorder-dark.svg",
+  "Sorted_binary_tree_preorder-dark.svg",
 ]
 
 [[object]]
@@ -120,4 +127,39 @@ hidden = true
 
 [[object]]
 pattern = "macro__has_*"
+hidden = true
+
+# We have to hide the GioUnix and GioWin32 symbols from the documentation — they
+# have to be present in the GIR files (until we next break API), but their
+# documentation is split out to glib-{unix,win32}.toml.
+[[object]]
+pattern = "Unix[A-Z].+"
+hidden = true
+
+[[object]]
+pattern = "unix_.+"
+hidden = true
+
+[[struct]]
+pattern = "Unix[A-Z].+"
+hidden = true
+
+[[function]]
+pattern = "unix_.+"
+hidden = true
+
+[[object]]
+pattern = "Win32[A-Z].+"
+hidden = true
+
+[[object]]
+pattern = "win32_.+"
+hidden = true
+
+[[struct]]
+pattern = "Win32[A-Z].+"
+hidden = true
+
+[[function]]
+pattern = "win32_.+"
 hidden = true

@@ -1,3 +1,20 @@
+# Copyright 2016, 2017 Centricular
+#
+# SPDX-License-Identifier: LGPL-2.1-or-later
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, see <http://www.gnu.org/licenses/>.
+
 gdbus_codegen_files = [
   '__init__.py',
   'codegen.py',
@@ -14,7 +31,7 @@ gdbus_codegen_conf = configuration_data()
 gdbus_codegen_conf.set('VERSION', glib_version)
 gdbus_codegen_conf.set('MAJOR_VERSION', major_version)
 gdbus_codegen_conf.set('MINOR_VERSION', minor_version)
-gdbus_codegen_conf.set('PYTHON', python_name)
+gdbus_codegen_conf.set('PYTHON', python.full_path())
 gdbus_codegen_conf.set('DATADIR', glib_datadir)
 
 # Install gdbus-codegen executable

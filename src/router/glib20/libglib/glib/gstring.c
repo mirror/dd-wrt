@@ -134,7 +134,7 @@ g_string_new (const gchar *init)
     string = g_string_sized_new (2);
   else
     {
-      gint len;
+      size_t len;
 
       len = strlen (init);
       string = g_string_sized_new (len + 2);
@@ -1023,37 +1023,138 @@ g_string_replace (GString     *string,
                   const gchar *replace,
                   guint        limit)
 {
-  gsize f_len, r_len, pos;
-  gchar *cur, *next;
-  guint n = 0;
+  GString *new_string = NULL;
+  gsize f_len, r_len, new_len;
+  gchar *cur, *next, *first, *dst;
+  guint n;
 
   g_return_val_if_fail (string != NULL, 0);
   g_return_val_if_fail (find != NULL, 0);
   g_return_val_if_fail (replace != NULL, 0);
 
+  first = strstr (string->str, find);
+
+  if (first == NULL)
+    return 0;
+
+  new_len = string->len;
   f_len = strlen (find);
   r_len = strlen (replace);
-  cur = string->str;
 
-  while ((next = strstr (cur, find)) != NULL)
+  /* It removes a lot of branches and possibility for infinite loops if we
+   * handle the case of an empty @find string separately. */
+  if (G_UNLIKELY (f_len == 0))
     {
-      pos = next - string->str;
-      g_string_erase (string, pos, f_len);
-      g_string_insert (string, pos, replace);
-      cur = string->str + pos + r_len;
-      n++;
-      /* Only match the empty string once at any given position, to
-       * avoid infinite loops */
-      if (f_len == 0)
+      if (limit == 0 || limit > string->len)
         {
-          if (cur[0] == '\0')
-            break;
-          else
-            cur++;
+          if (string->len > G_MAXSIZE - 1)
+            g_error ("inserting in every position in string would overflow");
+
+          limit = string->len + 1;
         }
-      if (n == limit)
-        break;
+
+      if (r_len > 0 &&
+          (limit > G_MAXSIZE / r_len ||
+           limit * r_len > G_MAXSIZE - string->len))
+        g_error ("inserting in every position in string would overflow");
+
+      new_len = string->len + limit * r_len;
+      new_string = g_string_sized_new (new_len);
+      for (size_t i = 0; i < limit; i++)
+        {
+          g_string_append_len (new_string, replace, r_len);
+          if (i < string->len)
+            g_string_append_c (new_string, string->str[i]);
+        }
+      if (limit < string->len)
+        g_string_append_len (new_string, string->str + limit, string->len - limit);
+
+      g_free (string->str);
+      string->allocated_len = new_string->allocated_len;
+      string->len = new_string->len;
+      string->str = g_string_free_and_steal (g_steal_pointer (&new_string));
+
+      return limit;
     }
+
+  /* Potentially do two passes: the first to calculate the length of the new string,
+   * new_len, if it’s going to be longer than the original string; and the second to
+   * do the replacements. The first pass is skipped if the new string is going to be
+   * no longer than the original.
+   *
+   * The second pass calls various g_string_insert_len() (and similar) methods
+   * which would normally potentially reallocate string->str, and hence
+   * invalidate the cur/next/first/dst pointers. Because we’ve pre-calculated
+   * the new_len and do all the string manipulations on new_string, that
+   * shouldn’t happen. This means we scan `string` while modifying
+   * `new_string`. */
+  do
+    {
+      dst = first;
+      cur = first;
+      n = 0;
+      while ((next = strstr (cur, find)) != NULL)
+        {
+          n++;
+
+          if (r_len <= f_len)
+            {
+              memmove (dst, cur, next - cur);
+              dst += next - cur;
+              memcpy (dst, replace, r_len);
+              dst += r_len;
+            }
+          else
+            {
+              if (new_string == NULL)
+                {
+                  new_len += r_len - f_len;
+                }
+              else
+                {
+                  g_string_append_len (new_string, cur, next - cur);
+                  g_string_append_len (new_string, replace, r_len);
+                }
+            }
+          cur = next + f_len;
+
+          if (n == limit)
+            break;
+        }
+
+      /* Append the trailing characters from after the final instance of @find
+       * in the input string. */
+      if (r_len <= f_len)
+        {
+          /* First pass skipped. */
+          gchar *end = string->str + string->len;
+          memmove (dst, cur, end - cur);
+          end = dst + (end - cur);
+          *end = 0;
+          string->len = end - string->str;
+          break;
+        }
+      else
+        {
+          if (new_string == NULL)
+            {
+              /* First pass. */
+              new_string = g_string_sized_new (new_len);
+              g_string_append_len (new_string, string->str, first - string->str);
+            }
+          else
+            {
+              /* Second pass. */
+              g_string_append_len (new_string, cur, (string->str + string->len) - cur);
+              g_free (string->str);
+              string->allocated_len = new_string->allocated_len;
+              string->len = new_string->len;
+              string->str = g_string_free_and_steal (g_steal_pointer (&new_string));
+              break;
+            }
+        }
+    }
+  while (1);
 
   return n;
 }

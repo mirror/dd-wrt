@@ -14,7 +14,7 @@
 
   <homepage rdf:resource="http://www.gtk.org" />
   <license rdf:resource="http://usefulinc.com/doap/licenses/lgpl" />
-  <bug-database rdf:resource="https://gitlab.gnome.org/GNOME/glib/issues/new"/>
+  <bug-database rdf:resource="https://gitlab.gnome.org/GNOME/glib/-/issues"/>
   <download-page rdf:resource="http://download.gnome.org/sources/glib/" />
   <developer-forum rdf:resource="https://discourse.gnome.org/tags/glib/" />
   <category rdf:resource="http://api.gnome.org/doap-extensions#core" />
@@ -107,14 +107,6 @@
       <foaf:name>Jonathan Matthew</foaf:name>
       <foaf:mbox rdf:resource="mailto:jonathan@d14n.org"/>
       <gnome:userid>jmatthew</gnome:userid>
-    </foaf:Person>
-  </maintainer>
-
-  <maintainer>
-    <foaf:Person>
-      <foaf:name>Antoine Jacoutot</foaf:name>
-      <foaf:mbox rdf:resource="mailto:ajacoutot@gnome.org"/>
-<!--      <gnome:userid>ajacoutot</gnome:userid> -->
     </foaf:Person>
   </maintainer>
 

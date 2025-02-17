@@ -1093,8 +1093,9 @@ extern GType g_proxy_resolver_portal_get_type (void);
 extern GType g_network_monitor_portal_get_type (void);
 #endif
 
-#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1090
+#ifdef HAVE_COCOA
 extern GType g_cocoa_notification_backend_get_type (void);
+extern GType g_osx_network_monitor_get_type (void);
 #endif
 
 #ifdef G_PLATFORM_WIN32
@@ -1336,10 +1337,10 @@ _g_io_modules_ensure_loaded (void)
       g_type_ensure (g_memory_settings_backend_get_type ());
       g_type_ensure (g_keyfile_settings_backend_get_type ());
       g_type_ensure (g_power_profile_monitor_dbus_get_type ());
-#if defined(HAVE_INOTIFY_INIT1)
+#if defined(FILE_MONITOR_BACKEND_INOTIFY) || defined(FILE_MONITOR_BACKEND_LIBINOTIFY_KQUEUE)
       g_type_ensure (g_inotify_file_monitor_get_type ());
 #endif
-#if defined(HAVE_KQUEUE)
+#if defined(FILE_MONITOR_BACKEND_KQUEUE)
       g_type_ensure (g_kqueue_file_monitor_get_type ());
 #endif
 #ifdef G_OS_WIN32
@@ -1348,8 +1349,10 @@ _g_io_modules_ensure_loaded (void)
       g_type_ensure (g_registry_settings_backend_get_type ());
 #endif
 #ifdef HAVE_COCOA
+      g_type_ensure (g_cocoa_notification_backend_get_type ());
       g_type_ensure (g_nextstep_settings_backend_get_type ());
       g_type_ensure (g_osx_app_info_get_type ());
+      g_type_ensure (g_osx_network_monitor_get_type ());
 #endif
 #ifdef G_OS_UNIX
       g_type_ensure (_g_unix_volume_monitor_get_type ());
@@ -1362,9 +1365,6 @@ _g_io_modules_ensure_loaded (void)
       g_type_ensure (g_network_monitor_portal_get_type ());
       g_type_ensure (g_power_profile_monitor_portal_get_type ());
       g_type_ensure (g_proxy_resolver_portal_get_type ());
-#endif
-#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1090
-      g_type_ensure (g_cocoa_notification_backend_get_type ());
 #endif
 #ifdef G_OS_WIN32
       g_type_ensure (g_win32_notification_backend_get_type ());

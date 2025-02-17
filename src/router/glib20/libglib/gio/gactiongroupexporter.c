@@ -34,7 +34,7 @@
 /**
  * GActionGroupExporter:
  *
- * These functions support exporting a [class@Gio.ActionGroup] on D-Bus.
+ * These functions support exporting a [iface@Gio.ActionGroup] on D-Bus.
  * The D-Bus interface that is used is a private implementation
  * detail.
  *
@@ -51,7 +51,7 @@ g_action_group_describe_action (GActionGroup *action_group,
   gboolean enabled;
   GVariant *state;
 
-  g_variant_builder_init (&builder, G_VARIANT_TYPE ("(bgav)"));
+  g_variant_builder_init_static (&builder, G_VARIANT_TYPE ("(bgav)"));
 
   enabled = g_action_group_get_action_enabled (action_group, name);
   g_variant_builder_add (&builder, "b", enabled);
@@ -146,10 +146,10 @@ g_action_group_exporter_dispatch_events (gpointer user_data)
   gpointer value;
   gpointer key;
 
-  g_variant_builder_init (&removes, G_VARIANT_TYPE_STRING_ARRAY);
-  g_variant_builder_init (&enabled_changes, G_VARIANT_TYPE ("a{sb}"));
-  g_variant_builder_init (&state_changes, G_VARIANT_TYPE ("a{sv}"));
-  g_variant_builder_init (&adds, G_VARIANT_TYPE ("a{s(bgav)}"));
+  g_variant_builder_init_static (&removes, G_VARIANT_TYPE_STRING_ARRAY);
+  g_variant_builder_init_static (&enabled_changes, G_VARIANT_TYPE ("a{sb}"));
+  g_variant_builder_init_static (&state_changes, G_VARIANT_TYPE ("a{sv}"));
+  g_variant_builder_init_static (&adds, G_VARIANT_TYPE ("a{s(bgav)}"));
 
   g_hash_table_iter_init (&iter, exporter->pending_changes);
   while (g_hash_table_iter_next (&iter, &key, &value))
@@ -410,7 +410,7 @@ org_gtk_Actions_method_call (GDBusConnection       *connection,
       gint i;
 
       list = g_action_group_list_actions (exporter->action_group);
-      g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{s(bgav)}"));
+      g_variant_builder_init_static (&builder, G_VARIANT_TYPE ("a{s(bgav)}"));
       for (i = 0; list[i]; i++)
         {
           const gchar *name = list[i];
@@ -531,10 +531,8 @@ org_gtk_Actions_method_call (GDBusConnection       *connection,
 }
 
 static void
-g_action_group_exporter_free (gpointer user_data)
+g_action_group_exporter_free (GActionGroupExporter *exporter)
 {
-  GActionGroupExporter *exporter = user_data;
-
   g_signal_handlers_disconnect_by_func (exporter->action_group,
                                         g_action_group_exporter_action_added, exporter);
   g_signal_handlers_disconnect_by_func (exporter->action_group,
@@ -558,10 +556,9 @@ g_action_group_exporter_free (gpointer user_data)
 
 /**
  * g_dbus_connection_export_action_group:
- * @connection: a #GDBusConnection
+ * @connection: the D-Bus connection
  * @object_path: a D-Bus object path
- * @action_group: a #GActionGroup
- * @error: a pointer to a %NULL #GError, or %NULL
+ * @action_group: an action group
  *
  * Exports @action_group on @connection at @object_path.
  *
@@ -573,7 +570,7 @@ g_action_group_exporter_free (gpointer user_data)
  * returned (with @error set accordingly).
  *
  * You can unexport the action group using
- * g_dbus_connection_unexport_action_group() with the return value of
+ * [method@Gio.DBusConnection.unexport_action_group] with the return value of
  * this function.
  *
  * The thread default main context is taken at the time of this call.
@@ -616,15 +613,6 @@ g_dbus_connection_export_action_group (GDBusConnection  *connection,
     }
 
   exporter = g_slice_new (GActionGroupExporter);
-  id = g_dbus_connection_register_object (connection, object_path, org_gtk_Actions, &vtable,
-                                          exporter, g_action_group_exporter_free, error);
-
-  if (id == 0)
-    {
-      g_slice_free (GActionGroupExporter, exporter);
-      return 0;
-    }
-
   exporter->context = g_main_context_ref_thread_default ();
   exporter->pending_changes = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
   exporter->pending_source = NULL;
@@ -632,29 +620,35 @@ g_dbus_connection_export_action_group (GDBusConnection  *connection,
   exporter->connection = g_object_ref (connection);
   exporter->object_path = g_strdup (object_path);
 
-  g_signal_connect (action_group, "action-added",
-                    G_CALLBACK (g_action_group_exporter_action_added), exporter);
-  g_signal_connect (action_group, "action-removed",
-                    G_CALLBACK (g_action_group_exporter_action_removed), exporter);
-  g_signal_connect (action_group, "action-state-changed",
-                    G_CALLBACK (g_action_group_exporter_action_state_changed), exporter);
-  g_signal_connect (action_group, "action-enabled-changed",
-                    G_CALLBACK (g_action_group_exporter_action_enabled_changed), exporter);
+  id = g_dbus_connection_register_object (connection, object_path, org_gtk_Actions, &vtable,
+                                          exporter, (GDestroyNotify) g_action_group_exporter_free, error);
+
+  if (id != 0)
+    {
+      g_signal_connect (action_group, "action-added",
+                        G_CALLBACK (g_action_group_exporter_action_added), exporter);
+      g_signal_connect (action_group, "action-removed",
+                        G_CALLBACK (g_action_group_exporter_action_removed), exporter);
+      g_signal_connect (action_group, "action-state-changed",
+                        G_CALLBACK (g_action_group_exporter_action_state_changed), exporter);
+      g_signal_connect (action_group, "action-enabled-changed",
+                        G_CALLBACK (g_action_group_exporter_action_enabled_changed), exporter);
+    }
 
   return id;
 }
 
 /**
  * g_dbus_connection_unexport_action_group:
- * @connection: a #GDBusConnection
- * @export_id: the ID from g_dbus_connection_export_action_group()
+ * @connection: the D-Bus connection
+ * @export_id: the ID from [method@Gio.DBusConnection.export_action_group]
  *
  * Reverses the effect of a previous call to
- * g_dbus_connection_export_action_group().
+ * [method@Gio.DBusConnection.export_action_group].
  *
- * It is an error to call this function with an ID that wasn't returned
- * from g_dbus_connection_export_action_group() or to call it with the
- * same ID more than once.
+ * It is an error to call this function with an ID that wasn’t returned from
+ * [method@Gio.DBusConnection.export_action_group] or to call it with the same
+ * ID more than once.
  *
  * Since: 2.32
  **/

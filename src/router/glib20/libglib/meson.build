@@ -1,10 +1,14 @@
 project('glib', 'c',
-  version : '2.80.0',
+  version : '2.83.0',
   # NOTE: See the policy in docs/meson-version.md before changing the Meson dependency
   meson_version : '>= 0.60.0',
   default_options : [
     'buildtype=debugoptimized',
     'warning_level=3',
+    # FIXME: After https://github.com/mesonbuild/meson/issues/13639 is
+    # fixed, change this to
+    # meson.version().version_compare('>=FIXED_MESON_VERSION') ? 'c_std=gnu99,c99' : 'c_std=gnu99'
+    # to avoid a warning on MSVC.
     'c_std=gnu99'
   ]
 )
@@ -14,7 +18,7 @@ fs = import('fs')
 cc = meson.get_compiler('c')
 c_standards = {}
 
-foreach std : ['90', '99', '11', '17']
+foreach std : ['89', '99', '11', '17']
   arg = (cc.get_id() == 'msvc' ? '/std:' : '-std=') + 'c' + std
   if cc.has_argument(arg)
     c_standards += { std: arg }
@@ -183,7 +187,7 @@ test_timeout = 30
 test_timeout_slow = 90
 
 add_test_setup('default',
-  is_default: true,
+  is_default: not meson.is_subproject(),
   exclude_suites: ['flaky', 'failing'],
   env: common_test_env,
   timeout_multiplier: 2,
@@ -222,8 +226,7 @@ if valgrind.found()
       '--num-callers=50',
       '--show-leak-kinds=definite,possible',
       '--show-error-list=yes',
-      '--suppressions=@0@'.format(meson.project_source_root() /
-        '@0@'.format(valgrind_suppression_file)),
+      '--suppressions=' + valgrind_suppression_file.full_path(),
     ],
     env: common_test_env,
     timeout_multiplier: 20,
@@ -234,10 +237,20 @@ add_project_arguments('-D_GNU_SOURCE', language: 'c')
 
 if host_system == 'qnx'
   add_project_arguments('-D_QNX_SOURCE', language: 'c')
+elif host_system == 'sunos'
+  add_project_arguments('-D__EXTENSIONS__', language: 'c')
 endif
+
+# dummy/empty dependency() object to declare fallbacks and simpler dependencies
+not_found = dependency('', required: false)
+
+get_dll_paths_script = not_found
 
 if host_system == 'windows'
   add_project_arguments(['-DUNICODE', '-D_UNICODE'], language: 'c')
+
+  # Script to obtain paths where the DLLs that we will reside for g-ir-scanner
+  get_dll_paths_script = find_program('tools/grab-gio-dll-paths.py', native: true)
 endif
 
 # Disable strict aliasing;
@@ -245,9 +258,6 @@ endif
 if cc.has_argument('-fno-strict-aliasing')
   add_project_arguments('-fno-strict-aliasing', language: 'c')
 endif
-
-# dummy/empty dependency() object to declare fallbacks and simpler dependencies
-not_found = dependency('', required: false)
 
 ########################
 # Configuration begins #
@@ -385,14 +395,17 @@ headers = [
   'dirent.h', # MSC does not come with this by default
   'float.h',
   'fstab.h',
+  'ftw.h',
   'grp.h',
   'inttypes.h',
   'libproc.h',
   'limits.h',
+  'linux/netlink.h',
   'locale.h',
   'mach/mach_time.h',
   'memory.h',
   'mntent.h',
+  'netlink/netlink.h',
   'poll.h',
   'pwd.h',
   'sched.h',
@@ -404,6 +417,7 @@ headers = [
   'strings.h',
   'sys/auxv.h',
   'sys/event.h',
+  'sys/uio.h',
   'sys/filio.h',
   'sys/inotify.h',
   'sys/mkdev.h',
@@ -449,7 +463,7 @@ if cc.check_header('malloc.h')
   glib_conf_prefix = glib_conf_prefix + '#define HAVE_MALLOC_H 1\n'
 endif
 
-if cc.check_header('linux/netlink.h')
+if glib_conf.has('HAVE_LINUX_NETLINK_H') or glib_conf.has('HAVE_NETLINK_NETLINK_H')
   glib_conf.set('HAVE_NETLINK', 1)
 endif
 
@@ -545,10 +559,12 @@ endforeach
 if cc.get_id() == 'gcc' or cc.get_id() == 'clang'
   warning_common_args = [
     '-Wduplicated-branches',
+    '-Wfloat-conversion',
     '-Wimplicit-fallthrough',
     '-Wmisleading-indentation',
     '-Wmissing-field-initializers',
     '-Wnonnull',
+    '-Wnull-dereference',
     '-Wunused',
     # Due to maintained deprecated code, we do not want to see unused parameters
     '-Wno-unused-parameter',
@@ -578,6 +594,10 @@ if cc.get_id() == 'gcc' or cc.get_id() == 'clang'
     '-Werror=missing-prototypes',
     '-Werror=pointer-sign',
     '-Wno-string-plus-int',
+    # We require a compiler that supports C11 even though it's not yet a
+    # strict requirement, so allow typedef redefinition not to break clang and
+    # older gcc versions.
+    '-Wno-typedef-redefinition',
   ]
   warning_cxx_args = warning_common_args
   warning_objc_args = warning_c_args
@@ -634,6 +654,11 @@ endif
 # improve this.
 glib_link_flags = cc.get_supported_link_arguments(warning_c_link_args)
 
+glib_sanitizers = get_option('b_sanitize').split(',')
+if glib_sanitizers == ['none']
+  glib_sanitizers = []
+endif
+
 # Windows SDK requirements and checks
 if host_system == 'windows'
   # Check whether we're building for UWP apps
@@ -661,7 +686,8 @@ functions = [
   'copy_file_range',
   'endmntent',
   'endservent',
-  'epoll_create',
+  'epoll_create1',
+  'faccessat',
   'fallocate',
   'fchmod',
   'fchown',
@@ -691,6 +717,7 @@ functions = [
   'lstat',
   'mbrtowc',
   'memalign',
+  'memmem',
   'mmap',
   'newlocale',
   'pipe2',
@@ -938,12 +965,18 @@ if host_system == 'linux'
 endif
 
 osx_ldflags = []
-glib_have_os_x_9_or_later = false
 glib_have_carbon = false
 glib_have_cocoa = false
 if host_system == 'darwin'
   add_languages('objc', native: false, required: true)
   objcc = meson.get_compiler('objc')
+  if not objcc.compiles('''#include <AvailabilityMacros.h>
+                           #if MAC_OS_X_VERSION_MIN_REQUIRED < 101300
+                           #error message "GLib requires macOS 10.13 or later."
+                           #endif''',
+                         name : 'macOS 10.13 or later')
+    error('GLib requires macOS 10.13 or later.')
+  endif
 
   add_project_arguments(objcc.get_supported_arguments(warning_objc_args), language: 'objc')
 
@@ -954,11 +987,6 @@ if host_system == 'darwin'
 
   if glib_have_carbon
     glib_conf.set('HAVE_CARBON', true)
-    glib_have_os_x_9_or_later = objcc.compiles('''#include <AvailabilityMacros.h>
-                                                  #if MAC_OS_X_VERSION_MIN_REQUIRED < 1090
-                                                  #error Compiling for minimum OS X version before 10.9
-                                                  #endif''',
-                                               name : 'OS X 9 or later')
   endif
 
   # Mac OS X Cocoa support
@@ -994,7 +1022,7 @@ if cc.compiles('''#include <linux/futex.h>
                int main (int argc, char ** argv) {
                  syscall (__NR_futex_time64, NULL, FUTEX_WAKE, FUTEX_WAIT);
                  return 0;
-               }''', name : 'futex(2) system call')
+               }''', name : 'futex_time64(2) system call')
   glib_conf.set('HAVE_FUTEX_TIME64', 1)
 endif
 
@@ -1006,6 +1034,19 @@ if cc.links('''#include <sys/eventfd.h>
                  return 0;
                }''', name : 'eventfd(2) system call')
   glib_conf.set('HAVE_EVENTFD', 1)
+endif
+
+# Check for ppoll(2)
+if cc.links('''#define _GNU_SOURCE
+               #include <poll.h>
+               #include <stddef.h>
+               int main (int argc, char ** argv) {
+                 struct pollfd fds[1] = {{0}};
+                 struct timespec ts = {0};
+                 ppoll (fds, 1, NULL, NULL);
+                 return 0;
+               }''', name : 'ppoll(2) system call')
+  glib_conf.set('HAVE_PPOLL', 1)
 endif
 
 # Check for pidfd_open(2)
@@ -1705,7 +1746,7 @@ glibconfig_conf.set('guint64_constant', guint64_constant)
 if host_system == 'windows'
   glibconfig_conf.set('g_pid_type', 'void*')
   glibconfig_conf.set_quoted('g_pid_format', 'p')
-  if host_machine.cpu_family() == 'x86_64'
+  if host_machine.cpu_family() in ['x86_64', 'aarch64']
     glibconfig_conf.set_quoted('g_pollfd_format', '%#' + int64_m + 'x')
   else
     glibconfig_conf.set_quoted('g_pollfd_format', '%#x')
@@ -2211,13 +2252,22 @@ else
 endif
 
 # Import the gvdb sources as a subproject to avoid having the copylib in-tree
-subproject('gvdb')
+subproject('gvdb', default_options: {'tests': false})
 gvdb_dep = dependency('gvdb')
 
 libm = cc.find_library('m', required : false)
 # libffi_dep = dependency('libffi', version : '>= 3.0.0')
 
 libz_dep = dependency('zlib')
+
+libatomic_test_code = '''
+  int main (int argc, char ** argv) {
+    return 0;
+  }'''
+atomic_dep = []
+if cc.links(libatomic_test_code, args : '-latomic', name : 'check for -latomic')
+  atomic_dep = cc.find_library('atomic')
+endif
 
 # First check in libc, fallback to libintl, and as last chance build
 # proxy-libintl subproject.
@@ -2282,8 +2332,11 @@ endif
 
 if host_system == 'windows'
   winsock2 = cc.find_library('ws2_32')
+  # Used for g_win32_clear_com() tests...
+  wincodecs = cc.find_library('windowscodecs')
 else
   winsock2 = not_found
+  wincodecs = not_found
 endif
 
 selinux_dep = []
@@ -2427,10 +2480,23 @@ have_pkg_config = find_program('pkg-config', required: false).found()
 # Some installed tests require a custom environment
 env_program = find_program('env', required: installed_tests_enabled)
 
-# FIXME: How to detect Solaris? https://github.com/mesonbuild/meson/issues/1578
+# illumos & Solaris may need extra definitions to expose some SUS/POSIX
+# interfaces in headers that conflict with previous Solaris headers.
+# But if we define them to request an older version of the standards,
+# we may hide things introduced in newer versions.  We only check the
+# versions that are supported on systems new enough that meson runs on them.
 if host_system == 'sunos'
-  glib_conf.set('_XOPEN_SOURCE_EXTENDED', 1)
-  glib_conf.set('_XOPEN_SOURCE', 2)
+  xopen_test_code = '''#include <unistd.h>
+  #if _XOPEN_VERSION != _XOPEN_SOURCE
+  #error "XOPEN_SOURCE of _XOPEN_SOURCE not supported"
+  #endif'''
+  foreach std : ['800', '700', '600']
+    if cc.compiles(xopen_test_code, args: '-D_XOPEN_SOURCE=' + std, name: 'building with _XOPEN_SOURCE=' + std)
+      xopen_version = std
+      break
+    endif
+  endforeach
+  glib_conf.set('_XOPEN_SOURCE', xopen_version)
   glib_conf.set('__EXTENSIONS__',1)
 endif
 
@@ -2481,19 +2547,35 @@ elif host_system == 'cygwin'
 endif
 
 # Tracing: dtrace
-want_dtrace = get_option('dtrace')
-enable_dtrace = false
+dtrace_option = get_option('dtrace')
+enable_dtrace = dtrace_option.allowed()
 
-# Since dtrace support is opt-in we just error out if it was requested but
-# is not available. We don't bother with autodetection yet.
-if want_dtrace
-  if glib_have_carbon
+if glib_have_carbon
+  if dtrace_option.enabled()
     error('GLib dtrace support not yet compatible with macOS dtrace')
+  else
+    enable_dtrace = false
   endif
-  dtrace = find_program('dtrace', required : true) # error out if not found
+endif
+
+if enable_dtrace
+  dtrace = find_program('dtrace', required : dtrace_option)
+  if not dtrace.found()
+    enable_dtrace = false
+  endif
+endif
+
+if enable_dtrace
   if not cc.has_header('sys/sdt.h')
-    error('dtrace support needs sys/sdt.h header')
+    if dtrace_option.enabled()
+      error('dtrace support needs sys/sdt.h header')
+    else
+      enable_dtrace = false
+    endif
   endif
+endif
+
+if enable_dtrace
   # FIXME: autotools build also passes -fPIC -DPIC but is it needed in this case?
   dtrace_obj_gen = generator(dtrace,
     output : '@BASENAME@.o',
@@ -2514,7 +2596,6 @@ with open(output, "w") as f:
   f.write(contents)
 ''', dtrace.full_path(), '-h', '-s', '@INPUT@', '-o', '@OUTPUT@'])
   glib_conf.set('HAVE_DTRACE', 1)
-  enable_dtrace = true
 endif
 
 if cc.has_header_symbol('sys/ptrace.h', 'PTRACE_O_EXITKILL')
@@ -2522,10 +2603,10 @@ if cc.has_header_symbol('sys/ptrace.h', 'PTRACE_O_EXITKILL')
 endif
 
 # systemtap
-want_systemtap = get_option('systemtap')
-enable_systemtap = false
+systemtap = get_option('systemtap').require(enable_dtrace, error_message: 'Cannot enable systemtap because dtrace feature is disabled')
+enable_systemtap = systemtap.allowed()
 
-if want_systemtap and enable_dtrace
+if enable_systemtap
   tapset_install_dir = get_option('tapset_install_dir')
   if tapset_install_dir == ''
     tapset_install_dir = join_paths(get_option('datadir'), 'systemtap/tapset', host_machine.cpu_family())
@@ -2534,12 +2615,20 @@ if want_systemtap and enable_dtrace
   stp_cdata.set('ABS_GLIB_RUNTIME_LIBDIR', glib_libdir)
   stp_cdata.set('LT_CURRENT', minor_version * 100)
   stp_cdata.set('LT_REVISION', micro_version)
-  enable_systemtap = true
 endif
 
-# introspection
-gir_scanner = find_program('g-ir-scanner', required: get_option('introspection'))
-enable_gir = get_option('introspection').allowed() and gir_scanner.found() and meson.can_run_host_binaries()
+# Introspection
+#
+# We depend on g-ir-scanner from gobject-introspection-1.0 to scan our source
+# to build GIR files. We then use gi-compile-repository from the local build
+# tree to build the typelibs (rather than using g-ir-compiler from
+# gobject-introspection). However, we use Meson’s gnome.generate_gir() function,
+# which adds a hard dependency on gobject-introspection-1.0, so we’d better
+# check for that here.
+gobject_introspection_required_version = '>= 1.80.0'
+gir_scanner = find_program('g-ir-scanner', required: get_option('introspection'), version: gobject_introspection_required_version)
+gobject_introspection = dependency('gobject-introspection-1.0', required: get_option('introspection'), version: gobject_introspection_required_version)
+enable_gir = get_option('introspection').allowed() and gir_scanner.found() and gobject_introspection.found() and meson.can_run_host_binaries()
 
 if get_option('introspection').enabled() and not meson.can_run_host_binaries()
   error('Running binaries on the build host needs to be supported to build with -Dintrospection=enabled')
@@ -2590,6 +2679,7 @@ endif
 
 configure_file(output : 'config.h', configuration : glib_conf)
 
+rst2html5 = find_program('rst2html5', 'rst2html5.py', required: get_option('documentation'))
 
 gnome = import('gnome')
 
@@ -2649,7 +2739,7 @@ endif
 
 summary({
   'xattr' : xattr_dep.length() > 0,
-  'dtrace' : get_option('dtrace'),
+  'dtrace' : enable_dtrace,
   'systemtap' : enable_systemtap,
   'sysprof' : libsysprof_capture_dep.found(),
   'bsymbolic_functions' : get_option('bsymbolic_functions'),
@@ -2664,4 +2754,5 @@ summary({
   'libelf' : get_option('libelf'),
   'multiarch' : get_option('multiarch'),
   'introspection' : enable_gir,
+  'file_monitor_backend' : get_option('file_monitor_backend'),
 }, section: 'Options')

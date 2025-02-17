@@ -7,11 +7,45 @@ gi_gen_shared_sources = [
   gmodule_visibility_h,
 ]
 
+gi_gen_shared_dependencies = [
+  # libgirepository is not needed by most of the modules below, but it is needed
+  # by the g-ir-scanner generated dumper program. If we don’t explicitly include
+  # the local version of it here, Meson will implicitly link against it anyway,
+  # and that might pull in a different version, or try to link against a
+  # half-built local version as the build ordering dependency tree won’t
+  # reflect this relationship.
+  libgirepository_dep,
+]
+
 gi_gen_env_variables = environment()
 
-if get_option('b_sanitize') != ''
+if 'address' in glib_sanitizers
   gi_gen_env_variables.append(
     'ASAN_OPTIONS', 'verify_asan_link_order=0', separator: ',')
+endif
+
+if host_system == 'windows'
+  # Use gio-2.0-uninstalled.pc to find the paths where the GLib DLLs (and their dependent non-system
+  # DLLs that are built as subprojects) are located
+  check_built_dll_paths_cmd = [get_dll_paths_script, '--build-path=@0@'.format(meson.project_build_root())]
+  meson_pkgconfig_paths = get_option('pkg_config_path')
+  if meson_pkgconfig_paths.length() > 0
+    check_built_dll_paths_cmd += '--pkg-config-path=@0@'.format(''.join(meson_pkgconfig_paths))
+  endif
+  check_built_dll_paths = run_command(
+    check_built_dll_paths_cmd,
+	capture: true,
+    check: true,
+  )
+  # hmm, no os.pathsep in Meson to make this more portable, if needed?
+  gi_scanner_dll_paths = check_built_dll_paths.stdout().strip().split(';')
+
+  # Also assume the existing paths in %PATH% to be considered for DLLs
+  message('Ensure that all of GLib\'s dependent non-system DLLs that are not built')
+  message('alongside with GLib can be found in paths in %PATH%')
+  message('Check this if building .gir files fail due to \'ImportError: DLL load failed while importing _giscanner\'')
+
+  gi_gen_env_variables.set('GI_EXTRA_BASE_DLL_DIRS', gi_scanner_dll_paths)
 endif
 
 # GLib
@@ -27,6 +61,7 @@ glib_gir_sources = [
   glib_types_h,
   glib_deprecated_sources,
   glib_sources,
+  files('../../glib/docs.c'),
 ]
 
 # For API compatibility reasons, GLib-2.0.gir needs to contain the platform
@@ -49,7 +84,8 @@ glib_gir = gnome.generate_gir(libglib,
   export_packages: 'glib-2.0',
   header: 'glib.h',
   install: true,
-  dependencies: [
+  install_dir_gir: glib_girdir,
+  dependencies: gi_gen_shared_dependencies + [
     libgobject_dep,
   ],
   env: gi_gen_env_variables,
@@ -76,7 +112,8 @@ if host_system == 'windows'
     header: 'glib.h',
     includes: [ glib_gir[0] ],
     install: true,
-    dependencies: [
+    install_dir_gir: glib_girdir,
+    dependencies: gi_gen_shared_dependencies + [
       libgobject_dep,
     ],
     env: gi_gen_env_variables,
@@ -104,7 +141,8 @@ else
     header: 'glib.h',
     includes: [ glib_gir[0] ],
     install: true,
-    dependencies: [
+    install_dir_gir: glib_girdir,
+    dependencies: gi_gen_shared_dependencies + [
       libgobject_dep,
     ],
     env: gi_gen_env_variables,
@@ -137,6 +175,8 @@ gobject_gir = gnome.generate_gir(libgobject,
   header: 'glib-object.h',
   includes: [ glib_gir[0] ],
   install: true,
+  install_dir_gir: glib_girdir,
+  dependencies: gi_gen_shared_dependencies,
   env: gi_gen_env_variables,
   extra_args: gir_args + [
       '-DGOBJECT_COMPILATION',
@@ -162,7 +202,8 @@ gmodule_gir = gnome.generate_gir(libgmodule,
   header: 'gmodule.h',
   includes: [ glib_gir[0] ],
   install: true,
-  dependencies: [
+  install_dir_gir: glib_girdir,
+  dependencies: gi_gen_shared_dependencies + [
     libglib_dep,
   ],
   env: gi_gen_env_variables,
@@ -201,14 +242,14 @@ gio_gir_args = [
 if host_system == 'windows'
   gio_gir_sources += [ gio_win32_include_headers, win32_sources ]
   foreach h: gio_win32_include_headers
-    gio_gir_args += '--c-include=@0@'.format(h)
+    gio_gir_args += '--c-include=gio/' + fs.name(h)
   endforeach
-  gio_gir_packages += 'gio-win32-2.0'
-  gio_gir_args += '--pkg=gio-win32-2.0'
+  gio_gir_packages += 'gio-windows-2.0'
+  gio_gir_args += '--pkg=gio-windows-2.0'
 else
   gio_gir_sources += [ gio_unix_include_headers, unix_sources ]
   foreach h: gio_unix_include_headers
-    gio_gir_args += '--c-include=@0@'.format(h)
+    gio_gir_args += '--c-include=gio/' + fs.name(h)
   endforeach
   gio_gir_packages += 'gio-unix-2.0'
   gio_gir_args += '--pkg=gio-unix-2.0'
@@ -224,7 +265,8 @@ gio_gir = gnome.generate_gir(libgio,
   header: 'gio/gio.h',
   includes: [ glib_gir[0], gmodule_gir[0], gobject_gir[0] ],
   install: true,
-  dependencies: [
+  install_dir_gir: glib_girdir,
+  dependencies: gi_gen_shared_dependencies + [
     libglib_dep,
     libgobject_dep,
     libgmodule_dep,
@@ -236,7 +278,7 @@ gio_gir = gnome.generate_gir(libgio,
 if host_system == 'windows'
   gio_win32_gir_c_includes = []
   foreach h: gio_win32_include_headers
-    gio_win32_gir_c_includes += '--c-include=@0@'.format(h)
+    gio_win32_gir_c_includes += '--c-include=gio/' + fs.name(h)
   endforeach
 
   gio_win32_gir = gnome.generate_gir(libgio,
@@ -245,26 +287,28 @@ if host_system == 'windows'
     nsversion: '2.0',
     identifier_prefix: gi_identifier_prefix,
     symbol_prefix: gi_symbol_prefix,
-    export_packages: [ 'gio-win32-2.0' ],
+    export_packages: [ 'gio-windows-2.0' ],
     header: 'gio/gio.h',
     includes: [ glib_gir[0], gmodule_gir[0], gobject_gir[0], gio_gir[0] ],
     install: true,
-    dependencies: [
+    install_dir_gir: glib_girdir,
+    dependencies: gi_gen_shared_dependencies + [
       libglib_dep,
       libgobject_dep,
       libgmodule_dep,
     ],
     env: gi_gen_env_variables,
     extra_args: gir_args + gio_gir_args + gio_win32_gir_c_includes + [
-      '--pkg=gio-win32-2.0',
+      '--pkg=gio-windows-2.0',
       '--symbol-prefix=g_win32',
       '--identifier-prefix=GWin32'
     ],
   )
+  gio_platform_gir = gio_win32_gir
 else
   gio_unix_gir_c_includes = []
   foreach h: gio_unix_include_headers
-    gio_unix_gir_c_includes += '--c-include=@0@'.format(h)
+    gio_unix_gir_c_includes += '--c-include=gio/' + fs.name(h)
   endforeach
 
   gio_unix_gir = gnome.generate_gir(libgio,
@@ -277,7 +321,8 @@ else
     header: 'gio/gio.h',
     includes: [ glib_gir[0], gmodule_gir[0], gobject_gir[0], gio_gir[0] ],
     install: true,
-    dependencies: [
+    install_dir_gir: glib_girdir,
+    dependencies: gi_gen_shared_dependencies + [
       libglib_dep,
       libgobject_dep,
       libgmodule_dep,
@@ -289,6 +334,7 @@ else
       '--identifier-prefix=GUnix'
     ],
   )
+  gio_platform_gir = gio_unix_gir
 endif
 
 # GIRepository
@@ -304,6 +350,12 @@ libgirepository_gir_args = [
   '--identifier-prefix=GI',
 ]
 
+gi_libgirepository_gen_env_variables = environment()
+
+if host_system == 'windows'
+  gi_libgirepository_gen_env_variables.set('GI_EXTRA_BASE_DLL_DIRS', gi_scanner_dll_paths)
+endif
+
 girepository_gir = gnome.generate_gir(libgirepository,
   sources: libgirepository_gir_sources,
   namespace: 'GIRepository',
@@ -314,7 +366,14 @@ girepository_gir = gnome.generate_gir(libgirepository,
   header: 'girepository/girepository.h',
   includes: [ glib_gir[0], gmodule_gir[0], gobject_gir[0], gio_gir[0] ],
   install: true,
-  dependencies: [ libglib_dep, libgobject_dep, libgmodule_dep, libgio_dep ],
+  install_dir_gir: glib_girdir,
+  dependencies: gi_gen_shared_dependencies + [
+    libglib_dep,
+    libgobject_dep,
+    libgmodule_dep,
+    libgio_dep,
+  ],
   extra_args: gir_args + libgirepository_gir_args,
+  env: gi_libgirepository_gen_env_variables,
 )
 

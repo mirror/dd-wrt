@@ -6,6 +6,8 @@
 # Copyright (C) 2008-2018 Red Hat, Inc.
 # Copyright (C) 2018 Iñigo Martínez <inigomartinez@gmail.com>
 #
+# SPDX-License-Identifier: LGPL-2.1-or-later
+#
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
 # License as published by the Free Software Foundation; either
@@ -2833,7 +2835,7 @@ class CodeGenerator:
                 )
             if m.unix_fd:
                 self.outfile.write(
-                    " * @out_fd_list: (out) (optional): Return location for a #GUnixFDList or %NULL to ignore.\n"
+                    " * @out_fd_list: (out) (optional) (nullable): Return location for a #GUnixFDList or %NULL to ignore.\n"
                 )
             self.outfile.write(
                 self.docbook_gen.expand(
@@ -2911,7 +2913,7 @@ class CodeGenerator:
                 )
             if m.unix_fd:
                 self.outfile.write(
-                    " * @out_fd_list: (out): Return location for a #GUnixFDList or %NULL.\n"
+                    " * @out_fd_list: (out) (optional) (nullable): Return location for a #GUnixFDList or %NULL.\n"
                 )
             self.outfile.write(
                 self.docbook_gen.expand(
@@ -3973,7 +3975,11 @@ class CodeGenerator:
             "\n"
             "  GVariantBuilder builder;\n"
             "  guint n;\n"
-            '  g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));\n'
+            "#if GLIB_VERSION_MAX_ALLOWED >= GLIB_VERSION_2_84\n"
+            '  g_variant_builder_init_static (&builder, G_VARIANT_TYPE ("a{sv}"));\n'
+            "#else\n"
+            '  g_variant_builder_init(&builder, G_VARIANT_TYPE ("a{sv}"));\n'
+            "#endif\n"
             "  if (_%s_interface_info.parent_struct.properties == NULL)\n"
             "    goto out;\n"
             "  for (n = 0; _%s_interface_info.parent_struct.properties[n] != NULL; n++)\n"
@@ -4182,8 +4188,13 @@ class CodeGenerator:
                 "  guint num_changes;\n"
                 "\n"
                 "  g_mutex_lock (&skeleton->priv->lock);\n"
+                "#if GLIB_VERSION_MAX_ALLOWED >= GLIB_VERSION_2_84\n"
+                '  g_variant_builder_init_static (&builder, G_VARIANT_TYPE ("a{sv}"));\n'
+                '  g_variant_builder_init_static (&invalidated_builder, G_VARIANT_TYPE ("as"));\n'
+                "#else\n"
                 '  g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));\n'
                 '  g_variant_builder_init (&invalidated_builder, G_VARIANT_TYPE ("as"));\n'
+                "#endif\n"
                 "  for (l = skeleton->priv->changed_properties, num_changes = 0; l != NULL; l = l->next)\n"
                 "    {\n"
                 "      ChangedProperty *cp = l->data;\n"

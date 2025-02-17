@@ -924,6 +924,8 @@ test_l10n_time (void)
   g_assert_true (original_locale != (locale_t) 0);
   new_locale = duplocale (original_locale);
   g_assert_true (new_locale != (locale_t) 0);
+  g_clear_pointer (&new_locale, freelocale);
+
   new_locale = newlocale (LC_TIME_MASK, "C", new_locale);
   g_assert_true (new_locale != (locale_t) 0);
   result = uselocale (new_locale);
@@ -936,6 +938,7 @@ test_l10n_time (void)
 
   g_assert_cmpstr (str, ==, "12:00 AM");
   g_free (str);
+  g_clear_pointer (&new_locale, freelocale);
   str = NULL;
 
   new_locale = newlocale (LC_TIME_MASK, "de_DE.UTF-8", new_locale);
@@ -964,7 +967,7 @@ test_l10n_time (void)
 
   result = uselocale (original_locale);
   g_assert_true (result == new_locale);
-  freelocale (new_locale);
+  g_clear_pointer (&new_locale, freelocale);
 
   g_object_unref (settings);
 #endif
@@ -1711,6 +1714,146 @@ test_custom_binding (void)
   g_test_assert_expected_messages ();
 
   g_object_unref (obj);
+  g_object_unref (settings);
+}
+
+/* Same test as above, but with closures
+ */
+static void
+test_bind_with_mapping_closures (void)
+{
+  TestObject *obj;
+  GSettings *settings;
+  char *s;
+  gboolean b;
+  GClosure *get;
+  GClosure *set;
+
+  settings = g_settings_new ("org.gtk.test.binding");
+  obj = test_object_new ();
+
+  g_settings_set_string (settings, "string", "true");
+
+  get = g_cclosure_new (G_CALLBACK (string_to_bool), NULL, NULL);
+  set = g_cclosure_new (G_CALLBACK (bool_to_string), NULL, NULL);
+
+  g_settings_bind_with_mapping_closures (settings, "string",
+                                         G_OBJECT (obj), "bool",
+                                         G_SETTINGS_BIND_DEFAULT, get, set);
+
+  g_settings_set_string (settings, "string", "false");
+  g_object_get (obj, "bool", &b, NULL);
+  g_assert_cmpint (b, ==, FALSE);
+
+  g_settings_set_string (settings, "string", "not true");
+  g_object_get (obj, "bool", &b, NULL);
+  g_assert_cmpint (b, ==, FALSE);
+
+  g_object_set (obj, "bool", TRUE, NULL);
+  s = g_settings_get_string (settings, "string");
+  g_assert_cmpstr (s, ==, "true");
+  g_free (s);
+
+  set = g_cclosure_new (G_CALLBACK (bool_to_bool), NULL, NULL);
+
+  g_settings_bind_with_mapping_closures (settings, "string",
+                                         G_OBJECT (obj), "bool",
+                                         G_SETTINGS_BIND_DEFAULT, get, set);
+  g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL,
+                         "*binding mapping function for key 'string' returned"
+                         " GVariant of type 'b' when type 's' was requested*");
+  g_object_set (obj, "bool", FALSE, NULL);
+  g_test_assert_expected_messages ();
+
+  g_object_unref (obj);
+  g_object_unref (settings);
+}
+
+typedef struct
+{
+  gboolean get_called;
+  gboolean set_called;
+  gboolean get_freed;
+  gboolean set_freed;
+} BindWithMappingData;
+
+static gboolean
+get_callback (GValue *value,
+              GVariant *variant,
+              void *user_data)
+{
+  BindWithMappingData *data = (BindWithMappingData *) user_data;
+  data->get_called = TRUE;
+
+  g_assert_true (G_VALUE_HOLDS_BOOLEAN (value));
+  g_assert_true (g_variant_is_of_type (variant, G_VARIANT_TYPE_STRING));
+
+  return string_to_bool (value, variant, NULL);
+}
+
+static GVariant *
+set_callback (const GValue *value,
+              const GVariantType *expected_type,
+              void *user_data)
+{
+  BindWithMappingData *data = (BindWithMappingData *) user_data;
+  data->set_called = TRUE;
+
+  g_assert_true (G_VALUE_HOLDS_BOOLEAN (value));
+  g_assert_true (g_variant_type_equal (expected_type, G_VARIANT_TYPE_STRING));
+
+  return bool_to_string (value, expected_type, NULL);
+}
+
+static void
+teardown_get (void *user_data, GClosure *closure)
+{
+  BindWithMappingData *data = (BindWithMappingData *) user_data;
+  data->get_freed = TRUE;
+}
+
+static void
+teardown_set (void *user_data, GClosure *closure)
+{
+  BindWithMappingData *data = (BindWithMappingData *) user_data;
+  data->set_freed = TRUE;
+}
+
+/* Tests the types of GValue and GVariant passed to the closures */
+static void
+test_bind_with_mapping_closures_parameters (void)
+{
+  TestObject *obj;
+  GSettings *settings;
+  GClosure *get;
+  GClosure *set;
+  BindWithMappingData data = { FALSE, FALSE, FALSE, FALSE };
+
+  settings = g_settings_new ("org.gtk.test.binding");
+  obj = test_object_new ();
+
+  g_settings_set_string (settings, "string", "true");
+
+  get = g_cclosure_new (G_CALLBACK (get_callback), &data, teardown_get);
+  set = g_cclosure_new (G_CALLBACK (set_callback), &data, teardown_set);
+
+  g_settings_bind_with_mapping_closures (settings, "string",
+                                         G_OBJECT (obj), "bool",
+                                         G_SETTINGS_BIND_DEFAULT, get, set);
+
+  g_assert_true (data.get_called);
+  g_assert_false (data.set_called);
+
+  data.get_called = FALSE;
+  g_object_set (obj, "bool", FALSE, NULL);
+  g_assert_true (data.set_called);
+  g_assert_false (data.get_called);
+
+  g_object_unref (obj);
+
+  g_assert_true (data.get_freed);
+  g_assert_true (data.set_freed);
+
   g_object_unref (settings);
 }
 
@@ -3096,11 +3239,26 @@ test_extended_schema (void)
   GSettings *settings;
   gchar **keys;
 
-  settings = g_settings_new_with_path ("org.gtk.test.extends.extended", "/test/extendes/");
+  settings = g_settings_new_with_path ("org.gtk.test.extends.extended", "/test/extends/");
   g_object_get (settings, "settings-schema", &schema, NULL);
   keys = g_settings_schema_list_keys (schema);
   g_assert_true (strv_set_equal ((const gchar * const *) keys, "int32", "string", "another-int32", NULL));
   g_strfreev (keys);
+  g_object_unref (settings);
+  g_settings_schema_unref (schema);
+}
+
+static void
+test_extended_schema_has_key (void)
+{
+  GSettingsSchema *schema;
+  GSettings *settings;
+
+  settings = g_settings_new_with_path ("org.gtk.test.extends.extended", "/test/extends/");
+  g_object_get (settings, "settings-schema", &schema, NULL);
+  g_assert_true (g_settings_schema_has_key (schema, "int32"));
+  g_assert_true (g_settings_schema_has_key (schema, "string"));
+  g_assert_true (g_settings_schema_has_key (schema, "another-int32"));
   g_object_unref (settings);
   g_settings_schema_unref (schema);
 }
@@ -3237,6 +3395,8 @@ main (int argc, char *argv[])
   g_test_add_func ("/gsettings/simple-binding", test_simple_binding);
   g_test_add_func ("/gsettings/directional-binding", test_directional_binding);
   g_test_add_func ("/gsettings/custom-binding", test_custom_binding);
+  g_test_add_func ("/gsettings/bind-with-mapping-closures", test_bind_with_mapping_closures);
+  g_test_add_func ("/gsettings/bind-with-mapping-closures-parameters", test_bind_with_mapping_closures_parameters);
   g_test_add_func ("/gsettings/no-change-binding", test_no_change_binding);
   g_test_add_func ("/gsettings/unbinding", test_unbind);
   g_test_add_func ("/gsettings/writable-binding", test_bind_writable);
@@ -3284,6 +3444,7 @@ main (int argc, char *argv[])
   g_test_add_func ("/gsettings/memory-backend", test_memory_backend);
   g_test_add_func ("/gsettings/read-descriptions", test_read_descriptions);
   g_test_add_func ("/gsettings/test-extended-schema", test_extended_schema);
+  g_test_add_func ("/gsettings/test-extended-schema-has-key", test_extended_schema_has_key);
   g_test_add_func ("/gsettings/default-value", test_default_value);
   g_test_add_func ("/gsettings/per-desktop", test_per_desktop);
   g_test_add_func ("/gsettings/per-desktop/subprocess", test_per_desktop_subprocess);

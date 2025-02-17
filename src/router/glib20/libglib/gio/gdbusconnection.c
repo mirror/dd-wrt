@@ -122,13 +122,14 @@
 
 #include "glibintl.h"
 
-#define G_DBUS_CONNECTION_FLAGS_ALL \
-  (G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT | \
-   G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_SERVER | \
-   G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_ALLOW_ANONYMOUS | \
-   G_DBUS_CONNECTION_FLAGS_MESSAGE_BUS_CONNECTION | \
-   G_DBUS_CONNECTION_FLAGS_DELAY_MESSAGE_PROCESSING | \
-   G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_REQUIRE_SAME_USER)
+#define G_DBUS_CONNECTION_FLAGS_ALL                           \
+  (G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT |            \
+   G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_SERVER |            \
+   G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_ALLOW_ANONYMOUS |   \
+   G_DBUS_CONNECTION_FLAGS_MESSAGE_BUS_CONNECTION |           \
+   G_DBUS_CONNECTION_FLAGS_DELAY_MESSAGE_PROCESSING |         \
+   G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_REQUIRE_SAME_USER | \
+   G_DBUS_CONNECTION_FLAGS_CROSS_NAMESPACE)
 
 /**
  * GDBusConnection:
@@ -287,6 +288,153 @@ call_destroy_notify (GMainContext  *context,
 
 /* ---------------------------------------------------------------------------------------------------- */
 
+typedef struct
+{
+  gatomicrefcount ref_count;
+  /* All remaining fields are immutable after construction. */
+  GDBusSignalCallback callback;
+  gpointer user_data;
+  GDestroyNotify user_data_free_func;
+  guint id;
+  GMainContext *context;
+} SignalSubscriber;
+
+static SignalSubscriber *
+signal_subscriber_ref (SignalSubscriber *subscriber)
+{
+  g_atomic_ref_count_inc (&subscriber->ref_count);
+  return subscriber;
+}
+
+static void
+signal_subscriber_unref (SignalSubscriber *subscriber)
+{
+  if (g_atomic_ref_count_dec (&subscriber->ref_count))
+    {
+      /* Destroy the user data. It doesn’t matter which thread
+       * signal_subscriber_unref() is called in (or whether it’s called with a
+       * lock held), as call_destroy_notify() always defers to the next
+       * #GMainContext iteration. */
+      call_destroy_notify (subscriber->context,
+                           subscriber->user_data_free_func,
+                           subscriber->user_data);
+
+      g_main_context_unref (subscriber->context);
+      g_free (subscriber);
+    }
+}
+
+typedef struct
+{
+  /*
+   * 1 reference while waiting for GetNameOwner() to finish
+   * 1 reference for each SignalData that points to this one as its
+   *   shared_name_watcher
+   */
+  grefcount ref_count;
+
+  gchar *owner;
+  guint32 get_name_owner_serial;
+} WatchedName;
+
+static WatchedName *
+watched_name_new (void)
+{
+  WatchedName *watched_name = g_new0 (WatchedName, 1);
+
+  g_ref_count_init (&watched_name->ref_count);
+  watched_name->owner = NULL;
+  return g_steal_pointer (&watched_name);
+}
+
+typedef struct SignalData SignalData;
+
+struct SignalData
+{
+  gchar *rule;
+  gchar *sender;
+  gchar *interface_name;
+  gchar *member;
+  gchar *object_path;
+  gchar *arg0;
+  GDBusSignalFlags flags;
+  GPtrArray *subscribers;  /* (owned) (element-type SignalSubscriber) */
+
+  /*
+   * If the sender is a well-known name, this is an unowned SignalData
+   * representing the NameOwnerChanged signal that tracks its owner.
+   * NULL if sender is NULL.
+   * NULL if sender is its own owner (a unique name or DBUS_SERVICE_DBUS).
+   *
+   * Invariants: if not NULL, then
+   * shared_name_watcher->sender == DBUS_SERVICE_DBUS
+   * shared_name_watcher->interface_name == DBUS_INTERFACE_DBUS
+   * shared_name_watcher->member == "NameOwnerChanged"
+   * shared_name_watcher->object_path == DBUS_PATH_DBUS
+   * shared_name_watcher->arg0 == sender
+   * shared_name_watcher->flags == NONE
+   * shared_name_watcher->watched_name == NULL
+   */
+  SignalData *shared_name_watcher;
+
+  /*
+   * Non-NULL if this SignalData is another SignalData's shared_name_watcher.
+   * One reference for each SignalData that has this one as its
+   * shared_name_watcher.
+   * Otherwise NULL.
+   */
+  WatchedName *watched_name;
+};
+
+static SignalData *
+signal_data_new_take (gchar *rule,
+                      gchar *sender,
+                      gchar *interface_name,
+                      gchar *member,
+                      gchar *object_path,
+                      gchar *arg0,
+                      GDBusSignalFlags flags)
+{
+  SignalData *signal_data = g_new0 (SignalData, 1);
+
+  signal_data->rule = rule;
+  signal_data->sender = sender;
+  signal_data->interface_name = interface_name;
+  signal_data->member = member;
+  signal_data->object_path = object_path;
+  signal_data->arg0 = arg0;
+  signal_data->flags = flags;
+  signal_data->subscribers = g_ptr_array_new_with_free_func ((GDestroyNotify) signal_subscriber_unref);
+  return g_steal_pointer (&signal_data);
+}
+
+static void
+signal_data_free (SignalData *signal_data)
+{
+  /* The SignalData should not be freed while it still has subscribers */
+  g_assert (signal_data->subscribers->len == 0);
+
+  /* The SignalData should not be freed while it is watching for
+   * NameOwnerChanged on behalf of another SignalData */
+  g_assert (signal_data->watched_name == NULL);
+
+  /* The SignalData should be detached from its name watcher, if any,
+   * before it is freed */
+  g_assert (signal_data->shared_name_watcher == NULL);
+
+  g_free (signal_data->rule);
+  g_free (signal_data->sender);
+  g_free (signal_data->interface_name);
+  g_free (signal_data->member);
+  g_free (signal_data->object_path);
+  g_free (signal_data->arg0);
+  g_ptr_array_unref (signal_data->subscribers);
+
+  g_free (signal_data);
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
 #ifdef G_OS_WIN32
 #define CONNECTION_ENSURE_LOCK(obj) do { ; } while (FALSE)
 #else
@@ -335,7 +483,7 @@ struct _GDBusConnection
   GMutex init_lock;
 
   /* Set (by loading the contents of /var/lib/dbus/machine-id) the first time
-   * someone calls org.freedesktop.DBus.Peer.GetMachineId(). Protected by @lock.
+   * someone calls DBUS_INTERFACE_PEER.GetMachineId(). Protected by @lock.
    */
   gchar *machine_id;
 
@@ -405,6 +553,7 @@ struct _GDBusConnection
 
   /* Map used for managing method replies, protected by @lock */
   GHashTable *map_method_serial_to_task;  /* guint32 -> owned GTask* */
+  GHashTable *map_method_serial_to_name_watcher;  /* guint32 -> unowned SignalData* */
 
   /* Maps used for managing signal subscription, protected by @lock */
   GHashTable *map_rule_to_signal_data;                      /* match rule (gchar*)    -> SignalData */
@@ -653,6 +802,7 @@ g_dbus_connection_finalize (GObject *object)
     g_error_free (connection->initialization_error);
 
   g_hash_table_unref (connection->map_method_serial_to_task);
+  g_hash_table_unref (connection->map_method_serial_to_name_watcher);
 
   g_hash_table_unref (connection->map_rule_to_signal_data);
   g_hash_table_unref (connection->map_id_to_signal_data);
@@ -1039,6 +1189,7 @@ g_dbus_connection_init (GDBusConnection *connection)
   g_mutex_init (&connection->init_lock);
 
   connection->map_method_serial_to_task = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_object_unref);
+  connection->map_method_serial_to_name_watcher = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, NULL);
 
   connection->map_rule_to_signal_data = g_hash_table_new (g_str_hash,
                                                           g_str_equal);
@@ -1897,6 +2048,7 @@ g_dbus_connection_send_message_with_reply_unlocked (GDBusConnection     *connect
 
   if (out_serial == NULL)
     out_serial = &serial;
+  *out_serial = 0;
 
   if (timeout_msec == -1)
     timeout_msec = 25 * 1000;
@@ -2166,6 +2318,197 @@ g_dbus_connection_send_message_with_reply_sync (GDBusConnection        *connecti
 
 /* ---------------------------------------------------------------------------------------------------- */
 
+/*
+ * Called in any thread.
+ * Must hold the connection lock when calling this, unless
+ * connection->finalizing is TRUE.
+ */
+static void
+name_watcher_unref_watched_name (GDBusConnection *connection,
+                                 SignalData *name_watcher)
+{
+  WatchedName *watched_name = name_watcher->watched_name;
+
+  g_assert (watched_name != NULL);
+
+  if (!g_ref_count_dec (&watched_name->ref_count))
+    return;
+
+  /* Removing watched_name from the name_watcher may result in
+   * name_watcher being freed, so we must make sure name_watcher is no
+   * longer in map_method_serial_to_name_watcher.
+   *
+   * If we stop watching the name while our GetNameOwner call was still
+   * in-flight, then when the reply eventually arrives, we will not find
+   * its serial number in the map and harmlessly ignore it as a result. */
+  if (watched_name->get_name_owner_serial != 0)
+    g_hash_table_remove (connection->map_method_serial_to_name_watcher,
+                         GUINT_TO_POINTER (watched_name->get_name_owner_serial));
+
+  name_watcher->watched_name = NULL;
+  g_free (watched_name->owner);
+  g_free (watched_name);
+}
+
+/* called in GDBusWorker thread with lock held */
+static void
+name_watcher_set_name_owner_unlocked (SignalData *name_watcher,
+                                      const char *new_owner)
+{
+  if (new_owner != NULL && new_owner[0] == '\0')
+    new_owner = NULL;
+
+  g_assert (name_watcher->watched_name != NULL);
+  g_set_str (&name_watcher->watched_name->owner, new_owner);
+}
+
+/* called in GDBusWorker thread with lock held */
+static void
+name_watcher_deliver_name_owner_changed_unlocked (SignalData *name_watcher,
+                                                  GDBusMessage *message)
+{
+  GVariant *body;
+
+  body = g_dbus_message_get_body (message);
+
+  if (G_LIKELY (body != NULL && g_variant_is_of_type (body, G_VARIANT_TYPE ("(sss)"))))
+    {
+      const char *name;
+      const char *new_owner;
+
+      g_variant_get (body, "(&s&s&s)", &name, NULL, &new_owner);
+
+      /* Our caller already checked this */
+      g_assert (g_strcmp0 (name_watcher->arg0, name) == 0);
+
+      /* FIXME: This should be validating that `new_owner` is a unique name,
+       * but IBus’ implementation of a message bus is not compliant with the spec.
+       * See https://gitlab.gnome.org/GNOME/glib/-/issues/3353 */
+      if (G_LIKELY (new_owner[0] == '\0' || g_dbus_is_name (new_owner)))
+        name_watcher_set_name_owner_unlocked (name_watcher, new_owner);
+      else
+        g_warning ("Received NameOwnerChanged signal with invalid owner \"%s\" for \"%s\"",
+                   new_owner, name);
+    }
+  else
+    {
+      g_warning ("Received NameOwnerChanged signal with unexpected "
+                 "signature %s",
+                 body == NULL ? "()" : g_variant_get_type_string (body));
+
+    }
+}
+
+/* called in GDBusWorker thread with lock held */
+static void
+name_watcher_deliver_get_name_owner_reply_unlocked (SignalData *name_watcher,
+                                                    GDBusConnection *connection,
+                                                    GDBusMessage *message)
+{
+  GDBusMessageType type;
+  GVariant *body;
+  WatchedName *watched_name;
+
+  watched_name = name_watcher->watched_name;
+  g_assert (watched_name != NULL);
+  g_assert (watched_name->get_name_owner_serial != 0);
+
+  type = g_dbus_message_get_message_type (message);
+  body = g_dbus_message_get_body (message);
+
+  if (type == G_DBUS_MESSAGE_TYPE_ERROR)
+    {
+      if (g_strcmp0 (g_dbus_message_get_error_name (message),
+                     DBUS_ERROR_NAME_HAS_NO_OWNER))
+        name_watcher_set_name_owner_unlocked (name_watcher, NULL);
+      /* else it's something like NoReply or AccessDenied, which tells
+       * us nothing - leave the owner set to whatever we most recently
+       * learned from NameOwnerChanged, or NULL */
+    }
+  else if (type != G_DBUS_MESSAGE_TYPE_METHOD_RETURN)
+    {
+      g_warning ("Received GetNameOwner reply with unexpected type %d",
+                 type);
+    }
+  else if (G_LIKELY (body != NULL && g_variant_is_of_type (body, G_VARIANT_TYPE ("(s)"))))
+    {
+      const char *new_owner;
+
+      g_variant_get (body, "(&s)", &new_owner);
+
+      /* FIXME: This should be validating that `new_owner` is a unique name,
+       * but IBus’ implementation of a message bus is not compliant with the spec.
+       * See https://gitlab.gnome.org/GNOME/glib/-/issues/3353 */
+      if (G_LIKELY (g_dbus_is_name (new_owner)))
+        name_watcher_set_name_owner_unlocked (name_watcher, new_owner);
+      else
+        g_warning ("Received GetNameOwner reply with invalid owner \"%s\" for \"%s\"",
+                   new_owner, name_watcher->arg0);
+    }
+  else
+    {
+      g_warning ("Received GetNameOwner reply with unexpected signature %s",
+                 body == NULL ? "()" : g_variant_get_type_string (body));
+    }
+
+  g_hash_table_remove (connection->map_method_serial_to_name_watcher,
+                       GUINT_TO_POINTER (watched_name->get_name_owner_serial));
+  watched_name->get_name_owner_serial = 0;
+}
+
+/* Called in a user thread, lock is held */
+static void
+name_watcher_call_get_name_owner_unlocked (GDBusConnection *connection,
+                                           SignalData *name_watcher)
+{
+  GDBusMessage *message;
+  GError *local_error = NULL;
+  WatchedName *watched_name;
+
+  g_assert (g_strcmp0 (name_watcher->sender, DBUS_SERVICE_DBUS) == 0);
+  g_assert (g_strcmp0 (name_watcher->interface_name, DBUS_INTERFACE_DBUS) == 0);
+  g_assert (g_strcmp0 (name_watcher->member, "NameOwnerChanged") == 0);
+  g_assert (g_strcmp0 (name_watcher->object_path, DBUS_PATH_DBUS) == 0);
+  /* arg0 of the NameOwnerChanged message is the well-known name whose owner
+   * we are interested in */
+  g_assert (g_dbus_is_name (name_watcher->arg0));
+  g_assert (name_watcher->flags == G_DBUS_SIGNAL_FLAGS_NONE);
+
+  watched_name = name_watcher->watched_name;
+  g_assert (watched_name != NULL);
+  g_assert (watched_name->owner == NULL);
+  g_assert (watched_name->get_name_owner_serial == 0);
+  g_assert (name_watcher->shared_name_watcher == NULL);
+
+  message = g_dbus_message_new_method_call (DBUS_SERVICE_DBUS,
+                                            DBUS_PATH_DBUS,
+                                            DBUS_INTERFACE_DBUS,
+                                            "GetNameOwner");
+  g_dbus_message_set_body (message, g_variant_new ("(s)", name_watcher->arg0));
+
+  if (g_dbus_connection_send_message_unlocked (connection, message,
+                                               G_DBUS_SEND_MESSAGE_FLAGS_NONE,
+                                               &watched_name->get_name_owner_serial,
+                                               &local_error))
+    {
+      g_assert (watched_name->get_name_owner_serial != 0);
+      g_hash_table_insert (connection->map_method_serial_to_name_watcher,
+                           GUINT_TO_POINTER (watched_name->get_name_owner_serial),
+                           name_watcher);
+    }
+  else
+    {
+      g_critical ("Error while sending GetNameOwner() message: %s",
+                  local_error->message);
+      g_clear_error (&local_error);
+      g_assert (watched_name->get_name_owner_serial == 0);
+    }
+
+  g_object_unref (message);
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
 typedef struct
 {
   guint                       id;
@@ -2289,6 +2632,7 @@ on_worker_message_received (GDBusWorker  *worker,
         {
           guint32 reply_serial;
           GTask *task;
+          SignalData *name_watcher;
 
           reply_serial = g_dbus_message_get_reply_serial (message);
           CONNECTION_LOCK (connection);
@@ -2304,6 +2648,19 @@ on_worker_message_received (GDBusWorker  *worker,
             {
               //g_debug ("message reply/error for serial %d but no SendMessageData found for %p", reply_serial, connection);
             }
+
+          name_watcher = g_hash_table_lookup (connection->map_method_serial_to_name_watcher,
+                                              GUINT_TO_POINTER (reply_serial));
+
+          if (name_watcher != NULL)
+            {
+              g_assert (name_watcher->watched_name != NULL);
+              g_assert (name_watcher->watched_name->get_name_owner_serial == reply_serial);
+              name_watcher_deliver_get_name_owner_reply_unlocked (name_watcher,
+                                                                  connection,
+                                                                  message);
+            }
+
           CONNECTION_UNLOCK (connection);
         }
       else if (message_type == G_DBUS_MESSAGE_TYPE_SIGNAL)
@@ -2616,9 +2973,9 @@ initable_init (GInitable     *initable,
         }
 
       hello_result = g_dbus_connection_call_sync (connection,
-                                                  "org.freedesktop.DBus", /* name */
-                                                  "/org/freedesktop/DBus", /* path */
-                                                  "org.freedesktop.DBus", /* interface */
+                                                  DBUS_SERVICE_DBUS,
+                                                  DBUS_PATH_DBUS,
+                                                  DBUS_INTERFACE_DBUS,
                                                   "Hello",
                                                   NULL, /* parameters */
                                                   G_VARIANT_TYPE ("(s)"),
@@ -3247,69 +3604,6 @@ g_dbus_connection_remove_filter (GDBusConnection *connection,
 
 /* ---------------------------------------------------------------------------------------------------- */
 
-typedef struct
-{
-  gchar *rule;
-  gchar *sender;
-  gchar *sender_unique_name; /* if sender is unique or org.freedesktop.DBus, then that name... otherwise blank */
-  gchar *interface_name;
-  gchar *member;
-  gchar *object_path;
-  gchar *arg0;
-  GDBusSignalFlags flags;
-  GPtrArray *subscribers;  /* (owned) (element-type SignalSubscriber) */
-} SignalData;
-
-static void
-signal_data_free (SignalData *signal_data)
-{
-  g_free (signal_data->rule);
-  g_free (signal_data->sender);
-  g_free (signal_data->sender_unique_name);
-  g_free (signal_data->interface_name);
-  g_free (signal_data->member);
-  g_free (signal_data->object_path);
-  g_free (signal_data->arg0);
-  g_ptr_array_unref (signal_data->subscribers);
-  g_free (signal_data);
-}
-
-typedef struct
-{
-  /* All fields are immutable after construction. */
-  gatomicrefcount ref_count;
-  GDBusSignalCallback callback;
-  gpointer user_data;
-  GDestroyNotify user_data_free_func;
-  guint id;
-  GMainContext *context;
-} SignalSubscriber;
-
-static SignalSubscriber *
-signal_subscriber_ref (SignalSubscriber *subscriber)
-{
-  g_atomic_ref_count_inc (&subscriber->ref_count);
-  return subscriber;
-}
-
-static void
-signal_subscriber_unref (SignalSubscriber *subscriber)
-{
-  if (g_atomic_ref_count_dec (&subscriber->ref_count))
-    {
-      /* Destroy the user data. It doesn’t matter which thread
-       * signal_subscriber_unref() is called in (or whether it’s called with a
-       * lock held), as call_destroy_notify() always defers to the next
-       * #GMainContext iteration. */
-      call_destroy_notify (subscriber->context,
-                           subscriber->user_data_free_func,
-                           subscriber->user_data);
-
-      g_main_context_unref (subscriber->context);
-      g_free (subscriber);
-    }
-}
-
 static gchar *
 args_to_rule (const gchar      *sender,
               const gchar      *interface_name,
@@ -3362,9 +3656,9 @@ add_match_rule (GDBusConnection *connection,
   if (match_rule[0] == '-')
     return;
 
-  message = g_dbus_message_new_method_call ("org.freedesktop.DBus", /* name */
-                                            "/org/freedesktop/DBus", /* path */
-                                            "org.freedesktop.DBus", /* interface */
+  message = g_dbus_message_new_method_call (DBUS_SERVICE_DBUS,
+                                            DBUS_PATH_DBUS,
+                                            DBUS_INTERFACE_DBUS,
                                             "AddMatch");
   g_dbus_message_set_body (message, g_variant_new ("(s)", match_rule));
   error = NULL;
@@ -3393,9 +3687,9 @@ remove_match_rule (GDBusConnection *connection,
   if (match_rule[0] == '-')
     return;
 
-  message = g_dbus_message_new_method_call ("org.freedesktop.DBus", /* name */
-                                            "/org/freedesktop/DBus", /* path */
-                                            "org.freedesktop.DBus", /* interface */
+  message = g_dbus_message_new_method_call (DBUS_SERVICE_DBUS,
+                                            DBUS_PATH_DBUS,
+                                            DBUS_INTERFACE_DBUS,
                                             "RemoveMatch");
   g_dbus_message_set_body (message, g_variant_new ("(s)", match_rule));
 
@@ -3421,11 +3715,48 @@ remove_match_rule (GDBusConnection *connection,
 static gboolean
 is_signal_data_for_name_lost_or_acquired (SignalData *signal_data)
 {
-  return g_strcmp0 (signal_data->sender_unique_name, "org.freedesktop.DBus") == 0 &&
-         g_strcmp0 (signal_data->interface_name, "org.freedesktop.DBus") == 0 &&
-         g_strcmp0 (signal_data->object_path, "/org/freedesktop/DBus") == 0 &&
+  return g_strcmp0 (signal_data->sender, DBUS_SERVICE_DBUS) == 0 &&
+         g_strcmp0 (signal_data->interface_name, DBUS_INTERFACE_DBUS) == 0 &&
+         g_strcmp0 (signal_data->object_path, DBUS_PATH_DBUS) == 0 &&
          (g_strcmp0 (signal_data->member, "NameLost") == 0 ||
           g_strcmp0 (signal_data->member, "NameAcquired") == 0);
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+/* called in any thread, connection lock is held */
+static void
+add_signal_data (GDBusConnection *connection,
+                 SignalData      *signal_data,
+                 const char      *sender_unique_name)
+{
+  GPtrArray *signal_data_array;
+
+  g_hash_table_insert (connection->map_rule_to_signal_data,
+                       signal_data->rule,
+                       signal_data);
+
+  /* Add the match rule to the bus...
+   *
+   * Avoid adding match rules for NameLost and NameAcquired messages - the bus will
+   * always send such messages to us.
+   */
+  if (connection->flags & G_DBUS_CONNECTION_FLAGS_MESSAGE_BUS_CONNECTION)
+    {
+      if (!is_signal_data_for_name_lost_or_acquired (signal_data))
+        add_match_rule (connection, signal_data->rule);
+    }
+
+  signal_data_array = g_hash_table_lookup (connection->map_sender_unique_name_to_signal_data_array,
+                                           sender_unique_name);
+  if (signal_data_array == NULL)
+    {
+      signal_data_array = g_ptr_array_new ();
+      g_hash_table_insert (connection->map_sender_unique_name_to_signal_data_array,
+                           g_strdup (sender_unique_name),
+                           signal_data_array);
+    }
+  g_ptr_array_add (signal_data_array, signal_data);
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -3518,8 +3849,9 @@ g_dbus_connection_signal_subscribe (GDBusConnection     *connection,
 {
   gchar *rule;
   SignalData *signal_data;
+  SignalData *name_watcher = NULL;
   SignalSubscriber *subscriber;
-  GPtrArray *signal_data_array;
+  gboolean sender_is_its_own_owner;
   const gchar *sender_unique_name;
 
   /* Right now we abort if AddMatch() fails since it can only fail with the bus being in
@@ -3554,7 +3886,12 @@ g_dbus_connection_signal_subscribe (GDBusConnection     *connection,
    */
   rule = args_to_rule (sender, interface_name, member, object_path, arg0, flags);
 
-  if (sender != NULL && (g_dbus_is_unique_name (sender) || g_strcmp0 (sender, "org.freedesktop.DBus") == 0))
+  if (sender != NULL && (g_dbus_is_unique_name (sender) || g_strcmp0 (sender, DBUS_SERVICE_DBUS) == 0))
+    sender_is_its_own_owner = TRUE;
+  else
+    sender_is_its_own_owner = FALSE;
+
+  if (sender_is_its_own_owner)
     sender_unique_name = sender;
   else
     sender_unique_name = "";
@@ -3576,43 +3913,62 @@ g_dbus_connection_signal_subscribe (GDBusConnection     *connection,
       goto out;
     }
 
-  signal_data = g_new0 (SignalData, 1);
-  signal_data->rule                  = rule;
-  signal_data->sender                = g_strdup (sender);
-  signal_data->sender_unique_name    = g_strdup (sender_unique_name);
-  signal_data->interface_name        = g_strdup (interface_name);
-  signal_data->member                = g_strdup (member);
-  signal_data->object_path           = g_strdup (object_path);
-  signal_data->arg0                  = g_strdup (arg0);
-  signal_data->flags                 = flags;
-  signal_data->subscribers           = g_ptr_array_new_with_free_func ((GDestroyNotify) signal_subscriber_unref);
+  signal_data = signal_data_new_take (g_steal_pointer (&rule),
+                                      g_strdup (sender),
+                                      g_strdup (interface_name),
+                                      g_strdup (member),
+                                      g_strdup (object_path),
+                                      g_strdup (arg0),
+                                      flags);
   g_ptr_array_add (signal_data->subscribers, subscriber);
 
-  g_hash_table_insert (connection->map_rule_to_signal_data,
-                       signal_data->rule,
-                       signal_data);
-
-  /* Add the match rule to the bus...
-   *
-   * Avoid adding match rules for NameLost and NameAcquired messages - the bus will
-   * always send such messages to us.
-   */
-  if (connection->flags & G_DBUS_CONNECTION_FLAGS_MESSAGE_BUS_CONNECTION)
+  /* If subscribing to a signal from a specific sender with a well-known
+   * name, we must first subscribe to NameOwnerChanged signals for that
+   * well-known name, so that we can match the current owner of the name
+   * against the sender of each signal. */
+  if (sender != NULL && !sender_is_its_own_owner)
     {
-      if (!is_signal_data_for_name_lost_or_acquired (signal_data))
-        add_match_rule (connection, signal_data->rule);
+      gchar *name_owner_rule = NULL;
+
+      /* We already checked that sender != NULL implies MESSAGE_BUS_CONNECTION */
+      g_assert (connection->flags & G_DBUS_CONNECTION_FLAGS_MESSAGE_BUS_CONNECTION);
+
+      name_owner_rule = args_to_rule (DBUS_SERVICE_DBUS,
+                                      DBUS_INTERFACE_DBUS,
+                                      "NameOwnerChanged",
+                                      DBUS_PATH_DBUS,
+                                      sender,
+                                      G_DBUS_SIGNAL_FLAGS_NONE);
+      name_watcher = g_hash_table_lookup (connection->map_rule_to_signal_data, name_owner_rule);
+
+      if (name_watcher == NULL)
+        {
+          name_watcher = signal_data_new_take (g_steal_pointer (&name_owner_rule),
+                                               g_strdup (DBUS_SERVICE_DBUS),
+                                               g_strdup (DBUS_INTERFACE_DBUS),
+                                               g_strdup ("NameOwnerChanged"),
+                                               g_strdup (DBUS_PATH_DBUS),
+                                               g_strdup (sender),
+                                               G_DBUS_SIGNAL_FLAGS_NONE);
+          add_signal_data (connection, name_watcher, DBUS_SERVICE_DBUS);
+        }
+
+      if (name_watcher->watched_name == NULL)
+        {
+          name_watcher->watched_name = watched_name_new ();
+          name_watcher_call_get_name_owner_unlocked (connection, name_watcher);
+        }
+      else
+        {
+          g_ref_count_inc (&name_watcher->watched_name->ref_count);
+        }
+
+      signal_data->shared_name_watcher = name_watcher;
+
+      g_clear_pointer (&name_owner_rule, g_free);
     }
 
-  signal_data_array = g_hash_table_lookup (connection->map_sender_unique_name_to_signal_data_array,
-                                           signal_data->sender_unique_name);
-  if (signal_data_array == NULL)
-    {
-      signal_data_array = g_ptr_array_new ();
-      g_hash_table_insert (connection->map_sender_unique_name_to_signal_data_array,
-                           g_strdup (signal_data->sender_unique_name),
-                           signal_data_array);
-    }
-  g_ptr_array_add (signal_data_array, signal_data);
+  add_signal_data (connection, signal_data, sender_unique_name);
 
  out:
   g_hash_table_insert (connection->map_id_to_signal_data,
@@ -3626,6 +3982,75 @@ g_dbus_connection_signal_subscribe (GDBusConnection     *connection,
 
 /* ---------------------------------------------------------------------------------------------------- */
 
+/*
+ * Called in any thread.
+ * Must hold the connection lock when calling this, unless
+ * connection->finalizing is TRUE.
+ * May free signal_data, so do not dereference it after this.
+ */
+static void
+remove_signal_data_if_unused (GDBusConnection *connection,
+                              SignalData *signal_data)
+{
+  const gchar *sender_unique_name;
+  GPtrArray *signal_data_array;
+
+  /* Cannot remove while there are still subscribers */
+  if (signal_data->subscribers->len != 0)
+    return;
+
+  /* Cannot remove while another SignalData is still using this one
+   * as its shared_name_watcher, which holds watched_name->ref_count > 0 */
+  if (signal_data->watched_name != NULL)
+    return;
+
+  /* Point of no return: we have committed to removing it */
+
+  if (signal_data->sender != NULL && signal_data->shared_name_watcher == NULL)
+    sender_unique_name = signal_data->sender;
+  else
+    sender_unique_name = "";
+
+  g_warn_if_fail (g_hash_table_remove (connection->map_rule_to_signal_data, signal_data->rule));
+
+  signal_data_array = g_hash_table_lookup (connection->map_sender_unique_name_to_signal_data_array,
+                                           sender_unique_name);
+  g_warn_if_fail (signal_data_array != NULL);
+  g_warn_if_fail (g_ptr_array_remove (signal_data_array, signal_data));
+
+  if (signal_data_array->len == 0)
+    {
+      g_warn_if_fail (g_hash_table_remove (connection->map_sender_unique_name_to_signal_data_array,
+                                           sender_unique_name));
+    }
+
+  /* remove the match rule from the bus unless NameLost or NameAcquired (see subscribe()) */
+  if ((connection->flags & G_DBUS_CONNECTION_FLAGS_MESSAGE_BUS_CONNECTION) &&
+      !is_signal_data_for_name_lost_or_acquired (signal_data) &&
+      !g_dbus_connection_is_closed (connection) &&
+      !connection->finalizing)
+    {
+      /* The check for g_dbus_connection_is_closed() means that
+       * sending the RemoveMatch message can't fail with
+       * G_IO_ERROR_CLOSED, because we're holding the lock,
+       * so on_worker_closed() can't happen between the check we just
+       * did, and releasing the lock later.
+       */
+      remove_match_rule (connection, signal_data->rule);
+    }
+
+  if (signal_data->shared_name_watcher != NULL)
+    {
+      SignalData *name_watcher = g_steal_pointer (&signal_data->shared_name_watcher);
+
+      name_watcher_unref_watched_name (connection, name_watcher);
+      /* May free signal_data */
+      remove_signal_data_if_unused (connection, name_watcher);
+    }
+
+  signal_data_free (signal_data);
+}
+
 /* called in any thread */
 /* must hold lock when calling this (except if connection->finalizing is TRUE)
  * returns the number of removed subscribers */
@@ -3634,7 +4059,6 @@ unsubscribe_id_internal (GDBusConnection *connection,
                          guint            subscription_id)
 {
   SignalData *signal_data;
-  GPtrArray *signal_data_array;
   guint n;
   guint n_removed = 0;
 
@@ -3661,40 +4085,8 @@ unsubscribe_id_internal (GDBusConnection *connection,
                                            GUINT_TO_POINTER (subscription_id)));
       n_removed++;
       g_ptr_array_remove_index_fast (signal_data->subscribers, n);
-
-      if (signal_data->subscribers->len == 0)
-        {
-          g_warn_if_fail (g_hash_table_remove (connection->map_rule_to_signal_data, signal_data->rule));
-
-          signal_data_array = g_hash_table_lookup (connection->map_sender_unique_name_to_signal_data_array,
-                                                   signal_data->sender_unique_name);
-          g_warn_if_fail (signal_data_array != NULL);
-          g_warn_if_fail (g_ptr_array_remove (signal_data_array, signal_data));
-
-          if (signal_data_array->len == 0)
-            {
-              g_warn_if_fail (g_hash_table_remove (connection->map_sender_unique_name_to_signal_data_array,
-                                                   signal_data->sender_unique_name));
-            }
-
-          /* remove the match rule from the bus unless NameLost or NameAcquired (see subscribe()) */
-          if ((connection->flags & G_DBUS_CONNECTION_FLAGS_MESSAGE_BUS_CONNECTION) &&
-              !is_signal_data_for_name_lost_or_acquired (signal_data) &&
-              !g_dbus_connection_is_closed (connection) &&
-              !connection->finalizing)
-            {
-              /* The check for g_dbus_connection_is_closed() means that
-               * sending the RemoveMatch message can't fail with
-               * G_IO_ERROR_CLOSED, because we're holding the lock,
-               * so on_worker_closed() can't happen between the check we just
-               * did, and releasing the lock later.
-               */
-              remove_match_rule (connection, signal_data->rule);
-            }
-
-          signal_data_free (signal_data);
-        }
-
+      /* May free signal_data */
+      remove_signal_data_if_unused (connection, signal_data);
       goto out;
     }
 
@@ -3821,8 +4213,8 @@ static gboolean
 namespace_rule_matches (const gchar *namespace,
                         const gchar *name)
 {
-  gint len_namespace;
-  gint len_name;
+  size_t len_namespace;
+  size_t len_name;
 
   len_namespace = strlen (namespace);
   len_name = strlen (name);
@@ -3840,7 +4232,7 @@ static gboolean
 path_rule_matches (const gchar *path_a,
                    const gchar *path_b)
 {
-  gint len_a, len_b;
+  size_t len_a, len_b;
 
   len_a = strlen (path_a);
   len_b = strlen (path_b);
@@ -3915,6 +4307,46 @@ schedule_callbacks (GDBusConnection *connection,
       if (signal_data->object_path != NULL && g_strcmp0 (signal_data->object_path, path) != 0)
         continue;
 
+      if (signal_data->shared_name_watcher != NULL)
+        {
+          /* We want signals from a specified well-known name, which means
+           * the signal's sender needs to be the unique name that currently
+           * owns that well-known name, and we will have found this
+           * SignalData in
+           * connection->map_sender_unique_name_to_signal_data_array[""]. */
+          const WatchedName *watched_name;
+          const char *current_owner;
+
+          g_assert (signal_data->sender != NULL);
+          /* Invariant: We never need to watch for the owner of a unique
+           * name, or for the owner of DBUS_SERVICE_DBUS, either of which
+           * is always its own owner */
+          g_assert (!g_dbus_is_unique_name (signal_data->sender));
+          g_assert (g_strcmp0 (signal_data->sender, DBUS_SERVICE_DBUS) != 0);
+
+          watched_name = signal_data->shared_name_watcher->watched_name;
+          g_assert (watched_name != NULL);
+          current_owner = watched_name->owner;
+
+          /* Skip the signal if the actual sender is not known to own
+           * the required name */
+          if (current_owner == NULL || g_strcmp0 (current_owner, sender) != 0)
+            continue;
+        }
+      else if (signal_data->sender != NULL)
+        {
+          /* We want signals from a unique name or o.fd.DBus... */
+          g_assert (g_dbus_is_unique_name (signal_data->sender)
+                    || g_str_equal (signal_data->sender, DBUS_SERVICE_DBUS));
+
+          /* ... which means we must have found this SignalData in
+           * connection->map_sender_unique_name_to_signal_data_array[signal_data->sender],
+           * therefore we would only have found it if the signal's
+           * actual sender matches the required signal_data->sender */
+          g_assert (g_strcmp0 (signal_data->sender, sender) == 0);
+        }
+      /* else the sender is unspecified and we will accept anything */
+
       if (signal_data->arg0 != NULL)
         {
           if (signal_data->flags & G_DBUS_SIGNAL_FLAGS_MATCH_ARG0_NAMESPACE)
@@ -3928,8 +4360,19 @@ schedule_callbacks (GDBusConnection *connection,
                   (arg0_path == NULL || !path_rule_matches (signal_data->arg0, arg0_path)))
                 continue;
             }
-          else if (!g_str_equal (signal_data->arg0, arg0))
+          else if (arg0 == NULL || !g_str_equal (signal_data->arg0, arg0))
             continue;
+        }
+
+      if (signal_data->watched_name != NULL)
+        {
+          /* Invariant: SignalData should only have a watched_name if it
+           * represents the NameOwnerChanged signal */
+          g_assert (g_strcmp0 (sender, DBUS_SERVICE_DBUS) == 0);
+          g_assert (g_strcmp0 (interface, DBUS_INTERFACE_DBUS) == 0);
+          g_assert (g_strcmp0 (path, DBUS_PATH_DBUS) == 0);
+          g_assert (g_strcmp0 (member, "NameOwnerChanged") == 0);
+          name_watcher_deliver_name_owner_changed_unlocked (signal_data, message);
         }
 
       for (m = 0; m < signal_data->subscribers->len; m++)
@@ -4003,7 +4446,7 @@ distribute_signals (GDBusConnection *connection,
         schedule_callbacks (connection, signal_data_array, message, sender);
     }
 
-  /* collect subscribers not matching on sender */
+  /* collect subscribers not matching on sender, or matching a well-known name */
   signal_data_array = g_hash_table_lookup (connection->map_sender_unique_name_to_signal_data_array, "");
   if (signal_data_array != NULL)
     schedule_callbacks (connection, signal_data_array, message, sender);
@@ -4273,8 +4716,11 @@ invoke_get_property_in_idle_cb (gpointer _data)
                                     &es))
     {
       reply = g_dbus_message_new_method_error (data->message,
-                                               "org.freedesktop.DBus.Error.UnknownMethod",
-                                               _("No such interface “org.freedesktop.DBus.Properties” on object at path %s"),
+                                               DBUS_ERROR_UNKNOWN_METHOD,
+                                               /* Translators: The first placeholder is a D-Bus interface,
+                                                * the second is the path of an object. */
+                                               _("No such interface “%s” on object at path %s"),
+                                               DBUS_INTERFACE_PROPERTIES,
                                                g_dbus_message_get_path (data->message));
       g_dbus_connection_send_message (data->connection, reply, G_DBUS_SEND_MESSAGE_FLAGS_NONE, NULL, NULL);
       g_object_unref (reply);
@@ -4409,7 +4855,7 @@ validate_and_maybe_schedule_property_getset (GDBusConnection            *connect
   if (vtable == NULL)
     goto out;
 
-  /* Check that the property exists - if not fail with org.freedesktop.DBus.Error.InvalidArgs
+  /* Check that the property exists - if not fail with DBUS_ERROR_INVALID_ARGS
    */
   property_info = NULL;
 
@@ -4418,7 +4864,7 @@ validate_and_maybe_schedule_property_getset (GDBusConnection            *connect
   if (property_info == NULL)
     {
       reply = g_dbus_message_new_method_error (message,
-                                               "org.freedesktop.DBus.Error.InvalidArgs",
+                                               DBUS_ERROR_INVALID_ARGS,
                                                _("No such property “%s”"),
                                                property_name);
       g_dbus_connection_send_message_unlocked (connection, reply, G_DBUS_SEND_MESSAGE_FLAGS_NONE, NULL, NULL);
@@ -4430,7 +4876,7 @@ validate_and_maybe_schedule_property_getset (GDBusConnection            *connect
   if (is_get && !(property_info->flags & G_DBUS_PROPERTY_INFO_FLAGS_READABLE))
     {
       reply = g_dbus_message_new_method_error (message,
-                                               "org.freedesktop.DBus.Error.InvalidArgs",
+                                               DBUS_ERROR_INVALID_ARGS,
                                                _("Property “%s” is not readable"),
                                                property_name);
       g_dbus_connection_send_message_unlocked (connection, reply, G_DBUS_SEND_MESSAGE_FLAGS_NONE, NULL, NULL);
@@ -4441,7 +4887,7 @@ validate_and_maybe_schedule_property_getset (GDBusConnection            *connect
   else if (!is_get && !(property_info->flags & G_DBUS_PROPERTY_INFO_FLAGS_WRITABLE))
     {
       reply = g_dbus_message_new_method_error (message,
-                                               "org.freedesktop.DBus.Error.InvalidArgs",
+                                               DBUS_ERROR_INVALID_ARGS,
                                                _("Property “%s” is not writable"),
                                                property_name);
       g_dbus_connection_send_message_unlocked (connection, reply, G_DBUS_SEND_MESSAGE_FLAGS_NONE, NULL, NULL);
@@ -4454,14 +4900,14 @@ validate_and_maybe_schedule_property_getset (GDBusConnection            *connect
     {
       GVariant *value;
 
-      /* Fail with org.freedesktop.DBus.Error.InvalidArgs if the type
+      /* Fail with DBUS_ERROR_INVALID_ARGS if the type
        * of the given value is wrong
        */
       g_variant_get_child (g_dbus_message_get_body (message), 2, "v", &value);
       if (g_strcmp0 (g_variant_get_type_string (value), property_info->signature) != 0)
         {
           reply = g_dbus_message_new_method_error (message,
-                                                   "org.freedesktop.DBus.Error.InvalidArgs",
+                                                   DBUS_ERROR_INVALID_ARGS,
                                                    _("Error setting property “%s”: Expected type “%s” but got “%s”"),
                                                    property_name, property_info->signature,
                                                    g_variant_get_type_string (value));
@@ -4558,7 +5004,7 @@ handle_getset_property (GDBusConnection *connection,
                    &property_name,
                    NULL);
 
-  /* Fail with org.freedesktop.DBus.Error.InvalidArgs if there is
+  /* Fail with DBUS_ERROR_INVALID_ARGS if there is
    * no such interface registered
    */
   ei = g_hash_table_lookup (eo->map_if_name_to_ei, interface_name);
@@ -4566,7 +5012,7 @@ handle_getset_property (GDBusConnection *connection,
     {
       GDBusMessage *reply;
       reply = g_dbus_message_new_method_error (message,
-                                               "org.freedesktop.DBus.Error.InvalidArgs",
+                                               DBUS_ERROR_INVALID_ARGS,
                                                _("No such interface “%s”"),
                                                interface_name);
       g_dbus_connection_send_message_unlocked (eo->connection, reply, G_DBUS_SEND_MESSAGE_FLAGS_NONE, NULL, NULL);
@@ -4627,8 +5073,9 @@ invoke_get_all_properties_in_idle_cb (gpointer _data)
                                     &es))
     {
       reply = g_dbus_message_new_method_error (data->message,
-                                               "org.freedesktop.DBus.Error.UnknownMethod",
-                                               _("No such interface “org.freedesktop.DBus.Properties” on object at path %s"),
+                                               DBUS_ERROR_UNKNOWN_METHOD,
+                                               _("No such interface “%s” on object at path %s"),
+                                               DBUS_INTERFACE_PROPERTIES,
                                                g_dbus_message_get_path (data->message));
       g_dbus_connection_send_message (data->connection, reply, G_DBUS_SEND_MESSAGE_FLAGS_NONE, NULL, NULL);
       g_object_unref (reply);
@@ -4641,7 +5088,7 @@ invoke_get_all_properties_in_idle_cb (gpointer _data)
    *       We could fail the whole call if just a single get_property() call
    *       returns an error. We need clarification in the D-Bus spec about this.
    */
-  g_variant_builder_init (&builder, G_VARIANT_TYPE ("(a{sv})"));
+  g_variant_builder_init_static (&builder, G_VARIANT_TYPE ("(a{sv})"));
   g_variant_builder_open (&builder, G_VARIANT_TYPE ("a{sv}"));
   for (n = 0; data->interface_info->properties != NULL && data->interface_info->properties[n] != NULL; n++)
     {
@@ -4773,7 +5220,7 @@ handle_get_all_properties (GDBusConnection *connection,
                  "(&s)",
                  &interface_name);
 
-  /* Fail with org.freedesktop.DBus.Error.InvalidArgs if there is
+  /* Fail with DBUS_ERROR_INVALID_ARGS if there is
    * no such interface registered
    */
   ei = g_hash_table_lookup (eo->map_if_name_to_ei, interface_name);
@@ -4781,7 +5228,7 @@ handle_get_all_properties (GDBusConnection *connection,
     {
       GDBusMessage *reply;
       reply = g_dbus_message_new_method_error (message,
-                                               "org.freedesktop.DBus.Error.InvalidArgs",
+                                               DBUS_ERROR_INVALID_ARGS,
                                                _("No such interface “%s”"),
                                                interface_name);
       g_dbus_connection_send_message_unlocked (eo->connection, reply, G_DBUS_SEND_MESSAGE_FLAGS_NONE, NULL, NULL);
@@ -4814,7 +5261,7 @@ static const gchar introspect_tail[] =
   "</node>\n";
 
 static const gchar introspect_properties_interface[] =
-  "  <interface name=\"org.freedesktop.DBus.Properties\">\n"
+  "  <interface name=\"" DBUS_INTERFACE_PROPERTIES "\">\n"
   "    <method name=\"Get\">\n"
   "      <arg type=\"s\" name=\"interface_name\" direction=\"in\"/>\n"
   "      <arg type=\"s\" name=\"property_name\" direction=\"in\"/>\n"
@@ -4837,12 +5284,12 @@ static const gchar introspect_properties_interface[] =
   "  </interface>\n";
 
 static const gchar introspect_introspectable_interface[] =
-  "  <interface name=\"org.freedesktop.DBus.Introspectable\">\n"
+  "  <interface name=\"" DBUS_INTERFACE_INTROSPECTABLE "\">\n"
   "    <method name=\"Introspect\">\n"
   "      <arg type=\"s\" name=\"xml_data\" direction=\"out\"/>\n"
   "    </method>\n"
   "  </interface>\n"
-  "  <interface name=\"org.freedesktop.DBus.Peer\">\n"
+  "  <interface name=\"" DBUS_INTERFACE_PEER "\">\n"
   "    <method name=\"Ping\"/>\n"
   "    <method name=\"GetMachineId\">\n"
   "      <arg type=\"s\" name=\"machine_uuid\" direction=\"out\"/>\n"
@@ -4947,11 +5394,11 @@ handle_introspect (GDBusConnection *connection,
                           sizeof (introspect_tail));
   introspect_append_header (s);
   if (!g_hash_table_lookup (eo->map_if_name_to_ei,
-                            "org.freedesktop.DBus.Properties"))
+                            DBUS_INTERFACE_PROPERTIES))
     g_string_append (s, introspect_properties_interface);
 
   if (!g_hash_table_lookup (eo->map_if_name_to_ei,
-                            "org.freedesktop.DBus.Introspectable"))
+                            DBUS_INTERFACE_INTROSPECTABLE))
     g_string_append (s, introspect_introspectable_interface);
 
   /* then include the registered interfaces */
@@ -4997,7 +5444,7 @@ call_in_idle_cb (gpointer user_data)
     {
       GDBusMessage *reply;
       reply = g_dbus_message_new_method_error (g_dbus_method_invocation_get_message (invocation),
-                                               "org.freedesktop.DBus.Error.UnknownMethod",
+                                               DBUS_ERROR_UNKNOWN_METHOD,
                                                _("No such interface “%s” on object at path %s"),
                                                g_dbus_method_invocation_get_interface_name (invocation),
                                                g_dbus_method_invocation_get_object_path (invocation));
@@ -5092,13 +5539,13 @@ validate_and_maybe_schedule_method_call (GDBusConnection            *connection,
   /* TODO: the cost of this is O(n) - it might be worth caching the result */
   method_info = g_dbus_interface_info_lookup_method (interface_info, g_dbus_message_get_member (message));
 
-  /* if the method doesn't exist, return the org.freedesktop.DBus.Error.UnknownMethod
+  /* if the method doesn't exist, return the DBUS_ERROR_UNKNOWN_METHOD
    * error to the caller
    */
   if (method_info == NULL)
     {
       reply = g_dbus_message_new_method_error (message,
-                                               "org.freedesktop.DBus.Error.UnknownMethod",
+                                               DBUS_ERROR_UNKNOWN_METHOD,
                                                _("No such method “%s”"),
                                                g_dbus_message_get_member (message));
       g_dbus_connection_send_message_unlocked (connection, reply, G_DBUS_SEND_MESSAGE_FLAGS_NONE, NULL, NULL);
@@ -5119,7 +5566,7 @@ validate_and_maybe_schedule_method_call (GDBusConnection            *connection,
     }
 
   /* Check that the incoming args are of the right type - if they are not, return
-   * the org.freedesktop.DBus.Error.InvalidArgs error to the caller
+   * the DBUS_ERROR_INVALID_ARGS error to the caller
    */
   in_type = _g_dbus_compute_complete_signature (method_info->in_args);
   if (!g_variant_is_of_type (parameters, in_type))
@@ -5129,7 +5576,7 @@ validate_and_maybe_schedule_method_call (GDBusConnection            *connection,
       type_string = g_variant_type_dup_string (in_type);
 
       reply = g_dbus_message_new_method_error (message,
-                                               "org.freedesktop.DBus.Error.InvalidArgs",
+                                               DBUS_ERROR_INVALID_ARGS,
                                                _("Type of message, “%s”, does not match expected type “%s”"),
                                                g_variant_get_type_string (parameters),
                                                type_string);
@@ -5203,28 +5650,28 @@ obj_message_func (GDBusConnection *connection,
         }
     }
 
-  if (g_strcmp0 (interface_name, "org.freedesktop.DBus.Introspectable") == 0 &&
+  if (g_strcmp0 (interface_name, DBUS_INTERFACE_INTROSPECTABLE) == 0 &&
       g_strcmp0 (member, "Introspect") == 0 &&
       g_strcmp0 (signature, "") == 0)
     {
       handled = handle_introspect (connection, eo, message);
       goto out;
     }
-  else if (g_strcmp0 (interface_name, "org.freedesktop.DBus.Properties") == 0 &&
+  else if (g_strcmp0 (interface_name, DBUS_INTERFACE_PROPERTIES) == 0 &&
            g_strcmp0 (member, "Get") == 0 &&
            g_strcmp0 (signature, "ss") == 0)
     {
       handled = handle_getset_property (connection, eo, message, TRUE);
       goto out;
     }
-  else if (g_strcmp0 (interface_name, "org.freedesktop.DBus.Properties") == 0 &&
+  else if (g_strcmp0 (interface_name, DBUS_INTERFACE_PROPERTIES) == 0 &&
            g_strcmp0 (member, "Set") == 0 &&
            g_strcmp0 (signature, "ssv") == 0)
     {
       handled = handle_getset_property (connection, eo, message, FALSE);
       goto out;
     }
-  else if (g_strcmp0 (interface_name, "org.freedesktop.DBus.Properties") == 0 &&
+  else if (g_strcmp0 (interface_name, DBUS_INTERFACE_PROPERTIES) == 0 &&
            g_strcmp0 (member, "GetAll") == 0 &&
            g_strcmp0 (signature, "s") == 0)
     {
@@ -5362,6 +5809,9 @@ g_dbus_connection_register_object (GDBusConnection             *connection,
 
  out:
   CONNECTION_UNLOCK (connection);
+
+  if (ret == 0 && user_data_free_func != NULL)
+    user_data_free_func (user_data);
 
   return ret;
 }
@@ -5501,6 +5951,11 @@ register_with_closures_on_method_call (GDBusConnection       *connection,
   g_value_set_variant (&params[5], parameters);
 
   g_value_init (&params[6], G_TYPE_DBUS_METHOD_INVOCATION);
+  /* NOTE: This is deliberately *not* g_value_take_object(). A reference to
+   * `invocation` is transferred in to this function, and it needs to be
+   * transferred onwards to the `g_dbus_method_invocation_return_*()` method
+   * call which must eventually happen (either in the closure function, or in
+   * a delayed consequence from it). Changing this will break API. */
   g_value_set_object (&params[6], invocation);
 
   g_closure_invoke (data->method_call_closure, NULL, G_N_ELEMENTS (params), params, NULL);
@@ -5635,6 +6090,11 @@ register_with_closures_on_set_property (GDBusConnection *connection,
  * Version of g_dbus_connection_register_object() using closures instead of a
  * #GDBusInterfaceVTable for easier binding in other languages.
  *
+ * Note that the reference counting semantics of the function wrapped by
+ * @method_call_closure are the same as those of
+ * [callback@Gio.DBusInterfaceMethodCallFunc]: ownership of a reference to the
+ * [class@Gio.DBusMethodInvocation] is transferred to the function.
+ *
  * Returns: 0 if @error is set, otherwise a registration ID (never 0)
  * that can be used with g_dbus_connection_unregister_object() .
  *
@@ -5664,7 +6124,7 @@ g_dbus_connection_register_object_with_closures (GDBusConnection     *connection
                                             object_path,
                                             interface_info,
                                             &vtable,
-                                            data,
+                                            g_steal_pointer (&data),
                                             register_object_free_func,
                                             error);
 }
@@ -6417,7 +6877,7 @@ g_dbus_connection_call_with_unix_fd_list (GDBusConnection     *connection,
 /**
  * g_dbus_connection_call_with_unix_fd_list_finish:
  * @connection: a #GDBusConnection
- * @out_fd_list: (out) (optional): return location for a #GUnixFDList or %NULL
+ * @out_fd_list: (out) (optional) (nullable): return location for a #GUnixFDList or %NULL
  * @res: a #GAsyncResult obtained from the #GAsyncReadyCallback passed to
  *     g_dbus_connection_call_with_unix_fd_list()
  * @error: return location for error or %NULL
@@ -6464,7 +6924,7 @@ g_dbus_connection_call_with_unix_fd_list_finish (GDBusConnection  *connection,
  * @timeout_msec: the timeout in milliseconds, -1 to use the default
  *     timeout or %G_MAXINT for no timeout
  * @fd_list: (nullable): a #GUnixFDList or %NULL
- * @out_fd_list: (out) (optional): return location for a #GUnixFDList or %NULL
+ * @out_fd_list: (out) (optional) (nullable): return location for a #GUnixFDList or %NULL
  * @cancellable: (nullable): a #GCancellable or %NULL
  * @error: return location for error or %NULL
  *
@@ -6566,9 +7026,9 @@ handle_subtree_introspect (GDBusConnection *connection,
 
       for (n = 0; interfaces[n] != NULL; n++)
         {
-          if (strcmp (interfaces[n]->name, "org.freedesktop.DBus.Properties") == 0)
+          if (strcmp (interfaces[n]->name, DBUS_INTERFACE_PROPERTIES) == 0)
             has_properties_interface = TRUE;
-          else if (strcmp (interfaces[n]->name, "org.freedesktop.DBus.Introspectable") == 0)
+          else if (strcmp (interfaces[n]->name, DBUS_INTERFACE_INTROSPECTABLE) == 0)
             has_introspectable_interface = TRUE;
         }
       if (!has_properties_interface)
@@ -6650,7 +7110,7 @@ handle_subtree_method_invocation (GDBusConnection *connection,
   is_property_get = FALSE;
   is_property_set = FALSE;
   is_property_get_all = FALSE;
-  if (g_strcmp0 (interface_name, "org.freedesktop.DBus.Properties") == 0)
+  if (g_strcmp0 (interface_name, DBUS_INTERFACE_PROPERTIES) == 0)
     {
       if (g_strcmp0 (member, "Get") == 0 && g_strcmp0 (signature, "ss") == 0)
         is_property_get = TRUE;
@@ -6732,7 +7192,7 @@ handle_subtree_method_invocation (GDBusConnection *connection,
                                                          interface_user_data);
       CONNECTION_UNLOCK (connection);
     }
-  /* handle org.freedesktop.DBus.Properties interface if not explicitly handled */
+  /* handle DBUS_INTERFACE_PROPERTIES if not explicitly handled */
   else if (is_property_get || is_property_set || is_property_get_all)
     {
       if (is_property_get)
@@ -6751,14 +7211,14 @@ handle_subtree_method_invocation (GDBusConnection *connection,
             interface_info = interfaces[n];
         }
 
-      /* Fail with org.freedesktop.DBus.Error.InvalidArgs if the user-code
+      /* Fail with DBUS_ERROR_INVALID_ARGS if the user-code
        * claims it won't support the interface
        */
       if (interface_info == NULL)
         {
           GDBusMessage *reply;
           reply = g_dbus_message_new_method_error (message,
-                                                   "org.freedesktop.DBus.Error.InvalidArgs",
+                                                   DBUS_ERROR_INVALID_ARGS,
                                                    _("No such interface “%s”"),
                                                    interface_name);
           g_dbus_connection_send_message (es->connection, reply, G_DBUS_SEND_MESSAGE_FLAGS_NONE, NULL, NULL);
@@ -6847,7 +7307,7 @@ process_subtree_vtable_message_in_idle_cb (gpointer _data)
 
   handled = FALSE;
 
-  if (g_strcmp0 (g_dbus_message_get_interface (data->message), "org.freedesktop.DBus.Introspectable") == 0 &&
+  if (g_strcmp0 (g_dbus_message_get_interface (data->message), DBUS_INTERFACE_INTROSPECTABLE) == 0 &&
       g_strcmp0 (g_dbus_message_get_member (data->message), "Introspect") == 0 &&
       g_strcmp0 (g_dbus_message_get_signature (data->message), "") == 0)
     handled = handle_subtree_introspect (data->es->connection,
@@ -6870,7 +7330,7 @@ process_subtree_vtable_message_in_idle_cb (gpointer _data)
     {
       GDBusMessage *reply;
       reply = g_dbus_message_new_method_error (data->message,
-                                               "org.freedesktop.DBus.Error.UnknownMethod",
+                                               DBUS_ERROR_UNKNOWN_METHOD,
                                                _("Method “%s” on interface “%s” with signature “%s” does not exist"),
                                                g_dbus_message_get_member (data->message),
                                                g_dbus_message_get_interface (data->message),
@@ -7019,6 +7479,9 @@ g_dbus_connection_register_subtree (GDBusConnection           *connection,
  out:
   CONNECTION_UNLOCK (connection);
 
+  if (ret == 0 && user_data_free_func != NULL)
+    user_data_free_func (user_data);
+
   return ret;
 }
 
@@ -7098,7 +7561,7 @@ handle_generic_get_machine_id_unlocked (GDBusConnection *connection,
       if (connection->machine_id == NULL)
         {
           reply = g_dbus_message_new_method_error_literal (message,
-                                                           "org.freedesktop.DBus.Error.Failed",
+                                                           DBUS_ERROR_FAILED,
                                                            error->message);
           g_error_free (error);
         }
@@ -7161,21 +7624,21 @@ handle_generic_unlocked (GDBusConnection *connection,
   signature = g_dbus_message_get_signature (message);
   path = g_dbus_message_get_path (message);
 
-  if (g_strcmp0 (interface_name, "org.freedesktop.DBus.Introspectable") == 0 &&
+  if (g_strcmp0 (interface_name, DBUS_INTERFACE_INTROSPECTABLE) == 0 &&
       g_strcmp0 (member, "Introspect") == 0 &&
       g_strcmp0 (signature, "") == 0)
     {
       handle_generic_introspect_unlocked (connection, path, message);
       handled = TRUE;
     }
-  else if (g_strcmp0 (interface_name, "org.freedesktop.DBus.Peer") == 0 &&
+  else if (g_strcmp0 (interface_name, DBUS_INTERFACE_PEER) == 0 &&
            g_strcmp0 (member, "Ping") == 0 &&
            g_strcmp0 (signature, "") == 0)
     {
       handle_generic_ping_unlocked (connection, path, message);
       handled = TRUE;
     }
-  else if (g_strcmp0 (interface_name, "org.freedesktop.DBus.Peer") == 0 &&
+  else if (g_strcmp0 (interface_name, DBUS_INTERFACE_PEER) == 0 &&
            g_strcmp0 (member, "GetMachineId") == 0 &&
            g_strcmp0 (signature, "") == 0)
     {
@@ -7275,7 +7738,7 @@ distribute_method_call (GDBusConnection *connection,
   if (object_found == TRUE)
     {
       reply = g_dbus_message_new_method_error (message,
-                                               "org.freedesktop.DBus.Error.UnknownMethod",
+                                               DBUS_ERROR_UNKNOWN_METHOD,
                                                _("No such interface “%s” on object at path %s"),
                                                interface_name,
                                                path);
@@ -7283,7 +7746,7 @@ distribute_method_call (GDBusConnection *connection,
   else
     {
       reply = g_dbus_message_new_method_error (message,
-                                           "org.freedesktop.DBus.Error.UnknownMethod",
+                                           DBUS_ERROR_UNKNOWN_METHOD,
                                            _("Object does not exist at path “%s”"),
                                            path);
     }

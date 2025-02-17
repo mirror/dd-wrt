@@ -261,11 +261,6 @@ threaded_dispose_thread_cb (gpointer user_data)
 static void
 test_cancellable_source_threaded_dispose (void)
 {
-#ifdef _GLIB_ADDRESS_SANITIZER
-  g_test_incomplete ("FIXME: Leaks lots of GCancellableSource objects, see glib#2309");
-  (void) cancelled_cb;
-  (void) threaded_dispose_thread_cb;
-#else
   ThreadedDisposeData data;
   GThread *thread = NULL;
   guint i;
@@ -275,6 +270,10 @@ test_cancellable_source_threaded_dispose (void)
                   "(in one thread) and cancelling the GCancellable it refers "
                   "to (in another thread)");
   g_test_bug ("https://gitlab.gnome.org/GNOME/glib/issues/1841");
+#ifdef _GLIB_ADDRESS_SANITIZER
+  g_test_message ("We also ensure that no GCancellableSource are leaked");
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/issues/2309");
+#endif
 
   /* Create a new thread and wait until it’s ready to execute. Each iteration of
    * the test will pass it a new #GCancellableSource. */
@@ -335,7 +334,6 @@ test_cancellable_source_threaded_dispose (void)
   g_cond_clear (&data.cond);
 
   g_ptr_array_unref (cancellables_pending_unref);
-#endif
 }
 
 static void
@@ -532,6 +530,17 @@ test_cancellable_disconnect_on_cancelled_callback_hangs (void)
       return;
     }
 
+  /* Run the test in a subprocess. While we can get away with deadlocking a
+   * specific thread on Linux, the libc on FreeBSD manages to detect the
+   * deadlock and aborts the whole test process. */
+  if (!g_test_subprocess ())
+    {
+      g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_DEFAULT);
+      if (!g_test_trap_has_passed ())
+        g_test_trap_assert_stderr ("*Unexpected error from C library during 'pthread_mutex_lock': Resource deadlock avoided.  Aborting.*");
+      return;
+    }
+
   cancellable = g_cancellable_new ();
   thread_data.cancellable = cancellable;
   thread_data.callback = G_CALLBACK (on_cancellable_connect_disconnect);
@@ -548,10 +557,9 @@ test_cancellable_disconnect_on_cancelled_callback_hangs (void)
   thread_loop = thread_data.loop;
   g_assert_cmpuint ((gulong) (guintptr) g_atomic_pointer_get (&thread_data.handler_id), !=, 0);
 
-  /* FIXME: This thread will hang (at least that's what this test wants to
-   *        ensure), but we can't stop it from the caller, unless we'll expose
-   *        pthread_cancel (and similar) to GLib.
-   *        So it will keep hanging till the test process is alive.
+  /* This thread will hang (at least that's what this test wants to ensure), but
+   * we can't stop it from the caller, unless we'll expose pthread_cancel() (and
+   * similar) to GLib. So it will keep hanging until the test subprocess exits.
    */
   cancelling_thread = g_thread_new ("/cancellable/disconnect-on-cancelled-callback-hangs",
                                     (GThreadFunc) g_cancellable_cancel,
@@ -617,6 +625,17 @@ test_cancellable_reset_on_cancelled_callback_hangs (void)
       return;
     }
 
+  /* Run the test in a subprocess. While we can get away with deadlocking a
+   * specific thread on Linux, the libc on FreeBSD manages to detect the
+   * deadlock and aborts the whole test process. */
+  if (!g_test_subprocess ())
+    {
+      g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_DEFAULT);
+      if (!g_test_trap_has_passed ())
+        g_test_trap_assert_stderr ("*Unexpected error from C library during 'pthread_mutex_lock': Resource deadlock avoided.  Aborting.*");
+      return;
+    }
+
   cancellable = g_cancellable_new ();
   thread_data.cancellable = cancellable;
   thread_data.callback = G_CALLBACK (on_cancelled_reset);
@@ -633,10 +652,9 @@ test_cancellable_reset_on_cancelled_callback_hangs (void)
   thread_loop = thread_data.loop;
   g_assert_cmpuint ((gulong) (guintptr) g_atomic_pointer_get (&thread_data.handler_id), !=, 0);
 
-  /* FIXME: This thread will hang (at least that's what this test wants to
-   *        ensure), but we can't stop it from the caller, unless we'll expose
-   *        pthread_cancel (and similar) to GLib.
-   *        So it will keep hanging till the test process is alive.
+  /* This thread will hang (at least that's what this test wants to ensure), but
+   * we can't stop it from the caller, unless we'll expose pthread_cancel() (and
+   * similar) to GLib. So it will keep hanging until the test subprocess exits.
    */
   cancelling_thread = g_thread_new ("/cancellable/reset-on-cancelled-callback-hangs",
                                     (GThreadFunc) g_cancellable_cancel,
@@ -790,6 +808,69 @@ test_cancellable_cancel_reset_connect_races (void)
   g_object_unref (cancellable);
 }
 
+static gboolean
+source_cancelled_counter_cb (GCancellable *cancellable,
+                             gpointer      user_data)
+{
+  guint *n_calls = user_data;
+
+  *n_calls = *n_calls + 1;
+
+  return G_SOURCE_CONTINUE;
+}
+
+static void
+do_nothing (G_GNUC_UNUSED void *user_data)
+{
+  /* An empty timeout/idle once callback function */
+}
+
+static void
+test_cancellable_source_can_be_fired_multiple_times (void)
+{
+  GCancellable *cancellable;
+  GSource *source;
+  guint n_calls = 0;
+
+  g_test_summary ("Test a cancellable source callback can be called multiple times");
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/issues/774");
+
+  cancellable = g_cancellable_new ();
+  source = g_cancellable_source_new (cancellable);
+
+  g_source_set_callback (source, G_SOURCE_FUNC (source_cancelled_counter_cb),
+                         &n_calls, NULL);
+  g_source_attach (source, NULL);
+
+  g_cancellable_cancel (cancellable);
+  g_assert_cmpuint (n_calls, ==, 0);
+
+  while (g_main_context_pending (NULL))
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert_cmpuint (n_calls, ==, 1);
+
+  g_cancellable_cancel (cancellable);
+
+  g_timeout_add_once (100, do_nothing, NULL);
+  while (g_main_context_pending (NULL))
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert_cmpuint (n_calls, ==, 1);
+
+  g_cancellable_reset (cancellable);
+  g_cancellable_cancel (cancellable);
+  g_assert_cmpuint (n_calls, ==, 1);
+
+  while (g_main_context_pending (NULL))
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert_cmpuint (n_calls, ==, 2);
+
+  g_source_unref (source);
+  g_object_unref (cancellable);
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -805,6 +886,7 @@ main (int argc, char *argv[])
   g_test_add_func ("/cancellable/cancel-reset-races", test_cancellable_cancel_reset_races);
   g_test_add_func ("/cancellable/cancel-reset-connect-races", test_cancellable_cancel_reset_connect_races);
   g_test_add_func ("/cancellable-source/threaded-dispose", test_cancellable_source_threaded_dispose);
+  g_test_add_func ("/cancellable-source/can-be-fired-multiple-times", test_cancellable_source_can_be_fired_multiple_times);
 
   return g_test_run ();
 }

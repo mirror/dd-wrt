@@ -22,6 +22,9 @@ and diffs, see the `commit log <https://gitlab.gnome.org/GNOME/glib/-/blob/main/
 **Version 1.0.1, 2022-11-02**
    - Formatting improvements
    - No semantic changes
+**Version 1.0.2, 2024-04-16**
+   - Add missing references to ``h`` type string
+   - Add missing reference to ``d`` type string to type string grammar
 
 *****
 Types
@@ -73,7 +76,7 @@ Some of these changes are under consideration for inclusion into D-Bus [#f2]_.
          special value outside of that range, called ``NULL``, ``Nothing``, ``None`` or similar. In most languages with reference
          or pointer types, these types are nullable. Some languages have the ability to have nullable versions of
          any type (for example, “``Maybe Int``” in Haskell and “``int? i;``” in C#).
-.. [#f2] Considerable discussion has been made in face-to-face meetings and some discussion has also occured
+.. [#f2] Considerable discussion has been made in face-to-face meetings and some discussion has also occurred
          on the D-Bus mailing list: http://lists.freedesktop.org/archives/dbus/2007-August/008290.html
 
 Enumeration of Types
@@ -171,7 +174,7 @@ that is used by the recursive structure of the language itself.
 Type strings can be described by a non-ambiguous context free grammar.
 
  * *type* ⇒ *base_type* | *container_type*
- * *base_type* ⇒ **b** | **y** | **n** | **q** | **i** | **u** | **x** | **t** | **s** | **o** | **g**
+ * *base_type* ⇒ **b** | **y** | **n** | **q** | **i** | **u** | **x** | **t** | **h** | **d** | **s** | **o** | **g**
  * *container_type* ⇒ **v** | **m** *type* | **a** *type* | **(** *types* **)** | **{** *base_type* *type* **}**
  * *types* ⇒ ε | *type* *types*
 
@@ -198,6 +201,8 @@ term containing a terminal is specified below:
    This derivation corresponds to the signed 64-bit integer type.
 **t**
    This derivation corresponds to the unsigned 64-bit integer type.
+**h**
+   This derivation corresponds to the signed 32-bit integer type, representing a handle.
 **d**
    This derivation corresponds to the double precision floating point number type.
 **s**
@@ -672,7 +677,7 @@ represents when deserialised with the given type.
    With type ``'a(si)'``::
 
       'h 'i \0 --   fe ff ff ff   03 ## ## ##   'b 'y 'e \0
-      ff ff ff ff   04 09
+      ff ff ff ff   04 09 15
 
    has a value of ``[('hi', -2), ('bye', -1)]``.
 

@@ -505,11 +505,16 @@ void   g_signal_chain_from_overridden_handler (gpointer           instance,
  * The handler will be called synchronously, before the default handler of the signal.
  * [func@GObject.signal_emit] will not return control until all handlers are called.
  *
- * See [memory management of signal handlers](signals.html#Memory_management_of_signal_handlers) for
+ * See [memory management of signal handlers](signals.html#memory-management-of-signal-handlers) for
  * details on how to handle the return value and memory management of @data.
  * 
- * This function cannot fail. If the given signal doesn’t exist, a critical
- * warning is emitted.
+ * This function cannot fail. If the given signal name doesn’t exist,
+ * a critical warning is emitted. No validation is performed on the
+ * ‘detail’ string when specified in @detailed_signal, other than a
+ * non-empty check.
+ *
+ * Refer to the [signals documentation](signals.html) for more
+ * details.
  *
  * Returns: the handler ID, of type `gulong` (always greater than 0)
  */
@@ -528,8 +533,13 @@ void   g_signal_chain_from_overridden_handler (gpointer           instance,
  * 
  * The handler will be called synchronously, after the default handler of the signal.
  * 
- * This function cannot fail. If the given signal doesn’t exist, a critical
- * warning is emitted.
+ * This function cannot fail. If the given signal name doesn’t exist,
+ * a critical warning is emitted. No validation is performed on the
+ * ‘detail’ string when specified in @detailed_signal, other than a
+ * non-empty check.
+ *
+ * Refer to the [signals documentation](signals.html) for more
+ * details.
  *
  * Returns: the handler ID, of type `gulong` (always greater than 0)
  */
@@ -569,8 +579,13 @@ void   g_signal_chain_from_overridden_handler (gpointer           instance,
  *                   (GCallback) button_clicked_cb, other_widget);
  * ]|
  * 
- * This function cannot fail. If the given signal doesn’t exist, a critical
- * warning is emitted.
+ * This function cannot fail. If the given signal name doesn’t exist,
+ * a critical warning is emitted. No validation is performed on the
+ * ‘detail’ string when specified in @detailed_signal, other than a
+ * non-empty check.
+ *
+ * Refer to the [signals documentation](signals.html) for more
+ * details.
  *
  * Returns: the handler ID, of type `gulong` (always greater than 0)
  */

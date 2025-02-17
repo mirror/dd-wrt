@@ -124,16 +124,21 @@
  * GHRFunc:
  * @key: a key
  * @value: the value associated with the key
- * @user_data: user data passed to g_hash_table_remove()
+ * @user_data: user data passed to the calling function
  *
  * Specifies the type of the function passed to
- * g_hash_table_foreach_remove(). It is called with each key/value
- * pair, together with the @user_data parameter passed to
- * g_hash_table_foreach_remove(). It should return %TRUE if the
- * key/value pair should be removed from the #GHashTable.
+ * [func@GLib.HashTable.find], [func@GLib.HashTable.foreach_remove], and
+ * [func@GLib.HashTable.foreach_steal].
+ * 
+ * The function is called with each key/value pair, together with
+ * the @user_data parameter passed to the calling function.
+ * 
+ * The function should return true if the key/value pair should be
+ * selected, meaning it has been found or it should be removed from the
+ * [struct@GLib.HashTable], depending on the calling function.
  *
- * Returns: %TRUE if the key/value pair should be removed from the
- *     #GHashTable
+ * Returns: true if the key/value pair should be selected, and
+ *   false otherwise
  */
 
 /**
@@ -813,7 +818,7 @@ g_hash_table_resize (GHashTable *hash_table)
    * Immediately after growing, the load factor will be in the range
    * .375 .. .469. After shrinking, it will be exactly .5. */
 
-  g_hash_table_set_shift_from_size (hash_table, hash_table->nnodes * 1.333);
+  g_hash_table_set_shift_from_size (hash_table, (gint) (hash_table->nnodes * 1.333));
 
   if (hash_table->size > old_size)
     {
@@ -1785,8 +1790,9 @@ g_hash_table_steal (GHashTable    *hash_table,
  * of @hash_table are %NULL-safe.
  *
  * The dictionary implementation optimizes for having all values identical to
- * their keys, for example by using g_hash_table_add(). When stealing both the
- * key and the value from such a dictionary, the value will be %NULL.
+ * their keys, for example by using g_hash_table_add(). Before 2.82, when
+ * stealing both the key and the value from such a dictionary, the value was
+ * %NULL. Since 2.82, the returned value and key will be the same.
  *
  * Returns: %TRUE if the key was found in the #GHashTable
  * Since: 2.58
@@ -1820,10 +1826,15 @@ g_hash_table_steal_extended (GHashTable    *hash_table,
   }
 
   if (stolen_value != NULL)
-  {
-    *stolen_value = g_hash_table_fetch_key_or_value (hash_table->values, node_index, hash_table->have_big_values);
-    g_hash_table_assign_key_or_value (hash_table->values, node_index, hash_table->have_big_values, NULL);
-  }
+    {
+      if (stolen_key && hash_table->keys == hash_table->values)
+        *stolen_value = *stolen_key;
+      else
+        {
+          *stolen_value = g_hash_table_fetch_key_or_value (hash_table->values, node_index, hash_table->have_big_values);
+          g_hash_table_assign_key_or_value (hash_table->values, node_index, hash_table->have_big_values, NULL);
+        }
+    }
 
   g_hash_table_remove_node (hash_table, node_index, FALSE);
   g_hash_table_maybe_resize (hash_table);

@@ -13,13 +13,9 @@ support. The list will be periodically updated for the development branch,
 with versions typically being updated as they lapse from receiving support from
 their vendor.
 
- * macOS: minimum version OS X 10.7 (we
-   [don’t support universal binaries](https://bugzilla.gnome.org/show_bug.cgi?id=780238);
-   some features (like notification support)
-   [require OS X 10.9](https://bugzilla.gnome.org/show_bug.cgi?id=747146)
-   * Note that older versions of macOS than what’s currently officially
-     supported by Apple are supported by GLib on a best-effort basis due to
-     still having significant user bases
+ * macOS: minimum version macOS 11.
+   * [No support for universal binaries ](https://bugzilla.gnome.org/show_bug.cgi?id=780238);
+   * macOS 10.13 support is maintained on a best-effort basis.
  * Windows:
    [minimum version is Windows 8](https://gitlab.gnome.org/GNOME/glib/-/merge_requests/1970),
    minimum build chain is Visual Studio 2012
@@ -38,14 +34,15 @@ GLib is regularly built on at least the following systems:
  * FreeBSD: https://wiki.gnome.org/Projects/Jhbuild/FreeBSD
  * openSUSE: https://build.opensuse.org/package/show/GNOME:Factory/glib2
  * CI runners, https://gitlab.gnome.org/GNOME/glib/blob/main/.gitlab-ci.yml:
-   - Fedora (34, https://gitlab.gnome.org/GNOME/glib/-/blob/main/.gitlab-ci/fedora.Dockerfile)
-   - Debian (Bullseye, https://gitlab.gnome.org/GNOME/glib/-/blob/main/.gitlab-ci/debian-stable.Dockerfile)
+   - Fedora (39, https://gitlab.gnome.org/GNOME/glib/-/blob/main/.gitlab-ci/fedora.Dockerfile)
+   - Debian (Bookworm, https://gitlab.gnome.org/GNOME/glib/-/blob/main/.gitlab-ci/debian-stable.Dockerfile)
+   - Alpine Linux (3.19 using muslc, https://gitlab.gnome.org/GNOME/glib/-/blob/main/.gitlab-ci/alpine.Dockerfile)
    - Windows (MinGW64)
-   - Windows (msys2-mingw32)
-   - Windows (Visual Studio 2017, and a static linking version)
+   - Windows (msys2-mingw32 and msys2-clang64; msys2 is a rolling release distribution)
+   - Windows (Visual Studio 2019 x64, a static linking version on x64, and an x86 version)
    - Android (NDK r23b, API 31, arm64, https://gitlab.gnome.org/GNOME/glib/-/blob/main/.gitlab-ci/android-ndk.sh)
-   - FreeBSD (12 and 13)
-   - macOS
+   - FreeBSD (13)
+   - macOS (arm64, SDK 11.3)
 
 If other platforms are to be supported, we need to set up regular CI testing for
 them. Please contact us if you want to help.
@@ -87,7 +84,25 @@ a fallback to a POSIX-specified approach, if possible, or to simply replace a
 given functionality with a no-op, but even this may not be possible in cases of
 critical functionality.
 
-Specific notes
+32-bit support
+---
+
+GLib will support 32-bit systems as long as they are supported by any of the
+tested platforms above. This means we are guaranteed to be able to test our
+32-bit build in CI.
+
+In particular, Debian
+[continues to support 32-bit installations on x86](https://lists.debian.org/debian-devel-announce/2023/12/msg00003.html)
+as containers or chroots, though it doesn’t support running on 32-bit physical
+x86 hardware. It also supports a 32-bit armhf kernel and userspace.
+
+As of 2024, other known significant consumers of 32-bit GLib are:
+ * [GStreamer on 32-bit Windows](https://gitlab.gnome.org/GNOME/glib/-/issues/3477#note_2235483)
+ * [GStreamer on 32-bit armv7](https://gitlab.gnome.org/GNOME/glib/-/issues/3477#note_2236548)
+ * [Wine](https://gitlab.gnome.org/GNOME/glib/-/issues/3477#note_2235484)
+ * [Steam](https://gitlab.gnome.org/GNOME/glib/-/issues/3477#note_2238744)
+
+Notes on specific features
 ---
 
 Note that we currently depend on a number of features specified in POSIX, but

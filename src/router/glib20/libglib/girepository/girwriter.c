@@ -461,6 +461,9 @@ write_callable_info (const char     *ns,
                      Xml            *file)
 {
   GITypeInfo *type;
+  GICallableInfo *async_func;
+  GICallableInfo *sync_func;
+  GICallableInfo *finish_func;
 
   if (gi_callable_info_can_throw_gerror (info))
     xml_printf (file, " throws=\"1\"");
@@ -468,6 +471,18 @@ write_callable_info (const char     *ns,
   write_attributes (file, (GIBaseInfo*) info);
 
   type = gi_callable_info_get_return_type (info);
+  async_func = gi_callable_info_get_async_function (info);
+  sync_func = gi_callable_info_get_sync_function (info);
+  finish_func = gi_callable_info_get_finish_function (info);
+
+  if (sync_func)
+    xml_printf (file, " glib:sync-func=\"%s\"", gi_base_info_get_name ((GIBaseInfo*) sync_func));
+
+  if (finish_func)
+    xml_printf (file, " glib:finish-func=\"%s\"", gi_base_info_get_name ((GIBaseInfo*) finish_func));
+
+  if (async_func)
+    xml_printf (file, " glib:async-func=\"%s\"", gi_base_info_get_name ((GIBaseInfo*) async_func));
 
   xml_start_element (file, "return-value");
 
@@ -1338,7 +1353,8 @@ gi_ir_writer_write (GIRepository *repository,
                     gboolean    show_all)
 {
   FILE *ofile;
-  size_t i, j;
+  size_t i;
+  unsigned int j;
   char **dependencies;
   Xml *xml;
 

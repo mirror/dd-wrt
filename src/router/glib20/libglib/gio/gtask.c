@@ -1126,8 +1126,7 @@ void
  * name of the #GSource used for idle completion of the task.
  *
  * This function may only be called before the @task is first used in a thread
- * other than the one it was constructed in. It is called automatically by
- * g_task_set_source_tag() if not called already.
+ * other than the one it was constructed in.
  *
  * Since: 2.60
  */
@@ -1154,6 +1153,9 @@ void
  * Sets @task’s name, used in debugging and profiling.
  *
  * This is a variant of g_task_set_name() that avoids copying @name.
+ *
+ * This function is called automatically by [method@Gio.Task.set_source_tag]
+ * unless a name is set.
  *
  * Since: 2.76
  */
@@ -1537,7 +1539,7 @@ g_task_thread_setup (void)
   if (tasks_running == G_TASK_POOL_SIZE)
     task_wait_time = G_TASK_WAIT_TIME_BASE;
   else if (tasks_running > G_TASK_POOL_SIZE && tasks_running < G_TASK_WAIT_TIME_MAX_POOL_SIZE)
-    task_wait_time *= G_TASK_WAIT_TIME_MULTIPLIER;
+    task_wait_time = (guint64) (task_wait_time * G_TASK_WAIT_TIME_MULTIPLIER);
 
   if (tasks_running >= G_TASK_POOL_SIZE)
     g_source_set_ready_time (task_pool_manager, g_get_monotonic_time () + task_wait_time);
@@ -1562,7 +1564,7 @@ g_task_thread_cleanup (void)
     g_source_set_ready_time (task_pool_manager, -1);
 
   if (tasks_running > G_TASK_POOL_SIZE && tasks_running < G_TASK_WAIT_TIME_MAX_POOL_SIZE)
-    task_wait_time /= G_TASK_WAIT_TIME_MULTIPLIER;
+    task_wait_time = (guint64) (task_wait_time / G_TASK_WAIT_TIME_MULTIPLIER);
 
   tasks_running--;
 

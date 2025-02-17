@@ -2,8 +2,6 @@
 
 set -ex
 
-export PATH="/c/msys64/$MSYSTEM/bin:$PATH"
-
 pacman --noconfirm -Suy
 
 pacman --noconfirm -S --needed \
@@ -21,7 +19,8 @@ pacman --noconfirm -S --needed \
     "${MINGW_PACKAGE_PREFIX}"-python-pip \
     "${MINGW_PACKAGE_PREFIX}"-toolchain \
     "${MINGW_PACKAGE_PREFIX}"-zlib \
-    "${MINGW_PACKAGE_PREFIX}"-libelf
+    "${MINGW_PACKAGE_PREFIX}"-libelf \
+    "${MINGW_PACKAGE_PREFIX}"-gdb
 
 mkdir -p _coverage
 mkdir -p _ccache
@@ -29,11 +28,19 @@ CCACHE_BASEDIR="$(pwd)"
 CCACHE_DIR="${CCACHE_BASEDIR}/_ccache"
 export CCACHE_BASEDIR CCACHE_DIR
 
-pip3 install --upgrade --user packaging==23.2
-
 PATH="$(cygpath "$USERPROFILE")/.local/bin:$HOME/.local/bin:$PATH"
 DIR="$(pwd)"
 export PATH CFLAGS
+
+# If msys2 doesn’t provide a new enough gobject-introspection package, build it
+# ourselves.
+# See https://gitlab.gnome.org/GNOME/glib/-/merge_requests/3746#note_2161354
+if [[ $(vercmp "$(pacman -Qi "${MINGW_PACKAGE_PREFIX}"-gobject-introspection | grep -Po '^Version\s*: \K.+')" "${GOBJECT_INTROSPECTION_TAG}") -lt 0 ]]; then
+    mkdir -p gobject-introspection
+    git clone --branch "${GOBJECT_INTROSPECTION_TAG}" https://gitlab.gnome.org/GNOME/gobject-introspection.git gobject-introspection
+    meson setup gobject-introspection gobject-introspection/build --prefix "${MINGW_PREFIX}"
+    meson install -C gobject-introspection/build
+fi
 
 # FIXME: We can’t use ${MESON_COMMON_OPTIONS} here because this script installs
 # Meson 1.3. See the comment in .gitlab-ci.yml about the same problem on
@@ -76,5 +83,5 @@ fi
 # Copy the built documentation to an artifact directory. The build for docs.gtk.org
 # can then pull it from there — see https://gitlab.gnome.org/GNOME/gtk/-/blob/docs-gtk-org/README.md
 mkdir -p _reference/
-mv _build/docs/reference/glib/glib-win32/ _reference/glib-win32/
-mv _build/docs/reference/gio/gio-win32/ _reference/gio-win32/
+mv _build/docs/reference/glib/glib-win32-2.0/ _reference/glib-win32/
+mv _build/docs/reference/gio/gio-win32-2.0/ _reference/gio-win32/

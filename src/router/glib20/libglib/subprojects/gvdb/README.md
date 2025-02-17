@@ -23,3 +23,8 @@ their memory mapping.
 This means that if multiple clients are using a GVDB table, an external
 process is needed to synchronise writes and to notify clients to reload
 the table. `dconf-service` is an example of such a process.
+
+<!--
+  SPDX-FileCopyrightText: 2021 Endless OS Foundation, LLC
+  SPDX-License-Identifier: LGPL-2.1-or-later
+-->

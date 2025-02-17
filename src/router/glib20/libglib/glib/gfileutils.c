@@ -373,7 +373,7 @@ g_file_test (const gchar *filename,
     {
       const gchar *lastdot = strrchr (filename, '.');
       const gchar *pathext = NULL, *p;
-      int extlen;
+      size_t extlen;
 
       if (lastdot == NULL)
         break;
@@ -401,7 +401,7 @@ g_file_test (const gchar *filename,
 	  const gchar *q = strchr (p, ';');
 	  if (q == NULL)
 	    q = p + strlen (p);
-	  if (extlen == q - p &&
+	  if (extlen == (size_t) (q - p) &&
 	      memcmp (lastdot, p, extlen) == 0)
 	    {
 	      g_free ((gchar *) pathext);
@@ -2991,6 +2991,7 @@ g_get_current_dir (void)
     {
       /* Fallback return value */
       g_assert (buffer_size >= 2);
+      g_assert (buffer != NULL);
       buffer[0] = G_DIR_SEPARATOR;
       buffer[1] = 0;
     }

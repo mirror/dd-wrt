@@ -13,8 +13,6 @@ gversionmacros_h = custom_target(
   command: [gen_visibility_macros, meson.project_version(), 'versions-macros', '@INPUT@', '@OUTPUT@'],
   install: true,
   install_dir: glib_sub_includedir,
-  # FIXME: Not needed with Meson >= 0.64.0
-  install_tag: 'devel',
 )
 
 glib_visibility_h = custom_target(
@@ -22,8 +20,6 @@ glib_visibility_h = custom_target(
   command: [gen_visibility_macros, meson.project_version(), 'visibility-macros', 'GLIB', '@OUTPUT@'],
   install: true,
   install_dir: glib_sub_includedir,
-  # FIXME: Not needed with Meson >= 0.64.0
-  install_tag: 'devel',
 )
 
 glib_built_headers = [gversionmacros_h, glib_visibility_h]
@@ -320,6 +316,7 @@ glib_sources += files(
   'gshell.c',
   'gslice.c',
   'gslist.c',
+  'gspawn.c',
   'gstdio.c',
   'gstrfuncs.c',
   'gstring.c',
@@ -371,7 +368,7 @@ if host_system == 'windows'
     glib_sources += files('dirent/wdirent.c')
   endif
 else
-  glib_sources += files('glib-unix.c', 'gspawn.c', 'giounix.c')
+  glib_sources += files('glib-unix.c', 'gspawn-posix.c', 'giounix.c')
   platform_deps = []
 endif
 
@@ -389,8 +386,6 @@ if glib_have_carbon
   framework_dep = dependency('appleframeworks', modules : 'Carbon')
   platform_deps += [framework_dep]
 endif
-
-glib_sources += files('gthread-@0@.c'.format(threads_implementation))
 
 if enable_dtrace
   glib_dtrace_obj = dtrace_obj_gen.process('glib_probes.d')
@@ -419,6 +414,7 @@ libglib = library('glib-2.0',
   include_directories : configinc,
   link_with: [charset_lib, gnulib_lib],
   dependencies : [
+    atomic_dep,
     gnulib_libm_dependency,
     libiconv,
     libintl_deps,
@@ -454,6 +450,12 @@ pkg.generate(libglib,
       valgrind_suppression_file_install_subdir /
       fs.name(valgrind_suppression_file),
   ],
+  uninstalled_variables : [
+    'glib_genmarshal=${prefix}/gobject/glib-genmarshal',
+    'gobject_query=${prefix}/gobject/gobject-query',
+    'glib_mkenums=${prefix}/gobject/glib-mkenums',
+    'glib_valgrind_suppressions=' + valgrind_suppression_file.full_path(),
+  ],
   version : glib_version,
   install_dir : glib_pkgconfigreldir,
   filebase : 'glib-2.0',
@@ -462,26 +464,30 @@ pkg.generate(libglib,
 )
 meson.override_dependency('glib-2.0', libglib_dep)
 
+# FIXME: This needs to be added to the `depends` of every invocation of
+# glib_compile_resources in the build process. We can drop this when
+# https://github.com/mesonbuild/meson/issues/13385 is fixed.
+gspawn_helpers = []
 # On Windows, glib needs a spawn helper for g_spawn* API
 if host_system == 'windows'
   if host_machine.cpu_family() == 'x86'
-    executable('gspawn-win32-helper', 'gspawn-win32-helper.c',
+    gspawn_helpers += executable('gspawn-win32-helper', 'gspawn-win32-helper.c',
       install : true,
       win_subsystem : 'windows',
       include_directories : configinc,
       dependencies : [libglib_dep])
-    executable('gspawn-win32-helper-console', 'gspawn-win32-helper.c',
+    gspawn_helpers += executable('gspawn-win32-helper-console', 'gspawn-win32-helper.c',
       install : true,
       c_args : ['-DHELPER_CONSOLE'],
       include_directories : configinc,
       dependencies : [libglib_dep])
   else
-    executable('gspawn-win64-helper', 'gspawn-win32-helper.c',
+    gspawn_helpers += executable('gspawn-win64-helper', 'gspawn-win32-helper.c',
       install : true,
       win_subsystem : 'windows',
       include_directories : configinc,
       dependencies : [libglib_dep])
-    executable('gspawn-win64-helper-console', 'gspawn-win32-helper.c',
+    gspawn_helpers += executable('gspawn-win64-helper-console', 'gspawn-win32-helper.c',
       install : true,
       c_args : ['-DHELPER_CONSOLE'],
       include_directories : configinc,
@@ -501,7 +507,7 @@ endif
 
 report_conf = configuration_data()
 report_conf.set('GLIB_VERSION', glib_version)
-report_conf.set('PYTHON', python_name)
+report_conf.set('PYTHON', python.full_path())
 configure_file(
   input: 'gtester-report.in',
   output: 'gtester-report',

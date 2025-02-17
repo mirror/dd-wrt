@@ -37,8 +37,9 @@
 
 #ifdef G_OS_WIN32
 #include "glib/glib-private.h"
-#include "gdbusprivate.h"
 #endif
+
+#include "gdbusprivate.h"
 
 /* ---------------------------------------------------------------------------------------------------- */
 
@@ -191,7 +192,7 @@ print_methods_and_signals (GDBusConnection *c,
   result = g_dbus_connection_call_sync (c,
                                         name,
                                         path,
-                                        "org.freedesktop.DBus.Introspectable",
+                                        DBUS_INTERFACE_INTROSPECTABLE,
                                         "Introspect",
                                         NULL,
                                         G_VARIANT_TYPE ("(s)"),
@@ -263,7 +264,7 @@ print_paths (GDBusConnection *c,
   result = g_dbus_connection_call_sync (c,
                                         name,
                                         path,
-                                        "org.freedesktop.DBus.Introspectable",
+                                        DBUS_INTERFACE_INTROSPECTABLE,
                                         "Introspect",
                                         NULL,
                                         G_VARIANT_TYPE ("(s)"),
@@ -332,9 +333,9 @@ print_names (GDBusConnection *c,
 
   error = NULL;
   result = g_dbus_connection_call_sync (c,
-                                        "org.freedesktop.DBus",
-                                        "/org/freedesktop/DBus",
-                                        "org.freedesktop.DBus",
+                                        DBUS_SERVICE_DBUS,
+                                        DBUS_PATH_DBUS,
+                                        DBUS_INTERFACE_DBUS,
                                         "ListNames",
                                         NULL,
                                         G_VARIANT_TYPE ("(as)"),
@@ -356,9 +357,9 @@ print_names (GDBusConnection *c,
 
   error = NULL;
   result = g_dbus_connection_call_sync (c,
-                                        "org.freedesktop.DBus",
-                                        "/org/freedesktop/DBus",
-                                        "org.freedesktop.DBus",
+                                        DBUS_SERVICE_DBUS,
+                                        DBUS_PATH_DBUS,
+                                        DBUS_INTERFACE_DBUS,
                                         "ListActivatableNames",
                                         NULL,
                                         G_VARIANT_TYPE ("(as)"),
@@ -501,7 +502,7 @@ call_helper_get_method_in_signature (GDBusConnection  *c,
   result = g_dbus_connection_call_sync (c,
                                         dest,
                                         path,
-                                        "org.freedesktop.DBus.Introspectable",
+                                        DBUS_INTERFACE_INTROSPECTABLE,
                                         "Introspect",
                                         NULL,
                                         G_VARIANT_TYPE ("(s)"),
@@ -801,7 +802,7 @@ handle_emit (gint        *argc,
     }
 
   /* Read parameters */
-  g_variant_builder_init (&builder, G_VARIANT_TYPE_TUPLE);
+  g_variant_builder_init_static (&builder, G_VARIANT_TYPE_TUPLE);
   skip_dashes = TRUE;
   parm = 0;
   for (n = 1; n < (guint) *argc; n++)
@@ -1113,7 +1114,7 @@ handle_call (gint        *argc,
     }
 
   /* Read parameters */
-  g_variant_builder_init (&builder, G_VARIANT_TYPE_TUPLE);
+  g_variant_builder_init_static (&builder, G_VARIANT_TYPE_TUPLE);
   skip_dashes = TRUE;
   parm = 0;
   for (n = 1; n < (guint) *argc; n++)
@@ -1373,7 +1374,7 @@ dump_method (const GDBusMethodInfo *o,
 {
   guint n;
   guint m;
-  guint name_len;
+  size_t name_len;
   guint total_num_args;
 
   for (n = 0; o->annotations != NULL && o->annotations[n] != NULL; n++)
@@ -1500,7 +1501,7 @@ dump_interface (GDBusConnection          *c,
       result = g_dbus_connection_call_sync (c,
                                             name,
                                             object_path,
-                                            "org.freedesktop.DBus.Properties",
+                                            DBUS_INTERFACE_PROPERTIES,
                                             "GetAll",
                                             g_variant_new ("(s)", o->name),
                                             NULL,
@@ -1538,7 +1539,7 @@ dump_interface (GDBusConnection          *c,
               result = g_dbus_connection_call_sync (c,
                                                     name,
                                                     object_path,
-                                                    "org.freedesktop.DBus.Properties",
+                                                    DBUS_INTERFACE_PROPERTIES,
                                                     "Get",
                                                     g_variant_new ("(ss)", o->name, o->properties[n]->name),
                                                     G_VARIANT_TYPE ("(v)"),
@@ -1720,7 +1721,7 @@ introspect_do (GDBusConnection *c,
   result = g_dbus_connection_call_sync (c,
                                         opt_introspect_dest,
                                         object_path,
-                                        "org.freedesktop.DBus.Introspectable",
+                                        DBUS_INTERFACE_INTROSPECTABLE,
                                         "Introspect",
                                         NULL,
                                         G_VARIANT_TYPE ("(s)"),
@@ -1983,10 +1984,7 @@ monitor_on_name_vanished (GDBusConnection *connection,
   g_print ("The name %s does not have an owner\n", name);
 
   if (monitor_filter_id != 0)
-    {
-      g_dbus_connection_signal_unsubscribe (connection, monitor_filter_id);
-      monitor_filter_id = 0;
-    }
+    g_dbus_connection_signal_unsubscribe (connection, g_steal_handle_id (&monitor_filter_id));
 }
 
 static const GOptionEntry monitor_entries[] =
