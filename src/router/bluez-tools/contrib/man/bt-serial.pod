@@ -1,0 +1,45 @@
+=head1 NAME
+
+bt-serial - a bluetooth serial manager
+
+=head1 SYNOPSIS
+
+bt-serial [OPTION...]
+
+Help Options:
+  -h, --help
+
+Application Options:
+  -a, --adapter=<name|mac>
+  -c, --connect <name|mac> <pattern>
+  -d, --disconnect <name|mac> <tty_device>
+
+=head1 DESCRIPTION
+
+This utility is used to manage serial service connections.
+
+=head1 OPTIONS
+
+B<-h, --help>
+    Show help
+
+B<-a, --adapter E<lt>name|macE<gt>>
+    Specify adapter to use by his Name or MAC address
+    (if this option does not defined - default adapter used)
+
+B<-c, --connect E<lt>name|macE<gt> E<lt>patternE<gt>>
+    Connects to a specific RFCOMM based service on a
+    remote device and then creates a RFCOMM TTY
+    device for it; `pattern` is a profile short name (spp, dun),
+    RFCOMM channel (1-30)
+
+B<-d, --disconnect E<lt>name|macE<gt> E<lt>tty_deviceE<gt>>
+    Disconnect a RFCOMM TTY device that has been created
+
+=head1 AUTHOR
+
+Alexander Orlenko <zxteam@gmail.com>.
+
+=head1 SEE ALSO
+
+bt-adapter(1) bt-agent(1) bt-audio(1) bt-device(1) bt-input(1) bt-monitor(1) bt-network(1)

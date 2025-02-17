@@ -1,0 +1,17 @@
+--------------------------
+Changes in 0.2.0 (beta)
+
+ - Replaced the DBus-GLib API with the GLib GIO GDBus API. DBus-GLib has been flagged as obsolete by freedesktop.org. DBus-GLib has also proved to be difficult when setting up DBus proxies to the newer BlueZ 5 API and thus been dropped in favor of the currently active GDBus API.
+ - The use of GValue has been dropped in favor of GVariant. GVariants are used extensivly by the GDBus API as they are seriallized objects that are used for messaging DBus.
+ - Because of the use of GDBus and GVariants, the need for custom C based marshallers have been dropped. Therefore, marshallers.c and marshallers.h have been deleted.
+ - The use of GHashTables by proxies and DBus objects have been dropped in favor of GVariant-based dictionaries. GHashTables are still used in some portions of the source code but all DBus dictionaries returned will be GVariants.
+ - Due to a major change in the BlueZ API (BlueZ 5), object properties are now stored in nodes with the `org.freedesktop.DBus.Properties' interface. A seperate GDBus proxy will be created for each BlueZ DBus object.
+ - Due to a major change in the BlueZ API (BlueZ 5), the `org.freedesktop.DBus.ObjectManager' will be used to get properties, adapters, the default adapter, and changes to the BlueZ DBus objects (such as devices discovered).
+ - The use of g_signal and its callbacks have been replaced in favor of g_dbus_connection_signal_subscribe() and g_dbus_connection_signal_unsubscribe() handled by the GIO GDBus API.
+ - DBus object exporting is handled by g_dbus_connection_register_object(), using g_dbus_node_info_new_for_xml() to assist generating an interface table. 
+ - Exported method returns are now handled by g_dbus_method_invocation_return_value(). Similarly to g_dbus_method_invocation_return_error() and its variants.
+ - BlueZ 5 has dropped the audio, input, moniter, and serial APIs in favor for the profile API. Because of this change bt-audio, bt-audio, bt-input, bt-moniter, and bt-serial have been removed from the project. Support for the profile API will be included in the future.
+ - DiscoverServices has been removed in the BlueZ 5 device DBus API. Because of this, bt-device will use `sdptool' as a substitute for discovering services on remote devices. This will require bluez-utils to be installed.
+ - OBEX is now a part of BlueZ 5. Because of this change, the option to compile bluez-tools without OBEX support has been removed. OBEX support will always be included in bluez-tools.
+
+--------------------------

@@ -1,0 +1,45 @@
+=head1 NAME
+
+bt-network - a bluetooth network manager
+
+=head1 SYNOPSIS
+
+bt-network [OPTION...]
+
+Help Options:
+  -h, --help
+
+Application Options:
+  -a, --adapter=<name|mac>
+  -c, --connect <name|mac> <uuid>
+  -s, --server <gn|panu|nap> <brige>
+
+=head1 DESCRIPTION
+
+This utility is used to manage network services (client/server).
+All servers will be automatically unregistered when the application terminates.
+
+=head1 OPTIONS
+
+B<-h, --help>
+    Show help
+
+B<-a, --adapter E<lt>name|macE<gt>>
+    Specify adapter to use by his Name or MAC address
+    (if this option does not defined - default adapter used)
+
+B<-c, --connect E<lt>name|macE<gt> E<lt>uuidE<gt>>
+    Connect to the network device and return the network interface
+    name, uuid can be either one of "gn", "panu" or "nap"
+
+B<-s, --server E<lt>gn|panu|napE<gt> E<lt>brigeE<gt>>
+    Register server for the provided UUID, every new connection to
+    this server will be added the bridge interface
+
+=head1 AUTHOR
+
+Alexander Orlenko <zxteam@gmail.com>.
+
+=head1 SEE ALSO
+
+bt-adapter(1) bt-agent(1) bt-device(1)

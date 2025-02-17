@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/org/blueztools">
+	<interface name="org.bluez.Agent1">
+		<method name="Release">
+		</method>
+		<method name="RequestPinCode">
+			<arg name="device" direction="in" type="o"/>
+			<arg name="pincode" direction="out" type="s"/>
+		</method>
+		<method name="DisplayPinCode">
+			<arg name="device" direction="in" type="o"/>
+			<arg name="pincode" direction="in" type="s"/>
+		</method>
+		<method name="RequestPasskey">
+			<arg name="device" direction="in" type="o"/>
+			<arg name="passkey" direction="out" type="u"/>
+		</method>
+		<method name="DisplayPasskey">
+			<arg name="device" direction="in" type="o"/>
+			<arg name="passkey" direction="in" type="u"/>
+			<arg name="entered" direction="in" type="q"/>
+		</method>
+		<method name="RequestConfirmation">
+			<arg name="device" direction="in" type="o"/>
+			<arg name="passkey" direction="in" type="u"/>
+		</method>
+		<method name="RequestAuthorization">
+			<arg name="device" direction="in" type="o"/>
+		</method>
+		<method name="AuthorizeService">
+			<arg name="device" direction="in" type="o"/>
+			<arg name="uuid" direction="in" type="s"/>
+		</method>
+		<method name="Cancel">
+		</method>
+	</interface>
+</node>

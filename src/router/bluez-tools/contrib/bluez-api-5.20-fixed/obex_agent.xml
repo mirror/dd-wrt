@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/org/blueztools/obex">
+	<interface name="org.bluez.obex.Agent1">
+		<method name="Release">
+		</method>
+		<method name="AuthorizePush">
+			<arg name="transfer" direction="in" type="o"/>
+			<arg name="filepath" direction="out" type="s"/>
+		</method>
+		<method name="Cancel">
+		</method>
+	</interface>
+</node>

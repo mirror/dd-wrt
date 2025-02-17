@@ -1,0 +1,104 @@
+=head1 NAME
+
+bt-adapter - a bluetooth adapter manager
+
+=head1 SYNOPSIS
+
+bt-adapter [OPTION...]
+
+Help Options:
+  -h, --help
+
+Application Options:
+  -l, --list
+  -a, --adapter=<name|mac>
+  -i, --info
+  -d, --discover
+  --set <property> <value>
+
+=head1 DESCRIPTION
+
+This utility is used to manage Bluetooth adapters. You can list all available adapters,
+show information about adapter, change adapter properties or discover remote devices.
+
+=head1 OPTIONS
+
+B<-h, --help>
+    Show help
+
+B<-l, --list>
+    List all available adapters
+
+B<-a, --adapter E<lt>name|macE<gt>>
+    Specify adapter to use by his Name or MAC address
+    (if this option does not defined - default adapter used)
+
+B<-i, --info>
+    Show information about adapter (returns all properties)
+
+B<-d, --discover>
+    Discover remote devices (with remote device name resolving)
+
+B<--set E<lt>propertyE<gt> E<lt>valueE<gt>>
+    Change adapter properties (see ADAPTER PROPERTIES section for list
+    of available properties)
+
+=head1 ADAPTER PROPERTIES
+
+string  Address [ro]
+        The Bluetooth adapter address (MAC).
+
+string  Alias [rw]
+        The Bluetooth adapter friendly name.
+
+uint32  Class [ro]
+        The Bluetooth class of device.
+
+boolean Powered [rw]
+        Switch an adapter on or off. This will also set the
+        appropiate connectable state.
+
+boolean Discoverable [rw]
+        Switch an adapter to discoverable or non-discoverable
+        to either make it visible or hide it.
+
+        If the DiscoverableTimeout is set to a non-zero
+        value then the system will set this value back to
+        false after the timer expired.
+
+        In case the adapter is switched off, setting this
+        value will fail.
+
+boolean Pairable [rw]
+        Switch an adapter to pairable or non-pairable.
+
+        Note that this property only affects incoming pairing
+        requests.
+
+uint32  PaireableTimeout [rw]
+        The pairable timeout in seconds. A value of zero
+        means that the timeout is disabled and it will stay in
+        pareable mode forever.
+
+uint32  DiscoverableTimeout [rw]
+        The discoverable timeout in seconds. A value of zero
+        means that the timeout is disabled and it will stay in
+        discoverable/limited mode forever.
+
+        The default value for the discoverable timeout should
+        be 180 seconds (3 minutes).
+
+boolean Discovering [ro]
+        Indicates that a device discovery procedure is active.
+
+list    UUIDs [ro]
+        List of 128-bit UUIDs that represents the available local
+        services.
+
+=head1 AUTHOR
+
+Alexander Orlenko <zxteam@gmail.com>.
+
+=head1 SEE ALSO
+
+bt-agent(1) bt-device(1) bt-network(1)

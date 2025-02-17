@@ -1,0 +1,103 @@
+bluez-tools
+===========
+
+See "Installation" for compile instructions.
+
+This was a GSoC'10 project to implement a new command line tools for bluez (bluetooth stack for linux). It is currently an active open source project.
+
+The project is implemented in C and uses the D-Bus interface of bluez.
+
+The project is still a work in progress, and not all APIs from Bluez have been implemented as a part of bluez-tools. The APIs which have been implemented in bluez-tools are adapter, agent, device, network and obex. Other APIs, such as interfaces for medical devices, pedometers and other specific APIs have not been ported to bluez-tools.
+
+Some bluez-tool source relied on the previous version of bluez (4), and have been deprecated, dropped and removed from the code. If such functionality exists in another form in bluez (5), a developer should feel free to clone the project, make the changes and send a merge request. If this is a major change, perhaps requiring multiple eyes, a developer should consider registering a change request at the project git repository. We support the project and welcome changes :) 
+
+The project is currently a beta version, and hiccups will still be present in the code. Register bugs at the project git repository.
+
+Project website: http://code.google.com/p/bluez-tools/
+Project Git repository: https://github.com/khvzak/bluez-tools
+
+
+bt-adapter
+==========
+
+- List available adapters
+- Show information about adapter (incl properties)
+- Discover remote devices (with remote device name resolving)
+- Change adapter properties (eg. Name, Discoverable, Pairable, etc)
+
+
+bt-agent
+========
+
+- Manage incoming Bluetooth requests (eg. request of pincode, request of
+ authorize a connection/service request, etc)
+
+
+bt-device
+=========
+
+- List added devices
+- Connect to the remote device by his MAC, retrieve all SDP records and then
+ initiate the pairing
+- Disconnect the remote device
+- Remove device (and also the pairing information)
+- Show information about device (incl properties)
+- Service discovery
+- Change device properties (eg. Name, Trusted, Blocked, etc)
+
+
+bt-network
+==========
+
+- Connect to the network device
+- Register network server for the provided UUID (gn/panu/nap)
+
+
+bt-obex
+=======
+
+- Agent (to accept/reject incoming bluetooth object push requests) for OBEXD
+ (OPP/FTP profile)
+- Send local file to the specified remote device using object push profile
+- Start FTP session with remote device
+
+
+Installation
+============
+
+Run `./autogen.sh' at the project root directory. This will generate the missing files you need to compile. Then run `./configure' followed by `make' and then `make install' to compile and install bluez-tools. `make install' requires root access. You can read `INSTALL' for detailed instructions on how to use `./configure'.
+
+
+Requirements
+============
+
+bluez-tools post v0.2 uses bluez-5.20 API.
+Due to the removal of DiscoverServices in the BlueZ 5 device API, bt-device requires `sdptool' (included in bluez-utils) for service discovery.
+
+
+Release Notes
+============
+
+For information regarding the changes of bluez-tools, please refer to the `ChangeLog' file included in the project.
+
+
+License
+============
+
+bluez-tools is released under the GNU General Public License version 2 (GPLv2). Refer to the `COPYING' file for details regarding the license.
+
+
+Known Issues
+============
+
+- Discovery mode on `bt-adapter' has no default timeout, which means it will last indefinitly. Using SIGINT (control-c) turns off the discovery scan and exits `bt-adapter'.
+- `bt-agent' does not recieve a `unregistered' callback signal in BlueZ 5, even when the agent manager successfully unregisters the agent. You will need to use SIGINT (control-c) twice to exit `bt-agent'.
+- Running `bt-agent' as a daemon process is currently broken.'
+- bt-network and bt-obex FTP has been implemented but it is largely untested with BlueZ 5.
+
+
+Unaddressed Issues From Pre v0.2
+============
+
+- FTP session closes unexpectedly after the command "ls" (bug in OBEXD?)
+- Copy/Move methods not yet implemented (OBEXD)

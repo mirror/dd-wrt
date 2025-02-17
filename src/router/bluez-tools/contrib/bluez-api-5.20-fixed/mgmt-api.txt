@@ -1,0 +1,2324 @@
+Bluetooth Management API
+*************************
+
+Copyright (C) 2008-2009  Marcel Holtmann <marcel@holtmann.org>
+
+
+Overview
+========
+
+This document describes the format of data used for communicating with
+the kernel using a so-called Bluetooth Management sockets. These sockets
+are available starting with Linux kernel version 3.4
+
+The following kernel versions introduced new commands, new events or
+important fixes to the Bluetooth Management API:
+
+Linux kernel v3.4	Version 1.0
+Linux kernel v3.5	Version 1.1
+Linux kernel v3.7	Version 1.2
+Linux kernel v3.9	Version 1.3
+Linux kernel v3.13	Version 1.4
+Linux kernel v3.15	Version 1.5
+Linux kernel v3.16	Version 1.6	(not yet released)
+
+Version 1.1 introduces Set Device ID command.
+
+Version 1.2 introduces Passkey Notify event.
+
+Version 1.3 does not introduce any new command or event.
+
+Version 1.4 introduces Set Advertising, Set BR/EDR, Set Static Address
+and Set Scan Parameters commands.
+
+Version 1.5 introduces Set Secure Connections, Set Debug Keys, Set Privacy
+and Load Identity Resolving Keys commands. It also introduces New Identity
+Resolving Key and New Signature Resolving Key events.
+
+Version 1.6 introduces Get Connection Information command. It also updates
+the Device Found event to combine advertising data and scan response data
+into a single event.
+
+
+Example
+=======
+
+The Bluetooth management sockets can be created by setting the hci_channel
+member of struct sockaddr_hci to HCI_CHANNEL_CONTROL (3) when creating a
+raw HCI socket. In C the needed code would look something like the following:
+
+int mgmt_create(void)
+{
+	struct sockaddr_hci addr;
+	int fd;
+
+	fd = socket(PF_BLUETOOTH, SOCK_RAW | SOCK_CLOEXEC | SOCK_NONBLOCK,
+                                                                BTPROTO_HCI);
+	if (fd < 0)
+		return -errno;
+
+	memset(&addr, 0, sizeof(addr));
+	addr.hci_family = AF_BLUETOOTH;
+	addr.hci_dev = HCI_DEV_NONE;
+	addr.hci_channel = HCI_CHANNEL_CONTROL;
+
+	if (bind(fd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+		int err = -errno;
+		close(fd);
+		return err;
+	}
+
+	return fd;
+}
+
+The process creating the mgmt socket is required to have the
+CAP_NET_ADMIN capability (e.g. root would have this).
+
+
+Packet Structures
+=================
+
+	Commands:
+
+	0    4    8   12   16   22   24   28   31   35   39   43   47
+	+-------------------+-------------------+-------------------+
+	|  Command Code     |  Controller Index |  Parameter Length |
+	+-------------------+-------------------+-------------------+
+	|                                                           |
+
+	Events:
+
+	0    4    8   12   16   22   24   28   31   35   39   43   47
+	+-------------------+-------------------+-------------------+
+	|  Event Code       |  Controller Index |  Parameter Length |
+	+-------------------+-------------------+-------------------+
+	|                                                           |
+
+All fields are in little-endian byte order (least significant byte first).
+
+Controller Index can have a special value <non-controller> to indicate that
+command or event is not related to any controller. Possible values:
+
+	<controller id>		0x0000 to 0xFFFE
+	<non-controller>	0xFFFF
+
+
+Error Codes
+===========
+
+The following values have been defined for use with the Command Status
+and Command Complete events:
+
+0x00	Success
+0x01	Unknown Command
+0x02	Not Connected
+0x03	Failed
+0x04	Connect Failed
+0x05	Authentication Failed
+0x06	Not Paired
+0x07	No Resources
+0x08	Timeout
+0x09	Already Connected
+0x0A	Busy
+0x0B	Rejected
+0x0C	Not Supported
+0x0D	Invalid Parameters
+0x0E	Disconnected
+0x0F	Not Powered
+0x10	Cancelled
+0x11	Invalid Index
+
+
+Read Management Version Information Command
+===========================================
+
+	Command Code:		0x0001
+	Controller Index:	<non-controller>
+	Command Parameters:
+	Return Parameters:	Version (1 Octets)
+				Revision (2 Octets)
+
+	This command returns the Management version and revision.
+	Besides, being informational the information can be used to
+	determine whether certain behavior has changed or bugs fixed
+	when interacting with the kernel.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+
+Read Management Supported Commands Command
+==========================================
+
+	Command Code:		0x0002
+	Controller Index:	<non-controller>
+	Command Parameters:
+	Return Parameters:	Num_Of_Commands (2 Octets)
+				Num_Of_Events (2 Octets)
+				Command1 (2 Octets)
+				Command2 (2 Octets)
+				...
+				Event1 (2 Octets)
+				Event2 (2 Octets)
+				...
+
+	This command returns the list of supported Management commands
+	and events.
+
+	The commands Read Management Version Information and Read
+	management Supported Commands are not included in this list.
+	Both commands are always supported and mandatory.
+
+	The events Command Status and Command Complete are not included
+	in this list. Both are implicit and mandatory.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+
+Read Controller Index List Command
+==================================
+
+	Command Code:		0x0003
+	Controller Index:	<non-controller>
+	Command Parameters:
+	Return Parameters:	Num_Controllers (2 Octets)
+				Controller_Index[i] (2 Octets)
+
+	This command returns the list of currently known controllers.
+	Controllers added or removed after calling this command can be
+	monitored using the Index Added and Index Removed events.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+
+Read Controller Information Command
+===================================
+
+	Command Code:		0x0004
+	Controller Index:	<controller id>
+	Command Parameters:
+	Return Parameters:	Address (6 Octets)
+				Bluetooth_Version (1 Octet)
+				Manufacturer (2 Octets)
+				Supported_Settings (4 Octets)
+				Current_Settings (4 Octets)
+				Class_Of_Device (3 Octets)
+				Name (249 Octets)
+				Short_Name (11 Octets)
+
+	This command is used to retreive the current state and basic
+	information of a controller. It is typically used right after
+	getting the response to the Read Controller Index List command
+	or an Index Added event.
+
+	If not short name is set the Short_Name parameter will be empty
+	(begin with a nul byte).
+
+	Current_Settings & Supported_Settings is a bitmask with
+	currently the following available bits:
+
+		0	Powered
+		1	Connectable
+		2	Fast Connectable
+		3	Discoverable
+		4	Pairable
+		5	Link Level Security (Sec. mode 3)
+		6	Secure Simple Pairing
+		7	Basic Rate/Enhanced Data Rate
+		8	High Speed
+		9	Low Energy
+		10	Advertising
+		11	Secure Connections
+		12	Debug Keys
+		13	Privacy
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+	Possible errors:	Invalid Parameters
+				Invalid Index
+
+
+Set Powered Command
+===================
+
+	Command Code:		0x0005
+	Controller Index:	<controller id>
+	Command Parameters:	Powered (1 Octet)
+	Return Parameters:	Current_Settings (4 Octets)
+
+	This command is used to power on or off a controller. The
+	allowed Powered command parameter values are 0x00 and 0x01. All
+	other values will return Invalid Parameters.
+
+	If discoverable setting is activated with a timeout, then
+	switching the controller off will expire this timeout and
+	disable discoverable.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+	Possible errors:	Busy
+				Invalid Parameters
+				Invalid Index
+
+
+Set Discoverable Command
+========================
+
+	Command Code:		0x0006
+	Controller Index:	<controller id>
+	Command Parameters:	Discoverable (1 Octet)
+				Timeout (2 Octets)
+	Return Parameters:	Current_Settings (4 Octets)
+
+	This command is used to set the discoverable property of a
+	controller. The allowed Discoverable command parameter values
+	are 0x00, 0x01 and 0x02. All other values will return Invalid
+	Parameters.
+
+	Timeout is the time in seconds and is only meaningful when
+	Discoverable is set to 0x01 or 0x02. Providing a timeout
+	with 0x00 return Invalid Parameters. For 0x02, the timeout
+	value is required.
+
+	The value 0x00 disables discoverable, the value 0x01 enables
+	general discoverable and the value 0x02 enables limited
+	discoverable.
+
+	This command is only available for BR/EDR capable controllers
+	(e.g. not for single-mode LE ones). It will return Not Supported
+	otherwise.
+
+	This command can be used when the controller is not powered and
+	all settings will be programmed once powered.
+
+	However using a timeout when the controller is not powered will
+	return Not Powered error.
+
+	When switching discoverable on and the connectable setting is
+	off it will return Rejected error.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+	Possible errors:	Busy
+				Rejected
+				Not Supported
+				Invalid Parameters
+				Not Powered
+				Invalid Index
+
+
+Set Connectable Command
+=======================
+
+	Command Code:		0x0007
+	Controller Index:	<controller id>
+	Command Parameters:	Connectable (1 Octet)
+	Return Parameters:	Current_Settings (4 Octets)
+
+	This command is used to set the connectable property of a
+	controller. The allowed Connectable command parameter values are
+	0x00 and 0x01. All other values will return Invalid Parameters.
+
+	This command is available for BR/EDR, LE-only and also dual
+	mode controllers. For BR/EDR is changes the page scan setting
+	and for LE controllers it changes the advertising type. For
+	dual mode controllers it affects both settings.
+
+	For LE capable controllers the connectable setting only takes
+	affect when advertising is enabled.
+
+	This command can be used when the controller is not powered and
+	all settings will be programmed once powered.
+
+	When switching connectable off, it will also switch off the
+	discoverable setting. Switching connectable back on will not
+	restore a previous discoverable. It will stay off and needs
+	to be manually switched back on.
+
+	When switching connectable off, it will expire a discoverable
+	setting with a timeout.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+	Possible errors:	Busy
+				Not Supported
+				Invalid Parameters
+				Invalid Index
+
+
+Set Fast Connectable Command
+============================
+
+	Command Code:		0x0008
+	Controller Index:	<controller id>
+	Command Parameters:	Enable (1 Octet)
+	Return Parameters:	Current_Settings (4 Octets)
+
+	This command is used to set the controller into a connectable
+	state where the page scan parameters have been set in a way to
+	favor faster connect times with the expense of higher power
+	consumption.
+
+	The allowed values of the Enable command parameter are 0x00 and
+	0x01. All other values will return Invalid Parameters.
+
+	This command is only available for BR/EDR capable controllers
+	(e.g. not for single-mode LE ones). It will return Not Supported
+	otherwise.
+
+	This command can only be used when the controller is powered on
+	and will return Not Powerd otherwise.
+
+	If connectable is not set, then this command will fail with
+	Rejected error.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+	Possible errors:	Failed
+				Busy
+				Rejected
+				Not Supported
+				Invalid Parameters
+				Not Powered
+				Invalid Index
+
+
+Set Pairable Command
+====================
+
+	Command Code:		0x0009
+	Controller Index:	<controller id>
+	Command Parameters:	Pairable (1 Octet)
+	Return Parameters:	Current_Settings (4 Octets)
+
+	This command is used to set the pairable property of an
+	controller. The allowed values for the Pairable command
+	parameter are 0x00 and 0x01. All other values will return
+	Invalid Parameters.
+
+	This command can be used when the controller is not powered and
+	all settings will be programmed once powered.
+
+	Turning pairable on will not automatically switch the controller
+	into connectable mode. That needs to be done separately.
+
+	The setting will be remembered during power down/up toggles.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+	Possible errors:	Invalid Parameters
+				Invalid Index
+
+
+Set Link Security Command
+=========================
+
+	Command Code:		0x000A
+	Controller Index:	<controller id>
+	Command Parameters:	Link_Security (1 Octet)
+	Return Parameters:	Current_Settings (4 Octets)
+
+	This command is used to either enable or disable link level
+	security for an controller (also known as Security Mode 3). The
+	allowed values for the Link_Security command parameter are 0x00
+	and 0x01. All other values will return Invalid Parameters.
+
+	This command is only available for BR/EDR capable controllers
+	(e.g. not for single-mode LE ones). It will return Not Supported
+	otherwise.
+
+	This command can be used when the controller is not powered and
+	all settings will be programmed once powered.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+	Possible errors:	Busy
+				Not Supported
+				Invalid Parameters
+				Invalid Index
+
+
+Set Secure Simple Pairing Command
+=================================
+
+	Command Code:		0x000B
+	Controller Index:	<controller id>
+	Command Parameters:	Secure_Simple_Pairing (1 Octet)
+	Return Parameters:	Current_Settings (4 Octets)
+
+	This command is used to enable/disable Secure Simple Pairing
+	support for a controller. The allowed values for the
+	Secure_Simple_Pairing command parameter are 0x00 and 0x01. All
+	other values will return Invalid Parameters.
+
+	This command is only available for BR/EDR capable controllers
+	supporting the core specification version 2.1 or greater
+	(e.g. not for single-mode LE controllers or pre-2.1 ones).
+
+	This command can be used when the controller is not powered and
+	all settings will be programmed once powered.
+
+	In case the controller does not support Secure Simple Pairing,
+	the command will fail regardless with Not Supported error.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+	Possible errors:	Busy
+				Not Supported
+				Invalid Parameters
+				Invalid Index
+
+Set High Speed Command
+======================
+
+	Command Code:		0x000C
+	Controller Index:	<controller id>
+	Command Parameters:	High_Speed (1 Octet)
+	Return Parameters:	Current_Settings (4 Octets)
+
+	This command is used to enable/disable Bluetooth High Speed
+	support for a controller. The allowed values for the High_Speed
+	command parameter are 0x00 and 0x01. All other values will
+	return Invalid Parameters.
+
+	This command is only available for BR/EDR capable controllers
+	(e.g. not for single-mode LE ones).
+
+	This command can be used when the controller is not powered and
+	all settings will be programmed once powered.
+
+	To enable High Speed support, it is required that Secure Simple
+	Pairing support is enabled first. High Speed support is not
+	possible for connections without Secure Simple Pairing.
+
+	When switching Secure Simple Pairing off, the support for High
+	Speed will be switched off as well. Switching Secure Simple
+	Pairing back on, will not re-enable High Speed support. That
+	needs to be done manually.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+	Possible errors:	Not Supported
+				Invalid Parameters
+				Invalid Index
+
+
+Set Low Energy Command
+======================
+
+	Command Code:		0x000D
+	Controller Index:	<controller id>
+	Command Parameters:	Low_Energy (1 Octet)
+	Return Parameters:	Current_Settings (4 Octets)
+
+	This command is used to enable/disable Low Energy support for a
+	controller. The allowed values of the Low_Energy command
+	parameter are 0x00 and 0x01. All other values will return
+	Invalid Parameters.
+
+	This command is only available for LE capable controllers and
+	will yield in a Not Supported error otherwise.
+
+	This command can be used when the controller is not powered and
+	all settings will be programmed once powered.
+
+	In case the kernel subsystem does not support Low Energy or the
+	controller does not either, the command will fail regardless.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+	Possible errors:	Busy
+				Not Supported
+				Invalid Parameters
+				Invalid Index
+
+
+Set Device Class
+================
+
+	Command Code:		0x000E
+	Controller Index:	<controller id>
+	Command Parameters:	Major_Class (1 Octet)
+				Minor_Class (1 Octet)
+	Return Parameters:	Class_Of_Device (3 Octets)
+
+	This command is used to set the major and minor device class for
+	BR/EDR capable controllers.
+
+	This command will also implicitly disable caching of pending CoD
+	and EIR updates.
+
+	This command is only available for BR/EDR capable controllers
+	(e.g. not for single-mode LE ones).
+
+	This command can be used when the controller is not powered and
+	all settings will be programmed once powered.
+
+	In case the controller is powered off, 0x000000 will be returned
+	for the class of device parameter. And after power on the new
+	value will be announced via class of device changed event.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+	Possible errors:	Busy
+				Not Supported
+				Invalid Parameters
+				Invalid Index
+
+
+Set Local Name Command
+======================
+
+	Command Code:		0x000F
+	Controller Index:	<controller id>
+	Command Parameters:	Name (249 Octets)
+				Short_Name (11 Octets)
+	Return Parameters:	Name (249 Octets)
+				Short_Name (11 Octets)
+
+	This command is used to set the local name of a controller. The
+	command parameters also include a short name which will be used
+	in case the full name doesn't fit within EIR/AD data.
+
+	The name parameters need to always end with a null byte (failure
+	to do so will cause the command to fail).
+
+	This command can be used when the controller is not powered and
+	all settings will be programmed once powered.
+
+	The values of name and short name will be remembered when
+	switching the controller off and back on again. So the name
+	and short name only have to be set once when a new controller
+	is found and will stay until removed.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+	Possible errors:	Invalid Parameters
+				Invalid Index
+
+
+Add UUID Command
+================
+
+	Command Code:		0x0010
+	Controller Index:	<controller id>
+	Command Parameters:	UUID (16 Octets)
+				SVC_Hint (1 Octet)
+	Return Parameters:	Class_Of_Device (3 Octets)
+
+	This command is used to add a UUID to be published in EIR
+	and/or AD data. The accompanied SVC_Hint parameter is used to
+	tell the kernel whether the service class bits of the Class of
+	Device value need modifying due to this UUID.
+
+	This command can be used when the controller is not powered and
+	all settings will be programmed once powered.
+
+	In case the controller is powered off, 0x000000 will be returned
+	for the class of device parameter. And after power on the new
+	value will be announced via class of device changed event.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+	Possible errors:	Busy
+				Invalid Parameters
+				Invalid Index
+
+
+Remove UUID Command
+===================
+
+	Command Code:		0x0011
+	Controller Index:	<controller id>
+	Command Parameters:	UUID (16 Octets)
+	Return Parameters:	Class_Of_Device (3 Octets)
+
+	This command is used to remove a UUID previously added using the
+	Add UUID command.
+
+	When the UUID parameter is an empty UUID (16 x 0x00), then all
+	previously loaded UUIDs will be removed.
+
+	This command can be used when the controller is not powered and
+	all settings will be programmed once powered.
+
+	In case the controller is powered off, 0x000000 will be returned
+	for the class of device parameter. And after power on the new
+	value will be announced via class of device changed event.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+	Possible errors:	Busy
+				Invalid Parameters
+				Invalid Index
+
+
+Load Link Keys Command
+======================
+
+	Command Code:		0x0012
+	Controller Index:	<controller id>
+	Command Parameters:	Debug_Keys (1 Octet)
+				Key_Count (2 Octets)
+				Key1 {
+					Address (6 Octets)
+					Address_Type (1 Octet)
+					Key_Type (1 Octet)
+					Value (16 Octets)
+					PIN_Length (1 Octet)
+				}
+				Key2 { }
+				...
+	Return Parameters:
+
+	This command is used to feed the kernel with currently known
+	link keys. The command does not need to be called again upon the
+	receiption of New Link Key events since the kernel updates its
+	list automatically.
+
+	The Debug_Keys parameter is used to tell the kernel whether to
+	accept the usage of debug keys or not. The allowed values for
+	this parameter are 0x00 and 0x01. All other values will return
+	an Invalid Parameters response.
+
+	Usage of the Debug_Keys parameter is deprecated and has been
+	replaced with the Set Debug Keys command. When setting the
+	Debug_Keys option via Load Link Keys command it has the same
+	affect as setting it via Set Debug Keys and applies to all
+	keys in the system.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	Reserved (not in use)
+		2	Reserved (not in use)
+
+	Public and random LE addresses are not valid and will be rejected.
+
+	Currently defined Key_Type values are:
+
+		0x00	Combination key
+		0x01	Local Unit key
+		0x02	Remote Unit key
+		0x03	Debug Combination key
+		0x04	Unauthenticated Combination key from P-192
+		0x05	Authenticated Combination key from P-192
+		0x06	Changed Combination key
+		0x07	Unauthenticated Combination key from P-256
+		0x08	Authenticated Combination key from P-256
+
+	This command can be used when the controller is not powered.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+	Possible errors:	Invalid Parameters
+				Invalid Index
+
+
+Load Long Term Keys Command
+===========================
+
+	Command Code:		0x0013
+	Controller Index:	<controller id>
+	Command Parameters:	Key_Count (2 Octets)
+				Key1 {
+					Address (6 Octets)
+					Address_Type (1 Octet)
+					Key_Type (1 Octet)
+					Master (1 Octet)
+					Encryption_Size (1 Octet)
+					Encryption_Diversifier (2 Octets)
+					Random_Number (8 Octets)
+					Value (16 Octets)
+				}
+				Key2 {  }
+				...
+	Return Parameters:
+
+	This command is used to feed the kernel with currently known
+	(SMP) Long Term Keys. The command does not need to be called
+	again upon the receiption of New Long Term Key events since the
+	kernel updates its list automatically.
+
+	Possible values for the Address_Type parameter:
+		0	Reserved (not in use)
+		1	LE Public
+		2	LE Random
+
+	The provided Address and Address_Type are the identity of
+	a device. So either its public address or static random address.
+
+	Unresolvable random addresses and resolvable random addresses are
+	not valid and will be rejected.
+
+	Currently defined Key_Type values are:
+
+		0x00	Unauthenticated key
+		0x01	Authenticated key
+
+	This command can be used when the controller is not powered.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+	Possible errors:	Invalid Parameters
+				Invalid Index
+
+
+Disconnect Command
+==================
+
+	Command Code:		0x0014
+	Controller Index:	<controller id>
+	Command Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+	Return Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+
+	This command is used to force the disconnection of a currently
+	connected device.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	This command can only be used when the controller is powered.
+
+	This command generates a Command Complete event on success
+	or failure.
+
+	Possible errors:	Not Connected
+				Busy
+				Invalid Parameters
+				Not Powered
+				Invalid Index
+
+
+Get Connections Command
+=======================
+
+	Command Code:		0x0015
+	Controller Index:	<controller id>
+	Command Parameters:
+	Return Parameters:	Connection_Count (2 Octets)
+				Address1 {
+					Address (6 Octets)
+					Address_Type (1 Octet)
+				}
+				Address2 { }
+				...
+
+	This command is used to retreive a list of currently connected
+	devices.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	For devices using resolvable random addresses with a known
+	identity resolving key, the Address and Address_Type will
+	contain the identity information.
+
+	This command can only be used when the controller is powered.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+	Possible errors:	Invalid Parameters
+				Not Powered
+				Invalid Index
+
+
+PIN Code Reply Command
+=======================
+
+	Command Code:		0x0016
+	Controller Index:	<controller id>
+	Command Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+				PIN_Length (1 Octet)
+				PIN_Code (16 Octets)
+	Return Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+
+	This command is used to respond to a PIN Code request event.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	This command can only be used when the controller is powered.
+
+	This command generates a Command Complete event on success
+	or failure.
+
+	Possible errors:	Not Connected
+				Invalid Parameters
+				Not Powered
+				Invalid Index
+
+
+PIN Code Negative Reply Command
+===============================
+
+	Command Code:		0x0017
+	Controller Index:	<controller id>
+	Command Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+	Return Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+
+	This command is used to return a negative response to a PIN Code
+	Request event.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	This command can only be used when the controller is powered.
+
+	This command generates a Command Complete event on success
+	or failure.
+
+	Possible errors:	Not Connected
+				Invalid Parameters
+				Not Powered
+				Invalid Index
+
+
+Set IO Capability Command
+=========================
+
+	Command Code:		0x0018
+	Controller Index:	<controller id>
+	Command Parameters:	IO_Capability (1 Octet)
+	Return Parameters:
+
+	This command is used to set the IO Capability used for pairing.
+	The command accepts both SSP and SMP values.
+
+	Possible values for the IO_Capability parameter:
+		0	DisplayOnly
+		1	DisplayYesNo
+		2	KeyboardOnly
+		3	NoInputNoOutput
+		4	KeyboardDisplay
+
+	Passing a value 4 (KeyboardDisplay) will cause the kernel to
+	convert it to 1 (DisplayYesNo) in the case of a BR/EDR
+	connection (as KeyboardDisplay is specific to SMP).
+
+	This command can be used when the controller is not powered.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+	Possible errors:	Invalid Parameters
+				Invalid Index
+
+
+Pair Device Command
+===================
+
+	Command Code:		0x0019
+	Controller Index:	<controller id>
+	Command Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+				IO_Capability (1 Octet)
+	Return Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+
+	This command is used to trigger pairing with a remote device.
+	The IO_Capability command parameter is used to temporarily (for
+	this pairing event only) override the global IO Capaility (set
+	using the Set IO Capability command).
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	Possible values for the IO_Capability parameter:
+		0	DisplayOnly
+		1	DisplayYesNo
+		2	KeyboardOnly
+		3	NoInputNoOutput
+		4	KeyboardDisplay
+
+	Passing a value 4 (KeyboardDisplay) will cause the kernel to
+	convert it to 1 (DisplayYesNo) in the case of a BR/EDR
+	connection (as KeyboardDisplay is specific to SMP).
+
+	The Address and Address_Type of the return parameters will
+	return the identity address if know. In case of resolvable
+	random address given as command parameters and the remote
+	provides an identity resolving key, the return parameters
+	will provide the resolved address.
+
+	To allow tracking of which resolvable random address changed
+	into which identity address, the New Identity Resolving Key
+	event will be send before receiving Command Complete event
+	for this command.
+
+	This command can only be used when the controller is powered.
+
+	This command generates a Command Complete event on success
+	or failure.
+
+	Possible errors:	Connect Failed
+				Busy
+				Invalid Parameters
+				Not Powered
+				Invalid Index
+
+
+Cancel Pair Device
+==================
+
+	Command Code:		0x001A
+	Controller Index:	<controller id>
+	Command Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+	Return Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+
+	The Address and Address_Type parameters should match what was
+	given to a preceding Pair Device command.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	This command can only be used when the controller is powered.
+
+	This command generates a Command Complete event on success
+	or failure.
+
+	Possible errors:	Invalid Parameters
+				Not Powered
+				Invalid Index
+
+
+Unpair Device Command
+=====================
+
+	Command Code:		0x001B
+	Controller Index:	<controller id>
+	Command Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+				Disconnect (1 Octet)
+	Return Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+
+	Removes all keys associated with the remote device.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	The Disconnect parameter tells the kernel whether to forcefully
+	disconnect any existing connections to the device. It should in
+	practice always be 1 except for some special GAP qualification
+	test-cases where a key removal without disconnecting is needed.
+
+	When unpairing a device its link key, long term key and if
+	provided identity resolving key will be purged.
+
+	For devices using resolvable random addresses where the identity
+	resolving key was available, after this command they will now no
+	longer be resolved. The device will essentially become private
+	again.
+
+	This command can only be used when the controller is powered.
+
+	This command generates a Command Complete event on success
+	or failure.
+
+	Possible errors:	Not Paired
+				Invalid Parameters
+				Not Powered
+				Invalid Index
+
+
+User Confirmation Reply Command
+===============================
+
+	Command Code:		0x001C
+	Controller Index:	<controller id>
+	Command Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+	Return Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+
+	This command is used to respond to a User Confirmation Request
+	event.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	This command can only be used when the controller is powered.
+
+	This command generates a Command Complete event on success
+	or failure.
+
+	Possible errors:	Not Connected
+				Invalid Parameters
+				Not Powered
+				Invalid Index
+
+
+User Confirmation Negative Reply Command
+========================================
+
+	Command Code:		0x001D
+	Controller Index:	<controller id>
+	Command Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+	Return Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+
+	This command is used to return a negative response to a User
+	Confirmation Request event.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	This command can only be used when the controller is powered.
+
+	This command generates a Command Complete event on success
+	or failure.
+
+	Possible errors:	Not Connected
+				Invalid Parameters
+				Not Powered
+				Invalid Index
+
+
+User Passkey Reply Command
+==========================
+
+	Command Code:		0x001E
+	Controller Index:	<controller id>
+	Command Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+				Passkey (4 Octets)
+	Return Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+
+	This command is used to respond to a User Confirmation Passkey
+	Request event.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	This command can only be used when the controller is powered.
+
+	This command generates a Command Complete event on success
+	or failure.
+
+	Possible errors:	Not Connected
+				Invalid Parameters
+				Not Powered
+				Invalid Index
+
+
+User Passkey Negative Reply Command
+===================================
+
+	Command Code:		0x001F
+	Controller Index:	<controller id>
+	Command Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+	Return Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+
+	This command is used to return a negative response to a User
+	Passkey Request event.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	This command can only be used when the controller is powered.
+
+	This command generates a Command Complete event on success
+	or failure.
+
+	Possible errors:	Not Connected
+				Invalid Parameters
+				Not Powered
+				Invalid Index
+
+
+Read Local Out Of Band Data Command
+===================================
+
+	Command Code:		0x0020
+	Controller Index:	<controller id>
+	Command Parameters:
+	Return Parameters:	Hash_192 (16 Octets)
+				Randomizer_192 (16 Octets)
+				Hash_256 (16 Octets, Optional)
+				Randomizer_256 (16 Octets, Optional)
+
+	This command is used to read the local Out of Band data.
+
+	This command can only be used when the controller is powered.
+
+	If Secure Connections support is enabled, then this command
+	will return P-192 versions of hash and randomizer as well as
+	P-256 versions of both.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+	Possible errors:	Not Supported
+				Busy
+				Invalid Parameters
+				Not Powered
+				Invalid Index
+
+
+Add Remote Out Of Band Data Command
+===================================
+
+	Command Code:		0x0021
+	Controller Index:	<controller id>
+	Command Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+				Hash_192 (16 Octets)
+				Randomizer_192 (16 Octets)
+				Hash_256 (16 Octets, Optional)
+				Randomizer_256 (16 Octets, Optional)
+	Return Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+
+	This command is used to provide Out of Band data for a remote
+	device.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	Provided Out Of Band data is persistent over power down/up toggles.
+
+	This command also accept optional P-256 versions of hash and
+	randomizer. If they are not provided, then they are set to
+	zero value.
+
+	The P-256 versions of both can also be provided when the
+	support for Secure Connections is not enabled. However in
+	that case they will never be used.
+
+	To only provide the P-256 versions of hash and randomizer,
+	it is valid to leave both P-192 fields as zero values. If
+	Secure Connections is disabled, then of course this is the
+	same as not providing any data at all.
+
+	This command generates a Command Complete event on success
+	or failure.
+
+	Possible errors:	Failed
+				Invalid Parameters
+				Not Powered
+				Invalid Index
+
+
+Remove Remote Out Of Band Data Command
+======================================
+
+	Command Code:		0x0022
+	Controller Index:	<controller id>
+	Command Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+	Return Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+
+	This command is used to remove data added using the Add Remote
+	Out Of Band Data command.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	This command generates a Command Complete event on success
+	or failure.
+
+	Possible errors:	Invalid Parameters
+				Not Powered
+				Invalid Index
+
+
+Start Discovery Command
+=======================
+
+	Command Code:		0x0023
+	Controller Index:	<controller id>
+	Command Parameters:	Address_Type (1 Octet)
+	Return Parameters:	Address_Type (1 Octet)
+
+	This command is used to start the process of discovering remote
+	devices. A Device Found event will be sent for each discovered
+	device.
+
+	Possible values for the Address_Type parameter are a bit-wise or
+	of the following bits:
+
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	By combining these e.g. the following values are possible:
+
+		1	BR/EDR
+		6	LE (public & random)
+		7	BR/EDR/LE (interleaved discovery)
+
+	This command can only be used when the controller is powered.
+
+	This command generates a Command Complete event on success
+	or failure.
+
+	Possible errors:	Busy
+				Not Supported
+				Invalid Parameters
+				Not Powered
+				Invalid Index
+
+
+Stop Discovery Command
+======================
+
+	Command Code:		0x0024
+	Controller Index:	<controller id>
+	Command Parameters:	Address_Type (1 Octet)
+	Return Parameters:	Address_Type (1 Octet)
+
+	This command is used to stop the discovery process started using
+	the Start Discovery command.
+
+	This command can only be used when the controller is powered.
+
+	This command generates a Command Complete event on success
+	or failure.
+
+	Possible errors:	Rejected
+				Invalid Parameters
+				Invalid Index
+
+
+Confirm Name Command
+====================
+
+	Command Code:		0x0025
+	Controller Index:	<controller id>
+	Command Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+				Name_Known (1 Octet)
+	Return Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+
+	This command is only valid during device discovery and is
+	expected for each Device Found event with the Confirm Name
+	flag set.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	The Name_Known parameter should be set to 0x01 if user space
+	knows the name for the device and 0x00 if it doesn't. If set to
+	0x00 the kernel will perform a name resolving procedure for the
+	device in question.
+
+	This command can only be used when the controller is powered.
+
+	This command generates a Command Complete event on success
+	or failure.
+
+	Possible errors:	Failed
+				Invalid Parameters
+				Invalid Index
+
+
+Block Device Command
+====================
+
+	Command Code:		0x0026
+	Controller Index:	<controller id>
+	Command Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+	Return Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+
+	This command is used to add a device to the list of devices
+	which should be blocked from being connect to the local
+	controller.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	This command can be used when the controller is not powered.
+
+	This command generates a Command Complete event on success
+	or failure.
+
+	Possible errors:	Failed
+				Invalid Parameters
+				Invalid Index
+
+
+Unblock Device Command
+======================
+
+	Command Code:		0x0027
+	Controller Index:	<controller id>
+	Command Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+	Return Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+
+	This command is used to remove a device from the list of blocked
+	devices (where it was added to using the Block Device command).
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	This command can be used when the controller is not powered.
+
+	This command generates a Command Complete event on success
+	or failure.
+
+	Possible errors:	Invalid Parameters
+				Invalid Index
+
+
+Set Device ID Command
+=====================
+
+	Command Code:		0x0028
+	Controller Index:	<controller id>
+	Command Parameters:	Source (2 Octets)
+				Vendor (2 Octets)
+				Product (2 Octets)
+				Version (2 Octets)
+	Return Parameters:
+
+	This command can be used when the controller is not powered and
+	all settings will be programmed once powered.
+
+	The Source parameter selects the organization that assigned the
+	Vendor parameter:
+
+		0x0000	Disable Device ID
+		0x0001	Bluetooth SIG
+		0x0002	USB Implementer’s Forum
+
+	The information are put into the EIR data. If the controller does
+	not support EIR or if SSP is disabled, this command will still
+	succeed. The information are stored for later use and will survive
+	toggling SSP on and off.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+	Possible errors:	Invalid Parameters
+				Invalid Index
+
+
+Set Advertising Command
+=======================
+
+	Command Code:		0x0029
+	Controller Index:	<controller id>
+	Command Parameters:	Advertising (1 Octet)
+	Return Parameters:	Current_Settings (4 Octets)
+
+	This command is used to enable LE advertising on a controller
+	that supports it. The allowed values for the Advertising
+	command parameter are 0x00 and 0x01. All other values will
+	return Invalid Parameters.
+
+	A pre-requisite is that LE is already enabled, otherwise
+	this command will return a "rejected" response.
+
+	This command generates a Command Complete event on success or a
+	Command Status event on failure.
+
+	Possible errors:	Busy
+				Rejected
+				Not Supported
+				Invalid Parameters
+				Invalid Index
+
+
+Set BR/EDR Command
+==================
+
+	Command Code:		0x002A
+	Controller Index:	<controller id>
+	Command Parameters:	BR/EDR (1 Octet)
+	Return Parameters:	Current_Settings (4 Octets)
+
+	This command is used to enable or disable BR/EDR support
+	on a dual-mode controller. The allowed values for the Advertising
+	command parameter are 0x00 and 0x01. All other values will
+	return Invalid Parameters.
+
+	A pre-requisite is that LE is already enabled, otherwise
+	this command will return a "rejected" response. Enabling BR/EDR
+	can be done both when powered on and powered off, however
+	disabling it can only be done when powered off (otherwise the
+	command will again return "rejected"). Disabling BR/EDR will
+	automatically disable all other BR/EDR related settings.
+
+	This command generates a Command Complete event on success or a
+	Command Status event on failure.
+
+	Possible errors:	Busy
+				Rejected
+				Not Supported
+				Invalid Parameters
+				Invalid Index
+
+
+Set Static Address Command
+==========================
+
+	Command Code:		0x002B
+	Controller Index:	<controller id>
+	Command Parameters:	Address (6 Octets)
+	Return Parameters:
+
+	This command allows for setting the static random address. It is
+	only supported on controllers with LE support. The static random
+	address is suppose to be valid for the lifetime of the
+	controller or at least until the next power cycle. To ensure
+	such behavior, setting of the address is limited to when the
+	controller is powered off.
+
+	The special BDADDR_ANY address (00:00:00:00:00:00) can be used
+	to disable the static address.
+
+	When a controller has a public address (which is required for
+	all dual-mode controllers), this address is not used. Only when
+	the controller information reports BDADDR_ANY (00:00:00:00:00:00),
+	it is required to configure a static address first.
+
+	If privacy mode is enabled and the controller is single mode
+	LE only without a public address, the static random address is
+	used as identity address.
+
+	This command generates a Command Complete event on success or a
+	Command Status event on failure.
+
+	Possible errors:	Rejected
+				Not Supported
+				Invalid Parameters
+				Invalid Index
+
+
+Set Scan Parameters Command
+===========================
+
+	Command Code:		0x002C
+	Controller Index:	<controller id>
+	Command Parameters:	Interval (2 Octets)
+				Window (2 Octets)
+	Return Parameters:
+
+	This command allows for setting the Low Energy scan parameters
+	used for connection establishment and passive scanning. It is
+	only supported on controllers with LE support.
+
+	This command generates a Command Complete event on success or a
+	Command Status event on failure.
+
+	Possible errors:	Rejected
+				Not Supported
+				Invalid Parameters
+				Invalid Index
+
+
+Set Secure Connections Command
+==============================
+
+	Command Code:		0x002D
+	Controller Index:	<controller id>
+	Command Parameters:	Secure_Connections (1 Octet)
+	Return Parameters:	Current_Settings (4 Octets)
+
+	This command is used to enable/disable Secure Connections
+	support for a controller. The allowed values for the
+	Secure_Connections command parameter are 0x00, 0x01 and 0x02.
+	All other values will return Invalid Parameters.
+
+	The value 0x00 disables Secure Connections, the value 0x01
+	enables Secure Connections and the value 0x02 enables Secure
+	Connections Only mode.
+
+	This command is only available for BR/EDR capable controllers
+	supporting the core specification version 4.1 or greater
+	(e.g. not for single-mode LE controllers or pre-4.1 ones).
+
+	This command can be used when the controller is not powered and
+	all settings will be programmed once powered.
+
+	In case the controller does not support Secure Connections
+	the command will fail regardless with Not Supported error.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+	Possible errors:	Busy
+				Not Supported
+				Invalid Parameters
+				Invalid Index
+
+
+Set Debug Keys Command
+======================
+
+	Command Code:		0x002E
+	Controller Index:	<controller id>
+	Command Parameters:	Debug_Keys (1 Octet)
+	Return Parameters:	Current_Settings (4 Octets)
+
+	This command is used to tell the kernel whether to accept the
+	usage of debug keys or not. The allowed values for this parameter
+	are 0x00 and 0x01. All other values will return an Invalid Parameters
+	response.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+	Possible errors:	Busy
+				Not Supported
+				Invalid Parameters
+				Invalid Index
+
+
+Set Privacy Command
+===================
+
+	Command Code:		0x002F
+	Controller Index:	<controller id>
+	Command Parameters:	Privacy (1 Octet)
+				Identity_Resolving_Key (16 Octets)
+	Return Parameters:	Current_Settings (4 Octets)
+
+	This command is used to enable Low Energy Privacy feature using
+	resolvable private addresses.
+
+	The value 0x00 disables privacy mode, the value 0x01 enables
+	privacy mode.
+
+	When the controller has a public address (mandatory for dual-mode
+	controllers) it is used as identity address. In case the controller
+	is single mode LE only without a public address, it is required
+	to configure a static random andress first. The privacy mode can
+	only be enabled when an identity address is available.
+
+	The Identity_Resolving_Key is the local key assigned for the local
+	resolvable private address.
+
+	Possible errors:	Busy
+				Not Supported
+				Invalid Parameters
+				Invalid Index
+
+
+Load Identity Resolving Keys Command
+====================================
+
+	Command Code:		0x0030
+	Controller Index:	<controller id>
+	Command Parameters:	Key_Count (2 Octets)
+				Key1 {
+					Address (6 Octets)
+					Address_Type (1 Octet)
+					Value (16 Octets)
+				}
+				Key2 {  }
+				...
+	Return Parameters:
+
+	This command is used to feed the kernel with currently known
+	identity resolving keys. The command does not need to be called
+	again upon the receiption of New Identity Resolving Key events
+	since the kernel updates its list automatically.
+
+	Possible values for the Address_Type parameter:
+		0	Reserved (not in use)
+		1	LE Public
+		2	LE Random
+
+	The provided Address and Address_Type are the identity of
+	a device. So either its public address or static random address.
+
+	Unresolvable random addresses and resolvable random addresses are
+	not valid and will be rejected.
+
+	This command can be used when the controller is not powered.
+
+	This command generates a Command Complete event on success or
+	a Command Status event on failure.
+
+	Possible errors:	Invalid Parameters
+				Invalid Index
+
+
+Get Connection Information Command
+==================================
+
+	Command Code:		0x0031
+	Controller Index:	<controller id>
+	Command Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+	Return Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+				RSSI (1 Octet)
+				TX_Power (1 Octet)
+				Max_TX_Power (1 Octet)
+
+	This command is used to get connection information.
+
+	TX_Power and Max_TX_Power can be set to 127 if values are invalid or
+	unknown.
+
+	This command generates a Command Complete event on success and
+	on failure. In case of failure only Address and Address_Type fields
+	are valid and values of remaining parameters are considered invalid
+	and shall be ignored.
+
+	Possible errors:	Not Connected
+				Not Powered
+				Invalid Parameters
+				Invalid Index
+
+
+Command Complete Event
+======================
+
+	Event Code:		0x0001
+	Controller Index:	<controller id> or <non-controller>
+	Event Parameters:	Command_Opcode (2 Octets)
+				Status (1 Octet)
+				Return_Parameters
+
+	This event is an indication that a command has completed. The
+	fixed set of parameters includes the opcode to identify the
+	command that completed as well as a status value to indicate
+	success or failure. The rest of the parameters are command
+	specific and documented in the section for each command
+	separately.
+
+
+Command Status Event
+====================
+
+	Event Code:		0x0002
+	Controller Index:	<controller id> or <non-controller>
+	Event Parameters:	Command_Opcode (2 Octets)
+				Status (1 Octet)
+
+	The command status event is used to indicate an early status for
+	a pending command. In the case that the status indicates failure
+	(anything else except success status) this also means that the
+	command has finished executing.
+
+
+Controller Error Event
+======================
+
+	Event Code:		0x0003
+	Controller Index:	<controller id>
+	Event Parameters:	Error_Code (1 Octet)
+
+	This event maps straight to the HCI Hardware Error event and is
+	used to indicate something wrong with the controller hardware.
+
+
+Index Added Event
+=================
+
+	Event Code:		0x0004
+	Controller Index:	<controller id>
+	Event Parameters:
+
+	This event indicates that a new controller has been added to the
+	system. It is usually followed by a Read Controller Information
+	command.
+
+
+Index Removed Event
+===================
+
+	Event Code:		0x0005
+	Controller Index:	<controller id>
+	Event Parameters:
+
+	This event indicates that a controller has been removed from the
+	system.
+
+
+New Settings Event
+==================
+
+	Event Code:		0x0006
+	Controller Index:	<controller id>
+	Event Parameters:	Current_Settings (4 Octets)
+
+	This event indicates that one or more of the settings for a
+	controller has changed.
+
+
+Class Of Device Changed Event
+=============================
+
+	Event Code:		0x0007
+	Controller Index:	<controller id>
+	Event Parameters:	Class_Of_Device (3 Octets)
+
+	This event indicates that the Class of Device value for the
+	controller has changed. When the controller is powered off the
+	Class of Device value will always be reported as zero.
+
+
+Local Name Changed Event
+========================
+
+	Event Code:		0x0008
+	Controller Index:	<controller id>
+	Event Parameters:	Name (249 Octets)
+				Short_Name (11 Octets)
+
+	This event indicates that the local name of the controller has
+	changed.
+
+
+New Link Key Event
+==================
+
+	Event Code:		0x0009
+	Controller Index:	<controller id>
+	Event Parameters:	Store_Hint (1 Octet)
+				Key {
+					Address (6 Octets)
+					Address_Type (1 Octet)
+					Key_Type (1 Octet)
+					Value (16 Octets)
+					PIN_Length (1 Octet)
+				}
+
+	This event indicates that a new link key has bee generated for a
+	remote device.
+
+	The Store_Hint parameter indicates whether the host is expected
+	to store the key persistently or not (e.g. this would not be set
+	if the authentication requirement was "No Bonding").
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	Reserved (not in use)
+		2	Reserved (not in use)
+
+	Public and random LE addresses are not valid and will be rejected.
+
+	Currently defined Key_Type values are:
+
+		0x00	Combination key
+		0x01	Local Unit key
+		0x02	Remote Unit key
+		0x03	Debug Combination key
+		0x04	Unauthenticated Combination key from P-192
+		0x05	Authenticated Combination key from P-192
+		0x06	Changed Combination key
+		0x07	Unauthenticated Combination key from P-256
+		0x08	Authenticated Combination key from P-256
+
+	Receiving this event indicates that a pairing procecure has
+	been completed.
+
+
+New Long Term Key Event
+=======================
+
+	Event Code:		0x000A
+	Controller Index:	<controller id>
+	Event Parameters:	Store_Hint (1 Octet)
+				Key {
+					Address (6 Octets)
+					Address_Type (1 Octet)
+					Key_Type (1 Octet)
+					Master (1 Octet)
+					Encryption Size (1 Octet)
+					Enc. Diversifier (2 Octets)
+					Random Number (8 Octets)
+					Value (16 Octets)
+				}
+
+	This event indicates that a new long term key has been generated
+	for a remote device.
+
+	The Store_Hint parameter indicates whether the host is expected
+	to store the key persistently or not (e.g. this would not be set
+	if the authentication requirement was "No Bonding").
+
+	Possible values for the Address_Type parameter:
+		0	Reserved (not in use)
+		1	LE Public
+		2	LE Random
+
+	The provided Address and Address_Type are the identity of
+	a device. So either its public address or static random address.
+
+	For unresolvable random addresses and resolvable random addresses
+	without identity information and identity resolving key, the
+	Store_Hint will be set to not store the long term key.
+
+	Currently defined Key_Type values are:
+
+		0x00	Unauthenticated key
+		0x01	Authenticated key
+
+	Receiving this event indicates that a pairing procecure has
+	been completed.
+
+
+Device Connected Event
+======================
+
+	Event Code:		0x000B
+	Controller Index:	<controller id>
+	Event Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+				Flags (4 Octets)
+				EIR_Data_Length (2 Octets)
+				EIR_Data (0-65535 Octets)
+
+	This event indicates that a successful baseband connection has
+	been created to the remote device.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	For devices using resolvable random addresses with a known
+	identity resolving key, the Address and Address_Type will
+	contain the identity information.
+
+	It is possible that devices get connected via its resolvable
+	random address and after New Identity Resolving Key event
+	start using its identity.
+
+	The following bits are defined for the Flags parameter:
+		0	Reserved (not in use)
+		1	Legacy Pairing
+
+
+Device Disconnected Event
+=========================
+
+	Event Code:		0x000C
+	Controller Index:	<controller id>
+	Event Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+				Reason (1 Octet)
+
+	This event indicates that the baseband connection was lost to a
+	remote device.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	For devices using resolvable random addresses with a known
+	identity resolving key, the Address and Address_Type will
+	contain the identity information.
+
+	Possible values for the Reason parameter:
+		0	Unspecified
+		1	Connection timeout
+		2	Connection terminated by local host
+		3	Connection terminated by remote host
+
+	Note that the local/remote distinction just determines which side
+	terminated the low-level connection, regardless of the
+	disconnection of the higher-level profiles.
+
+	This can sometimes be misleading and thus must be used with care.
+	For example, some hardware combinations would report a locally
+	initiated disconnection even if the user turned Bluetooth off in
+	the remote side.
+
+
+Connect Failed Event
+====================
+
+	Event Code:		0x000D
+	Controller Index:	<controller id>
+	Event Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+				Status (1 Octet)
+
+	This event indicates that a connection attempt failed to a
+	remote device.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	For devices using resolvable random addresses with a known
+	identity resolving key, the Address and Address_Type will
+	contain the identity information.
+
+
+PIN Code Request Event
+======================
+
+	Event Code:		0x000E
+	Controller Index:	<controller id>
+	Event Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+				Secure (1 Octet)
+
+	This event is used to request a PIN Code reply from user space.
+	The reply should either be returned using the PIN Code Reply or
+	the PIN Code Negative Reply command.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	Secure: 0x01  secure PIN code required
+		0x00  secure PIN code not required
+
+
+User Confirmation Request Event
+===============================
+
+	Event Code:		0x000F
+	Controller Index:	<controller id>
+	Event Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+				Confirm_Hint (1 Octet)
+				Value (4 Octets)
+
+	This event is used to request a user confirmation request from
+	user space.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	If the Confirm_Hint parameter value is 0x01 this means that
+	a simple "Yes/No" confirmation should be presented to the user
+	instead of a full numerical confirmation (in which case the
+	parameter value will be 0x00).
+
+	User space should respond to this command either using the User
+	Confirmation Reply or the User Confirmation Negative Reply
+	command.
+
+
+User Passkey Request Event
+==========================
+
+	Event Code:		0x0010
+	Controller Index:	<controller id>
+	Event Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+
+	This event is used to request a passkey from user space. The
+	response to this event should either be the User Passkey Reply
+	command or the User Passkey Negative Reply command.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+
+Authentication Failed Event
+===========================
+
+	Event Code:		0x0011
+	Controller Index:	<controller id>
+	Event Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+				Status (1 Octet)
+
+	This event indicates that there was an authentication failure
+	with a remote device.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+
+Device Found Event
+==================
+
+	Event Code:		0x0012
+	Controller Index:	<controller id>
+	Event Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+				RSSI (1 Octet)
+				Flags (4 Octets)
+				EIR_Data_Length (2 Octets)
+				EIR_Data (0-65535 Octets)
+
+	This event indicates that a device was found during device
+	discovery.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	The following bits are defined for the Flags parameter:
+		0	Confirm name
+		1	Legacy Pairing
+
+	The Confirm name flag indicates that the kernel wants to know
+	whether user space knows the name for this device or not. If
+	this flag is set user space should respond to it using the
+	Confirm Name command.
+
+	The Legacy Pairing flag indicates that Legacy Pairing is likely
+	to occur when pairing with this device. An application could use
+	this information to optimize the pairing process by locally
+	pre-generating a PIN code and thereby eliminate the risk of
+	local input timeout when pairing. Note that there is a risk of
+	false-positives for this flag so user space should be able to
+	handle getting something else as a PIN Request when pairing.
+
+
+Discovering Event
+=================
+
+	Event Code:		0x0013
+	Controller Index:	<controller id>
+	Event Parameters:	Address_Type (1 Octet)
+				Discovering (1 Octet)
+
+	This event indicates that the controller has started discovering
+	devices. This discovering state can come and go multiple times
+	between a StartDiscover and a StopDiscovery command.
+
+	The valid values for the Discovering parameter are 0x01
+	(enabled) and 0x00 (disabled).
+
+
+Device Blocked Event
+====================
+
+	Event Code:		0x0014
+	Controller Index:	<controller id>
+	Event Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+
+	This event indicates that a device has been blocked using the
+	Block Device command.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	The event will only be sent to Management sockets other than the
+	one through which the command was sent.
+
+
+Device Unblocked Event
+======================
+
+	Event Code:		0x0015
+	Controller Index:	<controller id>
+	Event Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+
+	This event indicates that a device has been unblocked using the
+	Unblock Device command.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	The event will only be sent to Management sockets other than the
+	one through which the command was sent.
+
+
+Device Unpaired Event
+=====================
+
+	Event Code:		0x0016
+	Controller Index:	<controller id>
+	Event Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+
+	This event indicates that a device has been unpaired (i.e. all
+	its keys have been removed from the kernel) using the Unpair
+	Device command.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	For devices using resolvable random addresses with a known
+	identity resolving key, the event paramters will contain
+	the identity. After receiving this event, the device will
+	become essentially private again.
+
+	The event will only be sent to Management sockets other than the
+	one through which the Unpair Device command was sent.
+
+
+Passkey Notify Event
+====================
+
+	Event Code:		0x0017
+	Controller Index:	<controller id>
+	Event Parameters:	Address (6 Octets)
+				Address_Type (1 Octet)
+				Passkey (4 Octets)
+				Entered (1 Octet)
+
+	This event is used to request passkey notification to the user.
+	Unlike the other authentication events it does not need
+	responding to using any Management command.
+
+	Possible values for the Address_Type parameter:
+		0	BR/EDR
+		1	LE Public
+		2	LE Random
+
+	The Passkey parameter indicates the passkey to be shown to the
+	user whereas the Entered parameter indicates how many characters
+	the user has entered on the remote side.
+
+
+New Identity Resolving Key Event
+================================
+
+	Event Code:		0x0018
+	Controller Index:	<controller id>
+	Event Parameters:	Store_Hint (1 Octet)
+				Random_Address (6 Octets)
+				Key {
+					Address (6 Octets)
+					Address_Type (1 Octet)
+					Value (16 Octets)
+				}
+
+	This event indicates that a new identity resolving key has been
+	generated for a remote device.
+
+	The Store_Hint parameter indicates whether the host is expected
+	to store the key persistently or not.
+
+	The Random_Address provides the resolvable random address that
+	was resolved into an identity. A value of 00:00:00:00:00:00
+	indicates that the identity resolving key was provided for
+	a public address or static random address.
+
+	Once this event has been send for a resolvable random address,
+	all further events mapping this device will send out using the
+	identity address information.
+
+	This event also indicates that now the identity address should
+	be used for commands instead of the resolvable random address.
+
+	Possible values for the Address_Type parameter:
+		0	Reserved (not in use)
+		1	LE Public
+		2	LE Random
+
+	The provided Address and Address_Type are the identity of
+	a device. So either its public address or static random address.
+
+
+New Signature Resolving Key Event
+=================================
+
+	Event Code:		0x0019
+	Controller Index:	<controller id>
+	Event Parameters:	Store_Hint (1 Octet)
+				Key {
+					Address (6 Octets)
+					Address_Type (1 Octet)
+					Master (1 Octet)
+					Value (16 Octets)
+				}
+
+	This event indicates that a new signature resolving key has been
+	generated for either the master or slave device.
+
+	The Store_Hint parameter indicates whether the host is expected
+	to store the key persistently or not.
+
+	When the Master parameter is set to 0x01, then the signature
+	resolving key from the remote peer device is provided. It is
+	the key that is used for signature verification.
+
+	When the Master parameter is set to 0x00, then it is the local
+	signature resolving key that is used to sign data. The remote
+	peer device will be using it for signature verification.
+
+	The local signature resolving key will be generated with each
+	pairing request. Only after receiving this event with Master
+	parameter set to 0x00 it is possible to use ATT Signed Write
+	procedures.
+
+	Possible values for the Address_Type parameter:
+		0	Reserved (not in use)
+		1	LE Public
+		2	LE Random
+
+	The provided Address and Address_Type are the identity of
+	a device. So either its public address or static random address.

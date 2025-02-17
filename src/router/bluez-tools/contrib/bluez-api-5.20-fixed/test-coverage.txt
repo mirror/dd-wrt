@@ -1,0 +1,69 @@
+BlueZ test coverage
+*******************
+
+
+Automated unit testing
+======================
+
+Application		Count	Description
+-------------------------------------------
+test-crc		   9	Link Layer CRC-24 checksum
+test-eir		  14	EIR and AD parsing
+test-lib		  14	SDP library functions
+test-sdp		 133	SDP qualification test cases
+test-uuid		  30	UUID conversion handling
+test-mgmt		   2	Management interface handling
+test-crypto		   4	Cryptographic toolbox helpers
+test-textfile		   4	Old textfile storage format
+test-ringbuf		   3	Ring buffer functionality
+test-queue		   1	Queue handling functionality
+test-uhid		   6	Userspace HID functionality
+test-hfp		  14	HFP Audio Gateway functionality
+test-avdtp		  60	AVDTP qualification test cases
+test-avctp		   9	AVCTP qualification test cases
+test-avrcp		  92	AVRCP qualification test cases
+test-gobex		  31	Generic OBEX functionality
+test-gobex-packet	   9	OBEX packet handling
+test-gobex-header	  28	OBEX header handling
+test-gobex-apparam	  18	OBEX apparam handling
+test-gobex-transfer	  36	OBEX transfer handling
+test-gdbus-client	  12	D-Bus client handling
+			-----
+			 519
+
+
+Automated end-to-end testing
+============================
+
+Application		Count	Description
+-------------------------------------------
+mgmt-tester		 189	Kernel management interface testing
+l2cap-tester		  26	Kernel L2CAP implementation testing
+rfcomm-tester		   9	Kernel RFCOMM implementation testing
+smp-tester		   5	Kernel SMP implementation testing
+sco-tester		   8	Kernel SCO implementation testing
+gap-tester		   1	Daemon D-Bus API testing
+hci-tester		  14	Controller hardware testing
+			-----
+			 252
+
+
+Android end-to-end testing
+==========================
+
+Application		Count	Description
+-------------------------------------------
+android-tester		  86	Android HAL interface testing
+ipc-tester		  94	Android IPC resistance testing
+			-----
+			 180
+
+
+Android automated unit testing
+==============================
+
+Application		Count	Description
+-------------------------------------------
+test-ipc		  14	Android IPC library functions
+			-----
+			  14

@@ -1,0 +1,42 @@
+=head1 NAME
+
+bt-audio - a bluetooth generic audio manager
+
+=head1 SYNOPSIS
+
+bt-audio [OPTION...]
+
+Help Options:
+  -h, --help
+
+Application Options:
+  -a, --adapter=<name|mac>
+  -c, --connect=<name|mac>
+  -d, --disconnect=<name|mac>
+
+=head1 DESCRIPTION
+
+This utility is used to manage outgoing audio service connections.
+
+=head1 OPTIONS
+
+B<-h, --help>
+    Show help
+
+B<-a, --adapter E<lt>name|macE<gt>>
+    Specify adapter to use by his Name or MAC address
+    (if this option does not defined - default adapter used)
+
+B<-c, --connect E<lt>name|macE<gt>>
+    Connect all supported audio profiles on the device
+
+B<-d, --disconnect E<lt>name|macE<gt>>
+    Disconnect all audio profiles on the device
+
+=head1 AUTHOR
+
+Alexander Orlenko <zxteam@gmail.com>.
+
+=head1 SEE ALSO
+
+bt-adapter(1) bt-agent(1) bt-device(1) bt-input(1) bt-monitor(1) bt-network(1) bt-serial(1)
