@@ -32,9 +32,19 @@ ifeq ($(CONFIG_MDNS_UTILS),y)
 	rm -rf $(INSTALLDIR)/expat/usr/lib/cmake
 	rm -f $(INSTALLDIR)/expat/usr/lib/*.la
 	rm -f $(INSTALLDIR)/expat/usr/lib/*.a
-else
-	@true
 endif
+ifeq ($(CONFIG_BLUEZ),y)
+	$(MAKE) -C expat/dynamic install DESTDIR=$(INSTALLDIR)/expat
+	rm -rf $(INSTALLDIR)/expat/usr/include
+	rm -rf $(INSTALLDIR)/expat/usr/bin
+	rm -rf $(INSTALLDIR)/expat/usr/share
+	rm -rf $(INSTALLDIR)/expat/usr/lib/pkgconfig
+	rm -rf $(INSTALLDIR)/expat/usr/lib/cmake
+	rm -f $(INSTALLDIR)/expat/usr/lib/*.la
+	rm -f $(INSTALLDIR)/expat/usr/lib/*.a
+endif
+	@true
+
 
 expat-clean:
 	-$(MAKE) -C expat/dynamic clean
