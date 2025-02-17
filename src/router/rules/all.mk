@@ -397,6 +397,7 @@ include rules/envtools.mk
 include rules/apfree-wifidog.mk
 include rules/nut.mk
 include rules/bluez.mk
+include rules/bluez-tools.mk
 
 #
 # Generic rules
