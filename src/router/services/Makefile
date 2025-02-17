@@ -2033,6 +2033,12 @@ OBJS += avahi.o
 endif
 ifeq ($(CONFIG_MDNS_UTILS),y)
 CFLAGS_EXTRA += -DHAVE_MDNS_UTILS
+CFLAGS_EXTRA += -DHAVE_DBUS
+OBJS += dbus.o
+endif
+ifeq ($(CONFIG_BLUEZ),y)
+CFLAGS_EXTRA += -DHAVE_DBUS -DHAVE_BLUEZ
+OBJS += dbus.o
 endif
 
 ifeq ($(CONFIG_ATH10K_CT),y)

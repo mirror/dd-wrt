@@ -195,6 +195,7 @@ DECLARE_SERVICE(zabbix);
 DECLARE_SERVICE(zebra);
 DECLARE_SERVICE(wifi_drivers);
 DECLARE_SERVICE(arch_defaults);
+DECLARE_SERVICE(dbus);
 
 extern void run_pptp(int status);
 
