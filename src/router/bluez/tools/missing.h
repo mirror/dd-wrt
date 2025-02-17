@@ -12,10 +12,10 @@
 #endif
 #if !HAVE_DECL_BASENAME
 #include <string.h>
-static inline const char *basename(const char *path)
+/*static inline const char *basename(const char *path)
 {
 	const char *base = strrchr(path, '/');
 
 	return base ? base + 1 : path;
-}
+}*/
 #endif
