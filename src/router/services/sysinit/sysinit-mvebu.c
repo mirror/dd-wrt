@@ -229,9 +229,9 @@ void start_wifi_drivers(void)
 		insmod("mwlwifi");
 		insmod("mwifiex");
 		insmod("mwifiex_sdio.ko");
-		insmod("bluetooth");
-		insmod("btmrvl");
-		insmod("btmrvl_sdio");
+		eval("modprobe","bluetooth");
+		eval("modprobe","btmrvl");
+		eval("modprobe","btmrvl_sdio");
 		wait_for_wifi(1);
 	}
 }
