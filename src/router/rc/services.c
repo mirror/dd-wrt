@@ -274,6 +274,9 @@ static int start_services_main(int argc, char **argv)
 #ifdef HAVE_MDNS
 	start_service_f("mdns");
 #endif
+#ifdef HAVE_BLUEZ
+	start_service_f("bluetooth");
+#endif
 	return 0;
 }
 
@@ -417,6 +420,9 @@ static int stop_services_main(int argc, char **argv)
 #endif
 #ifdef HAVE_CONNTRACK
 	stop_service_f("notifier");
+#endif
+#ifdef HAVE_BLUEZ
+	stop_service_f("bluetooth");
 #endif
 #ifdef HAVE_MDNS
 	stop_service_f("mdns");
@@ -797,6 +803,9 @@ static void handle_services(void)
 #ifdef HAVE_MDNS
 	restart_f("mdns");
 #endif
+#ifdef HAVE_BLUEZ
+	restart_f("bluetooth");
+#endif
 #ifdef HAVE_CHRONY
 	stop_service("chronyd");
 	start_service_f("chronyd");
@@ -856,6 +865,9 @@ static void handle_nassrv(void)
 #endif
 #ifdef HAVE_MDNS
 	restart_f("mdns");
+#endif
+#ifdef HAVE_BLUEZ
+	restart_f("bluetooth");
 #endif
 	restart("firewall");
 }

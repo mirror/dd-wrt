@@ -408,6 +408,9 @@ endif
 ifeq ($(CONFIG_MDNS),y)
 CFLAGS += -DHAVE_MDNS
 endif
+ifeq ($(CONFIG_BLUEZ),y)
+CFLAGS += -DHAVE_BLUEZ
+endif
 ifeq ($(CONFIG_WEBSERVER),y)
 	CFLAGS += -DHAVE_WEBSERVER
 endif
