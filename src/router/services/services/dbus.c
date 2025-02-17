@@ -43,11 +43,12 @@ void start_dbus(void)
 		stop_dbus();
 		return;
 	}
-
+	mkdir("/tmp/var/run/dbus",0744);
+	mkdir("/tmp/var/lib/dbus",0744);
 	if (pidof("dbus-daemon") > 0) {
 		dd_loginfo("dbus-daemon", "dbus-daemon already running");
 	} else {
-		log_eval("dbus-daemon", "--syslog", "--fork", "--print-pid","4", "--print-address","6", "--system");
+		log_eval("dbus-launch");
 	}
 	return;
 }

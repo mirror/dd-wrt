@@ -196,6 +196,7 @@ DECLARE_SERVICE(zebra);
 DECLARE_SERVICE(wifi_drivers);
 DECLARE_SERVICE(arch_defaults);
 DECLARE_SERVICE(dbus);
+DECLARE_SERVICE(bluetooth);
 
 extern void run_pptp(int status);
 
