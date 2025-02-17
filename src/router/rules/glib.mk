@@ -248,7 +248,9 @@ glib20-install:
 ifneq ($(CONFIG_MC),y)
 ifneq ($(CONFIG_LIBQMI),y)
 ifneq ($(CONFIG_LIBMBIM),y)
+ifneq ($(CONFIG_BLUEZ),y)
 	rm -f $(INSTALLDIR)/glib20/usr/lib/libgmodule-2.0*
+endif
 endif
 endif
 endif
@@ -269,13 +271,17 @@ endif
 ifneq ($(CONFIG_FRR),y)
 ifneq ($(CONFIG_MC),y)
 ifneq ($(CONFIG_LIBMBIM),y)
+ifneq ($(CONFIG_BLUEZ),y)
 	rm -f $(INSTALLDIR)/glib20/usr/lib/libpcre2-8*
+endif
 endif
 endif
 endif
 ifneq ($(CONFIG_LIBMBIM),y)
 ifneq ($(CONFIG_MC),y)
+ifneq ($(CONFIG_BLUEZ),y)
 	rm -f $(INSTALLDIR)/glib20/usr/lib/libglib-2*
+endif
 endif
 endif
 	rm -f $(INSTALLDIR)/glib20/usr/lib/libpcre2-32*
