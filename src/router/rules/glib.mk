@@ -2,6 +2,7 @@ GLIB_COMP_ARGS= \
 	-Ddefault_library=both \
 	-Dsysprof=disabled \
 	-Dtests=false \
+	-Druntime_dir=/var/run \
 	-Dglib_debug=disabled \
 	-Dlibelf=disabled \
 	-Dselinux=disabled \
@@ -22,6 +23,7 @@ GLIB_COMP_ARGS= \
 GLIB_STATIC_COMP_ARGS= \
 	-Dsysprof=disabled \
 	-Dtests=false \
+	-Druntime_dir=/var/run \
 	-Dglib_debug=disabled \
 	-Dlibelf=disabled \
 	-Dselinux=disabled \
@@ -225,7 +227,6 @@ endif
 endif
 	rm -f $(INSTALLDIR)/util-linux/lib/libfdisk.so*
 	rm -f $(INSTALLDIR)/util-linux/lib/libsmartcols.so*
-
 
 
 glib20-clean:
