@@ -1281,7 +1281,7 @@ main (int argc, char **argv)
                    "--fork",
                    "--print-pid", write_pid_fd_as_string,
                    "--print-address", write_address_fd_as_string,
-                   config_file ? "--config-file" : "--session",
+                   config_file ? "--config-file" : "--system",
                    config_file, /* has to be last in this varargs list */
                    NULL);
 
@@ -1299,7 +1299,7 @@ main (int argc, char **argv)
              "--fork",
              "--print-pid", write_pid_fd_as_string,
              "--print-address", write_address_fd_as_string,
-             config_file ? "--config-file" : "--session",
+             config_file ? "--config-file" : "--system",
              config_file, /* has to be last in this varargs list */
              NULL);
 
@@ -1319,7 +1319,7 @@ main (int argc, char **argv)
               "--fork",
               "--print-pid", write_pid_fd_as_string,
               "--print-address", write_address_fd_as_string,
-              config_file ? "--config-file" : "--session",
+              config_file ? "--config-file" : "--system",
               config_file, /* has to be last in this varargs list */
               NULL);
 
