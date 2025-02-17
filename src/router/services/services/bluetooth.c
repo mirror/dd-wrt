@@ -40,9 +40,10 @@ void start_bluetooth(void)
 	char path[64];
 	char conffile[64];
 	if (!nvram_matchi("bt_enable", 1)) {
-		stop_bluetooth();
 		return;
 	}
+	if (pidof("bluetoothd")>0)
+		return;
 	eval("modprobe", "bluetooth");
 	eval("modprobe", "rfcomm");
 	eval("modprobe", "bnep");
@@ -68,12 +69,14 @@ void start_bluetooth(void)
 
 void restart_bluetooth(void)
 {
+	stop_bluetooth();
 	start_bluetooth();
 }
 
 void stop_bluetooth(void)
-{
+{	
 	stop_process("bluetooth", "hciattach");
+	stop_process("bluetooth", "bluetoothd");
 
 	return;
 }
