@@ -43,12 +43,26 @@ void start_bluetooth(void)
 		stop_bluetooth();
 		return;
 	}
-	eval("modprobe","bluetooth");
-	eval("modprobe","rfcomm");
-	eval("modprobe","bnep");
-	eval("modprobe","hidp");
-	eval("modprobe","hci_uart");
-	eval("modprobe","btusb");
+	eval("modprobe", "bluetooth");
+	eval("modprobe", "rfcomm");
+	eval("modprobe", "bnep");
+	eval("modprobe", "hidp");
+	eval("modprobe", "hci_uart");
+	eval("modprobe", "btusb");
+	system("/usr/lib/bluetooth/bluetoothd&");
+	int brand = getRouterBrand();
+	switch (brand) {
+	case ROUTER_LINKSYS_MR7350:
+	case ROUTER_LINKSYS_MR7500:
+		eval("hciattach", "/dev/ttyMSM1", "bcsp", "115200", "noflow");
+		break;
+	case ROUTER_LINKSYS_MX8500:
+	case ROUTER_LINKSYS_MX4200V1:
+	case ROUTER_LINKSYS_MX4200V2:
+	case ROUTER_LINKSYS_MX4300:
+		eval("hciattach", "-s", "115200", "/dev/ttyMSM1", "any", "115200");
+		break;
+	}
 	return;
 }
 
@@ -59,5 +73,7 @@ void restart_bluetooth(void)
 
 void stop_bluetooth(void)
 {
+	stop_process("bluetooth", "hciattach");
+
 	return;
 }
