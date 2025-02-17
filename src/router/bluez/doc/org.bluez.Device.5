@@ -1,0 +1,445 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "ORG.BLUEZ.DEVICE" "5" "October 2023" "BlueZ" "Linux System Administration"
+.SH NAME
+org.bluez.Device \- BlueZ D-Bus Device API documentation
+.SH INTERFACE
+.INDENT 0.0
+.TP
+.B Service
+org.bluez
+.TP
+.B Interface
+org.bluez.Device1
+.TP
+.B Object path
+[variable prefix]/{hci0,hci1,...}/dev_XX_XX_XX_XX_XX_XX
+.UNINDENT
+.SS Methods
+.SS void Connect()
+.INDENT 0.0
+.INDENT 3.5
+Connects all profiles the remote device supports that can be connected
+to and have been flagged as auto\-connectable. If only subset of profiles
+is already connected it will try to connect currently disconnected ones.
+.sp
+If at least one profile was connected successfully this method will
+indicate success.
+.sp
+For dual\-mode devices only one bearer is connected at time, the
+conditions are in the following order:
+.INDENT 0.0
+.IP 1. 3
+Connect the disconnected bearer if already connected.
+.UNINDENT
+.sp
+2. Connect first the bonded bearer. If no bearers are bonded or both
+are skip and check latest seen bearer.
+.sp
+3. Connect last seen bearer, in case the timestamps are the same BR/EDR
+takes precedence.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.NotReady
+.TP
+.B org.bluez.Error.Failed
+.TP
+.B org.bluez.Error.InProgress
+.TP
+.B org.bluez.Error.AlreadyConnected
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS void Disconnect()
+.INDENT 0.0
+.INDENT 3.5
+Disconnects all connected profiles and then terminates low\-level ACL
+connection.
+.sp
+ACL connection will be terminated even if some profiles were not
+disconnected properly e.g. due to misbehaving device.
+.sp
+This method can be also used to cancel a preceding Connect call before
+a reply to it has been received.
+.sp
+For non\-trusted devices connected over LE bearer calling this method
+will disable incoming connections until Connect method is called again.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.NotConnected
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS void ConnectProfile(string uuid)
+.INDENT 0.0
+.INDENT 3.5
+Connects a specific profile of this device. The UUID provided is the
+remote service UUID for the profile.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.Failed
+.TP
+.B org.bluez.Error.InProgress
+.TP
+.B org.bluez.Error.InvalidArguments
+.TP
+.B org.bluez.Error.NotAvailable
+.TP
+.B org.bluez.Error.NotReady
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS void DisconnectProfile(string uuid)
+.INDENT 0.0
+.INDENT 3.5
+Disconnects a specific profile of this device. The profile needs to be
+registered client profile.
+.sp
+There is no connection tracking for a profile, so as long as the
+profile is registered this will always succeed.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.Failed
+.TP
+.B org.bluez.Error.InProgress
+.TP
+.B org.bluez.Error.InvalidArguments
+.TP
+.B org.bluez.Error.NotSupported
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS void Pair()
+.INDENT 0.0
+.INDENT 3.5
+Connects to the remote device and initiate pairing procedure then
+proceed with service discovery.
+.sp
+If the application has registered its own agent, then that specific
+agent will be used. Otherwise it will use the default agent.
+.sp
+Only for applications like a pairing wizard it would make sense to have
+its own agent. In almost all other cases the default agent will handle
+this just fine.
+.sp
+In case there is no application agent and also no default agent present,
+this method will fail.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.InvalidArguments
+.TP
+.B org.bluez.Error.Failed
+.TP
+.B org.bluez.Error.AlreadyExists
+.TP
+.B org.bluez.Error.AuthenticationCanceled
+.TP
+.B org.bluez.Error.AuthenticationFailed
+.TP
+.B org.bluez.Error.AuthenticationRejected
+.TP
+.B org.bluez.Error.AuthenticationTimeout
+.TP
+.B org.bluez.Error.ConnectionAttemptFailed
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS void CancelPairing()
+.INDENT 0.0
+.INDENT 3.5
+Cancels a pairing operation initiated by the \fBPair\fP method.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.DoesNotExist
+.TP
+.B org.bluez.Error.Failed
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS array{array{byte}} GetServiceRecords() [experimental]
+.INDENT 0.0
+.INDENT 3.5
+Returns all currently known BR/EDR service records for the device. Each
+individual byte array represents a raw SDP record, as defined by the
+Bluetooth Service Discovery Protocol specification.
+.sp
+This method is intended to be only used by compatibility layers like
+Wine, that need to provide access to raw SDP records to support foreign
+Bluetooth APIs. General applications should instead use the Profile API
+for services\-related functionality.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.Failed
+.TP
+.B org.bluez.Error.NotReady
+.TP
+.B org.bluez.Error.NotConnected
+.TP
+.B org.bluez.Error.DoesNotExist
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS Properties
+.SS string Address [readonly]
+.INDENT 0.0
+.INDENT 3.5
+The Bluetooth device address of the remote device.
+.UNINDENT
+.UNINDENT
+.SS string AddressType [readonly]
+.INDENT 0.0
+.INDENT 3.5
+The Bluetooth device Address Type. For dual\-mode and BR/EDR only devices
+this defaults to \(dqpublic\(dq. Single mode LE devices may have either value.
+If remote device uses privacy than before pairing this represents
+address type used for connection and Identity Address after pairing.
+.sp
+Possible values:
+.INDENT 0.0
+.TP
+.B \(dqpublic\(dq
+Public address
+.TP
+.B \(dqrandom\(dq
+Random address
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS string Name [readonly, optional]
+.INDENT 0.0
+.INDENT 3.5
+The Bluetooth remote name.
+.sp
+This value is only present for completeness. It is better to always use
+the \fBAlias\fP property when displaying the devices name.
+.sp
+If the \fBAlias\fP property is unset, it will reflect this value which
+makes it more convenient.
+.UNINDENT
+.UNINDENT
+.SS string Icon [readonly, optional]
+.INDENT 0.0
+.INDENT 3.5
+Proposed icon name according to the freedesktop.org icon naming
+specification.
+.UNINDENT
+.UNINDENT
+.SS uint32 Class [readonly, optional]
+.INDENT 0.0
+.INDENT 3.5
+The Bluetooth class of device of the remote device.
+.UNINDENT
+.UNINDENT
+.SS uint16 Appearance [readonly, optional]
+.INDENT 0.0
+.INDENT 3.5
+External appearance of device, as found on GAP service.
+.UNINDENT
+.UNINDENT
+.SS array{string} UUIDs [readonly, optional]
+.INDENT 0.0
+.INDENT 3.5
+List of 128\-bit UUIDs that represents the available remote services.
+.UNINDENT
+.UNINDENT
+.SS boolean Paired [readonly]
+.INDENT 0.0
+.INDENT 3.5
+Indicates if the remote device is paired. Paired means the pairing
+process where devices exchange the information to establish an
+encrypted connection has been completed.
+.UNINDENT
+.UNINDENT
+.SS boolean Bonded [readonly]
+.INDENT 0.0
+.INDENT 3.5
+Indicates if the remote device is bonded. Bonded means the information
+exchanged on pairing process has been stored and will be persisted.
+.UNINDENT
+.UNINDENT
+.SS boolean Connected [readonly]
+.INDENT 0.0
+.INDENT 3.5
+Indicates if the remote device is currently connected.
+A PropertiesChanged signal indicate changes to this status.
+.UNINDENT
+.UNINDENT
+.SS boolean Trusted [readwrite]
+.INDENT 0.0
+.INDENT 3.5
+Indicates if the remote is seen as trusted. This setting can be changed
+by the application.
+.UNINDENT
+.UNINDENT
+.SS boolean Blocked [readwrite]
+.INDENT 0.0
+.INDENT 3.5
+If set to true any incoming connections from the device will be
+immediately rejected. Any device drivers will also be removed and
+no new ones will be probed as long as the device is blocked.
+.UNINDENT
+.UNINDENT
+.SS boolean WakeAllowed [readwrite]
+.INDENT 0.0
+.INDENT 3.5
+If set to true this device will be allowed to wake the host from
+system suspend.
+.UNINDENT
+.UNINDENT
+.SS string Alias [readwrite]
+.INDENT 0.0
+.INDENT 3.5
+The name alias for the remote device. The alias can be used to have a
+different friendly name for the remote device.
+.sp
+In case no alias is set, it will return the remote device name. Setting
+an empty string as alias will convert it back to the remote device name.
+.sp
+When resetting the alias with an empty string, the property will default
+back to the remote name.
+.UNINDENT
+.UNINDENT
+.SS object Adapter [readonly]
+.INDENT 0.0
+.INDENT 3.5
+The object path of the adapter the device belongs to.
+.UNINDENT
+.UNINDENT
+.SS boolean LegacyPairing [readonly]
+.INDENT 0.0
+.INDENT 3.5
+Set to true if the device only supports the pre\-2.1 pairing mechanism.
+This property is useful during device discovery to anticipate whether
+legacy or simple pairing will occur if pairing is initiated.
+.sp
+Note that this property can exhibit false\-positives in the case of
+Bluetooth 2.1 (or newer) devices that have disabled Extended Inquiry
+Response support.
+.UNINDENT
+.UNINDENT
+.SS string Modalias [readonly, optional]
+.INDENT 0.0
+.INDENT 3.5
+Remote Device ID information in modalias format used by the kernel and
+udev.
+.UNINDENT
+.UNINDENT
+.SS int16 RSSI [readonly, optional]
+.INDENT 0.0
+.INDENT 3.5
+Received Signal Strength Indicator of the remote device (inquiry or
+advertising).
+.UNINDENT
+.UNINDENT
+.SS int16 TxPower [readonly, optional]
+.INDENT 0.0
+.INDENT 3.5
+Advertised transmitted power level (inquiry or advertising).
+.UNINDENT
+.UNINDENT
+.SS dict ManufacturerData [readonly, optional]
+.INDENT 0.0
+.INDENT 3.5
+Manufacturer specific advertisement data. Keys are 16 bits Manufacturer
+ID followed by its byte array value.
+.UNINDENT
+.UNINDENT
+.SS dict ServiceData [readonly, optional]
+.INDENT 0.0
+.INDENT 3.5
+Service advertisement data. Keys are the UUIDs in string format followed
+by its byte array value.
+.UNINDENT
+.UNINDENT
+.SS bool ServicesResolved [readonly]
+.INDENT 0.0
+.INDENT 3.5
+Indicate whether or not service discovery has been resolved.
+.UNINDENT
+.UNINDENT
+.SS array{byte} AdvertisingFlags [readonly]
+.INDENT 0.0
+.INDENT 3.5
+The Advertising Data Flags of the remote device.
+.UNINDENT
+.UNINDENT
+.SS dict AdvertisingData [readonly]
+.INDENT 0.0
+.INDENT 3.5
+The Advertising Data of the remote device. Keys are 1 byte AD Type
+followed by data as byte array.
+.sp
+Note: Only types considered safe to be handled by application are
+exposed.
+.sp
+Possible values:
+.INDENT 0.0
+.TP
+.B <type>
+<byte array>
+.UNINDENT
+.sp
+Example:
+.INDENT 0.0
+.INDENT 3.5
+<Transport Discovery> <Organization Flags...>
+0x26                   0x01         0x01...
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS array{object, dict} Sets [readonly, experimental]
+.INDENT 0.0
+.INDENT 3.5
+The object paths of the sets the device belongs to followed by a
+dictionary which can contain the following:
+.INDENT 0.0
+.TP
+.B byte Rank
+Rank of the device in the Set.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.\" Generated by docutils manpage writer.
+.

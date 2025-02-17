@@ -1,0 +1,282 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "ORG.BLUEZ.MEDIAENDPOINT" "5" "September 2023" "BlueZ" "Linux System Administration"
+.SH NAME
+org.bluez.MediaEndpoint \- BlueZ D-Bus MediaEndpoint API documentation
+.SH INTERFACE
+.INDENT 0.0
+.TP
+.B Service
+unique name (Server role)
+org.bluez (Client role)
+.TP
+.B Interface
+org.bluez.MediaEndpoint1
+.TP
+.B Object path
+freely definable (Server role)
+[variable prefix]/{hci0,hci1,...}/dev_XX_XX_XX_XX_XX_XX/sepX
+(Client role)
+.UNINDENT
+.SS Methods
+.SS void SetConfiguration(object transport, dict properties)
+.INDENT 0.0
+.INDENT 3.5
+Set configuration for the transport.
+.INDENT 0.0
+.TP
+.B object transport
+Configured transport object.
+.TP
+.B dict properties
+Configured \fBorg.bluez.MediaTransport(5)\fP properties.
+.UNINDENT
+.sp
+For client role transport must be set with a server endpoint
+object which will be configured and the properties must
+contain the following properties:
+.INDENT 0.0
+.TP
+.B array{byte} Capabilities [Mandatory]
+See Capabilities property.
+.TP
+.B array{byte} Metadata [ISO only]
+See Metadata property.
+.TP
+.B dict QoS [ISO only]
+See \fBorg.bluez.MediaTransport(5)\fP QoS property.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS array{byte} SelectConfiguration(array{byte} capabilities)
+.INDENT 0.0
+.INDENT 3.5
+Select preferable configuration from the supported capabilities.
+.sp
+Returns a configuration which can be used to setup a transport, see
+\fBorg.bluez.MediaTransport(5)\fP for possible values.
+.sp
+Note: There is no need to cache the selected configuration since on
+success the configuration is send back as parameter of SetConfiguration.
+.UNINDENT
+.UNINDENT
+.SS dict SelectProperties(dict capabilities)
+.INDENT 0.0
+.INDENT 3.5
+Select BAP unicast configuration from the supported capabilities:
+.INDENT 0.0
+.TP
+.B object Endpoint
+.TP
+.B array{byte} Capabilities
+.TP
+.B array{byte} Metadata
+.TP
+.B uint32 Locations
+.TP
+.B uint32_t ChannelAllocation
+.TP
+.B dict QoS
+.INDENT 7.0
+.TP
+.B byte Framing
+.TP
+.B byte PHY
+.TP
+.B uint16 MaximumLatency
+.TP
+.B uint32 MinimumDelay
+.TP
+.B uint32 MaximumDelay
+.TP
+.B uint32 PreferredMinimumDelay
+.TP
+.B uint32 PreferredMaximumDelay
+.UNINDENT
+.UNINDENT
+.sp
+See MediaEndpoint Properties for their possible values.
+.sp
+Returns a configuration which can be used to setup a transport:
+.INDENT 0.0
+.TP
+.B array{byte} Capabilities
+.TP
+.B array{byte} Metadata [optional]
+.TP
+.B dict QoS
+.UNINDENT
+.sp
+See SetConfiguration for their possible values.
+.sp
+Note: There is no need to cache the selected properties since on
+success the configuration is send back as parameter of SetConfiguration.
+.UNINDENT
+.UNINDENT
+.SS void ClearConfiguration(object transport)
+.INDENT 0.0
+.INDENT 3.5
+Clear transport configuration.
+.UNINDENT
+.UNINDENT
+.SS void Release()
+.INDENT 0.0
+.INDENT 3.5
+This method gets called when the service daemon unregisters the
+endpoint. An endpoint can use it to do cleanup tasks. There is no need
+to unregister the endpoint, because when this method gets called it has
+already been unregistered.
+.UNINDENT
+.UNINDENT
+.SS MediaEndpoint Properties
+.SS string UUID [readonly, optional]
+.INDENT 0.0
+.INDENT 3.5
+UUID of the profile which the endpoint is for.
+.UNINDENT
+.UNINDENT
+.SS byte Codec [readonly, optional]
+.INDENT 0.0
+.INDENT 3.5
+Assigned number of codec that the endpoint implements.
+The values should match the profile specification which is indicated by
+the UUID.
+.UNINDENT
+.UNINDENT
+.SS uint32_t Vendor [readonly, Optional]
+.INDENT 0.0
+.INDENT 3.5
+Vendor\-specific Company ID, Codec ID tuple that the endpoint implements.
+.sp
+It shall be set to appropriate value when Vendor Specific Codec (0xff)
+is used.
+.UNINDENT
+.UNINDENT
+.SS array{byte} Capabilities [readonly, optional]
+.INDENT 0.0
+.INDENT 3.5
+Capabilities blob, it is used as it is so the size and byte order must
+match.
+.UNINDENT
+.UNINDENT
+.SS array{byte} Metadata [readonly, Optional]
+.INDENT 0.0
+.INDENT 3.5
+Metadata blob, it is used as it is so the size and byte order must
+match.
+.UNINDENT
+.UNINDENT
+.SS object Device [readonly, optional]
+.INDENT 0.0
+.INDENT 3.5
+Device object which the endpoint is belongs to.
+.UNINDENT
+.UNINDENT
+.SS bool DelayReporting [readonly, optional]
+.INDENT 0.0
+.INDENT 3.5
+Indicates if endpoint supports Delay Reporting.
+.UNINDENT
+.UNINDENT
+.SS uint32 Locations [readonly, optional, ISO only, experimental]
+.INDENT 0.0
+.INDENT 3.5
+Indicates endpoint supported locations.
+.UNINDENT
+.UNINDENT
+.SS uint16 SupportedContext [readonly, optional, ISO only, experimental]
+.INDENT 0.0
+.INDENT 3.5
+Indicates endpoint supported audio context.
+.UNINDENT
+.UNINDENT
+.SS uint16 Context [readonly, optional, ISO only, experimental]
+.INDENT 0.0
+.INDENT 3.5
+Indicates endpoint available audio context.
+.UNINDENT
+.UNINDENT
+.SS dict QoS [readonly, optional, ISO only, experimental]
+.INDENT 0.0
+.INDENT 3.5
+Indicates QoS capabilities.
+.INDENT 0.0
+.TP
+.B byte Framing
+Indicates endpoint support framing.
+.sp
+Possible Values:
+.INDENT 7.0
+.TP
+.B 0x00
+Unframed PDUs supported.
+.TP
+.B 0x01
+Unframed PDUs not supported.
+.UNINDENT
+.TP
+.B byte PHY
+Indicates endpoint preferred PHY.
+.sp
+Possible values:
+.INDENT 7.0
+.TP
+.B bit 0
+LE 1M preferred.
+.TP
+.B bit 1
+LE 2M preferred.
+.TP
+.B bit 2
+LE Coded preferred.
+.UNINDENT
+.TP
+.B byte Retransmissions
+Indicates endpoint preferred number of retransmissions.
+.TP
+.B uint16 MaximumLatency
+Indicates endpoint maximum latency.
+.TP
+.B uint32 MinimumDelay
+Indicates endpoint minimum presentation delay.
+.TP
+.B uint32 MaximumDelay
+Indicates endpoint maximum presentation delay.
+.TP
+.B uint32 PreferredMinimumDelay
+Indicates endpoint preferred minimum presentation delay.
+.TP
+.B uint32 PreferredMaximumDelay
+Indicates endpoint preferred maximum presentation delay.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.\" Generated by docutils manpage writer.
+.

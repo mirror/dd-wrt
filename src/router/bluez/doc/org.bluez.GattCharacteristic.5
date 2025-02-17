@@ -1,0 +1,478 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "ORG.BLUEZ.GATTCHARACTERISTIC" "5" "October 2023" "BlueZ" "Linux System Administration"
+.SH NAME
+org.bluez.GattCharacteristic \- BlueZ D-Bus GattCharacteristic API documentation
+.SH DESCRIPTION
+.sp
+GATT local/server and remote/client characteristic attribute representation
+share the same high\-level D\-Bus API.
+.sp
+Local/Server refers to GATT based characteristics exported by a plugin or an
+external application.
+.sp
+Remote/Client refers to GATT characteristics exported by the peer.
+.SH INTERFACE
+.SS Client
+.INDENT 0.0
+.TP
+.B Service
+org.bluez
+.TP
+.B Interface
+org.bluez.GattCharacteristic1
+.TP
+.B Object path
+[variable prefix]/{hci0,hci1,...}/dev_XX_XX_XX_XX_XX_XX/serviceXX/charYYYY
+.UNINDENT
+.SS Server
+.INDENT 0.0
+.TP
+.B Service
+unique name
+.TP
+.B Interface
+org.bluez.GattCharacteristic1
+.TP
+.B Object path
+freely definable
+.UNINDENT
+.SS Methods
+.SS array{byte} ReadValue(dict options)
+.INDENT 0.0
+.INDENT 3.5
+Issues a request to read the value of the characteristic and returns the
+value if the operation was successful.
+.sp
+Possible options:
+.INDENT 0.0
+.TP
+.B uint16_t offset
+Read start offset in bytes.
+.TP
+.B uint16_t mtu (server only)
+Exchange MTU in bytes.
+.TP
+.B object device (server only)
+Device object.
+.TP
+.B string link (server only)
+Link type.
+.sp
+Possible values:
+.INDENT 7.0
+.TP
+.B \(dqBR/EDR\(dq
+.TP
+.B \(dqLE\(dq
+.UNINDENT
+.UNINDENT
+.sp
+Possible Errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.Failed
+Possible values: string 0x80 \- 0x9f
+.TP
+.B org.bluez.Error.InProgress
+.TP
+.B org.bluez.Error.NotPermitted
+.TP
+.B org.bluez.Error.NotAuthorized
+.TP
+.B org.bluez.Error.InvalidOffset
+.TP
+.B org.bluez.Error.NotSupported
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS void WriteValue(array{byte} value, dict options)
+.INDENT 0.0
+.INDENT 3.5
+Issues a request to write the value of the characteristic.
+.sp
+Possible options:
+.INDENT 0.0
+.TP
+.B uint16 offset
+Write start offset in bytes.
+.TP
+.B string type
+Possible values:
+.INDENT 7.0
+.TP
+.B \(dqcommand\(dq
+Use Write without response procedure.
+.TP
+.B \(dqrequest\(dq
+Use Write with response procedure.
+.TP
+.B \(dqreliable\(dq
+Use Reliable Write procedure.
+.UNINDENT
+.TP
+.B uint16 mtu
+Exchanged MTU (Server only).
+.TP
+.B object device
+Device path (Server only).
+.TP
+.B string link
+Link type (Server only).
+.sp
+Possible values:
+.INDENT 7.0
+.TP
+.B \(dqBR/EDR\(dq
+.TP
+.B \(dqLE\(dq
+.UNINDENT
+.TP
+.B boolean prepare\-authorize
+True if prepare authorization request.
+.UNINDENT
+.sp
+Possible Errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.Failed
+Possible values: string 0x80 \- 0x9f
+.TP
+.B org.bluez.Error.InProgress
+.TP
+.B org.bluez.Error.NotPermitted
+.TP
+.B org.bluez.Error.InvalidValueLength
+.TP
+.B org.bluez.Error.NotAuthorized
+.TP
+.B org.bluez.Error.NotSupported
+.TP
+.B org.bluez.Error.ImproperlyConfigured
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS fd, uint16 AcquireWrite(dict options) [optional]
+.INDENT 0.0
+.INDENT 3.5
+Acquire file descriptor and MTU for writing. Only sockets are supported.
+Usage of WriteValue will be locked causing it to return NotPermitted
+error.
+.sp
+For server the MTU returned shall be equal or smaller than the
+negotiated MTU.
+.sp
+For client it only works with characteristic that has \fBWriteAcquired\fP
+property which relies on write\-without\-response \fBFlag\fP\&.
+.sp
+To release the lock the client shall close the file descriptor, a HUP
+is generated in case the device is disconnected.
+.sp
+Note: the MTU can only be negotiated once and is symmetric therefore
+this method may be delayed in order to have the exchange MTU completed,
+because of that the file descriptor is closed during reconnections as
+the MTU has to be renegotiated.
+.sp
+Possible options:
+.INDENT 0.0
+.TP
+.B object device
+Object Device (Server only).
+.TP
+.B uint16 mtu
+Exchanged MTU (Server only).
+.TP
+.B string link
+Link type (Server only).
+.sp
+Possible values:
+.INDENT 7.0
+.TP
+.B \(dqBR/EDR\(dq
+.TP
+.B \(dqLE\(dq
+.UNINDENT
+.UNINDENT
+.sp
+Possible Errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.Failed
+.TP
+.B org.bluez.Error.NotSupported
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS fd, uint16 AcquireNotify(dict options) [optional]
+.INDENT 0.0
+.INDENT 3.5
+Acquire file descriptor and MTU for notify. Only sockets are support.
+.sp
+Usage of StartNotify will be locked causing it to return
+\fBorg.bluez.Error.NotPermitted\fP\&.
+.sp
+For server the MTU returned shall be equal or smaller than the
+negotiated MTU.
+.sp
+Only works with characteristic that has \fBNotifyAcquired\fP property
+which relies on \fB\(dqnotify\(dq\fP \fBFlag\fP and no other client have called
+\fBStartNotify()\fP\&.
+.sp
+Notification are enabled during this procedure so \fBStartNotify()\fP
+shall not be called, any notification will be dispatched via file
+descriptor therefore the Value property is not affected during the time
+where notify has been acquired.
+.sp
+To release the lock the client shall close the file descriptor, a HUP is
+generated in case the device is disconnected.
+.sp
+Note: the MTU can only be negotiated once and is symmetric therefore
+this method may be delayed in order to have the exchange MTU completed,
+because of that the file descriptor is closed during reconnections as
+the MTU has to be renegotiated.
+.sp
+Possible options:
+.INDENT 0.0
+.TP
+.B object device
+Object Device (Server only).
+.TP
+.B uint16 mtu
+Exchanged MTU (Server only).
+.TP
+.B string link
+Link type (Server only).
+.sp
+Possible values:
+.INDENT 7.0
+.TP
+.B \(dqBR/EDR\(dq
+.TP
+.B \(dqLE\(dq
+.UNINDENT
+.UNINDENT
+.sp
+Possible Errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.Failed
+.TP
+.B org.bluez.Error.NotSupported
+.TP
+.B org.bluez.Error.NotPermitted
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS void StartNotify()
+.INDENT 0.0
+.INDENT 3.5
+Starts a notification session from this characteristic if it supports
+value notifications or indications.
+.sp
+Possible Errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.Failed
+.TP
+.B org.bluez.Error.NotPermitted
+.TP
+.B org.bluez.Error.InProgress
+.TP
+.B org.bluez.Error.NotConnected
+.TP
+.B org.bluez.Error.NotSupported
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS void StopNotify()
+.INDENT 0.0
+.INDENT 3.5
+Stops or cancel session previously created by \fBStartNotify()\fP\&.
+.sp
+Note that notifications from a characteristic are shared between
+sessions thus calling StopNotify will release a single session.
+.sp
+Possible Errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.Failed
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS void Confirm() [noreply, optional] (Server only)
+.INDENT 0.0
+.INDENT 3.5
+Confirms value was received.
+.sp
+Possible Errors:
+.sp
+org.bluez.Error.Failed
+.UNINDENT
+.UNINDENT
+.SS Properties
+.SS string UUID [read\-only]
+.INDENT 0.0
+.INDENT 3.5
+128\-bit characteristic UUID.
+.UNINDENT
+.UNINDENT
+.SS object Service [read\-only]
+.INDENT 0.0
+.INDENT 3.5
+Object path of the GATT service the characteristic belongs to.
+.UNINDENT
+.UNINDENT
+.SS array{byte} Value [read\-only, optional]
+.INDENT 0.0
+.INDENT 3.5
+The cached value of the characteristic. This property gets updated only
+after a successful read request and when a notification or indication
+is received, upon which a PropertiesChanged signal will be emitted.
+.UNINDENT
+.UNINDENT
+.SS boolean WriteAcquired [read\-only, optional]
+.INDENT 0.0
+.INDENT 3.5
+True, if this characteristic has been acquired by any client using
+AcquireWrite.
+.sp
+For client properties is ommited in case \(aqwrite\-without\-response\(aq flag
+is not set.
+.sp
+For server the presence of this property indicates that AcquireWrite is
+supported.
+.UNINDENT
+.UNINDENT
+.SS boolean NotifyAcquired [read\-only, optional]
+.INDENT 0.0
+.INDENT 3.5
+True, if this characteristic has been acquired by any client using
+AcquireNotify.
+.sp
+For client this properties is ommited in case \(aqnotify\(aq flag is not set.
+.sp
+For server the presence of this property indicates that AcquireNotify
+is supported.
+.UNINDENT
+.UNINDENT
+.SS boolean Notifying [read\-only, optional]
+.INDENT 0.0
+.INDENT 3.5
+True, if notifications or indications on this characteristic are
+currently enabled.
+.UNINDENT
+.UNINDENT
+.SS array{string} Flags [read\-only]
+.INDENT 0.0
+.INDENT 3.5
+Defines how the characteristic value can be used. See Core spec
+\(dqTable 3.5: Characteristic Properties bit field\(dq, and
+\(dqTable 3.8: Characteristic Extended Properties bit field\(dq.
+.sp
+The \(dqx\-notify\(dq and \(dqx\-indicate\(dq flags restrict access to notifications
+and indications by imposing write restrictions on a characteristic\(aqs
+client characteristic configuration descriptor.
+.sp
+Possible values:
+.INDENT 0.0
+.TP
+.B \(dqbroadcast\(dq
+.TP
+.B \(dqread\(dq
+.TP
+.B \(dqwrite\-without\-response\(dq
+.TP
+.B \(dqwrite\(dq
+.TP
+.B \(dqnotify\(dq
+.TP
+.B \(dqindicate\(dq
+.TP
+.B \(dqauthenticated\-signed\-writes\(dq
+.TP
+.B \(dqextended\-properties\(dq
+.TP
+.B \(dqreliable\-write\(dq
+.TP
+.B \(dqwritable\-auxiliaries\(dq
+.TP
+.B \(dqencrypt\-read\(dq
+.TP
+.B \(dqencrypt\-write\(dq
+.TP
+.B \(dqencrypt\-notify\(dq (Server only)
+.TP
+.B \(dqencrypt\-indicate\(dq (Server only)
+.TP
+.B \(dqencrypt\-authenticated\-read\(dq
+.TP
+.B \(dqencrypt\-authenticated\-write\(dq
+.TP
+.B \(dqencrypt\-authenticated\-notify\(dq (Server only)
+.TP
+.B \(dqencrypt\-authenticated\-indicate\(dq (Server only)
+.TP
+.B \(dqsecure\-read\(dq (Server only)
+.TP
+.B \(dqsecure\-write\(dq (Server only)
+.TP
+.B \(dqsecure\-notify\(dq (Server only)
+.TP
+.B \(dqsecure\-indicate\(dq (Server only)
+.TP
+.B \(dqauthorize\(dq
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS uint16 Handle [read\-only] (Client Only)
+.INDENT 0.0
+.INDENT 3.5
+Characteristic handle.
+.UNINDENT
+.UNINDENT
+.SS uint16 Handle [read\-write, optional] (Server Only)
+.INDENT 0.0
+.INDENT 3.5
+Characteristic handle. When available in the server it would attempt to
+use to allocate into the database which may fail, to auto allocate the
+value 0x0000 shall be used which will cause the allocated handle to be
+set once registered.
+.UNINDENT
+.UNINDENT
+.SS uint16 MTU [read\-only]
+.INDENT 0.0
+.INDENT 3.5
+Characteristic MTU, this is valid both for \fBReadValue()\fP and
+\fBWriteValue()\fP but either method can use long procedures when
+supported.
+.UNINDENT
+.UNINDENT
+.\" Generated by docutils manpage writer.
+.

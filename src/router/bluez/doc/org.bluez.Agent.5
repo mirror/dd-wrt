@@ -1,0 +1,201 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "ORG.BLUEZ.AGENT" "5" "October 2023" "BlueZ" "Linux System Administration"
+.SH NAME
+org.bluez.Agent \- BlueZ D-Bus Agent API documentation
+.SH INTERFACE
+.INDENT 0.0
+.TP
+.B Service
+unique name
+.TP
+.B Interface
+org.bluez.Agent1
+.TP
+.B Object path
+freely definable
+.UNINDENT
+.SS Methods
+.SS void Release()
+.INDENT 0.0
+.INDENT 3.5
+This method gets called when the service daemon unregisters the agent.
+An agent can use it to do cleanup tasks. There is no need to unregister
+the agent, because when this method gets called it has already been
+unregistered.
+.UNINDENT
+.UNINDENT
+.SS string RequestPinCode(object device)
+.INDENT 0.0
+.INDENT 3.5
+This method gets called when the service daemon needs to get the passkey
+for an authentication.
+.sp
+The return value should be a string of 1\-16 characters length. The
+string can be alphanumeric.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.Rejected
+.TP
+.B org.bluez.Error.Canceled
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS void DisplayPinCode(object device, string pincode)
+.INDENT 0.0
+.INDENT 3.5
+This method gets called when the service daemon needs to display a
+pincode for an authentication.
+.sp
+An empty reply should be returned. When the pincode needs no longer to
+be displayed, the Cancel method of the agent will be called.
+.sp
+This is used during the pairing process of keyboards that don\(aqt support
+Bluetooth 2.1 Secure Simple Pairing, in contrast to DisplayPasskey which
+is used for those that do.
+.sp
+This method will only ever be called once since older keyboards do not
+support typing notification.
+.sp
+Note that the PIN will always be a 6\-digit number, zero\-padded to 6
+digits. This is for harmony with the later specification.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.Rejected
+.TP
+.B org.bluez.Error.Canceled
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS uint32 RequestPasskey(object device)
+.INDENT 0.0
+.INDENT 3.5
+This method gets called when the service daemon needs to get the passkey
+for an authentication.
+.sp
+The return value should be a numeric value between 0\-999999.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.Rejected
+.TP
+.B org.bluez.Error.Canceled
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS void DisplayPasskey(object device, uint32 passkey, uint16 entered)
+.INDENT 0.0
+.INDENT 3.5
+This method gets called when the service daemon needs to display a
+passkey for an authentication.
+.sp
+The entered parameter indicates the number of already typed keys on the
+remote side.
+.sp
+An empty reply should be returned. When the passkey needs no longer to
+be displayed, the Cancel method of the agent will be called.
+.sp
+During the pairing process this method might be called multiple times to
+update the entered value.
+.sp
+Note that the passkey will always be a 6\-digit number, so the display
+should be zero\-padded at the start if the value contains less than 6
+digits.
+.UNINDENT
+.UNINDENT
+.SS void RequestConfirmation(object device, uint32 passkey)
+.INDENT 0.0
+.INDENT 3.5
+This method gets called when the service daemon needs to confirm a
+passkey for an authentication.
+.sp
+To confirm the value it should return an empty reply or an error in case
+the passkey is invalid.
+.sp
+Note that the passkey will always be a 6\-digit number, so the display
+should be zero\-padded at the start if the value contains less than 6
+digits.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.Rejected
+.TP
+.B org.bluez.Error.Canceled
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS void RequestAuthorization(object device)
+.INDENT 0.0
+.INDENT 3.5
+This method gets called to request the user to authorize an incoming
+pairing attempt which would in other circumstances trigger the
+just\-works model, or when the user plugged in a device that implements
+cable pairing. In the latter case, the device would not be connected to
+the adapter via Bluetooth yet.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.Rejected
+.TP
+.B org.bluez.Error.Canceled
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS void AuthorizeService(object device, string uuid)
+.INDENT 0.0
+.INDENT 3.5
+This method gets called when the service daemon needs to authorize a
+connection/service request.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.Rejected
+.TP
+.B org.bluez.Error.Canceled
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS void Cancel()
+.INDENT 0.0
+.INDENT 3.5
+This method gets called to indicate that the agent request failed before
+a reply was returned.
+.UNINDENT
+.UNINDENT
+.\" Generated by docutils manpage writer.
+.

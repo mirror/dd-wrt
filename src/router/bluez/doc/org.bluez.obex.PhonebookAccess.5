@@ -1,0 +1,515 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "ORG.BLUEZ.OBEX.PHONEBOOKACCESS" "5" "October 2023" "BlueZ" "Linux System Administration"
+.SH NAME
+org.bluez.obex.PhonebookAccess \- BlueZ D-Bus OBEX PhonebookAccess API documentation
+.SH INTERFACE
+.INDENT 0.0
+.TP
+.B Service
+org.bluez.obex
+.TP
+.B Interface
+org.bluez.obex.PhonebookAccess1
+.TP
+.B Object path
+[Session object path]
+.UNINDENT
+.SS Methods
+.SS void Select(string location, string phonebook)
+.INDENT 0.0
+.INDENT 3.5
+Selects the phonebook object for other operations. Should be call before
+all the other operations.
+.sp
+Possible location values:
+.INDENT 0.0
+.TP
+.B \(dqint\(dq, \(dqinternal\(dq (default)
+Store in the Internal memory.
+.TP
+.B \(dqsim{#}\(dq
+Store in the sim number.
+.UNINDENT
+.sp
+Possible phonebook values:
+.INDENT 0.0
+.TP
+.B \(dqpb\(dq
+Store as contact.
+.TP
+.B \(dqich\(dq
+Store as incoming call.
+.TP
+.B \(dqoch\(dq
+Store as outgoing call.
+.TP
+.B \(dqmch\(dq
+Store as missing call.
+.TP
+.B \(dqcch\(dq
+Store as a combination of incoming, outgoing and missing call.
+.UNINDENT
+.sp
+\(dqspd\(dq:
+.INDENT 0.0
+.INDENT 3.5
+Store as speed dials entry ( only for \(dqinternal\(dq )
+.UNINDENT
+.UNINDENT
+.sp
+\(dqfav\(dq:
+.INDENT 0.0
+.INDENT 3.5
+Store as favorites entry ( only for \(dqinternal\(dq )
+.UNINDENT
+.UNINDENT
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B org.bluez.obex.Error.InvalidArguments
+.TP
+.B org.bluez.obex.Error.Failed
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS object, dict PullAll(string targetfile, dict filters)
+.INDENT 0.0
+.INDENT 3.5
+Returns the entire phonebook object from the PSE server in plain string
+with vcard format, and store it in a local file.
+.sp
+If an empty target file is given, a name will be automatically generated
+for the temporary file.
+.sp
+The returned path represents the newly created transfer, which should
+be used to find out if the content has been successfully transferred or
+if the operation fails.
+.sp
+The properties of this transfer are also returned along with the object
+path, to avoid a call to GetProperties, see
+\fBorg.bluez.obex.Transfer(5)\fP for the possible list of properties.
+.sp
+Possible filters:
+.INDENT 0.0
+.TP
+.B string Format
+Items vcard format.
+.sp
+Possible values:
+.INDENT 7.0
+.TP
+.B \(dqvcard21\(dq (default)
+.TP
+.B \(dqvcard30\(dq
+.UNINDENT
+.TP
+.B string Order
+Items order.
+.sp
+Possible values:
+.INDENT 7.0
+.TP
+.B \(dq\(dq
+.TP
+.B \(dqindexed\(dq
+.TP
+.B \(dqalphanumeric\(dq
+.TP
+.B \(dqphonetic\(dq
+.UNINDENT
+.TP
+.B uint16 Offset (default 0)
+Offset of the first item.
+.TP
+.B uint16 MaxCount (default 65535)
+Maximum number of items.
+.TP
+.B array{string} Fields (default all fields)
+Item vcard fields.
+.sp
+See \fBListFilterFields()\fP for possible values.
+.TP
+.B array{string} FilterAll
+Filter items by fields using AND logic, cannot be used
+together with \fBFilterAny\fP\&.
+.sp
+See \fBListFilterFields()\fP for possible values.
+.TP
+.B array{string} FilterAny
+Filter items by fields using OR logic, cannot be used together
+with \fBFilterAll\fP\&.
+.sp
+See \fBListFilterFields()\fP for possible values.
+.TP
+.B bool ResetNewMissedCalls
+Reset new the missed calls items, shall only be used for folders
+mch and cch.
+.UNINDENT
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B org.bluez.obex.Error.InvalidArguments
+.TP
+.B org.bluez.obex.Forbidden
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS array{string vcard, string name} List(dict filters)
+.INDENT 0.0
+.INDENT 3.5
+Returns array of vcard\-listing data where every entry consists of a
+pair of strings containing the vcard handle and the contact name.
+For example:
+.INDENT 0.0
+.TP
+.B \(dq1.vcf\(dq
+\(dqJohn\(dq
+.UNINDENT
+.sp
+Possible filters:
+.INDENT 0.0
+.TP
+.B string Order
+Contact order.
+.sp
+Possible values:
+.INDENT 7.0
+.TP
+.B \(dq\(dq
+.TP
+.B \(dqindexed\(dq
+.TP
+.B \(dqalphanumeric\(dq
+.TP
+.B \(dqphonetic\(dq
+.UNINDENT
+.TP
+.B uint16 Offset
+Start offset.
+.TP
+.B uint16 MaxCount
+Maximum number of contacts.
+.UNINDENT
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B org.bluez.obex.Error.InvalidArguments
+.TP
+.B org.bluez.obex.Forbidden
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS object, dict Pull(string vcard, string targetfile, dict filters)
+.INDENT 0.0
+.INDENT 3.5
+Retrieves the vcard in the current phonebook object and store it in a
+local file.
+.sp
+If an empty target file is given, a name will be automatically generated
+for the temporary file.
+.sp
+The returned path represents the newly created transfer, which should be
+used to find out if the content has been successfully transferred or if
+the operation fails.
+.sp
+The properties of this transfer are also returned along with the object
+path, to avoid a call to GetProperties, see
+\fBorg.bluez.obex.Transfer(5)\fP for the possible list of properties.
+.sp
+Possible filters:
+.INDENT 0.0
+.TP
+.B string Format
+Contact data format.
+.sp
+Possible values:
+.INDENT 7.0
+.TP
+.B \(dq\(dq
+.TP
+.B \(dqvcard21\(dq
+.TP
+.B \(dqvcard30\(dq
+.UNINDENT
+.TP
+.B array{string} Fields
+See \fBListFilterFields()\fP for possible values.
+.UNINDENT
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B org.bluez.obex.Error.InvalidArguments
+.TP
+.B org.bluez.obex.Error.Forbidden
+.TP
+.B org.bluez.obex.Error.Failed
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS array{string vcard, string name} Search(string field, string value, dict filters)
+.INDENT 0.0
+.INDENT 3.5
+Searches for entries matching the given condition and return an array of
+vcard\-listing data where every entry consists of a pair of strings
+containing the vcard handle and the contact name.
+.sp
+Possible field values:
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.TP
+.B \(dqname\(dq (default)
+Search by name.
+.TP
+.B \(dqnumber\(dq
+Search by number.
+.TP
+.B \(dqsound\(dq
+Search by sound.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+value: the string value to search for
+.sp
+Possible filters:
+.INDENT 0.0
+.TP
+.B string Order
+Contact order.
+.sp
+Possible values:
+.INDENT 7.0
+.TP
+.B \(dq\(dq
+.TP
+.B \(dqindexed\(dq
+.TP
+.B \(dqalphanumeric\(dq
+.TP
+.B \(dqphonetic\(dq
+.UNINDENT
+.TP
+.B uint16 Offset
+Start offset.
+.TP
+.B uint16 MaxCount
+Maximum number of contacts.
+.UNINDENT
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B org.bluez.obex.Error.InvalidArguments
+.TP
+.B org.bluez.obex.Error.Forbidden
+.TP
+.B org.bluez.obex.Error.Failed
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS uint16 GetSize()
+.INDENT 0.0
+.INDENT 3.5
+Returns the number of entries in the selected phonebook object that are
+actually used (i.e. indexes that correspond to non\-NULL entries).
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B org.bluez.obex.Error.Forbidden
+.TP
+.B org.bluez.obex.Error.Failed
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS void UpdateVersion()
+.INDENT 0.0
+.INDENT 3.5
+Attempts to update PrimaryCounter and SecondaryCounter.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B org.bluez.obex.Error.NotSupported
+.TP
+.B org.bluez.obex.Error.Forbidden
+.TP
+.B org.bluez.obex.Error.Failed
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS array{string} ListFilterFields()
+.INDENT 0.0
+.INDENT 3.5
+Returns all Available fields that can be used in Fields filter.
+.sp
+Possible return:
+.INDENT 0.0
+.TP
+.B \(dqVERSION\(dq
+.TP
+.B \(dqFN\(dq
+.TP
+.B \(dqN\(dq
+.TP
+.B \(dqPHOTO\(dq
+.TP
+.B \(dqBDAY\(dq
+.TP
+.B \(dqADR\(dq
+.TP
+.B \(dqLABEL\(dq
+.TP
+.B \(dqTEL\(dq
+.TP
+.B \(dqEMAIL\(dq
+.TP
+.B \(dqMAILER\(dq
+.TP
+.B \(dqTZ\(dq
+.TP
+.B \(dqGEO\(dq
+.TP
+.B \(dqTITLE\(dq
+.TP
+.B \(dqROLE\(dq
+.TP
+.B \(dqLOGO\(dq
+.TP
+.B \(dqAGENT\(dq
+.TP
+.B \(dqORG\(dq
+.TP
+.B \(dqNOTE\(dq
+.TP
+.B \(dqREV\(dq
+.TP
+.B \(dqSOUND\(dq
+.TP
+.B \(dqURL\(dq
+.TP
+.B \(dqUID\(dq
+.TP
+.B \(dqKEY\(dq
+.TP
+.B \(dqNICKNAME\(dq
+.TP
+.B \(dqCATEGORIES\(dq
+.TP
+.B \(dqPROID\(dq
+.TP
+.B \(dqCLASS\(dq
+.TP
+.B \(dqSORT\-STRING\(dq
+.TP
+.B \(dqX\-IRMC\-CALL\-DATETIME\(dq
+.TP
+.B \(dqX\-BT\-SPEEDDIALKEY\(dq
+.TP
+.B \(dqX\-BT\-UCI\(dq
+.TP
+.B \(dqX\-BT\-UID\(dq
+.TP
+.B \(dqBIT\-{#}\(dq
+.UNINDENT
+.sp
+Possible errors: None
+.UNINDENT
+.UNINDENT
+.SS Properties
+.SS string Folder [readonly]
+.INDENT 0.0
+.INDENT 3.5
+Current folder.
+.UNINDENT
+.UNINDENT
+.SS string DatabaseIdentifier [readonly, optional]
+.INDENT 0.0
+.INDENT 3.5
+128 bits persistent database identifier.
+.sp
+Possible values:
+.INDENT 0.0
+.INDENT 3.5
+32\-character hexadecimal such as
+A1A2A3A4B1B2C1C2D1D2E1E2E3E4E5E6
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS string PrimaryCounter [readonly, optional]
+.INDENT 0.0
+.INDENT 3.5
+128 bits primary version counter.
+.sp
+Possible values:
+.INDENT 0.0
+.INDENT 3.5
+32\-character hexadecimal such as
+A1A2A3A4B1B2C1C2D1D2E1E2E3E4E5E6
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS string SecondaryCounter [readonly, optional]
+.INDENT 0.0
+.INDENT 3.5
+128 bits secondary version counter.
+.sp
+Possible values:
+.INDENT 0.0
+.INDENT 3.5
+32\-character hexadecimal such as
+A1A2A3A4B1B2C1C2D1D2E1E2E3E4E5E6
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS bool FixedImageSize [readonly, optional]
+.INDENT 0.0
+.INDENT 3.5
+Indicate support for fixed image size.
+.sp
+Possible values:
+.INDENT 0.0
+.INDENT 3.5
+True if image is JPEG 300x300 pixels otherwise False.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.\" Generated by docutils manpage writer.
+.

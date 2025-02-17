@@ -1,0 +1,279 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "ORG.BLUEZ.OBEX.MESSAGEACCESS" "5" "October 2023" "BlueZ" "Linux System Administration"
+.SH NAME
+org.bluez.obex.MessageAccess \- BlueZ D-Bus OBEX MessageAccess API documentation
+.SH INTERFACE
+.INDENT 0.0
+.TP
+.B Service
+org.bluez.obex
+.TP
+.B Interface
+org.bluez.obex.MessageAccess1
+.TP
+.B Object path
+[Session object path]
+.UNINDENT
+.SS Methods
+.SS void SetFolder(string name)
+.INDENT 0.0
+.INDENT 3.5
+Set working directory for current session.
+.sp
+Possible name:
+.INDENT 0.0
+.INDENT 3.5
+Directory name or \(aq..[/dir]\(aq.
+.UNINDENT
+.UNINDENT
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B org.bluez.obex.Error.InvalidArguments
+.TP
+.B org.bluez.obex.Error.Failed
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS array{dict} ListFolders(dict filter)
+.INDENT 0.0
+.INDENT 3.5
+Returns a dictionary containing information about the current folder
+content.
+.sp
+Possible filter:
+.INDENT 0.0
+.TP
+.B uint16 Offset (default 0)
+Offset of the first item.
+.TP
+.B uint16 MaxCount (default 1024)
+Maximum number of items.
+.UNINDENT
+.sp
+Possible return:
+.INDENT 0.0
+.TP
+.B string Name
+Folder name
+.UNINDENT
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B org.bluez.obex.Error.InvalidArguments
+.TP
+.B org.bluez.obex.Error.Failed
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS array{string} ListFilterFields()
+.INDENT 0.0
+.INDENT 3.5
+Return all available fields that can be used in \fBFields\fP filter.
+.sp
+Possible values:
+.INDENT 0.0
+.TP
+.B \(dqsubject\(dq
+.TP
+.B \(dqtimestamp\(dq
+.TP
+.B \(dqsender\(dq
+.TP
+.B \(dqsender\-address\(dq
+.TP
+.B \(dqrecipient\(dq
+.TP
+.B \(dqrecipient\-address\(dq
+.TP
+.B \(dqtype\(dq
+.TP
+.B \(dqsize\(dq
+.TP
+.B \(dqstatus\(dq
+.TP
+.B \(dqtext\(dq
+.TP
+.B \(dqattachment\(dq
+.TP
+.B \(dqpriority\(dq
+.TP
+.B \(dqread\(dq
+.TP
+.B \(dqsent\(dq
+.TP
+.B \(dqprotected\(dq
+.TP
+.B \(dqreplyto\(dq
+.UNINDENT
+.sp
+Possible errors: None
+.UNINDENT
+.UNINDENT
+.SS array{object, dict} ListMessages(string folder, dict filter)
+.INDENT 0.0
+.INDENT 3.5
+Returns an array containing the messages objects found in the given
+subfolder of the current folder, or in the current folder if folder is
+empty.
+.sp
+Possible Filters:
+.INDENT 0.0
+.TP
+.B uint16 Offset (default 0)
+Offset of the first item.
+.UNINDENT
+.sp
+uint16 MaxCount (default 1024):
+.INDENT 0.0
+.INDENT 3.5
+Maximum number of items.
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B byte SubjectLength (default 256)
+Maximum length of the Subject property in the message.
+.TP
+.B array{string} Fields
+Message fields, default is all values.
+.sp
+See \fBListFilterFields()\fP for possible values.
+.TP
+.B array{string} Types
+Filter messages by type.
+.sp
+Possible values:
+.INDENT 7.0
+.TP
+.B \(dqsms\(dq
+.TP
+.B \(dqemail\(dq
+.TP
+.B \(dqmms\(dq
+.UNINDENT
+.TP
+.B string PeriodBegin
+Filter messages by starting period.
+.sp
+Possible values:
+.INDENT 7.0
+.INDENT 3.5
+Date in \(dqYYYYMMDDTHHMMSS\(dq format.
+.UNINDENT
+.UNINDENT
+.TP
+.B string PeriodEnd
+Filter messages by ending period.
+.sp
+Possible values:
+.INDENT 7.0
+.INDENT 3.5
+Date in \(dqYYYYMMDDTHHMMSS\(dq format.
+.UNINDENT
+.UNINDENT
+.TP
+.B boolean Read
+Filter messages by read flag.
+.sp
+Possible values:
+.INDENT 7.0
+.INDENT 3.5
+True for read or False for unread
+.UNINDENT
+.UNINDENT
+.TP
+.B string Recipient
+Filter messages by recipient address.
+.TP
+.B string Sender
+Filter messages by sender address.
+.TP
+.B boolean Priority
+Filter messages by priority flag.
+.sp
+Possible values:
+.INDENT 7.0
+.INDENT 3.5
+True for high priority or False for non\-high priority.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+Each message is represented by an object path, which implements
+\fBorg.bluez.obex.Message(5)\fP interface, followed by a dictionary
+of its properties.
+.UNINDENT
+.UNINDENT
+.sp
+void UpdateInbox(void)
+.INDENT 0.0
+.INDENT 3.5
+Requests remote to update its inbox.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B org.bluez.obex.Error.Failed
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS object, dict PushMessage(string sourcefile, string folder, dict args)
+.INDENT 0.0
+.INDENT 3.5
+Transfers a message (in bMessage format) to the remote device.
+.sp
+The message is transferred either to the given subfolder of the current
+folder, or to the current folder if folder is empty.
+.sp
+Possible args: Transparent, Retry, Charset
+.sp
+The returned path represents the newly created transfer, which should be
+used to find out if the content has been successfully transferred or if
+the operation fails.
+.sp
+The properties of this transfer are also returned along with the object
+path, to avoid a call to GetProperties, see
+\fBorg.bluez.obex.Transfer(5)\fP for the possible list of properties.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B org.bluez.obex.Error.InvalidArguments
+.TP
+.B org.bluez.obex.Error.Failed
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.\" Generated by docutils manpage writer.
+.

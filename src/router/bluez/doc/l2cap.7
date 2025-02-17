@@ -1,0 +1,578 @@
+'\" t
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "L2CAP" "7" "May 2024" "BlueZ" "Linux System Administration"
+.SH NAME
+l2cap \- L2CAP protocol
+.SH SYNOPSIS
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+#include <sys/socket.h>
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/l2cap.h>
+
+l2cap_socket = socket(PF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP);
+.EE
+.UNINDENT
+.UNINDENT
+.SH DESCRIPTION
+.sp
+L2CAP is a protocol that provides an interface for higher\-level protocols to
+send and receive data over a Bluetooth connection. L2CAP sits on top of the
+Bluetooth Host Controller Interface (HCI) and provides a set of channels that
+can be used by higher\-level protocols to transmit data.
+.sp
+L2CAP provides a number of services to higher\-level protocols, including
+segmentation and reassembly of large data packets and flow control to prevent
+overloading of the receiver. L2CAP also supports multiple channels per
+connection, allowing for concurrent data transmission using different protocols.
+.SH SOCKET ADDRESS
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+struct sockaddr_l2 {
+    sa_family_t     l2_family;
+    unsigned short  l2_psm;
+    bdaddr_t        l2_bdaddr;
+    unsigned short  l2_cid;
+    uint8_t         l2_bdaddr_type;
+};
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+struct sockaddr_l2 addr;
+
+memset(&addr, 0, sizeof(addr));
+addr.l2_family = AF_BLUETOOTH;
+bacpy(&addr.l2_bdaddr, bdaddr);
+
+if (cid)
+    addr.l2_cid = htobs(cid);
+else
+    addr.l2_psm = htobs(psm);
+
+addr.l2_bdaddr_type = bdaddr_type;
+.EE
+.UNINDENT
+.UNINDENT
+.SH SOCKET OPTIONS
+.sp
+The socket options listed below can be set by using \fBsetsockopt(2)\fP and read
+with \fBgetsockopt(2)\fP with the socket level set to SOL_BLUETOOTH.
+.SS BT_SECURITY (since Linux 2.6.30)
+.sp
+Channel security level, possible values:
+.TS
+box center;
+l|l|l|l.
+T{
+Value
+T}	T{
+Security Level
+T}	T{
+Link Key Type
+T}	T{
+Encryption
+T}
+_
+T{
+\fBBT_SECURITY_SDP\fP
+T}	T{
+0 (SDP Only)
+T}	T{
+None
+T}	T{
+Not required
+T}
+_
+T{
+\fBBT_SECURITY_LOW\fP
+T}	T{
+1 (Low)
+T}	T{
+Unauthenticated
+T}	T{
+Not required
+T}
+_
+T{
+\fBBT_SECURITY_MEDIUM\fP
+T}	T{
+2 (Medium \- default)
+T}	T{
+Unauthenticated
+T}	T{
+Desired
+T}
+_
+T{
+\fBBT_SECURITY_HIGH\fP
+T}	T{
+3 (High)
+T}	T{
+Authenticated
+T}	T{
+Required
+T}
+_
+T{
+\fBBT_SECURITY_FIPS\fP (since Linux 3.15)
+T}	T{
+4 (Secure Only)
+T}	T{
+Authenticated (P\-256 based Secure Simple Pairing and Secure Authentication)
+T}	T{
+Required
+T}
+.TE
+.sp
+Example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+int level = BT_SECURITY_HIGH;
+int err = setsockopt(l2cap_socket, SOL_BLUETOOTH, BT_SECURITY, &level,
+                     sizeof(level));
+if (err == \-1) {
+    perror(\(dqsetsockopt\(dq);
+    return 1;
+}
+.EE
+.UNINDENT
+.UNINDENT
+.SS BT_DEFER_SETUP (since Linux 2.6.30)
+.sp
+Channel defer connection setup, this control if the connection procedure
+needs to be authorized by userspace before responding which allows
+authorization at profile level, possible values:
+.TS
+box center;
+l|l|l.
+T{
+Value
+T}	T{
+Description
+T}	T{
+Authorization
+T}
+_
+T{
+\fB0\fP
+T}	T{
+Disable (default)
+T}	T{
+Not required
+T}
+_
+T{
+\fB1\fP
+T}	T{
+Enable
+T}	T{
+Required
+T}
+.TE
+.sp
+Example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+int defer_setup = 1;
+int err = setsockopt(l2cap_socket, SOL_BLUETOOTH, BT_DEFER_SETUP,
+                     &defer_setup, sizeof(defer_setup));
+if (err == \-1) {
+    perror(\(dqsetsockopt\(dq);
+    return err;
+}
+
+err = listen(l2cap_socket, 5);
+if (err) {
+    perror(\(dqlisten\(dq);
+    return err;
+}
+
+struct sockaddr_l2 remote_addr = {0};
+socklen_t addr_len = sizeof(remote_addr);
+int new_socket = accept(l2cap_socket, (struct sockaddr*)&remote_addr,
+                        &addr_len);
+if (new_socket < 0) {
+    perror(\(dqaccept\(dq);
+    return new_socket;
+}
+
+/* To complete the connection setup of new_socket read 1 byte */
+char c;
+struct pollfd pfd;
+
+memset(&pfd, 0, sizeof(pfd));
+pfd.fd = new_socket;
+pfd.events = POLLOUT;
+
+err = poll(&pfd, 1, 0);
+if (err) {
+    perror(\(dqpoll\(dq);
+    return err;
+}
+
+if (!(pfd.revents & POLLOUT)) {
+    err = read(sk, &c, 1);
+    if (err < 0) {
+        perror(\(dqread\(dq);
+        return err;
+    }
+}
+.EE
+.UNINDENT
+.UNINDENT
+.SS BT_FLUSHABLE (since Linux 2.6.39)
+.sp
+Channel flushable flag, this control if the channel data can be flushed or
+not, possible values:
+.TS
+box center;
+l|l|l.
+T{
+Define
+T}	T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+\fBBT_FLUSHABLE_OFF\fP
+T}	T{
+0x00 (default)
+T}	T{
+Do not flush data
+T}
+_
+T{
+\fBBT_FLUSHABLE_ON\fP
+T}	T{
+0x01
+T}	T{
+Flush data
+T}
+.TE
+.SS BT_POWER (since Linux 3.1)
+.sp
+Channel power policy, this control if the channel shall force exit of sniff
+mode or not, possible values:
+.TS
+box center;
+l|l|l.
+T{
+Define
+T}	T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+\fBBT_POWER_FORCE_ACTIVE_OFF\fP
+T}	T{
+0x00 (default)
+T}	T{
+Don\(aqt force exit of sniff mode
+T}
+_
+T{
+\fBBT_POWER_FORCE_ACTIVE_ON\fP
+T}	T{
+0x01
+T}	T{
+Force exit of sniff mode
+T}
+.TE
+.SS BT_CHANNEL_POLICY (since Linux 3.10)
+.sp
+High\-speed (AMP) channel policy, possible values:
+.TS
+box center;
+l|l|l.
+T{
+Define
+T}	T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+\fBBT_CHANNEL_POLICY_BREDR_ONLY\fP
+T}	T{
+0 (default)
+T}	T{
+BR/EDR only
+T}
+_
+T{
+\fBBT_CHANNEL_POLICY_BREDR_PREFERRED\fP
+T}	T{
+1
+T}	T{
+BR/EDR Preferred
+T}
+_
+T{
+\fBBT_CHANNEL_POLICY_BREDR_PREFERRED\fP
+T}	T{
+2
+T}	T{
+AMP Preferred
+T}
+.TE
+.SS BT_PHY (since Linux 5.10)
+.sp
+Channel supported PHY(s), possible values:
+.TS
+box center;
+l|l|l.
+T{
+Define
+T}	T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+\fBBT_PHY_BR_1M_1SLOT\fP
+T}	T{
+BIT 0
+T}	T{
+BR 1Mbps 1SLOT
+T}
+_
+T{
+\fBBT_PHY_BR_1M_3SLOT\fP
+T}	T{
+BIT 1
+T}	T{
+BR 1Mbps 3SLOT
+T}
+_
+T{
+\fBBT_PHY_BR_1M_5SLOT\fP
+T}	T{
+BIT 2
+T}	T{
+BR 1Mbps 5SLOT
+T}
+_
+T{
+\fBBT_PHY_BR_2M_1SLOT\fP
+T}	T{
+BIT 3
+T}	T{
+EDR 2Mbps 1SLOT
+T}
+_
+T{
+\fBBT_PHY_BR_2M_3SLOT\fP
+T}	T{
+BIT 4
+T}	T{
+EDR 2Mbps 3SLOT
+T}
+_
+T{
+\fBBT_PHY_BR_2M_5SLOT\fP
+T}	T{
+BIT 5
+T}	T{
+EDR 2Mbps 5SLOT
+T}
+_
+T{
+\fBBT_PHY_BR_3M_1SLOT\fP
+T}	T{
+BIT 6
+T}	T{
+EDR 3Mbps 1SLOT
+T}
+_
+T{
+\fBBT_PHY_BR_3M_3SLOT\fP
+T}	T{
+BIT 7
+T}	T{
+EDR 3Mbps 3SLOT
+T}
+_
+T{
+\fBBT_PHY_BR_3M_5SLOT\fP
+T}	T{
+BIT 8
+T}	T{
+EDR 3Mbps 5SLOT
+T}
+_
+T{
+\fBBT_PHY_LE_1M_TX\fP
+T}	T{
+BIT 9
+T}	T{
+LE 1Mbps TX
+T}
+_
+T{
+\fBBT_PHY_LE_1M_RX\fP
+T}	T{
+BIT 10
+T}	T{
+LE 1Mbps RX
+T}
+_
+T{
+\fBBT_PHY_LE_2M_TX\fP
+T}	T{
+BIT 11
+T}	T{
+LE 2Mbps TX
+T}
+_
+T{
+\fBBT_PHY_LE_2M_RX\fP
+T}	T{
+BIT 12
+T}	T{
+LE 2Mbps RX
+T}
+_
+T{
+\fBBT_PHY_LE_CODED_TX\fP
+T}	T{
+BIT 13
+T}	T{
+LE Coded TX
+T}
+_
+T{
+\fBBT_PHY_LE_CODED_RX\fP
+T}	T{
+BIT 14
+T}	T{
+LE Coded RX
+T}
+.TE
+.SS BT_MODE (since Linux 5.10)
+.sp
+Channel Mode, possible values:
+.TS
+box center;
+l|l|l|l.
+T{
+Define
+T}	T{
+Value
+T}	T{
+Description
+T}	T{
+Link
+T}
+_
+T{
+\fBBT_MODE_BASIC\fP
+T}	T{
+0x00 (default)
+T}	T{
+Basic mode
+T}	T{
+Any
+T}
+_
+T{
+\fBBT_MODE_ERTM\fP
+T}	T{
+0x01
+T}	T{
+Enhanced Retransmission mode
+T}	T{
+BR/EDR
+T}
+_
+T{
+\fBBT_MODE_STREAM\fP
+T}	T{
+0x02
+T}	T{
+Stream mode
+T}	T{
+BR/EDR
+T}
+_
+T{
+\fBBT_MODE_LE_FLOWCTL\fP
+T}	T{
+0x03
+T}	T{
+Credit based flow control mode
+T}	T{
+LE
+T}
+_
+T{
+\fBBT_MODE_EXT_FLOWCTL\fP
+T}	T{
+0x04
+T}	T{
+Extended Credit based flow control mode
+T}	T{
+Any
+T}
+.TE
+.SH RESOURCES
+.sp
+ <http://www.bluez.org> 
+.SH REPORTING BUGS
+.sp
+ <linux\-bluetooth@vger.kernel.org> 
+.SH SEE ALSO
+.sp
+socket(7), l2test(1)
+.SH COPYRIGHT
+Free use of this software is granted under ther terms of the GNU
+Lesser General Public Licenses (LGPL).
+.\" Generated by docutils manpage writer.
+.

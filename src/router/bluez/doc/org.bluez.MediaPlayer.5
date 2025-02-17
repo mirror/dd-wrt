@@ -1,0 +1,431 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "ORG.BLUEZ.MEDIAPLAYER" "5" "September 2023" "BlueZ" "Linux System Administration"
+.SH NAME
+org.bluez.MediaPlayer \- BlueZ D-Bus MediaPlayer API documentation
+.SH INTERFACE
+.INDENT 0.0
+.TP
+.B Service
+org.bluez (Controller role)
+.TP
+.B Interface
+org.bluez.MediaPlayer1
+.TP
+.B Object path
+[variable prefix]/{hci0,hci1,...}/dev_XX_XX_XX_XX_XX_XX/playerX
+.UNINDENT
+.SS Methods
+.SS void Play()
+.INDENT 0.0
+.INDENT 3.5
+Resume playback.
+.sp
+Possible Errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.NotSupported
+.TP
+.B org.bluez.Error.Failed
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS void Pause()
+.INDENT 0.0
+.INDENT 3.5
+Pause playback.
+.sp
+Possible Errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.NotSupported
+.TP
+.B org.bluez.Error.Failed
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS void Stop()
+.INDENT 0.0
+.INDENT 3.5
+Stop playback.
+.sp
+Possible Errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.NotSupported
+.TP
+.B org.bluez.Error.Failed
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS void Next()
+.INDENT 0.0
+.INDENT 3.5
+Next item.
+.sp
+Possible Errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.NotSupported
+.TP
+.B org.bluez.Error.Failed
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS void Previous()
+.INDENT 0.0
+.INDENT 3.5
+Previous item.
+.sp
+Possible Errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.NotSupported
+.TP
+.B org.bluez.Error.Failed
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS void FastForward()
+.INDENT 0.0
+.INDENT 3.5
+Fast forward playback, this action is only stopped when another method
+in this interface is called.
+.sp
+Possible Errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.NotSupported
+.TP
+.B org.bluez.Error.Failed
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS void Rewind()
+.INDENT 0.0
+.INDENT 3.5
+Rewind playback, this action is only stopped when another method in
+this interface is called.
+.sp
+Possible Errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.NotSupported
+.TP
+.B org.bluez.Error.Failed
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS void Press(byte avc_key)
+.INDENT 0.0
+.INDENT 3.5
+Press a specific key to send as passthrough command. The key will be
+released automatically. Use Hold() instead if the intention is to hold
+down the key.
+.sp
+Possible Errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.InvalidArguments
+.TP
+.B org.bluez.Error.NotSupported
+.TP
+.B org.bluez.Error.Failed
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS void Hold(byte avc_key)
+.INDENT 0.0
+.INDENT 3.5
+Press and hold a specific key to send as passthrough command. It is
+your responsibility to make sure that Release() is called after calling
+this method. The held key will also be released when any other method
+in this interface is called.
+.sp
+Possible Errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.InvalidArguments
+.TP
+.B org.bluez.Error.NotSupported
+.TP
+.B org.bluez.Error.Failed
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS void Release()
+.INDENT 0.0
+.INDENT 3.5
+Release the previously held key invoked using Hold().
+.sp
+Possible Errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.NotSupported
+.TP
+.B org.bluez.Error.Failed
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS Properties
+.SS string Equalizer [readwrite]
+.INDENT 0.0
+.INDENT 3.5
+Indicates Player Equalizer setting.
+.sp
+Possible values:
+.INDENT 0.0
+.TP
+.B \(dqoff\(dq
+.TP
+.B \(dqon\(dq
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS string Repeat [readwrite]
+.INDENT 0.0
+.INDENT 3.5
+Indicates Player Repeat setting.
+.sp
+Possible values:
+.INDENT 0.0
+.TP
+.B \(dqoff\(dq
+.TP
+.B \(dqsingletrack\(dq
+.TP
+.B \(dqalltracks\(dq
+.TP
+.B \(dqgroup\(dq
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS string Shuffle [readwrite]
+.INDENT 0.0
+.INDENT 3.5
+Indicates Player Suffle setting.
+.sp
+Possible values:
+.INDENT 0.0
+.TP
+.B \(dqoff\(dq
+.TP
+.B \(dqalltracks\(dq
+.TP
+.B \(dqgroup\(dq
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS string Scan [readwrite]
+.INDENT 0.0
+.INDENT 3.5
+Indicates Player Scan setting.
+.sp
+Possible values:
+.INDENT 0.0
+.TP
+.B \(dqoff\(dq
+.TP
+.B \(dqalltracks\(dq
+.TP
+.B \(dqgroup\(dq
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS string Status [readonly]
+.INDENT 0.0
+.INDENT 3.5
+Indicates Player Status setting.
+.sp
+Possible status:
+.INDENT 0.0
+.TP
+.B \(dqplaying\(dq
+.TP
+.B \(dqstopped\(dq
+.TP
+.B \(dqpaused\(dq
+.TP
+.B \(dqforward\-seek\(dq
+.TP
+.B \(dqreverse\-seek\(dq
+.TP
+.B \(dqerror\(dq
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS uint32 Position [readonly]
+.INDENT 0.0
+.INDENT 3.5
+Playback position in milliseconds. Changing the position may generate
+additional events that will be sent to the remote device. When position
+is 0 it means the track is starting and when it\(aqs greater than or equal
+to track\(aqs duration the track has ended.
+.sp
+Note that even if duration is not available in metadata it\(aqs possible
+to signal its end by setting position to the maximum uint32 value.
+.UNINDENT
+.UNINDENT
+.SS dict Track [readonly]
+.INDENT 0.0
+.INDENT 3.5
+Track metadata.
+.sp
+Possible values:
+.INDENT 0.0
+.TP
+.B string Title
+Track title name
+.TP
+.B string Artist
+Track artist name
+.TP
+.B string Album
+Track album name
+.TP
+.B string Genre
+Track genre name
+.TP
+.B uint32 NumberOfTracks
+Number of tracks in total
+.TP
+.B uint32 TrackNumber
+Track number
+.TP
+.B uint32 Duration
+Track duration in milliseconds
+.TP
+.B string ImgHandle
+[experimental]
+.sp
+Track image handle, available and valid only during the lifetime of an
+OBEX BIP connection to the ObexPort.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS object Device [readonly]
+.INDENT 0.0
+.INDENT 3.5
+Device object path.
+.UNINDENT
+.UNINDENT
+.SS string Name [readonly]
+.INDENT 0.0
+.INDENT 3.5
+Player name
+.UNINDENT
+.UNINDENT
+.SS string Type [readonly]
+.INDENT 0.0
+.INDENT 3.5
+Player type
+.sp
+Possible values:
+.INDENT 0.0
+.INDENT 3.5
+\(dqAudio\(dq
+\(dqVideo\(dq
+\(dqAudio Broadcasting\(dq
+\(dqVideo Broadcasting\(dq
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS string Subtype [readonly]
+.INDENT 0.0
+.INDENT 3.5
+Player subtype
+.sp
+Possible values:
+.INDENT 0.0
+.INDENT 3.5
+\(dqAudio Book\(dq
+\(dqPodcast\(dq
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS boolean Browsable [readonly]
+.INDENT 0.0
+.INDENT 3.5
+If present indicates the player can be browsed using MediaFolder
+interface.
+.sp
+Possible values:
+.INDENT 0.0
+.TP
+.B True
+Supported and active
+.TP
+.B False
+Supported but inactive
+.UNINDENT
+.sp
+Note: If supported but inactive clients can enable it by using
+MediaFolder interface but it might interfere in the playback of other
+players.
+.UNINDENT
+.UNINDENT
+.SS boolean Searchable [readonly]
+.INDENT 0.0
+.INDENT 3.5
+If present indicates the player can be searched using MediaFolder
+interface.
+.sp
+Possible values:
+.INDENT 0.0
+.TP
+.B True
+Supported and active
+.TP
+.B False
+Supported but inactive
+.UNINDENT
+.sp
+Note: If supported but inactive clients can enable it by using
+MediaFolder interface but it might interfere in the playback of other
+players.
+.UNINDENT
+.UNINDENT
+.SS object Playlist
+.INDENT 0.0
+.INDENT 3.5
+Playlist object path.
+.UNINDENT
+.UNINDENT
+.SS uint16 ObexPort [readonly, experimental]
+.INDENT 0.0
+.INDENT 3.5
+If present indicates the player can get cover art using BIP over OBEX
+on this PSM port.
+.UNINDENT
+.UNINDENT
+.\" Generated by docutils manpage writer.
+.
