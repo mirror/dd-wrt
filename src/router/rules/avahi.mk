@@ -8,8 +8,8 @@ avahi-configure: expat-configure expat dbus-configure dbus libdaemon-configure l
 	mkdir -p avahi/build_normal
 	cd avahi && ./autogen.sh NOCONFIGURE=1
 	cd avahi/build_utils && ../configure --prefix=/usr --host=$(ARCH)-linux \
-		--sysconfdir=/tmp \
-		--localstatedir=/tmp/var \
+		--sysconfdir=/etc \
+		--localstatedir=/var \
 		--with-distro=none \
 		--enable-introspection=no \
 		--enable-dbus \
@@ -36,8 +36,8 @@ avahi-configure: expat-configure expat dbus-configure dbus libdaemon-configure l
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" 
 
 	cd avahi/build_normal && ../configure --prefix=/usr --host=$(ARCH)-linux \
-		--sysconfdir=/tmp \
-		--localstatedir=/tmp/var \
+		--sysconfdir=/etc \
+		--localstatedir=/var \
 		--with-distro=none \
 		--enable-introspection=no \
 		--disable-dbus \
