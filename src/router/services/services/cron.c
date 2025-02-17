@@ -107,7 +107,7 @@ void start_cron(void)
 	 * ppp_peer.db backup
 	 */
 	unlink("/tmp/cron.d/ppp_peer_backup"); //
-	if (jffs_mounted()) {
+	if (jffs_mounted() && (nvram_matchi("pppoeserver_enabled", 1) || nvram_matchi("pptpd_enable", 1))) {
 		fp = fopen("/tmp/cron.d/ppp_peer_backup", "w");
 		if (nvram_matchi("pppoeserver_enabled", 1))
 			fprintf(fp, "1 0,12 * * * root /bin/cp /tmp/pppoe_peer.db /jffs/etc/freeradius/\n");
