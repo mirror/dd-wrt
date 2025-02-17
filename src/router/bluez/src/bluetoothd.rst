@@ -42,7 +42,7 @@ OPTIONS
                     controlling terminal in addition to syslog.
 
 -f, --configfile    Specifies an explicit config file path instead of relying
-                    on the default path(*/usr/local/etc/bluetooth/main.conf*)
+                    on the default path(*/usr/etc/bluetooth/main.conf*)
                     for the config file.
 
 -d, --debug=<file1>:<file2>:...
@@ -79,7 +79,7 @@ OPTIONS
 FILES
 =====
 
-*/usr/local/etc/bluetooth/main.conf*
+*/usr/etc/bluetooth/main.conf*
     Location of the global configuration file.
 
 RESOURCES

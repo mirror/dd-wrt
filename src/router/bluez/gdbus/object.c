@@ -22,6 +22,10 @@
 #include "gdbus.h"
 #include "src/shared/util.h"
 
+#ifndef MAX_INPUT
+#define MAX_INPUT _POSIX_MAX_INPUT
+#endif
+
 #define info(fmt...)
 #define error(fmt...)
 #define debug(fmt...)
