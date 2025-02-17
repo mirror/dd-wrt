@@ -13,6 +13,12 @@ ifeq ($(CONFIG_IPQ6018),y)
 	mkdir -p $(INSTALLDIR)$(FIRMWAREDIR)/marvell
 	cp -v aqr/* $(INSTALLDIR)$(FIRMWAREDIR)/marvell
 endif
+ifeq ($(CONFIG_MVEBU),y)
+	mkdir $(INSTALLDIR)$(FIRMWAREDIR)/mrvl
+	cp mrvl/sd8887_uapsta.bin $(INSTALLDIR)$(FIRMWAREDIR)/mrvl
+	cp mrvl/sdsd8997_combo_v4.bin $(INSTALLDIR)$(FIRMWAREDIR)/mrvl
+	ln -s ../mrvl/sdsd8997_combo_v4.bin $(INSTALLDIR)$(FIRMWAREDIR)/mrvl/sd8997_uapsta.bin
+endif
 ifeq ($(ARCH),i386)
 	cp -vr rtl_nic $(INSTALLDIR)$(FIRMWAREDIR)
 	cp -vr amd $(INSTALLDIR)$(FIRMWAREDIR)
