@@ -254,9 +254,11 @@ endif
 
 ifneq ($(CONFIG_LIBQMI),y)
 ifneq ($(CONFIG_LIBMBIM),y)
+ifneq ($(CONFIG_BLUEZ),y)
 	rm -f $(INSTALLDIR)/glib20/usr/lib/libgthread*
 	rm -f $(INSTALLDIR)/glib20/usr/lib/libgobject*
 	rm -f $(INSTALLDIR)/glib20/usr/lib/libgio*
+endif
 endif
 endif
 	rm -rf $(INSTALLDIR)/glib20/usr/libexec
