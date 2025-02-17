@@ -575,7 +575,7 @@ obj-$(CONFIG_IPQ6018) += cryptodev
 obj-$(CONFIG_IPQ806X) += cryptodev
 obj-$(CONFIG_MVEBU) += cryptodev
 obj-$(CONFIG_NUT) += nut
-obj-$(CONFIG_BLUEZ) += glib20 readline dbus bluez bluez-tools
+obj-$(CONFIG_BLUEZ) += libffi glib20 readline dbus bluez bluez-tools
 
 ifneq ($(CONFIG_DIST),"micro")
 obj-y+=wrtbwmon
