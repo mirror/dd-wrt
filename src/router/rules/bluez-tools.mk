@@ -3,6 +3,8 @@ bluez-tools-configure:
 	cd bluez-tools && autoreconf --force --install --verbose
 	rm -f bluez-tools/config.cache
 	cd bluez-tools && ./configure --prefix=/usr --libdir=/usr/lib --host=$(ARCH)-linux \
+	--sysconfdir=/etc \
+	--localstatedir=/tmp/var \
 	GLIB_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -I$(TOP)/glib20/libglib/build -I$(TOP)/glib20/libglib/build/glib" \
 	GLIB_LIBS="-L$(TOP)/glib20/libglib -L$(TOP)/glib20/libglib/glib -L$(TOP)/glib20/libglib/build/glib -L$(TOP)/glib20/libglib/build/gthread -L$(TOP)/glib20/libglib/build/gio -L$(TOP)/glib20/libglib/build/gobject" \
 	CFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) -I$(TOP) -I$(TOP)/zlib  -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -UHAVE_SELINUX -DNEED_PRINTF -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc" \

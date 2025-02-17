@@ -5,7 +5,7 @@ dbus-configure:
 	cd dbus && ./autogen.sh --prefix=/usr --host=$(ARCH)-linux \
 	--disable-Werror --disable-selinux --disable-tests \
 	--sysconfdir=/etc \
-	--localstatedir=/var \
+	--localstatedir=/tmp/var \
 	--disable-xml-docs \
 	--without-x \
 	--enable-systemd=no \

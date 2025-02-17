@@ -9,7 +9,7 @@ avahi-configure: expat-configure expat dbus-configure dbus libdaemon-configure l
 	cd avahi && ./autogen.sh NOCONFIGURE=1
 	cd avahi/build_utils && ../configure --prefix=/usr --host=$(ARCH)-linux \
 		--sysconfdir=/tmp \
-		--localstatedir=/var \
+		--localstatedir=/tmp/var \
 		--with-distro=none \
 		--enable-introspection=no \
 		--enable-dbus \
