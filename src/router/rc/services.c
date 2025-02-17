@@ -270,6 +270,7 @@ static int start_services_main(int argc, char **argv)
 		system("/usr/sbin/dns_responder 192.168.11.1 55300 &");
 	}
 #endif
+	start_service_f("dbus");
 #ifdef HAVE_MDNS
 	start_service_f("mdns");
 #endif
@@ -420,6 +421,7 @@ static int stop_services_main(int argc, char **argv)
 #ifdef HAVE_MDNS
 	stop_service_f("mdns");
 #endif
+	stop_service_f("dbus");
 
 	stop_running_main(0, NULL);
 	return 0;
