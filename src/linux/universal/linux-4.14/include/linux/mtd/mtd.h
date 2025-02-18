@@ -354,6 +354,7 @@ struct mtd_info {
 	struct mtd_ecc_stats ecc_stats;
 	/* Subpage shift (NAND) */
 	int subpage_sft;
+	loff_t fixup_offset;
 
 	void *priv;
 

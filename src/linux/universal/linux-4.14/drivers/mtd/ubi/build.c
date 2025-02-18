@@ -1347,7 +1347,7 @@ static void __init ubi_auto_attach(void)
 //		copy = kmalloc(sizeof(*mtd), GFP_KERNEL);
 //		memcpy(copy, mtd, sizeof(*mtd));
 //		mtd = copy;
-		mtd->addr += i;
+		mtd->fixup_offset = i;
 
 		/* auto-add only media types where UBI makes sense */
 		if (mtd->type == MTD_NANDFLASH ||
