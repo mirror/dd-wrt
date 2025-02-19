@@ -64,7 +64,7 @@ void start_sfe(void)
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
 #endif
 		dd_loginfo("ctf", "fast path (CTF) forwarding successfully started");
-	} else if (nvram_match("sfe", "3")) { // ecm nss
+	} else if (nvram_match("sfe", "3") && nvram_match("nss", "1")) { // ecm nss
 		rmmod("fast-classifier");
 		rmmod("shortcut-fe-ipv6");
 		rmmod("shortcut-fe");
@@ -76,7 +76,7 @@ void start_sfe(void)
 		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect");
 #endif
 		dd_loginfo("ecm-nss", "Enhanced Connection Manager (ECM) forwarding engine successfully started");
-	} else if (nvram_match("sfe", "4")) { // ecm sfe
+	} else if (nvram_match("sfe", "4") && nvram_match("nss", "1")) { // ecm sfe
 		rmmod("fast-classifier");
 		rmmod("shortcut-fe-ipv6");
 		rmmod("shortcut-fe");
@@ -88,7 +88,7 @@ void start_sfe(void)
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
 #endif
 		dd_loginfo("ecm-nss", "shortcut (NSS-SFE) forwarding engine successfully started");
-	} else if (nvram_match("sfe", "5")) { // ecm sfe & nss
+	} else if (nvram_match("sfe", "5") && nvram_match("nss", "1")) { // ecm sfe & nss
 		rmmod("fast-classifier");
 		rmmod("shortcut-fe-ipv6");
 		rmmod("shortcut-fe");
