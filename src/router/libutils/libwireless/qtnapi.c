@@ -1123,8 +1123,8 @@ void rpc_set_radio(int unit, int subunit, int on)
 			if (ret < 0)
 				dbG("Qcsapi qcsapi_interface_get_mac_addr %s error, return: %d\n", WIFINAME, ret);
 
-			sprintf(macbuf, "%02X%02X%02X%02X%02X%02X", wl_macaddr[0]&0xff, wl_macaddr[1]&0xff, wl_macaddr[2]&0xff, wl_macaddr[3]&0xff,
-				wl_macaddr[4]&0xff, wl_macaddr[5]&0xff);
+			sprintf(macbuf, "%02X%02X%02X%02X%02X%02X", wl_macaddr[0] & 0xff, wl_macaddr[1] & 0xff,
+				wl_macaddr[2] & 0xff, wl_macaddr[3] & 0xff, wl_macaddr[4] & 0xff, wl_macaddr[5] & 0xff);
 			macvalue = strtoll(macbuf, (char **)NULL, 16);
 			macvalue += subunit;
 			macp = (unsigned char *)&macvalue;
@@ -1559,8 +1559,8 @@ void rpc_update_mbss(const char *name, const char *value)
 			if (ret < 0)
 				dbG("Qcsapi qcsapi_interface_get_mac_addr %s error, return: %d\n", WIFINAME, ret);
 
-			sprintf(macbuf, "%02X%02X%02X%02X%02X%02X", wl_macaddr[0]&0xff, wl_macaddr[1]&0xff, wl_macaddr[2]&0xff, wl_macaddr[3]&0xff,
-				wl_macaddr[4]&0xff, wl_macaddr[5]&0xff);
+			sprintf(macbuf, "%02X%02X%02X%02X%02X%02X", wl_macaddr[0] & 0xff, wl_macaddr[1] & 0xff,
+				wl_macaddr[2] & 0xff, wl_macaddr[3] & 0xff, wl_macaddr[4] & 0xff, wl_macaddr[5] & 0xff);
 			macvalue = strtoll(macbuf, (char **)NULL, 16);
 			macvalue += subunit;
 			macp = (unsigned char *)&macvalue;

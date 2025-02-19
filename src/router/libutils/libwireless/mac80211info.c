@@ -1482,14 +1482,17 @@ int mac80211_check_band(const char *interface, int checkband)
 	int rem, rem2, freq_mhz;
 	int phy;
 	int bandfound = 0;
+	lock();
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1) {
+		unlock();
 		return 0;
 	}
 
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		unlock();
 		return 0;
 	}
 	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
@@ -1497,12 +1500,18 @@ int mac80211_check_band(const char *interface, int checkband)
 		goto out;
 	nla_for_each_nested(band, bands, rem) {
 		//			fprintf(stderr, "checkband %d band %d\n", checkband, band->nla_type);
-		if (checkband == 2 && band->nla_type == NL80211_BAND_2GHZ)
+		if (band && checkband == 2 && band->nla_type == NL80211_BAND_2GHZ) {
 			bandfound = 1;
-		if (checkband == 6 && band->nla_type == NL80211_BAND_6GHZ)
+			break;
+		}
+		if (band && checkband == 6 && band->nla_type == NL80211_BAND_6GHZ) {
 			bandfound = 1;
-		if (checkband == 5 && band->nla_type == NL80211_BAND_5GHZ)
+			break;
+		}
+		if (band && checkband == 5 && band->nla_type == NL80211_BAND_5GHZ) {
 			bandfound = 1;
+			break;
+		}
 
 #if 0
 		freqlist = nla_find(nla_data(band), nla_len(band), NL80211_BAND_ATTR_FREQS);
@@ -1521,10 +1530,12 @@ int mac80211_check_band(const char *interface, int checkband)
 #endif
 	}
 	nlmsg_free(msg);
+	unlock();
 	return bandfound;
 out:
 nla_put_failure:
 	nlmsg_free(msg);
+	unlock();
 	return 0;
 }
 
@@ -1918,8 +1929,10 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 							char *sa_region = getUEnv("region");
 							if (sa_region != NULL &&
 							    (!strcmp(sa_region, "AP") || !strcmp(sa_region, "US")) &&
-							    ieee80211_mhz2ieee(interface, freq_mhz) > 11 &&
-							    ieee80211_mhz2ieee(interface, freq_mhz) < 14 &&
+							    _ieee80211_mhz2ieee(band->nla_type == NL80211_BAND_6GHZ, freq_mhz) >
+								    11 &&
+							    _ieee80211_mhz2ieee(band->nla_type == NL80211_BAND_6GHZ, freq_mhz) <
+								    14 &&
 							    nvram_default_match("region", "SA", ""))
 								continue;
 #endif
@@ -1934,10 +1947,11 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 								continue;
 							if (band->nla_type == NL80211_BAND_6GHZ && freq_mhz == 5935)
 								regmaxbw = 20;
-							
+
 							if (max_bandwidth_mhz > regmaxbw)
 								continue;
-							list[count].channel = ieee80211_mhz2ieee(interface, freq_mhz);
+							list[count].channel =
+								_ieee80211_mhz2ieee(band->nla_type == NL80211_BAND_6GHZ, freq_mhz);
 							list[count].freq = freq_mhz;
 							if (nooverlap && max_bandwidth_mhz > 40)
 								list[count].band = newband;

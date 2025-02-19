@@ -154,7 +154,8 @@ static const char *ieee80211_ntoa(const unsigned char mac[6])
 	static char a[18];
 	int i;
 
-	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0]&0xff, mac[1]&0xff, mac[2]&0xff, mac[3]&0xff, mac[4]&0xff, mac[5]&0xff);
+	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0] & 0xff, mac[1] & 0xff, mac[2] & 0xff, mac[3] & 0xff,
+		     mac[4] & 0xff, mac[5] & 0xff);
 	return (i < 17 ? NULL : a);
 }
 

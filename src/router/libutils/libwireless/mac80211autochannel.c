@@ -371,8 +371,9 @@ struct wifi_channels *get_chan(struct wifi_channels *wifi_channels, int freq, co
 			chan->freq = CHANNEL_DISABLED;
 		}
 #if defined(HAVE_BUFFALO_SA) && defined(HAVE_ATH9K)
-		if ((!strcmp(getUEnv("region"), "AP") || !strcmp(getUEnv("region"), "US")) && ieee80211_mhz2ieee(interface, freq) > 11 &&
-		    ieee80211_mhz2ieee(interface, freq) < 14 && nvram_default_match("region", "SA", ""))
+		if ((!strcmp(getUEnv("region"), "AP") || !strcmp(getUEnv("region"), "US")) &&
+		    ieee80211_mhz2ieee(interface, freq) > 11 && ieee80211_mhz2ieee(interface, freq) < 14 &&
+		    nvram_default_match("region", "SA", ""))
 			chan->freq = CHANNEL_DISABLED;
 #endif
 #ifdef HAVE_IDEXX

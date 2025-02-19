@@ -70,7 +70,7 @@ int getValueFromPath(char *path, int dev, char *fmt, int *err)
  * DD-WRT addition (loaned from radauth) 
  */
 
-int ieee80211_mhz2ieee(const char *prefix, int freq)
+int _ieee80211_mhz2ieee(int has_6ghz, int freq)
 {
 	if (freq == 2484)
 		return 14;
@@ -94,7 +94,7 @@ int ieee80211_mhz2ieee(const char *prefix, int freq)
 		return (freq - 4000) / 5;
 	if (freq < 5000)
 		return 15 + ((freq - 2512) / 20);
-	if (prefix && has_6ghz(prefix)) {
+	if (has_6ghz) {
 		if (freq == 5935)
 			return (freq - 5925) / 5;
 		if (freq > 5950 && freq <= 7115)
@@ -110,6 +110,11 @@ int ieee80211_mhz2ieee(const char *prefix, int freq)
 		return 4;
 
 	return ((freq - 5000) / 5) % 0xff;
+}
+
+int ieee80211_mhz2ieee(const char *prefix, int freq)
+{
+	return _ieee80211_mhz2ieee(prefix ? has_6ghz(prefix) : 0, freq);
 }
 
 #ifdef HAVE_MVEBU
@@ -222,9 +227,9 @@ int has_vht80plus80(const char *prefix)
 
 #ifndef HAVE_MADWIFI
 
-unsigned int ieee80211_ieee2mhz(const char *prefix, unsigned int chan)
+unsigned int ieee80211_ieee2mhz(int has_6ghz, unsigned int chan)
 {
-	if (prefix && has_6ghz(prefix)) {
+	if (has_6ghz) {
 		if (chan == 2)
 			return 5935;
 		if (chan <= 233)
@@ -240,6 +245,11 @@ unsigned int ieee80211_ieee2mhz(const char *prefix, unsigned int chan)
 		return ((4000) + (chan * 5));
 	else
 		return ((5000) + (chan * 5));
+}
+
+int ieee80211_ieee2mhz(const char *prefix, unsigned int chan)
+{
+	return _ieee80211_mhz2ieee(prefix ? has_6ghz(prefix) : 0, chan);
 }
 
 #if defined(HAVE_RT2880) || defined(HAVE_RT61)
@@ -476,7 +486,8 @@ static const char *ieee80211_ntoa(const uint8_t mac[6])
 	static char a[18];
 	int i;
 
-	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0]&0xff, mac[1]&0xff, mac[2]&0xff, mac[3]&0xff, mac[4]&0xff, mac[5]&0xff);
+	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0] & 0xff, mac[1] & 0xff, mac[2] & 0xff, mac[3] & 0xff,
+		     mac[4] & 0xff, mac[5] & 0xff);
 	return (i < 17 ? NULL : a);
 }
 
@@ -3810,7 +3821,7 @@ int getmaxvaps(const char *prefix)
 	if (is_ath10k(prefix))
 		return 16;
 	if (is_ath11k(prefix)) {
-		if (nvram_match("mem_profile","1024"))
+		if (nvram_match("mem_profile", "1024"))
 			return 16;
 		else
 			return 8;
