@@ -50,7 +50,7 @@ void start_bluetooth(void)
 	eval("modprobe", "hidp");
 	eval("modprobe", "hci_uart");
 	eval("modprobe", "btusb");
-	system("/usr/lib/bluetooth/bluetoothd&");
+	system("bluetoothd&");
 	int brand = getRouterBrand();
 	switch (brand) {
 	case ROUTER_LINKSYS_MR7350:
