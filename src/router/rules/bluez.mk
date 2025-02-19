@@ -8,6 +8,7 @@ bluez-configure:
 	--disable-static \
 	--enable-shared \
 	--enable-client \
+	--enable-mesh \
 	--enable-datafiles \
 	--enable-experimental \
 	--enable-library \
@@ -26,7 +27,7 @@ bluez-configure:
 	GLIB_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -I$(TOP)/glib20/libglib/build -I$(TOP)/glib20/libglib/build/glib" \
 	GLIB_LIBS="-L$(TOP)/glib20/libglib -L$(TOP)/glib20/libglib/glib -L$(TOP)/glib20/libglib/build/glib -L$(TOP)/glib20/libglib/build/gthread -L$(TOP)/glib20/libglib/build/gio -L$(TOP)/glib20/libglib/build/gobject" \
 	CFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) -I$(TOP) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -UHAVE_SELINUX -DNEED_PRINTF -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc" \
-	LDFLAGS="$(LDLTO) -L$(TOP)/dbus/dbus/.libs -L$(TOP)/readline/shlib -L$(TOP)/ncurses/lib -lncurses -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="$(LDLTO) -L$(TOP)/dbus/dbus/.libs -L$(TOP)/readline/shlib -L$(TOP)/json-c/.libs -L$(TOP)/ncurses/lib -lncurses -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	ac_cv_lib_rt_clock_gettime=yes
 
 bluez:
