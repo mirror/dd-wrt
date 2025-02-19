@@ -21,6 +21,7 @@ libjson_cinclude_HEADERS = \
 	json_object_private.h \
 	json_tokener.h \
 	json_util.h \
+	json_types.h \
 	linkhash.h \
 	printbuf.h \
 	random_seed.h
