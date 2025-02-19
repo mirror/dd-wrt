@@ -273,10 +273,6 @@ AC_ARG_ENABLE(mesh, AS_HELP_STRING([--enable-mesh],
 		[enable Mesh profile support]), [enable_mesh=${enableval}])
 AM_CONDITIONAL(MESH, test "${enable_mesh}" = "yes")
 
-if (test "${enable_mesh}" = "yes"); then
-	PKG_CHECK_MODULES(JSONC, json-c >= 0.13)
-fi
-
 AC_ARG_ENABLE(midi, AS_HELP_STRING([--enable-midi],
                 [enable MIDI support]), [enable_midi=${enableval}])
 AM_CONDITIONAL(MIDI, test "${enable_midi}" = "yes")
