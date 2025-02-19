@@ -1,6 +1,6 @@
 
 bluez-configure:
-	#cd bluez && autoreconf -fsi
+	cd bluez && autoreconf -fsi
 	rm -f bluez/config.cache
 	cd bluez && ./configure --prefix=/usr --libdir=/usr/lib --host=$(ARCH)-linux \
 	--sysconfdir=/etc \
