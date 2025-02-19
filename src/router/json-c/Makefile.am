@@ -42,6 +42,7 @@ libjson_c_la_SOURCES = \
 	json_util.c \
 	linkhash.c \
 	printbuf.c \
+	strerror_override.c \
 	random_seed.c
 
 
