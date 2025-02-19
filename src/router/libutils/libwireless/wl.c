@@ -227,7 +227,7 @@ int has_vht80plus80(const char *prefix)
 
 #ifndef HAVE_MADWIFI
 
-unsigned int ieee80211_ieee2mhz(int has_6ghz, unsigned int chan)
+unsigned int _ieee80211_ieee2mhz(int has_6ghz, unsigned int chan)
 {
 	if (has_6ghz) {
 		if (chan == 2)
@@ -247,9 +247,9 @@ unsigned int ieee80211_ieee2mhz(int has_6ghz, unsigned int chan)
 		return ((5000) + (chan * 5));
 }
 
-int ieee80211_ieee2mhz(const char *prefix, unsigned int chan)
+unsigned int int ieee80211_ieee2mhz(const char *prefix, unsigned int chan)
 {
-	return _ieee80211_mhz2ieee(prefix ? has_6ghz(prefix) : 0, chan);
+	return _ieee80211_ieee2mhz(prefix ? has_6ghz(prefix) : 0, chan);
 }
 
 #if defined(HAVE_RT2880) || defined(HAVE_RT61)
