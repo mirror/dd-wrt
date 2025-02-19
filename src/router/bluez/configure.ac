@@ -298,13 +298,13 @@ AC_ARG_ENABLE([external_ell], AS_HELP_STRING([--enable-external-ell],
 if (test "${enable_external_ell}" = "yes"); then
 	PKG_CHECK_MODULES(ELL, ell >= 0.39)
 fi
-if (test "${enable_external_ell}" != "yes" &&
-		(test "${enable_btpclient}" = "yes" || test "${enable_mesh}" = "yes")); then
-	if (test ! -f ${srcdir}/ell/ell.h) &&
-			(test ! -f ${srcdir}/../ell/ell/ell.h); then
-				AC_MSG_ERROR(ELL source is required or use --enable-external-ell)
-	fi
-fi
+#if (test "${enable_external_ell}" != "yes" &&
+#		(test "${enable_btpclient}" = "yes" || test "${enable_mesh}" = "yes")); then
+#	if (test ! -f ${srcdir}/ell/ell.h) &&
+#			(test ! -f ${srcdir}/../ell/ell/ell.h); then
+#				AC_MSG_ERROR(ELL source is required or use --enable-external-ell)
+#	fi
+#fi
 AM_CONDITIONAL(EXTERNAL_ELL, test "${enable_external_ell}" = "yes" ||
 				(test "${enable_btpclient}" != "yes" &&
 						test "${enable_mesh}" != "yes"))
