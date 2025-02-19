@@ -34,6 +34,7 @@ bluez:
 
 bluez-install:
 	$(MAKE) -C bluez DESTDIR=$(INSTALLDIR)/bluez install
+	mv $(INSTALLDIR)/usr/lib/bluetooth/bluetoothd $(INSTALLDIR)/usr/sbin
 	rm -rf $(INSTALLDIR)/bluez/usr/include
 	rm -f $(INSTALLDIR)/bluez/usr/lib/*.la
 	rm -f $(INSTALLDIR)/bluez/usr/lib/*.a
