@@ -1767,7 +1767,7 @@ void start_wifi_drivers(void)
 			load_ath11k_internal(profile, 1, 0, frame_mode, "");
 			break;
 		case ROUTER_FORTINET_FAP231F:
-			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nss_disabled(), frame_mode,
+			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode,
 					     "");
 			wait_for_wifi(2);
 			load_ath10k();
@@ -1787,14 +1787,14 @@ void start_wifi_drivers(void)
 			   eval("ssdk_sh", "debug", "phy", "set", "8", "0x40070000", "0x3200"); */
 			//                      char *cert_region = get_deviceinfo_linksys("cert_region");
 			//                      if (!cert_region)
-			load_ath11k_internal(profile, 1, !nvram_match("ath11k_nss", "0") && !nss_disabled(), frame_mode,
+			load_ath11k_internal(profile, 1, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode,
 					     cert_region);
 			minif = 3;
 			break;
 		case ROUTER_LINKSYS_MX8500:
 			//                      char *cert_region = get_deviceinfo_linksys("cert_region");
 			//                      if (!cert_region)
-			load_ath11k_internal(profile, 1, !nvram_match("ath11k_nss", "0") && !nss_disabled(), frame_mode,
+			load_ath11k_internal(profile, 1, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode,
 					     cert_region);
 			minif = 3;
 			break;
@@ -1802,7 +1802,7 @@ void start_wifi_drivers(void)
 		case ROUTER_LINKSYS_MX5300:
 			//                      char *cert_region = get_deviceinfo_linksys("cert_region");
 			//                      if (!cert_region)
-			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nss_disabled(), frame_mode,
+			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode,
 					     cert_region);
 			wait_for_wifi(2);
 			load_ath10k();
@@ -1810,7 +1810,7 @@ void start_wifi_drivers(void)
 			break;
 
 		default:
-			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nss_disabled(), frame_mode,
+			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode,
 					     "");
 			break;
 		}
