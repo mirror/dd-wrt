@@ -247,7 +247,7 @@ unsigned int _ieee80211_ieee2mhz(int has_6ghz, unsigned int chan)
 		return ((5000) + (chan * 5));
 }
 
-unsigned int int ieee80211_ieee2mhz(const char *prefix, unsigned int chan)
+unsigned int ieee80211_ieee2mhz(const char *prefix, unsigned int chan)
 {
 	return _ieee80211_ieee2mhz(prefix ? has_6ghz(prefix) : 0, chan);
 }
