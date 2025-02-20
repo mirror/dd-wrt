@@ -475,10 +475,12 @@ static int nss_disabled(int setcur)
 	char *next;
 	char var[80];
 	char *vifs;
-	if (nvram_match("nss","0"))
-		return 1;
 	if (setcur)
 		nvram_set("nonss", "1");
+
+	if (nvram_match("nss","0")) {
+		return 1;
+	}
 	for (count = 0; count < 3; count++) {
 		char wifivifs[32];
 		sprintf(wifivifs, "wlan%d_vifs", count);
