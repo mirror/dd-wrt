@@ -198,6 +198,13 @@ DECLARE_SERVICE(arch_defaults);
 DECLARE_SERVICE(dbus);
 DECLARE_SERVICE(bluetooth);
 
+
+#if defined(HAVE_IPQ6018)
+int nss_disabled(int setcur);
+#define has_nss !nss_disabled(0)
+#else
+#define has_nss 1
+#endif
 extern void run_pptp(int status);
 
 #ifdef HAVE_UNBOUND

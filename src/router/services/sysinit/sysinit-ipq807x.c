@@ -453,7 +453,8 @@ static int use_nss_11_4(int setcur)
 	for (count = 0; count < 3; count++) {
 		char wifivifs[32];
 		sprintf(wifivifs, "wlan%d_vifs", count);
-		if (nvram_nmatch("mesh", "wlan%d_mode", count) || nvram_nmatch("wdssta", "wlan%d_mode", count) || nvram_nmatch("wdssta_mtik", "wlan%d_mode", count)   && !nvram_nmatch("disabled", "wlan%d_net_mode", count))
+		if (nvram_nmatch("mesh", "wlan%d_mode", count) || nvram_nmatch("wdssta", "wlan%d_mode", count) ||
+		    nvram_nmatch("wdssta_mtik", "wlan%d_mode", count) && !nvram_nmatch("disabled", "wlan%d_net_mode", count))
 			return 1;
 		vifs = nvram_safe_get(wifivifs);
 		if (vifs != NULL && *vifs) {
@@ -469,7 +470,7 @@ static int use_nss_11_4(int setcur)
 	return 0;
 }
 
-static int nss_disabled(int setcur)
+int nss_disabled(int setcur)
 {
 	int count;
 	char *next;
@@ -478,19 +479,21 @@ static int nss_disabled(int setcur)
 	if (setcur)
 		nvram_set("nonss", "1");
 
-	if (nvram_match("nss","0")) {
+	if (nvram_match("nss", "0")) {
 		return 1;
 	}
 	for (count = 0; count < 3; count++) {
 		char wifivifs[32];
 		sprintf(wifivifs, "wlan%d_vifs", count);
-		if ((nvram_nmatch("wdsap", "wlan%d_mode", count) || nvram_nmatch("apup", "wlan%d_mode", count)) && !nvram_nmatch("disabled", "wlan%d_net_mode", count))
+		if ((nvram_nmatch("wdsap", "wlan%d_mode", count) || nvram_nmatch("apup", "wlan%d_mode", count)) &&
+		    !nvram_nmatch("disabled", "wlan%d_net_mode", count))
 			return 1;
 		vifs = nvram_safe_get(wifivifs);
 		if (vifs != NULL && *vifs) {
 			foreach(var, vifs, next)
 			{
-				if ((nvram_nmatch("wdsap", "%s_mode", var)  || nvram_nmatch("apup", "%s_mode", var)) && !nvram_nmatch("disabled", "%s_net_mode", var))
+				if ((nvram_nmatch("wdsap", "%s_mode", var) || nvram_nmatch("apup", "%s_mode", var)) &&
+				    !nvram_nmatch("disabled", "%s_net_mode", var))
 					return 1;
 			}
 		}
@@ -523,8 +526,7 @@ static void load_nss(int profile, int maple, int cores, char *type)
 
 	snprintf(driver, sizeof(driver), "qca-nss-drv-%s", type);
 
-	eval_silence("insmod", driver, use_nss_11_4(1) ? "mesh=1" : "mesh=0",
-		     nss_disabled(1) ? "disable_nss=1" : "disable_nss=0");
+	eval_silence("insmod", driver, use_nss_11_4(1) ? "mesh=1" : "mesh=0", nss_disabled(1) ? "disable_nss=1" : "disable_nss=0");
 	if (!nss_disabled(0)) {
 		loadnss("qca-nss-crypto", type);
 		loadnss("qca-nss-cfi-cryptoapi", type);
@@ -1722,10 +1724,10 @@ void start_wifi_drivers(void)
 		if (!use_nss_11_4(0) && nvram_match("cur_nss", "11.4"))
 			sys_reboot();
 	}
-	if (nss_disabled(0) && nvram_match("nonss","0"))
-			sys_reboot();
-	if (!nss_disabled(0) && nvram_match("nonss","1"))
-			sys_reboot();
+	if (nss_disabled(0) && nvram_match("nonss", "0"))
+		sys_reboot();
+	if (!nss_disabled(0) && nvram_match("nonss", "1"))
+		sys_reboot();
 
 	if (!nvram_match("nss", nvram_safe_get("old_nss")))
 		sys_reboot();
@@ -1769,8 +1771,7 @@ void start_wifi_drivers(void)
 			load_ath11k_internal(profile, 1, 0, frame_mode, "");
 			break;
 		case ROUTER_FORTINET_FAP231F:
-			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode,
-					     "");
+			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode, "");
 			wait_for_wifi(2);
 			load_ath10k();
 			minif = 3;
@@ -1812,8 +1813,7 @@ void start_wifi_drivers(void)
 			break;
 
 		default:
-			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode,
-					     "");
+			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode, "");
 			break;
 		}
 		wait_for_wifi(minif);
