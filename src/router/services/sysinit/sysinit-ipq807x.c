@@ -176,14 +176,17 @@ void *get_deviceinfo(char *partname, char *var)
 	free(mem);
 	return NULL;
 }
+
 void *get_deviceinfo_linksys(char *var)
 {
 	return get_deviceinfo("devinfo", var);
 }
+
 void *get_deviceinfo_fap(char *var)
 {
 	return get_deviceinfo("APPSBLENV", var);
 }
+
 void *get_deviceinfo_wxr(char *var)
 {
 	return get_deviceinfo("appsblenv", var);
@@ -334,12 +337,12 @@ void patchvht160(char *file, int phynum)
 		fread(mem, len, 1, fp);
 		fclose(fp);
 
-		//		fprintf(stderr, "old boardflag = %X\n", s[68 / 4]);
-		//		s[68 / 4] |= 0x800;
-		//		s[68 / 4] |= 0x1000;
-		//		fprintf(stderr, "new boardflag = %X\n", s[68 / 4]);
+		//              fprintf(stderr, "old boardflag = %X\n", s[68 / 4]);
+		//              s[68 / 4] |= 0x800;
+		//              s[68 / 4] |= 0x1000;
+		//              fprintf(stderr, "new boardflag = %X\n", s[68 / 4]);
 
-		//		fprintf(stderr, "old boardflag = %X\n", s[1040 / 4]);
+		//              fprintf(stderr, "old boardflag = %X\n", s[1040 / 4]);
 		switch (phynum) {
 		case 0:
 			s[1040 / 4] |= 0x800;
@@ -354,7 +357,7 @@ void patchvht160(char *file, int phynum)
 			s[1376 / 4] |= 0x1000;
 			break;
 		}
-		//		fprintf(stderr, "new boardflag = %X\n", s[1040 / 4]);
+		//              fprintf(stderr, "new boardflag = %X\n", s[1040 / 4]);
 		calcchecksum(mem, 0, len);
 		FILE *fp = fopen(file, "wb");
 		fwrite(mem, len, 1, fp);
@@ -436,6 +439,7 @@ static void init_skb(int profile, int maple)
 	if (!skb_recycler_enable)
 		sysprintf("echo %d > /proc/net/skb_recycler/flush", 1);
 }
+
 static int use_mesh(int setcur)
 {
 	int count;
@@ -458,7 +462,7 @@ static int use_mesh(int setcur)
 			}
 		}
 	}
-	if (setcur)
+	if (!nvram_match("force_old_nss", "1") && setcur)
 		nvram_set("cur_nss", "12.5");
 	return 0;
 }
@@ -652,6 +656,7 @@ void start_setup_affinity(void)
 		}
 	}
 }
+
 void start_initvlans(void)
 {
 	int brand = getRouterBrand();
@@ -718,12 +723,12 @@ void start_initvlans(void)
 		eval_silence("ssdk_sh", "port", "poweron", "set", "5");
 		eval_silence("ssdk_sh", "fdb", "entry", "flush", "0");
 
-		/*drop invalid tcp*/
-		//		eval_silence("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
+		/*drop invalid tcp */
+		//              eval_silence("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
 		/* drop tcp/udp checksum errors */
-		//		eval_silence("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
+		//              eval_silence("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
 		/* enable pppoe */
-		//		eval_silence("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
+		//              eval_silence("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
 
 		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
 		eval_silence("ssdk_sh", "port", "flowctrlforcemode", "set", "6", "enable");
@@ -787,12 +792,12 @@ void start_initvlans(void)
 		eval_silence("ssdk_sh", "port", "poweron", "set", "5");
 		eval_silence("ssdk_sh", "fdb", "entry", "flush", "0");
 
-		/*drop invalid tcp*/
-		//		eval_silence("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
+		/*drop invalid tcp */
+		//              eval_silence("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
 		/* drop tcp/udp checksum errors */
-		//		eval_silence("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
+		//              eval_silence("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
 		/* enable pppoe */
-		//		eval_silence("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
+		//              eval_silence("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
 
 		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
 		eval_silence("ssdk_sh", "port", "flowctrlforcemode", "set", "6", "enable");
@@ -881,12 +886,12 @@ void start_initvlans(void)
 		eval_silence("ssdk_sh", "portVlan", "svlanTPID", "set", "0x8100");
 		eval_silence("ssdk_sh", "port", "poweron", "set", "2");
 		eval_silence("ssdk_sh", "fdb", "entry", "flush", "0");
-		/*drop invalid tcp*/
-		//		eval_silence("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
+		/*drop invalid tcp */
+		//              eval_silence("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
 		/* drop tcp/udp checksum errors */
-		//		eval_silence("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
+		//              eval_silence("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
 		/* enable pppoe */
-		//		eval_silence("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
+		//              eval_silence("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
 
 		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
 		eval_silence("ssdk_sh", "port", "flowctrlforcemode", "set", "6", "enable");
@@ -946,12 +951,12 @@ void start_initvlans(void)
 		eval_silence("ssdk_sh", "portVlan", "svlanTPID", "set", "0x8100");
 		eval_silence("ssdk_sh", "port", "poweron", "set", "2");
 		eval_silence("ssdk_sh", "fdb", "entry", "flush", "0");
-		/*drop invalid tcp*/
-		//		eval_silence("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
+		/*drop invalid tcp */
+		//              eval_silence("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
 		/* drop tcp/udp checksum errors */
-		//		eval_silence("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
+		//              eval_silence("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
 		/* enable pppoe */
-		//		eval_silence("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
+		//              eval_silence("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
 
 		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
 		eval_silence("ssdk_sh", "port", "flowctrlforcemode", "set", "6", "enable");
@@ -999,6 +1004,7 @@ static void setscaling(int maxfreq)
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
 }
+
 static void disableportlearn(void)
 {
 	eval_silence("ssdk_sh", "fdb", "portLearn", "set", "0", "disable");
@@ -1016,6 +1022,7 @@ static void disableportlearn(void)
 	eval_silence("ssdk_sh", "fdb", "learnCtrl", "set", "disable");
 	eval_silence("ssdk_sh", "fdb", "entry", "flush", "1");
 }
+
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
@@ -1046,7 +1053,7 @@ void start_sysinit(void)
 		nvram_default_get("eth2_label", "lan3");
 		nvram_default_get("eth3_label", "lan4");
 		nvram_default_get("eth4_label", "wan");
-		nvram_default_get("sfe","3");
+		nvram_default_get("sfe", "3");
 		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		break;
 	case ROUTER_LINKSYS_MR7500:
@@ -1058,7 +1065,7 @@ void start_sysinit(void)
 		nvram_default_get("eth2_label", "lan2");
 		nvram_default_get("eth3_label", "lan3");
 		nvram_default_get("eth4_label", "lan4");
-		nvram_default_get("sfe","3");
+		nvram_default_get("sfe", "3");
 		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		break;
 	case ROUTER_FORTINET_FAP231F:
@@ -1067,7 +1074,7 @@ void start_sysinit(void)
 		insmod("leds-gpio");
 		nvram_default_get("eth0_label", "lan1");
 		nvram_default_get("eth1_label", "wan");
-		nvram_default_get("sfe","3");
+		nvram_default_get("sfe", "3");
 		break;
 	case ROUTER_DYNALINK_DLWRX36:
 		profile = 1024;
@@ -1078,7 +1085,7 @@ void start_sysinit(void)
 		nvram_default_get("eth2_label", "lan3");
 		nvram_default_get("eth3_label", "lan4");
 		nvram_default_get("eth4_label", "wan");
-		nvram_default_get("sfe","3");
+		nvram_default_get("sfe", "3");
 		break;
 	case ROUTER_BUFFALO_WXR5950AX12:
 		insmod("aquantia");
@@ -1091,7 +1098,7 @@ void start_sysinit(void)
 		nvram_default_get("eth2_label", "lan2");
 		nvram_default_get("eth3_label", "lan3");
 		nvram_default_get("eth4_label", "lan4");
-		nvram_default_get("sfe","3");
+		nvram_default_get("sfe", "3");
 		break;
 	case ROUTER_ASUS_AX89X:
 		insmod("aquantia");
@@ -1100,9 +1107,9 @@ void start_sysinit(void)
 		load_nss_ipq807x(1024);
 		insmod("qca8k");
 		insmod("leds-gpio");
-		//		sysprintf("echo netdev > /sys/class/leds/white:wan/trigger");
-		//		sysprintf("echo eth3 > /sys/class/leds/white:wan/device_name");
-		//		sysprintf("echo link > /sys/class/leds/white:wan/link");
+		//              sysprintf("echo netdev > /sys/class/leds/white:wan/trigger");
+		//              sysprintf("echo eth3 > /sys/class/leds/white:wan/device_name");
+		//              sysprintf("echo link > /sys/class/leds/white:wan/link");
 		sysprintf("echo netdev > /sys/class/leds/white:sfp/trigger");
 		sysprintf("echo eth1 > /sys/class/leds/white:sfp/device_name");
 		sysprintf("echo 1 > /sys/class/leds/white:sfp/link");
@@ -1120,7 +1127,7 @@ void start_sysinit(void)
 		nvram_default_get("eth8_label", "lan6");
 		nvram_default_get("eth9_label", "lan7");
 		nvram_default_get("eth10_label", "lan8");
-		nvram_default_get("sfe","3");
+		nvram_default_get("sfe", "3");
 
 		break;
 	case ROUTER_LINKSYS_MX4200V2:
@@ -1138,7 +1145,7 @@ void start_sysinit(void)
 		nvram_default_get("eth3_label", "lan3");
 		nvram_default_get("eth4_label", "lan4");
 		maddr = get_deviceinfo_linksys("hw_mac_addr");
-		nvram_default_get("sfe","3");
+		nvram_default_get("sfe", "3");
 		break;
 	case ROUTER_LINKSYS_MX8500:
 		insmod("aquantia");
@@ -1150,7 +1157,7 @@ void start_sysinit(void)
 		nvram_default_get("eth2_label", "lan2");
 		nvram_default_get("eth3_label", "lan3");
 		nvram_default_get("eth4_label", "lan4");
-		nvram_default_get("sfe","3");
+		nvram_default_get("sfe", "3");
 		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		break;
 	case ROUTER_LINKSYS_MX5300:
@@ -1162,7 +1169,7 @@ void start_sysinit(void)
 		nvram_default_get("eth2_label", "lan2");
 		nvram_default_get("eth3_label", "lan3");
 		nvram_default_get("eth4_label", "lan4");
-		nvram_default_get("sfe","3");
+		nvram_default_get("sfe", "3");
 		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		break;
 	case ROUTER_LINKSYS_MX4300:
@@ -1174,7 +1181,7 @@ void start_sysinit(void)
 		nvram_default_get("eth2_label", "lan2");
 		nvram_default_get("eth3_label", "lan3");
 		nvram_default_get("eth4_label", "lan4");
-		nvram_default_get("sfe","3");
+		nvram_default_get("sfe", "3");
 		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		break;
 	case ROUTER_LINKSYS_MX4200V1:
@@ -1185,7 +1192,7 @@ void start_sysinit(void)
 		nvram_default_get("eth2_label", "lan2");
 		nvram_default_get("eth3_label", "lan3");
 		nvram_default_get("eth4_label", "lan4");
-		nvram_default_get("sfe","3");
+		nvram_default_get("sfe", "3");
 		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		break;
 	case ROUTER_LINKSYS_MR5500:
@@ -1210,7 +1217,7 @@ void start_sysinit(void)
 		break;
 	default:
 		fwlen = 0x20000;
-		nvram_default_get("sfe","3");
+		nvram_default_get("sfe", "3");
 		load_nss_ipq807x(512);
 		break;
 	}
@@ -1401,9 +1408,9 @@ void start_sysinit(void)
 		removeregdomain("/tmp/board2.bin", QCN9000);
 		removeregdomain("/tmp/cal-pci-0001:01:00.0.bin", QCN9000);
 
-		/*		set6g("/tmp/caldata2.bin");
-		set6g("/tmp/board2.bin");
-		set6g("/tmp/cal-pci-0001:01:00.0.bin");*/
+		/*              set6g("/tmp/caldata2.bin");
+		   set6g("/tmp/board2.bin");
+		   set6g("/tmp/cal-pci-0001:01:00.0.bin"); */
 		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
 		break;
 	case ROUTER_LINKSYS_MX4200V2:
@@ -1539,7 +1546,7 @@ void start_sysinit(void)
 		break;
 	case ROUTER_LINKSYS_MR7500:
 		setscaling(1800000);
-		//	disableportlearn();
+		//      disableportlearn();
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
 		eval("fw_setenv", "bootcmd",
 		     "aq_load_fw; if test $auto_recovery = no; then bootipq; elif test $boot_part = 1; then run bootpart1; else run bootpart2; fi");
@@ -1547,18 +1554,18 @@ void start_sysinit(void)
 		//reload firmware
 
 		/*
-		// for reference only 
-	if [ "1" = $wan25G_enable ] ; then
-		echo "wan25g_enable!!!"
-		echo `ssdk_sh debug phy set 8  0x4007c400 0x9454`
-		echo `ssdk_sh debug phy set 8  0x40070020 0x0e1`
-	else
-		if [ "0" = $wan25G_enable ] ; then
-		echo "wan25G_disable!!!!"
-		echo `ssdk_sh debug phy set 8  0x4007c400 0x9c54`
-		echo `ssdk_sh debug phy set 8  0x40070020 0x01e1`
-		fi
-	fi*/
+		   // for reference only 
+		   if [ "1" = $wan25G_enable ] ; then
+		   echo "wan25g_enable!!!"
+		   echo `ssdk_sh debug phy set 8  0x4007c400 0x9454`
+		   echo `ssdk_sh debug phy set 8  0x40070020 0x0e1`
+		   else
+		   if [ "0" = $wan25G_enable ] ; then
+		   echo "wan25G_disable!!!!"
+		   echo `ssdk_sh debug phy set 8  0x4007c400 0x9c54`
+		   echo `ssdk_sh debug phy set 8  0x40070020 0x01e1`
+		   fi
+		   fi */
 
 		break;
 	case ROUTER_FORTINET_FAP231F:
@@ -1631,7 +1638,7 @@ void start_sysinit(void)
 	writestr("/sys/class/leds/wifi1/trigger", "phy1tpt");
 	writestr("/sys/class/leds/wifi2/trigger", "phy2tpt");
 
-	//	sysprintf("echo warm > /sys/kernel/reboot/mode");
+	//      sysprintf("echo warm > /sys/kernel/reboot/mode");
 	nvram_unset("sw_cpuport");
 	nvram_unset("sw_wancpuport");
 	nvram_set("old_nss", nvram_safe_get("nss"));
@@ -1639,6 +1646,7 @@ void start_sysinit(void)
 
 	return;
 }
+
 static void load_ath11k_internal(int profile, int pci, int nss, int frame_mode, char *cert_region)
 {
 	char postfix[32] = { 0 };
@@ -1672,13 +1680,16 @@ static void load_ath11k_internal(int profile, int pci, int nss, int frame_mode, 
 	if (pci)
 		insmod(driver_ath11k_pci);
 }
+
 void start_wifi_drivers(void)
 {
 	int notloaded = 0;
-	if (use_mesh(0) && nvram_match("cur_nss", "12.5"))
-		sys_reboot();
-	if (!use_mesh(0) && nvram_match("cur_nss", "11.4"))
-		sys_reboot();
+	if (!nvram_match("force_old_nss", "1")) {
+		if (use_mesh(0) && nvram_match("cur_nss", "12.5"))
+			sys_reboot();
+		if (!use_mesh(0) && nvram_match("cur_nss", "11.4"))
+			sys_reboot();
+	}
 	if (!nvram_match("nss", nvram_safe_get("old_nss")))
 		sys_reboot();
 	notloaded = insmod("compat");
@@ -1728,34 +1739,34 @@ void start_wifi_drivers(void)
 			minif = 3;
 			break;
 		case ROUTER_LINKSYS_MR7500:
-			/*			eval("ssdk_sh", "debug", "phy", "set", "0x8", "0x401e2680", "0x1");
-			usleep(100 * 1000);
-			eval("aq-fw-download", "/lib/firmware/marvell/AQR114C.cld", "eth0", "8");
-			sleep(1);
-			eval("ssdk_sh", "port", "autoneg", "restart", "5");
-			sleep(2);
-			eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec430", "0xc0ef");
-			eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec431", "0xc0e0");
-			eval("ssdk_sh", "debug", "phy", "set", "8", "0x40070010", "0x9de1");
-			sleep(1);
-			eval("ssdk_sh", "debug", "phy", "set", "8", "0x40070000", "0x3200");*/
-			//			char *cert_region = get_deviceinfo_linksys("cert_region");
-			//			if (!cert_region)
+			/*                      eval("ssdk_sh", "debug", "phy", "set", "0x8", "0x401e2680", "0x1");
+			   usleep(100 * 1000);
+			   eval("aq-fw-download", "/lib/firmware/marvell/AQR114C.cld", "eth0", "8");
+			   sleep(1);
+			   eval("ssdk_sh", "port", "autoneg", "restart", "5");
+			   sleep(2);
+			   eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec430", "0xc0ef");
+			   eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec431", "0xc0e0");
+			   eval("ssdk_sh", "debug", "phy", "set", "8", "0x40070010", "0x9de1");
+			   sleep(1);
+			   eval("ssdk_sh", "debug", "phy", "set", "8", "0x40070000", "0x3200"); */
+			//                      char *cert_region = get_deviceinfo_linksys("cert_region");
+			//                      if (!cert_region)
 			load_ath11k_internal(profile, 1, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode,
 					     cert_region);
 			minif = 3;
 			break;
 		case ROUTER_LINKSYS_MX8500:
-			//			char *cert_region = get_deviceinfo_linksys("cert_region");
-			//			if (!cert_region)
+			//                      char *cert_region = get_deviceinfo_linksys("cert_region");
+			//                      if (!cert_region)
 			load_ath11k_internal(profile, 1, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode,
 					     cert_region);
 			minif = 3;
 			break;
 
 		case ROUTER_LINKSYS_MX5300:
-			//			char *cert_region = get_deviceinfo_linksys("cert_region");
-			//			if (!cert_region)
+			//                      char *cert_region = get_deviceinfo_linksys("cert_region");
+			//                      if (!cert_region)
 			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode,
 					     cert_region);
 			wait_for_wifi(2);
