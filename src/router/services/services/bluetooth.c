@@ -66,7 +66,7 @@ void start_bluetooth(void)
 	}
 	int counter = 10;
 	// wait for bluetooth daemon to be started
-	while (pidof("bluetoothhd") <= 0 && counter-- > 0) {
+	while (pidof("bluetoothd") <= 0 && counter-- > 0) {
 		sleep(1);
 	}
 	eval("bluetoothctl", "advertise.name", nvram_default_get("bt_name", "dd-wrt"));
