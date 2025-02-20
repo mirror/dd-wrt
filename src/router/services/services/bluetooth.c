@@ -57,9 +57,9 @@ void start_bluetooth(void)
 			eval("hciattach", "/dev/ttyMSM1", "bcsp", "115200", "noflow");
 			break;
 		case ROUTER_LINKSYS_MX8500:
-		case ROUTER_LINKSYS_MX4200V1:
-		case ROUTER_LINKSYS_MX4200V2:
-		case ROUTER_LINKSYS_MX4300:
+//		case ROUTER_LINKSYS_MX4200V1:
+//		case ROUTER_LINKSYS_MX4200V2:
+//		case ROUTER_LINKSYS_MX4300:
 			eval("hciattach", "-s", "115200", "/dev/ttyMSM1", "any", "115200");
 			break;
 		}
