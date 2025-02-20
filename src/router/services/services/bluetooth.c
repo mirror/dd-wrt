@@ -64,7 +64,7 @@ void start_bluetooth(void)
 			break;
 		}
 	}
-	counter = 0;
+	int counter = 10;
 	// wait for bluetooth daemon to be started
 	while (pidof("bluetoothhd") <= 0 && counter-- > 0) {
 		sleep(1);
