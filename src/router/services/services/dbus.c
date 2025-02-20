@@ -43,8 +43,8 @@ void start_dbus(void)
 		stop_dbus();
 		return;
 	}
-	mkdir("/tmp/var/run/dbus",0744);
-	mkdir("/tmp/var/lib/dbus",0744);
+	mkdir("/tmp/var/run/dbus", 0744);
+	mkdir("/tmp/var/lib/dbus", 0744);
 	if (pidof("dbus-daemon") > 0) {
 		dd_loginfo("dbus-daemon", "dbus-daemon already running");
 	} else {

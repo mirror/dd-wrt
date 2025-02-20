@@ -42,28 +42,39 @@ void start_bluetooth(void)
 	if (!nvram_matchi("bt_enable", 1)) {
 		return;
 	}
-	if (pidof("bluetoothd")>0)
-		return;
-	eval("modprobe", "bluetooth");
-	eval("modprobe", "rfcomm");
-	eval("modprobe", "bnep");
-	eval("modprobe", "hidp");
-	eval("modprobe", "hci_uart");
-	eval("modprobe", "btusb");
-	system("bluetoothd&");
-	int brand = getRouterBrand();
-	switch (brand) {
-	case ROUTER_LINKSYS_MR7350:
-	case ROUTER_LINKSYS_MR7500:
-		eval("hciattach", "/dev/ttyMSM1", "bcsp", "115200", "noflow");
-		break;
-	case ROUTER_LINKSYS_MX8500:
-	case ROUTER_LINKSYS_MX4200V1:
-	case ROUTER_LINKSYS_MX4200V2:
-	case ROUTER_LINKSYS_MX4300:
-		eval("hciattach", "-s", "115200", "/dev/ttyMSM1", "any", "115200");
-		break;
+	if (pidof("bluetoothd") <= 0) {
+		eval("modprobe", "bluetooth");
+		eval("modprobe", "rfcomm");
+		eval("modprobe", "bnep");
+		eval("modprobe", "hidp");
+		eval("modprobe", "hci_uart");
+		eval("modprobe", "btusb");
+		system("bluetoothd&");
+		int brand = getRouterBrand();
+		switch (brand) {
+		case ROUTER_LINKSYS_MR7350:
+		case ROUTER_LINKSYS_MR7500:
+			eval("hciattach", "/dev/ttyMSM1", "bcsp", "115200", "noflow");
+			break;
+		case ROUTER_LINKSYS_MX8500:
+		case ROUTER_LINKSYS_MX4200V1:
+		case ROUTER_LINKSYS_MX4200V2:
+		case ROUTER_LINKSYS_MX4300:
+			eval("hciattach", "-s", "115200", "/dev/ttyMSM1", "any", "115200");
+			break;
+		}
 	}
+	counter = 0;
+	// wait for bluetooth daemon to be started
+	while (pidof("bluetoothhd") <= 0 && counter-- > 0) {
+		sleep(1);
+	}
+	eval("bluetoothctl", "advertise.name", nvram_default_get("bt_name", "dd-wrt"));
+	eval("bluetoothctl", "mgmt.name", nvram_default_get("bt_name", "dd-wrt"));
+	eval("bluetoothctl", "power", "on");
+	eval("bluetoothctl", "discoverable", "on");
+	eval("bluetoothctl", "agent", "on");
+	eval("bt-network", "-d", "-s", "nap", "br0");
 	return;
 }
 
@@ -74,7 +85,8 @@ void restart_bluetooth(void)
 }
 
 void stop_bluetooth(void)
-{	
+{
+	stop_process("bluetooth", "bt-network");
 	stop_process("bluetooth", "hciattach");
 	stop_process("bluetooth", "bluetoothd");
 
