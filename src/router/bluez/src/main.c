@@ -1491,7 +1491,8 @@ int main(int argc, char *argv[])
 
 	mainloop_sd_notify("STATUS=Running");
 	mainloop_sd_notify("READY=1");
-
+	if (option_detach)
+		daemon(1, 0);
 	mainloop_run_with_signal(signal_callback, NULL);
 
 	mainloop_sd_notify("STATUS=Quitting");
