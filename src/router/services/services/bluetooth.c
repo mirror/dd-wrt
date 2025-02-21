@@ -68,6 +68,7 @@ void start_bluetooth(void)
 	eval("bluetoothctl", "mgmt.name", nvram_default_get("bt_name", "dd-wrt"));
 	eval("bluetoothctl", "power", "on");
 	eval("bluetoothctl", "discoverable", "on");
+	eval("bluetoothctl", "discoverable-timeout", "0");
 	eval("bluetoothctl", "agent", "on");
 	eval("bt-network", "-d", "-s", "nap", "br0");
 	FILE *fp = fopen("/tmp/pins.txt", "wb");
