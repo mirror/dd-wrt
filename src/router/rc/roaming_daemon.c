@@ -133,17 +133,10 @@ next:;
 
 static int roaming_daemon_main(int argc, char *argv[])
 {
-	switch (fork()) {
-	case -1:
-		perror("fork failed");
+	if (daemon(0, 0)) {
+		perror("daemonize failed");
 		exit(1);
-		break;
-	case 0:
-		roaming_daemon();
-		exit(0);
-		break;
-	default:
-		_exit(0);
 	}
+	roaming_daemon();
 	return 0;
 }

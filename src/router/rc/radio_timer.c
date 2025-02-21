@@ -34,23 +34,9 @@
 
 int main(int argc, char **argv)
 {
-	switch (fork()) {
-	case -1:
-		// can't fork
-		_exit(0);
-		break;
-	case 0:
-		/* 
-		 * child process 
-		 */
-		// fork ok
-		(void)setsid();
-		break;
-	default:
-		/* 
-		 * parent process should just die 
-		 */
-		_exit(0);
+	if (daemon(0, 0)) {
+		perror("daemonize failed");
+		exit(1);
 	}
 
 	unsigned int *radiotime; // 4 byte int number (24 bits from gui + 1 bit for midnight)

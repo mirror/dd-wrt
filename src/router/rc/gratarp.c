@@ -184,28 +184,15 @@ static int gratarp_main(int argc, char **argv)
 {
 	signal(SIGCHLD, SIG_IGN);
 
-	pid_t pid;
-
 	if (argc < 2) {
 		fprintf(stderr, "usage: gratarp <interface>\n");
 		return 1;
 	}
 
-	pid = fork();
-	switch (pid) {
-	case -1:
-		perror("fork failed");
+	if (daemon(0, 0)) {
+		perror("daemonize failed");
 		exit(1);
-		break;
-	case 0:
-		gratarp(argv[1]);
-		return 0;
-		break;
-	default:
-		//waitpid(pid, &status, 0);
-		// dprintf("parent\n");
-		break;
 	}
-
+	gratarp(argv[1]);
 	return 0;
 }

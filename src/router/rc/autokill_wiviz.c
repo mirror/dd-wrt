@@ -31,23 +31,13 @@
 
 static int autokill_wiviz_main(int argc, char **argv)
 {
-	pid_t pid;
-
-	pid = fork();
-	switch (pid) {
-	case -1:
-		perror("fork failed");
+	if (daemon(0, 0)) {
+		perror("daemonize failed");
 		exit(1);
-		break;
-	case 0:
-		sleep(10);
-		killall("wiviz", SIGTERM);
-		unlink("/tmp/wiviz2-cfg");
-		unlink("/tmp/wiviz2-dump");
-		exit(0);
-		break;
-	default:
-		_exit(0);
-		break;
 	}
+	sleep(10);
+	killall("wiviz", SIGTERM);
+	unlink("/tmp/wiviz2-cfg");
+	unlink("/tmp/wiviz2-dump");
+	exit(0);
 }

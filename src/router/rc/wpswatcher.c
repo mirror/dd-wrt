@@ -40,26 +40,9 @@
 
 static int wpswatcher_main(int argc, char **argv)
 {
-	/* 
-	 * Run it in the background 
-	 */
-	switch (fork()) {
-	case -1:
-		// can't fork
-		exit(0);
-		break;
-	case 0:
-		/* 
-		 * child process 
-		 */
-		// fork ok
-		(void)setsid();
-		break;
-	default:
-		/* 
-		 * parent process should just die 
-		 */
-		_exit(0);
+	if (daemon(0, 0)) {
+		perror("daemonize failed");
+		exit(1);
 	}
 	int timeout = atoi(argv[1]);
 	while (timeout) {

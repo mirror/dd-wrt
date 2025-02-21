@@ -423,24 +423,9 @@ static int gpiowatcher_main(int argc, char *argv[])
 		fprintf(stderr, "g = %d, i = %d, o= %d\n", gpio, interval, exit_only);
 
 	if (use_fork) {
-		switch (fork()) {
-		case -1:
-			fprintf(stderr, "can't fork\n");
-			exit(0);
-			break;
-		case 0:
-			/* 
-			 * child process 
-			 */
-			if (debug)
-				fprintf(stderr, "fork ok\n");
-			(void)setsid();
-			break;
-		default:
-			/* 
-			 * parent process should just die 
-			 */
-			_exit(0);
+		if (daemon(0, 0)) {
+			perror("daemonize failed");
+			exit(1);
 		}
 	}
 	/* 

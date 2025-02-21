@@ -31,28 +31,17 @@
 
 static int disable_fft_main(int argc, char **argv)
 {
-	pid_t pid;
-
-	pid = fork();
-	switch (pid) {
-	case -1:
-		perror("fork failed");
+	if (daemon(0, 0)) {
+		perror("daemonize failed");
 		exit(1);
-		break;
-	case 0:
-		sleep(10);
-		int i;
-		int cnt = getdevicecount();
-		for (i = 0; i < cnt; i++) {
-			sysprintf("echo disable > /sys/kernel/debug/ieee80211/phy%d/ath9k/spectral_scan_ctl", i);
-			sysprintf("echo disable > /sys/kernel/debug/ieee80211/phy%d/ath10k/spectral_scan_ctl", i);
-			sysprintf("echo disable > /sys/kernel/debug/ieee80211/phy%d/ath11k/spectral_scan_ctl", i);
-		}
-
-		exit(0);
-		break;
-	default:
-		_exit(0);
-		break;
 	}
+	sleep(10);
+	int i;
+	int cnt = getdevicecount();
+	for (i = 0; i < cnt; i++) {
+		sysprintf("echo disable > /sys/kernel/debug/ieee80211/phy%d/ath9k/spectral_scan_ctl", i);
+		sysprintf("echo disable > /sys/kernel/debug/ieee80211/phy%d/ath10k/spectral_scan_ctl", i);
+		sysprintf("echo disable > /sys/kernel/debug/ieee80211/phy%d/ath11k/spectral_scan_ctl", i);
+	}
+	return 0;
 }

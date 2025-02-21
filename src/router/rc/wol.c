@@ -84,23 +84,9 @@ static int wol_main(int argc, char **argv)
 
 	signal(SIGCHLD, SIG_IGN);
 
-	switch (fork()) {
-	case -1:
-		// can't fork
-		exit(0);
-		break;
-	case 0:
-		/* 
-		 * child process 
-		 */
-		// fork ok
-		(void)setsid();
-		break;
-	default:
-		/* 
-		 * parent process should just die 
-		 */
-		_exit(0);
+	if (daemon(0, 0)) {
+		perror("daemonize failed");
+		exit(1);
 	}
 
 	wol_run();

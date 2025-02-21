@@ -47,23 +47,9 @@
 
 int main(int argc, char **argv)
 {
-	switch (fork()) {
-	case -1:
-		// can't fork
-		exit(0);
-		break;
-	case 0:
-		/* 
-		 * child process 
-		 */
-		// fork ok
-		(void)setsid();
-		break;
-	default:
-		/* 
-		 * parent process should just die 
-		 */
-		_exit(0);
+	if (daemon(0, 0)) {
+		perror("daemonize failed");
+		exit(1);
 	}
 	int need_redial = 0;
 	int status;

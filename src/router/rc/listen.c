@@ -395,57 +395,52 @@ static int listen_main(int argc, char *argv[])
 
 	dd_loginfo("listen", "Starting listen on %s\n", interface);
 
-	pid = fork();
-	switch (pid) {
-	case -1:
-		perror("fork failed");
+	if (daemon(0, 0)) {
+		perror("daemonize failed");
 		exit(1);
-	case 0:
-retry:
-		for (;;) {
-			int ret;
-
-			ret = listen_interface(interface);
-			switch (ret) {
-			case L_SUCCESS:
-				DEBUG1("**************** received an lan to wan packet **************\n\n");
-				start_service_force("force_to_dial");
-				if (nvram_match("wan_proto", "heartbeat"))
-					exit(0);
-
-				if (!check_wan_link(0)) { // Connect fail, we want to re-connect
-					// session
-					sleep(3);
-					goto retry;
-				}
-				exit(0);
-				break;
-
-			case L_UPGRADE:
-				DEBUG1("listen: nothing to do...\n");
-				exit(0);
-				break;
-
-			case L_ESTABLISHED:
-				DEBUG1("The link had been established\n");
-				exit(0);
-				break;
-
-			case L_ERROR:
-				DEBUG1("Continue...\n");
-				exit(0);
-				break;
-
-			case L_FAIL:
-			default:
-				break;
-			}
-		}
-		break;
-	default:
-		_exit(0);
-		break;
 	}
+
+retry:
+	for (;;) {
+		int ret;
+
+		ret = listen_interface(interface);
+		switch (ret) {
+		case L_SUCCESS:
+			DEBUG1("**************** received an lan to wan packet **************\n\n");
+			start_service_force("force_to_dial");
+			if (nvram_match("wan_proto", "heartbeat"))
+				exit(0);
+
+			if (!check_wan_link(0)) { // Connect fail, we want to re-connect
+				// session
+				sleep(3);
+				goto retry;
+			}
+			exit(0);
+			break;
+
+		case L_UPGRADE:
+			DEBUG1("listen: nothing to do...\n");
+			exit(0);
+			break;
+
+		case L_ESTABLISHED:
+			DEBUG1("The link had been established\n");
+			exit(0);
+			break;
+
+		case L_ERROR:
+			DEBUG1("Continue...\n");
+			exit(0);
+			break;
+
+		case L_FAIL:
+		default:
+			break;
+		}
+	}
+	return 0;
 }
 
 #undef DEBUG

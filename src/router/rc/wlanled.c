@@ -388,16 +388,9 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Failed to connect to nl80211\n");
 		return 1;
 	}
-	switch (fork()) {
-	case -1:
-		fprintf(stderr, "can't fork\n");
-		_exit(0);
-		break;
-	case 0:
-		(void)setsid();
-		break;
-	default:
-		_exit(0);
+	if (daemon(0, 0)) {
+		perror("daemonize failed");
+		exit(1);
 	}
 
 	setup_sigint();

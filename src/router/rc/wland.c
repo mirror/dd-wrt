@@ -640,26 +640,9 @@ static void do_wlan_check(void)
 
 int main(int argc, char **argv)
 {
-	/* 
-	 * Run it in the background 
-	 */
-	switch (fork()) {
-	case -1:
-		// can't fork
-		exit(0);
-		break;
-	case 0:
-		/* 
-		 * child process 
-		 */
-		// fork ok
-		(void)setsid();
-		break;
-	default:
-		/* 
-		 * parent process should just die 
-		 */
-		_exit(0);
+	if (daemon(0, 0)) {
+		perror("daemonize failed");
+		exit(1);
 	}
 #ifdef HAVE_AQOS
 	qosidx = 1310;
@@ -674,24 +657,7 @@ int main(int argc, char **argv)
 	while (1) {
 		sleep(WLAND_INTERVAL);
 		do_wlan_check();
-		/*#if defined(HAVE_ATH10K) && !defined(HAVE_MVEBU)
-		int c = getdevicecount();
-		char dev[32];
-		int i;
-		for (i = 0; i < c; i++) {
-			sprintf(dev, "wlan%d", i);
-			char dst[32];
-			sprintf(dst, "%s_distance", dev);
-			if (is_ath10k(dev)) {	// evil hack for QCA 
-				set_ath10kdistance(dev, nvram_geti(dst)));
-			}
-		}
-#endif*/
 	}
 
 	return 0;
-} // end main
-
-/* 
- * void main(int argc, char **argv) { wland_main(argc,argv); } 
- */
+}

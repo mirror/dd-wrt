@@ -453,18 +453,9 @@ static int check_ps_main(int argc, char **argv)
 		return 1;
 	}
 
-	pid = fork();
-	switch (pid) {
-	case -1:
-		perror("fork failed");
-		_exit(1);
-		break;
-	case 0:
-		do_mon();
-		_exit(0);
-		break;
-	default:
-		_exit(0);
-		break;
+	if (daemon(0, 0)) {
+		perror("daemonize failed");
+		exit(1);
 	}
+	do_mon();
 }
