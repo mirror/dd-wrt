@@ -4,6 +4,14 @@
 
 int daemon(int nochdir, int noclose)
 {
+	switch(fork()) {
+	case 0: break;
+	case -1: return -1;
+	default: _exit(0);
+	}
+
+	if (setsid() < 0) return -1;
+
 	if (!nochdir && chdir("/"))
 		return -1;
 	if (!noclose) {
@@ -15,19 +23,6 @@ int daemon(int nochdir, int noclose)
 		if (failed) return -1;
 	}
 
-	switch(fork()) {
-	case 0: break;
-	case -1: return -1;
-	default: _exit(0);
-	}
-
-	if (setsid() < 0) return -1;
-
-	switch(fork()) {
-	case 0: break;
-	case -1: return -1;
-	default: _exit(0);
-	}
 
 	return 0;
 }
