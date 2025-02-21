@@ -196,6 +196,8 @@ extern void *dd_malloc(size_t len);
 #define system(cmd) dd_system(cmd)
 #endif
 
+void dd_daemon(void);
+
 #ifdef MEMDEBUG
 
 void *mymalloc(int size, char *func, int line);
