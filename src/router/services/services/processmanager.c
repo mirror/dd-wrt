@@ -27,14 +27,6 @@
 #include <syslog.h>
 #include <signal.h>
 
-static void waitfordead(const char *procname, int maxtime)
-{
-	int deadcounter = maxtime * 10;
-	while (pidof(procname) > 0 && deadcounter--) {
-		usleep(100 * 1000);
-	}
-}
-
 static int _stop_process(const char *name, const char *desc, int hard, int maxtime)
 {
 	if (!desc)

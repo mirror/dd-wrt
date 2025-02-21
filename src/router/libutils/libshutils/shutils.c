@@ -1061,6 +1061,14 @@ static int _pidof(const char *name, pid_t **pids)
 	return count;
 }
 
+void waitfordead(const char *procname, int maxtime)
+{
+	int deadcounter = maxtime * 10;
+	while (pidof(procname) > 0 && deadcounter--) {
+		usleep(100 * 1000);
+	}
+}
+
 void dd_daemon(void) {
 	if (daemon(1, 0)) {
 		perror("daemonize failed");
