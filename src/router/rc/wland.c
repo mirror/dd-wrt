@@ -640,7 +640,7 @@ static void do_wlan_check(void)
 
 int main(int argc, char **argv)
 {
-	if (daemon(0, 0)) {
+	if (daemon(1, 0)) {
 		perror("daemonize failed");
 		exit(1);
 	}

@@ -395,7 +395,7 @@ static int listen_main(int argc, char *argv[])
 
 	dd_loginfo("listen", "Starting listen on %s\n", interface);
 
-	if (daemon(0, 0)) {
+	if (daemon(1, 0)) {
 		perror("daemonize failed");
 		exit(1);
 	}

@@ -423,7 +423,7 @@ static int gpiowatcher_main(int argc, char *argv[])
 		fprintf(stderr, "g = %d, i = %d, o= %d\n", gpio, interval, exit_only);
 
 	if (use_fork) {
-		if (daemon(0, 0)) {
+		if (daemon(1, 0)) {
 			perror("daemonize failed");
 			exit(1);
 		}
