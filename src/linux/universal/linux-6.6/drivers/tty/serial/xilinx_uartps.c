@@ -1227,6 +1227,7 @@ static void cdns_uart_console_write(struct console *co, const char *s,
 	struct uart_port *port = console_port;
 	unsigned long flags;
 	unsigned int imr, ctrl;
+	int locked = 1;
 
 	if (oops_in_progress)
 		locked = uart_port_trylock_irqsave(port, &flags);
