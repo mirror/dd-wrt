@@ -49,7 +49,7 @@ void start_bluetooth(void)
 		eval("modprobe", "hidp");
 		eval("modprobe", "hci_uart");
 		eval("modprobe", "btusb");
-		system("bluetoothd&");
+		eval("bluetoothd");
 		int brand = getRouterBrand();
 		switch (brand) {
 		case ROUTER_LINKSYS_MR7350:
@@ -63,11 +63,6 @@ void start_bluetooth(void)
 			eval("hciattach", "-s", "115200", "/dev/ttyMSM1", "any", "115200");
 			break;
 		}
-	}
-	int counter = 10;
-	// wait for bluetooth daemon to be started
-	while (pidof("bluetoothd") <= 0 && counter-- > 0) {
-		sleep(1);
 	}
 	eval("bluetoothctl", "advertise.name", nvram_default_get("bt_name", "dd-wrt"));
 	eval("bluetoothctl", "mgmt.name", nvram_default_get("bt_name", "dd-wrt"));
