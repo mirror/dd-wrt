@@ -1061,6 +1061,13 @@ static int _pidof(const char *name, pid_t **pids)
 	return count;
 }
 
+void dd_daemon(void) {
+	if (daemon(1, 0)) {
+		perror("daemonize failed");
+		exit(1);
+	}
+}
+
 int pidof(const char *name)
 {
 	pid_t p;
