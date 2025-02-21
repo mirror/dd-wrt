@@ -57,9 +57,9 @@ void start_bluetooth(void)
 			eval("hciattach", "/dev/ttyMSM1", "bcsp", "115200", "noflow");
 			break;
 		case ROUTER_LINKSYS_MX8500:
-//		case ROUTER_LINKSYS_MX4200V1:
-//		case ROUTER_LINKSYS_MX4200V2:
-//		case ROUTER_LINKSYS_MX4300:
+			//		case ROUTER_LINKSYS_MX4200V1:
+			//		case ROUTER_LINKSYS_MX4200V2:
+			//		case ROUTER_LINKSYS_MX4300:
 			eval("hciattach", "-s", "115200", "/dev/ttyMSM1", "any", "115200");
 			break;
 		}
@@ -70,6 +70,11 @@ void start_bluetooth(void)
 	eval("bluetoothctl", "discoverable", "on");
 	eval("bluetoothctl", "agent", "on");
 	eval("bt-network", "-d", "-s", "nap", "br0");
+	FILE *fp = fopen("/tmp/pins.txt", "wb");
+	fprintf(fp, "00:00:00:00:00:00\t*\n");
+	fprintf(fp, "*\t*\n");
+	fclose(fp);
+	eval("bt-agent", "-d", "-c", "DisplayOnly", "-p", "/tmp/pins.txt");
 	return;
 }
 
