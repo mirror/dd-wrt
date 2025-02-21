@@ -16,27 +16,7 @@ int main(int argc, char *argv[])
 #else
 	system("ledtool 1");
 #endif
-
-	/* 
-	 * Run it under background 
-	 */
-	switch (fork()) {
-	case -1:
-		perror("fork failed");
-		exit(1);
-		break;
-	case 0:
-		/* 
-		 * child process 
-		 */
-		(void)setsid();
-		break;
-	default:
-		/* 
-		 * parent process should just die 
-		 */
-		_exit(0);
-	}
+	dd_daemon();
 	_nvram_commit();
 	return 0;
 }
