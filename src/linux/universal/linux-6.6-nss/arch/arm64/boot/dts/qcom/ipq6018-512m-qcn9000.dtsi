@@ -37,6 +37,7 @@
 };
 
 &reserved_memory {
+/*
 		qcn9000_pcie0: qcn9000_pcie0@4e400000 {
 			no-map;
 			reg = <0x0 0x4E400000 0x0 0x1A00000>;
@@ -47,4 +48,16 @@
 			no-map;
 			reg = <0x0 0x4FE00000 0x0 0x00900000>;
 		};
+*/
+		qcn9000_pcie0: qcn9000_pcie0@4e400000 {
+			no-map;
+			reg = <0x0 0x4E400000 0x0 0x3500000>;
+		};
+
+		mhi_region0: dma_pool0@51900000 {
+			compatible = "shared-dma-pool";
+			no-map;
+			reg = <0x0 0x51900000 0x0 0x00900000>;
+		};
 };
+
