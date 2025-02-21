@@ -267,12 +267,12 @@ int br_set_path_cost(const char *bridge, const char *port, int cost);
 
 void reset_hwaddr(char *ifname);
 
-int stop_process(char *name, char *desc);
-int reload_process(char *name);
-int stop_process_timeout(char *name, char *desc, int timeout);
-int stop_process_hard(char *name, char *desc);
+int stop_process(const char *name, const char *desc);
+int reload_process(const char *name);
+int stop_process_timeout(const char *name, const char *desc, int timeout);
+int stop_process_hard(const char *name, const char *desc);
 
-void network_delay(char *service);
+void network_delay(const char *service);
 
 char *getMacAddr(char *ifname, char *mac, size_t len);
 

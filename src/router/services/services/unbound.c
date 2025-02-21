@@ -106,7 +106,7 @@ static void unbound_config(void)
 			if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				char *ipaddr = nvram_nget("%s_ipaddr", var);
 				char *netmask = nvram_nget("%s_netmask", var);
-				if (*ipaddr && strcmp(ipaddr, "0.0.0.0") && nvram_nmatch("0","%s_bridged",var))
+				if (*ipaddr && strcmp(ipaddr, "0.0.0.0") && nvram_nmatch("0", "%s_bridged", var))
 					fprintf(fp, "access-control: %s/%d allow\n", ipaddr, getmask(netmask));
 			}
 		}

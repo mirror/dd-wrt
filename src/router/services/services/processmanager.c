@@ -27,7 +27,15 @@
 #include <syslog.h>
 #include <signal.h>
 
-static int _stop_process(char *name, char *desc, int hard, int maxtime)
+static void waitfordead(const char *procname, int maxtime)
+{
+	int deadcounter = maxtime * 10;
+	while (pidof(procname) > 0 && deadcounter--) {
+		usleep(100 * 1000);
+	}
+}
+
+static int _stop_process(const char *name, const char *desc, int hard, int maxtime)
 {
 	if (!desc)
 		desc = name;
@@ -39,13 +47,11 @@ static int _stop_process(char *name, char *desc, int hard, int maxtime)
 			killall(name, SIGKILL);
 		else
 			killall(name, SIGTERM);
-		int deadcounter = maxtime * 10;
-		while (pidof(name) > 0 && deadcounter--) {
-			usleep(100 * 1000);
-		}
+		waitfordead(name, maxtime);
 		if (pidof(name) > 0) {
 			dd_loginfo(name, "%s hanging, send SIGKILL", desc);
 			killall(name, SIGKILL);
+			waitfordead(name, maxtime);
 		}
 		dd_loginfo(name, "%s successfully stopped", desc);
 		return 1;
@@ -53,7 +59,7 @@ static int _stop_process(char *name, char *desc, int hard, int maxtime)
 	return 0;
 }
 
-int reload_process(char *name)
+int reload_process(const char *name)
 {
 	int pid = pidof(name);
 	if (pid > 0) {
@@ -64,9 +70,9 @@ int reload_process(char *name)
 	return -1;
 }
 
-int stop_process(char *name, char *desc)
+int stop_process(const char *name, const char *desc)
 {
-	return _stop_process(name, desc, 0, 2);
+	return _stop_process(name, desc, 0, 4);
 }
 
 int stop_process_timeout(char *name, char *desc, int timeout)
@@ -74,12 +80,12 @@ int stop_process_timeout(char *name, char *desc, int timeout)
 	return _stop_process(name, desc, 0, timeout);
 }
 
-int stop_process_hard(char *name, char *desc)
+int stop_process_hard(const char *name, const char *desc)
 {
-	return _stop_process(name, desc, 1, 2);
+	return _stop_process(name, desc, 1, 4);
 }
 
-void network_delay(char *service)
+void network_delay(const char *service)
 {
 	FILE *first = fopen("/tmp/firstrun", "rb");
 	if (!first) {
