@@ -644,7 +644,7 @@ void start_dnsmasq(void)
 		{
 			if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				char *ipaddr = nvram_nget("%s_ipaddr", var);
-				if (*ipaddr && strcmp(ipaddr, "0.0.0.0"))
+				if (*ipaddr && strcmp(ipaddr, "0.0.0.0") && nvram_nmatch("0", "%s_bridged", var))
 					fprintf(fp, ",%s", ipaddr);
 			}
 		}
@@ -664,7 +664,7 @@ void start_dnsmasq(void)
 		{
 			if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				char *ipaddr = nvram_nget("%s_ipaddr", var);
-				if (*ipaddr && strcmp(ipaddr, "0.0.0.0"))
+				if (*ipaddr && strcmp(ipaddr, "0.0.0.0") && nvram_nmatch("0", "%s_bridged", var))
 					fprintf(fp, ",%s", var);
 			}
 		}
