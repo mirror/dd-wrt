@@ -200,7 +200,7 @@ static void notifier(void)
 
 int main(int argc, char *argv[])
 {
-	dd_daemon();
+	daemon(1, 0);
 	notifier();
 	return 0;
 }
