@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 #else
 	system("ledtool 1");
 #endif
-	dd_daemon();
+	daemon(1, 0);
 	_nvram_commit();
 	return 0;
 }
