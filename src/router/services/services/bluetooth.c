@@ -87,10 +87,10 @@ void restart_bluetooth(void)
 
 void stop_bluetooth(void)
 {
-	stop_process("bluetooth", "bt-agent");
-	stop_process("bluetooth", "bt-network");
-	stop_process("bluetooth", "hciattach");
-	stop_process("bluetooth", "bluetoothd");
+	stop_process("bt-agent", "daemon");
+	stop_process("bt-network", "daemon");
+	stop_process("hciattach", "daemon");
+	stop_process("bluetoothd", "daemon");
 
 	return;
 }
