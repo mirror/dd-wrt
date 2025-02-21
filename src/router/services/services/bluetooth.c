@@ -87,6 +87,7 @@ void restart_bluetooth(void)
 
 void stop_bluetooth(void)
 {
+	stop_process("bluetooth", "bt-agent");
 	stop_process("bluetooth", "bt-network");
 	stop_process("bluetooth", "hciattach");
 	stop_process("bluetooth", "bluetoothd");
