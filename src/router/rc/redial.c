@@ -47,10 +47,7 @@
 
 int main(int argc, char **argv)
 {
-	if (daemon(1, 0)) {
-		perror("daemonize failed");
-		exit(1);
-	}
+	dd_daemon();
 	int need_redial = 0;
 	int status;
 	pid_t pid;

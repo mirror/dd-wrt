@@ -189,10 +189,7 @@ static int gratarp_main(int argc, char **argv)
 		return 1;
 	}
 
-	if (daemon(1, 0)) {
-		perror("daemonize failed");
-		exit(1);
-	}
+	dd_daemon();
 	gratarp(argv[1]);
 	return 0;
 }

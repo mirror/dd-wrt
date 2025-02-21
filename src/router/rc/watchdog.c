@@ -247,10 +247,7 @@ static void watchdog(void)
 
 int main(int argc, char *argv[])
 {
-	if (daemon(1, 0)) {
-		perror("daemonize failed");
-		exit(1);
-	}
+	dd_daemon();
 	watchdog();
 	return 0;
 }

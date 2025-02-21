@@ -51,10 +51,7 @@ static int ledtool_main(int argc, char **argv)
 		fprintf(stdout, "default = diag led (blink 1 time)\n");
 		exit(-1);
 	}
-	if (daemon(1, 0)) {
-		perror("daemonize failed");
-		exit(1);
-	}
+	dd_daemon();
 	int times = atoi(argv[1]);
 	int type = 0;
 	int count = 0;

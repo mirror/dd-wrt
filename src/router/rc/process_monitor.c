@@ -70,10 +70,7 @@ void monitor_signal(int sig)
 
 int main(int argc, char **argv)
 {
-	if (daemon(1, 0)) {
-		perror("daemonize failed");
-		exit(1);
-	}
+	dd_daemon();
 	int time;
 	long int leasetime = 0;
 	sigset_t sigs_to_catch;

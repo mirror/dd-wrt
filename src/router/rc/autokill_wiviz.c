@@ -31,10 +31,7 @@
 
 static int autokill_wiviz_main(int argc, char **argv)
 {
-	if (daemon(1, 0)) {
-		perror("daemonize failed");
-		exit(1);
-	}
+	dd_daemon();
 	sleep(10);
 	killall("wiviz", SIGTERM);
 	unlink("/tmp/wiviz2-cfg");

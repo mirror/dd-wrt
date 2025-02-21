@@ -133,10 +133,7 @@ next:;
 
 static int roaming_daemon_main(int argc, char *argv[])
 {
-	if (daemon(1, 0)) {
-		perror("daemonize failed");
-		exit(1);
-	}
+	dd_daemon();
 	roaming_daemon();
 	return 0;
 }

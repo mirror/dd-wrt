@@ -1900,10 +1900,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MAGICBOX
 	init_gpio();
 #endif
-	if (daemon(1, 0)) {
-		perror("daemonize failed");
-		exit(1);
-	}
+	dd_daemon();
 
 	/* 
 	 * set the signal handler 

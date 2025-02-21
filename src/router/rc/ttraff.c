@@ -138,10 +138,7 @@ void write_to_nvram(int day, int month, int year, unsigned long long rcvd, unsig
 int main(int argc, char **argv)
 {
 	char wan_if_buffer[33];
-	if (daemon(1, 0)) {
-		perror("daemonize failed");
-		exit(1);
-	}
+	dd_daemon();
 
 	struct tm *currtime;
 	time_t tloc;

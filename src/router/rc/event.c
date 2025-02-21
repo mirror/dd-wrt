@@ -30,10 +30,7 @@
 
 static int event_main(int argc, char **argv)
 {
-	if (daemon(1, 0)) {
-		perror("daemonize failed");
-		exit(1);
-	}
+	dd_daemon();
 	sleep(atoi(argv[1]));
 	kill(atoi(argv[2]), atoi(argv[3]));
 	exit(0);

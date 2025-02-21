@@ -122,6 +122,7 @@ extern int ether_atoe(const char *a, char *e);
 
 int indexof(char *str, char c);
 
+void dd_daemon(void);
 /*
  * Convert Ethernet address binary data to string representation
  * @param       e       binary data
@@ -305,7 +306,7 @@ char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short, ch
 #else
 #define FORK(func)                      \
 	{                               \
-		daemon(1, 0);		\
+		dd_daemon();		\
 		func;			\
 		exit(0);		\
 	}

@@ -34,10 +34,7 @@
 
 int main(int argc, char **argv)
 {
-	if (daemon(1, 0)) {
-		perror("daemonize failed");
-		exit(1);
-	}
+	dd_daemon();
 
 	unsigned int *radiotime; // 4 byte int number (24 bits from gui + 1 bit for midnight)
 	int cnt = getdevicecount();

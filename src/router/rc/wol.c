@@ -84,10 +84,7 @@ static int wol_main(int argc, char **argv)
 
 	signal(SIGCHLD, SIG_IGN);
 
-	if (daemon(1, 0)) {
-		perror("daemonize failed");
-		exit(1);
-	}
+	dd_daemon();
 
 	wol_run();
 
