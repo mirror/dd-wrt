@@ -36,10 +36,10 @@ typedef struct linkedlist {
 	struct linkedlist *next;
 } LINKEDLIST;
 
-void addEntry(LINKEDLIST * list, char *name, char *port, int value)
+void addEntry(LINKEDLIST *list, char *name, char *port, int value)
 {
 	LINKEDLIST *first = list;
-	if (nvram_match("wan_ipaddr", name))	// silently ignore the wan ip
+	if (nvram_match("wan_ipaddr", name)) // silently ignore the wan ip
 		return;
 	int p = atoi(port);
 	if (list == NULL)
@@ -64,7 +64,7 @@ void addEntry(LINKEDLIST * list, char *name, char *port, int value)
 	}
 }
 
-void freeList(LINKEDLIST * list)
+void freeList(LINKEDLIST *list)
 {
 	LINKEDLIST *first = list->next;
 	if (list == NULL)
@@ -81,7 +81,7 @@ void freeList(LINKEDLIST * list)
  * sends a email with the detailed connection statistic per port. this requires a modified sendmail command from busybox. the original one is buggy and does not work with alot of email servers like exim, so we modified
  * it to support direct message sending and authentication with commandline parameters
  */
-void send_email(LINKEDLIST * list, char *source, int value)
+void send_email(LINKEDLIST *list, char *source, int value)
 {
 	char *server = nvram_safe_get("warn_server");
 	char *from = nvram_safe_get("warn_from");
@@ -115,7 +115,8 @@ void send_email(LINKEDLIST * list, char *source, int value)
 		fprintf(fp, "\r\n\r\n");
 
 		if (strlen(user) > 0) {
-			sprintf(command, "sendmail -S %s -f %s -au %s -ap %s %s -d %s < /tmp/warn_mail", server, from, user, pass, to, domain);
+			sprintf(command, "sendmail -S %s -f %s -au %s -ap %s %s -d %s < /tmp/warn_mail", server, from, user, pass,
+				to, domain);
 		} else {
 			sprintf(command, "sendmail -S %s -f %s  %s -d %s < /tmp/warn_mail", server, from, to, domain);
 		}
@@ -126,7 +127,6 @@ void send_email(LINKEDLIST * list, char *source, int value)
 
 		unlink("/tmp/warn_mail");
 	}
-
 }
 
 static int notifier_loop(void)
@@ -162,17 +162,17 @@ static int notifier_loop(void)
 			break;
 		//default tcp
 		sscanf(line, "%*s %*s %s %*s %*s %s %s %s %s %s", proto, state, src, dst, sport, dport);
-		if (!strcmp(proto, "udp") || !strcmp(proto, "unknown")) {	// parse udp
+		if (!strcmp(proto, "udp") || !strcmp(proto, "unknown")) { // parse udp
 			sscanf(line, "%*s %*s %s %*s %*s %s %s %s %s", proto, src, dst, sport, dport);
 		}
-		if (!strcmp(proto, "gre"))	// parse gre
+		if (!strcmp(proto, "gre")) // parse gre
 			sscanf(line, "%*s %*s %s %*s %*s %*s %*s %s %s %s %s", proto, src, dst, sport, dport);
-		if (!strcmp(proto, "sctp"))	// parse sctp
+		if (!strcmp(proto, "sctp")) // parse sctp
 			sscanf(line, "%*s %*s %s %*s %*s %*s %s %s %s %s", proto, src, dst, sport, dport);
 		if (!strcmp(proto, "tcp") && strcmp(state, "ESTABLISHED"))
 			continue;
-		addEntry(&list, &src[4], &dport[6], 1);	//add connection per port
-		addEntry(&total, &src[4], "0", 1);	//add connection to total statistic
+		addEntry(&list, &src[4], &dport[6], 1); //add connection per port
+		addEntry(&total, &src[4], "0", 1); //add connection to total statistic
 	}
 	fclose(fp);
 	LINKEDLIST *entry = &total;
@@ -193,35 +193,14 @@ static int notifier_loop(void)
 static void notifier(void)
 {
 	while (1) {
-		sleep(5 * 60);	// wait 5 minutes between each checks
+		sleep(5 * 60); // wait 5 minutes between each checks
 		notifier_loop();
 	}
-
 }
 
 int main(int argc, char *argv[])
 {
-
-	/* 
-	 * Run it under background 
-	 */
-	switch (fork()) {
-	case -1:
-		perror("fork failed");
-		exit(1);
-		break;
-	case 0:
-		/* 
-		 * child process 
-		 */
-		notifier();
-		exit(0);
-		break;
-	default:
-		/* 
-		 * parent process should just die 
-		 */
-		_exit(0);
-	}
+	dd_daemon();
+	notifier();
 	return 0;
 }
