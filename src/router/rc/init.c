@@ -290,16 +290,23 @@ static char *critical_programs[] = { "service",	  "upnpd",	  "transmissiond", "p
 				     "httpd",	  "minidlna",	  "rsyncd",	   "dropbear",	      "wland",	 "smartd",
 				     "rpc.statd", "/bin/sh",	  "telnetd",	   "mactelnetd",      "syslogd", "klogd",
 				     "wsdd2",	  "udhcpc",	  "async_commit" };
+
+static void wait_for_finish(const char *banner)
+{
+	int i;
+	for (i = 0; i < ARRAY_SIZE(critical_programs); i++) {
+		if (pidof(critical_programs[i]) > 0) {
+			dd_loginfo("init", banner, critical_programs[i]);
+			waitfordead(critical_programs[i], 10);
+		}
+	}
+}
+
 void shutdown_system(void)
 {
 	int sig;
-	int deadcount = 0;
-	while (pidof("async_commit") > 0 && (deadcount++) < 10) // wait for any process of this type to finish
-	{
-		dd_loginfo("init", "wait for nvram write to finish");
-		sleep(1);
-	}
-	deadcount = 0;
+	dd_loginfo("init", "wait for nvram write to finish");
+	waitfordead("async_commit", 10);
 
 	/* 
 	 * Disable signal handlers 
@@ -318,21 +325,11 @@ void shutdown_system(void)
 		dd_loginfo("init", "Sending SIGTERM to all processes");
 		kill(-1, SIGTERM);
 		dd_loginfo("init", "Waiting some seconds to give programs time to flush");
-		int i;
-		while (deadcount++ < 10) {
-			for (i = 0; i < ARRAY_SIZE(critical_programs); i++) {
-				if (pidof(critical_programs[i]) > 0) {
-					dd_loginfo("init", "waiting for %s to stop", critical_programs[i]);
-					break;
-				}
-			}
-			if (i == ARRAY_SIZE(critical_programs))
-				break;
-			sleep(1);
-		}
+		wait_for_finish("waiting for %s to stop");
 		sync();
 		dd_loginfo("init", "Sending SIGKILL to all processes");
 		kill(-1, SIGKILL);
+		wait_for_finish("waiting for %s to be killed");
 		sync();
 		unmount_fs(); // try to unmount
 #if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_OPENRISC)
