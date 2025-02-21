@@ -305,17 +305,9 @@ char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short, ch
 #else
 #define FORK(func)                      \
 	{                               \
-		switch (fork()) {       \
-		case -1:                \
-			break;          \
-		case 0:                 \
-			(void)setsid(); \
-			func;           \
-			exit(0);        \
-			break;          \
-		default:                \
-			break;          \
-		}                       \
+		daemon(1, 0);		\
+		func;			\
+		exit(0);		\
 	}
 #endif
 
