@@ -1217,21 +1217,7 @@ int main(int argc, char **argv)
 	if (count_processes("wiviz") > 1)
 		return 0;
 
-	pid_t pid;
-
-	pid = fork();
-	switch (pid) {
-	case -1:
-		perror("fork failed");
-		exit(1);
-		break;
-	case 0:
-		wiviz_main(argc, argv);
-		exit(0);
-		break;
-	default:
-		_exit(0);
-		break;
-	}
+	dd_daemon();
+	wiviz_main(argc, argv);
 
 }
