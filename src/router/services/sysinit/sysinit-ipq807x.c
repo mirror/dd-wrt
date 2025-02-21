@@ -1757,6 +1757,7 @@ void start_wifi_drivers(void)
 		case ROUTER_LINKSYS_MX4300:
 		case ROUTER_LINKSYS_MX8500:
 		case ROUTER_LINKSYS_MX5300:
+		case ROUTER_LINKSYS_MR7500:
 			profile = 1024;
 			nvram_set("mem_profile", "1024");
 			break;
