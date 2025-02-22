@@ -230,6 +230,8 @@ static void __aspeed_gpio_set(struct gpio_chip *gc, unsigned int offset,
 		reg &= ~GPIO_BIT(offset);
 
 	iowrite32(reg, addr);
+	/* Flush write */
+	ioread32(addr);
 }
 
 static void aspeed_gpio_set(struct gpio_chip *gc, unsigned int offset,

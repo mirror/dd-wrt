@@ -299,6 +299,7 @@ config STM32_DAC
 
 config STM32_DAC_CORE
 	tristate
+	select REGMAP_MMIO
 
 config VF610_DAC
 	tristate "Vybrid vf610 DAC driver"
