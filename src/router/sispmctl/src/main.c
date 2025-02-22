@@ -99,7 +99,7 @@ static void daemonize()
 		exit(EXIT_FAILURE);
 
 	/* If we got a good PID, then
-	   we can exit the parent process. */
+     we can exit the parent process. */
 	if (pid > 0)
 		exit(EXIT_SUCCESS);
 
@@ -112,9 +112,9 @@ static void daemonize()
 		exit(EXIT_FAILURE);
 
 	/*
-	 * We do not expect any keyboard input anymore.
-	 * STDERR is still needed for logging.
-	 */
+   * We do not expect any keyboard input anymore.
+   * STDERR is still needed for logging.
+   */
 	close(STDIN_FILENO);
 	close(STDOUT_FILENO);
 }
@@ -197,7 +197,7 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 	int status;
 	int devnum = 0;
 	usb_dev_handle *udev = NULL;
-	usb_dev_handle *sudev = NULL; //scan device
+	usb_dev_handle *sudev; //scan device
 	unsigned int id = 0; //product id of current device
 	char *onoff[] = { "off", "on", "0", "1" };
 #ifndef WEBLESS
@@ -261,6 +261,7 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 				id = get_id(dev[devnum]);
 			}
 		}
+
 #ifdef WEBLESS
 		if (strchr("lLipu", c)) {
 			fprintf(stderr, "Application was compiled without web-interface. "
@@ -312,12 +313,11 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 					else
 						printf("%s\n", get_serial(sudev));
 					usb_close(sudev);
-					sudev = NULL;
 					printf("\n");
 				}
 				break;
-				// select device...
-				// replace previous (first is default) device by selected one
+			// select device...
+			// replace previous (first is default) device by selected one
 			case 'd': // by id
 				if (udev != NULL) {
 					usb_close(udev);
@@ -644,10 +644,11 @@ int main(int argc, char *argv[])
 					"%d devices found. Please recompile if you need to "
 					"support more devices!\n",
 					count);
-				break;
+				goto max_gembird;
 			}
 		}
 	}
+max_gembird:
 
 	/* bubble sort them first, thnx Ingo Flaschenberger */
 	if (count > 1) {
@@ -666,7 +667,7 @@ int main(int argc, char *argv[])
 
 	/* get serial number of each device */
 	for (i = 0; i < count; ++i) {
-		usb_dev_handle *sudev = NULL;
+		usb_dev_handle *sudev;
 
 		sudev = get_handle(usbdev[i]);
 		if (sudev == NULL) {
@@ -678,7 +679,6 @@ int main(int argc, char *argv[])
 		} else {
 			usbdevsn[i] = strdup(get_serial(sudev));
 			usb_close(sudev);
-			sudev = NULL;
 		}
 	}
 

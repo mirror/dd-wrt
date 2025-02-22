@@ -146,7 +146,6 @@ void process(int out, char *request, struct usb_device *dev, int devnum)
 		if (ptr)
 			*ptr = 0;
 	}
-
 	/* Look for authentication */
 	if (secret) {
 		char *password = NULL;
@@ -172,6 +171,7 @@ void process(int out, char *request, struct usb_device *dev, int devnum)
 			return;
 		}
 	}
+
 	// avoid to read other directories, %-codes are not evaluated
 	ptr = strrchr(filename, '/');
 	if (ptr != NULL)
@@ -215,7 +215,6 @@ void process(int out, char *request, struct usb_device *dev, int devnum)
 		return;
 	} else if (verbose)
 		fprintf(stderr, "Accessing Gembird #%d USB device %s\n", devnum, dev->filename);
-
 	id = get_id(dev);
 
 	lastpos = ftell(in);
@@ -232,19 +231,19 @@ void process(int out, char *request, struct usb_device *dev, int devnum)
 		char *mrk = xbuffer;
 		char *ptr = xbuffer;
 		/* search for:
-		 *  $$off(#)?.1.:.2.$$      to switch off(#)
-		 *  $$on(#)?.1.:.2.$$       to switch on(#)
-		 *  $$toggle(#)?.1.:.2.$$   to toggle(#)
-		 *  $$status(#)?.1.:.2.$$   to evaluate status(#)
-		 *  $$version()$$           to evaluate version
-		 */
+     *  $$off(#)?.1.:.2.$$      to switch off(#)
+     *  $$on(#)?.1.:.2.$$       to switch on(#)
+     *  $$toggle(#)?.1.:.2.$$   to toggle(#)
+     *  $$status(#)?.1.:.2.$$   to evaluate status(#)
+     *  $$version()$$           to evaluate version
+     */
 		for (mrk = ptr = xbuffer; (ptr - xbuffer) < length; ++ptr) {
 			if (*ptr == '$' && ptr[1] == '$') {
 				/*
-				 * $$exec(1)?positive:negative$$
-				 *   ^cmd    ^pos             ^trm
-				 * ^ptr   ^num        ^neg
-				 */
+         * $$exec(1)?positive:negative$$
+         *   ^cmd    ^pos             ^trm
+         * ^ptr   ^num        ^neg
+         */
 				char *cmd = &ptr[2];
 				char *num = strchr(cmd, '(');
 				char *pos = strchr(num ? num : cmd, '?');

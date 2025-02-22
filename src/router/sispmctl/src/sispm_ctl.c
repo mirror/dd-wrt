@@ -245,6 +245,7 @@ void plannif_display(const struct plannif *plan, int verbose, const char *progna
 		for (; action >= 1; --action)
 			loop += plan->actions[action].timeForNext;
 	}
+
 	// compute last action time
 	for (action = 0;
 	     action + 1 < sizeof(plan->actions) / sizeof(struct plannifAction) && (plan->actions[action + 1].switchOn != -1);
@@ -262,6 +263,7 @@ void plannif_display(const struct plannif *plan, int verbose, const char *progna
 			date += numOfLoops * (loop * 60);
 		}
 	}
+
 	// now read all filled rows, except the possibly last "stop" row
 	for (action = 0; action < sizeof(plan->actions) / sizeof(struct plannifAction) && plan->actions[action].switchOn != -1;
 	     ++action) {
@@ -313,6 +315,8 @@ void plannif_scanf(struct plannif *plan, const unsigned char *buffer)
 	int actionNo = 1;
 
 	READNEXTBYTE;
+	if (!nextWord)
+		nextWord = 1;
 	plan->socket = (nextWord - 1) / 3;
 	READNEXTDOUBLEWORD;
 	plan->timeStamp = nextWord;
@@ -377,11 +381,11 @@ void usb_command_getplannif(usb_dev_handle *udev, int socket, struct plannif *pl
 	}
 
 	/* // debug
-	   int n;
-	   for(n = 0 ; n < 0x27 ; n++)
-	   printf("%02x ", (unsigned char)buffer[n]);
-	   printf("\n");
-	   // */
+  int n;
+  for(n = 0 ; n < 0x27 ; n++)
+    printf("%02x ", (unsigned char)buffer[n]);
+  printf("\n");
+  // */
 
 	id = get_id(usb_device(udev));
 	if (id == PRODUCT_ID_SISPM_EG_PMS2)
@@ -472,15 +476,15 @@ void usb_command_setplannif(usb_dev_handle *udev, struct plannif *plan)
 	}
 
 	/*// debug
-	   int n;
-	   for(n = 0 ; n < 0x27 ; n++)
-	   printf("%02x ", (unsigned char)buffer[n]);
-	   printf("\n");
-	   plannif_reset(plan);
-	   plannif_scanf(plan, &buffer[0]);
-	   plannif_display(plan, 0, NULL);
-	   exit(0);
-	   // */
+  int n;
+  for(n = 0 ; n < 0x27 ; n++)
+    printf("%02x ", (unsigned char)buffer[n]);
+  printf("\n");
+  plannif_reset(plan);
+  plannif_scanf(plan, &buffer[0]);
+  plannif_display(plan, 0, NULL);
+  exit(0);
+  //*/
 	if (usb_control_msg_tries(udev, /* handle */
 				  reqtype, req, ((0x03 << 8) | (3 * plan->socket)) + 1, 0, /* index */
 				  (char *)buffer, /* bytes */
