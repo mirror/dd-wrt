@@ -388,7 +388,7 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Failed to connect to nl80211\n");
 		return 1;
 	}
-	dd_daemon();
+	daemon(1, 0);
 
 	setup_sigint();
 	run_loop();
