@@ -705,8 +705,8 @@ ifeq ($(CONFIG_OPTIMIZE_FOR_SPEED),y)
 	sed -i 's/\# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE is not set/CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y/g' $(LINUXDIR)/.config
 endif
 
-	$(MAKE) -f Makefile.pb42 kernel-relink-prep MAKEEXT=pb42 KBUILD_TARGETS="vmlinux"
-	$(MAKE) -f Makefile.pb42 kernel-relink MAKEEXT=pb42 KBUILD_TARGETS="vmlinux"
+	$(MAKE) -f Makefile.pb42 kernel-relink-prep MAKEEXT=pb42 KBUILD_TARGETS=vmlinux
+	$(MAKE) -f Makefile.pb42 kernel-relink MAKEEXT=pb42 KBUILD_TARGETS=vmlinux
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus_old 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
@@ -1241,6 +1241,7 @@ ifeq ($(CONFIG_MMS344),y)
 		mips-uclibc/willy.img
 endif
 ifeq ($(CONFIG_UBNTM),y)
+	cd ubnt_mtd && make clean
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
 	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
 	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/ar7420-firmware.bin $(ARCH)-uclibc/aligned.uimage
