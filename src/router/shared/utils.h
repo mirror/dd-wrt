@@ -1205,6 +1205,7 @@ void get_broadcast(char *ipaddr, size_t len, char *netmask);
 int route_manip(int cmd, char *name, int metric, char *dst, char *gateway, char *genmask);
 int route_add(char *name, int metric, char *dst, char *gateway, char *genmask);
 int route_del(char *name, int metric, char *dst, char *gateway, char *genmask);
+extern void waitfordead(const char *procname, int maxtime);
 extern int pidof(const char *name);
 extern int killall(const char *name, int sig);
 extern int getifcount(const char *ifprefix);
