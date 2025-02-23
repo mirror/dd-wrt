@@ -357,13 +357,7 @@ static int fatal_signals[] = {
 
 void fatal_signal(int sig)
 {
-	const char *message = strsignal(sig);
-	;
-
-	if (message)
-		dd_loginfo("init", "%s....................................", message);
-	else
-		dd_loginfo("init", "Caught signal %d.......................................", sig);
+	dd_loginfo("init", "%s....................................", strsignal(sig));
 
 	shutdown_system();
 	eval("sync");
