@@ -1,5 +1,5 @@
 
-bluez-configure:
+bluez-configure: dbus
 	cd bluez && autoreconf -fsi
 	rm -f bluez/config.cache
 	cd bluez && ./configure --prefix=/usr --libdir=/usr/lib --host=$(ARCH)-linux \
@@ -20,11 +20,12 @@ bluez-configure:
 	--disable-android \
 	--disable-cups \
 	--disable-manpages \
-	--disable-sixaxis \
+	--enable-sixaxis \
 	--disable-systemd \
 	--disable-test \
 	--disable-udev \
 	--enable-deprecated \
+	DBUS_CFLAGS="-I$(TOP)/dbus/staged/usr/include/dbus-1.0 -I$(TOP)/dbus/staged/usr/lib/dbus-1.0/include" \
 	GLIB_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -I$(TOP)/glib20/libglib/build -I$(TOP)/glib20/libglib/build/glib" \
 	GLIB_LIBS="-L$(TOP)/glib20/libglib -L$(TOP)/glib20/libglib/glib -L$(TOP)/glib20/libglib/build/glib -L$(TOP)/glib20/libglib/build/gthread -L$(TOP)/glib20/libglib/build/gio -L$(TOP)/glib20/libglib/build/gobject" \
 	CFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) -I$(TOP) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -UHAVE_SELINUX -DNEED_PRINTF -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc" \

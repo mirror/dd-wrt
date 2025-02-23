@@ -4,6 +4,7 @@ dbus-configure:
 	rm -f dbus/config.cache
 	cd dbus && ./autogen.sh --prefix=/usr --host=$(ARCH)-linux \
 	--disable-Werror --disable-selinux --disable-tests \
+	--libdir=/usr/lib \
 	--sysconfdir=/etc \
 	--localstatedir=/tmp/var \
 	--disable-xml-docs \
@@ -26,7 +27,7 @@ dbus-configure:
 
 dbus:
 	$(MAKE) -C dbus
-#	$(MAKE) -C dbus DESTDIR=$(TOP)/dbus/staged install
+	$(MAKE) -C dbus DESTDIR=$(TOP)/dbus/staged install
 
 dbus-install:
 	install -D dbus/bus/.libs/dbus-daemon $(INSTALLDIR)/dbus/usr/sbin/dbus-daemon
