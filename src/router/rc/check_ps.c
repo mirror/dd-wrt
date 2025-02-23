@@ -397,7 +397,7 @@ again:;
 #endif
 		dd_loginfo("upgrade", "done. rebooting now");
 		sleep(5);
-		killall("init", SIGQUIT);
+		killall("init", SIGTERM);
 	}
 }
 
