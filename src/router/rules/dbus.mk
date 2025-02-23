@@ -11,6 +11,7 @@ dbus-configure:
 	--enable-systemd=no \
 	--disable-asserts \
 	--disable-checks \
+	--disable-stats \
 	--disable-verbose-mode \
 	--with-dbus-user="nobody" \
 	--with-dbus-session-bus-connect-address="/tmp/var/run/dbus/dbussocket" \
