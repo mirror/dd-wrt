@@ -78,6 +78,7 @@ DBUS_SHARED_arch_sources = 			\
 	dbus-backtrace-win.c 			\
 	dbus-file-win.c 			\
 	dbus-pipe-win.c 			\
+	dbus-init-win.h				\
 	dbus-sockets-win.h			\
 	dbus-sysdeps-win.c 			\
 	dbus-sysdeps-win.h			\

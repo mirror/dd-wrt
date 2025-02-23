@@ -105,8 +105,6 @@ libdbus_daemon_internal_la_SOURCES =		\
 	config-parser-common.h			\
 	connection.c				\
 	connection.h				\
-	containers.c				\
-	containers.h				\
 	desktop-file.c				\
 	desktop-file.h				\
 	$(DIR_WATCH_SOURCE)			\
