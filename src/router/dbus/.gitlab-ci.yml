@@ -1,0 +1,499 @@
+# Copyright © 2015-2018 Collabora Ltd.
+# SPDX-License-Identifier: MIT
+#
+# Permission is hereby granted, free of charge, to any person
+# obtaining a copy of this software and associated documentation files
+# (the "Software"), to deal in the Software without restriction,
+# including without limitation the rights to use, copy, modify, merge,
+# publish, distribute, sublicense, and/or sell copies of the Software,
+# and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+# BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+# ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_PIPELINE_SOURCE == 'push' && $CI_PROJECT_NAMESPACE == 'dbus'
+
+include:
+  - project: 'freedesktop/ci-templates'
+    ref: fb33e1b244ec2a0b8edf8ee5590a96369c3b4666
+    file:
+      - '/templates/debian.yml'
+      - '/templates/freebsd.yml'
+      - '/templates/opensuse.yml'
+
+image: debian:bookworm-slim
+
+stages:
+  - 'build docker'
+  - build
+
+variables:
+  ci_builddir: "build"
+  ci_in_docker: "yes"
+  ci_local_packages: "yes"
+  ci_parallel: "2"
+  ci_sudo: "yes"
+  # Temporarily needed to clean up after dbus/dbus#447
+  GIT_STRATEGY: clone
+
+  ###
+  # IMPORTANT
+  # These are the version tags for the docker images the CI runs against.
+  # If you are hacking on them or need a them to rebuild, its enough
+  # to change any part of the string of the image you want.
+  ###
+  WINDOWS_TAG: "2023-05-12.0"
+
+  UPSTREAM_BRANCH: 'master'
+  UPSTREAM_REPO: 'dbus/dbus'
+  WINDOWS_AMD64_SUFFIX: 'amd64/windows'
+  WINDOWS_IMAGE: "$CI_REGISTRY_IMAGE/$WINDOWS_AMD64_SUFFIX:$WINDOWS_TAG-$UPSTREAM_BRANCH"
+  WINDOWS_UPSTREAM_IMAGE: "$CI_REGISTRY/$UPSTREAM_REPO/$WINDOWS_AMD64_SUFFIX:$WINDOWS_TAG-$UPSTREAM_BRANCH"
+  # variables used by the ci-templates scripts:
+  FDO_UPSTREAM_REPO: dbus/dbus
+  FDO_DISTRIBUTION_EXEC: './tools/ci-install.sh'
+
+.debian-vars:
+  variables:
+    FDO_DISTRIBUTION_VERSION: 'bookworm-slim'
+    FDO_DISTRIBUTION_TAG: '2024-10-01.0' # Bump this version on every ci-install.sh or dist version change
+
+.opensuse-vars:
+  variables:
+    FDO_DISTRIBUTION_VERSION: 'leap'
+    FDO_DISTRIBUTION_TAG: '2023-12-01' # Bump this version on every ci-install.sh or dist version change
+
+.freebsd-vars:
+  variables:
+    BUILD_OS: freebsd
+    BUILD_ARCH: "x86_64"
+    FDO_DISTRIBUTION_VERSION: '13.1'
+    FDO_DISTRIBUTION_TAG: '2022-09-21.0'  # Bump this version on every ci-install.sh or dist version change
+    FDO_REPO_SUFFIX: "$BUILD_OS/$BUILD_ARCH"
+
+.cmake-common:
+  variables:
+    # Default to generating JUnit XML output for all CMake jobs.
+    # This works fine even for older versions of CMake since the extra arguments
+    # to CTest are ignored and a missing JUnit XML file does not fail the build.
+    ci_cmake_junit_output: "$CI_PROJECT_DIR/test-results.xml"
+    ci_buildsys: "cmake"
+  artifacts:
+    name: dbus-$CI_JOB_NAME
+    when: always
+    paths:
+      - $CI_PROJECT_DIR/test-results.xml
+      - "build/config.h"
+    reports:
+      junit: $CI_PROJECT_DIR/test-results.xml
+
+.meson-common:
+  variables:
+    ci_buildsys: "meson"
+  artifacts:
+    reports:
+      junit: "build/meson-logs/testlog.junit.xml"
+    name: "dbus-$CI_JOB_NAME"
+    when: always
+    paths:
+      - "build/config.h"
+      - "build/meson-logs/*.txt"
+
+windows amd64 image:
+  stage: "build docker"
+  variables:
+    # this file needs to be relative to docker/windows/ subdir
+    # as it makes life easier in the powershell script
+    DOCKERFILE: "tools/docker/windows/Dockerfile"
+  timeout: 2h 30m
+  tags:
+    - windows
+    - shell
+    - "2022"
+  script:
+    # We need to pass an array and to resolve the env vars, so we can't use a variable:
+    - $DOCKER_BUILD_ARGS = @("--build-arg", "DEFAULT_BRANCH=$UPSTREAM_BRANCH")
+
+    - "& tools/docker/windows/container.ps1 $CI_REGISTRY $CI_REGISTRY_USER $CI_REGISTRY_PASSWORD $WINDOWS_IMAGE $WINDOWS_UPSTREAM_IMAGE $DOCKERFILE"
+    - |
+      if (!($?)) {
+        echo "Failed to build the image"
+        Exit 1
+      }
+
+.unix-host-build:
+  stage: build
+  # No need to wait for the Windows Docker image to be built
+  needs: []
+  cache:
+    key: ${CI_JOB_NAME}
+    paths:
+      - .ccache/
+  before_script:
+    - ./tools/ci-install.sh
+    - mkdir -p .ccache
+    - export CCACHE_BASEDIR="$(pwd)"
+    - export CCACHE_DIR="$CCACHE_BASEDIR/.ccache"
+    # Debian's ccache package creates symlinks here for all supported
+    # compilers
+    - export PATH="/usr/lib/ccache:$PATH"
+  script:
+    - ./tools/ci-build.sh
+
+debian image:
+  extends:
+    - .fdo.container-build@debian
+    - .debian-vars
+  stage: 'build docker'
+
+.debian-build:
+  needs: ["debian image"]
+  extends:
+    - .fdo.distribution-image@debian
+    - .debian-vars
+    - .unix-host-build
+  stage: build
+
+debian cmake debug:
+  extends:
+    - .cmake-common
+    - .debian-build
+  when: manual
+  variables:
+    ci_buildsys: "cmake"
+    ci_variant: "debug"
+
+debian meson:
+  extends:
+    - .meson-common
+    - .debian-build
+  variables:
+    ci_buildsys: "meson"
+
+debian meson clang debug:
+  extends:
+    - .meson-common
+    - .debian-build
+  variables:
+    ci_buildsys: "meson"
+    ci_compiler: "clang"
+    ci_variant: "debug"
+  script:
+    - ./tools/ci-build.sh
+    # Also test that we can be used as a subproject:
+    # https://gitlab.freedesktop.org/dbus/dbus/-/merge_requests/388
+    - meson dist -C $ci_builddir --formats xztar --no-tests
+    - mkdir -p test/use-as-subproject/subprojects/dbus
+    - tar --strip-components=1 -C test/use-as-subproject/subprojects/dbus -xf $ci_builddir/meson-dist/*.tar.xz
+    - meson setup --wrap-mode=forcefallback test/use-as-subproject/_build test/use-as-subproject
+    - meson compile -C test/use-as-subproject/_build
+    - meson test -C test/use-as-subproject/_build
+
+debian meson reduced:
+  extends:
+    - .meson-common
+    - .debian-build
+  when: manual
+  variables:
+    ci_buildsys: "meson"
+    ci_variant: "reduced"
+
+debian meson legacy:
+  extends:
+    - .meson-common
+    - .debian-build
+  when: manual
+  variables:
+    ci_buildsys: "meson"
+    ci_variant: "legacy"
+
+debian mingw32 cmake:
+  extends:
+    - .cmake-common
+    - .debian-build
+  when: manual
+  variables:
+    ci_host: "i686-w64-mingw32"
+    # https://gitlab.freedesktop.org/dbus/dbus/-/issues/509
+    ci_test: "no"
+
+debian mingw32 meson:
+  extends:
+    - .meson-common
+    - .debian-build
+  variables:
+    ci_host: "i686-w64-mingw32"
+    # https://gitlab.freedesktop.org/dbus/dbus/-/issues/509
+    ci_test: "no"
+
+debian mingw32 meson debug:
+  extends:
+    - .meson-common
+    - .debian-build
+  when: manual
+  variables:
+    ci_buildsys: "meson"
+    ci_host: "i686-w64-mingw32"
+    ci_variant: "debug"
+    # https://gitlab.freedesktop.org/dbus/dbus/-/issues/509
+    ci_test: "no"
+
+debian mingw64 cmake debug:
+  extends:
+    - .cmake-common
+    - .debian-build
+  when: manual
+  variables:
+    ci_buildsys: "cmake"
+    ci_host: "x86_64-w64-mingw32"
+    ci_variant: "debug"
+    # https://gitlab.freedesktop.org/dbus/dbus/-/issues/509
+    ci_test: "no"
+
+debian mingw64 meson debug:
+  extends:
+    - .meson-common
+    - .debian-build
+  when: manual
+  variables:
+    ci_host: "x86_64-w64-mingw32"
+    ci_variant: "debug"
+    # https://gitlab.freedesktop.org/dbus/dbus/-/issues/509
+    ci_test: "no"
+
+opensuse image:
+  extends:
+    - .fdo.container-build@opensuse
+    - .opensuse-vars
+  stage: 'build docker'
+
+.suse-build:
+  needs: ["opensuse image"]
+  extends:
+    - .fdo.distribution-image@opensuse
+    - .opensuse-vars
+    - .unix-host-build
+  stage: build
+
+opensuse cmake debug:
+  extends:
+    - .cmake-common
+    - .suse-build
+  variables:
+    ci_local_packages: "no"
+    ci_variant: "debug"
+
+# TODO: https://gitlab.freedesktop.org/dbus/dbus/-/issues/520
+opensuse mingw32 cmake:
+  extends:
+    - .cmake-common
+    - .suse-build
+  when: manual
+  variables:
+    ci_host: "i686-w64-mingw32"
+    ci_local_packages: "no"
+
+opensuse mingw64 cmake debug:
+  extends:
+    - .cmake-common
+    - .suse-build
+  variables:
+    ci_host: "x86_64-w64-mingw32"
+    ci_local_packages: "no"
+    ci_variant: "debug"
+
+opensuse mingw64 meson debug:
+  extends:
+    - .meson-common
+    - .suse-build
+  variables:
+    ci_host: "x86_64-w64-mingw32"
+    ci_local_packages: "no"
+    # TODO: Tests in this configuration fail to find the mingw builds
+    # of expat and GLib in /usr/x86_64-w64-mingw32/sys-root/mingw/bin
+    ci_test: "no"
+    ci_variant: "debug"
+
+.ubuntu-build:
+  extends: .unix-host-build
+  image: "ubuntu:latest"
+  variables:
+    ci_distro: "ubuntu"
+
+.win-build:
+  image: $WINDOWS_IMAGE
+  stage: build
+  tags:
+    - 'docker'
+    - 'windows'
+    - '2022'
+  needs:
+    - "windows amd64 image"
+  timeout: '2h'
+  before_script:
+    - $ErrorActionPreference = "Stop"
+    - $WarningPreference = "Stop"
+    - $env:DBUS_TEST_MALLOC_FAILURES = 0
+    - $env:PATH += ";C:\bin"
+
+windows msys64 ucrt64 cmake:
+  extends: .win-build
+  artifacts:
+    name: dbus-$CI_JOB_NAME
+    when: always
+    paths:
+      - "build/config.h"
+  script:
+    - $env:MSYSTEM = "UCRT64"
+    - $env:CHERE_INVOKING = "1"
+    - $env:MSYS2_PATH_TYPE = "inherit"
+    - $env:PATH += ";C:\msys64\usr\bin"
+    # FIXME: glib from msys2 has issues, disable it for now
+    - C:\msys64\usr\bin\bash -lc 'cmake -G \"MinGW Makefiles\" -S . -B build -DDBUS_WITH_GLIB=OFF -DDBUS_ENABLE_INTRUSIVE_TESTS=ON && cmake --build build --config Release'
+
+windows vs15-64 cmake:
+  extends:
+    - .cmake-common
+    - .win-build
+  script:
+    - cmake -DCMAKE_PREFIX_PATH=C:/ -G "Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE=Debug -DDBUS_ENABLE_VERBOSE_MODE=OFF -DDBUS_ENABLE_INTRUSIVE_TESTS=ON -S . -B build
+    - cmake --build build --config Debug
+    - cmake --install build --config Debug
+    # FIXME: a few tests timeout on gitlab runner for unknown reason
+    - cd build ; ctest -C Debug -VV --timeout 1200 -E '(dbus-daemon|monitor|header-fields)' --output-junit $ci_cmake_junit_output
+
+windows-meson-mingw-ucrt64:
+  extends: .win-build
+  script:
+    - $env:MSYSTEM = "UCRT64"
+    - $env:CHERE_INVOKING = "1"
+    - $env:MSYS2_PATH_TYPE = "inherit"
+    - $env:PATH += ";C:\msys64\usr\bin"
+    # FIXME: -j1: for some reason on CI ninja: fatal: pipe: Too many open files
+    - C:\msys64\usr\bin\bash -lc "
+        meson build &&
+        ninja -j1 -C build &&
+        meson test --no-suite=runs-dbus-daemon -C build"
+  artifacts:
+    reports:
+      junit: "build/meson-logs/testlog.junit.xml"
+    name: "dbus-$CI_JOB_NAME"
+    when: always
+    paths:
+      - "build/config.h"
+      - "build/meson-logs/*.txt"
+  # Currently broken, https://gitlab.freedesktop.org/dbus/dbus/-/issues/462
+  when: manual
+
+windows-meson-vs15-x86:
+  extends: .win-build
+  script:
+    # FIXME: tests that run dbus-daemon time out on the Gitlab runner
+    - cmd.exe /C "C:\BuildTools\Common7\Tools\VsDevCmd.bat -host_arch=amd64 -arch=x86 &&
+        meson --force-fallback-for=expat,glib,zlib build &&
+        meson compile -C build &&
+        meson test --no-suite=runs-dbus-daemon -C build"
+  artifacts:
+    reports:
+      junit: "build/meson-logs/testlog.junit.xml"
+    name: "dbus-$CI_JOB_NAME"
+    when: always
+    paths:
+      - "build/config.h"
+      - "build/meson-logs/*.txt"
+
+freebsd image:
+  extends:
+    - .fdo.qemu-build@freebsd@x86_64
+    - .freebsd-vars
+  stage: 'build docker'
+
+# Full build and test.
+.do-build-qemu:
+  stage: build
+  variables:
+    ci_parallel: "${FDO_CI_CONCURRENT:-2}"
+    ci_distro: "$BUILD_OS"
+    ci_suite: "$FDO_DISTRIBUTION_VERSION"
+  script:
+    # Start the VM and copy our workspace to the VM
+    - /app/vmctl start
+    # Copy files over to the VM using rsync (not scp) to preserve permissions.
+    - rsync -av $PWD "vm:"
+    - /app/vmctl exec "cd $CI_PROJECT_NAME && ./tools/ci-install.sh"
+    # Variables are not forwarded to the vm automatically so we forward the
+    # ones starting with ci_ to ci-build.sh manually. This works because
+    # $(env | grep "ci_.*=") is evaluated on the current host not in the VM.
+    - /app/vmctl exec "cd $CI_PROJECT_NAME && env make=gmake $(echo $(env | grep "ci_.*=")) bash -x ./tools/ci-build.sh $CI_BUILD_ARGS"
+    # Copy build artifacts from the VM for archiving/JUnit XML display
+    - mkdir -p "$ci_builddir"
+    - rsync -av "vm:$CI_PROJECT_NAME/$ci_builddir/meson-logs" "$ci_builddir/" || true
+    - scp -v "vm:$CI_PROJECT_NAME/$ci_builddir/config.h" . || true
+    - scp -v "vm:$ci_cmake_junit_output" "$ci_cmake_junit_output" || true
+    # Finally, shut down the VM.
+    - /app/vmctl stop
+  artifacts:
+    name: dbus-$CI_JOB_NAME
+    when: always
+    paths:
+      - test-results.xml
+    reports:
+      junit: test-results.xml
+
+.build-env-freebsd:
+  extends:
+    - .fdo.suffixed-image@freebsd
+    - .freebsd-vars
+    - .do-build-qemu
+  needs:
+    - job: "freebsd image"
+      artifacts: false
+  variables:
+    # Don't install with sudo (since we are already building as root and sudo
+    # is not currently installed on the CI image).
+    ci_sudo: "no"
+
+freebsd cmake debug:
+  extends:
+    - .cmake-common
+    - .build-env-freebsd
+  variables:
+    ci_variant: "debug"
+    # Don't build doxygen documentation since installing the required tools
+    # massively increases the VM image (and therefore container) size.
+    CI_BUILD_ARGS: "-DDBUS_ENABLE_DOXYGEN_DOCS=OFF -DDBUS_ENABLE_XML_DOCS=ON -DCMAKE_BUILD_TYPE=Debug"
+
+freebsd cmake release:
+  extends:
+    - .cmake-common
+    - .build-env-freebsd
+  variables:
+    # Don't build doxygen documentation since installing the required tools
+    # massively increases the VM image (and therefore container) size.
+    CI_BUILD_ARGS: "-DDBUS_ENABLE_DOXYGEN_DOCS=OFF -DDBUS_ENABLE_XML_DOCS=ON -DCMAKE_BUILD_TYPE=Release"
+
+freebsd meson:
+  extends:
+    - .build-env-freebsd
+    - .meson-common
+  variables:
+    # On FreeBSD the `environ` symbol is provided by the c startup code and is
+    # only defined in the main executable and not  available in libc.so, so
+    # building with -Wl,-no-undefined results in errors.
+    # See https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=263265.
+    CI_BUILD_ARGS: "-Db_lundef=false"
+
+# vim:set sw=2 sts=2 et:

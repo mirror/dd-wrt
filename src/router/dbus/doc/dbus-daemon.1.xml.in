@@ -727,6 +727,22 @@ configuration file would probably be nonsense.</para>
   <itemizedlist>
     <listitem>
       <para>
+        /etc/dbus-1/system-services: this location is specified
+        by the D-Bus Specification, and is suitable for software
+        installed locally by the system administrator,
+        or by an asset manager deploying services that are
+        not part of the OS (perhaps while /usr/ is read-only)
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        /run/dbus-1/system-services: this location is specified
+        by the D-Bus Specification, and is suitable for ephemeral
+        services that will disappear after a reboot
+      </para>
+    </listitem>
+    <listitem>
+      <para>
         /usr/local/share/dbus-1/system-services: this location is
         specified by the D-Bus Specification, and is suitable for
         software installed locally by the system administrator

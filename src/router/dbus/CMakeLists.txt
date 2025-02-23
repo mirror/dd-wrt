@@ -1,41 +1,35 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.10)
 
 # we do not need to have WIN32 defined
 set(CMAKE_LEGACY_CYGWIN_WIN32 0)
 
-project(dbus)
-
 # where to look first for cmake modules, before ${CMAKE_ROOT}/Modules/ is checked
-list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
-list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
-
-option(DBUS_BUILD_TESTS "enable unit test code" ON)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
 # detect version
-include(MacrosAutotools)
-autoinit(configure.ac)
-autoversion(dbus)
+include(MacrosMeson)
+meson_init(meson.build)
+meson_version(dbus)
+set(DBUS_PATCH_VERSION 0)
+set(VERSION "${DBUS_VERSION}")
+
+if(WIN32)
+    set(LANGUAGES C CXX)
+else()
+    set(LANGUAGES C)
+endif()
+project(dbus
+    VERSION ${DBUS_VERSION}
+    LANGUAGES C CXX
+)
+
+option(DBUS_BUILD_TESTS "enable unit test code" ON)
+option(DBUS_ENABLE_INTRUSIVE_TESTS "enable tests that require insecure extra code in the library and binaries" OFF)
 
 # replacement for AC_C_BIGENDIAN
 include (TestBigEndian)
 test_big_endian(WORDS_BIGENDIAN)
-
-if(EXISTS ${PROJECT_SOURCE_DIR}/config.h.in)
-    autoheaderchecks(${PROJECT_SOURCE_DIR}/config.h.in ${PROJECT_SOURCE_DIR}/cmake/ConfigureChecks.cmake ${PROJECT_SOURCE_DIR}/cmake/config.h.cmake)
-else()
-    message(STATUS "Generate config.h.in with autogen.sh to enable cmake header difference check.")
-endif()
-
-# used by file version info
-set(DBUS_PATCH_VERSION "0")
-
-# set PACKAGE_... variables
-autopackage(
-    dbus
-    ${DBUS_VERSION_STRING}
-    "http://dbus.freedesktop.org"
-    "https://gitlab.freedesktop.org/dbus/dbus/issues"
-)
 
 include(Macros)
 string(TIMESTAMP DBUS_BUILD_TIMESTAMP "%Y%m%d%H%M" UTC)
@@ -111,6 +105,7 @@ set(BUILD_SHARED_LIBS ON)
 set(INSTALL_TARGETS_DEFAULT_ARGS EXPORT DBus1Targets RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 if(CYGWIN)
+    # TODO cygwin is not using WIN32 api
     set(WIN32)
 endif()
 
@@ -381,8 +376,9 @@ if(UNIX AND NOT DBUS_DISABLE_ASSERT)
 endif()
 
 if(DBUS_WITH_GLIB)
-    autodefine(GLIB_VERSION_MIN_REQUIRED)
-    autodefine(GLIB_VERSION_MAX_ALLOWED)
+    # keep in sync with meson.build
+    set(GLIB_VERSION_MIN_REQUIRED GLIB_VERSION_2_38)
+    set(GLIB_VERSION_MAX_ALLOWED "G_ENCODE_VERSION(2,44)")
 endif()
 
 string(APPEND CMAKE_C_FLAGS_DEBUG " -D_DEBUG")
@@ -448,7 +444,6 @@ enable_testing()
 
 ########### command line options ###############
 if(DBUS_BUILD_TESTS)
-    set(DBUS_ENABLE_EMBEDDED_TESTS ON)
     set(DBUS_ENABLE_MODULAR_TESTS ON)
 endif()
 
@@ -644,7 +639,7 @@ add_definitions(-DHAVE_CONFIG_H)
 add_definitions(${DBUS_BUS_CFLAGS})
 
 
-if(DBUS_BUILD_TESTS)
+if(DBUS_ENABLE_MODULAR_TESTS OR DBUS_ENABLE_INTRUSIVE_TESTS)
     # set variables used for the .in files (substituted by configure_file) in test/data:
     set(DBUS_TEST_EXEC ${Z_DRIVE_IF_WINE}${CMAKE_RUNTIME_OUTPUT_DIRECTORY}${IDE_BIN})
     # Working directory for build-time tests, so that they'll pick up
@@ -674,10 +669,10 @@ set(DBUS_INTERNAL_LIBRARIES dbus-internal)
 set(DBUS_INTERNAL_ADD_LIBRARY_OPTIONS STATIC)
 set(DBUS_INTERNAL_CLIENT_DEFINITIONS "-DDBUS_COMPILATION")
 
-configure_file(cmake/config.h.cmake ${PROJECT_BINARY_DIR}/config.h )
+configure_file(cmake/config.h.cmake ${PROJECT_BINARY_DIR}/config.h)
 
 if(WIN32)
-configure_file(cmake/dbus-env.bat.cmake ${PROJECT_BINARY_DIR}/bin/dbus-env.bat )
+configure_file(cmake/dbus-env.bat.cmake ${PROJECT_BINARY_DIR}/bin/dbus-env.bat)
     install(FILES ${PROJECT_BINARY_DIR}/bin/dbus-env.bat DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
@@ -705,7 +700,7 @@ endif()
 
 add_subdirectory( dbus )
 add_subdirectory( bus )
-if(DBUS_BUILD_TESTS)
+if(DBUS_ENABLE_MODULAR_TESTS OR DBUS_ENABLE_INTRUSIVE_TESTS)
     add_subdirectory( test )
     add_custom_target(check
         COMMAND ctest -R ^test-.*
@@ -757,6 +752,7 @@ if(MSVC)
 message("        MSVC code analyze mode:   ${DBUS_MSVC_ANALYZE}                ")
 endif()
 message("        Building unit tests:      ${DBUS_BUILD_TESTS}                 ")
+message("        Building intrusive tests: ${DBUS_ENABLE_INTRUSIVE_TESTS}      ")
 message("        Building with GLib:       ${DBUS_WITH_GLIB}                   ")
 message("        Building verbose mode:    ${DBUS_ENABLE_VERBOSE_MODE}         ")
 message("        Building w/o assertions:  ${DBUS_DISABLE_ASSERT}              ")
@@ -791,11 +787,11 @@ message("        build timestamp:          ${DBUS_BUILD_TIMESTAMP}             "
 endif()
 
 message(" ")
-if(DBUS_BUILD_TESTS)
-    message("NOTE: building with unit tests increases the size of the installed library and renders it insecure.")
+if(DBUS_ENABLE_INTRUSIVE_TESTS)
+    message("NOTE: building with intrusive test code increases the size of the installed library and renders it insecure.")
 endif()
 
-if(DBUS_BUILD_TESTS AND DBUS_DISABLE_ASSERT)
+if(DBUS_ENABLE_INTRUSIVE_TESTS AND DBUS_DISABLE_ASSERT)
     message("NOTE: building with unit tests but without assertions means tests may not properly report failures (this configuration is only useful when doing something like profiling the tests)")
 endif()
 

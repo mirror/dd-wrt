@@ -113,10 +113,10 @@ dbus_bool_t       bus_context_allow_unix_user                    (BusContext    
                                                                   unsigned long     uid);
 dbus_bool_t       bus_context_allow_windows_user                 (BusContext       *context,
                                                                   const char       *windows_sid);
-BusContainers    *bus_context_get_containers                     (BusContext       *context);
 
 BusClientPolicy*  bus_context_create_client_policy               (BusContext       *context,
                                                                   DBusConnection   *connection,
+                                                                  BusClientPolicy  *previous,
                                                                   DBusError        *error);
 int               bus_context_get_activation_timeout             (BusContext       *context);
 int               bus_context_get_auth_timeout                   (BusContext       *context);

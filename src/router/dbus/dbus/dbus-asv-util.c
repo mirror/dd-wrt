@@ -376,3 +376,42 @@ _dbus_asv_add_byte_array (DBusMessageIter *arr_iter,
   return _dbus_asv_add_fixed_array (arr_iter, key, DBUS_TYPE_BYTE, value,
                                     n_elements);
 }
+
+/**
+ * Create a new entry in an a{sv} (map from string to variant)
+ * with a Unix file descriptor as value.
+ *
+ * If this function fails, the a{sv} must be abandoned, for instance
+ * with _dbus_asv_abandon().
+ *
+ * The FD remains owned by the caller regardless of the result returned
+ * by this function.
+ *
+ * @param arr_iter the iterator which is appending to the array
+ * @param key a UTF-8 key for the map
+ * @param value the value
+ * @returns #TRUE on success, or #FALSE if not enough memory
+ */
+dbus_bool_t
+_dbus_asv_add_unix_fd (DBusMessageIter *arr_iter,
+                       const char *key,
+                       int value)
+{
+  DBusMessageIter entry_iter, var_iter;
+
+  if (!_dbus_asv_open_entry (arr_iter, &entry_iter, key,
+                             DBUS_TYPE_UNIX_FD_AS_STRING, &var_iter))
+    return FALSE;
+
+  if (!dbus_message_iter_append_basic (&var_iter, DBUS_TYPE_UNIX_FD,
+                                       &value))
+    {
+      _dbus_asv_abandon_entry (arr_iter, &entry_iter, &var_iter);
+      return FALSE;
+    }
+
+  if (!_dbus_asv_close_entry (arr_iter, &entry_iter, &var_iter))
+    return FALSE;
+
+  return TRUE;
+}

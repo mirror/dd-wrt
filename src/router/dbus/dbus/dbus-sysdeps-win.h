@@ -87,9 +87,6 @@ _dbus_win_sid_to_name_and_domain (dbus_uid_t uid,
 DBUS_PRIVATE_EXPORT
 dbus_bool_t _dbus_get_install_root (DBusString *str);
 
-void        _dbus_threads_windows_init_global (void);
-void        _dbus_threads_windows_ensure_ctor_linked (void);
-
 DBUS_PRIVATE_EXPORT
 dbus_bool_t _dbus_getsid(char **sid, dbus_pid_t process_id);
 

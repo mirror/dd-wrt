@@ -457,7 +457,8 @@ _dbus_verbose_real (
   va_list args;
   static dbus_bool_t need_pid = TRUE;
   int len;
-  long sec, usec;
+  dbus_int64_t sec;
+  long usec;
   
   /* things are written a bit oddly here so that
    * in the non-verbose case we just have the one
@@ -473,7 +474,7 @@ _dbus_verbose_real (
       _dbus_print_thread ();
     }
   _dbus_get_real_time (&sec, &usec);
-  fprintf (stderr, "%ld.%06ld ", sec, usec);
+  fprintf (stderr, "%" DBUS_INT64_MODIFIER "d.%06ld ", sec, usec);
 #endif
 
   /* Only print pid again if the next line is a new line */
@@ -752,7 +753,7 @@ _dbus_generate_uuid (DBusGUID  *uuid,
                      DBusError *error)
 {
   DBusError rand_error;
-  long now;
+  dbus_int64_t now;
 
   dbus_error_init (&rand_error);
 
@@ -1096,7 +1097,7 @@ run_failing_each_malloc (int                    n_mallocs,
       n_mallocs -= 1;
     }
 
-  _dbus_set_fail_alloc_counter (_DBUS_INT_MAX);
+  _dbus_set_fail_alloc_counter (-1);
 
   return TRUE;
 }                        
@@ -1126,14 +1127,18 @@ _dbus_test_oom_handling (const char             *description,
 
   /* Run once to see about how many mallocs are involved */
   
-  _dbus_set_fail_alloc_counter (_DBUS_INT_MAX);
+  _dbus_set_fail_alloc_counter (-1);
 
   _dbus_test_diag ("Running \"%s\" once to count mallocs", description);
 
   if (!(* func) (data, TRUE))
     return FALSE;
 
-  approx_mallocs = _DBUS_INT_MAX - _dbus_get_fail_alloc_counter ();
+  /* We have decremented the counter once per allocation, so for example
+   * if there were 10 allocations, it will have changed from -1 to -11.
+   * Subtract from -1 to get the positive number of allocations that took
+   * place. */
+  approx_mallocs = -1 - _dbus_get_fail_alloc_counter ();
 
   _dbus_test_diag ("\"%s\" has about %d mallocs in total",
                    description, approx_mallocs);

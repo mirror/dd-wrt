@@ -1,0 +1,57 @@
+# For format see editorconfig.org
+# Copyright 2022 Collabora Ltd.
+# SPDX-License-Identifier: MIT
+
+root = true
+
+[*]
+# In general all dbus code is in Unix text format, encoded as UTF-8
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+# Hard tabs (if used, but please don't) are worth 8 spaces, even if we
+# are indenting by 2 or 4 spaces per indent level
+tab_width = 8
+
+[{*.py,*.sh,meson.build,CMakeLists.txt,*.cmake}]
+# Most scripts are 4-space indented
+indent_size = 4
+indent_style = space
+
+[{*.c,*.cpp,*.h,*.h.in,Version.in,*.h.cmake}]
+# C/C++ code is GNU-style, see CONTRIBUTING.md
+# Note that order is important: *.h.cmake appears after *.cmake so that
+# the more specific rule takes precedence
+indent_size = 2
+indent_style = space
+
+[{*.xml,*.xml.in}]
+# As a special case, XML is 2-space indented
+indent_size = 2
+indent_style = space
+
+[configure.ac]
+# Inconsistently 2, 4 or arbitrary, so choose the lowest common denominator
+indent_size = 2
+indent_style = space
+
+[Makefile.am]
+# Hard tabs are syntactically significant in Make
+indent_size = 8
+indent_style = tab
+
+[*.md]
+indent_size = 4
+indent_style = space
+# The Markdown spec assumes tabs are only worth 4 spaces, so if hard tabs
+# exist, treat them as a 4-space indent
+tab_width = 4
+
+[test/name-test/*.sh]
+# As a special case, these older scripts are 2-space indented
+indent_size = 2
+indent_style = space
+
+[*.reg.in]
+# As a special case, this has Windows line-endings
+end_of_line = crlf

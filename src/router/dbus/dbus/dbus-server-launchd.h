@@ -1,5 +1,6 @@
 /* dbus-server-launchd.h Server methods for interacting with launchd.
 * Copyright (C) 2008, Benjamin Reed <rangerrick@befunk.com>
+* SPDX-License-Identifier: MIT
 *
 * Permission is hereby granted, free of charge, to any person
 * obtaining a copy of this software and associated documentation

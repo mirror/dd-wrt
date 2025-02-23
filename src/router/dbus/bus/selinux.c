@@ -496,10 +496,7 @@ bus_selinux_allows_acquire_service (DBusConnection     *connection,
 
   if (spid)
     {
-      if (!_dbus_string_append (&auxdata, " spid="))
-	goto oom;
-
-      if (!_dbus_string_append_uint (&auxdata, spid))
+      if (!_dbus_string_append_printf (&auxdata, " spid=%lu", spid))
 	goto oom;
     }
   
@@ -608,19 +605,13 @@ bus_selinux_allows_send (DBusConnection     *sender,
 
   if (spid)
     {
-      if (!_dbus_string_append (&auxdata, " spid="))
-	goto oom;
-
-      if (!_dbus_string_append_uint (&auxdata, spid))
+      if (!_dbus_string_append_printf (&auxdata, " spid=%lu", spid))
 	goto oom;
     }
 
   if (tpid)
     {
-      if (!_dbus_string_append (&auxdata, " tpid="))
-	goto oom;
-
-      if (!_dbus_string_append_uint (&auxdata, tpid))
+      if (!_dbus_string_append_printf (&auxdata, " tpid=%lu", tpid))
 	goto oom;
     }
 

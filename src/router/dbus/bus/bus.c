@@ -31,7 +31,6 @@
 
 #include "activation.h"
 #include "connection.h"
-#include "containers.h"
 #include "dispatch.h"
 #include "services.h"
 #include "utils.h"
@@ -73,7 +72,6 @@ struct BusContext
   BusMatchmaker *matchmaker;
   BusLimits limits;
   DBusRLimit *initial_fd_limit;
-  BusContainers *containers;
   unsigned int fork : 1;
   unsigned int syslog : 1;
   unsigned int keep_umask : 1;
@@ -921,14 +919,6 @@ bus_context_new (const DBusString *config_file,
       goto failed;
     }
 
-  context->containers = bus_containers_new ();
-
-  if (context->containers == NULL)
-    {
-      BUS_SET_OOM (error);
-      goto failed;
-    }
-
   /* check user before we fork */
   if (context->user != NULL)
     {
@@ -1227,9 +1217,6 @@ bus_context_shutdown (BusContext  *context)
 
       link = _dbus_list_get_next_link (&context->servers, link);
     }
-
-  if (context->containers != NULL)
-    bus_containers_stop_listening (context->containers);
 }
 
 BusContext *
@@ -1300,7 +1287,6 @@ bus_context_unref (BusContext *context)
           context->matchmaker = NULL;
         }
 
-      bus_clear_containers (&context->containers);
       dbus_free (context->config_file);
       dbus_free (context->log_prefix);
       dbus_free (context->type);
@@ -1405,20 +1391,45 @@ bus_context_allow_windows_user (BusContext       *context,
                                         windows_sid);
 }
 
-BusContainers *
-bus_context_get_containers (BusContext *context)
-{
-  return context->containers;
-}
-
 BusClientPolicy*
 bus_context_create_client_policy (BusContext      *context,
                                   DBusConnection  *connection,
+                                  BusClientPolicy *previous,
                                   DBusError       *error)
 {
+  BusClientPolicy *client;
+  DBusError local_error = DBUS_ERROR_INIT;
+  const char *conn;
+  const char *loginfo;
+
   _DBUS_ASSERT_ERROR_IS_CLEAR (error);
-  return bus_policy_create_client_policy (context->policy, connection,
-                                          error);
+
+  client = bus_policy_create_client_policy (context->policy, connection,
+                                            &local_error);
+
+  /* On success, use new policy */
+  if (client != NULL)
+    return client;
+
+  /* On failure while setting up a new connection, fail */
+  if (previous == NULL)
+    {
+      dbus_move_error (&local_error, error);
+      return NULL;
+    }
+
+  /* On failure while reloading, keep the previous policy */
+  conn = bus_connection_get_name (connection);
+  loginfo = bus_connection_get_loginfo (connection);
+
+  if (conn == NULL)
+    conn = "(inactive)";
+
+  bus_context_log (context, DBUS_SYSTEM_LOG_WARNING,
+                   "Unable to reload policy for connection \"%s\" (%s), "
+                   "keeping current policy: %s",
+                   conn, loginfo, local_error.message);
+  return bus_client_policy_ref (previous);
 }
 
 int

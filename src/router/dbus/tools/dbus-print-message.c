@@ -530,7 +530,7 @@ print_iter (DBusMessageIter *iter, dbus_bool_t literal, int depth)
 }
 
 void
-print_message (DBusMessage *message, dbus_bool_t literal, long sec, long usec)
+print_message (DBusMessage *message, dbus_bool_t literal, dbus_int64_t sec, long usec)
 {
   DBusMessageIter iter;
   const char *sender;
@@ -545,7 +545,7 @@ print_message (DBusMessage *message, dbus_bool_t literal, long sec, long usec)
     {
       if (sec != 0 || usec != 0)
         {
-          printf ("%s time=%ld.%06ld sender=%s -> destination=%s",
+          printf ("%s time=%" DBUS_INT64_MODIFIER "d.%06ld sender=%s -> destination=%s",
                   type_to_name (message_type), sec, usec,
                   sender ? sender : "(null sender)",
                   destination ? destination : "(null destination)");

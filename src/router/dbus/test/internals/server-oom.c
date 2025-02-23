@@ -1,6 +1,7 @@
 /* Targeted unit tests for OOM paths in DBusServer
  *
  * Copyright © 2017 Collabora Ltd.
+ * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation files

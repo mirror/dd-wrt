@@ -36,7 +36,7 @@ application manuals
 <a href="dbus-test-plan.html">D-Bus Test Plan</a>
    <br>
    <br>
-<a href="api/index.html">libdbus API Documentation</a>
+@DBUS_APIDOC_LINK@
   </td>
   <td  valign=top>
 <a href="dbus-daemon.1.html">D-Bus Daemon manual</a>

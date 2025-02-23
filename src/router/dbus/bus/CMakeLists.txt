@@ -51,8 +51,6 @@ set(BUS_SOURCES
 #    config-parser-trivial.c
     connection.c
     connection.h
-    containers.c
-    containers.h
     desktop-file.c
     desktop-file.h
     dir-watch.h

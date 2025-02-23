@@ -27,7 +27,7 @@
 
 extern "C"
 {
-#include "dbus-sysdeps-win.h"
+#include "dbus-init-win.h"
 }
 
 class DBusInternalInit

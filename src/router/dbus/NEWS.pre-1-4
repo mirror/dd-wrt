@@ -1,0 +1,15 @@
+D-Bus 1.3.1 (23 June 2010)
+==
+ - New standardized PropertiesChanged signal in the properties interface
+ - Various portability fixes, in particular to Windows platforms
+ - Support forking bus services, for compatibility
+
+D-Bus 1.3.0 (29 July 2009)
+==
+ - ability for dbus-send to send to any bus (--address)
+ - file descriptor passing on Unix socket transports
+ - use of GCC atomic intrinsics for better processor support
+   (requires -march=i486 or above for x86 compilation)
+ - thread-safe FD_CLOEXEC setting on recent Linux kernels (2.6.24-27 and up)
+   and glibc (2.9 for pipe2 and 2.10 for accept4)
+ - feature negotiation in the bus daemon

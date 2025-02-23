@@ -21,6 +21,7 @@
 
 dbus_dependencies = [
     threads,
+    adt_libs,
     network_libs,
     systemd,
     valgrind.partial_dependency(compile_args: true),
@@ -78,7 +79,7 @@ dbus_shared_sources = [
     'dbus-sysdeps.c',
 ]
 
-if embedded_tests
+if intrusive_tests
     dbus_shared_sources += 'dbus-test-tap.c'
 endif
 
@@ -183,7 +184,12 @@ if cc.has_link_argument(
         meson.current_source_dir() / 'test-version-script'
     )
 )
-    version_flags = ['-Wl,--version-script,@0@'.format(version_script)]
+    if meson.version().version_compare('>=1.4.0')
+        version_script_path = version_script.full_path()
+    else
+        version_script_path = meson.current_build_dir() / 'version_script'
+    endif
+    version_flags = ['-Wl,--version-script,@0@'.format(version_script_path)]
 else
     version_flags = []
 endif
@@ -208,6 +214,8 @@ libdbus_dep = declare_dependency(
     dependencies: dbus_dependencies,
     link_with: libdbus,
 )
+
+meson.override_dependency('dbus-1', libdbus_dep)
 
 libdbus_internal = static_library('dbus-internal',
     dbus_util_sources,

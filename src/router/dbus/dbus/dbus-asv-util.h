@@ -67,5 +67,8 @@ dbus_bool_t  _dbus_asv_close_entry       (DBusMessageIter *arr_iter,
 void         _dbus_asv_abandon_entry     (DBusMessageIter *arr_iter,
                                           DBusMessageIter *entry_iter,
                                           DBusMessageIter *var_iter);
+dbus_bool_t  _dbus_asv_add_unix_fd       (DBusMessageIter *arr_iter,
+                                          const char      *key,
+                                          int              value);
 
 #endif

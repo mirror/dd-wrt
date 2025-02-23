@@ -342,35 +342,37 @@ _dbus_user_database_lookup_group (DBusUserDatabase *db,
  * @param uid the UID
  * @param group_ids return location for array of group IDs
  * @param n_group_ids return location for length of returned array
+ * @param error error to fill in on failure
  * @returns #TRUE if the UID existed and we got some credentials
  */
 dbus_bool_t
 _dbus_groups_from_uid (dbus_uid_t         uid,
                        dbus_gid_t       **group_ids,
-                       int               *n_group_ids)
+                       int               *n_group_ids,
+                       DBusError         *error)
 {
   DBusUserDatabase *db;
   const DBusUserInfo *info;
+  dbus_bool_t ret = FALSE;
+
   *group_ids = NULL;
   *n_group_ids = 0;
 
-  /* FIXME: this can't distinguish ENOMEM from other errors */
   if (!_dbus_user_database_lock_system ())
-    return FALSE;
+    {
+      _DBUS_SET_OOM (error);
+      return FALSE;
+    }
 
   db = _dbus_user_database_get_system ();
   if (db == NULL)
     {
-      _dbus_user_database_unlock_system ();
-      return FALSE;
+      _DBUS_SET_OOM (error);
+      goto out;
     }
 
-  if (!_dbus_user_database_get_uid (db, uid,
-                                    &info, NULL))
-    {
-      _dbus_user_database_unlock_system ();
-      return FALSE;
-    }
+  if (!_dbus_user_database_get_uid (db, uid, &info, error))
+    goto out;
 
   _dbus_assert (info->uid == uid);
   
@@ -379,8 +381,8 @@ _dbus_groups_from_uid (dbus_uid_t         uid,
       *group_ids = dbus_new (dbus_gid_t, info->n_group_ids);
       if (*group_ids == NULL)
         {
-	  _dbus_user_database_unlock_system ();
-          return FALSE;
+          _DBUS_SET_OOM (error);
+          goto out;
         }
 
       *n_group_ids = info->n_group_ids;
@@ -388,7 +390,10 @@ _dbus_groups_from_uid (dbus_uid_t         uid,
       memcpy (*group_ids, info->group_ids, info->n_group_ids * sizeof (dbus_gid_t));
     }
 
+  ret = TRUE;
+out:
+  _DBUS_ASSERT_ERROR_XOR_BOOL (error, ret);
   _dbus_user_database_unlock_system ();
-  return TRUE;
+  return ret;
 }
 /** @} */

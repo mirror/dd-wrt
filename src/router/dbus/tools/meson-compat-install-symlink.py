@@ -14,7 +14,7 @@ link_name, d, pointing_to = sys.argv[1:]
 if os.path.isabs(d):
     p = Path(d)
     d = p.relative_to(p.anchor)
-    dest = os.path.join(os.environ['DESTDIR'], d)
+    dest = os.path.join(os.environ.get('DESTDIR', '/'), d)
 else:
     dest = os.path.join(os.environ['MESON_INSTALL_DESTDIR_PREFIX'], d)
 

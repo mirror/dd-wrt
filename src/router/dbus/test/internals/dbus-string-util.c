@@ -534,7 +534,7 @@ _dbus_string_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
   if (!_dbus_string_init (&str))
     _dbus_test_fatal ("failed to init string");
 
-  if (!_dbus_string_append_int (&str, 27))
+  if (!_dbus_string_append_printf (&str, "%d", 27))
     _dbus_test_fatal ("failed to append int");
 
   i = _dbus_string_get_length (&str);

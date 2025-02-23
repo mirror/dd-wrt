@@ -3,6 +3,8 @@
 #ifndef _DBUS_CONFIG_H
 #define _DBUS_CONFIG_H
 
+#cmakedefine VERSION "@VERSION@"
+
 /* On Windows, we expect to be using msvcrt.dll-compatible printf
  * (%I64u instead of %llu) unless otherwise specified. This must be
  * done near the beginning of config.h, before we have included any
@@ -11,14 +13,8 @@
 #   define __USE_MINGW_ANSI_STDIO 0
 #endif
 
-@AUTOPACKAGE_CONFIG_H_TEMPLATE@
-
-/*
- * Variables defined by AC_DEFINE in ../configure.ac
- * should be placed in this file
-*/
-
-/* AC_C_BIGENDIAN */
+#cmakedefine _FILE_OFFSET_BITS @_FILE_OFFSET_BITS@
+#cmakedefine _TIME_BITS @_TIME_BITS@
 #cmakedefine WORDS_BIGENDIAN
 
 /* Opt-in to modern APIs and thread-safety for Solaris. In the Autotools
@@ -63,9 +59,14 @@
 #ifndef DBUS_DISABLE_CHECKS
 #  define DBUS_ENABLE_CHECKS 1
 #endif
-#cmakedefine DBUS_ENABLE_EMBEDDED_TESTS 1
+#cmakedefine DBUS_ENABLE_INTRUSIVE_TESTS 1
 #cmakedefine DBUS_ENABLE_MODULAR_TESTS 1
 #cmakedefine DBUS_USE_OUTPUT_DEBUG_STRING 1
+
+/* Compatibility with the old name for this functionality */
+#ifdef DBUS_ENABLE_INTRUSIVE_TESTS
+# define DBUS_ENABLE_EMBEDDED_TESTS 1
+#endif
 
 /* xmldocs */
 /* doxygen */
@@ -83,7 +84,6 @@
 # define DBUS_ENABLE_X11_AUTOLAUNCH 1
 #endif
 
-#cmakedefine DBUS_WITH_GLIB 1
 #cmakedefine GLIB_VERSION_MIN_REQUIRED @GLIB_VERSION_MIN_REQUIRED@
 #cmakedefine GLIB_VERSION_MAX_ALLOWED  @GLIB_VERSION_MAX_ALLOWED@
 
@@ -117,6 +117,7 @@
 /* Define to 1 if you have stdio.h */
 #cmakedefine   HAVE_STDIO_H 1
 
+#cmakedefine HAVE_STDATOMIC_H 1
 #cmakedefine HAVE_SYSLOG_H 1
 #cmakedefine HAVE_SYS_EVENTS_H 1
 #cmakedefine HAVE_SYS_INOTIFY_H 1
@@ -268,5 +269,6 @@
 #cmakedefine01 HAVE_DECL_ENVIRON
 #cmakedefine01 HAVE_DECL_LOG_PERROR
 #cmakedefine01 HAVE_DECL_MSG_NOSIGNAL
+#cmakedefine01 HAVE_DECL_SYS_PIDFD_OPEN
 
 #endif  // _DBUS_CONFIG_H

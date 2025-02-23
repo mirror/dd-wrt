@@ -273,8 +273,7 @@ _dbus_write_pid_to_file_and_pipe (const DBusString *pidfile,
           return FALSE;
         }
 	  
-      if (!_dbus_string_append_int (&pid, pid_to_write) ||
-          !_dbus_string_append (&pid, "\n"))
+      if (!_dbus_string_append_printf (&pid, DBUS_PID_FORMAT "\n", pid_to_write))
         {
           _dbus_string_free (&pid);
           _DBUS_SET_OOM (error);
@@ -947,14 +946,16 @@ _dbus_parse_unix_group_from_config (const DBusString  *groupname,
  * @param uid the UID
  * @param group_ids return location for array of group IDs
  * @param n_group_ids return location for length of returned array
+ * @param error error location
  * @returns #TRUE if the UID existed and we got some credentials
  */
 dbus_bool_t
 _dbus_unix_groups_from_uid (dbus_uid_t            uid,
                             dbus_gid_t          **group_ids,
-                            int                  *n_group_ids)
+                            int                  *n_group_ids,
+                            DBusError            *error)
 {
-  return _dbus_groups_from_uid (uid, group_ids, n_group_ids);
+  return _dbus_groups_from_uid (uid, group_ids, n_group_ids, error);
 }
 
 /**
@@ -1468,6 +1469,34 @@ _dbus_get_standard_system_servicedirs (DBusList **dirs)
     "/usr/share:"
     DBUS_DATADIR ":"
     "/lib";
+  DBusString servicedir_path;
+
+  _dbus_string_init_const (&servicedir_path, standard_search_path);
+
+  return _dbus_split_paths_and_append (&servicedir_path,
+                                       DBUS_UNIX_STANDARD_SYSTEM_SERVICEDIR,
+                                       dirs);
+}
+
+
+/**
+ * Returns the local admin directories for a system bus to look for service
+ * activation files
+ *
+ * On UNIX this should be the /etc/ and /run/ directories.
+ *
+ * On Windows there is no system bus and this function can return nothing.
+ *
+ * @param dirs the directory list we are returning
+ * @returns #FALSE on OOM
+ */
+
+dbus_bool_t
+_dbus_get_local_system_servicedirs (DBusList **dirs)
+{
+  static const char standard_search_path[] =
+    "/etc:"
+    "/run";
   DBusString servicedir_path;
 
   _dbus_string_init_const (&servicedir_path, standard_search_path);

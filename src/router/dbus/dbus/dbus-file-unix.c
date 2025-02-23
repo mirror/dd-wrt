@@ -66,7 +66,7 @@ _dbus_file_get_contents (DBusString       *str,
 {
   int fd;
   struct stat sb;
-#ifdef HAVE_FSTATFS
+#if defined(HAVE_FSTATFS) && defined(PROC_SUPER_MAGIC)
   struct statfs sfs;
 #endif
   int orig_len;
@@ -119,7 +119,7 @@ _dbus_file_get_contents (DBusString       *str,
   /* procfs has different semantics - most files are 0 size,
    * we can do only one read, and at most we can read 4M.
    */
-#ifdef HAVE_FSTATFS
+#if defined(HAVE_FSTATFS) && defined(PROC_SUPER_MAGIC)
   if (sb.st_size == 0)
     {
       if (fstatfs(fd, &sfs) < 0)

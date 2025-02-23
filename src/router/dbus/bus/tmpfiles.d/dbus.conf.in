@@ -7,7 +7,3 @@ d @EXPANDED_LOCALSTATEDIR@/lib/dbus 0755 - - -
 # Make ${localstatedir}/lib/dbus/machine-id a symlink to /etc/machine-id
 # if it does not already exist
 L @EXPANDED_LOCALSTATEDIR@/lib/dbus/machine-id - - - - /etc/machine-id
-
-# Create ${runstatedir}/dbus/containers owned by the system bus user.
-# org.freedesktop.DBus.Containers1 uses this to create sockets.
-d @EXPANDED_RUNSTATEDIR@/dbus/containers 0755 @DBUS_USER@ - - -

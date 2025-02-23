@@ -29,11 +29,12 @@
 
 #include <dbus/dbus-macros.h>
 
-#ifdef DBUS_ENABLE_EMBEDDED_TESTS
-# define DBUS_EMBEDDED_TESTS_EXPORT DBUS_PRIVATE_EXPORT
+#ifdef DBUS_ENABLE_INTRUSIVE_TESTS
+# define DBUS_INTRUSIVE_TESTS_EXPORT DBUS_PRIVATE_EXPORT
 #else
-# define DBUS_EMBEDDED_TESTS_EXPORT /* nothing */
+# define DBUS_INTRUSIVE_TESTS_EXPORT /* nothing */
 #endif
+#define DBUS_EMBEDDED_TESTS_EXPORT DBUS_INTRUSIVE_TESTS_EXPORT
 
 #if defined(DBUS_PRIVATE_EXPORT)
   /* value forced by compiler command line, don't redefine */

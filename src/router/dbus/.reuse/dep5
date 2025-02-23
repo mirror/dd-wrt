@@ -1,0 +1,9 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: dbus
+Source: https://gitlab.freedesktop.org/dbus/dbus
+
+Files:
+ subprojects/*.wrap
+Copyright:
+ © 2022-2023 Meson contributors
+License: MIT

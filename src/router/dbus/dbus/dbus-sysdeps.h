@@ -38,6 +38,10 @@
 #include <inttypes.h>
 #endif
 
+#ifdef HAVE_STDATOMIC_H
+#include <stdatomic.h>
+#endif
+
 #include <dbus/dbus-errors.h>
 #include <dbus/dbus-file.h>
 #include <dbus/dbus-string.h>
@@ -298,7 +302,8 @@ dbus_bool_t _dbus_parse_unix_group_from_config  (const DBusString  *groupname,
                                                  dbus_gid_t        *gid_p);
 dbus_bool_t _dbus_unix_groups_from_uid          (dbus_uid_t         uid,
                                                  dbus_gid_t       **group_ids,
-                                                 int               *n_group_ids);
+                                                 int               *n_group_ids,
+                                                 DBusError         *error);
 dbus_bool_t _dbus_unix_user_is_at_console       (dbus_uid_t         uid,
                                                  DBusError         *error);
 dbus_bool_t _dbus_unix_user_is_process_owner    (dbus_uid_t         uid);
@@ -311,6 +316,18 @@ dbus_bool_t _dbus_daemon_unpublish_session_bus_address (void);
 
 dbus_bool_t _dbus_socket_can_pass_unix_fd(DBusSocket fd);
 
+/* PID FDs are Linux-specific. */
+#ifdef DBUS_WIN
+static inline dbus_pid_t _dbus_resolve_pid_fd (int pid_fd)
+{
+  return DBUS_PID_UNSET;
+}
+
+#else
+DBUS_PRIVATE_EXPORT
+dbus_pid_t _dbus_resolve_pid_fd (int pid_fd);
+#endif
+
 /** Opaque type representing an atomically-modifiable integer
  * that can be used from multiple threads.
  */
@@ -321,7 +338,9 @@ typedef struct DBusAtomic DBusAtomic;
  */
 struct DBusAtomic
 {
-#ifdef DBUS_WIN
+#ifdef HAVE_STDATOMIC_H
+  atomic_int value; /**< Value of the atomic integer. */
+#elif defined(DBUS_WIN)
   volatile long value; /**< Value of the atomic integer. */
 #else
   volatile dbus_int32_t value; /**< Value of the atomic integer. */
@@ -444,11 +463,11 @@ DBUS_PRIVATE_EXPORT
 void _dbus_sleep_milliseconds (int milliseconds);
 
 DBUS_PRIVATE_EXPORT
-void _dbus_get_monotonic_time (long *tv_sec,
+void _dbus_get_monotonic_time (dbus_int64_t *tv_sec,
                                long *tv_usec);
 
 DBUS_PRIVATE_EXPORT
-void _dbus_get_real_time (long *tv_sec,
+void _dbus_get_real_time (dbus_int64_t *tv_sec,
                           long *tv_usec);
 
 /**
@@ -474,6 +493,7 @@ dbus_bool_t _dbus_path_is_absolute    (const DBusString *filename);
 
 dbus_bool_t _dbus_get_standard_session_servicedirs (DBusList **dirs);
 dbus_bool_t _dbus_get_standard_system_servicedirs (DBusList **dirs);
+dbus_bool_t _dbus_get_local_system_servicedirs (DBusList **dirs);
 dbus_bool_t _dbus_set_up_transient_session_servicedirs (DBusList  **dirs,
                                                         DBusError  *error);
 

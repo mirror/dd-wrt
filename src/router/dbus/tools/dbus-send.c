@@ -713,7 +713,8 @@ main (int argc, char *argv[])
 
       if (reply)
         {
-          long sec, usec;
+          dbus_int64_t sec;
+          long usec;
 
           _dbus_get_real_time (&sec, &usec);
           print_message (reply, print_reply_literal, sec, usec);

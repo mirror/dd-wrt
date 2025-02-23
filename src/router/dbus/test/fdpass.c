@@ -1,6 +1,7 @@
 /*
  * Copyright © 2010-2012 Nokia Corporation
  * Copyright © 2014 Collabora Ltd.
+ * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation files
@@ -673,9 +674,26 @@ test_flood (Fixture *f,
   unsigned int i, j;
   DBusMessage *outgoing[SOME_MESSAGES];
   dbus_uint32_t serial;
+#ifdef HAVE_GETRLIMIT
+  struct rlimit lim;
+#endif
 
   if (f->skip)
     return;
+
+#ifdef HAVE_GETRLIMIT
+  if (getrlimit (RLIMIT_NOFILE, &lim) == 0)
+    {
+      if (lim.rlim_cur != RLIM_INFINITY &&
+          /* only run if we have a fairly generous margin of error
+           * for stdout, stderr, duplicates, the D-Bus connection, etc. */
+          lim.rlim_cur < 2 * MAX_MESSAGE_UNIX_FDS * SOME_MESSAGES)
+        {
+          g_test_skip ("not enough RLIMIT_NOFILE to run this test");
+          return;
+        }
+    }
+#endif
 
   test_connect (f, TRUE);
 
@@ -909,14 +927,14 @@ main (int argc,
       if (getrlimit (RLIMIT_NOFILE, &lim) < 0)
         g_error ("Failed to get RLIMIT_NOFILE limit: %s", g_strerror (errno));
 
-      if (lim.rlim_cur != RLIM_INFINITY &&
-          /* only run if we have a fairly generous margin of error
-           * for stdout, stderr, duplicates, the D-Bus connection, etc. */
-          lim.rlim_cur < 2 * MAX_MESSAGE_UNIX_FDS * SOME_MESSAGES)
+      if ((lim.rlim_cur != RLIM_INFINITY) && (lim.rlim_cur < lim.rlim_max))
         {
-          g_message ("not enough RLIMIT_NOFILE to run this test");
-          /* Autotools exit code for "all skipped" */
-          return 77;
+          /* Many test require large number of file descriptors,
+           * so max out what they can use */
+          lim.rlim_cur = lim.rlim_max;
+          if (setrlimit (RLIMIT_NOFILE, &lim) < 0)
+            g_error ("Failed to set RLIMIT_NOFILE limit to %ld: %s",
+                     (long) lim.rlim_cur, g_strerror (errno));
         }
     }
 #endif

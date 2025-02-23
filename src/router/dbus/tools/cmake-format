@@ -1,0 +1,144 @@
+#!/bin/sh
+#
+# cmake-format - a simple cmake formatter
+#
+# Copyright (c) 2019,2021 Ralf Habacker <ralf.habacker@freenet.de>
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+if test -z "$1"; then
+	echo "format cmake files                                                                   by Ralf Habacker"
+	echo
+	echo "Usage: $0  --all | --end-args | --indents | --keyword-case | --keyword-spaces | --tabs | --trailing-spaces [<source-dir>]"
+	echo
+	echo "command line parameter:"
+	echo "   --all               all above"
+	echo "   --end-args          remove obsolete parameter list from end... cmake commands"
+	echo "   --indents           fix indents (requires keyword-case)"
+	echo "   --keyword-case      make all cmake keywords lowercase"
+	echo "   --keyword-spaces    remove spaces between keyword and opening bracket"
+	echo "   --tabs              replace tabs by 4 spaces"
+	echo "   --trailing-spaces   remove trailing spaces"
+	echo "   --check-indents     check indents"
+	echo "   [<source-dir>]      specify root dir to perform the requested action (optional)"
+	echo "                       If not specified, dbus source dir root is used"
+	exit 1
+fi
+
+# only apply to cmake keywords
+KEYWORDS=$(cmake --help-command-list)
+
+# do not search in comments
+range="/^[ ]*#/!"
+
+# use 4 spaces
+indent="\ \ \ \ "
+
+# remove tabs
+exp="${range}s/\t/${indent}/g"
+expt=$exp
+
+# remove trailing spaces
+exp="${range}s/[ \t]*$//"
+expts=$exp
+
+# fix indents
+exp=
+for j in $(echo $KEYWORDS); do
+	exp="$exp;${range}s/^ \{1,3\}$j(/${indent}$j(/g"
+	exp="$exp;${range}s/^ \{5,7\}$j(/${indent}${indent}$j(/g"
+	exp="$exp;${range}s/^ \{9,11\}$j(/${indent}${indent}${indent}$j(/g"
+done
+expki=$exp
+
+# convert upper case keywords to lower case
+exp=
+for j in $(echo $KEYWORDS); do
+	u=$(echo $j | sed 's/.*/\U&/')
+	exp="$exp;${range}s/$u[ \t]*(/$j(/g"
+done
+expku=$exp
+
+# remove spaces after keywords and (
+exp=
+for j in $(echo $KEYWORDS); do
+	exp="$exp;${range}s/$j[ \t]\+(/$j(/g"
+done
+expks=$exp
+
+# remove obsolete arguments from end...()
+exp=
+for j in $(echo $KEYWORDS); do
+	e=$(echo $j | grep '^end')
+	if test -n "$e"; then
+		exp="$exp;${range}s/$j(.*)/$j()/g"
+	fi
+done
+expke=$exp
+func=
+
+if test "$1" == "--all"; then
+	exp="${expt};${expts}${expku}${expki}${expks}${expke}"
+	func=$1
+	shift
+elif test "$1" == "--end-args"; then
+	exp=$expke
+	func=$1
+	shift
+elif test "$1" == "--indents"; then
+	exp=$expki
+	func=$1
+	shift
+elif test "$1" == "--keyword-case"; then
+	exp=$expku
+	func=$1
+	shift
+elif test "$1" == "--keyword-spaces"; then
+	exp=$expks
+	func=$1
+	shift
+elif test "$1" == "--tabs"; then
+	exp=$expt
+	func=$1
+	shift
+elif test "$1" == "--trailing-spaces"; then
+	exp=$expts
+	func=$1
+	shift
+elif test "$1" == "--check-indents"; then
+	echo "locations with unusual indention level changes, please inspect"
+	func=$1
+	shift
+fi
+
+# setup dir to apply
+if test -n "$1"; then
+    root=$1
+else
+    s=$(dirname $0)
+    root=$(realpath $s/..)
+fi
+
+#echo $exp
+#echo $root
+
+# script for checking indents
+awk='BEGIN { debug=0; indent=0 }
+$0 ~ /^ {0}/ && $0 !~ /^$/{ indent=0; }
+$0 ~ /^ {4}/ { indent=1; }
+$0 ~ /^ {8}/ { indent=2; }
+$0 ~ /^ {12}/ { indent=3; }
+debug == 1 { print FILENAME "[" NR "]:" indent " " oldindent ":  " $0; }
+{ if (indent - oldindent > 1) print FILENAME ":" NR ":" $0; }
+{ oldindent = indent;}
+'
+
+# apply to cmake related files
+for i in $(find $root -name 'CMakeLists.txt' -o -name '*.cmake' | grep -v README.cmake | grep -v config.h.cmake | grep -v bat.cmake | grep -v '/Find'); do
+	# apply style
+	if ! test "$func" = "--check-indents"; then
+		sed -i "$exp" $i
+	else
+		gawk "$awk" $i
+	fi
+done

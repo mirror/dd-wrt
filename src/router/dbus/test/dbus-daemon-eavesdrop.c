@@ -3,6 +3,7 @@
  * Author: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  * Based on: tests/dbus-daemon.c by Simon McVittie
  * Copyright © 2010-2011 Nokia Corporation
+ * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation files

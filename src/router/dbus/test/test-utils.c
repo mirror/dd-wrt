@@ -788,20 +788,26 @@ _dbus_test_main (int                  argc,
    * show up as having been "leaked" by the first module of code under
    * test that happens to do a NSS lookup. */
     {
-      DBusString username;
+      DBusString lookup;
       dbus_uid_t ignored_uid = DBUS_UID_UNSET;
+      dbus_gid_t ignored_gid = DBUS_GID_UNSET;
 
-      _dbus_string_init_const (&username, "dbus-no-user-with-this-name");
+      _dbus_string_init_const (&lookup, "dbus-no-user-with-this-name");
       /* We use a username that almost certainly doesn't exist, because
        * if we used something like root it might get handled early in the
        * NSS search order, before we get as far as asking sssd or LDAP. */
-      _dbus_parse_unix_user_from_config (&username, &ignored_uid);
+      _dbus_parse_unix_user_from_config (&lookup, &ignored_uid);
+
+      /* Same for groups */
+      _dbus_string_init_const (&lookup, "dbus-no-group-with-this-name");
+      _dbus_parse_unix_group_from_config (&lookup, &ignored_gid);
+
       _dbus_test_check_memleaks ("initial nss query");
     }
 
   for (i = 0; i < n_tests; i++)
     {
-      long before, after;
+      dbus_int64_t before, after;
       DBusInitialFDs *initial_fds = NULL;
 
       if (tests[i].name == NULL)
@@ -832,7 +838,7 @@ _dbus_test_main (int                  argc,
 
       _dbus_get_monotonic_time (&after, NULL);
 
-      _dbus_test_diag ("%s test took %ld seconds",
+      _dbus_test_diag ("%s test took %" DBUS_INT64_MODIFIER "d seconds",
                        tests[i].name, after - before);
 
       if (test_post_hook)

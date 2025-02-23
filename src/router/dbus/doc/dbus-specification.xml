@@ -6,8 +6,8 @@
 <article id="index">
   <articleinfo>
     <title>D-Bus Specification</title>
-    <releaseinfo>Version 0.41</releaseinfo>
-    <date>2023-02-08</date>
+    <releaseinfo>Version 0.43</releaseinfo>
+    <date>2024-10-29</date>
     <authorgroup>
       <author>
         <firstname>Havoc</firstname>
@@ -77,6 +77,28 @@
        <revremark>
          See <ulink url='http://cgit.freedesktop.org/dbus/dbus/log/doc/dbus-specification.xml'>commit log</ulink>
        </revremark>
+     </revision>
+     <revision>
+       <revnumber>0.43</revnumber>
+       <date>2024-10-29</date>
+       <authorinitials></authorinitials>
+       <revdescription>
+         <itemizedlist>
+           <listitem><simpara>Recommend loading system services from /etc, /run</simpara></listitem>
+           <listitem><simpara>Document the Stats interface</simpara></listitem>
+           <listitem><simpara>Document the Verbose interface</simpara></listitem>
+         </itemizedlist>
+       </revdescription>
+     </revision>
+     <revision>
+       <revnumber>0.42</revnumber>
+       <date>2023-08-21</date>
+       <authorinitials></authorinitials>
+       <revdescription>
+         <itemizedlist>
+           <listitem><simpara>GetConnectionCredentials can return ProcessFD</simpara></listitem>
+         </itemizedlist>
+       </revdescription>
      </revision>
      <revision>
        <revnumber>0.41</revnumber>
@@ -4882,7 +4904,7 @@
         message: they are delivered to the specified receipient,
         regardless of its match rules.  One use for unicast signals is to
         avoid a race condition in which a signal is emitted before the intended
-        recipient can call <xref linkend="bus-messages-add-match"/> to
+        recipient can call <link linkend="bus-messages-add-match">AddMatch</link> to
         receive that signal: if the signal is sent directly to that recipient
         using a unicast message, it does not need to add a match rule at all,
         and there is no race condition.  Another use for unicast signals,
@@ -5363,8 +5385,10 @@
         If two .service files in different directories offer the same
         service name, the one in the higher-priority directory is used:
         for instance, on the system bus, .service files in
-        /usr/local/share/dbus-1/system-services take precedence over those
-        in /usr/share/dbus-1/system-services.
+        /etc/dbus-1/system-services takes precedence over those in
+        /run/dbus-1/system-services, which in turn take precedence over
+        those in /usr/local/share/dbus-1/system-services, which in turn take
+        precedence over those in /usr/share/dbus-1/system-services.
       </para>
       <para>
         The executable launched will have the environment variable
@@ -5519,8 +5543,9 @@
         </para>
 
         <para>
-          Explicit activation via
-          <xref linkend="bus-messages-start-service-by-name"/> is not currently
+          Explicit activation via the
+          <link linkend="bus-messages-start-service-by-name">StartServiceByName</link>
+          method call is not currently
           affected by this mediation: if a confined process is to be prevented
           from starting arbitrary services, then it must not be allowed to call
           that method.
@@ -5818,12 +5843,19 @@
         <para>
           On Unix systems, the system bus should default to searching
           for .service files in
+          <literal>/etc/dbus-1/system-services</literal>,
+          <literal>/run/dbus-1/system-services</literal>,
           <literal>/usr/local/share/dbus-1/system-services</literal>,
           <literal>/usr/share/dbus-1/system-services</literal> and
           <literal>/lib/dbus-1/system-services</literal>, with that order
           of precedence. It may also search other implementation-specific
           locations, but should not vary these locations based on environment
           variables.
+          The directory in <literal>/etc/</literal> is reserved for use by
+          either the local system administrator,
+          or an asset manager deploying services that are not part of the OS.
+          The directory in <literal>/run/</literal> is reserved for ephemeral
+          services that will disappear after a reboot.
           <footnote>
             <para>
               The system bus is security-sensitive and is typically executed
@@ -5847,13 +5879,14 @@
     </sect2>
 
     <sect2 id="message-bus-messages">
-      <title>Message Bus Messages</title>
+      <title>Message Bus Interface: <literal>org.freedesktop.DBus</literal></title>
       <para>
         The special message bus name <literal>org.freedesktop.DBus</literal>
         responds to a number of additional messages at the object path
-        <literal>/org/freedesktop/DBus</literal>.
-        That object path is also used when emitting the
-        <xref linkend='bus-messages-name-owner-changed'/> signal.
+        <literal>/org/freedesktop/DBus</literal>,
+        implementing the <literal>org.freedesktop.DBus</literal> interface.
+        That object path is also used when emitting signals such as
+        <link linkend='bus-messages-name-owner-changed'>NameOwnerChanged</link>.
       </para>
 
       <para>
@@ -5871,16 +5904,8 @@
         instead of relying on this.
       </para>
 
-      <para>
-        In addition to the method calls listed below, the message bus
-        should implement the standard Introspectable, Properties and Peer
-        interfaces (see <xref linkend="standard-interfaces"/>).
-        Support for the Properties and Peer interfaces was added in version
-        1.11.x of the reference implementation of the message bus.
-      </para>
-
       <sect3 id="bus-messages-hello">
-        <title><literal>org.freedesktop.DBus.Hello</literal></title>
+        <title>Method: <literal>org.freedesktop.DBus.Hello</literal></title>
         <para>
           As a method:
           <programlisting>
@@ -5923,7 +5948,7 @@
       </sect3>
 
       <sect3 id="bus-messages-request-name">
-        <title><literal>org.freedesktop.DBus.RequestName</literal></title>
+        <title>Method: <literal>org.freedesktop.DBus.RequestName</literal></title>
         <para>
           As a method:
           <programlisting>
@@ -6161,7 +6186,7 @@
        </sect3>
 
        <sect3 id="bus-messages-release-name">
-        <title><literal>org.freedesktop.DBus.ReleaseName</literal></title>
+        <title>Method: <literal>org.freedesktop.DBus.ReleaseName</literal></title>
         <para>
           As a method:
           <programlisting>
@@ -6254,7 +6279,7 @@
        </sect3>
 
        <sect3 id="bus-messages-list-queued-owners">
-        <title><literal>org.freedesktop.DBus.ListQueuedOwners</literal></title>
+        <title>Method: <literal>org.freedesktop.DBus.ListQueuedOwners</literal></title>
         <para>
           As a method:
           <programlisting>
@@ -6308,7 +6333,7 @@
       </sect3>
 
       <sect3 id="bus-messages-list-names">
-        <title><literal>org.freedesktop.DBus.ListNames</literal></title>
+        <title>Method: <literal>org.freedesktop.DBus.ListNames</literal></title>
         <para>
           As a method:
           <programlisting>
@@ -6339,7 +6364,7 @@
         </para>
       </sect3>
       <sect3 id="bus-messages-list-activatable-names">
-        <title><literal>org.freedesktop.DBus.ListActivatableNames</literal></title>
+        <title>Method: <literal>org.freedesktop.DBus.ListActivatableNames</literal></title>
         <para>
           As a method:
           <programlisting>
@@ -6370,7 +6395,7 @@
         </para>
       </sect3>
       <sect3 id="bus-messages-name-exists">
-        <title><literal>org.freedesktop.DBus.NameHasOwner</literal></title>
+        <title>Method: <literal>org.freedesktop.DBus.NameHasOwner</literal></title>
         <para>
           As a method:
           <programlisting>
@@ -6421,7 +6446,7 @@
       </sect3>
 
       <sect3 id="bus-messages-name-owner-changed">
-        <title><literal>org.freedesktop.DBus.NameOwnerChanged</literal></title>
+        <title>Signal: <literal>org.freedesktop.DBus.NameOwnerChanged</literal></title>
         <para>
           This is a signal:
           <programlisting>
@@ -6464,7 +6489,7 @@
         </para>
       </sect3>
       <sect3 id="bus-messages-name-lost">
-        <title><literal>org.freedesktop.DBus.NameLost</literal></title>
+        <title>Signal: <literal>org.freedesktop.DBus.NameLost</literal></title>
         <para>
           This is a signal:
           <programlisting>
@@ -6497,7 +6522,7 @@
       </sect3>
 
       <sect3 id="bus-messages-name-acquired">
-        <title><literal>org.freedesktop.DBus.NameAcquired</literal></title>
+        <title>Signal: <literal>org.freedesktop.DBus.NameAcquired</literal></title>
         <para>
           This is a signal:
           <programlisting>
@@ -6530,7 +6555,7 @@
       </sect3>
 
       <sect3 id="bus-messages-activatable-services-changed">
-        <title><literal>org.freedesktop.DBus.ActivatableServicesChanged</literal></title>
+        <title>Signal: <literal>org.freedesktop.DBus.ActivatableServicesChanged</literal></title>
         <para>
           This is a signal:
           <programlisting>
@@ -6556,7 +6581,7 @@
       </sect3>
 
       <sect3 id="bus-messages-start-service-by-name">
-        <title><literal>org.freedesktop.DBus.StartServiceByName</literal></title>
+        <title>Method: <literal>org.freedesktop.DBus.StartServiceByName</literal></title>
         <para>
           As a method:
           <programlisting>
@@ -6657,7 +6682,7 @@
       </sect3>
 
       <sect3 id="bus-messages-update-activation-environment">
-        <title><literal>org.freedesktop.DBus.UpdateActivationEnvironment</literal></title>
+        <title>Method: <literal>org.freedesktop.DBus.UpdateActivationEnvironment</literal></title>
         <para>
           As a method:
           <programlisting>
@@ -6694,7 +6719,7 @@
       </sect3>
 
       <sect3 id="bus-messages-get-name-owner">
-        <title><literal>org.freedesktop.DBus.GetNameOwner</literal></title>
+        <title>Method: <literal>org.freedesktop.DBus.GetNameOwner</literal></title>
         <para>
           As a method:
           <programlisting>
@@ -6745,7 +6770,7 @@
       </sect3>
 
       <sect3 id="bus-messages-get-connection-unix-user">
-        <title><literal>org.freedesktop.DBus.GetConnectionUnixUser</literal></title>
+        <title>Method: <literal>org.freedesktop.DBus.GetConnectionUnixUser</literal></title>
         <para>
           As a method:
           <programlisting>
@@ -6798,7 +6823,7 @@
       </sect3>
 
       <sect3 id="bus-messages-get-connection-unix-process-id">
-        <title><literal>org.freedesktop.DBus.GetConnectionUnixProcessID</literal></title>
+        <title>Method: <literal>org.freedesktop.DBus.GetConnectionUnixProcessID</literal></title>
         <para>
           As a method:
           <programlisting>
@@ -6851,7 +6876,7 @@
       </sect3>
 
       <sect3 id="bus-messages-get-connection-credentials">
-        <title><literal>org.freedesktop.DBus.GetConnectionCredentials</literal></title>
+        <title>Method: <literal>org.freedesktop.DBus.GetConnectionCredentials</literal></title>
         <para>
           As a method:
           <programlisting>
@@ -6943,6 +6968,17 @@
                 </entry>
               </row>
               <row>
+                <entry>ProcessFD</entry>
+                <entry>UNIX_FD</entry>
+                <entry>A file descriptor pinning the process, on platforms
+                  that have this concept. On Linux, the SO_PEERPIDFD socket
+                  option is a suitable implementation. This is safer to use
+                  to identify a process than the <literal>ProcessID</literal>,
+                  as the latter is subject to re-use attacks, while the FD
+                  cannot be recycled. If the original process no longer exists
+                  the FD will no longer be resolvable.</entry>
+              </row>
+              <row>
                 <entry>ProcessID</entry>
                 <entry>UINT32</entry>
                 <entry>The numeric process ID, on platforms that have
@@ -7016,15 +7052,15 @@
         <para>
           This method was added in D-Bus 1.7 to reduce the round-trips
           required to list a process's credentials. In older versions, calling
-          this method will fail: applications should recover by using the
-          separate methods such as
-          <xref linkend="bus-messages-get-connection-unix-user"/>
+          this method will fail: applications wishing to support obsolete
+          message bus versions can recover by using the separate methods such as
+          <link linkend="bus-messages-get-connection-unix-user">GetConnectionUnixUser</link>
           instead.
         </para>
       </sect3>
 
       <sect3 id="bus-messages-get-adt-audit-session-data">
-        <title><literal>org.freedesktop.DBus.GetAdtAuditSessionData</literal></title>
+        <title>Method: <literal>org.freedesktop.DBus.GetAdtAuditSessionData</literal></title>
         <para>
           As a method:
           <programlisting>
@@ -7075,14 +7111,14 @@
           binary format. If you know what this means, please contribute
           documentation via the D-Bus bug tracking system.
           This method is on the core DBus interface for historical reasons;
-          the same information should be made available via
-          <xref linkend="bus-messages-get-connection-credentials"/>
-          in future.
+          the same information should be made available via the
+          <link linkend="bus-messages-get-connection-credentials">GetConnectionCredentials</link>
+          method in future.
         </para>
       </sect3>
 
       <sect3 id="bus-messages-get-connection-selinux-security-context">
-        <title><literal>org.freedesktop.DBus.GetConnectionSELinuxSecurityContext</literal></title>
+        <title>Method: <literal>org.freedesktop.DBus.GetConnectionSELinuxSecurityContext</literal></title>
         <para>
           As a method:
           <programlisting>
@@ -7133,15 +7169,15 @@
           format. If you know what this means, please contribute
           documentation via the D-Bus bug tracking system.
           This method is on the core DBus interface for historical reasons;
-          the same information should be made available via
-          <xref linkend="bus-messages-get-connection-credentials"/>
-          in future.
+          the same information should be made available via the
+          <link linkend="bus-messages-get-connection-credentials">GetConnectionCredentials</link>
+          method in future.
         </para>
       </sect3>
 
 
       <sect3 id="bus-messages-add-match">
-        <title><literal>org.freedesktop.DBus.AddMatch</literal></title>
+        <title>Method: <literal>org.freedesktop.DBus.AddMatch</literal></title>
         <para>
           As a method:
           <programlisting>
@@ -7172,7 +7208,7 @@
        </para>
       </sect3>
       <sect3 id="bus-messages-remove-match">
-        <title><literal>org.freedesktop.DBus.RemoveMatch</literal></title>
+        <title>Method: <literal>org.freedesktop.DBus.RemoveMatch</literal></title>
         <para>
           As a method:
           <programlisting>
@@ -7204,7 +7240,7 @@
       </sect3>
 
       <sect3 id="bus-messages-get-id">
-        <title><literal>org.freedesktop.DBus.GetId</literal></title>
+        <title>Method: <literal>org.freedesktop.DBus.GetId</literal></title>
         <para>
           As a method:
           <programlisting>
@@ -7239,8 +7275,194 @@
         </para>
       </sect3>
 
+      <sect3 id="message-bus-properties-features">
+        <title>Property: <literal>org.freedesktop.DBus.Features</literal></title>
+        <para>
+          As a property:
+          <programlisting>
+            Read-only constant ARRAY of STRING Features
+          </programlisting>
+          This property lists abstract “features” provided by the message
+          bus, and can be used by clients to detect the capabilities
+          of the message bus with which they are communicating.
+          This property was added in version 1.11.x of the reference
+          implementation of the message bus.
+          Like all properties, it is accessed via method calls to the standard
+          <link linkend="standard-interfaces-properties">Properties</link>
+          interface.
+        </para>
+
+        <para>
+          Items in the returned array not containing “.” are defined
+          by this specification. Bus daemon implementors wishing to advertise
+          features not mentioned in this document should either contribute
+          patches to this specification, or use keys containing “.” and
+          starting with their own reversed domain name, for example
+          <literal>com.example.MyBus.SubliminalMessages</literal>.
+        </para>
+
+        <para>
+          The features currently defined in this specification are as follows:
+          <variablelist>
+
+            <varlistentry>
+              <term><literal>ActivatableServicesChanged</literal></term>
+              <listitem>
+                <para>
+                  This message bus emits the <literal>ActivatableServicesChanged</literal>
+                  signal whenever its list of activatable services might have changed
+                  (for details see <xref linkend="bus-messages-activatable-services-changed"/>).
+                </para>
+              </listitem>
+            </varlistentry>
+
+            <varlistentry>
+              <term><literal>AppArmor</literal></term>
+              <listitem>
+                <para>
+                  This message bus filters messages via the
+                  <ulink url="http://wiki.apparmor.net/">AppArmor</ulink>
+                  security framework. This feature should only be
+                  advertised if AppArmor mediation is enabled and
+                  active at runtime; merely compiling in support
+                  for AppArmor should not result in this feature being
+                  advertised on message bus instances where it is disabled by
+                  message bus or operating system configuration.
+                </para>
+              </listitem>
+            </varlistentry>
+
+            <varlistentry>
+              <term><literal>HeaderFiltering</literal></term>
+              <listitem>
+                <para>
+                  This message bus guarantees that it will remove
+                  header fields that it does not understand when it
+                  relays messages, so that a client receiving a
+                  recently-defined header field that is specified to be
+                  controlled by the message bus can safely assume that
+                  it was in fact set by the message bus. This check is
+                  needed because older message bus implementations did
+                  not guarantee to filter headers in this way, so a
+                  malicious client could send any recently-defined
+                  header field with a crafted value of its choice
+                  through an older message bus that did not understand
+                  that header field.
+                </para>
+              </listitem>
+            </varlistentry>
+
+            <varlistentry>
+              <term><literal>SELinux</literal></term>
+              <listitem>
+                <para>
+                  This message bus filters messages via the
+                  <ulink url="https://selinuxproject.org/">SELinux</ulink>
+                  security framework. Similar to <literal>AppArmor</literal>,
+                  this feature should only be advertised if SELinux mediation
+                  is enabled and active at runtime (if SELinux is placed in
+                  permissive mode, that is still considered to be active).
+                </para>
+              </listitem>
+            </varlistentry>
+
+            <varlistentry>
+              <term><literal>SystemdActivation</literal></term>
+              <listitem>
+                <para>
+                  When asked to activate a service that has the
+                  <literal>SystemdService</literal> field in its
+                  <filename>.service</filename> file, this message bus will
+                  carry out systemd activation (for details see
+                  <xref linkend="message-bus-starting-services-systemd"/>).
+                </para>
+              </listitem>
+            </varlistentry>
+
+          </variablelist>
+        </para>
+      </sect3>
+
+      <sect3 id="message-bus-properties-interfaces">
+        <title>Property: <literal>org.freedesktop.DBus.Interfaces</literal></title>
+        <para>
+          As a property:
+          <programlisting>
+            Read-only constant ARRAY of STRING Interfaces
+          </programlisting>
+          This property lists interfaces provided by the
+          <literal>/org/freedesktop/DBus</literal> object,
+          and can be used by clients to detect the capabilities
+          of the message bus with which they are communicating.
+          Unlike the standard Introspectable interface, querying this
+          property does not require parsing XML.
+          This property was added in version 1.11.x of the reference
+          implementation of the message bus.
+          Like all properties, it is accessed via method calls to the standard
+          <link linkend="standard-interfaces-properties">Properties</link>
+          interface.
+        </para>
+
+        <para>
+          The standard <literal>org.freedesktop.DBus</literal> and
+          <literal>org.freedesktop.DBus.Properties</literal> interfaces
+          are not included in the value of this property, because their
+          presence can be inferred from the fact that a method call on
+          <literal>org.freedesktop.DBus.Properties</literal> asking for
+          properties of <literal>org.freedesktop.DBus</literal> was
+          successful. The standard <literal>org.freedesktop.DBus.Peer</literal>
+          and <literal>org.freedesktop.DBus.Introspectable</literal>
+          interfaces are not included in the value of this property either,
+          because they do not indicate features of the message bus
+          implementation.
+        </para>
+      </sect3>
+    </sect2>
+
+    <sect2>
+      <title>Message Bus Introspection</title>
+      <para>
+        The message bus should implement the standard
+        <link linkend="standard-interfaces-introspectable">Introspectable</link>
+        interface.
+      </para>
+    </sect2>
+
+    <sect2>
+      <title>Message Bus as a Peer</title>
+      <para>
+        The message bus should implement the standard
+        <link linkend="standard-interfaces-peer">Peer</link> interface.
+        Support for the Peer interface was added in version
+        1.11.x of the reference implementation of the message bus.
+      </para>
+    </sect2>
+
+    <sect2 id="message-bus-properties">
+      <title>Message Bus Properties</title>
+      <para>
+        The message bus should implement the standard
+        <link linkend="standard-interfaces-properties">Properties</link>
+        interface on the object path
+        <literal>/org/freedesktop/DBus</literal>.
+        The specific properties to be provided are documented as part of
+        their respective interfaces.
+        Support for the Properties interface was added in version
+        1.11.x of the reference implementation of the message bus.
+      </para>
+    </sect2>
+
+    <sect2 id="message-bus-monitoring-interface">
+      <title>Monitoring Interface: <literal>org.freedesktop.DBus.Monitoring</literal></title>
+      <para>
+        The special message bus name <literal>org.freedesktop.DBus</literal>
+        may optionally implement the
+        <literal>org.freedesktop.DBus.Monitoring</literal> interface on
+        the object path <literal>/org/freedesktop/DBus</literal>.
+      </para>
+
       <sect3 id="bus-messages-become-monitor">
-        <title><literal>org.freedesktop.DBus.Monitoring.BecomeMonitor</literal></title>
+        <title>Method: <literal>org.freedesktop.DBus.Monitoring.BecomeMonitor</literal></title>
         <para>
           As a method:
           <programlisting>
@@ -7328,156 +7550,418 @@
          when they would otherwise have succeeded.
        </para>
       </sect3>
-
     </sect2>
 
-    <sect2 id="message-bus-properties">
-      <title>Message Bus Properties</title>
+    <sect2 id="message-bus-debug-stats-interface">
+      <title>Debug Statistics Interface: <literal>org.freedesktop.DBus.Debug.Stats</literal></title>
       <para>
         The special message bus name <literal>org.freedesktop.DBus</literal>
-        exports several properties (see
-        <xref linkend="standard-interfaces-properties"/>) on the object path
-        <literal>/org/freedesktop/DBus</literal>.
+        may optionally implement the
+        <literal>org.freedesktop.DBus.Debug.Stats</literal> interface on
+        the object path <literal>/org/freedesktop/DBus</literal>.
+        This interface provides statistics which might be useful to
+        investigate performance bottlenecks.
+      </para>
+      <para>
+        In the reference implementation, this interface is an optional
+        feature, which can be enabled or disabled at compile-time.
+        On the well-known system bus or other buses that serve more than
+        one user, access to this interface should normally be restricted to
+        administrative users, but can be opened up to developers via
+        configuration if required.
       </para>
 
-      <sect3 id="message-bus-properties-features">
-        <title><literal>org.freedesktop.DBus.Features</literal></title>
+      <sect3 id="bus-messages-get-stats">
+        <title>Method: <literal>org.freedesktop.DBus.Debug.Stats.GetStats</literal></title>
         <para>
-          As a property:
+          As a method:
           <programlisting>
-            Read-only constant ARRAY of STRING Features
+            GetStats (out ARRAY of DICT_ENTRY&lt;STRING,VARIANT&gt; stats)
           </programlisting>
-          This property lists abstract “features” provided by the message
-          bus, and can be used by clients to detect the capabilities
-          of the message bus with which they are communicating.
-          This property was added in version 1.11.x of the reference
-          implementation of the message bus.
+          Message arguments:
+          <informaltable>
+            <tgroup cols="3">
+              <thead>
+                <row>
+                  <entry>Argument</entry>
+                  <entry>Type</entry>
+                  <entry>Description</entry>
+                </row>
+              </thead>
+              <tbody>
+                <row>
+                  <entry>0</entry>
+                  <entry>ARRAY of DICT_ENTRY&lt;STRING,VARIANT&gt;</entry>
+                  <entry>Statistics</entry>
+                </row>
+              </tbody>
+            </tgroup>
+          </informaltable>
+          Get statistics about the message bus itself.
         </para>
-
         <para>
-          Items in the returned array not containing “.” are defined
-          by this specification. Bus daemon implementors wishing to advertise
-          features not mentioned in this document should either contribute
-          patches to this specification, or use keys containing “.” and
-          starting with their own reversed domain name, for example
-          <literal>com.example.MyBus.SubliminalMessages</literal>.
+          The following keys in the result dictionary are defined by
+          this specification:
+
+          <informaltable>
+            <tgroup cols="3">
+              <thead>
+                <row>
+                  <entry>Key</entry>
+                  <entry>Value type</entry>
+                  <entry>Value</entry>
+                </row>
+              </thead>
+              <tbody>
+
+                <!-- Basic information -->
+                <row>
+                  <entry><literal>Serial</literal></entry>
+                  <entry>UINT32</entry>
+                  <entry>A serial number which is incremented with each
+                    call to the <literal>GetStats</literal> method.</entry>
+                </row>
+
+                <!-- Connection count -->
+                <row>
+                  <entry><literal>ActiveConnections</literal></entry>
+                  <entry>UINT32</entry>
+                  <entry>The number of active connections currently handled
+                    by this message bus.
+                    The exact meaning of an active connection is
+                    implementation-defined: in the reference dbus-daemon,
+                    a connection is considered to be active after it has
+                    successfully called
+                    <link xref="bus-messages-hello">the Hello
+                      method</link>.</entry>
+                </row>
+                <row>
+                  <entry><literal>IncompleteConnections</literal></entry>
+                  <entry>UINT32</entry>
+                  <entry>The number of incomplete connections currently handled
+                    by this message bus.
+                    The exact meaning of an incomplete connection is
+                    implementation-defined: in the reference dbus-daemon,
+                    a connection is considered to be incomplete if it is
+                    still carrying out the SASL handshake or if it has not
+                    yet successfully called
+                    <link xref="bus-messages-hello">the Hello
+                      method</link>.</entry>
+                </row>
+
+                <!-- Match rules -->
+                <row>
+                  <entry><literal>MatchRules</literal></entry>
+                  <entry>UINT32</entry>
+                  <entry>The total number of match rules that are
+                    currently in use.</entry>
+                </row>
+                <row>
+                  <entry><literal>PeakMatchRules</literal></entry>
+                  <entry>UINT32</entry>
+                  <entry>The largest total number of match rules that have
+                    been in use at any one time.</entry>
+                </row>
+                <row>
+                  <entry><literal>PeakMatchRulesPerConnection</literal></entry>
+                  <entry>UINT32</entry>
+                  <entry>The largest total number of match rules that have
+                    been in use by a single connection at any one time.</entry>
+                </row>
+
+                <!-- Bus names -->
+                <row>
+                  <entry><literal>BusNames</literal></entry>
+                  <entry>UINT32</entry>
+                  <entry>The total number of unique or well-known bus names
+                    that are currently owned by all connections.</entry>
+                </row>
+                <row>
+                  <entry><literal>PeakBusNames</literal></entry>
+                  <entry>UINT32</entry>
+                  <entry>The largest total number of bus names
+                    that have been owned by all connections at any
+                    one time.</entry>
+                </row>
+                <row>
+                  <entry><literal>PeakBusNamesPerConnection</literal></entry>
+                  <entry>UINT32</entry>
+                  <entry>The largest total number of bus names
+                    that have been owned by any single connection at any
+                    one time.</entry>
+                </row>
+
+              </tbody>
+            </tgroup>
+          </informaltable>
         </para>
-
         <para>
-          The features currently defined in this specification are as follows:
-          <variablelist>
-
-            <varlistentry>
-              <term><literal>ActivatableServicesChanged</literal></term>
-              <listitem>
-                <para>
-                  This message bus emits the <literal>ActivatableServicesChanged</literal>
-                  signal whenever its list of activatable services might have changed
-                  (for details see <xref linkend="bus-messages-activatable-services-changed"/>).
-                </para>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term><literal>AppArmor</literal></term>
-              <listitem>
-                <para>
-                  This message bus filters messages via the
-                  <ulink url="http://wiki.apparmor.net/">AppArmor</ulink>
-                  security framework. This feature should only be
-                  advertised if AppArmor mediation is enabled and
-                  active at runtime; merely compiling in support
-                  for AppArmor should not result in this feature being
-                  advertised on message bus instances where it is disabled by
-                  message bus or operating system configuration.
-                </para>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term><literal>HeaderFiltering</literal></term>
-              <listitem>
-                <para>
-                  This message bus guarantees that it will remove
-                  header fields that it does not understand when it
-                  relays messages, so that a client receiving a
-                  recently-defined header field that is specified to be
-                  controlled by the message bus can safely assume that
-                  it was in fact set by the message bus. This check is
-                  needed because older message bus implementations did
-                  not guarantee to filter headers in this way, so a
-                  malicious client could send any recently-defined
-                  header field with a crafted value of its choice
-                  through an older message bus that did not understand
-                  that header field.
-                </para>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term><literal>SELinux</literal></term>
-              <listitem>
-                <para>
-                  This message bus filters messages via the
-                  <ulink url="https://selinuxproject.org/">SELinux</ulink>
-                  security framework. Similar to <literal>apparmor</literal>,
-                  this feature should only be advertised if SELinux mediation
-                  is enabled and active at runtime (if SELinux is placed in
-                  permissive mode, that is still considered to be active).
-                </para>
-              </listitem>
-            </varlistentry>
-
-            <varlistentry>
-              <term><literal>SystemdActivation</literal></term>
-              <listitem>
-                <para>
-                  When asked to activate a service that has the
-                  <literal>SystemdService</literal> field in its
-                  <filename>.service</filename> file, this message bus will
-                  carry out systemd activation (for details see
-                  <xref linkend="message-bus-starting-services-systemd"/>).
-                </para>
-              </listitem>
-            </varlistentry>
-
-          </variablelist>
+          All other keys are implementation-specific until or unless they
+          are standardized in this specification.
+          The reference dbus-daemon provides additional keys
+          <literal>ListMemPoolUsedBytes</literal>,
+          <literal>ListMemPoolCachedBytes</literal>,
+          <literal>ListMemPoolAllocatedBytes</literal>
+          with UINT32 values, all of which describe implementation details
+          of libdbus’ memory management.
         </para>
       </sect3>
 
-      <sect3 id="message-bus-properties-interfaces">
-        <title><literal>org.freedesktop.DBus.Interfaces</literal></title>
+      <sect3 id="bus-messages-get-connection-stats">
+        <title>Method: <literal>org.freedesktop.DBus.Debug.Stats.GetConnectionStats</literal></title>
         <para>
-          As a property:
+          As a method:
           <programlisting>
-            Read-only constant ARRAY of STRING Interfaces
+            GetConnectionStats (in STRING connection, out ARRAY of DICT_ENTRY&lt;STRING,VARIANT&gt; stats)
           </programlisting>
-          This property lists interfaces provided by the
-          <literal>/org/freedesktop/DBus</literal> object,
-          and can be used by clients to detect the capabilities
-          of the message bus with which they are communicating.
-          Unlike the standard Introspectable interface, querying this
-          property does not require parsing XML.
-          This property was added in version 1.11.x of the reference
-          implementation of the message bus.
-        </para>
-
+          Message arguments:
+          <informaltable>
+            <tgroup cols="3">
+              <thead>
+                <row>
+                  <entry>Argument</entry>
+                  <entry>Type</entry>
+                  <entry>Description</entry>
+                </row>
+              </thead>
+              <tbody>
+                <row>
+                  <entry>0</entry>
+                  <entry>STRING</entry>
+                  <entry>Unique or well-known name of a connection</entry>
+                </row>
+                <row>
+                  <entry>1</entry>
+                  <entry>ARRAY of DICT_ENTRY&lt;STRING,VARIANT&gt;</entry>
+                  <entry>Statistics</entry>
+                </row>
+              </tbody>
+            </tgroup>
+          </informaltable>
+          Get statistics about a connection, identified by its unique
+          connection name or by any well-known bus name for which it is
+          the primary owner.
+          This method is not meaningful for the message bus
+          <literal>org.freedesktop.DBus</literal> itself.
+       </para>
         <para>
-          The standard <literal>org.freedesktop.DBus</literal> and
-          <literal>org.freedesktop.DBus.Properties</literal> interfaces
-          are not included in the value of this property, because their
-          presence can be inferred from the fact that a method call on
-          <literal>org.freedesktop.DBus.Properties</literal> asking for
-          properties of <literal>org.freedesktop.DBus</literal> was
-          successful. The standard <literal>org.freedesktop.DBus.Peer</literal>
-          and <literal>org.freedesktop.DBus.Introspectable</literal>
-          interfaces are not included in the value of this property either,
-          because they do not indicate features of the message bus
-          implementation.
+          The following keys in the result dictionary are defined by
+          this specification:
+
+          <informaltable>
+            <tgroup cols="3">
+              <thead>
+                <row>
+                  <entry>Key</entry>
+                  <entry>Value type</entry>
+                  <entry>Value</entry>
+                </row>
+              </thead>
+              <tbody>
+
+                <!-- Basic information -->
+                <row>
+                  <entry><literal>Serial</literal></entry>
+                  <entry>UINT32</entry>
+                  <entry>A serial number which is incremented with each
+                    call to the <literal>GetConnectionStats</literal>
+                    method.</entry>
+                </row>
+                <row>
+                  <entry><literal>UniqueName</literal></entry>
+                  <entry>STRING</entry>
+                  <entry>The connection's unique connection name.
+                    If the first parameter to
+                    <literal>GetConnectionStats</literal> was a unique
+                    name, this will be the same unique name.
+                    If the first parameter was a well-known name, this
+                    is equivalent to the result of calling
+                    <link xref="bus-messages-get-name-owner">GetNameOwner</link>
+                    on that well-known name.</entry>
+                </row>
+
+                <!-- Match rules -->
+                <row>
+                  <entry><literal>MatchRules</literal></entry>
+                  <entry>UINT32</entry>
+                  <entry>The total number of match rules that are
+                    currently in use by this connection.</entry>
+                </row>
+                <row>
+                  <entry><literal>PeakMatchRules</literal></entry>
+                  <entry>UINT32</entry>
+                  <entry>The largest total number of match rules that have
+                    been in use by this connection at any one time.</entry>
+                </row>
+
+                <!-- Bus names -->
+                <row>
+                  <entry><literal>BusNames</literal></entry>
+                  <entry>UINT32</entry>
+                  <entry>The total number of bus names that are
+                    currently owned by this connection.</entry>
+                </row>
+                <row>
+                  <entry><literal>PeakBusNames</literal></entry>
+                  <entry>UINT32</entry>
+                  <entry>The largest total number of bus names
+                    that have been owned by this connection at any
+                    one time.</entry>
+                </row>
+
+                <!-- Incoming queued messages -->
+                <row>
+                  <entry><literal>IncomingMessages</literal></entry>
+                  <entry>UINT32</entry>
+                  <entry>The total number of messages queued in the message
+                    bus that have been received from this connection and not
+                    yet dispatched.</entry>
+                </row>
+                <row>
+                  <entry><literal>IncomingBytes</literal></entry>
+                  <entry>UINT32</entry>
+                  <entry>The total number of bytes in the incoming
+                    messages.</entry>
+                </row>
+                <row>
+                  <entry><literal>IncomingFDs</literal></entry>
+                  <entry>UINT32</entry>
+                  <entry>The total number of Unix file descriptors
+                    attached to the incoming messages.</entry>
+                </row>
+                <row>
+                  <entry><literal>PeakIncomingBytes</literal></entry>
+                  <entry>UINT32</entry>
+                  <entry>The highest total number of bytes in the incoming
+                    messages at any one time.</entry>
+                </row>
+                <row>
+                  <entry><literal>PeakIncomingFDs</literal></entry>
+                  <entry>UINT32</entry>
+                  <entry>The highest total number of Unix file descriptors
+                    attached to the incoming messages at any one time.</entry>
+                </row>
+
+                <!-- Outgoing queued messages -->
+                <row>
+                  <entry><literal>OutgoingMessages</literal></entry>
+                  <entry>UINT32</entry>
+                  <entry>The total number of messages queued in the message
+                    bus to be delivered to this connection.</entry>
+                </row>
+                <row>
+                  <entry><literal>OutgoingBytes</literal></entry>
+                  <entry>UINT32</entry>
+                  <entry>The total number of bytes in the outgoing
+                    messages.</entry>
+                </row>
+                <row>
+                  <entry><literal>OutgoingFDs</literal></entry>
+                  <entry>UINT32</entry>
+                  <entry>The total number of Unix file descriptors
+                    attached to the outgoing messages.</entry>
+                </row>
+                <row>
+                  <entry><literal>PeakOutgoingBytes</literal></entry>
+                  <entry>UINT32</entry>
+                  <entry>The highest total number of bytes in the outgoing
+                    messages at any one time.</entry>
+                </row>
+                <row>
+                  <entry><literal>PeakOutgoingFDs</literal></entry>
+                  <entry>UINT32</entry>
+                  <entry>The highest total number of Unix file descriptors
+                    attached to the outgoing messages at any one time.</entry>
+                </row>
+
+              </tbody>
+            </tgroup>
+          </informaltable>
+        </para>
+        <para>
+          All other keys are implementation-specific until or unless they
+          are standardized in this specification.
         </para>
       </sect3>
+
+      <sect3 id="bus-messages-get-all-match-rules">
+        <title>Method: <literal>org.freedesktop.DBus.Debug.Stats.GetAllMatchRules</literal></title>
+        <para>
+          As a method:
+          <programlisting>
+            GetAllMatchRules (out ARRAY of DICT_ENTRY&lt;STRING,ARRAY&lt;STRING&gt;&gt; rules)
+          </programlisting>
+          Message arguments:
+          <informaltable>
+            <tgroup cols="3">
+              <thead>
+                <row>
+                  <entry>Argument</entry>
+                  <entry>Type</entry>
+                  <entry>Description</entry>
+                </row>
+              </thead>
+              <tbody>
+                <row>
+                  <entry>0</entry>
+                  <entry>ARRAY of DICT_ENTRY&lt;STRING,ARRAY&lt;STRING&gt;&gt;</entry>
+                  <entry>Match rules</entry>
+                </row>
+              </tbody>
+            </tgroup>
+          </informaltable>
+          List all of the match rules that are active on this message bus.
+          The keys in the result dictionary are unique connection names.
+          The values are lists of match rules registered by that connection,
+          in an unspecified order.
+          If a connection has registered the same match rule more than once,
+          it is unspecified whether duplicate entries appear in the list.
+       </para>
+      </sect3>
+
     </sect2>
 
+    <sect2 id="message-bus-verbose-interface">
+      <title>Verbose Interface: <literal>org.freedesktop.DBus.Verbose</literal></title>
+      <para>
+        The special message bus name <literal>org.freedesktop.DBus</literal>
+        may optionally implement the
+        <literal>org.freedesktop.DBus.Verbose</literal> interface on
+        the object path <literal>/org/freedesktop/DBus</literal>.
+        In the reference implementation, this interface is an optional
+        feature, which can be enabled or disabled at compile-time.
+        On the well-known system bus or other buses that serve more than
+        one user, access to this interface should normally be restricted to
+        administrative users, but can be opened up to developers via
+        configuration if required.
+      </para>
+
+      <sect3 id="bus-messages-enable-verbose">
+        <title>Method: <literal>org.freedesktop.DBus.Verbose.EnableVerbose</literal></title>
+        <para>
+          As a method:
+          <programlisting>
+            EnableVerbose ()
+          </programlisting>
+          Start producing verbose debugging messages in an
+          implementation-specific way.
+          For example, these messages might go to standard error or to a
+          system event log.
+       </para>
+      </sect3>
+
+      <sect3 id="bus-messages-disable-verbose">
+        <title>Method: <literal>org.freedesktop.DBus.Verbose.DisableVerbose</literal></title>
+        <para>
+          As a method:
+          <programlisting>
+            DisableVerbose ()
+          </programlisting>
+          Stop producing verbose debugging messages.
+       </para>
+      </sect3>
+
+    </sect2>
   </sect1>
 <!--
   <appendix id="implementation-notes">

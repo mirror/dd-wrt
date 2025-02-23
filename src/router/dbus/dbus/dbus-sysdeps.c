@@ -354,81 +354,6 @@ _dbus_split_paths_and_append (DBusString *dirs,
  *
  * @{
  */
-/**
- * Appends an integer to a DBusString.
- * 
- * @param str the string
- * @param value the integer value
- * @returns #FALSE if not enough memory or other failure.
- */
-dbus_bool_t
-_dbus_string_append_int (DBusString *str,
-                         long        value)
-{
-  /* this calculation is from comp.lang.c faq */
-#define MAX_LONG_LEN ((sizeof (long) * 8 + 2) / 3 + 1)  /* +1 for '-' */
-  int orig_len;
-  int i;
-  char *buf;
-  
-  orig_len = _dbus_string_get_length (str);
-
-  if (!_dbus_string_lengthen (str, MAX_LONG_LEN))
-    return FALSE;
-
-  buf = _dbus_string_get_data_len (str, orig_len, MAX_LONG_LEN);
-
-  snprintf (buf, MAX_LONG_LEN, "%ld", value);
-
-  i = 0;
-  while (*buf)
-    {
-      ++buf;
-      ++i;
-    }
-  
-  _dbus_string_shorten (str, MAX_LONG_LEN - i);
-  
-  return TRUE;
-}
-
-/**
- * Appends an unsigned integer to a DBusString.
- * 
- * @param str the string
- * @param value the integer value
- * @returns #FALSE if not enough memory or other failure.
- */
-dbus_bool_t
-_dbus_string_append_uint (DBusString    *str,
-                          unsigned long  value)
-{
-  /* this is wrong, but definitely on the high side. */
-#define MAX_ULONG_LEN (MAX_LONG_LEN * 2)
-  int orig_len;
-  int i;
-  char *buf;
-  
-  orig_len = _dbus_string_get_length (str);
-
-  if (!_dbus_string_lengthen (str, MAX_ULONG_LEN))
-    return FALSE;
-
-  buf = _dbus_string_get_data_len (str, orig_len, MAX_ULONG_LEN);
-
-  snprintf (buf, MAX_ULONG_LEN, "%lu", value);
-
-  i = 0;
-  while (*buf)
-    {
-      ++buf;
-      ++i;
-    }
-  
-  _dbus_string_shorten (str, MAX_ULONG_LEN - i);
-  
-  return TRUE;
-}
 
 /**
  * Parses an integer contained in a DBusString. Either return parameter
@@ -497,6 +422,45 @@ _dbus_string_parse_uint (const DBusString *str,
   end = NULL;
   _dbus_set_errno_to_zero ();
   v = strtoul (p, &end, 0);
+  if (end == NULL || end == p || errno != 0)
+    return FALSE;
+
+  if (value_return)
+    *value_return = v;
+  if (end_return)
+    *end_return = start + (end - p);
+
+  return TRUE;
+}
+
+/**
+ * Parses a dbus_int64_t integer contained in a DBusString. Either return parameter
+ * may be #NULL if you aren't interested in it. The integer is parsed
+ * and stored in value_return. Return parameters are not initialized
+ * if the function returns #FALSE.
+ *
+ * @param str the string
+ * @param start the byte index of the start of the integer
+ * @param value_return return location of the integer value or #NULL
+ * @param end_return return location of the end of the integer, or #NULL
+ * @returns #TRUE on success
+ */
+dbus_bool_t
+_dbus_string_parse_int64 (const DBusString *str,
+                          int               start,
+                          dbus_int64_t     *value_return,
+                          int              *end_return)
+{
+  dbus_int64_t v;
+  const char *p;
+  char *end;
+
+  p = _dbus_string_get_const_data_len (str, start,
+                                       _dbus_string_get_length (str) - start);
+
+  end = NULL;
+  _dbus_set_errno_to_zero ();
+  v = strtoll (p, &end, 0);
   if (end == NULL || end == p || errno != 0)
     return FALSE;
 
@@ -969,7 +933,7 @@ _dbus_combine_tcp_errors (DBusList **sources,
         name = DBUS_ERROR_FAILED;
 
       dbus_set_error (dest, name, "%s to \"%s\":%s (%s)",
-                      summary, host ? host : "*", port,
+                      summary, host ? host : "*", port ? port : "0",
                       _dbus_string_get_const_data (&message));
     }
 

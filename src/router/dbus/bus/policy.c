@@ -452,7 +452,7 @@ bus_policy_allow_unix_user (BusPolicy        *policy,
   int n_group_ids;
 
   /* On OOM or error we always reject the user */
-  if (!_dbus_unix_groups_from_uid (uid, &group_ids, &n_group_ids))
+  if (!_dbus_unix_groups_from_uid (uid, &group_ids, &n_group_ids, NULL))
     {
       _dbus_verbose ("Did not get any groups for UID %lu\n",
                      uid);

@@ -164,7 +164,7 @@ dbus_test_tool_spam (int argc, char **argv)
   int queue_len = 1;
   const char *payload = NULL;
   char *payload_buf = NULL;
-  size_t payload_len;
+  size_t payload_len = 0;
   int payload_type = DBUS_TYPE_STRING;
   DBusMessage *template = NULL;
   dbus_bool_t flood = FALSE;
@@ -217,6 +217,7 @@ dbus_test_tool_spam (int argc, char **argv)
       else if (strstr (arg, "--payload=") == arg)
         {
           payload = arg + strlen ("--payload=");
+          payload_len = strlen (payload);
         }
       else if (strcmp (arg, "--stdin") == 0)
         {

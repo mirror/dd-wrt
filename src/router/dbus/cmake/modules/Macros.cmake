@@ -1,6 +1,6 @@
 option(DBUS_USE_WINE "set to 1 or ON to support running test cases with Wine" OFF)
 
-if(DBUS_BUILD_TESTS AND CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_NAME STREQUAL "Windows")
+if((DBUS_ENABLE_MODULAR_TESTS OR DBUS_ENABLE_INTRUSIVE_TESTS) AND CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_NAME STREQUAL "Windows")
     if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
         find_file(WINE_EXECUTABLE
             NAMES wine
@@ -39,6 +39,34 @@ if(DBUS_BUILD_TESTS AND CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_NAME STREQUAL "Win
 endif()
 
 #
+# unit test setup
+#
+macro(setup_unit_tests)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+        set(DBUS_PATH_DELIMITER ";")
+    else()
+        set(DBUS_PATH_DELIMITER ":")
+    endif()
+
+    # Tests in bus/config-parser.c rely on these specific values for XDG_*
+    set(DBUS_TEST_XDG_DATA_DIRS "${Z_DRIVE_IF_WINE}${PROJECT_BINARY_DIR}/test/XDG_DATA_DIRS" "${Z_DRIVE_IF_WINE}${PROJECT_BINARY_DIR}/test/XDG_DATA_DIRS2")
+    set(DBUS_TEST_XDG_DATA_HOME "${Z_DRIVE_IF_WINE}${PROJECT_BINARY_DIR}/test/XDG_DATA_HOME")
+    set(DBUS_TEST_XDG_RUNTIME_DIR "${Z_DRIVE_IF_WINE}${PROJECT_BINARY_DIR}/test/XDG_RUNTIME_DIR")
+    list(JOIN DBUS_TEST_XDG_DATA_DIRS "${DBUS_PATH_DELIMITER}" DBUS_TEST_XDG_DATA_DIRS_JOINED)
+
+    # the test environment expects these directories to be present
+    foreach(_dir ${DBUS_TEST_XDG_RUNTIME_DIR})
+        if(NOT EXISTS ${_dir})
+            message(STATUS "creating directory '${_dir}' for test environment")
+            file(MAKE_DIRECTORY ${_dir})
+            if(NOT WIN32)
+                file(CHMOD ${_dir} DIRECTORY_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
+            endif()
+        endif()
+    endforeach()
+endmacro()
+
+#
 # add dbus specific test
 #
 # @param _name test name
@@ -56,17 +84,28 @@ macro(add_unit_test _name _target)
         COMMAND ${TEST_WRAPPER} ${__ARGS} ${Z_DRIVE_IF_WINE}$<TARGET_FILE:${_target}> --tap
         WORKING_DIRECTORY ${DBUS_TEST_WORKING_DIR}
     )
+
+    if(NOT setup_unit_tests_called)
+        setup_unit_tests()
+        set(setup_unit_test_called 1)
+    endif()
+
     set(_env)
     list(APPEND _env "DBUS_SESSION_BUS_ADDRESS=")
     list(APPEND _env "DBUS_FATAL_WARNINGS=1")
+    list(APPEND _env "DBUS_TEST_BUILDDIR=${Z_DRIVE_IF_WINE}${PROJECT_BINARY_DIR}/test")
     list(APPEND _env "DBUS_TEST_DAEMON=${DBUS_TEST_DAEMON}")
     list(APPEND _env "DBUS_TEST_DATA=${DBUS_TEST_DATA}")
     list(APPEND _env "DBUS_TEST_DBUS_LAUNCH=${DBUS_TEST_DBUS_LAUNCH}")
     list(APPEND _env "DBUS_TEST_EXEC=${DBUS_TEST_EXEC}")
     list(APPEND _env "DBUS_TEST_HOMEDIR=${DBUS_TEST_HOMEDIR}")
     list(APPEND _env "DBUS_TEST_UNINSTALLED=1")
+    # used by GLib-based tests to implement g_test_build_filename(), etc.
     list(APPEND _env "G_TEST_BUILDDIR=${Z_DRIVE_IF_WINE}${PROJECT_BINARY_DIR}/test")
     list(APPEND _env "G_TEST_SRCDIR=${Z_DRIVE_IF_WINE}${PROJECT_SOURCE_DIR}/test")
+    list(APPEND _env "XDG_DATA_DIRS=${DBUS_TEST_XDG_DATA_DIRS_JOINED}")
+    list(APPEND _env "XDG_DATA_HOME=${DBUS_TEST_XDG_DATA_HOME}")
+    list(APPEND _env "XDG_RUNTIME_DIR=${DBUS_TEST_XDG_RUNTIME_DIR}")
     list(APPEND _env ${__ENV})
     set_tests_properties(${_name} PROPERTIES ENVIRONMENT "${_env}")
 endmacro()

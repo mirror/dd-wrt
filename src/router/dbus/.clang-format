@@ -1,0 +1,7 @@
+BasedOnStyle: GNU
+AlwaysBreakAfterDefinitionReturnType: All
+BreakBeforeBinaryOperators: None
+BinPackParameters: false
+SpaceAfterCStyleCast: true
+SpaceBeforeParens: Always
+AlignEscapedNewlines: DontAlign

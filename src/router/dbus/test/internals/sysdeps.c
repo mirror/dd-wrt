@@ -1,5 +1,6 @@
 /*
  * Copyright © 2018 Collabora Ltd.
+ * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation files
@@ -233,7 +234,7 @@ fixture_open_some_fds (Fixture *f)
 
   for (i = 0; i < n; i += 2)
     {
-      gboolean cloexec;
+      gboolean cloexec = TRUE;
 
       if (pipe (&f->fds[i]) < 0)
         g_error ("pipe: %s", g_strerror (errno));
@@ -280,7 +281,7 @@ test_set_all_close_on_exec (Fixture *f,
 
   for (i = 0; i < f->n_fds; i++)
     {
-      gboolean cloexec;
+      gboolean cloexec = TRUE;
 
       g_assert_true (check_valid_fd (f->fds[i], &cloexec));
       g_assert_false (cloexec);
@@ -290,7 +291,7 @@ test_set_all_close_on_exec (Fixture *f,
 
   for (i = 0; i < f->n_fds; i++)
     {
-      gboolean cloexec;
+      gboolean cloexec = FALSE;
 
       g_assert_true (check_valid_fd (f->fds[i], &cloexec));
       g_assert_true (cloexec);

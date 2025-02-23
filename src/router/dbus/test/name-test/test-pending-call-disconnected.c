@@ -1,6 +1,7 @@
 /*
  * Copyright © 2006 Red Hat Inc.
  * Copyright © 2017 Shin-ichi MORITA <shin1morita@gmail.com>
+ * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation files

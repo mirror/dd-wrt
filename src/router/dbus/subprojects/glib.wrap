@@ -1,6 +1,3 @@
-# Copyright 2022 Meson contributors
-# SPDX-License-Identifier: MIT
-
 [wrap-file]
 directory = glib-2.72.2
 source_url = https://download.gnome.org/sources/glib/2.72/glib-2.72.2.tar.xz

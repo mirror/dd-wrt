@@ -3,6 +3,7 @@
  * Copyright 2010 Ralf Habacker
  * Copyright 2016-2018 Collabora Ltd.
  * Copyright 2017 Endless Mobile, Inc.
+ * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation files

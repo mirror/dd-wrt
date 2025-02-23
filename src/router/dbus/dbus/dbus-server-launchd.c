@@ -3,6 +3,7 @@
  * Copyright (C) 2008, Colin Walters <walters@verbum.org>
  * Copyright (C) 2008-2009, Benjamin Reed <rangerrick@befunk.com>
  * Copyright (C) 2009, Jonas Bähr <jonas.baehr@web.de>
+ * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation

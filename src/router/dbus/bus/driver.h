@@ -58,7 +58,8 @@ dbus_bool_t bus_driver_generate_introspect_string  (DBusString *xml,
                                                     dbus_bool_t canonical_path,
                                                     DBusMessage *message);
 dbus_bool_t bus_driver_fill_connection_credentials (DBusCredentials *credentials,
-                                                    DBusConnection  *conn,
+                                                    DBusConnection  *peer_conn,
+                                                    DBusConnection  *caller_conn,
                                                     DBusMessageIter *asv_iter);
 
 BusDriverFound bus_driver_get_conn_helper (DBusConnection  *connection,

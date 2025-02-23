@@ -9,10 +9,10 @@ import sys
 from pathlib import Path
 
 for d in sys.argv[1].split(':'):
-    if os.path.isabs(d) and 'DESTDIR' in os.environ:
+    if os.path.isabs(d):
         p = Path(d)
         d = p.relative_to(p.anchor)
-        dest = os.path.join(os.environ['DESTDIR'], d)
+        dest = os.path.join(os.environ.get('DESTDIR', '/'), d)
     else:
         dest = os.path.join(os.environ['MESON_INSTALL_DESTDIR_PREFIX'], d)
 

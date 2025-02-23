@@ -24,6 +24,7 @@
  */
 
 #include <config.h>
+#include "dbus-init-win.h"
 #include "dbus-internals.h"
 #include "dbus-sysdeps.h"
 #include "dbus-sysdeps-win.h"

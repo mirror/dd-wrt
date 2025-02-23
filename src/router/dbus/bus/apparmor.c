@@ -215,10 +215,7 @@ static dbus_bool_t
 _dbus_append_pair_uint (DBusString *auxdata, const char *name,
                        unsigned long value)
 {
-  return _dbus_string_append (auxdata, " ") &&
-         _dbus_string_append (auxdata, name) &&
-         _dbus_string_append (auxdata, "=") &&
-         _dbus_string_append_uint (auxdata, value);
+  return _dbus_string_append_printf (auxdata, " %s=%lu", name, value);
 }
 
 static dbus_bool_t

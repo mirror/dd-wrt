@@ -71,8 +71,10 @@ _run_iteration (DBusConnection *conn)
 int
 main (int argc, char *argv[])
 {
-  long start_tv_sec, start_tv_usec;
-  long end_tv_sec, end_tv_usec;
+  dbus_int64_t start_tv_sec;
+  long start_tv_usec;
+  dbus_int64_t end_tv_sec;
+  long end_tv_usec;
   int i;
   DBusMessage *method;
   DBusConnection *conn;
@@ -93,7 +95,7 @@ main (int argc, char *argv[])
   /* run 100 times to make sure */
   for (i = 0; i < 100; i++)
     {
-      long delta;
+      dbus_int64_t delta;
       
       _dbus_get_monotonic_time (&start_tv_sec, &start_tv_usec);
       _run_iteration (conn);
@@ -101,7 +103,7 @@ main (int argc, char *argv[])
 
       /* we just care about seconds */
       delta = end_tv_sec - start_tv_sec;
-      printf ("ok %d - %lis\n", i + 1, delta);
+      printf ("ok %d - %" DBUS_INT64_MODIFIER "is\n", i + 1, delta);
     }
  
   method = dbus_message_new_method_call ("org.freedesktop.TestSuiteEchoService",

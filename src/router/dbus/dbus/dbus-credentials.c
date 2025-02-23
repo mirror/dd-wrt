@@ -25,8 +25,17 @@
 #include <config.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SYSCALL_H
+#include <sys/syscall.h>
+#endif
 #include "dbus-credentials.h"
 #include "dbus-internals.h"
+#ifdef DBUS_UNIX
+#include "dbus-sysdeps-unix.h"
+#endif
 
 /**
  * @defgroup DBusCredentials Credentials provable through authentication
@@ -54,6 +63,7 @@ struct DBusCredentials {
   dbus_gid_t *unix_gids;
   size_t n_unix_gids;
   dbus_pid_t pid;
+  int pid_fd;
   char *windows_sid;
   char *linux_security_label;
   void *adt_audit_data;
@@ -86,6 +96,7 @@ _dbus_credentials_new (void)
   creds->unix_gids = NULL;
   creds->n_unix_gids = 0;
   creds->pid = DBUS_PID_UNSET;
+  creds->pid_fd = -1;
   creds->windows_sid = NULL;
   creds->linux_security_label = NULL;
   creds->adt_audit_data = NULL;
@@ -145,12 +156,22 @@ _dbus_credentials_unref (DBusCredentials    *credentials)
       dbus_free (credentials->windows_sid);
       dbus_free (credentials->linux_security_label);
       dbus_free (credentials->adt_audit_data);
+#ifdef DBUS_UNIX
+      if (credentials->pid_fd >= 0)
+        {
+          close (credentials->pid_fd);
+          credentials->pid_fd = -1;
+        }
+#endif
       dbus_free (credentials);
     }
 }
 
 /**
- * Add a UNIX process ID to the credentials.
+ * Add a UNIX process ID to the credentials. If the
+ * process ID FD is set, it will always take
+ * precendence when querying the PID of this
+ * credential.
  *
  * @param credentials the object
  * @param pid the process ID
@@ -162,6 +183,30 @@ _dbus_credentials_add_pid (DBusCredentials    *credentials,
 {
   credentials->pid = pid;
   return TRUE;
+}
+
+/**
+ * Add a UNIX process ID FD to the credentials. The
+ * FD is now owned by the credentials object.
+ *
+ * @param credentials the object
+ * @param pid_fd the process ID FD
+ * @returns #FALSE if no memory
+ */
+#ifndef DBUS_UNIX
+_DBUS_GNUC_NORETURN
+#endif
+void
+_dbus_credentials_take_pid_fd (DBusCredentials    *credentials,
+                              int                 pid_fd)
+{
+#ifdef DBUS_UNIX
+  if (credentials->pid_fd >= 0)
+    close (credentials->pid_fd);
+  credentials->pid_fd = pid_fd;
+#else
+  _dbus_assert_not_reached ("pidfd never set on non-Unix");
+#endif
 }
 
 /**
@@ -323,7 +368,10 @@ _dbus_credentials_include (DBusCredentials    *credentials,
   switch (type)
     {
     case DBUS_CREDENTIAL_UNIX_PROCESS_ID:
-      return credentials->pid != DBUS_PID_UNSET;
+      return credentials->pid != DBUS_PID_UNSET ||
+             credentials->pid_fd >= 0;
+    case DBUS_CREDENTIAL_UNIX_PROCESS_FD:
+      return credentials->pid_fd >= 0;
     case DBUS_CREDENTIAL_UNIX_USER_ID:
       return credentials->unix_uid != DBUS_UID_UNSET;
     case DBUS_CREDENTIAL_UNIX_GROUP_IDS:
@@ -343,6 +391,8 @@ _dbus_credentials_include (DBusCredentials    *credentials,
 /**
  * Gets the UNIX process ID in the credentials, or #DBUS_PID_UNSET if
  * the credentials object doesn't contain a process ID.
+ * If the PID FD is set, it will first try to resolve from it, and
+ * only return the stored PID if that fails.
  *
  * @param credentials the object
  * @returns UNIX process ID
@@ -350,7 +400,33 @@ _dbus_credentials_include (DBusCredentials    *credentials,
 dbus_pid_t
 _dbus_credentials_get_pid (DBusCredentials    *credentials)
 {
+#ifdef DBUS_UNIX
+  dbus_pid_t pid;
+
+  if (credentials->pid_fd >= 0)
+    {
+      pid = _dbus_resolve_pid_fd (credentials->pid_fd);
+      if (pid > 0)
+        return pid;
+    }
+#endif
+
   return credentials->pid;
+}
+
+/**
+ * Gets the UNIX process ID FD in the credentials as obtained by 'safe'
+ * means (e.g.: Linux's SO_PEERPIDFD), or -1 if the credentials object
+ * doesn't contain a process ID FD. The file FD is owned by the credentials
+ * object and must not be closed by the caller.
+ *
+ * @param credentials the object
+ * @returns UNIX process ID FD
+ */
+int
+_dbus_credentials_get_pid_fd (DBusCredentials    *credentials)
+{
+  return credentials->pid_fd;
 }
 
 /**
@@ -463,6 +539,7 @@ _dbus_credentials_are_empty (DBusCredentials    *credentials)
 {
   return
     credentials->pid == DBUS_PID_UNSET &&
+    credentials->pid_fd == -1 &&
     credentials->unix_uid == DBUS_UID_UNSET &&
     credentials->unix_gids == NULL &&
     credentials->n_unix_gids == 0 &&
@@ -498,6 +575,9 @@ _dbus_credentials_add_credentials (DBusCredentials    *credentials,
                                    DBusCredentials    *other_credentials)
 {
   return
+    _dbus_credentials_add_credential (credentials,
+                                      DBUS_CREDENTIAL_UNIX_PROCESS_FD,
+                                      other_credentials) &&
     _dbus_credentials_add_credential (credentials,
                                       DBUS_CREDENTIAL_UNIX_PROCESS_ID,
                                       other_credentials) &&
@@ -582,6 +662,19 @@ _dbus_credentials_add_credential (DBusCredentials    *credentials,
       if (!_dbus_credentials_add_adt_audit_data (credentials, other_credentials->adt_audit_data, other_credentials->adt_audit_data_size))
         return FALSE;
     }
+  /* _dbus_dup() is only available on UNIX platforms. */
+#ifdef DBUS_UNIX
+  else if (which == DBUS_CREDENTIAL_UNIX_PROCESS_FD &&
+      other_credentials->pid_fd >= 0)
+    {
+      int pid_fd = _dbus_dup (other_credentials->pid_fd, NULL);
+
+      if (pid_fd < 0)
+        return FALSE;
+
+      _dbus_credentials_take_pid_fd (credentials, pid_fd);
+    }
+#endif
 
   return TRUE;
 }
@@ -595,6 +688,13 @@ void
 _dbus_credentials_clear (DBusCredentials    *credentials)
 {
   credentials->pid = DBUS_PID_UNSET;
+#ifdef DBUS_UNIX
+  if (credentials->pid_fd >= 0)
+    {
+      close (credentials->pid_fd);
+      credentials->pid_fd = -1;
+    }
+#endif
   credentials->unix_uid = DBUS_UID_UNSET;
   dbus_free (credentials->unix_gids);
   credentials->unix_gids = NULL;
@@ -677,9 +777,12 @@ _dbus_credentials_to_string_append (DBusCredentials    *credentials,
         goto oom;
       join = TRUE;
     }
-  if (credentials->pid != DBUS_PID_UNSET)
+  if (credentials->pid != DBUS_PID_UNSET || credentials->pid_fd >= 0)
     {
-      if (!_dbus_string_append_printf (string, "%spid=" DBUS_PID_FORMAT, join ? " " : "", credentials->pid))
+      if (!_dbus_string_append_printf (string,
+                                       "%spid=" DBUS_PID_FORMAT,
+                                       join ? " " : "",
+                                       _dbus_credentials_get_pid (credentials)))
         goto oom;
       join = TRUE;
     }
@@ -711,6 +814,13 @@ _dbus_credentials_to_string_append (DBusCredentials    *credentials,
       if (!_dbus_string_append_printf (string, "%slsm='%s'",
                                        join ? " " : "",
                                        credentials->linux_security_label))
+        goto oom;
+      join = TRUE;
+    }
+
+  if (credentials->pid_fd >= 0)
+    {
+      if (!_dbus_string_append_printf (string, "%spidfd=%d", join ? " " : "", credentials->pid_fd))
         goto oom;
       join = TRUE;
     }

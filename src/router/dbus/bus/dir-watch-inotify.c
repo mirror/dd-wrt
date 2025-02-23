@@ -95,12 +95,17 @@ _handle_inotify_watch (DBusWatch *passed_watch, unsigned int flags, void *data)
 #include <stdio.h>
 
 static void
-_set_watched_dirs_internal (DBusList **directories)
+_set_watched_dirs_internal (BusContext *context,
+                            DBusList **directories)
 {
   int new_wds[MAX_DIRS_TO_WATCH];
   char *new_dirs[MAX_DIRS_TO_WATCH];
   DBusList *link;
   int i, j, wd;
+
+  /* Callers must provide a context, except during shutdown, at which
+   * point the list of directories must be empty. */
+  _dbus_assert (context != NULL || *directories == NULL);
 
   for (i = 0; i < MAX_DIRS_TO_WATCH; i++)
     {
@@ -116,15 +121,17 @@ _set_watched_dirs_internal (DBusList **directories)
       link = _dbus_list_get_next_link (directories, link);
     }
 
-  if (link != NULL)
+  if (link != NULL && context != NULL)
     {
-      _dbus_warn ("Too many directories to watch them all, only watching first %d.", MAX_DIRS_TO_WATCH);
+      bus_context_log (context, DBUS_SYSTEM_LOG_WARNING,
+                       "Too many directories to watch them all, only watching first %d.",
+                       MAX_DIRS_TO_WATCH);
     }
 
   /* Look for directories in both the old and new sets, if
    * we find one, move its data into the new set.
    */
-  for (i = 0; new_dirs[i]; i++)
+  for (i = 0; i < MAX_DIRS_TO_WATCH && new_dirs[i]; i++)
     {
       for (j = 0; j < num_wds; j++)
         {
@@ -153,7 +160,7 @@ _set_watched_dirs_internal (DBusList **directories)
         }
     }
 
-  for (i = 0; new_dirs[i]; i++)
+  for (i = 0; i < MAX_DIRS_TO_WATCH && new_dirs[i]; i++)
     {
       if (new_wds[i] == -1)
         {
@@ -164,7 +171,12 @@ _set_watched_dirs_internal (DBusList **directories)
               /* Not all service directories need to exist. */
               if (errno != ENOENT)
                 {
-                  _dbus_warn ("Cannot setup inotify for '%s'; error '%s'", new_dirs[i], _dbus_strerror (errno));
+                  /* We only have context == NULL during shutdown, at which
+                   * point we are not adding directories */
+                  _dbus_assert (context != NULL);
+                  bus_context_log (context, DBUS_SYSTEM_LOG_WARNING,
+                                   "Cannot set up inotify for '%s': %s",
+                                   new_dirs[i], _dbus_strerror (errno));
                   goto out;
                 }
               else
@@ -208,7 +220,7 @@ _shutdown_inotify (void *data)
   if (inotify_fd == -1)
     return;
 
-  _set_watched_dirs_internal (&empty);
+  _set_watched_dirs_internal (NULL, &empty);
 
   if (watch != NULL)
     {
@@ -243,7 +255,9 @@ _init_inotify (BusContext *context)
 #endif
       if (inotify_fd < 0)
         {
-          _dbus_warn ("Cannot initialize inotify: %s", _dbus_strerror (errno));
+          bus_context_log (context, DBUS_SYSTEM_LOG_WARNING,
+                           "Cannot initialize inotify: %s",
+                           _dbus_strerror (errno));
           goto out;
         }
 
@@ -259,13 +273,15 @@ _init_inotify (BusContext *context)
 
       if (watch == NULL)
         {
-          _dbus_warn ("Unable to create inotify watch");
+          bus_context_log (context, DBUS_SYSTEM_LOG_WARNING,
+                           "Unable to create inotify watch");
           goto out;
         }
 
       if (!_dbus_loop_add_watch (loop, watch))
         {
-          _dbus_warn ("Unable to add reload watch to main loop");
+          bus_context_log (context, DBUS_SYSTEM_LOG_WARNING,
+                           "Unable to add reload watch to main loop");
           _dbus_watch_unref (watch);
           watch = NULL;
           goto out;
@@ -273,7 +289,8 @@ _init_inotify (BusContext *context)
 
       if (!_dbus_register_shutdown_func (_shutdown_inotify, NULL))
       {
-          _dbus_warn ("Unable to register shutdown func");
+          bus_context_log (context, DBUS_SYSTEM_LOG_WARNING,
+                           "Unable to register shutdown func");
           _dbus_watch_unref (watch);
           watch = NULL;
           goto out;
@@ -292,5 +309,5 @@ bus_set_watched_dirs (BusContext *context, DBusList **directories)
   if (!_init_inotify (context))
     return;
 
-  _set_watched_dirs_internal (directories);
+  _set_watched_dirs_internal (context, directories);
 }

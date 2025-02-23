@@ -384,7 +384,7 @@ dbus_bool_t _dbus_test_oom_handling (const char             *description,
                                      void                   *data);
 #else
 #define _dbus_set_fail_alloc_counter(n)
-#define _dbus_get_fail_alloc_counter _DBUS_INT_MAX
+#define _dbus_get_fail_alloc_counter (-1)
 
 /* These are constant expressions so that blocks
  * they protect should be optimized away

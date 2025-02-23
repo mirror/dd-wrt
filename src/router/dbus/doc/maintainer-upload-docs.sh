@@ -25,9 +25,6 @@ set -eux
 : "${DOC_SERVER:=dbus.freedesktop.org}"
 : "${DOC_WWW_DIR:=/srv/dbus.freedesktop.org/www}"
 
-: "${SPECIFICATION_SERVER:=specifications.freedesktop.org}"
-: "${SPECIFICATION_PATH:=/srv/specifications.freedesktop.org/www/dbus/1.0}"
-
 if [ -n "${MESON_BUILD_ROOT-}" ]; then
     cd "${MESON_BUILD_ROOT}"
 fi
@@ -49,5 +46,3 @@ tar --xz -c -f dbus-docs.tar.xz dbus-docs
 
 scp dbus-docs.tar.xz "$DOC_SERVER:$DOC_WWW_DIR/"
 rsync -rpvzP --chmod=Dg+s,ug+rwX,o=rX dbus-docs/ "$DOC_SERVER:$DOC_WWW_DIR/doc/"
-
-scp -p "$top_srcdir"/doc/*.dtd "$SPECIFICATION_SERVER:$SPECIFICATION_PATH/"

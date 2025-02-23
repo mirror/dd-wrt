@@ -1,5 +1,7 @@
 /* stats.h - statistics from the bus driver
  *
+ * Copyright 2011 Nokia Corporation
+ * Copyright 2014 Collabora Ltd.
  * SPDX-License-Identifier: AFL-2.1 OR GPL-2.0-or-later
  *
  * Licensed under the Academic Free License version 2.1

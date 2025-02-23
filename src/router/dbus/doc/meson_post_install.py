@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright © 2019-2020 Salamandar <felix@piedallu.me>
+# SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +38,7 @@ if __name__ == "__main__":
     qch = Path(arg_qch)
     qchdir = Path(arg_qchdir)
     destdir = Path(env_destdir)
-    apidir = Path(destdir /docdir / 'api')
+    apidir = Path(destdir / docdir / 'api/html')
     shutil.rmtree(apidir, ignore_errors=True)
     shutil.copytree(builddir / 'api/html', apidir)
     if qch.is_file():

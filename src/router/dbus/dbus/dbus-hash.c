@@ -127,7 +127,7 @@
  * 
  */
 #define RANDOM_INDEX(table, i) \
-    (((((intptr_t) (i))*1103515245) >> (table)->down_shift) & (table)->mask)
+    (((((uintptr_t) (i))*1103515245) >> (table)->down_shift) & (table)->mask)
 
 /**
  * Initial number of buckets in hash table (hash table statically

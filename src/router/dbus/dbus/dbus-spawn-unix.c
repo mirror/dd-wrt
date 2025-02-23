@@ -1055,6 +1055,12 @@ do_exec (int                       child_err_report_fd,
 #ifdef DBUS_ENABLE_EMBEDDED_TESTS
   max_open = sysconf (_SC_OPEN_MAX);
 
+  /* Because fds are allocated as numerically small as possible, we don't
+   * need to check the entire fd space, which can be prohibitively slow if
+   * the fd limit is very high. */
+  if (max_open > 1024)
+    max_open = 1024;
+
   for (i = 3; i < max_open; i++)
     {
       int retval;

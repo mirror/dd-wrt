@@ -660,11 +660,7 @@ _dbus_misc_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
   if (!_dbus_string_init (&str))
     _dbus_test_fatal ("no memory");
 
-  if (!(_dbus_string_append_int (&str, major) &&
-        _dbus_string_append_byte (&str, '.') &&
-        _dbus_string_append_int (&str, minor) &&
-        _dbus_string_append_byte (&str, '.') &&
-        _dbus_string_append_int (&str, micro)))
+  if (!_dbus_string_append_printf (&str, "%d.%d.%d", major, minor, micro))
     _dbus_test_fatal ("no memory");
 
   _dbus_test_check (_dbus_string_equal_c_str (&str, DBUS_VERSION_STRING));
@@ -730,6 +726,8 @@ static char test_socket_dir[] = DBUS_TEST_SOCKET_DIR "/dbus-test-XXXXXX";
 static void
 cleanup_test_socket_tempdir (void)
 {
+  if (chdir ("/tmp") != 0)
+    _dbus_test_fatal ("Failed to chdir() to /tmp");
   if (rmdir (test_socket_dir) != 0)
     _dbus_test_not_ok ("failed to remove test socket directory %s",
                        test_socket_dir);
@@ -979,7 +977,7 @@ _dbus_userdb_test (const char *test_data_dir)
   dbus_uid_t uid;
   unsigned long *group_ids;
   int n_group_ids, i;
-  DBusError error;
+  DBusError error = DBUS_ERROR_INIT;
 
   if (!_dbus_username_from_current_process (&username))
     _dbus_test_fatal ("didn't get username");
@@ -990,8 +988,8 @@ _dbus_userdb_test (const char *test_data_dir)
   if (!_dbus_get_user_id (username, &uid))
     _dbus_test_fatal ("didn't get uid");
 
-  if (!_dbus_groups_from_uid (uid, &group_ids, &n_group_ids))
-    _dbus_test_fatal ("didn't get groups");
+  if (!_dbus_groups_from_uid (uid, &group_ids, &n_group_ids, &error))
+    _dbus_test_fatal ("didn't get groups: %s: %s", error.name, error.message);
 
   _dbus_test_diag ("    Current user: %s homedir: %s gids:",
           _dbus_string_get_const_data (username),

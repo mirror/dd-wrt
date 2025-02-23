@@ -41,13 +41,6 @@ option(
 )
 
 option(
-  'containers',
-  type: 'boolean',
-  value: false,
-  description: 'Enable restricted servers for app containers'
-)
-
-option(
   'dbus_daemondir',
   type: 'string',
   description: 'Directory for installing the dbus-daemon'
@@ -89,10 +82,10 @@ option(
 )
 
 option(
-  'embedded_tests',
+  'intrusive_tests',
   type: 'boolean',
   value: false,
-  description: 'Enable unit test code in the library and binaries'
+  description: 'Enable tests that require insecure extra code in the library and binaries'
 )
 
 option(
@@ -146,7 +139,7 @@ option(
 option(
   'message_bus',
   type: 'boolean',
-  value: 'true',
+  value: true,
   description: 'Enable dbus-daemon'
 )
 
@@ -260,7 +253,7 @@ option(
 option(
   'tools',
   type: 'boolean',
-  value: 'true',
+  value: true,
   description: 'Enable CLI tools such as dbus-send and dbus-monitor'
 )
 

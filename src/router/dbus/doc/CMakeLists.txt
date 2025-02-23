@@ -52,7 +52,7 @@ if(DBUS_ENABLE_DOXYGEN_DOCS)
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/doxygen.stamp
     )
     add_dependencies(doc apidoc)
-    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/api/html/ DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/dbus/api)
+    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/api/html/ DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/dbus/api/html)
 endif()
 
 find_program(XSLTPROC_EXECUTABLE xsltproc)
@@ -125,7 +125,11 @@ macro(add_docbook _target)
             set(STYLESHEET "${DOCBOOKXSL_DIR}/manpages/docbook.xsl")
             set(INSTALL_DIR ${CMAKE_INSTALL_DATADIR}/man/man${ARGS_MAN_CATEGORY})
         else()
-            set(_outname "${_target}.${ARGS_MAN_CATEGORY}.html")
+            if (NOT ARGS_MAN_CATEGORY)
+                set(_outname "${_target}.html")
+            else()
+                set(_outname "${_target}.${ARGS_MAN_CATEGORY}.html")
+            endif()
             set(STYLESHEET "${DOCBOOKXSL_DIR}/html/docbook.xsl")
             set(INSTALL_DIR ${CMAKE_INSTALL_DATADIR}/doc/dbus)
         endif()
@@ -185,10 +189,19 @@ add_docbook(dbus-send TEMPLATE dbus-send.1.xml.in MAN_CATEGORY 1 FORMATS ${forma
 add_docbook(dbus-test-tool TEMPLATE dbus-test-tool.1.xml.in MAN_CATEGORY 1 FORMATS ${formats})
 add_docbook(dbus-uuidgen TEMPLATE dbus-uuidgen.1.xml.in MAN_CATEGORY 1 FORMATS ${formats})
 add_docbook(dbus-update-activation-environment TEMPLATE dbus-update-activation-environment.1.xml.in MAN_CATEGORY 1 FORMATS ${formats})
+add_docbook(dbus-faq SOURCE dbus-faq.xml FORMATS html)
+add_docbook(dbus-specification SOURCE dbus-specification.xml FORMATS html)
+add_docbook(dbus-test-plan SOURCE dbus-test-plan.xml FORMATS html)
+add_docbook(dbus-tutorial SOURCE dbus-tutorial.xml FORMATS html)
 
 #
 # handle html index file
 #
+if(DBUS_ENABLE_DOXYGEN_DOCS)
+    set(DBUS_APIDOC_LINK "<a href=\"api/html/index.html\">libdbus API Documentation</a>")
+else()
+    set(DBUS_APIDOC_LINK "")
+endif()
 configure_file(index.html.in ${CMAKE_CURRENT_BINARY_DIR}/index.html)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/index.html DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/dbus)
 

@@ -203,8 +203,7 @@ _dbus_write_pid_to_file_and_pipe (const DBusString *pidfile,
           return FALSE;
         }
 
-      if (!_dbus_string_append_int (&pid, pid_to_write) ||
-          !_dbus_string_append (&pid, "\n"))
+      if (!_dbus_string_append_printf (&pid, DBUS_PID_FORMAT "\n", pid_to_write))
         {
           _dbus_string_free (&pid);
           _DBUS_SET_OOM (error);
@@ -651,6 +650,13 @@ dbus_bool_t _dbus_windows_user_is_process_owner (const char *windows_sid)
   unix emulation functions - should be removed sometime in the future
  =====================================================================*/
 
+static void
+set_unix_uid_unsupported (DBusError *error)
+{
+  dbus_set_error (error, DBUS_ERROR_NOT_SUPPORTED,
+                  "UNIX user IDs not supported on Windows");
+}
+
 /**
  * Checks to see if the UNIX user ID is at the console.
  * Should always fail on Windows (set the error to
@@ -664,8 +670,7 @@ dbus_bool_t
 _dbus_unix_user_is_at_console (dbus_uid_t         uid,
                                DBusError         *error)
 {
-  dbus_set_error (error, DBUS_ERROR_NOT_SUPPORTED,
-                  "UNIX user IDs not supported on Windows\n");
+  set_unix_uid_unsupported (error);
   return FALSE;
 }
 
@@ -709,13 +714,16 @@ _dbus_parse_unix_user_from_config (const DBusString  *username,
  * @param uid the UID
  * @param group_ids return location for array of group IDs
  * @param n_group_ids return location for length of returned array
+ * @param error error location
  * @returns #TRUE if the UID existed and we got some credentials
  */
 dbus_bool_t
 _dbus_unix_groups_from_uid (dbus_uid_t            uid,
                             dbus_gid_t          **group_ids,
-                            int                  *n_group_ids)
+                            int                  *n_group_ids,
+                            DBusError            *error)
 {
+  set_unix_uid_unsupported (error);
   return FALSE;
 }
 
@@ -1601,6 +1609,26 @@ _dbus_get_standard_session_servicedirs (DBusList **dirs)
 
 dbus_bool_t
 _dbus_get_standard_system_servicedirs (DBusList **dirs)
+{
+  *dirs = NULL;
+  return TRUE;
+}
+
+
+/**
+ * Returns the local admin directories for a system bus to look for service
+ * activation files
+ *
+ * On UNIX this should be the /etc/ and /run/ directories.
+ *
+ * On Windows there is no system bus and this function can return nothing.
+ *
+ * @param dirs the directory list we are returning
+ * @returns #FALSE on OOM
+ */
+
+dbus_bool_t
+_dbus_get_local_system_servicedirs (DBusList **dirs)
 {
   *dirs = NULL;
   return TRUE;

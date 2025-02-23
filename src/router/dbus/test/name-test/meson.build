@@ -20,32 +20,41 @@
 # SOFTWARE.
 
 
-if embedded_tests
+if intrusive_tests
 
     tests = [
-        'test-ids',
-        'test-pending-call-disconnected',
-        'test-shutdown',
+        {'name': 'test-ids'},
+        {'name': 'test-pending-call-disconnected'},
+        {'name': 'test-shutdown'},
     ]
 
     if platform_windows
-        tests += ['test-autolaunch-win']
+        autolaunch_name = 'test-autolaunch-win'
     else
-        tests += ['test-autolaunch']
+        autolaunch_name = 'test-autolaunch'
     endif
+    autolaunch = executable(autolaunch_name,
+        autolaunch_name + '.c',
+        include_directories: root_include,
+        link_with: [libdbus, libdbus_internal, libdbus_testutils],
+        dependencies: dbus_dependencies
+    )
 
     if use_traditional_activation
         tests += [
-            'test-pending-call-dispatch',
-            'test-pending-call-timeout',
-            'test-privserver-client',
-            'test-threads-init',
+            {'name': 'test-pending-call-dispatch', 'test_deps': [test_service]},
+            {'name': 'test-pending-call-timeout', 'test_deps': [test_service]},
+            {
+                'name': 'test-privserver-client',
+                'test_deps': [test_privserver, test_service],
+            },
+            {'name': 'test-threads-init', 'test_deps': [test_service]},
         ]
     endif
 
     foreach test: tests
-        test_exe = executable(test,
-            test + '.c',
+        test_exe = executable(test['name'],
+            test['name'] + '.c',
             include_directories: root_include,
             link_with: [
                 libdbus,
@@ -55,12 +64,12 @@ if embedded_tests
             dependencies: dbus_dependencies,
         )
 
-        if test == 'test-autolaunch'
+        if test['name'] == 'test-autolaunch'
             # This one is run from run-test.sh, not directly
             continue
         endif
 
-        if test == 'test-pending-call-timeout'
+        if test['name'] == 'test-pending-call-timeout'
             timeout = 75
             suites = ['name-test', 'slow']
         else
@@ -68,7 +77,7 @@ if embedded_tests
             suites = ['name-test']
         endif
 
-        test(test,
+        test(test['name'],
             dbus_run_session,
             args: [
                 '--config-file=@0@'.format(
@@ -77,6 +86,7 @@ if embedded_tests
                 '--',
                 test_exe,
             ],
+            depends: test.get('test_deps', []),
             env: test_env,
             protocol: test_protocol,
             suite: suites,
@@ -88,6 +98,7 @@ if embedded_tests
     if platform_unix
         test('run-test',
             find_program('run-test.sh'),
+            depends: [dbus_launch, autolaunch],
             env: test_env,
             protocol: test_protocol,
             suite: 'name-test',
@@ -95,6 +106,7 @@ if embedded_tests
 
         test('run-test-systemserver',
             find_program('run-test-systemserver.sh'),
+            depends: [dbus_send, test_service],
             env: test_env,
             protocol: test_protocol,
             suite: 'name-test',

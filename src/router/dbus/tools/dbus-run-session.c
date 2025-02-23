@@ -395,7 +395,8 @@ run_session (const char *dbus_daemon,
   DBusString address;
   char **env = NULL;
   DBusHashTable *env_table = NULL;
-  long sec,usec;
+  dbus_int64_t sec;
+  long usec;
   dbus_bool_t result = TRUE;
   char *key = NULL;
   char *value = NULL;
@@ -429,7 +430,7 @@ run_session (const char *dbus_daemon,
    * mechanism, with a unique scope that is shared by this dbus-daemon,
    * the app process that defines its lifetime, and any other child
    * processes they might have. */
-  _dbus_string_append_printf (&address, "autolaunch:scope=dbus-tmp-session-%ld%ld-" DBUS_PID_FORMAT, sec, usec, _dbus_getpid ());
+  _dbus_string_append_printf (&address, "autolaunch:scope=dbus-tmp-session-%" DBUS_INT64_MODIFIER "d%ld-" DBUS_PID_FORMAT, sec, usec, _dbus_getpid ());
   _dbus_string_append_printf (&argv_strings[0], "%s", dbus_daemon);
   if (config_file != NULL)
     _dbus_string_append_printf (&argv_strings[1], "--config-file=%s", config_file);

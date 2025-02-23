@@ -125,7 +125,7 @@ bus_expire_list_recheck_immediately (BusExpireList *list)
 
 static int
 do_expiration_with_monotonic_time (BusExpireList *list,
-                                   long           tv_sec,
+                                   dbus_int64_t   tv_sec,
                                    long           tv_usec)
 {
   DBusList *link;
@@ -193,7 +193,8 @@ bus_expirelist_expire (BusExpireList *list)
 
   if (list->items != NULL)
     {
-      long tv_sec, tv_usec;
+      dbus_int64_t tv_sec;
+      long tv_usec;
 
       _dbus_get_monotonic_time (&tv_sec, &tv_usec);
 
@@ -305,7 +306,7 @@ test_expire_func (BusExpireList *list,
 }
 
 static void
-time_add_milliseconds (long *tv_sec,
+time_add_milliseconds (dbus_int64_t *tv_sec,
                        long *tv_usec,
                        int   milliseconds)
 {
@@ -323,10 +324,14 @@ bus_expire_list_test (const char *test_data_dir _DBUS_GNUC_UNUSED)
 {
   DBusLoop *loop;
   BusExpireList *list;
-  long tv_sec, tv_usec;
-  long tv_sec_not_expired, tv_usec_not_expired;
-  long tv_sec_expired, tv_usec_expired;
-  long tv_sec_past, tv_usec_past;
+  dbus_int64_t tv_sec;
+  long tv_usec;
+  dbus_int64_t tv_sec_not_expired;
+  long tv_usec_not_expired;
+  dbus_int64_t tv_sec_expired;
+  long tv_usec_expired;
+  dbus_int64_t tv_sec_past;
+  long tv_usec_past;
   TestExpireItem *item;
   int next_interval;
   dbus_bool_t result = FALSE;

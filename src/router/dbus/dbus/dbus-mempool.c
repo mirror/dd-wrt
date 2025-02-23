@@ -317,7 +317,7 @@ _dbus_mem_pool_alloc (DBusMemPool *pool)
                * malloc here for purposes of failed alloc simulation.
                */
               saved_counter = _dbus_get_fail_alloc_counter ();
-              _dbus_set_fail_alloc_counter (_DBUS_INT_MAX);
+              _dbus_set_fail_alloc_counter (-1);
 #endif
           
               if (pool->zero_elements)

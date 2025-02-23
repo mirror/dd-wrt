@@ -1,0 +1,458 @@
+D-Bus 1.5.12 (2012-03-27)
+==
+
+The “Big Book of Science” release.
+
+• Add public API to validate various string types:
+  dbus_validate_path(), dbus_validate_interface(), dbus_validate_member(),
+  dbus_validate_error_name(), dbus_validate_bus_name(), dbus_validate_utf8()
+  (fd.o #39549, Simon McVittie)
+
+• Turn DBusBasicValue into public API so bindings don't need to invent their
+  own "union of everything" type (fd.o #11191, Simon McVittie)
+
+• Enumerate data files included in the build rather than using find(1)
+  (fd.o #33840, Simon McVittie)
+
+• Add support for policy rules like <allow own_prefix="com.example.Service"/>
+  in dbus-daemon (fd.o #46273, Alban Crequy)
+
+• Windows-specific:
+  · make dbus-daemon.exe --print-address (and --print-pid) work again
+    on Win32, but not on WinCE (fd.o #46049, Simon McVittie)
+  · fix duplicate case value when compiling against mingw-w64
+    (fd.o #47321, Andoni Morales Alastruey)
+
+D-Bus 1.5.10 (2012-02-21)
+==
+
+The "fire in Delerium" release.
+
+On Unix platforms, PTHREAD_MUTEX_RECURSIVE (as specified in POSIX 2008 Base
+and SUSv2) is now required.
+
+• D-Bus Specification 0.19:
+  · Formally define unique connection names and well-known bus names,
+    and document best practices for interface, bus, member and error names,
+    and object paths (fd.o #37095, Simon McVittie)
+  · Document the search path for session and system services on Unix, and
+    where they should be installed by build systems (fd.o #21620, fd.o #35306;
+    Simon McVittie)
+  · Document the systemd transport (fd.o #35232, Lennart Poettering)
+
+• Make dbus_threads_init() use the same built-in threading implementation
+  as dbus_threads_init_default(); the user-specified primitives that it
+  takes as a parameter are now ignored (fd.o #43744, Simon McVittie)
+
+• Allow all configured auth mechanisms, not just one (fd.o #45106,
+  Pavel Strashkin)
+
+• Improve cmake build system (Ralf Habacker):
+  · simplify XML parser dependencies (fd.o #41027)
+  · generate build timestamp (fd.o #41029)
+  · only create batch files on Windows
+  · fix option and cache syntax
+  · add help-options target
+  · share dbus-arch-deps.h.in with autotools rather than having our
+    own version (fd.o #41033)
+
+• Build tests successfully with older GLib, as found in e.g. Debian 6
+  (fd.o #41219, Simon McVittie)
+
+• Avoid use of deprecated GThread API (fd.o #44413, Martin Pitt)
+
+• Build documentation correctly if man2html doesn't support filenames on
+  its command-line (fd.o #43875, Jack Nagel)
+
+• Improve test coverage. To get even more coverage, run the tests with
+  DBUS_TEST_SLOW=1 (fd.o #38285, #42811; Simon McVittie)
+
+• Reduce the size of the shared library by moving functionality only used
+  by dbus-daemon, tests etc. into their internal library and deleting
+  unused code (fd.o #34976, #39759; Simon McVittie)
+
+• Add dbus-daemon --nopidfile option, overriding the configuration, for
+  setups where the default configuration must include <pidfile/> to avoid
+  breaking traditional init, but the pid file is in fact unnecessary; use
+  it under systemd to improve startup time a bit (fd.o #45520,
+  Lennart Poettering)
+
+• Optionally (if configured --with-valgrind) add instrumentation to debug
+  libdbus and associated tools more meaningfully under Valgrind
+  (fd.o #37286, Simon McVittie)
+
+• Improve the dbus-send(1) man page (fd.o #14005, Simon McVittie)
+
+• Make dbus-protocol.h compatible with C++11 (fd.o #46147, Marc Mutz)
+
+• If tests are enabled and DBUS_MALLOC_CANNOT_FAIL is set in the environment,
+  abort on failure to malloc() (like GLib does), to turn runaway memory leaks
+  into a debuggable core-dump if a resource limit is applied (fd.o #41048,
+  Simon McVittie)
+
+• Don't crash if realloc() returns NULL in a debug build (fd.o #41048,
+  Simon McVittie)
+
+• Unix-specific:
+  · Replace our broken reimplementation of recursive mutexes, which has
+    been broken since 2006, with an ordinary pthreads recursive mutex
+    (fd.o #43744; Sigmund Augdal, Simon McVittie)
+  · Use epoll(7) for a more efficient main loop in Linux; equivalent patches
+    welcomed for other OSs' equivalents like kqueue, /dev/poll, or Solaris
+    event ports (fd.o #33337; Simon McVittie, Ralf Habacker)
+  · When running under systemd, use it instead of ConsoleKit to check
+    whether to apply at_console policies (fd.o #39609, Lennart Poettering)
+  · Avoid a highly unlikely fd leak (fd.o #29881, Simon McVittie)
+  · Don't close invalid fd -1 if getaddrinfo fails (fd.o #37258, eXeC001er)
+  · Don't touch ~/.dbus and ~/.dbus-keyrings when running 'make installcheck'
+    (fd.o #41218, Simon McVittie)
+  · Stop pretending we respect XDG_DATA_DIRS for system services: the launch
+    helper doesn't obey environment variables to avoid privilege escalation
+    attacks, so make the system bus follow the same rules
+    (fd.o #21620, Simon McVittie)
+
+• Windows-specific:
+  · Find the dbus-daemon executable next to the shared library (fd.o #41558;
+    Jesper Dam, Ralf Habacker)
+  · Remove the faulty implementation of _dbus_condvar_wake_all (fd.o #44609,
+    Simon McVittie)
+
+D-Bus 1.5.8 (2011-09-21)
+==
+
+The "cross-metering" release.
+
+In addition to dead code removal and refactoring, this release contains all
+of the bugfixes from 1.4.16.
+
+• Clean up dead code, and make more warnings fatal in development builds
+  (fd.o #39231, fd.o #41012; Simon McVittie)
+
+• If full test coverage is requested via --enable-tests, strictly require
+  Python, pygobject and dbus-python, which are required by some tests; if not,
+  and Python is missing, skip those tests rather than failing
+  (fd.o #37847, Simon McVittie)
+
+• When using cmake, provide the same version-info API in the installed headers
+  as for autotools (DBUS_VERSION, etc.) (fd.o #40905, Ralf Habacker)
+
+• Add a regression test for fd.o #38005 (fd.o #39836, Simon McVittie)
+
+• Make "NOCONFIGURE=1 ./autogen.sh" not run configure (Colin Walters)
+
+• Add _DBUS_STATIC_ASSERT and use it to check invariants (fd.o #39636,
+  Simon McVittie)
+
+• Fix duplicates in authors list (Ralf Habacker)
+
+• Fix broken links from dbus-tutorial.html if $(htmldir) != $(docdir)
+  (fd.o #39879, Chris Mayo)
+
+• Fix a small memory leak, and a failure to report errors, when updating
+  a service file entry for activation (fd.o #39230, Simon McVittie)
+
+• Unix-specific:
+  · Clean up (non-abstract) Unix sockets on bus daemon exit (fd.o #38656;
+    Brian Cameron, Simon McVittie)
+  · On systems that use libcap-ng but not systemd, drop supplemental groups
+    when switching to the daemon user (Red Hat #726953, Steve Grubb)
+  · Make the cmake build work again on GNU platforms (fd.o #29228,
+    Simon McVittie)
+  · Fix compilation on non-C99 systems that have inttypes.h but not stdint.h,
+    like Solaris (fd.o #40313, Dagobert Michelsen)
+  · Define CMSG_ALIGN, CMSG_LEN, CMSG_SPACE on Solaris < 10
+    (fd.o #40235, Simon McVittie)
+  · Cope with Unixes that don't have LOG_PERROR, like Solaris 10
+    (fd.o #39987, Simon McVittie)
+  · Cope with platforms whose vsnprintf violates both POSIX and C99, like
+    Tru64, IRIX and HP-UX (fd.o #11668, Simon McVittie)
+
+• Windows-specific:
+  · Fix compilation on MSVC, which doesn't understand "inline" with its
+    C99 meaning (fd.o #40000; Ralf Habacker, Simon McVittie)
+  · Fix misuse of GPid in test/dbus-daemon.c (fd.o #40003, Simon McVittie)
+  · Fix cross-compilation to Windows with Automake (fd.o #40003, Simon McVittie)
+
+D-Bus 1.5.6 (2011-07-29)
+==
+
+The "weird, gravy-like aftertaste" release.
+
+In addition to new features and refactoring, this release contains all of the
+bugfixes from 1.4.14.
+
+Potentially incompatible (Bustle and similar debugging tools will need
+changes to work as intended):
+
+• Do not allow match rules to "eavesdrop" (receive messages intended for a
+  different recipient) by mistake: eavesdroppers must now opt-in to this
+  behaviour by putting "eavesdrop='true'" in the match rule, which will
+  not have any practical effect on buses where eavesdropping is not allowed
+  (fd.o #37890, Cosimo Alfarano)
+
+Other changes:
+
+• D-Bus Specification version 0.18 (fd.o #37890, fd.o #39450, fd.o #38252;
+  Cosimo Alfarano, Simon McVittie)
+  · add the "eavesdrop" keyword to match rules
+  · define eavesdropping, unicast messages and broadcast messages
+  · stop claiming that match rules are needed to match unicast messages to you
+  · promote the type system to be a top-level section
+
+• Use DBUS_ERROR_OBJECT_PATH_IN_USE if dbus_connection_try_register_object_path
+  or dbus_connection_try_register_fallback fails, not ...ADDRESS_IN_USE,
+  and simplify object-path registration (fd.o #38874, Jiří Klimeš)
+
+• Consistently use atomic operations on everything that is ever manipulated
+  via atomic ops, as was done for changes to DBusConnection's refcount in
+  1.4.12 (fd.o #38005, Simon McVittie)
+
+• Fix a file descriptor leak when connecting to a TCP socket (fd.o #37258,
+  Simon McVittie)
+
+• Make "make check" in a clean tree work, by not running tests until
+  test data has been set up (fd.o #34405, Simon McVittie)
+
+• The dbus-daemon no longer busy-loops if it has a very large number of file
+  descriptors (fd.o #23194, Simon McVittie)
+
+• Refactor message flow through dispatching to avoid locking violations if
+  the bus daemon's message limit is hit; remove the per-connection link cache,
+  which was meant to improve performance, but now reduces it (fd.o #34393,
+  Simon McVittie)
+
+• Some cmake fixes (Ralf Habacker)
+
+• Remove dead code, mainly from DBusString (fd.o #38570, fd.o #39610;
+  Simon McVittie, Lennart Poettering)
+
+• Stop storing two extra byte order indicators in each D-Bus message
+  (fd.o #38287, Simon McVittie)
+
+• Add an optional Stats interface which can be used to get statistics from
+  a running dbus-daemon if enabled at configure time with --enable-stats
+  (fd.o #34040, Simon McVittie)
+
+• Fix various typos (fd.o #27227, fd.o #38284; Sascha Silbe, Simon McVittie)
+
+• Documentation (fd.o #36156, Simon McVittie):
+  · let xsltproc be overridden as usual: ./configure XSLTPROC=myxsltproc
+  · install more documentation automatically, including man2html output
+  · put dbus.devhelp in the right place (it must go in ${htmldir})
+
+• Unix-specific:
+  · look for system services in /lib/dbus-1/system-services in addition to all
+    the other well-known locations; note that this should always be /lib,
+    even on platforms where shared libraries on the root FS would go in /lib64,
+    /lib/x86_64-linux-gnu or similar (fd.o #35229, Lennart Poettering)
+  · opt-in to fd passing on Solaris (fd.o #33465, Simon McVittie)
+
+• Windows-specific (Ralf Habacker):
+  · fix use of a mutex for autolaunch server detection
+  · don't crash on malloc failure in _dbus_printf_string_upper_bound
+
+D-Bus 1.5.4 (2011-06-10)
+==
+
+Security (local denial of service):
+
+• Byte-swap foreign-endian messages correctly, preventing a long-standing
+  local DoS if foreign-endian messages are relayed through the dbus-daemon
+  (backporters: this is git commit c3223ba6c401ba81df1305851312a47c485e6cd7)
+  (CVE-2011-2200, fd.o #38120, Debian #629938; Simon McVittie)
+
+New things:
+
+• The constant to use for an infinite timeout now has a name,
+  DBUS_TIMEOUT_INFINITE. It is numerically equivalent to 0x7fffffff (INT32_MAX)
+  which can be used for source compatibility with older versions of libdbus.
+
+• If GLib and DBus-GLib are already installed, more tests will be built,
+  providing better coverage. The new tests can also be installed via
+      ./configure --enable-installed-tests
+  for system integration testing, if required. (fd.o #34570, Simon McVittie)
+
+Changes:
+
+• Consistently use atomic operations for the DBusConnection's refcount,
+  fixing potential threading problems (fd.o #38005, Simon McVittie)
+
+• Don't use -Wl,--gc-sections by default: in practice the size decrease is
+  small (300KiB on x86-64) and it frequently doesn't work in unusual
+  toolchains. To optimize for minimum installed size, you should benchmark
+  various possibilities for CFLAGS and LDFLAGS, and set the best flags for
+  your particular toolchain at configure time. (fd.o #33466, Simon McVittie)
+
+• Use #!/bin/sh for run-with-tmp-session-bus.sh, making it work on *BSD
+  (fd.o #35880, Timothy Redaelli)
+
+• Use ln -fs to set up dbus for systemd, which should fix reinstallation
+  when not using a DESTDIR (fd.o #37870, Simon McVittie)
+
+• Windows-specific changes:
+  · don't try to build dbus-daemon-launch-helper (fd.o #37838, Mark Brand)
+
+D-Bus 1.5.2 (2011-06-01)
+==
+
+The "Boar Hunter" release.
+
+Notes for distributors:
+
+  This version of D-Bus no longer uses -fPIE by default. Distributions wishing
+  to harden the dbus-daemon and dbus-launch-helper can re-enable this if their
+  toolchain supports it reliably, via something like:
+
+    ./configure CFLAGS=-fPIE LDFLAGS="-pie -Wl,-z,relro"
+
+  or by using distribution-specific wrappers such as Debian's hardening-wrapper.
+
+Changes:
+
+  • D-Bus Specification v0.17
+    · Reserve the extra characters used in signatures by GVariant
+      (fd.o #34529, Simon McVittie)
+    · Define the ObjectManager interface (fd.o #34869, David Zeuthen)
+  • Don't force -fPIE: distributions and libtool know better than we do whether
+    it's desirable (fd.o #16621, fd.o #27215; Simon McVittie)
+  • Allow --disable-gc-sections, in case your toolchain offers the
+    -ffunction-sections, -fdata-sections and -Wl,--gc-sections options
+    but they're broken, as seen on Solaris (fd.o #33466, Simon McVittie)
+  • Install dbus-daemon and dbus-daemon-launch-helper in a more normal way
+    (fd.o #14512; Simon McVittie, loosely based on a patch from Luca Barbato)
+  • Ensure that maintainers upload documentation with the right permissions
+    (fd.o #36130, Simon McVittie)
+  • Don't force users of libdbus to be linked against -lpthread, -lrt
+    (fd.o #32827, Simon McVittie)
+  • Log system-bus activation information to syslog (fd.o #35705,
+    Colin Walters)
+  • Log messages dropped due to quotas to syslog (fd.o #35358,
+    Simon McVittie)
+  • Make the nonce-tcp transport work on Unix (fd.o #34569, Simon McVittie)
+  • On Unix, if /var/lib/dbus/machine-id cannot be read, try /etc/machine-id
+    (fd.o #35228, Lennart Poettering)
+  • In the regression tests, don't report fds as "leaked" if they were open
+    on startup (fd.o #35173, Simon McVittie)
+  • Make dbus-monitor bail out if asked to monitor more than one bus,
+    rather than silently using the last one (fd.o #26548, Will Thompson)
+  • Clarify documentation (fd.o #35182, Simon McVittie)
+  • Clean up minor dead code and some incorrect error handling
+    (fd.o #33128, fd.o #29881; Simon McVittie)
+  • Check that compiler options are supported before using them (fd.o #19681,
+    Simon McVittie)
+  • Windows:
+    • Remove obsolete workaround for winioctl.h (fd.o #35083, Ralf Habacker)
+
+D-Bus 1.5.0 (2011-04-11)
+==
+
+The "you never know when you need to tow something from your giant
+flying shark" release.
+
+  • D-Bus Specification v0.16
+    · Add support for path_namespace and arg0namespace in match rules
+      (fd.o #24317, #34870; Will Thompson, David Zeuthen, Simon McVittie)
+    · Make argNpath support object paths, not just object-path-like strings,
+      and document it better (fd.o #31818, Will Thompson)
+  • Let the bus daemon implement more than one interface (fd.o #33757,
+    Simon McVittie)
+  • Optimize _dbus_string_replace_len to reduce waste (fd.o #21261,
+    Roberto Guido)
+  • Require user intervention to compile with missing 64-bit support
+    (fd.o #35114, Simon McVittie)
+  • Add dbus_type_is_valid as public API (fd.o #20496, Simon McVittie)
+  • Raise UnknownObject instead of UnknownMethod for calls to methods on
+    paths that are not part of the object tree, and UnknownInterface for calls
+    to unknown interfaces in the bus daemon (fd.o #34527, Lennart Poettering)
+
+D-Bus 1.4.8 (2011-04-08)
+==
+
+The "It's like the beginning of a lobster" release.
+
+  • Rename configure.in to configure.ac, and update it to modern conventions
+    (fd.o #32245; Javier Jardón, Simon McVittie)
+  • Correctly give XDG_DATA_HOME priority over XDG_DATA_DIRS (fd.o #34496,
+    Anders Kaseorg)
+  • Prevent X11 autolaunching if $DISPLAY is unset or empty, and add
+    --disable-x11-autolaunch configure option to prevent it altogether
+    in embedded environments (fd.o #19997, NB#219964; Simon McVittie)
+  • Install the documentation, and an index for Devhelp (fd.o #13495,
+    Debian #454142; Simon McVittie, Matthias Clasen)
+  • If checks are not disabled, check validity of string-like types and
+    booleans when sending them (fd.o #16338, NB#223152; Simon McVittie)
+  • Add UnknownObject, UnknownInterface, UnknownProperty and PropertyReadOnly
+    errors to dbus-shared.h (fd.o #34527, Lennart Poettering)
+  • Break up a huge conditional in config-parser so gcov can produce coverage
+    data (fd.o #10887, Simon McVittie)
+  • List which parts of the Desktop Entry specification are applicable to
+    .service files (fd.o #19159, Sven Herzberg)
+  • Don't suppress service activation if two services have the same Exec=
+    (fd.o #35750, Colin Walters)
+  • Windows:
+    · Avoid the name ELEMENT_TYPE due to namespace-pollution from winioctl.h
+      (Andre Heinecke)
+    · Include _dbus_path_is_absolute in libdbus on Windows, fixing compilation
+      (fd.o #32805, Mark Brand)
+
+D-Bus 1.4.6 (2010-02-17)
+==
+
+The "1, 2, miss a few, 99, 100" release.
+
+  • Remove unfinished changes intended to support GTest-based tests,
+    which were mistakenly included in 1.4.4
+
+D-Bus 1.4.4 (2010-02-17)
+==
+
+  • Switch back to using even micro versions for stable releases; 1.4.1
+    should have been called 1.4.2, so skip that version number
+  • Don't leave bad file descriptors being watched when spawning processes,
+    which could result in a busy-loop (fd.o #32992, NB#200248; possibly
+    also LP#656134, LP#680444, LP#713157)
+  • Check for MSG_NOSIGNAL correctly
+  • Fix failure to detect abstract socket support (fd.o #29895)
+  • Make _dbus_system_logv actually exit with DBUS_SYSTEM_LOG_FATAL
+    (fd.o #32262, NB#180486)
+  • Improve some error code paths (fd.o #29981, fd.o #32264, fd.o #32262,
+    fd.o #33128, fd.o #33277, fd.o #33126, NB#180486)
+  • Avoid possible symlink attacks in /tmp during compilation (fd.o #32854)
+  • Tidy up dead code (fd.o #25306, fd.o #33128, fd.o #34292, NB#180486)
+  • Improve gcc malloc annotations (fd.o #32710)
+  • If the system bus is launched via systemd, protect it from the OOM killer
+  • Documentation improvements (fd.o #11190)
+  • Avoid readdir_r, which is difficult to use correctly (fd.o #8284,
+    fd.o #15922, LP#241619)
+  • Cope with invalid files in session.d, system.d (fd.o #19186,
+    Debian #230231)
+  • Don't distribute generated files that embed our builddir (fd.o #30285,
+    fd.o #34292)
+  • Raise the system bus's fd limit to be sufficient for its configuration
+    (fd.o #33474, LP#381063)
+  • Fix syslog string processing
+  • Ignore -Waddress
+  • Remove broken gcov parsing code and --enable-gcov, and replace them
+    with lcov HTML reports and --enable-compiler-coverage (fd.o #10887)
+  • Windows:
+    · avoid live-lock in Windows CE due to unfair condition variables
+  • OpenBSD:
+    · support credentials-passing (fd.o #32542)
+  • Solaris:
+    · opt-in to thread safety (fd.o #33464)
+
+D-Bus 1.4.1 (20 December 2010)
+==
+
+ • Fix for CVE-2010-4352: sending messages with excessively-nested variants can
+   crash the bus. The existing restriction to 64-levels of nesting previously
+   only applied to the static type signature; now it also applies to dynamic
+   nesting using variants. Thanks to Rémi Denis-Courmont for discoving this
+   issue.
+ • OS X portability fixes, including launchd support.
+ • Windows autolaunch improvements.
+ • Various bug fixes.
+
+D-Bus 1.4.0 (6 Sep 2010)
+==
+ - systemd hookup

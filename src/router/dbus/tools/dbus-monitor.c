@@ -54,7 +54,8 @@ monitor_filter_func (DBusConnection     *connection,
                      DBusMessage        *message,
                      void               *user_data)
 {
-  long sec = 0, usec = 0;
+  dbus_int64_t sec = 0;
+  long usec = 0;
 
   _dbus_get_real_time (&sec, &usec);
 
@@ -94,9 +95,9 @@ profile_print_headers (void)
 
 static void
 profile_print_with_attrs (const char *type, DBusMessage *message,
-  long sec, long usec, ProfileAttributeFlags attrs)
+  dbus_int64_t sec, long usec, ProfileAttributeFlags attrs)
 {
-  printf ("%s\t%ld.%06ld", type, sec, usec);
+  printf ("%s\t%" DBUS_INT64_MODIFIER "d.%06ld", type, sec, usec);
 
   if (attrs & PROFILE_ATTRIBUTE_FLAG_SERIAL)
     printf ("\t%u", dbus_message_get_serial (message));
@@ -129,7 +130,8 @@ static void
 print_message_profile (DBusMessage *message)
 {
   static dbus_bool_t first = TRUE;
-  long sec = 0, usec = 0;
+  dbus_int64_t sec = 0;
+  long usec = 0;
 
   if (first)
     {
@@ -174,7 +176,7 @@ print_message_profile (DBusMessage *message)
           PROFILE_ATTRIBUTE_FLAG_MEMBER);
         break;
       default:
-        printf ("%s\t%ld.%06ld", "tun", sec, usec);
+        printf ("%s\t%" DBUS_INT64_MODIFIER "d.%06ld", "tun", sec, usec);
         break;
     }
 }
@@ -219,7 +221,8 @@ binary_filter_func (DBusConnection *connection,
     {
       case BINARY_MODE_PCAP:
           {
-            long tv_sec, tv_usec;
+            dbus_int64_t tv_sec;
+            long tv_usec;
             /* seconds, microseconds, bytes captured (possibly truncated),
              * original length.
              * http://wiki.wireshark.org/Development/LibpcapFileFormat

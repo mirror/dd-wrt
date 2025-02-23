@@ -3,6 +3,7 @@
  * Author: Simon McVittie <simon.mcvittie@collabora.co.uk>
  * Copyright © 2010-2012 Nokia Corporation
  * Copyright © 2015 Collabora Ltd.
+ * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation files

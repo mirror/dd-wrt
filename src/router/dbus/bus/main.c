@@ -586,16 +586,6 @@ main (int argc, char **argv)
 
           print_address = TRUE;
         }
-      else if (prev_arg &&
-               strcmp (prev_arg, "--print-address") == 0)
-        {
-          check_two_addr_descriptors (&addr_fd, "print-address");
-
-          if (!_dbus_string_append (&addr_fd, arg))
-            exit (1);
-
-          print_address = TRUE;
-        }
       else if (strcmp (arg, "--print-address") == 0)
         {
           print_address = TRUE; /* and we'll get the next arg if appropriate */
@@ -610,16 +600,6 @@ main (int argc, char **argv)
           ++desc;
 
           if (!_dbus_string_append (&pid_fd, desc))
-            exit (1);
-
-          print_pid = TRUE;
-        }
-      else if (prev_arg &&
-               strcmp (prev_arg, "--print-pid") == 0)
-        {
-          check_two_pid_descriptors (&pid_fd, "print-pid");
-
-          if (!_dbus_string_append (&pid_fd, arg))
             exit (1);
 
           print_pid = TRUE;
@@ -642,6 +622,26 @@ main (int argc, char **argv)
             }
         }
 #endif
+      else if (prev_arg &&
+               strcmp (prev_arg, "--print-address") == 0)
+        {
+          check_two_addr_descriptors (&addr_fd, "print-address");
+
+          if (!_dbus_string_append (&addr_fd, arg))
+            exit (1);
+
+          print_address = TRUE;
+        }
+      else if (prev_arg &&
+               strcmp (prev_arg, "--print-pid") == 0)
+        {
+          check_two_pid_descriptors (&pid_fd, "print-pid");
+
+          if (!_dbus_string_append (&pid_fd, arg))
+            exit (1);
+
+          print_pid = TRUE;
+        }
       else
         {
           usage ();

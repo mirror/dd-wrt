@@ -1,4 +1,5 @@
 # Copyright © 2019-2020 Salamandar <felix@piedallu.me>
+# SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,7 +21,7 @@
 
 project('dbus',
     'c',
-    version: '1.15.6',
+    version: '1.16.0',
     meson_version: '>=0.56',
 )
 
@@ -61,16 +62,19 @@ config.set_quoted('DBUS_DAEMON_NAME', 'dbus-daemon')
 ###############################################################################
 # libtool versioning - this applies to libdbus
 # http://sources.redhat.com/autobook/autobook/autobook_91.html#SEC91
+#
+# These variables are parsed automatically by cmake/modules/MacrosMeson.cmake,
+# be careful if changing the formatting
 
 ## increment if the interface has additions, changes, removals.
-lt_current = 40
+lt_current = 41
 ## increment any time the source changes;
 ## set to 0 if you increment CURRENT
-lt_revision = 0
+lt_revision = 3
 ## increment if any interfaces have been added;
 ## set to 0 if any interfaces have been changed or removed.
 ## removal has precedence over adding, so set to 0 if both happened.
-lt_age = 37
+lt_age = 38
 
 soversion = (lt_current - lt_age)
 version_info = '@0@.@1@.@2@'.format(soversion, lt_age, lt_revision)
@@ -89,7 +93,7 @@ platform_windows = host_os.contains('windows')
 if platform_windows
     # On Windows, we use C++ constructors to initialize global locks
     using_cpp = true
-    add_languages('cpp', required: true)
+    add_languages('cpp', required: true, native: false)
     cpp = meson.get_compiler('cpp')
 else
     using_cpp = false
@@ -332,6 +336,10 @@ can_upload_docs = doxygen.found() and xsltproc.found() and ducktype.found()
 qhelpgen = find_program('qhelpgenerator', 'qhelpgenerator-qt5', required: get_option('qt_help'))
 qt_help_generate = doxygen.found() and qhelpgen.found()
 
+data_config.set(
+    'DBUS_APIDOC_LINK',
+    doxygen.found() ? '<a href="api/html/index.html">libdbus API Documentation</a>' : '',
+)
 data_config.set('DBUS_GENERATE_MAN', platform_windows ? 'NO' : 'YES')
 data_config.set('DOXYGEN_QCH_FILE', meson.current_build_dir()
     / 'doc' / 'api' / 'qch' / 'dbus-@0@.qch'.format(version))
@@ -384,7 +392,6 @@ else
     have_gio_unix = false
 endif
 use_glib = glib.found() and gio.found()
-config.set('DBUS_WITH_GLIB', use_glib)
 
 if message_bus
     expat = dependency('expat')
@@ -454,7 +461,6 @@ else
         error('kqueue support requested but not found')
     endif
 endif
-config.set('DBUS_BUS_ENABLE_KQUEUE', use_kqueue)
 
 if get_option('launchd').disabled()
     use_launchd = false
@@ -465,7 +471,7 @@ else
         error('launchd support requested but not found')
     endif
 endif
-config.set('DBUS_BUS_ENABLE_LAUNCHD', use_launchd)
+config.set('DBUS_ENABLE_LAUNCHD', use_launchd)
 
 if use_launchd
     launchd_agent_dir = get_option('launchd_agent_dir')
@@ -549,6 +555,8 @@ else
     if get_option('libaudit').enabled() and not have_libaudit
         error('libaudit support requested but not found')
     endif
+    # For the systemd system unit
+    data_config.set('AMBIENT_CAPS', 'AmbientCapabilities=CAP_AUDIT_WRITE')
 endif
 config.set('HAVE_LIBAUDIT', have_libaudit)
 
@@ -560,7 +568,7 @@ endif
 adt_api_check = cc.compiles('''
 #include <bsm/adt.h>
 int main() {
-    adt_user_context = ADT_USER;
+    int adt_user_context = ADT_USER;
     return 0;
 }
 ''', args: compile_args_c)
@@ -604,6 +612,25 @@ else
     network_libs = []
 endif
 
+# socket(), socketpair() might be in -lsocket, for example on older Solaris
+foreach function : ['socket', 'socketpair']
+    if not cc.has_function(
+        function,
+        args: compile_args_c,
+        dependencies: network_libs,
+    )
+        socket_lib = cc.find_library('socket', required: false)
+        if socket_lib.found() and cc.has_function(
+            function,
+            args: compile_args_c,
+            dependencies: network_libs + [socket_lib],
+        )
+            network_libs += [socket_lib]
+            break
+        endif
+    endif
+endforeach
+
 if get_option('x11_autolaunch').disabled()
     use_x11_autolaunch = false
     x11 = not_found
@@ -622,7 +649,18 @@ endif
 config.set('DBUS_BUILD_X11', use_x11_autolaunch)
 config.set('DBUS_ENABLE_X11_AUTOLAUNCH', use_x11_autolaunch)
 
+# Opt-in to large timestamp support, which we know doesn't break libdbus ABI:
+# https://gitlab.freedesktop.org/dbus/dbus/-/issues/465
+# Meson does the equivalent for large offsets and inode numbers automatically.
+if (
+    cc.has_header_symbol('time.h', '__GLIBC__', args: compile_args_c)
+    and not cc.has_header_symbol('time.h', '_TIME_BITS', args: compile_args_c)
+    and cc.sizeof('void *') == 4
+)
+    config.set('_TIME_BITS', '64')
+endif
 
+# keep CMakeLists.txt in sync
 check_functions = [
     'accept4',
     'clearenv',
@@ -656,9 +694,17 @@ check_functions = [
 
 foreach function : check_functions
     macro = 'HAVE_' + function.underscorify().to_upper()
-    config.set(macro, cc.has_function(function, args: compile_args_c) ? 1 : false)
+    config.set(
+        macro,
+        cc.has_function(
+            function,
+            args: compile_args_c,
+            dependencies: network_libs,
+        ) ? 1 : false,
+    )
 endforeach
 
+# keep CMakeLists.txt in sync
 check_headers = [
     'afunix.h',
     'alloca.h',
@@ -673,6 +719,7 @@ check_headers = [
     'linux/magic.h',
     'locale.h',
     'signal.h',
+    'stdatomic.h',
     'syslog.h',
     'sys/prctl.h',
     'sys/random.h',
@@ -686,7 +733,7 @@ check_headers = [
 
 foreach header : check_headers
     macro = 'HAVE_' + header.underscorify().to_upper()
-    config.set(macro, cc.has_header(header, args: compile_args_c) ? 1 : false)
+    config.set(macro, cc.check_header(header, args: compile_args_c) ? 1 : false)
 endforeach
 
 execinfo = cc.find_library('execinfo', required: false)
@@ -763,6 +810,14 @@ config.set('HAVE_FSTATFS',
     )
 )
 
+config.set10('HAVE_DECL_SYS_PIDFD_OPEN',
+    cc.has_header_symbol(
+        'sys/syscall.h',
+        'SYS_pidfd_open',
+        args: compile_args_c,
+    )
+)
+
 ###############################################################################
 # Project options
 
@@ -791,12 +846,9 @@ endif
 
 if not asserts
     warning_args += [
-        '-Wno-unused-but-set-variable',
-        '-Wno-unused-variable',
         '-Wno-unused-function',
     ]
 endif
-
 
 checks = get_option('checks')
 config.set('DBUS_ENABLE_CHECKS', checks ? 1 : false)
@@ -804,8 +856,22 @@ config.set('DBUS_DISABLE_CHECKS', not checks ? 1 : false)
 config.set('G_DISABLE_CHECKS', not checks ? 1 : false)
 config.set('HAVE_GIO_UNIX', have_gio_unix ? 1 : false)
 # Ignore post-2.38 deprecations, prevent use of post-2.44 APIs.
+# keep in sync with CMakeLists.txt
 config.set('GLIB_VERSION_MIN_REQUIRED', 'GLIB_VERSION_2_38')
 config.set('GLIB_VERSION_MAX_ALLOWED', 'G_ENCODE_VERSION(2,44)')
+
+if not checks
+    warning_args += [
+        '-Wno-unused-label',
+    ]
+endif
+
+if not (asserts and checks)
+    warning_args += [
+        '-Wno-unused-but-set-variable',
+        '-Wno-unused-variable',
+    ]
+endif
 
 windows_output_debug = get_option('windows_output_debug_string')
 config.set('DBUS_USE_OUTPUT_DEBUG_STRING', windows_output_debug)
@@ -813,10 +879,12 @@ config.set('DBUS_USE_OUTPUT_DEBUG_STRING', windows_output_debug)
 # Controls whether the tools are built.
 tools = get_option('tools')
 
-# DBUS_ENABLE_EMBEDDED_TESTS controls unit tests built in to .c files
+# DBUS_ENABLE_INTRUSIVE_TESTS controls unit tests built in to .c files
 # and some stuff in the test/ subdir.
-embedded_tests = get_option('embedded_tests')
-config.set('DBUS_ENABLE_EMBEDDED_TESTS', embedded_tests)
+intrusive_tests = get_option('intrusive_tests')
+config.set('DBUS_ENABLE_INTRUSIVE_TESTS', intrusive_tests)
+# An older name for the same thing
+config.set('DBUS_ENABLE_EMBEDDED_TESTS', intrusive_tests)
 
 
 # DBUS_ENABLE_MODULAR_TESTS controls tests that work based on public API.
@@ -1038,7 +1106,6 @@ config.set_quoted('DBUS_SESSION_BUS_CONNECT_ADDRESS', session_bus_connect_addres
 
 
 config.set('DBUS_ENABLE_STATS', get_option('stats'))
-config.set('DBUS_ENABLE_CONTAINERS', get_option('containers'))
 enable_user_session = get_option('user_session')
 
 
@@ -1083,6 +1150,8 @@ else
       #   a fixed signature but do not necessarily need all of its parameters
       '-Wno-missing-field-initializers',
       '-Wno-unused-parameter',
+      # We are not going to stop using deprecated functions on a stable branch
+      '-Wno-deprecated-declarations',
 
       # General warnings for both C and C++
       # TODO: Some of these are probably redundant with Meson's warning_level
@@ -1277,7 +1346,7 @@ summary_dict += {
 
     'gcc coverage':             get_option('b_coverage'),
     'gcc profiling':            get_option('b_pgo'),
-    'Building embedded tests':  embedded_tests,
+    'Building intrusive tests': intrusive_tests,
     'Building modular tests':   dbus_enable_modular_tests,
     '- with GLib':              use_glib,
     'Installing tests':         get_option('installed_tests'),
@@ -1285,7 +1354,6 @@ summary_dict += {
     'Building assertions':      asserts,
     'Building checks':          checks,
     'Building bus stats API':   get_option('stats'),
-    'Building container API':   get_option('containers'),
     'Building SELinux support': config.get('HAVE_SELINUX'),
     'Building AppArmor support': apparmor.found(),
     'Building inotify support': use_inotify,
@@ -1319,10 +1387,10 @@ endif
 
 summary(summary_dict, bool_yn: true)
 
-if embedded_tests
-  warning('building with unit tests increases the size of the installed library and renders it insecure.')
+if intrusive_tests
+  warning('building with intrusive tests increases the size of the installed library and renders it insecure.')
   if not asserts
-    warning('building with embedded tests but without assertions means tests may not properly report failures (this configuration is only useful when doing something like profiling the tests)')
+    warning('building with intrusive tests but without assertions means tests may not properly report failures (this configuration is only useful when doing something like profiling the tests)')
   endif
 endif
 

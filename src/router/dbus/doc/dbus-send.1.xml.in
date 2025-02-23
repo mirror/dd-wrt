@@ -165,6 +165,11 @@ The default is implementation&hyphen;defined, typically 25 seconds.</para>
 </variablelist>
 </refsect1>
 
+<refsect1 id='exit-status'><title>EXIT STATUS</title>
+<para>Exit status 0 indicates success. A non-zero exit status indicates any failure, including invalid parameters, failure to connect to the --bus or --peer, failure to obtain the --sender name, a timeout while waiting for a reply to a method call, or receiving an error as the reply to a method call.
+</para>
+</refsect1>
+
 <refsect1 id='author'><title>AUTHOR</title>
 <para>dbus-send was written by Philip Blundell.</para>
 

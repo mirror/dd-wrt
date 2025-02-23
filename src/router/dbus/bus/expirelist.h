@@ -41,7 +41,7 @@ typedef dbus_bool_t (* BusExpireFunc) (BusExpireList *list,
 /* embed this in a child expire item struct */
 struct BusExpireItem
 {
-  long added_tv_sec;  /**< Time we were added (seconds component) */
+  dbus_int64_t added_tv_sec;  /**< Time we were added (seconds component) */
   long added_tv_usec; /**< Time we were added (microsec component) */
 };
 

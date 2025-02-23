@@ -96,7 +96,6 @@ libdbus_daemon_internal_sources = [
     'config-parser-common.c',
     'config-parser.c',
     'connection.c',
-    'containers.c',
     'desktop-file.c',
     'dispatch.c',
     'driver.c',

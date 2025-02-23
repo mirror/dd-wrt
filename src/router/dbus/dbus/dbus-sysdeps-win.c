@@ -2436,7 +2436,7 @@ _dbus_sleep_milliseconds (int milliseconds)
  * @param tv_usec return location for number of microseconds
  */
 void
-_dbus_get_real_time (long *tv_sec,
+_dbus_get_real_time (dbus_int64_t *tv_sec,
                      long *tv_usec)
 {
   FILETIME ft;
@@ -2467,7 +2467,7 @@ _dbus_get_real_time (long *tv_sec,
  * @param tv_usec return location for number of microseconds
  */
 void
-_dbus_get_monotonic_time (long *tv_sec,
+_dbus_get_monotonic_time (dbus_int64_t *tv_sec,
                           long *tv_usec)
 {
   /* no implementation yet, fall back to wall-clock time */
@@ -2759,7 +2759,7 @@ static const char *cDBusDaemonMutex = "DBusDaemonMutex";
 static const char *cDBusDaemonAddressInfo = "DBusDaemonAddressInfo";
 
 /* custom command line parameter for autolaunching daemon */
-static const char *autolaunch_custom_command_line_parameter = "";
+static const char *autolaunch_custom_command_line_parameter = NULL;
 
 /**
  * Set command line parameters for the dbus daemon to start
@@ -3452,9 +3452,13 @@ _dbus_make_file_world_readable(const DBusString *filename,
 dbus_int32_t
 _dbus_atomic_inc (DBusAtomic *atomic)
 {
-  // +/- 1 is needed here!
-  // no volatile argument with mingw
+#ifdef HAVE_STDATOMIC_H
+  /* Atomic version of "old = *atomic; *atomic += 1; return old" */
+  return atomic_fetch_add (&atomic->value, 1);
+#else
+  /* Atomic version of "*atomic += 1; return *atomic - 1" */
   return InterlockedIncrement (&atomic->value) - 1;
+#endif
 }
 
 /**
@@ -3467,9 +3471,13 @@ _dbus_atomic_inc (DBusAtomic *atomic)
 dbus_int32_t
 _dbus_atomic_dec (DBusAtomic *atomic)
 {
-  // +/- 1 is needed here!
-  // no volatile argument with mingw
+#ifdef HAVE_STDATOMIC_H
+  /* Atomic version of "old = *atomic; *atomic -= 1; return old" */
+  return atomic_fetch_sub (&atomic->value, 1);
+#else
+  /* Atomic version of "*atomic -= 1; return *atomic + 1" */
   return InterlockedDecrement (&atomic->value) + 1;
+#endif
 }
 
 /**
@@ -3482,6 +3490,10 @@ _dbus_atomic_dec (DBusAtomic *atomic)
 dbus_int32_t
 _dbus_atomic_get (DBusAtomic *atomic)
 {
+#ifdef HAVE_STDATOMIC_H
+  /* Atomic version of "return *atomic" */
+  return atomic_load (&atomic->value);
+#else
   /* In this situation, GLib issues a MemoryBarrier() and then returns
    * atomic->value. However, mingw from mingw.org (not to be confused with
    * mingw-w64 from mingw-w64.sf.net) does not have MemoryBarrier in its
@@ -3495,6 +3507,7 @@ _dbus_atomic_get (DBusAtomic *atomic)
   InterlockedExchange (&dummy, 1);
 
   return atomic->value;
+#endif
 }
 
 /**
@@ -3505,7 +3518,12 @@ _dbus_atomic_get (DBusAtomic *atomic)
 void
 _dbus_atomic_set_zero (DBusAtomic *atomic)
 {
+#ifdef HAVE_STDATOMIC_H
+  /* Atomic version of "*atomic = 0" */
+  atomic_store (&atomic->value, 0);
+#else
   InterlockedExchange (&atomic->value, 0);
+#endif
 }
 
 /**
@@ -3516,7 +3534,12 @@ _dbus_atomic_set_zero (DBusAtomic *atomic)
 void
 _dbus_atomic_set_nonzero (DBusAtomic *atomic)
 {
+#ifdef HAVE_STDATOMIC_H
+  /* Atomic version of "*atomic = 1" */
+  atomic_store (&atomic->value, 1);
+#else
   InterlockedExchange (&atomic->value, 1);
+#endif
 }
 
 /**

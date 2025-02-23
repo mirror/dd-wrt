@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright © 2019-2020 Salamandar <felix@piedallu.me>
+# SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -87,11 +88,35 @@ def post_install_exe():
     daemon_launch_helper = get_target('dbus-daemon-launch-helper')
     if daemon_launch_helper:
         import grp
+        import pwd
         exe_name = os.path.basename(daemon_launch_helper['install_filename'][0])
         exe_path = abs_libexecdir / exe_name
         dbus_user = get_option('dbus_user')
         if os.getuid() == 0:
-            os.chown(exe_path, 0, grp.getgrnam(dbus_user).gr_gid)
+            dbus_user_data = None
+            try:
+                dbus_user_data = pwd.getpwnam(dbus_user)
+            except KeyError:
+                print('Not installing {0} binary setuid!'.format(exe_path))
+                print('The dbus_user {0} does not exist!'.format(dbus_user))
+                return
+
+            dbus_group_data = None
+            try:
+                dbus_group_data = grp.getgrgid(dbus_user_data.pw_gid)
+            except KeyError:
+                print('Not installing {0} binary setuid!'.format(exe_path))
+                print('The dbus_user\'s primary group {0} does not exist!'.format(dbus_user))
+                return
+
+            if len(dbus_group_data.gr_mem) > 1:
+                print('Not installing {0} binary setuid!'.format(exe_path))
+                print('The dbus_user\'s primary group {0} contains {1} members when it '
+                      'should only contain one!'
+                      .format(dbus_user, len(dbus_group_data.gr_mem)))
+                return
+            
+            os.chown(exe_path, 0, dbus_user_data.pw_gid)
             os.chmod(exe_path, stat.S_ISUID | stat.S_IXUSR | stat.S_IXGRP)
         else:
             print('Not installing {0} binary setuid!'.format(exe_path))
