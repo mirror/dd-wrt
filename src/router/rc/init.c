@@ -345,7 +345,7 @@ void shutdown_system(void)
 }
 
 static int fatal_signals[] = {
-	SIGQUIT, SIGILL,
+	SIGILL,
 #ifndef HAVE_RB500
 	SIGABRT,
 #endif
@@ -357,47 +357,8 @@ static int fatal_signals[] = {
 
 void fatal_signal(int sig)
 {
-	char *message = NULL;
-
-	switch (sig) {
-	case SIGQUIT:
-		message = "Quit";
-		break;
-	case SIGILL:
-		message = "Illegal instruction";
-		break;
-	case SIGABRT:
-		message = "Abort";
-		break;
-	case SIGFPE:
-		message = "Floating exception";
-		break;
-	case SIGPIPE:
-		message = "Broken pipe";
-		break;
-	case SIGBUS:
-		message = "Bus error";
-		break;
-	case SIGSEGV:
-		message = "Segmentation fault";
-		break;
-	case SIGSYS:
-		message = "Bad system call";
-		break;
-	case SIGTRAP:
-		message = "Trace trap";
-		break;
-	case SIGPWR:
-		message = "Power failure";
-		break;
-	case SIGTERM:
-		message = "Terminated";
-		break;
-	case SIGUSR1:
-		message = "User Signal 1";
-		break;
-		// case SIGUSR1: message = "User-defined signal 1"; break;
-	}
+	const char *message = strsignal(sig);
+	;
 
 	if (message)
 		dd_loginfo("init", "%s....................................", message);
@@ -445,12 +406,12 @@ void signal_init(void)
  * States 
  */
 enum {
+	IDLE,
 	RESTART,
 	STOP,
 	START,
 	TIMER,
 	USER,
-	IDLE,
 };
 
 static int state = START;
@@ -461,28 +422,20 @@ static int signalled = -1;
  */
 static void rc_signal(int sig)
 {
+	int actions[] = {
+		[0] = IDLE, //
+		[SIGQUIT] = IDLE, //
+		[SIGHUP] = RESTART, //
+		[SIGUSR1] = USER, //
+		[SIGUSR2] = START, //
+		[SIGINT] = STOP, //
+		[SIGALRM] = TIMER, //
+	};
+
+	dd_loginfo("init", "Signal: %s received!\n", strsignal(sig));
 	if (state == IDLE) {
-		if (sig == SIGHUP) {
-			lcdmessage("Signal RESTART");
-			printf("signalling RESTART\n");
-			signalled = RESTART;
-		} else if (sig == SIGUSR2) {
-			lcdmessage("Signal START");
-			printf("signalling START\n");
-			signalled = START;
-		} else if (sig == SIGINT) {
-			lcdmessage("Signal STOP");
-			printf("signalling STOP\n");
-			signalled = STOP;
-		} else if (sig == SIGALRM) {
-			lcdmessage("Signal TIMER");
-			printf("signalling TIMER\n");
-			signalled = TIMER;
-		} else if (sig == SIGUSR1) { // Receive from WEB
-			lcdmessage("Signal USER");
-			printf("signalling USER1\n");
-			signalled = USER;
-		}
+		if (sig < ARRAY_SIZE(actions))
+			signalled = actions[sig];
 	}
 }
 
@@ -516,6 +469,7 @@ int main(int argc, char **argv)
 	lcdmessage("System Start");
 
 	signal_init();
+	signal(SIGQUIT, rc_signal);
 	signal(SIGHUP, rc_signal);
 	signal(SIGUSR1, rc_signal); // Start single service from WEB, by
 	// honor
