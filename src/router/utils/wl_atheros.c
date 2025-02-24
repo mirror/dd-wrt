@@ -270,7 +270,8 @@ static void evaluate(char *keyname, char *ifdecl, char *macstr)
 			}
 			char vif[32];
 			sprintf(vif, "%s_vifs", interface);
-			char var[80], *next;
+			char var[80];
+			const char *next;
 			char *vifs = nvram_safe_get(vif);
 			if (vifs != NULL) {
 				foreach(var, vifs, next) {
