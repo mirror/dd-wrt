@@ -1468,6 +1468,16 @@ void getIfLists(char *eths, int size)
 	strcat(eths, eths2);
 
 	bzero(eths2, 256);
+	getIfList(eths2, "lan");
+	strcat(eths, " ");
+	strcat(eths, eths2);
+
+	bzero(eths2, 256);
+	getIfList(eths2, "wan");
+	strcat(eths, " ");
+	strcat(eths, eths2);
+
+	bzero(eths2, 256);
 	getIfList(eths2, "vxlan");
 	strcat(eths, " ");
 	strcat(eths, eths2);
