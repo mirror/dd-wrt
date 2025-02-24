@@ -23,7 +23,7 @@
 #define MV_SWITCHPORT(_n)		(MV_SWITCHPORT_BASE + (_n))
 #define MV_SWITCHREGS			(MV_BASE + 0xb)
 
-#define MV_VLANS			64
+#define MV_VLANS			4096
 
 enum {
 	MV_PORT_STATUS			= 0x00,
