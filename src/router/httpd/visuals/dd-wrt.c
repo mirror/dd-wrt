@@ -203,7 +203,8 @@ EJ_VISIBLE void ej_show_routing(webs_t wp, int argc, char_t **argv)
 
 EJ_VISIBLE void ej_has_routing(webs_t wp, int argc, char_t **argv)
 {
-	char var[32];const char *next;
+	char var[32];
+	const char *next;
 	char *sub = websGetVar(wp, "wk_mode", NULL);
 	if (sub == NULL)
 		sub = nvram_safe_get("wk_mode");
@@ -7760,7 +7761,8 @@ EJ_VISIBLE void ej_show_rflowif(webs_t wp, int argc, char_t **argv)
 #ifdef CONFIG_STATUS_GPIO
 EJ_VISIBLE void ej_show_status_gpio_output(webs_t wp, int argc, char_t **argv)
 {
-	char *var;const char *next;
+	char *var;
+	const char *next;
 	char nvgpio[32];
 	char *value = websGetVar(wp, "action", "");
 	char *gpios = nvram_safe_get("gpio_outputs");

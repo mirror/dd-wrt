@@ -55,7 +55,6 @@ EJ_VISIBLE void ej_show_bondings(webs_t wp, int argc, char_t **argv)
 	strcat(bufferif, " ");
 	strcat(bufferif, buffer);
 
-
 #ifdef HAVE_MADWIFI
 	int c = getdevicecount();
 

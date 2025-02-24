@@ -447,7 +447,8 @@ static void validate_services_port(webs_t wp)
 	char *services_array = websGetVar(wp, "services_array0", NULL);
 
 	// char *services_length = websGetVar (wp, "services_length0", NULL);
-	char word[1026];const char *next;
+	char word[1026];
+	const char *next;
 	char delim[] = "(&nbsp;)";
 	char var[32] = "";
 	int index = 0;
@@ -571,7 +572,8 @@ void addDeletion_route(char *word)
 void delete_old_routes(void)
 
 {
-	char word[256];const char *next;
+	char word[256];
+	const char *next;
 	foreach(word, nvram_safe_get("action_service_arg1"), next)
 	{
 #ifdef HAVE_MICRO
@@ -631,7 +633,8 @@ void delete_old_routes(void)
 #ifndef HAVE_MICRO
 void delete_old_pbr(void)
 {
-	char word[256];const char *next;
+	char word[256];
+	const char *next;
 	foreach(word, nvram_safe_get("action_service_arg2"), next)
 	{
 		char cmd[256];
@@ -721,7 +724,8 @@ void delete_static_route(webs_t wp)
 
 	char *cur = buf;
 	char *cur_name = buf_name;
-	char word[256];const char *next;
+	char word[256];
+	const char *next;
 	char word_name[256];
 	const char *next_name;
 	int page = websGetVari(wp, "route_page", 0);
@@ -774,7 +778,8 @@ void delete_pbr_rule(webs_t wp)
 
 	char *cur = buf;
 	char *cur_name = buf_name;
-	char word[256];const char *next;
+	char word[256];
+	const char *next;
 	char word_name[256];
 	const char *next_name;
 	int page = websGetVari(wp, "rule_page", 0);
@@ -1759,7 +1764,8 @@ void save_wds(webs_t wp)
 
 int get_svc(char *svc, char *protocol, char *ports)
 {
-	char word[1024];const char *next;
+	char word[1024];
+	const char *next;
 	char delim[] = "<&nbsp;>";
 	char *services;
 	// services = nvram_safe_get("filter_services");
@@ -4634,7 +4640,8 @@ void save_olsrd(webs_t wp)
 #ifdef HAVE_STATUS_GPIO
 void gpios_save(webs_t wp)
 {
-	char *var;const char *next;
+	char *var;
+	const char *next;
 	char nvgpio[32], gpioname[32];
 
 	char *value = websGetVar(wp, "action", "");
@@ -6759,7 +6766,8 @@ void save_macmode(webs_t wp)
 		char vif[32];
 
 		sprintf(vif, "%s_vifs", devs);
-		char var[80];const char *next;
+		char var[80];
+		const char *next;
 		char *vifs = nvram_safe_get(vif);
 
 		if (vifs != NULL)

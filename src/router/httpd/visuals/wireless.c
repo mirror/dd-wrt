@@ -72,7 +72,8 @@
 
 static char *wl_filter_mac_get(char *ifname2, char *type, int which, char *word)
 {
-	char *wordlist;const char *next;
+	char *wordlist;
+	const char *next;
 	char ifname[32];
 	strcpy(ifname, ifname2);
 	rep(ifname, 'X', '.');
@@ -335,7 +336,8 @@ static void save_hostname_ip(webs_t wp)
 EJ_VISIBLE void ej_wireless_active_table(webs_t wp, int argc, char_t **argv)
 {
 	int i, flag = 0;
-	char word[256];const char *next;
+	char word[256];
+	const char *next;
 	FILE *fp;
 	char list[2][20];
 	char line[80];
@@ -881,7 +883,8 @@ EJ_VISIBLE void ej_wl_ioctl(webs_t wp, int argc, char_t **argv)
 #endif
 EJ_VISIBLE void ej_wme_match_op(webs_t wp, int argc, char_t **argv)
 {
-	char word[256];const char *next;
+	char word[256];
+	const char *next;
 	char *list = nvram_safe_get(argv[0]);
 	foreach(word, list, next)
 	{

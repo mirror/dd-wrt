@@ -848,7 +848,8 @@ EJALIAS(ej_nvram_invmatch, ej_nvim);
 EJ_VISIBLE void ej_nvram_list(webs_t wp, int argc, char_t **argv)
 {
 	int which;
-	char word[256];const char *next;
+	char word[256];
+	const char *next;
 	which = atoi(argv[1]);
 	char *list = nvram_safe_get(argv[0]);
 
@@ -890,7 +891,8 @@ int get_dns_ip(char *name, int which, int count)
 EJ_VISIBLE void ej_get_dns_ip(webs_t wp, int argc, char_t **argv)
 {
 	int which;
-	char word[256];const char *next;
+	char word[256];
+	const char *next;
 
 	which = atoi(argv[1]);
 	char *list = nvram_safe_get(argv[0]);

@@ -373,7 +373,8 @@ char *sas_get_dns_ip(webs_t wp, char *label, int entry, int position)
 {
 	int which;
 	char name[32];
-	char word[256];const char *next;
+	char word[256];
+	const char *next;
 	char d[32];
 	char *g;
 

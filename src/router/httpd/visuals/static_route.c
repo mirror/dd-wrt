@@ -561,7 +561,8 @@ EJ_VISIBLE void ej_pbr_rule_table(webs_t wp, int argc, char_t **argv)
 	int i, page, tmp = 0;
 	int which;
 	char *type;
-	char word[256];const char *next;
+	char word[256];
+	const char *next;
 	if (argc < 1)
 		return;
 	type = argv[0];

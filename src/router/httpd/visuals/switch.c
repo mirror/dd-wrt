@@ -38,7 +38,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t **argv)
 	 */
 
 	int i, j, *vlans[10], tmp, wl_br;
-	char *c; 
+	char *c;
 	const char *next;
 	char buff[32], portvlan[32];
 	int a, *vlanlist;

@@ -258,7 +258,8 @@ EJ_VISIBLE void ej_active_wireless(webs_t wp, int argc, char_t **argv)
 		char vif[32];
 
 		sprintf(vif, "%s_vifs", devs);
-		char var[80];const char *next;
+		char var[80];
+		const char *next;
 		char *vifs = nvram_safe_get(vif);
 		if (*vifs) {
 			foreach(var, vifs, next)
