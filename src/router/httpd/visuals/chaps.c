@@ -34,7 +34,7 @@
 static void show_chaps_table(webs_t wp, char *type, int which)
 {
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 	char new_user[200], new_pass[200];
 
 	wordlist = nvram_safe_get("pppoeserver_chaps");

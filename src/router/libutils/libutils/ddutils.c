@@ -524,7 +524,8 @@ static void add_dnslist_internal(struct dns_lists *dns_list, char *dns, int cust
 
 static void add_dnslist(struct dns_lists *dns_list, char *dns, int custom, int ipv6)
 {
-	char *next, word[128];
+	const char *next;
+	char word[128];
 	if (!dns)
 		return;
 	foreach(word, dns, next)
@@ -607,7 +608,7 @@ struct dns_lists *get_dns_list(int v6)
 			add_dnslist(dns_list, a2, 1, 1);
 
 		if (!nvram_match("ignore_wan_dns", "1") || nvram_match("wan_proto", "static")) {
-			char *next, *wordlist = nvram_safe_get("ipv6_get_dns");
+			const char *next, *wordlist = nvram_safe_get("ipv6_get_dns");
 			char word[64];
 			foreach(word, wordlist, next)
 			{
@@ -1416,77 +1417,7 @@ int route_del(char *name, int metric, char *dst, char *gateway, char *genmask)
 
 void getIfLists(char *eths, int size)
 {
-	char eths2[256];
-
-	bzero(eths, size);
-	bzero(eths2, 256);
-#ifdef HAVE_XSCALE
-	getIfList(eths, "ixp");
-	getIfList(eths2, "eth");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-#else
-	getIfList(eths, "eth");
-#endif
-	bzero(eths2, 256);
-	getIfList(eths2, "vlan");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-#ifdef HAVE_MADWIFI
-	bzero(eths2, 256);
-	getIfList(eths2, "wlan");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-#elif defined(HAVE_RT2880) || defined(HAVE_RT61)
-	bzero(eths2, 256);
-	getIfList(eths2, "ra");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-
-	bzero(eths2, 256);
-	getIfList(eths2, "apcli");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-	bzero(eths2, 256);
-	getIfList(eths2, "wds");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-#else
-	bzero(eths2, 256);
-	getIfList(eths2, "wl");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-#endif
-	bzero(eths2, 256);
-	getIfList(eths2, "br");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-
-	bzero(eths2, 256);
-	getIfList(eths2, "oet");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-
-	bzero(eths2, 256);
-	getIfList(eths2, "lan");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-
-	bzero(eths2, 256);
-	getIfList(eths2, "wan");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-
-	bzero(eths2, 256);
-	getIfList(eths2, "vxlan");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-#ifdef HAVE_WAVESAT
-	bzero(eths2, 256);
-	getIfList(eths2, "ofdm");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-#endif
+	getIfList(eths, "ixp eth vlan wlan ra rb apcli wds wl br oet lan wan vxlan ofdm");
 }
 
 static uint32_t str_to_addr(const char *addr)
@@ -1562,7 +1493,8 @@ int getmask(char *nmask)
 int doMultiCast(void)
 {
 	char wan_if_buffer[33];
-	char name[80], *next;
+	char name[80];
+	const char *next;
 	int ifcount = 0;
 
 	if (nvram_match("wan_proto", "disabled"))
@@ -1795,7 +1727,8 @@ void free_filters(filters *filter)
 
 filters *get_filters_list(void)
 {
-	char word[1024], *next;
+	char word[1024];
+	const char *next;
 	char protocol[64], ports[64];
 	char delim[] = "<&nbsp;>";
 	char *services;
@@ -1984,7 +1917,7 @@ int searchfor(FILE *fp, char *str, int scansize)
 static void addactions(char *nv, char *action)
 {
 	char *actionstack = "";
-	char *next;
+	const char *next;
 	char service[80];
 	if (action == NULL || !*action)
 		return;

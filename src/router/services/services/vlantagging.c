@@ -69,7 +69,7 @@ static char *EGRESS(char *map, int class, char *prio)
 void start_vlantagging(void)
 {
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 
 	wordlist = nvram_safe_get("vlan_tags");
 	foreach(word, wordlist, next)
@@ -158,7 +158,7 @@ void start_vlantagging(void)
 void stop_vlantagging(void)
 {
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 
 	wordlist = nvram_safe_get("vlan_tags");
 	eval("vconfig", "set_name_type", "DEV_PLUS_VID_NO_PAD");
@@ -221,7 +221,7 @@ static void set_stp_state(char *bridge, char *stp)
 void apply_bridgeif(char *ifname, char *realport)
 {
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 #ifdef HAVE_MICRO
 	br_init();
 #endif
@@ -255,7 +255,7 @@ void start_bridgesif(void)
 {
 	char stp[256];
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 #ifdef HAVE_MICRO
 	br_init();
 #endif
@@ -291,7 +291,7 @@ void start_bridgesif(void)
 void start_bridging(void)
 {
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 	char hwaddr[32];
 #ifdef HAVE_MICRO
 	br_init();
@@ -340,7 +340,7 @@ extern char *getMTU(char *);
 
 char *getRealBridge(const char *ifname, char *word)
 {
-	char *next, *wordlist;
+	const char *next, *wordlist;
 	wordlist = nvram_safe_get("bridgesif");
 	foreach(word, wordlist, next)
 	{
@@ -359,7 +359,7 @@ char *getRealBridge(const char *ifname, char *word)
 void stop_bridgesif(void)
 {
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 #ifdef HAVE_MICRO
 	br_init();
 #endif
@@ -382,7 +382,7 @@ void stop_bridgesif(void)
 void stop_bridging(void)
 {
 	static char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 #ifdef HAVE_MICRO
 	br_init();
 #endif
@@ -427,7 +427,7 @@ int getbridge_main(int argc, char *argv[])
 int setportprio_main(int argc, char *argv[])
 {
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 	if (argc < 3) {
 		fprintf(stderr, "syntax: setportprio [bridge] [ifname]\n");
 		return -1;

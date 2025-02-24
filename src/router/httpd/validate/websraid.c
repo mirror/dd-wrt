@@ -159,7 +159,7 @@ void del_raid(webs_t wp)
 
 	char *raid = nvram_nget("raid%d", idx);
 	char *poolname = nvram_nget("raidname%d", idx);
-	char *next;
+	const char *next;
 	char drive[64];
 	char dev[32];
 	int drives = 0;
@@ -245,7 +245,7 @@ void del_raid_member(webs_t wp)
 	int idx = atoi(val);
 	int didx = atoi(del);
 	char *raid = nvram_nget("raid%d", idx);
-	char *next;
+	const char *next;
 	char drive[128];
 	char *a = NULL;
 	int cnt = 0;

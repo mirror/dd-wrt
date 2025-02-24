@@ -810,7 +810,7 @@ EJ_VISIBLE void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 #ifdef HAVE_PORTSETUP
 EJ_VISIBLE void validate_portsetup(webs_t wp, char *value, struct variable *v)
 {
-	char *next;
+	const char *next;
 	char var[64];
 	char eths[256];
 
@@ -3206,7 +3206,7 @@ EJ_VISIBLE void validate_static_route(webs_t wp, char *value, struct variable *v
 #endif
 
 	int i, tmp = 1;
-	char word[256], *next;
+	char word[256];const char *next;
 	char backuproute[256];
 	struct variable static_route_variables[] = {
 		{ argv: NULL },
@@ -3479,7 +3479,7 @@ write_nvram:
 EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 {
 	int i, tmp = 1;
-	char word[256], *next;
+	char word[256];const char *next;
 	char backuproute[256];
 	struct variable static_rule_variables[] = {
 		{ argv: NULL },

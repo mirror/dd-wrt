@@ -373,7 +373,7 @@ char *sas_get_dns_ip(webs_t wp, char *label, int entry, int position)
 {
 	int which;
 	char name[32];
-	char word[256], *next;
+	char word[256];const char *next;
 	char d[32];
 	char *g;
 
@@ -1194,7 +1194,7 @@ EJ_VISIBLE void ej_sas_show_security(webs_t wp, int argc, char_t **argv)
 
 void sas_show_security_single(webs_t wp, int argc, char_t **argv, char *prefix)
 {
-	char *next;
+	const char *next;
 	char var[80];
 	char ssid[80];
 	char mac[16];

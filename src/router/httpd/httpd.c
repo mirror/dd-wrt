@@ -869,7 +869,7 @@ static int check_connect_type(webs_t wp)
 		if (check_connect_type_vap(ifname, wp, temp))
 			return -1;
 		char *names = nvram_nget("%s_vifs", temp);
-		char *next;
+		const char *next;
 		char var[32];
 		foreach(var, names, next)
 		{

@@ -138,6 +138,8 @@ void start_sysinit(void)
 		}
 		fclose(fp);
 	}
+	eval("ifconfig", "eth0", "up");
+	eval("ifconfig", "eth1", "up");
 
 	/*     if (brand == ROUTER_WRT_1900AC) {
 	   set_smp_affinity(27, 2);

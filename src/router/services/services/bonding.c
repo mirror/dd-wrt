@@ -57,7 +57,7 @@ void start_bonding(void)
 	sprintf(count, "max_bonds=%s", nvram_default_get("bonding_number", "1"));
 	sprintf(hash_policy, "xmit_hash_policy=%s", nvram_default_get("bonding_policy", "layer2+3"));
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 	int first = 0;
 	wordlist = nvram_safe_get("bondings");
 	foreach(word, wordlist, next)
@@ -101,7 +101,7 @@ void start_bonding(void)
 int isBond(char *ifname)
 {
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 
 	wordlist = nvram_safe_get("bondings");
 	foreach(word, wordlist, next)

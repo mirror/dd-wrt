@@ -167,7 +167,7 @@ static void convert_wds(int instance)
 		int i = 0;
 		int j;
 		char mac[254];
-		char *next;
+		const char *next;
 
 		foreach(mac, wds_mac, next)
 		{
@@ -270,7 +270,7 @@ static char *getKey(const char *prefix)
 static void start_nas_lan(int c)
 {
 	char wlname[32];
-	char *next;
+	const char *next;
 	char var[80];
 	char vifname[32];
 
@@ -296,7 +296,7 @@ static void start_nas_wan(int c)
 	sprintf(wlname, "wl%d", c);
 	start_nas_single("wan", wlname);
 
-	char *next;
+	const char *next;
 	char var[80];
 	char vif[16];
 	char *vifs = nvram_nget("wl%d_vifs", c);
@@ -316,7 +316,7 @@ static void start_nas_wan(int c)
 static void stop_nas_process(void)
 {
 	int ret = 0;
-	char name[80], *next;
+	char name[80];const char *next;
 
 	unlink("/tmp/.nas");
 
@@ -669,7 +669,7 @@ static void start_nas_single(char *type, char *prefix)
 void stop_nas(void)
 {
 	int ret = 0;
-	char name[80], *next;
+	char name[80];const char *next;
 	FILE *check = fopen("/tmp/.startnas", "rb");
 	if (check) {
 		fclose(check);

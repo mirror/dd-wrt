@@ -542,7 +542,7 @@ static void do_madwifi_check(void)
 					if (count == 0 || count == -1) {
 						// fprintf(stderr,"get assoclist returns %d, restart
 						// ifnames\n",count);
-						char *next;
+						const char *next;
 						char var[80];
 						char *vifs;
 						char mode[32];
@@ -570,7 +570,7 @@ static void do_madwifi_check(void)
 						lastchans[i] = -1;
 					} else if (!notstarted[i]) {
 						notstarted[i] = 1;
-						char *next;
+						const char *next;
 						char var[80];
 						char *vifs;
 						char mode[32];

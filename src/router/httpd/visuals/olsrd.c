@@ -65,7 +65,7 @@ EJ_VISIBLE void ej_show_olsrd(webs_t wp, int argc, char_t **argv)
 		showOptionsLabel(wp, "route.olsrd_lqlvl", "olsrd_lqlevel", "0 1 2", nvram_default_get("olsrd_lqlevel", "2"));
 		showRadio(wp, "route.olsrd_hysteresis", "olsrd_hysteresis");
 		char *wordlist = nvram_safe_get("olsrd_interfaces");
-		char *next;
+		const char *next;
 		char word[128];
 		int count = 0;
 

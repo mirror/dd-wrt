@@ -24,7 +24,7 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t **argv)
 	char buffer[256];
 	int count = 0;
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 
 	bzero(buffer, 256);
 	getIfList(buffer, NULL);

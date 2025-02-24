@@ -26,7 +26,7 @@ EJ_VISIBLE void ej_show_bondings(webs_t wp, int argc, char_t **argv)
 	char bondnames[256];
 	int count = 0;
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 
 	bzero(buffer, 256);
 	bzero(bondnames, 256);
@@ -48,25 +48,13 @@ EJ_VISIBLE void ej_show_bondings(webs_t wp, int argc, char_t **argv)
 		  nvram_default_get("bonding_number", "1"));
 	websWrite(wp, "</div>\n");
 
-	getIfListNoPorts(bufferif, "eth");
+	getIfListNoPorts(bufferif, "eth ixp vlan");
 	int i;
-
-#ifdef HAVE_XSCALE
-	bzero(buffer, 256);
-	getIfListNoPorts(buffer, "ixp");
-	strcat(bufferif, " ");
-	strcat(bufferif, buffer);
-#endif
 	bzero(buffer, 256);
 	getIfListB(buffer, NULL, 1, 1, 1);
 	strcat(bufferif, " ");
 	strcat(bufferif, buffer);
 
-	bzero(buffer, 256);
-	getIfListNoPorts(buffer, "vlan");
-
-	strcat(bufferif, " ");
-	strcat(bufferif, buffer);
 
 #ifdef HAVE_MADWIFI
 	int c = getdevicecount();

@@ -72,7 +72,8 @@ void start_tmp_ppp(int num);
 
 static void del_routes(char *route)
 {
-	char word[80], *tmp;
+	char word[80];
+	const char *tmp;
 	char *ipaddr, *netmask, *gateway, *metric, *ifname;
 
 	foreach(word, route, tmp)
@@ -1585,7 +1586,7 @@ static int single_service_helper(void)
 		sleep(5);
 	}
 	start_service_force("overclocking");
-	char *next;
+	const char *next;
 	char service[80];
 	char *services = nvram_safe_get("action_service");
 	update_timezone();

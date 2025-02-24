@@ -89,7 +89,7 @@ static int name_to_type(char *type)
 void port_forward_table(webs_t wp, char *type, int which)
 {
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 	char new_name[200];
 
 	int t = name_to_type(type);
@@ -186,7 +186,7 @@ void port_forward_table(webs_t wp, char *type, int which)
 void port_forward_spec(webs_t wp, char *type, int which)
 {
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 	char new_name[200];
 
 	int t = name_to_type(type);
@@ -289,7 +289,7 @@ void port_forward_spec(webs_t wp, char *type, int which)
 void ip_forward(webs_t wp, char *type, int which)
 {
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 	char new_name[200];
 	int t = name_to_type(type);
 
@@ -338,7 +338,7 @@ void ip_forward(webs_t wp, char *type, int which)
 void port_trigger_table(webs_t wp, char *type, int which)
 {
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 	char new_name[200];
 	int t = name_to_type(type);
 	wordlist = nvram_safe_get("port_trigger");

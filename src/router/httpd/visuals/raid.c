@@ -267,7 +267,7 @@ static int ismember(char *name)
 		if (!*(raidtype))
 			return 0;
 		char var[128];
-		char *next;
+		const char *next;
 		foreach(var, raid, next)
 		{
 			if (!strcmp(name, var))
@@ -295,7 +295,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t **argv)
 	int zfs = checkfs("zfs");
 	char *drives = getAllDrives();
 	char drive[128];
-	char *dnext;
+	const char *dnext;
 	while (1) {
 		char *raid = nvram_nget("raid%d", i);
 		char *raidname = nvram_nget("raidname%d", i);
@@ -583,7 +583,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t **argv)
 			"<th class=\"center\" width=\"10%%\" ><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n"
 			"</tr></thead><tbody>\n");
 		char var[128];
-		char *next;
+		const char *next;
 		int midx = 0;
 #ifdef HAVE_X86
 		char check[64];

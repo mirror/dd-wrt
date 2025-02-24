@@ -178,7 +178,7 @@ void showAutoOption(webs_t wp, char *propname, char *nvname, int nodisable)
 
 void showOptions_trans(webs_t wp, char *propname, char *names, char **trans, char *select)
 {
-	char *next;
+	const char *next;
 	char var[80];
 	int cnt = 0;
 
@@ -203,7 +203,7 @@ void showOptions(webs_t wp, char *propname, char *names, char *select)
 
 void showOptions_ext_trans(webs_t wp, char *propname, char *names, char **trans, char *select, int disabled)
 {
-	char *next;
+	const char *next;
 	char var[80];
 	int cnt = 0;
 
@@ -223,7 +223,7 @@ void showOptions_ext_trans(webs_t wp, char *propname, char *names, char **trans,
 
 void showOptionsNames(webs_t wp, char *label, char *propname, char *valuenames, char **names, char *select)
 {
-	char *next;
+	const char *next;
 	char var[80];
 	int idx = 0;
 
@@ -242,7 +242,7 @@ void showOptionsNames(webs_t wp, char *label, char *propname, char *valuenames, 
 
 void showIfOptions_ext(webs_t wp, char *propname, char *names, char *select, int disabled)
 {
-	char *next;
+	const char *next;
 	char var[80];
 
 	websWrite(wp, "<select name=\"%s\"%s>\n", propname, disabled ? " disabled=\"true\"" : "");
@@ -262,7 +262,7 @@ void showIfOptions(webs_t wp, char *propname, char *names, char *select)
 
 void showOptionsChoose(webs_t wp, char *propname, char *names, char **trans, char *select)
 {
-	char *next;
+	const char *next;
 	char var[80];
 	int cnt = 0;
 

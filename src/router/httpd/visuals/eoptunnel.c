@@ -760,7 +760,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 				char bufferif[512];
 				char wan_if_buffer[33];
 				char word[32];
-				char *next;
+				const char *next;
 				snprintf(temp, sizeof(temp), "oet%d_dev", tun);
 				char *cmp = nvram_default_get(temp, "any");
 				char *wanface = safe_get_wan_face(wan_if_buffer);

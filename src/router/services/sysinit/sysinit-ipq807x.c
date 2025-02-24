@@ -443,7 +443,7 @@ static void init_skb(int profile, int maple)
 static int use_nss_11_4(int setcur)
 {
 	int count;
-	char *next;
+	const char *next;
 	char var[80];
 	char *vifs;
 	if (setcur)
@@ -477,7 +477,7 @@ static int use_nss_11_4(int setcur)
 int nss_disabled(int setcur)
 {
 	int count;
-	char *next;
+	const char *next;
 	char var[80];
 	char *vifs;
 	if (setcur)

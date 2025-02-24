@@ -26,7 +26,7 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t **argv)
 {
 	char wan_if_buffer[33];
 	char ssid[64];
-	char *next, *bnext;
+	const char *next, *bnext;
 	char var[64];
 	char eths[256];
 	char bword[256];
@@ -214,7 +214,7 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t **argv)
 		{
 			char nld_enable[32], nld_bridge[32];
 			char word[256];
-			char *next;
+			const char *next;
 
 			sprintf(nld_enable, "nld_%s_enable", var);
 			websWrite(
@@ -256,7 +256,7 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t **argv)
 		{
 			char bat_enable[32], bat_bridge[32];
 			char word[256];
-			char *next;
+			const char *next;
 
 			sprintf(bat_enable, "bat_%s_enable", var);
 			websWrite(

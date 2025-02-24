@@ -357,7 +357,7 @@ EJALIAS(ej_nvram_selmatch, ej_nvsm);
 EJ_VISIBLE void ej_nvram_listselmatch(webs_t wp, int argc, char_t **argv)
 {
 	char value[64];
-	char *next;
+	const char *next;
 	char *list = argv[1];
 
 	foreach(value, list, next)
@@ -377,7 +377,7 @@ EJ_VISIBLE void ej_nvram_listselmatch_not_v6(webs_t wp, int argc, char_t **argv)
 #ifdef HAVE_IPV6
 	if (nvram_matchi("ipv6_enable", 1)) {
 		char value[64];
-		char *next;
+		const char *next;
 		char *list = argv[1];
 
 		foreach(value, list, next)
@@ -422,7 +422,7 @@ EJALIAS(ej_nvram_else_selmatch, ej_nvesm);
 EJ_VISIBLE void ej_nvram_else_listselmatch(webs_t wp, int argc, char_t **argv)
 {
 	char value[64];
-	char *next;
+	const char *next;
 	char *list = argv[1];
 	char *type;
 
@@ -581,7 +581,7 @@ static int rule_afterburner(char *name)
 		ifname = nvram_safe_get("wl1_ifname");
 	else // "_wl1"
 		ifname = nvram_safe_get("wl2_ifname");
-	char *next;
+	const char *next;
 
 	if (wl_iovar_get(ifname, "cap", (void *)caps, WLC_IOCTL_SMLEN) == 0) {
 		foreach(cap, caps, next)
@@ -848,7 +848,7 @@ EJALIAS(ej_nvram_invmatch, ej_nvim);
 EJ_VISIBLE void ej_nvram_list(webs_t wp, int argc, char_t **argv)
 {
 	int which;
-	char word[256], *next;
+	char word[256];const char *next;
 	which = atoi(argv[1]);
 	char *list = nvram_safe_get(argv[0]);
 
@@ -868,7 +868,7 @@ EJ_VISIBLE void ej_nvram_list(webs_t wp, int argc, char_t **argv)
 int get_dns_ip(char *name, int which, int count)
 {
 	char word[256];
-	char *next;
+	const char *next;
 	int ip;
 	char *list = nvram_safe_get(name);
 
@@ -890,7 +890,7 @@ int get_dns_ip(char *name, int which, int count)
 EJ_VISIBLE void ej_get_dns_ip(webs_t wp, int argc, char_t **argv)
 {
 	int which;
-	char word[256], *next;
+	char word[256];const char *next;
 
 	which = atoi(argv[1]);
 	char *list = nvram_safe_get(argv[0]);
@@ -1225,7 +1225,7 @@ static int checkandadd(char *name, char **lst)
 		list = strdup(name);
 	} else {
 		char cap[128];
-		char *next;
+		const char *next;
 		foreach(cap, list, next)
 		{
 			if (!strcmp(cap, name)) {
@@ -1510,7 +1510,7 @@ EJ_VISIBLE void ej_show_bandwidth(webs_t wp, int argc, char_t **argv)
 	char wan_if_buffer[33];
 
 	char name[180];
-	char *next, *bnext;
+	const char *next, *bnext;
 	char var[80];
 	char eths[256];
 	char eths2[256];
@@ -1524,12 +1524,7 @@ EJ_VISIBLE void ej_show_bandwidth(webs_t wp, int argc, char_t **argv)
 	getIfLists(eths, sizeof(eths));
 	//add ppp interfacs
 	bzero(eths2, sizeof(eths2));
-	getIfList(eths2, "ppp");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-	//add tun interfaces
-	bzero(eths2, sizeof(eths2));
-	getIfList(eths2, "tun");
+	getIfList(eths2, "ppp tun");
 	strcat(eths, " ");
 	strcat(eths, eths2);
 #ifndef HAVE_MADWIFI

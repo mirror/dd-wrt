@@ -269,7 +269,7 @@ void mesh_params_main(int argc, char *argv[])
 	ENTER;
 	int c = getdevicecount();
 	char dev[32];
-	char var[32], *next;
+	char var[32];const char *next;
 	int i;
 	for (i = 0; i < c; i++) {
 		sprintf(dev, "wlan%d", i);
@@ -302,7 +302,7 @@ static void setchanbw(char *wif, char *driver, int bw)
 int iscpe(void);
 void configure_single_ath9k(int count)
 {
-	char *next;
+	const char *next;
 	char var[80];
 	char mode[80];
 	int cnt = 0;
@@ -672,7 +672,7 @@ int has_hidden_ssid(const char *prefix)
 	if (nvram_nmatch("1", "%s_closed", prefix))
 		return 1;
 	char vap[32];
-	char *next;
+	const char *next;
 	char *vifs = nvram_nget("%s_vifs", prefix);
 	foreach(vap, vifs, next)
 	{
@@ -688,7 +688,7 @@ int has_vaps(const char *prefix)
 	if (nvram_nmatch("1", "%s_closed", prefix))
 		return 1;
 	char vap[32];
-	char *next;
+	const char *next;
 	char *vifs = nvram_nget("%s_vifs", prefix);
 	foreach(vap, vifs, next)
 	{
@@ -1503,7 +1503,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 static void setMacFilter(FILE *fp, char *iface)
 {
 	ENTER;
-	char *next;
+	const char *next;
 	char var[32];
 	char nvvar[32];
 	sprintf(nvvar, "%s_macmode", iface);
@@ -1929,7 +1929,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		char *owe_ifname = nvram_nget("%s_owe_ifname", ifname);
 		if (*owe_ifname) {
 			char oif[32];
-			char *next;
+			const char *next;
 			int oexists = 0;
 			char *vifs = nvram_nget("%s_vifs", maininterface);
 			foreach(oif, vifs, next)
@@ -2013,7 +2013,7 @@ static char *makescanlist(const char *prefix, char *value)
 		if (clone[i] == ',')
 			clone[i] = ' ';
 	}
-	char *next;
+	const char *next;
 	char var[128];
 	foreach(var, clone, next)
 	{
@@ -2592,7 +2592,7 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 	// dann wpa_supplicant mit link zu hostapd
 	// dann bridgen und konfiguriren
 	MAC80211DEBUG();
-	char *next;
+	const char *next;
 	char var[80];
 	char fstr[32];
 	char bridged[32];
@@ -2741,7 +2741,7 @@ void post_hostapd_actions(int count)
 	char subinterface[32];
 	char tmp[256];
 	char var[80];
-	char *next, *vifs;
+	const char *next, *vifs;
 	char mode[80];
 	char fstr[32];
 	char wif[10];

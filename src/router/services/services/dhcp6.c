@@ -77,7 +77,7 @@ void start_dhcp6c(void)
 	unsigned long iaid = 0;
 
 	char ifname[32];
-	char *next;
+	const char *next;
 	char ipv6_iflist[128] = { 0 };
 	//dd_loginfo("dnsipv6if", "dhcp6.c dnsipv6if: %s", wordlist);
 	int sla_id = 0;

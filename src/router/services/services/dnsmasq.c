@@ -454,7 +454,7 @@ void stop_dnsmasq(void);
 char *getmdhcp(int count, int index, char *buffer)
 {
 	int cnt = 0;
-	char *next, *wordlist;
+	const char *next, *wordlist;
 	char word[128];
 	wordlist = nvram_safe_get("mdhcpd");
 	foreach(word, wordlist, next)
@@ -639,7 +639,7 @@ void start_dnsmasq(void)
 		}
 		char vifs[256];
 		getIfLists(vifs, 256);
-		char var[256], *wordlist, *next;
+		char var[256], *wordlist;const char *next;
 		foreach(var, vifs, next)
 		{
 			if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
@@ -659,7 +659,7 @@ void start_dnsmasq(void)
 		}
 		char vifs[256];
 		getIfLists(vifs, 256);
-		char var[256], *wordlist, *next;
+		char var[256], *wordlist;const char *next;
 		foreach(var, vifs, next)
 		{
 			if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
@@ -747,7 +747,7 @@ void start_dnsmasq(void)
 			}
 			//interfaces
 			char ifname[32];
-			char *next;
+			const char *next;
 			char *wordlist = nvram_safe_get("dnsipv6_interfaces");
 			//dd_loginfo("dnsipv6if", "dnsmasq dnsipv6if: %s", wordlist);
 			foreach(ifname, wordlist, next)

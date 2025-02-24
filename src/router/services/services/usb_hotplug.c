@@ -362,7 +362,7 @@ static int usb_process_path(char *path, char *fs, char *target)
 	eval("startservice", "run_rc_usb", "-f");
 	if (ret == 0)
 		run_on_mount(path);
-	char *next;
+	const char *next;
 	char *services = nvram_safe_get("custom_configs");
 	char service[32];
 	foreach(service, services, next)
@@ -451,7 +451,7 @@ static int usb_add_ufd(char *devpath)
 	char path[128];
 	char *fs = NULL;
 	int is_part = 0;
-	char part[10], *partitions, *next;
+	char part[10], *partitions;const char *next;
 	struct stat tmp_stat;
 	int i, found = 0;
 	int mounted[16];

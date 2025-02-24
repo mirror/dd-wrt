@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
 {
 	char tmp[1024];
 	char *sub;
-	char var[500], *next;
+	char var[500];const char *next;
 
 	sub = range("192.168.1.1", "192.169.2.100", tmp);
 	printf("%s\n", sub);

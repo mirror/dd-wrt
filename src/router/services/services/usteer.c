@@ -35,7 +35,7 @@ void start_usteer(void)
 
 	int c = getdevicecount();
 	char dev[32];
-	char var[32], *next;
+	char var[32];const char *next;
 	int i;
 	char *ssid_list = NULL;
 	for (i = 0; i < c; i++) {

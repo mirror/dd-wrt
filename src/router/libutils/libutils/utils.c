@@ -277,7 +277,7 @@ const char *getifaddr_any(char *buf, char *ifname, int family)
 #ifdef HAVE_VLANTAGGING
 char *getBridge(const char *ifname, char *word)
 {
-	char *next, *wordlist;
+	const char *next, *wordlist;
 	wordlist = nvram_safe_get("bridgesif");
 	foreach(word, wordlist, next)
 	{
@@ -301,7 +301,7 @@ char *getBridge(const char *ifname, char *word)
 
 char *getBridgeMTU(const char *ifname, char *word)
 {
-	char *next, *wordlist;
+	const char *next, *wordlist;
 
 	wordlist = nvram_safe_get("bridges");
 	foreach(word, wordlist, next)
@@ -1047,7 +1047,7 @@ int getIfByIdx(char *ifname, int index)
 
 // returns a physical interfacelist filtered by ifprefix. if ifprefix is
 // NULL, all valid interfaces will be returned
-int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort, int noports)
+static char **_getIfListB(const char *ifprefix, int bridgesonly, int noports)
 {
 	FILE *in = fopen("/proc/net/dev", "rb");
 	if (!in)
@@ -1095,10 +1095,11 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort, 
 				if (!sort) {
 					sort = malloc(sizeof(char *));
 				} else {
-					sort = realloc(sort, sizeof(char *) * (count + 1));
+					sort = realloc(sort, sizeof(char **) * (count + 2));
 				}
 				sort[count] = malloc(strlen(ifname) + 1);
 				strcpy(sort[count], ifname);
+				sort[count + 1] = NULL;
 				count++;
 			}
 			skip = 0;
@@ -1111,23 +1112,60 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort, 
 			ifname[ifcount++] = c;
 	}
 sort:;
+
+	return sort;
+}
+int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort, int noports)
+{
+	char word[32];
+	const char *next;
+	char **sort = NULL;
+	int count = 0;
+	int sortcount = 0;
+	if (ifprefix) {
+		foreach(word, ifprefix, next)
+		{
+			char **presort = _getIfListB(ifprefix, bridgesonly, noports);
+			if (presort) {
+				int cnt = 0;
+				while (presort[cnt++])
+					;
+				if (!sort) {
+					sort = presort;
+					sortcount = cnt;
+				} else {
+					sort = realloc(sort, (sortcount + cnt + 2) * sizeof(char **));
+					memcpy(&sort[sortcount], presort, cnt + 1);
+					sortcount += cnt;
+					cnt=0;
+					while(presort[cnt])
+					    free(presort[cnt++]);
+					free(presort);
+				}
+			}
+		}
+	} else {
+		sort = _getIfListB(ifprefix, bridgesonly, noports);
+	}
+	if (!sort)
+		return 0;
+
 	if (!nosort && count &&
 	    sort) { // if ifprefix doesnt match to any interface, sort might be NULL here, so check this condition
 		qsort(sort, count, sizeof(char *), ifcompare);
 	}
 	int i;
 	if (sort) {
-		for (i = 0; i < count; i++) {
+		while (sort[i]) {
 			strcat(buffer, sort[i]);
 			strcat(buffer, " ");
-			free(sort[i]);
+			free(sort[i++]);
 		}
 		free(sort);
+		count = i;
+		if (count)
+			buffer[strlen(buffer) - 1] = 0; // fixup last space
 	}
-
-	if (count)
-		buffer[strlen(buffer) - 1] = 0; // fixup last space
-	return count;
 }
 
 /*
@@ -1331,7 +1369,7 @@ int _domod(char *module, char *loader)
 {
 	char word[256];
 	char check[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 	int ret = 0;
 	char *target;
 	wordlist = module;
@@ -1370,7 +1408,7 @@ int modprobe(char *module)
 void rmmod(char *module)
 {
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 	wordlist = module;
 	foreach(word, wordlist, next)
 	{
@@ -1720,7 +1758,7 @@ void set_named_smp_affinity(char *name, int core, int entry)
 void set_named_smp_affinity_list(char *name, char *cpulist, int entry)
 {
 	char var[32];
-	char *next;
+	const char *next;
 	int mask = 0;
 	foreach(var, cpulist, next)
 	{
@@ -2145,7 +2183,7 @@ char *safe_get_wan_face(char *localwanface)
 
 char *getBridgeSTPType(char *br, char *word)
 {
-	char *next, *wordlist;
+	const char *next, *wordlist;
 	wordlist = nvram_safe_get("bridges");
 	foreach(word, wordlist, next)
 	{
@@ -2171,7 +2209,8 @@ int getBridgeSTP(char *br, char *word)
 
 int getBridgeForwardDelay(char *br)
 {
-	char *next, *wordlist, word[128];
+	const char *next, *wordlist;
+	char word[128];
 	wordlist = nvram_safe_get("bridges");
 	foreach(word, wordlist, next)
 	{
@@ -2188,7 +2227,8 @@ int getBridgeForwardDelay(char *br)
 
 int getBridgeMaxAge(char *br)
 {
-	char *next, *wordlist, word[128];
+	const char *next, *wordlist;
+	char word[128];
 	wordlist = nvram_safe_get("bridges");
 	foreach(word, wordlist, next)
 	{
@@ -2286,7 +2326,7 @@ static char *s_getDrives(int type)
 		if (!strncmp(file->d_name, "sd", 2) || !strncmp(file->d_name, "hd", 2) || !strncmp(file->d_name, "md", 2) ||
 		    !strncmp(file->d_name, "mmcblk", 6) || !strncmp(file->d_name, "nvme", 4)) {
 			char var[64];
-			char *next;
+			const char *next;
 			if (mounts) {
 				foreach(var, mounts, next)
 				{

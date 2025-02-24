@@ -42,7 +42,7 @@ static void assoc_count_prefix(webs_t wp, char *prefix)
 {
 	int count = getdevicecount();
 	int i;
-	char *next;
+	const char *next;
 	char var[32];
 	char *select = websGetVar(wp, "wifi_display", NULL);
 	if (!select)

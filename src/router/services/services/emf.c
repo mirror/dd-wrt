@@ -41,7 +41,7 @@ void start_emf(void)
 //              else
 //                      eval("emf", "stop", getBridge(get_wl_instance_name(i), tmp));
 
-		char *next;
+		const char *next;
 		char var[80];
 		char *vifs = nvram_nget("wl%d_vifs", i);
 		if (vifs != NULL) {
@@ -65,7 +65,7 @@ void stop_emf(void)
 	int cnt = get_wl_instances();
 	char tmp[256];
 	for (i = 0; i < cnt; i++) {
-		char *next;
+		const char *next;
 		char var[80];
 		char *vifs = nvram_nget("wl%d_vifs", i);
 		if (vifs != NULL) {

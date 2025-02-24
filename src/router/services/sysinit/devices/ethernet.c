@@ -219,7 +219,7 @@ static int detect_driver(char **drivers, char *list, int delay, int insmod)
 static int detect_drivers(char *buspath, char *enabled, char *list, char **driverset, int delay, int insmod)
 {
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 	int rcc = 0;
 	char s_hash[40] = { 0 };
 	char *hash;

@@ -77,7 +77,7 @@ EJ_VISIBLE void ej_dump_route_table(webs_t wp, int argc, char_t **argv)
 	// vmnet1 004410AC 00000000 0001 0 0 0 00FFFFFF 40 0 0
 
 	while (fgets(line, sizeof(line), fp) != NULL) {
-		char *next;
+		const char *next;
 		char word[128];
 		int field = 0;
 		char net[128] = { 0 };
@@ -166,7 +166,7 @@ EJ_VISIBLE void ej_dump_pbr_table(webs_t wp, int argc, char_t **argv)
 	// vmnet1 004410AC 00000000 0001 0 0 0 00FFFFFF 40 0 0
 
 	while (fgets(line, sizeof(line), fp) != NULL) {
-		char *next;
+		const char *next;
 		char word[128];
 		int field = 0;
 		char priority[16] = { 0 };

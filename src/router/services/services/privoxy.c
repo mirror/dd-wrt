@@ -44,7 +44,7 @@ void start_privoxy(void)
 
 	int mode = 0;
 	int whitelist = 0;
-	char *next;
+	const char *next;
 	char var[80];
 	char vifs[256];
 	char *ip = nvram_safe_get("lan_ipaddr");
@@ -141,7 +141,7 @@ void stop_privoxy(void)
 	char *mask = nvram_safe_get("lan_netmask");
 	char *webif_port = nvram_safe_get("http_lanport");
 	char *transp = nvram_safe_get("privoxy_transp_exclude");
-	char *next;
+	const char *next;
 	char var[80];
 	char vifs[256];
 

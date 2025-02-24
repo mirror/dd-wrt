@@ -96,7 +96,7 @@ void rpc_parse_nvram_from_httpd(void)
 	char *viflist[4] = { "wl1.1", "wl1.2", "wl1.3" };
 	int cnt = 0;
 	for (i = 0; i < 3; i++) {
-		char *next;
+		const char *next;
 		char var[80];
 		char *vifs = nvram_safe_get("wl1_vifs");
 		int found = 0;

@@ -271,7 +271,7 @@ void start_init_restart(void)
 	int c;
 	for (c = 0; c < cnt; c++) {
 		wlconf_down(get_wl_instance_name(c));
-		char *next;
+		const char *next;
 		char var[80];
 		char *vifs = nvram_nget("wl%d_vifs", c);
 

@@ -107,7 +107,7 @@ int main(int argc, char **argv)
 						char dev[32];
 						sprintf(dev, "wlan%d", i);
 						eval("ifconfig", dev, "down");
-						char *next;
+						const char *next;
 						char var[80];
 						char *vifs = nvram_nget("wlan%d_vifs", i);
 						foreach(var, vifs, next)

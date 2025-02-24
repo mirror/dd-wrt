@@ -114,7 +114,7 @@ int is_ap(const char *prefix)
 
 int is_vap_ap(const char *prefix)
 {
-	char *next;
+	const char *next;
 	char var[80];
 
 	char *vifs = nvram_nget("%s_vifs", prefix);
@@ -203,7 +203,7 @@ EJ_VISIBLE void ej_show_routing(webs_t wp, int argc, char_t **argv)
 
 EJ_VISIBLE void ej_has_routing(webs_t wp, int argc, char_t **argv)
 {
-	char var[32], *next;
+	char var[32];const char *next;
 	char *sub = websGetVar(wp, "wk_mode", NULL);
 	if (sub == NULL)
 		sub = nvram_safe_get("wk_mode");
@@ -900,7 +900,7 @@ static void show_security_prefix(webs_t wp, int argc, char_t **argv, char *prefi
 
 static void ej_show_security_single(webs_t wp, int argc, char_t **argv, char *prefix)
 {
-	char *next;
+	const char *next;
 	char var[80];
 	char ssid[80];
 	char mac[18];
@@ -1134,7 +1134,7 @@ EJ_VISIBLE void ej_show_dhcpd_settings(webs_t wp, int argc, char_t **argv)
 #ifdef HAVE_MADWIFI
 EJ_VISIBLE void ej_show_wifiselect(webs_t wp, int argc, char_t **argv)
 {
-	char *next;
+	const char *next;
 	char var[32];
 	char eths[256];
 	bzero(eths, 256);
@@ -1195,7 +1195,7 @@ EJ_VISIBLE void ej_show_wifiselect(webs_t wp, int argc, char_t **argv)
 #else
 EJ_VISIBLE void ej_show_wifiselect(webs_t wp, int argc, char_t **argv)
 {
-	char *next;
+	const char *next;
 	char var[32];
 	int count = get_wl_instances();
 
@@ -2483,7 +2483,7 @@ static void show_droplowsignal(webs_t wp, char *prefix)
 }
 static int show_virtualssid(webs_t wp, char *prefix)
 {
-	char *next;
+	const char *next;
 	char var[80];
 	char ssid[80];
 	char vif[16];
@@ -5858,7 +5858,7 @@ static int owe_possible(const char *prefix)
 {
 	int possible = 0;
 	char var[32];
-	char *next;
+	const char *next;
 	char master[32];
 	strcpy(master, prefix);
 	rep(master, '.', 0);
@@ -6041,7 +6041,7 @@ void show_owe(webs_t wp, char *prefix)
 {
 	if (nvram_nmatch("1", "%s_owe", prefix)) {
 		char var[32];
-		char *next;
+		const char *next;
 		char master[32];
 		strcpy(master, prefix);
 		rep(master, '.', 0);
@@ -7615,7 +7615,7 @@ EJ_VISIBLE void ej_show_dnscrypt(webs_t wp, int argc, char_t **argv)
 #endif
 EJ_VISIBLE void ej_show_congestion(webs_t wp, int argc, char_t **argv)
 {
-	char *next;
+	const char *next;
 	char var[80];
 	char eths[256];
 	FILE *fp = fopen("/proc/sys/net/ipv4/tcp_available_congestion_control", "rb");
@@ -7670,7 +7670,7 @@ EJ_VISIBLE void ej_show_ifselect(webs_t wp, int argc, char_t **argv)
 	}
 	websWrite(wp, "<option value=\"%s\" %s >LAN</option>\n", nvram_safe_get("lan_ifname"),
 		  nvram_match(ifname, nvram_safe_get("lan_ifname")) ? "selected=\"selected\"" : "");
-	char *next;
+	const char *next;
 	char var[80];
 	char eths[256];
 	char eth2[256];
@@ -7698,7 +7698,7 @@ EJ_VISIBLE void ej_show_ifselect(webs_t wp, int argc, char_t **argv)
 EJ_VISIBLE void ej_show_iflist(webs_t wp, int argc, char_t **argv)
 {
 	char wan_if_buffer[33];
-	char *next;
+	const char *next;
 	char var[80];
 	char buffer[256];
 	bzero(buffer, 256);
@@ -7729,7 +7729,7 @@ EJ_VISIBLE void ej_show_rflowif(webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "<option value=\"%s\" %s >LAN &amp; WLAN</option>\n", nvram_safe_get("lan_ifname"),
 		  nvram_match("rflow_if", nvram_safe_get("lan_ifname")) ? "selected=\"selected\"" : "");
 	char *lanifs = nvram_safe_get("lan_ifnames");
-	char *next;
+	const char *next;
 	char var[80];
 	foreach(var, lanifs, next)
 	{
@@ -7760,7 +7760,7 @@ EJ_VISIBLE void ej_show_rflowif(webs_t wp, int argc, char_t **argv)
 #ifdef CONFIG_STATUS_GPIO
 EJ_VISIBLE void ej_show_status_gpio_output(webs_t wp, int argc, char_t **argv)
 {
-	char *var, *next;
+	char *var;const char *next;
 	char nvgpio[32];
 	char *value = websGetVar(wp, "action", "");
 	char *gpios = nvram_safe_get("gpio_outputs");

@@ -223,7 +223,7 @@ void start_setup_vlans(void)
 		vlanlist[i] = i;
 	i = 0;
 	char portvlan[32];
-	char *next;
+	const char *next;
 	foreach(portvlan, c, next)
 	{
 		vlanlist[i++] = atoi(portvlan);
@@ -243,7 +243,7 @@ void start_setup_vlans(void)
 	for (i = 0; i < lanports; i++) {
 #endif
 		char *vlans = nvram_nget("port%dvlans", i);
-		char *next;
+		const char *next;
 		char vlan[32];
 		int mask = 0;
 		foreach(vlan, vlans, next)
@@ -524,7 +524,9 @@ void start_setup_vlans(void)
 	}
 
 	int i, j, ret = 0, tmp, workaround = 0, found;
-	char *vlans, *next, vlan[32], buff[70], buff2[16];
+	char *vlans;
+	const char *next
+	char vlan[32], buff[70], buff2[16];
 	FILE *fp;
 	char **portsettings = malloc(sizeof(char **) * (blen + 2));
 	for (i = 0; i < blen + 2; i++) {
@@ -710,7 +712,8 @@ void start_setup_vlans(void)
 
 int flush_interfaces(void)
 {
-	char all_ifnames[256] = { 0 }, *c, *next, buff[128], buff2[128];
+	char all_ifnames[256] = { 0 }, *c;const char *next;
+	char buff[128], buff2[128];
 
 #ifdef HAVE_MADWIFI
 #ifdef HAVE_GATEWORX

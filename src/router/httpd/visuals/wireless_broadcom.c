@@ -431,7 +431,7 @@ EJ_VISIBLE void ej_active_wireless(webs_t wp, int argc, char_t **argv)
 		sprintf(wlif, "wl%d", i);
 		global = active_wireless_if(wp, argc, argv, get_wl_instance_name(i), wlif, &assoc_count[cnt], global);
 		cnt++;
-		char *next;
+		const char *next;
 		char var[80];
 		char *vifs = nvram_nget("wl%d_vifs", i);
 

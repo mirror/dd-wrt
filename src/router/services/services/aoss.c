@@ -112,7 +112,7 @@ void start_aoss(void)
 		deconfigure_single_ath9k(0);
 		configure_single_ath9k(0);
 		hasaoss = 1;
-		char *next;
+		const char *next;
 		char var[80];
 		char *vifs = nvram_safe_get("wlan0_vifs");
 		int counter = 1;
@@ -137,7 +137,7 @@ void start_aoss(void)
 		deconfigure_single_ath9k(1);
 		configure_single_ath9k(1);
 		hasaoss = 1;
-		char *next;
+		const char *next;
 		char var[80];
 		char *vifs = nvram_safe_get("wlan1_vifs");
 		int counter = 1;
@@ -195,7 +195,7 @@ void start_aoss(void)
 			deconfigure_single_ath9k(0);
 			configure_single_ath9k(0);
 			hasaoss = 1;
-			char *next;
+			const char *next;
 			char var[80];
 			char *vifs = nvram_safe_get("wlan0_vifs");
 			int counter = 1;

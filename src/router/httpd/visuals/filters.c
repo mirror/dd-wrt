@@ -62,7 +62,7 @@
 
 static char *filter_ip_get(webs_t wp, char *type, int which, char *word, char *tgt, size_t len)
 {
-	char *start, *end, *wordlist, *next;
+	char *start, *end, *wordlist;const char *next;
 	char filter_ip[] = "filter_ip_grpXXX";
 	int temp = which;
 	snprintf(filter_ip, sizeof(filter_ip), "filter_ip_grp%d", wp->p->filter_id);
@@ -202,7 +202,7 @@ static char *filter_ip_get(webs_t wp, char *type, int which, char *word, char *t
 
 static char *filter_port_get(char *list, char *type, int which, char *buf, size_t len)
 {
-	char *wordlist, *next;
+	char *wordlist;const char *next;
 	char word[256];
 	char *start, *end, *proto;
 	char *protos[] = { "disable", "both", "tcp", "udp", "l7" };
@@ -273,7 +273,7 @@ EJ_VISIBLE void ej_filter_port_get(webs_t wp, int argc, char_t **argv)
 
 static char *filter_mac_get(webs_t wp, int which, char *word)
 {
-	char *wordlist, *next;
+	char *wordlist;const char *next;
 	char *mac;
 	char filter_mac[] = "filter_mac_grpXXX";
 
@@ -362,7 +362,7 @@ EJ_VISIBLE void ej_show_filterif(webs_t wp, int argc, char_t **argv)
 	char *wanface = safe_get_wan_face(wan_if_buffer);
 	websWrite(wp, "<option value=\"%s\" %s >LAN</option>\n", nvram_safe_get("lan_ifname"),
 		  !strcmp(ifs, nvram_safe_get("lan_ifname")) ? "selected=\"selected\"" : "");
-	char *next;
+	const char *next;
 	char var[80];
 	char eths[256];
 	char eth2[256];
@@ -769,7 +769,7 @@ EJ_VISIBLE void ej_filter_port_services_get(webs_t wp, int argc, char_t **argv)
 
 void filter_port_services_get(webs_t wp, char *type, int which)
 {
-	char word[1024], *next;
+	char word[1024];const char *next;
 	char delim[] = "<&nbsp;>";
 
 	char *services;

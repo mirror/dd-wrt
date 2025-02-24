@@ -1005,7 +1005,7 @@ static int checkfilter(char *filter, char *check, int sc)
 		return 0;
 #endif
 
-	char *next;
+	const char *next;
 	char var[32];
 	if (!filter)
 		return 1;

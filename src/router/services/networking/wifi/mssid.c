@@ -45,7 +45,7 @@ void config_macs(char *wlifname) // reconfigure macs which
 	int unit = get_wl_instance(wlifname);
 	char *vifs = nvram_nget("wl%d_vifs", unit);
 	char *mbss = nvram_nget("wl%d_mbss", unit);
-	char *next;
+	const char *next;
 	char var[80];
 
 	if (!strcmp(mbss, "0") || nvram_nmatch("apsta", "wl%d_mode", unit) || nvram_nmatch("ap", "wl%d_mode", unit)) {

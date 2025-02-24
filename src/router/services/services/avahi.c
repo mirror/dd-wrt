@@ -62,7 +62,7 @@ void start_mdns(void)
 		"#deny-interfaces=\n",
 		nvram_safe_get("router_name"), nvram_safe_get("mdns_domain"), nvram_matchi("ipv6_enable", 1) ? "yes" : "no");
 	char ifname[32];
-	char *next;
+	const char *next;
 	char *wordlist = nvram_safe_get("mdns_interfaces");
 	int idx = 0;
 	foreach(ifname, wordlist, next)

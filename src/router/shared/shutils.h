@@ -267,9 +267,9 @@ char *chomp(char *s);
  * Print directly to the console 
  */
 
-char *foreach_first(char *foreachwordlist, char *word, char *delim, size_t len);
+const char *foreach_first(const char *foreachwordlist, char *word, char *delim, size_t len);
 
-char *foreach_last(char *next, char *word, char *delim, size_t len);
+const char *foreach_last(const char *next, char *word, char *delim, size_t len);
 
 char *getentrybyidx(char *buf, char *list, int idx);
 char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short, char *delimiters);

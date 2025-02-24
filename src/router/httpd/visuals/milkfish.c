@@ -67,7 +67,7 @@ EJ_VISIBLE void ej_exec_milkfish_phonebook(webs_t wp, int argc, char_t **argv)
 void show_subscriber_table(webs_t wp, char *type, int which)
 {
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 	char *user, *pass;
 	char new_user[200], new_pass[200];
 
@@ -123,7 +123,7 @@ EJ_VISIBLE void ej_exec_show_subscribers(webs_t wp, int argc, char_t **argv)
 void show_aliases_table(webs_t wp, char *type, int which)
 {
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 	char *user, *pass;
 	char new_user[200], new_pass[200];
 
@@ -179,7 +179,7 @@ EJ_VISIBLE void ej_exec_show_aliases(webs_t wp, int argc, char_t **argv)
 void show_registrations_table(webs_t wp, char *type, int which)
 {
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 	char *user, *contact, *agent;
 	char new_user[200], new_contact[200], new_agent[200];
 

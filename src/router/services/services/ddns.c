@@ -245,7 +245,7 @@ static int init_ddns(FILE *fp)
 				fprintf(fp, "password = \"nopasswd\"\n");
 			else
 				fprintf(fp, "password = \"%s\"\n", nvram_safe_get(_passwd));
-			char *next;
+			const char *next;
 			char var[128];
 			char *hn = nvram_safe_get(_hostname);
 			fprintf(fp, "hostname = {");
@@ -284,7 +284,7 @@ static int init_ddns(FILE *fp)
 			else
 				fprintf(fp, "password = \"%s\"\n", nvram_safe_get(_passwd));
 
-			char *next;
+			const char *next;
 			char var[128];
 			char *hn = nvram_safe_get(_hostname);
 			fprintf(fp, "hostname = {");

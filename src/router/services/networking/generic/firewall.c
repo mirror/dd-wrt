@@ -349,7 +349,7 @@ static void addsuspense(char *buff)
 
 static void parse_port_forward(char *wan_iface, char *wanaddr, char *lan_cclass, char *wordlist, int dmzenable)
 {
-	char var[256], *next;
+	char var[256];const char *next;
 	char buff[256], ip2[16];
 	int flag_dis = 0;
 	char *wan_proto = nvram_safe_get("wan_proto");
@@ -600,7 +600,7 @@ static void create_spec_forward(char *wan_iface, char *proto, char *src, char *w
 
 static void parse_spec_forward(char *wan_iface, char *wanaddr, char *wordlist)
 {
-	char var[256], *next;
+	char var[256];const char *next;
 	char buff[256];
 	int flag_dis = 0;
 
@@ -673,7 +673,7 @@ static void create_ip_forward(int mode, char *wan_iface, char *src_ip, char *des
 static void parse_ip_forward(int mode, char *wanface)
 {
 	char *wordlist = nvram_safe_get("forward_ip");
-	char var[256], *next;
+	char var[256];const char *next;
 	int flag_dis = 0;
 	/*
 	 * name:enale:src:dest
@@ -702,7 +702,7 @@ static void parse_ip_forward(int mode, char *wanface)
 static void destroy_ip_forward(char *wan_iface)
 {
 	char *wordlist = nvram_safe_get("forward_ip");
-	char var[256], *next;
+	char var[256];const char *next;
 	char buff[256];
 
 	/*
@@ -719,7 +719,7 @@ static void destroy_ip_forward(char *wan_iface)
 
 static void nat_prerouting_bridged(char *wanface, char *vifs)
 {
-	char var[256], *wordlist, *next;
+	char var[256], *wordlist;const char *next;
 #ifdef HAVE_TOR
 	if (nvram_matchi("tor_enable", 1)) {
 		if (nvram_matchi("tor_transparent", 1)) {
@@ -781,7 +781,7 @@ static void nat_prerouting_bridged(char *wanface, char *vifs)
 static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int dmzenable, int remotessh, int remotetelnet,
 			   int remotemanage, char *vifs)
 {
-	char var[256], *wordlist, *next;
+	char var[256], *wordlist;const char *next;
 	char from[100], to[100];
 	char *remote_ip_any = nvram_default_get("remote_ip_any", "1");
 	char *remote_ip = nvram_default_get("remote_ip", "0.0.0.0 0");
@@ -974,7 +974,7 @@ static void add_rawtable(void)
 
 static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 {
-	char word[80], *tmp;
+	char word[80];const char *tmp;
 	if (has_gateway()) {
 		// added for logic test
 		int loopmask = 0;
@@ -1039,7 +1039,7 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 		}
 */
 
-		char *next;
+		const char *next;
 		char dev[16];
 		char var[80];
 
@@ -1127,7 +1127,7 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 
 static void parse_port_filter(char *lanface, char *wordlist)
 {
-	char var[256], *next;
+	char var[256];const char *next;
 
 	/*
 	 * Parse protocol:lan_port0-lan_port1 ... 
@@ -1322,7 +1322,7 @@ static int schedule_by_tod(FILE *cfd, int seq)
 
 static void macgrp_chain(int seq, int urlenable, char *iflist, char *target)
 {
-	char var[256], *next;
+	char var[256];const char *next;
 	char *wordlist;
 	wordlist = nvram_nget("filter_mac_grp%d", seq);
 	if (strcmp(wordlist, "") == 0)
@@ -1333,7 +1333,7 @@ static void macgrp_chain(int seq, int urlenable, char *iflist, char *target)
 	foreach(var, wordlist, next)
 	{
 		char ifname[32];
-		char *nextif;
+		const char *nextif;
 		if (iflist) {
 			foreach(ifname, iflist, nextif)
 			{
@@ -1350,8 +1350,8 @@ static void macgrp_chain(int seq, int urlenable, char *iflist, char *target)
 static void ipgrp_chain(char *lan_cclass, int seq, int urlenable, char *iflist, char *target)
 {
 	char buf[256];
-	char var1[256], *wordlist1, *next1;
-	char var2[256], *wordlist2, *next2;
+	char var1[256], *wordlist1;const char *next1;
+	char var2[256], *wordlist2;const char *next2;
 	char from[100], to[100];
 	char tmp[1024];
 	int a1 = 0, a2 = 0;
@@ -1402,7 +1402,7 @@ static void ipgrp_chain(char *lan_cclass, int seq, int urlenable, char *iflist, 
 		foreach(var2, wordlist2, next2)
 		{
 			char ifname[32];
-			char *nextif;
+			const char *nextif;
 			if (iflist) {
 				foreach(ifname, iflist, nextif)
 				{
@@ -1420,7 +1420,7 @@ static void ipgrp_chain(char *lan_cclass, int seq, int urlenable, char *iflist, 
 
 static void portgrp_chain(int seq, int urlenable, char *iflist, char *target)
 {
-	char var[256], *next;
+	char var[256];const char *next;
 	char *wordlist;
 
 	wordlist = nvram_nget("filter_dport_grp%d", seq);
@@ -1442,7 +1442,7 @@ static void portgrp_chain(int seq, int urlenable, char *iflist, char *target)
 			continue;
 
 		char ifname[32];
-		char *nextif;
+		const char *nextif;
 		if (iflist) {
 			foreach(ifname, iflist, nextif)
 			{
@@ -1666,8 +1666,8 @@ static struct TELEMETRY ms_telemetry[] = {
 
 static void advgrp_chain(int seq, int urlenable, char *ifname)
 {
-	char *wordlist, word[1024], *next;
-	char *services, srv[1024], *next2;
+	char *wordlist, word[1024];const char *next;
+	char *services, srv[1024];const char *next2;
 	char delim[] = "<&nbsp;>";
 
 	/*
@@ -2302,7 +2302,7 @@ int filtersync_main(int argc, char *argv[])
 
 static void parse_trigger_out(char *wordlist)
 {
-	char var[256], *next;
+	char var[256];const char *next;
 	/*
 	 * port_trigger=name:[on|off]:[tcp|udp|both]:wport0-wport1>lport0-lport1 
 	 */
@@ -2341,7 +2341,7 @@ static void parse_trigger_out(char *wordlist)
 static void add_bridges(char *wanface, char *chain, int forward)
 {
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 	wordlist = nvram_safe_get("bridges");
 	foreach(word, wordlist, next)
 	{
@@ -2377,7 +2377,8 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 {
 	char wan_if_buffer[33];
 
-	char *next, *iflist, buff[16];
+	const char *next;
+	char *iflist, buff[16];
 	/*
 	 * Filter known SPI state 
 	 */
@@ -2677,7 +2678,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	char wan_if_buffer[33];
 
 	char *filter_web_hosts, *filter_web_urls, *filter_rule;
-	char *next;
+	const char *next;
 	char var[80];
 	int i = 0;
 	int filter_host_url = 0;
@@ -3124,7 +3125,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 	} else {
 		char var[80];
 		char vifs[256];
-		char *next;
+		const char *next;
 		foreach(var, vifs, next)
 		{
 			if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
@@ -3239,7 +3240,7 @@ int isregistered_real(void);
 static void run_firewall6(char *vifs)
 {
 	char wan_if_buffer[33];
-	char *next;
+	const char *next;
 	char var[32];
 	int remotessh = 0;
 	int remotetelnet = 0;
@@ -3865,7 +3866,7 @@ void start_firewall(void)
 #endif
 #ifdef HAVE_GGEW
 	char *wordlist = nvram_safe_get("ral");
-	char var[256], *next;
+	char var[256];const char *next;
 	foreach(var, wordlist, next)
 	{
 		sysprintf("iptables -I INPUT -s %s -j %s", var, log_accept);

@@ -208,7 +208,7 @@ void start_raid(void)
 
 	i = 0;
 	char *raid = nvram_nget("raid%d", i);
-	char *next;
+	const char *next;
 	char drive[64];
 	foreach(drive, raid, next)
 	{

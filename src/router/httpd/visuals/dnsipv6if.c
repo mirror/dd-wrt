@@ -50,7 +50,7 @@ EJ_VISIBLE void ej_show_dnsipv6if(webs_t wp, int argc, char_t **argv)
 	int maxcount = 4;
 	char temp[64];
 	char word[32];
-	char *next;
+	const char *next;
 	bzero(bufferif, 256);
 	char wan_if_buffer[33];
 	char *wanface = safe_get_wan_face(wan_if_buffer);
@@ -79,7 +79,7 @@ EJ_VISIBLE void ej_show_dnsipv6if(webs_t wp, int argc, char_t **argv)
 				websWrite(wp, "<td>\n");
 
 				char ifname[32];
-				char *next2;
+				const char *next2;
 				int found = 0;
 				foreach(ifname, wordlist, next2)
 				{

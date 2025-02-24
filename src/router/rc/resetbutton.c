@@ -983,7 +983,7 @@ static void control_wifi(int *wifi_mode, char *title, char *post, int i, int res
 			char dev[32];
 			sprintf(dev, "wlan%d", i);
 			eval("ifconfig", dev, "down");
-			char *next;
+			const char *next;
 			char var[80];
 			char *vifs = nvram_nget("wlan%d_vifs", i);
 			foreach(var, vifs, next)

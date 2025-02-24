@@ -6535,7 +6535,7 @@ next:;
 
 	char vlan1buf[64];
 	char vlan2buf[64];
-	char var[32], *next;
+	char var[32];const char *next;
 	int port = 0;
 	vlan1 = brcm_to_swconfig(vlan1, vlan1buf);
 	vlan2 = brcm_to_swconfig(vlan2, vlan2buf);

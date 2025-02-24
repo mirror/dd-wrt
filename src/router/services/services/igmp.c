@@ -33,7 +33,8 @@ void start_igmprt(void)
 {
 	int ret = 0;
 	char wan_if_buffer[33];
-	char name[80], *next, *svbuf;
+	char name[80], *svbuf;
+	const char *next;
 	char *argv[] = { "igmprt", "/tmp/igmpproxy.conf", NULL };
 
 	int ifcount = 0;

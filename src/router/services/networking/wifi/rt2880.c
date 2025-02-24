@@ -259,7 +259,7 @@ void setupHostAP(const char *prefix, int iswan)
 
 void setMacFilter(char *iface)
 {
-	char *next;
+	const char *next;
 	char var[32];
 	char nvvar[32];
 
@@ -430,7 +430,7 @@ void configure_wifi_single(int idx) // madwifi implementation for atheros based
 	// cards
 {
 	char var[64];
-	char *next;
+	const char *next;
 
 	startradius[idx] = 0;
 #ifdef HAVE_DIR810L
@@ -1286,7 +1286,7 @@ void configure_wifi_single(int idx) // madwifi implementation for atheros based
 void init_network(int idx)
 {
 	char var[64];
-	char *next;
+	const char *next;
 	char *vifs;
 	char dev[32];
 	sprintf(dev, "wl%d", idx);

@@ -370,7 +370,7 @@ static struct CPUFEATURES cpufeatures[] = {
 EJ_VISIBLE void ej_show_cpufeatures(webs_t wp, int argc, char_t **argv)
 {
 	char word[64];
-	char *next = NULL;
+	const char *next = NULL;
 	char *result = NULL;
 	FILE *fp = fopen("/proc/cpuinfo", "rb");
 	if (!fp)

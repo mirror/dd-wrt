@@ -41,7 +41,7 @@ static int zebra_ripd_init(void);
 static int zebra_init(void)
 {
 	char *sub;
-	char var[32], *next;
+	char var[32];const char *next;
 	char daemons[64];
 	int services = 0;
 	int has_ospfd = 0, has_ospf6d = 0, has_bgpd = 0, has_ripd = 0;
@@ -244,7 +244,7 @@ static int zebra_ospf_init(void)
 	if (nvram_matchi("ospfd_copt", 1)) {
 		fwritenvram("ospfd_conf", fp);
 	} else {
-		char *next;
+		const char *next;
 		char var[80];
 		char eths[256];
 		char eths2[256];
@@ -254,12 +254,7 @@ static int zebra_ospf_init(void)
 		getIfLists(eths, sizeof(eths));
 		//add ppp interfacs
 		bzero(eths2, sizeof(eths2));
-		getIfList(eths2, "ppp");
-		strcat(eths, " ");
-		strcat(eths, eths2);
-		//add tun interfaces
-		bzero(eths2, sizeof(eths2));
-		getIfList(eths2, "tun");
+		getIfList(eths2, "ppp tun");
 		strcat(eths, " ");
 		strcat(eths, eths2);
 		bzero(bufferif, 256);

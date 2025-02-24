@@ -64,7 +64,7 @@ int client_bridged_enabled(void)
 	getIfList(iflist, NULL);
 
 	char word[256];
-	char *next;
+	const char *next;
 	int bridged_clients = 0;
 
 	// any interface in client_bridged mode?
@@ -275,7 +275,7 @@ static char *s_iflist = NULL;
 static int s_hasIF(char *list, char *ifname)
 {
 	char word[256];
-	char *next;
+	const char *next;
 	if (!list)
 		return 0;
 	foreach(word, list, next)
@@ -317,7 +317,7 @@ static void s_clearIF(char **list)
 static void down_upIF(void)
 {
 	char word[256];
-	char *next;
+	const char *next;
 	if (!s_downlist)
 		return;
 	foreach(word, s_downlist, next)
@@ -858,7 +858,7 @@ static int svqos_iptables(void)
 	//      if (nvram_invmatchi("openvpn_enable", 0) || nvram_invmatchi("openvpncl_enable", 0)) {
 	//              char iflist[256];
 	//              char word[256];
-	//              char *next;
+	//              const char *next;
 	//              bool unbridged_tap = 0;
 	//
 	//              insmod("xt_dscp");
@@ -1293,63 +1293,9 @@ void stop_qos(void)
 	nvram_seti("qos_done", 0);
 	deinit_qos(wan_dev, "imq0", "imq1");
 
-	char eths2[512];
 	char eths[512];
-	bzero(eths, 512);
-	bzero(eths2, 512);
-	bzero(eths, 512);
-	getIfList(eths, "ixp");
-	bzero(eths2, 512);
-	getIfList(eths2, "eth");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-	bzero(eths2, 512);
-	getIfList(eths2, "imq");
-
-	strcat(eths, " ");
-	strcat(eths, eths2);
-	bzero(eths2, 512);
-	getIfList(eths2, "ppp");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-	bzero(eths2, 512);
-	getIfList(eths2, "tun");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-	bzero(eths2, 512);
-	getIfList(eths2, "tap");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-	bzero(eths2, 512);
-	getIfList(eths2, "vlan");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-	bzero(eths2, 512);
-	getIfList(eths2, "wlan");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-	bzero(eths2, 512);
-	getIfList(eths2, "wl");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-	bzero(eths2, 512);
-	getIfList(eths2, "ra");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-	bzero(eths2, 512);
-	getIfList(eths2, "rb");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-	bzero(eths2, 512);
-	getIfList(eths2, "lan");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-	bzero(eths2, 512);
-	getIfList(eths2, "wan");
-	strcat(eths, " ");
-	strcat(eths, eths2);
-
-	char *next;
+	getIfList(eths, "ixp eth imq ppp tun tap vlan wlan wl ra rb lan wan");
+	const char *next;
 	char var[80];
 	char *vifs = eths;
 	foreach(var, vifs, next)

@@ -200,7 +200,7 @@ int has_vht160(const char *prefix)
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	char cap[WLC_IOCTL_SMLEN];
 	char caps[WLC_IOCTL_MEDLEN];
-	char *next;
+	const char *next;
 	char *ifname = nvram_nget("%s_ifname", prefix);
 
 	if (wl_iovar_get(ifname, "cap", (void *)caps, sizeof(caps)))
@@ -900,7 +900,7 @@ int has_mumimo(const char *prefix)
 {
 	char cap[WLC_IOCTL_SMLEN];
 	char caps[WLC_IOCTL_MEDLEN];
-	char *next;
+	const char *next;
 	int c = 0;
 	if (!strcmp(prefix, "wl0"))
 		c = 0;
@@ -4272,7 +4272,7 @@ void setRegulationDomain(char *reg)
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 void set_vifsmac(char *base) // corrects hwaddr and bssid assignment
 {
-	char *next;
+	const char *next;
 	char var[80];
 	char mac[80];
 	char *vifs = nvram_nget("%s_vifs", base);
@@ -4300,7 +4300,7 @@ int wlconf_up(char *name)
 {
 	int phytype, gmode, val, ret;
 	char ifinst[32];
-	char *next;
+	const char *next;
 	char var[80];
 
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
@@ -4890,7 +4890,7 @@ int get_maxbssid(char *name)
 {
 	char cap[WLC_IOCTL_SMLEN];
 	char caps[WLC_IOCTL_MEDLEN];
-	char *next;
+	const char *next;
 	char *ifname = nvram_nget("%s_ifname", name);
 	if (wl_iovar_get(ifname, "cap", (void *)caps, sizeof(caps)))
 		return 4; //minimum is default
@@ -4913,7 +4913,7 @@ int has_acktiming(const char *name)
 {
 	char cap[WLC_IOCTL_SMLEN];
 	char caps[WLC_IOCTL_MEDLEN];
-	char *next;
+	const char *next;
 	char *ifname = nvram_nget("%s_ifname", name);
 	if (wl_iovar_get(ifname, "cap", (void *)caps, sizeof(caps)))
 		return 0;

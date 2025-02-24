@@ -2204,7 +2204,7 @@ static int do_logout_asp(unsigned char method, struct mime_handler *handler, cha
 static int do_mypage(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
 	char *snamelist = nvram_safe_get("mypage_scripts");
-	char *next;
+	const char *next;
 	char sname[128];
 	char buf[1024];
 	int qnum;
@@ -2639,7 +2639,7 @@ static int do_ttgraph(unsigned char method, struct mime_handler *handler, char *
 
 #define COL_WIDTH 16 /* single column width */
 
-	char *next;
+	const char *next;
 	char var[80];
 
 	unsigned int days;

@@ -263,7 +263,7 @@ void start_pppoeserver(void)
 
 			// parse chaps from nvram to file
 			char word[256];
-			char *next, *wordlist;
+			const char *next, *wordlist;
 
 			wordlist = nvram_safe_get("pppoeserver_chaps");
 

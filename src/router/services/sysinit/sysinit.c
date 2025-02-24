@@ -2895,7 +2895,7 @@ void stop_drivers(void)
 static void set_led_usbport(char *led, char *ports)
 {
 	char word[256];
-	char *next;
+	const char *next;
 
 	sysprintf("echo usbport > /sys/class/leds/%s/trigger", led);
 
@@ -3494,7 +3494,7 @@ void start_nvram(void)
 				snprintf(newname, slen, "bat_wlan%s", &name[7]);
 				found = 1;
 			}
-			char *next;
+			const char *next;
 			slen = (strlen(value) * 2) + 1;
 			char *newvalue = malloc(slen);
 			char *entry = malloc(strlen(value) + 1);
@@ -3526,7 +3526,7 @@ void start_nvram(void)
 		free(buf);
 
 		char word[256];
-		char *next, *wordlist;
+		const char *next, *wordlist;
 		wordlist = nvram_safe_get("bridgesif");
 		size_t slen = strlen(wordlist) * 2 + 1;
 		char *newwordlist = malloc(slen);
@@ -3667,7 +3667,7 @@ void start_nvram(void)
 	if (nvram_geti("nvram_ver") < 6) {
 		nvram_seti("nvram_ver", 6);
 		nvram_seti("portvlan_count", 16);
-		char *next;
+		const char *next;
 		char var[32];
 		int i;
 		for (i = 0; i < 7; i++) {

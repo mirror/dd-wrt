@@ -35,7 +35,7 @@ static void _show_ruleif(webs_t wp, int argc, char_t **argv, char *page, char *r
 {
 	int which;
 	char word[256];
-	char *next = NULL;
+	const char *next = NULL;
 	char ifnamecopy[32];
 	char bufferif[512];
 
@@ -105,7 +105,7 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t **argv)
 	char *arg;
 	int which, count;
 	char word[256];
-	char *next, *page;
+	const char *next, *page;
 	char name[50] = "";
 	char new_name[200];
 	arg = argv[0];
@@ -253,7 +253,7 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t **argv)
 	char *arg;
 	int which, count;
 	char word[256];
-	char *next, *page;
+	const char *next, *page;
 	char name[50] = "";
 	char new_name[200];
 	arg = argv[0];
@@ -515,7 +515,8 @@ EJ_VISIBLE void ej_static_route_table(webs_t wp, int argc, char_t **argv)
 	int i, page, tmp = 0;
 	int which;
 	char *type;
-	char word[256], *next;
+	char word[256];
+	const char *next;
 	if (argc < 1)
 		return;
 	type = argv[0];
@@ -560,7 +561,7 @@ EJ_VISIBLE void ej_pbr_rule_table(webs_t wp, int argc, char_t **argv)
 	int i, page, tmp = 0;
 	int which;
 	char *type;
-	char word[256], *next;
+	char word[256];const char *next;
 	if (argc < 1)
 		return;
 	type = argv[0];

@@ -26,7 +26,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 	int count = 0;
 	int br0found = 0;
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 	char *stp = word;
 	char *bridge, *prio, *mtu, *mcast, *mac;
 	char bridge_name[32];
@@ -341,7 +341,7 @@ EJ_VISIBLE void ej_show_bridgeifnames(webs_t wp, int argc, char_t **argv)
 	int count = 0;
 	int c = 0;
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 	bzero(bufferif, 512);
 	bzero(finalbuffer, 512);
 	getIfList(bufferif, NULL);

@@ -288,7 +288,7 @@ void chilli_config(void)
 	FILE *fp;
 	int i;
 	char *dnslist;
-	char *next;
+	const char *next;
 	char var[64];
 
 #ifdef HAVE_CHILLILOCAL
@@ -422,7 +422,7 @@ void chilli_config(void)
 void hotspotsys_config(void)
 {
 	FILE *fp;
-	char *next;
+	const char *next;
 	char var[64];
 	char *dnslist;
 	int i;

@@ -23,10 +23,10 @@ EJ_VISIBLE void ej_show_ipvsassignments(webs_t wp, int argc, char_t **argv)
 {
 	int count = 0;
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 
 	char tword[256];
-	char *tnext, *twordlist;
+	const char *tnext, *twordlist;
 	char *ipvsname, *targetip, *targetport, *targetweight, *targetnat;
 	char ipvs_name[32];
 	char buf[128];
@@ -154,7 +154,7 @@ EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t **argv)
 {
 	int count = 0;
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 	char *ipvsname, *sourceip, *sourceport, *scheduler, *sourceproto;
 	char ipvs_name[32];
 	char buf[128];

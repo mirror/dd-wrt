@@ -33,7 +33,7 @@ void stop_ipvs(void);
 void start_ipvs(void)
 {
 	char word[256];
-	char *next, *wordlist;
+	const char *next, *wordlist;
 	int first = 0;
 
 	char tword[256];

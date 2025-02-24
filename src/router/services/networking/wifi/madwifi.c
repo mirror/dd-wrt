@@ -81,7 +81,7 @@ static void setdistance(char *device, int distance, int chanbw)
 
 static void deconfigure_single(int count)
 {
-	char *next;
+	const char *next;
 	char dev[16];
 	char var[80];
 	char wifivifs[16];
@@ -265,7 +265,7 @@ void get_pairwise(const char *prefix, char *pwstring, char *grpstring, int isadh
 	}
 	/* remove duplicates and recreate group string */
 	if (grpstring) {
-		char *next;
+		const char *next;
 		char var[32];
 		foreach(var, temp_grpstring, next)
 		{
@@ -1059,7 +1059,7 @@ static void checkhostapd(char *ifname, int force)
 				}
 				char *fstrarr[2] = { fstr, NULL };
 				do_hostapd(fstrarr, ifname);
-				char *next;
+				const char *next;
 				char var[80];
 				if (!nvram_nmatch("sta", "%s_mode", ifname)) {
 					char bridged[32];
@@ -1090,7 +1090,7 @@ static void checkhostapd(char *ifname, int force)
 
 static void s_checkhostapd(int force)
 {
-	char *next, *vifs;
+	const char *next, *vifs;
 	char wifivifs[32];
 	char var[80];
 	int c = getdevicecount();
@@ -1321,7 +1321,7 @@ void start_ses_led_control(void)
 {
 	char ath[32];
 	char net[32];
-	char *next;
+	const char *next;
 	char var[80];
 	char akm[16];
 	int c = getdevicecount();
@@ -1776,7 +1776,7 @@ void setupHostAP(const char *prefix, char *driver, int iswan)
 void start_hostapdwan(void)
 {
 	/*	char ath[32];
-	char *next;
+	const char *next;
 	char var[80];
 	int c = getdevicecount();
 	int i;
@@ -1802,7 +1802,7 @@ void start_hostapdwan(void)
 static void set_scanlist(char *dev, char *wif)
 {
 	char var[32];
-	char *next;
+	const char *next;
 	struct iwreq iwr;
 	char scanlist[32];
 	char list[64];
@@ -2018,7 +2018,7 @@ static void setRTS(char *use)
 */
 static void setMacFilter(char *iface)
 {
-	char *next;
+	const char *next;
 	char var[32];
 
 	eval("iwpriv", iface, "maccmd", "3");
@@ -2055,7 +2055,7 @@ int iscpe(void);
 
 static void configure_single(int count, char **configs, int *configidx)
 {
-	char *next;
+	const char *next;
 	char var[80];
 	char mode[80];
 	int cnt = 0;
@@ -2840,7 +2840,7 @@ static void configure_single(int count, char **configs, int *configidx)
 
 void start_vifs(void)
 {
-	char *next;
+	const char *next;
 	char var[80];
 	char *vifs;
 	char mode[32];
@@ -2885,7 +2885,7 @@ void start_vifs(void)
 
 void stop_vifs(void)
 {
-	char *next;
+	const char *next;
 	char var[80];
 	char *vifs;
 	char mode[32];

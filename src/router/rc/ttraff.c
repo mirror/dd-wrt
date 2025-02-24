@@ -53,7 +53,7 @@ static int checkbuffer(char **buffer, char *var, int buffersize)
 
 void write_to_nvram(int day, int month, int year, unsigned long long rcvd, unsigned long long sent)
 {
-	char *next;
+	const char *next;
 	char var[80];
 	char tq[32];
 	char temp[64] = "";

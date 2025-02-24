@@ -515,7 +515,7 @@ void rpc_update_macmode(const char *mac_address_filtering)
 		dbG("rpc_qcsapi_set_mac_address_filtering %s error, return: %d\n", WIFINAME, ret);
 	}
 
-	char *next;
+	const char *next;
 	char var[80];
 	char *vifs = nvram_safe_get("wl1_vifs");
 	foreach(var, vifs, next)
@@ -1335,7 +1335,7 @@ void rpc_update_wlmaclist(void)
 	if (ret < 0)
 		dbG("rpc_qcsapi_set_wlmaclist %s error, return: %d\n", WIFINAME, ret);
 
-	char *next;
+	const char *next;
 	char var[80];
 	char *vifs = nvram_safe_get("wl1_vifs");
 	foreach(var, vifs, next)

@@ -253,7 +253,7 @@ static int internal_eval_va(int silence, int space, const char *cmd, va_list arg
 	while (1) {
 		const char *arg = va_arg(args, const char *);
 		char word[128];
-		char *next;
+		const char *next;
 		if (!arg || !space)
 			s_args[i++] = arg;
 		else {
@@ -807,7 +807,8 @@ int osifname_to_nvifname(const char *osifname, char *nvifname_buf, int nvifname_
 
 int strhas(char *list, char *value)
 {
-	char *next, word[32];
+	const char *next;
+	char word[32];
 
 	if (!list)
 		return 0;
@@ -1240,7 +1241,7 @@ int dd_sprintf(char *str, const char *fmt, ...)
 	return n;
 }
 
-static void strcpyto(char *dest, char *src, char *delim, size_t max)
+static void strcpyto(char *dest, const char *src, char *delim, size_t max)
 {
 	int len = strlen(src);
 	char *to = strpbrk(src, delim);
@@ -1262,15 +1263,15 @@ char *chomp(char *s)
 	return s;
 }
 
-char *foreach_first(char *foreachwordlist, char *word, char *delimiters, size_t len)
+const char *foreach_first(const char *foreachwordlist, char *word, char *delimiters, size_t len)
 {
-	char *next = &foreachwordlist[strspn(foreachwordlist, delimiters)];
+	const char *next = &foreachwordlist[strspn(foreachwordlist, delimiters)];
 	strcpyto(word, next, delimiters, len);
 	next = strpbrk(next, delimiters);
 	return next;
 }
 
-char *foreach_last(char *next, char *word, char *delimiters, size_t len)
+const char *foreach_last(const char *next, char *word, char *delimiters, size_t len)
 {
 	next = next ? &next[strspn(next, delimiters)] : "";
 	strcpyto(word, next, delimiters, len);

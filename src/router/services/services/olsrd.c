@@ -117,7 +117,7 @@ void start_olsrd(void)
 		fprintf(fp, "}\n");
 
 		char *wordlist = nvram_safe_get("olsrd_interfaces");
-		char *next;
+		const char *next;
 		char word[128];
 
 		foreach(word, wordlist, next)
