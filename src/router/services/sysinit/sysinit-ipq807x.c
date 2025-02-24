@@ -1765,7 +1765,6 @@ void start_wifi_drivers(void)
 		case ROUTER_LINKSYS_MX4300:
 		case ROUTER_LINKSYS_MX8500:
 		case ROUTER_LINKSYS_MX5300:
-		case ROUTER_LINKSYS_MR7500:
 			profile = 1024;
 			nvram_set("mem_profile", "1024");
 			break;
@@ -1775,8 +1774,6 @@ void start_wifi_drivers(void)
 		switch (brand) {
 		case ROUTER_LINKSYS_MR5500:
 		case ROUTER_LINKSYS_MX5500:
-			profile = 1024;
-			nvram_set("mem_profile", "1024");
 			if (frame_mode == 2)
 				frame_mode = 1;
 			load_ath11k_internal(profile, 1, 0, frame_mode, "");
