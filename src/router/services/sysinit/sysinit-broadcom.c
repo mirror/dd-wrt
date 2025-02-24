@@ -2965,7 +2965,8 @@ void start_sysinit(void)
 
 	snprintf(buf, sizeof(buf), "/lib/modules/%s", name.release);
 	if (stat("/proc/modules", &tmp_stat) == 0 && stat(buf, &tmp_stat) == 0) {
-		char module[80], *modules = "";const char *next;
+		char module[80], *modules = "";
+		const char *next;
 
 #ifdef HAVE_ACK
 		nvram_seti("portprio_support",
@@ -3229,7 +3230,8 @@ void start_sysinit(void)
 	char vlan1buf[64];
 	char *vlan2 = brcm_to_swconfig(v2, vlan2buf);
 	char *vlan1 = brcm_to_swconfig(v1, vlan1buf);
-	char var[32];const char *next;
+	char var[32];
+	const char *next;
 	int port = 0;
 	int wanport = 0;
 	foreach(var, vlan2, next)

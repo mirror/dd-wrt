@@ -453,7 +453,7 @@ static int use_nss_11_4(int setcur)
 	for (count = 0; count < 3; count++) {
 		char wifivifs[32];
 		char base[32];
-		sprintf(base,"wlan%d",count);
+		sprintf(base, "wlan%d", count);
 		if (!is_ath11k(base))
 			continue;
 		sprintf(wifivifs, "wlan%d_vifs", count);
@@ -489,7 +489,7 @@ int nss_disabled(int setcur)
 	for (count = 0; count < 3; count++) {
 		char wifivifs[32];
 		char base[32];
-		sprintf(base,"wlan%d",count);
+		sprintf(base, "wlan%d", count);
 		if (!is_ath11k(base))
 			continue;
 		sprintf(wifivifs, "wlan%d_vifs", count);

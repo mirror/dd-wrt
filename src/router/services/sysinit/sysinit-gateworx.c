@@ -423,7 +423,8 @@ void start_sysinit(void)
 #endif
 
 #ifdef HAVE_STATUS_GPIO
-	char *var;const char *next;
+	char *var;
+	const char *next;
 	char *gpio_value;
 	char nvgpio[32];
 	int gpio_need_commit = 0;
