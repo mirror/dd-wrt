@@ -1340,6 +1340,14 @@ void stop_qos(void)
 	getIfList(eths2, "rb");
 	strcat(eths, " ");
 	strcat(eths, eths2);
+	bzero(eths2, 512);
+	getIfList(eths2, "lan");
+	strcat(eths, " ");
+	strcat(eths, eths2);
+	bzero(eths2, 512);
+	getIfList(eths2, "wan");
+	strcat(eths, " ");
+	strcat(eths, eths2);
 
 	char *next;
 	char var[80];

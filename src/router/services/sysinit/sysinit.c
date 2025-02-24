@@ -1163,19 +1163,19 @@ void start_restore_defaults(void)
 	struct nvram_param *generic = NULL;
 
 	struct nvram_param wrt1900[] = { { "lan_ifname", "br0" },
-					 { "lan_ifnames", "eth0 eth1 wlan0 wlan1" },
-					 { "wan_ifname", "eth1" },
-					 { "wan_ifname2", "eth1" },
-					 { "wan_ifnames", "eth1" },
-					 { "wan_default", "eth1" },
+					 { "lan_ifnames", "wan lan1 lan2 lan3 lan4 wlan0 wlan1" },
+					 { "wan_ifname", "wan" },
+					 { "wan_ifname2", "wan" },
+					 { "wan_ifnames", "wan" },
+					 { "wan_default", "wan" },
 					 { 0, 0 } };
 
 	struct nvram_param wrt1200[] = { { "lan_ifname", "br0" },
-					 { "lan_ifnames", "eth1 eth0 wlan0 wlan1" },
-					 { "wan_ifname", "eth0" },
-					 { "wan_ifname2", "eth0" },
-					 { "wan_ifnames", "eth0" },
-					 { "wan_default", "eth0" },
+					 { "lan_ifnames", "wan lan1 lan2 lan3 lan4 wlan0 wlan1" },
+					 { "wan_ifname", "wan" },
+					 { "wan_ifname2", "wan" },
+					 { "wan_ifnames", "wan" },
+					 { "wan_default", "wan" },
 					 { 0, 0 } };
 	int wrt_brand = getRouterBrand();
 	if (wrt_brand == ROUTER_WRT_1900AC)
