@@ -176,21 +176,13 @@ void start_sysinit(void)
 		writestr("/sys/class/leds/venom\\:blue\\:sata/trigger", "disk-activity");
 	}
 
-	nvram_seti("sw_wancpuport", 5);
-	nvram_seti("sw_lancpuport", 6);
-	nvram_seti("sw_wan", 4);
-	nvram_seti("sw_lan1", 3);
-	nvram_seti("sw_lan2", 2);
-	nvram_seti("sw_lan3", 1);
-	nvram_seti("sw_lan4", 0);
-	nvram_default_geti("port0vlans", 2);
-	nvram_default_geti("port1vlans", 1);
-	nvram_default_geti("port2vlans", 1);
-	nvram_default_geti("port3vlans", 1);
-	nvram_default_geti("port4vlans", 1);
-
-	nvram_default_get("port5vlans", "2 18000 19000 20000");
-	nvram_default_get("port6vlans", "1 18000 19000 20000");
+	nvram_unset("sw_wancpuport");
+	nvram_unset("sw_lancpuport");
+	nvram_unset("sw_wan");
+	nvram_unset("sw_lan1");
+	nvram_unset("sw_lan2");
+	nvram_unset("sw_lan3");
+	nvram_unset("sw_lan4");
 
 	return;
 }
