@@ -219,7 +219,7 @@ char *getSTA(void)
 	if (nvram_match("ofdm_mode", "sta"))
 		return "ofdm";
 #endif
-	int c = getdevicecount();
+	int c = ARRAY_SIZE(stalist);
 	int i;
 
 	for (i = 0; i < c; i++) {
@@ -236,7 +236,7 @@ char *getWET(void)
 	if (nvram_match("ofdm_mode", "bridge"))
 		return "ofdm";
 #endif
-	int c = getdevicecount();
+	int c = ARRAY_SIZE(stalist);
 	int i;
 
 	for (i = 0; i < c; i++) {
