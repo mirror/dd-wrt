@@ -807,13 +807,10 @@ void start_lan(void)
 		nvram_set("wan_default", "wan");
 	}
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr", get_hwaddr("wan", macaddr));
+		nvram_set("et0macaddr", get_hwaddr("lan1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 	MAC_ADD(mac);
-	set_hwaddr("lan1", mac);
-	set_hwaddr("lan2", mac);
-	set_hwaddr("lan3", mac);
-	set_hwaddr("lan4", mac);
+	set_hwaddr("wan", mac);
 #elif HAVE_R9000
 	nvram_setz(lan_ifnames, "eth0 vlan1 vlan2 wlan0 wlan1");
 	if (getSTA() || getWET() || CANBRIDGE()) {

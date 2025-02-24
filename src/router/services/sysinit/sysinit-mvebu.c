@@ -132,8 +132,12 @@ void start_sysinit(void)
 				nvram_set("et0macaddr", mac);
 				nvram_set("et0macaddr_safe", mac);
 				set_hwaddr("eth0", mac);
+				set_hwaddr("lan1", mac);
+				set_hwaddr("lan2", mac);
+				set_hwaddr("lan3", mac);
+				set_hwaddr("lan4", mac);
 				MAC_ADD(mac);
-				set_hwaddr("eth1", mac);
+				set_hwaddr("wan", mac);
 			}
 		}
 		fclose(fp);
@@ -208,7 +212,7 @@ void start_overclocking(void)
 
 char *enable_dtag_vlan(int enable)
 {
-	return "eth0";
+	return "wan";
 }
 
 char *set_wan_state(int state)
