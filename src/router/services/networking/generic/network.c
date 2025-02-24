@@ -508,7 +508,8 @@ void run_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int leas
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 static int enable_dhcprelay(char *ifname)
 {
-	char name[80];const char *next;
+	char name[80];
+	const char *next;
 #ifdef HAVE_DHDAP
 	int is_dhd;
 #endif /* __CONFIG_DHDAP__ */
@@ -2904,7 +2905,8 @@ void stop_lan(void)
 
 int wan_valid(char *ifname)
 {
-	char name[80];const char *next;
+	char name[80];
+	const char *next;
 
 	foreach(name, nvram_safe_get("wan_ifnames"), next) if (ifname && !strcmp(ifname, name)) return 1;
 
@@ -4904,7 +4906,8 @@ static void apply_rules(char *method, char *pbr)
 
 void start_set_routes(void)
 {
-	char word[512];const char *tmp;
+	char word[512];
+	const char *tmp;
 
 	if (!nvram_match("lan_gateway", "0.0.0.0")) {
 		eval("route", "del", "default");

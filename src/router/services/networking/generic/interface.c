@@ -525,8 +525,7 @@ void start_setup_vlans(void)
 
 	int i, j, ret = 0, tmp, workaround = 0, found;
 	char *vlans;
-	const char *next
-	char vlan[32], buff[70], buff2[16];
+	const char *next char vlan[32], buff[70], buff2[16];
 	FILE *fp;
 	char **portsettings = malloc(sizeof(char **) * (blen + 2));
 	for (i = 0; i < blen + 2; i++) {
@@ -712,7 +711,8 @@ void start_setup_vlans(void)
 
 int flush_interfaces(void)
 {
-	char all_ifnames[256] = { 0 }, *c;const char *next;
+	char all_ifnames[256] = { 0 }, *c;
+	const char *next;
 	char buff[128], buff2[128];
 
 #ifdef HAVE_MADWIFI
@@ -753,7 +753,8 @@ int flush_interfaces(void)
 #elif HAVE_UNIWIP
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_MVEBU
-	snprintf(all_ifnames, 255, "%s %s %s", "wan lan1 lan2 lan3 lan4", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "wan lan1 lan2 lan3 lan4", nvram_safe_get("lan_ifnames"),
+		 nvram_safe_get("wan_ifnames"));
 #elif HAVE_R9000
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0 vlan1 vlan2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_IPQ806X

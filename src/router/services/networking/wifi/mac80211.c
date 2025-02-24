@@ -269,7 +269,8 @@ void mesh_params_main(int argc, char *argv[])
 	ENTER;
 	int c = getdevicecount();
 	char dev[32];
-	char var[32];const char *next;
+	char var[32];
+	const char *next;
 	int i;
 	for (i = 0; i < c; i++) {
 		sprintf(dev, "wlan%d", i);
