@@ -1069,7 +1069,8 @@ void waitfordead(const char *procname, int maxtime)
 	}
 }
 
-void dd_daemon(void) {
+void dd_daemon(void)
+{
 	if (daemon(1, 0)) {
 		perror("daemonize failed");
 		exit(1);
@@ -1761,18 +1762,26 @@ static unsigned long getmeminfo(int linenr)
 {
 	FILE *fmem = fopen("/proc/meminfo", "r");
 	char line[128];
-	unsigned long msize = 0;
+	unsigned long total, used, free;
 	int i;
 	if (fmem != NULL) {
 		fgets(line, sizeof(line), fmem);
 		while (linenr--) {
 			fgets(line, sizeof(line), fmem);
 		}
-		if (sscanf(line, "%*s %lu", &msize) != 1) {
-			msize = 0;
+		if (sscanf(line, "%*s %lu %lu %lu", &total, &used, &free) != 1) {
+			total = 0;
+			used = 0;
+			free = 0;
 		}
 		fclose(fmem);
 	}
+	if (linenr == 0)
+		return total;
+	if (linenr == 1)
+		return used;
+	if (linenr == 2)
+		return free;
 	return msize;
 }
 long getmemfree(void)
@@ -1781,7 +1790,7 @@ long getmemfree(void)
 }
 long getmemtotal(void)
 {
-	return getmeminfo(1);
+	return getmeminfo(0);
 }
 
 #ifdef MEMDEBUG
