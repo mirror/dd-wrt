@@ -1766,10 +1766,9 @@ static unsigned long getmeminfo(int linenr)
 	int i;
 	if (fmem != NULL) {
 		fgets(line, sizeof(line), fmem);
-		while (linenr--) {
-			fgets(line, sizeof(line), fmem);
-		}
-		if (sscanf(line, "%*s %lu %lu %lu", &total, &used, &free) != 1) {
+		fgets(line, sizeof(line), fmem);
+		int l = sscanf(line, "%*s %lu %lu %lu", &total, &used, &free);
+		if (l != 3) {
 			total = 0;
 			used = 0;
 			free = 0;
@@ -1782,7 +1781,7 @@ static unsigned long getmeminfo(int linenr)
 		return used;
 	if (linenr == 2)
 		return free;
-	return msize;
+	return 0;
 }
 long getmemfree(void)
 {
