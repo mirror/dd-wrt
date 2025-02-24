@@ -645,17 +645,12 @@
 			reg = <0x00010000 0 0 0 0>;
 
 			qcom,ath11k-calibration-variant = "Linksys-MR7500";
-			qcom,ath11k-fw-memory-mode = <0>;
+			qcom,ath11k-fw-memory-mode = <1>;
 			hremote_node = <&qcn9000_pcie0>;
-/*			qcom,m3-dump-addr = <0x4F800000>;
+			qcom,m3-dump-addr = <0x4F800000>;
 			qcom,caldb-addr = <0x4F200000>;
 			qcom,caldb-size = <0x800000>;
-			qcom,pageable-addr = <0x4FA00000>;*/
-
-			qcom,m3-dump-addr = <0x50700000>;
-			qcom,caldb-addr = <0x50900000>;
-			qcom,caldb-size = <0x800000>;
-			qcom,pageable-addr = <0x51100000>;
+			qcom,pageable-addr = <0x4FA00000>;
 		};
 	};
 };

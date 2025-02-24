@@ -108,13 +108,13 @@
 
 		qcn9000_pcie0: qcn9000_pcie0@4cb00000 {
 			no-map;
-			reg = <0x0 0x4Cb00000 0x0 0x03500000>;
+			reg = <0x0 0x4Cb00000 0x0 0x01a00000>;
 		};
 		
 		mhi_region1: dma_pool1@4e500000 {
 			compatible = "shared-dma-pool";
 			no-map;
-			reg = <0x0 0x50000000 0x0 0x00500000>;
+			reg = <0x0 0x4e500000 0x0 0x00500000>;
 		};
 
 	};
@@ -758,12 +758,12 @@
 			compatible = "pci17cb,1104";
 			reg = <0x00010000 0 0 0 0>;
 			hremote_node = <&qcn9000_pcie0>;
-			qcom,ath11k-fw-memory-mode = <0>;
-			qcom,m3-dump-addr = <0x4EE00000>;
-			qcom,caldb-addr = <0x4F000000>;
+			qcom,ath11k-fw-memory-mode = <1>;
+			qcom,m3-dump-addr = <0x4D700000>;
+			qcom,caldb-addr = <0x4D900000>;
 			qcom,caldb-size = <0x800000>;
-			qcom,pageable-addr = <0x4F800000>;
-			qcom,pageable-size = <0x800000>;
+			qcom,pageable-addr = <0x4E100000>;
+			qcom,pageable-size = <0x400000>;
 
 			qcom,ath11k-calibration-variant = "Linksys-MX5500";
 		};
