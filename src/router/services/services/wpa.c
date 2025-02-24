@@ -316,7 +316,8 @@ static void start_nas_wan(int c)
 static void stop_nas_process(void)
 {
 	int ret = 0;
-	char name[80];const char *next;
+	char name[80];
+	const char *next;
 
 	unlink("/tmp/.nas");
 
@@ -669,7 +670,8 @@ static void start_nas_single(char *type, char *prefix)
 void stop_nas(void)
 {
 	int ret = 0;
-	char name[80];const char *next;
+	char name[80];
+	const char *next;
 	FILE *check = fopen("/tmp/.startnas", "rb");
 	if (check) {
 		fclose(check);

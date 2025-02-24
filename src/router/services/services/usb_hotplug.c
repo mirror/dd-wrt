@@ -451,7 +451,8 @@ static int usb_add_ufd(char *devpath)
 	char path[128];
 	char *fs = NULL;
 	int is_part = 0;
-	char part[10], *partitions;const char *next;
+	char part[10], *partitions;
+	const char *next;
 	struct stat tmp_stat;
 	int i, found = 0;
 	int mounted[16];

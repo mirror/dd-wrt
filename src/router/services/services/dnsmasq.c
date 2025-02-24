@@ -639,7 +639,8 @@ void start_dnsmasq(void)
 		}
 		char vifs[256];
 		getIfLists(vifs, 256);
-		char var[256], *wordlist;const char *next;
+		char var[256], *wordlist;
+		const char *next;
 		foreach(var, vifs, next)
 		{
 			if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
@@ -659,7 +660,8 @@ void start_dnsmasq(void)
 		}
 		char vifs[256];
 		getIfLists(vifs, 256);
-		char var[256], *wordlist;const char *next;
+		char var[256], *wordlist;
+		const char *next;
 		foreach(var, vifs, next)
 		{
 			if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {

@@ -41,7 +41,8 @@ static int zebra_ripd_init(void);
 static int zebra_init(void)
 {
 	char *sub;
-	char var[32];const char *next;
+	char var[32];
+	const char *next;
 	char daemons[64];
 	int services = 0;
 	int has_ospfd = 0, has_ospf6d = 0, has_bgpd = 0, has_ripd = 0;
