@@ -1137,9 +1137,9 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort, 
 					sort = realloc(sort, (sortcount + cnt + 2) * sizeof(char **));
 					memcpy(&sort[sortcount], presort, cnt + 1);
 					sortcount += cnt;
-					cnt=0;
-					while(presort[cnt])
-					    free(presort[cnt++]);
+					cnt = 0;
+					while (presort[cnt])
+						free(presort[cnt++]);
 					free(presort);
 				}
 			}
