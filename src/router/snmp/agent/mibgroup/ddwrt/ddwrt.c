@@ -1138,7 +1138,7 @@ int get_minmaxrates_madwifi(char *ifname, int maxrate)
 
 void ddxrWlStatTable_madwifi()
 {
-	char *next;
+	const char *next;
 	char *mac;
 	// struct ether_addr *mac;
 	char var[32];
@@ -1375,7 +1375,7 @@ void set_ddxrWlRtabAntennaname(struct ddWlRtabTable_entry *entry, char *var)
 
 void ddWlRtabTable_madwifi()
 {
-	char *next;
+	const char *next;
 	char var[32];
 	char temp[32];
 	int count;
