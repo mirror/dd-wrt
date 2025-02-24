@@ -50,7 +50,6 @@ static struct bcj bcj[] = { { "x86", LZMA_FILTER_X86, 0, 0 },
 			    { "delta-4", LZMA_FILTER_DELTA, 0, 4 },
 			    { "delta-8", LZMA_FILTER_DELTA, 0, 8 },
 			    { "delta-16", LZMA_FILTER_DELTA, 0, 16 },
-			    { "armbe", LZMA_FILTER_ARMBE, 0, 0 },
 			    { NULL, LZMA_VLI_UNKNOWN, 0 } };
 
 static int filter_count = 1;
@@ -298,7 +297,7 @@ static int xz_init(void **strm, int block_size, int datablock)
 			if (filter[j].buffer == NULL)
 				goto failed3;
 			filter[j].filter[0].id = bcj[i].id;
-			if (i >= 10) {
+			if (i >= 9) {
 				lzma_options_delta *opt = malloc(sizeof(lzma_options_delta));
 				memset(opt, 0, sizeof(*opt));
 				opt->type = LZMA_DELTA_TYPE_BYTE;
@@ -519,23 +518,24 @@ static int checkparameters(struct xz_stream *stream, char *src, int len, int *pb
 		in = opendatabase("rb");
 		if (!in) {
 			pthread_spin_unlock(&p_mutex);
-//			fprintf(stderr, "open fail\n");
+			db_filters = stream->filters;
 			return -1;
 		}
 		fseek(in, 0, SEEK_END);
 		dblen = ftell(in) - 2;
-		if (dblen > 1024 * 1024) {
+		if (dblen > 1024 * 1024 * 10) {
 			fclose(in);
+			fprintf(stderr, "db oversize, unlink\n");
 			unlinkdatabase();
+			db_filters = stream->filters;
 			pthread_spin_unlock(&p_mutex);
-//			fprintf(stderr, "oversize\n");
 			return -1;
 		}
 
 		if (!dblen) {
 			fclose(in);
-//			fprintf(stderr, "zero len\n");
 			pthread_spin_unlock(&p_mutex);
+			db_filters = stream->filters;
 			return -1;
 		}
 
@@ -543,22 +543,21 @@ static int checkparameters(struct xz_stream *stream, char *src, int len, int *pb
 		rewind(in);
 		if (!db) {
 			fclose(in);
-//			fprintf(stderr, "malloc fail\n");
 			pthread_spin_unlock(&p_mutex);
+			db_filters = stream->filters;
 			return -1;
 		}
 		int version = getc(in);
 		db_filters = getc(in);
 		if (version != DBVERSION || db_filters != stream->filters) {
 			fclose(in);
+			fprintf(stderr, "invalid version or filters, unlink %d %d %d\n",version != DBVERSION, db_filters, stream->filters);
 			unlinkdatabase();
 			dblen = 0;
 			pthread_spin_unlock(&p_mutex);
 			db_filters = stream->filters;
-//			fprintf(stderr, "db unmatch\n");
 			return -1;
 		}
-//		fprintf(stderr, "read db %d\n", dblen);
 		fread(db, dblen, 1, in);
 		fclose(in);
 	}
@@ -570,12 +569,10 @@ static int checkparameters(struct xz_stream *stream, char *src, int len, int *pb
 			*lp = db[i].lp;
 			*fail = db[i].fail;
 			*filterid = db[i].filterid;
-//			fprintf(stderr, "matched\n");
 			pthread_spin_unlock(&p_mutex);
 			return 0;
 		}
 	}
-//	fprintf(stderr, "unmatch\n");
 	pthread_spin_unlock(&p_mutex);
 	return -1;
 }

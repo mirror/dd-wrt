@@ -3704,7 +3704,7 @@ void sort_directory(struct dir_info *dir)
 			 * Merge them onto the output list
 			 */
 			while(len1 && l2 && len2) {
-				if(mkstrcmp(l1->name, l2->name) <= 0) {
+				if(strcmp(l1->name, l2->name) <= 0) {
 					next = l1;
 					l1 = l1->next;
 					len1 --;

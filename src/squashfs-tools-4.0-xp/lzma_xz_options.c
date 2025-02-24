@@ -281,8 +281,8 @@ int lzma_xz_extract_options(int block_size, void *buffer, int size, int lzmaver)
 {
 	if (size == 0) {
 		/* default options */
-		options.preset = 6;
-		options.extreme = 0;
+		options.preset = 9;
+		options.extreme = 1;
 		options.lc = LZMA_OPT_LC_DEFAULT;
 		options.lp = LZMA_OPT_LC_DEFAULT;
 		options.pb = LZMA_OPT_PB_DEFAULT;
