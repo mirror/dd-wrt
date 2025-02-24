@@ -68,7 +68,7 @@ int authmac(unsigned char *mac)
 		char *collection = nvram_get_collection("iradius");
 		if (collection != NULL) {
 			char entry[32];
-			char *next;
+			const char *next;
 			int c = 0;
 			char smac[32];
 			memset(smac, 0, 32);
