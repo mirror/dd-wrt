@@ -1047,11 +1047,11 @@ int getIfByIdx(char *ifname, int index)
 
 // returns a physical interfacelist filtered by ifprefix. if ifprefix is
 // NULL, all valid interfaces will be returned
-static char **_getIfListB(const char *ifprefix, int bridgesonly, int noports)
+static char **_getIfListB(const char *ifprefix, int bridgesonly, int noports, int *cnt)
 {
 	FILE *in = fopen("/proc/net/dev", "rb");
 	if (!in)
-		return 0;
+		return NULL;
 	char *ignorelist[] = { "wifi", "ifb", "imq", "etherip", "lo",	  "teql",   "gre",   "ppp",
 			       "aux",  "ctf", "tap", "sit",	"ip6tnl", "miireg", "nssifb" };
 	char ifname[32];
@@ -1095,11 +1095,10 @@ static char **_getIfListB(const char *ifprefix, int bridgesonly, int noports)
 				if (!sort) {
 					sort = malloc(sizeof(char *));
 				} else {
-					sort = realloc(sort, sizeof(char **) * (count + 2));
+					sort = realloc(sort, sizeof(char **) * (count + 1));
 				}
 				sort[count] = malloc(strlen(ifname) + 1);
 				strcpy(sort[count], ifname);
-				sort[count + 1] = NULL;
 				count++;
 			}
 			skip = 0;
@@ -1112,7 +1111,7 @@ static char **_getIfListB(const char *ifprefix, int bridgesonly, int noports)
 			ifname[ifcount++] = c;
 	}
 sort:;
-
+	*cnt = count;
 	return sort;
 }
 int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort, int noports)
@@ -1122,50 +1121,47 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort, 
 	char **sort = NULL;
 	int count = 0;
 	int sortcount = 0;
+	int cnt = 0;
 	if (ifprefix) {
 		foreach(word, ifprefix, next)
 		{
-			char **presort = _getIfListB(ifprefix, bridgesonly, noports);
+			char **presort = _getIfListB(word, bridgesonly, noports, &cnt);
 			if (presort) {
-				int cnt = 0;
-				while (presort[cnt++])
-					;
 				if (!sort) {
 					sort = presort;
 					sortcount = cnt;
-				} else {
-					sort = realloc(sort, (sortcount + cnt + 2) * sizeof(char **));
-					memcpy(&sort[sortcount], presort, cnt + 1);
+				} else 
+				{
+					sort = realloc(sort, (sortcount + cnt + 1) * sizeof(char **));
+					int i;
+					memcpy(&sort[sortcount],presort, cnt*sizeof(char**));
 					sortcount += cnt;
-					cnt = 0;
-					while (presort[cnt])
-						free(presort[cnt++]);
 					free(presort);
 				}
 			}
 		}
 	} else {
-		sort = _getIfListB(ifprefix, bridgesonly, noports);
+		sort = _getIfListB(ifprefix, bridgesonly, noports, &sortcount);
 	}
 	if (!sort)
 		return 0;
 
-	if (!nosort && count &&
+	if (!nosort && sortcount &&
 	    sort) { // if ifprefix doesnt match to any interface, sort might be NULL here, so check this condition
-		qsort(sort, count, sizeof(char *), ifcompare);
+		qsort(sort, sortcount, sizeof(char *), ifcompare);
 	}
 	int i;
 	if (sort) {
-		while (sort[i]) {
+		for (i=0;i<sortcount;i++) {
 			strcat(buffer, sort[i]);
 			strcat(buffer, " ");
-			free(sort[i++]);
+			free(sort[i]);
 		}
 		free(sort);
-		count = i;
-		if (count)
+		if (sortcount)
 			buffer[strlen(buffer) - 1] = 0; // fixup last space
 	}
+	return sortcount;
 }
 
 /*
