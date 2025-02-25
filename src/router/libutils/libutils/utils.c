@@ -1130,11 +1130,10 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort, 
 				if (!sort) {
 					sort = presort;
 					sortcount = cnt;
-				} else 
-				{
+				} else {
 					sort = realloc(sort, (sortcount + cnt + 1) * sizeof(char **));
 					int i;
-					memcpy(&sort[sortcount],presort, cnt*sizeof(char**));
+					memcpy(&sort[sortcount], presort, cnt * sizeof(char **));
 					sortcount += cnt;
 					free(presort);
 				}
@@ -1152,7 +1151,7 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort, 
 	}
 	int i;
 	if (sort) {
-		for (i=0;i<sortcount;i++) {
+		for (i = 0; i < sortcount; i++) {
 			strcat(buffer, sort[i]);
 			strcat(buffer, " ");
 			free(sort[i]);
