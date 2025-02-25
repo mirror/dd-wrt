@@ -13,6 +13,7 @@
 #include "app/config/config.h"
 #include "lib/crypt_ops/crypto_format.h"
 #include "lib/crypt_ops/crypto_util.h"
+#include "lib/cc/torint.h"
 #include "feature/hs/hs_ident.h"
 #include "feature/hs/hs_common.h"
 #include "feature/hs/hs_client.h"
@@ -68,7 +69,7 @@ store_v3_desc_as_dir(hs_cache_dir_descriptor_t *desc)
 }
 
 /** Query our cache and return the entry or NULL if not found. */
-static hs_cache_dir_descriptor_t *
+STATIC hs_cache_dir_descriptor_t *
 lookup_v3_desc_as_dir(const uint8_t *key)
 {
   tor_assert(key);
@@ -224,6 +225,72 @@ cache_lookup_v3_as_dir(const char *query, const char **desc_out)
   return -1;
 }
 
+/** Clean the v3 cache by removing entries that are below or equal the
+ * downloaded target.
+ *
+ * Stop when the max_remove_bytes is reached. It is possible that more bytes
+ * are removed if max_remove_bytes is not aligned on cache entry size.
+ *
+ * Return the amount of bytes freed. The next_lowest param is set to the
+ * lowest n_downloaded value in the cache that is above target.
+ *
+ * If both next_lowest and returned value are 0, the cache is empty. */
+STATIC size_t
+cache_clean_v3_by_downloaded_as_dir(const uint64_t target,
+                                    const size_t max_remove_bytes,
+                                    uint64_t *next_lowest)
+{
+  size_t bytes_removed = 0;
+  uint64_t lowest = 0;
+
+  if (!hs_cache_v3_dir) { /* No cache to clean. Just return. */
+    goto end;
+  }
+
+  log_info(LD_REND, "Cleaning HS cache for downloaded target of %" PRIu64
+                    ". Maximum bytes to removed: %" TOR_PRIuSZ,
+           target, max_remove_bytes);
+
+  DIGEST256MAP_FOREACH_MODIFY(hs_cache_v3_dir, key,
+                              hs_cache_dir_descriptor_t *, entry) {
+    /* Downloaded counter is above target, ignore. Record next lowest. */
+    if (entry->n_downloaded > target) {
+      if (lowest == 0 || lowest > entry->n_downloaded) {
+        lowest = entry->n_downloaded;
+      }
+      continue;
+    }
+    /* We have removed enough, avoid cleaning this entry. Reason we continue
+     * the loop is so we can find the next lowest value. Yes, with many
+     * entries, this could be expensive but this is only called during OOM
+     * cleanup which should be fairly rare. */
+    if (bytes_removed >= max_remove_bytes) {
+      continue;
+    }
+    size_t entry_size = cache_get_dir_entry_size(entry);
+    /* Logging. */
+    {
+      char key_b64[BASE64_DIGEST256_LEN + 1];
+      digest256_to_base64(key_b64, (const char *) key);
+      log_info(LD_REND, "Removing v3 descriptor '%s' from HSDir cache. "
+                        "Downloaded %" PRIu64 " times and "
+                        "size of %" TOR_PRIuSZ " bytes",
+               safe_str_client(key_b64), entry->n_downloaded, entry_size);
+    }
+    /* Remove it from our cache. */
+    MAP_DEL_CURRENT(key);
+    bytes_removed += entry_size;
+    /* Entry is not in the cache anymore, destroy it. */
+    cache_dir_desc_free(entry);
+    /* Update our cache entry allocation size for the OOM. */
+    hs_cache_decrement_allocation(entry_size);
+  } DIGEST256MAP_FOREACH_END;
+
+ end:
+  *next_lowest = lowest;
+  return bytes_removed;
+}
+
 /** Clean the v3 cache by removing any entry that has expired using the
  * <b>global_cutoff</b> value. If <b>global_cutoff</b> is 0, the cleaning
  * process will use the lifetime found in the plaintext data section. Return
@@ -332,6 +399,22 @@ hs_cache_lookup_as_dir(uint32_t version, const char *query,
   }
 
   return found;
+}
+
+/** Using the given directory identifier, lookup the descriptor in our cache
+ * and if present, increment the downloaded counter. This is done when the
+ * directory connection fetching this descriptor is closed. */
+void
+hs_cache_mark_dowloaded_as_dir(const hs_ident_dir_conn_t *ident)
+{
+  hs_cache_dir_descriptor_t *entry;
+
+  tor_assert(ident);
+
+  entry = lookup_v3_desc_as_dir(ident->blinded_pk.pubkey);
+  if (entry) {
+    entry->n_downloaded++;
+  }
 }
 
 /** Clean all directory caches using the current time now. */
@@ -1071,45 +1154,28 @@ hs_cache_client_new_auth_parse(const ed25519_public_key_t *service_pk)
  * min_remove_bytes if the caches get emptied out so the caller should be
  * aware of this. */
 size_t
-hs_cache_handle_oom(time_t now, size_t min_remove_bytes)
+hs_cache_handle_oom(size_t min_remove_bytes)
 {
-  time_t k;
   size_t bytes_removed = 0;
+  /* The downloaded counter value to remove. Start at 0 and increment to the
+   * next lowest value in the cache. */
+  uint64_t target = 0;
 
   /* Our OOM handler called with 0 bytes to remove is a code flow error. */
   tor_assert(min_remove_bytes != 0);
 
-  /* The algorithm is as follow. K is the oldest expected descriptor age.
-   *
-   *   1) Deallocate all entries from v3 cache that are older than K hours
-   *      2.1) If the amount of remove bytes has been reached, stop.
-   *   2) Set K = K - 1 hour and repeat process until K is < 0.
-   *
-   * This ends up being O(Kn).
-   */
-
-  /* Set K to the oldest expected age in seconds which is the maximum
-   * lifetime of a cache entry. */
-  k = hs_cache_max_entry_lifetime();
-
+  /* Loop until we have an empty cache or we have removed enough bytes. */
   do {
-    time_t cutoff;
-
-    /* If K becomes negative, it means we've empty the caches so stop and
-     * return what we were able to cleanup. */
-    if (k < 0) {
+    /* This is valid due to the loop condition. At the start, min_remove_bytes
+     * can't be 0. */
+    size_t bytes_to_free = (min_remove_bytes - bytes_removed);
+    size_t bytes_freed =
+      cache_clean_v3_by_downloaded_as_dir(target, bytes_to_free, &target);
+    if (bytes_freed == 0 && target == 0) {
+      /* Indicate that the cache is empty. */
       break;
     }
-    /* Compute a cutoff value with K and the current time. */
-    cutoff = now - k;
-
-    if (bytes_removed < min_remove_bytes) {
-      /* We haven't remove enough bytes so clean v3 cache. */
-      bytes_removed += cache_clean_v3_as_dir(now, cutoff);
-      /* Decrement K by a post period to shorten the cutoff, Two minutes
-       * if we are a testing network, or one hour otherwise. */
-      k -= get_options()->TestingTorNetwork ? 120 : 3600;
-    }
+    bytes_removed += bytes_freed;
   } while (bytes_removed < min_remove_bytes);
 
   return bytes_removed;
@@ -1194,3 +1260,17 @@ hs_cache_increment_allocation(size_t n)
     }
   }
 }
+
+#ifdef TOR_UNIT_TESTS
+
+/** Test only: Set the downloaded counter value of a HSDir cache entry. */
+void
+dir_set_downloaded(const ed25519_public_key_t *pk, uint64_t value)
+{
+  hs_cache_dir_descriptor_t *entry = lookup_v3_desc_as_dir(pk->pubkey);
+  if (entry) {
+    entry->n_downloaded = value;
+  }
+}
+
+#endif /* TOR_UNIT_TESTS */

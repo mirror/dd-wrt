@@ -2,6 +2,34 @@ This document summarizes new features and bugfixes in each stable
 release of Tor. If you want to see more detailed descriptions of the
 changes in each development snapshot, see the ChangeLog file.
 
+Changes in version 0.4.8.14 - 2025-02-05
+  Minor release fixing a major bug affecting onion service directory cache,
+  also known as HSDir. Furthermore, the fallbackdir list had more than 25% of
+  its entries unreachable or gone from the consensus. As usual, we strongly
+  recommend to update to this version as soon as possible.
+
+  o Major bugfixes (onion service directory cache):
+    - When the OOM killer kicks in, cleanup the descriptor cache of an
+      HSDir by looking at the lowest downloaded count instead of time in
+      cache. Fixes bug 40996; bugfix on 0.3.5.1-alpha.
+
+  o Minor feature (testing):
+    - test-network now unconditionally includes IPv6 instead of trying
+      to detect IPv6 support.
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on February 05, 2025.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2025/02/05.
+
+  o Minor bugfixes (memory):
+    - Fix a pointer free that wasn't set to NULL afterwards which could
+      be reused by calling back in the free all function. Fixes bug
+      40989; bugfix on 0.4.8.13.
+
+
 Changes in version 0.4.8.13 - 2024-10-24
   This is minor release fixing an important client circuit building (Conflux
   related) bug which lead to performance degradation and extra load on the

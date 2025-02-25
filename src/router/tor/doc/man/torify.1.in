@@ -2,12 +2,12 @@
 .\"     Title: torify
 .\"    Author: Tor Project, Inc.
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 10/24/2024
+.\"      Date: 02/05/2025
 .\"    Manual: Tor Manual
 .\"    Source: Tor
 .\"  Language: English
 .\"
-.TH "TORIFY" "1" "10/24/2024" "Tor" "Tor Manual"
+.TH "TORIFY" "1" "02/05/2025" "Tor" "Tor Manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

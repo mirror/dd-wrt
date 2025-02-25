@@ -2941,7 +2941,7 @@ cell_queues_check_size(void)
       if (hs_cache_total > get_options()->MaxMemInQueues / 5) {
         const size_t bytes_to_remove =
           hs_cache_total - (size_t)(get_options()->MaxMemInQueues / 10);
-        removed = hs_cache_handle_oom(now, bytes_to_remove);
+        removed = hs_cache_handle_oom(bytes_to_remove);
         oom_stats_n_bytes_removed_hsdir += removed;
         alloc -= removed;
       }

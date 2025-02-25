@@ -143,8 +143,12 @@ typedef struct workerthread_t {
 } workerthread_t;
 
 static void queue_reply(replyqueue_t *queue, workqueue_entry_t *work);
-static void workerthread_free(workerthread_t *thread);
-static void replyqueue_free(replyqueue_t *queue);
+static void workerthread_free_(workerthread_t *thread);
+#define workerthread_free(thread) \
+  FREE_AND_NULL(workerthread_t, workerthread_free_, (thread))
+static void replyqueue_free_(replyqueue_t *queue);
+#define replyqueue_free(queue) \
+  FREE_AND_NULL(replyqueue_t, replyqueue_free_, (queue))
 
 /** Allocate and return a new workqueue_entry_t, set up to run the function
  * <b>fn</b> in the worker thread, and <b>reply_fn</b> in the main
@@ -369,7 +373,7 @@ workerthread_new(int32_t lower_priority_chance,
  * Free up the resources allocated by a worker thread.
  */
 static void
-workerthread_free(workerthread_t *thread)
+workerthread_free_(workerthread_t *thread)
 {
   tor_free(thread);
 }
@@ -589,7 +593,7 @@ threadpool_new(int n_threads,
  * Free up the resources allocated by worker threads, worker thread pool, ...
  */
 void
-threadpool_free(threadpool_t *pool)
+threadpool_free_(threadpool_t *pool)
 {
   if (!pool)
     return;
@@ -652,7 +656,7 @@ replyqueue_new(uint32_t alertsocks_flags)
  * Free up the resources allocated by a reply queue.
  */
 static void
-replyqueue_free(replyqueue_t *queue)
+replyqueue_free_(replyqueue_t *queue)
 {
   if (!queue)
     return;

@@ -44,7 +44,9 @@ struct dir_connection_t {
 
   /* Hidden service connection identifier for dir connections: Used by HS
      client-side code to fetch HS descriptors, and by the service-side code to
-     upload descriptors. */
+     upload descriptors. Also used by the HSDir, setting only the blinded key,
+     in order to locate back the descriptor in the cache once the dir stream is
+     closed. */
   struct hs_ident_dir_conn_t *hs_ident;
 
   /** If this is a one-hop connection, tracks the state of the directory guard

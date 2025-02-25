@@ -16,6 +16,7 @@
 #include "feature/dirclient/dirclient.h"
 #include "feature/dircommon/directory.h"
 #include "feature/dircommon/fp_pair.h"
+#include "feature/hs/hs_cache.h"
 #include "feature/stats/geoip_stats.h"
 #include "lib/compress/compress.h"
 
@@ -490,6 +491,17 @@ connection_dir_about_to_close(dir_connection_t *dir_conn)
     /* It's a directory connection and connecting or fetching
      * failed: forget about this router, and maybe try again. */
     connection_dir_client_request_failed(dir_conn);
+  }
+
+  /* If we are an HSDir, mark the corresponding descriptor as downloaded. This
+   * is needed for the OOM cache cleanup.
+   *
+   * This is done when the direction connection is closed in order to raise the
+   * attack cost of filling the cache with bogus descriptors. That attacker
+   * would need to increase that downloaded counter for the attack to be
+   * successful which is expensive. */
+  if (conn->purpose == DIR_PURPOSE_SERVER && dir_conn->hs_ident) {
+    hs_cache_mark_dowloaded_as_dir(dir_conn->hs_ident);
   }
 
   connection_dir_client_refetch_hsdesc_if_needed(dir_conn);
