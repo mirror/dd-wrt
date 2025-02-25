@@ -31,5 +31,9 @@ tor-install:
 	make -C tor DESTDIR=$(INSTALLDIR)/tor install
 
 	mkdir -p $(INSTALLDIR)/tor/etc/config
+ifeq ($(CONFIG_TOR_FULL),y)
+	install -D tor/src/config/geoip.full $(INSTALLDIR)/tor/usr/share/tor/geoip
+	install -D tor/src/config/geoip6.full $(INSTALLDIR)/tor/usr/share/tor/geoip6
+endif
 	install -D tor/config/tor.webservices $(INSTALLDIR)/tor/etc/config
 	install -D tor/config/tor.nvramconfig $(INSTALLDIR)/tor/etc/config
