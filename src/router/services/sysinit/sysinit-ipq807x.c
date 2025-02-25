@@ -493,7 +493,7 @@ int nss_disabled(int setcur)
 		if (!is_ath11k(base))
 			continue;
 		sprintf(wifivifs, "wlan%d_vifs", count);
-		if ((nvram_nmatch("wdsap", "wlan%d_mode", count) || nvram_nmatch("apup", "wlan%d_mode", count)) &&
+		if ((nvram_nmatch("wdssta", "wlan%d_mode", count) || nvram_nmatch("wdssta_mtik", "wlan%d_mode", count) || nvram_nmatch("wdsap", "wlan%d_mode", count) || nvram_nmatch("apup", "wlan%d_mode", count)) &&
 		    !nvram_nmatch("disabled", "wlan%d_net_mode", count))
 			return 1;
 		vifs = nvram_safe_get(wifivifs);
