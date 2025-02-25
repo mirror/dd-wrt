@@ -384,7 +384,7 @@ int mtd_resetbc(const char *mtd)
 	} else {
 		sync();
 
-		fprintf(stdout, "Boot count sucessfully reset to zero.");
+		fprintf(stdout, "Boot count sucessfully reset to zero.\n");
 
 		retval = 0;
 		goto out;
