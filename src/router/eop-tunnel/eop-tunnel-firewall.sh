@@ -252,7 +252,7 @@ for i in $(seq 1 $tunnels); do
 					#cat /proc/net/ip_conntrack_flush 2>&1
 					#cat /proc/sys/net/netfilter/nf_conntrack_flush 2>&1
 					# Escape Destination routing via the WAN
-					if [[ $($nv get oet${i}_dpbr) -eq 2 ]]; then
+					if [[ $($nv get oet${i}_dpbr) -eq 2 &&  ! -z $($nv get oet${i}_dpbr_ip | sed '/^[[:blank:]]*#/d') ]]; then
 						makechain
 						WGDPBRIP="/tmp/wgdpbrip_oet${i}"
 						MAXTIME=10
@@ -262,6 +262,7 @@ for i in $(seq 1 $tunnels); do
 							sleep 2
 							SLEEPCT=$((SLEEPCT+2))
 							if [[ $SLEEPCT -gt $MAXTIME && $MAXTIME -ne 0 ]]; then
+								logger -p user.err "WireGuard waited $SLEEPCT sec. for $WGDPBRIP but could not find it"
 								break
 							fi
 						done
