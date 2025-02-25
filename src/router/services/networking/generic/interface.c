@@ -525,7 +525,8 @@ void start_setup_vlans(void)
 
 	int i, j, ret = 0, tmp, workaround = 0, found;
 	char *vlans;
-	const char *next char vlan[32], buff[70], buff2[16];
+	const char *next;
+	char vlan[32], buff[70], buff2[16];
 	FILE *fp;
 	char **portsettings = malloc(sizeof(char **) * (blen + 2));
 	for (i = 0; i < blen + 2; i++) {
