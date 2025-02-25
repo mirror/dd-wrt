@@ -788,25 +788,14 @@ void start_lan(void)
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 	MAC_ADD(mac);
 #elif HAVE_MVEBU
-	if (getRouterBrand() == ROUTER_WRT_1900AC) {
-		if (getSTA() || getWET() || CANBRIDGE()) {
-			nvram_setz(lan_ifnames, "wan lan1 lan2 lan3 lan4 wlan0 wlan1");
-			PORTSETUPWAN("");
-		} else {
-			nvram_setz(lan_ifnames, "lan1 lan2 lan3 lan4 wlan0 wlan1");
-			PORTSETUPWAN("wan");
-		}
-		nvram_set("wan_default", "eth1");
+	if (getSTA() || getWET() || CANBRIDGE()) {
+		nvram_setz(lan_ifnames, "wan lan1 lan2 lan3 lan4 wlan0 wlan1");
+		PORTSETUPWAN("");
 	} else {
-		if (getSTA() || getWET() || CANBRIDGE()) {
-			nvram_setz(lan_ifnames, "wan lan1 lan2 lan3 lan4 wlan0 wlan1");
-			PORTSETUPWAN("");
-		} else {
-			nvram_setz(lan_ifnames, "lan1 lan2 lan3 lan4 wlan0 wlan1");
-			PORTSETUPWAN("wan");
-		}
-		nvram_set("wan_default", "wan");
+		nvram_setz(lan_ifnames, "lan1 lan2 lan3 lan4 wlan0 wlan1");
+		PORTSETUPWAN("wan");
 	}
+	nvram_set("wan_default", "wan");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("lan1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));

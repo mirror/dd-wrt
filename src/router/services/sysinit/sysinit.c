@@ -1160,28 +1160,13 @@ void start_restore_defaults(void)
 					 { "wan_default", "eth0" },
 					 { 0, 0 } };
 #elif HAVE_MVEBU
-	struct nvram_param *generic = NULL;
-
-	struct nvram_param wrt1900[] = { { "lan_ifname", "br0" },
+	struct nvram_param generic[] = { { "lan_ifname", "br0" },
 					 { "lan_ifnames", "wan lan1 lan2 lan3 lan4 wlan0 wlan1" },
 					 { "wan_ifname", "wan" },
 					 { "wan_ifname2", "wan" },
 					 { "wan_ifnames", "wan" },
 					 { "wan_default", "wan" },
 					 { 0, 0 } };
-
-	struct nvram_param wrt1200[] = { { "lan_ifname", "br0" },
-					 { "lan_ifnames", "wan lan1 lan2 lan3 lan4 wlan0 wlan1" },
-					 { "wan_ifname", "wan" },
-					 { "wan_ifname2", "wan" },
-					 { "wan_ifnames", "wan" },
-					 { "wan_default", "wan" },
-					 { 0, 0 } };
-	int wrt_brand = getRouterBrand();
-	if (wrt_brand == ROUTER_WRT_1900AC)
-		generic = wrt1900;
-	else
-		generic = wrt1200;
 #elif HAVE_R9000
 	struct nvram_param generic[] = { { "lan_ifname", "br0" },
 					 { "lan_ifnames", "eth0 vlan1 vlan2 wlan0 wlan1" },
