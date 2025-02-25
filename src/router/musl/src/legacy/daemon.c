@@ -4,24 +4,6 @@
 
 int daemon(int nochdir, int noclose)
 {
-	switch(fork()) {
-	case 0: break;
-	case -1: return -1;
-	default: _exit(0);
-	}
-
-	if (setsid() < 0) return -1;
-
-#if 0
-// the second fork is only usefull for a corner case which does not exist since no other libc does 
-// handle the daemon implementation that way including bsd. this means in fact. no software developer would use daemon 
-// with a double fork in mind. in fact we may even trigger bugs here in common software packages
-	switch(fork()) {
-	case 0: break;
-	case -1: return -1;
-	default: _exit(0);
-	}
-#endif
 	if (!nochdir && chdir("/"))
 		return -1;
 	if (!noclose) {
@@ -33,6 +15,19 @@ int daemon(int nochdir, int noclose)
 		if (failed) return -1;
 	}
 
+	switch(fork()) {
+	case 0: break;
+	case -1: return -1;
+	default: _exit(0);
+	}
+
+	if (setsid() < 0) return -1;
+
+	switch(fork()) {
+	case 0: break;
+	case -1: return -1;
+	default: _exit(0);
+	}
 
 	return 0;
 }
