@@ -2993,6 +2993,8 @@ void configure_wifi(void) // madwifi implementation for atheros based
 		if (!iso)
 			iso = "DE";
 		eval("iw", "reg", "set", iso);
+		eval("iw", "reg", "set", "DE");
+		eval("iw", "reg", "set", iso);
 #if defined(HAVE_ONNET) && defined(HAVE_ATH10K_CT)
 		if (nvram_geti("ath10k-ct") != nvram_geti("wlan10k-ct_bak")) {
 			fprintf(stderr, "Switching ATH10K driver, rebooting now...\n");

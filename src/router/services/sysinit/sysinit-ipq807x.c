@@ -1827,6 +1827,7 @@ void start_wifi_drivers(void)
 		wait_for_wifi(minif);
 		start_setup_affinity();
 		start_initvlans();
+		sleep(1);
 	}
 }
 
