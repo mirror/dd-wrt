@@ -1145,8 +1145,7 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort, 
 	if (!sort)
 		return 0;
 
-	if (!nosort && sortcount &&
-	    sort) { // if ifprefix doesnt match to any interface, sort might be NULL here, so check this condition
+	if (!nosort && sortcount) { // if ifprefix doesnt match to any interface, sort might be NULL here, so check this condition
 		qsort(sort, sortcount, sizeof(char *), ifcompare);
 	}
 	int i;
