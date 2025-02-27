@@ -191,7 +191,7 @@ int wiviz_main(int argc, char **argv)
 #if defined(HAVE_MADWIFI)
 	if (is_mac80211(wl_dev)) {
 		char phy[32];
-		sprintf(phy, "phy%d", get_ath9k_phy_ifname(wl_dev));
+		sprintf(phy, "phy%d", get_mac80211_phy_ifname(wl_dev));
 		eval("iw", "phy", phy, "interface", "add", get_monitor(), "type", "monitor", "flags", "control", "otherbss");
 	} else {
 		char *getWifi(char *ifname);
