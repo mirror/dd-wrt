@@ -932,6 +932,7 @@ download_nvm:
 		case QCA_MAPLE:
 			snprintf(config.fwname, sizeof(config.fwname),
 				"qca/mpnv%02x.bin", rom_ver);
+			break;
 		case QCA_WCN6750:
 			snprintf(config.fwname, sizeof(config.fwname),
 				 "qca/msnv%02x.bin", rom_ver);
