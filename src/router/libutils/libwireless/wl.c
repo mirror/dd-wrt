@@ -1794,8 +1794,8 @@ int get_radiostate(char *ifname)
 		return 0;
 	if (!has_ad(ifname)) {
 		if (is_mac80211(ifname)) {
-			int state = getValueFromPath("/sys/kernel/debug/ieee80211/phy%d/ath9k/diag", get_mac80211_phy_ifname(ifname),
-						     "0x%x", NULL);
+			int state = getValueFromPath("/sys/kernel/debug/ieee80211/phy%d/ath9k/diag",
+						     get_mac80211_phy_ifname(ifname), "0x%x", NULL);
 			if (state == 0x00000003)
 				return 0;
 		}
@@ -1906,7 +1906,7 @@ static void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value)
 	fclose(fp);
 }
 
-void radio_on_off_ath9k(int idx, int on)
+void mac80211_radio_on_off(int idx, int on)
 {
 	char debugstring[64];
 	int fp;
@@ -1915,41 +1915,11 @@ void radio_on_off_ath9k(int idx, int on)
 	char prefix[32];
 	sprintf(prefix, "wlan%d", idx);
 	int needrestart = 1;
-	if (on) {
-		char pid[64];
-		sprintf(pid, "/var/run/%s_hostapd.pid", prefix);
-		if (check_pidfromfile(pid, "hostapd"))
-			needrestart = 0;
-		sprintf(pid, "/var/run/%s_wpa_supplicant.pid", prefix);
-		if (check_pidfromfile(pid, "wpa_supplicant"))
-			needrestart = 0;
-		if (needrestart) {
-			eval("startservice", "restarthostapd_ifneeded", "-f");
-			eval("restart", "dnsmasq");
-			eval("startservice", "resetleds", "-f");
-			eval("startservice", "postnetwork", "-f");
-		}
-	} else {
-		char pid[64];
-		sprintf(pid, "/var/run/%s_hostapd.pid", prefix);
-		FILE *file = fopen(pid, "rb");
-		if (file) {
-			int p;
-			fscanf(file, "%d", &p);
-			fclose(file);
-			kill(p, SIGTERM);
-			unlink(pid);
-		}
-		sprintf(pid, "/var/run/%s_wpa_supplicant.pid", prefix);
-		file = fopen(pid, "rb");
-		if (file) {
-			int p;
-			fscanf(file, "%d", &p);
-			fclose(file);
-			kill(p, SIGTERM);
-			unlink(pid);
-		}
-	}
+	nvram_nseti(!on, "wlan%s_off", prefix);
+	eval("startservice", "configurewifi", "-f");
+	eval("restart", "dnsmasq");
+	eval("startservice", "resetleds", "-f");
+	eval("startservice", "postnetwork", "-f");
 
 	if (is_ath10k(prefix)) {
 		unsigned int pcu_diag_reg = 0x24048;
@@ -2334,12 +2304,12 @@ void radio_off(int idx)
 		int cc = getdevicecount();
 		int i;
 		for (i = 0; i < cc; i++) {
-			radio_on_off_ath9k(i, 0);
+			mac80211_radio_on_off(i, 0);
 		}
 		led_control(LED_WLAN0, LED_OFF);
 		led_control(LED_WLAN1, LED_OFF);
 	} else {
-		radio_on_off_ath9k(idx, 0);
+		mac80211_radio_on_off(idx, 0);
 		if (idx == 0)
 			led_control(LED_WLAN0, LED_OFF);
 		if (idx == 1)
@@ -2384,12 +2354,12 @@ void radio_on(int idx)
 		int cc = getdevicecount();
 		int i;
 		for (i = 0; i < cc; i++) {
-			radio_on_off_ath9k(i, 1);
+			mac80211_radio_on_off(i, 1);
 		}
 		led_control(LED_WLAN0, LED_ON);
 		led_control(LED_WLAN1, LED_ON);
 	} else {
-		radio_on_off_ath9k(idx, 1);
+		mac80211_radio_on_off(idx, 1);
 		if (idx == 0)
 			led_control(LED_WLAN0, LED_ON);
 		if (idx == 1)
@@ -3716,12 +3686,12 @@ static int devicecountbydriver(const const char *prefix, const char *drivername,
 }
 
 #define IS_DRIVER(name, desc, module)                                   \
-	int is_##name(const char *prefix)   \
-	{                                                       \
-		INITVALUECACHE();                               \
+	int is_##name(const char *prefix)                               \
+	{                                                               \
+		INITVALUECACHE();                                       \
 		RETURNVALUE(devicecountbydriver(prefix, desc, module)); \
-		EXITVALUECACHE();                               \
-		return ret > 0;                                 \
+		EXITVALUECACHE();                                       \
+		return ret > 0;                                         \
 	}
 
 #ifdef HAVE_ATH5K
