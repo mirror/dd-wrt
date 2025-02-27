@@ -488,6 +488,10 @@
 	status = "okay";
 };
 
+&bluetooth {
+	status = "okay";
+};
+
 &crypto {
 	status = "okay";
 };
