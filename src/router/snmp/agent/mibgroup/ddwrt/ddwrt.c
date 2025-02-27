@@ -1195,7 +1195,7 @@ void ddxrWlStatTable_madwifi()
 		set_ddxrWlStatnetmode(entry, (int)madwifi_getwirelessnetmode(var));
 		set_ddxrWlStatmode(entry, (int)madwifi_getwirelessmode(var));
 #ifdef HAVE_ATH9K
-		sprintf(temp, "A 2ghz:%d 5ghz:%d 802.11n:%d 80211ac:%d", has_2ghz(var), has_5ghz(var), is_ath9k(var) | has_ac(var), has_ac(var));
+		sprintf(temp, "A 2ghz:%d 5ghz:%d 6ghz:%d 802.11n:%d 80211ac:%d 80211ax:%d", has_2ghz(var), has_5ghz(var), has_6ghz(var), has_n(var), has_ac(var), has_ax(var));
 #else
 		sprintf(temp, "A 2ghz:%d 5ghz:%d 802.11n:%d 80211ac:%d", has_2ghz(var), has_5ghz(var), 0, 0);
 #endif
