@@ -215,7 +215,7 @@ int getNoise_11n(const char *ifname, unsigned char *mac);
 int getUptime_11n(const char *ifname, unsigned char *mac);
 int getRssi_11n(const char *ifname, unsigned char *mac);
 
-extern int getassoclist_ath9k(const char *name, unsigned char *list);
+extern int mac80211_getassoclist(const char *name, unsigned char *list);
 
 extern int has_mimo(const char *prefix);
 extern int has_ac(const char *prefix);
