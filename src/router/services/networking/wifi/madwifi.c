@@ -2988,12 +2988,10 @@ void configure_wifi(void) // madwifi implementation for atheros based
 		char *country;
 		sprintf(regdomain, "wlan0_regdomain");
 		country = nvram_default_get(regdomain, "UNITED_STATES");
-		eval("iw", "reg", "set", "DE");
+		eval("iw", "reg", "set", "00");
 		const char *iso = getIsoName(country);
 		if (!iso)
 			iso = "DE";
-		eval("iw", "reg", "set", iso);
-		eval("iw", "reg", "set", "DE");
 		eval("iw", "reg", "set", iso);
 #if defined(HAVE_ONNET) && defined(HAVE_ATH10K_CT)
 		if (nvram_geti("ath10k-ct") != nvram_geti("wlan10k-ct_bak")) {
@@ -3026,12 +3024,10 @@ void configure_wifi(void) // madwifi implementation for atheros based
 		char *country;
 		sprintf(regdomain, "wlan0_regdomain");
 		country = nvram_default_get(regdomain, "UNITED_STATES");
-		eval("iw", "reg", "set", "DE");
+		eval("iw", "reg", "set", "00");
 		const char *iso = getIsoName(country);
 		if (!iso)
 			iso = "DE";
-		eval("iw", "reg", "set", iso);
-		eval("iw", "reg", "set", "DE");
 		eval("iw", "reg", "set", iso);
 #if defined(HAVE_ONNET) && defined(HAVE_ATH10K_CT)
 		if (nvram_geti("ath10k-ct") != nvram_geti("wlan10k-ct_bak")) {
@@ -3076,12 +3072,10 @@ void configure_wifi(void) // madwifi implementation for atheros based
 			char *country;
 			sprintf(regdomain, "wlan0_regdomain");
 			country = nvram_default_get(regdomain, "UNITED_STATES");
-			eval("iw", "reg", "set", "DE");
+			eval("iw", "reg", "set", "ßß");
 			const char *iso = getIsoName(country);
 			if (!iso)
 				iso = "DE";
-			eval("iw", "reg", "set", iso);
-			eval("iw", "reg", "set", "DE");
 			eval("iw", "reg", "set", iso);
 #if defined(HAVE_ONNET) && defined(HAVE_ATH10K_CT)
 			if (nvram_geti("ath10k-ct") != nvram_geti("wlan10k-ct_bak")) {
