@@ -1795,7 +1795,7 @@ int get_radiostate(char *ifname)
 	if (!has_ad(ifname)) {
 		if (is_mac80211(ifname)) {
 			int state = getValueFromPath("/sys/kernel/debug/ieee80211/phy%d/ath9k/diag",
-						     get_mac80211_phy_ifname(ifname), "0x%x", NULL);
+						     mac80211_get_phy_ifname(ifname), "0x%x", NULL);
 			if (state == 0x00000003)
 				return 0;
 		}
@@ -1870,7 +1870,7 @@ int getAssocMAC(const char *ifname, char *mac)
 
 static unsigned int get_ath10kreg(char *ifname, unsigned int reg)
 {
-	int phy = get_mac80211_phy_ifname(ifname);
+	int phy = mac80211_get_phy_ifname(ifname);
 	char file[64];
 	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_addr", phy);
 	FILE *fp = fopen(file, "wb");
@@ -1891,7 +1891,7 @@ static unsigned int get_ath10kreg(char *ifname, unsigned int reg)
 static void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value)
 {
 	char file[64];
-	int phy = get_mac80211_phy_ifname(ifname);
+	int phy = mac80211_get_phy_ifname(ifname);
 	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_addr", phy);
 	FILE *fp = fopen(file, "wb");
 	if (fp == NULL)
@@ -1942,14 +1942,14 @@ void mac80211_radio_on_off(int idx, int on)
 			value |= ((1 << 5) | (1 << 6));	// disable rx and tx
 		set_ath10kreg(prefix, pcu_diag_reg, value);*/
 	} else {
-		sprintf(debugstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/diag", get_mac80211_phy_idx(idx));
+		sprintf(debugstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/diag", mac80211_get_phy_idx(idx));
 		fp = open(debugstring, O_WRONLY);
 		if (fp) {
 			if (on)
 				write(fp, "0", sizeof("0") - 1);
 			else
 				write(fp, "3", sizeof("3") - 1);
-			fprintf(stderr, "ath9k radio %d: phy%d wlan%d\n", on, get_mac80211_phy_idx(idx), idx);
+			fprintf(stderr, "ath9k radio %d: phy%d wlan%d\n", on, mac80211_get_phy_idx(idx), idx);
 			close(fp);
 		}
 	}
@@ -1961,16 +1961,16 @@ void mac80211_radio_on_off(int idx, int on)
 		sprintf(debugstring, "/sys/class/leds/wireless_generic_21/trigger");
 #else
 	if (is_ath10k(prefix))
-		sprintf(debugstring, "/sys/class/leds/ath10k-phy%d/trigger", get_mac80211_phy_idx(idx));
+		sprintf(debugstring, "/sys/class/leds/ath10k-phy%d/trigger", mac80211_get_phy_idx(idx));
 	else if (is_ath11k(prefix))
-		sprintf(debugstring, "/sys/class/leds/ath11k-phy%d/trigger", get_mac80211_phy_idx(idx));
+		sprintf(debugstring, "/sys/class/leds/ath11k-phy%d/trigger", mac80211_get_phy_idx(idx));
 	else
-		sprintf(debugstring, "/sys/class/leds/ath9k-phy%d/trigger", get_mac80211_phy_idx(idx));
+		sprintf(debugstring, "/sys/class/leds/ath9k-phy%d/trigger", mac80211_get_phy_idx(idx));
 #endif
 	fp = open(debugstring, O_WRONLY);
 	if (fp) {
 		if (on) {
-			sprintf(tpt, "phy%dtpt", get_mac80211_phy_idx(idx));
+			sprintf(tpt, "phy%dtpt", mac80211_get_phy_idx(idx));
 			write(fp, tpt, strlen(tpt));
 			sprintf(secmode, "wlan%d_akm", idx);
 			if (nvram_exists(secmode) && !nvram_match(secmode, "disabled")) {
@@ -3334,7 +3334,7 @@ char *getWifiDeviceName(const char *prefix, int *flags)
 #endif
 #ifdef HAVE_ATH9K
 	if (!vendor || !device) {
-		devnum = get_mac80211_phy_ifname(prefix);
+		devnum = mac80211_get_phy_ifname(prefix);
 		if (devnum == -1)
 			return NULL;
 		vendor = getValueFromPath("/sys/class/ieee80211/phy%d/device/vendor", devnum, "0x%x", NULL);
@@ -3523,7 +3523,7 @@ int has_subquarter(const char *prefix)
 #endif
 
 #ifdef HAVE_ATH9K
-int get_mac80211_devicecount(void)
+static int mac80211_get_devicecount(void)
 {
 	glob_t globbuf;
 	int globresult;
@@ -3535,7 +3535,7 @@ int get_mac80211_devicecount(void)
 	return (count);
 }
 
-int get_mac80211_phy_idx(int idx)
+int mac80211_get_phy_idx(int idx)
 {
 	// fprintf(stderr,"channel number %d of %d\n", i,achans.ic_nchans);
 #ifdef HAVE_MVEBU
@@ -3545,7 +3545,7 @@ int get_mac80211_phy_idx(int idx)
 #endif
 }
 
-int get_mac80211_phy_ifname(const char *ifname)
+int mac80211_get_phy_ifname(const char *ifname)
 {
 	int devnum;
 	if (!ifname)
@@ -3557,7 +3557,7 @@ int get_mac80211_phy_ifname(const char *ifname)
 	if (!sscanf(ifname, "wlan%d", &devnum))
 		return -1;
 	// fprintf(stderr,"channel number %d of %d\n", i,achans.ic_nchans);
-	return get_mac80211_phy_idx(devnum);
+	return mac80211_get_phy_idx(devnum);
 }
 
 int is_mac80211(const char *prefix)
@@ -3574,7 +3574,7 @@ int is_mac80211(const char *prefix)
 	int devnum;
 	// get legacy interface count
 	// correct index if there are legacy cards arround
-	devnum = get_mac80211_phy_ifname(prefix);
+	devnum = mac80211_get_phy_ifname(prefix);
 	if (devnum == -1) {
 		RETURNVALUE(0);
 	}
@@ -3601,7 +3601,7 @@ int has_spectralscanning(const char *prefix)
 	int devnum;
 	// get legacy interface count
 	// correct index if there are legacy cards arround
-	devnum = get_mac80211_phy_ifname(prefix);
+	devnum = mac80211_get_phy_ifname(prefix);
 	if (devnum == -1)
 		RETURNVALUE(0);
 	if (is_ath10k(prefix))
@@ -3637,7 +3637,7 @@ static int devicecountbydriver_ath5kahb(const char *prefix)
 	int devnum;
 	int ret;
 	// correct index if there are legacy cards arround... should not...
-	devnum = get_mac80211_phy_ifname(prefix);
+	devnum = mac80211_get_phy_ifname(prefix);
 	if (devnum == -1)
 		return 0;
 
@@ -3671,7 +3671,7 @@ static int devicecountbydriver(const const char *prefix, const char *drivername,
 	if (globresult)
 		return -1; // keep cache invalidated
 	// correct index if there are legacy cards arround... should not...
-	devnum = get_mac80211_phy_ifname(prefix);
+	devnum = mac80211_get_phy_ifname(prefix);
 	if (devnum == -1)
 		return 0;
 	snprintf(globstring, sizeof(globstring), "/sys/class/ieee80211/phy%d/device/driver/module/drivers/%s", devnum, drivername);
@@ -5030,7 +5030,7 @@ int getdevicecount(void)
 #ifdef HAVE_MADWIFI
 	int count = 0;
 #ifdef HAVE_ATH9K
-	count += get_mac80211_devicecount();
+	count += mac80211_get_devicecount();
 #endif
 	count += getifcount("wifi");
 

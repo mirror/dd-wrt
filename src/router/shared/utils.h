@@ -1279,7 +1279,6 @@ extern int has_ar900b(const char *prefix);
 extern int has_dualband(const char *prefix);
 extern int has_subquarter(const char *prefix);
 extern int has_fwswitch(const char *prefix);
-extern int get_mac80211_devicecount(void);
 #else
 
 static inline int is_mac80211(const char *prefix)
@@ -1579,8 +1578,8 @@ static inline int isFXXN_PRO(char *ifname)
 void get3GControlDevice(void);
 int mac80211_get_maxmcs(char *interface);
 int mac80211_get_maxvhtmcs(char *interface);
-int get_mac80211_phy_idx(int idx);
-int get_mac80211_phy_ifname(const char *ifname);
+int mac80211_get_phy_idx(int idx);
+int mac80211_get_phy_ifname(const char *ifname);
 char *getUUID(char *buf);
 char *getWifiDeviceName(const char *prefix, int *flags);
 
