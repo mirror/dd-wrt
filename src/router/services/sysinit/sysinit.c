@@ -3300,6 +3300,14 @@ void start_nvram(void)
 	nvram_unset("wan_3g_signal");
 	nvram_unset("wan_3g_status");
 	nvram_unset("wan_3g_imsi");
+	nvram_unset("wlan0_off");
+	nvram_unset("wlan1_off");
+	nvram_unset("wlan2_off");
+	nvram_unset("wlan3_off");
+	nvram_unset("wlan4_off");
+	nvram_unset("wlan5_off");
+	nvram_unset("wlan6_off");
+	nvram_unset("wlan7_off");
 
 	// fix openvpnclient and server values (was 0/1 now is yes/no/adaptive)
 	// convert 0 -> no and 1 -> adaptive
