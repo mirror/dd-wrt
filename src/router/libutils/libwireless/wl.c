@@ -3695,7 +3695,8 @@ static int devicecountbydriver(const const char *prefix, const char *drivername,
 	int globresult;
 	int devnum;
 	int ret;
-	char mod[32] snprintf(mod, sizeof(mod), "/sys/module/%s*", module);
+	char mod[32];
+	snprintf(mod, sizeof(mod), "/sys/module/%s*", module);
 	globresult = glob(mod, GLOB_NOSORT, NULL, &globbuf);
 	if (globresult)
 		return -1; // keep cache invalidated
