@@ -652,7 +652,7 @@ int getassoclist(const char *ifname, unsigned char *list)
 	return count[0];
 }
 
-int getWifiInfo(const char *ifname, unsigned char *mac, int field)
+int getwifiinfo(const char *ifname, unsigned char *mac, int field)
 {
 	struct iwreq iwr;
 	RT_802_11_MAC_TABLE table = { 0 };
@@ -1199,7 +1199,7 @@ typedef struct {
 	struct ether_addr ea;
 } rssi_val_t;
 
-int getWifiInfo(const char *ifname, unsigned char *macname, int field)
+int getwifinfo(const char *ifname, unsigned char *macname, int field)
 {
 	unsigned int noise, rssi;
 	rssi_val_t rssi_get;
@@ -2157,10 +2157,10 @@ struct wifi_channels *list_channels(char *devnr)
 	 */
 }
 
-int getWifiInfo(const char *ifname, unsigned char *mac, int field)
+int getwifiinfo(const char *ifname, unsigned char *mac, int field)
 {
 	if (is_mac80211(ifname)) {
-		return getWifiInfo_ath9k(ifname, mac, field);
+		return mac80211_getwifiinfo(ifname, mac, field);
 	}
 	unsigned char *buf = calloc(24 * 1024, 1);
 
@@ -2249,7 +2249,7 @@ int getWifiInfo(const char *ifname, unsigned char *mac, int field)
 int getassoclist(const char *ifname, unsigned char *list)
 {
 	if (is_mac80211(ifname)) {
-		return getassoclist_ath9k(ifname, list);
+		return mac80211_getassoclist(ifname, list);
 	}
 	unsigned char *buf;
 
