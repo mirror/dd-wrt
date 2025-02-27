@@ -177,7 +177,7 @@ static int bt_rproc_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "failed to prepare/enable clock\n");
 		return ret;
 	}
-
+	dev_info(&pdev->dev, "fw name %s\n",btDesc->fw_name);
 	rproc = rproc_alloc(&pdev->dev, pdev->name, &m0_btss_ops,
 							btDesc->fw_name, 0);
 	if (!rproc) {

@@ -98,6 +98,7 @@ static ssize_t mdt_load_split_segment(void *ptr, const struct elf32_phdr *phdrs,
 		return -ENOMEM;
 
 	sprintf(seg_name + strlen(fw_name) - 3, "b%02d", segment);
+	dev_info(dev, "load seg %s\n", seg_name);
 	ret = request_firmware_into_buf(&seg_fw, seg_name, dev,
 					ptr, phdr->p_filesz);
 	if (ret) {
@@ -544,7 +545,7 @@ static int memcpy_pdseg_to_dma_blk(const char *fw_name, struct device *dev,
 	const struct firmware *seg_fw;
 	int ret, offset_tmp = 0, tmp = 0;
 	size_t size = 0;
-
+	dev_info(dev, "load %s\n", fw_name);
 	ret = request_firmware(&seg_fw, fw_name, dev);
 	if (ret) {
 		dev_err(dev, "failed to load %s\n", fw_name);
