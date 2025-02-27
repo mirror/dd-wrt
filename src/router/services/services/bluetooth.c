@@ -49,6 +49,8 @@ void start_bluetooth(void)
 		eval("modprobe", "hidp");
 		eval("modprobe", "hci_uart");
 		eval("modprobe", "btusb");
+		eval("modprobe", "btqca");
+		eval("modprobe", "bt_rproc");
 		eval("bluetoothd");
 		int brand = getRouterBrand();
 		switch (brand) {
