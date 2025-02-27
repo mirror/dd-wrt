@@ -3714,11 +3714,11 @@ static int devicecountbydriver(const const char *prefix, const char *drivername,
 	return ret;
 }
 
-#define IS_DRIVER(name, desc)                                   \
-	int is_##name(const char *prefix, const char *module)   \
+#define IS_DRIVER(name, desc, module)                                   \
+	int is_##name(const char *prefix)   \
 	{                                                       \
 		INITVALUECACHE();                               \
-		RETURNVALUE(devicecountbydriver(prefix, desc)); \
+		RETURNVALUE(devicecountbydriver(prefix, desc, module)); \
 		EXITVALUECACHE();                               \
 		return ret > 0;                                 \
 	}
