@@ -2616,119 +2616,126 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 	sprintf(wl, "%s_mode", prefix);
 	sprintf(dev, "%s", prefix);
 	sprintf(net, "%s_net_mode", dev);
-	char *netmode = nvram_default_get(net, "mixed");
-	if (!strcmp(netmode, "disabled"))
-		return;
-	char bw[32];
-	int isath5k = 0;
-	int isath10k = 0;
-	int ismt7615 = 0;
-	int ismt7915 = 0;
-	int ismt7921 = 0;
-	isath5k = is_ath5k(dev);
-	isath10k = is_ath10k(dev);
-	ismt7615 = is_mt7615(dev);
-	ismt7915 = is_mt7915(dev);
-	ismt7921 = is_mt7921(dev);
-	// set channelbw ht40 is also 20!
-	sprintf(bw, "%s_channelbw", dev);
-	char *driver = "ath9k";
-	int bwmax = 20;
-	int bwmin = 2;
-	if (isath5k) {
-		driver = "ath5k";
-		bwmax = 40;
-	} else if (isath10k)
-		driver = "ath10k";
-	else if (isath10k)
-		driver = "ath11k";
-	else if (ismt7615 || ismt7915 || ismt7921) {
-		bwmin = 5;
-		driver = "mt76";
-	}
-	int chanbw = nvram_geti(bw);
-	if (chanbw < bwmin)
-		chanbw = bwmin;
-	if (chanbw > bwmax)
-		chanbw = bwmax;
-	setchanbw(wif, driver, chanbw);
+	int off = nvram_ngeti("%s_off", dev);
+	if (!off && !nvram_nmatch("disabled", "%s_net_mode", dev)) {
+		char *netmode = nvram_default_get(net, "mixed");
+		if (!strcmp(netmode, "disabled"))
+			return;
+		char bw[32];
+		int isath5k = 0;
+		int isath10k = 0;
+		int ismt7615 = 0;
+		int ismt7915 = 0;
+		int ismt7921 = 0;
+		isath5k = is_ath5k(dev);
+		isath10k = is_ath10k(dev);
+		ismt7615 = is_mt7615(dev);
+		ismt7915 = is_mt7915(dev);
+		ismt7921 = is_mt7921(dev);
+		// set channelbw ht40 is also 20!
+		sprintf(bw, "%s_channelbw", dev);
+		char *driver = "ath9k";
+		int bwmax = 20;
+		int bwmin = 2;
+		if (isath5k) {
+			driver = "ath5k";
+			bwmax = 40;
+		} else if (isath10k)
+			driver = "ath10k";
+		else if (isath10k)
+			driver = "ath11k";
+		else if (ismt7615 || ismt7915 || ismt7921) {
+			bwmin = 5;
+			driver = "mt76";
+		}
+		int chanbw = nvram_geti(bw);
+		if (chanbw < bwmin)
+			chanbw = bwmin;
+		if (chanbw > bwmax)
+			chanbw = bwmax;
+		setchanbw(wif, driver, chanbw);
 
-	apm = nvram_safe_get(wl);
-	sprintf(wifivifs, "%s_vifs", prefix);
-	sprintf(power, "%s_txpwrdbm", prefix);
-	vifs = nvram_safe_get(wifivifs);
-	sprintf(subinterface, "-i%s", dev);
-	if (has_ad(dev))
-		sprintf(subinterface, "-igiwifi0");
-	sprintf(wmode, "%s_mode", dev);
-	sprintf(bridged, "%s_bridged", dev);
-	debug = nvram_ngeti("%s_wpa_debug", dev);
-	if (debug == 1)
-		background = "-Bds";
-	else if (debug == 2)
-		background = "-Bdds";
-	else if (debug == 3)
-		background = "-Bddds";
-	int wet = 0;
+		apm = nvram_safe_get(wl);
+		sprintf(wifivifs, "%s_vifs", prefix);
+		sprintf(power, "%s_txpwrdbm", prefix);
+		vifs = nvram_safe_get(wifivifs);
+		sprintf(subinterface, "-i%s", dev);
+		if (has_ad(dev))
+			sprintf(subinterface, "-igiwifi0");
+		sprintf(wmode, "%s_mode", dev);
+		sprintf(bridged, "%s_bridged", dev);
+		debug = nvram_ngeti("%s_wpa_debug", dev);
+		if (debug == 1)
+			background = "-Bds";
+		else if (debug == 2)
+			background = "-Bdds";
+		else if (debug == 3)
+			background = "-Bddds";
+		int wet = 0;
 #ifndef HAVE_RELAYD
-	wet = nvram_match(wmode, "wet");
+		wet = nvram_match(wmode, "wet");
 #endif
-	char pid[64];
-	sprintf(pid, "/var/run/%s_wpa_supplicant.pid", dev);
-	{
-		char pw[32];
-		sprintf(pw, "%d", nvram_default_geti(power, 16) * 100);
-		eval("iw", "phy", wif, "set", "txpower", "fixed", pw);
-	}
+		char pid[64];
+		sprintf(pid, "/var/run/%s_wpa_supplicant.pid", dev);
+		{
+			char pw[32];
+			sprintf(pw, "%d", nvram_default_geti(power, 16) * 100);
+			eval("iw", "phy", wif, "set", "txpower", "fixed", pw);
+		}
 
-	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wdssta_mtik") && strcmp(apm, "infra") &&
-	    strcmp(apm, "mesh") && strcmp(apm, "tdma") && strcmp(apm, "wet")) {
-		sprintf(fstr, "/tmp/%s_hostap.conf", dev);
-		configs[*configidx] = strdup(fstr);
-		configidx[0]++;
-		configs[*configidx] = NULL;
-	} else {
-		if (*vifs) {
-			int ctrl = 0;
-			int last = 0;
-			foreach(var, vifs, next)
-			{
-				ctrl++;
-				if (nvram_nmatch("disabled", "%s_net_mode", var) || nvram_nmatch("disabled", "%s_mode", var))
-					continue;
-				last = ctrl;
-				if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var))
-					break;
-			}
-			ctrl = last;
-			if (ctrl == 0)
-				goto skip;
+		if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wdssta_mtik") && strcmp(apm, "infra") &&
+		    strcmp(apm, "mesh") && strcmp(apm, "tdma") && strcmp(apm, "wet")) {
 			sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 			configs[*configidx] = strdup(fstr);
 			configidx[0]++;
 			configs[*configidx] = NULL;
-			sprintf(ctrliface, "/var/run/hostapd/%s.%d", dev, ctrl);
-			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
-			if (nvram_match(wmode, "mesh") || nvram_match(wmode, "infra")) {
-				/* for mesh mode we dont need ctrl interface since it has a static channel configuration */
-				if (nvram_matchi(bridged, 1))
-					log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background, "-Dnl80211",
-						 subinterface, "-c", fstr);
-				else
-					log_eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-c", fstr);
-			}
 		} else {
+			if (*vifs) {
+				int ctrl = 0;
+				int last = 0;
+				foreach(var, vifs, next)
+				{
+					ctrl++;
+					if (nvram_nmatch("disabled", "%s_net_mode", var) ||
+					    nvram_nmatch("disabled", "%s_mode", var))
+						continue;
+					last = ctrl;
+					if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var))
+						break;
+				}
+				ctrl = last;
+				if (ctrl == 0)
+					goto skip;
+				sprintf(fstr, "/tmp/%s_hostap.conf", dev);
+				configs[*configidx] = strdup(fstr);
+				configidx[0]++;
+				configs[*configidx] = NULL;
+				sprintf(ctrliface, "/var/run/hostapd/%s.%d", dev, ctrl);
+				sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
+				if (nvram_match(wmode, "mesh") || nvram_match(wmode, "infra")) {
+					/* for mesh mode we dont need ctrl interface since it has a static channel configuration */
+					if (nvram_matchi(bridged, 1))
+						log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background,
+							 "-Dnl80211", subinterface, "-c", fstr);
+					else
+						log_eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-c",
+							 fstr);
+				}
+			} else {
 skip:;
-			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
-			if (nvram_match(wmode, "sta") || nvram_match(wmode, "wdssta") || nvram_match(wmode, "wdssta_mtik") || wet ||
-			    nvram_match(wmode, "infra") || nvram_match(wmode, "mesh")) {
-				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") ||
-				     nvram_match(wmode, "wdsta_mtik") || wet) &&
-				    nvram_matchi(bridged, 1)) {
-					log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background, "-Dnl80211",
-						 subinterface, "-c", fstr);
-				} else {
-					log_eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-c", fstr);
+				sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
+				if (nvram_match(wmode, "sta") || nvram_match(wmode, "wdssta") ||
+				    nvram_match(wmode, "wdssta_mtik") || wet || nvram_match(wmode, "infra") ||
+				    nvram_match(wmode, "mesh")) {
+					if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") ||
+					     nvram_match(wmode, "wdsta_mtik") || wet) &&
+					    nvram_matchi(bridged, 1)) {
+						log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background,
+							 "-Dnl80211", subinterface, "-c", fstr);
+					} else {
+						log_eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-c",
+							 fstr);
+					}
 				}
 			}
 		}
@@ -2765,193 +2772,199 @@ void post_hostapd_actions(int count)
 	sprintf(power, "%s_txpwrdbm", dev);
 	sprintf(bridged, "%s_bridged", dev);
 	sprintf(wifivifs, "%s_vifs", dev);
-	int wet = 0;
+	int off = nvram_ngeti("%s_off", dev);
+	if (!off && !nvram_nmatch("disabled", "%s_net_mode", dev)) {
+		int wet = 0;
 #ifndef HAVE_RELAYD
-	wet = nvram_match(wmode, "wet");
+		wet = nvram_match(wmode, "wet");
 #endif
-	char pid[64];
-	sprintf(pid, "/var/run/%s_wpa_supplicant.pid", dev);
-	vifs = nvram_safe_get(wifivifs);
-	int debug = nvram_ngeti("%s_wpa_debug", dev);
-	char *background = "-B";
+		char pid[64];
+		sprintf(pid, "/var/run/%s_wpa_supplicant.pid", dev);
+		vifs = nvram_safe_get(wifivifs);
+		int debug = nvram_ngeti("%s_wpa_debug", dev);
+		char *background = "-B";
 
-	if (debug == 1)
-		background = "-Bds";
-	else if (debug == 2)
-		background = "-Bdds";
-	else if (debug == 3)
-		background = "-Bddds";
-	if (has_ad(dev))
-		sprintf(dev, "giwifi0");
+		if (debug == 1)
+			background = "-Bds";
+		else if (debug == 2)
+			background = "-Bdds";
+		else if (debug == 3)
+			background = "-Bddds";
+		if (has_ad(dev))
+			sprintf(dev, "giwifi0");
 
-	if (!strcmp(apm, "sta") || !strcmp(apm, "wdssta") || !strcmp(apm, "wdssta_mtik") || !strcmp(apm, "infra") ||
-	    !strcmp(apm, "mesh") || !strcmp(apm, "tdma") || !strcmp(apm, "wet")) {
+		if ((!strcmp(apm, "sta") || !strcmp(apm, "wdssta") || !strcmp(apm, "wdssta_mtik") || !strcmp(apm, "infra") ||
+		     !strcmp(apm, "mesh") || !strcmp(apm, "tdma") || !strcmp(apm, "wet"))) {
+			if (*vifs) {
+				int ctrl = 0;
+				int last = 0;
+				foreach(var, vifs, next)
+				{
+					ctrl++;
+					if (nvram_nmatch("disabled", "%s_net_mode", var) ||
+					    nvram_nmatch("disabled", "%s_mode", var))
+						continue;
+					last = ctrl;
+					if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var))
+						break;
+				}
+				ctrl = last;
+				if (ctrl == 0)
+					goto skip;
+				sprintf(ctrliface, "/var/run/hostapd/%s.%d", dev, ctrl);
+				sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
+				if (!nvram_match(wmode, "mesh") && !nvram_match(wmode, "infra")) {
+					if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wdsta_mtik") || wet) &&
+					    nvram_matchi(bridged, 1))
+						log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background,
+							 "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
+					else
+						log_eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-H",
+							 ctrliface, "-c", fstr);
+				}
+			}
+		}
+skip:;
+#ifdef HAVE_RELAYD
+		if (strcmp(apm, "sta") && strcmp(apm, "wet")) {
+#else
+		if (strcmp(apm, "sta")) {
+#endif
+			char bridged[32];
+			sprintf(bridged, "%s_bridged", dev);
+			if (nvram_default_matchi(bridged, 1, 1)) {
+				eval("ifconfig", dev, "0.0.0.0", "up");
+				br_add_interface(getBridge(dev, tmp), dev);
+				eval("ifconfig", dev, "0.0.0.0", "up");
+			} else {
+				eval("ifconfig", dev, "mtu", getMTU(dev));
+				eval("ifconfig", dev, "txqueuelen", getTXQ(dev));
+				eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev), "netmask", nvram_nget("%s_netmask", dev), "up");
+			}
+		} else {
+#ifdef HAVE_RELAYD
+			if (!strcmp(apm, "wet")) {
+				eval("ifconfig", dev, "0.0.0.0", "up");
+				//                      sysprintf("relayd -I %s -I %s -D -B", getBridge(dev),
+				//                                dev);
+			}
+#endif
+
+			char bridged[32];
+			sprintf(bridged, "%s_bridged", dev);
+			if (nvram_default_matchi(bridged, 0, 1)) {
+				eval("ifconfig", dev, "mtu", getMTU(dev));
+				eval("ifconfig", dev, "txqueuelen", getTXQ(dev));
+				eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev), "netmask", nvram_nget("%s_netmask", dev), "up");
+			}
+		}
+
 		if (*vifs) {
-			int ctrl = 0;
-			int last = 0;
 			foreach(var, vifs, next)
 			{
-				ctrl++;
-				if (nvram_nmatch("disabled", "%s_net_mode", var) || nvram_nmatch("disabled", "%s_mode", var))
+				sprintf(mode, "%s_mode", var);
+				char *m2 = nvram_safe_get(mode);
+				char bridged[32];
+				sprintf(bridged, "%s_bridged", var);
+				if (!strcmp(m2, "mesh") || !strcmp(m2, "infra")) {
+					sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", var);
+					sprintf(subinterface, "-i%s", var);
+					if (nvram_matchi(bridged, 1))
+						log_eval("wpa_supplicant", "-b", getBridge(var, tmp), background, "-Dnl80211",
+							 subinterface, "-c", fstr);
+					else {
+						log_eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr);
+					}
+				}
+
+				if (strcmp(m2, "sta")) {
+					if (nvram_default_matchi(bridged, 1, 1)) {
+						eval("ifconfig", dev, "0.0.0.0", "up");
+						br_add_interface(getBridge(var, tmp), var);
+					} else {
+						eval("ifconfig", var, "mtu", getMTU(var));
+						eval("ifconfig", var, "txqueuelen", getTXQ(var));
+						eval("ifconfig", var, nvram_nget("%s_ipaddr", var), "netmask",
+						     nvram_nget("%s_netmask", var), "up");
+					}
+				}
+			}
+		}
+		if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap") || !strcmp(apm, "apup")) {
+			int s;
+			for (s = 1; s <= 10; s++) {
+				char wdsvarname[32] = { 0 };
+				char wdsdevname[32] = { 0 };
+				char wdsmacname[32] = { 0 };
+				char *wdsdev;
+				char *hwaddr;
+				sprintf(wdsvarname, "%s_wds%d_enable", dev, s);
+				sprintf(wdsdevname, "%s_wds%d_if", dev, s);
+				sprintf(wdsmacname, "%s_wds%d_hwaddr", dev, s);
+				wdsdev = nvram_safe_get(wdsdevname);
+				if (!*wdsdev)
 					continue;
-				last = ctrl;
-				if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var))
-					break;
-			}
-			ctrl = last;
-			if (ctrl == 0)
-				goto skip;
-			sprintf(ctrliface, "/var/run/hostapd/%s.%d", dev, ctrl);
-			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
-			if (!nvram_match(wmode, "mesh") && !nvram_match(wmode, "infra")) {
-				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wdsta_mtik") || wet) &&
-				    nvram_matchi(bridged, 1))
-					log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background, "-Dnl80211",
-						 subinterface, "-H", ctrliface, "-c", fstr);
-				else
-					log_eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-H",
-						 ctrliface, "-c", fstr);
-			}
-		}
-	}
-skip:;
-
-#ifdef HAVE_RELAYD
-	if (strcmp(apm, "sta") && strcmp(apm, "wet")) {
-#else
-	if (strcmp(apm, "sta")) {
-#endif
-		char bridged[32];
-		sprintf(bridged, "%s_bridged", dev);
-		if (nvram_default_matchi(bridged, 1, 1)) {
-			eval("ifconfig", dev, "0.0.0.0", "up");
-			br_add_interface(getBridge(dev, tmp), dev);
-			eval("ifconfig", dev, "0.0.0.0", "up");
-		} else {
-			eval("ifconfig", dev, "mtu", getMTU(dev));
-			eval("ifconfig", dev, "txqueuelen", getTXQ(dev));
-			eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev), "netmask", nvram_nget("%s_netmask", dev), "up");
-		}
-	} else {
-#ifdef HAVE_RELAYD
-		if (!strcmp(apm, "wet")) {
-			eval("ifconfig", dev, "0.0.0.0", "up");
-			//                      sysprintf("relayd -I %s -I %s -D -B", getBridge(dev),
-			//                                dev);
-		}
-#endif
-
-		char bridged[32];
-		sprintf(bridged, "%s_bridged", dev);
-		if (nvram_default_matchi(bridged, 0, 1)) {
-			eval("ifconfig", dev, "mtu", getMTU(dev));
-			eval("ifconfig", dev, "txqueuelen", getTXQ(dev));
-			eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev), "netmask", nvram_nget("%s_netmask", dev), "up");
-		}
-	}
-
-	if (*vifs) {
-		foreach(var, vifs, next)
-		{
-			sprintf(mode, "%s_mode", var);
-			char *m2 = nvram_safe_get(mode);
-			char bridged[32];
-			sprintf(bridged, "%s_bridged", var);
-			if (!strcmp(m2, "mesh") || !strcmp(m2, "infra")) {
-				sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", var);
-				sprintf(subinterface, "-i%s", var);
-				if (nvram_matchi(bridged, 1))
-					log_eval("wpa_supplicant", "-b", getBridge(var, tmp), background, "-Dnl80211", subinterface,
-						 "-c", fstr);
-				else {
-					log_eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr);
-				}
-			}
-
-			if (strcmp(m2, "sta")) {
-				if (nvram_default_matchi(bridged, 1, 1)) {
-					eval("ifconfig", dev, "0.0.0.0", "up");
-					br_add_interface(getBridge(var, tmp), var);
-				} else {
-					eval("ifconfig", var, "mtu", getMTU(var));
-					eval("ifconfig", var, "txqueuelen", getTXQ(var));
-					eval("ifconfig", var, nvram_nget("%s_ipaddr", var), "netmask",
-					     nvram_nget("%s_netmask", var), "up");
-				}
-			}
-		}
-	}
-	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap") || !strcmp(apm, "apup")) {
-		int s;
-		for (s = 1; s <= 10; s++) {
-			char wdsvarname[32] = { 0 };
-			char wdsdevname[32] = { 0 };
-			char wdsmacname[32] = { 0 };
-			char *wdsdev;
-			char *hwaddr;
-			sprintf(wdsvarname, "%s_wds%d_enable", dev, s);
-			sprintf(wdsdevname, "%s_wds%d_if", dev, s);
-			sprintf(wdsmacname, "%s_wds%d_hwaddr", dev, s);
-			wdsdev = nvram_safe_get(wdsdevname);
-			if (!*wdsdev)
-				continue;
-			if (nvram_matchi(wdsvarname, 0))
-				continue;
-			hwaddr = nvram_safe_get(wdsmacname);
-			if (*hwaddr) {
-				eval("iw", wif, "interface", "add", wdsdev, "type", "wds");
+				if (nvram_matchi(wdsvarname, 0))
+					continue;
+				hwaddr = nvram_safe_get(wdsmacname);
+				if (*hwaddr) {
+					eval("iw", wif, "interface", "add", wdsdev, "type", "wds");
 #ifdef HAVE_IPQ6018
-				eval("tc", "qdisc", "replace", "dev", wdsdev, "root", "noqueue");
+					eval("tc", "qdisc", "replace", "dev", wdsdev, "root", "noqueue");
 #endif
-				eval("iw", "dev", wdsdev, "set", "peer", hwaddr);
-				eval("ifconfig", wdsdev, "0.0.0.0", "up");
+					eval("iw", "dev", wdsdev, "set", "peer", hwaddr);
+					eval("ifconfig", wdsdev, "0.0.0.0", "up");
+				}
 			}
 		}
-	}
-	{
-		char pw[32];
-		sprintf(pw, "%d", nvram_default_geti(power, 16) * 100);
-		eval("iw", "dev", dev, "set", "txpower", "fixed", pw);
-	}
-	if (is_ath10k(dev)) {
-		char wl_po[32];
-		sprintf(wl_po, "%s_power_override", dev);
-		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/power_override", nvram_default_get(wl_po, "0"), wif);
-	}
-	char wl_intmit[32];
-	sprintf(wl_intmit, "%s_intmit", dev);
-	char wl_qboost[32];
-	sprintf(wl_qboost, "%s_qboost", dev);
-	char wl_autoburst[32];
-	sprintf(wl_autoburst, "%s_autoburst", dev);
-	char wl_sifs_trigger_time[32];
-	sprintf(wl_sifs_trigger_time, "%s_sifs_trigger_time", dev);
-	if (is_ath10k(dev)) {
-		if (has_qboost(dev)) {
-			sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/qboost_enable",
-				  nvram_default_get(wl_qboost, "0"), wif);
-			if (has_qboost_tdma(dev)) {
-				sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/sifs_trigger_time",
-					  nvram_default_get(wl_sifs_trigger_time, "0"), wif);
-			}
+		{
+			char pw[32];
+			sprintf(pw, "%d", nvram_default_geti(power, 16) * 100);
+			eval("iw", "dev", dev, "set", "txpower", "fixed", pw);
 		}
-		if (nvram_match("experimental", "1")) {
-			if (has_wave2(dev)) {
-				sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/dynamic_auto_burst",
-					  nvram_default_get(wl_autoburst, "0"), wif);
-			}
+		if (is_ath10k(dev)) {
+			char wl_po[32];
+			sprintf(wl_po, "%s_power_override", dev);
+			sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/power_override", nvram_default_get(wl_po, "0"),
+				  wif);
 		}
-		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/ani_enable", nvram_default_get(wl_intmit, "0"), wif);
-	}
-	if (is_ath9k(dev))
-		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath9k/ani", nvram_default_get(wl_intmit, "1"), wif);
+		char wl_intmit[32];
+		sprintf(wl_intmit, "%s_intmit", dev);
+		char wl_qboost[32];
+		sprintf(wl_qboost, "%s_qboost", dev);
+		char wl_autoburst[32];
+		sprintf(wl_autoburst, "%s_autoburst", dev);
+		char wl_sifs_trigger_time[32];
+		sprintf(wl_sifs_trigger_time, "%s_sifs_trigger_time", dev);
+		if (is_ath10k(dev)) {
+			if (has_qboost(dev)) {
+				sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/qboost_enable",
+					  nvram_default_get(wl_qboost, "0"), wif);
+				if (has_qboost_tdma(dev)) {
+					sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/sifs_trigger_time",
+						  nvram_default_get(wl_sifs_trigger_time, "0"), wif);
+				}
+			}
+			if (nvram_match("experimental", "1")) {
+				if (has_wave2(dev)) {
+					sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/dynamic_auto_burst",
+						  nvram_default_get(wl_autoburst, "0"), wif);
+				}
+			}
+			sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/ani_enable", nvram_default_get(wl_intmit, "0"),
+				  wif);
+		}
+		if (is_ath9k(dev))
+			sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath9k/ani", nvram_default_get(wl_intmit, "1"), wif);
 
-	MAC80211DEBUG();
-	if (has_airtime_fairness(dev)) {
-		char atf[32];
-		sprintf(atf, "%s_atf", dev);
-		sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/airtime_flags", nvram_default_matchi(atf, 1, 1) ? 3 : 0, wif);
+		MAC80211DEBUG();
+		if (has_airtime_fairness(dev)) {
+			char atf[32];
+			sprintf(atf, "%s_atf", dev);
+			sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/airtime_flags", nvram_default_matchi(atf, 1, 1) ? 3 : 0,
+				  wif);
+		}
+		MAC80211DEBUG();
 	}
-	MAC80211DEBUG();
 }
 #endif
