@@ -2130,6 +2130,7 @@ status_router.legend3="Speicher";
 status_router.mem_tot="Insgesamt verfügbar";
 status_router.mem_free="Frei";
 status_router.mem_used="Verwendet";
+status_router.mem_avail="Verfügbar";
 status_router.mem_buf="Puffer";
 status_router.mem_cached="Cached";
 status_router.mem_active="Aktiv";

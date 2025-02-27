@@ -2415,6 +2415,7 @@ status_router.legend3="Memory - Available / Total";
 status_router.mem_tot="Total";
 status_router.mem_free="Free";
 status_router.mem_used="Used";
+status_router.mem_avail="Available";
 status_router.mem_buf="Buffers";
 status_router.mem_cached="Cached";
 status_router.mem_active="Active";

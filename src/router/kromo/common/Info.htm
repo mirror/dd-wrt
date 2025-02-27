@@ -190,9 +190,11 @@ function setMemoryValues(val) {
 	var memCached = parseInt(mem[31]) / 1024;
 	var memActive = parseInt(mem[37]) / 1024;
 	var memInactive = parseInt(mem[40]) / 1024;
+	var memAvail = parseInt(mem[43]) / 1024;
 	setElementContent("mem_total", memTotal.toFixed(1) + " MiB / " + memSystem.toFixed(1) + " MiB");
 	setElementContent("mem_free", memFree.toFixed(1) + " MiB / " + memTotal.toFixed(1) + " MiB");
 	setElementContent("mem_used", memUsed.toFixed(1) + " MiB / " + memTotal.toFixed(1) + " MiB");
+	setElementContent("mem_avail", memAvail.toFixed(1) + " MiB / " + memTotal.toFixed(1) + " MiB");
 	setElementContent("mem_buffer", memBuffer.toFixed(1) + " MiB / " + memUsed.toFixed(1) + " MiB");
 	setElementContent("mem_cached", memCached.toFixed(1) + " MiB / " + memUsed.toFixed(1) + " MiB");
 	setElementContent("mem_active", memActive.toFixed(1) + " MiB / " + memUsed.toFixed(1) + " MiB");
@@ -436,6 +438,10 @@ function refresh(F) {
 									<div class="setting">
 										<div class="label"><% tran("status_router.mem_cached"); %></div>
 										<span id="mem_cached"></span>&nbsp;
+									</div>
+									<div class="setting">
+										<div class="label"><% tran("status_router.mem_avail"); %></div>
+										<span id="mem_avail"></span>&nbsp;
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("status_router.mem_active"); %></div>

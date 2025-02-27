@@ -14,9 +14,11 @@ function setMemoryValues(val) {
 	var memCached = parseInt(mem[31]);
 	var memActive = parseInt(mem[37]);
 	var memInactive = parseInt(mem[40]);
+	var memAvail = parseInt(mem[43]);
 	setMeterBar("mem_total", memTotal / memSystem * 100, memTotal + " KiB / " + memSystem + " KiB");
 	setMeterBar("mem_free", memFree / memTotal * 100, memFree + " KiB / " + memTotal + " KiB");
 	setMeterBar("mem_used", memUsed / memTotal * 100, memUsed + " KiB / " + memTotal + " KiB");
+	setMeterBar("mem_avail", memAvail / memTotal * 100, memUsed + " KiB / " + memTotal + " KiB");
 	setMeterBar("mem_buffer", memBuffer / memUsed * 100, memBuffer + " KiB / " + memUsed + " KiB");
 	setMeterBar("mem_cached", memCached / memUsed * 100, memCached + " KiB / " + memUsed + " KiB");
 	setMeterBar("mem_active", memActive / memUsed * 100, memActive + " KiB / " + memUsed + " KiB");
@@ -167,6 +169,10 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<div class="label"><% tran("status_router.mem_cached"); %></div>
 									<span id="mem_cached"></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("status_router.mem_avail"); %></div>
+									<span id="mem_avail"></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_router.mem_active"); %></div>
