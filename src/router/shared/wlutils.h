@@ -440,6 +440,7 @@ extern int mac80211_get_coverageclass(char *interface);
 extern struct mac80211_info *mac80211_assoclist(const char *interface);
 extern char *mac80211_get_caps(const char *interface, int shortgi, int greenfield, int ht40, int ldpc, int smps);
 extern int has_greenfield(const char *interface);
+extern int has_n(const char *interface);
 #ifdef HAVE_ATH9K
 extern int has_airtime_fairness(const char *prefix);
 #ifdef HAVE_WPA3
