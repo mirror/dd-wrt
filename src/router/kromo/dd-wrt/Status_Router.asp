@@ -163,16 +163,16 @@ addEvent(window, "unload", function() {
 									<span id="mem_used"></span>&nbsp;
 								</div>
 								<div class="setting">
+									<div class="label"><% tran("status_router.mem_avail"); %></div>
+									<span id="mem_avail"></span>&nbsp;
+								</div>
+								<div class="setting">
 									<div class="label"><% tran("status_router.mem_buf"); %></div>
 									<span id="mem_buffer"></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_router.mem_cached"); %></div>
 									<span id="mem_cached"></span>&nbsp;
-								</div>
-								<div class="setting">
-									<div class="label"><% tran("status_router.mem_avail"); %></div>
-									<span id="mem_avail"></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_router.mem_active"); %></div>
