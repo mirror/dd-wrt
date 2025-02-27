@@ -228,4 +228,3 @@ create_pdev:
 			       sizeof(struct cpufreq_dt_platform_data)));
 }
 core_initcall(cpufreq_dt_platdev_init);
-MODULE_LICENSE("GPL");
