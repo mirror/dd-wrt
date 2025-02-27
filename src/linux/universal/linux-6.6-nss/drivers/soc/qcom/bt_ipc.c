@@ -571,3 +571,6 @@ void bt_ipc_deinit(struct bt_descriptor *btDesc)
 	destroy_workqueue(ipc->wq);
 }
 EXPORT_SYMBOL(bt_ipc_deinit);
+
+MODULE_DESCRIPTION("QTI Technologies, Inc.");
+MODULE_LICENSE("GPL v2");

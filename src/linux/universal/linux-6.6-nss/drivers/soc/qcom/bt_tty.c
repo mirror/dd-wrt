@@ -97,6 +97,7 @@ int bt_ipc_avail_size(struct bt_descriptor *btDesc)
 {
 	return tty_buffer_space_avail(&btDesc->tty_port);
 }
+EXPORT_SYMBOL(bt_ipc_avail_size);
 
 static
 void bt_read(struct bt_descriptor *btDesc, unsigned char *buf, int len)
