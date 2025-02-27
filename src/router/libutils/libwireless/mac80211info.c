@@ -245,7 +245,7 @@ nla_put_failure:
 	return;
 }
 
-struct mac80211_info *getcurrentsurvey_mac80211(const char *interface, struct mac80211_info *mac80211_info)
+struct mac80211_info *mac80211_getcurrentsurvey(const char *interface, struct mac80211_info *mac80211_info)
 {
 	mac80211_init();
 	lock();
