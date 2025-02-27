@@ -106,14 +106,14 @@ static void _invalidate_channelcache(void)
 	sscanf(prefix, "wlan%d", &dn);                           \
 	if (dn > -1 && (dn > 7 || devs[dn] == -1)) {
 #endif
-#define EXITVALUECACHE()         \
-	}                        \
-	else                     \
-	{                        \
-		return devs[dn]; \
-	}                        \
-out_cache:;                      \
-	if (dn < 8 && dn > -1)   \
+#define EXITVALUECACHE()               \
+	}                              \
+	else                           \
+	{                              \
+		return (devs[dn] > 0); \
+	}                              \
+out_cache:;                            \
+	if (dn < 8 && dn > -1)         \
 		devs[dn] = ret;
 
 #define RETURNVALUE(val)        \
