@@ -3688,20 +3688,23 @@ static int devicecountbydriver_ath5kahb(const char *prefix)
 }
 
 #endif
-static int devicecountbydriver(const char *prefix, char *drivername)
+static int devicecountbydriver(const const char *prefix, const char *drivername, const char *module)
 {
 	glob_t globbuf;
-	char *globstring;
+	char globstring[128];
 	int globresult;
 	int devnum;
 	int ret;
+	char mod[32] snprintf(mod, sizeof(mod), "/sys/module/%s*", module);
+	globresult = glob(mod, GLOB_NOSORT, NULL, &globbuf);
+	if (globresult)
+		return -1; // keep cache invalidated
 	// correct index if there are legacy cards arround... should not...
 	devnum = get_ath9k_phy_ifname(prefix);
 	if (devnum == -1)
 		return 0;
-	asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/driver/module/drivers/%s", devnum, drivername);
+	snprintf(globstring, sizeof(globstring), "/sys/class/ieee80211/phy%d/device/driver/module/drivers/%s", devnum, drivername);
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
-	free(globstring);
 	if (globresult == 0)
 		ret = (int)globbuf.gl_pathc;
 	else
@@ -3712,16 +3715,16 @@ static int devicecountbydriver(const char *prefix, char *drivername)
 }
 
 #define IS_DRIVER(name, desc)                                   \
-	int is_##name(const char *prefix)                       \
+	int is_##name(const char *prefix, const char *module)   \
 	{                                                       \
 		INITVALUECACHE();                               \
 		RETURNVALUE(devicecountbydriver(prefix, desc)); \
 		EXITVALUECACHE();                               \
-		return ret;                                     \
+		return ret > 0;                                 \
 	}
 
 #ifdef HAVE_ATH5K
-IS_DRIVER(ath5k_pci, "pci:ath5k");
+IS_DRIVER(ath5k_pci, "pci:ath5k", "ath5k");
 
 int is_ath5k_ahb(const char *prefix)
 {
@@ -3738,7 +3741,7 @@ int is_ath5k(const char *prefix)
 
 #endif
 #ifdef HAVE_ATH9K
-IS_DRIVER(ath9k, "pci:ath9k");
+IS_DRIVER(ath9k, "pci:ath9k", "ath9k");
 int is_ap8x(const char *prefix)
 {
 	INITVALUECACHE();
@@ -3751,37 +3754,37 @@ int is_ap8x(const char *prefix)
 	return ret;
 }
 
-IS_DRIVER(iwlwifi, "pci:iwlwifi");
-IS_DRIVER(iwl4965, "pci:iwl4965");
-IS_DRIVER(iwl3945, "pci:iwl3945");
-IS_DRIVER(mwifiex, "sdio:mwifiex_sdio");
+IS_DRIVER(iwlwifi, "pci:iwlwifi", "iwlwifi");
+IS_DRIVER(iwl4965, "pci:iwl4965", "iwl4965");
+IS_DRIVER(iwl3945, "pci:iwl3945", "iwl3945");
+IS_DRIVER(mwifiex, "sdio:mwifiex_sdio", "mwifiex");
 #endif
 #ifdef HAVE_MVEBU
-IS_DRIVER(mvebu, "pci:mwlwifi");
+IS_DRIVER(mvebu, "pci:mwlwifi", "mwlwifi");
 #endif
 #ifdef HAVE_ATH10K
-IS_DRIVER(ath10k, "pci:ath10k_pci");
+IS_DRIVER(ath10k, "pci:ath10k_pci", "ath10k");
 #endif
 #ifdef HAVE_ATH11K
-IS_DRIVER(ath11k_pci, "pci:ath11k_pci");
-IS_DRIVER(ath11k_ahb, "platform:ath11k");
+IS_DRIVER(ath11k_pci, "pci:ath11k_pci", "ath11k");
+IS_DRIVER(ath11k_ahb, "platform:ath11k", "ath11k");
 int is_ath11k(const char *prefix)
 {
 	return is_ath11k_pci(prefix) || is_ath11k_ahb(prefix);
 }
 #endif
 #ifdef HAVE_BRCMFMAC
-IS_DRIVER(brcmfmac, "pci:brcmfmac");
+IS_DRIVER(brcmfmac, "pci:brcmfmac", "brcmfmac");
 #endif
 #if defined(HAVE_MT76) || defined(HAVE_ATH11K)
-IS_DRIVER(mt7615, "pci:mt7615e");
-IS_DRIVER(mt7915, "pci:mt7915e");
-IS_DRIVER(mt7921, "pci:mt7921e");
-IS_DRIVER(mt7603, "pci:mt7603e");
-IS_DRIVER(mt76x0, "pci:mt76x0e");
-IS_DRIVER(mt76x2, "pci:mt76x2e");
-IS_DRIVER(rt2880_wmac, "pci:rt2880_wmac");
-IS_DRIVER(rt2880_pci, "pci:rt2880pci");
+IS_DRIVER(mt7615, "pci:mt7615e", "mt7615");
+IS_DRIVER(mt7915, "pci:mt7915e", "mt7915");
+IS_DRIVER(mt7921, "pci:mt7921e", "mt7921");
+IS_DRIVER(mt7603, "pci:mt7603e", "mt7603");
+IS_DRIVER(mt76x0, "pci:mt76x0e", "mt76x0");
+IS_DRIVER(mt76x2, "pci:mt76x2e", "mt76x2");
+IS_DRIVER(rt2880_wmac, "pci:rt2880_wmac", "rt2880");
+IS_DRIVER(rt2880_pci, "pci:rt2880pci", "rt2880");
 
 int is_mt76(const char *prefix)
 {
