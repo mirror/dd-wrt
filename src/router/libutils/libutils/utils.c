@@ -1150,17 +1150,19 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort, 
 		qsort(sort, sortcount, sizeof(char *), ifcompare);
 	}
 	int i;
-	if (sort) {
-		for (i = 0; i < sortcount; i++) {
+	cnt = 0;
+	for (i = 0; i < sortcount; i++) {
+		if (!strstr(buffer, sort[i])) {
 			strcat(buffer, sort[i]);
 			strcat(buffer, " ");
-			free(sort[i]);
 		}
-		free(sort);
-		if (sortcount)
-			buffer[strlen(buffer) - 1] = 0; // fixup last space
+		free(sort[i]);
+		cnt++;
 	}
-	return sortcount;
+	free(sort);
+	if (sortcount)
+		buffer[strlen(buffer) - 1] = 0; // fixup last space
+	return cnt;
 }
 
 /*
