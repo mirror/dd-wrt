@@ -146,7 +146,7 @@ static int phy_lookup_by_number(int idx)
 
 int mac80211_get_phyidx_by_vifname(const char *vif)
 {
-	return (phy_lookup_by_number(get_ath9k_phy_ifname(vif)));
+	return (phy_lookup_by_number(get_mac80211_phy_ifname(vif)));
 }
 
 static struct nla_policy survey_policy[NL80211_SURVEY_INFO_MAX + 1] = {
@@ -1253,7 +1253,7 @@ static void *cipher_worker(struct nlattr **tb, void *priv)
 static void *mac80211_has_worker(const char *prefix, void *(*worker)(struct nlattr **tb, void *priv), void *priv)
 {
 	mac80211_init();
-	int phy = get_ath9k_phy_ifname(prefix);
+	int phy = get_mac80211_phy_ifname(prefix);
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
 	struct nl_msg *msg;
 	struct genlmsghdr *gnlh;
@@ -2401,7 +2401,7 @@ void mac80211_set_antennas(const char *prefix, uint32_t tx_ant, uint32_t rx_ant)
 	if (maxtxchain > 15 && (maxtxchain & 0xf) == 0)
 		tx_ant <<= 4;
 
-	int phy = get_ath9k_phy_ifname(prefix);
+	int phy = get_mac80211_phy_ifname(prefix);
 	mac80211_init();
 	struct nl_msg *msg;
 	if (tx_ant == 0 || rx_ant == 0)
@@ -2509,7 +2509,7 @@ int has_tdma(const char *prefix)
 
 static int mac80211_get_antennas(const char *prefix, int which, int direction)
 {
-	int phy = get_ath9k_phy_ifname(prefix);
+	int phy = get_mac80211_phy_ifname(prefix);
 	mac80211_init();
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
 	struct nl_msg *msg;

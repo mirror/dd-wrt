@@ -213,7 +213,7 @@ void delete_ath9k_devices(char *physical_iface)
 void deconfigure_single_ath9k(int count)
 {
 	ENTER;
-	int idx = get_ath9k_phy_idx(count);
+	int idx = get_mac80211_phy_idx(count);
 	fprintf(stderr, "ath9k deconfigure_single: phy%d wlan%d\n", idx, count);
 	char wif[10];
 	sprintf(wif, "phy%d", idx);
@@ -309,7 +309,7 @@ void configure_single_ath9k(int count)
 	int cnt = 0;
 	char dev[10];
 	char wif[10];
-	int phy_idx = get_ath9k_phy_idx(count);
+	int phy_idx = get_mac80211_phy_idx(count);
 	char channel[32];
 	char ssid[32];
 	char net[32];
@@ -2612,7 +2612,7 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 	char wmode[32];
 	int ctrlifneeded = 0;
 	char wif[10];
-	sprintf(wif, "phy%d", get_ath9k_phy_idx(count));
+	sprintf(wif, "phy%d", get_mac80211_phy_idx(count));
 	sprintf(wl, "%s_mode", prefix);
 	sprintf(dev, "%s", prefix);
 	sprintf(net, "%s_net_mode", dev);
@@ -2752,7 +2752,7 @@ void post_hostapd_actions(int count)
 	char wmode[32];
 	char bridged[32];
 
-	sprintf(wif, "phy%d", get_ath9k_phy_idx(count));
+	sprintf(wif, "phy%d", get_mac80211_phy_idx(count));
 
 	sprintf(wl, "wlan%d_mode", count);
 	char *apm = nvram_safe_get(wl);
