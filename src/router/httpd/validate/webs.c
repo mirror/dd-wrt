@@ -4071,6 +4071,7 @@ static char *vapsettings[] = {
 	"at_weight",
 	"at_limit",
 	"mesh_fwding",
+	"mesh_nolearn",
 	"mesh_retry_timeout",
 	"mesh_confirm_timeout",
 	"mesh_holding_timeout",
@@ -5612,6 +5613,7 @@ static void save_prefix(webs_t wp, char *prefix)
 		copytonv_prefix(wp, "mesh_hwmp_rann_interval", prefix);
 		copytonv_prefix(wp, "mesh_gate_announcements", prefix);
 		copytonv_prefix(wp, "mesh_fwding", prefix);
+		copytonv_prefix(wp, "mesh_nolearn", prefix);
 		copytonv_prefix(wp, "mesh_sync_offset_max_neighor", prefix);
 		copytonv_prefix(wp, "mesh_rssi_threshold", prefix);
 		copytonv_prefix(wp, "mesh_hwmp_active_path_to_root_timeout", prefix);
