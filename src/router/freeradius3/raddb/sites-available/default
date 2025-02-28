@@ -11,7 +11,7 @@
 #	the "inner-tunnel" virtual server.  You will likely have to edit
 #	that, too, for authentication to work.
 #
-#	$Id: b4339bde9e22910fb01159fd89b6a92cbb2cae24 $
+#	$Id: 5046e59429b1510d5a2372593a60d16f2b951d7b $
 #
 ######################################################################
 #
@@ -190,11 +190,29 @@ listen {
 	      #  If no packets have been received over the connection for
 	      #  this time, the connection will be closed.
 	      #
+	      #  In general, the client should close connections when
+	      #  they are idle.  This setting is here just to make
+	      #  sure that bad clients do not leave connections open
+	      #  for days.
+	      #
+	      #  If an idle timeout is set for only a "client" or a
+	      #  "listen" section, that timeout is used.
+	      #
+	      #  If an idle timeout is set for both a "client" and a
+	      #  "listen" section, then the smaller timeout is used.
+	      #
 	      #  Setting this to 0 means "no timeout".
 	      #
 	      #  We STRONGLY RECOMMEND that you set an idle timeout.
 	      #
-	      idle_timeout = 30
+	      #  Systems with many incoming connections (500+) should
+	      #  set this value to a lower number.  There are only a
+	      #  limited number of usable file descriptors (usually
+	      #  1024) due to Posix API issues.  If many sockets are
+	      #  idle, it can prevent the server from opening new
+	      #  connections.
+	      #
+	      idle_timeout = 900
 	}
 }
 
@@ -685,6 +703,7 @@ accounting {
 	#  recorded from the corresponding Access-Accept
 	#  use it only if your NAS boxes do not support CUI themselves
 #	cui
+
 	#
 	#  Create a 'detail'ed log of the packets.
 	#  Note that accounting requests which are proxied
@@ -694,8 +713,9 @@ accounting {
 
 	#  Update the wtmp file
 	#
-	#  If you don't use "radlast", you can delete this line.
-	unix
+	#  If you don't use "radlast" (becoming obsolete and no longer
+	#  available on all systems), you can delete this line.
+#	unix
 
 	#
 	#  For Simultaneous-Use tracking.

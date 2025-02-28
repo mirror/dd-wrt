@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 035f5578fe749c6c0ed4e046a02bafa4626f60f9 $
+ * $Id: d18c0084575951f3d27b8aa287c17cedc83527bf $
  *
  * @brief Functions and datatypes for the REST (HTTP) transport.
  * @file rest.c
@@ -23,7 +23,7 @@
  * @copyright 2012-2014  Arran Cudbard-Bell <a.cudbard-bell@freeradius.org>
  */
 
-RCSID("$Id: 035f5578fe749c6c0ed4e046a02bafa4626f60f9 $")
+RCSID("$Id: d18c0084575951f3d27b8aa287c17cedc83527bf $")
 
 #include <ctype.h>
 #include <string.h>
@@ -394,7 +394,7 @@ void *mod_conn_create(TALLOC_CTX *ctx, void *instance)
 	CURL *candle = curl_easy_init();
 
 	CURLcode ret = CURLE_OK;
-	char const *option = "unknown";
+	char const *option;
 
 	if (!candle) {
 		ERROR("rlm_rest (%s): Failed to create CURL handle", inst->xlat_name);
@@ -480,10 +480,15 @@ int mod_conn_alive(void *instance, void *handle)
 	rlm_rest_handle_t	*randle = handle;
 	CURL			*candle = randle->handle;
 
-	long last_socket;
 	CURLcode ret;
 
-	ret = curl_easy_getinfo(candle, CURLINFO_LASTSOCKET, &last_socket);
+#if CURL_AT_LEAST_VERSION(7,45,0)
+	curl_socket_t	socket;
+	ret = curl_easy_getinfo(candle, CURLINFO_ACTIVESOCKET, &socket);
+#else
+	long	socket;
+	ret = curl_easy_getinfo(candle, CURLINFO_LASTSOCKET, &socket);
+#endif
 	if (ret != CURLE_OK) {
 		ERROR("rlm_rest (%s): Couldn't determine socket state: %i - %s", inst->xlat_name, ret,
 		      curl_easy_strerror(ret));
@@ -491,7 +496,7 @@ int mod_conn_alive(void *instance, void *handle)
 		return false;
 	}
 
-	if (last_socket == -1) {
+	if (socket == -1) {
 		return false;
 	}
 
@@ -1960,7 +1965,7 @@ static int rest_request_config_body(UNUSED rlm_rest_t *instance, rlm_rest_sectio
 	CURL			*candle = handle->handle;
 
 	CURLcode ret = CURLE_OK;
-	char const *option = "unknown";
+	char const *option;
 
 	ssize_t len;
 
@@ -2040,7 +2045,7 @@ int rest_request_config(rlm_rest_t *instance, rlm_rest_section_t *section,
 	http_auth_type_t	auth = section->auth;
 
 	CURLcode	ret = CURLE_OK;
-	char const	*option = "unknown";
+	char const	*option;
 	char const	*content_type;
 
 	VALUE_PAIR 	*header;

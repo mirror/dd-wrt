@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 18eb1c439cf0d6723cf198ce94eb244f5c879863 $
+ * $Id: f94c4928a1e172cec27f7770d58b1dca7904e938 $
  * @file rlm_eap.c
  * @brief Implements the EAP framework.
  *
@@ -23,7 +23,7 @@
  * @copyright 2001  hereUare Communications, Inc. <raghud@hereuare.com>
  * @copyright 2003  Alan DeKok <aland@freeradius.org>
  */
-RCSID("$Id: 18eb1c439cf0d6723cf198ce94eb244f5c879863 $")
+RCSID("$Id: f94c4928a1e172cec27f7770d58b1dca7904e938 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -591,7 +591,8 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(void *instance, REQUEST *reque
 static rlm_rcode_t CC_HINT(nonnull) mod_pre_proxy(UNUSED void *instance, REQUEST *request)
 {
 	VALUE_PAIR	*vp;
-	size_t		length, eap_length;
+	vp_cursor_t	cursor;
+	size_t		length, eap_length = 0;
 
 	vp = fr_pair_find_by_num(request->packet->vps, PW_EAP_MESSAGE, 0, TAG_ANY);
 	if (!vp) return RLM_MODULE_NOOP;
@@ -615,12 +616,13 @@ static rlm_rcode_t CC_HINT(nonnull) mod_pre_proxy(UNUSED void *instance, REQUEST
 	/*
 	 *	Get length of all EAP-Message attributes
 	 */
-	for (eap_length = 0; vp != NULL; vp = vp->next) {
+	fr_cursor_init(&cursor, &request->packet->vps);
+	while ((vp = fr_cursor_next_by_num(&cursor, PW_EAP_MESSAGE, 0, TAG_ANY))) {
 		eap_length += vp->vp_length;
 	}
 
 	if (length != eap_length) {
-		RDEBUG("EAP length does not match attribute length");
+		RDEBUG("EAP length (%zu) does not match attribute length (%zu)", eap_length, length);
 		goto add_error_cause;
 	}
 

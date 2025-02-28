@@ -1,7 +1,7 @@
 /*
  * realms.c	Realm handling code
  *
- * Version:     $Id: cf10ccbe1d5ee12209f8026bbe04f88323c699cb $
+ * Version:     $Id: eb81b8a6721f5f35e636802f5c47584620a51444 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2007  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: cf10ccbe1d5ee12209f8026bbe04f88323c699cb $")
+RCSID("$Id: eb81b8a6721f5f35e636802f5c47584620a51444 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/realms.h>
@@ -649,7 +649,7 @@ static bool home_server_insert(home_server_t *home, CONF_SECTION *cs)
 		return false;
 	}
 
-	if (!home->virtual_server && !rbtree_insert(home_servers_byaddr, home)) {
+	if (!home->virtual_server && !home->dynamic && !rbtree_insert(home_servers_byaddr, home)) {
 		rbtree_deletebydata(home_servers_byname, home);
 		cf_log_err_cs(cs, "Internal error %d adding home server %s", __LINE__, home->log_name);
 		return false;
@@ -691,7 +691,7 @@ bool realm_home_server_add(home_server_t *home)
 		return false;
 	}
 
-	if (!home->virtual_server && (rbtree_finddata(home_servers_byaddr, home) != NULL)) {
+	if (!home->virtual_server && !home->dynamic && (rbtree_finddata(home_servers_byaddr, home) != NULL)) {
 		char buffer[INET6_ADDRSTRLEN + 3];
 
 		inet_ntop(home->ipaddr.af, &home->ipaddr.ipaddr, buffer, sizeof(buffer));
@@ -978,7 +978,7 @@ home_server_t *home_server_afrom_cs(TALLOC_CTX *ctx, realm_config_t *rc, CONF_SE
 		home->proto = proto;
 	}
 
-	if (!home->virtual_server && rbtree_finddata(home_servers_byaddr, home)) {
+	if (!home->virtual_server && !home->dynamic && rbtree_finddata(home_servers_byaddr, home)) {
 		cf_log_err_cs(cs, "Duplicate home server");
 		goto error;
 	}
@@ -3160,11 +3160,12 @@ home_pool_t *home_pool_byname(char const *name, int type)
 	return rbtree_finddata(home_pools_byname, &mypool);
 }
 
+
 int home_server_afrom_file(char const *filename)
 {
 	CONF_SECTION *cs, *subcs;
 	char const *p;
-	home_server_t *home;
+	home_server_t *home, *old;
 
 	if (!realm_config->dynamic) {
 		fr_strerror_printf("Must set \"dynamic = true\" in proxy.conf for dynamic home servers to work");
@@ -3205,18 +3206,22 @@ int home_server_afrom_file(char const *filename)
 
 	home->dynamic = true;
 
-	if (home->virtual_server) {
-		fr_strerror_printf("Dynamic home_server '%s' cannot have 'server = %s' configuration item", p, home->virtual_server);
+#ifdef WITH_TLS
+	/*
+	 *	All of the other code assumes that only TLS sockets
+	 *	have child listeners.  See listen.c for references to
+	 *	...->listeners, which are all inside of blocks which
+	 *	check for TLS.
+	 */
+	if (!home->tls) {
+		fr_strerror_printf("Dynamic home_server '%s' does not use TLS - ignoring it.", p);
 		talloc_free(home);
 		goto error;
 	}
-
-	if (home->dual
-#ifdef WITH_TLS
-		&& !home->tls
 #endif
-	) {
-		fr_strerror_printf("Dynamic home_server '%s' is missing 'type', or it is set to 'auth+acct'.  Please specify 'type = auth' or 'type = acct', etc.", p);
+
+	if (home->virtual_server) {
+		fr_strerror_printf("Dynamic home_server '%s' cannot have 'server = %s' configuration item", p, home->virtual_server);
 		talloc_free(home);
 		goto error;
 	}
@@ -3229,8 +3234,88 @@ int home_server_afrom_file(char const *filename)
 	}
 #endif
 
+	old = home_server_byname(home->name, home->type);
+	if (old) {
+		if (!old->dynamic) {
+			fr_strerror_printf("Cannot replace static home server %s with a dynamic one",
+					   home->name);
+			talloc_free(home);
+			goto error;
+		}
+
+#ifdef WITH_TLS
+		if (!old->tls) {
+			fr_strerror_printf("Cannot replace non-TLS home server %s with a dynamic one",
+					   home->name);
+			talloc_free(home);
+			goto error;
+		}
+#endif
+
+#if 0
+		/*
+		 *	The fr_socket_client_tcp() and fr_socket() functions may change the
+		 *	source IP, i.e. * -> 192.168...., due to issues like FreeBSD jails.
+		 */
+		if (memcmp(&old->src_ipaddr, &home->src_ipaddr, sizeof(home->src_ipaddr)) != 0) {
+			fr_strerror_printf("Cannot change source IP for dynamic home server %s.",
+					   home->name);
+			talloc_free(home);
+			goto error;
+		}
+#endif
+
+		if (old->ipaddr.af != home->ipaddr.af) {
+			fr_strerror_printf("Cannot change IP address families for dynamic home server %s.",
+					   home->name);
+			talloc_free(home);
+			goto error;
+		}
+
+		/*
+		 *	No other thread is writing to it, as we're running in the master thread.  So this
+		 *	memcpy is safe.
+		 *
+		 *	@todo - extend the lifetime?
+		 */
+		if (memcmp(&old->ipaddr, &home->ipaddr, sizeof(home->ipaddr)) == 0) {
+			talloc_free(home);
+			return 0;
+		}
+
+		/*
+		 *	Change the destination IP to the new one.
+		 *
+		 *	This isn't thread-safe.  :(
+		 */
+		switch (old->ipaddr.af) {
+		case AF_INET:
+			old->ipaddr.ipaddr.ip4addr.s_addr = home->ipaddr.ipaddr.ip4addr.s_addr;
+			break;
+
+		case AF_INET6:
+			memcpy(&old->ipaddr.ipaddr.ip6addr.s6_addr,
+			       &home->ipaddr.ipaddr.ip6addr.s6_addr,
+			       sizeof(old->ipaddr.ipaddr.ip6addr.s6_addr));
+			break;
+
+		default:
+			fr_strerror_printf("Bad address family");
+			talloc_free(home);
+			return -1;
+		}
+
+		talloc_free(home);
+		return 0;
+	}
+
+	/*
+	 *	@todo - find the original one.  If it already exists,
+	 *	just change the IP address?
+	 */
+
 	if (!realm_home_server_add(home)) {
-		fr_strerror_printf("Failed adding home_server to the internal data structures");
+		fr_strerror_printf("Failed adding dynamic server");
 		talloc_free(home);
 		goto error;
 	}
@@ -3238,7 +3323,7 @@ int home_server_afrom_file(char const *filename)
 	return 0;
 }
 
-int home_server_delete(char const *name, char const *type_name)
+int home_server_delete_byname(char const *name, char const *type_name)
 {
 	home_server_t *home;
 	int type;
@@ -3268,13 +3353,24 @@ int home_server_delete(char const *name, char const *type_name)
 		return -1;
 	}
 
+	return home_server_delete(home);
+}
+
+int home_server_delete(home_server_t *home)
+{
 	if (!home->dynamic) {
-		fr_strerror_printf("Cannot delete static home_server %s", p);
+		fr_strerror_printf("Cannot delete static home_server %s", home->name);
 		return -1;
 	}
 
+#ifdef WITH_TLS
+	if (rbtree_num_elements(home->listeners) > 0) {
+		fr_strerror_printf("Cannot delete dynaic home_server %s - it still has open sockets", home->name);
+		return -1;
+	}
+#endif
+
 	(void) rbtree_deletebydata(home_servers_byname, home);
-	(void) rbtree_deletebydata(home_servers_byaddr, home);
 #ifdef WITH_STATS
 	(void) rbtree_deletebydata(home_servers_bynumber, home);
 #endif

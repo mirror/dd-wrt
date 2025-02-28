@@ -1,7 +1,7 @@
 /*
  * command.c	Command socket processing.
  *
- * Version:	$Id: 266366b2a8f395e42a1048dd4b3863d305e34cdc $
+ * Version:	$Id: 1e5d43212283d80ede908200fae86f49b54d9afb $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -2805,7 +2805,7 @@ static int command_del_home_server(rad_listen_t *listener, int argc, char *argv[
 		return 0;
 	}
 
-	if (home_server_delete(argv[0], argv[1]) < 0) {
+	if (home_server_delete_byname(argv[0], argv[1]) < 0) {
 		cprintf_error(listener, "Failed deleted home_server %s - %s\n", argv[1], fr_strerror());
 		return 0;
 	}

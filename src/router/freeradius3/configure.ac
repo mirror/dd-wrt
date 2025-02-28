@@ -23,7 +23,7 @@ dnl #############################################################
 AC_PREREQ([2.59])
 export CFLAGS LIBS LDFLAGS CPPFLAGS
 
-AC_INIT([freeradius],[$Id: a24a8061f62ba434a92675ad55fb33af9b1dc5b9 $],[http://bugs.freeradius.org],[],[http://www.freeradius.org])
+AC_INIT([freeradius],[$Id: 6f292066466458fda3ec898b16d2d44e324741fb $],[http://bugs.freeradius.org],[],[http://www.freeradius.org])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/main/radiusd.c])
 AC_CONFIG_HEADER([src/include/autoconf.h])
@@ -567,6 +567,25 @@ if test "x$WITH_DHCP" = "xyes"; then
 fi
 AC_SUBST(WITH_DHCP)
 
+
+dnl #
+dnl #  extra argument: --with-radlast
+dnl #
+MANSKIP=
+WITH_RADLAST=
+AC_ARG_WITH(radlast,
+[  --with-radlast          install radlast],
+[ case "$withval" in
+  yes)
+    WITH_RADLAST=yes
+    ;;
+  *)
+    WITH_RADLAST=no
+  esac ]
+)
+AC_SUBST(WITH_RADLAST)
+
+
 dnl #
 dnl #  Allow the user to specify a list of modules to be linked
 dnl #  statically to the server.
@@ -857,6 +876,19 @@ if test "x$ac_cv_path_SNMPWALK" = "x"; then
 fi
 
 AC_PATH_PROG(RUSERS, rusers, /usr/bin/rusers)
+
+
+dnl #
+dnl #  radlast depends on last
+dnl #
+if test "x$WITH_RADLAST" = "x"; then
+  AC_CHECK_PROG(LAST, last, yes, no)
+  WITH_RADLAST="$LAST"
+fi
+if test "x$WITH_RADLAST" != "xyes"; then
+  MANSKIP="$MANSKIP man/man1/radlast.1"
+fi
+
 
 dnl #
 dnl #  FIXME This is truly gross.
@@ -2625,11 +2657,13 @@ AC_SUBST(USE_SHARED_LIBS)
 USE_STATIC_LIBS="yes"
 AC_SUBST(USE_STATIC_LIBS)
 AC_SUBST(STATIC_MODULES)
+AC_SUBST(MANSKIP)
 
 AC_CONFIG_FILES([\
   ./Make.inc \
   ./src/include/build-radpaths-h \
   ./src/main/radsniff.mk \
+  ./src/main/radlast.mk \
   ./src/main/checkrad \
   ./src/main/radlast \
   ./src/main/radtest \

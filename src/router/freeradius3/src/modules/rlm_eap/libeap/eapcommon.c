@@ -3,7 +3,7 @@
  *
  * code common to clients and to servers.
  *
- * Version:     $Id: 5abe47a750c0fe354d89fcccb973db79e5fe5081 $
+ * Version:     $Id: 12399696ed3df4cd774099567b45b50b0f3248bf $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -57,11 +57,18 @@
  *
  */
 
-RCSID("$Id: 5abe47a750c0fe354d89fcccb973db79e5fe5081 $")
+RCSID("$Id: 12399696ed3df4cd774099567b45b50b0f3248bf $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/rad_assert.h>
 #include "eap_types.h"
+
+#ifndef TLS_LENGTH_INCLUDED
+#define TLS_LENGTH_INCLUDED(x) 	(((x) & 0x80) != 0)
+#endif
+#ifndef TLS_OUTER_TLV_INCLUDED
+#define TLS_OUTER_TLV_INCLUDED(x) (((x) & 0x10) != 0)
+#endif
 
 const FR_NAME_NUMBER eap_rcode_table[] = {
 	{ "notfound",		EAP_NOTFOUND		},
@@ -422,11 +429,19 @@ eap_packet_raw_t *eap_vp2packet(TALLOC_CTX *ctx, VALUE_PAIR *vps)
 			return NULL;
 		}
 
+#if 0
+		DEBUG("(TLS) EAP Peer sent flags %c%c%c%c",
+		      TLS_START(eap_packet->data[1]) ? 'S' : '-',
+		      TLS_MORE_FRAGMENTS(eap_packet->data[1]) ? 'M' : '-',
+		      TLS_OUTER_TLV_INCLUDED(eap_packet->data[1]) ? 'O' : '-',
+		      TLS_LENGTH_INCLUDED(eap_packet->data[1]) ? 'L' : '-');
+#endif
+
 		/*
 		 *	L bit set means we have 4 octets of Length
 		 *	following the flags field.
 		 */
-		if ((eap_packet->data[1] & 0x80) != 0) {
+		if (TLS_LENGTH_INCLUDED(eap_packet->data[1])) {
 			uint32_t tls_len;
 
 			if (len <= (2 + 4)) {
@@ -452,23 +467,44 @@ eap_packet_raw_t *eap_vp2packet(TALLOC_CTX *ctx, VALUE_PAIR *vps)
 			/*
 			 *	O bit set means we have 4 octets of Outer TLV Length
 			 *	following the Length field.
+			 *
+			 * 0                   1                   2                   3
+			 * 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+			 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			 * |     Code      |   Identifier  |            Length             |
+			 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			 * |     Type      |   Flags | Ver |        Message Length         :
+			 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			 * :         Message Length        |         Outer TLV Length
+			 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			 * :     Outer TLV Length          |         TLS Data...
+			 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			 * |       Outer TLVs...
+			 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 			 */
-			if ((eap_packet->data[1] & 0x10) != 0) {
+			if (TLS_OUTER_TLV_INCLUDED(eap_packet->data[1])) {
 				uint32_t tlv_len;
+				uint16_t offset;
 
+			check_outer_tlv:
 				if (!allow_o) {
 					fr_strerror_printf("Malformed EAP packet - TLS 'O' bit is set, but EAP method does not use it.");
 					talloc_free(eap_packet);
 					return NULL;
 				}
 
-				if (len <= (2 + 4 + 4)) {
+				/*
+				 *	Type + flags + potentially a message length.
+				 */
+				offset = 2 + (TLS_LENGTH_INCLUDED(eap_packet->data[1]) << 2);
+
+				if (len <= (offset + 4)) {
 					fr_strerror_printf("Malformed EAP packet - TLS 'O' bit is set, but packet is too small to contain 'outer tlv length' field");
 					talloc_free(eap_packet);
 					return NULL;
 				}
 
-				memcpy(&tlv_len, eap_packet->data + 2 + 4, 4);
+				memcpy(&tlv_len, eap_packet->data + offset, 4);
 				tlv_len = ntohl(tlv_len);
 
 				/*
@@ -479,19 +515,14 @@ eap_packet_raw_t *eap_vp2packet(TALLOC_CTX *ctx, VALUE_PAIR *vps)
 				 *	flags, length field, or outer
 				 *	tlv length field.
 				 */
-				if ((int)tlv_len > (len - (2 + 4 + 4))) {
+				if ((int)tlv_len > (len - (offset + 4))) {
 					fr_strerror_printf("Malformed EAP packet - TLS 'O' bit is set, but 'outer tlv length' field is larger than the current fragment");
 					talloc_free(eap_packet);
 					return NULL;
 				}
 			}
-		} else {
-			if ((eap_packet->data[1] & 0x10) != 0) {
-				fr_strerror_printf("Malformed EAP packet - TLS 'O' bit is set, but 'L' bit is not set.");
-				talloc_free(eap_packet);
-				return NULL;
-			}
-
+		} else if (TLS_OUTER_TLV_INCLUDED(eap_packet->data[1])) {
+			goto check_outer_tlv;
 		}
 		break;
 

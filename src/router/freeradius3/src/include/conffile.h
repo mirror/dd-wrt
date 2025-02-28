@@ -4,11 +4,11 @@
 /*
  * conffile.h	Defines for the conffile parsing routines.
  *
- * Version:	$Id: 237469c880603666a5975d8c4699af35ca81a7d8 $
+ * Version:	$Id: fb3dd80597045202c5603aa21257a787811809f5 $
  *
  */
 
-RCSIDH(conffile_h, "$Id: 237469c880603666a5975d8c4699af35ca81a7d8 $")
+RCSIDH(conffile_h, "$Id: fb3dd80597045202c5603aa21257a787811809f5 $")
 
 #include <stddef.h>
 #include <freeradius-devel/token.h>
@@ -299,6 +299,10 @@ int cf_file_changed(CONF_SECTION *cs, rb_walker_t callback);
 
 extern CONF_SECTION *root_config;
 extern bool cf_new_escape;
+
+
+void cf_md5_init(void);
+void cf_md5_final(uint8_t *digest);
 
 #ifdef __cplusplus
 }

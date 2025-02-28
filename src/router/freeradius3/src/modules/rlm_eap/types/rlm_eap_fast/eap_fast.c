@@ -1,7 +1,7 @@
 /*
  * eap_fast.c  contains the interfaces that are called from the main handler
  *
- * Version:     $Id: bbb5a03c9582ebdc878d4f7339359841ceb3f765 $
+ * Version:     $Id: 0d0b6c970cee8806ac3480f02509c8bdfa291098 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *   Copyright 2016 The FreeRADIUS server project
  */
 
-RCSID("$Id: bbb5a03c9582ebdc878d4f7339359841ceb3f765 $")
+RCSID("$Id: 0d0b6c970cee8806ac3480f02509c8bdfa291098 $")
 
 #include "eap_fast.h"
 #include "eap_fast_crypto.h"
@@ -901,6 +901,8 @@ static PW_CODE eap_fast_eap_payload(REQUEST *request, eap_handler_t *eap_session
 	 */
 	fake = request_alloc_fake(request);
 	rad_assert(!fake->packet->vps);
+
+	fake->eap_inner_tunnel = true;
 
 	t = (eap_fast_tunnel_t *) tls_session->opaque;
 

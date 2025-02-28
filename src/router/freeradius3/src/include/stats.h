@@ -4,7 +4,7 @@
 /*
  * stats.h	Structures and functions for statistics.
  *
- * Version:	$Id: 68903f93497fb4f469d40ce440b9eb7c3eba15c8 $
+ * Version:	$Id: 482d3f383644ea408d76f4dc6b8b7b9b79bc050a $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  * Copyright 2005,2006,2007,2008  The FreeRADIUS server project
  */
 
-RCSIDH(stats_h, "$Id: 68903f93497fb4f469d40ce440b9eb7c3eba15c8 $")
+RCSIDH(stats_h, "$Id: 482d3f383644ea408d76f4dc6b8b7b9b79bc050a $")
 
 #ifdef __cplusplus
 extern "C" {
@@ -82,7 +82,8 @@ void request_stats_reply(REQUEST *request);
 void radius_stats_ema(fr_stats_ema_t *ema,
 		      struct timeval *start, struct timeval *end);
 
-#define FR_STATS_INC(_x, _y) radius_ ## _x ## _stats._y++;if (listener) listener->stats._y++;if (client) client->_x._y++;
+#define FR_STATS_INC(_x, _y) do { radius_ ## _x ## _stats._y++;if (listener) listener->stats._y++;if (client) client->_x._y++; if (listener && listener->parent) { listener->parent->stats._y++; } } while (0)
+
 #define FR_STATS_TYPE_INC(_x) _x++
 
 #else  /* WITH_STATS */

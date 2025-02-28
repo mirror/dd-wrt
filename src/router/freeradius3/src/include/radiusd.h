@@ -16,7 +16,7 @@
 #ifndef RADIUSD_H
 #define RADIUSD_H
 /**
- * $Id: ec69b8d4e096bef619e3541bb500744a6644abbd $
+ * $Id: da7a6b8421fbaed9baebcca46c6cdb114022e9b7 $
  *
  * @file radiusd.h
  * @brief Structures, prototypes and global variables for the FreeRADIUS server.
@@ -24,7 +24,7 @@
  * @copyright 1999-2000,2002-2008  The FreeRADIUS server project
  */
 
-RCSIDH(radiusd_h, "$Id: ec69b8d4e096bef619e3541bb500744a6644abbd $")
+RCSIDH(radiusd_h, "$Id: da7a6b8421fbaed9baebcca46c6cdb114022e9b7 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/radpaths.h>
@@ -183,6 +183,9 @@ typedef struct main_config {
 #ifdef ENABLE_OPENSSL_VERSION_CHECK
 	char const	*allow_vulnerable_openssl;	//!< The CVE number of the last security issue acknowledged.
 #endif
+
+	bool		group_stop_return;		//!< "return" stops at end of group
+	bool		policy_stop_return;		//!< "return" stops at end of policy
 } main_config_t;
 
 #if defined(WITH_VERIFY_PTR)
@@ -199,6 +202,7 @@ typedef struct main_config {
 typedef enum {
 	REQUEST_ACTIVE = 1,
 	REQUEST_STOP_PROCESSING,
+	REQUEST_TO_FREE,			//!< in the queue, and the queue should free it
 } rad_master_state_t;
 #define REQUEST_MASTER_NUM_STATES (REQUEST_STOP_PROCESSING + 1)
 
@@ -284,6 +288,7 @@ struct rad_request {
 	bool			max_time;	//!< did we hit max time?
 
 	bool			in_request_hash;
+	bool			eap_inner_tunnel;
 #ifdef WITH_PROXY
 	bool			in_proxy_hash;
 
@@ -544,6 +549,7 @@ int radius_copy_vp(TALLOC_CTX *ctx, VALUE_PAIR **out, REQUEST *request, char con
 /* threads.c */
 int	thread_pool_init(CONF_SECTION *cs, bool *spawn_flag);
 void	thread_pool_stop(void);
+void	thread_pool_free(void);
 int	thread_pool_addrequest(REQUEST *, RAD_REQUEST_FUNP);
 pid_t	rad_fork(void);
 pid_t	rad_waitpid(pid_t pid, int *status);

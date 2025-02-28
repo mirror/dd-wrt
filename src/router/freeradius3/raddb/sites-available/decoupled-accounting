@@ -15,7 +15,7 @@
 #	This file is NOT meant to be used as-is.  It needs to be
 #	edited to match your local configuration.
 #
-#	$Id: abf455cc2cf10da1e8e749a90b544a533c7e26e1 $
+#	$Id: 46bf7a120dad1c67235afa0da9316641263e7c43 $
 #
 ######################################################################
 
@@ -91,15 +91,16 @@ accounting {
 
 	#  Update the wtmp file
 	#
-	#  If you don't use "radlast", you can delete this line.
-	unix
+	#  If you don't use "radlast" (becoming obsolete and no longer
+	#  available on all systems), you can delete this line.
+#	unix
 
 	#
 	#  For Simultaneous-Use tracking.
 	#
 	#  Due to packet losses in the network, the data here
 	#  may be incorrect.  There is little we can do about it.
-	radutmp
+#	radutmp
 #	sradutmp
 
 	#

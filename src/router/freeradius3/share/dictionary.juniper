@@ -6,7 +6,7 @@
 #
 #	As posted to the list by Eric Kilfoil <ekilfoil@uslec.net>
 #
-# Version:	$Id: 15b6e6f90da6beeb6684f7a62cf0afda543e58b7 $
+# Version:	$Id: 30b256ecd4d5c0f9a7839abe471ef1097b8c67eb $
 #
 
 VENDOR		Juniper				2636
@@ -22,8 +22,8 @@ ATTRIBUTE	Juniper-Deny-Configuration		5	string
 ATTRIBUTE	Juniper-Interactive-Command		8	string
 ATTRIBUTE	Juniper-Configuration-Change		9	string
 ATTRIBUTE	Juniper-User-Permissions		10	string
-ATTRIBUTE	Juniper-Junosspace-Profile		11	String
-ATTRIBUTE	Juniper-Junosspace-Profiles		11	String
+ATTRIBUTE	Juniper-Junosspace-Profile		11	string
+ATTRIBUTE	Juniper-Junosspace-Profiles		11	string
 
 ATTRIBUTE	Juniper-CTP-Group			21	integer
 ATTRIBUTE	Juniper-CTPView-APP-Group		22	integer

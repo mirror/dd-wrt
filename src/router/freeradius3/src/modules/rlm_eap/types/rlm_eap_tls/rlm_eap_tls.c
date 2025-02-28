@@ -1,7 +1,7 @@
 /*
  * rlm_eap_tls.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: 482fdca64066835ed3b49ce7b87ea9f36d7ac6ac $
+ * Version:     $Id: 0eaf063421cc52f21103361973cf91f8cc1f18b5 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  *
  */
 
-RCSID("$Id: 482fdca64066835ed3b49ce7b87ea9f36d7ac6ac $")
+RCSID("$Id: 0eaf063421cc52f21103361973cf91f8cc1f18b5 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #ifdef HAVE_OPENSSL_RAND_H
@@ -81,10 +81,8 @@ static int mod_instantiate(CONF_SECTION *cs, void **instance)
  */
 static int mod_session_init(void *type_arg, eap_handler_t *handler)
 {
-	int		status;
 	tls_session_t	*ssn;
 	rlm_eap_tls_t	*inst;
-	REQUEST		*request = handler->request;
 	bool		require_client_cert = true;
 
 	inst = type_arg;
@@ -122,13 +120,7 @@ static int mod_session_init(void *type_arg, eap_handler_t *handler)
 	 *	TLS session initialization is over.  Now handle TLS
 	 *	related handshaking or application data.
 	 */
-	status = eaptls_request(handler->eap_ds, ssn, true);
-	if ((status == FR_TLS_INVALID) || (status == FR_TLS_FAIL)) {
-		REDEBUG("[eaptls start] = %s", fr_int2str(fr_tls_status_table, status, "<INVALID>"));
-	} else {
-		RDEBUG3("[eaptls start] = %s", fr_int2str(fr_tls_status_table, status, "<INVALID>"));
-	}
-	if (status == 0) return 0;
+	eaptls_start(handler->eap_ds, ssn->peap_flag);
 
 	/*
 	 *	The next stage to process the packet.
@@ -179,6 +171,8 @@ static int CC_HINT(nonnull) mod_process(void *type_arg, eap_handler_t *handler)
 			/* create a fake request */
 			fake = request_alloc_fake(request);
 			rad_assert(!fake->packet->vps);
+
+			fake->eap_inner_tunnel = true;
 
 			fake->packet->vps = fr_pair_list_copy(fake->packet, request->packet->vps);
 

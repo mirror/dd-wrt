@@ -5,7 +5,7 @@
  *		write a decent parser. I know how to do that, really :)
  *		miquels@cistron.nl
  *
- * Version:	$Id: 4ed7d055b05ee069095ac0442d62e865b3399ff3 $
+ * Version:	$Id: 75bb5d616e1ea7b053e5951e1d55c23920c20400 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,10 +26,11 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 4ed7d055b05ee069095ac0442d62e865b3399ff3 $")
+RCSID("$Id: 75bb5d616e1ea7b053e5951e1d55c23920c20400 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/parser.h>
+#include <freeradius-devel/md5.h>
 #include <freeradius-devel/rad_assert.h>
 
 #ifdef HAVE_DIRENT_H
@@ -1503,7 +1504,7 @@ int cf_item_parse(CONF_SECTION *cs, char const *name, unsigned int type, void *d
 				     next->item.lineno, name);
 			}
 		}
-										   
+
 		if (multi) {
 			while ((next = cf_pair_find_next(cs, next, name)) != NULL) {
 				/*
@@ -2333,6 +2334,34 @@ static char const *cf_local_file(char const *base, char const *filename,
 	return buffer;
 }
 
+static bool cf_md5_initted = false;
+static FR_MD5_CTX conf_context;
+
+void cf_md5_init(void)
+{
+	fr_md5_init(&conf_context);
+	cf_md5_initted = true;
+}
+
+
+static void cf_md5_update(char const *p)
+{
+	if (!cf_md5_initted) return;
+
+	fr_md5_update(&conf_context, (uint8_t const *)p, strlen(p));
+}
+
+void cf_md5_final(uint8_t *digest)
+{
+	if (!cf_md5_initted) {
+		memset(digest, 0, MD5_DIGEST_LENGTH);
+		return;
+	}
+
+	fr_md5_final(digest, &conf_context);
+	cf_md5_initted = false;
+}
+
 
 /*
  *	Read a part of the config file.
@@ -2369,6 +2398,7 @@ static int cf_section_read(char const *filename, int *lineno, FILE *fp,
 		 *	Get data, and remember if we are at EOF.
 		 */
 		at_eof = (fgets(cbuf, sizeof(buf) - (cbuf - buf), fp) == NULL);
+		cf_md5_update(cbuf);
 		(*lineno)++;
 
 		/*

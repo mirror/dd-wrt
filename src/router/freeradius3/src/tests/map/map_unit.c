@@ -1,7 +1,7 @@
 /*
  * radattr.c	Map debugging tool.
  *
- * Version:	$Id: af6d016a5ab83a1cbfbcbc084d95d81c8a1009c4 $
+ * Version:	$Id: 24f1a291b1bc194a03acc1be7cd782786c6ef1e0 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2015  Alan DeKok <aland@freeradius.org>
  */
 
-RCSID("$Id: af6d016a5ab83a1cbfbcbc084d95d81c8a1009c4 $")
+RCSID("$Id: 24f1a291b1bc194a03acc1be7cd782786c6ef1e0 $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -53,6 +53,9 @@ pid_t rad_waitpid(pid_t pid, int *status)
 	return waitpid(pid, status, 0);
 }
 #endif
+
+/* Dummy config to allow linking to modcall */
+main_config_t main_config;
 
 rlm_rcode_t indexed_modcall(UNUSED rlm_components_t comp, UNUSED int idx, UNUSED REQUEST *request)
 {

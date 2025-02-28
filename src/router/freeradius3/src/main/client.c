@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 6e1a684da6a8ac5d6ef9e3fe65c2768e37e9507d $
+ * $Id: 859e0578bdaa787fa9f3e4f519936769bec3f30f $
  * @file main/client.c
  * @brief Manage clients allowed to communicate with the server.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000 Alan DeKok <aland@ox.org>
  * @copyright 2000 Miquel van Smoorenburg <miquels@cistron.nl>
  */
-RCSID("$Id: 6e1a684da6a8ac5d6ef9e3fe65c2768e37e9507d $")
+RCSID("$Id: 859e0578bdaa787fa9f3e4f519936769bec3f30f $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -576,7 +576,7 @@ RADCLIENT_LIST *client_list_parse_section(CONF_SECTION *section, UNUSED bool tls
 		 *	But the list isn't _our_ list that we parsed,
 		 *	so we still need to parse the clients here.
 		 */
-		if (clients->parsed) return clients;		
+		if (clients->parsed) return clients;
 	} else {
 		clients = client_list_init(section);
 		if (!clients) return NULL;
@@ -897,6 +897,7 @@ RADCLIENT *client_afrom_cs(TALLOC_CTX *ctx, CONF_SECTION *cs, bool in_server, bo
 {
 	RADCLIENT	*c;
 	char const	*name2;
+	CONF_SECTION	*tls;
 
 	name2 = cf_section_name2(cs);
 	if (!name2) {
@@ -937,6 +938,17 @@ RADCLIENT *client_afrom_cs(TALLOC_CTX *ctx, CONF_SECTION *cs, bool in_server, bo
 
 		return NULL;
 	}
+
+	/*
+	 *	Check the TLS configuration.
+	 */
+	tls = cf_section_sub_find(cs, "tls");
+#ifndef WITH_TLS
+	if (tls) {
+		cf_log_err_cs(cs, "TLS transport is not available in this executable");
+		goto error;
+	}
+#endif
 
 	/*
 	 *	Global clients can set servers to use, per-server clients cannot.
@@ -1219,10 +1231,27 @@ done_coa:
 	/*
 	 *	Be annoying to people, but it's about security.
 	 */
+#ifdef WITH_TLS
+	if (!c->tls_required && (strlen(c->secret) < 12)) {
+#else
 	if (strlen(c->secret) < 12) {
+#endif
 		WARN("Shared secret for client %s is short, and likely can be broken by an attacker.",
 		     c->shortname);
 	}
+
+#ifdef WITH_TLS
+	if (tls) {
+		/*
+		 *	Client TLS settings are taken from the
+		 *	_server_ configuration.  See listen.c, where
+		 *	client->tls is used as listener->tls.
+		 */
+		c->tls = tls_server_conf_parse(tls);
+		if (!c->tls) goto error;
+		c->tls->name = c->shortname;
+	}
+#endif
 
 	return c;
 }

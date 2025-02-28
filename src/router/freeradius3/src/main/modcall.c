@@ -1,7 +1,7 @@
 /*
  * @name modcall.c
  *
- * Version:	$Id: 5a3116cc58cd6ed3dd25c23f418a1e0357da121a $
+ * Version:	$Id: 29fc2be1b9912c51affbe05ab1300630008c6dbd $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 5a3116cc58cd6ed3dd25c23f418a1e0357da121a $")
+RCSID("$Id: 29fc2be1b9912c51affbe05ab1300630008c6dbd $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modpriv.h>
@@ -1096,6 +1096,12 @@ calculate_result:
 	}
 
 	if (entry->unwind == MOD_RETURN) {
+		if ((entry->c->type == MOD_GROUP && main_config.group_stop_return) ||
+		    (entry->c->type == MOD_POLICY && main_config.policy_stop_return)) {
+			entry->unwind = 0;
+			goto next_sibling;
+		}
+
 		goto finish;
 	}
 

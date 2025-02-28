@@ -2,7 +2,7 @@
  *  sql.c		rlm_sql - FreeRADIUS SQL Module
  *		Main code directly taken from ICRADIUS
  *
- * Version:	$Id: a18e00b1fe7bc6c189ef5d0aaaed3b9d3d9d8b00 $
+ * Version:	$Id: 59f81e44092e52f7b0219fee2b8fa9b7308de72d $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * Copyright 2001  Chad Miller <cmiller@surfsouth.com>
  */
 
-RCSID("$Id: a18e00b1fe7bc6c189ef5d0aaaed3b9d3d9d8b00 $")
+RCSID("$Id: 59f81e44092e52f7b0219fee2b8fa9b7308de72d $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/rad_assert.h>
@@ -191,7 +191,7 @@ int sql_fr_pair_list_afrom_str(TALLOC_CTX *ctx, REQUEST *request, VALUE_PAIR **h
  */
 sql_rcode_t rlm_sql_fetch_row(rlm_sql_t *inst, REQUEST *request, rlm_sql_handle_t **handle)
 {
-	int ret;
+	sql_rcode_t ret;
 
 	if (!*handle || !(*handle)->conn) return RLM_SQL_ERROR;
 

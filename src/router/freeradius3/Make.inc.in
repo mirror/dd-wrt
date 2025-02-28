@@ -1,7 +1,7 @@
 # -*- makefile -*-
 # Make.inc.in
 #
-# Version:	$Id: fefb022a268626190ccc781068efaa16f7072131 $
+# Version:	$Id: 6d5cc1c343ce49e3bd2694a889ca238c0fdad1b7 $
 #
 
 # Location of files.
@@ -65,6 +65,7 @@ INSTALL_PROGRAM	= ${INSTALL}
 INSTALL_DATA	= ${INSTALL} -m 644
 INSTALL_SCRIPT	= ${INSTALL_PROGRAM}
 INSTALLSTRIP	= @INSTALLSTRIP@
+MANSKIP         = @MANSKIP@
 
 #
 #  Linker arguments for libraries searched for by the main

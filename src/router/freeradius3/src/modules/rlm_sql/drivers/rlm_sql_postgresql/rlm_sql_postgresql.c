@@ -1,7 +1,7 @@
 /*
  * sql_postgresql.c		Postgresql rlm_sql driver
  *
- * Version:	$Id: c88d8b05a67289537a5c339f62ac37e091176d98 $
+ * Version:	$Id: 9d7fe3218d94b14a75477a46f617da3dd237f022 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
  * Bernhard Herzog <bh@intevation.de>
  */
 
-RCSID("$Id: c88d8b05a67289537a5c339f62ac37e091176d98 $")
+RCSID("$Id: 9d7fe3218d94b14a75477a46f617da3dd237f022 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -419,6 +419,9 @@ static CC_HINT(nonnull) sql_rcode_t sql_query(rlm_sql_handle_t *handle, UNUSED r
 	 */
 #ifdef HAVE_PGRES_SINGLE_TUPLE
 	case PGRES_SINGLE_TUPLE:
+#endif
+#ifdef HAVE_PGRES_TUPLES_CHUNK
+	case PGRES_TUPLES_CHUNK:
 #endif
 	case PGRES_TUPLES_OK:
 		conn->cur_row = 0;

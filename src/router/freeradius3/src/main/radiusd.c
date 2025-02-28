@@ -1,7 +1,7 @@
 /*
  * radiusd.c	Main loop of the radius server.
  *
- * Version:	$Id: f2acec7dd90f25eb17b92cc314639e001260dc98 $
+ * Version:	$Id: d91895cc11405b84b855d7fe0733eec2b6de745b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  * Copyright 2000  Chad Miller <cmiller@surfsouth.com>
  */
 
-RCSID("$Id: f2acec7dd90f25eb17b92cc314639e001260dc98 $")
+RCSID("$Id: d91895cc11405b84b855d7fe0733eec2b6de745b $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -359,6 +359,18 @@ int main(int argc, char *argv[])
 	 *  This is very useful in figuring out why the panic_action didn't fire.
 	 */
 	INFO("%s", fr_debug_state_to_msg(fr_debug_state));
+
+	/*
+	 *	Track configuration versions.  This lets us know if the configuration changed.
+	 */
+	if (rad_debug_lvl) {
+		uint8_t digest[16];
+
+		cf_md5_final(digest);
+
+		INFO("Configuration version: %02x%02x-%02x%02x-%02x%02x-%02x%02x",
+		     digest[0], digest[1], digest[2], digest[3], digest[4], digest[5], digest[6], digest[7]);
+	}
 
 	/*
 	 *  Check for vulnerabilities in the version of libssl were linked against.
@@ -773,6 +785,7 @@ static void sig_fatal(int sig)
 			radius_signal_self(RADIUS_SIGNAL_SELF_TERM);
 			break;
 		}
+		fr_strerror_printf(NULL); /* clear old errors */
 		/* FALL-THROUGH */
 
 	default:

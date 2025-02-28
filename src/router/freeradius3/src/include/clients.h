@@ -17,7 +17,7 @@
 #ifndef CLIENTS_H
 #define CLIENTS_H
 /*
- * $Id: 7e962b6797ed165189bfb7b1e06bfc2700ccdaef $
+ * $Id: 5ebca8a2a69bd639bb49b77dddefdd0fe35021ab $
  *
  * @file clients.h
  * @brief Function declarations and structures to manage clients.
@@ -79,7 +79,7 @@ typedef struct radclient {
 #endif
 #ifdef WITH_TLS
 	bool			tls_required;		//!< whether TLS encryption is required.
-
+	fr_tls_server_conf_t	*tls;
 #ifdef WITH_RADIUSV11
 	char const		*radiusv11_name;
 	fr_radiusv11_t 		radiusv11;

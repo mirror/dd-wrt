@@ -2,7 +2,7 @@
  * fifo.c	Non-thread-safe fifo (FIFO) implementation, based
  *		on hash tables.
  *
- * Version:	$Id: 7a9ecfac6d839c13bdce115bb842ae39c2996267 $
+ * Version:	$Id: 7d96aef6ecd175f99a9ae0e1ce7b5d0a9f8fbcdd $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -22,7 +22,7 @@
  *  Copyright 2005  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 7a9ecfac6d839c13bdce115bb842ae39c2996267 $")
+RCSID("$Id: 7d96aef6ecd175f99a9ae0e1ce7b5d0a9f8fbcdd $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -117,6 +117,13 @@ unsigned int fr_fifo_num_elements(fr_fifo_t *fi)
 	if (!fi) return 0;
 
 	return fi->num;
+}
+
+bool fr_fifo_full(fr_fifo_t *fi)
+{
+	if (!fi) return true;
+
+	return (fi->num >= fi->max);
 }
 
 #ifdef TESTING

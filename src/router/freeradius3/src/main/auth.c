@@ -1,7 +1,7 @@
 /*
  * auth.c	User authentication.
  *
- * Version:	$Id: d9dfc9505c27033850e8557ddc316351860837f4 $
+ * Version:	$Id: 5fa400b9968f5ca6f196aad2b9b4eb7e39213646 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2000  Miquel van Smoorenburg <miquels@cistron.nl>
  * Copyright 2000  Jeff Carneal <jeff@apex.net>
  */
-RCSID("$Id: d9dfc9505c27033850e8557ddc316351860837f4 $")
+RCSID("$Id: 5fa400b9968f5ca6f196aad2b9b4eb7e39213646 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -596,8 +596,8 @@ autz_redo:
 
 				vp_prints(buffer, sizeof(buffer), tmp);
 				RDEBUG("Proxying due to %s", buffer);
-				return RLM_MODULE_OK;
 			}
+			return RLM_MODULE_OK;
 		}
 	}
 

@@ -1,7 +1,7 @@
 /*
  * stats.c	Internal statistics handling.
  *
- * Version:	$Id: 64cbafea931f9e807cfa50984853e20b0e07173b $
+ * Version:	$Id: 9c7d8f81b24003f027facbf91cd2c56e4aba4a98 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2008  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 64cbafea931f9e807cfa50984853e20b0e07173b $")
+RCSID("$Id: 9c7d8f81b24003f027facbf91cd2c56e4aba4a98 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -261,21 +261,25 @@ void request_stats_final(REQUEST *request)
 	switch (request->proxy->code) {
 	case PW_CODE_ACCESS_REQUEST:
 		proxy_auth_stats.total_requests += request->num_proxied_requests;
+		request->home_server->stats.total_requests += request->num_proxied_requests;
 		break;
 
 #ifdef WITH_ACCOUNTING
 	case PW_CODE_ACCOUNTING_REQUEST:
 		proxy_acct_stats.total_requests += request->num_proxied_requests;
+		request->home_server->stats.total_requests += request->num_proxied_requests;
 		break;
 #endif
 
 #ifdef WITH_COA
 	case PW_CODE_COA_REQUEST:
 		proxy_coa_stats.total_requests += request->num_proxied_requests;
+		request->home_server->stats.total_requests += request->num_proxied_requests;
 		break;
 
 	case PW_CODE_DISCONNECT_REQUEST:
 		proxy_dsc_stats.total_requests += request->num_proxied_requests;
+		request->home_server->stats.total_requests += request->num_proxied_requests;
 		break;
 #endif
 
@@ -356,6 +360,7 @@ void request_stats_final(REQUEST *request)
 
  done:
 #endif /* WITH_PROXY */
+
 
 	if (request->max_time) {
 		switch (request->packet->code) {
@@ -618,7 +623,7 @@ void request_stats_reply(REQUEST *request)
 		fr_ipaddr_t ipaddr;
 		VALUE_PAIR *server_ip, *server_port = NULL;
 		RADCLIENT *client = NULL;
-		RADCLIENT_LIST *cl = NULL;
+		RADCLIENT_LIST *cl =  NULL;
 
 		/*
 		 *	See if we need to look up the client by server
@@ -632,6 +637,10 @@ void request_stats_reply(REQUEST *request)
 				ipaddr.af = AF_INET;
 				ipaddr.ipaddr.ip4addr.s_addr = server_ip->vp_ipaddr;
 				cl = listener_find_client_list(&ipaddr, server_port->vp_integer, IPPROTO_UDP);
+
+#ifdef WITH_TCP
+				if (!cl) cl = listener_find_client_list(&ipaddr, server_port->vp_integer, IPPROTO_TCP);
+#endif
 
 				/*
 				 *	Not found: don't do anything
@@ -647,6 +656,10 @@ void request_stats_reply(REQUEST *request)
 					ipaddr.af = AF_INET6;
 					ipaddr.ipaddr.ip6addr = server_ip->vp_ipv6addr;
 					cl = listener_find_client_list(&ipaddr, server_port->vp_integer, IPPROTO_UDP);
+
+#ifdef WITH_TCP
+					if (!cl) cl = listener_find_client_list(&ipaddr, server_port->vp_integer, IPPROTO_TCP);
+#endif
 
 					/*
 					 *	Not found: don't do anything
@@ -842,8 +855,8 @@ void request_stats_reply(REQUEST *request)
 	if (((flag->vp_integer & 0x80) != 0) &&		/* home-server */
 	    ((flag->vp_integer & 0x03) != 0)) {		/* auth or accounting */
 		home_server_t *home;
-		VALUE_PAIR *server_ip, *server_port;
-		fr_ipaddr_t ipaddr;
+		VALUE_PAIR *server_ip, *server_port, *server_src_ip;
+		fr_ipaddr_t ipaddr, src_ipaddr;
 
 		server_port = fr_pair_find_by_num(request->packet->vps, PW_FREERADIUS_STATS_SERVER_PORT, VENDORPEC_FREERADIUS, TAG_ANY);
 		if (!server_port) {
@@ -874,12 +887,32 @@ void request_stats_reply(REQUEST *request)
 			return;
 		}
 
+		memset(&src_ipaddr, 0, sizeof(src_ipaddr));
+		src_ipaddr.af = ipaddr.af;
+
+		if (ipaddr.af == AF_INET) {
+			server_src_ip = fr_pair_find_by_num(request->packet->vps, PW_FREERADIUS_STATS_SERVER_SRC_IP_ADDRESS, VENDORPEC_FREERADIUS, TAG_ANY);
+			if (server_src_ip) {
+				src_ipaddr.prefix = 32;
+				src_ipaddr.ipaddr.ip4addr.s_addr = server_src_ip->vp_ipaddr;
+			}
+#ifdef AF_INET6
+		} else if (ipaddr.af == AF_INET6) {
+			server_src_ip = fr_pair_find_by_num(request->packet->vps, PW_FREERADIUS_STATS_SERVER_SRC_IPV6_ADDRESS, VENDORPEC_FREERADIUS, TAG_ANY);
+			if (server_src_ip) {
+				src_ipaddr.af = AF_INET6;
+				src_ipaddr.ipaddr.ip6addr = server_src_ip->vp_ipv6addr;
+#endif	/* AF_INET6 */
+			}
+		}
+
+
 		/*
 		 *	Not found: don't do anything
 		 */
-		home = home_server_find(&ipaddr, server_port->vp_integer, IPPROTO_UDP);
+		home = home_server_find_bysrc(&ipaddr, server_port->vp_integer, IPPROTO_UDP, &src_ipaddr);
 #ifdef WITH_TCP
-		if (!home) home = home_server_find(&ipaddr, server_port->vp_integer, IPPROTO_TCP);
+		if (!home) home = home_server_find_bysrc(&ipaddr, server_port->vp_integer, IPPROTO_TCP, &src_ipaddr);
 #endif
 		if (!home) {
 			stats_error(request, "Failed to find home server IP");

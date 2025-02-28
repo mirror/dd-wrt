@@ -1,7 +1,7 @@
 /*
  * rlm_eap_ttls.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: d997e3ea3b6ac46555518ea4bc35fe18a440287a $
+ * Version:     $Id: 4a27fcc63df8d0adb7278c7356d1bc7dc6ba2a52 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *   Copyright 2006 The FreeRADIUS server project
  */
 
-RCSID("$Id: d997e3ea3b6ac46555518ea4bc35fe18a440287a $")
+RCSID("$Id: 4a27fcc63df8d0adb7278c7356d1bc7dc6ba2a52 $")
 
 #include "eap_ttls.h"
 #include "eap_chbind.h"
@@ -1005,8 +1005,9 @@ int eapttls_process(eap_handler_t *handler, tls_session_t *tls_session)
 	 *	Allocate a fake REQUEST structure.
 	 */
 	fake = request_alloc_fake(request);
-
 	rad_assert(!fake->packet->vps);
+
+	fake->eap_inner_tunnel = true;
 
 	/*
 	 *	Add the tunneled attributes to the fake request.

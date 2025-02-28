@@ -16,14 +16,14 @@
 #ifndef LIBRADIUS_H
 #define LIBRADIUS_H
 /*
- * $Id: 4dda31ced645438d4c2de1a5d7f47f860dc220d3 $
+ * $Id: d3a47815847652873076bc7e25f1e0e0fcc2371d $
  *
  * @file libradius.h
  * @brief Structures and prototypes for the radius library.
  *
  * @copyright 1999-2014 The FreeRADIUS server project
  */
-RCSIDH(libradius_h, "$Id: 4dda31ced645438d4c2de1a5d7f47f860dc220d3 $")
+RCSIDH(libradius_h, "$Id: d3a47815847652873076bc7e25f1e0e0fcc2371d $")
 
 /*
  *  Compiler hinting macros.  Included here for 3rd party consumers
@@ -257,8 +257,7 @@ typedef union value_data {
 	uint32_t		integer;			//!< 32bit unsigned integer.
 	struct in_addr		ipaddr;				//!< IPv4 Address.
 	uint32_t		date;				//!< Date (32bit Unix timestamp).
-	size_t			filter[32/sizeof(size_t)];	//!< Ascend binary format a packed data
-								//!< structure.
+	uint8_t			*filter;			//!< ascend data filter
 
 	uint8_t			ifid[8];			//!< IPv6 interface ID (should be struct?).
 	struct in6_addr		ipv6addr;			//!< IPv6 Address.
@@ -647,6 +646,7 @@ VALUE_PAIR	*fr_cursor_remove(vp_cursor_t *cursor);
 VALUE_PAIR	*fr_cursor_replace(vp_cursor_t *cursor, VALUE_PAIR *new);
 void		fr_pair_delete_by_num(VALUE_PAIR **, unsigned int attr, unsigned int vendor, int8_t tag);
 void		fr_pair_delete_by_da(VALUE_PAIR **first, DICT_ATTR const *da);
+void		fr_pair_delete(VALUE_PAIR **first, VALUE_PAIR *vp);
 void		fr_pair_add(VALUE_PAIR **, VALUE_PAIR *);
 void		fr_pair_prepend(VALUE_PAIR **, VALUE_PAIR *);
 void		fr_pair_replace(VALUE_PAIR **first, VALUE_PAIR *add);
@@ -807,7 +807,7 @@ void		fr_talloc_verify_cb(const void *ptr, int depth,
 
 #ifdef WITH_ASCEND_BINARY
 /* filters.c */
-int		ascend_parse_filter(value_data_t *out, char const *value, size_t len);
+int		ascend_parse_filter(TALLOC_CTX *ctx, value_data_t *out, char const *value, size_t len);
 void		print_abinary(char *out, size_t outlen, uint8_t const *data, size_t len, int8_t quote);
 #endif /*WITH_ASCEND_BINARY*/
 
@@ -958,6 +958,7 @@ int		fr_fifo_push(fr_fifo_t *fi, void *data);
 void		*fr_fifo_pop(fr_fifo_t *fi);
 void		*fr_fifo_peek(fr_fifo_t *fi);
 unsigned int	fr_fifo_num_elements(fr_fifo_t *fi);
+bool		fr_fifo_full(fr_fifo_t *fi);
 
 /*
  *	socket.c

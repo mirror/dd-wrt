@@ -1,7 +1,7 @@
 /*
  * radclient.c	General radius packet debug tool.
  *
- * Version:	$Id: ab880dd735d0f4ddc888f5390e07aa6f6b0f3342 $
+ * Version:	$Id: 0f1cc4c2923f2a3a0d05f65f5e5f588e2f6bbdda $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: ab880dd735d0f4ddc888f5390e07aa6f6b0f3342 $")
+RCSID("$Id: 0f1cc4c2923f2a3a0d05f65f5e5f588e2f6bbdda $")
 
 #include <freeradius-devel/radclient.h>
 #include <freeradius-devel/radpaths.h>
@@ -1069,6 +1069,13 @@ static int send_one_packet(rc_request_t *request)
 		fr_packet_header_print(fr_log_fp, request->packet, false);
 
 		if (fr_debug_lvl > 2) rad_print_hex(request->packet);
+
+		if ((fr_debug_lvl > 0) &&
+		    ((request->packet->code == PW_CODE_ACCESS_REQUEST) ||
+		     (request->packet->code == PW_CODE_STATUS_SERVER)) &&
+		    !fr_pair_find_by_num(request->packet->vps, PW_MESSAGE_AUTHENTICATOR, 0, TAG_ANY)) {
+			fprintf(fr_log_fp, "\tMessage-Authenticator = 0x\n");
+		}
 
 		if (fr_debug_lvl > 0) vp_printlist(fr_log_fp, request->packet->vps);
 	}

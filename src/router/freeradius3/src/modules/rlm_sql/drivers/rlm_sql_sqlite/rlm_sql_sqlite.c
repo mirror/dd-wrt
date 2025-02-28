@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: 87227ca549d582658d8e9d09dc3ada20735d37e0 $
+ * $Id: 37f8ba99cc3eaae02df95448cc7f950570ad26af $
  * @file rlm_sql_sqlite.c
  * @brief SQLite driver.
  *
  * @copyright 2013 Network RADIUS SARL <info@networkradius.com>
  * @copyright 2007 Apple Inc.
  */
-RCSID("$Id: 87227ca549d582658d8e9d09dc3ada20735d37e0 $")
+RCSID("$Id: 37f8ba99cc3eaae02df95448cc7f950570ad26af $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -151,7 +151,7 @@ static sql_rcode_t sql_check_error(sqlite3 *db, int status)
 	}
 
 	if (status != SQLITE_OK) return sql_error_to_rcode(status);
-	if (hstatus != SQLITE_OK) return sql_error_to_rcode(status);
+	if (hstatus != SQLITE_OK) return sql_error_to_rcode(hstatus);
 
 	return RLM_SQL_OK;
 }

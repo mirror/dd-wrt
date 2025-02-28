@@ -1,7 +1,7 @@
 /*
  * mainconf.c	Handle the server's configuration.
  *
- * Version:	$Id: 2b2dda804b008f715e50ad72a4605bb83bac7d55 $
+ * Version:	$Id: debfb296f030b4f336551d161b0babcb41833aa1 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2002  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 2b2dda804b008f715e50ad72a4605bb83bac7d55 $")
+RCSID("$Id: debfb296f030b4f336551d161b0babcb41833aa1 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -230,6 +230,15 @@ static const CONF_PARSER resources[] = {
 	CONF_PARSER_TERMINATOR
 };
 
+static const CONF_PARSER unlang_config[] = {
+	/*
+	 *	Unlang behaviour options
+	 */
+	{ "group_stop_return", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.group_stop_return), "no" },
+	{ "policy_stop_return", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.policy_stop_return), "no" },
+	CONF_PARSER_TERMINATOR
+};
+
 static const CONF_PARSER server_config[] = {
 	/*
 	 *	FIXME: 'prefix' is the ONLY one which should be
@@ -282,6 +291,8 @@ static const CONF_PARSER server_config[] = {
 	{ "log_stripped_names", FR_CONF_POINTER(PW_TYPE_BOOLEAN | PW_TYPE_DEPRECATED, &log_stripped_names), NULL },
 
 	{  "security", FR_CONF_POINTER(PW_TYPE_SUBSECTION, NULL), (void const *) security_config },
+
+	{  "unlang", FR_CONF_POINTER(PW_TYPE_SUBSECTION, NULL), (void const *) unlang_config },
 	CONF_PARSER_TERMINATOR
 };
 
@@ -1005,6 +1016,11 @@ do {\
 		cf_section_add(cs, subcs);
 	}
 	version_init_numbers(subcs);
+
+	/*
+	 *	Track the status of the configuration.
+	 */
+	if (rad_debug_lvl) cf_md5_init();
 
 	/* Read the configuration file */
 	snprintf(buffer, sizeof(buffer), "%.200s/%.50s.conf", radius_dir, main_config.name);

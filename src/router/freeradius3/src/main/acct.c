@@ -1,7 +1,7 @@
 /*
  * acct.c	Accounting routines.
  *
- * Version:	$Id: c6112fd15a21de0e43d9f5042f4cfbb224db3462 $
+ * Version:	$Id: f6b048a572d7568f2e1d5d13786b640e0e75be0a $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  * Copyright 2000  Alan Curry <pacman@world.std.com>
  */
 
-RCSID("$Id: c6112fd15a21de0e43d9f5042f4cfbb224db3462 $")
+RCSID("$Id: f6b048a572d7568f2e1d5d13786b640e0e75be0a $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -150,8 +150,8 @@ int rad_accounting(REQUEST *request)
 
 				vp_prints(buffer, sizeof(buffer), vp);
 				RDEBUG("Proxying due to %s", buffer);
-				return RLM_MODULE_OK;
 			}
+			return RLM_MODULE_OK;
 		}
 	}
 

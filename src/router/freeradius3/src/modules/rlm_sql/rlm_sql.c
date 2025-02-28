@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 4989dd484b982d09e30f2346ce87e54c88469ef0 $
+ * $Id: 9d21243683894524f6e80096ecdda40a7fe3851f $
  * @file rlm_sql.c
  * @brief Implements SQL 'users' file, and SQL accounting.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000  Mike Machado <mike@innercite.com>
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: 4989dd484b982d09e30f2346ce87e54c88469ef0 $")
+RCSID("$Id: 9d21243683894524f6e80096ecdda40a7fe3851f $")
 
 #include <ctype.h>
 
@@ -1706,7 +1706,7 @@ static rlm_rcode_t mod_checksimul(void *instance, REQUEST * request)
 
 		num_rows = (inst->module->sql_num_fields)(handle, inst->config);
 		if (num_rows < 8) {
-			RDEBUG("Too few rows returned.  Please do not edit 'simul_verify_query'");
+			WARN("SELECT returned too few fields.  Please do not edit 'simul_verify_query'");
 			rcode = RLM_MODULE_FAIL;
 
 			goto finish;

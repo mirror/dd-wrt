@@ -1,7 +1,7 @@
 /*
  * radeapclient.c	EAP specific radius packet debug tool.
  *
- * Version:	$Id: ae24f06cc7154e87c02ed2b46c6afed4dc41c5e1 $
+ * Version:	$Id: 66d9f040f924a56bd92169663dccf8cbdae3f7d2 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: ae24f06cc7154e87c02ed2b46c6afed4dc41c5e1 $")
+RCSID("$Id: 66d9f040f924a56bd92169663dccf8cbdae3f7d2 $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -190,10 +190,25 @@ rlm_rcode_t process_post_auth(UNUSED int postauth_type, UNUSED REQUEST *request)
 	return RLM_MODULE_FAIL;
 }
 
-
 fr_event_list_t *radius_event_list_corral(UNUSED event_corral_t hint)
 {
 	return NULL;
+}
+
+/*
+ *	These are shared with threads.c, and nothing else.
+ */
+void request_free(REQUEST *request) CC_HINT(nonnull);
+void request_done(REQUEST *request, int original) CC_HINT(nonnull);
+
+void request_free(UNUSED REQUEST *request)
+{
+	/* do nothing */
+}
+
+void request_done(UNUSED REQUEST *request, UNUSED int original)
+{
+	/* do nothing */
 }
 
 static void NEVER_RETURNS usage(void)
@@ -694,7 +709,7 @@ static void generate_triplets(RADIUS_PACKET *packet, VALUE_PAIR *ki, uint8_t con
 		char buffer[33];	/* 32 hexits (16 bytes) + 1 */
 
 		for (i = 0; i < EAPSIM_RAND_SIZE; i++) {
-			ess.keys.rand[idx][i] = ch[(idx * EAPSIM_RAND_SIZE) + i];
+			ess.keys.rand[idx][i] = ch ? ch[(idx * EAPSIM_RAND_SIZE) + i] : 0;
 		}
 
 		/*
@@ -1981,7 +1996,7 @@ int main(int argc, char **argv)
 			timeout = atof(optarg);
 			break;
 		case 'v':
-			printf("$Id: ae24f06cc7154e87c02ed2b46c6afed4dc41c5e1 $"
+			printf("$Id: 66d9f040f924a56bd92169663dccf8cbdae3f7d2 $"
 #ifndef ENABLE_REPRODUCIBLE_BUILDS
 			", built on " __DATE__ " at " __TIME__
 #endif

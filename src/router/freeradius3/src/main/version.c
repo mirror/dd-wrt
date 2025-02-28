@@ -1,7 +1,7 @@
 /*
  * version.c	Print version number and exit.
  *
- * Version:	$Id: c190337c1d553caf6847d8720e69067ea6f391fa $
+ * Version:	$Id: 44a6edc699e8cad9eb54e54e673bf6fd316e8505 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Chris Parker <cparker@starnetusa.com>
  */
 
-RCSID("$Id: c190337c1d553caf6847d8720e69067ea6f391fa $")
+RCSID("$Id: 44a6edc699e8cad9eb54e54e673bf6fd316e8505 $")
 
 #include <freeradius-devel/radiusd.h>
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
@@ -57,7 +57,20 @@ int ssl_check_consistency(void)
 	ssl_linked = SSLeay();
 
 	/*
-	 *	Major and minor versions mismatch, that's bad.
+	 *	Major mismatch, that's bad.
+	 */
+	if ((ssl_linked & 0xff000000) != (ssl_built & 0xff000000)) goto mismatch;
+
+	/*
+	 *	For OpenSSL 3, the minor versions are API/ABI compatible.
+	 *
+	 *	https://openssl-library.org/policies/releasestrat/index.html
+	 */
+	if ((ssl_linked & 0xff000000) >= 0x30000000) return 0;
+
+	/*
+	 *	For other versions of OpenSSL, the minor versions have
+	 *	to match, too.
 	 */
 	if ((ssl_linked & 0xfff00000) != (ssl_built & 0xfff00000)) goto mismatch;
 
@@ -514,7 +527,11 @@ void version_init_numbers(CONF_SECTION *cs)
 	snprintf(buffer, sizeof(buffer), "%i.%i.*", talloc_version_major(), talloc_version_minor());
 	version_add_number(cs, "talloc", buffer);
 
+#ifdef OPENSSL_FULL_VERSION_STR
+	version_add_number(cs, "ssl", OPENSSL_FULL_VERSION_STR);
+#else
 	version_add_number(cs, "ssl", ssl_version_num());
+#endif
 
 #if defined(HAVE_REGEX) && defined(HAVE_PCRE)
 	version_add_number(cs, "pcre", pcre_version());

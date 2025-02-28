@@ -1,12 +1,15 @@
 # -*- text -*-
 #
-#  $Id: 82319c033bbf349991a46b8f198a5bf5487b5da8 $
+#  $Id: 3702bb04e776188d1f38ecdb6710a584e744e653 $
 
 #  Write a 'utmp' style file, of which users are currently
 #  logged in, and where they've logged in from.
 #
 #  This file is used mainly for Simultaneous-Use checking,
 #  and also 'radwho', to see who's currently logged in.
+#
+#  The 'utmp' file format is becoming obsolete. You should use
+#  a database instead.
 #
 radutmp {
 	#  Where the file is stored.  It's not a log file,

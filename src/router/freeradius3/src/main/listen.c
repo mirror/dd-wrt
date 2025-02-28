@@ -1,7 +1,7 @@
 /*
  * listen.c	Handle socket stuff
  *
- * Version:	$Id: 0460e5f9bc9e9466600e1c0fcb1bc9d6950f41e3 $
+ * Version:	$Id: b817248d71906f14efa7951157207268d268b104 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2005  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 0460e5f9bc9e9466600e1c0fcb1bc9d6950f41e3 $")
+RCSID("$Id: b817248d71906f14efa7951157207268d268b104 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -1199,8 +1199,6 @@ static int dual_tcp_accept(rad_listen_t *listener)
 		close(newfd);
 		return 0;
 	}
-	client->limit.num_connections++;
-	sock->limit.num_connections++;
 
 	/*
 	 *	Add the new listener.  We require a new context here,
@@ -1209,6 +1207,12 @@ static int dual_tcp_accept(rad_listen_t *listener)
 	 */
 	this = listen_alloc(NULL, listener->type);
 	if (!this) return -1;
+
+	/*
+	 *	Now that we've opened a connection, increment the reference count.
+	 */
+	client->limit.num_connections++;
+	sock->limit.num_connections++;
 
 	/*
 	 *	Copy everything, including the pointer to the socket
@@ -1265,6 +1269,7 @@ static int dual_tcp_accept(rad_listen_t *listener)
 		this->recv = dual_tcp_recv;
 
 #ifdef WITH_TLS
+		if (client->tls) this->tls = client->tls;
 		if (this->tls) {
 			this->recv = dual_tls_recv;
 			this->send = dual_tls_send;
@@ -3642,6 +3647,17 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 
 
 #ifdef WITH_TCP
+#ifdef SO_KEEPALIVE
+	if (home->proto == IPPROTO_TCP) {
+		int on = 1;
+
+		if (setsockopt(this->fd, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on)) < 0) {
+			ERROR("(TLS) Failed to set SO_KEEPALIVE: %s", fr_syserror(errno));
+			goto error;
+		}
+	}
+#endif
+
 #ifdef WITH_TLS
 	if ((home->proto == IPPROTO_TCP) && home->tls) {
 		DEBUG("(TLS) Trying new outgoing proxy connection to %s", buffer);

@@ -1,7 +1,7 @@
 /*
  * peap.c contains the interfaces that are called from eap
  *
- * Version:     $Id: efe9b102d3e82095316d34f0875f30bf1f3ecc04 $
+ * Version:     $Id: 24e7a664f5e871fb3d26c7b52f6603c3e048d7db $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *   Copyright 2006 The FreeRADIUS server project
  */
 
-RCSID("$Id: efe9b102d3e82095316d34f0875f30bf1f3ecc04 $")
+RCSID("$Id: 24e7a664f5e871fb3d26c7b52f6603c3e048d7db $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "eap_peap.h"
@@ -826,6 +826,9 @@ rlm_rcode_t eappeap_process(eap_handler_t *handler, tls_session_t *tls_session, 
 	case PEAP_STATUS_WAIT_FOR_SOH_RESPONSE:
 		fake = request_alloc_fake(request);
 		rad_assert(!fake->packet->vps);
+
+		fake->eap_inner_tunnel = true;
+
 		eapsoh_verify(fake, fake->packet, data + header, data_len - header);
 		setup_fake_request(request, fake, t);
 
@@ -919,8 +922,9 @@ rlm_rcode_t eappeap_process(eap_handler_t *handler, tls_session_t *tls_session, 
 	}
 
 	fake = request_alloc_fake(request);
-
 	rad_assert(!fake->packet->vps);
+
+	fake->eap_inner_tunnel = true;
 
 	switch (t->status) {
 		/*

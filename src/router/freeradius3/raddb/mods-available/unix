@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: 5165139aaf39d533581161871542b48a6e3e8c42 $
+#  $Id: fcdd5b140a14424a780ce996041c3add4712460f $
 
 # Unix /etc/passwd style authentication
 #
@@ -20,6 +20,10 @@ unix {
 	#
 	#  Note that the radwtmp file may get large!  You should
 	#  rotate it (cp /dev/null radwtmp), or just not use it.
+	#
+	#  wtmp files are gradually becoming obsolete. Some systems
+	#  may not have 'last' or 'radlast' available any more.
+	#  You shoud use a database instead.
 	#
 	radwtmp = ${logdir}/radwtmp
 }

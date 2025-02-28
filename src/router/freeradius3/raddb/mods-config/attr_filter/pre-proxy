@@ -2,7 +2,7 @@
 #	Configuration file for the rlm_attr_filter module.
 #	Please see rlm_attr_filter(5) manpage for more information.
 #
-#	$Id: 36d84e86906da2b102b81f4b8435bd49947a2d4d $
+#	$Id: 66f115c5aa05af178d094de45e0e6bc058f85346 $
 #
 #	This file contains security and configuration information
 #	for each realm. It can be used be an rlm_attr_filter module
@@ -62,6 +62,5 @@ DEFAULT
 	Operator-Name =* ANY,
 	Calling-Station-Id =* ANY,
 	Called-Station-Id =* ANY,
-	Operator-Name =* ANY,
 	Chargeable-User-Identity =* ANY,
 	Proxy-State =* ANY

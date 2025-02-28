@@ -1,3 +1,69 @@
+FreeRADIUS 3.2.7 Fri 31 Jan 2025 12:00:00 UTC urgency=low
+	Configuration changes
+	* The dpsk module now supports dynamic expansion of the
+	  "filename" parameter.
+	* radiusd.conf now contains an "unlang" section, which
+	  controls new behavior for the "return" statement.
+	* New configuration parameters for TEAP which makes it
+	  much easier to configure.  See the "teap" section of
+	  the "eap" module.
+	* Change idle timeout for incoming radsec connections, to
+	  better match behavior of radsecproxy.
+	* python2 and rlm_couchbase are no longer available in the
+	  alpine docker image.
+	* utmp files are becoming obsolete due to 32-bit time. unix/radwtmp
+	  have been commented out in the default config and "radlast" is
+	  no longer installed if "last" is not present on the system.
+
+	Feature improvements
+	* Print MD5 hash of the configuration files in debug mode.
+	  This helps people track configuration changes.
+	* Add support for IPv6 to "abinary" type.  The fields
+	  are the same as for "ip", but use "ipv6", and IPv6
+	  formatted addresses.
+	* Update radclient to make it clear that Message-Authenticator
+	  is added to all Access-Request packets, even if the
+	  input file does not contain it.
+	* Add support for Subject AltName URI.  Closes #5450.
+	* Add python_path_mode option to python3 module.
+	* Relax checks on OpenSSL minor versions for OpenSSL 3.x.
+	* Add API for deleting dynamic home servers.
+	* set SO_KEEPALIVE on outbound sockets, so firewalls are
+	  less likly to close TCP connections.
+	* Allow querying of statistics when home_server has
+	  src_ipaddr set.  See FreeRADIUS-Stats-Server-Src-IP-Address.
+	  Fixes #5483
+	* Update dictionary "man" page.  Fixes #4346.
+	* Change jlibtool to use --show-config, to avoid conflicts with
+	  clang --config.  Fixes #5442.
+	* RADIUS/TLS clients now support a "tls' subsection.  For
+	  connections from this client, this section is used in preference
+	  to the "listen" TLS settings.  This allows a server to easily
+	  present different identities to different clients.
+	* RADIUS/TLS has been updated for TLS-PSK and TLS 1.3.  Tested with
+	  radsecproxy.
+
+	Bug fixes
+	* For EAP-TLS, send TLS start without a length field.
+	  Some clients refuse to do EAP-TLS when this field exists.
+	* Avoid blocking TLS sockets on corner cases during session
+	  setup.
+	* Update home server stats
+	* Correct error message about untrusted certs.  Fixes #5466.
+	* Use PyEval_RestoreThread to swap to main thread.
+	  Fixes #5111
+	* Don't run Python detach function on config check
+	* Fix a number of issues with TLS connections and
+	  "check_client_connections = yes".
+	* Be more careful about managing the incoming queue when databases
+	  block the server.  The server will still be unable to make
+	  progress, but it should crash less.  Whether or not this is a
+	  good thing is unknown.
+	* Better handler single-character expansions.  Fixes #2216.
+	* Correct calculation of EAP length in pre-proxy.  Fixes #5486.
+	* Don't segfault when using detail listeners. Fixes #5485
+	* Add check for Couchbase v2, rlm_couchbase won't build on v3.
+
 FreeRADIUS 3.2.6 Sat 24 Aug 2024 12:00:00 UTC urgency=low
 	Configuration changes
 	* require_message_authenticator=auto and limit_proxy_state=auto

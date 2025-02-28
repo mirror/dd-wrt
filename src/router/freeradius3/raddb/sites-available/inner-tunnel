@@ -4,7 +4,7 @@
 #	This is a virtual server that handles *only* inner tunnel
 #	requests for EAP-TTLS and PEAP types.
 #
-#	$Id: 1197e084d77e469f7208306489f2b15588546a4e $
+#	$Id: 68998cf95e67829f462e5bc65c0bb7fdba3843d1 $
 #
 ######################################################################
 
@@ -289,7 +289,7 @@ authenticate {
 #  or rlm_sql module can handle this.
 #  The rlm_sql module is *much* faster
 session {
-	radutmp
+#	radutmp
 
 	#
 	#  See "Simultaneous Use Checking Queries" in `mods-config/sql/main/$driver/queries.conf`

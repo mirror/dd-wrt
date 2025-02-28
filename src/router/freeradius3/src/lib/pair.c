@@ -1,7 +1,7 @@
 /*
  * pair.c	Functions to handle VALUE_PAIRs
  *
- * Version:	$Id: 449e0e1ca50afaa63e4b873cf16ae8a7977530d0 $
+ * Version:	$Id: c9f2f046819e4fe81b7ffca154f6132f3515e069 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 449e0e1ca50afaa63e4b873cf16ae8a7977530d0 $")
+RCSID("$Id: c9f2f046819e4fe81b7ffca154f6132f3515e069 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/regex.h>
@@ -253,6 +253,29 @@ void fr_pair_delete_by_da(VALUE_PAIR **first, DICT_ATTR const *da)
 		if (i->da == da) {
 			*last = next;
 			talloc_free(i);
+		} else {
+			last = &i->next;
+		}
+	}
+}
+
+/** Delete matching pair
+ *
+ * @param[in,out] first VP in list.
+ * @param[in] vp to delete
+ */
+void fr_pair_delete(VALUE_PAIR **first, VALUE_PAIR *vp)
+{
+	VALUE_PAIR *i, *next;
+	VALUE_PAIR **last = first;
+
+	for(i = *first; i; i = next) {
+		VERIFY_VP(i);
+		next = i->next;
+		if (i == vp) {
+			*last = next;
+			talloc_free(i);
+			break;
 		} else {
 			last = &i->next;
 		}
@@ -1882,11 +1905,32 @@ FR_TOKEN fr_pair_raw_from_str(char const **ptr, VALUE_PAIR_RAW *raw)
 		 *	Only report as double quoted if it contained valid
 		 *	a valid xlat expansion.
 		 */
+		raw->quote = T_SINGLE_QUOTED_STRING;
 		p = strchr(raw->r_opand, '%');
-		if (p && (p[1] == '{')) {
-			raw->quote = quote;
-		} else {
-			raw->quote = T_SINGLE_QUOTED_STRING;
+
+		while (p) {
+			/*
+			 *	%{...}
+			 */
+			if (p[1] == '{') {
+				raw->quote = T_DOUBLE_QUOTED_STRING;
+				break;
+			}
+
+			/*
+			 *	Single-character expansions.  See src/main/xlat.c
+			 */
+			if (strchr("cdelmntCDGHIMSTYv", p[1])) {
+				raw->quote = T_DOUBLE_QUOTED_STRING;
+				break;
+			}
+
+			/*
+			 *	Skip %%
+			 */
+			if (p[1] == '%') p++;
+
+			p = strchr(p + 1, '%');
 		}
 
 		break;
