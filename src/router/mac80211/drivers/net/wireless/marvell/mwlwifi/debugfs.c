@@ -425,10 +425,62 @@ err_get_hw_specs:
 	len += scnprintf(p + len, size - len,
 			 "use_short_preamble: %s\n", priv->use_short_preamble ? "enable" : "disable");
 	len += mwl_hif_get_info(priv->hw, p + len, size - len);
+	ret = simple_read_from_buffer(ubuf, count, ppos, p, len);
+	free_page(page);
+
+	return ret;
+}
+
+static ssize_t mwl_debugfs_rx_decrypt_read(struct file *file, char __user *ubuf,
+					   size_t count, loff_t *ppos) {
+	struct mwl_priv *priv = (struct mwl_priv *)file->private_data;
+	unsigned long page = get_zeroed_page(GFP_KERNEL);
+	char *p = (char *)page;
+	int len = 0, size = PAGE_SIZE;
+	ssize_t ret;
+
+	if (!p)
+		return -ENOMEM;
+
+	len += scnprintf(p + len, size - len, "%5s\n", priv->rx_decrypt ? "true" : "false");
 
 	ret = simple_read_from_buffer(ubuf, count, ppos, p, len);
 	free_page(page);
 
+	return ret;
+
+}
+
+static ssize_t mwl_debugfs_rx_decrypt_write(struct file *file,
+					  const char __user *ubuf,
+					  size_t count, loff_t *ppos)
+{
+	struct mwl_priv *priv = (struct mwl_priv *)file->private_data;
+	unsigned long addr = get_zeroed_page(GFP_KERNEL);
+	char *buf = (char *)addr;
+	size_t buf_size = min_t(size_t, count, PAGE_SIZE - 1);
+	int value;
+	ssize_t ret;
+
+	if (!buf)
+		return -ENOMEM;
+
+	if (copy_from_user(buf, ubuf, buf_size)) {
+		ret = -EFAULT;
+		goto err;
+	}
+
+	if (kstrtoint(buf, 0, &value)) {
+		ret = -EINVAL;
+		goto err;
+	}
+
+	priv->rx_decrypt = value ? true : false;
+
+	ret = count;
+
+err:
+	free_page(addr);
 	return ret;
 }
 
@@ -2107,6 +2159,7 @@ MWLWIFI_DEBUGFS_FILE_READ_OPS(device_pwrtbl);
 MWLWIFI_DEBUGFS_FILE_READ_OPS(txpwrlmt);
 MWLWIFI_DEBUGFS_FILE_OPS(ampdu);
 MWLWIFI_DEBUGFS_FILE_OPS(tx_amsdu);
+MWLWIFI_DEBUGFS_FILE_OPS(rx_decrypt);
 MWLWIFI_DEBUGFS_FILE_OPS(dump_hostcmd);
 MWLWIFI_DEBUGFS_FILE_OPS(heartbeat);
 MWLWIFI_DEBUGFS_FILE_OPS(dfs_test);
@@ -2136,6 +2189,7 @@ void mwl_debugfs_init(struct ieee80211_hw *hw)
 
 	MWLWIFI_DEBUGFS_ADD_FILE(info);
 	MWLWIFI_DEBUGFS_ADD_FILE(tx_status);
+	MWLWIFI_DEBUGFS_ADD_FILE(rx_decrypt);
 	MWLWIFI_DEBUGFS_ADD_FILE(rx_status);
 	MWLWIFI_DEBUGFS_ADD_FILE(vif);
 	MWLWIFI_DEBUGFS_ADD_FILE(sta);

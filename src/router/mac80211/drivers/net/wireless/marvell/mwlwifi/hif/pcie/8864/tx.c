@@ -244,23 +244,14 @@ static inline void pcie_tx_skb(struct mwl_priv *priv, int desc_num,
 	struct pcie_tx_ctrl *tx_ctrl;
 	struct pcie_tx_hndl *tx_hndl = NULL;
 	struct pcie_tx_desc *tx_desc;
-	struct ieee80211_sta *sta;
-	struct ieee80211_vif *vif;
-	struct mwl_vif *mwl_vif;
 	struct pcie_dma_data *dma_data;
 	struct ieee80211_hdr *wh;
 	dma_addr_t dma;
 	int tailpad = 0;
 	struct ieee80211_key_conf *k_conf;
 
-	if (WARN_ON(!tx_skb))
-		return;
-
 	tx_info = IEEE80211_SKB_CB(tx_skb);
 	tx_ctrl = (struct pcie_tx_ctrl *)tx_info->driver_data;
-	sta = (struct ieee80211_sta *)tx_ctrl->sta;
-	vif = (struct ieee80211_vif *)tx_info->control.vif;
-	mwl_vif = mwl_dev_get_vif(vif);
 	k_conf = (struct ieee80211_key_conf *)tx_info->control.hw_key;
 
 	if (k_conf) {
@@ -433,6 +424,9 @@ static void pcie_non_pfu_tx_done(struct mwl_priv *priv)
 
 	spin_lock_bh(&pcie_priv->tx_desc_lock);
 	while (num--) {
+		if (!pcie_priv->fw_desc_cnt[num])
+			continue;
+
 		desc = &pcie_priv->desc_data[num];
 		tx_hndl = desc->pstale_tx_hndl;
 		tx_desc = tx_hndl->pdesc;
@@ -460,40 +454,31 @@ static void pcie_non_pfu_tx_done(struct mwl_priv *priv)
 			tx_hndl->psk_buff = NULL;
 			wmb(); /*Data Memory Barrier*/
 
-			skb_get(done_skb);
-
 			dma_data = (struct pcie_dma_data *)done_skb->data;
 			wh = &dma_data->wh;
 			if (ieee80211_is_nullfunc(wh->frame_control) ||
 			    ieee80211_is_qos_nullfunc(wh->frame_control)) {
 				dev_kfree_skb_any(done_skb);
-				done_skb = NULL;
 				goto next;
 			}
 
 			info = IEEE80211_SKB_CB(done_skb);
 			if (ieee80211_is_data(wh->frame_control) ||
-			    ieee80211_is_data_qos(wh->frame_control)) {
-					pcie_tx_prepare_info(priv, rate, info);
-			} else {
+			    ieee80211_is_data_qos(wh->frame_control))
+				pcie_tx_prepare_info(priv, rate, info);
+			else
 				pcie_tx_prepare_info(priv, 0, info);
-			}
 
-			if (done_skb) {
-				/* Remove H/W dma header */
-				hdrlen = ieee80211_hdrlen(
-					dma_data->wh.frame_control);
-				if (ieee80211_is_qos_nullfunc(dma_data->wh.frame_control) ||
-				   ieee80211_is_data_qos(dma_data->wh.frame_control)) {
-					memmove(dma_data->data - hdrlen, &dma_data->wh, hdrlen - IEEE80211_QOS_CTL_LEN);
-					*((__le16 *)(dma_data->data - IEEE80211_QOS_CTL_LEN)) = tx_desc->qos_ctrl;
-				} else
-					memmove(dma_data->data - hdrlen, &dma_data->wh, hdrlen);
-				skb_pull(done_skb, sizeof(*dma_data) - hdrlen);
-				ieee80211_tx_status(priv->hw, done_skb);
-				dev_kfree_skb_any(done_skb);
-				done_skb = NULL;
-			}
+			/* Remove H/W dma header */
+			hdrlen = ieee80211_hdrlen(
+				dma_data->wh.frame_control);
+			if (ieee80211_is_data_qos(dma_data->wh.frame_control)) {
+				memmove(dma_data->data - hdrlen, &dma_data->wh, hdrlen - IEEE80211_QOS_CTL_LEN);
+				*((__le16 *)(dma_data->data - IEEE80211_QOS_CTL_LEN)) = tx_desc->qos_ctrl;
+			} else
+				memmove(dma_data->data - hdrlen, &dma_data->wh, hdrlen);
+			skb_pull(done_skb, sizeof(*dma_data) - hdrlen);
+			ieee80211_tx_status(priv->hw, done_skb);
 next:
 			tx_hndl = tx_hndl->pnext;
 			tx_desc = tx_hndl->pdesc;
@@ -504,11 +489,7 @@ next:
 	}
 	spin_unlock_bh(&pcie_priv->tx_desc_lock);
 
-	if (pcie_priv->is_tx_done_schedule) {
-		pcie_mask_int(pcie_priv, MACREG_A2HRIC_BIT_TX_DONE, true);
-		tasklet_schedule(&pcie_priv->tx_task);
-		pcie_priv->is_tx_done_schedule = false;
-	}
+	tasklet_schedule(&pcie_priv->tx_task);
 }
 
 int pcie_8864_tx_init(struct ieee80211_hw *hw)
@@ -617,6 +598,15 @@ void pcie_8864_tx_skbs(unsigned long data)
 		}
 	}
 	spin_unlock_bh(&pcie_priv->tx_desc_lock);
+}
+
+void pcie_8864_tx_done_task(unsigned long data)
+{
+	struct ieee80211_hw *hw = (struct ieee80211_hw *)data;
+	struct mwl_priv *priv = hw->priv;
+
+	pcie_non_pfu_tx_done(priv);
+	priv->hif.ops->irq_enable(hw);
 }
 
 void pcie_8864_tx_done(unsigned long data)
@@ -735,9 +725,6 @@ void pcie_8864_tx_xmit(struct ieee80211_hw *hw,
 			tid = (capab & IEEE80211_ADDBA_PARAM_TID_MASK) >> 2;
 			index = utils_tid_to_ac(tid);
 		}
-
-		if (unlikely(ieee80211_is_assoc_req(wh->frame_control)))
-			utils_add_basic_rates(hw->conf.chandef.chan->band, skb);
 	}
 
 	index = SYSADPT_TX_WMM_QUEUES - index - 1;

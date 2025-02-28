@@ -240,13 +240,11 @@ static inline void pcie_rx_status(struct mwl_priv *priv,
 	}
 }
 
-static inline bool pcie_rx_process_mesh_amsdu(struct mwl_priv *priv,
+static inline int pcie_rx_process_amsdu(struct mwl_priv *priv,
 					     struct sk_buff *skb,
 					     struct ieee80211_rx_status *status)
 {
 	struct ieee80211_hdr *wh;
-	struct mwl_sta *sta_info;
-	struct ieee80211_sta *sta;
 	u8 *qc;
 	int wh_len;
 	int len;
@@ -254,24 +252,17 @@ static inline bool pcie_rx_process_mesh_amsdu(struct mwl_priv *priv,
 	u8 *data;
 	u16 frame_len;
 	struct sk_buff *newskb;
+	int work_done;
+	struct pcie_priv *pcie_priv = priv->hif.priv;
 
 	wh = (struct ieee80211_hdr *)skb->data;
 
-	spin_lock_bh(&priv->sta_lock);
-	list_for_each_entry(sta_info, &priv->sta_list, list) {
-		sta = container_of((void *)sta_info, struct ieee80211_sta,
-				   drv_priv[0]);
-		if (ether_addr_equal(sta->addr, wh->addr2)) {
-			if (!sta_info->is_mesh_node) {
-				spin_unlock_bh(&priv->sta_lock);
-				return false;
-			}
-		}
-	}
-	spin_unlock_bh(&priv->sta_lock);
-
 	qc = ieee80211_get_qos_ctl(wh);
 	*qc &= ~IEEE80211_QOS_CTL_A_MSDU_PRESENT;
+
+	if(priv->rx_decrypt)
+		if(status->flag & RX_FLAG_DECRYPTED)
+			status->flag |= RX_FLAG_SKIP_MONITOR;
 
 	wh_len = ieee80211_hdrlen(wh->frame_control);
 	len = wh_len;
@@ -302,12 +293,23 @@ static inline bool pcie_rx_process_mesh_amsdu(struct mwl_priv *priv,
 		else
 			status->flag &= ~RX_FLAG_AMSDU_MORE;
 		memcpy(IEEE80211_SKB_RXCB(newskb), status, sizeof(*status));
-		ieee80211_rx(priv->hw, newskb);
+		ieee80211_rx_napi(priv->hw, NULL, newskb, &pcie_priv->napi);
+		work_done++;
 	}
 
-	dev_kfree_skb_any(skb);
+	if(priv->rx_decrypt) {
+		if (status->flag & RX_FLAG_DECRYPTED) {
 
-	return true;
+			status->flag &= ~RX_FLAG_SKIP_MONITOR;
+			status->flag |= RX_FLAG_ONLY_MONITOR;
+			((struct ieee80211_hdr *)skb->data)->frame_control &= ~__cpu_to_le16(IEEE80211_FCTL_PROTECTED);
+			ieee80211_rx_napi(priv->hw, NULL, skb, &pcie_priv->napi);
+		}
+	}
+	else
+		dev_kfree_skb_any(skb);
+
+	return work_done;
 }
 
 static inline int pcie_rx_refill(struct mwl_priv *priv,
@@ -378,11 +380,11 @@ void pcie_8864_rx_deinit(struct ieee80211_hw *hw)
 	pcie_rx_ring_free(priv);
 }
 
-void pcie_8864_rx_recv(unsigned long data)
+int pcie_8864_poll_napi(struct napi_struct *napi, int budget)
 {
-	struct ieee80211_hw *hw = (struct ieee80211_hw *)data;
-	struct mwl_priv *priv = hw->priv;
-	struct pcie_priv *pcie_priv = priv->hif.priv;
+	struct pcie_priv *pcie_priv = container_of(napi, struct pcie_priv, napi);
+	struct mwl_priv *priv = pcie_priv->mwl_priv;
+	struct ieee80211_hw *hw = priv->hw;
 	struct pcie_desc_data *desc;
 	struct pcie_rx_hndl *curr_hndl;
 	int work_done = 0;
@@ -399,16 +401,14 @@ void pcie_8864_rx_recv(unsigned long data)
 	curr_hndl = desc->pnext_rx_hndl;
 
 	if (!curr_hndl) {
-		pcie_mask_int(pcie_priv, MACREG_A2HRIC_BIT_RX_RDY, true);
-		pcie_priv->is_rx_schedule = false;
 		wiphy_warn(hw->wiphy, "busy or no receiving packets\n");
-		return;
+		goto end_poll;
 	}
 
 	while ((curr_hndl->pdesc->rx_control == EAGLE_RXD_CTRL_DMA_OWN) &&
-	       (work_done < pcie_priv->recv_limit)) {
+	       (work_done < budget)) {
 		prx_skb = curr_hndl->psk_buff;
-		if (!prx_skb)
+		if (unlikely(!prx_skb))
 			goto out;
 		dma_unmap_single(&(pcie_priv->pdev)->dev,
 				 le32_to_cpu(curr_hndl->pdesc->pphys_buff_data),
@@ -416,13 +416,13 @@ void pcie_8864_rx_recv(unsigned long data)
 				 DMA_FROM_DEVICE);
 		pkt_len = le16_to_cpu(curr_hndl->pdesc->pkt_len);
 
-		if (skb_tailroom(prx_skb) < pkt_len) {
+		if (unlikely(skb_tailroom(prx_skb) < pkt_len)) {
 			dev_kfree_skb_any(prx_skb);
 			goto out;
 		}
 
-		if (curr_hndl->pdesc->channel !=
-		    hw->conf.chandef.chan->hw_value) {
+		if (unlikely(curr_hndl->pdesc->channel !=
+		    hw->conf.chandef.chan->hw_value)) {
 			dev_kfree_skb_any(prx_skb);
 			goto out;
 		}
@@ -476,23 +476,25 @@ void pcie_8864_rx_recv(unsigned long data)
 				*qc |= 7;
 
 			if ((*qc & IEEE80211_QOS_CTL_A_MSDU_PRESENT) && (ieee80211_has_a4(wh->frame_control))) {
-				if (pcie_rx_process_mesh_amsdu(priv, prx_skb, status))
-					goto out;
+				work_done += pcie_rx_process_amsdu(priv, prx_skb, status);
+				goto out;
 			}
 		}
 
-		if (status->flag & RX_FLAG_DECRYPTED) {
-			monitor_skb = skb_copy(prx_skb, GFP_ATOMIC);
-			if (monitor_skb) {
-				IEEE80211_SKB_RXCB(monitor_skb)->flag |= RX_FLAG_ONLY_MONITOR;
-				((struct ieee80211_hdr *)monitor_skb->data)->frame_control &= ~__cpu_to_le16(IEEE80211_FCTL_PROTECTED);
+		if(priv->rx_decrypt) {
+			if (status->flag & RX_FLAG_DECRYPTED) {
+				monitor_skb = skb_copy(prx_skb, GFP_ATOMIC);
+				if (monitor_skb) {
+					IEEE80211_SKB_RXCB(monitor_skb)->flag |= RX_FLAG_ONLY_MONITOR;
+					((struct ieee80211_hdr *)monitor_skb->data)->frame_control &= ~__cpu_to_le16(IEEE80211_FCTL_PROTECTED);
 
-				ieee80211_rx(hw, monitor_skb);
+					ieee80211_rx_napi(hw, NULL, monitor_skb, &pcie_priv->napi);
+				}
+				status->flag |= RX_FLAG_SKIP_MONITOR;
 			}
-			status->flag |= RX_FLAG_SKIP_MONITOR;
 		}
 
-		ieee80211_rx(hw, prx_skb);
+		ieee80211_rx_napi(hw, NULL, prx_skb, &pcie_priv->napi);
 out:
 		pcie_rx_refill(priv, curr_hndl);
 		curr_hndl->pdesc->rx_control = EAGLE_RXD_CTRL_DRIVER_OWN;
@@ -502,6 +504,11 @@ out:
 	}
 
 	desc->pnext_rx_hndl = curr_hndl;
-	pcie_mask_int(pcie_priv, MACREG_A2HRIC_BIT_RX_RDY, true);
-	pcie_priv->is_rx_schedule = false;
+
+end_poll:
+	if (work_done < budget) {
+		napi_complete(napi);
+		priv->hif.ops->irq_enable(hw);
+	}
+	return work_done;
 }

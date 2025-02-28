@@ -183,6 +183,9 @@ static int mwl_mac80211_add_interface(struct ieee80211_hw *hw,
 	u32 macids_supported;
 	int macid;
 
+	if (vif->type == NL80211_IFTYPE_MONITOR)
+		priv->rx_decrypt = true;
+
 	switch (vif->type) {
 	case NL80211_IFTYPE_AP:
 	case NL80211_IFTYPE_MESH_POINT:
@@ -257,6 +260,25 @@ static void mwl_mac80211_remove_vif(struct mwl_priv *priv,
 
 	if (!priv->macids_used)
 		return;
+
+	/* mac80211 suppress 1 monitor interface */
+	if (vif->type == NL80211_IFTYPE_MONITOR) {
+		int counter = 0;
+		struct ieee80211_vif *_vif;
+		spin_lock_bh(&priv->vif_lock);
+		list_for_each_entry(mwl_vif, &priv->vif_list, list) {
+			_vif = container_of((void *)mwl_vif, struct ieee80211_vif,
+					drv_priv);
+
+			if (_vif->type == NL80211_IFTYPE_MONITOR)
+				counter++;
+		}
+		spin_unlock_bh(&priv->vif_lock);
+		/* but if existe more than 1,
+		   so 1 interface is still activ*/
+		if (counter <= 1)
+			priv->rx_decrypt = false;
+	}
 
 	mwl_hif_tx_del_pkts_via_vif(priv->hw, vif);
 
@@ -357,10 +379,14 @@ static void mwl_mac80211_bss_info_changed_sta(struct ieee80211_hw *hw,
 {
 	struct mwl_priv *priv = hw->priv;
 
-	if ((changed & BSS_CHANGED_ERP_SLOT) && (priv->chip_type == MWL8997)) {
+	if (changed & BSS_CHANGED_ERP_SLOT) {
 		if (priv->use_short_slot != vif->bss_conf.use_short_slot) {
-			mwl_fwcmd_set_slot_time(hw,
-						vif->bss_conf.use_short_slot);
+			if (priv->chip_type == MWL8997)
+				mwl_fwcmd_set_slot_time_mwl8997(hw,
+							vif->bss_conf.use_short_slot);
+			else
+				mwl_fwcmd_set_slot_time(hw,
+							vif->bss_conf.use_short_slot);
 			priv->use_short_slot = vif->bss_conf.use_short_slot;
 		}
 	}
@@ -390,10 +416,14 @@ static void mwl_mac80211_bss_info_changed_ap(struct ieee80211_hw *hw,
 
 	mwl_vif = mwl_dev_get_vif(vif);
 
-	if ((changed & BSS_CHANGED_ERP_SLOT) && (priv->chip_type == MWL8997)) {
+	if (changed & BSS_CHANGED_ERP_SLOT) {
 		if (priv->use_short_slot != vif->bss_conf.use_short_slot) {
-			mwl_fwcmd_set_slot_time(hw,
-						vif->bss_conf.use_short_slot);
+			if (priv->chip_type == MWL8997)
+				mwl_fwcmd_set_slot_time_mwl8997(hw,
+							vif->bss_conf.use_short_slot);
+			else
+				mwl_fwcmd_set_slot_time(hw,
+							vif->bss_conf.use_short_slot);
 			priv->use_short_slot = vif->bss_conf.use_short_slot;
 		}
 	}
@@ -508,19 +538,34 @@ static int mwl_mac80211_set_key(struct ieee80211_hw *hw,
 	addr = sta ? sta->addr : vif->addr;
 
 	if (cmd_param == SET_KEY) {
-		if ((key->cipher == WLAN_CIPHER_SUITE_WEP40) ||
-		    (key->cipher == WLAN_CIPHER_SUITE_WEP104)) {
+		switch (key->cipher) {
+		case WLAN_CIPHER_SUITE_WEP40:
+		case WLAN_CIPHER_SUITE_WEP104:
 			encr_type = ENCR_TYPE_WEP;
-		} else if (key->cipher == WLAN_CIPHER_SUITE_CCMP) {
-			encr_type = ENCR_TYPE_AES;
+			break;
+		case WLAN_CIPHER_SUITE_CCMP:
+			encr_type = ENCR_TYPE_CCMP;
 			if (priv->chip_type != MWL8964)
 				key->flags |= IEEE80211_KEY_FLAG_GENERATE_IV;
-		} else if (key->cipher == WLAN_CIPHER_SUITE_TKIP) {
-			if (priv->chip_type != MWL8964)
-				key->flags |= IEEE80211_KEY_FLAG_GENERATE_MMIC | IEEE80211_KEY_FLAG_GENERATE_IV;
+			break;
+		case WLAN_CIPHER_SUITE_CCMP_256:
+			encr_type = ENCR_TYPE_CCMP_256;
+			break;
+		case WLAN_CIPHER_SUITE_GCMP:
+			encr_type = ENCR_TYPE_GCMP;
+			break;
+		case WLAN_CIPHER_SUITE_GCMP_256:
+			encr_type = ENCR_TYPE_GCMP_256;
+			break;
+		case WLAN_CIPHER_SUITE_TKIP:
 			encr_type = ENCR_TYPE_TKIP;
-		} else {
+			if (priv->chip_type != MWL8964)
+				key->flags |= IEEE80211_KEY_FLAG_GENERATE_MMIC |
+					      IEEE80211_KEY_FLAG_GENERATE_IV;
+			break;
+		default:
 			encr_type = ENCR_TYPE_DISABLE;
+			break;
 		}
 
 		rc = mwl_fwcmd_update_encryption_enable(hw, vif, addr,

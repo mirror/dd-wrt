@@ -212,17 +212,15 @@ static int pcie_init_8997(struct ieee80211_hw *hw)
 		     (void *)pcie_8997_tx_skbs, (unsigned long)hw);
 	tasklet_disable(&pcie_priv->tx_task);
 	tasklet_init(&pcie_priv->tx_done_task,
-		     (void *)pcie_8997_tx_done, (unsigned long)hw);
+		     (void *)pcie_8997_tx_done_task, (unsigned long)hw);
 	tasklet_disable(&pcie_priv->tx_done_task);
 	spin_lock_init(&pcie_priv->tx_desc_lock);
-	tasklet_init(&pcie_priv->rx_task,
-		     (void *)pcie_8997_rx_recv, (unsigned long)hw);
-	tasklet_disable(&pcie_priv->rx_task);
+	init_dummy_netdev(&pcie_priv->napi_dev);
+	netif_napi_add(&pcie_priv->napi_dev, &pcie_priv->napi,
+		       pcie_8997_poll_napi);
 	pcie_priv->txq_limit = PCIE_TX_QUEUE_LIMIT;
 	pcie_priv->txq_wake_threshold = PCIE_TX_WAKE_Q_THRESHOLD;
-	pcie_priv->is_tx_done_schedule = false;
 	pcie_priv->recv_limit = PCIE_RECEIVE_LIMIT;
-	pcie_priv->is_rx_schedule = false;
 
 	rc = pcie_8997_tx_init(hw);
 	if (rc) {
@@ -309,16 +307,14 @@ static int pcie_init_8864(struct ieee80211_hw *hw)
 	spin_lock_init(&pcie_priv->int_mask_lock);
 	tasklet_init(&pcie_priv->tx_task, (void *)pcie_8864_tx_skbs, (unsigned long)hw);
 	tasklet_disable(&pcie_priv->tx_task);
-	tasklet_init(&pcie_priv->tx_done_task, (void *)pcie_8864_tx_done, (unsigned long)hw);
+	tasklet_init(&pcie_priv->tx_done_task, (void *)pcie_8864_tx_done_task, (unsigned long)hw);
 	tasklet_disable(&pcie_priv->tx_done_task);
 	spin_lock_init(&pcie_priv->tx_desc_lock);
-	tasklet_init(&pcie_priv->rx_task, (void *)pcie_8864_rx_recv, (unsigned long)hw);
-	tasklet_disable(&pcie_priv->rx_task);
+	init_dummy_netdev(&pcie_priv->napi_dev);
+	netif_napi_add(&pcie_priv->napi_dev, &pcie_priv->napi, pcie_8864_poll_napi);
 	pcie_priv->txq_limit = PCIE_TX_QUEUE_LIMIT;
 	pcie_priv->txq_wake_threshold = PCIE_TX_WAKE_Q_THRESHOLD;
-	pcie_priv->is_tx_done_schedule = false;
 	pcie_priv->recv_limit = PCIE_RECEIVE_LIMIT;
-	pcie_priv->is_rx_schedule = false;
 
 	rc = pcie_8864_tx_init(hw);
 	if (rc) {
@@ -363,6 +359,7 @@ static int pcie_init_8864(struct ieee80211_hw *hw)
 		set_hw_spec.wcb_base[i] = cpu_to_le32(
 			pcie_priv->desc_data[i].pphys_tx_ring);
 	set_hw_spec.features |= HW_SET_PARMS_FEATURES_HOST_PROBE_RESP;
+//	set_hw_spec.features |= HW_SET_PARMS_FEATURES_HOST_BEACON;
 	set_hw_spec.features |= cpu_to_le32(priv->feature);
 	set_hw_spec.tx_wcb_num_per_queue =
 			cpu_to_le32(PCIE_MAX_NUM_TX_DESC);
@@ -402,7 +399,6 @@ static void pcie_deinit_8997(struct ieee80211_hw *hw)
 
 	pcie_8997_rx_deinit(hw);
 	pcie_8997_tx_deinit(hw);
-	tasklet_kill(&pcie_priv->rx_task);
 	tasklet_kill(&pcie_priv->tx_done_task);
 	tasklet_kill(&pcie_priv->tx_task);
 	pcie_reset(hw);
@@ -415,7 +411,6 @@ static void pcie_deinit_8864(struct ieee80211_hw *hw)
 
 	pcie_8864_rx_deinit(hw);
 	pcie_8864_tx_deinit(hw);
-	tasklet_kill(&pcie_priv->rx_task);
 	tasklet_kill(&pcie_priv->tx_done_task);
 	tasklet_kill(&pcie_priv->tx_task);
 	pcie_reset(hw);
@@ -446,7 +441,7 @@ static void pcie_enable_data_tasks(struct ieee80211_hw *hw)
 
 	tasklet_enable(&pcie_priv->tx_task);
 	tasklet_enable(&pcie_priv->tx_done_task);
-	tasklet_enable(&pcie_priv->rx_task);
+	napi_enable(&pcie_priv->napi);
 }
 
 static void pcie_disable_data_tasks(struct ieee80211_hw *hw)
@@ -456,7 +451,8 @@ static void pcie_disable_data_tasks(struct ieee80211_hw *hw)
 
 	tasklet_disable(&pcie_priv->tx_task);
 	tasklet_disable(&pcie_priv->tx_done_task);
-	tasklet_disable(&pcie_priv->rx_task);
+	napi_synchronize(&pcie_priv->napi);
+	napi_disable(&pcie_priv->napi);
 }
 
 static int pcie_exec_cmd(struct ieee80211_hw *hw, unsigned short cmd)
@@ -527,21 +523,13 @@ static irqreturn_t pcie_isr_8864(struct ieee80211_hw *hw)
 		       pcie_priv->iobase1 + MACREG_REG_A2H_INTERRUPT_CAUSE);
 
 		if (int_status & MACREG_A2HRIC_BIT_TX_DONE) {
-			if (!pcie_priv->is_tx_done_schedule) {
-				pcie_mask_int(pcie_priv,
-					      MACREG_A2HRIC_BIT_TX_DONE, false);
-				tasklet_schedule(&pcie_priv->tx_done_task);
-				pcie_priv->is_tx_done_schedule = true;
-			}
+			priv->hif.ops->irq_disable(hw);
+			tasklet_schedule(&pcie_priv->tx_done_task);
 		}
 
 		if (int_status & MACREG_A2HRIC_BIT_RX_RDY) {
-			if (!pcie_priv->is_rx_schedule) {
-				pcie_mask_int(pcie_priv,
-					      MACREG_A2HRIC_BIT_RX_RDY, false);
-				tasklet_schedule(&pcie_priv->rx_task);
-				pcie_priv->is_rx_schedule = true;
-			}
+			priv->hif.ops->irq_disable(hw);
+			napi_schedule(&pcie_priv->napi);
 		}
 
 		if (int_status & MACREG_A2HRIC_BIT_RADAR_DETECT) {
@@ -549,8 +537,11 @@ static irqreturn_t pcie_isr_8864(struct ieee80211_hw *hw)
 			ieee80211_radar_detected(hw);
 		}
 
-		if (int_status & MACREG_A2HRIC_BIT_CHAN_SWITCH) ieee80211_queue_work(hw, &priv->chnl_switch_handle);
-		if (int_status & MACREG_A2HRIC_BIT_TX_WATCHDOG) ieee80211_queue_work(hw, &priv->watchdog_ba_handle);
+		if (int_status & MACREG_A2HRIC_BIT_CHAN_SWITCH)
+			ieee80211_queue_work(hw, &priv->chnl_switch_handle);
+
+		if (int_status & MACREG_A2HRIC_BIT_TX_WATCHDOG)
+			ieee80211_queue_work(hw, &priv->watchdog_ba_handle);
 	}
 
 	return IRQ_HANDLED;
@@ -574,21 +565,13 @@ static irqreturn_t pcie_isr_8997(struct ieee80211_hw *hw)
 		       pcie_priv->iobase1 + MACREG_REG_A2H_INTERRUPT_CAUSE);
 
 		if (int_status & MACREG_A2HRIC_BIT_TX_DONE) {
-			if (!pcie_priv->is_tx_done_schedule) {
-				pcie_mask_int(pcie_priv,
-					      MACREG_A2HRIC_BIT_TX_DONE, false);
-				tasklet_schedule(&pcie_priv->tx_done_task);
-				pcie_priv->is_tx_done_schedule = true;
-			}
+			priv->hif.ops->irq_disable(hw);
+			tasklet_schedule(&pcie_priv->tx_done_task);
 		}
 
 		if (int_status & MACREG_A2HRIC_BIT_RX_RDY) {
-			if (!pcie_priv->is_rx_schedule) {
-				pcie_mask_int(pcie_priv,
-					      MACREG_A2HRIC_BIT_RX_RDY, false);
-				tasklet_schedule(&pcie_priv->rx_task);
-				pcie_priv->is_rx_schedule = true;
-			}
+			priv->hif.ops->irq_disable(hw);
+			napi_schedule(&pcie_priv->napi);
 		}
 
 		if (int_status & MACREG_A2HRIC_BIT_RADAR_DETECT) {
@@ -700,10 +683,12 @@ static void pcie_get_survey(struct ieee80211_hw *hw,
 	survey_info->filled = SURVEY_INFO_TIME |
 			      SURVEY_INFO_TIME_BUSY |
 			      SURVEY_INFO_TIME_TX |
+			      SURVEY_INFO_TIME_RX |
 			      SURVEY_INFO_NOISE_DBM;
 	survey_info->time_period += pcie_read_mac_reg(pcie_priv, MCU_LAST_READ);
 	survey_info->time_busy += pcie_read_mac_reg(pcie_priv, MCU_CCA_CNT);
 	survey_info->time_tx += pcie_read_mac_reg(pcie_priv, MCU_TXPE_CNT);
+	survey_info->time_rx += pcie_read_mac_reg(pcie_priv, BBU_RXRDY_CNT_REG);
 	survey_info->noise = priv->noise;
 }
 

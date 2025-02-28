@@ -199,6 +199,8 @@ u32 utils_get_init_tx_rate(struct mwl_priv *priv, struct ieee80211_conf *conf,
 		nss = sta->rx_nss;
 
 	switch (conf->chandef.width) {
+	case NL80211_CHAN_WIDTH_5:
+	case NL80211_CHAN_WIDTH_10:
 	case NL80211_CHAN_WIDTH_20_NOHT:
 	case NL80211_CHAN_WIDTH_20:
 		bw = TX_RATE_BANDWIDTH_20;

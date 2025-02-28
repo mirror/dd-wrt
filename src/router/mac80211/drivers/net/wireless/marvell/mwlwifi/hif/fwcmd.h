@@ -55,12 +55,17 @@ enum {
 	WL_ANTENNATYPE_TX = 2,
 };
 
+
 enum encr_type {
 	ENCR_TYPE_WEP = 0,
 	ENCR_TYPE_DISABLE = 1,
 	ENCR_TYPE_TKIP = 4,
-	ENCR_TYPE_AES = 6,
+	ENCR_TYPE_CCMP = 6,
 	ENCR_TYPE_MIX = 7,
+	ENCR_TYPE_UNKNOWN = 8,
+	ENCR_TYPE_CCMP_256 = 9,
+	ENCR_TYPE_GCMP = 10,
+	ENCR_TYPE_GCMP_256 = 11,
 };
 
 char *mwl_fwcmd_get_cmd_string(unsigned short cmd);
@@ -272,6 +277,9 @@ int mwl_fwcmd_get_fw_core_dump(struct ieee80211_hw *hw,
 
 int mwl_fwcmd_set_slot_time(struct ieee80211_hw *hw, bool short_slot);
 
+int mwl_fwcmd_set_slot_time_mwl8997(struct ieee80211_hw *hw, bool short_slot);
+
+
 int mwl_fwcmd_config_EDMACCtrl(struct ieee80211_hw *hw, int EDMAC_Ctrl);
 
 int mwl_fwcmd_set_txpwrlmt_cfg_data(struct ieee80211_hw *hw);
@@ -281,5 +289,9 @@ int mwl_fwcmd_get_txpwrlmt_cfg_data(struct ieee80211_hw *hw);
 int mwl_fwcmd_mcast_cts(struct ieee80211_hw *hw, u8 enable);
 
 void mwl_fwcmd_get_survey(struct ieee80211_hw *hw, int idx);
+
+int mwl_fwcmd_set_wds_mode(struct ieee80211_hw *hw, u32 wds_mode);
+int mwl_fwcmd_set_no_ack(struct ieee80211_hw *hw, u32 noack);
+int mwl_fwcmd_set_no_steer(struct ieee80211_hw *hw, u32 nosteer);
 
 #endif /* _FWCMD_H_ */

@@ -46,22 +46,36 @@ static const struct ieee80211_channel mwl_channels_24[] = {
 };
 
 static const struct ieee80211_rate mwl_rates_24[] = {
-	{ .bitrate = 10, .hw_value = 2, },
-	{ .bitrate = 20, .hw_value = 4, },
-	{ .bitrate = 55, .hw_value = 11, },
-	{ .bitrate = 110, .hw_value = 22, },
-	{ .bitrate = 220, .hw_value = 44, },
-	{ .bitrate = 60, .hw_value = 12, },
-	{ .bitrate = 90, .hw_value = 18, },
-	{ .bitrate = 120, .hw_value = 24, },
-	{ .bitrate = 180, .hw_value = 36, },
-	{ .bitrate = 240, .hw_value = 48, },
-	{ .bitrate = 360, .hw_value = 72, },
-	{ .bitrate = 480, .hw_value = 96, },
-	{ .bitrate = 540, .hw_value = 108, },
+	{ .bitrate = 10,  .hw_value = 2,   .flags = IEEE80211_RATE_SHORT_PREAMBLE },
+	{ .bitrate = 20,  .hw_value = 4,   .flags = IEEE80211_RATE_SHORT_PREAMBLE },
+	{ .bitrate = 55,  .hw_value = 11,  .flags = IEEE80211_RATE_SHORT_PREAMBLE },
+	{ .bitrate = 110, .hw_value = 22,  .flags = IEEE80211_RATE_SHORT_PREAMBLE },
+	{ .bitrate = 60,  .hw_value = 12,  },
+	{ .bitrate = 90,  .hw_value = 18,  },
+	{ .bitrate = 120, .hw_value = 24,  },
+	{ .bitrate = 180, .hw_value = 36,  },
+	// Extended Supported Rates
+	{ .bitrate = 240, .hw_value = 48,  },
+	{ .bitrate = 360, .hw_value = 72,  },
+	{ .bitrate = 480, .hw_value = 96,  },
+	{ .bitrate = 540, .hw_value = 108, }
 };
 
 static const struct ieee80211_channel mwl_channels_50[] = {
+	{ .band = NL80211_BAND_5GHZ, .center_freq = 4915, .hw_value = 36, },
+	{ .band = NL80211_BAND_5GHZ, .center_freq = 4920, .hw_value = 36, },
+	{ .band = NL80211_BAND_5GHZ, .center_freq = 4925, .hw_value = 36, },
+	{ .band = NL80211_BAND_5GHZ, .center_freq = 4930, .hw_value = 36, },
+	{ .band = NL80211_BAND_5GHZ, .center_freq = 4935, .hw_value = 36, },
+	{ .band = NL80211_BAND_5GHZ, .center_freq = 4940, .hw_value = 36, },
+	{ .band = NL80211_BAND_5GHZ, .center_freq = 4945, .hw_value = 36, },
+	{ .band = NL80211_BAND_5GHZ, .center_freq = 4950, .hw_value = 36, },
+	{ .band = NL80211_BAND_5GHZ, .center_freq = 4955, .hw_value = 36, },
+	{ .band = NL80211_BAND_5GHZ, .center_freq = 4960, .hw_value = 36, },
+	{ .band = NL80211_BAND_5GHZ, .center_freq = 4965, .hw_value = 36, },
+	{ .band = NL80211_BAND_5GHZ, .center_freq = 4970, .hw_value = 36, },
+	{ .band = NL80211_BAND_5GHZ, .center_freq = 4975, .hw_value = 36, },
+	{ .band = NL80211_BAND_5GHZ, .center_freq = 4980, .hw_value = 36, },
 	{ .band = NL80211_BAND_5GHZ, .center_freq = 5180, .hw_value = 36, },
 	{ .band = NL80211_BAND_5GHZ, .center_freq = 5200, .hw_value = 40, },
 	{ .band = NL80211_BAND_5GHZ, .center_freq = 5220, .hw_value = 44, },
@@ -105,6 +119,20 @@ static const u32 cipher_suites[] = {
 		WLAN_CIPHER_SUITE_TKIP,
 		WLAN_CIPHER_SUITE_CCMP,
 		WLAN_CIPHER_SUITE_AES_CMAC,
+		WLAN_CIPHER_SUITE_BIP_CMAC_256,
+		WLAN_CIPHER_SUITE_BIP_GMAC_128,
+		WLAN_CIPHER_SUITE_BIP_GMAC_256,
+};
+
+static const u32 cipher_suites_8964[] = {
+		WLAN_CIPHER_SUITE_WEP40,
+		WLAN_CIPHER_SUITE_WEP104,
+		WLAN_CIPHER_SUITE_TKIP,
+		WLAN_CIPHER_SUITE_CCMP,
+		WLAN_CIPHER_SUITE_AES_CMAC,
+		WLAN_CIPHER_SUITE_GCMP,
+		WLAN_CIPHER_SUITE_GCMP_256,
+		WLAN_CIPHER_SUITE_CCMP_256,
 		WLAN_CIPHER_SUITE_BIP_CMAC_256,
 		WLAN_CIPHER_SUITE_BIP_GMAC_128,
 		WLAN_CIPHER_SUITE_BIP_GMAC_256,
@@ -453,7 +481,7 @@ void mwl_set_ht_caps(struct mwl_priv *priv,
 	band->ht_cap.cap |= IEEE80211_HT_CAP_SGI_20;
 	band->ht_cap.cap |= IEEE80211_HT_CAP_SGI_40;
 	band->ht_cap.cap |= IEEE80211_HT_CAP_DSSSCCK40;
-
+	
 	if ((priv->chip_type == MWL8997) &&
 	    (priv->antenna_tx != ANTENNA_TX_1)) {
 		band->ht_cap.cap |= IEEE80211_HT_CAP_TX_STBC;
@@ -857,10 +885,13 @@ static int mwl_wl_init(struct mwl_priv *priv)
 	hw->wiphy->flags |= WIPHY_FLAG_HAS_CHANNEL_SWITCH;
 	hw->wiphy->flags |= WIPHY_FLAG_SUPPORTS_TDLS;
 	hw->wiphy->flags |= WIPHY_FLAG_AP_UAPSD;
-
-	hw->wiphy->cipher_suites = cipher_suites;
-	hw->wiphy->n_cipher_suites = ARRAY_SIZE(cipher_suites);
-
+	if (priv->chip_type == MWL8964) {
+		hw->wiphy->cipher_suites = cipher_suites_8964;
+		hw->wiphy->n_cipher_suites = ARRAY_SIZE(cipher_suites_8964);
+	} else {
+		hw->wiphy->cipher_suites = cipher_suites;
+		hw->wiphy->n_cipher_suites = ARRAY_SIZE(cipher_suites);
+	}
 	hw->vif_data_size = sizeof(struct mwl_vif);
 	hw->sta_data_size = sizeof(struct mwl_sta);
 
@@ -1097,6 +1128,7 @@ struct ieee80211_hw *mwl_alloc_hw(int bus_type,
 	priv->hif.ops = ops;
 	priv->hif.priv = (char *)priv + ALIGN(sizeof(*priv), NETDEV_ALIGN);
 	priv->debug_ampdu = false;
+	priv->rx_decrypt = false;
 	priv->ampdu_num = mwl_hif_get_ampdu_num(hw);
 	priv->ampdu =
 		kzalloc(priv->ampdu_num * sizeof(*priv->ampdu), GFP_KERNEL);

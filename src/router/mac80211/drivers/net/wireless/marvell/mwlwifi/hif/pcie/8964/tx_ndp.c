@@ -563,9 +563,6 @@ void pcie_tx_xmit_ndp(struct ieee80211_hw *hw,
 			index = utils_tid_to_ac(tid);
 		}
 
-		if (unlikely(ieee80211_is_assoc_req(wh->frame_control)))
-			utils_add_basic_rates(hw->conf.chandef.chan->band, skb);
-
 		if (ieee80211_is_probe_req(wh->frame_control) ||
 		    ieee80211_is_probe_resp(wh->frame_control))
 			tx_que_priority = PROBE_RESPONSE_TXQNUM;

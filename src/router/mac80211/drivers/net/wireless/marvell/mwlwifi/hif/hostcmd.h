@@ -28,6 +28,7 @@
 #define HOSTCMD_CMD_RF_REG_ACCESS               0x001b
 #define HOSTCMD_CMD_802_11_RADIO_CONTROL        0x001c
 #define HOSTCMD_CMD_MEM_ADDR_ACCESS             0x001d
+#define HOSTCMD_CMD_SET_TX_POWER_CLIENT_SCAN    0x001e
 #define HOSTCMD_CMD_802_11_TX_POWER             0x001f
 #define HOSTCMD_CMD_802_11_RF_ANTENNA           0x0020
 #define HOSTCMD_CMD_BROADCAST_SSID_ENABLE       0x0050 /* per-vif */
@@ -36,7 +37,9 @@
 #define HOSTCMD_CMD_SET_AID                     0x010d /* per-vif */
 #define HOSTCMD_CMD_SET_INFRA_MODE              0x010e /* per-vif */
 #define HOSTCMD_CMD_802_11_RTS_THSD             0x0113
+#define HOSTCMD_CMD_802_11_SLOT_TIME            0x0114
 #define HOSTCMD_CMD_SET_EDCA_PARAMS             0x0115
+#define HOSTCMD_CMD_802_11_BOOST_MODE           0x0116
 #define HOSTCMD_CMD_802_11H_DETECT_RADAR        0x0120
 #define HOSTCMD_CMD_SET_WMM_MODE                0x0123
 #define HOSTCMD_CMD_HT_GUARD_INTERVAL           0x0124
@@ -50,6 +53,7 @@
 #define HOSTCMD_CMD_DEL_MAC_ADDR                0x0206 /* per-vif */
 #define HOSTCMD_CMD_BSS_START                   0x1100 /* per-vif */
 #define HOSTCMD_CMD_AP_BEACON                   0x1101 /* per-vif */
+#define HOSTCMD_CMD_SET_WDS_MODE                0x1110 /* per-vif */
 #define HOSTCMD_CMD_SET_NEW_STN                 0x1111 /* per-vif */
 #define HOSTCMD_CMD_SET_APMODE                  0x1114
 #define HOSTCMD_CMD_SET_SWITCH_CHANNEL          0x1121
@@ -65,9 +69,12 @@
 #define HOSTCMD_CMD_DWDS_ENABLE                 0x1144
 #define HOSTCMD_CMD_FW_FLUSH_TIMER              0x1148
 #define HOSTCMD_CMD_SET_CDD                     0x1150
+#define HOSTCMD_CMD_SET_NO_ACK                  0x1152
+#define HOSTCMD_CMD_SET_NO_STEER                0x1153
 #define HOSTCMD_CMD_SET_BFTYPE                  0x1155
 #define HOSTCMD_CMD_CAU_REG_ACCESS              0x1157
 #define HOSTCMD_CMD_GET_TEMP                    0x1159
+#define HOSTCMD_CMD_SET_VHT_OPMODE              0x1168
 #define HOSTCMD_CMD_LED_CTRL                    0x1169
 #define HOSTCMD_CMD_GET_FW_REGION_CODE          0x116A
 #define HOSTCMD_CMD_GET_DEVICE_PWR_TBL          0x116B
@@ -75,9 +82,12 @@
 #define HOSTCMD_CMD_NEWDP_DMATHREAD_START       0x1189
 #define HOSTCMD_CMD_GET_FW_REGION_CODE_SC4      0x118A
 #define HOSTCMD_CMD_GET_DEVICE_PWR_TBL_SC4      0x118B
+#define HOSTCMD_CMD_GET_MU_SET		        0x1190
+#define HOSTCMD_CMD_SET_MU_SET		        0x1191
+#define HOSTCMD_CMD_SET_RTS_RETRY	        0x119A
 #define HOSTCMD_CMD_QUIET_MODE                  0x1201
 #define HOSTCMD_CMD_CORE_DUMP_DIAG_MODE         0x1202
-#define HOSTCMD_CMD_802_11_SLOT_TIME            0x1203
+#define HOSTCMD_CMD_802_11_SLOT_TIME_MWL8997    0x1203
 #define HOSTCMD_CMD_GET_FW_CORE_DUMP            0x1203
 #define HOSTCMD_CMD_EDMAC_CTRL                  0x1204
 #define HOSTCMD_CMD_TXPWRLMT_CFG                0x1211
@@ -107,6 +117,9 @@
 #define CH_40_MHZ_WIDTH                         0x4
 #define CH_80_MHZ_WIDTH                         0x5
 #define CH_160_MHZ_WIDTH                        0x6
+#define CH_5_MHZ_WIDTH        			0x8
+
+
 #define EXT_CH_ABOVE_CTRL_CH                    0x1
 #define EXT_CH_AUTO                             0x2
 #define EXT_CH_BELOW_CTRL_CH                    0x3
@@ -135,8 +148,37 @@
 
 #define KEY_TYPE_ID_WEP                         0x00
 #define KEY_TYPE_ID_TKIP                        0x01
-#define KEY_TYPE_ID_AES	                        0x02
+#define KEY_TYPE_ID_CCMP			0x02
+#define KEY_TYPE_ID_WAPI			0x03
+#define KEY_TYPE_ID_CCMP_256			0x04
+#define KEY_TYPE_ID_GCMP			0x05
+#define KEY_TYPE_ID_GCMP_256			0x06
 
+
+#if 0
+// different solution taken from nxp
+typedef enum _KEY_TYPE_ID
+{
+    /** Key type : WEP */
+    KEY_TYPE_ID_WEP = 0,
+    /** Key type : TKIP */
+    KEY_TYPE_ID_TKIP = 1,
+    /** Key type : AES */
+    KEY_TYPE_ID_AES      = 2,
+    KEY_TYPE_ID_WAPI     = 3,
+    KEY_TYPE_ID_AES_CMAC = 4,
+    /** Key type : GCMP */
+    KEY_TYPE_ID_GCMP = 5,
+    /** Key type : GCMP_256 */
+    KEY_TYPE_ID_GCMP_256 = 6,
+    /** Key type : CCMP_256 */
+    KEY_TYPE_ID_CCMP_256 = 7,
+    /** Key type : GMAC_128 */
+    KEY_TYPE_ID_BIP_GMAC_128 = 8,
+    /** Key type : GMAC_256 */
+    KEY_TYPE_ID_BIP_GMAC_256 = 9,
+} KEY_TYPE_ID;
+#endif
 /* Group key for RX only */
 #define ENCR_KEY_FLAG_RXGROUPKEY                0x00000002
 #define ENCR_KEY_FLAG_TXGROUPKEY                0x00000004
@@ -166,7 +208,17 @@
 #define WSC_IE_SET_BEACON                       0
 #define WSC_IE_SET_PROBE_RESPONSE               1
 
-#define HW_SET_PARMS_FEATURES_HOST_PROBE_RESP   0x00000020
+#define HW_SET_PARMS_FEATURES_AMSDU_SIZE_MASK		0x3 // first 2 bits is msdu size 0 = disabled, 1 = 4K 2 = 8K
+
+#define HW_SET_PARMS_FEATURES_IMPLICIT_AMPDU_BA		0x00000004// Indicates supported AMPDU type (1 = implicit, 0 = explicit (default))
+#define HW_SET_PARMS_FEATURES_DISABLE_MBSS   		0x00000008
+#define HW_SET_PARMS_FEATURES_HOST_BEACON   		0x00000010
+#define HW_SET_PARMS_FEATURES_HOST_PROBE_RESP   	0x00000020
+#define HW_SET_PARMS_FEATURES_HOST_POWER_SAVE   	0x00000040
+#define HW_SET_PARMS_FEATURES_HOST_DECR_MGMT   		0x00000080
+#define HW_SET_PARMS_FEATURES_INTRA_BSS_OFFLOAD   	0x00000100
+#define HW_SET_PARMS_FEATURES_IV_OFFLOAD   		0x00000200
+#define HW_SET_PARMS_FEATURES_HOST_ENCR_DECR_FRAME	0x00000400
 
 #define EDMAC_2G_ENABLE_MASK                    0x00000001
 #define EDMAC_2G_ENABLE_SHIFT                   0x0
@@ -846,10 +898,16 @@ struct aes_type_key {
 	u8 key_material[MAX_ENCR_KEY_LENGTH];
 } __packed;
 
+struct aes256_type_key {
+	/* AES Key material */
+	u8 key_material[MAX_ENCR_KEY_LENGTH * 2];
+} __packed;
+
 union mwl_key_type {
 	struct wep_type_key  wep_key;
 	struct tkip_type_key tkip_key;
 	struct aes_type_key  aes_key;
+	struct aes256_type_key  aes256_key;
 } __packed;
 
 struct key_param_set {
@@ -1227,11 +1285,18 @@ struct hostcmd_cmd_get_fw_core_dump_ {
 } __packed;
 
 /* HOSTCMD_CMD_802_11_SLOT_TIME */
-struct hostcmd_cmd_802_11_slot_time {
+struct hostcmd_cmd_802_11_slot_time_mwl8997 {
 	struct hostcmd_header cmd_hdr;
 	__le16 action;
 	/* 0:long slot; 1:short slot */
 	__le16 short_slot;
+} __packed;
+
+struct hostcmd_cmd_802_11_slot_time {
+	struct hostcmd_header cmd_hdr;
+	__le16 action;
+	/* 0:long slot; 1:short slot */
+	u8 short_slot;
 } __packed;
 
 /* HOSTCMD_CMD_EDMAC_CTRL */
@@ -1280,6 +1345,21 @@ struct mwl_txpwrlmt_cfg_entry_hdr {
 struct hostcmd_cmd_mcast_cts {
 	struct hostcmd_header cmd_hdr;
 	u8 enable;            /* 1:enable, 0:disable */
+} __packed;
+
+/* HOSTCMD_CMD_SET_WDS_MODE */
+/* HOSTCMD_CMD_SET_NO_ACK */
+/* HOSTCMD_CMD_SET_NO_STEER */
+struct hostcmd_cmd_basic_cmd {
+	struct hostcmd_header cmd_hdr;
+	u32 value;
+} __packed;
+
+/* HOSTCMD_CMD_SET_MU_SET */
+struct hostcmd_cmd_set_mu_set {
+	struct hostcmd_header cmd_hdr;
+	u8 index[3];
+	__le16 irgendwas[3];
 } __packed;
 
 #endif /* _HOSTCMD_H_ */

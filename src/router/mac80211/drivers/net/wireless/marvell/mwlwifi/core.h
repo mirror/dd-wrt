@@ -38,8 +38,8 @@
 
 /* band related constants */
 #define BAND_24_CHANNEL_NUM           14
-#define BAND_24_RATE_NUM              13
-#define BAND_50_CHANNEL_NUM           24
+#define BAND_24_RATE_NUM              12
+#define BAND_50_CHANNEL_NUM           38
 #define BAND_50_RATE_NUM              8
 
 #define NUM_WEP_KEYS                  4
@@ -355,7 +355,7 @@ struct mwl_priv {
 	u32 ra_tx_attempt[2][6];
 
 	bool debug_ampdu;
-	bool decrypt_rx;
+	bool rx_decrypt;
 	bool rate_adapt_mode;
 	bool dwds_stamode;
 	bool optimization_level;

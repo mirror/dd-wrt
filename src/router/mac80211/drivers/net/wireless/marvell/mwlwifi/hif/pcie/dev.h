@@ -27,7 +27,7 @@
 #include <net/mac80211.h>
 
 #define PCIE_DRV_NAME    KBUILD_MODNAME
-#define PCIE_DRV_VERSION "10.4.10.0"
+#define PCIE_DRV_VERSION "10.4.11.0"
 
 #define PCIE_MIN_BYTES_HEADROOM   64
 #define PCIE_MIN_TX_HEADROOM_KF2  96
@@ -51,6 +51,7 @@ enum {
 #define MCU_CCA_CNT               MAC_REG_ADDR(0x06A0)
 #define MCU_TXPE_CNT              MAC_REG_ADDR(0x06A4)
 #define MCU_LAST_READ             MAC_REG_ADDR(0x06A8)
+#define BBU_RXRDY_CNT_REG	  MAC_REG_ADDR(0x0860)
 
 /* Map to 0x80000000 (Bus control) on BAR0 */
 #define MACREG_REG_H2A_INTERRUPT_EVENTS      0x00000C18 /* (From host to ARM) */
@@ -99,7 +100,6 @@ enum {
 			     MACREG_A2HRIC_BIT_RADAR_DETECT | \
 			     MACREG_A2HRIC_BIT_CHAN_SWITCH | \
 			     MACREG_A2HRIC_BIT_TX_WATCHDOG | \
-			     MACREG_A2HRIC_BIT_QUE_EMPTY | \
 			     MACREG_A2HRIC_BA_WATCHDOG | \
 			     MACREG_A2HRIC_CONSEC_TXFAIL)
 
@@ -583,6 +583,9 @@ struct pcie_priv {
 	spinlock_t int_mask_lock ____cacheline_aligned_in_smp;
 	struct tasklet_struct tx_task;
 	struct tasklet_struct tx_done_task;
+	/* NAPI */
+	struct net_device napi_dev;
+	struct napi_struct napi;
 	struct tasklet_struct rx_task;
 	unsigned int tx_head_room;
 	int txq_limit;
@@ -802,13 +805,20 @@ static inline void pcie_tx_encapsulate_frame(struct mwl_priv *priv,
 		switch (k_conf->cipher) {
 		case WLAN_CIPHER_SUITE_WEP40:
 		case WLAN_CIPHER_SUITE_WEP104:
-			data_pad = 4;
+			data_pad = IEEE80211_WEP_IV_LEN;
 			break;
 		case WLAN_CIPHER_SUITE_TKIP:
-			data_pad = 12;
+			data_pad = IEEE80211_TKIP_IV_LEN + IEEE80211_TKIP_ICV_LEN;
 			break;
 		case WLAN_CIPHER_SUITE_CCMP:
-			data_pad = 8;
+			data_pad = IEEE80211_CCMP_MIC_LEN;
+			break;
+		case WLAN_CIPHER_SUITE_CCMP_256:
+			data_pad = IEEE80211_CCMP_256_MIC_LEN;
+			break;
+		case WLAN_CIPHER_SUITE_GCMP:
+		case WLAN_CIPHER_SUITE_GCMP_256:
+			data_pad = IEEE80211_GCMP_MIC_LEN;
 			break;
 		}
 	}

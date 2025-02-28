@@ -67,37 +67,6 @@ static inline int utils_tid_to_ac(u8 tid)
 	return -1;
 }
 
-static inline void utils_add_basic_rates(int band, struct sk_buff *skb)
-{
-	struct ieee80211_mgmt *mgmt;
-	int len;
-	u8 *pos;
-
-	mgmt = (struct ieee80211_mgmt *)skb->data;
-	len = skb->len - ieee80211_hdrlen(mgmt->frame_control);
-	len -= 4;
-	pos = (u8 *)cfg80211_find_ie(WLAN_EID_SUPP_RATES,
-				     mgmt->u.assoc_req.variable,
-				     len);
-	if (pos) {
-		pos++;
-		len = *pos++;
-		while (len) {
-			if (band == NL80211_BAND_2GHZ) {
-				if ((*pos == 2) || (*pos == 4) ||
-				    (*pos == 11) || (*pos == 22))
-					*pos |= 0x80;
-			} else {
-				if ((*pos == 12) || (*pos == 24) ||
-				    (*pos == 48))
-					*pos |= 0x80;
-			}
-			pos++;
-			len--;
-		}
-	}
-}
-
 static inline int utils_assign_stnid(struct mwl_priv *priv, int macid, u16 aid)
 {
 	int stnid;

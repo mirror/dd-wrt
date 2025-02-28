@@ -20,6 +20,6 @@
 
 int pcie_8864_rx_init(struct ieee80211_hw *hw);
 void pcie_8864_rx_deinit(struct ieee80211_hw *hw);
-void pcie_8864_rx_recv(unsigned long data);
+int pcie_8864_poll_napi(struct napi_struct *napi, int budget);
 
 #endif /* _8864_RX_H_ */
