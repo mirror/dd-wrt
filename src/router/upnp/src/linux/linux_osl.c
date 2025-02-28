@@ -103,8 +103,7 @@ int upnp_osl_ifname_list(char *ifname_list)
 	/* Null end the string */
 	ifname_list[0] = 0;
 	char buf[512];
-	memset(buf, 0, 512);
-	int cnt = getIfListNoPorts(buf, NULL);
+	int cnt = getIfListNoPorts(buf, sizeof(buf), NULL);
 	int i = 0;
 	char *p = &buf[0];
 	/* Cat all lan interface together */
