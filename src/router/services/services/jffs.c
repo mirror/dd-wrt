@@ -26,7 +26,11 @@
 #include <utils.h>
 #include <sys/mount.h>
 
+#if defined(HAVE_R6800)
+#define DEFAULT_UBIFS_COMPR "zlib"
+#else
 #define DEFAULT_UBIFS_COMPR "zstd"
+#endif
 
 void stop_jffs2(void)
 {
