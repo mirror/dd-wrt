@@ -15,7 +15,7 @@ do
 		DROPPED=false
 		for ip in $WDS_WATCHDOG_IPS
 		do
-			if ping -c 1 -W $WDS_WATCHDOG_TIMEOUT $ip > /tmp/null
+			if ping -c 1 -W $WDS_WATCHDOG_TIMEOUT $ip > /dev/null
 			then
 				: #logger -t "$TAG" "$ip ok"
 			else
@@ -29,7 +29,7 @@ do
 			sleep 10
 			for ip in $WDS_WATCHDOG_IPS
 			do
-				if ping -c 1 -W $WDS_WATCHDOG_TIMEOUT $ip > /tmp/null
+				if ping -c 1 -W $WDS_WATCHDOG_TIMEOUT $ip > /dev/null
 				then
 					: #logger -t "$TAG" "$ip ok"
 				else
@@ -44,7 +44,7 @@ do
 			sleep 10
 			for ip in $WDS_WATCHDOG_IPS
 			do
-				if ping -c 1 -W $WDS_WATCHDOG_TIMEOUT $ip > /tmp/null
+				if ping -c 1 -W $WDS_WATCHDOG_TIMEOUT $ip > /dev/null
 				then
 					: #logger -t "$TAG" "$ip ok"
 				else
@@ -59,7 +59,7 @@ do
 		DROPPED=true
 		for ip in $WDS_WATCHDOG_IPS
 		do
-			if ping -c 1 -W $WDS_WATCHDOG_TIMEOUT $ip > /tmp/null
+			if ping -c 1 -W $WDS_WATCHDOG_TIMEOUT $ip > /dev/null
 			then
 				DROPPED=false
 				#logger -t "$TAG" "$ip ok"
@@ -73,7 +73,7 @@ do
 			sleep 10
 			for ip in $WDS_WATCHDOG_IPS
 			do
-				if ping -c 1 -W $WDS_WATCHDOG_TIMEOUT $ip > /tmp/null
+				if ping -c 1 -W $WDS_WATCHDOG_TIMEOUT $ip > /dev/null
 				then
 					DROPPED=false
 					#logger -t "$TAG" "$ip ok"
@@ -88,7 +88,7 @@ do
 			sleep 10
 			for ip in $WDS_WATCHDOG_IPS
 			do
-				if ping -c 1 -W $WDS_WATCHDOG_TIMEOUT $ip > /tmp/null
+				if ping -c 1 -W $WDS_WATCHDOG_TIMEOUT $ip > /dev/null
 				then
 					DROPPED=false
 					#logger -t "$TAG" "$ip ok"
