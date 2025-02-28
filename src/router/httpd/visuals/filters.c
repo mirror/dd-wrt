@@ -369,7 +369,7 @@ EJ_VISIBLE void ej_show_filterif(webs_t wp, int argc, char_t **argv)
 	char var[80];
 	char eths[256];
 	char eth2[256];
-	getIfLists(eths, sizeof(eths), 256);
+	getIfLists(eths, sizeof(eths));
 	getIfListNoPorts(eth2, sizeof(eth2), "ppp");
 	strcat(eths, " ");
 	strcat(eths, eth2);

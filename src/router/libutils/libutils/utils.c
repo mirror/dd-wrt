@@ -1154,7 +1154,7 @@ int getIfListB(char *buffer, size_t len, const char *ifprefix, int bridgesonly, 
 	size_t totallen = 0;
 	for (i = 0; i < sortcount; i++) {
 		if (!strstr(buffer, sort[i])) {
-			totallen + = strlen(sort[i]) + 1;
+			totallen += strlen(sort[i]) + 1;
 			if ((totallen + 1) < len) {
 				strcat(buffer, sort[i]);
 				strcat(buffer, " ");
