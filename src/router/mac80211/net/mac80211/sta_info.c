@@ -1238,7 +1238,7 @@ void sta_info_stop(struct ieee80211_local *local)
 }
 
 
-int __sta_info_flush(struct ieee80211_sub_if_data *sdata, bool vlans)
+int __sta_info_flush(struct ieee80211_sub_if_data *sdata, bool vlans, bool tx)
 {
 	struct ieee80211_local *local = sdata->local;
 	struct sta_info *sta, *tmp;
@@ -1261,7 +1261,8 @@ int __sta_info_flush(struct ieee80211_sub_if_data *sdata, bool vlans)
 	}
 
 	if (!list_empty(&free_list)) {
-		synchronize_net();
+		if (tx)
+			synchronize_net();
 		list_for_each_entry_safe(sta, tmp, &free_list, free_list)
 			__sta_info_destroy_part2(sta);
 	}

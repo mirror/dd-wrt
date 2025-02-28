@@ -838,7 +838,7 @@ static void sta_info_stop(struct ieee80211_local *local);
  * @sdata: sdata to remove all stations from
  * @vlans: if the given interface is an AP interface, also flush VLANs
  */
-static int __sta_info_flush(struct ieee80211_sub_if_data *sdata, bool vlans);
+static int __sta_info_flush(struct ieee80211_sub_if_data *sdata, bool vlans, bool tx);
 
 /**
  * sta_info_flush - flush matching STA entries from the STA table
@@ -847,9 +847,9 @@ static int __sta_info_flush(struct ieee80211_sub_if_data *sdata, bool vlans);
  *
  * @sdata: sdata to remove all stations from
  */
-static inline int sta_info_flush(struct ieee80211_sub_if_data *sdata)
+static inline int sta_info_flush(struct ieee80211_sub_if_data *sdata, bool tx)
 {
-	return __sta_info_flush(sdata, false);
+	return __sta_info_flush(sdata, false, tx);
 }
 
 static void sta_set_rate_info_tx(struct sta_info *sta,

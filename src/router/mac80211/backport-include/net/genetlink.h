@@ -242,7 +242,7 @@ int genlmsg_multicast(const struct genl_family *family,
 #define genlmsg_multicast_allns LINUX_BACKPORT(genlmsg_multicast_allns)
 int backport_genlmsg_multicast_allns(const struct genl_family *family,
 				     struct sk_buff *skb, u32 portid,
-				     unsigned int group, gfp_t flags);
+				     unsigned int group);
 
 #define genl_family_attrbuf LINUX_BACKPORT(genl_family_attrbuf)
 static inline struct nlattr **genl_family_attrbuf(struct genl_family *family)

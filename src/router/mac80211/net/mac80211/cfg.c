@@ -1449,7 +1449,7 @@ static int ieee80211_stop_ap(struct wiphy *wiphy, struct net_device *dev)
 	kfree(sdata->vif.bss_conf.ftmr_params);
 	sdata->vif.bss_conf.ftmr_params = NULL;
 
-	__sta_info_flush(sdata, true);
+	__sta_info_flush(sdata, true, true);
 
 	sdata->vif.bss_conf.enable_beacon = false;
 	sdata->beacon_rate_set = false;
@@ -1869,7 +1869,7 @@ static int ieee80211_del_station(struct wiphy *wiphy, struct net_device *dev,
 	if (params->mac)
 		return sta_info_destroy_addr_bss(sdata, params->mac);
 
-	sta_info_flush(sdata);
+	sta_info_flush(sdata, true);
 	return 0;
 }
 

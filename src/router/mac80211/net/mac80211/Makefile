@@ -1,13 +1,13 @@
 
 
 ifeq ($(CONFIG_ARM64), y)
-EXTRA_CFLAGS += -Wno-unused-function -Wno-unused-variable -DCONFIG_NOPRINTK -DWEAK=
-ccflags-y := -Wno-unused-function -Wno-unused-variable -DCONFIG_NOPRINTK -DWEAK=
-ccflags-m := -Wno-unused-function -Wno-unused-variable -DCONFIG_NOPRINTK -DWEAK=
+EXTRA_CFLAGS += -Wno-unused-function -Wno-unused-variable -DWEAK=
+ccflags-y := -Wno-unused-function -Wno-unused-variable -DWEAK=
+ccflags-m := -Wno-unused-function -Wno-unused-variable -DWEAK=
 else
-EXTRA_CFLAGS += -Wno-unused-function -Wno-unused-variable -DCONFIG_NOPRINTK -DWEAK=__weak
-ccflags-y := -Wno-unused-function -Wno-unused-variable -DCONFIG_NOPRINTK -DWEAK=__weak
-ccflags-m := -Wno-unused-function -Wno-unused-variable -DCONFIG_NOPRINTK -DWEAK=__weak
+EXTRA_CFLAGS += -Wno-unused-function -Wno-unused-variable -DWEAK=__weak
+ccflags-y := -Wno-unused-function -Wno-unused-variable -DWEAK=__weak
+ccflags-m := -Wno-unused-function -Wno-unused-variable -DWEAK=__weak
 endif
 
 obj-$(CPTCFG_MAC80211) += mac80211.o

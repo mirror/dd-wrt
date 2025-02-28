@@ -241,7 +241,7 @@ void tdma_reset_state(struct ieee80211_if_tdma *tdma)
 #ifdef TDMA_DEBUG
 	printk("TDMA: USC - %u\n", (u32)tdma->unknow_state_counter);
 #endif
-	sta_info_flush(sdata);
+	sta_info_flush(sdata, true);
 	while ((skb = skb_dequeue(&tdma->tx_skb_list))) {
 		ieee80211_free_txskb(&sdata->local->hw, skb);
 	}

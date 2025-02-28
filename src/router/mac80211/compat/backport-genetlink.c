@@ -440,11 +440,17 @@ static int genlmsg_mcast(struct sk_buff *skb, u32 portid, unsigned long group,
 
 int backport_genlmsg_multicast_allns(const struct genl_family *family,
 				     struct sk_buff *skb, u32 portid,
-				     unsigned int group, gfp_t flags)
+				     unsigned int group)
 {
+	int ret;
+	rcu_read_lock();
 	group = __backport_genl_group(family, group);
-	if (group == INVALID_GROUP)
+	if (group == INVALID_GROUP) {
+		rcu_read_unlock();
 		return -EINVAL;
-	return genlmsg_mcast(skb, portid, group, flags);
+	}
+	ret = genlmsg_mcast(skb, portid, group, GFP_ATOMIC);
+	rcu_read_unlock();
+	return ret;
 }
 EXPORT_SYMBOL_GPL(backport_genlmsg_multicast_allns);

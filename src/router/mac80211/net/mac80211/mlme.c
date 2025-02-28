@@ -2316,7 +2316,8 @@ static void ieee80211_set_disassoc(struct ieee80211_sub_if_data *sdata,
 	ieee80211_recalc_ps_vif(sdata);
 
 	/* make sure ongoing transmission finishes */
-	synchronize_net();
+	if (tx)
+		synchronize_net();
 
 	/*
 	 * drop any frame before deauth/disassoc, this can be data or
@@ -2357,7 +2358,7 @@ static void ieee80211_set_disassoc(struct ieee80211_sub_if_data *sdata,
 	sdata->vif.bss_conf.ssid_len = 0;
 
 	/* remove AP and TDLS peers */
-	sta_info_flush(sdata);
+	sta_info_flush(sdata, tx);
 
 	/* finally reset all BSS / config parameters */
 	changed |= ieee80211_reset_erp_info(sdata);

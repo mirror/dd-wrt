@@ -23,7 +23,7 @@
 /* TODO: could possibly be 512, but no samples this large
  * could be acquired so far.
  */
-#define SPECTRAL_ATH10K_MAX_NUM_BINS		256
+#define SPECTRAL_ATH10K_MAX_NUM_BINS		512
 #define SPECTRAL_ATH11K_MAX_NUM_BINS		1024
 
 /* FFT sample format given to userspace via debugfs.
@@ -117,6 +117,7 @@ struct fft_sample_ath11k {
 	u8 chan_width_mhz;
 	s8 max_index;
 	u8 max_exp;
+	bool is_primary;
 	__be16 freq1;
 	__be16 freq2;
 	__be16 max_magnitude;
