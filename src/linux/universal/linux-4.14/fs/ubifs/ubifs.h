@@ -398,7 +398,7 @@ struct ubifs_inode {
 	unsigned int dirty:1;
 	unsigned int xattr:1;
 	unsigned int bulk_read:1;
-	unsigned int compr_type:2;
+	unsigned int compr_type:3;
 	struct mutex ui_mutex;
 	spinlock_t ui_lock;
 	loff_t synced_i_size;
@@ -929,7 +929,7 @@ struct ubifs_mount_opts {
 	unsigned int bulk_read:2;
 	unsigned int chk_data_crc:2;
 	unsigned int override_compr:1;
-	unsigned int compr_type:2;
+	unsigned int compr_type:3;
 };
 
 /**

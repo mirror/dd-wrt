@@ -65,6 +65,9 @@
 
 static int get_default_compressor(void)
 {
+	if (ubifs_compr_present(UBIFS_COMPR_ZSTD))
+		return UBIFS_COMPR_ZSTD;
+
 	if (ubifs_compr_present(UBIFS_COMPR_LZO))
 		return UBIFS_COMPR_LZO;
 

@@ -1037,6 +1037,10 @@ static int ubifs_parse_options(struct ubifs_info *c, char *options,
 				c->mount_opts.compr_type = UBIFS_COMPR_LZO;
 			else if (!strcmp(name, "zlib"))
 				c->mount_opts.compr_type = UBIFS_COMPR_ZLIB;
+			else if (!strcmp(name, "zstd"))
+				c->mount_opts.compr_type = UBIFS_COMPR_ZSTD;
+			else if (!strcmp(name, "xz"))
+				c->mount_opts.compr_type = UBIFS_COMPR_XZ;
 			else {
 				ubifs_err(c, "unknown compressor \"%s\"", name); //FIXME: is c ready?
 				kfree(name);
@@ -2257,7 +2261,7 @@ static int __init ubifs_init(void)
 	 * @compr_type in 'struct ubifs_inode', @default_compr in
 	 * 'struct ubifs_info' and @compr_type in 'struct ubifs_mount_opts'.
 	 */
-	BUILD_BUG_ON(UBIFS_COMPR_TYPES_CNT > 4);
+	BUILD_BUG_ON(UBIFS_COMPR_TYPES_CNT > 6);
 
 	/*
 	 * We require that PAGE_SIZE is greater-than-or-equal-to
