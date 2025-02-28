@@ -3726,6 +3726,9 @@ void start_nvram(void)
 		//		if (doreboot)
 		//			eval("reboot");
 	}
+	if (nvram_geti("nvram_ver") < 11) {
+		nvram_seti("nvram_ver", 11);
+	}
 
 	return;
 }

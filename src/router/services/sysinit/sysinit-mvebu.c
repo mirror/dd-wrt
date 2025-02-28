@@ -175,7 +175,14 @@ void start_sysinit(void)
 	if (brand == ROUTER_WRT_32X) {
 		writestr("/sys/class/leds/venom\\:blue\\:sata/trigger", "disk-activity");
 	}
-
+	if (nvram_match("wan_ifname2","eth0") || nvram_match("wan_ifname2","eth1") || nvram_match("wan_ifname","eth1") || nvram_match("wan_ifname","eth0")) {
+		nvram_set("wan_ifname2","wan");
+		nvram_set("wan_ifname","wan");
+		nvram_set("wan_ifnames","wan");
+		nvram_set("wan_default","wan");
+		nvram_set("wan_iface","wan");
+	}
+	    
 	nvram_unset("sw_wancpuport");
 	nvram_unset("sw_lancpuport");
 	nvram_unset("sw_wan");
