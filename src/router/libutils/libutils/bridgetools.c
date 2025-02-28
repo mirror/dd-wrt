@@ -352,7 +352,7 @@ int br_add_interface(const char *br, const char *dev)
 void sync_multicast_to_unicast(void)
 {
 	char vifs[256];
-	getIfLists(vifs, 256);
+	getIfLists(vifs, sizeof(vifs));
 	char var[256];
 	const char *wordlist, *next;
 	foreach(var, vifs, next)

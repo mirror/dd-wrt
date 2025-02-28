@@ -950,7 +950,7 @@ int getifcount(const char *ifprefix)
 	 */
 	char *iflist = calloc(256, 1);
 
-	int c = getIfListB(iflist, ifprefix, 0, 1, 0);
+	int c = getIfListB(iflist, 256, ifprefix, 0, 1, 0);
 
 	free(iflist);
 	return c;
@@ -992,14 +992,14 @@ void strtrim_right(char *p, int c)
 	return;
 }
 
-int getIfList(char *buffer, const char *ifprefix)
+int getIfList(char *buffer, size_t len, const char *ifprefix)
 {
-	return getIfListB(buffer, ifprefix, 0, 0, 0);
+	return getIfListB(buffer, len, ifprefix, 0, 0, 0);
 }
 
-int getIfListNoPorts(char *buffer, const char *ifprefix)
+int getIfListNoPorts(char *buffer, size_t len, const char *ifprefix)
 {
-	return getIfListB(buffer, ifprefix, 0, 0, 1);
+	return getIfListB(buffer, len, ifprefix, 0, 0, 1);
 }
 
 static int ifcompare(const void *a, const void *b)
@@ -1114,7 +1114,7 @@ sort:;
 	*cnt = count;
 	return sort;
 }
-int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort, int noports)
+int getIfListB(char *buffer, size_t len, const char *ifprefix, int bridgesonly, int nosort, int noports)
 {
 	char word[32];
 	const char *next;
@@ -1122,7 +1122,7 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort, 
 	int count = 0;
 	int sortcount = 0;
 	int cnt = 0;
-	buffer[0]=0;
+	bzero(buffer, len);
 	if (ifprefix) {
 		foreach(word, ifprefix, next)
 		{
@@ -1151,10 +1151,14 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort, 
 	}
 	int i;
 	cnt = 0;
+	size_t totallen = 0;
 	for (i = 0; i < sortcount; i++) {
 		if (!strstr(buffer, sort[i])) {
-			strcat(buffer, sort[i]);
-			strcat(buffer, " ");
+			totallen + = strlen(sort[i]) + 1;
+			if ((totallen + 1) < len) {
+				strcat(buffer, sort[i]);
+				strcat(buffer, " ");
+			}
 		}
 		free(sort[i]);
 		cnt++;
