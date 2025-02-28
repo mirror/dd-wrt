@@ -18,7 +18,7 @@ function setMemoryValues(val) {
 	setMeterBar("mem_total", memTotal / memSystem * 100, memTotal + " KiB / " + memSystem + " KiB");
 	setMeterBar("mem_free", memFree / memTotal * 100, memFree + " KiB / " + memTotal + " KiB");
 	setMeterBar("mem_used", memUsed / memTotal * 100, memUsed + " KiB / " + memTotal + " KiB");
-	setMeterBar("mem_avail", memAvail / memTotal * 100, memUsed + " KiB / " + memTotal + " KiB");
+	setMeterBar("mem_avail", memAvail / memTotal * 100, memAvail + " KiB / " + memTotal + " KiB");
 	setMeterBar("mem_buffer", memBuffer / memUsed * 100, memBuffer + " KiB / " + memUsed + " KiB");
 	setMeterBar("mem_cached", memCached / memUsed * 100, memCached + " KiB / " + memUsed + " KiB");
 	setMeterBar("mem_active", memActive / memUsed * 100, memActive + " KiB / " + memUsed + " KiB");
