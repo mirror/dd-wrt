@@ -51,9 +51,8 @@ EJ_VISIBLE void ej_show_mdnsif(webs_t wp, int argc, char_t **argv)
 	char temp[64];
 	char word[32];
 	const char *next;
-	bzero(bufferif, 256);
 
-	getIfListNoPorts(bufferif, NULL);
+	getIfListNoPorts(bufferif, sizeof(bufferif), NULL);
 
 	websWrite(wp, "<fieldset>\n");
 	show_caption_legend(wp, "service.mdns_legend");

@@ -40,8 +40,7 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t **argv)
 
 	if (*(wanifname) == 0)
 		wanifname = nvram_safe_get("wan_ifname");
-	bzero(eths, 256);
-	getIfLists(eths, 256);
+	getIfLists(eths, sizeof(eths));
 	if (*(wanifname)) {
 		show_caption_legend(wp, "idx.portsetup");
 		websWrite(
@@ -59,8 +58,7 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t **argv)
 		}
 		websWrite(wp, "</select></div>\n");
 	}
-	bzero(bufferif, sizeof(bufferif));
-	getIfListB(bufferif, NULL, 1, 1, 0);
+	getIfListB(bufferif, sizeof(bufferif), NULL, 1, 1, 0);
 	foreach(var, eths, next)
 	{
 		int isb = 0;

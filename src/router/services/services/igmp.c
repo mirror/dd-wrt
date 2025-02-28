@@ -73,7 +73,7 @@ void start_igmprt(void)
 	}
 	char ifnames[256];
 
-	getIfLists(ifnames, 256);
+	getIfLists(ifnames, sizeof(ifname));
 	foreach(name, ifnames, next)
 	{
 		if (strcmp(safe_get_wan_face(wan_if_buffer), name) && strcmp(nvram_safe_get("lan_ifname"), name) &&

@@ -99,7 +99,7 @@ static void unbound_config(void)
 	fprintf(fp, "access-control: %s/%d allow\n", lan_ip, getmask(lan_mask));
 	if (port == 53) {
 		char vifs[256];
-		getIfLists(vifs, 256);
+		getIfLists(vifs, sizeof(vifs));
 		char var[256], *wordlist;
 		const char *next;
 		foreach(var, vifs, next)

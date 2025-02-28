@@ -60,8 +60,7 @@ int client_bridged_enabled(void)
 {
 	// enumerate all possible interfaces
 	char iflist[512];
-	iflist[0] = 0; // workaround for bug in getIfList()
-	getIfList(iflist, NULL);
+	getIfList(iflist, sizeof(iflist), NULL);
 
 	char word[256];
 	const char *next;
@@ -1295,9 +1294,9 @@ void stop_qos(void)
 
 	char eths[512];
 #ifdef HAVE_MVEBU
-	getIfList(eths, "ixp imq ppp tun tap vlan wlan wl ra rb lan wan");
+	getIfList(eths, sizeof(eths), "ixp imq ppp tun tap vlan wlan wl ra rb lan wan");
 #else
-	getIfList(eths, "ixp eth imq ppp tun tap vlan wlan wl ra rb lan wan");
+	getIfList(eths, sizeof(eths), "ixp eth imq ppp tun tap vlan wlan wl ra rb lan wan");
 #endif
 	const char *next;
 	char var[80];

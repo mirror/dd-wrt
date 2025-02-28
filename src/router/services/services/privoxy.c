@@ -73,7 +73,7 @@ void start_privoxy(void)
 			//			sysprintf("iptables -t nat -I PREROUTING -p tcp -s %s --dport 443 -j ACCEPT", transp);
 		}
 		mode = 1;
-		getIfLists(vifs, 256);
+		getIfLists(vifs, sizeof(vifs));
 		char vif_ip[32];
 		foreach(var, vifs, next)
 		{
@@ -153,7 +153,7 @@ void stop_privoxy(void)
 		sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s --dport 80 -j ACCEPT");
 		//		sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s --dport 443 -j ACCEPT");
 	}
-	getIfLists(vifs, 256);
+	getIfLists(vifs, sizeof(vifs));
 	char vif_ip[32];
 	foreach(var, vifs, next)
 	{

@@ -1522,11 +1522,9 @@ EJ_VISIBLE void ej_show_bandwidth(webs_t wp, int argc, char_t **argv)
 	int globresult;
 	int c;
 	show_bwif(wp, nvram_safe_get("lan_ifname"), "LAN");
-	bzero(eths, sizeof(eths));
 	getIfLists(eths, sizeof(eths));
 	//add ppp interfacs
-	bzero(eths2, sizeof(eths2));
-	getIfList(eths2, "ppp tun");
+	getIfList(eths2, sizeof(eths2), "ppp tun");
 	strcat(eths, " ");
 	strcat(eths, eths2);
 #ifndef HAVE_MADWIFI

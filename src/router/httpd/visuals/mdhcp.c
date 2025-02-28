@@ -39,8 +39,7 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t **argv)
 	show_caption_pp(wp, NULL, "networking.max", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.leasetime", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></thead><tbody>\n");
-	bzero(buffer, 256);
-	getIfListNoPorts(buffer, NULL);
+	getIfListNoPorts(buffer, sizeof(buffer), NULL);
 	int totalcount = 0;
 	int realcount = nvram_default_geti("mdhcpd_count", 0);
 

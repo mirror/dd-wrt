@@ -638,7 +638,7 @@ void start_dnsmasq(void)
 #endif
 		}
 		char vifs[256];
-		getIfLists(vifs, 256);
+		getIfLists(vifs, sizeof(vifs));
 		char var[256], *wordlist;
 		const char *next;
 		foreach(var, vifs, next)
@@ -659,7 +659,7 @@ void start_dnsmasq(void)
 			fprintf(fp, "%s", nvram_safe_get("lan_ifname"));
 		}
 		char vifs[256];
-		getIfLists(vifs, 256);
+		getIfLists(vifs, sizeof(vifs));
 		char var[256], *wordlist;
 		const char *next;
 		foreach(var, vifs, next)

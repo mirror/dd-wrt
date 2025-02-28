@@ -1964,8 +1964,7 @@ void validate_avahi(webs_t wp, char *value, struct variable *v)
 	char word[32] = { 0 };
 	const char *next;
 	int idx = 0;
-	bzero(bufferif, 512);
-	getIfList(bufferif, NULL);
+	getIfList(bufferif, sizeof(bufferif), NULL);
 	foreach(word, bufferif, next)
 	{
 		if (!strchr(word, ':')) {
@@ -1998,8 +1997,7 @@ void validate_dnsipv6(webs_t wp, char *value, struct variable *v)
 	char word[32] = { 0 };
 	const char *next;
 	int idx = 0;
-	bzero(bufferif, 512);
-	getIfList(bufferif, NULL);
+	getIfList(bufferif, sizeof(bufferif), NULL);
 	//dd_loginfo("validate_dnsipv6", "interface list: %s", bufferif);
 	foreach(word, bufferif, next)
 	{

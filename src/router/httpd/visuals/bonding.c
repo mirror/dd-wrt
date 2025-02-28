@@ -28,9 +28,7 @@ EJ_VISIBLE void ej_show_bondings(webs_t wp, int argc, char_t **argv)
 	char word[256];
 	const char *next, *wordlist;
 
-	bzero(buffer, 256);
 	bzero(bondnames, 256);
-	bzero(bufferif, 512);
 	// todo rework that shit. each bond can have a individual type. this should be considered here
 	show_caption_pp(wp, NULL, "networking.bonding", "<h2>", "</h2>\n");
 	websWrite(wp, "<fieldset>\n");
@@ -49,13 +47,12 @@ EJ_VISIBLE void ej_show_bondings(webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "</div>\n");
 
 #ifdef HAVE_MVEBU
-	getIfListNoPorts(bufferif, "ixp vlan wan lan");
+	getIfListNoPorts(bufferif, sizeof(bufferif), "ixp vlan wan lan");
 #else
-	getIfListNoPorts(bufferif, "eth ixp vlan wan lan");
+	getIfListNoPorts(bufferif, sizeof(bufferif), "eth ixp vlan wan lan");
 #endif	
 	int i;
-	bzero(buffer, 256);
-	getIfListB(buffer, NULL, 1, 1, 1);
+	getIfListB(buffer, sizeof(buffer), NULL, 1, 1, 1);
 	strcat(bufferif, " ");
 	strcat(bufferif, buffer);
 

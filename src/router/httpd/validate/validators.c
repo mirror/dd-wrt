@@ -814,7 +814,7 @@ EJ_VISIBLE void validate_portsetup(webs_t wp, char *value, struct variable *v)
 	char var[64];
 	char eths[256];
 
-	getIfLists(eths, 256);
+	getIfLists(eths, sizeof(eths));
 	foreach(var, eths, next)
 	{
 		copytonv_prefix(wp, "label", var);

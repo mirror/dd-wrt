@@ -54,8 +54,7 @@ static void _show_ruleif(webs_t wp, int argc, char_t **argv, char *page, char *r
 		}
 	}
 
-	bzero(bufferif, 512);
-	getIfList(bufferif, NULL);
+	getIfList(bufferif, sizeof(bufferif), NULL);
 	websWrite(wp, "<option value=\"lan\" %s >LAN &amp; WLAN</option>\n",
 		  nvram_match("lan_ifname", ifnamecopy) ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"wan\" %s >WAN</option>\n",

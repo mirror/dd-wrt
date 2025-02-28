@@ -3696,7 +3696,7 @@ void start_firewall(void)
 	writeprocsysnet("ipv4/conf/all/arp_ignore", nvram_default_get("net.ipv4.conf.all.arp_ignore", "1"));
 
 	char vifs[256];
-	getIfLists(vifs, 256);
+	getIfLists(vifs, sizeof(vifs));
 	/*
 	 * Block obviously spoofed IP addresses 
 	 */

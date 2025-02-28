@@ -51,11 +51,10 @@ EJ_VISIBLE void ej_show_dnsipv6if(webs_t wp, int argc, char_t **argv)
 	char temp[64];
 	char word[32];
 	const char *next;
-	bzero(bufferif, 256);
 	char wan_if_buffer[33];
 	char *wanface = safe_get_wan_face(wan_if_buffer);
 
-	getIfListNoPorts(bufferif, NULL);
+	getIfListNoPorts(bufferif, sizeof(bufferif), NULL);
 	char *wordlist = nvram_safe_get("dnsipv6_interfaces");
 	//dd_loginfo("show_dnsipv6if", "show_dnsipv6if: %s", wordlist);
 	//dd_loginfo("show_dnsipv6if", "getIfListNoPorts: %s", bufferif);

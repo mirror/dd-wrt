@@ -1138,13 +1138,12 @@ EJ_VISIBLE void ej_show_wifiselect(webs_t wp, int argc, char_t **argv)
 	const char *next;
 	char var[32];
 	char eths[256];
-	bzero(eths, 256);
 
 	int count = getdevicecount();
 
 	if (count < 1)
 		return;
-	getIfList(eths, "wlan0.sta");
+	getIfList(eths, sizeof(eths), "wlan0.sta");
 
 	if (count == 1 && *(nvram_safe_get("wlan0_vifs")) == 0 && *(eths) == 0)
 		return;
@@ -1182,8 +1181,7 @@ EJ_VISIBLE void ej_show_wifiselect(webs_t wp, int argc, char_t **argv)
 
 		char ifname[32];
 		sprintf(ifname, "wlan%d.sta", i);
-		bzero(eths, 256);
-		getIfList(eths, ifname);
+		getIfList(eths, sizeof(eths), ifname);
 		foreach(var, eths, next)
 		{
 			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var,
@@ -7675,10 +7673,8 @@ EJ_VISIBLE void ej_show_ifselect(webs_t wp, int argc, char_t **argv)
 	char var[80];
 	char eths[256];
 	char eth2[256];
-	bzero(eths, 256);
-	getIfLists(eths, 256);
-	bzero(eth2, 256);
-	getIfList(eth2, "ppp");
+	getIfLists(eths, sizeof(eths), 256);
+	getIfList(eth2, sizeof(eth2), "ppp");
 	strcat(eths, " ");
 	strcat(eths, eth2);
 	foreach(var, eths, next)
@@ -7702,13 +7698,12 @@ EJ_VISIBLE void ej_show_iflist(webs_t wp, int argc, char_t **argv)
 	const char *next;
 	char var[80];
 	char buffer[256];
-	bzero(buffer, 256);
 	char *prefix = NULL;
 	if (argc > 0)
 		prefix = argv[0];
 	if (!*prefix)
 		prefix = NULL;
-	getIfListNoPorts(buffer, prefix);
+	getIfListNoPorts(buffer, sizeof(buffer), prefix);
 	foreach(var, buffer, next)
 	{
 		char *wanface = safe_get_wan_face(wan_if_buffer);

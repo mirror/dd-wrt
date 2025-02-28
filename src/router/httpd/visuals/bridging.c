@@ -31,8 +31,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 	char *bridge, *prio, *mtu, *mcast, *mac;
 	char bridge_name[32];
 
-	bzero(buffer, 256);
-	getIfList(buffer, NULL);
+	getIfList(buffer, sizeof(buffer), NULL);
 	int realcount = nvram_default_geti("bridges_count", 0);
 
 	wordlist = nvram_safe_get("bridges");
@@ -342,9 +341,8 @@ EJ_VISIBLE void ej_show_bridgeifnames(webs_t wp, int argc, char_t **argv)
 	int c = 0;
 	char word[256];
 	const char *next, *wordlist;
-	bzero(bufferif, 512);
 	bzero(finalbuffer, 512);
-	getIfList(bufferif, NULL);
+	getIfList(bufferif, sizeof(bufferif), NULL);
 	foreach(word, bufferif, next)
 	{
 		if (!isbridge(word) && strcmp(word, "lo") && !strchr(word, ':')) {
@@ -355,8 +353,7 @@ EJ_VISIBLE void ej_show_bridgeifnames(webs_t wp, int argc, char_t **argv)
 	strcpy(bufferif, finalbuffer);
 	int i;
 
-	bzero(finalbuffer, 512);
-	getIfListB(finalbuffer, NULL, 1, 1, 0);
+	getIfListB(finalbuffer, sizeof(finalbuffer), NULL, 1, 1, 0);
 	char *checkbuffer = calloc(strlen(finalbuffer) + 6, 1);
 	strcpy(checkbuffer, "none ");
 	strcat(checkbuffer, finalbuffer);

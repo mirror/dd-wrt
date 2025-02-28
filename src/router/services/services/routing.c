@@ -254,12 +254,10 @@ static int zebra_ospf_init(void)
 		bzero(eths, sizeof(eths));
 		getIfLists(eths, sizeof(eths));
 		//add ppp interfacs
-		bzero(eths2, sizeof(eths2));
-		getIfList(eths2, "ppp tun");
+		getIfList(eths2, sizeof(eths2), "ppp tun");
 		strcat(eths, " ");
 		strcat(eths, eths2);
-		bzero(bufferif, 256);
-		getIfListB(bufferif, NULL, 1, 1, 1);
+		getIfListB(bufferif, sizeof(bufferif), NULL, 1, 1, 1);
 		foreach(var, eths, next)
 		{
 			if (!strcmp("etherip0", var))
