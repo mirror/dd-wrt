@@ -1199,7 +1199,7 @@ typedef struct {
 	struct ether_addr ea;
 } rssi_val_t;
 
-int getwifinfo(const char *ifname, unsigned char *macname, int field)
+int getwifiinfo(const char *ifname, unsigned char *macname, int field)
 {
 	unsigned int noise, rssi;
 	rssi_val_t rssi_get;
