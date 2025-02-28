@@ -1417,7 +1417,11 @@ int route_del(char *name, int metric, char *dst, char *gateway, char *genmask)
 
 void getIfLists(char *eths, int size)
 {
+#ifdef HAVE_MVEBU
+	getIfList(eths, "ixp vlan wlan ra rb apcli wds wl br oet lan wan vxlan ofdm");
+#else
 	getIfList(eths, "ixp eth vlan wlan ra rb apcli wds wl br oet lan wan vxlan ofdm");
+#endif
 }
 
 static uint32_t str_to_addr(const char *addr)

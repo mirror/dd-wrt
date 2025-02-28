@@ -48,7 +48,11 @@ EJ_VISIBLE void ej_show_bondings(webs_t wp, int argc, char_t **argv)
 		  nvram_default_get("bonding_number", "1"));
 	websWrite(wp, "</div>\n");
 
+#ifdef HAVE_MVEBU
+	getIfListNoPorts(bufferif, "ixp vlan wan lan");
+#else
 	getIfListNoPorts(bufferif, "eth ixp vlan wan lan");
+#endif	
 	int i;
 	bzero(buffer, 256);
 	getIfListB(buffer, NULL, 1, 1, 1);
