@@ -10,7 +10,7 @@ while sleep $SQUID_WATCHDOG_INTERVAL_SEC
 do
   for ip in $PROXY_SERVER
   do
-    if ping -c 1 $ip > /tmp/null
+    if ping -c 1 $ip > /dev/null
     then
       if [ -z "$(nvram get transparent_proxy)" ]; then
         /usr/sbin/iptables -t nat -A PREROUTING -i br0 -s $ROUTER_IP/$ROUTER_NETMASK \
