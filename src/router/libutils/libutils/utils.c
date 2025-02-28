@@ -1122,6 +1122,7 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort, 
 	int count = 0;
 	int sortcount = 0;
 	int cnt = 0;
+	buffer[0]=0;
 	if (ifprefix) {
 		foreach(word, ifprefix, next)
 		{
