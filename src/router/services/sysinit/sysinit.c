@@ -2935,6 +2935,8 @@ void load_drivers(int boot)
 		//ahci
 
 		mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
+		led_control(USB_POWER, LED_ON);
+		led_control(USB_POWER1, LED_ON);
 	} else if (!boot) {
 		led_control(USB_POWER, LED_OFF);
 		led_control(USB_POWER1, LED_OFF);
