@@ -76,8 +76,7 @@ static void del_routes(char *route)
 	const char *tmp;
 	char *ipaddr, *netmask, *gateway, *metric, *ifname;
 
-	foreach(word, route, tmp)
-	{
+	foreach(word, route, tmp) {
 		netmask = word;
 		ipaddr = strsep(&netmask, ":");
 		if (!ipaddr || !netmask)
@@ -1590,8 +1589,7 @@ static int single_service_helper(void)
 	char service[80];
 	char *services = nvram_safe_get("action_service");
 	update_timezone();
-	foreach(service, services, next)
-	{
+	foreach(service, services, next) {
 #ifdef HAVE_OLED
 		char message[32];
 		sprintf(message, "restart: %s", service);

@@ -552,8 +552,7 @@ static void do_madwifi_check(void)
 						sprintf(wifivifs, "%s_vifs", dev);
 						vifs = nvram_safe_get(wifivifs);
 						if (vifs != NULL && *vifs) {
-							foreach(var, vifs, next)
-							{
+							foreach(var, vifs, next) {
 								eval("ifconfig", var, "down");
 							}
 						}
@@ -580,8 +579,7 @@ static void do_madwifi_check(void)
 						sprintf(wifivifs, "%s_vifs", dev);
 						vifs = nvram_safe_get(wifivifs);
 						if (vifs != NULL && *vifs) {
-							foreach(var, vifs, next)
-							{
+							foreach(var, vifs, next) {
 								eval("ifconfig", var, "up");
 								eval("startservice", "set_routes", "-f");
 							}

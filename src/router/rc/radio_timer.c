@@ -110,8 +110,7 @@ int main(int argc, char **argv)
 						const char *next;
 						char var[80];
 						char *vifs = nvram_nget("wlan%d_vifs", i);
-						foreach(var, vifs, next)
-						{
+						foreach(var, vifs, next) {
 							eval("ifconfig", var, "down");
 						}
 #endif

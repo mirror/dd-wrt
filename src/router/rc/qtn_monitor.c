@@ -100,8 +100,7 @@ void rpc_parse_nvram_from_httpd(void)
 		char var[80];
 		char *vifs = nvram_safe_get("wl1_vifs");
 		int found = 0;
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			if (!strcmp(var, viflist[cnt++])) {
 				found = 1;
 				char mbss[32];

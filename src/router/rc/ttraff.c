@@ -89,8 +89,7 @@ void write_to_nvram(int day, int month, int year, unsigned long long rcvd, unsig
 		tdata = nvram_safe_get(tq);
 	}
 
-	foreach(var, tdata, next)
-	{
+	foreach(var, tdata, next) {
 		if (i == day) {
 			if (strstr(var,
 				   "[")) { //check and correct faulty entries

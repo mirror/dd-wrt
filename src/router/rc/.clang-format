@@ -69,6 +69,7 @@ FixNamespaceComments: false
 #   | sed "s,^#define \([^[:space:]]*for_each[^[:space:]]*\)(.*$,  - '\1'," \
 #   | LC_ALL=C sort -u
 ForEachMacros:
+  - 'foreach'
   - '__ata_qc_for_each'
   - '__bio_for_each_bvec'
   - '__bio_for_each_segment'
