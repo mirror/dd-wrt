@@ -1096,9 +1096,8 @@ void start_restore_defaults(void)
 					      { "wan_ifnames", "wan" },
 					      { "wan_default", "wan" },
 					      { 0, 0 } };
-	struct nvram_param generic_fap231f] = { { "lan_ifname", "br0" },
-					      { "lan_ifnames",
-						"wan lan1 wlan0 wlan1 wlan2" },
+	struct nvram_param generic_fap231f[] = { { "lan_ifname", "br0" },
+					      { "lan_ifnames", "wan lan1 wlan0 wlan1 wlan2" },
 					      { "wan_ifname", "wan" },
 					      { "wan_ifname2", "wan" },
 					      { "wan_ifnames", "wan" },
