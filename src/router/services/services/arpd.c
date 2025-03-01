@@ -57,7 +57,8 @@ void start_arpd(void)
 			ifnames[cnt++] = strdup(var);
 		active = 1;
 	}
-	_log_evalpid(ifnames, NULL, 0, NULL);
+	if (active)
+		_log_evalpid(ifnames, NULL, 0, NULL);
 
 	return;
 }
