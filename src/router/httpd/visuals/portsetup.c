@@ -164,7 +164,7 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t **argv)
 #ifdef HAVE_IPTOOLS
 		char arpvar[32];
 		sprintf(arpvar, "%s_arpd", var);
-		nvram_default_get(arpvar, "1");
+		nvram_default_get(arpvar, "0");
 		showRadio(wp, "networking.arpd", arpvar);
 
 #endif

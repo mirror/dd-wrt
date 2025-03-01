@@ -2273,7 +2273,7 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 #ifdef HAVE_IPTOOLS
 	char arpvar[32];
 	sprintf(arpvar, "%s_arpd", var);
-	nvram_default_get(arpvar, "1");
+	nvram_default_get(arpvar, "0");
 	showRadio(wp, "networking.arpd", arpvar);
 
 #endif
