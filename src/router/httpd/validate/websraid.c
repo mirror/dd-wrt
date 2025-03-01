@@ -163,8 +163,7 @@ void del_raid(webs_t wp)
 	char drive[64];
 	char dev[32];
 	int drives = 0;
-	foreach(drive, raid, next)
-	{
+	foreach(drive, raid, next) {
 		drives++;
 		eval("umount", drive);
 	}
@@ -249,8 +248,7 @@ void del_raid_member(webs_t wp)
 	char drive[128];
 	char *a = NULL;
 	int cnt = 0;
-	foreach(drive, raid, next)
-	{
+	foreach(drive, raid, next) {
 		a = realloc(a, cnt ? strlen(a) + strlen(drive) + 2 : strlen(drive) + 1);
 		if (cnt != didx) {
 			if (!cnt)

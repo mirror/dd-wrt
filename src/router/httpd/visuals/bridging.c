@@ -35,8 +35,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 	int realcount = nvram_default_geti("bridges_count", 0);
 
 	wordlist = nvram_safe_get("bridges");
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(bridge, word, 0);
 		if (bridge && !strcmp(bridge, "br0")) {
 			br0found = 1;
@@ -100,8 +99,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 
 		count++;
 	}
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		int sub = 0;
 		if (*word == '>')
 			sub = 1;
@@ -343,8 +341,7 @@ EJ_VISIBLE void ej_show_bridgeifnames(webs_t wp, int argc, char_t **argv)
 	const char *next, *wordlist;
 	bzero(finalbuffer, 512);
 	getIfList(bufferif, sizeof(bufferif), NULL);
-	foreach(word, bufferif, next)
-	{
+	foreach(word, bufferif, next) {
 		if (!isbridge(word) && strcmp(word, "lo") && !strchr(word, ':')) {
 			strcat(finalbuffer, " ");
 			strcat(finalbuffer, word);
@@ -374,8 +371,7 @@ EJ_VISIBLE void ej_show_bridgeifnames(webs_t wp, int argc, char_t **argv)
 	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></thead>\n");
 
 	wordlist = nvram_safe_get("bridgesif");
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(tag, word, 0);
 		GETENTRYBYIDX(port, word, 1);
 		GETENTRYBYIDX(prio, word, 2);

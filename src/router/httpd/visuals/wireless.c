@@ -90,8 +90,7 @@ static char *wl_filter_mac_get(char *ifname2, char *type, int which, char *word)
 	}
 	wordlist = nvram_safe_get(var);
 
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		if (which-- == 0) {
 #ifdef HAVE_SPOTPASS
 			//rep( word, '/', ' ');
@@ -366,8 +365,7 @@ EJ_VISIBLE void ej_wireless_active_table(webs_t wp, int argc, char_t **argv)
 		}
 		char *maclist = nvram_safe_get(var);
 
-		foreach(word, maclist, next)
-		{
+		foreach(word, maclist, next) {
 			snprintf(wp->p->wl_client_macs[wp->p->nv_count].hwaddr,
 				 sizeof(wp->p->wl_client_macs[wp->p->nv_count].hwaddr), "%s", word);
 			wp->p->wl_client_macs[wp->p->nv_count].status = 0; // offline (default)
@@ -886,8 +884,7 @@ EJ_VISIBLE void ej_wme_match_op(webs_t wp, int argc, char_t **argv)
 	char word[256];
 	const char *next;
 	char *list = nvram_safe_get(argv[0]);
-	foreach(word, list, next)
-	{
+	foreach(word, list, next) {
 		if (!strcmp(word, argv[1])) {
 			websWrite(wp, argv[2]);
 			return;

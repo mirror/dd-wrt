@@ -2217,8 +2217,7 @@ static int do_mypage(unsigned char method, struct mime_handler *handler, char *u
 
 	if (qnum < 0)
 		qnum = 1;
-	foreach(sname, snamelist, next)
-	{
+	foreach(sname, snamelist, next) {
 		if (qnum == i) {
 			FILE *fp;
 			dd_logdebug("httpd", "exec %s", sname);
@@ -2670,8 +2669,7 @@ static int do_ttgraph(unsigned char method, struct mime_handler *handler, char *
 	char *tdata = nvram_safe_get(tq);
 
 	if (tdata != NULL && *(tdata)) {
-		foreach(var, tdata, next)
-		{
+		foreach(var, tdata, next) {
 			if (i == days)
 				break; //skip monthly total
 			int ret = sscanf(var, "%lu:%lu", &rcvd[i], &sent[i]);

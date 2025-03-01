@@ -46,8 +46,7 @@ EJ_VISIBLE void ej_show_ipvsassignments(webs_t wp, int argc, char_t **argv)
 
 		wordlist = nvram_safe_get("ipvstarget");
 
-		foreach(word, wordlist, next)
-		{
+		foreach(word, wordlist, next) {
 			GETENTRYBYIDX(ipvsname, word, 0);
 			GETENTRYBYIDX(targetip, word, 1);
 			GETENTRYBYIDX(targetport, word, 2);
@@ -67,8 +66,7 @@ EJ_VISIBLE void ej_show_ipvsassignments(webs_t wp, int argc, char_t **argv)
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 			twordlist = nvram_safe_get("ipvs");
 			char *matchname = "";
-			foreach(tword, twordlist, tnext)
-			{
+			foreach(tword, twordlist, tnext) {
 				GETENTRYBYIDX(matchname, tword, 0);
 				websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n",
 					  matchname ? matchname : "",
@@ -106,8 +104,7 @@ EJ_VISIBLE void ej_show_ipvsassignments(webs_t wp, int argc, char_t **argv)
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 			twordlist = nvram_safe_get("ipvs");
 			char *matchname = "";
-			foreach(tword, twordlist, tnext)
-			{
+			foreach(tword, twordlist, tnext) {
 				GETENTRYBYIDX(matchname, tword, 0);
 				websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n",
 					  matchname ? matchname : "",
@@ -181,8 +178,7 @@ EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t **argv)
 
 	wordlist = nvram_safe_get("ipvs");
 
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(ipvsname, word, 0);
 		GETENTRYBYIDX(sourceip, word, 1);
 		GETENTRYBYIDX(sourceport, word, 2);

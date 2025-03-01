@@ -51,16 +51,14 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t **argv)
 		websWrite(wp,
 			  "<option value=\"\" %s ><script type=\"text/javascript\">Capture(share.disabled);</script></option>\n",
 			  *(wanifname) == 0 ? "selected=\"selected\"" : "");
-		foreach(var, eths, next)
-		{
+		foreach(var, eths, next) {
 			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var,
 				  !strcmp(wanifname, var) ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 		}
 		websWrite(wp, "</select></div>\n");
 	}
 	getIfListB(bufferif, sizeof(bufferif), NULL, 1, 1, 0);
-	foreach(var, eths, next)
-	{
+	foreach(var, eths, next) {
 		int isb = 0;
 		if (!strcmp("etherip0", var))
 			continue;
@@ -229,8 +227,7 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t **argv)
 				"<div class=\"setting\">\n<div class=\"label\">ZCM&nbsp;<script type=\"text/javascript\">Capture(networking.bridge)</script></div>\n");
 			websWrite(wp, "<select name=\"nld_%s_bridge\">\n", var);
 			websWrite(wp, "  <option value=\"\">none</option>\n");
-			foreach(word, bufferif, next)
-			{
+			foreach(word, bufferif, next) {
 				// if( strcmp( word, "br0" ) ) {
 				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", word,
 					  nvram_match(nld_bridge, word) ? "selected=\"selected\"" : "", word);
@@ -274,8 +271,7 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t **argv)
 				wp,
 				"<option value=\"none\" %s><script type=\"text/javascript\">Capture(share.none)</script></option>\n",
 				nvram_match(bat_bridge, "none") ? "selected=\"selected\"" : "");
-			foreach(word, bufferif, next)
-			{
+			foreach(word, bufferif, next) {
 				// if( strcmp( word, "br0" ) ) {
 				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", word,
 					  nvram_match(bat_bridge, word) ? "selected=\"selected\"" : "", word);

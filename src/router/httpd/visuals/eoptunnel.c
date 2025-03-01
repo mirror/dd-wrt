@@ -778,8 +778,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 						websWrite(wp, "<option value=\"%s\" %s >WAN</option>\n", wanface,
 							  !strcmp(wanface, cmp) ? "selected=\"selected\"" : "");
 					}
-					foreach(word, bufferif, next)
-					{
+					foreach(word, bufferif, next) {
 						if (nvram_match("lan_ifname", word))
 							continue;
 						if (strcmp(wanface, "br0")) {

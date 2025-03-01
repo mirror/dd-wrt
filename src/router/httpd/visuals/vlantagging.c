@@ -39,8 +39,7 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t **argv)
 	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></thead><tbody>\n");
 
 	wordlist = nvram_safe_get("vlan_tags");
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(tag, word, 0);
 		GETENTRYBYIDX(port, word, 1);
 		GETENTRYBYIDX(prio, word, 2);

@@ -322,8 +322,7 @@ static int ej_show_roaming_single(webs_t wp, int argc, char_t **argv, char *pref
 		    nvram_nmatch("apup", "%s_mode", prefix))
 			cnt++;
 	}
-	foreach(var, vifs, next)
-	{
+	foreach(var, vifs, next) {
 		if (nvram_nmatch("disabled", "%s_mode", var))
 			continue;
 		sprintf(ssid, "%s_ssid", var);

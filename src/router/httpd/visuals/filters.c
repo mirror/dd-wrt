@@ -72,8 +72,7 @@ static char *filter_ip_get(webs_t wp, char *type, int which, char *word, char *t
 	if (!wordlist)
 		return "0";
 
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		if (which-- == 0) {
 			if (temp == 6) {
 				end = word;
@@ -210,8 +209,7 @@ static char *filter_port_get(char *list, char *type, int which, char *buf, size_
 	char *protos[] = { "disable", "both", "tcp", "udp", "l7" };
 
 	wordlist = nvram_safe_get(list);
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		if (which-- == 0) {
 			start = word;
 			proto = strsep(&start, ":");
@@ -286,8 +284,7 @@ static char *filter_mac_get(webs_t wp, int which, char *word)
 	if (!wordlist)
 		return "";
 
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		if (which-- == 0) {
 			mac = word;
 			return mac;
@@ -373,8 +370,7 @@ EJ_VISIBLE void ej_show_filterif(webs_t wp, int argc, char_t **argv)
 	getIfListNoPorts(eth2, sizeof(eth2), "ppp");
 	strcat(eths, " ");
 	strcat(eths, eth2);
-	foreach(var, eths, next)
-	{
+	foreach(var, eths, next) {
 		if (!strcmp(wanface, var))
 			continue;
 		if (!strcmp(nvram_safe_get("lan_ifname"), var))

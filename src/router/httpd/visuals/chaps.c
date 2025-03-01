@@ -39,8 +39,7 @@ static void show_chaps_table(webs_t wp, char *type, int which)
 
 	wordlist = nvram_safe_get("pppoeserver_chaps");
 
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		if (which-- == 0) {
 			GETENTRYBYIDX(user, word, 0);
 			GETENTRYBYIDX(pass, word, 1);

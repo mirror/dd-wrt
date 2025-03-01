@@ -118,8 +118,7 @@ int is_vap_ap(const char *prefix)
 	char var[80];
 
 	char *vifs = nvram_nget("%s_vifs", prefix);
-	foreach(var, vifs, next)
-	{
+	foreach(var, vifs, next) {
 		char ap[16];
 		sprintf(ap, "%s_mode", var);
 		if (nvram_match(ap, "ap") || nvram_match(ap, "wdsap") || nvram_match(ap, "apup"))
@@ -209,8 +208,7 @@ EJ_VISIBLE void ej_has_routing(webs_t wp, int argc, char_t **argv)
 	if (sub == NULL)
 		sub = nvram_safe_get("wk_mode");
 
-	foreach(var, sub, next)
-	{
+	foreach(var, sub, next) {
 		if (!strcmp(argv[0], "zebra")) {
 			if (!strcmp(var, "bgp"))
 				return;
@@ -927,8 +925,7 @@ static void ej_show_security_single(webs_t wp, int argc, char_t **argv, char *pr
 		show_security_prefix(wp, argc, argv, prefix, 1);
 		websWrite(wp, "</fieldset>\n<br />\n");
 	}
-	foreach(var, vifs, next)
-	{
+	foreach(var, vifs, next) {
 		if (nvram_nmatch("disabled", "%s_mode", var))
 			continue;
 
@@ -1165,8 +1162,7 @@ EJ_VISIBLE void ej_show_wifiselect(webs_t wp, int argc, char_t **argv)
 				  nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 		char *names = nvram_nget(WIFINAME "%d_vifs", i);
 
-		foreach(var, names, next)
-		{
+		foreach(var, names, next) {
 			if (nvram_nmatch("disabled", "%s_net_mode", var))
 				continue;
 			if (has_ad(var))
@@ -1182,8 +1178,7 @@ EJ_VISIBLE void ej_show_wifiselect(webs_t wp, int argc, char_t **argv)
 		char ifname[32];
 		sprintf(ifname, "wlan%d.sta", i);
 		getIfList(eths, sizeof(eths), ifname);
-		foreach(var, eths, next)
-		{
+		foreach(var, eths, next) {
 			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var,
 				  nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 		}
@@ -2511,8 +2506,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 	if ((is_mac80211(prefix) && getmaxvaps(prefix) > 1) || !is_mac80211(prefix))
 #endif
 		websWrite(wp, "<h2><script type=\"text/javascript\">Capture(wl_basic.h2_vi)</script></h2>\n");
-	foreach(var, vifs, next)
-	{
+	foreach(var, vifs, next) {
 #ifdef HAVE_GUESTPORT
 		if (nvram_match(guestport, var)) {
 			count++;
@@ -2824,8 +2818,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #ifdef HAVE_GUESTPORT
 	int gpfound = 0;
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(share.guest_port)</script></h2>\n");
-	foreach(var, vifs, next)
-	{
+	foreach(var, vifs, next) {
 		if (nvram_match(guestport, var)) {
 			gpfound = 1;
 			sprintf(ssid, "%s_ssid", var);
@@ -5867,8 +5860,7 @@ static int owe_possible(const char *prefix)
 		if (possible)
 			return possible && nomesh(prefix);
 	}
-	foreach(var, vifs, next)
-	{
+	foreach(var, vifs, next) {
 		if (strcmp(var, prefix) && (nvram_nmatch("disabled", "%s_akm", var) || *nvram_nget("%s_akm", var) == 0)) {
 			possible = check_already_owe(prefix, var);
 			if (possible)
@@ -6054,8 +6046,7 @@ void show_owe(webs_t wp, char *prefix)
 			websWrite(wp, "<option value=\"%s\" %s >%s - %s</option>\n", master,
 				  nvram_nmatch(master, "%s_owe_ifname", prefix) ? "selected=\"selected\"" : "", master,
 				  nvram_nget("%s_ssid", master));
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			if (strcmp(var, prefix) && (nvram_nmatch("disabled", "%s_akm", var) || *nvram_nget("%s_akm", var) == 0))
 				websWrite(wp, "<option value=\"%s\" %s >%s - %s</option>\n", var,
 					  nvram_nmatch(var, "%s_owe_ifname", prefix) ? "selected=\"selected\"" : "", var,
@@ -7635,8 +7626,7 @@ EJ_VISIBLE void ej_show_congestion(webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "management.net_conctrl", NULL);
 	websWrite(wp, "<select name=\"tcp_congestion_control\">\n");
-	foreach(var, eths, next)
-	{
+	foreach(var, eths, next) {
 		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var,
 			  nvram_match("tcp_congestion_control", var) ? "selected" : "", var);
 	}
@@ -7677,8 +7667,7 @@ EJ_VISIBLE void ej_show_ifselect(webs_t wp, int argc, char_t **argv)
 	getIfList(eth2, sizeof(eth2), "ppp");
 	strcat(eths, " ");
 	strcat(eths, eth2);
-	foreach(var, eths, next)
-	{
+	foreach(var, eths, next) {
 		if (!strcmp(wanface, var))
 			continue;
 		if (!strcmp(nvram_safe_get("lan_ifname"), var))
@@ -7704,8 +7693,7 @@ EJ_VISIBLE void ej_show_iflist(webs_t wp, int argc, char_t **argv)
 	if (!*prefix)
 		prefix = NULL;
 	getIfListNoPorts(buffer, sizeof(buffer), prefix);
-	foreach(var, buffer, next)
-	{
+	foreach(var, buffer, next) {
 		char *wanface = safe_get_wan_face(wan_if_buffer);
 		if (strcmp(wanface, "br0") && nvram_match(wanface, var)) {
 			websWrite(wp, "<option value=\"%s\" >WAN</option>\n", var);
@@ -7727,8 +7715,7 @@ EJ_VISIBLE void ej_show_rflowif(webs_t wp, int argc, char_t **argv)
 	char *lanifs = nvram_safe_get("lan_ifnames");
 	const char *next;
 	char var[80];
-	foreach(var, lanifs, next)
-	{
+	foreach(var, lanifs, next) {
 		if (nvram_match("wan_ifname", var))
 			continue;
 		if (!ifexists(var))
@@ -7764,8 +7751,7 @@ EJ_VISIBLE void ej_show_status_gpio_output(webs_t wp, int argc, char_t **argv)
 	var = (char *)malloc(strlen(gpios) + 1);
 	if (var != NULL) {
 		if (gpios != NULL) {
-			foreach(var, gpios, next)
-			{
+			foreach(var, gpios, next) {
 				sprintf(nvgpio, "gpio%s", var);
 				nvgpio = nvram_nget("gpio_%s", var);
 				if (!nvgpio)

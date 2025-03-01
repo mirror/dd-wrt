@@ -73,8 +73,7 @@ void show_subscriber_table(webs_t wp, char *type, int which)
 
 	wordlist = nvram_safe_get("milkfish_ddsubscribers");
 
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		if (which-- == 0) {
 			pass = word;
 			user = strsep(&pass, ":");
@@ -129,8 +128,7 @@ void show_aliases_table(webs_t wp, char *type, int which)
 
 	wordlist = nvram_safe_get("milkfish_ddaliases");
 
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		if (which-- == 0) {
 			pass = word;
 			user = strsep(&pass, ":");
@@ -185,8 +183,7 @@ void show_registrations_table(webs_t wp, char *type, int which)
 
 	wordlist = nvram_safe_get("milkfish_ddactive");
 
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		if (which-- == 0) {
 			contact = word;
 			user = strsep(&contact, ":");

@@ -360,8 +360,7 @@ EJ_VISIBLE void ej_nvram_listselmatch(webs_t wp, int argc, char_t **argv)
 	const char *next;
 	char *list = argv[1];
 
-	foreach(value, list, next)
-	{
+	foreach(value, list, next) {
 		if (nvram_selmatch(wp, argv[0], value)) {
 			websWrite(wp, argv[2]);
 			return;
@@ -380,8 +379,7 @@ EJ_VISIBLE void ej_nvram_listselmatch_not_v6(webs_t wp, int argc, char_t **argv)
 		const char *next;
 		char *list = argv[1];
 
-		foreach(value, list, next)
-		{
+		foreach(value, list, next) {
 			if (nvram_selmatch(wp, argv[0], value)) {
 				websWrite(wp, argv[2]);
 				return;
@@ -427,8 +425,7 @@ EJ_VISIBLE void ej_nvram_else_listselmatch(webs_t wp, int argc, char_t **argv)
 	char *type;
 
 	type = GOZILA_GET(wp, argv[0]);
-	foreach(value, list, next)
-	{
+	foreach(value, list, next) {
 		if (!type) {
 			if (nvram_match(argv[0], value)) {
 				websWrite(wp, argv[2]);
@@ -584,8 +581,7 @@ static int rule_afterburner(char *name)
 	const char *next;
 
 	if (wl_iovar_get(ifname, "cap", (void *)caps, WLC_IOCTL_SMLEN) == 0) {
-		foreach(cap, caps, next)
-		{
+		foreach(cap, caps, next) {
 			if (!strcmp(cap, "afterburner"))
 				return 1;
 		}
@@ -853,8 +849,7 @@ EJ_VISIBLE void ej_nvram_list(webs_t wp, int argc, char_t **argv)
 	which = atoi(argv[1]);
 	char *list = nvram_safe_get(argv[0]);
 
-	foreach(word, list, next)
-	{
+	foreach(word, list, next) {
 		if (which-- == 0)
 			websWrite(wp, word);
 	}
@@ -873,8 +868,7 @@ int get_dns_ip(char *name, int which, int count)
 	int ip;
 	char *list = nvram_safe_get(name);
 
-	foreach(word, list, next)
-	{
+	foreach(word, list, next) {
 		if (which-- == 0) {
 			ip = get_single_ip(word, count);
 			return ip;
@@ -897,8 +891,7 @@ EJ_VISIBLE void ej_get_dns_ip(webs_t wp, int argc, char_t **argv)
 	which = atoi(argv[1]);
 	char *list = nvram_safe_get(argv[0]);
 
-	foreach(word, list, next)
-	{
+	foreach(word, list, next) {
 		if (which-- == 0) {
 			websWrite(wp, "%d", get_single_ip(word, atoi(argv[2])));
 			return;
@@ -1228,8 +1221,7 @@ static int checkandadd(char *name, char **lst)
 	} else {
 		char cap[128];
 		const char *next;
-		foreach(cap, list, next)
-		{
+		foreach(cap, list, next) {
 			if (!strcmp(cap, name)) {
 				return 1;
 			}
@@ -1530,8 +1522,7 @@ EJ_VISIBLE void ej_show_bandwidth(webs_t wp, int argc, char_t **argv)
 #ifndef HAVE_MADWIFI
 	int cnt = get_wl_instances();
 #endif
-	foreach(var, eths, next)
-	{
+	foreach(var, eths, next) {
 		if (!nvram_match("wan_proto", "disabled")) {
 			if (!strcmp(safe_get_wan_face(wan_if_buffer), var))
 				continue;
@@ -1590,8 +1581,7 @@ skip:;
 
 		if (vifs == NULL)
 			continue;
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			if (nvram_nmatch("disabled", "%s_mode", var))
 				continue;
 			snprintf(name, sizeof(name), "%s (%s)", tran_string(buf, sizeof(buf), "share.wireless"),
@@ -1641,8 +1631,7 @@ skip:;
 		char *vifs = nvram_nget("wl%d_vifs", c);
 		if (vifs == NULL)
 			continue;
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			if (nvram_nmatch("disabled", "%s_mode", var))
 				continue;
 			snprintf(name, sizeof(name), "%s (%s)", tran_string(buf, sizeof(buf), "share.wireless"),

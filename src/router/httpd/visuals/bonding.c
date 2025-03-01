@@ -50,7 +50,7 @@ EJ_VISIBLE void ej_show_bondings(webs_t wp, int argc, char_t **argv)
 	getIfListNoPorts(bufferif, sizeof(bufferif), "ixp vlan wan lan");
 #else
 	getIfListNoPorts(bufferif, sizeof(bufferif), "eth ixp vlan wan lan 10g-sfp 10g-copper");
-#endif	
+#endif
 	int i;
 	getIfListB(buffer, sizeof(buffer), NULL, 1, 1, 1);
 	strcat(bufferif, " ");
@@ -82,8 +82,7 @@ EJ_VISIBLE void ej_show_bondings(webs_t wp, int argc, char_t **argv)
 	int realcount = nvram_default_geti("bonding_count", 0);
 
 	wordlist = nvram_safe_get("bondings");
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		char *port = word;
 		char *tag = strsep(&port, ">");
 

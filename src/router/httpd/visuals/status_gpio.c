@@ -43,8 +43,7 @@ EJ_VISIBLE void ej_show_status_gpio_output(webs_t wp, int argc, char_t **argv)
 	var = (char *)malloc(strlen(gpios) + 1);
 	if (var != NULL) {
 		if (gpios != NULL) {
-			foreach(var, gpios, next)
-			{
+			foreach(var, gpios, next) {
 				sprintf(nvgpio, "gpio%s", var);
 				sprintf(gpio_new_name, "gpio%s_name", var);
 				rgpio = nvram_nget("gpio%s", var);
@@ -81,8 +80,7 @@ EJ_VISIBLE void ej_show_status_gpio_input(webs_t wp, int argc, char_t **argv)
 	var = (char *)malloc(strlen(gpios) + 1);
 	if (var != NULL) {
 		if (gpios != NULL) {
-			foreach(var, gpios, next)
-			{
+			foreach(var, gpios, next) {
 				sprintf(nvgpio, "gpio%s", var);
 				gpio_name = nvram_nget("gpio%s_name", var);
 				sprintf(gpio_new_name, "gpio%s_name", var);

@@ -121,8 +121,7 @@ EJ_VISIBLE void ej_list_mac_layers(webs_t wp, int argc, char_t **argv)
 		const char *next;
 		char *vifs = nvram_safe_get(vif);
 
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			sprintf(macmode, "%s_macmode1", var);
 			sprintf(id, "idmac%s", var);
 			rep(id, '.', 'X');
@@ -161,8 +160,7 @@ EJ_VISIBLE void ej_show_macfilter(webs_t wp, int argc, char_t **argv)
 		const char *next;
 		char *vifs = nvram_safe_get(vif);
 
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			show_macfilter_if(wp, var);
 		}
 	}

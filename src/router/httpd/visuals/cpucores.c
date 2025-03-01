@@ -381,8 +381,7 @@ EJ_VISIBLE void ej_show_cpufeatures(webs_t wp, int argc, char_t **argv)
 		for (i = 0; i < sizeof(cpufeatures) / sizeof(struct CPUFEATURES); i++) {
 			if (strstr(line, cpufeatures[i].line)) {
 				char *begin = strchr(line, ':') + 1;
-				foreach(word, begin, next)
-				{
+				foreach(word, begin, next) {
 					if (result) {
 						if (strstr(result, cpufeatures[i].name))
 							continue;

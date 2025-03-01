@@ -69,8 +69,7 @@ EJ_VISIBLE void ej_show_olsrd(webs_t wp, int argc, char_t **argv)
 		char word[128];
 		int count = 0;
 
-		foreach(word, wordlist, next)
-		{
+		foreach(word, wordlist, next) {
 			GETENTRYBYIDX(interface, word, 0);
 			GETENTRYBYIDX(hellointerval, word, 1);
 			GETENTRYBYIDX(hellovaliditytime, word, 2);

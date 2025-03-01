@@ -152,8 +152,7 @@ void delete_leases(webs_t wp)
 	eval("dhcp_release", iface, ip, mac);
 	wordlist = nvram_safe_get("mdhcpd");
 	char word[32];
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(interface, word, 0);
 		// send it to all known interfaces
 		eval("dhcp_release", interface, ip, mac);
@@ -574,8 +573,7 @@ void delete_old_routes(void)
 {
 	char word[256];
 	const char *next;
-	foreach(word, nvram_safe_get("action_service_arg1"), next)
-	{
+	foreach(word, nvram_safe_get("action_service_arg1"), next) {
 #ifdef HAVE_MICRO
 		char ipaddr[20], netmask[20], gateway[20], met[20], ifn[20];
 		strcpy(ipaddr, strtok(word, ":"));
@@ -635,8 +633,7 @@ void delete_old_pbr(void)
 {
 	char word[256];
 	const char *next;
-	foreach(word, nvram_safe_get("action_service_arg2"), next)
-	{
+	foreach(word, nvram_safe_get("action_service_arg2"), next) {
 		char cmd[256];
 		strcpy(cmd, "ip rule del");
 		GETENTRYBYIDX(s_flags, word, 0);
@@ -734,8 +731,7 @@ void delete_static_route(webs_t wp)
 	char *performance = nvram_safe_get("static_route");
 	char *performance2 = nvram_safe_get("static_route_name");
 
-	foreach(word, performance, next)
-	{
+	foreach(word, performance, next) {
 		if (i == page) {
 			addDeletion_route(word);
 			i++;
@@ -748,8 +744,7 @@ void delete_static_route(webs_t wp)
 	}
 
 	i = 0;
-	foreach(word_name, performance2, next_name)
-	{
+	foreach(word_name, performance2, next_name) {
 		if (i == page) {
 			i++;
 			continue;
@@ -788,8 +783,7 @@ void delete_pbr_rule(webs_t wp)
 	char *performance = nvram_safe_get("pbr_rule");
 	char *performance2 = nvram_safe_get("pbr_rule_name");
 
-	foreach(word, performance, next)
-	{
+	foreach(word, performance, next) {
 		if (i == page) {
 			addDeletion_pbr(word);
 			i++;
@@ -802,8 +796,7 @@ void delete_pbr_rule(webs_t wp)
 	}
 
 	i = 0;
-	foreach(word_name, performance2, next_name)
-	{
+	foreach(word_name, performance2, next_name) {
 		if (i == page) {
 			i++;
 			continue;
@@ -1361,8 +1354,7 @@ static int security_save_prefix(webs_t wp, char *prefix)
 
 	if (vifs == NULL)
 		return 0;
-	foreach(var, vifs, next)
-	{
+	foreach(var, vifs, next) {
 		save_secprefix(wp, var);
 	}
 	// nvram_async_commit ();
@@ -1429,8 +1421,7 @@ static int roaming_save_prefix(webs_t wp, char *prefix)
 
 	if (vifs == NULL)
 		return 0;
-	foreach(var, vifs, next)
-	{
+	foreach(var, vifs, next) {
 		save_roamprefix(wp, var);
 	}
 	// nvram_async_commit ();
@@ -1965,8 +1956,7 @@ void validate_avahi(webs_t wp, char *value, struct variable *v)
 	const char *next;
 	int idx = 0;
 	getIfList(bufferif, sizeof(bufferif), NULL);
-	foreach(word, bufferif, next)
-	{
+	foreach(word, bufferif, next) {
 		if (!strchr(word, ':')) {
 			char temp[32];
 			snprintf(temp, sizeof(temp), "mdnsif_%s", word);
@@ -1999,8 +1989,7 @@ void validate_dnsipv6(webs_t wp, char *value, struct variable *v)
 	int idx = 0;
 	getIfList(bufferif, sizeof(bufferif), NULL);
 	//dd_loginfo("validate_dnsipv6", "interface list: %s", bufferif);
-	foreach(word, bufferif, next)
-	{
+	foreach(word, bufferif, next) {
 		if (!strchr(word, ':')) {
 			char temp[32];
 			snprintf(temp, sizeof(temp), "dnsipv6if_%s", word);
@@ -3199,8 +3188,7 @@ void delfrom(char *var, char *countvar, int todel)
 	char *target = malloc(strlen(wordlist) + 1);
 	memset(target, 0, strlen(wordlist) + 1);
 	int idx = 0;
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		if (idx)
 			strcat(target, " ");
 		if (idx == todel) {
@@ -3358,8 +3346,7 @@ int get_vifcount(const char *prefix)
 		return 0;
 	int count = 0;
 
-	foreach(var, vifs, next)
-	{
+	foreach(var, vifs, next) {
 		count++;
 	}
 	return count;
@@ -4150,8 +4137,7 @@ static void movevap(const char *prefix, int source, int target, int bonly)
 	if (*wordlist) {
 		copy = malloc(strlen(wordlist) + 1024);
 		*copy = 0;
-		foreach(word, wordlist, next)
-		{
+		foreach(word, wordlist, next) {
 			GETENTRYBYIDX(tag, word, 0);
 			GETENTRYBYIDX(port, word, 1);
 			GETENTRYBYIDX(prio, word, 2);
@@ -4188,8 +4174,7 @@ static void movevap(const char *prefix, int source, int target, int bonly)
 	if (*wordlist) {
 		copy = malloc(strlen(wordlist) + 1024);
 		*copy = 0;
-		foreach(word, wordlist, next)
-		{
+		foreach(word, wordlist, next) {
 			GETENTRYBYIDX(tag, word, 0);
 			GETENTRYBYIDX(port, word, 1);
 			GETENTRYBYIDX(prio, word, 2);
@@ -4233,8 +4218,7 @@ static void movevap(const char *prefix, int source, int target, int bonly)
 	if (*wordlist) {
 		copy = malloc(strlen(wordlist) + 1024);
 		*copy = 0;
-		foreach(word, wordlist, next)
-		{
+		foreach(word, wordlist, next) {
 			GETENTRYBYIDX(interface, word, 0);
 			GETENTRYBYIDX(dhcpon, word, 1);
 			GETENTRYBYIDX(start, word, 2);
@@ -4346,8 +4330,7 @@ void remove_vifs_single(const char *prefix, int vap)
 	int gp = 0;
 
 	int elements = 0;
-	foreach(word, vifs, next)
-	{
+	foreach(word, vifs, next) {
 		elements++;
 	}
 	if (elements) {
@@ -4358,8 +4341,7 @@ void remove_vifs_single(const char *prefix, int vap)
 			if (vap == elements - 1)
 				movevap(prefix, i + 1, i, 1);
 		}
-		foreach(word, vifs, next)
-		{
+		foreach(word, vifs, next) {
 			if (gp == elements - 1)
 				break;
 			strspcattach(copy, word);
@@ -4480,8 +4462,7 @@ void add_bond(webs_t wp)
 
 	if (realcount == 0) {
 		wordlist = nvram_safe_get("bondings");
-		foreach(word, wordlist, next)
-		{
+		foreach(word, wordlist, next) {
 			count++;
 		}
 		realcount = count;
@@ -4510,8 +4491,7 @@ void del_bond(webs_t wp)
 		return;
 	int count = 0;
 
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		if (count != todel) {
 			strcat(newwordlist, word);
 			strcat(newwordlist, " ");
@@ -4567,8 +4547,7 @@ void del_olsrd(webs_t wp)
 	char word[128];
 	int count = 0;
 
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		if (count != d) {
 			strcat(newlist, " ");
 			strcat(newlist, word);
@@ -4589,8 +4568,7 @@ void save_olsrd(webs_t wp)
 	const char *next;
 	char word[64];
 
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		char *interface = word;
 		char *dummy = interface;
 
@@ -4649,8 +4627,7 @@ void gpios_save(webs_t wp)
 	var = (char *)malloc(strlen(gpios) + 1);
 	if (var != NULL) {
 		if (gpios != NULL) {
-			foreach(var, gpios, next)
-			{
+			foreach(var, gpios, next) {
 				sprintf(nvgpio, "gpio%s", var);
 				sprintf(gpioname, "gpio%s_name", var);
 				value = websGetVar(wp, nvgpio, NULL);
@@ -4672,8 +4649,7 @@ void gpios_save(webs_t wp)
 	var = (char *)malloc(strlen(gpios) + 1);
 	if (var != NULL) {
 		if (gpios != NULL) {
-			foreach(var, gpios, next)
-			{
+			foreach(var, gpios, next) {
 				sprintf(gpioname, "gpio%s_name", var);
 				value = websGetVar(wp, gpioname, NULL);
 				if (value) {
@@ -5062,8 +5038,7 @@ void add_vlan(webs_t wp)
 
 	if (realcount == 0) {
 		wordlist = nvram_safe_get("vlan_tags");
-		foreach(word, wordlist, next)
-		{
+		foreach(word, wordlist, next) {
 			count++;
 		}
 		realcount = count;
@@ -5092,8 +5067,7 @@ void del_vlan(webs_t wp)
 		return;
 	int count = 0;
 
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		if (count != todel) {
 			strcat(newwordlist, word);
 			strcat(newwordlist, " ");
@@ -5135,8 +5109,7 @@ void add_mdhcp(webs_t wp)
 
 	if (realcount == 0) {
 		wordlist = nvram_safe_get("mdhcpd");
-		foreach(word, wordlist, next)
-		{
+		foreach(word, wordlist, next) {
 			count++;
 		}
 		realcount = count;
@@ -5165,8 +5138,7 @@ void del_mdhcp(webs_t wp)
 		return;
 	int count = 0;
 
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		if (count != todel) {
 			strcat(newwordlist, word);
 			strcat(newwordlist, " ");
@@ -5200,8 +5172,7 @@ void del_bridge(webs_t wp)
 		return;
 	int count = 0;
 
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		if (count != todel) {
 			strcat(newwordlist, word);
 			strcat(newwordlist, " ");
@@ -5241,8 +5212,7 @@ void add_bridge(webs_t wp)
 
 	if (realcount == 0) {
 		wordlist = nvram_safe_get("bridges");
-		foreach(word, wordlist, next)
-		{
+		foreach(word, wordlist, next) {
 			count++;
 		}
 		realcount = count;
@@ -5271,8 +5241,7 @@ void del_bridgeif(webs_t wp)
 		return;
 	int count = 0;
 
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		if (count != todel) {
 			strcat(newwordlist, word);
 			strcat(newwordlist, " ");
@@ -5302,8 +5271,7 @@ void add_bridgeif(webs_t wp)
 
 	if (realcount == 0) {
 		wordlist = nvram_safe_get("bridgesif");
-		foreach(word, wordlist, next)
-		{
+		foreach(word, wordlist, next) {
 			count++;
 		}
 		realcount = count;
@@ -5329,8 +5297,7 @@ void add_ipvs(webs_t wp)
 
 	if (realcount == 0) {
 		wordlist = nvram_safe_get("ipvs");
-		foreach(word, wordlist, next)
-		{
+		foreach(word, wordlist, next) {
 			count++;
 		}
 		realcount = count;
@@ -5363,8 +5330,7 @@ void del_ipvs(webs_t wp)
 	}
 	int count = 0;
 
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		if (count != todel) {
 			strcat(newwordlist, word);
 			strcat(newwordlist, " ");
@@ -5394,8 +5360,7 @@ void add_ipvstarget(webs_t wp)
 
 	if (realcount == 0) {
 		wordlist = nvram_safe_get("ipvstarget");
-		foreach(word, wordlist, next)
-		{
+		foreach(word, wordlist, next) {
 			count++;
 		}
 		realcount = count;
@@ -5428,8 +5393,7 @@ void del_ipvstarget(webs_t wp)
 	}
 	int count = 0;
 
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		if (count != todel) {
 			strcat(newwordlist, word);
 			strcat(newwordlist, " ");
@@ -5964,8 +5928,7 @@ void wireless_save(webs_t wp)
 #endif
 		if (vifs == NULL)
 			return;
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			save_prefix(wp, var);
 		}
 #ifdef HAVE_ATH9K
@@ -6454,8 +6417,7 @@ void portvlan_remove(webs_t wp)
 		const char *next;
 		char portvlan[32];
 		int i = 0, a;
-		foreach(portvlan, vlist, next)
-		{
+		foreach(portvlan, vlist, next) {
 			if (val != i) {
 				strspcattach(vlanlist, portvlan);
 			} else {
@@ -6465,8 +6427,7 @@ void portvlan_remove(webs_t wp)
 					char *newlist = strdup(list);
 					newlist[0] = 0;
 					const char *next2;
-					foreach(var, list, next2)
-					{
+					foreach(var, list, next2) {
 						if (atoi(var) != i) {
 							strspcattach(newlist, var);
 						}
@@ -6627,8 +6588,7 @@ void port_vlan_table_save(webs_t wp)
 	strcpy(br0vlans, "");
 	c = nvram_safe_get("lan_ifnames");
 	if (c) {
-		foreach(portid, c, next)
-		{
+		foreach(portid, c, next) {
 			if (!(strncmp(portid, "vlan", 4) == 0) && !(strncmp(portid, "eth1", 4) == 0)) {
 				if (*(br0vlans))
 					strcat(br0vlans, " ");
@@ -6640,8 +6600,7 @@ void port_vlan_table_save(webs_t wp)
 	strcpy(br1vlans, "");
 	c = nvram_safe_get("ub1_ifnames");
 	if (c) {
-		foreach(portid, c, next)
-		{
+		foreach(portid, c, next) {
 			if (!(strncmp(portid, "vlan", 4) == 0) && !(strncmp(portid, "eth1", 4) == 0)) {
 				if (*(br1vlans))
 					strcat(br1vlans, " ");
@@ -6653,8 +6612,7 @@ void port_vlan_table_save(webs_t wp)
 	strcpy(br2vlans, "");
 	c = nvram_safe_get("ub2_ifnames");
 	if (c) {
-		foreach(portid, c, next)
-		{
+		foreach(portid, c, next) {
 			if (!(strncmp(portid, "vlan", 4) == 0) && !(strncmp(portid, "eth1", 4) == 0)) {
 				if (*(br2vlans))
 					strcat(br2vlans, " ");
@@ -6771,8 +6729,7 @@ void save_macmode(webs_t wp)
 		char *vifs = nvram_safe_get(vif);
 
 		if (vifs != NULL)
-			foreach(var, vifs, next)
-			{
+			foreach(var, vifs, next) {
 				save_macmode_if(wp, var);
 			}
 	}

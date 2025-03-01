@@ -95,8 +95,7 @@ void port_forward_table(webs_t wp, char *type, int which)
 	int t = name_to_type(type);
 	wordlist = nvram_safe_get("forward_port");
 
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		if (which-- == 0) {
 			switch (t) {
 			case NAME: {
@@ -192,8 +191,7 @@ void port_forward_spec(webs_t wp, char *type, int which)
 	int t = name_to_type(type);
 	wordlist = nvram_safe_get("forward_spec");
 
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		if (which-- == 0) {
 			switch (t) {
 			case NAME: {
@@ -295,8 +293,7 @@ void ip_forward(webs_t wp, char *type, int which)
 
 	wordlist = nvram_safe_get("forward_ip");
 
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		if (which-- == 0) {
 			switch (t) {
 			case NAME: {
@@ -343,8 +340,7 @@ void port_trigger_table(webs_t wp, char *type, int which)
 	int t = name_to_type(type);
 	wordlist = nvram_safe_get("port_trigger");
 
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		if (which-- == 0) {
 			switch (t) {
 			case NAME: {

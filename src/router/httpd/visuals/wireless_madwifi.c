@@ -262,8 +262,7 @@ EJ_VISIBLE void ej_active_wireless(webs_t wp, int argc, char_t **argv)
 		const char *next;
 		char *vifs = nvram_safe_get(vif);
 		if (*vifs) {
-			foreach(var, vifs, next)
-			{
+			foreach(var, vifs, next) {
 				if (!is_mac80211(devs)) {
 					global = active_wireless_if(wp, argc, argv, var, &assoc_count[cnt], global, t, macmask);
 				} else {

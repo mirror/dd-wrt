@@ -68,8 +68,7 @@ static void assoc_count_prefix(webs_t wp, char *prefix)
 			goto done;
 		idx++;
 		char *names = nvram_nget("%s%d_vifs", prefix, i);
-		foreach(var, names, next)
-		{
+		foreach(var, names, next) {
 			if (!strcmp(var, s))
 				goto done;
 			idx++;

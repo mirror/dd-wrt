@@ -268,8 +268,7 @@ static int ismember(char *name)
 			return 0;
 		char var[128];
 		const char *next;
-		foreach(var, raid, next)
-		{
+		foreach(var, raid, next) {
 			if (!strcmp(name, var))
 				return 1;
 		}
@@ -591,8 +590,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t **argv)
 		sprintf(check, "/dev/%s", d);
 		free(d);
 #endif
-		foreach(var, raid, next)
-		{
+		foreach(var, raid, next) {
 			websWrite(wp, "<tr>\n"
 				      "<td>\n");
 			websWrite(wp, "<select name=\"raid%dmember%d\">\n", i, midx);
@@ -601,8 +599,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t **argv)
 					wp,
 					"<option value=\"none\"><script type=\"text/javascript\">Capture(share.none)</script></option>\n");
 			if (drives) {
-				foreach(drive, drives, dnext)
-				{
+				foreach(drive, drives, dnext) {
 #ifdef HAVE_X86
 					if (!strcmp(drive, check))
 						continue;
@@ -656,8 +653,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t **argv)
 		  "</tr>\n</thead><tbody>");
 	int idx = 0;
 	if (drives) {
-		foreach(drive, drives, dnext)
-		{
+		foreach(drive, drives, dnext) {
 			int canformat = 0;
 			char *fs = getfsname(drive);
 			if (!fs)
@@ -738,8 +734,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "</tbody></table>\n");
 
 	if (drives) {
-		foreach(drive, drives, dnext)
-		{
+		foreach(drive, drives, dnext) {
 			char *fs = getfsname(drive);
 			if (!fs)
 				continue;

@@ -389,8 +389,7 @@ char *sas_get_dns_ip(webs_t wp, char *label, int entry, int position)
 	which = entry;
 	char *list = nvram_safe_get(label);
 
-	foreach(word, list, next)
-	{
+	foreach(word, list, next) {
 		if (which-- == 0) {
 			sprintf(d, "%i", get_single_ip(word, position));
 			return d;

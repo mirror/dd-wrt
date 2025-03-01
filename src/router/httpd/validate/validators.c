@@ -815,8 +815,7 @@ EJ_VISIBLE void validate_portsetup(webs_t wp, char *value, struct variable *v)
 	char eths[256];
 
 	getIfLists(eths, sizeof(eths));
-	foreach(var, eths, next)
-	{
+	foreach(var, eths, next) {
 		copytonv_prefix(wp, "label", var);
 		copytonv_prefix(wp, "hwaddr", var);
 		char *bridged = copytonv_prefix(wp, "bridged", var);
@@ -3405,14 +3404,12 @@ write_nvram:
 		strcpy(&old_name[i * ROUTE_NAME_SIZE], "");
 	}
 	i = 0;
-	foreach(word, nvram_safe_get("static_route"), next)
-	{
+	foreach(word, nvram_safe_get("static_route"), next) {
 		strcpy(&old[i * ROUTE_LINE_SIZE], word);
 		i++;
 	}
 	i = 0;
-	foreach(word, nvram_safe_get("static_route_name"), next)
-	{
+	foreach(word, nvram_safe_get("static_route_name"), next) {
 		strcpy(&old_name[i * ROUTE_NAME_SIZE], word);
 		i++;
 	}
@@ -3662,14 +3659,12 @@ write_nvram:
 		strcpy(&old_name[i * ROUTE_NAME_SIZE], "");
 	}
 	i = 0;
-	foreach(word, nvram_safe_get("pbr_rule"), next)
-	{
+	foreach(word, nvram_safe_get("pbr_rule"), next) {
 		strcpy(&old[i * PBR_LINE_SIZE], word);
 		i++;
 	}
 	i = 0;
-	foreach(word, nvram_safe_get("pbr_rule_name"), next)
-	{
+	foreach(word, nvram_safe_get("pbr_rule_name"), next) {
 		strcpy(&old_name[i * ROUTE_NAME_SIZE], word);
 		i++;
 	}

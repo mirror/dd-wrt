@@ -44,8 +44,7 @@ static void _show_ruleif(webs_t wp, int argc, char_t **argv, char *page, char *r
 
 	char *sroute = nvram_safe_get(rules);
 
-	foreach(word, sroute, next)
-	{
+	foreach(word, sroute, next) {
 		if (which-- == 0) {
 			GETENTRYBYIDX_DEL(ifname, word, index, ":");
 			if (!ifname)
@@ -64,8 +63,7 @@ static void _show_ruleif(webs_t wp, int argc, char_t **argv, char *page, char *r
 			  strcmp("any", ifnamecopy) == 0 ? "selected=\"selected\"" : "");
 	bzero(word, 256);
 	next = NULL;
-	foreach(word, bufferif, next)
-	{
+	foreach(word, bufferif, next) {
 		if (nvram_match("lan_ifname", word))
 			continue;
 		if (nvram_match("wan_ifname", word))
@@ -114,8 +112,7 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t **argv)
 	if (!strcmp(arg, "name")) {
 		char *sroutename = nvram_safe_get("static_route_name");
 
-		foreach(word, sroutename, next)
-		{
+		foreach(word, sroutename, next) {
 			if (which-- == 0 || (next == NULL && !strcmp("", websGetVar(wp, "change_action", "-")))) {
 				find_match_pattern(name, sizeof(name), word, "$NAME:", "");
 				httpd_filter_name(name, new_name, sizeof(new_name), GET);
@@ -126,8 +123,7 @@ EJ_VISIBLE void ej_static_route_setting(webs_t wp, int argc, char_t **argv)
 	}
 	char *sroute = nvram_safe_get("static_route");
 
-	foreach(word, sroute, next)
-	{
+	foreach(word, sroute, next) {
 		//if (which-- == 0) {
 		if (which-- == 0 || (next == NULL && !strcmp("", websGetVar(wp, "change_action", "-")))) {
 			GETENTRYBYIDX_DEL(s_flags, word, 6, ":");
@@ -262,8 +258,7 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t **argv)
 	if (!strcmp(arg, "name")) {
 		char *sroutename = nvram_safe_get("pbr_rule_name");
 
-		foreach(word, sroutename, next)
-		{
+		foreach(word, sroutename, next) {
 			if (which-- == 0 || (next == NULL && !strcmp("", websGetVar(wp, "change_action", "-")))) {
 				find_match_pattern(name, sizeof(name), word, "$NAME:", "");
 				httpd_filter_name(name, new_name, sizeof(new_name), GET);
@@ -274,8 +269,7 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t **argv)
 	}
 	char *sroute = nvram_safe_get("pbr_rule");
 
-	foreach(word, sroute, next)
-	{
+	foreach(word, sroute, next) {
 		//if (which-- == 0) {
 		if (which-- == 0 || (next == NULL && !strcmp("", websGetVar(wp, "change_action", "-")))) {
 			GETENTRYBYIDX_DEL(s_flags, word, 0, ":");
@@ -531,8 +525,7 @@ EJ_VISIBLE void ej_static_route_table(webs_t wp, int argc, char_t **argv)
 			char buf[80] = "";
 
 			which = i;
-			foreach(word, sroutename, next)
-			{
+			foreach(word, sroutename, next) {
 				if (which-- == 0) {
 					find_match_pattern(name, sizeof(name), word, "$NAME:", " ");
 					httpd_filter_name(name, new_name, sizeof(new_name), GET);
@@ -577,8 +570,7 @@ EJ_VISIBLE void ej_pbr_rule_table(webs_t wp, int argc, char_t **argv)
 			char buf[80] = "";
 
 			which = i;
-			foreach(word, srulename, next)
-			{
+			foreach(word, srulename, next) {
 				if (which-- == 0) {
 					find_match_pattern(name, sizeof(name), word, "$NAME:", " ");
 					httpd_filter_name(name, new_name, sizeof(new_name), GET);

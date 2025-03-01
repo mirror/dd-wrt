@@ -73,8 +73,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t **argv)
 	for (i = 0; i < blen; i++)
 		vlanlist[i] = i;
 	i = 0;
-	foreach(portvlan, c, next)
-	{
+	foreach(portvlan, c, next) {
 		vlanlist[i++] = atoi(portvlan);
 	}
 	for (i = 0; i < blen + 9; i++)
@@ -94,8 +93,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t **argv)
 		c = nvram_safe_get(buff);
 
 		if (c) {
-			foreach(portvlan, c, next)
-			{
+			foreach(portvlan, c, next) {
 				if (portvlan[0] == 'e' && portvlan[1] == 't' && portvlan[2] == 'h' && portvlan[3] == '1')
 					wl_br = i - (lanports + 1);
 				if (ISDIGIT(portvlan, 1) ||

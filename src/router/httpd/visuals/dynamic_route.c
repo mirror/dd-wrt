@@ -95,8 +95,7 @@ EJ_VISIBLE void ej_dump_route_table(webs_t wp, int argc, char_t **argv)
 		int d_src = 0;
 		int d_via = 0;
 		int d_metric = 0;
-		foreach(word, line, next)
-		{
+		foreach(word, line, next) {
 			if (!field && !strcmp(word, "broadcast"))
 				goto nextline;
 			if (!field && !strcmp(word, "local"))

@@ -44,8 +44,7 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t **argv)
 	int realcount = nvram_default_geti("mdhcpd_count", 0);
 
 	wordlist = nvram_safe_get("mdhcpd");
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(interface, word, 0);
 		GETENTRYBYIDX(dhcpon, word, 1);
 		GETENTRYBYIDX(start, word, 2);

@@ -438,8 +438,7 @@ EJ_VISIBLE void ej_active_wireless(webs_t wp, int argc, char_t **argv)
 		if (vifs == NULL)
 			return;
 
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			global = active_wireless_if(wp, argc, argv, var, var, &assoc_count[cnt], global);
 			cnt++;
 		}
