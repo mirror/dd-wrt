@@ -1754,7 +1754,7 @@ service.rflow_srv2="MACupd";
 
 //pppoe-relay.webservices
 service.pppoe_legend="PPPoE-Relay";
-service.pppoe_srv="Relay";
+service.pppoe_srv="Relay Einschalten";
 
 //pppoe-server.webservices
 service.pppoesrv_legend="PPPoE Server";
