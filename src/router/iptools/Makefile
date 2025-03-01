@@ -66,6 +66,8 @@ install: all
 	install -m 0755 $(TARGETS) $(INSTALLDIR)/$(DESTDIR)/usr/sbin
 	ln -sf lnstat $(INSTALLDIR)/$(DESTDIR)/usr/sbin/rtstat
 	ln -sf lnstat $(INSTALLDIR)/$(DESTDIR)/usr/sbin/ctstat
+	install -D config/arpd.nvramconfig $(INSTALLDIR)/etc/config/arpd.nvramconfig
+	install -D config/arpd.webservices $(INSTALLDIR)/etc/config/arpd.webservices
 
 clean:
 	make -C db/build_unix clean
