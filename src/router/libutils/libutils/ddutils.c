@@ -1420,7 +1420,7 @@ void getIfLists(char *eths, size_t size)
 #ifdef HAVE_MVEBU
 	getIfList(eths, size, "ixp vlan wlan ra rb apcli wds wl br oet lan wan vxlan ofdm");
 #else
-	getIfList(eths, size, "ixp eth vlan wlan ra rb apcli wds wl br oet lan wan vxlan ofdm");
+	getIfList(eths, size, "ixp eth vlan wlan ra rb apcli wds wl br oet lan wan 10g-copper 10g-sfp vxlan ofdm");
 #endif
 }
 
