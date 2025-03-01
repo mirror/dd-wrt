@@ -282,6 +282,8 @@ __bamc_refresh(dbc)
 	 *
 	 * Recno uses the btree bt_ovflsize value -- it's close enough.
 	 */
+	if (t->bt_minkey == 0)
+		return (DB_RECOVER);
 	cp->ovflsize = B_MINKEY_TO_OVFLSIZE(
 	    dbp,  F_ISSET(dbc, DBC_OPD) ? 2 : t->bt_minkey, dbp->pgsize);
 

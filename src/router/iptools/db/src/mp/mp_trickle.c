@@ -67,6 +67,10 @@ __memp_trickle(env, pct, nwrotep)
 		return (EINVAL);
 	}
 
+	/* First we purge all dead files and their buffers. */
+	if ((ret = __memp_purge_dead_files(env)) != 0)
+		return (ret);
+
 	/*
 	 * Loop through the caches counting total/dirty buffers.
 	 *

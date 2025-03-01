@@ -439,12 +439,7 @@ thawed:			need_free = (atomic_dec(env, &bhp->ref) == 0);
 		if (flags == DB_MPOOL_FREE) {
 freebuf:		MUTEX_LOCK(env, hp->mtx_hash);
 			h_locked = 1;
-			if (F_ISSET(bhp, BH_DIRTY)) {
-				F_CLR(bhp, BH_DIRTY | BH_DIRTY_CREATE);
-				DB_ASSERT(env,
-				   atomic_read(&hp->hash_page_dirty) > 0);
-				atomic_dec(env, &hp->hash_page_dirty);
-			}
+			__memp_bh_clear_dirty(env, hp, bhp);
 
 			/*
 			 * If the buffer we found is already freed, we're done.
@@ -649,7 +644,7 @@ alloc:		/* Allocate a new buffer header and data space. */
 
 		/* Initialize enough so we can call __memp_bhfree. */
 		alloc_bhp->flags = 0;
-		atomic_init(&alloc_bhp->ref, 1);
+		__db_atomic_init(&alloc_bhp->ref, 1);
 #ifdef DIAGNOSTIC
 		if ((uintptr_t)alloc_bhp->buf & (sizeof(size_t) - 1)) {
 			__db_errx(env, DB_STR("3025",
@@ -955,7 +950,7 @@ alloc:		/* Allocate a new buffer header and data space. */
 			MVCC_MPROTECT(bhp->buf, mfp->pagesize,
 			    PROT_READ);
 
-		atomic_init(&alloc_bhp->ref, 1);
+		__db_atomic_init(&alloc_bhp->ref, 1);
 		MUTEX_LOCK(env, alloc_bhp->mtx_buf);
 		alloc_bhp->priority = bhp->priority;
 		alloc_bhp->pgno = bhp->pgno;

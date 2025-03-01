@@ -28,6 +28,15 @@ __db_file_extend(env, fhp, size)
 	int ret;
 	char buf;
 
+#ifdef HAVE_MMAP_EXTEND
+	/*
+	 * We have to ensure we extend a mmap'd segment a full memory page at
+	 * a time or risk the end of the page not having any filesystem blocks
+	 * associated resulting in the data loss.
+	 */
+	size = DB_ALIGN(size, getpagesize()) - 1;
+#endif
+
 	buf = '\0';
 	/*
 	 * Extend the file by writing the last page.  If the region is >4Gb,

@@ -473,7 +473,7 @@ __env_config(dbenv, db_home, flagsp, mode)
 	env->db_mode = mode == 0 ? DB_MODE_660 : mode;
 
 	/* Read the DB_CONFIG file. */
-	if ((ret = __env_read_db_config(env)) != 0)
+	if (env->db_home != NULL && (ret = __env_read_db_config(env)) != 0)
 		return (ret);
 
 	/*

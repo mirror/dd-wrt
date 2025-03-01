@@ -375,8 +375,10 @@ __db_verify(dbp, ip, name, subdb, handle, callback, lp, rp, flags)
 		    vdp, name, 0, lp, rp, flags)) != 0) {
 			if (t_ret == DB_VERIFY_BAD)
 				isbad = 1;
-			else
-				goto err;
+			else {
+			    ret = t_ret;
+			    goto err;
+			}
 		}
 
 	/*
@@ -764,9 +766,10 @@ __db_vrfy_walkpages(dbp, vdp, handle, callback, flags)
 		 */
 		if ((t_ret = __memp_fget(mpf, &i,
 		    vdp->thread_info, NULL, 0, &h)) != 0) {
-			if (dbp->type == DB_HASH ||
+			if ((dbp->type == DB_HASH ||
 			    (dbp->type == DB_QUEUE &&
-			    F_ISSET(dbp, DB_AM_INMEM))) {
+			    F_ISSET(dbp, DB_AM_INMEM))) &&
+			    t_ret != DB_RUNRECOVERY) {
 				if ((t_ret =
 				    __db_vrfy_getpageinfo(vdp, i, &pip)) != 0)
 					goto err1;
@@ -936,6 +939,8 @@ err:		if (h != NULL && (t_ret = __memp_fput(mpf,
 			return (ret == 0 ? t_ret : ret);
 	}
 
+	if (ret == DB_PAGE_NOTFOUND && isbad == 1)
+		ret = 0;
 	return ((isbad == 1 && ret == 0) ? DB_VERIFY_BAD : ret);
 }
 
@@ -1567,7 +1572,7 @@ __db_vrfy_meta(dbp, vdp, meta, pgno, flags)
 	if (pgno == PGNO_BASE_MD &&
 	    dbtype != DB_QUEUE && meta->last_pgno != vdp->last_pgno) {
 #ifdef HAVE_FTRUNCATE
-		isbad = 1;
+		ret = DB_VERIFY_FATAL;
 		EPRINT((env, DB_STR_A("0552",
 		    "Page %lu: last_pgno is not correct: %lu != %lu",
 		    "%lu %lu %lu"), (u_long)pgno,
@@ -1608,7 +1613,11 @@ __db_vrfy_freelist(dbp, vdp, meta, flags)
 
 	env = dbp->env;
 	pgset = vdp->pgset;
-	DB_ASSERT(env, pgset != NULL);
+	if (pgset == NULL) {
+		EPRINT((env, DB_STR("5543",
+			"Error, database contains no visible pages.")));
+		return (DB_RUNRECOVERY);
+	}
 
 	if ((ret = __db_vrfy_getpageinfo(vdp, meta, &pip)) != 0)
 		return (ret);
@@ -1993,7 +2002,8 @@ __db_salvage_pg(dbp, vdp, pgno, h, handle, callback, flags)
 	int keyflag, ret, t_ret;
 
 	env = dbp->env;
-	DB_ASSERT(env, LF_ISSET(DB_SALVAGE));
+	if (!LF_ISSET(DB_SALVAGE))
+		return (EINVAL);
 
 	/*
 	 * !!!
@@ -2126,10 +2136,8 @@ __db_salvage_leaf(dbp, vdp, pgno, h, handle, callback, flags)
 	int (*callback) __P((void *, const void *));
 	u_int32_t flags;
 {
-	ENV *env;
-
-	env = dbp->env;
-	DB_ASSERT(env, LF_ISSET(DB_SALVAGE));
+	if (!LF_ISSET(DB_SALVAGE))
+		return (EINVAL);
 
 	/* If we got this page in the subdb pass, we can safely skip it. */
 	if (__db_salvage_isdone(vdp, pgno))
@@ -2223,8 +2231,8 @@ __db_salvage_unknowns(dbp, vdp, handle, callback, flags)
 				ret = t_ret;
 			break;
 		case SALVAGE_OVERFLOW:
-			DB_ASSERT(env, 0);	/* Shouldn't ever happen. */
-			break;
+			EPRINT((env, DB_STR("5544", "Invalid page type to salvage.")));
+			return (EINVAL);
 		case SALVAGE_HASH:
 			if ((t_ret = __ham_salvage(dbp, vdp,
 			    pgno, h, handle, callback, flags)) != 0 && ret == 0)
@@ -2237,8 +2245,8 @@ __db_salvage_unknowns(dbp, vdp, handle, callback, flags)
 			 * Shouldn't happen, but if it does, just do what the
 			 * nice man says.
 			 */
-			DB_ASSERT(env, 0);
-			break;
+			EPRINT((env, DB_STR("5545", "Invalid page type to salvage.")));
+			return (EINVAL);
 		}
 		if ((t_ret = __memp_fput(mpf,
 		    vdp->thread_info, h, dbp->priority)) != 0 && ret == 0)
@@ -2284,8 +2292,8 @@ __db_salvage_unknowns(dbp, vdp, handle, callback, flags)
 					ret = t_ret;
 			break;
 		default:
-			DB_ASSERT(env, 0);	/* Shouldn't ever happen. */
-			break;
+			EPRINT((env, DB_STR("5546", "Invalid page type to salvage.")));
+			return (EINVAL);
 		}
 		if ((t_ret = __memp_fput(mpf,
 		    vdp->thread_info, h, dbp->priority)) != 0 && ret == 0)
@@ -2342,7 +2350,10 @@ __db_vrfy_inpitem(dbp, h, pgno, i, is_btree, flags, himarkp, offsetp)
 
 	env = dbp->env;
 
-	DB_ASSERT(env, himarkp != NULL);
+	if (himarkp == NULL) {
+		__db_msg(env, "Page %lu index has no end.", (u_long)pgno);
+		return (DB_VERIFY_FATAL);
+	}
 	inp = P_INP(dbp, h);
 
 	/*
@@ -2755,7 +2766,11 @@ __db_salvage_subdbpg(dbp, vdp, master, handle, callback, flags)
 					goto err;
 				ovfl_bufsz = bkkey->len + 1;
 			}
-			DB_ASSERT(env, subdbname != NULL);
+			if (subdbname == NULL) {
+				EPRINT((env, DB_STR("5547", "Subdatabase cannot be null.")));
+				ret = EINVAL;
+				goto err;
+			}
 			memcpy(subdbname, bkkey->data, bkkey->len);
 			subdbname[bkkey->len] = '\0';
 		}

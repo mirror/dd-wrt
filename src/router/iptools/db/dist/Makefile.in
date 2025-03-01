@@ -1034,7 +1034,7 @@ db_recover: db_recover@o@ util_sig@o@ $(DEF_LIB)
 	    db_recover@o@ util_sig@o@ $(DEF_LIB) $(LIBS)
 	$(POSTLINK) $@
 
-db_replicate: db_replicate@o@ util_sig@o@ $(DEF_LIB)
+db_replicate: db_replicate@o@ util_log@o@ util_sig@o@ $(DEF_LIB)
 	$(CCLINK) -o $@ $(LDFLAGS) \
 	    db_replicate@o@ util_log@o@ util_sig@o@ $(DEF_LIB) $(LIBS)
 	$(POSTLINK) $@

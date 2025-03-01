@@ -208,7 +208,8 @@ __db_vrfy_getpageinfo(vdp, pgno, pipp)
 	if ((ret = __db_get(pgdbp,
 	    vdp->thread_info, vdp->txn, &key, &data, 0)) == 0) {
 		/* Found it. */
-		DB_ASSERT(env, data.size == sizeof(VRFY_PAGEINFO));
+		if (data.size != sizeof(VRFY_PAGEINFO))
+			return (DB_VERIFY_FATAL);
 		pip = data.data;
 		LIST_INSERT_HEAD(&vdp->activepips, pip, links);
 		goto found;
@@ -336,7 +337,8 @@ __db_vrfy_pgset_get(dbp, ip, txn, pgno, valp)
 	F_SET(&data, DB_DBT_USERMEM);
 
 	if ((ret = __db_get(dbp, ip, txn, &key, &data, 0)) == 0) {
-		DB_ASSERT(dbp->env, data.size == sizeof(int));
+		if (data.size != sizeof(int))
+			return (EINVAL);
 	} else if (ret == DB_NOTFOUND)
 		val = 0;
 	else
@@ -376,7 +378,8 @@ __db_vrfy_pgset_inc(dbp, ip, txn, pgno)
 	F_SET(&data, DB_DBT_USERMEM);
 
 	if ((ret = __db_get(dbp, ip, txn, &key, &data, 0)) == 0) {
-		DB_ASSERT(dbp->env, data.size == sizeof(int));
+		if (data.size != sizeof(int))
+			return (DB_VERIFY_FATAL);
 	} else if (ret != DB_NOTFOUND)
 		return (ret);
 
@@ -413,7 +416,8 @@ __db_vrfy_pgset_next(dbc, pgnop)
 	if ((ret = __dbc_get(dbc, &key, &data, DB_NEXT)) != 0)
 		return (ret);
 
-	DB_ASSERT(dbc->env, key.size == sizeof(db_pgno_t));
+	if (key.size != sizeof(db_pgno_t))
+		return (DB_VERIFY_FATAL);
 	*pgnop = pgno;
 
 	return (0);
@@ -560,7 +564,8 @@ __db_vrfy_ccset(dbc, pgno, cipp)
 	if ((ret = __dbc_get(dbc, &key, &data, DB_SET)) != 0)
 		return (ret);
 
-	DB_ASSERT(dbc->env, data.size == sizeof(VRFY_CHILDINFO));
+	if (data.size != sizeof(VRFY_CHILDINFO))
+		return (DB_VERIFY_FATAL);
 	*cipp = (VRFY_CHILDINFO *)data.data;
 
 	return (0);
@@ -588,7 +593,8 @@ __db_vrfy_ccnext(dbc, cipp)
 	if ((ret = __dbc_get(dbc, &key, &data, DB_NEXT_DUP)) != 0)
 		return (ret);
 
-	DB_ASSERT(dbc->env, data.size == sizeof(VRFY_CHILDINFO));
+	if (data.size != sizeof(VRFY_CHILDINFO))
+		return (DB_VERIFY_FATAL);
 	*cipp = (VRFY_CHILDINFO *)data.data;
 
 	return (0);
@@ -715,7 +721,8 @@ __db_salvage_getnext(vdp, dbcp, pgnop, pgtypep, skip_overflow)
 		return (ret);
 
 	while ((ret = __dbc_get(*dbcp, &key, &data, DB_NEXT)) == 0) {
-		DB_ASSERT(dbp->env, data.size == sizeof(u_int32_t));
+		if (data.size != sizeof(u_int32_t))
+			return (DB_VERIFY_FATAL);
 		memcpy(&pgtype, data.data, sizeof(pgtype));
 
 		if (skip_overflow && pgtype == SALVAGE_OVERFLOW)
@@ -724,8 +731,9 @@ __db_salvage_getnext(vdp, dbcp, pgnop, pgtypep, skip_overflow)
 		if ((ret = __dbc_del(*dbcp, 0)) != 0)
 			return (ret);
 		if (pgtype != SALVAGE_IGNORE) {
-			DB_ASSERT(dbp->env, key.size == sizeof(db_pgno_t));
-			DB_ASSERT(dbp->env, data.size == sizeof(u_int32_t));
+			if (key.size != sizeof(db_pgno_t)
+				|| data.size != sizeof(u_int32_t))
+				return (DB_VERIFY_FATAL);
 
 			*pgnop = *(db_pgno_t *)key.data;
 			*pgtypep = *(u_int32_t *)data.data;

@@ -1373,6 +1373,7 @@
 #define	__memp_pgread __memp_pgread@DB_VERSION_UNIQUE_NAME@
 #define	__memp_pg __memp_pg@DB_VERSION_UNIQUE_NAME@
 #define	__memp_bhfree __memp_bhfree@DB_VERSION_UNIQUE_NAME@
+#define	__memp_bh_clear_dirty __memp_bh_clear_dirty@DB_VERSION_UNIQUE_NAME@
 #define	__memp_fget_pp __memp_fget_pp@DB_VERSION_UNIQUE_NAME@
 #define	__memp_fget __memp_fget@DB_VERSION_UNIQUE_NAME@
 #define	__memp_fcreate_pp __memp_fcreate_pp@DB_VERSION_UNIQUE_NAME@
@@ -1397,6 +1398,7 @@
 #define	__memp_fclose __memp_fclose@DB_VERSION_UNIQUE_NAME@
 #define	__memp_mf_discard __memp_mf_discard@DB_VERSION_UNIQUE_NAME@
 #define	__memp_inmemlist __memp_inmemlist@DB_VERSION_UNIQUE_NAME@
+#define	__memp_mf_mark_dead __memp_mf_mark_dead@DB_VERSION_UNIQUE_NAME@
 #define	__memp_fput_pp __memp_fput_pp@DB_VERSION_UNIQUE_NAME@
 #define	__memp_fput __memp_fput@DB_VERSION_UNIQUE_NAME@
 #define	__memp_unpin_buffers __memp_unpin_buffers@DB_VERSION_UNIQUE_NAME@
@@ -1455,6 +1457,7 @@
 #define	__mp_xxx_fh __mp_xxx_fh@DB_VERSION_UNIQUE_NAME@
 #define	__memp_sync_int __memp_sync_int@DB_VERSION_UNIQUE_NAME@
 #define	__memp_mf_sync __memp_mf_sync@DB_VERSION_UNIQUE_NAME@
+#define	__memp_purge_dead_files __memp_purge_dead_files@DB_VERSION_UNIQUE_NAME@
 #define	__memp_trickle_pp __memp_trickle_pp@DB_VERSION_UNIQUE_NAME@
 #define	__mutex_alloc __mutex_alloc@DB_VERSION_UNIQUE_NAME@
 #define	__mutex_alloc_int __mutex_alloc_int@DB_VERSION_UNIQUE_NAME@

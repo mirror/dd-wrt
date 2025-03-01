@@ -474,7 +474,7 @@ atomic_compare_exchange(env, v, oldval, newval)
 	MUTEX_LOCK(env, mtx);
 	ret = atomic_read(v) == oldval;
 	if (ret)
-		atomic_init(v, newval);
+		__db_atomic_init(v, newval);
 	MUTEX_UNLOCK(env, mtx);
 
 	return (ret);

@@ -611,7 +611,11 @@ __bam_vrfy_inp(dbp, vdp, h, pgno, nentriesp, flags)
 			isbad = 1;
 			goto err;
 		default:
-			DB_ASSERT(env, ret != 0);
+			if (ret == 0) {
+				isbad = 1;
+				ret = DB_VERIFY_FATAL;
+				goto err;
+			}
 			break;
 		}
 
@@ -922,7 +926,7 @@ __bam_vrfy_itemorder(dbp, vdp, ip, h, pgno, nentries, ovflok, hasdups, flags)
 	DBT dbta, dbtb, dup_1, dup_2, *p1, *p2, *tmp;
 	ENV *env;
 	PAGE *child;
-	db_pgno_t cpgno;
+	db_pgno_t cpgno, grandparent;
 	VRFY_PAGEINFO *pip;
 	db_indx_t i, *inp;
 	int adj, cmp, freedup_1, freedup_2, isbad, ret, t_ret;
@@ -954,7 +958,8 @@ __bam_vrfy_itemorder(dbp, vdp, ip, h, pgno, nentries, ovflok, hasdups, flags)
 
 	buf1 = buf2 = NULL;
 
-	DB_ASSERT(env, !LF_ISSET(DB_NOORDERCHK));
+	if (LF_ISSET(DB_NOORDERCHK))
+		return (EINVAL);
 
 	dupfunc = (dbp->dup_compare == NULL) ? __bam_defcmp : dbp->dup_compare;
 	if (TYPE(h) == P_LDUP)
@@ -963,6 +968,7 @@ __bam_vrfy_itemorder(dbp, vdp, ip, h, pgno, nentries, ovflok, hasdups, flags)
 		func = __bam_defcmp;
 		if (dbp->bt_internal != NULL) {
 			bt = (BTREE *)dbp->bt_internal;
+			grandparent = bt->bt_root;
 			if (TYPE(h) == P_IBTREE && (bt->bt_compare != NULL ||
 			    dupfunc != __bam_defcmp)) {
 				/*
@@ -974,8 +980,24 @@ __bam_vrfy_itemorder(dbp, vdp, ip, h, pgno, nentries, ovflok, hasdups, flags)
 				 */
 				mpf = dbp->mpf;
 				child = h;
+				cpgno = pgno;
 				while (TYPE(child) == P_IBTREE) {
+					if (NUM_ENT(child) == 0) {
+						EPRINT((env, DB_STR_A("1088",
+		    "Page %lu: internal page is empty and should not be",
+					    "%lu"), (u_long)cpgno));
+						ret = DB_VERIFY_BAD;
+						goto err;
+					}
 					bi = GET_BINTERNAL(dbp, child, 0);
+					if (grandparent == bi->pgno) {
+						EPRINT((env, DB_STR_A("5552",
+					      "Page %lu: found twice in the btree",
+				          "%lu"), (u_long)grandparent));
+						ret = DB_VERIFY_FATAL;
+						goto err;
+					} else
+						grandparent = cpgno;
 					cpgno = bi->pgno;
 					if (child != h &&
 					    (ret = __memp_fput(mpf,
@@ -1231,7 +1253,10 @@ overflow:		if (!ovflok) {
 					 */
 					if (dup_1.data == NULL ||
 					    dup_2.data == NULL) {
-						DB_ASSERT(env, !ovflok);
+						if (ovflok) {
+							isbad = 1;
+							goto err;
+						}
 						if (pip != NULL)
 							F_SET(pip,
 							    VRFY_INCOMPLETE);
@@ -1569,9 +1594,10 @@ bad_prev:				isbad = 1;
 			    (ret = __db_vrfy_ovfl_structure(dbp, vdp,
 			    child->pgno, child->tlen,
 			    flags | DB_ST_OVFL_LEAF)) != 0) {
-				if (ret == DB_VERIFY_BAD)
+				if (ret == DB_VERIFY_BAD) {
 					isbad = 1;
-				else
+					break;
+				} else
 					goto done;
 			}
 
@@ -1645,9 +1671,10 @@ bad_prev:				isbad = 1;
 						    stflags | DB_ST_TOPLEVEL,
 						    NULL, NULL, NULL)) != 0) {
 							if (ret ==
-							    DB_VERIFY_BAD)
+							    DB_VERIFY_BAD) {
 								isbad = 1;
-							else
+								break;
+							} else
 								goto err;
 						}
 					}
@@ -1790,7 +1817,10 @@ bad_prev:				isbad = 1;
 			 */
 
 			/* Otherwise, __db_vrfy_childput would be broken. */
-			DB_ASSERT(env, child->refcnt >= 1);
+			if (child->refcnt < 1) {
+				isbad = 1;
+				goto err;
+			}
 
 			/*
 			 * An overflow referenced more than twice here
@@ -1807,9 +1837,10 @@ bad_prev:				isbad = 1;
 					if ((ret = __db_vrfy_ovfl_structure(dbp,
 					    vdp, child->pgno, child->tlen,
 					    flags)) != 0) {
-						if (ret == DB_VERIFY_BAD)
+						if (ret == DB_VERIFY_BAD) {
 							isbad = 1;
-						else
+							break;
+						} else
 							goto done;
 					}
 		}
@@ -1847,9 +1878,10 @@ bad_prev:				isbad = 1;
 		if ((ret = __bam_vrfy_subtree(dbp, vdp, li->pgno,
 		    i == 0 ? NULL : li, ri, flags, &child_level,
 		    &child_nrecs, NULL)) != 0) {
-			if (ret == DB_VERIFY_BAD)
+			if (ret == DB_VERIFY_BAD) {
 				isbad = 1;
-			else
+				break;
+			} else
 				goto done;
 		}
 
@@ -2675,7 +2707,11 @@ __bam_meta2pgset(dbp, vdp, btmeta, flags, pgset)
 	db_pgno_t current, p;
 	int err_ret, ret;
 
-	DB_ASSERT(dbp->env, pgset != NULL);
+	if (pgset == NULL) {
+		EPRINT((dbp->env, DB_STR("5542",
+			"Error, database contains no visible pages.")));
+		return (DB_RUNRECOVERY);
+	}
 
 	mpf = dbp->mpf;
 	h = NULL;

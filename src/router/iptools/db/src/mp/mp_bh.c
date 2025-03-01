@@ -474,11 +474,8 @@ file_dead:
 	if (F_ISSET(bhp, BH_DIRTY | BH_TRASH)) {
 		MUTEX_LOCK(env, hp->mtx_hash);
 		DB_ASSERT(env, !SH_CHAIN_HASNEXT(bhp, vc));
-		if (ret == 0 && F_ISSET(bhp, BH_DIRTY)) {
-			F_CLR(bhp, BH_DIRTY | BH_DIRTY_CREATE);
-			DB_ASSERT(env, atomic_read(&hp->hash_page_dirty) > 0);
-			atomic_dec(env, &hp->hash_page_dirty);
-		}
+		if (ret == 0)
+			__memp_bh_clear_dirty(env, hp, bhp);
 
 		/* put the page back if necessary. */
 		if ((ret != 0 || BH_REFCOUNT(bhp) > 1) &&
@@ -688,3 +685,29 @@ no_hp:	if (mfp != NULL)
 
 	return (ret);
 }
+
+/*
+ * __memp_bh_clear_dirty --
+ *	Clear the dirty flag of of a buffer. Calls on the same buffer must be
+ *	serialized to get the accounting correct. This can be achieved by
+ *	acquiring an exclusive lock on the buffer, a shared lock on the
+ *	buffer plus an exclusive lock on the hash bucket, or some other
+ *	mechanism that guarantees single-thread access to the entire region
+ *	(e.g. during __memp_region_bhfree()).
+ *
+ * PUBLIC: void __memp_bh_clear_dirty __P((ENV*, DB_MPOOL_HASH *, BH *));
+ */
+void
+__memp_bh_clear_dirty(env, hp, bhp)
+	ENV *env;
+	DB_MPOOL_HASH *hp;
+	BH *bhp;
+{
+	COMPQUIET(env, env);
+	if (F_ISSET(bhp, BH_DIRTY)) {
+		F_CLR(bhp, BH_DIRTY | BH_DIRTY_CREATE);
+		DB_ASSERT(env, atomic_read(&hp->hash_page_dirty) > 0);
+		(void)atomic_dec(env, &hp->hash_page_dirty);
+	}
+}
+

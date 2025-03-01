@@ -493,8 +493,11 @@ __db_byteswap(dbp, pg, h, pagesize, pgin)
 	db_indx_t i, *inp, len, tmp;
 	u_int8_t *end, *p, *pgend;
 
-	if (pagesize == 0)
-		return (0);
+	/* This function is also used to byteswap logs, so
+	 * the pagesize might not be an actual page size.
+	 */
+	if (!(pagesize >= 24 && pagesize <= DB_MAX_PGSIZE))
+		return (EINVAL);
 
 	if (pgin) {
 		M_32_SWAP(h->lsn.file);
@@ -513,26 +516,41 @@ __db_byteswap(dbp, pg, h, pagesize, pgin)
 	pgend = (u_int8_t *)h + pagesize;
 
 	inp = P_INP(dbp, h);
-	if ((u_int8_t *)inp >= pgend)
-		goto out;
+	if ((u_int8_t *)inp > pgend)
+		return (__db_pgfmt(env, pg));
 
 	switch (TYPE(h)) {
 	case P_HASH_UNSORTED:
 	case P_HASH:
 		for (i = 0; i < NUM_ENT(h); i++) {
+			if ((u_int8_t*)(inp + i) >= pgend)
+				return (__db_pgfmt(env, pg));
+			if (inp[i] == 0)
+				continue;
 			if (pgin)
 				M_16_SWAP(inp[i]);
+			if (inp[i] >= pagesize)
+				return (__db_pgfmt(env, pg));
 
-			if (P_ENTRY(dbp, h, i) >= pgend)
-				continue;
+	   		if (P_ENTRY(dbp, h, i) >= pgend)
+				return (__db_pgfmt(env, pg));
 
 			switch (HPAGE_TYPE(dbp, h, i)) {
 			case H_KEYDATA:
 				break;
 			case H_DUPLICATE:
+				if (LEN_HITEM(dbp, h, pagesize, i) < 
+				    HKEYDATA_SIZE(0))
+					return (__db_pgfmt(env, pg));
+
 				len = LEN_HKEYDATA(dbp, h, pagesize, i);
 				p = HKEYDATA_DATA(P_ENTRY(dbp, h, i));
-				for (end = p + len; p < end;) {
+
+				end = p + len;
+				if (end > pgend)
+					return (__db_pgfmt(env, pg));
+
+				while (p < end) {
 					if (pgin) {
 						P_16_SWAP(p);
 						memcpy(&tmp,
@@ -544,14 +562,20 @@ __db_byteswap(dbp, pg, h, pagesize, pgin)
 						SWAP16(p);
 					}
 					p += tmp;
+					if (p >= end)
+						return (__db_pgfmt(env, pg));
 					SWAP16(p);
 				}
 				break;
 			case H_OFFDUP:
+				if ((inp[i] + HOFFDUP_SIZE) > pagesize)
+					return (__db_pgfmt(env, pg));
 				p = HOFFPAGE_PGNO(P_ENTRY(dbp, h, i));
 				SWAP32(p);			/* pgno */
 				break;
 			case H_OFFPAGE:
+				if ((inp[i] + HOFFPAGE_SIZE) > pagesize)
+					return (__db_pgfmt(env, pg));
 				p = HOFFPAGE_PGNO(P_ENTRY(dbp, h, i));
 				SWAP32(p);			/* pgno */
 				SWAP32(p);			/* tlen */
@@ -559,7 +583,6 @@ __db_byteswap(dbp, pg, h, pagesize, pgin)
 			default:
 				return (__db_pgfmt(env, pg));
 			}
-
 		}
 
 		/*
@@ -576,8 +599,12 @@ __db_byteswap(dbp, pg, h, pagesize, pgin)
 	case P_LDUP:
 	case P_LRECNO:
 		for (i = 0; i < NUM_ENT(h); i++) {
+			if ((u_int8_t *)(inp + i) >= pgend)
+				return (__db_pgfmt(env, pg));
 			if (pgin)
 				M_16_SWAP(inp[i]);
+			if (inp[i] >= pagesize)
+				return (__db_pgfmt(env, pg));
 
 			/*
 			 * In the case of on-page duplicates, key information
@@ -597,7 +624,7 @@ __db_byteswap(dbp, pg, h, pagesize, pgin)
 
 			bk = GET_BKEYDATA(dbp, h, i);
 			if ((u_int8_t *)bk >= pgend)
-				continue;
+				return (__db_pgfmt(env, pg));
 			switch (B_TYPE(bk->type)) {
 			case B_KEYDATA:
 				M_16_SWAP(bk->len);
@@ -605,6 +632,8 @@ __db_byteswap(dbp, pg, h, pagesize, pgin)
 			case B_DUPLICATE:
 			case B_OVERFLOW:
 				bo = (BOVERFLOW *)bk;
+				if (((u_int8_t *)bo + BOVERFLOW_SIZE) > pgend)
+					return (__db_pgfmt(env, pg));
 				M_32_SWAP(bo->pgno);
 				M_32_SWAP(bo->tlen);
 				break;
@@ -618,12 +647,17 @@ __db_byteswap(dbp, pg, h, pagesize, pgin)
 		break;
 	case P_IBTREE:
 		for (i = 0; i < NUM_ENT(h); i++) {
+			if ((u_int8_t *)(inp + i) > pgend)
+				return (__db_pgfmt(env, pg));
 			if (pgin)
 				M_16_SWAP(inp[i]);
+			if ((u_int16_t)(inp[i] + 
+			    BINTERNAL_SIZE(0) - 1) > pagesize)
+				break;
 
 			bi = GET_BINTERNAL(dbp, h, i);
-			if ((u_int8_t *)bi >= pgend)
-				continue;
+			if (((u_int8_t *)bi + BINTERNAL_SIZE(0)) > pgend)
+				return (__db_pgfmt(env, pg));
 
 			M_16_SWAP(bi->len);
 			M_32_SWAP(bi->pgno);
@@ -634,6 +668,10 @@ __db_byteswap(dbp, pg, h, pagesize, pgin)
 				break;
 			case B_DUPLICATE:
 			case B_OVERFLOW:
+				if ((u_int16_t)(inp[i] + 
+				    BINTERNAL_SIZE(BOVERFLOW_SIZE) - 1) >
+				    pagesize)
+					goto out;
 				bo = (BOVERFLOW *)bi->data;
 				M_32_SWAP(bo->pgno);
 				M_32_SWAP(bo->tlen);
@@ -648,12 +686,16 @@ __db_byteswap(dbp, pg, h, pagesize, pgin)
 		break;
 	case P_IRECNO:
 		for (i = 0; i < NUM_ENT(h); i++) {
+			if ((u_int8_t *)(inp + i) >= pgend)
+				return (__db_pgfmt(env, pg));
 			if (pgin)
 				M_16_SWAP(inp[i]);
+			if (inp[i] >= pagesize)
+				return (__db_pgfmt(env, pg));
 
 			ri = GET_RINTERNAL(dbp, h, i);
-			if ((u_int8_t *)ri >= pgend)
-				continue;
+			if ((((u_int8_t *)ri) + RINTERNAL_SIZE) > pgend)
+				return (__db_pgfmt(env, pg));
 
 			M_32_SWAP(ri->pgno);
 			M_32_SWAP(ri->nrecs);

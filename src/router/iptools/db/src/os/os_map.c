@@ -213,7 +213,10 @@ __os_attach(env, infop, rp)
 	if (rp->max < rp->size)
 		rp->max = rp->size;
 	if (ret == 0 && F_ISSET(infop, REGION_CREATE)) {
-		if (F_ISSET(dbenv, DB_ENV_REGION_INIT))
+
+		rp->size = rp->max;
+
+        if (F_ISSET(dbenv, DB_ENV_REGION_INIT))
 			ret = __db_file_write(env, infop->fhp,
 			    rp->size / MEGABYTE, rp->size % MEGABYTE, 0x00);
 		else

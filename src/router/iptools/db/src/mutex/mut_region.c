@@ -17,7 +17,7 @@
 static db_size_t __mutex_align_size __P((ENV *));
 static int __mutex_region_init __P((ENV *, DB_MUTEXMGR *));
 static size_t __mutex_region_size __P((ENV *));
-static size_t __mutex_region_max __P((ENV *));
+static size_t __mutex_region_max __P((ENV *, u_int32_t));
 
 /*
  * __mutex_open --
@@ -34,7 +34,7 @@ __mutex_open(env, create_ok)
 	DB_MUTEXMGR *mtxmgr;
 	DB_MUTEXREGION *mtxregion;
 	size_t size;
-	u_int32_t cpu_count;
+	u_int32_t cpu_count, mutex_needed;
 	int ret;
 #ifndef HAVE_ATOMIC_SUPPORT
 	u_int i;
@@ -61,19 +61,20 @@ __mutex_open(env, create_ok)
 	}
 
 	/*
-	 * If the user didn't set an absolute value on the number of mutexes
-	 * we'll need, figure it out.  We're conservative in our allocation,
-	 * we need mutexes for DB handles, group-commit queues and other things
-	 * applications allocate at run-time.  The application may have kicked
-	 * up our count to allocate its own mutexes, add that in.
+	 * Figure out the number of mutexes we'll need.  We're conservative in
+	 * our allocation, we need mutexes for DB handles, group-commit queues
+	 * and other things applications allocate at run-time.  The application
+	 * may have kicked up our count to allocate its own mutexes, add that
+	 * in.
 	 */
+	mutex_needed =
+	    __lock_region_mutex_count(env) +
+	    __log_region_mutex_count(env) +
+	    __memp_region_mutex_count(env) +
+	    __txn_region_mutex_count(env);
 	if (dbenv->mutex_cnt == 0 &&
 	    F_ISSET(env, ENV_PRIVATE | ENV_THREAD) != ENV_PRIVATE)
-		dbenv->mutex_cnt =
-		    __lock_region_mutex_count(env) +
-		    __log_region_mutex_count(env) +
-		    __memp_region_mutex_count(env) +
-		    __txn_region_mutex_count(env);
+		dbenv->mutex_cnt = mutex_needed;
 
 	if (dbenv->mutex_max != 0 && dbenv->mutex_cnt > dbenv->mutex_max)
 		dbenv->mutex_cnt = dbenv->mutex_max;
@@ -90,8 +91,8 @@ __mutex_open(env, create_ok)
 	size = __mutex_region_size(env);
 	if (create_ok)
 		F_SET(&mtxmgr->reginfo, REGION_CREATE_OK);
-	if ((ret = __env_region_attach(env,
-	    &mtxmgr->reginfo, size, size + __mutex_region_max(env))) != 0)
+	if ((ret = __env_region_attach(env, &mtxmgr->reginfo,
+	    size, size + __mutex_region_max(env, mutex_needed))) != 0)
 		goto err;
 
 	/* If we created the region, initialize it. */
@@ -352,9 +353,13 @@ __mutex_region_size(env)
 
 	s = sizeof(DB_MUTEXMGR) + 1024;
 
-	/* We discard one mutex for the OOB slot. */
+	/* 
+	 * We discard one mutex for the OOB slot. Make sure mutex_cnt doesn't
+	 * overflow.
+	 */
 	s += __env_alloc_size(
-	    (dbenv->mutex_cnt + 1) *__mutex_align_size(env));
+	    (dbenv->mutex_cnt + (dbenv->mutex_cnt == UINT32_MAX ? 0 : 1)) *
+	    __mutex_align_size(env));
 
 	return (s);
 }
@@ -364,28 +369,42 @@ __mutex_region_size(env)
  *	 Return the amount of space needed to reach the maximum size.
  */
 static size_t
-__mutex_region_max(env)
+__mutex_region_max(env, mutex_needed)
 	ENV *env;
+	u_int32_t mutex_needed;
 {
 	DB_ENV *dbenv;
-	u_int32_t max;
+	u_int32_t max, mutex_cnt;
 
 	dbenv = env->dbenv;
+	mutex_cnt = dbenv->mutex_cnt;
 
-	if ((max = dbenv->mutex_max) == 0) {
+	/*
+	 * We want to limit the region size to accommodate at most UINT32_MAX
+	 * mutexes. If mutex_cnt is UINT32_MAX, no more space is allowed.
+	 */
+	if ((max = dbenv->mutex_max) == 0 && mutex_cnt != UINT32_MAX)
 		if (F_ISSET(env, ENV_PRIVATE | ENV_THREAD) == ENV_PRIVATE)
-			max = dbenv->mutex_inc + 1;
-		else
+			if (dbenv->mutex_inc + 1 < UINT32_MAX - mutex_cnt)
+				max = dbenv->mutex_inc + 1 + mutex_cnt;
+			else
+				max = UINT32_MAX;
+		else {
 			max = __lock_region_mutex_max(env) +
 			    __txn_region_mutex_max(env) +
 			    __log_region_mutex_max(env) +
 			    dbenv->mutex_inc + 100;
-	} else if (max <= dbenv->mutex_cnt)
+			if (max < UINT32_MAX - mutex_needed)
+				max += mutex_needed;
+			else
+				max = UINT32_MAX;
+		}
+
+	if (max <= mutex_cnt)
 		return (0);
 	else
-		max -= dbenv->mutex_cnt;
-
-	return ( __env_alloc_size(max * __mutex_align_size(env)));
+		return (__env_alloc_size(
+		    (max - mutex_cnt) * __mutex_align_size(env)));
 }
 
 #ifdef	HAVE_MUTEX_SYSTEM_RESOURCES

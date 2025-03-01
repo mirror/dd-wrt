@@ -640,7 +640,7 @@ __memp_nameop(env, fileid, newname, fullold, fullnew, inmem)
 	MPOOLFILE *mfp;
 	roff_t newname_off;
 	u_int32_t bucket;
-	int locked, ret;
+	int locked, purge_dead, ret;
 	size_t nlen;
 	void *p;
 
@@ -657,6 +657,7 @@ __memp_nameop(env, fileid, newname, fullold, fullnew, inmem)
 	nhp = NULL;
 	p = NULL;
 	locked = ret = 0;
+	purge_dead = 0;
 
 	if (!MPOOL_ON(env))
 		goto fsop;
@@ -749,7 +750,7 @@ __memp_nameop(env, fileid, newname, fullold, fullnew, inmem)
 		 */
 		if (mfp->no_backing_file)
 			mfp->mpf_cnt--;
-		mfp->deadfile = 1;
+		__memp_mf_mark_dead(dbmp, mfp, &purge_dead);
 		MUTEX_UNLOCK(env, mfp->mutex);
 	} else {
 		/*
@@ -808,6 +809,12 @@ err:	if (p != NULL) {
 		if (nhp != NULL && nhp != hp)
 			MUTEX_UNLOCK(env, nhp->mtx_hash);
 	}
+	/* 
+	 * __memp_purge_dead_files() must be called when the hash bucket is
+	 * unlocked.
+	 */
+	if (purge_dead)
+		(void)__memp_purge_dead_files(env);
 	return (ret);
 }
 

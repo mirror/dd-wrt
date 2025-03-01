@@ -44,22 +44,8 @@
 extern "C" {
 #endif
 
-/*
- * This declaration is POSIX-compatible.  Because there are lots of different
- * time.h include file patterns out there, it's easier to declare our own name
- * in all cases than to try and discover if a system has a struct timespec.
- * For the same reason, and because we'd have to #include <sys/time.h> in db.h,
- * we don't export any timespec structures in the DB API, even in places where
- * it would make sense, like the replication statistics information.
- */
-typedef struct {
-	time_t	tv_sec;				/* seconds */
-#ifdef HAVE_MIXED_SIZE_ADDRESSING
-	int32_t tv_nsec;
-#else
-	long	tv_nsec;			/* nanoseconds */
-#endif
-} db_timespec;
+#include <time.h>
+#define db_timespec struct timespec
 
 /* Operations on timespecs */
 #undef	timespecclear
