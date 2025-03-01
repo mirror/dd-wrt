@@ -3676,6 +3676,9 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_IRQBALANCE
 	{ "irqbalance_enabled", "1" },
 #endif
+#ifdef HAVE_IPTOOLS
+	{ "arpd_enable", "0" },
+#endif
 	{ 0, 0 }
 };
 #else
