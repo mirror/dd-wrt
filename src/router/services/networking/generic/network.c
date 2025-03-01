@@ -1734,40 +1734,8 @@ void start_lan(void)
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif defined(HAVE_IPQ6018)
 	int brand = getRouterBrand();
-	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_DYNALINK_DLWRX36) {
-		nvram_setz(lan_ifnames, "wan lan1 lan2 lan3 lan4 wlan0 wlan1");
-		if (getSTA() || getWET() || CANBRIDGE()) {
-			PORTSETUPWAN("");
-		} else {
-			PORTSETUPWAN("wan");
-		}
-		nvram_set("wan_default", "wan");
-		if (nvram_match("et0macaddr", ""))
-			nvram_set("et0macaddr", get_hwaddr("eth4", macaddr));
-		strcpy(mac, nvram_safe_get("et0macaddr"));
-	} else if (brand == ROUTER_LINKSYS_MR5500) {
-		nvram_setz(lan_ifnames, "wan lan1 lan2 lan3 lan4 wlan0 wlan1");
-		if (getSTA() || getWET() || CANBRIDGE()) {
-			PORTSETUPWAN("");
-		} else {
-			PORTSETUPWAN("wan");
-		}
-		nvram_set("wan_default", "wan");
-		if (nvram_match("et0macaddr", ""))
-			nvram_set("et0macaddr", get_hwaddr("lan1", macaddr));
-		strcpy(mac, nvram_safe_get("et0macaddr"));
-	} else if (brand == ROUTER_LINKSYS_MX5500) {
-		nvram_setz(lan_ifnames, "wan lan1 lan2 lan3 lan4 wlan0 wlan1");
-		if (getSTA() || getWET() || CANBRIDGE()) {
-			PORTSETUPWAN("");
-		} else {
-			PORTSETUPWAN("wan");
-		}
-		nvram_set("wan_default", "wan");
-		if (nvram_match("et0macaddr", ""))
-			nvram_set("et0macaddr", get_hwaddr("lan1", macaddr));
-		strcpy(mac, nvram_safe_get("et0macaddr"));
-	} else if (brand == ROUTER_ASUS_AX89X) {
+	switch (brand) {
+	case ROUTER_ASUS_AX89X:
 		nvram_setz(lan_ifnames, "wan lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8 10g-sfp 10g-copper wlan0 wlan1");
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			PORTSETUPWAN("");
@@ -1778,7 +1746,8 @@ void start_lan(void)
 		if (nvram_match("et0macaddr", ""))
 			nvram_set("et0macaddr", get_hwaddr("lan1", macaddr));
 		strcpy(mac, nvram_safe_get("et0macaddr"));
-	} else if (brand == ROUTER_FORTINET_FAP231F) {
+		break;
+	case ROUTER_FORTINET_FAP231F:
 		nvram_setz(lan_ifnames, "wan lan1 wlan0 wlan1 wlan2");
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			PORTSETUPWAN("");
@@ -1789,18 +1758,8 @@ void start_lan(void)
 		if (nvram_match("et0macaddr", ""))
 			nvram_set("et0macaddr", get_hwaddr("lan1", macaddr));
 		strcpy(mac, nvram_safe_get("et0macaddr"));
-	} else if (brand == ROUTER_BUFFALO_WXR5950AX12) {
-		nvram_setz(lan_ifnames, "wan lan1 lan2 lan3 lan4 wlan0 wlan1 wlan2");
-		if (getSTA() || getWET() || CANBRIDGE()) {
-			PORTSETUPWAN("");
-		} else {
-			PORTSETUPWAN("wan");
-		}
-		nvram_set("wan_default", "wan");
-		if (nvram_match("et0macaddr", ""))
-			nvram_set("et0macaddr", get_hwaddr("lan1", macaddr));
-		strcpy(mac, nvram_safe_get("et0macaddr"));
-	} else {
+		break;
+	default:
 		nvram_setz(lan_ifnames, "wan lan1 lan2 lan3 lan4 wlan0 wlan1 wlan2");
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			PORTSETUPWAN("");
@@ -1810,6 +1769,7 @@ void start_lan(void)
 		if (nvram_match("et0macaddr", ""))
 			nvram_set("et0macaddr", get_hwaddr("lan1", macaddr));
 		strcpy(mac, nvram_safe_get("et0macaddr"));
+		break;
 	}
 #elif defined(HAVE_VENTANA)
 	nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 wlan0 wlan1 wlan2 wlan3 wlan4 wlan5 wlan6");

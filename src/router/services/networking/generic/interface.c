@@ -727,10 +727,7 @@ int flush_interfaces(void)
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_IPQ6018
 	int brand = getRouterBrand();
-	if (brand == ROUTER_FORTINET_FAP231F)
-		snprintf(all_ifnames, 255, "%s %s %s", "eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
-	else
-		snprintf(all_ifnames, 255, "%s %s %s", "wan", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "wan", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_VENTANA
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_NEWPORT

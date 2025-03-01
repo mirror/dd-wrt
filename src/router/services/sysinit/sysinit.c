@@ -1067,22 +1067,8 @@ void start_restore_defaults(void)
 					 { 0, 0 } };
 #elif HAVE_IPQ6018
 	struct nvram_param *generic = NULL;
-	struct nvram_param generic_mr7500[] = { { "lan_ifname", "br0" },
+	struct nvram_param generic_all[] = { { "lan_ifname", "br0" },
 						{ "lan_ifnames", "wan lan1 lan2 lan3 lan4 wlan0 wlan1 wlan2" },
-						{ "wan_ifname", "wan" },
-						{ "wan_ifname2", "wan" },
-						{ "wan_ifnames", "wan" },
-						{ "wan_default", "wan" },
-						{ 0, 0 } };
-	struct nvram_param generic_mx4200[] = { { "lan_ifname", "br0" },
-						{ "lan_ifnames", "wan lan1 lan2 lan3 lan4 wlan0 wlan1" },
-						{ "wan_ifname", "wan" },
-						{ "wan_ifname2", "wan" },
-						{ "wan_ifnames", "wan" },
-						{ "wan_default", "wan" },
-						{ 0, 0 } };
-	struct nvram_param generic_mx5500[] = { { "lan_ifname", "br0" },
-						{ "lan_ifnames", "wan lan1 lan2 lan3 wlan0 wlan1" },
 						{ "wan_ifname", "wan" },
 						{ "wan_ifname2", "wan" },
 						{ "wan_ifnames", "wan" },
@@ -1105,23 +1091,14 @@ void start_restore_defaults(void)
 					      { 0, 0 } };
 	int wrt_brand = getRouterBrand();
 	switch (wrt_brand) {
-	case ROUTER_LINKSYS_MX5500:
-	case ROUTER_BUFFALO_WXR5950AX12:
-		generic = generic_mx5500;
-		break;
 	case ROUTER_ASUS_AX89X:
 		generic = generic_ax89;
-		break;
-	case ROUTER_LINKSYS_MR7500:
-	case ROUTER_LINKSYS_MX8500:
-	case ROUTER_LINKSYS_MX5300:
-		generic = generic_mr7500;
 		break;
 	case ROUTER_FORTINET_FAP231F:
 		generic = generic_fap231f;
 		break;
 	default:
-		generic = generic_mx4200;
+		generic = generic_all;
 	}
 #elif HAVE_VENTANA
 	struct nvram_param generic[] = { { "lan_ifname", "br0" },
