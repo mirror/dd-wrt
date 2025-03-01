@@ -2270,7 +2270,13 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 		nvram_default_get(natvar, nvram_safe_get("block_loopback"));
 		showRadio(wp, "filter.nat", natvar);
 	}
+#ifdef HAVE_IPTOOLS
+	char arpvar[32];
+	sprintf(arpvar, "%s_arpd", var);
+	nvram_default_get(arpvar, "1");
+	showRadio(wp, "networking.arpd", arpvar);
 
+#endif
 	char isolation[32];
 	sprintf(isolation, "%s_isolation", var);
 	nvram_default_get(isolation, "0");

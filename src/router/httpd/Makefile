@@ -242,6 +242,9 @@ ifeq ($(CONFIG_SPEEDTEST_CLI),y)
 VISOBJS += speedtest.o
 CFLAGS += -DHAVE_SPEEDTEST_CLI
 endif
+ifeq ($(CONFIG_IPTOOLS),y)
+CFLAGS += -DHAVE_IPTOOLS
+endif
 ifeq ($(CONFIG_WZRG450),y)
 CFLAGS += -DHAVE_WZRG450
 endif

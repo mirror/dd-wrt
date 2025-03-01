@@ -161,7 +161,13 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t **argv)
 			nvram_default_get(mcast, nvram_safe_get("block_loopback"));
 			showRadio(wp, "filter.nat", mcast);
 		}
+#ifdef HAVE_IPTOOLS
+		char arpvar[32];
+		sprintf(arpvar, "%s_arpd", var);
+		nvram_default_get(arpvar, "1");
+		showRadio(wp, "networking.arpd", arpvar);
 
+#endif
 		char isolation[32];
 		sprintf(isolation, "%s_isolation", var);
 		nvram_default_get(isolation, "0");

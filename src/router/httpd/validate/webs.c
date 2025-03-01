@@ -3549,6 +3549,10 @@ void add_vifs_single(const char *prefix, int device)
 	nvram_seti(v2, 1);
 	sprintf(v2, "%s_bloop", v);
 	nvram_seti(v2, 0);
+#ifdef HAVE_IPTOOLS
+	sprintf(v2, "%s_arpd", v);
+	nvram_seti(v2, 0);
+#endif
 	sprintf(v2, "%s_ipaddr", v);
 	nvram_set(v2, "0.0.0.0");
 	sprintf(v2, "%s_netmask", v);
@@ -3825,6 +3829,7 @@ static char *vapsettings[] = {
 	"nas",
 	"nat",
 	"bloop",
+	"arpd",
 	"nband",
 	"nbw",
 	"nbw_cap",
@@ -5697,6 +5702,9 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "bridged", ifname);
 	copytonv_prefix(wp, "nat", ifname);
 	copytonv_prefix(wp, "bloop", ifname);
+#ifdef HAVE_IPTOOLS
+	copytonv_prefix(wp, "arpd", ifname);
+#endif
 	copytonv_prefix(wp, "isolation", ifname);
 #ifdef HAVE_TOR
 	copytonv_prefix(wp, "tor", ifname);
@@ -5720,6 +5728,9 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "bridged", prefix);
 	copytonv_prefix(wp, "nat", prefix);
 	copytonv_prefix(wp, "bloop", prefix);
+#ifdef HAVE_ARPD
+	copytonv_prefix(wp, "arpd", prefix);
+#endif
 	copytonv_prefix(wp, "isolation", prefix);
 #ifdef HAVE_TOR
 	copytonv_prefix(wp, "tor", prefix);

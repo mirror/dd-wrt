@@ -1611,6 +1611,8 @@ networking.ipvs_targetport="Target Port";
 networking.ipvs_weight="Weight";
 networking.ipvs_role="Role";
 networking.ipvs_config="Configuration";
+networking.arpd="ARPd Caching";
+
 //help container
 var hnetworking=new Object();
 hnetworking.right1=networking.legend5;
