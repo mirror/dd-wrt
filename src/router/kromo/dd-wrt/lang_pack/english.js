@@ -1843,6 +1843,7 @@ service.dns_crypt="Encrypt DNS";
 service.dnsmasq_ipv6="Dnsmasq IPv6 Settings";
 service.dnsmasq_ipv6_enabled="IPv6 Router Advertisement (RA)";
 service.dnsmasq_ipv6_rastate="DHCP6 RA mode";
+service.dnsmasq_ipv6_raonly="Router Advertisement only";
 service.dnsmasq_ipv6_rastateful="Stateful DHCP6";
 service.dnsmasq_ipv6_rastateless="Stateless DHCP6";
 service.dnsmasq_ipv6_ralifetime="DHCP6 RA lifetime";

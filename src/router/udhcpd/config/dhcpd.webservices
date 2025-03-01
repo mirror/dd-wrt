@@ -234,7 +234,8 @@
 						<div class="setting">
 							<div class="label"><% tran("service.dnsmasq_ipv6_rastate"); %></div>
 							<input class="spaceradio" type="radio" name="dnsipv6_rastate" value="1" <% nvc("dnsipv6_rastate", "1"); %> /><% tran("service.dnsmasq_ipv6_rastateful"); %>&nbsp;&nbsp;
-							<input class="spaceradio" type="radio" name="dnsipv6_rastate" value="0" <% nvc("dnsipv6_rastate", "0"); %> /><% tran("service.dnsmasq_ipv6_rastateless"); %>
+							<input class="spaceradio" type="radio" name="dnsipv6_rastate" value="0" <% nvc("dnsipv6_rastate", "0"); %> /><% tran("service.dnsmasq_ipv6_rastateless"); %>&nbsp;&nbsp;
+							<input class="spaceradio" type="radio" name="dnsipv6_rastate" value="2" <% nvc("dnsipv6_rastate", "2"); %> /><% tran("service.dnsmasq_ipv6_raonly"); %>
 						</div>
 						<% show_dnsipv6if(); %>
 					</div>

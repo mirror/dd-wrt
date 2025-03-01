@@ -736,9 +736,21 @@ void start_dnsmasq(void)
 			//leasetime
 			char ipv6_leasetime[12] = { 0 };
 			char dnsipv6_rastate[16] = { 0 };
+			int rastate = nvram_geti("dnsipv6_rastate");
+			
+			/*
 			nvram_geti("dnsipv6_rastate") ? strlcpy(dnsipv6_rastate, "slaac", sizeof(dnsipv6_rastate)) :
 							strlcpy(dnsipv6_rastate, "ra-stateless", sizeof(dnsipv6_rastate));
-
+			*/
+			
+			if (rastate == 1) {
+				strlcpy(dnsipv6_rastate, "slaac", sizeof(dnsipv6_rastate));  //slaac in DNSMasq speak is ra-stateful with DHCP6v 
+			} else if  (rastate == 0) {
+				strlcpy(dnsipv6_rastate, "ra-stateless", sizeof(dnsipv6_rastate));
+			} else {
+				strlcpy(dnsipv6_rastate, "ra-only", sizeof(dnsipv6_rastate));
+			}
+			
 			if (!strcmp(nvram_safe_get("dnsipv6_leasetime"), "0")) {
 				strlcpy(ipv6_leasetime, "infinite", sizeof(ipv6_leasetime));
 			} else {
@@ -750,12 +762,15 @@ void start_dnsmasq(void)
 			char *wordlist = nvram_safe_get("dnsipv6_interfaces");
 			//dd_loginfo("dnsipv6if", "dnsmasq dnsipv6if: %s", wordlist);
 			foreach(ifname, wordlist, next) {
-				fprintf(fp, "dhcp-range=::%s,::%s,constructor:%s,ra-names,%s,%s\n",
-					nvram_safe_get("dnsipv6_range_start"), nvram_safe_get("dnsipv6_range_end"), ifname,
-					dnsipv6_rastate, ipv6_leasetime);
+				if (rastate == 2) {
+					fprintf(fp, "dhcp-range=::,constructor:%s,%s\n", ifname, dnsipv6_rastate);
+				} else {
+					fprintf(fp, "dhcp-range=::%s,::%s,constructor:%s,ra-names,%s,%s\n",
+						nvram_safe_get("dnsipv6_range_start"), nvram_safe_get("dnsipv6_range_end"), ifname,
+						dnsipv6_rastate, ipv6_leasetime);
+				}
 				fprintf(fp, "ra-param=%s%s%s\n", ifname, ",10,", nvram_safe_get("dnsipv6_ralifetime"));
 			}
-
 			fprintf(fp, "enable-ra\n");
 			// Suppress logging of the routine operation:
 			fprintf(fp, "quiet-dhcp6\nquiet-ra\n");
