@@ -1007,6 +1007,10 @@ ifeq ($(CONFIG_RFLOW),y)
 CFLAGS += -DHAVE_RFLOW
 endif
 
+ifeq ($(CONFIG_IPTOOLS),y)
+CFLAGS += -DHAVE_IPTOOLS
+endif
+
 ifeq ($(CONFIG_SER),y)
 CFLAGS += -DHAVE_SER
 endif
