@@ -361,35 +361,35 @@
 
 &dp1 {
 	status = "okay";
-	label = "eth1";
+	label = "lan1";
 	phy-handle = <&qca8075_0>;
 	phy-mode = "qsgmii";
 };
 
 &dp2 {
 	status = "okay";
-	label = "eth2";
+	label = "lan2";
 	phy-handle = <&qca8075_1>;
 	phy-mode = "qsgmii";
 };
 
 &dp3 {
 	status = "okay";
-	label = "eth3";
+	label = "lan3";
 	phy-handle = <&qca8075_2>;
 	phy-mode = "qsgmii";
 };
 
 &dp4 {
 	status = "okay";
-	label = "eth4";
+	label = "lan4";
 	phy-handle = <&qca8075_3>;
 	phy-mode = "qsgmii";
 };
 
 &dp5_syn {
 	status = "okay";
-	label = "eth0";
+	label = "wan";
 	phy-handle = <&aqr114c>;
 };
 
