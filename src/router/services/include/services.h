@@ -197,6 +197,7 @@ DECLARE_SERVICE(wifi_drivers);
 DECLARE_SERVICE(arch_defaults);
 DECLARE_SERVICE(dbus);
 DECLARE_SERVICE(bluetooth);
+DECLARE_SERVICE(arpd);
 
 #if defined(HAVE_IPQ6018)
 int nss_disabled(int setcur);
