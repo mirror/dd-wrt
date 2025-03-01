@@ -1,0 +1,128 @@
+#!/bin/sh
+#
+# This script builds below components from a Berkeley DB source tree:
+# 1. Generated BDB Thrift Server interface
+# 2. BDB Thrift Server
+# 3. BDB Thrift Java Client Driver
+
+# A db_addons repository must be available, and presumbly in the parent of
+# this repository/source tree.
+# The following 3rd party packages from db_addons are required:
+# libthrift, slf4j and log4j
+# slf4j and log4j are used by libthrift, so their versions depend on the
+# version of libthrift. libthrift can be downloaded and built from
+# https://thrift.apache.org
+
+# In addition, the DB Java API (db.jar) must have been built.
+
+. ./RELEASE
+
+# Versions of 3rd party libraries. Versions of slf4j and log4j depend on
+# the version of thrift.
+THRIFT_VERSION=0.9.2
+SLF4J_VERSION=1.5.8
+LOG4J_VERSION=1.2.14
+
+die()
+{
+	echo >&2 "$@"
+	exit 1
+}
+
+PKG_ROOT=../..
+DB_JAR=../build_unix/db.jar
+CLEAN_ONLY=0
+while [ $# -gt 0 ]
+do
+	case "$1" in
+	-clean)
+		CLEAN_ONLY=1;;
+	-db)
+		shift
+		DB_JAR=$1;;
+	-addons)
+		shift
+		PKG_ROOT=$1;;
+	esac
+	shift
+done
+
+THRIFT_DIR=`pwd`/../lang/thrift
+BUILD_DIR=$THRIFT_DIR/jars
+
+DB_ADDONS_REPO=$PKG_ROOT/db_addons
+update_repo()
+{
+	if [ ! -d $DB_ADDONS_REPO ]; then
+		die "db_addons repository doesn't exist."
+	fi
+	hg up -R $DB_ADDONS_REPO -r `hg branch` || \
+	    die "Failed updating db_addons - likely contains local updates."
+	hg pull -R $DB_ADDONS_REPO -u
+	if [ $? != 0 ]; then
+		die "Failed updating the db_addons repository."
+	fi
+}
+
+THIRD_PARTY_DIR=$DB_ADDONS_REPO/thirdparty
+copy_3rd_jars()
+{
+	cp $THIRD_PARTY_DIR/thrift/libthrift-$THRIFT_VERSION.jar $BUILD_DIR/libthrift.jar
+	cp $THIRD_PARTY_DIR/slf4j/slf4j-api-$SLF4J_VERSION.jar $BUILD_DIR/slf4j-api.jar
+	cp $THIRD_PARTY_DIR/slf4j/slf4j-log4j12-$SLF4J_VERSION.jar $BUILD_DIR/slf4j-log4j12.jar
+	cp $THIRD_PARTY_DIR/log4j/log4j-$LOG4J_VERSION.jar $BUILD_DIR/log4j.jar
+}
+
+CLASS_PATH=$DB_JAR
+CLASS_PATH=$CLASS_PATH:$BUILD_DIR/libthrift.jar
+CLASS_PATH=$CLASS_PATH:$BUILD_DIR/slf4j-api.jar
+CLASS_PATH=$CLASS_PATH:$BUILD_DIR/slf4j-log4j12.jar
+CLASS_PATH=$CLASS_PATH:$BUILD_DIR/log4j.jar
+
+# build_jar $src_dir $src_package $jar_name $additional_classpath
+# $src_dir - the root directory of the source code
+# $jar_name - the file name of the output jar
+# $manifest - the manifest file
+# $additional_classpath - additional jars added to the classpath
+build_jar()
+{
+	SRC_DIR=$1
+	CLASS_DIR=$1/.classes
+	if [ ! -d $CLASS_DIR ]; then
+		mkdir $CLASS_DIR
+	fi
+
+	javac -cp $CLASS_PATH:$4 -d $CLASS_DIR -sourcepath $SRC_DIR `find $SRC_DIR -type f -name *.java`
+	if [ "x$3" == "x" ]; then
+		jar cf $BUILD_DIR/$2.jar -C $CLASS_DIR .
+	else
+		jar cfm $BUILD_DIR/$2.jar $3 -C $CLASS_DIR .
+	fi
+	rm -rf $CLASS_DIR
+}
+
+#############################
+
+if [ "$CLEAN_ONLY" != 0 ]; then
+	rm -f $BUILD_DIR/*.jar
+	exit 0
+fi
+
+#update_repo
+
+if [ ! -d $BUILD_DIR ]; then
+	mkdir $BUILD_DIR
+fi
+
+copy_3rd_jars
+
+build_jar $THRIFT_DIR/generated/java db_thrift_interface
+
+build_jar $THRIFT_DIR/server db_thrift_server "" $BUILD_DIR/db_thrift_interface.jar
+
+build_jar $THRIFT_DIR/client/java db_thrift_client $THRIFT_DIR/client/java/jarManifestEntries $BUILD_DIR/db_thrift_interface.jar
+
+
+
+
+

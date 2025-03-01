@@ -1,0 +1,137 @@
+diff -r fff253f6cfea SQLite.Interop/src/contrib/extension-functions.c
+--- SQLite.Interop/src/contrib/extension-functions.c	Tue Apr 15 16:41:07 2014 +0800
++++ SQLite.Interop/src/contrib/extension-functions.c	Tue Apr 15 17:13:26 2014 +0800
+@@ -126,7 +126,13 @@
+ 
+ #if !defined(_WIN32_WCE) || defined(HAVE_ERRNO_H)
+ #include <errno.h>		/* LMH 2007-03-25 */
++#if defined(_WIN32_WCE)
++#include "dbinc/globals.h"
++#define	strerror	__db_Cstrerror
++extern char *strerror(int errnum);
++#endif
+ #else
++#undef errno
+ int errno;
+ #define strerror(x)		""
+ #endif
+@@ -141,8 +147,8 @@
+ 
+ typedef signed char int8_t;
+ typedef unsigned char uint8_t;
+-typedef signed int int16_t;
+-typedef unsigned int uint16_t;
++typedef signed short int16_t;
++typedef unsigned short uint16_t;
+ typedef signed long int int32_t;
+ typedef unsigned long int uint32_t;
+ typedef signed long long int int64_t;
+diff -r fff253f6cfea SQLite.Interop/src/win/interop.c
+--- SQLite.Interop/src/win/interop.c	Tue Apr 15 16:41:07 2014 +0800
++++ SQLite.Interop/src/win/interop.c	Tue Apr 15 17:13:26 2014 +0800
+@@ -43,9 +43,6 @@
+ #endif
+ 
+ #if defined(SQLITE_OS_WIN)
+-#if defined(INTEROP_CODEC) && !defined(INTEROP_INCLUDE_SEE)
+-#include "crypt.c"
+-#endif
+ 
+ #include "interop.h"
+ 
+@@ -932,7 +929,7 @@
+   int ret = -1; /* NOT FOUND */
+ 
+   if (!p || !db) return ret;
+-  sqlite3_mutex_enter(db->mutex);
++ /* sqlite3_mutex_enter(db->mutex);
+   for (n = 0; n < p->nCursor && p->apCsr[n] != NULL; n++)
+   {
+     if (p->apCsr[n]->isTable == FALSE) continue;
+@@ -944,7 +941,7 @@
+     }
+   }
+   sqlite3_mutex_leave(db->mutex);
+-
++*/
+   return ret;
+ }
+ 
+diff -r fff253f6cfea System.Data.SQLite/SQLiteConnection.cs
+--- System.Data.SQLite/SQLiteConnection.cs	Tue Apr 15 16:41:07 2014 +0800
++++ System.Data.SQLite/SQLiteConnection.cs	Tue Apr 15 17:13:26 2014 +0800
+@@ -2680,14 +2680,14 @@
+                       cmd.CommandText = String.Format(CultureInfo.InvariantCulture, "PRAGMA max_page_count={0}", intValue);
+                       cmd.ExecuteNonQuery();
+                   }
+-
+-                  strValue = FindKey(opts, "Legacy Format", DefaultLegacyFormat.ToString());
+-                  boolValue = SQLiteConvert.ToBoolean(strValue);
+-                  if (boolValue != DefaultLegacyFormat)
+-                  {
+-                      cmd.CommandText = String.Format(CultureInfo.InvariantCulture, "PRAGMA legacy_file_format={0}", boolValue ? "ON" : "OFF");
+-                      cmd.ExecuteNonQuery();
+-                  }
++                  // DBSQL does not support "PRAGMA legacy_file_format", ignore this operation.
++                  // strValue = FindKey(opts, "Legacy Format", DefaultLegacyFormat.ToString());
++                  // boolValue = SQLiteConvert.ToBoolean(strValue);
++                  // if (boolValue != DefaultLegacyFormat)
++                  // {
++                  //    cmd.CommandText = String.Format(CultureInfo.InvariantCulture, "PRAGMA legacy_file_format={0}", boolValue ? "ON" : "OFF");
++                  //    cmd.ExecuteNonQuery();
++                  // }
+ 
+                   strValue = FindKey(opts, "Synchronous", DefaultSynchronous.ToString());
+                   enumValue = TryParseEnum(typeof(SQLiteSynchronousEnum), strValue, true);
+@@ -2709,8 +2709,9 @@
+                   enumValue = TryParseEnum(typeof(SQLiteJournalModeEnum), strValue, true);
+                   if (!(enumValue is SQLiteJournalModeEnum) || ((SQLiteJournalModeEnum)enumValue != DefaultJournalMode))
+                   {
+-                      cmd.CommandText = String.Format(CultureInfo.InvariantCulture, "PRAGMA journal_mode={0}", strValue);
+-                      cmd.ExecuteNonQuery();
++                      // DBSQL does not support "PRAGMA journal_mode", ignore this operation.
++                      // cmd.CommandText = String.Format(CultureInfo.InvariantCulture, "PRAGMA journal_mode={0}", strValue);
++                      // cmd.ExecuteNonQuery();
+                   }
+ 
+                   strValue = FindKey(opts, "Foreign Keys", DefaultForeignKeys.ToString());
+diff -r fff253f6cfea test/TestCases.cs
+--- test/TestCases.cs	Tue Apr 15 16:41:07 2014 +0800
++++ test/TestCases.cs	Tue Apr 15 17:13:26 2014 +0800
+@@ -1254,7 +1254,8 @@
+       CheckLocked();
+     }
+ 
+-    [Test(Sequence = 60)]
++    // Skip below test due to difference between SQLite and DBSQL."
++    // [Test(Sequence = 60)]
+     internal void LockTest()
+     {
+       CheckSQLite();
+@@ -1340,7 +1341,8 @@
+       internal System.Threading.ManualResetEvent ev;
+     }
+ 
+-    [Test(Sequence=11)]
++    // Skip below test due to difference between SQLite and DBSQL."
++    // [Test(Sequence=11)]
+     internal void MultithreadingTest()
+     {
+       using (DbCommand cmd = _cnn.CreateCommand())
+diff -r fff253f6cfea testce/TestCases.cs
+--- testce/TestCases.cs	Tue Apr 15 16:41:07 2014 +0800
++++ testce/TestCases.cs	Tue Apr 15 17:13:26 2014 +0800
+@@ -252,9 +252,10 @@
+       try { VerifyBinaryData(cnn); frm.WriteLine("SUCCESS - VerifyBinaryData"); passed++; }
+       catch (Exception) { frm.WriteLine("FAIL - VerifyBinaryData"); failed++; }
+ 
+-      total++;
+-      try { LockTest(cnn, sql, isolatedSql); frm.WriteLine("SUCCESS - LockTest"); passed++; }
+-      catch (Exception) { frm.WriteLine("FAIL - LockTest"); failed++; }
++      // Skip below test due to difference between SQLite and DBSQL.
++      // total++;
++      // try { LockTest(cnn, sql, isolatedSql); frm.WriteLine("SUCCESS - LockTest"); passed++; }
++      // catch (Exception) { frm.WriteLine("FAIL - LockTest"); failed++; }
+ 
+       total++;
+       try { ParameterizedInsertMissingParams(cnn); frm.WriteLine("FAIL - ParameterizedInsertMissingParams"); failed++; }

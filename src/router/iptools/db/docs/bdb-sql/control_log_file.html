@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Controlling the Number of Accumulated Log Files</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Getting Started with the Oracle Berkeley DB SQL APIs" />
+    <link rel="up" href="dbfeatures.html" title="Chapter 3. Berkeley DB Features" />
+    <link rel="prev" href="selectpage_size.html" title="Selecting the Page Size" />
+    <link rel="next" href="sql_db_config.html" title="Chapter 4. Using DB_CONFIG to configure the Berkeley DB SQL interface" />
+  </head>
+  <body>
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 12.1.6.2</p>
+      </div>
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">Controlling the Number of Accumulated Log Files</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="selectpage_size.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 3. Berkeley DB Features</th>
+          <td width="20%" align="right"> <a accesskey="n" href="sql_db_config.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="control_log_file"></a>Controlling the Number of Accumulated Log Files</h2>
+          </div>
+        </div>
+      </div>
+      <p>
+               In Berkeley DB SQL interface, the <code class="literal">pragma
+               wal_autocheckpoint</code> can be used to control
+               the total number of log files that get accumulated
+               before an automatic purge happens. For example,
+               if we set <code class="literal">pragma wal_checkpoint=N</code>, and
+               when the current amount of data written to logs since the
+               last checkpoint equals or exceeds "N" pages, a checkpoint
+               happens. If the log file auto-removing is enabled 
+               (which is enabled by default), the accumulated log
+               files are auto-purged.
+           </p>
+      <p>
+               In Berkeley DB SQL interface, the default value of
+               <code class="literal">wal_autocheckpoint</code> is 512 pages.
+               With the default page size as 4096 bytes, it means when
+               the current amount of data written to logs since
+               the last checkpoint equals or exceeds 2 MB, a
+               checkpoint happens and the accumulated log files
+               purge. As in Berkeley DB SQL interface, by default
+               a single log file has the maximium size as 2 MB,
+               so we will at most have two 2 MB log files in a
+               Bekeley DB environment. 
+           </p>
+      <p>
+               You can make changes to the default values. For
+               example, if you change <code class="literal">wal_autocheckpoint</code>
+               to 256 pages with the page size as 4096 bytes, it means
+               when the current amount of data written to logs since
+               the last checkpoint equals or exceeds 1 MB, a checkpoint
+               happens and the accumulated log files get purged. You
+               can also change the single log file size to 256 KB 
+               (check the usage of <code class="literal">PRAGMA journal_size_limit</code>).
+               With this setting, you will have maximum five 256 KB log
+               files in the Berkeley DB environment.
+             </p>
+      <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
+        <h3 class="title">Note</h3>
+        <div class="itemizedlist">
+          <ul type="disc">
+            <li>
+              <p>
+                  If there are huge transactions, the Berkeley DB
+                  accumulated log files will be as many as needed.
+               </p>
+            </li>
+            <li>
+              <p>
+                   User can turn off the auto-checkpointing (for example,
+                   by <code class="literal">PRAGMA wal_autocheckpoint = -1</code>).
+                   In this case, users must have their own management
+                   on the accumulated log files.
+               </p>
+            </li>
+            <li>
+              <p>
+                   <code class="literal">Pragma wal_autocheckpoint</code> is not
+                   persistent and will reset to default after we reset
+                   the database connection.
+               </p>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="selectpage_size.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="dbfeatures.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="sql_db_config.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">Selecting the Page Size </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> Chapter 4. Using DB_CONFIG to configure the Berkeley DB SQL interface</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,130 @@
+userauth01-api-1.0
+NULL
+1
+2.5
+'three'
+X'4444'
+t1
+userauth01-api-1.1.1
+Authentication failed for user alice
+userauth01-api-1.1.2
+NULL
+1
+2.5
+'three'
+X'4444'
+t1
+userauth01-api-1.2
+User-Add failed: 23
+userauth01-api-1.3
+NULL
+1
+2.5
+'three'
+X'4444'
+t1
+userauth01-api-1.4
+userauth01-api-1.5
+NULL
+1
+2.5
+'three'
+X'4444'
+alice|1
+sqlite_user
+t1
+userauth01-api-1.6
+alice|1
+bob|0
+cindy|0
+david|0
+userauth01-api-1.7
+NULL
+1
+2.5
+'three'
+X'4444'
+sqlite_user
+t1
+userauth01-api-1.8
+Error: near line xx: no such table: sqlite_user
+userauth01-api-1.9
+userauth01-api-1.10
+Authentication failed for user cindy
+userauth01-api-1.11
+userauth01-api-1.12
+userauth01-api-1.13
+Authentication failed for user alice
+userauth01-api-1.14
+userauth01-api-1.15
+User-Edit failed: 23
+userauth01-api-1.16
+alice|1
+bob|0
+cindy|0
+david|0
+userauth01-api-1.17
+User-Edit failed: 23
+userauth01-api-1.18
+alice|1
+bob|0
+cindy|0
+david|0
+userauth01-api-1.20
+userauth01-api-1.21
+alice|1
+bob|0
+cindy|0
+david|1
+userauth01-api-1.22
+userauth01-api-1.23
+alice|1
+bob|0
+cindy|0
+david|1
+userauth01-api-1.24
+userauth01-api-1.25
+Authentication failed for user david
+userauth01-api-1.26
+alice|1
+bob|0
+cindy|0
+david|0
+userauth01-api-1.27
+Error: near line xx: no such table: sqlite_user
+userauth01-api-1.30
+User-Edit failed: 23
+userauth01-api-1.31
+alice|1
+bob|0
+cindy|0
+david|0
+userauth01-api-1.40
+userauth01-api-1.41
+alice|1
+cindy|0
+david|0
+userauth01-api-1.42
+User-Delete failed: 23
+userauth01-api-1.43
+User-Delete failed: 23
+userauth01-api-1.44
+alice|1
+cindy|0
+david|0
+userauth01-api-1.50
+User-Delete failed: 23
+userauth01-api-1.51
+alice|1
+cindy|0
+david|0
+userauth01-api-1.60
+userauth01-api-1.61
+1|2|3
+userauth01-api-1.62
+|1|2|3
+userauth01-api-1.63
+Error: near line xx: unable to open database: test3.db
+userauth01-api-1.64
+userauth01-api-1.65
+0|main|test.db

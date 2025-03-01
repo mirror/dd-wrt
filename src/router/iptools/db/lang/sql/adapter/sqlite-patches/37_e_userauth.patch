@@ -1,0 +1,291 @@
+--- Makefile.in	
++++ Makefile.in	
+@@ -28,9 +28,16 @@
+ # are provide so that these aspects of the build process can be changed
+ # on the "make" command-line.  Ex:  "make CC=clang CFLAGS=-fsanitize=undefined"
+ #
++# When building BDB SQL, the current build folder(-I.) is where we build the 
++# BDB library. e.g., build_unix or build_windows. Some BDB header files like 
++# db.h or db_int.h are found there. 
++# We also add BDB src/ folder(-I${TOP}/../../../src) into the search path. 
++# This is where BDB internal header files are found. For example, dbinc/crypto.h. 
++#
+ CC = @CC@
+ CFLAGS = @CPPFLAGS@ @CFLAGS@
+-TCC = $(CC) $(CFLAGS) -I. -I${TOP}/src -I${TOP}/../adapter -I${TOP}/ext/fts3 -I${TOP}/ext/rtree -I${TOP}/ext/fts3
++TCC = $(CC) $(CFLAGS) -I. -I${TOP}/src -I${TOP}/../adapter -I${TOP}/../../../src \
++	-I${TOP}/ext/fts3 -I${TOP}/ext/rtree -I${TOP}/ext/fts3 -I${TOP}/ext/userauth
+ 
+ # Define this for the autoconf-based build, so that the code knows it can
+ # include the generated config.h
+@@ -182,7 +189,7 @@
+          pager.lo parse.lo pcache.lo pcache1.lo pragma.lo prepare.lo printf.lo \
+          random.lo resolve.lo rowset.lo rtree.lo select.lo status.lo \
+          table.lo threads.lo tokenize.lo trigger.lo \
+-         update.lo util.lo vacuum.lo \
++         userauth.lo update.lo util.lo vacuum.lo \
+          vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
+          vdbetrace.lo wal.lo walker.lo where.lo utf.lo vtab.lo
+ 
+@@ -343,7 +350,10 @@
+ SRC += \
+   $(TOP)/ext/rtree/rtree.h \
+   $(TOP)/ext/rtree/rtree.c
+-
++SRC += \
++  $(TOP)/ext/userauth/sqlite3userauth.h \
++  $(TOP)/../adapter/userauth.h \
++  $(TOP)/../adapter/userauth.c
+ 
+ # Generated source code files
+ #
+@@ -513,6 +523,9 @@
+   $(TOP)/ext/icu/sqliteicu.h
+ EXTHDR += \
+   $(TOP)/ext/rtree/sqlite3rtree.h
++EXTHDR += \
++  $(TOP)/ext/userauth/sqlite3userauth.h \
++  $(TOP)/../adapter/userauth.h
+ 
+ # This is the default Makefile target.  The objects listed here
+ # are what get build when you type just "make" with no arguments.
+@@ -953,6 +966,9 @@
+ rtree.lo:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
+ 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/rtree/rtree.c
+ 
++userauth.lo:	$(TOP)/../adapter/userauth.c $(HDR) $(EXTHDR)
++	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/../adapter/userauth.c
++
+ 
+ # Rules to build the 'testfixture' application.
+ #
+--- tool/mksqlite3c.tcl	
++++ tool/mksqlite3c.tcl	
+@@ -113,9 +113,11 @@
+    rtree.h
+    sqlite3ext.h
+    sqlite3.h
++   sqlite3userauth.h
+    sqliteicu.h
+    sqliteInt.h
+    sqliteLimit.h
++   userauth.h
+    vdbe.h
+    vdbeInt.h
+    vxworks.h
+@@ -373,6 +375,7 @@
+    icu.c
+    fts3_icu.c
+    dbstat.c
++   userauth.c
+ } {
+   copy_file tsrc/$file
+ }
+--- tool/mksqlite3h.tcl	
++++ tool/mksqlite3h.tcl	
+@@ -71,6 +71,7 @@
+ set filelist [subst {
+   $TOP/src/sqlite.h.in
+   $TOP/ext/rtree/sqlite3rtree.h
++  $TOP/ext/userauth/sqlite3userauth.h
+ }]
+ 
+ # These are the functions that accept a variable number of arguments.  They
+--- src/test1.c	
++++ src/test1.c	
+@@ -6498,7 +6498,6 @@
+ 
+ 
+ #ifdef SQLITE_USER_AUTHENTICATION
+-#include "sqlite3userauth.h"
+ /*
+ ** tclcmd:  sqlite3_user_authenticate DB USERNAME PASSWORD
+ */
+--- src/shell.c	
++++ src/shell.c	
+@@ -61,9 +61,6 @@
+ #include <stdio.h>
+ #include <assert.h>
+ #include "sqlite3.h"
+-#if SQLITE_USER_AUTHENTICATION
+-# include "sqlite3userauth.h"
+-#endif
+ #include <ctype.h>
+ #include <stdarg.h>
+ 
+--- ext/userauth/sqlite3userauth.h	
++++ ext/userauth/sqlite3userauth.h	
+@@ -19,7 +19,30 @@
+ ** user-auth.txt file in the same source directory as this file for
+ ** additional information.
+ */
++#ifndef _SQLITE3USERAUTH_H_
++#define _SQLITE3USERAUTH_H_
++
+ #ifdef SQLITE_USER_AUTHENTICATION
++#undef SQLITE_USER_AUTHENTICATION
++#endif
++
++#if defined(BDBSQL_USER_AUTHENTICATION) || \
++ defined(BDBSQL_USER_AUTHENTICATION_KEYSTORE)
++#define SQLITE_USER_AUTHENTICATION 1
++#endif
++
++#if defined(SQLITE_USER_AUTHENTICATION) && !defined(SQLITE_HAS_CODEC)
++#error Encryption is required when authentication is enabled.
++#endif
++
++#if defined(BDBSQL_USER_AUTHENTICATION_KEYSTORE) && !defined(SQLITE_HAS_CODEC)
++#undef BDBSQL_USER_AUTHENTICATION_KEYSTORE
++#endif
++
++#ifdef SQLITE_USER_AUTHENTICATION
++#ifdef __cplusplus
++extern "C" {
++#endif
+ 
+ /*
+ ** If a database contains the SQLITE_USER table, then the
+@@ -85,4 +108,10 @@
+   const char *zUsername  /* Username to remove */
+ );
+ 
++#ifdef __cplusplus
++}  /* end of the 'extern "C"' block */
++#endif
++
+ #endif /* SQLITE_USER_AUTHENTICATION */
++
++#endif  /* ifndef _SQLITE3USERAUTH_H_ */
+--- ext/userauth/userauth.c	
++++ ext/userauth/userauth.c	
+@@ -148,34 +148,38 @@
+ ** If Y is NULL then generate a new hash for password X and return that
+ ** hash.  If Y is not null, then generate a hash for password X using the
+ ** same salt as the previous hash Y and return the new hash.
++**
++** Note: SQLite uses a simple Ceasar-cypher to compute hash value of passwords.
++** In Berkeley DB we replace this with a stronger password hash function. The 
++** hashed password was stored as 84 bytes(64 bytes of salt + 20 bytes of HMAC). 
+ */
++#include "dbinc/hmac.h"
+ void sqlite3CryptFunc(
+   sqlite3_context *context,
+   int NotUsed,
+   sqlite3_value **argv
+ ){
+   const char *zIn;
+-  int nIn, ii;
++  int nIn, nOut;
+   u8 *zOut;
+-  char zSalt[8];
++  char zSalt[HMAC_BLOCK_SIZE];
+   zIn = sqlite3_value_blob(argv[0]);
+   nIn = sqlite3_value_bytes(argv[0]);
++  nOut = HMAC_OUTPUT_SIZE+sizeof(zSalt);
+   if( sqlite3_value_type(argv[1])==SQLITE_BLOB
+-   && sqlite3_value_bytes(argv[1])==nIn+sizeof(zSalt)
++   && sqlite3_value_bytes(argv[1])==nOut
+   ){
+     memcpy(zSalt, sqlite3_value_blob(argv[1]), sizeof(zSalt));
+   }else{
+     sqlite3_randomness(sizeof(zSalt), zSalt);
+   }
+-  zOut = sqlite3_malloc( nIn+sizeof(zSalt) );
++  zOut = sqlite3_malloc( nOut );
+   if( zOut==0 ){
+     sqlite3_result_error_nomem(context);
+   }else{
+     memcpy(zOut, zSalt, sizeof(zSalt));
+-    for(ii=0; ii<nIn; ii++){
+-      zOut[ii+sizeof(zSalt)] = zIn[ii]^zSalt[ii&0x7];
+-    }
+-    sqlite3_result_blob(context, zOut, nIn+sizeof(zSalt), sqlite3_free);
++    __db_chksum(NULL, zIn, nIn, zSalt, zOut+sizeof(zSalt));
++    sqlite3_result_blob(context, zOut, nOut, sqlite3_free);
+   }
+ }
+ 
+--- src/test_config.c	
++++ src/test_config.c	
+@@ -621,6 +621,12 @@
+   Tcl_SetVar2(interp, "sqlite_options", "userauth", "0", TCL_GLOBAL_ONLY);
+ #endif
+ 
++#ifdef BDBSQL_USER_AUTHENTICATION_KEYSTORE
++  Tcl_SetVar2(interp, "sqlite_options", "userauth_keystore", "1", TCL_GLOBAL_ONLY);
++#else
++  Tcl_SetVar2(interp, "sqlite_options", "userauth_keystore", "0", TCL_GLOBAL_ONLY);
++#endif
++
+ #ifdef SQLITE_MULTIPLEX_EXT_OVWR
+   Tcl_SetVar2(interp, "sqlite_options", "multiplex_ext_overwrite", "1", TCL_GLOBAL_ONLY);
+ #else
+--- test/userauth01.test	
++++ test/userauth01.test	
+@@ -31,10 +31,12 @@
+ } {NULL 1 2.5 'three' X'4444' t1}
+ 
+ # Calling sqlite3_user_authenticate() on a no-authentication-required
+-# database connection is a harmless no-op.  
++# database connection is an error.  
+ #
+-do_test userauth01-1.1 {
++do_test userauth01-1.1.1 {
+   sqlite3_user_authenticate db alice pw-4-alice
++} {SQLITE_AUTH}
++do_test userauth01-1.1.2 {
+   execsql {
+     SELECT quote(x) FROM t1 ORDER BY x;
+     SELECT name FROM sqlite_master;
+@@ -207,7 +209,7 @@
+ # check fails, then the ATTACH command fails with an SQLITE_AUTH error.
+ #
+ do_test userauth01-1.60 {
+-  forcedelete test3.db
++  forcedelete test3.db test3.db-journal
+   sqlite3 db3 test3.db
+   sqlite3_user_add db3 alice xyzzy-alice 1
+ } {SQLITE_OK}
+--- src/sqliteInt.h
++++ src/sqliteInt.h
+@@ -567,20 +567,39 @@
+ #  define INT8_TYPE signed char
+ # endif
+ #endif
+ #ifndef LONGDOUBLE_TYPE
+ # define LONGDOUBLE_TYPE long double
+ #endif
+ typedef sqlite_int64 i64;          /* 8-byte signed integer */
+ typedef sqlite_uint64 u64;         /* 8-byte unsigned integer */
++
++/*
++ * The types of u8/u16/u32 are defined both in SQLite code and BDB code. To 
++ * avoid the "redefinition of typedef" compile error, we use the macros of 
++ * U8_TYPE_DEFINED/U16_TYPE_DEFINED/U32_TYPE_DEFINED as below.
++ */
++#ifndef U32_TYPE_DEFINED
+ typedef UINT32_TYPE u32;           /* 4-byte unsigned integer */
++#define U32_TYPE_DEFINED
++#endif
++
++#ifndef U16_TYPE_DEFINED
+ typedef UINT16_TYPE u16;           /* 2-byte unsigned integer */
++#define U16_TYPE_DEFINED
++#endif
++
+ typedef INT16_TYPE i16;            /* 2-byte signed integer */
++
++#ifndef U8_TYPE_DEFINED
+ typedef UINT8_TYPE u8;             /* 1-byte unsigned integer */
++#define U8_TYPE_DEFINED
++#endif
++
+ typedef INT8_TYPE i8;              /* 1-byte signed integer */
+ 
+ /*
+ ** SQLITE_MAX_U32 is a u64 constant that is the maximum u64 value
+ ** that can be stored in a u32 without loss of data.  The value
+ ** is 0x00000000ffffffff.  But because of quirks of some compilers, we
+ ** have to specify the value in the less intuitive manner shown:
+ */

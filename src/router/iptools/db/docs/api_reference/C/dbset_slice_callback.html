@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>DB-&gt;set_slice_callback()</title>
+    <link rel="stylesheet" href="apiReference.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Berkeley DB C API Reference" />
+    <link rel="up" href="db.html" title="Chapter 2.  The DB Handle" />
+    <link rel="prev" href="dbset_re_source.html" title="DB-&gt;set_re_source()" />
+    <link rel="next" href="dbslice_lookup.html" title="DB-&gt;slice_lookup()" />
+  </head>
+  <body>
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 12.1.6.2</p>
+      </div>
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">DB-&gt;set_slice_callback()</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="dbset_re_source.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 2. 
+                The DB Handle
+        </th>
+          <td width="20%" align="right"> <a accesskey="n" href="dbslice_lookup.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="dbset_slice_callback"></a>DB-&gt;set_slice_callback()</h2>
+          </div>
+        </div>
+      </div>
+      <pre class="programlisting">#include &lt;db.h&gt;
+ 
+DB-&gt;set_slice_callback(DB *db, 
+        int (*func)(const DB *db, const DBT *key, DBT *slice));  </pre>
+      <p>
+         The <code class="methodname">DB-&gt;set_slice_callback()</code> method
+         is optionally used to identify slices for applications using a
+         sliced environment. The callback identifies the portion of a
+         record's key that is used to allocate records across slices. This
+         is the <span class="emphasis"><em>slice-relevant</em></span> portion of the key. If
+         no callback is specified, then the entire key is used to allocate
+         records across slices.
+     </p>
+      <p>
+         The <code class="methodname">DB-&gt;set_slice_callback()</code> method
+         must be called on an opened database handle. Changing this callback
+         after the database has been created results in undefined behavior.
+     </p>
+      <p>
+         The <code class="methodname">DB-&gt;set_backup_callbacks()</code> <span>
+            <span>
+                  method returns a non-zero error value on failure and 0 on success.
+            </span>
+            
+        </span>
+     </p>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140711180229328"></a>Parameters</h3>
+            </div>
+          </div>
+        </div>
+        <div class="sect3" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h4 class="title"><a id="idm140711180228944"></a>func</h4>
+              </div>
+            </div>
+          </div>
+          <p>
+                The <span class="bold"><strong>func</strong></span> parameter 
+                is the function used to determine which part of a key is
+                slice relevant.
+            </p>
+          <p>
+                This function takes three parameters:
+            </p>
+          <div class="itemizedlist">
+            <ul type="disc">
+              <li>
+                <p>
+                        <code class="literal">db</code>
+                    </p>
+                <p>
+                        The <span class="bold"><strong>db</strong></span>
+                        parameter is the sliced database for which the
+                        callback is set.
+                    </p>
+              </li>
+              <li>
+                <p>
+                        <code class="literal">key</code>
+                    </p>
+                <p>
+                        The <span class="bold"><strong>key</strong></span> parameter is the
+                        source of the slice specification fields. That is,
+                        this is the key portion of the database's records. Some
+                        portion of this key is used to determine slice
+                        location, and that portion of the key is determined
+                        by the function implemented by this callback.
+                    </p>
+              </li>
+              <li>
+                <p>
+                        <code class="literal">slice</code>
+                    </p>
+                <p>
+                        The <span class="bold"><strong>slice</strong></span> parameter is the
+                        <a class="link" href="dbt.html" title="Chapter 4.  The DBT Handle">DBT</a>
+                        into which the slice-relevant portion of the key
+                        will be written. This 
+                        <a class="link" href="dbt.html" title="Chapter 4.  The DBT Handle">DBT</a>
+                        is user-owned. 
+                    </p>
+                <p>
+                        You should zero this 
+                        <a class="link" href="dbt.html" title="Chapter 4.  The DBT Handle">DBT</a>, with 
+                        the exception of the <code class="literal">size</code> and
+                        <code class="literal">data</code> fields. When initializing
+                        the structure, set
+                        <code class="literal">size</code> to <code class="literal">DB_SLICE_BUFLEN</code>, and
+                        <code class="literal">data</code> to the address of a 32-bit
+                        word aligned buffer of <code class="literal">DB_SLICE_BUFLEN</code>
+                        bytes.
+                    </p>
+                <p>
+                        Within the context of the callback, you can set
+                        these two fields in the following ways:
+                    </p>
+                <div class="itemizedlist">
+                  <ul type="circle">
+                    <li>
+                      <p>
+                                If the slice-relevant portion of the key is one contiguous
+                                region, the set <code class="literal">data</code> to the first
+                                relevant byte in that region, and <code class="literal">size</code>
+                                to the number of significant bytes. Change no other
+                                fields.
+                            </p>
+                    </li>
+                    <li>
+                      <p>
+                                If the slice-relevant portion of the key is more than one
+                                contiguous region, then calculate the total size required
+                                to hold the slice-relevant data. If this total size is
+                                less than <code class="literal">DB_SLICE_BUFLEN</code>, then leave
+                                the initialized buffer unchanged. If the total size is
+                                greater than <code class="literal">DB_SLICE_BUFLEN</code>, then:
+                            </p>
+                      <div class="orderedlist">
+                        <ol type="1">
+                          <li>
+                            <p>
+                                        Allocate enough memory to contain all of the
+                                        slice-relevant data. By default,
+                                        <code class="literal">malloc()</code> is used to allocate
+                                        memory. However, if your application configured a
+                                        custom memory allocator using
+
+                                       <span> 
+                                            <a class="xref" href="envset_alloc.html" title="DB_ENV-&gt;set_alloc()">DB_ENV-&gt;set_alloc()</a> 
+                                            or <a class="xref" href="db_env_set_func_malloc.html" title="db_env_set_func_malloc">db_env_set_func_malloc</a>,
+                                       </span>
+                                       
+
+                                       then use that function.
+                                    </p>
+                          </li>
+                          <li>
+                            <p>
+                                        Set the <code class="literal">flags</code> parameter to
+                                        <code class="literal">DB_DBT_APPMALLOC</code>.  DB will
+                                        deallocate the memory before returning from the
+                                        API call, using  the free function corresponding
+                                        to the allocator just used.
+                                    </p>
+                          </li>
+                        </ol>
+                      </div>
+                      <p>
+                                Once you have created a large enough buffer, set the slice
+                                <a class="link" href="dbt.html" title="Chapter 4.  The DBT Handle">DBT</a> 
+                                handle's size to the new buffer's size.
+                            </p>
+                      <p>
+                                After that, concatenate all of the slice-relevant data
+                                together into the newly created buffer.
+                            </p>
+                      <p>
+                                Be aware that the slice
+                                <a class="link" href="dbt.html" title="Chapter 4.  The DBT Handle">DBT</a>
+                                handle's size can be zero, in which case the record will
+                                be placed in slice 0. Also, this size may be larger than
+                                the key's size, if it is appropriate for your application.
+                            </p>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140711195734016"></a>Class</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+            <a class="link" href="db.html" title="Chapter 2.  The DB Handle">DB</a>  
+        </p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140711180219184"></a>See Also</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+            <a class="xref" href="db.html#dblist" title="Database and Related Methods">Database and Related Methods</a>
+        </p>
+      </div>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="dbset_re_source.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="db.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="dbslice_lookup.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">DB-&gt;set_re_source() </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> DB-&gt;slice_lookup()</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

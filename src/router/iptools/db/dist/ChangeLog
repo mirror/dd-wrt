@@ -1,0 +1,550 @@
+= Berkeley DB 6.2 Changelog =
+
+== Changes between version 12.1.6.2.23 and version 12.1.6.2.32 ==
+
+Modified the ex_rep_base example to accept IPv6 addresses. [#24371]
+
+Fixed a bug where SQL authentication APIs might raise assertion 
+failures. [#24598]
+
+The SQLite user authentication extension now always requires encryption.
+To build with the authentication extension, encryption must be enabled.
+Otherwise, it results in a compiler error. To convert a database to
+require authentication, the database must be encrypted. 
+sqlite3_user_authenticate() now always returns SQLITE_AUTH if called
+on a database that does not require authentication. [#24598]
+
+Fixed a bug where an application might hang because it could not obtain 
+a TAS lock when running Linux on Sparc architecture. [#24805]
+
+Added tests memp009 and mut004. [#24974]
+
+When the number of free mutexes is low, removed databases and closed unnamed
+in-memory databases are purged from the memory pool to free mutexes. [#24974]
+
+Fixed a bug where built-in atomic functions are used only when --enable-cxx
+is specified. [#24974]
+
+Fixed a possible crash when using the Java API and slices. [#24988]
+
+Added cross-compile support for detecting built-in atomic functions. [#25055]
+
+Fixed undefined symbol errors for configurations including --enable-dtrace and
+-enable-perfmon_statistics when replication is also enabled. [#25061]
+
+Added the db_convert utility program which converts the byte order of all 
+databases in database files. [#25086]
+
+Increased the number of instances in which failchk can successfully
+clean the environment without requiring full recovery after a thread 
+crashes while using Berkeley DB. [#25087]
+
+Added DPL APIs to BDB Java client driver. [#25089]
+
+Attempting to open an environment while it is being recovered now returns a
+new error message, which includes the time. [#25204]
+
+Improved db_verify's handling of corrupted database files. [#25239]
+
+Adjusted configure scripts to handle FreeBSD 10 or greater. [#25251]
+
+Fixed a bug where setting the absolute path of a file on Windows
+could result in the file being created on the wrong disk. [#25284]
+
+Syncing a database with external files will now also sync the
+meta database associated with the external files. [#25284]
+
+Add support for -with-mutex=BSD/OSSpinLockTry, to avoid using the undocumented
+spin_lock_try function, which is not permitted on iOS. [#25342]
+
+Fixed a bug preventing some changes to external files performed through
+the DB_STREAM API from replicating to the clients.  [#25432]
+
+Fixed a bug where automatic log removal did not work on Windows Mobile 
+6.5. [#25449]
+
+Fixed bugs where printed statistics might contain "unknown" flags. [#25461]
+
+Fixed a bug where hot backup of queue extent files did not follow
+the original directory structure. [#25545]
+
+Fixed a bug where ADO .Net package had debug pre-processors for release
+configurations. [#25549]
+
+Added PRAGMA statistics, which prints out statistics about the
+database and its environment.  [#25550]
+
+Added PRAGMA statistics_files, which redirects output from the
+statistics PRAGMA to a file.  [#25550]
+
+Internal Berkeley DB messages are now redirected to the same file where
+internal Berkeley DB error messages are redirected. [#25568]
+
+Fixed a bug that could cause a client undergoing internal initialization
+to fail to request all the necessary logs for a correct recovery.  The
+major symptom of this bug was that some client database files were left
+with empty pages that would later cause log sequence errors or other
+failures. [#25624]
+
+Added a new field in the per-thread statistics output: the number of 
+locked mutexes. [#25690] 
+
+The -c option of db_hotbackup can now work with replication manager
+applications. The -c option cannot be used with base replication
+applications. [#25702]
+
+Fixed a bug where the configure script may fail to find the JNI include
+directories on Mac OS X. [#25713]
+
+Fixed a bug where mutexes could not be acquired on arm64-v8a Android
+systems. [#25752]
+
+Fixed a bug where the JAVACFLAGS environment variable was not passed to the
+JDBC driver. [#25752]
+
+Fixed a bug where clients in the replication group might panic during
+synchronization with the master. [#25800]
+
+Fixed possible segfaults when running db_verify with external files.
+[#25920]
+
+Added Visual Studio 2015 solution files to the SQL ADO.NET package. [#25946]
+
+Fixed a bug where setting initial number of lockers might cause 
+segfault. [#26085]
+
+Fixed a bug where client specific log records resulted in incorrect 
+calculation of subsequent log offset. This would later result in a
+DB panic on master. [#26090]
+
+== Database or Log File On-Disk Format Changes ==
+
+The log file format changed in release 12.1.6.2.
+
+Existing SQL databases will have to be reindexed after
+upgrading to this release.  No actions are required for non-SQL
+databases.  Check the upgrade documentation for more details. [#23469]
+
+
+== New Features/Improvements ==
+
+Added support for global message prefixes. [#20514]
+
+Added Replication Manager write forwarding, which enables a client
+to perform simple put and delete operations by forwarding them to the
+master.  [#21049]
+
+Improved the way we mark a password as consumed.  [#23876]
+
+Added support for IPv6. [#23878]
+
+Added support for Java 8. [#24220]
+
+Added support for ARMv7 and above, and for ARM64. ARMv6 and below are 
+no longer supported. [#24312]
+
+Add a new SMP-optimized data model that is especially valuable for highly
+multithreaded applications. A sliced Berkeley DB instance contains a collection
+of related Berkeley DB environments, known as slices, each containing a
+disjoint subset of records. Transactional consistency is individually
+maintained within each slice, rather than across multiple slices. [#24343]
+
+DB now supports the client-server architecture by providing a stand-alone
+server program and Java client driver APIs. The server program offers
+remote access to DB features. The client driver APIs provide building
+blocks for applications that communicate with a database server. Multiple
+client applications can communicate with a single server 
+simultaneously. [#24360]
+
+Enabled support of the SQLite user authentication extension. [#24365]
+
+Added Visual Studio 2012 projects. [#24674]
+
+Encryption and checksum can now be enabled with external files (formerly
+known as BLOBs).  Note that only the data stored in the database will 
+be encrypted and checksum protected.  The data in the external files 
+will not be encrypted or checksum protected. [#24849]
+
+The BLOB files feature has been renamed external files to 
+reduce confusion with the SQL BLOB datatype.  The BLOB related 
+functions have been deprecated, and replaced with new function 
+names; for example, ext_file_threshold has replaced blob_threshold, 
+and blob_threshold is deprecated. See the Upgrading section 
+of the documentation for more details. [#24850]
+
+== Database Environment Changes ==
+
+The location of the region directory can now be configured using
+DB_ENV->get/set_region_dir. [#22374]
+
+Improved the statistic displays of thread states. [#23577]
+
+Fixed a bug that causes a crash when opening a corrupted environment
+with encryption and DB_REGISTER. [#23643]
+
+Fixed a bug that causes a crash when opening a corrupted environment
+with DB_FAILCHK using a BDB compiled with DIAGNOSTIC defined. [#23643]
+
+Fixed a bug where closing a panicked environment raised an access violation 
+and crashed the program. [#23679]
+
+Fixed a bug where closing a panicked environment could lead to an 
+infinite loop. [#23814]
+
+Fixed a bug that could cause a crash when opening multiple environments 
+in a multi-threaded program. [#23913]
+
+Fixed a bug that could cause the database to appear in the wrong directory
+when performing catastrophic recovery with logs created in 5.3 or
+earlier. [#24169]
+
+Improved the sizing of the environment region to better match the needs of
+thread tracking as specified by DB_ENV->set_thread_count(). [#24314]
+
+Fixed a bug where DB_ENV->open would fail when DB_ENV->set_memory_max
+was called on a 32-bit system. [#24783]
+
+Fixed a bug that allowed illegal use of transactions when adding a
+sequence to a new database.  [#24786]
+
+== Concurrent Data Store Changes ==
+
+None.
+
+== Access Method Changes ==
+
+DB->open() now detects invalid pagesizes sooner, avoiding a potential
+floating point exception when a purported database file has a pagesize of 0.
+[#24217]
+
+DB->open() now detects invalid bt_minkey better, avoiding a potential
+floating point exception. [#24398]
+
+Removed a potential race condition when three or more threads attempt to split
+adjacent pages in a btree. [#24733]
+
+Improved parallelism of DB->open() calls when the database name is NULL,
+that is, when opening a file that does not contain sub-databases. [#25624]
+
+== API Changes ==
+
+Added new parameter message prefix to message callback function. [#20514]
+
+Added a new public error code, DB_META_CHKSUM_FAIL, that gets thrown
+when there is a checksum failure on any metadata page. [#23304]
+
+Added new statistics to DB_REP_STAT that collect information on external
+files. [#23944]
+
+Removed EnvironmentConfig.setTxnNotDurable() and Environment.getTxnNotDurable()
+from the Java API. This flag cannot be set on environments. [#24416]
+
+== SQL-specific API Changes ==
+
+Fixed a known bug in SQL where ORDER BY could return results
+out of order if an index is used to answer the query. [#23469]
+
+Fixed a bug where BDB crashed when enabling encryption in the SQL
+API using PRAGMA key.  [#23655]
+
+Sequence names are now case insensitive except when surrounded
+by quotation marks. [#23964]
+
+Fixed a bug where BDB was not handling tables with multiple SQL BLOB
+columns when using the SQL API. [#24092]
+
+Fixed a bug that an error message was not getting displayed
+correctly when sequence creation failed. [#24103]
+
+Creating a table will no longer fail after opening the database
+connection without the SQLITE_OPEN_CREATE flag. [#24115]
+
+Improved the speed of many SQL queries, especially ones based
+on index lookups. [#24183]
+
+The default cache size for SQL databases has been increased
+from 2000 pages to 5000 pages. [#24183]
+
+Fixed a bug that was preventing the PRAGMA cache_size from
+changing the size of the cache. [#24206]
+
+Fixed a crash when writing to a SQL BLOB while txn_bulk 
+is enabled. [#24351]
+
+Updated SQL API build to be compatible with SQLite 3.8.10.2. [#24397]
+
+A single transaction is now used to manage SQL BLOB handles for tables
+that contain SQL BLOBs. [#24549]
+
+Enabled keystore based user authentication to make the authentication
+extension more secure and easier to work with. [#24598]
+
+Fixed a bug that may lead to a crash when working with sequences. [#24826]
+
+Fixed a crash when closing connection to a database with sequences. [#24827]
+
+Fixed the error "BDB0232 Error opening external file" when using SQL API with
+PRAGMA large_record_opt enabled. [#24895]
+
+== Tcl-specific API Changes ==
+
+None.
+
+== Java-specific API Changes ==
+
+Fixed a bug that may cause Database.removeSequence() to throw an
+IllegalArgumentException. [#24360]
+
+== C#-specific API Changes ==
+
+Fixed a bug so that setting DatabaseEnvironmentConfig.Register now works.
+[#24094]
+
+== Replication Changes ==
+
+Fixed a bug that could leave a 2SITE_STRICT replication group in a state
+where the master cannot reelect itself master and the other site cannot
+join if both sites crash at an inopportune time during the other site's
+initial attempt to join the replication group. [#20604]
+
+Fixed a bug that causes a site joining a replication group to hang or
+to only partially complete the internal steps necessary to join the
+replication group. [#23750]
+
+Client to client support is now enabled for replication groups that
+support external files. [#23944]
+
+Fixed a bug that could cause a master crash in the following cases: an
+unencrypted client attempts to join an encrypted replication group, or
+an encrypted client attempts to join an unencrypted replication group.
+[#24288]
+
+Fixed a bug when using BDB SQL where adding a replication site immediately
+after opening the master environment could cause the add site operation
+to hang.  Also fixed a bug that caused BDB SQL to lose its encryption
+settings when turning replication on or off on an existing environment.
+[#24327]
+
+Enhanced the vote comparison routine used to select a new master. [#24433]
+
+Fixed a bug that caused mixed-version replication live upgrades from
+releases prior to 6.0 to fail with an EEXIST error when in-memory databases
+are present.  [#24597]
+
+Fixed a bug that caused a double deallocation when there was a failure
+to set the SO_KEEPALIVE socket option on a Replication Manager connection.
+[#24830]
+
+== Locking Subsystem Changes ==
+
+Fixed a crash which could occur when multiple BDB SQL processes repeatedly
+open a database file. [#24230]
+
+Fixed a crash which could occur when maximum count of lockers is 
+reached. [#24470]
+
+== Logging Subsystem Changes ==
+
+Avoid incrementing the statistic DB_LOG_STAT.st_scount
+("Total log file flushes") when DB_LOG_NOSYNC is in effect. [#23945]
+
+== Memory Pool Subsystem Changes ==
+
+Fixed a bug that may cause a crash when DB_ENV->memp_stat() is called. [#24298]
+
+Corrected error paths which could cause a spurious panic attempting
+to unlock a mutex that was not locked. [#24606]
+
+When an attempt to flush a file from the memory pool fails, add an error message
+that includes the file name. It is likely that the file was removed or altered
+outside of the control of Berkeley DB. [#24606]
+
+Fixed a bug where the memory pool statistics for the number of caches and
+maximum number of caches were incorrect. [#24758]
+
+== Mutex Subsystem Changes ==
+
+Fixed a bug where an application might fail to obtain a TAS lock when running 
+Linux on Sparc architecture. [#24805]
+
+Added support for built-in atomic (__atomic_*) functions when the compiler
+supports them. [#20943]
+
+Fixed the error "BDB2074 No space available in latch table" for
+configurations using plain pthreads mutexes and DB_ENV->set_thread_count().
+Susceptible configurations include the definition of HAVE_MUTEX_PTHREADS
+in db_config.h but do not define HAVE_MUTEX_HYBRID.  [#23831] 
+
+Fixed DB_RUNRECOVERY errors caused by an incompatibility between
+pure pthreads-based mutexes and failchk broadcasting. [#23965]
+
+Fixed a race condition which might allow DB_ENV->failchk() to hang after
+it had freed a locker ID. [#24194]
+
+== Transaction Subsystem Changes ==
+
+Fixed a rare case where a TPEPROTO error would be returned
+incorrectly when using XA transactions. [#24017]
+
+Aborting a transaction no longer panics if a deadlock error occurs while
+freeing up the transaction's cursors. [#24223]
+
+== Test Suite Changes ==
+
+The test suite now requires Tcl 8.6 or greater. [#23878]
+
+== Utility Changes ==
+
+A 'salvage' (db_dump -r) no longer hangs on a corrupt database which contains
+a loop in an overflow item's chain of pages. [#18550]
+
+Fixed a bug that db_verify did not verify multiple files correctly. [#23692]
+
+Fixed a crash with db_dump -d when --enable-diagnostic is on and the environment
+has been set up for thread tracking (DB_ENV->set_thread_count()) [#23818].
+
+Added a '-v [ov]' flag which can be used to verify the database file before dumping it. [#24217]
+
+Fixed a bug where db_printlog improperly handled a "No such file or directory"
+error condition. [#24265]
+
+Improved the way db_verify handle corrupted database files. [#24398]
+
+Added additional page verifications into db_verify to prevent possible
+SEGV errors when verifying extremely corrupted database files. [#24754]
+ 
+== Configuration, Documentation, Sample Apps, Portability and Build Changes ==
+
+Improved the Javadoc on EnvironmentConfig.addDataDir and EnvironmentConfig.setCreateDir. [#24093]
+
+Improved the configure scripts for Mac OS X. [#24139]
+
+The JDBC jar file (sqlite.jar) is now installed in the "lib" directory instead of "jar" on -nix systems. [#24139]
+
+Worked around a clang compiler issue on Mac OS X where clang may incorrectly
+optimize out the check for external file size overflow and cause SIGXFSZ to be 
+raised when calling DB_STREAM->write(). [#24264]
+
+Enabled cross compiling the JDBC driver. [#24347]
+
+Removed support for Visual Studio 2005. [#24354]
+
+Added a 64-bit Windows binary release. [#24576]
+
+== Example Changes ==
+
+Added a Java example showing how to use the external file interface and
+storage format for working with very large records. [#24023]
+
+Added the C example ex_servicemgmt, which shows how BDB can be used to 
+implement an automobile after-sale management system. [#24064]
+
+Added the SQL example ex_toll_booth, which shows how BDB can be used to 
+implement an automated toll booth. [#24065]
+
+Added the SQL example ex_advertising, which shows how BDB can be used to 
+implement location based personal advertising. [#24065]
+
+Added the C example ex_priority, which shows how BDB can be used to 
+implement priority message handling. [#24065]
+
+Added the C example ex_firewall, which shows how BDB can be used to 
+implement a firewall. [#24065]
+
+Wrote a guide to the Berkeley DB example programs and posted it to 
+the Oracle Berkeley DB OTN site. [#24072]
+
+Added the parking demo Java sample program. The demo program requires
+JDK 7 or above and DB's JDBC driver to build and run. To build the demo
+program, run 'make dbdemos.jar'. [#24106]
+
+Added the C example ex_rep_gsg_wrfor, which shows how to use BDB
+Replication Manager write forwarding. Also added C++ and Java versions
+of the test. [#24726]
+
+Fixed a bug to make the excxx_repquote_gsg example programs more
+reliable. [#24845]
+
+== Miscellaneous Bug Fixes ==
+
+Fixed a bug where opening or renaming a compressed in-memory database may 
+fail with the error "BDB1565 DB->set_bt_compress: method not permitted 
+after handle's open method". [#22055]
+
+Fixed a crash when joining compressed databases. [#22058]
+
+Fixed a bug where a join cursor may miss the first matching pair when
+the database is compressed. [#22062]
+
+Fixed a build error on Solaris where signal.h does not include a typedef
+for sig_t. [#22419]
+
+Fixed a bug so the metadata database created when external 
+files are enabled for a database will have the same page 
+size as that database. [#23414]
+
+Fixed a known bug in SQL where ORDER BY could return results 
+out of order if an index is used to answer the query. [#23469]
+
+Fixed a bug that may cause self-deadlock during database compaction. [#23725]
+
+Removed the +u1 compile flag from the HP-UX build.  [#23739]
+
+Fix a memory leak that can occur when multiple threads try to 
+create a table simultaneously. [#23746]
+
+Fixed a bug in the recovery of a truncated hash database. [#23772]
+
+Fixed a Windows-specific file handling bug where an ERROR_ACCESS_DENIED
+error was generated on a CreateFile. [#23785]
+
+Clean up attribute entry after calling pthread_create. [#23808]
+
+Fixed a crash when MVCC and snapshot isolation is used and the system is 
+under heavy load.[#23815]
+
+Fixed a bug which was causing memory leaks in the DB utility programs 
+and a segmentation fault. [#23816]
+
+Fixed a bug that may cause DB_PAGE_NOTFOUND error during btree 
+compaction. [#23853]
+
+Fixed a bug that may cause DBcursor->get to return incorrect data when
+DB_GET_BOTH_RANGE flag is used. [#24220] 
+
+Fixed a bug that did not display file names correctly when a file 
+failed to open during backup. [#24340]
+
+Fixed a bug that may cause an environment panic when the number of lock table 
+partitions is too large. [#24554]
+
+Fixed a bug that MultipleRecnoDataEntry did not encode record-number-data pairs
+correctly with append(). [#24555]
+
+Fixed a bug causing DBcursor->put to crash when DB_AFTER is set. [#24572]
+
+Fixed a bug causing Database.setConfig() to incorrectly throw an 
+exception. [#24585]
+
+Fixed a bug that may cause DB->get and DBcursor->get to return 
+DB_SECONDARY_BAD when Concurrent Data Store is used. [#24640]
+
+Fixed a bug that may cause a segmentation fault when multiple database
+handles are opened on the same database in the same transaction. [#24857]
+
+== Deprecated Features ==
+
+Removed support for <varargs.h>; <stdarg.h> is required. [#23895]
+
+Removed unneeded historical code that is no longer active in Berkeley 
+DB. [#23930]
+
+The lock statistic st_nlockers_hit will be removed in a future release. [#24954]
+
+== Known Bugs ==
+
+The STL interface does not work correctly on a Mac OS X platform.
+
+The Solaris Studio 12.5 C++ compiler can fail to build Berkeley DB 
+because of our support for built-in atomic functions. Falling back 
+to Solaris Studio 12.4 should be a successful workaround. 

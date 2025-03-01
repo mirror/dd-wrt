@@ -1,0 +1,89 @@
+--- test/permutations.test
++++ test/permutations.test
+@@ -217,6 +217,13 @@
+   thread004.test thread005.test walthread.test
+ }
+
++# We exlcude below fts3 tests:
++#  fts3defer.test, fts3defer2.test
++#  --  Known difference of zeroblob between SQLite and BDBSQL. #19764
++#  fts3fault.test
++#  --  Known difference: DBSQL testfixture does't support sqlite_io_error tests.
++#  fts4growth.test, fts4growth2.test
++#  --  Deferred when upgrading to SQLite 3.8.10. #24397
+ test_suite "fts3" -prefix "" -description {
+   All FTS3 tests except fts3rnd.test.
+ } -files {
+@@ -224,18 +231,17 @@
+   fts3af.test fts3ag.test fts3ah.test fts3ai.test fts3aj.test
+   fts3ak.test fts3al.test fts3am.test fts3an.test fts3ao.test
+   fts3atoken.test fts3b.test fts3c.test fts3cov.test fts3d.test
+-  fts3defer.test fts3defer2.test fts3e.test fts3expr.test fts3expr2.test 
++  fts3e.test fts3expr.test fts3expr2.test
+   fts3expr3.test
+-  fts3near.test fts3query.test fts3shared.test fts3snippet.test 
++  fts3near.test fts3query.test fts3snippet.test
+   fts3sort.test
+-  fts3fault.test fts3malloc.test fts3matchinfo.test
++  fts3malloc.test fts3matchinfo.test
+   fts3aux1.test fts3comp1.test fts3auto.test
+   fts4aa.test fts4content.test
+-  fts3conf.test fts3prefix.test fts3fault2.test fts3corrupt.test
++  fts3conf.test fts3prefix.test fts3corrupt.test
+   fts3corrupt2.test fts3first.test fts4langid.test fts4merge.test
+   fts4check.test fts4unicode.test fts4noti.test
+   fts3varint.test
+-  fts4growth.test fts4growth2.test
+ }
+
+ test_suite "nofaultsim" -prefix "" -description {
+@@ -583,6 +589,29 @@
+     vacuum.test view.test where.test
+ }
+
++# Run tests appropriate to the BDB SQL API using UTF-16 databases.
++#
++test_suite "bdb-utf16" -description {
++  Run tests using UTF-16 databases
++} -presql {
++  pragma encoding = 'UTF-16'
++} -files {
++    alter.test alter3.test
++    auth.test bind.test blob.test collate1.test
++    collate2.test collate3.test collate4.test collate6.test
++    date.test delete.test expr.test fkey1.test
++    index.test insert2.test insert.test interrupt.test in.test
++    intpkey.test join2.test join.test lastinsert.test
++    laststmtchanges.test limit.test main.test
++    memdb.test minmax.test misc2.test misc3.test notnull.test
++    null.test quote.test rowid.test select1.test select2.test
++    select3.test select4.test select6.test sort.test
++    subselect.test tableapi.test table.test temptable.test
++    trace.test trigger1.test trigger2.test trigger3.test
++    trigger4.test types2.test types.test unique.test update.test
++    view.test where.test
++}
++
+ # Run some tests in exclusive locking mode.
+ #
+ test_suite "exclusive" -description {
+@@ -961,17 +961,18 @@
+   fts3ae.test  fts3af.test  fts3ag.test  fts3ah.test
+   fts3ai.test  fts3aj.test  fts3ak.test  fts3al.test
+   fts3am.test  fts3an.test  fts3ao.test  fts3b.test
+   fts3c.test   fts3d.test   fts3e.test   fts3query.test 
+ }
+ 
+ test_suite "rtree" -description {
+   All R-tree related tests. Provides coverage of source file rtree.c.
+-} -files [glob -nocomplain $::testdir/../ext/rtree/*.test]
++} -files [test_set [glob -nocomplain $::testdir/../ext/rtree/*.test] \
++    -exclude *rtreeD.test]
+ 
+ test_suite "no_optimization" -description {
+   Run test scripts with optimizations disabled using the
+   sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS) interface.
+ } -files {
+   where.test where2.test where3.test where4.test where5.test
+   where6.test where7.test where8.test where9.test
+   whereA.test whereB.test wherelimit.test

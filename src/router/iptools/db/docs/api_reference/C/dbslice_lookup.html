@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>DB-&gt;slice_lookup()</title>
+    <link rel="stylesheet" href="apiReference.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Berkeley DB C API Reference" />
+    <link rel="up" href="db.html" title="Chapter 2.  The DB Handle" />
+    <link rel="prev" href="dbset_slice_callback.html" title="DB-&gt;set_slice_callback()" />
+    <link rel="next" href="dbsort_multiple.html" title="DB-&gt;sort_multiple()" />
+  </head>
+  <body>
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 12.1.6.2</p>
+      </div>
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">DB-&gt;slice_lookup()</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="dbset_slice_callback.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 2. 
+                The DB Handle
+        </th>
+          <td width="20%" align="right"> <a accesskey="n" href="dbsort_multiple.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="dbslice_lookup"></a>DB-&gt;slice_lookup()</h2>
+          </div>
+        </div>
+      </div>
+      <pre class="programlisting">#include &lt;db.h&gt;
+ 
+DB-&gt;slice_lookup(DB *db, const DBT *key, DB **result, 
+                 u_int32_t flags);  </pre>
+      <p>
+         The <code class="methodname">DB-&gt;slice_lookup()</code> method
+         returns the subordinate database that contains the records for the
+         provided key.
+     </p>
+      <p>
+         The <code class="methodname">DB-&gt;slice_lookup()</code> method
+         must be called on an opened database handle.
+     </p>
+      <p>
+         The <code class="methodname">DB-&gt;slice_lookup()</code> <span>
+            <span>
+                  method returns a non-zero error value on failure and 0 on success.
+            </span>
+            
+        </span>
+    </p>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140711180182976"></a>Parameters</h3>
+            </div>
+          </div>
+        </div>
+        <div class="sect3" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h4 class="title"><a id="idm140711180143824"></a>key</h4>
+              </div>
+            </div>
+          </div>
+          <p>
+                The <span class="bold"><strong>key</strong></span> parameter 
+                is the <a class="link" href="dbt.html" title="Chapter 4.  The DBT Handle">DBT</a>
+                for the record that you want to look up.
+            </p>
+        </div>
+        <div class="sect3" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h4 class="title"><a id="idm140711180150448"></a>result</h4>
+              </div>
+            </div>
+          </div>
+          <p>
+                The subordinate database containing the record identified
+                by <span class="bold"><strong>key</strong></span> is returned in 
+                the <span class="bold"><strong>result</strong></span> parameter. 
+            </p>
+        </div>
+        <div class="sect3" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h4 class="title"><a id="idm140711183767568"></a>flags</h4>
+              </div>
+            </div>
+          </div>
+          <p>
+                The <span class="bold"><strong>flags</strong></span> parameter 
+                is currently unused, and must be set to 0.
+            </p>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140711180235024"></a>Class</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+            <a class="link" href="db.html" title="Chapter 2.  The DB Handle">DB</a>  
+        </p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140711180138608"></a>See Also</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+            <a class="xref" href="db.html#dblist" title="Database and Related Methods">Database and Related Methods</a>
+        </p>
+      </div>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="dbset_slice_callback.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="db.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="dbsort_multiple.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">DB-&gt;set_slice_callback() </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> DB-&gt;sort_multiple()</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

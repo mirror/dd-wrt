@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>New Database Format for BLOBs</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Berkeley DB Installation and Build Guide" />
+    <link rel="up" href="upgrade_61_toc.html" title="Chapter 10.  Upgrading Berkeley DB 12.1.6.0 applications to Berkeley DB 12.1.6.1" />
+    <link rel="prev" href="repmgr_inqueue.html" title="Replication Manager Incoming Queue Size Limit" />
+    <link rel="next" href="sqlite_ver61.html" title="Updated SQLite Version" />
+  </head>
+  <body>
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 12.1.6.2</p>
+      </div>
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">New Database Format for BLOBs</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="repmgr_inqueue.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 10.  Upgrading Berkeley DB 12.1.6.0 applications to Berkeley DB 12.1.6.1 </th>
+          <td width="20%" align="right"> <a accesskey="n" href="sqlite_ver61.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="blobdb_format"></a>New Database Format for BLOBs</h2>
+          </div>
+        </div>
+      </div>
+      <p>
+            The database record format for databases containing BLOBs was
+            changed in 12.1.6.0.30. Any database from version 12.1.6.0.21 or
+            earlier that contains BLOBs must be upgraded before it can be
+            opened by this or any later version of Berkeley DB. Databases
+            from version 12.1.6.0.30 or later that contain BLOBs and databases
+            without BLOBs do not require upgrading.
+        </p>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="repmgr_inqueue.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="upgrade_61_toc.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="sqlite_ver61.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">Replication Manager Incoming Queue
+        Size Limit </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> Updated SQLite Version</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Slice APIs</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
+    <link rel="up" href="bdb_slices.html" title="Chapter 14. Berkeley DB Slice Support" />
+    <link rel="prev" href="bdb_slices.html" title="Chapter 14. Berkeley DB Slice Support" />
+    <link rel="next" href="slice-keys.html" title="Key Design" />
+  </head>
+  <body>
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 12.1.6.2</p>
+      </div>
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">Slice APIs</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="bdb_slices.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 14. Berkeley DB Slice Support</th>
+          <td width="20%" align="right"> <a accesskey="n" href="slice-keys.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="slice-apis"></a>Slice APIs</h2>
+          </div>
+        </div>
+      </div>
+      <p>
+            Most of the DB methods behave the same way with or without
+            a sliced environment or database. Some small differences in
+            behavior may result when using a sliced environment or
+            database, and a few methods simply do not support slices. These
+            differences are identified in the Berkeley DB C API Reference Guide when they occur.
+        </p>
+      <p>
+            In addition, sliced environments and databases offer the
+            following methods:
+        </p>
+      <div class="itemizedlist">
+        <ul type="disc">
+          <li>
+            <p>
+                        <code class="literal"><a href="../api_reference/C/envget_slice_count.html" class="olink">DB_ENV-&gt;get_slice_count()</a></code>
+                    </p>
+            <p>
+                        Returns the number of slices configured for the
+                        environment.
+                    </p>
+          </li>
+          <li>
+            <p>
+                        <code class="literal"><a href="../api_reference/C/envget_slices.html" class="olink">DB_ENV-&gt;get_slices()</a></code>
+                    </p>
+            <p>
+                        Returns an array of pointers to sub-environments in use to
+                        support your sliced environment. Be aware that all
+                        these handles are automatically closed when you
+                        close the encompassing environment; you should not
+                        close them explicitly.
+                    </p>
+          </li>
+          <li>
+            <p>
+                        <code class="literal"><a href="../api_reference/C/dbset_slice_callback.html" class="olink">DB-&gt;set_slice_callback()</a></code>
+                    </p>
+            <p>
+                        Sets an optional callback that is used to identify
+                        the slice-relevant portion of your records' key.
+                        It allows a transaction to access many different keys, 
+                        as long as the slice callback for those keys returns 
+                        the same value.
+                    </p>
+          </li>
+          <li>
+            <p>
+                        <code class="literal"><a href="../api_reference/C/dbget_slices.html" class="olink">DB-&gt;get_slices()</a></code>
+                    </p>
+            <p>
+                        Returns an array of pointers to databases in use to
+                        support your sliced environment. There is one such
+                        database for each slice that you configured for
+                        your environment. Be aware that all these handles
+                        are automatically closed when you close the
+                        top-level database handle; you should not close
+                        them explicitly.
+                    </p>
+          </li>
+          <li>
+            <p>
+                        <code class="literal"><a href="../api_reference/C/dbslice_lookup.html" class="olink">DB-&gt;slice_lookup()</a></code>
+                    </p>
+            <p>
+                        Returns the slice database which contains the key
+                        that you provide to this method.
+                    </p>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="bdb_slices.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="bdb_slices.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="slice-keys.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">Chapter 14. Berkeley DB Slice Support </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> Key Design</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

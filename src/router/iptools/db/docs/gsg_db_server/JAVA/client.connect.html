@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Connecting to a Server without SSL</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Getting Started with Distributed Berkeley DB Applications" />
+    <link rel="up" href="client.html" title="Chapter 3. Berkeley DB Client Driver APIs" />
+    <link rel="prev" href="client.html" title="Chapter 3. Berkeley DB Client Driver APIs" />
+    <link rel="next" href="client.connectssl.html" title="Connecting to a Server with SSL" />
+  </head>
+  <body>
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 12.1.6.2</p>
+      </div>
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">Connecting to a Server without SSL</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="client.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 3. Berkeley DB Client Driver APIs</th>
+          <td width="20%" align="right"> <a accesskey="n" href="client.connectssl.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="client.connect"></a>Connecting to a Server without SSL</h2>
+          </div>
+        </div>
+      </div>
+      <p>
+            To establish a connection to a server, you must
+            use one of the <code class="classname">connect</code> methods of the
+            <code class="classname">BdbServerConnection</code> class. To connect to
+            a server without SSL, use
+            <code class="classname">BdbServerConnection.connect</code> and specify
+            the host name and port of the server:
+        </p>
+      <pre class="programlisting">BdbServerConnection conn = 
+     BdbServerConnection.connect("localhost", 8080);</pre>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="client.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="client.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="client.connectssl.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">Chapter 3. Berkeley DB Client Driver APIs </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> Connecting to a Server with SSL</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

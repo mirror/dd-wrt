@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Chapter 11.  Upgrading Berkeley DB 11.2.5.3 applications to Berkeley DB 12.1.6.0</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Berkeley DB Installation and Build Guide" />
+    <link rel="up" href="index.html" title="Berkeley DB Installation and Build Guide" />
+    <link rel="prev" href="changelog_6_1.html" title="Berkeley DB Library Version 12.1.6.1 Change Log" />
+    <link rel="next" href="blob-support.html" title="Binary Large Object Support" />
+  </head>
+  <body>
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 12.1.6.2</p>
+      </div>
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">Chapter 11.  Upgrading Berkeley DB 11.2.5.3 applications to Berkeley DB 12.1.6.0 </th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="changelog_6_1.html">Prev</a> </td>
+          <th width="60%" align="center"> </th>
+          <td width="20%" align="right"> <a accesskey="n" href="blob-support.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="chapter" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title"><a id="upgrade_60_toc"></a>Chapter 11.  Upgrading Berkeley DB 11.2.5.3 applications to Berkeley DB 12.1.6.0 </h2>
+          </div>
+        </div>
+      </div>
+      <div class="toc">
+        <p>
+          <b>Table of Contents</b>
+        </p>
+        <dl>
+          <dt>
+            <span class="sect1">
+              <a href="upgrade_60_toc.html#upgrade_60_intro">Introduction</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect1">
+              <a href="blob-support.html">Binary Large Object Support</a>
+            </span>
+          </dt>
+          <dd>
+            <dl>
+              <dt>
+                <span class="sect2">
+                  <a href="blob-support.html#idm140188017259792">New Functions</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="blob-support.html#idm140188017241136">New Flags Accepted by Blob Streaming Interfaces</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="blob-support.html#idm140188017246176">Other New Flags</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="blob-support.html#idm140188017244096">New Pragma</a>
+                </span>
+              </dt>
+            </dl>
+          </dd>
+          <dt>
+            <span class="sect1">
+              <a href="rep_views.html">Replication Views</a>
+            </span>
+          </dt>
+          <dd>
+            <dl>
+              <dt>
+                <span class="sect2">
+                  <a href="rep_views.html#idm140188017461440">New Function</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="rep_views.html#idm140188017228272">New Flag</a>
+                </span>
+              </dt>
+            </dl>
+          </dd>
+          <dt>
+            <span class="sect1">
+              <a href="bdbsql_ha_more_options.html">Enhanced BDB SQL Replication Options</a>
+            </span>
+          </dt>
+          <dd>
+            <dl>
+              <dt>
+                <span class="sect2">
+                  <a href="bdbsql_ha_more_options.html#idm140188017324368">New Pragmas</a>
+                </span>
+              </dt>
+            </dl>
+          </dd>
+          <dt>
+            <span class="sect1">
+              <a href="rep_auto_takeover.html">Replication Manager Automatic Takeover</a>
+            </span>
+          </dt>
+          <dd>
+            <dl>
+              <dt>
+                <span class="sect2">
+                  <a href="rep_auto_takeover.html#idm140188017323824">New Event</a>
+                </span>
+              </dt>
+            </dl>
+          </dd>
+          <dt>
+            <span class="sect1">
+              <a href="sql_logbuf.html">New Berkeley DB SQL API Pragma</a>
+            </span>
+          </dt>
+          <dd>
+            <dl>
+              <dt>
+                <span class="sect2">
+                  <a href="sql_logbuf.html#idm140188017268880">New Pragma</a>
+                </span>
+              </dt>
+            </dl>
+          </dd>
+          <dt>
+            <span class="sect1">
+              <a href="bdb_sql_encryption.html">UNIX/POSIX SQL Encryption Default</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect1">
+              <a href="seq_datatype.html">Sequence Datatype Changes</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect1">
+              <a href="compare_func.html">Comparison Function Signature Change</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect1">
+              <a href="license_change60.html">License Change</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect1">
+              <a href="sqlite_ver60.html">Updated SQLite Version</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect1">
+              <a href="sun_opt.html">Sun Workshop Compiler Optimization
+            Level</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect1">
+              <a href="drop_sup60.html">Dropped Support</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect1">
+              <a href="changelog_6_0.html">Berkeley DB Library Version 12.1.6.0 Change Log</a>
+            </span>
+          </dt>
+          <dd>
+            <dl>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_6_0.html#idm140188017173184">Database or Log File On-Disk Format Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_6_0.html#idm140188017205440">New Features</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_6_0.html#idm140188017179776">Database Environment Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_6_0.html#idm140188017159648">Concurrent Data Store Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_6_0.html#idm140188017157824">Access Method Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_6_0.html#idm140188017149328">API Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_6_0.html#idm140188017146672">SQL-specific API Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_6_0.html#idm140188017145040">Tcl-specific API Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_6_0.html#idm140188017140224">Java-specific API Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_6_0.html#idm140188017137344">C#-specific API Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_6_0.html#idm140188017131520">Replication Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_6_0.html#idm140188017145344">Locking Subsystem Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_6_0.html#idm140188017127088">Logging Subsystem Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_6_0.html#idm140188017125072">Memory Pool Subsystem Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_6_0.html#idm140188017115392">Mutex Subsystem Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_6_0.html#idm140188017112576">Transaction Subsystem Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_6_0.html#idm140188017110992">Test Suite Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_6_0.html#idm140188017107888">Utility Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_6_0.html#idm140188017115888">Configuration, Documentation, Sample Apps, Portability and Build Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_6_0.html#idm140188017103072">Example Changes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_6_0.html#idm140188017101440">Miscellaneous Bug Fixes</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_6_0.html#idm140188017094096">Deprecated Features</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="changelog_6_0.html#idm140188017089616">Known Bugs</a>
+                </span>
+              </dt>
+            </dl>
+          </dd>
+        </dl>
+      </div>
+      <div class="sect1" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h2 class="title" style="clear: both"><a id="upgrade_60_intro"></a>Introduction</h2>
+            </div>
+          </div>
+        </div>
+        <p> 
+            The following pages describe how to upgrade
+            applications coded against the Berkeley DB 11.2.5.3
+            library (which belongs to Berkeley DB
+            11<span class="emphasis"><em>g</em></span> Release 2) to the Berkeley DB
+            12.1.6.0 library (which belongs to Berkeley DB
+            12<span class="emphasis"><em>c</em></span> Release 1). This information
+            does not describe how to upgrade Berkeley DB 1.85 release
+            applications. 
+        </p>
+        <p> 
+            For information on the general process of upgrading
+            Berkeley DB installations and upgrade instructions related
+            to historical releases, see the 
+            <a class="ulink" href="http://docs.oracle.com/cd/E17076_02/html/upgrading/index.html" target="_top">
+             Berkeley DB Upgrade Guide. </a>
+        </p>
+      </div>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="changelog_6_1.html">Prev</a> </td>
+          <td width="20%" align="center"> </td>
+          <td width="40%" align="right"> <a accesskey="n" href="blob-support.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">Berkeley DB Library Version 12.1.6.1 Change Log </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> Binary Large Object Support</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

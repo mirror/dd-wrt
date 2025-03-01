@@ -1,0 +1,81 @@
+--- src/btree.h
++++ src/btree.h
+@@ -122,6 +122,14 @@
+ int sqlite3BtreeNewDb(Btree *p);
+ 
+ /*
++ * BEGIN Berkeley DB specific function forward declarations.
++ */
++int sqlite3BtreeHandleCacheFixup(Btree *, int);
++/*
++ * END Berkeley DB specific function forward declarations.
++ */
++
++/*
+ ** The second parameter to sqlite3BtreeGetMeta or sqlite3BtreeUpdateMeta
+ ** should be one of the following values. The integer values are assigned 
+ ** to constants so that the offset of the corresponding field in an
+--- src/vdbe.c
++++ src/vdbe.c
+@@ -2367,7 +2367,9 @@
+         assert( rc==SQLITE_OK );   /* DataSize() cannot fail */
+         pC->aRow = sqlite3BtreeDataFetch(pCrsr, &avail);
+       }
+-      assert( avail<=65536 );  /* Maximum page size is 64KiB */
++      /* The BDB version can return data items larger than the largest page.
++      ** assert( avail<=65536 );
++      */
+       if( pC->payloadSize <= (u32)avail ){
+         pC->szRow = pC->payloadSize;
+       }else{
+@@ -3051,6 +3051,7 @@
+ case OP_Transaction: {
+   Btree *pBt;
+   int iMeta;
++  int iSchemaUpdated;
+   int iGen;
+
+   assert( p->bIsReader );
+@@ -3061,6 +3062,7 @@
+     rc = SQLITE_READONLY;
+     goto abort_due_to_error;
+   }
++  iSchemaUpdated = 0;
+   pBt = db->aDb[pOp->p1].pBt;
+
+   if( pBt ){
+@@ -3102,12 +3104,14 @@
+     ** schema used when compiling the SQL query matches the schema of the
+     ** database against which the compiled query is actually executed.
+     */
+-    sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&iMeta);
+-    if (db->errCode == SQLITE_BUSY) {
+-      rc = db->errCode;
+-      break;
++    if( pOp->p5 ){
++      sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&iMeta);
++      if (db->errCode == SQLITE_BUSY) {
++        rc = db->errCode;
++        break;
++      }
++      iGen = db->aDb[pOp->p1].pSchema->iGeneration;
+     }
+-    iGen = db->aDb[pOp->p1].pSchema->iGeneration;
+   }else{
+     iGen = iMeta = 0;
+   }
+@@ -3129,11 +3131,14 @@
+     ** a v-table method.
+     */
+     if( db->aDb[pOp->p1].pSchema->schema_cookie!=iMeta ){
++      iSchemaUpdated = 1;
+       sqlite3ResetOneSchema(db, pOp->p1);
+     }
+     p->expired = 1;
+     rc = SQLITE_SCHEMA;
+   }
++  if( pOp->p5 && pBt )
++    sqlite3BtreeHandleCacheFixup(pBt, iSchemaUpdated);
+   break;
+ }
+

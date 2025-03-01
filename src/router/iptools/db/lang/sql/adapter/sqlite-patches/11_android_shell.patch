@@ -1,0 +1,28 @@
+--- src/shell.c
++++ src/shell.c
+@@ -42,6 +42,12 @@
+ # define _LARGEFILE_SOURCE 1
+ #endif
+
++#ifdef ANDROID
++#ifndef NO_ANDROID_FUNCS
++#include<sqlite3_android.h>
++#endif
++#endif
++
+ /*
+ ** Include the configuration header output by 'configure' if we're using the
+ ** autoconf-based build
+@@ -1931,6 +1937,12 @@
+       sqlite3_create_function(p->db, "shellstatic", 0, SQLITE_UTF8, 0,
+           shellstaticFunc, 0, 0);
+     }
++#ifdef ANDROID
++#ifndef NO_ANDROID_FUNCS
++    register_android_functions(p->db, 0);
++    register_localized_collators(p->db, "", 0);
++#endif
++#endif
+     if( p->db==0 || SQLITE_OK!=sqlite3_errcode(p->db) ){
+       fprintf(stderr,"Error: unable to open database \"%s\": %s\n",
+           p->zDbFilename, sqlite3_errmsg(p->db));

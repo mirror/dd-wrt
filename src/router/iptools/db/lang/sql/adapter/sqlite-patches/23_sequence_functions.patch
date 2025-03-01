@@ -1,0 +1,74 @@
+--- Makefile.in
++++ Makefile.in
+@@ -168,7 +168,7 @@
+ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
+          backup.lo bitvec.lo btmutex.lo btree.lo build.lo \
+          callback.lo complete.lo ctime.lo date.lo dbstat.lo db_encrypt.lo \
+-         db_pragma.lo db_shell.lo delete.lo expr.lo fault.lo fkey.lo \
+-         fts3.lo fts3_aux.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo \
++         db_pragma.lo db_sequence.lo db_shell.lo delete.lo expr.lo fault.lo \
++         fkey.lo fts3.lo fts3_aux.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo \
+          fts3_porter.lo fts3_snippet.lo fts3_tokenizer.lo fts3_tokenizer1.lo \
+          fts3_tokenize_vtab.lo \
+@@ -216,6 +216,7 @@
+   $(TOP)/src/date.c \
+   $(TOP)/../adapter/db_encrypt.c \
+   $(TOP)/../adapter/db_pragma.c \
++  $(TOP)/../adapter/db_sequence.c \
+   $(TOP)/../adapter/db_shell.c \
+   $(TOP)/src/delete.c \
+   $(TOP)/src/expr.c \
+@@ -424,6 +425,7 @@
+   $(TOP)/../adapter/backup.c \
+   $(TOP)/src/bitvec.c \
+   $(TOP)/../adapter/btree.c \
++  $(TOP)/../adapter/db_sequence.c \
+   $(TOP)/src/build.c \
+   $(TOP)/src/ctime.c \
+   $(TOP)/src/date.c \
+@@ -669,6 +671,10 @@
+ 		$(TOP)/../adapter/btreeInt.h
+ 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/../adapter/db_pragma.c
+ 
++db_sequence.lo:	$(TOP)/../adapter/db_sequence.c $(HDR) \
++		$(TOP)/../adapter/btreeInt.h
++	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/../adapter/db_sequence.c
++
+ db_shell.lo:	$(TOP)/../adapter/db_shell.c $(HDR) \
+ 		$(TOP)/../adapter/btreeInt.h
+ 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/../adapter/db_shell.c
+--- src/main.c
++++ src/main.c
+@@ -55,6 +55,8 @@
+ */
+ int sqlite3_threadsafe(void){ return SQLITE_THREADSAFE; }
+ 
++extern int add_sequence_functions(sqlite3 *db);
++
+ /*
+ ** When compiling the test fixture or with debugging enabled (on Win32),
+ ** this variable being set to non-zero will cause OSTRACE macros to emit
+@@ -2786,6 +2786,13 @@
+   db->pDfltColl = sqlite3FindCollSeq(db, SQLITE_UTF8, "BINARY", 0);
+   assert( db->pDfltColl!=0 );
+ 
++  /*
++  ** Berkley DB customization!
++  ** Register any Berkeley DB specific extension functions.
++  */
++  add_sequence_functions(db);
++  /* End Berkeley DB customization. */
++
+   /* Parse the filename/URI argument. */
+   db->openFlags = flags;
+   rc = sqlite3ParseUri(zVfs, zFilename, &flags, &db->pVfs, &zOpen, &zErrMsg);
+--- tool/mksqlite3c.tcl
++++ tool/mksqlite3c.tcl
+@@ -310,6 +310,7 @@
+    backup.c
+    db_encrypt.c
+    db_pragma.c
++   db_sequence.c
+    db_shell.c
+ 
+    vdbemem.c

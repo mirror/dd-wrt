@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Starting the Server</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Getting Started with Distributed Berkeley DB Applications" />
+    <link rel="up" href="server.html" title="Chapter 2. Berkeley DB Server" />
+    <link rel="prev" href="server.html" title="Chapter 2. Berkeley DB Server" />
+    <link rel="next" href="server.stop.html" title="Stopping the server" />
+  </head>
+  <body>
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 12.1.6.2</p>
+      </div>
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">Starting the Server</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="server.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 2. Berkeley DB Server</th>
+          <td width="20%" align="right"> <a accesskey="n" href="server.stop.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="server.startshell"></a>Starting the Server</h2>
+          </div>
+        </div>
+      </div>
+      <p>
+            On UNIX/POSIX systems, a shell script
+            <code class="literal">start_server.sh</code> is installed under the
+            <code class="literal">bin</code> directory if
+            <code class="literal">--enable-server</code> is specified to the build
+            configuration. This script sets up the proper classpath and JVM
+            options, and starts the server program. 
+        </p>
+      <p> 
+            On Windows systems, no batch script is provided because the place
+            of the <code class="literal">db.jar</code> depends on the build configuration.
+            To start a server, you need to do the following:
+        </p>
+      <div class="orderedlist">
+        <ol type="1">
+          <li>
+            <p> 
+                    Copy <code class="literal">bdb.properties</code> and
+                    <code class="literal">log4j.xml</code> from
+                    <code class="literal">lang/thrift/server</code> to your current
+                    directory. 
+                </p>
+          </li>
+          <li>
+            <p> 
+                    Include the <code class="literal">db.jar</code> and all jar files
+                    under <code class="literal">lang/thrift/jars</code> to the classpath.
+                </p>
+          </li>
+          <li>
+            <p> 
+                    Set the <code class="literal">java.library.path</code> JVM option
+                    to point to the directory where native Berkeley DB libraries
+                    are placed. 
+                </p>
+          </li>
+          <li>
+            <p> 
+                    Run the <code class="literal">com.sleepycat.server.BdbServer</code>
+                    program. 
+                </p>
+          </li>
+        </ol>
+      </div>
+      <p>
+            For example, if the native libraries and
+            <code class="literal">db.jar</code> are placed under
+            <code class="literal">build_windows/Win32/Release</code>, a batch script
+            placed under it would look like: 
+        </p>
+      <pre class="programlisting">set THRIFT_HOME=..\..\..\lang\thrift
+
+copy %THRIFT_HOME%\server\bdb.properties .
+copy %THRIFT_HOME%\server\log4j.xml .
+
+set CLASSPATH=.;%THRIFT_HOME%\jars\slf4j-api.jar
+set CLASSPATH=%CLASSPATH%;%THRIFT_HOME%\jars\slf4j-log4j12.jar
+set CLASSPATH=%CLASSPATH%;%THRIFT_HOME%\jars\log4j.jar
+set CLASSPATH=%CLASSPATH%;%THRIFT_HOME%\jars\libthrift.jar
+set CLASSPATH=%CLASSPATH%;%THRIFT_HOME%\jars\db_thrift_interface.jar
+set CLASSPATH=%CLASSPATH%;%THRIFT_HOME%\jars\db_thrift_server.jar
+set CLASSPATH=%CLASSPATH%;db.jar
+
+java -Djava.library.path=. com.sleepycat.server.BdbServer</pre>
+      <p> 
+            The <code class="literal">BdbServer</code> supports the following options: 
+        </p>
+      <div class="itemizedlist">
+        <ul type="disc">
+          <li>
+            <p>-v
+                    </p>
+            <p>
+                        Print the version of the server program.
+                    </p>
+          </li>
+          <li>
+            <p>-h</p>
+            <p>Print the help information of the server
+                        program.</p>
+          </li>
+          <li>
+            <p>-config-file</p>
+            <p>Specify the configuration file for the server
+                        program.</p>
+          </li>
+          <li>
+            <p>-log-config</p>
+            <p>Specify the log4j XML configuration file for the
+                        server program.</p>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="server.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="server.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="server.stop.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">Chapter 2. Berkeley DB Server </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> Stopping the server</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

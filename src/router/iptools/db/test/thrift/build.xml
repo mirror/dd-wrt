@@ -1,0 +1,204 @@
+<!-- $Id$ -->
+<project name="thrift.unit.tests" default="build">
+
+  <target name="clean">
+    <delete dir="out"/>
+  </target>
+
+  <target name="build" depends="clean">
+    <property name="thrift.dir" location="../../lang/thrift/"/>
+    <property name="thrift.jars" location="../../lang/thrift/jars"/>
+
+    <path id="thrift.libs">
+      <pathelement location="${thrift.jars}/slf4j-api.jar"/>
+      <pathelement location="${thrift.jars}/slf4j-log4j12.jar"/>
+      <pathelement location="${thrift.jars}/log4j.jar"/>
+      <pathelement location="${thrift.jars}/libthrift.jar"/>
+    </path>
+    <path id="thrift.server.test.libs">
+      <path refid="thrift.libs"/>
+      <pathelement location="../../build_unix/db.jar"/>
+      <pathelement location="${thrift.jars}/db_thrift_interface.jar"/>
+      <pathelement location="${thrift.jars}/db_thrift_server.jar"/>
+    </path>
+    <path id="thrift.client.test.libs">
+      <path refid="thrift.libs"/>
+      <pathelement location="${thrift.jars}/db_thrift_interface.jar"/>
+      <pathelement location="${thrift.jars}/db_thrift_server.jar"/>
+      <pathelement location="${thrift.jars}/db_thrift_client.jar"/>
+    </path>
+
+    <!-- Compile server tests. -->
+    <mkdir dir="out/server/classes" />
+    <javac srcdir="." includes="com/sleepycat/server/**/*.java"
+        destdir="out/server/classes" classpathref="thrift.server.test.libs"
+        debug="on" target="1.8" source="1.8" includeAntRuntime="yes" />
+    <jar destfile="out/server_tests.jar" basedir="out/server/classes"/>
+
+    <!-- Compile client tests. -->
+    <mkdir dir="out/client/classes"/>
+    <javac srcdir="." includes="com/sleepycat/client/**/*.java"
+        destdir="out/client/classes" classpathref="thrift.client.test.libs"
+        debug="on" target="1.8" source="1.8" includeAntRuntime="yes"/>
+    <jar destfile="out/client_tests.jar" basedir="out/client/classes"/>
+
+    <!-- Compile original version of TestSerial -->
+    <mkdir dir="out/testserial/classes"/>
+    <property name="testserial.path"
+        value="com/sleepycat/client/collections/test/serial/TestSerial"/>
+    <copy file="${testserial.path}.java.original"
+        tofile="out/testserial/${testserial.path}.java"/>
+    <javac srcdir="out/testserial/" destdir="out/testserial/classes"
+        debug="on" target="1.8" source="1.8" includeAntRuntime="yes"/>
+    <jar destfile="out/testserial_original.jar"
+        basedir="out/testserial/classes"/>
+
+    <!-- Compile original version of EvolveClasses. -->
+    <mkdir dir="out/testevolve/classes"/>
+    <property name="testevolve.dir" value="com/sleepycat/client/persist/test"/>
+    <copy file="${testevolve.dir}/EvolveClasses.java.original"
+        tofile="out/testevolve/${testevolve.dir}/EvolveClasses.java"/>
+    <copy file="${testevolve.dir}/EvolveCase.java"
+        tofile="out/testevolve/${testevolve.dir}/EvolveCase.java"/>
+    <copy file="${testevolve.dir}/PersistTestUtils.java"
+        tofile="out/testevolve/${testevolve.dir}/PersistTestUtils.java"/>
+    <javac srcdir="out/testevolve" destdir="out/testevolve/classes"
+        classpathref="thrift.client.test.libs"
+        debug="on" target="1.8" source="1.8" includeAntRuntime="yes"/>
+    <jar destfile="out/testevolve_original.jar"
+        basedir="out/testevolve/classes"/>
+
+    <!-- Enhance persist test classes by rewriting the class files with
+         the ClassEnhancer main program. -->
+    <mkdir dir="out/testenhancedir/classes"/>
+    <copy todir="out/testenhancedir/classes">
+      <fileset dir="out/client/classes"
+          includes="com/sleepycat/client/persist/**/*.class"/>
+    </copy>
+    <java fork="yes" failonerror="true" clonevm="true"
+          classname="com.sleepycat.client.persist.model.ClassEnhancer">
+      <arg line="-v out/testenhancedir/classes"/>
+      <classpath refid="thrift.client.test.libs"/>
+    </java>
+    <jar destfile="out/test_enhanced.jar"
+        basedir="out/testenhancedir/classes"/>
+  </target>
+
+  <target name="test" depends="build">
+
+    <mkdir dir="out/reports"/>
+
+    <path id="server.test.runtime.libs">
+        <pathelement location="../../build_unix/db.jar"/>
+        <path refid="thrift.server.test.libs"/>
+        <pathelement location="out/server_tests.jar"/>
+    </path>
+    <path id="client.test.runtime.libs">
+        <pathelement location="../../build_unix/db.jar"/>
+        <path refid="thrift.client.test.libs"/>
+        <pathelement location="out/client_tests.jar"/>
+    </path>
+
+    <echo message="Run server unit tests."/>
+    <junit fork="on" haltonfailure="on" clonevm="true">
+      <jvmarg value="-ea"/>
+      <classpath refid="server.test.runtime.libs"/>
+      <formatter type="plain" usefile="false"/>
+      <batchtest todir="out/reports">
+        <zipfileset src="out/server_tests.jar" includes="**/*Test.class"/>
+      </batchtest>
+    </junit>
+
+    <!-- Performs initialization needed before StoredClassCatalogTest. -->
+    <junit fork="on" haltonfailure="on" clonevm="true">
+      <jvmarg value="-ea"/>
+      <classpath>
+        <pathelement location="out/testserial_original.jar"/>
+        <path refid="client.test.runtime.libs"/>
+      </classpath>
+      <sysproperty key="testdestdir" value="out/tmp"/>
+      <sysproperty key="testenvdirroot" value="out/envdata"/>
+      <sysproperty key="failurecopydir" value="out/failure"/>
+      <sysproperty key="longtest" value="${longtest}"/>
+      <formatter type="plain" usefile="false"/>
+      <formatter type="xml"/>
+      <test name=
+            "com.sleepycat.client.collections.test.serial.StoredClassCatalogTestInit"
+            todir="out/reports"/>
+    </junit>
+
+    <!-- Performs initialization needed before persist EvolveTest. -->
+    <junit fork="on" haltonfailure="on" clonevm="true">
+      <jvmarg value="-ea"/>
+      <classpath>
+        <pathelement location="out/testevolve_original.jar"/>
+        <path refid="client.test.runtime.libs"/>
+      </classpath>
+      <sysproperty key="testdestdir" value="out/tmp"/>
+      <sysproperty key="testenvdirroot" value="out/envdata"/>
+      <sysproperty key="failurecopydir" value="out/failure"/>
+      <sysproperty key="testevolvedir" value="out"/>
+      <sysproperty key="longtest" value="${longtest}"/>
+      <formatter type="plain" usefile="false"/>
+      <formatter type="xml"/>
+      <test name="com.sleepycat.client.persist.test.EvolveTestInit"
+            todir="out/reports"/>
+    </junit>
+
+    <echo message="Run client unit tests."/>
+    <junit fork="on" haltonfailure="on" clonevm="true">
+      <jvmarg value="-ea"/>
+      <classpath refid="client.test.runtime.libs"/>
+      <sysproperty key="testdestdir" value="out/tmp"/>
+      <sysproperty key="testenvdirroot" value="out/envdata"/>
+      <sysproperty key="failurecopydir" value="out/failure"/>
+      <sysproperty key="testevolvedir" value="out"/>
+      <sysproperty key="longtest" value="${longtest}"/>
+      <formatter type="plain" usefile="false"/>
+      <batchtest todir="out/reports">
+        <zipfileset src="out/client_tests.jar" includes="**/*Test.class"/>
+      </batchtest>
+    </junit>
+
+    <!-- Run the persist tests with -javaagent to enhance classes as they are
+         loaded.  In this, and the following test with enhanced classes,
+         set the expectEnhanced system property to cause the test to fail if
+         classes are not enhanced.  -->
+    <property name="client.jar" location="${thrift.jars}/db_thrift_client.jar"/>
+    <echo message="Run persist tests with -javaagent"/>
+    <junit fork="on" haltonfailure="on" clonevm="true">
+      <jvmarg value="-ea"/>
+      <jvmarg value="-javaagent:${client.jar}=enhance:-v,com.sleepycat.client.persist"/>
+      <classpath refid="client.test.runtime.libs"/>
+      <sysproperty key="testdestdir" value="out/tmp"/>
+      <sysproperty key="testenvdirroot" value="out/envdata"/>
+      <sysproperty key="failurecopydir" value="out/failure"/>
+      <sysproperty key="testevolvedir" value="out"/>
+      <sysproperty key="longtest" value="${longtest}"/>
+      <formatter type="plain" usefile="false"/>
+      <batchtest todir="out/reports">
+        <zipfileset src="out/client_tests.jar"
+            includes="com/sleepycat/client/persist/**/*Test.class"/>
+      </batchtest>
+    </junit>
+
+    <!-- Run the persist tests again with enhanced classes. -->
+    <echo message="Run persist tests with ClassEnhancer main program"/>
+    <junit fork="on" haltonfailure="on" clonevm="true">
+      <jvmarg value="-ea"/>
+      <classpath location="out/test_enhanced.jar"/>
+      <classpath refid="client.test.runtime.libs"/>
+      <sysproperty key="testdestdir" value="out/tmp"/>
+      <sysproperty key="testenvdirroot" value="out/envdata"/>
+      <sysproperty key="failurecopydir" value="out/failure"/>
+      <sysproperty key="testevolvedir" value="out"/>
+      <sysproperty key="longtest" value="${longtest}"/>
+      <formatter type="plain" usefile="false"/>
+      <batchtest todir="out/reports">
+        <zipfileset src="out/client_tests.jar"
+            includes="com/sleepycat/client/persist/**/*Test.class"/>
+      </batchtest>
+    </junit>
+
+  </target>
+</project>

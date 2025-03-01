@@ -1,0 +1,21 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<References xmlns="http://xmlns.oracle.com/adf/jndi">
+   <Reference name="BDBConnection" className="oracle.jdeveloper.db.adapter.DatabaseProvider" credentialStoreKey="BDBConnection" xmlns="">
+      <Factory className="oracle.jdeveloper.db.adapter.DatabaseProviderFactory"/>
+      <RefAddresses>
+         <StringRefAddr addrType="subtype">
+            <Contents>thirdParty</Contents>
+         </StringRefAddr>
+         <StringRefAddr addrType="user">
+            <Contents>myLogin</Contents>
+         </StringRefAddr>
+         <SecureRefAddr addrType="password"/>
+         <StringRefAddr addrType="driver">
+            <Contents>SQLite.JDBCDriver</Contents>
+         </StringRefAddr>
+         <StringRefAddr addrType="customUrl">
+            <Contents>jdbc:sqlite:/absolute_path_to_db</Contents>
+         </StringRefAddr>
+      </RefAddresses>
+   </Reference>
+</References>

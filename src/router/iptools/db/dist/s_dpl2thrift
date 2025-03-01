@@ -1,0 +1,77 @@
+#!/bin/sh
+#
+# This script ports the Java DPL and Collections APIs to the Thrift client
+
+
+# copy_file $src $dst
+#    $src - the source file from DPL
+#    $dst - the destination file in Thrift 
+copy_file()
+{
+	cp "$1" "$2"
+
+	sed -e "s/com.sleepycat\.\([a-z\.]*\)/com.sleepycat.client.\1/g" \
+	    -e "s/com.sleepycat.client.db.util/com.sleepycat.client.util/" \
+	    -e "s/sleepycat.client.db\.\([a-z\.]*\)/sleepycat.client.S\1/" \
+	    -e "s/sleepycat.client.db\}/sleepycat.client}/" \
+	    -i "$2"
+
+	awk '\
+	/import com.sleepycat.client.S/ { \
+		cn = substr($0, 30, index($0, ";") - 30)
+		printf "s/\\b%s\\b/S%s/g\n", cn, cn \
+	} \
+	' "$2" | sort > "$2.sed"
+
+	sed -f "$2.sed" -i "$2"
+
+	rm "$2.sed"
+}
+
+
+# port $dpl_root $thrift_root $incl_dirs
+#    $dpl_root    - the root directory of DPL sources
+#    $thrift_root - the root directory of Thrift sources
+#    $incl_dirs   - the list of subdirectories to be ported
+port()
+{
+	for d in $3 ; do
+		for sub in `cd $1/$d ; find . -type d` ; do
+			mkdir -p $2/$d/$sub
+		done
+
+		for f in `cd $1/$d ; find . -type f` ; do
+			copy_file "$1/$d/$f" "$2/$d/$f"
+		done
+	done
+}
+
+
+DPL_SRC="../lang/java/src/com/sleepycat"
+THRIFT_CLIENT="../lang/thrift/client/java/com/sleepycat/client"
+DPL_TEST="../test/java/compat/src/com/sleepycat"
+THRIFT_CLIENT_TEST="../test/thrift/com/sleepycat/client"
+
+DPL_SRC=$(cd "$DPL_SRC" ; /bin/pwd)
+THRIFT_CLIENT=$(cd "$THRIFT_CLIENT" ; /bin/pwd)
+DPL_TEST=$(cd "$DPL_TEST" ; /bin/pwd)
+THRIFT_CLIENT_TEST=$(cd "$THRIFT_CLIENT_TEST" ; /bin/pwd)
+
+PORT_DIRS="asm bind collections compat persist util"
+PORT_TEST_DIRS="bind collections persist util"
+
+
+#=========== Port the DPL sources ==========
+port "$DPL_SRC" "$THRIFT_CLIENT" "$PORT_DIRS"
+(cd .. && patch -p1 -i dist/thrift/dpl.patch)
+
+
+#=========== Port the DPL tests ==========
+port "$DPL_TEST" "$THRIFT_CLIENT_TEST" "$PORT_TEST_DIRS"
+copy_file $DPL_TEST/db/util/DualTestCase.java \
+	$THRIFT_CLIENT_TEST/util/DualTestCase.java
+(rm "../test/thrift/com/sleepycat/client/collections/test/TestEnv.java")
+(rm "../test/thrift/com/sleepycat/client/collections/test/IterDeadlockTest.java")
+(rm "../test/thrift/com/sleepycat/client/collections/test/SecondaryDeadlockTest.java")
+(rm "../test/thrift/com/sleepycat/client/persist/test/GetLastRestartTest.java")
+(cd .. && patch -p1 -i dist/thrift/dpl_test.patch)

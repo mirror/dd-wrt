@@ -1,0 +1,85 @@
+--- Makefile.in
++++ Makefile.in
+@@ -167,8 +167,8 @@
+ #
+ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
+          backup.lo bitvec.lo btmutex.lo btree.lo build.lo \
+-         callback.lo complete.lo ctime.lo date.lo dbstat.lo delete.lo \
+-         expr.lo fault.lo fkey.lo \
++         callback.lo complete.lo ctime.lo date.lo dbstat.lo db_pragma.lo \
++         delete.lo expr.lo fault.lo fkey.lo \
+          fts3.lo fts3_aux.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo \
+          fts3_porter.lo fts3_snippet.lo fts3_tokenizer.lo fts3_tokenizer1.lo \
+          fts3_tokenize_vtab.lo \
+@@ -214,6 +214,7 @@
+   $(TOP)/src/ctime.c \
+   $(TOP)/src/date.c \
+   $(TOP)/src/dbstat.c \
++  $(TOP)/../adapter/db_pragma.c \
+   $(TOP)/src/delete.c \
+   $(TOP)/src/expr.c \
+   $(TOP)/src/fault.c \
+@@ -657,6 +657,10 @@
+ dbstat.lo:	$(TOP)/src/dbstat.c $(HDR)
+ 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/dbstat.c
+
++db_pragma.lo:  $(TOP)/../adapter/db_pragma.c $(HDR) \
++		$(TOP)/../adapter/btreeInt.h
++	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/../adapter/db_pragma.c
++
+ delete.lo:	$(TOP)/src/delete.c $(HDR)
+ 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/delete.c
+
+--- src/pragma.h
++++ src/pragma.h
+@@ -86,7 +86,7 @@
+ #if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
+   { /* zName:     */ "cache_size",
+     /* ePragTyp:  */ PragTyp_CACHE_SIZE,
+-    /* ePragFlag: */ PragFlag_NeedSchema,
++    /* ePragFlag: */ 0,
+     /* iArg:      */ 0 },
+ #endif
+ #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
+--- src/pragma.c
++++ src/pragma.c
+@@ -162,7 +162,7 @@
+ /*
+ ** Generate code to return a single integer value.
+ */
+-static void returnSingleInt(Parse *pParse, const char *zLabel, i64 value){
++void returnSingleInt(Parse *pParse, const char *zLabel, i64 value){
+   Vdbe *v = sqlite3GetVdbe(pParse);
+   int mem = ++pParse->nMem;
+   i64 *pI64 = sqlite3DbMallocRaw(pParse->db, sizeof(value));
+@@ -248,6 +248,8 @@
+   return azModeName[eMode];
+ }
+ 
++extern int bdbsqlPragma(Parse *, char *, char *, int);
++
+ /*
+ ** Process a pragma statement.  
+ **
+@@ -358,6 +358,11 @@
+     goto pragma_out;
+   }
+ 
++  if ( bdbsqlPragma(pParse, zLeft, zRight, iDb)==0 ) {
++    /* Do nothing if this was a Berkeley DB specific pragma. */
++    goto pragma_out;
++  }
++
+   /* Locate the pragma in the lookup table */
+   lwr = 0;
+   upr = ArraySize(aPragmaNames)-1;
+--- tool/mksqlite3c.tcl
++++ tool/mksqlite3c.tcl
+@@ -308,6 +308,7 @@
+    btmutex.c
+    btree.c
+    backup.c
++   db_pragma.c
+ 
+    vdbemem.c
+    vdbeaux.c

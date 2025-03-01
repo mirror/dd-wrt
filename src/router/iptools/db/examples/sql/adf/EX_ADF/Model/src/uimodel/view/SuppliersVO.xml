@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="GBK" ?>
+<!DOCTYPE ViewObject SYSTEM "jbo_03_01.dtd">
+<!---->
+<ViewObject
+  xmlns="http://xmlns.oracle.com/bc4j"
+  Name="SuppliersVO"
+  Version="11.1.2.64.36"
+  SelectList="SuppliersEO.SUP_ID, 
+       SuppliersEO.SUP_NAME, 
+       SuppliersEO.STREET, 
+       SuppliersEO.CITY, 
+       SuppliersEO.STATE, 
+       SuppliersEO.ZIP"
+  FromList="SUPPLIERSPK SuppliersEO"
+  BindingStyle="JDBC"
+  CustomQuery="false"
+  PageIterMode="Full"
+  UseGlueCode="false">
+  <Properties>
+    <SchemaBasedProperties>
+      <LABEL
+        ResId="uimodel.view.SuppliersVO_LABEL"/>
+    </SchemaBasedProperties>
+  </Properties>
+  <EntityUsage
+    Name="SuppliersEO"
+    Entity="model.entity.SuppliersEO"/>
+  <ViewAttribute
+    Name="SupId"
+    IsNotNull="true"
+    PrecisionRule="true"
+    EntityAttrName="SupId"
+    EntityUsage="SuppliersEO"
+    AliasName="SUP_ID"/>
+  <ViewAttribute
+    Name="SupName"
+    PrecisionRule="true"
+    EntityAttrName="SupName"
+    EntityUsage="SuppliersEO"
+    AliasName="SUP_NAME"/>
+  <ViewAttribute
+    Name="Street"
+    PrecisionRule="true"
+    EntityAttrName="Street"
+    EntityUsage="SuppliersEO"
+    AliasName="STREET"/>
+  <ViewAttribute
+    Name="City"
+    PrecisionRule="true"
+    EntityAttrName="City"
+    EntityUsage="SuppliersEO"
+    AliasName="CITY"/>
+  <ViewAttribute
+    Name="State"
+    PrecisionRule="true"
+    EntityAttrName="State"
+    EntityUsage="SuppliersEO"
+    AliasName="STATE"/>
+  <ViewAttribute
+    Name="Zip"
+    PrecisionRule="true"
+    EntityAttrName="Zip"
+    EntityUsage="SuppliersEO"
+    AliasName="ZIP"/>
+  <ViewLinkAccessor
+    Name="CoffeesVO"
+    ViewLink="uimodel.view.SuppliersVOToCoffeesVOLink"
+    Type="oracle.jbo.RowIterator"
+    IsUpdateable="false"/>
+  <ResourceBundle>
+    <PropertiesBundle
+      PropertiesFile="model.ModelBundle"/>
+  </ResourceBundle>
+</ViewObject>

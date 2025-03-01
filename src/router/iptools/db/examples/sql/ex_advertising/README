@@ -1,0 +1,21 @@
+This event processing example shows how Oracle Berkeley DB can be used to implement location based personal advertising using smart phones.  It consists of three parts.
+
+Data Generator - Creates two Berkeley DB databases and populates them with data.  One database is a SQL database that contains information on the stores advertised, including their location and the ads to send.=.  The other database is a btree database that contains the shopping preferences of the phone owners.
+
+Event Generator - Simulates GPS coordinates sent by the smart phone to a central server.
+
+Personal Advertising Server - Receives the GPS coordinates from the phones.  First looks up the shopping preferences of the phone owner in a Berkeley DB database, then uses that information plus the GPS coordinates to find ads for nearby stores in the SQL database.
+
+BUILD and RUN
+
+Windows
+
+To build this example build the Visual Studio examples ex_advertising, ex_ad_event, and ex_ad_data.
+
+To run the example first make sure the executeables can be located by your PATH environment variable.  Then click or run the file RunAdvertisingExample.bat.
+
+Unix/Linux
+
+To build this example install Berkeley DB with sql enabled, then in the build_unix directory execute the command "make examples_sql"
+
+To run execute the script RunAdvertisingExample.sh.

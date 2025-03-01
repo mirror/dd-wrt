@@ -1,0 +1,1431 @@
+diff -r -U5 -x '*.xml' a/lang/thrift/client/java/com/sleepycat/client/bind/RecordNumberBinding.java b/lang/thrift/client/java/com/sleepycat/client/bind/RecordNumberBinding.java
+--- a/lang/thrift/client/java/com/sleepycat/client/bind/RecordNumberBinding.java    2016-07-30 23:21:59.000000000 +0800
++++ b/lang/thrift/client/java/com/sleepycat/client/bind/RecordNumberBinding.java    2016-07-31 00:06:54.000000000 +0800
+@@ -8,10 +8,13 @@
+ package com.sleepycat.client.bind;
+ 
+ import com.sleepycat.client.compat.DbCompat;
+ import com.sleepycat.client.SDatabaseEntry;
+ 
++import java.nio.ByteOrder;
++import java.util.Objects;
++
+ /**
+  * An <code>EntryBinding</code> that treats a record number key entry as a
+  * <code>Long</code> key object.
+  *
+  * <p>Record numbers are returned as <code>Long</code> objects, although on
+@@ -19,50 +22,61 @@
+  *
+  * @author Mark Hayes
+  */
+ public class RecordNumberBinding implements EntryBinding {
+ 
++    private final ByteOrder byteOrder;
++
+     /**
+      * Creates a byte array binding.
++     *
++     * @param byteOrder the server's native byte order
+      */
+-    public RecordNumberBinding() {
++    public RecordNumberBinding(ByteOrder byteOrder) {
++        this.byteOrder = Objects.requireNonNull(byteOrder);
+     }
+ 
+     // javadoc is inherited
+     public Long entryToObject(SDatabaseEntry entry) {
+ 
+-        return Long.valueOf(entryToRecordNumber(entry));
++        return Long.valueOf(entryToRecordNumber(entry, byteOrder));
+     }
+ 
+     // javadoc is inherited
+     public void objectToEntry(Object object, SDatabaseEntry entry) {
+ 
+-        recordNumberToEntry(((Number) object).longValue(), entry);
++        recordNumberToEntry(((Number) object).longValue(), entry, byteOrder);
+     }
+ 
+     /**
+      * Utility method for use by bindings to translate a entry buffer to an
+      * record number integer.
+      *
+      * @param entry the entry buffer.
+      *
++     * @param byteOrder the server's native byte order
++     *
+      * @return the record number.
+      */
+-    public static long entryToRecordNumber(SDatabaseEntry entry) {
++    public static long entryToRecordNumber(SDatabaseEntry entry,
++                                           ByteOrder byteOrder) {
+ 
+-        return DbCompat.getRecordNumber(entry) & 0xFFFFFFFFL;
++        return DbCompat.getRecordNumber(entry, byteOrder) & 0xFFFFFFFFL;
+     }
+ 
+     /**
+      * Utility method for use by bindings to translate a record number integer
+      * to a entry buffer.
+      *
+      * @param recordNumber the record number.
+      *
+      * @param entry the entry buffer to hold the record number.
++     *
++     * @param byteOrder the server's native byte order
+      */
+     public static void recordNumberToEntry(long recordNumber,
+-                                           SDatabaseEntry entry) {
++                                           SDatabaseEntry entry,
++                                           ByteOrder byteOrder) {
+         entry.setData(new byte[4], 0, 4);
+-        DbCompat.setRecordNumber(entry, (int) recordNumber);
++        DbCompat.setRecordNumber(entry, (int) recordNumber, byteOrder);
+     }
+ }
+diff -r -U5 -x '*.xml' a/lang/thrift/client/java/com/sleepycat/client/bind/tuple/package.html b/lang/thrift/client/java/com/sleepycat/client/bind/tuple/package.html
+--- a/lang/thrift/client/java/com/sleepycat/client/bind/tuple/package.html  2016-08-04 11:48:10.000000000 +0800
++++ b/lang/thrift/client/java/com/sleepycat/client/bind/tuple/package.html  2016-08-04 12:04:22.000000000 +0800
+@@ -7,16 +7,11 @@
+ 
+ <p>The serialization format for tuple bindings are designed for compactness,
+ serialization speed and proper default sorting.</p>
+ 
+ <p>When a format is used for database keys, it is important to use default
+-sorting for best performance.  Although a custom comparator may be specified
+-for a {@link com.sleepycat.client.SDatabaseConfig#setBtreeComparator database} or
+-{@link <a
+-href="{@docRoot}/com/sleepycat/persist/model/KeyField.html#comparable">entity
+-index</a>}, custom comparators often reduce performance because comparators are
+-called very frequently during Btree operations.</p>
++sorting for best performance.  For BDB Server, custom comparators are not supported.</p>
+ 
+ <p>For proper default sorting, the byte array of the stored format must be
+ designed so that a byte-by-byte unsigned comparison results in the natural sort
+ order, as defined by the {@link java.lang.Comparable#compareTo} method of the
+ data type.  For example, the natural sort order for integers is the standard
+diff -r -U5 -x '*.xml' a/lang/thrift/client/java/com/sleepycat/client/collections/BlockIterator.java b/lang/thrift/client/java/com/sleepycat/client/collections/BlockIterator.java
+--- a/lang/thrift/client/java/com/sleepycat/client/collections/BlockIterator.java   2016-07-30 23:21:59.000000000 +0800
++++ b/lang/thrift/client/java/com/sleepycat/client/collections/BlockIterator.java   2016-07-31 00:06:54.000000000 +0800
+@@ -5,10 +5,11 @@
+  *
+  */
+ 
+ package com.sleepycat.client.collections;
+ 
++import java.nio.ByteOrder;
+ import java.util.ListIterator;
+ import java.util.NoSuchElementException;
+ 
+ import com.sleepycat.client.compat.DbCompat;
+ import com.sleepycat.client.SDatabaseEntry;
+@@ -154,11 +155,11 @@
+             } finally {
+                 coll.closeCursor(cursor);
+             }
+         } else {
+             SDatabaseEntry entry = new SDatabaseEntry(keys[i]);
+-            return DbCompat.getRecordNumber(entry);
++            return DbCompat.getRecordNumber(entry, getServerByteOrder());
+         }
+     }
+ 
+     /**
+      * Sets dataObject to the iterator data for the element at dataIndex.
+@@ -243,15 +244,19 @@
+      * Increments the record number key at the given slot.
+      */
+     private void bumpRecordNumber(int i) {
+ 
+         SDatabaseEntry entry = new SDatabaseEntry(keys[i]);
+-        DbCompat.setRecordNumber(entry,
+-                                 DbCompat.getRecordNumber(entry) + 1);
++        int recordNum = DbCompat.getRecordNumber(entry, getServerByteOrder());
++        DbCompat.setRecordNumber(entry, recordNum + 1, getServerByteOrder());
+         keys[i] = entry.getData();
+     }
+ 
++    private ByteOrder getServerByteOrder() {
++        return coll.view.getServerByteOrder();
++    }
++
+     /**
+      * Deletes the given slot, adjusts nextIndex and sets dataIndex to -1.
+      */
+     private void deleteSlot(int i) {
+ 
+diff -r -U5 -x '*.xml' a/lang/thrift/client/java/com/sleepycat/client/collections/DataCursor.java b/lang/thrift/client/java/com/sleepycat/client/collections/DataCursor.java
+--- a/lang/thrift/client/java/com/sleepycat/client/collections/DataCursor.java  2016-07-30 23:21:59.000000000 +0800
++++ b/lang/thrift/client/java/com/sleepycat/client/collections/DataCursor.java  2016-07-31 00:06:54.000000000 +0800
+@@ -19,10 +19,12 @@
+ import com.sleepycat.client.SLockMode;
+ import com.sleepycat.client.SOperationStatus;
+ import com.sleepycat.client.util.keyrange.KeyRange;
+ import com.sleepycat.client.util.keyrange.RangeCursor;
+ 
++import java.nio.ByteOrder;
++
+ /**
+  * Represents a Berkeley DB cursor and adds support for indices, bindings and
+  * key ranges.
+  *
+  * <p>This class operates on a view and takes care of reading and updating
+@@ -392,17 +394,21 @@
+             if (otherThang == null) {
+                 otherThang = new SDatabaseEntry();
+             }
+             DbCompat.getCurrentRecordNumber(cursor.getCursor(), otherThang,
+                                             getLockMode(false));
+-            return DbCompat.getRecordNumber(otherThang);
++            return DbCompat.getRecordNumber(otherThang, getServerByteOrder());
+         } else {
+             /* QUEUE or RECNO database. */
+-            return DbCompat.getRecordNumber(keyThang);
++            return DbCompat.getRecordNumber(keyThang, getServerByteOrder());
+         }
+     }
+ 
++    private ByteOrder getServerByteOrder() {
++        return view.getServerByteOrder();
++    }
++
+     /**
+      * Binding version of SCursor.getCurrent(), no join cursor allowed.
+      */
+     SOperationStatus getCurrent(boolean lockForWrite)
+         throws SDatabaseException {
+diff -r -U5 -x '*.iws' a/lang/thrift/client/java/com/sleepycat/client/collections/DataView.java b/lang/thrift/client/java/com/sleepycat/client/collections/DataView.java
+--- a/lang/thrift/client/java/com/sleepycat/client/collections/DataView.java    2016-07-22 21:51:46.000000000 +0800
++++ b/lang/thrift/client/java/com/sleepycat/client/collections/DataView.java    2016-07-22 21:55:58.000000000 +0800
+@@ -24,10 +24,12 @@
+ import com.sleepycat.client.STransaction;
+ import com.sleepycat.client.util.RuntimeExceptionWrapper;
+ import com.sleepycat.client.util.keyrange.KeyRange;
+ import com.sleepycat.client.util.keyrange.KeyRangeException;
+ 
++import java.nio.ByteOrder;
++
+ /**
+  * Represents a Berkeley DB database and adds support for indices, bindings and
+  * key ranges.
+  *
+  * <p>This class defines a view and takes care of reading and updating indices,
+@@ -363,22 +365,11 @@
+                                                            valueThang);
+             } finally {
+                 cursor.close();
+             }
+         } else {
+-            /* Assume QUEUE/RECNO access method. */
+-            if (currentTxn.isCDBCursorOpen(db)) {
+-                throw new IllegalStateException
+-                    ("cannot open CDB write cursor when read cursor is open");
+-            }
+-            status = DbCompat.append(db, useTransaction(),
+-                                     keyThang, valueThang);
+-            if (status == SOperationStatus.SUCCESS && !range.check(keyThang)) {
+-                db.delete(useTransaction(), keyThang);
+-                throw new IllegalArgumentException
+-                    ("appended record number out of range");
+-            }
++            throw new IllegalStateException("Key assigner must be used.");
+         }
+         if (status == SOperationStatus.SUCCESS) {
+             returnPrimaryKeyAndValue(keyThang, valueThang,
+                                      retPrimaryKey, retValue);
+         }
+@@ -517,19 +508,24 @@
+                                                  valueThang, keyThang);
+             } else {
+                 entityBinding.objectToKey(value, keyThang);
+             }
+         }
+-        if (recNumAccess && DbCompat.getRecordNumber(keyThang) <= 0) {
++        if (recNumAccess &&
++            DbCompat.getRecordNumber(keyThang, getServerByteOrder()) <= 0) {
+             return false;
+         }
+         if (checkRange != null && !checkRange.check(keyThang)) {
+             return false;
+         }
+         return true;
+     }
+ 
++    ByteOrder getServerByteOrder() {
++        return db.getServerByteOrder();
++    }
++
+     /**
+      * Returns whether data keys can be derived from the value/entity binding
+      * of this view, which determines whether a value/entity object alone is
+      * sufficient for operations that require keys.
+      */
+@@ -565,12 +561,10 @@
+             if (value != null) {
+                 throw new IllegalArgumentException
+                     ("non-null value with null value/entity binding");
+             }
+             valueThang.setData(KeyRange.ZERO_LENGTH_BYTE_ARRAY);
+-            valueThang.setOffset(0);
+-            valueThang.setSize(0);
+         }
+     }
+ 
+     /**
+      * Converts a key entry to a key object.
+diff -r -U5 -x '*.xml' a/lang/thrift/client/java/com/sleepycat/client/collections/StoredList.java b/lang/thrift/client/java/com/sleepycat/client/collections/StoredList.java
+--- a/lang/thrift/client/java/com/sleepycat/client/collections/StoredList.java  2016-07-30 23:21:59.000000000 +0800
++++ b/lang/thrift/client/java/com/sleepycat/client/collections/StoredList.java  2016-07-31 00:06:54.000000000 +0800
+@@ -5,10 +5,11 @@
+  *
+  */
+ 
+ package com.sleepycat.client.collections;
+ 
++import java.nio.ByteOrder;
+ import java.util.Collection;
+ import java.util.Iterator;
+ import java.util.List;
+ import java.util.ListIterator;
+ 
+@@ -41,12 +42,13 @@
+  * </ul>
+  * @author Mark Hayes
+  */
+ public class StoredList<E> extends StoredCollection<E> implements List<E> {
+ 
+-    private static final EntryBinding DEFAULT_KEY_BINDING =
+-        new IndexKeyBinding(1);
++    private static EntryBinding defaultKeyBinding(SDatabase db) {
++        return new IndexKeyBinding(1, db.getServerByteOrder());
++    }
+ 
+     private int baseIndex = 1;
+     private boolean isSubList;
+ 
+     /**
+@@ -68,12 +70,12 @@
+      */
+     public StoredList(SDatabase database,
+                       EntryBinding<E> valueBinding,
+                       boolean writeAllowed) {
+ 
+-        super(new DataView(database, DEFAULT_KEY_BINDING, valueBinding, null,
+-                           writeAllowed, null));
++        super(new DataView(database, defaultKeyBinding(database), valueBinding,
++                           null, writeAllowed, null));
+     }
+ 
+     /**
+      * Creates a list entity view of a {@link SDatabase}.
+      *
+@@ -93,11 +95,11 @@
+      */
+     public StoredList(SDatabase database,
+                       EntityBinding<E> valueEntityBinding,
+                       boolean writeAllowed) {
+ 
+-        super(new DataView(database, DEFAULT_KEY_BINDING, null,
++        super(new DataView(database, defaultKeyBinding(database), null,
+                            valueEntityBinding, writeAllowed, null));
+     }
+ 
+     /**
+      * Creates a list view of a {@link SDatabase} with a {@link
+@@ -119,11 +121,11 @@
+      */
+     public StoredList(SDatabase database,
+                       EntryBinding<E> valueBinding,
+                       PrimaryKeyAssigner keyAssigner) {
+ 
+-        super(new DataView(database, DEFAULT_KEY_BINDING, valueBinding,
++        super(new DataView(database, defaultKeyBinding(database), valueBinding,
+                            null, true, keyAssigner));
+     }
+ 
+     /**
+      * Creates a list entity view of a {@link SDatabase} with a {@link
+@@ -145,11 +147,11 @@
+      */
+     public StoredList(SDatabase database,
+                       EntityBinding<E> valueEntityBinding,
+                       PrimaryKeyAssigner keyAssigner) {
+ 
+-        super(new DataView(database, DEFAULT_KEY_BINDING, null,
++        super(new DataView(database, defaultKeyBinding(database), null,
+                            valueEntityBinding, true, keyAssigner));
+     }
+ 
+     private StoredList(DataView view, int baseIndex) {
+ 
+@@ -521,11 +523,12 @@
+         try {
+             int newBaseIndex = baseIndex + fromIndex;
+             return new StoredList(
+                 view.subView(Long.valueOf(fromIndex), true,
+                              Long.valueOf(toIndex), false,
+-                             new IndexKeyBinding(newBaseIndex)),
++                             new IndexKeyBinding(newBaseIndex,
++                                                 view.getServerByteOrder())),
+                 newBaseIndex);
+         } catch (KeyRangeException e) {
+             throw new IndexOutOfBoundsException(e.getMessage());
+         } catch (Exception e) {
+             throw StoredContainer.convertException(e);
+@@ -614,24 +617,24 @@
+ 
+     private static class IndexKeyBinding extends RecordNumberBinding {
+ 
+         private int baseIndex;
+ 
+-        private IndexKeyBinding(int baseIndex) {
+-
++        private IndexKeyBinding(int baseIndex, ByteOrder byteOrder) {
++            super(byteOrder);
+             this.baseIndex = baseIndex;
+         }
+ 
+         @Override
+         public Long entryToObject(SDatabaseEntry data) {
+ 
+-            return Long.valueOf(entryToRecordNumber(data) - baseIndex);
++            return super.entryToObject(data) - baseIndex;
+         }
+ 
+         @Override
+         public void objectToEntry(Object object, SDatabaseEntry data) {
+ 
+-            recordNumberToEntry(((Number) object).intValue() + baseIndex,
++            super.objectToEntry(((Number) object).intValue() + baseIndex,
+                                 data);
+         }
+     }
+ }
+diff -r -U5 -x '*.iws' a/lang/thrift/client/java/com/sleepycat/client/compat/DbCompat.java b/lang/thrift/client/java/com/sleepycat/client/compat/DbCompat.java
+--- a/lang/thrift/client/java/com/sleepycat/client/compat/DbCompat.java 2016-07-22 22:15:57.000000000 +0800
++++ b/lang/thrift/client/java/com/sleepycat/client/compat/DbCompat.java 2016-07-22 22:22:49.000000000 +0800
+@@ -7,33 +7,29 @@
+  */
+ 
+ package com.sleepycat.client.compat;
+ 
+ import java.io.File;
+-import java.io.FileNotFoundException;
+ import java.io.IOException;
++import java.nio.ByteOrder; 
+-import java.util.Comparator;
+-import java.util.regex.Pattern;
+ 
+ import com.sleepycat.client.SCursor;
+ import com.sleepycat.client.SCursorConfig;
+ import com.sleepycat.client.SDatabase;
+ import com.sleepycat.client.SDatabaseConfig;
+ import com.sleepycat.client.SDatabaseEntry;
+ import com.sleepycat.client.SDatabaseException;
+ import com.sleepycat.client.SDatabaseType;
+ import com.sleepycat.client.SEnvironment;
+ import com.sleepycat.client.SEnvironmentConfig;
+-import com.sleepycat.client.SErrorHandler;
+ import com.sleepycat.client.SLockDetectMode;
+ import com.sleepycat.client.SLockMode;
+ import com.sleepycat.client.SOperationStatus;
+ import com.sleepycat.client.SSecondaryConfig;
+ import com.sleepycat.client.SSecondaryCursor;
+ import com.sleepycat.client.SSecondaryDatabase;
+ import com.sleepycat.client.STransaction;
+-import com.sleepycat.client.STransactionConfig;
+ 
+ /**
+  * A minimal set of DB-JE compatibility methods for internal use only.
+  * Two versions are maintained in parallel in the DB and JE source trees.
+  * Used by the collections package.
+@@ -40,20 +40,20 @@
+  */
+ public class DbCompat {
+ 
+     /* Capabilities */
+ 
+-    public static final boolean CDB = true;
++    public static final boolean CDB = false;
+     public static final boolean JOIN = true;
+     public static final boolean NESTED_TRANSACTIONS = true;
+     public static final boolean INSERTION_ORDERED_DUPLICATES = true;
+     public static final boolean SEPARATE_DATABASE_FILES = true;
+     public static final boolean MEMORY_SUBSYSTEM = true;
+     public static final boolean LOCK_SUBSYSTEM = true;
+     public static final boolean HASH_METHOD = true;
+-    public static final boolean RECNO_METHOD = true;
+-    public static final boolean QUEUE_METHOD = true;
++    public static final boolean RECNO_METHOD = false;
++    public static final boolean QUEUE_METHOD = false;
+     public static final boolean BTREE_RECNUM_METHOD = true;
+     public static final boolean OPTIONAL_READ_UNCOMMITTED = true;
+     public static final boolean SECONDARIES = true;
+     public static boolean TRANSACTION_RUNNER_PRINT_STACK_TRACES = true;
+     public static final boolean DATABASE_COUNT = false;
+@@ -93,15 +88,15 @@
+     public static boolean isTypeHash(SDatabaseConfig dbConfig) {
+         return dbConfig.getType() == SDatabaseType.HASH;
+     }
+ 
+     public static boolean isTypeQueue(SDatabaseConfig dbConfig) {
+-        return dbConfig.getType() == SDatabaseType.QUEUE;
++        return false;
+     }
+ 
+     public static boolean isTypeRecno(SDatabaseConfig dbConfig) {
+-        return dbConfig.getType() == SDatabaseType.RECNO;
++        return false;
+     }
+ 
+     public static boolean getBtreeRecordNumbers(SDatabaseConfig dbConfig) {
+         return dbConfig.getBtreeRecordNumbers();
+     }
+@@ -129,28 +124,29 @@
+     // XXX Remove this when DB and JE support SCursorConfig.cloneConfig
+     public static SCursorConfig cloneCursorConfig(SCursorConfig config) {
+         SCursorConfig newConfig = new SCursorConfig();
+         newConfig.setReadCommitted(config.getReadCommitted());
+         newConfig.setReadUncommitted(config.getReadUncommitted());
+-        newConfig.setWriteCursor(config.getWriteCursor());
+         return newConfig;
+     }
+ 
+     public static boolean getWriteCursor(SCursorConfig config) {
+-        return config.getWriteCursor();
++        return false;
+     }
+ 
+     public static void setWriteCursor(SCursorConfig config, boolean val) {
+-        config.setWriteCursor(val);
++        throw new IllegalStateException(
++                "Concurrent Data Store is not supported.");
+     }
+ 
+-    public static void setRecordNumber(SDatabaseEntry entry, int recNum) {
+-        entry.setRecordNumber(recNum);
++    public static void setRecordNumber(SDatabaseEntry entry,
++        int recNum, ByteOrder bo) {
++        entry.setRecordNumber(recNum, bo);
+     }
+ 
+-    public static int getRecordNumber(SDatabaseEntry entry) {
+-        return entry.getRecordNumber();
++    public static int getRecordNumber(SDatabaseEntry entry, ByteOrder bo) {
++        return entry.getRecordNumber(bo);
+     }
+ 
+     public static String getDatabaseFile(SDatabase db)
+         throws SDatabaseException {
+         return db.getDatabaseFile();
+@@ -202,66 +197,30 @@
+                                             SDatabaseEntry data)
+         throws SDatabaseException {
+         return cursor.putBefore(key, data);
+     }
+ 
+-    public static SOperationStatus append(SDatabase db,
+-                                         STransaction txn,
+-                                         SDatabaseEntry key,
+-                                         SDatabaseEntry data)
+-        throws SDatabaseException {
+-        return db.append(txn, key, data);
+-    }
+-
+     public static STransaction getThreadTransaction(SEnvironment env)
+ 	throws SDatabaseException {
+         return null;
+     }
+ 
+     /* Methods used by the collections tests. */
+ 
+-    public static void setInitializeCache(SEnvironmentConfig config,
+-                                          boolean val) {
+-        config.setInitializeCache(val);
+-    }
+-
+-    public static void setInitializeLocking(SEnvironmentConfig config,
+-                                            boolean val) {
+-        config.setInitializeLocking(val);
+-    }
+-
+-    public static void setInitializeCDB(SEnvironmentConfig config,
+-                                        boolean val) {
+-        config.setInitializeCDB(val);
+-    }
+-
+     public static void setLockDetectModeOldest(SEnvironmentConfig config) {
+ 
+         config.setLockDetectMode(SLockDetectMode.OLDEST);
+     }
+ 
+-    public static void setBtreeComparator(SDatabaseConfig dbConfig,
+-                                          Comparator comparator) {
+-        dbConfig.setBtreeComparator(comparator);
+-    }
+-
+     public static void setTypeBtree(SDatabaseConfig dbConfig) {
+         dbConfig.setType(SDatabaseType.BTREE);
+     }
+ 
+     public static void setTypeHash(SDatabaseConfig dbConfig) {
+         dbConfig.setType(SDatabaseType.HASH);
+     }
+ 
+-    public static void setTypeRecno(SDatabaseConfig dbConfig) {
+-        dbConfig.setType(SDatabaseType.RECNO);
+-    }
+-
+-    public static void setTypeQueue(SDatabaseConfig dbConfig) {
+-        dbConfig.setType(SDatabaseType.QUEUE);
+-    }
+-
+     public static void setBtreeRecordNumbers(SDatabaseConfig dbConfig,
+                                              boolean val) {
+         dbConfig.setBtreeRecordNumbers(val);
+     }
+ 
+@@ -306,11 +265,11 @@
+             SDatabase db = env.openDatabase(null, fileName, dbName, null);
+             db.close();
+             return true;
+         } catch (SDatabaseException e) {
+             throw new RuntimeException(e);
+-        } catch (FileNotFoundException e) {
++        } catch (IOException e) {
+             return false;
+         }
+     }
+ 
+     public static SDatabase openDatabase(SEnvironment env,
+@@ -327,11 +286,11 @@
+         } catch (SDatabaseException e) {
+             if (isFileExistsError(e)) {
+                 return null;
+             }
+             throw e;
+-        } catch (FileNotFoundException e) {
++        } catch (IOException e) {
+             return null;
+         }
+     }
+ 
+     public static SSecondaryDatabase openSecondaryDatabase(
+@@ -351,11 +310,11 @@
+         } catch (SDatabaseException e) {
+             if (isFileExistsError(e)) {
+                 return null;
+             }
+             throw e;
+-        } catch (FileNotFoundException e) {
++        } catch (IOException e) {
+             return null;
+         }
+     }
+ 
+     public static boolean truncateDatabase(SEnvironment env,
+@@ -367,11 +326,11 @@
+         assert fileName != null;
+         assert dbName == null;
+         SDatabase db;
+         try {
+             db = env.openDatabase(txn, fileName, dbName, null);
+-        } catch (FileNotFoundException e) {
++        } catch (IOException e) {
+             return false;
+         }
+         try {
+             db.truncate(txn, false /*returnCount*/);
+             return true;
+@@ -387,13 +346,13 @@
+         throws SDatabaseException {
+         /* Currently we only support file names. */
+         assert fileName != null;
+         assert dbName == null;
+         try {
+-            env.removeDatabase(txn, fileName, dbName);
++            env.removeDatabase(txn, fileName, dbName, false);
+             return true;
+-        } catch (FileNotFoundException e) {
++        } catch (IOException e) {
+             return false;
+         }
+     }
+ 
+     public static boolean renameDatabase(SEnvironment env,
+@@ -410,17 +369,18 @@
+         assert newDbName == null;
+         try {
+             File oldFile = new File(oldFileName);
+             File newFile = new File(newFileName);
+             if(!oldFile.equals(newFile)) {
+-                env.renameDatabase(txn, oldFileName, null, newFileName);
++                env.renameDatabase(txn, oldFileName, null, newFileName, false);
+             }
+             if (oldDbName != null && !oldDbName.equals(newDbName)) {
+-                env.renameDatabase(txn, newFileName, oldDbName, newDbName);
++                env.renameDatabase(txn, newFileName, oldDbName, newDbName,
++                        false);
+             }
+             return true;
+-        } catch (FileNotFoundException e) {
++        } catch (IOException e) {
+             return false;
+         }
+     }
+ 
+     public static SDatabase testOpenDatabase(SEnvironment env,
+@@ -438,11 +398,11 @@
+             if (isFileExistsError(e)) {
+                 assert false;
+                 return null;
+             }
+             throw e;
+-        } catch (FileNotFoundException e) {
++        } catch (IOException e) {
+             assert false;
+             return null;
+         }
+     }
+ 
+@@ -463,11 +423,11 @@
+             if (isFileExistsError(e)) {
+                 assert false;
+                 return null;
+             }
+             throw e;
+-        } catch (FileNotFoundException e) {
++        } catch (IOException e) {
+             assert false;
+             return null;
+         }
+     }
+ 
+@@ -516,48 +476,11 @@
+         return !fSystemCaseSensitive;
+     }
+ 
+     public static void enableDeadlockDetection(SEnvironmentConfig envConfig,
+                                                boolean isCDB) {
+-        if (isCDB) {
+-            envConfig.setCDBLockAllDatabases(true);
+-        } else {
+-            envConfig.setLockDetectMode(SLockDetectMode.MAXWRITE);
+-        }
+-    }
+-
+-    public static Object getErrorHandler(SEnvironment env)
+-        throws SDatabaseException {
+-        return env.getConfig().getErrorHandler();
+-    }
+-
+-    public static void setErrorHandler(SEnvironment env, Object errHandler)
+-        throws SDatabaseException {
+-        SEnvironmentConfig config = env.getConfig();
+-        config.setErrorHandler((SErrorHandler) errHandler);
+-        env.setConfig(config);
+-    }
+-
+-    public static void suppressError(SEnvironment env, final Pattern errPattern)
+-        throws SDatabaseException{
+-        if (errPattern != null) {
+-            final SEnvironmentConfig config = env.getConfig();
+-            SErrorHandler handler = new SErrorHandler() {
+-                public void error(SEnvironment environment, String errpfx, String msg) {
+-                    if (!errPattern.matcher(msg).matches()) {
+-                        try {
+-                            config.getErrorStream().write(msg.getBytes());
+-                            config.getErrorStream().write("\n".getBytes());
+-                        } catch (IOException e) {
+-                            e.printStackTrace();
+-                        }
+-                    }
+-                }
+-            };
+-            config.setErrorHandler(handler);
+-            env.setConfig(config);
+-        }
++        envConfig.setLockDetectMode(SLockDetectMode.MAX_WRITE);
+     }
+ 
+     public static class OpResult {
+ 
+         public static final OpResult SUCCESS =
+diff -r -U5 -x '*.xml' a/lang/thrift/client/java/com/sleepycat/client/persist/EntityIndex.java b/lang/thrift/client/java/com/sleepycat/client/persist/EntityIndex.java
+--- a/lang/thrift/client/java/com/sleepycat/client/persist/EntityIndex.java 2016-08-04 11:48:10.000000000 +0800
++++ b/lang/thrift/client/java/com/sleepycat/client/persist/EntityIndex.java 2016-08-04 12:04:22.000000000 +0800
+@@ -271,31 +271,24 @@
+  * transactions with the Direct Persistence Layer.  For more information on
+  * using transactions, see <a
+  * href="{@docRoot}/../gsg_txn/JAVA/index.html">Writing
+  * Transactional Applications</a>.</p>
+  *
+- * <p>Transactions may be used only with a transactional {@link EntityStore},
+- * which is one for which {@link StoreConfig#setTransactional
+- * StoreConfig.setTransactional(true)} has been called.  Likewise, a
+- * transactional store may only be used with a transactional {@link
+- * SEnvironment}, which is one for which {@link
+- * SEnvironmentConfig#setTransactional SEnvironmentConfig.setTransactional(true)}
+- * has been called.  For example:</p>
++ * <p>All environments and databases created by BDB Server are transactional,
++ * therefore, all {@link EntityStore}s are also transactional. For example:</p>
+  *
+  * <pre class="code">
+  * SEnvironmentConfig envConfig = new SEnvironmentConfig();
+- * envConfig.setTransactional(true);
+  * envConfig.setAllowCreate(true);
+  * SEnvironment env = new SEnvironment(new File("/my/data"), envConfig);
+  *
+  * StoreConfig storeConfig = new StoreConfig();
+- * storeConfig.setTransactional(true);
+  * storeConfig.setAllowCreate(true);
+  * EntityStore store = new EntityStore(env, "myStore", storeConfig);</pre>
+  *
+  * <p>Transactions are represented by {@link STransaction} objects, which are
+- * part of the {@link com.sleepycat.client.db Base API}.  Transactions are created
++ * part of the {@link com.sleepycat.client Base API}.  Transactions are created
+  * using the {@link SEnvironment#beginTransaction SEnvironment.beginTransaction}
+  * method.</p>
+  *
+  * <p>A transaction will include all operations for which the transaction
+  * object is passed as a method argument.  All retrieval, storage and deletion
+@@ -565,11 +558,11 @@
+  *
+  * <h3>Low Level Access</h3>
+  *
+  * <p>Each Direct Persistence Layer index is associated with an underlying
+  * {@link SDatabase} or {@link SSecondaryDatabase} defined in the {@link
+- * com.sleepycat.client.db Base API}.  At this level, an index is a Btree managed by
++ * com.sleepycat.client Base API}.  At this level, an index is a Btree managed by
+  * the Berkeley DB Java Edition transactional storage engine.  Although you may
+  * never need to work at the {@code Base API} level, keep in mind that some
+  * types of performance tuning can be done by configuring the underlying
+  * databases.  See the {@link EntityStore} class for more information on
+  * database and sequence configuration.</p>
+diff -r -U5 -x '*.xml' a/lang/thrift/client/java/com/sleepycat/client/persist/EntityStore.java b/lang/thrift/client/java/com/sleepycat/client/persist/EntityStore.java
+--- a/lang/thrift/client/java/com/sleepycat/client/persist/EntityStore.java 2016-08-04 11:48:10.000000000 +0800
++++ b/lang/thrift/client/java/com/sleepycat/client/persist/EntityStore.java 2016-08-04 12:04:22.000000000 +0800
+@@ -54,11 +54,11 @@
+  * {@link SecondaryIndex} objects by calling {@link #getPrimaryIndex
+  * getPrimaryIndex} and {@link #getSecondaryIndex getSecondaryIndex}.  Then use
+  * these indices to store and access entity records by key.</p>
+  *
+  * <p>Although not normally needed, you can also use the entity store along
+- * with the {@link com.sleepycat.client.db Base API}.  Methods in the {@link
++ * with the {@link com.sleepycat.client Base API}.  Methods in the {@link
+  * PrimaryIndex} and {@link SecondaryIndex} classes may be used to obtain
+  * databases and bindings.  The databases may be used directly for accessing
+  * entity records.  The bindings should be called explicitly to translate
+  * between {@link com.sleepycat.client.SDatabaseEntry} objects and entity model
+  * objects.</p>
+@@ -559,19 +559,15 @@
+      * configuration for an entity class.
+      *
+      * <p>The returned configuration is as follows.  All other properties have
+      * default values.</p>
+      * <ul>
+-     * <li>{@link SDatabaseConfig#setTransactional Transactional} is set to
+-     * match {@link StoreConfig#setTransactional StoreConfig}.</li>
+      * <li>{@link SDatabaseConfig#setAllowCreate AllowCreate} is set to the
+      * inverse of the store {@link StoreConfig#setReadOnly ReadOnly}.
+      * setting.</li>
+      * <li>{@link SDatabaseConfig#setReadOnly ReadOnly} is set to match
+      * {@link StoreConfig#setReadOnly StoreConfig}.</li>
+-     * <li>{@link SDatabaseConfig#setBtreeComparator BtreeComparator} is set to
+-     * an internal class if a key comparator is used.</li>
+      * </ul>
+      *
+      * @param entityClass the entity class identifying the primary database.
+      *
+      * @return the default configuration for the given entity class.
+@@ -589,11 +585,10 @@
+      * #getPrimaryConfig getPrimaryConfig}, modified, and then passed to this
+      * method.  The following configuration properties may not be changed:</p>
+      * <ul>
+      * <li>{@link SDatabaseConfig#setExclusiveCreate ExclusiveCreate}</li>
+      * <li>{@link SDatabaseConfig#setSortedDuplicates SortedDuplicates}</li>
+-     * <li>{@link SDatabaseConfig#setBtreeComparator BtreeComparator}</li>
+      * </ul>
+      * <p>In addition, {@link SDatabaseConfig#setAllowCreate AllowCreate} must be
+      * the inverse of {@code ReadOnly}</p>
+      *
+      * @param entityClass the entity class identifying the primary database.
+@@ -614,19 +609,15 @@
+      * configuration for an entity class and key name.
+      *
+      * <p>The returned configuration is as follows.  All other properties have
+      * default values.</p>
+      * <ul>
+-     * <li>{@link SDatabaseConfig#setTransactional Transactional} is set to
+-     * match the primary database.</li>
+      * <li>{@link SDatabaseConfig#setAllowCreate AllowCreate} is set to the
+      * inverse of the primary database {@link SDatabaseConfig#setReadOnly
+      * ReadOnly} setting.</li>
+      * <li>{@link SDatabaseConfig#setReadOnly ReadOnly} is set to match
+      * the primary database.</li>
+-     * <li>{@link SDatabaseConfig#setBtreeComparator BtreeComparator} is set to
+-     * an internal class if a key comparator is used.</li>
+      * <li>{@link SDatabaseConfig#setSortedDuplicates SortedDuplicates} is set
+      * according to {@link SecondaryKey#relate}.</li>
+      * <li>{@link SSecondaryConfig#setAllowPopulate AllowPopulate} is set to
+      * true when a secondary key is added to an existing primary index.</li>
+      * <li>{@link SSecondaryConfig#setKeyCreator KeyCreator} or {@link
+@@ -660,13 +651,10 @@
+      * this method.  The following configuration properties may not be
+      * changed:</p>
+      * <ul>
+      * <li>{@link SDatabaseConfig#setExclusiveCreate ExclusiveCreate}</li>
+      * <li>{@link SDatabaseConfig#setSortedDuplicates SortedDuplicates}</li>
+-     * <li>{@link SDatabaseConfig#setBtreeComparator BtreeComparator}</li>
+-     * <li>{@link SDatabaseConfig#setDuplicateComparator
+-     * DuplicateComparator}</li>
+      * <li>{@link SSecondaryConfig#setAllowPopulate AllowPopulate}</li>
+      * <li>{@link SSecondaryConfig#setKeyCreator KeyCreator}</li>
+      * <li>{@link SSecondaryConfig#setMultiKeyCreator MultiKeyCreator}</li>
+      * <li>{@link SSecondaryConfig#setForeignKeyNullifier
+      * ForeignKeyNullifier}</li>
+diff -r -U5 -x '*.iws' a/lang/thrift/client/java/com/sleepycat/client/persist/StoreConfig.java b/lang/thrift/client/java/com/sleepycat/client/persist/StoreConfig.java
+--- a/lang/thrift/client/java/com/sleepycat/client/persist/StoreConfig.java 2016-07-15 17:19:14.000000000 +0800
++++ b/lang/thrift/client/java/com/sleepycat/client/persist/StoreConfig.java 2016-07-15 17:58:47.000000000 +0800
+@@ -146,45 +146,10 @@
+     public boolean getExclusiveCreate() {
+         return exclusiveCreate;
+     }
+ 
+     /**
+-     * Sets the transactional configuration property.  By default this property
+-     * is false.
+-     *
+-     * <p>This property is true to open all store indices for transactional
+-     * access.  True may not be specified if the environment is not also
+-     * transactional.</p>
+-     *
+-     * @param transactional whether the store is transactional.
+-     *
+-     * @return 'this'.
+-     */
+-    public StoreConfig setTransactional(boolean transactional) {
+-        setTransactionalVoid(transactional);
+-        return this;
+-    }
+-    
+-    /**
+-     * The void return setter for use by Bean editors.
+-     *
+-     * @param transactional whether the store is transactional.
+-     */
+-    public void setTransactionalVoid(boolean transactional) {
+-        this.transactional = transactional;
+-    }
+-
+-    /**
+-     * Returns the transactional configuration property.
+-     *
+-     * @return whether the store is transactional.
+-     */
+-    public boolean getTransactional() {
+-        return transactional;
+-    }
+-
+-    /**
+      * Sets the read-only configuration property.  By default this property is
+      * false.
+      *
+      * <p>This property is true to open all store indices for read-only access,
+      * or false to open them for read-write access.  False may not be specified
+diff -r -U5 -x '*.iws' a/lang/thrift/client/java/com/sleepycat/client/persist/SubIndex.java b/lang/thrift/client/java/com/sleepycat/client/persist/SubIndex.java
+--- a/lang/thrift/client/java/com/sleepycat/client/persist/SubIndex.java  2016-07-15 17:19:14.000000000 +0800
++++ b/lang/thrift/client/java/com/sleepycat/client/persist/SubIndex.java  2016-07-15 17:58:47.000000000 +0800
+@@ -187,11 +187,11 @@
+         SCursorConfig cursorConfig = null;
+         if (concurrentDB) {
+             cursorConfig = new SCursorConfig();
+             DbCompat.setWriteCursor(cursorConfig, true);
+         } 
+-        SSecondaryCursor cursor = db.openSecondaryCursor(txn, cursorConfig);
++        SSecondaryCursor cursor = db.openCursor(txn, cursorConfig);
+         try {
+             SOperationStatus status = cursor.getSearchBoth
+                 (keyEntry, pkeyEntry, dataEntry,
+                  locking ? SLockMode.RMW : null);
+             if (status == SOperationStatus.SUCCESS) {
+diff -r -U5 -x '*.xml' a/lang/thrift/client/java/com/sleepycat/client/persist/impl/PersistCatalog.java b/lang/thrift/client/java/com/sleepycat/client/persist/impl/PersistCatalog.java
+--- a/lang/thrift/client/java/com/sleepycat/client/persist/impl/PersistCatalog.java 2016-08-01 13:01:34.000000000 +0800
++++ b/lang/thrift/client/java/com/sleepycat/client/persist/impl/PersistCatalog.java 2016-08-01 14:44:04.000000000 +0800
+@@ -255,12 +255,12 @@
+         throws SDatabaseException {
+ 
+         for (int i = 0;; i += 1) {
+             STransaction txn = null;
+             if (transactional && DbCompat.getThreadTransaction(env) == null) {
+-                txn =
+-                    env.beginTransaction(null, store.getAutoCommitTxnConfig());
++                txn = env.beginTransaction(null,
++                        store == null ? null : store.getAutoCommitTxnConfig());
+             }
+             boolean success = false;
+             try {
+                 init(txn, storePrefix, modelParam, mutationsParam);
+                 success = true;
+@@ -1272,12 +1272,12 @@
+         throws SDatabaseException, RefreshException {
+ 
+         for (int i = 0;; i += 1) {
+             STransaction txn = null;
+             if (transactional && DbCompat.getThreadTransaction(env) == null) {
+-                txn =
+-                    env.beginTransaction(null, store.getAutoCommitTxnConfig());
++                txn = env.beginTransaction(null,
++                        store == null ? null : store.getAutoCommitTxnConfig());
+             }
+             boolean success = false;
+             try {
+                 if (isMetadataStale(txn)) {
+                     throw new RefreshException(store, this,  -1 /*formatId*/);
+diff -r -U5 -x '*.iws' a/lang/thrift/client/java/com/sleepycat/client/persist/impl/Store.java b/lang/thrift/client/java/com/sleepycat/client/persist/impl/Store.java
+--- a/lang/thrift/client/java/com/sleepycat/client/persist/impl/Store.java	2016-07-22 22:34:46.000000000 +0800
++++ b/lang/thrift/client/java/com/sleepycat/client/persist/impl/Store.java	2016-07-22 22:38:22.000000000 +0800
+@@ -145,12 +145,10 @@
+                 throw new IllegalArgumentException
+                     ("A model may not be specified when opening a RawStore");
+             }
+             SDatabaseConfig dbConfig = new SDatabaseConfig();
+             dbConfig.setReadOnly(true);
+-            dbConfig.setTransactional
+-                (storeConfig.getTransactional());
+             catalog = new PersistCatalog
+                 (env, storePrefix, storePrefix + CATALOG_DB, dbConfig,
+                  null /*model*/, config.getMutations(), rawAccess, this);
+         } else {
+             /* Open the shared catalog that uses the current model. */
+@@ -167,12 +165,10 @@
+                     SDatabaseConfig dbConfig = new SDatabaseConfig();
+                     dbConfig.setAllowCreate(storeConfig.getAllowCreate());
+                     dbConfig.setExclusiveCreate
+                         (storeConfig.getExclusiveCreate());
+                     dbConfig.setReadOnly(storeConfig.getReadOnly());
+-                    dbConfig.setTransactional
+-                        (storeConfig.getTransactional());
+                     DbCompat.setTypeBtree(dbConfig);
+                     catalog = new PersistCatalog
+                         (env, storePrefix, storePrefix + CATALOG_DB, dbConfig,
+                          model, config.getMutations(), rawAccess, this);
+                     catalogMap.put(storeName, catalog);
+@@ -802,12 +798,10 @@
+         assert !config.getExclusiveCreate();
+         final SDatabase priDb = priIndex.getDatabase();
+         final ComplexFormat entityFormat = (ComplexFormat)
+             ((PersistEntityBinding) priIndex.getEntityBinding()).entityFormat;
+         final boolean saveAllowCreate = config.getAllowCreate();
+-        final Comparator<byte[]> saveDupComparator = 
+-            config.getDuplicateComparator();
+         try {
+             if (doNotCreate) {
+                 config.setAllowCreate(false);
+             }
+             /* First try creating a new database, populate if needed. */
+@@ -816,47 +810,28 @@
+                 /* AllowPopulate is true; comparators are set. */
+                 final SSecondaryDatabase db = DbCompat.openSecondaryDatabase
+                     (env, txn, fileAndDbNames[0], fileAndDbNames[1], priDb,
+                      config);
+                 if (db != null) {
+-                    /* For unit testing. */ 
+-                    boolean doFlush = false;
+-                    /* Update dup ordering bug info. [#17252] */
+-                    if (config.getDuplicateComparator() != null &&
+-                        entityFormat.setSecKeyCorrectlyOrdered(keyName)) {
+-                        catalog.flush(txn);
+-                        doFlush = true;
+-                    }
+-                    
+-                    /* 
+-                     * expectFlush is false except when set by
+-                     * SecondaryDupOrderTest.
+-                     */
+-                    assert !expectFlush || doFlush;
++                    assert !expectFlush;
+                     
+                     return db;
+                 }
+             }
+             /* Next try opening an existing database. */
+             config.setAllowCreate(false);
+             config.setAllowPopulate(false);
+             config.setExclusiveCreate(false);
+             
+-            /* Account for dup ordering bug. [#17252] */
+-            if (config.getDuplicateComparator() != null &&
+-                entityFormat.isSecKeyIncorrectlyOrdered(keyName)) {
+-                config.setDuplicateComparator((Comparator<byte[]>) null);
+-            }
+             final SSecondaryDatabase db = DbCompat.openSecondaryDatabase
+                 (env, txn, fileAndDbNames[0], fileAndDbNames[1], priDb,
+                  config);
+             return db;
+         } finally {
+             config.setAllowPopulate(true);
+             config.setExclusiveCreate(false);
+             config.setAllowCreate(saveAllowCreate);
+-            config.setDuplicateComparator(saveDupComparator);
+         }
+     }
+ 
+     /**
+      * Checks that all secondary indexes defined in the given entity metadata
+@@ -908,12 +883,11 @@
+ 
+         String clsName = entityClass.getName();
+         EntityMetadata entityMeta = checkEntityClass(clsName);
+ 
+         boolean autoCommit = false;
+-        if (storeConfig.getTransactional() &&
+-            txn == null &&
++        if (txn == null &&
+             DbCompat.getThreadTransaction(env) == null) {
+             txn = env.beginTransaction(null, autoCommitTxnConfig);
+             autoCommit = true;
+         }
+ 
+@@ -1078,11 +1052,10 @@
+         if (seq == null) {
+             if (sequenceDb == null) {
+                 String[] fileAndDbNames =
+                     parseDbName(storePrefix + SEQUENCE_DB);
+                 SDatabaseConfig dbConfig = new SDatabaseConfig();
+-                dbConfig.setTransactional(storeConfig.getTransactional());
+                 dbConfig.setAllowCreate(true);
+                 DbCompat.setTypeBtree(dbConfig);
+                 sequenceDb = DbCompat.openDatabase
+                     (env, null /*txn*/, fileAndDbNames[0], fileAndDbNames[1],
+                      dbConfig);
+@@ -1139,11 +1112,10 @@
+     private synchronized SDatabaseConfig getPrimaryConfig(EntityMetadata meta) {
+         String clsName = meta.getClassName();
+         SDatabaseConfig config = priConfigMap.get(clsName);
+         if (config == null) {
+             config = new SDatabaseConfig();
+-            config.setTransactional(storeConfig.getTransactional());
+             config.setAllowCreate(!storeConfig.getReadOnly());
+             config.setReadOnly(storeConfig.getReadOnly());
+             DbCompat.setTypeBtree(config);
+             setBtreeComparator(config, meta.getPrimaryKey().getClassName());
+             priConfigMap.put(clsName, config);
+@@ -1196,21 +1168,19 @@
+         SSecondaryConfig config = secConfigMap.get(secName);
+         if (config == null) {
+             /* Set common properties to match the primary DB. */
+             SDatabaseConfig priConfig = getPrimaryConfig(entityMeta);
+             config = new SSecondaryConfig();
+-            config.setTransactional(priConfig.getTransactional());
+             config.setAllowCreate(!priConfig.getReadOnly());
+             config.setReadOnly(priConfig.getReadOnly());
+             DbCompat.setTypeBtree(config);
+             /* Set secondary properties based on metadata. */
+             config.setAllowPopulate(true);
+             Relationship rel = secKeyMeta.getRelationship();
+             config.setSortedDuplicates(rel == Relationship.MANY_TO_ONE ||
+                                        rel == Relationship.MANY_TO_MANY);
+             setBtreeComparator(config, keyClassName);
+-            config.setDuplicateComparator(priConfig.getBtreeComparator());
+             PersistKeyCreator keyCreator = new PersistKeyCreator
+                 (catalog, entityMeta, keyClassName, secKeyMeta, rawAccess);
+             if (rel == Relationship.ONE_TO_MANY ||
+                 rel == Relationship.MANY_TO_MANY) {
+                 config.setMultiKeyCreator(keyCreator);
+@@ -1260,11 +1230,10 @@
+             getSecondaryConfig(secName, entityMeta, keyClassName, secKeyMeta);
+         if (config.getExclusiveCreate() ||
+             config.getAllowCreate() == config.getReadOnly() ||
+             config.getSortedDuplicates() != dbConfig.getSortedDuplicates() ||
+             config.getBtreeComparator() != dbConfig.getBtreeComparator() ||
+-            config.getDuplicateComparator() != null ||
+             config.getAllowPopulate() != dbConfig.getAllowPopulate() ||
+             config.getKeyCreator() != dbConfig.getKeyCreator() ||
+             config.getMultiKeyCreator() != dbConfig.getMultiKeyCreator() ||
+             config.getForeignKeyNullifier() !=
+                 dbConfig.getForeignKeyNullifier() ||
+@@ -1410,14 +1379,12 @@
+     private void setBtreeComparator(SDatabaseConfig config, String clsName) {
+         if (!rawAccess) {
+             PersistKeyBinding binding = getKeyBinding(clsName);
+             Format format = binding.keyFormat;
+             if (format instanceof CompositeKeyFormat) {
+-                Class keyClass = format.getType();
+-                if (Comparable.class.isAssignableFrom(keyClass)) {
+-                    config.setBtreeComparator(new PersistComparator(binding));
+-                }
++                throw new UnsupportedOperationException(
++                    "Composite key with custom sort order is unsupported.");
+             }
+         }
+     }
+ 
+     private SDatabaseException closeDb(SDatabase db,
+diff -r -U5 -x '*.xml' a/lang/thrift/client/java/com/sleepycat/client/persist/model/KeyField.java b/lang/thrift/client/java/com/sleepycat/client/persist/model/KeyField.java
+--- a/lang/thrift/client/java/com/sleepycat/client/persist/model/KeyField.java  2016-08-04 11:48:10.000000000 +0800
++++ b/lang/thrift/client/java/com/sleepycat/client/persist/model/KeyField.java  2016-08-04 12:04:22.000000000 +0800
+@@ -60,66 +60,11 @@
+  *
+  * <p>The fields in a composite key class may not be null.</p>
+  *
+  * <p><a name="comparable"><strong>Custom Sort Order</strong></a></p>
+  *
+- * <p>To override the default sort order, a composite key class may implement
+- * the {@link Comparable} interface.  This allows overriding the sort order and
+- * is therefore useful even when there is only one key field in the composite
+- * key class.  For example, the following class sorts Strings using a Canadian
+- * collator:</p>
+- *
+- * <pre class="code">
+- *  import java.text.Collator;
+- *  import java.util.Locale;
+- *
+- *  {@literal @Entity}
+- *  class Animal {
+- *      ...
+- *      {@literal @SecondaryKey(relate=ONE_TO_ONE)}
+- *      CollatedString canadianName;
+- *      ...
+- *  }
+- *
+- *  {@literal @Persistent}
+- *  {@literal class CollatedString implements Comparable<CollatedString>} {
+- *
+- *      static Collator collator = Collator.getInstance(Locale.CANADA);
+- *
+- *      {@literal @KeyField(1)}
+- *      String value;
+- *
+- *      CollatedString(String value) { this.value = value; }
+- *
+- *      private CollatedString() {}
+- *
+- *      public int compareTo(CollatedString o) {
+- *          return collator.compare(value, o.value);
+- *      }
+- *  }</pre>
+- *
+- * <p>Several important rules should be considered when implementing a custom
+- * comparison method.  Failure to follow these rules may result in the primary
+- * or secondary index becoming unusable; in other words, the store will not be
+- * able to function.</p>
+- * <ol>
+- * <li>The comparison method must always return the same result, given the same
+- * inputs.  The behavior of the comparison method must not change over
+- * time.</li>
+- * <li>A corollary to the first rule is that the behavior of the comparison
+- * method must not be dependent on state which may change over time.  For
+- * example, if the above collation method used the default Java locale, and the
+- * default locale is changed, then the sort order will change.</li>
+- * <li>The comparison method must not assume that it is called after the store
+- * has been opened.  With Berkeley DB Java Edition, the comparison method is
+- * called during database recovery, which occurs in the {@link SEnvironment}
+- * constructor.</li>
+- * <li>The comparison method must not assume that it will only be called with
+- * keys that are currently present in the database.  The comparison method will
+- * occasionally be called with deleted keys or with keys for records that were
+- * not part of a committed transaction.</li>
+- * </ol>
++ * <p>Custom sort order is not supported by BDB Server</p>
+  *
+  * @author Mark Hayes
+  */
+ @Documented @Retention(RUNTIME) @Target(FIELD)
+ public @interface KeyField {
+diff -r -U5 -x '*.xml' a/lang/thrift/client/java/com/sleepycat/client/persist/model/SecondaryKey.java b/lang/thrift/client/java/com/sleepycat/client/persist/model/SecondaryKey.java
+--- a/lang/thrift/client/java/com/sleepycat/client/persist/model/SecondaryKey.java  2016-08-04 11:48:10.000000000 +0800
++++ b/lang/thrift/client/java/com/sleepycat/client/persist/model/SecondaryKey.java  2016-08-04 12:04:22.000000000 +0800
+@@ -149,13 +149,11 @@
+      * as a secondary key value for this entity, the action is taken that is
+      * specified using the {@link #onRelatedEntityDelete} property.</p>
+      *
+      * <p>Together, these two checks guarantee that a secondary key value for
+      * this entity will always exist as a primary key value for the related
+-     * entity.  Note, however, that a transactional store must be configured
+-     * to guarantee this to be true in the face of a crash; see {@link
+-     * StoreConfig#setTransactional}.</p>
++     * entity.</p>
+      *
+      * @return the related entity class, or void.class if none is specified.
+      */
+     Class relatedEntity() default void.class;
+ 
+diff -r -U5 -x '*.xml' a/lang/thrift/client/java/com/sleepycat/client/util/keyrange/KeyRange.java b/lang/thrift/client/java/com/sleepycat/client/util/keyrange/KeyRange.java
+--- a/lang/thrift/client/java/com/sleepycat/client/util/keyrange/KeyRange.java  2016-07-30 23:21:59.000000000 +0800
++++ b/lang/thrift/client/java/com/sleepycat/client/util/keyrange/KeyRange.java  2016-07-31 00:06:54.000000000 +0800
+@@ -258,11 +258,10 @@
+     /**
+      * Copies one entry to another.
+      */
+     public static void copy(SDatabaseEntry from, SDatabaseEntry to) {
+         to.setData(getByteArray(from));
+-        to.setOffset(0);
+     }
+ 
+     /**
+      * Returns an entry's byte array, copying it if the entry offset is
+      * non-zero.
+diff -r -U5 -x '*.iws' a/lang/thrift/client/java/com/sleepycat/client/util/keyrange/RangeCursor.java b/lang/thrift/client/java/com/sleepycat/client/util/keyrange/RangeCursor.java
+--- a/lang/thrift/client/java/com/sleepycat/client/util/keyrange/RangeCursor.java   2016-06-22 15:45:00.000000000 +0800
++++ b/lang/thrift/client/java/com/sleepycat/client/util/keyrange/RangeCursor.java   2016-06-22 15:55:52.000000000 +0800
+@@ -14,10 +14,12 @@
+ import com.sleepycat.client.SDatabaseEntry;
+ import com.sleepycat.client.SDatabaseException;
+ import com.sleepycat.client.SOperationStatus;
+ import com.sleepycat.client.SSecondaryCursor;
+ 
++import java.nio.ByteOrder;
++
+ /**
+  * A cursor-like interface that enforces a key range.  The method signatures
+  * are actually those of SSecondaryCursor, but the pKey parameter may be null.
+  * It was done this way to avoid doubling the number of methods.
+  *
+@@ -233,15 +235,13 @@
+      * the caller when the operation was successful.
+      */
+     private static void swapData(SDatabaseEntry e1, SDatabaseEntry e2) {
+ 
+         byte[] d1 = e1.getData();
+-        int o1 = e1.getOffset();
+-        int s1 = e1.getSize();
+ 
+-        e1.setData(e2.getData(), e2.getOffset(), e2.getSize());
+-        e2.setData(d1, o1, s1);
++        e1.setData(e2.getData());
++        e2.setData(d1);
+     }
+ 
+     /**
+      * Shares the same byte array, offset and size between two entries.
+      * Used when copying the entry data is not necessary because it is known
+@@ -249,11 +249,11 @@
+      * with getSearchKey.
+      */
+     private static void shareData(SDatabaseEntry from, SDatabaseEntry to) {
+ 
+         if (from != null) {
+-            to.setData(from.getData(), from.getOffset(), from.getSize());
++            to.setData(from.getData());
+         }
+     }
+ 
+     public OpResult getFirst(SDatabaseEntry key,
+                              SDatabaseEntry pKey,
+@@ -1169,11 +1171,12 @@
+     }
+ 
+     private OpResult doGetSearchKey(OpReadOptions options)
+         throws SDatabaseException {
+ 
+-        if (checkRecordNumber() && DbCompat.getRecordNumber(privKey) <= 0) {
++        if (checkRecordNumber() &&
++            DbCompat.getRecordNumber(privKey, getServerByteOrder()) <= 0) {
+             return OpResult.FAILURE;
+         }
+         if (secCursor != null && privPKey != null) {
+             return OpResult.make(
+                 secCursor.getSearchKey(
+@@ -1185,11 +1188,12 @@
+     }
+ 
+     private OpResult doGetSearchKeyRange(OpReadOptions options)
+         throws SDatabaseException {
+ 
+-        if (checkRecordNumber() && DbCompat.getRecordNumber(privKey) <= 0) {
++        if (checkRecordNumber() &&
++            DbCompat.getRecordNumber(privKey, getServerByteOrder()) <= 0) {
+             return OpResult.FAILURE;
+         }
+         if (secCursor != null && privPKey != null) {
+             return OpResult.make(
+                 secCursor.getSearchKeyRange(
+@@ -1202,11 +1206,12 @@
+     }
+ 
+     private OpResult doGetSearchBoth(OpReadOptions options)
+         throws SDatabaseException {
+ 
+-        if (checkRecordNumber() && DbCompat.getRecordNumber(privKey) <= 0) {
++        if (checkRecordNumber() &&
++            DbCompat.getRecordNumber(privKey, getServerByteOrder()) <= 0) {
+             return OpResult.FAILURE;
+         }
+         if (secCursor != null && privPKey != null) {
+             return OpResult.make(
+                 secCursor.getSearchBoth(
+@@ -1219,11 +1224,12 @@
+     }
+ 
+     private OpResult doGetSearchBothRange(OpReadOptions options)
+         throws SDatabaseException {
+ 
+-        if (checkRecordNumber() && DbCompat.getRecordNumber(privKey) <= 0) {
++        if (checkRecordNumber() &&
++            DbCompat.getRecordNumber(privKey, getServerByteOrder()) <= 0) {
+             return OpResult.FAILURE;
+         }
+         if (secCursor != null && privPKey != null) {
+             return OpResult.make(
+                 secCursor.getSearchBothRange(
+@@ -1236,11 +1242,11 @@
+     }
+ 
+     private OpResult doGetSearchRecordNumber(OpReadOptions options)
+         throws SDatabaseException {
+ 
+-        if (DbCompat.getRecordNumber(privKey) <= 0) {
++        if (DbCompat.getRecordNumber(privKey, getServerByteOrder()) <= 0) {
+             return OpResult.FAILURE;
+         }
+         if (secCursor != null && privPKey != null) {
+             return OpResult.make(
+                 DbCompat.getSearchRecordNumber(
+@@ -1251,10 +1257,14 @@
+                 DbCompat.getSearchRecordNumber(
+                     cursor, privKey, privData, options.getLockMode()));
+         }
+     }
+ 
++    private ByteOrder getServerByteOrder() {
++        return cursor.getDatabase().getServerByteOrder();
++    }
++
+     /*
+      * Protected methods for duping and closing cursors.  These are overridden
+      * by the collections API to implement cursor pooling for CDS.
+      */
+ 
+diff -r -U5 -x '*.xml' a/lang/thrift/client/java/com/sleepycat/client/util/RuntimeExceptionWrapper.java b/lang/thrift/client/java/com/sleepycat/client/util/RuntimeExceptionWrapper.java
+--- a/lang/thrift/client/java/com/sleepycat/client/util/RuntimeExceptionWrapper.java    2016-07-27 11:02:34.000000000 +0800
++++ b/lang/thrift/client/java/com/sleepycat/client/util/RuntimeExceptionWrapper.java    2016-07-27 11:03:25.000000000 +0800
+@@ -5,10 +5,12 @@
+  *
+  */
+ 
+ package com.sleepycat.client.util;
+ 
++import com.sleepycat.client.SDatabaseException;
++
+ /**
+  * A RuntimeException that can contain nested exceptions.
+  *
+  * @author Mark Hayes
+  */
+@@ -22,11 +24,13 @@
+      *
+      * @return {@code e} if it is a {@code RuntimeException}, otherwise a
+      * {@code RuntimeExceptionWrapper} for {@code e}.
+      */
+     public static RuntimeException wrapIfNeeded(Throwable e) {
+-        if (e instanceof RuntimeException) {
++        if (!(e instanceof SDatabaseException) &&
++            e instanceof RuntimeException) {
++
+             return (RuntimeException) e;
+         }
+         return new RuntimeExceptionWrapper(e);
+     }
+ 

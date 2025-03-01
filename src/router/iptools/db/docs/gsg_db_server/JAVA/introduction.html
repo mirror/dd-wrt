@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Chapter 1. Introduction to Building Distributed Applications with Berkeley DB</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Getting Started with Distributed Berkeley DB Applications" />
+    <link rel="up" href="index.html" title="Getting Started with Distributed Berkeley DB Applications" />
+    <link rel="prev" href="moreinfo.html" title="For More Information" />
+    <link rel="next" href="intro.client.html" title="Client Driver APIs" />
+  </head>
+  <body>
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 12.1.6.2</p>
+      </div>
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">Chapter 1. Introduction to Building Distributed Applications with Berkeley DB</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="moreinfo.html">Prev</a> </td>
+          <th width="60%" align="center"> </th>
+          <td width="20%" align="right"> <a accesskey="n" href="intro.client.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="chapter" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title"><a id="introduction"></a>Chapter 1. Introduction to Building Distributed Applications with Berkeley DB</h2>
+          </div>
+        </div>
+      </div>
+      <div class="toc">
+        <p>
+          <b>Table of Contents</b>
+        </p>
+        <dl>
+          <dt>
+            <span class="sect1">
+              <a href="introduction.html#intro.server">Berkeley DB Server</a>
+            </span>
+          </dt>
+          <dd>
+            <dl>
+              <dt>
+                <span class="sect2">
+                  <a href="introduction.html#features">Supported Features</a>
+                </span>
+              </dt>
+            </dl>
+          </dd>
+          <dt>
+            <span class="sect1">
+              <a href="intro.client.html">Client Driver APIs</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect1">
+              <a href="connection.html">Secure Connections</a>
+            </span>
+          </dt>
+        </dl>
+      </div>
+      <p> 
+		In addition to being an embedded database, DB also supports the
+		client-server architecture by providing a stand-alone server program and
+		client driver APIs. The server program offers remote access to DB
+		features. The client driver APIs provide building blocks for
+		applications that communicate with a database server. Multiple client
+		applications can communicate with a single server simultaneously. 
+	</p>
+      <p> 
+		This book provides a thorough introduction and discussion on how to
+		build distributed applications with Berkeley DB (DB). It describes
+		the features supported by the server, and how to configure and start the
+		server program. Finally, it describes the driver APIs that you use to
+		implement client applications. 
+	</p>
+      <p> 
+		You should understand the concepts from the <span>
+		<em class="citetitle">Berkeley DB Getting Started with Transaction Processing</em>
+		</span> guide before reading this book. 
+	</p>
+      <div class="sect1" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h2 class="title" style="clear: both"><a id="intro.server"></a>Berkeley DB Server</h2>
+            </div>
+          </div>
+        </div>
+        <div class="toc">
+          <dl>
+            <dt>
+              <span class="sect2">
+                <a href="introduction.html#features">Supported Features</a>
+              </span>
+            </dt>
+          </dl>
+        </div>
+        <p>
+			The server is capable of managing multiple DB environments
+			and databases on behalf of client applications. All environments and
+			databases managed by a server are protected by transactions.
+			Non-transactional environments or databases are not supported by the
+			server. The server can serve multiple client applications
+			simultaneously. 
+		</p>
+        <p>
+			Not all features offered by the DB library are supported by
+			the server. For example, features that require callback functions
+			are not supported. An exception to this is secondary databases,
+			where a callback function is needed to create the set of secondary
+			keys corresponding to a given primary key and data pair. 
+		</p>
+        <p>
+			To avoid leaking DB handles, the server can be configured to
+			close long-inactive handles automatically. This is useful when
+			client applications may disconnect unexpectedly. For example, a
+			client application may open a transactional cursor, update a few
+			records using the cursor and then disconnect unexpectedly (e.g. the
+			client application crashes). Without the ability to close (e.g.
+			abort) the transaction handle by the server, the transaction will be
+			open forever, and the locks held by the transaction will never be
+			released. This would block other client applications that require
+			any of the locks.
+		</p>
+        <div class="sect2" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h3 class="title"><a id="features"></a>Supported Features</h3>
+              </div>
+            </div>
+          </div>
+          <p>
+				The following high-level features are supported by Berkeley DB
+				server: 
+			</p>
+          <div class="itemizedlist">
+            <ul type="disc">
+              <li>
+					B-Tree, Hash and Recno access methods
+				</li>
+              <li>
+					Transaction
+				</li>
+              <li>
+					In-memory databases
+				</li>
+              <li>
+					Secondary databases, foreign constraints and join
+					cursors
+				</li>
+              <li>
+					Sequences
+				</li>
+              <li>
+					Environment and database statistics
+				</li>
+              <li>
+					Close long-inactive handles manually and
+					automatically
+				</li>
+              <li>
+					SSL over TCP connections
+				</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="moreinfo.html">Prev</a> </td>
+          <td width="20%" align="center"> </td>
+          <td width="40%" align="right"> <a accesskey="n" href="intro.client.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">For More Information </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> Client Driver APIs</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

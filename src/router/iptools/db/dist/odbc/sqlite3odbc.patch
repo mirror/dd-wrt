@@ -1,0 +1,10 @@
+--- a/sqlite3odbc.c~    Sun Dec  8 15:19:27 2013 
++++ b/sqlite3odbc.c     Fri Mar 28 11:59:54 2014 
+@@ -401,6 +401,7 @@
+ #define snprintf    _snprintf
+ #define strcasecmp  _stricmp
+ #define strncasecmp _strnicmp
++#define strtoll     _strtoi64
+ 
+ static HINSTANCE NEAR hModule;	/* Saved module handle for resources */
+ 

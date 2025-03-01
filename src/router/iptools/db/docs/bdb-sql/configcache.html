@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Configuring the In-Memory Cache</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Getting Started with the Oracle Berkeley DB SQL APIs" />
+    <link rel="up" href="sql_db_config.html" title="Chapter 4. Using DB_CONFIG to configure the Berkeley DB SQL interface" />
+    <link rel="prev" href="using_dbconfig.html" title="The DB_CONFIG File" />
+    <link rel="next" href="sqlrep.html" title="Chapter 5. Using Replication with the SQL API" />
+  </head>
+  <body>
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 12.1.6.2</p>
+      </div>
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">Configuring the In-Memory Cache</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="using_dbconfig.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 4. Using DB_CONFIG to configure the Berkeley DB SQL interface</th>
+          <td width="20%" align="right"> <a accesskey="n" href="sqlrep.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="configcache"></a>Configuring the In-Memory Cache</h2>
+          </div>
+        </div>
+      </div>
+      <p>
+                SQLite provides an in-memory cache which you
+                size according to the maximum number of database pages that
+                you want to hold in memory at any given time.
+            </p>
+      <p>
+                 Berkeley DB also provides an in-memory cache that performs the
+                 same function as SQLite. You can configure this
+                 cache using the exact same PRAGMAs as you are used to
+                 using with SQLite. See
+     <a class="ulink" href="http://www.sqlite.org/pragma.html#pragma_cache_size" target="_top">PRAGMA cache_size</a>
+                 and
+     <a class="ulink" href="http://www.sqlite.org/pragma.html#pragma_default_cache_size" target="_top">PRAGMA default_cache_size</a>
+                 for details. As is the case with SQLite, you use these
+                 PRAGMAs to describe the total number of pages that you
+                 want in the cache.
+             </p>
+      <p>
+                 However, you can also configure Berkeley DB's in-memory cache
+                 size using the <code class="literal">DB_CONFIG</code> file. When you
+                 do this, you do not specify the cache size in terms of the
+                 number of pages to be contained there. Instead, you
+                 configure it in terms of the total number of bytes that
+                 you want it to be able to hold.
+             </p>
+      <p>
+                 Like the in-memory cache for SQLite, you can change
+                 Berkeley DB's cache size at any time. However, if you want to
+                 manage it using the <code class="literal">DB_CONFIG</code> file,
+                 then you must restart your application.  In addition, you
+                 must re-create your environment in order for the new value
+                 to take effect. See
+                 <a class="xref" href="using_dbconfig.html" title="The DB_CONFIG File">The DB_CONFIG File</a>
+                 for details.
+            </p>
+      <p>
+                To configure your cache size using the
+                <code class="literal">DB_CONFIG</code> file, use the
+                <a href="../api_reference/C/set_cachesize_parameter.html" class="olink">set_cachesize</a>
+                     parameter.
+            </p>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="using_dbconfig.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="sql_db_config.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="sqlrep.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">The DB_CONFIG File </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> Chapter 5. Using Replication with the SQL API</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

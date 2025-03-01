@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="GBK"?>
+<trinidad-config xmlns="http://myfaces.apache.org/trinidad/config">
+  <skin-family>fusionFx</skin-family>
+  <skin-version>v2.1</skin-version>
+</trinidad-config>

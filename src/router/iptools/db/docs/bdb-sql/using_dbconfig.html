@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>The DB_CONFIG File</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Getting Started with the Oracle Berkeley DB SQL APIs" />
+    <link rel="up" href="sql_db_config.html" title="Chapter 4. Using DB_CONFIG to configure the Berkeley DB SQL interface" />
+    <link rel="prev" href="sql_db_config.html" title="Chapter 4. Using DB_CONFIG to configure the Berkeley DB SQL interface" />
+    <link rel="next" href="configcache.html" title="Configuring the In-Memory Cache" />
+  </head>
+  <body>
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 12.1.6.2</p>
+      </div>
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">The DB_CONFIG File</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="sql_db_config.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 4. Using DB_CONFIG to configure the Berkeley DB SQL interface</th>
+          <td width="20%" align="right"> <a accesskey="n" href="configcache.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="using_dbconfig"></a>The DB_CONFIG File</h2>
+          </div>
+        </div>
+      </div>
+      <div class="toc">
+        <dl>
+          <dt>
+            <span class="sect2">
+              <a href="using_dbconfig.html#dbconfigcreate">Creating the DB_CONFIG File Before Creating the Database</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="using_dbconfig.html#envrecreate">Re-creating the Environment</a>
+            </span>
+          </dt>
+        </dl>
+      </div>
+      <p>
+                You can configure most aspects of your Berkeley DB environment by
+                using the <code class="literal">DB_CONFIG</code> file. This file must be
+                placed in your environment directory. When using the BDB SQL interface, this is
+                the directory created alongside of your database. It has
+                the same name as your database, followed by a
+                <code class="literal">-journal</code> extension. For example, if your
+                database is named <code class="literal">mydb.db</code>, then your
+                environment directory is created next to the
+                <code class="literal">mydb.db</code> file, and it
+                is called <code class="literal">mydb.db-journal</code>.
+            </p>
+      <p>
+                If a <code class="literal">DB_CONFIG</code> file exists in your
+                environment directory, it will be read when
+                your environment is opened. This happens when your
+                application starts up and creates its first connection to
+                the database.
+            </p>
+      <p>
+                Configurations set in the DB_CONFIG file usually appear as
+                the name of the configuration's C function, as documented
+                in <a class="ulink" href="http://docs.oracle.com/cd/E17076_02/html/api_reference/C/frame_main.html" target="_top">Berkeley DB C API Reference Guide</a>, followed by
+                the values of the function arguments.  For example, you
+                can use the <a href="../api_reference/C/set_lg_dir_parameter.html" class="olink">set_lg_dir</a>
+                    
+                DB_CONFIG parameter to configure the directory in which log
+                files are stored like this:
+            </p>
+      <pre class="programlisting">set_lg_dir ../myLogDir</pre>
+      <p>
+                In some cases, you must either specify a configuration
+                option before the environment is created, or the
+                environment must be re-created before the configuration
+                option will take effect. The documentation for each
+                configuration option will indicate where this is true.
+            </p>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="dbconfigcreate"></a>Creating the DB_CONFIG File Before Creating the Database</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+                    In order to provide the <code class="literal">DB_CONFIG</code>
+                    file before the database is first created, physically
+                    make the journal directory in the correct location in
+                    your filesystem (this is wherever you want to place
+                    your database file), and put the
+                    <code class="literal">DB_CONFIG</code> file there before you
+                    create your database.  For example, if you plan to
+                    create a database named <code class="literal">mydb.db</code>,
+                    then in the same directory as the database, create a
+                    directory named <code class="literal">mydb.db-journal</code>.
+                </p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="envrecreate"></a>Re-creating the Environment</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+                    Some <code class="literal">DB_CONFIG</code> parameters require you to
+                    re-create your environment before they take effect.
+                    The <code class="literal">DB_CONFIG</code> parameter descriptions
+                    indicates where this is the case.
+                </p>
+        <p>
+                    To re-create your environment:
+                </p>
+        <div class="itemizedlist">
+          <ul type="disc">
+            <li>
+              <p>
+                            Make sure the <code class="literal">DB_CONFIG</code> file
+                            contains the following line:
+                        </p>
+              <pre class="programlisting">add_data_dir ..</pre>
+              <p>
+                            (This line should already be in the
+                            <code class="literal">DB_CONFIG</code> file.)
+                        </p>
+            </li>
+            <li>
+              <p>
+                            Run the <a href="../api_reference/C/db_recover.html" class="olink">db_recover</a>
+                      command line utility. If
+                            you run it from within your environment
+                            (<code class="literal">-journal</code>) directory, no
+                            command line arguments are required. If you run
+                            it from outside your environment directory, use
+                            the <code class="literal">-h</code> parameter to identify
+                            the location of the environment directory:
+                        </p>
+              <pre class="programlisting">db_recover -h /some/path/to/mydb.db-journal</pre>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="sql_db_config.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="sql_db_config.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="configcache.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">Chapter 4. Using DB_CONFIG to configure the Berkeley DB SQL interface </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> Configuring the In-Memory Cache</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

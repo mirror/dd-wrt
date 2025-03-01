@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Chapter 5. Configuring for Write Forwarding</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
+    <link rel="up" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
+    <link rel="prev" href="exampledoloop.html" title="Example Processing Loop" />
+    <link rel="next" href="wrfor_programlisting.html" title="Program Listing" />
+  </head>
+  <body>
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 12.1.6.2</p>
+      </div>
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">Chapter 5. Configuring for Write Forwarding</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="exampledoloop.html">Prev</a> </td>
+          <th width="60%" align="center"> </th>
+          <td width="20%" align="right"> <a accesskey="n" href="wrfor_programlisting.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="chapter" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title"><a id="writeforwarding"></a>Chapter 5. Configuring for Write Forwarding</h2>
+          </div>
+        </div>
+      </div>
+      <div class="toc">
+        <p>
+          <b>Table of Contents</b>
+        </p>
+        <dl>
+          <dt>
+            <span class="sect1">
+              <a href="writeforwarding.html#wrforapp_overview">Application with Write Forwarding Overview</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect1">
+              <a href="wrfor_programlisting.html">Program Listing</a>
+            </span>
+          </dt>
+          <dd>
+            <dl>
+              <dt>
+                <span class="sect2">
+                  <a href="wrfor_programlisting.html#repwrforconfiginfo_cxx">
+                            
+                            <span>Class: RepWrforConfig</span>
+                    </a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="wrfor_programlisting.html#simplewrforusage_java">Class: RepQuoteWrforExampleGSG</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="wrfor_programlisting.html#wrformain_java">Method: RepQuoteWrforExampleGSG.main()</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="wrfor_programlisting.html#wrfor_init_java">Method: RepQuoteWrforExampleGSG.init()</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="wrfor_programlisting.html#doloop_wrforjava">Method: RepQuoteWrforExampleGSG.doloop()</a>
+                </span>
+              </dt>
+              <dt>
+                <span class="sect2">
+                  <a href="wrfor_programlisting.html#wrfor_printstocks_c">
+                            
+                            
+                            <span>Method: RepQuoteWrforExampleGSG.printStocks()</span>    </a>
+                </span>
+              </dt>
+            </dl>
+          </dd>
+        </dl>
+      </div>
+      <p> 
+        By default, write operations cannot be performed on a replication
+        client site. Replication Manager provides automatic write forwarding
+        as a configurable option for applications with simple data and
+        transaction models. (See the 
+        <a href="../../programmer_reference/comm_repsites.html#conf_writeforw" class="olink">Configuring for Write Forwarding</a> 
+        section in the <em class="citetitle">Berkeley DB Programmer's Reference Guide</em> for more information.) 
+    </p>
+      <p>
+        In this chapter, we configure write forwarding for the simple
+        transaction-protected DB application that you created in 
+        the <a class="xref" href="txnapp.html" title="Chapter 2. Transactional Application">Transactional Application</a> chapter.
+    </p>
+      <div class="sect1" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h2 class="title" style="clear: both"><a id="wrforapp_overview"></a>Application with Write Forwarding Overview</h2>
+            </div>
+          </div>
+        </div>
+        <p> 
+            Write forwarding simplifies adding replication to the stock
+            market quotes database application. Once write forwarding is
+            configured, this application allows any site to accept stock quote
+            updates. There is no need to confine write operations to the
+            master or even to know which site is the master. 
+        </p>
+        <p>
+            The application operates by presenting you with a command line
+            prompt. You then enter the stock symbol and its value, separated by
+            a space. The application takes this information and writes it to the
+            database.
+        </p>
+        <p> 
+            To see the contents of the database, simply press
+                <code class="literal">return</code> at the command prompt.
+        </p>
+        <p>
+            To quit the application, type 'quit' or 'exit' at the command
+            prompt. 
+        </p>
+        <p> 
+            For example, the following illustrates the application's usage.
+            In it, we use entirely fictitious stock market symbols and price
+            values.
+        </p>
+        <pre class="programlisting">node01&gt; java db.repquote_gsg.RepQuoteWrforExampleGSG -h env_home_dir -L \ 
+node01:5000
+QUOTESERVER&gt; stock1 88
+QUOTESERVER&gt; stock2 .08
+QUOTESERVER&gt; 
+        Symbol  Price
+        ======  =====
+        stock1  88
+        stock2 .08 </pre>
+        <p>
+           where <code class="literal">L</code> is used to identify the local site
+           as group creator, which creates the database and starts
+           this site as master.
+        </p>
+        <p>
+           With write forwarding, we can add a new stock value in the client
+           site. In the client site (node02), specify the new 
+           local client site and the existing remote site in the replication group.     
+        </p>
+        <pre class="programlisting">node02&gt; java db.repquote_gsg.RepQuoteWrforExampleGSG -l \
+node02:5001 -r node01:5000
+QUOTESERVER&gt; stock3 99
+QUOTESERVER&gt; 
+        Symbol  Price
+        ======  =====
+        stock1  88
+        stock2  .08
+        stock3  99
+
+QUOTESERVER&gt; quit </pre>
+        <p>
+          Finally, verify that the <code class="literal">stock3</code> value replicated 
+          to the master:
+      </p>
+        <pre class="programlisting">QUOTESERVER&gt; 
+        Symbol  Price
+        ======  =====
+        stock1  88
+        stock2  .08
+        stock3  99
+
+QUOTESERVER&gt; quit </pre>
+      </div>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="exampledoloop.html">Prev</a> </td>
+          <td width="20%" align="center"> </td>
+          <td width="40%" align="right"> <a accesskey="n" href="wrfor_programlisting.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">Example Processing Loop </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> Program Listing</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

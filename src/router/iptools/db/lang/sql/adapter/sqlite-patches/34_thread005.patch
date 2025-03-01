@@ -1,0 +1,13 @@
+--- test/thread005.test
++++ test/thread005.test
+@@ -175,7 +175,9 @@
+   }
+ 
+   set ::DB [sqlite3_open test.db]
+-
++  if {[sqlite3 -has-codec]} {
++    sqlite3_key $DB xyzzy
++  }
+   execsql { ATTACH 'test2.db' AS aux }
+ 
+   set result "ok"

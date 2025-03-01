@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Updated SQLite Version</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Berkeley DB Installation and Build Guide" />
+    <link rel="up" href="upgrade_61_toc.html" title="Chapter 10.  Upgrading Berkeley DB 12.1.6.0 applications to Berkeley DB 12.1.6.1" />
+    <link rel="prev" href="blobdb_format.html" title="New Database Format for BLOBs" />
+    <link rel="next" href="remlockdetect.html" title="Removed C# Class" />
+  </head>
+  <body>
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 12.1.6.2</p>
+      </div>
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">Updated SQLite Version</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="blobdb_format.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 10.  Upgrading Berkeley DB 12.1.6.0 applications to Berkeley DB 12.1.6.1 </th>
+          <td width="20%" align="right"> <a accesskey="n" href="remlockdetect.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="sqlite_ver61"></a>Updated SQLite Version</h2>
+          </div>
+        </div>
+      </div>
+      <div class="toc">
+        <dl>
+          <dt>
+            <span class="sect2">
+              <a href="sqlite_ver61.html#sqlite_db_upgrade_61">Upgrading SQL databases to releases after 6.1.19</a>
+            </span>
+          </dt>
+        </dl>
+      </div>
+      <p> 
+            Berkeley DB's SQL interface includes code from SQLite.
+            The version of SQLite used has been upgraded, so that
+            Berkeley DB SQL is now compatible with SQLite version
+            3.8.3.1. Please see the release notes at <a class="ulink" href="http://sqlite.org/changes.html" target="_top">http://sqlite.org/changes.html</a> for further
+            information. 
+        </p>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="sqlite_db_upgrade_61"></a>Upgrading SQL databases to releases after 6.1.19</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+                When upgrading from Berkeley DB releases between 5.0 and
+                6.1.19 to a release after 6.1.19, you must re-index any SQL
+                databases.  Non-SQL databases do not require any action.
+            </p>
+        <div class="sect3" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h4 class="title"><a id="sqlite_db_upgrade_posix"></a>Upgrading SQL databases on POSIX/UNIX Systems</h4>
+              </div>
+            </div>
+          </div>
+          <p>
+                    The shell script <code class="literal">upgrade61.sh</code> has
+                    been provided to simplify upgrading.  Before executing
+                    the script, back up all the databases and shut down any
+                    applications that access the databases.  Then execute
+                    the script, passing the path to one or more databases
+                    in the command line, as follows:
+                </p>
+          <pre class="programlisting">sh db-x.x.xx/lang/sql/upgrade61.sh &lt;db1.dbsql&gt; &lt;db2.dbsql&gt; ...</pre>
+          <p>
+                    The upgrade process can be done by hand by executing
+                    the following commands for each database:
+                </p>
+          <div class="orderedlist">
+            <ol type="1">
+              <li>
+                <p>
+                            Back up the database and shut down any
+                            applications accessing it.
+                        </p>
+              </li>
+              <li>
+                <p>
+                            Run recovery on the database journal directory as follows:
+                        </p>
+                <pre class="programlisting">db_recover -f -h &lt;database-journal&gt;</pre>
+              </li>
+              <li>
+                <p>
+                            Enter the dbsql shell and execute a SQL REINDEX
+                            command as follows:
+                        </p>
+                <pre class="programlisting">dbsql &lt;database.dbsql&gt;
+dbsql&gt; REINDEX
+dbsql&gt; .quit </pre>
+              </li>
+            </ol>
+          </div>
+          <p>
+                    That completes the upgrade process.
+                </p>
+        </div>
+        <div class="sect3" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h4 class="title"><a id="sqlite_db_upgrade_win"></a>Upgrading SQL databases on Windows Systems</h4>
+              </div>
+            </div>
+          </div>
+          <p>
+                    The batch script "upgrade61.bat" has been provided to
+                    simplify upgrading.  Before executing the script, back
+                    up all the databases and shut down any applications
+                    that access the databases.  Then execute the script,
+                    passing the path to one or more databases in the
+                    command line, as follows:
+                </p>
+          <pre class="programlisting">db-x.x.xx\lang\sql\upgrade61.bat &lt;db1.dbsql&gt; &lt;db2.dbsql&gt; ...</pre>
+          <p>
+                    The upgrade process can be done by hand by executing
+                    the following commands for each database:
+                </p>
+          <div class="orderedlist">
+            <ol type="1">
+              <li>
+                <p>
+                            Back up the database and shut down any
+                            applications accessing it.
+                        </p>
+              </li>
+              <li>
+                <p>
+                            Run recovery on the database journal directory as follows:
+                        </p>
+                <pre class="programlisting">db_recover.exe -f -h &lt;database-journal&gt;</pre>
+              </li>
+              <li>
+                <p>
+                            Enter the dbsql shell and execute a SQL REINDEX
+                            command as follows:
+                        </p>
+                <pre class="programlisting">dbsql.exe &lt;database.dbsql&gt;
+dbsql&gt; REINDEX
+dbsql&gt; .quit </pre>
+              </li>
+            </ol>
+          </div>
+          <p>
+                    That completes the upgrade process.
+                </p>
+        </div>
+      </div>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="blobdb_format.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="upgrade_61_toc.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="remlockdetect.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">New Database Format for BLOBs </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> Removed C# Class</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

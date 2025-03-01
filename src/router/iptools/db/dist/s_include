@@ -1,0 +1,250 @@
+#!/bin/sh -
+#	$Id$
+#
+# Build the automatically generated function prototype files.
+
+msgc="/* DO NOT EDIT: automatically built by dist/s_include. */"
+
+. ./RELEASE
+
+AWK=${AWK:-awk}
+head()
+{
+	defonly=0
+	while :
+		do case "$1" in
+		space)
+			echo ""; shift;;
+		defonly)
+			defonly=1; shift;;
+		*)
+			name="$1"; break;;
+		esac
+	done
+
+	echo "$msgc"
+	echo "#ifndef	$name"
+	echo "#define	$name"
+	echo ""
+	if [ $defonly -eq 0 ]; then
+		echo "#if defined(__cplusplus)"
+		echo "extern \"C\" {"
+		echo "#endif"
+		echo ""
+	fi
+}
+
+tail()
+{
+	defonly=0
+	while :
+		do case "$1" in
+		defonly)
+			defonly=1; shift;;
+		*)
+			name="$1"; break;;
+		esac
+	done
+
+	echo ""
+	if [ $defonly -eq 0 ]; then
+		echo "#if defined(__cplusplus)"
+		echo "}"
+		echo "#endif"
+	fi
+	echo "#endif /* !$name */"
+}
+
+# This script is run on a variety of systems.  To avoid spurious changes, fix
+# some variables that affect sort order of ls(1).
+unset LANG
+export LANG
+LC_ALL="C"
+export LC_ALL
+
+# We are building several files:
+#	1 external #define file
+#	1 external prototype file
+#	1 internal #define file
+#	N internal prototype files
+# The events.in verification step use three files
+#	events_file
+#	failed_file
+#	missing_file
+e_dfile=/tmp/__db_c.$$
+e_pfile=/tmp/__db_a.$$
+i_dfile=/tmp/__db_d.$$
+i_pfile=/tmp/__db_b.$$
+events_file=/tmp/__db_e.$$
+failed_file=/tmp/__db_f.$$
+missing_file=/tmp/__db_m.$$
+trap 'rm -f $e_dfile $e_pfile $i_dfile $i_pfile $events_file $failed_file $missing_file; exit 0' 0 1 2 3 13 15
+
+head defonly space _DB_EXT_DEF_IN_ > $e_dfile
+head space _DB_EXT_PROT_IN_ > $e_pfile
+head defonly _DB_INT_DEF_IN_ > $i_dfile
+
+# Process the standard directories, creating per-directory prototype
+# files and adding to the external prototype and #define files.
+for i in db blob btree clib common crypto dbreg env fileops hash heap \
+    hmac lock log mp mutex os qam rep repmgr sequence tcl txn xa; do
+	head "_${i}_ext_h_" > $i_pfile
+
+	if [ $i = os ] ; then
+		f=`ls ../src/$i/*.c \
+	    ../src/os_qnx/*.c ../src/os_vxworks/*.c ../src/os_windows/*.c`
+	elif [ $i = crypto ] ; then
+		f=`ls ../src/$i/*.c ../src/$i/*/*.c`
+	elif [ $i = env ] ; then
+		f=`ls ../src/$i/*.c ../src/repmgr/repmgr_stub.c`
+	elif [ $i = tcl ] ; then
+		f=`ls ../lang/$i/*.c`
+	else
+		f=`ls ../src/$i/*.c`
+	fi
+	$AWK -f gen_inc.awk \
+	    -v db_version_unique_name=$DB_VERSION_UNIQUE_NAME \
+	    -v e_dfile=$e_dfile \
+	    -v e_pfile=$e_pfile \
+	    -v i_dfile=$i_dfile \
+	    -v i_pfile=$i_pfile $f
+
+	tail "_${i}_ext_h_" >> $i_pfile
+
+	f=../src/dbinc_auto/${i}_ext.h
+	cmp $i_pfile $f > /dev/null 2>&1 ||
+	    (echo "Building $f" && rm -f $f && cp $i_pfile $f)
+done
+
+# Process directories which only add to the external prototype and #define
+# files.
+for i in dbm hsearch; do
+	f=`ls ../lang/$i/*.c`
+	$AWK -f gen_inc.awk \
+	    -v db_version_unique_name=$DB_VERSION_UNIQUE_NAME \
+	    -v e_dfile=$e_dfile \
+	    -v e_pfile=$e_pfile \
+	    -v i_dfile="" \
+	    -v i_pfile="" $f
+done
+
+# There are a few global variables in DB -- add them to the external/internal
+# #define files.
+(echo "#define	__db_global_values __db_global_values@DB_VERSION_UNIQUE_NAME@";
+ echo "#define	__repmgr_guesstimated_max __repmgr_guesstimated_max@DB_VERSION_UNIQUE_NAME@";
+ echo "#define	db_xa_switch db_xa_switch@DB_VERSION_UNIQUE_NAME@"
+ ) >> $i_dfile
+
+# Wrap up the external #defines/prototypes, and internal #defines.
+tail defonly _DB_EXT_DEF_IN_ >> $e_dfile
+f=../src/dbinc_auto/ext_def.in
+cmp $e_dfile $f > /dev/null 2>&1 ||
+    (echo "Building $f" && rm -f $f && cp $e_dfile $f)
+
+tail _DB_EXT_PROT_IN_ >> $e_pfile
+f=../src/dbinc_auto/ext_prot.in
+cmp $e_pfile $f > /dev/null 2>&1 ||
+    (echo "Building $f" && rm -f $f && cp $e_pfile $f)
+
+tail defonly _DB_INT_DEF_IN_ >> $i_dfile
+f=../src/dbinc_auto/int_def.in
+cmp $i_dfile $f > /dev/null 2>&1 ||
+    (echo "Building $f" && rm -f $f && cp $i_dfile $f)
+
+# DB185 compatibility support.
+head space defonly _DB_EXT_185_DEF_IN_ > $e_dfile
+head space _DB_EXT_185_PROT_IN_ > $e_pfile
+
+f=`ls ../lang/db185/*.c`
+$AWK -f gen_inc.awk \
+    -v db_version_unique_name=$DB_VERSION_UNIQUE_NAME \
+    -v e_dfile=$e_dfile \
+    -v e_pfile=$e_pfile \
+    -v i_dfile="" \
+    -v i_pfile="" $f
+
+tail defonly _DB_EXT_185_DEF_IN_ >> $e_dfile
+f=../src/dbinc_auto/ext_185_def.in
+cmp $e_dfile $f > /dev/null 2>&1 ||
+    (echo "Building $f" && rm -f $f && cp $e_dfile $f)
+
+tail _DB_EXT_185_PROT_IN_ >> $e_pfile
+f=../src/dbinc_auto/ext_185_prot.in
+cmp $e_pfile $f > /dev/null 2>&1 ||
+    (echo "Building $f" && rm -f $f && cp $e_pfile $f)
+
+#
+# Make the DTrace provider description file from events.in
+#
+rm -f db_provider.d
+(echo "/*"; \
+ echo " * DO NOT EDIT: automatically built by dist/s_include."; \
+ echo " * Oracle Berkeley DB DTrace Provider"; \
+ echo " */"; \
+perl gen_provider.pl events.in)  > db_provider.d
+
+
+#
+# Now check for STAT_INC/DEC/SET/ADJUST macros without a corresponding entry in
+# events.in.  This section requires an awk which handles '|' separated regular
+# expression segments.  Perform the check only if this awk supports them.
+#
+if test "$(echo 'STAT_INC(e, a, b, x)' |
+         $AWK '/STAT_INC\(|STAT_DEC\(/{print $2, $3}')" = "a, b," ; then
+    sed -ne '/probe/s/[	 ]*probe \([a-z_]*\).*$/\1/p' ../dist/db_provider.d \
+	    | sort -o $events_file
+
+    # Generate a list of all the source file names, relative to dist/ or
+    # any other immediate subdirectory of the Berkeley DB source tree.
+    allsources=$($AWK '/^[a-z]/{ print "../" $1}'  ../dist/srcfiles.in)
+
+    # Find the STAT_INC, STAT_DEC, STAT_ADJUST and STAT_SET macros in those source
+    # files, including the STAT_XXX_VERB variants and those split across multiple
+    # lines. 
+    $AWK '
+	    # Skip any lines that define macros.
+	    /^#define.STAT_/		{
+		    next;
+	    }
+	    # Combine the first two lines of multi-line invocations of the
+	    # STAT_INC/DEC/ADJUST/SET macros -- those which end in a comma.  The new
+	    # $0 is matched by the next pattern, which will match both the
+	    # single-line and multi-line versions.
+	    /STAT_INC\(.*$|STAT_DEC\(.*$|STAT_SET\(.*$|STAT_ADJUST\(.*$|STAT_[A-Z]*_VERB\(.*$/	{
+		    begin = $0; 
+		    getline; 
+		    $0 = begin $0;
+	    }
+	    # Print the event line we expect to see in db_provider.d.
+	    /STAT_INC\(|STAT_DEC\(|STAT_SET\(|STAT_ADJUST\(|STAT_[A-Z]*_VERB\(/	{
+		    saveline = $0;
+		    # Convert tabs and commas to blanks, trim away redundant blanks.
+		    gsub(",", " ");
+		    gsub("	", " ");
+		    gsub("  "," ");
+		    gsub("	", "", saveline);
+		    eventname = $2 "__" $3;
+		    # Event names must meet DTrace and SystemTap limitations.
+		    if (eventname !~ /^[a-z_]*$/)  {
+			    printf \
+			"Event \"%s\" must be an identifier:\n\t%s:%d:\t%s\n", \
+				eventname, FILENAME, FNR, saveline >> "'$failed_file'";
+		    }
+		    # Print the event name, filename:line#, then the line.
+		    printf("%s %s:%-5d %s\n", eventname, FILENAME, FNR, saveline);
+	    }
+    '   \
+	$allsources | sort -u | join -v1 - $events_file > $missing_file
+
+    if test -s $failed_file; then
+	    cat $failed_file
+	    echo "Change the above line(s) and rerun s_include"
+	    exit 1
+    fi
+    if test -s $missing_file;  then
+	    echo 'Please add entries for the following performance-monitored' \
+		  'statistics to dist/events.in:'
+	    $AWK '{printf("%-30s %-30s %s %s\n", $1, $2, $3, $4 $5 $6 $7 $8 $9 $10);}' $missing_file
+	    exit 1
+    fi
+fi

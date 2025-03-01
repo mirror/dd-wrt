@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="GBK" ?>
+<!DOCTYPE Entity SYSTEM "jbo_03_01.dtd">
+<!---->
+<Entity
+  xmlns="http://xmlns.oracle.com/bc4j"
+  Name="SuppliersEO"
+  Version="11.1.2.64.36"
+  DBObjectType="TABLE"
+  DBObjectName="SUPPLIERSPK"
+  AliasName="SuppliersEO"
+  BindingStyle="JDBC"
+  UseGlueCode="false"
+  RowClass="model.entity.SuppliersEOImpl">
+  <DesignTime>
+    <Attr Name="_codeGenFlag2" Value="Access"/>
+    <Attr Name="_isCodegen" Value="true"/>
+  </DesignTime>
+  <Attribute
+    Name="SupId"
+    IsNotNull="true"
+    ColumnName="SUP_ID"
+    SQLType="INTEGER"
+    Type="java.lang.Integer"
+    ColumnType="INTEGER"
+    TableName="SUPPLIERSPK"
+    PrimaryKey="true"/>
+  <Attribute
+    Name="SupName"
+    ColumnName="SUP_NAME"
+    SQLType="VARCHAR"
+    Type="java.lang.String"
+    ColumnType="VARCHAR"
+    TableName="SUPPLIERSPK"/>
+  <Attribute
+    Name="Street"
+    ColumnName="STREET"
+    SQLType="VARCHAR"
+    Type="java.lang.String"
+    ColumnType="VARCHAR"
+    TableName="SUPPLIERSPK"/>
+  <Attribute
+    Name="City"
+    ColumnName="CITY"
+    SQLType="VARCHAR"
+    Type="java.lang.String"
+    ColumnType="VARCHAR"
+    TableName="SUPPLIERSPK"/>
+  <Attribute
+    Name="State"
+    ColumnName="STATE"
+    SQLType="VARCHAR"
+    Type="java.lang.String"
+    ColumnType="VARCHAR"
+    TableName="SUPPLIERSPK"/>
+  <Attribute
+    Name="Zip"
+    ColumnName="ZIP"
+    SQLType="VARCHAR"
+    Type="java.lang.String"
+    ColumnType="VARCHAR"
+    TableName="SUPPLIERSPK"/>
+  <AccessorAttribute
+    Name="CoffeesEO"
+    Association="model.entity.association.SuppliersEOToCoffeesEOAssoc"
+    AssociationEnd="model.entity.association.SuppliersEOToCoffeesEOAssoc.CoffeesEO"
+    AssociationOtherEnd="model.entity.association.SuppliersEOToCoffeesEOAssoc.SuppliersEO"
+    Type="oracle.jbo.RowIterator"
+    IsUpdateable="false"/>
+  <Key
+    Name="SupplierspkPk"
+    PrimaryKey="true">
+    <DesignTime>
+      <Attr Name="_DBObjectName" Value="SUPPLIERSPK_PK"/>
+    </DesignTime>
+    <AttrArray Name="Attributes">
+      <Item Value="model.entity.SuppliersEO.SupId"/>
+    </AttrArray>
+  </Key>
+</Entity>

@@ -1,0 +1,8 @@
+ex_advertising/
+		This event processing example shows how Oracle Berkeley DB 
+		can be used to implement location based personal advertising 
+		using smart phones.
+
+ex_toll_booth/
+		This event processing example shows how Oracle Berkeley DB 
+		can be used to implement an automatic toll booth.

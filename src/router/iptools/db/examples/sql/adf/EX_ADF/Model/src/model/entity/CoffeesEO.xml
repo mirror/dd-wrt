@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="GBK" ?>
+<!DOCTYPE Entity SYSTEM "jbo_03_01.dtd">
+<!---->
+<Entity
+  xmlns="http://xmlns.oracle.com/bc4j"
+  Name="CoffeesEO"
+  Version="11.1.2.64.36"
+  DBObjectType="TABLE"
+  DBObjectName="COFFEESFK"
+  AliasName="CoffeesEO"
+  BindingStyle="JDBC"
+  UseGlueCode="false"
+  RowClass="model.entity.CoffeesEOImpl">
+  <DesignTime>
+    <Attr Name="_codeGenFlag2" Value="Access"/>
+    <Attr Name="_isCodegen" Value="true"/>
+  </DesignTime>
+  <Attribute
+    Name="CofName"
+    IsNotNull="true"
+    ColumnName="COF_NAME"
+    SQLType="VARCHAR"
+    Type="java.lang.String"
+    ColumnType="VARCHAR"
+    TableName="COFFEESFK"
+    PrimaryKey="true"/>
+  <Attribute
+    Name="SupId"
+    ColumnName="SUP_ID"
+    SQLType="INTEGER"
+    Type="java.lang.Integer"
+    ColumnType="INTEGER"
+    TableName="COFFEESFK"/>
+  <Attribute
+    Name="Price"
+    ColumnName="PRICE"
+    SQLType="FLOAT"
+    Type="java.lang.Float"
+    ColumnType="FLOAT"
+    TableName="COFFEESFK"/>
+  <Attribute
+    Name="Sales"
+    ColumnName="SALES"
+    SQLType="INTEGER"
+    Type="java.lang.Integer"
+    ColumnType="INTEGER"
+    TableName="COFFEESFK"/>
+  <Attribute
+    Name="Total"
+    ColumnName="TOTAL"
+    SQLType="INTEGER"
+    Type="java.lang.Integer"
+    ColumnType="INTEGER"
+    TableName="COFFEESFK"/>
+  <AccessorAttribute
+    Name="SuppliersEO"
+    Association="model.entity.association.SuppliersEOToCoffeesEOAssoc"
+    AssociationEnd="model.entity.association.SuppliersEOToCoffeesEOAssoc.SuppliersEO"
+    AssociationOtherEnd="model.entity.association.SuppliersEOToCoffeesEOAssoc.CoffeesEO"
+    Type="model.entity.SuppliersEOImpl"
+    IsUpdateable="true"/>
+  <Key
+    Name="SqliteAutoindexCoffeesfk1"
+    PrimaryKey="true">
+    <DesignTime>
+      <Attr Name="_DBObjectName" Value="sqlite_autoindex_COFFEESFK_1"/>
+    </DesignTime>
+    <AttrArray Name="Attributes">
+      <Item Value="model.entity.CoffeesEO.CofName"/>
+    </AttrArray>
+  </Key>
+  <Key
+    Name="fk_CoffeesEO">
+    <DesignTime>
+      <Attr Name="_referencedKey" Value="SUPPLIERSPK_PK"/>
+      <Attr Name="_isForeign" Value="true"/>
+      <Attr Name="_DBObjectName" Value="FK_COFFEES_EO"/>
+      <Attr Name="_isCascadeDelete" Value="true"/>
+    </DesignTime>
+    <AttrArray Name="Attributes">
+      <Item Value="model.entity.CoffeesEO.SupId"/>
+    </AttrArray>
+  </Key>
+</Entity>

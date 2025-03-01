@@ -1,0 +1,8 @@
+#!/bin/sh -
+#	$Id$
+#
+# Build the C# files.
+
+sh s_csharp_swig		# Create core C# API with SWIG
+sh s_csharp_const		# Create C# constants
+sh s_csharp_stat		# Build the CSharp stat structures

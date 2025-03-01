@@ -1,0 +1,24 @@
+This event processing example shows how Oracle Berkeley DB can be used to implement an automatic toll booth.  It consists of three parts.
+
+Data Generator - Creates two Berkeley DB databases and populates them with data.  One database is a SQL database that contains user information used in billing car owners whose cars pass through the toll booth.  The other database is a btree that contains the license plate numbers of cars reported stolen.
+
+Event Generator - Simulates a day's worth of cars passing through the toll booth by sending events to the event processor that consist of a car license plate and time stamp.
+
+Event Processor - Receives the events from the event generator and passes them through the following event filters.
+	Stolen - Checks the license plate against a Berkeley DB btree database that contains the plate numbers of stolen cars.  If a match is found the event is consumed and an alert is sent.
+	Billing - Uses the license plate number to get the car owner's billing information from a Berkeley DB SQL database.  Subtracts the toll from the owner's funds and sends an alert if the user's available funds are low.
+	Traffic - Uses a Berkeley DB sequence to keep track of how many cars pass through the toll booth.  If the number of cars passes a certain threshold in an hour then a heavy traffic alert is sent.
+
+BUILD and RUN
+
+Windows
+
+To build this example build the Visual Studio projects ex_toll_booth, ex_toll_event, and ex_toll_data.
+
+To run the example first make sure the executeables can be located by your PATH environment variable.  To run the example click or run the file RunTollBoothExample.bat.
+
+Unix/Linux
+
+To build this example install Berkeley DB with sql enabled, then in the build_unix directory execute the command "make examples_sql"
+
+To run execute the script RunTollBoothExample.sh.

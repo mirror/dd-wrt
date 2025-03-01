@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="GBK" ?>
+<!DOCTYPE AppModule SYSTEM "jbo_03_01.dtd">
+<!---->
+<AppModule
+  xmlns="http://xmlns.oracle.com/bc4j"
+  Name="AppModule"
+  Version="11.1.2.64.36"
+  ClearCacheOnRollback="true">
+  <Properties>
+    <SchemaBasedProperties>
+      <LABEL
+        ResId="uimodel.am.AppModule_LABEL"/>
+    </SchemaBasedProperties>
+  </Properties>
+  <ViewUsage
+    Name="Coffees"
+    ViewObjectName="uimodel.view.CoffeesVO"/>
+  <ViewUsage
+    Name="Suppliers"
+    ViewObjectName="uimodel.view.SuppliersVO"/>
+  <ViewUsage
+    Name="CoffeesForSuppliers"
+    ViewObjectName="uimodel.view.CoffeesVO"/>
+  <ViewLinkUsage
+    Name="SuppliersVOToCoffeesVOLink1"
+    ViewLinkObjectName="uimodel.view.SuppliersVOToCoffeesVOLink"
+    SrcViewUsageName="uimodel.am.AppModule.Suppliers"
+    DstViewUsageName="uimodel.am.AppModule.CoffeesForSuppliers"
+    Reversed="false"/>
+  <ResourceBundle>
+    <PropertiesBundle
+      PropertiesFile="model.ModelBundle"/>
+  </ResourceBundle>
+</AppModule>

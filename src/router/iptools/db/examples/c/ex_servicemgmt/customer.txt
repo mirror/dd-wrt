@@ -1,0 +1,4 @@
+001#ZhangSan#12345678#zhongshanroad#zhangsan@gmail.com#87654321#Lavida#2014-05-01 
+002#LiSi#54875088#ZhengliRoad#Lisi@gmail.com#88776655#Audi#2014-06-01
+003#LiLei#137878789#SonghuRoad#LiLei@gmail.com#76768787#BMW#2013-07-05
+004#WangWu#33388787#HuangxinRoad#WangWu@gmail.com#676789#Bens#2015-07-06

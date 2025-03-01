@@ -1,0 +1,18 @@
+This example shows how Oracle Berkeley DB can be used to implement a simple firewall.  It consists of three parts.
+Message Generator - Simulates messages arriving to the application.  It stops after 100,000 messages are generated.
+Firewall - Receives and filters the messages by dropping the messages found to be from blocked sites, and forwarding the messages from all other sites.
+Destination - Receives the messages forwarded by the firewall and prints out a statement each time it processes 10,000 messages.
+
+BUILD and RUN
+
+Windows
+
+To build this example build the Visual Studio examples ex_firewall, ex_firewall_dest, and ex_firewall_msg.
+
+To run the example first make sure the executeables can be located by your PATH environment variable. To run the example click or run the file RunFirewallExample.bat.
+
+Unix/Linux
+
+To build this example install Berkeley DB, then in the build_unix directory execute the command "make examples_c".
+
+To run execute the script RunFirewallExample.sh.

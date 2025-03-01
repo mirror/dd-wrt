@@ -1,0 +1,98 @@
+(:
+*  This script will generate the configuration for the following 3 platforms:
+*    Smartphone 2003 (ARMV4)
+*    Windows Mobile 6 Professional SDK (ARMV4I)
+*    Windows Mobile 6.5.3 Professional DTK (ARMV4I)
+:)
+
+declare function local:getCopyNodes1($node)
+{
+  copy $node1 := $node
+  modify replace value of node $node1/@Name with "Debug|Smartphone 2003 (ARMV4)"
+  return $node1
+};
+
+declare function local:getCopyNodes2($node)
+{
+  copy $node2 := $node
+  modify replace value of node $node2/@Name with "Release|Smartphone 2003 (ARMV4)"
+       return $node2
+};
+
+declare function local:getCopyNodes3($node)
+{
+  copy $node3 := $node
+  modify (
+  replace value of node $node3/@Name with "Debug|Windows Mobile 6 Professional SDK (ARMV4I)" ,
+  replace value of node $node3/Tool[@Name="VCLinkerTool"]/@AdditionalOptions with '/subsystem:windowsce,5.02' ,
+  delete node $node3/Tool[@Name='VCLinkerTool']/@AdditionalDependencies
+  )
+  return $node3
+};
+
+declare function local:getCopyNodes4($node)
+{
+  copy $node4 := $node
+  modify (
+  replace value of node $node4/@Name with "Release|Windows Mobile 6 Professional SDK (ARMV4I)" ,
+  replace value of node $node4/Tool[@Name="VCLinkerTool"]/@AdditionalOptions with '/subsystem:windowsce,5.02' ,
+  delete node $node4/Tool[@Name='VCLinkerTool']/@AdditionalDependencies
+  )
+  return $node4
+};
+
+declare function local:getCopyNodes5($node)
+{
+  copy $node5 := $node
+  modify (
+  replace value of node $node5/@Name with "Debug|Windows Mobile 6.5.3 Professional DTK (ARMV4I)" ,
+  replace value of node $node5/Tool[@Name="VCLinkerTool"]/@AdditionalOptions with '/subsystem:windowsce,5.02' ,
+  delete node $node5/Tool[@Name='VCLinkerTool']/@AdditionalDependencies
+  )
+  return $node5
+};
+
+declare function local:getCopyNodes6($node)
+{
+  copy $node6 := $node
+  modify (
+  replace value of node $node6/@Name with "Release|Windows Mobile 6.5.3 Professional DTK (ARMV4I)" ,
+  replace value of node $node6/Tool[@Name="VCLinkerTool"]/@AdditionalOptions with '/subsystem:windowsce,5.02' ,
+  delete node $node6/Tool[@Name='VCLinkerTool']/@AdditionalDependencies
+  )
+  return $node6
+};
+
+let $root := VisualStudioProject
+return
+(
+  (: Add the new platforms into "FileConfiguration" and "Platforms" :)
+  (
+  for $platforms in ("Smartphone 2003 (ARMV4)", "Windows Mobile 6 Professional SDK (ARMV4I)",
+     "Windows Mobile 6.5.3 Professional DTK (ARMV4I)")
+    return
+    (
+    insert node <Platform Name="{$platforms}" /> as last into $root/Platforms,
+    for $n in $root/Files/Filter[@Name="Source Files"]/File/FileConfiguration[1]
+    for $conf in ("Debug", "Release")
+    return insert node <FileConfiguration ExcludedFromBuild="true" Name="{$conf}|{$platforms}">
+      <Tool Name="VCCLCompilerTool" /></FileConfiguration> as last  into $n/parent::*
+    )
+  ),
+
+  (: 
+   * Add the new platforms into "Configurations".
+   * We copy settings from "Debug|Pocket PC 2003(ARMV4)" and then
+   * do necessary changes.
+   :)
+  (
+    let $node1 := local:getCopyNodes1($root/Configurations/Configuration[1])
+    let $node2 := local:getCopyNodes2($root/Configurations/Configuration[2])
+    let $node3 := local:getCopyNodes3($root/Configurations/Configuration[1])
+    let $node4 := local:getCopyNodes4($root/Configurations/Configuration[2])
+    let $node5 := local:getCopyNodes5($root/Configurations/Configuration[1])
+    let $node6 := local:getCopyNodes6($root/Configurations/Configuration[2])
+    for $node in ($node1, $node2, $node3, $node4, $node5, $node6)
+      return insert node $node as last into $root/Configurations
+  )
+)

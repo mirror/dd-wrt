@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Building for Windows Embedded Compact 7</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Berkeley DB Installation and Build Guide" />
+    <link rel="up" href="build_wince.html" title="Chapter 6.  Building Berkeley DB for Windows Mobile" />
+    <link rel="prev" href="build_wince_faq.html" title="Windows Mobile FAQ" />
+    <link rel="next" href="build_unix.html" title="Chapter 7.  Building Berkeley DB for UNIX/POSIX" />
+  </head>
+  <body>
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 12.1.6.2</p>
+      </div>
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">Building for Windows
+        Embedded Compact 7</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="build_wince_faq.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 6.  Building Berkeley DB for Windows Mobile </th>
+          <td width="20%" align="right"> <a accesskey="n" href="build_unix.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="build_winec_intro"></a>Building for Windows
+        Embedded Compact 7</h2>
+          </div>
+        </div>
+      </div>
+      <div class="toc">
+        <dl>
+          <dt>
+            <span class="sect2">
+              <a href="build_winec_intro.html#idm140188018402512">Building Berkeley DB for Windows Embedded Compact 7</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="build_winec_intro.html#idm140188018324144">Changing Build Configuration Type</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="build_winec_intro.html#idm140188018289312">Troubleshooting Common Build Errors</a>
+            </span>
+          </dt>
+        </dl>
+      </div>
+      <p>
+        This page contains general instructions on building Berkeley
+        DB for Windows Embedded Compact 7 platforms using specific
+        compilers.
+    </p>
+      <p>
+        The <code class="filename">build_wince</code> directory in the
+        Berkeley DB distribution contains project files for Microsoft
+        Visual 2008 with the Windows Embedded Compact 7 installed:
+    </p>
+      <div class="informaltable">
+        <table border="1" width="80%">
+          <colgroup>
+            <col />
+            <col />
+          </colgroup>
+          <thead>
+            <tr>
+              <th align="center">Project File</th>
+              <th align="center">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td align="center">Berkeley_DB.sln</td>
+              <td align="center">Visual Studio 2008
+                        solution</td>
+            </tr>
+            <tr>
+              <td align="center">VS8\*.vcproj</td>
+              <td align="center">Visual Studio 2008 project
+                        files</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        These project files can be used to build Berkeley DB for the
+        Windows Embedded Compact 7 platform.
+    </p>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188018402512"></a>Building Berkeley DB for Windows Embedded Compact 7</h3>
+            </div>
+          </div>
+        </div>
+        <div class="sect3" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h4 class="title"><a id="idm140188018414528"></a>Visual Studio 2008</h4>
+              </div>
+            </div>
+          </div>
+          <div class="orderedlist">
+            <ol type="1">
+              <li>
+                    Install 
+                    <a class="ulink" href="http://msdn.microsoft.com/en-US/library/gg154201(v=winembedded.70).aspx" target="_top">Windows Embedded Compact 7</a>,
+                    and add it to 
+                    <a class="link" href="build_wince.html#build_wince_intro.add_platform" title="Building Berkeley DB for different target platforms">target platforms</a>.
+                </li>
+              <li>
+                    Choose <span class="emphasis"><em>File -&gt; Open
+                    Project/Solution...</em></span>. Navigate to the
+                    <code class="filename">build_wince</code> directory,
+                    select <code class="filename">Berkeley_DB</code> and click
+                    <code class="literal">Open</code>. Wait for the project conversion
+                    to finish.
+                </li>
+              <li>
+                    Select the desired target platform from the
+                    platform drop-down menu.
+                </li>
+              <li>
+                    Build the desired projects.
+                </li>
+            </ol>
+          </div>
+        </div>
+        <div class="sect3" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h4 class="title"><a id="idm140188018295472"></a>Build results</h4>
+              </div>
+            </div>
+          </div>
+          <p>
+                The results of your build will be placed in any one
+                of the following Berkeley DB subdirectories, depending
+                on the configuration that you chose: </p>
+          <table class="simplelist" border="0" summary="Simple list">
+            <tr>
+              <td>
+                <code class="filename">build_wince\(Platform)\Debug</code>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code class="filename">build_wince\(Platform)\Release</code>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code class="filename">build_wince\(Platform)\Debug_static</code>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code class="filename">build_wince\(Platform)\Release_static</code>
+              </td>
+            </tr>
+          </table>
+          <p>
+            </p>
+          <p>
+                When building your application during development,
+                you must link against
+                <code class="filename">libdb_small62sd.lib</code>
+                or against
+                <code class="filename">libdb_sql62sd.lib</code>
+                for SQL features. You can also build using a release
+                version of the Berkeley DB libraries and tools, which
+                will be placed in the
+                <code class="filename">build_wince\(Platform)\Release_static
+                </code>directory. You must add the
+                <code class="filename">build_wince</code> directory to the
+                list of include directories of your application's
+                project, or copy the Berkeley DB include files to a
+                location in your Visual Studio include path.
+            </p>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188018324144"></a>Changing Build Configuration Type</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+            This section contains information on how to change
+            between a dynamic library (.dll) and static library
+            (.lib). The library projects and their default output and
+            configuration in the Release build is as follows:
+        </p>
+        <div class="informaltable">
+          <table border="1" width="80%">
+            <colgroup>
+              <col />
+              <col />
+              <col />
+            </colgroup>
+            <thead>
+              <tr>
+                <th align="center">Project</th>
+                <th align="center">Default Output</th>
+                <th align="center">Default
+                            Configuration</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td align="center">db_small</td>
+                <td align="center">libdb_small62s.lib</td>
+                <td align="center">Static Library</td>
+              </tr>
+              <tr>
+                <td align="center">db</td>
+                <td align="center">libdb62s.lib</td>
+                <td align="center">Static Library</td>
+              </tr>
+              <tr>
+                <td align="center">db_sql</td>
+                <td align="center">libdb_sql62.dll</td>
+                <td align="center">Dynamic Library</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+            To change a project configuration type in Visual Studio
+            2008, select a project and do the following:
+        </p>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+                Choose
+                <span class="emphasis"><em>Project</em></span>-&gt;<span class="emphasis"><em>Properties</em></span>
+                and navigate to <code class="literal">Configuration
+                Properties.</code></li>
+            <li>
+                Under <code class="literal">Project Defaults</code>,
+                change the <code class="literal">Configuration Type</code> to
+                your desired type.
+            </li>
+          </ol>
+        </div>
+        <p>
+            Note: After this change, the output file names change to
+            the Visual Studio 2008 defaults based on the project
+            name.
+        </p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188018289312"></a>Troubleshooting Common Build Errors</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <span class="emphasis">
+                <em>Compile error at line 146 in stdlib.h</em>
+              </span>
+              <p>
+                    This is a known bug for the Windows Embedded Compact 7 SDK.
+                    A workaround is to change the line 146 in stdlib.h to read:
+                </p>
+              <pre class="programlisting">__checkReturn __bcount(_Size) void * __cdecl _alloca(__in size_t 
+_Size);</pre>
+            </li>
+            <li>
+              <span class="emphasis">
+                <em>error LNK2019: unresolved external symbol _localtime_s referenced in function _osLocaltime</em>
+              </span>
+              <p>
+                    This link error is caused by the fact that the Windows
+                    Embedded Compact 7 runtime used to link Berkeley DB does not
+                    provide the localtime_s() function. A workaround is to add
+                    </p>
+              <pre class="programlisting">HAVE_LOCALTIME_S=0</pre>
+              <p>
+                    to the proprocessor definitions of the db_sql project. This
+                    can be done by right click the db_sql project, select
+                    Properties-&gt;Configuration Properties-&gt;C/C++-&gt;Preprocessor-&gt;Proprocessor Definitions,
+                    and append </p>
+              <pre class="programlisting">HAVE_LOCALTIME_S=0</pre>
+              <p>
+                    at the end of the list.
+                </p>
+            </li>
+            <li>
+              <span class="emphasis">
+                <em>error LNK1221: a subsystem can't be inferred and must be defined</em>
+              </span>
+              <p>
+                    This link error happens on Visual Studio 2008, because it
+                    cannot understand the subsystem configured for Visual
+                    Studio 2005. To fix this error, right click the project
+                    reporting this link error, select Properties-&gt;Configuration Properties-&gt;
+                    Linker-&gt;System-&gt;SubSystem, and change the value to WindowsCE (/SUBSYSTEM:WINDOWSCE).
+                </p>
+            </li>
+            <li>
+              <span class="emphasis">
+                <em>warning C4996: 'xxx': This function or variable may be unsafe.</em>
+              </span>
+              <p>
+                    Used within the Berkeley DB source tree, these functions are actually safe.
+                    You can safely ignore these warnings.
+                </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="build_wince_faq.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="build_wince.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="build_unix.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">Windows Mobile FAQ </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> Chapter 7.  Building Berkeley DB for UNIX/POSIX
+    </td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

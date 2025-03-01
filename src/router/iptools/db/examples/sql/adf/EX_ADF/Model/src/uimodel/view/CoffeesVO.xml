@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="GBK" ?>
+<!DOCTYPE ViewObject SYSTEM "jbo_03_01.dtd">
+<!---->
+<ViewObject
+  xmlns="http://xmlns.oracle.com/bc4j"
+  Name="CoffeesVO"
+  Version="11.1.2.64.36"
+  SelectList="CoffeesEO.COF_NAME, 
+       CoffeesEO.SUP_ID, 
+       CoffeesEO.PRICE, 
+       CoffeesEO.SALES, 
+       CoffeesEO.TOTAL"
+  FromList="COFFEESFK CoffeesEO"
+  BindingStyle="JDBC"
+  CustomQuery="false"
+  PageIterMode="Full"
+  UseGlueCode="false">
+  <Properties>
+    <SchemaBasedProperties>
+      <LABEL
+        ResId="uimodel.view.CoffeesVO_LABEL"/>
+    </SchemaBasedProperties>
+  </Properties>
+  <ViewAccessor
+    Name="SuppliersVOAccessor"
+    ViewObjectName="uimodel.view.SuppliersVO"
+    RowLevelBinds="true"/>
+  <ListBinding
+    Name="LOV_SupId"
+    ListVOName="SuppliersVOAccessor"
+    ListRangeSize="-1"
+    NullValueFlag="start"
+    NullValueId="LOV_SupId_LOVUIHints_NullValueId"
+    MRUCount="0">
+    <AttrArray Name="AttrNames">
+      <Item Value="SupId"/>
+    </AttrArray>
+    <AttrArray Name="ListAttrNames">
+      <Item Value="SupId"/>
+    </AttrArray>
+    <AttrArray Name="ListDisplayAttrNames">
+      <Item Value="SupId"/>
+    </AttrArray>
+    <DisplayCriteria/>
+  </ListBinding>
+  <EntityUsage
+    Name="CoffeesEO"
+    Entity="model.entity.CoffeesEO"/>
+  <ViewAttribute
+    Name="CofName"
+    IsNotNull="true"
+    PrecisionRule="true"
+    EntityAttrName="CofName"
+    EntityUsage="CoffeesEO"
+    AliasName="COF_NAME"/>
+  <ViewAttribute
+    Name="SupId"
+    PrecisionRule="true"
+    EntityAttrName="SupId"
+    EntityUsage="CoffeesEO"
+    AliasName="SUP_ID"
+    LOVName="LOV_SupId"
+    DefaultValue="49">
+    <RecalcCondition><![CDATA[true]]></RecalcCondition>
+    <Properties>
+      <SchemaBasedProperties>
+        <CONTROLTYPE
+          Value="choice"/>
+      </SchemaBasedProperties>
+    </Properties>
+  </ViewAttribute>
+  <ViewAttribute
+    Name="Price"
+    PrecisionRule="true"
+    EntityAttrName="Price"
+    EntityUsage="CoffeesEO"
+    AliasName="PRICE"/>
+  <ViewAttribute
+    Name="Sales"
+    PrecisionRule="true"
+    EntityAttrName="Sales"
+    EntityUsage="CoffeesEO"
+    AliasName="SALES"/>
+  <ViewAttribute
+    Name="Total"
+    PrecisionRule="true"
+    EntityAttrName="Total"
+    EntityUsage="CoffeesEO"
+    AliasName="TOTAL"/>
+  <ResourceBundle>
+    <PropertiesBundle
+      PropertiesFile="model.ModelBundle"/>
+  </ResourceBundle>
+</ViewObject>

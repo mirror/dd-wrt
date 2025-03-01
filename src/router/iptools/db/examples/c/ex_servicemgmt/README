@@ -1,0 +1,43 @@
+This example shows how Oracle Berkeley DB can be used to implement an 
+automobile after-sale management application. This application provides a
+communication interface via the command line. There are three main entrance 
+points for the application: administrator, customer and engineer. The user 
+enters the system by specifing different flags such as -a, -c, -e for 
+administrator, customer and engineer respectively and then logs in to carry 
+out further operations.
+  
+Administrator login: manage the customer information and engineer information,
+handle service requested by customer or submitted by engineer. An 
+administrator password is already set up (use "admin").
+
+Customer login: edit customer information or request service.
+Log in with the customer's name, which can be found in the second
+column of the customer.txt file (for example, ZhangSan).
+
+Engineer login: edit engineer information or request additional
+service after the maintenance. Log in with the engineer's name,
+which can be found in the second column of the engineer.txt file
+(for example, LiQiang).
+
+The application will use three input files: customer.txt, engineer.txt, 
+service.txt. These files are in the ./ServicemgmtExample directory and 
+an example of the format is shown below:
+001#ZhangSan#12345678#zhongshanroad#zhangsan@gmail.com#87654321#Lavida#2014-05-01 
+
+BUILD and RUN
+
+Windows
+
+To build this example, build the ex_servicemgmt project in Berkeley_DB solution 
+with Visual Studio platform.
+
+To run the example, execute file RunServicemgmtExample.bat in 
+examples/c/ex_servicemgmt. 
+
+Unix/Linux
+
+To build this example, build Berkeley DB, then in the build_unix directory 
+execute the command "make ex_servicemgmt".
+
+To run the example, execute script file RunServicemgmtExample.sh in 
+examples/c/ex_servicemgmt.

@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>DB_ENV-&gt;repmgr_set_socket()</title>
+    <link rel="stylesheet" href="apiReference.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Berkeley DB C API Reference" />
+    <link rel="up" href="rep.html" title="Chapter 10.  Replication Methods" />
+    <link rel="prev" href="repmgrset_incoming_queue_max.html" title="DB_ENV-&gt;repmgr_set_incoming_queue_max()" />
+    <link rel="next" href="repmgr_site.html" title="DB_ENV-&gt;repmgr_site()" />
+  </head>
+  <body>
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 12.1.6.2</p>
+      </div>
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">DB_ENV-&gt;repmgr_set_socket()</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="repmgrset_incoming_queue_max.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 10. 
+                Replication Methods
+        </th>
+          <td width="20%" align="right"> <a accesskey="n" href="repmgr_site.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="repmgrset_socket"></a>DB_ENV-&gt;repmgr_set_socket()</h2>
+          </div>
+        </div>
+      </div>
+      <pre class="programlisting">#include &lt;db.h&gt;
+
+int
+DB_ENV-&gt;repmgr_set_socket(DB_ENV *env,
+    int (*approval_func)(DB_ENV *dbenv,
+    DB_REPMGR_SOCKET socket, int *result, u_int32_t flags));  </pre>
+      <p>
+        The <code class="methodname">DB_ENV-&gt;repmgr_set_socket()</code> method
+        specifies a socket callback.  The socket callback enables an
+        application to exert additional control over the connections used by
+        Replication Manager.
+    </p>
+      <p>
+        Replication Manager creates IPv6 connections whenever possible
+        but also supports IPv4.
+        In cases where there are multiple addresses defined for a
+        site, Replication Manager attempts connections first on any IPv6
+        addresses and then on any IPv4 addresses until one succeeds.
+        Replication Manager relies on platform configuration settings
+        and defaults to govern the use of IPv4-mapped IPv6 addresses in
+        cases where one site is using IPv6 and the other site is using IPv4.
+    </p>
+      <p>
+        If your application requires more precise control over
+        connections, you can use this method to provide a socket callback.
+        The socket callback provides access to each socket before it is used
+        in a connection attempt and provides the ability to accept or reject
+        the socket.  Within the socket callback's approval_func, you can test
+        socket properties such as address characteristics (e.g. whether it
+        is IPv6 or IPv4) and socket options.  You can optionally change the
+        IPV6_V6ONLY socket option to enable or disable use of IPv4-mapped
+        IPv6 addresses.  If the socket callback rejects a socket or if a
+        connection attempt does not succeed, Replication Manager tries any
+        other addresses defined for the site.
+    </p>
+      <p>
+        The only supported change to the socket in this callback is the
+        IPV6_V6ONLY socket option.  Any other changes may adversely affect
+        the operation of Replication Manager's TCP/IP communications
+        infrastructure. 
+    </p>
+      <p>
+         The <code class="methodname">DB_ENV-&gt;repmgr_set_socket()</code> method
+         configures operations performed using the specified 
+         <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>  handle, not all operations
+         performed on the underlying database environment.
+    </p>
+      <p>
+         The <code class="methodname">DB_ENV-&gt;repmgr_set_socket()</code> <span>
+            <span>
+                  method returns a non-zero error value on failure and 0 on success.
+            </span>
+            
+        </span>
+    </p>
+      <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
+        <h3 class="title">Note</h3>
+        <p>
+            Berkeley DB is not re-entrant. The callback function for
+            this method should not attempt to make library calls (for
+            example, to release locks or close open handles).
+            Re-entering Berkeley DB is not guaranteed to work
+            correctly, and the results are undefined.
+        </p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140711173042160"></a>Parameters</h3>
+            </div>
+          </div>
+        </div>
+        <div class="sect3" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h4 class="title"><a id="idm140711173043536"></a>approval_func</h4>
+              </div>
+            </div>
+          </div>
+          <p>
+                  The <span class="bold"><strong>approval_func</strong></span>
+                  callback function determines whether a particular
+                  socket should be used in a connection attempt to a
+                  site.  The parameters to 
+                  <span class="bold"><strong>approval_func</strong></span> are as follows:
+            </p>
+          <div class="itemizedlist">
+            <ul type="disc">
+              <li>
+                <p>
+                        <code class="literal">dbenv</code>
+                     </p>
+                <p>
+                         The <span class="bold"><strong>dbenv</strong></span>
+                         parameter is the enclosing database environment
+                         handle.
+                    </p>
+              </li>
+              <li>
+                <p>
+                        <code class="literal">socket</code>
+                     </p>
+                <p>
+                         The <span class="bold"><strong>socket</strong></span>
+                         parameter is the socket that is about to be
+                         used in a connection attempt to a site.
+                     </p>
+              </li>
+              <li>
+                <p>
+                        <code class="literal">result</code>
+                     </p>
+                <p>
+                         The <span class="bold"><strong>result</strong></span> parameter is
+                         an output parameter indicating whether to use this
+                         socket.  Set it to 0 to reject this socket or to a
+                         non-zero value to accept this socket.
+                     </p>
+              </li>
+              <li>
+                <p>
+                        <code class="literal">flags</code>
+                     </p>
+                <p>
+                         The <span class="bold"><strong>flags</strong></span>
+                         parameter is currently unused.
+                     </p>
+              </li>
+            </ul>
+          </div>
+          <p>
+                The <span class="bold"><strong>approval</strong></span> function must
+                return 0 on success and non-zero on failure.  If the
+                approval function fails, the environment will panic.
+            </p>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140711173029648"></a>Errors</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+                 The <code class="methodname">DB_ENV-&gt;repmgr_set_socket()</code>
+                 <span>
+            <span>
+                 method may fail and return one of the following non-zero errors:
+            </span>
+            
+        </span>
+            </p>
+        <div class="sect3" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h4 class="title"><a id="idm140711173014240"></a>EINVAL</h4>
+              </div>
+            </div>
+          </div>
+          <p>
+                If this method is called from a base replication API
+                application; or if an invalid flag value or parameter was
+                specified.
+            </p>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140711173011680"></a>Class</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+            <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>  
+        </p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140711173109872"></a>See Also</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+             <a class="xref" href="rep.html#replist" title="Replication and Related Methods">Replication and Related Methods</a> 
+        </p>
+      </div>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="repmgrset_incoming_queue_max.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="rep.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="repmgr_site.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">
+        DB_ENV-&gt;repmgr_set_incoming_queue_max()
+     </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> DB_ENV-&gt;repmgr_site()</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

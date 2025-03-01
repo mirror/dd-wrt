@@ -1,0 +1,1331 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Berkeley DB Library Version 12.1.6.2 Change Log</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Berkeley DB Installation and Build Guide" />
+    <link rel="up" href="upgrade_62_toc.html" title="Chapter 9.  Upgrading Berkeley DB 12.1.6.1 applications to Berkeley DB 12.1.6.2" />
+    <link rel="prev" href="upgrade_droppsupp62.html" title="Dropped Support" />
+    <link rel="next" href="upgrade_61_toc.html" title="Chapter 10.  Upgrading Berkeley DB 12.1.6.0 applications to Berkeley DB 12.1.6.1" />
+  </head>
+  <body>
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 12.1.6.2</p>
+      </div>
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">Berkeley DB Library Version 12.1.6.2 Change Log</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="upgrade_droppsupp62.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 9.  Upgrading Berkeley DB 12.1.6.1 applications to Berkeley DB 12.1.6.2 </th>
+          <td width="20%" align="right"> <a accesskey="n" href="upgrade_61_toc.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="changelog_6_2"></a>Berkeley DB Library Version 12.1.6.2 Change Log</h2>
+          </div>
+        </div>
+      </div>
+      <div class="toc">
+        <dl>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_6_2.html#idm140188017503984">Changes between version 12.1.6.2.23 and version 12.1.6.2.32</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_6_2.html#idm140188017503216">Database or Log File On-Disk Format Changes</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_6_2.html#idm140188017526592">New Features/Improvements</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_6_2.html#idm140188017501040">Database Environment Changes</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_6_2.html#idm140188017505328">Concurrent Data Store Changes</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_6_2.html#idm140188017475184">Access Method Changes</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_6_2.html#idm140188017511008">API Changes</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_6_2.html#idm140188017511392">SQL-specific API Changes</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_6_2.html#idm140188017512224">Tcl-specific API Changes</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_6_2.html#idm140188017456256">Java-specific API Changes</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_6_2.html#idm140188017452912">C#-specific API Changes</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_6_2.html#idm140188017497120">Replication Changes</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_6_2.html#idm140188017499488">Locking Subsystem Changes</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_6_2.html#idm140188017440640">Logging Subsystem Changes</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_6_2.html#idm140188017439168">Memory Pool Subsystem Changes</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_6_2.html#idm140188017433136">Mutex Subsystem Changes</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_6_2.html#idm140188017430864">Transaction Subsystem Changes</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_6_2.html#idm140188017429072">Test Suite Changes</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_6_2.html#idm140188017425824">Utility Changes</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_6_2.html#idm140188017421968">Configuration, Documentation, Sample Apps, Portability and Build Changes</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_6_2.html#idm140188017419664">Example Changes</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_6_2.html#idm140188017418032">Miscellaneous Bug Fixes</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_6_2.html#idm140188017413392">Deprecated Features</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="changelog_6_2.html#idm140188017409264">Known Bugs</a>
+            </span>
+          </dt>
+        </dl>
+      </div>
+      <p>
+        This is the changelog for Berkeley DB
+        12<span class="emphasis"><em>c</em></span> Release 1 (library
+        version 12.1.6.2).
+    </p>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017503984"></a>Changes between version 12.1.6.2.23 and version 12.1.6.2.32</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ Modified the ex_rep_base example to accept IPv6 addresses. [#24371]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug where SQL authentication APIs might raise assertion failures. [#24598]
+            </p>
+            </li>
+            <li>
+              <p>
+ The SQLite user authentication extension now always requires encryption. To build with the authentication extension, encryption must be enabled. Otherwise, it results in a compiler error. To convert a database to require authentication, the database must be encrypted. sqlite3_user_authenticate() now always returns SQLITE_AUTH if called on a database that does not require authentication. [#24598]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug where an application might hang because it could not obtain a TAS lock when running Linux on Sparc architecture. [#24805]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added tests memp009 and mut004. [#24974]
+            </p>
+            </li>
+            <li>
+              <p>
+ When the number of free mutexes is low, removed databases and closed unnamed in-memory databases are purged from the memory pool to free mutexes. [#24974]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug where built-in atomic functions are used only when --enable-cxx is specified. [#24974]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a possible crash when using the Java API and slices. [#24988]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added cross-compile support for detecting built-in atomic functions. [#25055]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed undefined symbol errors for configurations including --enable-dtrace and -enable-perfmon_statistics when replication is also enabled. [#25061]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added the db_convert utility program which converts the byte order of all databases in database files. [#25086]
+            </p>
+            </li>
+            <li>
+              <p>
+ Increased the number of instances in which failchk can successfully clean the environment without requiring full recovery after a thread crashes while using Berkeley DB. [#25087]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added DPL APIs to BDB Java client driver. [#25089]
+            </p>
+            </li>
+            <li>
+              <p>
+ Attempting to open an environment while it is being recovered now returns a new error message, which includes the time. [#25204]
+            </p>
+            </li>
+            <li>
+              <p>
+ Improved db_verify's handling of corrupted database files. [#25239]
+            </p>
+            </li>
+            <li>
+              <p>
+ Adjusted configure scripts to handle FreeBSD 10 or greater. [#25251]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug where setting the absolute path of a file on Windows could result in the file being created on the wrong disk. [#25284]
+            </p>
+            </li>
+            <li>
+              <p>
+ Syncing a database with external files will now also sync the meta database associated with the external files. [#25284]
+            </p>
+            </li>
+            <li>
+              <p>
+ Add support for -with-mutex=BSD/OSSpinLockTry, to avoid using the undocumented spin_lock_try function, which is not permitted on iOS. [#25342]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug preventing some changes to external files performed through the DB_STREAM API from replicating to the clients.  [#25432]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug where automatic log removal did not work on Windows Mobile 6.5. [#25449]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed bugs where printed statistics might contain "unknown" flags. [#25461]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug where hot backup of queue extent files did not follow the original directory structure. [#25545]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug where ADO .Net package had debug pre-processors for release configurations. [#25549]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added PRAGMA statistics, which prints out statistics about the database and its environment.  [#25550]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added PRAGMA statistics_files, which redirects output from the statistics PRAGMA to a file.  [#25550]
+            </p>
+            </li>
+            <li>
+              <p>
+ Internal Berkeley DB messages are now redirected to the same file where internal Berkeley DB error messages are redirected. [#25568]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that could cause a client undergoing internal initialization to fail to request all the necessary logs for a correct recovery.  The major symptom of this bug was that some client database files were left with empty pages that would later cause log sequence errors or other failures. [#25624]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added a new field in the per-thread statistics output: the number of locked mutexes. [#25690]
+            </p>
+            </li>
+            <li>
+              <p>
+ The -c option of db_hotbackup can now work with replication manager applications. The -c option cannot be used with base replication applications. [#25702]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug where the configure script may fail to find the JNI include directories on Mac OS X. [#25713]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug where mutexes could not be acquired on arm64-v8a Android systems. [#25752]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug where the JAVACFLAGS environment variable was not passed to the JDBC driver. [#25752]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug where clients in the replication group might panic during synchronization with the master. [#25800]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed possible segfaults when running db_verify with external files. [#25920]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added Visual Studio 2015 solution files to the SQL ADO.NET package. [#25946]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug where setting initial number of lockers might cause segfault. [#26085]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug where client specific log records resulted in incorrect calculation of subsequent log offset. This would later result in a DB panic on master. [#26090]
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017503216"></a>Database or Log File On-Disk Format Changes</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ The log file format changed in release 12.1.6.2.
+            </p>
+            </li>
+            <li>
+              <p>
+ Existing SQL databases will have to be reindexed after upgrading to this release.  No actions are required for non-SQL databases.  Check the upgrade documentation for more details. [#23469]
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017526592"></a>New Features/Improvements</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ Added support for global message prefixes. [#20514]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added Replication Manager write forwarding, which enables a client to perform simple put and delete operations by forwarding them to the master.  [#21049]
+            </p>
+            </li>
+            <li>
+              <p>
+ Improved the way we mark a password as consumed.  [#23876]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added support for IPv6. [#23878]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added support for Java 8. [#24220]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added support for ARMv7 and above, and for ARM64. ARMv6 and below are no longer supported. [#24312]
+            </p>
+            </li>
+            <li>
+              <p>
+ Add a new SMP-optimized data model that is especially valuable for highly multithreaded applications. A sliced Berkeley DB instance contains a collection of related Berkeley DB environments, known as slices, each containing a disjoint subset of records. Transactional consistency is individually maintained within each slice, rather than across multiple slices. [#24343]
+            </p>
+            </li>
+            <li>
+              <p>
+ DB now supports the client-server architecture by providing a stand-alone server program and Java client driver APIs. The server program offers remote access to DB features. The client driver APIs provide building blocks for applications that communicate with a database server. Multiple client applications can communicate with a single server simultaneously. [#24360]
+            </p>
+            </li>
+            <li>
+              <p>
+ Enabled support of the SQLite user authentication extension. [#24365]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added Visual Studio 2012 projects. [#24674]
+            </p>
+            </li>
+            <li>
+              <p>
+ Encryption and checksum can now be enabled with external files (formerly known as BLOBs).  Note that only the data stored in the database will be encrypted and checksum protected.  The data in the external files will not be encrypted or checksum protected. [#24849]
+            </p>
+            </li>
+            <li>
+              <p>
+ The BLOB files feature has been renamed external files to reduce confusion with the SQL BLOB datatype.  The BLOB related functions have been deprecated, and replaced with new function names; for example, ext_file_threshold has replaced blob_threshold, and blob_threshold is deprecated. See the Upgrading section of the documentation for more details. [#24850]
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017501040"></a>Database Environment Changes</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ The location of the region directory can now be configured using DB_ENV-&gt;get/set_region_dir. [#22374]
+            </p>
+            </li>
+            <li>
+              <p>
+ Improved the statistic displays of thread states. [#23577]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that causes a crash when opening a corrupted environment with encryption and DB_REGISTER. [#23643]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that causes a crash when opening a corrupted environment with DB_FAILCHK using a BDB compiled with DIAGNOSTIC defined. [#23643]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug where closing a panicked environment raised an access violation and crashed the program. [#23679]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug where closing a panicked environment could lead to an infinite loop. [#23814]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that could cause a crash when opening multiple environments in a multi-threaded program. [#23913]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that could cause the database to appear in the wrong directory when performing catastrophic recovery with logs created in 5.3 or earlier. [#24169]
+            </p>
+            </li>
+            <li>
+              <p>
+ Improved the sizing of the environment region to better match the needs of thread tracking as specified by DB_ENV-&gt;set_thread_count(). [#24314]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug where DB_ENV-&gt;open would fail when DB_ENV-&gt;set_memory_max was called on a 32-bit system. [#24783]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that allowed illegal use of transactions when adding a sequence to a new database.  [#24786]
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017505328"></a>Concurrent Data Store Changes</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ None.
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017475184"></a>Access Method Changes</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ DB-&gt;open() now detects invalid pagesizes sooner, avoiding a potential floating point exception when a purported database file has a pagesize of 0. [#24217]
+            </p>
+            </li>
+            <li>
+              <p>
+ DB-&gt;open() now detects invalid bt_minkey better, avoiding a potential floating point exception. [#24398]
+            </p>
+            </li>
+            <li>
+              <p>
+ Removed a potential race condition when three or more threads attempt to split adjacent pages in a btree. [#24733]
+            </p>
+            </li>
+            <li>
+              <p>
+ Improved parallelism of DB-&gt;open() calls when the database name is NULL, that is, when opening a file that does not contain sub-databases. [#25624]
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017511008"></a>API Changes</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ Added new parameter message prefix to message callback function. [#20514]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added a new public error code, DB_META_CHKSUM_FAIL, that gets thrown when there is a checksum failure on any metadata page. [#23304]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added new statistics to DB_REP_STAT that collect information on external files. [#23944]
+            </p>
+            </li>
+            <li>
+              <p>
+ Removed EnvironmentConfig.setTxnNotDurable() and Environment.getTxnNotDurable() from the Java API. This flag cannot be set on environments. [#24416]
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017511392"></a>SQL-specific API Changes</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ Fixed a known bug in SQL where ORDER BY could return results out of order if an index is used to answer the query. [#23469]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug where BDB crashed when enabling encryption in the SQL API using PRAGMA key.  [#23655]
+            </p>
+            </li>
+            <li>
+              <p>
+ Sequence names are now case insensitive except when surrounded by quotation marks. [#23964]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug where BDB was not handling tables with multiple SQL BLOB columns when using the SQL API. [#24092]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that an error message was not getting displayed correctly when sequence creation failed. [#24103]
+            </p>
+            </li>
+            <li>
+              <p>
+ Creating a table will no longer fail after opening the database connection without the SQLITE_OPEN_CREATE flag. [#24115]
+            </p>
+            </li>
+            <li>
+              <p>
+ Improved the speed of many SQL queries, especially ones based on index lookups. [#24183]
+            </p>
+            </li>
+            <li>
+              <p>
+ The default cache size for SQL databases has been increased from 2000 pages to 5000 pages. [#24183]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that was preventing the PRAGMA cache_size from changing the size of the cache. [#24206]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a crash when writing to a SQL BLOB while txn_bulk is enabled. [#24351]
+            </p>
+            </li>
+            <li>
+              <p>
+ Updated SQL API build to be compatible with SQLite 3.8.10.2. [#24397]
+            </p>
+            </li>
+            <li>
+              <p>
+ A single transaction is now used to manage SQL BLOB handles for tables that contain SQL BLOBs. [#24549]
+            </p>
+            </li>
+            <li>
+              <p>
+ Enabled keystore based user authentication to make the authentication extension more secure and easier to work with. [#24598]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that may lead to a crash when working with sequences. [#24826]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a crash when closing connection to a database with sequences. [#24827]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed the error "BDB0232 Error opening external file" when using SQL API with PRAGMA large_record_opt enabled. [#24895]
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017512224"></a>Tcl-specific API Changes</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ None.
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017456256"></a>Java-specific API Changes</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ Fixed a bug that may cause Database.removeSequence() to throw an IllegalArgumentException. [#24360]
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017452912"></a>C#-specific API Changes</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ Fixed a bug so that setting DatabaseEnvironmentConfig.Register now works. [#24094]
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017497120"></a>Replication Changes</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ Fixed a bug that could leave a 2SITE_STRICT replication group in a state where the master cannot reelect itself master and the other site cannot join if both sites crash at an inopportune time during the other site's initial attempt to join the replication group. [#20604]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that causes a site joining a replication group to hang or to only partially complete the internal steps necessary to join the replication group. [#23750]
+            </p>
+            </li>
+            <li>
+              <p>
+ Client to client support is now enabled for replication groups that support external files. [#23944]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that could cause a master crash in the following cases: an unencrypted client attempts to join an encrypted replication group, or an encrypted client attempts to join an unencrypted replication group. [#24288]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug when using BDB SQL where adding a replication site immediately after opening the master environment could cause the add site operation to hang.  Also fixed a bug that caused BDB SQL to lose its encryption settings when turning replication on or off on an existing environment. [#24327]
+            </p>
+            </li>
+            <li>
+              <p>
+ Enhanced the vote comparison routine used to select a new master. [#24433]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that caused mixed-version replication live upgrades from releases prior to 6.0 to fail with an EEXIST error when in-memory databases are present.  [#24597]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that caused a double deallocation when there was a failure to set the SO_KEEPALIVE socket option on a Replication Manager connection. [#24830]
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017499488"></a>Locking Subsystem Changes</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ Fixed a crash which could occur when multiple BDB SQL processes repeatedly open a database file. [#24230]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a crash which could occur when maximum count of lockers is reached. [#24470]
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017440640"></a>Logging Subsystem Changes</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ Avoid incrementing the statistic DB_LOG_STAT.st_scount ("Total log file flushes") when DB_LOG_NOSYNC is in effect. [#23945]
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017439168"></a>Memory Pool Subsystem Changes</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ Fixed a bug that may cause a crash when DB_ENV-&gt;memp_stat() is called. [#24298]
+            </p>
+            </li>
+            <li>
+              <p>
+ Corrected error paths which could cause a spurious panic attempting to unlock a mutex that was not locked. [#24606]
+            </p>
+            </li>
+            <li>
+              <p>
+ When an attempt to flush a file from the memory pool fails, add an error message that includes the file name. It is likely that the file was removed or altered outside of the control of Berkeley DB. [#24606]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug where the memory pool statistics for the number of caches and maximum number of caches were incorrect. [#24758]
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017433136"></a>Mutex Subsystem Changes</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ Fixed a bug where an application might fail to obtain a TAS lock when running Linux on Sparc architecture. [#24805]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added support for built-in atomic (__atomic_*) functions when the compiler supports them. [#20943]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed the error "BDB2074 No space available in latch table" for configurations using plain pthreads mutexes and DB_ENV-&gt;set_thread_count(). Susceptible configurations include the definition of HAVE_MUTEX_PTHREADS in db_config.h but do not define HAVE_MUTEX_HYBRID.  [#23831]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed DB_RUNRECOVERY errors caused by an incompatibility between pure pthreads-based mutexes and failchk broadcasting. [#23965]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a race condition which might allow DB_ENV-&gt;failchk() to hang after it had freed a locker ID. [#24194]
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017430864"></a>Transaction Subsystem Changes</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ Fixed a rare case where a TPEPROTO error would be returned incorrectly when using XA transactions. [#24017]
+            </p>
+            </li>
+            <li>
+              <p>
+ Aborting a transaction no longer panics if a deadlock error occurs while freeing up the transaction's cursors. [#24223]
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017429072"></a>Test Suite Changes</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ The test suite now requires Tcl 8.6 or greater. [#23878]
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017425824"></a>Utility Changes</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ A 'salvage' (db_dump -r) no longer hangs on a corrupt database which contains a loop in an overflow item's chain of pages. [#18550]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that db_verify did not verify multiple files correctly. [#23692]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a crash with db_dump -d when --enable-diagnostic is on and the environment has been set up for thread tracking (DB_ENV-&gt;set_thread_count()) [#23818].
+            </p>
+            </li>
+            <li>
+              <p>
+ Added a '-v [ov]' flag which can be used to verify the database file before dumping it. [#24217]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug where db_printlog improperly handled a "No such file or directory" error condition. [#24265]
+            </p>
+            </li>
+            <li>
+              <p>
+ Improved the way db_verify handle corrupted database files. [#24398]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added additional page verifications into db_verify to prevent possible SEGV errors when verifying extremely corrupted database files. [#24754]
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017421968"></a>Configuration, Documentation, Sample Apps, Portability and Build Changes</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ Improved the Javadoc on EnvironmentConfig.addDataDir and EnvironmentConfig.setCreateDir. [#24093]
+            </p>
+            </li>
+            <li>
+              <p>
+ Improved the configure scripts for Mac OS X. [#24139]
+            </p>
+            </li>
+            <li>
+              <p>
+ The JDBC jar file (sqlite.jar) is now installed in the "lib" directory instead of "jar" on -nix systems. [#24139]
+            </p>
+            </li>
+            <li>
+              <p>
+ Worked around a clang compiler issue on Mac OS X where clang may incorrectly optimize out the check for external file size overflow and cause SIGXFSZ to be raised when calling DB_STREAM-&gt;write(). [#24264]
+            </p>
+            </li>
+            <li>
+              <p>
+ Enabled cross compiling the JDBC driver. [#24347]
+            </p>
+            </li>
+            <li>
+              <p>
+ Removed support for Visual Studio 2005. [#24354]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added a 64-bit Windows binary release. [#24576]
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017419664"></a>Example Changes</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ Added a Java example showing how to use the external file interface and storage format for working with very large records. [#24023]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added the C example ex_servicemgmt, which shows how BDB can be used to implement an automobile after-sale management system. [#24064]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added the SQL example ex_toll_booth, which shows how BDB can be used to implement an automated toll booth. [#24065]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added the SQL example ex_advertising, which shows how BDB can be used to implement location based personal advertising. [#24065]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added the C example ex_priority, which shows how BDB can be used to implement priority message handling. [#24065]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added the C example ex_firewall, which shows how BDB can be used to implement a firewall. [#24065]
+            </p>
+            </li>
+            <li>
+              <p>
+ Wrote a guide to the Berkeley DB example programs and posted it to the Oracle Berkeley DB OTN site. [#24072]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added the parking demo Java sample program. The demo program requires JDK 7 or above and DB's JDBC driver to build and run. To build the demo program, run 'make dbdemos.jar'. [#24106]
+            </p>
+            </li>
+            <li>
+              <p>
+ Added the C example ex_rep_gsg_wrfor, which shows how to use BDB Replication Manager write forwarding. Also added C++ and Java versions of the test. [#24726]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug to make the excxx_repquote_gsg example programs more reliable. [#24845]
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017418032"></a>Miscellaneous Bug Fixes</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ Fixed a bug where opening or renaming a compressed in-memory database may fail with the error "BDB1565 DB-&gt;set_bt_compress: method not permitted after handle's open method". [#22055]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a crash when joining compressed databases. [#22058]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug where a join cursor may miss the first matching pair when the database is compressed. [#22062]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a build error on Solaris where signal.h does not include a typedef for sig_t. [#22419]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug so the metadata database created when external files are enabled for a database will have the same page size as that database. [#23414]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a known bug in SQL where ORDER BY could return results out of order if an index is used to answer the query. [#23469]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that may cause self-deadlock during database compaction. [#23725]
+            </p>
+            </li>
+            <li>
+              <p>
+ Removed the +u1 compile flag from the HP-UX build.  [#23739]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fix a memory leak that can occur when multiple threads try to create a table simultaneously. [#23746]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug in the recovery of a truncated hash database. [#23772]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a Windows-specific file handling bug where an ERROR_ACCESS_DENIED error was generated on a CreateFile. [#23785]
+            </p>
+            </li>
+            <li>
+              <p>
+ Clean up attribute entry after calling pthread_create. [#23808]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a crash when MVCC and snapshot isolation is used and the system is under heavy load.[#23815]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug which was causing memory leaks in the DB utility programs and a segmentation fault. [#23816]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that may cause DB_PAGE_NOTFOUND error during btree compaction. [#23853]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that may cause DBcursor-&gt;get to return incorrect data when DB_GET_BOTH_RANGE flag is used. [#24220]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that did not display file names correctly when a file failed to open during backup. [#24340]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that may cause an environment panic when the number of lock table partitions is too large. [#24554]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that MultipleRecnoDataEntry did not encode record-number-data pairs correctly with append(). [#24555]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug causing DBcursor-&gt;put to crash when DB_AFTER is set. [#24572]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug causing Database.setConfig() to incorrectly throw an exception. [#24585]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that may cause DB-&gt;get and DBcursor-&gt;get to return DB_SECONDARY_BAD when Concurrent Data Store is used. [#24640]
+            </p>
+            </li>
+            <li>
+              <p>
+ Fixed a bug that may cause a segmentation fault when multiple database handles are opened on the same database in the same transaction. [#24857]
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017413392"></a>Deprecated Features</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ Removed support for &lt;varargs.h&gt;; &lt;stdarg.h&gt; is required. [#23895]
+            </p>
+            </li>
+            <li>
+              <p>
+ Removed unneeded historical code that is no longer active in Berkeley DB. [#23930]
+            </p>
+            </li>
+            <li>
+              <p>
+ The lock statistic st_nlockers_hit will be removed in a future release. [#24954]
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017409264"></a>Known Bugs</h3>
+            </div>
+          </div>
+        </div>
+        <div class="orderedlist">
+          <ol type="1">
+            <li>
+              <p>
+ The STL interface does not work correctly on a Mac OS X platform.
+            </p>
+            </li>
+            <li>
+              <p>
+ The Solaris Studio 12.5 C++ compiler can fail to build Berkeley DB because of our support for built-in atomic functions. Falling back to Solaris Studio 12.4 should be a successful workaround.
+            </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="upgrade_droppsupp62.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="upgrade_62_toc.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="upgrade_61_toc.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">Dropped Support </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> Chapter 10.  Upgrading Berkeley DB 12.1.6.0 applications to Berkeley DB 12.1.6.1 </td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

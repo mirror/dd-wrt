@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Special considerations for two-site replication groups</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
+    <link rel="up" href="rep.html" title="Chapter 13.  Berkeley DB Replication" />
+    <link rel="prev" href="comm_repsites.html" title="Communicating between Replication Manager Sites" />
+    <link rel="next" href="rep_partition.html" title="Network partitions" />
+  </head>
+  <body>
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 12.1.6.2</p>
+      </div>
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">Special considerations for two-site replication groups</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="comm_repsites.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 13.  Berkeley DB Replication </th>
+          <td width="20%" align="right"> <a accesskey="n" href="rep_partition.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="rep_twosite"></a>Special considerations for two-site replication groups</h2>
+          </div>
+        </div>
+      </div>
+      <div class="toc">
+        <dl>
+          <dt>
+            <span class="sect2">
+              <a href="rep_twosite.html#twosite_strict">Two-site strict configuration</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="rep_twosite.html#twosite_prefmas">Preferred master mode</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="rep_twosite.html#twosite_other">Other alternatives</a>
+            </span>
+          </dt>
+        </dl>
+      </div>
+      <p> 
+        One of the benefits of replication is that it helps your
+        application remain available for writes even when a site
+        crashes. Another benefit is the added durability achieved by
+        storing multiple copies of your application data at different
+        sites. However, if your replication group contains only two
+        sites, you must prioritize which of these benefits is more
+        important to your application. 
+    </p>
+      <p> 
+        A two-site replication group is particularly vulnerable to
+        duplicate masters when there is a disruption to communications
+        between the sites. The original master continues to accept new
+        transactions. If the original client detects the loss of the
+        master and elects itself master, it also starts accepting new
+        transactions. When communications are restored, there are
+        duplicate masters and one site's new transactions will be
+        rolled back. 
+    </p>
+      <p>
+        If it is unacceptable to your application for any new
+        transactions to be rolled back, the alternative in a two-site
+        replication group is to require both sites to be present in
+        order to elect a master. This stops a client from electing
+        itself master when it loses contact with the master and
+        prevents creation of parallel sets of transactions, one of
+        which must be rolled back.
+        However, requiring both sites to be present to elect a
+        master results in a loss of write availability when the master
+        crashes. The client cannot take over as master and the
+        replication group exists in a read-only state until the
+        original master site rejoins the replication group.
+    </p>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="twosite_strict"></a>Two-site strict configuration</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+        Replication Manager applications use the <a href="../api_reference/C/repconfig.html" class="olink">DB_ENV-&gt;rep_set_config()</a> method
+        <a href="../api_reference/C/repconfig.html#config_DB_REPMGR_CONF_2SITE_STRICT" class="olink">DB_REPMGR_CONF_2SITE_STRICT</a> flag to make this tradeoff
+        between write availability and transaction durability. When
+        this flag is turned on, Replication Manager favors transaction
+        durability. When it is turned off, Replication Manager favors
+        write availability. 
+    </p>
+        <p>
+        A two-site Replication Manager application that uses
+        heartbeats in an environment with frequent communications
+        disruptions generally should operate with the
+        <a href="../api_reference/C/repconfig.html#config_DB_REPMGR_CONF_2SITE_STRICT" class="olink">DB_REPMGR_CONF_2SITE_STRICT</a> flag turned on. Otherwise,
+        frequent heartbeat failures will cause frequent duplicate
+        masters and the resulting elections and client
+        synchronizations will make one or both sites unavailable for
+        extended periods of time.
+    </p>
+        <p>
+        A replication group containing only two electable sites is
+        subject to duplicate masters and rollback of one site's new
+        transactions even when it contains additional unelectable
+        sites. The <a href="../api_reference/C/repconfig.html#config_DB_REPMGR_CONF_2SITE_STRICT" class="olink">DB_REPMGR_CONF_2SITE_STRICT</a> flag does not apply in
+        this case because the replication group is larger than two
+        sites.
+    </p>
+        <p> 
+        Base API applications using two sites use the values of the <span class="bold"><strong>nvotes</strong></span> and <span class="bold"><strong>nsites</strong></span> parameters in calls to the <a href="../api_reference/C/repelect.html" class="olink">DB_ENV-&gt;rep_elect()</a>
+        method to make this durability vs. availability  tradeoff. For more
+        information, see <a class="xref" href="rep_elect.html" title="Elections">Elections</a>.
+    </p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="twosite_prefmas"></a>Preferred master mode</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+        In some two-site replication groups, it is desirable for one
+        particular site to function as the master whenever possible. This
+        might be due to hardware differences, geographical location, or
+        other reasons. Replication Manager preferred master mode provides
+        this behavior.
+    </p>
+        <p>
+        A preferred master replication group contains two sites where one
+        site is the <span class="bold"><strong>preferred master site</strong></span>
+        and the other site is the <span class="bold"><strong>client
+        site</strong></span>. The preferred master site operates as
+        the master as much of the time as its availability permits. 
+        The client site takes over as <span class="bold"><strong>temporary
+        master</strong></span> when the preferred
+        master is unavailable, providing write availability when the
+        preferred master site is down. Transactions committed on the preferred
+        master site are never rolled back, providing more predictable
+        durability than turning off the <a href="../api_reference/C/repconfig.html#config_DB_REPMGR_CONF_2SITE_STRICT" class="olink">DB_REPMGR_CONF_2SITE_STRICT</a> flag.
+    </p>
+        <p>
+        In a preferred master replication group where the client site is
+        operating as the temporary master, when the preferred master site
+        again becomes available it synchronizes with the temporary master
+        and then automatically takes over as master. The preferred master
+        synchronization preserves temporary master transactions when
+        they do not conflict with any new preferred master transactions. If
+        there are conflicting transactions, the temporary master transactions
+        are always the transactions that are rolled back.
+    </p>
+        <p>
+        To configure a preferred master replication group, you use the
+        <a href="../api_reference/C/repconfig.html" class="olink">DB_ENV-&gt;rep_set_config()</a> method to specify the <a href="../api_reference/C/repconfig.html#config_DB_REPMGR_CONF_PREFMAS_MASTER" class="olink">DB_REPMGR_CONF_PREFMAS_MASTER</a>
+        flag on the preferred master site and to specify the
+        <a href="../api_reference/C/repconfig.html#config_DB_REPMGR_CONF_PREFMAS_CLIENT" class="olink">DB_REPMGR_CONF_PREFMAS_CLIENT</a> flag on the client site. These
+        flags must be specified before calling the <a href="../api_reference/C/repmgrstart.html" class="olink">DB_ENV-&gt;repmgr_start()</a> method
+        and cannot be changed after it is called. Both sites should call
+        the <a href="../api_reference/C/repmgrstart.html" class="olink">DB_ENV-&gt;repmgr_start()</a> method using the <a href="../api_reference/C/repmgrstart.html#repmgrstart_DB_REP_CLIENT" class="olink">DB_REP_CLIENT</a> flags value.
+    </p>
+        <p>
+        Some configuration items are automatically set in preferred master
+        mode and cannot be changed: the <a href="../api_reference/C/repconfig.html#config_DB_REPMGR_CONF_2SITE_STRICT" class="olink">DB_REPMGR_CONF_2SITE_STRICT</a> and
+        <a href="../api_reference/C/repconfig.html#config_DB_REPMGR_CONF_ELECTIONS" class="olink">DB_REPMGR_CONF_ELECTIONS</a> flags are turned on, and
+        each site's priority value is set. The following timeout values
+        have different defaults in preferred master mode which can be
+        changed: <a href="../api_reference/C/repset_timeout.html#set_timeout_DB_REP_HEARTBEAT_SEND" class="olink">DB_REP_HEARTBEAT_SEND</a>, <a href="../api_reference/C/repset_timeout.html#set_timeout_DB_REP_HEARTBEAT_MONITOR" class="olink">DB_REP_HEARTBEAT_MONITOR</a>,
+        <a href="../api_reference/C/repset_timeout.html#set_timeout_DB_REP_ELECTION_RETRY" class="olink">DB_REP_ELECTION_RETRY</a>. Heartbeats cannot be turned off in
+        preferred master mode because they are required for automatic
+        takeovers. Preferred master mode
+        is not supported with master leases, in-memory databases, in-memory
+        logs, in-memory replication files or private environments.
+    </p>
+        <p>
+        When restarting a preferred master replication group after both
+        sites were down, it is best to restart the client site first in
+        order to preserve as many temporary master transactions as possible.
+        If the preferred master site is started first and then commits new
+        transactions, these new preferred master transactions would conflict
+        with any recent temporary master transactions and the temporary
+        master transactions would be rolled back.
+    </p>
+        <p>
+        If the preferred master site can no longer be used (for example, due
+        to a hardware failure), you can reconfigure the client site to become
+        the new preferred master site using the following steps:
+    </p>
+        <div class="itemizedlist">
+          <ul type="disc">
+            <li>
+              <p>
+          Shut down the old preferred master site if it is still running.
+          Use the old client site (now operating as temporary master) to
+          remove the old preferred master site from the replication group,
+          then close the old client's environment.
+        </p>
+            </li>
+            <li>
+              <p>
+          If you are using the <a href="../api_reference/C/configuration_reference.html" class="olink">DB_CONFIG</a> file to configure preferred master
+          mode, edit it to replace the <a href="../api_reference/C/rep_set_config_parameter.html" class="olink">rep_set_config</a> method
+          <code class="literal">db_repmgr_conf_prefmas_client</code> parameter
+          with the <code class="literal">db_repmgr_conf_prefmas_master</code>
+          parameter and adjust any other configuration values as needed.
+        </p>
+            </li>
+            <li>
+              <p>
+          Perform a recovery on the new preferred master site's environment
+          and reopen it.
+        </p>
+            </li>
+            <li>
+              <p>
+          If you are using the <a href="../api_reference/C/repconfig.html" class="olink">DB_ENV-&gt;rep_set_config()</a> method to configure preferred
+          master mode, invoke it to configure the
+          <a href="../api_reference/C/repconfig.html#config_DB_REPMGR_CONF_PREFMAS_MASTER" class="olink">DB_REPMGR_CONF_PREFMAS_MASTER</a> flag and adjust any other
+          configuration values as needed.
+        </p>
+            </li>
+            <li>
+              <p>
+          Call the <a href="../api_reference/C/repmgrstart.html" class="olink">DB_ENV-&gt;repmgr_start()</a> method with the <a href="../api_reference/C/repmgrstart.html#repmgrstart_DB_REP_CLIENT" class="olink">DB_REP_CLIENT</a> flags
+          value to restart this site as the new preferred master.
+        </p>
+            </li>
+          </ul>
+        </div>
+        <p>
+        Preferred master applications are more likely to have
+        <code class="literal">DB_LOCK_DEADLOCK</code>,
+        <code class="literal">DB_REP_HANDLE_DEAD</code> and <code class="literal">EACCES</code>
+        errors on either site during automatic takeovers and should be
+        prepared to handle these errors appropriately.
+    </p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="twosite_other"></a>Other alternatives</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+        If both write availability and transaction durability are
+        important to your application, you should strongly consider
+        having three or more electable sites in your replication
+        group. You should also carefully choose an acknowledgement
+        policy that requires at least a quorum of sites. It is best to
+        have an odd number of electable sites to provide a clear
+        majority in the event of a network partition.
+    </p>
+      </div>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="comm_repsites.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="rep.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="rep_partition.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">Communicating between Replication Manager Sites </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> Network partitions</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

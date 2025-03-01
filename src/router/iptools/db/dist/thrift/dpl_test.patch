@@ -1,0 +1,1746 @@
+diff -r -U5 -x '*.xml' a/test/thrift/com/sleepycat/client/bind/test/BindingSpeedTest.java b/test/thrift/com/sleepycat/client/bind/test/BindingSpeedTest.java
+--- a/test/thrift/com/sleepycat/client/bind/test/BindingSpeedTest.java  2016-07-27 11:23:48.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/bind/test/BindingSpeedTest.java  2016-07-27 11:25:44.000000000 +0800
+@@ -201,19 +201,20 @@
+                 ((stopTime - startTime) / (double) RUN_COUNT));
+         }
+     }
+ 
+     @After
+-    public void tearDown() {
++    public void tearDown() throws Exception {
+ 
+         /* Ensure that GC can cleanup. */
+         command = null;
+         fo = null;
+         to = null;
+         jtc = null;
+         buf = null;
+         parser = null;
++        super.tearDown();
+     }
+ 
+     void initSerialUnshared() {
+         fo = new FastOutputStream();
+     }
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/bind/serial/test/SerialBindingTest.java b/test/thrift/com/sleepycat/client/bind/serial/test/SerialBindingTest.java
+--- a/test/thrift/com/sleepycat/client/bind/serial/test/SerialBindingTest.java	2016-07-25 07:38:03.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/bind/serial/test/SerialBindingTest.java	2016-07-25 07:42:50.000000000 +0800
+@@ -88,11 +88,10 @@
+ 
+     @Test
+     public void testNullObjects() {
+ 
+         SerialBinding binding = new SerialBinding(catalog, null);
+-        buffer.setSize(0);
+         binding.objectToEntry(null, buffer);
+         assertTrue(buffer.getSize() > 0);
+         assertEquals(null, binding.entryToObject(buffer));
+     }
+ 
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/bind/tuple/test/TupleBindingTest.java b/test/thrift/com/sleepycat/client/bind/tuple/test/TupleBindingTest.java
+--- a/test/thrift/com/sleepycat/client/bind/tuple/test/TupleBindingTest.java    2016-07-26 12:53:14.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/bind/tuple/test/TupleBindingTest.java    2016-07-26 12:59:06.000000000 +0800
+@@ -253,78 +253,59 @@
+         assertEquals(8, entry.getData().length);
+         forMoreCoverageTest(new SortedDoubleBinding(),
+                             new Double(123.123));
+         
+         PackedIntegerBinding.intToEntry(1234, entry);
+-        assertEquals(5, entry.getData().length);
+         assertTrue(1234 == PackedIntegerBinding.entryToInt(entry));
+ 
+         new PackedIntegerBinding().objectToEntry
+             (new Integer(1234), entry);
+-        assertEquals(5, entry.getData().length);
+         forMoreCoverageTest(new PackedIntegerBinding(),
+                             new Integer(1234));
+                             
+         PackedLongBinding.longToEntry(1234, entry);
+-        assertEquals(9, entry.getData().length);
+         assertTrue(1234 == PackedLongBinding.entryToLong(entry));
+ 
+         new PackedLongBinding().objectToEntry(new Long(1234), entry);
+-        assertEquals(9, entry.getData().length);
+         forMoreCoverageTest(new PackedLongBinding(), new Long(1234));
+         
+         BigDecimalBinding.bigDecimalToEntry
+                 (new BigDecimal("123456789.123456789"), entry);
+-        assertEquals(5 * 2 + new BigDecimal("123456789.123456789").
+-                     unscaledValue().toByteArray().length, 
+-                     entry.getData().length);
+         assertTrue((new BigDecimal("123456789.123456789")).equals
+                    (BigDecimalBinding.entryToBigDecimal(entry)));
+                            
+         SortedPackedIntegerBinding.intToEntry(1234, entry);
+-        assertEquals(5, entry.getData().length);
+         assertTrue(1234 == SortedPackedIntegerBinding.entryToInt(entry));
+ 
+         new SortedPackedIntegerBinding().objectToEntry
+             (new Integer(1234), entry);
+-        assertEquals(5, entry.getData().length);
+         forMoreCoverageTest(new SortedPackedIntegerBinding(),
+                             new Integer(1234));
+                             
+         SortedPackedLongBinding.longToEntry(1234, entry);
+-        assertEquals(9, entry.getData().length);
+         assertTrue(1234 == SortedPackedLongBinding.entryToLong(entry));
+ 
+         new SortedPackedLongBinding().objectToEntry(new Long(1234), entry);
+-        assertEquals(9, entry.getData().length);
+         forMoreCoverageTest(new SortedPackedLongBinding(), new Long(1234));
+         
+         BigDecimalBinding.bigDecimalToEntry
+                 (new BigDecimal("123456789.123456789"), entry);
+-        assertEquals(5 * 2 + new BigDecimal("123456789.123456789").
+-                     unscaledValue().toByteArray().length, 
+-                     entry.getData().length);
+         assertTrue((new BigDecimal("123456789.123456789")).equals
+                    (BigDecimalBinding.entryToBigDecimal(entry)));
+ 
+         new BigDecimalBinding().objectToEntry
+                 (new BigDecimal("123456789.123456789"), entry);
+-        assertEquals(5 * 2 + new BigDecimal("123456789.123456789").
+-                     unscaledValue().toByteArray().length, 
+-                     entry.getData().length);
+         forMoreCoverageTest(new BigDecimalBinding(),
+                             new BigDecimal("123456789.123456789"));
+                             
+         SortedBigDecimalBinding.bigDecimalToEntry
+                 (new BigDecimal("123456789.123456"), entry);
+-        assertEquals(1 + 5 + 5 * 2 + 1, entry.getData().length);
+         assertEquals(0,(new BigDecimal("123456789.123456")).compareTo
+                      (SortedBigDecimalBinding.entryToBigDecimal(entry)));
+ 
+         new SortedBigDecimalBinding().objectToEntry
+                 (new BigDecimal("123456789.123456E100"), entry);
+-        assertEquals(1 + 5 + 5 * 2 + 1, entry.getData().length);
+         forMoreCoverageTest(new SortedBigDecimalBinding(),
+                             new BigDecimal("123456789.123456"));
+     }
+ 
+     @Test
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/collections/KeyRangeTest.java b/test/thrift/com/sleepycat/client/collections/KeyRangeTest.java
+--- a/test/thrift/com/sleepycat/client/collections/KeyRangeTest.java	2016-07-25 14:22:52.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/collections/KeyRangeTest.java	2016-07-25 14:25:33.000000000 +0800
+@@ -15,10 +15,11 @@
+ import java.io.Serializable;
+ import java.util.Arrays;
+ import java.util.Comparator;
+ 
+ import org.junit.After;
++import org.junit.Ignore;
+ import org.junit.Test;
+ 
+ import com.sleepycat.client.bind.ByteArrayBinding;
+ import com.sleepycat.client.compat.DbCompat;
+ import com.sleepycat.client.SDatabase;
+@@ -67,18 +68,14 @@
+ 
+         File dir = SharedTestUtils.getNewDir();
+         ByteArrayBinding dataBinding = new ByteArrayBinding();
+         SEnvironmentConfig envConfig = new SEnvironmentConfig();
+         envConfig.setAllowCreate(true);
+-        DbCompat.setInitializeCache(envConfig, true);
+-        env = new SEnvironment(dir, envConfig);
++        env = create(dir, envConfig);
+         SDatabaseConfig dbConfig = new SDatabaseConfig();
+         DbCompat.setTypeBtree(dbConfig);
+         dbConfig.setAllowCreate(true);
+-        if (comparator != null) {
+-            DbCompat.setBtreeComparator(dbConfig, comparator);
+-        }
+         store = DbCompat.testOpenDatabase
+             (env, null, "test.db", null, dbConfig);
+         view = new DataView(store, dataBinding, dataBinding, null, true, null);
+     }
+ 
+@@ -90,11 +86,11 @@
+         env.close();
+         env = null;
+     }
+ 
+     @After
+-    public void tearDown() {
++    public void tearDown() throws Exception {
+         try {
+             if (store != null) {
+                 store.close();
+             }
+         } catch (Exception e) {
+@@ -110,19 +106,21 @@
+         /* Ensure that GC can cleanup. */
+         env = null;
+         store = null;
+         view = null;
+         cursor = null;
++        super.tearDown();
+     }
+ 
+     @Test
+     public void testScan() throws Exception {
+         openDb(null);
+         doScan(false);
+         closeDb();
+     }
+ 
++    @Ignore("Custom comparator is not supported.")
+     @Test
+     public void testScanComparator() throws Exception {
+         openDb(new ReverseComparator());
+         doScan(true);
+         closeDb();
+@@ -130,16 +128,18 @@
+ 
+     private void doScan(boolean reversed) throws Exception {
+ 
+         byte[][] keys = new byte[KEYS.length][];
+         final int end = KEYS.length - 1;
++        view.getCurrentTxn().beginTransaction(null);
+         cursor = new DataCursor(view, true);
+         for (int i = 0; i <= end; i++) {
+             keys[i] = KEYS[i];
+             cursor.put(keys[i], KEYS[i], null, false);
+         }
+         cursor.close();
++        view.getCurrentTxn().commitTransaction();
+         byte[][] extremeKeys = new byte[EXTREME_KEY_BYTES.length][];
+         for (int i = 0; i < extremeKeys.length; i++) {
+             extremeKeys[i] = EXTREME_KEY_BYTES[i];
+         }
+ 
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/collections/test/CollectionTest.java b/test/thrift/com/sleepycat/client/collections/test/CollectionTest.java
+--- a/test/thrift/com/sleepycat/client/collections/test/CollectionTest.java	2016-07-25 07:38:03.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/collections/test/CollectionTest.java	2016-07-25 07:42:50.000000000 +0800
+@@ -188,11 +188,11 @@
+     @Test
+     public void runTest()
+         throws Exception {
+ 
+         try {
+-            env = testEnv.open(testName);
++            env = testEnv.open(connection, testName);
+             // For testing auto-commit, use a normal (transactional) runner for
+             // all reading and for writing via an iterator, and a do-nothing
+             // runner for writing via collections; if auto-commit is tested,
+             // the per-collection auto-commit property will be set elsewhere.
+             //
+@@ -699,11 +699,10 @@
+         throws Exception {
+ 
+         writeIterRunner.run(new TransactionWorker() {
+             public void doWork() throws Exception {
+                 Pattern suppressedError = Pattern.compile("BDB1004.*");
+-                Object oldErrHandler = DbCompat.getErrorHandler(env);
+                 ListIterator iter = (ListIterator) iterator(coll);
+                 try {
+                     for (int i = beginKey; i <= endKey; i += 1) {
+                         assertTrue(iter.hasNext());
+                         Object obj = iter.next();
+@@ -715,21 +714,19 @@
+                                 setValuePlusOne(iter, obj);
+                                 fail();
+                             } catch (UnsupportedOperationException e) {}
+                         } else if
+                            (((StoredCollection) coll).areDuplicatesOrdered()) {
+-                            DbCompat.suppressError(env, suppressedError);
+                             try {
+                                 setValuePlusOne(iter, obj);
+                                 fail();
+                             } catch (RuntimeException e) {
+                                 Exception e2 = ExceptionUnwrapper.unwrap(e);
+                                 assertTrue(e2.getClass().getName(),
+                                       e2 instanceof IllegalArgumentException ||
+                                       e2 instanceof SDatabaseException);
+                             }
+-                            DbCompat.setErrorHandler(env, oldErrHandler);
+                         } else {
+                             setValuePlusOne(iter, obj);
+                             /* Ensure iterator position is correct. */
+                             if (map.isOrdered()) {
+                                 assertTrue(iter.hasPrevious());
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/collections/test/ForeignKeyTest.java b/test/thrift/com/sleepycat/client/collections/test/ForeignKeyTest.java
+--- a/test/thrift/com/sleepycat/client/collections/test/ForeignKeyTest.java	2016-07-25 07:38:03.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/collections/test/ForeignKeyTest.java	2016-07-25 07:42:50.000000000 +0800
+@@ -103,16 +103,16 @@
+     public void setUp()
+         throws Exception {
+ 
+         super.setUp();
+         SharedTestUtils.printTestName(customName);
+-        env = testEnv.open(customName);
++        env = testEnv.open(connection, customName);
+         createDatabase();
+     }
+ 
+     @After
+-    public void tearDown() {
++    public void tearDown() throws Exception {
+ 
+         try {
+             if (index1 != null) {
+                 index1.close();
+             }
+@@ -145,10 +145,11 @@
+             factory = null;
+             storeMap1 = null;
+             storeMap2 = null;
+             indexMap1 = null;
+             indexMap2 = null;
++            super.tearDown();
+         }
+     }
+ 
+     @Test
+     public void runTest()
+@@ -178,11 +178,10 @@
+     private SDatabase openDb(String file)
+         throws Exception {
+ 
+         SDatabaseConfig config = new SDatabaseConfig();
+         DbCompat.setTypeBtree(config);
+-        config.setTransactional(testEnv.isTxnMode());
+         config.setAllowCreate(true);
+ 
+         return DbCompat.testOpenDatabase(env, null, file, null, config);
+     }
+ 
+@@ -196,11 +195,10 @@
+         TupleSerialMarshalledKeyCreator keyCreator =
+                 factory.getKeyCreator(MarshalledObject.class, keyName);
+ 
+         SSecondaryConfig secConfig = new SSecondaryConfig();
+         DbCompat.setTypeBtree(secConfig);
+-        secConfig.setTransactional(testEnv.isTxnMode());
+         secConfig.setAllowCreate(true);
+         secConfig.setKeyCreator(keyCreator);
+         if (foreignStore != null) {
+             secConfig.setForeignKeyDatabase(foreignStore);
+             secConfig.setForeignKeyDeleteAction(onDelete);
+diff -r -U5 -x '*.xml' a/test/thrift/com/sleepycat/client/collections/test/JoinTest.java b/test/thrift/com/sleepycat/client/collections/test/JoinTest.java
+--- a/test/thrift/com/sleepycat/client/collections/test/JoinTest.java   2016-07-31 22:58:03.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/collections/test/JoinTest.java   2016-07-31 22:59:39.000000000 +0800
+@@ -66,18 +66,19 @@
+ 
+     @Before
+     public void setUp()
+         throws Exception {
+ 
++        super.setUp();
+         SharedTestUtils.printTestName(customName);
+-        env = TestEnv.TXN.open(customName);
++        env = TestEnv.TXN.open(connection, customName);
+         runner = new TransactionRunner(env);
+         createDatabase();
+     }
+ 
+     @After
+-    public void tearDown() {
++    public void tearDown() throws Exception {
+ 
+         try {
+             if (index1 != null) {
+                 index1.close();
+             }
+@@ -105,10 +106,11 @@
+             runner = null;
+             factory = null;
+             storeMap = null;
+             indexMap1 = null;
+             indexMap2 = null;
++            super.tearDown();
+         }
+     }
+ 
+     @Test
+     public void runTest()
+@@ -137,11 +139,10 @@
+     private SDatabase openDb(String file)
+         throws Exception {
+ 
+         SDatabaseConfig config = new SDatabaseConfig();
+         DbCompat.setTypeBtree(config);
+-        config.setTransactional(true);
+         config.setAllowCreate(true);
+ 
+         return DbCompat.testOpenDatabase(env, null, file, null, config);
+     }
+ 
+@@ -150,11 +151,10 @@
+                                               String keyName)
+         throws Exception {
+ 
+         SSecondaryConfig secConfig = new SSecondaryConfig();
+         DbCompat.setTypeBtree(secConfig);
+-        secConfig.setTransactional(true);
+         secConfig.setAllowCreate(true);
+         DbCompat.setSortedDuplicates(secConfig, true);
+         secConfig.setKeyCreator(factory.getKeyCreator(MarshalledObject.class,
+                                                       keyName));
+ 
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/collections/test/NullValueTest.java b/test/thrift/com/sleepycat/client/collections/test/NullValueTest.java
+--- a/test/thrift/com/sleepycat/client/collections/test/NullValueTest.java	2016-07-25 07:38:03.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/collections/test/NullValueTest.java	2016-07-25 07:42:50.000000000 +0800
+@@ -58,17 +58,18 @@
+     @Before
+     public void setUp()
+         throws Exception {
+ 
+         SharedTestUtils.printTestName(customName);
+-        env = TestEnv.TXN.open(customName);
++        super.setUp();
++        env = TestEnv.TXN.open(connection, customName);
+         runner = new TransactionRunner(env);
+         open();
+     }
+     
+     @After
+-    public void tearDown() {
++    public void tearDown() throws Exception {
+         if (catalog != null) {
+             try {
+                 catalog.close();
+             } catch (SDatabaseException e) {
+                 System.out.println("During tearDown: " + e);
+@@ -89,17 +91,17 @@
+             }
+         }
+         catalog = null;
+         db = null;
+         env = null;
++        super.tearDown();
+     }
+     
+     private void open()
+         throws Exception {
+     
+         SDatabaseConfig dbConfig = new SDatabaseConfig();
+-        dbConfig.setTransactional(true);
+         dbConfig.setAllowCreate(true);
+         DbCompat.setTypeBtree(dbConfig);
+ 
+         SDatabase catalogDb = DbCompat.testOpenDatabase(env, null, "catalog",
+                                                        null, dbConfig);
+diff -r -U5 -x '*.xml' a/test/thrift/com/sleepycat/client/collections/test/TestEntityBinding.java b/test/thrift/com/sleepycat/client/collections/test/TestEntityBinding.java
+--- a/test/thrift/com/sleepycat/client/collections/test/TestEntityBinding.java  2016-07-31 00:26:17.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/collections/test/TestEntityBinding.java  2016-07-31 20:47:28.000000000 +0800
+@@ -9,10 +9,12 @@
+ 
+ import com.sleepycat.client.bind.EntityBinding;
+ import com.sleepycat.client.bind.RecordNumberBinding;
+ import com.sleepycat.client.SDatabaseEntry;
+ 
++import java.nio.ByteOrder;
++
+ /**
+  * @author Mark Hayes
+  */
+ class TestEntityBinding implements EntityBinding {
+ 
+@@ -28,11 +30,12 @@
+         byte keyByte;
+         if (isRecNum) {
+             if (key.getSize() != 4) {
+                 throw new IllegalStateException();
+             }
+-            keyByte = (byte) RecordNumberBinding.entryToRecordNumber(key);
++            keyByte = (byte) RecordNumberBinding.entryToRecordNumber(key,
++                    ByteOrder.nativeOrder());
+         } else {
+             if (key.getSize() != 1) {
+                 throw new IllegalStateException();
+             }
+             keyByte = key.getData()[key.getOffset()];
+@@ -46,11 +49,12 @@
+ 
+     public void objectToKey(Object object, SDatabaseEntry key) {
+ 
+         byte val = (byte) ((TestEntity) object).key;
+         if (isRecNum) {
+-            RecordNumberBinding.recordNumberToEntry(val, key);
++            RecordNumberBinding.recordNumberToEntry(val, key,
++                ByteOrder.nativeOrder());
+         } else {
+             key.setData(new byte[] { val }, 0, 1);
+         }
+     }
+ 
+diff -r -U5 -x '*.xml' a/test/thrift/com/sleepycat/client/collections/test/TestKeyAssigner.java b/test/thrift/com/sleepycat/client/collections/test/TestKeyAssigner.java
+--- a/test/thrift/com/sleepycat/client/collections/test/TestKeyAssigner.java    2016-07-31 00:26:17.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/collections/test/TestKeyAssigner.java    2016-07-31 20:47:28.000000000 +0800
+@@ -9,10 +9,12 @@
+ 
+ import com.sleepycat.client.bind.RecordNumberBinding;
+ import com.sleepycat.client.collections.PrimaryKeyAssigner;
+ import com.sleepycat.client.SDatabaseEntry;
+ 
++import java.nio.ByteOrder;
++
+ /**
+  * @author Mark Hayes
+  */
+ class TestKeyAssigner implements PrimaryKeyAssigner {
+ 
+@@ -24,11 +26,12 @@
+         this.isRecNum = isRecNum;
+     }
+ 
+     public void assignKey(SDatabaseEntry keyData) {
+         if (isRecNum) {
+-            RecordNumberBinding.recordNumberToEntry(next, keyData);
++            RecordNumberBinding.recordNumberToEntry(next, keyData,
++                ByteOrder.nativeOrder());
+         } else {
+             keyData.setData(new byte[] { next }, 0, 1);
+         }
+         next += 1;
+     }
+diff -r -U5 -x '*.xml' a/test/thrift/com/sleepycat/client/collections/test/TestKeyCreator.java b/test/thrift/com/sleepycat/client/collections/test/TestKeyCreator.java
+--- a/test/thrift/com/sleepycat/client/collections/test/TestKeyCreator.java 2016-07-31 20:51:35.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/collections/test/TestKeyCreator.java 2016-07-31 22:13:04.000000000 +0800
+@@ -10,10 +10,12 @@
+ import com.sleepycat.client.bind.RecordNumberBinding;
+ import com.sleepycat.client.SDatabaseEntry;
+ import com.sleepycat.client.SSecondaryDatabase;
+ import com.sleepycat.client.SSecondaryKeyCreator;
+ 
++import java.nio.ByteOrder;
++
+ /**
+  * Unused until secondaries are available.
+  * @author Mark Hayes
+  */
+ class TestKeyCreator implements SSecondaryKeyCreator {
+@@ -39,11 +41,12 @@
+         if (val == 0) {
+             return false; // fixed-len pad value
+         }
+         val -= 100;
+         if (isRecNum) {
+-            RecordNumberBinding.recordNumberToEntry(val, indexKeyData);
++            RecordNumberBinding.recordNumberToEntry(val, indexKeyData,
++                ByteOrder.nativeOrder());
+         } else {
+             indexKeyData.setData(new byte[] { val }, 0, 1);
+         }
+         return true;
+     }
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/collections/test/TestSR15721.java b/test/thrift/com/sleepycat/client/collections/test/TestSR15721.java
+--- a/test/thrift/com/sleepycat/client/collections/test/TestSR15721.java	2016-07-25 14:22:52.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/collections/test/TestSR15721.java	2016-07-25 14:25:33.000000000 +0800
+@@ -30,26 +30,28 @@
+ 
+     @Before
+     public void setUp()
+         throws Exception {
+ 
+-        env = TestEnv.TXN.open("TestSR15721");
++        super.setUp();
++        env = TestEnv.TXN.open(connection, "TestSR15721");
+         currentTxn = CurrentTransaction.getInstance(env);
+     }
+ 
+     @After
+-    public void tearDown() {
++    public void tearDown() throws Exception {
+         try {
+             if (env != null) {
+                 env.close();
+             }
+         } catch (Exception e) {
+             System.out.println("Ignored exception during tearDown: " + e);
+         } finally {
+             /* Ensure that GC can cleanup. */
+             env = null;
+             currentTxn = null;
++            super.tearDown();
+         }
+     }
+ 
+     /**
+      * Tests that the CurrentTransaction instance doesn't indeed allow GC to
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/collections/test/TestStore.java b/test/thrift/com/sleepycat/client/collections/test/TestStore.java
+--- a/test/thrift/com/sleepycat/client/collections/test/TestStore.java	2016-07-25 07:38:03.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/collections/test/TestStore.java	2016-07-25 07:42:50.000000000 +0800
+@@ -5,10 +5,11 @@
+  *
+  */
+ 
+ package com.sleepycat.client.collections.test;
+ 
++import java.nio.ByteOrder;
+ import java.util.ArrayList;
+ import java.util.List;
+ 
+ import com.sleepycat.client.bind.EntityBinding;
+ import com.sleepycat.client.bind.EntryBinding;
+@@ -27,11 +28,12 @@
+ 
+     static final TestKeyCreator BYTE_EXTRACTOR = new TestKeyCreator(false);
+     static final TestKeyCreator RECNO_EXTRACTOR = new TestKeyCreator(true);
+     static final EntryBinding VALUE_BINDING = new TestDataBinding();
+     static final EntryBinding BYTE_KEY_BINDING = VALUE_BINDING;
+-    static final EntryBinding RECNO_KEY_BINDING = new RecordNumberBinding();
++    static final EntryBinding RECNO_KEY_BINDING =
++            new RecordNumberBinding(ByteOrder.nativeOrder());
+     static final EntityBinding BYTE_ENTITY_BINDING =
+             new TestEntityBinding(false);
+     static final EntityBinding RECNO_ENTITY_BINDING =
+             new TestEntityBinding(true);
+     static final TestKeyAssigner BYTE_KEY_ASSIGNER =
+@@ -118,37 +119,14 @@
+             HASH_UNIQ = null;
+             HASH_DUP = null;
+             HASH_DUPSORT = null;
+         }
+ 
+-        if (DbCompat.QUEUE_METHOD) {
+-            config = new SSecondaryConfig();
+-            DbCompat.setTypeQueue(config);
+-            QUEUE = new TestStore("queue", config);
+-            QUEUE.indexOf = QUEUE;
+-            list.add(QUEUE);
+-        } else {
+-            QUEUE = null;
+-        }
++        QUEUE = null;
+ 
+-        if (DbCompat.RECNO_METHOD) {
+-            config = new SSecondaryConfig();
+-            DbCompat.setTypeRecno(config);
+-            RECNO = new TestStore("recno", config);
+-            RECNO.indexOf = RECNO;
+-            list.add(RECNO);
+-
+-            config = new SSecondaryConfig();
+-            DbCompat.setTypeRecno(config);
+-            DbCompat.setRenumbering(config, true);
+-            RECNO_RENUM = new TestStore("recno-renum", config);
+-            RECNO_RENUM.indexOf = null; // indexes must have stable keys
+-            list.add(RECNO_RENUM);
+-        } else {
+-            RECNO = null;
+-            RECNO_RENUM = null;
+-        }
++        RECNO = null;
++        RECNO_RENUM = null;
+ 
+         ALL = new TestStore[list.size()];
+         list.toArray(ALL);
+     }
+ 
+@@ -264,11 +242,10 @@
+         } else {
+             DbCompat.setRecordLength(config, 0);
+         }
+         config.setAllowCreate(true);
+         DbCompat.setReadUncommitted(config, true);
+-        config.setTransactional(CurrentTransaction.getInstance(env) != null);
+         if (primary != null) {
+             return DbCompat.testOpenSecondaryDatabase
+                 (env, null, fileName, null, primary, config);
+         } else {
+             return DbCompat.testOpenDatabase
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/collections/test/TransactionTest.java b/test/thrift/com/sleepycat/client/collections/test/TransactionTest.java
+--- a/test/thrift/com/sleepycat/client/collections/test/TransactionTest.java	2016-07-25 14:22:52.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/collections/test/TransactionTest.java	2016-07-25 14:25:33.000000000 +0800
+@@ -75,19 +75,19 @@
+     @Before
+     public void setUp()
+         throws Exception {
+ 
+         super.setUp();
+-        env = TestEnv.TXN.open("TransactionTests");
++        env = TestEnv.TXN.open(connection, "TransactionTests");
+         currentTxn = CurrentTransaction.getInstance(env);
+         store = testStore.open(env, dbName(0));
+         map = new StoredSortedMap(store, testStore.getKeyBinding(),
+                                   testStore.getValueBinding(), true);
+     }
+ 
+     @After
+-    public void tearDown() {
++    public void tearDown() throws Exception {
+ 
+         try {
+             if (store != null) {
+                 store.close();
+             }
+@@ -101,10 +101,11 @@
+             store = null;
+             env = null;
+             currentTxn = null;
+             map = null;
+             testStore = null;
++            super.tearDown();
+         }
+     }
+ 
+     private String dbName(int i) {
+ 
+@@ -186,18 +186,16 @@
+         dbConfig.setAllowCreate(true);
+         SDatabase db = DbCompat.testOpenDatabase
+             (env, null, dbName(1), null, dbConfig);
+         map = new StoredSortedMap(db, testStore.getKeyBinding(),
+                                       testStore.getValueBinding(), true);
+-        assertTrue(!map.isTransactional());
+         map.put(ONE, ONE);
+         readCheck(map, ONE, ONE);
+         db.close();
+ 
+         // is transactional
+         //
+-        dbConfig.setTransactional(true);
+         currentTxn.beginTransaction(null);
+         db = DbCompat.testOpenDatabase
+             (env, currentTxn.getTransaction(), dbName(2), null, dbConfig);
+         currentTxn.commitTransaction();
+         map = new StoredSortedMap(db, testStore.getKeyBinding(),
+@@ -604,20 +602,20 @@
+              * @throws FileNotFoundException from DB core.
+              */
+             MyEnv(File home, SEnvironmentConfig config)
+                 throws SDatabaseException, FileNotFoundException {
+ 
+-                super(home, config);
++                super(create(home, config));
+             }
+ 
+             @Override
+             protected void finalize() {
+                 finalizedFlag.append('.');
+             }
+         }
+ 
+-        MyEnv myEnv = new MyEnv(env.getHome(), env.getConfig());
++        MyEnv myEnv = new MyEnv(new File(env.getHome()), env.getConfig());
+         CurrentTransaction myCurrTxn = CurrentTransaction.getInstance(myEnv);
+ 
+         store.close();
+         store = null;
+         map = null;
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/collections/test/serial/CatalogCornerCaseTest.java b/test/thrift/com/sleepycat/client/collections/test/serial/CatalogCornerCaseTest.java
+--- a/test/thrift/com/sleepycat/client/collections/test/serial/CatalogCornerCaseTest.java	2016-07-25 14:22:52.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/collections/test/serial/CatalogCornerCaseTest.java	2016-07-25 14:25:33.000000000 +0800
+@@ -37,25 +37,26 @@
+     public void setUp()
+         throws Exception {
+ 
+         super.setUp();
+         SharedTestUtils.printTestName(customName);
+-        env = TestEnv.BDB.open(customName);
++        env = TestEnv.TXN.open(connection, customName);
+     }
+ 
+     @After
+-    public void tearDown() {
++    public void tearDown() throws Exception {
+ 
+         try {
+             if (env != null) {
+                 env.close();
+             }
+         } catch (Exception e) {
+             System.out.println("Ignored exception during tearDown: " + e);
+         } finally {
+             /* Ensure that GC can cleanup. */
+             env = null;
++            super.tearDown();
+         }
+     }
+ 
+     @Test
+     public void testReadOnlyEmptyCatalog()
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/collections/test/serial/StoredClassCatalogTest.java b/test/thrift/com/sleepycat/client/collections/test/serial/StoredClassCatalogTest.java
+--- a/test/thrift/com/sleepycat/client/collections/test/serial/StoredClassCatalogTest.java	2016-07-25 14:22:52.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/collections/test/serial/StoredClassCatalogTest.java	2016-07-25 14:25:33.000000000 +0800
+@@ -81,10 +81,11 @@
+ 
+     @Before
+     public void setUp()
+         throws Exception {
+ 
++        super.setUp();
+         SharedTestUtils.printTestName(customName);
+         
+         /* 
+          * Copy the environment generated by StoredClassCatalogTestInit in
+          * test dest dir, which is required to perform this test. 
+@@ -91,11 +91,11 @@
+          */
+         SharedTestUtils.copyDir(
+             new File(SharedTestUtils.getDestDir(), customName), 
+             new File(SharedTestUtils.getTestDir(), customName));
+         
+-        env = testEnv.open(customName, false);
++        env = testEnv.open(connection, customName, false);
+         runner = new TransactionRunner(env);
+ 
+         catalog = new StoredClassCatalog(openDb(CATALOG_FILE, false));
+         catalog2 = new StoredClassCatalog(openDb("catalog2.db", true));
+ 
+@@ -111,18 +111,17 @@
+     private SDatabase openDb(String file, boolean create)
+         throws Exception {
+ 
+         SDatabaseConfig config = new SDatabaseConfig();
+         DbCompat.setTypeBtree(config);
+-        config.setTransactional(testEnv.isTxnMode());
+         config.setAllowCreate(create);
+ 
+         return DbCompat.testOpenDatabase(env, null, file, null, config);
+     }
+ 
+     @After
+-    public void tearDown() {
++    public void tearDown() throws Exception {
+ 
+         try {
+             if (catalog != null) {
+                 catalog.close();
+                 catalog.close(); // should have no effect
+@@ -146,10 +146,11 @@
+             store = null;
+             env = null;
+             testEnv = null;
+             map = null;
+             runner = null;
++            super.tearDown();
+         }
+     }
+     
+     @Test
+     public void runTest()
+diff -r -U5 -x '*.xml' a/test/thrift/com/sleepycat/client/collections/test/serial/StoredClassCatalogTestInit.java b/test/thrift/com/sleepycat/client/collections/test/serial/StoredClassCatalogTestInit.java
+--- a/test/thrift/com/sleepycat/client/collections/test/serial/StoredClassCatalogTestInit.java  2016-07-31 22:58:03.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/collections/test/serial/StoredClassCatalogTestInit.java  2016-07-31 22:59:39.000000000 +0800
+@@ -73,13 +73,14 @@
+     }
+ 
+     @Before
+     public void setUp()
+         throws Exception {
+-        
++
++        super.setUp();
+         SharedTestUtils.printTestName(customName);
+-        env = testEnv.open(customName);
++        env = testEnv.open(connection, customName);
+         runner = new TransactionRunner(env);
+ 
+         catalog = new StoredClassCatalog(openDb(CATALOG_FILE));
+ 
+         SerialBinding keyBinding = new SerialBinding(catalog, String.class);
+@@ -93,11 +94,10 @@
+     private SDatabase openDb(String file)
+         throws Exception {
+ 
+         SDatabaseConfig config = new SDatabaseConfig();
+         DbCompat.setTypeBtree(config);
+-        config.setTransactional(testEnv.isTxnMode());
+         config.setAllowCreate(true);
+ 
+         return DbCompat.testOpenDatabase(env, null, file, null, config);
+     }
+ 
+@@ -133,10 +133,11 @@
+             store = null;
+             env = null;
+             testEnv = null;
+             map = null;
+             runner = null;
++            super.tearDown();
+         }
+     }
+ 
+     @Test
+     public void runTest()
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/collections/test/serial/TupleSerialFactoryTest.java b/test/thrift/com/sleepycat/client/collections/test/serial/TupleSerialFactoryTest.java
+--- a/test/thrift/com/sleepycat/client/collections/test/serial/TupleSerialFactoryTest.java	2016-07-25 14:22:52.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/collections/test/serial/TupleSerialFactoryTest.java	2016-07-25 14:25:33.000000000 +0800
+@@ -87,18 +87,18 @@
+     public void setUp()
+         throws Exception {
+ 
+         super.setUp();
+         SharedTestUtils.printTestName(customName);
+-        env = testEnv.open(customName);
++        env = testEnv.open(connection, customName);
+         runner = new TransactionRunner(env);
+ 
+         createDatabase();
+     }
+ 
+     @After
+-    public void tearDown() {
++    public void tearDown() throws Exception {
+ 
+         try {
+             if (index1 != null) {
+                 index1.close();
+             }
+@@ -132,10 +132,11 @@
+             factory = null;
+             storeMap1 = null;
+             storeMap2 = null;
+             indexMap1 = null;
+             indexMap2 = null;
++            super.tearDown();
+         }
+     }
+ 
+     @Test
+     public void runTest()
+@@ -164,11 +164,10 @@
+ 
+     private SDatabase openDb(String file)
+         throws Exception {
+ 
+         SDatabaseConfig config = new SDatabaseConfig();
+-        config.setTransactional(testEnv.isTxnMode());
+         config.setAllowCreate(true);
+         DbCompat.setTypeBtree(config);
+ 
+         return DbCompat.testOpenDatabase(env, null, file, null, config);
+     }
+@@ -179,11 +178,10 @@
+                                               String file,
+                                               SDatabase foreignStore)
+         throws Exception {
+ 
+         SSecondaryConfig secConfig = new SSecondaryConfig();
+-        secConfig.setTransactional(testEnv.isTxnMode());
+         secConfig.setAllowCreate(true);
+         DbCompat.setTypeBtree(secConfig);
+         secConfig.setKeyCreator(factory.getKeyCreator(MarshalledObject.class,
+                                                       keyName));
+         if (foreignStore != null) {
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/persist/test/BindingTest.java b/test/thrift/com/sleepycat/client/persist/test/BindingTest.java
+--- a/test/thrift/com/sleepycat/client/persist/test/BindingTest.java    2016-07-25 14:10:21.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/persist/test/BindingTest.java    2016-07-25 14:16:15.000000000 +0800
+@@ -126,13 +126,13 @@
+      * @throws FileNotFoundException from DB core.
+      */
+     private void open()
+         throws FileNotFoundException, SDatabaseException {
+ 
+-        SEnvironmentConfig envConfig = TestEnv.BDB.getConfig();
++        SEnvironmentConfig envConfig = TestEnv.TXN.getConfig();
+         envConfig.setAllowCreate(true);
+-        env = new SEnvironment(envHome, envConfig);
++        env = create(envHome, envConfig);
+         openCatalog();
+     }
+ 
+     private void openCatalog()
+         throws SDatabaseException {
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/persist/test/EvolveTestBase.java b/test/thrift/com/sleepycat/client/persist/test/EvolveTestBase.java
+--- a/test/thrift/com/sleepycat/client/persist/test/EvolveTestBase.java 2016-07-25 14:10:21.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/persist/test/EvolveTestBase.java 2016-07-25 14:16:15.000000000 +0800
+@@ -183,18 +183,14 @@
+         null,
+         "DisallowPriKeyField_Float2double2",
+         null,
+         "DisallowPriKeyField_Long2BigInt",
+         null,
+-        "DisallowCompositeKeyField_byte2short",
+-        null,
+         "AllowPriKeyField_Byte2byte2",
+         null,
+         "AllowPriKeyField_byte2Byte",
+         null,
+-        "AllowFieldTypeChanges",
+-        null,
+         "ConvertFieldContent_Entity",
+         null,
+         "ConvertExample1_Entity",
+         null,
+         "ConvertExample2_Person",
+@@ -217,12 +213,10 @@
+         null,
+         "ArrayNameChange_Entity",
+         null,
+         "AddEnumConstant_Entity",
+         null,
+-        "InsertEnumConstant_Entity",
+-        null,
+         "DeleteEnumConstant_NoMutation",
+         null,
+         "DisallowChangeKeyRelate",
+         null,
+         "AllowChangeKeyMetadata",
+@@ -302,11 +296,11 @@
+             (System.getProperty("testevolvedir"),
+              (evolved ? "evolved" : "original") + '/' + caseLabel);
+     }
+ 
+     @After
+-    public void tearDown() {
++    public void tearDown() throws Exception {
+ 
+         if (env != null) {
+             try {
+                 closeAll();
+             } catch (Throwable e) {
+@@ -317,10 +311,11 @@
+         env = null;
+         store = null;
+         caseCls = null;
+         caseObj = null;
+         caseLabel = null;
++        super.tearDown();
+ 
+         /* Do not delete log files so they can be used by 2nd phase of test. */
+     }
+ 
+     /**
+@@ -329,22 +329,21 @@
+     void openEnv()
+         throws FileNotFoundException, SDatabaseException {
+ 
+         SEnvironmentConfig config = TestEnv.TXN.getConfig();
+         config.setAllowCreate(true);
+-        env = new SEnvironment(envHome, config);
++        env = create(envHome, config);
+     }
+ 
+     /**
+      * Returns true if the store was opened successfully.  Returns false if the
+      * store could not be opened because an exception was expected -- this is
+      * not a test failure but no further tests for an EntityStore may be run.
+      */
+     private boolean openStore(StoreConfig config)
+         throws Exception {
+ 
+-        config.setTransactional(true);
+         config.setMutations(caseObj.getMutations());
+ 
+         EntityModel model = new AnnotationModel();
+         config.setModel(model);
+         caseObj.configure(model, config);
+@@ -397,11 +396,10 @@
+ 
+     void openRawStore()
+         throws SDatabaseException {
+ 
+         StoreConfig config = new StoreConfig();
+-        config.setTransactional(true);
+         rawStore = new RawStore(env, EvolveCase.STORE_NAME, config);
+     }
+ 
+     void closeStore()
+         throws SDatabaseException {
+@@ -415,11 +413,10 @@
+     void openNewStore()
+         throws Exception {
+ 
+         StoreConfig config = new StoreConfig();
+         config.setAllowCreate(true);
+-        config.setTransactional(true);
+ 
+         EntityModel model = new AnnotationModel();
+         config.setModel(model);
+         caseObj.configure(model, config);
+ 
+diff -r -U5 -x '*.xml' a/test/thrift/com/sleepycat/client/persist/test/EvolveTestInit.java b/test/thrift/com/sleepycat/client/persist/test/EvolveTestInit.java
+--- a/test/thrift/com/sleepycat/client/persist/test/EvolveTestInit.java 2016-08-02 16:01:50.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/persist/test/EvolveTestInit.java 2016-08-02 16:02:13.000000000 +0800
+@@ -32,12 +32,13 @@
+     boolean useEvolvedClass() {
+         return false;
+     }
+ 
+     @Before
+-    public void setUp() {
++    public void setUp() throws Exception {
+ 
++        super.setUp();
+         envHome = getTestInitHome(false /*evolved*/);
+         envHome.mkdirs();
+         SharedTestUtils.emptyDir(envHome);
+     }
+ 
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/persist/test/ForeignKeyTest.java b/test/thrift/com/sleepycat/client/persist/test/ForeignKeyTest.java
+--- a/test/thrift/com/sleepycat/client/persist/test/ForeignKeyTest.java 2016-07-25 07:38:03.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/persist/test/ForeignKeyTest.java 2016-07-25 08:18:37.000000000 +0800
+@@ -82,11 +82,11 @@
+                           DeleteAction action, 
+                           String label, 
+                           String useClassLabel){
+         initEnvConfig();
+         txnType = type;
+-        isTransactional = (txnType != TXN_NULL);
++        isTransactional = true;
+         onDelete = action;
+         onDeleteLabel = label;
+         useSubclassLabel = useClassLabel;
+         customName = txnType + '-' + onDeleteLabel + "-" + useSubclassLabel;
+     }
+@@ -104,11 +104,10 @@
+     private void open()
+         throws SDatabaseException {
+ 
+         StoreConfig config = new StoreConfig();
+         config.setAllowCreate(envConfig.getAllowCreate());
+-        config.setTransactional(envConfig.getTransactional());
+ 
+         store = new EntityStore(env, "test", config);
+ 
+         pri1 = store.getPrimaryIndex(String.class, Entity1.class);
+         sec1 = store.getSecondaryIndex(pri1, String.class, "sk");
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/persist/test/IndexTest.java b/test/thrift/com/sleepycat/client/persist/test/IndexTest.java
+--- a/test/thrift/com/sleepycat/client/persist/test/IndexTest.java  2016-07-25 07:38:03.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/persist/test/IndexTest.java  2016-07-25 08:18:37.000000000 +0800
+@@ -67,11 +67,11 @@
+     }
+     
+     public IndexTest(String type){
+         initEnvConfig();
+         txnType = type;
+-        isTransactional = (txnType != TXN_NULL);
++        isTransactional = true;
+         customName = txnType;
+     }
+ 
+     private EntityStore store;
+     private PrimaryIndex<Integer, MyEntity> primary;
+@@ -93,11 +93,10 @@
+     private void open()
+         throws SDatabaseException {
+ 
+         StoreConfig config = new StoreConfig();
+         config.setAllowCreate(envConfig.getAllowCreate());
+-        config.setTransactional(envConfig.getTransactional());
+ 
+         store = new EntityStore(env, "test", config);
+ 
+         primary = store.getPrimaryIndex(Integer.class, MyEntity.class);
+         oneToOne =
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/persist/test/JoinTest.java b/test/thrift/com/sleepycat/client/persist/test/JoinTest.java
+--- a/test/thrift/com/sleepycat/client/persist/test/JoinTest.java   2016-07-25 07:38:03.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/persist/test/JoinTest.java   2016-07-25 08:18:37.000000000 +0800
+@@ -46,11 +46,11 @@
+     }
+     
+     public JoinTest(String type){
+         initEnvConfig();
+         txnType = type;
+-        isTransactional = (txnType != TXN_NULL);
++        isTransactional = true;
+         customName = txnType;
+     }
+ 
+     private EntityStore store;
+     private PrimaryIndex<Integer, MyEntity> primary;
+@@ -64,11 +64,10 @@
+     private void open()
+         throws SDatabaseException {
+ 
+         StoreConfig config = new StoreConfig();
+         config.setAllowCreate(envConfig.getAllowCreate());
+-        config.setTransactional(envConfig.getTransactional());
+ 
+         store = new EntityStore(env, "test", config);
+ 
+         primary = store.getPrimaryIndex(Integer.class, MyEntity.class);
+         sec1 = store.getSecondaryIndex(primary, Integer.class, "k1");
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/persist/test/NegativeTest.java b/test/thrift/com/sleepycat/client/persist/test/NegativeTest.java
+--- a/test/thrift/com/sleepycat/client/persist/test/NegativeTest.java   2016-07-25 07:38:03.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/persist/test/NegativeTest.java   2016-07-25 08:18:37.000000000 +0800
+@@ -57,11 +57,11 @@
+     }
+     
+     public NegativeTest(String type){
+         initEnvConfig();
+         txnType = type;
+-        isTransactional = (txnType != TXN_NULL);
++        isTransactional = true;
+         customName = txnType;
+     }
+ 
+     private EntityStore store;
+ 
+@@ -74,11 +74,10 @@
+     private void open(Class<ProxyExtendsEntity> clsToRegister)
+         throws SDatabaseException {
+ 
+         StoreConfig config = new StoreConfig();
+         config.setAllowCreate(envConfig.getAllowCreate());
+-        config.setTransactional(envConfig.getTransactional());
+ 
+         if (clsToRegister != null) {
+             AnnotationModel model = new AnnotationModel();
+             model.registerClass(clsToRegister);
+             config.setModel(model);
+@@ -712,11 +711,11 @@
+         try {
+             store.setSequenceConfig("foo", seqConfig);
+             fail();
+         } catch (IllegalStateException expected) {
+             assertTrue(expected.getMessage().indexOf
+-                ("Cannot set config after Sequence is open") >= 0);
++                ("Cannot set config after SSequence is open") >= 0);
+         }
+ 
+         close();
+     }
+ 
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/persist/test/OperationTest.java b/test/thrift/com/sleepycat/client/persist/test/OperationTest.java
+--- a/test/thrift/com/sleepycat/client/persist/test/OperationTest.java  2016-07-25 07:38:03.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/persist/test/OperationTest.java  2016-07-25 08:18:37.000000000 +0800
+@@ -27,10 +27,11 @@
+ import java.util.List;
+ import java.util.Map;
+ import java.util.Set;
+ 
+ import org.junit.After;
++import org.junit.Ignore;
+ import org.junit.Test;
+ import org.junit.runner.RunWith;
+ import org.junit.runners.Parameterized;
+ import org.junit.runners.Parameterized.Parameters;
+ 
+@@ -73,11 +73,11 @@
+     }
+     
+     public OperationTest(String type){
+         initEnvConfig();
+         txnType = type;
+-        isTransactional = (txnType != TXN_NULL);
++        isTransactional = true;
+         customName = txnType;
+     }
+ 
+     private EntityStore store;
+ 
+@@ -110,11 +110,10 @@
+     }
+ 
+     private void open(StoreConfig config)
+         throws SDatabaseException {
+ 
+-        config.setTransactional(envConfig.getTransactional());
+         store = new EntityStore(env, STORE_NAME, config);
+     }
+ 
+     private void close()
+         throws SDatabaseException {
+@@ -608,10 +608,11 @@
+ 
+         @PrimaryKey(sequence="seq2")
+         private Integer key;
+     }
+ 
++    @Ignore
+     @Test
+     public void testCompositeSequence()
+         throws SDatabaseException {
+ 
+         open();
+@@ -727,11 +726,10 @@
+         store.getPrimaryIndex(Integer.class, MyEntity.class);
+         close();
+ 
+         StoreConfig config = new StoreConfig();
+         config.setReadOnly(true);
+-        config.setTransactional(envConfig.getTransactional());
+         RawStore rawStore = new RawStore(env, "test", config);
+ 
+         String clsName = MyEntity.class.getName();
+         rawStore.getSecondaryIndex(clsName, "secKey");
+ 
+@@ -742,10 +742,11 @@
+      * When opening an X_TO_MANY secondary that has a persistent key class, the
+      * key class was not recognized as being persistent if it was never before
+      * referenced when getSecondaryIndex was called.  This was a bug in JE
+      * 3.0.12, reported on OTN.  [#15103]
+      */
++    @Ignore
+     @Test
+     public void testToManyKeyClass()
+         throws SDatabaseException {
+ 
+         open();
+@@ -764,10 +765,11 @@
+     /**
+      * Test a fix for a bug where opening a TO_MANY secondary index would fail
+      * fail with "IllegalArgumentException: Wrong secondary key class: ..."
+      * when the store was opened read-only.  [#15156]
+      */
++    @Ignore
+     @Test
+     public void testToManyReadOnly()
+         throws SDatabaseException {
+ 
+         open();
+@@ -1029,10 +1031,11 @@
+      * getSecondaryConfig, or getSubclassIndex was called, if that key class
+      * was not previously referenced.  All three cases are tested by calling
+      * getSecondaryConfig.  This was a bug in JE 3.3.69, reported on OTN.
+      * [#16407]
+      */
++    @Ignore
+     @Test
+     public void testKeyClassInitialization()
+         throws SDatabaseException {
+ 
+         open();
+@@ -1290,12 +1293,13 @@
+             super(id);
+             this.name = name;
+         }
+ 
+         private ExtendedStatement() {}
+-    } 
++    }
+ 
++    @Ignore
+     @Test
+     public void testCustomCompare()
+         throws SDatabaseException {
+ 
+         open();
+@@ -1423,10 +1427,11 @@
+      * the deserialization and subsequent use of comparators.  The JE
+      * SDatabaseConfig.setBtreeComparator method serializes and deserializes the
+      * comparator.  The comparator is initialized on its first use, just as if
+      * recovery were run.
+      */
++    @Ignore
+     @Test
+     public void testStoredComparators()
+         throws SDatabaseException {
+ 
+         open();
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/persist/test/SequenceTest.java b/test/thrift/com/sleepycat/client/persist/test/SequenceTest.java
+--- a/test/thrift/com/sleepycat/client/persist/test/SequenceTest.java   2016-07-25 07:38:03.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/persist/test/SequenceTest.java   2016-07-25 08:18:37.000000000 +0800
+@@ -64,18 +66,10 @@
+             SequenceEntity_Byte.class,
+             SequenceEntity_tlong.class,
+             SequenceEntity_tint.class,
+             SequenceEntity_tshort.class,
+             SequenceEntity_tbyte.class,
+-            SequenceEntity_Long_composite.class,
+-            SequenceEntity_Integer_composite.class,
+-            SequenceEntity_Short_composite.class,
+-            SequenceEntity_Byte_composite.class,
+-            SequenceEntity_tlong_composite.class,
+-            SequenceEntity_tint_composite.class,
+-            SequenceEntity_tshort_composite.class,
+-            SequenceEntity_tbyte_composite.class,
+         };
+ 
+         SEnvironmentConfig envConfig = TestEnv.TXN.getConfig();
+         envConfig.setAllowCreate(true);
+         env = create(envHome, envConfig);
+@@ -80,11 +80,10 @@
+         envConfig.setAllowCreate(true);
+         env = create(envHome, envConfig);
+ 
+         StoreConfig storeConfig = new StoreConfig();
+         storeConfig.setAllowCreate(true);
+-        storeConfig.setTransactional(true);
+         EntityStore store = new EntityStore(env, "foo", storeConfig);
+ 
+         long seq = 0;
+ 
+         for (int i = 0; i < classes.length; i += 1) {
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/persist/test/SubclassIndexTest.java b/test/thrift/com/sleepycat/client/persist/test/SubclassIndexTest.java
+--- a/test/thrift/com/sleepycat/client/persist/test/SubclassIndexTest.java  2016-07-25 07:38:03.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/persist/test/SubclassIndexTest.java  2016-07-25 08:18:37.000000000 +0800
+@@ -74,11 +74,10 @@
+         model.registerClass(SalariedManager.class);
+ 
+         StoreConfig storeConfig = new StoreConfig();
+         storeConfig.setModel(model);
+         storeConfig.setAllowCreate(true);
+-        storeConfig.setTransactional(true);
+         store = new EntityStore(env, "foo", storeConfig);
+     }
+ 
+     private void close()
+         throws SDatabaseException {
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/util/DualTestCase.java b/test/thrift/com/sleepycat/client/util/DualTestCase.java
+--- a/test/thrift/com/sleepycat/client/util/DualTestCase.java   2016-07-25 14:10:21.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/util/DualTestCase.java   2016-07-25 14:16:15.000000000 +0800
+@@ -42,22 +42,10 @@
+                 ("tearDown was invoked without a corresponding setUp() call");
+         }
+         super.tearDown();
+     }
+ 
+-    protected SEnvironment create(File envHome, SEnvironmentConfig envConfig)
+-        throws SDatabaseException {
+-
+-	SEnvironment env = null;
+-        try {
+-            env = new SEnvironment(envHome, envConfig);
+-        } catch (FileNotFoundException e) {
+-            throw new RuntimeException(e);
+-        }
+-        return env;
+-    }
+-
+     protected void close(SEnvironment env)
+         throws SDatabaseException {
+ 
+         env.close();
+     }
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/util/test/SharedTestUtils.java b/test/thrift/com/sleepycat/client/util/test/SharedTestUtils.java
+--- a/test/thrift/com/sleepycat/client/util/test/SharedTestUtils.java   2016-07-26 11:33:22.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/util/test/SharedTestUtils.java   2016-07-26 12:51:28.000000000 +0800
+@@ -49,11 +49,11 @@
+      */
+     public static File getDestDir() {
+         String dir = System.getProperty(DEST_DIR, DEFAULT_DEST_DIR);
+         File file = new File(dir);
+         if (!file.isDirectory())
+-            file.mkdir();
++            file.mkdirs();
+         
+         return file;
+     }
+ 
+     /**
+@@ -62,11 +62,11 @@
+      */
+     public static File getTestDir() {
+         String dir = System.getProperty(TEST_ENV_DIR, DEFAULT_TEST_DIR_ROOT);
+         File file = new File(dir);
+         if (!file.isDirectory())
+-            file.mkdir();
++            file.mkdirs();
+         
+         return file;
+     }
+     
+     /**
+@@ -74,11 +74,11 @@
+      */
+     public static File getFailureCopyDir() {
+         String dir = System.getProperty(FAILURE_DIR, DEFAULT_FAIL_DIR);
+         File file = new File(dir);
+         if (!file.isDirectory())
+-            file.mkdir();
++            file.mkdirs();
+         
+         return file;
+     }
+ 
+     /**
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/util/test/TestBase.java b/test/thrift/com/sleepycat/client/util/test/TestBase.java
+--- a/test/thrift/com/sleepycat/client/util/test/TestBase.java  2016-07-25 14:10:21.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/util/test/TestBase.java  2016-07-25 14:16:15.000000000 +0800
+@@ -6,22 +6,29 @@
+  */
+ 
+ package com.sleepycat.client.util.test;
+ 
+ import java.io.File;
+-
++import java.io.IOException;
++import java.nio.file.Path;
++import java.nio.file.Paths;
++
++import com.sleepycat.client.ClientTestBase;
++import com.sleepycat.client.SDatabaseException;
++import com.sleepycat.client.SEnvironment;
++import com.sleepycat.client.SEnvironmentConfig;
+ import org.junit.After;
+ import org.junit.Before;
+ import org.junit.Rule;
+ import org.junit.rules.TestRule;
+ import org.junit.rules.TestWatcher;
+ import org.junit.runner.Description;
+ 
+ /**
+  * The base class for all JE unit tests. 
+  */
+-public abstract class TestBase {
++public abstract class TestBase extends ClientTestBase {
+ 
+     private static final boolean copySucceeded =
+         Boolean.getBoolean("test.copySucceeded");
+ 
+     /*
+@@ -72,17 +79,41 @@
+     @Before
+     public void setUp() 
+         throws Exception {
+         
+         SharedTestUtils.cleanUpTestDir(SharedTestUtils.getTestDir());
++
++        super.setUp();
+     }
+     
+     @After
+     public void tearDown() throws Exception {
+-        // Provision for future use
++        super.tearDown();
+     }
+-    
++
++    @Override
++    protected Path createTestRoot() throws Exception {
++        return Paths.get(".");
++    }
++
++    @Override
++    protected boolean cleanTestRootAfterTests() {
++        return false;
++    }
++
++    protected SEnvironment create(File envHome, SEnvironmentConfig envConfig)
++            throws SDatabaseException {
++
++        SEnvironment env = null;
++        try {
++            env = connection.openEnvironment(envHome.getPath(), envConfig);
++        } catch (IOException e) {
++            throw new RuntimeException(e);
++        }
++        return env;
++    }
++
+     /**
+      *  Copy the testing directory to other place. 
+      */
+     private void copyEnvironments(String path) throws Exception{
+         
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/util/test/TestEnv.java b/test/thrift/com/sleepycat/client/util/test/TestEnv.java
+--- a/test/thrift/com/sleepycat/client/util/test/TestEnv.java   2016-07-25 14:10:21.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/util/test/TestEnv.java   2016-07-25 14:16:15.000000000 +0800
+@@ -9,60 +9,39 @@
+ 
+ import java.io.File;
+ import java.io.FileNotFoundException;
+ import java.io.IOException;
+ 
++import com.sleepycat.client.BdbServerConnection;
+ import com.sleepycat.client.compat.DbCompat;
+ import com.sleepycat.client.SDatabaseException;
+ import com.sleepycat.client.SEnvironment;
+ import com.sleepycat.client.SEnvironmentConfig;
+ 
+ /**
+  * @author Mark Hayes
+  */
+ public class TestEnv {
+ 
+-    public static final TestEnv BDB;
+-    public static final TestEnv CDB;
+     public static final TestEnv TXN;
+     static {
+         SEnvironmentConfig config;
+ 
+         config = newEnvConfig();
+-        BDB = new TestEnv("bdb", config);
+-
+-        if (DbCompat.CDB) {
+-            config = newEnvConfig();
+-            DbCompat.setInitializeCDB(config, true);
+-            CDB = new TestEnv("cdb", config);
+-        } else {
+-            CDB = null;
+-        }
+-
+-        config = newEnvConfig();
+-        config.setTransactional(true);
+-        DbCompat.setInitializeLocking(config, true);
+         TXN = new TestEnv("txn", config);
+     }
+ 
+     private static SEnvironmentConfig newEnvConfig() {
+ 
+         SEnvironmentConfig config = new SEnvironmentConfig();
+         config.setTxnNoSync(Boolean.getBoolean(SharedTestUtils.NO_SYNC));
+-        if (DbCompat.MEMORY_SUBSYSTEM) {
+-            DbCompat.setInitializeCache(config, true);
+-        }
+         return config;
+     }
+ 
+     public static final TestEnv[] ALL;
+     static {
+-        if (DbCompat.CDB) {
+-            ALL = new TestEnv[] { BDB, CDB, TXN };
+-        } else {
+-            ALL = new TestEnv[] { BDB, TXN };
+-        }
++        ALL = new TestEnv[] { TXN };
+     }
+ 
+     private final String name;
+     private final SEnvironmentConfig config;
+ 
+@@ -80,17 +59,10 @@
+     public SEnvironmentConfig getConfig() {
+         return config;
+     }
+ 
+     void copyConfig(SEnvironmentConfig copyToConfig) {
+-        DbCompat.setInitializeCache
+-            (copyToConfig, DbCompat.getInitializeCache(config));
+-        DbCompat.setInitializeLocking
+-            (copyToConfig, DbCompat.getInitializeLocking(config));
+-        DbCompat.setInitializeCDB
+-            (copyToConfig, DbCompat.getInitializeCDB(config));
+-        copyToConfig.setTransactional(config.getTransactional());
+     }
+ 
+     public boolean isTxnMode() {
+ 
+         return config.getTransactional();
+@@ -99,34 +71,25 @@
+     public boolean isCdbMode() {
+ 
+         return DbCompat.getInitializeCDB(config);
+     }
+ 
+-    public SEnvironment open(String testName)
++    public SEnvironment open(BdbServerConnection conn, String testName)
+         throws IOException, SDatabaseException {
+ 
+-        return open(testName, true);
++        return open(conn, testName, true);
+     }
+ 
+-    public SEnvironment open(String testName, boolean create)
++    public SEnvironment open(BdbServerConnection conn,
++        String testName, boolean create)
+         throws IOException, SDatabaseException {
+ 
+         config.setAllowCreate(create);
+         /* OLDEST deadlock detection on DB matches the use of timeouts on JE.*/
+         DbCompat.setLockDetectModeOldest(config);
+         File dir = getDirectory(testName, create);
+-        return newEnvironment(dir, config);
+-    }
+-
+-    /**
+-     * Is overridden in XACollectionTest.
+-     * @throws FileNotFoundException from DB core.
+-     */
+-    protected SEnvironment newEnvironment(File dir, SEnvironmentConfig config)
+-        throws SDatabaseException, FileNotFoundException {
+-
+-        return new SEnvironment(dir, config);
++        return conn.openEnvironment(dir.getPath(), config);
+     }
+ 
+     public File getDirectory(String testName) {
+         return getDirectory(testName, true);
+     }
+diff -r -U5 -x '*.iws' a/test/thrift/com/sleepycat/client/util/test/TxnTestCase.java b/test/thrift/com/sleepycat/client/util/test/TxnTestCase.java
+--- a/test/thrift/com/sleepycat/client/util/test/TxnTestCase.java   2016-07-25 14:10:21.000000000 +0800
++++ b/test/thrift/com/sleepycat/client/util/test/TxnTestCase.java   2016-07-25 14:16:15.000000000 +0800
+@@ -39,14 +39,12 @@
+  * operations.  Use the isTransactional protected field for setup of a database
+  * config.</p>
+  */
+ public abstract class TxnTestCase extends DualTestCase {
+ 
+-    public static final String TXN_NULL = "txn-null";
+     public static final String TXN_AUTO = "txn-auto";
+     public static final String TXN_USER = "txn-user";
+-    public static final String TXN_CDB = "txn-cdb";
+ 
+     protected File envHome;
+     protected SEnvironment env;
+     protected SEnvironmentConfig envConfig;
+     protected String txnType;
+@@ -60,33 +58,12 @@
+         return list;
+     }
+ 
+     public static String[] getTxnTypes(String[] txnTypes, boolean rep) {
+         if (txnTypes == null) {
+-            if (rep) {
+-                txnTypes = new String[] { // Skip non-transactional tests
+-                                          TxnTestCase.TXN_USER,
+-                                          TxnTestCase.TXN_AUTO };
+-            } else if (!DbCompat.CDB) {
+-                txnTypes = new String[] { TxnTestCase.TXN_NULL,
+-                                          TxnTestCase.TXN_USER,
+-                                          TxnTestCase.TXN_AUTO };
+-            } else {
+-                txnTypes = new String[] { TxnTestCase.TXN_NULL,
+-                                          TxnTestCase.TXN_USER,
+-                                          TxnTestCase.TXN_AUTO, 
+-                                          TxnTestCase.TXN_CDB };
+-            }
+-        } else {
+-            if (!DbCompat.CDB) {
+-                /* Remove TxnTestCase.TXN_CDB, if there is any. */
+-                final ArrayList<String> tmp =
+-                    new ArrayList<>(Arrays.asList(txnTypes));
+-                tmp.remove(TxnTestCase.TXN_CDB);
+-                txnTypes = new String[tmp.size()];
+-                tmp.toArray(txnTypes);
+-            }
++            txnTypes = new String[] { TxnTestCase.TXN_USER,
++                                      TxnTestCase.TXN_AUTO };
+         }
+         return txnTypes;
+     }
+ 
+     @Before
+@@ -100,13 +77,13 @@
+ 
+     @After
+     public void tearDown()
+         throws Exception {
+ 
+-        super.tearDown();
+         closeEnv();
+         env = null;
++        super.tearDown();
+     }
+     
+     protected void initEnvConfig() {
+         if (envConfig == null) {
+             envConfig = new SEnvironmentConfig();
+@@ -137,22 +114,16 @@
+      * Used for closing and reopening the environment.
+      */
+     public void openEnv()
+         throws SDatabaseException {
+ 
+-        if (txnType == TXN_NULL) {
+-            TestEnv.BDB.copyConfig(envConfig);
+-            env = create(envHome, envConfig);
+-        } else if (txnType == TXN_AUTO) {
++        if (txnType == TXN_AUTO) {
+             TestEnv.TXN.copyConfig(envConfig);
+             env = create(envHome, envConfig);
+         } else if (txnType == TXN_USER) {
+             TestEnv.TXN.copyConfig(envConfig);
+             env = create(envHome, envConfig);
+-        } else if (txnType == TXN_CDB) {
+-            TestEnv.CDB.copyConfig(envConfig);
+-            env = create(envHome, envConfig);
+         } else {
+             assert false;
+         }
+     }
+ 
+@@ -203,16 +174,11 @@
+     
+     /**
+      * Create a write cursor config;
+      */
+     public SCursorConfig getWriteCursorConfig() {
+-        if (txnType != TXN_CDB) {
+-            return null;
+-        }
+-        final SCursorConfig config = new SCursorConfig();
+-        DbCompat.setWriteCursor(config, true);
+-        return config;
++        return null;
+     } 
+ 
+     /**
+      * Commit a txn if non-null.
+      */

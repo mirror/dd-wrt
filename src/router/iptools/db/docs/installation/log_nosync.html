@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>New Logging Option</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Berkeley DB Installation and Build Guide" />
+    <link rel="up" href="upgrade_61_toc.html" title="Chapter 10.  Upgrading Berkeley DB 12.1.6.0 applications to Berkeley DB 12.1.6.1" />
+    <link rel="prev" href="fcbc_notif.html" title="Failchk Broadcast Notifications" />
+    <link rel="next" href="repmgr_prefmas.html" title="Replication Manager Preferred Master Mode" />
+  </head>
+  <body>
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 12.1.6.2</p>
+      </div>
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">New Logging Option</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="fcbc_notif.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 10.  Upgrading Berkeley DB 12.1.6.0 applications to Berkeley DB 12.1.6.1 </th>
+          <td width="20%" align="right"> <a accesskey="n" href="repmgr_prefmas.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="log_nosync"></a>New Logging Option</h2>
+          </div>
+        </div>
+      </div>
+      <div class="toc">
+        <dl>
+          <dt>
+            <span class="sect2">
+              <a href="log_nosync.html#idm140188017545024">New Parameter Value</a>
+            </span>
+          </dt>
+        </dl>
+      </div>
+      <p>
+            A new logging configuration option has been added which
+            does not flush the transaction log from the operating
+            system cache to stable storage when a transaction commits
+            or the logging system switches log files. This can further
+            improve performance when all of the applications in an
+            environment use less-than-durable transactions
+            (<a href="../api_reference/C/envset_flags.html#envset_flags_DB_TXN_NOSYNC" class="olink">DB_TXN_NOSYNC</a> and <a href="../api_reference/C/envset_flags.html#set_flags_DB_TXN_WRITE_NOSYNC" class="olink">DB_TXN_WRITE_NOSYNC</a>).
+        </p>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017545024"></a>New Parameter Value</h3>
+            </div>
+          </div>
+        </div>
+        <div class="itemizedlist">
+          <ul type="disc">
+            <li><a href="../api_reference/C/envlog_set_config.html#log_set_config_DB_LOG_NOSYNC" class="olink">DB_LOG_NOSYNC</a> — A new
+                    <code class="literal">flags</code>
+                    parameter value for the <a href="../api_reference/C/envlog_set_config.html" class="olink">DB_ENV-&gt;log_set_config()</a> method.
+                </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="fcbc_notif.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="upgrade_61_toc.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="repmgr_prefmas.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">Failchk Broadcast Notifications </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> Replication Manager Preferred Master
+        Mode</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

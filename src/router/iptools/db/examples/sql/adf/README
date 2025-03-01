@@ -1,0 +1,117 @@
+The BDB JDBC ADF example was tested using both JDeveloper 11g (11.1.2.4.0)
+and JDeveloper 12c (12.1.2.0.0).
+
+=================== PREPARING THE ENVIRONMENT ================
+
+1. Install JDeveloper.
+
+2. Build the BDB JDBC driver and include its path in the system CLASSPATH
+and LD_LIBRARY_PATH environment variables. Please refer to the Berkeley DB
+Installation Guide for instructions on building the JDBC driver.
+
+
+=================== OPENING THE SAMPLE =======================
+
+In JDeveloper, open <example>/EX_ADF.jws. If you are using JDeveloper 12c,
+it will ask you to migrate the application to 12c automatically after you
+open the file. In this event, please choose "yes" to migrate the example.
+
+
+=================== RUNNING ==================================
+
+1. Add the BDB JDBC path to project properties.
+Select Application -> project properties -> Libraries and Classpath ->
+Add JAR/Directory -> locate the path of BDB JDBC -> OK.
+
+2. Initialize the database schema.
+Open <example>/Model/src/dbscheme/PrimaryKeySuppliers.java and 
+<example>/Model/src/dbscheme/ForeignKeysCoffees.java, and replace "path_to_db" 
+with the location of the database file you want to store. Then run the 2 java files 
+in order.
+
+3. Modify the database connection.
+Select Application Resources -> Connections -> Database ->
+right click on BDBConnection -> properties -> JDBC URL, and replace
+"absolute_path_to_db" with the path of the database file you just created in the
+last step. Note that the path in the connection JDBC URL must be absolute,
+otherwise JDeveloper can not locate the database file.
+
+If the password in the connection properties panel is empty,
+enter "myPassword".
+
+4. You can run the example in 2 ways.
+a) Run with tester.
+Expand uimode.am in the project panel and run AppModule. You can select/insert/
+update/delete rows in the tester.
+b) Run without tester.
+Expand uimode.am in the project panel and run TestClient.java. This is a Java
+program demonstrating how to perform select/insert/update/delete operations 
+by using ADF classes and APIs.
+
+
+=================== LIST OF FILES ================
+
+All files needed by the example are located under examples/sql/adf/EX_ADF. You
+need to maintain its file and directory structure. If you want to run the
+example in the location other than examples/sql/adf/EX_ADF, please copy the
+entire example directory (examples/sql/adf/EX_ADF) into place.
+
+Here is a brief description of files under examples/sql/adf/EX_ADF.
+
+1. Application file
+    EX_ADF.jws
+
+2. Application configurations and connection properties
+    .adf/META-INF/adf-config.xml
+    .adf/META-INF/connections.xml
+    src/META-INF/jps-config.xml
+    src/META-INF/weblogic-application.xml
+
+3. Model project
+This is one of the default ADF application projects.
+
+a) Project file
+    Model/Model.jpr
+
+b) ADF Business Component
+    Model/src/model/Model.jpx
+    Model/src/model/ModelBundle.properties
+
+c) Database schema
+    Model/src/dbschema/ForeignKeysCoffees.java
+    Model/src/dbschema/PrimaryKeysSuppliers.java
+
+d) Entity object
+    Model/src/model/entity/CoffeesEO.xml
+    Model/src/model/entity/CoffeesEOImpl.java
+    Model/src/model/entity/SuppliersEO.xml
+    Model/src/model/entity/SuppliersEOImpl.java
+
+e) View object and link
+    Model/src/uimodel/view/CoffeesVO.xml
+    Model/src/uimodel/view/SuppliersVO.xml
+    Model/src/uimodel/view/SuppliersVOToCoffeesVOLink.xml
+
+f) Association
+    Model/src/model/entity/association/SuppliersEOToCoffeesEOAssoc.xml
+
+g) Application Module configurations
+    Model/src/uimodel/am/AppModule.xml
+    Model/src/uimodel/am/common/bc4j.xcfg
+
+h) Sample Java program
+    Model/src/uimodel/am/TestClient.java
+
+4. ViewController project
+This is one of the default ADF application projects.
+
+a) Project file
+    ViewController/ViewController.jpr
+
+b) Project configurations
+    ViewController/public_html/WEB-INF/adfc-config.xml
+    ViewController/public_html/WEB-INF/faces-config.xml
+    ViewController/public_html/WEB-INF/trinidad-config.xml
+    ViewController/public_html/WEB-INF/web.xml
+    ViewController/src/META-INF/adf-settings.xml
+

@@ -1,0 +1,66 @@
+--- a/xpath.c	Fri May 10 17:26:39 2013 +0800
++++ b/xpath.c	Fri May 10 18:22:18 2013 +0800
+@@ -951,7 +951,7 @@
+ static void 
+ xpath_vfunc_string(sqlite3_context *ctx, int argc, sqlite3_value **argv)
+ {
+-    return xpath_vfunc_common(ctx, 0, argc, argv);
++   xpath_vfunc_common(ctx, 0, argc, argv);
+ }
+ 
+ /**
+@@ -964,7 +964,7 @@
+ static void 
+ xpath_vfunc_boolean(sqlite3_context *ctx, int argc, sqlite3_value **argv)
+ {
+-    return xpath_vfunc_common(ctx, 1, argc, argv);
++    xpath_vfunc_common(ctx, 1, argc, argv);
+ }
+ 
+ /**
+@@ -977,7 +977,7 @@
+ static void 
+ xpath_vfunc_number(sqlite3_context *ctx, int argc, sqlite3_value **argv)
+ {
+-    return xpath_vfunc_common(ctx, 2, argc, argv);
++    xpath_vfunc_common(ctx, 2, argc, argv);
+ }
+ 
+ /**
+@@ -990,7 +990,7 @@
+ static void 
+ xpath_vfunc_xml(sqlite3_context *ctx, int argc, sqlite3_value **argv)
+ {
+-    return xpath_vfunc_common(ctx, 3, argc, argv);
++    xpath_vfunc_common(ctx, 3, argc, argv);
+ }
+ 
+ /**
+--- a/zipfile.c	Fri May 10 17:26:39 2013 +0800
++++ b/zipfile.c	Fri May 10 18:22:18 2013 +0800
+@@ -226,7 +226,10 @@
+ 	goto error;
+     }
+     data = (unsigned char *) mmap(0, length, PROT_READ,
+-				  MAP_FILE | MAP_PRIVATE, fd, 0);
++#ifdef MAP_FILE
++				  MAP_FILE | 
++#endif
++                                 MAP_PRIVATE, fd, 0);
+     if (data == MAP_FAILED) {
+ 	goto error;
+     }
+@@ -1303,7 +1306,12 @@
+ #else
+     size = sizeof (mem_blk) + psize + length + 1;
+     mb = (mem_blk *) mmap(0, size, PROT_READ | PROT_WRITE,
+-			  MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
++#if defined(MAP_ANONYMOUS)
++			  MAP_ANONYMOUS | 
++#elif defined(MAP_ANON)
++			  MAP_ANON |
++#endif 
++                         MAP_PRIVATE, -1, 0);
+     if (mb == MAP_FAILED) {
+ 	return 0;
+     }

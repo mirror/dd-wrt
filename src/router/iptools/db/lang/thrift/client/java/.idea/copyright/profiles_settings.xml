@@ -1,0 +1,10 @@
+<component name="CopyrightManager">
+  <settings default="BDB_Java">
+    <LanguageOptions name="__TEMPLATE__">
+      <option name="separateBefore" value="true" />
+      <option name="prefixLines" value="false" />
+      <option name="lenBefore" value="1" />
+      <option name="filler" value="-" />
+    </LanguageOptions>
+  </settings>
+</component>

@@ -1,0 +1,15 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<BC4JConfig version="11.1" xmlns="http://xmlns.oracle.com/bc4j/configuration">
+   <AppModuleConfigBag ApplicationName="uimodel.am.AppModule">
+      <AppModuleConfig name="AppModuleShared" jbo.project="model.Model" DeployPlatform="LOCAL" ApplicationName="uimodel.am.AppModule">
+         <AM-Pooling jbo.ampool.maxpoolsize="1" jbo.ampool.dynamicjdbccredentials="false" jbo.ampool.isuseexclusive="false" jbo.ampool.resetnontransactionalstate="false"/>
+         <Database jbo.locking.mode="optimistic" jbo.TypeMapEntries="Java" jbo.sql92.JdbcDriverClass="SQLite.JDBCDriver" jbo.SQLBuilder="SQL92"/>
+         <Security AppModuleJndiName="uimodel.am.AppModule"/>
+         <Custom JDBCDataSource="java:comp/env/jdbc/BDBConnectionDS"/>
+      </AppModuleConfig>
+      <AppModuleConfig name="AppModuleLocal" DeployPlatform="LOCAL" JDBCName="BDBConnection" jbo.project="model.Model" ApplicationName="uimodel.am.AppModule">
+         <Database jbo.sql92.JdbcDriverClass="SQLite.JDBCDriver" jbo.TypeMapEntries="Java" jbo.locking.mode="optimistic" jbo.SQLBuilder="SQL92"/>
+         <Security AppModuleJndiName="uimodel.am.AppModule"/>
+      </AppModuleConfig>
+   </AppModuleConfigBag>
+</BC4JConfig>

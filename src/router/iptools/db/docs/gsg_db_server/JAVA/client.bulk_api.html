@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Key/Data Pairs and Bulk Operations</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Getting Started with Distributed Berkeley DB Applications" />
+    <link rel="up" href="client.html" title="Chapter 3. Berkeley DB Client Driver APIs" />
+    <link rel="prev" href="client.resource_api.html" title="Removing and Renaming Objects" />
+    <link rel="next" href="client.stat_api.html" title="Statistic Functions" />
+  </head>
+  <body>
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 12.1.6.2</p>
+      </div>
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">Key/Data Pairs and Bulk Operations</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="client.resource_api.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 3. Berkeley DB Client Driver APIs</th>
+          <td width="20%" align="right"> <a accesskey="n" href="client.stat_api.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="client.bulk_api"></a>Key/Data Pairs and Bulk Operations</h2>
+          </div>
+        </div>
+      </div>
+      <p> 
+            Bulk operations in the driver APIs are quite different from the
+            <span>Java base</span> APIs. In <span>Java base</span> APIs, multiple entries are encoded into a
+            single byte array. In the driver APIs, they are simply maintained as
+            a list of entries. As a consequence, the
+            <code class="classname">MultipleEntry</code> class has no counterpart in
+            the driver APIs, and <code class="classname">SMultipleDataEntry</code> ,
+            <code class="classname">SMultipleKeyDataEntry</code> and
+            <code class="classname">SMultipleRecnoDataEntry</code> are no longer
+            subclasses of <code class="classname">SDatabaseEntry</code>. To support
+            functions that accept any type of data entries,
+            <code class="classname">SDatabaseEntryBase</code> is added as the base
+            interface of all data entry classes, and
+            <code class="classname">SMultiplePairs</code> is added as the base class
+            of <code class="classname">SMultipleKeyDataEntry</code> and
+            <code class="classname">SMultipleRecnoDataEntry</code>. </p>
+      <p> 
+            In driver APIs, the amount of data to be returned in a single
+            bulk retrieval is not limited by a buffer size, because
+            <code class="classname">SMultipleDataEntry</code> ,
+            <code class="classname">SMultipleKeyDataEntry</code> or
+            <code class="classname">SMultipleRecnoDataEntry</code> does not use a
+            byte array buffer. Instead, the number of entries to be returned is
+            specified with the <code class="classname">setBatchSize</code> method: 
+        </p>
+      <pre class="programlisting">SEnvironment env = ...
+
+// Open the database with the default configuration.
+SDatabase db = env.openDatabase(null, "db", null, null);
+
+// Create a SMultipleDataEntry for bulk retrieval.
+SMultipleDataEntry dataEntries = new SMultipleDataEntry();
+
+// Return at maximum of 10 data items from a single retrieval.
+dataEntries.setBatchSize(10);
+
+// Perform a bulk retrieval to return multiple data items
+// for the same duplicated key.
+db.get(null, new SDatabaseEntry("key".getBytes()), dataEntries, null);
+
+// Iterate over the retrieved items.
+SDatabaseEntry item = new SDatabaseEntry();
+while (dataEntries.next(item)) {
+    // Do something for each item.
+}</pre>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="client.resource_api.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="client.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="client.stat_api.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">Removing and Renaming Objects </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> Statistic Functions</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

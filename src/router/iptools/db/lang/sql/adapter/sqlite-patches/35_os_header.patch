@@ -1,0 +1,72 @@
+--- src/os_common.h
++++ src/os_common.h
+@@ -58,13 +58,13 @@
+ ** is used for testing the I/O recovery logic.
+ */
+ #ifdef SQLITE_TEST
+-int sqlite3_io_error_hit = 0;            /* Total number of I/O Errors */
+-int sqlite3_io_error_hardhit = 0;        /* Number of non-benign errors */
+-int sqlite3_io_error_pending = 0;        /* Count down to first I/O error */
+-int sqlite3_io_error_persist = 0;        /* True if I/O errors persist */
+-int sqlite3_io_error_benign = 0;         /* True if errors are benign */
+-int sqlite3_diskfull_pending = 0;
+-int sqlite3_diskfull = 0;
++extern int sqlite3_io_error_hit;            /* Total number of I/O Errors */
++extern int sqlite3_io_error_hardhit;        /* Number of non-benign errors */
++extern int sqlite3_io_error_pending;        /* Count down to first I/O error */
++extern int sqlite3_io_error_persist;        /* True if I/O errors persist */
++extern int sqlite3_io_error_benign;         /* True if errors are benign */
++extern int sqlite3_diskfull_pending;
++extern int sqlite3_diskfull;
+ #define SimulateIOErrorBenign(X) sqlite3_io_error_benign=(X)
+ #define SimulateIOError(CODE)  \
+   if( (sqlite3_io_error_persist && sqlite3_io_error_hit) \
+@@ -96,7 +96,7 @@
+ ** When testing, keep a count of the number of open files.
+ */
+ #ifdef SQLITE_TEST
+-int sqlite3_open_file_count = 0;
++extern int sqlite3_open_file_count;
+ #define OpenCounter(X)  sqlite3_open_file_count+=(X)
+ #else
+ #define OpenCounter(X)
+--- src/os_win.c
++++ src/os_win.c
+@@ -20,6 +20,17 @@
+ */
+ #include "os_common.h"
+ 
++#ifdef SQLITE_TEST
++int sqlite3_io_error_hit = 0;
++int sqlite3_io_error_hardhit = 0;
++int sqlite3_io_error_pending = 0;
++int sqlite3_io_error_persist = 0;
++int sqlite3_io_error_benign = 0;
++int sqlite3_diskfull_pending = 0;
++int sqlite3_diskfull = 0;
++int sqlite3_open_file_count = 0;
++#endif
++
+ /*
+ ** Include the header file for the Windows VFS.
+ */
+--- src/os_unix.c
++++ src/os_unix.c
+@@ -266,6 +266,17 @@
+ */
+ #include "os_common.h"
+ 
++#ifdef SQLITE_TEST
++int sqlite3_io_error_hit = 0;
++int sqlite3_io_error_hardhit = 0;
++int sqlite3_io_error_pending = 0;
++int sqlite3_io_error_persist = 0;
++int sqlite3_io_error_benign = 0;
++int sqlite3_diskfull_pending = 0;
++int sqlite3_diskfull = 0;
++int sqlite3_open_file_count = 0;
++#endif
++
+ /*
+ ** Define various macros that are missing from some systems.
+ */

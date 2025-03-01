@@ -1,0 +1,18 @@
+This example shows how Oracle Berkeley DB can be used to implement a simple case of priority  message handling.  It consists of three parts.
+Message Generator - Simulates messages arriving to the application.  It stops after 100,000 messages are generated.
+Priority Sorter - Receives and sorts the messages into two queues, a high priorty one and a low priority one.
+Destination - Processes the messages in the two priority queues, giving preference to the high priority queue.
+
+BUILD and RUN
+
+Windows
+
+To build this example build the Visual Studio examples ex_priority, ex_priority_dest, and ex_priority_msg.
+
+To run the example first make sure the executeables can be located by your PATH environment variable. Then click or run the file RunPriorityExample.bat.
+
+Unix/Linux
+
+To build this example install Berkeley DB, then in the build_unix directory execute the command "make examples_c".
+
+To run execute the script RunPriorityExample.sh.

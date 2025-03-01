@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="libthrift-0.9.2">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../jars/libthrift.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../jars/log4j.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../jars/slf4j-api.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../jars/slf4j-log4j12.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

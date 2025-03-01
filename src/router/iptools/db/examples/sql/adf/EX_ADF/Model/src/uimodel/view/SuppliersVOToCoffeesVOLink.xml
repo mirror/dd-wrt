@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="GBK" ?>
+<!DOCTYPE ViewLink SYSTEM "jbo_03_01.dtd">
+<!---->
+<ViewLink
+  xmlns="http://xmlns.oracle.com/bc4j"
+  Name="SuppliersVOToCoffeesVOLink"
+  Version="11.1.2.64.36">
+  <Properties>
+    <SchemaBasedProperties>
+      <LABEL
+        ResId="uimodel.view.SuppliersVOToCoffeesVOLink_LABEL"/>
+    </SchemaBasedProperties>
+  </Properties>
+  <ViewLinkDefEnd
+    Name="SuppliersVO"
+    Cardinality="1"
+    Source="true"
+    Owner="uimodel.view.SuppliersVO">
+    <DesignTime>
+      <Attr Name="_finderName" Value="SuppliersVO"/>
+      <Attr Name="_isUpdateable" Value="true"/>
+      <Attr Name="_minCardinality" Value="1"/>
+    </DesignTime>
+    <AttrArray Name="Attributes">
+      <Item Value="uimodel.view.SuppliersVO.SupId"/>
+    </AttrArray>
+  </ViewLinkDefEnd>
+  <ViewLinkDefEnd
+    Name="CoffeesVO"
+    Cardinality="-1"
+    Owner="uimodel.view.CoffeesVO">
+    <DesignTime>
+      <Attr Name="_finderName" Value="CoffeesVO"/>
+      <Attr Name="_isUpdateable" Value="true"/>
+    </DesignTime>
+    <AttrArray Name="Attributes">
+      <Item Value="uimodel.view.CoffeesVO.SupId"/>
+    </AttrArray>
+  </ViewLinkDefEnd>
+  <ResourceBundle>
+    <PropertiesBundle
+      PropertiesFile="model.ModelBundle"/>
+  </ResourceBundle>
+</ViewLink>

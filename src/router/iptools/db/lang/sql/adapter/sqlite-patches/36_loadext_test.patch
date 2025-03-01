@@ -1,0 +1,29 @@
+--- test/loadext.test
++++ test/loadext.test
+@@ -66,6 +66,26 @@
+   set dlerror_nosymbol   {dlsym(XXX, %2$s): symbol not found}
+ }
+ 
++if {$::tcl_platform(os) eq "FreeBSD"} {
++  set dlerror_nosuchfile {Cannot open "%s"}
++  set dlerror_notadll    {%s: invalid file format}
++  set dlerror_nosymbol   {Undefined symbol "%2$s"}
++}
++
++if {$::tcl_platform(os) eq "SunOS" && $::tcl_platform(machine) eq "i86pc"} {
++  set dlerror_nosuchfile \
++      {ld.so.1: testfixture: fatal: %s: open failed: No such file or directory}
++  set dlerror_notadll    {ld.so.1: testfixture: fatal: %s: unknown file type}
++  set dlerror_nosymbol   {ld.so.1: testfixture: fatal: %2$s: can't find symbol}
++}
++
++if {$::tcl_platform(os) eq "SunOS" && $::tcl_platform(machine) eq "sun4v"} {
++  set dlerror_nosuchfile \
++      {ld.so.1: testfixture: fatal: %s: open failed: No such file or directory}
++  set dlerror_notadll    {ld.so.1: testfixture: fatal: %s: not an ELF file}
++  set dlerror_nosymbol   {ld.so.1: testfixture: fatal: %2$s: can't find symbol}
++}
++
+ if {$::tcl_platform(platform) eq "windows"} {
+   set dlerror_nosuchfile {The specified module could not be found.*}
+   set dlerror_notadll    {%%1 is not a valid Win32 application.*}

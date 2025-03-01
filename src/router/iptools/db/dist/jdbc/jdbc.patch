@@ -1,0 +1,36 @@
+diff -r e7e24e781211 configure
+--- a/configure	Wed Jan 09 13:03:42 2013 -0800
++++ b/configure	Tue Jan 22 18:41:16 2013 +0800
+@@ -11420,9 +11420,14 @@
+    return ret;
+ }
+ 
++static int vatest2(va_list ap) {
++	return 0;
++}
++
+ int
+ main(int argc, char **argv)
+ {
++   vatest2((va_list)argv); /* Check whether we can convert "char *" to va_list */
+    exit(vatest(NULL, vatest, 0.0, 0, NULL));
+ }
+ 
+diff -r e7e24e781211 configure.in
+--- a/configure.in	Wed Jan 09 13:03:42 2013 -0800
++++ b/configure.in	Tue Jan 22 18:41:16 2013 +0800
+@@ -436,9 +436,14 @@
+    return ret;
+ }
+ 
++static int vatest2(va_list ap) {
++	return 0;
++}
++
+ int
+ main(int argc, char **argv)
+ {
++   vatest2((va_list)argv); /* Check whether we can convert "char *" to va_list */
+    exit(vatest(NULL, vatest, 0.0, 0, NULL));
+ }
+ ],[USE_VFUNCS=1],[USE_VFUNCS=0],[USE_VFUNCS=0])

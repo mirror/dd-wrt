@@ -1,0 +1,18 @@
+<?xml version = '1.0' encoding = 'GBK'?>
+<jpsConfig xmlns="http://xmlns.oracle.com/oracleas/schema/11/jps-config-11_1.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xmlns.oracle.com/oracleas/schema/11/jps-config-11_1.xsd jps-config-11_1.xsd">
+   <serviceProviders>
+      <serviceProvider class="oracle.security.jps.internal.credstore.ssp.SspCredentialStoreProvider" name="credstore.provider" type="CREDENTIAL_STORE">
+         <description>Credential Store Service Provider</description>
+      </serviceProvider>
+   </serviceProviders>
+   <serviceInstances>
+      <serviceInstance provider="credstore.provider" name="credstore">
+         <property value="./" name="location"/>
+      </serviceInstance>
+   </serviceInstances>
+   <jpsContexts default="EX_ADF">
+      <jpsContext name="EX_ADF">
+         <serviceInstanceRef ref="credstore"/>
+      </jpsContext>
+   </jpsContexts>
+</jpsConfig>

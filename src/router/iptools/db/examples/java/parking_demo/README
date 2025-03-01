@@ -1,0 +1,24 @@
+
+This demo program is designed to demonstrate how to develop Berkeley DB
+applications in Java with three popular Java IDEs: IntelliJ IDEA,
+Eclipse and JDeveloper. This demo program also illustrates the three
+flavors of APIs offered by Berkeley DB: the base key-value API, the 
+DPL (data persistence layer) API, and the JDBC API.
+
+A series of tutorials on how to build and run this demo program with the
+above three IDEs are available at the Learn More section of Berkeley DB's
+OTN site:
+http://www.oracle.com/technetwork/database/database-technologies/berkeleydb/learnmore/index.html
+
+Although this demo program is primarily designed for use with an IDE, it's
+also possible to build and run this program in console. This demo program
+requires JDK 7 or above and the DB's JDBC driver, so you must configure DB
+with the --enable-jdbc option. To build the program, run
+	
+	make dbdemos.jar
+
+To run this demo program, execute the following command under the build_unix
+directory:
+java -Djava.library.path=<DB install path>/lib \
+-cp <DB install path>/lib/db.jar:<DB install path>/lib/sqlite.jar:dbdemos.jar \
+com.sleepycat.sample.ParkingDemo

@@ -1,0 +1,33 @@
+userauth-ext-common-api-1.1
+User-Edit failed: 23
+userauth-ext-common-api-1.2
+User-Delete failed: 23
+userauth-ext-common-api-1.3
+Authentication failed for user alice
+userauth-ext-common-api-1.4
+User-Edit failed: 23
+userauth-ext-common-api-1.5
+User-Delete failed: 23
+userauth-ext-common-api-2.0
+NULL
+1
+2.5
+'three'
+X'4444'
+t1
+userauth-ext-common-api-2.1
+Authentication failed for user alice
+userauth-ext-common-api-2.2
+User-Edit failed: 23
+userauth-ext-common-api-2.3
+User-Delete failed: 23
+userauth-ext-common-api-2.4
+userauth-ext-common-api-2.5
+Error: near line xx: user not authenticated
+userauth-ext-common-api-2.6
+userauth-ext-common-api-2.7
+NULL
+1
+2.5
+'three'
+X'4444'

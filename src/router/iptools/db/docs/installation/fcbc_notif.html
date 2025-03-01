@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Failchk Broadcast Notifications</title>
+    <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
+    <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
+    <link rel="start" href="index.html" title="Berkeley DB Installation and Build Guide" />
+    <link rel="up" href="upgrade_61_toc.html" title="Chapter 10.  Upgrading Berkeley DB 12.1.6.0 applications to Berkeley DB 12.1.6.1" />
+    <link rel="prev" href="upgrade_61_toc.html" title="Chapter 10.  Upgrading Berkeley DB 12.1.6.0 applications to Berkeley DB 12.1.6.1" />
+    <link rel="next" href="log_nosync.html" title="New Logging Option" />
+  </head>
+  <body>
+    <div xmlns="" class="navheader">
+      <div class="libver">
+        <p>Library Version 12.1.6.2</p>
+      </div>
+      <table width="100%" summary="Navigation header">
+        <tr>
+          <th colspan="3" align="center">Failchk Broadcast Notifications</th>
+        </tr>
+        <tr>
+          <td width="20%" align="left"><a accesskey="p" href="upgrade_61_toc.html">Prev</a> </td>
+          <th width="60%" align="center">Chapter 10.  Upgrading Berkeley DB 12.1.6.0 applications to Berkeley DB 12.1.6.1 </th>
+          <td width="20%" align="right"> <a accesskey="n" href="log_nosync.html">Next</a></td>
+        </tr>
+      </table>
+      <hr />
+    </div>
+    <div class="sect1" lang="en" xml:lang="en">
+      <div class="titlepage">
+        <div>
+          <div>
+            <h2 class="title" style="clear: both"><a id="fcbc_notif"></a>Failchk Broadcast Notifications</h2>
+          </div>
+        </div>
+      </div>
+      <div class="toc">
+        <dl>
+          <dt>
+            <span class="sect2">
+              <a href="fcbc_notif.html#idm140188017545792">New Parameter Value</a>
+            </span>
+          </dt>
+          <dt>
+            <span class="sect2">
+              <a href="fcbc_notif.html#idm140188017723200">New Events</a>
+            </span>
+          </dt>
+        </dl>
+      </div>
+      <p>
+            The <a href="../api_reference/C/envfailchk.html" class="olink">DB_ENV-&gt;failchk()</a> method now has a new option to notify 
+            environment processes of an application failure as soon
+            as possible. This option causes any thread waiting on a
+            mutex owned by a crashed process to return <a href="../programmer_reference/program_errorret.html#program_errorret.DB_RUNRECOVERY" class="olink">
+            DB_RUNRECOVERY</a> instead of hanging.
+        </p>
+      <p>
+            This option is enabled at compile time with the new
+            configure option 
+            <a class="link" href="build_unix_conf.html#build_unix_conf.--enable-failchk_broadcast">
+                --enable-failchk_broadcast</a>.
+            When enabled, this option provides a new timeout. It also 
+            provides new events that notify the application when a
+            thread is about to return <a href="../programmer_reference/program_errorret.html#program_errorret.DB_RUNRECOVERY" class="olink">
+            DB_RUNRECOVERY</a>.
+        </p>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017545792"></a>New Parameter Value</h3>
+            </div>
+          </div>
+        </div>
+        <div class="itemizedlist">
+          <ul type="disc">
+            <li><a href="../api_reference/C/envset_timeout.html#set_timeout_DB_SET_MUTEX_FAILCHK_TIMEOUT" class="olink">DB_SET_MUTEX_FAILCHK_TIMEOUT</a> —
+                    A new <code class="literal">timeout</code> parameter value for the
+                    <a href="../api_reference/C/envset_timeout.html" class="olink">DB_ENV-&gt;set_timeout()</a> method to indicate how long a thread
+                    will wait for a mutex lock before checking whether
+                    <a href="../api_reference/C/envfailchk.html" class="olink">DB_ENV-&gt;failchk()</a> has marked the mutex as failed.
+                </li>
+          </ul>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idm140188017723200"></a>New Events</h3>
+            </div>
+          </div>
+        </div>
+        <div class="itemizedlist">
+          <ul type="disc">
+            <li>
+              <a href="../api_reference/C/envevent_notify.html#event_notify_DB_EVENT_FAILCHK_PANIC" class="olink">DB_EVENT_FAILCHK_PANIC</a>
+            </li>
+            <li>
+              <a href="../api_reference/C/envevent_notify.html#event_notify_DB_EVENT_MUTEX_DIED" class="olink">DB_EVENT_MUTEX_DIED</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="navfooter">
+      <hr />
+      <table width="100%" summary="Navigation footer">
+        <tr>
+          <td width="40%" align="left"><a accesskey="p" href="upgrade_61_toc.html">Prev</a> </td>
+          <td width="20%" align="center">
+            <a accesskey="u" href="upgrade_61_toc.html">Up</a>
+          </td>
+          <td width="40%" align="right"> <a accesskey="n" href="log_nosync.html">Next</a></td>
+        </tr>
+        <tr>
+          <td width="40%" align="left" valign="top">Chapter 10.  Upgrading Berkeley DB 12.1.6.0 applications to Berkeley DB 12.1.6.1  </td>
+          <td width="20%" align="center">
+            <a accesskey="h" href="index.html">Home</a>
+          </td>
+          <td width="40%" align="right" valign="top"> New Logging Option</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>
