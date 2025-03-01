@@ -1453,6 +1453,8 @@ networking.ipvs_targetport="Ziel Port";
 networking.ipvs_weight="Wichtung";
 networking.ipvs_role="Rolle";
 networking.ipvs_config="Konfiguration";
+networking.arpd="ARPd Caching";
+networking.arpd_en="ARPd Einschalten";
 
 
 //help container
