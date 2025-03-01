@@ -98,16 +98,14 @@
 #endif
 
 /*
-** The suggested maximum number of in-memory pages to use for
-** the main database table and for temporary tables.
-**
-** IMPLEMENTATION-OF: R-31093-59126 The default suggested cache size
-** is 2000 pages.
-** IMPLEMENTATION-OF: R-48205-43578 The default suggested cache size can be
-** altered using the SQLITE_DEFAULT_CACHE_SIZE compile-time options.
+** The maximum number of in-memory pages to use for the main database
+** table and for temporary tables.  The SQLITE_DEFAULT_CACHE_SIZE
 */
 #ifndef SQLITE_DEFAULT_CACHE_SIZE
-# define SQLITE_DEFAULT_CACHE_SIZE  5000
+# define SQLITE_DEFAULT_CACHE_SIZE  2000
+#endif
+#ifndef SQLITE_DEFAULT_TEMP_CACHE_SIZE
+# define SQLITE_DEFAULT_TEMP_CACHE_SIZE  500
 #endif
 
 /*

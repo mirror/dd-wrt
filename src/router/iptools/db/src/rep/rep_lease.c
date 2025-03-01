@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2007, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2007, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -45,20 +45,10 @@ __rep_update_grant(env, ts)
 	timespecclear(&mytime);
 
 	/*
-	 * If we are a view, we never grant a lease.
-	 */
-	if (IS_VIEW_SITE(env))
-		return (0);
-
-	/*
 	 * Get current time, and add in the (skewed) lease duration
-	 * time to send the grant to the master.  We need to use '0'
-	 * for a non-monotonic (i.e. realtime) timestamp.  Some systems
-	 * use "time since boot" for monotonic time, which would not
-	 * work between machines here.  We already document that for leases,
-	 * the time cannot go backward.
+	 * time to send the grant to the master.
 	 */
-	__os_gettime(env, &mytime, 0);
+	__os_gettime(env, &mytime, 1);
 	timespecadd(&mytime, &rep->lease_duration);
 	REP_SYSTEM_LOCK(env);
 	/*
@@ -118,7 +108,7 @@ __rep_islease_granted(env)
 	 * Get current time and compare against our granted lease.
 	 */
 	timespecclear(&mytime);
-	__os_gettime(env, &mytime, 0);
+	__os_gettime(env, &mytime, 1);
 
 	return (timespeccmp(&mytime, &rep->grant_expire, <=) ? 1 : 0);
 }
@@ -329,15 +319,9 @@ __rep_lease_check(env, refresh)
 		max_tries = LEASE_REFRESH_MIN;
 retry:
 	REP_SYSTEM_LOCK(env);
-	/*
-	 * We need enough leases so that we're guaranteed any successful
-	 * election will include at least one site with the lease-guaranteed
-	 * data.  Note this is based on total number of sites so leases
-	 * cannot be used with half or more unelectable sites.
-	 */
-	min_leases = (rep->config_nsites - 1) / 2;
+	min_leases = rep->config_nsites / 2;
 	ret = 0;
-	__os_gettime(env, &curtime, 0);
+	__os_gettime(env, &curtime, 1);
 	VPRINT(env, (env, DB_VERB_REP_LEASE,
 "%s %d of %d refresh %d min_leases %lu curtime %lu %lu, maxLSN [%lu][%lu]",
 	    "lease_check: try ", tries, max_tries, refresh,
@@ -542,7 +526,7 @@ __rep_lease_waittime(env)
 		if (!F_ISSET(rep, REP_F_LEASE_EXPIRED))
 			to = rep->lease_timeout;
 	} else {
-		__os_gettime(env, &mytime, 0);
+		__os_gettime(env, &mytime, 1);
 		RPRINT(env, (env, DB_VERB_REP_LEASE,
     "wait_time: mytime %lu %lu, grant_expire %lu %lu",
 		    (u_long)mytime.tv_sec, (u_long)mytime.tv_nsec,

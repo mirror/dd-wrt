@@ -14,7 +14,6 @@ set testdir ./TESTDIR
 global dict
 global util_path
 
-global is_aix_test
 global is_freebsd_test
 global is_hp_test
 global is_linux_test

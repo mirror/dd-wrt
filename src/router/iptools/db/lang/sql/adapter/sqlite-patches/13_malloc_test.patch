@@ -1,6 +1,11 @@
 --- test/malloc.test
 +++ test/malloc.test
-@@ -718,7 +718,7 @@
+@@ -713,17 +713,17 @@
+ 
+ # After committing a transaction in persistent-journal mode, if a journal
+ # size limit is configured SQLite may attempt to truncate the journal file.
+ # This test verifies the libraries response to a malloc() failure during
+ # this operation.
  #
  do_malloc_test 31 -sqlprep {
    PRAGMA journal_mode = persist;
@@ -9,3 +14,8 @@
    CREATE TABLE t1(a PRIMARY KEY, b);
  } -sqlbody {
    INSERT INTO t1 VALUES(1, 2);
+ }
+ 
+ # When written, this test provoked an obscure change-counter bug.
+ # 
+ # If, when running in exclusive mode, a malloc() failure occurs

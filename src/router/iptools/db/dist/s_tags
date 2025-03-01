@@ -6,7 +6,6 @@
 cd tagdir
 files=`echo ../../src/dbinc/*.h \
 	../../src/dbinc/*.in \
-	../../src/blob/*.[ch] \
 	../../src/btree/*.[ch] \
 	../../src/clib/*.[ch] \
 	../../src/common/*.[ch] \
@@ -20,7 +19,6 @@ files=`echo ../../src/dbinc/*.h \
 	../../src/env/*.[ch] \
 	../../src/fileops/*.[ch] \
 	../../src/hash/*.[ch] \
-	../../src/heap/*.[ch] \
 	../../src/hmac/*.[ch] \
 	../../src/hsearch/*.[ch] \
 	../../src/lock/*.[ch] \

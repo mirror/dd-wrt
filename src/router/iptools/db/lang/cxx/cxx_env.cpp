@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1997, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -90,13 +90,6 @@ void _paniccall_intercept_c(DB_ENV *dbenv, int errval)
 }
 
 extern "C"
-int _partial_rep_intercept_c(DB_ENV *dbenv,
-    const char *name, int *result, u_int32_t flags)
-{
-	return (DbEnv::_partial_rep_intercept(dbenv, name, result, flags));
-}
-
-extern "C"
 void _event_func_intercept_c(DB_ENV *dbenv, u_int32_t event, void *event_info)
 {
 	DbEnv::_event_func_intercept(dbenv, event, event_info);
@@ -110,10 +103,9 @@ void _stream_error_function_c(const DB_ENV *dbenv,
 }
 
 extern "C"
-void _stream_message_function_c(const DB_ENV *dbenv,
-    const char *prefix, const char *message)
+void _stream_message_function_c(const DB_ENV *dbenv, const char *message)
 {
-	DbEnv::_stream_message_function(dbenv, prefix, message);
+	DbEnv::_stream_message_function(dbenv, message);
 }
 
 extern "C"
@@ -128,13 +120,6 @@ int _rep_send_intercept_c(DB_ENV *dbenv, const DBT *cntrl, const DBT *data,
 {
 	return (DbEnv::_rep_send_intercept(dbenv,
 	    cntrl, data, lsn, id, flags));
-}
-
-extern "C"
-int _repmgr_set_socket_intercept_c(DB_ENV *dbenv, DB_REPMGR_SOCKET socket,
-	int *result, u_int32_t flags)
-{
-	return DbEnv::_repmgr_set_socket_intercept(dbenv, socket, result, flags);
 }
 
 extern "C"
@@ -218,18 +203,6 @@ void DbEnv::_paniccall_intercept(DB_ENV *dbenv, int errval)
 	(*cxxenv->paniccall_callback_)(cxxenv, errval);
 }
 
-int DbEnv::_partial_rep_intercept(DB_ENV *dbenv, 
-    const char *name, int *result, u_int32_t flags)
-{
-	DbEnv *cxxenv = DbEnv::get_DbEnv(dbenv);
-	if (cxxenv == 0) {
-		DB_ERROR(0,
-		    "DbEnv::partial_rep_callback", EINVAL, ON_ERROR_UNKNOWN);
-		return (EINVAL);
-	}
-	return ((*cxxenv->partial_rep_callback_)(cxxenv, name, result, flags));
-}
-
 void DbEnv::_event_func_intercept(
     DB_ENV *dbenv, u_int32_t event, void *event_info)
 {
@@ -277,21 +250,6 @@ int DbEnv::_isalive_intercept(
 		return (0);
 	}
 	return ((*cxxenv->isalive_callback_)(cxxenv, pid, thrid, flags));
-}
-
-int DbEnv::_repmgr_set_socket_intercept(DB_ENV *dbenv,
-	DB_REPMGR_SOCKET socket, int *result, u_int32_t flags)
-{
-	DbEnv *cxxenv = DbEnv::get_DbEnv(dbenv);
-	if (cxxenv == 0) {
-		DB_ERROR(DbEnv::get_DbEnv(dbenv),
-		    "DbEnv::repmgr_set_socket_callback", EINVAL,
-		    ON_ERROR_UNKNOWN);
-		return (EINVAL);
-	} else {
-		return ((*cxxenv->repmgr_set_socket_callback_)(cxxenv,
-			socket, result, flags));
-	}
 }
 
 void DbEnv::_message_dispatch_intercept(DB_ENV *dbenv, DB_CHANNEL *dbchannel, 
@@ -416,16 +374,13 @@ int DbEnv::_backup_write_intercept(DB_ENV *dbenv, u_int32_t off_gbytes,
 
 DbEnv::DbEnv(u_int32_t flags)
 :	imp_(0)
-,	slices_(0)
 ,	construct_error_(0)
 ,	construct_flags_(flags)
-,	internally_managed_(false)
 ,	error_stream_(0)
 ,	message_stream_(0)
 ,	app_dispatch_callback_(0)
 ,	feedback_callback_(0)
 ,	paniccall_callback_(0)
-,	partial_rep_callback_(0)
 ,	event_func_callback_(0)
 ,	rep_send_callback_(0)
 ,	message_dispatch_callback_(0)
@@ -437,16 +392,13 @@ DbEnv::DbEnv(u_int32_t flags)
 
 DbEnv::DbEnv(DB_ENV *dbenv, u_int32_t flags)
 :	imp_(0)
-,	slices_(0)
 ,	construct_error_(0)
 ,	construct_flags_(flags)
-,	internally_managed_(false)
 ,	error_stream_(0)
 ,	message_stream_(0)
 ,	app_dispatch_callback_(0)
 ,	feedback_callback_(0)
 ,	paniccall_callback_(0)
-,	partial_rep_callback_(0)
 ,	event_func_callback_(0)
 ,	rep_send_callback_(0)
 ,	message_dispatch_callback_(0)
@@ -454,27 +406,6 @@ DbEnv::DbEnv(DB_ENV *dbenv, u_int32_t flags)
 	if ((construct_error_ = initialize(dbenv)) != 0)
 		DB_ERROR(this, "DbEnv::DbEnv", construct_error_,
 		    error_policy());
-}
-
-DbEnv::DbEnv(DB_ENV *dbenv)
-:	imp_(0)
-,	slices_(0)
-,	construct_error_(0)
-,	construct_flags_(0)
-,	internally_managed_(true)
-,	error_stream_(0)
-,	message_stream_(0)
-,	app_dispatch_callback_(0)
-,	feedback_callback_(0)
-,	paniccall_callback_(0)
-,	partial_rep_callback_(0)
-,	event_func_callback_(0)
-,	rep_send_callback_(0)
-,	message_dispatch_callback_(0)
-{
-	if ((construct_error_ = initialize(dbenv)) != 0)
-		DB_ERROR(this, "DbEnv::DbEnv", construct_error_,
-		error_policy());
 }
 
 // If the DB_ENV handle is still open, we close it.  This is to make stack
@@ -497,12 +428,7 @@ DbEnv::~DbEnv()
 	 * function.
 	 */
 	if (dbenv != NULL) {
-		/*
-		 * Do not close environments that are opened and closed
-		 * internally, such as slice environments.
-		 */
-		if (!internally_managed_)
-			(void)dbenv->close(dbenv, DB_FORCESYNC);
+		(void)dbenv->close(dbenv, DB_FORCESYNC);
 		cleanup();
 	}
 }
@@ -510,14 +436,6 @@ DbEnv::~DbEnv()
 // called by destructors before the DB_ENV is destroyed.
 void DbEnv::cleanup()
 {
-	int i;
-
-	if (slices_ != NULL) {
-		for (i = 0; slices_[i] != NULL; i++) {
-			delete slices_[i];
-		}
-		delete [] slices_;
-	}
 	imp_ = 0;
 }
 
@@ -726,13 +644,6 @@ DBENV_METHOD(memp_stat_print, (u_int32_t flags), (dbenv, flags))
 DBENV_METHOD(memp_sync, (DbLsn *sn), (dbenv, sn))
 DBENV_METHOD(memp_trickle, (int pct, int *nwrotep), (dbenv, pct, nwrotep))
 
-void DbEnv::msg(const char *format, ...)
-{
-	DB_ENV *dbenv = unwrap(this);
-
-	DB_REAL_MSG(dbenv, format);
-}
-
 // If an error occurred during the constructor, report it now.
 // Otherwise, call the underlying DB->open method.
 //
@@ -885,8 +796,7 @@ void DbEnv::_stream_error_function(
 	}
 }
 
-void DbEnv::_stream_message_function(
-    const DB_ENV *dbenv, const char *prefix, const char *message)
+void DbEnv::_stream_message_function(const DB_ENV *dbenv, const char *message)
 {
 	const DbEnv *cxxenv = DbEnv::get_const_DbEnv(dbenv);
 	if (cxxenv == 0) {
@@ -896,15 +806,10 @@ void DbEnv::_stream_message_function(
 	}
 
 	if (cxxenv->message_callback_)
-		cxxenv->message_callback_(cxxenv, prefix, message);
+		cxxenv->message_callback_(cxxenv, message);
 	else if (cxxenv->message_stream_) {
 		// HP compilers need the extra casts, we don't know why.
-		if (prefix) {
-			(*cxxenv->message_stream_) << prefix;
-			(*cxxenv->message_stream_) << (const char *)": ";
-		}
-		if (message)
-			(*cxxenv->message_stream_) << (const char *)message;
+		(*cxxenv->message_stream_) << (const char *)message;
 		(*cxxenv->message_stream_) << (const char *)"\n";
 	}
 }
@@ -920,10 +825,6 @@ char *DbEnv::strerror(int error)
 //
 DBENV_METHOD(get_backup_config, (DB_BACKUP_CONFIG type, u_int32_t *valuep), (dbenv, type, valuep))
 DBENV_METHOD(set_backup_config, (DB_BACKUP_CONFIG type, u_int32_t value), (dbenv, type, value))
-DBENV_METHOD(get_blob_dir, (const char **dir), (dbenv, dir))
-DBENV_METHOD(set_blob_dir, (const char *dir), (dbenv, dir))
-DBENV_METHOD(get_blob_threshold, (u_int32_t *bytes), (dbenv, bytes))
-DBENV_METHOD(set_blob_threshold, (u_int32_t bytes, u_int32_t flags), (dbenv, bytes, flags))
 DBENV_METHOD(set_data_dir, (const char *dir), (dbenv, dir))
 DBENV_METHOD(get_encrypt_flags, (u_int32_t *flagsp),
     (dbenv, flagsp))
@@ -933,10 +834,6 @@ DBENV_METHOD_VOID(get_errfile, (FILE **errfilep), (dbenv, errfilep))
 DBENV_METHOD_VOID(set_errfile, (FILE *errfile), (dbenv, errfile))
 DBENV_METHOD_VOID(get_errpfx, (const char **errpfxp), (dbenv, errpfxp))
 DBENV_METHOD_VOID(set_errpfx, (const char *errpfx), (dbenv, errpfx))
-DBENV_METHOD(get_ext_file_dir, (const char **dir), (dbenv, dir))
-DBENV_METHOD(set_ext_file_dir, (const char *dir), (dbenv, dir))
-DBENV_METHOD(get_ext_file_threshold, (u_int32_t *bytes), (dbenv, bytes))
-DBENV_METHOD(set_ext_file_threshold, (u_int32_t bytes, u_int32_t flags), (dbenv, bytes, flags))
 DBENV_METHOD(get_intermediate_dir_mode, (const char **modep), (dbenv, modep))
 DBENV_METHOD(set_intermediate_dir_mode, (const char *mode), (dbenv, mode))
 DBENV_METHOD(get_lg_bsize, (u_int32_t *bsizep), (dbenv, bsizep))
@@ -989,10 +886,6 @@ DBENV_METHOD(get_mp_tablesize, (u_int32_t *tablesizep), (dbenv, tablesizep))
 DBENV_METHOD(set_mp_tablesize, (u_int32_t tablesize), (dbenv, tablesize))
 DBENV_METHOD_VOID(get_msgfile, (FILE **msgfilep), (dbenv, msgfilep))
 DBENV_METHOD_VOID(set_msgfile, (FILE *msgfile), (dbenv, msgfile))
-DBENV_METHOD_VOID(get_msgpfx, (const char **msgpfxp), (dbenv, msgpfxp))
-DBENV_METHOD_VOID(set_msgpfx, (const char *msgpfx), (dbenv, msgpfx))
-DBENV_METHOD(get_region_dir, (const char **dirp), (dbenv, dirp))
-DBENV_METHOD(set_region_dir, (const char *dir), (dbenv, dir))
 DBENV_METHOD(get_tmp_dir, (const char **tmp_dirp), (dbenv, tmp_dirp))
 DBENV_METHOD(set_tmp_dir, (const char *tmp_dir), (dbenv, tmp_dir))
 DBENV_METHOD(get_tx_max, (u_int32_t *tx_maxp), (dbenv, tx_maxp))
@@ -1027,57 +920,6 @@ DBENV_METHOD(set_cache_max, (u_int32_t gbytes, u_int32_t bytes),
     (dbenv, gbytes, bytes))
 DBENV_METHOD(get_create_dir, (const char **dirp), (dbenv, dirp))
 DBENV_METHOD(set_create_dir, (const char *dir), (dbenv, dir))
-
-int DbEnv::get_slices(DbEnv ***slices)
-{
-	DB_ENV **c_slices;
-	DB_ENV *dbenv;
-	int i, num_slices, ret;
-
-	if (slices_ != NULL) {
-		*slices = slices_;
-		return (0);
-	}
-
-	dbenv = unwrap(this);
-	ret = dbenv->get_slices(dbenv, &c_slices);
-	if (ret == 0) {
-		for (num_slices = 0;
-			c_slices[num_slices] != NULL; num_slices++);
-		if (num_slices == 0) {
-			*slices = NULL;
-			return (0);
-		}
-		slices_ = new DbEnv *[num_slices + 1];
-		for (i = 0; i < num_slices; i++) {
-			slices_[i] = new DbEnv(c_slices[i]);
-		}
-		slices_[i] = NULL;
-		*slices = slices_;
-	}
-	else
-		*slices = NULL;
-
-	if (!DB_RETOK_STD(ret))
-		DB_ERROR(this, "DbEnv::get_slices", ret, error_policy());
-	return (ret);
-}
-
-u_int32_t DbEnv::get_slice_count()
-{
-	DB_ENV *dbenv;
-	u_int32_t count;
-	int ret;
-
-	dbenv = unwrap(this);
-	count = 0;
-
-	ret = dbenv->get_slice_count(dbenv, &count);
-	if (!DB_RETOK_STD(ret))
-		DB_ERROR(this, "DbEnv::get_slice_count", ret, error_policy());
-
-	return (count);
-}
 
 void DbEnv::get_errcall(void (**argp)(const DbEnv *, const char *, const char *))
 {
@@ -1133,13 +975,13 @@ int DbEnv::set_feedback(void (*arg)(DbEnv *, int, int))
 DBENV_METHOD(get_flags, (u_int32_t *flagsp), (dbenv, flagsp))
 DBENV_METHOD(set_flags, (u_int32_t flags, int onoff), (dbenv, flags, onoff))
 
-void DbEnv::get_msgcall(void (**argp)(const DbEnv *, const char *, const char *))
+void DbEnv::get_msgcall(void (**argp)(const DbEnv *, const char *))
 {
 	if (argp != NULL)
 		*argp = message_callback_;
 }
 
-void DbEnv::set_msgcall(void (*arg)(const DbEnv *, const char *, const char *))
+void DbEnv::set_msgcall(void (*arg)(const DbEnv *, const char *))
 {
 	DB_ENV *dbenv = unwrap(this);
 
@@ -1489,37 +1331,8 @@ DBENV_METHOD(rep_get_timeout, (int which, db_timeout_t * timeout),
     (dbenv, which, timeout))
 DBENV_METHOD(rep_set_timeout, (int which, db_timeout_t timeout),
     (dbenv, which, timeout))
-
-int DbEnv::rep_set_view(int (*arg)(DbEnv *, const char *, int *, u_int32_t))
-{
-	DB_ENV *dbenv = unwrap(this);
-
-	partial_rep_callback_ = arg;
-
-	return (dbenv->rep_set_view(dbenv,
-	    arg == 0 ? 0 : _partial_rep_intercept_c));
-}
-
 DBENV_METHOD(repmgr_get_ack_policy, (int *policy), (dbenv, policy))
 DBENV_METHOD(repmgr_set_ack_policy, (int policy), (dbenv, policy))
-DBENV_METHOD(repmgr_get_incoming_queue_max, 
-    (u_int32_t *gbytesp, u_int32_t *bytesp), (dbenv, gbytesp, bytesp));
-DBENV_METHOD(repmgr_set_incoming_queue_max,
-    (u_int32_t gbytes, u_int32_t bytes), (dbenv, gbytes, bytes));
-
-int DbEnv::repmgr_set_socket(int (*approval_func)(DbEnv *,
-	DB_REPMGR_SOCKET, int *, u_int32_t))
-{
-	DB_ENV *dbenv = unwrap(this);
-	int ret;
-
-	repmgr_set_socket_callback_ = approval_func;
-	if ((ret = dbenv->repmgr_set_socket(dbenv,
-	    approval_func == 0 ? 0 : _repmgr_set_socket_intercept_c)) != 0)
-		DB_ERROR(this, "DbEnv::repmgr_set_socket", ret, error_policy());
-
-	return (ret);
-}
 
 int DbEnv::repmgr_channel(int eid, DbChannel **dbchannel, u_int32_t flags)
 {
@@ -1658,23 +1471,4 @@ DbEnv *DbEnv::wrap_DB_ENV(DB_ENV *dbenv)
 {
 	DbEnv *wrapped_env = get_DbEnv(dbenv);
 	return (wrapped_env != NULL) ? wrapped_env : new DbEnv(dbenv, 0);
-}
-
-//static method used for testing
-bool DbEnv::slices_enabled()
-{
-	DB_ENV *dbenv;
-	u_int32_t count;
-
-	if (db_env_create(&dbenv, 0) != 0)
-		return (false);
-	dbenv->set_errfile(dbenv, NULL);
-	dbenv->set_errcall(dbenv, NULL);
-
-	if (dbenv->get_slice_count(dbenv, &count) == DB_OPNOTSUP)
-		return (false);
-
-	(void)dbenv->close(dbenv, 0);
-
-	return (true);
 }

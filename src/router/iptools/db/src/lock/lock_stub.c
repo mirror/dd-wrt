@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -359,7 +359,6 @@ size_t
 __lock_region_max(env)
 	ENV *env;
 {
-	COMPQUIET(env, NULL);
 	return (0);
 }
 
@@ -368,7 +367,6 @@ __lock_region_size(env, other_alloc)
 	ENV *env;
 	size_t other_alloc;
 {
-	COMPQUIET(env, NULL);
 	COMPQUIET(other_alloc, 0);
 	return (0);
 }
@@ -586,7 +584,6 @@ __lock_list_print(env, mbp, list)
 	DBT *list;
 {
 	COMPQUIET(env, NULL);
-	COMPQUIET(mbp, NULL);
 	COMPQUIET(list, NULL);
 }
 
@@ -628,7 +625,7 @@ __lock_change(env, old_lock, new_lock)
 	ENV *env;
 	DB_LOCK *old_lock, *new_lock;
 {
+	COMPQUIET(env, NULL);
 	COMPQUIET(old_lock, NULL);
 	COMPQUIET(new_lock, NULL);
-	return (__db_nolocking(env));
 }

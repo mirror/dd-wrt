@@ -69,6 +69,19 @@
 #        The filename extension for executables on the
 #        target platform.  "" for Unix and ".exe" for windows.
 #
+# The generated configure script will make an attempt to guess
+# at all of the above parameters.  You can override any of
+# the guesses by setting the environment variable named
+# "config_AAAA" where "AAAA" is the name of the parameter
+# described above.  (Exception: srcdir cannot be set this way.)
+# If you have a file that sets one or more of these environment
+# variables, you can invoke configure as follows:
+#
+#           configure --with-hints=FILE
+#
+# where FILE is the name of the file that sets the environment
+# variables.  FILE should be an absolute pathname.
+#
 # This configure.in file is easy to reuse on other projects.  Just
 # change the argument to AC_INIT().  And disable any features that
 # you don't need (for example BLT) by erasing or commenting out
@@ -84,6 +97,11 @@ AC_MSG_ERROR([configure script is out of date:
  top level VERSION file     = $sqlite_version_sanity_check
 please regen with autoconf])
 fi
+
+dnl Put the RCS revision string after AC_INIT so that it will also
+dnl show in in configure.
+# The following RCS revision string applies to configure.in
+# $Revision: 1.56 $
 
 #########
 # Programs needed
@@ -104,12 +122,12 @@ AC_CHECK_TYPES([int8_t, int16_t, int32_t, int64_t, intptr_t, uint8_t,
 
 #########
 # Check for needed/wanted headers
-AC_CHECK_HEADERS([sys/types.h stdlib.h stdint.h inttypes.h malloc.h errno.h])
+AC_CHECK_HEADERS([sys/types.h stdlib.h stdint.h inttypes.h errno.h])
 
 #########
 # Figure out whether or not we have these functions
 #
-AC_CHECK_FUNCS([fdatasync gmtime_r isnan localtime_r localtime_s malloc_usable_size strchrnul usleep utime])
+AC_CHECK_FUNCS([usleep fdatasync localtime_r gmtime_r localtime_s])
 
 #########
 # By default, we use the amalgamation (this may be changed below...)
@@ -121,7 +139,7 @@ USE_AMALGAMATION=1
 # if not, then we fall back to plain tclsh.
 # TODO: try other versions before falling back?
 # 
-AC_CHECK_PROGS(TCLSH_CMD, [tclsh8.6 tclsh8.5 tclsh], none)
+AC_CHECK_PROGS(TCLSH_CMD, [tclsh8.5 tclsh], none)
 if test "$TCLSH_CMD" = "none"; then
   # If we can't find a local tclsh, then building the amalgamation will fail.
   # We act as though --disable-amalgamation has been used.
@@ -163,6 +181,41 @@ AC_MSG_NOTICE(Version number set to $VERSION_NUMBER)
 AC_SUBST(VERSION_NUMBER)
 
 #########
+# Check to see if the --with-hints=FILE option is used.  If there is none,
+# then check for a files named "$host.hints" and ../$hosts.hints where
+# $host is the hostname of the build system.  If still no hints are
+# found, try looking in $system.hints and ../$system.hints where
+# $system is the result of uname -s.
+#
+AC_ARG_WITH(hints,
+  AC_HELP_STRING([--with-hints=FILE],[Read configuration options from FILE]),
+  hints=$withval)
+if test "$hints" = ""; then
+  host=`hostname | sed 's/\..*//'`
+  if test -r $host.hints; then
+    hints=$host.hints
+  else
+     if test -r ../$host.hints; then
+       hints=../$host.hints
+     fi
+  fi
+fi
+if test "$hints" = ""; then
+  sys=`uname -s`
+  if test -r $sys.hints; then
+    hints=$sys.hints
+  else
+     if test -r ../$sys.hints; then
+       hints=../$sys.hints
+     fi
+  fi
+fi
+if test "$hints" != ""; then
+  AC_MSG_RESULT(reading hints from $hints)
+  . $hints
+fi
+
+#########
 # Locate a compiler for the build machine.  This compiler should
 # generate command-line programs that run on the build machine.
 #
@@ -183,7 +236,7 @@ AC_SUBST(BUILD_CC)
 # Do we want to support multithreaded use of sqlite
 #
 AC_ARG_ENABLE(threadsafe, 
-AC_HELP_STRING([--disable-threadsafe],[Disable mutexing]),,enable_threadsafe=yes)
+AC_HELP_STRING([--enable-threadsafe],[Support threadsafe operation]),,enable_threadsafe=yes)
 AC_MSG_CHECKING([whether to support threadsafe operation])
 if test "$enable_threadsafe" = "no"; then
   SQLITE_THREADSAFE=0
@@ -197,6 +250,23 @@ AC_SUBST(SQLITE_THREADSAFE)
 if test "$SQLITE_THREADSAFE" = "1"; then
   AC_SEARCH_LIBS(pthread_create, pthread)
 fi
+
+##########
+# Do we want to allow a connection created in one thread to be used
+# in another thread.  This does not work on many Linux systems (ex: RedHat 9)
+# due to bugs in the threading implementations.  This is thus off by default.
+#
+AC_ARG_ENABLE(cross-thread-connections, 
+AC_HELP_STRING([--enable-cross-thread-connections],[Allow connection sharing across threads]),,enable_xthreadconnect=no)
+AC_MSG_CHECKING([whether to allow connections to be shared across threads])
+if test "$enable_xthreadconnect" = "no"; then
+  XTHREADCONNECT=''
+  AC_MSG_RESULT([no])
+else
+  XTHREADCONNECT='-DSQLITE_ALLOW_XTHREAD_CONNECT=1'
+  AC_MSG_RESULT([yes])
+fi
+AC_SUBST(XTHREADCONNECT)
 
 ##########
 # Do we want to support release
@@ -270,18 +340,28 @@ else
   TARGET_EXEEXT=$config_TARGET_EXEEXT
 fi
 if test "$TARGET_EXEEXT" = ".exe"; then
-  SQLITE_OS_UNIX=0
-  SQLITE_OS_WIN=1
-  CFLAGS="$CFLAGS -DSQLITE_OS_WIN=1"
+  if test $OS2_SHELL ; then
+    SQLITE_OS_UNIX=0
+    SQLITE_OS_WIN=0
+    SQLITE_OS_OS2=1
+    CFLAGS="$CFLAGS -DSQLITE_OS_OS2=1"
+  else
+    SQLITE_OS_UNIX=0
+    SQLITE_OS_WIN=1
+    SQLITE_OS_OS2=0
+    CFLAGS="$CFLAGS -DSQLITE_OS_WIN=1"
+  fi
 else
   SQLITE_OS_UNIX=1
   SQLITE_OS_WIN=0
+  SQLITE_OS_OS2=0
   CFLAGS="$CFLAGS -DSQLITE_OS_UNIX=1"
 fi
 
 AC_SUBST(BUILD_EXEEXT)
 AC_SUBST(SQLITE_OS_UNIX)
 AC_SUBST(SQLITE_OS_WIN)
+AC_SUBST(SQLITE_OS_OS2)
 AC_SUBST(TARGET_EXEEXT)
 
 ##########
@@ -308,16 +388,14 @@ if test "${use_tcl}" = "yes" ; then
     fi
 
     # Start autosearch by asking tclsh
-    if test x"${ac_cv_c_tclconfig}" = x ; then
-      if test x"$cross_compiling" = xno; then
-        for i in `echo 'puts stdout $auto_path' | ${TCLSH_CMD}`
-        do
-          if test -f "$i/tclConfig.sh" ; then
-            ac_cv_c_tclconfig="$i"
-            break
-          fi
-        done
-      fi
+    if test x"$cross_compiling" = xno; then
+      for i in `echo 'puts stdout $auto_path' | ${TCLSH_CMD}`
+      do
+        if test -f "$i/tclConfig.sh" ; then
+          ac_cv_c_tclconfig="$i"
+          break
+        fi
+      done
     fi
 
     # then check for a private Tcl installation
@@ -421,6 +499,7 @@ if test "${use_tcl}" = "yes" ; then
     AC_SUBST(TCL_VERSION)
     AC_SUBST(TCL_BIN_DIR)
     AC_SUBST(TCL_SRC_DIR)
+    AC_SUBST(TCL_LIBS)
     AC_SUBST(TCL_INCLUDE_SPEC)
     
     AC_SUBST(TCL_LIB_FILE)
@@ -430,7 +509,6 @@ if test "${use_tcl}" = "yes" ; then
     AC_SUBST(TCL_STUB_LIB_FILE)
     AC_SUBST(TCL_STUB_LIB_FLAG)
     AC_SUBST(TCL_STUB_LIB_SPEC)
-    AC_SUBST(TCL_SHLIB_SUFFIX)
   fi
 fi
 if test "${use_tcl}" = "no" ; then
@@ -552,12 +630,11 @@ AC_SUBST(USE_AMALGAMATION)
 
 #########
 # See whether we should allow loadable extensions
-AC_ARG_ENABLE(load-extension, AC_HELP_STRING([--disable-load-extension],
-      [Disable loading of external extensions]),
-      [use_loadextension=$enableval],[use_loadextension=yes])
+AC_ARG_ENABLE(load-extension, AC_HELP_STRING([--enable-load-extension],
+      [Enable loading of external extensions]),
+      [use_loadextension=$enableval],[use_loadextension=no])
 if test "${use_loadextension}" = "yes" ; then
   OPT_FEATURE_FLAGS=""
-  AC_SEARCH_LIBS(dlopen, dl)
 else
   OPT_FEATURE_FLAGS="-DSQLITE_OMIT_LOAD_EXTENSION=1"
 fi

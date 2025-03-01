@@ -25,7 +25,7 @@ source $testdir/tester.tcl
 if {[sqlite3 -has-codec]} {
   set r "sqlite_orig HANDLE FILENAME ?-key CODEC-KEY?"
 } else {
-  set r "sqlite_orig HANDLE FILENAME ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN? ?-nomutex BOOLEAN? ?-fullmutex BOOLEAN? ?-uri BOOLEAN?"
+  set r "sqlite_orig HANDLE FILENAME ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN? ?-nomutex BOOLEAN? ?-fullmutex BOOLEAN?"
 }
 do_test tcl-1.1 {
   set v [catch {sqlite3 bogus} msg]
@@ -118,7 +118,7 @@ do_test tcl-1.14 {
 do_test tcl-1.15 {
   set v [catch {db function} msg]
   lappend v $msg
-} {1 {wrong # args: should be "db function NAME ?SWITCHES? SCRIPT"}}
+} {1 {wrong # args: should be "db function NAME [-argcount N] SCRIPT"}}
 do_test tcl-1.16 {
   set v [catch {db last_insert_rowid xyz} msg]
   lappend v $msg
@@ -143,11 +143,11 @@ do_test tcl-1.21 {
   set v [catch {db total_changes xyz} msg]
   lappend v $msg
 } {1 {wrong # args: should be "db total_changes "}}
-do_test tcl-1.22 {
+do_test tcl-1.20 {
   set v [catch {db copy} msg]
   lappend v $msg
 } {1 {wrong # args: should be "db copy CONFLICT-ALGORITHM TABLE FILENAME ?SEPARATOR? ?NULLINDICATOR?"}}
-do_test tcl-1.23 {
+do_test tcl-1.21 {
   set v [catch {sqlite3 db2 test.db -vfs nosuchvfs} msg]
   lappend v $msg
 } {1 {no such vfs: nosuchvfs}}
@@ -319,23 +319,14 @@ do_test tcl-8.1 {
   execsql {INSERT INTO t1 VALUES(30,NULL)}
   db eval {SELECT * FROM t1 WHERE b IS NULL}
 } {30 NaN}
-proc concatFunc args {return [join $args {}]}
 do_test tcl-8.2 {
-  db function concat concatFunc
-  db eval {SELECT concat('a', b, 'z') FROM t1 WHERE b is NULL}
-} {aNaNz}
-do_test tcl-8.3 {
   db nullvalue NULL
   db nullvalue
 } {NULL}
-do_test tcl-8.4 {
+do_test tcl-8.3 {
   db nullvalue {}
   db eval {SELECT * FROM t1 WHERE b IS NULL}
 } {30 {}}
-do_test tcl-8.5 {
-  db function concat concatFunc
-  db eval {SELECT concat('a', b, 'z') FROM t1 WHERE b is NULL}
-} {az}
 
 # Test the return type of user-defined functions
 #
@@ -625,17 +616,6 @@ ifcapable tclvar {
     }
   } {31323334 blob}
 }
-
-db func xCall xCall
-proc xCall {} { return "value" }
-do_execsql_test tcl-14.1 {
-  CREATE TABLE t6(x);
-  INSERT INTO t6 VALUES(1);
-}
-do_test tcl-14.2 {
-  db one {SELECT x FROM t6 WHERE xCall()!='value'}
-} {}
-
 
 
 finish_test

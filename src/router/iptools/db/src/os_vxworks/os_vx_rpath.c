@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1997, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -29,12 +29,13 @@ __db_rpath(path)
 	 * skip over the device name and not take into account any
 	 * PATH_SEPARATOR characters that might be in that name.
 	 *
-	 * !!! [#2393]
+	 * XXX [#2393]
 	 * VxWorks supports having a filename directly follow a device
 	 * name with no separator.  I.e. to access a file 'xxx' in
 	 * the top level directory of a device mounted at "mydrive"
 	 * you could say "mydrivexxx" or "mydrive/xxx" or "mydrive\xxx".
 	 * We do not support the first usage here.
+	 * XXX
 	 */
 	if ((dummy = iosDevFind(path, (const char**)&ptail)) == NULL)
 		s = path;

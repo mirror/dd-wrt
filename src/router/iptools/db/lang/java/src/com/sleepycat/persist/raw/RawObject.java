@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -45,8 +45,9 @@ public class RawObject {
      *
      * @param values a map of field name to value for each declared field in
      * the class, or null to create an empty map.  Each value in the map is a
-     * {@link RawObject}, a <a href="../model/Entity.html#simpleTypes">simple
-     * type</a> instance, or null.
+     * {@link RawObject}, a {@link <a
+     * href="../model/Entity.html#simpleTypes">simple type</a>} instance, or
+     * null.
      *
      * @param superObject the instance of the superclass, or null if the
      * superclass is {@code Object}.
@@ -70,8 +71,9 @@ public class RawObject {
      * @param type the type of this raw object.
      *
      * @param elements an array of elements.  Each element in the array is a
-     * {@link RawObject}, a <a href="../model/Entity.html#simpleTypes">simple
-     * type</a> instance, or null.
+     * {@link RawObject}, a {@link <a
+     * href="../model/Entity.html#simpleTypes">simple type</a>} instance, or
+     * null.
      *
      * @throws IllegalArgumentException if the type argument is not an array
      * type.
@@ -111,8 +113,6 @@ public class RawObject {
      * EntityModel#getRawType EntityModel.getRawType} for the same class name.
      * This can only occur in a {@link Conversion#convert
      * Conversion.convert}.</p>
-     *
-     * @return the RawType.
      */
     public RawType getType() {
         return type;
@@ -122,15 +122,13 @@ public class RawObject {
      * Returns a map of field name to value for a complex type, or null for an
      * array type or an enum type.  The map contains a String key for each
      * declared field in the class.  Each value in the map is a {@link
-     * RawObject}, a <a href="../model/Entity.html#simpleTypes">simple
-     * type</a> instance, or null.
+     * RawObject}, a {@link <a href="../model/Entity.html#simpleTypes">simple
+     * type</a>} instance, or null.
      *
      * <p>There will be an entry in the map for every field declared in this
      * type, as determined by {@link RawType#getFields} for the type returned
      * by {@link #getType}.  Values in the map may be null for fields with
      * non-primitive types.</p>
-     *
-     * @return the map of field name to value, or null.
      */
     public Map<String, Object> getValues() {
         return values;
@@ -139,10 +137,8 @@ public class RawObject {
     /**
      * Returns the array of elements for an array type, or null for a complex
      * type or an enum type.  Each element in the array is a {@link RawObject},
-     * a <a href="../model/Entity.html#simpleTypes">simple type</a> instance,
-     * or null.
-     *
-     * @return the array of elements, or null.
+     * a {@link <a href="../model/Entity.html#simpleTypes">simple type</a>}
+     * instance, or null.
      */
     public Object[] getElements() {
         return elements;
@@ -152,8 +148,6 @@ public class RawObject {
      * Returns the enum constant String for an enum type, or null for a complex
      * type or an array type.  The String returned will be one of the Strings
      * returned by {@link RawType#getEnumConstants}.
-     *
-     * @return the enum constant String, or null.
      */
     public String getEnum() {
         return enumConstant;
@@ -162,8 +156,6 @@ public class RawObject {
     /**
      * Returns the instance of the superclass, or null if the superclass is
      * {@code Object} or {@code Enum}.
-     *
-     * @return the instance of the superclass, or null.
      */
     public RawObject getSuper() {
         return superObject;

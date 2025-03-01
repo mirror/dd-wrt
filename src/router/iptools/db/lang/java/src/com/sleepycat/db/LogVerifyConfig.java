@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates. All rights reserved.
  *
  * $Id: LogVerifyConfig.java,v 0f73af5ae3da 2010/05/10 05:38:40 alexander $
  */

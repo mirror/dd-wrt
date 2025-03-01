@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -1719,5 +1719,318 @@ __bam_rcuradj_recover(env, dbtp, lsnp, op, info)
 done:	*lsnp = argp->prev_lsn;
 out:	if (rdbc != NULL && (t_ret = __dbc_close(rdbc)) != 0 && ret == 0)
 		ret = t_ret;
+	REC_CLOSE;
+}
+
+/*
+ * __bam_merge_44_recover --
+ *	Recovery function for merge.
+ *
+ * PUBLIC: int __bam_merge_44_recover
+ * PUBLIC:   __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
+ */
+int
+__bam_merge_44_recover(env, dbtp, lsnp, op, info)
+	ENV *env;
+	DBT *dbtp;
+	DB_LSN *lsnp;
+	db_recops op;
+	void *info;
+{
+	__bam_merge_44_args *argp;
+	DB_THREAD_INFO *ip;
+	BKEYDATA *bk;
+	DB *file_dbp;
+	DBC *dbc;
+	DB_MPOOLFILE *mpf;
+	PAGE *pagep;
+	db_indx_t indx, *ninp, *pinp;
+	u_int32_t size;
+	u_int8_t *bp;
+	int cmp_n, cmp_p, i, ret;
+
+	ip = ((DB_TXNHEAD *)info)->thread_info;
+	REC_PRINT(__bam_merge_44_print);
+	REC_INTRO(__bam_merge_44_read, ip, 1);
+
+	if ((ret = __memp_fget(mpf, &argp->pgno, ip, NULL, 0, &pagep)) != 0) {
+		if (ret != DB_PAGE_NOTFOUND) {
+			ret = __db_pgerr(file_dbp, argp->pgno, ret);
+			goto out;
+		} else
+			goto next;
+	}
+
+	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
+	cmp_p = LOG_COMPARE(&LSN(pagep), &argp->lsn);
+	CHECK_LSN(file_dbp->env, op, cmp_p, &LSN(pagep), &argp->lsn);
+
+	if (cmp_p == 0 && DB_REDO(op)) {
+		/*
+		 * If the header is provided the page is empty, copy the
+		 * needed data.
+		 */
+		DB_ASSERT(env, argp->hdr.size == 0 || NUM_ENT(pagep) == 0);
+		REC_DIRTY(mpf, ip, dbc->priority, &pagep);
+		if (argp->hdr.size != 0) {
+			P_INIT(pagep, file_dbp->pgsize, pagep->pgno,
+			     PREV_PGNO(argp->hdr.data),
+			     NEXT_PGNO(argp->hdr.data),
+			     LEVEL(argp->hdr.data), TYPE(argp->hdr.data));
+		}
+		if (TYPE(pagep) == P_OVERFLOW) {
+			OV_REF(pagep) = OV_REF(argp->hdr.data);
+			OV_LEN(pagep) = OV_LEN(argp->hdr.data);
+			bp = (u_int8_t *) pagep + P_OVERHEAD(file_dbp);
+			memcpy(bp, argp->data.data, argp->data.size);
+		} else {
+			/* Copy the data segment. */
+			bp = (u_int8_t *)pagep +
+			     (db_indx_t)(HOFFSET(pagep) - argp->data.size);
+			memcpy(bp, argp->data.data, argp->data.size);
+
+			/* Copy index table offset past the current entries. */
+			pinp = P_INP(file_dbp, pagep) + NUM_ENT(pagep);
+			ninp = argp->ind.data;
+			for (i = 0;
+			     i < (int)(argp->ind.size / sizeof(*ninp)); i++)
+				*pinp++ = *ninp++
+				      - (file_dbp->pgsize - HOFFSET(pagep));
+			HOFFSET(pagep) -= argp->data.size;
+			NUM_ENT(pagep) += i;
+		}
+		pagep->lsn = *lsnp;
+	} else if (cmp_n == 0 && !DB_REDO(op)) {
+		/*
+		 * Since logging is logical at the page level
+		 * we cannot just truncate the data space.  Delete
+		 * the proper number of items from the logical end
+		 * of the page.
+		 */
+		REC_DIRTY(mpf, ip, dbc->priority, &pagep);
+		for (i = 0; i < (int)(argp->ind.size / sizeof(*ninp)); i++) {
+			indx = NUM_ENT(pagep) - 1;
+			if (P_INP(file_dbp, pagep)[indx] ==
+			     P_INP(file_dbp, pagep)[indx - P_INDX]) {
+				NUM_ENT(pagep)--;
+				continue;
+			}
+			switch (TYPE(pagep)) {
+			case P_LBTREE:
+			case P_LRECNO:
+			case P_LDUP:
+				bk = GET_BKEYDATA(file_dbp, pagep, indx);
+				size = BITEM_SIZE(bk);
+				break;
+
+			case P_IBTREE:
+				size = BINTERNAL_SIZE(
+				     GET_BINTERNAL(file_dbp, pagep, indx)->len);
+				break;
+			case P_IRECNO:
+				size = RINTERNAL_SIZE;
+				break;
+
+			default:
+				ret = __db_pgfmt(env, PGNO(pagep));
+				goto out;
+			}
+			if ((ret =
+			     __db_ditem(dbc, pagep, indx, size)) != 0)
+				goto out;
+		}
+		if (argp->ind.size == 0)
+			HOFFSET(pagep) = file_dbp->pgsize;
+		pagep->lsn = argp->lsn;
+	}
+
+	if ((ret = __memp_fput(mpf, ip, pagep, dbc->priority)) != 0)
+		goto out;
+
+next:	if ((ret = __memp_fget(mpf, &argp->npgno, ip, NULL, 0, &pagep)) != 0) {
+		if (ret != DB_PAGE_NOTFOUND) {
+			ret = __db_pgerr(file_dbp, argp->pgno, ret);
+			goto out;
+		} else
+			goto done;
+	}
+
+	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
+	cmp_p = LOG_COMPARE(&LSN(pagep), &argp->nlsn);
+	CHECK_LSN(file_dbp->env, op, cmp_p, &LSN(pagep), &argp->nlsn);
+
+	if (cmp_p == 0 && DB_REDO(op)) {
+		/* Need to truncate the page. */
+		REC_DIRTY(mpf, ip, dbc->priority, &pagep);
+		HOFFSET(pagep) = file_dbp->pgsize;
+		NUM_ENT(pagep) = 0;
+		pagep->lsn = *lsnp;
+	} else if (cmp_n == 0 && !DB_REDO(op)) {
+		/* Need to put the data back on the page. */
+		REC_DIRTY(mpf, ip, dbc->priority, &pagep);
+		if (TYPE(pagep) == P_OVERFLOW) {
+			OV_REF(pagep) = OV_REF(argp->hdr.data);
+			OV_LEN(pagep) = OV_LEN(argp->hdr.data);
+			bp = (u_int8_t *) pagep + P_OVERHEAD(file_dbp);
+			memcpy(bp, argp->data.data, argp->data.size);
+		} else {
+			bp = (u_int8_t *)pagep +
+			     (db_indx_t)(HOFFSET(pagep) - argp->data.size);
+			memcpy(bp, argp->data.data, argp->data.size);
+
+			/* Copy index table. */
+			pinp = P_INP(file_dbp, pagep) + NUM_ENT(pagep);
+			ninp = argp->ind.data;
+			for (i = 0;
+			    i < (int)(argp->ind.size / sizeof(*ninp)); i++)
+				*pinp++ = *ninp++;
+			HOFFSET(pagep) -= argp->data.size;
+			NUM_ENT(pagep) = i;
+		}
+		pagep->lsn = argp->nlsn;
+	}
+
+	if ((ret = __memp_fput(mpf,
+	     ip, pagep, dbc->priority)) != 0)
+		goto out;
+done:
+	*lsnp = argp->prev_lsn;
+	ret = 0;
+
+out:	REC_CLOSE;
+}
+
+/*
+ * __bam_relink_43_recover --
+ *	Recovery function for relink.
+ *
+ * PUBLIC: int __bam_relink_43_recover
+ * PUBLIC:   __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
+ */
+int
+__bam_relink_43_recover(env, dbtp, lsnp, op, info)
+	ENV *env;
+	DBT *dbtp;
+	DB_LSN *lsnp;
+	db_recops op;
+	void *info;
+{
+	__bam_relink_43_args *argp;
+	DB_THREAD_INFO *ip;
+	DB *file_dbp;
+	DBC *dbc;
+	DB_MPOOLFILE *mpf;
+	PAGE *pagep;
+	int cmp_n, cmp_p, modified, ret;
+
+	ip = ((DB_TXNHEAD *)info)->thread_info;
+	pagep = NULL;
+	REC_PRINT(__bam_relink_43_print);
+	REC_INTRO(__bam_relink_43_read, ip, 0);
+
+	/*
+	 * There are up to three pages we need to check -- the page, and the
+	 * previous and next pages, if they existed.  For a page add operation,
+	 * the current page is the result of a split and is being recovered
+	 * elsewhere, so all we need do is recover the next page.
+	 */
+	if ((ret = __memp_fget(mpf, &argp->pgno, ip, NULL, 0, &pagep)) != 0) {
+		if (ret != DB_PAGE_NOTFOUND) {
+			ret = __db_pgerr(file_dbp, argp->pgno, ret);
+			goto out;
+		} else
+			goto next2;
+	}
+
+	cmp_p = LOG_COMPARE(&LSN(pagep), &argp->lsn);
+	CHECK_LSN(env, op, cmp_p, &LSN(pagep), &argp->lsn);
+	if (cmp_p == 0 && DB_REDO(op)) {
+		/* Redo the relink. */
+		REC_DIRTY(mpf, ip, file_dbp->priority, &pagep);
+		pagep->lsn = *lsnp;
+	} else if (LOG_COMPARE(lsnp, &LSN(pagep)) == 0 && DB_UNDO(op)) {
+		/* Undo the relink. */
+		REC_DIRTY(mpf, ip, file_dbp->priority, &pagep);
+		pagep->next_pgno = argp->next;
+		pagep->prev_pgno = argp->prev;
+		pagep->lsn = argp->lsn;
+	}
+	if ((ret = __memp_fput(mpf,
+	     ip, pagep, file_dbp->priority)) != 0)
+		goto out;
+	pagep = NULL;
+
+next2: if ((ret = __memp_fget(mpf, &argp->next, ip, NULL, 0, &pagep)) != 0) {
+		if (ret != DB_PAGE_NOTFOUND) {
+			ret = __db_pgerr(file_dbp, argp->next, ret);
+			goto out;
+		} else
+			goto prev;
+	}
+
+	modified = 0;
+	cmp_n = LOG_COMPARE(lsnp, &LSN(pagep));
+	cmp_p = LOG_COMPARE(&LSN(pagep), &argp->lsn_next);
+	CHECK_LSN(env, op, cmp_p, &LSN(pagep), &argp->lsn_next);
+	if (cmp_p == 0 && DB_REDO(op)) {
+		/* Redo the remove or undo the add. */
+		REC_DIRTY(mpf, ip, file_dbp->priority, &pagep);
+		pagep->prev_pgno = argp->prev;
+		modified = 1;
+	} else if (cmp_n == 0 && DB_UNDO(op)) {
+		/* Undo the remove or redo the add. */
+		REC_DIRTY(mpf, ip, file_dbp->priority, &pagep);
+		pagep->prev_pgno = argp->pgno;
+		modified = 1;
+	}
+	if (modified) {
+		if (DB_UNDO(op))
+			pagep->lsn = argp->lsn_next;
+		else
+			pagep->lsn = *lsnp;
+	}
+	if ((ret = __memp_fput(mpf,
+	     ip, pagep, file_dbp->priority)) != 0)
+		goto out;
+	pagep = NULL;
+
+prev: if ((ret = __memp_fget(mpf, &argp->prev, ip, NULL, 0, &pagep)) != 0) {
+		if (ret != DB_PAGE_NOTFOUND) {
+			ret = __db_pgerr(file_dbp, argp->prev, ret);
+			goto out;
+		} else
+			goto done;
+	}
+
+	modified = 0;
+	cmp_p = LOG_COMPARE(&LSN(pagep), &argp->lsn_prev);
+	CHECK_LSN(env, op, cmp_p, &LSN(pagep), &argp->lsn_prev);
+	if (cmp_p == 0 && DB_REDO(op)) {
+		/* Redo the relink. */
+		REC_DIRTY(mpf, ip, file_dbp->priority, &pagep);
+		pagep->next_pgno = argp->next;
+		modified = 1;
+	} else if (LOG_COMPARE(lsnp, &LSN(pagep)) == 0 && DB_UNDO(op)) {
+		/* Undo the relink. */
+		REC_DIRTY(mpf, ip, file_dbp->priority, &pagep);
+		pagep->next_pgno = argp->pgno;
+		modified = 1;
+	}
+	if (modified) {
+		if (DB_UNDO(op))
+			pagep->lsn = argp->lsn_prev;
+		else
+			pagep->lsn = *lsnp;
+	}
+	if ((ret = __memp_fput(mpf,
+	     ip, pagep, file_dbp->priority)) != 0)
+		goto out;
+	pagep = NULL;
+
+done:	*lsnp = argp->prev_lsn;
+	ret = 0;
+
+out:	if (pagep != NULL)
+		(void)__memp_fput(mpf, ip, pagep, file_dbp->priority);
 	REC_CLOSE;
 }

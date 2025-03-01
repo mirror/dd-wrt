@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -53,19 +53,15 @@ __memp_fget_pp(dbmfp, pgnoaddr, txnp, flags, addrp)
 	 * time, which we don't want to do because one of our big goals in life
 	 * is to keep database files small.  It's sleazy as hell, but we catch
 	 * any attempt to actually write the file in memp_fput().
-	 *
-	 * CREATE, LAST, and NEW are mutually exclusive. DIRTY and EDIT are also
-	 * mutually exclusive - that is checked in __memp_fget() itself..
 	 */
-#undef	OKMODE
 #undef	OKFLAGS
-#define	OKMODE	(DB_MPOOL_CREATE | DB_MPOOL_LAST | DB_MPOOL_NEW)
-#define	OKFLAGS	(OKMODE | DB_MPOOL_DIRTY | DB_MPOOL_EDIT)
+#define	OKFLAGS		(DB_MPOOL_CREATE | DB_MPOOL_DIRTY | \
+	    DB_MPOOL_EDIT | DB_MPOOL_LAST | DB_MPOOL_NEW)
 	if (flags != 0) {
 		if ((ret = __db_fchk(env, "memp_fget", flags, OKFLAGS)) != 0)
 			return (ret);
 
-		switch (FLD_ISSET(flags, OKMODE)) {
+		switch (FLD_CLR(flags, DB_MPOOL_DIRTY | DB_MPOOL_EDIT)) {
 		case DB_MPOOL_CREATE:
 		case DB_MPOOL_LAST:
 		case DB_MPOOL_NEW:
@@ -135,7 +131,6 @@ __memp_fget(dbmfp, pgnoaddr, ip, txn, flags, addrp)
 #ifdef DIAGNOSTIC
 	DB_LOCKTAB *lt;
 	DB_LOCKER *locker;
-	int pagelock_err;
 #endif
 
 	*(void **)addrp = NULL;
@@ -279,7 +274,7 @@ retry:		MUTEX_LOCK(env, hp->mtx_hash);
 			 * the BTREE in a subsequent txn).
 			 */
 			if (bhp == NULL) {
-				ret = USR_ERR(env, DB_PAGE_NOTFOUND);
+				ret = DB_PAGE_NOTFOUND;
 				goto err;
 			}
 		}
@@ -298,7 +293,7 @@ retry:		MUTEX_LOCK(env, hp->mtx_hash);
 			ret = __env_panic(env, EINVAL);
 			goto err;
 		}
-		(void)atomic_inc(env, &bhp->ref);
+		atomic_inc(env, &bhp->ref);
 		b_incr = 1;
 
 		/*
@@ -308,10 +303,7 @@ retry:		MUTEX_LOCK(env, hp->mtx_hash);
 		MUTEX_UNLOCK(env, hp->mtx_hash);
 		h_locked = 0;
 		if (dirty || extending || makecopy || F_ISSET(bhp, BH_FROZEN)) {
-#ifdef HAVE_SHARED_LATCHES
-xlatch:
-#endif
-			if (LF_ISSET(DB_MPOOL_TRY)) {
+xlatch:			if (LF_ISSET(DB_MPOOL_TRY)) {
 				if ((ret =
 				    MUTEX_TRYLOCK(env, bhp->mtx_buf)) != 0)
 					goto err;
@@ -321,7 +313,6 @@ xlatch:
 		} else if (LF_ISSET(DB_MPOOL_TRY)) {
 			if ((ret = MUTEX_TRY_READLOCK(env, bhp->mtx_buf)) != 0)
 				goto err;
-			DB_TEST_CRASH(env->test_abort, DB_TEST_LATCH);
 		} else
 			MUTEX_READLOCK(env, bhp->mtx_buf);
 
@@ -375,18 +366,18 @@ thawed:			need_free = (atomic_dec(env, &bhp->ref) == 0);
 		    (SH_CHAIN_NEXTP(bhp, vc, __bh)->td_off == bhp->td_off ||
 		    (!dirty && read_lsnp == NULL))) {
 			DB_ASSERT(env, b_incr && BH_REFCOUNT(bhp) != 0);
-			(void)atomic_dec(env, &bhp->ref);
+			atomic_dec(env, &bhp->ref);
 			b_incr = 0;
 			MUTEX_UNLOCK(env, bhp->mtx_buf);
 			b_lock = 0;
 			bhp = NULL;
 			goto retry;
 		} else if (dirty && SH_CHAIN_HASNEXT(bhp, vc)) {
-			ret = USR_ERR(env, DB_LOCK_DEADLOCK);
+			ret = DB_LOCK_DEADLOCK;
 			goto err;
 		} else if (F_ISSET(bhp, BH_FREED) && flags != DB_MPOOL_CREATE &&
 		    flags != DB_MPOOL_NEW && flags != DB_MPOOL_FREE) {
-			ret = USR_ERR(env, DB_PAGE_NOTFOUND);
+			ret = DB_PAGE_NOTFOUND;
 			goto err;
 		}
 
@@ -448,7 +439,12 @@ thawed:			need_free = (atomic_dec(env, &bhp->ref) == 0);
 		if (flags == DB_MPOOL_FREE) {
 freebuf:		MUTEX_LOCK(env, hp->mtx_hash);
 			h_locked = 1;
-			__memp_bh_clear_dirty(env, hp, bhp);
+			if (F_ISSET(bhp, BH_DIRTY)) {
+				F_CLR(bhp, BH_DIRTY | BH_DIRTY_CREATE);
+				DB_ASSERT(env,
+				   atomic_read(&hp->hash_page_dirty) > 0);
+				atomic_dec(env, &hp->hash_page_dirty);
+			}
 
 			/*
 			 * If the buffer we found is already freed, we're done.
@@ -512,13 +508,9 @@ revive:			if (F_ISSET(bhp, BH_FREED))
 			/*
 			 * With multiversion databases, we might need to
 			 * allocate a new buffer into which we can copy the one
-			 * that we found.  In that case, check the old versions
+			 * that we found.  In that case, check the last buffer
 			 * in the chain to see whether we can reuse an obsolete
-			 * or unreachable buffer. First see whether the oldest
-			 * version is truly obsolete. If not, look for somewhat
-			 * more recent versions which are no longer needed
-			 * because the snapshot transactions which once could
-			 * have seen them have now exited.
+			 * buffer.
 			 *
 			 * To provide snapshot isolation, we need to make sure
 			 * that we've seen a buffer older than the oldest
@@ -531,17 +523,24 @@ reuse:			if ((makecopy || F_ISSET(bhp, BH_FROZEN)) &&
 			}
 			if ((makecopy || F_ISSET(bhp, BH_FROZEN)) &&
 			    SH_CHAIN_HASPREV(bhp, vc)) {
-				if ((ret = __memp_find_obsolete_version(env,
-				    bhp, hp, &oldest_bhp)) != 0)
+				oldest_bhp = SH_CHAIN_PREVP(bhp, vc, __bh);
+				while (SH_CHAIN_HASPREV(oldest_bhp, vc))
+					oldest_bhp = SH_CHAIN_PREVP(
+					    oldest_bhp, vc, __bh);
+
+				if (BH_REFCOUNT(oldest_bhp) == 0 &&
+				    !BH_OBSOLETE(
+				    oldest_bhp, hp->old_reader, vlsn) &&
+				    (ret = __txn_oldest_reader(env,
+				    &hp->old_reader)) != 0)
 					goto err;
-				if (oldest_bhp != NULL) {
+
+				if (BH_OBSOLETE(
+				    oldest_bhp, hp->old_reader, vlsn) &&
+				    BH_REFCOUNT(oldest_bhp) == 0) {
 					DB_ASSERT(env,
 					    !F_ISSET(oldest_bhp, BH_DIRTY));
-					(void)atomic_inc(env, &oldest_bhp->ref);
-#ifdef HAVE_STATISTICS
-					if (SH_CHAIN_HASPREV(oldest_bhp, vc))
-						c_mp->stat.st_mvcc_reused++;
-#endif
+					atomic_inc(env, &oldest_bhp->ref);
 					if (F_ISSET(oldest_bhp, BH_FROZEN)) {
 						/*
 						 * This call will release the
@@ -607,7 +606,7 @@ newpg:		/*
 			    mfp->last_pgno >= mfp->maxpgno) {
 				__db_errx(env, DB_STR_A("3023",
 				    "%s: file limited to %lu pages", "%s %lu"),
-				    __memp_fn(dbmfp), (u_long)mfp->maxpgno + 1);
+				    __memp_fn(dbmfp), (u_long)mfp->maxpgno);
 				ret = ENOSPC;
 			} else
 				*pgnoaddr = mfp->last_pgno + 1;
@@ -616,7 +615,7 @@ newpg:		/*
 			if (mfp->maxpgno != 0 && *pgnoaddr > mfp->maxpgno) {
 				__db_errx(env, DB_STR_A("3024",
 				    "%s: file limited to %lu pages", "%s %lu"),
-				    __memp_fn(dbmfp), (u_long)mfp->maxpgno + 1);
+				    __memp_fn(dbmfp), (u_long)mfp->maxpgno);
 				ret = ENOSPC;
 			} else if (!extending)
 				extending = *pgnoaddr > mfp->last_pgno;
@@ -762,7 +761,7 @@ alloc:		/* Allocate a new buffer header and data space. */
 		 */
 		if (flags == DB_MPOOL_NEW) {
 			DB_ASSERT(env, b_incr && BH_REFCOUNT(bhp) != 0);
-			(void)atomic_dec(env, &bhp->ref);
+			atomic_dec(env, &bhp->ref);
 			b_incr = 0;
 			if (F_ISSET(bhp, BH_EXCLUSIVE))
 				F_CLR(bhp, BH_EXCLUSIVE);
@@ -811,7 +810,7 @@ alloc:		/* Allocate a new buffer header and data space. */
 
 		/* We created a new page, it starts dirty. */
 		if (extending) {
-			(void)atomic_inc(env, &hp->hash_page_dirty);
+			atomic_inc(env, &hp->hash_page_dirty);
 			F_SET(bhp, BH_DIRTY | BH_DIRTY_CREATE);
 		}
 
@@ -938,17 +937,8 @@ alloc:		/* Allocate a new buffer header and data space. */
 		 * need to make copy, so we now need to allocate another buffer
 		 * to hold the new copy.
 		 */
-		if (alloc_bhp == NULL) {
-			if (FLD_ISSET(env->dbenv->verbose, DB_VERB_MVCC))
-				__db_msg(env,
-	"fget makecopy txn %08x %lu/%lu going to reuse pgno %d from %lu/%lu",
-				    txn->txnid, td == NULL ? 0L :
-				    (u_long)td->read_lsn.file, td == NULL ? 0L :
-				    (u_long)td->read_lsn.offset, bhp->pgno,
-				    (u_long)VISIBLE_LSN(env, bhp)->file,
-				    (u_long)VISIBLE_LSN(env, bhp)->offset);
+		if (alloc_bhp == NULL)
 			goto reuse;
-		}
 
 		DB_ASSERT(env, bhp != NULL && alloc_bhp != bhp);
 		DB_ASSERT(env, bhp->td_off == INVALID_ROFF ||
@@ -1029,15 +1019,6 @@ alloc:		/* Allocate a new buffer header and data space. */
 		F_CLR(bhp, BH_EXCLUSIVE);
 		MUTEX_UNLOCK(env, bhp->mtx_buf);
 
-		if (FLD_ISSET(env->dbenv->verbose, DB_VERB_MVCC))
-			__db_msg(env,
-			    "fget makecopy txn %08x %lx pgno %d from %lu/%lu",
-			    txn->txnid, (u_long)R_OFFSET(infop, bhp),
-			    bhp->pgno, bhp->td_off == INVALID_ROFF ? 0L :
-			    (u_long)VISIBLE_LSN(env, bhp)->file,
-			    bhp->td_off == INVALID_ROFF ? 0L :
-			    (u_long)VISIBLE_LSN(env, bhp)->offset);
-
 		bhp = alloc_bhp;
 		DB_ASSERT(env, BH_REFCOUNT(bhp) > 0);
 		b_incr = 1;
@@ -1092,7 +1073,7 @@ alloc:		/* Allocate a new buffer header and data space. */
 			MUTEX_LOCK(env, hp->mtx_hash);
 #endif
 			DB_ASSERT(env, !SH_CHAIN_HASNEXT(bhp, vc));
-			(void)atomic_inc(env, &hp->hash_page_dirty);
+			atomic_inc(env, &hp->hash_page_dirty);
 			F_SET(bhp, BH_DIRTY);
 #ifdef DIAGNOSTIC
 			MUTEX_UNLOCK(env, hp->mtx_hash);
@@ -1108,7 +1089,7 @@ alloc:		/* Allocate a new buffer header and data space. */
 		 * switched locks, we have to go through it all again.
 		 */
 		if (SH_CHAIN_HASNEXT(bhp, vc) && read_lsnp == NULL) {
-			(void)atomic_dec(env, &bhp->ref);
+			atomic_dec(env, &bhp->ref);
 			b_incr = 0;
 			MUTEX_UNLOCK(env, bhp->mtx_buf);
 			b_lock = 0;
@@ -1183,15 +1164,8 @@ alloc:		/* Allocate a new buffer header and data space. */
 			lt = env->lk_handle;
 			locker = (DB_LOCKER *)
 			    (R_ADDR(&lt->reginfo, ip->dbth_locker));
-			pagelock_err = __db_has_pagelock(env, locker, dbmfp,
-			    (PAGE *)bhp->buf, DB_LOCK_WRITE);
-			if (pagelock_err != 0) {
-				if (pagelock_err == DB_RUNRECOVERY)
-					return (pagelock_err);
-				__db_syserr(env, pagelock_err,
-				    "Locker %x has no page lock for pgno %d",
-				    locker->id, ((PAGE *)bhp->buf)->pgno);
-			}
+			DB_ASSERT(env, __db_has_pagelock(env, locker, dbmfp,
+			    (PAGE*)bhp->buf, DB_LOCK_WRITE) == 0);
 		}
 #endif
 
@@ -1237,7 +1211,7 @@ err:	/*
 
 	if (bhp != NULL) {
 		if (b_incr)
-			(void)atomic_dec(env, &bhp->ref);
+			atomic_dec(env, &bhp->ref);
 		if (b_lock) {
 			F_CLR(bhp, BH_EXCLUSIVE);
 			MUTEX_UNLOCK(env, bhp->mtx_buf);
@@ -1252,87 +1226,5 @@ err:	/*
 		(void)__memp_bhfree(dbmp, infop, NULL,
 		     NULL, alloc_bhp, BH_FREE_FREEMEM | BH_FREE_UNLOCKED);
 
-	return (ret);
-}
-
-/*
- * __memp_find_obsolete_version --
- *
- *	Search the version chain, from oldest to youngest, looking for buffers
- *	which are no longer BH_VISIBLE() to any existing transaction.
- *
- *	The hash bucket is locked, no buffer is locked.
- *
- * PUBLIC: int  __memp_find_obsolete_version
- * PUBLIC:	__P((ENV *, BH *, DB_MPOOL_HASH *, BH **));
- */
-int
-__memp_find_obsolete_version(env, vis_bhp, hp, foundp)
-	ENV *env;
-	BH *vis_bhp;
-	DB_MPOOL_HASH *hp;
-	BH **foundp;
-{
-	BH *bhp;
-	DB_LSN *readers, vlsn;
-	int n_readers, ret;
-
-	*foundp = NULL;
-	readers = NULL;
-	ret = 0;
-	bhp = SH_CHAIN_PREVP(vis_bhp, vc, __bh);
-	while (SH_CHAIN_HASPREV(bhp, vc))
-		bhp = SH_CHAIN_PREVP(bhp, vc, __bh);
-
-	/*
-	 * The least-expensive case is finding an obsolete version without
-	 * needing to build the active snapshot transactionn list.
-	 */
-	if (BH_OBSOLETE(bhp, hp->old_reader, vlsn) && BH_REFCOUNT(bhp) == 0) {
-		*foundp = bhp;
-		goto out;
-	}
-
-	if ((ret = __txn_get_readers(env, &readers, &n_readers)) != 0)
-		goto out;
-
-	if (LOG_COMPARE(&readers[n_readers - 1], &hp->old_reader) > 0) {
-		hp->old_reader = readers[n_readers - 1];
-		if (BH_OBSOLETE(bhp, hp->old_reader, vlsn) &&
-		    BH_REFCOUNT(bhp) == 0) {
-			*foundp = bhp;
-			goto cleanup;
-		}
-	}
-
-	while ((bhp = SH_CHAIN_NEXT(bhp, vc, __bh)) != vis_bhp) {
-		if (BH_REFCOUNT(bhp) == 0 &&
-		    __memp_bh_unreachable(env, bhp, readers, n_readers)) {
-			*foundp = bhp;
-#ifdef DIAGNOSTIC
-			/*
-			 * Usually when the hash bucket is locked, the refcount
-			 * is incremented and the bucket unlocked before the
-			 * buffer is locked; this avoids mtx_buf deadlocks.
-			 * This unreachable version cannot be involved with any
-			 * deadlock-creating locking, though the head of the
-			 * version chain could be locked. No TRYLOCK needed.
-			 */
-			MUTEX_LOCK(env, bhp->mtx_buf);
-			F_SET(bhp, BH_UNREACHABLE);
-			MUTEX_UNLOCK(env, bhp->mtx_buf);
-#endif
-			break;
-		}
-	}
-
-cleanup:
-	if (readers != NULL)
-		__os_free(env, readers);
-out:
-	if (FLD_ISSET(env->dbenv->verbose, DB_VERB_MVCC) && *foundp != NULL)
-		__db_msg(env, "fget reusing %p pgno %d @%lu/%lu", bhp,
-		    bhp->pgno, (u_long)VISIBLE_LSN(env, bhp)->file,
-		    (u_long)VISIBLE_LSN(env, bhp)->offset);
 	return (ret);
 }

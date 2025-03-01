@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -17,8 +17,6 @@
 /*
  * Prototypes for procedures defined later in this file:
  */
-static int tcl_DbcDbstream __P((Tcl_Interp *,
-    int, Tcl_Obj * CONST*, DBC *, DB_STREAM **));
 static int tcl_DbcDel __P((Tcl_Interp *, int, Tcl_Obj * CONST*, DBC *));
 static int tcl_DbcDup __P((Tcl_Interp *, int, Tcl_Obj * CONST*, DBC *));
 static int tcl_DbcCompare __P((Tcl_Interp *, int, Tcl_Obj * CONST*, DBC *));
@@ -45,7 +43,6 @@ dbc_Cmd(clientData, interp, objc, objv)
 #endif
 		"close",
 		"cmp",
-		"dbstream",
 		"del",
 		"dup",
 		"get",
@@ -58,24 +55,18 @@ dbc_Cmd(clientData, interp, objc, objv)
 #endif
 		DBCCLOSE,
 		DBCCOMPARE,
-		DBCDBSTREAM,
 		DBCDELETE,
 		DBCDUP,
 		DBCGET,
 		DBCPUT
 	};
 	DBC *dbc;
-	DB_STREAM *dbs;
-	DBTCL_INFO *dbip, *ip;
-	Tcl_Obj *res;
-	char newname[MSG_SIZE];
+	DBTCL_INFO *dbip;
 	int cmdindex, result, ret;
 
 	Tcl_ResetResult(interp);
 	dbc = (DBC *)clientData;
 	dbip = _PtrToInfo((void *)dbc);
-	res = NULL;
-	memset(newname, 0, MSG_SIZE);
 	result = TCL_OK;
 
 	if (objc <= 1) {
@@ -129,28 +120,6 @@ dbc_Cmd(clientData, interp, objc, objv)
 		_debug_check();
 		result = tcl_DbcCompare(interp, objc, objv, dbc);
 		break;
-	case DBCDBSTREAM:
-		snprintf(newname, sizeof(newname),
-		    "%s.dbs%d", dbip->i_name, dbip->i_dbcdbsid);
-		ip = _NewInfo(interp, NULL, newname, I_DBSTREAM);
-		if (ip != NULL) {
-			result = tcl_DbcDbstream(interp, objc, objv, dbc, &dbs);
-			if (result == TCL_OK) {
-				dbip->i_dbcdbsid++;
-				ip->i_parent = dbip;
-				(void)Tcl_CreateObjCommand(interp, newname,
-				    (Tcl_ObjCmdProc *)dbstream_Cmd,
-				    (ClientData)dbs, NULL);
-				res = NewStringObj(newname, strlen(newname));
-				_SetInfoData(ip, dbs);
-			} else
-				_DeleteInfo(ip);
-		} else {
-			Tcl_SetResult(interp,
-			    "Could not set up info", TCL_STATIC);
-			result = TCL_ERROR;
-		}
-		break;
 	case DBCDELETE:
 		result = tcl_DbcDel(interp, objc, objv, dbc);
 		break;
@@ -164,13 +133,6 @@ dbc_Cmd(clientData, interp, objc, objv)
 		result = tcl_DbcPut(interp, objc, objv, dbc);
 		break;
 	}
-
-	/*
-	 * Only set result if we have a res.  Otherwise, lower
-	 * functions have already done so.
-	 */
-	if (result == TCL_OK && res)
-		Tcl_SetObjResult(interp, res);
 	return (result);
 }
 
@@ -238,7 +200,6 @@ tcl_DbcPut(interp, objc, objv, dbc)
 #endif
 		"-after",
 		"-before",
-		"-blob",
 		"-current",
 		"-keyfirst",
 		"-keylast",
@@ -252,7 +213,6 @@ tcl_DbcPut(interp, objc, objv, dbc)
 #endif
 		DBCPUT_AFTER,
 		DBCPUT_BEFORE,
-		DBCPUT_BLOB,
 		DBCPUT_CURRENT,
 		DBCPUT_KEYFIRST,
 		DBCPUT_KEYLAST,
@@ -320,9 +280,6 @@ tcl_DbcPut(interp, objc, objv, dbc)
 		case DBCPUT_BEFORE:
 			FLAG_CHECK(flag);
 			flag = DB_BEFORE;
-			break;
-		case DBCPUT_BLOB:
-			data.flags |= DB_DBT_EXT_FILE;
 			break;
 		case DBCPUT_CURRENT:
 			FLAG_CHECK(flag);
@@ -1033,11 +990,6 @@ tcl_DbcGet(interp, objc, objv, dbc, ispget)
 			hkey.data = &rid;
 			hkey.ulen = hkey.size = data.size;
 			hkey.flags = DB_DBT_USERMEM;
-			if (data.data != NULL &&
-			    F_ISSET(&data, DB_DBT_MALLOC)) {
-				__os_ufree(dbc->env, data.data);
-				data.data = NULL;
-			}
 			ret = phsdbp->pget(phsdbp,
 			    dbc->txn, &hkey, &data, &tmpdata, 0);
 		} 
@@ -1384,59 +1336,3 @@ tcl_DbcDel(interp, objc, objv, dbc)
 out:
 	return (result);
 }
-
-/*
- * tcl_DbcDbstream --
- */
-static int
-tcl_DbcDbstream(interp, objc, objv, dbc, dbsp)
-	Tcl_Interp *interp;		/* Interpreter */
-	int objc;			/* How many arguments? */
-	Tcl_Obj *CONST objv[];		/* The argument objects */
-	DBC *dbc;			/* Cursor pointer */
-	DB_STREAM **dbsp;		/* Return database stream pointer */
-{
-	static const char *dbstreamopts[] = {
-		"-rdonly",
-		"-sync",
-		NULL
-	};
-	enum dbstreamopts {
-		DBSTREAM_READ_ONLY,
-		DBSTREAM_SYNC
-	};
-	u_int32_t flag;
-	int i, optindex, result, ret;
-
-	result = TCL_OK;
-	flag = 0;
-	i = 2;
-	while (i < objc) {
-		if (Tcl_GetIndexFromObj(interp, objv[i], dbstreamopts,
-		    "option", TCL_EXACT, &optindex) != TCL_OK) {
-			result = IS_HELP(objv[i]);
-			goto out;
-		}
-		i++;
-		switch ((enum dbstreamopts)optindex) {
-		case DBSTREAM_READ_ONLY:
-			flag |= DB_STREAM_READ;
-			break;
-		case DBSTREAM_SYNC:
-			flag |= DB_STREAM_SYNC_WRITE;
-			break;
-		}
-		if (result != TCL_OK)
-			break;
-	}
-	if (result != TCL_OK)
-		goto out;
-
-	_debug_check();
-	ret = dbc->db_stream(dbc, dbsp, flag);
-	if (ret != 0)
-		result = _ErrorSetup(interp, ret, "dbc db_stream");
-out:
-	return (result);
-}
-

@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -50,22 +50,19 @@ Run the C tests in the following order:
                 <li>
                   <p>
 
-Tests for mutexes located in the <code class="literal">src/mutex</code>
-directory. Build and run the tests in your build directory: 
-</p>
-                  <pre class="programlisting"> 
-% make test_mutex
-% ./test_mutex
-</pre>
-                  <p>
+Tests for mutexes located in the <code class="literal">test_mutex</code>
+directory. To run the tests, follow the instructions in the
+<code class="literal">test_mutex/readme</code> file.
 </p>
                 </li>
                 <li>
                   <p>
 Tests for the common code paths located in the
-<code class="literal">test/micro</code> directory. To run the tests in a shell
+<code class="literal">test_micro</code> directory. To run the tests in a shell
 script, follow the instructions in the
-<code class="literal">test/micro/README</code> file.
+<code class="literal">test_micro/readme</code> file. To run the tests as
+simple C tests, follow the instructions in the
+<code class="literal">test_micro/readme_embedded</code> file.
 </p>
                 </li>
               </ol>
@@ -83,7 +80,7 @@ How you run the Test Suite varies depending on the target platform:
 If the target platform supports a UNIX-like version of Tcl, then set up Tcl
 and build the Test Suite as described in "Running the Test Suite under
 UNIX" in <em class="citetitle">Berkeley DB Installation and Build Guide</em> at 
-<a class="ulink" href="http://docs.oracle.com/cd/E17076_02/html/installation/build_unix_test.html" target="_top">http://docs.oracle.com/cd/E17076_02/html/installation/build_unix_test.html</a>
+<a class="ulink" href="http://download.oracle.com/docs/cd/E17076_02/html/installation/build_unix_test.html" target="_top">http://download.oracle.com/docs/cd/E17076_02/html/installation/build_unix_test.html</a>
 and, then, run the test suite.
 </p>
                 </li>
@@ -94,7 +91,7 @@ and, then, run the test suite.
         setup Tcl, and build and run the Test Suite as described in
         "Running the Test Suite under Windows" in
         <em class="citetitle">Berkeley DB Programmer's Reference Guide</em> at 
-        <a class="ulink" href="http://docs.oracle.com/cd/E17076_02/html/installation/build_win_test.html" target="_top">http://docs.oracle.com/cd/E17076_02/html/installation/build_win_test.html</a>
+        <a class="ulink" href="http://download.oracle.com/docs/cd/E17076_02/html/installation/build_win_test.html" target="_top">http://download.oracle.com/docs/cd/E17076_02/html/installation/build_win_test.html</a>
 
 </p>
                 </li>

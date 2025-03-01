@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -41,7 +41,7 @@
       <pre class="programlisting">#include &lt;db_cxx.h&gt;
  
 int
-DbSequence::get(DbTxn *txnid, u_int32_t delta, db_seq_t *retp, 
+DbSequence::get(DbTxn *txnid, int32_t delta, db_seq_t *retp, 
                 u_int32_t flags);</pre>
       <p>
          The <code class="methodname">DbSequence::get()</code> method returns the next available element in
@@ -72,7 +72,7 @@ DbSequence::get(DbTxn *txnid, u_int32_t delta, db_seq_t *retp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670055455296"></a>Parameters</h3>
+              <h3 class="title"><a id="idp10073032"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -80,7 +80,7 @@ DbSequence::get(DbTxn *txnid, u_int32_t delta, db_seq_t *retp,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670055454752"></a>txnid</h4>
+                <h4 class="title"><a id="idp10067240"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -113,7 +113,7 @@ DbSequence::get(DbTxn *txnid, u_int32_t delta, db_seq_t *retp,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670055454592"></a>delta</h4>
+                <h4 class="title"><a id="idp10055816"></a>delta</h4>
               </div>
             </div>
           </div>
@@ -125,7 +125,7 @@ DbSequence::get(DbTxn *txnid, u_int32_t delta, db_seq_t *retp,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670055386464"></a>retp</h4>
+                <h4 class="title"><a id="idp10049176"></a>retp</h4>
               </div>
             </div>
           </div>
@@ -138,7 +138,7 @@ DbSequence::get(DbTxn *txnid, u_int32_t delta, db_seq_t *retp,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670055414496"></a>flags</h4>
+                <h4 class="title"><a id="idp10057112"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -167,7 +167,7 @@ DbSequence::get(DbTxn *txnid, u_int32_t delta, db_seq_t *retp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670055393216"></a>Class</h3>
+              <h3 class="title"><a id="idp10084784"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -179,7 +179,7 @@ DbSequence::get(DbTxn *txnid, u_int32_t delta, db_seq_t *retp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670055400768"></a>See Also</h3>
+              <h3 class="title"><a id="idp10080608"></a>See Also</h3>
             </div>
           </div>
         </div>

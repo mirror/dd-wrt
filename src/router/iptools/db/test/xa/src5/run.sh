@@ -94,14 +94,11 @@ msg "BOOTING TUXEDO."
 tmboot -y
 
 exitval=0
-./client -t $1 -n 1 $DVERBOSE_FLAG 2>> client_err &
-./client -t $1 -n 2 $DVERBOSE_FLAG 2>> client_err
-# Copy out any server errors.
-test -s client_err && {
-        echo "CLIENT_ERR:"
-	cat client_err
-	echo "FAIL: client_err file not empty"
+./client -t $1 $DVERBOSE_FLAG 2>> stderr
+test "$?" -ne 0 && {
+	echo "FAIL: client failed"
 	exitval=1
+	break;
 }
 
 msg "SHUTTING DOWN THE TRANSACTION MANAGER."

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -26,8 +26,7 @@ int	 usage(void);
  * Globals
  */
 FILE	*cfp;				/* C source file */
-FILE	*ffp;				/* CSV file */
-FILE	*hfp;				/* C header file */
+FILE	*hfp;				/* C source file */
 char	*progname;			/* Program name */
 int	 verbose;			/* Verbose flag */
 
@@ -46,8 +45,6 @@ main(int argc, char *argv[])
 	else
 		++progname;
 
-	ffp = NULL;
-
 	/* Initialize arguments. */
 	cfile = "csv_local.c";		/* Default header/source files */
 	hfile = "csv_local.h";
@@ -58,8 +55,8 @@ main(int argc, char *argv[])
 		case 'c':
 			cfile = optarg;
 			break;
-		case 'f':		/* Required argument */
-			if ((ffp = freopen(optarg, "r", stdin)) == NULL) {
+		case 'f':
+			if (freopen(optarg, "r", stdin) == NULL) {
 				fprintf(stderr,
 				    "%s: %s\n", optarg, strerror(errno));
 				return (EXIT_FAILURE);
@@ -78,7 +75,7 @@ main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	if (*argv != NULL || ffp == NULL)
+	if (*argv != NULL)
 		return (usage());
 
 	/* Load records from the input file. */

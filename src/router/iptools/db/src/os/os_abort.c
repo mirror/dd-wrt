@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -13,11 +13,11 @@
 /*
  * __os_abort --
  *
- * PUBLIC: void __os_abort __P((const ENV *));
+ * PUBLIC: void __os_abort __P((ENV *));
  */
 void
 __os_abort(env)
-	const ENV *env;
+	ENV *env;
 {
 	__os_stack(env);		/* Try and get a stack trace. */
 

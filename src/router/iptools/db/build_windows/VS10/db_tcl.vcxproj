@@ -60,7 +60,7 @@
       <PreprocessorDefinitions>DB_CREATE_DLL;_UNICODE;DB_TCL_SUPPORT;CONFIG_TEST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb62d.lib;tcl86.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb53d.lib;tcl85g.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>..\..\build_windows\libdb_tcl.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
@@ -69,7 +69,7 @@
       <PreprocessorDefinitions>DB_CREATE_DLL;_UNICODE;DB_TCL_SUPPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb62.lib;tcl86.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb53.lib;tcl85.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>..\..\build_windows\libdb_tcl.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
@@ -78,7 +78,7 @@
       <PreprocessorDefinitions>DB_CREATE_DLL;_UNICODE;DB_TCL_SUPPORT;CONFIG_TEST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb62d.lib;tcl86.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb53d.lib;tcl85g.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>..\..\build_windows\libdb_tcl.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
@@ -87,7 +87,7 @@
       <PreprocessorDefinitions>DB_CREATE_DLL;_UNICODE;DB_TCL_SUPPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdb62.lib;tcl86.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdb53.lib;tcl85.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>..\..\build_windows\libdb_tcl.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
@@ -98,7 +98,6 @@
     <ClCompile Include="..\..\lang\tcl\tcl_db.c"/>
     <ClCompile Include="..\..\lang\tcl\tcl_db_pkg.c"/>
     <ClCompile Include="..\..\lang\tcl\tcl_dbcursor.c"/>
-    <ClCompile Include="..\..\lang\tcl\tcl_dbstream.c"/>
     <ClCompile Include="..\..\lang\tcl\tcl_env.c"/>
     <ClCompile Include="..\..\lang\tcl\tcl_internal.c"/>
     <ClCompile Include="..\..\lang\tcl\tcl_lock.c"/>
@@ -118,7 +117,7 @@
   </ImportGroup>
   <ItemGroup>
     <ProjectReference Condition="exists('db.vcxproj')" Include="db.vcxproj">
-      <Project>{FD045D60-ABAD-4A6C-9794-9BFB085FC3E7}</Project>
+      <Project>{fd045d60-abad-4a6c-9794-9bfb085fc3e7}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>

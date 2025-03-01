@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994
@@ -368,7 +368,6 @@ finish:		if (ret == 0) {
 			off += len + 2 * sizeof(db_indx_t);
 		}
 		break;
-	case H_BLOB:
 	default:
 		ret = __db_pgfmt(env, hcp->pgno);
 		break;
@@ -679,6 +678,7 @@ err:	if (new_pagep != NULL)
  *	Replace an onpage set of duplicates with the OFFDUP structure
  *	that references the duplicate page.
  *
+ * XXX
  * This is really just a special case of __onpage_replace; we should
  * probably combine them.
  *
@@ -772,12 +772,12 @@ __ham_dsearch(dbc, dbt, offp, cmpp, flags)
 	DBT cur;
 	HASH_CURSOR *hcp;
 	db_indx_t i, len;
-	int (*func) __P((DB *, const DBT *, const DBT *, size_t *));
+	int (*func) __P((DB *, const DBT *, const DBT *));
 	u_int8_t *data;
 
 	dbp = dbc->dbp;
 	hcp = (HASH_CURSOR *)dbc->internal;
-	func = dbp->dup_compare == NULL ? __dbt_defcmp : dbp->dup_compare;
+	func = dbp->dup_compare == NULL ? __bam_defcmp : dbp->dup_compare;
 
 	i = F_ISSET(hcp, H_CONTINUE) ? hcp->dup_off: 0;
 	data = HKEYDATA_DATA(H_PAIRDATA(dbp, hcp->page, hcp->indx)) + i;
@@ -794,7 +794,7 @@ __ham_dsearch(dbc, dbt, offp, cmpp, flags)
 		 * we're done.  In the latter case, if permitting partial
 		 * matches, it's not a failure.
 		 */
-		*cmpp = func(dbp, dbt, &cur, NULL);
+		*cmpp = func(dbp, dbt, &cur);
 		if (*cmpp == 0)
 			break;
 		if (*cmpp < 0 && dbp->dup_compare != NULL) {

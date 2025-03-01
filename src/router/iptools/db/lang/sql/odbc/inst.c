@@ -2,9 +2,9 @@
  * @file inst.c
  * SQLite ODBC Driver installer/uninstaller for WIN32
  *
- * $Id: inst.c,v 1.22 2014/12/29 09:52:55 chw Exp chw $
+ * $Id: inst.c,v 1.16 2011/11/08 17:29:28 chw Exp chw $
  *
- * Copyright (c) 2001-2014 Christian Werner <chw@ch-werner.de>
+ * Copyright (c) 2001-2011 Christian Werner <chw@ch-werner.de>
  *
  * See the file "license.terms" for information on usage
  * and redistribution of this file and for a
@@ -29,32 +29,46 @@
 #define SEESTR2 ""
 #endif
 
-#define NUMDRVS 4
+#ifdef _WIN64
+#define NUMDRVS 1
+static char *DriverName[NUMDRVS] = {
+    "SQLite3 ODBC Driver" SEESTR
+};
+static char *DSName[NUMDRVS] = {
+    "SQLite3 " SEESTR2 "Datasource"
+};
+static char *DriverDLL[NUMDRVS] = {
+    "sqlite3odbc" SEEEXT ".dll"
+};
+#ifdef WITH_SQLITE_DLLS
+static char *EngineDLL[NUMDRVS] = {
+    "sqlite3" SEEEXT ".dll"
+};
+#endif
+#else
+#define NUMDRVS 3
 static char *DriverName[NUMDRVS] = {
     "SQLite ODBC Driver",
     "SQLite ODBC (UTF-8) Driver",
-    "SQLite3 ODBC Driver" SEESTR,
-    "SQLite4 ODBC Driver"
+    "SQLite3 ODBC Driver" SEESTR
 };
 static char *DSName[NUMDRVS] = {
     "SQLite Datasource",
     "SQLite UTF-8 Datasource",
-    "SQLite3 " SEESTR2 "Datasource",
-    "SQLite4 Datasource"
+    "SQLite3 " SEESTR2 "Datasource"
 };
 static char *DriverDLL[NUMDRVS] = {
     "sqliteodbc.dll",
     "sqliteodbcu.dll",
-    "sqlite3odbc" SEEEXT ".dll",
-    "sqlite4odbc.dll"
+    "sqlite3odbc" SEEEXT ".dll"
 };
 #ifdef WITH_SQLITE_DLLS
 static char *EngineDLL[NUMDRVS] = {
     "sqlite.dll",
     "sqliteu.dll",
-    "sqlite3.dll",
-    "sqlite4.dll"
+    "sqlite3.dll"
 };
+#endif
 #endif
 
 static int quiet = 0;
@@ -219,7 +233,7 @@ InUn(int remove, char *drivername, char *dllname, char *dll2name, char *dsname)
 	    if (nosys) {
 		goto done;
 	    }
-	    sprintf(attr, "DSN=%s;Database=", dsname);
+	    sprintf(attr, "DSN=%s;Database=sqlite.db;", dsname);
 	    p = attr;
 	    while (*p) {
 		if (*p == ';') {
@@ -260,7 +274,7 @@ InUn(int remove, char *drivername, char *dllname, char *dll2name, char *dsname)
 	if (nosys) {
 	    goto done;
 	}
-	sprintf(attr, "DSN=%s;Database=;", dsname);
+	sprintf(attr, "DSN=%s;Database=sqlite.db;", dsname);
 	p = attr;
 	while (*p) {
 	    if (*p == ';') {
@@ -294,7 +308,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 {
     char path[300], *p;
     int i, remove;
-    BOOL ret[NUMDRVS];
+    BOOL ret[3];
 
     GetModuleFileName(NULL, path, sizeof (path));
     p = path;
@@ -333,11 +347,3 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     exit(0);
 }
 
-/*
- * Local Variables:
- * mode: c
- * c-basic-offset: 4
- * fill-column: 78
- * tab-width: 8
- * End:
- */

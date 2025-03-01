@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1997, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -85,11 +85,9 @@ void Db::_name _argspec							\
 
 Db::Db(DbEnv *dbenv, u_int32_t flags)
 :	imp_(0)
-,	slices_(0)
 ,	dbenv_(dbenv)
 ,	mpf_(0)
 ,	construct_error_(0)
-,	internally_managed_(false)
 ,	flags_(0)
 ,	construct_flags_(flags)
 ,	append_recno_callback_(0)
@@ -104,38 +102,9 @@ Db::Db(DbEnv *dbenv, u_int32_t flags)
 ,	feedback_callback_(0)
 ,	h_compare_callback_(0)
 ,	h_hash_callback_(0)
-,	slice_callback_(0)
 {
 	if (dbenv_ == 0)
 		flags_ |= DB_CXX_PRIVATE_ENV;
-
-	if ((construct_error_ = initialize()) != 0)
-		DB_ERROR(dbenv_, "Db::Db", construct_error_, error_policy());
-}
-
-Db::Db(DB *dbp)
-:	imp_(dbp)
-,	slices_(0)
-,	dbenv_(0)
-,	mpf_(0)
-,	construct_error_(0)
-,	internally_managed_(true)
-,	flags_(0)
-,	construct_flags_(0)
-,	append_recno_callback_(0)
-,	associate_callback_(0)
-,	associate_foreign_callback_(0)
-,	bt_compare_callback_(0)
-,	bt_compress_callback_(0)
-,	bt_decompress_callback_(0)
-,	bt_prefix_callback_(0)
-,	db_partition_callback_(0)
-,	dup_compare_callback_(0)
-,	feedback_callback_(0)
-,	h_compare_callback_(0)
-,	h_hash_callback_(0)
-,	slice_callback_(0)
-{
 
 	if ((construct_error_ = initialize()) != 0)
 		DB_ERROR(dbenv_, "Db::Db", construct_error_, error_policy());
@@ -154,12 +123,7 @@ Db::~Db()
 
 	db = unwrap(this);
 	if (db != NULL) {
-		/* 
-		 * Do not close databases that are internally opened and closed,
-		 * such as slice databases.
-		 */
-		if (!internally_managed_)
-			(void)db->close(db, 0);
+		(void)db->close(db, 0);
 		cleanup();
 	}
 }
@@ -177,31 +141,24 @@ int Db::initialize()
 
 	cxx_flags = construct_flags_ & DB_CXX_NO_EXCEPTIONS;
 
-	if (!internally_managed_) {
-		// Create a new underlying DB object.
-		// We rely on the fact that if a NULL DB_ENV* is given,
-		// one is allocated by DB.
-		//
-		if ((ret = db_create(&db, cenv,
-			construct_flags_ & ~cxx_flags)) != 0)
-			return (ret);
+	// Create a new underlying DB object.
+	// We rely on the fact that if a NULL DB_ENV* is given,
+	// one is allocated by DB.
+	//
+	if ((ret = db_create(&db, cenv,
+			     construct_flags_ & ~cxx_flags)) != 0)
+		return (ret);
 
-		// Associate the DB with this object
-		imp_ = db;
-	} else 
-		db = imp_;
+	// Associate the DB with this object
+	imp_ = db;
 	db->api_internal = this;
 	db->alt_close = this->alt_close;
-
-	slices_ = NULL;
 
 	// Create a new DbEnv from a DB_ENV* if it was created locally.
 	// It is deleted in Db::close().
 	//
-	if (!internally_managed_ && (flags_ & DB_CXX_PRIVATE_ENV) != 0)
+	if ((flags_ & DB_CXX_PRIVATE_ENV) != 0)
 		dbenv_ = new DbEnv(db->dbenv, cxx_flags);
-	else if (internally_managed_)
-		dbenv_ = new DbEnv(db->dbenv);
 
 	// Create a DbMpoolFile from the DB_MPOOLFILE* in the DB handle.
 	mpf_ = new DbMpoolFile();
@@ -215,16 +172,8 @@ int Db::initialize()
 //
 void Db::cleanup()
 {
-	int i;
 	if (imp_ != 0) {
 		imp_ = 0;
-
-		if (slices_ != NULL) {
-			for (i = 0; slices_[i] != NULL; i++) {
-				delete slices_[i];
-			}
-			delete[] slices_;
-		}
 
 		// we must dispose of the DbEnv object if
 		// we created it.  This will be the case
@@ -295,14 +244,6 @@ void Db::errx(const char *format, ...)
 	DB_REAL_ERR(db->dbenv, 0, DB_ERROR_NOT_SET, 1, format);
 }
 
-void Db::msg(const char *format, ...)
-{
-        DB *db = unwrap(this);
-
-        DB_REAL_MSG(db->dbenv, format);
-}
-
-
 DB_METHOD(exists, (DbTxn *txnid, Dbt *key, u_int32_t flags),
     (db, unwrap(txnid), key, flags), DB_RETOK_EXISTS)
 
@@ -341,54 +282,6 @@ DbEnv *Db::get_env()
 DbMpoolFile *Db::get_mpf()
 {
 	return (mpf_);
-}
-
-int Db::get_slices(Db ***slices)
-{
-	DB **c_slices;
-	DB *db;
-	int i, num_slices, ret;
-
-	if (slices_ != NULL) {
-		*slices = slices_;
-		return (0);
-	}
-
-	db = unwrap(this);
-	ret = db->get_slices(db, &c_slices);
-	if (ret == 0) {
-	  	num_slices = dbenv_->get_slice_count();
-		if (num_slices == 0) {
-			*slices = NULL;
-			return (0);
-		}
-		slices_ = new Db *[num_slices + 1];
-		for (i = 0; i < num_slices; i++) {
-			slices_[i] = new Db(c_slices[i]);
-		}
-		slices_[i] = NULL;
-		*slices = slices_;
-	} else
-		*slices = NULL;
-
-	if (!DB_RETOK_STD(ret))
-		DB_ERROR(dbenv_, "Db::get_slices", ret, error_policy());
-	return (ret);
-}
-
-int Db::slice_lookup(const Dbt *key, Db **slice, u_int32_t flags)
-{
-	DB *c_slice, *db;
-	int ret;
-
-	*slice = NULL;
-	db = unwrap(this);
-	ret = db->slice_lookup(db, key, &c_slice, flags);
-	if (DB_RETOK_STD(ret))
-		*slice = new Db(c_slice);
-	else
-		DB_ERROR(dbenv_, "Db::slice_lookup", ret, error_policy());
-	return (ret);
 }
 
 DB_METHOD(get_dbname, (const char **filenamep, const char **dbnamep),
@@ -563,31 +456,6 @@ int Db::_cxxname _cxxargspec						\
 	return 0;							\
 }
 
-#define	DB_CALLBACK_C_INTERCEPT_CONST(_name, _rettype, _cargspec,	\
-	_return, _cxxargs)						\
-	extern "C" _rettype _db_##_name##_intercept_c_const _cargspec	\
-{									\
-	const Db *cxxthis;						\
-									\
-	/* We don't have a dbenv handle at this point. */		\
-	DB_ASSERT(NULL, cthis != NULL);					\
-	cxxthis = Db::get_const_Db(cthis);				\
-	DB_ASSERT(cthis->dbenv->env, cxxthis != NULL);			\
-	DB_ASSERT(cthis->dbenv->env, cxxthis->_name##_callback_ != 0);	\
-									\
-	_return(*cxxthis->_name##_callback_) _cxxargs;			\
-}
-
-#define	DB_SET_CALLBACK_CONST(_cxxname, _name, _cxxargspec, _cb)	\
-	int Db::_cxxname _cxxargspec					\
-{									\
-	DB *cthis = unwrap(this);					\
-									\
-	_name##_callback_ = _cb;					\
-	return ((*(cthis->_cxxname))(cthis,				\
-	(_cb) ? _db_##_name##_intercept_c_const : NULL));		\
-}
-
 /* associate callback - doesn't quite fit the pattern because of the flags */
 DB_CALLBACK_C_INTERCEPT(associate,
     int, (DB *cthis, const DBT *key, const DBT *data, DBT *retval),
@@ -645,17 +513,15 @@ DB_SET_CALLBACK(set_append_recno, append_recno,
     (int (*arg)(Db *cxxthis, Dbt *data, db_recno_t recno)), arg)
 
 DB_CALLBACK_C_INTERCEPT(bt_compare,
-    int, (DB *cthis, const DBT *data1, const DBT *data2, size_t *locp),
+    int, (DB *cthis, const DBT *data1, const DBT *data2),
     return,
-    (cxxthis, Dbt::get_const_Dbt(data1), Dbt::get_const_Dbt(data2), locp))
+    (cxxthis, Dbt::get_const_Dbt(data1), Dbt::get_const_Dbt(data2)))
 
 DB_GET_CALLBACK(get_bt_compare, bt_compare,
-    (int (**argp)(Db *cxxthis, const Dbt *data1, const Dbt *data2,
-    size_t *locp)), argp)
+    (int (**argp)(Db *cxxthis, const Dbt *data1, const Dbt *data2)), argp)
 
 DB_SET_CALLBACK(set_bt_compare, bt_compare,
-    (int (*arg)(Db *cxxthis, const Dbt *data1, const Dbt *data2, 
-    size_t *locp)), arg)
+    (int (*arg)(Db *cxxthis, const Dbt *data1, const Dbt *data2)), arg)
 
 DB_CALLBACK_C_INTERCEPT(bt_compress,
     int, (DB *cthis, const DBT *data1, const DBT *data2, const DBT *data3,
@@ -711,30 +577,26 @@ DB_SET_CALLBACK(set_bt_prefix, bt_prefix,
     (size_t (*arg)(Db *cxxthis, const Dbt *data1, const Dbt *data2)), arg)
 
 DB_CALLBACK_C_INTERCEPT(dup_compare,
-    int, (DB *cthis, const DBT *data1, const DBT *data2, size_t *locp),
+    int, (DB *cthis, const DBT *data1, const DBT *data2),
     return,
-    (cxxthis, Dbt::get_const_Dbt(data1), Dbt::get_const_Dbt(data2), locp))
+    (cxxthis, Dbt::get_const_Dbt(data1), Dbt::get_const_Dbt(data2)))
 
 DB_GET_CALLBACK(get_dup_compare, dup_compare,
-    (int (**argp)(Db *cxxthis, const Dbt *data1, const Dbt *data2, 
-    size_t *locp)), argp)
+    (int (**argp)(Db *cxxthis, const Dbt *data1, const Dbt *data2)), argp)
 
 DB_SET_CALLBACK(set_dup_compare, dup_compare,
-    (int (*arg)(Db *cxxthis, const Dbt *data1, const Dbt *data2,
-    size_t *locp)), arg)
+    (int (*arg)(Db *cxxthis, const Dbt *data1, const Dbt *data2)), arg)
 
 DB_CALLBACK_C_INTERCEPT(h_compare,
-    int, (DB *cthis, const DBT *data1, const DBT *data2, size_t *locp),
+    int, (DB *cthis, const DBT *data1, const DBT *data2),
     return,
-    (cxxthis, Dbt::get_const_Dbt(data1), Dbt::get_const_Dbt(data2), locp))
+    (cxxthis, Dbt::get_const_Dbt(data1), Dbt::get_const_Dbt(data2)))
 
 DB_GET_CALLBACK(get_h_compare, h_compare,
-    (int (**argp)(Db *cxxthis, const Dbt *data1, const Dbt *data2,
-    size_t *locp)), argp)
+    (int (**argp)(Db *cxxthis, const Dbt *data1, const Dbt *data2)), argp)
 
 DB_SET_CALLBACK(set_h_compare, h_compare,
-    (int (*arg)(Db *cxxthis, const Dbt *data1, const Dbt *data2,
-    size_t *locp)), arg)
+    (int (*arg)(Db *cxxthis, const Dbt *data1, const Dbt *data2)), arg)
 
 DB_CALLBACK_C_INTERCEPT(h_hash,
     u_int32_t, (DB *cthis, const void *data, u_int32_t len),
@@ -745,14 +607,6 @@ DB_GET_CALLBACK(get_h_hash, h_hash,
 
 DB_SET_CALLBACK(set_h_hash, h_hash,
     (u_int32_t (*arg)(Db *cxxthis, const void *data, u_int32_t len)), arg)
-
-DB_CALLBACK_C_INTERCEPT_CONST(slice,
-    int, (const DB *cthis, const DBT *key, DBT *slice),
-    return,
-    (cxxthis, Dbt::get_const_Dbt(key), Dbt::get_Dbt(slice)))
-
-DB_SET_CALLBACK_CONST(set_slice_callback, slice,
-    (int(*arg)(const Db *cxxthis, const Dbt *key, Dbt *)), arg)
 
 // This is a 'glue' function declared as extern "C" so it will
 // be compatible with picky compilers that do not allow mixing
@@ -799,73 +653,59 @@ int Db::verify(const char *name, const char *subdb,
 	return (ret);
 }
 
-DB_METHOD(set_blob_dir, (const char *dir), (db, dir), DB_RETOK_STD)
-DB_METHOD(get_blob_dir, (const char **dir), (db, dir), DB_RETOK_STD)
-DB_METHOD(set_blob_threshold, (u_int32_t bytes, u_int32_t flags),
-(db, bytes, flags), DB_RETOK_STD)
-DB_METHOD(get_blob_threshold, (u_int32_t *bytes),
-(db, bytes), DB_RETOK_STD)
 DB_METHOD(set_bt_compare, (bt_compare_fcn_type func),
-(db, func), DB_RETOK_STD)
+    (db, func), DB_RETOK_STD)
 DB_METHOD(get_bt_minkey, (u_int32_t *bt_minkeyp),
-(db, bt_minkeyp), DB_RETOK_STD)
+    (db, bt_minkeyp), DB_RETOK_STD)
 DB_METHOD(set_bt_minkey, (u_int32_t bt_minkey),
-(db, bt_minkey), DB_RETOK_STD)
+    (db, bt_minkey), DB_RETOK_STD)
 DB_METHOD(set_bt_prefix, (bt_prefix_fcn_type func),
-(db, func), DB_RETOK_STD)
+    (db, func), DB_RETOK_STD)
 DB_METHOD(set_dup_compare, (dup_compare_fcn_type func),
-(db, func), DB_RETOK_STD)
+    (db, func), DB_RETOK_STD)
 DB_METHOD(get_encrypt_flags, (u_int32_t *flagsp),
-(db, flagsp), DB_RETOK_STD)
+    (db, flagsp), DB_RETOK_STD)
 DB_METHOD(set_encrypt, (const char *passwd, u_int32_t flags),
-(db, passwd, flags), DB_RETOK_STD)
+    (db, passwd, flags), DB_RETOK_STD)
 DB_METHOD_VOID(get_errfile, (FILE **errfilep), (db, errfilep))
 DB_METHOD_VOID(set_errfile, (FILE *errfile), (db, errfile))
-DB_METHOD_VOID(get_errpfx, (const char **errpfxp), (db, errpfxp))
+DB_METHOD_VOID(get_errpfx, (const char **errpfx), (db, errpfx))
 DB_METHOD_VOID(set_errpfx, (const char *errpfx), (db, errpfx))
-DB_METHOD(set_ext_file_dir, (const char *dir), (db, dir), DB_RETOK_STD)
-DB_METHOD(get_ext_file_dir, (const char **dir), (db, dir), DB_RETOK_STD)
-DB_METHOD(set_ext_file_threshold, (u_int32_t bytes, u_int32_t flags),
-(db, bytes, flags), DB_RETOK_STD)
-DB_METHOD(get_ext_file_threshold, (u_int32_t *bytes),
-(db, bytes), DB_RETOK_STD)
 DB_METHOD(get_flags, (u_int32_t *flagsp), (db, flagsp),
-DB_RETOK_STD)
+    DB_RETOK_STD)
 DB_METHOD(set_flags, (u_int32_t flags), (db, flags),
-DB_RETOK_STD)
+    DB_RETOK_STD)
 DB_METHOD(get_heapsize, (u_int32_t *gbytesp, u_int32_t *bytesp),
-(db, gbytesp, bytesp), DB_RETOK_STD)
+    (db, gbytesp, bytesp), DB_RETOK_STD)
 DB_METHOD(set_heapsize, (u_int32_t gbytes, u_int32_t bytes),
-(db, gbytes, bytes, 0), DB_RETOK_STD)
+    (db, gbytes, bytes, 0), DB_RETOK_STD)
 DB_METHOD(get_heap_regionsize, (u_int32_t *npagesp),
-(db, npagesp), DB_RETOK_STD)
+    (db, npagesp), DB_RETOK_STD)
 DB_METHOD(set_heap_regionsize, (u_int32_t npages),
-(db, npages), DB_RETOK_STD)
+    (db, npages), DB_RETOK_STD)
 DB_METHOD(set_h_compare, (h_compare_fcn_type func),
-(db, func), DB_RETOK_STD)
+    (db, func), DB_RETOK_STD)
 DB_METHOD(get_h_ffactor, (u_int32_t *h_ffactorp),
-(db, h_ffactorp), DB_RETOK_STD)
+    (db, h_ffactorp), DB_RETOK_STD)
 DB_METHOD(set_h_ffactor, (u_int32_t h_ffactor),
-(db, h_ffactor), DB_RETOK_STD)
+    (db, h_ffactor), DB_RETOK_STD)
 DB_METHOD(set_h_hash, (h_hash_fcn_type func),
-(db, func), DB_RETOK_STD)
+    (db, func), DB_RETOK_STD)
 DB_METHOD(get_h_nelem, (u_int32_t *h_nelemp),
-(db, h_nelemp), DB_RETOK_STD)
+    (db, h_nelemp), DB_RETOK_STD)
 DB_METHOD(set_h_nelem, (u_int32_t h_nelem),
-(db, h_nelem), DB_RETOK_STD)
+    (db, h_nelem), DB_RETOK_STD)
 DB_METHOD(get_lorder, (int *db_lorderp), (db, db_lorderp),
-DB_RETOK_STD)
+    DB_RETOK_STD)
 DB_METHOD(set_lorder, (int db_lorder), (db, db_lorder),
-DB_RETOK_STD)
+    DB_RETOK_STD)
 DB_METHOD_VOID(get_msgfile, (FILE **msgfilep), (db, msgfilep))
 DB_METHOD_VOID(set_msgfile, (FILE *msgfile), (db, msgfile))
-DB_METHOD_VOID(get_msgpfx, (const char **msgpfxp), (db, msgpfxp))
-DB_METHOD_VOID(set_msgpfx, (const char *msgpfx), (db, msgpfx))
 DB_METHOD_QUIET(get_multiple, (), (db))
 DB_METHOD(get_pagesize, (u_int32_t *db_pagesizep),
-(db, db_pagesizep), DB_RETOK_STD)
+    (db, db_pagesizep), DB_RETOK_STD)
 DB_METHOD(set_pagesize, (u_int32_t db_pagesize),
-(db, db_pagesize), DB_RETOK_STD)
+    (db, db_pagesize), DB_RETOK_STD)
 
 DB_CALLBACK_C_INTERCEPT(db_partition,
     u_int32_t, (DB *cthis, DBT *key),
@@ -943,12 +783,12 @@ void Db::set_errcall(void (*arg)(const DbEnv *, const char *, const char *))
 	dbenv_->set_errcall(arg);
 }
 
-void Db::get_msgcall(void (**argp)(const DbEnv *, const char *, const char *))
+void Db::get_msgcall(void (**argp)(const DbEnv *, const char *))
 {
 	dbenv_->get_msgcall(argp);
 }
 
-void Db::set_msgcall(void (*arg)(const DbEnv *, const char *, const char *))
+void Db::set_msgcall(void (*arg)(const DbEnv *, const char *))
 {
 	dbenv_->set_msgcall(arg);
 }

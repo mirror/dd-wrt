@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -11,7 +11,7 @@ using BerkeleyDB.Internal;
 
 namespace BerkeleyDB {
     /// <summary>
-    /// A class representing a replication site used by Replication Manager.
+    /// A class representing a replication site used by Replication Manager
     /// </summary>
     public class RepMgrSite {
         
@@ -23,7 +23,7 @@ namespace BerkeleyDB {
         /// </summary>
         public int EId;
         /// <summary>
-        /// The address of the site.
+        /// The address of the site
         /// </summary>
         public ReplicationHostAddress Address;
         /// <summary>
@@ -34,17 +34,12 @@ namespace BerkeleyDB {
         /// If true, the site is client-to-client peer.
         /// </summary>
         public bool isPeer;
-        /// <summary>
-        /// If true, the site is a view site.
-        /// </summary>
-        public bool isView;
 
         internal RepMgrSite(DB_REPMGR_SITE site) {
             EId = site.eid;
             Address = new ReplicationHostAddress(site.host, site.port);
             isConnected = (site.status == DbConstants.DB_REPMGR_CONNECTED);
-            isPeer = (site.flags & DbConstants.DB_REPMGR_ISPEER) != 0;
-            isView = (site.flags & DbConstants.DB_REPMGR_ISVIEW) != 0;
+            isPeer = (site.flags & DbConstants.DB_REPMGR_PEER) != 0;
         }
     }
 }

@@ -2,7 +2,7 @@
 #
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -178,9 +178,7 @@ BEGIN {
 
 	make_name(thisfunc, thisfunc, version);
 }
-# Some versions of awk do not understand splitting a pattern into several lines
-# with '\', so this > 80 character pattern needs to remain a single line.
-/^[	 ]*(DB|ARG|DBOP|DBT|DATA|HDR|LOCKS|OP|PGDBT|PGDDBT|PGLIST|POINTER|TIME|LONGARG)/ {
+/^[	 ]*(DB|ARG|DBOP|DBT|DATA|HDR|LOCKS|OP|PGDBT|PGDDBT|PGLIST|POINTER|TIME)/ {
 	vars[nvars] = $2;
 	types[nvars] = $3;
 	modes[nvars] = $1;
@@ -204,8 +202,6 @@ BEGIN {
 		sizes[nvars] = sprintf("sizeof(u_int32_t)");
 		if ($3 != "u_int32_t")
 			is_uint = 1;
-	} else if ($1 == "LONGARG") {
-		sizes[nvars] = sprintf("sizeof(u_int64_t)");	
 	} else if ($1 == "POINTER")
 		sizes[nvars] = sprintf("sizeof(*%s)", $2);
 	else { # DBT, PGDBT, PGDDBT

@@ -32,7 +32,7 @@ ifcapable {!utf16} {
 # enc2.3.*: Simple tests with a UTF-16BE db.
 # enc2.4.*: Test that attached databases must have the same text encoding
 #           as the main database.
-# enc2.5.*: Test the behavior of the library when a collation sequence is
+# enc2.5.*: Test the behaviour of the library when a collation sequence is
 #           not available for the most desirable text encoding.
 # enc2.6.*: Similar test for user functions.
 # enc2.7.*: Test that the VerifyCookie opcode protects against assuming the
@@ -142,7 +142,7 @@ set encodings [list UTF-8 UTF-16le UTF-16be]
 set sqlite_os_trace 0
 set i 1
 foreach enc $encodings {
-  forcedelete test.db
+  file delete -force test.db
   sqlite3 db test.db
   db eval "PRAGMA encoding = \"$enc\""
   execsql $dbcontents
@@ -172,13 +172,13 @@ foreach enc $encodings {
 # encoding to the main database.
 ifcapable attach {
   do_test enc2-4.1 {
-    forcedelete test.db
+    file delete -force test.db
     sqlite3 db test.db
     db eval "PRAGMA encoding = 'UTF-8'"
     db eval "CREATE TABLE abc(a, b, c);"
   } {}
   do_test enc2-4.2 {
-    forcedelete test2.db
+    file delete -force test2.db
     sqlite3 db2 test2.db
     db2 eval "PRAGMA encoding = 'UTF-16'"
     db2 eval "CREATE TABLE abc(a, b, c);"
@@ -206,7 +206,7 @@ proc test_collate {enc lhs rhs} {
   return $res
 }
 
-forcedelete test.db
+file delete -force test.db
 sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 do_test enc2-5.0 {
   execsql {
@@ -235,7 +235,7 @@ do_test enc2-5.3 {
 } {one two three four five UTF-16BE}
 
 db close
-forcedelete test.db
+file delete -force test.db
 sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 execsql {pragma encoding = 'UTF-16LE'}
 do_test enc2-5.4 {
@@ -265,7 +265,7 @@ do_test enc2-5.7 {
 } {one two three four five UTF-8}
 
 db close
-forcedelete test.db
+file delete -force test.db
 sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 execsql {pragma encoding = 'UTF-16BE'}
 do_test enc2-5.8 {
@@ -311,7 +311,7 @@ do_test enc2-5.14 {
 } test_collate
 
 db close
-forcedelete test.db
+file delete -force test.db
 
 do_test enc2-5.15 {
   sqlite3 db test.db; set ::DB [sqlite3_connection_pointer db]
@@ -333,7 +333,7 @@ proc test_function {enc arg} {
 }
 
 db close
-forcedelete test.db
+file delete -force test.db
 sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 execsql {pragma encoding = 'UTF-8'}
 do_test enc2-6.0 {
@@ -366,7 +366,7 @@ do_test enc2-6.3 {
 } {{UTF-16BE sqlite}}
 
 db close
-forcedelete test.db
+file delete -force test.db
 sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 execsql {pragma encoding = 'UTF-16LE'}
 do_test enc2-6.3 {
@@ -399,7 +399,7 @@ do_test enc2-6.6 {
 } {{UTF-16BE sqlite}}
 
 db close
-forcedelete test.db
+file delete -force test.db
 sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 execsql {pragma encoding = 'UTF-16BE'}
 do_test enc2-6.7 {
@@ -433,7 +433,7 @@ do_test enc2-6.10 {
 
 
 db close
-forcedelete test.db
+file delete -force test.db
 
 # The following tests - enc2-7.* - function as follows:
 #
@@ -493,7 +493,7 @@ ifcapable {complete} {
 
 # Test that the encoding of an empty database may still be set after the
 # (empty) schema has been initialized.
-forcedelete test.db
+file delete -force test.db
 do_test enc2-9.1 {
   sqlite3 db test.db
   execsql {
@@ -537,7 +537,7 @@ do_test enc2-9.5 {
 #
 do_test enc2-10.1 {
   db close
-  forcedelete test.db test.db-journal
+  file delete -force test.db test.db-journal
   sqlite3 db test.db
   db eval {
     PRAGMA encoding=UTF16;

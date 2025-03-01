@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -54,16 +54,15 @@
                     heartbeat on a defined interval when it is otherwise
                     idle. Do this by using the
                     
-                    <span>
+                <span>
                         <code class="methodname">Environment.setReplicationTimeout()</code>
                         method.
                         You pass this method the 
                         <code class="methodname">ReplicationTimeoutType.HEARTBEAT_SEND</code>
                         constant.
-                    </span>
-                    You must also provide the method a value representing the
-                    period between heartbeats in microseconds. Note that the
-                    heartbeat is sent only if the system is idle.
+                </span>
+                You must also provide the method a value representing the period between heartbeats in microseconds. Note that the heartbeat is sent only if the
+                system is idle.
             </p>
       <p>
                     On the replica, you configure the application to listen

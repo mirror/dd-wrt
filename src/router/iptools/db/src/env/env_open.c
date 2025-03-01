@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -107,15 +107,9 @@ __env_open_pp(dbenv, db_home, flags, mode)
 		__db_errx(env, DB_STR("1589", "DB_PRIVATE is not "
 			    "supported by 64-bit applications in "
 			    "mixed-size-addressing mode"));
-		return (EINVAL);
-	}
+			return (EINVAL);
+		}
 #endif
-
-	if (LF_ISSET(DB_PRIVATE) && PREFMAS_IS_SET(env)) {
-		__db_errx(env, DB_STR("1594", "DB_PRIVATE is not "
-		    "supported in Replication Manager preferred master mode"));
-		return (EINVAL);
-	}
 
 	return (__env_open(dbenv, db_home, flags, mode));
 }
@@ -135,20 +129,12 @@ __env_open(dbenv, db_home, flags, mode)
 {
 	DB_THREAD_INFO *ip;
 	ENV *env;
-	u_int32_t orig_flags, retry_flags;
-	int recovery_failed, register_recovery, ret, t_ret;
-	char *old_passwd;
-	size_t old_passwd_len;
-	u_int32_t old_encrypt_flags;
+	u_int32_t orig_flags;
+	int register_recovery, ret, t_ret;
 
 	ip = NULL;
 	env = dbenv->env;
-	recovery_failed = 1;
 	register_recovery = 0;
-	retry_flags = 0;
-	old_passwd = NULL;
-	old_passwd_len = 0;
-	old_encrypt_flags = 0;
 
 	/* Initial configuration. */
 	if ((ret = __env_config(dbenv, db_home, &flags, mode)) != 0)
@@ -162,25 +148,10 @@ __env_open(dbenv, db_home, flags, mode)
 	 * we'll restore the DB_ENV flags to these values.
 	 */
 	orig_flags = dbenv->flags;
-#ifdef HAVE_SLICES
-	/*
-	 * Sliced environments are automatically TDS. Is automating this wrong?
-	 */
-	if (dbenv->slice_cnt > 0)
-		LF_SET(DB_INIT_LOCK | DB_INIT_LOG |
-		    DB_INIT_MPOOL | DB_INIT_TXN);
-#endif
 
 	/* Check open flags. */
 	if ((ret = __env_open_arg(dbenv, flags)) != 0)
 		return (ret);
-
-#ifdef HAVE_SLICES
-	/* Open & recover the slices first, before recovering the container. */
-	if (dbenv->slice_cnt > 0 &&
-	    (ret = __env_slice_open(dbenv, db_home, flags, mode)) != 0)
-		    return (ret);
-#endif
 
 	/*
 	 * If we're going to register with the environment, that's the first
@@ -200,29 +171,13 @@ __env_open(dbenv, db_home, flags, mode)
 			dbenv->is_alive = __envreg_isalive;
 		}
 
-		/*
-		 * Backup the current key, because it would be consumed by
-		 * __envreg_register below
-		 */
-		if (dbenv->passwd != NULL) {
-			if ((ret =
-			    __os_strdup(env, dbenv->passwd, &old_passwd)) != 0)
-				goto err;
-			old_passwd_len = dbenv->passwd_len;
-			(void)__env_get_encrypt_flags(dbenv,
-			    &old_encrypt_flags);
-		}
-
-		F_SET(dbenv, DB_ENV_NOPANIC);
-		ret = __envreg_register(env, &register_recovery, flags);
-		dbenv->flags = orig_flags;
-		if (ret != 0)
+		if ((ret =
+		    __envreg_register(env, &register_recovery, flags)) != 0)
 			goto err;
 		if (register_recovery) {
 			if (!LF_ISSET(DB_RECOVER)) {
 				__db_errx(env, DB_STR("1567",
 	    "The DB_RECOVER flag was not specified, and recovery is needed"));
-				recovery_failed = 0;
 				ret = DB_RUNRECOVERY;
 				goto err;
 			}
@@ -242,30 +197,16 @@ __env_open(dbenv, db_home, flags, mode)
 	 * want to remove files left over for any reason, from any session.
 	 */
 retry:	if (LF_ISSET(DB_RECOVER | DB_RECOVER_FATAL))
-		if (
 #ifdef HAVE_REPLICATION
-		    (ret = __rep_reset_init(env)) != 0 ||
-#endif
+		if ((ret = __rep_reset_init(env)) != 0 ||
 		    (ret = __env_remove_env(env)) != 0 ||
-		    (ret = __env_refresh(dbenv,
-		    orig_flags | retry_flags, 0)) != 0)
-			goto err;
-
-	/* Restore the database key. */
-	if (LF_ISSET(DB_REGISTER) && old_passwd != NULL) {
-		ret = __env_set_encrypt(dbenv, old_passwd, old_encrypt_flags);
-
-#ifdef HAVE_CRYPTO
-		__crypto_erase_passwd(env, &old_passwd, &old_passwd_len);
+#else
+		if ((ret = __env_remove_env(env)) != 0 ||
 #endif
-
-		if (ret != 0)
+		    (ret = __env_refresh(dbenv, orig_flags, 0)) != 0)
 			goto err;
-	}
 
-	DB_ASSERT(env, ret == 0);
-	if ((ret = __env_attach_regions(dbenv,
-	    flags, orig_flags | retry_flags, 1)) != 0)
+	if ((ret = __env_attach_regions(dbenv, flags, orig_flags, 1)) != 0)
 		goto err;
 
 	/*
@@ -275,18 +216,8 @@ retry:	if (LF_ISSET(DB_RECOVER | DB_RECOVER_FATAL))
 	 */
 	if (LF_ISSET(DB_FAILCHK) && !register_recovery) {
 		ENV_ENTER(env, ip);
-		/*
-		 * Set the thread state so that any waiting for a potentially
-		 * dead thread will call is_alive() in order to avoid hanging.
-		 */
-		FAILCHK_THREAD(env, ip);
-		ret = __env_failchk_int(dbenv);
-		if (ret != 0) {
-			__db_err(env, ret,
-			    DB_STR("1595",
-			    "failchk crash after clean registry"));
+		if ((ret = __env_failchk_int(dbenv)) != 0)
 			goto err;
-		}
 		ENV_LEAVE(env, ip);
 	}
 
@@ -299,12 +230,12 @@ err:	if (ret != 0)
 		 * processes can now proceed.
 		 *
 		 * If recovery failed, unregister now and let another process
-		 * clean up and run recovery.
+		 * clean up.
 		 */
 		if (ret == 0 && (t_ret = __envreg_xunlock(env)) != 0)
 			ret = t_ret;
 		if (ret != 0)
-			(void)__envreg_unregister(env, recovery_failed);
+			(void)__envreg_unregister(env, 1);
 	}
 
 	/*
@@ -316,11 +247,7 @@ err:	if (ret != 0)
 	 */
 	if (ret == DB_RUNRECOVERY && !register_recovery &&
 	    !LF_ISSET(DB_RECOVER) && LF_ISSET(DB_REGISTER)) {
-		if (FLD_ISSET(dbenv->verbose, DB_VERB_REGISTER))
-			__db_msg(env, DB_STR("1596",
-		"env_open DB_REGISTER w/o RECOVER panic: trying w/recovery"));
 		LF_SET(DB_RECOVER);
-		retry_flags = DB_ENV_NOPANIC;
 		goto retry;
 	}
 
@@ -377,15 +304,6 @@ __env_open_arg(dbenv, flags)
 			    "replication requires transaction support"));
 			return (EINVAL);
 		}
-		if ((ret = __log_set_config_int(
-		    dbenv, DB_LOG_EXT_FILE, 1, 1)) != 0)
-			return (ret);
-		if (dbenv->slice_cnt != 0) {
-			__db_errx(env, DB_STR("1605",
-			    "replication is not compatible with slices"));
-			return (EINVAL);
-		}
-			
 	}
 	if (LF_ISSET(DB_RECOVER | DB_RECOVER_FATAL)) {
 		if ((ret = __db_fcchk(env,
@@ -417,17 +335,6 @@ __env_open_arg(dbenv, flags)
 			return (EINVAL);
 		}
 	}
-	if (dbenv->db_reg_dir != NULL &&
-	    LF_ISSET(DB_PRIVATE | DB_SYSTEM_MEM)) {
-		__db_errx(env, DB_STR("1604",
-"The region directory cannot be set with DB_PRIVATE or DB_SYSTEM_MEM."));
-		return (EINVAL);
-	}
-	if (LF_ISSET(DB_INIT_CDB) && dbenv->slice_cnt != 0) {
-		__db_errx(env, DB_STR("1606",
-		    "A sliced environment cannot use DB_INIT_CDB"));
-		return (EINVAL);
-	}
 
 #ifdef HAVE_MUTEX_THREAD_ONLY
 	/*
@@ -442,6 +349,30 @@ __env_open_arg(dbenv, flags)
 	}
 #endif
 
+#ifdef HAVE_MUTEX_FCNTL
+	/*
+	 * !!!
+	 * We need a file descriptor for fcntl(2) locking.  We use the file
+	 * handle from the REGENV file for this purpose.
+	 *
+	 * Since we may be using shared memory regions, e.g., shmget(2), and
+	 * not a mapped-in regular file, the backing file may be only a few
+	 * bytes in length.  So, this depends on the ability to call fcntl to
+	 * lock file offsets much larger than the actual physical file.  I
+	 * think that's safe -- besides, very few systems actually need this
+	 * kind of support, SunOS is the only one still in wide use of which
+	 * I'm aware.
+	 *
+	 * The error case is if an application lacks spinlocks and wants to be
+	 * threaded.  That doesn't work because fcntl will lock the underlying
+	 * process, including all its threads.
+	 */
+	if (F_ISSET(env, ENV_THREAD)) {
+		__db_errx(env, DB_STR("1578",
+    "architecture lacks fast mutexes: applications cannot be threaded"));
+		return (EINVAL);
+	}
+#endif
 	return (ret);
 }
 
@@ -457,9 +388,8 @@ __env_remove(dbenv, db_home, flags)
 	const char *db_home;
 	u_int32_t flags;
 {
-	DB_ENV *slice;
 	ENV *env;
-	int i, ret, t_ret;
+	int ret, t_ret;
 
 	env = dbenv->env;
 
@@ -483,13 +413,6 @@ __env_remove(dbenv, db_home, flags)
 	if ((ret = __env_turn_off(env, flags)) == 0 || LF_ISSET(DB_FORCE))
 		ret = __env_remove_env(env);
 
-	/* Remove all slices, returning the first error seen, if any. */
-	if (ret == 0)
-		SLICE_FOREACH(dbenv, slice, i)
-			if ((t_ret = __env_remove(slice,
-			    slice->env->db_home, flags)) != 0 && ret == 0)
-				ret = t_ret;
-
 	if ((t_ret = __env_close(dbenv, 0)) != 0 && ret == 0)
 		ret = t_ret;
 
@@ -498,8 +421,7 @@ __env_remove(dbenv, db_home, flags)
 
 /*
  * __env_config --
- *	Find the configuration settings for db_home, including any
- *	of its slices.
+ *	Argument-based initialization.
  *
  * PUBLIC: int __env_config __P((DB_ENV *, const char *, u_int32_t *, int));
  */
@@ -511,9 +433,9 @@ __env_config(dbenv, db_home, flagsp, mode)
 	int mode;
 {
 	ENV *env;
+	int ret;
 	u_int32_t flags;
 	char *home, home_buf[DB_MAXPATHLEN];
-	int ret;
 
 	env = dbenv->env;
 	flags = *flagsp;
@@ -537,11 +459,7 @@ __env_config(dbenv, db_home, flagsp, mode)
 		 * home set to NULL if __os_getenv failed to find DB_HOME.
 		 */
 	}
-	/*
-	 * "slice <n> home <dir>" sets db_home in the slice. Don't accidentally
-	 * free the 'home' argument passed in.
-	*/
-	if (home != NULL && home != env->db_home) {
+	if (home != NULL) {
 		if (env->db_home != NULL)
 			__os_free(env, env->db_home);
 		if ((ret = __os_strdup(env, home, &env->db_home)) != 0)
@@ -558,10 +476,6 @@ __env_config(dbenv, db_home, flagsp, mode)
 	if ((ret = __env_read_db_config(env)) != 0)
 		return (ret);
 
-#ifdef HAVE_SLICES
-	if (SLICES_ON(env))
-		ret = __env_slice_db_home(dbenv, env->db_home);
-#endif
 	/*
 	 * Update the DB_ENV->open method flags. The copy of the flags might
 	 * have been changed during reading DB_CONFIG file.
@@ -592,7 +506,7 @@ __env_close_pp(dbenv, flags)
 {
 	DB_THREAD_INFO *ip;
 	ENV *env;
-	int ret, t_ret;
+	int rep_check, ret, t_ret;
 	u_int32_t close_flags, flags_orig;
 
 	env = dbenv->env;
@@ -603,75 +517,65 @@ __env_close_pp(dbenv, flags)
 	 * Validate arguments, but as a DB_ENV handle destructor, we can't
 	 * fail.
 	 */
-#undef	OKFLAGS
-#define	OKFLAGS	(DB_FORCESYNC | DB_FORCESYNCENV)
-
-	ret = __db_fchk(env, "DB_ENV->close", flags, OKFLAGS);
+	if (flags != 0 && flags != DB_FORCESYNC &&
+	    (t_ret = __db_ferr(env, "DB_ENV->close", 0)) != 0 && ret == 0)
+		ret = t_ret;
 
 #define	DBENV_FORCESYNC		0x00000001
 #define	DBENV_CLOSE_REPCHECK	0x00000010
-	if (LF_ISSET(DB_FORCESYNC))
+	if (flags == DB_FORCESYNC)
 		close_flags |= DBENV_FORCESYNC;
-	if (LF_ISSET(DB_FORCESYNCENV))
-		F_SET(env, ENV_FORCESYNCENV);
-
-	/*
-	 * Call __env_close() to clean up resources even though the open
-	 * didn't fully succeed.
-	 * */
-	if (!F_ISSET(env, ENV_OPEN_CALLED))
-		goto do_close;
 
 	/*
 	 * If the environment has panic'd, all we do is try and discard
 	 * the important resources.
 	 */
 	if (PANIC_ISSET(env)) {
-		/*
-		 * Temporarily set no panic so we do not trigger the
-		 * LAST_PANIC_CHECK_BEFORE_IO check in __os_physwrite thus
-		 * allowing the unregister to happen correctly.
-		 */
-		flags_orig = dbenv->flags;
-		F_SET(dbenv, DB_ENV_NOPANIC);
-		ENV_ENTER(env, ip);
 		/* clean up from registry file */
-		if (dbenv->registry != NULL)
+		if (dbenv->registry != NULL) {
+			/*
+			 * Temporarily set no panic so we do not trigger the
+			 * LAST_PANIC_CHECK_BEFORE_IO check in __os_physwr
+			 * thus allowing the unregister to happen correctly.
+			 */
+			flags_orig = F_ISSET(dbenv, DB_ENV_NOPANIC);
+			F_SET(dbenv, DB_ENV_NOPANIC);
 			(void)__envreg_unregister(env, 0);
+			dbenv->registry = NULL;
+			if (!flags_orig)
+				F_CLR(dbenv, DB_ENV_NOPANIC);
+		}
 
 		/* Close all underlying threads and sockets. */
-		(void)__repmgr_close(env);
+		if (IS_ENV_REPLICATED(env))
+			(void)__repmgr_close(env);
 
 		/* Close all underlying file handles. */
 		(void)__file_handle_cleanup(env);
-		ENV_LEAVE(env, ip);
 
-		dbenv->flags = flags_orig;
-		(void)__env_region_cleanup(env);
-
-		return (__env_panic_msg(env));
+		PANIC_CHECK(env);
 	}
 
 	ENV_ENTER(env, ip);
 
+	rep_check = IS_ENV_REPLICATED(env) ? 1 : 0;
+	if (rep_check) {
 #ifdef HAVE_REPLICATION_THREADS
-	/*
-	 * Shut down Replication Manager threads first of all.  This
-	 * must be done before __env_rep_enter to avoid a deadlock that
-	 * could occur if repmgr's background threads try to do a rep
-	 * operation that needs __rep_lockout.
-	 */
-	if ((t_ret = __repmgr_close(env)) != 0 && ret == 0)
-		ret = t_ret;
+		/*
+		 * Shut down Replication Manager threads first of all.  This
+		 * must be done before __env_rep_enter to avoid a deadlock that
+		 * could occur if repmgr's background threads try to do a rep
+		 * operation that needs __rep_lockout.
+		 */
+		if ((t_ret = __repmgr_close(env)) != 0 && ret == 0)
+			ret = t_ret;
 #endif
-	if (IS_ENV_REPLICATED(env)) {
 		if ((t_ret = __env_rep_enter(env, 0)) != 0 && ret == 0)
 			ret = t_ret;
-		if (ret == 0)
-			close_flags |= DBENV_CLOSE_REPCHECK;
 	}
 
-do_close:
+	if (rep_check)
+		close_flags |= DBENV_CLOSE_REPCHECK;
 	if ((t_ret = __env_close(dbenv, close_flags)) != 0 && ret == 0)
 		ret = t_ret;
 
@@ -681,7 +585,7 @@ do_close:
 
 /*
  * __env_close --
- *	Do the real work of DB_ENV->close.
+ *	DB_ENV->close.
  *
  * PUBLIC: int __env_close __P((DB_ENV *, u_int32_t));
  */
@@ -691,9 +595,8 @@ __env_close(dbenv, flags)
 	u_int32_t flags;
 {
 	DB *dbp;
-	DB_ENV *slice;
 	ENV *env;
-	int i, rep_check, ret, t_ret;
+	int ret, rep_check, t_ret;
 	char **p;
 	u_int32_t close_flags;
 
@@ -701,23 +604,6 @@ __env_close(dbenv, flags)
 	ret = 0;
 	close_flags = LF_ISSET(DBENV_FORCESYNC) ? 0 : DB_NOSYNC;
 	rep_check = LF_ISSET(DBENV_CLOSE_REPCHECK);
-
-#ifdef HAVE_SLICES
-	if (env->slice_container != NULL)
-		env->slice_container->slice_envs[env->slice_index] = NULL;
-	else if (SLICES_ON(env)) {
-		SLICE_FOREACH(dbenv, slice, i) {
-			if ((t_ret = __env_close_pp(slice, flags)) != 0 &&
-			    ret == 0)
-				ret = t_ret;
-		}
-		__os_free(env, env->slice_envs);
-		env->slice_envs = NULL;
-	}
-#else
-	COMPQUIET(slice, NULL);
-	COMPQUIET(i, 0);
-#endif
 
 	/*
 	 * Check to see if we were in the middle of restoring transactions and
@@ -754,11 +640,8 @@ __env_close(dbenv, flags)
 			t_ret = dbp->alt_close(dbp, close_flags);
 		else
 			t_ret = __db_close(dbp, NULL, close_flags);
-		if (t_ret != 0) {
-			if (ret == 0)
-				ret = t_ret;
-			break;
-		}
+		if (t_ret != 0 && ret == 0)
+			ret = t_ret;
 	}
 
 	/*
@@ -778,8 +661,10 @@ __env_close(dbenv, flags)
 #endif
 
 	/* If we're registered, clean up. */
-	if (dbenv->registry != NULL)
+	if (dbenv->registry != NULL) {
 		(void)__envreg_unregister(env, 0);
+		dbenv->registry = NULL;
+	}
 
 	/* Check we've closed all underlying file handles. */
 	if ((t_ret = __file_handle_cleanup(env)) != 0 && ret == 0)
@@ -795,12 +680,6 @@ __env_close(dbenv, flags)
 	if (dbenv->db_md_dir != NULL)
 		__os_free(env, dbenv->db_md_dir);
 	dbenv->db_md_dir = NULL;
-	if (dbenv->db_blob_dir != NULL)
-		__os_free(env, dbenv->db_blob_dir);
-	dbenv->db_blob_dir = NULL;
-	if (dbenv->db_reg_dir != NULL)
-		__os_free(env, dbenv->db_reg_dir);
-	dbenv->db_reg_dir = NULL;
 	if (dbenv->db_data_dir != NULL) {
 		for (p = dbenv->db_data_dir; *p != NULL; ++p)
 			__os_free(env, *p);
@@ -844,7 +723,6 @@ __env_refresh(dbenv, orig_flags, rep_check)
 
 	env = dbenv->env;
 	ret = 0;
-	ip = NULL;
 
 	/*
 	 * Release resources allocated by DB_ENV->open, and return it to the
@@ -883,7 +761,9 @@ __env_refresh(dbenv, orig_flags, rep_check)
 			ret = t_ret;
 	}
 
-	/* Discard the ENV handle mutex. */
+	/* Discard the DB_ENV, ENV handle mutexes. */
+	if ((t_ret = __mutex_free(env, &dbenv->mtx_db_env)) != 0 && ret == 0)
+		ret = t_ret;
 	if ((t_ret = __mutex_free(env, &env->mtx_env)) != 0 && ret == 0)
 		ret = t_ret;
 
@@ -906,7 +786,7 @@ __env_refresh(dbenv, orig_flags, rep_check)
 			    ldbp->dname == NULL ? "" : "/",
 			    ldbp->dname == NULL ? "" : ldbp->dname);
 		if (ret == 0)
-			ret = USR_ERR(env, EINVAL);
+			ret = EINVAL;
 	}
 	TAILQ_INIT(&env->dblist);
 	if ((t_ret = __mutex_free(env, &env->mtx_dblist)) != 0 && ret == 0)
@@ -978,7 +858,6 @@ __env_refresh(dbenv, orig_flags, rep_check)
 	if (env->thr_hashtab != NULL &&
 	    (t_ret = __env_set_state(env, &ip, THREAD_OUT)) != 0 && ret == 0)
 		ret = t_ret;
-        DB_ASSERT(env, (ip == NULL || ip->mtx_ctr == 0));
 
 	/*
 	 * We are about to detach from the mutex region.  This is the last
@@ -1057,38 +936,17 @@ __file_handle_cleanup(env)
 	ENV *env;
 {
 	DB_FH *fhp;
-	DB_MPOOL *dbmp;
-	u_int i;
 
-	if (TAILQ_EMPTY(&env->fdlist))
+	if (TAILQ_FIRST(&env->fdlist) == NULL)
 		return (0);
 
-	__db_errx(env,
-	    DB_STR("1581", "File handles still open at environment close"));
+	__db_errx(env, DB_STR("1581",
+	    "File handles still open at environment close"));
 	while ((fhp = TAILQ_FIRST(&env->fdlist)) != NULL) {
-		__db_errx(env,
-		    DB_STR_A("1582", "Open file handle: %s", "%s"), fhp->name);
-		if (__os_closehandle(env, fhp) != 0)
-			break;
+		__db_errx(env, DB_STR_A("1582", "Open file handle: %s", "%s"),
+		    fhp->name);
+		(void)__os_closehandle(env, fhp);
 	}
-	if (env->lockfhp != NULL)
-		env->lockfhp = NULL;
-	/* Invalidate saved pointers to the regions' files: all are closed. */
-	if (env->reginfo != NULL)
-		env->reginfo->fhp = NULL;
-	if (env->lg_handle != NULL)
-		env->lg_handle->reginfo.fhp = NULL;
-	if (env->lk_handle != NULL)
-		env->lk_handle->reginfo.fhp = NULL;
-#ifdef HAVE_MUTEX_SUPPORT
-	if (env->mutex_handle != NULL)
-		env->mutex_handle->reginfo.fhp = NULL;
-#endif
-	if (env->tx_handle != NULL)
-		env->tx_handle->reginfo.fhp = NULL;
-	if ((dbmp = env->mp_handle) != NULL && dbmp->reginfo != NULL)
-		for (i = 0; i < env->dbenv->mp_ncache; ++i)
-			dbmp->reginfo[i].fhp = NULL;
 	return (EINVAL);
 }
 
@@ -1251,9 +1109,11 @@ __env_attach_regions(dbenv, flags, orig_flags, retry_ok)
 		goto err;
 
 	/*
-	 * Initialize the handle mutex.
+	 * Initialize the handle mutexes.
 	 */
 	if ((ret = __mutex_alloc(env,
+	    MTX_ENV_HANDLE, DB_MUTEX_PROCESS_ONLY, &dbenv->mtx_db_env)) != 0 ||
+	    (ret = __mutex_alloc(env,
 	    MTX_ENV_HANDLE, DB_MUTEX_PROCESS_ONLY, &env->mtx_env)) != 0)
 		goto err;
 
@@ -1265,15 +1125,8 @@ __env_attach_regions(dbenv, flags, orig_flags, retry_ok)
 		goto err;
 
 	rep_check = IS_ENV_REPLICATED(env) ? 1 : 0;
-	if (rep_check && (ret = __env_rep_enter(env, 0)) != 0) {
-		/*
-		 * If we get an error we didn't increment handle_cnt,
-		 * so we don't want to decrement it later.  Turn off
-		 * rep_check here.
-		 */
-		rep_check = 0;
+	if (rep_check && (ret = __env_rep_enter(env, 0)) != 0)
 		goto err;
-	}
 
 	if (LF_ISSET(DB_INIT_MPOOL)) {
 		if ((ret = __memp_open(env, create_ok)) != 0)

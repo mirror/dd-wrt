@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1996
@@ -118,11 +118,10 @@ __txn_regop_recover(env, dbtp, lsnp, op, info)
 		*lsnp = argp->prev_lsn;
 
 	if (0) {
-
-err:		ret = USR_ERR(env, EINVAL);
-		__db_errx(env, DB_STR_A("4514",
+err:		__db_errx(env, DB_STR_A("4514",
 		    "txnid %lx commit record found, already on commit list",
 		    "%lx"), (u_long)argp->txnp->txnid);
+		ret = EINVAL;
 	}
 	__os_free(env, argp);
 
@@ -158,7 +157,7 @@ __txn_prepare_recover(env, dbtp, lsnp, op, info)
 		return (ret);
 
 	if (argp->opcode != TXN_PREPARE && argp->opcode != TXN_ABORT) {
-		ret = USR_ERR(env, EINVAL);
+		ret = EINVAL;
 		goto err;
 	}
 	headp = info;
@@ -211,12 +210,11 @@ __txn_prepare_recover(env, dbtp, lsnp, op, info)
 		 */
 		else if ((ret = __db_txnlist_remove(env,
 		    info, argp->txnp->txnid)) != 0) {
-txn_err:
-			ret = USR_ERR(env, DB_NOTFOUND);
-			__db_errx(env,
+txn_err:		__db_errx(env,
 			    DB_STR_A("4515",
 			    "transaction not in list %lx", "%lx"),
 			    (u_long)argp->txnp->txnid);
+			ret = DB_NOTFOUND;
 		} else if (IS_ZERO_LSN(headp->trunc_lsn) ||
 		    LOG_COMPARE(&headp->trunc_lsn, lsnp) >= 0) {
 			if ((ret = __db_txnlist_add(env,
@@ -462,7 +460,6 @@ __txn_restore_txn(env, lsnp, argp)
 	if (region->stat.st_nactive > region->stat.st_maxnactive)
 		STAT_SET(env, txn, maxnactive, region->stat.st_maxnactive,
 		    region->stat.st_nactive, td->txnid);
-	td->slice_details = INVALID_ROFF;
 #endif
 	TXN_SYSTEM_UNLOCK(env);
 	return (0);
@@ -501,4 +498,119 @@ __txn_recycle_recover(env, dbtp, lsnp, op, info)
 	__os_free(env, argp);
 
 	return (0);
+}
+
+/*
+ * PUBLIC: int __txn_regop_42_recover
+ * PUBLIC:    __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
+ *
+ * These records are only ever written for commits.  Normally, we redo any
+ * committed transaction, however if we are doing recovery to a timestamp, then
+ * we may treat transactions that committed after the timestamp as aborted.
+ */
+int
+__txn_regop_42_recover(env, dbtp, lsnp, op, info)
+	ENV *env;
+	DBT *dbtp;
+	DB_LSN *lsnp;
+	db_recops op;
+	void *info;
+{
+	__txn_regop_42_args *argp;
+	DB_TXNHEAD *headp;
+	u_int32_t status;
+	int ret;
+
+#ifdef DEBUG_RECOVER
+	(void)__txn_regop_42_print(env, dbtp, lsnp, op, info);
+#endif
+
+	if ((ret = __txn_regop_42_read(env, dbtp->data, &argp)) != 0)
+		return (ret);
+
+	headp = info;
+	/*
+	 * We are only ever called during FORWARD_ROLL or BACKWARD_ROLL.
+	 * We check for the former explicitly and the last two clauses
+	 * apply to the BACKWARD_ROLL case.
+	 */
+
+	if (op == DB_TXN_FORWARD_ROLL) {
+		/*
+		 * If this was a 2-phase-commit transaction, then it
+		 * might already have been removed from the list, and
+		 * that's OK.  Ignore the return code from remove.
+		 */
+		if ((ret = __db_txnlist_remove(env,
+		    info, argp->txnp->txnid)) != DB_NOTFOUND && ret != 0)
+			goto err;
+	} else if ((env->dbenv->tx_timestamp != 0 &&
+	    argp->timestamp > (int32_t)env->dbenv->tx_timestamp) ||
+	    (!IS_ZERO_LSN(headp->trunc_lsn) &&
+	    LOG_COMPARE(&headp->trunc_lsn, lsnp) < 0)) {
+		/*
+		 * We failed either the timestamp check or the trunc_lsn check,
+		 * so we treat this as an abort even if it was a commit record.
+		 */
+		if ((ret = __db_txnlist_update(env, info,
+		    argp->txnp->txnid, TXN_ABORT, NULL, &status, 1)) != 0)
+			goto err;
+		else if (status != TXN_IGNORE && status != TXN_OK)
+			goto err;
+	} else {
+		/* This is a normal commit; mark it appropriately. */
+		if ((ret = __db_txnlist_update(env,
+		    info, argp->txnp->txnid, argp->opcode, lsnp,
+		    &status, 0)) == DB_NOTFOUND) {
+			if ((ret = __db_txnlist_add(env,
+			    info, argp->txnp->txnid,
+			    argp->opcode == TXN_ABORT ?
+			    TXN_IGNORE : argp->opcode, lsnp)) != 0)
+				goto err;
+		} else if (ret != 0 ||
+		    (status != TXN_IGNORE && status != TXN_OK))
+			goto err;
+	}
+
+	if (ret == 0)
+		*lsnp = argp->prev_lsn;
+
+	if (0) {
+err:		__db_errx(env, DB_STR_A("4517",
+		    "txnid %lx commit record found, already on commit list",
+		    "%lx"), (u_long)argp->txnp->txnid);
+		ret = EINVAL;
+	}
+	__os_free(env, argp);
+
+	return (ret);
+}
+
+/*
+ * PUBLIC: int __txn_ckp_42_recover
+ * PUBLIC: __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
+ */
+int
+__txn_ckp_42_recover(env, dbtp, lsnp, op, info)
+	ENV *env;
+	DBT *dbtp;
+	DB_LSN *lsnp;
+	db_recops op;
+	void *info;
+{
+	__txn_ckp_42_args *argp;
+	int ret;
+
+#ifdef DEBUG_RECOVER
+	__txn_ckp_42_print(env, dbtp, lsnp, op, info);
+#endif
+	if ((ret = __txn_ckp_42_read(env, dbtp->data, &argp)) != 0)
+		return (ret);
+
+	if (op == DB_TXN_BACKWARD_ROLL)
+		__db_txnlist_ckp(env, info, lsnp);
+
+	*lsnp = argp->last_ckp;
+	__os_free(env, argp);
+	return (DB_TXN_CKP);
 }

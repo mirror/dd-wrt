@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -19,13 +19,9 @@ namespace BerkeleyDB {
         private HashFunctionDelegate hashHandler;
         private EntryComparisonDelegate compareHandler;
         private EntryComparisonDelegate dupCompareHandler;
-        private PartitionDelegate partitionHandler;
         private BDB_CompareDelegate doCompareRef;
         private BDB_HashDelegate doHashRef;
         private BDB_CompareDelegate doDupCompareRef;
-        private BDB_PartitionDelegate doPartitionRef;
-        private DatabaseEntry[] partitionKeys;
-        private uint nparts;
         
         #region Constructors
         private HashDatabase(DatabaseEnvironment env, uint flags)
@@ -35,18 +31,10 @@ namespace BerkeleyDB {
         private void Config(HashDatabaseConfig cfg) {
             base.Config(cfg);
             /* 
-             * Database.Config calls set_flags, but that does not get the Hash
+             * Database.Config calls set_flags, but that doesn't get the Hash
              * specific flags.  No harm in calling it again.
              */
             db.set_flags(cfg.flags);
-
-            if (cfg.BlobDir != null && cfg.Env == null)
-                db.set_ext_file_dir(cfg.BlobDir);
-            if (cfg.ExternalFileDir != null && cfg.Env == null)
-                db.set_ext_file_dir(cfg.ExternalFileDir);
-
-            if (cfg.blobThresholdIsSet)
-                db.set_ext_file_threshold(cfg.BlobThreshold, 0);
             
             if (cfg.HashFunction != null)
                 HashFunction = cfg.HashFunction;
@@ -60,25 +48,6 @@ namespace BerkeleyDB {
             if (cfg.HashComparison != null)
                 Compare = cfg.HashComparison;
 
-            if (cfg.partitionIsSet) {
-                nparts = cfg.NParts;
-                Partition = cfg.Partition;
-                if (Partition == null)
-                    doPartitionRef = null;
-                else
-                    doPartitionRef = new BDB_PartitionDelegate(doPartition);
-                partitionKeys = cfg.PartitionKeys;
-                IntPtr[] ptrs = null;
-                if (partitionKeys != null) {
-                    int size = (int)nparts - 1;
-                    ptrs = new IntPtr[size];
-                    for (int i = 0; i < size; i++) {
-                        ptrs[i] = DBT.getCPtr(
-                            DatabaseEntry.getDBT(partitionKeys[i])).Handle;
-                    }
-                }
-                db.set_partition(nparts, ptrs, doPartitionRef);
-            }
         }
 
         /// <summary>
@@ -92,15 +61,15 @@ namespace BerkeleyDB {
         /// the database can only be accessed by sharing the single database
         /// object that created it, in circumstances where doing so is safe.
         /// </para>
-          /// <para>
+        /// <para>
         /// If <see cref="DatabaseConfig.AutoCommit"/> is set, the operation
-        /// is implicitly transaction protected. Transactionally
-        /// protected operations on a database object requires the object itself
+        /// will be implicitly transaction protected. Note that transactionally
+        /// protected operations on a datbase object requires the object itself
         /// be transactionally protected during its open.
         /// </para>
         /// </remarks>
         /// <param name="Filename">
-        /// The name of an underlying file used to back the
+        /// The name of an underlying file that will be used to back the
         /// database. In-memory databases never intended to be preserved on disk
         /// may be created by setting this parameter to null.
         /// </param>
@@ -124,18 +93,18 @@ namespace BerkeleyDB {
         /// object that created it, in circumstances where doing so is safe. If
         /// <paramref name="Filename"/> is null and
         /// <paramref name="DatabaseName"/> is non-null, the database can be
-        /// opened by other threads of control and be replicated to client
+        /// opened by other threads of control and will be replicated to client
         /// sites in any replication group.
         /// </para>
         /// <para>
         /// If <see cref="DatabaseConfig.AutoCommit"/> is set, the operation
-        /// is implicitly transaction protected. Transactionally
-        /// protected operations on a database object requires the object itself
+        /// will be implicitly transaction protected. Note that transactionally
+        /// protected operations on a datbase object requires the object itself
         /// be transactionally protected during its open.
         /// </para>
         /// </remarks>
         /// <param name="Filename">
-        /// The name of an underlying file used to back the
+        /// The name of an underlying file that will be used to back the
         /// database. In-memory databases never intended to be preserved on disk
         /// may be created by setting this parameter to null.
         /// </param>
@@ -164,15 +133,15 @@ namespace BerkeleyDB {
         /// </para>
         /// <para>
         /// If <paramref name="txn"/> is null, but
-        /// <see cref="DatabaseConfig.AutoCommit"/> is set, the operation
-        /// is implicitly transaction protected. Transactionally
-        /// protected operations on a database object requires the object itself
-        /// be transactionally protected during its open. The
+        /// <see cref="DatabaseConfig.AutoCommit"/> is set, the operation will
+        /// be implicitly transaction protected. Note that transactionally
+        /// protected operations on a datbase object requires the object itself
+        /// be transactionally protected during its open. Also note that the
         /// transaction must be committed before the object is closed.
         /// </para>
         /// </remarks>
         /// <param name="Filename">
-        /// The name of an underlying file used to back the
+        /// The name of an underlying file that will be used to back the
         /// database. In-memory databases never intended to be preserved on disk
         /// may be created by setting this parameter to null.
         /// </param>
@@ -203,21 +172,21 @@ namespace BerkeleyDB {
         /// the database can only be accessed by sharing the single database 
         /// object that created it, in circumstances where doing so is safe. If
         /// <paramref name="Filename"/> is null and
-        /// <paramref name="DatabaseName"/> is non-null, the database can be      
-        /// opened by other threads of control and be replicated to client
+        /// <paramref name="DatabaseName"/> is non-null, the database can be
+        /// opened by other threads of control and will be replicated to client
         /// sites in any replication group.
         /// </para>
         /// <para>
         /// If <paramref name="txn"/> is null, but
-        /// <see cref="DatabaseConfig.AutoCommit"/> is set, the operation
-        /// is implicitly transaction protected. Transactionally
-        /// protected operations on a database object requires the object itself
-        /// be transactionally protected during its open. The
+        /// <see cref="DatabaseConfig.AutoCommit"/> is set, the operation will
+        /// be implicitly transaction protected. Note that transactionally
+        /// protected operations on a datbase object requires the object itself
+        /// be transactionally protected during its open. Also note that the
         /// transaction must be committed before the object is closed.
         /// </para>
         /// </remarks>
         /// <param name="Filename">
-        /// The name of an underlying file used to back the
+        /// The name of an underlying file that will be used to back the
         /// database. In-memory databases never intended to be preserved on disk
         /// may be created by setting this parameter to null.
         /// </param>
@@ -251,12 +220,11 @@ namespace BerkeleyDB {
 
         #region Callbacks
         private static int doDupCompare(
-            IntPtr dbp, IntPtr dbt1p, IntPtr dbt2p, IntPtr locp) {
+            IntPtr dbp, IntPtr dbt1p, IntPtr dbt2p) {
             DB db = new DB(dbp, false);
             DBT dbt1 = new DBT(dbt1p, false);
             DBT dbt2 = new DBT(dbt2p, false);
-            if (locp != IntPtr.Zero)
-                locp = IntPtr.Zero;
+
             return ((HashDatabase)(db.api_internal)).DupCompare(
                 DatabaseEntry.fromDBT(dbt1), DatabaseEntry.fromDBT(dbt2));
         }
@@ -267,86 +235,18 @@ namespace BerkeleyDB {
 
             return ((HashDatabase)(db.api_internal)).hashHandler(t_data);
         }
-        private static int doCompare(IntPtr dbp,
-            IntPtr dbtp1, IntPtr dbtp2, IntPtr locp) {
+        private static int doCompare(IntPtr dbp, IntPtr dbtp1, IntPtr dbtp2) {
             DB db = new DB(dbp, false);
             DBT dbt1 = new DBT(dbtp1, false);
             DBT dbt2 = new DBT(dbtp2, false);
-            if (locp != IntPtr.Zero)
-                locp = IntPtr.Zero;
 
             return ((HashDatabase)(db.api_internal)).compareHandler(
                 DatabaseEntry.fromDBT(dbt1), DatabaseEntry.fromDBT(dbt2));
-        }
-        private static uint doPartition(IntPtr dbp, IntPtr dbtp) {
-            DB db = new DB(dbp, false);
-            DatabaseEntry dbt = DatabaseEntry.fromDBT(new DBT(dbtp, false));
-            HashDatabase btdb = (HashDatabase)(db.api_internal);
-            return btdb.Partition(dbt);
         }
 
         #endregion Callbacks
 
         #region Properties
-        /// <summary>
-        /// The path of the directory where external files are stored.
-        /// </summary>
-        public string ExternalFileDir {
-            get {
-                string dir;
-                db.get_ext_file_dir(out dir);
-                return dir;
-            }
-        }
-	/// <summary>
-        /// Deprecated.  Replaced by ExternalFileDir.
-        /// </summary>
-        public string BlobDir {
-            get {
-                string dir;
-                db.get_ext_file_dir(out dir);
-                return dir;
-            }
-        }
-
-        internal string BlobSubDir {
-            get {
-                string dir;
-                db.get_blob_sub_dir(out dir);
-                return dir;
-            }
-        }
-
-        /// <summary>
-        /// The threshold value in bytes beyond which data items are stored as
-        /// external files.
-        /// <para>
-        /// Any data item that is equal to or larger in size than the
-        /// threshold value is automatically stored as a external file.
-        /// </para>
-        /// <para>
-        /// A value of 0 indicates that external files are not used by the
-	/// database.
-        /// </para>
-        /// </summary>
-        public uint ExternalFileThreshold {
-            get {
-                uint ret = 0;
-                db.get_ext_file_threshold(ref ret);
-                return ret;
-            }
-        }
-	/// <summary>
-        /// Deprecated.  Replaced by ExternalFileThreshold.
-        /// </summary>
-        public uint BlobThreshold {
-            get {
-                uint ret = 0;
-                db.get_ext_file_threshold(ref ret);
-                return ret;
-            }
-        }
-
         /// <summary>
         /// The Hash key comparison function. The comparison function is called
         /// whenever it is necessary to compare a key specified by the
@@ -446,8 +346,8 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// If the operation occurs in a transactional database, the operation
-        /// is implicitly transaction protected using multiple
-        /// transactions. These transactions are periodically committed to
+        /// will be implicitly transaction protected using multiple
+        /// transactions. These transactions will be periodically committed to
         /// avoid locking large sections of the tree. Any deadlocks encountered
         /// cause the compaction operation to be retried from the point of the
         /// last transaction commit.
@@ -473,8 +373,8 @@ namespace BerkeleyDB {
         /// </para>
         /// <para>
         /// If <paramref name="txn"/> is null, but the operation occurs in a
-        /// transactional database, the operation is implicitly transaction
-        /// protected using multiple transactions. These transactions are
+        /// transactional database, the operation will be implicitly transaction
+        /// protected using multiple transactions. These transactions will be
         /// periodically committed to avoid locking large sections of the tree.
         /// Any deadlocks encountered cause the compaction operation to be
         /// retried from the point of the last transaction commit.
@@ -607,7 +507,7 @@ namespace BerkeleyDB {
         /// </param>
         /// <param name="isoDegree">
         /// The level of isolation for database reads.
-        /// <see cref="Isolation.DEGREE_ONE"/> is silently ignored for 
+        /// <see cref="Isolation.DEGREE_ONE"/> will be silently ignored for 
         /// databases which did not specify
         /// <see cref="DatabaseConfig.ReadUncommitted"/>.
         /// </param>
@@ -649,39 +549,6 @@ namespace BerkeleyDB {
             db.compact(Transaction.getDB_TXN(txn),
                 null, null, cdata, DbConstants.DB_FREELIST_ONLY, null);
             return cdata.compact_pages_truncated;
-        }
-
-        /// <summary>
-        /// Return the number of partitions created in the database.
-        /// </summary>
-        public uint NParts {
-            get {
-                db.get_partition_parts(ref nparts);
-                return nparts;
-            }
-            private set { nparts = value; }
-        }
-
-        /// <summary>
-        /// Return the application-specified partitioning function.
-        /// </summary>
-        public PartitionDelegate Partition {
-            get { return partitionHandler; }
-            private set { partitionHandler = value; }
-        }
-
-        /// <summary>
-        /// Return an array of type DatabaseEntry where each array entry
-        /// contains the range of keys contained in one of the database's
-        /// partitions. The array contains the information for the entire
-        /// database.
-        /// </summary>
-        public DatabaseEntry[] PartitionKeys {
-            get {
-                partitionKeys = db.get_partition_keys();
-                return partitionKeys;
-            }
-            private set { partitionKeys = value; }
         }
 
         /// <summary>
@@ -751,7 +618,7 @@ namespace BerkeleyDB {
         /// </param>
         /// <param name="isoDegree">
         /// The level of isolation for database reads.
-        /// <see cref="Isolation.DEGREE_ONE"/> is silently ignored for 
+        /// <see cref="Isolation.DEGREE_ONE"/> will be silently ignored for 
         /// databases which did not specify
         /// <see cref="DatabaseConfig.ReadUncommitted"/>.
         /// </param>

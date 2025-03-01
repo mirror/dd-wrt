@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2012, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 #include <errno.h>
@@ -9,40 +9,13 @@
 #include "sqliteInt.h"
 #include <db.h>
 
-/* Internal DB functions that are used by adapter source files. */
-extern int __db_check_chksum(ENV *, void *, DB_CIPHER *, u_int8_t *, void *,
-    size_t, int);
-extern void __db_chksum(void *, u_int8_t *, size_t, u_int8_t *, u_int8_t *);
-extern int __env_encrypt(DB_ENV *, u_int8_t *, u_int8_t *, size_t);
-extern int __env_encrypt_adj_size(DB_ENV *, size_t, size_t *);
-extern int __env_decrypt(DB_ENV *, u_int8_t *, u_int8_t *, size_t);
-extern int __env_ref_get(DB_ENV *, u_int32_t *);
-extern int __os_closehandle(ENV *, DB_FH *);
-extern int __os_dirlist(ENV *, const char *, int, char ***, int *);
-extern void __os_dirfree(ENV *, char **, int);
-extern int __os_exists(ENV *, const char *, int *);
-extern int __os_fileid(ENV *, const char *, int, u_int8_t *);
-extern int __os_io(ENV *, int, DB_FH *, db_pgno_t, u_int32_t, u_int32_t,
-    u_int32_t, u_int8_t *, size_t *);
-extern int __os_ioinfo(ENV *, const char *, DB_FH *, u_int32_t *, u_int32_t *,
-    u_int32_t *);
-extern int __os_mkdir(ENV *, const char *, int);
-extern int __os_open(ENV *, const char *, u_int32_t, u_int32_t, int, DB_FH **);
-extern int __os_read(ENV *, DB_FH *, void *, size_t, size_t *);
-extern int __os_rename(ENV *, const char *, const char *, u_int32_t);
-extern int __os_seek(ENV *, DB_FH *, db_pgno_t, u_int32_t, off_t);
-extern int __os_unlink(ENV *, const char *, int);
-extern int __os_write(ENV *, DB_FH *, void *, size_t, size_t *);
-extern void __os_yield(ENV *, u_long, u_long);
-
 #ifdef BDBSQL_SHARE_PRIVATE
 /* BDBSQL_SHARE_PRIVATE implies BDBSQL_SINGLE_PROCESS */
 #define	BDBSQL_SINGLE_PROCESS
 #endif
 
 #define	INTKEY_BUFSIZE	(sizeof(i64) + 2) /* We add 2 bytes to negatives. */
-/* MULTI_BUFSIZE needs to be at least as large as the maximum page size. */
-#define	MULTI_BUFSIZE	SQLITE_MAX_PAGE_SIZE
+#define	MULTI_BUFSIZE	8 * SQLITE_DEFAULT_PAGE_SIZE
 #define	DBNAME_SIZE	20
 #define	NUMMETA		16
 #define	NUM_DB_PRAGMA	30
@@ -51,15 +24,6 @@ extern void __os_yield(ENV *, u_long, u_long);
 #define	BT_MAX_PATH 512
 
 #define BT_MAX_SEQ_NAME 128
-
-/*
- * If greater than 0, records larger than or equal to N bytes will be stored
- * in an alternate format that improves the reading and updating speed of large
- * records.
- */
-#ifndef BDBSQL_LARGE_RECORD_OPTIMIZATION
-# define BDBSQL_LARGE_RECORD_OPTIMIZATION 0
-#endif
 
 /*
  * The default size of the Berkeley DB environment's logging area, in
@@ -130,7 +94,7 @@ typedef struct {
 } CACHED_DB;
 
 typedef struct {
-	u32	cache;
+	int32_t cache;
 	int64_t min_val;
 	int64_t max_val;
 	int64_t start_val;
@@ -194,7 +158,6 @@ typedef enum { DB_STORE_NAMED, DB_STORE_TMP, DB_STORE_INMEM } storage_mode_t;
 typedef enum { TRANS_NONE, TRANS_READ, TRANS_WRITE } txn_mode_t;
 typedef enum { LOCKMODE_NONE, LOCKMODE_READ, LOCKMODE_WRITE } lock_mode_t;
 typedef enum { NO_LSN_RESET, LSN_RESET_FILE } lsn_reset_t;
-typedef enum { BDBSQL_REP_CLIENT, BDBSQL_REP_MASTER, BDBSQL_REP_UNKNOWN } rep_site_type_t;
 
 /* Declarations for functions that are shared by adapter source files. */
 int btreeBeginTransInternal(Btree *p, int wrflag);
@@ -241,8 +204,6 @@ int unsetRepVerboseFile(BtShared *pBt, DB_ENV *dbenv, char **msg);
 void *getThreadID(sqlite3 *db);
 /* Checks if the thread id item identifies the current thread. */
 int isCurrentThread(void *tid);
-void btreeHandleDbError(
-    const DB_ENV *dbenv, const char *errpfx, const char *msg);
 
 #define	CLEAR_PWD(pBt)	do {						\
 	memset((pBt)->encrypt_pwd, 0xff, (pBt)->encrypt_pwd_len);	\
@@ -278,7 +239,6 @@ struct BtShared {
 	char *orig_name;
 	char *err_file;
 	char *err_msg;
-	char *master_address; /* Address of the replication master. */
 	u_int8_t fileid[DB_FILE_ID_LEN];
 	char *encrypt_pwd;
 	lsn_reset_t lsn_reset;
@@ -321,9 +281,6 @@ struct BtShared {
 	u_int32_t logFileSize; /* In bytes */
 	u_int32_t database_existed; /* Did the database file exist on open. */
 	u_int32_t read_txn_flags; /* Flags passed to the read transaction. */
-	/* Records >= blob_threshold stored as blob files.*/
-	u_int32_t blob_threshold;
-	u8 blobs_enabled; /* Whether this database can support blobs. */
 	u8 autoVacuum; /* Is auto-vacuum enabled? */
 	u8 incrVacuum; /* Is incremental vacuum enabled? */
 	u8 resultsBuffer; /* Query results are stored in a in-memory buffer */
@@ -343,9 +300,6 @@ struct BtShared {
 	int repStarted; /* Replication is configured and started. */
 	int repForceRecover; /* Force recovery on next open environment. */
 	int single_process; /* If non-zero, keep all environment on the heap. */
-	rep_site_type_t repRole; /* Whether this site is a master, client, unknown. */
-	u_int32_t permFailures; /* Number of perm failures. */
-	char *stat_filename; /* File to which statistics are printed. */
 };
 
 struct BtCursor {
@@ -365,7 +319,6 @@ struct BtCursor {
 	DBT key, data, index;
 	i64 nKey;
 	u8 indexKeyBuf[CURSOR_BUFSIZE];
-	u8 hints;
 	DBT multiData;
 	void *multiGetPtr, *multiPutPtr;
 	void *threadID;
@@ -425,12 +378,7 @@ typedef enum {
 	LOG_VERBOSE, LOG_DEBUG, LOG_NORMAL, LOG_RELEASE, LOG_NONE
 } loglevel_t;
 
-/*
- * The Makefile can override this default; e.g., -DCURRENT_LOG_LEVEL=LOG_VERBOSE
- */
-#ifndef CURRENT_LOG_LEVEL
-#define	CURRENT_LOG_LEVEL	LOG_RELEASE
-#endif
+#define	CURRENT_LOG_LEVEL LOG_RELEASE
 
 #ifdef NDEBUG
 #define	log_msg(...)

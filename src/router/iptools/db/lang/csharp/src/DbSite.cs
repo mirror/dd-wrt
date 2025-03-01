@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -59,7 +59,7 @@ namespace BerkeleyDB {
         /// <remarks>
         /// A remote site may be a helper site when the local site first joins
         /// the replication group. Once the local site has been established as
-        /// a member of the group, this configuration setting is ignored. 
+        /// a member of the group, this config setting is ignored. 
         /// </remarks>
         public bool Helper {
             get {
@@ -78,7 +78,7 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// Specify the site in a legacy group. It would be considered as part
-        /// of an existing group, upgrading from a previous version of Berkeley DB. All
+        /// of an existing group, upgrading from a previous version of BDB. All
         /// sites in the legacy group must specify this for themselves (the 
         /// local site) and for all other sites initially in the group. 
         /// </remarks>
@@ -95,7 +95,7 @@ namespace BerkeleyDB {
         }
 
         /// <summary>
-        /// Whether it is a local site.
+        /// Whether it is local site.
         /// </summary>
         public bool LocalSite {
             get {
@@ -110,7 +110,7 @@ namespace BerkeleyDB {
         }
 
         /// <summary>
-        /// Whether the site is peer to a local site. 
+        /// Whether the site is peer to local site. 
         /// </summary>
         /// <remarks>
         /// A peer site may be used as a target for "client-to-client" 
@@ -154,7 +154,7 @@ namespace BerkeleyDB {
 
         /// <summary>
         /// Release the resources held by this object, and close the site if
-        /// it is still open.
+        /// it's still open.
         /// </summary>
         public void Dispose() {
             if (isOpen)

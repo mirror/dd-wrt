@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -33,9 +33,9 @@ proc sdb018 {method {nentries 100} args } {
 	# If we are given an env, then skip this test.  It needs its own.
 	if { $eindex != -1 } {
 		incr eindex
-		set env [lindex $args $eindex]
-		puts "Subdb018 skipping for env $env"
-		return
+	        set env [lindex $args $eindex]
+	        puts "Subdb016 skipping for env $env"
+	        return
         }
 
 	# In-memory dbs never go to disk, so we can't do checksumming.
@@ -49,17 +49,12 @@ proc sdb018 {method {nentries 100} args } {
 	berkdb srand $rand_init
 
 	foreach opt {" -dup" " -dupsort"} {
-		append args $opt
-		if { [lsearch $args "-compress"] != -1 && $opt == " -dup" } {
-			puts "\tSubdb018: skip $opt loop with -compress."
-			continue
-		}
 		env_cleanup $testdir
 
 		set cache [expr 1024 * 1024 * 10]
 		set env [berkdb_env -create -home $testdir \
 		    -cachesize "0 $cache 1" ]
-
+		append args $opt
 		set oargs $args
 		append oargs " -env $env"
 

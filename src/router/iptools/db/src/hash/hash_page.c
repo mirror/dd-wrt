@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994
@@ -129,7 +129,7 @@ recheck:
 		/* Fetch next page. */
 		if (NEXT_PGNO(hcp->page) == PGNO_INVALID) {
 			F_SET(hcp, H_NOMORE);
-			return (DBC_ERR(dbc, DB_NOTFOUND));
+			return (DB_NOTFOUND);
 		}
 		next_pgno = NEXT_PGNO(hcp->page);
 		hcp->indx = 0;
@@ -344,7 +344,7 @@ __ham_item_prev(dbc, mode, pgnop)
 		if (hcp->pgno == PGNO_INVALID) {
 			/* Beginning of bucket. */
 			F_SET(hcp, H_NOMORE);
-			return (DBC_ERR(dbc, DB_NOTFOUND));
+			return (DB_NOTFOUND);
 		} else if ((ret =
 		    __ham_next_cpage(dbc, hcp->pgno)) != 0)
 			return (ret);
@@ -371,7 +371,7 @@ __ham_item_prev(dbc, mode, pgnop)
 		if (hcp->indx == 0) {
 			/* Bucket was empty. */
 			F_SET(hcp, H_NOMORE);
-			return (DBC_ERR(dbc, DB_NOTFOUND));
+			return (DB_NOTFOUND);
 		}
 	}
 
@@ -497,8 +497,7 @@ __ham_insertpair(dbc, p, indxp, key_dbt, data_dbt, key_type, data_type)
 	inp = P_INP(dbp, p);
 	ksize = (key_type == H_OFFPAGE) ?
 	    key_dbt->size : HKEYDATA_SIZE(key_dbt->size);
-	dsize = (data_type == H_OFFPAGE ||
-	    data_type == H_OFFDUP || data_type == H_BLOB) ?
+	dsize = (data_type == H_OFFPAGE || data_type == H_OFFDUP) ?
 	    data_dbt->size : HKEYDATA_SIZE(data_dbt->size);
 	increase = ksize + dsize;
 
@@ -580,8 +579,7 @@ __ham_insertpair(dbc, p, indxp, key_dbt, data_dbt, key_type, data_type)
 	else
 		PUT_HKEYDATA(P_ENTRY(dbp, p, indx), key_dbt->data,
 		    key_dbt->size, key_type);
-	if (data_type == H_BLOB ||
-	    data_type == H_OFFPAGE || data_type == H_OFFDUP)
+	if (data_type == H_OFFPAGE || data_type == H_OFFDUP)
 		memcpy(P_ENTRY(dbp, p, indx+1), data_dbt->data,
 		    data_dbt->size);
 	else
@@ -620,8 +618,6 @@ __ham_getindex(dbc, p, key, key_type, match, indx)
 {
 	/* Since all entries are key/data pairs. */
 	DB_ASSERT(dbc->env, NUM_ENT(p)%2 == 0 );
-	/* Blob files can only be stored as data items. */
-	DB_ASSERT(dbc->env, key_type != H_BLOB );
 
 	/* Support pre 4.6 unsorted hash pages. */
 	if (p->type == P_HASH_UNSORTED)
@@ -676,7 +672,7 @@ __ham_getindex_unsorted(dbc, p, key, match, indx)
 				memcpy(&pgno,
 				    HOFFPAGE_PGNO(hk), sizeof(db_pgno_t));
 				if ((ret = __db_moff(dbc, key, pgno, tlen,
-				    t->h_compare, &res, NULL)) != 0)
+				    t->h_compare, &res)) != 0)
 					return (ret);
 			}
 			break;
@@ -685,7 +681,7 @@ __ham_getindex_unsorted(dbc, p, key, match, indx)
 				DB_INIT_DBT(pg_dbt,
 				    HKEYDATA_DATA(hk), key->size);
 				if (t->h_compare(
-				    dbp, key, &pg_dbt, NULL) != 0)
+				    dbp, key, &pg_dbt) != 0)
 					break;
 			} else if (key->size ==
 			    LEN_HKEY(dbp, p, dbp->pgsize, i))
@@ -788,7 +784,7 @@ __ham_getindex_sorted(dbc, p, key, key_type, match, indxp)
 				(void)__ua_memcpy(&off_pgno,
 				    HOFFPAGE_PGNO(offp), sizeof(db_pgno_t));
 				if ((ret = __db_moff(dbc, key, off_pgno,
-				    itemlen, t->h_compare, &res, NULL)) != 0)
+				    itemlen, t->h_compare, &res)) != 0)
 					return (ret);
 			}
 		} else {
@@ -803,7 +799,7 @@ __ham_getindex_sorted(dbc, p, key, key_type, match, indxp)
 				(void)__ua_memcpy(&off_len, HOFFPAGE_TLEN(offp),
 				    sizeof(u_int32_t));
 				if ((ret = __db_moff(dbc, &tmp_dbt, off_pgno,
-				    off_len, t->h_compare, &res, NULL)) != 0)
+				    off_len, t->h_compare, &res)) != 0)
 					return (ret);
 				/*
 				 * Since we switched the key/match parameters
@@ -814,7 +810,7 @@ __ham_getindex_sorted(dbc, p, key, key_type, match, indxp)
 			} else if (t->h_compare != NULL) {
 				/* Case 4, with a user comparison func */
 				DB_INIT_DBT(tmp_dbt, data, itemlen);
-				res = t->h_compare(dbp, key, &tmp_dbt, NULL);
+				res = t->h_compare(dbp, key, &tmp_dbt);
 			} else {
 				/* Case 4, without a user comparison func */
 				if ((res = memcmp(key->data, data,
@@ -903,8 +899,8 @@ __ham_verify_sorted_page (dbc, p)
 			    sizeof(u_int32_t));
 			memcpy(&tpgno, HOFFPAGE_PGNO(H_PAIRKEY(dbp, p, i-2)),
 			    sizeof(db_pgno_t));
-			if ((ret = __db_moff(dbc, &curr_dbt,
-			    tpgno, tlen, t->h_compare, &res, NULL)) != 0)
+			if ((ret = __db_moff(dbc,
+			    &curr_dbt, tpgno, tlen, t->h_compare, &res)) != 0)
 				return (ret);
 		} else if (HPAGE_TYPE(dbp, p, i) == H_OFFPAGE) {
 			memset(&prev_dbt, 0, sizeof(prev_dbt));
@@ -914,8 +910,8 @@ __ham_verify_sorted_page (dbc, p)
 			    sizeof(u_int32_t));
 			memcpy(&tpgno, HOFFPAGE_PGNO(H_PAIRKEY(dbp, p, i)),
 			    sizeof(db_pgno_t));
-			if ((ret = __db_moff(dbc, &prev_dbt, tpgno, tlen,
-			    t->h_compare, &res, NULL)) != 0)
+			if ((ret = __db_moff(dbc,
+			    &prev_dbt, tpgno, tlen, t->h_compare, &res)) != 0)
 				return (ret);
 		} else
 			res = memcmp(prev, curr, min(curr_len, prev_len));
@@ -1051,11 +1047,9 @@ __ham_del_pair(dbc, flags, ppg)
 	DBT data_dbt, key_dbt;
 	DB_LSN new_lsn, *n_lsn, tmp_lsn;
 	DB_MPOOLFILE *mpf;
-	HBLOB hblob;
 	HASH_CURSOR *hcp;
 	PAGE *n_pagep, *nn_pagep, *p, *p_pagep;
 	db_ham_mode op;
-	db_seq_t blob_id;
 	db_indx_t ndx;
 	db_pgno_t chg_pgno, pgno, tmp_pgno;
 	u_int32_t data_type, key_type, order;
@@ -1073,8 +1067,6 @@ __ham_del_pair(dbc, flags, ppg)
 	    DB_MPOOL_CREATE | DB_MPOOL_DIRTY, &hcp->page)) != 0)
 		return (ret);
 	p = hcp->page;
-	key_type = HPAGE_PTYPE(H_PAIRKEY(dbp, p, ndx));
-	data_type = HPAGE_PTYPE(H_PAIRDATA(dbp, p, ndx));
 
 	/*
 	 * We optimize for the normal case which is when neither the key nor
@@ -1083,7 +1075,8 @@ __ham_del_pair(dbc, flags, ppg)
 	 * to remove the big item and then update the page to remove the
 	 * entry referring to the big item.
 	 */
-	if (!LF_ISSET(HAM_DEL_IGNORE_OFFPAGE) && key_type == H_OFFPAGE) {
+	if (!LF_ISSET(HAM_DEL_IGNORE_OFFPAGE) &&
+	    HPAGE_PTYPE(H_PAIRKEY(dbp, p, ndx)) == H_OFFPAGE) {
 		memcpy(&pgno, HOFFPAGE_PGNO(P_ENTRY(dbp, p, H_KEYINDEX(ndx))),
 		    sizeof(db_pgno_t));
 		ret = __db_doff(dbc, pgno);
@@ -1091,13 +1084,7 @@ __ham_del_pair(dbc, flags, ppg)
 		ret = 0;
 
 	if (!LF_ISSET(HAM_DEL_IGNORE_OFFPAGE) && ret == 0)
-		switch (data_type) {
-		case H_BLOB:
-			memcpy(&hblob,
-			    P_ENTRY(dbp, p, H_DATAINDEX(ndx)), HBLOB_SIZE);
-			blob_id = (db_seq_t)hblob.id;
-			ret = __blob_del(dbc, blob_id);
-			break;
+		switch (HPAGE_PTYPE(H_PAIRDATA(dbp, p, ndx))) {
 		case H_OFFPAGE:
 			memcpy(&pgno,
 			    HOFFPAGE_PGNO(P_ENTRY(dbp, p, H_DATAINDEX(ndx))),
@@ -1124,7 +1111,7 @@ __ham_del_pair(dbc, flags, ppg)
 	/* Now log the delete off this page. */
 	if (DBC_LOGGING(dbc)) {
 		hk = H_PAIRKEY(dbp, hcp->page, ndx);
-		if (key_type == H_OFFPAGE) {
+		if ((key_type = HPAGE_PTYPE(hk)) == H_OFFPAGE) {
 			key_dbt.data = hk;
 			key_dbt.size = HOFFPAGE_SIZE;
 		} else {
@@ -1133,12 +1120,9 @@ __ham_del_pair(dbc, flags, ppg)
 			    LEN_HKEY(dbp, hcp->page, dbp->pgsize, ndx);
 		}
 		hk = H_PAIRDATA(dbp, hcp->page, ndx);
-		if (data_type == H_OFFPAGE) {
+		if ((data_type = HPAGE_PTYPE(hk)) == H_OFFPAGE) {
 			data_dbt.data = hk;
 			data_dbt.size = HOFFPAGE_SIZE;
-		} else if (data_type == H_BLOB) {
-			data_dbt.data = hk;
-			data_dbt.size = HBLOB_SIZE;
 		} else if (data_type == H_OFFDUP) {
 			data_dbt.data = hk;
 			data_dbt.size = HOFFDUP_SIZE;
@@ -1176,7 +1160,7 @@ __ham_del_pair(dbc, flags, ppg)
 	 * If we are locking, we will not maintain this, because it is
 	 * a hot spot.
 	 *
-	 * Note:
+	 * XXX
 	 * Perhaps we can retain incremental numbers and apply them later.
 	 */
 	if (!STD_LOCKING(dbc)) {
@@ -1420,8 +1404,6 @@ __ham_replpair(dbc, dbt, newtype)
 	 * unless it is an append, when we extend the offpage item, and
 	 * update the HOFFPAGE item on the current page to have the new size
 	 * via a delete/add.
-	 *
-	 * Updating a record won't cause it to become a blob file or vice versa.
 	 */
 	dbp = dbc->dbp;
 	env = dbp->env;
@@ -2482,18 +2464,15 @@ __ham_add_el(dbc, key, val, type)
 	const DBT *pkey, *pdata;
 	DB *dbp;
 	DBT key_dbt, data_dbt;
-	DB_LSN blob_lsn, new_lsn;
+	DB_LSN new_lsn;
 	DB_MPOOLFILE *mpf;
 	HASH_CURSOR *hcp;
 	HOFFPAGE doff, koff;
-	HBLOB dblob;
 	PAGE *new_pagep;
 	db_pgno_t next_pgno, pgno;
-	off_t file_size;
-	db_seq_t blob_id;
 	u_int32_t data_size, data_type, key_size, key_type;
 	u_int32_t pages, pagespace, pairsize;
-	int do_expand, is_keybig, match, ret;
+	int do_expand, is_keybig, is_databig, match, ret;
 
 	dbp = dbc->dbp;
 	mpf = dbp->mpf;
@@ -2506,33 +2485,14 @@ __ham_add_el(dbc, key, val, type)
 	    dbc->thread_info, dbc->txn, DB_MPOOL_CREATE, &hcp->page)) != 0)
 		return (ret);
 
-	/*
-	 * Key is either:
-	 * - On page
-	 * - On overflow page(s)
-	 */
 	key_size = HKEYDATA_PSIZE(key->size);
+	data_size = HKEYDATA_PSIZE(val->size);
 	is_keybig = ISBIG(hcp, key->size);
+	is_databig = ISBIG(hcp, val->size);
 	if (is_keybig)
 		key_size = HOFFPAGE_PSIZE;
-	/*
-	 * Data is either:
-	 * - On page (H_KEYDATA or H_DUPLICATE)
-	 * - On overflow page(s)
-	 * - In a blob file
-	 */
-	data_type =
-	    (dbp->blob_threshold && (val->size >= dbp->blob_threshold ||
-	    F_ISSET(val, DB_DBT_BLOB))) ?
-	    H_BLOB : (ISBIG(hcp, val->size)) ? H_OFFPAGE : H_KEYDATA;
-	if (data_type == H_KEYDATA || data_type == H_DUPLICATE)
-		data_size = HKEYDATA_PSIZE(val->size);
-	else if (data_type == H_OFFPAGE)
+	if (is_databig)
 		data_size = HOFFPAGE_PSIZE;
-	else { /* H_BLOB */
-		DB_ASSERT(dbp->env, data_type == H_BLOB);
-		data_size = HBLOB_PSIZE;
-	}
 
 	pairsize = key_size + data_size;
 
@@ -2576,17 +2536,17 @@ __ham_add_el(dbc, key, val, type)
 	 * run out of file space before updating the key or data.
 	 */
 	if (dbc->txn == NULL &&
-	    dbp->mpf->mfp->maxpgno != 0 &&
-	    (is_keybig || data_type == H_OFFPAGE)) {
+	    dbp->mpf->mfp->maxpgno != 0 && (is_keybig || is_databig)) {
 		pagespace = P_MAXSPACE(dbp, dbp->pgsize);
 		pages = 0;
-		if (data_type == H_OFFPAGE)
+		if (is_databig)
 			pages = ((data_size - 1) / pagespace) + 1;
-		if (is_keybig)
+		if (is_keybig) {
 			pages += ((key->size - 1) / pagespace) + 1;
-		if (pages >
-		    (dbp->mpf->mfp->maxpgno - dbp->mpf->mfp->last_pgno))
-			return (__db_space_err(dbp));
+			if (pages >
+			    (dbp->mpf->mfp->maxpgno - dbp->mpf->mfp->last_pgno))
+				return (__db_space_err(dbp));
+		}
 	}
 
 	if ((ret = __memp_dirty(mpf,
@@ -2615,7 +2575,7 @@ __ham_add_el(dbc, key, val, type)
 		key_type = H_KEYDATA;
 	}
 
-	if (data_type == H_OFFPAGE) {
+	if (is_databig) {
 		doff.type = H_OFFPAGE;
 		UMRW_SET(doff.unused[0]);
 		UMRW_SET(doff.unused[1]);
@@ -2627,22 +2587,6 @@ __ham_add_el(dbc, key, val, type)
 		data_dbt.size = sizeof(doff);
 		pdata = &data_dbt;
 		data_type = H_OFFPAGE;
-	} else if (data_type == H_BLOB) {
-		memset(&dblob, 0, HBLOB_SIZE);
-		dblob.type = H_BLOB;
-		blob_id = 0;
-		file_size = 0;
-		if ((ret = __blob_put(
-		    dbc, (DBT *)val, &blob_id, &file_size, &blob_lsn)) != 0)
-			return (ret);
-		SET_BLOB_ID(&dblob, blob_id, HBLOB);
-		SET_BLOB_SIZE(&dblob, file_size, HBLOB);
-		SET_BLOB_FILE_ID(&dblob, dbp->blob_file_id, HBLOB);
-		SET_BLOB_SDB_ID(&dblob, dbp->blob_sdb_id, HBLOB);
-		data_dbt.data = &dblob;
-		data_dbt.size = sizeof(dblob);
-		pdata = &data_dbt;
-		data_type = H_BLOB;
 	} else {
 		pdata = val;
 		data_type = type;
@@ -2729,7 +2673,7 @@ __ham_add_el(dbc, key, val, type)
 /*
  * Special insert pair call -- copies a key/data pair from one page to
  * another.  Works for all types of hash entries (H_OFFPAGE, H_KEYDATA,
- * H_DUPLICATE, H_OFFDUP, H_BLOB).  Since we log splits at a high level, we
+ * H_DUPLICATE, H_OFFDUP).  Since we log splits at a high level, we
  * do not need to log them here.
  *
  * dest_indx is an optional parameter, it serves several purposes:
@@ -2771,7 +2715,7 @@ __ham_copypair(dbc, src_page, src_ndx, dest_page, dest_indx, log)
 		tkey.data = HKEYDATA_DATA(P_ENTRY(dbp, src_page, kindx));
 		tkey.size = LEN_HKEYDATA(dbp, src_page, dbp->pgsize, kindx);
 	}
-	if (dtype == H_OFFPAGE || dtype == H_OFFDUP || dtype == H_BLOB) {
+	if (dtype == H_OFFPAGE || dtype == H_OFFDUP) {
 		tdata.data = P_ENTRY(dbp, src_page, dindx);
 		tdata.size = LEN_HITEM(dbp, src_page, dbp->pgsize, dindx);
 	} else {

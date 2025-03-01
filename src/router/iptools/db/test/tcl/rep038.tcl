@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2004, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -93,25 +93,6 @@ proc rep038_sub { method niter tnum logset recargs testopt largs } {
 		set repmemargs "-rep_inmem_files "
 	}
 
-	set blobargs ""
-	set cacheargs ""
-	set mutexargs ""
-	set lockargs ""
-	if { [can_support_blobs $method $largs] == 1 } {
-		set blobargs "-blob_threshold 1024"
-		# This test builds up a big enough backlog of log records
-		# in the __db.rep.db replication file to require additional
-		# cache space when it is in-memory and blobs are in use.
-		if { $repfiles_in_memory } {
-			set cachesize [expr 1024 * 1024]
-			set cacheargs "-cachesize { 0 $cachesize 1 }"
-		}
-		# The use of blobs can also exhaust the default mutex and
-		# lock allocations for some access methods, particularly heap.
-		set mutexargs "-mutex_set_max 40000"
-		set lockargs "-lock_max_objects 10000 -lock_max_locks 10000"
-	}
-
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -142,8 +123,7 @@ proc rep038_sub { method niter tnum logset recargs testopt largs } {
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs $repmemargs \
 	    $m_logargs -log_max $log_max -errpfx MASTER $verbargs \
-	    -home $masterdir $blobargs $cacheargs $mutexargs $lockargs \
-	    -rep_transport \[list 1 replsend\]"
+	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs -rep_master]
 	$masterenv rep_limit 0 0
 
@@ -187,15 +167,8 @@ proc rep038_sub { method niter tnum logset recargs testopt largs } {
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $c_txnargs $repmemargs \
 	    $c_logargs -log_max $log_max -errpfx CLIENT $verbargs \
-	    -home $clientdir $blobargs $cacheargs $mutexargs $lockargs \
-	    -rep_transport \[list 2 replsend\]"
+	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
-
-	# Increase the rerequest delay for blob tests with in memory
-	# rep files to prevent a flood of rerequest messages.
-	if { $repfiles_in_memory && $blobargs != "" } {
-		$clientenv rep_request 2000000 8000000
-	}
 	$clientenv rep_limit 0 0
 	set envlist "{$masterenv 1} {$clientenv 2}"
 	#
@@ -260,7 +233,6 @@ proc rep038_sub { method niter tnum logset recargs testopt largs } {
 		}
 		incr i
 	}
-	process_msgs $envlist
 	set cdb [eval {berkdb_open_noerr} -env $clientenv -auto_commit\
 	    -create -mode 0644 $omethod $dbargs $testfile]
 	error_check_good reptest_db [is_valid_db $cdb] TRUE

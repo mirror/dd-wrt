@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1997, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -28,45 +28,34 @@ public class ReplicationManagerSiteInfo
             
     /** 
     Create a ReplicationManagerSiteInfo with the given information, isConnected defaults to false.
-    @param hostAddr the host address
-    @param eid the environment ID
     */
     public ReplicationManagerSiteInfo(ReplicationHostAddress hostAddr, int eid)
     {
-	this(hostAddr, eid, false, false, false);
+	this(hostAddr, eid, false, false);
     }
 	
     /** 
     Create a ReplicationManagerSiteInfo with the given information.
-    @param hostAddr the host address
-    @param eid the environment ID
-    @param isConnected is connected
     */
     public ReplicationManagerSiteInfo(ReplicationHostAddress hostAddr, int eid, boolean isConnected)
     {
-	this(hostAddr, eid, isConnected, false, false);
+	this(hostAddr, eid, isConnected, false);
     }
 
     /** 
     Create a ReplicationManagerSiteInfo with the given information.
-    @param hostAddr the host address
-    @param eid the environment ID
-    @param isConnected is connected
-    @param isPeer is peer
-    @param isView is view
     */
-    public ReplicationManagerSiteInfo(ReplicationHostAddress hostAddr, int eid, boolean isConnected, boolean isPeer, boolean isView)
+    public ReplicationManagerSiteInfo(ReplicationHostAddress hostAddr, int eid, boolean isConnected, boolean isPeer)
     {
-	this.addr = hostAddr;
+        this.addr = hostAddr;
 	this.eid = eid;
 	this.status = isConnected ? DbConstants.DB_REPMGR_CONNECTED : 0;
 	this.flags = isPeer ? DbConstants.DB_REPMGR_ISPEER : 0;
-	this.flags |= isView ? DbConstants.DB_REPMGR_ISVIEW : 0;
     }
 
     /**
      * The status of the replication site's connection.
-     * @return the status of the replication site's connection
+     *
      */
     public ReplicationManagerConnectionStatus getConnectionStatus() {
         return ReplicationManagerConnectionStatus.fromInt(this.status);
@@ -76,7 +65,6 @@ public class ReplicationManagerSiteInfo
      * The replication site is connected.
      *
      * @deprecated  Replaced by {@link #getConnectionStatus()}
-     * @return if the replication site is connected
      */
     @Deprecated
     public boolean isConnected() {
@@ -85,18 +73,9 @@ public class ReplicationManagerSiteInfo
 
     /**
     The replication site is a peer.
-    @return if the replication site is a peer
     */ 
     public boolean isPeer() {
 	return ((this.flags & DbConstants.DB_REPMGR_ISPEER) != 0);
-    }
-
-    /**
-    The replication site is a view.
-    @return if the replication site is a view
-    */
-    public boolean isView() {
-        return ((this.flags & DbConstants.DB_REPMGR_ISVIEW) != 0);
     }
     
 }

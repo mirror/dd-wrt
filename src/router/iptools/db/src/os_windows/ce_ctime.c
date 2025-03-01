@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -25,8 +25,8 @@ __os_ctime(tod, time_buf)
 	__int64 i64_tod;
 	struct _FILETIME file_tod, file_loc;
 	struct _SYSTEMTIME sys_loc;
-	static const __int64 SECS_BETWEEN_EPOCHS = 11644473600;
-	static const __int64 SECS_TO_100NS = 10000000; /* 10^7 */
+static const __int64 SECS_BETWEEN_EPOCHS = 11644473600;
+static const __int64 SECS_TO_100NS = 10000000; /* 10^7 */
 
 	strcpy(time_buf, "Thu Jan 01 00:00:00 1970");
 	time_buf[CTIME_BUFLEN - 1] = '\0';

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -19,11 +19,11 @@ namespace BerkeleyDB {
         ///</summary>
         public const int DB_BUFFER_SMALL = DbConstants.DB_BUFFER_SMALL;
         ///<summary>
-        /// "Null" return from secondary callback. 
+        /// "Null" return from 2ndary callbk. 
         ///</summary>
         public const int DB_DONOTINDEX = DbConstants.DB_DONOTINDEX;
         ///<summary>
-        /// A foreign database constraint triggered. 
+        /// A foreign db constraint triggered. 
         ///</summary>
         public const int DB_FOREIGN_CONFLICT = DbConstants.DB_FOREIGN_CONFLICT;
         /// <summary>
@@ -50,10 +50,6 @@ namespace BerkeleyDB {
         /// In-memory log buffer full. 
         ///</summary>
         public const int DB_LOG_BUFFER_FULL = DbConstants.DB_LOG_BUFFER_FULL;
-        ///<summary>
-        /// Checksum mismatch detected.
-        ///</summary>
-        public const int DB_META_CHKSUM_FAIL = DbConstants.DB_META_CHKSUM_FAIL;
         ///<summary>
         /// Server panic return. 
         ///</summary>
@@ -83,7 +79,7 @@ namespace BerkeleyDB {
         ///</summary>
         public const int DB_REP_HOLDELECTION = DbConstants.DB_REP_HOLDELECTION;
         ///<summary>
-        /// This message should be ignored.
+        /// This msg should be ignored.
         ///</summary>
         public const int DB_REP_IGNORE = DbConstants.DB_REP_IGNORE;
         ///<summary>

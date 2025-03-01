@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -68,6 +68,7 @@ import com.sleepycat.persist.model.PrimaryKey;
  *
  * {@code PrimaryIndex<Long, Employee>} primaryIndex =
  *     store.getPrimaryIndex(Long.class, Employee.class);</pre>
+ * </pre>
  *
  * <p>Note that {@code Long.class} is passed as the primary key class, but the
  * primary key field has the primitive type {@code long}.  When a primitive
@@ -105,7 +106,7 @@ import com.sleepycat.persist.model.PrimaryKey;
  * <p>The {@link #putNoOverwrite} method can be used to ensure that an existing
  * entity is not overwritten.  {@link #putNoOverwrite} returns true if the
  * entity was inserted, or false if an existing entity exists and no action was
- * taken.  For example:</p>
+ * taken.  For example:<p>
  *
  * <pre class="code">
  * boolean inserted;
@@ -249,6 +250,15 @@ public class PrimaryIndex<PK, E> extends BasicIndex<PK, E> {
             keyAssigner =
                 ((PersistEntityBinding) entityBinding).getKeyAssigner();
         }
+    }
+
+    /**
+     * Returns the underlying database for this index.
+     *
+     * @return the database.
+     */
+    public Database getDatabase() {
+        return db;
     }
 
     /**
@@ -430,7 +440,6 @@ public class PrimaryIndex<PK, E> extends BasicIndex<PK, E> {
     public void putNoReturn(Transaction txn, E entity)
         throws DatabaseException {
 
-
         DatabaseEntry keyEntry = new DatabaseEntry();
         DatabaseEntry dataEntry = new DatabaseEntry();
         assignKey(entity, keyEntry);
@@ -485,7 +494,6 @@ public class PrimaryIndex<PK, E> extends BasicIndex<PK, E> {
     public boolean putNoOverwrite(Transaction txn, E entity)
         throws DatabaseException {
 
-
         DatabaseEntry keyEntry = new DatabaseEntry();
         DatabaseEntry dataEntry = new DatabaseEntry();
         assignKey(entity, keyEntry);
@@ -495,7 +503,6 @@ public class PrimaryIndex<PK, E> extends BasicIndex<PK, E> {
 
         return (status == OperationStatus.SUCCESS);
     }
-
 
     /**
      * If we are assigning primary keys from a sequence, assign the next key
@@ -527,7 +534,6 @@ public class PrimaryIndex<PK, E> extends BasicIndex<PK, E> {
     public E get(Transaction txn, PK key, LockMode lockMode)
         throws DatabaseException {
 
-
         DatabaseEntry keyEntry = new DatabaseEntry();
         DatabaseEntry dataEntry = new DatabaseEntry();
         keyBinding.objectToEntry(key, keyEntry);
@@ -535,21 +541,15 @@ public class PrimaryIndex<PK, E> extends BasicIndex<PK, E> {
         OperationStatus status = db.get(txn, keyEntry, dataEntry, lockMode);
 
         if (status == OperationStatus.SUCCESS) {
-            return makeEntity(key, keyEntry, dataEntry);
+            if (entityBinding instanceof PersistEntityBinding) {
+                return (E)((PersistEntityBinding) entityBinding).
+                           entryToObjectWithPriKey(key, dataEntry);
+            } else {
+                return entityBinding.entryToObject(keyEntry, dataEntry);
+            }
         } else {
             return null;
         }
-    }
-
-
-    private E makeEntity(PK key,
-                         DatabaseEntry keyEntry,
-                         DatabaseEntry dataEntry) {
-
-        return (entityBinding instanceof PersistEntityBinding) ?
-            (E)((PersistEntityBinding) entityBinding).
-                entryToObjectWithPriKey(key, dataEntry) :
-            entityBinding.entryToObject(keyEntry, dataEntry);
     }
 
     public Map<PK, E> map() {
@@ -564,6 +564,7 @@ public class PrimaryIndex<PK, E> extends BasicIndex<PK, E> {
     }
 
     /**
+     * @hidden
      * For internal use only.
      *
      * Used for obtaining the auto-commit txn config from the store, which

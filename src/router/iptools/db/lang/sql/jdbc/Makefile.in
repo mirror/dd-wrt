@@ -177,7 +177,7 @@ $(SQLITE3_A10N_O):	$(SQLITE3_A10N_C)
 	$(LIBTOOL) --mode=compile $(CC) -c $(CFLAGS) $(SQLITE3_A10N_C)
 
 libsqlite_jni.la:	sqlite_jni.lo $(SQLITE3_A10N_O)
-	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) -shrext $(JMODSUFFIX) -o libsqlite_jni.la \
+	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) -o libsqlite_jni.la \
 	    sqlite_jni.lo $(SQLITE3_A10N_O) -rpath $(NATIVE_LIB_DIR) \
 	    -module -avoid-version $(LIBS)
 
@@ -209,17 +209,11 @@ test3:	all
 	    $(JAVA_RUN) $(JAVA_FLAGS) -classpath sqlite.jar:$(CURDIR) \
 	    -DSQLite.library.path=$(CURDIR)/.libs test3
 
-testg:	all
-	$(JAVAC) -classpath sqlite.jar:$(CURDIR) $(JAVAC_FLAGS) testg.java
-	LD_LIBRARY_PATH="$$LD_LIBRARY_PATH:$(CURDIR)/.libs" \
-	    $(JAVA_RUN) $(JAVA_FLAGS) -classpath sqlite.jar:$(CURDIR) \
-	    -DSQLite.library.path=$(CURDIR)/.libs testg
-
 clean:
 	$(RM) SQLite/*.class SQLite/@JDBCVER@/*.class *.lo *.la *.o *~ \
 	    native/sqlite_jni.h native/mkconst \
 	    SQLite/Constants.java \
-	    test.class test3.class testg.class sqlite.jar conftest*
+	    test.class test3.class sqlite.jar conftest*
 	$(RM) -r .libs native/.libs META-INF
 
 distclean:	clean

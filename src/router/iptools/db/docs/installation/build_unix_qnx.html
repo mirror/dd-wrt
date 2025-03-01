@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,8 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="build_unix_macosx.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 7.  Building Berkeley DB for UNIX/POSIX
-    </th>
+          <th width="60%" align="center">Chapter 7. 
+		Building Berkeley DB for UNIX/POSIX
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="build_unix_sco.html">Next</a></td>
         </tr>
       </table>
@@ -43,111 +44,73 @@
             <span class="bold">
               <strong>To what versions of QNX has DB been ported?</strong>
             </span>
-            <p> 
-                Berkeley DB has been ported to the QNX Neutrino
-                technology which is commonly referred to as QNX RTP
-                (Real-Time Platform). Berkeley DB has not been ported
-                to earlier versions of QNX, such as QNX 4.25. 
-            </p>
+            <p>Berkeley DB has been ported to the QNX Neutrino technology which is commonly
+referred to as QNX RTP (Real-Time Platform).  Berkeley DB has not been
+ported to earlier versions of QNX, such as QNX 4.25.</p>
           </li>
           <li>
             <span class="bold">
-              <strong>Building Berkeley DB shared
-                libraries fails.</strong>
+              <strong>Building Berkeley DB shared libraries fails.</strong>
             </span>
-            <p>
-                The <code class="filename">/bin/sh</code> utility
-                distributed with some QNX releases drops core when
-                running the GNU libtool script (which is used to build
-                Berkeley DB shared libraries). There are two
-                workarounds for this problem: First, only build static
-                libraries. You can disable building shared libraries
-                by specifying the configuration flag when configuring
-                Berkeley DB.
-            </p>
-            <p> 
-                Second, build Berkeley DB using an alternate shell.
-                QNX distributions include an accessories disk with
-                additional tools. One of the included tools is the GNU
-                bash shell, which is able to run the libtool script.
-                To build Berkeley DB using an alternate shell, move
-                <code class="filename">/bin/sh</code> aside, link or copy
-                the alternate shell into that location, configure,
-                build and install Berkeley DB, and then replace the
-                original shell utility. 
-            </p>
+            <p>The <code class="filename">/bin/sh</code> utility distributed with some QNX releases drops
+core when running the GNU libtool script (which is used to build Berkeley DB
+shared libraries).  There are two workarounds for this problem: First,
+only build static libraries.  You can disable building shared libraries
+by specifying the  configuration flag when
+configuring Berkeley DB.</p>
+            <p>Second, build Berkeley DB using an alternate shell.  QNX distributions include
+an accessories disk with additional tools.  One of the included tools
+is the GNU bash shell, which is able to run the libtool script.  To
+build Berkeley DB using an alternate shell, move <code class="filename">/bin/sh</code> aside, link
+or copy the alternate shell into that location, configure, build and
+install Berkeley DB, and then replace the original shell utility.</p>
           </li>
           <li>
             <span class="bold">
-              <strong>Are there any QNX filesystem
-                issues?</strong>
+              <strong>Are there any QNX filesystem issues?</strong>
             </span>
-            <p>
-                Berkeley DB generates temporary files for use in
-                transactionally protected file system operations. Due
-                to the filename length limit of 48 characters in the
-                QNX filesystem, applications that are using
-                transactions should specify a database name that is at
-                most 43 characters.
-            </p>
+            <p>Berkeley DB generates temporary files for use in transactionally
+protected file system operations.  Due to the filename length limit of
+48 characters in the QNX filesystem, applications that are using
+transactions should specify a database name that is at most 43 characters.</p>
           </li>
           <li>
             <span class="bold">
-              <strong>What are the implications of QNX's
-                requirement to use <code class="literal">shm_open</code>(2) in
-                order to use <code class="literal">mmap</code>(2)?</strong>
+              <strong>What are the implications of QNX's requirement to use
+<code class="literal">shm_open</code>(2) in order to use <code class="literal">mmap</code>(2)?</strong>
             </span>
-            <p> 
-                QNX requires that files mapped with
-                <code class="literal">mmap</code>(2) be opened using
-                <code class="literal">shm_open</code>(2). There are other
-                places in addition to the environment shared memory
-                regions, where Berkeley DB tries to memory map files
-                if it can. 
-            </p>
-            <p> 
-                The memory pool subsystem normally attempts to use
-                <code class="literal">mmap</code>(2) even when using private
-                memory, as indicated by the <a href="../api_reference/C/envopen.html#envopen_DB_PRIVATE" class="olink">DB_PRIVATE</a> flag to
-                <a href="../api_reference/C/envopen.html" class="olink">DB_ENV-&gt;open()</a>. In the case of QNX, if an application is
-                using private memory, Berkeley DB will not attempt to
-                map the memory and will instead use the local cache.
-            </p>
+            <p>QNX requires that files mapped with <code class="literal">mmap</code>(2) be opened using
+<code class="literal">shm_open</code>(2).  There are other places in addition to the
+environment shared memory regions, where Berkeley DB tries to memory map files
+if it can.</p>
+            <p>The memory pool subsystem normally attempts to use <code class="literal">mmap</code>(2)
+even when using private memory, as indicated by the <a href="../api_reference/C/envopen.html#envopen_DB_PRIVATE" class="olink">DB_PRIVATE</a> flag
+to <a href="../api_reference/C/envopen.html" class="olink">DB_ENV-&gt;open()</a>.  In the case of QNX, if an application is
+using private memory, Berkeley DB will not attempt to map the memory and will
+instead use the local cache.</p>
           </li>
           <li>
             <span class="bold">
-              <strong>What are the implications of QNX's
-                mutex implementation using microkernel
-                resources?</strong>
+              <strong>What are the implications of QNX's mutex implementation using
+microkernel resources?</strong>
             </span>
-            <p>
-                On QNX, the primitives implementing mutexes consume
-                system resources. Therefore, if an application
-                unexpectedly fails, those resources could leak.
-                Berkeley DB solves this problem by always allocating
-                mutexes in the persistent shared memory regions. Then,
-                if an application fails, running recovery or
-                explicitly removing the database environment by
-                calling the <a href="../api_reference/C/envremove.html" class="olink">DB_ENV-&gt;remove()</a> method will allow Berkeley DB
-                to release those previously held mutex resources. If
-                an application specifies the <a href="../api_reference/C/envopen.html#envopen_DB_PRIVATE" class="olink">DB_PRIVATE</a> flag
-                (choosing not to use persistent shared memory), and
-                then fails, mutexes allocated in that private memory
-                may leak their underlying system resources. Therefore,
-                the <a href="../api_reference/C/envopen.html#envopen_DB_PRIVATE" class="olink">DB_PRIVATE</a> flag should be used with caution on
-                QNX. 
-            </p>
+            <p>On QNX, the primitives implementing mutexes consume system resources.
+Therefore, if an application unexpectedly fails, those resources could
+leak.  Berkeley DB solves this problem by always allocating mutexes in the
+persistent shared memory regions.  Then, if an application fails,
+running recovery or explicitly removing the database environment by
+calling the <a href="../api_reference/C/envremove.html" class="olink">DB_ENV-&gt;remove()</a> method will allow Berkeley DB to release those
+previously held mutex resources.  If an application specifies the
+<a href="../api_reference/C/envopen.html#envopen_DB_PRIVATE" class="olink">DB_PRIVATE</a> flag (choosing not to use persistent shared memory),
+and then fails, mutexes allocated in that private memory may leak their
+underlying system resources.  Therefore, the <a href="../api_reference/C/envopen.html#envopen_DB_PRIVATE" class="olink">DB_PRIVATE</a> flag
+should be used with caution on QNX.</p>
           </li>
           <li>
             <span class="bold">
-              <strong>The make clean command fails to
-                execute when building the Berkeley DB SQL
-                interface.</strong>
+              <strong>The make clean command fails to execute when building the Berkeley DB SQL interface.</strong>
             </span>
-            <p>
-                Remove the build directory manually to clean up and
-                proceed. 
-            </p>
+            <p>Remove the build directory manually to clean up and proceed. </p>
           </li>
         </ol>
       </div>

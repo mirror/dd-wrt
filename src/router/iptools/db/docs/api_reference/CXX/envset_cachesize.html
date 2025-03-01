@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -95,14 +95,6 @@ DbEnv::set_cachesize(u_int32_t gbytes, u_int32_t bytes, int ncache); </pre>
          not only operations performed using the specified <a class="link" href="env.html" title="Chapter 5.  The DbEnv Handle">DbEnv</a>  handle.
     </p>
       <p>
-        When used with sliced databases, the
-        <code class="methodname">DbEnv::set_cachesize()</code> method must be
-        called for each slice environment. That is, for each slice, there
-        is a sub-environment, and this method must be called on each such 
-        environment individually. Use <a class="xref" href="envget_slices.html" title="DbEnv::get_slices()">DbEnv::get_slices()</a> to retrieve an array
-        of slice environments.
-    </p>
-      <p>
          The <code class="methodname">DbEnv::set_cachesize()</code> method may be called at any time during
          the life of the application.
     </p>
@@ -120,7 +112,7 @@ DbEnv::set_cachesize(u_int32_t gbytes, u_int32_t bytes, int ncache); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670057903952"></a>Parameters</h3>
+              <h3 class="title"><a id="idp8798512"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -128,7 +120,7 @@ DbEnv::set_cachesize(u_int32_t gbytes, u_int32_t bytes, int ncache); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670057905200"></a>gbytes</h4>
+                <h4 class="title"><a id="idp8797864"></a>gbytes</h4>
               </div>
             </div>
           </div>
@@ -140,7 +132,7 @@ DbEnv::set_cachesize(u_int32_t gbytes, u_int32_t bytes, int ncache); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670057936256"></a>bytes</h4>
+                <h4 class="title"><a id="idp8788440"></a>bytes</h4>
               </div>
             </div>
           </div>
@@ -152,7 +144,7 @@ DbEnv::set_cachesize(u_int32_t gbytes, u_int32_t bytes, int ncache); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670057927088"></a>ncache</h4>
+                <h4 class="title"><a id="idp8784488"></a>ncache</h4>
               </div>
             </div>
           </div>
@@ -166,7 +158,7 @@ DbEnv::set_cachesize(u_int32_t gbytes, u_int32_t bytes, int ncache); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670057893616"></a>Errors</h3>
+              <h3 class="title"><a id="idp8788096"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -184,7 +176,7 @@ DbEnv::set_cachesize(u_int32_t gbytes, u_int32_t bytes, int ncache); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670057880000"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp8813032"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -198,7 +190,7 @@ DbEnv::set_cachesize(u_int32_t gbytes, u_int32_t bytes, int ncache); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670057881536"></a>Class</h3>
+              <h3 class="title"><a id="idp8810528"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -210,7 +202,7 @@ DbEnv::set_cachesize(u_int32_t gbytes, u_int32_t bytes, int ncache); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670057890224"></a>See Also</h3>
+              <h3 class="title"><a id="idp8806392"></a>See Also</h3>
             </div>
           </div>
         </div>

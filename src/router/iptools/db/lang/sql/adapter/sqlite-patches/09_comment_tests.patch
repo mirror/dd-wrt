@@ -12,47 +12,22 @@
  if {0==[sqlite3 -has-codec]} {
    do_test date-14.1 {
      execsql {
-@@ -528,6 +533,7 @@
+@@ -528,4 +533,5 @@
      } {1}
    }
  }
 +}
- 
- # Verify that multiple calls to date functions with 'now' return the
- # same answer.
---- test/incrblob.test
-+++ test/incrblob.test
-@@ -135,8 +135,8 @@
-       INSERT INTO blobs VALUES('one', $::str || randstr(500,500), 45);
-       COMMIT;
-     }
--    expr [file size test.db]/1024
--  } [expr 31 + $AutoVacuumMode]
-+  } {}
-+  
- 
-   ifcapable autovacuum {
-     do_test incrblob-2.$AutoVacuumMode.2 {
---- test/manydb.test
-+++ test/manydb.test
-@@ -67,6 +67,7 @@
- for {set i 0} {$i<$N} {incr i} {
-   do_test manydb-1.$i {
-     sqlite3 db$i $dbname($i)
-+    execsql { PRAGMA cache_size=20; } db$i
-     execsql {
-        CREATE TABLE t1(a,b);
-        BEGIN;
+ finish_test
 --- test/rollback.test
 +++ test/rollback.test
 @@ -88,8 +88,8 @@
        BEGIN;
        INSERT INTO t3 VALUES('hello world');
      }
--    forcecopy test.db testA.db
--    forcecopy test.db-journal testA.db-journal
-+    #forcecopy test.db testA.db
-+    #forcecopy test.db-journal testA.db-journal
+-    file copy -force test.db testA.db
+-    file copy -force test.db-journal testA.db-journal
++    #file copy -force test.db testA.db
++    #file copy -force test.db-journal testA.db-journal
      execsql {
        COMMIT;
      }
@@ -102,7 +77,7 @@
  
    # Open a handle on testA.db and use it to query the database. At one
    # point the first query would attempt a hot rollback, attempt to open
-@@ -127,6 +130,8 @@
+@@ -127,6 +127,8 @@
    # be opened. This is incorrect, it should simply delete the journal
    # file and proceed with the query.
    # 
@@ -111,24 +86,37 @@
    do_test rollback-2.2 {
      sqlite3 db2 testA.db
      execsql {
-@@ -146,5 +151,6 @@
+@@ -146,5 +148,6 @@
  
    db2 close
  }
 +}
  
  finish_test
+--- test/incrblob.test
++++ test/incrblob.test
+@@ -134,8 +134,8 @@
+       INSERT INTO blobs VALUES('one', $::str || randstr(500,500), 45);
+       COMMIT;
+     }
+-    expr [file size test.db]/1024
+-  } [expr 31 + $AutoVacuumMode]
++  } {}
++  
+ 
+   ifcapable autovacuum {
+     do_test incrblob-2.$AutoVacuumMode.2 {
 --- test/shared3.test
 +++ test/shared3.test
-@@ -102,7 +102,7 @@
+@@ -101,7 +101,7 @@
  
  db1 close
  db2 close
 -db3 close
 +#db3 close
  
- #-------------------------------------------------------------------------
- # At one point this was causing a faulty assert to fail.
+ sqlite3_enable_shared_cache $::enable_shared_cache
+ finish_test
 --- test/shared6.test
 +++ test/shared6.test
 @@ -42,8 +42,8 @@
@@ -142,3 +130,13 @@
  do_test shared6-1.2.2 {
    execsql { SELECT * FROM t1 } db1
  } {}
+--- test/manydb.test    
++++ test/manydb.test    
+@@ -67,6 +67,7 @@
+ for {set i 0} {$i<$N} {incr i} {
+   do_test manydb-1.$i {
+     sqlite3 db$i $dbname($i)
++    execsql { PRAGMA cache_size=20; } db$i
+     execsql {
+        CREATE TABLE t1(a,b);
+        BEGIN;

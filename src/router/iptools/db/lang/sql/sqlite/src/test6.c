@@ -87,7 +87,7 @@ typedef struct WriteBuffer WriteBuffer;
 **   an aligned write() of an integer number of 512 byte regions, then
 **   option (3) above is never selected. Instead, each 512 byte region
 **   is either correctly written or left completely untouched. Similar
-**   logic governs the behavior if any of the other ATOMICXXX flags
+**   logic governs the behaviour if any of the other ATOMICXXX flags
 **   is set.
 **
 **   If either the IOCAP_SAFEAPPEND or IOCAP_SEQUENTIAL flags are set
@@ -133,9 +133,9 @@ struct CrashFile {
   ** OsFileSize() calls. Although both could be done by traversing the
   ** write-list, in practice this is impractically slow.
   */
-  u8 *zData;                           /* Buffer containing file contents */
+  int iSize;                           /* Size of file in bytes */
   int nData;                           /* Size of buffer allocated at zData */
-  i64 iSize;                           /* Size of file in bytes */
+  u8 *zData;                           /* Buffer containing file contents */
 };
 
 struct CrashGlobal {
@@ -173,8 +173,11 @@ static void *crash_realloc(void *p, int n){
 static int writeDbFile(CrashFile *p, u8 *z, i64 iAmt, i64 iOff){
   int rc = SQLITE_OK;
   int iSkip = 0;
+  if( iOff==PENDING_BYTE && (p->flags&SQLITE_OPEN_MAIN_DB) ){
+    iSkip = 512;
+  }
   if( (iAmt-iSkip)>0 ){
-    rc = sqlite3OsWrite(p->pRealFile, &z[iSkip], (int)(iAmt-iSkip), iOff+iSkip);
+    rc = sqlite3OsWrite(p->pRealFile, &z[iSkip], (int)iAmt-iSkip, iOff+iSkip);
   }
   return rc;
 }
@@ -303,14 +306,14 @@ static int writeListSync(CrashFile *pFile, int isCrash){
       }
       case 3: {               /* Trash sectors */
         u8 *zGarbage;
-        int iFirst = (int)(pWrite->iOffset/g.iSectorSize);
-        int iLast = (int)((pWrite->iOffset+pWrite->nBuf-1)/g.iSectorSize);
+        int iFirst = ((int)pWrite->iOffset/g.iSectorSize);
+        int iLast = ((int)pWrite->iOffset+pWrite->nBuf-1)/g.iSectorSize;
 
         assert(pWrite->zBuf);
 
 #ifdef TRACE_CRASHTEST
-        printf("Trashing %d sectors @ %lld (sector %d) (%s)\n", 
-            1+iLast-iFirst, pWrite->iOffset, iFirst, pWrite->pFile->zName
+        printf("Trashing %d sectors @ sector %d (%s)\n", 
+            1+iLast-iFirst, iFirst, pWrite->pFile->zName
         );
 #endif
 
@@ -406,17 +409,13 @@ static int cfRead(
   sqlite_int64 iOfst
 ){
   CrashFile *pCrash = (CrashFile *)pFile;
-  int nCopy = (int)MIN((i64)iAmt, (pCrash->iSize - iOfst));
-
-  if( nCopy>0 ){
-    memcpy(zBuf, &pCrash->zData[iOfst], nCopy);
-  }
 
   /* Check the file-size to see if this is a short-read */
-  if( nCopy<iAmt ){
+  if( pCrash->iSize<(iOfst+iAmt) ){
     return SQLITE_IOERR_SHORT_READ;
   }
 
+  memcpy(zBuf, &pCrash->zData[iOfst], iAmt);
   return SQLITE_OK;
 }
 
@@ -431,7 +430,7 @@ static int cfWrite(
 ){
   CrashFile *pCrash = (CrashFile *)pFile;
   if( iAmt+iOfst>pCrash->iSize ){
-    pCrash->iSize = (int)(iAmt+iOfst);
+    pCrash->iSize = iAmt+(int)iOfst;
   }
   while( pCrash->iSize>pCrash->nData ){
     u8 *zNew;
@@ -469,23 +468,15 @@ static int cfSync(sqlite3_file *pFile, int flags){
 
   const char *zName = pCrash->zName;
   const char *zCrashFile = g.zCrashFile;
-  int nName = (int)strlen(zName);
-  int nCrashFile = (int)strlen(zCrashFile);
+  int nName = strlen(zName);
+  int nCrashFile = strlen(zCrashFile);
 
   if( nCrashFile>0 && zCrashFile[nCrashFile-1]=='*' ){
     nCrashFile--;
     if( nName>nCrashFile ) nName = nCrashFile;
   }
 
-#ifdef TRACE_CRASHTEST
-  printf("cfSync(): nName = %d, nCrashFile = %d, zName = %s, zCrashFile = %s\n",
-         nName, nCrashFile, zName, zCrashFile);
-#endif
-
   if( nName==nCrashFile && 0==memcmp(zName, zCrashFile, nName) ){
-#ifdef TRACE_CRASHTEST
-    printf("cfSync(): name matched, g.iCrash = %d\n", g.iCrash);
-#endif
     if( (--g.iCrash)==0 ) isCrash = 1;
   }
 
@@ -514,16 +505,6 @@ static int cfCheckReservedLock(sqlite3_file *pFile, int *pResOut){
   return sqlite3OsCheckReservedLock(((CrashFile *)pFile)->pRealFile, pResOut);
 }
 static int cfFileControl(sqlite3_file *pFile, int op, void *pArg){
-  if( op==SQLITE_FCNTL_SIZE_HINT ){
-    CrashFile *pCrash = (CrashFile *)pFile;
-    i64 nByte = *(i64 *)pArg;
-    if( nByte>pCrash->iSize ){
-      if( SQLITE_OK==writeListAppend(pFile, nByte, 0, 0) ){
-        pCrash->iSize = (int)nByte;
-      }
-    }
-    return SQLITE_OK;
-  }
   return sqlite3OsFileControl(((CrashFile *)pFile)->pRealFile, op, pArg);
 }
 
@@ -622,24 +603,25 @@ static int cfOpen(
     pWrapper->flags = flags;
   }
   if( rc==SQLITE_OK ){
-    pWrapper->nData = (int)(4096 + pWrapper->iSize);
+    pWrapper->nData = (4096 + pWrapper->iSize);
     pWrapper->zData = crash_malloc(pWrapper->nData);
     if( pWrapper->zData ){
       /* os_unix.c contains an assert() that fails if the caller attempts
       ** to read data from the 512-byte locking region of a file opened
       ** with the SQLITE_OPEN_MAIN_DB flag. This region of a database file
       ** never contains valid data anyhow. So avoid doing such a read here.
-      **
-      ** UPDATE: It also contains an assert() verifying that each call
-      ** to the xRead() method reads less than 128KB of data.
       */
-      i64 iOff;
-
+      const int isDb = (flags&SQLITE_OPEN_MAIN_DB);
+      int iChunk = pWrapper->iSize;
+      if( iChunk>PENDING_BYTE && isDb ){
+        iChunk = PENDING_BYTE;
+      }
       memset(pWrapper->zData, 0, pWrapper->nData);
-      for(iOff=0; iOff<pWrapper->iSize; iOff += 512){
-        int nRead = (int)(pWrapper->iSize - iOff);
-        if( nRead>512 ) nRead = 512;
-        rc = sqlite3OsRead(pReal, &pWrapper->zData[iOff], nRead, iOff);
+      rc = sqlite3OsRead(pReal, pWrapper->zData, iChunk, 0); 
+      if( SQLITE_OK==rc && pWrapper->iSize>(PENDING_BYTE+512) && isDb ){
+        i64 iOff = PENDING_BYTE+512;
+        iChunk = pWrapper->iSize - (int)iOff;
+        rc = sqlite3OsRead(pReal, &pWrapper->zData[iOff], iChunk, iOff);
       }
     }else{
       rc = SQLITE_NOMEM;
@@ -713,18 +695,17 @@ static int processDevSymArgs(
     char *zName;
     int iValue;
   } aFlag[] = {
-    { "atomic",              SQLITE_IOCAP_ATOMIC                },
-    { "atomic512",           SQLITE_IOCAP_ATOMIC512             },
-    { "atomic1k",            SQLITE_IOCAP_ATOMIC1K              },
-    { "atomic2k",            SQLITE_IOCAP_ATOMIC2K              },
-    { "atomic4k",            SQLITE_IOCAP_ATOMIC4K              },
-    { "atomic8k",            SQLITE_IOCAP_ATOMIC8K              },
-    { "atomic16k",           SQLITE_IOCAP_ATOMIC16K             },
-    { "atomic32k",           SQLITE_IOCAP_ATOMIC32K             },
-    { "atomic64k",           SQLITE_IOCAP_ATOMIC64K             },
-    { "sequential",          SQLITE_IOCAP_SEQUENTIAL            },
-    { "safe_append",         SQLITE_IOCAP_SAFE_APPEND           },
-    { "powersafe_overwrite", SQLITE_IOCAP_POWERSAFE_OVERWRITE   },
+    { "atomic",      SQLITE_IOCAP_ATOMIC      },
+    { "atomic512",   SQLITE_IOCAP_ATOMIC512   },
+    { "atomic1k",    SQLITE_IOCAP_ATOMIC1K    },
+    { "atomic2k",    SQLITE_IOCAP_ATOMIC2K    },
+    { "atomic4k",    SQLITE_IOCAP_ATOMIC4K    },
+    { "atomic8k",    SQLITE_IOCAP_ATOMIC8K    },
+    { "atomic16k",   SQLITE_IOCAP_ATOMIC16K   },
+    { "atomic32k",   SQLITE_IOCAP_ATOMIC32K   },
+    { "atomic64k",   SQLITE_IOCAP_ATOMIC64K   },
+    { "sequential",  SQLITE_IOCAP_SEQUENTIAL  },
+    { "safe_append", SQLITE_IOCAP_SAFE_APPEND },
     { 0, 0 }
   };
 

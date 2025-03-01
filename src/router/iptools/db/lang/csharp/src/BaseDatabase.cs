@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -11,12 +11,12 @@ using BerkeleyDB.Internal;
 
 namespace BerkeleyDB {
     /// <summary>
-    /// The base class from which all database classes inherit.
+    /// The base class from which all database classes inherit
     /// </summary>
     public class BaseDatabase : IDisposable {
         internal DB db;
         /// <summary>
-        /// The environment where the database exists.
+        /// The environment that the database lies in.
         /// </summary>
         protected internal DatabaseEnvironment env;
         /// <summary>
@@ -28,8 +28,6 @@ namespace BerkeleyDB {
         private DatabaseFeedbackDelegate feedbackHandler;
         private BDB_CompareDelegate doDupCompareRef;
         private BDB_DbFeedbackDelegate doFeedbackRef;
-        private BDB_MsgcallDelegate doMsgFeedbackRef;
-        private MessageFeedbackDelegate msgFeedbackHandler;
 
         #region Constructors
         /// <summary>
@@ -72,8 +70,6 @@ namespace BerkeleyDB {
                     cfg.EncryptionPassword, (uint)cfg.EncryptAlgorithm);
             if (cfg.ErrorPrefix != null)
                 ErrorPrefix = cfg.ErrorPrefix;
-            if (cfg.MessagePrefix != null)
-                MessagePrefix = cfg.MessagePrefix;
             if (cfg.ErrorFeedback != null)
                 ErrorFeedback = cfg.ErrorFeedback;
             if (cfg.Feedback != null)
@@ -112,11 +108,6 @@ namespace BerkeleyDB {
         }
         #endregion Constructor
 
-        private static void doMsgFeedback(IntPtr dbp, string msgpfx, string msg) {
-            DB db = new DB(dbp, false);
-            db.api_internal.msgFeedbackHandler(msgpfx, msg);
-        }
-
         #region Callbacks
         private static void doFeedback(IntPtr dbp, int opcode, int percent) {
             DB db = new DB(dbp, false);
@@ -128,7 +119,7 @@ namespace BerkeleyDB {
         // Sorted alpha by property name
         /// <summary>
         /// If true, all database modification operations based on this object
-        /// are transactionally protected.
+        /// will be transactionally protected.
         /// </summary>
         public bool AutoCommit {
             get {
@@ -138,7 +129,7 @@ namespace BerkeleyDB {
             }
         }
         /// <summary>
-        /// The size of the shared memory buffer pool (the cache).
+        /// The size of the shared memory buffer pool -- that is, the cache.
         /// </summary>
         public CacheInfo CacheSize {
             get {
@@ -231,17 +222,17 @@ namespace BerkeleyDB {
         /// <para>
         /// When an error occurs in the Berkeley DB library, a
         /// <see cref="DatabaseException"/>, or subclass of DatabaseException,
-        /// is thrown. In some cases the exception may be insufficient
+        /// is thrown. In some cases, however, the exception may be insufficient
         /// to completely describe the cause of the error, especially during
         /// initial application debugging.
         /// </para>
         /// <para>
-        /// In some cases, when an error occurs, Berkeley DB calls the given
+        /// In some cases, when an error occurs, Berkeley DB will call the given
         /// delegate with additional error information. It is up to the delegate
         /// to display the error message in an appropriate manner.
         /// </para>
         /// <para>
-        /// Setting ErrorFeedback to NULL resets the callback interface.
+        /// Setting ErrorFeedback to NULL unconfigures the callback interface.
         /// </para>
         /// <para>
         /// This error-logging enhancement does not slow performance or
@@ -255,55 +246,13 @@ namespace BerkeleyDB {
         /// </para>
         /// <para>
         /// For databases not opened in an environment, setting ErrorFeedback
-        /// configures operations performed using the specified object, instead of all
+        /// configures operations performed using the specified object, not all
         /// operations performed on the underlying database. 
         /// </para>
         /// </remarks>
         public ErrorFeedbackDelegate ErrorFeedback {
             get { return env.ErrorFeedback; }
             set { env.ErrorFeedback = value; }
-        }
-        /// <summary>
-        /// The mechanism for reporting detailed statistic messages to the
-        /// application.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// There are interfaces in the Berkeley DB library which either
-        /// directly output informational messages or statistical
-        /// information, or configure the library to output such messages
-        /// when performing other operations.
-        /// </para>
-        /// <para>
-        /// Berkeley DB calls the given delegate with each message. It is up
-        /// to the delegate to display the message in an appropriate manner.
-        /// </para>
-        /// <para>
-        /// Setting MessageFeedback to NULL resets the callback interface.
-        /// </para>
-        /// <para>
-        /// For databases opened inside of a DatabaseEnvironment, setting
-        /// MessageFeedback affects the entire environment and is equivalent to
-        /// setting DatabaseEnvironment.MessageFeedback.
-        /// </para>
-        /// <para>
-        /// For databases not opened in an environment, setting MessageFeedback
-        /// configures operations performed using the specified object, instead
-        /// of all operations performed on the underlying database.
-        /// </para>
-        /// </remarks>
-        public MessageFeedbackDelegate messageFeedback {
-            get { return msgFeedbackHandler; }
-            set {
-                if (value == null)
-                    db.set_msgcall(null);
-                else if (msgFeedbackHandler == null) {
-                    if (doMsgFeedbackRef == null)
-                        doMsgFeedbackRef = new BDB_MsgcallDelegate(doMsgFeedback);
-                    db.set_msgcall(doMsgFeedbackRef);
-                }
-                msgFeedbackHandler = value;
-            }
         }
         /// <summary>
         /// The prefix string that appears before error messages issued by
@@ -326,29 +275,15 @@ namespace BerkeleyDB {
             set { env.ErrorPrefix = value; }
         }
         /// <summary>
-        /// The prefix string that appears before informational messages issued
-        /// by Berkeley DB.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// For databases opened inside of a DatabaseEnvironment, setting
-        /// MessagePrefix affects the entire environment and is equivalent to
-        /// setting <see cref="DatabaseEnvironment.MessagePrefix"/>.
-        /// </para>
-        /// </remarks>
-        public string MessagePrefix {
-            get { return env.MessagePrefix; }
-            set { env.MessagePrefix = value; }
-        }
-        /// <summary>
         /// Monitor progress within long running operations.
         /// </summary>
         /// <remarks>
         /// <para>
         /// Some operations performed by the Berkeley DB library can take
-        /// non-trivial amounts of time.  When an operation
-        /// is likely to take a long time, Berkeley DB calls the
-        /// the Feedback delegate to monitor progress within these operations.
+        /// non-trivial amounts of time. The Feedback delegate can be used by
+        /// applications to monitor progress within these operations. When an
+        /// operation is likely to take a long time, Berkeley DB will call the
+        /// specified delegate with progress information.
         /// </para>
         /// <para>
         /// It is up to the delegate to display this information in an
@@ -380,7 +315,7 @@ namespace BerkeleyDB {
             }
         }
         /// <summary>
-        /// If true, the object is free-threaded; concurrently usable
+        /// If true, the object is free-threaded; that is, concurrently usable
         /// by multiple threads in the address space. 
         /// </summary>
         public bool FreeThreaded {
@@ -415,18 +350,6 @@ namespace BerkeleyDB {
             }
         }
         /// <summary>
-        /// The message file.
-        /// </summary>
-        public string Msgfile {
-            set {
-                int ret = 0;
-                ret = db.set_msgfile(value);
-                if(ret != 0) {
-                    throw new Exception("Set message file fails.");
-                }
-            }
-        }
-        /// <summary>
         /// <para>
         /// If true, this database is not mapped into process memory.
         /// </para>
@@ -443,7 +366,7 @@ namespace BerkeleyDB {
             }
         }
         /// <summary>
-        /// If true, Berkeley DB does not write log records for this database.
+        /// If true, Berkeley DB will not write log records for this database.
         /// </summary>
         public bool NonDurableTxns {
             get {
@@ -454,11 +377,11 @@ namespace BerkeleyDB {
         }
         /// <summary>
         /// If true, configure the database handle to obtain a write lock on the
-        /// entire database. When the database is opened it immediately
-        /// throws <see cref="LockNotGrantedException"/> if it cannot obtain the
+        /// entire database. When the database is opened it will immediately
+        /// throw <see cref="LockNotGrantedException"/> if it cannot obtain the
         /// exclusive lock immediately. If False, configure the database handle
         /// to obtain a write lock on the entire database. When the database is
-        /// opened, it blocks until it can obtain the exclusive lock. If
+        /// opened, it will block until it can obtain the exclusive lock. If
         /// null, do not configure the database handle to obtain a write lock on
         /// the entire database.
         /// </summary>
@@ -479,7 +402,7 @@ namespace BerkeleyDB {
         /// The database's current page size.
         /// </summary>
         /// <remarks>  If <see cref="DatabaseConfig.PageSize"/> was not set by
-        /// your application, then the default page size is selected based on the
+        /// your application, then the default pagesize is selected based on the
         /// underlying filesystem I/O block size.
         /// </remarks>
         public uint Pagesize {
@@ -500,7 +423,7 @@ namespace BerkeleyDB {
             }
         }
         /// <summary>
-        /// If true, this database has been opened for read only. Any attempt
+        /// If true, this database has been opened for reading only. Any attempt
         /// to modify items in the database will fail, regardless of the actual
         /// permissions of any underlying files. 
         /// </summary>
@@ -587,32 +510,32 @@ namespace BerkeleyDB {
         /// </summary>
         /// <overloads>
         /// <para>
-        /// Although closing a database also closes any open cursors, it is
+        /// Although closing a database will close any open cursors, it is
         /// recommended that applications explicitly close all their Cursor
         /// objects before closing the database. The reason why is that when the
         /// cursor is explicitly closed, the memory allocated for it is
-        /// reclaimed; however, this does not happen if you close a database
+        /// reclaimed; however, this will not happen if you close a database
         /// while cursors are still opened.
         /// </para>
         /// <para>
-        /// The same rule, for the same reasons, holds true for
+        /// The same rule, for the same reasons, hold true for
         /// <see cref="Transaction"/> objects. Simply make sure you resolve
         /// all your transaction objects before closing your database handle.
         /// </para>
         /// <para>
-        /// Because key/data pairs are cached in-memory, applications should
+        /// Because key/data pairs are cached in memory, applications should
         /// make a point to always either close database handles or sync their
         /// data to disk (using <see cref="Sync"/> before exiting, to
-        /// ensure that any data cached in main memory is reflected in the
+        /// ensure that any data cached in main memory are reflected in the
         /// underlying file system.
         /// </para>
         /// <para>
-        /// When called on a secondary index's primary database, the primary
-        /// should be closed only after all secondary indices referencing
-        /// it have been closed.
+        /// When called on a database that is the primary database for a
+        /// secondary index, the primary database should be closed only after
+        /// all secondary indices referencing it have been closed.
         /// </para>
         /// <para>
-        /// When multiple threads use the object concurrently, only a
+        /// When multiple threads are using the object concurrently, only a
         /// single thread may call the Close method.
         /// </para>
         /// <para>
@@ -640,17 +563,18 @@ namespace BerkeleyDB {
         /// application crash.
         /// </para>
         /// <para>
-        /// Flushing cached information to disk only minimizes the window of opportunity
-        /// for corrupted data. Although unlikely, it is possible for database corruption
-        /// to occur in the event of a system or application crash while writing data to the
-        /// database. To ensure that database corruption never occurs, 
-        /// applications must either use transactions and logging with
-        /// automatic recovery, or edit a copy of the database and then replace the corrupted
-        /// database with the updated copy once all applications using the database
-        /// have successfully called <see cref="BaseDatabase.Close"/>.
+        /// It is important to understand that flushing cached information to
+        /// disk only minimizes the window of opportunity for corrupted data.
+        /// Although unlikely, it is possible for database corruption to happen
+        /// if a system or application crash occurs while writing data to the
+        /// database. To ensure that database corruption never occurs,
+        /// applications must either use transactions and logging with automatic
+        /// recovery or edit a copy of the database, and once all applications
+        /// using the database have successfully called Close, atomically
+        /// replace the original database with the updated copy.
         /// </para>
         /// <para>
-        /// This parameter only works when the database has been
+        /// Note that this parameter only works when the database has been
         /// opened using an environment. 
         /// </para>
         /// </remarks>
@@ -707,7 +631,7 @@ namespace BerkeleyDB {
         /// is DatabaseEntry, the key/data pair associated with 
         /// <paramref name="key"/> is discarded from the database. In the
         /// presence of duplicate key values, all records associated with the
-        /// designated key are discarded. If <paramref name="key"/> is 
+        /// designated key will be discarded. If <paramref name="key"/> is 
         /// MultipleDatabaseEntry, delete multiple data items using keys from
         /// the buffer to which the key parameter refers. If 
         /// <paramref name="key"/> is MultipleKeyDatabaseEntry, delete multiple
@@ -721,7 +645,7 @@ namespace BerkeleyDB {
         /// </para>
         /// <para>
         /// If the operation occurs in a transactional database, the operation
-        /// is implicitly transaction protected.
+        /// will be implicitly transaction protected.
         /// </para>
         /// </remarks>
         /// <param name="key">
@@ -745,7 +669,7 @@ namespace BerkeleyDB {
         /// is DatabaseEntry, the key/data pair associated with 
         /// <paramref name="key"/> is discarded from the database. In the
         /// presence of duplicate key values, all records associated with the
-        /// designated key are discarded. If <paramref name="key"/> is 
+        /// designated key will be discarded. If <paramref name="key"/> is 
         /// MultipleDatabaseEntry, delete multiple data items using keys from
         /// the buffer to which the key parameter refers. If 
         /// <paramref name="key"/> is MultipleKeyDatabaseEntry, delete multiple
@@ -759,7 +683,7 @@ namespace BerkeleyDB {
         /// </para>
         /// <para>
         /// If <paramref name="txn"/> is null and the operation occurs in a
-        /// transactional database, the operation is implicitly transaction
+        /// transactional database, the operation will be implicitly transaction
         /// protected.
         /// </para>
         /// </remarks>
@@ -799,7 +723,7 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// If the operation occurs in a transactional database, the operation
-        /// is implicitly transaction protected.
+        /// will be implicitly transaction protected.
         /// </remarks>
         /// <param name="key">The key to search for.</param>
         /// <exception cref="NotFoundException">
@@ -824,7 +748,7 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// If <paramref name="txn"/> is null and the operation occurs in a
-        /// transactional database, the operation is implicitly transaction
+        /// transactional database, the operation will be implicitly transaction
         /// protected.
         /// </remarks>
         /// <param name="key">The key to search for.</param>
@@ -858,7 +782,7 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// If <paramref name="txn"/> is null and the operation occurs in a
-        /// transactional database, the operation is implicitly transaction
+        /// transactional database, the operation will be implicitly transaction
         /// protected.
         /// </remarks>
         /// <param name="key">The key to search for.</param>
@@ -904,12 +828,12 @@ namespace BerkeleyDB {
 
         /// <summary>
         /// Retrieve a key/data pair from the database.  In the presence of
-        /// duplicate key values, Get returns the first data item for 
+        /// duplicate key values, Get will return the first data item for 
         /// <paramref name="key"/>.
         /// </summary>
         /// <remarks>
         /// If the operation occurs in a transactional database, the operation
-        /// is implicitly transaction protected.
+        /// will be implicitly transaction protected.
         /// </remarks>
         /// <param name="key">The key to search for</param>
         /// <exception cref="NotFoundException">
@@ -933,12 +857,12 @@ namespace BerkeleyDB {
         }
         /// <summary>
         /// Retrieve a key/data pair from the database.  In the presence of
-        /// duplicate key values, Get returns the first data item for 
+        /// duplicate key values, Get will return the first data item for 
         /// <paramref name="key"/>.
         /// </summary>
         /// <remarks>
         /// If <paramref name="txn"/> is null and the operation occurs in a
-        /// transactional database, the operation is implicitly transaction
+        /// transactional database, the operation will be implicitly transaction
         /// protected.
         /// </remarks>
         /// <param name="key">The key to search for</param>
@@ -970,12 +894,12 @@ namespace BerkeleyDB {
         }
         /// <summary>
         /// Retrieve a key/data pair from the database.  In the presence of
-        /// duplicate key values, Get returns the first data item for 
+        /// duplicate key values, Get will return the first data item for 
         /// <paramref name="key"/>.
         /// </summary>
         /// <remarks>
         /// If <paramref name="txn"/> is null and the operation occurs in a
-        /// transactional database, the operation is implicitly transaction
+        /// transactional database, the operation will be implicitly transaction
         /// protected.
         /// </remarks>
         /// <param name="key">The key to search for</param>
@@ -1008,7 +932,7 @@ namespace BerkeleyDB {
         }
         /// <summary>
         /// Retrieve a key/data pair from the database.  In the presence of
-        /// duplicate key values, Get returns the first data item for
+        /// duplicate key values, Get will return the first data item for
         /// <paramref name="key"/>. If the data is a partial
         /// <see cref="DatabaseEntry"/>, <see cref="DatabaseEntry.PartialLen"/>
         /// bytes starting <see cref="DatabaseEntry.PartialOffset"/> bytes
@@ -1040,7 +964,7 @@ namespace BerkeleyDB {
         }
         /// <summary>
         /// Retrieve a key/data pair from the database. In the presence of
-        /// duplicate key values, Get returns the first data item for
+        /// duplicate key values, Get will return the first data item for
         /// <paramref name="key"/>. If the data is a partial
         /// <see cref="DatabaseEntry"/>, <see cref="DatabaseEntry.PartialLen"/>
         /// bytes starting <see cref="DatabaseEntry.PartialOffset"/> bytes
@@ -1051,7 +975,7 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// If <paramref name="txn"/> is null and the operation occurs in
-        /// a transactional database, the operation is implicitly 
+        /// a transactional database, the operation will be implicitly 
         /// transaction protected.
         /// </remarks>
         /// <param name="key">The key to search for</param>
@@ -1084,7 +1008,7 @@ namespace BerkeleyDB {
         }
         /// <summary>
         /// Retrieve a key/data pair from the database.  In the presence of
-        /// duplicate key values, Get returns the first data item for
+        /// duplicate key values, Get will return the first data item for
         /// <paramref name="key"/>. If the data is a partial
         /// <see cref="DatabaseEntry"/>, <see cref="DatabaseEntry.PartialLen"/>
         /// bytes starting <see cref="DatabaseEntry.PartialOffset"/> bytes
@@ -1095,7 +1019,7 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// If <paramref name="txn"/> is null and the operation occurs in
-        /// a transactional database, the operation is implicitly 
+        /// a transactional database, the operation will be implicitly 
         /// transaction protected.
         /// </remarks>
         /// <param name="key">The key to search for</param>
@@ -1137,7 +1061,7 @@ namespace BerkeleyDB {
         /// <param name="data">
         /// The data to search for.  If null a new DatabaseEntry is created.
         /// </param>
-        /// <param name="txn">The transaction for this operation.</param>
+        /// <param name="txn">The txn for this operation.</param>
         /// <param name="info">Locking info for this operation.</param>
         /// <param name="flags">
         /// Flags value specifying which type of get to perform.  Passed
@@ -1166,7 +1090,7 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// If the operation occurs in a transactional database, the operation
-        /// is implicitly transaction protected.
+        /// will be implicitly transaction protected.
         /// </remarks>
         /// <param name="key">The key to search for</param>
         /// <param name="data">The data to search for</param>
@@ -1195,7 +1119,7 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// If <paramref name="txn"/> is null and the operation occurs in a
-        /// transactional database, the operation is implicitly transaction
+        /// transactional database, the operation will be implicitly transaction
         /// protected.
         /// </remarks>
         /// <param name="key">The key to search for</param>
@@ -1232,7 +1156,7 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// If <paramref name="txn"/> is null and the operation occurs in a
-        /// transactional database, the operation is implicitly transaction
+        /// transactional database, the operation will be implicitly transaction
         /// protected.
         /// </remarks>
         /// <param name="key">The key to search for</param>
@@ -1431,7 +1355,7 @@ namespace BerkeleyDB {
         /// <para>
         /// Applications should not rename databases that are currently in use.
         /// If an underlying file is being renamed and logging is currently
-        /// enabled in the database environment, no database in the file should be
+        /// enabled in the database environment, no database in the file may be
         /// open when Rename is called. In particular, some architectures do not
         /// permit renaming files with open handles. On these architectures,
         /// attempts to rename databases that are currently in use by any thread
@@ -1461,18 +1385,20 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// <para>
-        /// If the database is in-memory only, Sync has no effect and
-        /// always succeeds.
+        /// If the database is in memory only, Sync has no effect and will
+        /// always succeed.
         /// </para>
         /// <para>
-        /// Flushing cached information to disk only minimizes the window of opportunity
-        /// for corrupted data. Although unlikely, it is possible for database corruption
-        /// to occur in the event of a system or application crash while writing data to the
+        /// It is important to understand that flushing cached information to
+        /// disk only minimizes the window of opportunity for corrupted data.
+        /// Although unlikely, it is possible for database corruption to happen
+        /// if a system or application crash occurs while writing data to the
         /// database. To ensure that database corruption never occurs, 
-        /// applications must either use transactions and logging with
-        /// automatic recovery, or edit a copy of the database and then replace the corrupted
-        /// database with the updated copy once all applications using the database
-        /// have successfully called <see cref="BaseDatabase.Close"/>.
+        /// applications must either: use transactions and logging with
+        /// automatic recovery or edit a copy of the database, and once all
+        /// applications using the database have successfully called
+        /// <see cref="BaseDatabase.Close"/>, atomically replace
+        /// the original database with the updated copy.
         /// </para>
         /// </remarks>
         public void Sync() {
@@ -1484,11 +1410,11 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// If the operation occurs in a transactional database, the operation
-        /// is implicitly transaction protected.
+        /// will be implicitly transaction protected.
         /// </remarks>
         /// <overloads>
         /// When called on a database configured with secondary indices, 
-        /// This method truncates the primary database and all secondary
+        /// Truncate will truncate the primary database and all secondary
         /// indices. A count of the records discarded from the primary database
         /// is returned. 
         /// </overloads>
@@ -1503,7 +1429,7 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// If <paramref name="txn"/> is null and the operation occurs in a
-        /// transactional database, the operation is implicitly transaction
+        /// transactional database, the operation will be implicitly transaction
         /// protected.
         /// </remarks>
         /// <param name="txn">
@@ -1526,7 +1452,7 @@ namespace BerkeleyDB {
 
         /// <summary>
         /// Release the resources held by this object, and close the database if
-        /// it is still open.
+        /// it's still open.
         /// </summary>
         public void Dispose() {
             if (isOpen)

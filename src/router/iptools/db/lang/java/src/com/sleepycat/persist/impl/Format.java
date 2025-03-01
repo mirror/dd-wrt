@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -9,7 +9,6 @@ package com.sleepycat.persist.impl;
 
 import java.io.Serializable;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -25,6 +24,7 @@ import com.sleepycat.persist.model.SecondaryKeyMetadata;
 import com.sleepycat.persist.raw.RawField;
 import com.sleepycat.persist.raw.RawObject;
 import com.sleepycat.persist.raw.RawType;
+import java.util.IdentityHashMap;
 
 /**
  * The base class for all object formats.  Formats are used to define the

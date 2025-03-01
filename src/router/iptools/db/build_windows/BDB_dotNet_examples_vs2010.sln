@@ -1,21 +1,21 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "excs_access", "..\examples\csharp\VS10\excs_access.csproj", "{B7250534-4FB1-450D-865C-59231820EAB5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "excs_access", "..\examples\csharp\excs_access\excs_access.csproj", "{B7250534-4FB1-450D-865C-59231820EAB5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "excs_btrec", "..\examples\csharp\VS10\excs_btrec.csproj", "{657FB9CC-16ED-4BAE-97AD-1A359D133F25}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "excs_btrec", "..\examples\csharp\excs_btrec\excs_btrec.csproj", "{657FB9CC-16ED-4BAE-97AD-1A359D133F25}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "excs_bulk", "..\examples\csharp\VS10\excs_bulk.csproj", "{90740BD6-C91B-4259-B6E9-C361A06791BA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "excs_bulk", "..\examples\csharp\excs_bulk\excs_bulk.csproj", "{90740BD6-C91B-4259-B6E9-C361A06791BA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "excs_env", "..\examples\csharp\VS10\excs_env.csproj", "{617FF132-0566-4F6D-932D-2A1BA3C6A93E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "excs_env", "..\examples\csharp\excs_env\excs_env.csproj", "{617FF132-0566-4F6D-932D-2A1BA3C6A93E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "excs_getting_started", "..\examples\csharp\VS10\excs_getting_started.csproj", "{A8813939-DA91-4036-9BE4-B0FB44051A06}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "excs_getting_started", "..\examples\csharp\excs_getting_started\excs_getting_started.csproj", "{A8813939-DA91-4036-9BE4-B0FB44051A06}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "excs_sequence", "..\examples\csharp\VS10\excs_sequence.csproj", "{DC306DCB-F42C-4038-91FA-B553FD37CB2E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "excs_sequence", "..\examples\csharp\excs_sequence\excs_sequence.csproj", "{DC306DCB-F42C-4038-91FA-B553FD37CB2E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "excs_repquote", "..\examples\csharp\VS10\excs_repquote.csproj", "{7BA3D41C-2B70-405E-BEDB-A5A72509D2ED}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "excs_repquote", "..\examples\csharp\excs_repquote\excs_repquote.csproj", "{7BA3D41C-2B70-405E-BEDB-A5A72509D2ED}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "excs_txn", "..\examples\csharp\VS10\excs_txn.csproj", "{D3EEDB47-F622-4E8A-A218-076B49C269F1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "excs_txn", "..\examples\csharp\excs_txn\excs_txn.csproj", "{D3EEDB47-F622-4E8A-A218-076B49C269F1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

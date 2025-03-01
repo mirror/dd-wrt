@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -14,8 +14,6 @@
 
 static int __rep_egen_init  __P((ENV *, REP *));
 static int __rep_gen_init  __P((ENV *, REP *));
-static int __rep_view_init  __P((ENV *, REP *));
-static int __rep_viewfile_exists  __P((ENV *, int *));
 
 /*
  * __rep_open --
@@ -31,7 +29,7 @@ __rep_open(env)
 	REGENV *renv;
 	REGINFO *infop;
 	REP *rep;
-	int i, ret, view;
+	int i, ret;
 	char *p;
 	char fname[sizeof(REP_DIAGNAME) + 3];
 
@@ -39,15 +37,10 @@ __rep_open(env)
 	infop = env->reginfo;
 	renv = infop->primary;
 	ret = 0;
-	view = 0;
 	DB_ASSERT(env, DBREP_DIAG_FILES < 100);
 
 	if (renv->rep_off == INVALID_ROFF) {
-		/*
-		 * Must create the region. This environment either is being
-		 * created for the first time or has just had its regions
-		 * cleared by a recovery.
-		 */
+		/* Must create the region. */
 		if ((ret = __env_alloc(infop, sizeof(REP), &rep)) != 0)
 			return (ret);
 		memset(rep, 0, sizeof(*rep));
@@ -87,10 +80,6 @@ __rep_open(env)
 		    env, MTX_REP_START, 0, &rep->mtx_repstart)) != 0)
 			return (ret);
 
-		if ((ret = __mutex_alloc(
-		    env, MTX_LSN_HISTORY, 0, &db_rep->mtx_lsnhist)) != 0)
-			return (ret);
-
 		rep->diag_off = 0;
 		rep->diag_index = 0;
 		rep->newmaster_event_gen = 0;
@@ -119,23 +108,6 @@ __rep_open(env)
 			return (ret);
 		if ((ret = __rep_egen_init(env, rep)) != 0)
 			return (ret);
-		/*
-		 * Determine if this is a view site or not.  It is a view
-		 * if the callback is set.  If the site was a view in the
-		 * past, we mark it as a view, but will check consistency
-		 * later when starting replication.
-		 */
-		if (db_rep->partial != NULL) {
-			rep->stat.st_view = 1;
-			if ((ret = __rep_view_init(env, rep)) != 0)
-				return (ret);
-		} else {
-			if ((ret = __rep_viewfile_exists(env, &view)) != 0)
-				return (ret);
-			if (view)
-				rep->stat.st_view = 1;
-		}
-
 		rep->gbytes = db_rep->gbytes;
 		rep->bytes = db_rep->bytes;
 		rep->request_gap = db_rep->request_gap;
@@ -184,32 +156,6 @@ __rep_open(env)
 			    "Application type mismatch for a replication "
 			    "process joining the environment"));
 			return (EINVAL);
-		}
-		/*
-		 * If we are joining an existing environment and we
-		 * have a view callback set, then the environment must
-		 * already be a view.  If not, error.
-		 *
-		 * The other mismatch is not an error here (no callback
-		 * set, but environment is a view) because we may be a
-		 * rep unaware process such as db_stat and that is allowed
-		 * to proceed.  There is additional checking in other rep
-		 * functions like rep_start to confirm consistency before
-		 * using replication.
-		 */
-		if (db_rep->partial != NULL) {
-			if ((ret = __rep_viewfile_exists(env, &view)) != 0)
-				return (ret);
-			/*
-			 * If there is a callback, and we are not in-memory,
-			 * there better be a view system file too.
-			 */
-			if (view == 0 && !FLD_ISSET(rep->config, REP_C_INMEM)) {
-				__db_errx(env, DB_STR("3688",
-				    "Application environment and view mismatch "
-				    "joining the environment"));
-				return (EINVAL);
-			}
 		}
 #ifdef HAVE_REPLICATION_THREADS
 		if ((ret = __repmgr_join(env, rep)) != 0)
@@ -333,9 +279,6 @@ __rep_env_refresh(env)
 			if ((t_ret = __mutex_free(env,
 			    &rep->mtx_repstart)) != 0 && ret == 0)
 				ret = t_ret;
-			if ((t_ret = __mutex_free(env,
-			    &db_rep->mtx_lsnhist)) != 0 && ret == 0)
-				ret = t_ret;
 
 			/* Discard commit queue elements. */
 			DB_ASSERT(env, SH_TAILQ_EMPTY(&rep->waiters));
@@ -422,12 +365,10 @@ __rep_preclose(env)
 	if (db_rep == NULL || db_rep->region == NULL)
 		return (ret);
 
-	MUTEX_LOCK(env, db_rep->mtx_lsnhist);
 	if ((dbp = db_rep->lsn_db) != NULL) {
 		ret = __db_close(dbp, NULL, DB_NOSYNC);
 		db_rep->lsn_db = NULL;
 	}
-	MUTEX_UNLOCK(env, db_rep->mtx_lsnhist);
 
 	MUTEX_LOCK(env, db_rep->region->mtx_clientdb);
 	if (db_rep->rep_db != NULL) {
@@ -565,8 +506,9 @@ __rep_write_egen(env, rep, egen)
 	 * If running in-memory replication, return without any file
 	 * operations.
 	 */
-	if (FLD_ISSET(rep->config, REP_C_INMEM))
+	if (FLD_ISSET(rep->config, REP_C_INMEM)) {
 		return (0);
+	}
 
 	if ((ret = __db_appname(env,
 	    DB_APP_META, REP_EGENNAME, NULL, &p)) != 0)
@@ -649,8 +591,9 @@ __rep_write_gen(env, rep, gen)
 	 * If running in-memory replication, return without any file
 	 * operations.
 	 */
-	if (FLD_ISSET(rep->config, REP_C_INMEM))
+	if (FLD_ISSET(rep->config, REP_C_INMEM)) {
 		return (0);
+	}
 
 	if ((ret = __db_appname(env,
 	    DB_APP_META, REP_GENNAME, NULL, &p)) != 0)
@@ -664,106 +607,4 @@ __rep_write_gen(env, rep, gen)
 	}
 	__os_free(env, p);
 	return (ret);
-}
-
-/*
- * __rep_view_init --
- *	Initialize the permanent view file to know this site is a view
- *	forever.  The existence of the file is the record.
- */
-static int
-__rep_view_init(env, rep)
-	ENV *env;
-	REP *rep;
-{
-	DB_FH *fhp;
-	int ret;
-	char *p;
-
-	/*
-	 * If running in-memory replication, return without any file
-	 * operations.
-	 */
-	if (FLD_ISSET(rep->config, REP_C_INMEM))
-		return (0);
-
-	if ((ret = __db_appname(env,
-	    DB_APP_META, REPVIEW, NULL, &p)) != 0)
-		return (ret);
-
-	/*
-	 * If the file doesn't exist, create it.  We just want to open
-	 * and close the file.  It doesn't have any content.
-	 * If the file already exists, there is nothing else to do.
-	 */
-	if (__os_exists(env, p, NULL) != 0) {
-		RPRINT(env, (env, DB_VERB_REP_MISC, "View init: Create %s", p));
-		if ((ret = __os_open(env, p, 0,
-		    DB_OSO_CREATE | DB_OSO_TRUNC, DB_MODE_600, &fhp)) != 0)
-			goto out;
-		(void)__os_closehandle(env, fhp);
-	}
-out:	__os_free(env, p);
-	return (ret);
-}
-
-/*
- * __rep_check_view --
- *	Check consistency between the view file and the db_rep handle.
- *
- * PUBLIC: int __rep_check_view __P((ENV *));
- */
-int
-__rep_check_view(env)
-	ENV *env;
-{
-	DB_REP *db_rep;
-	REP *rep;
-	int exist, ret;
-
-	db_rep = env->rep_handle;
-	rep = db_rep->region;
-	ret = 0;
-
-	/*
-	 * If running in-memory replication, check without any file
-	 * operations.  We can only check what exists in the region,
-	 * which is the st_view field from a previous open.
-	 */
-	if (FLD_ISSET(rep->config, REP_C_INMEM))
-		exist = (int)rep->stat.st_view;
-	else if ((ret = __rep_viewfile_exists(env, &exist)) != 0)
-		return (ret);
-
-	RPRINT(env, (env, DB_VERB_REP_MISC, "Check view.  Exist %d, cb %d",
-	    exist, (db_rep->partial != NULL)));
-	/*
-	 * If view file exists, a partial function must be set.
-	 * If view file does not exist, a partial function must not be set.
-	 */
-	if ((exist == 0 && db_rep->partial != NULL) ||
-	    (exist == 1 && db_rep->partial == NULL))
-		ret = EINVAL;
-	return (ret);
-}
-
-static int
-__rep_viewfile_exists(env, existp)
-	ENV *env;
-	int *existp;
-{
-	char *p;
-	int ret;
-
-	*existp = 0;
-	if ((ret = __db_appname(env,
-	    DB_APP_META, REPVIEW, NULL, &p)) != 0)
-		return (ret);
-
-	if (__os_exists(env, p, NULL) == 0)
-		*existp = 1;
-
-	__os_free(env, p);
-	return (ret);
-
 }

@@ -16,11 +16,6 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable !compound {
-  finish_test
-  return
-}
-
 do_execsql_test e_select-1.0 {
   CREATE TABLE t1(a, b);
   INSERT INTO t1 VALUES('a', 'one');
@@ -83,7 +78,7 @@ proc do_join_test {tn select res} {
 # The following tests check that all paths on the syntax diagrams on
 # the lang_select.html page may be taken.
 #
-# -- syntax diagram join-constraint
+# EVIDENCE-OF: R-18428-22111 -- syntax diagram join-constraint
 #
 do_join_test e_select-0.1.1 {
   SELECT count(*) FROM t1 %JOIN% t2 ON (t1.a=t2.a)
@@ -101,7 +96,7 @@ do_catchsql_test e_select-0.1.5 {
   SELECT count(*) FROM t1, t2 USING (a) ON (t1.a=t2.a)
 } {1 {near "ON": syntax error}}
 
-# -- syntax diagram select-core
+# EVIDENCE-OF: R-44854-11739 -- syntax diagram select-core
 #
 #   0: SELECT ...
 #   1: SELECT DISTINCT ...
@@ -226,7 +221,7 @@ do_select_tests e_select-0.2 {
 }
 
 
-# -- syntax diagram result-column
+# EVIDENCE-OF: R-23316-20169 -- syntax diagram result-column
 #
 do_select_tests e_select-0.3 {
   1  "SELECT * FROM t1" {a one b two c three}
@@ -236,9 +231,9 @@ do_select_tests e_select-0.3 {
   5  "SELECT 'x'||a||'x' AS alias FROM t1" {xax xbx xcx}
 }
 
-# -- syntax diagram join-source
+# EVIDENCE-OF: R-41233-21397 -- syntax diagram join-source
 #
-# -- syntax diagram join-op
+# EVIDENCE-OF: R-45040-11121 -- syntax diagram join-op
 #
 do_select_tests e_select-0.4 {
   1  "SELECT t1.rowid FROM t1" {1 2 3}
@@ -263,7 +258,7 @@ do_select_tests e_select-0.4 {
   16 "SELECT t1.rowid FROM t1 CROSS JOIN t3" {1 1 2 2 3 3}
 }
 
-# -- syntax diagram compound-operator
+# EVIDENCE-OF: R-56911-63533 -- syntax diagram compound-operator
 #
 do_select_tests e_select-0.5 {
   1  "SELECT rowid FROM t1 UNION ALL SELECT rowid+2 FROM t4" {1 2 3 3 4}
@@ -272,7 +267,7 @@ do_select_tests e_select-0.5 {
   4  "SELECT rowid FROM t1 EXCEPT    SELECT rowid+2 FROM t4" {1 2}
 }
 
-# -- syntax diagram ordering-term
+# EVIDENCE-OF: R-60388-27458 -- syntax diagram ordering-term
 #
 do_select_tests e_select-0.6 {
   1  "SELECT b||a FROM t1 ORDER BY b||a"                  {onea threec twob}
@@ -281,7 +276,7 @@ do_select_tests e_select-0.6 {
   4  "SELECT b||a FROM t1 ORDER BY (b||a) DESC"           {twob threec onea}
 }
 
-# -- syntax diagram select-stmt
+# EVIDENCE-OF: R-36494-33519 -- syntax diagram select-stmt
 #
 do_select_tests e_select-0.7 {
   1  "SELECT * FROM t1" {a one b two c three}
@@ -333,9 +328,9 @@ do_select_tests e_select-1.1 {
   6 "SELECT count(*) WHERE 1" {1}
 }
 
-# EVIDENCE-OF: R-45424-07352 If there is only a single table or subquery
-# in the FROM clause, then the input data used by the SELECT statement
-# is the contents of the named table.
+# EVIDENCE-OF: R-48114-33255 If there is only a single table in the
+# join-source following the FROM clause, then the input data used by the
+# SELECT statement is the contents of the named table.
 #
 #   The results of the SELECT queries suggest that they are operating on the
 #   contents of the table 'xx'.
@@ -357,10 +352,10 @@ do_select_tests e_select-1.2 {
   3  "SELECT sum(x), sum(y) FROM xx"               {-17.89 -16.87}
 }
 
-# EVIDENCE-OF: R-28355-09804 If there is more than one table or subquery
-# in FROM clause then the contents of all tables and/or subqueries are
-# joined into a single dataset for the simple SELECT statement to
-# operate on.
+# EVIDENCE-OF: R-23593-12456 If there is more than one table specified
+# as part of the join-source following the FROM keyword, then the
+# contents of each named table are joined into a single dataset for the
+# simple SELECT statement to operate on.
 #
 #   There are more detailed tests for subsequent requirements that add 
 #   more detail to this idea. We just add a single test that shows that
@@ -383,10 +378,10 @@ do_select_tests e_select-1.3 {
 # of cartesian joins in the SELECT documentation is consistent with SQLite.
 # In doing so, we test the following three requirements as a side-effect:
 #
-# EVIDENCE-OF: R-49872-03192 If the join-operator is "CROSS JOIN",
-# "INNER JOIN", "JOIN" or a comma (",") and there is no ON or USING
-# clause, then the result of the join is simply the cartesian product of
-# the left and right-hand datasets.
+# EVIDENCE-OF: R-46122-14930 If the join-op is "CROSS JOIN", "INNER
+# JOIN", "JOIN" or a comma (",") and there is no ON or USING clause,
+# then the result of the join is simply the cartesian product of the
+# left and right-hand datasets.
 #
 #    The tests are built on this assertion. Really, they test that the output
 #    of a CROSS JOIN, JOIN, INNER JOIN or "," join matches the expected result
@@ -395,8 +390,8 @@ do_select_tests e_select-1.3 {
 # EVIDENCE-OF: R-46256-57243 There is no difference between the "INNER
 # JOIN", "JOIN" and "," join operators.
 #
-# EVIDENCE-OF: R-25071-21202 The "CROSS JOIN" join operator produces the
-# same result as the "INNER JOIN", "JOIN" and "," operators
+# EVIDENCE-OF: R-07544-24155 The "CROSS JOIN" join operator produces the
+# same data as the "INNER JOIN", "JOIN" and "," operators
 #
 #    All tests are run 4 times, with the only difference in each run being
 #    which of the 4 equivalent cartesian product join operators are used.
@@ -450,24 +445,24 @@ do_join_test e_select-1.4.1.4 {
 # left-hand and right-hand datasets.
 #
 do_join_test e_select-1.4.2.1 {
-  SELECT * FROM x2 %JOIN% x3 ORDER BY +c, +f
+  SELECT * FROM x2 %JOIN% x3
 } [list -60.06 {} {}      -39.24 {} encompass -1                 \
-        -60.06 {} {}      alerting {} -93.79 {}                  \
-        -60.06 {} {}      coldest -96 dramatists 82.3            \
-        -60.06 {} {}      conducting -87.24 37.56 {}             \
         -60.06 {} {}      presenting 51 reformation dignified    \
+        -60.06 {} {}      conducting -87.24 37.56 {}             \
+        -60.06 {} {}      coldest -96 dramatists 82.3            \
+        -60.06 {} {}      alerting {} -93.79 {}                  \
         -58 {} 1.21       -39.24 {} encompass -1                 \
-        -58 {} 1.21       alerting {} -93.79 {}                  \
-        -58 {} 1.21       coldest -96 dramatists 82.3            \
-        -58 {} 1.21       conducting -87.24 37.56 {}             \
         -58 {} 1.21       presenting 51 reformation dignified    \
+        -58 {} 1.21       conducting -87.24 37.56 {}             \
+        -58 {} 1.21       coldest -96 dramatists 82.3            \
+        -58 {} 1.21       alerting {} -93.79 {}                  \
 ]
 # TODO: Come back and add a few more like the above.
 
-# EVIDENCE-OF: R-18439-38548 In other words, if the left-hand dataset
-# consists of Nleft rows of Mleft columns, and the right-hand dataset of
-# Nright rows of Mright columns, then the cartesian product is a dataset
-# of Nleft&times;Nright rows, each containing Mleft+Mright columns.
+# EVIDENCE-OF: R-20659-43267 In other words, if the left-hand dataset
+# consists of Nlhs rows of Mlhs columns, and the right-hand dataset of
+# Nrhs rows of Mrhs columns, then the cartesian product is a dataset of
+# Nlhs.Nrhs rows, each containing Mlhs+Mrhs columns.
 #
 # x1, x2    (Nlhs=3, Nrhs=2)   (Mlhs=2, Mrhs=3)
 do_join_test e_select-1.4.3.1 { 
@@ -513,10 +508,11 @@ do_select_tests e_select-1.4.5 [list                                   \
     4 { SELECT * FROM t1 AS y INNER JOIN t1 AS x } $t1_cross_t1        \
 ]
 
-# EVIDENCE-OF: R-38465-03616 If there is an ON clause then the ON
-# expression is evaluated for each row of the cartesian product as a
-# boolean expression. Only rows for which the expression evaluates to
-# true are included from the dataset.
+
+# EVIDENCE-OF: R-22775-56496 If there is an ON clause specified, then
+# the ON expression is evaluated for each row of the cartesian product
+# as a boolean expression. All rows for which the expression evaluates
+# to false are excluded from the dataset.
 #
 foreach {tn select res} [list                                              \
     1 { SELECT * FROM t1 %JOIN% t2 ON (1) }       $t1_cross_t2             \
@@ -539,9 +535,9 @@ foreach {tn select res} [list                                              \
   do_join_test e_select-1.3.$tn $select $res
 }
 
-# EVIDENCE-OF: R-49933-05137 If there is a USING clause then each of the
-# column names specified must exist in the datasets to both the left and
-# right of the join-operator.
+# EVIDENCE-OF: R-63358-54862 If there is a USING clause specified as
+# part of the join-constraint, then each of the column names specified
+# must exist in the datasets to both the left and right of the join-op.
 #
 do_select_tests e_select-1.4 -error {
   cannot join using column %s - column not present in both tables
@@ -551,10 +547,10 @@ do_select_tests e_select-1.4 -error {
   3 { SELECT * FROM t3, (SELECT a AS b, b AS c FROM t1) USING (a) }   "a"
 } 
 
-# EVIDENCE-OF: R-22776-52830 For each pair of named columns, the
+# EVIDENCE-OF: R-55987-04584 For each pair of namesake columns, the
 # expression "lhs.X = rhs.X" is evaluated for each row of the cartesian
-# product as a boolean expression. Only rows for which all such
-# expressions evaluates to true are included from the result set.
+# product as a boolean expression. All rows for which one or more of the
+# expressions evaluates to false are excluded from the result set.
 #
 do_select_tests e_select-1.5 {
   1 { SELECT * FROM t1, t3 USING (a)   }  {a one 1 b two 2}
@@ -565,8 +561,8 @@ do_select_tests e_select-1.5 {
 # USING clause, the normal rules for handling affinities, collation
 # sequences and NULL values in comparisons apply.
 #
-# EVIDENCE-OF: R-38422-04402 The column from the dataset on the
-# left-hand side of the join-operator is considered to be on the
+# EVIDENCE-OF: R-35466-18578 The column from the dataset on the
+# left-hand side of the join operator is considered to be on the
 # left-hand side of the comparison operator (=) for the purposes of
 # collation sequence and affinity precedence.
 #
@@ -621,9 +617,10 @@ foreach {tn select res} {
 } {
   do_join_test e_select-1.7.$tn $select $res
 }
-# EVIDENCE-OF: R-42531-52874 If the join-operator is a "LEFT JOIN" or
-# "LEFT OUTER JOIN", then after the ON or USING filtering clauses have
-# been applied, an extra row is added to the output for each row in the
+
+# EVIDENCE-OF: R-41434-12448 If the join-op is a "LEFT JOIN" or "LEFT
+# OUTER JOIN", then after the ON or USING filtering clauses have been
+# applied, an extra row is added to the output for each row in the
 # original left-hand input dataset that corresponds to no rows at all in
 # the composite dataset (if any).
 #
@@ -658,8 +655,8 @@ do_select_tests e_select-1.9 {
   2b "SELECT * FROM t7 LEFT JOIN t8 USING (a)" {x ex 24 abc 24 y why 25 {} {}}
 }
 
-# EVIDENCE-OF: R-04932-55942 If the NATURAL keyword is in the
-# join-operator then an implicit USING clause is added to the
+# EVIDENCE-OF: R-01809-52134 If the NATURAL keyword is added to any of
+# the join-ops, then an implicit USING clause is added to the
 # join-constraints. The implicit USING clause contains each of the
 # column names that appear in both the left and right-hand input
 # datasets.
@@ -732,10 +729,10 @@ do_execsql_test e_select-3.0 {
   INSERT INTO x2 VALUES(7, 'mistrusted', 'standardized');
 } {}
 
-# EVIDENCE-OF: R-60775-64916 If a WHERE clause is specified, the WHERE
+# EVIDENCE-OF: R-06999-14330 If a WHERE clause is specified, the WHERE
 # expression is evaluated for each row in the input data as a boolean
-# expression. Only rows for which the WHERE clause expression evaluates
-# to true are included from the dataset before continuing.
+# expression. All rows for which the WHERE clause expression evaluates
+# to false are excluded from the dataset before continuing.
 #
 do_execsql_test e_select-3.1.1 { SELECT k FROM x1 WHERE x }         {3}
 do_execsql_test e_select-3.1.2 { SELECT k FROM x1 WHERE y }         {3 5 6}
@@ -803,7 +800,7 @@ do_select_tests e_select-4.1 {
 
   6  "SELECT count(*), * FROM z1"           {6 63 born -26}
   7  "SELECT max(a), * FROM z1"             {63 63 born -26}
-  8  "SELECT *, min(a) FROM z1"             {-5 {} 75 -5}
+  8  "SELECT *, min(a) FROM z1"             {63 born -26 -5}
 
   9  "SELECT *,* FROM z1,z2 LIMIT 1" {        
      51.65 -59.58 belfries {} 21 51.65 -59.58 belfries {} 21
@@ -813,8 +810,8 @@ do_select_tests e_select-4.1 {
   }
 }
 
-# EVIDENCE-OF: R-38023-18396 It is an error to use a "*" or "alias.*"
-# expression in any context other than a result expression list.
+# EVIDENCE-OF: R-61869-22578 It is an error to use a "*" or "alias.*"
+# expression in any context other than than a result expression list.
 #
 # EVIDENCE-OF: R-44324-41166 It is also an error to use a "*" or
 # "alias.*" expression in a simple SELECT query that does not have a
@@ -1007,12 +1004,12 @@ do_execsql_test e_select-4.9.0 {
   INSERT INTO b3 VALUES('dEF', 'dEF');
 } {}
 
-# EVIDENCE-OF: R-07284-35990 If the SELECT statement is an aggregate
+# EVIDENCE-OF: R-57754-57109 If the SELECT statement is an aggregate
 # query with a GROUP BY clause, then each of the expressions specified
 # as part of the GROUP BY clause is evaluated for each row of the
 # dataset. Each row is then assigned to a "group" based on the results;
 # rows for which the results of evaluating the GROUP BY expressions are
-# the same get assigned to the same group.
+# the same are assigned to the same group.
 #
 #   These tests also show that the following is not untrue:
 #
@@ -1021,10 +1018,10 @@ do_execsql_test e_select-4.9.0 {
 #
 do_select_tests e_select-4.9 {
   1  "SELECT group_concat(one), two FROM b1 GROUP BY two" {
-    /#,# f   1 o   #,#   s #,# t/
+    4,5 f   1 o   7,6   s 3,2 t
   }
   2  "SELECT group_concat(one), sum(one) FROM b1 GROUP BY (one>4)" {
-    1,2,3,4 10    5,6,7 18
+    1,4,3,2 10    5,7,6 18
   }
   3  "SELECT group_concat(one) FROM b1 GROUP BY (two>'o'), one%2" {
     4  1,5    2,6   3,7
@@ -1038,7 +1035,7 @@ do_select_tests e_select-4.9 {
 # values are considered equal.
 #
 do_select_tests e_select-4.10 {
-  1  "SELECT group_concat(y) FROM b2 GROUP BY x" {/#,#   3   #,#/}
+  1  "SELECT group_concat(y) FROM b2 GROUP BY x" {0,1   3   2,4}
   2  "SELECT count(*) FROM b2 GROUP BY CASE WHEN y<4 THEN NULL ELSE 0 END" {4 1}
 } 
 
@@ -1224,8 +1221,8 @@ do_select_tests e_select-5.1 {
 # EVIDENCE-OF: R-08861-34280 If the simple SELECT is a SELECT ALL, then
 # the entire set of result rows are returned by the SELECT.
 #
-# EVIDENCE-OF: R-01256-01950 If neither ALL or DISTINCT are present,
-# then the behavior is as if ALL were specified.
+# EVIDENCE-OF: R-47911-02086 If neither ALL or DISTINCT are present,
+# then the behaviour is as if ALL were specified.
 #
 # EVIDENCE-OF: R-14442-41305 If the simple SELECT is a SELECT DISTINCT,
 # then duplicate rows are removed from the set of result rows before it
@@ -1241,8 +1238,8 @@ do_select_tests e_select-5 {
   3.1 "SELECT x FROM h2" {One Two Three Four one two three four}
   3.2 "SELECT x FROM h1, h2 ON (x=b)" {One one Four four}
 
-  4.1 "SELECT DISTINCT x FROM h2" {One Two Three Four}
-  4.2 "SELECT DISTINCT x FROM h1, h2 ON (x=b)" {One Four}
+  4.1 "SELECT DISTINCT x FROM h2" {four one three two}
+  4.2 "SELECT DISTINCT x FROM h1, h2 ON (x=b)" {four one}
 } 
 
 # EVIDENCE-OF: R-02054-15343 For the purposes of detecting duplicate
@@ -1256,11 +1253,11 @@ do_select_tests e_select-5.5 {
 # sequence to compare text values with apply.
 #
 do_select_tests e_select-5.6 {
-  1  "SELECT DISTINCT b FROM h1"                  {one I i four IV iv}
-  2  "SELECT DISTINCT b COLLATE nocase FROM h1"   {one I four IV}
-  3  "SELECT DISTINCT x FROM h2"                  {One Two Three Four}
+  1  "SELECT DISTINCT b FROM h1"                  {I IV four i iv one}
+  2  "SELECT DISTINCT b COLLATE nocase FROM h1"   {four i iv one}
+  3  "SELECT DISTINCT x FROM h2"                  {four one three two}
   4  "SELECT DISTINCT x COLLATE binary FROM h2"   {
-    One Two Three Four one two three four
+    Four One Three Two four one three two
   }
 }
 
@@ -1371,9 +1368,8 @@ foreach {tn select op1 op2} {
   do_catchsql_test e_select-7.2.$tn $select [list 1 $err]
 }
 
-# EVIDENCE-OF: R-45440-25633 ORDER BY and LIMIT clauses may only occur
-# at the end of the entire compound SELECT, and then only if the final
-# element of the compound is not a VALUES clause.
+# EVIDENCE-OF: R-22874-32655 ORDER BY and LIMIT clauses may only occur
+# at the end of the entire compound SELECT.
 #
 foreach {tn select} {
   1   "SELECT * FROM j1 UNION ALL SELECT * FROM j2,j3 ORDER BY a"
@@ -1385,7 +1381,6 @@ foreach {tn select} {
 
   7   "SELECT * FROM j1 UNION SELECT * FROM j2,j3 ORDER BY a"
   8   "SELECT count(*) FROM j1 UNION SELECT max(e) FROM j2 ORDER BY 1"
-  8b  "VALUES('8b') UNION SELECT max(e) FROM j2 ORDER BY 1"
   9   "SELECT count(*), * FROM j1 UNION SELECT *,* FROM j2 ORDER BY 1,2,3"
   10  "SELECT * FROM j1 UNION SELECT * FROM j2,j3 LIMIT 10" 
   11  "SELECT * FROM j1 UNION SELECT * FROM j2,j3 LIMIT 10 OFFSET 5" 
@@ -1406,14 +1401,6 @@ foreach {tn select} {
   24  "SELECT a FROM j1 INTERSECT SELECT g FROM j2,j3 LIMIT (SELECT 10)" 
 } {
   do_test e_select-7.3.$tn { catch {execsql $select} msg } 0
-}
-foreach {tn select} {
-  50   "SELECT * FROM j1 ORDER BY 1 UNION ALL SELECT * FROM j2,j3"
-  51   "SELECT * FROM j1 LIMIT 1 UNION ALL SELECT * FROM j2,j3"
-  52   "SELECT count(*) FROM j1 UNION ALL VALUES(11) ORDER BY 1"
-  53   "SELECT count(*) FROM j1 UNION ALL VALUES(11) LIMIT 1"
-} {
-  do_test e_select-7.3.$tn { catch {execsql $select} msg } 1
 }
 
 # EVIDENCE-OF: R-08531-36543 A compound SELECT created using UNION ALL
@@ -1753,12 +1740,12 @@ do_select_tests e_select-8.4 {
      1 2 7    1 2 8      1 4  93    1 5 -1   
   }
   8  "SELECT z, x FROM d1 ORDER BY 2" {
-     /# 1    # 1    # 1   # 1 
-      # 1    # 1    # 2   # 2/
+     3 1     8 1    7 1   -20 1 
+     93 1   -1 1   -1 2   93 2
   }
   9  "SELECT z, x FROM d1 ORDER BY 1" {
-     /-20 1  -1 #   -1 #   3 1
-     7 1     8 1   93 #   93 #/   
+     -20 1  -1 2   -1 1   3 1     
+     7 1     8 1   93 2   93 1   
   }
 }
 
@@ -1774,16 +1761,16 @@ do_select_tests e_select-8.5 {
     94 94 9 8 4 0 0 -19
   }
   3  "SELECT z AS x, x AS z FROM d1 ORDER BY z" {
-    /# 1    # 1    # 1    # 1    # 1    # 1    # 2    # 2/
+    3 1    8 1    7 1    -20 1    93 1    -1 1    -1 2    93 2
   }
   4  "SELECT z AS x, x AS z FROM d1 ORDER BY x" {
-    /-20 1    -1 #    -1 #    3 1    7 1    8 1    93 #    93 #/
+    -20 1    -1 2    -1 1    3 1    7 1    8 1    93 2    93 1
   }
 }
 
-# EVIDENCE-OF: R-65068-27207 Otherwise, if the ORDER BY expression is
-# any other expression, it is evaluated and the returned value used to
-# order the output rows.
+# EVIDENCE-OF: R-27923-38747 Otherwise, if the ORDER BY expression is
+# any other expression, it is evaluated and the the returned value used
+# to order the output rows.
 #
 # EVIDENCE-OF: R-03421-57988 If the SELECT statement is a simple SELECT,
 # then an ORDER BY may contain any arbitrary expressions.

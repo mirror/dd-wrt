@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -23,8 +23,7 @@ static int __bam_lock_tree __P((DBC *, EPG *, EPG *csp, u_int32_t, u_int32_t));
 static int __bam_lock_subtree __P((DBC *, PAGE *, u_int32_t, u_int32_t));
 static int __bam_merge __P((DBC *,
      DBC *,  u_int32_t, DBT *, DB_COMPACT *, int *, int *));
-static int __bam_merge_internal __P((DBC *,
-    DBC *, int, DB_COMPACT *, int *, int *));
+static int __bam_merge_internal __P((DBC *, DBC *, int, DB_COMPACT *, int *, int *));
 static int __bam_merge_pages __P((DBC *, DBC *, DB_COMPACT *));
 static int __bam_merge_records __P((DBC *,
     DBC *,  u_int32_t, DB_COMPACT *, int *));
@@ -171,7 +170,7 @@ __bam_compact_int(dbc, start, stop, factor, spanp, c_data, isdonep)
 	int check_dups, check_trunc, clear_root, do_commit, isdone;
 	int merged, next_p, pgs_done, ret, t_ret, tdone;
 
-#ifdef	DEBUG_WOP
+#ifdef	DEBUG
 #define	CTRACE(dbc, location, t, start, f) do {				\
 		DBT __trace;						\
 		DB_SET_DBT(__trace, t, strlen(t));			\
@@ -185,8 +184,8 @@ __bam_compact_int(dbc, start, stop, factor, spanp, c_data, isdonep)
 		CTRACE(dbc, location, __buf, start, f);			\
 	} while (0)
 #else
-#define	CTRACE(dbc, location, t, start, f)	NOP_STATEMENT
-#define	PTRACE(dbc, location, p, start, f)	NOP_STATEMENT
+#define	CTRACE(dbc, location, t, start, f)
+#define	PTRACE(dbc, location, p, start, f)
 #endif
 
 	ndbc = NULL;
@@ -442,12 +441,9 @@ retry:	pg = NULL;
 					if (ret != 0)
 						goto err;
 				}
-				F_CLR(dbc, C_ROOT_COLLAPSED);
 				if ((ret =
 				    __bam_dpages(dbc, 0, BTD_RELINK)) != 0)
 					goto err;
-				if (F_ISSET(dbc, C_ROOT_COLLAPSED))
-					npgno = PGNO_INVALID;
 				c_data->compact_pages_free++;
 				if ((ret = __TLPUT(dbc, prev_lock)) != 0)
 					goto err;
@@ -603,8 +599,8 @@ retry:	pg = NULL;
 		merged = 0;
 		for (epg = cp->sp; epg != cp->csp; epg++) {
 			PTRACE(dbc, "PMerge", PGNO(epg->page), start, 0);
-			if ((ret = __bam_merge_internal(dbc, ndbc,
-			    LEVEL(epg->page), c_data, &merged, &pgs_done)) != 0)
+			if ((ret = __bam_merge_internal(dbc,
+			    ndbc, LEVEL(epg->page), c_data, &merged, &pgs_done)) != 0)
 				break;
 			if (merged)
 				break;
@@ -726,8 +722,8 @@ retry:	pg = NULL;
 				/* Get a fresh low numbered page. */
 				pgno = PGNO(pg);
 				if ((ret = __db_exchange_page(dbc,
-				    &cp->csp->page, NULL, PGNO_INVALID,
-				    DB_EXCH_DEFAULT, &pgs_done)) != 0)
+				    &cp->csp->page, NULL,
+				    PGNO_INVALID, DB_EXCH_DEFAULT, &pgs_done)) != 0)
 					goto err1;
 				if ((ret = __TLPUT(dbc, prev_lock)) != 0)
 					goto err1;
@@ -843,8 +839,7 @@ retry:	pg = NULL;
 			pgno = PGNO(pg);
 			/* Get a fresh low numbered page. */
 			if ((ret = __db_exchange_page(dbc, &cp->csp->page,
-			    npg, PGNO_INVALID,
-			    DB_EXCH_DEFAULT, &pgs_done)) != 0)
+			    npg, PGNO_INVALID, DB_EXCH_DEFAULT, &pgs_done)) != 0)
 				goto err1;
 			if ((ret = __TLPUT(dbc, prev_lock)) != 0)
 				goto err1;
@@ -929,7 +924,7 @@ next_page:
 	pg = NULL;
 	if ((ret = __bam_stkrel(dbc, STK_PGONLY)) != 0)
 		goto err;
-	if (npgno != PGNO_INVALID && !do_commit &&
+	if (npgno != PGNO_INVALID &&
 	    (ret = __db_lget(dbc, 0, npgno, DB_LOCK_READ, 0, &next_lock)) != 0)
 		goto err;
 	if ((ret = __bam_stkrel(dbc, pgs_done == 0 ? STK_NOLOCK : 0)) != 0)
@@ -1007,6 +1002,9 @@ err:	/*
 	if ((t_ret = __bam_stkrel(dbc, sflag)) != 0 && ret == 0)
 		ret = t_ret;
 
+	if ((t_ret = __TLPUT(dbc, metalock)) != 0 && ret == 0)
+		ret = t_ret;
+
 	if (pg != NULL && (t_ret =
 	     __memp_fput(dbmp,
 		  dbc->thread_info, pg, dbc->priority) != 0) && ret == 0)
@@ -1016,11 +1014,7 @@ err:	/*
 		  dbc->thread_info, npg, dbc->priority) != 0) && ret == 0)
 		ret = t_ret;
 
-out:
-	if ((t_ret = __TLPUT(dbc, metalock)) != 0 && ret == 0)
-		ret = t_ret;
-
-	*isdonep = isdone;
+out:	*isdonep = isdone;
 
 	/* For OPD trees return if we did anything in the span variable. */
 	if (F_ISSET(dbc, DBC_OPD))
@@ -1240,11 +1234,10 @@ __bam_merge_records(dbc, ndbc, factor, c_data, pgs_donep)
 		indx -= adj;
 	}
 	bk = GET_BKEYDATA(dbp, npg, indx);
-	len = (B_TYPE(bk->type) == B_KEYDATA) ? bk->len :
-	    ((B_TYPE(bk->type) == B_BLOB) ? BBLOB_DSIZE : BOVERFLOW_SIZE);
+	len = (B_TYPE(bk->type) != B_KEYDATA) ? BOVERFLOW_SIZE : bk->len;
 	if (indx != 0 && BINTERNAL_SIZE(len) >= pfree) {
 		if (F_ISSET(dbc, DBC_OPD)) {
-			if (dbp->dup_compare == __dbt_defcmp)
+			if (dbp->dup_compare == __bam_defcmp)
 				func = __bam_defpfx;
 			else
 				func = NULL;
@@ -1285,9 +1278,8 @@ noprefix:
 		} while (indx != 0 &&  ninp[indx] == ninp[indx - adj]);
 
 		bk = GET_BKEYDATA(dbp, npg, indx);
-		len = (B_TYPE(bk->type) == B_KEYDATA) ?
-		    bk->len : ((B_TYPE(bk->type) == B_BLOB) ?
-		    BBLOB_DSIZE : BOVERFLOW_SIZE);
+		len =
+		    (B_TYPE(bk->type) != B_KEYDATA) ? BOVERFLOW_SIZE : bk->len;
 	}
 
 	/*
@@ -1351,18 +1343,11 @@ no_check: is_dup = first_dup = next_dup = 0;
 			     BOVERFLOW_SIZE, &data, NULL)) != 0)
 				goto err;
 			break;
-		case B_BLOB:
-			data.size = BBLOB_SIZE;
-			data.data = bk;
-			if ((ret = __db_pitem(dbc, pg,
-			    pind, BBLOB_SIZE, &data, NULL)) != 0)
-				goto err;
-			break;
 		default:
-			ret = USR_ERR(env, EINVAL);
 			__db_errx(env, DB_STR_A("1022",
 			    "Unknown record format, page %lu, indx 0",
 			    "%lu"), (u_long)PGNO(pg));
+			ret = EINVAL;
 			goto err;
 		}
 		pind++;
@@ -1624,11 +1609,11 @@ __bam_merge_internal(dbc, ndbc, level, c_data, merged, pgs_donep)
 		 * Check for overflow keys on both pages while we have
 		 * them locked.
 		 */
-		if ((ret = __bam_truncate_internal_overflow(dbc,
-		    pg, c_data, pgs_donep)) != 0)
+		 if ((ret =
+		     __bam_truncate_internal_overflow(dbc, pg, c_data, pgs_donep)) != 0)
 			goto err;
-		if ((ret = __bam_truncate_internal_overflow(dbc,
-		    npg, c_data, pgs_donep)) != 0)
+		 if ((ret =
+		     __bam_truncate_internal_overflow(dbc, npg, c_data, pgs_donep)) != 0)
 			goto err;
 	}
 
@@ -1728,9 +1713,9 @@ fits:	memset(&bi, 0, sizeof(bi));
 			} else if (fip->type == B_OVERFLOW) {
 				DB_ASSERT(dbc->env,
 				    fip->len == sizeof(BOVERFLOW));
-				/* Cast to "BOVERFLOW *" to calm down lint. */
-				memmove(&bo,
-				    (BOVERFLOW *)fip->data, sizeof(BOVERFLOW));
+ 				/* Cast to "BOVERFLOW *" to calm down lint. */
+  				memmove(&bo,
+  				    (BOVERFLOW *)fip->data, sizeof(BOVERFLOW));
 				memset(&hdr, 0, sizeof(hdr));
 				if ((ret = __db_goff(dbc, &hdr, bo.tlen,
 				     bo.pgno, &hdr.data, &hdr.size)) == 0)
@@ -1741,11 +1726,6 @@ fits:	memset(&bi, 0, sizeof(bi));
 					return (ret);
 				data.size = sizeof(bo);
 				data.data = &bo;
-			} else if (fip->type == B_BLOB) {
-				/* Blobs should never appear as keys. */
-				DB_ASSERT(dbc->env,
-				    !(fip->type == B_BLOB &&
-				    TYPE(pg) == P_IBTREE));
 			} else {
 				data.size = fip->len;
 				data.data = fip->data;
@@ -1796,8 +1776,7 @@ fits:	memset(&bi, 0, sizeof(bi));
 		if ((ret = __db_pitem(dbc, pg, pind, size, &hdr, &data)) != 0)
 			goto err;
 		pind++;
-		/* add bip test so fortify does not complain */
-		if (fip != NULL && bip != NULL) {
+		if (fip != NULL) {
 			if (B_TYPE(bip->type) == B_OVERFLOW &&
 			    (ret = __db_doff(dbc,
 			    ((BOVERFLOW *)bip->data)->pgno)) != 0)
@@ -1947,7 +1926,7 @@ __bam_compact_dups(dbc, ppg, factor, have_lock, c_data, pgs_donep)
 	DB_ASSERT(NULL, dbc != NULL);
 	dbp = dbc->dbp;
 	dbmp = dbp->mpf;
-	/* !!! Don't reserve any free bytes (Force 100% fillfactor) in OPD trees
+	/* XXX Don't reserve any free bytes (Force 100% fillfactor) in OPD trees
 	 * to ensure forward progress.
 	 */
 	factor = 0;
@@ -1955,8 +1934,7 @@ __bam_compact_dups(dbc, ppg, factor, have_lock, c_data, pgs_donep)
 
 	for (i = 0; i <  NUM_ENT(*ppg); i++) {
 		bo = GET_BOVERFLOW(dbp, *ppg, i);
-		if (B_TYPE(bo->type) == B_KEYDATA ||
-		    B_TYPE(bo->type) == B_BLOB)
+		if (B_TYPE(bo->type) == B_KEYDATA)
 			continue;
 		c_data->compact_pages_examine++;
 		if (bo->pgno > c_data->compact_truncate) {
@@ -1990,8 +1968,7 @@ __bam_compact_dups(dbc, ppg, factor, have_lock, c_data, pgs_donep)
 
 		if (B_TYPE(bo->type) == B_OVERFLOW) {
 			if ((ret = __db_truncate_overflow(dbc,
-			    bo->pgno, have_lock ? NULL : ppg,
-			    c_data, pgs_donep)) != 0)
+			    bo->pgno, have_lock ? NULL : ppg, c_data, pgs_donep)) != 0)
 				goto err;
 			continue;
 		}
@@ -2201,7 +2178,7 @@ __bam_compact_isdone(dbc, stop, pg, isdone)
 	} else {
 		DB_ASSERT(dbc->dbp->env, TYPE(pg) == P_LBTREE);
 		if ((ret = __bam_cmp(dbc, stop, pg, 0,
-		    t->bt_compare, &cmp, NULL)) != 0)
+		    t->bt_compare, &cmp)) != 0)
 			return (ret);
 
 		*isdone = cmp <= 0;
@@ -2387,7 +2364,7 @@ __bam_savekey(dbc, next, start)
 			if (len == 0) {
 no_key:				__db_errx(env, DB_STR("1023",
 				    "Compact cannot handle zero length key"));
-				ret = DBC_ERR(dbc, DB_NOTFOUND);
+				ret = DB_NOTFOUND;
 				goto err;
 			}
 		} else {
@@ -2540,9 +2517,8 @@ new_txn:
 		pgno = PGNO(cp->csp->page);
 
 		if (pgno > c_data->compact_truncate) {
-			if ((ret = __db_exchange_page(dbc,
-			    &cp->csp->page, NULL, PGNO_INVALID,
-			    DB_EXCH_DEFAULT, pgs_donep)) != 0)
+			if ((ret = __db_exchange_page(dbc, &cp->csp->page,
+			    NULL, PGNO_INVALID, DB_EXCH_DEFAULT, pgs_donep)) != 0)
 				goto err;
 		}
 
@@ -2566,8 +2542,6 @@ new_txn:
 	} while (pgno != BAM_ROOT_PGNO(dbc));
 
 	if ((ret = __LPUT(dbc, root_lock)) != 0)
-		goto err;
-	if ((ret = __LPUT(dbc, meta_lock)) != 0)
 		goto err;
 	if ((ret = __dbc_close(dbc)) != 0)
 		goto err;
@@ -2647,8 +2621,8 @@ again:	if (F_ISSET(dbp, DB_AM_SUBDB) &&
 			 * page latch is released.
 			 */
 			++dbp->mpf->mfp->revision;
-			if ((ret = __db_exchange_page(dbc, &root, NULL,
-			    PGNO_INVALID, DB_EXCH_FREE, pgs_donep)) != 0)
+			if ((ret = __db_exchange_page(dbc,
+			    &root, NULL, PGNO_INVALID, DB_EXCH_FREE, pgs_donep)) != 0)
 				goto err;
 			if (PGNO(root) == bt->bt_root)
 				goto err;
@@ -2672,8 +2646,6 @@ again:	if (F_ISSET(dbp, DB_AM_SUBDB) &&
 		if ((ret = __memp_fput(dbp->mpf, ip, meta, dbp->priority)) != 0)
 			goto err;
 		meta = NULL;
-		if (txn == NULL && (ret = __LPUT(dbc, meta_lock)) != 0)
-			goto err;
 		if ((ret = __dbc_close(dbc)) != 0)
 			goto err;
 		dbc = NULL;

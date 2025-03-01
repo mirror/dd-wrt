@@ -7,14 +7,14 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="transapp.html" title="Chapter 12.  Berkeley DB Transactional Data Store Applications" />
+    <link rel="up" href="transapp.html" title="Chapter 11.  Berkeley DB Transactional Data Store Applications" />
     <link rel="prev" href="transapp_atomicity.html" title="Atomicity" />
     <link rel="next" href="transapp_read.html" title="Degrees of isolation" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,7 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="transapp_atomicity.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 12.  Berkeley DB Transactional Data Store Applications </th>
+          <th width="60%" align="center">Chapter 11. 
+		Berkeley DB Transactional Data Store Applications
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="transapp_read.html">Next</a></td>
         </tr>
       </table>
@@ -36,45 +38,34 @@
           </div>
         </div>
       </div>
-      <p>
-        The third reason listed for using transactions was
-        <span class="emphasis"><em>isolation</em></span>. Consider an application
-        suite in which multiple threads of control (multiple processes
-        or threads in one or more processes) are changing the values
-        associated with a key in one or more databases. Specifically,
-        they are taking the current value, incrementing it, and then
-        storing it back into the database.
-    </p>
-      <p>
-        Such an application requires isolation. Because we want to
-        change a value in the database, we must make sure that after
-        we read it, no other thread of control modifies it. For
-        example, assume that both thread #1 and thread #2 are doing
-        similar operations in the database, where thread #1 is
-        incrementing records by 3, and thread #2 is incrementing
-        records by 5. We want to increment the record by a total of 8.
-        If the operations interleave in the right (well, wrong) order,
-        that is not what will happen:
-    </p>
+      <p>The third reason listed for using transactions was <span class="emphasis"><em>isolation</em></span>.
+Consider an application suite in which multiple threads of control
+(multiple processes or threads in one or more processes) are changing
+the values associated with a key in one or more databases.  Specifically,
+they are taking the current value, incrementing it, and then storing it
+back into the database.</p>
+      <p>Such an application requires isolation.  Because we want to change a value
+in the database, we must make sure that after we read it, no other thread
+of control modifies it.  For example, assume that both thread #1 and
+thread #2 are doing similar operations in the database, where thread #1
+is incrementing records by 3, and thread #2 is incrementing records by
+5.  We want to increment the record by a total of 8.  If the operations
+interleave in the right (well, wrong) order, that is not what will
+happen:</p>
       <pre class="programlisting">thread #1  <span class="bold"><strong>read</strong></span> record: the value is 2
 thread #2  <span class="bold"><strong>read</strong></span> record: the value is 2
 thread #2  <span class="bold"><strong>write</strong></span> record + 5 back into the database (new value 7)
 thread #1  <span class="bold"><strong>write</strong></span> record + 3 back into the database (new value 5)</pre>
-      <p>
-        As you can see, instead of incrementing the record by a
-        total of 8, we've incremented it only by 3 because thread #1
-        overwrote thread #2's change. By wrapping the operations in
-        transactions, we ensure that this cannot happen. In a
-        transaction, when the first thread reads the record, locks are
-        acquired that will not be released until the transaction
-        finishes, guaranteeing that all writers will block, waiting
-        for the first thread's transaction to complete (or to be
-        aborted).
-    </p>
-      <p>
-        Here is an example function that does transaction-protected
-        increments on database records to ensure isolation:
-    </p>
+      <p>As you can see, instead of incrementing the record by a total of 8,
+we've incremented it only by 3 because thread #1 overwrote thread #2's
+change.  By wrapping the operations in transactions, we ensure that this
+cannot happen.  In a transaction, when the first thread reads the
+record, locks are acquired that will not be released until the
+transaction finishes, guaranteeing that all writers
+will block, waiting for the first thread's transaction to complete (or
+to be aborted).</p>
+      <p>Here is an example function that does transaction-protected increments
+on database records to ensure isolation:</p>
       <pre class="programlisting">int
 main(int argc, char *argv)
 {
@@ -189,15 +180,12 @@ add_color(DB_ENV *dbenv, DB *dbp, char *color, int increment)
         }
     }
 }</strong></span></pre>
-      <p>
-        The <a href="../api_reference/C/dbcget.html#dbcget_DB_RMW" class="olink">DB_RMW</a> flag in the <a href="../api_reference/C/dbget.html" class="olink">DB-&gt;get()</a> call specifies a write lock
-        should be acquired on the key/data pair, instead of the more
-        obvious read lock. We do this because the application expects
-        to write the key/data pair in a subsequent operation, and the
-        transaction is much more likely to deadlock if we first obtain
-        a read lock and subsequently a write lock, than if we obtain
-        the write lock initially.
-    </p>
+      <p>The <a href="../api_reference/C/dbcget.html#dbcget_DB_RMW" class="olink">DB_RMW</a> flag in the <a href="../api_reference/C/dbget.html" class="olink">DB-&gt;get()</a> call specifies a write lock
+should be acquired on the key/data pair, instead of the more obvious read
+lock.  We do this because the application expects to write the key/data
+pair in a subsequent operation, and the transaction is much more likely to
+deadlock if we first obtain a read lock and subsequently a write lock, than
+if we obtain the write lock initially.</p>
     </div>
     <div class="navfooter">
       <hr />

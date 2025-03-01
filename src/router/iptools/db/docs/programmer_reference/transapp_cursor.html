@@ -7,14 +7,14 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="transapp.html" title="Chapter 12.  Berkeley DB Transactional Data Store Applications" />
+    <link rel="up" href="transapp.html" title="Chapter 11.  Berkeley DB Transactional Data Store Applications" />
     <link rel="prev" href="transapp_read.html" title="Degrees of isolation" />
     <link rel="next" href="transapp_nested.html" title="Nested transactions" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,7 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="transapp_read.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 12.  Berkeley DB Transactional Data Store Applications </th>
+          <th width="60%" align="center">Chapter 11. 
+		Berkeley DB Transactional Data Store Applications
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="transapp_nested.html">Next</a></td>
         </tr>
       </table>
@@ -36,24 +38,18 @@
           </div>
         </div>
       </div>
-      <p>
-        Berkeley DB cursors may be used inside a transaction,
-        exactly as any other <a href="../api_reference/C/db.html" class="olink">DB</a> method. The enclosing transaction ID
-        must be specified when the cursor is created, but it does not
-        then need to be further specified on operations performed
-        using the cursor. One important point to remember is that a
-        cursor <span class="bold"><strong>must be closed</strong></span> before
-        the enclosing transaction is committed or aborted.
-    </p>
-      <p>
-        The following code fragment uses a cursor to store a new key
-        in the cats database with four associated data items. The key
-        is a name. The data items are a company name and a list of the
-        breeds of cat owned. Each of the data entries is stored as a
-        duplicate data item. In this example, transactions are
-        necessary to ensure that either all or none of the data items
-        appear in case of system or application failure.
-    </p>
+      <p>Berkeley DB cursors may be used inside a transaction, exactly as any other
+<a href="../api_reference/C/db.html" class="olink">DB</a> method.  The enclosing transaction ID must be specified when
+the cursor is created, but it does not then need to be further specified
+on operations performed using the cursor.  One important point to
+remember is that a cursor <span class="bold"><strong>must be closed</strong></span> before the enclosing
+transaction is committed or aborted.</p>
+      <p>The following code fragment uses a cursor to store a new key in the cats
+database with four associated data items.  The key is a name.  The data
+items are a company name and a list of the breeds of cat owned.  Each
+of the data entries is stored as a duplicate data item.  In this
+example, transactions are necessary to ensure that either all or none
+of the data items appear in case of system or application failure.</p>
       <pre class="programlisting">int
 main(int argc, char *argv)
 {

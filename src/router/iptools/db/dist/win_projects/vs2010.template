@@ -75,18 +75,6 @@ declare function local:configurationType($project, $config)
   else error(QName("","xqilla"),"configurationType:unkown project type")
 };
 
-declare function local:generatePlatformToolset()
-{
-  local:indent(4),<PlatformToolset xmlns="http://schemas.microsoft.com/developer/msbuild/2003">v110</PlatformToolset>
-};
-
-declare function local:platformToolset($vsversion)
-{
-  let $toolset := local:generatePlatformToolset()
-  return
-    (if ($vsversion eq "11.0") then $toolset else "")
-};
-
 declare function local:generateConfigurations($project)
 {
   for $platform in local:getPlatforms($vsversion) return
@@ -99,7 +87,6 @@ declare function local:generateConfigurations($project)
         {local:indent(4)}<ConfigurationType>{$configType}</ConfigurationType>
 	{local:indent(4)}<UseOfMfc>false</UseOfMfc>
 	{local:indent(4)}<CharacterSet>MultiByte</CharacterSet>
-        {local:platformToolset($vsversion)}
       {local:indent(2)}</PropertyGroup>
       )
 };
@@ -297,7 +284,7 @@ declare function local:addLibraryDependencies($project,$config)
 declare function local:addProjectDependencies($project)
 {	
    for $mydep in $project/references
-	   let $mytemp := concat("{",doc($projectList)/projects/project[@name=$mydep]/@guid,"}")
+	   let $mytemp := lower-case(concat("{",doc($projectList)/projects/project[@name=$mydep]/@guid,"}"))
 	   return
 	   (local:indent(4), <ProjectReference Condition="exists('{concat($mydep,".vcxproj")}')" Include="{concat($mydep,".vcxproj")}" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 	    {local:indent(6)}<Project>{$mytemp}</Project>

@@ -1,9 +1,4 @@
-/**
- * @file impexp.c
- * SQLite extension module for importing/exporting
- * database information from/to SQL source text and
- * export to CSV text.
- *
+/*
  * 2007 January 27
  *
  * The author disclaims copyright to this source code.  In place of
@@ -15,15 +10,17 @@
  *
  ********************************************************************
  *
- * <pre>
+ * SQLite extension module for importing/exporting
+ * database information from/to SQL source text and
+ * export to CSV text.
+ *
  * Usage:
  *
  *  SQLite function:
  *       SELECT import_sql(filename);
  *
  *  C function:
- *       int impexp_import_sql(sqlite3 *db,
- *                             char *filename);
+ *       int impexp_import_sql(sqlite3 *db, char *filename);
  *
  *       Reads SQL commands from filename and executes them
  *       against the current database. Returns the number
@@ -124,22 +121,22 @@
  *          SELECT export_xml('out.xml', 0, 2, 'TBL_A', 'ROW', 'A');
  *          -- XML output
  *            <TBL_A>
- *              <ROW>
- *                &lt;a TYPE="INTEGER"&gt;1&lt;/a&gt;
- *                &lt;b TYPE="REAL"&gt;2.1&lt;/b&gt;
- *              </ROW>
- *              <ROW>
- *                &lt;a TYPE="INTEGER"&gt;3&lt;/a&gt;
- *                &lt;b TYPE="TEXT"&gt;foo&lt;/b&gt;
- *              </ROW>
- *              <ROW>
- *                &lt;a TYPE="TEXT"&gt;&lt;/a&gt;
- *                &lt;b TYPE="NULL"&gt;&lt;/b&gt;
- *              </ROW>
- *              <ROW>
- *                &lt;a TYPE="BLOB"&gt;&#x01;&#x02;&x03;&lt;/a&gt;
- *                &lt;b TYPE="TEXT"&gt;&amp;lt;blob&amp;gt;&lt;/b&gt;
- *              </ROW>
+ *             <ROW>
+ *              <a TYPE="INTEGER">1</a>
+ *              <b TYPE="REAL">2.1</b>
+ *             </ROW>
+ *             <ROW>
+ *              <a TYPE="INTEGER">3</a>
+ *              <b TYPE="TEXT">foo</b>
+ *             </ROW>
+ *             <ROW>
+ *              <a TYPE="TEXT"></a>
+ *              <b TYPE="NULL"></b>
+ *             </ROW>
+ *             <ROW>
+ *              <a TYPE="BLOB">&#x01;&#x02;&x03;</a>
+ *              <b TYPE="TEXT">&lt;blob&gt;</b>
+ *             </ROW>
  *            </TBL_A>
  *
  *       Quoting of XML entities is performed only on the data,
@@ -177,7 +174,6 @@
  *
  * On Win32 the filename argument may be specified as NULL in order
  * to open a system file dialog for interactive filename selection.
- * </pre>
  */
 
 #ifdef STANDALONE
@@ -185,7 +181,7 @@
 #define sqlite3_api_routines void
 #else
 #include <sqlite3ext.h>
-static SQLITE_EXTENSION_INIT1
+SQLITE_EXTENSION_INIT1
 #endif
 
 #include <stdlib.h>
@@ -203,27 +199,16 @@ static SQLITE_EXTENSION_INIT1
 
 #include "impexp.h"
 
-/**
- * @typedef struct json_pfs
- * @struct json_pfs
- * JSON output helper structure
- */
+/* JSON output helper */
 
 typedef struct {
-    impexp_putc pfunc;	/**< function like fputc() */
-    void *parg;		/**< argument to function */
+    impexp_putc pfunc;
+    void *parg;
 } json_pfs;
 
 static const char space_chars[] = " \f\n\r\t\v";
 
-#define ISSPACE(c) ((c) && (strchr(space_chars, (c)) != 0))
-
-/**
- * Read one line of input into dynamically allocated buffer
- * which the caller must free with sqlite3_free()
- * @param fin FILE pointer
- * @result dynamically allocated input line
- */
+#define ISSPACE(c) ((c) && strchr(space_chars, (c)) != 0)
 
 static char *
 one_input_line(FILE *fin)
@@ -262,7 +247,7 @@ one_input_line(FILE *fin)
 	while (line[n]) {
 	    n++;
 	}
-	if ((n > 0) && (line[n-1] == '\n')) {
+	if (n > 0 && line[n-1] == '\n') {
 	    n--;
 	    line[n] = 0;
 	    eol = 1;
@@ -271,31 +256,19 @@ one_input_line(FILE *fin)
     tmp = sqlite3_realloc(line, n + 1);
     if (!tmp) {
 	sqlite3_free(line);
+	return 0;
     }
     return tmp;
 }
 
-/**
- * Test if string ends with a semicolon
- * @param str string to be tested
- * @param n length of string
- * @result true or false
- */
-
 static int
 ends_with_semicolon(const char *str, int n)
 {
-    while ((n > 0) && ISSPACE(str[n - 1])) {
+    while (n > 0 && ISSPACE(str[n - 1])) {
 	n--;
     }
-    return (n > 0) && (str[n - 1] == ';');
+    return n > 0 && str[n - 1] == ';';
 }
-
-/**
- * Test if string contains entirely whitespace or SQL comment
- * @param str string to be tested
- * @result true or false
- */
 
 static int
 all_whitespace(const char *str)
@@ -304,9 +277,9 @@ all_whitespace(const char *str)
 	if (ISSPACE(str[0])) {
 	    continue;
 	}
-	if ((str[0] == '/') && (str[1] == '*')) {
+	if (str[0] == '/' && str[1] == '*') {
 	    str += 2;
-	    while (str[0] && ((str[0] != '*') || (str[1] != '/'))) {
+	    while (str[0] && (str[0] != '*' || str[1] != '/')) {
 		str++;
 	    }
 	    if (!str[0]) {
@@ -315,9 +288,9 @@ all_whitespace(const char *str)
 	    str++;
 	    continue;
 	}
-	if ((str[0] == '-') && (str[1] == '-')) {
+	if (str[0] == '-' && str[1] == '-') {
 	    str += 2;
-	    while (str[0] && (str[0] != '\n')) {
+	    while (str[0] && str[0] != '\n') {
 		str++;
 	    }
 	    if (!str[0]) {
@@ -329,13 +302,6 @@ all_whitespace(const char *str)
     }
     return 1;
 }
-
-/**
- * Process contents of FILE pointer as SQL commands
- * @param db SQLite database to work on
- * @param fin input FILE pointer
- * @result number of errors
- */
 
 static int
 process_input(sqlite3 *db, FILE *fin)
@@ -404,18 +370,6 @@ process_input(sqlite3 *db, FILE *fin)
     return errors;
 }
 
-/**
- * SQLite function to quote SQLite value depending on optional quote mode
- * @param context SQLite function context
- * @param argc number of arguments
- * @param argv argument vector
- *
- * Layout of arguments:
- *
- * argv[0] - value to be quoted<br>
- * argv[1] - value of quote mode (optional)<br>
- */
-
 static void
 quote_func(sqlite3_context *context, int argc, sqlite3_value **argv)
 {
@@ -439,7 +393,7 @@ quote_func(sqlite3_context *context, int argc, sqlite3_value **argv)
     }
     case SQLITE_BLOB: {
 	char *text = 0;
-	unsigned char *blob = (unsigned char *) sqlite3_value_blob(argv[0]);
+	char const *blob = sqlite3_value_blob(argv[0]);
 	int nblob = sqlite3_value_bytes(argv[0]);
 
 	if (2 * nblob + 4 > 1000000000) {
@@ -511,7 +465,6 @@ quote_func(sqlite3_context *context, int argc, sqlite3_value **argv)
 	p = sqlite3_malloc(i + n + 3);
 	if (!p) {
 	    sqlite3_result_error(context, "out of memory", -1);
-	    return;
 	}
 	p[0] = '\'';
 	for (i = 0, n = 1; arg[i]; i++) {
@@ -528,13 +481,6 @@ quote_func(sqlite3_context *context, int argc, sqlite3_value **argv)
     }
     }
 }
-
-/**
- * SQLite function to quote an SQLite value in CSV format
- * @param context SQLite function context
- * @param argc number of arguments
- * @param argv argument vector
- */
 
 static void
 quote_csv_func(sqlite3_context *context, int argc, sqlite3_value **argv)
@@ -554,7 +500,7 @@ quote_csv_func(sqlite3_context *context, int argc, sqlite3_value **argv)
     }
     case SQLITE_BLOB: {
 	char *text = 0;
-	unsigned char *blob = (unsigned char *) sqlite3_value_blob(argv[0]);
+	char const *blob = sqlite3_value_blob(argv[0]);
 	int nblob = sqlite3_value_bytes(argv[0]);
 
 	if (2 * nblob + 4 > 1000000000) {
@@ -600,7 +546,6 @@ quote_csv_func(sqlite3_context *context, int argc, sqlite3_value **argv)
 	p = sqlite3_malloc(i + n + 3);
 	if (!p) {
 	    sqlite3_result_error(context, "out of memory", -1);
-	    return;
 	}
 	p[0] = '"';
 	for (i = 0, n = 1; arg[i]; i++) {
@@ -618,13 +563,6 @@ quote_csv_func(sqlite3_context *context, int argc, sqlite3_value **argv)
     }
 }
 
-/**
- * SQLite function to make XML indentation
- * @param context SQLite function context
- * @param argc number of arguments
- * @param argv argument vector
- */
-
 static void
 indent_xml_func(sqlite3_context *context, int argc, sqlite3_value **argv)
 {
@@ -641,13 +579,6 @@ indent_xml_func(sqlite3_context *context, int argc, sqlite3_value **argv)
     }
     sqlite3_result_text(context, spaces, n, SQLITE_STATIC);
 }
-
-/**
- * SQLite function to quote a string for XML
- * @param context SQLite function context
- * @param argc number of arguments
- * @param argv argument vector
- */
 
 static void
 quote_xml_func(sqlite3_context *context, int argc, sqlite3_value **argv)
@@ -695,7 +626,7 @@ quote_xml_func(sqlite3_context *context, int argc, sqlite3_value **argv)
     }
     case SQLITE_BLOB: {
 	char *text = 0;
-	unsigned char *blob = (unsigned char *) sqlite3_value_blob(argv[0]);
+	char const *blob = sqlite3_value_blob(argv[0]);
 	int nblob = sqlite3_value_bytes(argv[0]);
 	int i, k = 0;
 
@@ -734,9 +665,9 @@ quote_xml_func(sqlite3_context *context, int argc, sqlite3_value **argv)
 	    return;
 	}
 	for (i = 0, n = 0; arg[i]; i++) {
-	    if ((arg[i] == '"') || (arg[i] == '\'') ||
-		(arg[i] == '<') || (arg[i] == '>') ||
-		(arg[i] == '&') || (arg[i] < ' ')) {
+	    if (arg[i] == '"' || arg[i] == '\'' ||
+		arg[i] == '<' || arg[i] == '>' ||
+		arg[i] == '&' || arg[i] < ' ') {
 		n += 5;
 	    }
 	}
@@ -792,7 +723,7 @@ quote_xml_func(sqlite3_context *context, int argc, sqlite3_value **argv)
 		p[n++] = xdigits[(arg[i] >> 4 ) & 0x0F];
 		p[n++] = xdigits[arg[i] & 0x0F];
 		p[n++] = ';';
-	    } else if (addtype < 0 && (arg[i] == ' ')) {
+	    } else if (addtype < 0 && arg[i] == ' ') {
 		p[n++] = '&';
 		p[n++] = '#';
 		p[n++] = 'x';
@@ -810,13 +741,6 @@ quote_xml_func(sqlite3_context *context, int argc, sqlite3_value **argv)
     }
     }
 }
-
-/**
- * SQLite function to read and process SQL commands from a file
- * @param ctx SQLite function context
- * @param nargs number of arguments
- * @param args argument vector
- */
 
 static void
 import_func(sqlite3_context *ctx, int nargs, sqlite3_value **args)
@@ -863,8 +787,6 @@ done:
     sqlite3_result_int(ctx, sqlite3_changes(db) - changes0);
 }
 
-/* see doc in impexp.h */
-
 int
 impexp_import_sql(sqlite3 *db, char *filename)
 {
@@ -907,26 +829,15 @@ done:
     return sqlite3_changes(db) - changes0;
 }
 
-/**
- * @typedef DUMP_DATA
- * @struct DUMP_DATA
- * Structure for dump callback
- */
-
 typedef struct {
-    sqlite3 *db;	/**< SQLite database pointer */
-    int with_schema;	/**< if true, output schema */
-    int quote_mode;	/**< mode for quoting data */
-    char *where;	/**< optional where clause of dump */
-    int nlines;		/**< counter for output lines */
-    int indent;		/**< current indent level */
-    FILE *out;		/**< output file pointer */
+    sqlite3 *db;
+    int with_schema;
+    int quote_mode;
+    char *where;
+    int nlines;
+    int indent;
+    FILE *out;
 } DUMP_DATA;
-
-/**
- * Write indentation to dump
- * @param dd information structure for dump
- */
 
 static void
 indent(DUMP_DATA *dd)
@@ -938,20 +849,10 @@ indent(DUMP_DATA *dd)
     }
 }
 
-/**
- * Execute SQL to dump contents of one table
- * @param dd information structure for dump
- * @param errp pointer receiving error message
- * @param fmt if true, use sqlite3_*printf() on SQL
- * @param query SQL text to perform dump of table
- * @param ... optional arguments
- * @result SQLite error code
- */
-
 static int
 table_dump(DUMP_DATA *dd, char **errp, int fmt, const char *query, ...)
 {
-    sqlite3_stmt *select = 0;
+    sqlite3_stmt *select;
     int rc;
     const char *rest, *q = query;
     va_list ap;
@@ -976,7 +877,7 @@ table_dump(DUMP_DATA *dd, char **errp, int fmt, const char *query, ...)
     if (fmt) {
 	sqlite3_free((char *) q);
     }
-    if ((rc != SQLITE_OK) || !select) {
+    if (rc != SQLITE_OK || !select) {
 	return rc;
     }
     rc = sqlite3_step(select);
@@ -1004,49 +905,15 @@ table_dump(DUMP_DATA *dd, char **errp, int fmt, const char *query, ...)
     return rc;
 }
 
-/**
- * Free dynamically allocated string buffer
- * @param in input string pointer
- */
-
-static void
-append_free(char **in)
-{
-    long *p = (long *) *in;
-
-    if (p) {
-	p -= 2;
-	sqlite3_free(p);
-	*in = 0;
-    }
-}
-
-/**
- * Append a string to dynamically allocated string buffer
- * with optional quoting
- * @param in input string pointer
- * @param append string to append
- * @param quote quote character or NUL
- * @result new string to be free'd with append_free()
- */
-
 static char *
-append(char **in, char const *append, char quote)
+append(char *in, char const *append, char quote)
 {
-    long *p = (long *) *in;
-    long len, maxlen, actlen;
-    int i;
-    char *pp;
+    int len, i;
     int nappend = append ? strlen(append) : 0;
+    int nin = in ? strlen(in) : 0;
+    char *tmp;
 
-    if (p) {
-	p -= 2;
-	maxlen = p[0];
-	actlen = p[1];
-    } else {
-	maxlen = actlen = 0;
-    }
-    len = nappend + actlen;
+    len = nappend + nin + 1;
     if (quote) {
 	len += 2;
 	for (i = 0; i < nappend; i++) {
@@ -1055,50 +922,34 @@ append(char **in, char const *append, char quote)
 	    }
 	}
     } else if (!nappend) {
-	return *in;
+	return in;
     }
-    if (len >= maxlen - 1) {
-	long *q;
-
-	maxlen = (len + 0x03ff) & (~0x3ff);
-	q = (long *) sqlite3_realloc(p, maxlen + 1 + 2 * sizeof (long));
-	if (!q) {
-	    return 0;
-	}
-	if (!p) {
-	    q[1] = 0;
-	}
-	p = q;
-	p[0] = maxlen;
-	*in = (char *) (p + 2);
+    tmp = (char *) sqlite3_realloc(in, len);
+    if (!tmp) {
+	sqlite3_free(in);
+	return 0;
     }
-    pp = *in + actlen;
+    in = tmp;
     if (quote) {
-	*pp++ = quote;
+	char *p = in + nin;
+
+	*p++ = quote;
 	for (i = 0; i < nappend; i++) {
-	    *pp++ = append[i];
+	    *p++ = append[i];
 	    if (append[i] == quote) {
-		*pp++ = quote;
+		*p++ = quote;
 	    }
 	}
-	*pp++ = quote;
-	*pp = '\0';
+	*p++ = quote;
+	*p++ = '\0';
     } else {
 	if (nappend) {
-	    memcpy(pp, append, nappend);
-	    pp += nappend;
-	    *pp = '\0';
+	    memcpy(in + nin, append, nappend);
 	}
+	in[len - 1] = '\0';
     }
-    p[1] = pp - *in;
-    return *in;
+    return in;
 }
-
-/**
- * Quote string for XML output during dump
- * @param dd information structure for dump
- * @param str string to be output
- */
 
 static void
 quote_xml_str(DUMP_DATA *dd, char *str)
@@ -1138,15 +989,6 @@ quote_xml_str(DUMP_DATA *dd, char *str)
     }
 }
 
-/**
- * Callback for sqlite3_exec() to dump one data row
- * @param udata information structure for dump
- * @param nargs number of columns
- * @param args column data
- * @param cols column labels
- * @result 0 to continue, 1 to abort
- */
-
 static int
 dump_cb(void *udata, int nargs, char **args, char **cols)
 {
@@ -1154,7 +996,7 @@ dump_cb(void *udata, int nargs, char **args, char **cols)
     const char *table, *type, *sql;
     DUMP_DATA *dd = (DUMP_DATA *) udata;
 
-    if ((nargs != 3) || (args == NULL)) {
+    if (nargs != 3 || args == NULL) {
 	return 1;
     }
     table = args[0];
@@ -1179,61 +1021,65 @@ dump_cb(void *udata, int nargs, char **args, char **cols)
 	    sqlite3_stmt *stmt = 0;
 	    char *creat = 0, *table_info = 0;
    
-	    append(&table_info, "PRAGMA table_info(", 0);
-	    append(&table_info, table, '"');
-	    append(&table_info, ")", 0);
+	    table_info = append(table_info, "PRAGMA table_info(", 0);
+	    table_info = append(table_info, table, '"');
+	    table_info = append(table_info, ");", 0);
 #if defined(HAVE_SQLITE3PREPAREV2) && HAVE_SQLITE3PREPAREV2
 	    rc = sqlite3_prepare_v2(dd->db, table_info, -1, &stmt, 0);
 #else
 	    rc = sqlite3_prepare(dd->db, table_info, -1, &stmt, 0);
 #endif
-	    append_free(&table_info);
-	    if ((rc != SQLITE_OK) || !stmt) {
+	    if (table_info) {
+		sqlite3_free(table_info);
+		table_info = 0;
+	    }
+	    if (rc != SQLITE_OK || !stmt) {
 bailout0:
-		if (stmt) {
-		    sqlite3_finalize(stmt);
+		if (creat) {
+		    sqlite3_free(creat);
 		}
-		append_free(&creat);
 		return 1;
 	    }
-	    append(&creat, table, '"');
-	    append(&creat, "(", 0);
+	    creat = append(creat, table, '"');
+	    creat = append(creat, "(", 0);
 	    rc = sqlite3_step(stmt);
 	    while (rc == SQLITE_ROW) {
 		const char *p;
 
 		p = (const char *) sqlite3_column_text(stmt, 1);
-		append(&creat, p, '"');
-		append(&creat, " ", 0);
+		creat = append(creat, p, '"');
+		creat = append(creat, " ", 0);
 		p = (const char *) sqlite3_column_text(stmt, 2);
 		if (p && p[0]) {
-		    append(&creat, p, 0);
+		    creat = append(creat, p, 0);
 		}
 		if (sqlite3_column_int(stmt, 5)) {
-		    append(&creat, " PRIMARY KEY", 0);
+		    creat = append(creat, " PRIMARY KEY", 0);
 		}
 		if (sqlite3_column_int(stmt, 3)) {
-		    append(&creat, " NOT NULL", 0);
+		    creat = append(creat, " NOT NULL", 0);
 		}
 		p = (const char *) sqlite3_column_text(stmt, 4);
 		if (p && p[0]) {
-		    append(&creat, " DEFAULT ", 0);
-		    append(&creat, p, 0);
+		    creat = append(creat, " DEFAULT ", 0);
+		    creat = append(creat, p, 0);
 		}
 		rc = sqlite3_step(stmt);
 		if (rc == SQLITE_ROW) {
-		    append(&creat, ",", 0);
+		    creat = append(creat, ",", 0);
 		}
 	    }
-	    if (rc != SQLITE_DONE) {
+	    rc = sqlite3_finalize(stmt);
+	    if (rc != SQLITE_OK) {
 		goto bailout0;
 	    }
-	    sqlite3_finalize(stmt);
-	    append(&creat, ")", 0);
+	    creat = append(creat, ")", 0);
 	    if (creat && fprintf(dd->out, "CREATE TABLE %s;\n", creat) > 0) {
 		dd->nlines++;
 	    }
-	    append_free(&creat);
+	    if (creat) {
+		sqlite3_free(creat);
+	    }
 	}
     } else {
 	if (dd->with_schema) {
@@ -1242,111 +1088,113 @@ bailout0:
 	    }
 	}
     }
-    if ((strcmp(type, "table") == 0) ||
-	((dd->quote_mode < 0) && (strcmp(type, "view") == 0))) {
+    if (strcmp(type, "table") == 0 ||
+	(dd->quote_mode < 0 && strcmp(type, "view") == 0)) {
 	sqlite3_stmt *stmt = 0;
-	char *select = 0, *hdr = 0, *table_info = 0;
+	char *select = 0, *hdr = 0, *table_info = 0, *tmp = 0;
 	char buffer[256];
    
-	append(&table_info, "PRAGMA table_info(", 0);
-	append(&table_info, table, '"');
-	append(&table_info, ")", 0);
+	table_info = append(table_info, "PRAGMA table_info(", 0);
+	table_info = append(table_info, table, '"');
+	table_info = append(table_info, ");", 0);
 #if defined(HAVE_SQLITE3PREPAREV2) && HAVE_SQLITE3PREPAREV2
 	rc = sqlite3_prepare_v2(dd->db, table_info, -1, &stmt, 0);
 #else
 	rc = sqlite3_prepare(dd->db, table_info, -1, &stmt, 0);
 #endif
-	append_free(&table_info);
-	if ((rc != SQLITE_OK) || !stmt) {
+	if (rc != SQLITE_OK || !stmt) {
 bailout1:
-	    if (stmt) {
-		sqlite3_finalize(stmt);
+	    if (hdr) {
+		sqlite3_free(hdr);
 	    }
-	    append_free(&hdr);
-	    append_free(&select);
+	    if (select) {
+		sqlite3_free(select);
+	    }
+	    if (table_info) {
+		sqlite3_free(table_info);
+	    }
 	    return 1;
 	}
 	if (dd->quote_mode < -1) {
 	    if (dd->where) {
-		append(&select, "SELECT ", 0);
+		select = append(select, "SELECT ", 0);
 		sprintf(buffer, "indent_xml(%d)", dd->indent);
-		append(&select, buffer, 0);
-		append(&select, " || '<' || quote_xml(", 0);
-		append(&select, dd->where, '"');
-		append(&select, ",-1) || '>\n' || ", 0);
+		select = append(select, buffer, 0);
+		select = append(select, " || '<' || quote_xml(", 0);
+		select = append(select, dd->where, '"');
+		select = append(select, ",-1) || '>\n' || ", 0);
 	    } else {
-		append(&select, "SELECT ", 0);
+		select = append(select, "SELECT ", 0);
 	    }
 	} else if (dd->quote_mode < 0) {
 	    if (dd->where) {
-		append(&select, "SELECT quote_csv(", 0);
-		append(&select, dd->where, '"');
-		append(&select, ") || ',' || ", 0);
+		select = append(select, "SELECT quote_csv(", 0);
+		select = append(select, dd->where, '"');
+		select = append(select, ") || ',' || ", 0);
 	    } else {
-		append(&select, "SELECT ", 0);
+		select = append(select, "SELECT ", 0);
 	    }
 	    if (dd->indent) {
-		append(&hdr, select, 0);
+		hdr = append(hdr, select, 0);
 	    }
 	} else {
-	    char *tmp = 0;
-
 	    if (dd->with_schema) {
-		append(&select, "SELECT 'INSERT INTO ' || ", 0);
+		select = append(select, "SELECT 'INSERT INTO ' || ", 0);
 	    } else {
-		append(&select, "SELECT 'INSERT OR REPLACE INTO ' || ", 0);
+		select = append(select, "SELECT 'INSERT OR REPLACE INTO ' || ",
+				0);
 	    }
-	    append(&tmp, table, '"');
+	    tmp = append(tmp, table, '"');
 	    if (tmp) {
-		append(&select, tmp, '\'');
-		append_free(&tmp);
+		select = append(select, tmp, '\'');
+		sqlite3_free(tmp);
+		tmp = 0;
 	    }
 	}
-	if ((dd->quote_mode >= 0) && !dd->with_schema) {
-	    char *tmp = 0;
-
-	    append(&select, " || ' (' || ", 0);
+	if (dd->quote_mode >= 0 && !dd->with_schema) {
+	    select = append(select, " || ' (' || ", 0);
 	    rc = sqlite3_step(stmt);
 	    while (rc == SQLITE_ROW) {
 		const char *text = (const char *) sqlite3_column_text(stmt, 1);
 
-		append(&tmp, text, '"');
+		tmp = append(tmp, text, '"');
 		if (tmp) {
-		    append(&select, tmp, '\'');
-		    append_free(&tmp);
+		    select = append(select, tmp, '\'');
+		    sqlite3_free(tmp);
+		    tmp = 0;
 		}
 		rc = sqlite3_step(stmt);
 		if (rc == SQLITE_ROW) {
-		    append(&select, " || ',' || ", 0);
+		    select = append(select, " || ',' || ", 0);
 		}
 	    }
-	    if (rc != SQLITE_DONE) {
+	    rc = sqlite3_reset(stmt);
+	    if (rc != SQLITE_OK) {
 		goto bailout1;
 	    }
-	    sqlite3_reset(stmt);
-	    append(&select, "|| ')'", 0);
+	    select = append(select, "|| ')'", 0);
 	}
-	if ((dd->quote_mode == -1) && dd->indent) {
+	if (dd->quote_mode == -1 && dd->indent) {
 	    rc = sqlite3_step(stmt);
 	    while (rc == SQLITE_ROW) {
 		const char *text = (const char *) sqlite3_column_text(stmt, 1);
 
-		append(&hdr, "quote_csv(", 0);
-		append(&hdr, text, '"');
+		hdr = append(hdr, "quote_csv(", 0);
+		hdr = append(hdr, text, '"');
 		rc = sqlite3_step(stmt);
 		if (rc == SQLITE_ROW) {
-		    append(&hdr, ") || ',' || ", 0);
+		    hdr = append(hdr, ") || ',' || ", 0);
 		} else {
-		    append(&hdr, ")", 0);
+		    hdr = append(hdr, ")", 0);
 		}
 	    }
-	    if (rc != SQLITE_DONE) {
+	    rc = sqlite3_reset(stmt);
+	    if (rc != SQLITE_OK) {
 		goto bailout1;
 	    }
-	    sqlite3_reset(stmt);
 	}
 	if (dd->quote_mode >= 0) {
-	    append(&select, " || ' VALUES(' || ", 0);
+	    select = append(select, " || ' VALUES(' || ", 0);
 	}
 	rc = sqlite3_step(stmt);
 	while (rc == SQLITE_ROW) {
@@ -1356,18 +1204,18 @@ bailout1:
 
 	    if (dd->quote_mode < -1) {
 		sprintf(buffer, "indent_xml(%d)", dd->indent + 1);
-		append(&select, buffer, 0);
-		append(&select, "|| '<' || quote_xml(", 0);
-		append(&select, text, '\'');
-		append(&select, ",-1) || quote_xml(", 0);
-		append(&select, text, '"');
-		append(&select, ",1) || '</' || quote_xml(", 0);
-		append(&select, text, '\'');
-		append(&select, ",-1) || '>\n'", 0);
+		select = append(select, buffer, 0);
+		select = append(select, "|| '<' || quote_xml(", 0);
+		select = append(select, text, '\'');
+		select = append(select, ",-1) || quote_xml(", 0);
+		select = append(select, text, '"');
+		select = append(select, ",1) || '</' || quote_xml(", 0);
+		select = append(select, text, '\'');
+		select = append(select, ",-1) || '>\n'", 0);
 	    } else if (dd->quote_mode < 0) {
 		/* leave out BLOB columns */
-		if (((tlen >= 4) && (strncasecmp(type, "BLOB", 4) == 0)) ||
-		    ((tlen >= 6) && (strncasecmp(type, "BINARY", 6) == 0))) {
+		if ((tlen >= 4 && strncasecmp(type, "BLOB", 4) == 0) ||
+		    (tlen >= 6 && strncasecmp(type, "BINARY", 6) == 0)) {
 		    rc = sqlite3_step(stmt);
 		    if (rc != SQLITE_ROW) {
 			tlen = strlen(select);
@@ -1377,79 +1225,76 @@ bailout1:
 		    }
 		    continue;
 		}
-		append(&select, "quote_csv(", 0);
-		append(&select, text, '"');
+		select = append(select, "quote_csv(", 0);
+		select = append(select, text, '"');
 	    } else {
-		append(&select, "quote_sql(", 0);
-		append(&select, text, '"');
+		select = append(select, "quote_sql(", 0);
+		select = append(select, text, '"');
 		if (dd->quote_mode) {
 		    char mbuf[32];
 
 		    sprintf(mbuf, ",%d", dd->quote_mode);
-		    append(&select, mbuf, 0);
+		    select = append(select, mbuf, 0);
 		}
 	    }
 	    rc = sqlite3_step(stmt);
 	    if (rc == SQLITE_ROW) {
 		if (dd->quote_mode >= -1) {
-		    append(&select, ") || ',' || ", 0);
+		    select = append(select, ") || ',' || ", 0);
 		} else {
-		    append(&select, " || ", 0);
+		    select = append(select, " || ", 0);
 		}
 	    } else {
 		if (dd->quote_mode >= -1) {
-		    append(&select, ") ", 0);
+		    select = append(select, ") ", 0);
 		} else {
-		    append(&select, " ", 0);
+		    select = append(select, " ", 0);
 		}
 	    }
 	}
-	if (rc != SQLITE_DONE) {
+	rc = sqlite3_finalize(stmt);
+	if (rc != SQLITE_OK) {
 	    goto bailout1;
 	}
-	sqlite3_finalize(stmt);
-	stmt = 0;
 	if (dd->quote_mode >= 0) {
-	    append(&select, "|| ')' FROM ", 0);
+	    select = append(select, "|| ')' FROM ", 0);
 	} else {
-	    if ((dd->quote_mode < -1) && dd->where) {
+	    if (dd->quote_mode < -1 && dd->where) {
 		sprintf(buffer, " || indent_xml(%d)", dd->indent);
-		append(&select, buffer, 0);
-		append(&select, " || '</' || quote_xml(", 0);
-		append(&select, dd->where, '"');
-		append(&select, ",-1) || '>\n' FROM ", 0);
+		select = append(select, buffer, 0);
+		select = append(select, " || '</' || quote_xml(", 0);
+		select = append(select, dd->where, '"');
+		select = append(select, ",-1) || '>\n' FROM ", 0);
 	    } else {
-		append(&select, "FROM ", 0);
+		select = append(select, "FROM ", 0);
 	    }
 	}
-	append(&select, table, '"');
-	if ((dd->quote_mode >= 0) && dd->where) {
-	    append(&select, " ", 0);
-	    append(&select, dd->where, 0);
+	select = append(select, table, '"');
+	if (dd->quote_mode >= 0 && dd->where) {
+	    select = append(select, " ", 0);
+	    select = append(select, dd->where, 0);
+	}
+	if (table_info) {
+	    sqlite3_free(table_info);
+	    table_info = 0;
 	}
 	if (hdr) {
 	    rc = table_dump(dd, 0, 0, hdr);
-	    append_free(&hdr);
+	    sqlite3_free(hdr);
 	    hdr = 0;
 	}
 	rc = table_dump(dd, 0, 0, select);
 	if (rc == SQLITE_CORRUPT) {
-	    append(&select, " ORDER BY rowid DESC", 0);
+	    select = append(select, " ORDER BY rowid DESC", 0);
 	    rc = table_dump(dd, 0, 0, select);
 	}
-	append_free(&select);
+	if (select) {
+	    sqlite3_free(select);
+	    select = 0;
+	}
     }
     return 0;
 }
-
-/**
- * Execute SQL on sqlite_master table in order to dump data.
- * @param dd information structure for dump
- * @param errp pointer receiving error message
- * @param query SQL for sqlite3_*printf()
- * @param ... argument list
- * @result SQLite error code
- */
 
 static int
 schema_dump(DUMP_DATA *dd, char **errp, const char *query, ...)
@@ -1487,13 +1332,6 @@ schema_dump(DUMP_DATA *dd, char **errp, const char *query, ...)
     sqlite3_free(q);
     return rc;
 }
-
-/**
- * SQLite function for SQL output, see impexp_export_sql
- * @param ctx SQLite function context
- * @param nargs number of arguments
- * @param args argument vector
- */
 
 static void
 export_func(sqlite3_context *ctx, int nargs, sqlite3_value **args)
@@ -1559,7 +1397,7 @@ export_func(sqlite3_context *ctx, int nargs, sqlite3_value **args)
     } else {
 	for (i = 2; i < nargs; i += (mode & 2) ? 2 : 1) {
 	    dd->where = 0;
-	    if ((mode & 2) && (i + 1 < nargs)) {
+	    if ((mode & 2) && i + 1 < nargs) {
 		dd->where = (char *) sqlite3_value_text(args[i + 1]);
 	    }
 	    schema_dump(dd, 0,
@@ -1584,13 +1422,6 @@ export_func(sqlite3_context *ctx, int nargs, sqlite3_value **args)
 done:
     sqlite3_result_int(ctx, dd->nlines);
 }
-
-/**
- * SQLite function for CSV output, see impexp_export_csv
- * @param ctx SQLite function context
- * @param nargs number of arguments
- * @param args argument vector
- */
 
 static void
 export_csv_func(sqlite3_context *ctx, int nargs, sqlite3_value **args)
@@ -1662,7 +1493,7 @@ export_csv_func(sqlite3_context *ctx, int nargs, sqlite3_value **args)
 	if (sqlite3_value_type(args[i + 2]) != SQLITE_NULL) {
 	    schema = (char *) sqlite3_value_text(args[i + 2]);
 	}
-	if (!schema || (schema[0] == '\0')) {
+	if (!schema || schema[0] == '\0') {
 	    schema = "sqlite_master";
 	}
 	sql = sqlite3_mprintf("SELECT name, type, sql FROM %s"
@@ -1678,13 +1509,6 @@ export_csv_func(sqlite3_context *ctx, int nargs, sqlite3_value **args)
 done:
     sqlite3_result_int(ctx, dd->nlines);
 }
-
-/**
- * SQLite function for XML output, see impexp_export_xml
- * @param ctx SQLite function context
- * @param nargs number of arguments
- * @param args argument vector
- */
 
 static void
 export_xml_func(sqlite3_context *ctx, int nargs, sqlite3_value **args)
@@ -1774,7 +1598,7 @@ export_xml_func(sqlite3_context *ctx, int nargs, sqlite3_value **args)
 	if (sqlite3_value_type(args[i + 3]) != SQLITE_NULL) {
 	    schema = (char *) sqlite3_value_text(args[i + 3]);
 	}
-	if (!schema || (schema[0] == '\0')) {
+	if (!schema || schema[0] == '\0') {
 	    schema = "sqlite_master";
 	}
 	sql = sqlite3_mprintf("SELECT name, type, sql FROM %s"
@@ -1797,8 +1621,6 @@ export_xml_func(sqlite3_context *ctx, int nargs, sqlite3_value **args)
 done:
     sqlite3_result_int(ctx, dd->nlines);
 }
-
-/* see doc in impexp.h */
 
 int
 impexp_export_sql(sqlite3 *db, char *filename, int mode, ...)
@@ -1884,8 +1706,6 @@ done:
     return dd->nlines;
 }
 
-/* see doc in impexp.h */
-
 int
 impexp_export_csv(sqlite3 *db, char *filename, int hdr, ...)
 {
@@ -1928,7 +1748,7 @@ impexp_export_csv(sqlite3 *db, char *filename, int hdr, ...)
 #ifdef _WIN32
     dd->out = fopen(filename, "wb");
 #else
-    if ((hdr < 0) && access(filename, W_OK) == 0) {
+    if (hdr < 0 && access(filename, W_OK) == 0) {
 	dd->out = fopen(filename, "a");
 	dd->indent = 0;
     } else {
@@ -1947,7 +1767,7 @@ impexp_export_csv(sqlite3 *db, char *filename, int hdr, ...)
 	char *sql;
 
 	dd->where = (prefix && prefix[0]) ? prefix : 0;
-	if (!schema || (schema[0] == '\0')) {
+	if (!schema || schema[0] == '\0') {
 	    schema = "sqlite_master";
 	}
 	sql = sqlite3_mprintf("SELECT name, type, sql FROM %s"
@@ -1968,8 +1788,6 @@ done:
     return dd->nlines;
 }
 
-/* see doc in impexp.h */
-
 int
 impexp_export_xml(sqlite3 *db, char *filename, int append, int indnt,
 		  char *root, char *item, char *tablename, char *schema)
@@ -1986,7 +1804,7 @@ impexp_export_xml(sqlite3 *db, char *filename, int append, int indnt,
     dd->db = db;
     dd->where = item;
     dd->nlines = -1;
-    dd->indent = (indnt > 0) ? indnt : 0;
+    dd->indent = indnt > 0 ? indnt : 0;
     dd->with_schema = 0;
     dd->quote_mode = -2;
 #ifdef _WIN32
@@ -2020,7 +1838,7 @@ impexp_export_xml(sqlite3 *db, char *filename, int append, int indnt,
 	quote_xml_str(dd, root);
 	fputs(">\n", dd->out);
     }
-    if (!schema || (schema[0] == '\0')) {
+    if (!schema || schema[0] == '\0') {
 	schema = "sqlite_master";
     }
     sql = sqlite3_mprintf("SELECT name, type, sql FROM %s"
@@ -2043,12 +1861,6 @@ done:
     return dd->nlines;
 }
 
-/**
- * Write string using JSON output function
- * @param string string to be written
- * @param pfs JSON output function
- */
-
 static void
 json_pstr(const char *string, json_pfs *pfs)
 {
@@ -2057,12 +1869,6 @@ json_pstr(const char *string, json_pfs *pfs)
 	string++;
     }
 }
-
-/**
- * Quote and write string using JSON output function
- * @param string string to be written
- * @param pfs JSON output function
- */
 
 static void
 json_pstrq(const char *string, json_pfs *pfs)
@@ -2104,7 +1910,7 @@ json_pstrq(const char *string, json_pfs *pfs)
 	    pfunc('t', parg);
 	    break;
 	default:
-	    if (((*string < ' ') && (*string > 0)) || (*string == 0x7f)) {
+	    if ((*string < ' ' && *string > 0) || *string == 0x7f) {
 		sprintf(buf, "\\u%04x", *string);
 		json_pstr(buf, pfs);
 	    } else if (*string < 0) {
@@ -2121,8 +1927,8 @@ json_pstrq(const char *string, json_pfs *pfs)
 			uc = c;
 		    }
 		} else if (c < 0xf0) {
-		    if (((string[1] & 0xc0) == 0x80) &&
-			((string[2] & 0xc0) == 0x80)) {
+		    if ((string[1] & 0xc0) == 0x80 &&
+			(string[2] & 0xc0) == 0x80) {
 			uc = ((c & 0x0f) << 12) |
 			     ((string[1] & 0x3f) << 6) | (string[2] & 0x3f);
 			string += 2;
@@ -2130,9 +1936,9 @@ json_pstrq(const char *string, json_pfs *pfs)
 			uc = c;
 		    }
 		} else if (c < 0xf8) {
-		    if (((string[1] & 0xc0) == 0x80) &&
-			((string[2] & 0xc0) == 0x80) &&
-			((string[3] & 0xc0) == 0x80)) {
+		    if ((string[1] & 0xc0) == 0x80 &&
+			(string[2] & 0xc0) == 0x80 &&
+			(string[3] & 0xc0) == 0x80) {
 			uc = ((c & 0x03) << 18) |
 			     ((string[1] & 0x3f) << 12) |
 			     ((string[2] & 0x3f) << 6) |
@@ -2142,10 +1948,10 @@ json_pstrq(const char *string, json_pfs *pfs)
 			uc = c;
 		    }
 		} else if (c < 0xfc) {
-		    if (((string[1] & 0xc0) == 0x80) &&
-			((string[2] & 0xc0) == 0x80) &&
-			((string[3] & 0xc0) == 0x80) &&
-			((string[4] & 0xc0) == 0x80)) {
+		    if ((string[1] & 0xc0) == 0x80 &&
+			(string[2] & 0xc0) == 0x80 &&
+			(string[3] & 0xc0) == 0x80 &&
+			(string[4] & 0xc0) == 0x80) {
 			uc = ((c & 0x01) << 24) |
 			     ((string[1] & 0x3f) << 18) |
 			     ((string[2] & 0x3f) << 12) |
@@ -2161,14 +1967,12 @@ json_pstrq(const char *string, json_pfs *pfs)
 		}
 		if (uc < 0x10000) {
 		    sprintf(buf, "\\u%04lx", uc);
-		} else if (uc < 0x100000) {
+		} else {
 		    uc -= 0x10000;
 
-		    sprintf(buf, "\\u%04lx", 0xd800 | ((uc >> 10) & 0x3ff));
+		    sprintf(buf, "\\u%04lx", 0xd800 | (uc & 0x3ff));
 		    json_pstr(buf, pfs);
-		    sprintf(buf, "\\u%04lx", 0xdc00 | (uc & 0x3ff));
-		} else {
-		    strcpy(buf, "\\ufffd");
+		    sprintf(buf, "\\u%04lx", 0xdc00 | ((uc >> 10) & 0x3ff));
 		}
 		json_pstr(buf, pfs);
 	    } else {
@@ -2180,29 +1984,6 @@ json_pstrq(const char *string, json_pfs *pfs)
     }
     pfunc('"', parg);
 }
-
-/**
- * Conditionally quote and write string using JSON output function
- * @param string string to be written
- * @param pfs JSON output function
- */
-
-static void
-json_pstrc(const char *string, json_pfs *pfs)
-{
-    if (*string && strchr(".0123456789-+", *string)) {
-	json_pstr(string, pfs);
-    } else {
-	json_pstrq(string, pfs);
-    }
-}
-
-/**
- * Write a blob as base64 string using JSON output function
- * @param blk pointer to blob
- * @param len length of blob
- * @param pfs JSON output function
- */
 
 static void
 json_pb64(const unsigned char *blk, int len, json_pfs *pfs)
@@ -2248,15 +2029,6 @@ json_pb64(const unsigned char *blk, int len, json_pfs *pfs)
     pfunc('"', parg);
 }
 
-/**
- * Execute SQL and write output as JSON
- * @param db SQLite database pointer
- * @param sql SQL text
- * @param pfunc JSON output function
- * @param parg argument for output function
- * @result SQLite error code
- */
-
 static int
 json_output(sqlite3 *db, char *sql, impexp_putc pfunc, void *parg)
 {
@@ -2266,40 +2038,39 @@ json_output(sqlite3 *db, char *sql, impexp_putc pfunc, void *parg)
 
     pfs->pfunc = pfunc;
     pfs->parg = parg;
-    json_pstr("{\"sql\":", pfs);
+    json_pstr("{sql:", pfs);
     json_pstrq(sql, pfs);
-    json_pstr(",\"results\":[", pfs);
+    json_pstr(",results:[", pfs);
     do {
 	sqlite3_stmt *stmt;
 	int firstrow = 1, nrows = 0;
 	char buf[256];
 
 	++nresults;
-	json_pstr((nresults == 1) ? "{" : ",{", pfs);
+	json_pstr(nresults == 1 ? "{" : ",{", pfs);
 	result = sqlite3_prepare(db, tail, -1, &stmt, &tail);
 	if (result != SQLITE_OK) {
 doerr:
 	    if (nrows == 0) {
-		json_pstr("\"columns\":null,\"rows\":null,\"changes\":0,"
-			  "\"last_insert_rowid\":null,", pfs);
+		json_pstr("columns:null,rows:null,changes:0,"
+			  "last_insert_rowid:null,", pfs);
 	    }
-	    json_pstr("\"error:\"", pfs);
+	    json_pstr("error:", pfs);
 	    json_pstrq(sqlite3_errmsg(db), pfs);
 	    pfunc('}', parg);
 	    break;
 	}
 	result = sqlite3_step(stmt);
-	while ((result == SQLITE_ROW) || (result == SQLITE_DONE)) {
+	while (result == SQLITE_ROW || result == SQLITE_DONE) {
 	    if (firstrow) {
 		for (i = 0; i < sqlite3_column_count(stmt); i++) {
 		    char *type;
-
-		    json_pstr((i == 0) ? "\"columns\":[" : ",", pfs);
-		    json_pstr("{\"name\":", pfs);
+		    json_pstr(i == 0 ? "columns:[" : ",", pfs);
+		    json_pstr("{name:", pfs);
 		    json_pstrq(sqlite3_column_name(stmt, i), pfs);
-		    json_pstr(",\"decltype\":", pfs);
+		    json_pstr(",decltype:", pfs);
 		    json_pstrq(sqlite3_column_decltype(stmt, i), pfs);
-		    json_pstr(",\"type\":", pfs);
+		    json_pstr(",type:", pfs);
 		    switch (sqlite3_column_type(stmt, i)) {
 		    case SQLITE_INTEGER:
 			type = "integer";
@@ -2332,15 +2103,13 @@ doerr:
 		break;
 	    }
 	    ++nrows;
-	    json_pstr((nrows == 1) ? ",\"rows\":[" : ",", pfs);
+	    json_pstr(nrows == 1 ? ",rows:[" : ",", pfs);
 	    for (i = 0; i < sqlite3_column_count(stmt); i++) {
-		pfunc((i == 0) ? '[' : ',', parg);
+		pfunc(i == 0 ? '[' : ',', parg);
 		switch (sqlite3_column_type(stmt, i)) {
 		case SQLITE_INTEGER:
-		    json_pstr((char *) sqlite3_column_text(stmt, i), pfs);
-		    break;
 		case SQLITE_FLOAT:
-		    json_pstrc((char *) sqlite3_column_text(stmt, i), pfs);
+		    json_pstr((char *) sqlite3_column_text(stmt, i), pfs);
 		    break;
 		case SQLITE_BLOB:
 		    json_pb64((unsigned char *) sqlite3_column_blob(stmt, i),
@@ -2355,7 +2124,7 @@ doerr:
 		    break;
 		}
 	    }
-	    json_pstr((i == 0) ? "null]" : "]", pfs);
+	    json_pstr(i == 0 ? "null]" : "]", pfs);
 	    result = sqlite3_step(stmt);
 	}
 	if (nrows > 0) {
@@ -2366,9 +2135,9 @@ doerr:
 	    if (nrows > 0) {
 		sprintf(buf,
 #ifdef _WIN32
-			",\"changes\":%d,\"last_insert_rowid\":%I64d",
+			",changes:%d,last_insert_rowid:%I64d",
 #else
-			",\"changes\":%d,\"last_insert_rowid\":%lld",
+			",changes:%d,last_insert_rowid:%lld",
 #endif
 			sqlite3_changes(db),
 			sqlite3_last_insert_rowid(db));
@@ -2377,29 +2146,22 @@ doerr:
 	    goto doerr;
 	}
 	if (nrows == 0) {
-	    json_pstr("\"columns\":null,\"rows\":null", pfs);
+	    json_pstr("columns:null,rows:null", pfs);
 	}
 	sprintf(buf,
 #ifdef _WIN32
-		",\"changes\":%d,\"last_insert_rowid\":%I64d",
+		",changes:%d,last_insert_rowid:%I64d",
 #else
-		",\"changes\":%d,\"last_insert_rowid\":%lld",
+		",changes:%d,last_insert_rowid:%lld",
 #endif
 		sqlite3_changes(db),
 		sqlite3_last_insert_rowid(db));
 	json_pstr(buf, pfs);
-	json_pstr(",\"error\":null}", pfs);
+	json_pstr(",error:null}", pfs);
     } while (tail && *tail);
     json_pstr("]}", pfs);
     return result;
 }
-
-/**
- * SQLite function for JSON output, see impexp_export_json
- * @param ctx SQLite function context
- * @param nargs number of arguments
- * @param args argument vector
- */
 
 static void
 export_json_func(sqlite3_context *ctx, int nargs, sqlite3_value **args)
@@ -2452,22 +2214,12 @@ done:
     sqlite3_result_int(ctx, result);
 }
 
-/* see doc in impexp.h */
-
 int
 impexp_export_json(sqlite3 *db, char *sql, impexp_putc pfunc,
 		   void *parg)
 {
     return json_output(db, sql, pfunc, parg);
 }
-
-/**
- * Initializer for SQLite extension load mechanism.
- * @param db SQLite database pointer
- * @param errmsg pointer receiving error message
- * @param api SQLite API routines
- * @result SQLite error code
- */
 
 #ifdef STANDALONE
 static int
@@ -2514,8 +2266,6 @@ sqlite3_extension_init(sqlite3 *db, char **errmsg,
     }
     return rc;
 }
-
-/* see doc in impexp.h */
 
 int
 impexp_init(sqlite3 *db)

@@ -6,7 +6,6 @@
 extern "C" {
 #endif
 
-int __memp_bh_unreachable __P((ENV *, BH *, DB_LSN *, int));
 int __memp_alloc __P((DB_MPOOL *, REGINFO *, MPOOLFILE *, size_t, roff_t *, void *));
 void __memp_free __P((REGINFO *, void *));
 int __memp_backup_open __P((ENV *, DB_MPOOLFILE *, const char *, const char *, u_int32_t, DB_FH **, void**));
@@ -17,10 +16,8 @@ int __memp_bhwrite __P((DB_MPOOL *, DB_MPOOL_HASH *, MPOOLFILE *, BH *, int));
 int __memp_pgread __P((DB_MPOOLFILE *, BH *, int));
 int __memp_pg __P((DB_MPOOLFILE *, db_pgno_t, void *, int));
 int __memp_bhfree __P((DB_MPOOL *, REGINFO *, MPOOLFILE *, DB_MPOOL_HASH *, BH *, u_int32_t));
-void __memp_bh_clear_dirty __P((ENV*, DB_MPOOL_HASH *, BH *));
 int __memp_fget_pp __P((DB_MPOOLFILE *, db_pgno_t *, DB_TXN *, u_int32_t, void *));
 int __memp_fget __P((DB_MPOOLFILE *, db_pgno_t *, DB_THREAD_INFO *, DB_TXN *, u_int32_t, void *));
-int  __memp_find_obsolete_version __P((ENV *, BH *, DB_MPOOL_HASH *, BH **));
 int __memp_fcreate_pp __P((DB_ENV *, DB_MPOOLFILE **, u_int32_t));
 int __memp_fcreate __P((ENV *, DB_MPOOLFILE **));
 int __memp_set_clear_len __P((DB_MPOOLFILE *, u_int32_t));
@@ -31,7 +28,6 @@ int __memp_set_flags __P((DB_MPOOLFILE *, u_int32_t, int));
 int __memp_get_ftype __P((DB_MPOOLFILE *, int *));
 int __memp_set_ftype __P((DB_MPOOLFILE *, int));
 int __memp_set_lsn_offset __P((DB_MPOOLFILE *, int32_t));
-void __memp_set_maxpgno __P((MPOOLFILE *, u_int32_t, u_int32_t));
 int __memp_get_pgcookie __P((DB_MPOOLFILE *, DBT *));
 int __memp_set_pgcookie __P((DB_MPOOLFILE *, DBT *));
 int __memp_get_priority __P((DB_MPOOLFILE *, DB_CACHE_PRIORITY *));
@@ -44,7 +40,6 @@ int __memp_fclose_pp __P((DB_MPOOLFILE *, u_int32_t));
 int __memp_fclose __P((DB_MPOOLFILE *, u_int32_t));
 int __memp_mf_discard __P((DB_MPOOL *, MPOOLFILE *, int));
 int __memp_inmemlist __P((ENV *, char ***, int *));
-void __memp_mf_mark_dead __P((DB_MPOOL *, MPOOLFILE *, int*));
 int __memp_fput_pp __P((DB_MPOOLFILE *, void *, DB_CACHE_PRIORITY, u_int32_t));
 int __memp_fput __P((DB_MPOOLFILE *, DB_THREAD_INFO *, void *, DB_CACHE_PRIORITY));
 int __memp_unpin_buffers __P((ENV *, DB_THREAD_INFO *));
@@ -64,8 +59,6 @@ int __memp_get_mp_mmapsize __P((DB_ENV *, size_t *));
 int __memp_set_mp_mmapsize __P((DB_ENV *, size_t));
 int __memp_get_mp_pagesize __P((DB_ENV *, u_int32_t *));
 int __memp_set_mp_pagesize __P((DB_ENV *, u_int32_t));
-int __memp_get_reg_dir __P((DB_ENV *, const char **));
-int __memp_set_reg_dir __P((DB_ENV *, const char *));
 int __memp_get_mp_tablesize __P((DB_ENV *, u_int32_t *));
 int __memp_set_mp_tablesize __P((DB_ENV *, u_int32_t));
 int __memp_get_mp_mtxcount __P((DB_ENV *, u_int32_t *));
@@ -82,12 +75,10 @@ int __memp_skip_curadj __P((DBC *, db_pgno_t));
 int __memp_bh_freeze __P((DB_MPOOL *, REGINFO *, DB_MPOOL_HASH *, BH *, int *));
 int __memp_bh_thaw __P((DB_MPOOL *, REGINFO *, DB_MPOOL_HASH *, BH *, BH *));
 int __memp_open __P((ENV *, int));
-int __memp_region_detach __P((ENV *, DB_MPOOL *));
 int	__memp_init __P((ENV *, DB_MPOOL *, u_int, u_int32_t, u_int));
 u_int32_t __memp_max_regions __P((ENV *));
 u_int32_t __memp_region_mutex_count __P((ENV *));
 int __memp_env_refresh __P((ENV *));
-int __memp_region_bhfree __P((REGINFO *));
 int __memp_register_pp __P((DB_ENV *, int, int (*)(DB_ENV *, db_pgno_t, void *, DBT *), int (*)(DB_ENV *, db_pgno_t, void *, DBT *)));
 int __memp_register __P((ENV *, int, int (*)(DB_ENV *, db_pgno_t, void *, DBT *), int (*)(DB_ENV *, db_pgno_t, void *, DBT *)));
 int __memp_get_bucket __P((ENV *, MPOOLFILE *, db_pgno_t, REGINFO **, DB_MPOOL_HASH **, u_int32_t *));
@@ -107,7 +98,6 @@ int __memp_fsync __P((DB_MPOOLFILE *));
 int __mp_xxx_fh __P((DB_MPOOLFILE *, DB_FH **));
 int __memp_sync_int __P((ENV *, DB_MPOOLFILE *, u_int32_t, u_int32_t, u_int32_t *, int *));
 int __memp_mf_sync __P((DB_MPOOL *, MPOOLFILE *, int));
-int __memp_purge_dead_files __P((ENV *));
 int __memp_trickle_pp __P((DB_ENV *, int, int *));
 
 #if defined(__cplusplus)

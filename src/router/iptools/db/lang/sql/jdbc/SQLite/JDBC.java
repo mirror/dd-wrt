@@ -85,7 +85,7 @@ public abstract class JDBC {
 	    } catch (java.lang.Exception e) {
 	    }
 	    try {
-		String tvfs =
+		String tvfs = 
 		    java.lang.System.getProperty("SQLite.vfs");
 		if (tvfs != null) {
 		    vfs = tvfs;
@@ -99,7 +99,7 @@ public abstract class JDBC {
 
     public JDBC() {
     }
-
+	
     public boolean acceptsURL(String url) throws SQLException {
 	return url.startsWith("sqlite:/") ||
 	    url.startsWith("jdbc:sqlite:/");

@@ -9,12 +9,12 @@
     <link rel="start" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
     <link rel="up" href="fwrkmasterreplica.html" title="Chapter 4. Replica versus Master Processes" />
     <link rel="prev" href="processingloop.html" title="Processing Loop" />
-    <link rel="next" href="writeforwarding.html" title="Chapter 5. Configuring for Write Forwarding" />
+    <link rel="next" href="addfeatures.html" title="Chapter 5. Additional Features" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -23,7 +23,7 @@
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="processingloop.html">Prev</a> </td>
           <th width="60%" align="center">Chapter 4. Replica versus Master Processes</th>
-          <td width="20%" align="right"> <a accesskey="n" href="writeforwarding.html">Next</a></td>
+          <td width="20%" align="right"> <a accesskey="n" href="addfeatures.html">Next</a></td>
         </tr>
       </table>
       <hr />
@@ -82,7 +82,7 @@
                           
                   </p>
       <pre class="programlisting">/*
- * File: rep_mgr_gsg.c
+ * File: ex_rep_gsg_repmgr.c
  */
 
 #include &lt;stdlib.h&gt;
@@ -112,7 +112,7 @@ const char *progname = "ex_rep_gsg_repmgr";
 int create_env(const char *, DB_ENV **);
 int env_init(DB_ENV *, const char *);
 int doloop (DB_ENV *);
-static int print_stocks(DB *);
+static int print_stocks(DBC *);
 <strong class="userinput"><code>void *event_callback(DB_ENV *, u_int32_t, void *);</code></strong> </pre>
       <p>
         In our <code class="function">main()</code> function, most of what we
@@ -164,8 +164,6 @@ main(int argc, char *argv[])
             home = optarg;
             break;
         /* Set the host and port used by this environment */
-        case 'L':
-            is_group_creator = 1; /* FALLTHROUGH */
         case 'l':
             host = strtok(optarg, ":");
             if ((portstr = strtok(NULL, ":")) == NULL) {
@@ -184,7 +182,7 @@ main(int argc, char *argv[])
                 dbsite-&gt;set_config(dbsite, DB_GROUP_CREATOR, 1);
 
             if ((ret = dbsite-&gt;close(dbsite)) != 0) {
-                dbenv-&gt;err(dbenv, ret, "DB_SITE-&gt;close");
+                dbenv-&gt;(dbenv, ret, "DB_SITE-&gt;close");
                 goto err;
             }
             local_is_set = 1;
@@ -203,7 +201,8 @@ main(int argc, char *argv[])
             port = (unsigned short)atoi(portstr);
             if ((dbenv-&gt;repmgr_site(dbenv, host, port, &amp;dbsite,
                                       0)) != 0) {
-                dbenv-&gt;err(dbenv, ret, "DB_ENV-&gt;repmgr_site");
+                fprintf(stderr,
+                    "Could not add site %s.\n", host);
                 goto err;
             }
             dbenv-&gt;set_config(dbsite, DB_BOOTSTRAP_HELPER, 1);
@@ -649,14 +648,14 @@ QUOTESERVER (read-only)&gt; </pre>
           <td width="20%" align="center">
             <a accesskey="u" href="fwrkmasterreplica.html">Up</a>
           </td>
-          <td width="40%" align="right"> <a accesskey="n" href="writeforwarding.html">Next</a></td>
+          <td width="40%" align="right"> <a accesskey="n" href="addfeatures.html">Next</a></td>
         </tr>
         <tr>
           <td width="40%" align="left" valign="top">Processing Loop </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Chapter 5. Configuring for Write Forwarding</td>
+          <td width="40%" align="right" valign="top"> Chapter 5. Additional Features</td>
         </tr>
       </table>
     </div>

@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -38,12 +38,10 @@
           </div>
         </div>
       </div>
-      <pre class="programlisting">db_dump [-klNpRrV] [-b ext_file_dir]
-    [-d a | h | r] [-f output] [-h home] [-P password] [-s database]
-    [-D bytes] [-v o | v] file
+      <pre class="programlisting">db_dump [-klNpRrV] [-b blob_dir] [-d ahr]
+    [-f output] [-h home] [-P password] [-s database] [-D bytes] file
 
-db_dump [-kNpV] [-d a | h | r] [-f output] [-h home] [-v o | v] 
-    -m database
+db_dump [-kNpV] [-d ahr] [-f output] [-h home] -m database
 
 db_dump185 [-p] [-f output] file  </pre>
       <p>
@@ -67,8 +65,8 @@ db_dump185 [-p] [-f output] file  </pre>
                  <span class="bold"><strong>-b</strong></span>
             </p>
             <p>
-                Specifies the directory where external file data is stored for
-                the database you are dumping.
+                Specifies the directory where BLOB data is stored for the
+                database you are dumping.
             </p>
           </li>
           <li>
@@ -263,40 +261,6 @@ db_dump185 [-p] [-f output] file  </pre>
           </li>
           <li>
             <p>
-              <span class="bold"><strong>-v</strong></span>
-            </p>
-            <p>
-                Verify the specified database before performing a normal dump.
-                Unlike the <span class="bold"><strong>-R</strong></span> or <span class="bold"><strong>-r</strong></span> option, no data is dumped if the database
-                is corrpted. Use this option when you are not sure about the
-                integrity of the database.
-            </p>
-            <div class="itemizedlist">
-              <ul type="circle">
-                <li>
-                  <p>
-                        <span class="bold"><strong>o</strong></span>
-                    </p>
-                  <p>
-                        Skip the database checks for btree and duplicate sort order
-                        and for hashing. See also the 
-                        <span class="bold"><strong>-o</strong></span> option for db_verify.
-                    </p>
-                </li>
-                <li>
-                  <p>
-                        <span class="bold"><strong>v</strong></span>
-                    </p>
-                  <p>
-                        Perform the standard verification on the database as performed
-                        by db_verify without options.
-                    </p>
-                </li>
-              </ul>
-            </div>
-          </li>
-          <li>
-            <p>
                  <span class="bold"><strong>-V</strong></span>
             </p>
             <p>
@@ -360,7 +324,7 @@ db_dump185 [-p] [-f output] file  </pre>
       <p>
          The <span class="command"><strong>db_dump</strong></span> utility exits 0 on success, and &gt;0 if an error occurs.
          Note that this utility might return <code class="literal">DB_VERIFY_BAD</code> if the
-         <code class="literal">-R</code>, <code class="literal">-r</code> or <code class="literal">-v</code> command line
+         <code class="literal">-R</code> or <code class="literal">-r</code> command line
          options are used. This indicates a corrupt database. However, the
          dump may still have been successful.
      </p>
@@ -372,7 +336,7 @@ db_dump185 [-p] [-f output] file  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711171537376"></a>Environment Variables</h3>
+              <h3 class="title"><a id="idp55142264"></a>Environment Variables</h3>
             </div>
           </div>
         </div>
@@ -380,7 +344,7 @@ db_dump185 [-p] [-f output] file  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711171401136"></a>DB_HOME</h4>
+                <h4 class="title"><a id="idp55142576"></a>DB_HOME</h4>
               </div>
             </div>
           </div>

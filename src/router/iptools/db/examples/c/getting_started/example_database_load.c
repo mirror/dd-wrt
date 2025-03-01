@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2004, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2004, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 #include "gettingstarted_common.h"
@@ -77,7 +77,7 @@ main(int argc, char *argv[])
     /* Open all databases */
     ret = databases_setup(&my_stock, "example_database_load", stderr);
     if (ret) {
-	fprintf(stderr, "Error opening databases.\n");
+	fprintf(stderr, "Error opening databases\n");
 	databases_close(&my_stock);
 	return (ret);
     }
@@ -121,7 +121,6 @@ load_vendors_database(STOCK_DBS my_stock, char *vendor_file)
 	return (-1);
     }
 
-    /* Iterate over the vendor file */
     while (fgets(buf, MAXLINE, ifp) != NULL) {
 	/* zero out the structure */
 	memset(&my_vendor, 0, sizeof(VENDOR));
@@ -165,7 +164,6 @@ load_vendors_database(STOCK_DBS my_stock, char *vendor_file)
 	my_stock.vendor_dbp->put(my_stock.vendor_dbp, 0, &key, &data, 0);
     } /* end vendors database while loop */
 
-    /* Close the vendor.txt file */
     fclose(ifp);
     return (0);
 }
@@ -222,10 +220,6 @@ load_inventory_database(STOCK_DBS my_stock, char *inventory_file)
 	    return (-1);
     }
 
-    /*
-     * Read the inventory.txt file line by line, saving each line off to
-     * the database as we go.
-     */
     while (fgets(buf, MAXLINE, ifp) != NULL) {
 	/*
 	 * Scan the line into the appropriate buffers and variables.
@@ -244,22 +238,10 @@ load_inventory_database(STOCK_DBS my_stock, char *inventory_file)
 	bufLen = 0;
 	dataLen = 0;
 
-	/*
-	 * We first store the fixed-length elements. This makes our code
-	 * to retrieve this data from the database a little bit easier.
-	 */
-
-	/* First discover how long the data element is. */
 	dataLen = sizeof(float);
-	/* Then copy it to our buffer */
 	memcpy(databuf, &price, dataLen);
-	/*
-	 * Then figure out how much data is actually in our buffer.
-	 * We repeat this pattern for all the data we want to store.
-	 */
 	bufLen += dataLen;
 
-	/* Rinse, lather, repeat. */
 	dataLen = sizeof(int);
 	memcpy(databuf + bufLen, &quantity, dataLen);
 	bufLen += dataLen;
@@ -269,19 +251,11 @@ load_inventory_database(STOCK_DBS my_stock, char *inventory_file)
 	bufLen = pack_string(databuf, category, bufLen);
 	bufLen = pack_string(databuf, vendor, bufLen);
 
-	/*
-	 * Now actually save the contents of the buffer off
-	 * to our database.
-	 */
-
 	/* Zero out the DBTs */
 	memset(&key, 0, sizeof(DBT));
 	memset(&data, 0, sizeof(DBT));
 
-	/*
-	 * The key is the item's SKU. This is a unique value, so we need
-	 * not support duplicates for this database.
-	 */
+	/* The key is the item's SKU */
 	key.data = sku;
 	key.size = (u_int32_t)strlen(sku) + 1;
 

@@ -5,131 +5,35 @@
 
 if {[catch {
 
-# Argument $tname is the name of a table within the database opened by
-# database handle [db]. Return true if it is a WITHOUT ROWID table, or
-# false otherwise.
-#
-proc is_without_rowid {tname} {
-  set t [string map {' ''} $tname]
-  db eval "PRAGMA index_list = '$t'" o {
-    if {$o(origin) == "pk"} {
-      set n $o(name)
-      if {0==[db one { SELECT count(*) FROM sqlite_master WHERE name=$n }]} {
-        return 1
-      }
-    }
-  }
-  return 0
-}
-
 # Get the name of the database to analyze
 #
-proc usage {} {
-  set argv0 [file rootname [file tail [info nameofexecutable]]]
+#set argv $argv0
+if {[llength $argv]!=1} {
   puts stderr "Usage: $argv0 database-name"
   exit 1
 }
-set file_to_analyze {}
-set flags(-pageinfo) 0
-set flags(-stats) 0
-append argv {}
-foreach arg $argv {
-  if {[regexp {^-+pageinfo$} $arg]} {
-    set flags(-pageinfo) 1
-  } elseif {[regexp {^-+stats$} $arg]} {
-    set flags(-stats) 1
-  } elseif {[regexp {^-} $arg]} {
-    puts stderr "Unknown option: $arg"
-    usage
-  } elseif {$file_to_analyze!=""} {
-    usage
-  } else {
-    set file_to_analyze $arg
-  }
-}
-if {$file_to_analyze==""} usage
-set root_filename $file_to_analyze
-regexp {^file:(//)?([^?]*)} $file_to_analyze all x1 root_filename
-if {![file exists $root_filename]} {
-  puts stderr "No such file: $root_filename"
+set file_to_analyze [lindex $argv 0]
+if {![file exists $file_to_analyze]} {
+  puts stderr "No such file: $file_to_analyze"
   exit 1
 }
-if {![file readable $root_filename]} {
-  puts stderr "File is not readable: $root_filename"
+if {![file readable $file_to_analyze]} {
+  puts stderr "File is not readable: $file_to_analyze"
   exit 1
 }
-set true_file_size [file size $root_filename]
-if {$true_file_size<512} {
-  puts stderr "Empty or malformed database: $root_filename"
+if {[file size $file_to_analyze]<512} {
+  puts stderr "Empty or malformed database: $file_to_analyze"
   exit 1
-}
-
-# Compute the total file size assuming test_multiplexor is being used.
-# Assume that SQLITE_ENABLE_8_3_NAMES might be enabled
-#
-set extension [file extension $root_filename]
-set pattern $root_filename
-append pattern {[0-3][0-9][0-9]}
-foreach f [glob -nocomplain $pattern] {
-  incr true_file_size [file size $f]
-  set extension {}
-}
-if {[string length $extension]>=2 && [string length $extension]<=4} {
-  set pattern [file rootname $root_filename]
-  append pattern {.[0-3][0-9][0-9]}
-  foreach f [glob -nocomplain $pattern] {
-    incr true_file_size [file size $f]
-  }
 }
 
 # Open the database
 #
-if {[catch {sqlite3 db $file_to_analyze -uri 1} msg]} {
-  puts stderr "error trying to open $file_to_analyze: $msg"
-  exit 1
-}
+sqlite3 db [lindex $argv 0]
 register_dbstat_vtab db
 
-db eval {SELECT count(*) FROM sqlite_master}
-set pageSize [expr {wide([db one {PRAGMA page_size}])}]
+set pageSize [db one {PRAGMA page_size}]
 
-if {$flags(-pageinfo)} {
-  db eval {CREATE VIRTUAL TABLE temp.stat USING dbstat}
-  db eval {SELECT name, path, pageno FROM temp.stat ORDER BY pageno} {
-    puts "$pageno $name $path"
-  }
-  exit 0
-}
-if {$flags(-stats)} {
-  db eval {CREATE VIRTUAL TABLE temp.stat USING dbstat}
-  puts "BEGIN;"
-  puts "CREATE TABLE stats("
-  puts "  name       STRING,           /* Name of table or index */"
-  puts "  path       INTEGER,          /* Path to page from root */"
-  puts "  pageno     INTEGER,          /* Page number */"
-  puts "  pagetype   STRING,           /* 'internal', 'leaf' or 'overflow' */"
-  puts "  ncell      INTEGER,          /* Cells on page (0 for overflow) */"
-  puts "  payload    INTEGER,          /* Bytes of payload on this page */"
-  puts "  unused     INTEGER,          /* Bytes of unused space on this page */"
-  puts "  mx_payload INTEGER,          /* Largest payload size of all cells */"
-  puts "  pgoffset   INTEGER,          /* Offset of page in file */"
-  puts "  pgsize     INTEGER           /* Size of the page */"
-  puts ");"
-  db eval {SELECT quote(name) || ',' ||
-                  quote(path) || ',' ||
-                  quote(pageno) || ',' ||
-                  quote(pagetype) || ',' ||
-                  quote(ncell) || ',' ||
-                  quote(payload) || ',' ||
-                  quote(unused) || ',' ||
-                  quote(mx_payload) || ',' ||
-                  quote(pgoffset) || ',' ||
-                  quote(pgsize) AS x FROM stat} {
-    puts "INSERT INTO stats VALUES($x);"
-  }
-  puts "COMMIT;"
-  exit 0
-}
+#set DB [btree_open [lindex $argv 0] 1000 0]
 
 # In-memory database for collecting statistics. This script loops through
 # the tables and indices in the database being analyzed, adding a row for each
@@ -137,7 +41,8 @@ if {$flags(-stats)} {
 # queries the in-memory db to produce the space-analysis report.
 #
 sqlite3 mem :memory:
-set tabledef {CREATE TABLE space_used(
+set tabledef\
+{CREATE TABLE space_used(
    name clob,        -- Name of a table or index in the database file
    tblname clob,     -- Name of associated table
    is_index boolean, -- TRUE if it is an index, false for a table
@@ -153,17 +58,17 @@ set tabledef {CREATE TABLE space_used(
    int_unused int,   -- Number of unused bytes on interior pages
    leaf_unused int,  -- Number of unused bytes on primary pages
    ovfl_unused int,  -- Number of unused bytes on overflow pages
-   gap_cnt int,      -- Number of gaps in the page layout
-   compressed_size int  -- Total bytes stored on disk
+   gap_cnt int       -- Number of gaps in the page layout
 );}
 mem eval $tabledef
 
 # Create a temporary "dbstat" virtual table.
 #
-db eval {CREATE VIRTUAL TABLE temp.stat USING dbstat}
-db eval {CREATE TEMP TABLE dbstat AS SELECT * FROM temp.stat
-         ORDER BY name, path}
-db eval {DROP TABLE temp.stat}
+db eval { 
+  CREATE VIRTUAL TABLE temp.stat USING dbstat;
+  CREATE TEMP TABLE dbstat AS SELECT * FROM temp.stat ORDER BY name, path;
+  DROP TABLE temp.stat;
+}
 
 proc isleaf {pagetype is_index} {
   return [expr {$pagetype == "leaf" || ($pagetype == "internal" && $is_index)}]
@@ -179,37 +84,26 @@ db func isleaf isleaf
 db func isinternal isinternal
 db func isoverflow isoverflow
 
-set isCompressed 0
-set compressOverhead 0
 set sql { SELECT name, tbl_name FROM sqlite_master WHERE rootpage>0 }
 foreach {name tblname} [concat sqlite_master sqlite_master [db eval $sql]] {
 
   set is_index [expr {$name!=$tblname}]
-  set idx_btree [expr {$is_index || [is_without_rowid $name]}]
   db eval {
     SELECT 
       sum(ncell) AS nentry,
-      sum(isleaf(pagetype, $idx_btree) * ncell) AS leaf_entries,
+      sum(isleaf(pagetype, $is_index) * ncell) AS leaf_entries,
       sum(payload) AS payload,
-      sum(isoverflow(pagetype, $idx_btree) * payload) AS ovfl_payload,
+      sum(isoverflow(pagetype, $is_index) * payload) AS ovfl_payload,
       sum(path LIKE '%+000000') AS ovfl_cnt,
       max(mx_payload) AS mx_payload,
-      sum(isinternal(pagetype, $idx_btree)) AS int_pages,
-      sum(isleaf(pagetype, $idx_btree)) AS leaf_pages,
-      sum(isoverflow(pagetype, $idx_btree)) AS ovfl_pages,
-      sum(isinternal(pagetype, $idx_btree) * unused) AS int_unused,
-      sum(isleaf(pagetype, $idx_btree) * unused) AS leaf_unused,
-      sum(isoverflow(pagetype, $idx_btree) * unused) AS ovfl_unused,
-      sum(pgsize) AS compressed_size
+      sum(isinternal(pagetype, $is_index)) AS int_pages,
+      sum(isleaf(pagetype, $is_index)) AS leaf_pages,
+      sum(isoverflow(pagetype, $is_index)) AS ovfl_pages,
+      sum(isinternal(pagetype, $is_index) * unused) AS int_unused,
+      sum(isleaf(pagetype, $is_index) * unused) AS leaf_unused,
+      sum(isoverflow(pagetype, $is_index) * unused) AS ovfl_unused
     FROM temp.dbstat WHERE name = $name
   } break
-
-  set total_pages [expr {$leaf_pages+$int_pages+$ovfl_pages}]
-  set storage [expr {$total_pages*$pageSize}]
-  if {!$isCompressed && $storage>$compressed_size} {
-    set isCompressed 1
-    set compressOverhead 14
-  }
 
   # Column 'gap_cnt' is set to the number of non-contiguous entries in the
   # list of pages visited if the b-tree structure is traversed in a top-down
@@ -218,17 +112,15 @@ foreach {name tblname} [concat sqlite_master sqlite_master [db eval $sql]] {
   # is.
   #
   set gap_cnt 0
-  set prev 0
-  db eval {
-    SELECT pageno, pagetype FROM temp.dbstat
-     WHERE name=$name
-     ORDER BY pageno
-  } {
-    if {$prev>0 && $pagetype=="leaf" && $pageno!=$prev+1} {
-      incr gap_cnt
-    }
-    set prev $pageno
+  set pglist [db eval {
+    SELECT pageno FROM temp.dbstat WHERE name = $name ORDER BY rowid
+  }]
+  set prev [lindex $pglist 0]
+  foreach pgno [lrange $pglist 1 end] {
+    if {$pgno != $prev+1} {incr gap_cnt}
+    set prev $pgno
   }
+
   mem eval {
     INSERT INTO space_used VALUES(
       $name,
@@ -246,15 +138,14 @@ foreach {name tblname} [concat sqlite_master sqlite_master [db eval $sql]] {
       $int_unused, 
       $leaf_unused,
       $ovfl_unused,
-      $gap_cnt,
-      $compressed_size
+      $gap_cnt
     );
   }
 }
 
 proc integerify {real} {
   if {[string is double -strict $real]} {
-    return [expr {wide($real)}]
+    return [expr {int($real)}]
   } else {
     return 0
   }
@@ -267,19 +158,8 @@ mem function int integerify
 # [quote {hello world's}] == {'hello world''s'}
 #
 proc quote {txt} {
-  return [string map {' ''} $txt]
-}
-
-# Output a title line
-#
-proc titleline {title} {
-  if {$title==""} {
-    puts [string repeat * 79]
-  } else {
-    set len [string length $title]
-    set stars [string repeat * [expr 79-$len-5]]
-    puts "*** $title $stars"
-  }
+  regsub -all ' $txt '' q
+  return '$q'
 }
 
 # Generate a single line of output in the statistics section of the
@@ -287,7 +167,7 @@ proc titleline {title} {
 #
 proc statline {title value {extra {}}} {
   set len [string length $title]
-  set dots [string repeat . [expr 50-$len]]
+  set dots [string range {......................................} $len end]
   set len [string length $value]
   set sp2 [string range {          } $len end]
   if {$extra ne ""} {
@@ -319,8 +199,8 @@ proc divide {num denom} {
 # Generate a subreport that covers some subset of the database.
 # the $where clause determines which subset to analyze.
 #
-proc subreport {title where showFrag} {
-  global pageSize file_pgcnt compressOverhead
+proc subreport {title where} {
+  global pageSize file_pgcnt
 
   # Query the in-memory database for the sum of various statistics 
   # for the subset of tables/indices identified by the WHERE clause in
@@ -344,14 +224,15 @@ proc subreport {title where showFrag} {
       int(sum(leaf_unused)) AS leaf_unused,
       int(sum(int_unused)) AS int_unused,
       int(sum(ovfl_unused)) AS ovfl_unused,
-      int(sum(gap_cnt)) AS gap_cnt,
-      int(sum(compressed_size)) AS compressed_size
+      int(sum(gap_cnt)) AS gap_cnt
     FROM space_used WHERE $where" {} {}
 
   # Output the sub-report title, nicely decorated with * characters.
   #
   puts ""
-  titleline $title
+  set len [string length $title]
+  set stars [string repeat * [expr 65-$len]]
+  puts "*** $title $stars"
   puts ""
 
   # Calculate statistics and store the results in TCL variables, as follows:
@@ -393,21 +274,15 @@ proc subreport {title where showFrag} {
   statline {Percentage of total database} $total_pages_percent
   statline {Number of entries} $nleaf
   statline {Bytes of storage consumed} $storage
-  if {$compressed_size!=$storage} {
-    set compressed_size [expr {$compressed_size+$compressOverhead*$total_pages}]
-    set pct [expr {$compressed_size*100.0/$storage}]
-    set pct [format {%5.1f%%} $pct]
-    statline {Bytes used after compression} $compressed_size $pct
-  }
   statline {Bytes of payload} $payload $payload_percent
   statline {Average payload per entry} $avg_payload
   statline {Average unused bytes per entry} $avg_unused
   if {[info exists avg_fanout]} {
     statline {Average fanout} $avg_fanout
   }
-  if {$showFrag && $total_pages>1} {
-    set fragmentation [percent $gap_cnt [expr {$total_pages-1}]]
-    statline {Non-sequential pages} $gap_cnt $fragmentation
+  if {$total_pages>1} {
+    set fragmentation [percent $gap_cnt [expr {$total_pages-1}] {fragmentation}]
+    statline {Fragmentation} $fragmentation
   }
   statline {Maximum payload per entry} $mx_payload
   statline {Entries that use overflow} $ovfl_cnt $ovfl_cnt_percent
@@ -418,16 +293,16 @@ proc subreport {title where showFrag} {
   statline {Overflow pages used} $ovfl_pages
   statline {Total pages used} $total_pages
   if {$int_unused>0} {
-    set int_unused_percent [
-         percent $int_unused [expr {$int_pages*$pageSize}] {of index space}]
+    set int_unused_percent \
+         [percent $int_unused [expr {$int_pages*$pageSize}] {of index space}]
     statline "Unused bytes on index pages" $int_unused $int_unused_percent
   }
-  statline "Unused bytes on primary pages" $leaf_unused [
-     percent $leaf_unused [expr {$leaf_pages*$pageSize}] {of primary space}]
-  statline "Unused bytes on overflow pages" $ovfl_unused [
-     percent $ovfl_unused [expr {$ovfl_pages*$pageSize}] {of overflow space}]
-  statline "Unused bytes on all pages" $total_unused [
-               percent $total_unused $storage {of all space}]
+  statline "Unused bytes on primary pages" $leaf_unused \
+     [percent $leaf_unused [expr {$leaf_pages*$pageSize}] {of primary space}]
+  statline "Unused bytes on overflow pages" $ovfl_unused \
+     [percent $ovfl_unused [expr {$ovfl_pages*$pageSize}] {of overflow space}]
+  statline "Unused bytes on all pages" $total_unused \
+               [percent $total_unused $storage {of all space}]
   return 1
 }
 
@@ -455,7 +330,7 @@ proc autovacuum_overhead {filePages pageSize} {
   set ptrsPerPage [expr double($pageSize/5)]
 
   # Return the number of pointer map pages in the database.
-  return [expr wide(ceil( ($filePages-1.0)/($ptrsPerPage+1.0) ))]
+  return [expr int(ceil( ($filePages-1.0)/($ptrsPerPage+1.0) ))]
 }
 
 
@@ -482,24 +357,17 @@ proc autovacuum_overhead {filePages pageSize} {
 #                (not including sqlite_master)
 # user_percent:  $user_payload as a percentage of total file size.
 
-### The following, setting $file_bytes based on the actual size of the file
-### on disk, causes this tool to choke on zipvfs databases. So set it based
-### on the return of [PRAGMA page_count] instead.
-if 0 {
-  set file_bytes  [file size $file_to_analyze]
-  set file_pgcnt  [expr {$file_bytes/$pageSize}]
-}
-set file_pgcnt  [db one {PRAGMA page_count}]
-set file_bytes  [expr {$file_pgcnt * $pageSize}]
+set file_bytes  [file size $file_to_analyze]
+set file_pgcnt  [expr {$file_bytes/$pageSize}]
 
 set av_pgcnt    [autovacuum_overhead $file_pgcnt $pageSize]
 set av_percent  [percent $av_pgcnt $file_pgcnt]
 
 set sql {SELECT sum(leaf_pages+int_pages+ovfl_pages) FROM space_used}
-set inuse_pgcnt   [expr wide([mem eval $sql])]
+set inuse_pgcnt   [expr int([mem eval $sql])]
 set inuse_percent [percent $inuse_pgcnt $file_pgcnt]
 
-set free_pgcnt    [expr {$file_pgcnt-$inuse_pgcnt-$av_pgcnt}]
+set free_pgcnt    [expr $file_pgcnt-$inuse_pgcnt-$av_pgcnt]
 set free_percent  [percent $free_pgcnt $file_pgcnt]
 set free_pgcnt2   [db one {PRAGMA freelist_count}]
 set free_percent2 [percent $free_pgcnt2 $file_pgcnt]
@@ -519,7 +387,10 @@ set user_percent [percent $user_payload $file_bytes]
 
 # Output the summary statistics calculated above.
 #
-puts "/** Disk-Space Utilization Report For $root_filename"
+puts "/** Disk-Space Utilization Report For $file_to_analyze"
+catch {
+  puts "*** As of [clock format [clock seconds] -format {%Y-%b-%d %H:%M:%S}]"
+}
 puts ""
 statline {Page size in bytes} $pageSize
 statline {Pages in the whole file (measured)} $file_pgcnt
@@ -530,94 +401,50 @@ statline {Pages on the freelist (calculated)} $free_pgcnt $free_percent
 statline {Pages of auto-vacuum overhead} $av_pgcnt $av_percent
 statline {Number of tables in the database} $ntable
 statline {Number of indices} $nindex
-statline {Number of defined indices} $nmanindex
-statline {Number of implied indices} $nautoindex
-if {$isCompressed} {
-  statline {Size of uncompressed content in bytes} $file_bytes
-  set efficiency [percent $true_file_size $file_bytes]
-  statline {Size of compressed file on disk} $true_file_size $efficiency
-} else {
-  statline {Size of the file in bytes} $file_bytes
-}
+statline {Number of named indices} $nmanindex
+statline {Automatically generated indices} $nautoindex
+statline {Size of the file in bytes} $file_bytes
 statline {Bytes of user payload stored} $user_payload $user_percent
 
 # Output table rankings
 #
 puts ""
-titleline "Page counts for all tables with their indices"
+puts "*** Page counts for all tables with their indices ********************"
 puts ""
 mem eval {SELECT tblname, count(*) AS cnt, 
               int(sum(int_pages+leaf_pages+ovfl_pages)) AS size
           FROM space_used GROUP BY tblname ORDER BY size+0 DESC, tblname} {} {
   statline [string toupper $tblname] $size [percent $size $file_pgcnt]
 }
-puts ""
-titleline "Page counts for all tables and indices separately"
-puts ""
-mem eval {
-  SELECT
-       upper(name) AS nm,
-       int(int_pages+leaf_pages+ovfl_pages) AS size
-    FROM space_used
-   ORDER BY size+0 DESC, name} {} {
-  statline $nm $size [percent $size $file_pgcnt]
-}
-if {$isCompressed} {
-  puts ""
-  titleline "Bytes of disk space used after compression"
-  puts ""
-  set csum 0
-  mem eval {SELECT tblname,
-                  int(sum(compressed_size)) +
-                         $compressOverhead*sum(int_pages+leaf_pages+ovfl_pages)
-                        AS csize
-          FROM space_used GROUP BY tblname ORDER BY csize+0 DESC, tblname} {} {
-    incr csum $csize
-    statline [string toupper $tblname] $csize [percent $csize $true_file_size]
-  }
-  set overhead [expr {$true_file_size - $csum}]
-  if {$overhead>0} {
-    statline {Header and free space} $overhead [percent $overhead $true_file_size]
-  }
-}
 
 # Output subreports
 #
 if {$nindex>0} {
-  subreport {All tables and indices} 1 0
+  subreport {All tables and indices} 1
 }
-subreport {All tables} {NOT is_index} 0
+subreport {All tables} {NOT is_index}
 if {$nindex>0} {
-  subreport {All indices} {is_index} 0
+  subreport {All indices} {is_index}
 }
-foreach tbl [mem eval {SELECT DISTINCT tblname name FROM space_used
+foreach tbl [mem eval {SELECT name FROM space_used WHERE NOT is_index
                        ORDER BY name}] {
-  set qn [quote $tbl]
+  regsub ' $tbl '' qn
   set name [string toupper $tbl]
-  set n [mem eval {SELECT count(*) FROM space_used WHERE tblname=$tbl}]
+  set n [mem eval "SELECT count(*) FROM space_used WHERE tblname='$qn'"]
   if {$n>1} {
-    set idxlist [mem eval "SELECT name FROM space_used
-                            WHERE tblname='$qn' AND is_index
-                            ORDER BY 1"]
-    subreport "Table $name and all its indices" "tblname='$qn'" 0
-    subreport "Table $name w/o any indices" "name='$qn'" 1
-    if {[llength $idxlist]>1} {
-      subreport "Indices of table $name" "tblname='$qn' AND is_index" 0
-    }
-    foreach idx $idxlist {
-      set qidx [quote $idx]
-      subreport "Index [string toupper $idx] of table $name" "name='$qidx'" 1
-    }
+    subreport "Table $name and all its indices" "tblname='$qn'"
+    subreport "Table $name w/o any indices" "name='$qn'"
+    subreport "Indices of table $name" "tblname='$qn' AND is_index"
   } else {
-    subreport "Table $name" "name='$qn'" 1
+    subreport "Table $name" "name='$qn'"
   }
 }
 
 # Output instructions on what the numbers above mean.
 #
-puts ""
-titleline Definitions
 puts {
+*** Definitions ******************************************************
+
 Page size in bytes
 
     The number of bytes in a single page of the database file.  
@@ -625,9 +452,11 @@ Page size in bytes
 
 Number of pages in the whole file
 }
-puts "    The number of $pageSize-byte pages that go into forming the complete
+puts \
+"    The number of $pageSize-byte pages that go into forming the complete
     database"
-puts {
+puts \
+{
 Pages that store data
 
     The number of pages that store data, either as primary B*Tree pages or
@@ -654,11 +483,11 @@ Number of indices
 
     The total number of indices in the database.
 
-Number of defined indices
+Number of named indices
 
     The number of indices created using an explicit CREATE INDEX statement.
 
-Number of implied indices
+Automatically generated indices
 
     The number of indices used to implement PRIMARY KEY or UNIQUE constraints
     on tables.
@@ -707,16 +536,13 @@ Average unused bytes per entry
     category on a per-entry basis.  This is the number of unused bytes on
     all pages divided by the number of entries.
 
-Non-sequential pages
+Fragmentation
 
-    The number of pages in the table or index that are out of sequence.
-    Many filesystems are optimized for sequential file access so a small
-    number of non-sequential pages might result in faster queries,
-    especially for larger database files that do not fit in the disk cache.
-    Note that after running VACUUM, the root page of each table or index is
-    at the beginning of the database file and all other pages are in a
-    separate part of the database file, resulting in a single non-
-    sequential page.
+    The percentage of pages in the table or index that are not
+    consecutive in the disk file.  Many filesystems are optimized
+    for sequential file access so smaller fragmentation numbers 
+    sometimes result in faster queries, especially for larger
+    database files that do not fit in the disk cache.
 
 Maximum payload per entry
 
@@ -772,7 +598,7 @@ Unused bytes on all pages
 # Output a dump of the in-memory database. This can be used for more
 # complex offline analysis.
 #
-titleline {}
+puts "**********************************************************************"
 puts "The entire text of this report can be sourced into any SQL database"
 puts "engine for further analysis.  All of the text above is an SQL comment."
 puts "The data used to generate this report follows:"
@@ -785,7 +611,7 @@ mem eval {SELECT * FROM space_used} x {
   set sep (
   foreach col $x(*) {
     set v $x($col)
-    if {$v=="" || ![string is double $v]} {set v '[quote $v]'}
+    if {$v=="" || ![string is double $v]} {set v [quote $v]}
     puts -nonewline $sep$v
     set sep ,
   }

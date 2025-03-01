@@ -1,30 +1,21 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package com.sleepycat.persist.test;
 
-import static com.sleepycat.persist.model.DeleteAction.NULLIFY;
 import static com.sleepycat.persist.model.Relationship.ONE_TO_MANY;
 import static com.sleepycat.persist.model.Relationship.ONE_TO_ONE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static com.sleepycat.persist.model.DeleteAction.NULLIFY;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Locale;
 
-import org.junit.After;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import junit.framework.Test;
 
 import com.sleepycat.db.DatabaseConfig;
 import com.sleepycat.db.DatabaseException;
@@ -48,19 +39,11 @@ import com.sleepycat.util.test.TxnTestCase;
  *
  * @author Mark Hayes
  */
-@RunWith(Parameterized.class)
 public class NegativeTest extends TxnTestCase {
 
-    @Parameters
-    public static List<Object[]> genParams() {
-        return getTxnParams(null, false);
-    }
-    
-    public NegativeTest(String type){
-        initEnvConfig();
-        txnType = type;
-        isTransactional = (txnType != TXN_NULL);
-        customName = txnType;
+    public static Test suite() {
+        testClass = NegativeTest.class;
+        return txnTestSuite(null, null);
     }
 
     private EntityStore store;
@@ -94,7 +77,14 @@ public class NegativeTest extends TxnTestCase {
         store = null;
     }
 
-    @After
+    @Override
+    public void setUp()
+        throws Exception {
+
+        super.setUp();
+    }
+
+    @Override
     public void tearDown()
         throws Exception {
 
@@ -109,7 +99,6 @@ public class NegativeTest extends TxnTestCase {
         super.tearDown();
     }
 
-    @Test
     public void testBadKeyClass1()
         throws DatabaseException {
 
@@ -134,13 +123,12 @@ public class NegativeTest extends TxnTestCase {
     static class UseBadKeyClass1 {
 
         @PrimaryKey
-        private final BadKeyClass1 f1 = new BadKeyClass1();
+        private BadKeyClass1 f1 = new BadKeyClass1();
 
         @SecondaryKey(relate=ONE_TO_ONE)
-        private final BadKeyClass1 f2 = new BadKeyClass1();
+        private BadKeyClass1 f2 = new BadKeyClass1();
     }
 
-    @Test
     public void testBadSequenceKeys()
         throws DatabaseException {
 
@@ -214,7 +202,6 @@ public class NegativeTest extends TxnTestCase {
      * A proxied object may not current contain a field that references the
      * parent proxy.  [#15815]
      */
-    @Test
     public void testProxyNestedRef()
         throws DatabaseException {
 
@@ -245,7 +232,6 @@ public class NegativeTest extends TxnTestCase {
     /**
      * Disallow primary keys on entity subclasses.  [#15757]
      */
-    @Test
     public void testEntitySubclassWithPrimaryKey()
         throws DatabaseException {
 
@@ -335,7 +321,6 @@ public class NegativeTest extends TxnTestCase {
     /**
      * Disallow storing null entities. [#19085]
      */
-    @Test
     public void testNullEntity()
         throws DatabaseException {
 
@@ -358,7 +343,6 @@ public class NegativeTest extends TxnTestCase {
     /**
      * Disallow embedded entity classes and subclasses.  [#16077]
      */
-    @Test
     public void testEmbeddedEntity()
         throws DatabaseException {
 
@@ -464,7 +448,6 @@ public class NegativeTest extends TxnTestCase {
     /**
      * Disallow SecondaryKey collection with no type parameter. [#15950]
      */
-    @Test
     public void testTypelessKeyCollection()
         throws DatabaseException {
 
@@ -489,7 +472,7 @@ public class NegativeTest extends TxnTestCase {
         private int x;
 
         @SecondaryKey(relate=ONE_TO_MANY)
-        private final Collection keys = new ArrayList();
+        private Collection keys = new ArrayList();
 
         TypelessKeyCollectionEntity(int x) {
             this.x = x;
@@ -501,7 +484,6 @@ public class NegativeTest extends TxnTestCase {
     /**
      * Disallow a persistent proxy that extends an entity.  [#15950]
      */
-    @Test
     public void testProxyEntity()
         throws DatabaseException {
 
@@ -537,7 +519,6 @@ public class NegativeTest extends TxnTestCase {
     /**
      * Wrapper type not allowed for nullified foreign key.
      */
-    @Test
     public void testBadNullifyKey()
         throws DatabaseException {
 
@@ -574,7 +555,6 @@ public class NegativeTest extends TxnTestCase {
     /**
      * @Persistent not allowed on an enum.
      */
-    @Test
     public void testPersistentEnum()
         throws DatabaseException {
 
@@ -604,7 +584,6 @@ public class NegativeTest extends TxnTestCase {
     /**
      * Disallow a reference to an interface marked @Persistent.
      */
-    @Test
     public void testPersistentInterface()
         throws DatabaseException {
 
@@ -638,7 +617,6 @@ public class NegativeTest extends TxnTestCase {
     /**
      * Disallow reference to @Persistent inner class.
      */
-    @Test
     public void testPersistentInnerClass()
         throws DatabaseException {
 
@@ -673,7 +651,6 @@ public class NegativeTest extends TxnTestCase {
     /**
      * Disallow @Entity inner class.
      */
-    @Test
     public void testSetConfigAfterOpen()
         throws DatabaseException {
 

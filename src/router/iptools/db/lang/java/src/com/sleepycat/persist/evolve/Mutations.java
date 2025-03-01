@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -60,8 +60,6 @@ public class Mutations implements Serializable {
 
     /**
      * Returns true if no mutations are present.
-     *
-     * @return true if no mutations are present.
      */
     public boolean isEmpty() {
         return renamers.isEmpty() &&
@@ -71,8 +69,6 @@ public class Mutations implements Serializable {
 
     /**
      * Adds a renamer mutation.
-     *
-     * @param renamer the Renamer.
      */
     public void addRenamer(Renamer renamer) {
         renamers.put(new Key(renamer), renamer);
@@ -82,14 +78,6 @@ public class Mutations implements Serializable {
      * Returns the renamer mutation for the given class, version and field, or
      * null if none exists.  A null field name should be specified to get a
      * class renamer.
-     *
-     * @param className the class name.
-     *
-     * @param classVersion the class version.
-     *
-     * @param fieldName the field name in the given class version.
-     *
-     * @return the Renamer, or null.
      */
     public Renamer getRenamer(String className,
                               int classVersion,
@@ -99,8 +87,6 @@ public class Mutations implements Serializable {
 
     /**
      * Returns an unmodifiable collection of all renamer mutations.
-     *
-     * @return the renamers.
      */
     public Collection<Renamer> getRenamers() {
         return renamers.values();
@@ -108,8 +94,6 @@ public class Mutations implements Serializable {
 
     /**
      * Adds a deleter mutation.
-     *
-     * @param deleter the Deleter.
      */
     public void addDeleter(Deleter deleter) {
         deleters.put(new Key(deleter), deleter);
@@ -119,14 +103,6 @@ public class Mutations implements Serializable {
      * Returns the deleter mutation for the given class, version and field, or
      * null if none exists.  A null field name should be specified to get a
      * class deleter.
-     *
-     * @param className the class name.
-     *
-     * @param classVersion the class version.
-     *
-     * @param fieldName the field name.
-     *
-     * @return the Deleter, or null.
      */
     public Deleter getDeleter(String className,
                               int classVersion,
@@ -136,8 +112,6 @@ public class Mutations implements Serializable {
 
     /**
      * Returns an unmodifiable collection of all deleter mutations.
-     *
-     * @return the deleters.
      */
     public Collection<Deleter> getDeleters() {
         return deleters.values();
@@ -145,8 +119,6 @@ public class Mutations implements Serializable {
 
     /**
      * Adds a converter mutation.
-     *
-     * @param converter the Converter.
      */
     public void addConverter(Converter converter) {
         converters.put(new Key(converter), converter);
@@ -156,14 +128,6 @@ public class Mutations implements Serializable {
      * Returns the converter mutation for the given class, version and field,
      * or null if none exists.  A null field name should be specified to get a
      * class converter.
-     *
-     * @param className the class name.
-     *
-     * @param classVersion the class version.
-     *
-     * @param fieldName the field name.
-     *
-     * @return the Converter, or null.
      */
     public Converter getConverter(String className,
                                   int classVersion,
@@ -173,8 +137,6 @@ public class Mutations implements Serializable {
 
     /**
      * Returns an unmodifiable collection of all converter mutations.
-     *
-     * @return the converters.
      */
     public Collection<Converter> getConverters() {
         return converters.values();

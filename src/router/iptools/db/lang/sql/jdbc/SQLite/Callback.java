@@ -62,7 +62,6 @@ public interface Callback {
      * SQLite query is aborted.<BR><BR>
      *
      * @param rowdata string array holding the column values of the row
-     * @return true to abort
      */
 
     public boolean newrow(String rowdata[]);

@@ -15,7 +15,6 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 source $testdir/malloc_common.tcl
 source $testdir/wal_common.tcl
-set testprefix pager1
 
 # Do not use a codec for tests in this file, as the database file is
 # manipulated directly using tcl scripts (using the [hexio_write] command).
@@ -55,8 +54,6 @@ do_not_use_codec
 # pager1-16.*: Varying sqlite3_vfs.mxPathname
 #
 # pager1-17.*: Tests related to "PRAGMA omit_readlock"
-#              (The omit_readlock pragma has been removed and so have
-#              these tests.)
 #
 # pager1-18.*: Test that the pager layer responds correctly if the b-tree
 #              requests an invalid page number (due to db corruption).
@@ -271,7 +268,7 @@ do_execsql_test pager1-3.1.2 {
 } {3 0}
 do_catchsql_test pager1-3.1.3 {
     INSERT INTO t1 SELECT a+3, randomblob(1500) FROM t1
-} {1 {CHECK constraint failed: counter}}
+} {1 {constraint failed}}
 do_execsql_test pager1-3.4 { SELECT * FROM counter } {3 0}
 do_execsql_test pager1-3.5 { SELECT a FROM t1 } {1 2 3}
 do_execsql_test pager1-3.6 { COMMIT } {}
@@ -444,8 +441,6 @@ do_test pager1.4.2.1 {
   db close
   tstvfs delete
 } {}
-
-if {$::tcl_platform(platform)!="windows"} {
 do_test pager1.4.2.2 {
   faultsim_restore_and_reopen
   execsql {
@@ -455,7 +450,7 @@ do_test pager1.4.2.2 {
 } {4 ok}
 do_test pager1.4.2.3 {
   faultsim_restore_and_reopen
-  foreach f [glob test.db-mj*] { forcedelete $f }
+  foreach f [glob test.db-mj*] { file delete -force $f }
   execsql {
     SELECT count(*) FROM t1;
     PRAGMA integrity_check;
@@ -463,7 +458,7 @@ do_test pager1.4.2.3 {
 } {64 ok}
 do_test pager1.4.2.4 {
   faultsim_restore_and_reopen
-  hexio_write test.db-journal [expr [file size test.db-journal]-30] 123456
+  hexio_write test.db-journal [expr [file size test.db-journal]-20] 123456
   execsql {
     SELECT count(*) FROM t1;
     PRAGMA integrity_check;
@@ -471,14 +466,13 @@ do_test pager1.4.2.4 {
 } {4 ok}
 do_test pager1.4.2.5 {
   faultsim_restore_and_reopen
-  hexio_write test.db-journal [expr [file size test.db-journal]-30] 123456
-  foreach f [glob test.db-mj*] { forcedelete $f }
+  hexio_write test.db-journal [expr [file size test.db-journal]-20] 123456
+  foreach f [glob test.db-mj*] { file delete -force $f }
   execsql {
     SELECT count(*) FROM t1;
     PRAGMA integrity_check;
   }
 } {4 ok}
-}
 
 do_test pager1.4.3.1 {
   testvfs tstvfs -default 1
@@ -525,27 +519,18 @@ db close
 # file-system is saved just before the xDelete() call to remove the 
 # master journal file from the file-system.
 #
-set pwd [get_pwd]
 testvfs tv -default 1
 tv script copy_on_mj_delete
 set ::mj_filename_length 0
 proc copy_on_mj_delete {method filename args} {
   if {[string match *mj* [file tail $filename]]} { 
-    #
-    # NOTE: Is the file name relative?  If so, add the length of the current
-    #       directory.
-    #
-    if {[is_relative_file $filename]} {
-      set ::mj_filename_length \
-        [expr {[string length $filename] + [string length $::pwd]}]
-    } else {
-      set ::mj_filename_length [string length $filename]
-    }
+    set ::mj_filename_length [string length $filename]
     faultsim_save 
   }
   return SQLITE_OK
 }
 
+set pwd [pwd]
 foreach {tn1 tcl} {
   1 { set prefix "test.db" }
   2 { 
@@ -661,7 +646,7 @@ foreach {tn1 tcl} {
     #
     do_test pager1-4.4.$tn.7 {
       faultsim_restore_and_reopen $prefix
-      foreach f [glob ${prefix}-mj*] { forcedelete $f }
+      foreach f [glob ${prefix}-mj*] { file delete -force $f }
       execsql "ATTACH '${prefix}2' AS aux"
     } {}
     do_execsql_test pager1-4.4.$tn.8 {
@@ -676,7 +661,7 @@ foreach {tn1 tcl} {
 }
 db close
 tv delete
-forcedelete $dirname
+file delete -force $dirname
 
 
 # Set up a VFS to make a copy of the file-system just before deleting a
@@ -753,7 +738,7 @@ sqlite3 db test.db -readonly 1
 do_catchsql_test pager1.4.5.6 {
   SELECT * FROM t1;
   SELECT * FROM t2;
-} {1 {attempt to write a readonly database}}
+} {1 {disk I/O error}}
 db close
 
 # Snapshot the file-system just before multi-file commit. Save the name
@@ -884,44 +869,18 @@ do_execsql_test pager1.4.7.1 {
 tv filter {}
 db close
 tv delete 
-catch {
-  test_syscall install fchmod
-  test_syscall fault 1 1
-}
 do_test pager1.4.7.2 {
   faultsim_restore_and_reopen
   catch {file attributes test.db-journal -permissions r--------}
   catch {file attributes test.db-journal -readonly 1}
   catchsql { SELECT * FROM t1 }
 } {1 {unable to open database file}}
-catch {
-  test_syscall reset
-  test_syscall fault 0 0
-}
 do_test pager1.4.7.3 {
   db close
   catch {file attributes test.db-journal -permissions rw-rw-rw-}
   catch {file attributes test.db-journal -readonly 0}
-  delete_file test.db-journal
+  file delete test.db-journal
   file exists test.db-journal
-} {0}
-do_test pager1.4.8.1 {
-  catch {file attributes test.db -permissions r--------}
-  catch {file attributes test.db -readonly 1}
-  sqlite3 db test.db
-  db eval { SELECT * FROM t1 }
-  sqlite3_db_readonly db main
-} {1}
-do_test pager1.4.8.2 {
-  sqlite3_db_readonly db xyz
-} {-1}
-do_test pager1.4.8.3 {
-  db close
-  catch {file attributes test.db -readonly 0}
-  catch {file attributes test.db -permissions rw-rw-rw-} msg
-  sqlite3 db test.db
-  db eval { SELECT * FROM t1 }
-  sqlite3_db_readonly db main
 } {0}
 
 #-------------------------------------------------------------------------
@@ -1028,28 +987,8 @@ do_test pager1-5.4.1 {
       INSERT INTO t2 VALUES(85, 'Gorbachev');
     COMMIT;
   }
-
-  # The size of the journal file is now:
-  # 
-  #   1) 512 byte header +
-  #   2) 2 * (1024+8) byte records +
-  #   3) 20+N bytes of master-journal pointer, where N is the size of 
-  #      the master-journal name encoded as utf-8 with no nul term.
-  #
-  set mj_pointer [expr {
-    20 + [string length "test.db-mjXXXXXX9XX"]
-  }]
-  #
-  #   NOTE: For item 3 above, if the current SQLite VFS lacks the concept of a
-  #         current directory, the length of the current directory name plus 1
-  #         character for the directory separator character are NOT counted as
-  #         part of the total size; otherwise, they are.
-  #
-  ifcapable curdir {
-    set mj_pointer [expr {$mj_pointer + [string length [get_pwd]] + 1}]
-  }
-  expr {$::max_journal==(512+2*(1024+8)+$mj_pointer)}
-} 1
+  set ::max_journal
+} [expr 2615+[string length [pwd]]]
 do_test pager1-5.4.2 {
   set ::max_journal 0
   execsql {
@@ -1059,25 +998,8 @@ do_test pager1-5.4.2 {
       DELETE FROM t2 WHERE b = 'Lenin';
     COMMIT;
   }
-
-  # In synchronous=full mode, the master-journal pointer is not written
-  # directly after the last record in the journal file. Instead, it is
-  # written starting at the next (in this case 512 byte) sector boundary.
-  #
-  set mj_pointer [expr {
-    20 + [string length "test.db-mjXXXXXX9XX"]
-  }]
-  #
-  #   NOTE: If the current SQLite VFS lacks the concept of a current directory,
-  #         the length of the current directory name plus 1 character for the
-  #         directory separator character are NOT counted as part of the total
-  #         size; otherwise, they are.
-  #
-  ifcapable curdir {
-    set mj_pointer [expr {$mj_pointer + [string length [get_pwd]] + 1}]
-  }
-  expr {$::max_journal==(((512+2*(1024+8)+511)/512)*512 + $mj_pointer)}
-} 1
+  set ::max_journal
+} [expr 3111+[string length [pwd]]]
 db close
 tv delete
 
@@ -1374,7 +1296,7 @@ do_test pager1-9.4.1 {
 } {SQLITE_DONE SQLITE_OK}
 do_test pager1-9.4.2 {
   list [file size test.db2] [file size test.db]
-} {1024 0}
+} {0 0}
 db2 close
 
 #-------------------------------------------------------------------------
@@ -1383,12 +1305,10 @@ db2 close
 #
 testvfs tv -default 1
 foreach sectorsize {
-    16
     32   64   128   256   512   1024   2048 
     4096 8192 16384 32768 65536 131072 262144
 } {
   tv sectorsize $sectorsize
-  tv devchar {}
   set eff $sectorsize
   if {$sectorsize < 512}   { set eff 512 }
   if {$sectorsize > 65536} { set eff 65536 }
@@ -1406,7 +1326,7 @@ foreach sectorsize {
       COMMIT;
     }
     file size test.db-journal
-  } [expr $sectorsize > 65536 ? 65536 : ($sectorsize<32 ? 512 : $sectorsize)]
+  } [expr $sectorsize > 65536 ? 65536 : $sectorsize]
 
   do_test pager1-10.$sectorsize.2 {
     execsql { 
@@ -1628,7 +1548,6 @@ do_execsql_test pager1-13.1.1 {
   UPDATE t1 SET b = a_string(400);
 } {persist}
 
-if {$::tcl_platform(platform)!="windows"} {
 # Run transactions of increasing sizes. Eventually, one (or more than one)
 # of these will write just enough content that one of the old headers created 
 # by the transaction in the block above lies immediately after the content
@@ -1651,9 +1570,7 @@ for {set nUp 1} {$nUp<64} {incr nUp} {
   } {ok}
   db2 close
 }
-}
 
-if {$::tcl_platform(platform)!="windows"} {
 # Same test as above. But this time with an index on the table.
 #
 do_execsql_test pager1-13.2.1 {
@@ -1673,7 +1590,6 @@ for {set nUp 1} {$nUp<64} {incr nUp} {
     execsql { PRAGMA integrity_check } db2
   } {ok}
   db2 close
-}
 }
 
 db close
@@ -1703,7 +1619,7 @@ do_catchsql_test pager1-14.1.4 {
   BEGIN;
     INSERT INTO t1(rowid, a, b) SELECT a+3, b, b FROM t1;
     INSERT INTO t1(rowid, a, b) SELECT a+3, b, b FROM t1;
-} {1 {UNIQUE constraint failed: t1.rowid}}
+} {1 {PRIMARY KEY must be unique}}
 do_execsql_test pager1-14.1.5 {
   COMMIT;
   SELECT * FROM t1;
@@ -1737,7 +1653,7 @@ for {set i 0} {$i<513} {incr i 3} {
 testvfs tv -default 1
 tv script xOpenCb
 tv filter xOpen
-proc xOpenCb {method filename args} {
+proc xOpenCb {method filename} {
   set ::file_len [string length $filename]
 }
 sqlite3 db test.db
@@ -1765,6 +1681,75 @@ for {set ii [expr $::file_len-5]} {$ii < [expr $::file_len+20]} {incr ii} {
   tv delete
 }
 
+#-------------------------------------------------------------------------
+# Test "PRAGMA omit_readlock". 
+#
+#   pager1-17.$tn.1.*: Test that if a second connection has an open 
+#                      read-transaction, it is not usually possible to write 
+#                      the database.
+#
+#   pager1-17.$tn.2.*: Test that if the second connection was opened with
+#                      the SQLITE_OPEN_READONLY flag, and 
+#                      "PRAGMA omit_readlock = 1" is executed before attaching
+#                      the database and opening a read-transaction on it, it is
+#                      possible to write the db.
+#
+#   pager1-17.$tn.3.*: Test that if the second connection was *not* opened with
+#                      the SQLITE_OPEN_READONLY flag, executing 
+#                      "PRAGMA omit_readlock = 1" has no effect.
+#
+do_multiclient_test tn {
+  do_test pager1-17.$tn.1.1 {
+    sql1 { 
+      CREATE TABLE t1(a, b);
+      INSERT INTO t1 VALUES(1, 2);
+    }
+    sql2 {
+      BEGIN;
+      SELECT * FROM t1;
+    }
+  } {1 2}
+  do_test pager1-17.$tn.1.2 {
+    csql1 { INSERT INTO t1 VALUES(3, 4) }
+  } {1 {database is locked}}
+  do_test pager1-17.$tn.1.3 {
+    sql2 { COMMIT }
+    sql1 { INSERT INTO t1 VALUES(3, 4) }
+  } {}
+
+  do_test pager1-17.$tn.2.1 {
+    code2 {
+      db2 close
+      sqlite3 db2 :memory: -readonly 1
+    }
+    sql2 { 
+      PRAGMA omit_readlock = 1;
+      ATTACH 'test.db' AS two;
+      BEGIN;
+      SELECT * FROM t1;
+    }
+  } {1 2 3 4}
+  do_test pager1-17.$tn.2.2 { sql1 "INSERT INTO t1 VALUES(5, 6)" } {}
+  do_test pager1-17.$tn.2.3 { sql2 "SELECT * FROM t1" }            {1 2 3 4}
+  do_test pager1-17.$tn.2.4 { sql2 "COMMIT ; SELECT * FROM t1" }   {1 2 3 4 5 6}
+
+  do_test pager1-17.$tn.3.1 {
+    code2 {
+      db2 close
+      sqlite3 db2 :memory:
+    }
+    sql2 { 
+      PRAGMA omit_readlock = 1;
+      ATTACH 'test.db' AS two;
+      BEGIN;
+      SELECT * FROM t1;
+    }
+  } {1 2 3 4 5 6}
+  do_test pager1-17.$tn.3.2 {
+  csql1 { INSERT INTO t1 VALUES(3, 4) }
+  } {1 {database is locked}}
+  do_test pager1-17.$tn.3.3 { sql2 COMMIT } {}
+}
 
 #-------------------------------------------------------------------------
 # Test the pagers response to the b-tree layer requesting illegal page 
@@ -1774,10 +1759,6 @@ for {set ii [expr $::file_len-5]} {$ii < [expr $::file_len+20]} {incr ii} {
 #   + Page 0,
 #   + A page with a page number greater than (2^31-1).
 #
-# These tests will not work if SQLITE_DIRECT_OVERFLOW_READ is defined. In
-# that case IO errors are sometimes reported instead of SQLITE_CORRUPT.
-#
-ifcapable !direct_read {
 do_test pager1-18.1 {
   faultsim_delete_and_reopen
   db func a_string a_string
@@ -1805,7 +1786,7 @@ do_test pager1-18.2 {
   catchsql { SELECT count(*) FROM t1 } db2
 } {1 {database disk image is malformed}}
 db2 close
-do_test pager1-18.3.1 {
+do_test pager1-18.3 {
   execsql {
     CREATE TABLE t2(x);
     INSERT INTO t2 VALUES(a_string(5000));
@@ -1813,38 +1794,13 @@ do_test pager1-18.3.1 {
   set pgno [expr ([file size test.db] / 1024)-2]
   hexio_write test.db [expr ($pgno-1)*1024] 00000000
   sqlite3 db2 test.db
-  # even though x is malformed, because typeof() does
-  # not load the content of x, the error is not noticed.
-  catchsql { SELECT typeof(x) FROM t2 } db2
-} {0 text}
-do_test pager1-18.3.2 {
-  # in this case, the value of x is loaded and so the error is
-  # detected
-  catchsql { SELECT length(x||'') FROM t2 } db2
-} {1 {database disk image is malformed}}
-db2 close
-do_test pager1-18.3.3 {
-  execsql {
-    DELETE FROM t2;
-    INSERT INTO t2 VALUES(randomblob(5000));
-  }
-  set pgno [expr ([file size test.db] / 1024)-2]
-  hexio_write test.db [expr ($pgno-1)*1024] 00000000
-  sqlite3 db2 test.db
-  # even though x is malformed, because length() and typeof() do
-  # not load the content of x, the error is not noticed.
-  catchsql { SELECT length(x), typeof(x) FROM t2 } db2
-} {0 {5000 blob}}
-do_test pager1-18.3.4 {
-  # in this case, the value of x is loaded and so the error is
-  # detected
-  catchsql { SELECT length(x||'') FROM t2 } db2
+  catchsql { SELECT length(x) FROM t2 } db2
 } {1 {database disk image is malformed}}
 db2 close
 do_test pager1-18.4 {
   hexio_write test.db [expr ($pgno-1)*1024] 90000000
   sqlite3 db2 test.db
-  catchsql { SELECT length(x||'') FROM t2 } db2
+  catchsql { SELECT length(x) FROM t2 } db2
 } {1 {database disk image is malformed}}
 db2 close
 do_test pager1-18.5 {
@@ -1878,7 +1834,6 @@ do_test pager1-18.6 {
   sqlite3 db test.db
   catchsql { SELECT length(x) FROM t1 }
 } {1 {database disk image is malformed}}
-}
 
 do_test pager1-19.1 {
   sqlite3 db ""
@@ -2030,33 +1985,31 @@ ifcapable wal {
 #   pager1-22.1.*: is a no-op on a non-WAL db, and
 #   pager1-22.2.*: does not cause xSync calls with a synchronous=off db.
 #
-ifcapable wal {
-  do_test pager1-22.1.1 {
-    faultsim_delete_and_reopen
-    execsql {
-      CREATE TABLE ko(c DEFAULT 'abc', b DEFAULT 'def');
-      INSERT INTO ko DEFAULT VALUES;
-    }
-    execsql { PRAGMA wal_checkpoint }
-  } {0 -1 -1}
-  do_test pager1-22.2.1 {
-    testvfs tv -default 1
-    tv filter xSync
-    tv script xSyncCb
-    proc xSyncCb {args} {incr ::synccount}
-    set ::synccount 0
-    sqlite3 db test.db
-    execsql {
-      PRAGMA synchronous = off;
-      PRAGMA journal_mode = WAL;
-      INSERT INTO ko DEFAULT VALUES;
-    }
-    execsql { PRAGMA wal_checkpoint }
-    set synccount
-  } {0}
-  db close
-  tv delete
-}
+do_test pager1-22.1.1 {
+  faultsim_delete_and_reopen
+  execsql {
+    CREATE TABLE ko(c DEFAULT 'abc', b DEFAULT 'def');
+    INSERT INTO ko DEFAULT VALUES;
+  }
+  execsql { PRAGMA wal_checkpoint }
+} {0 -1 -1}
+do_test pager1-22.2.1 {
+  testvfs tv -default 1
+  tv filter xSync
+  tv script xSyncCb
+  proc xSyncCb {args} {incr ::synccount}
+  set ::synccount 0
+  sqlite3 db test.db
+  execsql {
+    PRAGMA synchronous = off;
+    PRAGMA journal_mode = WAL;
+    INSERT INTO ko DEFAULT VALUES;
+  }
+  execsql { PRAGMA wal_checkpoint }
+  set synccount
+} {0}
+db close
+tv delete
 
 #-------------------------------------------------------------------------
 # Tests for changing journal mode.
@@ -2245,6 +2198,7 @@ do_test pager1-25-1 {
   }
   db close
 } {}
+breakpoint
 do_test pager1-25-2 {
   faultsim_delete_and_reopen
   execsql {
@@ -2407,8 +2361,8 @@ do_test pager1-29.2 {
 #
 do_test pager1-30.1 {
   db close
-  delete_file test.db
-  delete_file test.db-journal
+  file delete test.db
+  file delete test.db-journal
   set fd [open test.db-journal w]
   seek $fd [expr 512+1032*2]
   puts -nonewline $fd x
@@ -2427,7 +2381,6 @@ do_test pager1-30.1 {
 # file can still be rolled back. This is required for backward compatibility -
 # versions of SQLite prior to 3.5.8 always set this field to zero.
 #
-if {$tcl_platform(platform)=="unix"} {
 do_test pager1-31.1 {
   faultsim_delete_and_reopen
   execsql {
@@ -2448,370 +2401,14 @@ do_test pager1-31.1 {
     BEGIN;
       UPDATE t1 SET y = randomblob(1499);
   }
-  copy_file test.db test.db2
-  copy_file test.db-journal test.db2-journal
+  file copy test.db test.db2
+  file copy test.db-journal test.db2-journal
   
   hexio_write test.db2-journal 24 00000000
   sqlite3 db2 test.db2
   execsql { PRAGMA integrity_check } db2
 } {ok}
-}
 
-#-------------------------------------------------------------------------
-# Test that a database file can be "pre-hinted" to a certain size and that
-# subsequent spilling of the pager cache does not result in the database
-# file being shrunk.
-#
-catch {db close}
-forcedelete test.db
 
-do_test pager1-32.1 {
-  sqlite3 db test.db
-  execsql {
-    CREATE TABLE t1(x, y);
-  }
-  db close
-  sqlite3 db test.db
-  execsql {
-    BEGIN;
-    INSERT INTO t1 VALUES(1, randomblob(10000));
-  }
-  file_control_chunksize_test db main 1024
-  file_control_sizehint_test db main 20971520; # 20MB
-  execsql {
-    PRAGMA cache_size = 10;
-    INSERT INTO t1 VALUES(1, randomblob(10000));
-    INSERT INTO t1 VALUES(2, randomblob(10000));
-    INSERT INTO t1 SELECT x+2, randomblob(10000) from t1;
-    INSERT INTO t1 SELECT x+4, randomblob(10000) from t1;
-    INSERT INTO t1 SELECT x+8, randomblob(10000) from t1;
-    INSERT INTO t1 SELECT x+16, randomblob(10000) from t1;
-    SELECT count(*) FROM t1;
-    COMMIT;
-  }
-  db close
-  file size test.db
-} {20971520}
-
-# Cleanup 20MB file left by the previous test.
-forcedelete test.db
-
-#-------------------------------------------------------------------------
-# Test that if a transaction is committed in journal_mode=DELETE mode,
-# and the call to unlink() returns an ENOENT error, the COMMIT does not
-# succeed.
-#
-if {$::tcl_platform(platform)=="unix"} {
-  do_test pager1-33.1 {
-    sqlite3 db test.db
-    execsql {
-      CREATE TABLE t1(x);
-      INSERT INTO t1 VALUES('one');
-      INSERT INTO t1 VALUES('two');
-      BEGIN;
-        INSERT INTO t1 VALUES('three');
-        INSERT INTO t1 VALUES('four');
-    }
-    forcedelete bak-journal
-    file rename test.db-journal bak-journal
-
-    catchsql COMMIT
-  } {1 {disk I/O error}}
-
-  do_test pager1-33.2 {
-    file rename bak-journal test.db-journal
-    execsql { SELECT * FROM t1 }
-  } {one two}
-}
-
-#-------------------------------------------------------------------------
-# Test that appending pages to the database file then moving those pages
-# to the free-list before the transaction is committed does not cause
-# an error.
-#
-foreach {tn pragma strsize} {
-  1 { PRAGMA mmap_size = 0 } 2400
-  2 { }                       2400
-  3 { PRAGMA mmap_size = 0 } 4400
-  4 { }                       4400
-} {
-  reset_db
-  db func a_string a_string
-  db eval $pragma
-  do_execsql_test 34.$tn.1 {
-    CREATE TABLE t1(a, b);
-    INSERT INTO t1 VALUES(1, 2);
-  }
-  do_execsql_test 34.$tn.2 {
-    BEGIN;
-    INSERT INTO t1 VALUES(2, a_string($strsize));
-    DELETE FROM t1 WHERE oid=2;
-    COMMIT;
-    PRAGMA integrity_check;
-  } {ok}
-}
-
-#-------------------------------------------------------------------------
-#
-reset_db
-do_test 35 {
-  sqlite3 db test.db
-
-  execsql {
-    CREATE TABLE t1(x, y);
-    PRAGMA journal_mode = WAL;
-    INSERT INTO t1 VALUES(1, 2);
-  }
-
-  execsql {
-    BEGIN;
-      CREATE TABLE t2(a, b);
-  }
-
-  hexio_write test.db-shm [expr 16*1024] [string repeat 0055 8192]
-  catchsql ROLLBACK
-} {0 {}}
-
-do_multiclient_test tn {
-  sql1 {
-    PRAGMA auto_vacuum = 0;
-    CREATE TABLE t1(x, y);
-    INSERT INTO t1 VALUES(1, 2);
-  }
-
-  do_test 36.$tn.1 { 
-    sql2 { PRAGMA max_page_count = 2 }
-    list [catch { sql2 { CREATE TABLE t2(x) } } msg] $msg
-  } {1 {database or disk is full}}
-
-  sql1 { PRAGMA checkpoint_fullfsync = 1 }
-  sql1 { CREATE TABLE t2(x) }
-
-  do_test 36.$tn.2 { 
-    sql2 { INSERT INTO t2 VALUES('xyz') }
-    list [catch { sql2 { CREATE TABLE t3(x) } } msg] $msg
-  } {1 {database or disk is full}}
-}
-
-forcedelete test1 test2
-foreach {tn uri} {
-  1   {file:?mode=memory&cache=shared}
-  2   {file:one?mode=memory&cache=shared}
-  3   {file:test1?cache=shared}
-  4   {file:test2?another=parameter&yet=anotherone}
-} {
-  do_test 37.$tn {
-    catch { db close }
-    sqlite3_shutdown
-    sqlite3_config_uri 1
-    sqlite3 db $uri
-
-    db eval {
-      CREATE TABLE t1(x);
-      INSERT INTO t1 VALUES(1);
-      SELECT * FROM t1;
-    }
-  } {1}
-
-  do_execsql_test 37.$tn.2 {
-    VACUUM;
-    SELECT * FROM t1;
-  } {1}
-
-  db close
-  sqlite3_shutdown
-  sqlite3_config_uri 0
-}
-
-do_test 38.1 {
-  catch { db close }
-  forcedelete test.db
-  set fd [open test.db w]
-  puts $fd "hello world"
-  close $fd
-  sqlite3 db test.db
-  catchsql { CREATE TABLE t1(x) }
-} {1 {file is encrypted or is not a database}}
-do_test 38.2 {
-  catch { db close }
-  forcedelete test.db
-} {}
-
-do_test 39.1 {
-  sqlite3 db test.db
-  execsql {
-    PRAGMA auto_vacuum = 1;
-    CREATE TABLE t1(x);
-    INSERT INTO t1 VALUES('xxx');
-    INSERT INTO t1 VALUES('two');
-    INSERT INTO t1 VALUES(randomblob(400));
-    INSERT INTO t1 VALUES(randomblob(400));
-    INSERT INTO t1 VALUES(randomblob(400));
-    INSERT INTO t1 VALUES(randomblob(400));
-    BEGIN;
-    UPDATE t1 SET x = 'one' WHERE rowid=1;
-  }
-  set ::stmt [sqlite3_prepare db "SELECT * FROM t1 ORDER BY rowid" -1 dummy]
-  sqlite3_step $::stmt
-  sqlite3_column_text $::stmt 0
-} {one}
-do_test 39.2 {
-  execsql { CREATE TABLE t2(x) }
-  sqlite3_step $::stmt
-  sqlite3_column_text $::stmt 0
-} {two}
-do_test 39.3 {
-  sqlite3_finalize $::stmt
-  execsql COMMIT
-} {}
-
-do_execsql_test 39.4 {
-  PRAGMA auto_vacuum = 2;
-  CREATE TABLE t3(x);
-  CREATE TABLE t4(x);
-
-  DROP TABLE t2;
-  DROP TABLE t3;
-  DROP TABLE t4;
-}
-do_test 39.5 {
-  db close
-  sqlite3 db test.db
-  execsql {
-    PRAGMA cache_size = 1;
-    PRAGMA incremental_vacuum;
-    PRAGMA integrity_check;
-  }
-} {ok}
-
-do_test 40.1 {
-  reset_db
-  execsql {
-    PRAGMA auto_vacuum = 1;
-    CREATE TABLE t1(x PRIMARY KEY);
-    INSERT INTO t1 VALUES(randomblob(1200));
-    PRAGMA page_count;
-  }
-} {6}
-do_test 40.2 {
-  execsql {
-    INSERT INTO t1 VALUES(randomblob(1200));
-    INSERT INTO t1 VALUES(randomblob(1200));
-    INSERT INTO t1 VALUES(randomblob(1200));
-  }
-} {}
-do_test 40.3 {
-  db close
-  sqlite3 db test.db
-  execsql {
-    PRAGMA cache_size = 1;
-    CREATE TABLE t2(x);
-    PRAGMA integrity_check;
-  }
-} {ok}
-
-do_test 41.1 {
-  reset_db
-  execsql {
-    CREATE TABLE t1(x PRIMARY KEY);
-    INSERT INTO t1 VALUES(randomblob(200));
-    INSERT INTO t1 SELECT randomblob(200) FROM t1;
-    INSERT INTO t1 SELECT randomblob(200) FROM t1;
-    INSERT INTO t1 SELECT randomblob(200) FROM t1;
-    INSERT INTO t1 SELECT randomblob(200) FROM t1;
-    INSERT INTO t1 SELECT randomblob(200) FROM t1;
-    INSERT INTO t1 SELECT randomblob(200) FROM t1;
-  }
-} {}
-do_test 41.2 {
-  testvfs tv -default 1
-  tv sectorsize 16384;
-  tv devchar [list]
-  db close
-  sqlite3 db test.db
-  execsql {
-    PRAGMA cache_size = 1;
-    DELETE FROM t1 WHERE rowid%4;
-    PRAGMA integrity_check;
-  }
-} {ok}
-db close
-tv delete
-
-set pending_prev [sqlite3_test_control_pending_byte 0x1000000]
-do_test 42.1 {
-  reset_db
-  execsql {
-    CREATE TABLE t1(x, y);
-    INSERT INTO t1 VALUES(randomblob(200), randomblob(200));
-    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
-    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
-    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
-    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
-    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
-    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
-    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
-    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
-    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
-  }
-  db close
-  sqlite3_test_control_pending_byte 0x0010000
-  sqlite3 db test.db
-  db eval { PRAGMA mmap_size = 0 }
-  catchsql { SELECT sum(length(y)) FROM t1 }
-} {1 {database disk image is malformed}}
-do_test 42.2 {
-  reset_db
-  execsql {
-    CREATE TABLE t1(x, y);
-    INSERT INTO t1 VALUES(randomblob(200), randomblob(200));
-    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
-    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
-    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
-    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
-    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
-    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
-    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
-    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
-  }
-  db close
-
-  testvfs tv -default 1
-  tv sectorsize 16384;
-  tv devchar [list]
-  sqlite3 db test.db -vfs tv
-  execsql { UPDATE t1 SET x = randomblob(200) }
-} {}
-db close
-tv delete
-sqlite3_test_control_pending_byte $pending_prev
-
-do_test 43.1 {
-  reset_db
-  execsql {
-    CREATE TABLE t1(x, y);
-    INSERT INTO t1 VALUES(1, 2);
-    CREATE TABLE t2(x, y);
-    INSERT INTO t2 VALUES(1, 2);
-    CREATE TABLE t3(x, y);
-    INSERT INTO t3 VALUES(1, 2);
-  }
-  db close
-  sqlite3 db test.db
-
-  db eval { PRAGMA mmap_size = 0 }
-  db eval { SELECT * FROM t1 }
-  sqlite3_db_status db CACHE_MISS 0
-} {0 2 0}
-
-do_test 43.2 {
-  db eval { SELECT * FROM t2 }
-  sqlite3_db_status db CACHE_MISS 1
-} {0 3 0}
-
-do_test 43.3 {
-  db eval { SELECT * FROM t3 }
-  sqlite3_db_status db CACHE_MISS 0
-} {0 1 0}
 
 finish_test

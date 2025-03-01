@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1991, 1993
@@ -111,7 +111,7 @@ extern "C" {
  */
 
 /*
- * !!!
+ * XXX
  * We #undef all of the macros because there are incompatible versions of this
  * file and these macros on various systems.  What makes the problem worse is
  * they are included and/or defined by system include files which we may have
@@ -273,7 +273,7 @@ struct {								\
 	}								\
 	else {								\
 		struct type *curelm = SLIST_FIRST((head));		\
-		while (curelm != NULL &&				\
+		while (curelm != NULL && 				\
 		    SLIST_NEXT(curelm, field) != (elm))			\
 			curelm = SLIST_NEXT(curelm, field);		\
 		if (curelm != NULL)					\

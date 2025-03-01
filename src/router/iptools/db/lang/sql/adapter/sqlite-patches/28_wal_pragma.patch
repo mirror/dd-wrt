@@ -1,0 +1,21 @@
+--- src/vdbe.c
++++ src/vdbe.c
+@@ -5323,17 +5323,17 @@
+ 
+ #ifndef SQLITE_OMIT_WAL
+   zFilename = sqlite3PagerFilename(pPager);
+ 
+   /* Do not allow a transition to journal_mode=WAL for a database
+   ** in temporary storage or if the VFS does not support shared memory 
+   */
+   if( eNew==PAGER_JOURNALMODE_WAL
+-   && (zFilename[0]==0                         /* Temp file */
++   && (zFilename==NULL || zFilename[0]==0      /* Temp file */
+        || !sqlite3PagerWalSupported(pPager))   /* No shared-memory support */
+   ){
+     eNew = eOld;
+   }
+ 
+   if( (eNew!=eOld)
+    && (eOld==PAGER_JOURNALMODE_WAL || eNew==PAGER_JOURNALMODE_WAL)
+   ){

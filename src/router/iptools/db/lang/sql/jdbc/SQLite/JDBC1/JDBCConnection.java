@@ -181,7 +181,7 @@ public class JDBCConnection
     public SQLite.Database getSQLiteDatabase() {
 	return db;
     }
-
+  
     public Statement createStatement() {
 	JDBCStatement s = new JDBCStatement(this);
 	return s;

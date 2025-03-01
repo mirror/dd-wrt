@@ -8,7 +8,7 @@ msgcsharp="/*-
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  */"
 
 f=../lang/csharp/src/Internal/StatStructs.cs
@@ -33,7 +33,6 @@ csclass()
 	-e 's:\tdb_timeout_t:\tinternal uint:' \
 	-e 's:\tDB_LSN:\tinternal DB_LSN_STRUCT:' \
 	-e 's:\tDB_TXN_ACTIVE \*:\tinternal IntPtr :' \
-	-e 's:\tDB_TXN_ACTIVE_SLICE \*:\tinternal uint[] : ' \
 	-e 's:\tint\s:\tinternal int :' \
 	-e 's:\tint32_t:\tinternal int:' \
 	-e 's:\tpid_t:\tinternal int:' \
@@ -51,8 +50,7 @@ s:/\*.*\*/::
 P
 D
 }
-}" \
-    	-e "s:\;.*:\;:"
+}"
 }
 
 stat_class()
@@ -83,7 +81,6 @@ EOF
 	    -e "/^#/d" \
 	    -e "/gid\[.*\]/d" \
 	    -e "/name\[.*\]/d" \
-	    -e "/slice_txns/d" \
 	    -e 's:\tchar \*:\tinternal string :' \
 	    -e 's:\tdb_pgno_t:\tinternal uint:' \
 	    -e 's:\tdb_seq_t:\tinternal long:' \

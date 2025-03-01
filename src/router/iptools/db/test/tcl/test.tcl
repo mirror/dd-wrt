@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 
@@ -31,11 +31,6 @@ if { [file exists $testdir] != 1 } {
 global __debug_print
 global __debug_on
 global __debug_test
-
-# number_of_slices is used to mark that the test environment should be
-# sliced, and list how many slices it contains.
-global number_of_slices
-set number_of_slices 0
 
 #
 # Test if utilities work to figure out the path.  Most systems
@@ -71,12 +66,6 @@ set fixed_len 20
 set recd_debug	0
 set log_log_record_types 0
 set ohandles {}
-
-# Some hosts are old and slow and need a little extra time
-# for various procs, for example the await_condition utilities. 
-# List them here.
-global slow_hosts
-set slow_hosts [list scl58090]
 
 # Normally, we're not running an all-tests-in-one-env run.  This matters
 # for error stream/error prefix settings in berkdb_open.
@@ -137,14 +126,6 @@ if { [is_substr $conf "heap"] } {
 	lappend valid_methods "heap"
 }
 
-# Here we track the official latest release for each major.minor 
-# version.  This is the version you will find if you go to the 
-# Oracle download site looking for a historical release.
-global valid_releases
-array set valid_releases [list 44 "db-4.4.20" 45 "db-4.5.20" 46 "db-4.6.21" \
-    47 "db-4.7.25" 48 "db-4.8.30" 50 "db-5.0.32" 51 "db-5.1.29" \
-    52 "db-5.2.42" 53 "db-5.3.28" 60 "db-6.0.30" 61 "db-6.1.26"]
-
 # The variable test_recopts controls whether we open envs in
 # replication tests with the -recover flag.   The default is
 # to test with and without the flag, but to run a meaningful
@@ -155,7 +136,6 @@ set test_recopts { "-recover" "" }
 
 # Set up any OS-specific values.
 global tcl_platform
-set is_aix_test [string match AIX $tcl_platform(os)]
 set is_freebsd_test [string match FreeBSD $tcl_platform(os)]
 set is_hp_test [string match HP-UX $tcl_platform(os)]
 set is_linux_test [string match Linux $tcl_platform(os)]
@@ -194,7 +174,6 @@ if { $stat != 0 } {
 	# Make sure it's the right error for a non-crypto release.
 	error_check_good non_crypto_release \
 	    [expr [is_substr $result "operation not supported"] || \
-	    [is_substr $result "did not include support for cryptography"] || \
 	    [is_substr $result "invalid argument"]] 1
 	set has_crypto 0
 } else {
@@ -281,7 +260,6 @@ proc run_std { { testname ALL } args } {
 	{"locking"		"lock"}
 	{"logging"		"log"}
 	{"memory pool"		"memp"}
-	{"multiversion"		"multiversion"}
 	{"mutex"		"mutex"}
 	{"transaction"		"txn"}
 	{"deadlock detection"	"dead"}
@@ -294,10 +272,9 @@ proc run_std { { testname ALL } args } {
 	{"secondary index"	"sindex"}
 	{"partition"		"partition"}
 	{"compression"		"compressed"}
-	{"automated repmgr tests" 	"repmgr_auto"}
-	{"repmgr multi-process"	"repmgr_multiproc"}
-	{"other repmgr tests" 	"repmgr_other"}
-	{"expected failures"	"fail"}
+	{"automated repmgr tests" 	"auto_repmgr"}
+	{"other repmgr tests" 	"other_repmgr"}
+	{"repmgr multi-process"	"multi_repmgr"}
 	}
 
 	# If this is run_std only, run each rep test for a single
@@ -311,11 +288,6 @@ proc run_std { { testname ALL } args } {
 	# If release supports encryption, run security tests.
 	if { $has_crypto == 1 } {
 	        lappend test_list {"security"   "sec"}
-	}
-
-	# If slices are enabled, run slice tests.
-    	if { [berkdb slice_enabled ] } {
-	    	lappend test_list {"slices"	"slices_complete"}
 	}
 
 	if { $am_only == 0 } {
@@ -481,16 +453,14 @@ proc check_output { file } {
 		^Join\stest:\.*|
 		^Method:\s.*|
 		^Putting\s.*databases.*|
-		^Regression\sTests\sSucceeded.*|
 		^Repl:\stest\d\d\d:.*|
 		^Repl:\ssdb\d\d\d:.*|
-		^Running\stest.*|
+		^Running\stest\ssdb.*|
+		^Running\stest\stest.*|
 		^Running\sall\scases\sof\s.*|
 		^run_inmem_db\s.*rep.*|
 		^run_inmem_log\s.*rep.*|
 		^run_mixedmode_log\s.*rep.*|
-		^run_in_sliced_env .*|
-		^run_with_slices .*|
 		^Script\swatcher\sprocess\s.*|
 		^Secondary\sindex\sjoin\s.*|
 		^Test\ssuite\srun\s.*|
@@ -519,7 +489,6 @@ proc check_output { file } {
 		^\t*[e|E]nv[0-9][0-9][0-9].*|
 		^\t*Executing\scommand$|
 		^\t*Executing\stxn_.*|
-		^\t*[F|f]ail[0-9][0-9][0-9].*|
 		^\t*File\srecd005\.\d\.db\sexecuted\sand\saborted\.$|
 		^\t*File\srecd005\.\d\.db\sexecuted\sand\scommitted\.$|
 		^\t*[f|F]op[0-9][0-9][0-9].*|
@@ -559,7 +528,6 @@ proc check_output { file } {
 		^\t*Salvage\stests\sof.*|
 		^\t*sdb[0-9][0-9][0-9].*|
 		^\t*Skipping\s.*|
-		^\t*[s|S]lice[0-9][0-9][0-9].*|
 		^\t*Subdb[0-9][0-9][0-9].*|
 		^\t*Subdbtest[0-9][0-9][0-9].*|
 		^\t*Syncing$|
@@ -591,8 +559,6 @@ proc r { args } {
 	global one_test
 	global test_recopts
 	global checking_valid_methods
-	global run_in_sliced_env_tests
-	global run_with_slices_tests
 
 	source ./include.tcl
 
@@ -617,20 +583,18 @@ proc r { args } {
 		set sub [ lindex $args 0 ]
 		set starttest [lindex $args 1]
 		switch $sub {
+			auto_repmgr -
 			bigfile -
 			dead -
 			env -
-			fail -
 			lock -
 			log -
 			memp -
+			multi_repmgr -
 			mutex -
-			repmgr_auto -
-			repmgr_multiproc -
-			repmgr_other -
+			other_repmgr -
 			rsrc -
 			sdbtest -
-			slice -
 			txn {
 				if { $display } {
 					run_subsystem $sub 1 0 $starttest
@@ -639,21 +603,16 @@ proc r { args } {
 					run_subsystem $sub 0 1 $starttest
 				}
 			}
-			backup {
-				if { $one_test == "ALL" } {
-					run_test backup $display $run
-				}
-			}
 			byte {
 				if { $one_test == "ALL" } {
 					run_test byteorder $display $run
 				}
 			}
 			archive -
+			backup -
 			dbm -
 			hsearch -
 			ndbm -
-			run_ipv4_tests -
 			shelltest {
 				if { $one_test == "ALL" } {
 					if { $display } { puts "eval $sub" }
@@ -664,10 +623,10 @@ proc r { args } {
 				}
 			}
 			compact -
-			fop -
+			elect -
 			inmemdb -
-			rep_elect -
-			rep_init {
+			init -
+			fop {
 				set tindx [lsearch $test_names($sub) $starttest]
 				if { $tindx == -1 } {
 					set tindx 0
@@ -683,10 +642,8 @@ proc r { args } {
 					set tindex 0
 				}
 				set clist [lrange $test_names(test) $tindex end]
-				set clist [concat $clist $test_names(sdb)]
 				foreach test $clist {
-					eval run_compressed\
-					     btree $test $display $run
+					eval run_compressed btree $test $display $run
 				}
 			}
 			join {
@@ -747,18 +704,6 @@ proc r { args } {
 					eval jointest 512 3
 				}
 			}
-			multiversion {
-				if { $one_test == "ALL" } {
-					if { $display } { 
-						puts "eval rep065 -btree"
-						puts "eval repmgr035"
-					}
-					if { $run } {
-						eval rep065 -btree
-						eval repmgr035
-					}
-				}
-			}
 			partition {
 				foreach method { btree hash } {
 					foreach test "$test_names(recd)\
@@ -779,8 +724,8 @@ proc r { args } {
 				    $display $run $args
 			}
 			repmgr {
-				r repmgr_other
-				foreach test $test_names(repmgr_basic) {
+				r other_repmgr
+				foreach test $test_names(basic_repmgr) {
 					$test 100 1 1 1 1 1 
 					$test 100 1 0 0 0 0 
 					$test 100 0 1 0 0 0
@@ -899,33 +844,6 @@ proc r { args } {
 					if { $run } {
 						sindex 0 1
 						sijoin 0 1
-					}
-				}
-			}
-			slices_complete {
-				# Skip sliced tests if slices
-				# are not enabled.
-				if { ![berkdb slice_enabled ] } {
-					return
-				}
-				if { $one_test == "ALL" } {
-					if { $display } {
-						run_subsystem slice 1 0
-					}
-					if { $run } {
-						run_subsystem slice 0 1
-					}
-					foreach method {btree hash} {
-						foreach test\
-						    $run_in_sliced_env_tests {
-							run_in_sliced_env\
-							    -$method $test\
-							    $display $run 
-						}
-					}
-					foreach test $run_with_slices_tests {
-						run_with_slices \
-						    $test $display $run 
 					}
 				}
 			}
@@ -1295,144 +1213,6 @@ proc run_secenv { method test {largs ""} } {
 }
 
 #
-# Run tests with a sliced configuration.
-#
-proc run_with_slices { test {display 0} {run 1} {args ""} } {
-	global number_of_slices
-	source ./include.tcl
-
-	# Skip of this release is not slice enabled.
-	if { ![berkdb slice_enabled] } {
-		return
-	}
-
-	if { $display } {
-		puts "run_with_slices $test"
-	}
-	if {!$run} {
-		return
-	}
-
-	# Run with just the environment sliced, and with the environment
-	# and databases sliced
-	set number_of_slices 2
-
-	set sliced_args {" " " -sliced "}
-	foreach sliced_arg $sliced_args {
-		set largs $args
-		append largs $sliced_arg
-		if { $run } {
-			if { [string match "*-sliced*" $largs] } {
-		puts "run_with_slices $test with sliced databases."
-			} else {
-		puts "run_with_slices $test with non-sliced databases."
-			}
-			slice_db_config $number_of_slices
-			eval $test $largs
-			env_cleanup $testdir
-		}
-	}
-	set number_of_slices 0
-	fileremove $testdir/DB_CONFIG
-}
-
-#
-# Run method tests each in its own, new sliced environment.
-#
-proc run_in_sliced_env { method test {display 0} {run 1} {largs ""} } {
-	global __debug_on
-	global __debug_print
-	global __debug_test
-	global is_envmethod
-	global test_names
-	global parms
-	global number_of_slices
-	source ./include.tcl
-
-	# Skip of this release is not slice enabled.
-	if { ![berkdb slice_enabled] } {
-		return
-	}
-
-	if {$display} {
-		puts "run_in_sliced_env $method $test $largs"
-	}
-
-	if {!$run} {
-		return
-	}
-
-	# exec rm -rf $testdir
-	env_cleanup $testdir
-	set save_largs $largs
-	set is_envmethod 1
-	set number_of_slices 2
-	set container {"set_cachesize 0 4194304 1"}
-	set slice_all {"set_cachesize 0 4194304 1"}
-	#
-	# Run each test multiple times in the sliced env.
-	# Once with a sliced env + non-sliced database
-	# Once with a sliced env + sliced database
-	#
-	set sliced_args {" " " -sliced "}
-	foreach sliced_arg $sliced_args {
-		set stat [catch {
-			slice_db_config $number_of_slices $container $slice_all
-			set env [eval {berkdb_env -create -mode 0644 -home $testdir}]
-			error_check_good env_open [is_valid_env $env] TRUE
-			append largs " -env $env "
-			append largs $sliced_arg
-
-			puts "[timestamp]"
-			if { [info exists parms($test)] != 1 } {
-				puts stderr "$test disabled in\
-				    testparams.tcl; skipping."
-				continue
-			}
-			if { [string match "*-sliced*" $largs] } {
-		puts "run_in_sliced_env $test with sliced databases."
-			} else {
-		puts "run_in_sliced_env $test with non-sliced databases."
-			}
-			eval $test $method $parms($test) $largs
-
-			if { $__debug_print != 0 } {
-				puts ""
-			}
-			if { $__debug_on != 0 } {
-				debug $__debug_test
-			}
-			flush stdout
-			flush stderr
-			set largs $save_largs
-			error_check_good envclose [$env close] 0
-			set nodump 0
-			if { $is_hp_test } {
-				set nodump 1
-			}
-			verify_dir $testdir "" 1 0 $nodump
-			salvage_dir $testdir 1
-			env_cleanup $testdir
-		} res]
-	}
-	if { $stat != 0} {
-		global errorInfo;
-
-		set fnl [string first "\n" $errorInfo]
-		set theError [string range $errorInfo 0 [expr $fnl - 1]]
-		if {[string first FAIL $errorInfo] == -1} {
-			error "FAIL:[timestamp]\
-			    run_in_sliced_env: $method $test: $theError"
-		} else {
-			error $theError;
-		}
-	set is_envmethod 0
-	}
-	set number_of_slices 0
-	fileremove $testdir/DB_CONFIG
-}
-
-#
 # Run replication method tests in master and client env.
 # This proc runs a specific test/method using the db_replicate utility.
 #
@@ -1523,8 +1303,7 @@ proc run_replicate_test { method test {nsites 2} {largs "" } } {
 		set envcmd($i) "berkdb_env_noerr -create -log_max $logmax \
 		    $envargs -rep -home $repdir($i) -txn -thread -pagesize $pg \
 		    -log_regionmax $logregion -lock_max_objects $lockmax \
-		    -lock_max_locks $lockmax -errpfx $repdir($i) $verbargs \
-		    -log_blob"
+		    -lock_max_locks $lockmax -errpfx $repdir($i) $verbargs"
 		set env($i) [eval $envcmd($i)]
 		error_check_good env_open($i) [is_valid_env $env($i)] TRUE
 	}
@@ -2515,10 +2294,9 @@ proc run_all { { testname ALL } args } {
 		}
 	}
 
-	# Add a few more tests that are suitable for run_all but not run_std.
-	set test_list {
-		{"testNNN under replication"	"repmethod"}
-		{"IPv4"			"run_ipv4_tests"}}
+	# Run standard access method tests under replication.
+	#
+	set test_list [list {"testNNN under replication"	"repmethod"}]
 
 	# If we're on Windows, Linux, FreeBSD, or Solaris, run the
 	# bigfile tests.  These create files larger than 4 GB.
@@ -2808,7 +2586,7 @@ proc run_envmethod1 { method {display 0} {run 1} { outfile stdout } args } {
 		env_cleanup $testdir
 		error_check_good envremove [berkdb envremove -home $testdir] 0
 		set env [eval {berkdb_env -create -cachesize {0 10000000 0}} \
-		    {-pagesize 512 -mode 0644 -home $testdir} $args ]
+ 		    {-pagesize 512 -mode 0644 -home $testdir} $args ]
 		error_check_good env_open [is_valid_env $env] TRUE
 		append largs " -env $env "
 	}

@@ -25,37 +25,32 @@ case `uname` in
 	*CYGWIN*WOW64*)
 	d=../../../build_windows/x64/Debug
 	DB_LIB_DIR="$d"
-	JUNIT_JAR="`cygpath -m $JUNIT_JAR`"
+	REQUIRED_JARS="`cygpath -m $JUNIT_JAR`"
 	CP_SEP=";"
 	PATH="`pwd`/$DB_LIB_DIR:$PATH"
-	export PATH
-	;;
+	export PATH;;
 	*CYGWIN*)
 	d=../../../build_windows/Win32/Debug
 	DB_LIB_DIR="$d"
-	JUNIT_JAR="`cygpath -m $JUNIT_JAR`"
+	REQUIRED_JARS="`cygpath -m $JUNIT_JAR`"
 	CP_SEP=";"
 	PATH="`pwd`/$DB_LIB_DIR:$PATH"
-	export PATH
-	;;
+	export PATH;;
 	*)
 	d=../../../build_unix
 	DB_LIB_DIR="$d/.libs"
+	REQUIRED_JARS=$JUNIT_JAR
 	CP_SEP=":"
 	LD_LIBRARY_PATH="`pwd`/$DB_LIB_DIR:$LD_LIBRARY_PATH"
 	export LD_LIBRARY_PATH
-	ANT_OPTS="-Djava.library.path=$LD_LIBRARY_PATH"
 	;;
 esac
-JUNIT_DIR="`dirname $JUNIT_JAR`"
-REQUIRED_JARS=$JUNIT_JAR$CP_SEP$JUNIT_DIR/hamcrest-core.jar
 DB_JAR="$d/db.jar"
 CLASSPATH="${REQUIRED_JARS}${CP_SEP}${CLASSPATH}"
 export DB_JAR
 export REQUIRED_JARS
 export CP_SEP
 export CLASSPATH
-export ANT_OPTS
 
 ANT=${ANT:-ant}
 

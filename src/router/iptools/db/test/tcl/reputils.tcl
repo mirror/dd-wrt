@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -377,7 +377,7 @@ proc repl_envsetup { envargs largs test {nclients 1} {droppct 0} { oob 0 } } {
 	set ma_cmd "berkdb_env_noerr -create -log_max $logmax $envargs \
 	    -cachesize { 0 16777216 1 } -log_regionmax $logregion \
 	    -lock_max_objects $lockmax -lock_max_locks $lockmax \
-	    -errpfx $masterdir $verbargs -log_blob -pagesize $pagesize \
+	    -errpfx $masterdir $verbargs -pagesize $pagesize \
 	    -home $masterdir -txn nosync -rep_master -rep_transport \
 	    \[list 1 replsend\]"
 	set masterenv [eval $ma_cmd]
@@ -574,9 +574,9 @@ proc repl_verdel { test method { nclients 1 } } {
 	if { $stat == 1 } {
 		return
 	}
-	set utilflag "-b $masterdir/__db_bl"
+	set utilflag ""
 	if { $encrypt != 0 } {
-		append utilflag " -P $passwd"
+		set utilflag "-P $passwd"
 	}
 	foreach testfile $dbs {
 
@@ -1216,7 +1216,6 @@ proc run_election { celist errcmd priority crsh\
 
 	global elect_serial
 	global is_hp_test
-	global is_sunos_test
 	global is_windows_test
 	global rand_init
 	upvar $celist cenvlist
@@ -1224,9 +1223,9 @@ proc run_election { celist errcmd priority crsh\
 	upvar $priority pri
 	upvar $crsh crash
 
-	# Windows, HP-UX and SunOS require a longer timeout.
-	if { [llength $elect_timeout] == 1 && ($is_windows_test == 1 ||
-	    $is_hp_test == 1 || $is_sunos_test == 1) } {
+	# Windows and HP-UX require a longer timeout.
+	if { [llength $elect_timeout] == 1 &&
+	    ($is_windows_test == 1 || $is_hp_test == 1) } {
 		set elect_timeout [expr $elect_timeout * 2]
 	}
 
@@ -1658,7 +1657,6 @@ proc rep_test { method env repdb {nentries 10000} \
 	set pflags ""
 	set gflags ""
 	set txn ""
-	set nblobs 0
 
 	if { [is_record_based $method] == 1 } {
 		append gflags " -recno"
@@ -1674,15 +1672,7 @@ proc rep_test { method env repdb {nentries 10000} \
 	# Abort occasionally during the run.
 	set abortfreq [expr $nentries / 15]
 
-	set allentries $nentries
-	set blob_threshold [$db get_blob_threshold]
-	set blob_data ""
-	if { $blob_threshold != 0 } {
-	    	set nblobs [expr $nentries / 10]
-	    	set nentries [expr $nentries - $nblobs]
-	    	set blob_data [string repeat "a" $blob_threshold]
-	}
-	while { [gets $did str] != -1 && $count < $allentries } {
+	while { [gets $did str] != -1 && $count < $nentries } {
 		if { [is_record_based $method] == 1 } {
 			global kvals
 
@@ -1715,14 +1705,8 @@ proc rep_test { method env repdb {nentries 10000} \
 		set t [$env txn]
 		error_check_good txn [is_valid_txn $t $env] TRUE
 		set txn "-txn $t"
-	    	if { $count < $nentries } {
-		    	set ret [eval {$db put } \
-		    	    $txn $pflags {$key [chop_data $method $str]}]
-		    	
-	    	} else {
-		    	set ret [eval {$db put } \
-		    	    $txn $pflags {$key $blob_data}]
-		}
+		set ret [eval \
+		    {$db put} $txn $pflags {$key [chop_data $method $str]}]
 		error_check_good put $ret 0
 		error_check_good txn [$t commit] 0
 
@@ -1869,7 +1853,7 @@ proc rep_test_bulk { method env repdb {nentries 10000} \
 				set word $overflowword1
 			} else {
 				set len [string length $overflowword2]
-				set word $overflowword2
+				set word $overflowword1
 			}
 			set rpt [expr 1024 * 1024 / $len]
 			incr rpt
@@ -2050,12 +2034,6 @@ proc rep_test_upg.recno.check { key data } {
 	#
 	set i [string first . $key]
 	error_check_good pid $i -1
-}
-
-proc rep_test_upg.inmem.check { key data } {
-	# Using -unknown method because client sites do not have access to
-	# the method. 
-	error_check_good "key/data mismatch" $data [chop_data -unknown data$key]
 }
 
 # In a situation where logs are being archived off a master, it's
@@ -2296,7 +2274,7 @@ proc proc_msgs_once { elist {dupp NONE} {errp NONE} } {
 
 proc rep_verify { masterdir masterenv clientdir clientenv \
     {compare_shared_portion 0} {match 1} {logcompare 1} \
-    {dbname "test.db"} {datadir ""} {bt_cmp_func 0} {ham_cmp_func 0} } {
+    {dbname "test.db"} {datadir ""} } {
 	global util_path
 	global encrypt
 	global passwd
@@ -2378,33 +2356,18 @@ proc rep_verify { masterdir masterenv clientdir clientenv \
 		}
 	}
 
-	set bt_cmp_flag ""
-	set ham_cmp_flag ""
-	if { $bt_cmp_func != 0 } {
-		set bt_cmp_flag -btcompare
-	} else {
-		set bt_cmp_func ""
-	}
-	if { $ham_cmp_func != 0 } {
-		set ham_cmp_flag -hashcompare
-	} else {
-		set ham_cmp_func ""
-	}
-
 	# ... now the databases.
 	#
 	# We're defensive here and throw an error if a database does
 	# not exist.  If opening the first database succeeded but the
 	# second failed, we close the first before reporting the error.
 	#
-	if { [catch {eval {berkdb_open_noerr} -env $masterenv \
-	    $bt_cmp_flag $bt_cmp_func $ham_cmp_flag $ham_cmp_func \
+	if { [catch {eval {berkdb_open_noerr} -env $masterenv\
 	    -rdonly $dbname} db1] } {
 		error "FAIL:\
 		    Unable to open first db $dbname in rep_verify: $db1"
 	}
 	if { [catch {eval {berkdb_open_noerr} -env $clientenv\
-	    $bt_cmp_flag $bt_cmp_func $ham_cmp_flag $ham_cmp_func \
 	    -rdonly $dbname} db2] } {
 		error_check_good close_db1 [$db1 close] 0
 		error "FAIL:\
@@ -2478,27 +2441,10 @@ proc site_from_port { port n { rangeincr 10 } } {
 # Wait (a limited amount of time) for an arbitrary condition to become true,
 # polling once per second.  If time runs out we throw an error: a successful
 # return implies the condition is indeed true.
-# If we have a slow host, pause a second before returning. Slow hosts may
-# need the extra time to release locks and avoid deadlocks.
+# 
 proc await_condition { cond { limit 20 } } {
-	global slow_hosts
-	set slow 0
-	set hostname [info hostname]
-	if {[info exists slow_hosts]} {
-		foreach host $slow_hosts {
-			# The tcl hostname may be a fully qualified
-			# domain name, so match as a substring. 
-			if { [is_substr $hostname $host]} {
-				set slow 1
-			}
-		}
-	}
-	
 	for {set i 0} {$i < $limit} {incr i} {
 		if {[uplevel 1 [list expr $cond]]} {
-			if { $slow } {
-				tclsleep 1
-			}
 			return
 		}
 		tclsleep 1
@@ -2965,381 +2911,3 @@ proc rep_client_access { env testfile result } {
 		error_check_good clacc_close [$res close] 0
 	}
 }
-
-#
-# View function for replication.
-# This function always returns 0 and does not replicate any database files.
-#
-proc replview_none { name flags } {
-	# Verify flags are always 0 - "none" in Tcl.
-#	puts "Replview_none called with $name, $flags"
-	set noflags [string compare $flags "none"]
-	error_check_good chkflags $noflags 0
-
-	# Verify we never get a BDB owned file.
-	set bdbfile "__db"
-	set prefix_len [string length $bdbfile]
-	incr prefix_len -1
-	set substr [string range $name 0 $prefix_len]
-	set res [string compare $substr $bdbfile]
-	error_check_bad notbdbfile $res 0
-
-	#
-	# Otherwise this proc always returns 0 to say we do not want the file.
-	#
-	return 0
-}
-
-#
-# View function for replication.
-# This function returns 1 if the name has an odd digit in it, and 0
-# otherwise.
-#
-proc replview_odd { name flags } {
-#	puts "Replview_odd called with $name, $flags"
-
-	# Verify we never get a BDB owned file.
-	set bdbfile "__db"
-	set prefix_len [string length $bdbfile]
-	incr prefix_len -1
-	set substr [string range $name 0 $prefix_len]
-	set res [string compare $substr $bdbfile]
-	error_check_bad notbdbfile $res 0
-
-	#
-	# Otherwise look for an odd digit.
-	#
-	set odd [string match "*\[13579\]*" $name]
-	return $odd
-}
-
-#
-# Determine whether current version of Berkeley DB has group membership.
-# This function returns 1 if group membership is supported, and 0
-# otherwise.
-#
-proc have_group_membership { } {
-	set bdbver [berkdb version]
-	set vermaj [lindex $bdbver 0]
-	set vermin [lindex $bdbver 1]
-	if { $vermaj >= 6 } {
-		return 1
-	} elseif { $vermaj >= 5 && $vermin >= 2 } {
-		return 1
-	} else {
-		return 0
-	}
-}
-
-#
-# Create an empty marker file.  The upgrade tests use marker files to
-# synchronize between their different processes.
-#
-proc upgrade_create_markerfile { filename } {
-	if [catch {open $filename { RDWR CREAT } 0777} markid] {
-		puts "problem opening marker file $markid"
-	} else {
-		close $markid
-	}
-}
-
-proc upgrade_setup_sites { nsites } {
-	#
-	# Set up a list that goes from 0 to $nsites running
-	# upgraded.  A 0 represents running old version and 1
-	# represents running upgraded.  So, for 3 sites it will look like:
-	# { 0 0 0 } { 1 0 0 } { 1 1 0 } { 1 1 1 }
-	#
-	set sitelist {}
-	for { set i 0 } { $i <= $nsites } { incr i } {
-		set l ""
-		for { set j 1 } { $j <= $nsites } { incr j } {
-			if { $i < $j } {
-				lappend l 0
-			} else {
-				lappend l 1
-			}
-		}
-		lappend sitelist $l
-	}
-	return $sitelist
-}
-
-proc upgrade_one_site { histdir upgdir } {
-	global util_path
-
-	#
-	# Upgrade a site to the current version.  This entails:
-	# 1.  Removing any old files from the upgrade directory.
-	# 2.  Copy all old version files to upgrade directory.
-	# 3.  Remove any __db files from upgrade directory except __db.rep*gen.
-	# 4.  Force checkpoint in new version.
-	file delete -force $upgdir
-
-	# Recovery was run before as part of upgradescript.
-	# Archive dir by copying it to upgrade dir.
-	file copy -force $histdir $upgdir
-	set dbfiles [glob -nocomplain $upgdir/__db*]
-	foreach d $dbfiles {
-		if { $d == "$upgdir/__db.rep.gen" ||
-		    $d == "$upgdir/__db.rep.egen" ||
-		    $d == "$upgdir/__db.rep.system" } {
-			continue
-		}
-		file delete -force $d
-	}
-	# Force current version checkpoint
-	set stat [catch {eval exec $util_path/db_checkpoint -1 -h $upgdir} r]
-	if { $stat != 0 } {
-		puts "CHECKPOINT: $upgdir: $r"
-	}
-	error_check_good stat_ckp $stat 0
-}
-
-proc upgrade_get_master { nsites verslist } {
-	error_check_good vlist_chk [llength $verslist] $nsites
-	#
-	# When we can, simply run an election to get a new master.
-	# We then verify we got an old client.
-	#
-	# For now, randomly pick among the old sites, or if no old
-	# sites just randomly pick anyone.
-	#
-	set old_count 0
-	# Pick 1 out of N old sites or 1 out of nsites if all upgraded.
-	foreach i $verslist {
-		if { $i == 0 } {
-			incr old_count
-		}
-	}
-	if { $old_count == 0 } {
-		set old_count $nsites
-	}
-	set master [berkdb random_int 0 [expr $old_count - 1]]
-	#
-	# Since the Nth old site may not be at the Nth place in the
-	# list unless we used the entire list, we need to loop to find
-	# the right index to return.
-	if { $old_count == $nsites } {
-		return $master
-	}
-	set ocount 0
-	set index 0
-	foreach i $verslist {
-		if { $i == 1 } {
-			incr index
-			continue
-		}
-		if { $ocount == $master } {
-			return $index
-		}
-		incr ocount
-		incr index
-	}
-	#
-	# If we get here there is a problem in the code.
-	#
-	error "FAIL: upgrade_get_master problem"
-}
-
-# Shared upgrade test script procedure to execute rep_test_upg on a master.
-proc upgradescr_reptest { repenv oplist markerdir } {
-
-	set method [lindex $oplist 1]
-	set niter [lindex $oplist 2]
-	set loop [lindex $oplist 3]
-	set start 0
-	puts "REPTEST: method $method, niter $niter, loop $loop"
-
-	for {set n 0} {$n < $loop} {incr n} {
-		puts "REPTEST: call rep_test_upg $n"
-		eval rep_test_upg $method $repenv NULL $niter $start $start 0 0
-		incr start $niter
-		tclsleep 3
-	}
-	#
-	# Sleep a bunch to help get the messages worked through.
-	#
-	tclsleep 10
-	puts "create DONE marker file"
-	upgrade_create_markerfile $markerdir/DONE
-}
-
-# Shared upgrade test script procedure to perform db_gets on a client.
-proc upgradescr_repget { repenv oplist mydir markerdir } {
-	set dbname "$mydir/DATADIR/test.db"
-	set i 0
-	while { [file exists $dbname] == 0 } {
-		tclsleep 2
-		incr i
-		if { $i >= 15 && $i % 5 == 0 } {
-			puts "After $i seconds, no database $dbname exists."
-		}
-		if { $i > 180 } {
-			error "Database $dbname never created."
-		}
-	}
-	set loop 1
-	while { [file exists $markerdir/DONE] == 0 } {
-		set db [berkdb_open -env $repenv $dbname]
-		error_check_good dbopen [is_valid_db $db] TRUE
-		set dbc [$db cursor]
-		set i 0
-		error_check_good curs [is_valid_cursor $dbc $db] TRUE
-		for { set dbt [$dbc get -first ] } \
-		    { [llength $dbt] > 0 } \
-		    { set dbt [$dbc get -next] } {
-			incr i
-		}
-		error_check_good dbc_close [$dbc close] 0
-		error_check_good db_close [$db close] 0
-		puts "REPTEST_GET: after $loop loops: key count $i"
-		incr loop
-		tclsleep 2
-	}
-}
-
-# Shared upgrade test script procedure to verify dbs and logs.
-proc upgradescr_verify { oplist mydir rep_env_cmd } {
-	global util_path
-
-	# Change directories to where this will run.
-	# !!!
-	# mydir is an absolute path of the form
-	# <path>/build_unix/TESTDIR/MASTERDIR or
-	# <path>/build_unix/TESTDIR/CLIENTDIR.0
-	#
-	# So we want to run relative to the build_unix directory
-	cd $mydir/../..
-
-	foreach op $oplist {
-		set repenv [eval $rep_env_cmd]
-		error_check_good env_open [is_valid_env $repenv] TRUE
-		if { $op == "DB" } {
-			set dbname "$mydir/DATADIR/test.db"
-			puts "Open db: $dbname"
-			set db [berkdb_open -env $repenv -rdonly $dbname]
-			error_check_good dbopen [is_valid_db $db] TRUE
-			set txn ""
-			set method [$db get_type]
-			set dumpfile "$mydir/VERIFY/dbdump"
-			if { [is_record_based $method] == 1 } {
-				dump_file $db $txn $dumpfile \
-				    rep_test_upg.recno.check
-			} else {
-				dump_file $db $txn $dumpfile \
-				    rep_test_upg.check
-			}
-			puts "Done dumping $dbname to $dumpfile"
-			error_check_good dbclose [$db close] 0
-		}
-		if { $op == "LOG" } {
-			set lgstat [$repenv log_stat]
-			set lgfile [stat_field $repenv log_stat "Current log file number"]
-			set lgoff [stat_field $repenv log_stat "Current log file offset"]
-			puts "Current LSN: $lgfile $lgoff"
-			set f [open $mydir/VERIFY/loglsn w]
-			puts $f $lgfile
-			puts $f $lgoff
-			close $f
-
-			set stat [catch {eval exec $util_path/db_printlog \
-			    -h $mydir > $mydir/VERIFY/prlog} result]
-			if { $stat != 0 } {
-				puts "PRINTLOG: $result"
-			}
-			error_check_good stat_prlog $stat 0
-		}
-		error_check_good envclose [$repenv close] 0
-	}
-	#
-	# Run recovery locally so that any later upgrades are ready
-	# to be upgraded.
-	#
-	set stat [catch {eval exec $util_path/db_recover -h $mydir} result]
-	if { $stat != 0 } {
-		puts "RECOVERY: $result"
-	}
-	error_check_good stat_rec $stat 0
-
-}
-
-# run_ipv4_tests is used to run all the repmgr tests using 
-# IPv4 addresses.  
-proc run_ipv4_tests { } {
-	global test_names
-	global ipversion
-	set orig_ipversion $ipversion
-	set ipversion 4
-
-	if { [catch { 
-		if { [catch { set s [setup_site_prog] } res ] != 0 } {
-			puts "Skipping repmgr_multiproc tests\
-			    because db_repsite is not built."
-		} else {
-			foreach test $test_names(repmgr_multiproc) {
-				puts "Running test $test with IPv4"
-				$test
-			}
-		}
-		foreach test $test_names(repmgr_other) {
-			puts "Running test $test with IPv4"
-			$test
-		}
-		foreach test $test_names(repmgr_basic) { 
-			puts "Running test $test with IPv4"
-			$test 100 1 1 1 1 1
-			$test 100 1 0 0 0 0
-			$test 100 0 1 0 0 0
-			$test 100 0 0 1 0 0
-			$test 100 0 0 0 1 0
-			$test 100 0 0 0 0 1
-			$test 100 0 0 0 0 0
-		}
-		flush stdout 
-		flush stderr
-	} res] != 0 } {
-		global errorInfo
-	
-		set ipversion $orig_ipversion
-		if {[string first FAIL $errorInfo] == -1} {
-			error "FAIL:[timestamp]\
-			    run_ipv4_tests: $test: $res"
-
-		} else {
-			error $res
-		}
-	}
-	set ipversion $orig_ipversion
-}
-
-# run_ipv4 is suitable for running a single repmgr test using
-# IPv4 addresses.  The repmgr tests don't take arguments, so neither
-# does this procedure. 
-proc run_ipv4 { test } {
-	global ipversion 
-	set orig_ipversion $ipversion
-	set ipversion 4
-
-	if { [catch { 
-		$test
-		flush stdout
-		flush stderr
-	} res] !=0 } {
-
-		global errorInfo
-	
-		set ipversion $orig_ipversion
-		set fnl [string first "\n" $errorInfo]
-		set theError [string range $errorInfo 0 [expr $fnl - 1]]
-		if {[string first FAIL $errorInfo] == -1} {
-			error "FAIL:[timestamp]\
-			    run_verbose: $test: $theError"
-
-		} else {
-			error $theError;
-		}
-	}
-	set ipversion $orig_ipversion
-}
-

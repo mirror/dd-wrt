@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -46,7 +46,7 @@
         Again, remember that you can find the complete implementation for these functions
         in:
     </p>
-      <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples/cxx/getting_started</pre>
+      <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples_cxx/getting_started</pre>
       <p>
         where <code class="literal"><span class="emphasis"><em>DB_INSTALL</em></span></code> is the location where you
         placed your DB distribution.
@@ -146,10 +146,10 @@ public:
     {
         price_ = 0.0;
         quantity_ = 0;
-        category_ = "";
-        name_ = "";
-        vendor_ = "";
-        sku_ = "";
+        category_.clear();
+        name_.clear();
+        vendor_.clear();
+        sku_.clear();
     } </pre>
           <p>
         Next we implement our constructors. The default constructor simply calls
@@ -252,7 +252,7 @@ public:
     void
     packString(char *buffer, std::string &amp;theString)
     {
-        size_t string_size = theString.size() + 1;
+        int string_size = theString.size() + 1;
         memcpy(buffer+bufLen_, theString.c_str(), string_size);
         bufLen_ += string_size;
     }
@@ -261,7 +261,7 @@ public:
     std::string category_, name_, vendor_, sku_;
     double price_;
     long quantity_;
-    size_t bufLen_;
+    int bufLen_;
     char databuf_[500];
 }; </pre>
         </div>
@@ -279,7 +279,7 @@ public:
             this example program. However, as always you can find the complete
             implementation for this program here:
         </p>
-          <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples/cxx/getting_started</pre>
+          <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples_cxx/getting_started</pre>
           <p>
         where <code class="literal"><span class="emphasis"><em>DB_INSTALL</em></span></code> is the location where you
         placed your DB distribution.
@@ -288,7 +288,7 @@ public:
         We begin with the normal include directives and forward declarations:
     </p>
           <a id="cxx_dbt16"></a>
-          <pre class="programlisting">// File: excxx_example_database_load.cpp
+          <pre class="programlisting">// File: example_database_load.cpp
 #include &lt;iostream&gt;
 #include &lt;fstream&gt;
 #include &lt;cstdlib&gt;
@@ -334,12 +334,11 @@ main(int argc, char *argv[])
         MyDb inventoryDB(databaseHome, iDbName);
         MyDb vendorDB(databaseHome, vDbName);
 
-        // Load the inventory database
-        loadInventoryDB(inventoryDB, inventoryFile);
-
         // Load the vendor database
         loadVendorDB(vendorDB, vendorFile);
 
+        // Load the inventory database
+        loadInventoryDB(inventoryDB, inventoryFile);
     } catch(DbException &amp;e) {
         std::cerr &lt;&lt; "Error loading databases. " &lt;&lt; std::endl;
         std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
@@ -408,7 +407,7 @@ loadVendorDB(MyDb &amp;vendorDB, std::string &amp;vendorFile)
           my_vendor.zipcode, my_vendor.phone_number,
           my_vendor.sales_rep, my_vendor.sales_rep_phone);
 
-        Dbt key(my_vendor.name, (u_int32_t)strlen(my_vendor.name) + 1);
+        Dbt key(my_vendor.name, strlen(my_vendor.name) + 1);
         Dbt data(&amp;my_vendor, sizeof(VENDOR));
 
         vendorDB.getDb().put(NULL, &amp;key, &amp;data, 0);
@@ -449,7 +448,7 @@ loadVendorDB(MyDb &amp;vendorDB, std::string &amp;vendorFile)
 int
 getNextPound(std::string &amp;theString, std::string &amp;substring)
 {
-    size_t pos = theString.find("#");
+    int pos = theString.find("#");
     substring.assign(theString, 0, pos);
     theString.assign(theString, pos + 1, theString.size());
     return (pos);
@@ -461,7 +460,7 @@ loadInventoryDB(MyDb &amp;inventoryDB, std::string &amp;inventoryFile)
 {
     InventoryData inventoryData;
     std::string substring;
-    size_t nextPound;
+    int nextPound;
 
     std::ifstream inFile(inventoryFile.c_str(), std::ios::in);
     if (!inFile)
@@ -499,7 +498,7 @@ loadInventoryDB(MyDb &amp;inventoryDB, std::string &amp;inventoryFile)
             inventoryData.setVendor(substring);
 
             void *buff = (void *)inventoryData.getSKU().c_str();
-            size_t size = inventoryData.getSKU().size()+1;
+            int size = inventoryData.getSKU().size()+1;
             Dbt key(buff, size);
 
             buff = inventoryData.getBuffer();

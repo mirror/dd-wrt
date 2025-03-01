@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -9,7 +9,6 @@
 #include "db_config.h"
 
 #include "db_int.h"
-#include "dbinc/blob.h"
 #include "dbinc/crypto.h"
 #include "dbinc/db_page.h"
 #include "dbinc/btree.h"
@@ -23,8 +22,8 @@
 static int  __db_get_byteswapped __P((DB *, int *));
 static int  __db_get_dbname __P((DB *, const char **, const char **));
 static DB_ENV *__db_get_env __P((DB *));
-static void __db_get_msgcall __P((DB *,
-		void (**)(const DB_ENV *, const char *, const char *)));
+static void __db_get_msgcall
+	      __P((DB *, void (**)(const DB_ENV *, const char *)));
 static DB_MPOOLFILE *__db_get_mpf __P((DB *));
 static int  __db_get_multiple __P((DB *));
 static int  __db_get_transactional __P((DB *));
@@ -37,15 +36,14 @@ static int  __db_set_alloc __P((DB *, void *(*)(size_t),
 static int  __db_get_append_recno __P((DB *,
 		int (**)(DB *, DBT *, db_recno_t)));
 static int  __db_set_append_recno __P((DB *, int (*)(DB *, DBT *, db_recno_t)));
-static int  __db_get_blob_dir __P((DB *, const char **));
-static int  __db_set_blob_dir __P((DB *, const char *));
-static int  __db_get_blob_sub_dir __P((DB *, const char **));
 static int  __db_get_cachesize __P((DB *, u_int32_t *, u_int32_t *, int *));
 static int  __db_set_cachesize __P((DB *, u_int32_t, u_int32_t, int));
 static int  __db_get_create_dir __P((DB *, const char **));
 static int  __db_set_create_dir __P((DB *, const char *));
 static int  __db_get_dup_compare
-		__P((DB *, int (**)(DB *, const DBT *, const DBT *, size_t *)));
+		__P((DB *, int (**)(DB *, const DBT *, const DBT *)));
+static int  __db_set_dup_compare
+		__P((DB *, int (*)(DB *, const DBT *, const DBT *)));
 static int  __db_get_encrypt_flags __P((DB *, u_int32_t *));
 static int  __db_set_encrypt __P((DB *, const char *, u_int32_t));
 static int  __db_get_feedback __P((DB *, void (**)(DB *, int, int)));
@@ -66,15 +64,12 @@ static void __db_set_errfile __P((DB *, FILE *));
 static void __db_get_errpfx __P((DB *, const char **));
 static void __db_set_errpfx __P((DB *, const char *));
 static void __db_set_msgcall
-	      __P((DB *, void (*)(const DB_ENV *, const char *, const char *)));
+	      __P((DB *, void (*)(const DB_ENV *, const char *)));
 static void __db_get_msgfile __P((DB *, FILE **));
 static void __db_set_msgfile __P((DB *, FILE *));
-static void __db_get_msgpfx __P((DB *, const char **));
-static void __db_set_msgpfx __P((DB *, const char *));
 static int  __db_get_assoc_flags __P((DB *, u_int32_t *));
 static void __dbh_err __P((DB *, int, const char *, ...));
 static void __dbh_errx __P((DB *, const char *, ...));
-static void __dbh_msg __P((DB *, const char *, ...));
 
 /*
  * db_create --
@@ -94,12 +89,6 @@ db_create(dbpp, dbenv, flags)
 
 	ip = NULL;
 	env = dbenv == NULL ? NULL : dbenv->env;
-
-#ifdef HAVE_ERROR_HISTORY
-	/* Call thread local storage initializer at least once per process. */
-	if (env == NULL)
-		__db_thread_init();
-#endif
 
 	/* Check for invalid function flags. */
 	switch (flags) {
@@ -143,7 +132,6 @@ db_create(dbpp, dbenv, flags)
 	}
 
 	ret = __db_create_internal(dbpp, env, flags);
-
 err:	if (env != NULL)
 		ENV_LEAVE(env, ip);
 
@@ -218,10 +206,11 @@ __db_create_internal(dbpp, env, flags)
 err:	if (dbp != NULL) {
 		if (dbp->mpf != NULL)
 			(void)__memp_fclose(dbp->mpf, 0);
-		if (F_ISSET(env, ENV_DBLOCAL))
-			(void)__env_close(dbp->dbenv, 0);
 		__os_free(env, dbp);
 	}
+
+	if (dbp != NULL && F_ISSET(env, ENV_DBLOCAL))
+		(void)__env_close(dbp->dbenv, 0);
 
 	return (ret);
 }
@@ -236,7 +225,6 @@ __db_init(dbp, flags)
 	u_int32_t flags;
 {
 	int ret;
-	u_int32_t bytes;
 
 	dbp->locker = NULL;
 	dbp->alt_close = NULL;
@@ -255,7 +243,6 @@ __db_init(dbp, flags)
 	dbp->associate_foreign = __db_associate_foreign_pp;
 	dbp->close = __db_close_pp;
 	dbp->compact = __db_compact_pp;
-	dbp->convert = __db_convert_pp;
 	dbp->cursor = __db_cursor_pp;
 	dbp->del = __db_del_pp;
 	dbp->dump = __db_dump_pp;
@@ -267,9 +254,6 @@ __db_init(dbp, flags)
 	dbp->get_alloc = __db_get_alloc;
 	dbp->get_append_recno = __db_get_append_recno;
 	dbp->get_assoc_flags = __db_get_assoc_flags;
-	dbp->get_blob_dir = __db_get_blob_dir;
-	dbp->get_blob_sub_dir = __db_get_blob_sub_dir;
-	dbp->get_blob_threshold = __db_get_blob_threshold;
 	dbp->get_byteswapped = __db_get_byteswapped;
 	dbp->get_cachesize = __db_get_cachesize;
 	dbp->get_create_dir = __db_get_create_dir;
@@ -280,15 +264,12 @@ __db_init(dbp, flags)
 	dbp->get_errcall = __db_get_errcall;
 	dbp->get_errfile = __db_get_errfile;
 	dbp->get_errpfx = __db_get_errpfx;
-	dbp->get_ext_file_dir = __db_get_blob_dir;
-	dbp->get_ext_file_threshold = __db_get_blob_threshold;
 	dbp->get_feedback = __db_get_feedback;
 	dbp->get_flags = __db_get_flags;
 	dbp->get_lorder = __db_get_lorder;
 	dbp->get_mpf = __db_get_mpf;
 	dbp->get_msgcall = __db_get_msgcall;
 	dbp->get_msgfile = __db_get_msgfile;
-	dbp->get_msgpfx = __db_get_msgpfx;
 	dbp->get_multiple = __db_get_multiple;
 	dbp->get_open_flags = __db_get_open_flags;
 	dbp->get_partition_dirs = __partition_get_dirs;
@@ -296,17 +277,10 @@ __db_init(dbp, flags)
 	dbp->get_partition_keys = __partition_get_keys;
 	dbp->get_pagesize = __db_get_pagesize;
 	dbp->get_priority = __db_get_priority;
-	/*
-	 * Initialize the slice-only function pointers to an error function.
-	 * Update them to the real worker functions if the database turns out to
-	 * be sliced.
-	 */
-	dbp->get_slices = (int (*) __P((DB *, DB ***)))__db_not_sliced;
 	dbp->get_transactional = __db_get_transactional;
 	dbp->get_type = __db_get_type;
 	dbp->join = __db_join_pp;
 	dbp->key_range = __db_key_range_pp;
-	dbp->msg = __dbh_msg;
 	dbp->get_lk_exclusive = __db_get_lk_exclusive;
 	dbp->set_lk_exclusive = __db_set_lk_exclusive;
 	dbp->open = __db_open_pp;
@@ -316,8 +290,6 @@ __db_init(dbp, flags)
 	dbp->rename = __db_rename_pp;
 	dbp->set_alloc = __db_set_alloc;
 	dbp->set_append_recno = __db_set_append_recno;
-	dbp->set_blob_dir = __db_set_blob_dir;
-	dbp->set_blob_threshold = __db_set_blob_threshold;
 	dbp->set_cachesize = __db_set_cachesize;
 	dbp->set_create_dir = __db_set_create_dir;
 	dbp->set_dup_compare = __db_set_dup_compare;
@@ -325,22 +297,16 @@ __db_init(dbp, flags)
 	dbp->set_errcall = __db_set_errcall;
 	dbp->set_errfile = __db_set_errfile;
 	dbp->set_errpfx = __db_set_errpfx;
-	dbp->set_ext_file_dir = __db_set_blob_dir;
-	dbp->set_ext_file_threshold = __db_set_blob_threshold;
 	dbp->set_feedback = __db_set_feedback;
 	dbp->set_flags = __db_set_flags;
 	dbp->set_lorder = __db_set_lorder;
-	dbp->set_slice_callback = __db_set_slice_callback;
 	dbp->set_msgcall = __db_set_msgcall;
 	dbp->set_msgfile = __db_set_msgfile;
-	dbp->set_msgpfx = __db_set_msgpfx;
 	dbp->set_pagesize = __db_set_pagesize;
 	dbp->set_paniccall = __db_set_paniccall;
 	dbp->set_partition = __partition_set;
 	dbp->set_partition_dirs = __partition_set_dirs;
 	dbp->set_priority = __db_set_priority;
-	dbp->slice_lookup =
-	    (int (*) __P((DB *, const DBT *, DB **, u_int32_t)))__db_not_sliced;
 	dbp->sort_multiple = __db_sort_multiple;
 	dbp->stat = __db_stat_pp;
 	dbp->stat_print = __db_stat_print_pp;
@@ -350,11 +316,7 @@ __db_init(dbp, flags)
 	dbp->verify = __db_verify_pp;
 	/* DB PUBLIC HANDLE LIST END */
 
-	if ((ret = __env_get_blob_threshold_int(dbp->env, &bytes)) != 0)
-		return (ret);
-	dbp->blob_threshold = bytes;
-
-	/* Access method specific. */
+					/* Access method specific. */
 	if ((ret = __bam_db_create(dbp)) != 0)
 		return (ret);
 	if ((ret = __ham_db_create(dbp)) != 0)
@@ -404,7 +366,15 @@ __dbh_am_chk(dbp, flags)
  *	Db.err method.
  */
 static void
+#ifdef STDC_HEADERS
 __dbh_err(DB *dbp, int error, const char *fmt, ...)
+#else
+__dbh_err(dbp, error, fmt, va_alist)
+	DB *dbp;
+	int error;
+	const char *fmt;
+	va_dcl
+#endif
 {
 	/* Message with error string, to stderr by default. */
 	DB_REAL_ERR(dbp->dbenv, error, DB_ERROR_SET, 1, fmt);
@@ -415,21 +385,17 @@ __dbh_err(DB *dbp, int error, const char *fmt, ...)
  *	Db.errx method.
  */
 static void
+#ifdef STDC_HEADERS
 __dbh_errx(DB *dbp, const char *fmt, ...)
+#else
+__dbh_errx(dbp, fmt, va_alist)
+	DB *dbp;
+	const char *fmt;
+	va_dcl
+#endif
 {
 	/* Message without error string, to stderr by default. */
 	DB_REAL_ERR(dbp->dbenv, 0, DB_ERROR_NOT_SET, 1, fmt);
-}
-
-/*
- * __dbh_msg --
- *	Db.msg method.
- */
-static void
-__dbh_msg(DB *dbp, const char *fmt, ...)
-{
-	/* Print the non-error message, to stdout by default. */
-	DB_REAL_MSG(dbp->dbenv, fmt);
 }
 
 /*
@@ -569,179 +535,6 @@ __db_set_append_recno(dbp, func)
 }
 
 /*
- * __db_get_blob_threshold --
- *	Get the current threshold size at which records are stored as external
- *	files.
- *
- *  PUBLIC: int __db_get_blob_threshold __P((DB *, u_int32_t *));
- */
-int
-__db_get_blob_threshold(dbp, bytes)
-	DB *dbp;
-	u_int32_t *bytes;
-{
-	/*
-	 * While shared, this value never changes after open, so it is safe
-	 * to access it without mutex protection.
-	 */
-	*bytes = dbp->blob_threshold;
-
-	return (0);
-}
-
-/*
- * __db_set_blob_threshold --
- *	API to allow setting the threshold size at which records are stored
- *	as blobs rather than in database items. No flags currently supported.
- * PUBLIC: int __db_set_blob_threshold __P((DB *, u_int32_t, u_int32_t));
- */
-int
-__db_set_blob_threshold(dbp, bytes, flags)
-	DB *dbp;
-	u_int32_t bytes;
-	u_int32_t flags;
-{
-	if (__db_fchk(dbp->env, "DB->set_ext_file_threshold", flags, 0) != 0)
-		return (EINVAL);
-
-	DB_ILLEGAL_AFTER_OPEN(dbp, "DB->set_ext_file_threshold");
-
-	if (bytes != 0 && F_ISSET(dbp, (DB_AM_DUP | DB_AM_DUPSORT))) {
-		__db_errx(dbp->env, DB_STR("0760",
-"Cannot enable external files in databases with duplicates."));
-		return (EINVAL);
-	}
-#ifdef HAVE_COMPRESSION
-	if (DB_IS_COMPRESSED(dbp) && bytes != 0) {
-		__db_errx(dbp->env, DB_STR("0761",
-	"Cannot enable external files in databases with compression."));
-		return (EINVAL);
-	}
-#endif
-
-	dbp->blob_threshold = bytes;
-
-	return (0);
-}
-
-/*
- * __db_blobs_enabled --
- *
- * Used to tell if the database is configured to support blobs.
- * PUBLIC: int __db_blobs_enabled __P((DB *));
- */
-int
-__db_blobs_enabled(dbp)
-	DB *dbp;
-{
-	/* Blob threshold must be non-0. */
-	if (!dbp->blob_threshold)
-		return (0);
-	/* Blobs do not support compression, but that may change. */
-#ifdef HAVE_COMPRESSION
-	if (DB_IS_COMPRESSED(dbp))
-		return (0);
-#endif
-	if (dbp->env->dbenv != NULL &&
-	    F_ISSET(dbp->env->dbenv, DB_ENV_TXN_SNAPSHOT))
-		return (0);
-	/* Cannot support blobs in recno or queue. */
-	if (dbp->type == DB_RECNO || dbp->type == DB_QUEUE)
-		return (0);
-	/*
-	 * Cannot support dups because that would require comparing
-	 * blob data items.
-	 */
-	if (F_ISSET(dbp, (DB_AM_DUP | DB_AM_DUPSORT)))
-		return (0);
-	/* No place to put blob files when using an in-memory db. */
-	if (F_ISSET(dbp, (DB_AM_INMEM)))
-		return (0);
-
-	/* BDB managed databases should not support blobs. */
-	if ((dbp->fname != NULL && IS_DB_FILE(dbp->fname)) ||
-	    (dbp->dname != NULL && IS_DB_FILE(dbp->dname)))
-		return (0);
-
-	return (1);
-}
-
-/*
- * __db_get_blob_sub_dir --
- *
- * Returns the subdirectory of the blob directory in which the blob files
- * for the given db are stored, or NULL if there is none.
- *
- */
-static int
-__db_get_blob_sub_dir(dbp, dir)
-	DB *dbp;
-	const char **dir;
-{
-	DB_ILLEGAL_BEFORE_OPEN(dbp, "DB->get_blob_sub_dir");
-
-	*dir = dbp->blob_sub_dir;
-
-	return (0);
-}
-
-/*
- * __db_get_blob_dir --
- *
- * Get the blob directory for this database.
- */
-static int
-__db_get_blob_dir(dbp, dir)
-	DB *dbp;
-	const char **dir;
-{
-	DB_ENV *dbenv;
-	ENV *env;
-
-	env = dbp->env;
-	dbenv = dbp->env->dbenv;
-	*dir = NULL;
-
-	if (dbenv == NULL)
-		return (0);
-
-	if (dbenv->db_blob_dir != NULL)
-		*dir = dbenv->db_blob_dir;
-	else if (env->db_home != NULL)
-		*dir = BLOB_DEFAULT_DIR;
-
-	return (0);
-}
-
-/*
- * __db_set_blob_dir --
- *
- * Set the blob directory in a local environment.
- */
-static int
-__db_set_blob_dir(dbp, dir)
-	DB *dbp;
-	const char *dir;
-{
-	DB_ENV *dbenv;
-	ENV *env;
-
-	DB_ILLEGAL_IN_ENV(dbp, "DB->set_ext_file_dir");
-	DB_ILLEGAL_AFTER_OPEN(dbp, "DB->set_ext_file_dir");
-	env = dbp->env;
-	dbenv = dbp->env->dbenv;
-
-	if (dbenv == NULL)
-		return (0);
-
-	if (dbenv->db_blob_dir != NULL)
-		__os_free(env, dbenv->db_blob_dir);
-	dbenv->db_blob_dir = NULL;
-
-	return (__os_strdup(env, dir, &dbenv->db_blob_dir));
-}
-
-/*
  * __db_get_cachesize --
  *	Get underlying cache size.
  */
@@ -814,7 +607,7 @@ __db_get_create_dir(dbp, dirp)
 static int
 __db_get_dup_compare(dbp, funcp)
 	DB *dbp;
-	int (**funcp) __P((DB *, const DBT *, const DBT *, size_t *));
+	int (**funcp) __P((DB *, const DBT *, const DBT *));
 {
 
 	DB_ILLEGAL_METHOD(dbp, DB_OK_BTREE | DB_OK_HASH);
@@ -835,14 +628,11 @@ __db_get_dup_compare(dbp, funcp)
 /*
  * __db_set_dup_compare --
  *	Set duplicate comparison routine.
- *
- * PUBLIC: int __db_set_dup_compare __P((DB *,
- * PUBLIC:     int (*)(DB *, const DBT *, const DBT *, size_t *)));
  */
-int
+static int
 __db_set_dup_compare(dbp, func)
 	DB *dbp;
-	int (*func) __P((DB *, const DBT *, const DBT *, size_t *));
+	int (*func) __P((DB *, const DBT *, const DBT *));
 {
 	int ret;
 
@@ -1110,13 +900,6 @@ __db_set_flags(dbp, flags)
 		ENV_REQUIRES_CONFIG(env,
 		    env->tx_handle, "DB_NOT_DURABLE", DB_INIT_TXN);
 
-	if (dbp->blob_threshold &&
-	    LF_ISSET(DB_DUP | DB_DUPSORT)) {
-		__db_errx(dbp->env, DB_STR("0763",
-		    "Cannot enable duplicates with external file support."));
-		return (EINVAL);
-	}
-
 	__db_map_flags(dbp, &flags, &dbp->flags);
 
 	if ((ret = __bam_set_flags(dbp, &flags)) != 0)
@@ -1219,7 +1002,7 @@ __db_set_alloc(dbp, mal_func, real_func, free_func)
 static void
 __db_get_msgcall(dbp, msgcallp)
 	DB *dbp;
-	void (**msgcallp) __P((const DB_ENV *, const char *, const char *));
+	void (**msgcallp) __P((const DB_ENV *, const char *));
 {
 	__env_get_msgcall(dbp->dbenv, msgcallp);
 }
@@ -1227,7 +1010,7 @@ __db_get_msgcall(dbp, msgcallp)
 static void
 __db_set_msgcall(dbp, msgcall)
 	DB *dbp;
-	void (*msgcall) __P((const DB_ENV *, const char *, const char *));
+	void (*msgcall) __P((const DB_ENV *, const char *));
 {
 	__env_set_msgcall(dbp->dbenv, msgcall);
 }
@@ -1246,22 +1029,6 @@ __db_set_msgfile(dbp, msgfile)
 	FILE *msgfile;
 {
 	__env_set_msgfile(dbp->dbenv, msgfile);
-}
-
-static void
-__db_get_msgpfx(dbp, msgpfxp)
-	DB *dbp;
-	const char **msgpfxp;
-{
-	__env_get_msgpfx(dbp->dbenv, msgpfxp);
-}
-
-static void
-__db_set_msgpfx(dbp, msgpfx)
-	DB *dbp;
-	const char *msgpfx;
-{
-	__env_set_msgpfx(dbp->dbenv, msgpfx);
 }
 
 static int
@@ -1308,6 +1075,12 @@ __db_set_pagesize(dbp, db_pagesize)
 		    "page sizes must be a power-of-2"));
 		return (EINVAL);
 	}
+
+	/*
+	 * XXX
+	 * Should we be checking for a page size that's not a multiple of 512,
+	 * so that we never try and write less than a disk sector?
+	 */
 	dbp->pgsize = db_pagesize;
 
 	return (0);
@@ -1341,102 +1114,4 @@ __db_get_priority(dbp, priority)
 		*priority = dbp->priority;
 
 	return (0);
-}
-
-/*
- * __db_slice_notsup -
- *	Generate an error when a 'normal' DML call is attempted on
- *	a sliced database handle.
- *
- * PUBLIC: int  __db_slice_notsup __P((DB *));
- */
-int
-__db_slice_notsup(dbp)
-	DB *dbp;
-{
-	int	ret;
-
-	ret = USR_ERR(dbp->env, EINVAL);
-	__db_err(dbp->env, ret,
-	    "This sliced database handle for %s does not support this api call",
-	    dbp->fname);
-	return (ret);
-}
-
-/*
- * __dbc_slice_notsup -
- *	Generate an error when a 'normal' DML call is attempted on
- *	a sliced cursor.
- *
- * PUBLIC: int  __dbc_slice_notsup __P((DBC *));
- */
-int
-__dbc_slice_notsup(dbc)
-	DBC *dbc;
-{
-	return (__db_slice_notsup(dbc->dbp));
-}
-
-/*
- * __db_slice_get_slices --
- *	Return the slices array for a database, or DB_OPNOTSUP if slice support
- *	was not configured in.
- *
- * PUBLIC: int  __db_slice_get_slices __P((DB *, DB ***));
- */
-int
-__db_slice_get_slices(dbp, slices)
-	DB *dbp;
-	DB ***slices;
-{
-	int ret;
-
-	ret = 0;
-	if ((*slices = dbp->db_slices) == NULL)
-		ret = __db_not_sliced(dbp);
-	return (ret);
-}
-
-/*
- * __db_set_slice_callback -
- *
- * PUBLIC: int __db_set_slice_callback
- * PUBLIC:     __P((DB *, int (*) __P((const DB *, const DBT *, DBT *))));
- */
-int
-__db_set_slice_callback(dbp, func)
-	DB *dbp;
-	int (*func) __P((const DB *, const DBT *, DBT *));
-{
-#ifdef HAVE_SLICES
-	dbp->slice_callback = func;
-	return (0);
-#else
-	COMPQUIET(func, NULL);
-	return (__env_no_slices(dbp->env));
-#endif
-}
-
-/*
- * __db_not_sliced -
- *	Raise the error that this database was opened without DB_SLICED,
- *	or DB_OPNOTSUP if slices where not even configured.
- *
- * PUBLIC: int  __db_not_sliced __P((DB *));
- */
-int
-__db_not_sliced(dbp)
-	DB *dbp;
-{
-	ENV *env;
-	int ret;
-
-	env = dbp->env;
-#ifdef HAVE_SLICES
-	ret = USR_ERR(env, EINVAL);
-	__db_err(env, ret, "This database was not opened for sliced access");
-#else
-	ret = __env_no_slices(env);
-#endif
-	return (ret);
 }

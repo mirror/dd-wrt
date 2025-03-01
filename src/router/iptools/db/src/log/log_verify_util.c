@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -53,16 +53,16 @@
 	}								\
 } while (0)
 
-typedef int (*btcmp_funct)(DB *, const DBT *, const DBT *, size_t *);
-typedef int (*dupcmp_funct)(DB *, const DBT *, const DBT *, size_t *);
+typedef int (*btcmp_funct)(DB *, const DBT *, const DBT *);
+typedef int (*dupcmp_funct)(DB *, const DBT *, const DBT *);
 
 static int __lv_add_recycle_handler __P((
     DB_LOG_VRFY_INFO *, VRFY_TXN_INFO *, void *));
 static int __lv_add_recycle_lsn __P((VRFY_TXN_INFO *, const DB_LSN *));
 static size_t __lv_dbt_arrsz __P((const DBT *, u_int32_t));
-static int __lv_fidpgno_cmp __P((DB *, const DBT *, const DBT *, size_t *));
-static int __lv_i32_cmp __P((DB *, const DBT *, const DBT *, size_t *));
-static int __lv_lsn_cmp __P((DB *, const DBT *, const DBT *, size_t *));
+static int __lv_fidpgno_cmp __P((DB *, const DBT *, const DBT *));
+static int __lv_i32_cmp __P((DB *, const DBT *, const DBT *));
+static int __lv_lsn_cmp __P((DB *, const DBT *, const DBT *));
 static void __lv_on_bdbop_err __P((int));
 static int __lv_open_db __P((DB_ENV *, DB **, DB_THREAD_INFO *,
     const char *, int, btcmp_funct, u_int32_t, dupcmp_funct));
@@ -73,8 +73,8 @@ static int __lv_seccbk_fname __P((DB *, const DBT *, const DBT *, DBT *));
 static int __lv_seccbk_lsn __P((DB *, const DBT *, const DBT *, DBT *));
 static int __lv_seccbk_txnpg __P((DB *, const DBT *, const DBT *, DBT *));
 static void __lv_setup_logtype_names __P((DB_LOG_VRFY_INFO *lvinfo));
-static int __lv_txnrgns_lsn_cmp __P((DB *, const DBT *, const DBT *, size_t *));
-static int __lv_ui32_cmp __P((DB *, const DBT *, const DBT *, size_t *));
+static int __lv_txnrgns_lsn_cmp __P((DB *, const DBT *, const DBT *));
+static int __lv_ui32_cmp __P((DB *, const DBT *, const DBT *));
 static int __lv_unpack_txn_vrfy_info __P((VRFY_TXN_INFO **, const DBT *));
 static int __lv_unpack_filereg __P((const DBT *, VRFY_FILEREG_INFO **));
 
@@ -268,7 +268,6 @@ __lv_seccbk_fname(secdb, key, data, result)
 	size_t buflen, slen;
 
 	ret = tret = 0;
-	freg = NULL;
 	COMPQUIET(key, NULL);
 	if ((ret = __lv_unpack_filereg(data, &freg)) != 0)
 		goto out;
@@ -384,18 +383,16 @@ err:
 
 /* Btree compare function for a [fileid, pgno] key. */
 static int
-__lv_fidpgno_cmp(db, dbt1, dbt2, locp)
+__lv_fidpgno_cmp(db, dbt1, dbt2)
 	DB *db;
 	const DBT *dbt1;
 	const DBT *dbt2;
-	size_t * locp;
 {
 	db_pgno_t pgno1, pgno2;
 	int ret;
 	size_t len;
 
 	COMPQUIET(db, NULL);
-	COMPQUIET(locp, NULL);
 	len = DB_FILE_ID_LEN;
 	ret = memcmp(dbt1->data, dbt2->data, len);
 	if (ret == 0) {
@@ -411,16 +408,14 @@ __lv_fidpgno_cmp(db, dbt1, dbt2, locp)
 
 /* Btree compare function for a int32_t type of key. */
 static int
-__lv_i32_cmp(db, dbt1, dbt2, locp)
+__lv_i32_cmp(db, dbt1, dbt2)
 	DB *db;
 	const DBT *dbt1;
 	const DBT *dbt2;
-	size_t *locp;
 {
 	int32_t k1, k2;
 
 	COMPQUIET(db, NULL);
-	COMPQUIET(locp, NULL);
 	memcpy(&k1, dbt1->data, sizeof(k1));
 	memcpy(&k2, dbt2->data, sizeof(k2));
 
@@ -429,16 +424,14 @@ __lv_i32_cmp(db, dbt1, dbt2, locp)
 
 /* Btree compare function for a u_int32_t type of key. */
 static int
-__lv_ui32_cmp(db, dbt1, dbt2, locp)
+__lv_ui32_cmp(db, dbt1, dbt2)
 	DB *db;
 	const DBT *dbt1;
 	const DBT *dbt2;
-	size_t *locp;
 {
 	u_int32_t k1, k2;
 
 	COMPQUIET(db, NULL);
-	COMPQUIET(locp, NULL);
 	memcpy(&k1, dbt1->data, sizeof(k1));
 	memcpy(&k2, dbt2->data, sizeof(k2));
 
@@ -447,21 +440,18 @@ __lv_ui32_cmp(db, dbt1, dbt2, locp)
 
 /* Btree compare function for a DB_LSN type of key. */
 static int
-__lv_lsn_cmp(db, dbt1, dbt2, locp)
+__lv_lsn_cmp(db, dbt1, dbt2)
 	DB *db;
 	const DBT *dbt1;
 	const DBT *dbt2;
-	size_t *locp;
 {
 	DB_LSN lsn1, lsn2;
 
-	COMPQUIET(locp, NULL);
 	DB_ASSERT(db->env, dbt1->size == sizeof(DB_LSN));
 	DB_ASSERT(db->env, dbt2->size == sizeof(DB_LSN));
 	memcpy(&lsn1, dbt1->data, sizeof(DB_LSN));
 	memcpy(&lsn2, dbt2->data, sizeof(DB_LSN));
 
-	COMPQUIET(db, NULL);
 	return (LOG_COMPARE(&lsn1, &lsn2));
 }
 
@@ -1673,21 +1663,17 @@ int __put_timestamp_info (lvinfo, tsinfo)
 }
 
 static int
-__lv_txnrgns_lsn_cmp (db, d1, d2, locp)
+__lv_txnrgns_lsn_cmp (db, d1, d2)
 	DB *db;
 	const DBT *d1, *d2;
-	size_t *locp;
 {
 	struct __lv_txnrange r1, r2;
-
-	COMPQUIET(locp, NULL);
 
 	DB_ASSERT(db->env, d1->size == sizeof(r1));
 	DB_ASSERT(db->env, d2->size == sizeof(r2));
 	memcpy(&r1, d1->data, d1->size);
 	memcpy(&r2, d2->data, d2->size);
 
-	COMPQUIET(db, NULL);
 	return (LOG_COMPARE(&(r1.end), &(r2.end)));
 }
 

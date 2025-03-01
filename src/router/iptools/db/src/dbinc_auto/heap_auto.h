@@ -26,7 +26,7 @@ __heap_addrem_log(DB *dbp, DB_TXN *txnp, DB_LSN *ret_lsnp, u_int32_t flags,
     const DBT *hdr, const DBT *dbt, DB_LSN * pagelsn)
 {
 	return (__log_put_record((dbp)->env, dbp, txnp, ret_lsnp,
-	    flags, DB___heap_addrem, 1,
+	    flags, DB___heap_addrem, 0,
 	    sizeof(u_int32_t) + sizeof(u_int32_t) + sizeof(DB_LSN) +
 	    sizeof(u_int32_t) + sizeof(u_int32_t) + sizeof(u_int32_t) +
 	    sizeof(u_int32_t) + sizeof(u_int32_t) + LOG_DBT_SIZE(hdr) +
@@ -41,52 +41,6 @@ static inline int __heap_addrem_read(ENV *env,
 	*arg = NULL;
 	return (__log_read_record(env, 
 	    dbpp, td, data, __heap_addrem_desc, sizeof(__heap_addrem_args), (void**)arg));
-}
-#define	DB___heap_addrem_60	151
-typedef struct ___heap_addrem_60_args {
-	u_int32_t type;
-	DB_TXN *txnp;
-	DB_LSN prev_lsn;
-	u_int32_t	opcode;
-	int32_t	fileid;
-	db_pgno_t	pgno;
-	u_int32_t	indx;
-	u_int32_t	nbytes;
-	DBT	hdr;
-	DBT	dbt;
-	DB_LSN	pagelsn;
-} __heap_addrem_60_args;
-
-extern __DB_IMPORT DB_LOG_RECSPEC __heap_addrem_60_desc[];
-static inline int __heap_addrem_60_read(ENV *env, 
-    DB **dbpp, void *td, void *data, __heap_addrem_60_args **arg)
-{
-	*arg = NULL;
-	return (__log_read_record(env, 
-	    dbpp, td, data, __heap_addrem_60_desc, sizeof(__heap_addrem_60_args), (void**)arg));
-}
-#define	DB___heap_addrem_50	151
-typedef struct ___heap_addrem_50_args {
-	u_int32_t type;
-	DB_TXN *txnp;
-	DB_LSN prev_lsn;
-	u_int32_t	opcode;
-	int32_t	fileid;
-	db_pgno_t	pgno;
-	u_int32_t	indx;
-	u_int32_t	nbytes;
-	DBT	hdr;
-	DBT	dbt;
-	DB_LSN	pagelsn;
-} __heap_addrem_50_args;
-
-extern __DB_IMPORT DB_LOG_RECSPEC __heap_addrem_50_desc[];
-static inline int __heap_addrem_50_read(ENV *env, 
-    DB **dbpp, void *td, void *data, __heap_addrem_50_args **arg)
-{
-	*arg = NULL;
-	return (__log_read_record(env, 
-	    dbpp, td, data, __heap_addrem_50_desc, sizeof(__heap_addrem_50_args), (void**)arg));
 }
 #define	DB___heap_pg_alloc	152
 typedef struct ___heap_pg_alloc_args {

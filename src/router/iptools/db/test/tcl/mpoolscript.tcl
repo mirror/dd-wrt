@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -148,6 +148,10 @@ while { $i != $id } {
 	set p [$mpf get -create $i]
 	error_check_good mp_get [is_valid_page $p $mpf] TRUE
 
+	set p1 [$mpf get -dirty $i]
+	error_check_good mp_get_p1_dirty [is_valid_page $p1 $mpf] TRUE
+	error_check_good page_put:$p1 [$p1 put] 0
+
 	if { [$p is_setto MASTER$i] != 1 } {
 		puts "Warning: Master page $i not set."
 	}
@@ -155,11 +159,6 @@ while { $i != $id } {
 
 	set i [expr ($i + 1) % $maxprocs]
 }
-
-# Check that -dirty is accepted by itself, without -create
-set p [$mpf get -dirty [expr ($id + 1) % $maxprocs]]
-error_check_good mp_get_dirty [is_valid_page $p $mpf] TRUE
-error_check_good page_put_dirty:$p [$p put] 0
 
 # Close files
 foreach i $mpools {

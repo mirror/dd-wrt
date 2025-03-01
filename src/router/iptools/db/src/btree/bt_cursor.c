@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -638,13 +638,15 @@ __bamc_cmp(dbc, other_dbc, result)
 	DBC *dbc, *other_dbc;
 	int *result;
 {
+	ENV *env;
 	BTREE_CURSOR *bcp, *obcp;
 
+	env = dbc->env;
 	bcp = (BTREE_CURSOR *)dbc->internal;
 	obcp = (BTREE_CURSOR *)other_dbc->internal;
 
-	DB_ASSERT(dbc->env, bcp->pgno == obcp->pgno);
-	DB_ASSERT(dbc->env, bcp->indx == obcp->indx);
+	DB_ASSERT (env, bcp->pgno == obcp->pgno);
+	DB_ASSERT (env, bcp->indx == obcp->indx);
 
 	/* Check to see if both cursors have the same deleted flag. */
 	*result =
@@ -936,7 +938,7 @@ __bamc_get(dbc, key, data, flags, pgnop)
 	case DB_CURRENT:
 		/* It's not possible to return a deleted record. */
 		if (F_ISSET(cp, C_DELETED)) {
-			ret = DBC_ERR(dbc, DB_KEYEMPTY);
+			ret = DB_KEYEMPTY;
 			goto err;
 		}
 
@@ -977,7 +979,7 @@ __bamc_get(dbc, key, data, flags, pgnop)
 				goto err;
 			if (flags == DB_GET_BOTH) {
 				if (!exact) {
-					ret = DBC_ERR(dbc, DB_NOTFOUND);
+					ret = DB_NOTFOUND;
 					goto err;
 				}
 				break;
@@ -998,7 +1000,7 @@ __bamc_get(dbc, key, data, flags, pgnop)
 			    dbc, PGNO_INVALID, key, flags, &exact)) != 0)
 				return (ret);
 			if (!exact) {
-				ret = DBC_ERR(dbc, DB_NOTFOUND);
+				ret = DB_NOTFOUND;
 				goto err;
 			}
 
@@ -1045,7 +1047,7 @@ __bamc_get(dbc, key, data, flags, pgnop)
 		if ((ret = __bamc_next(dbc, 1, 0)) != 0)
 			goto err;
 		if (!IS_CUR_DUPLICATE(dbc, orig_pgno, orig_indx)) {
-			ret = DBC_ERR(dbc, DB_NOTFOUND);
+			ret = DB_NOTFOUND;
 			goto err;
 		}
 		break;
@@ -1075,7 +1077,7 @@ __bamc_get(dbc, key, data, flags, pgnop)
 		if ((ret = __bamc_prev(dbc)) != 0)
 			goto err;
 		if (!IS_CUR_DUPLICATE(dbc, orig_pgno, orig_indx)) {
-			ret = DBC_ERR(dbc, DB_NOTFOUND);
+			ret = DB_NOTFOUND;
 			goto err;
 		}
 		break;
@@ -1171,15 +1173,12 @@ __bam_bulk(dbc, data, flags)
 	DBT *data;
 	u_int32_t flags;
 {
-	BBLOB bl;
 	BKEYDATA *bk;
 	BOVERFLOW *bo;
 	BTREE_CURSOR *cp;
 	PAGE *pg;
 	db_indx_t *inp, indx, pg_keyoff;
 	int32_t  *endp, key_off, *offp, *saveoffp;
-	off_t blob_size;
-	db_seq_t blob_id;
 	u_int8_t *dbuf, *dp, *np;
 	u_int32_t key_size, pagesize, size, space;
 	int adj, is_key, need_pg, next_key, no_dup, rec_key, ret;
@@ -1280,7 +1279,6 @@ next_pg:
 		 */
 		if (is_key && pg_keyoff != inp[indx]) {
 			bk = GET_BKEYDATA(dbc->dbp, pg, indx);
-			DB_ASSERT(dbc->env, B_TYPE(bk->type) != B_BLOB);
 			if (B_TYPE(bk->type) == B_OVERFLOW) {
 				bo = (BOVERFLOW *)bk;
 				size = key_size = bo->tlen;
@@ -1405,31 +1403,6 @@ get_key_space:
 			*offp-- = (int32_t)(np - dbuf);
 			np += size;
 			*offp-- = (int32_t)size;
-		} else if (B_TYPE(bk->type) == B_BLOB) {
-			blob_size = 0;
-			blob_id = 0;
-			memcpy(&bl, bk, BBLOB_SIZE);
-			GET_BLOB_SIZE(dbc->env, bl, blob_size, ret);
-			if (ret != 0)
-				return (ret);
-			if (blob_size > UINT32_MAX) {
-				size = UINT32_MAX;
-				goto back_up;
-			}
-			size = (u_int32_t)blob_size;
-			if (size > space)
-				goto back_up;
-			blob_id = (db_seq_t)bl.id;
-			if ((ret = __blob_bulk(dbc, size, blob_id, np)) != 0)
-				return (ret);
-			if (is_key) {
-				*offp-- = (int32_t)key_off;
-				*offp-- = (int32_t)key_size;
-			}
-			space -= size;
-			*offp-- = (int32_t)(np - dbuf);
-			np += size;
-			*offp-- = (int32_t)size;
 		} else {
 			if (need_pg) {
 				dp = np;
@@ -1527,15 +1500,7 @@ get_space:
 	 * If we are not fetching keys, we may have stepped to the
 	 * next key.
 	 */
-	if (ret == DB_NOTFOUND && next_key && cp->indx >= NUM_ENT(cp->page)) {
-		/*
-		 * We have run over the last record on the last page,
-		 * back up the index.
-		 */
-		cp->indx -= adj;
-		if (dbc->dbtype == DB_RECNO)
-			cp->recno--;
-	} else if (ret == DB_BUFFER_SMALL || next_key || pg_keyoff == inp[indx])
+	if (ret == DB_BUFFER_SMALL || next_key || pg_keyoff == inp[indx])
 		cp->indx = indx;
 	else
 		cp->indx = indx - P_INDX;
@@ -1798,12 +1763,12 @@ __bam_getbothc(dbc, data)
 		 * the current position;  if it doesn't, return DB_NOTFOUND.
 		 */
 		if ((ret = __bam_cmp(dbc, data, cp->page, cp->indx,
-		    dbp->dup_compare == NULL ? __dbt_defcmp : dbp->dup_compare,
-		    &cmp, NULL)) != 0)
+		    dbp->dup_compare == NULL ? __bam_defcmp : dbp->dup_compare,
+		    &cmp)) != 0)
 			return (ret);
 
 		if (cmp <= 0)
-			return (DBC_ERR(dbc, DB_NOTFOUND));
+			return (DB_NOTFOUND);
 
 		/* Discard the current page, we're going to do a full search. */
 		if ((ret = __memp_fput(mpf,
@@ -1826,7 +1791,7 @@ __bam_getbothc(dbc, data)
 	 */
 	if (cp->indx + P_INDX >= NUM_ENT(cp->page) ||
 	    !IS_DUPLICATE(dbc, cp->indx, cp->indx + P_INDX))
-		return (DBC_ERR(dbc, DB_NOTFOUND));
+		return (DB_NOTFOUND);
 	cp->indx += P_INDX;
 
 	return (__bam_getboth_finddatum(dbc, data, DB_GET_BOTH));
@@ -1877,7 +1842,7 @@ __bam_getlte(dbc, key, data)
 
 		/* Check if we're still on the correct key */
 		if ((ret = __bam_cmp(dbc, key, cp->page, cp->indx,
-		    ((BTREE*)dbp->bt_internal)->bt_compare, &exact, NULL)) != 0)
+		    ((BTREE*)dbp->bt_internal)->bt_compare, &exact)) != 0)
 			goto end;
 		exact = (exact == 0);
 	}
@@ -1919,8 +1884,8 @@ __bam_getlte(dbc, key, data)
 			if (data != NULL) {
 				/* Check if we're still on the correct data */
 				if ((ret = __bam_cmp(
-				    dbc, data, ocp->page, ocp->indx,
-				    dbp->dup_compare, &exact, NULL)) != 0)
+					    dbc, data, ocp->page, ocp->indx,
+					    dbp->dup_compare, &exact)) != 0)
 					goto end;
 				exact = (exact == 0);
 			} else
@@ -1950,8 +1915,7 @@ __bam_getlte(dbc, key, data)
 		else {
 			/* Check if we're still on the correct data */
 			if ((ret = __bam_cmp(dbc, data, cp->page,
-			    cp->indx + O_INDX, dbp->dup_compare,
-			    &exact, NULL)) != 0)
+			    cp->indx + O_INDX, dbp->dup_compare, &exact)) != 0)
 				goto end;
 			exact = (exact == 0);
 		}
@@ -2015,10 +1979,10 @@ __bam_getboth_finddatum(dbc, data, flags)
 	 */
 	if (dbp->dup_compare == NULL) {
 		for (;; cp->indx += P_INDX) {
-			if (!IS_DELETED(dbp, cp->page, cp->indx)) {
+			if (!IS_CUR_DELETED(dbc)) {
 				if ((ret = __bam_cmp(
 				    dbc, data, cp->page, cp->indx + O_INDX,
-				    __dbt_defcmp, &cmp, NULL)) != 0)
+				    __bam_defcmp, &cmp)) != 0)
 					return (ret);
 				if (cmp == 0)
 					return (0);
@@ -2028,8 +1992,7 @@ __bam_getboth_finddatum(dbc, data, flags)
 			    !IS_DUPLICATE(dbc, cp->indx, cp->indx + P_INDX))
 				break;
 		}
-
-		return (DBC_ERR(dbc, DB_NOTFOUND));
+		return (DB_NOTFOUND);
 	}
 
 	/*
@@ -2045,32 +2008,27 @@ __bam_getboth_finddatum(dbc, data, flags)
 			break;
 	if (base == (top - P_INDX)) {
 		if  ((ret = __bam_cmp(dbc, data, cp->page,
-		    cp->indx + O_INDX, dbp->dup_compare, &cmp, NULL)) != 0)
+		    cp->indx + O_INDX, dbp->dup_compare, &cmp)) != 0)
 			return (ret);
 		if (cmp == 0 || (cmp < 0 && flags == DB_GET_BOTH_RANGE))
 			return (0);
 		cp->indx = top;
-		return (DBC_ERR(dbc, DB_NOTFOUND));
+		return DB_NOTFOUND;
 	}
 
 	for (lim = (top - base) / (db_indx_t)P_INDX; lim != 0; lim >>= 1) {
 		cp->indx = base + ((lim >> 1) * P_INDX);
 		if ((ret = __bam_cmp(dbc, data, cp->page,
-		    cp->indx + O_INDX, dbp->dup_compare, &cmp, NULL)) != 0)
+		    cp->indx + O_INDX, dbp->dup_compare, &cmp)) != 0)
 			return (ret);
 		if (cmp == 0) {
 			/*
-			 * !!!
+			 * XXX
 			 * No duplicate duplicates in sorted duplicate sets,
 			 * so there can be only one.
 			 */
 			if (!IS_CUR_DELETED(dbc))
 				return (0);
-			/*
-			 * Advance base so that by the end of the loop, base is
-			 * always the smallest index greater than the data item.
-			 */
-			base = cp->indx + P_INDX;
 			break;
 		}
 		if (cmp > 0) {
@@ -2081,7 +2039,7 @@ __bam_getboth_finddatum(dbc, data, flags)
 
 	/* No match found; if we're looking for an exact match, we're done. */
 	if (flags == DB_GET_BOTH)
-		return (DBC_ERR(dbc, DB_NOTFOUND));
+		return (DB_NOTFOUND);
 
 	/*
 	 * Base is the smallest index greater than the data item, may be zero
@@ -2091,7 +2049,7 @@ __bam_getboth_finddatum(dbc, data, flags)
 	cp->indx = base;
 	while (cp->indx < top && IS_CUR_DELETED(dbc))
 		cp->indx += P_INDX;
-	return (cp->indx < top ? 0 : DBC_ERR(dbc, DB_NOTFOUND));
+	return (cp->indx < top ? 0 : DB_NOTFOUND);
 }
 
 /*
@@ -2124,7 +2082,7 @@ split:	ret = stack = 0;
 	switch (flags) {
 	case DB_CURRENT:
 		if (F_ISSET(cp, C_DELETED))
-			return (DBC_ERR(dbc, DB_NOTFOUND));
+			return (DB_NOTFOUND);
 		/* FALLTHROUGH */
 	case DB_AFTER:
 	case DB_BEFORE:
@@ -2248,8 +2206,7 @@ split:	ret = stack = 0;
 		 */
 		for (;; cp->indx += P_INDX) {
 			if ((ret = __bam_cmp(dbc, data, cp->page,
-			    cp->indx + O_INDX, dbp->dup_compare,
-			    &cmp, NULL)) != 0)
+			    cp->indx + O_INDX, dbp->dup_compare, &cmp)) != 0)
 				goto err;
 			if (cmp < 0) {
 				iiop = DB_BEFORE;
@@ -2522,7 +2479,7 @@ __bamc_next(dbc, initial_move, deleted_okay)
 		 */
 		if (cp->indx >= NUM_ENT(cp->page)) {
 			if ((pgno = NEXT_PGNO(cp->page)) == PGNO_INVALID)
-				return (DBC_ERR(dbc, DB_NOTFOUND));
+				return (DB_NOTFOUND);
 
 			ACQUIRE_CUR(dbc, lock_mode, pgno, 0, ret);
 			if (ret != 0)
@@ -2582,7 +2539,7 @@ __bamc_prev(dbc)
 		if (cp->indx == 0) {
 			if ((pgno =
 			    PREV_PGNO(cp->page)) == PGNO_INVALID)
-				return (DBC_ERR(dbc, DB_NOTFOUND));
+				return (DB_NOTFOUND);
 
 			ACQUIRE_CUR(dbc, lock_mode, pgno, 0, ret);
 			if (ret != 0)
@@ -2754,11 +2711,11 @@ __bamc_search(dbc, root_pgno, key, flags, exactp)
 	if (h->next_pgno == PGNO_INVALID) {
 		indx = NUM_ENT(h) - P_INDX;
 		if ((ret = __bam_cmp(dbc, key, h, indx,
-		    t->bt_compare, &cmp, NULL)) != 0)
+		    t->bt_compare, &cmp)) != 0)
 			goto fast_miss;
 		if (cmp > 0) {
 			if (FLD_ISSET(sflags, SR_EXACT))
-				return (DBC_ERR(dbc, DB_NOTFOUND));
+				return (DB_NOTFOUND);
 			else
 				indx += P_INDX;
 		}
@@ -2768,10 +2725,10 @@ __bamc_search(dbc, root_pgno, key, flags, exactp)
 	if (h->prev_pgno == PGNO_INVALID) {
 		indx = 0;
 		if ((ret = __bam_cmp(dbc, key, h, indx,
-		    t->bt_compare, &cmp, NULL)) != 0)
+		    t->bt_compare, &cmp)) != 0)
 			goto fast_miss;
 		if (cmp < 0 && FLD_ISSET(sflags, SR_EXACT))
-			return (DBC_ERR(dbc, DB_NOTFOUND));
+			return (DB_NOTFOUND);
 		if (cmp <= 0)
 			goto fast_hit;
 	}
@@ -2779,7 +2736,7 @@ __bamc_search(dbc, root_pgno, key, flags, exactp)
 		DB_BINARY_SEARCH_FOR(base, lim, NUM_ENT(h), P_INDX) {
 			DB_BINARY_SEARCH_INCR(indx, base, lim, P_INDX);
 			if ((ret = __bam_cmp(dbc, key, h, indx,
-			    t->bt_compare, &cmp, NULL)) != 0)
+			    t->bt_compare, &cmp)) != 0)
 				goto fast_miss;
 
 			if (cmp == 0)
@@ -2795,7 +2752,7 @@ __bamc_search(dbc, root_pgno, key, flags, exactp)
 		indx = base;
 		if (indx > 0 && indx < NUM_ENT(h)) {
 			if (FLD_ISSET(sflags, SR_EXACT))
-				return (DBC_ERR(dbc, DB_NOTFOUND));
+				return (DB_NOTFOUND);
 			goto fast_hit;
 		}
 	}
@@ -3111,7 +3068,7 @@ __bam_opd_exists(dbc, pgno)
 	if (NUM_ENT(h) == 0)
 		ret = 0;
 	else
-		ret = DBC_ERR(dbc, DB_KEYEXIST);
+		ret = DB_KEYEXIST;
 
 	(void)__memp_fput(dbc->dbp->mpf, dbc->thread_info, h, dbc->priority);
 

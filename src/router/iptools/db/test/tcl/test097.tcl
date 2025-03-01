@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -29,19 +29,9 @@ proc test097 { method {ndbs 500} {nentries 400} args } {
 		return
 	}
 	env_cleanup $testdir
-
-	# When native pagesize is small(like 512B on QNX) and
-	# we are running with heap, we need extra mutexes
-	# for supporting recno file.
-	set mutexargs ""
-	set native_pagesize [get_native_pagesize]
-	if {$native_pagesize < 2048 && [is_heap $method]} {
-		set mutexargs "-mutex_set_max 40000"
-	}
-
 	set env [eval {berkdb_env -create -log_regionmax 256000 \
 	    -pagesize 512 -cachesize { 0 1048576 1 } -txn} \
-	    -home $testdir $encargs $mutexargs]
+	    -home $testdir $encargs]
 	error_check_good dbenv [is_valid_env $env] TRUE
 
 	if { [is_partitioned $args] == 1 } {

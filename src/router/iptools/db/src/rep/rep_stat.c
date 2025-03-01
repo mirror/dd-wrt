@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -73,13 +73,6 @@ static const char *__rep_syncstate_to_string __P((repsync_t));
 	}								\
 } while (0)
 
-#define	PRINT_VIEW(sp) do {						\
-	if ((sp)->st_view != 0)						\
-		__db_msg(env, "Environment configured as view site");	\
-	else								\
-		__db_msg(env, "Environment not configured as view site");\
-} while (0)
-
 /*
  * __rep_stat_pp --
  *	ENV->rep_stat pre/post processing.
@@ -127,7 +120,7 @@ __rep_stat(env, statp, flags)
 	DB_REP_STAT *stats;
 	LOG *lp;
 	REP *rep;
-	u_int32_t startupdone, view;
+	u_int32_t startupdone;
 	uintmax_t queued;
 	int dolock, ret;
 
@@ -184,12 +177,10 @@ __rep_stat(env, statp, flags)
 	if (LF_ISSET(DB_STAT_CLEAR)) {
 		queued = rep->stat.st_log_queued;
 		startupdone = rep->stat.st_startup_complete;
-		view = rep->stat.st_view;
 		memset(&rep->stat, 0, sizeof(rep->stat));
 		rep->stat.st_log_queued = rep->stat.st_log_queued_total =
 		    rep->stat.st_log_queued_max = queued;
 		rep->stat.st_startup_complete = startupdone;
-		rep->stat.st_view = view;
 	}
 
 	/*
@@ -323,14 +314,6 @@ __rep_print_stats(env, flags)
 	    "Not waiting for any missed pages" :
 	    "Page number of first page we have after missed pages";
 	__db_msg(env, "%lu\t%s", (u_long)sp->st_waiting_pg, p);
-	__db_dl(env, "Number of duplicate external file data messages received",
-	    (u_long)sp->st_ext_duplicated);
-	__db_dl(env, "Number of external file data messages written to disk",
-	    (u_long)sp->st_ext_records);
-	__db_dl(env, "Number of external file data messages re-requested",
-	    (u_long)sp->st_ext_rereq);
-	__db_dl(env, "Number of external file update messages re-requested",
-	    (u_long)sp->st_ext_update_rereq);
 	__db_dl(env,
      "Number of duplicate master conditions originally detected at this site",
 	    (u_long)sp->st_dupmasters);
@@ -394,7 +377,6 @@ __rep_print_stats(env, flags)
 	__db_dl(env, "Number of page records missed and requested",
 	    (u_long)sp->st_pg_requested);
 	PRINT_STARTUPCOMPLETE(sp);
-	PRINT_VIEW(sp);
 	__db_dl(env,
 	    "Number of transactions applied", (u_long)sp->st_txns_applied);
 
@@ -480,21 +462,16 @@ __rep_print_all(env, flags)
 	u_int32_t flags;
 {
 	static const FN rep_cfn[] = {
-		{ REP_C_2SITE_STRICT,		"REP_C_2SITE_STRICT" },
-		{ REP_C_AUTOINIT,		"REP_C_AUTOINIT" },
-		{ REP_C_AUTOROLLBACK,		"REP_C_AUTOROLLBACK" },
-		{ REP_C_AUTOTAKEOVER,		"REP_C_AUTOTAKEOVER" },
-		{ REP_C_BULK,			"REP_C_BULK" },
-		{ REP_C_DELAYCLIENT,		"REP_C_DELAYCLIENT" },
-		{ REP_C_ELECT_LOGLENGTH,	"REP_C_ELECT_LOGLENGTH" },
-		{ REP_C_ELECTIONS,		"REP_C_ELECTIONS" },
-		{ REP_C_FORWARD_WRITES,		"REP_C_FORWARD_WRITES" },
-		{ REP_C_INMEM,			"REP_C_INMEM" },
-		{ REP_C_LEASE,			"REP_C_LEASE" },
-		{ REP_C_NOWAIT,			"REP_C_NOWAIT" },
-		{ REP_C_PREFMAS_CLIENT,		"REP_C_PREFMAS_CLIENT" },
-		{ REP_C_PREFMAS_MASTER,		"REP_C_PREFMAS_MASTER" },
-		{ 0,				NULL }
+		{ REP_C_2SITE_STRICT,	"REP_C_2SITE_STRICT" },
+		{ REP_C_AUTOINIT,	"REP_C_AUTOINIT" },
+		{ REP_C_AUTOROLLBACK,	"REP_C_AUTOROLLBACK" },
+		{ REP_C_BULK,		"REP_C_BULK" },
+		{ REP_C_DELAYCLIENT,	"REP_C_DELAYCLIENT" },
+		{ REP_C_ELECTIONS,	"REP_C_ELECTIONS" },
+		{ REP_C_INMEM,		"REP_C_INMEM" },
+		{ REP_C_LEASE,		"REP_C_LEASE" },
+		{ REP_C_NOWAIT,		"REP_C_NOWAIT" },
+		{ 0,			NULL }
 	};
 	static const FN rep_efn[] = {
 		{ REP_E_PHASE0,		"REP_E_PHASE0" },
@@ -504,21 +481,19 @@ __rep_print_all(env, flags)
 		{ 0,			NULL }
 	};
 	static const FN rep_fn[] = {
-		{ REP_F_ABBREVIATED,		"REP_F_ABBREVIATED" },
-		{ REP_F_APP_BASEAPI,		"REP_F_APP_BASEAPI" },
-		{ REP_F_APP_REPMGR,		"REP_F_APP_REPMGR" },
-		{ REP_F_CLIENT,			"REP_F_CLIENT" },
-		{ REP_F_DELAY,			"REP_F_DELAY" },
-		{ REP_F_GROUP_ESTD,		"REP_F_GROUP_ESTD" },
-		{ REP_F_HOLD_GEN,		"REP_F_HOLD_GEN" },
-		{ REP_F_LEASE_EXPIRED,		"REP_F_LEASE_EXPIRED" },
-		{ REP_F_MASTER,			"REP_F_MASTER" },
-		{ REP_F_MASTERELECT,		"REP_F_MASTERELECT" },
-		{ REP_F_NEWFILE,		"REP_F_NEWFILE" },
-		{ REP_F_NIMDBS_LOADED,		"REP_F_NIMDBS_LOADED" },
-		{ REP_F_READONLY_MASTER,	"REP_F_READONLY_MASTER" },
-		{ REP_F_SKIPPED_APPLY,		"REP_F_SKIPPED_APPLY" },
-		{ REP_F_START_CALLED,		"REP_F_START_CALLED" },
+		{ REP_F_ABBREVIATED,	"REP_F_ABBREVIATED" },
+		{ REP_F_APP_BASEAPI,	"REP_F_APP_BASEAPI" },
+		{ REP_F_APP_REPMGR,	"REP_F_APP_REPMGR" },
+		{ REP_F_CLIENT,		"REP_F_CLIENT" },
+		{ REP_F_DELAY,		"REP_F_DELAY" },
+		{ REP_F_GROUP_ESTD,	"REP_F_GROUP_ESTD" },
+		{ REP_F_LEASE_EXPIRED,	"REP_F_LEASE_EXPIRED" },
+		{ REP_F_MASTER,		"REP_F_MASTER" },
+		{ REP_F_MASTERELECT,	"REP_F_MASTERELECT" },
+		{ REP_F_NEWFILE,	"REP_F_NEWFILE" },
+		{ REP_F_NIMDBS_LOADED,	"REP_F_NIMDBS_LOADED" },
+		{ REP_F_SKIPPED_APPLY,	"REP_F_SKIPPED_APPLY" },
+		{ REP_F_START_CALLED,	"REP_F_START_CALLED" },
 		{ 0,			NULL }
 	};
 	static const FN rep_lfn[] = {
@@ -548,16 +523,15 @@ __rep_print_all(env, flags)
 	rep = db_rep->region;
 	infop = env->reginfo;
 	renv = infop->primary;
+	ENV_ENTER(env, ip);
 
 	__db_msg(env, "%s", DB_GLOBAL(db_line));
 	__db_msg(env, "DB_REP handle information:");
 
 	if (db_rep->rep_db == NULL)
 		STAT_ISSET("Bookkeeping database", db_rep->rep_db);
-	else {
-		ENV_GET_THREAD_INFO(env, ip);
+	else
 		(void)__db_stat_print(db_rep->rep_db, ip, flags);
-	}
 
 	__db_prflags(env, NULL, db_rep->flags, dbrep_fn, NULL, "\tFlags");
 
@@ -630,6 +604,7 @@ __rep_print_all(env, flags)
 	STAT_LONG("Maximum lease timestamp microseconds",
 	    lp->max_lease_ts.tv_nsec / NS_PER_US);
 	MUTEX_UNLOCK(env, rep->mtx_clientdb);
+	ENV_LEAVE(env, ip);
 
 	return (0);
 }
@@ -673,10 +648,8 @@ __rep_stat_summary_print(env)
 	ret = 0;
 	if ((ret = __rep_stat(env, &sp, 0)) == 0) {
 		PRINT_STATUS(sp, is_client);
-		if (is_client) {
+		if (is_client)
 			PRINT_STARTUPCOMPLETE(sp);
-			PRINT_VIEW(sp);
-		}
 		PRINT_MAXPERMLSN(sp);
 		/*
 		 * Use the number of sites that is kept up-to-date most

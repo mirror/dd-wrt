@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -94,7 +94,7 @@
         Remember that you can find the complete implementation of this application
         in:
     </p>
-      <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples/cxx/getting_started</pre>
+      <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples_cxx/getting_started</pre>
       <p>
         where <code class="literal"><span class="emphasis"><em>DB_INSTALL</em></span></code> is the location where you
         placed your DB distribution.
@@ -111,7 +111,7 @@
             function.
         </p>
           <a id="cxx_cursor10"></a>
-          <pre class="programlisting">// File: excxx_example_database_read.cpp
+          <pre class="programlisting">// File: example_database_read.cpp
 #include &lt;iostream&gt;
 #include &lt;fstream&gt;
 #include &lt;cstdlib&gt;
@@ -232,7 +232,7 @@ show_vendor(MyDb &amp;vendorDB, const char *vendor)
         // Set the search key to the vendor's name
         // vendor is explicitly cast to char * to stop a compiler
         // complaint.
-        Dbt key((char *)vendor, (u_int32_t)strlen(vendor) + 1);
+        Dbt key((char *)vendor, strlen(vendor) + 1);
 
         // Make sure we use the memory we set aside for the VENDOR
         // structure rather than the memory that DB allocates.

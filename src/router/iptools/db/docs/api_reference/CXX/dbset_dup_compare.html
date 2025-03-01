@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -42,7 +42,7 @@
  
 extern "C" {
     typedef int (*dup_compare_fcn_type)(DB *db, const DBT *dbt1, 
-        const DBT *dbt2, size_t *locp);
+    const DBT *dbt2);
 };
 int
 Db::set_dup_compare(dup_compare_fcn_type dup_compare_fcn);</pre>
@@ -80,7 +80,7 @@ Db::set_dup_compare(dup_compare_fcn_type dup_compare_fcn);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670064173440"></a>Parameters</h3>
+              <h3 class="title"><a id="idp391656"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -88,14 +88,14 @@ Db::set_dup_compare(dup_compare_fcn_type dup_compare_fcn);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670064174688"></a>dup_compare_fcn</h4>
+                <h4 class="title"><a id="idp419736"></a>dup_compare_fcn</h4>
               </div>
             </div>
           </div>
           <p>
                           The <span class="bold"><strong>dup_compare_fcn</strong></span> function is the
                           application-specified duplicate data item comparison function.  The
-                          function takes four arguments:
+                          function takes three arguments:
                      </p>
           <div class="itemizedlist">
             <ul type="disc">
@@ -128,15 +128,6 @@ Db::set_dup_compare(dup_compare_fcn_type dup_compare_fcn);</pre>
                                  tree's data item.
                             </p>
               </li>
-              <li>
-                <p>
-                                <code class="literal">locp</code>
-                             </p>
-                <p>
-                                 The <span class="bold"><strong>locp</strong></span> parameter is currently
-                                 unused, and must be set to NULL or corruption can occur.
-                             </p>
-              </li>
             </ul>
           </div>
           <p>
@@ -159,7 +150,7 @@ Db::set_dup_compare(dup_compare_fcn_type dup_compare_fcn);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670064156080"></a>Errors</h3>
+              <h3 class="title"><a id="idp1764696"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -177,7 +168,7 @@ Db::set_dup_compare(dup_compare_fcn_type dup_compare_fcn);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670064137360"></a>EINVAL</h4>
+                <h4 class="title"><a id="idm367568"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -190,7 +181,7 @@ Db::set_dup_compare(dup_compare_fcn_type dup_compare_fcn);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670064144592"></a>Class</h3>
+              <h3 class="title"><a id="idm1267864"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -202,7 +193,7 @@ Db::set_dup_compare(dup_compare_fcn_type dup_compare_fcn);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670064151504"></a>See Also</h3>
+              <h3 class="title"><a id="idm993464"></a>See Also</h3>
             </div>
           </div>
         </div>

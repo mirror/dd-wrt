@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 #include "sqliteInt.h"
@@ -13,7 +13,3 @@ void sqlite3PCacheSetDefault(void){}
 #ifdef SQLITE_TEST
 void sqlite3PcacheStats(int *a,int *b,int *c,int *d) {}
 #endif
-
-int sqlite3HeaderSizePcache(void){ return SQLITE_OK; }
-int sqlite3HeaderSizePcache1(void){ return SQLITE_OK; }
-sqlite3_mutex *sqlite3Pcache1Mutex(void){ return 0; }

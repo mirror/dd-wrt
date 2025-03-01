@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -52,10 +52,6 @@ public class Renamer extends Mutation {
     /**
      * Creates a mutation for renaming the class of all instances of the given
      * class version.
-     *
-     * @param fromClass the class to rename.
-     * @param fromVersion the class version to rename.
-     * @param toClass the new class name.
      */
     public Renamer(String fromClass, int fromVersion, String toClass) {
         super(fromClass, fromVersion, null);
@@ -65,12 +61,6 @@ public class Renamer extends Mutation {
     /**
      * Creates a mutation for renaming the given field for all instances of the
      * given class version.
-     *
-     * @param declaringClass the class to which this mutation applies.
-     * @param declaringClassVersion the class version to which this mutation
-     * applies.
-     * @param fromField field name in the given class version.
-     * @param toField the new field name.
      */
     public Renamer(String declaringClass, int declaringClassVersion,
                    String fromField, String toField) {
@@ -80,8 +70,6 @@ public class Renamer extends Mutation {
 
     /**
      * Returns the new class or field name specified in the constructor.
-     *
-     * @return the new name.
      */
     public String getNewName() {
         return newName;

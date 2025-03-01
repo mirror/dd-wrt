@@ -16,7 +16,6 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set ::testprefix io
 
 db close
 sqlite3_simulate_device
@@ -39,10 +38,6 @@ sqlite3 db test.db -vfs devsym
 #
 # io-5.* -  Test that the default page size is selected and used 
 #           correctly.
-#
-# io-6.* -  Test that the pager-cache is not being flushed unnecessarily 
-#           after a transaction that uses the special atomic-write path
-#           is committed.
 #           
 
 set ::nWrite 0
@@ -151,15 +146,11 @@ do_test io-2.2 {
 # written because page 1 - the change-counter page - is written using
 # an out-of-band method that bypasses the write counter.
 #
-# UPDATE: As of [05f98d4eec] (adding SQLITE_DBSTATUS_CACHE_WRITE), the
-# second write is also counted. So this now reports two writes and a
-# single fsync.
-#
 sqlite3_simulate_device -char atomic
 do_test io-2.3 {
   execsql { INSERT INTO abc VALUES(3, 4) }
   list [nWrite db] [nSync]
-} {2 1}
+} {1 1}
 
 # Test that the journal file is not created and the change-counter is
 # updated when the atomic-write optimization is used.
@@ -212,7 +203,7 @@ do_test io-2.5.3 {
 # Changed 2010-03-27:  The size of the database is now stored in 
 # bytes 28..31 and so when a page is added to the database, page 1
 # is immediately modified and the journal file immediately comes into
-# existence.  To fix this test, the BEGIN is changed into a a
+# existance.  To fix this test, the BEGIN is changed into a a
 # BEGIN IMMEDIATE and the INSERT is omitted.
 #
 do_test io-2.6.1 {
@@ -234,7 +225,7 @@ do_test io-2.6.2 {
   }
 } {1 {unable to open database file}}
 do_test io-2.6.3 {
-  forcedelete test.db-journal
+  file delete -force test.db-journal
   catchsql { COMMIT }
 } {0 {}}
 do_test io-2.6.4 {
@@ -246,7 +237,7 @@ do_test io-2.6.4 {
 # is created during execution of the COMMIT statement, so we have to
 # use the same technique to check that it is created as in the above 
 # block.
-forcedelete test2.db test2.db-journal
+file delete -force test2.db test2.db-journal
 ifcapable attach {
   do_test io-2.7.1 {
     execsql {
@@ -270,7 +261,7 @@ ifcapable attach {
     catchsql { COMMIT }
   } {1 {unable to open database file}}
   do_test io-2.7.5 {
-    forcedelete test2.db-journal
+    file delete -force test2.db-journal
     catchsql { COMMIT }
   } {1 {cannot commit - no transaction is active}}
   do_test io-2.7.6 {
@@ -313,7 +304,7 @@ do_test io-2.9.1 {
 do_test io-2.9.2 {
   execsql { ROLLBACK; }
   db close
-  forcedelete test.db test.db-journal
+  file delete -force test.db test.db-journal
   sqlite3 db test.db -vfs devsym
   execsql {
     PRAGMA auto_vacuum = OFF;
@@ -384,7 +375,7 @@ sqlite3_simulate_device -char sequential -sectorsize 0
 ifcapable pager_pragmas {
   do_test io-3.1 {
     db close
-    forcedelete test.db test.db-journal
+    file delete -force test.db test.db-journal
     sqlite3 db test.db -vfs devsym
     db eval {
       PRAGMA auto_vacuum=OFF;
@@ -553,7 +544,7 @@ foreach {char                 sectorsize pgsize} {
   incr tn
   if {$pgsize>$::SQLITE_MAX_PAGE_SIZE} continue
   db close
-  forcedelete test.db test.db-journal
+  file delete -force test.db test.db-journal
   sqlite3_simulate_device -char $char -sectorsize $sectorsize
   sqlite3 db test.db -vfs devsym
   db eval {
@@ -568,75 +559,6 @@ foreach {char                 sectorsize pgsize} {
     }
     expr {[file size test.db]/2}
   } $pgsize
-}
-
-#----------------------------------------------------------------------
-#
-do_test io-6.1 {
-  db close
-  sqlite3_simulate_device -char atomic
-  forcedelete test.db
-  sqlite3 db test.db -vfs devsym
-  execsql {
-    PRAGMA mmap_size = 0;
-    PRAGMA page_size = 1024;
-    PRAGMA cache_size = 2000;
-    CREATE TABLE t1(x);
-    CREATE TABLE t2(x);
-    CREATE TABLE t3(x);
-    CREATE INDEX i3 ON t3(x);
-    INSERT INTO t3 VALUES(randomblob(100));
-    INSERT INTO t3 SELECT randomblob(100) FROM t3;
-    INSERT INTO t3 SELECT randomblob(100) FROM t3;
-    INSERT INTO t3 SELECT randomblob(100) FROM t3;
-    INSERT INTO t3 SELECT randomblob(100) FROM t3;
-    INSERT INTO t3 SELECT randomblob(100) FROM t3;
-    INSERT INTO t3 SELECT randomblob(100) FROM t3;
-    INSERT INTO t3 SELECT randomblob(100) FROM t3;
-    INSERT INTO t3 SELECT randomblob(100) FROM t3;
-    INSERT INTO t3 SELECT randomblob(100) FROM t3;
-    INSERT INTO t3 SELECT randomblob(100) FROM t3;
-    INSERT INTO t3 SELECT randomblob(100) FROM t3;
-  }
-
-  db_save_and_close
-} {}
-
-foreach {tn sql} {
-  1 { BEGIN;
-        INSERT INTO t1 VALUES('123');
-        INSERT INTO t2 VALUES('456');
-      COMMIT;
-  }
-  2 { BEGIN;
-        INSERT INTO t1 VALUES('123');
-      COMMIT;
-  }
-} {
-
-  # These tests don't work with memsubsys1, as it causes the effective page
-  # cache size to become too small to hold the entire db in memory.
-  if {[permutation] == "memsubsys1"} continue
-
-  db_restore
-  sqlite3 db test.db -vfs devsym
-  execsql {
-    PRAGMA cache_size = 2000;
-    PRAGMA mmap_size = 0;
-    SELECT x FROM t3 ORDER BY rowid;
-    SELECT x FROM t3 ORDER BY x;
-  }
-  do_execsql_test 6.2.$tn.1 { PRAGMA integrity_check } {ok}
-  do_execsql_test 6.2.$tn.2 $sql
-
-  # Corrupt the database file on disk. This should not matter for the
-  # purposes of the following "PRAGMA integrity_check", as the entire
-  # database should be cached in the pager-cache. If corruption is
-  # reported, it indicates that executing $sql caused the pager cache
-  # to be flushed. Which is a bug.
-  hexio_write test.db [expr 1024 * 5] [string repeat 00 2048]
-  do_execsql_test 6.2.$tn.3 { PRAGMA integrity_check } {ok}
-  db close
 }
 
 sqlite3_simulate_device -char {} -sectorsize 0

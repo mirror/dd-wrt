@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -102,8 +102,6 @@ public class SerialBinding<E> extends SerialBase implements EntryBinding<E> {
      * <p>If this method returns null, a default class loader will be used as
      * determined by the <code>java.io.ObjectInputStream.resolveClass</code>
      * method.</p>
-     *
-     * @return the ClassLoader or null.
      */
     public ClassLoader getClassLoader() {
 

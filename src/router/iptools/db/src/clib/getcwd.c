@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1989, 1991, 1993
@@ -136,7 +136,7 @@ getcwd(pt, size)
 	root_dev = s.st_dev;
 	root_ino = s.st_ino;
 
-	__os_set_errno(0);		/* !!! readdir has no error return. */
+	__os_set_errno(0);		/* XXX readdir has no error return. */
 
 	for (first = 1;; first = 0) {
 		/* Stat the current level. */

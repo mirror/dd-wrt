@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * A C test for the queue access method.
  * TODO: Make this more consistent with the CuTest harness.
@@ -778,8 +778,7 @@ int TestQueue(CuTest *ct) {
 			}
 			if (!strcmp("sh_tailq", qfns[t].name)) {
 				result =
-				    sh_t_verify_TAILQ_LAST(
-				    (struct sh_tq *)list, ops[i].init);
+				    sh_t_verify_TAILQ_LAST(list, ops[i].init);
 			}
 #ifdef VERBOSE
 			printf("\ncase %d %s in %s init: \"%s\" desired: \"%s\" elem: \"%s\" insert: \"%s\"\n",
@@ -815,8 +814,8 @@ int TestQueue(CuTest *ct) {
 				break;
 			}
 			if (!strcmp("sh_tailq", op_names[ops[i].op])) {
-				result = sh_t_verify_TAILQ_LAST(
-				    (struct sh_tq *)list, ops[i].final);
+				result = sh_t_verify_TAILQ_LAST(list,
+				    ops[i].final);
 			}
 			if (result == 0)
 				result = qfns[t].f_verify(list, ops[i].final);

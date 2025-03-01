@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -24,259 +24,6 @@ namespace CsharpAPITest
 		{
 			testFixtureName = "BTreeDatabaseTest";
 			base.SetUpTestfixture();
-		}
-
-		[Test]
-		public void TestBlob()
-		{
-			testName = "TestBlob";
-			SetUpTest(false);
-			// Test opening the external file database without
-			// environment.
-			TestBlobBtreeDatabase(0, null, 6, null, false);
-
-			/*
-			 * Test opening the external file database without
-			 * environment
-			 * but specifying external file directory.
-			 */
-			TestBlobBtreeDatabase(0, null, 6,
-			    testHome + "/DBBLOB", true);
-
-			// Test opening the external file database with
-			// environment.
-			TestBlobBtreeDatabase(3, "ENVBLOB", 6, null, false);
-
-			/*
-			 * Test opening the external file database with
-			 * environment and specifying external file directory.
-			 */
-			TestBlobBtreeDatabase(3, null, 6, "/DBBLOB", true);
-		}
-
-		/*
-		 * Test the external file database with or without environment.
-		 * 1. Config and open the environment;
-		 * 2. Verify the environment external file configs;
-		 * 3. Config and open the database;
-		 * 4. Verify the database external file configs;
-		 * 5. Insert and verify some external file data by database
-		 * methods;
-		 * 6. Insert some external file data by cursor, update it and
-		 * verify
-		 * the update by database stream and cursor;
-		 * 7. Verify the stats;
-		 * 8. Close all handles.
-		 * If "blobdbt" is true, set the data DatabaseEntry.Blob as
-		 * true, otherwise make the data DatabaseEntry reach the
-		 * external file threshold in size.
-		 */
-		void TestBlobBtreeDatabase(uint env_threshold,
-		    string env_blobdir, uint db_threshold,
-		    string db_blobdir, bool blobdbt)
-		{
-			if (env_threshold == 0 && db_threshold == 0)
-				return;
-
-			string btreeDBName =
-			    testHome + "/" + testName + ".db";
-
-			Configuration.ClearDir(testHome);
-			BTreeDatabaseConfig cfg = new BTreeDatabaseConfig();
-			cfg.Creation = CreatePolicy.ALWAYS;
-			string blrootdir = "__db_bl";
-
-			// Open the environment and verify the external file
-			// configs.
-			if (env_threshold > 0)
-			{
-				DatabaseEnvironmentConfig envConfig =
-				    new DatabaseEnvironmentConfig();
-				envConfig.AutoCommit = true;
-				envConfig.Create = true;
-				envConfig.UseMPool = true;
-				envConfig.UseLogging = true;
-				envConfig.UseTxns = true;
-				envConfig.UseLocking = true;
-				envConfig.ExternalFileThreshold = env_threshold;
-				if (env_blobdir != null)
-				{
-					envConfig.ExternalFileDir = env_blobdir;
-					blrootdir = env_blobdir;
-				}
-				DatabaseEnvironment env =
-				    DatabaseEnvironment.Open(
-				    testHome, envConfig);
-				if (env_blobdir == null)
-					Assert.IsNull(env.ExternalFileDir);
-				else
-					Assert.AreEqual(0, env.ExternalFileDir.
-					    CompareTo(env_blobdir));
-				Assert.AreEqual(env_threshold,
-				    env.ExternalFileThreshold);
-				cfg.Env = env;
-				btreeDBName = testName + ".db";
-			}
-
-			// Open the database and verify the external file
-			// configs.
-			if (db_threshold > 0)
-				cfg.ExternalFileThreshold = db_threshold;
-			if (db_blobdir != null)
-			{
-				cfg.ExternalFileDir = db_blobdir;
-				/*
-				 * The external file directory setting in the
- 				 * database is effective only when it is opened
-				 * without an environment.
-				 */
-				if (cfg.Env == null)
-					blrootdir = db_blobdir;
-			}
-
-			BTreeDatabase db =
-			    BTreeDatabase.Open(btreeDBName, cfg);
-			Assert.AreEqual(
-			    db_threshold > 0 ? db_threshold : env_threshold,
-			    db.ExternalFileThreshold);
-			if (db_blobdir == null && cfg.Env == null)
-				Assert.IsNull(db.ExternalFileDir);
-			else
-				Assert.AreEqual(0,
-				    db.ExternalFileDir.CompareTo(blrootdir));
-
-			// Insert and verify some external file data by
-			// database methods.
-			string[] records = {"a", "b", "c", "d", "e", "f", "g",
-			    "h", "i", "j", "k", "l", "m", "n", "o", "p", "q",
-			    "r", "s", "t", "u", "v", "w", "x", "y", "z"};
-			DatabaseEntry kdbt = new DatabaseEntry();
-			DatabaseEntry ddbt = new DatabaseEntry();
-			byte[] kdata, ddata;
-			string str;
-			KeyValuePair<DatabaseEntry, DatabaseEntry> pair;
-			ddbt.ExternalFile = blobdbt;
-			Assert.AreEqual(blobdbt, ddbt.ExternalFile);
-			for (int i = 0; i < records.Length; i++)
-			{
-				kdata = BitConverter.GetBytes(i);
-				str = records[i];
-				if (!blobdbt) {
-					for (int j = 0; j < db_threshold; j++)
-						str = str + records[i];
-				}
-				ddata = Encoding.ASCII.GetBytes(str);
-				kdbt.Data = kdata;
-				ddbt.Data = ddata;
-				db.Put(kdbt, ddbt);
-				try
-				{
-					pair = db.Get(kdbt);
-				}
-				catch (DatabaseException)
-				{
-					db.Close();
-					if (cfg.Env != null)
-						cfg.Env.Close();
-					throw new TestException();
-				}
-				Assert.AreEqual(ddata, pair.Value.Data);
-			}
-
-			/*
-			 * Insert some external file data by cursor, update it
-			 * and verify the update by database stream.
-			 */
-			kdata = BitConverter.GetBytes(records.Length);
-			ddata = Encoding.ASCII.GetBytes("abc");
-			kdbt.Data = kdata;
-			ddbt.Data = ddata;
-			ddbt.ExternalFile = true;
-			Assert.IsTrue(ddbt.ExternalFile);
-			pair = new KeyValuePair<
-			    DatabaseEntry, DatabaseEntry>(kdbt, ddbt);
-			CursorConfig dbcConfig = new CursorConfig();
-			Transaction txn = null;
-			if (cfg.Env != null)
-				txn = cfg.Env.BeginTransaction();
-			BTreeCursor cursor = db.Cursor(dbcConfig, txn);
-			cursor.Add(pair);
-			DatabaseStreamConfig dbsc = new DatabaseStreamConfig();
-			dbsc.SyncPerWrite = true;
-			DatabaseStream dbs = cursor.DbStream(dbsc);
-			Assert.AreNotEqual(null, dbs);
-			Assert.IsFalse(dbs.GetConfig.ReadOnly);
-			Assert.IsTrue(dbs.GetConfig.SyncPerWrite);
-			Assert.AreEqual(3, dbs.Size());
-			DatabaseEntry sdbt = dbs.Read(0, 3);
-			Assert.IsNotNull(sdbt);
-			Assert.AreEqual(ddata, sdbt.Data);
-			sdbt = new DatabaseEntry(
-			    Encoding.ASCII.GetBytes("defg"));
-			Assert.IsTrue(dbs.Write(sdbt, 3));
-			Assert.AreEqual(7, dbs.Size());
-			sdbt = dbs.Read(0, 7);
-			Assert.IsNotNull(sdbt);
-			Assert.AreEqual(
-			    Encoding.ASCII.GetBytes("abcdefg"), sdbt.Data);
-			dbs.Close();
-
-			/*
-			 * Verify the database stream can not write when it is
-			 * configured to be read-only.
-			 */
-			dbsc.ReadOnly = true;
-			dbs = cursor.DbStream(dbsc);
-			Assert.IsTrue(dbs.GetConfig.ReadOnly);
-			try
-			{
-				dbs.Write(sdbt, 7);
-				throw new TestException();
-			}
-			catch (DatabaseException)
-			{
-			}
-			dbs.Close();
-
-			// Verify the update by cursor.
-			Assert.IsTrue(cursor.Move(kdbt, true));
-			pair = cursor.Current;
-			Assert.AreEqual(Encoding.ASCII.GetBytes("abcdefg"),
-			    pair.Value.Data);
-			cursor.Close();
-			if (cfg.Env != null)
-				txn.Commit();
-
-			/*
-			 * Verify the external file files are created
-			 * in the expected location.
-			 * This part of test code is disabled since
-			 * BTreeDatabase.BlobSubDir is not exposed to users.
-			 */
-			
-			//if (cfg.Env != null)
-			//	blrootdir = testHome + "/" + blrootdir;
-			//string blobdir = blrootdir + "/" + db.BlobSubDir;
-			//Assert.AreEqual(records.Length + 1,
-			//    Directory.GetFiles(blobdir, "__db.bl*").Length);
-			//Assert.AreEqual(1, Directory.GetFiles(
-			//    blobdir, "__db_blob_meta.db").Length);
-
-			// Verify the stats.
-			BTreeStats st = db.Stats();
-			Assert.AreEqual(records.Length + 1, st.nExternalFiles);
-
-			// Close all handles.
-			db.Close();
-			if (cfg.Env != null)
-				cfg.Env.Close();
-
-			/*
-			 * Remove the default external file directory when it
-			 * is not under the test home.
-			 */
-			if (db_blobdir == null && cfg.Env == null)
-				Directory.Delete("__db_bl", true);
 		}
 
 		[Test]
@@ -1336,126 +1083,6 @@ ASCIIEncoding.ASCII.GetBytes(Configuration.RandomString(100)));
 		}
 
 		[Test]
-		public void TestMessageCall()
-		{
-			testName = "TestMessageCall";
-			SetUpTest(true);
-
-			// Configure and open an environment.
-			DatabaseEnvironmentConfig envConfig =
-			    new DatabaseEnvironmentConfig();
-			envConfig.Create = true;
-			envConfig.UseMPool = true;
-			DatabaseEnvironment env = DatabaseEnvironment.Open(
-			    testHome, envConfig);
-
-			// Configure and open a database.
-			BTreeDatabaseConfig DBConfig =
-			    new BTreeDatabaseConfig();
-			DBConfig.Env = env;
-			DBConfig.Creation = CreatePolicy.IF_NEEDED;
-
-			string DBFileName = testName + ".db";
-			BTreeDatabase db = BTreeDatabase.Open(DBFileName, DBConfig);
-
-			// Confirm message file does not exist.
-			string messageCallFile = testHome + "/" + "MessageCallFile";
-			Assert.AreEqual(false, File.Exists(messageCallFile));
-
-			string messageInfo = "Message come from db.set_msgcall!";
-
-			// Call set_msgcall() of env.
-			db.messageFeedback = new MessageFeedbackDelegate(Msgcall_fcn);
-			db.messageFeedback(null, messageInfo);
-
-			// Unconfigures the callback interface.
-			db.messageFeedback = null;
-
-			// Confirm message file exists now.
-			Assert.AreEqual(true, File.Exists(messageCallFile));
-
-			// Read the first line of message file.
-			string line = null;
-			System.IO.StreamReader file = new System.IO.StreamReader(@"" + messageCallFile);
-			line = file.ReadLine();
-
-			// Confirm the message file is not empty.
-			Assert.AreEqual(line, messageInfo);
-			file.Close();
-
-			// Close database and environment.
-			db.Close();
-			env.Close();
-		}
-
-		public void Msgcall_fcn(string msgpfx, string message)
-		{
-			string msgfile = testHome + "/" + "MessageCallFile";
-			FileStream fs = new FileStream(msgfile, FileMode.OpenOrCreate);
-			StreamWriter sw = new StreamWriter(fs);
-			if (msgpfx != null)
-				sw.Write(msgpfx + ": ");
-			sw.Write(message);
-			sw.Flush();
-			sw.Close();
-			fs.Close();
-		}
-
-		[Test]
-		public void TestMessageFile()
-		{
-			testName = "TestMessageFile";
-			SetUpTest(true);
-
-			// Configure and open an environment.
-			DatabaseEnvironmentConfig envConfig =
-			    new DatabaseEnvironmentConfig();
-			envConfig.Create = true;
-			envConfig.UseMPool = true;
-			DatabaseEnvironment env = DatabaseEnvironment.Open(
-			    testHome, envConfig);
-
-			// Configure and open a database.
-			BTreeDatabaseConfig DBConfig =
-			    new BTreeDatabaseConfig();
-			DBConfig.Env = env;
-			DBConfig.Creation = CreatePolicy.IF_NEEDED;
-
-			string DBFileName = testName + ".db";
-			BTreeDatabase db = BTreeDatabase.Open(DBFileName, DBConfig);
-
-			// Confirm message file does not exist.
-			string messageFile = testHome + "/" + "msgfile";
-			Assert.AreEqual(false, File.Exists(messageFile));
-
-			// Call set_msgfile() of db.
-			db.Msgfile = messageFile;
-
-			// Print db statistic to message file.
-			db.PrintStats(true);
-
-			// Confirm message file exists now.
-			Assert.AreEqual(true, File.Exists(messageFile));
-
-			db.Msgfile = "";
-			string line = null;
-
-			// Read the third line of message file.
-			System.IO.StreamReader file = new System.IO.StreamReader(@"" + messageFile);
-			line = file.ReadLine();
-			line = file.ReadLine();
-			line = file.ReadLine();
-
-			// Confirm the message file is not empty.
-			Assert.AreEqual(line, "DB handle information:");
-			file.Close();
-
-			// Close database and environment.
-			db.Close();
-			env.Close();
-		}
-
-		[Test]
 		public void TestNoWaitDbExclusiveLock()
 		{
 			testName = "TestNoWaitDbExclusiveLock";
@@ -1760,97 +1387,6 @@ ASCIIEncoding.ASCII.GetBytes(Configuration.RandomString(100)));
 
 			if (txn != null)
 				txn.Commit();
-		}
-
-		[Test]
-		public void TestPartition()
-		{
-			testName = "TestPartition";
-			SetUpTest(true);
-			string btreeDBName = testHome + "/" + testName + ".db";
-
- 			BTreeDatabaseConfig cfg = new BTreeDatabaseConfig();
-			BTreeDatabase db;
-			DatabaseEntry[] keys;
- 			DatabaseEntry key, data;
-			string[] keyData =
-			    { "a", "b", "i", "k", "l", "q", "v", "z" };
-			int i;
-			uint parts;
-
-			cfg.Creation = CreatePolicy.ALWAYS;
-			parts = 3;
-			keys = new DatabaseEntry[parts - 1];
-			keys[0] = new DatabaseEntry(
-			    ASCIIEncoding.ASCII.GetBytes("i"));
-			keys[1] = new DatabaseEntry(
-			    ASCIIEncoding.ASCII.GetBytes("q"));
-
-			/*
-			 * Test that neither key array nor
-			 * partiton callback is set.
-			 */
-			Assert.AreEqual(false, cfg.SetPartitionByKeys(null));
-			Assert.AreEqual(false,
-			    cfg.SetPartitionByCallback(parts, null));
-
-			/* Test creating the partitioned database by keys. */
-			Assert.AreEqual(true, cfg.SetPartitionByKeys(keys));
-			db = BTreeDatabase.Open(btreeDBName, cfg);
-			for (i = 0; i < keyData.Length; i++)
-			{
-				key = new DatabaseEntry(
-				    ASCIIEncoding.ASCII.GetBytes(keyData[i]));
-				data = new DatabaseEntry(
-				    ASCIIEncoding.ASCII.GetBytes(keyData[i]));
-				db.Put(key, data);
-			}
-			Assert.AreEqual(parts, db.NParts);
-			Assert.AreEqual(parts - 1, db.PartitionKeys.Length);
-			Assert.AreEqual(
-			    keys[0].Data, db.PartitionKeys[0].Data);
-			Assert.AreEqual(
-			    keys[1].Data, db.PartitionKeys[1].Data);
-			Assert.AreEqual(db.Partition, null);
-			db.Close();
-			string[] files =
-			    Directory.GetFiles(testHome, "__dbp.*");
-			Assert.AreEqual(parts, files.Length);
-
-			/*
-			 * Test creating the partitioned database by callback.
-			 */
-			Directory.Delete(testHome, true);
-			Directory.CreateDirectory(testHome);
-			Assert.AreEqual(true,
-			    cfg.SetPartitionByCallback(parts, partition));
-			db = BTreeDatabase.Open(btreeDBName, cfg);
-			for (i = 0; i < keyData.Length; i++)
-			{
-				key = new DatabaseEntry(
-				    ASCIIEncoding.ASCII.GetBytes(keyData[i]));
-				data = new DatabaseEntry(
-				    ASCIIEncoding.ASCII.GetBytes(keyData[i]));
-				db.Put(key, data);
-			}
-			Assert.AreEqual(parts, db.NParts);
-			Assert.AreEqual(
-			    new PartitionDelegate(partition), db.Partition);
-			db.Close();
-			files = Directory.GetFiles(testHome, "__dbp.*");
-			Assert.AreEqual(parts, files.Length);
-		}
-
-		uint partition(DatabaseEntry key)
-		{
-			if (String.Compare(
-			    ASCIIEncoding.ASCII.GetString(key.Data), "i") < 0)
-				return 0;
-			else if (String.Compare(
-			    ASCIIEncoding.ASCII.GetString(key.Data), "q") < 0)
-				return 1;
-			else
-				return 2;
 		}
 
 		[Test]
@@ -2846,7 +2382,7 @@ ASCIIEncoding.ASCII.GetBytes(Configuration.RandomString(100)));
 			testName = "TestUpgrade";
 			SetUpTest(true);
 
-			string srcDBFileName = "../../../bdb4.7.db";
+			string srcDBFileName = "../../bdb4.7.db";
 			string testDBFileName = testHome + "/bdb4.7.db";
 
 			FileInfo srcDBFileInfo = new FileInfo(srcDBFileName);
@@ -2929,7 +2465,6 @@ ASCIIEncoding.ASCII.GetBytes(Configuration.RandomString(100)));
 			byte[] bigArray = new byte[10240];
 			db.Delete(new DatabaseEntry(bigArray));
 
-			db.Msgfile = testHome + "/" + testName+ ".log";
 			db.PrintStats();
 			db.PrintFastStats();
 
@@ -3035,7 +2570,6 @@ ASCIIEncoding.ASCII.GetBytes(Configuration.RandomString(100)));
 				stats = db.Stats(statsTxn, Isolation.DEGREE_THREE);
 			ConfirmStatsPart3Case1(stats);
 
-			db.Msgfile = home + "/" + name+ ".log";
 			db.PrintStats(true);
 			Assert.AreEqual(0, stats.EmptyPages);
 
@@ -3093,7 +2627,7 @@ ASCIIEncoding.ASCII.GetBytes(Configuration.RandomString(100)));
 			Assert.AreEqual(10, stats.MinKey);
 			Assert.AreEqual(2, stats.nPages);
 			Assert.AreEqual(4096, stats.PageSize);
-			Assert.AreEqual(10, stats.Version);
+			Assert.AreEqual(9, stats.Version);
 		}
 
 		public void ConfirmStatsPart2Case1(BTreeStats stats)

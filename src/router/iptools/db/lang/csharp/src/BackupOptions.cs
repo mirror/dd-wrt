@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -17,13 +17,14 @@ namespace BerkeleyDB {
     public class BackupOptions {
         /// <summary>
         /// If true, all files are removed from the target backup directory 
-        /// before the backup is performed.
+        /// before the back up is performed.
         /// </summary>
         public bool Clean;
         /// <summary>
-        /// If true, all ordinary files that might exist in the environment or
-        /// in the environment's subdirectories are backed up; otherwise, only files
-        /// necessary for the proper operation of Berkeley DB are backed up.
+        /// If true, all ordinary files that might exist in the environment, as 
+        /// well as might exist in the environment's subdirectories, are backed 
+        /// up; otherwise, only files necessary for the proper operation of 
+        /// Berkeley DB are backed up.
         /// </summary>
         public bool Files;
         /// <summary>
@@ -33,20 +34,20 @@ namespace BerkeleyDB {
         public bool NoLogs;
         /// <summary>
         /// If true, then regardless of the directory structure used by the 
-        /// source environment, place all backup files in the single target 
+        /// source environment, place all back up files in the single target 
         /// directory.  Use this option if absolute path names to your 
         /// environment directory and the files within that directory are 
         /// required by your application. 
         /// </summary>
         public bool SingleDir;
         /// <summary>
-        /// If true, perform an incremental back up, instead of a full backup.
+        /// If true, perform an incremental back up, instead of a full back up.
         /// When this option is specified, only log files are copied to the 
         /// target directory. 
         /// </summary>
         public bool Update;
         /// <summary>
-        /// Specify whether the target directory is created if it does not
+        /// Specify whether the target directory will be created if it does not
         /// already exist.
         /// </summary>
         public CreatePolicy Creation = CreatePolicy.NEVER;

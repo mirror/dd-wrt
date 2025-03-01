@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -143,7 +143,6 @@ proc open_and_dump_file {
 	set envarg ""
 	set txn ""
 	set txnenv 0
-	set bflags "-blob_dir $testdir/__db_bl"
 	if { $env != "NULL" } {
 		append envarg " -env $env "
 		set txnenv [is_txnenv $env]
@@ -153,10 +152,8 @@ proc open_and_dump_file {
 			error_check_good txn [is_valid_txn $t $env] TRUE
 			set txn "-txn $t"
 		}
-		set bflags ""
 	}
-	set db [eval {berkdb open} $envarg -rdonly -unknown \
-	    $encarg $bflags $args $dbname]
+	set db [eval {berkdb open} $envarg -rdonly -unknown $encarg $args $dbname]
 	error_check_good dbopen [is_valid_db $db] TRUE
 	$dump_func $db $txn $outfile $checkfunc $beg $cont
 	if { $txnenv == 1 } {
@@ -179,7 +176,6 @@ proc open_and_dump_subfile {
 	set envarg ""
 	set txn ""
 	set txnenv 0
-	set bflags "-blob_dir $testdir/__db_bl"
 	if { $env != "NULL" } {
 		append envarg "-env $env"
 		set txnenv [is_txnenv $env]
@@ -189,36 +185,15 @@ proc open_and_dump_subfile {
 			error_check_good txn [is_valid_txn $t $env] TRUE
 			set txn "-txn $t"
 		}
-		set bflags ""
 	}
 	set db [eval {berkdb open -rdonly -unknown} \
-	    $envarg $encarg $bflags {$dbname $subdb}]
+	    $envarg $encarg {$dbname $subdb}]
 	error_check_good dbopen [is_valid_db $db] TRUE
 	$dump_func $db $txn $outfile $checkfunc $beg $cont
 	if { $txnenv == 1 } {
 		error_check_good txn [$t commit] 0
 	}
 	error_check_good db_close [$db close] 0
-}
-
-# This is the same as dump_file but also figures out whether
-# we have a transactional environment and starts & commits 
-# the transaction. 
-proc dump_file_env { env db outfile {checkfunc NONE} } {
-	set txn ""
-	set txnenv 0
-	if { $env != "NULL" } {
-		set txnenv [is_txnenv $env] 
-	}
-	if { $txnenv == 1 } {
-		set t [$env txn] 
-		error_check_good txn [is_valid_txn $t $env] TRUE
-		set txn " -txn $t"
-	}
-	dump_file $db $txn $outfile $checkfunc
-	if { $txnenv == 1 } {
-		error_check_good txn_commit [$t commit] 0 
-	}
 }
 
 # Sequentially read a file and call checkfunc on each key/data pair.
@@ -232,10 +207,6 @@ proc dump_file { db txn outfile {checkfunc NONE} } {
 proc dump_file_direction { db txn outfile checkfunc start continue } {
 	source ./include.tcl
 
-	# Ignore the transaction if the database is sliced
-	if { [$db is_sliced] } {
-		set txn ""
-	}
 	# Now we will get each key from the DB and dump to outfile
 	set c [eval {$db cursor} $txn]
 	error_check_good db_cursor [is_valid_cursor $c $db] TRUE
@@ -283,11 +254,6 @@ proc dump_binkey_file_direction { db txn outfile checkfunc begin cont } {
 
 	set outf [open $outfile w]
 
-	# Ignore the transaction if the database is sliced
-	if { [$db is_sliced] } {
-		set txn ""
-	}
-
 	# Now we will get each key from the DB and dump to outfile
 	set c [eval {$db cursor} $txn]
 	error_check_good db_cursor [is_valid_cursor $c $db] TRUE
@@ -325,11 +291,6 @@ proc dump_bin_file_direction { db txn outfile checkfunc begin cont } {
 	set d1 $testdir/d1
 
 	set outf [open $outfile w]
-
-	# Ignore the transaction if the database is sliced
-	if { [$db is_sliced] } {
-		set txn ""
-	}
 
 	# Now we will get each key from the DB and dump to outfile
 	set c [eval {$db cursor} $txn]
@@ -657,7 +618,7 @@ proc replicate { str times } {
 proc repeat { str n } {
 	set ret ""
 	while { $n > 0 } {
-		append ret $str
+		set ret $str$ret
 		incr n -1
 	}
 	return $ret
@@ -1161,10 +1122,8 @@ proc cleanup { dir env { quiet 0 } } {
 	global is_je_test
 	global old_encrypt
 	global passwd
-	global number_of_slices
 	source ./include.tcl
 
-	set uflags "-b $testdir/__db_bl"
 	if { $gen_upgrade == 1 || $gen_dump == 1 } {
 		save_upgrade_files $dir
 	}
@@ -1180,16 +1139,14 @@ proc cleanup { dir env { quiet 0 } } {
 		foreach fileorig $result {
 			#
 			# We:
-			# - Ignore any env-related files, which are those
-			# that match __db.*, __db_bl or log.* if we are
+			# - Ignore any env-related files, which are
+			# those that have __db.* or log.* if we are
 			# running in an env. 
 			# - Call 'dbremove' on any databases.
 			# Remove any remaining temp files.
-			# XXX Remove any slices (e.g. __db.sliceNNN) ?
 			#
 			switch -glob -- $fileorig {
 			*/__db.* -
-			*/__db_bl -
 			*/log.* -
 			*/*.jdb {
 				if { $env != "NULL" } {
@@ -1199,14 +1156,6 @@ proc cleanup { dir env { quiet 0 } } {
 						catch {berkdb envremove -force \
 						    -home $dir} r
 					}
-					lappend remfiles $fileorig
-				}
-				}
-                       */DB_CONFIG {
-				if { $number_of_slices > 0 } {
-					# puts "cleanup skipping $fileorig"
-					continue
-				} else {
 					lappend remfiles $fileorig
 				}
 				}
@@ -1223,13 +1172,11 @@ proc cleanup { dir env { quiet 0 } } {
 					if { [is_txnenv $env] } {
 						append envargs " -auto_commit "
 					}
-					set bflags ""
 				} else {
 					if { $old_encrypt != 0 } {
 						set encarg "-encryptany $passwd"
 					}
 					set file $fileorig
-					set bflags "-blob_dir $testdir/__db_bl"
 				}
 
 				# If a database is left in a corrupt
@@ -1240,7 +1187,7 @@ proc cleanup { dir env { quiet 0 } } {
 				# message.
 				set ret [catch \
 				    {eval {berkdb dbremove} $envargs $encarg \
-				    $bflags $file} env_dbremove_res]
+				    $file} res]
 				# If dbremove failed and we're not in an env,
 				# note that we don't have 100% certainty
 				# about whether the previous run used
@@ -1252,18 +1199,18 @@ proc cleanup { dir env { quiet 0 } } {
 						set ret [catch \
 				    		    {eval {berkdb dbremove} \
 						    -encryptany $passwd \
-				    		    $bflags $file} res]
+				    		    $file} res]
 					}
 					if { $env == "NULL" && \
 					    $old_encrypt == 1 } {
 						set ret [catch \
 						    {eval {berkdb dbremove} \
-						    $bflags $file} res]
+						    $file} res]
 					}
 					if { $ret != 0 } {
 						if { $quiet == 0 } {
 							puts \
-    "FAIL: dbremove $file in cleanup failed: $res env_dbremove_res $env_dbremove_res"
+				    "FAIL: dbremove in cleanup failed: $res"
 						}
 						set file $fileorig
 						lappend remfiles $file
@@ -1282,37 +1229,29 @@ proc cleanup { dir env { quiet 0 } } {
 			# it fails, try again a few times.  HFS is found on
 			# Mac OS X machines only (although not all of them)
 			# so we can limit the extra delete attempts to that 
-			# platform.
+			# platform.  
 			#
 			# This bug has been compensated for in Tcl with a fix
 			# checked into Tcl 8.4.  When Berkeley DB requires
 			# Tcl 8.5, we can remove this while loop and replace
 			# it with a simple 'fileremove -f $remfiles'.
 			#
-			# QNX file system has the same issue, and using Tcl 8.5
-			# does not fix that.
-			#
 			set count 0
-			if { $is_osx_test || $is_qnx_test } {
-				while { [catch {eval fileremove \
-				    -f $remfiles}] == 1 && $count < 5 } {
+			if { $is_osx_test } {
+				while { [catch {eval fileremove -f $remfiles}] == 1 \
+				    && $count < 5 } {
 					incr count
 				}
-				# The final attempt to remove files should
-				# only be performed when previous try fails.
-				if {$count >= 5} {
-					eval fileremove -f $remfiles
-				}
-			} else {
-				eval fileremove -f $remfiles
 			}
-
-			waitforfileremove $dir/* $remfiles
+			# The final attempt to remove files can be for all
+			# OSes including Darwin.  Don't catch failures, we'd
+			# like to notice them.
+			eval fileremove -f $remfiles 
 		}
 
 		if { $is_je_test } {
-			set rval [catch {eval {exec $util_path/db_dump} \
-			    -h $dir -l $uflags} res]
+			set rval [catch {eval {exec \
+			    $util_path/db_dump} -h $dir -l } res]
 			if { $rval == 0 } {
 				set envargs " -env $env "
 				if { [is_txnenv $env] } {
@@ -1321,8 +1260,7 @@ proc cleanup { dir env { quiet 0 } } {
 
 				foreach db $res {
 					set ret [catch {eval \
-					    {berkdb dbremove} \
-					    $envargs $db } res]
+					   {berkdb dbremove} $envargs $db } res]
 				}
 			}
 		}
@@ -1348,26 +1286,16 @@ proc log_cleanup { dir } {
 			fileremove -f $f
 		}
 	}
-
-	waitforfileremove $dir/log.*
 }
 
 proc env_cleanup { dir } {
 	global old_encrypt
 	global passwd
-	global number_of_slices
 	source ./include.tcl
 
 	set encarg ""
 	if { $old_encrypt != 0 } {
 		set encarg "-encryptany $passwd"
-	}
-
-	if { $number_of_slices > 0 } {
-		set clean_env [eval {berkdb_env \
-		    -recover -create -mode 0644 -home} $dir $encarg]
-		cleanup $dir $clean_env
-		$clean_env close
 	}
 	set stat [catch {eval {berkdb envremove -home} $dir $encarg} ret]
 	#
@@ -2285,10 +2213,6 @@ proc is_valid_cursor { dbc db } {
 	return [is_valid_widget $dbc $db.c]
 }
 
-proc is_valid_dbstream { dbs dbc } {
-	return [is_valid_widget $dbs $dbc.dbs]
-}
-
 proc is_valid_lock { lock env } {
 	return [is_valid_widget $lock $env.lock]
 }
@@ -2622,7 +2546,7 @@ proc split_pageargs { largs pageargsp } {
 	} else {
 		set eend [expr $eindex + 1]
 		set e [lrange $largs $eindex $eend]
-		set newl [lreplace $largs $eindex $eend]
+		set newl [lreplace $largs $eindex $eend ""]
 	}
 	return $newl
 }
@@ -2886,26 +2810,6 @@ proc is_partition_callback { args } {
 	}
 }
 
-# Returns 0 if the environment configuration conflicts with blobs, 1 otherwise.
-proc can_support_blobs { method args } {
-    	global databases_in_memory
-
-    	if { [is_frecno $method] || [is_rrecno $method] ||\
-	    [is_recno $method] || [is_queue $method] } {
-		return 0
-    	}
-    	foreach conf { "-chksum" "-compress" \
-	    "-dup" "-dupsort" "-read_uncommitted" "-multiversion" } {
-		if { [string first $conf $args] != -1 } {
-		    	return 0
-		}
-	}
-    	if { $databases_in_memory == 1 } {
-		return 0
-    	}
-    	return 1
-}
-
 # Sort lines in file $in and write results to file $out.
 # This is a more portable alternative to execing the sort command,
 # which has assorted issues on NT [#1576].
@@ -2971,61 +2875,8 @@ proc fileremove { args } {
 				set forceflag "-force"
 			}
 		} else {
-			if { $forceflag == "-force" } {
-				# This is to workaround a Tcl bug:
-				# "file delete -force" will sometimes return the error:
-				# "error deleting 'filename': file already exists".
-				# See http://sourceforge.net/p/tcl/bugs/4630/
-				set count 0
-				while { $count < 5 && 
-					   [catch {eval {file delete $forceflag $a}} res] == 1 } {
-					incr count
-					after 10
-				}
-				if { $res != "" && $count >=5 } {
-					error "FAIL: cannot delete file $a: $res"
-				}
-			} else {
-				eval {file delete $forceflag $a}
-			}
+			eval {file delete $forceflag $a}
 		}
-	}
-}
-
-# On a slow Windows machine, a file requested for deletion may stay in
-# the pending-delete state for an extended period and the file is still
-# visible through the directory listing. This may interfere with tests
-# that require a clean environment for each case.
-# This procedure can be used to wait for the files to disappear from the
-# directory listing, and thus avoid the problem.
-# Usage: waitforfileremove $dir/globpattern removedfiles
-proc waitforfileremove { pattern { removedfiles {} } } {
-	# There is no direct api to wait on files being deleted. The best
-	# we can do is to list the directory and see if the deleted files
-	# are still visible. To avoid infinite loops, we retry only 5 times.
-	set allremoved 0 
-	set count 0
-	while { $allremoved == 0 && $count < 5} {
-		set allremoved 1
-		set files [glob -nocomplain $pattern]
-		if { [llength $removedfiles] == 0 } {
-			if { [llength $files] != 0 } {
-				set allremoved 0
-			}
-		} else {
-			foreach f $files {
-				if { $f in $removedfiles} {
-					set allremoved 0
-				}
-			}
-		}
-		if { $allremoved == 0} {
-			incr count
-			after 50
-		}
-	}
-	if { $allremoved == 0 && $count >=5 } {
-		error "FAIL: removing files under $pattern takes too long"
 	}
 }
 
@@ -3249,10 +3100,9 @@ proc dbverify_inmem { filename {directory $testdir} \
 
 # Verify all .db files in the specified directory.
 proc verify_dir { {directory $testdir} { pref "" } \
-    { noredo 0 } { quiet 0 } { nodump 0 } { cachesize 0 } { unref 1 } { blobdir 0 }} {
+    { noredo 0 } { quiet 0 } { nodump 0 } { cachesize 0 } { unref 1 } } {
 	global encrypt
 	global passwd
-	global number_of_slices
 
 	# If we're doing database verification between tests, we don't
 	# want to do verification twice without an intervening cleanup--some
@@ -3286,21 +3136,9 @@ proc verify_dir { {directory $testdir} { pref "" } \
 	if { $encrypt != 0 } {
 		set encarg "-encryptaes $passwd"
 	}
-	if { $blobdir == 0 } {
-		set blobdir $directory/__db_bl
-	}
 
-	if { $number_of_slices > 0 } {
-		set currentdir [pwd]
-		cd $directory
-		set dbs [glob *.db]
-		cd $currentdir
-		set env [eval {berkdb_env} $encarg \
-		    {-cachesize [list 0 $cachesize 0]} -home $directory]
-	} else {
-		set env [eval {berkdb_env -create -private} $encarg \
-		    {-cachesize [list 0 $cachesize 0]} -blob_dir $blobdir]
-	}
+	set env [eval {berkdb_env -create -private} $encarg \
+	    {-cachesize [list 0 $cachesize 0]}]
 	set earg " -env $env "
 
 	# The 'unref' flag means that we report unreferenced pages
@@ -3372,7 +3210,6 @@ proc check_for_subdbs { db } {
 }
 
 proc db_compare { olddb newdb olddbname newdbname } {
-	global number_of_slices
 	# Walk through olddb and newdb and make sure their contents
 	# are identical.
 	set oc [$olddb cursor]
@@ -3384,15 +3221,8 @@ proc db_compare { olddb newdb olddbname newdbname } {
 
 	for { set odbt [$oc get -first -nolease] } { [llength $odbt] > 0 } \
 	    { set odbt [$oc get -next -nolease] } {
-		if { $number_of_slices > 0 } {
-			set ndbt [$newdb get -get_both -nolease \
-			    [lindex [lindex $odbt 0] 0] [lindex \
-			    [lindex $odbt 0] 1]]
-		} else {
-			set ndbt [$nc get -get_both -nolease \
-			    [lindex [lindex $odbt 0] 0] [lindex \
-			    [lindex $odbt 0] 1]]
-		}
+		set ndbt [$nc get -get_both -nolease \
+		    [lindex [lindex $odbt 0] 0] [lindex [lindex $odbt 0] 1]]
 		if { [binary_compare $ndbt $odbt] == 1 } {
 			error_check_good oc_close [$oc close] 0
 			error_check_good nc_close [$nc close] 0
@@ -3403,15 +3233,8 @@ proc db_compare { olddb newdb olddbname newdbname } {
 
 	for { set ndbt [$nc get -first -nolease] } { [llength $ndbt] > 0 } \
 	    { set ndbt [$nc get -next -nolease] } {
-		if { $number_of_slices > 0 } {
-			set odbt [$olddb get -get_both -nolease \
-			    [lindex [lindex $ndbt 0] 0] [lindex \
-			    [lindex $ndbt 0] 1]]
-		} else {
-			set odbt [$oc get -get_both -nolease \
-			    [lindex [lindex $ndbt 0] 0] [lindex \
-			    [lindex $ndbt 0] 1]]
-		}
+		set odbt [$oc get -get_both -nolease \
+		    [lindex [lindex $ndbt 0] 0] [lindex [lindex $ndbt 0] 1]]
 		if { [binary_compare $ndbt $odbt] == 1 } {
 			error_check_good oc_close [$oc close] 0
 			error_check_good nc_close [$nc close] 0
@@ -3424,53 +3247,6 @@ proc db_compare { olddb newdb olddbname newdbname } {
 	error_check_good new_cursor_close($newdbname) [$nc close] 0
 
 	return 0
-}
-
-proc dump_compare { file1 file2 } {
-	global testdir
-	global util_path
-
-	fileremove -f $testdir/dump1
-	fileremove -f $testdir/dump2
-
-	if { [catch { eval exec $util_path/db_dump \
-	    -f $testdir/dump1 $file1 } res] } {
-		error "FAIL db_dump: $res"
-	}
-	if { [catch { eval exec $util_path/db_dump \
-	    -f $testdir/dump2 $file2 } res] } {
-		error "FAIL db_dump: $res"
-	}
-	error_check_good compare_dump \
-	    [filecmp $testdir/dump1 $testdir/dump2] 0
-}
-
-proc dump_compare_blobs { file1 file2 blobdir1 blobdir2 } {
-	global testdir
-	global util_path
-
-	fileremove -f $testdir/dump1
-	fileremove -f $testdir/dump2
-
-	set dpflags1 "-f $testdir/dump1"
-	set dpflags2 "-f $testdir/dump2"
-	if { $blobdir1 != "" } {
-		set dpflags1 "$dpflags1 -b $blobdir1"
-	}
-	if { $blobdir2 != "" } {
-		set dpflags2 "$dpflags2 -b $blobdir2"
-	}
-
-	if { [catch { eval exec $util_path/db_dump \
-	    $dpflags1 $file1 } res] } {
-		error "FAIL db_dump: $res"
-	}
-	if { [catch { eval exec $util_path/db_dump \
-	    $dpflags2 $file2 } res] } {
-		error "FAIL db_dump: $res"
-	}
-	error_check_good compare_dump \
-	    [filecmp $testdir/dump1 $testdir/dump2] 0
 }
 
 proc dumploadtest_inmem { db envdir } {
@@ -3543,38 +3319,22 @@ proc dumploadtest { db } {
 	global util_path
 	global encrypt
 	global passwd
-	global testdir
-	global number_of_slices
 
 	set newdbname $db-dumpload.db
 
-	set dbarg "-blob_dir $testdir/__db_bl"
-	set utilflag "-b $testdir/__db_bl"
-	set keyflag "-k"
+	set dbarg ""
+	set utilflag ""
+   	set keyflag "-k"
 	set heapdb 0
-	set cachesize [expr 1024 * 1024]
-	set earg ""
-	set homearg ""
-	set filepath ""
 
-	if { $number_of_slices > 0 } {
-		set dbarg ""
-		set env [eval {berkdb_env} \
-		    {-cachesize [list 0 $cachesize 0]} -home $testdir]
-		set earg " -env $env "
-		set homearg " -h [$env get_home] "
-		set filepath "[$env get_home]/"
-	} else {
-		if { $encrypt != 0 } {
-			append dbarg " -encryptany $passwd"
-			append utilflag " -P $passwd"
-		}
+	if { $encrypt != 0 } {
+		set dbarg "-encryptany $passwd"
+		set utilflag "-P $passwd"
 	}
 
 	# Open original database to find dbtype.
-	set olddb [eval {berkdb_open -rdonly} $earg $dbarg $db]
+	set olddb [eval {berkdb_open -rdonly} $dbarg $db]
 	error_check_good olddb($db) [is_valid_db $olddb] TRUE
-	set threshold [$olddb get_blob_threshold]
     	if { [is_heap [$olddb get_type]] } {
 		set heapdb 1
 	    	set keyflag ""
@@ -3582,29 +3342,25 @@ proc dumploadtest { db } {
 	error_check_good orig_db_close($db) [$olddb close] 0
 
 	set dumpflags "$utilflag $keyflag"
-	# Specify the blob threshold in db_load.
-	if { $threshold != 0 } {
-		append utilflag " -o $threshold"
-	}
 
 	# Dump/load the whole file, including all subdbs.
 	set rval [catch {eval {exec $util_path/db_dump} $dumpflags \
-	    $homearg $db | $util_path/db_load $utilflag $homearg $newdbname} res]
+	    $db | $util_path/db_load $utilflag $newdbname} res]
 	error_check_good db_dump/db_load($db:$res) $rval 0
 
 	# If the old file was empty, there's no new file and we're done.
-	if { [file exists $filepath$newdbname] == 0 } {
+	if { [file exists $newdbname] == 0 } {
 		return 0
 	}
     
 	# Dump/load doesn't preserve order in a heap db, don't run db_compare
     	if { $heapdb == 1 } {
-		eval berkdb dbremove $earg $dbarg $newdbname
+		eval berkdb dbremove $dbarg $newdbname
 		return 0
 	}
 
 	# Open original database.
-	set olddb [eval {berkdb_open -rdonly} $earg $dbarg $db]
+	set olddb [eval {berkdb_open -rdonly} $dbarg $db]
 	error_check_good olddb($db) [is_valid_db $olddb] TRUE
 
 	if { [check_for_subdbs $olddb] } {
@@ -3619,14 +3375,12 @@ proc dumploadtest { db } {
 			set subdb [lindex [lindex $dbt 0] 0]
 
 			set oldsubdb \
-			    [eval {berkdb_open -rdonly} \
-				 $earg $dbarg {$db $subdb}]
+			    [eval {berkdb_open -rdonly} $dbarg {$db $subdb}]
 			error_check_good olddb($db) [is_valid_db $oldsubdb] TRUE
 
 			# Open the new database.
 			set newdb \
-			    [eval {berkdb_open -rdonly} \
-				 $earg $dbarg {$newdbname $subdb}]
+			    [eval {berkdb_open -rdonly} $dbarg {$newdbname $subdb}]
 			error_check_good newdb($db) [is_valid_db $newdb] TRUE
 
 			db_compare $oldsubdb $newdb $db $newdbname
@@ -3637,29 +3391,14 @@ proc dumploadtest { db } {
 		error_check_good oldcclose [$oc close] 0
 	} else {
 		# Open the new database.
-		set newdb [eval {berkdb_open -rdonly} $earg $dbarg $newdbname]
+		set newdb [eval {berkdb_open -rdonly} $dbarg $newdbname]
 		error_check_good newdb($db) [is_valid_db $newdb] TRUE
-		if { [is_substr $db "bigfile003"] != 1 } {
-			db_compare $olddb $newdb $db $newdbname
-		} else {
-			# We expect an error for db_compare in the test
-			# bigfile003 because of the large blobs.
-			# Make sure it's the right error.
-			set ret [catch {eval db_compare \
-			    $olddb $newdb $db $newdbname} res]
-			error_check_good db_compare \
-			    [is_substr $res "DB_BUFFER_SMALL"] 1
-			error_check_bad db_compare $ret 0
-		}
+		db_compare $olddb $newdb $db $newdbname
 		error_check_good new_db_close($db) [$newdb close] 0
 	}
+
 	error_check_good orig_db_close($db) [$olddb close] 0
-	error_check_good remove_new_db \
-	    [eval berkdb dbremove $earg $dbarg $newdbname] 0
-	if { $number_of_slices > 0 } {
-		error_check_good dumploadtest_env_close [$env close] 0
-	}
-	set ret 0
+	eval berkdb dbremove $dbarg $newdbname
 }
 
 # Test regular and aggressive salvage procedures for all databases
@@ -3668,8 +3407,6 @@ proc salvage_dir { dir { noredo 0 } { quiet 0 } } {
 	global util_path
 	global encrypt
 	global passwd
-	global testdir
-	global number_of_slices
 
 	# If we're doing salvage testing between tests, don't do it
 	# twice without an intervening cleanup.
@@ -3684,76 +3421,37 @@ proc salvage_dir { dir { noredo 0 } { quiet 0 } } {
 		close $f
 	}
 
-	set homearg ""
-	set filepath ""
-	if { $number_of_slices > 0 } {
-		set currdir [pwd]
-		cd $dir
-		if { [catch {glob *.db} dbs] != 0 } {
-			# No files matched
-			return 0
-		}
-		cd $currdir
-		set homearg " -h $dir "
-		set filepath "$dir/"
-	} else {
-		if { [catch {glob $dir/*.db} dbs] != 0 } {
-			# No files matched
-			return 0
-		}
+	if { [catch {glob $dir/*.db} dbs] != 0 } {
+		# No files matched
+		return 0
 	}
 
 	foreach db $dbs {
-		set dumpfile $filepath$db-dump
-		set sorteddump $filepath$db-dump-sorted
-		set salvagefile $filepath$db-salvage
-		set sortedsalvage $filepath$db-salvage-sorted
-		set aggsalvagefile $filepath$db-aggsalvage
+		set dumpfile $db-dump
+		set sorteddump $db-dump-sorted
+		set salvagefile $db-salvage
+		set sortedsalvage $db-salvage-sorted
+		set aggsalvagefile $db-aggsalvage
 
-		if { $number_of_slices > 0 } {
-			set dbarg ""
-			set utilflag ""
-		} else {
-			set dbarg "-blob_dir $testdir/__db_bl"
-			set utilflag "-b $testdir/__db_bl"
-		}
+		set dbarg ""
+		set utilflag ""
 		if { $encrypt != 0 } {
-			append dbarg " -encryptany $passwd"
-			append utilflag " -P $passwd"
+			set dbarg "-encryptany $passwd"
+			set utilflag "-P $passwd"
 		}
 
-		# First do an ordinary db_dump and save the results
-		# for comparison to the salvage dumps. 
-		set rval [catch {eval {exec $util_path/db_dump} $utilflag \
-		    $homearg -f $dumpfile $db} res]
-		error_check_good dump($db:$res) $rval 0
-
-		# Queue databases must be dumped with -k to display record
-		# numbers if we're not in salvage mode.  Look at the dump
-		# and dump again with -k if it was queue. 
-		if { [isqueuedump $dumpfile] == 1 } {
-			set rval [catch {eval {exec $util_path/db_dump} \
-			    $homearg $utilflag -k -f $dumpfile $db} res]
-		}
-
-		filesort $dumpfile $sorteddump
-
-		# Discard db_pagesize lines from file dumped with ordinary
-		# db_dump -- they are omitted from a salvage dump.
-		discardline $sorteddump TEMPFILE "db_pagesize="
-		file copy -force TEMPFILE $sorteddump
-
-		# Now the regular salvage. 
+		# Dump the database with salvage, with aggressive salvage,
+		# and without salvage.
+		#
 		set rval [catch {eval {exec $util_path/db_dump} $utilflag -r \
-		    $homearg -f $salvagefile $db} res]
+		    -f $salvagefile $db} res]
 		error_check_good salvage($db:$res) $rval 0
 		filesort $salvagefile $sortedsalvage
 
-		# Finally the aggressive salvage.
 		# We can't avoid occasional verify failures in aggressive
 		# salvage.  Make sure it's the expected failure.
 		set rval [catch {eval {exec $util_path/db_dump} $utilflag -R \
-		    $homearg -f $aggsalvagefile $db} res]
+		    -f $aggsalvagefile $db} res]
 		if { $rval == 1 } {
 #puts "res is $res"
 			error_check_good agg_failure \
@@ -3762,13 +3460,24 @@ proc salvage_dir { dir { noredo 0 } { quiet 0 } } {
 			error_check_good aggressive_salvage($db:$res) $rval 0
 		}
 
-		# A non-aggressively salvaged file should match db_dump,
-		# unless the database is sliced, then the container and
-		# extra headers will mess up the comparison.
-		if { $number_of_slices == 0 } {
-			error_check_good compare_dump_and_salvage \
-			    [filecmp $sorteddump $sortedsalvage] 0
+		# Queue databases must be dumped with -k to display record
+		# numbers if we're not in salvage mode.
+		if { [isqueuedump $salvagefile] == 1 } {
+			append utilflag " -k "
 		}
+
+		# Discard db_pagesize lines from file dumped with ordinary
+		# db_dump -- they are omitted from a salvage dump.
+		set rval [catch {eval {exec $util_path/db_dump} $utilflag \
+		    -f $dumpfile $db} res]
+		error_check_good dump($db:$res) $rval 0
+		filesort $dumpfile $sorteddump
+		discardline $sorteddump TEMPFILE "db_pagesize="
+		file copy -force TEMPFILE $sorteddump
+
+		# A non-aggressively salvaged file should match db_dump.
+		error_check_good compare_dump_and_salvage \
+		    [filecmp $sorteddump $sortedsalvage] 0
 
 		puts "Salvage tests of $db succeeded."
 	}
@@ -3929,23 +3638,12 @@ proc berkdb_open { args } {
 }
 
 # Version without errpfx/errfile, used when we're expecting a failure.
-#
-# Errors will be caught *only* if *all* the berkdb_env and berkdb_open calls
-# for the env handle are the _noerr versions. Any use of the plain berkdb_env
-# or berkdb_open functions cause the env-handle-global errfile and errpfx
-# options to be set, wiping out the attempt here and in berkdb_env_noerr to
-# suppress error messages.
-#
 proc berkdb_open_noerr { args } {
 	eval {berkdb open} $args
 }
 
 # Wrapper for berkdb env, used throughout the test suite so that we can
 # set an errfile/errpfx as appropriate.
-#
-# If you will use berkdb_open_noerr with an env handle, you need to call
-# berkdb_env_noerr instead of this function
-#
 proc berkdb_env { args } {
 	global is_envmethod
 
@@ -3963,9 +3661,6 @@ proc berkdb_env { args } {
 }
 
 # Version without errpfx/errfile, used when we're expecting a failure.
-# If you will use berkdb_open_noerr with an env handle, you need to use
-# If you will use berkdb_open_noerr with an env handle, you need to use
-#
 proc berkdb_env_noerr { args } {
 	eval {berkdb env} $args
 }
@@ -4493,128 +4188,4 @@ proc my_isalive { pid } {
 		return 0
 	}
 	return 1
-}
-
-# Check log file and report failures with FAIL.  Use this when
-# we don't expect failures.
-proc logcheck { logname } {
-	set errstrings [eval findfail $logname]
-	foreach errstring $errstrings {
-		puts "FAIL: error in $logname : $errstring"
-	}
-}
-
-# This proc returns the amount of free disk space in K. 
-proc diskfree-k {{dir .}} {
-	switch $::tcl_platform(os) {
-		FreeBSD -
-		Linux -
-		SunOS {
-			# Use end-2 instead of 3 because long mountpoints 
-			# can make the output to appear in two lines. 
-			# There is df -k -P to avoid this, but -P is not
-			# available on all systems.
-			lindex [lindex [split [exec df -k $dir] \n] end] end-2
-		}
-		HP-UX { lindex [lindex [split [exec bdf $dir] \n] end] 3}
-		Darwin { lindex [lindex [split [exec df -k $dir] \n] end] 3}
-		{Windows NT} {
-			expr [lindex [lindex [split [exec\
-			    cmd /c dir /-c $dir] \n] end] 0]/1024
-		}
-		default {error "don't know how to diskfree-k\
-		    on $::tcl_platform(os)"}
-	}
-} 
-
-# Tests if a directory in the blob directory structure exists
-proc check_blob_sub_exists { blobdir blobsubdir expected } {
-	set blob_subdir $blobdir/$blobsubdir
-	error_check_good "blob subdir exists" \
-	    [file exists $blob_subdir] $expected
-}
-
-# This function is widely used in the compaction tests.  It sets
-# up a transaction if one is needed, does the compaction, and verifies
-# that the resulting file looks valid. 
-proc compact_and_verify { env db tnum nodump } {
-	source ./include.tcl
-
-	set txn ""
-	set txnenv 0 
-	if { $env != "NULL" } {
-	 	if { [is_txnenv $env] } {
-			set txnenv 1
-		}
-	}
-	for {set commit 0} {$commit <= $txnenv} {incr commit} {
-		if { $txnenv == 1 } {
-			set t [$env txn]
-			error_check_good txn [is_valid_txn $t $env] TRUE
-			set txn "-txn $t"
-		}
-		if {[catch {eval {$db compact} $txn {-freespace}} ret] } {
-			error "FAIL: db compact: $ret"
-		}
-		if { $txnenv == 1 } {
-			if { $commit == 0 } {
-				puts "\t\tTest$tnum: Aborting."
-				error_check_good txn_abort [$t abort] 0
-			} else {
-				puts "\t\tTest$tnum: Committing."
-				error_check_good txn_commit [$t commit] 0
-			}
-		}
-		error_check_good db_sync [$db sync] 0
-		error_check_good verify_dir \
-		    [verify_dir $testdir "" 0 0 $nodump 0 1 0] 0
-	}
-}
-
-# Creates a DB_CONFIG for a sliced environment.  Arguments are:
-# num_slice - The number of slices, used for the set_slice_count command.
-# container - A list of configurations that apply to the container.
-# slice_all - A list of configureations that apply to all slices.
-# slice - A list of configurations that apply to an individual slice.
-#
-# Below is an example call to slice_db_config and the DB_CONFIG file it
-# would produce.
-# set slice_num 2
-# set container {"set_cachesize 2 0 1"}
-# set slice_all {"set_cachesize 1 0 1"}
-# set slice {"0 home /home/slice0" "1 home /home/slice1"}
-# slice_db_config $slice_num $container $slice_all $slice
-#
-# DB_CONFIG:
-# set_cachesize 2 0 1
-# set_slice_count 2
-# slice all set_cachesize 1 0 1
-# slice 0 home /home/slice0
-# slice 1 home /home/slice1
-#
-proc slice_db_config { num_slice {container {}} {slice_all {}} {slice {}} } {
-	source ./include.tcl
-
-	set fp [open "$testdir/DB_CONFIG" w]
-	foreach cont_conf $container {
-		puts $fp "$cont_conf"
-	}
-	puts $fp "set_slice_count $num_slice"
-	foreach slice_all_conf $slice_all {
-		puts $fp "slice all $slice_all_conf"
-	}
-	foreach slice_conf $slice {
-		puts $fp "slice $slice_conf"
-	}
-	close $fp
-}
-
-# Checks if the given environment handle is sliced
-proc is_sliced_env { dbenv } {
-	return [dbenv is_sliced]
-}
-
-# Checks if the given database handle is sliced
-proc is_sliced_db { db } {
-	return [db is_sliced]
 }

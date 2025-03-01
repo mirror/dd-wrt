@@ -35,11 +35,6 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable !compound {
-  finish_test
-  return
-}
-
 unset -nocomplain ::STMT
 proc runsql {} {
   db eval {CREATE TABLE IF NOT EXISTS t4(q)}

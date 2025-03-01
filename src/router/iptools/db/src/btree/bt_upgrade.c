@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -9,7 +9,6 @@
 #include "db_config.h"
 
 #include "db_int.h"
-#include "dbinc/blob.h"
 #include "dbinc/db_page.h"
 #include "dbinc/db_upgrade.h"
 #include "dbinc/btree.h"
@@ -147,97 +146,6 @@ __bam_31_lbtree(dbp, real_name, flags, fhp, h, dirtyp)
 				*dirtyp = 1;
 				GET_BOVERFLOW(dbp, h, indx)->pgno = pgno;
 			}
-		}
-	}
-
-	return (ret);
-}
-
-/*
- * __bam_60_btreemeta--
- *	Upgrade the version number.
- *
- * PUBLIC: int __bam_60_btreemeta
- * PUBLIC:      __P((DB *, char *, u_int32_t, DB_FH *, PAGE *, int *));
- */
-int
-__bam_60_btreemeta(dbp, real_name, flags, fhp, h, dirtyp)
-	DB *dbp;
-	char *real_name;
-	u_int32_t flags;
-	DB_FH *fhp;
-	PAGE *h;
-	int *dirtyp;
-{
-	BTMETA33 *bmeta;
-
-	COMPQUIET(flags, 0);
-	COMPQUIET(real_name, NULL);
-	COMPQUIET(fhp, NULL);
-	COMPQUIET(dbp, NULL);
-	bmeta = (BTMETA33 *)h;
-
-	bmeta->dbmeta.version = 10;
-	*dirtyp = 1;
-
-	return (0);
-}
-
-/*
- * __bam_60_lbtree --
- *	Upgrade the blob records on the database btree leaf pages.
- *
- * PUBLIC: int __bam_60_lbtree
- * PUBLIC:      __P((DB *, char *, u_int32_t, DB_FH *, PAGE *, int *));
- */
-int
-__bam_60_lbtree(dbp, real_name, flags, fhp, h, dirtyp)
-	DB *dbp;
-	char *real_name;
-	u_int32_t flags;
-	DB_FH *fhp;
-	PAGE *h;
-	int *dirtyp;
-{
-	BBLOB60 bl60;
-	BBLOB60P1 bl60p1;
-	BKEYDATA *bk;
-	db_seq_t blob_id, blob_size, file_id, sdb_id;
-	db_indx_t indx;
-	int ret;
-
-	COMPQUIET(flags, 0);
-	COMPQUIET(real_name, NULL);
-	COMPQUIET(fhp, NULL);
-	ret = 0;
-
-	DB_ASSERT(dbp->env, BBLOB60_SIZE == BBLOB_SIZE);
-	for (indx = O_INDX; indx < NUM_ENT(h); indx += P_INDX) {
-		bk = GET_BKEYDATA(dbp, h, indx);
-		if (B_TYPE(bk->type) == B_BLOB ) {
-			memcpy(&bl60, bk, BBLOB60_SIZE);
-			memset(&bl60p1, 0, BBLOB_SIZE);
-			bl60p1.type = bl60.type;
-			bl60p1.len = BBLOB_DSIZE;
-			bl60p1.encoding = bl60.encoding;
-			GET_BLOB60_ID(dbp->env, bl60, blob_id, ret);
-			if (ret != 0)
-				return (ret);
-			GET_BLOB60_SIZE(dbp->env, bl60, blob_size, ret);
-			if (ret != 0)
-				return (ret);
-			GET_BLOB60_FILE_ID(dbp->env, &bl60, file_id, ret);
-			if (ret != 0)
-				return (ret);
-			GET_BLOB60_SDB_ID(dbp->env, &bl60, sdb_id, ret);
-			if (ret != 0)
-				return (ret);
-			SET_BLOB_ID(&bl60p1, blob_id, BBLOB60P1);
-			SET_BLOB_SIZE(&bl60p1, blob_size, BBLOB60P1);
-			SET_BLOB_FILE_ID(&bl60p1, file_id, BBLOB60P1);
-			SET_BLOB_SDB_ID(&bl60p1, sdb_id, BBLOB60P1);
-			memcpy(bk, &bl60p1, BBLOB_SIZE);
-			*dirtyp = 1;
 		}
 	}
 

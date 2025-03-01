@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -49,11 +49,15 @@ __heap_db_close(dbp)
 	DB *dbp;
 {
 	HEAP *h;
+	int ret;
 
-	if ((h = dbp->heap_internal) != NULL) {
-		__os_free(dbp->env, h);
-		dbp->heap_internal = NULL;
-	}
+	ret = 0;
+	if ((h = dbp->heap_internal) == NULL)
+		return (0);
+
+	__os_free(dbp->env, h);
+	dbp->heap_internal = NULL;
+
 	return (0);
 }
 

@@ -166,8 +166,6 @@ for {set i 1} {$i<$max_count-5} {incr i 1} {
   } {1 interrupted}
 }
 
-if {0} {  # This doesn't work anymore since the collation factor is
-          # no longer called during schema parsing.
 # Interrupt during parsing
 #
 do_test interrupt-5.1 {
@@ -181,5 +179,5 @@ do_test interrupt-5.1 {
     CREATE INDEX fake ON fake1(a COLLATE fake_collation, b, c DESC);
   }
 } {1 interrupt}
-}
+
 finish_test

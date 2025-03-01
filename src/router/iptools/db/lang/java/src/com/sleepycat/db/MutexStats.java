@@ -4,7 +4,7 @@
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 package com.sleepycat.db;
@@ -18,73 +18,49 @@ public class MutexStats {
     /* package */ MutexStats() {}
 
     private int st_mutex_align;
-    /**
-    The mutex alignment, in bytes.
-    @return the mutex alignment, in bytes
-    */
+    /** The mutex alignment, in bytes. **/
     public int getMutexAlign() {
         return st_mutex_align;
     }
 
     private int st_mutex_tas_spins;
-    /**
-    The number of times test-and-set mutexes will spin without blocking.
-    @return the number of times test-and-set mutexes will spin without blocking
-    */
+    /** The number of times test-and-set mutexes will spin without blocking. **/
     public int getMutexTasSpins() {
         return st_mutex_tas_spins;
     }
 
     private int st_mutex_init;
-    /**
-    The initial number of mutexes configured.
-    @return the initial number of mutexes configured
-    */
+    /** The initial number of mutexes configured. */
     public int getMutexInit() {
         return st_mutex_init;
     }
 
     private int st_mutex_cnt;
-    /**
-    The total number of mutexes configured.
-    @return the total number of mutexes configured
-    */
+    /** The total number of mutexes configured. **/
     public int getMutexCount() {
         return st_mutex_cnt;
     }
 
     private int st_mutex_max;
-    /**
-    The maximum number of mutexes.
-    @return the maximum number of mutexes
-    */
+    /** The maximum number of mutexes. */
     public int getMutexMax() {
         return st_mutex_max;
     }
 
     private int st_mutex_free;
-    /**
-    The number of mutexes currently available.
-    @return the number of mutexes currently available
-    */
+    /** The number of mutexes currently available. **/
     public int getMutexFree() {
         return st_mutex_free;
     }
 
     private int st_mutex_inuse;
-    /**
-    The number of mutexes currently in use.
-    @return the number of mutexes currently in use
-    */
+    /** The number of mutexes currently in use. **/
     public int getMutexInuse() {
         return st_mutex_inuse;
     }
 
     private int st_mutex_inuse_max;
-    /**
-    The maximum number of mutexes ever in use.
-    @return the maximum number of mutexes ever in use
-    */
+    /** The maximum number of mutexes ever in use. **/
     public int getMutexInuseMax() {
         return st_mutex_inuse_max;
     }
@@ -93,9 +69,7 @@ public class MutexStats {
     /**
     The number of times that a thread of control was forced to wait before
     obtaining the mutex region mutex.
-    @return the number of times that a thread of control was forced
-    to wait before obtaining the mutex region mutex
-    */
+    **/
     public long getRegionWait() {
         return st_region_wait;
     }
@@ -104,27 +78,19 @@ public class MutexStats {
     /**
     The number of times that a thread of control was able to obtain
     the mutex region mutex without waiting.
-    @return the number of times that a thread of control was able to obtain
-    the mutex region mutex without waiting
-    */
+    **/
     public long getRegionNowait() {
         return st_region_nowait;
     }
 
     private long st_regsize;
-    /**
-    The size of the mutex region, in bytes.
-    @return the size of the mutex region, in bytes
-    */
+    /** The size of the mutex region, in bytes. **/
     public long getRegSize() {
         return st_regsize;
     }
 
     private long st_regmax;
-    /**
-    The max size of the mutex region size.
-    @return the max size of the mutex region size
-    */
+    /** The max size of the mutex region size. */
     public long getRegmax() {
         return st_regmax;
     }
@@ -132,7 +98,6 @@ public class MutexStats {
     /**
     For convenience, the MutexStats class has a toString method that lists
     all the data fields.
-    @return a String that lists all the data fields
     */
     public String toString() {
         return "MutexStats:"

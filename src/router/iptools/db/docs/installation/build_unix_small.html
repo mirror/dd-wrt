@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,8 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="build_unix_sql.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 7.  Building Berkeley DB for UNIX/POSIX
-    </th>
+          <th width="60%" align="center">Chapter 7. 
+		Building Berkeley DB for UNIX/POSIX
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="build_unix_flags.html">Next</a></td>
         </tr>
       </table>
@@ -38,128 +39,106 @@
         </div>
       </div>
       <p>
-        There are a set of configuration options to assist you in
-        building a small memory footprint library. These configuration
-        options turn off specific functionality in the Berkeley DB
-        library, reducing the code size. These configuration options
-        include: 
+        There are a set of configuration options to assist you in building
+        a small memory footprint library.  These configuration options turn
+        off specific functionality in the Berkeley DB library, reducing the
+        code size.  These configuration options include:
     </p>
       <div class="variablelist">
         <dl>
           <dt>
             <span class="term">
-                <code class="literal">--enable-smallbuild</code>
+              <code class="literal">--enable-smallbuild</code>
             </span>
           </dt>
           <dd>
             <p>
-                    Equivalent to individually specifying all of
-                    the following configuration options. In addition,
-                    when compiling building with the GNU gcc compiler,
-                    this option uses the <code class="literal">-Os</code>
-                    compiler build flag instead of the default
-                    <code class="literal">-O3</code>.
+                    Equivalent to individually specifying all of the following
+                    configuration options.  In addition, when compiling
+                    building with the GNU gcc compiler, this option uses the
+                    <code class="literal">-Os</code> compiler build flag instead of the
+                    default <code class="literal">-O3</code>.
                 </p>
             <div class="variablelist">
               <dl>
                 <dt>
                   <span class="term">
-                            <code class="literal">--disable-compression</code>
-                        </span>
+                    <code class="literal">--with-cryptography=no</code>
+                  </span>
                 </dt>
                 <dd>
-                            Builds Berkeley DB without support for
-                            the automatic compression of key/data pairs.
+                            Builds Berkeley DB without support for cryptography.
                         </dd>
                 <dt>
                   <span class="term">
-                            <code class="literal">--with-cryptography=no</code>
-                        </span>
+                    <code class="literal">--disable-hash</code>
+                  </span>
                 </dt>
                 <dd>
-                            Builds Berkeley DB without support
-                            for cryptography. 
+                            Builds Berkeley DB without support for the Hash access
+                            method.
                         </dd>
                 <dt>
                   <span class="term">
-                            <code class="literal">--disable-hash</code>
-                        </span>
-                </dt>
-                <dd> 
-                            Builds Berkeley DB without support
-                            for the Hash access method. 
-                        </dd>
-                <dt>
-                  <span class="term">
-                            <code class="literal">--disable-heap</code>
-                        </span>
-                </dt>
-                <dd> 
-                            Builds Berkeley DB without support
-                            for the Heap access method. 
-                        </dd>
-                <dt>
-                  <span class="term">
-                            <code class="literal">--disable-queue</code>
-                        </span>
-                </dt>
-                <dd> 
-                            Builds Berkeley DB without support
-                            for the Queue access method.
-                        </dd>
-                <dt>
-                  <span class="term">
-                            <code class="literal">--disable-partition</code>
-                        </span>
-                </dt>
-                <dd> 
-                            Builds Berkeley DB without support
-                            for the partitioning of databases.
-                        </dd>
-                <dt>
-                  <span class="term">
-                            <code class="literal">--disable-replication</code>
-                        </span>
-                </dt>
-                <dd> 
-                            Builds Berkeley DB without support
-                            for the database environment replication.
-                        </dd>
-                <dt>
-                  <span class="term">
-                            <code class="literal">--disable-statistics</code>
-                        </span>
+                    <code class="literal">--disable-heap</code>
+                  </span>
                 </dt>
                 <dd>
-                            Builds Berkeley DB without support
-                            for the statistics interfaces.
+                            Builds Berkeley DB without support for the
+                            Heap access method.
                         </dd>
                 <dt>
                   <span class="term">
-                            <code class="literal">--disable-verify</code>
-                        </span>
-                </dt>
-                <dd> 
-                            Builds Berkeley DB without support
-                            for database verification.
-                        </dd>
-                <dt>
-                  <span class="term">
-                            <code class="literal">--enable-stripped_messages</code>
-                        </span>
+                    <code class="literal">--disable-queue</code>
+                  </span>
                 </dt>
                 <dd>
-                  <p> 
-                                Strips message text from the error
-                                messages issued by Berkeley DB. This
-                                can reduce the size of the library by
+                            Builds Berkeley DB without support for the Queue access
+                            method.
+                        </dd>
+                <dt>
+                  <span class="term">
+                    <code class="literal">--disable-replication</code>
+                  </span>
+                </dt>
+                <dd>
+                            Builds Berkeley DB without support for the database
+                            environment replication.
+                        </dd>
+                <dt>
+                  <span class="term">
+                    <code class="literal">--disable-statistics</code>
+                  </span>
+                </dt>
+                <dd>
+                            Builds Berkeley DB without support for the statistics
+                            interfaces.
+                        </dd>
+                <dt>
+                  <span class="term">
+                    <code class="literal">--disable-verify</code>
+                  </span>
+                </dt>
+                <dd>
+                            Builds Berkeley DB without support for database
+                            verification.
+                        </dd>
+                <dt>
+                  <span class="term">
+                    <code class="literal">--enable-stripped_messages</code>
+                  </span>
+                </dt>
+                <dd>
+                  <p>
+                                Strips message text from the error messages issued by
+                                Berkeley DB. This can reduce the size of the library by
                                 roughly another 22KB.
                             </p>
-                  <p> 
-                                If your library has stripped
-                                messages, you can get an idea of what
-                                text should be issued for a given
-                                error message by using the <a href="../articles/mssgtxt/index.html" class="olink">Berkeley DB Message Reference Guide</a>.
+                  <p>
+                                If your library has stripped messages, you can get an idea of 
+                                what text should be issued for a given error message by using 
+                                the <a href="../articles/mssgtxt/index.html" class="olink">Message
+                                    Reference for Stripped Libraries</a> guide.
                             </p>
                 </dd>
               </dl>
@@ -170,17 +149,18 @@
       <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
         <h3 class="title">Note</h3>
         <p>
-            <code class="literal">--disable-cryptography</code> and
+            <code class="literal">--disable-cryptography</code> and 
             <code class="literal">--enable-cryptography</code> are
-            deprecated in the Berkeley DB 11gR2 release. Use
-            <code class="literal">--with-cryptography=no</code> and
-            <code class="literal">--with-cryptography=yes</code> instead.
+            deprecated in the Berkeley DB 11gR2 release. 
+            Use <code class="literal">--with-cryptography=no</code>
+            and <code class="literal">--with-cryptography=yes</code>
+            instead.
         </p>
       </div>
-      <p> 
-        The following configuration options will increase the size
-        of the Berkeley DB library dramatically and are only useful
-        when debugging applications: 
+      <p>
+        The following configuration options will increase the size of the
+        Berkeley DB library dramatically and are only useful when debugging
+        applications:
     </p>
       <div class="variablelist">
         <dl>
@@ -189,57 +169,47 @@
                 <a class="link" href="build_unix_conf.html#build_unix_conf.--enable-debug">--enable-debug</a>
             </span>
           </dt>
-          <dd>
-                Build Berkeley DB with symbols for
-                debugging.
-            </dd>
+          <dd>Build Berkeley DB with symbols for debugging.</dd>
           <dt>
             <span class="term">
                 <a class="link" href="build_unix_conf.html#build_unix_conf.--enable-debug_rop">--enable-debug_rop</a>
             </span>
           </dt>
-          <dd>
-                Build Berkeley DB with read-operation
-                logging.
-            </dd>
+          <dd>Build Berkeley DB with read-operation logging.</dd>
           <dt>
             <span class="term">
                 <a class="link" href="build_unix_conf.html#build_unix_conf.--enable-debug_wop">--enable-debug_wop</a>
             </span>
           </dt>
-          <dd>
-                Build Berkeley DB with write-operation
-                logging.
-            </dd>
+          <dd>Build Berkeley DB with write-operation logging.</dd>
           <dt>
             <span class="term">
                 <a class="link" href="build_unix_conf.html#build_unix_conf.--enable-diagnostic">--enable-diagnostic</a>
             </span>
           </dt>
-          <dd>
-                Build Berkeley DB with run-time debugging
-                checks.
-            </dd>
+          <dd>Build Berkeley DB with run-time debugging checks.</dd>
         </dl>
       </div>
       <p>
-        In addition, static libraries are usually smaller than
-        shared libraries. By default Berkeley DB will build both
-        shared and static libraries. To build only a static library,
-        configure Berkeley DB with the <a class="xref" href="build_unix_conf.html" title="Configuring Berkeley DB">Configuring Berkeley DB</a> option.
+        In addition, static libraries are usually smaller than shared
+        libraries.  By default Berkeley DB will build both shared and
+        static libraries.  To build only a static library, configure
+        Berkeley DB with the
+        <a class="xref" href="build_unix_conf.html" title="Configuring Berkeley DB">Configuring Berkeley DB</a> 
+        option.
     </p>
       <p>
         The size of the Berkeley DB library varies depending on the
-        compiler, machine architecture, and configuration options. As
-        an estimate, production Berkeley DB libraries built with GNU
-        gcc version 4.X compilers have footprints in the range of
-        600KB to 1.4MB on 32-bit x86 architectures, and in the range
-        of 700KB to 1.6MB on 64-bit x86 architectures. 
+        compiler, machine architecture, and configuration options.  As an
+        estimate, production Berkeley DB libraries built with GNU gcc
+        version 4.X compilers have footprints in the range of 600KB to
+        1.4MB on 32-bit x86 architectures, and in the range of 700KB to
+        1.6MB on 64-bit x86 architectures.
     </p>
-      <p> 
-        For assistance in further reducing the size of the Berkeley
-        DB library, or in building small memory footprint libraries on
-        other systems, please contact Berkeley DB support. 
+      <p>
+        For assistance in further reducing the size of the Berkeley DB
+        library, or in building small memory footprint libraries on other
+        systems, please contact Berkeley DB support.
     </p>
     </div>
     <div class="navfooter">
@@ -253,13 +223,11 @@
           <td width="40%" align="right"> <a accesskey="n" href="build_unix_flags.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Configuring the SQL
-        Interface </td>
+          <td width="40%" align="left" valign="top">Configuring the SQL Interface </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Changing compile or load
-        options</td>
+          <td width="40%" align="right" valign="top"> Changing compile or load options</td>
         </tr>
       </table>
     </div>

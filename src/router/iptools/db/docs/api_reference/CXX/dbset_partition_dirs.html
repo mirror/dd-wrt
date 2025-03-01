@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -43,18 +43,16 @@
 int
 Db::set_partition_dirs(const char **dirs); </pre>
       <p>
-        Specify which directories will contain the database extents.  If
-        the number of directories is less than the number of partitions,
-        the directories will be used in a round robin fashion.
+    	Specify which directories the database extents should be created in or looked for.  If the number
+	of directories is less than the number of partitions, the directories will be used in a round robin
+	fashion.
     </p>
       <p>
-             The <code class="methodname">Db::set_partition_dirs()</code> method
-             may not be called after the 
+             The <code class="methodname">Db::set_partition_dirs()</code> method may not be called after the 
              <a class="xref" href="dbopen.html" title="Db::open()">Db::open()</a>  method is called.
     </p>
       <p>
-         The <code class="methodname">Db::set_partition_dirs()</code>
-         <span>
+         The <code class="methodname">Db::set_partition_dirs()</code> <span>
             
             <span>
                 method either returns a non-zero error value or throws an
@@ -67,7 +65,7 @@ Db::set_partition_dirs(const char **dirs); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670063553536"></a>Parameters</h3>
+              <h3 class="title"><a id="idp5761840"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -75,32 +73,29 @@ Db::set_partition_dirs(const char **dirs); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670063516192"></a>dirs</h4>
+                <h4 class="title"><a id="idp5775680"></a>dirs</h4>
               </div>
             </div>
           </div>
           <p>
-                    The <span class="bold"><strong>dirs</strong></span> points to an
-                    array of directories that will be used to create or
-                    locate the database extent files specified to the 
-                    <a class="xref" href="dbopen.html" title="Db::open()">Db::open()</a>
-                    method.  The directories must be included in the
-                    environment list specified by 
-                    <a class="xref" href="envadd_data_dir.html" title="DbEnv::add_data_dir()">DbEnv::add_data_dir()</a>.
-                </p>
+                        The <span class="bold"><strong>dirs</strong></span> points to an array of directories that
+			will be used to create or locate the
+                        database extent files specified in the <a class="xref" href="dbopen.html" title="Db::open()">Db::open()</a>
+                        method call.  The directories must be included in the environment
+                        list specified by <a class="xref" href="envadd_data_dir.html" title="DbEnv::add_data_dir()">DbEnv::add_data_dir()</a>.
+                    </p>
         </div>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670063621600"></a>Errors</h3>
+              <h3 class="title"><a id="idp5743712"></a>Errors</h3>
             </div>
           </div>
         </div>
         <p>
-            The <code class="methodname">Db::set_partition_dirs()</code>
-            <span>
+                         The <code class="methodname">Db::set_partition_dirs()</code> <span>
             
             <span>
                 method may fail and throw a <a class="link" href="dbexception.html" title="Chapter 6. The DbException Class">DbException</a> 
@@ -108,12 +103,12 @@ Db::set_partition_dirs(const char **dirs); </pre>
                 of the following non-zero errors:
             </span>
         </span>
-        </p>
+                    </p>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670063549648"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp5759888"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -126,25 +121,25 @@ Db::set_partition_dirs(const char **dirs); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670063544688"></a>Class</h3>
+              <h3 class="title"><a id="idp5755576"></a>Class</h3>
             </div>
           </div>
         </div>
         <p>
-            <a class="link" href="db.html" title="Chapter 2.  The Db Handle">Db</a>  
-        </p>
+                 <a class="link" href="db.html" title="Chapter 2.  The Db Handle">Db</a>  
+            </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670063515008"></a>See Also</h3>
+              <h3 class="title"><a id="idp5767344"></a>See Also</h3>
             </div>
           </div>
         </div>
         <p>
-            <a class="xref" href="db.html#dblist" title="Database and Related Methods">Database and Related Methods</a> 
-        </p>
+                     <a class="xref" href="db.html#dblist" title="Database and Related Methods">Database and Related Methods</a> 
+                </p>
       </div>
     </div>
     <div class="navfooter">

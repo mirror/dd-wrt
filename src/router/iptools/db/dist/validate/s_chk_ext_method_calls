@@ -41,8 +41,7 @@ m=`grep '(\*[a-z][_a-z]*)' $s/dbinc/db.in |
        -e '/db_realloc/d' \
        -e '/dbt_usercopy/d' \
        -e '/dup_compare/d' \
-       -e '/s_callback/d' \
-       -e '/slice_callback/d' |
+       -e '/s_callback/d' |
    sort -u`
 
 (cd $s && for i in $m; do
@@ -62,12 +61,11 @@ sed \
     -e '/^mutex\/tm.c:/d' \
     -e '/closeme->close() is a wrapper;/d' \
     -e '/crypto.c.*db_cipher->close/d' \
-    -e '/db_err.c:.*dbenv->db_msgcall(dbenv,/d' \
+    -e '/db_err.c:.*dbenv->db_msgcall(dbenv, buf);/d' \
     -e '/db_iface.c:.*(txn->commit(txn, nosync ? DB_TXN_NOSYNC : 0));/d' \
     -e '/db_iface.c:.*if ((t_ret = txn->abort(txn)) != 0)/d' \
     -e '/db_iface.c:.*return (dbenv->txn_begin(dbenv, NULL, txnidp, 0));/d' \
     -e '/db_iface.c:.*return (dbp->get(dbp, txn, key, &data, flags));/d' \
-    -e '/db_iface.c:.*DB->associate() does not support/d' \
     -e '/dbenv->is_alive(/d' \
     -e '/dbenv->thread_id(/d' \
     -e '/dbenv->thread_id_string(/d' \

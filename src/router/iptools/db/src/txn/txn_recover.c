@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -305,8 +305,8 @@ __txn_openfiles(env, ip, min, force)
 
 	if ((ret = __db_txnlist_init(env, ip, 0, 0, NULL, &txninfo)) != 0)
 		goto err;
-	ret = __env_openfiles(env,
-	    logc, txninfo, &data, &open_lsn, NULL, (double)0, 0);
+	ret = __env_openfiles(
+	    env, logc, txninfo, &data, &open_lsn, NULL, (double)0, 0);
 	if (txninfo != NULL)
 		__db_txnlist_end(env, txninfo);
 

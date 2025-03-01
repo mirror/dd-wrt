@@ -1,22 +1,16 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package com.sleepycat.collections.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -27,12 +21,10 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.concurrent.ConcurrentMap;
-import java.util.regex.Pattern;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 import com.sleepycat.bind.EntityBinding;
 import com.sleepycat.bind.EntryBinding;
@@ -58,14 +50,12 @@ import com.sleepycat.db.DatabaseException;
 import com.sleepycat.db.Environment;
 import com.sleepycat.util.ExceptionUnwrapper;
 import com.sleepycat.util.test.SharedTestUtils;
-import com.sleepycat.util.test.TestBase;
 import com.sleepycat.util.test.TestEnv;
 
 /**
  * @author Mark Hayes
  */
-@RunWith(Parameterized.class)
-public class CollectionTest extends TestBase {
+public class CollectionTest extends TestCase {
 
     private static final int NONE = 0;
     private static final int SUB = 1;
@@ -79,13 +69,13 @@ public class CollectionTest extends TestBase {
      * test below the block size (6), at the block size (10), and above it (14
      * and 22).
      */
-    protected static final int DEFAULT_MAX_KEY = 6;
+    private static final int DEFAULT_MAX_KEY = 6;
     private static final int[] MAX_KEYS = {6, 10, 14, 22};
 
     private boolean testStoredIterator;
-    private static int maxKey; /* Must be a multiple of 2. */
-    protected static int beginKey = 1;
-    private static int endKey;
+    private int maxKey; /* Must be a multiple of 2. */
+    private int beginKey = 1;
+    private int endKey;
 
     private Environment env;
     private Database store;
@@ -114,49 +104,121 @@ public class CollectionTest extends TestBase {
     private StoredKeySet keySet;
     private StoredValueSet valueSet;
 
-    @Parameters
-    public static List<Object[]> genParams() {
-        if (SharedTestUtils.runLongTests()){
-            List<Object[]> list = baseParams(true, DEFAULT_MAX_KEY);
-            
-            for (int i : MAX_KEYS)
-                list.addAll(baseParams(false, i));
-            
-            return list;
+    /**
+     * Runs a command line collection test.
+     * @see #usage
+     */
+    public static void main(String[] args) {
+        if (args.length == 1 &&
+            (args[0].equals("-h") || args[0].equals("-help"))) {
+            usage();
+        } else {
+            junit.framework.TestResult tr =
+                junit.textui.TestRunner.run(suite(args));
+            if (tr.errorCount() > 0 ||
+                tr.failureCount() > 0) {
+                System.exit(1);
+            } else {
+                System.exit(0);
+            }
         }
-        return baseParams(false, 6);
     }
-    
-    private static List<Object[]> baseParams(boolean storedIter, 
-                                             int maximumKey){
-        
-        List <Object[]> list = new ArrayList<Object[]>();
+
+    private static void usage() {
+
+        System.out.println(
+            "Usage: java com.sleepycat.collections.test.CollectionTest\n" +
+            "              -h | -help\n" +
+            "              [testName]...\n" +
+            "  where testName has the format:\n" +
+            "    <env>-<store>-{entity|value}\n" +
+            "  <env> is:\n" +
+            "    bdb | cdb | txn\n" +
+            "  <store> is:\n" +
+            "    btree-uniq | btree-dup | btree-dupsort | btree-recnum |\n" +
+            "    hash-uniq | hash-dup | hash-dupsort |\n" +
+            "    queue | recno | recno-renum\n" +
+            "  For example:  bdb-btree-uniq-entity\n" +
+            "  If no arguments are given then all tests are run.");
+        System.exit(2);
+    }
+
+    public static Test suite() {
+        return suite(null);
+    }
+
+    static Test suite(String[] args) {
+        if (SharedTestUtils.runLongTests()) {
+            TestSuite suite = new TestSuite();
+
+            /* StoredIterator tests. */
+            permuteTests(args, suite, true, DEFAULT_MAX_KEY);
+
+            /* BlockIterator tests with different maxKey values. */
+            for (int i = 0; i < MAX_KEYS.length; i += 1) {
+                permuteTests(args, suite, false, MAX_KEYS[i]);
+            }
+
+            return suite;
+        } else {
+            return baseSuite(args);
+        }
+    }
+
+    private static void permuteTests(String[] args,
+                                     TestSuite suite,
+                                     boolean storedIter,
+                                     int maxKey) {
+       TestSuite baseTests = baseSuite(args);
+        Enumeration e = baseTests.tests();
+        while (e.hasMoreElements()) {
+            CollectionTest t = (CollectionTest) e.nextElement();
+            t.setParams(storedIter, maxKey);
+            suite.addTest(t);
+        }
+    }
+
+    private static TestSuite baseSuite(String[] args) {
+        TestSuite suite = new TestSuite();
         for (int i = 0; i < TestEnv.ALL.length; i += 1) {
             for (int j = 0; j < TestStore.ALL.length; j += 1) {
                 for (int k = 0; k < 2; k += 1) {
                     boolean entityBinding = (k != 0);
-                    
-                    list.add(new Object[] {TestEnv.ALL[i], TestStore.ALL[j], 
-                            entityBinding, false, storedIter, maximumKey});
-                    
+
+                    addTest(args, suite, new CollectionTest(
+                            TestEnv.ALL[i], TestStore.ALL[j],
+                            entityBinding, false));
+
                     if (TestEnv.ALL[i].isTxnMode()) {
-                        list.add(new Object[] 
-                            {TestEnv.ALL[i], TestStore.ALL[j], entityBinding, 
-                             true, storedIter, maximumKey});
+                        addTest(args, suite, new CollectionTest(
+                                TestEnv.ALL[i], TestStore.ALL[j],
+                                entityBinding, true));
                     }
                 }
             }
         }
-        
-        return list;
+        return suite;
     }
 
-    public CollectionTest(TestEnv testEnv, 
-                          TestStore testStore,
-                          boolean isEntityBinding, 
-                          boolean isAutoCommit,
-                          boolean storedIter,
-                          int maxKey) {
+    private static void addTest(String[] args, TestSuite suite,
+                                CollectionTest test) {
+
+        if (args == null || args.length == 0) {
+            suite.addTest(test);
+        } else {
+            for (int t = 0; t < args.length; t += 1) {
+                if (args[t].equals(test.testName)) {
+                    suite.addTest(test);
+                    break;
+                }
+            }
+        }
+    }
+
+    public CollectionTest(TestEnv testEnv, TestStore testStore,
+                          boolean isEntityBinding, boolean isAutoCommit) {
+
+        super(null);
 
         this.testEnv = testEnv;
         this.testStore = testStore;
@@ -167,15 +229,14 @@ public class CollectionTest extends TestBase {
         valueBinding = testStore.getValueBinding();
         entityBinding = testStore.getEntityBinding();
 
-        setParams(storedIter, maxKey);
-        customName = testName;
+        setParams(false, DEFAULT_MAX_KEY);
     }
 
-    private void setParams(boolean storedIter, int maximumKey) {
+    private void setParams(boolean storedIter, int maxKey) {
 
-        testStoredIterator = storedIter;
-        maxKey = maximumKey;
-        endKey = maximumKey;
+        this.testStoredIterator = storedIter;
+        this.maxKey = maxKey;
+        this.endKey = maxKey;
 
         testName = testEnv.getName() + '-' + testStore.getName() +
                     (isEntityBinding ? "-entity" : "-value") +
@@ -184,13 +245,19 @@ public class CollectionTest extends TestBase {
                     ((maxKey != DEFAULT_MAX_KEY) ? ("-maxKey-" + maxKey) : "");
     }
 
+    @Override
+    public void tearDown() {
+        setName(testName);
+    }
 
-    @Test
+    @Override
     public void runTest()
         throws Exception {
 
+        SharedTestUtils.printTestName(SharedTestUtils.qualifiedTestName(this));
         try {
             env = testEnv.open(testName);
+
             // For testing auto-commit, use a normal (transactional) runner for
             // all reading and for writing via an iterator, and a do-nothing
             // runner for writing via collections; if auto-commit is tested,
@@ -699,9 +766,7 @@ public class CollectionTest extends TestBase {
         throws Exception {
 
         writeIterRunner.run(new TransactionWorker() {
-            public void doWork() throws Exception {
-                Pattern suppressedError = Pattern.compile("BDB1004.*");
-                Object oldErrHandler = DbCompat.getErrorHandler(env);
+            public void doWork() {
                 ListIterator iter = (ListIterator) iterator(coll);
                 try {
                     for (int i = beginKey; i <= endKey; i += 1) {
@@ -717,7 +782,6 @@ public class CollectionTest extends TestBase {
                             } catch (UnsupportedOperationException e) {}
                         } else if
                            (((StoredCollection) coll).areDuplicatesOrdered()) {
-                            DbCompat.suppressError(env, suppressedError);
                             try {
                                 setValuePlusOne(iter, obj);
                                 fail();
@@ -727,7 +791,6 @@ public class CollectionTest extends TestBase {
                                       e2 instanceof IllegalArgumentException ||
                                       e2 instanceof DatabaseException);
                             }
-                            DbCompat.setErrorHandler(env, oldErrHandler);
                         } else {
                             setValuePlusOne(iter, obj);
                             /* Ensure iterator position is correct. */

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -27,11 +27,13 @@ static int __dbc_pget_arg __P((DBC *, DBT *, u_int32_t));
 static int __dbc_put_arg __P((DBC *, DBT *, DBT *, u_int32_t));
 static int __db_curinval __P((const ENV *));
 static int __db_cursor_arg __P((DB *, u_int32_t));
-static int __db_del_arg __P((DB *, DBT *, u_int32_t, int));
+static int __db_del_arg __P((DB *, DBT *, u_int32_t));
 static int __db_get_arg __P((const DB *, DBT *, DBT *, u_int32_t));
 static int __db_join_arg __P((DB *, DBC **, u_int32_t));
+static int __db_open_arg __P((DB *,
+    DB_TXN *, const char *, const char *, DBTYPE, u_int32_t));
 static int __db_pget_arg __P((DB *, DBT *, u_int32_t));
-static int __db_put_arg __P((DB *, DBT *, DBT *, u_int32_t, int));
+static int __db_put_arg __P((DB *, DBT *, DBT *, u_int32_t));
 static int __dbt_ferr __P((const DB *, const char *, const DBT *, int));
 static int __db_compact_func
     __P((DBC *, DBC *, u_int32_t *, db_pgno_t, u_int32_t, void *));
@@ -101,9 +103,9 @@ __db_associate_pp(dbp, txn, sdbp, callback, flags)
 	 */
 	if (TAILQ_FIRST(&sdbp->active_queue) != NULL ||
 	    TAILQ_FIRST(&sdbp->join_queue) != NULL) {
-		ret = USR_ERR(env, EINVAL);
 		__db_errx(env, DB_STR("0572",
     "Databases may not become secondary indices while cursors are open"));
+		ret = EINVAL;
 		goto err;
 	}
 
@@ -129,18 +131,7 @@ __db_associate_pp(dbp, txn, sdbp, callback, flags)
 		if ((ret = __dbc_destroy(sdbc)) != 0)
 			goto err;
 
-#ifdef HAVE_SLICES
-	if (FLD_ISSET(dbp->open_flags, DB_SLICED) !=
-	    FLD_ISSET(sdbp->open_flags, DB_SLICED)) {
-		ret = USR_ERR(dbp->env, EINVAL);
-		__db_errx(dbp->env,
-    "DB->associate() does not support mixing sliced and non-sliced databases");
-	} else if (FLD_ISSET(dbp->open_flags, DB_SLICED))
-		ret = __db_slice_associate(dbp, txn, sdbp, callback, flags);
-	else
-#endif
-		/*lint -e{539} Did not expect positive indentation. */
-		ret = __db_associate(dbp, ip, txn, sdbp, callback, flags);
+	ret = __db_associate(dbp, ip, txn, sdbp, callback, flags);
 
 err:	if (txn_local &&
 	    (t_ret = __db_txn_auto_resolve(env, txn, 0, ret)) && ret == 0)
@@ -168,15 +159,9 @@ __db_associate_arg(dbp, sdbp, callback, flags)
 
 	env = dbp->env;
 
-	if (dbp->blob_threshold || sdbp->blob_threshold) {
-		__db_errx(env, DB_STR("0751",
-	    "Secondary and primary databases cannot support external files."));
-		return (EINVAL);
-	}
-
 	if (sdbp->type == DB_HEAP) {
-		__db_errx(env, DB_STR("0752",
-		    "Heap databases may not be used as secondary databases"));
+		__db_errx(env,
+		    "Heap databases may not be used as secondary databases");
 		return (EINVAL);
 	}
 
@@ -298,7 +283,6 @@ __db_cursor_pp(dbp, txn, dbcp, flags)
 	u_int32_t flags;
 {
 	DB_THREAD_INFO *ip;
-	DBC *dbc;
 	ENV *env;
 	REGENV *renv;
 	int rep_blocked, ret;
@@ -341,10 +325,6 @@ __db_cursor_pp(dbp, txn, dbcp, flags)
 	if ((ret = __db_check_txn(dbp, txn, DB_LOCK_INVALIDID, 1)) != 0)
 		goto err;
 
-#ifdef HAVE_SLICES
-	if (FLD_ISSET(dbp->open_flags, DB_SLICED))
-		LF_SET(DB_SLICED);
-#endif
 	ret = __db_cursor(dbp, ip, txn, dbcp, flags);
 
 	/*
@@ -352,12 +332,10 @@ __db_cursor_pp(dbp, txn, dbcp, flags)
 	 * If a family transaction was passed in, the transaction handle in
 	 * the cursor may not match.
 	 */
-	if ((dbc = *dbcp) != NULL) {
-		txn = dbc->txn;
-		dbc->open_flags = flags;
-	}
+	if ((*dbcp) != NULL)
+	    txn = (*dbcp)->txn;
 	if (txn != NULL && ret == 0)
-		TAILQ_INSERT_HEAD(&(txn->my_cursors), dbc, txn_cursors);
+		TAILQ_INSERT_HEAD(&(txn->my_cursors), *dbcp, txn_cursors);
 
 err:	/* Release replication block on error. */
 	if (ret != 0 && rep_blocked)
@@ -430,11 +408,6 @@ __db_cursor(dbp, ip, txn, dbcp, flags)
 	    (txn != NULL && F_ISSET(txn, TXN_READ_COMMITTED)))
 		F_SET(dbc, DBC_READ_COMMITTED);
 
-#ifdef HAVE_SLICES
-	if (LF_ISSET(DB_SLICED))
-		ret = __dbc_slice_init(dbc);
-#endif
-
 	*dbcp = dbc;
 	return (0);
 
@@ -461,13 +434,6 @@ __db_cursor_arg(dbp, flags)
 	if (LF_ISSET(DB_READ_COMMITTED | DB_READ_UNCOMMITTED)) {
 		if (!LOCKING_ON(env))
 			return (__db_fnl(env, "DB->cursor"));
-	}
-
-	if (dbp->blob_threshold &&
-	    LF_ISSET(DB_READ_UNCOMMITTED | DB_TXN_SNAPSHOT)) {
-		__db_errx(dbp->env, DB_STR("0753",
-"External file enabled databases do not support READ_UNCOMMITTED and TXN_SNAPSHOT."));
-		return (EINVAL);
 	}
 
 	LF_CLR(DB_CURSOR_BULK |
@@ -507,15 +473,10 @@ __db_del_pp(dbp, txn, key, flags)
 {
 	DB_THREAD_INFO *ip;
 	ENV *env;
-	int forward_op, handle_check, ret, t_ret, txn_local;
+	int handle_check, ret, t_ret, txn_local;
 
 	env = dbp->env;
 	txn_local = 0;
-	forward_op = 0;
-#ifdef HAVE_REPLICATION_THREADS
-	forward_op = IS_REP_CLIENT(env) &&
-		IS_USING_WRITE_FORWARDING(env) && txn == NULL;
-#endif
 
 	STRIP_AUTO_COMMIT(flags);
 	DB_ILLEGAL_BEFORE_OPEN(dbp, "DB->del");
@@ -535,18 +496,8 @@ __db_del_pp(dbp, txn, key, flags)
 			goto err;
 	}
 
-	if ((ret = __db_del_arg(dbp, key, flags, forward_op)) != 0)
+	if ((ret = __db_del_arg(dbp, key, flags)) != 0)
 		goto err;
-
-	/* Forward singleton del operation to replication master if needed. */
-#ifdef HAVE_REPLICATION_THREADS
-	if (forward_op) {
-		ret = __repmgr_forward_single_write(
-		    REPMGR_WF_SINGLE_DEL, dbp, key, NULL, flags);
-		/* Always skip regular del processing for forwarded del. */
-		goto rep_exit;
-	}
-#endif
 
 	/* Create local transaction as necessary. */
 	if (IS_DB_AUTO_COMMIT(dbp, txn)) {
@@ -566,9 +517,6 @@ err:	if (txn_local &&
 		ret = t_ret;
 
 	/* Release replication block. */
-#ifdef HAVE_REPLICATION_THREADS
-rep_exit:
-#endif
 	if (handle_check && (t_ret = __env_db_rep_exit(env)) != 0 && ret == 0)
 		ret = t_ret;
 	ENV_LEAVE(env, ip);
@@ -581,22 +529,18 @@ rep_exit:
  *	Check DB->delete arguments.
  */
 static int
-__db_del_arg(dbp, key, flags, forward_op)
+__db_del_arg(dbp, key, flags)
 	DB *dbp;
 	DBT *key;
 	u_int32_t flags;
-	int forward_op;
 {
 	ENV *env;
 	int ret;
 
 	env = dbp->env;
 
-	/*
-	 * Check for changes to a read-only tree unless this is a
-	 * replication client write operation to be forwarded.
-	 */
-	if (!forward_op && DB_IS_READONLY(dbp))
+	/* Check for changes to a read-only tree. */
+	if (DB_IS_READONLY(dbp))
 		return (__db_rdonly(env, "DB->del"));
 
 	/* Check for invalid function flags. */
@@ -696,14 +640,15 @@ __db_fd_pp(dbp, fdp)
 	 * !!!
 	 * The actual method call is simple, do it inline.
 	 *
-	 * This is a truly spectacular layering violation.
+	 * XXX
+	 * Truly spectacular layering violation.
 	 */
 	if ((ret = __mp_xxx_fh(dbp->mpf, &fhp)) == 0) {
 		if (fhp == NULL) {
 			*fdp = -1;
-			ret = USR_ERR(env, ENOENT);
 			__db_errx(env, DB_STR("0582",
 			    "Database does not have a valid file handle"));
+			ret = ENOENT;
 		} else
 			*fdp = fhp->fd;
 	}
@@ -793,7 +738,6 @@ err:	if (txn_local &&
 	if (handle_check && (t_ret = __env_db_rep_exit(env)) != 0 && ret == 0)
 		ret = t_ret;
 
-	DB_TEST_CRASH(env->test_abort, DB_TEST_NO_MUTEX);
 	ENV_LEAVE(env, ip);
 	__dbt_userfree(env, key, NULL, data);
 	return (ret);
@@ -886,12 +830,6 @@ __db_get_arg(dbp, key, data, flags)
 
 	env = dbp->env;
 
-	if (dbp->blob_threshold && LF_ISSET(DB_READ_UNCOMMITTED)) {
-		__db_errx(env, DB_STR("0754",
-	"External file enabled databases do not support DB_READ_UNCOMMITTED."));
-		return (EINVAL);
-	}
-
 	/*
 	 * Check for read-modify-write validity.  DB_RMW doesn't make sense
 	 * with CDB cursors since if you're going to write the cursor, you
@@ -940,9 +878,6 @@ __db_get_arg(dbp, key, data, flags)
 		break;
 	case DB_CONSUME:
 	case DB_CONSUME_WAIT:
-		if (DB_IS_READONLY(dbp))
-			return (__db_rdonly(env,
-			    "DB->get CONSUME/CONSUME_WAIT"));
 		if (dirty) {
 			__db_errx(env, DB_STR_A("0583",
 		    "%s is not supported with DB_CONSUME or DB_CONSUME_WAIT",
@@ -1215,13 +1150,6 @@ __db_open_pp(dbp, txn, fname, dname, type, flags, mode)
 	/* Save the current DB handle flags for refresh. */
 	dbp->orig_flags = dbp->flags;
 
-	if (fname == NULL && PREFMAS_IS_SET(env)) {
-		ret = USR_ERR(env, EINVAL);
-		__db_errx(env, DB_STR("0783", "In-memory databases are not "
-		    "supported in Replication Manager preferred master mode"));
-		goto err;
-	}
-
 	/* Check for replication block. */
 	handle_check = IS_ENV_REPLICATED(env);
 	if (handle_check &&
@@ -1261,17 +1189,10 @@ __db_open_pp(dbp, txn, fname, dname, type, flags, mode)
 	 * which is unusual -- the reason is some flags are illegal if any
 	 * kind of transaction is in effect.
 	 */
-	if ((ret = __db_open_arg(dbp, txn, fname, dname, type, flags)) == 0) {
+	if ((ret = __db_open_arg(dbp, txn, fname, dname, type, flags)) == 0)
 		if ((ret = __db_open(dbp, ip, txn, fname, dname, type,
 		    flags, mode, PGNO_BASE_MD)) != 0)
 			goto txnerr;
-#ifdef HAVE_SLICES
-		if (FLD_ISSET(dbp->open_flags, DB_SLICED) &&
-		    (ret = __db_slice_open(dbp,
-		    ip, txn, fname, type, flags, mode)) != 0)
-			goto txnerr;
-#endif
-	}
 
 	/*
 	 * You can open the database that describes the subdatabases in the
@@ -1285,9 +1206,9 @@ __db_open_pp(dbp, txn, fname, dname, type, flags, mode)
 	 */
 	if (dname == NULL && !IS_RECOVERING(env) && !LF_ISSET(DB_RDONLY) &&
 	    !LF_ISSET(DB_RDWRMASTER) && F_ISSET(dbp, DB_AM_SUBDB)) {
-		ret = USR_ERR(env, EINVAL);
 		__db_errx(env, DB_STR("0590",
     "files containing multiple databases may only be opened read-only"));
+		ret = EINVAL;
 		goto txnerr;
 	}
 
@@ -1335,10 +1256,8 @@ err:	/* Release replication block. */
 /*
  * __db_open_arg --
  *	Check DB->open arguments.
- * PUBLIC: int __db_open_arg __P((DB *,
- * PUBLIC:     DB_TXN *, const char *, const char *, DBTYPE, u_int32_t));
  */
-int
+static int
 __db_open_arg(dbp, txn, fname, dname, type, flags)
 	DB *dbp;
 	DB_TXN *txn;
@@ -1357,23 +1276,13 @@ __db_open_arg(dbp, txn, fname, dname, type, flags)
 #define	OKFLAGS								\
 	(DB_AUTO_COMMIT | DB_CREATE | DB_EXCL | DB_FCNTL_LOCKING |	\
 	DB_MULTIVERSION | DB_NOMMAP | DB_NO_AUTO_COMMIT | DB_RDONLY |	\
-	DB_RDWRMASTER | DB_READ_UNCOMMITTED | DB_SLICED | DB_THREAD |	\
-	DB_TRUNCATE)
+	DB_RDWRMASTER | DB_READ_UNCOMMITTED | DB_THREAD | DB_TRUNCATE)
 	if ((ret = __db_fchk(env, "DB->open", flags, OKFLAGS)) != 0)
 		return (ret);
 	if (LF_ISSET(DB_EXCL) && !LF_ISSET(DB_CREATE))
 		return (__db_ferr(env, "DB->open", 1));
 	if (LF_ISSET(DB_RDONLY) && LF_ISSET(DB_CREATE))
 		return (__db_ferr(env, "DB->open", 1));
-
-	if (LF_ISSET(DB_SLICED)) {
-#ifdef HAVE_SLICES
-		if (env->dbenv->slice_cnt == 0)
-			return (__env_not_sliced(env));
-#else
-		return (__env_no_slices(env));
-#endif
-	}
 
 #ifdef	HAVE_VXWORKS
 	if (LF_ISSET(DB_TRUNCATE)) {
@@ -1384,9 +1293,9 @@ __db_open_arg(dbp, txn, fname, dname, type, flags)
 #endif
 	switch (type) {
 	case DB_UNKNOWN:
-		if (LF_ISSET(DB_CREATE | DB_TRUNCATE)) {
+		if (LF_ISSET(DB_CREATE|DB_TRUNCATE)) {
 			__db_errx(env, DB_STR("0592",
-		    "DB_UNKNOWN type specified with DB_CREATE or DB_TRUNCATE"));
+	    "DB_UNKNOWN type specified with DB_CREATE or DB_TRUNCATE"));
 			return (EINVAL);
 		}
 		ok_flags = 0;
@@ -1479,18 +1388,6 @@ __db_open_arg(dbp, txn, fname, dname, type, flags)
 	if (LF_ISSET(DB_MULTIVERSION) && type == DB_QUEUE) {
 		__db_errx(env, DB_STR("0598",
 		    "DB_MULTIVERSION illegal with queue databases"));
-		return (EINVAL);
-	}
-
-	if (LF_ISSET(DB_MULTIVERSION) && dbp->blob_threshold) {
-		__db_errx(env, DB_STR("0755",
-	    "DB_MULTIVERSION illegal with external file enabled databases"));
-		return (EINVAL);
-	}
-
-	if (LF_ISSET(DB_READ_UNCOMMITTED) && dbp->blob_threshold) {
-		__db_errx(env, DB_STR("0756",
-	"DB_READ_UNCOMMITTED illegal with external file enabled databases"));
 		return (EINVAL);
 	}
 
@@ -1664,17 +1561,15 @@ __db_pget_arg(dbp, pkey, flags)
 	env = dbp->env;
 
 	if (!F_ISSET(dbp, DB_AM_SECONDARY)) {
-		ret = USR_ERR(env, EINVAL);
 		__db_errx(env, DB_STR("0601",
 		    "DB->pget may only be used on secondary indices"));
-		return (ret);
+		return (EINVAL);
 	}
 
 	if (LF_ISSET(DB_MULTIPLE | DB_MULTIPLE_KEY)) {
-		ret = USR_ERR(env, EINVAL);
 		__db_errx(env,DB_STR("0602",
 "DB_MULTIPLE and DB_MULTIPLE_KEY may not be used on secondary indices"));
-		return (ret);
+		return (EINVAL);
 	}
 
 	/* DB_CONSUME makes no sense on a secondary index. */
@@ -1698,19 +1593,17 @@ __db_pget_arg(dbp, pkey, flags)
 
 	/* Check invalid partial pkey. */
 	if (pkey != NULL && F_ISSET(pkey, DB_DBT_PARTIAL)) {
-		ret = USR_ERR(env, EINVAL);
 		__db_errx(env, DB_STR("0709",
 		    "The primary key returned by pget can't be partial"));
-		return (ret);
+		return (EINVAL);
 	}
 
 	if (flags == DB_GET_BOTH) {
 		/* The pkey field can't be NULL if we're doing a DB_GET_BOTH. */
 		if (pkey == NULL) {
-			ret = USR_ERR(env, EINVAL);
 			__db_errx(env, DB_STR("0603",
 		    "DB_GET_BOTH on a secondary index requires a primary key"));
-			return (ret);
+			return (EINVAL);
 		}
 		if ((ret = __dbt_usercopy(env, pkey)) != 0)
 			return (ret);
@@ -1734,20 +1627,15 @@ __db_put_pp(dbp, txn, key, data, flags)
 {
 	DB_THREAD_INFO *ip;
 	ENV *env;
-	int forward_op, handle_check, ret, txn_local, t_ret;
+	int handle_check, ret, txn_local, t_ret;
 
 	env = dbp->env;
 	txn_local = 0;
-	forward_op = 0;
-#ifdef HAVE_REPLICATION_THREADS
-	forward_op = IS_REP_CLIENT(env) &&
-		IS_USING_WRITE_FORWARDING(env) && txn == NULL;
-#endif
 
 	STRIP_AUTO_COMMIT(flags);
 	DB_ILLEGAL_BEFORE_OPEN(dbp, "DB->put");
 
-	if ((ret = __db_put_arg(dbp, key, data, flags, forward_op)) != 0)
+	if ((ret = __db_put_arg(dbp, key, data, flags)) != 0)
 		return (ret);
 
 	ENV_ENTER(env, ip);
@@ -1760,16 +1648,6 @@ __db_put_pp(dbp, txn, key, data, flags)
 		handle_check = 0;
 		goto err;
 	}
-
-	/* Forward singleton put operation to replication master if needed. */
-#ifdef HAVE_REPLICATION_THREADS
-	if (forward_op) {
-		ret = __repmgr_forward_single_write(
-		    REPMGR_WF_SINGLE_PUT, dbp, key, data, flags);
-		/* Always skip regular put processing for forwarded put. */
-		goto rep_exit;
-	}
-#endif
 
 	/* Create local transaction as necessary. */
 	if (IS_DB_AUTO_COMMIT(dbp, txn)) {
@@ -1789,13 +1667,9 @@ err:	if (txn_local &&
 		ret = t_ret;
 
 	/* Release replication block. */
-#ifdef HAVE_REPLICATION_THREADS
-rep_exit:
-#endif
 	if (handle_check && (t_ret = __env_db_rep_exit(env)) != 0 && ret == 0)
 		ret = t_ret;
 
-	DB_TEST_CRASH(env->test_abort, DB_TEST_NO_MUTEX);
 	ENV_LEAVE(env, ip);
 	__dbt_userfree(env, key, NULL, data);
 	return (ret);
@@ -1806,11 +1680,10 @@ rep_exit:
  *	Check DB->put arguments.
  */
 static int
-__db_put_arg(dbp, key, data, flags, forward_op)
+__db_put_arg(dbp, key, data, flags)
 	DB *dbp;
 	DBT *key, *data;
 	u_int32_t flags;
-	int forward_op;
 {
 	ENV *env;
 	int ret, returnkey;
@@ -1818,11 +1691,8 @@ __db_put_arg(dbp, key, data, flags, forward_op)
 	env = dbp->env;
 	returnkey = 0;
 
-	/*
-	 * Check for changes to a read-only tree unless this is a
-	 * replication client write operation to be forwarded.
-	 */
-	if (!forward_op && DB_IS_READONLY(dbp))
+	/* Check for changes to a read-only tree. */
+	if (DB_IS_READONLY(dbp))
 		return (__db_rdonly(env, "DB->put"));
 
 	/* Check for puts on a secondary. */
@@ -2008,9 +1878,9 @@ __db_compact_pp(dbp, txn, start, stop, c_data, flags, end)
 		if ((ret = __db_walk_cursors(dbp,
 		    NULL, __db_compact_func, &count, 0, 0, txn)) != 0) {
 			if (ret == EEXIST) {
-				ret = USR_ERR(env, EINVAL);
 				__db_errx(env, DB_STR("0609",
 "DB->compact may not be called with active cursors in the transaction."));
+				ret = EINVAL;
 			}
 			goto err;
 		}
@@ -2033,15 +1903,12 @@ __db_compact_pp(dbp, txn, start, stop, c_data, flags, end)
 		ret = __db_compact_int(dbp, ip,
 		    txn, start, stop, dp, flags, end);
 		break;
+	case DB_HEAP:
+		break;
 	default:
 		ret = __dbh_am_chk(dbp, DB_OK_BTREE);
 		break;
 	}
-
-#ifdef HAVE_SLICES
-	if (ret == 0 && FLD_ISSET(dbp->open_flags, DB_SLICED))
-		ret = __db_slice_compact(dbp, txn, start, stop, dp, flags, end);
-#endif
 
 	/* Release replication block. */
 err:	if (handle_check && (t_ret = __env_db_rep_exit(env)) != 0 && ret == 0)
@@ -2143,12 +2010,6 @@ __db_associate_foreign_arg(fdbp, dbp, callback, flags)
 		    "callback function cannot be configured"));
 		return (EINVAL);
 	}
-	if (FLD_ISSET(dbp->open_flags, DB_SLICED) ||
-	    FLD_ISSET(fdbp->open_flags, DB_SLICED)) {
-	    	__db_errx(env,
-		    "DB->associate_foreign does not support sliced databases.");
-		return (EINVAL);
-	}
 
 	return (0);
 }
@@ -2218,7 +2079,6 @@ __dbc_close_pp(dbc)
 	dbp = dbc->dbp;
 	env = dbp->env;
 	txn = dbc->txn;
-	ret = 0;
 
 	/*
 	 * If the cursor is already closed we have a serious problem, and we
@@ -2246,13 +2106,7 @@ __dbc_close_pp(dbc)
 		    dbc->txn_cursors.tqe_prev == NULL);
 	}
 
-#ifdef HAVE_SLICES
-	if (FLD_ISSET(dbp->open_flags, DB_SLICED))
-		ret = __dbc_slice_close(dbc);
-#endif
-
-	if ((t_ret = __dbc_close(dbc)) != 0 && ret == 0)
-		ret = t_ret;
+	ret = __dbc_close(dbc);
 
 	/* Release replication block. */
 	if (handle_check &&
@@ -2513,7 +2367,6 @@ __dbc_get_pp(dbc, key, data, flags)
 	    IS_REP_MASTER(env) && IS_USING_LEASES(env) && !ignore_lease)
 		ret = __rep_lease_check(env, 1);
 
-	DB_TEST_CRASH(env->test_abort, DB_TEST_NO_MUTEX);
 	ENV_LEAVE(env, ip);
 	__dbt_userfree(env, key, NULL, data);
 	return (ret);
@@ -3042,7 +2895,7 @@ __dbt_ferr(dbp, name, dbt, check_thread)
 	 * database, without having to clear flags.
 	 */
 	if ((ret = __db_fchk(env, name, dbt->flags,
-	    DB_DBT_APPMALLOC | DB_DBT_BLOB | DB_DBT_BULK | DB_DBT_DUPOK |
+	    DB_DBT_APPMALLOC | DB_DBT_BULK | DB_DBT_DUPOK |
 	    DB_DBT_MALLOC | DB_DBT_REALLOC | DB_DBT_USERCOPY |
 	    DB_DBT_USERMEM | DB_DBT_PARTIAL | DB_DBT_READONLY)) != 0)
 		return (ret);

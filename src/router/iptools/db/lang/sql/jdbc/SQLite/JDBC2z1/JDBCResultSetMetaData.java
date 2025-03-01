@@ -6,11 +6,11 @@ import java.sql.Types;
 public class JDBCResultSetMetaData implements java.sql.ResultSetMetaData {
 
     private JDBCResultSet r;
-
+	
     public JDBCResultSetMetaData(JDBCResultSet r) {
 	this.r = r;
     }
-
+ 
     @Override
     public String getCatalogName(int column) throws java.sql.SQLException {
 	return null;
@@ -181,7 +181,7 @@ public class JDBCResultSetMetaData implements java.sql.ResultSetMetaData {
     }
 
     @Override
-    public boolean isDefinitelyWritable(int column)
+    public boolean isDefinitelyWritable(int column) 
 	throws java.sql.SQLException {
 	return true;
     }

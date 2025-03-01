@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -43,12 +43,8 @@
 int
 DbMpoolFile::set_maxsize(u_int32_t gbytes, u_int32_t bytes); </pre>
       <p>
-        Set the maximum size for the file to be 
-        <span class="bold"><strong>gbytes</strong></span> gigabytes plus 
-        <span class="bold"><strong>bytes</strong></span>.  Attempts to set the file
-        size smaller than or equal to the page size removes the file size
-        limit.  Attempts to allocate new pages in the file after the limit
-        has been reached will fail.
+         Set the maximum size for the file to be <span class="bold"><strong>gbytes</strong></span> gigabytes plus <span class="bold"><strong>bytes</strong></span>.  Attempts to allocate new pages in the
+         file after the limit has been reached will fail.
     </p>
       <p>
          To set the maximum file size for a particular database, call the
@@ -81,7 +77,7 @@ DbMpoolFile::set_maxsize(u_int32_t gbytes, u_int32_t bytes); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670057340640"></a>Parameters</h3>
+              <h3 class="title"><a id="idp9088032"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -89,54 +85,50 @@ DbMpoolFile::set_maxsize(u_int32_t gbytes, u_int32_t bytes); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670057341888"></a>bytes</h4>
+                <h4 class="title"><a id="idp9087384"></a>bytes</h4>
               </div>
             </div>
           </div>
           <p>
-                The maximum size of the file is set to 
-                <span class="bold"><strong>gbytes</strong></span> gigabytes plus 
-                <span class="bold"><strong>bytes</strong></span>.
-            </p>
+                          The maximum size of the file is set to <span class="bold"><strong>gbytes</strong></span> gigabytes plus <span class="bold"><strong>bytes</strong></span>.
+                     </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670057335328"></a>gbytes</h4>
+                <h4 class="title"><a id="idp9069848"></a>gbytes</h4>
               </div>
             </div>
           </div>
           <p>
-                The maximum size of the file is set to 
-                <span class="bold"><strong>gbytes</strong></span> gigabytes plus 
-                <span class="bold"><strong>bytes</strong></span>.
+                          The maximum size of the file is set to <span class="bold"><strong>gbytes</strong></span> gigabytes plus <span class="bold"><strong>bytes</strong></span>.
+                     </p>
+        </div>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idp9079072"></a>Class</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+                 <a class="link" href="env.html" title="Chapter 5.  The DbEnv Handle">DbEnv</a>, <a class="link" href="memp.html" title="Chapter 9.  The DbMpoolFile Handle">DbMpoolFile</a> 
             </p>
-        </div>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670057345616"></a>Class</h3>
+              <h3 class="title"><a id="idp9092968"></a>See Also</h3>
             </div>
           </div>
         </div>
         <p>
-             <a class="link" href="env.html" title="Chapter 5.  The DbEnv Handle">DbEnv</a>, <a class="link" href="memp.html" title="Chapter 9.  The DbMpoolFile Handle">DbMpoolFile</a> 
-        </p>
-      </div>
-      <div class="sect2" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
-              <h3 class="title"><a id="idm139670057336576"></a>See Also</h3>
-            </div>
-          </div>
-        </div>
-        <p>
-             <a class="xref" href="memp.html#memplist" title="Memory Pools and Related Methods">Memory Pools and Related Methods</a> 
-        </p>
+                     <a class="xref" href="memp.html#memplist" title="Memory Pools and Related Methods">Memory Pools and Related Methods</a> 
+                </p>
       </div>
     </div>
     <div class="navfooter">

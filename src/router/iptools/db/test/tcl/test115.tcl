@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -146,11 +146,18 @@ proc test115 { method {nentries 10000} {tnum "115"} args } {
 		close $did
 		error_check_good db_sync [$db sync] 0
 
-		puts "\tTest$tnum.c: Save contents."
-		dump_file_env $env $db $t1 $checkfunc
+		puts "\tTest$tnum.c: Do a dump_file on contents."
+		if { $txnenv == 1 } {
+			set t [$env txn]
+			error_check_good txn [is_valid_txn $t $env] TRUE
+			set txn "-txn $t"
+		}
 
-		# We don't use the compact_and_verify proc here because
-		# of the special sort. 
+		dump_file $db $txn $t1 $checkfunc
+		if { $txnenv == 1 } {
+			error_check_good txn_commit [$t commit] 0
+		}
+
 		puts "\tTest$tnum.d: Compact and verify database."
 		for {set commit 0} {$commit <= $txnenv} {incr commit} {
 			if { $txnenv == 1 } {
@@ -192,7 +199,15 @@ if { [is_partitioned $args] == 0 } {
 		    file_size [expr [expr $size1 * $reduction] > $size2] 1
 }
 		puts "\tTest$tnum.e: Contents are the same after compaction."
-		dump_file_env $env $db $t2 $checkfunc
+		if { $txnenv == 1 } {
+			set t [$env txn]
+			error_check_good txn [is_valid_txn $t $env] TRUE
+			set txn "-txn $t"
+		}
+		dump_file $db $txn $t2 $checkfunc
+		if { $txnenv == 1 } {
+			error_check_good txn_commit [$t commit] 0
+		}
 
 		error_check_good filecmp [filecmp $t1 $t2] 0
 
@@ -246,10 +261,16 @@ if { [is_partitioned $args] == 0 } {
 		error_check_good db_sync [$db sync] 0
 
 		puts "\tTest$tnum.h: Save contents."
-		dump_file_env $env $db $t1 $checkfunc
+		if { $txnenv == 1 } {
+			set t [$env txn]
+			error_check_good txn [is_valid_txn $t $env] TRUE
+			set txn "-txn $t"
+		}
+		dump_file $db $txn $t1 $checkfunc
+		if { $txnenv == 1 } {
+			error_check_good t_commit [$t commit] 0
+		}
 
-		# We don't use the compact_and_verify proc here because
-		# of the special sort and the second compaction.		
 		puts "\tTest$tnum.i: Compact and verify database again."
 		for {set commit 0} {$commit <= $txnenv} {incr commit} {
 			if { $txnenv == 1 } {
@@ -296,7 +317,15 @@ if { [is_partitioned $args] == 0 } {
 }
 
 		puts "\tTest$tnum.j: Contents are the same after compaction."
-		dump_file_env $env $db $t2 $checkfunc
+		if { $txnenv == 1 } {
+			set t [$env txn]
+			error_check_good txn [is_valid_txn $t $env] TRUE
+			set txn "-txn $t"
+		}
+		dump_file $db $txn $t2 $checkfunc
+		if { $txnenv == 1 } {
+			error_check_good t_commit [$t commit] 0
+		}
 		error_check_good filecmp [filecmp $t1 $t2] 0
 
 		error_check_good db_close [$db close] 0

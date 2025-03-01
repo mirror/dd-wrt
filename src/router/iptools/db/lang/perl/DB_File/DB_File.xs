@@ -2,11 +2,13 @@
 
  DB_File.xs -- Perl 5 interface to Berkeley DB 
 
- Written by Paul Marquess <pmqs@cpan.org>
+ written by Paul Marquess <pmqs@cpan.org>
+ last modified 4th February 2007
+ version 1.818
 
  All comments/suggestions/problems are welcome
 
-     Copyright (c) 1995-2016 Paul Marquess. All rights reserved.
+     Copyright (c) 1995-2009 Paul Marquess. All rights reserved.
      This program is free software; you can redistribute it and/or
      modify it under the same terms as Perl itself.
 
@@ -125,8 +127,6 @@
 #  include "ppport.h"
 #endif
 
-int DB_File___unused() { return 0; }
-
 /* Mention DB_VERSION_MAJOR_CFG, DB_VERSION_MINOR_CFG, and
    DB_VERSION_PATCH_CFG here so that Configure pulls them all in. */
 
@@ -142,21 +142,7 @@ int DB_File___unused() { return 0; }
 #ifdef COMPAT185
 #    include <db_185.h>
 #else
-
-/* Uncomment one of the lines below */
-/* See the section "At least one secondary cursor must be specified to DB->join"
-   in the README file for the circumstances where you need to uncomment one
-   of the two lines below.
-*/
-
-/* #define time_t __time64_t */
-/* #define time_t __time32_t */
-
 #    include <db.h>
-#endif
-
-#ifndef PERL_UNUSED_ARG
-#  define PERL_UNUSED_ARG(x) ((void)x)
 #endif
 
 /* Wall starts with 5.7.x */
@@ -170,11 +156,7 @@ int DB_File___unused() { return 0; }
 #  ifndef DB_VERSION_MAJOR
 
 #    undef  dNOOP
-#    ifdef __cplusplus
-#        define dNOOP (void)0
-#    else
-#        define dNOOP extern int DB_File___notused()
-#    endif
+#    define dNOOP extern int Perl___notused
 
     /* Ditto for dXSARGS. */
 #    undef  dXSARGS
@@ -224,10 +206,6 @@ int DB_File___unused() { return 0; }
 
 #if DB_VERSION_MAJOR > 4 || (DB_VERSION_MAJOR == 4 && DB_VERSION_MINOR >= 3)
 #    define AT_LEAST_DB_4_3
-#endif
-
-#if DB_VERSION_MAJOR >= 6 
-#    define AT_LEAST_DB_6_0
 #endif
 
 #ifdef AT_LEAST_DB_3_3
@@ -314,7 +292,7 @@ typedef db_recno_t	recno_t;
 #if DB_VERSION_MAJOR == 2 && DB_VERSION_MINOR < 5
 #    define flagSet(flags, bitmask)	((flags) & (bitmask))
 #else
-#    define flagSet(flags, bitmask)	(((flags) & DB_OPFLAGS_MASK) == (u_int)(bitmask))
+#    define flagSet(flags, bitmask)	(((flags) & DB_OPFLAGS_MASK) == (bitmask))
 #endif
 
 #else /* db version 1.x */
@@ -558,19 +536,6 @@ tidyUp(DB_File db)
 
 
 static int
-
-#ifdef AT_LEAST_DB_6_0
-#ifdef CAN_PROTOTYPE
-btree_compare(DB * db, const DBT *key1, const DBT *key2, size_t* locp)
-#else
-btree_compare(db, key1, key2, locp)
-DB * db ;
-const DBT * key1 ;
-const DBT * key2 ;
-size_t* locp;
-#endif /* CAN_PROTOTYPE */
-
-#else /* Berkeley DB < 6.0 */
 #ifdef AT_LEAST_DB_3_2
 
 #ifdef CAN_PROTOTYPE
@@ -593,7 +558,6 @@ const DBT * key2 ;
 #endif
 
 #endif
-#endif
 
 {
 #ifdef dTHX
@@ -605,9 +569,6 @@ const DBT * key2 ;
     int retval ;
     int count ;
     
-#ifdef AT_LEAST_DB_3_2
-    PERL_UNUSED_ARG(db);
-#endif
 
     if (CurrentDB->in_compare) {
         tidyUp(CurrentDB);
@@ -693,10 +654,6 @@ const DBT * key2 ;
     int retval ;
     int count ;
     
-#ifdef AT_LEAST_DB_3_2
-    PERL_UNUSED_ARG(db);
-#endif
-
     if (CurrentDB->in_prefix){
         tidyUp(CurrentDB);
         croak ("DB_File btree_prefix: recursion detected\n") ;
@@ -786,10 +743,6 @@ HASH_CB_SIZE_TYPE size ;
     int retval = 0;
     int count ;
 
-#ifdef AT_LEAST_DB_3_2
-    PERL_UNUSED_ARG(db);
-#endif
-
     if (CurrentDB->in_hash){
         tidyUp(CurrentDB);
         croak ("DB_File hash callback: recursion detected\n") ;
@@ -845,9 +798,6 @@ db_errcall_cb(const char * db_errpfx, char * buffer)
     dTHX;
 #endif    
     SV * sv = perl_get_sv(ERR_BUFF, FALSE) ;
-#ifdef AT_LEAST_DB_4_3
-    PERL_UNUSED_ARG(dbenv);
-#endif
     if (sv) {
         if (db_errpfx)
             sv_setpvf(sv, "%s: %s", db_errpfx, buffer) ;
@@ -1521,10 +1471,7 @@ SV *   sv ;
 	}
 
         if (status)
-	{
-	    db_close(RETVAL); /* close **dbp handle to prevent mem.leak */
 	    RETVAL->dbp = NULL ;
-	}
 
     }
 
@@ -1550,9 +1497,6 @@ BOOT:
     SV * sv_err = perl_get_sv(ERR_BUFF, GV_ADD|GV_ADDMULTI) ; 
 #endif
     MY_CXT_INIT;
-#ifdef WANT_ERROR
-    PERL_UNUSED_VAR(sv_err); /* huh? we just retrieved it... */
-#endif
     __getBerkeleyDBInfo() ;
  
     DBT_clear(empty) ; 
@@ -1581,7 +1525,6 @@ db_DoTie_(isHASH, dbtype, name=undef, flags=O_CREAT|O_RDWR, mode=0666, type=DB_H
 	        sv = ST(5) ;
 
 	    RETVAL = ParseOpenInfo(aTHX_ isHASH, name, flags, mode, sv) ;
-	    Trace(("db_DoTie_ %p\n", RETVAL));
 	    if (RETVAL->dbp == NULL) {
 	        Safefree(RETVAL);
 	        RETVAL = NULL ;
@@ -1629,7 +1572,6 @@ db_DELETE(db, key, flags=0)
 	PREINIT:
 	  dMY_CXT;
 	INIT:
-	  (void)flags;
 	  CurrentDB = db ;
 
 
@@ -1678,7 +1620,6 @@ db_STORE(db, key, value, flags=0)
 	PREINIT:
 	  dMY_CXT;
 	INIT:
-	  (void)flags;
 	  CurrentDB = db ;
 
 

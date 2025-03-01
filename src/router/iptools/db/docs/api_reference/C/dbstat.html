@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -61,7 +61,7 @@ DB-&gt;stat(DB *db, DB_TXN *txnid, void *sp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711180183584"></a>Parameters</h3>
+              <h3 class="title"><a id="idp50606888"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -69,7 +69,7 @@ DB-&gt;stat(DB *db, DB_TXN *txnid, void *sp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711180238304"></a>txnid</h4>
+                <h4 class="title"><a id="idp50607536"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -89,7 +89,7 @@ DB-&gt;stat(DB *db, DB_TXN *txnid, void *sp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711180145328"></a>flags</h4>
+                <h4 class="title"><a id="idp50622872"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -141,7 +141,7 @@ DB-&gt;stat(DB *db, DB_TXN *txnid, void *sp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711180145776"></a>Statistical Structure</h3>
+              <h3 class="title"><a id="idp50629792"></a>Statistical Structure</h3>
             </div>
           </div>
         </div>
@@ -184,7 +184,7 @@ DB-&gt;stat(DB *db, DB_TXN *txnid, void *sp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711180109712"></a>Hash Statistics</h4>
+                <h4 class="title"><a id="idp50631872"></a>Hash Statistics</h4>
               </div>
             </div>
           </div>
@@ -208,8 +208,7 @@ DB-&gt;stat(DB *db, DB_TXN *txnid, void *sp, u_int32_t flags);  </pre>
                   <code class="literal">u_int32_t hash_bigpages;</code>
                 </p>
                 <p>
-                             The number of hash overflow pages (created when key/data is 
-                             too big for the page).
+                             The number of big key/data pages.
                          </p>
               </li>
               <li>
@@ -217,7 +216,7 @@ DB-&gt;stat(DB *db, DB_TXN *txnid, void *sp, u_int32_t flags);  </pre>
                   <code class="literal">uintmax_t hash_big_bfree;</code>
                 </p>
                 <p>
-                             The number of bytes free on hash overflow (big item) pages. 
+                             The number of bytes free on big item pages.
                          </p>
               </li>
               <li>
@@ -281,14 +280,6 @@ DB-&gt;stat(DB *db, DB_TXN *txnid, void *sp, u_int32_t flags);  </pre>
               </li>
               <li>
                 <p>
-                  <code class="literal">u_int32_t hash_ext_files;</code>
-                </p>
-                <p>
-                             The number of external files.
-                         </p>
-              </li>
-              <li>
-                <p>
                   <code class="literal">u_int32_t hash_ndata;</code>
                 </p>
                 <p>
@@ -314,8 +305,8 @@ DB-&gt;stat(DB *db, DB_TXN *txnid, void *sp, u_int32_t flags);  </pre>
                   <code class="literal">u_int32_t hash_overflows;</code>
                 </p>
                 <p>
-                              The number of bucket overflow pages (bucket overflow pages are created
-                              when items did not fit on the main bucket page).
+                              The number of overflow pages (overflow pages are pages that contain
+                              items that did not fit in the main bucket page).
                          </p>
               </li>
               <li>
@@ -323,7 +314,7 @@ DB-&gt;stat(DB *db, DB_TXN *txnid, void *sp, u_int32_t flags);  </pre>
                   <code class="literal">uintmax_t hash_ovfl_free;</code>
                 </p>
                 <p>
-                              The number of bytes free on bucket overflow pages.
+                             The number of bytes free on overflow pages.
                          </p>
               </li>
               <li>
@@ -358,7 +349,7 @@ DB-&gt;stat(DB *db, DB_TXN *txnid, void *sp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711180173888"></a>Heap Statistics</h4>
+                <h4 class="title"><a id="idp50607704"></a>Heap Statistics</h4>
               </div>
             </div>
           </div>
@@ -380,19 +371,19 @@ DB-&gt;stat(DB *db, DB_TXN *txnid, void *sp, u_int32_t flags);  </pre>
               </li>
               <li>
                 <p>
+                  <code class="literal">u_int32_t heap_version;</code>
+                </p>
+                <p>
+                              The version of the Heap database.  Returned if DB_FAST_STAT is set.
+                         </p>
+              </li>
+              <li>
+                <p>
                   <code class="literal">u_int32_t heap_metaflags;</code>
                 </p>
                 <p>
                               Reports internal flags. For internal use
                               only.
-                          </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t heap_ext_files;</code>
-                </p>
-                <p>
-                              The number of external files.
                           </p>
               </li>
               <li>
@@ -439,14 +430,6 @@ DB-&gt;stat(DB *db, DB_TXN *txnid, void *sp, u_int32_t flags);  </pre>
                               DB_FAST_STAT is set.
                          </p>
               </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t heap_version;</code>
-                </p>
-                <p>
-                              The version of the Heap database.  Returned if DB_FAST_STAT is set.
-                         </p>
-              </li>
             </ul>
           </div>
         </div>
@@ -454,7 +437,7 @@ DB-&gt;stat(DB *db, DB_TXN *txnid, void *sp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711180089792"></a>Btree and Recno Statistics</h4>
+                <h4 class="title"><a id="idp50647248"></a>Btree and Recno Statistics</h4>
               </div>
             </div>
           </div>
@@ -562,14 +545,6 @@ DB-&gt;stat(DB *db, DB_TXN *txnid, void *sp, u_int32_t flags);  </pre>
                 </p>
                 <p>
                               The minimum keys per page.  Returned if DB_FAST_STAT is set.
-                         </p>
-              </li>
-              <li>
-                <p>
-                  <code class="literal">u_int32_t bt_ext_files;</code>
-                </p>
-                <p>
-                              The number of external files.
                          </p>
               </li>
               <li>
@@ -687,7 +662,7 @@ DB-&gt;stat(DB *db, DB_TXN *txnid, void *sp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711180051008"></a>Queue Statistics</h4>
+                <h4 class="title"><a id="idp50680688"></a>Queue Statistics</h4>
               </div>
             </div>
           </div>
@@ -823,7 +798,7 @@ DB-&gt;stat(DB *db, DB_TXN *txnid, void *sp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711180011520"></a>Errors</h3>
+              <h3 class="title"><a id="idp50657600"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -839,7 +814,7 @@ DB-&gt;stat(DB *db, DB_TXN *txnid, void *sp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711180041136"></a>  DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="idp50650224"></a>  DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -858,7 +833,7 @@ DB-&gt;stat(DB *db, DB_TXN *txnid, void *sp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711180001808"></a>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="idp50694776"></a>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -870,7 +845,7 @@ DB-&gt;stat(DB *db, DB_TXN *txnid, void *sp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711180019008"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp50688264"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -883,7 +858,7 @@ DB-&gt;stat(DB *db, DB_TXN *txnid, void *sp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711180005552"></a>Class</h3>
+              <h3 class="title"><a id="idp50656176"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -895,7 +870,7 @@ DB-&gt;stat(DB *db, DB_TXN *txnid, void *sp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711180039952"></a>See Also</h3>
+              <h3 class="title"><a id="idp50698528"></a>See Also</h3>
             </div>
           </div>
         </div>

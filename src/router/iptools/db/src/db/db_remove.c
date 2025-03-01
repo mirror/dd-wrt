@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -18,7 +18,7 @@
 #include "dbinc/txn.h"
 
 static int __db_dbtxn_remove __P((DB *,
-    DB_THREAD_INFO *, DB_TXN *, const char *, const char *, APPNAME));
+    DB_THREAD_INFO *, DB_TXN *, const char *, const char *));
 static int __db_subdb_remove __P((DB *,
     DB_THREAD_INFO *, DB_TXN *, const char *, const char *, u_int32_t));
 
@@ -40,17 +40,11 @@ __env_dbremove_pp(dbenv, txn, name, subdb, flags)
 	DB_THREAD_INFO *ip;
 	ENV *env;
 	int handle_check, ret, t_ret, txn_local;
-#ifdef HAVE_SLICES
-	u_int32_t slice_txn_flags;
-#endif
 
 	dbp = NULL;
 	env = dbenv->env;
 	txn_local = 0;
 	handle_check = 0;
-#ifdef HAVE_SLICES
-	slice_txn_flags = flags & ~DB_AUTO_COMMIT;
-#endif
 
 	ENV_ILLEGAL_BEFORE_OPEN(env, "DB_ENV->dbremove");
 
@@ -75,12 +69,6 @@ __env_dbremove_pp(dbenv, txn, name, subdb, flags)
 		goto err;
 	}
 
-	if (handle_check && IS_REP_CLIENT(env)) {
-		__db_errx(env, DB_STR("2588",
-		    "dbremove disallowed on replication client"));
-		goto err;
-	}
-
 	/*
 	 * Create local transaction as necessary, check for consistent
 	 * transaction usage.
@@ -94,7 +82,7 @@ __env_dbremove_pp(dbenv, txn, name, subdb, flags)
 		ret = __db_not_txn_env(env);
 		goto err;
 	} else if (txn != NULL && LF_ISSET(DB_LOG_NO_DATA)) {
-		ret = USR_ERR(env, EINVAL);
+		ret = EINVAL;
 		__db_errx(env, DB_STR("0690",
 	    "DB_LOG_NO_DATA may not be specified within a transaction."));
 		goto err;
@@ -108,15 +96,7 @@ __env_dbremove_pp(dbenv, txn, name, subdb, flags)
 		goto err;
 	LF_CLR(DB_TXN_NOT_DURABLE);
 
-#ifdef HAVE_SLICES
-	/*
-	 * Remove the slices (if any) first, because then container's portion
-	 * of the database needs to the used in order to remove the slices.
-	 */
-	ret = __db_slice_remove(dbenv, txn, name, subdb, slice_txn_flags);
-#endif
-	if (ret == 0)
-		ret = __db_remove_int(dbp, ip, txn, name, subdb, flags);
+	ret = __db_remove_int(dbp, ip, txn, name, subdb, flags);
 
 	if (txn_local) {
 		/*
@@ -210,12 +190,6 @@ __db_remove_pp(dbp, name, subdb, flags)
 		goto err;
 	}
 
-	if (handle_check && IS_REP_CLIENT(env)) {
-		__db_errx(env, DB_STR("2588",
-		    "dbremove disallowed on replication client"));
-		goto err;
-	}
-
 	/* Remove the file. */
 	ret = __db_remove(dbp, ip, NULL, name, subdb, flags);
 
@@ -274,9 +248,9 @@ __db_remove_int(dbp, ip, txn, name, subdb, flags)
 	real_name = tmpname = NULL;
 
 	if (name == NULL && subdb == NULL) {
-		ret = USR_ERR(env, EINVAL);
 		__db_errx(env, DB_STR("0691",
 		    "Remove on temporary files invalid"));
+		ret = EINVAL;
 		goto err;
 	}
 
@@ -290,7 +264,7 @@ __db_remove_int(dbp, ip, txn, name, subdb, flags)
 
 	/* Handle transactional file removes separately. */
 	if (IS_REAL_TXN(txn)) {
-		ret = __db_dbtxn_remove(dbp, ip, txn, name, subdb, DB_APP_DATA);
+		ret = __db_dbtxn_remove(dbp, ip, txn, name, subdb);
 		goto err;
 	}
 
@@ -317,10 +291,6 @@ __db_remove_int(dbp, ip, txn, name, subdb, flags)
 
 	if (dbp->db_am_remove != NULL &&
 	    (ret = dbp->db_am_remove(dbp, ip, NULL, name, subdb, flags)) != 0)
-		goto err;
-
-	if (dbp->db_am_remove == NULL &&
-	    (ret = __blob_del_all(dbp, txn, 0)) != 0)
 		goto err;
 
 	ret = F_ISSET(dbp, DB_AM_INMEM) ?
@@ -437,10 +407,6 @@ __db_subdb_remove(dbp, ip, txn, name, subdb, flags)
 	    txn, name, subdb, DB_UNKNOWN, DB_WRITEOPEN, 0, PGNO_BASE_MD)) != 0)
 		goto err;
 
-	if (sdbp->blob_threshold != 0)
-		if ((ret = __blob_del_all(sdbp, txn, 0)) != 0)
-			goto err;
-
 	DB_TEST_RECOVERY(sdbp, DB_TEST_PREDESTROY, ret, name);
 
 	/* Have the handle locked so we will not lock pages. */
@@ -494,21 +460,18 @@ err:
 }
 
 static int
-__db_dbtxn_remove(dbp, ip, txn, name, subdb, appname)
+__db_dbtxn_remove(dbp, ip, txn, name, subdb)
 	DB *dbp;
 	DB_THREAD_INFO *ip;
 	DB_TXN *txn;
 	const char *name, *subdb;
-	APPNAME appname;
 {
 	ENV *env;
 	int ret;
 	char *tmpname;
-	u_int32_t flags;
 
 	env = dbp->env;
 	tmpname = NULL;
-	flags = DB_NOSYNC;
 
 	/*
 	 * This is a transactional remove, so we have to keep the name
@@ -525,12 +488,7 @@ __db_dbtxn_remove(dbp, ip, txn, name, subdb, appname)
 	DB_TEST_RECOVERY(dbp, DB_TEST_PREDESTROY, ret, name);
 
 	if ((ret = __db_rename_int(dbp,
-	    txn->thread_info, txn, name, subdb, tmpname, flags)) != 0)
-		goto err;
-
-	/* Delete all blob files, if this database supports blobs. */
-	if (appname != DB_APP_BLOB && (dbp->blob_file_id != 0 ||
-	    dbp->blob_sdb_id != 0) && (ret = __blob_del_all(dbp, txn, 0)) != 0)
+	    txn->thread_info, txn, name, subdb, tmpname, DB_NOSYNC)) != 0)
 		goto err;
 
 	/*
@@ -543,7 +501,7 @@ __db_dbtxn_remove(dbp, ip, txn, name, subdb, appname)
 	ret = F_ISSET(dbp, DB_AM_INMEM) ?
 	     __db_inmem_remove(dbp, txn, tmpname) :
 	    __fop_remove(env,
-	    txn, dbp->fileid, tmpname, &dbp->dirname, appname,
+	    txn, dbp->fileid, tmpname, &dbp->dirname, DB_APP_DATA,
 	    F_ISSET(dbp, DB_AM_NOT_DURABLE) ? DB_LOG_NOT_DURABLE : 0);
 
 	DB_TEST_RECOVERY(dbp, DB_TEST_POSTDESTROY, ret, name);

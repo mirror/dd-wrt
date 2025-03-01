@@ -1,10 +1,10 @@
                                   DB_File
 
-                               Version 1.836
+                               Version 1.824
 
-                             23 December 2016
+                              6th August 2011
 
-     Copyright (c) 1995-2016 Paul Marquess. All rights reserved. This
+     Copyright (c) 1995-2011 Paul Marquess. All rights reserved. This
       program is free software; you can redistribute it and/or modify
                   it under the same terms as Perl itself.
 
@@ -22,11 +22,11 @@ DESCRIPTION
 
 DB_File is a module which allows Perl programs to make use of the
 facilities provided by Berkeley DB version 1. (DB_File can be built
-version 2, or greater, of Berkeley DB, but it will only support the 1.x
-features).
+version 2, 3 or 4 of Berkeley DB, but it will only support the 1.x
+features),
 
 If you want to make use of the new features available in Berkeley DB
-2.x, or greater, use the Perl module BerkeleyDB instead.
+2.x, 3.x or 4.x, use the Perl module BerkeleyDB instead.
 
 Berkeley DB is a C library which provides a consistent interface to a
 number of database formats. DB_File provides an interface to all three
@@ -42,7 +42,7 @@ PREREQUISITES
 Before you can build DB_File you must have the following installed on
 your system:
 
-    * Perl 5.8.3 or greater.
+    * Perl 5.004_05 or greater.
 
     * Berkeley DB.
 
@@ -205,7 +205,7 @@ Solution: Setting the LIB & INCLUDE variables in config.in to point to the
 Incompatible versions of db.h and libdb
 ---------------------------------------
 
-DB_File seems to have built correctly, but you get an error like this
+BerkeleyDB seems to have built correctly, but you get an error like this
 when you run the test harness:
 
   $ make test
@@ -229,63 +229,6 @@ Solution: Setting the LIB & INCLUDE variables in config.in to point to the
           of db.h and libdb.a that you don't want BerkeleyDB to use.
           If you are running Linux, please read the Linux Notes section
           below.
-
-Keep getting "At least one secondary cursor must be specified to DB->join"
---------------------------------------------------------------------------
-
-When you either run the DB_File test harness, or attempt to run a script
-that uses DB_File you get the error message below.
-
-    BDB0588 At least one secondary cursor must be specified to DB->join.
-
-To date thus issue has only been reported on Windows. If you encounter this
-issue on another platform, please report the issue. See the FEEDBACK
-section for details.
-
-This issue boils down to the size of the C type time_t. 
-
-The typical reason for getting this error is when running a 32-bit Perl
-(which will use a 32-bit time_t) along with a 32-bit Berkeley DB library.
-The key point is how Berkeley DB has been built. If it has been built with
-a newish version of Visual C++, time_t will default to 64-bit, even when
-the rest of the library has been built 32-bit. This means that Perl thinks
-time_t is 32-bit, but Berkeley DB thinks it is 64-bit. 
-
-More details of how the size of time_t in Windows is shown below (taken
-from http://msdn.microsoft.com/en-us/library/w4ddyt9h.aspx)
-
-    In versions of Visual C++ and Microsoft C/C++ before Visual C++ 2005,
-    time_t was a long int (32 bits) and hence could not be used for dates
-    past 3:14:07 January 19, 2038, UTC. time_t is now equivalent to
-    __time64_t by default, but defining _USE_32BIT_TIME_T changes time_t
-    to __time32_t and forces many time functions to call versions that take
-    the 32-bit time_t.
-
-
-When DB_File is built, it uses a Berkeley DB header file, called db.h. This
-file contains the definition of a number of key data structures used by
-Berkeley DB. Unfortunately one of those data structures includes a time_t.
-This is the root case for this issue. When you build DB_File, it assumes
-time_t is 32-bit, but the Berkeley DB library is expecting it to be 64-bit.
-
-Solution: 
-
-There are a few options available.
-
-1. Use a 64-bit Perl along with a 64-bit Berkleley DB.
-
-2. Use a 32-bit Perl along with a 32-bit Berkeley DB where _USE_32BIT_TIME_T
-   has been defined.
-
-3. If you do need to interoperate with a Berkeley DB library that uses a
-   time_t that is different from Perl you need to edit the file DB_File.xs
-   and find these lines
-
-        /* #define time_t __time64_t */
-        /* #define time_t __time32_t */
-
-    If your Berkeley DB library uses a 64-bit time_t, uncomment the first line.
-    If your Berkeley DB library uses a 32-bit time_t, uncomment the second line.
 
 
 Solaris build fails with "language optional software package not installed"

@@ -1,22 +1,18 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package com.sleepycat.bind.tuple.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 import com.sleepycat.bind.EntityBinding;
 import com.sleepycat.bind.EntryBinding;
@@ -45,24 +41,48 @@ import com.sleepycat.bind.tuple.TupleMarshalledBinding;
 import com.sleepycat.bind.tuple.TupleOutput;
 import com.sleepycat.bind.tuple.TupleTupleMarshalledBinding;
 import com.sleepycat.db.DatabaseEntry;
+import com.sleepycat.util.ExceptionUnwrapper;
 import com.sleepycat.util.FastOutputStream;
+import com.sleepycat.util.test.SharedTestUtils;
 
 /**
  * @author Mark Hayes
  */
-public class TupleBindingTest {
+public class TupleBindingTest extends TestCase {
 
     private DatabaseEntry buffer;
     private DatabaseEntry keyBuffer;
 
-    @Before
+    public static void main(String[] args) {
+        junit.framework.TestResult tr =
+            junit.textui.TestRunner.run(suite());
+        if (tr.errorCount() > 0 ||
+            tr.failureCount() > 0) {
+            System.exit(1);
+        } else {
+            System.exit(0);
+        }
+    }
+
+    public static Test suite() {
+        TestSuite suite = new TestSuite(TupleBindingTest.class);
+        return suite;
+    }
+
+    public TupleBindingTest(String name) {
+
+        super(name);
+    }
+
+    @Override
     public void setUp() {
 
+        SharedTestUtils.printTestName("TupleBindingTest." + getName());
         buffer = new DatabaseEntry();
         keyBuffer = new DatabaseEntry();
     }
 
-    @After
+    @Override
     public void tearDown() {
 
         /* Ensure that GC can cleanup. */
@@ -70,6 +90,16 @@ public class TupleBindingTest {
         keyBuffer = null;
     }
 
+    @Override
+    public void runTest()
+        throws Throwable {
+
+        try {
+            super.runTest();
+        } catch (Exception e) {
+            throw ExceptionUnwrapper.unwrap(e);
+        }
+    }
 
     private void primitiveBindingTest(Class primitiveCls, Class compareCls,
                                       Object val, int byteSize) {
@@ -113,7 +143,6 @@ public class TupleBindingTest {
         assertEquals(val2, val3);
     }
 
-    @Test
     public void testPrimitiveBindings() {
 
         primitiveBindingTest(String.class, String.class,
@@ -327,7 +356,6 @@ public class TupleBindingTest {
                             new BigDecimal("123456789.123456"));
     }
 
-    @Test
     public void testTupleInputBinding() {
 
         EntryBinding binding = new TupleInputBinding();
@@ -345,7 +373,6 @@ public class TupleBindingTest {
     }
 
     // also tests TupleBinding since TupleMarshalledBinding extends it
-    @Test
     public void testTupleMarshalledBinding() {
 
         EntryBinding binding =
@@ -363,7 +390,6 @@ public class TupleBindingTest {
 
     // also tests TupleTupleBinding since TupleTupleMarshalledBinding extends
     // it
-    @Test
     public void testTupleTupleMarshalledBinding() {
 
         EntityBinding binding =
@@ -385,7 +411,6 @@ public class TupleBindingTest {
         assertEquals("index2", val.getIndexKey2());
     }
 
-    @Test
     public void testBufferSize() {
 
         CaptureSizeBinding binding = new CaptureSizeBinding();
@@ -427,7 +452,6 @@ public class TupleBindingTest {
         }
     }
 
-    @Test
     public void testBufferOverride() {
 
         TupleOutput out = new TupleOutput(new byte[10]);

@@ -35,8 +35,8 @@ execsql {
 }
 
 # Create tables t1 and t2 in database file test2.db
-forcedelete test2.db
-forcedelete test2.db-journal
+file delete -force test2.db
+file delete -force test2.db-journal
 sqlite3 db2 test2.db
 execsql {
   CREATE TABLE t1(a, b);
@@ -322,6 +322,7 @@ do_test attach3-12.9 {
   db_list
 } {main temp {}}
 do_test attach3-12.10 {
+breakpoint
   execsql {
     DETACH ?
   }

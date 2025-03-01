@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -46,7 +46,7 @@
         Again, remember that you can find the complete implementation for these functions
         in:
     </p>
-      <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples/c/getting_started</pre>
+      <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples_c/getting_started</pre>
       <p>
         where <code class="literal"><span class="emphasis"><em>DB_INSTALL</em></span></code> is the location where you
         placed your DB distribution.
@@ -109,7 +109,7 @@
             this example program. However, as always you can find the complete
             implementation for this program here:
         </p>
-          <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples/c/getting_started</pre>
+          <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples_c/getting_started</pre>
           <p>
         where <code class="literal"><span class="emphasis"><em>DB_INSTALL</em></span></code> is the location where you
         placed your DB distribution.
@@ -123,7 +123,7 @@
 
 /* Forward declarations */
 int load_vendors_database(STOCK_DBS, char *);
-size_t pack_string(char *, char *, size_t);
+int pack_string(char *, char *, int);
 int load_inventory_database(STOCK_DBS, char *); </pre>
           <p>
        Next we begin our <code class="function">main()</code> function with the variable
@@ -139,8 +139,7 @@ int
 main(int argc, char *argv[])
 {
     STOCK_DBS my_stock;
-    int ret;
-    size_t size;
+    int ret, size;
     char *basename, *inventory_file, *vendor_file;
 
     /* Initialize the STOCK_DBS struct */
@@ -178,20 +177,20 @@ main(int argc, char *argv[])
 
     /* Open all databases */
     ret = databases_setup(&amp;my_stock, "example_database_load", stderr);
-    if (ret) {
-            fprintf(stderr, "Error opening databases.\n");
+    if (ret != 0) {
+            fprintf(stderr, "Error opening databases\n");
             databases_close(&amp;my_stock);
             return (ret);
     }
 
     ret = load_vendors_database(my_stock, vendor_file);
-    if (ret) {
+    if (!ret) {
         fprintf(stderr, "Error loading vendors database.\n");
         databases_close(&amp;my_stock);
         return (ret);
     }
     ret = load_inventory_database(my_stock, inventory_file);
-    if (ret) {
+    if (!ret) {
         fprintf(stderr, "Error loading inventory database.\n");
         databases_close(&amp;my_stock);
         return (ret);
@@ -234,9 +233,9 @@ int
 load_vendors_database(STOCK_DBS my_stock, char *vendor_file)
 {
     DBT key, data;
-    char buf[MAXLINE];
     FILE *ifp;
     VENDOR my_vendor;
+    char buf[MAXLINE];
 
     /* Open the vendor file for read access */
     ifp = fopen(vendor_file, "r");
@@ -273,11 +272,11 @@ load_vendors_database(STOCK_DBS my_stock, char *vendor_file)
 
         /* Set up the database record's key */
         key.data = my_vendor.name;
-        key.size = (u_int32_t)strlen(my_vendor.name) + 1;
+        key.size = strlen(my_vendor.name) + 1;
 
         /* Set up the database record's data */
         data.data = &amp;my_vendor;
-        data.size = sizeof(VENDOR);
+        data.size = sizeof(my_vendor);
 
         /*
          * Note that given the way we built our struct, there are extra
@@ -331,11 +330,10 @@ load_vendors_database(STOCK_DBS my_stock, char *vendor_file)
  * appropriate location. Used to ensure that all our strings
  * are contained in a single contiguous chunk of memory.
  */
-size_t
-pack_string(char *buffer, char *string, size_t start_pos)
+int
+pack_string(char *buffer, char *string, int start_pos)
 {
-    size_t string_size;
-    string_size = strlen(string) + 1;
+    int string_size = strlen(string) + 1;
 
     memcpy(buffer+start_pos, string, string_size);
 
@@ -347,19 +345,15 @@ pack_string(char *buffer, char *string, size_t start_pos)
           <a id="c_dbt15"></a>
           <pre class="programlisting">/*
  * Loads the contents of the inventory.txt file into
- * a database. Note that because the itemname
- * secondary database is associated to the inventorydb
- * (see env_setup() in gettingstarted_common.c), the
- * itemname index is automatically created when this
- * database is loaded.
+ * a database.
  */
 int
 load_inventory_database(STOCK_DBS my_stock, char *inventory_file)
 {
     DBT key, data;
     char buf[MAXLINE];
-    char databuf[MAXDATABUF];
-    size_t bufLen, dataLen;
+    void *databuf;
+    int bufLen, dataLen;
     FILE *ifp;
 
     /*
@@ -379,6 +373,9 @@ load_inventory_database(STOCK_DBS my_stock, char *inventory_file)
         fprintf(stderr, "Error opening file '%s'\n", inventory_file);
         return(-1);
     }
+
+    /* Get our buffer. MAXDATABUF is some suitably large number */
+    databuf = malloc(MAXDATABUF);
 
     /* 
      * Read the inventory.txt file line by line, saving each line off to 
@@ -441,11 +438,11 @@ load_inventory_database(STOCK_DBS my_stock, char *inventory_file)
          * not support duplicates for this database. 
          */
         key.data = sku;
-        key.size = (u_int32_t)strlen(sku) + 1;
+        key.size = strlen(sku) + 1;
 
         /* The data is the information that we packed into databuf. */
         data.data = databuf;
-        data.size = (u_int32_t)bufLen;
+        data.size = bufLen;
 
         /* Put the data into the database */
         my_stock.vendor_dbp-&gt;put(my_stock.inventory_dbp, 0, 
@@ -454,6 +451,8 @@ load_inventory_database(STOCK_DBS my_stock, char *inventory_file)
 
     /* Cleanup */
     fclose(ifp);
+    if (databuf != NULL)
+        free(databuf);
 
     return(0);
 } </pre>

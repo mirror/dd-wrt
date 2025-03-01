@@ -14,14 +14,12 @@
 */
 
 #include "tcl.h"
-#include "sqlite3.h"
+#include <sqlite3.h>
 #include <assert.h>
 
-/* These functions are implemented in main.c. */
-extern const char *sqlite3ErrName(int);
-
 /* These functions are implemented in test1.c. */
-extern int getDbPointer(Tcl_Interp *, const char *, sqlite3 **);
+int getDbPointer(Tcl_Interp *, const char *, sqlite3 **);
+const char *sqlite3TestErrorName(int);
 
 static int backupTestCmd(
   ClientData clientData, 
@@ -72,7 +70,7 @@ static int backupTestCmd(
       Tcl_DeleteCommand(interp, zCmdName);
 
       rc = sqlite3_backup_finish(p);
-      Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_STATIC);
+      Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
       break;
     }
 
@@ -82,7 +80,7 @@ static int backupTestCmd(
         return TCL_ERROR;
       }
       rc = sqlite3_backup_step(p, nPage);
-      Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_STATIC);
+      Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
       break;
     }
 

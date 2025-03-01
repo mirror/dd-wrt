@@ -18,13 +18,13 @@
     <HtmlHelpName>BerkeleyDB</HtmlHelpName>
     <HelpFileFormat>Help1xAndWebsite</HelpFileFormat>
     <KeepLogFile>False</KeepLogFile>
-    <CopyrightText>Copyright %28c%29 2008, 2017 Oracle. All rights reserved.</CopyrightText>
+    <CopyrightText>Copyright %28c%29 2008, 2013 Oracle. All rights reserved.</CopyrightText>
     <HelpTitle>Berkeley DB .NET API Documentation</HelpTitle>
     <NamingMethod>MemberName</NamingMethod>
     <MissingTags>AutoDocumentCtors</MissingTags>
     <VisibleItems>InheritedMembers, InheritedFrameworkMembers</VisibleItems>
     <DocumentationSources>
-      <DocumentationSource sourceFile="..\src\VS8\db_dotnet.csproj" />
+      <DocumentationSource sourceFile="..\src\db_dotnet.csproj" />
     </DocumentationSources>
     <FeedbackEMailLinkText>
     </FeedbackEMailLinkText>

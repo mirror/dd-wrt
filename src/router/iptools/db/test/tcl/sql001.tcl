@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2010, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -16,7 +16,6 @@
 proc sql001 { {nentries 1000} {tnum "001"} args} {
 	source ./include.tcl
 	global EXE
-	global ipversion
 
 	if { [file exists $util_path/dbsql$EXE] == 0 } {
 		puts "Skipping Sql$tnum with dbsql.  Is it built?"
@@ -39,7 +38,6 @@ proc sql001 { {nentries 1000} {tnum "001"} args} {
 	file mkdir $clientdir
 	file mkdir $clientdir/$envname
 
-	set hoststr [get_hoststr $ipversion]
 	foreach {porta portb} [available_ports 2] {}
 
 	set confa [open $masterdir/$envname/DB_CONFIG w]
@@ -48,16 +46,16 @@ proc sql001 { {nentries 1000} {tnum "001"} args} {
 	puts $confa "add_data_dir .."
 	puts $confa "set_create_dir .."
 	puts $confa "set_open_flags db_init_rep"
-	puts $confa "repmgr_site $hoststr $porta db_local_site on db_group_creator on "
-	puts $confa "repmgr_site $hoststr $portb"
+	puts $confa "repmgr_site 127.0.0.1 $porta db_local_site on db_group_creator on "
+	puts $confa "repmgr_site 127.0.0.1 $portb"
 	puts $confa "set_open_flags db_thread"
 	puts $confa "set_open_flags db_register"
 
 	puts $confb "add_data_dir .."
 	puts $confb "set_create_dir .."
 	puts $confb "set_open_flags db_init_rep"
-	puts $confb "repmgr_site $hoststr $portb db_local_site on"
-	puts $confb "repmgr_site $hoststr $porta db_bootstrap_helper on"
+	puts $confb "repmgr_site 127.0.0.1 $portb db_local_site on"
+	puts $confb "repmgr_site 127.0.0.1 $porta db_bootstrap_helper on"
 	puts $confb "set_open_flags db_thread"
 	puts $confb "set_open_flags db_register"
 

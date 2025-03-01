@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -241,122 +241,6 @@ typedef struct hashhdr {	/* Disk resident portion */
 	 * Minimum page size is 256.
 	 */
 } HASHHDR;
-
-/************************************************************************
- BLOB RECORD LAYOUTS
- ************************************************************************/
-
-/*
- * Hash BLOB record layout.
- */
-typedef struct _hblob60 {
-	u_int8_t  type;			/*    00: Page type and delete flag. */
-	u_int8_t  encoding;		/*    01: Encoding of blob file. */
-	u_int8_t  unused[2];		/* 02-03: Padding, unused. */
-	u_int32_t id_lo;		/* 04-07: Blob file identifier. */
-	u_int32_t id_hi;		/* 07-11: Blob file identifier. */
-	u_int32_t size_lo;		/* 12-15: Blob file size. */
-	u_int32_t size_hi;		/* 15-19: Blob file size. */
-	DB_LSN    lsn;			/* 20-27: LSN for blob file update. */
-	u_int8_t  chksum[DB_MAC_KEY];	/* 28-47: Checksum */
-	u_int8_t  iv[DB_IV_BYTES];	/* 48-63: IV */
-	u_int32_t file_id_lo;		/* 64-67: File directory lo. */
-	u_int32_t file_id_hi;		/* 68-71: File directory hi. */
-	u_int32_t sdb_id_lo;		/* 72-75: Subdb that owns this blob. */
-	u_int32_t sdb_id_hi;		/* 76-79: Subdb that owns this blob. */
-} HBLOB60;
-
-#define	HBLOB60_SIZE		(sizeof(HBLOB60))
-
-/*
- * Btree BLOB record layout.
- */
-typedef struct _bblob60 {
-	db_indx_t len;			/* 00-01: BBLOB_DSIZE. */
-	u_int8_t  type;			/*    02: Page type and delete flag. */
-	u_int8_t  encoding;		/*    03: Encoding of blob file. */
-	u_int32_t id_lo;		/* 04-07: Blob file identifier. */
-	u_int32_t id_hi;		/* 08-11: Blob file identifier. */
-	u_int32_t size_lo;		/* 12-15: Blob file size. */
-	u_int32_t size_hi;		/* 15-19: Blob file size. */
-	DB_LSN    lsn;			/* 20-27: LSN for blob file update. */
-	u_int8_t  chksum[DB_MAC_KEY];	/* 28-47: Checksum */
-	u_int8_t  iv[DB_IV_BYTES];	/* 48-63: IV */
-	u_int32_t file_id_lo;		/* 64-67: File directory lo. */
-	u_int32_t file_id_hi;		/* 68-71: File directory hi. */
-	u_int32_t sdb_id_lo;		/* 72-75: Subdb that owns this blob. */
-	u_int32_t sdb_id_hi;		/* 76-79: Subdb that owns this blob. */
-} BBLOB60;
-
-#define	BBLOB60_SIZE							\
-	((u_int16_t)DB_ALIGN(sizeof(BBLOB60), sizeof(u_int32_t)))
-/*
- * Heap BLOB record layout.
- */
-typedef struct _heapblob60 {
-	u_int8_t flags;			/* 00: Flags describing record. */
-	u_int8_t unused;		/* 01: Padding. */
-	u_int16_t size;			/* 02-03: Size of stored data piece. */
-	u_int8_t  encoding;		/*    04: Encoding of blob file. */
-	u_int8_t  unused2[3];		/* 05-07: Padding, unused. */
-	u_int32_t id_lo;		/* 08-11: Blob file identifier. */
-	u_int32_t id_hi;		/* 12-15: Blob file identifier. */
-	u_int32_t size_lo;		/* 16-19: Blob file size. */
-	u_int32_t size_hi;		/* 20-23: Blob file size. */
-	u_int8_t  unused3[4];		/* 24-27: Padding, unused. */
-	u_int8_t  chksum[DB_MAC_KEY];	/* 28-47: Checksum */
-	u_int8_t  iv[DB_IV_BYTES];	/* 48-63: IV */
-	DB_LSN    lsn;			/* 64-67: LSN for blob file update. */
-	u_int32_t file_id_lo;		/* 68-71: File directory lo. */
-	u_int32_t file_id_hi;		/* 72-75: File directory hi. */
-} HEAPBLOBHDR60;
-
-#define	HEAPBLOBREC60_SIZE		(sizeof(HEAPBLOBHDR60))
-
-#define	GET_BLOB60_FILE_ID(e, p, o, ret)				\
-	GET_LO_HI(e, (p)->file_id_lo, (p)->file_id_hi, o, ret);
-
-#define	GET_BLOB60_SDB_ID(e, p, o, ret)					\
-	GET_LO_HI(e, (p)->sdb_id_lo, (p)->sdb_id_hi, o, ret);
-
-/* Return a uintmax_t version of blob_id. */
-#define	GET_BLOB60_ID(e, p, o, ret)	do {				\
-	DB_ASSERT((e), sizeof(o) <= 8);					\
-	if (sizeof(o) == 8) {						\
-		(o) = (p).id_hi;					\
-		(o) = (o) << 32;					\
-		(o) += (p).id_lo;					\
-	} else {							\
-		if ((p).id_hi > 0) {					\
-			__db_errx((e), DB_STR("0766",			\
-			    "External file identifier overflow."));	\
-			(ret) = EINVAL;					\
-		}							\
-		(o) = (p).id_lo;					\
-	}								\
-} while (0);
-
-/* Return a off_t version of blob size. */
-#define	GET_BLOB60_SIZE(e, p, o, ret)	do {				\
-	DB_ASSERT((e), sizeof(o) <= 8);					\
-	if (sizeof(o) == 8) {						\
-		(o) = (p).size_hi;					\
-		(o) = (o) << 32;					\
-		(o) += (p).size_lo;					\
-	} else {							\
-		if ((p).size_hi > 0) {					\
-			__db_errx((e), DB_STR("0767",			\
-			    "External file size overflow."));		\
-			(ret) = EINVAL;					\
-		}							\
-		if ((p).size_lo > INT_MAX) {				\
-			__db_errx((e), DB_STR("0768",			\
-			    "External file size overflow."));		\
-			(ret) = EINVAL;					\
-		}							\
-		(o) = (int32_t)(p).size_lo;				\
-	}								\
-} while (0);
 
 #if defined(__cplusplus)
 }

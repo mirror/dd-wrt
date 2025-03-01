@@ -270,11 +270,7 @@ ifcapable {explain} {
       CREATE UNIQUE INDEX ex1i1 ON ex1(a);
       EXPLAIN REINDEX;
     }]
-    ifcapable mergesort {
-      regexp { SorterCompare \d+ \d+ \d+ } $x
-    } else {
-      regexp { IsUnique \d+ \d+ \d+ \d+ } $x
-    }
+    regexp { IsUnique \d+ \d+ \d+ \d+ } $x
   } {1}
   if {[regexp {16} [db one {PRAGMA encoding}]]} {
     do_test misc3-6.11-utf16 {
@@ -283,7 +279,7 @@ ifcapable {explain} {
       }]
       set y [regexp { 123456789012 } $x]
       lappend y [regexp { 4.5678 } $x]
-      lappend y [regexp {,-B} $x]
+      lappend y [regexp {,-BINARY} $x]
     } {1 1 1}
   } else {
     do_test misc3-6.11-utf8 {
@@ -293,7 +289,7 @@ ifcapable {explain} {
       set y [regexp { 123456789012 } $x]
       lappend y [regexp { 4.5678 } $x]
       lappend y [regexp { hello } $x]
-      lappend y [regexp {,-B} $x]
+      lappend y [regexp {,-BINARY} $x]
     } {1 1 1 1}
   }
 }

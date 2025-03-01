@@ -1,25 +1,26 @@
 --- src/shell.c
 +++ src/shell.c
-@@ -4425,7 +4425,7 @@
-   sqlite3_config(SQLITE_CONFIG_URI, 1);
+@@ -2529,7 +2529,7 @@
+   memcpy(data->separator,"|", 2);
+   data->showHeader = 0;
    sqlite3_config(SQLITE_CONFIG_LOG, shellLog, data);
-   sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
 -  sqlite3_snprintf(sizeof(mainPrompt), mainPrompt,"sqlite> ");
 +  sqlite3_snprintf(sizeof(mainPrompt), mainPrompt,"dbsql> ");
    sqlite3_snprintf(sizeof(continuePrompt), continuePrompt,"   ...> ");
+   sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
  }
-
-@@ -4780,10 +4780,11 @@
+@@ -2730,11 +2730,12 @@
        char *zHome;
        char *zHistory = 0;
        int nHistory;
 +      extern char *db_full_version(int *, int *, int *, int *, int *);
        printf(
--        "SQLite version %s %.19s\n" /*extra-version-info*/
+-        "SQLite version %s\n"
 +        "%s\n"
-         "Enter \".help\" for usage hints.\n",
--        sqlite3_libversion(), sqlite3_sourceid()
+         "Enter \".help\" for instructions\n"
+         "Enter SQL statements terminated with a \";\"\n",
+-        sqlite3_libversion()
 +        db_full_version(NULL, NULL, NULL, NULL, NULL)
        );
-       if( warnInmemoryDb ){
-         printf("Connected to a ");
+       zHome = find_home_dir();
+       if( zHome ){

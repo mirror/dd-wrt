@@ -192,13 +192,6 @@ do_test triggerA-2.10 {
      SELECT * FROM result4 ORDER BY a;
   }
 } {3 305 3 9900305 4 404 4 9900404 5 504 5 9900504}
-do_test triggerA-2.11 {
-  db eval {
-     DELETE FROM result4;
-     UPDATE v5 SET b = main.v5.b+9900000 WHERE main.v5.x BETWEEN 3 AND 5;
-     SELECT * FROM result4 ORDER BY a;
-  }
-} {3 305 3 9900305 4 404 4 9900404 5 504 5 9900504}
 
 # Only run the reamining tests if memory debugging is turned on.
 #
@@ -212,16 +205,16 @@ source $testdir/malloc_common.tcl
 # Save a copy of the current database configuration.
 #
 db close
-forcedelete test.db-triggerA
-copy_file test.db test.db-triggerA
+file delete -force test.db-triggerA
+file copy test.db test.db-triggerA
 sqlite3 db test.db
 
 # Run malloc tests on the INSTEAD OF trigger firing.
 #
 do_malloc_test triggerA-3 -tclprep {
   db close
-  forcedelete test.db test.db-journal
-  forcecopy test.db-triggerA test.db
+  file delete -force test.db test.db-journal
+  file copy -force test.db-triggerA test.db
   sqlite3 db test.db
   sqlite3_extended_result_codes db 1  
   db eval {SELECT * FROM v5; -- warm up the cache}
@@ -232,6 +225,6 @@ do_malloc_test triggerA-3 -tclprep {
 
 # Clean up the saved database copy.
 #
-forcedelete test.db-triggerA
+file delete -force test.db-triggerA
 
 finish_test

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -56,8 +56,8 @@ static int __bam_dup_check __P((DBC *, u_int32_t,
 static int __bam_dup_convert __P((DBC *, PAGE *, u_int32_t, u_int32_t));
 static int __bam_ovput
 	       __P((DBC *, u_int32_t, db_pgno_t, PAGE *, u_int32_t, DBT *));
-static int __bam_partsize
-		__P((DB *, u_int32_t, DBT *, PAGE *, u_int32_t, u_int32_t *));
+static u_int32_t
+	   __bam_partsize __P((DB *, u_int32_t, DBT *, PAGE *, u_int32_t));
 
 /*
  * __bam_iitem --
@@ -71,22 +71,18 @@ __bam_iitem(dbc, key, data, op, flags)
 	DBT *key, *data;
 	u_int32_t op, flags;
 {
-	BBLOB bl, blob_buf;
 	BKEYDATA *bk, bk_tmp;
 	BTREE *t;
 	BTREE_CURSOR *cp;
 	DB *dbp;
-	DBT bk_hdr, blob_dbt, tdbt;
+	DBT bk_hdr, tdbt;
 	DB_MPOOLFILE *mpf;
 	ENV *env;
-	DB_LSN lsn;
 	PAGE *h;
 	db_indx_t cnt, indx;
-	off_t blob_size;
-	db_seq_t blob_id, new_blob_id;
 	u_int32_t data_size, have_bytes, need_bytes, needed, pages, pagespace;
 	char tmp_ch;
-	int cmp, bigkey, bigdata, blobdata, del, dupadjust;
+	int cmp, bigkey, bigdata, del, dupadjust;
 	int padrec, replace, ret, t_ret, was_deleted;
 
 	COMPQUIET(cnt, 0);
@@ -99,7 +95,6 @@ __bam_iitem(dbc, key, data, op, flags)
 	h = cp->page;
 	indx = cp->indx;
 	del = dupadjust = replace = was_deleted = 0;
-	blobdata = 0;
 
 	/*
 	 * Fixed-length records with partial puts: it's an error to specify
@@ -117,12 +112,8 @@ __bam_iitem(dbc, key, data, op, flags)
 	 * longer than the fixed-length, and we never require less than
 	 * the fixed-length record size.
 	 */
-	if (F_ISSET(data, DB_DBT_PARTIAL)) {
-		if ((ret = __bam_partsize(
-		    dbp, op, data, h, indx, &data_size)) != 0)
-			return (ret);
-	} else
-		data_size = data->size;
+	data_size = F_ISSET(data, DB_DBT_PARTIAL) ?
+	    __bam_partsize(dbp, op, data, h, indx) : data->size;
 	padrec = 0;
 	if (F_ISSET(dbp, DB_AM_FIXEDLEN)) {
 		if (data_size > t->re_len)
@@ -199,13 +190,6 @@ __bam_iitem(dbc, key, data, op, flags)
 	}
 	if (!F_ISSET(data, DB_DBT_STREAMING) &&
 	    (padrec || F_ISSET(data, DB_DBT_PARTIAL))) {
-		/* Partial puts need to be handled in the blob functions. */
-		if (op == DB_CURRENT) {
-			bk = GET_BKEYDATA(dbp, h, indx + (TYPE(h) == P_LBTREE ?
-			    O_INDX : 0));
-			if (B_TYPE(bk->type) == B_BLOB)
-				goto dup_cmp;
-		}
 		tdbt = *data;
 		if ((ret =
 		    __bam_build(dbc, op, &tdbt, h, indx, data_size)) != 0)
@@ -220,45 +204,24 @@ __bam_iitem(dbc, key, data, op, flags)
 	 * screwing up the duplicate sort order.  We have to do this after
 	 * we build the real record so that we're comparing the real items.
 	 */
-dup_cmp:if (op == DB_CURRENT && dbp->dup_compare != NULL) {
+	if (op == DB_CURRENT && dbp->dup_compare != NULL) {
 		if ((ret = __bam_cmp(dbc, data, h,
 		    indx + (TYPE(h) == P_LBTREE ? O_INDX : 0),
-		    dbp->dup_compare, &cmp, NULL)) != 0)
+		    dbp->dup_compare, &cmp)) != 0)
 			return (ret);
 		if (cmp != 0) {
-			ret = USR_ERR(env, EINVAL);
 			__db_errx(env, DB_STR("1004",
 			    "Existing data sorts differently from put data"));
-			return (ret);
+			return (EINVAL);
 		}
 	}
 
 	/*
 	 * If the key or data item won't fit on a page, we'll have to store
-	 * them on overflow pages.  The exception is if we are inserting
-	 * into an existing blob file, in that case it remains a blob
-	 * file regardless of its new size.
+	 * them on overflow pages.
 	 */
-	if (op == DB_CURRENT) {
-		bk = GET_BKEYDATA(
-		    dbp, h, indx + (TYPE(h) == P_LBTREE ? O_INDX : 0));
-		if (B_TYPE(bk->type) == B_BLOB) {
-			blobdata = 1;
-			bigdata = 0;
-		} else
-			bigdata = data_size > cp->ovflsize;
-	} else {
-		if (dbp->blob_threshold &&
-		    (dbp->blob_threshold <= data_size ||
-		    F_ISSET(data, DB_DBT_BLOB))) {
-			blobdata = 1;
-			bigdata = 0;
-		} else {
-			blobdata = 0;
-			bigdata = data_size > cp->ovflsize;
-		}
-	}
 	needed = 0;
+	bigdata = data_size > cp->ovflsize;
 	switch (op) {
 	case DB_KEYFIRST:
 		/* We're adding a new key and data pair. */
@@ -269,8 +232,6 @@ dup_cmp:if (op == DB_CURRENT && dbp->dup_compare != NULL) {
 			needed += BKEYDATA_PSIZE(key->size);
 		if (bigdata)
 			needed += BOVERFLOW_PSIZE;
-		else if (blobdata)
-			needed += BBLOB_PSIZE;
 		else
 			needed += BKEYDATA_PSIZE(data_size);
 		break;
@@ -293,8 +254,6 @@ dup_cmp:if (op == DB_CURRENT && dbp->dup_compare != NULL) {
 			    indx + (TYPE(h) == P_LBTREE ? O_INDX : 0));
 			if (B_TYPE(bk->type) == B_KEYDATA)
 				have_bytes = BKEYDATA_PSIZE(bk->len);
-			else if (B_TYPE(bk->type) == B_BLOB)
-				have_bytes = BBLOB_PSIZE;
 			else
 				have_bytes = BOVERFLOW_PSIZE;
 			need_bytes = 0;
@@ -304,8 +263,6 @@ dup_cmp:if (op == DB_CURRENT && dbp->dup_compare != NULL) {
 		}
 		if (bigdata)
 			need_bytes += BOVERFLOW_PSIZE;
-		else if (blobdata)
-			need_bytes += BBLOB_PSIZE;
 		else
 			need_bytes += BKEYDATA_PSIZE(data_size);
 
@@ -448,8 +405,7 @@ dup_cmp:if (op == DB_CURRENT && dbp->dup_compare != NULL) {
 		 * because we're going to immediately re-add the item into the
 		 * same slot.
 		 */
-		if (bigdata || (B_TYPE(bk->type) != B_KEYDATA &&
-		    B_TYPE(bk->type) != B_BLOB)) {
+		if (bigdata || B_TYPE(bk->type) != B_KEYDATA) {
 			/*
 			 * If streaming, don't delete the overflow item,
 			 * just delete the item pointing to the overflow item.
@@ -492,65 +448,13 @@ dup_cmp:if (op == DB_CURRENT && dbp->dup_compare != NULL) {
 			bk_hdr.size = SSZA(BKEYDATA, data);
 			ret = __db_pitem(dbc, h, indx,
 			    BKEYDATA_SIZE(data->size), &bk_hdr, data);
-		} else if (replace) {
-			/*
-			 * If updating a blob, replace the blob file with the
-			 * new blob data and updated the blob db record.
-			 */
-			if (blobdata) {
-				memcpy(&bl,
-				    P_ENTRY(dbp, h, indx), BBLOB_SIZE);
-				memset(&blob_dbt, 0, sizeof(DBT));
-				blob_dbt.size = BBLOB_DSIZE;
-				if (F_ISSET(data, DB_DBT_BLOB_REC)) {
-					/*
-					 * Replace the blob record with the
-					 * blob record in the data DBT.
-					 */
-					blob_dbt.data = BBLOB_DATA(data->data);
-				} else {
-					blob_id = (db_seq_t)bl.id;
-					GET_BLOB_SIZE(
-					    dbp->env, bl, blob_size, ret);
-					if (ret != 0)
-						goto err;
-					if ((ret = __blob_repl(
-					    dbc, data, blob_id,
-					    &new_blob_id, &blob_size)) != 0)
-						goto err;
-					blob_dbt.data = BBLOB_DATA((&bl));
-					SET_BLOB_ID(&bl, new_blob_id, BBLOB);
-					SET_BLOB_SIZE(&bl, blob_size, BBLOB);
-				}
-				ret = __bam_ritem(
-				    dbc, h, indx, &blob_dbt, B_BLOB);
-			} else
-				ret = __bam_ritem(dbc, h, indx, data, 0);
-		} else
-			if (blobdata) {
-				new_blob_id = 0;
-				blob_size = 0;
-				if ((ret = __blob_put(dbc, data,
-				    &new_blob_id, &blob_size, &lsn)) != 0)
-					goto err;
-				memset(&blob_buf, 0, BBLOB_SIZE);
-				blob_buf.type = B_BLOB;
-				blob_buf.len = BBLOB_DSIZE;
-				tdbt.data = &blob_buf;
-				tdbt.size = BBLOB_SIZE;
-				SET_BLOB_ID(&blob_buf, new_blob_id, BBLOB);
-				SET_BLOB_SIZE(&blob_buf, blob_size, BBLOB);
-				SET_BLOB_FILE_ID(
-				    &blob_buf, dbp->blob_file_id, BBLOB);
-				SET_BLOB_SDB_ID(
-				    &blob_buf, dbp->blob_sdb_id, BBLOB);
-				ret = __db_pitem(dbc, h,
-				    indx, BBLOB_SIZE, &tdbt, NULL);
-			} else
-				ret = __db_pitem(dbc, h, indx,
-				    BKEYDATA_SIZE(data->size), NULL, data);
+		} else if (replace)
+			ret = __bam_ritem(dbc, h, indx, data, 0);
+		else
+			ret = __db_pitem(dbc, h, indx,
+			    BKEYDATA_SIZE(data->size), NULL, data);
 	}
-err:	if (ret != 0) {
+	if (ret != 0) {
 		if (del == 1 && (t_ret =
 		     __bam_ca_di(dbc, PGNO(h), indx + 1, -1)) != 0) {
 			__db_err(env, t_ret, DB_STR("1005",
@@ -600,61 +504,32 @@ err:	if (ret != 0) {
  * __bam_partsize --
  *	Figure out how much space a partial data item is in total.
  */
-static int
-__bam_partsize(dbp, op, data, h, indx, data_size)
+static u_int32_t
+__bam_partsize(dbp, op, data, h, indx)
 	DB *dbp;
 	u_int32_t op, indx;
 	DBT *data;
 	PAGE *h;
-	u_int32_t *data_size;
 {
-	BBLOB bl;
 	BKEYDATA *bk;
-	int ret;
-	off_t blob_size;
 	u_int32_t nbytes;
-
-	ret = 0;
 
 	/*
 	 * If the record doesn't already exist, it's simply the data we're
 	 * provided.
 	 */
-	if (op != DB_CURRENT) {
-		*data_size = data->doff + data->size;
-		return (0);
-	}
+	if (op != DB_CURRENT)
+		return (data->doff + data->size);
 
 	/*
 	 * Otherwise, it's the data provided plus any already existing data
 	 * that we're not replacing.
 	 */
 	bk = GET_BKEYDATA(dbp, h, indx + (TYPE(h) == P_LBTREE ? O_INDX : 0));
-	switch (B_TYPE(bk->type)) {
-	case B_BLOB:
-		memcpy(&bl, bk, BBLOB_SIZE);
-		GET_BLOB_SIZE(dbp->env, bl, blob_size, ret);
-		if (ret != 0)
-			return (ret);
-		/*
-		 * It is not possible to add data past UINT32_MAX in the
-		 * partial API, so this is safe.
-		 */
-		if (blob_size > UINT32_MAX)
-			nbytes = UINT32_MAX;
-		else
-			nbytes = (u_int32_t)blob_size;
-		break;
-	case B_OVERFLOW:
-		nbytes = ((BOVERFLOW *)bk)->tlen;
-		break;
-	default:
-		nbytes = bk->len;
-	}
+	nbytes =
+	    B_TYPE(bk->type) == B_OVERFLOW ? ((BOVERFLOW *)bk)->tlen : bk->len;
 
-	*data_size = __db_partsize(nbytes, data);
-
-	return (ret);
+	return (__db_partsize(nbytes, data));
 }
 
 /*
@@ -973,7 +848,6 @@ __bam_irep(dbc, h, indx, hdr, data)
 	bi = GET_BINTERNAL(dbp, h, indx);
 	bn = (BINTERNAL *) hdr->data;
 
-	DB_ASSERT(dbc->env, B_TYPE(bi->type) != B_BLOB);
 	if (B_TYPE(bi->type) == B_OVERFLOW &&
 	    (ret = __db_doff(dbc, ((BOVERFLOW *)bi->data)->pgno)) != 0)
 		return (ret);
@@ -1018,7 +892,6 @@ __bam_dup_check(dbc, op, h, indx, sz, cntp)
 
 	/* Count the key once. */
 	bk = GET_BKEYDATA(dbp, h, indx);
-	DB_ASSERT(dbc->env, B_TYPE(bk->type) != B_BLOB);
 	sz += B_TYPE(bk->type) == B_KEYDATA ?
 	    BKEYDATA_PSIZE(bk->len) : BOVERFLOW_PSIZE;
 
@@ -1121,7 +994,6 @@ __bam_dup_convert(dbc, h, indx, cnt)
 		 * overflow, then free up those pages).
 		 */
 		bk = GET_BKEYDATA(dbp, h, dindx + 1);
-		DB_ASSERT(dbc->env, B_TYPE(bk->type) != B_BLOB);
 		hdr.data = bk;
 		hdr.size = B_TYPE(bk->type) == B_KEYDATA ?
 		    BKEYDATA_SIZE(bk->len) : BOVERFLOW_SIZE;

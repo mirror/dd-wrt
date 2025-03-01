@@ -82,12 +82,9 @@ __os_read						db db_small
 __os_realloc						db db_small 
 __os_rename						db db_small 
 __os_strdup						db db_small 
-__os_support_direct_io					db db_small 
 __os_umalloc						db db_small 
 __os_unlink						db db_small 
 __os_write						db db_small 
-__repmgr_get_incoming_queue_fullevent			db db_small 
-__repmgr_get_incoming_queue_redzone			db db_small
 __txn_id_set						db db_small 
 
 # These are needed for linking tools or java.
@@ -159,39 +156,23 @@ __db_relink_desc						db db_small
 __db_rpath						db db_small 
 __db_stat_pp						db db_small 
 __db_stat_print_pp						db db_small 
-__db_util_arg_progname						db db_small 
-__db_util_arg_password						db db_small
-__db_util_cache							db db_small 
-__db_util_env_create						db db_small 
-__db_util_env_open						db db_small 
+__db_util_cache						db db_small 
 __db_util_interrupted						db db_small 
 __db_util_logset						db db_small 
 __db_util_siginit						db db_small 
 __db_util_sigresend						db db_small 
-__db_util_version_check						db db_small 
 __db_verify_internal						db db_small 
-__dbreg_register_desc						db db_small
-__dbreg_register_42_desc					db db_small
+__dbreg_register_desc						db db_small 
 __dbt_usercopy						db db_small 
 __dbt_userfree						db db_small 
-__env_encrypt_adj_size					db
-__env_encrypt						db
-__env_decrypt						db
-__fop_create_42_desc						db db_small
-__fop_create_60_desc						db db_small
+__fop_create_42_desc						db db_small 
 __fop_create_desc						db db_small 
-__fop_file_remove_60_desc					db db_small
-__fop_file_remove_desc						db db_small
-__fop_remove_60_desc						db db_small
+__fop_file_remove_desc						db db_small 
 __fop_remove_desc						db db_small 
-__fop_rename_42_desc						db db_small
-__fop_rename_60_desc						db db_small
-__fop_rename_desc						db db_small
-__fop_write_42_desc						db db_small
-__fop_write_60_desc						db db_small 
-__fop_write_desc						db db_small
-__fop_write_file_60_desc					db db_small
-__fop_write_file_desc						db db_small
+__fop_rename_42_desc						db db_small 
+__fop_rename_desc						db db_small 
+__fop_write_42_desc						db db_small 
+__fop_write_desc						db db_small 
 __ham_changeslot_desc						db 
 __ham_chgpg_desc						db 
 __ham_contract_desc						db 
@@ -211,10 +192,9 @@ __ham_release_meta						db
 __ham_replace_42_desc						db 
 __ham_replace_desc						db 
 __ham_splitdata_desc						db 
-__heap_addrem_60_desc						db
-__heap_addrem_50_desc						db
 __heap_addrem_desc						db 
 __heap_exist						db db_small 
+__heap_init_print						db db_small 
 __heap_pg_alloc_desc						db 
 __heap_trunc_meta_desc						db 
 __heap_trunc_page_desc						db 
@@ -268,4 +248,3 @@ __txn_xa_regop_42_desc						db db_small
 
 # These are needed for internal test programs.
 __repmgr_getaddr						db 
-__db_ctimespec							db

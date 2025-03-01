@@ -12,29 +12,30 @@
  
 --- configure
 +++ configure
-@@ -10287,7 +10287,7 @@
-
- #########
- # Check for needed/wanted headers
--for ac_header in sys/types.h stdlib.h stdint.h inttypes.h malloc.h
-+for ac_header in sys/types.h stdlib.h stdint.h inttypes.h malloc.h errno.h
- do :
-   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
- ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+@@ -11993,7 +11993,8 @@ fi
+ 
+ 
+ 
+-for ac_header in sys/types.h stdlib.h stdint.h inttypes.h
++
++for ac_header in sys/types.h stdlib.h stdint.h inttypes.h errno.h
+ do
+ as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
 --- configure.ac
 +++ configure.ac
-@@ -104,7 +104,7 @@
+@@ -122,7 +122,7 @@ AC_CHECK_TYPES([int8_t, int16_t, int32_t
  
  #########
  # Check for needed/wanted headers
--AC_CHECK_HEADERS([sys/types.h stdlib.h stdint.h inttypes.h malloc.h])
-+AC_CHECK_HEADERS([sys/types.h stdlib.h stdint.h inttypes.h malloc.h errno.h])
+-AC_CHECK_HEADERS([sys/types.h stdlib.h stdint.h inttypes.h])
++AC_CHECK_HEADERS([sys/types.h stdlib.h stdint.h inttypes.h errno.h])
  
  #########
  # Figure out whether or not we have these functions
 --- src/sqliteInt.h
 +++ src/sqliteInt.h
-@@ -135,6 +135,9 @@
+@@ -75,6 +75,9 @@
  #ifdef HAVE_INTTYPES_H
  #include <inttypes.h>
  #endif
@@ -43,4 +44,4 @@
 +#endif
  
  /*
- ** The following macros are used to cast pointers to integers and
+ ** The number of samples of an index that SQLite takes in order to 

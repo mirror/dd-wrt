@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1997, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -102,7 +102,7 @@ skipdel:
 	FREE_STRING(env, orig_tpath);
 
 	/*
-	 * !!!
+	 * XXX
 	 * We shouldn't be testing for an errno of ENOENT here, but ENOENT
 	 * signals that a file is missing, and we attempt to unlink things
 	 * (such as v. 2.x environment regions, in ENV->remove) that we

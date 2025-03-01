@@ -4,7 +4,7 @@
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 package com.sleepycat.db;
@@ -19,7 +19,6 @@ public class QueueStats extends DatabaseStats {
     private int qs_magic;
     /**
     The magic number that identifies the file as a Queue file.
-    @return the magic number that identifies the file as a Queue file
     */
     public int getMagic() {
         return qs_magic;
@@ -28,7 +27,6 @@ public class QueueStats extends DatabaseStats {
     private int qs_version;
     /**
     The version of the Queue database.
-    @return the version of the Queue database
     */
     public int getVersion() {
         return qs_version;
@@ -37,7 +35,6 @@ public class QueueStats extends DatabaseStats {
     private int qs_metaflags;
     /**
     Reports internal flags. For internal use only.
-    @return internal flags
     */
     public int getMetaFlags() {
         return qs_metaflags;
@@ -51,7 +48,6 @@ public class QueueStats extends DatabaseStats {
     {@link com.sleepycat.db.StatsConfig#setFast StatsConfig.setFast} method, the count will be the last
     saved value unless it has never been calculated, in which case it
     will be 0.
-    @return the number of records in the database
     */
     public int getNumKeys() {
         return qs_nkeys;
@@ -65,7 +61,6 @@ public class QueueStats extends DatabaseStats {
     {@link com.sleepycat.db.StatsConfig#setFast StatsConfig.setFast} method, the count will be the last
     saved value unless it has never been calculated, in which case it
     will be 0.
-    @return the number of records in the database
     */
     public int getNumData() {
         return qs_ndata;
@@ -74,7 +69,6 @@ public class QueueStats extends DatabaseStats {
     private int qs_pagesize;
     /**
     The underlying database page size, in bytes.
-    @return the underlying database page size, in bytes
     */
     public int getPageSize() {
         return qs_pagesize;
@@ -83,7 +77,6 @@ public class QueueStats extends DatabaseStats {
     private int qs_extentsize;
     /**
     The underlying database extent size, in pages.
-    @return the underlying database extent size, in pages
     */
     public int getExtentSize() {
         return qs_extentsize;
@@ -95,7 +88,6 @@ public class QueueStats extends DatabaseStats {
 <p>
 The information is only included if the {@link com.sleepycat.db.Database#getStats Database.getStats} call
 was not configured by the {@link com.sleepycat.db.StatsConfig#setFast StatsConfig.setFast} method.
-    @return the number of pages in the database
     */
     public int getPages() {
         return qs_pages;
@@ -104,7 +96,6 @@ was not configured by the {@link com.sleepycat.db.StatsConfig#setFast StatsConfi
     private int qs_re_len;
     /**
     The length of the records.
-    @return the length of the records
     */
     public int getReLen() {
         return qs_re_len;
@@ -113,7 +104,6 @@ was not configured by the {@link com.sleepycat.db.StatsConfig#setFast StatsConfi
     private int qs_re_pad;
     /**
     The padding byte value for the records.
-    @return the padding byte value for the records
     */
     public int getRePad() {
         return qs_re_pad;
@@ -125,7 +115,6 @@ was not configured by the {@link com.sleepycat.db.StatsConfig#setFast StatsConfi
 <p>
 The information is only included if the {@link com.sleepycat.db.Database#getStats Database.getStats} call
 was not configured by the {@link com.sleepycat.db.StatsConfig#setFast StatsConfig.setFast} method.
-    @return the number of bytes free in database pages
     */
     public int getPagesFree() {
         return qs_pgfree;
@@ -134,7 +123,6 @@ was not configured by the {@link com.sleepycat.db.StatsConfig#setFast StatsConfi
     private int qs_first_recno;
     /**
     The first undeleted record in the database.
-    @return the first undeleted record in the database
     */
     public int getFirstRecno() {
         return qs_first_recno;
@@ -143,7 +131,6 @@ was not configured by the {@link com.sleepycat.db.StatsConfig#setFast StatsConfi
     private int qs_cur_recno;
     /**
     The next available record number.
-    @return the next available record number
     */
     public int getCurRecno() {
         return qs_cur_recno;
@@ -152,7 +139,6 @@ was not configured by the {@link com.sleepycat.db.StatsConfig#setFast StatsConfi
     /**
     For convenience, the QueueStats class has a toString method
     that lists all the data fields.
-    @return a String that lists all the data fields
     */
     public String toString() {
         return "QueueStats:"

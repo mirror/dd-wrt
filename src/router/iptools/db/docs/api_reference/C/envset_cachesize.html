@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -96,14 +96,6 @@ DB_ENV-&gt;set_cachesize(DB_ENV *dbenv,
          not only operations performed using the specified <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>  handle.
     </p>
       <p>
-        When used with sliced databases, the
-        <code class="methodname">DB_ENV-&gt;set_cachesize()</code> method must be
-        called for each slice environment. That is, for each slice, there
-        is a sub-environment, and this method must be called on each such 
-        environment individually. Use <a class="xref" href="envget_slices.html" title="DB_ENV-&gt;get_slices()">DB_ENV-&gt;get_slices()</a> to retrieve an array
-        of slice environments.
-    </p>
-      <p>
          The <code class="methodname">DB_ENV-&gt;set_cachesize()</code> method may be called at any time during
          the life of the application.
     </p>
@@ -119,7 +111,7 @@ DB_ENV-&gt;set_cachesize(DB_ENV *dbenv,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711175154656"></a>Parameters</h3>
+              <h3 class="title"><a id="idp53338680"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -127,7 +119,7 @@ DB_ENV-&gt;set_cachesize(DB_ENV *dbenv,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711175173536"></a>gbytes</h4>
+                <h4 class="title"><a id="idp53338528"></a>gbytes</h4>
               </div>
             </div>
           </div>
@@ -139,7 +131,7 @@ DB_ENV-&gt;set_cachesize(DB_ENV *dbenv,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711175141904"></a>bytes</h4>
+                <h4 class="title"><a id="idp53345176"></a>bytes</h4>
               </div>
             </div>
           </div>
@@ -151,7 +143,7 @@ DB_ENV-&gt;set_cachesize(DB_ENV *dbenv,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711175159104"></a>ncache</h4>
+                <h4 class="title"><a id="idp53336336"></a>ncache</h4>
               </div>
             </div>
           </div>
@@ -165,7 +157,7 @@ DB_ENV-&gt;set_cachesize(DB_ENV *dbenv,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711175130432"></a>Errors</h3>
+              <h3 class="title"><a id="idp53352048"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -181,7 +173,7 @@ DB_ENV-&gt;set_cachesize(DB_ENV *dbenv,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711175121472"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp53356760"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -195,7 +187,7 @@ DB_ENV-&gt;set_cachesize(DB_ENV *dbenv,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711175125376"></a>Class</h3>
+              <h3 class="title"><a id="idp53354672"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -207,7 +199,7 @@ DB_ENV-&gt;set_cachesize(DB_ENV *dbenv,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711175118992"></a>See Also</h3>
+              <h3 class="title"><a id="idp53358096"></a>See Also</h3>
             </div>
           </div>
         </div>

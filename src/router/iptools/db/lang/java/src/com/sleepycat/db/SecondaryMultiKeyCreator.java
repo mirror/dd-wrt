@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -47,7 +47,6 @@ relationships) you may use the {@link SecondaryKeyCreator} interface instead.
 The table below summarizes how to create all four variations of relationships.
 <div>
 <table border="yes">
-    <caption>Summary of four variations of relationships</caption>
     <tr><th>Relationship</th>
         <th>Interface</th>
         <th>Duplicates</th>

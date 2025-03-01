@@ -1,7 +1,7 @@
 /*
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -65,6 +65,29 @@ extern "C" {
 		pthread_rwlock_t rwlock;	/* Read/write lock */	\
 	} u;
 
+#if defined(HAVE_SHARED_LATCHES) && !defined(HAVE_MUTEX_HYBRID)
+#define	RET_SET_PTHREAD_LOCK(mutexp, ret) do {				\
+	if (F_ISSET(mutexp, DB_MUTEX_SHARED))				\
+		RET_SET((pthread_rwlock_wrlock(&(mutexp)->u.rwlock)),	\
+		    ret);						\
+	else								\
+		RET_SET((pthread_mutex_lock(&(mutexp)->u.m.mutex)), ret); \
+} while (0)
+#define	RET_SET_PTHREAD_TRYLOCK(mutexp, ret) do {			\
+	if (F_ISSET(mutexp, DB_MUTEX_SHARED))				\
+		RET_SET((pthread_rwlock_trywrlock(&(mutexp)->u.rwlock)), \
+		    ret);						\
+	else								\
+		RET_SET((pthread_mutex_trylock(&(mutexp)->u.m.mutex)),	\
+		    ret);						\
+} while (0)
+#else
+#define	RET_SET_PTHREAD_LOCK(mutexp, ret)				\
+		RET_SET(pthread_mutex_lock(&(mutexp)->u.m.mutex), ret);
+#define	RET_SET_PTHREAD_TRYLOCK(mutexp, ret)				\
+		RET_SET(pthread_mutex_trylock(&(mutexp)->u.m.mutex), ret);
+#endif
+#endif
 
 #ifdef HAVE_MUTEX_UI_THREADS
 #include <thread.h>
@@ -89,7 +112,7 @@ extern "C" {
  *********************************************************************/
 #ifdef HAVE_MUTEX_SOLARIS_LWP
 /*
- * !!!
+ * XXX
  * Don't change <synch.h> to <sys/lwp.h> -- although lwp.h is listed in the
  * Solaris manual page as the correct include to use, it causes the Solaris
  * compiler on SunOS 2.6 to fail.
@@ -99,7 +122,6 @@ extern "C" {
 #define	MUTEX_FIELDS							\
 	lwp_mutex_t mutex;		/* Mutex. */			\
 	lwp_cond_t cond;		/* Condition variable. */
-#endif
 #endif
 
 /*********************************************************************
@@ -115,7 +137,7 @@ extern "C" {
 #endif
 
 /*********************************************************************
- * AIX C library functions -- _check_lock.
+ * AIX C library functions.
  *********************************************************************/
 #ifdef HAVE_MUTEX_AIX_CHECK_LOCK
 #include <sys/atomic_op.h>
@@ -129,21 +151,7 @@ typedef int tsl_t;
 #endif
 
 /*********************************************************************
- * BSD/Apple/Darwin library functions -- OSSpinLockTry.
- *********************************************************************/
-#ifdef HAVE_MUTEX_BSD_OSSPINLOCKTRY
-#include <libkern/OSAtomic.h>
-typedef OSSpinLock tsl_t;
-
-#ifdef LOAD_ACTUAL_MUTEX_CODE
-#define	MUTEX_SET(tsl)          OSSpinLockTry(tsl)
-#define	MUTEX_UNSET(tsl)        OSSpinLockUnlock(tsl)
-#define	MUTEX_INIT(tsl)         (MUTEX_UNSET(tsl), 0)
-#endif
-#endif
-
-/*********************************************************************
- * Apple/Darwin -- fallback to the undocumented _spin_lock_try.
+ * Apple/Darwin library functions.
  *********************************************************************/
 #ifdef HAVE_MUTEX_DARWIN_SPIN_LOCK_TRY
 typedef u_int32_t tsl_t;
@@ -260,11 +268,6 @@ typedef abilock_t tsl_t;
 typedef lock_t tsl_t;
 
 /*
- * Solaris requires 8 byte alignment for pthread_mutex_t values.
- */
-#define	MUTEX_ALIGN 8
-
-/*
  * The functions are declared in <sys/machlock.h>, but under #ifdef KERNEL.
  * Re-declare them here to avoid warnings.
  */
@@ -311,12 +314,12 @@ typedef SEM_ID tsl_t;
 
 #ifdef LOAD_ACTUAL_MUTEX_CODE
 /*
- * Uses of this MUTEX_SET() need to have a local 'flags' variable,
+ * Uses of this MUTEX_SET() need to have a local 'nowait' variable,
  * which determines whether to return right away when the semaphore
  * is busy or to wait until it is available.
  */
 #define	MUTEX_SET(tsl)							\
-	(semTake((*(tsl)), LF_ISSET(MUTEX_WAIT) ? WAIT_FOREVER : NO_WAIT) == OK)
+	(semTake((*(tsl)), nowait ? NO_WAIT : WAIT_FOREVER) == OK)
 #define	MUTEX_UNSET(tsl)	(semGive((*tsl)))
 #define	MUTEX_INIT(tsl)							\
 	((*(tsl) = semBCreate(SEM_Q_FIFO, SEM_FULL)) == NULL)
@@ -467,17 +470,15 @@ typedef volatile u_int32_t tsl_t;
  * ARM/gcc assembly.
  *********************************************************************/
 #ifdef HAVE_MUTEX_ARM_GCC_ASSEMBLY
-typedef unsigned int tsl_t;
+typedef unsigned char tsl_t;
 
 #ifdef LOAD_ACTUAL_MUTEX_CODE
 /* gcc/arm: 0 is clear, 1 is set. */
 #define	MUTEX_SET(tsl) ({						\
-	register tsl_t __r;						\
+	int __r;							\
 	__asm__ volatile(						\
-		"ldrex		%0, [%2]\n\t"				\
-		"cmp		%0, %1\n\t"				\
-		"strexne	%0, %1, [%2]\n\t"			\
-		"eor		%0, %0, #1\n\t"				\
+		"swpb	%0, %1, [%2]\n\t"				\
+		"eor	%0, %0, #1\n\t"					\
 	    : "=&r" (__r)						\
 	    : "r" (1), "r" (tsl)					\
 	    );								\
@@ -486,44 +487,6 @@ typedef unsigned int tsl_t;
 
 #define	MUTEX_UNSET(tsl)	(*(volatile tsl_t *)(tsl) = 0)
 #define	MUTEX_INIT(tsl)         (MUTEX_UNSET(tsl), 0)
-#define	MUTEX_MEMBAR(x) \
-	({ __asm__ volatile ("dsb"); })
-#define	MEMBAR_ENTER() \
-	({ __asm__ volatile ("dsb"); })
-#define	MEMBAR_EXIT() \
-	({ __asm__ volatile ("dsb"); })
-#endif
-#endif
-
-/*********************************************************************
- * ARM64/gcc assembly.
- *********************************************************************/
-#ifdef HAVE_MUTEX_ARM64_GCC_ASSEMBLY
-typedef unsigned int tsl_t;
-
-#ifdef LOAD_ACTUAL_MUTEX_CODE
-/* gcc/arm: 0 is clear, 1 is set. */
-#define	MUTEX_SET(tsl) ({						\
-	register tsl_t __r, __old;					\
-	__asm__ volatile(						\
-		"ldxr	%w1, [%3]\n\t"					\
-		"stxr	%w0, %w2, [%3]\n\t"				\
-		"orr	%w0, %w0, %w1\n\t"				\
-		"mvn	%w0, %w0\n\t"					\
-	    : "=&r" (__r), "+r" (__old)					\
-	    : "r" (1), "r" (tsl)					\
-	    );								\
-	__r & 1;							\
-})
-
-#define	MUTEX_UNSET(tsl)	(*(volatile tsl_t *)(tsl) = 0)
-#define	MUTEX_INIT(tsl)		(MUTEX_UNSET(tsl), 0)
-#define	MUTEX_MEMBAR(x) \
-	({ __asm__ volatile ("dsb sy"); })
-#define	MEMBAR_ENTER() \
-	({ __asm__ volatile ("dsb sy"); })
-#define	MEMBAR_EXIT() \
-	({ __asm__ volatile ("dsb sy"); })
 #endif
 #endif
 
@@ -815,7 +778,6 @@ MUTEX_SET(tsl_t *tsl) {
 static inline void
 MUTEX_UNSET(tsl_t *tsl) {
 	__asm__ volatile(
-	       "       .set mips2          \n"
 	       "       .set noreorder      \n"
 	       "       sync                \n"
 	       "       sw      $0, %0      \n"
@@ -930,22 +892,15 @@ struct __db_mutexmgr {
 	REGINFO	 reginfo;		/* Region information */
 
 	void	*mutex_array;		/* Base of the mutex array */
-#ifdef HAVE_FAILCHK_BROADCAST
-	/*
-	 * The mutex lock functions wait for at most this long between checks
-	 * for DB_MUTEX_OWNER_DEAD. This field needs no mutex protection.
-	 */
-	db_timeout_t	failchk_polltime;
-#endif
 };
 
 /* Macros to lock/unlock the mutex region as a whole. */
-#define	MUTEX_SYSTEM_LOCK(env)						\
-	MUTEX_LOCK(env, ((DB_MUTEXREGION *)				\
-	    (env)->mutex_handle->reginfo.primary)->mtx_region)
-#define	MUTEX_SYSTEM_UNLOCK(env)					\
-	MUTEX_UNLOCK(env, ((DB_MUTEXREGION *)				\
-	    (env)->mutex_handle->reginfo.primary)->mtx_region)
+#define	MUTEX_SYSTEM_LOCK(dbenv)					\
+	MUTEX_LOCK(dbenv, ((DB_MUTEXREGION *)				\
+	    (dbenv)->mutex_handle->reginfo.primary)->mtx_region)
+#define	MUTEX_SYSTEM_UNLOCK(dbenv)					\
+	MUTEX_UNLOCK(dbenv, ((DB_MUTEXREGION *)				\
+	    (dbenv)->mutex_handle->reginfo.primary)->mtx_region)
 
 /*
  * DB_MUTEXREGION --
@@ -972,16 +927,6 @@ typedef struct __db_mutexregion { /* SHARED */
 } DB_MUTEXREGION;
 
 #ifdef HAVE_MUTEX_SUPPORT
-/*
- * MTX_DIAG turns on the recording of when and where a mutex was locked. It has
- * a large impact, and should only be turned on when debugging mutexes.
- */
-#define	MUTEX_STACK_TEXT_SIZE	600
-typedef struct __mutex_history { /* SHARED */
-	db_timespec when;
-	char	stacktext[MUTEX_STACK_TEXT_SIZE];
-} MUTEX_HISTORY;
-
 struct __db_mutex_t { /* SHARED */	/* Mutex. */
 #ifdef MUTEX_FIELDS
 	MUTEX_FIELDS			/* Opaque thread mutex structures. */
@@ -1014,9 +959,9 @@ struct __db_mutex_t { /* SHARED */	/* Mutex. */
 
 	db_mutex_t mutex_next_link;	/* Linked list of free mutexes. */
 
+#ifdef HAVE_STATISTICS
 	int	  alloc_id;		/* Allocation ID. */
 
-#ifdef HAVE_STATISTICS
 	u_int32_t mutex_set_wait;	/* Granted after wait. */
 	u_int32_t mutex_set_nowait;	/* Granted without waiting. */
 #ifdef HAVE_SHARED_LATCHES
@@ -1028,9 +973,7 @@ struct __db_mutex_t { /* SHARED */	/* Mutex. */
 	u_int32_t hybrid_wakeup;	/* for counting spurious wakeups */
 #endif
 #endif
-#ifdef MUTEX_DIAG
-	MUTEX_HISTORY	mutex_history;
-#endif
+
 	/*
 	 * A subset of the flag arguments for __mutex_alloc().
 	 *
@@ -1048,6 +991,19 @@ struct __db_mutex_t { /* SHARED */	/* Mutex. */
 	(DB_MUTEX *)((u_int8_t *)env->mutex_handle->mutex_array +	\
 	    (indx) *							\
 	    ((DB_MUTEXREGION *)env->mutex_handle->reginfo.primary)->mutex_size))
+
+/*
+ * Check that a particular mutex is exclusively held at least by someone, not
+ * necessarily the current thread.
+ */
+#ifdef HAVE_MUTEX_SUPPORT
+#define	MUTEX_IS_OWNED(env, mutex)					\
+	(mutex == MUTEX_INVALID || !MUTEX_ON(env) ||			\
+	F_ISSET(env->dbenv, DB_ENV_NOLOCKING) ||			\
+	F_ISSET(MUTEXP_SET(env, mutex), DB_MUTEX_LOCKED))
+#else
+#define	MUTEX_IS_OWNED(env, mutex)	0
+#endif
 
 #if defined(HAVE_MUTEX_HYBRID) ||  defined(DB_WIN32) ||		\
 	(defined(HAVE_SHARED_LATCHES) && !defined(HAVE_MUTEX_PTHREADS))

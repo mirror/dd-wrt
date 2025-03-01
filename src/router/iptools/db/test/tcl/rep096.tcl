@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2010, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -21,6 +21,12 @@ proc rep096 { method { niter 100 } { tnum "096" } args } {
 	# All access methods are allowed.
 	if { $checking_valid_methods } {
 		return "ALL"
+	}
+
+	# Skip for FreeBSD, test fix not backported to 5.3.
+	if { $is_freebsd_test == 1 } {
+		puts "Skipping Rep$tnum on FreeBSD platform."
+		return
 	}
 
 	# QNX does not support fork() in a multi-threaded environment.
@@ -81,10 +87,8 @@ proc rep096_sub { method niter tnum logset recargs largs } {
 	global verbose_type
 
 	set verbargs ""
-	set varg ""
 	if { $rep_verbose == 1 } {
 		set verbargs " -verbose {$verbose_type on} "
-		set varg " -v "
 	}
 
 	set repmemargs ""
@@ -146,73 +150,65 @@ proc rep096_sub { method niter tnum logset recargs largs } {
 	#
 	puts "\tRep$tnum.b: Start db_replicate on each env."
 	set dpid(M) [eval {exec $util_path/db_replicate -h $masterdir} \
-	    -M -t 5 $varg &]
-	set dpid(C) [eval {exec $util_path/db_replicate -h $clientdir} $varg &]
+	    -M -t 5 &]
+	set dpid(C) [eval {exec $util_path/db_replicate -h $clientdir} &]
 
 	await_startup_done $clientenv
 
 	#
-	# Force a checkpoint from a subordinate connection.  However,
-	# the checkpoint log records will likely get lost prior to the
+	# Force a checkpoint to cause the subordinate connection 
+	# for this Tcl process to get established.  However, the
+	# checkpoint log records will get lost prior to the
 	# connection getting established.
 	#
-	puts "\tRep$tnum.c: Force checkpoint from non-rep process."
-	set cid [exec $util_path/db_checkpoint -h $masterdir -1]
+	$masterenv txn_checkpoint -force
 
 	#
 	# Wait for the master and client LSNs to match after this
-	# checkpoint.  That might mean waiting for a rerequest
+	# checkpoint.  That might mean waiting for the rerequest thread
 	# to run or db_replicate to call rep_flush.
 	#
 	await_condition \
 	    {[stat_field $masterenv rep_stat "Next LSN expected"] == \
 	    [stat_field $clientenv rep_stat "Next LSN expected"]}
 
-	if { $is_freebsd_test == 0 } {
-		#
-		# Now perform operations using this Tcl process with
-		# subordinate connections.  This does not work with FreeBSD.
-		#
-		set omethod [convert_method $method]
-		set db [eval berkdb_open_noerr -create -env $masterenv \
-		    -auto_commit -mode 0644 $largs $omethod $dbname]
-		error_check_good db_open [is_valid_db $db] TRUE
+	puts "\tRep$tnum.c: Create database on master."
+	set omethod [convert_method $method]
+	set db [eval berkdb_open_noerr -create -env $masterenv -auto_commit \
+	    -mode 0644 $largs $omethod $dbname]
+	error_check_good db_open [is_valid_db $db] TRUE
 
-		await_condition \
-		    {[stat_field $masterenv rep_stat "Next LSN expected"] == \
-		    [stat_field $clientenv rep_stat "Next LSN expected"]}
+	await_condition \
+	    {[stat_field $masterenv rep_stat "Next LSN expected"] == \
+	    [stat_field $clientenv rep_stat "Next LSN expected"]}
 
-		if { !$databases_in_memory } {
-			error_check_good client_db \
-			    [file exists $clientdir/$dbname] 1
-		} 
+	if { !$databases_in_memory } {
+		puts "\tRep$tnum.d: Verify database exists on client."
+		error_check_good client_db [file exists $clientdir/$dbname] 1
+	} 
 
-		# Run a modified test001 in the master (and update client).
-		puts "\tRep$tnum.d: Running rep_test in replicated env."
-		eval rep_test $method $masterenv $db $niter 0 0 0 $largs
+	# Run a modified test001 in the master (and update client).
+	puts "\tRep$tnum.e: Running rep_test in replicated env."
+	eval rep_test $method $masterenv $db $niter 0 0 0 $largs
+
+	await_condition \
+	    {[stat_field $masterenv rep_stat "Next LSN expected"] == \
+	    [stat_field $clientenv rep_stat "Next LSN expected"]}
+
+	# Check that databases are in-memory or on-disk as expected.
+	check_db_location $masterenv
+	check_db_location $clientenv
 	
-		await_condition \
-		    {[stat_field $masterenv rep_stat "Next LSN expected"] == \
-		    [stat_field $clientenv rep_stat "Next LSN expected"]}
+	$db close
 
-		# Check that databases are in-memory or on-disk as expected.
-		check_db_location $masterenv
-		check_db_location $clientenv
-	
-		$db close
-		rep_verify $masterdir $masterenv $clientdir $clientenv 1 1 1
-	} else {
-		puts "\tRep$tnum.d: Force 2nd checkpoint from non-rep process."
-		set cid [exec $util_path/db_checkpoint -h $masterdir -1]
-	}
-
-	puts "\tRep$tnum.e: Await final processing."
 	await_condition \
 	    {[stat_field $masterenv rep_stat "Next LSN expected"] == \
 	    [stat_field $clientenv rep_stat "Next LSN expected"]}
 
 	tclkill $dpid(C)
 	tclkill $dpid(M)
+
+	rep_verify $masterdir $masterenv $clientdir $clientenv 1 1 1
 
 	error_check_good masterenv_close [$masterenv close] 0
 	error_check_good clientenv_close [$clientenv close] 0

@@ -505,7 +505,7 @@ ifcapable subquery {
       )  
       ORDER BY LOWER(artist) ASC;
     }
-  } {two}
+  } {one}
 }
 
 # Ticket #1370.  Do not overwrite small files (less than 1024 bytes)
@@ -514,7 +514,7 @@ ifcapable subquery {
 if {[permutation] == ""} {
   do_test misc5-4.1 {
     db close
-    forcedelete test.db
+    file delete -force test.db
     set fd [open test.db w]
     puts $fd "This is not really a database"
     close $fd
@@ -544,7 +544,7 @@ do_test misc5-5.4 {
 # a UNION ALL query causes an error, not a crash.
 #
 db close
-forcedelete test.db
+file delete -force test.db
 sqlite3 db test.db
 ifcapable subquery&&compound {
   do_test misc5-6.1 {
@@ -582,24 +582,6 @@ do_test misc5-7.1 {
   append sql 2$tail
   catchsql $sql
 } {1 {parser stack overflow}}
-
-# Parser stack overflow is silently ignored when it occurs while parsing the
-# schema and PRAGMA writable_schema is turned on.
-#
-do_test misc5-7.2 {
-  sqlite3 db2 :memory:
-  catchsql {
-    CREATE TABLE t1(x UNIQUE);
-    PRAGMA writable_schema=ON;
-    UPDATE sqlite_master SET sql='CREATE table t(o CHECK(((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((;VALUES(o)';
-    BEGIN;
-    CREATE TABLE t2(y);
-    ROLLBACK;
-    DROP TABLE IF EXISTS D;
-  } db2
-} {0 {}}
-db2 close
-  
 
 # Ticket #1911
 #

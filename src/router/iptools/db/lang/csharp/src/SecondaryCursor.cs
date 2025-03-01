@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -91,9 +91,9 @@ namespace BerkeleyDB {
         /// <param name="keepPosition">
         /// If true, the newly created cursor is initialized to refer to the
         /// same position in the database as the original cursor (if any) and
-        /// hold the same locks (if any). If false, or if the original cursor does
+        /// hold the same locks (if any). If false, or the original cursor does
         /// not hold a database position and locks, the created cursor is
-        /// uninitialized and behaves like a cursor newly created by
+        /// uninitialized and will behave like a cursor newly created by
         /// <see cref="BaseDatabase.Cursor"/>.</param>
         /// <returns>A newly created cursor</returns>
         public SecondaryCursor Duplicate(bool keepPosition) {
@@ -110,7 +110,7 @@ namespace BerkeleyDB {
         /// <see cref="SecondaryCursor"/>.
         /// </summary>
         /// <remarks>
-        /// The enumerator begins at the cursor's current position (or the
+        /// The enumerator will begin at the cursor's current position (or the
         /// first record if the cursor has not yet been positioned) and iterate 
         /// forwards (i.e. in the direction of <see cref="MoveNext"/>) over the
         /// remaining records.
@@ -642,8 +642,8 @@ namespace BerkeleyDB {
         /// If the next key/data pair of the database is a duplicate data record
         /// for the current key/data pair, move the cursor to the next key/data
         /// pair in the database, and store the secondary key and primary
-        /// key/data pair in <see cref="Current"/>. MoveNextDuplicate
-        /// returns false if the next key/data pair of the database is not a
+        /// key/data pair in <see cref="Current"/>. MoveNextDuplicate will
+        /// return false if the next key/data pair of the database is not a
         /// duplicate data record for the current key/data pair.
         /// </summary>
         /// <remarks>
@@ -658,8 +658,8 @@ namespace BerkeleyDB {
         /// If the next key/data pair of the database is a duplicate data record
         /// for the current key/data pair, move the cursor to the next key/data
         /// pair in the database, and store the secondary key and primary
-        /// key/data pair in <see cref="Current"/>. MoveNextDuplicate 
-        /// returns false if the next key/data pair of the database is not a
+        /// key/data pair in <see cref="Current"/>. MoveNextDuplicate will
+        /// return false if the next key/data pair of the database is not a
         /// duplicate data record for the current key/data pair.
         /// </summary>
         /// <remarks>
@@ -681,8 +681,8 @@ namespace BerkeleyDB {
         /// If the next key/data pair of the database is a duplicate data record
         /// for the current key/data pair, move the cursor to the next key/data
         /// pair in the database, and store the secondary key and primary
-        /// key/data pair in <see cref="Current"/>. MoveNextDuplicate 
-        /// returns false if the next key/data pair of the database is not a
+        /// key/data pair in <see cref="Current"/>. MoveNextDuplicate will
+        /// return false if the next key/data pair of the database is not a
         /// duplicate data record for the current key/data pair. If
         /// <paramref name="key"/>, or <paramref name="pkey"/>, or
         /// <paramref name="data"/> is partial <see cref="DatabaseEntry"/>,
@@ -715,8 +715,8 @@ namespace BerkeleyDB {
         /// If the next key/data pair of the database is a duplicate data record
         /// for the current key/data pair, move the cursor to the next key/data
         /// pair in the database, and store the secondary key and primary
-        /// key/data pair in <see cref="Current"/>. MoveNextDuplicate 
-        /// returns false if the next key/data pair of the database is not a
+        /// key/data pair in <see cref="Current"/>. MoveNextDuplicate will
+        /// return false if the next key/data pair of the database is not a
         /// duplicate data record for the current key/data pair. If
         /// <paramref name="key"/>, or <paramref name="pkey"/>, or
         /// <paramref name="data"/> is partial <see cref="DatabaseEntry"/>,
@@ -751,8 +751,8 @@ namespace BerkeleyDB {
         /// If the cursor is not yet initialized, MoveNextUnique is identical to 
         /// <see cref="MoveFirst()"/>. Otherwise, move the cursor to the next
         /// non-duplicate key in the database, and store the secondary key and
-        /// primary key/data pair in <see cref="Current"/>. MoveNextUnique 
-        /// returns false if no non-duplicate key/data pairs exist after the
+        /// primary key/data pair in <see cref="Current"/>. MoveNextUnique will
+        /// return false if no non-duplicate key/data pairs exist after the
         /// cursor position in the database. 
         /// </summary>
         /// <remarks>
@@ -767,14 +767,14 @@ namespace BerkeleyDB {
         /// If the cursor is not yet initialized, MoveNextUnique is identical to 
         /// <see cref="MoveFirst()"/>. Otherwise, move the cursor to the next
         /// non-duplicate key in the database, and store the secondary key and
-        /// primary key/data pair in <see cref="Current"/>. MoveNextUnique 
-        /// returns false if no non-duplicate key/data pairs exist after the
+        /// primary key/data pair in <see cref="Current"/>. MoveNextUnique will
+        /// return false if no non-duplicate key/data pairs exist after the
         /// cursor position in the database. 
         /// </summary>
         /// <remarks>
         /// <para>
-        /// If the database is a Queue or Recno database, MoveNextUnique
-        /// ignores any keys that exist but were never explicitly created by the
+        /// If the database is a Queue or Recno database, MoveNextUnique will
+        /// ignore any keys that exist but were never explicitly created by the
         /// application, or those that were created and later deleted.
         /// </para>
         /// <para>
@@ -797,8 +797,8 @@ namespace BerkeleyDB {
         /// If the cursor is not yet initialized, MoveNextUnique is identical to 
         /// <see cref="MoveFirst()"/>. Otherwise, move the cursor to the next
         /// non-duplicate key in the database, and store the secondary key and
-        /// primary key/data pair in <see cref="Current"/>. MoveNextUnique 
-        /// returns false if no non-duplicate key/data pairs exist after the
+        /// primary key/data pair in <see cref="Current"/>. MoveNextUnique will
+        /// return false if no non-duplicate key/data pairs exist after the
         /// cursor position in the database. If <paramref name="key"/>, or
         /// <paramref name="pkey"/>, or <paramref name="data"/> is
         /// partial <see cref="DatabaseEntry"/>, its 
@@ -832,7 +832,7 @@ namespace BerkeleyDB {
         /// <see cref="MoveFirst(LockingInfo)"/>. Otherwise, move the cursor to
         /// the next non-duplicate key in the database, and store the secondary
         /// key and primary key/data pair in <see cref="Current"/>. 
-        /// MoveNextUnique returns false if no non-duplicate key/data pairs
+        /// MoveNextUnique will return false if no non-duplicate key/data pairs
         /// exist after the cursor position in the database. If 
         /// <paramref name="key"/>, or <paramref name="pkey"/>, or 
         /// <paramref name="data"/> is partial <see cref="DatabaseEntry"/>, its 
@@ -977,7 +977,7 @@ namespace BerkeleyDB {
         /// record for the current key/data pair, the cursor is moved to the
         /// previous key/data pair of the database, and the secondary key and
         /// primary key/data pair in <see cref="Current"/>. MovePrevDuplicate
-        /// returns false if the previous key/data pair of the database is
+        /// will return false if the previous key/data pair of the database is
         /// not a duplicate data record for the current key/data pair.
         /// </summary>
         /// <remarks>
@@ -993,7 +993,7 @@ namespace BerkeleyDB {
         /// record for the current key/data pair, the cursor is moved to the
         /// previous key/data pair of the database, and the secondary key and
         /// primary key/data pair in <see cref="Current"/>. MovePrevDuplicate
-        /// returns false if the previous key/data pair of the database is
+        /// will return false if the previous key/data pair of the database is
         /// not a duplicate data record for the current key/data pair.
         /// </summary>
         /// <remarks>
@@ -1016,7 +1016,7 @@ namespace BerkeleyDB {
         /// record for the current key/data pair, the cursor is moved to the
         /// previous key/data pair of the database, and the secondary key and
         /// primary key/data pair in <see cref="Current"/>. MovePrevDuplicate
-        /// returns false if the previous key/data pair of the database is
+        /// will return false if the previous key/data pair of the database is
         /// not a duplicate data record for the current key/data pair. If
         /// <paramref name="key"/>, or <paramref name="pkey"/>, or
         /// <paramref name="data"/> is partial <see cref="DatabaseEntry"/>, its 
@@ -1050,7 +1050,7 @@ namespace BerkeleyDB {
         /// record for the current key/data pair, the cursor is moved to the
         /// previous key/data pair of the database, and the secondary key and
         /// primary key/data pair in <see cref="Current"/>. MovePrevDuplicate
-        /// returns false if the previous key/data pair of the database is
+        /// will return false if the previous key/data pair of the database is
         /// not a duplicate data record for the current key/data pair. If
         /// <paramref name="key"/>, or <paramref name="pkey"/>, or
         /// <paramref name="data"/> is partial <see cref="DatabaseEntry"/>, its 
@@ -1085,8 +1085,8 @@ namespace BerkeleyDB {
         /// If the cursor is not yet initialized, MovePrevUnique is identical to 
         /// <see cref="MoveLast()"/>. Otherwise, move the cursor to the previous
         /// non-duplicate key in the database, and store the secondary key and
-        /// primary key/data pair in <see cref="Current"/>. MovePrevUnique
-        /// returns false if no non-duplicate key/data pairs exist after the 
+        /// primary key/data pair in <see cref="Current"/>. MovePrevUnique will
+        /// return false if no non-duplicate key/data pairs exist after the 
         /// cursor position in the database. 
         /// </summary>
         /// <remarks>
@@ -1102,7 +1102,7 @@ namespace BerkeleyDB {
         /// <see cref="MoveLast(LockingInfo)"/>. Otherwise, move the cursor to
         /// the previous non-duplicate key in the database, and store the
         /// secondary key and primary key/data pair in <see cref="Current"/>.
-        /// MovePrevUnique returns false if no non-duplicate key/data pairs
+        /// MovePrevUnique will return false if no non-duplicate key/data pairs
         /// exist after the cursor position in the database. 
         /// </summary>
         /// <remarks>
@@ -1124,8 +1124,8 @@ namespace BerkeleyDB {
         /// If the cursor is not yet initialized, MovePrevUnique is identical to 
         /// <see cref="MoveLast()"/>. Otherwise, move the cursor to the previous
         /// non-duplicate key in the database, and store the secondary key and
-        /// primary key/data pair in <see cref="Current"/>. MovePrevUnique
-        /// returns false if no non-duplicate key/data pairs exist after the 
+        /// primary key/data pair in <see cref="Current"/>. MovePrevUnique will
+        /// return false if no non-duplicate key/data pairs exist after the 
         /// cursor position in the database. If <paramref name="key"/>, or
         /// <paramref name="pkey"/>, or <paramref name="data"/> is
         /// partial <see cref="DatabaseEntry"/>, its 
@@ -1159,7 +1159,7 @@ namespace BerkeleyDB {
         /// <see cref="MoveLast(LockingInfo)"/>. Otherwise, move the cursor to
         /// the previous non-duplicate key in the database, and store the
         /// secondary key and primary key/data pair in <see cref="Current"/>.
-        /// MovePrevUnique returns false if no non-duplicate key/data pairs
+        /// MovePrevUnique will return false if no non-duplicate key/data pairs
         /// exist after the cursor position in the database. If
         /// <paramref name="key"/>, or <paramref name="pkey"/>, or
         /// <paramref name="data"/> is partial <see cref="DatabaseEntry"/>, its 

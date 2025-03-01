@@ -8,13 +8,13 @@
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
     <link rel="up" href="introduction.html" title="Chapter 1. Introduction" />
-    <link rel="prev" href="apioverview.html" title="Replication Mechanisms" />
+    <link rel="prev" href="apioverview.html" title="The Replication APIs" />
     <link rel="next" href="permmessages.html" title="Permanent Message Handling" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -65,7 +65,7 @@
       <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
         <h3 class="title">Note</h3>
         <p>
-                    In some rare situations, it is desirable for the
+                    In some rare situations, it is desireable for the
                     application to manually select its master. For these
                     cases, elections can be turned off. 
                 </p>
@@ -100,9 +100,10 @@
           </div>
         </div>
         <p>
-                If you want to control the election process, you can
-                declare a specific environment to be the master. Should
-                the master become unavailable during run-time for any
+                If you want to control the election process, you can declare
+                a specific environment to be the master. Note that for the Replication Manager,
+                it is only possible to do this at application startup.
+                Should the master become unavailable during run-time for any
                 reason, an election is held. The environment that receives
                 the most number of votes, wins the election and becomes the
                 master. A machine receives a vote because it has the most
@@ -254,7 +255,7 @@
           <td width="40%" align="right"> <a accesskey="n" href="permmessages.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Replication Mechanisms </td>
+          <td width="40%" align="left" valign="top">The Replication APIs </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

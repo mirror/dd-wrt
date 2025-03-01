@@ -40,7 +40,6 @@ int sqlite3_client_finalize(sqlite3_stmt*);
 int sqlite3_client_close(sqlite3*);
 int sqlite3_server_start(void);
 int sqlite3_server_stop(void);
-void sqlite3_server_start2(int *pnDecr);
 
 /*
 ** Each thread is controlled by an instance of the following
@@ -69,13 +68,6 @@ struct Thread {
   int argc;                /* number of columns in result */
   const char *argv[100];   /* result columns */
   const char *colv[100];   /* result column names */
-
-  /* Initialized to 1 by the supervisor thread when the client is 
-  ** created, and then deemed read-only to the supervisor thread. 
-  ** Is set to 0 by the server thread belonging to this client 
-  ** just before it exits.  
-  */
-  int nServer;             /* Number of server threads running */
 };
 
 /*
@@ -183,10 +175,7 @@ static int tcl_client_create(
     return TCL_ERROR;
   }
   pthread_detach(x);
-  if( threadset[i].nServer==0 ){
-    threadset[i].nServer = 1;
-    sqlite3_server_start2(&threadset[i].nServer);
-  }
+  sqlite3_server_start();
   return TCL_OK;
 }
 
@@ -279,11 +268,6 @@ static int tcl_client_halt(
   for(i=0; i<N_THREAD && threadset[i].busy==0; i++){}
   if( i>=N_THREAD ){
     sqlite3_server_stop();
-    while( 1 ){
-      for(i=0; i<N_THREAD && threadset[i].nServer==0; i++);
-      if( i==N_THREAD ) break;
-      sched_yield();
-    }
   }
   return TCL_OK;
 }
@@ -315,7 +299,7 @@ static int tcl_client_argc(
     return TCL_ERROR;
   }
   client_wait(&threadset[i]);
-  sqlite3_snprintf(sizeof(zBuf), zBuf, "%d", threadset[i].argc);
+  sprintf(zBuf, "%d", threadset[i].argc);
   Tcl_AppendResult(interp, zBuf, 0);
   return TCL_OK;
 }
@@ -392,8 +376,6 @@ static int tcl_client_colname(
   return TCL_OK;
 }
 
-extern const char *sqlite3ErrName(int);
-
 /*
 ** Usage: client_result  ID
 **
@@ -421,7 +403,34 @@ static int tcl_client_result(
     return TCL_ERROR;
   }
   client_wait(&threadset[i]);
-  zName = sqlite3ErrName(threadset[i].rc);
+  switch( threadset[i].rc ){
+    case SQLITE_OK:         zName = "SQLITE_OK";          break;
+    case SQLITE_ERROR:      zName = "SQLITE_ERROR";       break;
+    case SQLITE_PERM:       zName = "SQLITE_PERM";        break;
+    case SQLITE_ABORT:      zName = "SQLITE_ABORT";       break;
+    case SQLITE_BUSY:       zName = "SQLITE_BUSY";        break;
+    case SQLITE_LOCKED:     zName = "SQLITE_LOCKED";      break;
+    case SQLITE_NOMEM:      zName = "SQLITE_NOMEM";       break;
+    case SQLITE_READONLY:   zName = "SQLITE_READONLY";    break;
+    case SQLITE_INTERRUPT:  zName = "SQLITE_INTERRUPT";   break;
+    case SQLITE_IOERR:      zName = "SQLITE_IOERR";       break;
+    case SQLITE_CORRUPT:    zName = "SQLITE_CORRUPT";     break;
+    case SQLITE_FULL:       zName = "SQLITE_FULL";        break;
+    case SQLITE_CANTOPEN:   zName = "SQLITE_CANTOPEN";    break;
+    case SQLITE_PROTOCOL:   zName = "SQLITE_PROTOCOL";    break;
+    case SQLITE_EMPTY:      zName = "SQLITE_EMPTY";       break;
+    case SQLITE_SCHEMA:     zName = "SQLITE_SCHEMA";      break;
+    case SQLITE_CONSTRAINT: zName = "SQLITE_CONSTRAINT";  break;
+    case SQLITE_MISMATCH:   zName = "SQLITE_MISMATCH";    break;
+    case SQLITE_MISUSE:     zName = "SQLITE_MISUSE";      break;
+    case SQLITE_NOLFS:      zName = "SQLITE_NOLFS";       break;
+    case SQLITE_AUTH:       zName = "SQLITE_AUTH";        break;
+    case SQLITE_FORMAT:     zName = "SQLITE_FORMAT";      break;
+    case SQLITE_RANGE:      zName = "SQLITE_RANGE";       break;
+    case SQLITE_ROW:        zName = "SQLITE_ROW";         break;
+    case SQLITE_DONE:       zName = "SQLITE_DONE";        break;
+    default:                zName = "SQLITE_Unknown";     break;
+  }
   Tcl_AppendResult(interp, zName, 0);
   return TCL_OK;
 }

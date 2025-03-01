@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -110,8 +110,6 @@ public class UtfOps {
      *
      * @param length the number of byte to be converted.
      *
-     * @return the number of characters.
-     *
      * @throws IndexOutOfBoundsException if a UTF character sequence at the end
      * of the data is not complete.
      *
@@ -158,8 +156,6 @@ public class UtfOps {
      *
      * @param isByteLen if true then len is a measure of bytes, otherwise
      * len is a measure of characters
-     *
-     * @return the byte offset after converting the bytes.
      *
      * @throws IndexOutOfBoundsException if a UTF character sequence at the end
      * of the data is not complete.

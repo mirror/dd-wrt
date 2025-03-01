@@ -1,12 +1,12 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2016 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010 Oracle.  All rights reserved.
  *
  */
 
 /*
- * This file shows an example of using the bfile interface for OSL.
+ * This file show a exmple of using bfile interface for OSL.
  */
 
 #include <stdio.h>

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -61,18 +61,15 @@ __bam_ditem(dbc, h, indx)
 	PAGE *h;
 	u_int32_t indx;
 {
-	BBLOB bl;
 	BINTERNAL *bi;
 	BKEYDATA *bk;
 	DB *dbp;
-	db_seq_t blob_id;
 	u_int32_t nbytes;
 	int ret;
 	db_indx_t *inp;
 
 	dbp = dbc->dbp;
 	inp = P_INP(dbp, h);
-	ret = 0;
 
 	/* The page should already have been dirtied by our caller. */
 	DB_ASSERT(dbp->env, IS_DIRTY(h));
@@ -140,13 +137,6 @@ __bam_ditem(dbc, h, indx)
 			nbytes = BOVERFLOW_SIZE;
 			if ((ret = __db_doff(
 			    dbc, (GET_BOVERFLOW(dbp, h, indx))->pgno)) != 0)
-				return (ret);
-			break;
-		case B_BLOB:
-			nbytes = BBLOB_SIZE;
-			memcpy(&bl, bk, BBLOB_SIZE);
-			blob_id = (db_seq_t)bl.id;
-			if ((ret = __blob_del(dbc, blob_id)) != 0)
 				return (ret);
 			break;
 		case B_KEYDATA:
@@ -479,7 +469,6 @@ err:		for (; epg <= cp->csp; ++epg) {
 			child = NULL;
 			goto stop;
 		}
-		F_SET(dbc, C_ROOT_COLLAPSED);
 		child = NULL;
 
 		if (0) {
@@ -505,7 +494,7 @@ stop:			done = 1;
 /*
  * __bam_pupdate --
  *	Update parent key pointers up the tree after putting a new key
- *	at the start of a leaf page.
+ *	at the start of a leaf page. 
  *
  *
  * PUBLIC: int __bam_pupdate __P((DBC *, PAGE *));

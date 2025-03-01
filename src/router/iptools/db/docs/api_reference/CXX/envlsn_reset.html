@@ -9,12 +9,12 @@
     <link rel="start" href="index.html" title="Berkeley DB C++ API Reference" />
     <link rel="up" href="env.html" title="Chapter 5.  The DbEnv Handle" />
     <link rel="prev" href="envlog_verify.html" title="DbEnv::log_verify()" />
-    <link rel="next" href="envmsg.html" title="DbEnv::msg()" />
+    <link rel="next" href="envopen.html" title="DbEnv::open()" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -25,7 +25,7 @@
           <th width="60%" align="center">Chapter 5. 
                 The DbEnv Handle
         </th>
-          <td width="20%" align="right"> <a accesskey="n" href="envmsg.html">Next</a></td>
+          <td width="20%" align="right"> <a accesskey="n" href="envopen.html">Next</a></td>
         </tr>
       </table>
       <hr />
@@ -66,11 +66,6 @@ DbEnv::lsn_reset(const char *file, u_int32_t flags);</pre>
          Applications should not reset LSNs in files that are currently in use.
     </p>
       <p>
-         The <code class="methodname">DbEnv::lsn_reset()</code> method is a
-         non-atomic operation. If the operation fails, it is possible for the
-         database to be in an inconsistent state.
-    </p>
-      <p>
          The <code class="methodname">DbEnv::lsn_reset()</code> method may be called at any time during the
          life of the application.
     </p>
@@ -88,7 +83,7 @@ DbEnv::lsn_reset(const char *file, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670061220880"></a>Parameters</h3>
+              <h3 class="title"><a id="idp7006440"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -96,7 +91,7 @@ DbEnv::lsn_reset(const char *file, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670061222128"></a>file</h4>
+                <h4 class="title"><a id="idp7005792"></a>file</h4>
               </div>
             </div>
           </div>
@@ -108,7 +103,7 @@ DbEnv::lsn_reset(const char *file, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670061265264"></a>flags</h4>
+                <h4 class="title"><a id="idp7011136"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -134,7 +129,7 @@ DbEnv::lsn_reset(const char *file, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670061252656"></a>Errors</h3>
+              <h3 class="title"><a id="idp7012320"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -152,7 +147,7 @@ DbEnv::lsn_reset(const char *file, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670061196992"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp7020520"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -165,7 +160,7 @@ DbEnv::lsn_reset(const char *file, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670061199072"></a>Class</h3>
+              <h3 class="title"><a id="idp7019440"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -177,7 +172,7 @@ DbEnv::lsn_reset(const char *file, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670061320640"></a>See Also</h3>
+              <h3 class="title"><a id="idp7016288"></a>See Also</h3>
             </div>
           </div>
         </div>
@@ -194,14 +189,14 @@ DbEnv::lsn_reset(const char *file, u_int32_t flags);</pre>
           <td width="20%" align="center">
             <a accesskey="u" href="env.html">Up</a>
           </td>
-          <td width="40%" align="right"> <a accesskey="n" href="envmsg.html">Next</a></td>
+          <td width="40%" align="right"> <a accesskey="n" href="envopen.html">Next</a></td>
         </tr>
         <tr>
           <td width="40%" align="left" valign="top">DbEnv::log_verify() </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> DbEnv::msg()</td>
+          <td width="40%" align="right" valign="top"> DbEnv::open()</td>
         </tr>
       </table>
     </div>

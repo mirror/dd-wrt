@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 
@@ -9,11 +9,10 @@ source $test_path/test.tcl
 source $test_path/testutils.tcl
 source $test_path/reputils.tcl
 
-set hoststr [lindex $argv 0]
-set dirB [lindex $argv 1]
-set portB [lindex $argv 2]
-set dirA [lindex $argv 3]
-set portA [lindex $argv 4]
+set dirB [lindex $argv 0]
+set portB [lindex $argv 1]
+set dirA [lindex $argv 2]
+set portA [lindex $argv 3]
 
 puts "Repmgr029script2: Open env of A."
 set ma_cmd "berkdb_env -home $dirA -txn -thread"
@@ -34,7 +33,7 @@ error_check_good a_txn_A_1 $active_txn_1 1
 
 puts "Repmgr029script2: Start up B. It finishes when the txn has been aborted."
 set envB [berkdb env -create -errpfx B -home $dirB -txn -rep -thread]
-$envB repmgr -local [list $hoststr $portB] -remote [list $hoststr $portA] \
+$envB repmgr -local [list 127.0.0.1 $portB] -remote [list 127.0.0.1 $portA] \
     -start client
 await_startup_done $envB
 error_check_good a_txn_A_0 [stat_field $envA txn_stat "Number active txns"] 0

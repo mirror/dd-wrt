@@ -23,35 +23,13 @@ die()
 }
 
 START_DIR=`pwd`
+if [ "x$1" != "x" ]; then
+	PKG_ROOT=$1
+else
+	PKG_ROOT=../..
+fi
 
-PKG_ROOT=../..
-BUILD_ALL=1
-CLEAN_ONLY=0
-BUILD_JDBC=0
-BUILD_ODBC=0
-BUILD_NET=0
-while [ $# -gt 0 ]
-do
-	case "$1" in
-	-clean)
-		CLEAN_ONLY=1;;
-	-jdbc)
-		BUILD_ALL=0
-		BUILD_JDBC=1;;
-	-odbc)
-		BUILD_ALL=0
-		BUILD_ODBC=1;;
-	-adodotnet)
-		BUILD_ALL=0
-		BUILD_NET=1;;
-	-addons)
-		shift
-		PKG_ROOT=$1;;
-	esac
-	shift
-done
-
-DB_ADDONS_REPO=$PKG_ROOT/db_addons
+DB_ADDONS_REPO=$PKG_ROOT/db_addons-5.3
 update_repo()
 {
 	if [ ! -d $DB_ADDONS_REPO ]; then
@@ -64,6 +42,21 @@ update_repo()
 		die "Failed updating the db_addons repository."
 	fi
 }
+update_repo
+
+cd $START_DIR
+ODBC_PACKAGE=`ls $DB_ADDONS_REPO/thirdparty/sql/sqliteodbc-*.tar.gz | tail -1`
+JDBC_PACKAGE=`ls $DB_ADDONS_REPO/thirdparty/sql/javasqlite-*.tar.gz | tail -1`
+ADO_PACKAGE=`ls $DB_ADDONS_REPO/thirdparty/sql/sqlite-dotnetsrc*.zip | tail -1`
+HOMEDIR=`pwd`
+
+SQL_DIR=../lang/sql/
+ODBC_DIR=$SQL_DIR/odbc
+JDBC_DIR=$SQL_DIR/jdbc
+ADO_DIR=$PKG_ROOT/adodotnet
+rm -rf "$ODBC_DIR" && mkdir -p $ODBC_DIR
+rm -rf "$JDBC_DIR" && mkdir -p $JDBC_DIR
+rm -rf "$ADO_DIR" && mkdir -p $ADO_DIR
 
 
 ##############################################################################
@@ -82,16 +75,13 @@ fi
 dir=`basename $ODBC_PACKAGE .tar.gz`
 gzip -c -d $ODBC_PACKAGE | tar xf -
 mv $dir/* $ODBC_DIR || exit $?
-rm -r $dir
 
 # Apply patches
-for PATCH in 'odbc/odbc.patch' 'odbc/sqlite3odbc.patch' 
-do 
-	( cd $ODBC_DIR && patch -p1 -i $START_DIR/$PATCH ) 
-	if [ $? -ne 0 ]; then 
-	    die "Can not apply patch $PATCH" 
-    fi 
-done 
+PATCH='odbc/odbc.patch'
+( cd $ODBC_DIR && patch -p1 -i $START_DIR/$PATCH )
+if [ $? -ne 0 ]; then
+	die "Can not apply patch $PATCH"
+fi
 
 # Remove unnecessary files from packages.
 
@@ -132,22 +122,6 @@ fi
 dir=`basename $JDBC_PACKAGE .tar.gz`
 gzip -c -d $JDBC_PACKAGE | tar xf -
 mv $dir/* $JDBC_DIR || exit $?
-rm -r $dir
-
-# Apply patches. 
-# The change in jdbc.patch was accepted back into javasqlite-20131124, 
-# so we don't need to apply this patch any more. 
-#PATCH='jdbc/jdbc.patch'
-#( cd $JDBC_DIR && patch -p1 -i $START_DIR/$PATCH )
-#if [ $? -ne 0 ]; then
-#	die "Can not apply patch $PATCH"
-#fi
-
-PATCH='jdbc/jdbc.patch2'
-( cd $JDBC_DIR && patch -p1 -i $START_DIR/$PATCH )
-if [ $? -ne 0 ]; then
-	die "Can not apply patch $PATCH"
-fi
 
 #
 # Remove unnecessary files from packages.
@@ -168,23 +142,14 @@ rm -f $JDBC_DIR/db $JDBC_DIR/db2 $JDBC_DIR/db3
 # Remove other bits and pieces that aren't relevant.
 rm -rf $JDBC_DIR/debian $ODBC_DIR/*ming* $ODBC_DIR/README.* $ODBC_DIR/*mak
 
-# Patch the JDBC configure file, so the JDK binaries path can be configured
-# correctly on non-Linux platforms
-mv $JDBC_DIR/configure $JDBC_DIR/configure.tmp
-# 1. Use the JAVAC path configured for BDB
-cat $JDBC_DIR/configure.tmp | \
-    sed -e '/$JAVA_HOME\/bin/s//$JAVA_BIN/' > $JDBC_DIR/configure
-rm -f $JDBC_DIR/configure.tmp
-
 # Patch the JDBC build files for autoconf, so the Berkeley DB library
 # can be added to the link command.
 mv $JDBC_DIR/Makefile.in $JDBC_DIR/Makefile.in.tmp
 # 1. Define BDB_LIB for Makefile
 # 2. Add LD_LIBRARY_PATH for runing native/mkconst in JDBC configuration
-# 3. Make the suffix of libsqlite_jni configurable
 cat $JDBC_DIR/Makefile.in.tmp | \
     sed -e '/native\/mkconst > SQLite\/Constants.java/ i \\t\LD_LIBRARY_PATH=\"\$\$LD_LIBRARY_PATH:\$(PWD)\/..\/.libs\" \\' \
-    -e '/^LIBS=/s/$/ @BDB_LIB@/' -e '/-o libsqlite_jni.la/s/-o/-shrext $(JMODSUFFIX) -o/' > $JDBC_DIR/Makefile.in
+    -e '/^LIBS=/s/$/ @BDB_LIB@/' > $JDBC_DIR/Makefile.in
 rm -f $JDBC_DIR/Makefile.in.tmp
 
 # Generate Constants.java needed by JDBC on Windows
@@ -205,16 +170,11 @@ rm -f mkconst*
 # Note: If you run into XQuery issue when executing the script, you may need to
 # upgrade the XQilla version to at lease 2.2
 ##############################################################################
-set_adodotnet_dir()
-{
-ADO_DIR="dbsql-adodotnet-${DB_VERSION_MAJOR}.${DB_VERSION_MINOR}.${DB_VERSION_PATCH}"
-}
-
 s_sql_adodotnet()
 {
 cd $START_DIR
 ADO_DIR_ORIG=`basename $ADO_PACKAGE .zip`
-set_adodotnet_dir
+ADO_DIR="dbsql-adodotnet-${DB_VERSION_MAJOR}.${DB_VERSION_MINOR}.${DB_VERSION_PATCH}"
 TMP_FILE='temp_file'
 
 # Detect package
@@ -322,6 +282,7 @@ done
 
 # Replace SQLite source code with DBSQL source code
 cp -f $START_DIR/../lang/sql/generated/* SQLite.Interop/src/core/
+cp -f $START_DIR/adodotnet/testce.2008.csproj testce/
 
 # Apply patches
 PATCH='adodotnet/adodotnet.patch'
@@ -331,31 +292,40 @@ if [ $? -ne 0 ]; then
 fi
 
 #
-# Change the projects.
+# Generate WinCE projects
 #
+WINDOWS_VCPROJ="SQLite.Interop/SQLite.Interop.2008.vcproj"
+WINDOWS_2010_VCPROJ="SQLite.Interop/SQLite.Interop.2010.vcxproj"
+WINCE_VCPROJ_NAME="SQLite.Interop.2008.WinCE"
+WINCE_VCPROJ="SQLite.Interop/${WINCE_VCPROJ_NAME}.vcproj"
 XQ_COMMON="$START_DIR/adodotnet/adapt_common.xq.in"
 
-# Change SQLite.Interop.CE.2005/2008.vcproj to add platforms.
+# Define WINCE_PLATFORM_NAME
+# Use the most common project name for WinCE project file.
+WINCE_PLATFORM_NAME='Pocket PC 2003 (ARMV4)'
+WINCE_PROJECT_GUID='A7895F70-6FD5-11E0-A1F0-0800200C9A66'
 XQ='gen_wince_project.xq'
 XQ_IN="${XQ}.in"
 XQ_IN_SRC="$START_DIR/adodotnet/${XQ_IN}"
+# Generate XQuery script
 cp $XQ_COMMON $XQ_IN
 cat $XQ_IN_SRC >> $XQ_IN
 sed -e "s/@DB_VERSION_MAJOR@/$DB_VERSION_MAJOR/g" \
     -e "s/@DB_VERSION_MINOR@/$DB_VERSION_MINOR/g" \
+    -e "s/@PROJECT_GUID@/$WINCE_PROJECT_GUID/g" \
+    -e "s/@PLATFORM_NAME@/$WINCE_PLATFORM_NAME/g" \
+    -e "s/@PROJECT_FILE@/$WINCE_VCPROJ_NAME/g" \
     -e "s/@BDB_PATH@/$BDB_PATH4SED/g" \
     -e "s/@BDB_NAME@/$BDB_ROOT/g" \
     < $XQ_IN >> $XQ
-# Change File list for vcproject file
-for proj in CE.2005 CE.2008
-do
-	xqilla -u -i SQLite.Interop/SQLite.Interop.$proj.vcproj $XQ
-done
+
+cp $WINDOWS_VCPROJ $WINCE_VCPROJ
+xqilla -u -i $WINCE_VCPROJ $XQ
 rm -f $XQ
 rm -f $XQ_IN
 
 #
-# Change SQLite.Interop.2010/2012.vcproj for Win32/x64.
+# Change SQLite.Interop/SQLite.Interop.2010.vcproj for Win32/x64
 #
 XQ='adapt_SQLite.Interop.2010.xq'
 XQ_IN="${XQ}.in"
@@ -368,33 +338,18 @@ cat $XQ_COMMON >> $XQ_IN
 cat $XQ_IN_SRC >> $XQ_IN
 sed -e "s/@DB_VERSION_MAJOR@/$DB_VERSION_MAJOR/g" \
     -e "s/@DB_VERSION_MINOR@/$DB_VERSION_MINOR/g" \
+    -e "s/@WINCE_PLATFORM_NAME@/$WINCE_PLATFORM_NAME/g" \
     -e "s/@BDB_PATH@/$BDB_PATH4SED/g" \
     -e "s/@BDB_NAME@/$BDB_ROOT/g" \
     < $XQ_IN >> $XQ
 
 # Change File list for vcproject file
-for proj in 2010 Static.2010 2012 Static.2012 2013 Static.2013 CE.2012
-do
-	xqilla -u -i SQLite.Interop/SQLite.Interop.$proj.vcxproj $XQ
-done
+xqilla -u -i $WINDOWS_2010_VCPROJ $XQ
 rm -f $XQ
 rm -f $XQ_IN
 
-# Add BDB files into  SQLite.Interop.CE.2012.vcxproj using sed, since
-# xqilla can not handle that.
-sed -n -e '/File.*RelativePath/p' $BDB_ROOT/build_wince/VS8/db.vcproj | \
-    sed -e 's/File/ClCompile/g' -e 's/RelativePath/Include/g' \
-    -e "s#\\.\\.\\\\\\.\\.\\\\src#..\\\\$BDB_ROOT\\\\src#g" >ce.tmp
-sed -e '$d' SQLite.Interop/SQLite.Interop.CE.2012.vcxproj >prj.tmp
-echo '<ItemGroup>' >> prj.tmp
-cat ce.tmp >> prj.tmp
-echo '</ItemGroup>' >> prj.tmp
-echo '</Project>' >> prj.tmp
-mv prj.tmp SQLite.Interop/SQLite.Interop.CE.2012.vcxproj
-rm -f ce.tmp
-
 #
-# Change SQLite.Interop.[CE.]2005/2008.vcproj for Win32/x64/WinCE.
+# Change SQLite.Interop/SQLite.Interop.2008.vcproj for Win32/x64
 #
 XQ='adapt_SQLite.Interop.2008.xq'
 XQ_IN="${XQ}.in"
@@ -404,15 +359,14 @@ cp $XQ_COMMON $XQ_IN
 cat $XQ_IN_SRC >> $XQ_IN
 sed -e "s/@DB_VERSION_MAJOR@/$DB_VERSION_MAJOR/g" \
     -e "s/@DB_VERSION_MINOR@/$DB_VERSION_MINOR/g" \
+    -e "s/@WINCE_PLATFORM_NAME@/$WINCE_PLATFORM_NAME/g" \
     -e "s/@BDB_PATH@/$BDB_PATH4SED/g" \
     -e "s/@BDB_NAME@/$BDB_ROOT/g" \
     < $XQ_IN >> $XQ
 
 # Change File list for vcproject file
-for proj in 2005 2008 CE.2005 CE.2008 Static.2005 Static.2008
-do
-	xqilla -u -i SQLite.Interop/SQLite.Interop.$proj.vcproj $XQ
-done
+xqilla -u -i $WINDOWS_VCPROJ $XQ
+xqilla -u -i $WINCE_VCPROJ $XQ
 rm -f $XQ
 rm -f $XQ_IN
 
@@ -421,7 +375,7 @@ rm -f $XQ_IN
 # 1. Change xml version to 1.0, otherwise Visual Studio can not open it
 # 2. Remove unnecessary xmlns in VS2010 project file
 #
-for f in `ls SQLite.Interop/*.vcproj SQLite.Interop/*.vcxproj`
+for f in $WINDOWS_VCPROJ $WINCE_VCPROJ $WINDOWS_2010_VCPROJ
 do
 	forward="cat"
 	which tidy  > /dev/null 2>&1
@@ -430,9 +384,8 @@ do
 		forward='tidy -w 1000 -xml -i -q -utf8 -n'
 
 		# Rename _ProjectFileVersion for now, othwerwise the tidy command
-		# might fails. The BDB requires WIN2K at least.
-		sed -e 's/_ProjectFileVersion/tempProjectFileVersion/g' \
-		    -e 's/_WIN32_WINNT=0x0400/_WIN32_WINNT=0x0500/g' $f > $TMP_FILE
+		# might fails
+		sed -e 's/_ProjectFileVersion/tempProjectFileVersion/g' $f > $TMP_FILE
 	else
 		echo "Warning: can not find tidy command to format the project file"
 	fi
@@ -443,29 +396,6 @@ do
 
 	sed -e 's/tempProjectFileVersion/_ProjectFileVersion/g' ${f}.tmp > $f
 	rm ${f}.tmp
-done
-
-# Change the solutions containing WinCE projects so that all the supported
-# platforms can be seen and selected.
-for sln in SQLite.NET.2005.MSBuild.sln SQLite.NET.2005.sln \
-    SQLite.NET.2008.MSBuild.sln SQLite.NET.2008.sln
-do
-	for conf in Release ReleaseNativeOnly Debug DebugNativeOnly
-	do
-		for platform in "Windows Mobile 6.5.3 Professional DTK (ARMV4I)" \
-		    "Windows Mobile 6 Professional SDK (ARMV4I)" \
-		    "Windows Mobile 5.0 Smartphone SDK (ARMV4I)" \
-		    "Windows Mobile 5.0 Pocket PC SDK (ARMV4I)" \
-		    "Smartphone 2003 (ARMV4)"
-		do
-			# Use proper indent for the added string so the 
-			# solution file will have good format.
-			sed -e "/GlobalSection.*SolutionConfigurationPlatforms.*/a\\
-		$conf|$platform = $conf|$platform" $sln > $sln.tmp
-			mv $sln.tmp $sln
-		done
-	done
-	rm -f $sln.tmp
 done
 
 #
@@ -494,6 +424,52 @@ do
 done
 
 #
+# Generate WinCE edition for Solution files
+#
+# Skip *.MSBuild.sln and *.2010.sln since they don't include CompactFramework
+# components
+#
+for sln in SQLite.NET.2008.sln
+do
+	dst=`echo $sln | sed -e 's/2008/2008.WinCE/g'`
+
+	# Dos to unix
+	sed 's/$\r//' $sln > ${sln}.tmp
+	rm -f $TMP_FILE
+	
+	# Change Win32 projects to WinCE projects
+	sed -e "s/|Win32/|$WINCE_PLATFORM_NAME/g" ${sln}.tmp > $TMP_FILE
+	sed -e "s/SQLite.Interop.2008/SQLite.Interop.2008.WinCE/g" $TMP_FILE > ${sln}.tmp
+	# Remove x64 platform -- WinCE projects doesn't require it
+	sed -e "/|x64/d" ${sln}.tmp > $TMP_FILE
+
+	# Remove SQLite.Designer, since it's not for Windows mobile/CE
+	guid=`grep 'SQLite.Designer' $TMP_FILE | head -n 1 | awk -F '[{}]' '{print $4}'`
+	if [ "$guid" != "" ]; then
+		sed -e '/SQLite.Designer/,/EndProject/d' \
+		    -e "/$guid/d" $TMP_FILE > ${sln}.tmp
+	else
+		cp $TMP_FILE ${sln}.tmp
+	fi
+
+	# Change test.2008 to testce.2008 for WinCE testing
+	testceProj="$START_DIR/adodotnet/testce.2008.csproj"
+	test_GUID=`cat ${sln}.tmp | grep test\.2008 | awk -F "[{}]" '{print $4}'`
+	testce_GUID=`cat $testceProj |  grep ProjectGuid | awk -F "[{}]" '{print $2}'`
+
+	# Change test project name and UID
+	sed -e "s/test\\\/testce\\\/g" \
+    	    -e "s/$test_GUID/$testce_GUID/g" \
+    	    -e "s/test\.2008/testce\.2008/g" \
+    	${sln}.tmp > $TMP_FILE
+
+	# Change to dos format -- VisualStudio solution files must be dos format
+	sed -e 's///g' -e 's/$//' $TMP_FILE > $dst
+
+	rm -f ${sln}.tmp
+done
+
+#
 # SQLITE_MEMDEBUG only suit (Tcl) testfixture. Disable it.
 #
 cd $START_DIR/$ADO_DIR
@@ -502,6 +478,11 @@ do
 	sed -e "s/SQLITE_MEMDEBUG=1//g" $f > $TMP_FILE
 	cat $TMP_FILE > $f
 done
+
+#
+# Set Working directory for debugging with IDE
+#
+cp $START_DIR/adodotnet/test.2008.csproj.user test
 
 #
 # Clean Env
@@ -523,37 +504,10 @@ fi
 
 # Clean environment
 rm -r $ADO_DIR
+}
 
-} # end ADO.NET packaging
 
-###########################################################
-
-cd $START_DIR
-SQL_DIR=../lang/sql/
-HOMEDIR=`pwd`
-
-if [ "$CLEAN_ONLY" != 0 ]; then
-	set_adodotnet_dir
-	rm -rf $SQL_DIR/jdbc $SQL_DIR/odbc ../release/${ADO_DIR}.zip
-	exit 0
-fi
-
-update_repo
-
-if [ "$BUILD_ALL" != 0 -o "$BUILD_JDBC" != 0 ]; then
-	JDBC_PACKAGE=`ls $DB_ADDONS_REPO/thirdparty/sql/javasqlite-*.tar.gz | tail -1`
-	JDBC_DIR=$SQL_DIR/jdbc
-	rm -rf "$JDBC_DIR" && mkdir -p $JDBC_DIR
-	s_sql_jdbc
-fi
-if [ "$BUILD_ALL" != 0 -o "$BUILD_ODBC" != 0 ]; then
-	ODBC_PACKAGE=`ls $DB_ADDONS_REPO/thirdparty/sql/sqliteodbc-*.tar.gz | tail -1`
-	ODBC_DIR=$SQL_DIR/odbc
-	rm -rf "$ODBC_DIR" && mkdir -p $ODBC_DIR
-	s_sql_odbc
-fi
-if [ "$BUILD_ALL" != 0 -o "$BUILD_NET" != 0 ]; then
-	ADO_PACKAGE=`ls $DB_ADDONS_REPO/thirdparty/sql/sqlite-dotnetsrc*.zip | tail -1`
-	s_sql_adodotnet
-fi
+s_sql_odbc
+s_sql_jdbc
+s_sql_adodotnet
 

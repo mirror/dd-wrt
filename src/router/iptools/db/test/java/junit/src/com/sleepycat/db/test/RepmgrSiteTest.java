@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  * 
- * Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
  * 
  * $Id$
  * 
@@ -18,14 +18,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import java.io.File;
-import java.io.FileNotFoundException;
 import com.sleepycat.db.*;
 
 public class RepmgrSiteTest extends EventHandlerAdapter
 {
-    static String host = "::1";
+    static String host = "localhost";
     static String homedirName = "";
-    static long port = 30303;
+    static long port = 30100;
     static int maxLoopWait = 30;
 
     File homedir;
@@ -148,127 +147,6 @@ public class RepmgrSiteTest extends EventHandlerAdapter
         env.close();
     }
 
-    @Test public void testPartialRep() throws Exception
-    {
-        // Start up master.
-        File mHomeDir = new File(homedirName + File.separator + "master");
-        mHomeDir.mkdir();
-        ReplicationManagerSiteConfig mConf =
-            new ReplicationManagerSiteConfig(host, port);
-        mConf.setLocalSite(true);
-        mConf.setGroupCreator(true);
-        envConfig.addReplicationManagerSite(mConf);
-        long mport = port;
-
-        Environment mEnv = new Environment(mHomeDir, envConfig);
-
-        mEnv.replicationManagerStart(4,
-            ReplicationManagerStartPolicy.REP_MASTER);
-
-        // Set up the environments for the client sites.
-        ReplicationManagerSiteConfig hConf =
-            new ReplicationManagerSiteConfig(host, port);
-        hConf.setBootstrapHelper(true);
-        File cHomeDir1 = new File(homedirName + File.separator + "client1");
-        cHomeDir1.mkdir();
-        port++;
-        ReplicationManagerSiteConfig cConf1 =
-            new ReplicationManagerSiteConfig(host, port);
-        cConf1.setLocalSite(true);
-        EnvironmentConfig cEnvConfig1 = initEnvConfig();
-        cEnvConfig1.addReplicationManagerSite(cConf1);
-        cEnvConfig1.addReplicationManagerSite(hConf);
-        // Set the client 1 site as a partial view.
-        cEnvConfig1.setReplicationView(new RepViewCallback());
-        Environment cEnv1 = new Environment(cHomeDir1, cEnvConfig1);
-
-        File cHomeDir2 = new File(homedirName + File.separator + "client2");
-        cHomeDir2.mkdir();
-        port++;
-        ReplicationManagerSiteConfig cConf2 =
-            new ReplicationManagerSiteConfig(host, port);
-        cConf2.setLocalSite(true);
-        EnvironmentConfig cEnvConfig2 = initEnvConfig();
-        cEnvConfig2.addReplicationManagerSite(cConf2);
-        cEnvConfig2.addReplicationManagerSite(hConf);
-        // Set the client 2 site as a full view.
-        cEnvConfig2.setReplicationView(null);
-        Environment cEnv2 = new Environment(cHomeDir2, cEnvConfig2);
-
-        // Create 2 db files on the master site.
-        DatabaseConfig db_config = new DatabaseConfig();
-        db_config.setErrorStream(TestUtils.getErrorStream());
-        db_config.setErrorPrefix("RepmgrSiteTest::testPartialRep ");
-        db_config.setType(DatabaseType.BTREE);
-        db_config.setAllowCreate(true);
-        db_config.setTransactional(true);
-
-        Database db1 = mEnv.openDatabase(null, "db1.db", null, db_config);
-        Database db2 = mEnv.openDatabase(null, "db2.db", null, db_config);
-        db1.close();
-        db2.close();
-
-        // Start the client sites.
-        cEnv1.replicationManagerStart(4,
-            ReplicationManagerStartPolicy.REP_CLIENT);
-        assertTrue(waitForStartUpDone(cEnv1));
-        cEnv2.replicationManagerStart(4,
-            ReplicationManagerStartPolicy.REP_CLIENT);
-        assertTrue(waitForStartUpDone(cEnv2));
-
-        // Verify that the database file db1.db is replicated to both client
-        // sites, but db2.db is replicated only to the client 2 site.
-        db_config.setAllowCreate(false);
-        db1 = cEnv1.openDatabase(null, "db1.db", null, db_config);
-        try {
-            db2 = cEnv1.openDatabase(null, "db2.db", null, db_config);
-            throw new Exception();
-        } catch (FileNotFoundException e) {
-        }
-        db1.close();
-
-        db1 = cEnv2.openDatabase(null, "db1.db", null, db_config);
-        db2 = cEnv2.openDatabase(null, "db2.db", null, db_config);
-        db1.close();
-        db2.close();
-
-        // Verify the clients are views locally and from remote site.
-        ReplicationManagerSiteInfo[] siteLists =
-            mEnv.getReplicationManagerSiteList();
-        assertEquals(2, siteLists.length);
-        assertEquals(true, siteLists[0].isView());
-        assertEquals(true, siteLists[1].isView());
-        ReplicationStats repStats =
-            cEnv1.getReplicationStats(StatsConfig.DEFAULT);
-        assertEquals(true, repStats.getView());
-        repStats = cEnv2.getReplicationStats(StatsConfig.DEFAULT);
-        assertEquals(true, repStats.getView());
-
-        // Verify the master is not a view locally or from remote site.
-        siteLists = cEnv1.getReplicationManagerSiteList();
-        assertEquals(2, siteLists.length);
-        int i;
-        for (i = 0; i < siteLists.length; i++) {
-            if (siteLists[i].addr.port == mport)
-                break;
-        }
-        assertTrue(i < siteLists.length);
-        assertEquals(false, siteLists[i].isView());
-        repStats = mEnv.getReplicationStats(StatsConfig.DEFAULT);
-        assertEquals(false, repStats.getView());
-
-        // Get the replication manager statistics.
-        ReplicationManagerStats masterStats =
-            mEnv.getReplicationManagerStats(StatsConfig.DEFAULT);
-        assertEquals(1, masterStats.getSiteParticipants());
-        assertEquals(3, masterStats.getSiteTotal());
-        assertEquals(2, masterStats.getSiteViews());
-
-        cEnv2.close();
-        cEnv1.close();
-        mEnv.close();
-    }
-
     @Test public void testRepmgrSiteConfig() throws Exception
     {
         // Start up master.
@@ -384,12 +262,7 @@ public class RepmgrSiteTest extends EventHandlerAdapter
         dbsite.close();
 
         // Ensure the DbSite handle cannot work after close.
-	try {
-	    dbsite.getLocalSite();
-	} catch (IllegalArgumentException ex) {
-	    env.close();
-	    throw ex;
-	}
+        dbsite.getLocalSite();
 
         env.close();
     }
@@ -464,17 +337,5 @@ public class RepmgrSiteTest extends EventHandlerAdapter
         cEnv2.close();
         cEnv1.close();
         mEnv.close();
-    }
-}
-
-class RepViewCallback implements ReplicationViewHandler
-{
-    public boolean partial_view(Environment dbenv, String name, int flags)
-        throws DatabaseException
-    {
-        if (name.compareTo("db1.db") == 0)
-            return true;
-        else
-            return false;
     }
 }

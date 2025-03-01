@@ -8,24 +8,24 @@
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C API Reference" />
     <link rel="up" href="rep.html" title="Chapter 10.  Replication Methods" />
-    <link rel="prev" href="repmgrstat_print.html" title="DB_ENV-&gt;repmgr_stat_print()" />
-    <link rel="next" href="envtxn_applied.html" title="DB_ENV-&gt;txn_applied()" />
+    <link rel="prev" href="dbchannel_set_timeout.html" title="DB_CHANNEL-&gt;set_timeout()" />
+    <link rel="next" href="dbsite_get_config.html" title="DB_SITE-&gt;get_config()" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DB_SITE-&gt;close()</th>
         </tr>
         <tr>
-          <td width="20%" align="left"><a accesskey="p" href="repmgrstat_print.html">Prev</a> </td>
+          <td width="20%" align="left"><a accesskey="p" href="dbchannel_set_timeout.html">Prev</a> </td>
           <th width="60%" align="center">Chapter 10. 
                 Replication Methods
         </th>
-          <td width="20%" align="right"> <a accesskey="n" href="envtxn_applied.html">Next</a></td>
+          <td width="20%" align="right"> <a accesskey="n" href="dbsite_get_config.html">Next</a></td>
         </tr>
       </table>
       <hr />
@@ -68,7 +68,24 @@ DB_SITE-&gt;close(DB_SITE *site); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711172925552"></a>Class</h3>
+              <h3 class="title"><a id="idp53876232"></a>Errors</h3>
+            </div>
+          </div>
+        </div>
+        <p>
+             The <code class="methodname">DB_SITE-&gt;close()</code> <span>
+            <span>
+                 method may fail and return one of the following non-zero errors:
+            </span>
+            
+        </span>
+        </p>
+      </div>
+      <div class="sect2" lang="en" xml:lang="en">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h3 class="title"><a id="idp53873904"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -80,7 +97,7 @@ DB_SITE-&gt;close(DB_SITE *site); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711172915888"></a>See Also</h3>
+              <h3 class="title"><a id="idp53891880"></a>See Also</h3>
             </div>
           </div>
         </div>
@@ -93,18 +110,18 @@ DB_SITE-&gt;close(DB_SITE *site); </pre>
       <hr />
       <table width="100%" summary="Navigation footer">
         <tr>
-          <td width="40%" align="left"><a accesskey="p" href="repmgrstat_print.html">Prev</a> </td>
+          <td width="40%" align="left"><a accesskey="p" href="dbchannel_set_timeout.html">Prev</a> </td>
           <td width="20%" align="center">
             <a accesskey="u" href="rep.html">Up</a>
           </td>
-          <td width="40%" align="right"> <a accesskey="n" href="envtxn_applied.html">Next</a></td>
+          <td width="40%" align="right"> <a accesskey="n" href="dbsite_get_config.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">DB_ENV-&gt;repmgr_stat_print() </td>
+          <td width="40%" align="left" valign="top">DB_CHANNEL-&gt;set_timeout() </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> DB_ENV-&gt;txn_applied()</td>
+          <td width="40%" align="right" valign="top"> DB_SITE-&gt;get_config()</td>
         </tr>
       </table>
     </div>

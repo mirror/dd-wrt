@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -71,13 +71,11 @@ __lock_detect_pp(dbenv, flags, atype, rejectp)
 	u_int32_t flags, atype;
 	int *rejectp;
 {
-	DB_ENV *slice;
 	DB_THREAD_INFO *ip;
 	ENV *env;
-	int i, ret, t_ret, temp;
+	int ret;
 
 	env = dbenv->env;
-	temp = 0;
 
 	ENV_REQUIRES_CONFIG(env,
 	    env->lk_handle, "DB_ENV->lock_detect", DB_INIT_LOCK);
@@ -105,16 +103,6 @@ __lock_detect_pp(dbenv, flags, atype, rejectp)
 	ENV_ENTER(env, ip);
 	REPLICATION_WRAP(env, (__lock_detect(env, atype, rejectp)), 0, ret);
 	ENV_LEAVE(env, ip);
-	SLICE_FOREACH(dbenv, slice, i) {
-		if ((t_ret = __lock_detect_pp(slice,
-			flags, atype, rejectp == NULL ? NULL : &temp)) != 0) {
-			if (ret == 0)
-				ret = t_ret;
-			break;
-		}
-		if (rejectp != NULL)
-			*rejectp += temp;
-	}
 	return (ret);
 }
 
@@ -140,18 +128,14 @@ __lock_detect(env, atype, rejectp)
 	int pri_set, ret, status;
 
 	/*
-	 * If this environment is a replication client, then we force use of
-	 * MINWRITE in the hope that application-initiated transactions (which
-	 * must be read-only) are aborted instead of any transactions being
-	 * applied by replication message processing threads.
+	 * If this environment is a replication client, then we must use the
+	 * MINWRITE detection discipline.
 	 */
 	if (IS_REP_CLIENT(env))
 		atype = DB_LOCK_MINWRITE;
 
-	bitmap = copymap = tmpmap = NULL;
+	copymap = tmpmap = NULL;
 	deadlist = NULL;
-	idmap = NULL;
-	pri_set = nlockers = nalloc = 0;
 
 	lt = env->lk_handle;
 	if (rejectp != NULL)
@@ -320,7 +304,7 @@ __lock_detect(env, atype, rejectp)
 
 			default:
 				killid = BAD_KILLID;
-				ret = USR_ERR(env, EINVAL);
+				ret = EINVAL;
 				goto dokill;
 			}
 
@@ -449,7 +433,7 @@ skip:		LOCK_DD(env, region);
 					if (__clock_expired(env,
 					    &now, &lockerp->lk_expire)) {
 						lp->status = DB_LSTAT_EXPIRED;
-						MUTEX_UNLOCK_NO_CTR(
+						MUTEX_UNLOCK(
 						    env, lp->mtx_lock);
 						if (rejectp != NULL)
 							++*rejectp;
@@ -636,7 +620,7 @@ again:		memset(bitmap, 0, count * sizeof(u_int32_t) * nentries);
 				if (__clock_expired(env,
 				    &now, &lockerp->lk_expire)) {
 					lp->status = DB_LSTAT_EXPIRED;
-					MUTEX_UNLOCK_NO_CTR(env, lp->mtx_lock);
+					MUTEX_UNLOCK(env, lp->mtx_lock);
 					if (rejectp != NULL)
 						++*rejectp;
 					continue;
@@ -699,45 +683,38 @@ again:		memset(bitmap, 0, count * sizeof(u_int32_t) * nentries);
 	/*
 	 * Now for each locker, record its last lock and set abort status.
 	 * We need to look at the heldby list carefully.  We have the LOCKERS
-	 * locked so they cannot go away. The LOCK_SYSTEM_LOCK keeps things
-	 * steady when the lock table is not partitioned.  However, if there are
-	 * multiple lock partitions then the head of the heldby list can be
-	 * changed by another thread locking the object it points at.  That
-	 * thread will have OBJECT_LOCK()'d that lock's partition.  We need to
-	 * look at the lock entry in order to determine which partition to
-	 * mutex_lock.  Since lock structs are never really freed, once we get
-	 * the pointer we can look at it safely. However SH_LIST_FIRST is not
-	 * atomic, so we first fetch the pointer and then check that the list
-	 * was not empty during the fetch. This lets us at least mutex_lock the
-	 * partition of the lock. Afterwards, we retry if the lock is no longer
-	 * the first for that locker -- it might have changed to something ELSE
-	 * since then. We check abort status after building the bit maps so that
-	 * we will not pick a blocked transaction without noting that it is
-	 * already aborting.
+	 * locked so they cannot go away.  The lock at the head of the
+	 * list can be removed by locking the object it points at.
+	 * Since lock memory is not freed if we get a lock we can look
+	 * at it safely but SH_LIST_FIRST is not atomic, so we check that
+	 * the list has not gone empty during that macro. We check abort
+	 * status after building the bit maps so that we will not detect
+	 * a blocked transaction without noting that it is already aborting.
 	 */
 	for (id = 0; id < count; id++) {
 		if (!id_array[id].valid)
 			continue;
-		if ((ret = __lock_getlocker_int(lt, id_array[id].id,
-		     0, NULL, &lockerp)) != 0 || lockerp == NULL)
+		if ((ret = __lock_getlocker_int(lt,
+		    id_array[id].id, 0, &lockerp)) != 0 || lockerp == NULL)
 			continue;
 
 		/*
-		 * If this is a master transaction, try to find one of its
-		 * children's locks first, as they are probably more recent.
+		 * If this is a master transaction, try to
+		 * find one of its children's locks first,
+		 * as they are probably more recent.
 		 */
 		child = SH_LIST_FIRST(&lockerp->child_locker, __db_locker);
 		if (child != NULL) {
 			do {
-c_retry:			lp = SH_LIST_FIRSTP(&child->heldby, __db_lock);
-				if (__SH_LIST_WAS_EMPTY(&child->heldby, lp))
+c_retry:			lp = SH_LIST_FIRST(&child->heldby, __db_lock);
+				if (SH_LIST_EMPTY(&child->heldby) || lp == NULL)
 					goto c_next;
 
 				if (F_ISSET(child, DB_LOCKER_INABORT))
 					id_array[id].in_abort = 1;
 				ndx = lp->indx;
 				OBJECT_LOCK_NDX(lt, region, ndx);
-				if (lp != SH_LIST_FIRSTP(
+				if (lp != SH_LIST_FIRST(
 				    &child->heldby, __db_lock) ||
 				    ndx != lp->indx) {
 					OBJECT_UNLOCK(lt, region, ndx);
@@ -756,11 +733,11 @@ c_next:				child = SH_LIST_NEXT(
 			} while (child != NULL);
 		}
 
-l_retry:	lp = SH_LIST_FIRSTP(&lockerp->heldby, __db_lock);
-		if (!__SH_LIST_WAS_EMPTY(&lockerp->heldby, lp)) {
+l_retry:	lp = SH_LIST_FIRST(&lockerp->heldby, __db_lock);
+		if (!SH_LIST_EMPTY(&lockerp->heldby) && lp != NULL) {
 			ndx = lp->indx;
 			OBJECT_LOCK_NDX(lt, region, ndx);
-			if (lp != SH_LIST_FIRSTP(&lockerp->heldby, __db_lock) ||
+			if (lp != SH_LIST_FIRST(&lockerp->heldby, __db_lock) ||
 			    lp->indx != ndx) {
 				OBJECT_UNLOCK(lt, region, ndx);
 				goto l_retry;
@@ -892,7 +869,7 @@ __dd_abort(env, info, statusp)
 	 * detecting, return that.
 	 */
 	if ((ret = __lock_getlocker_int(lt,
-	    info->last_locker_id, 0, NULL, &lockerp)) != 0)
+	    info->last_locker_id, 0, &lockerp)) != 0)
 		goto err;
 	if (lockerp == NULL || F_ISSET(lockerp, DB_LOCKER_INABORT)) {
 		*statusp = DB_ALREADY_ABORTED;
@@ -938,7 +915,7 @@ __dd_abort(env, info, statusp)
 		UNLOCK_DD(env, region);
 	} else
 		ret = __lock_promote(lt, sh_obj, NULL, 0);
-	MUTEX_UNLOCK_NO_CTR(env, lockp->mtx_lock);
+	MUTEX_UNLOCK(env, lockp->mtx_lock);
 
 done:	OBJECT_UNLOCK(lt, region, info->last_ndx);
 err:	UNLOCK_LOCKERS(env, region);

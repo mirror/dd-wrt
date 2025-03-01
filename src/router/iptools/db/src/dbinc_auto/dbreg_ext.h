@@ -20,11 +20,9 @@ int __dbreg_failchk __P((ENV *));
 int __dbreg_log_close __P((ENV *, FNAME *, DB_TXN *, u_int32_t));
 int __dbreg_log_id __P((DB *, DB_TXN *, int32_t, int));
 int __dbreg_init_recover __P((ENV *, DB_DISTAB *));
-int __dbreg_register_42_print __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
 int __dbreg_register_print __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
 int __dbreg_init_print __P((ENV *, DB_DISTAB *));
 int __dbreg_register_recover __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
-int __dbreg_register_42_recover __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
 int __dbreg_stat_print __P((ENV *, u_int32_t));
 void __dbreg_print_fname __P((ENV *, FNAME *));
 int __dbreg_add_dbentry __P((ENV *, DB_LOG *, DB *, int32_t));
@@ -38,9 +36,8 @@ int __dbreg_invalidate_files __P((ENV *, int));
 int __dbreg_id_to_db __P((ENV *, DB_TXN *, DB **, int32_t, int));
 int __dbreg_id_to_fname __P((DB_LOG *, int32_t, int, FNAME **));
 int __dbreg_fid_to_fname __P((DB_LOG *, u_int8_t *, int, FNAME **));
-int __dbreg_blob_file_to_fname __P((DB_LOG *, db_seq_t, int, FNAME **));
 int __dbreg_get_name __P((ENV *, u_int8_t *, char **, char **));
-int __dbreg_do_open __P((ENV *, DB_TXN *, DB_LOG *, u_int8_t *, char *, DBTYPE, int32_t, db_pgno_t, void *, u_int32_t, u_int32_t, db_seq_t));
+int __dbreg_do_open __P((ENV *, DB_TXN *, DB_LOG *, u_int8_t *, char *, DBTYPE, int32_t, db_pgno_t, void *, u_int32_t, u_int32_t));
 int __dbreg_lazy_id __P((DB *));
 
 #if defined(__cplusplus)

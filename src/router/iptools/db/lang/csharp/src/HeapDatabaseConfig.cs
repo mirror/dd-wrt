@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -15,66 +15,12 @@ namespace BerkeleyDB {
     /// </summary>
     public class HeapDatabaseConfig : DatabaseConfig {
         /// <summary>
-        /// The path of the directory where external files are stored.
-        /// <para>
-        /// If the database is opened within <see cref="DatabaseEnvironment"/>,
-        /// this path setting will be ignored during
-        /// <see cref="HeapDatabase.Open"/>. Use
-        /// <see cref="HeapDatabase.ExternalFileDir"/> to identify the current
-        /// storage location of external files after opening the database.
-        /// </para>
-        /// </summary>
-	public string ExternalFileDir;
-	/// <summary>
-        /// Deprecated.  Replaced by ExternalFileDir.
-        /// </summary>
-        public string BlobDir;
-
-        internal bool blobThresholdIsSet;
-        private uint blobThreshold;
-        /// <summary>
-        /// The size in bytes which is used to determine when a data item 
-        /// will be stored as an external file.
-        /// <para>
-        /// Any data item that is equal to or larger in size than the
-        /// threshold value is automatically stored as an external file.
-        /// </para>
-        /// <para>
-        /// If the threshold value is 0, external files are never used by the
-        /// database.
-        /// </para>
-        /// <para>
-        /// It is illegal to enable external file support in the database which
-        /// is configured as in-memory database or with duplicates,
-        /// sorted duplicates, compression, multiversion concurrency control
-        /// and transactional read operations with degree 1 isolation.
-        /// </para>
-        /// </summary>
-        public uint ExternalFileThreshold {
-            get { return blobThreshold; }
-            set {
-                blobThresholdIsSet = true;
-                blobThreshold = value;
-            }
-        }
-	/// <summary>
-        /// Deprecated.  Replaced by ExternalFileThreshold.
-        /// </summary>
-	public uint BlobThreshold {
-            get { return blobThreshold; }
-            set {
-                blobThresholdIsSet = true;
-                blobThreshold = value;
-            }
-        }
-
-        /// <summary>
         /// The policy for how to handle database creation.
         /// </summary>
         /// <remarks>
         /// If the database does not already exist and
         /// <see cref="CreatePolicy.NEVER"/> is set,
-        /// <see cref="HeapDatabase.Open"/> fails.
+        /// <see cref="HeapDatabase.Open"/> will fail.
         /// </remarks>
         public CreatePolicy Creation;
         internal new uint openFlags {
@@ -97,20 +43,23 @@ namespace BerkeleyDB {
         /// </summary>
         public uint MaxSizeBytes { get { return _bytes; } }
         /// <summary>
-        /// Set the maximum on-disk database file size used by the database. Attempts
-        /// to update or create records in a database that have reached this file size
-        /// limit throw a <see cref="HeapFullException"/>. If this value is not set,
-        /// the database file size can grow infinitely. 
+        /// Set the maximum on-disk database file size used by the database. If
+        /// this value is never set, the database's file size can grow without
+        /// bound. If this value is set, then the heap file can never grow
+        /// larger than the limit defined by this method. In that case, attempts
+        /// to update or create records in a database that has reached its
+        /// maximum size will throw a <see cref="HeapFullException"/>.
         /// </summary>
         ///<remarks>
-        /// The size specified must be at least three times the
-        /// database page size. The database must contain at least 
+        /// The size specified to this method must be at least three times the
+        /// database page size. That is, the database must contain at least 
         /// three database pages. You can set the database page size using 
         /// <see cref="DatabaseConfig.PageSize"/>.
         ///
         /// If this value is set for an existing database, the size specified
-        /// here must match the size used to create the database. Specifying an
-        /// incorrect size does not result in an error until the database is opened. 
+        /// here must match the size used to create the database. Note, however,
+        /// that specifying an incorrect size will not result in an error 
+        /// until the database is opened. 
         /// </remarks>
         /// <param name="GBytes">The size of the database is set to GBytes
         /// gigabytes plus Bytes.</param>
@@ -126,15 +75,15 @@ namespace BerkeleyDB {
         internal bool regionszIsSet;
         /// <summary>
         /// The number of pages in a region of the database. If this value is
-        /// never set, the default region size for the database's page size is
-        /// used. You can set the database page size using 
+        /// never set, the default region size for the database's page size will
+        /// be used. You can set the database page size using 
         /// <see cref="DatabaseConfig.PageSize"/>.
         ///
-        /// If the database already exists, this value is ignored. If the
+        /// If the database already exists, this value will be ignored. If the
         /// specified region size is larger than the maximum region size for the
-        /// database's page size, an error is returned when
+        /// database's page size, an error will be returned when
         /// <see cref="Database.Open"/> is called. The maximum allowable region 
-        /// size is included in the error message. 
+        /// size will be included in the error message. 
         /// </summary>
         public uint RegionSize {
             get { return _regionsz; }
@@ -147,7 +96,6 @@ namespace BerkeleyDB {
         /// Instantiate a new HeapDatabaseConfig object
         /// </summary>
         public HeapDatabaseConfig() {
-            blobThresholdIsSet = false;
             Creation = CreatePolicy.NEVER;
         }
     }

@@ -1,24 +1,50 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package com.sleepycat.util.test;
 
-import static org.junit.Assert.assertEquals;
-
-import org.junit.Test;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 import com.sleepycat.util.FastOutputStream;
 
 /**
  * @author Mark Hayes
  */
-public class FastOutputStreamTest extends TestBase {
+public class FastOutputStreamTest extends TestCase {
 
-    @Test
+    public static void main(String[] args) {
+        junit.framework.TestResult tr =
+            junit.textui.TestRunner.run(suite());
+        if (tr.errorCount() > 0 ||
+            tr.failureCount() > 0) {
+            System.exit(1);
+        } else {
+            System.exit(0);
+        }
+    }
+
+    public static Test suite() {
+        TestSuite suite = new TestSuite(FastOutputStreamTest.class);
+        return suite;
+    }
+
+    public FastOutputStreamTest(String name) {
+
+        super(name);
+    }
+
+    @Override
+    public void setUp() {
+
+        SharedTestUtils.printTestName("FastOutputStreamTest." + getName());
+    }
+
     public void testBufferSizing() {
         FastOutputStream fos = new FastOutputStream();
         assertEquals

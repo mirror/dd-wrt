@@ -9,7 +9,6 @@ build()
 	(cd ../`dirname $1` && rm -f `basename $1` && ln -s $2 `basename $1`)
 }
 
-build src/blob/tags ../../dist/tagdir/tags
 build src/btree/tags ../../dist/tagdir/tags
 build build_unix/tags ../dist/tagdir/tags
 build src/clib/tags ../../dist/tagdir/tags
@@ -28,7 +27,6 @@ build examples/c/tags ../../dist/tagdir/tags
 build examples/cxx/tags ../../dist/tagdir/tags
 build src/fileops/tags ../../dist/tagdir/tags
 build src/hash/tags ../../dist/tagdir/tags
-build src/heap/tags ../../dist/tagdir/tags
 build src/hmac/tags ../../dist/tagdir/tags
 build lang/hsearch/tags ../../dist/tagdir/tags
 build lang/java/libdb_java/tags ../../../dist/tagdir/tags

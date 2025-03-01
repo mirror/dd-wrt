@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -12,7 +12,7 @@ using BerkeleyDB.Internal;
 
 namespace BerkeleyDB {
     /// <summary>
-    /// Statistical information about the transaction subsystem.
+    /// Statistical information about the transaction subsystem
     /// </summary>
     public class TransactionStats {
         private TransactionStatStruct st;
@@ -69,7 +69,7 @@ namespace BerkeleyDB {
         /// </summary>
         public uint MaxSnapshot { get { return st.st_maxnsnapshot; } }
         /// <summary>
-        /// Maximum transactions possible 
+        /// Maximum txns possible 
         /// </summary>
         public uint MaxTransactions { get { return st.st_maxtxns; } }
         /// <summary>

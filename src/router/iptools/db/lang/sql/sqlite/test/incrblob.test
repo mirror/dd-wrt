@@ -120,10 +120,9 @@ foreach AutoVacuumMode [list 0 1] {
   }
 
   db close
-  forcedelete test.db test.db-journal
+  file delete -force test.db test.db-journal
 
   sqlite3 db test.db
-  execsql "PRAGMA mmap_size = 0"
   execsql "PRAGMA auto_vacuum = $AutoVacuumMode"
 
   do_test incrblob-2.$AutoVacuumMode.1 {
@@ -150,7 +149,6 @@ foreach AutoVacuumMode [list 0 1] {
     # Open and close the db to make sure the page cache is empty.
     db close
     sqlite3 db test.db
-    execsql "PRAGMA mmap_size = 0"
   
     # Read the last 20 bytes of the blob via a blob handle.
     set ::blob [db incrblob blobs v 1]
@@ -173,7 +171,6 @@ foreach AutoVacuumMode [list 0 1] {
     # Open and close the db to make sure the page cache is empty.
     db close
     sqlite3 db test.db
-    execsql "PRAGMA mmap_size = 0"
   
     # Write the second-to-last 20 bytes of the blob via a blob handle.
     #
@@ -203,7 +200,6 @@ foreach AutoVacuumMode [list 0 1] {
     # Open and close the db to make sure the page cache is empty.
     db close
     sqlite3 db test.db
-    execsql { PRAGMA mmap_size = 0 }
 
     execsql { SELECT i FROM blobs } 
   } {45}
@@ -383,7 +379,7 @@ ifcapable vtab {
 #
 ifcapable attach {
   do_test incrblob-5.1 {
-    forcedelete test2.db test2.db-journal
+    file delete -force test2.db test2.db-journal
     set ::size [expr [file size [info script]]]
     execsql {
       ATTACH 'test2.db' AS aux;
@@ -441,7 +437,7 @@ if {[permutation] != "memsubsys1"} {
   } {}
   do_test incrblob-6.2 {
     execsql {
-      SELECT rowid FROM blobs ORDER BY rowid
+      SELECT rowid FROM blobs
     }
   } {1 2 3}
   do_test incrblob-6.3 {
@@ -477,9 +473,15 @@ if {[permutation] != "memsubsys1"} {
     flush $::blob
   } {}
   
-  # At this point commit should be illegal (because 
-  # there is an open blob channel).
+  # At this point rollback should be illegal (because 
+  # there is an open blob channel).  But commit is also illegal because
+  # the open blob is read-write.
   #
+  do_test incrblob-6.10 {
+    catchsql {
+      ROLLBACK;
+    } db2
+  } {1 {cannot rollback transaction - SQL statements in progress}}
   do_test incrblob-6.11 {
     catchsql {
       COMMIT;
@@ -509,7 +511,7 @@ if {[permutation] != "memsubsys1"} {
 sqlite3_soft_heap_limit $cmdlinearg(soft-heap-limit)
 
 #-----------------------------------------------------------------------
-# The following tests verify the behavior of the incremental IO
+# The following tests verify the behaviour of the incremental IO
 # APIs in the following cases:
 #
 #     7.1 A row that containing an open blob is modified.
@@ -520,7 +522,7 @@ sqlite3_soft_heap_limit $cmdlinearg(soft-heap-limit)
 #     7.3 An INCREMENTAL VACUUM moves an overflow page that is part
 #         of an open blob.
 #
-# In the first case above, correct behavior is for all subsequent
+# In the first case above, correct behaviour is for all subsequent
 # read/write operations on the blob-handle to return SQLITE_ABORT.
 # More accurately, blob-handles are invalidated whenever the table
 # they belong to is written to.
@@ -582,7 +584,7 @@ set ::data [read $fd 14000]
 close $fd
 
 db close
-forcedelete test.db test.db-journal
+file delete -force test.db test.db-journal
 sqlite3 db test.db
 
 do_test incrblob-7.2.1 {

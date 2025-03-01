@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -26,8 +26,6 @@ static int __db_cursor_check __P((DB *));
  * __db_truncate_pp
  *	DB->truncate pre/post processing.
  *
- *	countp can be NULL.
-
  * PUBLIC: int __db_truncate_pp __P((DB *, DB_TXN *, u_int32_t *, u_int32_t));
  */
 int
@@ -39,17 +37,9 @@ __db_truncate_pp(dbp, txn, countp, flags)
 	DB_THREAD_INFO *ip;
 	ENV *env;
 	int handle_check, ret, t_ret, txn_local;
-#ifdef HAVE_SLICES
-	u_int32_t slice_txn_flags;
-#endif
 
 	env = dbp->env;
 	handle_check = txn_local = 0;
-#ifdef HAVE_SLICES
-	slice_txn_flags = flags;
-#endif
-
-	DB_ILLEGAL_BEFORE_OPEN(dbp, "DB->truncate");
 
 	STRIP_AUTO_COMMIT(flags);
 
@@ -110,18 +100,7 @@ __db_truncate_pp(dbp, txn, countp, flags)
 	if ((ret = __db_check_txn(dbp, txn, DB_LOCK_INVALIDID, 0)) != 0)
 		goto err;
 
-#ifdef HAVE_SLICES
-	/*
-	 * If sliced, just truncate the slices. The 'else' explicitly avoids
-	 * truncating the container of a sliced db; it might contain metadata
-	 * such as the location of the slices, etc.
-	 */
-	if (FLD_ISSET(dbp->open_flags, DB_SLICED))
-		ret = __db_slice_truncate(dbp, txn, countp, slice_txn_flags);
-	else
-#endif
-		/*lint -e{539} Did not expect positive indentation. */
-		ret = __db_truncate(dbp, ip, txn, countp);
+	ret = __db_truncate(dbp, ip, txn, countp);
 
 err:	if (txn_local &&
 	    (t_ret = __db_txn_auto_resolve(env, txn, 0, ret)) && ret == 0)
@@ -211,10 +190,6 @@ __db_truncate(dbp, ip, txn, countp)
 	/* Discard the cursor. */
 	if (dbc != NULL && (t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
-
-	/* Delete all blob/external files if that feature is supported. */
-	if (ret == 0 && dbp->blob_threshold)
-		ret = __blob_del_all(dbp, txn, 1);
 
 	DB_TEST_RECOVERY(dbp, DB_TEST_POSTDESTROY, ret, NULL);
 

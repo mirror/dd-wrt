@@ -26,10 +26,16 @@ typedef struct FileChunk FileChunk;
 **
 ** The size chosen is a little less than a power of two.  That way,
 ** the FileChunk object will have a size that almost exactly fills
-** a power-of-two allocation.  This minimizes wasted space in power-of-two
+** a power-of-two allocation.  This mimimizes wasted space in power-of-two
 ** memory allocators.
 */
 #define JOURNAL_CHUNKSIZE ((int)(1024-sizeof(FileChunk*)))
+
+/* Macro to find the minimum of two numeric values.
+*/
+#ifndef MIN
+# define MIN(x,y) ((x)<(y)?(x):(y))
+#endif
 
 /*
 ** The rollback journal is composed of a linked list of these structures.
@@ -224,9 +230,7 @@ static const struct sqlite3_io_methods MemJournalMethods = {
   0,                /* xShmMap */
   0,                /* xShmLock */
   0,                /* xShmBarrier */
-  0,                /* xShmUnmap */
-  0,                /* xFetch */
-  0                 /* xUnfetch */
+  0                 /* xShmUnlock */
 };
 
 /* 

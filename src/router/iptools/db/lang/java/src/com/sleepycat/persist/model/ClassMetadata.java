@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -42,14 +42,6 @@ public class ClassMetadata implements Serializable {
     /**
      * Used by an {@code EntityModel} to construct persistent class metadata.
      * The optional {@link #getPersistentFields} property will be set to null.
-     *
-     * @param className the class name.
-     * @param version the version.
-     * @param proxiedClassName the proxied class name.
-     * @param entityClass whether the class is an entity class.
-     * @param primaryKey the primary key metadata.
-     * @param secondaryKeys the secondary key metadata.
-     * @param compositeKeyFields the composite key field metadata.
      */
     public ClassMetadata(String className,
                          int version,
@@ -65,15 +57,6 @@ public class ClassMetadata implements Serializable {
 
     /**
      * Used by an {@code EntityModel} to construct persistent class metadata.
-     *
-     * @param className the class name.
-     * @param version the version.
-     * @param proxiedClassName the proxied class name.
-     * @param entityClass whether the class is an entity class.
-     * @param primaryKey the primary key metadata.
-     * @param secondaryKeys the secondary key metadata.
-     * @param compositeKeyFields the composite key field metadata.
-     * @param persistentFields the persistent field metadata.
      */
     public ClassMetadata(String className,
                          int version,
@@ -95,8 +78,6 @@ public class ClassMetadata implements Serializable {
 
     /**
      * Returns the name of the persistent class.
-     *
-     * @return the name of the persistent class.
      */
     public String getClassName() {
         return className;
@@ -106,8 +87,6 @@ public class ClassMetadata implements Serializable {
      * Returns the version of this persistent class.  This may be specified
      * using the {@link Entity#version} or {@link Persistent#version}
      * annotation.
-     *
-     * @return the version of this persistent class.
      */
     public int getVersion() {
         return version;
@@ -116,8 +95,6 @@ public class ClassMetadata implements Serializable {
     /**
      * Returns the class name of the proxied class if this class is a {@link
      * PersistentProxy}, or null otherwise.
-     *
-     * @return the class name of the proxied class, or null.
      */
     public String getProxiedClassName() {
         return proxiedClassName;
@@ -125,8 +102,6 @@ public class ClassMetadata implements Serializable {
 
     /**
      * Returns whether this class is an entity class.
-     *
-     * @return whether this class is an entity class.
      */
     public boolean isEntityClass() {
         return entityClass;
@@ -136,8 +111,6 @@ public class ClassMetadata implements Serializable {
      * Returns the primary key metadata for a key declared in this class, or
      * null if none is declared.  This may be specified using the {@link
      * PrimaryKey} annotation.
-     *
-     * @return the primary key metadata, or null.
      */
     public PrimaryKeyMetadata getPrimaryKey() {
         return primaryKey;
@@ -148,8 +121,6 @@ public class ClassMetadata implements Serializable {
      * field name) to secondary key metadata for all secondary keys declared in
      * this class, or null if no secondary keys are declared in this class.
      * This metadata may be specified using {@link SecondaryKey} annotations.
-     *
-     * @return the unmodifiable map, or null.
      */
     public Map<String, SecondaryKeyMetadata> getSecondaryKeys() {
         return secondaryKeys;
@@ -162,8 +133,6 @@ public class ClassMetadata implements Serializable {
      * and may be specified using the {@link KeyField} annotation.  When the
      * composite key class does not implement {@link Comparable}, the order of
      * the fields is the relative sort order.
-     *
-     * @return the unmodifiable list, or null.
      */
     public List<FieldMetadata> getCompositeKeyFields() {
         return compositeKeyFields;
@@ -181,8 +150,6 @@ public class ClassMetadata implements Serializable {
      * may be overridden by an {@link EntityModel}.  For example, the {@link
      * AnnotationModel} overrides the default rules when the {@link
      * NotPersistent} or {@link NotTransient} annotation is specified.</p>
-     *
-     * @return the unmodifiable list, or null.
      */
     public Collection<FieldMetadata> getPersistentFields() {
         return persistentFields;

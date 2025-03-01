@@ -7,14 +7,14 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="mp.html" title="Chapter 20.  The Memory Pool Subsystem" />
+    <link rel="up" href="mp.html" title="Chapter 18.  The Memory Pool Subsystem" />
     <link rel="prev" href="mp_config.html" title="Configuring the memory pool" />
-    <link rel="next" href="txn.html" title="Chapter 21.  The Transaction Subsystem" />
+    <link rel="next" href="txn.html" title="Chapter 19.  The Transaction Subsystem" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,7 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="mp_config.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 20.  The Memory Pool Subsystem </th>
+          <th width="60%" align="center">Chapter 18. 
+		The Memory Pool Subsystem
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="txn.html">Next</a></td>
         </tr>
       </table>
@@ -45,61 +47,58 @@
           </dt>
         </dl>
       </div>
-      <p> 
-        Some applications find it is useful to pre-load the memory
-        pool upon application startup. This is a strictly optional
-        activity that provides faster initial access to your data at
-        the expense of longer application startup times.
+      <p>
+        Some applications find it is useful to pre-load the memory pool
+        upon application startup. This is a strictly optional activity that
+        provides faster initial access to your data at the expense of
+        longer application startup times. 
     </p>
-      <p> 
-        To warm the cache, you simply have to read the records that
-        your application will operate on most frequently. You can do
-        this with normal database reads, and you can also use cursors.
-        But the most efficient way to warm the cache is to use memory
-        pool APIs to get the pages that contain your most frequently
-        accessed records. 
+      <p>
+        To warm the cache, you simply have to read the records that your
+        application will operate on most frequently. You can do this with
+        normal database reads, and you can also use cursors. But the most
+        efficient way to warm the cache is to use memory pool APIs to get
+        the pages that contain your most frequently accessed records.
     </p>
-      <p> 
+      <p>
         You read pages into the memory pool using the
-        <code class="methodname">DB_MPOOLFILE-&gt;get()</code> method. This
-        method acquires locks on the page, so immediately upon getting
-        the page you need to put it so as to release the locks. 
+        <code class="methodname">DB_MPOOLFILE-&gt;get()</code> method. This method
+        acquires locks on the page, so immediately upon getting the page
+        you need to put it so as to release the locks.
     </p>
       <p>
-        Also, you obtain a memory pool file handle using a database
-        handle. This means that if your data is contained in more than
-        one Berkeley DB database, you must operate on each database
-        handle in turn. 
+        Also, you obtain a memory pool file handle using a database handle.
+        This means that if your data is contained in more than one Berkeley
+        DB database, you must operate on each database handle in turn.
     </p>
       <p>
-        The following example code illustrates this. It does the
-        following: 
+        The following example code illustrates this. It does the following:
     </p>
       <div class="itemizedlist">
         <ul type="disc">
           <li>
-            <p> 
+            <p>
                 Opens an environment and two database handles.
             </p>
           </li>
           <li>
             <p>
-                Determines how many database pages can fit into the
-                memory pool. 
+                Determines how many database pages can fit into the memory
+                pool.
             </p>
           </li>
           <li>
-            <p> 
-                Uses <code class="methodname">DB_MPOOLFILE-&gt;get()</code>
-                and <code class="methodname">DB_MPOOLFILE-&gt;put()</code> to
-                load that number of pages into the memory pool.
+            <p>
+                Uses <code class="methodname">DB_MPOOLFILE-&gt;get()</code> and
+                <code class="methodname">DB_MPOOLFILE-&gt;put()</code>
+                to load that number of pages into the memory pool.
             </p>
           </li>
         </ul>
       </div>
       <p>
-        First, we include the libraries that we need, forward
-        declare some functions, and intialize some variables.
+        First, we include the libraries that we need, forward declare some
+        functions, and intialize some variables.
     </p>
       <a id="prog_mp01-1"></a>
       <pre class="programlisting">#include &lt;stdio.h&gt; 
@@ -118,12 +117,12 @@ main(void)
     DB_ENV *envp = 0;
     u_int32_t env_flags, pagesize, gbytes, bytes;
     int ret = 0, ret_t = 0, numcachepages, pagecount; </pre>
-      <p> 
+      <p>
         Then we open the environment and our databases. The
-        <code class="methodname">open_db()</code> function that we use
-        here simply opens a database. We will provide that code at the
-        end of this example, but it should hold no surprises for you.
-        We only use the function so as to reuse the code. 
+        <code class="methodname">open_db()</code> function that we use here simply
+        opens a database. We will provide that code at the end of this
+        example, but it should hold no surprises for you.
+        We only use the function so as to reuse the code.
     </p>
       <a id="prog_mp01-2"></a>
       <pre class="programlisting">    /*
@@ -162,9 +161,9 @@ main(void)
     if (ret != 0)
         goto err; </pre>
       <p>
-        Next we determine how many database pages we can fit into
-        the cache. We do this by finding out how large our pages are,
-        and then finding out how large our cache can be. 
+        Next we determine how many database pages we can fit into the
+        cache. We do this by finding out how large our pages are, and then
+        finding out how large our cache can be.
     </p>
       <a id="prog_mp01-3"></a>
       <pre class="programlisting">    /* Find out how many pages can fit at most in the cache */
@@ -184,12 +183,12 @@ main(void)
     /* Avoid an overflow by first calculating pages per gigabyte. */
     numcachepages = gbytes * ((1024 * 1024 * 1024) / pagesize);
     numcachepages += bytes / pagesize; </pre>
-      <p> 
+      <p>
         Now we call our <code class="methodname">warm_cache()</code>
-        function. We will describe this function in a little while,
-        but note that we call <code class="methodname">warm_cache()</code>
+        function. We will describe this function in a little while, but
+        note that we call <code class="methodname">warm_cache()</code>
         twice. This is because our example uses two databases, and the
-        memory pool methods operate on a per-handle basis. 
+        memory pool methods operate on a per-handle basis.
     </p>
       <a id="prog_mp01-4"></a>
       <pre class="programlisting">    /*
@@ -210,7 +209,7 @@ main(void)
             db_strerror(ret));
         goto err;
     } </pre>
-      <p> 
+      <p>
         Now we close all our handles and finish our
         <code class="methodname">main()</code> function. Again, this is
         straight-forward boilerplate code that we provide simply to be
@@ -251,11 +250,11 @@ main(void)
     printf("I'm all done.\n");
     return (ret == 0 ? EXIT_SUCCESS : EXIT_FAILURE);
 } </pre>
-      <p> 
-        As noted above, this example uses an
-        <code class="methodname">open_db()</code> function, which opens a
-        database handle inside the provided environment. To be
-        complete, this is the implementation of that function: 
+      <p>
+        As noted above, this example uses an <code class="methodname">open_db()</code>
+        function, which opens a database handle inside the provided
+        environment. To be complete, this is the implementation of that
+        function:
     </p>
       <a id="prog_mp01-6"></a>
       <pre class="programlisting">/* Open a database handle */
@@ -305,11 +304,11 @@ open_db(DB_ENV *envp, DB **dbpp, const char *file_name)
         </div>
         <p>
             In this section we provide the implementation of the
-            <code class="methodname">warm_cache()</code> function. This
-            example function simply loads all the database pages that
-            will fit into the memory pool. It starts from the first
-            database page and continues until it either runs out of
-            database pages or it runs out of room in the memory pool. 
+            <code class="methodname">warm_cache()</code> function. This example
+            function simply loads all the database pages that will fit into
+            the memory pool. It starts from the first database page and
+            continues until it either runs out of database pages or it runs
+            out of room in the memory pool.
         </p>
         <a id="prog_mp01-7"></a>
         <pre class="programlisting">/* Warm the cache */
@@ -379,7 +378,9 @@ warm_cache(DB *dbp, int *pagecountp, int numcachepages)
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Chapter 21.  The Transaction Subsystem </td>
+          <td width="40%" align="right" valign="top"> Chapter 19. 
+		The Transaction Subsystem
+        </td>
         </tr>
       </table>
     </div>

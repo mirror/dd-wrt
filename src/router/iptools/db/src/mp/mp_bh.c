@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -70,7 +70,7 @@ __memp_bhwrite(dbmp, hp, mfp, bhp, open_extents)
 			/* We may not be allowed to create backing files. */
 			if (mfp->no_backing_file) {
 				--dbmfp->ref;
-				return (USR_ERR(env, EPERM));
+				return (EPERM);
 			}
 
 			MUTEX_LOCK(env, dbmp->mutex);
@@ -99,7 +99,7 @@ __memp_bhwrite(dbmp, hp, mfp, bhp, open_extents)
 	 * It's the caller's choice if we're going to open extent files.
 	 */
 	if (!open_extents && F_ISSET(mfp, MP_EXTENT))
-		return (USR_ERR(env, EPERM));
+		return (EPERM);
 
 	/*
 	 * !!!
@@ -122,7 +122,7 @@ __memp_bhwrite(dbmp, hp, mfp, bhp, open_extents)
 	 * be marked dead.
 	 */
 	if (F_ISSET(mfp, MP_TEMP) || mfp->no_backing_file)
-		return (USR_ERR(env, EPERM));
+		return (EPERM);
 
 	/*
 	 * It's not a page from a file we've opened.  If the file requires
@@ -137,7 +137,7 @@ __memp_bhwrite(dbmp, hp, mfp, bhp, open_extents)
 				break;
 		MUTEX_UNLOCK(env, dbmp->mutex);
 		if (mpreg == NULL)
-			return (USR_ERR(env, EPERM));
+			return (EPERM);
 	}
 
 	/*
@@ -157,7 +157,7 @@ __memp_bhwrite(dbmp, hp, mfp, bhp, open_extents)
 	opened = 1;
 	if ((ret = __memp_fopen(dbmfp, mfp, NULL,
 	    NULL, DB_FLUSH | DB_DURABLE_UNKNOWN, 0, mfp->pagesize)) != 0) {
-		dbmfp->ref--;
+	    	dbmfp->ref--;
 		(void)__memp_fclose(dbmfp, 0);
 
 		/*
@@ -264,7 +264,7 @@ __memp_pgread(dbmfp, bhp, can_create)
 		 * how to handle the error.
 		 */
 		if (!can_create) {
-			ret = USR_ERR(env, DB_PAGE_NOTFOUND);
+			ret = DB_PAGE_NOTFOUND;
 			goto err;
 		}
 
@@ -356,8 +356,7 @@ __memp_pgwrite(env, dbmfp, hp, bhp)
 
 #ifdef DIAGNOSTIC
 	/*
-	 * Verify write-ahead logging semantics, assuming the changes are
-	 * being logged, and the logs are durable.
+	 * Verify write-ahead logging semantics.
 	 *
 	 * !!!
 	 * Two special cases.  There is a single field on the meta-data page,
@@ -375,7 +374,7 @@ __memp_pgwrite(env, dbmfp, hp, bhp)
 	 * the current end-of-log.
 	 */
 	if (LOGGING_ON(env) && !IS_NOT_LOGGED_LSN(LSN(bhp->buf)) &&
-	    !IS_CLIENT_PGRECOVER(env) && !F_ISSET(mfp, MP_NOT_DURABLE)) {
+	    !IS_CLIENT_PGRECOVER(env)) {
 		/*
 		 * There is a potential race here.  If we are in the midst of
 		 * switching log files, it's possible we could test against the
@@ -475,8 +474,11 @@ file_dead:
 	if (F_ISSET(bhp, BH_DIRTY | BH_TRASH)) {
 		MUTEX_LOCK(env, hp->mtx_hash);
 		DB_ASSERT(env, !SH_CHAIN_HASNEXT(bhp, vc));
-		if (ret == 0)
-			__memp_bh_clear_dirty(env, hp, bhp);
+		if (ret == 0 && F_ISSET(bhp, BH_DIRTY)) {
+			F_CLR(bhp, BH_DIRTY | BH_DIRTY_CREATE);
+			DB_ASSERT(env, atomic_read(&hp->hash_page_dirty) > 0);
+			atomic_dec(env, &hp->hash_page_dirty);
+		}
 
 		/* put the page back if necessary. */
 		if ((ret != 0 || BH_REFCOUNT(bhp) > 1) &&
@@ -555,9 +557,6 @@ err:	__db_errx(env, DB_STR_A("3016",
  * __memp_bhfree --
  *	Free a bucket header and its referenced data.
  *
- *	The hash bucket is unlocked before returning except when flags includes
- *	BH_FREE_UNLOCKED -- or there was no hp passed in to begin with.
- *
  * PUBLIC: int __memp_bhfree __P((DB_MPOOL *,
  * PUBLIC:	REGINFO *, MPOOLFILE *, DB_MPOOL_HASH *, BH *, u_int32_t));
  */
@@ -601,13 +600,10 @@ __memp_bhfree(dbmp, infop, mfp, hp, bhp, flags)
 	    (SH_CHAIN_NEXTP(bhp, vc, __bh)->td_off == bhp->td_off ||
 	    bhp->td_off == INVALID_ROFF ||
 	    IS_MAX_LSN(*VISIBLE_LSN(env, bhp)) ||
-	    F_ISSET(bhp, BH_UNREACHABLE) ||
 	    BH_OBSOLETE(bhp, hp->old_reader, vlsn))));
 
 	PERFMON3(env, mpool, evict, __memp_fns(dbmp, mfp), bhp->pgno, bhp);
-	if (FLD_ISSET(env->dbenv->verbose, DB_VERB_MVCC))
-		__db_msg(env, "bhfree pgno %lu roff %lx",
-		    (u_long)bhp->pgno, (u_long)R_OFFSET(dbmp->reginfo, bhp));
+
 	/*
 	 * Delete the buffer header from the hash bucket queue or the
 	 * version chain.
@@ -691,28 +687,4 @@ no_hp:	if (mfp != NULL)
 		MUTEX_UNLOCK(env, mfp->mutex);
 
 	return (ret);
-}
-
-/*
- * __memp_bh_clear_dirty --
- *	Clear the dirty flag of of a buffer. Calls on the same buffer must be
- *	serialized to get the accounting correct. This can be achieved by
- *	acquiring an exclusive lock on the buffer, a shared lock on the
- *	buffer plus an exclusive lock on the hash bucket, or some other
- *	mechanism that guarantees single-thread access to the entire region
- *	(e.g. during __memp_region_bhfree()).
- *
- * PUBLIC: void __memp_bh_clear_dirty __P((ENV*, DB_MPOOL_HASH *, BH *));
- */
-void
-__memp_bh_clear_dirty(env, hp, bhp)
-	ENV *env;
-	DB_MPOOL_HASH *hp;
-	BH *bhp;
-{
-	if (F_ISSET(bhp, BH_DIRTY)) {
-		F_CLR(bhp, BH_DIRTY | BH_DIRTY_CREATE);
-		DB_ASSERT(env, atomic_read(&hp->hash_page_dirty) > 0);
-		(void)atomic_dec(env, &hp->hash_page_dirty);
-	}
 }

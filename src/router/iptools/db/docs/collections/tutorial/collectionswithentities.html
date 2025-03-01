@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -52,8 +52,8 @@
 	<code class="classname">SupplierData</code> and <code class="classname">ShipmentData</code>).
 </p>
       <p>
-    Since the <code class="literal">partDataBinding</code>, <code class="literal">supplierDataBinding</code>
-	and <code class="literal">shipmentDataBinding</code> were defined as entity bindings in
+    Since the <code class="literal">partValueBinding</code>, <code class="literal">supplierValueBinding</code>
+	and <code class="literal">shipmentValueBinding</code> were defined as entity bindings in
 	the prior section, there are no source code changes necessary for
 	creating the stored map objects.
 </p>
@@ -65,14 +65,14 @@
     {
         ...
         partMap =
-            new StoredSortedMap(db.getPartDatabase(),
-                          partKeyBinding, partDataBinding, true);
+            new StoredMap(db.getPartDatabase(),
+                          partKeyBinding, partValueBinding, true);
         supplierMap =
-            new StoredSortedMap(db.getSupplierDatabase(),
-                          supplierKeyBinding, supplierDataBinding, true);
+            new StoredMap(db.getSupplierDatabase(),
+                          supplierKeyBinding, supplierValueBinding, true);
         shipmentMap =
-            new StoredSortedMap(db.getShipmentDatabase(),
-                          shipmentKeyBinding, shipmentDataBinding, true);
+            new StoredMap(db.getShipmentDatabase(),
+                          shipmentKeyBinding, shipmentValueBinding, true);
       ...
     } </pre>
       <p>
@@ -80,7 +80,7 @@
     <a class="ulink" href="../../java/com/sleepycat/bind/EntityBinding.html" target="_top">EntityBinding</a>
     
 	will select a different 
-    <a class="ulink" href="../../java/com/sleepycat/collections/StoredMap.html" target="_top">StoredSortedMap</a>
+    <a class="ulink" href="../../java/com/sleepycat/collections/StoredMap.html" target="_top">StoredMap</a>
     
 	constructor, but the syntax is the same. In general, an entity
 	binding may be used anywhere that a value binding is used.
@@ -121,7 +121,7 @@ public class SampleViews
 } </pre>
       <p>
     Notice that the collection returned by the 
-    <a class="ulink" href="../../java/com/sleepycat/collections/StoredMap.html#values()" target="_top">StoredSortedMap.values</a>
+    <a class="ulink" href="../../java/com/sleepycat/collections/StoredMap.html#values()" target="_top">StoredMap.values</a>
     
 	method is actually a 
     <a class="ulink" href="../../java/com/sleepycat/collections/StoredValueSet.html" target="_top">StoredValueSet</a>

@@ -11,20 +11,20 @@
 ** is substantially reduced.  This is important for embedded applications
 ** on platforms with limited memory.
 */
-/* Hash score: 182 */
+/* Hash score: 175 */
 static int keywordCode(const char *z, int n){
-  /* zText[] encodes 834 bytes of keywords in 554 bytes */
+  /* zText[] encodes 811 bytes of keywords in 541 bytes */
   /*   REINDEXEDESCAPEACHECKEYBEFOREIGNOREGEXPLAINSTEADDATABASELECT       */
   /*   ABLEFTHENDEFERRABLELSEXCEPTRANSACTIONATURALTERAISEXCLUSIVE         */
   /*   XISTSAVEPOINTERSECTRIGGEREFERENCESCONSTRAINTOFFSETEMPORARY         */
-  /*   UNIQUERYWITHOUTERELEASEATTACHAVINGROUPDATEBEGINNERECURSIVE         */
-  /*   BETWEENOTNULLIKECASCADELETECASECOLLATECREATECURRENT_DATEDETACH     */
-  /*   IMMEDIATEJOINSERTMATCHPLANALYZEPRAGMABORTVALUESVIRTUALIMITWHEN     */
-  /*   WHERENAMEAFTEREPLACEANDEFAULTAUTOINCREMENTCASTCOLUMNCOMMIT         */
-  /*   CONFLICTCROSSCURRENT_TIMESTAMPRIMARYDEFERREDISTINCTDROPFAIL        */
-  /*   FROMFULLGLOBYIFISNULLORDERESTRICTRIGHTROLLBACKROWUNIONUSING        */
-  /*   VACUUMVIEWINITIALLY                                                */
-  static const char zText[553] = {
+  /*   UNIQUERYATTACHAVINGROUPDATEBEGINNERELEASEBETWEENOTNULLIKE          */
+  /*   CASCADELETECASECOLLATECREATECURRENT_DATEDETACHIMMEDIATEJOIN        */
+  /*   SERTMATCHPLANALYZEPRAGMABORTVALUESVIRTUALIMITWHENWHERENAME         */
+  /*   AFTEREPLACEANDEFAULTAUTOINCREMENTCASTCOLUMNCOMMITCONFLICTCROSS     */
+  /*   CURRENT_TIMESTAMPRIMARYDEFERREDISTINCTDROPFAILFROMFULLGLOBYIF      */
+  /*   ISNULLORDERESTRICTOUTERIGHTROLLBACKROWUNIONUSINGVACUUMVIEW         */
+  /*   INITIALLY                                                          */
+  static const char zText[540] = {
     'R','E','I','N','D','E','X','E','D','E','S','C','A','P','E','A','C','H',
     'E','C','K','E','Y','B','E','F','O','R','E','I','G','N','O','R','E','G',
     'E','X','P','L','A','I','N','S','T','E','A','D','D','A','T','A','B','A',
@@ -35,77 +35,76 @@ static int keywordCode(const char *z, int n){
     'P','O','I','N','T','E','R','S','E','C','T','R','I','G','G','E','R','E',
     'F','E','R','E','N','C','E','S','C','O','N','S','T','R','A','I','N','T',
     'O','F','F','S','E','T','E','M','P','O','R','A','R','Y','U','N','I','Q',
-    'U','E','R','Y','W','I','T','H','O','U','T','E','R','E','L','E','A','S',
-    'E','A','T','T','A','C','H','A','V','I','N','G','R','O','U','P','D','A',
-    'T','E','B','E','G','I','N','N','E','R','E','C','U','R','S','I','V','E',
-    'B','E','T','W','E','E','N','O','T','N','U','L','L','I','K','E','C','A',
-    'S','C','A','D','E','L','E','T','E','C','A','S','E','C','O','L','L','A',
-    'T','E','C','R','E','A','T','E','C','U','R','R','E','N','T','_','D','A',
-    'T','E','D','E','T','A','C','H','I','M','M','E','D','I','A','T','E','J',
-    'O','I','N','S','E','R','T','M','A','T','C','H','P','L','A','N','A','L',
-    'Y','Z','E','P','R','A','G','M','A','B','O','R','T','V','A','L','U','E',
-    'S','V','I','R','T','U','A','L','I','M','I','T','W','H','E','N','W','H',
-    'E','R','E','N','A','M','E','A','F','T','E','R','E','P','L','A','C','E',
-    'A','N','D','E','F','A','U','L','T','A','U','T','O','I','N','C','R','E',
-    'M','E','N','T','C','A','S','T','C','O','L','U','M','N','C','O','M','M',
-    'I','T','C','O','N','F','L','I','C','T','C','R','O','S','S','C','U','R',
-    'R','E','N','T','_','T','I','M','E','S','T','A','M','P','R','I','M','A',
-    'R','Y','D','E','F','E','R','R','E','D','I','S','T','I','N','C','T','D',
-    'R','O','P','F','A','I','L','F','R','O','M','F','U','L','L','G','L','O',
-    'B','Y','I','F','I','S','N','U','L','L','O','R','D','E','R','E','S','T',
-    'R','I','C','T','R','I','G','H','T','R','O','L','L','B','A','C','K','R',
-    'O','W','U','N','I','O','N','U','S','I','N','G','V','A','C','U','U','M',
-    'V','I','E','W','I','N','I','T','I','A','L','L','Y',
+    'U','E','R','Y','A','T','T','A','C','H','A','V','I','N','G','R','O','U',
+    'P','D','A','T','E','B','E','G','I','N','N','E','R','E','L','E','A','S',
+    'E','B','E','T','W','E','E','N','O','T','N','U','L','L','I','K','E','C',
+    'A','S','C','A','D','E','L','E','T','E','C','A','S','E','C','O','L','L',
+    'A','T','E','C','R','E','A','T','E','C','U','R','R','E','N','T','_','D',
+    'A','T','E','D','E','T','A','C','H','I','M','M','E','D','I','A','T','E',
+    'J','O','I','N','S','E','R','T','M','A','T','C','H','P','L','A','N','A',
+    'L','Y','Z','E','P','R','A','G','M','A','B','O','R','T','V','A','L','U',
+    'E','S','V','I','R','T','U','A','L','I','M','I','T','W','H','E','N','W',
+    'H','E','R','E','N','A','M','E','A','F','T','E','R','E','P','L','A','C',
+    'E','A','N','D','E','F','A','U','L','T','A','U','T','O','I','N','C','R',
+    'E','M','E','N','T','C','A','S','T','C','O','L','U','M','N','C','O','M',
+    'M','I','T','C','O','N','F','L','I','C','T','C','R','O','S','S','C','U',
+    'R','R','E','N','T','_','T','I','M','E','S','T','A','M','P','R','I','M',
+    'A','R','Y','D','E','F','E','R','R','E','D','I','S','T','I','N','C','T',
+    'D','R','O','P','F','A','I','L','F','R','O','M','F','U','L','L','G','L',
+    'O','B','Y','I','F','I','S','N','U','L','L','O','R','D','E','R','E','S',
+    'T','R','I','C','T','O','U','T','E','R','I','G','H','T','R','O','L','L',
+    'B','A','C','K','R','O','W','U','N','I','O','N','U','S','I','N','G','V',
+    'A','C','U','U','M','V','I','E','W','I','N','I','T','I','A','L','L','Y',
   };
   static const unsigned char aHash[127] = {
-      76, 105, 117,  74,   0,  45,   0,   0,  82,   0,  77,   0,   0,
-      42,  12,  78,  15,   0, 116,  85,  54, 112,   0,  19,   0,   0,
-     121,   0, 119, 115,   0,  22,  93,   0,   9,   0,   0,  70,  71,
-       0,  69,   6,   0,  48,  90, 102,   0, 118, 101,   0,   0,  44,
-       0, 103,  24,   0,  17,   0, 122,  53,  23,   0,   5, 110,  25,
-      96,   0,   0, 124, 106,  60, 123,  57,  28,  55,   0,  91,   0,
-     100,  26,   0,  99,   0,   0,   0,  95,  92,  97,  88, 109,  14,
-      39, 108,   0,  81,   0,  18,  89, 111,  32,   0, 120,  80, 113,
-      62,  46,  84,   0,   0,  94,  40,  59, 114,   0,  36,   0,   0,
-      29,   0,  86,  63,  64,   0,  20,  61,   0,  56,
+      72, 101, 114,  70,   0,  45,   0,   0,  78,   0,  73,   0,   0,
+      42,  12,  74,  15,   0, 113,  81,  50, 108,   0,  19,   0,   0,
+     118,   0, 116, 111,   0,  22,  89,   0,   9,   0,   0,  66,  67,
+       0,  65,   6,   0,  48,  86,  98,   0, 115,  97,   0,   0,  44,
+       0,  99,  24,   0,  17,   0, 119,  49,  23,   0,   5, 106,  25,
+      92,   0,   0, 121, 102,  56, 120,  53,  28,  51,   0,  87,   0,
+      96,  26,   0,  95,   0,   0,   0,  91,  88,  93,  84, 105,  14,
+      39, 104,   0,  77,   0,  18,  85, 107,  32,   0, 117,  76, 109,
+      58,  46,  80,   0,   0,  90,  40,   0, 112,   0,  36,   0,   0,
+      29,   0,  82,  59,  60,   0,  20,  57,   0,  52,
   };
-  static const unsigned char aNext[124] = {
+  static const unsigned char aNext[121] = {
        0,   0,   0,   0,   4,   0,   0,   0,   0,   0,   0,   0,   0,
        0,   2,   0,   0,   0,   0,   0,   0,  13,   0,   0,   0,   0,
        0,   7,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-       0,   0,   0,   0,  33,   0,  21,   0,   0,   0,   0,   0,  50,
-       0,  43,   3,  47,   0,   0,   0,   0,  30,   0,  58,   0,  38,
-       0,   0,   0,   1,  66,   0,   0,  67,   0,  41,   0,   0,   0,
-       0,   0,   0,  49,  65,   0,   0,   0,   0,  31,  52,  16,  34,
-      10,   0,   0,   0,   0,   0,   0,   0,  11,  72,  79,   0,   8,
-       0, 104,  98,   0, 107,   0,  87,   0,  75,  51,   0,  27,  37,
-      73,  83,   0,  35,  68,   0,   0,
+       0,   0,   0,   0,  33,   0,  21,   0,   0,   0,  43,   3,  47,
+       0,   0,   0,   0,  30,   0,  54,   0,  38,   0,   0,   0,   1,
+      62,   0,   0,  63,   0,  41,   0,   0,   0,   0,   0,   0,   0,
+      61,   0,   0,   0,   0,  31,  55,  16,  34,  10,   0,   0,   0,
+       0,   0,   0,   0,  11,  68,  75,   0,   8,   0, 100,  94,   0,
+     103,   0,  83,   0,  71,   0,   0, 110,  27,  37,  69,  79,   0,
+      35,  64,   0,   0,
   };
-  static const unsigned char aLen[124] = {
+  static const unsigned char aLen[121] = {
        7,   7,   5,   4,   6,   4,   5,   3,   6,   7,   3,   6,   6,
        7,   7,   3,   8,   2,   6,   5,   4,   4,   3,  10,   4,   6,
       11,   6,   2,   7,   5,   5,   9,   6,   9,   9,   7,  10,  10,
-       4,   6,   2,   3,   9,   4,   2,   6,   5,   7,   4,   5,   7,
-       6,   6,   5,   6,   5,   5,   9,   7,   7,   3,   2,   4,   4,
-       7,   3,   6,   4,   7,   6,  12,   6,   9,   4,   6,   5,   4,
-       7,   6,   5,   6,   7,   5,   4,   5,   6,   5,   7,   3,   7,
-      13,   2,   2,   4,   6,   6,   8,   5,  17,  12,   7,   8,   8,
-       2,   4,   4,   4,   4,   4,   2,   2,   6,   5,   8,   5,   8,
-       3,   5,   5,   6,   4,   9,   3,
+       4,   6,   2,   3,   9,   4,   2,   6,   5,   6,   6,   5,   6,
+       5,   5,   7,   7,   7,   3,   2,   4,   4,   7,   3,   6,   4,
+       7,   6,  12,   6,   9,   4,   6,   5,   4,   7,   6,   5,   6,
+       7,   5,   4,   5,   6,   5,   7,   3,   7,  13,   2,   2,   4,
+       6,   6,   8,   5,  17,  12,   7,   8,   8,   2,   4,   4,   4,
+       4,   4,   2,   2,   6,   5,   8,   5,   5,   8,   3,   5,   5,
+       6,   4,   9,   3,
   };
-  static const unsigned short int aOffset[124] = {
+  static const unsigned short int aOffset[121] = {
        0,   2,   2,   8,   9,  14,  16,  20,  23,  25,  25,  29,  33,
       36,  41,  46,  48,  53,  54,  59,  62,  65,  67,  69,  78,  81,
       86,  91,  95,  96, 101, 105, 109, 117, 122, 128, 136, 142, 152,
-     159, 162, 162, 165, 167, 167, 171, 176, 179, 184, 184, 188, 192,
-     199, 204, 209, 212, 218, 221, 225, 234, 240, 240, 240, 243, 246,
-     250, 251, 255, 261, 265, 272, 278, 290, 296, 305, 307, 313, 318,
-     320, 327, 332, 337, 343, 349, 354, 358, 361, 367, 371, 378, 380,
-     387, 389, 391, 400, 404, 410, 416, 424, 429, 429, 445, 452, 459,
-     460, 467, 471, 475, 479, 483, 486, 488, 490, 496, 500, 508, 513,
-     521, 524, 529, 534, 540, 544, 549,
+     159, 162, 162, 165, 167, 167, 171, 176, 179, 184, 189, 194, 197,
+     203, 206, 210, 217, 223, 223, 223, 226, 229, 233, 234, 238, 244,
+     248, 255, 261, 273, 279, 288, 290, 296, 301, 303, 310, 315, 320,
+     326, 332, 337, 341, 344, 350, 354, 361, 363, 370, 372, 374, 383,
+     387, 393, 399, 407, 412, 412, 428, 435, 442, 443, 450, 454, 458,
+     462, 466, 469, 471, 473, 479, 483, 491, 495, 500, 508, 511, 516,
+     521, 527, 531, 536,
   };
-  static const unsigned char aCode[124] = {
+  static const unsigned char aCode[121] = {
     TK_REINDEX,    TK_INDEXED,    TK_INDEX,      TK_DESC,       TK_ESCAPE,     
     TK_EACH,       TK_CHECK,      TK_KEY,        TK_BEFORE,     TK_FOREIGN,    
     TK_FOR,        TK_IGNORE,     TK_LIKE_KW,    TK_EXPLAIN,    TK_INSTEAD,    
@@ -115,22 +114,22 @@ static int keywordCode(const char *z, int n){
     TK_ALTER,      TK_RAISE,      TK_EXCLUSIVE,  TK_EXISTS,     TK_SAVEPOINT,  
     TK_INTERSECT,  TK_TRIGGER,    TK_REFERENCES, TK_CONSTRAINT, TK_INTO,       
     TK_OFFSET,     TK_OF,         TK_SET,        TK_TEMP,       TK_TEMP,       
-    TK_OR,         TK_UNIQUE,     TK_QUERY,      TK_WITHOUT,    TK_WITH,       
-    TK_JOIN_KW,    TK_RELEASE,    TK_ATTACH,     TK_HAVING,     TK_GROUP,      
-    TK_UPDATE,     TK_BEGIN,      TK_JOIN_KW,    TK_RECURSIVE,  TK_BETWEEN,    
-    TK_NOTNULL,    TK_NOT,        TK_NO,         TK_NULL,       TK_LIKE_KW,    
-    TK_CASCADE,    TK_ASC,        TK_DELETE,     TK_CASE,       TK_COLLATE,    
-    TK_CREATE,     TK_CTIME_KW,   TK_DETACH,     TK_IMMEDIATE,  TK_JOIN,       
-    TK_INSERT,     TK_MATCH,      TK_PLAN,       TK_ANALYZE,    TK_PRAGMA,     
-    TK_ABORT,      TK_VALUES,     TK_VIRTUAL,    TK_LIMIT,      TK_WHEN,       
-    TK_WHERE,      TK_RENAME,     TK_AFTER,      TK_REPLACE,    TK_AND,        
-    TK_DEFAULT,    TK_AUTOINCR,   TK_TO,         TK_IN,         TK_CAST,       
-    TK_COLUMNKW,   TK_COMMIT,     TK_CONFLICT,   TK_JOIN_KW,    TK_CTIME_KW,   
-    TK_CTIME_KW,   TK_PRIMARY,    TK_DEFERRED,   TK_DISTINCT,   TK_IS,         
-    TK_DROP,       TK_FAIL,       TK_FROM,       TK_JOIN_KW,    TK_LIKE_KW,    
-    TK_BY,         TK_IF,         TK_ISNULL,     TK_ORDER,      TK_RESTRICT,   
-    TK_JOIN_KW,    TK_ROLLBACK,   TK_ROW,        TK_UNION,      TK_USING,      
-    TK_VACUUM,     TK_VIEW,       TK_INITIALLY,  TK_ALL,        
+    TK_OR,         TK_UNIQUE,     TK_QUERY,      TK_ATTACH,     TK_HAVING,     
+    TK_GROUP,      TK_UPDATE,     TK_BEGIN,      TK_JOIN_KW,    TK_RELEASE,    
+    TK_BETWEEN,    TK_NOTNULL,    TK_NOT,        TK_NO,         TK_NULL,       
+    TK_LIKE_KW,    TK_CASCADE,    TK_ASC,        TK_DELETE,     TK_CASE,       
+    TK_COLLATE,    TK_CREATE,     TK_CTIME_KW,   TK_DETACH,     TK_IMMEDIATE,  
+    TK_JOIN,       TK_INSERT,     TK_MATCH,      TK_PLAN,       TK_ANALYZE,    
+    TK_PRAGMA,     TK_ABORT,      TK_VALUES,     TK_VIRTUAL,    TK_LIMIT,      
+    TK_WHEN,       TK_WHERE,      TK_RENAME,     TK_AFTER,      TK_REPLACE,    
+    TK_AND,        TK_DEFAULT,    TK_AUTOINCR,   TK_TO,         TK_IN,         
+    TK_CAST,       TK_COLUMNKW,   TK_COMMIT,     TK_CONFLICT,   TK_JOIN_KW,    
+    TK_CTIME_KW,   TK_CTIME_KW,   TK_PRIMARY,    TK_DEFERRED,   TK_DISTINCT,   
+    TK_IS,         TK_DROP,       TK_FAIL,       TK_FROM,       TK_JOIN_KW,    
+    TK_LIKE_KW,    TK_BY,         TK_IF,         TK_ISNULL,     TK_ORDER,      
+    TK_RESTRICT,   TK_JOIN_KW,    TK_JOIN_KW,    TK_ROLLBACK,   TK_ROW,        
+    TK_UNION,      TK_USING,      TK_VACUUM,     TK_VIEW,       TK_INITIALLY,  
+    TK_ALL,        
   };
   int h, i;
   if( n<2 ) return TK_ID;
@@ -187,82 +186,79 @@ static int keywordCode(const char *z, int n){
       testcase( i==45 ); /* OR */
       testcase( i==46 ); /* UNIQUE */
       testcase( i==47 ); /* QUERY */
-      testcase( i==48 ); /* WITHOUT */
-      testcase( i==49 ); /* WITH */
-      testcase( i==50 ); /* OUTER */
-      testcase( i==51 ); /* RELEASE */
-      testcase( i==52 ); /* ATTACH */
-      testcase( i==53 ); /* HAVING */
-      testcase( i==54 ); /* GROUP */
-      testcase( i==55 ); /* UPDATE */
-      testcase( i==56 ); /* BEGIN */
-      testcase( i==57 ); /* INNER */
-      testcase( i==58 ); /* RECURSIVE */
-      testcase( i==59 ); /* BETWEEN */
-      testcase( i==60 ); /* NOTNULL */
-      testcase( i==61 ); /* NOT */
-      testcase( i==62 ); /* NO */
-      testcase( i==63 ); /* NULL */
-      testcase( i==64 ); /* LIKE */
-      testcase( i==65 ); /* CASCADE */
-      testcase( i==66 ); /* ASC */
-      testcase( i==67 ); /* DELETE */
-      testcase( i==68 ); /* CASE */
-      testcase( i==69 ); /* COLLATE */
-      testcase( i==70 ); /* CREATE */
-      testcase( i==71 ); /* CURRENT_DATE */
-      testcase( i==72 ); /* DETACH */
-      testcase( i==73 ); /* IMMEDIATE */
-      testcase( i==74 ); /* JOIN */
-      testcase( i==75 ); /* INSERT */
-      testcase( i==76 ); /* MATCH */
-      testcase( i==77 ); /* PLAN */
-      testcase( i==78 ); /* ANALYZE */
-      testcase( i==79 ); /* PRAGMA */
-      testcase( i==80 ); /* ABORT */
-      testcase( i==81 ); /* VALUES */
-      testcase( i==82 ); /* VIRTUAL */
-      testcase( i==83 ); /* LIMIT */
-      testcase( i==84 ); /* WHEN */
-      testcase( i==85 ); /* WHERE */
-      testcase( i==86 ); /* RENAME */
-      testcase( i==87 ); /* AFTER */
-      testcase( i==88 ); /* REPLACE */
-      testcase( i==89 ); /* AND */
-      testcase( i==90 ); /* DEFAULT */
-      testcase( i==91 ); /* AUTOINCREMENT */
-      testcase( i==92 ); /* TO */
-      testcase( i==93 ); /* IN */
-      testcase( i==94 ); /* CAST */
-      testcase( i==95 ); /* COLUMN */
-      testcase( i==96 ); /* COMMIT */
-      testcase( i==97 ); /* CONFLICT */
-      testcase( i==98 ); /* CROSS */
-      testcase( i==99 ); /* CURRENT_TIMESTAMP */
-      testcase( i==100 ); /* CURRENT_TIME */
-      testcase( i==101 ); /* PRIMARY */
-      testcase( i==102 ); /* DEFERRED */
-      testcase( i==103 ); /* DISTINCT */
-      testcase( i==104 ); /* IS */
-      testcase( i==105 ); /* DROP */
-      testcase( i==106 ); /* FAIL */
-      testcase( i==107 ); /* FROM */
-      testcase( i==108 ); /* FULL */
-      testcase( i==109 ); /* GLOB */
-      testcase( i==110 ); /* BY */
-      testcase( i==111 ); /* IF */
-      testcase( i==112 ); /* ISNULL */
-      testcase( i==113 ); /* ORDER */
-      testcase( i==114 ); /* RESTRICT */
-      testcase( i==115 ); /* RIGHT */
-      testcase( i==116 ); /* ROLLBACK */
-      testcase( i==117 ); /* ROW */
-      testcase( i==118 ); /* UNION */
-      testcase( i==119 ); /* USING */
-      testcase( i==120 ); /* VACUUM */
-      testcase( i==121 ); /* VIEW */
-      testcase( i==122 ); /* INITIALLY */
-      testcase( i==123 ); /* ALL */
+      testcase( i==48 ); /* ATTACH */
+      testcase( i==49 ); /* HAVING */
+      testcase( i==50 ); /* GROUP */
+      testcase( i==51 ); /* UPDATE */
+      testcase( i==52 ); /* BEGIN */
+      testcase( i==53 ); /* INNER */
+      testcase( i==54 ); /* RELEASE */
+      testcase( i==55 ); /* BETWEEN */
+      testcase( i==56 ); /* NOTNULL */
+      testcase( i==57 ); /* NOT */
+      testcase( i==58 ); /* NO */
+      testcase( i==59 ); /* NULL */
+      testcase( i==60 ); /* LIKE */
+      testcase( i==61 ); /* CASCADE */
+      testcase( i==62 ); /* ASC */
+      testcase( i==63 ); /* DELETE */
+      testcase( i==64 ); /* CASE */
+      testcase( i==65 ); /* COLLATE */
+      testcase( i==66 ); /* CREATE */
+      testcase( i==67 ); /* CURRENT_DATE */
+      testcase( i==68 ); /* DETACH */
+      testcase( i==69 ); /* IMMEDIATE */
+      testcase( i==70 ); /* JOIN */
+      testcase( i==71 ); /* INSERT */
+      testcase( i==72 ); /* MATCH */
+      testcase( i==73 ); /* PLAN */
+      testcase( i==74 ); /* ANALYZE */
+      testcase( i==75 ); /* PRAGMA */
+      testcase( i==76 ); /* ABORT */
+      testcase( i==77 ); /* VALUES */
+      testcase( i==78 ); /* VIRTUAL */
+      testcase( i==79 ); /* LIMIT */
+      testcase( i==80 ); /* WHEN */
+      testcase( i==81 ); /* WHERE */
+      testcase( i==82 ); /* RENAME */
+      testcase( i==83 ); /* AFTER */
+      testcase( i==84 ); /* REPLACE */
+      testcase( i==85 ); /* AND */
+      testcase( i==86 ); /* DEFAULT */
+      testcase( i==87 ); /* AUTOINCREMENT */
+      testcase( i==88 ); /* TO */
+      testcase( i==89 ); /* IN */
+      testcase( i==90 ); /* CAST */
+      testcase( i==91 ); /* COLUMN */
+      testcase( i==92 ); /* COMMIT */
+      testcase( i==93 ); /* CONFLICT */
+      testcase( i==94 ); /* CROSS */
+      testcase( i==95 ); /* CURRENT_TIMESTAMP */
+      testcase( i==96 ); /* CURRENT_TIME */
+      testcase( i==97 ); /* PRIMARY */
+      testcase( i==98 ); /* DEFERRED */
+      testcase( i==99 ); /* DISTINCT */
+      testcase( i==100 ); /* IS */
+      testcase( i==101 ); /* DROP */
+      testcase( i==102 ); /* FAIL */
+      testcase( i==103 ); /* FROM */
+      testcase( i==104 ); /* FULL */
+      testcase( i==105 ); /* GLOB */
+      testcase( i==106 ); /* BY */
+      testcase( i==107 ); /* IF */
+      testcase( i==108 ); /* ISNULL */
+      testcase( i==109 ); /* ORDER */
+      testcase( i==110 ); /* RESTRICT */
+      testcase( i==111 ); /* OUTER */
+      testcase( i==112 ); /* RIGHT */
+      testcase( i==113 ); /* ROLLBACK */
+      testcase( i==114 ); /* ROW */
+      testcase( i==115 ); /* UNION */
+      testcase( i==116 ); /* USING */
+      testcase( i==117 ); /* VACUUM */
+      testcase( i==118 ); /* VIEW */
+      testcase( i==119 ); /* INITIALLY */
+      testcase( i==120 ); /* ALL */
       return aCode[i];
     }
   }
@@ -271,4 +267,4 @@ static int keywordCode(const char *z, int n){
 int sqlite3KeywordCode(const unsigned char *z, int n){
   return keywordCode((char*)z, n);
 }
-#define SQLITE_N_KEYWORD 124
+#define SQLITE_N_KEYWORD 121

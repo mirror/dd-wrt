@@ -8,16 +8,15 @@ External software requirements:
     Java 1.5 or later.
     The Sun JDK is normally used, but any compatible JVM should work.
 
-    Apache Ant 1.7.0 or later.
+    Apache Ant 7.0 or later.
     http://ant.apache.org/bindownload.cgi
 
-    JUnit 4.10 or later, with hamcrest-core which is required by JUnit.
+    JUnit 3.8.1 or 3.8.2 (later versions do not currently work)
+    http://prdownloads.sourceforge.net/junit/junit3.8.1.zip?download
 
 The bin directories of both Java and Ant must be in your executable path.  The
 junit.jar file must be available to Ant. The simplest way to do this is to copy
-the junit.jar file into your Ant's lib directory.  You may also set JUNIT_JAR
-to point to the desired junit.jar file. Make sure hamcrest-core.jar is in the
-same directory as the desired junit.jar file.
+the junit.jar file into your Ant's lib directory.
 
 There are two configuration settings for specifying the DB release to be
 tested:

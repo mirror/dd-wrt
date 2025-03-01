@@ -47,15 +47,8 @@ _ACJNI_FOLLOW_SYMLINKS("$_ACJNI_JAVAC")
 _JTOPDIR=`echo "$_ACJNI_FOLLOWED" | sed -e 's://*:/:g' -e 's:/[[^/]]*$::'`
 case "$host_os" in
 	darwin*)	_JTOPDIR=`echo "$_JTOPDIR" | sed -e 's:/[[^/]]*$::'`
-			if test -d "$_JTOPDIR/include"; then
-				_JINC="$_JTOPDIR/include"
-			else
-				_JINC="`$_JTOPDIR/Commands/java_home`/include"
-			fi;;
-	*)		if test ! -r "$_JTOPDIR/include/jni.h"; then
-				_JTOPDIR=`echo "$_JTOPDIR" | sed -e 's:/[[^/]]*$::'`
-			fi
-			_JINC="$_JTOPDIR/include";;
+			_JINC="$_JTOPDIR/Headers";;
+	*)		_JINC="$_JTOPDIR/include";;
 esac
 
 # If we find jni.h in /usr/include, then it's not a java-only tree, so
@@ -68,6 +61,13 @@ if test -r "$_JINC/jni.h"; then
 	if test "$_JINC" != "/usr/include"; then
 		JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $_JINC"
 	fi
+else
+	_JTOPDIR=`echo "$_JTOPDIR" | sed -e 's:/[[^/]]*$::'`
+	if test -r "$_JTOPDIR/include/jni.h"; then
+		if test "$_JTOPDIR" != "/usr"; then
+			JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $_JTOPDIR/include"
+		fi
+	fi
 fi
 
 # get the likely subdirectories for system specific java includes
@@ -76,7 +76,6 @@ if test "$_JTOPDIR" != "/usr"; then
 	aix*)		_JNI_INC_SUBDIRS="aix";;
 	bsdi*)		_JNI_INC_SUBDIRS="bsdos";;
 	cygwin*)	_JNI_INC_SUBDIRS="win32";;
-	darwin*)	_JNI_INC_SUBDIRS="darwin";;
 	freebsd*)	_JNI_INC_SUBDIRS="freebsd";;
 	hp*)		_JNI_INC_SUBDIRS="hp-ux";;
 	linux*)		_JNI_INC_SUBDIRS="linux genunix";;
@@ -89,8 +88,8 @@ fi
 # add any subdirectories that are present
 for _JINCSUBDIR in $_JNI_INC_SUBDIRS
 do
-	if test -d "$_JINC/$_JINCSUBDIR"; then
-		JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $_JINC/$_JINCSUBDIR"
+	if test -d "$_JTOPDIR/include/$_JINCSUBDIR"; then
+		JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $_JTOPDIR/include/$_JINCSUBDIR"
 	fi
 done
 ])

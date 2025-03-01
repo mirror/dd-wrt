@@ -1,23 +1,18 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package com.sleepycat.persist.test;
 
 import static com.sleepycat.persist.model.Relationship.MANY_TO_ONE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import junit.framework.Test;
 
 import com.sleepycat.db.DatabaseException;
 import com.sleepycat.db.Transaction;
@@ -35,21 +30,13 @@ import com.sleepycat.util.test.TxnTestCase;
 /**
  * @author Mark Hayes
  */
-@RunWith(Parameterized.class)
 public class JoinTest extends TxnTestCase {
 
     private static final int N_RECORDS = 5;
 
-    @Parameters
-    public static List<Object[]> genParams() {
-        return getTxnParams(null, false);
-    }
-    
-    public JoinTest(String type){
-        initEnvConfig();
-        txnType = type;
-        isTransactional = (txnType != TXN_NULL);
-        customName = txnType;
+    public static Test suite() {
+        testClass = JoinTest.class;
+        return txnTestSuite(null, null);
     }
 
     private EntityStore store;
@@ -85,7 +72,6 @@ public class JoinTest extends TxnTestCase {
         store.close();
     }
 
-    @Test
     public void testJoin()
         throws DatabaseException {
 

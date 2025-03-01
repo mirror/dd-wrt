@@ -65,7 +65,7 @@
   </ImportGroup>
   <ItemGroup>
     <ProjectReference Condition="exists('db_tcl.vcxproj')" Include="db_tcl.vcxproj">
-      <Project>{7F3D3EEE-2ABB-4F0F-A2A7-DE88C1989BE1}</Project>
+      <Project>{7f3d3eee-2abb-4f0f-a2a7-de88c1989be1}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>

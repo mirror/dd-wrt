@@ -22,8 +22,9 @@
 **     * The FTS3 module is being built into the core of
 **       SQLite (in which case SQLITE_ENABLE_FTS3 is defined).
 */
-#include "fts3Int.h"
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
+
+#include "fts3Int.h"
 
 #include <assert.h>
 #include <stdlib.h>
@@ -218,7 +219,6 @@ static const sqlite3_tokenizer_module simpleTokenizerModule = {
   simpleOpen,
   simpleClose,
   simpleNext,
-  0,
 };
 
 /*

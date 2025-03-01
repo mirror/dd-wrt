@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -20,13 +20,13 @@ namespace BerkeleyDB {
         /// <remarks>
         /// If the sequence does not already exist and
         /// <see cref="CreatePolicy.NEVER"/> is set, the Sequence constructor
-        /// fails.
+        /// will fail.
         /// </remarks>
         public CreatePolicy Creation;
         /// <summary>
-        /// If true, the object returned by the Sequence constructor is
-        /// free-threaded; usable by multiple threads within a single
-        /// address space. If multiple threads create multiple
+        /// If true, the object returned by the Sequence constructor will be
+        /// free-threaded; that is, usable by multiple threads within a single
+        /// address space. Note that if multiple threads create multiple
         /// sequences using the same <see cref="BackingDatabase"/>, that
         /// database must have also been opened free-threaded.
         /// </summary>
@@ -52,7 +52,7 @@ namespace BerkeleyDB {
         /// <para>
         /// If <see cref="BackingDatabase"/> was opened in a transaction,
         /// calling Get may result in changes to the sequence object; these
-        /// changes are automatically committed in a transaction internal to
+        /// changes will be automatically committed in a transaction internal to
         /// the Berkeley DB library. If the thread of control calling Get has an
         /// active transaction, which holds locks on the same database as the
         /// one in which the sequence object is stored, it is possible for a
@@ -91,14 +91,14 @@ namespace BerkeleyDB {
         public bool Wrap;
         private bool inc = true;
         /// <summary>
-        /// If true, the sequence is decremented.
+        /// If true, the sequence will be decremented.
         /// </summary>
         public bool Decrement {
             get { return !inc; }
             set { inc = !value; }
         }
         /// <summary>
-        /// If true, the sequence is incremented. This is the default. 
+        /// If true, the sequence will be incremented. This is the default. 
         /// </summary>
         public bool Increment {
             get { return inc; }
@@ -113,12 +113,12 @@ namespace BerkeleyDB {
             }
         }
 
-        private uint cacheSz;
+        private int cacheSz;
         internal bool cacheSzIsSet;
         /// <summary>
         /// The number of elements cached by a sequence handle.
         /// </summary>
-        public uint CacheSize {
+        public int CacheSize {
             get { return cacheSz; }
             set {
                 cacheSz = value;

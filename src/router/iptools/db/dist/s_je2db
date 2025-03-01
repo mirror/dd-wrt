@@ -15,8 +15,8 @@ else
 fi
 
 if [ ! -d "$DBDIR/src/dbinc" -o ! -f "$JEDIR/build.xml" ] ; then
-    echo >&2 "Usage $0 /path/to/je [ /path/to/db ]"
-    exit 1
+	echo >&2 "Usage $0 /path/to/je [ /path/to/db ]"
+	exit 1
 fi
 
 JEDIR=$(cd "$JEDIR" ; /bin/pwd)
@@ -31,19 +31,22 @@ DBEXAMPLES="$DBDIR/examples/java/src"
 DIRMATCH="com/sleepycat/\(\(asm\)\|\(bind\)\|\(collections\)\|\(persist\)\|\(util\)\)/"
 EXAMPLESMATCH="^\./\(\(collections\)\|\(persist\)\)"
 
-# mkdirs <src> <dst> <pattern>
-#   create a sub-directory in <dst> for each sub-directory in <src> matching the <pattern>
-function mkdirs {
-    cd "$1"
-    for d in `find . -type d | grep -v CVS | grep $3` ; do
-        mkdir -p "$2/$d"
-    done    
-}
-
-mkdirs "$JESRC" "$DBSRC" "$DIRMATCH"
-mkdirs "$JETEST" "$DBTEST" "$DIRMATCH"
+cd "$JESRC"
+for d in `find . -type d | grep -v CVS | grep $DIRMATCH` ; do
+    #echo "$DBSRC/$d"
+    mkdir -p "$DBSRC/$d"
+done
+cd "$JETEST"
+for d in `find . -type d | grep -v CVS | grep $DIRMATCH` ; do
+    #echo "$DBTEST/$d"
+    mkdir -p "$DBTEST/$d"
+done
 if [ $COPY_EXAMPLES -eq 1 ] ; then
-    mkdirs "$JEEXAMPLES" "$DBEXAMPLES" "$EXAMPLESMATCH"
+    cd "$JEEXAMPLES"
+    for d in `find . -type d | grep -v CVS | grep $EXAMPLESMATCH` ; do
+        #echo "$DBEXAMPLES/$d"
+        mkdir -p "$DBEXAMPLES/$d"
+    done
 fi
 
 E1='s/com\.sleepycat\.je\.utilint\.IdentityHashMap/java.util.IdentityHashMap/g'
@@ -53,43 +56,40 @@ E4='s/LockConflictException/DeadlockException/g'
 E5='s/$Id:.*\$/$Id$/'
 E6='s/TransactionGettingStarted/gsg_txn\/JAVA/'
 E7='s/OperationFailureException/DatabaseException/g'
-EXCLUDESRC="\(\(ClassEnhancerTask\)\|\(DeletedClassException\)\|\(EntityResult\)\|\(IncompatibleClassException\)\|\(StoreExistsException\)\|\(StoreNotFoundException\)\)"
+EXCLUDESRC="\(\(ClassEnhancerTask\)\|\(DeletedClassException\)\|\(IncompatibleClassException\)\|\(StoreExistsException\)\|\(StoreNotFoundException\)\)"
 EXCLUDETESTS="\(\(ConvertAndAddTest\)\|\(DevolutionTest\)\|\(TestVersionCompatibility\)\|\(XACollectionTest\)\|\(AddNewSecKeyToAbstractClassTest\)\|\(EvolveProxyClassTest\)\|\(CreateAbstractClassData\)\|\(CreateSecDupsWithoutComparator\)\|\(CreateSecDupsWithoutComparatorEvolve\)\|\(CreateOldVersionBigDecimalDb\)\|\(CreateStringDataDB\)\|\(ProxyToSimpleTypeTest\)\|\(SecondaryDupOrderEvolveTest\)\|\(SecondaryDupOrderTest\)\|\(StringFormatCompatibilityTest\)\)"
 
-# transfer <dst> <list>
-#   
-function transfer {
-    for f in $2 ; do
-        if [ -e $1/$f ] && [[ $f == *.java* ]] && [[ $f != */asm/* ]] ; then
-            sed -n 1,6p $1/$f > $1/$f.license
-            COPY_LICENSE="1 r $1/$f.license"
-            if [[ $f == *.original ]] ; then
-                DEL_LICENSE='1,6 d'
-            else
-                DEL_LICENSE='1,42 d'
-            fi
-            sed -e "$E1" -e "$E2" -e "$E3" -e "$E4" -e "$E5" -e "$E6" -e "$E7" -e "$COPY_LICENSE" -e "$DEL_LICENSE" < $f \
-                > $1/$f.sed.out
-            rm -f $1/$f.license
-        else
-            sed -e "$E1" -e "$E2" -e "$E3" -e "$E4" -e "$E5" -e "$E6" -e "$E7" < $f \
-                > $1/$f.sed.out
-        fi
-        diff -q -I "\$\Id:" $1/$f $1/$f.sed.out || \
-            mv -f $1/$f.sed.out $1/$f
-        rm -f $1/$f.sed.out
-    done
-}
-
 cd "$JESRC"
-transfer "$DBSRC" "`find . -name '*.java' -o -name "package.html" | grep $DIRMATCH | grep -v $EXCLUDESRC`"
+for f in `find . -name '*.java' -o -name "package.html" | grep $DIRMATCH | grep -v $EXCLUDESRC` ; do
+    #echo $DBSRC/$f
+    sed -e "$E1" -e "$E2" -e "$E3" -e "$E4" -e "$E5" -e "$E6" -e "$E7" < $f \
+        > $DBSRC/$f.sed.out
+    diff -q -I "\$\Id:" $DBSRC/$f $DBSRC/$f.sed.out || \
+        mv -f $DBSRC/$f.sed.out $DBSRC/$f
+    rm -f $DBSRC/$f.sed.out
+done
 
 cd "$JETEST"
-transfer "$DBTEST" "`find . -name '*.java' -o -name "*.java.original" | grep $DIRMATCH | grep -v $EXCLUDETESTS`"
+for f in `find . -name '*.java' -o -name "*.java.original" | grep $DIRMATCH | grep -v $EXCLUDETESTS` \
+        ; do
+    #echo $DBTEST/$f
+    sed -e "$E1" -e "$E2" -e "$E3" -e "$E4" -e "$E5" -e "$E6" -e "$E7" < $f \
+        > $DBTEST/$f.sed.out
+    diff -q -I "\$\Id:" $DBTEST/$f $DBTEST/$f.sed.out || \
+        mv -f $DBTEST/$f.sed.out $DBTEST/$f
+    rm -f $DBTEST/$f.sed.out
+done
 
 if [ $COPY_EXAMPLES -eq 1 ] ; then
     cd "$JEEXAMPLES"
-    transfer "$DBEXAMPLES" "`find . -name '*.java' | grep $EXAMPLESMATCH`"
+    for f in `find . -name '*.java' | grep $EXAMPLESMATCH` ; do
+        #echo $DBEXAMPLES/$f
+        sed -e "$E1" -e "$E2" -e "$E3" -e "$E4" -e "$E5" -e "$E6" -e "$E7" < $f \
+            > $DBEXAMPLES/$f.sed.out
+        diff -q -I "\$\Id:" $DBEXAMPLES/$f $DBEXAMPLES/$f.sed.out || \
+            mv -f $DBEXAMPLES/$f.sed.out $DBEXAMPLES/$f
+        rm -f $DBEXAMPLES/$f.sed.out
+    done
 fi
 
 exit 0

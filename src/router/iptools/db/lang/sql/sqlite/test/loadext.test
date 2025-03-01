@@ -23,7 +23,7 @@ ifcapable !load_ext {
 
 # The name of the test extension varies by operating system.
 #
-if {$::tcl_platform(platform) eq "windows"} {
+if {$::tcl_platform(platform) eq "windows" || $::tcl_platform(platform) eq "os2"} {
   set testextension ./testloadext.dll
 } else {
   set testextension ./libtestloadext.so
@@ -64,32 +64,6 @@ if {$::tcl_platform(os) eq "Darwin"} {
   set dlerror_nosuchfile {dlopen(%s, 10): image not found}
   set dlerror_notadll    {dlopen(%1$s, 10): no suitable image found.*}
   set dlerror_nosymbol   {dlsym(XXX, %2$s): symbol not found}
-}
-
-if {$::tcl_platform(os) eq "FreeBSD"} {
-  set dlerror_nosuchfile {Cannot open "%s"}
-  set dlerror_notadll    {%s: invalid file format}
-  set dlerror_nosymbol   {Undefined symbol "%2$s"}
-}
-
-if {$::tcl_platform(os) eq "SunOS" && $::tcl_platform(machine) eq "i86pc"} {
-  set dlerror_nosuchfile \
-      {ld.so.1: testfixture: fatal: %s: open failed: No such file or directory}
-  set dlerror_notadll    {ld.so.1: testfixture: fatal: %s: unknown file type}
-  set dlerror_nosymbol   {ld.so.1: testfixture: fatal: %2$s: can't find symbol}
-}
-
-if {$::tcl_platform(os) eq "SunOS" && $::tcl_platform(machine) eq "sun4v"} {
-  set dlerror_nosuchfile \
-      {ld.so.1: testfixture: fatal: %s: open failed: No such file or directory}
-  set dlerror_notadll    {ld.so.1: testfixture: fatal: %s: not an ELF file}
-  set dlerror_nosymbol   {ld.so.1: testfixture: fatal: %2$s: can't find symbol}
-}
-
-if {$::tcl_platform(platform) eq "windows"} {
-  set dlerror_nosuchfile {The specified module could not be found.*}
-  set dlerror_notadll    {%%1 is not a valid Win32 application.*}
-  set dlerror_nosymbol   {The specified procedure could not be found.*}
 }
 
 # Make sure the test extension actually exists.  If it does not
@@ -160,27 +134,25 @@ sqlite3_enable_load_extension db 1
 # Try to load an extension for which the file does not exist.
 #
 do_test loadext-2.1 {
-  forcedelete ${testextension}xx
+  file delete -force ${testextension}xx
   set rc [catch {
     sqlite3_load_extension db "${testextension}xx"
   } msg]
   list $rc $msg
-} /[list 1 [format $dlerror_nosuchfile ${testextension}xx.*]]/
+} [list 1 [format $dlerror_nosuchfile ${testextension}xx]]
 
 # Try to load an extension for which the file is not a shared object
 #
 do_test loadext-2.2 {
-  set fd [open "./notasharedlib.so" w]
-  puts $fd blah
-  close $fd
-  set fd [open "./notasharedlib.dll" w]
+  set fd [open "${testextension}xx" w]
   puts $fd blah
   close $fd
   set rc [catch {
-    sqlite3_load_extension db "./notasharedlib"
+    sqlite3_load_extension db "${testextension}xx"
   } msg]
-  list $rc $msg
-} /[list 1 [format $dlerror_notadll ./notasharedlib.*]]/
+  set expected_error_pattern [format $dlerror_notadll ${testextension}xx]
+  list $rc [string match $expected_error_pattern $msg]
+} [list 1 1]
 
 # Try to load an extension for which the file is present but the
 # entry point is not.
@@ -193,7 +165,7 @@ do_test loadext-2.3 {
     regsub {0x[1234567890abcdefABCDEF]*} $msg XXX msg
   }
   list $rc $msg
-} /[list 1 [format $dlerror_nosymbol $testextension icecream]]/
+} [list 1 [format $dlerror_nosymbol $testextension icecream]]
 
 # Try to load an extension for which the entry point fails (returns non-zero) 
 #
@@ -224,7 +196,7 @@ do_test loadext-3.2 {
     regsub {0x[1234567890abcdefABCDEF]*} $res XXX res
   }
   set res
-} /[list 1 [format $dlerror_nosymbol $testextension sqlite3_.*_init]]/
+} [list 1 [format $dlerror_nosymbol $testextension sqlite3_extension_init]]
 do_test loadext-3.3 {
   catchsql {
     SELECT load_extension($::testextension,'testloadext_init')
@@ -293,17 +265,10 @@ do_malloc_test loadext-5 -tclprep {
 } -tclbody {
   if {[autoinstall_test_functions]==7} {error "out of memory"}
 }
-
-# On Windows, this malloc test must be skipped because the winDlOpen
-# function itself can fail due to "out of memory" conditions.
-#
-if {$::tcl_platform(platform) ne "windows"} {
-  do_malloc_test loadext-6 -tclbody {
-    db enable_load_extension 1
-    sqlite3_load_extension db $::testextension testloadext_init
-  }
+do_malloc_test loadext-6 -tclbody {
+  db enable_load_extension 1
+  sqlite3_load_extension db $::testextension testloadext_init
 }
-
 autoinstall_test_functions
 
 finish_test

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -34,8 +34,8 @@ public class ReplicationManagerSiteConfig implements Cloneable {
 
     /**
     Configure the host and port for a site in replication group.
-    @param host the host name
-    @param port the port
+    @param host
+    @param port
     */
     public ReplicationManagerSiteConfig(String host, long port) {
         this.host = host;
@@ -45,7 +45,7 @@ public class ReplicationManagerSiteConfig implements Cloneable {
     /**
     Configure the address for a site in replication group.
     <p>
-    @param address the host address
+    @param address
     */
     public void setAddress(ReplicationHostAddress address) {
         this.host = address.host;
@@ -69,7 +69,7 @@ public class ReplicationManagerSiteConfig implements Cloneable {
     /**
     Configure the host of the site.
     <p>
-    @param host the host name
+    @param host
     */
     public void setHost(String host) {
         this.host = host;
@@ -87,7 +87,7 @@ public class ReplicationManagerSiteConfig implements Cloneable {
     /**
     Configure the port of the site.
     <p>
-    @param port the port
+    @param port
     */
     public void setPort(long port) {
         this.port = port;
@@ -109,7 +109,7 @@ public class ReplicationManagerSiteConfig implements Cloneable {
     replication group. Once the local site has been established as a member of
     the group, this config setting is ignored. 
     <p>
-    @param helper if the site is a helper site
+    @param helper
     If true, the site will be a helper.
     */
     public void setBootstrapHelper(final boolean helper) {
@@ -134,7 +134,7 @@ public class ReplicationManagerSiteConfig implements Cloneable {
     of just the one site, rather than trying to join an existing group when it 
     starts for the first time.
     <p>
-    @param groupCreator if the site is a group creator
+    @param groupCreator
     If true, set the site a group creator.
     */
     public void setGroupCreator(final boolean groupCreator) {
@@ -157,7 +157,7 @@ public class ReplicationManagerSiteConfig implements Cloneable {
     legacy group must specify this for themselves (the local site) and for all
     other sites initially in the group. 
     <p>
-    @param legacy if the site is in a legacy group
+    @param legacy
     If true, specify the site in a legacy group.
     */
     public void setLegacy(final boolean legacy) {
@@ -177,7 +177,7 @@ public class ReplicationManagerSiteConfig implements Cloneable {
     /**
     Set the site to be the local site.
     <p>
-    @param localSite if the site is a local site
+    @param localSite
     If true, it is local site.
     */
     public void setLocalSite(final boolean localSite) {
@@ -199,7 +199,7 @@ public class ReplicationManagerSiteConfig implements Cloneable {
     <p>
     A peer site may be used as a target for "client-to-client" synchronization
     messages. It only makes sense to specify this for a remote site. 
-    @param peer if the site is a peer to local site
+    @param peer
     If true, it is peer to loca site.
     */
     public void setPeer(final boolean peer) {

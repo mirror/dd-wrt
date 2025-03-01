@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -17,9 +17,9 @@ extern void	DbRecord_print(DbRecord *, FILE *);
 extern int	DbRecord_read(u_long, DbRecord *);
 extern int	DbRecord_search_field_name(char *, char *, OPERATOR);
 extern int	DbRecord_search_field_number(u_int, char *, OPERATOR);
-extern int	compare_double(DB *, const DBT *, const DBT *, size_t *);
-extern int	compare_string(DB *, const DBT *, const DBT *, size_t *);
-extern int	compare_ulong(DB *, const DBT *, const DBT *, size_t *);
+extern int	compare_double(DB *, const DBT *, const DBT *);
+extern int	compare_string(DB *, const DBT *, const DBT *);
+extern int	compare_ulong(DB *, const DBT *, const DBT *);
 extern int	csv_env_close(void);
 extern int	csv_env_open(const char *, int);
 extern int	csv_secondary_close(void);

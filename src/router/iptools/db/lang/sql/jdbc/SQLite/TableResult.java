@@ -81,8 +81,6 @@ public class TableResult implements Callback {
 
     /**
      * Create an empty result set with maximum number of rows.
-     *
-     * @param maxrows number of rows
      */
 
     public TableResult(int maxrows) {

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 #include "db_config.h"
@@ -9,6 +9,7 @@
 #include "db_int.h"
 #include "dbinc/db_page.h"
 #include "dbinc/heap.h"
+#include "dbinc/log.h"
 #include "dbinc/mp.h"
 
 /*
@@ -33,8 +34,7 @@ __heap_addrem_recover(env, dbtp, lsnp, op, info)
 	DB_THREAD_INFO *ip;
 	PAGE *pagep, *regionp;
 	db_pgno_t region_pgno;
-	int cmp_n, cmp_p, modified, ret;
-	u_int32_t oldspace, opcode, space;
+	int cmp_n, cmp_p, modified, oldspace, ret, space;
 
 	ip = ((DB_TXNHEAD *)info)->thread_info;
 	pagep = NULL;
@@ -44,20 +44,19 @@ __heap_addrem_recover(env, dbtp, lsnp, op, info)
 
 	REC_FGET(mpf, ip, argp->pgno, &pagep, done);
 	modified = 0;
-	opcode = OP_MODE_GET(argp->opcode);
 	cmp_n = log_compare(lsnp, &LSN(pagep));
 	cmp_p = log_compare(&LSN(pagep), &argp->pagelsn);
 
-	if ((cmp_p == 0 && DB_REDO(op) && opcode == DB_ADD_HEAP) ||
-	    (cmp_n == 0 && DB_UNDO(op) && opcode == DB_REM_HEAP)) {
+	if ((cmp_p == 0 && DB_REDO(op) && argp->opcode == DB_ADD_HEAP) ||
+	    (cmp_n == 0 && DB_UNDO(op) && argp->opcode == DB_REM_HEAP)) {
 		/* We are either redo-ing an add or undoing a delete. */
 		REC_DIRTY(mpf, ip, dbc->priority, &pagep);
 		if ((ret = __heap_pitem(dbc, pagep,
 		    argp->indx, argp->nbytes, &argp->hdr, &argp->dbt)) != 0)
 			goto out;
 		modified = 1;
-	} else if ((cmp_n == 0 && DB_UNDO(op) && opcode == DB_ADD_HEAP) ||
-	    (cmp_p == 0 && DB_REDO(op) && opcode == DB_REM_HEAP)) {
+	} else if ((cmp_n == 0 && DB_UNDO(op) && argp->opcode == DB_ADD_HEAP) ||
+	    (cmp_p == 0 && DB_REDO(op) && argp->opcode == DB_REM_HEAP)) {
 		/* We are either undoing an add or redo-ing a delete. */
 		REC_DIRTY(mpf, ip, dbc->priority, &pagep);
 		if ((ret = __heap_ditem(
@@ -77,11 +76,11 @@ __heap_addrem_recover(env, dbtp, lsnp, op, info)
 		HEAP_CALCSPACEBITS(
 		    file_dbp, HEAP_FREESPACE(file_dbp, pagep), space);
 		oldspace = HEAP_SPACE(file_dbp, regionp,
-		    (argp->pgno - region_pgno) - 1);
+		    argp->pgno - region_pgno - 1);
 		if (space != oldspace) {
 			REC_DIRTY(mpf, ip, dbc->priority, &regionp);
 			HEAP_SETSPACE(file_dbp,
-			    regionp, (argp->pgno - region_pgno) - 1, space);
+			    regionp, argp->pgno - region_pgno - 1, space);
 		}
 		if ((ret = __memp_fput(mpf, ip, regionp, dbc->priority)) != 0)
 			goto out;
@@ -375,203 +374,6 @@ __heap_trunc_page_recover(env, dbtp, lsnp, op, info)
 		pagep = NULL;
 		if ((ret = __memp_fget(mpf, &argp->pgno,
 		    dbc->thread_info, dbc->txn, DB_MPOOL_FREE, &pagep)) != 0)
-			goto out;
-	}
-
-done:	*lsnp = argp->prev_lsn;
-	ret = 0;
-
-out:	if (pagep != NULL)
-		(void)__memp_fput(mpf, ip, pagep, dbc->priority);
-	REC_CLOSE;
-}
-
-/*
- * __heap_addrem_60_recover --
- *	Recovery function for addrem.
- *
- * PUBLIC: int __heap_addrem_60_recover
- * PUBLIC:   __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
- */
-int
-__heap_addrem_60_recover(env, dbtp, lsnp, op, info)
-	ENV *env;
-	DBT *dbtp;
-	DB_LSN *lsnp;
-	db_recops op;
-	void *info;
-{
-	__heap_addrem_60_args *argp;
-	DB *file_dbp;
-	DBC *dbc;
-	DB_MPOOLFILE *mpf;
-	DB_THREAD_INFO *ip;
-	HEAPBLOBHDR bhdr;
-	HEAPHDR *hhdr;
-	PAGE *pagep, *regionp;
-	db_pgno_t region_pgno;
-	int cmp_n, cmp_p, modified, ret;
-	u_int32_t oldspace, opcode, space;
-	u_int8_t buf[HEAPBLOBREC_SIZE];
-
-	ip = ((DB_TXNHEAD *)info)->thread_info;
-	pagep = NULL;
-	REC_PRINT(__heap_addrem_60_print);
-	REC_INTRO(__heap_addrem_60_read, ip, 1);
-	region_pgno = HEAP_REGION_PGNO(file_dbp, argp->pgno);
-
-	REC_FGET(mpf, ip, argp->pgno, &pagep, done);
-	modified = 0;
-	opcode = OP_MODE_GET(argp->opcode);
-	cmp_n = log_compare(lsnp, &LSN(pagep));
-	cmp_p = log_compare(&LSN(pagep), &argp->pagelsn);
-
-	if ((cmp_p == 0 && DB_REDO(op) && opcode == DB_ADD_HEAP) ||
-	    (cmp_n == 0 && DB_UNDO(op) && opcode == DB_REM_HEAP)) {
-		hhdr = argp->hdr.data;
-		/*
-		 * In 6.0 heap blob log records were not correctly byte
-		 * swapped, so do the swapping here if the blob file id of the
-		 * database does not match the blob file id stored in the
-		 * record.  Technically byte swapping the blob file id could
-		 * produce the same value, but that would only happen in
-		 * practice if the environment contained over 4 billion blob
-		 * databases.  0 is an invalid blob file id.
-		 */
-		if (F_ISSET(hhdr, HEAP_RECBLOB)) {
-			memcpy(buf + sizeof(HEAPHDR),
-				    argp->dbt.data, HEAPBLOBREC_DSIZE);
-			memcpy(&bhdr, buf, HEAPBLOBREC_SIZE);
-			if ((db_seq_t)bhdr.file_id != dbc->dbp->blob_file_id) {
-				M_64_SWAP(bhdr.id);
-				M_64_SWAP(bhdr.size);
-				M_64_SWAP(bhdr.file_id);
-				DB_ASSERT(env,
-				    (db_seq_t)bhdr.file_id
-				    == dbc->dbp->blob_file_id);
-				memcpy(buf, &bhdr, HEAPBLOBREC_SIZE);
-				memcpy(argp->dbt.data,
-				    buf + sizeof(HEAPHDR), HEAPBLOBREC_DSIZE);
-			}
-		}
-		/* We are either redo-ing an add or undoing a delete. */
-		REC_DIRTY(mpf, ip, dbc->priority, &pagep);
-		if ((ret = __heap_pitem(dbc, pagep,
-		    argp->indx, argp->nbytes, &argp->hdr, &argp->dbt)) != 0)
-			goto out;
-		modified = 1;
-	} else if ((cmp_n == 0 && DB_UNDO(op) && opcode == DB_ADD_HEAP) ||
-	    (cmp_p == 0 && DB_REDO(op) && opcode == DB_REM_HEAP)) {
-		/* We are either undoing an add or redo-ing a delete. */
-		REC_DIRTY(mpf, ip, dbc->priority, &pagep);
-		if ((ret = __heap_ditem(
-		    dbc, pagep, argp->indx, argp->nbytes)) != 0)
-			goto out;
-		modified = 1;
-	}
-
-	if (modified) {
-		REC_FGET(mpf, ip, region_pgno, &regionp, done);
-		if (DB_REDO(op))
-			LSN(pagep) = *lsnp;
-		else
-			LSN(pagep) = argp->pagelsn;
-
-		/* Update the available space bitmap, if necessary. */
-		HEAP_CALCSPACEBITS(
-		    file_dbp, HEAP_FREESPACE(file_dbp, pagep), space);
-		oldspace = HEAP_SPACE(file_dbp, regionp,
-		    (argp->pgno - region_pgno) - 1);
-		if (space != oldspace) {
-			REC_DIRTY(mpf, ip, dbc->priority, &regionp);
-			HEAP_SETSPACE(file_dbp,
-			    regionp, (argp->pgno - region_pgno) - 1, space);
-		}
-		if ((ret = __memp_fput(mpf, ip, regionp, dbc->priority)) != 0)
-			goto out;
-	}
-
-done:	*lsnp = argp->prev_lsn;
-	ret = 0;
-
-out:	if (pagep != NULL)
-		(void)__memp_fput(mpf, ip, pagep, dbc->priority);
-	REC_CLOSE;
-
-}
-
-/*
- * __heap_addrem_50_recover --
- *	Recovery function for addrem.
- *
- * PUBLIC: int __heap_addrem_50_recover
- * PUBLIC:   __P((ENV *, DBT *, DB_LSN *, db_recops, void *));
- */
-int
-__heap_addrem_50_recover(env, dbtp, lsnp, op, info)
-	ENV *env;
-	DBT *dbtp;
-	DB_LSN *lsnp;
-	db_recops op;
-	void *info;
-{
-	__heap_addrem_50_args *argp;
-	DB *file_dbp;
-	DBC *dbc;
-	DB_MPOOLFILE *mpf;
-	DB_THREAD_INFO *ip;
-	PAGE *pagep, *regionp;
-	db_pgno_t region_pgno;
-	int cmp_n, cmp_p, modified, ret;
-	u_int32_t oldspace, space;
-
-	ip = ((DB_TXNHEAD *)info)->thread_info;
-	pagep = NULL;
-	REC_PRINT(__heap_addrem_50_print);
-	REC_INTRO(__heap_addrem_50_read, ip, 1);
-	region_pgno = HEAP_REGION_PGNO(file_dbp, argp->pgno);
-
-	REC_FGET(mpf, ip, argp->pgno, &pagep, done);
-	modified = 0;
-	cmp_n = log_compare(lsnp, &LSN(pagep));
-	cmp_p = log_compare(&LSN(pagep), &argp->pagelsn);
-
-	if ((cmp_p == 0 && DB_REDO(op) && argp->opcode == DB_ADD_HEAP) ||
-	    (cmp_n == 0 && DB_UNDO(op) && argp->opcode == DB_REM_HEAP)) {
-		/* We are either redo-ing an add or undoing a delete. */
-		REC_DIRTY(mpf, ip, dbc->priority, &pagep);
-		if ((ret = __heap_pitem(dbc, pagep,
-		    argp->indx, argp->nbytes, &argp->hdr, &argp->dbt)) != 0)
-			goto out;
-		modified = 1;
-	} else if ((cmp_n == 0 && DB_UNDO(op) && argp->opcode == DB_ADD_HEAP) ||
-	    (cmp_p == 0 && DB_REDO(op) && argp->opcode == DB_REM_HEAP)) {
-		/* We are either undoing an add or redo-ing a delete. */
-		REC_DIRTY(mpf, ip, dbc->priority, &pagep);
-		if ((ret = __heap_ditem(
-		    dbc, pagep, argp->indx, argp->nbytes)) != 0)
-			goto out;
-		modified = 1;
-	}
-
-	if (modified) {
-		REC_FGET(mpf, ip, region_pgno, &regionp, done);
-		if (DB_REDO(op))
-			LSN(pagep) = *lsnp;
-		else
-			LSN(pagep) = argp->pagelsn;
-
-		/* Update the available space bitmap, if necessary. */
-		HEAP_CALCSPACEBITS(
-		    file_dbp, HEAP_FREESPACE(file_dbp, pagep), space);
-		oldspace = HEAP_SPACE(file_dbp,
-		    regionp, (argp->pgno - region_pgno) - 1);
-		if (space != oldspace) {
-			REC_DIRTY(mpf, ip, dbc->priority, &regionp);
-			HEAP_SETSPACE(file_dbp,
-			    regionp, (argp->pgno - region_pgno) - 1, space);
-		}
-		if ((ret = __memp_fput(mpf, ip, regionp, dbc->priority)) != 0)
 			goto out;
 	}
 

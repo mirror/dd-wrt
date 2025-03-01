@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2004, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2004, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 #include <db.h>
@@ -52,8 +52,8 @@ typedef struct vendor {
 } VENDOR;
 
 /* Function prototypes */
-int	databases_setup(STOCK_DBS *, const char *, FILE *);
 int	databases_close(STOCK_DBS *);
+int	databases_setup(STOCK_DBS *, const char *, FILE *);
 void	initialize_stockdbs(STOCK_DBS *);
 int	open_database(DB **, const char *, const char *, FILE *, int);
 void	set_db_filenames(STOCK_DBS *my_stock);

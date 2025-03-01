@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -19,8 +19,6 @@
  */
 #ifdef CONFIG_TEST
 static int      mp_Cmd __P((ClientData, Tcl_Interp *, int, Tcl_Obj * CONST*));
-static int      mp_size_getinput __P((Tcl_Interp *, Tcl_Obj * CONST*, int,
-    u_int32_t *, u_int32_t *));
 static int      pg_Cmd __P((ClientData, Tcl_Interp *, int, Tcl_Obj * CONST*));
 static int      tcl_MpGet __P((Tcl_Interp *, int, Tcl_Obj * CONST*,
     DB_MPOOLFILE *, DBTCL_INFO *));
@@ -154,52 +152,35 @@ tcl_Mp(interp, objc, objv, dbenv, envip)
 	DBTCL_INFO *envip;		/* Info pointer */
 {
 	static const char *mpopts[] = {
-		"-clear_len",
 		"-create",
-		"-lsn_offset",
-		"-maxsize",
 		"-mode",
 		"-multiversion",
 		"-nommap",
 		"-pagesize",
-		"-pgcookie",
 		"-rdonly",
 		 NULL
 	};
 	enum mpopts {
-		MPCLEARLEN,
 		MPCREATE,
-		MPLSNOFFSET,
-		MPMAXSIZE,
 		MPMODE,
 		MPMULTIVERSION,
 		MPNOMMAP,
 		MPPAGE,
-		MPPGCOOKIE,
 		MPRDONLY
 	};
-	DBT cookie;
 	DBTCL_INFO *ip;
 	DB_MPOOLFILE *mpf;
 	Tcl_Obj *res;
-	u_int32_t bytes, flag, gbytes, len;
-	int32_t offset;
-	int cookiesz, i, mode, optindex, pgsize;
-	int result, ret, setlen, setofs, setsize, value;
+	u_int32_t flag;
+	int i, pgsize, mode, optindex, result, ret;
 	char *file, newname[MSG_SIZE];
 
-	ip = NULL;
-	mpf = NULL;
 	result = TCL_OK;
 	i = 2;
 	flag = 0;
-	bytes = gbytes = len = 0;
-	offset = 0;
 	mode = 0;
 	pgsize = 0;
-	ret = setlen = setofs = setsize = value = 0;
 	memset(newname, 0, MSG_SIZE);
-	memset(&cookie, 0, sizeof(DBT));
 	while (i < objc) {
 		if (Tcl_GetIndexFromObj(interp, objv[i],
 		    mpopts, "option", TCL_EXACT, &optindex) != TCL_OK) {
@@ -215,40 +196,8 @@ tcl_Mp(interp, objc, objv, dbenv, envip)
 		}
 		i++;
 		switch ((enum mpopts)optindex) {
-		case MPCLEARLEN:
-			if (i >= objc) {
-				Tcl_WrongNumArgs(interp, 2, objv,
-				    "?-clearlen len?");
-				result = TCL_ERROR;
-				break;
-			}
-			result = _GetUInt32(interp, objv[i++], &len);
-			setlen = 1;
-			break;
-		case MPLSNOFFSET:
-			if (i >= objc) {
-				Tcl_WrongNumArgs(interp, 2, objv,
-					"?-lsnoffset offset?");
-				result = TCL_ERROR;
-				break;
-			}
-			result = Tcl_GetIntFromObj(interp, objv[i++], &value);
-			offset = (int32_t)value;
-			setofs = 1;
-			break;
 		case MPCREATE:
 			flag |= DB_CREATE;
-			break;
-		case MPMAXSIZE:
-			if (i >= objc) {
-				Tcl_WrongNumArgs(interp, 2, objv,
-				    "?-maxsize {gbytes bytes}?");
-				result = TCL_ERROR;
-				break;
-			}
-			result = mp_size_getinput(interp,
-			    objv, i++, &gbytes, &bytes);
-			setsize = 1;
 			break;
 		case MPMODE:
 			if (i >= objc) {
@@ -286,16 +235,6 @@ tcl_Mp(interp, objc, objv, dbenv, envip)
 			 */
 			result = Tcl_GetIntFromObj(interp, objv[i++], &pgsize);
 			break;
-		case MPPGCOOKIE:
-			if (i >= objc) {
-				Tcl_WrongNumArgs(interp, 2, objv,
-				    "?-pgcookie cookie?");
-				result = TCL_ERROR;
-				break;
-			}
-			cookie.data = Tcl_GetStringFromObj(objv[i++], &cookiesz);
-			cookie.size = (u_int32_t)cookiesz;
-			break;
 		case MPRDONLY:
 			flag |= DB_RDONLY;
 			break;
@@ -326,27 +265,23 @@ tcl_Mp(interp, objc, objv, dbenv, envip)
 	}
 
 	_debug_check();
-	if ((ret = dbenv->memp_fcreate(dbenv, &mpf, 0)) != 0)
+	if ((ret = dbenv->memp_fcreate(dbenv, &mpf, 0)) != 0) {
+		result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret), "mpool");
+		_DeleteInfo(ip);
 		goto error;
-
-	if (setlen != 0 && (ret = mpf->set_clear_len(mpf, len)) != 0)
-		goto error;
-
-	if (setsize != 0 && (ret = mpf->set_maxsize(mpf, gbytes, bytes)) != 0)
-		goto error;
-
-	if (setofs != 0 && (ret = mpf->set_lsn_offset(mpf, offset)) != 0)
-		goto error;
-
-	if (cookie.data != NULL && (ret = mpf->set_pgcookie(mpf, &cookie)) != 0)
-		goto error;
+	}
 
 	/*
 	 * XXX
 	 * Interface doesn't currently support DB_MPOOLFILE configuration.
 	 */
-	if ((ret = mpf->open(mpf, file, flag, mode, (size_t)pgsize)) != 0)
+	if ((ret = mpf->open(mpf, file, flag, mode, (size_t)pgsize)) != 0) {
+		result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret), "mpool");
+		_DeleteInfo(ip);
+
+		(void)mpf->close(mpf, 0);
 		goto error;
+	}
 
 	/*
 	 * Success.  Set up return.  Set up new info and command widget for
@@ -362,12 +297,6 @@ tcl_Mp(interp, objc, objv, dbenv, envip)
 	Tcl_SetObjResult(interp, res);
 
 error:
-	if (ret != 0) {
-		result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret), "mpool");
-		_DeleteInfo(ip);
-		if (mpf != NULL)
-			(void)mpf->close(mpf, 0);
-	}
 	return (result);
 }
 
@@ -395,9 +324,11 @@ tcl_MpStat(interp, objc, objv, dbenv)
 	flag = 0;
 	result = TCL_OK;
 	savefsp = NULL;
-
+	/*
+	 * No args for this.  Error if there are some.
+	 */
 	if (objc > 3) {
-		Tcl_WrongNumArgs(interp, 2, objv, "?-clear?");
+		Tcl_WrongNumArgs(interp, 2, objv, NULL);
 		return (TCL_ERROR);
 	}
 
@@ -423,6 +354,7 @@ tcl_MpStat(interp, objc, objv, dbenv)
 	 * list pairs and free up the memory.
 	 */
 	res = Tcl_NewObj();
+#ifdef HAVE_STATISTICS
 	/*
 	 * MAKE_STAT_LIST assumes 'res' and 'error' label.
 	 */
@@ -446,10 +378,6 @@ tcl_MpStat(interp, objc, objv, dbenv)
 	MAKE_WSTAT_LIST("Clean page evictions", sp->st_ro_evict);
 	MAKE_WSTAT_LIST("Dirty page evictions", sp->st_rw_evict);
 	MAKE_WSTAT_LIST("Dirty pages trickled", sp->st_page_trickle);
-	/* Undocumented field used by tests only. */
-	MAKE_STAT_LIST("Odd file size detected", sp->st_oddfsize_detect);
-	/* Undocumented field used by tests only. */
-	MAKE_STAT_LIST("Odd file size resolved", sp->st_oddfsize_resolve);
 	MAKE_STAT_LIST("Cached pages", sp->st_pages);
 	MAKE_WSTAT_LIST("Cached clean pages", sp->st_page_clean);
 	MAKE_WSTAT_LIST("Cached dirty pages", sp->st_page_dirty);
@@ -470,8 +398,6 @@ tcl_MpStat(interp, objc, objv, dbenv)
 	MAKE_WSTAT_LIST("Buffers frozen", sp->st_mvcc_frozen);
 	MAKE_WSTAT_LIST("Buffers thawed", sp->st_mvcc_thawed);
 	MAKE_WSTAT_LIST("Frozen buffers freed", sp->st_mvcc_freed);
-	MAKE_WSTAT_LIST("The number of outdated intermediate versions reused",
-	    sp->st_mvcc_reused);
 	MAKE_WSTAT_LIST("Page allocations", sp->st_alloc);
 	MAKE_STAT_LIST("Buckets examined during allocation",
 	    sp->st_alloc_buckets);
@@ -489,7 +415,6 @@ tcl_MpStat(interp, objc, objv, dbenv)
 	 * our per-file sublist.
 	 */
 	res1 = res;
-#ifdef HAVE_STATISTICS
 	for (savefsp = fsp; fsp != NULL && *fsp != NULL; fsp++) {
 		res = Tcl_NewObj();
 		MAKE_STAT_STRLIST("File Name", (*fsp)->file_name);
@@ -534,14 +459,12 @@ tcl_MpStatPrint(interp, objc, objv, dbenv)
 {
 	static const char *mpstatprtopts[] = {
 		"-all",
-		"-alloc",
 		"-clear",
 		"-hash",
 		 NULL
 	};
 	enum mpstatprtopts {
 		MPSTATPRTALL,
-		MPSTATPRTALLOC,
 		MPSTATPRTCLEAR,
 		MPSTATPRTHASH
 	};
@@ -562,9 +485,6 @@ tcl_MpStatPrint(interp, objc, objv, dbenv)
 		switch ((enum mpstatprtopts)optindex) {
 		case MPSTATPRTALL:
 			flag |= DB_STAT_ALL;
-			break;
-		case MPSTATPRTALLOC:
-			flag |= DB_STAT_ALLOC;
 			break;
 		case MPSTATPRTCLEAR:
 			flag |= DB_STAT_CLEAR;
@@ -606,11 +526,8 @@ mp_Cmd(clientData, interp, objc, objv)
 		"get_clear_len",
 		"get_fileid",
 		"get_ftype",
-		"get_last_pgno",
 		"get_lsn_offset",
-		"get_maxsize",
 		"get_pgcookie",
-		"set_maxsize",
 		NULL
 	};
 	enum mpcmds {
@@ -620,20 +537,16 @@ mp_Cmd(clientData, interp, objc, objv)
 		MPGETCLEARLEN,
 		MPGETFILEID,
 		MPGETFTYPE,
-		MPGETLASTPGNO,
 		MPGETLSNOFFSET,
-		MPGETMAXSIZE,
-		MPGETPGCOOKIE,
-		MPSETMAXSIZE
+		MPGETPGCOOKIE
 	};
 	DB_MPOOLFILE *mp;
 	int cmdindex, ftype, length, result, ret;
 	DBTCL_INFO *mpip;
-	Tcl_Obj *res, *myobjv[2];
+	Tcl_Obj *res;
 	char *obj_name;
-	u_int32_t bytes, gbytes, value;
+	u_int32_t value;
 	int32_t intval;
-	db_pgno_t pgno;
 	u_int8_t fileid[DB_FILE_ID_LEN];
 	DBT cookie;
 
@@ -695,7 +608,7 @@ mp_Cmd(clientData, interp, objc, objv)
 		ret = mp->get_clear_len(mp, &value);
 		if ((result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
 		    "mp get_clear_len")) == TCL_OK)
-			res = Tcl_NewLongObj((long)value);
+			res = Tcl_NewIntObj((int)value);
 		break;
 	case MPGETFILEID:
 		if (objc != 2) {
@@ -717,16 +630,6 @@ mp_Cmd(clientData, interp, objc, objv)
 		    "mp get_ftype")) == TCL_OK)
 			res = Tcl_NewIntObj(ftype);
 		break;
-	case MPGETLASTPGNO:
-		if (objc != 2) {
-			Tcl_WrongNumArgs(interp, 1, objv, NULL);
-			return (TCL_ERROR);
-		}
-		ret = mp->get_last_pgno(mp, &pgno);
-		if ((result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
-		   "mp get_last_pgno")) == TCL_OK)
-			res = Tcl_NewLongObj((long)pgno);
-		break;
 	case MPGETLSNOFFSET:
 		if (objc != 2) {
 			Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -736,19 +639,6 @@ mp_Cmd(clientData, interp, objc, objv)
 		if ((result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
 		    "mp get_lsn_offset")) == TCL_OK)
 			res = Tcl_NewIntObj(intval);
-		break;
-	case MPGETMAXSIZE:
-		if (objc != 2) {
-			Tcl_WrongNumArgs(interp, 1, objv, NULL);
-			return (TCL_ERROR);
-		}
-		ret = mp->get_maxsize(mp, &gbytes, &bytes);
-		if ((result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
-		    "mp get_maxsize")) == TCL_OK) {
-			myobjv[0] = Tcl_NewLongObj((long)gbytes);
-			myobjv[1] = Tcl_NewLongObj((long)bytes);
-			res = Tcl_NewListObj(2, myobjv);
-		}
 		break;
 	case MPGETPGCOOKIE:
 		if (objc != 2) {
@@ -761,21 +651,6 @@ mp_Cmd(clientData, interp, objc, objv)
 		    "mp get_pgcookie")) == TCL_OK)
 			res = Tcl_NewByteArrayObj((u_char *)cookie.data,
 			    (int)cookie.size);
-		break;
-	case MPSETMAXSIZE:
-		if (objc != 3) {
-			Tcl_WrongNumArgs(interp, 2, objv,
-			    "?set_maxsize {gbytes bytes}?");
-			return (TCL_ERROR);
-		}
-		_debug_check();
-		if ((result = mp_size_getinput(interp,
-		    objv, 2, &gbytes, &bytes)) != TCL_OK)
-			break;
-		ret = mp->set_maxsize(mp, gbytes, bytes);
-		if ((result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
-		    "set_maxsize")) == TCL_OK)
-			res = Tcl_NewIntObj(ret);
 		break;
 	}
 	/*
@@ -1141,36 +1016,6 @@ tcl_PgIsset(interp, objc, objv, page, pgip)
 
 	res = Tcl_NewIntObj(1);
 	Tcl_SetObjResult(interp, res);
-	return (result);
-}
-
-static int
-mp_size_getinput(interp, objv, indx, gbytes, bytes)
-	Tcl_Interp *interp;
-	Tcl_Obj *CONST objv[];
-	int indx;
-	u_int32_t *gbytes, *bytes;
-{
-	Tcl_Obj **myobjv;
-	int myobjc, result;
-
-	if ((result = Tcl_ListObjGetElements(interp, objv[indx],
-	    &myobjc, &myobjv)) != TCL_OK)
-		goto error;
-
-	if (myobjc != 2) {
-		Tcl_WrongNumArgs(interp, 2, objv,
-		    "?set_maxsize {gbytes bytes}?");
-		result = TCL_ERROR;
-		goto error;
-	}
-
-	if ((result = _GetUInt32(interp, myobjv[0], gbytes)) != TCL_OK)
-		goto error;
-
-	result = _GetUInt32(interp, myobjv[1], bytes);
-
-error:
 	return (result);
 }
 #endif

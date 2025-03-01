@@ -24,10 +24,6 @@ source $testdir/tester.tcl
 #
 do_not_use_codec
 
-# These tests deal with corrupt database files
-#
-database_may_be_corrupt
-
 # We must have the page_size pragma for these tests to work.
 #
 ifcapable !pager_pragmas {
@@ -90,7 +86,7 @@ integrity_check corrupt9-1.2
 # Make sure the corruption is detected.
 #
 db close
-forcecopy test.db test.db-template
+file copy -force test.db test.db-template
 
 corrupt_freelist test.db 1
 sqlite3 db test.db
@@ -107,7 +103,7 @@ do_test corrupt9-2.2 {
 
 
 db close
-forcecopy test.db-template test.db
+file copy -force test.db-template test.db
 corrupt_freelist test.db 2
 sqlite3 db test.db
 do_test corrupt9-3.1 {
@@ -122,7 +118,7 @@ do_test corrupt9-3.2 {
 } {1 {database disk image is malformed}}
 
 db close
-forcecopy test.db-template test.db
+file copy -force test.db-template test.db
 corrupt_freelist test.db 3
 sqlite3 db test.db
 do_test corrupt9-4.1 {

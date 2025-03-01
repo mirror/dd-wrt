@@ -1,19 +1,19 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package com.sleepycat.persist.impl;
 
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
 import com.sleepycat.compat.DbCompat;
 import com.sleepycat.persist.raw.RawObject;
+import java.util.IdentityHashMap;
 
 /**
  * Read-only catalog operations used when initializing new formats.  This

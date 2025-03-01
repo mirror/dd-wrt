@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -73,9 +73,8 @@ DB-&gt;set_lk_exclusive(DB *db, int nowait_onoff);  </pre>
         <h3 class="title">Note</h3>
         <p>
             This method is incompatible with the 
-            <a class="link" href="dbopen.html#open_DB_THREAD">DB_THREAD</a> and
-            <a class="link" href="dbopen.html#dbopen_DB_SLICED">DB_SLICED</a>
-            configuration flags.
+            <a class="link" href="dbopen.html#open_DB_THREAD">DB_THREAD</a> configuration
+            flag.
         </p>
       </div>
       <p>
@@ -122,7 +121,7 @@ DB-&gt;set_lk_exclusive(DB *db, int nowait_onoff);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711190091376"></a>Parameters</h3>
+              <h3 class="title"><a id="idp50434896"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -130,7 +129,7 @@ DB-&gt;set_lk_exclusive(DB *db, int nowait_onoff);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711188804816"></a>nowait_onoff</h4>
+                <h4 class="title"><a id="idp50435088"></a>nowait_onoff</h4>
               </div>
             </div>
           </div>
@@ -148,7 +147,7 @@ DB-&gt;set_lk_exclusive(DB *db, int nowait_onoff);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711190734944"></a>Errors</h3>
+              <h3 class="title"><a id="idp50410472"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -164,7 +163,7 @@ DB-&gt;set_lk_exclusive(DB *db, int nowait_onoff);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711191357504"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp50434192"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -172,8 +171,8 @@ DB-&gt;set_lk_exclusive(DB *db, int nowait_onoff);  </pre>
                 If the  method was called after 
                 <a class="xref" href="dbopen.html" title="DB-&gt;open()">DB-&gt;open()</a> 
                 was called; the method was called on a currently operating
-                replication client; this method was called on a sliced database;
-                or if an invalid flag value or parameter was specified.
+                replication client; or if an invalid flag value or
+                parameter was specified.
             </p>
         </div>
       </div>
@@ -181,7 +180,7 @@ DB-&gt;set_lk_exclusive(DB *db, int nowait_onoff);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711191077088"></a>Class</h3>
+              <h3 class="title"><a id="idp50438960"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -193,7 +192,7 @@ DB-&gt;set_lk_exclusive(DB *db, int nowait_onoff);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711191294880"></a>See Also</h3>
+              <h3 class="title"><a id="idp50444792"></a>See Also</h3>
             </div>
           </div>
         </div>

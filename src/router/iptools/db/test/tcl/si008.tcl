@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -53,13 +53,6 @@ proc si008 { methods {nentries 10} {tnum "008"} args } {
 		}
 	}
 
-	# When native pagesize is small(like 512B on QNX), this test
-	# requires a large number of mutexes.
-	set mutexargs ""
-	set native_pagesize [get_native_pagesize]
-	if {$native_pagesize < 2048} {
-		set mutexargs "-mutex_set_max 40000"
-	}
 	set argses [convert_argses $methods $args]
 	set omethods [convert_methods $methods]
 
@@ -68,8 +61,7 @@ proc si008 { methods {nentries 10} {tnum "008"} args } {
 	if { $eindex == -1 } {
 		env_cleanup $testdir
 		set cacheargs " -cachesize {0 1048576 1} "
-		set env [eval berkdb_env -create $cacheargs $mutexargs\
-		    -home $testdir]
+		set env [eval berkdb_env -create $cacheargs -home $testdir]
 		error_check_good env_open [is_valid_env $env] TRUE
 	} else {
 		incr eindex

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -17,18 +17,18 @@ namespace BerkeleyDB {
     /// <para>
     /// Calling <see cref="Transaction.Abort"/>,
     /// <see cref="Transaction.Commit"/> or
-    /// <see cref="Transaction.Discard"/> releases the resources held by
+    /// <see cref="Transaction.Discard"/> will release the resources held by
     /// the created object.
     /// </para>
     /// <para>
-    /// Transactions may only span threads if they do so serially;
+    /// Transactions may only span threads if they do so serially; that is,
     /// each transaction must be active in only a single thread of control
     /// at a time. This restriction holds for parents of nested transactions
     /// as well; no two children may be concurrently active in more than one
     /// thread of control at any one time.
     /// </para>
     /// <para>
-    /// Cursors may not span transactions; each cursor must be
+    /// Cursors may not span transactions; that is, each cursor must be
     /// opened and closed within a single transaction.
     /// </para>
     /// <para>
@@ -82,10 +82,10 @@ namespace BerkeleyDB {
         /// </summary>
         public byte[] CommitToken {
             /*
-             *If iscommitted is true, but dbtoken is null, then it is one
+             *If iscommitted is true, but dbtoken is null, then it's one
              * of below cases:
              * 1) either this transaction is a nested txn; or
-             * 2) this environment did not enable logging; or
+             * 2) this environment didn't enable logging; or
              * 3) the user calls this function on a rep client node.\
              */
             get {
@@ -99,7 +99,7 @@ namespace BerkeleyDB {
 
         /// <summary>
         /// The deadlock priority for this transaction.  The deadlock detector
-        /// rejects lock requests from lower priority transactions before
+        /// will reject lock requests from lower priority transactions before
         /// those from higher priority transactions.
         /// </summary>
         public uint Priority {
@@ -118,15 +118,15 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// <para>
-        /// Before Abort returns, any locks held by the transaction are
-        /// released.
+        /// Before Abort returns, any locks held by the transaction will have
+        /// been released.
         /// </para>
         /// <para>
         /// In the case of nested transactions, aborting a parent transaction
         /// causes all children (unresolved or not) of the parent transaction to
         /// be aborted.
         /// </para>
-        /// <para>
+		/// <para>
         /// All cursors opened within the transaction must be closed before the 
         ///	transaction is aborted. This method closes all open cursor handles,
         /// if any. And if a close operation fails, the rest of
@@ -148,18 +148,18 @@ namespace BerkeleyDB {
         /// children of the parent to be committed. In the case of nested
         /// transactions, if the transaction is a child transaction, its locks
         /// are not released, but are acquired by its parent. Although the
-        /// commit of the child transaction succeeds, the actual resolution
+        /// commit of the child transaction will succeed, the actual resolution
         /// of the child transaction is postponed until the parent transaction
-        /// is committed or aborted; if its parent transaction commits,
-        /// it is committed; and if its parent transaction aborts, it
-        /// is aborted.
+        /// is committed or aborted; that is, if its parent transaction commits,
+        /// it will be committed; and if its parent transaction aborts, it will
+        /// be aborted.
         /// </para>
-        /// <para>
+		/// <para>
         /// All cursors opened within the transaction must be closed before the
         /// transaction is committed. If there are cursor handles
-        /// open when this method is called, they are all closed inside this 
-        /// method. And if there are errors when closing the cursor handles, 
-        /// the transaction is aborted and the first such error is returned.
+	/// open when this method is called, they are all closed inside this 
+	/// method. And if there are errors when closing the cursor handles, 
+	/// the transaction is aborted and the first such error is returned.
         /// </para>
         /// </overloads>
         public void Commit() {
@@ -194,9 +194,9 @@ namespace BerkeleyDB {
         /// transaction.
         /// </summary>
         /// <remarks>
-        /// If there are cursor handles open when this method is called, they 
-        /// are all closed inside this method. And if there are errors when 
-        /// closing the cursor handles, the first such error is returned.
+	/// If there are cursor handles open when this method is called, they 
+	/// are all closed inside this method. And if there are errors when 
+	/// closing the cursor handles, the first such error is returned.
         /// This call may be used only after calls to
         /// <see cref="DatabaseEnvironment.Recover"/> when there are multiple
         /// global transaction managers recovering transactions in a single
@@ -244,21 +244,21 @@ namespace BerkeleyDB {
         /// successful responses from all of its prepare messages should it
         /// issue any commit messages.
         /// </para>
-        /// <para>
+		/// <para>
         /// In the case of nested transactions, preparing the parent causes all
         /// unresolved children of the parent transaction to be committed. Child
-        /// transactions should never be explicitly prepared. Their fate is 
+        /// transactions should never be explicitly prepared. Their fate will be
         /// resolved along with their parent's during global recovery.
         /// </para>
         /// <para>
-        /// If there are cursor handles open when this method is called, they 
-        /// are all closed inside this method. And if there are errors when 
-        /// closing the cursor handles, the first such error is returned.
-        /// </para>
+	/// If there are cursor handles open when this method is called, they 
+	/// are all closed inside this method. And if there are errors when 
+	/// closing the cursor handles, the first such error is returned.
+	/// </para>
         /// </remarks>
         /// <param name="globalId">
-        /// The global transaction ID by which this transaction is known.
-        /// This global transaction ID is returned in calls to 
+        /// The global transaction ID by which this transaction will be known.
+        /// This global transaction ID will be returned in calls to 
         /// <see cref="DatabaseEnvironment.Recover"/> telling the
         /// application which global transactions must be resolved.
         /// </param>
@@ -281,7 +281,7 @@ namespace BerkeleyDB {
         /// accuracy of the timeout depends on how often deadlock detection is
         /// performed.
         /// </para>
-        /// <para>
+		/// <para>
         /// Timeout values may be specified for the database environment as a
         /// whole. See <see cref="DatabaseEnvironment.LockTimeout"/> for more
         /// information. 
@@ -308,7 +308,7 @@ namespace BerkeleyDB {
         /// accuracy of the timeout depends on how often deadlock detection is
         /// performed. 
         /// </para>
-        /// <para>
+		/// <para>
         /// Timeout values may be specified for the database environment as a
         /// whole. See <see cref="DatabaseEnvironment.TxnTimeout"/> for more
         /// information. 

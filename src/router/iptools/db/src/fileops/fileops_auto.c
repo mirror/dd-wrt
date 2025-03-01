@@ -14,24 +14,11 @@ DB_LOG_RECSPEC __fop_create_42_desc[] = {
 	{LOGREC_ARG, SSZ(__fop_create_42_args, mode), "mode", "%o"},
 	{LOGREC_Done, 0, "", ""}
 };
-DB_LOG_RECSPEC __fop_create_60_desc[] = {
-	{LOGREC_DBT, SSZ(__fop_create_60_args, name), "name", ""},
-	{LOGREC_DBT, SSZ(__fop_create_60_args, dirname), "dirname", ""},
-	{LOGREC_ARG, SSZ(__fop_create_60_args, appname), "appname", "%lu"},
-	{LOGREC_ARG, SSZ(__fop_create_60_args, mode), "mode", "%o"},
-	{LOGREC_Done, 0, "", ""}
-};
 DB_LOG_RECSPEC __fop_create_desc[] = {
 	{LOGREC_DBT, SSZ(__fop_create_args, name), "name", ""},
 	{LOGREC_DBT, SSZ(__fop_create_args, dirname), "dirname", ""},
 	{LOGREC_ARG, SSZ(__fop_create_args, appname), "appname", "%lu"},
 	{LOGREC_ARG, SSZ(__fop_create_args, mode), "mode", "%o"},
-	{LOGREC_Done, 0, "", ""}
-};
-DB_LOG_RECSPEC __fop_remove_60_desc[] = {
-	{LOGREC_DBT, SSZ(__fop_remove_60_args, name), "name", ""},
-	{LOGREC_DBT, SSZ(__fop_remove_60_args, fid), "fid", ""},
-	{LOGREC_ARG, SSZ(__fop_remove_60_args, appname), "appname", "%lu"},
 	{LOGREC_Done, 0, "", ""}
 };
 DB_LOG_RECSPEC __fop_remove_desc[] = {
@@ -50,17 +37,6 @@ DB_LOG_RECSPEC __fop_write_42_desc[] = {
 	{LOGREC_ARG, SSZ(__fop_write_42_args, flag), "flag", "%lu"},
 	{LOGREC_Done, 0, "", ""}
 };
-DB_LOG_RECSPEC __fop_write_60_desc[] = {
-	{LOGREC_DBT, SSZ(__fop_write_60_args, name), "name", ""},
-	{LOGREC_DBT, SSZ(__fop_write_60_args, dirname), "dirname", ""},
-	{LOGREC_ARG, SSZ(__fop_write_60_args, appname), "appname", "%lu"},
-	{LOGREC_ARG, SSZ(__fop_write_60_args, pgsize), "pgsize", "%lu"},
-	{LOGREC_ARG, SSZ(__fop_write_60_args, pageno), "pageno", "%lu"},
-	{LOGREC_ARG, SSZ(__fop_write_60_args, offset), "offset", "%lu"},
-	{LOGREC_DBT, SSZ(__fop_write_60_args, page), "page", ""},
-	{LOGREC_ARG, SSZ(__fop_write_60_args, flag), "flag", "%lu"},
-	{LOGREC_Done, 0, "", ""}
-};
 DB_LOG_RECSPEC __fop_write_desc[] = {
 	{LOGREC_DBT, SSZ(__fop_write_args, name), "name", ""},
 	{LOGREC_DBT, SSZ(__fop_write_args, dirname), "dirname", ""},
@@ -70,27 +46,6 @@ DB_LOG_RECSPEC __fop_write_desc[] = {
 	{LOGREC_ARG, SSZ(__fop_write_args, offset), "offset", "%lu"},
 	{LOGREC_DBT, SSZ(__fop_write_args, page), "page", ""},
 	{LOGREC_ARG, SSZ(__fop_write_args, flag), "flag", "%lu"},
-	{LOGREC_Done, 0, "", ""}
-};
-DB_LOG_RECSPEC __fop_write_file_60_desc[] = {
-	{LOGREC_DBT, SSZ(__fop_write_file_60_args, name), "name", ""},
-	{LOGREC_DBT, SSZ(__fop_write_file_60_args, dirname), "dirname", ""},
-	{LOGREC_ARG, SSZ(__fop_write_file_60_args, appname), "appname", "%lu"},
-	{LOGREC_ARG, SSZ(__fop_write_file_60_args, offset_lo), "offset_lo", "%lu"},
-	{LOGREC_ARG, SSZ(__fop_write_file_60_args, offset_hi), "offset_hi", "%lu"},
-	{LOGREC_DBT, SSZ(__fop_write_file_60_args, old_data), "old_data", ""},
-	{LOGREC_DBT, SSZ(__fop_write_file_60_args, new_data), "new_data", ""},
-	{LOGREC_ARG, SSZ(__fop_write_file_60_args, flag), "flag", "%lu"},
-	{LOGREC_Done, 0, "", ""}
-};
-DB_LOG_RECSPEC __fop_write_file_desc[] = {
-	{LOGREC_DBT, SSZ(__fop_write_file_args, name), "name", ""},
-	{LOGREC_DBT, SSZ(__fop_write_file_args, dirname), "dirname", ""},
-	{LOGREC_ARG, SSZ(__fop_write_file_args, appname), "appname", "%lu"},
-	{LOGREC_LONGARG, SSZ(__fop_write_file_args, offset), "offset", ""},
-	{LOGREC_DBT, SSZ(__fop_write_file_args, old_data), "old_data", ""},
-	{LOGREC_DBT, SSZ(__fop_write_file_args, new_data), "new_data", ""},
-	{LOGREC_ARG, SSZ(__fop_write_file_args, flag), "flag", "%lu"},
 	{LOGREC_Done, 0, "", ""}
 };
 DB_LOG_RECSPEC __fop_rename_42_desc[] = {
@@ -107,22 +62,6 @@ DB_LOG_RECSPEC __fop_rename_noundo_46_desc[] = {
 	{LOGREC_ARG, SSZ(__fop_rename_42_args, appname), "appname", "%lu"},
 	{LOGREC_Done, 0, "", ""}
 };
-DB_LOG_RECSPEC __fop_rename_60_desc[] = {
-	{LOGREC_DBT, SSZ(__fop_rename_60_args, oldname), "oldname", ""},
-	{LOGREC_DBT, SSZ(__fop_rename_60_args, newname), "newname", ""},
-	{LOGREC_DBT, SSZ(__fop_rename_60_args, dirname), "dirname", ""},
-	{LOGREC_DBT, SSZ(__fop_rename_60_args, fileid), "fileid", ""},
-	{LOGREC_ARG, SSZ(__fop_rename_60_args, appname), "appname", "%lu"},
-	{LOGREC_Done, 0, "", ""}
-};
-DB_LOG_RECSPEC __fop_rename_noundo_60_desc[] = {
-	{LOGREC_DBT, SSZ(__fop_rename_60_args, oldname), "oldname", ""},
-	{LOGREC_DBT, SSZ(__fop_rename_60_args, newname), "newname", ""},
-	{LOGREC_DBT, SSZ(__fop_rename_60_args, dirname), "dirname", ""},
-	{LOGREC_DBT, SSZ(__fop_rename_60_args, fileid), "fileid", ""},
-	{LOGREC_ARG, SSZ(__fop_rename_60_args, appname), "appname", "%lu"},
-	{LOGREC_Done, 0, "", ""}
-};
 DB_LOG_RECSPEC __fop_rename_desc[] = {
 	{LOGREC_DBT, SSZ(__fop_rename_args, oldname), "oldname", ""},
 	{LOGREC_DBT, SSZ(__fop_rename_args, newname), "newname", ""},
@@ -137,14 +76,6 @@ DB_LOG_RECSPEC __fop_rename_noundo_desc[] = {
 	{LOGREC_DBT, SSZ(__fop_rename_args, dirname), "dirname", ""},
 	{LOGREC_DBT, SSZ(__fop_rename_args, fileid), "fileid", ""},
 	{LOGREC_ARG, SSZ(__fop_rename_args, appname), "appname", "%lu"},
-	{LOGREC_Done, 0, "", ""}
-};
-DB_LOG_RECSPEC __fop_file_remove_60_desc[] = {
-	{LOGREC_DBT, SSZ(__fop_file_remove_60_args, real_fid), "real_fid", ""},
-	{LOGREC_DBT, SSZ(__fop_file_remove_60_args, tmp_fid), "tmp_fid", ""},
-	{LOGREC_DBT, SSZ(__fop_file_remove_60_args, name), "name", ""},
-	{LOGREC_ARG, SSZ(__fop_file_remove_60_args, appname), "appname", "%lu"},
-	{LOGREC_ARG, SSZ(__fop_file_remove_60_args, child), "child", "%lx"},
 	{LOGREC_Done, 0, "", ""}
 };
 DB_LOG_RECSPEC __fop_file_remove_desc[] = {
@@ -173,9 +104,6 @@ __fop_init_recover(env, dtabp)
 		return (ret);
 	if ((ret = __db_add_recovery_int(env, dtabp,
 	    __fop_write_recover, DB___fop_write)) != 0)
-		return (ret);
-	if ((ret = __db_add_recovery_int(env, dtabp,
-	    __fop_write_file_recover, DB___fop_write_file)) != 0)
 		return (ret);
 	if ((ret = __db_add_recovery_int(env, dtabp,
 	    __fop_rename_recover, DB___fop_rename)) != 0)

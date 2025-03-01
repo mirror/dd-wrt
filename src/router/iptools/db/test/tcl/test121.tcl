@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2006, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2006, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -41,14 +41,6 @@ proc test121 { method {tnum "121"} args } {
 	set pageargs ""
 	set args [split_pageargs $args pageargs]
 
-	# When native pagesize is small(like 512B on QNX), this test
-	# requires a large number of mutexes.
-	set mutexargs ""
-	set native_pagesize [get_native_pagesize]
-	if {$native_pagesize < 2048} {
-		set mutexargs "-mutex_set_max 40000"
-	}
-
 	# Create transactional env.  Specifying -multiversion makes
 	# all databases opened within the env -multiversion.
 
@@ -60,15 +52,9 @@ proc test121 { method {tnum "121"} args } {
 	set cachesize [expr 2 * 1024 * 1024]
 	set max_locks 2000
 	set max_objects 2000
-	# When native pagesize is small(like 512B on QNX), this test
-	# also requires more locks and lock objects.
-	if {$native_pagesize < 2048} {
-		set max_locks 5000
-		set max_objects 5000
-	}
 	set env [eval {berkdb_env -create -cachesize "0 $cachesize 1"}\
 	    -lock_max_locks $max_locks -lock_max_objects $max_objects\
-	    -txn -multiversion $mutexargs $encargs $pageargs -home $testdir]
+	    -txn -multiversion $encargs $pageargs -home $testdir]
 	error_check_good env_open [is_valid_env $env] TRUE
 
 	# Open database.

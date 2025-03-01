@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -12,7 +12,7 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 2010, 2017 Oracle and/or its affiliates.  All rights reserved.\n";
+    "Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.\n";
 #endif
 
 int	 main __P((int, char *[]));
@@ -32,6 +32,7 @@ main(argc, argv)
 #else
 
 static int	usage __P((void));
+static int	version_check __P((void));
 static void	event_callback __P((DB_ENV *, u_int32_t, void *));
 static int	db_replicate_logmsg __P((DB_ENV *, const char *));
 static void	prog_close __P((DB_ENV *, int));
@@ -59,10 +60,9 @@ main(argc, argv)
 	time_t now;
 	long argval;
 	db_timeout_t max_req;
-	u_int32_t repmgr_th, seconds, start_state;
+	u_int32_t flags, repmgr_th, seconds, start_state;
 	int ch, count, done, exitval, ret, verbose;
-	const char *prog;
-	char *blob_dir, *home, *passwd, time_buf[CTIME_BUFLEN];
+	char *home, *passwd, *prog, time_buf[CTIME_BUFLEN];
 
 	dbenv = NULL;
 	logfp = NULL;
@@ -70,14 +70,17 @@ main(argc, argv)
 	__os_id(NULL, &pid, NULL);
 	panic_exit = 0;
 
-	prog = __db_util_arg_progname(argv[0]);
+	if ((prog = __db_rpath(argv[0])) == NULL)
+		prog = argv[0];
+	else
+		++prog;
 
 	if ((size_t)(count = snprintf(progname, sizeof(progname), "%s(%lu)",
 	    prog, (u_long)pid)) >= sizeof(progname)) {
 		fprintf(stderr, DB_STR("5093", "Program name too long\n"));
 		goto err;
 	}
-	if ((ret = __db_util_version_check(progname)) != 0)
+	if ((ret = version_check()) != 0)
 		goto err;
 
 	/*
@@ -104,15 +107,13 @@ main(argc, argv)
 	dbenv->set_errpfx(dbenv, progname);
 
 	exitval = verbose = 0;
-	blob_dir = home = logfile = passwd = NULL;
+	flags = 0;
+	home = logfile = passwd = NULL;
 	seconds = 30;
 	start_state = DB_REP_ELECTION;
 	repmgr_th = REP_NTHREADS;
-	while ((ch = getopt(argc, argv, "b:h:L:MP:T:t:Vv")) != EOF)
+	while ((ch = getopt(argc, argv, "h:L:MP:T:t:Vv")) != EOF)
 		switch (ch) {
-		case 'b':
-			blob_dir = optarg;
-			break;
 		case 'h':
 			home = optarg;
 			break;
@@ -123,19 +124,20 @@ main(argc, argv)
 			start_state = DB_REP_MASTER;
 			break;
 		case 'P':
-			if (__db_util_arg_password(progname, 
- 			    optarg, &passwd) != 0) {
- 				if (passwd != NULL)
- 					free(passwd);
- 				goto err;
-  			}
-  			ret = dbenv->set_encrypt(dbenv, passwd, DB_ENCRYPT_AES);
-  			free(passwd);
- 			passwd = NULL;
-  			if (ret != 0) {
-  				dbenv->err(dbenv, ret, "set_passwd");
-  				goto err;
-  			}
+			passwd = strdup(optarg);
+			memset(optarg, 0, strlen(optarg));
+			if (passwd == NULL) {
+				fprintf(stderr, DB_STR_A("5094",
+				    "%s: strdup: %s\n", "%s %s\n"),
+				    progname, strerror(errno));
+				return (EXIT_FAILURE);
+			}
+			ret = dbenv->set_encrypt(dbenv, passwd, DB_ENCRYPT_AES);
+			free(passwd);
+			if (ret != 0) {
+				dbenv->err(dbenv, ret, "set_passwd");
+				goto err;
+			}
 			break;
 		case 'T':
 			if (__db_getlong(NULL, progname,
@@ -178,12 +180,6 @@ main(argc, argv)
 			goto err;
 		if ((ret = db_replicate_logmsg(dbenv, "STARTED")) != 0)
 			goto err;
-	}
-
-	if (blob_dir != NULL && 
-	    (ret = dbenv->set_blob_dir(dbenv, blob_dir)) != 0) {
-		dbenv->err(dbenv, ret, "DB_ENV->set_blob_dir");
-		goto err;
 	}
 
 	/*
@@ -257,7 +253,7 @@ main(argc, argv)
 		__os_yield(dbenv->env, seconds, 0);
 		if (verbose) {
 			(void)time(&now);
-			dbenv->msg(dbenv, DB_STR_A("5095",
+			dbenv->errx(dbenv, DB_STR_A("5095",
 			    "db_replicate begin: %s", "%s"),
 			    __os_ctime(&now, time_buf));
 		}
@@ -365,7 +361,7 @@ event_callback(dbenv, which, info)
 
 	default:
 		db_replicate_logmsg(dbenv, "IGNORED");
-		dbenv->msg(dbenv, DB_STR_A("5097", "ignoring event %d",
+		dbenv->errx(dbenv, DB_STR_A("5097", "ignoring event %d",
 		    "%d"), which);
 	}
 }
@@ -376,6 +372,24 @@ usage()
 	(void)fprintf(stderr, "usage: %s [-MVv]\n\t%s\n", progname,
 "[-h home] [-P password] [-T nthreads] [-t seconds]");
 	return (EXIT_FAILURE);
+}
+
+static int
+version_check()
+{
+	int v_major, v_minor, v_patch;
+
+	/* Make sure we're loaded with the right version of the DB library. */
+	(void)db_version(&v_major, &v_minor, &v_patch);
+	if (v_major != DB_VERSION_MAJOR || v_minor != DB_VERSION_MINOR) {
+		fprintf(stderr, DB_STR_A("5098",
+		    "%s: version %d.%d doesn't match library version %d.%d\n",
+		    "%s %d %d %d %d\n"), progname,
+		    DB_VERSION_MAJOR, DB_VERSION_MINOR,
+		    v_major, v_minor);
+		return (EXIT_FAILURE);
+	}
+	return (0);
 }
 
 static int

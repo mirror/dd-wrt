@@ -17,7 +17,6 @@ int __crypto_env_refresh __P((ENV *));
 int __crypto_algsetup __P((ENV *, DB_CIPHER *, u_int32_t, int));
 int __crypto_decrypt_meta __P((ENV *, DB *, u_int8_t *, int));
 int __crypto_set_passwd __P((ENV *, ENV *));
-void __crypto_erase_passwd __P((ENV*, char **, size_t *));
 int __db_generate_iv __P((ENV *, u_int32_t *));
 int __db_rijndaelKeySetupEnc __P((u32 *, const u8 *, int));
 int __db_rijndaelKeySetupDec __P((u32 *, const u8 *, int));

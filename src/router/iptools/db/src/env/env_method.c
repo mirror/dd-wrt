@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
- * $Id$
+ * $Id: env_method.c,v dabaaeb7d839 2010/08/03 17:28:53 mike $
  */
 
 #include "db_config.h"
@@ -20,7 +20,6 @@
 static int  __db_env_init __P((DB_ENV *));
 static void __env_err __P((const DB_ENV *, int, const char *, ...));
 static void __env_errx __P((const DB_ENV *, const char *, ...));
-static void __env_msg __P((const DB_ENV *, const char *, ...));
 static int  __env_get_create_dir __P((DB_ENV *, const char **));
 static int  __env_get_data_dirs __P((DB_ENV *, const char ***));
 static int  __env_get_data_len __P((DB_ENV *, u_int32_t *));
@@ -41,7 +40,6 @@ static int  __env_get_app_dispatch
 		__P((DB_ENV *, int (**)(DB_ENV *, DBT *, DB_LSN *, db_recops)));
 static int  __env_set_app_dispatch
 		__P((DB_ENV *, int (*)(DB_ENV *, DBT *, DB_LSN *, db_recops)));
-static int  __env_get_blob_dir __P((DB_ENV *, const char **));
 static int __env_set_event_notify
 		__P((DB_ENV *, void (*)(DB_ENV *, u_int32_t, void *)));
 static int  __env_get_feedback __P((DB_ENV *, void (**)(DB_ENV *, int, int)));
@@ -82,11 +80,6 @@ db_env_create(dbenvpp, flags)
 	 */
 	if (flags != 0)
 		return (EINVAL);
-
-#ifdef HAVE_ERROR_HISTORY
-	/* Call thread local storage initializer at least once per process. */
-	__db_thread_init();
-#endif
 
 	/* Allocate the DB_ENV and ENV structures -- we always have both. */
 	if ((ret = __os_calloc(NULL, 1, sizeof(DB_ENV), &dbenv)) != 0)
@@ -182,8 +175,6 @@ __db_env_init(dbenv)
 	dbenv->get_cachesize = __memp_get_cachesize;
 	dbenv->get_backup_callbacks = __env_get_backup_callbacks;
 	dbenv->get_backup_config = __env_get_backup_config;
-	dbenv->get_blob_dir = __env_get_blob_dir;
-	dbenv->get_blob_threshold = __env_get_blob_threshold_pp;
 	dbenv->get_create_dir = __env_get_create_dir;
 	dbenv->get_data_dirs = __env_get_data_dirs;
 	dbenv->get_data_len = __env_get_data_len;
@@ -191,8 +182,6 @@ __db_env_init(dbenv)
 	dbenv->get_errcall = __env_get_errcall;
 	dbenv->get_errfile = __env_get_errfile;
 	dbenv->get_errpfx = __env_get_errpfx;
-	dbenv->get_ext_file_dir = __env_get_blob_dir;
-	dbenv->get_ext_file_threshold = __env_get_blob_threshold_pp;
 	dbenv->get_feedback = __env_get_feedback;
 	dbenv->get_flags = __env_get_flags;
 	dbenv->get_home = __env_get_home;
@@ -222,12 +211,8 @@ __db_env_init(dbenv)
 	dbenv->get_mp_tablesize = __memp_get_mp_tablesize;
 	dbenv->get_msgcall = __env_get_msgcall;
 	dbenv->get_msgfile = __env_get_msgfile;
-	dbenv->get_msgpfx = __env_get_msgpfx;
 	dbenv->get_open_flags = __env_get_open_flags;
-	dbenv->get_region_dir = __memp_get_reg_dir;
 	dbenv->get_shm_key = __env_get_shm_key;
-	dbenv->get_slice_count = __env_get_slice_count;
-	dbenv->get_slices = __env_get_slices;
 	dbenv->get_thread_count = __env_get_thread_count;
 	dbenv->get_thread_id_fn = __env_get_thread_id_fn;
 	dbenv->get_thread_id_string_fn = __env_get_thread_id_string_fn;
@@ -265,7 +250,6 @@ __db_env_init(dbenv)
 	dbenv->memp_stat_print = __memp_stat_print_pp;
 	dbenv->memp_sync = __memp_sync_pp;
 	dbenv->memp_trickle = __memp_trickle_pp;
-	dbenv->msg = __env_msg;
 	dbenv->mutex_alloc = __mutex_alloc_pp;
 	dbenv->mutex_free = __mutex_free_pp;
 	dbenv->mutex_get_align = __mutex_get_align;
@@ -285,7 +269,7 @@ __db_env_init(dbenv)
 	dbenv->open = __env_open_pp;
 	dbenv->remove = __env_remove;
 	dbenv->rep_elect = __rep_elect_pp;
-	dbenv->rep_flush = __rep_flush_pp;
+	dbenv->rep_flush = __rep_flush;
 	dbenv->rep_get_clockskew = __rep_get_clockskew;
 	dbenv->rep_get_config = __rep_get_config;
 	dbenv->rep_get_limit = __rep_get_limit;
@@ -298,35 +282,29 @@ __db_env_init(dbenv)
 	dbenv->rep_set_config = __rep_set_config;
 	dbenv->rep_set_limit = __rep_set_limit;
 	dbenv->rep_set_nsites = __rep_set_nsites_pp;
-	dbenv->rep_set_priority = __rep_set_priority_pp;
+	dbenv->rep_set_priority = __rep_set_priority;
 	dbenv->rep_set_request = __rep_set_request;
-	dbenv->rep_set_timeout = __rep_set_timeout_pp;
+	dbenv->rep_set_timeout = __rep_set_timeout;
 	dbenv->rep_set_transport = __rep_set_transport_pp;
-	dbenv->rep_set_view = __rep_set_view;
 	dbenv->rep_start = __rep_start_pp;
 	dbenv->rep_stat = __rep_stat_pp;
 	dbenv->rep_stat_print = __rep_stat_print_pp;
 	dbenv->rep_sync = __rep_sync;
 	dbenv->repmgr_channel = __repmgr_channel;
 	dbenv->repmgr_get_ack_policy = __repmgr_get_ack_policy;
-	dbenv->repmgr_get_incoming_queue_max = __repmgr_get_incoming_queue_max;
 	dbenv->repmgr_local_site = __repmgr_local_site;
 	dbenv->repmgr_msg_dispatch = __repmgr_set_msg_dispatch;
 	dbenv->repmgr_set_ack_policy = __repmgr_set_ack_policy;
-	dbenv->repmgr_set_incoming_queue_max = __repmgr_set_incoming_queue_max;
-	dbenv->repmgr_set_socket = __repmgr_set_socket;
 	dbenv->repmgr_site = __repmgr_site;
 	dbenv->repmgr_site_by_eid = __repmgr_site_by_eid;
-	dbenv->repmgr_site_list = __repmgr_site_list_pp;
-	dbenv->repmgr_start = __repmgr_start_pp;
+	dbenv->repmgr_site_list = __repmgr_site_list;
+	dbenv->repmgr_start = __repmgr_start;
 	dbenv->repmgr_stat = __repmgr_stat_pp;
 	dbenv->repmgr_stat_print = __repmgr_stat_print_pp;
 	dbenv->set_alloc = __env_set_alloc;
 	dbenv->set_app_dispatch = __env_set_app_dispatch;
 	dbenv->set_backup_callbacks = __env_set_backup_callbacks;
 	dbenv->set_backup_config = __env_set_backup_config;
-	dbenv->set_blob_dir = __env_set_blob_dir;
-	dbenv->set_blob_threshold = __env_set_blob_threshold;
 	dbenv->set_cache_max = __memp_set_cache_max;
 	dbenv->set_cachesize = __memp_set_cachesize;
 	dbenv->set_create_dir = __env_set_create_dir;
@@ -337,8 +315,6 @@ __db_env_init(dbenv)
 	dbenv->set_errfile = __env_set_errfile;
 	dbenv->set_errpfx = __env_set_errpfx;
 	dbenv->set_event_notify = __env_set_event_notify;
-	dbenv->set_ext_file_dir = __env_set_blob_dir;
-	dbenv->set_ext_file_threshold = __env_set_blob_threshold;
 	dbenv->set_feedback = __env_set_feedback;
 	dbenv->set_flags = __env_set_flags;
 	dbenv->set_intermediate_dir_mode = __env_set_intermediate_dir_mode;
@@ -367,9 +343,7 @@ __db_env_init(dbenv)
 	dbenv->set_mp_tablesize = __memp_set_mp_tablesize;
 	dbenv->set_msgcall = __env_set_msgcall;
 	dbenv->set_msgfile = __env_set_msgfile;
-	dbenv->set_msgpfx = __env_set_msgpfx;
 	dbenv->set_paniccall = __env_set_paniccall;
-	dbenv->set_region_dir = __memp_set_reg_dir;
 	dbenv->set_shm_key = __env_set_shm_key;
 	dbenv->set_thread_count = __env_set_thread_count;
 	dbenv->set_thread_id = __env_set_thread_id;
@@ -396,11 +370,10 @@ __db_env_init(dbenv)
 	dbenv->thread_id = __os_id;
 	dbenv->thread_id_string = __env_thread_id_string;
 
-	dbenv->mutex_failchk_timeout = US_PER_SEC;
-
 	env = dbenv->env;
 	__os_id(NULL, &env->pid_cache, NULL);
 
+	env->db_ref = 0;
 	env->log_verify_wrap = __log_verify_wrap;
 	env->data_len = ENV_DEF_DATA_LEN;
 	TAILQ_INIT(&env->fdlist);
@@ -408,7 +381,6 @@ __db_env_init(dbenv)
 	if (!__db_isbigendian())
 		F_SET(env, ENV_LITTLEENDIAN);
 	F_SET(env, ENV_NO_OUTPUT_SET);
-	dbenv->db_msgfile = stdout;
 
 	return (0);
 }
@@ -418,7 +390,15 @@ __db_env_init(dbenv)
  *	DbEnv.err method.
  */
 static void
+#ifdef STDC_HEADERS
 __env_err(const DB_ENV *dbenv, int error, const char *fmt, ...)
+#else
+__env_err(dbenv, error, fmt, va_alist)
+	const DB_ENV *dbenv;
+	int error;
+	const char *fmt;
+	va_dcl
+#endif
 {
 	/* Message with error string, to stderr by default. */
 	DB_REAL_ERR(dbenv, error, DB_ERROR_SET, 1, fmt);
@@ -429,21 +409,17 @@ __env_err(const DB_ENV *dbenv, int error, const char *fmt, ...)
  *	DbEnv.errx method.
  */
 static void
+#ifdef STDC_HEADERS
 __env_errx(const DB_ENV *dbenv, const char *fmt, ...)
+#else
+__env_errx(dbenv, fmt, va_alist)
+	const DB_ENV *dbenv;
+	const char *fmt;
+	va_dcl
+#endif
 {
 	/* Message without error string, to stderr by default. */
 	DB_REAL_ERR(dbenv, 0, DB_ERROR_NOT_SET, 1, fmt);
-}
-
-/*
- * __env_msg --
- *	DbEnv.msg method.
- */
-static void
-__env_msg(const DB_ENV *dbenv, const char *fmt, ...)
-{
-	/* Prnt the message, to stdout by default. */
-	DB_REAL_MSG(dbenv, fmt);
 }
 
 static int
@@ -585,102 +561,6 @@ __env_get_memory_init(dbenv, type, countp)
 }
 
 /*
- * __env_get_blob_threshold_pp --
- * Get the blob threshold for the environment.  Any data item larger
- * than the blob threshold is automatically saved as a blob file.
- *
- * PUBLIC: int  __env_get_blob_threshold_pp
- * PUBLIC:         __P ((DB_ENV *, u_int32_t *));
- */
-int
-__env_get_blob_threshold_pp(dbenv, bytes)
-	DB_ENV *dbenv;
-	u_int32_t *bytes;
-{
-	ENV *env;
-	DB_THREAD_INFO *ip;
-	int ret;
-
-	env = dbenv->env;
-
-	ENV_ENTER(env, ip);
-	ret = __env_get_blob_threshold_int(env, bytes);
-	ENV_LEAVE(env, ip);
-
-	return (ret);
-}
-
-/*
- * __env_get_blob_threshold_int --
- * Get the blob threshold for the environment.  Any data item larger
- * than the blob threshold is automatically saved as a blob file.
- *
- * PUBLIC: int  __env_get_blob_threshold_int
- * PUBLIC:         __P ((ENV *, u_int32_t *));
- */
-int
-__env_get_blob_threshold_int(env, bytes)
-	ENV *env;
-	u_int32_t *bytes;
-{
-	REGENV *renv;
-	REGINFO *infop;
-
-	if (F_ISSET(env, ENV_OPEN_CALLED)) {
-		infop = env->reginfo;
-		renv = infop->primary;
-		MUTEX_LOCK(env, renv->mtx_regenv);
-		*bytes = renv->blob_threshold;
-		MUTEX_UNLOCK(env, renv->mtx_regenv);
-	} else
-		*bytes = env->dbenv->blob_threshold;
-
-	return (0);
-}
-
-/*
- * __env_set_blob_threshold --
- * Set the default blob threshold for the environment.  Any data item larger
- * than the blob threshold is automatically saved as a blob file.
- *
- * PUBLIC: int  __env_set_blob_threshold __P((DB_ENV *, u_int32_t, u_int32_t));
- */
-int
-__env_set_blob_threshold(dbenv, bytes, flags)
-	DB_ENV *dbenv;
-	u_int32_t bytes;
-	u_int32_t flags;
-{
-	DB_ENV *slice;
-	DB_THREAD_INFO *ip;
-	ENV *env;
-	REGENV *renv;
-	REGINFO *infop;
-	int i;
-
-	env = dbenv->env;
-
-	if (__db_fchk(dbenv->env,
-	    "DB_ENV->set_ext_file_threshold", flags, 0) != 0)
-		return (EINVAL);
-
-	if (F_ISSET(env, ENV_OPEN_CALLED)) {
-		infop = env->reginfo;
-		renv = infop->primary;
-		ENV_ENTER(env, ip);
-		MUTEX_LOCK(env, renv->mtx_regenv);
-		renv->blob_threshold = bytes;
-		MUTEX_UNLOCK(env, renv->mtx_regenv);
-		ENV_LEAVE(env, ip);
-		SLICE_FOREACH(dbenv, slice, i)
-			(void)__env_set_blob_threshold(slice, bytes, flags);
-	} else
-		dbenv->blob_threshold = bytes;
-
-	return (0);
-}
-
-/*
  * __env_set_memory_init --
  *	DB_ENV->set_memory_init.
  *
@@ -701,20 +581,20 @@ __env_set_memory_init(dbenv, type, count)
 	case DB_MEM_LOCK:
 		dbenv->lk_init = count;
 		break;
-	case DB_MEM_LOCKER:
-		dbenv->lk_init_lockers = count;
-		break;
 	case DB_MEM_LOCKOBJECT:
 		dbenv->lk_init_objects = count;
+		break;
+	case DB_MEM_LOCKER:
+		dbenv->lk_init_lockers = count;
 		break;
 	case DB_MEM_LOGID:
 		dbenv->lg_fileid_init = count;
 		break;
-	case DB_MEM_THREAD:
-		dbenv->thr_init = count;
-		break;
 	case DB_MEM_TRANSACTION:
 		dbenv->tx_init = count;
+		break;
+	case DB_MEM_THREAD:
+		dbenv->thr_init = count;
 		break;
 	}
 
@@ -817,43 +697,6 @@ __env_set_app_dispatch(dbenv, app_dispatch)
 }
 
 /*
- * __env_set_blob_dir --
- * API to allow the user to override the default blob file
- * root directory. Must be set if blobs are enabled and an
- * unnamed environment is created.
- *
- * PUBLIC:  int  __env_set_blob_dir __P((DB_ENV *, const char *));
- */
-int
-__env_set_blob_dir(dbenv, dir)
-	DB_ENV *dbenv;
-	const char *dir;
-{
-	ENV *env;
-
-	env = dbenv->env;
-
-	ENV_ILLEGAL_AFTER_OPEN(env, "DB_ENV->set_ext_file_dir");
-
-	if (dbenv->db_blob_dir != NULL)
-		__os_free(env, dbenv->db_blob_dir);
-	return (__os_strdup(env, dir, &dbenv->db_blob_dir));
-}
-
-/*
- * __env_get_blob_dir --
- * Get the blob file root directory.
- */
-static int
-__env_get_blob_dir(dbenv, dirp)
-    DB_ENV *dbenv;
-    const char **dirp;
-{
-	*dirp = dbenv->db_blob_dir;
-	return (0);
-}
-
-/*
  * __env_get_encrypt_flags --
  *	{DB_ENV,DB}->get_encrypt_flags.
  *
@@ -936,8 +779,6 @@ __env_set_encrypt(dbenv, passwd, flags)
 	 * We're going to need this often enough to keep around
 	 */
 	dbenv->passwd_len = strlen(dbenv->passwd) + 1;
-	
-	dbenv->encrypt_flags = flags;
 	/*
 	 * The MAC key is for checksumming, and is separate from
 	 * the algorithm.  So initialize it here, even if they
@@ -1003,24 +844,25 @@ const FLAG_MAP EnvMap[] = {
 
 /*
  * __env_map_flags -- map from external to internal flags.
- * PUBLIC: void __env_map_flags
- * PUBLIC:      __P((const FLAG_MAP *, u_int, u_int32_t, u_int32_t *));
+ * PUBLIC: void __env_map_flags __P((const FLAG_MAP *,
+ * PUBLIC:       u_int, u_int32_t *, u_int32_t *));
  */
 void
-__env_map_flags(flagmap, mapsize, inflags, outflagsp)
+__env_map_flags(flagmap, mapsize, inflagsp, outflagsp)
 	const FLAG_MAP *flagmap;
 	u_int mapsize;
-	u_int32_t inflags, *outflagsp;
+	u_int32_t *inflagsp, *outflagsp;
 {
+
 	const FLAG_MAP *fmp;
 	u_int i;
 
 	for (i = 0, fmp = flagmap;
 	    i < mapsize / sizeof(flagmap[0]); ++i, ++fmp)
-		if (FLD_ISSET(inflags, fmp->inflag)) {
+		if (FLD_ISSET(*inflagsp, fmp->inflag)) {
 			FLD_SET(*outflagsp, fmp->outflag);
-			FLD_CLR(inflags, fmp->inflag);
-			if (inflags == 0)
+			FLD_CLR(*inflagsp, fmp->inflag);
+			if (*inflagsp == 0)
 				break;
 		}
 }
@@ -1089,13 +931,11 @@ __env_set_flags(dbenv, flags, on)
 	int on;
 {
 	ENV *env;
-	DB_ENV *slice;
 	DB_THREAD_INFO *ip;
-	int i, mem_on, ret;
 	u_int32_t mapped_flags;
+	int mem_on, ret;
 
 	env = dbenv->env;
-	ret = 0;
 
 #define	OK_FLAGS							\
 	(DB_AUTO_COMMIT | DB_CDB_ALLDB | DB_DATABASE_LOCKING |		\
@@ -1178,17 +1018,13 @@ __env_set_flags(dbenv, flags, on)
 	}
 
 	mapped_flags = 0;
-	__env_map_flags(EnvMap, sizeof(EnvMap), flags, &mapped_flags);
+	__env_map_flags(EnvMap, sizeof(EnvMap), &flags, &mapped_flags);
 	if (on)
 		F_SET(dbenv, mapped_flags);
 	else
 		F_CLR(dbenv, mapped_flags);
 
-	SLICE_FOREACH(dbenv, slice, i)
-		if ((ret = __env_set_flags(slice, flags, on)) != 0)
-			break;
-
-	return (ret);
+	return (0);
 }
 
 /*
@@ -1225,10 +1061,6 @@ __env_set_backup(env, on)
 		return (EINVAL);
 	}
 
-	/*
-	 * This code does not need env_rep_enter for the checkpoint because
-	 * it can only happen if there is an active bulk txn existing.
-	 */
 	if (needs_checkpoint && (ret = __txn_checkpoint(env, 0, 0, 0)))
 		return (ret);
 	return (0);
@@ -1359,34 +1191,6 @@ __env_get_intermediate_dir_mode(dbenv, modep)
 }
 
 /*
- * __env_set_home_dir --
- *	Helper function for DB_CONFIG's "slice <ID> home <directory>" line.
- *	This is *not* an API call. It is permitted only for slices.
- *
- * PUBLIC: int __env_set_home_dir __P((DB_ENV *, const char *));
- */
-int
-__env_set_home_dir(dbenv, dir)
-	DB_ENV *dbenv;
-	const char *dir;
-{
-	ENV *env;
-
-	env = dbenv->env;
-
-#ifdef HAVE_SLICES
-	if (env->slice_container == NULL)
-		return (__env_not_sliced(env));
-	if (env->db_home != NULL)
-		__os_free(env, env->db_home);
-	return (__os_strdup(env, dir, &env->db_home));
-#else
-	COMPQUIET(dir, NULL);
-	return (__env_no_slices(env));
-#endif
-}
-
-/*
  * __env_set_metadata_dir --
  *	DB_ENV->set_metadata_dir.
  *
@@ -1440,18 +1244,8 @@ __env_set_data_len(dbenv, data_len)
 	DB_ENV *dbenv;
 	u_int32_t data_len;
 {
-	DB_ENV *slice;
-	int i;
-
-	if (data_len == 0) {
-		__db_errx(dbenv->env, DB_STR("1593",
-"Maximum number of bytes to display for each key/data item can not be 0."));
-		return (EINVAL);
-	}
 
 	dbenv->env->data_len = data_len;
-	SLICE_FOREACH(dbenv, slice, i)
-		slice->env->data_len = data_len;
 	return (0);
 }
 
@@ -1547,16 +1341,12 @@ __env_set_errcall(dbenv, errcall)
 	DB_ENV *dbenv;
 	void (*errcall) __P((const DB_ENV *, const char *, const char *));
 {
-	DB_ENV *slice;
 	ENV *env;
-	int i;
 
 	env = dbenv->env;
 
 	F_CLR(env, ENV_NO_OUTPUT_SET);
 	dbenv->db_errcall = errcall;
-	SLICE_FOREACH(dbenv, slice, i)
-		__env_set_errcall(slice, errcall);
 }
 
 /*
@@ -1584,16 +1374,12 @@ __env_set_errfile(dbenv, errfile)
 	DB_ENV *dbenv;
 	FILE *errfile;
 {
-	DB_ENV *slice;
 	ENV *env;
-	int i;
 
 	env = dbenv->env;
 
 	F_CLR(env, ENV_NO_OUTPUT_SET);
 	dbenv->db_errfile = errfile;
-	SLICE_FOREACH(dbenv, slice, i)
-		__env_set_errfile(slice, errfile);
 }
 
 /*
@@ -1621,12 +1407,7 @@ __env_set_errpfx(dbenv, errpfx)
 	DB_ENV *dbenv;
 	const char *errpfx;
 {
-	DB_ENV *slice;
-	int i;
-
 	dbenv->db_errpfx = errpfx;
-	SLICE_FOREACH(dbenv, slice, i)
-		slice->db_errpfx = errpfx;
 }
 
 static int
@@ -1644,12 +1425,7 @@ __env_set_feedback(dbenv, feedback)
 	DB_ENV *dbenv;
 	void (*feedback) __P((DB_ENV *, int, int));
 {
-	DB_ENV *slice;
-	int i;
-
 	dbenv->db_feedback = feedback;
-	SLICE_FOREACH(dbenv, slice, i)
-		slice->db_feedback = feedback;
 	return (0);
 }
 
@@ -1672,18 +1448,11 @@ __env_get_thread_id_fn(dbenv, idp)
  *	DB_ENV->set_thread_id
  */
 static int
-__env_set_thread_id(dbenv, id_func)
+__env_set_thread_id(dbenv, id)
 	DB_ENV *dbenv;
-	void (*id_func) __P((DB_ENV *, pid_t *, db_threadid_t *));
+	void (*id) __P((DB_ENV *, pid_t *, db_threadid_t *));
 {
-	DB_ENV *slice;
-	int i;
-
-	dbenv->thread_id = id_func;
-
-	SLICE_FOREACH(dbenv, slice, i)
-		slice->thread_id = id_func;
-
+	dbenv->thread_id = id;
 	return (0);
 }
 
@@ -1711,12 +1480,7 @@ __env_set_thread_id_string(dbenv, thread_id_string)
 	DB_ENV *dbenv;
 	char *(*thread_id_string) __P((DB_ENV *, pid_t, db_threadid_t, char *));
 {
-	DB_ENV *slice;
-	int i;
-
 	dbenv->thread_id_string = thread_id_string;
-	SLICE_FOREACH(dbenv, slice, i)
-		slice->thread_id_string = thread_id_string;
 	return (0);
 }
 
@@ -1803,13 +1567,13 @@ __env_set_thread_count(dbenv, count)
  * __env_get_msgcall --
  *	{DB_ENV,DB}->get_msgcall.
  *
- * PUBLIC: void __env_get_msgcall __P((DB_ENV *,
- * PUBLIC:		void (**)(const DB_ENV *, const char *, const char *)));
+ * PUBLIC: void __env_get_msgcall
+ * PUBLIC:     __P((DB_ENV *, void (**)(const DB_ENV *, const char *)));
  */
 void
 __env_get_msgcall(dbenv, msgcallp)
 	DB_ENV *dbenv;
-	void (**msgcallp) __P((const DB_ENV *, const char *, const char *));
+	void (**msgcallp) __P((const DB_ENV *, const char *));
 {
 	if (msgcallp != NULL)
 		*msgcallp = dbenv->db_msgcall;
@@ -1819,20 +1583,15 @@ __env_get_msgcall(dbenv, msgcallp)
  * __env_set_msgcall --
  *	{DB_ENV,DB}->set_msgcall.
  *
- * PUBLIC: void __env_set_msgcall __P((DB_ENV *,
- * PUBLIC:		void (*)(const DB_ENV *, const char *, const char *)));
+ * PUBLIC: void __env_set_msgcall
+ * PUBLIC:     __P((DB_ENV *, void (*)(const DB_ENV *, const char *)));
  */
 void
 __env_set_msgcall(dbenv, msgcall)
 	DB_ENV *dbenv;
-	void (*msgcall) __P((const DB_ENV *, const char *, const char *));
+	void (*msgcall) __P((const DB_ENV *, const char *));
 {
-	DB_ENV *slice;
-	int i;
-
 	dbenv->db_msgcall = msgcall;
-	SLICE_FOREACH(dbenv, slice, i)
-		slice->db_msgcall = msgcall;
 }
 
 /*
@@ -1860,45 +1619,7 @@ __env_set_msgfile(dbenv, msgfile)
 	DB_ENV *dbenv;
 	FILE *msgfile;
 {
-	DB_ENV *slice;
-	int i;
-
 	dbenv->db_msgfile = msgfile;
-	SLICE_FOREACH(dbenv, slice, i)
-		slice->db_msgfile = msgfile;
-}
-
-/*
- * __env_get_msgpfx --
- *	{DB_ENV,DB}->get_msgpfx.
- *
- * PUBLIC: void __env_get_msgpfx __P((DB_ENV *, const char **));
- */
-void
-__env_get_msgpfx(dbenv, msgpfxp)
-	DB_ENV *dbenv;
-	const char **msgpfxp;
-{
-	*msgpfxp = dbenv->db_msgpfx;
-}
-
-/*
- * __env_set_msgpfx --
- *	{DB_ENV,DB}->set_msgpfx.
- *
- * PUBLIC: void __env_set_msgpfx __P((DB_ENV *, const char *));
- */
-void
-__env_set_msgpfx(dbenv, msgpfx)
-	DB_ENV *dbenv;
-	const char *msgpfx;
-{
-	DB_ENV *slice;
-	int i;
-
-	dbenv->db_msgpfx = msgpfx;
-	SLICE_FOREACH(dbenv, slice, i)
-		slice->db_msgpfx = msgpfx;
 }
 
 /*
@@ -1912,12 +1633,7 @@ __env_set_paniccall(dbenv, paniccall)
 	DB_ENV *dbenv;
 	void (*paniccall) __P((DB_ENV *, int));
 {
-	DB_ENV *slice;
-	int i;
-
 	dbenv->db_paniccall = paniccall;
-	SLICE_FOREACH(dbenv, slice, i)
-		slice->db_paniccall = paniccall;
 	return (0);
 }
 
@@ -1930,12 +1646,7 @@ __env_set_event_notify(dbenv, event_func)
 	DB_ENV *dbenv;
 	void (*event_func) __P((DB_ENV *, u_int32_t, void *));
 {
-	DB_ENV *slice;
-	int i;
-
 	dbenv->db_event_func = event_func;
-	SLICE_FOREACH(dbenv, slice, i)
-		slice->db_event_func = event_func;
 	return (0);
 }
 
@@ -2009,7 +1720,6 @@ __env_get_verbose(dbenv, which, onoffp)
 	case DB_VERB_DEADLOCK:
 	case DB_VERB_FILEOPS:
 	case DB_VERB_FILEOPS_ALL:
-	case DB_VERB_MVCC:
 	case DB_VERB_RECOVERY:
 	case DB_VERB_REGISTER:
 	case DB_VERB_REPLICATION:
@@ -2022,12 +1732,11 @@ __env_get_verbose(dbenv, which, onoffp)
 	case DB_VERB_REP_TEST:
 	case DB_VERB_REPMGR_CONNFAIL:
 	case DB_VERB_REPMGR_MISC:
-	case DB_VERB_SLICE:
 	case DB_VERB_WAITSFOR:
 		*onoffp = FLD_ISSET(dbenv->verbose, which) ? 1 : 0;
 		break;
 	default:
-		return (USR_ERR(dbenv->env, EINVAL));
+		return (EINVAL);
 	}
 	return (0);
 }
@@ -2044,15 +1753,11 @@ __env_set_verbose(dbenv, which, on)
 	u_int32_t which;
 	int on;
 {
-	DB_ENV *slice;
-	int i;
-
 	switch (which) {
 	case DB_VERB_BACKUP:
 	case DB_VERB_DEADLOCK:
 	case DB_VERB_FILEOPS:
 	case DB_VERB_FILEOPS_ALL:
-	case DB_VERB_MVCC:
 	case DB_VERB_RECOVERY:
 	case DB_VERB_REGISTER:
 	case DB_VERB_REPLICATION:
@@ -2065,21 +1770,14 @@ __env_set_verbose(dbenv, which, on)
 	case DB_VERB_REP_TEST:
 	case DB_VERB_REPMGR_CONNFAIL:
 	case DB_VERB_REPMGR_MISC:
-	case DB_VERB_SLICE:
 	case DB_VERB_WAITSFOR:
 		if (on)
 			FLD_SET(dbenv->verbose, which);
 		else
 			FLD_CLR(dbenv->verbose, which);
-		SLICE_FOREACH(dbenv, slice, i) {
-			if (on)
-				FLD_SET(slice->verbose, which);
-			else
-				FLD_CLR(slice->verbose, which);
-		}
 		break;
 	default:
-		return (USR_ERR(dbenv->env, EINVAL));
+		return (EINVAL);
 	}
 	return (0);
 }
@@ -2098,7 +1796,7 @@ __db_mi_env(env, name)
 	__db_errx(env, DB_STR_A("1564",
 	    "%s: method not permitted when environment specified", "%s"),
 	    name);
-	return (USR_ERR(env, EINVAL));
+	return (EINVAL);
 }
 
 /*
@@ -2116,7 +1814,7 @@ __db_mi_open(env, name, after)
 	__db_errx(env, DB_STR_A("1565",
 	    "%s: method not permitted %s handle's open method", "%s %s"),
 	    name, after ? DB_STR_P("after") : DB_STR_P("before"));
-	return (USR_ERR(env, EINVAL));
+	return (EINVAL);
 }
 
 /*
@@ -2174,7 +1872,7 @@ __env_not_config(env, i, flags)
 	    "%s %s"), i, sub);
 	}
 
-	return (USR_ERR(env, EINVAL));
+	return (EINVAL);
 }
 
 /*
@@ -2190,15 +1888,9 @@ __env_get_timeout(dbenv, timeoutp, flags)
 	int ret;
 
 	ret = 0;
-	if (flags == DB_SET_REG_TIMEOUT)
+	if (flags == DB_SET_REG_TIMEOUT) {
 		*timeoutp = dbenv->envreg_timeout;
-	else if (flags == DB_SET_MUTEX_FAILCHK_TIMEOUT)
-#ifdef HAVE_FAILCHK_BROADCAST
-		*timeoutp = dbenv->mutex_failchk_timeout;
-#else
-		ret = USR_ERR(dbenv->env, DB_OPNOTSUP);
-#endif
-	else
+	} else
 		ret = __lock_get_env_timeout(dbenv, timeoutp, flags);
 	return (ret);
 }
@@ -2215,129 +1907,12 @@ __env_set_timeout(dbenv, timeout, flags)
 	db_timeout_t timeout;
 	u_int32_t flags;
 {
-	DB_ENV *slice;
-	int i;
 	int ret;
 
 	ret = 0;
 	if (flags == DB_SET_REG_TIMEOUT)
 		dbenv->envreg_timeout = timeout;
-	else if (flags == DB_SET_MUTEX_FAILCHK_TIMEOUT)
-#ifdef HAVE_FAILCHK_BROADCAST
-		dbenv->mutex_failchk_timeout = timeout;
-#else
-		ret = USR_ERR(dbenv->env, DB_OPNOTSUP);
-#endif
 	else
 		ret = __lock_set_env_timeout(dbenv, timeout, flags);
-	if (ret == 0)
-		SLICE_FOREACH(dbenv, slice, i)
-			if ((ret =
-			    __env_set_timeout(slice, timeout, flags)) != 0)
-				break;
 	return (ret);
-}
-
-/*
- * __env_encrypt_adj_size --
- *	Ajust the given size to the amount needed to meet the "chunk" needs of
- *	the env's encryption algorithm. It is only intended for use as an
- *	internal utility routine.
- *
- * PUBLIC: int __env_encrypt_adj_size __P((DB_ENV *, size_t, size_t *));
- */
-int
-__env_encrypt_adj_size(dbenv, orig_size, ajustp)
-	DB_ENV *dbenv;
-	size_t orig_size;
-	size_t *ajustp;
-{
-#ifdef HAVE_CRYPTO
-	DB_CIPHER *db_cipher;
-#endif
-	ENV *env;
-
-	env = dbenv->env;
-#ifdef HAVE_CRYPTO
-	db_cipher = env->crypto_handle;
-	if (db_cipher != NULL)
-		*ajustp = db_cipher->adj_size(orig_size);
-	return (0);
-#else
-	COMPQUIET(orig_size, 0);
-	COMPQUIET(ajustp, NULL);
-	__db_errx(env, DB_STR("1555",
-	    "library build did not include support for cryptography"));
-	return (DB_OPNOTSUP);
-#endif
-}
-
-/*
- * __env_encrypt --
- *	Encrypt the given data using the environment's crypto handler.
- *	It is only intended for use as an internal utility routine.
- *
- * PUBLIC: int __env_encrypt __P((DB_ENV *, u_int8_t *, u_int8_t *, size_t));
- */
-int
-__env_encrypt(dbenv, iv, data, len)
-	DB_ENV *dbenv;
-	u_int8_t *iv;
-	u_int8_t *data;
-	size_t len;
-{
-#ifdef HAVE_CRYPTO
-	DB_CIPHER *db_cipher;
-#endif
-	ENV *env;
-
-	env = dbenv->env;
-#ifdef HAVE_CRYPTO
-	db_cipher = env->crypto_handle;
-	if (db_cipher != NULL)
-		return db_cipher->encrypt(env, db_cipher->data, iv, data, len);
-	return (0);
-#else
-	COMPQUIET(iv, NULL);
-	COMPQUIET(data, NULL);
-	COMPQUIET(len, 0);
-	__db_errx(env, DB_STR("1555",
-	    "library build did not include support for cryptography"));
-	return (DB_OPNOTSUP);
-#endif
-}
-
-/*
- * __env_decrypt --
- *	Decrypt the given data using the environment's crypto handler.
- *	It is only intended for use as an internal utility routine.
- *
- * PUBLIC: int __env_decrypt __P((DB_ENV *, u_int8_t *, u_int8_t *, size_t));
- */
-int  
-__env_decrypt(dbenv, iv, data, len)
-	DB_ENV *dbenv;
-	u_int8_t *iv;
-	u_int8_t *data;
-	size_t len;
-{
-#ifdef HAVE_CRYPTO
-	DB_CIPHER *db_cipher;
-#endif
-	ENV *env;
-
-	env = dbenv->env;
-#ifdef HAVE_CRYPTO
-	db_cipher = env->crypto_handle;
-	if (db_cipher != NULL)
-		return db_cipher->decrypt(env, db_cipher->data, iv, data, len);
-	return (0);
-#else
-	COMPQUIET(iv, NULL);
-	COMPQUIET(data, NULL);
-	COMPQUIET(len, 0);
-	__db_errx(env, DB_STR("1555",
-	    "library build did not include support for cryptography"));
-	return (DB_OPNOTSUP);
-#endif
 }

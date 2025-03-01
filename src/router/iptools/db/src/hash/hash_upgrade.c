@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -9,7 +9,6 @@
 #include "db_config.h"
 
 #include "db_int.h"
-#include "dbinc/blob.h"
 #include "dbinc/db_page.h"
 #include "dbinc/hash.h"
 #include "dbinc/db_upgrade.h"
@@ -208,7 +207,7 @@ __ham_31_hashmeta(dbp, real_name, flags, fhp, h, dirtyp)
 
 	/* Upgrade the flags. */
 	if (LF_ISSET(DB_DUPSORT))
-		F_SET(&newmeta->dbmeta, HASHM_DUPSORT);
+		F_SET(&newmeta->dbmeta, DB_HASH_DUPSORT);
 
 	*dirtyp = 1;
 	return (0);
@@ -319,96 +318,6 @@ __ham_46_hash(dbp, real_name, flags, fhp, h, dirtyp)
 	ret = __ham_sort_page(dbc, NULL, h);
 	if ((t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 		ret = t_ret;
-
-	return (ret);
-}
-
-/*
- * __ham_60_hashmeta--
- *	Upgrade the version number.
- *
- * PUBLIC: int __ham_60_hashmeta
- * PUBLIC:      __P((DB *, char *, u_int32_t, DB_FH *, PAGE *, int *));
- */
-int
-__ham_60_hashmeta(dbp, real_name, flags, fhp, h, dirtyp)
-	DB *dbp;
-	char *real_name;
-	u_int32_t flags;
-	DB_FH *fhp;
-	PAGE *h;
-	int *dirtyp;
-{
-	HMETA33 *hmeta;
-
-	COMPQUIET(flags, 0);
-	COMPQUIET(real_name, NULL);
-	COMPQUIET(fhp, NULL);
-	COMPQUIET(dbp, NULL);
-	hmeta = (HMETA33 *)h;
-
-	hmeta->dbmeta.version = 10;
-	*dirtyp = 1;
-
-	return (0);
-}
-
-/*
- * __ham_60_hash --
- *	Upgrade the blob records on the database hash leaf pages.
- *
- * PUBLIC: int __ham_60_hash
- * PUBLIC:      __P((DB *, char *, u_int32_t, DB_FH *, PAGE *, int *));
- */
-int
-__ham_60_hash(dbp, real_name, flags, fhp, h, dirtyp)
-	DB *dbp;
-	char *real_name;
-	u_int32_t flags;
-	DB_FH *fhp;
-	PAGE *h;
-	int *dirtyp;
-{
-	HBLOB60 hb60;
-	HBLOB60P1 hb60p1;
-	HKEYDATA *hk;
-	db_seq_t blob_id, blob_size, file_id, sdb_id;
-	db_indx_t indx;
-	int ret;
-
-	COMPQUIET(flags, 0);
-	COMPQUIET(real_name, NULL);
-	COMPQUIET(fhp, NULL);
-	ret = 0;
-
-	DB_ASSERT(dbp->env, HBLOB60_SIZE == HBLOB_SIZE);
-	for (indx = 0; indx < NUM_ENT(h); indx += 2) {
-		hk = (HKEYDATA *)H_PAIRDATA(dbp, h, indx);
-		if (HPAGE_PTYPE(hk) == H_BLOB) {
-			memcpy(&hb60, hk, HBLOB60_SIZE);
-			memset(&hb60p1, 0, HBLOB_SIZE);
-			hb60p1.type = hb60.type;
-			hb60p1.encoding = hb60.encoding;
-			GET_BLOB60_ID(dbp->env, hb60, blob_id, ret);
-			if (ret != 0)
-				return (ret);
-			GET_BLOB60_SIZE(dbp->env, hb60, blob_size, ret);
-			if (ret != 0)
-				return (ret);
-			GET_BLOB60_FILE_ID(dbp->env, &hb60, file_id, ret);
-			if (ret != 0)
-				return (ret);
-			GET_BLOB60_SDB_ID(dbp->env, &hb60, sdb_id, ret);
-			if (ret != 0)
-				return (ret);
-			SET_BLOB_ID(&hb60p1, blob_id, HBLOB60P1);
-			SET_BLOB_SIZE(&hb60p1, blob_size, HBLOB60P1);
-			SET_BLOB_FILE_ID(&hb60p1, file_id, HBLOB60P1);
-			SET_BLOB_SDB_ID(&hb60p1, sdb_id, HBLOB60P1);
-			memcpy(hk, &hb60p1, HBLOB_SIZE);
-			*dirtyp = 1;
-		}
-	}
 
 	return (ret);
 }

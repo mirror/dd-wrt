@@ -28,9 +28,9 @@
  * shared memory.
  */
 #ifdef HAVE_MIXED_SIZE_ADDRESSING
-#define	__STRUCTURE_COUNT	48
+#define	__STRUCTURE_COUNT	41
 #else
-#define	__STRUCTURE_COUNT	(48 + 109)
+#define	__STRUCTURE_COUNT	(41 + 104)
 #endif
 
 /*
@@ -66,11 +66,7 @@ __env_struct_sig()
 	__ADD(__db_h_stat);
 	__ADD(__db_heap_stat);
 	__ADD(__db_qam_stat);
-#ifdef	HAVE_MUTEX_SUPPORT
-	__ADD(__mutex_state);
-#endif
 	__ADD(__db_thread_info);
-	__ADD(__env_thread_info);
 	__ADD(__db_lockregion);
 	__ADD(__sh_dbt);
 	__ADD(__db_lockobj);
@@ -86,9 +82,6 @@ __env_struct_sig()
 	__ADD(__db_mutexregion);
 #endif
 #ifdef	HAVE_MUTEX_SUPPORT
-	__ADD(__mutex_history);
-#endif
-#ifdef	HAVE_MUTEX_SUPPORT
 	__ADD(__db_mutex_t);
 #endif
 	__ADD(__db_reg_env);
@@ -99,10 +92,6 @@ __env_struct_sig()
 
 #ifndef HAVE_MIXED_SIZE_ADDRESSING
 	__ADD(__db_dbt);
-#ifdef	HAVE_MUTEX_SUPPORT
-	__ADD(__db_event_mutex_died_info);
-#endif
-	__ADD(__db_event_failchk_info);
 	__ADD(__db_lockreq);
 	__ADD(__db_log_cursor);
 	__ADD(__log_rec_spec);
@@ -113,7 +102,6 @@ __env_struct_sig()
 	__ADD(__my_cursors);
 	__ADD(__femfs);
 	__ADD(__db_preplist);
-	__ADD(__db_txn_active_slice);
 	__ADD(__db_txn_active);
 	__ADD(__db_txn_stat);
 	__ADD(__db_txn_token);
@@ -125,7 +113,6 @@ __env_struct_sig()
 	__ADD(__cq_fq);
 	__ADD(__cq_aq);
 	__ADD(__cq_jq);
-	__ADD(__db_stream);
 	__ADD(__db_heap_rid);
 	__ADD(__dbc);
 	__ADD(__key_range);
@@ -138,6 +125,7 @@ __env_struct_sig()
 	__ADD(__fn);
 	__ADD(__db_msgbuf);
 	__ADD(__pin_list);
+	__ADD(__env_thread_info);
 	__ADD(__flag_map);
 	__ADD(__db_backup_handle);
 	__ADD(__env);

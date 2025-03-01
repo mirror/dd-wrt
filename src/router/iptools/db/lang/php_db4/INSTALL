@@ -1,6 +1,6 @@
 Build and installation instructions for Berkeley DB PHP support
 on Linux or *nix machines.  Note that while it is still called "db4" these
-instructions apply to Berkeley DB 5.x and 6.x as well.
+instructions apply to Berkeley DB 5.x as well.
 
 Prerequisites
 -------------
@@ -31,8 +31,8 @@ the php.ini file you use:
 extension=db4.so
 
 See examples in the "samples" directory.  The samples create their data in
-the executing directory by default and the transaction_counter.php example 
-requires that ./dbhome exist. The samples can be edited to change these 
+/var/tmp by default and the transaction_counter.php example requires 
+that /var/tmp/dbhome exist. The samples can be edited to change these 
 requirements.
 
 Apache 2 Configuration
@@ -88,7 +88,7 @@ extension=db4.so
        http://<path-to-server>/simple_counter.php
    Refresh your page to see the counter increment.
 
-   This example creates a database in the executing directory.  The example 
-   can be modified to change the location of the database.
+   This example creates a database in /var/tmp.  It can be modified to 
+   change the location of the database.
 
 

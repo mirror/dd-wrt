@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -33,6 +33,7 @@ multiple threads simultaneously access the same DatabaseEntry object using
 <p>
 DatabaseEntry objects may be used in conjunction with the object mapping
 support provided in the {@link com.sleepycat.bind} package.
+<p>
 <h3>Input and Output Parameters</h3>
 <p>
 DatabaseEntry objects are used for both input data (when writing to a
@@ -60,6 +61,7 @@ a new array is allocated each time the entry is used as an output parameter,
 the application can safely keep a reference to the byte array returned
 by {@link #getData} without danger that the array will be overwritten in
 a subsequent call.
+<p>
 <h3>Offset and Size Properties</h3>
 <p>
 By default the Offset property is zero and the Size property is the length
@@ -84,6 +86,7 @@ However, for input DatabaseEntry parameters the application should not make
 this assumption.  In general, it is safest for the application to always
 honor the Size and Offset properties, rather than assuming they have default
 values.
+<p>
 <h3>Partial Offset and Length Properties</h3>
 <p>
 By default the specified data (byte array, offset and size) corresponds to
@@ -209,26 +212,6 @@ public class DatabaseEntry {
      */
 
     /**
-    @deprecated Replaced with {@link #setExternalFile}.
-    <p>
-    @param externalFile
-    Whether this DatabaseEntry is configured to be stored as an external file.
-    */
-    public void setBlob(final boolean externalFile) {
-        setExternalFile(externalFile);
-    }
-
-    /**
-    @deprecated Replaced with {@link #getExternalFile}.
-    <p>
-    @return
-    Whether this DatabaseEntry is configured to be stored as an external file.
-    */
-    public boolean getBlob() {
-        return getExternalFile();
-    }
-
-    /**
     Return the byte array.
     <p>
     For a DatabaseEntry that is used as an output parameter, the byte
@@ -339,30 +322,6 @@ public class DatabaseEntry {
     }
 
     /**
-    Configure this DatabaseEntry to be stored as an external file.
-    <p>
-    @param externalFile
-    Whether this DatabaseEntry is configured to be stored as an external file.
-    */
-    public void setExternalFile(final boolean externalFile) {
-        if (externalFile)
-            flags |= DbConstants.DB_DBT_EXT_FILE;
-        else
-            flags &= ~DbConstants.DB_DBT_EXT_FILE;
-    }
-
-    /**
-    Return whether this DatabaseEntry is configured to be stored as an external
-    file.
-    <p>
-    @return
-    Whether this DatabaseEntry is configured to be stored as an external file.
-    */
-    public boolean getExternalFile() {
-        return (flags & DbConstants.DB_DBT_EXT_FILE) != 0;
-    }
-
-    /**
      * This method is called just before performing a get operation.  It is
      * overridden by Multiple*Entry classes to return the flags used for bulk
      * retrieval.  If non-zero is returned, this method should reset the entry
@@ -406,6 +365,7 @@ public class DatabaseEntry {
     @return
     The byte length of the partial record being read or written by the
     application, in bytes.
+    <p>
     @see #setPartial(int,int,boolean)
     */
     public int getPartialLength() {
@@ -422,6 +382,7 @@ public class DatabaseEntry {
     @return
     The offset of the partial record being read or written by the
     application, in bytes.
+    <p>
     @see #setPartial(int,int,boolean)
     */
     public int getPartialOffset() {
@@ -438,6 +399,7 @@ public class DatabaseEntry {
     @return
     Whether this DatabaseEntry is configured to read or write partial
     records.
+    <p>
     @see #setPartial(int,int,boolean)
     */
     public boolean getPartial() {
@@ -454,6 +416,7 @@ public class DatabaseEntry {
     @param doff
     The offset of the partial record being read or written by the
     application, in bytes.
+    <p>
     @see #setPartial(int,int,boolean)
     */
     public void setPartialOffset(final int doff) {
@@ -486,6 +449,7 @@ public class DatabaseEntry {
     @param partial
     Whether this DatabaseEntry is configured to read or write partial
     records.
+    <p>
     @see #setPartial(int,int,boolean)
     */
     public void setPartial(final boolean partial) {
@@ -555,6 +519,7 @@ public class DatabaseEntry {
     <p>
     @return
     Whether this DatabaseEntry is configured as read only.
+    <p>
     @see #setReadOnly(boolean)
     */
     public boolean getReadOnly() {

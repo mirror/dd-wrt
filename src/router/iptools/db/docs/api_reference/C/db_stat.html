@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -40,8 +40,8 @@
       </div>
       <pre class="programlisting">db_stat -d file [-fN] [-h home] [-P password] [-s database]
 
-db_stat [-acEelmNrtVxZ] [-C Aclop] [-h home] [-L A] [-M Ah] [-R A] 
-        [-X A] [-P password]  </pre>
+db_stat [-cEelmNrtVxZ] [-C Aclop] [-h home] [-L A] [-M Ah] [-R A] 
+        [-P password]  </pre>
       <p>
          The <span class="command"><strong>db_stat</strong></span> utility displays statistics for Berkeley DB environments.
     </p>
@@ -50,14 +50,6 @@ db_stat [-acEelmNrtVxZ] [-C Aclop] [-h home] [-L A] [-M Ah] [-R A]
     </p>
       <div class="itemizedlist">
         <ul type="disc">
-          <li>
-            <p>
-                 <span class="bold"><strong>-a</strong></span>
-            </p>
-            <p>
-                 Display allocation information.
-            </p>
-          </li>
           <li>
             <p>
                   <span class="bold"><strong>-C</strong></span>
@@ -318,26 +310,6 @@ db_stat [-acEelmNrtVxZ] [-C Aclop] [-h home] [-L A] [-M Ah] [-R A]
           </li>
           <li>
             <p>
-                  <span class="bold"><strong>-X</strong></span>
-            </p>
-            <p>
-                Display detailed information about the mutex subsystem.  
-            </p>
-            <div class="itemizedlist">
-              <ul type="circle">
-                <li>
-                  <p>
-                      <span class="bold"><strong>A</strong></span>
-                    </p>
-                  <p>
-                        Display all information.
-                    </p>
-                </li>
-              </ul>
-            </div>
-          </li>
-          <li>
-            <p>
                  <span class="bold"><strong>-x</strong></span>
             </p>
             <p>
@@ -386,7 +358,7 @@ db_stat [-acEelmNrtVxZ] [-C Aclop] [-h home] [-L A] [-M Ah] [-R A]
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711170936224"></a>Environment Variables</h3>
+              <h3 class="title"><a id="idp55427040"></a>Environment Variables</h3>
             </div>
           </div>
         </div>
@@ -394,7 +366,7 @@ db_stat [-acEelmNrtVxZ] [-C Aclop] [-h home] [-L A] [-M Ah] [-R A]
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711170858208"></a>DB_HOME</h4>
+                <h4 class="title"><a id="idp55437256"></a>DB_HOME</h4>
               </div>
             </div>
           </div>

@@ -7,14 +7,14 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="transapp.html" title="Chapter 12.  Berkeley DB Transactional Data Store Applications" />
+    <link rel="up" href="transapp.html" title="Chapter 11.  Berkeley DB Transactional Data Store Applications" />
     <link rel="prev" href="transapp_deadlock.html" title="Deadlock detection" />
     <link rel="next" href="transapp_archival.html" title="Database and log file archival" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,7 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="transapp_deadlock.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 12.  Berkeley DB Transactional Data Store Applications </th>
+          <th width="60%" align="center">Chapter 11. 
+		Berkeley DB Transactional Data Store Applications
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="transapp_archival.html">Next</a></td>
         </tr>
       </table>
@@ -36,41 +38,31 @@
           </div>
         </div>
       </div>
+      <p>The second component of the infrastructure is performing checkpoints of
+the log files.  Performing checkpoints is necessary for two reasons.</p>
+      <p>First, you may be able to remove Berkeley DB log files from your database
+environment after a checkpoint.  Change records are written into the log
+files when databases are modified, but the actual changes to the
+database are not necessarily written to disk.  When a checkpoint is
+performed, changes to the database are written into the backing database
+file.  Once the database pages are written, log files can be archived
+and removed from the database environment because they will never be
+needed for anything other than catastrophic failure.  (Log files which
+are involved in active transactions may not be removed, and there must
+always be at least one log file in the database environment.)</p>
+      <p>The second reason to perform checkpoints is because checkpoint frequency
+is inversely proportional to the amount of time it takes to run database
+recovery after a system or application failure.  This is because
+recovery after failure has to redo or undo changes only since the last
+checkpoint, as changes before the checkpoint have all been flushed to
+the databases.</p>
       <p>
-        The second component of the infrastructure is performing
-        checkpoints of the log files. Performing checkpoints is
-        necessary for two reasons.
-    </p>
-      <p>
-        First, you may be able to remove Berkeley DB log files from
-        your database environment after a checkpoint. Change records
-        are written into the log files when databases are modified,
-        but the actual changes to the database are not necessarily
-        written to disk. When a checkpoint is performed, changes to
-        the database are written into the backing database file. Once
-        the database pages are written, log files can be archived and
-        removed from the database environment because they will never
-        be needed for anything other than catastrophic failure. (Log
-        files which are involved in active transactions may not be
-        removed, and there must always be at least one log file in the
-        database environment.)
-    </p>
-      <p>
-        The second reason to perform checkpoints is because
-        checkpoint frequency is inversely proportional to the amount
-        of time it takes to run database recovery after a system or
-        application failure. This is because recovery after failure
-        has to redo or undo changes only since the last checkpoint, as
-        changes before the checkpoint have all been flushed to the
-        databases.
-    </p>
-      <p> 
-        Berkeley DB provides the <a href="../api_reference/C/db_checkpoint.html" class="olink">db_checkpoint</a> utility, which can be used
-        to perform checkpoints. Alternatively, applications can write
-        their own checkpoint thread using the underlying
-        <a href="../api_reference/C/txncheckpoint.html" class="olink">DB_ENV-&gt;txn_checkpoint()</a> function. The following code fragment
-        checkpoints the database environment every 60 seconds: 
-    </p>
+    Berkeley DB provides the <a href="../api_reference/C/db_checkpoint.html" class="olink">db_checkpoint</a> utility, which can be used to perform
+    checkpoints.  Alternatively, applications can write their own
+    checkpoint thread using the underlying <a href="../api_reference/C/txncheckpoint.html" class="olink">DB_ENV-&gt;txn_checkpoint()</a> function.  The
+    following code fragment checkpoints the database environment every 60
+    seconds:
+</p>
       <pre class="programlisting">int
 main(int argc, char *argv)
 {
@@ -147,11 +139,9 @@ checkpoint_thread(void *arg)
 
     /* NOTREACHED */
 }</strong></span></pre>
-      <p>
-        Because checkpoints can be quite expensive, choosing how
-        often to perform a checkpoint is a common tuning parameter for
-        Berkeley DB applications.
-    </p>
+      <p>Because checkpoints can be quite expensive, choosing how often to
+perform a checkpoint is a common tuning parameter for Berkeley DB
+applications.</p>
     </div>
     <div class="navfooter">
       <hr />
@@ -168,8 +158,7 @@ checkpoint_thread(void *arg)
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Database and log file
-        archival</td>
+          <td width="40%" align="right" valign="top"> Database and log file archival</td>
         </tr>
       </table>
     </div>

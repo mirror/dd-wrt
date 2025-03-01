@@ -401,8 +401,6 @@ do_malloc_test shared_err-8 -tclprep {
     execsql {INSERT INTO t1 VALUES($a, $b)} db2
   }
   execsql {COMMIT} db2
-  execsql BEGIN
-  execsql ROLLBACK
   set ::DB2 [sqlite3_connection_pointer db2]
   set ::STMT [sqlite3_prepare $::DB2 "SELECT a FROM t1 ORDER BY a" -1 DUMMY]
   sqlite3_step $::STMT       ;# Cursor points at 0000000000
@@ -411,7 +409,8 @@ do_malloc_test shared_err-8 -tclprep {
   execsql {
     BEGIN;
     INSERT INTO t1 VALUES(6, NULL);
-    ROLLBACK}
+    ROLLBACK;
+  }
 } -cleanup {
   # UPDATE: As of [5668], if the rollback fails SQLITE_CORRUPT is returned. 
   # So these tests have been updated to expect SQLITE_CORRUPT and its
@@ -446,15 +445,9 @@ do_malloc_test shared_err-8 -tclprep {
   } {1}
   db2 close
 }
-
-# When this test case was written, OOM errors in write statements would 
-# cause transaction rollback, which would trip cursors in other statements,
-# aborting them. This no longer happens.
-#
 do_test shared_malloc-8.X {
   # Test that one or more queries were aborted due to the malloc() failure.
-  # expr $::aborted>=1
-  expr $::aborted==0
+  expr $::aborted>=1
 } {1}
 
 # This test is designed to catch a specific bug that was present during

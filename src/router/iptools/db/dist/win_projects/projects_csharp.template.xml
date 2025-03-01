@@ -17,8 +17,8 @@
   <project name="db_dotnet" guid="4696FB1E-1E5F-40B9-BD8C-A54D3BDA00F6">
     <type>dll</type>
     <AssemblyName>libdb_dotnet@DB_VERSION_MAJOR@@DB_VERSION_MINOR@</AssemblyName>
-    <DocumentationFile>..\doc\libdb_dotnet@DB_VERSION_MAJOR@@DB_VERSION_MINOR@.XML</DocumentationFile>
-    <files path="..\\">
+    <DocumentationFile>doc\libdb_dotnet@DB_VERSION_MAJOR@@DB_VERSION_MINOR@.XML</DocumentationFile>
+    <files path="">
       <file name="AckPolicy.cs" />
       <file name="ActiveTransaction.cs" />
       <file name="BaseCursor.cs" />
@@ -35,8 +35,6 @@
       <file name="CompactData.cs" />
       <file name="MultipleKeyDatabaseEntry.cs" />
       <file name="DatabaseEntry.cs" />
-      <file name="DatabaseStream.cs" />
-      <file name="DatabaseStreamConfig.cs" />
       <file name="DbChannel.cs" />
       <file name="DbSite.cs" />
       <file name="DbSiteConfig.cs" />
@@ -116,7 +114,6 @@
       <file name="Internal\DB_LSN.cs" />
       <file name="Internal\db_recops.cs" />
       <file name="Internal\DB_SITE.cs" />
-      <file name="Internal\DB_STREAM.cs" />
       <file name="Internal\DB_TXN.cs" />
       <file name="Internal\DB_TXN_TOKEN.cs" />
       <file name="Internal\Delegates.cs" />
@@ -146,7 +143,7 @@
 
   <!-- Global ProjectReference setting for examples/apps -->
   <ProjectReference
-    Include="..\..\..\..\lang\csharp\src\@VISUAL_STUDIO_VERSION@\db_dotnet.csproj"
+    Include="..\..\..\lang\csharp\src\db_dotnet.csproj"
     ProjectUID="4696FB1E-1E5F-40B9-BD8C-A54D3BDA00F6"
     ProjectName="db_dotnet"
   />
@@ -154,35 +151,35 @@
   <!-- Examples -->
   <project name="excs_access" guid="B7250534-4FB1-450D-865C-59231820EAB5">
     <type>app</type>
-    <files path="..\\excs_access\\">
+    <files path="">
       <file name="excs_access.cs" />
       <file name="Properties\AssemblyInfo.cs" />
     </files>
   </project>
   <project name="excs_btrec" guid="657FB9CC-16ED-4BAE-97AD-1A359D133F25">
     <type>app</type>
-    <files path="..\\excs_btrec\\">
+    <files path="">
       <file name="excs_btrec.cs" />
       <file name="Properties\AssemblyInfo.cs" />
     </files>
   </project>
   <project name="excs_bulk" guid="90740BD6-C91B-4259-B6E9-C361A06791BA">
     <type>app</type>
-    <files path="..\\excs_bulk\\">
+    <files path="">
       <file name="excs_bulk.cs" />
       <file name="Properties\AssemblyInfo.cs" />
     </files>
   </project>
   <project name="excs_env" guid="617FF132-0566-4F6D-932D-2A1BA3C6A93E">
     <type>app</type>
-    <files path="..\\excs_env\\">
+    <files path="">
       <file name="excs_env.cs" />
       <file name="Properties\AssemblyInfo.cs" />
     </files>
   </project>
   <project name="excs_getting_started" guid="A8813939-DA91-4036-9BE4-B0FB44051A06">
     <type>app</type>
-    <files path="..\\excs_getting_started\\">
+    <files path="">
       <file name="DatabaseExample.cs" />
       <file name="DatabaseLoader.cs" />
       <file name="DatabaseReader.cs" />
@@ -194,14 +191,14 @@
   </project>
   <project name="excs_lock" guid="BE804FB8-EF18-4ED6-B1EC-035D2564ED9F">
     <type>app</type>
-    <files path="..\\excs_lock\\">
+    <files path="">
       <file name="excs_lock.cs" />
       <file name="Properties\AssemblyInfo.cs" />
     </files>
   </project>
   <project name="excs_repquote" guid="7BA3D41C-2B70-405E-BEDB-A5A72509D2ED">
     <type>app</type>
-    <files path="..\\excs_repquote\\">
+    <files path="">
       <file name="Properties\AssemblyInfo.cs" />
       <file name="RepConfig.cs" />
       <file name="RepQuoteEnvironment.cs" />
@@ -210,14 +207,14 @@
   </project>
   <project name="excs_sequence" guid="DC306DCB-F42C-4038-91FA-B553FD37CB2E">
     <type>app</type>
-    <files path="..\\excs_sequence\\">
+    <files path="">
       <file name="Properties\AssemblyInfo.cs" />
       <file name="excs_sequence.cs" />
     </files>
   </project>
   <project name="excs_txn" guid="D3EEDB47-F622-4E8A-A218-076B49C269F1">
     <type>app</type>
-    <files path="..\\excs_txn\\">
+    <files path="">
       <file name="Properties\AssemblyInfo.cs" />
       <file name="PayloadData.cs" />
       <file name="excs_txn.cs" />
@@ -228,11 +225,11 @@
   <project name="DotNetTest" guid="08D940C7-AAF5-413A-95E3-58A46880DC4D">
     <type>test</type>
     <ProjectReference
-      Include="..\..\..\lang\csharp\src\@VISUAL_STUDIO_VERSION@\db_dotnet.csproj"
+      Include="..\..\lang\csharp\src\db_dotnet.csproj"
       ProjectUID="4696FB1E-1E5F-40B9-BD8C-A54D3BDA00F6"
       ProjectName="db_dotnet"
     />
-    <files path="..\\">
+    <files path="">
       <file name="BTreeCursorTest.cs" />
       <file name="BTreeDatabaseConfigTest.cs" />
       <file name="BTreeDatabaseTest.cs" />
@@ -289,7 +286,7 @@ IF $(ConfigurationName) == Release SET LIBEXT
 
 copy /B "$(SolutionDir)Win32\$(ConfigurationName)\libdb@DB_VERSION_MAJOR@@DB_VERSION_MINOR@%25LIBEXT%25.dll" "$(TargetDir)"
 copy /B "$(SolutionDir)Win32\$(ConfigurationName)\libdb_csharp@DB_VERSION_MAJOR@@DB_VERSION_MINOR@%25LIBEXT%25.dll" "$(TargetDir)"
-copy "$(ProjectDir)..\AllTestData.xml" "$(TargetDir)"
+copy "$(ProjectDir)AllTestData.xml" "$(TargetDir)"
 ]]></PreBuildEvent>
   </project>
 </projects>

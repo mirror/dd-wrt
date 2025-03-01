@@ -1,20 +1,18 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # TEST repmgr106
 # TEST Simple smoke test for repmgr elections with multi-process envs.
 
 proc repmgr106 { } {
 	source ./include.tcl
-	global ipversion
 
 	set tnum "106"
 	puts "Repmgr$tnum:\
 	    Smoke test for repmgr elections with multi-process envs."
 
 	env_cleanup $testdir
-	set hoststr [get_hoststr $ipversion]
 
         # Assign values for each port variable from list contents.
 	foreach {portA portB portC} [available_ports 3] {}
@@ -27,15 +25,15 @@ proc repmgr106 { } {
         # First just create the group.
         file mkdir $testdir/A
         make_dbconfig $testdir/A \
-            [linsert $timeouts 0 [list repmgr_site $hoststr $portA db_local_site on]]
+            [linsert $timeouts 0 [list repmgr_site 127.0.0.1 $portA db_local_site on]]
         file mkdir $testdir/B
         make_dbconfig $testdir/B \
-            [linsert $timeouts 0 [list repmgr_site $hoststr $portB db_local_site on] \
-                 [list repmgr_site $hoststr $portA db_bootstrap_helper on]]
+            [linsert $timeouts 0 [list repmgr_site 127.0.0.1 $portB db_local_site on] \
+                 [list repmgr_site 127.0.0.1 $portA db_bootstrap_helper on]]
         file mkdir $testdir/C
         make_dbconfig $testdir/C \
-            [linsert $timeouts 0 [list repmgr_site $hoststr $portC db_local_site on] \
-                 [list repmgr_site $hoststr $portA db_bootstrap_helper on]]
+            [linsert $timeouts 0 [list repmgr_site 127.0.0.1 $portC db_local_site on] \
+                 [list repmgr_site 127.0.0.1 $portA db_bootstrap_helper on]]
 	set cmds {
 		{home $testdir/A}
 		{open_env}

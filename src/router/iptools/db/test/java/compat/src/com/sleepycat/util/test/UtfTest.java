@@ -1,18 +1,18 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package com.sleepycat.util.test;
 
-import static org.junit.Assert.fail;
-
 import java.io.DataOutputStream;
 import java.util.Arrays;
 
-import org.junit.Test;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 import com.sleepycat.util.FastOutputStream;
 import com.sleepycat.util.UtfOps;
@@ -20,14 +20,40 @@ import com.sleepycat.util.UtfOps;
 /**
  * @author Mark Hayes
  */
-public class UtfTest extends TestBase {
+public class UtfTest extends TestCase {
+
+    public static void main(String[] args) {
+        junit.framework.TestResult tr =
+            junit.textui.TestRunner.run(suite());
+        if (tr.errorCount() > 0 ||
+            tr.failureCount() > 0) {
+            System.exit(1);
+        } else {
+            System.exit(0);
+        }
+    }
+
+    public static Test suite() {
+        TestSuite suite = new TestSuite(UtfTest.class);
+        return suite;
+    }
+
+    public UtfTest(String name) {
+
+        super(name);
+    }
+
+    @Override
+    public void setUp() {
+
+        SharedTestUtils.printTestName("UtfTest." + getName());
+    }
 
     /**
      * Compares the UtfOps implementation to the java.util.DataOutputStream
      * (and by implication DataInputStream) implementation, character for
      * character in the full Unicode set.
      */
-    @Test
     public void testMultibyte()
         throws Exception {
 

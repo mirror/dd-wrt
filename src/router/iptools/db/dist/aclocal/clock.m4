@@ -3,7 +3,7 @@
 # Configure clocks and timers.
 AC_DEFUN(AC_TIMERS, [
 
-AC_CHECK_FUNCS(gettimeofday localtime localtime_r time strftime)
+AC_CHECK_FUNCS(gettimeofday localtime time strftime)
 
 # AIX 4.3 will link applications with calls to clock_gettime, but the
 # calls always fail.
@@ -20,14 +20,12 @@ esac
 #	existence to mean the clock really exists.
 AC_CACHE_CHECK([for clock_gettime monotonic clock], db_cv_clock_monotonic, [
 AC_TRY_RUN([
-#include <time.h>
 #include <sys/time.h>
-int main() {
+main() {
 	struct timespec t;
 	return (clock_gettime(CLOCK_MONOTONIC, &t) != 0);
 }], db_cv_clock_monotonic=yes, db_cv_clock_monotonic=no,
 AC_TRY_LINK([
-#include <time.h>
 #include <sys/time.h>], [
 struct timespec t;
 clock_gettime(CLOCK_MONOTONIC, &t);

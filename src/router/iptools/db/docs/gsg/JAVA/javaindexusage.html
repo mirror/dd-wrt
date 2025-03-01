@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -89,7 +89,7 @@
           <p>In our key creator class, we make use of a custom tuple binding
         called <code class="classname">InventoryBinding</code>. This class is described in <a class="xref" href="dbtJavaUsage.html#InventoryJavaBinding" title="Example 8.3 InventoryBinding.java">InventoryBinding.java</a>.</p>
           <p>You can find <code class="filename">InventoryBinding.java</code> in: </p>
-          <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples/java/db/GettingStarted</pre>
+          <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples_java/db/GettingStarted</pre>
           <p>
         where <code class="literal"><span class="emphasis"><em>DB_INSTALL</em></span></code> is the location where you
         placed your DB distribution.
@@ -97,11 +97,13 @@
           <a id="java_index11"></a>
           <pre class="programlisting">package db.GettingStarted;
 
-import com.sleepycat.bind.tuple.TupleBinding;
-import com.sleepycat.db.SecondaryKeyCreator;
 import com.sleepycat.db.DatabaseEntry;
 import com.sleepycat.db.DatabaseException;
 import com.sleepycat.db.SecondaryDatabase;
+import com.sleepycat.db.SecondaryKeyCreator;
+import com.sleepycat.bind.tuple.TupleBinding;
+
+import java.io.IOException;
 
 public class ItemNameKeyCreator implements SecondaryKeyCreator {
 
@@ -119,14 +121,15 @@ public class ItemNameKeyCreator implements SecondaryKeyCreator {
         DatabaseEntry resultEntry) // set the key data on this.
         throws DatabaseException {
 
-        if (dataEntry != null) {
+        try {
             // Convert dataEntry to an Inventory object
-            Inventory inventoryItem =
-                  (Inventory)theBinding.entryToObject(dataEntry);
+            Inventory inventoryItem = 
+                (Inventory) theBinding.entryToObject(dataEntry);
             // Get the item name and use that as the key
             String theItem = inventoryItem.getItemName();
-            resultEntry.setData(theItem.getBytes());
-        }
+            resultEntry.setData(theItem.getBytes("UTF-8"));
+        } catch (IOException willNeverOccur) {}
+
         return true;
     }
 } </pre>
@@ -320,7 +323,7 @@ public class MyDbs {
             <p>That completes our update to <code class="classname">MyDbs</code>. You
         can find the complete class implementation in:
         </p>
-            <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples/java/db/GettingStarted</pre>
+            <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples_java/db/GettingStarted</pre>
             <p>
         where <code class="literal"><span class="emphasis"><em>DB_INSTALL</em></span></code> is the location where you
         placed your DB distribution.
@@ -360,7 +363,7 @@ public class MyDbs {
         to seek to the item name key and then display all matching records.
       </p>
         <p>Remember that you can find <code class="filename">ExampleDatabaseRead.java</code> in: </p>
-        <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples/java/db/GettingStarted</pre>
+        <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples_java/db/GettingStarted</pre>
         <p>
         where <code class="literal"><span class="emphasis"><em>DB_INSTALL</em></span></code> is the location where you
         placed your DB distribution.
@@ -480,7 +483,7 @@ import com.sleepycat.db.OperationStatus;
         line switch. To see how this is done, see
         <code class="filename">ExampleDatabaseRead.java</code> in:
         </p>
-            <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples/java/db/GettingStarted</pre>
+            <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples_java/db/GettingStarted</pre>
             <p>
         where <code class="literal"><span class="emphasis"><em>DB_INSTALL</em></span></code> is the location where you
         placed your DB distribution.

@@ -1,7 +1,7 @@
 #
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -57,6 +57,8 @@ BEGIN {
 			alloc = 1;
 		else if ($i == "check_length")
 			check_length = 1;
+		else if ($i == "version")
+			version = 1;
 	}
 
 	base_name = sprintf("%s_%s", prefix, thismsg);
@@ -104,6 +106,7 @@ BEGIN {
 	in_begin = 0;
 	alloc = 0;
 	check_length = 0;
+	version = 0;
 	has_dbt = 0;
 }
 END {
@@ -117,7 +120,7 @@ END {
 #
 function type_length(type)
 {
-	if (type == "DB_LSN" || type == "u_int64_t")
+	if (type == "DB_LSN")
 		return (8);
 	if (type == "DBT" || type == "u_int32_t" || type == "db_pgno_t")
 		return (4);
@@ -139,6 +142,8 @@ function emit_marshal()
 	function_name = sprintf("%s_marshal", base_name);
 	p[pi++] = function_name;
 	p[pi++] = " __P((ENV *, ";
+	if (version)
+		p[pi++] = "u_int32_t, ";
 	p[pi++] = sprintf("%s *, u_int8_t *", typedef_name);
 	if (check_length)
 		p[pi++] = ", size_t, size_t *";
@@ -150,18 +155,24 @@ function emit_marshal()
 	else
 		printf("void\n") >> CFILE;
 	printf("%s(env", function_name) >> CFILE;
+	if (version)
+		printf(", version") >> CFILE;
 	printf(", argp, bp") >> CFILE;
 	if (check_length)
 		printf(", max, lenp") >> CFILE;
 	printf(")\n") >> CFILE;
 
 	printf("\tENV *env;\n") >> CFILE;
+	if (version)
+		printf("\tu_int32_t version;\n") >> CFILE;
 	printf("\t%s *argp;\n", typedef_name) >> CFILE;
 	printf("\tu_int8_t *bp;\n") >> CFILE;
 	if (check_length)
 		printf("\tsize_t *lenp, max;\n") >> CFILE;
 	printf("{\n") >> CFILE;
 
+	if (version)
+		printf("\tint copy_only;\n") >> CFILE;
 	if (check_length) {
 		printf("\tu_int8_t *start;\n\n") >> CFILE;
 		printf("\tif (max < %s", msg_size_name) >> CFILE;
@@ -175,23 +186,68 @@ function emit_marshal()
 		printf("\tstart = bp;\n\n") >> CFILE;
 	}
 
+	if (version) {
+		printf("\tcopy_only = 0;\n") >> CFILE;
+		printf("\tif (version < DB_REPVERSION_47)\n") >> CFILE;
+		printf("\t\tcopy_only = 1;\n") >> CFILE;
+	}
 	for (i = 0; i < nvars; i++) {
 		if (types[i] == "u_int32_t" || types[i] == "db_pgno_t") {
+			if (version) {
+				printf("\tif (copy_only) {\n") >> CFILE;
+				printf(\
+    "\t\tmemcpy(bp, &argp->%s, sizeof(u_int32_t));\n", vars[i]) >> CFILE;
+				printf(\
+    "\t\tbp += sizeof(u_int32_t);\n") >> CFILE;
+				printf("\t} else\n\t") >> CFILE;
+			}
 			printf("\tDB_HTONL_COPYOUT(env, bp, argp->%s);\n", \
                             vars[i]) >> CFILE;
 		} else if (types[i] == "u_int16_t") {
+			if (version) {
+				printf("\tif (copy_only) {\n") >> CFILE;
+				printf(\
+    "\t\tmemcpy(bp, &argp->%s, sizeof(u_int16_t));\n", vars[i]) >> CFILE;
+				printf(\
+    "\t\tbp += sizeof(u_int16_t);\n") >> CFILE;
+				printf("\t} else\n\t") >> CFILE;
+			}
 			printf("\tDB_HTONS_COPYOUT(env, bp, argp->%s);\n", \
                             vars[i]) >> CFILE;
 		} else if (types[i] == "u_int8_t") {
 				printf(\
     "\t*bp++ = argp->%s;\n", vars[i]) >> CFILE;
 		} else if (types[i] == "DB_LSN") {
+			if (version) {
+				printf("\tif (copy_only) {\n") >> CFILE;
+				printf(\
+    "\t\tmemcpy(bp, &argp->%s.file, sizeof(u_int32_t));\n", vars[i]) >> CFILE;
+				printf(\
+    "\t\tbp += sizeof(u_int32_t);\n") >> CFILE;
+				printf(\
+    "\t\tmemcpy(bp, &argp->%s.offset, sizeof(u_int32_t));\n", vars[i]) >> CFILE;
+				printf(\
+    "\t\tbp += sizeof(u_int32_t);\n") >> CFILE;
+				printf("\t} else {\n\t") >> CFILE;
+			}
 			printf("\tDB_HTONL_COPYOUT(env, bp, argp->%s.file);\n",\
                             vars[i]) >> CFILE;
+			if (version)
+				printf("\t") >> CFILE;
 			printf( \
                             "\tDB_HTONL_COPYOUT(env, bp, argp->%s.offset);\n", \
                             vars[i]) >> CFILE;
+			if (version)
+				printf("\t}\n") >> CFILE;
 		} else if (types[i] == "DBT") {
+			if (version) {
+				printf("\tif (copy_only) {\n") >> CFILE;
+				printf(\
+    "\t\tmemcpy(bp, &argp->%s.size, sizeof(u_int32_t));\n", vars[i]) >> CFILE;
+				printf(\
+    "\t\tbp += sizeof(u_int32_t);\n") >> CFILE;
+				printf("\t} else\n\t") >> CFILE;
+			}
 			printf("\tDB_HTONL_COPYOUT(env, bp, argp->%s.size);\n",\
                             vars[i]) >> CFILE;
 			printf("\tif (argp->%s.size > 0) {\n", vars[i]) \
@@ -201,9 +257,6 @@ function emit_marshal()
                             vars[i], vars[i]) >> CFILE;
 			printf("\t\tbp += argp->%s.size;\n", vars[i]) >> CFILE;
 			printf("\t}\n") >> CFILE;
-		} else if (types[i] == "u_int64_t") {
-			printf("\tDB_HTONLL_COPYOUT(env, bp, argp->%s);\n", \
-                            vars[i]) >> CFILE;
 		} else {
 			printf("unknown field type: %s", types[i]);
 			exit(1);
@@ -224,6 +277,8 @@ function emit_unmarshal()
 	function_name = sprintf("%s_unmarshal", base_name);
 	p[pi++] = function_name;
 	p[pi++] = " __P((ENV *, ";
+	if (version)
+		p[pi++] = sprintf("u_int32_t, ");
 	if (alloc)
 		p[pi++] = sprintf("%s **, u_int8_t *, ", typedef_name);
 	else
@@ -237,9 +292,13 @@ function emit_unmarshal()
 	else
 		arg_name = "argp";
 	printf("%s(env, ", function_name) >> CFILE;
+	if (version)
+		printf("version, ") >> CFILE;
 	printf("%s, bp, ", arg_name) >> CFILE;
 	printf("max, nextp)\n") >> CFILE;
 	printf("\tENV *env;\n") >> CFILE;
+	if (version)
+		printf("\tu_int32_t version;\n") >> CFILE;
 	if (alloc)
 		printf("\t%s **argpp;\n", typedef_name) >> CFILE;
 	else
@@ -256,6 +315,10 @@ function emit_unmarshal()
 	if (alloc) {
 		printf("\t%s *argp;\n", typedef_name) >> CFILE;
 		printf("\tint ret;\n") >> CFILE;
+		has_locals = 1;
+	}
+	if (version) {
+		printf("\tint copy_only;\n") >> CFILE;
 		has_locals = 1;
 	}
 	if (has_locals)
@@ -276,24 +339,69 @@ function emit_unmarshal()
 		    >> CFILE;
 		printf("\t\treturn (ret);\n\n") >> CFILE;
 	}
+	if (version) {
+		printf("\tcopy_only = 0;\n") >> CFILE;
+		printf("\tif (version < DB_REPVERSION_47)\n") >> CFILE;
+		printf("\t\tcopy_only = 1;\n") >> CFILE;
+	}
 	
 	for (i = 0; i < nvars; i++) {
 		if (types[i] == "u_int32_t" || types[i] == "db_pgno_t") {
+			if (version) {
+				printf("\tif (copy_only) {\n") >> CFILE;
+				printf(\
+    "\t\tmemcpy(&argp->%s, bp, sizeof(u_int32_t));\n", vars[i]) >> CFILE;
+				printf(\
+    "\t\tbp += sizeof(u_int32_t);\n") >> CFILE;
+				printf("\t} else\n\t") >> CFILE;
+			}
 			printf("\tDB_NTOHL_COPYIN(env, argp->%s, bp);\n", \
                             vars[i]) >> CFILE;
 		} else if (types[i] == "u_int16_t") {
+			if (version) {
+				printf("\tif (copy_only) {\n") >> CFILE;
+				printf(\
+    "\t\tmemcpy(&argp->%s, bp, sizeof(u_int16_t));\n", vars[i]) >> CFILE;
+				printf(\
+    "\t\tbp += sizeof(u_int16_t);\n") >> CFILE;
+				printf("\t} else\n\t") >> CFILE;
+			}
 			printf("\tDB_NTOHS_COPYIN(env, argp->%s, bp);\n", \
                             vars[i]) >> CFILE;
 		} else if (types[i] == "u_int8_t") {
 				printf(\
     "\targp->%s = *bp++;\n", vars[i]) >> CFILE;
 		} else if (types[i] == "DB_LSN") {
+			if (version) {
+				printf("\tif (copy_only) {\n") >> CFILE;
+				printf(\
+    "\t\tmemcpy(&argp->%s.file, bp, sizeof(u_int32_t));\n", vars[i]) >> CFILE;
+				printf(\
+    "\t\tbp += sizeof(u_int32_t);\n") >> CFILE;
+				printf(\
+    "\t\tmemcpy(&argp->%s.offset, bp, sizeof(u_int32_t));\n", vars[i]) >> CFILE;
+				printf(\
+    "\t\tbp += sizeof(u_int32_t);\n") >> CFILE;
+				printf("\t} else {\n\t") >> CFILE;
+			}
 			printf("\tDB_NTOHL_COPYIN(env, argp->%s.file, bp);\n", \
                             vars[i]) >> CFILE;
+			if (version)
+				printf("\t") >> CFILE;
 			printf( \
                             "\tDB_NTOHL_COPYIN(env, argp->%s.offset, bp);\n", \
                             vars[i]) >> CFILE;
+			if (version)
+				printf("\t}\n") >> CFILE;
 		} else if (types[i] == "DBT") {
+			if (version) {
+				printf("\tif (copy_only) {\n") >> CFILE;
+				printf(\
+    "\t\tmemcpy(&argp->%s.size, bp, sizeof(u_int32_t));\n", vars[i]) >> CFILE;
+				printf(\
+    "\t\tbp += sizeof(u_int32_t);\n") >> CFILE;
+				printf("\t} else\n\t") >> CFILE;
+			}
 			printf("\tDB_NTOHL_COPYIN(env, argp->%s.size, bp);\n", \
                             vars[i]) >> CFILE;
 			printf("\tif (argp->%s.size == 0)\n", vars[i]) >> CFILE;
@@ -305,9 +413,6 @@ function emit_unmarshal()
 			printf("\tif (max < needed)\n") >> CFILE;
 			printf("\t\tgoto too_few;\n") >> CFILE;
 			printf("\tbp += argp->%s.size;\n", vars[i]) >> CFILE;
-		} else if (types[i] == "u_int64_t") {
-			printf("\tDB_NTOHLL_COPYIN(env, argp->%s, bp);\n", \
-                            vars[i]) >> CFILE;
 		} else {
 			printf("unknown field type: %s", types[i]);
 			exit(1);

@@ -183,8 +183,8 @@ if {$tcl_platform(platform)!="windows"} {
       BEGIN;
       INSERT INTO t1 VALUES(3, 4);
     }
-    forcecopy test2.db test.db
-    forcecopy test2.db-journal test.db-journal
+    copy_file test2.db test.db
+    copy_file test2.db-journal test.db-journal
     db2 close
   } -tclbody {
     sqlite3 db test.db
@@ -219,11 +219,11 @@ if {$tcl_platform(platform)=="unix"} {
       BEGIN;
       INSERT INTO t1 VALUES(randstr(200,200), randstr(1000,1000), 2);
     }
-    forcecopy test.db-journal test2.db-journal
+    copy_file test.db-journal test2.db-journal
     execsql {
       COMMIT;
     }
-    forcecopy test2.db-journal test.db-journal
+    copy_file test2.db-journal test.db-journal
     set f [open test.db-journal a]
     fconfigure $f -encoding binary
     puts -nonewline $f "hello"
@@ -258,7 +258,7 @@ do_ioerr_test ioerr-10 -ckrefcount true -tclprep {
     INSERT INTO t1 SELECT (a+500)%900, 'good string' FROM t1;
   }} msg
 
-  if {$msg != "UNIQUE constraint failed: t1.a"} {
+  if {$msg != "column a is not unique"} {
     error $msg
   }
 }

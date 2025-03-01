@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -45,8 +45,6 @@ public class SerialInput extends ClassResolver.Stream {
      *
      * @param classCatalog is the catalog containing the class descriptions
      * for the serialized objects.
-     *
-     * @throws IOException if an I/O error occurs while reading stream header.
      */
     public SerialInput(InputStream in, ClassCatalog classCatalog)
         throws IOException {
@@ -65,8 +63,6 @@ public class SerialInput extends ClassResolver.Stream {
      *
      * @param classLoader is the class loader to use, or null if a default
      * class loader should be used.
-     *
-     * @throws IOException if an I/O error occurs while reading stream header.
      */
     public SerialInput(InputStream in,
                        ClassCatalog classCatalog,

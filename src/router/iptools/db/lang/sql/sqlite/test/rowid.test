@@ -12,9 +12,7 @@
 # focus of this file is testing the magic ROWID column that is
 # found on all tables.
 #
-# EVIDENCE-OF: R-36924-43758 By default, every row in SQLite has a
-# special column, usually called the "rowid", that uniquely identifies
-# that row within the table.
+# $Id: rowid.test,v 1.21 2009/06/26 15:14:55 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -659,7 +657,7 @@ do_test rowid-11.4 {
 # Test the automatic generation of rowids when the table already contains
 # a rowid with the maximum value.
 #
-# Once the maximum rowid is taken, rowids are normally chosen at
+# Once the the maximum rowid is taken, rowids are normally chosen at
 # random.  By by reseting the random number generator, we can cause
 # the rowid guessing loop to collide with prior rowids, and test the
 # loop out to its limit of 100 iterations.  After 100 collisions, the
@@ -679,9 +677,9 @@ do_test rowid-12.2 {
   save_prng_state
   execsql {
     INSERT INTO t7 VALUES(NULL,'b');
-    SELECT x, y FROM t7 ORDER BY x;
+    SELECT x, y FROM t7;
   }
-} {/\d+ b 9223372036854775807 a/}
+} {1 b 9223372036854775807 a}
 execsql {INSERT INTO t7 VALUES(2,'y');}
 for {set i 1} {$i<100} {incr i} {
   do_test rowid-12.3.$i {
@@ -701,19 +699,5 @@ do_test rowid-12.4 {
   }
 } {1 {database or disk is full}}
 
-# INSERTs that happen inside of nested function calls are recorded
-# by last_insert_rowid.
-#
-proc rowid_addrow_func {n} {
-  db eval {INSERT INTO t13(rowid,x) VALUES($n,$n*$n)}
-  return [db last_insert_rowid]
-}
-db function addrow rowid_addrow_func
-do_execsql_test rowid-13.1 {
-  CREATE TABLE t13(x);
-  INSERT INTO t13(rowid,x) VALUES(1234,5);
-  SELECT rowid, x, addrow(rowid+1000), '|' FROM t13 LIMIT 3;
-  SELECT last_insert_rowid();
-} {1234 5 2234 | 2234 4990756 3234 | 3234 10458756 4234 | 4234}
 
 finish_test

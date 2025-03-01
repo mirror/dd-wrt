@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2004, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -108,11 +108,10 @@ proc log009_check { logc logrec } {
 	# version, but make sure it is something reasonable.
 	#
 	# !!!
-	# As of 8 Feb 2012 we are at version 20, and we do
-	# move the log version pretty frequently, so just 
-	# check that it's under 30.
+	# First readable log is 8, current log version
+	# is pretty far from 20.
 	#
-	set reasonable [expr $version > 19 && $version < 30]
+	set reasonable [expr $version > 7 && $version < 20]
 	error_check_good persist $reasonable 1
 	#
 	# Verify that getting the version doesn't move

@@ -29,7 +29,7 @@ if {[llength [info command client_step]]==0 || [sqlite3 -has-codec]} {
 # The sample server implementation does not work right when memory
 # management is enabled.
 #
-ifcapable (memorymanage||mutex_noop) {
+ifcapable memorymanage {
   finish_test
   return
 }

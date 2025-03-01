@@ -17,19 +17,18 @@ for i in $GREP_CMDS; do
 	if [ "`which $i`" = "" ]; then
 		continue
 	fi
-	echo "s_message_id test" > /tmp/s_message_id.tmp
-	$i "s_message_id test"  /tmp/s_message_id.tmp -o --include=*.tmp | \
-	    $i -v "s_message_id.txt" > /tmp/s_message_id.tmp.out 2>&1
-	if [ `$i "unrecognized option" /tmp/s_message_id.tmp.out | wc -l` \
-	    -eq 0 ] && [ `$i "invalid option" /tmp/s_message_id.tmp.out | \
-	    wc -l` -eq 0 ] && [ `$i "can't open" /tmp/s_message_id.tmp.out | \
+	echo "s_message_id test" > s_message_id.tmp
+	$i "s_message_id test"  s_message_id.tmp -o --include=*.tmp | \
+	    $i -v "s_message_id.txt" > s_message_id.tmp.out 2>&1
+	if [ `$i "unrecognized option" s_message_id.tmp.out | wc -l` \
+	    -eq 0 ] && [ `$i "invalid option" s_message_id.tmp.out | \
+	    wc -l` -eq 0 ] && [ `$i "can't open" s_message_id.tmp.out | \
 	    wc -l` -eq 0 ]; then
 		GREP_CMD=$i
 		break
 	fi
+	rm s_message_id.tmp s_message_id.tmp.out
 done
-trap 'rm -f /tmp/s_message_id.tmp /tmp/s_message_id.tmp.out; exit 1' 1 2 3 13 15
-trap 'rm -f /tmp/s_message_id.tmp /tmp/s_message_id.tmp.out; exit 0' 0
 if [ "$GREP_CMD" = "" ]; then
 	echo "UNSUPPORTED COMMAND: (g)grep -o --include"
 	echo "Please try other platform"
@@ -70,13 +69,12 @@ for i in $MSG_DIRS; do
 		if [ "$i" = "../util/" ] || [ "$i" = "../lang/dbm/" ]; then
 			cat_indx=10
 			cat_dirs="../util/ ../lang/dbm/"
-		elif [ "$3" = "blob" ] || [ "$3" = "common" ] || \
-		    [ "$3" = "crypto" ] || \
+		elif [ "$3" = "common" ] || [ "$3" = "crypto" ] || \
 		    [ "$3" = "fileops" ] || [ "$3" = "hmac" ] || \
 		    [ "$3" = "os" ] || [ "$3" = "os_qnx" ] || \
 		    [ "$3" = "os_vxworks" ] || [ "$3" = "os_windows" ]; then 
 			cat_indx=0
-			cat_dirs=$i"blob "$i"common "$i"crypto "$i"fileops "
+			cat_dirs=$i"common "$i"crypto "$i"fileops "
 			cat_dirs=$cat_dirs$i"hmac "$i"os "$i"os_qnx "
 			cat_dirs=$cat_dirs$i"os_vxworks "$i"os_windows"
 		elif [ "$3" = "db" ] || [ "$3" = "dbinc" ] || \
@@ -181,10 +179,9 @@ for i in $MSG_DIRS; do
 done
 
 # Check if there is any remaining "BDB####". 
-# NOTE: If "BDB####" is not .c, .h, .in, .awk files, they won't be updated with 
-# the real message id.
+# NOTE: If "BDB####" is not .c, .h, .in files, they won't be updated with the 
+# real message id.
 if [ `$GREP_CMD "BDB####" -r $MSG_DIRS | wc -l` -gt 0 ]; then
 	echo "WARNING: There is remaining BDB####. Please check:"
-	$GREP_CMD "BDB####" -r $MSG_DIRS -wl --include=*.c --include=*.h \
-	    --include=*.in --include=*.awk 
+	$GREP_CMD "BDB####" -r $MSG_DIRS
 fi

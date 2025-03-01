@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -13,7 +13,6 @@
 #include "dbinc/txn.h"
 
 static int __txn_init __P((ENV *, DB_TXNMGR *));
-static int lsn_hi_to_low __P((const void *, const void *));
 
 /*
  * __txn_open --
@@ -58,30 +57,12 @@ __txn_open(env)
 	env->tx_handle = mgr;
 	return (0);
 
-err:	(void)__mutex_free(env, &mgr->mutex);
-	(void)__txn_region_detach(env, mgr);
+err:	env->tx_handle = NULL;
+	if (mgr->reginfo.addr != NULL)
+		(void)__env_region_detach(env, &mgr->reginfo, 0);
 
-	return (ret);
-}
-
-/*
- * __txn_region_detach --
- *
- * PUBLIC: int __txn_region_detach __P((ENV *, DB_TXNMGR *));
- */
-int
-__txn_region_detach(env, mgr)
-	ENV *env;
-	DB_TXNMGR *mgr;
-{
-	int ret;
-
-	ret = 0;
-	if (mgr != NULL) {
-		ret = __env_region_detach(env, &mgr->reginfo, 0);
-		__os_free(env, mgr);
-		env->tx_handle = NULL;
-	}
+	(void)__mutex_free(env, &mgr->mutex);
+	__os_free(env, mgr);
 	return (ret);
 }
 
@@ -277,10 +258,10 @@ __txn_env_refresh(env)
 			}
 		}
 		if (aborted) {
-			if (ret == 0)
-				ret = USR_ERR(env, EINVAL);
 			__db_errx(env, DB_STR("4511",
 	"Error: closing the transaction region with active transactions"));
+			if (ret == 0)
+				ret = EINVAL;
 		}
 	}
 
@@ -340,7 +321,7 @@ __txn_region_mutex_max(env)
 
 /*
  * __txn_region_size --
- *	 Return the initial amount of space needed for the txn region.
+ *	 Return the amount of space needed for the txn region.
  * PUBLIC:  size_t __txn_region_size __P((ENV *));
  */
 size_t
@@ -366,9 +347,7 @@ __txn_region_size(env)
 
 /*
  * __txn_region_max --
- *	Return how much additional memory to reserve, so that all the configured
- *	transaction-specific data structures can be allocated.
- *
+ *	 Return the additional amount of space needed for the txn region.
  * PUBLIC:  size_t __txn_region_max __P((ENV *));
  */
 size_t
@@ -415,116 +394,54 @@ __txn_id_set(env, cur_txnid, max_txnid)
 
 	ret = 0;
 	if (cur_txnid < TXN_MINIMUM) {
-		ret = USR_ERR(env, EINVAL);
 		__db_errx(env, DB_STR_A("4512",
 		    "Current ID value %lu below minimum", "%lu"),
 		    (u_long)cur_txnid);
+		ret = EINVAL;
 	}
 	if (max_txnid < TXN_MINIMUM) {
-		ret = USR_ERR(env, EINVAL);
 		__db_errx(env, DB_STR_A("4513",
 		    "Maximum ID value %lu below minimum", "%lu"),
 		    (u_long)max_txnid);
+		ret = EINVAL;
 	}
 	return (ret);
 }
 
 /*
- * lsn_hi_to_low --
- *	Compare lsns, sorting them from high to low. This is the opposite of
- *	__rep_lsn_cmp.
- */
-static int
-lsn_hi_to_low(lsn1, lsn2)
-	const void *lsn1, *lsn2;
-{
-	return (LOG_COMPARE((DB_LSN *)lsn2, (DB_LSN *)lsn1));
-}
-
-/*
- * __txn_get_readers --
- *	Find the read LSN of all active transactions.
- *	MVCC versions older than the oldest active transaction can safely be
- *	discarded from the cache. MVCC versions not quite so old can be
- *      discarded if they are not visible to any active transaction.
+ * __txn_oldest_reader --
+ *	 Find the oldest "read LSN" of any active transaction'
+ *	 MVCC changes older than this can safely be discarded from the cache.
  *
- * Returns:
- *	An error code, or 0.
- *	If 0 was returned, *readers has been filled in with an __os_malloc()'d
- *	array of active transactions with read_lsns, sorted from newest
- *      (largest) to oldest (smallest). *ntxnsp indicates how many are there.
- *	The last lsn is that of the oldest active mvcc-supporting transaction.
- *	The caller must __os_free() *readers whenever it is non-NULL.
- *
- * PUBLIC: int __txn_get_readers __P((ENV *, DB_LSN **, int *));
+ * PUBLIC: int __txn_oldest_reader __P((ENV *, DB_LSN *));
  */
-#define	TXN_READERS_SIZE	64 /* Initial number of LSNs to allocate. */
 int
-__txn_get_readers(env, readers, ntxnsp)
+__txn_oldest_reader(env, lsnp)
 	ENV *env;
-	DB_LSN **readers;
-	int *ntxnsp;
+	DB_LSN *lsnp;
 {
-	DB_LSN current, *lsns;
+	DB_LSN old_lsn;
 	DB_TXNMGR *mgr;
 	DB_TXNREGION *region;
 	TXN_DETAIL *td;
-	int cmp, is_sorted, ret;
-	unsigned count, txnmax;
-
-	*ntxnsp = 0;
-	*readers = NULL;
+	int ret;
 
 	if ((mgr = env->tx_handle) == NULL)
 		return (0);
 	region = mgr->reginfo.primary;
-	lsns = NULL;
 
-	if ((ret = __log_current_lsn_int(env, &current, NULL, NULL)) != 0)
-		return (ret);
-
-	txnmax = TXN_READERS_SIZE;
-	if ((ret = __os_malloc(env, txnmax * sizeof(lsns[0]), &lsns)) != 0)
+	if ((ret = __log_current_lsn_int(env, &old_lsn, NULL, NULL)) != 0)
 		return (ret);
 
 	TXN_SYSTEM_LOCK(env);
-	/* The array always has at least the current lsn. */
-	lsns[0] = current;
-	count = 1;
-	is_sorted = TRUE;
+	SH_TAILQ_FOREACH(td, &region->active_txn, links, __txn_detail)
+		if (LOG_COMPARE(&td->read_lsn, &old_lsn) < 0)
+			old_lsn = td->read_lsn;
 
-	/*
-	 * Build up our array in most-recent (largest) to first-started (oldest)
-	 * order. Delete adjacent dups. Detect when the txns need to be sorted.
-	 */
-	SH_TAILQ_FOREACH(td, &region->active_txn, links, __txn_detail) {
-		if (IS_MAX_LSN(td->read_lsn) ||
-		    (cmp = LOG_COMPARE(&td->read_lsn, &lsns[count - 1])) == 0)
-			continue;
-		if (cmp > 0)
-			is_sorted = FALSE;
-		if (count >= txnmax) {
-			txnmax += txnmax;
-			if ((ret = __os_realloc(env,
-			    txnmax * sizeof(lsns[0]), &lsns)) != 0)
-				goto err;
-		}
-		lsns[count] = td->read_lsn;
-		count++;
-	}
-
-err:
+	*lsnp = old_lsn;
 	TXN_SYSTEM_UNLOCK(env);
 
-	if (ret != 0)
-		__os_free(env, lsns);
-	else {
-		if (!is_sorted)
-			qsort(lsns, count, sizeof(lsns[0]), lsn_hi_to_low);
-		*ntxnsp = (int)count;
-		*readers = lsns;
-	}
-	return (ret);
+	return (0);
 }
 
 /*

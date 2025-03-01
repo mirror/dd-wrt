@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -9,7 +9,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Xml;
@@ -313,7 +312,7 @@ namespace CsharpAPITest
             
             /* We should only copy one file, the database. */
             env.BackupDatabase(target, dbFileName, true);
-            Assert.AreEqual(1, Directory.GetFiles(target).Length);
+            Assert.AreEqual(Directory.GetFiles(target).Length, 1);
             
             Directory.Delete(target, true);
             env.Close();
@@ -340,13 +339,13 @@ namespace CsharpAPITest
              * are other tests to check that the backup options are obeyed.
              */
             env.BackupBufferSize = (uint)1024;
-            Assert.AreEqual((uint)1024, env.BackupBufferSize);
+            Assert.AreEqual(env.BackupBufferSize, (uint)1024);
             
             env.BackupReadCount = (uint)4096;
-            Assert.AreEqual((uint)4096, env.BackupReadCount);
+            Assert.AreEqual(env.BackupReadCount, (uint)4096);
             
             env.BackupReadSleepDuration = (uint)1000;
-            Assert.AreEqual((uint)1000, env.BackupReadSleepDuration);
+            Assert.AreEqual(env.BackupReadSleepDuration, (uint)1000);
             
             env.BackupWriteDirect = true;
             Assert.IsTrue(env.BackupWriteDirect);
@@ -519,49 +518,6 @@ namespace CsharpAPITest
 		}
 
 		[Test]
-		public void TestBlob()
-		{
-			testName = "TestBlob";
-			SetUpTest(true);
-
-			DatabaseEnvironmentConfig envConfig =
-			    new DatabaseEnvironmentConfig();
-			envConfig.AutoCommit = true;
-			envConfig.Create = true;
-			envConfig.UseMPool = true;
-			envConfig.UseLogging = true;
-			envConfig.UseTxns = true;
-
-			// Not set the external file directory when enabling
-			// external file.
-			envConfig.ExternalFileThreshold = 10485760;
-			DatabaseEnvironment env = DatabaseEnvironment.Open(
-			    testHome, envConfig);
-			Assert.AreEqual(null, env.ExternalFileDir);
-			Assert.AreEqual(10485760, env.ExternalFileThreshold);
-			env.Close();
-
-			Configuration.ClearDir(testHome);
-
-			// Set the external file directory with an empty string.
-			envConfig.ExternalFileDir = "";
-			env = DatabaseEnvironment.Open(testHome, envConfig);
-			Assert.AreEqual("", env.ExternalFileDir);
-			Assert.AreEqual(10485760, env.ExternalFileThreshold);
-			env.Close();
-
-			Configuration.ClearDir(testHome);
-
-			// Set the external file directory with a non-emptry
-			// string.
-			envConfig.ExternalFileDir = "BLOBDIR";
-			env = DatabaseEnvironment.Open(testHome, envConfig);
-			Assert.AreEqual("BLOBDIR", env.ExternalFileDir);
-			Assert.AreEqual(10485760, env.ExternalFileThreshold);
-			env.Close();
-		}
-
-		[Test]
 		public void TestCheckpoint()
 		{
 			testName = "TestCheckpoint";
@@ -666,7 +622,7 @@ namespace CsharpAPITest
 
 			// Configure with methods.
 			ReplicationHostAddress address =
-			    new ReplicationHostAddress("::1:11111");
+			    new ReplicationHostAddress("127.0.0.0", 11111);
 			envConig.RepSystemCfg.Clockskew(102, 100);
 			envConig.RepSystemCfg.RetransmissionRequest(10, 100);
 			envConig.RepSystemCfg.TransmitLimit(1, 1024);
@@ -679,7 +635,6 @@ namespace CsharpAPITest
 			Confirm(xmlElem, env, true, true, true, true, true, true);
 
 			// Print statistics of the current environment.
-			env.Msgfile = testHome + "/" + testName+ ".log";
 			env.PrintStats(true, true);
 
 			// Print statistics of all subsytems.
@@ -968,14 +923,12 @@ namespace CsharpAPITest
 			return false;
 		}
 
-		[DllImport("kernel32.dll")]
-		static extern uint GetCurrentThreadId();
 		public DbThreadID SetThrdID()
 		{
 			DbThreadID threadID;
 
 			int pid = Process.GetCurrentProcess().Id;
-			uint tid = GetCurrentThreadId();
+			uint tid = (uint)AppDomain.GetCurrentThreadId();
 			threadID = new DbThreadID(pid, tid);
 			return threadID;
 		}
@@ -1009,104 +962,6 @@ namespace CsharpAPITest
 		{
 			Assert.AreEqual(opcode, EnvironmentFeedbackEvent.RECOVERY);
 			Assert.AreEqual(10, percent);
-		}
-
-		[Test]
-		public void TestMessageCall()
-		{
-			testName = "TestMessageCall";
-			SetUpTest(true);
-
-			// Configure and open an environment.
-			DatabaseEnvironmentConfig envConfig =
-			    new DatabaseEnvironmentConfig();
-			envConfig.Create = true;
-			envConfig.UseMPool = true;
-			DatabaseEnvironment env =
-			    DatabaseEnvironment.Open(testHome, envConfig);
-
-			// Confirm message file does not exist.
-			string messageCallFile = testHome + "/" + "MessageCallFile";
-			Assert.AreEqual(false, File.Exists(messageCallFile));
-
-			string messageInfo = "Message come from db.set_msgcall!";
-
-			// Call set_msgcall() of env.
-			env.messageFeedback = new MessageFeedbackDelegate(Msgcall_fcn);
-			env.messageFeedback(null, messageInfo);
-
-			// Unconfigures the callback interface.
-			env.messageFeedback = null;
-
-			// Confirm message file exists now.
-			Assert.AreEqual(true, File.Exists(messageCallFile));
-
-			// Read the first line of message file.
-			string line = null;
-			System.IO.StreamReader file = new System.IO.StreamReader(@"" + messageCallFile);
-			line = file.ReadLine();
-
-			// Confirm the message file is not empty.
-			Assert.AreEqual(line, messageInfo);
-
-			file.Close();
-			env.Close();
-		}
-
-		public void Msgcall_fcn(string msgpfx, string message)
-		{
-			string msgfile = testHome + "/" + "MessageCallFile";
-			FileStream fs = new FileStream(msgfile, FileMode.OpenOrCreate);
-			StreamWriter sw = new StreamWriter(fs);
-			if (msgpfx != null)
-				sw.Write(msgpfx + ": ");
-			sw.Write(message);
-			sw.Flush();
-			sw.Close();
-			fs.Close();
-		}
-
-		[Test]
-		public void TestMessageFile()
-		{
-			testName = "TestMessageFile";
-			SetUpTest(true);
-
-			// Configure and open an environment.
-			DatabaseEnvironmentConfig envConfig =
-			    new DatabaseEnvironmentConfig();
-			envConfig.Create = true;
-			envConfig.UseMPool = true;
-			DatabaseEnvironment env =
-			    DatabaseEnvironment.Open(testHome, envConfig);
-
-			// Confirm message file does not exist.
-			string messageFile = testHome + "/" + "msgfile";
-			Assert.AreEqual(false, File.Exists(messageFile));
-
-			// Call set_msgfile() of db.
-			env.Msgfile = messageFile;
-
-			// Print db statistic to message file.
-			env.PrintStats(true, true);
-
-			// Confirm message file exists now.
-			Assert.AreEqual(true, File.Exists(messageFile));
-
-			env.Msgfile = "";
-			string line = null;
-
-			// Read the third line of message file.
-			System.IO.StreamReader file = new System.IO.StreamReader(@"" + messageFile);
-			line = file.ReadLine();
-			line = file.ReadLine();
-			line = file.ReadLine();
-
-			// Confirm the message file is not empty.
-			Assert.AreEqual(line, "Default database environment information:");
-
-			file.Close();
-			env.Close();
 		}
 
 		[Test]
@@ -1185,7 +1040,6 @@ namespace CsharpAPITest
 			DatabaseEnvironment env = DatabaseEnvironment.Open(testHome, cfg);
 
 			MutexStats stats = env.MutexSystemStats();
-			env.Msgfile = testHome + "/" + testName+ ".log";
 			env.PrintMutexSystemStats(true, true);
 			Assert.AreEqual(512, stats.Alignment);
 			Assert.AreEqual(stats.Count, stats.Available + stats.InUse);
@@ -1221,80 +1075,6 @@ namespace CsharpAPITest
 		}
 
 		[Test]
-		public void TestMutexStatPrint()
-		{
-			testName = "TestMutexStatPrint";
-			SetUpTest(true);
-
-			string[] messageInfo = new string[]
-			{ 
-			  "Mutex region size",
-			  "Mutex region max size",
-			  "The number of region locks that required waiting (0%)",
-			  "Mutex alignment",
-			  "Mutex test-and-set spins",
-			  "Mutex initial count",
-			  "Mutex total count",
-			  "Mutex max count",
-			  "Mutex free count",
-			  "Mutex in-use count",
-			  "Mutex maximum in-use count",
-			  "",
-			  "Unallocated",
-			  "env region",
-			  "mutex region",
-			};
-
-			// Configure and open an environment.
-			DatabaseEnvironmentConfig envConfig =
-			new DatabaseEnvironmentConfig();
-			envConfig.Create = true;
-			envConfig.MutexSystemCfg = new MutexConfig();
-			envConfig.MutexSystemCfg.Alignment = 512;
-			envConfig.MutexSystemCfg.Increment = 128;
-			envConfig.MutexSystemCfg.MaxMutexes = 150;
-			envConfig.MutexSystemCfg.NumTestAndSetSpins = 10;
-
-			DatabaseEnvironment env =
-			    DatabaseEnvironment.Open(testHome, envConfig);
-
-			// Confirm message file does not exist.
-			string messageFile = testHome + "/" + "msgfile";
-			Assert.AreEqual(false, File.Exists(messageFile));
-
-			// Call set_msgfile() of env.
-			env.Msgfile = messageFile;
-
-			// Print env statistic to message file.
-			env.PrintMutexSystemStats();
-
-			// Confirm message file exists now.
-			Assert.AreEqual(true, File.Exists(messageFile));
-
-			env.Msgfile = "";
-			int counter = 0;
-			string line;
-			line = null;
-
-			// Read the message file line by line.
-			System.IO.StreamReader file = new System.IO.StreamReader(@"" + messageFile);
-			while ((line = file.ReadLine()) != null)
-			{
-				string[] tempStr = line.Split('\t');
-				// Confirm the content of the message file.
-				if (tempStr[0] != "Mutex counts")
-				{
-					Assert.AreEqual(tempStr[1], messageInfo[counter]);
-				}
-				counter++;
-			}
-			Assert.AreNotEqual(0, counter);
-
-			file.Close();
-			env.Close();
-		}
-
-		[Test]
 		public void TestLogFile()
 		{
 			testName = "TestLogFile";
@@ -1319,10 +1099,8 @@ namespace CsharpAPITest
 			cfg.LogSystemCfg.FileMode = 755;
 			cfg.LogSystemCfg.ForceSync = true;
 			cfg.LogSystemCfg.InMemory = false;
-			cfg.LogSystemCfg.LogExternalFileContent = false;
 			cfg.LogSystemCfg.MaxFileSize = 1048576;
 			cfg.LogSystemCfg.NoBuffer = false;
-			cfg.LogSystemCfg.NoSync = true;
 			cfg.LogSystemCfg.RegionSize = 204800;
 			cfg.LogSystemCfg.ZeroOnCreate = true;
 			DatabaseEnvironment env = DatabaseEnvironment.Open(testHome, cfg);
@@ -1506,6 +1284,8 @@ namespace CsharpAPITest
 			logVerifyCfg.EnvHome = tempHome;
 			logVerifyCfg.Verbose = true;
 			Assert.AreEqual(0, env.LogVerify(logVerifyCfg));
+			db.Close();
+			env.Close();
 
 			// Verify specific database.
 			logVerifyCfg.DbFile = testName + ".db";
@@ -1537,8 +1317,6 @@ namespace CsharpAPITest
 			Assert.AreEqual(logVerifyCfg.StartLsn.Offset, 3);
 			Assert.AreEqual(logVerifyCfg.StartTime, startTime);
 			Assert.AreEqual(logVerifyCfg.Verbose, true);
-			db.Close();
-			env.Close();
 		}
 
 		[Test]
@@ -1559,332 +1337,11 @@ namespace CsharpAPITest
 			Assert.AreEqual(testHome, env.Home);
 
 			// Print statistics of the current environment.
-			env.Msgfile = testHome + "/" + testName+ ".log";
 			env.PrintStats();
 
 			// Print statistics of all subsytems.
 			env.PrintSubsystemStats();
 
-			env.Close();
-		}
-
-		[Test]
-		public void TestStatPrint()
-		{
-			testName = "TestStatPrint";
-			SetUpTest(true);
-
-			string[] messageInfo = new string[]
-			{ 
-			  "Local time",
-			  "Magic number",
-			  "Panic value",
-			  "Environment version",
-			  "Btree version",
-			  "Hash version",
-			  "Lock version",
-			  "Log version",
-			  "Queue version",
-			  "Sequence version",
-			  "Txn version",
-			  "Creation time",
-			  "Environment ID",
-			  "Primary region allocation and reference count mutex [0/4 0% !Own], env region (alloc)",
-			  "References",
-			  "Current region size",
-			  "Maximum region size",
-			  "Process failure detected"	// This appears only with HAVE_FAILCHK_BROADCAST.
-			};
-
-			// Configure and open an environment.
-			DatabaseEnvironmentConfig envConfig =
-			    new DatabaseEnvironmentConfig();
-			envConfig.Create = true;
-			envConfig.FreeThreaded = true;
-			envConfig.LockTimeout = 1000;
-			envConfig.MPoolSystemCfg = new MPoolConfig();
-			envConfig.MPoolSystemCfg.CacheSize = new CacheInfo(0, 104800, 1);
-			envConfig.NoLocking = false;
-			envConfig.TxnTimeout = 2000;
-			envConfig.UseLocking = true;
-			envConfig.UseMPool = true;
-			envConfig.UseTxns = true;
-			DatabaseEnvironment env =
-			    DatabaseEnvironment.Open(testHome, envConfig);
-
-			// Confirm message file does not exist.
-			string messageFile = testHome + "/" + "msgfile";
-			Assert.AreEqual(false, File.Exists(messageFile));
-
-			// Call set_msgfile() of env.
-			env.Msgfile = messageFile;
-
-			// Print env statistic to message file.
-			env.PrintStats();
-
-			// Confirm message file exists now.
-			Assert.AreEqual(true, File.Exists(messageFile));
-
-			env.Msgfile = "";
-			int counter = 0;
-			string line;
-			line = null;
-
-			// Read the message file line by line.
-			System.IO.StreamReader file = new System.IO.StreamReader(@"" + messageFile);
-			while ((line = file.ReadLine()) != null)
-			{
-				string[] tempStr = line.Split('\t');
-				// Confirm the content of the message file.
-				Assert.AreEqual(messageInfo[counter], tempStr[1]);
-				counter++;
-			}
-			Assert.AreNotEqual(0, counter);
-
-			file.Close();
-			env.Close();
-		}
-
-		[Test]
-		public void TestSubsystemStatPrint()
-		{
-			testName = "TestSubsystemStatPrint";
-			SetUpTest(true);
-
-			string[] messageInfo = new string[]
-			{ 
-			  "Local time",
-			  "Magic number",
-			  "Panic value",
-			  "Environment version",
-			  "Btree version",
-			  "Hash version",
-			  "Lock version",
-			  "Log version",
-			  "Queue version",
-			  "Sequence version",
-			  "Txn version",
-			  "Creation time",
-			  "Environment ID",
-			  "Primary region allocation and reference count mutex [0/4 0% !Own], env region (alloc)",
-			  "References",
-			  "Current region size",
-			  "Maximum region size",
-			  "",
-			  "Log magic number",
-			  "Log version number",
-			  "Log record cache size",
-			  "Log file mode",
-			  "Current log file size",
-			  "Initial fileid allocation",
-			  "Current fileids in use",
-			  "Maximum fileids used",
-			  "Records entered into the log",
-			  "Log bytes written",
-			  "Log bytes written since last checkpoint",
-			  "Total log file I/O writes",
-			  "Total log file I/O writes due to overflow",
-			  "Total log file flushes",
-			  "Total log file I/O reads",
-			  "Current log file number",
-			  "Current log file offset",
-			  "On-disk log file number",
-			  "On-disk log file offset",
-			  "Maximum commits in a log flush",
-			  "Minimum commits in a log flush",
-			  "Region size",
-			  "The number of region locks that required waiting (0%)",
-			  "",
-			  "",
-			  "Last allocated locker ID",
-			  "Current maximum unused locker ID",
-			  "Number of lock modes",
-			  "Initial number of locks allocated",
-			  "Initial number of lockers allocated",
-			  "Initial number of lock objects allocated",
-			  "Maximum number of locks possible",
-			  "Maximum number of lockers possible",
-			  "Maximum number of lock objects possible",
-			  "Current number of locks allocated",
-			  "Current number of lockers allocated",
-			  "Current number of lock objects allocated",
-			  "Number of lock object partitions",
-			  "Size of object hash table",
-			  "Number of current locks",
-			  "Maximum number of locks at any one time",
-			  "Maximum number of locks in any one bucket",
-			  "Maximum number of locks stolen by for an empty partition",
-			  "Maximum number of locks stolen for any one partition",
-			  "Number of current lockers",
-			  "Maximum number of lockers at any one time",
-			  "Number of hits in the thread locker cache",
-			  "Total number of lockers reused",
-			  "Number of current lock objects",
-			  "Maximum number of lock objects at any one time",
-			  "Maximum number of lock objects in any one bucket",
-			  "Maximum number of objects stolen by for an empty partition",
-			  "Maximum number of objects stolen for any one partition",
-			  "Total number of locks requested",
-			  "Total number of locks released",
-			  "Total number of locks upgraded",
-			  "Total number of locks downgraded",
-			  "Lock requests not available due to conflicts, for which we waited",
-			  "Lock requests not available due to conflicts, for which we did not wait",
-			  "Number of deadlocks",
-			  "Lock timeout value",
-			  "Number of locks that have timed out",
-			  "Transaction timeout value",
-			  "Number of transactions that have timed out",
-			  "Region size",
-			  "The number of partition locks that required waiting (0%)",
-			  "The maximum number of times any partition lock was waited for (0%)",
-			  "The number of object queue operations that required waiting (0%)",
-			  "The number of locker allocations that required waiting (0%)",
-			  "The number of region locks that required waiting (0%)",
-			  "Maximum hash bucket length",
-			  "",
-			  "Total cache size",
-			  "Number of caches",
-			  "Maximum number of caches",
-			  "Pool individual cache size",
-			  "Pool individual cache max",
-			  "Maximum memory-mapped file size",
-			  "Maximum open file descriptors",
-			  "Maximum sequential buffer writes",
-			  "Sleep after writing maximum sequential buffers",
-			  "Requested pages mapped into the process' address space",
-			  "Requested pages found in the cache (0%)",
-			  "Requested pages not found in the cache",
-			  "Pages created in the cache",
-			  "Pages read into the cache",
-			  "Pages written from the cache to the backing file",
-			  "Clean pages forced from the cache",
-			  "Dirty pages forced from the cache",
-			  "Dirty pages written by trickle-sync thread",
-			  "Current total page count",
-			  "Current clean page count",
-			  "Current dirty page count",
-			  "Number of hash buckets used for page location",
-			  "Number of mutexes for the hash buckets",
-			  "Assumed page size used",
-			  "Total number of times hash chains searched for a page",
-			  "The longest hash chain searched for a page",
-			  "Total number of hash chain entries checked for page",
-			  "The number of hash bucket locks that required waiting (0%)",
-			  "The maximum number of times any hash bucket lock was waited for (0%)",
-			  "The number of region locks that required waiting (0%)",
-			  "The number of buffers frozen",
-			  "The number of buffers thawed",
-			  "The number of frozen buffers freed",
-			  "The number of outdated intermediate versions reused",
-			  "The number of page allocations",
-			  "The number of hash buckets examined during allocations",
-			  "The maximum number of hash buckets examined for an allocation",
-			  "The number of pages examined during allocations",
-			  "The max number of pages examined for an allocation",
-			  "Threads waited on page I/O",
-			  "The number of times a sync is interrupted",
-			  "",
-			  "No checkpoint LSN",
-			  "Checkpoint timestamp",
-			  "Last transaction ID allocated",
-			  "Maximum number of active transactions configured",
-			  "Initial number of transactions configured",
-			  "Active transactions",
-			  "Maximum active transactions",
-			  "Number of transactions begun",
-			  "Number of transactions aborted",
-			  "Number of transactions committed",
-			  "Snapshot transactions",
-			  "Maximum snapshot transactions",
-			  "Number of transactions restored",
-			  "Region size",
-			  "The number of region locks that required waiting (0%)",
-			  "",
-			  "",
-			  "Mutex region size",
-			  "Mutex region max size",
-			  "The number of region locks that required waiting (0%)",
-			  "Mutex alignment",
-			  "Mutex test-and-set spins",
-			  "Mutex initial count",
-			  "Mutex total count",
-			  "Mutex max count",
-			  "Mutex free count",
-			  "Mutex in-use count",
-			  "Mutex maximum in-use count",
-			  "",
-			  "Unallocated",
-			  "env dblist",
-			  "env handle",
-			  "env region",
-			  "lock region",
-			  "log filename",
-			  "log flush",
-			  "log region",
-			  "mpool file bucket",
-			  "mpool handle",
-			  "mpool hash bucket",
-			  "mpool region",
-			  "mutex region",
-			  "twister",
-			  "txn active list",
-			  "transaction checkpoint"
-			};
-
-			// Configure and open an environment.
-			DatabaseEnvironmentConfig envConfig =
-			    new DatabaseEnvironmentConfig();
-			envConfig.Create = true;
-			envConfig.FreeThreaded = true;
-			envConfig.LockTimeout = 1000;
-			envConfig.MPoolSystemCfg = new MPoolConfig();
-			envConfig.MPoolSystemCfg.CacheSize = new CacheInfo(0, 104800, 1);
-			envConfig.NoLocking = false;
-			envConfig.TxnTimeout = 2000;
-			envConfig.UseLocking = true;
-			envConfig.UseMPool = true;
-			envConfig.UseTxns = true;
-			DatabaseEnvironment env =
-			    DatabaseEnvironment.Open(testHome, envConfig);
-
-			// Confirm message file does not exist.
-			string messageFile = testHome + "/" + "msgfile";
-			Assert.AreEqual(false, File.Exists(messageFile));
-
-			// Call set_msgfile() of env.
-			env.Msgfile = messageFile;
-
-			// Print env statistic to message file.
-			env.PrintSubsystemStats();
-
-			// Confirm message file exists now.
-			Assert.AreEqual(true, File.Exists(messageFile));
-
-			env.Msgfile = "";
-			int counter = 0;
-			string line;
-			line = null;
-
-			// Read the message file line by line.
-			System.IO.StreamReader file = new System.IO.StreamReader(@"" + messageFile);
-			while ((line = file.ReadLine()) != null)
-			{
-				string[] tempStr = line.Split('\t');
-				// Confirm the content of the message file.
-				if (tempStr[0] != "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=" &&
-				tempStr[0] != "Active transactions:" && tempStr[0] != "Mutex counts")
-				{
-					// Ignore statistics lines which appear only some of the time.
-					if (tempStr[1] == "Process failure detected")
-						continue;
-					Assert.AreEqual(messageInfo[counter], tempStr[1]);
-				}
-				counter++;
-			}
-			Assert.AreNotEqual(0, counter);
-
-			file.Close();
 			env.Close();
 		}
 
@@ -1910,12 +1367,11 @@ namespace CsharpAPITest
 			    testHome, envConfig);
 
 			MPoolStats stats = env.MPoolSystemStats();
-			env.Msgfile = testHome + "/" + testName+ ".log";
 			env.PrintMPoolSystemStats();
 
 			Assert.AreEqual(0, stats.BlockedOperations);
 			Assert.AreEqual(0, stats.BucketsCheckedDuringAlloc);
-			Assert.AreEqual(3, stats.MaxCacheRegions);
+			Assert.AreEqual(3, stats.CacheRegions);
 			Assert.LessOrEqual(1048576, stats.CacheSettings.Bytes);
 			Assert.AreEqual(0, stats.CacheSettings.Gigabytes);
 			Assert.AreEqual(3, stats.CacheSettings.NCaches);
@@ -1943,8 +1399,6 @@ namespace CsharpAPITest
 			Assert.AreEqual(0, stats.MaxMMapSize);
 			Assert.AreEqual(0, stats.MaxOpenFileDescriptors);
 			Assert.AreEqual(0, stats.MaxPagesCheckedDuringAlloc);
-			Assert.AreEqual(0, stats.OddFileSizeDetected);
-			Assert.AreEqual(0, stats.OddFileSizeResolve);
 			Assert.AreEqual(0, stats.PageAllocations);
 			Assert.AreEqual(0, stats.Pages);
 			Assert.AreEqual(0, stats.PagesCheckedDuringAlloc);
@@ -2003,100 +1457,6 @@ namespace CsharpAPITest
 			stats = env.MPoolSystemStats();
 			env.PrintMPoolSystemStats(true, true, true);
 
-			env.Close();
-		}
-
-		[Test]
-		public void TestMPoolStatPrint()
-		{
-			testName = "TestMPoolStatPrint";
-			SetUpTest(true);
-
-			string[] messageInfo = new string[]
-			{
-			  "Total cache size",
-			  "Number of caches",
-			  "Maximum number of caches",
-			  "Pool individual cache size",
-			  "Pool individual cache max",
-			  "Maximum memory-mapped file size",
-			  "Maximum open file descriptors",
-			  "Maximum sequential buffer writes",
-			  "Sleep after writing maximum sequential buffers",
-			  "Requested pages mapped into the process' address space",
-			  "Requested pages found in the cache (0%)",
-			  "Requested pages not found in the cache",
-			  "Pages created in the cache",
-			  "Pages read into the cache",
-			  "Pages written from the cache to the backing file",
-			  "Clean pages forced from the cache",
-			  "Dirty pages forced from the cache",
-			  "Dirty pages written by trickle-sync thread",
-			  "Current total page count",
-			  "Current clean page count",
-			  "Current dirty page count",
-			  "Number of hash buckets used for page location",
-			  "Number of mutexes for the hash buckets",
-			  "Assumed page size used",
-			  "Total number of times hash chains searched for a page",
-			  "The longest hash chain searched for a page",
-			  "Total number of hash chain entries checked for page",
-			  "The number of hash bucket locks that required waiting (0%)",
-			  "The maximum number of times any hash bucket lock was waited for (0%)",
-			  "The number of region locks that required waiting (0%)",
-			  "The number of buffers frozen",
-			  "The number of buffers thawed",
-			  "The number of frozen buffers freed",
-			  "The number of outdated intermediate versions reused",
-			  "The number of page allocations",
-			  "The number of hash buckets examined during allocations",
-			  "The maximum number of hash buckets examined for an allocation",
-			  "The number of pages examined during allocations",
-			  "The max number of pages examined for an allocation",
-			  "Threads waited on page I/O",
-			  "The number of times a sync is interrupted"
-			};
-
-			// Configure and open an environment.
-			DatabaseEnvironmentConfig envConfig =
-			    new DatabaseEnvironmentConfig();
-			envConfig.Create = true;
-			envConfig.MPoolSystemCfg = new MPoolConfig();
-			envConfig.MPoolSystemCfg.CacheSize = new CacheInfo(0, 104800, 1);
-			envConfig.UseMPool = true;
-			DatabaseEnvironment env =
-			    DatabaseEnvironment.Open(testHome, envConfig);
-
-			// Confirm message file does not exist.
-			string messageFile = testHome + "/" + "msgfile";
-			Assert.AreEqual(false, File.Exists(messageFile));
-
-			// Call set_msgfile() of env.
-			env.Msgfile = messageFile;
-
-			// Print env statistic to message file.
-			env.PrintMPoolSystemStats();
-
-			// Confirm message file exists now.
-			Assert.AreEqual(true, File.Exists(messageFile));
-
-			env.Msgfile = "";
-			int counter = 0;
-			string line;
-			line = null;
-
-			// Read the message file line by line.
-			System.IO.StreamReader file = new System.IO.StreamReader(@"" + messageFile);
-			while ((line = file.ReadLine()) != null)
-			{
-				string[] tempStr = line.Split('\t');
-				// Confirm the content of the message file.
-				Assert.AreEqual(messageInfo[counter], tempStr[1]);
-				counter++;
-			}
-			Assert.AreNotEqual(0, counter);
-
-			file.Close();
 			env.Close();
 		}
 
@@ -2419,7 +1779,7 @@ namespace CsharpAPITest
 			envConfig.Create = true;
 			envConfig.MaxTransactions = 50;
 			envConfig.UseLogging = true;
-			envConfig.UseLocking = true;
+            envConfig.UseLocking = true;
 			envConfig.UseMPool = true;
 			envConfig.UseTxns = true;
 			envConfig.TxnNoSync = false;
@@ -2436,7 +1796,6 @@ namespace CsharpAPITest
 				{
 					// Confirm initial transaction subsystem statistics.
 					stats = env.TransactionSystemStats();
-					env.Msgfile = testHome + "/" + testName+ ".log";
 					env.PrintTransactionSystemStats(true, true);
 					Assert.AreEqual(0, stats.Aborted);
 					Assert.AreEqual(0, stats.Active);
@@ -2587,96 +1946,6 @@ namespace CsharpAPITest
 			{
 				env.Close();
 			}
-		}
-
-		[Test]
-		public void TestTransactionStatPrint()
-		{
-			testName = "TestTransactionStatPrint";
-			SetUpTest(true);
-
-			string[] messageInfo = new string[]
-			{
-			  "No checkpoint LSN",
-			  "Checkpoint timestamp",
-			  "Last transaction ID allocated",
-			  "Maximum number of active transactions configured",
-			  "Initial number of transactions configured",
-			  "Active transactions",
-			  "Maximum active transactions",
-			  "Number of transactions begun",
-			  "Number of transactions aborted",
-			  "Number of transactions committed",
-			  "Snapshot transactions",
-			  "Maximum snapshot transactions",
-			  "Number of transactions restored",
-			  "Region size",
-			  "The number of region locks that required waiting (0%)",
-			  ""
-			};            
-
-			// Configure and open an environment.
-			DatabaseEnvironmentConfig envConfig =
-			    new DatabaseEnvironmentConfig();
-			envConfig.Create = true;
-			envConfig.FreeThreaded = true;
-			envConfig.LockTimeout = 1000;
-			envConfig.MPoolSystemCfg = new MPoolConfig();
-			envConfig.MPoolSystemCfg.CacheSize = new CacheInfo(0, 104800, 1);
-			envConfig.UseLocking = true;
-			envConfig.UseMPool = true;
-			envConfig.UseTxns = true;
-			envConfig.MaxTransactions = 50;
-
-			DatabaseEnvironment env =
-			    DatabaseEnvironment.Open(testHome, envConfig);
-
-			//Begin a transaction called openTxn and open a database.
-			Transaction openTxn = null;
-			TransactionConfig openTxnCfg = new TransactionConfig();
-			openTxnCfg.Name = "openTxn";
-			openTxn = env.BeginTransaction(openTxnCfg);
-			openTxn.Priority = 50;
-			BTreeDatabaseConfig dbConfig = new BTreeDatabaseConfig();
-			dbConfig.Creation = CreatePolicy.IF_NEEDED;
-			dbConfig.Env = env;
-			BTreeDatabase db;
-			db = BTreeDatabase.Open(testName + ".db", dbConfig, openTxn);
-
-			// Confirm message file does not exist.
-			string messageFile = testHome + "/" + "msgfile";
-			Assert.AreEqual(false, File.Exists(messageFile));
-
-			// Call set_msgfile() of env.
-			env.Msgfile = messageFile;
-
-			// Print env statistic to message file.
-			env.PrintTransactionSystemStats();
-
-			// Confirm message file exists now.
-			Assert.AreEqual(true, File.Exists(messageFile));
-
-			env.Msgfile = "";
-			int counter = 0;
-			string line;
-			line = null;
-
-			// Read the message file line by line.
-			System.IO.StreamReader file = new System.IO.StreamReader(@"" + messageFile);
-			while ((line = file.ReadLine()) != null)
-			{
-				string[] tempStr = line.Split('\t');
-				// Confirm the content of the message file.
-				if (tempStr[0] == "Active transactions:")
-					break;
-				Assert.AreEqual(messageInfo[counter], tempStr[1]);
-				counter++;
-			}
-			Assert.AreNotEqual(0, counter);
-
-			openTxn.Commit();
-			file.Close();
-			env.Close();
 		}
 
 		/*
@@ -2876,13 +2145,7 @@ namespace CsharpAPITest
 				Configuration.ConfirmBool(childElem,
 				    "InMemory", env.LogInMemory, compulsory);
 				Configuration.ConfirmBool(childElem,
-				    "LogExternalFileContent",
-				    env.LogExternalFileContent,
-				    compulsory);
-				Configuration.ConfirmBool(childElem,
 				    "NoBuffer", env.LogNoBuffer, compulsory);
-				Configuration.ConfirmBool(childElem,
-				    "NoSync", env.LogNoSync, compulsory);
 				Configuration.ConfirmUint(childElem,
 				    "RegionSize", env.LogRegionSize,
 				    compulsory);

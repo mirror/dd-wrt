@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 /*
@@ -11,19 +11,17 @@
 #include "btreeInt.h"
 
 extern void returnSingleInt(Parse *, const char *, i64);
+extern u8 getBoolean(const char *);
+extern int __os_exists (ENV *, const char *, int *);
+extern int __os_unlink (ENV *, const char *, int);
+extern int __os_mkdir (ENV *, const char *, int);
+extern void __db_chksum (void *, u_int8_t *, size_t, u_int8_t *, u_int8_t *);
+extern int __db_check_chksum (ENV *, void *, DB_CIPHER *, u_int8_t *, void *,
+    size_t, int);
+extern int __env_ref_get (DB_ENV *, u_int32_t *);
 
 static const char *PRAGMA_FILE = "pragma";
 static const char *PRAGMA_VERSION = "1.0";
-
-static const char *ACK_POLICY_ALL = "all_sites";
-static const char *ACK_POLICY_ALL_AVAILABLE = "all_available";
-static const char *ACK_POLICY_NONE = "none";
-static const char *ACK_POLICY_ONE = "one";
-static const char *ACK_POLICY_QUORUM = "quorum";
-
-static const char *REP_SITE_MASTER = "MASTER";
-static const char *REP_SITE_CLIENT = "CLIENT";
-static const char *REP_SITE_UNKNOWN = "UNKNOWN";
 
 static const u32 HDR_SIZE = 256;
 static const u32 RECORD_HDR_SIZE = 8;
@@ -44,111 +42,10 @@ static const u32 DEFINED_PRAGMAS = 8;
 #define	RECORD_OFFSET(pragma_index) ((pragma_index * 8) + 12)
 #define	RECORD_SIZE(pragma_index) ((pragma_index * 8) + 8)
 
-#define	pBtPragma (p->pBt->pragma)
+#define	pPragma (p->pBt->pragma)
 
 #define	dbExists (pDb->pBt->pBt->full_name != NULL && \
     !__os_exists(NULL, pDb->pBt->pBt->full_name, NULL))
-
-
-/*
- * Print statistics to the set statistics file, or stdout if none has been set.
- */
-static void printStatistics(const DB_ENV *dbenv,
-	const char *msgpfx,
-	const char *msg
-) {
-	BtShared *pBt;
-	FILE *fp;
-
-	pBt = (BtShared *)dbenv->app_private;
-	
-	if (pBt->stat_filename == NULL)
-		fp = stdout;
-	else {
-		fp = fopen(pBt->stat_filename, "a");
-		if (fp == NULL)
-			fp = stdout;
-	}
-	
-	fprintf(fp, "%s %s\n", msgpfx, msg);
-	if (fp != stdout) {
-		fflush(fp);
-		fclose(fp);
-	}
-}
-
-/*
- * Print verbose replication messages to a file, or stdout if no file has been
- * set.
- */
-static void printRepVerbose(const DB_ENV *dbenv,
-	const char *msgpfx,
-	const char *msg
-) {
-	BtShared *pBt;
-	FILE *fp;
-
-	pBt = (BtShared *)dbenv->app_private;
-	
-	if (pBt->repVerbFile == NULL)
-		fp = stdout;
-	else
-		fp = pBt->repVerbFile;
-	
-	fprintf(fp, "%s %s\n", msgpfx, msg);
-	fflush(fp);
-}
-
-/* Translates a text ack policy to its DB value. */
-static int textToAckPolicy(const char *policy) 
-{
-	int len;
-	if (policy == NULL)
-		return (-1);
-
-	len = (int)strlen(policy);
-
-	if ((sqlite3StrNICmp(policy, ACK_POLICY_ALL, len)) == 0)
-		return (DB_REPMGR_ACKS_ALL);
-	else if ((sqlite3StrNICmp(policy, ACK_POLICY_ALL_AVAILABLE, len)) == 0)
-		return (DB_REPMGR_ACKS_ALL_AVAILABLE);
-	else if ((sqlite3StrNICmp(policy, ACK_POLICY_NONE, len)) == 0)
-		return (DB_REPMGR_ACKS_NONE);
-	else if ((sqlite3StrNICmp(policy, ACK_POLICY_ONE, len)) == 0)
-		return (DB_REPMGR_ACKS_ONE);
-	else if ((sqlite3StrNICmp(policy, ACK_POLICY_QUORUM, len)) == 0)
-		return (DB_REPMGR_ACKS_QUORUM);
-	else
-		return (-1);
-}
-
-/* Translates a DB value ack policy to text. */
-static const char *ackPolicyToText(int policy)
-{
-	if (policy == DB_REPMGR_ACKS_ALL)
-		return (ACK_POLICY_ALL);
-	else if (policy == DB_REPMGR_ACKS_ALL_AVAILABLE)
-		return (ACK_POLICY_ALL_AVAILABLE);
-	else if (policy == DB_REPMGR_ACKS_NONE)
-		return (ACK_POLICY_NONE);
-	else if (policy == DB_REPMGR_ACKS_ONE)
-		return (ACK_POLICY_ONE);
-	else if (policy == DB_REPMGR_ACKS_QUORUM)
-		return (ACK_POLICY_QUORUM);
-	else
-		return (NULL);
-}
-
-/* Translates a replication site type to text. */
-static const char *repSiteTypeToText(rep_site_type_t type)
-{
-	if (type == BDBSQL_REP_MASTER)
-		return (REP_SITE_MASTER);
-	else if (type == BDBSQL_REP_CLIENT)
-		return (REP_SITE_CLIENT);
-	else
-		return (REP_SITE_UNKNOWN);
-}
 
 static u8 envIsClosed(Parse *pParse, Btree *p, const char *pragmaName)
 {
@@ -157,7 +54,7 @@ static u8 envIsClosed(Parse *pParse, Btree *p, const char *pragmaName)
 	rc = btreeUpdateBtShared(p, 1);
 	if (rc != SQLITE_OK) {
 		sqlite3ErrorMsg(pParse, "Error setting %s", pragmaName);
-		sqlite3ErrorWithMsg(p->db, rc,
+		sqlite3Error(p->db, rc,
 		    "Error checking environment while setting %s",
 		    pragmaName);
 		return 0;
@@ -184,12 +81,6 @@ int bdbsqlPragmaMultiversion(Parse *pParse, Btree *p, u8 on)
 	if (!envIsClosed(pParse, p, "multiversion"))
 		return 1;
 	pBt = p->pBt;
-
-	if (pBt->blobs_enabled && on) {
-		sqlite3ErrorMsg(pParse,
-	"Cannot enable both multiversion and large record optimization.");
-		return 1;
-	}
 
 	/* Do not want other processes opening the environment */
 	mutexOpen = sqlite3MutexAlloc(OPEN_MUTEX(pBt->dbStorage));
@@ -311,8 +202,8 @@ int getHostPort(const char *hpstr, char **host, u_int *port)
 	strcpy(*host, hpstr);
 
 	/* Make sure we have two strings separated by colon. */
-	colonpos = strrchr(*host, ':');
-	if (colonpos == NULL || colonpos <= *host ||
+	colonpos = strchr(*host, ':');
+	if (colonpos <= *host ||
 	    colonpos == *host + strlen(*host) - 1)
 		rc = SQLITE_ERROR;
 
@@ -332,97 +223,10 @@ int getHostPort(const char *hpstr, char **host, u_int *port)
 	return rc;
 }
 
-#ifdef SQLITE_USER_AUTHENTICATION
-/*
- * Parse and validate a string containing user:pwd:isAdmin.
- *
- * Return SQLITE_OK and fill in user/pwd strings and isAdmin boolean value if 
- * successful. When successful, the caller is responsible for deallocating 
- * memory pointed by *user.
- */
-static int getUserPwdIsadmin(const char* upiStr, char** user, char** pwd, 
-    int* isAdmin)
-{
-	char* colonpos;
-
-	if(!upiStr)
-		return SQLITE_ERROR;
-
-	/* Copy entire user:pwd:isAdmin string from value. */
-	*user = sqlite3_malloc((int)strlen(upiStr) + 1);
-	if (*user == NULL)
-		return SQLITE_NOMEM;
-	strcpy(*user, upiStr);
-
-	colonpos = strrchr(*user, ':');
-	if (!colonpos || colonpos == *user || 
-	    colonpos == *user + strlen(*user) - 1)
-		goto err;
-    if (sqlite3GetInt32(colonpos + 1, isAdmin) == 0 || 
-	    !(*isAdmin == 0 || *isAdmin == 1))
-		goto err;
-	*colonpos = '\0';
-
-	colonpos = strrchr(*user, ':');
-	if (!colonpos || colonpos == *user || 
-		colonpos == *user + strlen(*user) - 1)
-		goto err;
-	*colonpos = '\0';
-	*pwd = colonpos + 1;
-
-	if (strrchr(*user, ':') != NULL)
-		goto err;
-
-	return SQLITE_OK;
-
-err:
-	sqlite3_free(*user);
-	return SQLITE_ERROR;
-}
-
-/*
- * Parse and validate a string containing user:pwd.
- *
- * Return SQLITE_OK and fill in user/pwd strings if successful. When 
- * successful, the caller is responsible for deallocating memory pointed 
- * by *user.
- */
-static int getUserPwd(const char* upStr, char** user, char** pwd)
-{
-	char* colonpos;
-
-	if(!upStr)
-		return SQLITE_ERROR;
-
-	/* Copy entire user:pwd string from value. */
-	*user = sqlite3_malloc((int)strlen(upStr) + 1);
-	if (*user == NULL)
-		return SQLITE_NOMEM;
-	strcpy(*user, upStr);
-
-	colonpos = strrchr(*user, ':');
-	if (!colonpos || colonpos == *user || 
-	    colonpos == *user + strlen(*user) - 1)
-		goto err;
-	*colonpos = '\0';
-
-	if (strrchr(*user, ':') != NULL)
-		goto err;
-
-	*pwd = colonpos + 1;
-	return SQLITE_OK;
-
-err:
-	sqlite3_free(*user);
-	return SQLITE_ERROR;
-}
-#endif
-
 static int bdbsqlPragmaStartReplication(Parse *pParse, Db *pDb)
 {
 	Btree *pBt;
 	char *value;
-	int needs_commit = 0;
 	int rc = SQLITE_OK;
 	u8 hadRemSite = 0;
 
@@ -445,17 +249,6 @@ static int bdbsqlPragmaStartReplication(Parse *pParse, Db *pDb)
 		goto done;
 	}
 
-	/*
-	 * If a repmgr application tries to add a site immediately after
-	 * opening the BDB SQL master environment, the add site operation
-	 * can hang waiting for all other transactions to complete because
-	 * BDB SQL creates MainTxn and leaves it open.  The solution is
-	 * to commit MainTxn if the environment is opened successfully 
-	 * when replication is in use.  BDB SQL will start a new MainTxn
-	 * automatically when it is needed.  We use the needs_commit
-	 * variable to determine when this commit is needed.
-	 */
-
 	if (dbExists) {
 		if (!pBt->pBt->env_opened) {
 			if ((rc = btreeOpenEnvironment(pBt, 1)) != SQLITE_OK)
@@ -468,20 +261,17 @@ static int bdbsqlPragmaStartReplication(Parse *pParse, Db *pDb)
 		 * Opening the environment started repmgr if it was
 		 * configured for it, so we are done here.
 		 */
-		if (supportsReplication(pBt)) {
-			needs_commit = 1;
+		if (supportsReplication(pBt))
 			goto done;
-		}
 		/*
-		 * Turning on replication on an existing environment not
-		 * configured for replication requires recovery on the
+		 * Turning on replication requires recovery on the underlying
 		 * BDB environment, which requires single-threaded access.
 		 * Make sure there are no other processes or threads accessing
 		 * it.  This is not foolproof, because there is a small chance
 		 * that another process or thread could slip in there between
 		 * this call and the recovery, but it should cover most cases.
 		 */
-		if (hasDatabaseConnections(pBt) || pBt->pBt->nRef > 1) {
+		if (hasDatabaseConnections(pBt)) {
 			sqlite3ErrorMsg(pParse, "Close all database "
 			    "connections before turning on replication");
 			goto done;
@@ -498,10 +288,8 @@ static int bdbsqlPragmaStartReplication(Parse *pParse, Db *pDb)
 		 * the underlying BDB environment with replication always
 		 * performs a recovery.
 		 */
-		pBt->pBt->repForceRecover = 1;
-		if ((rc = btreeReopenEnvironment(pBt, 0)) == SQLITE_OK)
-			needs_commit = 1;
-		else
+		pBt->pBt->repStartMaster = 1;
+		if ((rc = btreeReopenEnvironment(pBt, 0)) != SQLITE_OK)
 			sqlite3ErrorMsg(pParse, "Could not "
 			    "start replication on an existing database");
 	} else {
@@ -525,20 +313,16 @@ static int bdbsqlPragmaStartReplication(Parse *pParse, Db *pDb)
 		}
 
 		/* Create replication environment for new SQL database. */
-		if ((rc = btreeOpenEnvironment(pBt, 1)) == SQLITE_OK)
-			needs_commit = 1;
+		rc = btreeOpenEnvironment(pBt, 1);
 	}
 
 done:
-	if (needs_commit)
-		rc = sqlite3BtreeCommit(pBt);
 	return rc;
 }
 
 static int bdbsqlPragmaStopReplication(Parse *pParse, Db *pDb)
 {
 	Btree *pBt;
-	char *old_addr = NULL;
 	int rc = SQLITE_OK;
 
 	pBt = pDb->pBt;
@@ -570,13 +354,6 @@ static int bdbsqlPragmaStopReplication(Parse *pParse, Db *pDb)
 	 */
 	pBt->pBt->repForceRecover = 1;
 	rc = btreeReopenEnvironment(pBt, 1);
-	sqlite3_mutex_enter(pBt->pBt->mutex);
-	pBt->pBt->repRole = BDBSQL_REP_UNKNOWN;
-	old_addr = pBt->pBt->master_address;
-	pBt->pBt->master_address = NULL;
-	sqlite3_mutex_leave(pBt->pBt->mutex);
-	if (old_addr)
-		sqlite3_free(old_addr);
 
 done:
 	return rc;
@@ -619,14 +396,14 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 		}
 	} else if (sqlite3StrNICmp(zLeft, "txn_bulk", 8) == 0) {
 		if (zRight)
-			pBt->txn_bulk = sqlite3GetBoolean(zRight, 0);
+			pBt->txn_bulk = getBoolean(zRight);
 		returnSingleInt(pParse, "txn_bulk", (i64)pBt->txn_bulk);
 		parsed = 1;
 		/* Enables MVCC and transactions snapshots. */
 	} else if (sqlite3StrNICmp(zLeft, "multiversion", 12) == 0) {
 		if (zRight)
 			bdbsqlPragmaMultiversion(pParse, pDb->pBt,
-			    sqlite3GetBoolean(zRight, 0));
+			    getBoolean(zRight));
 
 		returnSingleInt(pParse, "multiversion",
 		    (i64)((pDb->pBt->pBt->env_oflags & DB_MULTIVERSION)?
@@ -637,7 +414,7 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 		 */
 	} else if (sqlite3StrNICmp(zLeft, "snapshot_isolation", 18) == 0) {
 		if (zRight) {
-			if (sqlite3GetBoolean(zRight, 0)) {
+			if (getBoolean(zRight)) {
 				if (pDb->pBt->pBt->env_oflags &
 				    DB_MULTIVERSION) {
 					pDb->pBt->pBt->read_txn_flags
@@ -747,8 +524,8 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 			sqlite3VdbeAddOp2(pParse->pVdbe, OP_ResultRow, 1, 1);
 		} else {
 			if (pDb->pBt->db->errCode != SQLITE_OK)
-				sqlite3ErrorWithMsg(pDb->pBt->db, rc, 
-				    "error in ", zLeft);
+				sqlite3Error(pDb->pBt->db, rc, "error in ",
+				    zLeft);
 		}
 		if (value && value != zRight)
 			sqlite3_free(value);
@@ -766,7 +543,7 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 		setValue[0] = '\0';
 		startedRep = stoppedRep = turningOn = 0;
 		if (zRight) {
-			turningOn = (sqlite3GetBoolean(zRight, 0) == 1);
+			turningOn = (getBoolean(zRight) == 1);
 			strcpy(setValue, turningOn ? "1" : "0");
 			rc = setPersistentPragma(pDb->pBt, zLeft,
 			    setValue, pParse);
@@ -796,24 +573,12 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 				}
 
 				dbenv = pDb->pBt->pBt->dbenv;
-				if (isVerb && dbExists) {
-					if (dbenv->set_verbose(dbenv,
-					    DB_VERB_REPLICATION,
-					    turningOn) != 0) {
-						sqlite3ErrorMsg(pParse,
-						    "Error "
-					"in replication set_verbose call");
-						rc = SQLITE_ERROR;
-					} else {
-						if (turningOn)
-							dbenv->set_msgcall(
-						    	    dbenv, 
-							    printRepVerbose);
-						else
-							dbenv->set_msgcall(
-							    dbenv,
-							    btreeHandleDbError);
-					}
+				if (isVerb && dbExists &&
+				    dbenv->set_verbose(dbenv,
+					DB_VERB_REPLICATION, turningOn) != 0) {
+					sqlite3ErrorMsg(pParse, "Error "
+					    "in replication set_verbose call");
+					rc = SQLITE_ERROR;
 				}
 			}
 		} else
@@ -831,8 +596,8 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 			sqlite3VdbeAddOp2(pParse->pVdbe, OP_ResultRow, 1, 1);
 		} else {
 			if (pDb->pBt->db->errCode != SQLITE_OK)
-				sqlite3ErrorWithMsg(pDb->pBt->db, rc, 
-				    "error in %s",  zLeft);
+				sqlite3Error(pDb->pBt->db, rc, "error in ",
+				    zLeft);
 		}
 		if (value && value != zRight)
 			sqlite3_free(value);
@@ -844,7 +609,7 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 		outValue[0] = '\0';
 		if (zRight)
 			pDb->pBt->pBt->repStartMaster =
-			    sqlite3GetBoolean(zRight, 0) == 1 ? 1 : 0;
+			    getBoolean(zRight) == 1 ? 1 : 0;
 		strcpy(outValue,
 		    pDb->pBt->pBt->repStartMaster == 1 ? "1" : "0");
 		sqlite3VdbeSetNumCols(pParse->pVdbe, 1);
@@ -869,16 +634,15 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 				dbenv = pBt->pBt->dbenv;
 				if (dbenv->repmgr_site(dbenv,
 				    host, port, &remsite, 0) != 0) {
-					sqlite3ErrorWithMsg(db, SQLITE_ERROR,
+					sqlite3Error(db, SQLITE_ERROR,
 					    "Cannot find site to remove");
 					rc = SQLITE_ERROR;
 				}
 				/* The remove method deallocates remsite. */
 				if (rc != SQLITE_ERROR &&
 				    remsite->remove(remsite) != 0) {
-					sqlite3ErrorWithMsg(db, SQLITE_ERROR, 
-					    "Error in replication call site "
-					    "remove");
+					sqlite3Error(db, SQLITE_ERROR, "Error "
+					    "in replication call site remove");
 					rc = SQLITE_ERROR;
 				}
 				sqlite3_free(host);
@@ -898,8 +662,8 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 			sqlite3ErrorMsg(pParse,
 			    "Replication site not removed");
 			if (pDb->pBt->db->errCode != SQLITE_OK)
-				sqlite3ErrorWithMsg(pDb->pBt->db, rc, 
-				    "error in ", zLeft);
+				sqlite3Error(pDb->pBt->db, rc, "error in ",
+				    zLeft);
 		}
 		parsed = 1;
 		/*
@@ -923,8 +687,8 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 			sqlite3VdbeAddOp2(pParse->pVdbe, OP_ResultRow, 1, 1);
 		} else {
 			if (pDb->pBt->db->errCode != SQLITE_OK)
-			    sqlite3ErrorWithMsg(pDb->pBt->db, rc, "error in ",
-			        zLeft);
+			    sqlite3Error(pDb->pBt->db, rc, "error in ",
+			    zLeft);
 		}
 		if (value && value != PRAGMA_VERSION)
 			sqlite3_free(value);
@@ -982,40 +746,6 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 		    pDb->pBt->txn_priority);
 		parsed = 1;
 	/*
-	 * PRAGMA bdbsql_log_buffer; -- DB_ENV->get_lg_bsize
-	 * PRAGMA bdbsql_log_buffer = N; -- DB_ENV->set_lg_bsize
-	 *   N provides the size of the log buffer size in bytes.
-	 */
-	} else if (sqlite3StrNICmp(zLeft, "bdbsql_log_buffer", 17) == 0) {
-    		int iLimit = -2;
-		u_int32_t val;
-
-		if (zRight &&
-		    envIsClosed(pParse, pDb->pBt, "bdbsql_log_buffer")) {
-      			if (!sqlite3GetInt32(zRight, &iLimit) ||
-			    iLimit < 0)
-				sqlite3ErrorMsg(pParse,
-				    "Invalid value bdbsql_log_buffer %s",
-				    zRight);
-			else {
-				val = iLimit;
-				if ((ret =
-				    pDb->pBt->pBt->dbenv->set_lg_bsize(
-				    pDb->pBt->pBt->dbenv, val)) != 0) {
-					sqlite3ErrorMsg(pParse,
-					    "Failed to set log buffer size "
-					    "error: %d.", ret);
-				}
-			}
-		} else if (zRight == NULL) {
-			/* Get existing value */
-			pDb->pBt->pBt->dbenv->get_lg_bsize(
-				pDb->pBt->pBt->dbenv, &val);
-
-			returnSingleInt(pParse, "bdbsql_log_buffer", val);
-		}
-		parsed = 1;
-	/*
 	 * PRAGMA bdbsql_single_process = boolean;
 	 *   Turn on/off omit sharing.
 	 */
@@ -1026,7 +756,7 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 
 		if (zRight &&
 		    envIsClosed(pParse, pDb->pBt, "bdbsql_single_process")) {
-			new_value = sqlite3GetBoolean(zRight, 0);
+			new_value = getBoolean(zRight);
 			if (new_value != pDb->pBt->pBt->single_process)
 				is_changed = 1;
 		}
@@ -1151,7 +881,7 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 
 		if (zRight &&
 		    envIsClosed(pParse, pDb->pBt, "bdbsql_shared_resources")) {
-			if (pDb->pBt->pBt->database_existed) {
+			if (pDb->pBt->pBt->need_open) {
 				/*
 				 * The DBENV->set_memory_max() method must be
 				 * called prior to opening/creating the database
@@ -1201,7 +931,7 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 
 		if (zRight &&
 		    envIsClosed(pParse, pDb->pBt, "bdbsql_lock_tablesize")) {
-			if (pDb->pBt->pBt->database_existed) {
+			if (pDb->pBt->pBt->need_open) {
 				/*
 				 * The DB_ENV->set_lk_tablesize() method must be
 				 * called prior to opening/creating the database
@@ -1232,430 +962,7 @@ int bdbsqlPragma(Parse *pParse, char *zLeft, char *zRight, int iDb)
 
 		returnSingleInt(pParse, "bdbsql_lock_tablesize", val);
 		parsed = 1;
-	/*
-	 * PRAGMA large_record_opt; -- Gets the blob threshold
-	 * PRAGMA large_record_opt = N; -- Sets the blob threshold of all
-	 * tables opened in the database.  The blob threshold is set to
-	 * N.  A value of 0 disables blobs.
-	 */
-	} else if (sqlite3StrNICmp(zLeft, "large_record_opt", 16) == 0) {
-    		int iLimit = -2;
-		u_int32_t val;
-
-		if (zRight) {
-			if (!sqlite3GetInt32(zRight, &iLimit) || iLimit < 0) {
-				sqlite3ErrorMsg(pParse,
-				    "Invalid value large_record_opt %s",
-				    zRight);
-			} else {
-				/* 
-				 * SQL only supports records up to 1GB in
-				 * size, so reject page counts that result
-				 * in a blob threshold that will always be
-				 * larger than 1 GB, to prevent overflow.
-				 */
-				if (iLimit > GIGABYTE) {
-					sqlite3ErrorMsg(pParse,
-		"large_record_opt must be less than or equal to 1 gigabyte",
-					    zRight);
-				} else {
-					pDb->pBt->pBt->blob_threshold
-					    = iLimit;
-					if (iLimit > 0) {
-						pDb->pBt->pBt->blobs_enabled
-						    = 1;
-					}
-				}
-			}
-		}
-
-		val = pDb->pBt->pBt->blob_threshold;
-		returnSingleInt(pParse, "large_record_opt", val);
-		parsed = 1;
-	/*
-	 * PRAGMA replication_ack_policy; -- DB_ENV->repmgr_get_ack_policy
-	 * PRAGMA replication_ack_policy =
-	 * [all_sites|all_available|none|one|quorum];
-	 * -- DB_ENV->repmgr_set_ack_policy
-	 *   Sets the policy on how many clients must acknowledge a transaction
-	 *   commit message before the master will consider it durable.
-	 */
-	} else if (sqlite3StrNICmp(zLeft, "replication_ack_policy", 22) == 0) {
-		int val = -1;
-		const char *policy;
-
-		if (zRight) {
-			if ((val = textToAckPolicy(zRight)) == -1)
-				sqlite3ErrorMsg(pParse,
-				    "Invalid value replication_ack_policy %s",
-				    zRight);
-			else {
-				if ((ret =
-				    pDb->pBt->pBt->dbenv->repmgr_set_ack_policy(
-				    pDb->pBt->pBt->dbenv, val)) != 0) {
-					sqlite3ErrorMsg(pParse,
-					    "Failed to set "
-					    "replication_ack_policy. "
-					    "Error: %d.", ret);
-				}
-			}
-		}
-
-		/* Get existing value */
-		pDb->pBt->pBt->dbenv->repmgr_get_ack_policy(
-			pDb->pBt->pBt->dbenv, &val);
-
-		policy = ackPolicyToText(val);
-		sqlite3VdbeSetNumCols(pParse->pVdbe, 1);
-		sqlite3VdbeSetColName(pParse->pVdbe, 0, COLNAME_NAME,
-		    zLeft, SQLITE_STATIC);
-		if (policy != NULL)
-			sqlite3VdbeAddOp4(pParse->pVdbe, OP_String8, 0, 1, 0,
-			    policy, 0);
-		else 
-			sqlite3VdbeAddOp4(pParse->pVdbe, OP_String8, 0, 1, 0,
-			    "No policy", 0);
-		sqlite3VdbeAddOp2(pParse->pVdbe, OP_ResultRow, 1, 1);
-		parsed = 1;
-	/*
-	 * PRAGMA replication_ack_timeout; -- DB_ENV->rep_get_timeout
-	 * PRAGMA replication_ack_timeout = N; -- DB_ENV->rep_set_timeout
-	 *   N provides the greater than -1 timeout on acks from clients
-	 *   when the master sends a transaction commit message.
-	 */
-	} else if
-	    (sqlite3StrNICmp(zLeft, "replication_ack_timeout", 23) == 0) {
-		int iLimit = -2;
-		db_timeout_t val;
-
-		if (zRight) {
-			if (!sqlite3GetInt32(zRight, &iLimit) || iLimit < 0)
-				sqlite3ErrorMsg(pParse,
-				    "Invalid value replication_ack_timeout %s",
-				    zRight);
-			else {
-				val = iLimit;
-				if ((ret = 
-				    pDb->pBt->pBt->dbenv->rep_set_timeout(
-				    pDb->pBt->pBt->dbenv, DB_REP_ACK_TIMEOUT,
-				    val)) != 0) {
-					sqlite3ErrorMsg(pParse,
-					    "Failed to set "
-					    "replication_ack_timeout. "
-					    "Error: %d.", ret);
-				}
-			}
-		}
-
-		/* Get existing value */
-		pDb->pBt->pBt->dbenv->rep_get_timeout(
-			pDb->pBt->pBt->dbenv, DB_REP_ACK_TIMEOUT, &val);
-
-		returnSingleInt(pParse, "replication_ack_timeout", val);
-		parsed = 1;
-	/*
-	 * PRAGMA replication_priority; -- DB_ENV->rep_get_priority
-	 * PRAGMA replication_priority = N; -- DB_ENV->rep_set_priority
-	 *   N provides the 1 or greater priority of the replication site,
-	 *   which is used to decide what site is elected master.
-	 */
-	} else if (sqlite3StrNICmp(zLeft, "replication_priority", 20) == 0) {
-    		int iLimit = -2;
-		u_int32_t val;
-
-		if (zRight) {
-			if (!sqlite3GetInt32(zRight, &iLimit) || iLimit < 1)
-				sqlite3ErrorMsg(pParse,
-				    "Invalid value replication_priority %s",
-				    zRight);
-			else {
-				val = iLimit;
-				if ((ret =
-				    pDb->pBt->pBt->dbenv->rep_set_priority(
-				    pDb->pBt->pBt->dbenv, val)) != 0) {
-					sqlite3ErrorMsg(pParse,
-					    "Failed to set replication "
-					    "priority. Error: %d.", ret);
-				}
-			}
-		}
-
-		/* Get existing value */
-		pDb->pBt->pBt->dbenv->rep_get_priority(
-			pDb->pBt->pBt->dbenv, &val);
-
-		returnSingleInt(pParse, "replication_priority", val);
-		parsed = 1;
-	/*
-	 * PRAGMA replication_num_sites; -- DB_ENV->repmgr_site_list
-	 *   Returns the number of sites in the replication group.
-	 */
-	} else if (sqlite3StrNICmp(zLeft, "replication_num_sites", 21) == 0) {
-		u_int32_t val = -1;
-		DB_REPMGR_SITE *sites = NULL;
-
-		/* Get existing value */
-		pDb->pBt->pBt->dbenv->repmgr_site_list(
-			pDb->pBt->pBt->dbenv, &val, &sites);
-
-		/* 
-		 * repmgr_site_list only gets the list of remote sites, 
-		 * so add one for the local site if replication has been
-		 * started.
-		 */
-		if (pDb->pBt->pBt->repStarted)
-			val++;
-
-		if (sites)
-			sqlite3_free(sites);
-
-		returnSingleInt(pParse, "replication_num_sites", val);
-		parsed = 1;
-	/*
-	 * PRAGMA replication_perm_failed; -- DB_REP_PERM_FAILED
-	 *   Returns the number of times since the last time this pragma was
-	 *   called the master was unable to get enough acknowledgments from
-	 *   clients when committing a transaction.
-	 */
-	} else if (sqlite3StrNICmp(zLeft, "replication_perm_failed", 23) == 0) {
-		u_int32_t val = 0;
-		
-		sqlite3_mutex_enter(pDb->pBt->pBt->mutex);
-		val = pDb->pBt->pBt->permFailures;
-		pDb->pBt->pBt->permFailures = 0;
-		sqlite3_mutex_leave(pDb->pBt->pBt->mutex);
-
-		returnSingleInt(pParse, "replication_perm_failed", val);
-		parsed = 1;
-	/*
-	 * PRAGMA replication_site_status;
-	 *   Returns MASTER if the site is a replication master, CLIENT if the
-	 *   site is a replication client, and UNKNOWN if replication is not
-	 *   enabled, or the site status is still being decided (such as during
-	 *   an election).
-	 */
-	} else if (sqlite3StrNICmp(zLeft, "replication_site_status", 23) == 0) {
-		rep_site_type_t val;
-		const char *type;
-		
-		sqlite3_mutex_enter(pDb->pBt->pBt->mutex);
-		val = pDb->pBt->pBt->repRole;
-		sqlite3_mutex_leave(pDb->pBt->pBt->mutex);
-
-		type = repSiteTypeToText(val);
-		sqlite3VdbeSetNumCols(pParse->pVdbe, 1);
-		sqlite3VdbeSetColName(pParse->pVdbe, 0, COLNAME_NAME,
-		    zLeft, SQLITE_STATIC);
-		sqlite3VdbeAddOp4(pParse->pVdbe, OP_String8, 0, 1, 0, type, 0);
-		sqlite3VdbeAddOp2(pParse->pVdbe, OP_ResultRow, 1, 1);
-		parsed = 1;
-	/*
-	 * PRAGMA replication_get_master;
-	 *   Returns the host:port of the master, or NULL if replication has
-	 *   not started, or there is none.
-	 */
-	} else if (sqlite3StrNICmp(zLeft, "replication_get_master", 23) == 0) {
-		const char *address;
-		
-		sqlite3_mutex_enter(pDb->pBt->pBt->mutex);
-		address = pDb->pBt->pBt->master_address;
-		sqlite3_mutex_leave(pDb->pBt->pBt->mutex);
-
-		sqlite3VdbeSetNumCols(pParse->pVdbe, 1);
-		sqlite3VdbeSetColName(pParse->pVdbe, 0, COLNAME_NAME,
-		    zLeft, SQLITE_STATIC);
-		if (address)
-			sqlite3VdbeAddOp4(pParse->pVdbe, OP_String8, 0, 1, 0, address, 0);
-		else
-			sqlite3VdbeAddOp4(pParse->pVdbe, OP_String8, 0, 1, 0, "NULL", 0);
-		sqlite3VdbeAddOp2(pParse->pVdbe, OP_ResultRow, 1, 1);
-		parsed = 1;
-	/*
-	 * PRAGMA statistics_file; -- Returns the file to which the PRAGMA
-	 *  statistics prints its output.
-	 * PRAGMA statistics_file=filename -- Sets the file to which the PRAGMA
-	 *  statistics prints its output.
-	 */
-	} else if (sqlite3StrNICmp(zLeft, "statistics_file", 15) == 0) {
-		char *dirPathName, dirPathBuf[BT_MAX_PATH], *stat_file;
-
-		btreeUpdateBtShared(pDb->pBt, 1);
-		dirPathName = dirPathBuf;
-		stat_file = NULL;
-
-		if (zRight) {
-			FILE *tmpfile;
-			if (sqlite3OsFullPathname(db->pVfs,
-			    zRight, sizeof(dirPathBuf), dirPathName) != SQLITE_OK) {
-				sqlite3ErrorMsg(pParse, "Out of memory");
-				return (1);
-			}
-			tmpfile = fopen(dirPathName, "a");
-			if (tmpfile == NULL)
-				sqlite3ErrorMsg(pParse,
-				    "Can't open error file %s", dirPathName);
-			else {
-				fclose(tmpfile);
-				sqlite3_mutex_enter(pBt->pBt->mutex);
-				if (pBt->pBt->stat_filename != NULL)
-					sqlite3_free(pBt->pBt->stat_filename);
-				pBt->pBt->stat_filename =
-				    sqlite3_mprintf("%s", dirPathName);
-				sqlite3_mutex_leave(pBt->pBt->mutex);
-				stat_file = zRight;
-			}
-		}
-
-		if (stat_file == NULL) {
-			sqlite3_mutex_enter(pBt->pBt->mutex);
-			stat_file = pBt->pBt->stat_filename;
-			sqlite3_mutex_leave(pBt->pBt->mutex);
-		}
-		sqlite3VdbeSetNumCols(pParse->pVdbe, 1);
-		sqlite3VdbeSetColName(pParse->pVdbe, 0, COLNAME_NAME,
-		    zLeft, SQLITE_STATIC);
-		if (stat_file)
-			sqlite3VdbeAddOp4(pParse->pVdbe, OP_String8, 0, 1, 0,
-			    stat_file, 0);
-		else 
-			sqlite3VdbeAddOp4(pParse->pVdbe, OP_String8, 0, 1, 0,
-			    "NULL", 0);
-		sqlite3VdbeAddOp2(pParse->pVdbe, OP_ResultRow, 1, 1);
-		parsed = 1;
-	/*
-	 * PRAGMA statistics; -- Prints statistics about the database.
-	 * PRAGMA statistics=[LOCK|LOG|MEM|MUTEX|REP] -- Prints statistics
-	 *  about the specified subsystem. 
-	 */
-	} else if (sqlite3StrNICmp(zLeft, "statistics", 10) == 0) {
-		DB_ENV *dbenv;
-		int err;
-
-		err = 0;
-		if (!pDb->pBt->pBt->env_opened) {
-			sqlite3ErrorMsg(pParse,
-			    "Cannot call %s before accessing the database.",
-			    zLeft);
-		} else {
-			dbenv = pDb->pBt->pBt->dbenv;
-			dbenv->set_msgcall(dbenv, printStatistics);
-			if (!zRight) {
-				err = dbenv->stat_print(dbenv, 0);
-			} else if (sqlite3StrNICmp(zRight, "LOCK", 4) == 0) {
-				err = dbenv->lock_stat_print(dbenv, 0);
-			} else if (sqlite3StrNICmp(zRight, "LOG", 3) == 0) {
-				err = dbenv->log_stat_print(dbenv, 0);
-			} else if (sqlite3StrNICmp(zRight, "MEM", 3) == 0) {
-				err = dbenv->memp_stat_print(dbenv, 0);
-			} else if (sqlite3StrNICmp(zRight, "MUTEX", 5) == 0) {
-				err = dbenv->mutex_stat_print(dbenv, 0);
-			} else if (sqlite3StrNICmp(zRight, "REP", 3) == 0) {
-				err = dbenv->rep_stat_print(dbenv, 0);
-				if (err == 0)
-					err = dbenv->repmgr_stat_print(dbenv, 0);
-				else if (err == EINVAL) {
-					sqlite3ErrorMsg(pParse,
-					    "Replication not enabled.");
-					err = 0;
-				}
-			} else
-				sqlite3ErrorMsg(pParse,
-				    "Invalid statistics entry: %s.", zRight);
-			dbenv->set_msgcall(dbenv, btreeHandleDbError);
-			if (err != 0)
-				sqlite3ErrorMsg(pParse,
-				    "Error getting statistics: %s.",
-				    db_strerror(err));
-		}
-		parsed = 1;
 	}
-#ifdef SQLITE_USER_AUTHENTICATION
-	/**
-	 * PRAGMA bdbsql_userauth_add = "user:password:isAdmin";
-	 *   Create a new user.
-	 *   isAdmin should only be 0 or 1.
-	 */
-	else if (sqlite3StrNICmp(zLeft, "bdbsql_user_add", 15) == 0) {
-		char *user;
-		char *pwd;
-		int isAdmin;
-		int rc;
-
-		if (zRight && 
-		    getUserPwdIsadmin(zRight, &user, &pwd, &isAdmin) == 0) {
-			if((rc = sqlite3_user_add(db, user, pwd, 
-			    sqlite3Strlen30(pwd), isAdmin)) != SQLITE_OK)
-				sqlite3ErrorMsg(pParse, "User-Add failed. "
-				    "Error %d: %s", rc, sqlite3_errstr(rc));
-			sqlite3_free(user);
-		} else
-			sqlite3ErrorMsg(pParse, "Format of value must be "
-			    "user:password:isAdmin");
-		
-		parsed = 1;
-	/**
-	 * PRAGMA bdbsql_user_login = "user:password";
-	 *   Authenticate a user.
-	 */
-	} else if (sqlite3StrNICmp(zLeft, "bdbsql_user_login", 17) == 0) {
-		char *user;
-		char *pwd;
-		int rc;
-
-		if (zRight && getUserPwd(zRight, &user, &pwd) == 0) {
-			if((rc = sqlite3_user_authenticate(db, user, pwd, 
-			    sqlite3Strlen30(pwd))) != SQLITE_OK)
-				sqlite3ErrorMsg(pParse, "Authentication failed "
-				    "for user %s. Error %d: %s", user, rc, 
-				    sqlite3_errstr(rc));
-			sqlite3_free(user);
-		} else
-			sqlite3ErrorMsg(pParse, "Format of value must be "
-			    "user:password");
-
-		parsed = 1;
-	/**
-	 * PRAGMA bdbsql_user_edit = "user:password:isAdmin";
-	 *   Edit a user.
-	 *   isAdmin should only be 0 or 1.
-	 */
-	} else if (sqlite3StrNICmp(zLeft, "bdbsql_user_edit", 16) == 0) {
-		char *user;
-		char *pwd;
-		int isAdmin;
-		int rc;
-
-		if (zRight && 
-		    getUserPwdIsadmin(zRight, &user, &pwd, &isAdmin) == 0) {
-			if((rc = sqlite3_user_change(db, user, pwd, 
-			    sqlite3Strlen30(pwd), isAdmin)) != SQLITE_OK)
-				sqlite3ErrorMsg(pParse, "User-Edit failed for "
-				    "user %s. Error %d: %s", user, rc, 
-				    sqlite3_errstr(rc));
-			sqlite3_free(user);
-		} else
-			sqlite3ErrorMsg(pParse, "Format of value must be "
-			    "user:password:isAdmin");
-
-		parsed = 1;
-	/**
-	 * PRAGMA bdbsql_user_delete = "user";
-	 *   Delete a user.
-	 */
-	} else if (sqlite3StrNICmp(zLeft, "bdbsql_user_delete", 18) == 0) {
-		int rc;
-
-		if (zRight) {
-			if((rc = sqlite3_user_delete(db, zRight)) != SQLITE_OK)
-				sqlite3ErrorMsg(pParse, "User-Delete failed "
-				    "for user %s. Error %d: %s", zRight, rc, 
-				    sqlite3_errstr(rc));
-		} else
-			sqlite3ErrorMsg(pParse, "Value cannot be null.");
-
-		parsed = 1;
-	}
-#endif
 
 	/* Return semantics to match strcmp. */
 	return (!parsed);
@@ -1783,7 +1090,7 @@ static void removeCorruptedRecords(Btree *p, int *corrupted, int num_corrupted,
 			    "All persistent pragma values lost. "
 			    "Please re-enter all pragmas.");
 		}
-		sqlite3ErrorWithMsg(p->db, SQLITE_CORRUPT,
+		sqlite3Error(p->db, SQLITE_CORRUPT,
 		    "Persistent pragma database corrupted. "
 		    "All persistent pragma values lost. "
 		    "Please re-enter all pragmas.");
@@ -1792,7 +1099,7 @@ static void removeCorruptedRecords(Btree *p, int *corrupted, int num_corrupted,
 
 		/* Reset the cache. */
 		cleanPragmaCache(p);
-		memset(pBtPragma, 0, sizeof(pBtPragma[0]) * NUM_DB_PRAGMA);
+		memset(pPragma, 0, sizeof(pPragma[0]) * NUM_DB_PRAGMA);
 
 		/* Delete the pragma file. */
 		sqlite3OsUnlock(pragma_file, NO_LOCK);
@@ -1805,7 +1112,7 @@ static void removeCorruptedRecords(Btree *p, int *corrupted, int num_corrupted,
 	    getPragmaName(corrupted[0]));
 	if (pParse)
 		sqlite3ErrorMsg(pParse, buf);
-	sqlite3ErrorWithMsg(p->db, SQLITE_CORRUPT, buf);
+	sqlite3Error(p->db, SQLITE_CORRUPT, buf);
 
 	for (i = 0; i < num_corrupted; i++) {
 		u32 invalid = 0;
@@ -1813,7 +1120,7 @@ static void removeCorruptedRecords(Btree *p, int *corrupted, int num_corrupted,
 		int idx, offset;
 
 		idx = corrupted[i];
-		offset = pBtPragma[idx].offset;
+		offset = pPragma[idx].offset;
 		/*
 		 * Invalidate the corrupted record  by setting its offset and
 		 * size to 0 in the header, and setting the pragma index to 0
@@ -1825,11 +1132,11 @@ static void removeCorruptedRecords(Btree *p, int *corrupted, int num_corrupted,
 		if (sqlite3OsWrite(pragma_file, &invalid, 4, offset)
 		    != SQLITE_OK)
 			break;
-		if (pBtPragma[idx].value != NULL && idx != 0) {
-			sqlite3_free(pBtPragma[idx].value);
-			pBtPragma[idx].value = NULL;
+		if (pPragma[idx].value != NULL && idx != 0) {
+			sqlite3_free(pPragma[idx].value);
+			pPragma[idx].value = NULL;
 		}
-		pBtPragma[idx].offset = pBtPragma[idx].size = 0;
+		pPragma[idx].offset = pPragma[idx].size = 0;
 	}
 
 	/* Read in the header file and recalculate the checksum. */
@@ -1859,7 +1166,7 @@ static int insertPragmaIntoFile(Btree *p, u32 pragma_index,
 	if (!p->pBt || p->pBt->dbStorage != DB_STORE_NAMED)
 		return SQLITE_OK;
 
-	size = pBtPragma[pragma_index].size;
+	size = pPragma[pragma_index].size;
 
 	/*
 	 * Create the record, which consists of
@@ -1871,7 +1178,7 @@ static int insertPragmaIntoFile(Btree *p, u32 pragma_index,
 	}
 
 	memcpy(data, &pragma_index, 4);
-	memcpy(&data[RECORD_HDR_SIZE], pBtPragma[pragma_index].value, size);
+	memcpy(&data[RECORD_HDR_SIZE], pPragma[pragma_index].value, size);
 	__db_chksum(NULL, &data[RECORD_HDR_SIZE], size, NULL, &data[4]);
 	/*
 	 * If creating the file then add in the file header and schema pragma
@@ -1891,9 +1198,9 @@ static int insertPragmaIntoFile(Btree *p, u32 pragma_index,
 		memcpy(&buf[RECORD_SIZE(0)], &int_value, 4);
 		memcpy(&buf[RECORD_OFFSET(0)], &HDR_SIZE, 4);
 		memcpy(&buf[RECORD_SIZE(pragma_index)], &size, 4);
-		pBtPragma[pragma_index].offset = HDR_SIZE + VERSION_RECORD_SIZE;
+		pPragma[pragma_index].offset = HDR_SIZE + VERSION_RECORD_SIZE;
 		memcpy(&buf[RECORD_OFFSET(pragma_index)],
-		    &pBtPragma[pragma_index].offset, 4);
+		    &pPragma[pragma_index].offset, 4);
 
 		__db_chksum(NULL, &buf[4], HDR_SIZE - 4, NULL, buf);
 		if ((rc = sqlite3OsWrite(pragma_file, buf, HDR_SIZE, 0))
@@ -1944,10 +1251,10 @@ static int insertPragmaIntoFile(Btree *p, u32 pragma_index,
 		/* Set the pragma offset and size. */
 		memcpy(&buf[RECORD_SIZE(pragma_index)], &size, 4);
 		memcpy(&buf[RECORD_OFFSET(pragma_index)], &buf[4], 4);
-		memcpy(&pBtPragma[pragma_index].offset, &buf[4], 4);
+		memcpy(&pPragma[pragma_index].offset, &buf[4], 4);
 
 		/* Recalculate the offset for new records. */
-		int_value = pBtPragma[pragma_index].offset + size
+		int_value = pPragma[pragma_index].offset + size
 		    + RECORD_HDR_SIZE;
 		memcpy(&buf[4], &int_value, 4);
 
@@ -1957,8 +1264,8 @@ static int insertPragmaIntoFile(Btree *p, u32 pragma_index,
 		    != SQLITE_OK)
 			goto err;
 		if ((rc = sqlite3OsWrite(pragma_file, data,
-		    pBtPragma[pragma_index].size + RECORD_HDR_SIZE,
-		   pBtPragma[pragma_index].offset)) != SQLITE_OK)
+		    pPragma[pragma_index].size + RECORD_HDR_SIZE,
+		   pPragma[pragma_index].offset)) != SQLITE_OK)
 			goto err;
 	}
 err:	if (corrupted)
@@ -2029,14 +1336,14 @@ static int readPragmaFromFile(Btree *p, sqlite3_file *pragma_file,
 
 	/* Set the offsets in the cache. */
 	for (i = start; i <= end; i++) {
-		memcpy(&pBtPragma[i].offset , &buf[RECORD_OFFSET(i)], 4);
-		memcpy(&pBtPragma[i].size, &buf[RECORD_SIZE(i)], 4);
+		memcpy(&pPragma[i].offset , &buf[RECORD_OFFSET(i)], 4);
+		memcpy(&pPragma[i].size, &buf[RECORD_SIZE(i)], 4);
 	}
 
 	/* Load the data into the cache. */
 	for (i = start; i <= end; i++) {
 		/* If the offset is 0 then the pragma has not been set. */
-		if (pBtPragma[i].offset == 0)
+		if (pPragma[i].offset == 0)
 			continue;
 		/*
 		 * Allocated enough space to read the record if the buffer is
@@ -2046,8 +1353,8 @@ static int readPragmaFromFile(Btree *p, sqlite3_file *pragma_file,
 			sqlite3_free(data);
 			data = NULL;
 		}
-		if ((pBtPragma[i].size + RECORD_HDR_SIZE) > BT_MAX_PATH) {
-			if ((data = sqlite3_malloc(pBtPragma[i].size
+		if ((pPragma[i].size + RECORD_HDR_SIZE) > BT_MAX_PATH) {
+			if ((data = sqlite3_malloc(pPragma[i].size
 			    + RECORD_HDR_SIZE)) == NULL) {
 				rc = SQLITE_NOMEM;
 				goto err;
@@ -2056,34 +1363,34 @@ static int readPragmaFromFile(Btree *p, sqlite3_file *pragma_file,
 			data = buf;
 		/* Read the record and check that it is not corrupted. */
 		if ((rc = sqlite3OsRead(pragma_file, data,
-		    pBtPragma[i].size + RECORD_HDR_SIZE, pBtPragma[i].offset))
+		    pPragma[i].size + RECORD_HDR_SIZE, pPragma[i].offset))
 		    != SQLITE_OK)
 			goto err;
 		if ((ret = __db_check_chksum(NULL, NULL, NULL, &data[4],
-		    data + RECORD_HDR_SIZE, pBtPragma[i].size, 0)) != 0) {
+		    data + RECORD_HDR_SIZE, pPragma[i].size, 0)) != 0) {
 			if (ret == -1) {
 				if (corrupted == NULL)
 					corrupted = corrupted_buf;
 				corrupted[num_corrupted] = i;
 				num_corrupted++;
-				pBtPragma[i].offset = pBtPragma[i].size = 0;
+				pPragma[i].offset = pPragma[i].size = 0;
 				continue;
 			} else
 				goto err;
 		}
 		/* Copy the record data into the cache. */
-		if (pBtPragma[i].value != NULL &&
-		    pBtPragma[i].value != PRAGMA_VERSION) {
-			sqlite3_free(pBtPragma[i].value);
-			pBtPragma[i].value = NULL;
+		if (pPragma[i].value != NULL &&
+		    pPragma[i].value != PRAGMA_VERSION) {
+			sqlite3_free(pPragma[i].value);
+			pPragma[i].value = NULL;
 		}
-		if ((pBtPragma[i].value =
-		    sqlite3_malloc(pBtPragma[i].size)) == NULL) {
+		if ((pPragma[i].value =
+		    sqlite3_malloc(pPragma[i].size)) == NULL) {
 			rc = SQLITE_NOMEM;
 			goto err;
 		}
-		memcpy(pBtPragma[i].value, &data[RECORD_HDR_SIZE],
-		    pBtPragma[i].size);
+		memcpy(pPragma[i].value, &data[RECORD_HDR_SIZE],
+		    pPragma[i].size);
 	}
 	p->pBt->cache_loaded = 1;
 err:	if (num_corrupted != 0) {
@@ -2183,9 +1490,9 @@ int getPersistentPragma(Btree *p, const char *pragma_name, char **value,
 	 */
 	if (p->pBt->dbStorage != DB_STORE_NAMED || !CACHE_LOADED) {
 		p->pBt->cache_loaded = (p->pBt->dbStorage != DB_STORE_NAMED);
-		pBtPragma[0].offset = HDR_SIZE;
-		pBtPragma[0].value = (char *)PRAGMA_VERSION;
-		pBtPragma[0].size = 4;
+		pPragma[0].offset = HDR_SIZE;
+		pPragma[0].value = (char *)PRAGMA_VERSION;
+		pPragma[0].size = 4;
 	}
 
 	/* Return an empty value if the pragma is not cached.*/
@@ -2193,10 +1500,10 @@ int getPersistentPragma(Btree *p, const char *pragma_name, char **value,
 		goto err;
 
 	/* Copy the pragma value. */
-	*value = sqlite3_malloc(pBtPragma[idx].size);
+	*value = sqlite3_malloc(pPragma[idx].size);
 	if (!*value)
 		goto err;
-	memcpy(*value, pBtPragma[idx].value, pBtPragma[idx].size);
+	memcpy(*value, pPragma[idx].value, pPragma[idx].size);
 
 	if (0) {
 err:        *value = NULL;
@@ -2256,26 +1563,26 @@ int setPersistentPragma(Btree *p, const char *pragma_name, const char *value,
 		sqlite3_mutex_enter(p->pBt->pragma_cache_mutex);
 
 	/* Cache the pragma value */
-	if (pBtPragma[idx].value != NULL &&
-	    pBtPragma[idx].value != PRAGMA_VERSION)
-		sqlite3_free(pBtPragma[idx].value);
-	pBtPragma[idx].size = (u_int32_t)strlen(value) + 1;
-	pBtPragma[idx].value = sqlite3_malloc(pBtPragma[idx].size);
-	if (pBtPragma[idx].value == NULL) {
+	if (pPragma[idx].value != NULL &&
+	    pPragma[idx].value != PRAGMA_VERSION)
+		sqlite3_free(pPragma[idx].value);
+	pPragma[idx].size = (u_int32_t)strlen(value) + 1;
+	pPragma[idx].value = sqlite3_malloc(pPragma[idx].size);
+	if (pPragma[idx].value == NULL) {
 		rc = SQLITE_NOMEM;
 		goto err;
 	}
-	memcpy(pBtPragma[idx].value, value, pBtPragma[idx].size);
+	memcpy(pPragma[idx].value, value, pPragma[idx].size);
 	/*
 	 * If this database is not persistent and the pragma version has
 	 * not been loaded into the cahce, then load it.
 	 */
 	if (p->pBt->dbStorage != DB_STORE_NAMED) {
-		pBtPragma[idx].offset = 1;
+		pPragma[idx].offset = 1;
 		if (!CACHE_LOADED) {
-			pBtPragma[0].offset = HDR_SIZE;
-			pBtPragma[0].value = (char *)PRAGMA_VERSION;
-			pBtPragma[0].size = 4;
+			pPragma[0].offset = HDR_SIZE;
+			pPragma[0].value = (char *)PRAGMA_VERSION;
+			pPragma[0].size = 4;
 		}
 	}
 
@@ -2307,9 +1614,9 @@ int cleanPragmaCache(Btree *p)
 	int i;
 
 	for (i = 0; i < NUM_DB_PRAGMA; i++) {
-		if (pBtPragma[i].value != NULL &&
-		    pBtPragma[i].value != PRAGMA_VERSION)
-			sqlite3_free(pBtPragma[i].value);
+		if (pPragma[i].value != NULL &&
+		    pPragma[i].value != PRAGMA_VERSION)
+			sqlite3_free(pPragma[i].value);
 	}
 
 	return 0;

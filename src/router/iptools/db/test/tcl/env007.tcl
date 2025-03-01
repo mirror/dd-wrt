@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -41,263 +41,93 @@ proc env007 { } {
 	# The initial values for both locks and lock objects have silently
 	# enforced minimums of 50 * #cpus. These values work for up to 8 cpus.
 	set rlist {
-	{ "-blob_dir" "set_ext_file_dir" "." "./BLOBDIR"
-	    "Env007.a1: External file dir" ""
-	    "External file dir" "" "get_blob_dir" }
-	{ "-blob_threshold" "set_ext_file_threshold" "10485760" "20971520 0"
-	    "Env007.a2: External file threshold" ""
-	    "" "" "get_blob_threshold" }
-	{ "-cache_max" "set_cache_max" "1 0" "0 134217728" 
-	    "Env007.a3: Cache max" ""
-	    "" "" "get_cache_max" }
-	{ "-cachesize" "set_cachesize" "0 536870912 1" "1 0 1"
-	    "Env007.a4.0: Cachesize" "mpool_stat"
-	    "Cache size (gbytes)" "0" "get_cachesize" }
-	{ "-cachesize" "set_cachesize" "0 536870912 1" "1 0 1"
-	    "Env007.a4.1: Cachesize" "mpool_stat"
-	    "Cache size (bytes)" "1" "get_cachesize" }
-	{ "-cachesize" "set_cachesize" "0 536870912 1" "1 0 1"
-	    "Env007.a4.2: Cachesize" "mpool_stat"
-	    "Number of caches" "2" "get_cachesize" }
-	{ "-lock_lockers" "set_memory_init DB_MEM_LOCKER" "150" "200"
-	    "Env007.a5: Init Lockers" "lock_stat"
-	    "Initial lockers" "0" "get_lk_init_lockers" }
-	{ "-lock_locks" "set_memory_init DB_MEM_LOCK" "12407" "12429"
-	    "Env007.a6: Lock Init" "lock_stat"
-	    "Initial locks" "0" "get_lk_init_locks" }
-	{ "-lock_logid" "set_memory_init DB_MEM_LOGID" "1024" "2048"
-	    "Env007.a7: Init Logid" ""
-	    "" "" "get_lk_init_logid" }
-	{ "-lock_max_lockers" "set_lk_max_lockers" "1500" "2000"
-	    "Env007.a8: Max Lockers" "lock_stat"
-	    "Maximum lockers" "0" "get_lk_max_lockers" }
-	{ "-lock_max_locks" "set_lk_max_locks" "1070" "1290"
-	    "Env007.a9: Lock Max" "lock_stat"
-	    "Maximum locks" "0" "get_lk_max_locks" }
-	{ "-lock_max_objects" "set_lk_max_objects" "1500" "2000"
-	    "Env007.a10: Max Objects" "lock_stat"
-	    "Maximum objects" "0" "get_lk_max_objects" }
-	{ "-lock_objects" "set_memory_init DB_MEM_LOCKOBJECT" "12405" "12408"
-	    "Env007.a11: Init Objects" "lock_stat"
-	    "Initial objects" "0" "get_lk_init_objects" }
-	{ "-lock_partitions" "set_lk_partitions" "10" "20"
-	    "Env007.a12: Lock Partitions" "lock_stat"
-	    "Number of lock table partitions" "0" "get_lk_partitions" }
-	{ "-lock_tablesize" "set_lk_tablesize" "2097152" "4194304"
-	    "Env007.a13: Lock set tablesize" "lock_stat"
-	    "Size of object hash table" "0" "get_lk_tablesize" }
-	{ "-lock_thread" "set_memory_init DB_MEM_THREAD" "128" "256"
-	    "Env007.a14: Init Thread" ""
-	    "" "" "get_lk_init_thread" }
-	{ "-lock_timeout" "set_lock_timeout" "100" "120"
-	    "Env007.a15: Lock Timeout" "lock_stat"
-	    "Lock timeout value" "0" "get_timeout lock" }
-	{ "-log_buffer" "set_lg_bsize" "65536" "131072"
-	    "Env007.a16: Log Bsize" "log_stat"
-	    "Log record cache size" "0" "get_lg_bsize" }
-	{ "-log_filemode" "set_lg_filemode" "417" "637"
-	    "Env007.a17: Log FileMode" "log_stat"
-	    "Log file mode" "0" "get_lg_filemode" }
-	{ "-log_max" "set_lg_max" "8388608" "9437184"
-	    "Env007.a18: Log Max" "log_stat"
-	    "Current log file size" "0" "get_lg_max" }
-	{ "-log_regionmax" "set_lg_regionmax" "8388608" "4194304"
-	    "Env007.a19: Log Regionmax" ""
-	    "Region size" "0" "get_lg_regionmax" }
-	{ "-pagesize" "set_mp_pagesize" "4096" "8192"
-	    "Env007.a20: Mpool pagesize" "mpool_stat"
-	    "Default pagesize" "0" "get_mp_pagesize" }
-	{ "-memory_max" "set_memory_max " "1 0" "0 134217728"
-	    "Env007.a21.0: Memory max" ""
-	    "" "0" "get_memory_max" }
-	{ "-memory_max" "set_memory_max " "1 0" "0 134217728"
-	    "Env007.a21.1: Memory max" ""
-	    "" "1" "get_memory_max" }
-	{ "-mpool_max_openfd" "set_mp_max_openfd" "17" "27"
-	    "Env007.a22: Mmap max openfd" "mpool_stat"
-	    "Maximum open file descriptors" "0" "get_mp_max_openfd" }
-	{ "-mpool_max_write" "set_mp_max_write" "37 47" "57 67"
-	    "Env007.a23: Mmap max write" "mpool_stat"
-	    "Sleep after writing maximum buffers" "1" "get_mp_max_write" }
-	{ "-mpool_mmap_size" "set_mp_mmapsize" "12582912" "8388608"
-	    "Env007.a24: Mmapsize" "mpool_stat"
-	    "Maximum memory-mapped file size" "0" "get_mp_mmapsize" }
-	{ "-mpool_mutex_count" "set_mp_mtxcount" "8" "10"
-	    "Env007.a25: Number of mutexes for the hash table" "mpool_stat"
-	    "Mutexes for hash buckets" "0" "get_mp_mtxcount"}
-	{ "-mutex_failchk_timeout" "set_mutex_failchk_timeout" "100" "120"
-	    "Env007.a26: Mutex failchk timeout" ""
-	    "" "" "get_timeout mutex_failchk" }
-	{ "-mutex_set_init" "mutex_set_init" "6" "9"
-	    "Env007.a27: Mutex set init" "mutex_stat"
-	    "Initial mutex count" "0" "mutex_get_init" }
-	{ "-mutex_set_align" "mutex_set_align" "8" "16"
-	    "Env007.a28: Mutex align" "mutex_stat"
-	    "Mutex align" "0" "mutex_get_align" }
-	{ "-mutex_set_incr" "mutex_set_increment" "1000" "1500"
-	    "Env007.a29: Mutex increment" ""
-	    "" "" "mutex_get_incr" }
-	{ "-mutex_set_max" "mutex_set_max" "2000" "2500"
-	    "Env007.a30: Mutex max" "mutex_stat"
-	    "Mutex max" "0" "mutex_get_max" }
-	{ "-mutex_set_tas_spins" "mutex_set_tas_spins" "60" "85"
-	    "Env007.a31: Mutex tas spins" "mutex_stat"
-	    "Mutex TAS spins" "0" "mutex_get_tas_spins" }
-	{ "-region_dir" "set_region_dir" "."
-	    "." "Env007.a31.1: Region dir" ""
-	    "Region dir" "" "get_region_dir" }
-	{ "-reg_timeout" "set_reg_timeout" "25000" "35000"
-	    "Env007.a32: Register timeout" ""
-	    "" "" "get_timeout reg" }
-	{ "-rep_config" "rep_set_config"
-	    "autoinit on" "DB_REP_CONF_AUTOINIT off"
-	    "Env007.a33.0: Replication config" ""
-	    "" "" "rep_get_config autoinit" }
-	{ "-rep_config" "rep_set_config"
-	    "bulk off" "DB_REP_CONF_BULK on"
-	    "Env007.a33.1: Replication config" ""
-	    "" "" "rep_get_config bulk" }
-	{ "-rep_config" "rep_set_config"
-	    "delayclient on" "DB_REP_CONF_DELAYCLIENT off"
-	    "Env007.a33.2: Replication config" ""
-	    "" "" "rep_get_config delayclient" }
-	{ "-rep_config" "rep_set_config"
-	    "electloglength on" "DB_REP_CONF_ELECT_LOGLENGTH off"
-	    "Env007.a33.3: Replication config" ""
-	    "" "" "rep_get_config electloglength" }
-	{ "-rep_config" "rep_set_config"
-	    "inmem off" "DB_REP_CONF_INMEM on"
-	    "Env007.a33.4: Replication config" ""
-	    "" "" "rep_get_config inmem" }
-	{ "-rep_config" "rep_set_config"
-	    "lease on" "DB_REP_CONF_LEASE off"
-	    "Env007.a33.5: Replication config" ""
-	    "" "" "rep_get_config lease" }
-	{ "-rep_config" "rep_set_config"
-	    "nowait off" "DB_REP_CONF_NOWAIT on"
-	    "Env007.a33.6: Replication config" ""
-	    "" "" "rep_get_config nowait" }
-	{ "-rep_config" "rep_set_config"
-	    "mgr2sitestrict on" "DB_REPMGR_CONF_2SITE_STRICT off"
-	    "Env007.a33.7: Replication config" ""
-	    "" "" "rep_get_config mgr2sitestrict" }
-	{ "-rep_config" "rep_set_config"
-	    "mgrelections on" "DB_REPMGR_CONF_ELECTIONS off"
-	    "Env007.a33.8: Replication config" ""
-	    "" "" "rep_get_config mgrelections" }
-	{ "-rep_config" "rep_set_config"
-	    "mgrprefmasclient on" "DB_REPMGR_CONF_PREFMAS_CLIENT off"
-	    "Env007.a33.9: Replication config" ""
-	    "" "" "rep_get_config mgrprefmasclient" }
-	{ "-rep_config" "rep_set_config"
-	    "mgrprefmasmaster off" "DB_REPMGR_CONF_PREFMAS_MASTER on"
-	    "Env007.a33.10: Replication config" ""
-	    "" "" "rep_get_config mgrprefmasmaster" }
-	{ "-rep_config" "rep_set_config"
-	    "mgrforwardwrites off" "DB_REPMGR_CONF_FORWARD_WRITES on"
-	    "Env007.a33.11: Replication config" ""
-	    "" "" "rep_get_config mgrforwardwrites" }
-	{ "-rep_lease" "rep_set_clockskew" "60 1003 1000" "101 100"
-	    "Env007.a34: Replication clock skew" ""
-	    "" "0" "rep_get_clockskew" }
-	{ "-rep_limit" "rep_set_limit" "0 1048576" "0 0"
-	    "Env007.a35: Replication limit" ""
-	    "" "0" "rep_get_limit" }
-	{ "-rep_nsites" "rep_set_nsites" "19" "15"
-	    "Env007.a36: Rep number of sites" ""
-	    "" "0" "rep_get_nsites" }
-	{ "-rep_priority" "rep_set_priority" "77" "3"
-	    "Env007.a37: Replication priority" "rep_stat"
-	    "Environment priority" "0" "rep_get_priority" }
-	{ "-rep_request" "rep_set_request" "20000 640000" "80000 2560000"
-	    "Env007.a38: Replication request" ""
-	    "" "0" "rep_get_request" }
-	{ "-rep_timeout" "rep_set_timeout"
-	    "1 15000000" "DB_REP_ACK_TIMEOUT 10000000"
-	    "Env007.a39.0: Replication timeout" ""
-	    "" "0" "rep_get_timeout ack" }
-	{ "-rep_timeout" "rep_set_timeout"
-	    "2 2000000" "DB_REP_CHECKPOINT_DELAY 3000000"
-	    "Env007.a39.1: Replication checkpoint delay" ""
-	    "" "0" "rep_get_timeout checkpoint_delay" }
-	{ "-rep_timeout" "rep_set_timeout"
-	    "3 3000000" "DB_REP_CONNECTION_RETRY 4000000"
-	    "Env007.a39.2: Replication connection retry" ""
-	    "" "0" "rep_get_timeout connection_retry" }
-	{ "-rep_timeout" "rep_set_timeout"
-	    "4 4000000" "DB_REP_ELECTION_RETRY 5000000"
-	    "Env007.a39.3: Replication election retry" ""
-	    "" "0" "rep_get_timeout election_retry" }
-	{ "-rep_timeout" "rep_set_timeout"
-	    "5 5000000" "DB_REP_ELECTION_TIMEOUT 6000000"
-	    "Env007.a39.4: Replication election timeout" ""
-	    "" "0" "rep_get_timeout election" }
-	{ "-rep_timeout" "rep_set_timeout"
-	    "6 6000000" "DB_REP_FULL_ELECTION_TIMEOUT 7000000"
-	    "Env007.a39.5: Replication full election timeout" ""
-	    "" "0" "rep_get_timeout full_election" }
-	{ "-rep_timeout" "rep_set_timeout"
-	    "7 7000000" "DB_REP_HEARTBEAT_MONITOR 8000000"
-	    "Env007.a39.6: Replication heartbeat monitor" ""
-	    "" "0" "rep_get_timeout heartbeat_monitor" }
-	{ "-rep_timeout" "rep_set_timeout"
-	    "8 8000000" "DB_REP_HEARTBEAT_SEND 9000000"
-	    "Env007.a39.7: Replication heartbeat send" ""
-	    "" "0" "rep_get_timeout heartbeat_send" }
-	{ "-rep_timeout" "rep_set_timeout"
-	    "9 9000000" "DB_REP_LEASE_TIMEOUT 10000000"
-	    "Env007.a39.8: Replication lease timeout" ""
-	    "" "0" "rep_get_timeout lease" }
-	{ "-rep_timeout" "rep_set_timeout"
-	    "10 3000000" "DB_REP_WRITE_FORWARD_TIMEOUT 4000000"
-	    "Env007.a39.9: Replication write forwarding timeout" ""
-	    "" "0" "rep_get_timeout write_forward" }
-	{ "-repmgr_ack_policy" "repmgr_set_ack_policy"
-	    "1" "DB_REPMGR_ACKS_ALL"
-	    "Env007.a40.0: Rep mgr ack policy" ""
-	    "" "0" "repmgr_get_ack_policy" }      
-	{ "-repmgr_ack_policy" "repmgr_set_ack_policy"
-	    "2" "DB_REPMGR_ACKS_ALL_AVAILABLE"
-	    "Env007.a40.1: Rep mgr ack policy" ""
-	    "" "0" "repmgr_get_ack_policy" }
-	{ "-repmgr_ack_policy" "repmgr_set_ack_policy"
-	    "3" "DB_REPMGR_ACKS_ALL_PEERS"
-	    "Env007.a40.2: Rep mgr ack policy" ""
-	    "" "0" "repmgr_get_ack_policy" }
-	{ "-repmgr_ack_policy" "repmgr_set_ack_policy"
-	    "4" "DB_REPMGR_ACKS_NONE"
-	    "Env007.a40.3: Rep mgr ack policy" ""
-	    "" "0" "repmgr_get_ack_policy" }      
-	{ "-repmgr_ack_policy" "repmgr_set_ack_policy"
-	    "5" "DB_REPMGR_ACKS_ONE"
-	    "Env007.a40.4: Rep mgr ack policy" ""
-	    "" "0" "repmgr_get_ack_policy" }
-	{ "-repmgr_ack_policy" "repmgr_set_ack_policy"
-	    "6" "DB_REPMGR_ACKS_ONE_PEER"
-	    "Env007.a40.5: Rep mgr ack policy" ""
-	    "" "0" "repmgr_get_ack_policy" }
-	{ "-repmgr_ack_policy" "repmgr_set_ack_policy"
-	    "7" "DB_REPMGR_ACKS_QUORUM"
-	    "Env007.a40.6: Rep mgr ack policy" ""
-	    "" "0" "repmgr_get_ack_policy" }
-	{ "-shm_key" "set_shm_key" "15" "35"
-	    "Env007.a41: Shm Key" ""
-	    "" "" "get_shm_key" }
-	{ "-thread_count" "set_thread_count" "6" "8"
-	    "Env007.a42: Thread count" ""
-	    "" "0" "get_thread_count" }
-	{ "-tmp_dir" "set_tmp_dir" "." "./TEMPDIR"
-	    "Env007.a43: Temp dir" ""
-	    "" "" "get_tmp_dir" }
-	{ "-txn_init" "set_memory_init DB_MEM_TRANSACTION" "19" "31"
-	    "Env007.a44: Txn Init" "txn_stat"
+	{ " -txn_init " "set_memory_init DB_MEM_TRANSACTION" "19" "31"
+	    "Env007.a1: Txn Init" "txn_stat"
 	    "Initial txns" "0" "get_tx_init" }
-	{ "-txn_max" "set_tx_max" "29" "51"
-	    "Env007.a45: Txn Max" "txn_stat"
+    	{ " -txn_max " "set_tx_max" "29" "51"
+	    "Env007.a1: Txn Max" "txn_stat"
 	    "Maximum txns" "0" "get_tx_max" }
-	{ "-txn_timeout" "set_txn_timeout" "100" "120"
-	    "Env007.a46: Txn timeout" "lock_stat"
+	{ " -lock_locks " "set_memory_init DB_MEM_LOCK" "12407" "12429"
+	    "Env007.a2: Lock Init" "lock_stat"
+	    "Initial locks" "0" "get_lk_init_locks" }
+	{ " -lock_max_locks " "set_lk_max_locks" "1070" "1290"
+	    "Env007.a2: Lock Max" "lock_stat"
+	    "Maximum locks" "0" "get_lk_max_locks" }
+	{ " -lock_lockers " "set_memory_init DB_MEM_LOCKER" "150" "200"
+	    "Env007.a3: Init Lockers" "lock_stat"
+	    "Initial lockers" "0" "get_lk_init_lockers" }
+	{ " -lock_max_lockers " "set_lk_max_lockers" "1500" "2000"
+	    "Env007.a3: Max Lockers" "lock_stat"
+	    "Maximum lockers" "0" "get_lk_max_lockers" }
+	{ " -lock_objects " "set_memory_init DB_MEM_LOCKOBJECT" "12405" "12408"
+	    "Env007.a4: Init Objects" "lock_stat"
+	    "Initial objects" "0" "get_lk_init_objects" }
+	{ " -lock_max_objects " "set_lk_max_objects" "1500" "2000"
+	    "Env007.a4: Max Objects" "lock_stat"
+	    "Maximum objects" "0" "get_lk_max_objects" }
+	{ " -log_buffer " "set_lg_bsize" "65536" "131072"
+	    "Env007.a5: Log Bsize" "log_stat"
+	    "Log record cache size" "0" "get_lg_bsize" }
+	{ " -log_max " "set_lg_max" "8388608" "9437184"
+	    "Env007.a6: Log Max" "log_stat"
+	    "Current log file size" "0" "get_lg_max" }
+	{ " -cachesize " "set_cachesize" "0 536870912 1" "1 0 1"
+	    "Env007.a7.0: Cachesize" "mpool_stat"
+	    "Cache size (gbytes)" "0" "get_cachesize" }
+	{ " -cachesize " "set_cachesize" "0 536870912 1" "1 0 1"
+	    "Env007.a7.1: Cachesize" "mpool_stat"
+	    "Cache size (bytes)" "1" "get_cachesize" }
+	{ " -cachesize " "set_cachesize" "0 536870912 1" "1 0 1"
+	    "Env007.a7.2: Cachesize" "mpool_stat"
+	    "Number of caches" "2" "get_cachesize" }
+	{ " -lock_timeout " "set_lock_timeout" "100" "120"
+	    "Env007.a8: Lock Timeout" "lock_stat"
+	    "Lock timeout value" "0" "get_timeout lock" }
+	{ " -log_regionmax " "set_lg_regionmax" "8388608" "4194304"
+	    "Env007.a9: Log Regionmax" ""
+	    "Region size" "0" "get_lg_regionmax" }
+	{ " -mpool_max_openfd " "set_mp_max_openfd" "17" "27"
+	    "Env007.a10: Mmap max openfd" "mpool_stat"
+	    "Maximum open file descriptors" "0" "get_mp_max_openfd" }
+	{ " -mpool_max_write " "set_mp_max_write" "37 47" "57 67"
+	    "Env007.a11.1: Mmap max write" "mpool_stat"
+	    "Sleep after writing maximum buffers" "1" "get_mp_max_write" }
+	{ " -mpool_mmap_size " "set_mp_mmapsize" "12582912" "8388608"
+	    "Env007.a12: Mmapsize" "mpool_stat"
+	    "Maximum memory-mapped file size" "0" "get_mp_mmapsize" }
+	{ " -shm_key " "set_shm_key" "15" "35"
+	    "Env007.a13: Shm Key" ""
+	    "" "" "get_shm_key" }
+	{ " -tmp_dir " "set_tmp_dir" "." "./TEMPDIR"
+	    "Env007.a14: Temp dir" ""
+	    "" "" "get_tmp_dir" }
+	{ " -txn_timeout " "set_txn_timeout" "100" "120"
+	    "Env007.a15: Txn timeout" "lock_stat"
 	    "Transaction timeout value" "0" "get_timeout txn" }
+	{ " -log_filemode " "set_lg_filemode" "417" "637"
+	    "Env007.a16: Log FileMode" "log_stat"
+	    "Log file mode" "0" "get_lg_filemode" }
+	{" -lock_partitions " "set_lk_partitions" "10" "20"
+	    "Env007.a17: Lock Partitions" "lock_stat"
+	    "Number of lock table partitions" "0" "get_lk_partitions" }
+	{" -mutex_set_align " "mutex_set_align" "8" "16"
+	    "Env007.a18: Mutex align" "mutex_stat"
+	    "Mutex align" "0" "mutex_get_align" }
+	{" -mutex_set_incr " "mutex_set_increment" "1000" "1500"
+	    "Env007.a19: Mutex increment" ""
+	    "" "" "mutex_get_incr" }
+	{" -mutex_set_max " "mutex_set_max" "2000" "2500"
+	    "Env007.a20: Mutex max" "mutex_stat"
+	    "Mutex max" "0" "mutex_get_max" }
+	{" -mutex_set_tas_spins " "mutex_set_tas_spins" "60" "85"
+	    "Env007.a21: Mutex tas spins" "mutex_stat"
+	    "Mutex TAS spins" "0" "mutex_get_tas_spins" }
+	{" -pagesize " "set_mp_pagesize" "4096" "8192"
+	    "Env007.a22: Mpool pagesize" ""
+	    "" "" "get_mp_pagesize" }
+	{" -reg_timeout " "set_reg_timeout" "25000" "35000"
+	    "Env007.a23: Register timeout" ""
+	    "" "" "get_timeout reg" }
 	}
 
 	set e "berkdb_env_noerr -create -mode 0644 -home $testdir -txn "
@@ -320,20 +150,13 @@ proc env007 { } {
 			continue
 		}
 
-		if { $envarg == "-mutex_failchk_timeout" &&
-		    [lsearch [berkdb getconfig] "failchk_broadcast"] == -1} {
-			puts "\tEnv007.a26: Skipping $envarg without\
-			    failchk broadcasting."
-			continue
-		}
-
 		env_cleanup $testdir
 
 		# First verify using just env args
 		puts "\t$msg Environment argument only"
 		set env [eval $e $envarg {$envval}]
 		error_check_good envopen:0 [is_valid_env $env] TRUE
-		env007_check_getter env $env $envarg $envval $getter
+		error_check_good get_envval [eval $env $getter] $envval
 		if { $statcmd != "" } {
 			set statenvval [lindex $envval $index]
 			# log_stat reports the sum of the specified
@@ -348,37 +171,28 @@ proc env007 { } {
 
 		env_cleanup $testdir
 		env007_make_config $configarg $configval
-		if { [lsearch [split $configarg "_"] "rep"] == 0 } {
-			env007_append_config\
-			    "a" "set_open_flags" "db_init_rep" ""
-		}
+
 		# Verify using just config file
 		puts "\t$msg Config file only"
 		set env [eval $e]
 		error_check_good envopen:1 [is_valid_env $env] TRUE
-		env007_check_getter config $env $configarg $configval $getter
+		error_check_good get_configval1 [eval $env $getter] $configval
 		if { $statcmd != "" } {
 			set statconfigval [lindex $configval $index]
 			if { $statstr == "Region size" } {
-				set statconfigval\
+				set statconfigval \
 				    [expr $statconfigval + $lbufsize]
 			}
 			env007_check $env $statcmd $statstr $statconfigval
 		}
 		error_check_good envclose:1 [$env close] 0
 
-		env_cleanup $testdir
-		env007_make_config $configarg $configval
-		if { [lsearch [split $configarg "_"] "rep"] == 0 } {
-		env007_append_config\
-		    "a" "set_open_flags" "db_init_rep" ""
-		}
 		# Now verify using env args and config args
 		puts "\t$msg Environment arg and config file"
 		set env [eval $e $envarg {$envval}]
 		error_check_good envopen:2 [is_valid_env $env] TRUE
 		# Getter should retrieve config val, not envval.
-		env007_check_getter config $env $configarg $configval $getter
+		error_check_good get_configval2 [eval $env $getter] $configval
 		if { $statcmd != "" } {
 			env007_check $env $statcmd $statstr $statconfigval
 		}
@@ -396,8 +210,6 @@ proc env007 { } {
 
 	# The cfglist variable contains options that can be set in DB_CONFIG.
 	set cfglist {
-	{ "set_blob_dir" "." "get_blob_dir" "." }
-	{ "set_blob_threshold" "10485760 0" "get_blob_threshold" "10485760" }
 	{ "set_data_dir" "." "get_data_dirs" "." }
 	{ "add_data_dir" "." "get_data_dirs" "." }
 	{ "set_metadata_dir" "." "get_metadata_dir" "."}
@@ -424,10 +236,6 @@ proc env007 { } {
 	{ "set_flags" "db_log_autoremove" "log_get_config" "autoremove" }
 	{ "set_lg_bsize" "65536" "get_lg_bsize" "65536" }
 	{ "set_lg_dir" "." "get_lg_dir" "." }
-	{ " set_lg_dir" "leading-whitespace-test"
-	     "get_lg_dir" "leading-whitespace-test" }
-	{ "set_lg_dir" "windows whitespace test"
-	     "get_lg_dir" "windows whitespace test" }
 	{ "set_lg_max" "8388608" "get_lg_max" "8388608" }
 	{ "set_lg_regionmax" "262144" "get_lg_regionmax" "262144" }
 	{ "set_lk_detect" "db_lock_default" "get_lk_detect" "default" }
@@ -447,14 +255,11 @@ proc env007 { } {
 	{ "set_mp_mmapsize" "12582912" "get_mp_mmapsize" "12582912" }
 	{ "set_mp_max_write" "10 20" "get_mp_max_write" "10 20" }
 	{ "set_mp_max_openfd" "10" "get_mp_max_openfd" "10" }
-	{ "set_mp_mtxcount" "10" "get_mp_mtxcount" "10" }
 	{ "set_mp_pagesize" "8192" "get_mp_pagesize" "8192" }
-	{ "set_mutex_failchk_timeout" "90" "get_timeout mutex_failchk" "90" }
 	{ "set_open_flags" "db_private" "get_open_flags" "-private" }
 	{ "set_open_flags" "db_private on" "get_open_flags" "-private" }
 	{ "set_open_flags" "db_init_rep" "get_open_flags" "-rep" }
 	{ "set_open_flags" "db_thread" "get_open_flags" "-thread" }
-	{ "set_region_dir" "." "get_region_dir" "." }
 	{ "set_region_init" "1" "get_flags" "-region_init" }
 	{ "set_reg_timeout" "60" "get_timeout reg" "60" }
 	{ "set_shm_key" "15" "get_shm_key" "15" }
@@ -474,14 +279,11 @@ proc env007 { } {
 	{ "set_verbose" "db_verb_repmgr_connfail" 
 	    "get_verbose repmgr_connfail" "on" }
 	{ "set_verbose" "db_verb_repmgr_misc" "get_verbose repmgr_misc" "on" }
-	{ "set_verbose" "db_verb_slice" "get_verbose slice" "on" }
 	{ "set_verbose" "db_verb_waitsfor" "get_verbose wait" "on" }
-	{ "log_set_config" "db_log_blob" "log_get_config" "blob" } 
 	{ "log_set_config" "db_log_direct" "log_get_config" "direct" }
 	{ "log_set_config" "db_log_dsync" "log_get_config" "dsync" }
 	{ "log_set_config" "db_log_auto_remove" "log_get_config" "autoremove" }
 	{ "log_set_config" "db_log_in_memory" "log_get_config" "inmemory" }
-	{ "log_set_config" "db_log_nosync" "log_get_config" "nosync" }
 	{ "log_set_config" "db_log_zero" "log_get_config" "zero" }
 	{ "mutex_set_align" "8" "mutex_get_align" "8" }
 	{ "mutex_set_increment" "100" "mutex_get_incr" "100" }
@@ -504,23 +306,6 @@ proc env007 { } {
 		set extra_cmd {}
 		if {$configarg == "set_create_dir"} {
 			set extra_cmd "-add_dir $configval"
-		}
-		if {$getval == "leading-whitespace-test"} {
-			file mkdir $testdir/$getval
-		}
-		if {$getval == "windows whitespace test"} {
-			if { $is_windows_test} {
-				file mkdir $testdir/$getval
-			} else {
-				continue
-			}
-		} 
-
-		if { $configarg == "set_mutex_failchk_timeout" &&
-		    [lsearch [berkdb getconfig] "failchk_broadcast"] == -1} {
-			puts "\t\tEnv007.b1: Skipping $configarg without\
-			    failchk broadcasting."
-			continue
 		}
 
 		env007_make_config $configarg $configval
@@ -607,13 +392,6 @@ proc env007 { } {
 	# The envopenlist variable contains options that can be set using
 	# berkdb env.  We always set -mpool.
 
-	#
-	# For -tablesize, BDB will internally set with the nearby prime number
-	# of the input value. The next power-of-2 number of 100 is 128. And
-	# the nearby prime number of 128 is 131. So if we do "-tablesize 100",
-	# BDB will internally set the hash table size with 131 and we will get
-	# 131 from get_mp_tablesize command.
-	#
 	set envopenlist {
 	{ "-system_mem" "-shm_key 20" "-system_mem" "get_open_flags" }
 	{ "-cdb" "" "-cdb" "get_open_flags" }
@@ -621,7 +399,6 @@ proc env007 { } {
 	{ "-lock" "" "-lock" "get_open_flags" }
 	{ "-log" "" "-log" "get_open_flags" }
 	{ "" "" "-mpool" "get_open_flags" }
-	{ "-tablesize" "100" "131" "get_mp_tablesize" }
 	{ "-txn -rep" "" "-rep" "get_open_flags" }
 	{ "-txn" "" "-txn" "get_open_flags" }
 	{ "-recover" "-txn" "-recover" "get_open_flags" }
@@ -773,8 +550,7 @@ proc env007 { } {
 
 		error_check_good envclose [$env close] 0
 	}
-	puts "\tEnv007.d1: Test berkdb env options\
-	    using log_set_config and getters."
+	puts "\tEnv007.d1: Test berkdb env options using log_set_config and getters."
 
 	# The flaglist variable contains options that can be set using
 	# $env log_config.
@@ -867,7 +643,6 @@ proc env007 { } {
 	{ "set_mp_max_openfd" "1 2" }
 	{ "set_mp_max_write" "1 2 3" }
 	{ "set_mp_mmapsize" "db_xxx" }
-	{ "set_mutex_failchk_timeout" "xxx"}
 	{ "set_open_flags" "db_private db_thread db_init_rep" }
 	{ "set_open_flags" "db_private x" }
 	{ "set_open_flags" "db_xxx" }
@@ -918,9 +693,6 @@ proc env007 { } {
 	#	2.  Specific method, if needed
 	# 	3.  Arg used in getter
 	set olist {
-	{ "-blob_threshold" "10485760" "-btree" "get_blob_threshold" }
-	{ "-blob_threshold" "10485760" "-hash" "get_blob_threshold" }
-	{ "-blob_threshold" "10485760" "-heap" "get_blob_threshold" }
 	{ "-minkey" "4" " -btree " "get_bt_minkey" }
 	{ "-cachesize" "0 1048576 1" "" "get_cachesize" }
 	{ "" "FILENAME DBNAME" "" "get_dbname" }
@@ -953,7 +725,6 @@ proc env007 { } {
 	{ "-pad" "0" "-recno" "get_re_pad" }
 	{ "-source" "include.tcl" "-recno" "get_re_source" }
 	{ "-heap_regionsize" "1000" "-heap" "get_heap_regionsize" }
-	{ "-heapsize" "0 40960" "-heap" "get_heapsize" }
 	}
 
 	set o "berkdb_open_noerr -create -mode 0644"
@@ -971,7 +742,7 @@ proc env007 { } {
 
 		# Check that open is successful with the flag.
 		# The option -cachesize requires grouping for $flagval.
-		if { $flag == "-cachesize" || $flag == "-heapsize" } {
+		if { $flag == "-cachesize" } {
 			set ret [catch {eval $o $method $flag {$flagval}\
 			    $testdir/a.db} db]
 		} else {
@@ -1072,27 +843,18 @@ proc env007 { } {
 		error_check_good envclose [$env close] 0
 	}
 
-	puts "\tEnv007.k: Test berkdb_open\
-	     DB_TXN_NOSYNC and DB_TXN_WRITE_NOSYNC."
-	# Test all combinations of DB_TXN_NOSYNC and DB_TXN_WRITE_NOSYNC. If
-	# we're setting both of them, the previous setting would be cleared.
+	puts "\tEnv007.k: Test berkdb_open DB_TXN_NOSYNC and DB_TXN_WRITE_NOSYNC."
+	# Test all combinations of DB_TXN_NOSYNC and DB_TXN_WRITE_NOSYNC. If we're
+	# setting both of them, the previous setting would be cleared.
 	set cfglist {
-	{ "db_txn_nosync" "on"  "db_txn_write_nosync" "on"\
-	    "-nosync" "0" "-wrnosync" "1"}
-	{ "db_txn_nosync" "off" "db_txn_write_nosync" "on"\
-	    "-nosync" "0" "-wrnosync" "1"}
-	{ "db_txn_nosync" "on"  "db_txn_write_nosync" "off"\
-	    "-nosync" "1" "-wrnosync" "0"}
-	{ "db_txn_nosync" "off" "db_txn_write_nosync" "off"\
-	    "-nosync" "0" "-wrnosync" "0"}
-	{ "db_txn_write_nosync" "on"  "db_txn_nosync" "on"\
-	    "-wrnosync" "0" "-nosync" "1"}
-	{ "db_txn_write_nosync" "off" "db_txn_nosync" "on"\
-	    "-wrnosync" "0" "-nosync" "1"}
-	{ "db_txn_write_nosync" "on"  "db_txn_nosync" "off"\
-	    "-wrnosync" "1" "-nosync" "0"}
-	{ "db_txn_write_nosync" "off" "db_txn_nosync" "off"\
-	    "-wrnosync" "0" "-nosync" "0"}
+	{ "db_txn_nosync" "on"  "db_txn_write_nosync" "on"  "-nosync" "0" "-wrnosync" "1"}
+	{ "db_txn_nosync" "off" "db_txn_write_nosync" "on"  "-nosync" "0" "-wrnosync" "1"}
+	{ "db_txn_nosync" "on"  "db_txn_write_nosync" "off" "-nosync" "1" "-wrnosync" "0"}
+	{ "db_txn_nosync" "off" "db_txn_write_nosync" "off" "-nosync" "0" "-wrnosync" "0"}
+	{ "db_txn_write_nosync" "on"  "db_txn_nosync" "on"  "-wrnosync" "0" "-nosync" "1"}
+	{ "db_txn_write_nosync" "off" "db_txn_nosync" "on"  "-wrnosync" "0" "-nosync" "1"}
+	{ "db_txn_write_nosync" "on"  "db_txn_nosync" "off" "-wrnosync" "1" "-nosync" "0"}
+	{ "db_txn_write_nosync" "off" "db_txn_nosync" "off" "-wrnosync" "0" "-nosync" "0"}
 	}
 
 	foreach item $cfglist {
@@ -1114,10 +876,8 @@ proc env007 { } {
 
 		# Check flags
 		set flags [eval $env "get_flags"]
-		error_check_good flag_found\
-		    [is_substr $flags $chk_cfg1] $chk_val1
-		error_check_good flag_found\
-		    [is_substr $flags $chk_cfg2] $chk_val2
+		error_check_good flag_found [is_substr $flags $chk_cfg1] $chk_val1
+		error_check_good flag_found [is_substr $flags $chk_cfg2] $chk_val2
 		error_check_good envclose [$env close] 0
 	}
 }
@@ -1157,55 +917,4 @@ proc env007_append_config { mode carg cval onoff } {
 
 proc env007_eval_env { e } {
 	eval $e 
-}
-
-proc env007_check_getter { msg env arg val getter} {
-	set getval [eval $env $getter]
-	if { $arg == "-rep_config" || $arg == "-rep_timeout" ||\
-	    ($msg == "env" && $arg == "-rep_lease") ||\
-	    $arg == "rep_set_config" || $arg == "rep_set_timeout"} {
-		set valtmp [lrange $val 1\
-		    [expr [llength $val]-1]]
-	} elseif { $msg == "config" && $arg == "set_ext_file_threshold" } {
-		set valtmp [lindex $val 0]
-	} else {
-		set valtmp $val
-	}
-	if { $arg == "-rep_config" || $arg == "-repmgr_ack_policy" ||\
-	    $arg == "rep_set_config" || $arg == "repmgr_set_ack_policy"} {
-		env007_check_special get_val $getval $valtmp
-	} elseif { $arg == "-cache_max" || $arg == "set_cache_max" } {
-		# The first component of the value is in gigabytes and
-		# the second is in bytes
-		set getCacheSize [expr [lindex $getval 0]\
-		    *1024*1024*1024 + [lindex $getval 1]]
-		set setCacheSize [expr [lindex $valtmp 0]\
-		    *1024*1024*1024 + [lindex $valtmp 1]] 
-		error_check_good get_val_max\
-		    [expr $getCacheSize > $setCacheSize] 1
-	} else {
-		error_check_good get_val $getval $valtmp
-	}
-}
-
-proc env007_check_special { getmsg getval envval } {
-	switch $envval {
-		1 {set chkval "all"}
-		2 {set chkval "allavailable"}
-		3 {set chkval "allpeers"}
-		4 {set chkval "none"}
-		5 {set chkval "one"}
-		6 {set chkval "onepeer"}
-		7 {set chkval "quorum"}
-		"on" {set chkval 1}
-		"off" {set chkval 0}
-		"DB_REPMGR_ACKS_ALL" {set chkval "all"}
-		"DB_REPMGR_ACKS_ALL_AVAILABLE" {set chkval "allavailable"}
-		"DB_REPMGR_ACKS_ALL_PEERS" {set chkval "allpeers"}
-		"DB_REPMGR_ACKS_NONE" {set chkval "none"}
-		"DB_REPMGR_ACKS_ONE" {set chkval "one"}
-		"DB_REPMGR_ACKS_ONE_PEER" {set chkval "onepeer"}
-		"DB_REPMGR_ACKS_QUORUM" {set chkval "quorum"}
-	}
-	error_check_good $getmsg $getval $chkval
 }

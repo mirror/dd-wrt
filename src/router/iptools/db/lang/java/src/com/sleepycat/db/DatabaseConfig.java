@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -36,23 +36,18 @@ public class DatabaseConfig implements Cloneable {
     /* Parameters */
     private DatabaseType type = DatabaseType.UNKNOWN;
     private int mode = 0644;
-    private java.io.File blobDir = null;
-    private int blobThreshold = 0;
     private int btMinKey = 0;
     private int byteOrder = 0;
     private long cacheSize = 0L;
     private java.io.File createDir = null;
     private int cacheCount = 0;
-    private String errorPrefix = null;
     private java.io.OutputStream errorStream = null;
+    private String errorPrefix = null;
     private int hashFillFactor = 0;
     private int hashNumElements = 0;
     private long heapSize = 0L;
     private int heapRegionSize = 0;
-    private String messagePrefix = null;
-    private java.io.OutputStream messageStream = System.out;
-    private java.io.File msgfile = null;
-    private String msgfileStr = null;
+    private java.io.OutputStream messageStream = null;
     private Boolean noWaitDbExclusiveLock = null;
     private int pageSize = 0;
     private java.io.File[] partitionDirs = null;
@@ -79,7 +74,6 @@ public class DatabaseConfig implements Cloneable {
     private boolean readOnly = false;
     private boolean renumbering = false;
     private boolean reverseSplitOff = false;
-    private boolean sliced = false;
     private boolean sortedDuplicates = false;
     private boolean snapshot = false;
     private boolean unsortedDuplicates = false;
@@ -96,7 +90,6 @@ public class DatabaseConfig implements Cloneable {
     private ErrorHandler errorHandler = null;
     private MessageHandler messageHandler = null;
     private PartitionHandler partitionHandler = null;
-    private Slice sliceHandler = null;
     private java.util.Comparator hashComparator = null;
     private Hasher hasher = null;
     private RecordNumberAppender recnoAppender = null;
@@ -111,8 +104,6 @@ public class DatabaseConfig implements Cloneable {
 
     /**
      * Returns a copy of this configuration object.
-     *
-     * @return a copy of this configuration object
      */
     public DatabaseConfig cloneConfig() {
         try {
@@ -149,45 +140,6 @@ True if the {@link com.sleepycat.db.Environment#openDatabase Environment.openDat
     }
 
     /**
-    @deprecated This has been replaced by {@link #setExternalFileDir}.
-    @param dir
-    The path of a directory where external files are stored
-    */
-    public void setBlobDir(java.io.File dir) {
-        setExternalFileDir(dir);
-    }
-
-    /**
-    @deprecated This has been replaced by {@link #getExternalFileDir}.
-    @return
-    The path of a directory where external files are stored
-    */
-    public java.io.File getBlobDir() {
-        return getExternalFileDir();
-    }
-
-    /**
-    @deprecated This has been replaced by {@link #setExternalFileThreshold}.
-    @param value
-    The size in bytes which is used to determine when a data item will be
-    stored as an external file. If 0, external files will be never used by the
-    database.
-    */
-    public void setBlobThreshold(int value) {
-        setExternalFileThreshold(value);
-    }
-
-    /**
-    @deprecated This has been replaced by {@link #getExternalFileThreshold}.
-    @return
-    The threshold value in bytes beyond which data items are
-    stored as external files. If 0, external files are not used by the database.
-    */
-    public int getBlobThreshold() {
-        return getExternalFileThreshold();
-    }
-
-    /**
     By default, a byte by byte lexicographic comparison is used for
     btree keys. To customize the comparison, supply a different
     Comparator.
@@ -197,7 +149,6 @@ True if the {@link com.sleepycat.db.Environment#openDatabase Environment.openDat
     organized in the byte array, then you can write a comparison routine that
     directly examines the contents of the arrays. Otherwise, you have to
     reconstruct your original objects, and then perform the comparison.
-    @param btreeComparator the custom Comparator used for btree keys
     */
     public void setBtreeComparator(final java.util.Comparator btreeComparator) {
         this.btreeComparator = btreeComparator;
@@ -318,7 +269,6 @@ database has been opened.
 
     /**
     Set the Btree compression callbacks.
-    @param btreeCompressor the custom Btree compression callbacks
     */
     public void setBtreeCompressor(final BtreeCompressor btreeCompressor) {
         this.btreeCompressor = btreeCompressor;
@@ -326,26 +276,9 @@ database has been opened.
 
     /**
     Get the Btree compression callbacks.
-    @return the btree compression callbacks
     */
     public BtreeCompressor getBtreeCompressor() {
         return btreeCompressor;
-    }
-
-    /**
-    Set the slice callback. 
-    @param sliceHandler the slice callback
-    */
-    public void setSliceCallback(final Slice sliceHandler) {
-        this.sliceHandler = sliceHandler;
-    }
-
-    /**
-    Get the Slice callback.
-    @return the slice callback
-    */
-    public Slice getSliceCallback() {
-        return sliceHandler;
     }
 
     /**
@@ -364,7 +297,6 @@ database has been opened.
     callback is specified, no prefix function is used.  It is an error to
     specify a prefix function without also specifying a Btree key comparison
     function.
-    @param btreePrefixCalculator the Btree prefix callback
     */
     public void setBtreePrefixCalculator(
             final BtreePrefixCalculator btreePrefixCalculator) {
@@ -409,6 +341,9 @@ This method may be called at any time during the life of the application.
 @param cacheSize
 The size of the shared memory buffer pool, that is, the size of the
 cache.
+<p>
+<p>
+@throws DatabaseException if a failure occurs.
     */
     public void setCacheSize(final long cacheSize) {
         this.cacheSize = cacheSize;
@@ -433,6 +368,9 @@ Specify which directory a database should be created in or looked for.
 The directory will be used to create or locate the database file specified in
 the openDatabase method call. The directory must be one of the directories
 in the environment list specified by EnvironmentConfig.addDataDirectory.
+<p>
+<p>
+@throws DatabaseException if a failure occurs.
     */
     public void setCreateDir(final java.io.File createDir) {
         this.createDir = createDir;
@@ -461,6 +399,7 @@ be allocated contiguously by a process.  This method allows applications
 to break the cache broken up into a number of  equally sized, separate
 pieces of memory.
 <p>
+<p>
 Because databases opened within database environments use the cache
 specified to the environment, it is an error to attempt to configure
 multiple caches in a database created within an environment.
@@ -471,6 +410,9 @@ This method may be called at any time during the life of the application.
 <p>
 @param cacheCount
 The number of shared memory buffer pools, that is, the number of caches.
+<p>
+<p>
+@throws DatabaseException if a failure occurs.
     */
     public void setCacheCount(final int cacheCount) {
         this.cacheCount = cacheCount;
@@ -640,7 +582,6 @@ True if the database is configured to support read uncommitted.
     Berkeley DB uses the Rijndael/AES (also known as the Advanced
     Encryption Standard and Federal Information Processing
     Standard (FIPS) 197) algorithm for encryption or decryption.
-    @param password the password used to perform encryption and decryption
     */
     public void setEncrypted(final String password) {
         this.password = password;
@@ -812,71 +753,6 @@ True if the {@link com.sleepycat.db.Environment#openDatabase Environment.openDat
     }
 
     /**
-    Sets the path of a directory where external files are stored.
-    <p>
-    If the database is opened within an environment, this path setting is
-    ignored in
-    {@link com.sleepycat.db.Environment#openDatabase Environment.openDatabase}.
-    Use {@link com.sleepycat.db.Database#getConfig Database.getConfig} and
-    {@link com.sleepycat.db.DatabaseConfig#getExternalFileDir DatabaseConfig.getExternalFileDir}
-    to identify the current storage location of external files after opening
-    the database.
-    <p>
-    This path can not be set after opening the database.
-    <p>
-    @param dir
-    The path of a directory where external files are stored.
-    */
-    public void setExternalFileDir(java.io.File dir) {
-        this.blobDir = dir;
-    }
-
-    /**
-    Returns the path of a directory where external files are stored.
-    <p>
-    @return
-    The path of a directory where external files are stored.
-    */
-    public java.io.File getExternalFileDir() {
-        return blobDir;
-    }
-
-    /**
-    Set the size in bytes which is used to determine when a data item will be
-    stored as an external file.
-    <p>
-    Any data item that is equal to or larger in size than the
-    threshold value will automatically be stored as an external file.
-    <p>
-    It is illegal to enable external files in the database which is configured
-    as in-memory database or with duplicates, sorted
-    duplicates, compression, multiversion concurrency control and
-    transactional read operations with degree 1 isolation.
-    <p>
-    This threshold value can not be set after opening the database.
-    <p>
-    @param value
-    The size in bytes which is used to determine when a data item will be
-    stored as an external file. If 0, external files will be never used by the
-    database.
-    */
-    public void setExternalFileThreshold(int value) {
-        this.blobThreshold = value;
-    }
-
-    /**
-    Return the threshold value in bytes beyond which data items are
-    stored as external files.
-    <p>
-    @return
-    The threshold value in bytes beyond which data items are
-    stored as external files. If 0, external files are not used by the database.
-    */
-    public int getExternalFileThreshold() {
-        return blobThreshold;
-    }
-
-    /**
     Set an object whose methods are called to provide feedback.
 <p>
 Some operations performed by the Berkeley DB library can take
@@ -966,7 +842,6 @@ The hash table density.
     organized in the byte array, then you can write a comparison routine that
     directly examines the contents of the arrays. Otherwise, you have to
     reconstruct your original objects, and then perform the comparison.
-    @param hashComparator the Comparator used to compare keys in a Hash database
     */
     public void setHashComparator(final java.util.Comparator hashComparator) {
         this.hashComparator = hashComparator;
@@ -1169,50 +1044,6 @@ The function to be called with an informational message.
     }
 
     /**
-    Set the prefix string that appears before informational messages.
-<p>
-For {@link com.sleepycat.db.Database Database} handles opened inside of database environments,
-calling this method affects the entire environment and is equivalent to
-calling {@link com.sleepycat.db.EnvironmentConfig#setMessagePrefix EnvironmentConfig.setMessagePrefix}.
-<p>
-This method may be called at any time during the life of the application.
-<p>
-@param messagePrefix
-The prefix string that appears before informational messages.
-    */
-    public void setMessagePrefix(final String messagePrefix) {
-        this.messagePrefix = messagePrefix;
-    }
-
-    /**
-Return the prefix string that appears before informational messages.
-<p>
-This method may be called at any time during the life of the application.
-<p>
-@return
-The prefix string that appears before informational messages.
-    */
-    public String getMessagePrefix() {
-        return messagePrefix;
-    }
-
-    /**
-Sets the path of a file to store statistical information.
-<p>
-This method may be called at any time during the life of the application.
-<p>
-@param file
-The path of a file to store statistical information.
-    */
-    public void setMsgfile(java.io.File file) {
-        this.msgfile = file;
-        if (file != null)
-            this.msgfileStr = file.toString();
-        else
-            this.msgfileStr = null;
-    }
-
-    /**
     Set an OutputStream for displaying informational messages.
 <p>
 There are interfaces in the Berkeley DB library which either directly
@@ -1224,10 +1055,6 @@ The {@link com.sleepycat.db.EnvironmentConfig#setMessageStream EnvironmentConfig
 {@link com.sleepycat.db.DatabaseConfig#setMessageStream DatabaseConfig.setMessageStream} methods are used to display
 these messages for the application.  In this case, the message will
 include a trailing newline character.
-<p>
-The error message will consist of the prefix string and a colon
-("<b>:</b>") (if a prefix string was previously specified using
-{@link com.sleepycat.db.EnvironmentConfig#setMessagePrefix EnvironmentConfig.setMessagePrefix} or {@link com.sleepycat.db.DatabaseConfig#setMessagePrefix DatabaseConfig.setMessagePrefix}), an informational string, and a trailing newline character.
 <p>
 Setting messageStream to null unconfigures the interface.
 <p>
@@ -1496,30 +1323,10 @@ The number of partitions that will be created.
 <p>
 @param keys
 A MultipleDatabaseEntry that contains the boundary keys for partitioning.
-<p>
-@throws IllegalArgumentException if parts is not equal to the size of key array plus 1.
     */
     public void setPartitionByRange(int parts, MultipleDataEntry keys) {
-        if (keys == null || keys.getSize() == 0)
-            this.partitionKeys = null;
-        else {
-            // Get the number of items from the input keys
-            MultipleDataEntry keysmulti = new MultipleDataEntry();
-            keysmulti.setData(keys.getData());
-            keysmulti.setUserBuffer(keys.getData().length, true);
-            DatabaseEntry keyElement = new DatabaseEntry();
-            int cnt = 0;
-            while(keysmulti.next(keyElement))
-                cnt++;
-            // Ensure the size of key array equal to parts minus 1
-            if (cnt != (parts - 1))
-                throw new IllegalArgumentException("parts!=(key number-1).");
-            else if (cnt == 0)
-                this.partitionKeys = null;
-            else
-                this.partitionKeys = keys;
-        }
         this.partitionParts = parts;
+        this.partitionKeys = keys;
     }
 
     /**
@@ -2215,28 +2022,6 @@ True if the database is configured to support duplicate data items.
         return unsortedDuplicates;
     }
 
-/**
-    Configure the {@link com.sleepycat.db.Environment#openDatabase Environment.openDatabase} method to open or create a sliced database.
-    <p>
-    @param sliced
-    If true, configure the {@link com.sleepycat.db.Environment#openDatabase Environment.openDatabase} method to open or created a sliced database.
-    */
-    public void setSliced(final boolean sliced) {
-        this.sliced = sliced;
-    }
-
-    /**
-Return true if the {@link com.sleepycat.db.Environment#openDatabase Environment.openDatabase} method is configured to create a sliced database.
-<p>
-This method may be called at any time during the life of the application.
-<p>
-@return
-True if the {@link com.sleepycat.db.Environment#openDatabase Environment.openDatabase} method is configured to create a sliced database.
-    */
-    public boolean getSliced() {
-        return sliced;
-    }
-
     /**
     Specify that any specified backing source file be read in its entirety
     when the database is opened.
@@ -2438,7 +2223,6 @@ database has been opened.
         openFlags |= multiversion ? DbConstants.DB_MULTIVERSION : 0;
         openFlags |= noMMap ? DbConstants.DB_NOMMAP : 0;
         openFlags |= readOnly ? DbConstants.DB_RDONLY : 0;
-	openFlags |= sliced ? DbConstants.DB_SLICED : 0;
         openFlags |= threaded ? DbConstants.DB_THREAD : 0;
         openFlags |= truncate ? DbConstants.DB_TRUNCATE : 0;
 
@@ -2461,7 +2245,10 @@ database has been opened.
         }
     }
 
-    private int getFlags(final Db db) throws DatabaseException {
+    /* package */
+    void configureDatabase(final Db db, final DatabaseConfig oldConfig)
+        throws DatabaseException {
+
         int dbFlags = 0;
         dbFlags |= checksum ? DbConstants.DB_CHKSUM : 0;
         dbFlags |= btreeRecordNumbers ? DbConstants.DB_RECNUM : 0;
@@ -2474,23 +2261,10 @@ database has been opened.
         dbFlags |= transactionNotDurable ? DbConstants.DB_TXN_NOT_DURABLE : 0;
         if (!db.getPrivateDbEnv())
                 dbFlags |= (password != null) ? DbConstants.DB_ENCRYPT : 0;
-        return dbFlags;
-    }
 
-    /* package */
-    void configureDatabase(final Db db, final DatabaseConfig oldConfig)
-        throws DatabaseException {
-
-        int dbFlags = getFlags(db);
-        int oldFlags = oldConfig.getFlags(db);
-
-        if (dbFlags != oldFlags)
+        if (dbFlags != 0)
             db.set_flags(dbFlags);
 
-        if (db.get_env().wrapper == null && blobDir != oldConfig.blobDir)
-            db.set_ext_file_dir(blobDir.toString());
-        if (blobThreshold != oldConfig.blobThreshold)
-            db.set_ext_file_threshold(blobThreshold, 0);
         if (btMinKey != oldConfig.btMinKey)
             db.set_bt_minkey(btMinKey);
         if (byteOrder != oldConfig.byteOrder)
@@ -2513,12 +2287,8 @@ database has been opened.
             db.set_heapsize(heapSize);
         if (heapRegionSize != oldConfig.heapRegionSize)
             db.set_heap_regionsize(heapRegionSize);
-        if (messagePrefix != oldConfig.messagePrefix)
-            db.set_msgpfx(messagePrefix);
         if (messageStream != oldConfig.messageStream)
             db.set_message_stream(messageStream);
-        if (msgfile != oldConfig.msgfile)
-            db.set_msgfile(msgfile.toString());
         if (pageSize != oldConfig.pageSize)
             db.set_pagesize(pageSize);
 
@@ -2574,8 +2344,6 @@ database has been opened.
             db.set_append_recno(recnoAppender);
         if (panicHandler != oldConfig.panicHandler)
             db.set_paniccall(panicHandler);
-	if (sliceHandler != oldConfig.sliceHandler)
-            db.set_slice_callback(sliceHandler);
     }
 
     /* package */
@@ -2591,7 +2359,6 @@ database has been opened.
         multiversion = (openFlags & DbConstants.DB_MULTIVERSION) != 0;
         noMMap = (openFlags & DbConstants.DB_NOMMAP) != 0;
         readOnly = (openFlags & DbConstants.DB_RDONLY) != 0;
-	sliced = (openFlags & DbConstants.DB_SLICED) != 0;
         truncate = (openFlags & DbConstants.DB_TRUNCATE) != 0;
 
         final int dbFlags = db.get_flags();
@@ -2605,10 +2372,6 @@ database has been opened.
         unsortedDuplicates = !sortedDuplicates && ((dbFlags & DbConstants.DB_DUP) != 0);
         transactionNotDurable = (dbFlags & DbConstants.DB_TXN_NOT_DURABLE) != 0;
 
-        String blobDirStr = db.get_ext_file_dir();
-        if (blobDirStr != null)
-            blobDir = new java.io.File(blobDirStr);
-        blobThreshold = db.get_ext_file_threshold();
         if (type == DatabaseType.BTREE) {
             btMinKey = db.get_bt_minkey();
         }
@@ -2628,10 +2391,6 @@ database has been opened.
 	    heapRegionSize = db.get_heap_regionsize();
 	}
         messageStream = db.get_message_stream();
-        messagePrefix = db.get_msgpfx();
-        if (msgfileStr != null)
-            msgfile = new java.io.File(msgfileStr);
-
         pageSize = db.get_pagesize();
         // Not available by design
         password = ((dbFlags & DbConstants.DB_ENCRYPT) != 0) ? "" : null;

@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -51,8 +51,8 @@ DB_ENV-&gt;rep_set_priority(DB_ENV *env, u_int32_t priority);  </pre>
       <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
         <h3 class="title">Note</h3>
         <p>
-            The 
-            <a class="xref" href="repmgrset_ack_policy.html" title="DB_ENV-&gt;repmgr_set_ack_policy()">DB_ENV-&gt;repmgr_set_ack_policy()</a> 
+            The
+            <a class="xref" href="repmgrset_ack_policy.html" title="DB_ENV-&gt;repmgr_set_ack_policy()">DB_ENV-&gt;repmgr_set_ack_policy()</a>
             method describes <span class="emphasis"><em>electable peers</em></span>, which
             are replication sites with a non-zero priority. For some
             acknowledgement policies, Replication Manager's computation of
@@ -75,10 +75,8 @@ DB_ENV-&gt;rep_set_priority(DB_ENV *env, u_int32_t priority);  </pre>
          configuration done before that time.
     </p>
       <p>
-        Note that if the application never explicitly sets a priority, then
-        a default value of 100 is used. In preferred master mode, priority
-        values for each site are automatically set and any attempt to change
-        them results in an error.
+        Note that if the application never explicitly sets a priority, then a default value of 100
+        is used.
     </p>
       <p>
          The <code class="methodname">DB_ENV-&gt;rep_set_priority()</code> method configures a database
@@ -101,7 +99,7 @@ DB_ENV-&gt;rep_set_priority(DB_ENV *env, u_int32_t priority);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711173610672"></a>Parameters</h3>
+              <h3 class="title"><a id="idp54164408"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -109,7 +107,7 @@ DB_ENV-&gt;rep_set_priority(DB_ENV *env, u_int32_t priority);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711173611920"></a>priority</h4>
+                <h4 class="title"><a id="idp54163760"></a>priority</h4>
               </div>
             </div>
           </div>
@@ -126,37 +124,7 @@ DB_ENV-&gt;rep_set_priority(DB_ENV *env, u_int32_t priority);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711173618832"></a>Errors</h3>
-            </div>
-          </div>
-        </div>
-        <p>
-             The <code class="methodname">DB_ENV-&gt;rep_set_priority()</code> <span>
-            <span>
-                 method may fail and return one of the following non-zero errors:
-            </span>
-            
-        </span>
-        </p>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h4 class="title"><a id="idm140711173595632"></a>EINVAL</h4>
-              </div>
-            </div>
-          </div>
-          <p>
-                If changing the automatically set priority value in
-                Replication Manager preferred master mode.
-            </p>
-        </div>
-      </div>
-      <div class="sect2" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
-              <h3 class="title"><a id="idm140711173604848"></a>Class</h3>
+              <h3 class="title"><a id="idp54132032"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -168,7 +136,7 @@ DB_ENV-&gt;rep_set_priority(DB_ENV *env, u_int32_t priority);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711173612336"></a>See Also</h3>
+              <h3 class="title"><a id="idp54122592"></a>See Also</h3>
             </div>
           </div>
         </div>

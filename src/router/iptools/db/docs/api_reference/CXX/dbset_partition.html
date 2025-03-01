@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -44,31 +44,22 @@ int
 Db::set_partition(u_int32_t parts, DBT *kyes,
 	u_int32_t (*db_partition_fcn) (Db *db, DBT *key));</pre>
       <p>
-        Set up partitioning for a database.  Partitioning may be used on
-        either BTREE or HASH databases.  Partitions may be specified by
-        either a set of keys specifying a range of values in each
-        partition, or with a callback function that returns the number of
-        the partition to put a specific key.  Partition range keys may only
-        be specified for BTREE databases.
+		Set up partitioning for a database.  Partitioning may be used on either BTREE or HASH databases.
+		Partitions may be specified by either a set of keys specifying a range of values in each partition
+		or with a callback function that returns the number of the partition to put a specific key.
+		Partition range keys may only be specified for BTREE databases.
 	</p>
       <p>
-        Partitions are implemented as separate database files and can help
-        reduce contention within a logical database.  Contention can come
-        from multiple threads of control accessing database pages
-        simultaneously.  Typically these pages are the root of a btree and
-        the metadata page which contains allocation information in both
-        BTREE and HASH databases.  Each partition has its own metadata and
-        root pages.
+		Partitions are implimented as separate database files and can help reduce contention within a logical
+		database.  Contention can come from multiple threads of control accessing database pages simultaniously.
+		Typically these pages are the root of a btree and the metadata page which contains allocation information
+		in both BTREE and HASH databases.  Each partition has its own metadata and root pages.
 	</p>
-      <p>
-          The <code class="methodname">Db::set_partition()</code> method can not
-          be used with a sliced database.
-      </p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670063562016"></a>Parameters</h3>
+              <h3 class="title"><a id="idp5754304"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -81,21 +72,20 @@ Db::set_partition(u_int32_t parts, DBT *kyes,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670063539728"></a>parts</h4>
+                <h4 class="title"><a id="idp5763280"></a>parts</h4>
               </div>
             </div>
           </div>
           <p>
-                The <span class="bold"><strong>parts</strong></span> parameter is the
-	         number of partitions to create. The value must be greater than
-	         or equal to 2, and smaller than 1000000.
+                The <span class="bold"><strong>parts</strong></span> parameter is the number of partitions to create.
+		The value must be 2 or greater.
 	    </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670063553120"></a>keys</h4>
+                <h4 class="title"><a id="idp5749232"></a>keys</h4>
               </div>
             </div>
           </div>
@@ -115,7 +105,7 @@ Db::set_partition(u_int32_t parts, DBT *kyes,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670063586848"></a>db_partition_fcn</h4>
+                <h4 class="title"><a id="idp5736504"></a>db_partition_fcn</h4>
               </div>
             </div>
           </div>
@@ -134,8 +124,7 @@ Db::set_partition(u_int32_t parts, DBT *kyes,
                         <code class="literal">db</code>
                     </p>
                 <p>
-                         The <span class="bold"><strong>db</strong></span> parameter
-                         is the database handle.
+                         The <span class="bold"><strong>db</strong></span> parameter is the database handle.
                     </p>
               </li>
               <li>
@@ -156,25 +145,25 @@ Db::set_partition(u_int32_t parts, DBT *kyes,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670063647408"></a>Class</h3>
+              <h3 class="title"><a id="idp5767640"></a>Class</h3>
             </div>
           </div>
         </div>
         <p>
-            <a class="link" href="db.html" title="Chapter 2.  The Db Handle">Db</a>  
-        </p>
+                <a class="link" href="db.html" title="Chapter 2.  The Db Handle">Db</a>  
+            </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670063578624"></a>See Also</h3>
+              <h3 class="title"><a id="idp5711944"></a>See Also</h3>
             </div>
           </div>
         </div>
         <p>
-             <a class="xref" href="db.html#dblist" title="Database and Related Methods">Database and Related Methods</a> 
-        </p>
+                     <a class="xref" href="db.html#dblist" title="Database and Related Methods">Database and Related Methods</a> 
+                </p>
       </div>
     </div>
     <div class="navfooter">

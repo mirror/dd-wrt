@@ -7,14 +7,14 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Installation and Build Guide" />
-    <link rel="up" href="upgrade_4_8_toc.html" title="Chapter 16. Upgrading Berkeley DB 4.7 applications to Berkeley DB 4.8" />
+    <link rel="up" href="upgrade_4_8_toc.html" title="Chapter 13. Upgrading Berkeley DB 4.7 applications to Berkeley DB 4.8" />
     <link rel="prev" href="upgrade_4_8_dpl.html" title="Registering DPL Secondary Keys" />
     <link rel="next" href="upgrade_4_8_fcntl.html" title="Dropped Support for fcntl System Calls" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,7 +22,7 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="upgrade_4_8_dpl.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 16. Upgrading Berkeley DB 4.7 applications to Berkeley DB 4.8</th>
+          <th width="60%" align="center">Chapter 13. Upgrading Berkeley DB 4.7 applications to Berkeley DB 4.8</th>
           <td width="20%" align="right"> <a accesskey="n" href="upgrade_4_8_fcntl.html">Next</a></td>
         </tr>
       </table>
@@ -37,30 +37,27 @@
         </div>
       </div>
       <p>
-        DB 4.8 introduces some performance enhancements, based on
-        the use of shared/exclusive latches instead of locks in some
-        areas of the internal buffer management code. This change will
-        affect how the <code class="classname">DB_MPOOL</code> interface
-        handles dirty buffers.
-    </p>
-      <p> 
-        Because of these changes,
-        <code class="methodname">DB_MPOOLFILE-&gt;get</code> will now
-        acquire an exclusive latch on the buffer if the
-        <code class="literal">DB_MPOOL_DIRTY</code> or
-        <code class="literal">DB_MPOOL_EDIT</code> flags are specified. This
-        could lead to an application deadlock if the application tries
-        to fetch the buffer again, without an intervening
-        <code class="methodname">DB_MPOOLFILE-&gt;put</code> call.
-    </p>
+    DB 4.8 introduces some performance enhancements, based on the use
+    of shared/exclusive latches instead of locks in some areas of the
+    internal buffer management code. This change will affect how the
+    <code class="classname">DB_MPOOL</code> interface handles dirty buffers.
+</p>
+      <p> Because of these
+    changes, <code class="methodname">DB_MPOOLFILE-&gt;get</code> will now
+    acquire an exclusive latch on the buffer if
+    the <code class="literal">DB_MPOOL_DIRTY</code>
+    or <code class="literal">DB_MPOOL_EDIT</code> flags are specified. This
+    could lead to an application deadlock if the application tries to
+    fetch the buffer again, without an
+    intervening <code class="methodname">DB_MPOOLFILE-&gt;put</code> call.
+</p>
       <p>
-        If your application uses the <code class="literal">DB_MPOOL</code>
-        interface, and especially the
-        <code class="literal">DB_MPOOL_DIRTY</code> and
-        <code class="literal">DB_MPOOL_EDIT</code> flags, you should review
-        your code to ensure that this behavior change does not cause
-        your application to deadlock.
-    </p>
+    If your application uses the <code class="literal">DB_MPOOL</code>
+    interface, and especially the <code class="literal">DB_MPOOL_DIRTY</code>
+    and <code class="literal">DB_MPOOL_EDIT</code> flags, you should review your
+    code to ensure that this behavior change does not cause your
+    application to deadlock.
+</p>
     </div>
     <div class="navfooter">
       <hr />

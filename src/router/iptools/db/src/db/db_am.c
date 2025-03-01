@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1998, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1998, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -19,6 +19,7 @@
 #include "dbinc/qam.h"
 #include "dbinc/txn.h"
 
+static int __db_secondary_get __P((DB *, DB_TXN *, DBT *, DBT *, u_int32_t));
 static int __dbc_set_priority __P((DBC *, DB_CACHE_PRIORITY));
 static int __dbc_get_priority __P((DBC *, DB_CACHE_PRIORITY* ));
 
@@ -204,7 +205,6 @@ __db_cursor_int(dbp, ip, txn, dbtype, root, flags, locker, dbcp)
 	/* Refresh the DBC structure. */
 	dbc->dbtype = dbtype;
 	RESET_RET_MEM(dbc);
-	dbc->db_stream = __dbc_db_stream;
 	dbc->set_priority = __dbc_set_priority;
 	dbc->get_priority = __dbc_get_priority;
 	dbc->priority = dbp->priority;
@@ -314,16 +314,16 @@ __db_cursor_int(dbp, ip, txn, dbtype, root, flags, locker, dbcp)
 	if (F2_ISSET(dbp, DB2_AM_EXCL)) {
 		F_SET(dbc, DBC_DONTLOCK);
 		if (IS_REAL_TXN(txn)&& !LF_ISSET(DBC_OPD | DBC_DUPLICATE)) {
-			/*
-			 * Exclusive databases can only have one active
-			 * transaction at a time since there are no internal
+			/* 
+			 * Exclusive databases can only have one active 
+			 * transaction at a time since there are no internal 
 			 * locks to prevent one transaction from reading and
-			 * writing another's uncommitted changes.
+			 * writing another's uncommitted changes. 
 			 */
 			if (dbp->cur_txn != NULL && dbp->cur_txn != txn) {
-				ret = USR_ERR(env, EINVAL);
 			    __db_errx(env, DB_STR("0749",
 "Exclusive database handles can only have one active transaction at a time."));
+				ret = EINVAL;
 				goto err;
 			}
 			/* Do not trade a second time. */
@@ -332,7 +332,7 @@ __db_cursor_int(dbp, ip, txn, dbtype, root, flags, locker, dbcp)
 				memset(&req, 0, sizeof(req));
 				req.lock = dbp->handle_lock;
 				req.op = DB_LOCK_TRADE;
-				if ((ret = __lock_vec(env, txn->locker, 0,
+				if ((ret = __lock_vec(env, txn->locker, 0, 
 				    &req, 1, 0)) != 0)
 					goto err;
 				dbp->cur_txn = txn;
@@ -397,11 +397,10 @@ __db_cursor_int(dbp, ip, txn, dbtype, root, flags, locker, dbcp)
 	if (ip != NULL) {
 		dbc->thread_info = ip;
 #ifdef DIAGNOSTIC
-		if (dbc->locker != NULL) {
-			dbc->locker->prev_locker = ip->dbth_locker;
+		if (dbc->locker != NULL)
 			ip->dbth_locker =
 			    R_OFFSET(&(env->lk_handle->reginfo), dbc->locker);
-		} else
+		else
 			ip->dbth_locker = INVALID_ROFF;
 #endif
 	} else if (txn != NULL)
@@ -818,17 +817,6 @@ __db_sync(dbp)
 		ret = __partition_sync(dbp);
 	else
 #endif
-
-        /*
-         * No need to sync the top level external file database, since it is
-         * only opened when creating a new external file database, and is
-         * immediately closed after the external file directory id is obtained
-		 * from it.
-         */
-        if (dbp->blob_meta_db != NULL) {
-                if ((t_ret = __db_sync(dbp->blob_meta_db)) != 0 && ret == 0)
-                        ret = t_ret;
-        }
 	if (dbp->type == DB_QUEUE)
 		ret = __qam_sync(dbp);
 	else
@@ -1013,11 +1001,8 @@ err:	if (sdbc != NULL && (t_ret = __dbc_close(sdbc)) != 0 && ret == 0)
  * __db_secondary_get --
  *	This wrapper function for DB->pget() is the DB->get() function
  *	on a database which has been made into a secondary index.
- *
- * PUBLIC: int __db_secondary_get
- * PUBLIC:     __P((DB *, DB_TXN *, DBT *, DBT *, u_int32_t));
  */
-int
+static int
 __db_secondary_get(sdbp, txn, skey, data, flags)
 	DB *sdbp;
 	DB_TXN *txn;

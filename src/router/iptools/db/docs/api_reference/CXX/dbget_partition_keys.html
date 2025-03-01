@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -43,15 +43,12 @@
 int
 Db::get_partition_keys(u_int32_t *partsp, DBT *keysp);</pre>
       <p>
-        The <code class="methodname">Db::get_partition_keys()</code> method
-        returns the range of keys used to specify the values placed in each
-        of a database's partitions. This information is set using the
-        <a class="xref" href="dbset_partition.html" title="Db::set_partition()">Db::set_partition()</a>
-        method.
+        The <code class="methodname">Db::get_partition_keys()</code> method returns the partitioning information as
+        set by the <a class="xref" href="dbset_partition.html" title="Db::set_partition()">Db::set_partition()</a> method.
     </p>
       <p>
-         The <code class="methodname">Db::get_partition_keys()</code> method may
-         be called at any time during the life of the application.
+         The <code class="methodname">Db::get_partition_keys()</code> method may be called at any time during the life
+         of the application.
     </p>
       <p>
          The <code class="methodname">Db::get_partition_keys()</code> <span>
@@ -67,7 +64,7 @@ Db::get_partition_keys(u_int32_t *partsp, DBT *keysp);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670065087584"></a>Parameters</h3>
+              <h3 class="title"><a id="idp1605864"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -75,28 +72,28 @@ Db::get_partition_keys(u_int32_t *partsp, DBT *keysp);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670065088832"></a>partsp</h4>
+                <h4 class="title"><a id="idp2250472"></a>partsp</h4>
               </div>
             </div>
           </div>
           <p>
-                  The <span class="bold"><strong>partsp</strong></span>
-                  parameter returns the number of partitions in the
-                  database.
-             </p>
+                          The
+                          <code class="methodname">Db::get_partition_keys()</code>
+                          method returns number of partitions in the
+                          <span class="bold"><strong>partsp</strong></span>
+                          parameter.
+                     </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670065094080"></a>keysp</h4>
+                <h4 class="title"><a id="idm1655072"></a>keysp</h4>
               </div>
             </div>
           </div>
           <p>
-                 The <span class="bold"><strong>keysp</strong></span> parameter 
-                 returns the set of keys used to place values in the
-                 database partitions.
+		         The <span class="bold"><strong>keysp</strong></span> parameter will be set to the array of partitioning keys.
              </p>
         </div>
       </div>
@@ -104,7 +101,7 @@ Db::get_partition_keys(u_int32_t *partsp, DBT *keysp);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670065104304"></a>Class</h3>
+              <h3 class="title"><a id="idp1551320"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -116,14 +113,14 @@ Db::get_partition_keys(u_int32_t *partsp, DBT *keysp);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670065146016"></a>See Also</h3>
+              <h3 class="title"><a id="idp3812744"></a>See Also</h3>
             </div>
           </div>
         </div>
         <p>
-                <a class="xref" href="db.html#dblist" title="Database and Related Methods">Database and Related Methods</a>,
-                <a class="xref" href="dbset_partition.html" title="Db::set_partition()">Db::set_partition()</a>
-        </p>
+                        <a class="xref" href="db.html#dblist" title="Database and Related Methods">Database and Related Methods</a>,
+                        <a class="xref" href="dbset_partition.html" title="Db::set_partition()">Db::set_partition()</a>
+                </p>
       </div>
     </div>
     <div class="navfooter">

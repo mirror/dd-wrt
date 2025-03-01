@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -602,15 +602,15 @@ public class PackedInteger {
             
             /* 
              * valueLen is the length of the value part stored in buf. Because
-             * the first byte of buf is used to stored the length, we need 
-             * to subtract one.
+             * the first byte of buf is used to stored the length, so we need 
+             * to minus one.
              */
             int valueLen = offset - byte1Off - 1;
             
             /* 
              * The first byte stores the number of additional bytes. Here we
              * store the result of 0x08 - valueLen, rather than directly store
-             * valueLen. The reason is to implement natural sort order for 
+             * valueLen. The reason is to implement nature sort order for 
              * byte-by-byte comparison.
              */
             buf[byte1Off] = (byte) (0x08 - valueLen);
@@ -618,7 +618,7 @@ public class PackedInteger {
         
             /* 
              * If the value > 120, then first adjust the value by subtracting 
-             * 121. Then the adjusted value is stored as an unsigned big endian
+             * 119. Then the adjusted value is stored as an unsigned big endian
              * integer.
              */
             value -= 121;
@@ -647,15 +647,15 @@ public class PackedInteger {
             
             /* 
              * valueLen is the length of the value part stored in buf. Because
-             * the first byte of buf is used to stored the length, we need to
-             * subtract one.
+             * the first byte of buf is used to stored the length, so we need 
+             * to minus one.
              */
             int valueLen = offset - byte1Off - 1;   
 
             /* 
              * The first byte stores the number of additional bytes. Here we
              * store the result of 0xF7 + valueLen, rather than directly store
-             * valueLen. The reason is to implement natural sort order for 
+             * valueLen. The reason is to implement nature sort order for 
              * byte-by-byte comparison.
              */
             buf[byte1Off] = (byte) (0xF7 + valueLen);
@@ -663,7 +663,7 @@ public class PackedInteger {
 
             /* 
              * If -119 <= value <= 120, only one byte is needed to store the
-             * value. The stored value is the original value plus 127.
+             * value. The stored value is the original value adds 127.
              */
             buf[byte1Off] = (byte) (value + 127);
         }

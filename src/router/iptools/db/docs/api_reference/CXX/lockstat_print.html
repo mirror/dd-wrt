@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -71,7 +71,7 @@ DbEnv::lock_stat_print(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670059088976"></a>Parameters</h3>
+              <h3 class="title"><a id="idp8118672"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -79,15 +79,15 @@ DbEnv::lock_stat_print(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670059097344"></a>flags</h4>
+                <h4 class="title"><a id="idp8148784"></a>flags</h4>
               </div>
             </div>
           </div>
           <p>
-                  The <span class="bold"><strong>flags</strong></span> parameter must be set to 0
-                  or by bitwise inclusively <span class="bold"><strong>OR</strong></span>'ing
-                  together one or more of the following values:
-             </p>
+                          The <span class="bold"><strong>flags</strong></span> parameter must be set to 0
+                          or by bitwise inclusively <span class="bold"><strong>OR</strong></span>'ing
+                          together one or more of the following values:
+                     </p>
           <div class="itemizedlist">
             <ul type="disc">
               <li>
@@ -103,37 +103,28 @@ DbEnv::lock_stat_print(u_int32_t flags);</pre>
                      </p>
               </li>
               <li>
-                <p><a id="lockstat_print_DB_STAT_ALLOC"></a>
-                          <code class="literal">DB_STAT_ALLOC</code>
-                     </p>
-                <p>
-                        Display allocation information. To display allocation information, both
-                        DB_STAT_ALLOC and DB_STAT_ALL need to be set.
-                     </p>
-              </li>
-              <li>
                 <p><a id="envsat_print_DB_STAT_CLEAR"></a>
-                          <code class="literal">DB_STAT_CLEAR</code>
-                     </p>
+                  <code class="literal">DB_STAT_CLEAR</code>
+            </p>
                 <p>
-                        Reset statistics after displaying their values.
-                     </p>
+                Reset statistics after displaying their values.
+            </p>
               </li>
               <li>
                 <p><a id="envsat_print_DB_STAT_LOCK_CONF"></a>
-                          <code class="literal">DB_STAT_LOCK_CONF</code>
-                     </p>
+                  <code class="literal">DB_STAT_LOCK_CONF</code>
+            </p>
                 <p>
-                        Display the lock conflict matrix.
-                     </p>
+                Display the lock conflict matrix.
+            </p>
               </li>
               <li>
                 <p><a id="envsat_print_DB_STAT_LOCK_LOCKERS"></a>
-                          <code class="literal">DB_STAT_LOCK_LOCKERS</code>
-                     </p>
+                  <code class="literal">DB_STAT_LOCK_LOCKERS</code>
+            </p>
                 <p>
-                        Display the lockers within hash chains.
-                     </p>
+                Display the lockers within hash chains.
+            </p>
               </li>
               <li>
                 <p><a id="envsat_print_DB_STAT_LOCK_OBJECTS"></a>
@@ -143,18 +134,18 @@ DbEnv::lock_stat_print(u_int32_t flags);</pre>
                         Display the lock objects within hash chains. For
                         each object, the amount of data displayed is
                         limited to 100 bytes, unless some other limit is
-                        set 
+                        set
                         
                         using the DB_CONFIG "set_data_len" parameter.
                      </p>
               </li>
               <li>
                 <p><a id="envsat_print_DB_STAT_LOCK_PARAMS"></a>
-                          <code class="literal">DB_STAT_LOCK_PARAMS</code>
-                     </p>
+                  <code class="literal">DB_STAT_LOCK_PARAMS</code>
+            </p>
                 <p>
-                        Display the locking subsystem parameters.
-                     </p>
+                Display the locking subsystem parameters.
+            </p>
               </li>
             </ul>
           </div>
@@ -164,7 +155,7 @@ DbEnv::lock_stat_print(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670059043968"></a>Class</h3>
+              <h3 class="title"><a id="idp8176616"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -177,7 +168,7 @@ DbEnv::lock_stat_print(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670059066112"></a>See Also</h3>
+              <h3 class="title"><a id="idp8167424"></a>See Also</h3>
             </div>
           </div>
         </div>

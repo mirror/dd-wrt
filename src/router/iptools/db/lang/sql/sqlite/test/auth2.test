@@ -31,7 +31,7 @@ do_test auth2-1.1 {
     INSERT INTO t1 VALUES(1,2,3);
   }
   set ::flist {}
-  proc auth {code arg1 arg2 arg3 arg4 args} {
+  proc auth {code arg1 arg2 arg3 arg4} {
     if {$code=="SQLITE_FUNCTION"} {
       lappend ::flist $arg2
       if {$arg2=="max"} {
@@ -80,7 +80,7 @@ sqlite3 db test.db
 sqlite3 db2 test.db
 proc auth {args} {
   global authargs
-  append authargs [lrange $args 0 4]\n
+  append authargs $args\n
   return SQLITE_OK
 }
 db auth auth
@@ -102,7 +102,6 @@ SQLITE_READ sqlite_master name main {}
 SQLITE_READ sqlite_master rootpage main {}
 SQLITE_READ sqlite_master sql main {}
 SQLITE_READ sqlite_master tbl_name main {}
-SQLITE_READ sqlite_master type main {}
 SQLITE_READ sqlite_master ROWID main {}
 }
 do_test auth2-2.2 {
@@ -123,7 +122,6 @@ SQLITE_READ sqlite_master name main {}
 SQLITE_READ sqlite_master rootpage main {}
 SQLITE_READ sqlite_master sql main {}
 SQLITE_READ sqlite_master tbl_name main {}
-SQLITE_READ sqlite_master type main {}
 SQLITE_READ sqlite_master ROWID main {}
 }
 do_test auth2-2.3 {
@@ -133,12 +131,12 @@ do_test auth2-2.3 {
   }
   set ::authargs
 } {SQLITE_SELECT {} {} {} {}
+SQLITE_READ v2 a main {}
+SQLITE_READ v2 b main {}
 SQLITE_READ t2 x main v2
 SQLITE_READ t2 y main v2
 SQLITE_READ t2 y main v2
 SQLITE_READ t2 z main v2
-SQLITE_READ v2 a main {}
-SQLITE_READ v2 b main {}
 SQLITE_SELECT {} {} {} v2
 }
 do_test auth2-2.4 {
@@ -151,20 +149,20 @@ do_test auth2-2.4 {
   }
   set ::authargs
 } {SQLITE_SELECT {} {} {} {}
+SQLITE_READ v2 b main {}
+SQLITE_READ v2 a main {}
 SQLITE_READ t2 x main v2
 SQLITE_READ t2 y main v2
 SQLITE_READ t2 y main v2
 SQLITE_READ t2 z main v2
-SQLITE_READ v2 b main {}
-SQLITE_READ v2 a main {}
 SQLITE_SELECT {} {} {} v2
 SQLITE_SELECT {} {} {} {}
+SQLITE_READ v2 b main {}
+SQLITE_READ v2 a main {}
 SQLITE_READ t2 x main v2
 SQLITE_READ t2 y main v2
 SQLITE_READ t2 y main v2
 SQLITE_READ t2 z main v2
-SQLITE_READ v2 b main {}
-SQLITE_READ v2 a main {}
 SQLITE_SELECT {} {} {} v2
 }
 db2 close

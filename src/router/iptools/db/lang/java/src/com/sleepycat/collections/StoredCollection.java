@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -61,8 +61,6 @@ public abstract class StoredCollection<E> extends StoredContainer
      * Returns the number of records read at one time by iterators returned by
      * the {@link #iterator} method.  By default this value is {@link
      * #DEFAULT_ITERATOR_BLOCK_SIZE}.
-     *
-     * @return the number of records.
      */
     public int getIteratorBlockSize() {
 
@@ -73,8 +71,6 @@ public abstract class StoredCollection<E> extends StoredContainer
      * Changes the number of records read at one time by iterators returned by
      * the {@link #iterator} method.  By default this value is {@link
      * #DEFAULT_ITERATOR_BLOCK_SIZE}.
-     *
-     * @param blockSize the number of records.
      *
      * @throws IllegalArgumentException if the blockSize is less than two.
      */
@@ -199,12 +195,6 @@ public abstract class StoredCollection<E> extends StoredContainer
     }
 
     /**
-     * @param writeAllowed is true to open a read-write iterator or false to
-     * open a read-only iterator.  If the collection is read-only the iterator
-     * will always be read-only.
-     *
-     * @return a {@link StoredIterator} for this collection.
-     *
      * @deprecated Please use {@link #storedIterator()} or {@link
      * #storedIterator(boolean)} instead.  Because the iterator returned must
      * be closed, the method name {@code iterator} is confusing since standard

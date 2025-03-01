@@ -84,8 +84,6 @@ typedef u_int32_t uintptr_t;\\
 typedef int64_t off_t;
 	d
 }
-s/@db_off_t_decl@/typedef int64_t db_off_t;/
-s/@db_off_t_max_decl@/#define DB_OFF_T_MAX INT64_MAX/
 /@platform_header@/{
 	i\\
 /*\\
@@ -115,12 +113,6 @@ s/@db_off_t_max_decl@/#define DB_OFF_T_MAX INT64_MAX/
 #ifdef _MSC_VER\\
 #pragma warning(pop)\\
 #endif
-	d
-}
-/@socket_decl/{
-	i\\
-#include <winsock2.h>\\
-typedef SOCKET DB_REPMGR_SOCKET;
 	d
 }
 s/@DB_VERSION_FAMILY@/$DB_VERSION_FAMILY/
@@ -277,14 +269,9 @@ f=../build_windows/dbstl_common.h
 cmp $t $f > /dev/null 2>&1 ||
     (echo "Building $f" && rm -f $f && cp $t $f)
 
-# Copy in sqlite3.h.
-f=../build_windows/sqlite3.h
-cmp ../lang/sql/generated/sqlite3.h $f > /dev/null 2>&1 ||
-    (echo "Building $f" && rm -f $f && cp ../lang/sql/generated/sqlite3.h $f)
- 
 # Copy in errno.h.
 f=../build_wince/errno.h
 cmp errno.h $f > /dev/null 2>&1 ||
     (echo "Building $f" && rm -f $f && cp errno.h $f)
- 
+
 rm -f $s $t

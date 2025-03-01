@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -29,7 +29,6 @@ public interface BackupHandler {
      <p>
      @param dbname
      The name of the database that has been backed up.
-     @return error code; zero if there is no error
      */
     int close(String dbname);
     /**
@@ -42,7 +41,6 @@ public interface BackupHandler {
      <p>
      @param dbname
      The name of the database being backed up.
-     @return error code; zero if there is no error
      */
     int open(String target, String dbname);
     /**
@@ -61,7 +59,6 @@ public interface BackupHandler {
      <p>
      @param len
      Identifies the number of bytes to back up from the buffer.
-     @return error code; zero if there is no error
      */
     int write(long file_pos, byte[] buf, int off, int len);
 }

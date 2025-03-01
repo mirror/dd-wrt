@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -178,11 +178,10 @@
           </li>
           <li>
             <p>
-                Temporary files, which are created only under certain
-                special circumstances. These files never need to be backed
-                up or otherwise managed and so they are not a consideration
-                for the topics described in this chapter. See <a class="xref" href="enabletxn.html#security" title="Security Considerations">Security Considerations</a> for more
-                information on temporary files.
+                Temporary files, which are created only under certain special circumstances. These files never need to
+                be backed up or otherwise managed and so they are not a consideration for the topics described in this
+                chapter. See <a class="xref" href="enabletxn.html#security" title="Security Considerations">Security Considerations</a> 
+                for more information on temporary files.
             </p>
           </li>
         </ul>
@@ -228,15 +227,11 @@
           <ul type="disc">
             <li>
               <p>
-                    Flushes dirty pages from the in-memory cache. This
-                    means that data modifications found in your in-memory
-                    cache are written to the database files on disk. Note that
-                    a checkpoint also causes data dirtied by an uncommitted
-                    transaction to also be written to your database files on
-                    disk. In this latter case, DB's normal recovery is
-                    used to remove any such modifications that were
-                    subsequently abandoned by your application using a
-                    transaction abort.
+                    Flushes dirty pages from the in-memory cache. This means that data modifications found in your
+                    in-memory cache are written to the database files on disk. Note that a checkpoint also causes data
+                    dirtied by an uncommitted transaction to also be written to your database files on disk. In this latter
+                    case, DB's normal recovery is used to remove any such modifications that were subsequently
+                    abandoned by your application using a transaction abort.
                 </p>
               <p>
                     Normal recovery is describe in <a class="xref" href="recovery.html" title="Recovery Procedures">Recovery Procedures</a>.
@@ -249,8 +244,7 @@
             </li>
             <li>
               <p>
-                    Flushes the log. This causes all log data that has not
-                    yet been written to disk to be written.
+                    Flushes the log. This causes all log data that has not yet been written to disk to be written.
                 </p>
             </li>
             <li>
@@ -262,9 +256,8 @@
         </div>
         <p>
             There are several ways to run a checkpoint. One way is to use
-            the <span class="command"><strong>db_checkpoint</strong></span> command line utility.
-            (Note, however, that this command line utility cannot be used
-            if your environment was opened using
+            the <span class="command"><strong>db_checkpoint</strong></span> command line utility. (Note, however, that this command line utility
+            cannot be used if your environment was opened using
                 <span>
                     <code class="literal">DB_PRIVATE</code>.)
                 </span>
@@ -291,7 +284,7 @@
         <p>
             For configuration information, see the 
             
-                <a class="ulink" href="http://docs.oracle.com/cd/E17076_02/html/api_reference/CXX/txncheckpoint.html" target="_top">
+                <a class="ulink" href="http://download.oracle.com/docs/cd/E17076_02/html/api_reference/CXX/txncheckpoint.html" target="_top">
                     DbEnv::txn_checkpoint() API reference page.
                 </a>
                 

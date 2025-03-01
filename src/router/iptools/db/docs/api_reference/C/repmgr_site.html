@@ -8,20 +8,20 @@
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C API Reference" />
     <link rel="up" href="rep.html" title="Chapter 10.  Replication Methods" />
-    <link rel="prev" href="repmgrset_socket.html" title="DB_ENV-&gt;repmgr_set_socket()" />
+    <link rel="prev" href="repmgrset_ack_policy.html" title="DB_ENV-&gt;repmgr_set_ack_policy()" />
     <link rel="next" href="repmgr_site_by_eid.html" title="DB_ENV-&gt;repmgr_site_by_eid()" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DB_ENV-&gt;repmgr_site()</th>
         </tr>
         <tr>
-          <td width="20%" align="left"><a accesskey="p" href="repmgrset_socket.html">Prev</a> </td>
+          <td width="20%" align="left"><a accesskey="p" href="repmgrset_ack_policy.html">Prev</a> </td>
           <th width="60%" align="center">Chapter 10. 
                 Replication Methods
         </th>
@@ -45,9 +45,9 @@ DB_ENV-&gt;repmgr_site(DB_ENV *env, const char *host,
     u_int port, DB_SITE **sitep, u_int32_t flags);  </pre>
       <p>
         The <code class="methodname">DB_ENV-&gt;repmgr_site()</code> method returns a 
-        DB_SITE handle that defines a site's network address.
-        You use the DB_SITE
-        handle to configure and manage a Replication Manager site.
+        DB_SITE handle that defines a site's
+        host/port network address. You use the DB_SITE
+        handle to configure and manage replication sites.
     </p>
       <p>
         This method allocates memory for the handle, returning a pointer to
@@ -78,7 +78,7 @@ DB_ENV-&gt;repmgr_site(DB_ENV *env, const char *host,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711173037840"></a>Parameters</h3>
+              <h3 class="title"><a id="idp54404184"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -86,22 +86,19 @@ DB_ENV-&gt;repmgr_site(DB_ENV *env, const char *host,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711173039664"></a>host</h4>
+                <h4 class="title"><a id="idp54413704"></a>host</h4>
               </div>
             </div>
           </div>
           <p>
-                  The site's host identification string, generally a TCP/IP
-                  host name.   IPv6 and IPv4 addresses in numeric format
-                  are also accepted.  If multiple addresses are defined
-                  for a host name, an IPv6 address is used whenever possible.
+                  The site's host identification string, generally a TCP/IP host name.
              </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711173046272"></a>port</h4>
+                <h4 class="title"><a id="idp54437600"></a>port</h4>
               </div>
             </div>
           </div>
@@ -113,7 +110,7 @@ DB_ENV-&gt;repmgr_site(DB_ENV *env, const char *host,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711173026896"></a>sitep</h4>
+                <h4 class="title"><a id="idp54438008"></a>sitep</h4>
               </div>
             </div>
           </div>
@@ -126,7 +123,7 @@ DB_ENV-&gt;repmgr_site(DB_ENV *env, const char *host,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711172993968"></a>flags</h4>
+                <h4 class="title"><a id="idp54438456"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -140,7 +137,7 @@ DB_ENV-&gt;repmgr_site(DB_ENV *env, const char *host,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711173130896"></a>Errors</h3>
+              <h3 class="title"><a id="idp54400648"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -157,7 +154,7 @@ DB_ENV-&gt;repmgr_site(DB_ENV *env, const char *host,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711173021440"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp54423552"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -171,7 +168,7 @@ DB_ENV-&gt;repmgr_site(DB_ENV *env, const char *host,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711173073296"></a>Class</h3>
+              <h3 class="title"><a id="idp54418624"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -183,13 +180,12 @@ DB_ENV-&gt;repmgr_site(DB_ENV *env, const char *host,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711173002896"></a>See Also</h3>
+              <h3 class="title"><a id="idp54414144"></a>See Also</h3>
             </div>
           </div>
         </div>
         <p>
-            <a class="xref" href="rep.html#replist" title="Replication and Related Methods">Replication and Related Methods</a>,
-            <a class="xref" href="db_site.html" title="The DB_SITE Handle">The DB_SITE Handle</a>
+             <a class="xref" href="rep.html#replist" title="Replication and Related Methods">Replication and Related Methods</a> 
         </p>
       </div>
     </div>
@@ -197,14 +193,14 @@ DB_ENV-&gt;repmgr_site(DB_ENV *env, const char *host,
       <hr />
       <table width="100%" summary="Navigation footer">
         <tr>
-          <td width="40%" align="left"><a accesskey="p" href="repmgrset_socket.html">Prev</a> </td>
+          <td width="40%" align="left"><a accesskey="p" href="repmgrset_ack_policy.html">Prev</a> </td>
           <td width="20%" align="center">
             <a accesskey="u" href="rep.html">Up</a>
           </td>
           <td width="40%" align="right"> <a accesskey="n" href="repmgr_site_by_eid.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">DB_ENV-&gt;repmgr_set_socket() </td>
+          <td width="40%" align="left" valign="top">DB_ENV-&gt;repmgr_set_ack_policy() </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

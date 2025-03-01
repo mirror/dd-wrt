@@ -9,12 +9,12 @@
     <link rel="start" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
     <link rel="up" href="repapp.html" title="Chapter 3. The DB Replication Manager" />
     <link rel="prev" href="rep_init_code.html" title="Starting and Stopping Replication" />
-    <link rel="next" href="fwrkpermmessage.html" title="Replication Manager Permanent Message Handling" />
+    <link rel="next" href="fwrkpermmessage.html" title="Permanent Message Handling" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -96,7 +96,7 @@
                 <span>ex_rep_gsg_simple</span>
                 
                 code to a new file called
-                <code class="literal">rep_mgr_gsg.c</code>.
+                <code class="literal">ex_rep_gsg_repmgr.c</code>.
 
                 <span>
                     We then make the corresponding change to the program name.
@@ -105,7 +105,7 @@
                 
         </p>
       <pre class="programlisting">/*
- <strong class="userinput"><code>* File: rep_mgr_gsg.c</code></strong>
+ <strong class="userinput"><code>* File: ex_rep_gsg_repmgr.c</code></strong>
  */
 
 #include &lt;stdlib.h&gt;
@@ -128,7 +128,7 @@ const char *progname = <strong class="userinput"><code>"ex_rep_gsg_repmgr";</cod
 int create_env(const char *, DB_ENV **);
 int env_init(DB_ENV *, const char *);
 int doloop (DB_ENV *);
-int print_stocks(DB *); </pre>
+int print_stocks(DBC *); </pre>
       <p>
         Next we update our usage function. The application will continue to
         accept the <code class="literal">-h</code> parameter so that we can identify
@@ -207,7 +207,7 @@ main(int argc, char *argv[])
     const char *home;
     char ch, <strong class="userinput"><code>*host, *portstr</code></strong>;
     int ret, <strong class="userinput"><code>local_is_set, is_group_creator</code></strong>;
-    <strong class="userinput"><code>u_int16_t port</code></strong>;
+    <strong class="userinput"><code>u_int32_t port</code></strong>;
 
     dbenv = NULL;
 
@@ -238,8 +238,6 @@ main(int argc, char *argv[])
             home = optarg;
             break;
         <strong class="userinput"><code>/* Set the host and port used by this environment */
-        case 'L':
-            is_group_creator = 1; /* FALLTHROUGH */
         case 'l':
             host = strtok(optarg, ":");
             if ((portstr = strtok(NULL, ":")) == NULL) {
@@ -277,7 +275,8 @@ main(int argc, char *argv[])
             port = (unsigned short)atoi(portstr);
             if ((dbenv-&gt;repmgr_site(dbenv, host, port, &amp;dbsite,
                                       0)) != 0) {
-                dbenv-&gt;err(dbenv, ret, "DB_ENV-&gt;repmgr_site");
+                fprintf(stderr,
+                    "Could not add site %s.\n", host);
                 goto err;
             }
             dbenv-&gt;set_config(dbsite, DB_BOOTSTRAP_HELPER, 1);
@@ -390,7 +389,7 @@ env_init(DB_ENV *dbenv, const char *home)
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Replication Manager Permanent Message Handling</td>
+          <td width="40%" align="right" valign="top"> Permanent Message Handling</td>
         </tr>
       </table>
     </div>

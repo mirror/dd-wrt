@@ -26,7 +26,7 @@ for api in csharp ; do
 	echo "Building $api API"
 	swig_args="-outdir $CSHARP_SRCDIR -namespace $NAMESPACE -dllimport libname -DSWIG_CSHARP_NO_EXCEPTION_HELPER $args"
 
-	$SWIG -DSWIG2_CSHARP -Wall -$api $swig_args -I$SWIG_DIR \
+	$SWIG -Wall -$api $swig_args -I$SWIG_DIR \
 	    -o ../lang/csharp/libdb_$api/db_${api}_wrap.c $SWIG_FILE || exit $?
 done
 

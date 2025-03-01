@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -440,10 +440,6 @@ public class TupleOutput extends FastOutputStream {
     /**
      * Writes an unsorted packed integer.
      *
-     * @param val is the value to write to the buffer.
-     *
-     * @return this tuple output object.
-     *
      * @see <a href="package-summary.html#integerFormats">Integer Formats</a>
      */
     public final TupleOutput writePackedInt(int val) {
@@ -459,10 +455,6 @@ public class TupleOutput extends FastOutputStream {
 
     /**
      * Writes an unsorted packed long integer.
-     *
-     * @param val is the value to write to the buffer.
-     *
-     * @return this tuple output object.
      *
      * @see <a href="package-summary.html#integerFormats">Integer Formats</a>
      */
@@ -480,10 +472,6 @@ public class TupleOutput extends FastOutputStream {
     /**
      * Writes a sorted packed integer.
      *
-     * @param val is the value to write to the buffer.
-     *
-     * @return this tuple output object.
-     *
      * @see <a href="package-summary.html#integerFormats">Integer Formats</a>
      */
     public final TupleOutput writeSortedPackedInt(int val) {
@@ -498,10 +486,6 @@ public class TupleOutput extends FastOutputStream {
 
     /**
      * Writes a sorted packed long integer.
-     *
-     * @param val is the value to write to the buffer.
-     *
-     * @return this tuple output object.
      *
      * @see <a href="package-summary.html#integerFormats">Integer Formats</a>
      */
@@ -519,10 +503,6 @@ public class TupleOutput extends FastOutputStream {
 
     /**
      * Writes a {@code BigInteger}.
-     *
-     * @param val is the value to write to the buffer.
-     *
-     * @return this tuple output object.
      *
      * @throws NullPointerException if val is null.
      *
@@ -550,10 +530,6 @@ public class TupleOutput extends FastOutputStream {
      * {@code BigInteger} value if {@link TupleOutput#writeBigInteger} were
      * called.
      *
-     * @param val the BigInteger
-     *
-     * @return the byte length.
-     *
      * @see <a href="package-summary.html#integerFormats">Integer Formats</a>
      */
     public static int getBigIntegerByteLength(BigInteger val) {
@@ -563,10 +539,6 @@ public class TupleOutput extends FastOutputStream {
     
     /**
      * Writes an unsorted {@code BigDecimal}.
-     *
-     * @param val is the value to write to the buffer.
-     *
-     * @return this tuple output object.
      *
      * @throws NullPointerException if val is null.
      *
@@ -605,10 +577,6 @@ public class TupleOutput extends FastOutputStream {
      * Returns the maximum byte length that would be output for a given {@code
      * BigDecimal} value if {@link TupleOutput#writeBigDecimal} were called.
      *
-     * @param val the BigDecimal.
-     *
-     * @return the byte length.
-     *
      * @see <a href="package-summary.html#bigDecimalFormats">BigDecimal
      * Formats</a>
      */
@@ -621,10 +589,6 @@ public class TupleOutput extends FastOutputStream {
     
     /**
      * Writes a sorted {@code BigDecimal}.
-     *
-     * @param val is the value to write to the buffer.
-     *
-     * @return this tuple output object.
      *
      * @see <a href="package-summary.html#bigDecimalFormats">BigDecimal
      * Formats</a>
@@ -750,10 +714,6 @@ public class TupleOutput extends FastOutputStream {
      * Returns the maximum byte length that would be output for a given {@code
      * BigDecimal} value if {@link TupleOutput#writeSortedBigDecimal} were
      * called.
-     *
-     * @param val the BigDecimal.
-     *
-     * @return the byte length.
      *
      * @see <a href="package-summary.html#bigDecimalFormats">BigDecimal
      * Formats</a>

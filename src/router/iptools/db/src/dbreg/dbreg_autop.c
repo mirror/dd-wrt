@@ -10,23 +10,6 @@
 #include "dbinc/txn.h"
 
 /*
- * PUBLIC: int __dbreg_register_42_print __P((ENV *, DBT *, DB_LSN *,
- * PUBLIC:     db_recops, void *));
- */
-int
-__dbreg_register_42_print(env, dbtp, lsnp, notused2, info)
-	ENV *env;
-	DBT *dbtp;
-	DB_LSN *lsnp;
-	db_recops notused2;
-	void *info;
-{
-	COMPQUIET(notused2, DB_TXN_PRINT);
-
-	return (__log_print_record(env, dbtp, lsnp, "__dbreg_register_42", __dbreg_register_42_desc, info));
-}
-
-/*
  * PUBLIC: int __dbreg_register_print __P((ENV *, DBT *, DB_LSN *,
  * PUBLIC:     db_recops, void *));
  */

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2004, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2004, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -53,9 +53,8 @@ __rep_elect_pp(dbenv, given_nsites, nvotes, flags)
 	u_int32_t given_nsites, nvotes;
 	u_int32_t flags;
 {
-	ENV *env;
 	DB_REP *db_rep;
-	DB_THREAD_INFO *ip;
+	ENV *env;
 	int ret;
 
 	env = dbenv->env;
@@ -90,9 +89,7 @@ __rep_elect_pp(dbenv, given_nsites, nvotes, flags)
 		return (EINVAL);
 	}
 
-	ENV_ENTER(env, ip);
 	ret = __rep_elect_int(env, given_nsites, nvotes, flags);
-	ENV_LEAVE(env, ip);
 
 	/*
 	 * The DB_REP_IGNORE return code can be of use to repmgr (which of
@@ -123,6 +120,7 @@ __rep_elect_int(env, given_nsites, nvotes, flags)
 	DB_LOGC *logc;
 	DB_LSN lsn;
 	DB_REP *db_rep;
+	DB_THREAD_INFO *ip;
 	LOG *lp;
 	REP *rep;
 	int done, elected, in_progress;
@@ -142,15 +140,6 @@ __rep_elect_int(env, given_nsites, nvotes, flags)
 	ret = 0;
 
 	/*
-	 * View sites never participate in elections.
-	 */
-	if (IS_VIEW_SITE(env)) {
-		__db_errx(env, DB_STR("3687",
-		    "View sites may not participate in elections"));
-		return (EINVAL);
-	}
-
-	/*
 	 * Specifying 0 for nsites signals us to use the value configured
 	 * previously via rep_set_nsites.  Similarly, if the given nvotes is 0,
 	 * it asks us to compute the value representing a simple majority.
@@ -159,7 +148,7 @@ __rep_elect_int(env, given_nsites, nvotes, flags)
 	ack = nvotes == 0 ? ELECTION_MAJORITY(nsites) : nvotes;
 
 	/*
-	 * !!!
+	 * XXX
 	 * If users give us less than a majority, they run the risk of
 	 * having a network partition.  However, this also allows the
 	 * scenario of master/1 client to elect the client.  Allow
@@ -196,6 +185,7 @@ __rep_elect_int(env, given_nsites, nvotes, flags)
 	 * real, configured priority, as retrieved from REP region.
 	 */
 	ctlflags = realpri != 0 ? REPCTL_ELECTABLE : 0;
+	ENV_ENTER(env, ip);
 
 	orig_tally = 0;
 	/* If we are already master, simply broadcast that fact and return. */
@@ -607,7 +597,8 @@ out:
 	DB_ASSERT(env, rep->elect_th > 0);
 	rep->elect_th--;
 	if (rep->elect_th == 0) {
-		need_req = F_ISSET(rep, REP_F_SKIPPED_APPLY) && !elected;
+		need_req = F_ISSET(rep, REP_F_SKIPPED_APPLY) &&
+		    !I_HAVE_WON(rep, rep->winner);
 		FLD_CLR(rep->lockout_flags, REP_LOCKOUT_APPLY);
 		F_CLR(rep, REP_F_SKIPPED_APPLY);
 	}
@@ -650,6 +641,7 @@ out:
 unlck_lv:	REP_SYSTEM_UNLOCK(env);
 	}
 envleave:
+	ENV_LEAVE(env, ip);
 	return (ret);
 }
 
@@ -672,6 +664,7 @@ __rep_vote1(env, rp, rec, eid)
 	DB_REP *db_rep;
 	LOG *lp;
 	REP *rep;
+	REP_OLD_VOTE_INFO *ovi;
 	VOTE1_CONTENT vote1;
 	__rep_egen_args egen_arg;
 	__rep_vote_info_v5_args tmpvi5;
@@ -699,7 +692,19 @@ __rep_vote1(env, rp, rec, eid)
 		return (ret);
 	}
 
-	if (rp->rep_version < DB_REPVERSION_52) {
+	/*
+	 * In 4.7 we changed to having fixed sized u_int32_t's from
+	 * non-fixed 'int' fields in the vote structure.
+	 */
+	if (rp->rep_version < DB_REPVERSION_47) {
+		ovi = (REP_OLD_VOTE_INFO *)rec->data;
+		tmpvi.egen = ovi->egen;
+		tmpvi.nsites = (u_int32_t)ovi->nsites;
+		tmpvi.nvotes = (u_int32_t)ovi->nvotes;
+		tmpvi.priority = (u_int32_t)ovi->priority;
+		tmpvi.tiebreaker = ovi->tiebreaker;
+		tmpvi.data_gen = 0;
+	} else if (rp->rep_version < DB_REPVERSION_52) {
 		if ((ret = __rep_vote_info_v5_unmarshal(env,
 		    &tmpvi5, rec->data, rec->size, NULL)) != 0)
 			return (ret);
@@ -731,10 +736,15 @@ __rep_vote1(env, rp, rec, eid)
 		    (u_long)vi->egen, (u_long)rep->egen));
 		egen_arg.egen = rep->egen;
 		REP_SYSTEM_UNLOCK(env);
-		if ((ret = __rep_egen_marshal(env,
-		    &egen_arg, buf, __REP_EGEN_SIZE, &len)) != 0)
-			return (ret);
-		DB_INIT_DBT(data_dbt, buf, len);
+		if (rep->version < DB_REPVERSION_47)
+			DB_INIT_DBT(data_dbt, &egen_arg.egen,
+			    sizeof(egen_arg.egen));
+		else {
+			if ((ret = __rep_egen_marshal(env,
+			    &egen_arg, buf, __REP_EGEN_SIZE, &len)) != 0)
+				return (ret);
+			DB_INIT_DBT(data_dbt, buf, len);
+		}
 		(void)__rep_send_message(env,
 		    eid, REP_ALIVE, &rp->lsn, &data_dbt, 0, 0);
 		return (0);
@@ -883,11 +893,12 @@ err:		REP_SYSTEM_UNLOCK(env);
  * __rep_vote2 --
  *	Handle incoming vote2 message on a client.
  *
- * PUBLIC: int __rep_vote2 __P((ENV *, DBT *, int));
+ * PUBLIC: int __rep_vote2 __P((ENV *, __rep_control_args *, DBT *, int));
  */
 int
-__rep_vote2(env, rec, eid)
+__rep_vote2(env, rp, rec, eid)
 	ENV *env;
+	__rep_control_args *rp;
 	DBT *rec;
 	int eid;
 {
@@ -896,6 +907,7 @@ __rep_vote2(env, rec, eid)
 	DB_REP *db_rep;
 	LOG *lp;
 	REP *rep;
+	REP_OLD_VOTE_INFO *ovi;
 	__rep_vote_info_args tmpvi, *vi;
 	u_int32_t egen;
 	int ret;
@@ -930,9 +942,21 @@ __rep_vote2(env, rec, eid)
 	 * election thread catches up we'll have the votes we
 	 * already received.
 	 */
-	if ((ret = __rep_vote_info_unmarshal(env,
-	    &tmpvi, rec->data, rec->size, NULL)) != 0)
-		return (ret);
+	/*
+	 * In 4.7 we changed to having fixed sized u_int32_t's from
+	 * non-fixed 'int' fields in the vote structure.
+	 */
+	if (rp->rep_version < DB_REPVERSION_47) {
+		ovi = (REP_OLD_VOTE_INFO *)rec->data;
+		tmpvi.egen = ovi->egen;
+		tmpvi.nsites = (u_int32_t)ovi->nsites;
+		tmpvi.nvotes = (u_int32_t)ovi->nvotes;
+		tmpvi.priority = (u_int32_t)ovi->priority;
+		tmpvi.tiebreaker = ovi->tiebreaker;
+	} else
+		if ((ret = __rep_vote_info_unmarshal(env,
+		    &tmpvi, rec->data, rec->size, NULL)) != 0)
+			return (ret);
 	vi = &tmpvi;
 	if (!IN_ELECTION_TALLY(rep) && vi->egen >= rep->egen) {
 		RPRINT(env, (env, DB_VERB_REP_ELECT,
@@ -1082,7 +1106,7 @@ __rep_cmp_vote(env, rep, eid, lsnp, priority, gen, data_gen, tiebreaker, flags)
 	u_int32_t priority;
 	u_int32_t data_gen, flags, gen, tiebreaker;
 {
-	int cmp, genlog_cmp, genlog_cmp2, like_pri;
+	int cmp, like_pri;
 
 	cmp = LOG_COMPARE(lsnp, &rep->w_lsn);
 	/*
@@ -1116,23 +1140,10 @@ __rep_cmp_vote(env, rep, eid, lsnp, priority, gen, data_gen, tiebreaker, flags)
 		like_pri = (priority == 0 && rep->w_priority == 0) ||
 		    (priority != 0 && rep->w_priority != 0);
 
-		/*
-		 * The undocumented ELECT_LOGLENGTH option requires that the
-		 * election should be won based on log length without regard
-		 * for datagen.  Do not include datagen in the comparison if
-		 * this option is enabled.
-		 */
-		if (FLD_ISSET(rep->config, REP_C_ELECT_LOGLENGTH)) {
-			genlog_cmp = like_pri && cmp > 0;
-			genlog_cmp2 = like_pri && cmp == 0;
-		} else {
-			genlog_cmp = (like_pri && data_gen > rep->w_datagen) ||
-			    (like_pri && data_gen == rep->w_datagen && cmp > 0);
-			genlog_cmp2 = like_pri && data_gen >= rep->w_datagen &&
-			    cmp == 0;
-		}
-		if ((priority != 0 && rep->w_priority == 0) || genlog_cmp ||
-		    (genlog_cmp2 && (priority > rep->w_priority ||
+		if ((priority != 0 && rep->w_priority == 0) ||
+		    (like_pri && data_gen > rep->w_datagen) ||
+		    (like_pri && data_gen == rep->w_datagen && cmp > 0) ||
+		    (cmp == 0 && (priority > rep->w_priority ||
 		    (priority == rep->w_priority &&
 		    (tiebreaker > rep->w_tiebreaker))))) {
 			RPRINT(env, (env, DB_VERB_REP_ELECT,
@@ -1295,9 +1306,8 @@ __rep_wait(env, timeoutp, full_elect, egen, flags)
 {
 	DB_REP *db_rep;
 	REP *rep;
-	db_timespec exptime, mytime;
-	int diff_timeout, done;
-	u_int32_t sleeptime, timeout;
+	int done;
+	u_int32_t sleeptime, sleeptotal, timeout;
 
 	db_rep = env->rep_handle;
 	rep = db_rep->region;
@@ -1305,20 +1315,10 @@ __rep_wait(env, timeoutp, full_elect, egen, flags)
 
 	timeout = *timeoutp;
 	sleeptime = SLEEPTIME(timeout);
-	__os_gettime(env, &exptime, 0);
-	TIMESPEC_ADD_DB_TIMEOUT(&exptime, timeout);
-	while (!done) {
-		__os_gettime(env, &mytime, 0);
-		/*
-		 * Check if the timeout has expired.  __os_yield might sleep
-		 * a slightly shorter time than requested, so check the exact
-		 * amount of time that has passed.  If we do not sleep the
-		 * full PHASE0 time, old unexpired lease grants could
-		 * incorrectly prevent the election from happening.
-		 */
-		if (timespeccmp(&mytime, &exptime, >))
-			break;
+	sleeptotal = 0;
+	while (sleeptotal < timeout) {
 		__os_yield(env, 0, sleeptime);
+		sleeptotal += sleeptime;
 		REP_SYSTEM_LOCK(env);
 		/*
 		 * Check if group membership changed while we were
@@ -1331,19 +1331,19 @@ __rep_wait(env, timeoutp, full_elect, egen, flags)
 		if (!LF_ISSET(REP_E_PHASE0) &&
 		    full_elect && F_ISSET(rep, REP_F_GROUP_ESTD)) {
 			*timeoutp = rep->elect_timeout;
-			if ((diff_timeout = (int)(*timeoutp - timeout)) > 0)
-				TIMESPEC_ADD_DB_TIMEOUT(&exptime, diff_timeout);
-			else {
-				diff_timeout = -diff_timeout;
-				TIMESPEC_SUB_DB_TIMEOUT(&exptime, diff_timeout);
-			}
 			timeout = *timeoutp;
-			sleeptime = SLEEPTIME(timeout);
+			if (sleeptotal >= timeout)
+				done = 1;
+			else
+				sleeptime = SLEEPTIME(timeout);
 		}
 
 		if (egen != rep->egen || !FLD_ISSET(rep->elect_flags, flags))
 			done = 1;
 		REP_SYSTEM_UNLOCK(env);
+
+		if (done)
+			return (0);
 	}
 	return (0);
 }
@@ -1437,6 +1437,7 @@ __rep_send_vote(env, lsnp,
 	DB_REP *db_rep;
 	DBT vote_dbt;
 	REP *rep;
+	REP_OLD_VOTE_INFO ovi;
 	__rep_vote_info_args vi;
 	__rep_vote_info_v5_args vi5;
 	u_int8_t buf[__REP_VOTE_INFO_SIZE];
@@ -1448,7 +1449,19 @@ __rep_send_vote(env, lsnp,
 	memset(&vi, 0, sizeof(vi));
 	memset(&vote_dbt, 0, sizeof(vote_dbt));
 
-	if (rep->version < DB_REPVERSION_52) {
+	/*
+	 * In 4.7 we went to fixed sized fields.  They may not be
+	 * the same as the sizes in older versions.  In 5.2 we
+	 * added the data_gen.
+	 */
+	if (rep->version < DB_REPVERSION_47) {
+		ovi.egen = egen;
+		ovi.priority = (int) pri;
+		ovi.nsites = (int) nsites;
+		ovi.nvotes = (int) nvotes;
+		ovi.tiebreaker = tie;
+		DB_INIT_DBT(vote_dbt, &ovi, sizeof(ovi));
+	} else if (rep->version < DB_REPVERSION_52) {
 		vi5.egen = egen;
 		vi5.priority = pri;
 		vi5.nsites = nsites;

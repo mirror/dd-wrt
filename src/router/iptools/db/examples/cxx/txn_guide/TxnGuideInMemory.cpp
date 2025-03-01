@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$ 
  */
@@ -95,7 +95,7 @@ main(void)
 
     try {
         // Create the environment
-        envp = new DbEnv((u_int32_t)0);
+        envp = new DbEnv(0);
 
         // Specify in-memory logging
         envp->log_set_config(DB_LOG_IN_MEMORY, 1);

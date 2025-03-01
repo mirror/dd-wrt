@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -44,7 +44,7 @@ int
 DbEnv::repmgr_site_by_eid(int eid, DB_SITE **sitep </pre>
       <p>
         The <code class="methodname">DbEnv::repmgr_site_by_eid()</code> method returns a 
-        DbSite handle based on the site's environment ID
+        DbSite handle based on the site's Environment ID
         value.  You use the DbSite
         handle to configure and manage replication sites.
     </p>
@@ -58,7 +58,7 @@ DbEnv::repmgr_site_by_eid(int eid, DB_SITE **sitep </pre>
     </p>
       <p>
          The <code class="methodname">DbEnv::repmgr_site_by_eid()</code> method may
-         be called at any time after opening the environment.
+         be called at any time after environment open time.
     </p>
       <p>
          The <code class="methodname">DbEnv::repmgr_site_by_eid()</code> <span>
@@ -74,7 +74,7 @@ DbEnv::repmgr_site_by_eid(int eid, DB_SITE **sitep </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670055698368"></a>Parameters</h3>
+              <h3 class="title"><a id="idp9929776"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -82,12 +82,12 @@ DbEnv::repmgr_site_by_eid(int eid, DB_SITE **sitep </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670055699616"></a>eid</h4>
+                <h4 class="title"><a id="idp9929128"></a>eid</h4>
               </div>
             </div>
           </div>
           <p>
-                  The environment ID of the site for which you want
+                  The Environment ID of the site for which you want
                   to create the DbSite handle. You can obtain a
                   site's EID by using the 
                   <a class="xref" href="dbsite_get_eid.html" title="DbSite::get_eid()">DbSite::get_eid()</a>
@@ -98,7 +98,7 @@ DbEnv::repmgr_site_by_eid(int eid, DB_SITE **sitep </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670055774288"></a>sitep</h4>
+                <h4 class="title"><a id="idp9909488"></a>sitep</h4>
               </div>
             </div>
           </div>
@@ -112,7 +112,7 @@ DbEnv::repmgr_site_by_eid(int eid, DB_SITE **sitep </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670055747808"></a>Errors</h3>
+              <h3 class="title"><a id="idp9900200"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -131,20 +131,7 @@ DbEnv::repmgr_site_by_eid(int eid, DB_SITE **sitep </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670055687600"></a>DB_NOTFOUND</h4>
-              </div>
-            </div>
-          </div>
-          <p>
-                Returned if there is no site corresponding to the supplied
-                <span class="bold"><strong>eid</strong></span> value.
-            </p>
-        </div>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h4 class="title"><a id="idm139670055749072"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp9935968"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -158,7 +145,7 @@ DbEnv::repmgr_site_by_eid(int eid, DB_SITE **sitep </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670055757456"></a>Class</h3>
+              <h3 class="title"><a id="idp9934888"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -170,7 +157,7 @@ DbEnv::repmgr_site_by_eid(int eid, DB_SITE **sitep </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670055696704"></a>See Also</h3>
+              <h3 class="title"><a id="idp9937264"></a>See Also</h3>
             </div>
           </div>
         </div>

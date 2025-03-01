@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -69,11 +69,8 @@
       <p>
             Finally, Replication Manager applications use the 
             <a class="link" href="db_site.html" title="The DB_SITE Handle">DB_SITE</a> class to manage
-            and configure replication sites. The 
-            <a class="link" href="db_channel.html" title="The DB_CHANNEL Handle">DB_CHANNEL</a> class can
-            be used to transmit custom messages between sites in the
-            replication group. These classes are not used in
-            any way by Base API applications.
+            and configure replication sites. This handle is not used in any
+            way by Base API applications.
         </p>
       <div class="sect1" lang="en" xml:lang="en">
         <div class="titlepage">
@@ -112,6 +109,12 @@
               </tr>
               <tr>
                 <td>
+                  <a class="xref" href="dbchannel_set_timeout.html" title="DB_CHANNEL-&gt;set_timeout()">DB_CHANNEL-&gt;set_timeout()</a>
+                </td>
+                <td>Sets the default timeout for the DB_CHANNEL</td>
+              </tr>
+              <tr>
+                <td>
                   <a class="xref" href="repmgr_channel.html" title="DB_ENV-&gt;repmgr_channel()">DB_ENV-&gt;repmgr_channel()</a>
                 </td>
                 <td>Creates a DB_CHANNEL handle</td>
@@ -126,25 +129,11 @@
                 <td>
                   <a class="xref" href="repmgr_msg_dispatch.html" title="DB_ENV-&gt;repmgr_msg_dispatch()">DB_ENV-&gt;repmgr_msg_dispatch()</a>
                 </td>
-                <td>Configures a DB_CHANNEL's message dispatch function</td>
+                <td>Creates a DB_CHANNEL handle</td>
               </tr>
               <tr>
                 <td><a class="xref" href="repmgrset_ack_policy.html" title="DB_ENV-&gt;repmgr_set_ack_policy()">DB_ENV-&gt;repmgr_set_ack_policy()</a>, <a class="xref" href="repmgrget_ack_policy.html" title="DB_ENV-&gt;repmgr_get_ack_policy()">DB_ENV-&gt;repmgr_get_ack_policy()</a></td>
                 <td>Specify the Replication Manager's client acknowledgement policy</td>
-              </tr>
-              <tr>
-                <td><a class="xref" href="repmgrset_incoming_queue_max.html" title="DB_ENV-&gt;repmgr_set_incoming_queue_max()">
-        DB_ENV-&gt;repmgr_set_incoming_queue_max()
-    </a>, <a class="xref" href="repmgrget_incoming_queue_max.html" title="DB_ENV-&gt;repmgr_get_incoming_queue_max()">
-        DB_ENV-&gt;repmgr_get_incoming_queue_max()
-    </a></td>
-                <td>Configure the Replication Manager incoming queue size limit.</td>
-              </tr>
-              <tr>
-                <td>
-                  <a class="xref" href="repmgrset_socket.html" title="DB_ENV-&gt;repmgr_set_socket()">DB_ENV-&gt;repmgr_set_socket()</a>
-                </td>
-                <td>Configure the Replication Manager's socket callback</td>
               </tr>
               <tr>
                 <td>
@@ -181,12 +170,6 @@
                   <a class="xref" href="repmgrstat_print.html" title="DB_ENV-&gt;repmgr_stat_print()">DB_ENV-&gt;repmgr_stat_print()</a>
                 </td>
                 <td>Print Replication Manager statistics</td>
-              </tr>
-              <tr>
-                <td>
-                  <a class="xref" href="dbsite_close.html" title="DB_SITE-&gt;close()">DB_SITE-&gt;close()</a>
-                </td>
-                <td>Closes the DB_SITE handle</td>
               </tr>
               <tr>
                 <td colspan="2">
@@ -245,6 +228,12 @@
                 <td>Replication synchronization</td>
               </tr>
               <tr>
+                <td>
+                  <a class="xref" href="envtxn_applied.html" title="DB_ENV-&gt;txn_applied()">DB_ENV-&gt;txn_applied()</a>
+                </td>
+                <td>Check if a transaction has been replicated</td>
+              </tr>
+              <tr>
                 <td colspan="2">
                   <span class="bold">
                     <strong>Replication Configuration</strong>
@@ -253,9 +242,9 @@
               </tr>
               <tr>
                 <td>
-                  <a class="xref" href="dbchannel_set_timeout.html" title="DB_CHANNEL-&gt;set_timeout()">DB_CHANNEL-&gt;set_timeout()</a>
+                  <a class="xref" href="dbsite_close.html" title="DB_SITE-&gt;close()">DB_SITE-&gt;close()</a>
                 </td>
-                <td>Sets the default timeout for a DB_CHANNEL</td>
+                <td>Closes the DB_SITE handle</td>
               </tr>
               <tr>
                 <td>
@@ -267,7 +256,7 @@
                 <td>
                   <a class="xref" href="dbsite_get_eid.html" title="DB_SITE-&gt;get_eid()">DB_SITE-&gt;get_eid()</a>
                 </td>
-                <td>Returns a site's environment ID</td>
+                <td>Returns a site's Environment ID</td>
               </tr>
               <tr>
                 <td>
@@ -308,23 +297,11 @@
                 <td>Configure replication timeouts</td>
               </tr>
               <tr>
-                <td>
-                  <a class="xref" href="repset_view.html" title="DB_ENV-&gt;rep_set_view()">DB_ENV-&gt;rep_set_view()</a>
-                </td>
-                <td>Configure the replication view callback</td>
-              </tr>
-              <tr>
                 <td colspan="2">
                   <span class="bold">
                     <strong>Transaction Operations</strong>
                   </span>
                 </td>
-              </tr>
-              <tr>
-                <td>
-                  <a class="xref" href="envtxn_applied.html" title="DB_ENV-&gt;txn_applied()">DB_ENV-&gt;txn_applied()</a>
-                </td>
-                <td>Check if a transaction has been replicated</td>
               </tr>
               <tr>
                 <td>

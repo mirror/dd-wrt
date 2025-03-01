@@ -156,7 +156,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 
     @Override
     public String getNumericFunctions() throws SQLException {
-	return "";
+	return ""; 
     }
 
     @Override
@@ -203,7 +203,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
     public boolean nullPlusNonNullIsNull() throws SQLException {
 	return false;
     }
-
+    
     @Override
     public boolean supportsConvert() throws SQLException {
 	return false;
@@ -274,7 +274,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
     @Override
     public boolean supportsMinimumSQLGrammar() throws SQLException {
 	return true;
-    }
+    } 
 
     @Override
     public boolean supportsCoreSQLGrammar() throws SQLException {
@@ -361,7 +361,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
     public boolean supportsSchemasInTableDefinitions() throws SQLException {
 	return false;
     }
-
+    
     @Override
     public boolean supportsSchemasInIndexDefinitions() throws SQLException {
 	return false;
@@ -628,7 +628,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
     @Override
     public ResultSet getProcedureColumns(String catalog,
 					 String schemaPattern,
-					 String procedureNamePattern,
+					 String procedureNamePattern, 
 					 String columnNamePattern)
 	throws SQLException {
 	return null;
@@ -656,7 +656,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	    sb.append("(type = 'table' or type = 'view')");
 	} else {
 	    sb.append("(");
-	    String sep = "";
+	    String sep = ""; 
 	    for (int i = 0; i < types.length; i++) {
 		sb.append(sep);
 		sb.append("type = ");
@@ -1591,8 +1591,8 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
     }
 
     @Override
-    public ResultSet getUDTs(String catalog, String schemaPattern,
-		      String typeNamePattern, int[] types)
+    public ResultSet getUDTs(String catalog, String schemaPattern, 
+		      String typeNamePattern, int[] types) 
 	throws SQLException {
 	return null;
     }
@@ -1803,7 +1803,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
     public int getJDBCMajorVersion() {
 	return 1;
     }
-
+    
     @Override
     public int getJDBCMinorVersion() {
 	return 0;

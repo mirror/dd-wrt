@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -93,177 +93,6 @@ namespace CsharpAPITest {
             }
 
         }
-
-	[Test]
-	public void TestBlob() {
-		testName = "TestBlob";
-		SetUpTest(false);
-		// Test opening the external file database without environment.
-		TestBlobHeapDatabase(0, null, 6, null, false);
-
-		/*
-		 * Test opening the external file database without environment
-		 * but specifying external file directory.
-		 */
-		TestBlobHeapDatabase(0, null, 6, testHome + "/DBBLOB", true);
-
-		// Test opening the external file database with environment.
-		TestBlobHeapDatabase(3, "ENVBLOB", 6, null, false);
-
-		/*
-		 * Test opening the external file database with environment
-		 * and specifying external file directory.
-		 */
-		TestBlobHeapDatabase(3, null, 6, "/DBBLOB", true);
-	}
-
-	/*
-	 * Test the external file database with or without environment.
-	 * 1. Config and open the environment;
-	 * 2. Verify the environment external file configs;
-	 * 3. Config and open the database;
-	 * 4. Verify the database external file configs;
-	 * 5. Insert and verify some external file data by database methods;
-	 * 6. Verify the stats;
-	 * 7. Close all handles.
-	 * If "blobdbt" is true, set the data DatabaseEntry.ExternalFile as
-	 * true, otherwise make the data DatabaseEntry reach the external file
-	 * threshold in size.
-	 */
-	void TestBlobHeapDatabase(uint env_threshold, string env_blobdir,
-	    uint db_threshold, string db_blobdir, bool blobdbt)
-	{
-		if (env_threshold == 0 && db_threshold == 0)
-			return;
-
-		string heapDBName =
-		    testHome + "/" + testName + ".db";
-
-		Configuration.ClearDir(testHome);
-		HeapDatabaseConfig cfg = new HeapDatabaseConfig();
-		cfg.Creation = CreatePolicy.ALWAYS;
-		string blrootdir = "__db_bl";
-
-		// Open the environment and verify the external file configs.
-		if (env_threshold > 0)
-		{
-			DatabaseEnvironmentConfig envConfig =
-			    new DatabaseEnvironmentConfig();
-			envConfig.AutoCommit = true;
-			envConfig.Create = true;
-			envConfig.UseMPool = true;
-			envConfig.UseLogging = true;
-			envConfig.UseTxns = true;
-			envConfig.UseLocking = true;
-			envConfig.ExternalFileThreshold = env_threshold;
-			if (env_blobdir != null)
-			{
-				envConfig.ExternalFileDir = env_blobdir;
-				blrootdir = env_blobdir;
-			}
-			DatabaseEnvironment env = DatabaseEnvironment.Open(
-			    testHome, envConfig);
-			if (env_blobdir == null)
-				Assert.IsNull(env.ExternalFileDir);
-			else
-				Assert.AreEqual(0,
-				    env.ExternalFileDir.CompareTo(env_blobdir));
-			Assert.AreEqual(env_threshold, env.ExternalFileThreshold);
-			cfg.Env = env;
-			heapDBName = testName + ".db";
-		}
-
-		// Open the database and verify the external file configs.
-		if (db_threshold > 0)
-			cfg.ExternalFileThreshold = db_threshold;
-		if (db_blobdir != null)
-		{
-			cfg.ExternalFileDir = db_blobdir;
-			/*
-			 * The external file directory setting in the database
-			 * is effective only when it is opened without
-			 * an environment.
-			 */
-			if (cfg.Env == null)
-				blrootdir = db_blobdir;
-		}
-
-		HeapDatabase db = HeapDatabase.Open(heapDBName, cfg);
-		Assert.AreEqual(
-		    db_threshold > 0 ? db_threshold : env_threshold,
-		    db.ExternalFileThreshold);
-		if (db_blobdir == null && cfg.Env == null)
-			Assert.IsNull(db.ExternalFileDir);
-		else
-			Assert.AreEqual(0, db.ExternalFileDir.CompareTo(blrootdir));
-
-		// Insert and verify some external file data by database
-		// methods.
-		string[] records = {"a", "b", "c", "d", "e", "f", "g", "h",
-		    "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s",
-		    "t", "u", "v", "w", "x", "y", "z"};
-		DatabaseEntry kdbt = new DatabaseEntry();
-		DatabaseEntry ddbt = new DatabaseEntry();
-		byte[] ddata;
-		string str;
-		KeyValuePair<DatabaseEntry, DatabaseEntry> pair;
-		ddbt.ExternalFile = blobdbt;
-		Assert.AreEqual(blobdbt, ddbt.ExternalFile);
-		for (int i = 0; i < records.Length; i++)
-		{
-			str = records[i];
-			if (!blobdbt)
-			{
-				for (int j = 0; j < db_threshold; j++)
-					str = str + records[i];
-			}
-			ddata = Encoding.ASCII.GetBytes(str);
-			ddbt.Data = ddata;
-			kdbt = new DatabaseEntry((db.Append(ddbt)).toArray()) ;
-			try
-			{
-				pair = db.Get(kdbt);
-			}
-			catch (DatabaseException)
-			{
-				db.Close();
-				if (cfg.Env != null)
-					cfg.Env.Close();
-				throw new TestException();
-			}
-			Assert.AreEqual(ddata, pair.Value.Data);
-		}
-
-		/*
-		 * Verify the external file files are created in the expected 
-		 * location.
-		 * This part of test is disabled since BTreeDatabase.BlobSubDir
-		 * is not exposed to users.
-		 */
-		//if (cfg.Env != null)
-		//	blrootdir = testHome + "/" + blrootdir;
-		//string blobdir = blrootdir + "/" + db.BlobSubDir;
-		//Assert.AreEqual(records.Length,
-		//    Directory.GetFiles(blobdir, "__db.bl*").Length);
-		//Assert.AreEqual(1,
-		//    Directory.GetFiles(blobdir, "__db_blob_meta.db").Length);
-
-		// Verify the stats.
-		HeapStats st = db.Stats();
-		Assert.AreEqual(records.Length, st.nExternalFiles);
-
-		// Close all handles.
-		db.Close();
-		if (cfg.Env != null)
-			cfg.Env.Close();
-
-		/*
-		 * Remove the default external file directory
-		 * when it is not under the test home.
-		 */
-		if (db_blobdir == null && cfg.Env == null)
-			Directory.Delete("__db_bl", true);
-	}
 
         [Test]
         public void TestCursor() {
@@ -385,60 +214,6 @@ namespace CsharpAPITest {
         }
 
         [Test]
-        public void TestMessageFile()
-        {
-            testName = "TestMessageFile";
-            SetUpTest(true);
-
-            // Configure and open an environment.
-            DatabaseEnvironmentConfig envConfig =
-                new DatabaseEnvironmentConfig();
-            envConfig.Create = true;
-            envConfig.UseMPool = true;
-            DatabaseEnvironment env = DatabaseEnvironment.Open(
-                testHome, envConfig);
-
-            // Configure and open a database.
-            HeapDatabaseConfig DBConfig =
-                new HeapDatabaseConfig();
-            DBConfig.Env = env;
-            DBConfig.Creation = CreatePolicy.IF_NEEDED;
-
-            string DBFileName = testName + ".db";
-            HeapDatabase db = HeapDatabase.Open(DBFileName, DBConfig);
-
-            // Confirm message file does not exist.
-            string messageFile = testHome + "/" + "msgfile";
-            Assert.AreEqual(false, File.Exists(messageFile));
-
-            // Call set_msgfile() of db.
-            db.Msgfile = messageFile;
-
-            // Print db statistic to message file.
-            db.PrintStats(true);
-
-            // Confirm message file exists now.
-            Assert.AreEqual(true, File.Exists(messageFile));
-
-            db.Msgfile = "";
-            string line = null;
-
-            // Read the third line of message file.
-            System.IO.StreamReader file = new System.IO.StreamReader(@"" + messageFile);
-            line = file.ReadLine();
-            line = file.ReadLine();
-            line = file.ReadLine();
-
-            // Confirm the message file is not empty.
-            Assert.AreEqual(line, "DB handle information:");
-            file.Close();
-
-            // Close database and environment.
-            db.Close();
-            env.Close();
-        }
-
-        [Test]
         public void TestOpenExistingHeapDB() {
             testName = "TestOpenExistingHeapDB";
             SetUpTest(true);
@@ -525,7 +300,6 @@ namespace CsharpAPITest {
 
             HeapStats stats = db.Stats();
             ConfirmStatsPart1Case1(stats);
-	    db.Msgfile = testHome + "/" + testName+ ".log";
             db.PrintFastStats(true);
 
             // Put 500 records into the database.
@@ -611,7 +385,6 @@ namespace CsharpAPITest {
                 stats = db.Stats(statsTxn, Isolation.DEGREE_ONE);
 
             ConfirmStatsPart1Case1(stats);
-	    db.Msgfile = home + "/" + name+ ".log";
             db.PrintStats(true);
 
             // Put 500 records into the database.
@@ -665,7 +438,7 @@ namespace CsharpAPITest {
             Assert.AreNotEqual(0, stats.MagicNumber);
             Assert.AreEqual(4096, stats.PageSize);
             Assert.AreNotEqual(0, stats.RegionSize);
-            Assert.AreEqual(2, stats.Version);
+            Assert.AreNotEqual(0, stats.Version);
         }
 
         public void ConfirmStatsPart2Case1(HeapStats stats) {

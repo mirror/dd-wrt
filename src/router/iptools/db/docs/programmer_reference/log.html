@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Chapter 19.  The Logging Subsystem</title>
+    <title>Chapter 17.  The Logging Subsystem</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
@@ -14,11 +14,13 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Chapter 19.  The Logging Subsystem </th>
+          <th colspan="3" align="center">Chapter 17. 
+		The Logging Subsystem
+        </th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="lock_nondb.html">Prev</a> </td>
@@ -32,7 +34,9 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title"><a id="log"></a>Chapter 19.  The Logging Subsystem </h2>
+            <h2 class="title"><a id="log"></a>Chapter 17. 
+		The Logging Subsystem
+        </h2>
           </div>
         </div>
       </div>
@@ -43,8 +47,7 @@
         <dl>
           <dt>
             <span class="sect1">
-              <a href="log.html#log_intro">Introduction to the logging
-        subsystem</a>
+              <a href="log.html#log_intro">Introduction to the logging subsystem</a>
             </span>
           </dt>
           <dt>
@@ -63,42 +66,27 @@
         <div class="titlepage">
           <div>
             <div>
-              <h2 class="title" style="clear: both"><a id="log_intro"></a>Introduction to the logging
-        subsystem</h2>
+              <h2 class="title" style="clear: both"><a id="log_intro"></a>Introduction to the logging subsystem</h2>
             </div>
           </div>
         </div>
-        <p>
-        The Logging subsystem is the logging facility used by
-        Berkeley DB. It is largely Berkeley DB-specific, although it
-        is potentially useful outside of the Berkeley DB package for
-        applications wanting write-ahead logging support. Applications
-        wanting to use the log for purposes other than logging file
-        modifications based on a set of open file descriptors will
-        almost certainly need to make source code modifications to the
-        Berkeley DB code base.
-    </p>
-        <p>
-        A log can be shared by any number of threads of control. The
-        <a href="../api_reference/C/envopen.html" class="olink">DB_ENV-&gt;open()</a> method is used to open a log. When the log is no
-        longer in use, it should be closed using the <a href="../api_reference/C/envclose.html" class="olink">DB_ENV-&gt;close()</a>
-        method.
-    </p>
-        <p>
-        Individual log entries are identified by log sequence
-        numbers. Log sequence numbers are stored in an opaque object,
-        an <a href="../api_reference/C/lsn.html" class="olink">DB_LSN</a>.
-    </p>
-        <p>
-        The <a href="../api_reference/C/logcursor.html" class="olink">DB_ENV-&gt;log_cursor()</a> method is used to allocate a log cursor. Log
-        cursors have two methods: <a href="../api_reference/C/logcget.html" class="olink">DB_LOGC-&gt;get()</a> method to retrieve log
-        records from the log, and <a href="../api_reference/C/logcclose.html" class="olink">DB_LOGC-&gt;close()</a> method to destroy the
-        cursor.
-    </p>
-        <p>
-        There are additional methods for integrating the log
-        subsystem with a transaction processing system:
-    </p>
+        <p>The Logging subsystem is the logging facility used by Berkeley DB.  It is
+largely Berkeley DB-specific, although it is potentially useful outside of
+the Berkeley DB package for applications wanting write-ahead logging support.
+Applications wanting to use the log for purposes other than logging file
+modifications based on a set of open file descriptors will almost
+certainly need to make source code modifications to the Berkeley DB code
+base.</p>
+        <p>A log can be shared by any number of threads of control.  The
+<a href="../api_reference/C/envopen.html" class="olink">DB_ENV-&gt;open()</a> method is used to open a log.  When the log is no longer
+in use, it should be closed using the <a href="../api_reference/C/envclose.html" class="olink">DB_ENV-&gt;close()</a> method.</p>
+        <p>Individual log entries are identified by log sequence numbers.  Log
+sequence numbers are stored in an opaque object, an <a href="../api_reference/C/lsn.html" class="olink">DB_LSN</a>.</p>
+        <p>The <a href="../api_reference/C/logcursor.html" class="olink">DB_ENV-&gt;log_cursor()</a> method is used to allocate a log cursor.  Log cursors
+have two methods: <a href="../api_reference/C/logcget.html" class="olink">DB_LOGC-&gt;get()</a> method to retrieve log records from the
+log, and <a href="../api_reference/C/logcclose.html" class="olink">DB_LOGC-&gt;close()</a> method to destroy the cursor.</p>
+        <p>There are additional methods for integrating the log subsystem with a
+transaction processing system:</p>
         <div class="variablelist">
           <dl>
             <dt>
@@ -106,66 +94,44 @@
                 <a href="../api_reference/C/logflush.html" class="olink">DB_ENV-&gt;log_flush()</a>
               </span>
             </dt>
-            <dd>
-                Flushes the log up to a particular log sequence
-                number.
-            </dd>
+            <dd>Flushes the log up to a particular log sequence number.</dd>
             <dt>
               <span class="term">
                 <a href="../api_reference/C/logcompare.html" class="olink">DB_ENV-&gt;log_compare()</a>
               </span>
             </dt>
-            <dd>
-                Allows applications to compare any two log
-                sequence numbers.
-            </dd>
+            <dd>Allows applications to compare any two log sequence numbers.</dd>
             <dt>
               <span class="term">
                 <a href="../api_reference/C/logfile.html" class="olink">DB_ENV-&gt;log_file()</a>
               </span>
             </dt>
-            <dd>
-                Maps a log sequence number to the specific log
-                file that contains it.
-            </dd>
+            <dd>Maps a log sequence number to the specific log file that contains it.</dd>
             <dt>
               <span class="term">
                 <a href="../api_reference/C/logarchive.html" class="olink">DB_ENV-&gt;log_archive()</a>
               </span>
             </dt>
-            <dd>
-                Returns various sets of log filenames. These
-                methods are used for database administration; for
-                example, to determine if log files may safely be
-                removed from the system.
-            </dd>
+            <dd>Returns various sets of log filenames.  These methods are used for
+database administration; for example, to determine if log files may
+safely be removed from the system.</dd>
             <dt>
               <span class="term">
                 <a href="../api_reference/C/logstat.html" class="olink">DB_ENV-&gt;log_stat()</a>
               </span>
             </dt>
-            <dd>
-                The display <a href="../api_reference/C/db_stat.html" class="olink">db_stat</a> utility used the <a href="../api_reference/C/logstat.html" class="olink">DB_ENV-&gt;log_stat()</a> method
-                to display statistics about the log.
-            </dd>
+            <dd> The display <a href="../api_reference/C/db_stat.html" class="olink">db_stat</a> utility used the <a href="../api_reference/C/logstat.html" class="olink">DB_ENV-&gt;log_stat()</a> method to
+display statistics about the log.</dd>
             <dt>
               <span class="term">
                 <a href="../api_reference/C/envremove.html" class="olink">DB_ENV-&gt;remove()</a>
               </span>
             </dt>
-            <dd>
-                The log meta-information (but not the log files
-                themselves) may be removed using the <a href="../api_reference/C/envremove.html" class="olink">DB_ENV-&gt;remove()</a>
-                method.
-            </dd>
+            <dd>The log meta-information (but not the log files themselves) may be
+removed using the <a href="../api_reference/C/envremove.html" class="olink">DB_ENV-&gt;remove()</a> method.</dd>
           </dl>
         </div>
-        <p>
-        For more information on the logging subsystem methods, see
-        the <a href="../api_reference/C/lsn.html#loglist" class="olink">Logging
-        Subsystem and Related Methods</a> section in the
-        <em class="citetitle">Berkeley DB C API Reference Guide.</em>
-    </p>
+        <p>For more information on the logging subsystem methods, see the <a href="../api_reference/C/lsn.html#loglist" class="olink">Logging Subsystem and Related Methods</a> section in the <em class="citetitle">Berkeley DB C API Reference Guide.</em></p>
       </div>
     </div>
     <div class="navfooter">
@@ -177,8 +143,7 @@
           <td width="40%" align="right"> <a accesskey="n" href="log_config.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Locking and non-Berkeley DB
-        applications </td>
+          <td width="40%" align="left" valign="top">Locking and non-Berkeley DB applications </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

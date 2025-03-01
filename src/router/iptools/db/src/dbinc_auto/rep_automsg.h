@@ -32,7 +32,7 @@ typedef struct ___rep_egen_args {
 	u_int32_t	egen;
 } __rep_egen_args;
 
-#define	__REP_FILEINFO_SIZE	48
+#define	__REP_FILEINFO_SIZE	40
 typedef struct ___rep_fileinfo_args {
 	u_int32_t	pgsize;
 	db_pgno_t	pgno;
@@ -44,23 +44,7 @@ typedef struct ___rep_fileinfo_args {
 	DBT		uid;
 	DBT		info;
 	DBT		dir;
-	u_int32_t	blob_fid_lo;
-	u_int32_t	blob_fid_hi;
 } __rep_fileinfo_args;
-
-#define	__REP_FILEINFO_V7_SIZE	40
-typedef struct ___rep_fileinfo_v7_args {
-	u_int32_t	pgsize;
-	db_pgno_t	pgno;
-	db_pgno_t	max_pgno;
-	u_int32_t	filenum;
-	u_int32_t	finfo_flags;
-	u_int32_t	type;
-	u_int32_t	db_flags;
-	DBT		uid;
-	DBT		info;
-	DBT		dir;
-} __rep_fileinfo_v7_args;
 
 #define	__REP_FILEINFO_V6_SIZE	36
 typedef struct ___rep_fileinfo_v6_args {
@@ -132,55 +116,5 @@ typedef struct ___rep_lsn_hist_data_args {
 	u_int32_t	hist_nsec;
 } __rep_lsn_hist_data_args;
 
-#define	__REP_BLOB_UPDATE_REQ_SIZE	36
-typedef struct ___rep_blob_update_req_args {
-	u_int64_t	blob_fid;
-	u_int64_t	blob_sid;
-	u_int64_t	blob_id;
-	u_int64_t	highest_id;
-	u_int32_t	flags;
-} __rep_blob_update_req_args;
-
-#define	__REP_BLOB_UPDATE_REQ_V8_SIZE	32
-typedef struct ___rep_blob_update_req_v8_args {
-	u_int64_t	blob_fid;
-	u_int64_t	blob_sid;
-	u_int64_t	blob_id;
-	u_int64_t	highest_id;
-} __rep_blob_update_req_v8_args;
-
-#define	__REP_BLOB_UPDATE_SIZE	24
-typedef struct ___rep_blob_update_args {
-	u_int64_t	blob_fid;
-	u_int64_t	highest_id;
-	u_int32_t	flags;
-	u_int32_t	num_blobs;
-} __rep_blob_update_args;
-
-#define	__REP_BLOB_FILE_SIZE	24
-typedef struct ___rep_blob_file_args {
-	u_int64_t	blob_sid;
-	u_int64_t	blob_id;
-	u_int64_t	blob_size;
-} __rep_blob_file_args;
-
-#define	__REP_BLOB_CHUNK_SIZE	40
-typedef struct ___rep_blob_chunk_args {
-	u_int32_t	flags;
-	u_int64_t	blob_fid;
-	u_int64_t	blob_sid;
-	u_int64_t	blob_id;
-	u_int64_t	offset;
-	DBT		data;
-} __rep_blob_chunk_args;
-
-#define	__REP_BLOB_CHUNK_REQ_SIZE	32
-typedef struct ___rep_blob_chunk_req_args {
-	u_int64_t	blob_fid;
-	u_int64_t	blob_sid;
-	u_int64_t	blob_id;
-	u_int64_t	offset;
-} __rep_blob_chunk_req_args;
-
-#define	__REP_MAXMSG_SIZE	48
+#define	__REP_MAXMSG_SIZE	40
 #endif

@@ -12,7 +12,7 @@
 // Dialog
 //
 
-DRIVERCONNECT DIALOG DISCARDABLE  65, 43, 277, 190
+DRIVERCONNECT DIALOG DISCARDABLE  65, 43, 277, 175
 STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION |
     WS_SYSMENU
 CAPTION "SQLite3 ODBC Driver Connect"
@@ -41,21 +41,19 @@ BEGIN
     CONTROL         "Always BIGINT",IDC_BIGINT,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,85,110,75,15
     CONTROL         "No WCHAR",IDC_NOWCHAR,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,170,110,75,15
-    CONTROL         "Julian Day Conv.",IDC_JDCONV,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,85,125,75,15
-    EDITTEXT        IDC_LOADEXT,82,145,185,12,ES_AUTOHSCROLL | WS_GROUP
-    DEFPUSHBUTTON   "OK",IDOK,175,165,40,14
-    PUSHBUTTON      "Cancel",IDCANCEL,225,165,40,14
+                    WS_TABSTOP,170,110,52,15
+    EDITTEXT        IDC_LOADEXT,82,130,185,12,ES_AUTOHSCROLL | WS_GROUP
+    DEFPUSHBUTTON   "OK",IDOK,175,150,40,14
+    PUSHBUTTON      "Cancel",IDCANCEL,225,150,40,14
     CTEXT           "Enter options for connect",1003,95,6,80,8
     RTEXT           "Data Source Name:",IDC_DSNAMETEXT,6,22,73,9,NOT WS_GROUP
     RTEXT           "Database Name:",IDC_DBNAMETEXT,7,38,71,9,NOT WS_GROUP
     RTEXT           "Lock Timeout [ms]:",IDC_TONAMETEXT,6,53,73,9,NOT WS_GROUP
     RTEXT           "Sync.Mode:",IDC_SYNCPTEXT,6,69,72,9,NOT WS_GROUP
-    RTEXT           "Load Extensions:",IDC_LOADEXTTEXT,6,147,73,9,NOT WS_GROUP
+    RTEXT           "Load Extensions:",IDC_LOADEXTTEXT,6,132,73,9,NOT WS_GROUP
 END
 
-CONFIGDSN DIALOG DISCARDABLE  65, 43, 277, 190
+CONFIGDSN DIALOG DISCARDABLE  65, 43, 277, 175
 STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION |
     WS_SYSMENU
 CAPTION "SQLite3 ODBC DSN Configuration"
@@ -84,18 +82,16 @@ BEGIN
     CONTROL         "Always BIGINT",IDC_BIGINT,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,85,110,75,15
     CONTROL         "No WCHAR",IDC_NOWCHAR,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,170,110,75,15
-    CONTROL         "Julian Day Conv.",IDC_JDCONV,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,85,125,75,15
-    EDITTEXT        IDC_LOADEXT,82,145,185,12,ES_AUTOHSCROLL | WS_GROUP
-    DEFPUSHBUTTON   "OK",IDOK,175,165,40,14
-    PUSHBUTTON      "Cancel",IDCANCEL,225,165,40,14
+                    WS_TABSTOP,170,110,52,15
+    EDITTEXT        IDC_LOADEXT,82,130,185,12,ES_AUTOHSCROLL | WS_GROUP
+    DEFPUSHBUTTON   "OK",IDOK,175,150,40,14
+    PUSHBUTTON      "Cancel",IDCANCEL,225,150,40,14
     CTEXT           "Enter options for connect",1003,95,6,80,8
     RTEXT           "Data Source Name:",IDC_DSNAMETEXT,6,22,73,9,NOT WS_GROUP
     RTEXT           "Database Name:",IDC_DBNAMETEXT,7,38,71,9,NOT WS_GROUP
     RTEXT           "Lock Timeout [ms]:",IDC_TONAMETEXT,6,53,73,9,NOT WS_GROUP
     RTEXT           "Sync.Mode:",IDC_SYNCPTEXT,6,69,72,9,NOT WS_GROUP
-    RTEXT           "Load Extensions:",IDC_LOADEXTTEXT,6,147,73,9,NOT WS_GROUP
+    RTEXT           "Load Extensions:",IDC_LOADEXTTEXT,6,132,73,9,NOT WS_GROUP
 END
 
 /////////////////////////////////////////////////////////////////////////////
@@ -120,7 +116,7 @@ BEGIN
             VALUE "FileDescription", "SQLite3 ODBC Driver\0"
             VALUE "FileVersion", VERSION "\0"
             VALUE "InternalName", "SQLITE3ODBC\0"
-            VALUE "LegalCopyright", "Copyright © 2004-2014 <chw@ch-werner.de>\0"
+            VALUE "LegalCopyright", "Copyright © 2004-2011 <chw@ch-werner.de>\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "SQLITE3ODBC.DLL\0"
             VALUE "PrivateBuild", "\0"

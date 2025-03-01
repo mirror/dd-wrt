@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2003, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2003, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -124,7 +124,7 @@ proc test119 { method {tnum "119"} args} {
 		if { [is_record_based $method] == 1 } {
 			set k $i
 		} else {
-			if { [expr $i % $x] != 1 } {
+			if { [expr $i % $x] == 1 } {
 				set k $i.$bigkey
 			} else {
 				set k $i.$key
@@ -132,7 +132,7 @@ proc test119 { method {tnum "119"} args} {
 		}
 
 		# We can have big data on any method.
-		if { [expr $i % $y] != 1 } {
+		if { [expr $i % $y] == 1 } {
 			set d $i.$bigdata
 		} else {
 			set d $i.$data
@@ -173,12 +173,12 @@ proc test119 { method {tnum "119"} args} {
 			    [is_substr $errorCode DB_BUFFER_SMALL] 1
 
 			# Adjust the buffer sizes to fit the big key or data.
-			if { [expr $count % $x] != 1 } {
+			if { [expr $count % $x] == 1 } {
 				set key_buf $bigbuf
 			} else {
 				set key_buf $buffer
 			}
-			if { [expr $count % $y] != 1 } {
+			if { [expr $count % $y] == 1 } {
 				set data_buf $bigbuf
 			} else {
 				set data_buf $buffer

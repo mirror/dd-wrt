@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -116,36 +116,10 @@ namespace BerkeleyDB {
             }
         }
 
-        /// <summary>
-        /// Whether the record data will be stored as an external file,
-        /// regardless of size.
-        /// </summary>
-        public bool ExternalFile {
-            get { return (dbt.flags & DbConstants.DB_DBT_EXT_FILE) != 0; }
-            set {
-                if (value == true)
-                    dbt.flags |= DbConstants.DB_DBT_EXT_FILE;
-                else
-                    dbt.flags &= ~DbConstants.DB_DBT_EXT_FILE;
-                }
-        }
 	/// <summary>
-        /// Deprecated.  Replaced by ExternalFile.
-        /// </summary>
-        public bool Blob {
-            get { return (dbt.flags & DbConstants.DB_DBT_EXT_FILE) != 0; }
-            set {
-                if (value == true)
-                    dbt.flags |= DbConstants.DB_DBT_EXT_FILE;
-                else
-                    dbt.flags &= ~DbConstants.DB_DBT_EXT_FILE;
-                }
-        }
-
-    /// <summary>
-    /// Set this DatabaseEntry as read only - Berkeley DB cannot
-    /// alter the entry.
-    /// </summary>
+	/// Set this DatabaseEntry as read only - that is Berkeley DB will not
+	/// alter the entry.
+	/// </summary>
         public bool ReadOnly {
             get { return (flags & DbConstants.DB_DBT_READONLY) != 0; }
             set {

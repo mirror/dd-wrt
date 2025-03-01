@@ -22,8 +22,9 @@
 **     * The FTS3 module is being built into the core of
 **       SQLite (in which case SQLITE_ENABLE_FTS3 is defined).
 */
-#include "fts3Int.h"
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
+
+#include "fts3Int.h"
 
 #include <assert.h>
 #include <stdlib.h>
@@ -40,7 +41,7 @@ typedef struct porter_tokenizer {
 } porter_tokenizer;
 
 /*
-** Class derived from sqlite3_tokenizer_cursor
+** Class derived from sqlit3_tokenizer_cursor
 */
 typedef struct porter_tokenizer_cursor {
   sqlite3_tokenizer_cursor base;
@@ -183,7 +184,7 @@ static int isVowel(const char *z){
 ** by a consonant.
 **
 ** In this routine z[] is in reverse order.  So we are really looking
-** for an instance of a consonant followed by a vowel.
+** for an instance of of a consonant followed by a vowel.
 */
 static int m_gt_0(const char *z){
   while( isVowel(z) ){ z++; }
@@ -403,14 +404,12 @@ static void porter_stemmer(const char *zIn, int nIn, char *zOut, int *pnOut){
   /* Step 2 */
   switch( z[1] ){
    case 'a':
-     if( !stem(&z, "lanoita", "ate", m_gt_0) ){
-       stem(&z, "lanoit", "tion", m_gt_0);
-     }
+     stem(&z, "lanoita", "ate", m_gt_0) ||
+     stem(&z, "lanoit", "tion", m_gt_0);
      break;
    case 'c':
-     if( !stem(&z, "icne", "ence", m_gt_0) ){
-       stem(&z, "icna", "ance", m_gt_0);
-     }
+     stem(&z, "icne", "ence", m_gt_0) ||
+     stem(&z, "icna", "ance", m_gt_0);
      break;
    case 'e':
      stem(&z, "rezi", "ize", m_gt_0);
@@ -419,54 +418,43 @@ static void porter_stemmer(const char *zIn, int nIn, char *zOut, int *pnOut){
      stem(&z, "igol", "log", m_gt_0);
      break;
    case 'l':
-     if( !stem(&z, "ilb", "ble", m_gt_0) 
-      && !stem(&z, "illa", "al", m_gt_0)
-      && !stem(&z, "iltne", "ent", m_gt_0)
-      && !stem(&z, "ile", "e", m_gt_0)
-     ){
-       stem(&z, "ilsuo", "ous", m_gt_0);
-     }
+     stem(&z, "ilb", "ble", m_gt_0) ||
+     stem(&z, "illa", "al", m_gt_0) ||
+     stem(&z, "iltne", "ent", m_gt_0) ||
+     stem(&z, "ile", "e", m_gt_0) ||
+     stem(&z, "ilsuo", "ous", m_gt_0);
      break;
    case 'o':
-     if( !stem(&z, "noitazi", "ize", m_gt_0)
-      && !stem(&z, "noita", "ate", m_gt_0)
-     ){
-       stem(&z, "rota", "ate", m_gt_0);
-     }
+     stem(&z, "noitazi", "ize", m_gt_0) ||
+     stem(&z, "noita", "ate", m_gt_0) ||
+     stem(&z, "rota", "ate", m_gt_0);
      break;
    case 's':
-     if( !stem(&z, "msila", "al", m_gt_0)
-      && !stem(&z, "ssenevi", "ive", m_gt_0)
-      && !stem(&z, "ssenluf", "ful", m_gt_0)
-     ){
-       stem(&z, "ssensuo", "ous", m_gt_0);
-     }
+     stem(&z, "msila", "al", m_gt_0) ||
+     stem(&z, "ssenevi", "ive", m_gt_0) ||
+     stem(&z, "ssenluf", "ful", m_gt_0) ||
+     stem(&z, "ssensuo", "ous", m_gt_0);
      break;
    case 't':
-     if( !stem(&z, "itila", "al", m_gt_0)
-      && !stem(&z, "itivi", "ive", m_gt_0)
-     ){
-       stem(&z, "itilib", "ble", m_gt_0);
-     }
+     stem(&z, "itila", "al", m_gt_0) ||
+     stem(&z, "itivi", "ive", m_gt_0) ||
+     stem(&z, "itilib", "ble", m_gt_0);
      break;
   }
 
   /* Step 3 */
   switch( z[0] ){
    case 'e':
-     if( !stem(&z, "etaci", "ic", m_gt_0)
-      && !stem(&z, "evita", "", m_gt_0)
-     ){
-       stem(&z, "ezila", "al", m_gt_0);
-     }
+     stem(&z, "etaci", "ic", m_gt_0) ||
+     stem(&z, "evita", "", m_gt_0)   ||
+     stem(&z, "ezila", "al", m_gt_0);
      break;
    case 'i':
      stem(&z, "itici", "ic", m_gt_0);
      break;
    case 'l':
-     if( !stem(&z, "laci", "ic", m_gt_0) ){
-       stem(&z, "luf", "", m_gt_0);
-     }
+     stem(&z, "laci", "ic", m_gt_0) ||
+     stem(&z, "luf", "", m_gt_0);
      break;
    case 's':
      stem(&z, "ssen", "", m_gt_0);
@@ -507,11 +495,9 @@ static void porter_stemmer(const char *zIn, int nIn, char *zOut, int *pnOut){
            z += 3;
          }
        }else if( z[2]=='e' ){
-         if( !stem(&z, "tneme", "", m_gt_1)
-          && !stem(&z, "tnem", "", m_gt_1)
-         ){
-           stem(&z, "tne", "", m_gt_1);
-         }
+         stem(&z, "tneme", "", m_gt_1) ||
+         stem(&z, "tnem", "", m_gt_1) ||
+         stem(&z, "tne", "", m_gt_1);
        }
      }
      break;
@@ -530,9 +516,8 @@ static void porter_stemmer(const char *zIn, int nIn, char *zOut, int *pnOut){
      }
      break;
    case 't':
-     if( !stem(&z, "eta", "", m_gt_1) ){
-       stem(&z, "iti", "", m_gt_1);
-     }
+     stem(&z, "eta", "", m_gt_1) ||
+     stem(&z, "iti", "", m_gt_1);
      break;
    case 'u':
      if( z[0]=='s' && z[2]=='o' && m_gt_1(z+3) ){
@@ -646,7 +631,6 @@ static const sqlite3_tokenizer_module porterTokenizerModule = {
   porterOpen,
   porterClose,
   porterNext,
-  0
 };
 
 /*

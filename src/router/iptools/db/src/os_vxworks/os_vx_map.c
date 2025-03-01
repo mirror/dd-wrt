@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1998, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1998, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * This code is derived from software contributed to Sleepycat Software by
  * Frederick G.M. Roeber of Netscape Communications Corp.
@@ -388,7 +388,7 @@ __os_segdata_find_byname(env, name, infop, rp)
 			return (0);
 		}
 	}
-	return (USR_ERR(env, ENOENT));
+	return (ENOENT);
 }
 
 /*

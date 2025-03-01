@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -60,11 +60,6 @@ DB-&gt;truncate(DB *db,
          open cursors.
     </p>
       <p>
-         The <code class="methodname">DB-&gt;truncate()</code> method is non-atomic when used on a sliced
-         database. If the operation fails, it is possible for the resulting database files
-         to be in an inconsistent state.
-     </p>
-      <p>
          The <code class="methodname">DB-&gt;truncate()</code> <span>
             <span>
                   method returns a non-zero error value on failure and 0 on success.
@@ -76,7 +71,7 @@ DB-&gt;truncate(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711179969536"></a>Parameters</h3>
+              <h3 class="title"><a id="idp50719552"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -84,7 +79,7 @@ DB-&gt;truncate(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711179969152"></a>txnid</h4>
+                <h4 class="title"><a id="idp50719744"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -104,7 +99,7 @@ DB-&gt;truncate(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711180089664"></a>countp</h4>
+                <h4 class="title"><a id="idp50712192"></a>countp</h4>
               </div>
             </div>
           </div>
@@ -118,7 +113,7 @@ DB-&gt;truncate(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711180120288"></a>flags</h4>
+                <h4 class="title"><a id="idp50708272"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -132,7 +127,7 @@ DB-&gt;truncate(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711179964224"></a>Errors</h3>
+              <h3 class="title"><a id="idp50705504"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -148,7 +143,7 @@ DB-&gt;truncate(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711179956112"></a>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="idp50727184"></a>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -161,7 +156,7 @@ DB-&gt;truncate(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711179942960"></a>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="idp50734968"></a>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -181,13 +176,12 @@ DB-&gt;truncate(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711179953632"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp50728520"></a>EINVAL</h4>
               </div>
             </div>
           </div>
           <p>
-                If there are open cursors in the database; or if an invalid
-                flag value or parameter was specified.
+                If there are open cursors in the database; or if an invalid flag value or parameter was specified.
             </p>
         </div>
       </div>
@@ -195,7 +189,7 @@ DB-&gt;truncate(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711179960288"></a>Class</h3>
+              <h3 class="title"><a id="idp50724984"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -207,7 +201,7 @@ DB-&gt;truncate(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711179951888"></a>See Also</h3>
+              <h3 class="title"><a id="idp50729376"></a>See Also</h3>
             </div>
           </div>
         </div>

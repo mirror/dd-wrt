@@ -1,25 +1,24 @@
-Rules for the Berkeley DB test suite
+Rules for the Berkeley DB and Berkeley DB-XML test suites
 
 1.  Test Naming
 
 The primary script for running Berkeley DB scripts is named
-'test.tcl'.  
+'test.tcl'.  The primary script for running DB-XML is named
+'xmltest.tcl'.
 
 Tests are named with a (prefix, test number) combination.  The
-prefix indicates the type of test (lock, log, rep, etc.).  The
+prefix indicates the type of test (lock, log, xml, etc.).  The
 prefix 'test' is used for plain vanilla DB testing.  Test numbers
-are 3 digits long, starting from 001.
+are 3 digits long, starting with 001.
 
 Procedures common to a group of tests, or to all tests, are placed
 in files named 'xxxutils.tcl'.  At the moment, we have the following
 utilities files:
 
-testutils.tcl		Utilities common to all DB tests
-reputils.tcl		Utilities for replication testing.
-reputilsnoenv.tcl	Utilities for replication testing.
-siutils.tcl		Utilities for secondary index testing.
-xmlutils.tcl 		Utilities for XML testing.
-foputils.tcl 		Utilities for file operations testing.
+testutils.tcl	Utilities common to all DB tests
+reputils.tcl	Utilities for replication testing.
+siutils.tcl	Utilities for secondary index testing.
+xmlutils.tcl 	Utilities for XML testing.
 
 2.  Internal test structure
 
@@ -29,7 +28,7 @@ Each test starts with a section like the following:
 
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -45,18 +44,11 @@ Each test starts with a section like the following:
 # TEST	After all are entered, retrieve all; compare output to original.
 # TEST	Close file, reopen, do retrieve and re-verify.
 
-Always mention the license and claim copyright first. 
-Copy the sentences from another file, but adjust the copyright 
-date if you're creating a new file.  The '$Id$' is left over 
-from when we used a different version control system, CVS 
-instead of mercurial.  I don't think it does any harm, but
-I don't think it has to be in there, either. 
-
-The section of lines beginning # TEST is used to automatically 
-maintain the TESTS file, a listing of all tests and what they 
-do.   Use this section to briefly describe the test's purpose
-and structure.  The TESTS file gets rebuilt by the dist/s_test
-script, which is run when we run s_all.
+First we refer to the license and assert copyright, then comes the CVS
+header string.   The section of lines beginning # TEST is used to
+automatically maintain the TESTS file, a listing of all tests and
+what they do.   Use this section to briefly describe the test's purpose
+and structure.
 
 Next comes the main procedure of the test, which has the same name
 as the tcl file.  The test should be liberally commented, and also
@@ -78,7 +70,7 @@ useful, allowing us to say at a glance that "testxxx is failing in
 btree" or whatever.  Each line of output must begin with the test name.
 We use this to separate expected informational output from errors.
 
-Supporting procedures follow the main procedure.   Procedures used
+Ancillary procedures follow the main procedure.   Procedures used
 by more than one test should go into the appropriate XXXutils.tcl
 file.
 
@@ -109,8 +101,7 @@ run by typing
 
 	r $sub
 
-where sub is the name of the subsystem.  This also works for 
-access methods:  r btree, r hash, and so on. 
+where sub is the name of the subsystem.
 
 For any of the following methods
 
@@ -145,31 +136,7 @@ run_recd is a special case, in that it runs the recdxxx tests;
 all the others run the testxxx tests.
 
 To run the standard test suite, type run_std at the tclsh prompt.
-To run all the tests, type run_all.  Run_all runs each of the 
-testXXX tests under many different conditions:  with and without 
-transaction, partitioning, replication, encryption, different 
-page sizes, and so on.  When writing a new test -- call it test150 --
-it's a good idea to run 'run_all test150' and make sure it passes. 
-This command will run test150 in all the different ways that 
-a run_all run would.  Similarly you can do 'run_std test150'. 
-
-Just as the testXXX tests are run in different ways, the 
-replication tests are also set up so they can be run with 
-databases in-memory or on-disk, log files in-memory or 
-on-disk, replication files in-memory or on-disk, and with
-or without private environments.  These options can be accessed
-with the commands
-
-% run_inmem_db rep001 btree (in-memory databases)
-% run_inmem_log rep001 btree (in-memory logs)
-% run_mixedmode rep001 btree (runs through the various options of 
-	master logs on-disk/in-mem and client logs on-disk/in-mem)
-% run_env_private rep001 btree (open all envs with -private)
-% run_inmem_rep rep001 btree (in-memory rep files: __db.rep.gen, 
-	__db.rep.egen, __db.rep.init, etc.)
-% run_inmem_tests (runs all the in-memory testing)
-
-
+To run all the tests, type run_all.
 
 If you are running run_std or run_all, you may use the run_parallel
 interface to speed things up or to test under conditions of high
@@ -178,5 +145,3 @@ reorders the tests randomly, then runs the tests in a number of
 parallel processes.  To run run_std in five processes type
 
 	run_parallel 5 run_std
-
-

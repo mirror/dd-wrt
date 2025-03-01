@@ -7,12 +7,8 @@ backup
 
 	Do all the of the following tests with and without 
 	the -c (checkpoint) option; and with and without the
-	transactional bulk loading optimization; and with
-	and without BLOB. Make sure that -c and -d (data_dir)
-	are not allowed together; and backing up with BLOB
-	but without -log_blob is not allowed.  If slices are
-	enabled, run some of the tests with the -sliced
-	database flag.
+	transactional bulk loading optimization.  Make sure
+	that -c and -d (data_dir) are not allowed together. 
 
 	(1) Test that plain and simple hotbackup works. 
 	(2) Test with -data_dir (-d). 
@@ -23,8 +19,6 @@ backup
 	(6) DB_CONFIG and update.  
 	(7) Repeat hot backup (non-update) with DB_CONFIG, 
 	DB_CONFIG (-D) and existing directories. 
-	(8) Incremental hot backup when txn is active and the number
-	of log files is successively increased.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 bigfile001
@@ -40,25 +34,11 @@ bigfile002
 	with 1K pages.  Dirty page 6000000.  Sync.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-bigfile003
-	1. Create two databases.  One will hold a very large (5 GB)
-	blob and the other a relatively small one (5 MB) to test some 
-	functionality that is punishingly slow on the 5 GB blob.
-	2. Add empty blobs.
-	3. Append data into the blobs by database stream.
-	4. Verify the blob size and data. For txn env, verify it with
-	txn commit/abort.
-	5. Verify getting the blob by database/cursor get method returns
-	the error DB_BUFFER_SMALL.
-	6. Run verify_dir and a regular db_dump on both databases.
-	7. Run db_dump -r and -R on the small blob only.
-
-	This test requires a platform that supports 5 GB files and
-	64-bit integers.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-db_reptest
-	Wrapper to configure and run the db_reptest program.
+Cold-boot a 4-site group.  The first two sites start quickly and
+	initiate an election.  The other two sites don't join the election until
+	the middle of the long full election timeout period.  It's important that
+	the number of sites that start immediately be a sub-majority, because
+	that's the case that used to have a bug in it [#18456].
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 dbm
@@ -67,6 +47,10 @@ dbm
 	After all are entered, retrieve all; compare output to original.
 	Then reopen the file, re-retrieve everything.  Finally, delete
 	everything.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+db_reptest
+	Wrapper to configure and run the db_reptest program.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 dead001
@@ -254,9 +238,6 @@ env014
 	Make sure that the attempt to change subsystems when
 	joining an env fails with the appropriate messages.
 
-	Make sure that full blob logging is enabled when replication
-	is enabled, and that it cannot be disabled.
-
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 env015
 	Rename the underlying directory of an env, make sure everything
@@ -298,11 +279,6 @@ env018
 	a second handle on the same env, get_open_flags and verify 
 	the flag is returned.
 
-	Also check that the environment configurations lock and txn
-	timeout, mpool max write openfd and mmap size, and log auto
-	remove, when set before opening an environment, are applied
-	when creating the environment, but not when joining.
-
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 env019
 	Test that stats are correctly set and reported when 
@@ -340,91 +316,6 @@ env021
 	$txn commit
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-env022
-	Test db_archive and db_checkpoint with all allowed options.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-env023
-	Test db_deadlock options. For each option, generate a deadlock
-	then call db_deadlock.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-env024
-	Test db_hotbackup with all allowed option combinations.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-env025
-	Test db_recover with all allowed option combinations.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-env026
-	Test reopening an environment after a panic.
-
-	Repeatedly panic the environment, close & reopen it in order to
-	verify that a process is able to reopen the env and there are no
-	major shmem/mmap "leaks"; malloc leaks will occur, and that's ok.
-
-	Since this test leaks memory, it is meant to be run standalone
-	and should not be added to the automated Tcl test suite.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-env027
-	Test recovery of the truncate of a hash db. 
-
-	This is a one-off test of the fix for #23772 --
-	the conditions for reproducing it are so specific 
-	that the test does not generalize well to other 
-	access methods.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-env028
-	Test of SET_REGION_DIR.
-	With an environment path specified using -home, and then again
-	with it specified by the environment variable DB_HOME:
-	1) Make sure that the set_region_dir option is respected
-	a) as a relative pathname.
-	b) as an absolute pathname.
-	2) Make sure that the SET_REGION_DIR db_config argument is respected,
-	again as relative and absolute pathnames.
-	3) Make sure that if -both- db_config and a file are present,
-	only the file is respected (see doc/env/naming.html).
-	4) Check that setting the region dir is incompatible with
-	DB_PRIVATE and DB_SYSTEM_MEM
-	5) Check that MVCC freezer files go into the region dir.        
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-env029
-	Test the behavior of the slice specific functions and flags.
-	There are two versions of this test, one that tests the
-	functions when BDB was built with slices enabled, and one
-	that tests them when they are not enabled.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-env030
-	Test failchk.
-
-	Tests that failchk is able to recover the environment after a crash,
-	or returns RUNRECOVERY when appropriate.
-
-	1. Open environment with is_alive function and failchk.
-	2. Open database and insert a record.
-	3. Test that failchk works when another process: exits cleanly,
-	crashes outside the API, crashes inside the API but holds no
-	latches, and crashes inside the API while holding latches.
-	4. Test that failchk returns RUNRECOVER when another process:
-	crashes while holding an exclusive latch, crashes while holding
-	a mutex, and crashes while performing failchk.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-fail001
-	Test database compaction errors.
-
-	Populate a database.
-	1) Compact the heap / queue database and it should fail.
-	2) Reopen the database with -rdonly, compact the database and it
-	should fail.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 fop001.tcl
 	Test two file system operations combined in one transaction. 
 
@@ -448,8 +339,6 @@ fop004
 	Test that files can be renamed from one directory to another.
 	Test that files can be renamed using absolute or relative
 	pathnames.
-	Test that renaming a database does not change the location or
-	name of its blob files.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 fop005
@@ -601,15 +490,6 @@ log009
 	Do this both forward and backward.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-log010
-	Test of DB_LOG_NOSYNC
-
-	Configure a database with txn_nosync and log_nosync. 
-	Set a very small log size so we'll easily create more 
-	than one.  Verify that we have a small number of writes,
-	and no log syncs at all.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 memp001
 	Randomly updates pages.
 
@@ -629,33 +509,6 @@ memp004
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 memp005
 	Make sure that db pagesize does not interfere with mpool pagesize.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-memp006
-	Tests multiple processes accessing and modifying the same files.
-	Attempt to hit the case where we see the mpool file not a
-	multiple of pagesize so that we can make sure we tolerate it.
-	Some file systems don't protect against racing writes and stat
-	so seeing a database not a multiple of pagesize is possible.
-	Use a large pagesize to try to catch the file at a point where
-	it is getting extended and that races with the open.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-memp007
-	Tests the mpool methods in the mpool file handle.
-	(1) -clear_len, -lsn_offset and -pgcookie.
-	(2) set_maxsize, get_maxsize and get_last_pgno.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-memp008
-	Test for MPOOL multi-process operation.
-
-	This test stress tests MPOOL by creating frozen buckets and 
-	then resizing.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-memp009
-	Dead files and their buffers are removed when the mutex usage is high.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 mut001
@@ -682,11 +535,6 @@ mut003
 	we get appropriate errors.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-mut004
-	Try setting various mutex number configurations. Make sure the
-	mutex region has a reasonable size.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 plat001
 
 	Test of portability of sequences.
@@ -698,8 +546,7 @@ plat001
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 recd001
 	Per-operation recovery tests for non-duplicate, non-split
-	messages. Test it with blob/log_blob enabled and disabled.
-	Makes sure that we exercise redo, undo, and do-nothing
+	messages.  Makes sure that we exercise redo, undo, and do-nothing
 	condition.  Any test that appears with the message (change state)
 	indicates that we've already run the particular test, but we are
 	running it again so that we can change the state of the data base
@@ -717,8 +564,7 @@ recd001
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 recd002
-	Split recovery tests with blob/log_blob enabled and disabled.
-	For every known split log message, makes sure
+	Split recovery tests.  For every known split log message, makes sure
 	that we exercise redo, undo, and do-nothing condition.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -737,7 +583,6 @@ recd004
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 recd005
 	Verify reuse of file ids works on catastrophic recovery.
-	Test it with blob/log_blob enabled and disabled.
 
 	Make sure that we can do catastrophic recovery even if we open
 	files using the same log file id.
@@ -807,7 +652,6 @@ recd017
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 recd018
 	Test recover of closely interspersed checkpoints and commits.
-	Test with blob/log_blob enabled and disabled.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 recd019
@@ -835,7 +679,7 @@ recd022
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 recd023
-	Test recover of reverse split with blob/log_blob enabled and disabled.
+	Test recover of reverse split.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 recd024
@@ -849,8 +693,7 @@ recd024
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 recd025
-	Basic tests for transaction bulk loading and recovery with
-	blob/log_blob enabled and disabled.
+	Basic tests for transaction bulk loading and recovery.
 	In particular, verify that the tricky hot backup protocol works.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -1084,11 +927,6 @@ rep025
 	Put one more record to the master.  At the next
 	processing of messages, the client should get JOIN_FAILURE.
 	Recover with a hot failover.
-
-	Test error handling when a client without encryption tries to
-	join an encrypted repgroup, or vice versa.  Make sure the client
-	gets the expected JOIN_FAILURE error and that the master
-	continues to operate after the error.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 rep026
@@ -1377,10 +1215,10 @@ rep052
 	no longer has the client's last log file.
 	Reopen the client and turn on NOWAIT.
 	Process a few messages to get the client into
-	recovery mode, and verify that a lockout error occurs
-	on a txn API call (txn_begin) and a list of env API calls
-	as well as utilities.
-	Process all the messages and verify that lockout is over.
+	recovery mode, and verify that lockout occurs
+	on a txn API call (txn_begin) and an env API call.
+	Process all the messages and verify that lockout
+	is over.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 rep053
@@ -1487,7 +1325,7 @@ rep065
 	This capability is introduced with 4.5.
 
 	Start a replication group of 1 master and N sites, all
-	running some historical version greater than or equal to 4.7.
+	running some historical version greater than or equal to 4.4.
 	Take down a client and bring it up again running current.
 	Run some upgrades, make sure everything works.
 
@@ -1762,12 +1600,6 @@ rep093
 rep094
 	Full election with less than majority initially connected.
 
-	Cold-boot a 4-site group.  The first two sites start quickly and
-	initiate an election.  The other two sites don't join the election until
-	the middle of the long full election timeout period.  It's important that
-	the number of sites that start immediately be a sub-majority, because
-	that's the case that used to have a bug in it [#18456].
-
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 rep095
 	Test of internal initialization use of shared region memory.
@@ -1840,69 +1672,6 @@ rep102
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-rep103
-	Test of multiple data dirs and databases, with different
-	directory structure on master and client.
-
-	One master, two clients using several data_dirs.
-	Create databases in different data_dirs.  Replicate to client
-	that doesn't have the same data_dirs.
-	Add 2nd client later to require it to catch up via internal init.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-rep104
-	Test of interrupted internal initialization changes.  The
-	interruption is due to a changed master.
-
-	One master, two clients.
-	Generate several log files. Remove old master log files.
-	Restart client forcing an internal init.
-	Interrupt the internal init.
-	We create lots of databases and a small cache to reproduce an
-	issue where interrupted init removed the files and then the later
-	init tried to write dirty pages to the no-longer-existing file.
-
-	Run for btree and queue only because of the number of permutations.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-rep105
-	Replication and rollback on sync over multiple log files.
-
-	Run rep_test in a replicated master env.
-	Hold open various txns in various log files and make sure
-	that when synchronization happens, we rollback the correct set
-	of log files.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-rep106
-
-	Replication and basic lease test with site shutdowns.
-	Set leases on master and 3 clients, 2 electable and 1 zero-priority.
-	Do a lease operation and process to all clients.
-	Shutdown 1 electable and perform another update.  Leases should work.
-	Shutdown 1 electable and perform another update.  Should fail.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-rep107
-
-	Replication and basic view error test.
-	Have a master, a client and a view.
-	Test for various error conditions and restrictions, including
-	having a view call rep_elect; trying to demote a client to a
-	view after opening the env; inconsistent view opening; trying
-	to make it a master, etc.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-rep108
-
-	Replication and partial rep database creation.
-	Have a master, a client and a view.
-	Start up master and client.  Create files and make sure
-	the correct files appear on the view.  Force creation
-	via internal init, recovery or by applying live log records.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 rep109
 	Test that snapshot isolation cannot be used on HA clients.
 	Master creates a txn with DB_TXN_SNAPSHOT and succeeds.
@@ -1910,60 +1679,6 @@ rep109
 	Master opens a cursor with DB_TXN_SNAPSHOT and succeeds.
 	Client gets and error when opening a cursor with DB_TXN_SNAPSHOT.
 
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-rep110
-	Test of internal initialization, nowait and child processes.
-	This tests a particular code path for handle_cnt management.
-
-	One master, one client, with DB_REP_CONF_NOWAIT.
-	Generate several log files.
-	Remove old master log files.
-	While in internal init, start a child process to open the env.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-rep111
-
-	Replication and partial view and client-to-client synchronization.
-	Start up master and view.  Create files and make sure
-	the correct files appear on the view.  Start client site and
-	confirm the view serves client-to-client.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-rep112
-
-	Replication and partial view remove and rename.
-	Start up master and view.  Create files and make sure
-	the correct files appear on the view.  
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-rep113
-
-	Replication and partial view special case testing.
-	Start up master and view.  Create files and make sure
-	the correct files appear on the view.  Run special cases
-	such as partitioned databases, secondaries and many data_dirs.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-rep115
-	Test correct behavior of TXN_WRNOSYNC, TXN_NOSYNC and synchronous
-	transactions on client sites.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-rep116
-	Test of instant internal initialization, where internal init is started
-	instantly if a file delete is found while walking back through the
-	logs during the verify step.
-
-	One master, one client.
-	Generate several log files.
-	Remove old master and client log files.
-	Create a network partition between the master and client,
-	and restart the client as a master.
-	Delete a database or blob file on the client, then close the client and
-	have it rejoin the master.  Assert that the deleted file is present on
-	the client.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 repmgr001
@@ -1984,21 +1699,6 @@ repmgr003
 	Basic repmgr init test.
 
 	Run all combinations of the basic_repmgr_init_test.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr004
-	Test the repmgr incoming queue limit.
-
-	Test that setting the repmgr incoming queue limit works.
-	We create a master and a client, and set a small client
-	incoming queue limit.  We verify this limit works on the
-	client side for full and abbreviated internal init and 
-	for regular processing.  In addition to the default case, 
-	we will also test cases using bulk transfer and blob
-	databases.
-
-	Run for btree only because access method shouldn't matter.
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -2029,11 +1729,7 @@ repmgr010
 
 	Verify that "quorum" acknowledgement policy succeeds with fewer than 
 	nsites running. Verify that "all" acknowledgement policy results in 
-	ack failures with fewer than nsites running.  Make sure the presence
-	of more views than participants doesn't cause incorrect ack behavior.
-	Make sure unelectable master requires more acks for "quorum" policy.
-	Test that an unelectable client joining the group doesn't cause
-	PERM_FAILs.
+	ack failures with fewer than nsites running.
 
 	Run for btree only because access method shouldn't matter.
 
@@ -2042,13 +1738,10 @@ repmgr010
 repmgr011
 	repmgr two site strict majority test.
 
-	Test each 2site_strict option's behavior for master loss and for
-	client site removal.  With 2site_strict=on, make sure remaining
-	site does not take over as master and that the client site can be
-	removed and rejoin the group.  With 2site_strict=off, make sure
-	remaining site does take over as master and make sure the deferred
-	election logic prevents the rejoining site from immediately taking
-	over as master before fully rejoining the repgroup. 
+	Start an appointed master and one client with 2 site strict
+	majority set. Shut down the master site, wait and verify that
+	the client site was not elected master. Start up master site
+	and verify that transactions are processed as expected.
 
 	Run for btree only because access method shouldn't matter.
 
@@ -2160,14 +1853,12 @@ repmgr029
 repmgr030
 	repmgr multiple client-to-client peer test.
 
-	Start an appointed master, three clients and a view.  The third client
-	configures the two other clients and view as peers and delays client
-	sync.  Add some data and confirm that the third client uses first client
-	as a peer.  Close the master so that the first client now becomes the
-	the master.  Add some more data and confirm that the third client now
-	uses the second client as a peer.  Close the current master so that the
-	second client becomes master and the third client uses the view as a
-	peer.
+	Start an appointed master and three clients. The third client
+	configures the other two clients as peers and delays client
+	sync.  Add some data and confirm that the third client uses first
+	client as a peer.  Close the master so that the first client now
+	becomes the master.  Add some more data and confirm that the
+	third client now uses the second client as a peer.
 
 	Run for btree only because access method shouldn't matter.
 
@@ -2192,165 +1883,6 @@ repmgr034
 
 	This test must use heartbeats to ensure that a client that has
 	been removed and restarted without recovery can sync up.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr035
-	Tests replication manager running with different versions.
-	This capability is introduced with 4.5, but this test can only
-	go back to 5.0 because it requires the ability to turn off
-	elections.
-
-	Start a replication group of 1 master and N sites, all
-	running some historical version greater than or equal to 5.0.
-	Take down a client and bring it up again running current.
-	Run some upgrades, make sure everything works.
-
-	Each site runs the tcllib of its own version, but uses
-	the current tcl code (e.g. test.tcl).
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr036
-	Basic repmgr view test.
-
-	Start an appointed master site and one view.  Ensure replication
-	is occurring to the view.  Shut down master, ensure view does not
-	take over as master.  Restart master, add an empty view to the
-	replication group, and make sure further master changes are
-	replicated to the view and the empty view is empty.  Test
-	view-related stats and flag indicator in repmgr_site_list output.
-
-	Run for btree only because access method shouldn't matter.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr037
-	Election test for repmgr views.
-
-	Run a set of elections in a replication group containing views,
-	making sure views never become master.  Run test for replication
-	groups containing different numbers of clients, unelectable clients
-	and views.
-
-	Run for btree only because access method shouldn't matter.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr038
-	repmgr view demotion test.
-
-	Create a replication group of a master and two clients.  Demote
-	the second client to a view, then check site statistics, transaction
-	apply and election behavior for demoted view.
-
-	Run for btree only because access method shouldn't matter.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr039
-	repmgr duplicate master test.
-
-	This test verifies repmgr's automatic dupmaster resolution.  It
-	uses the repmgr test hook to prevent sending heartbeats and
-	2SITE_STRICT=off to enable the client to become a master in
-	parallel with the already-established master.  After rescinding
-	the test hook, it makes sure repmgr performs its dupmaster resolution
-	process resulting in the expected winner.
-
-	This test runs in the following configurations:
-	Default elections where master generation helps determine winner
-	The undocumented DB_REP_CONF_ELECT_LOGLENGTH election option
-	A Preferred Master replication group
-
-	Run for btree only because access method shouldn't matter.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr040
-	repmgr preferred master basic configuration test.
-
-	This test verifies repmgr's preferred master mode, including
-	basic operation and configuration errors.
-
-	Run for btree only because access method shouldn't matter.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr041
-	repmgr preferred master basic resync and take over test.
-
-	Creates a preferred master replication group and shuts down the master
-	site so that the client site takes over as temporary master.  Then
-	it restarts the preferred master site, which synchronizes with the
-	temporary master and takes over as preferred master again.  Verifies
-	that temporary master transactions are retained.
-
-	Run for btree only because access method shouldn't matter.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr042
-	repmgr preferred master client startup test.
-
-	Test various preferred master client start up and shut down cases.
-	Verify replication group continued operation without a client.
-	Verify client site's startup as the temporary master and the
-	ability of the preferred master site to resync and take over
-	afterwards.
-
-	Run for btree only because access method shouldn't matter.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr043
-	repmgr preferred master transaction retention test.
-
-	Test various cases that create continuous or conflicting sets of
-	transactions across the two sites.  Verify that unique preferred
-	master transactions are never rolled back and that unique temporary
-	master transactions are kept when possible.
-
-	Run for btree only because access method shouldn't matter.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr044
-	repmgr preferred master replication group size test.
-
-	Test preferred master behavior when sites are removed from or added
-	to the replication group.  Also test permanent transfer of preferred
-	mastership to the client site.
-
-	Run for btree only because access method shouldn't matter.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr045
-	IPv6/IPv4 interoperability test.
-
-	This test ensures that a single IPv4 site can function as an
-	appointed master, an elected master or a client in a replication
-	group where the other sites use IPv6.
-
-	Run for btree only because access method shouldn't matter.
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr046
-	repmgr singleton write forwarding test.
-
-	The initial basic test has several purposes: test general use
-	of repmgr write forwarding API options (config, timeout, stats),
-	test basic forwarded put and del operations, test that expected
-	errors are returned from most simple error scenarios.
-
-	The 3-site test makes sure that write forwarding continues to
-	operate as expected during replication group changes such as
-	a change of master and a former master rejoining as a client.
-
-	The other tests include cases for blobs, subdatabases,
-	various duplicate options, and additional error cases.
-	Run for btree only because access method shouldn't matter.
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -2382,8 +1914,8 @@ repmgr102
 	Start a second process, and see that it does not become the listener.
 	Shut down the first process (gracefully).  Now a second process should
 	become listener.
-	Kill the listener process abruptly.  Run recovery and start a clean
-	listener.
+	Kill the listener process abruptly.  Running failchk should show that
+	recovery is necessary.  Run recovery and start a clean listener.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 repmgr105
@@ -2431,31 +1963,6 @@ repmgr112
 	Subordinate processes sending live log records must observe the
 	ack policy set by the main process.  Also, a policy change made by a
 	subordinate process should be observed by all processes.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr113
-	Multi-process repmgr automatic listener takeover.
-
-	One of the subordinate processes automatically becomes listener if the
-	original listener leaves.  An election is delayed long enough for a
-	takeover to occur if the takeover happens on the master.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-repmgr150
-	Test repmgr with DB_REGISTER, DB_RECOVER, and FAILCHK
-
-	1. RepMgr can be started with -register and -recovery flags. 
-
-	2. A rep unaware process can join the master environment 
-	with -register and -recovery without running recovery. 
-
-	3. RepMgr can be started with -register and -recovery flags, 
-	even if the environment is corrupted.
-
-	4. RepMgr can be started with -failchk and -isalive. 
-
-	5. A rep unaware process can join the master environment 
-	with -failchk and -isalive.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 rsrc001
@@ -2519,7 +2026,6 @@ sdb003
 	Insert each with entry as name of subdatabase and a partial list
 	as key/data.  After all are entered, retrieve all; compare output
 	to original.  Close file, reopen, do retrieve and re-verify.
-	Run the test with blob enabled and disabled.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 sdb004
@@ -2782,44 +2288,8 @@ si008
 	one native, one swapped.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-si009
-	Secondary index put/delete with lorder test
-
-	This test is the same as si001 except we use 
-	partial put to update entries.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 sijointest: Secondary index and join test.
 	This used to be si005.tcl.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-slice001
-	Test of the various environment set_*_dir settings in DB_CONFIG
-	for sliced environments.  The following configs are tested for both
-	relative and absolute paths.
-	1. home
-	2. set_create_dir
-	3. add_data_dir
-	4. set_metadata_dir
-	5. set_blob_dir
-	6. set_tmp_dir
-	7. set_region_dir
-	8. set_lg_dir
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-slice002
-	Test transactional operations on sliced databases.
-	Test that transactions behave as expected when:
-	1. Auto commit is used.
-	2. Transactions cover only a single operation each.
-	3. Transactions cover multiple operations on the same key.
-	4. Transactions cover multiple operations on different keys.
-	5. Transactions cover multiple operations on different slices.
-	Do this when both committing and aborting the transaction.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-slice003
-	Test associate and secondary index handling in a sliced environment.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 sql001
@@ -2915,14 +2385,13 @@ test007
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 test008
-	Small keys/large data with overflows or BLOB.
+	Small keys/large data
 	Put/get per key
 	Loop through keys by steps (which change)
 	... delete each key at step
 	... add each key back
 	... change step
-	Confirm that overflow pages are getting reused or blobs
-	are created.
+	Confirm that overflow pages are getting reused
 
 	Take the source files and dbtest executable and enter their names as
 	the key with their contents as data.  After all are entered, begin
@@ -2999,8 +2468,6 @@ test014
 	we'll try to perform partial puts of some characters at the beginning,
 	some at the end, and some at the middle.
 
-	Run the test with blob enabled and disabled.
-
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 test015
 	Partial put test
@@ -3017,7 +2484,6 @@ test016
 	retrieve each. After all are entered, go back and do partial puts,
 	replacing a random-length string with the key value.
 	Then verify.
-	Run the test with blob enabled and disabled.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 test017
@@ -3228,8 +2694,6 @@ test042
 	partial put).  Some will use cursors to traverse through a few keys
 	before finding one to write.
 
-	Run the test with blob enabled and disabled.
-
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 test043
 	Recno renumbering and implicit creation test
@@ -3356,7 +2820,6 @@ test059
 	The following ops, should allow a partial data retrieve of 0-length.
 	db_get
 	db_cget FIRST, NEXT, LAST, PREV, CURRENT, SET, SET_RANGE
-	Run the test with blob enabled and disabled.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 test060
@@ -3699,7 +3162,7 @@ test107
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 test109
 
-	Test of full arguments combinations for sequences API.
+	Test of sequences.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 test110
@@ -3747,7 +3210,7 @@ test113
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 test114
-	Test database compaction with overflow or duplicate pages.
+	Test database compaction with overflows.
 
 	Populate a database.  Remove a high proportion of entries.
 	Dump and save contents.  Compact the database, dump again,
@@ -3775,18 +3238,12 @@ test116
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 test117
-	Test database compaction with requested fill percent or specified
-	number of pages to free.
+	Test database compaction with requested fill percent.
 
 	Populate a database.  Remove a high proportion of entries.
-	Dump and save contents. Compact the database with the following
-	configurations.
-	1) Compact with requested fill percentages, starting at 10% and
-	working our way up to 100.
-	2) Compact the database 4 times with -pages option and each time
-	try to compact 1/4 of the original database pages.
-
-	On each compaction, make sure we still have the same contents.
+	Dump and save contents.  Compact the database, requesting
+	fill percentages starting at 10% and working our way up to
+	100.  On each cycle, make sure we still have the same contents.
 
 	Unlike the other compaction tests, this one does not
 	use -freespace.
@@ -4024,130 +3481,6 @@ test142
 	configuration.
 	4. Run script tests on a database with both wait and no wait 
 	configuration.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-test143
-
-	Test of mpool cache resizing.
-
-	Open an env with specified cache size and cache max.
-	Write some data, check cache size. 
-	Resize cache.
-	Configure cache-related mutex settings.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-test144
-	Tests setting the heap size.
-	1. Open the db with heap size smaller than 3 times the database page
-	size and it fails and it should fail.
-	2. Open the db with heap size A and close it. Reopen the db with heap
-	size B (A != B) and it should fail.
-	3. Open the db with heap size A, put some records to make the db file
-	size bigger than A and it returns DB_HEAP_FULL.
-	4. Open another heap database after getitng DB_HEAP_FULL and it
-	should succeed.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-test145
-	Tests setting the database creation directory
-	in the environment and database handles.
-	1. Test setting the directory in the environment handle 
-	(1) sets the db creation directory in the env handle with -data_dir;
-	(2) opens the env handle with the env home directory;
-	(3) opens the db handle with the db file name and db name.
-	2. Test setting the directory in the database handle.
-	(1) adds the db creation directory to the data directory list in the
-	env handle with -add_dir;
-	(2) opens the env handle with the env home directory;
-	(3) sets the db creation directory in the db handle with -create_dir;
-	(4) opens the db handle with the db file name and db name.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-test146
-	Test the BLOB APIs.
-	1) Test that the db blob threshold value defaults to
-	the env threshold value.
-	2) Test that the db blob threshold value is retained when re-opening
-	the db.
-	3) Test that the db blob threshold value is retained when re-opening
-	the db with a different threshold value.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-test147
-	Test db_stat and db_printlog with all allowed options.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-test148
-	Test database compaction with -freeonly, -start/-stop.
-
-	Populate a database. Remove a high proportion of entries.
-	Dump and save contents.  Compact the database with -freeonly,
-	-start, -stop, or -start/-stop, dump again, and make sure
-	we still have the same contents.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-test149
-	Database stream test.
-	1. Append data to empty / non-empty blobs.
-	2. Update the existing data in the blobs.
-	3. Check that the blob meta database has the same page size
-	as the database that owns it.
-	4. Re-create blob of the same key by deleting the record and
-	and writing new data to blob by database stream.
-	5. Verify the error is returned when opening a database stream
-	on a record that is not a blob.
-	6. Verify database stream can not write in blobs when it is
-	configured to read-only.
-	7. Verify database stream can not write in read-only databases.
-
-	In each test case, verify database stream read/size/write/close
-	operations work as expected with transaction commit/abort.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-test150
-	Test db_verify and db_log_verify with all allowed options.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-test151
-	Test db_dump and db_load with all allowed options.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-test152
-	Test database compaction with blobs.  
-	This is basically test111 with blobs. 
-
-	Populate a database with a mixture of blob and non-blob
-	items. Remove a high proportion of entries.
-	Dump and save contents.  Compact the database, dump again,
-	and make sure we still have the same contents.
-	Add back some entries, delete more entries (this time by
-	cursor), dump, compact, and do the before/after check again.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-test153
-	Test queue consuming on a database having holes.
-
-	Create a database and then do some put operations. We will commit
-	most of the operations and abort some to create holes(A queue
-	database that is missing some consecutive elements). Then we will
-	consume all records in the database to verify it still works, and
-	we will also verify there are no zombie(see below) extents left.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-test154
-	Test of multi-version concurrency control.
-
-	Test basic snapshot functionality, adding volume and
-	multiple iterations to generate freeze/thaw behavior.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-test155
-	Make sure DB_AFTER works properly after DBcursor->next(DB_MULTIPLE_KEY)
-	has returned the last item.
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-test156
-	Test byte order conversions.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 txn001

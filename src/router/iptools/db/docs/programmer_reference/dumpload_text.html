@@ -7,14 +7,14 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="dumpload.html" title="Chapter 25.  Dumping and Reloading Databases" />
+    <link rel="up" href="dumpload.html" title="Chapter 23.  Dumping and Reloading Databases" />
     <link rel="prev" href="dumpload_format.html" title="Dump output formats" />
-    <link rel="next" href="refs.html" title="Chapter 26. Additional References" />
+    <link rel="next" href="refs.html" title="Chapter 24.  Additional References" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,8 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="dumpload_format.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 25.  Dumping and Reloading Databases
-    </th>
+          <th width="60%" align="center">Chapter 23. 
+		Dumping and Reloading Databases
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="refs.html">Next</a></td>
         </tr>
       </table>
@@ -37,23 +38,10 @@
           </div>
         </div>
       </div>
-      <p>
-        The <a href="../api_reference/C/db_load.html" class="olink">db_load</a> utility can be used to load text into databases. The
-        <span class="bold"><strong>-T</strong></span> option permits
-        nondatabase applications to create flat-text files that are
-        then loaded into databases for fast, highly-concurrent access.
-        For example, the following command loads the standard UNIX
-        <code class="filename">/etc/passwd</code> file into a database,
-        with the login name as the key item and the entire password
-        entry as the data item:
-    </p>
+      <p>The <a href="../api_reference/C/db_load.html" class="olink">db_load</a> utility can be used to load text into databases.  The <span class="bold"><strong>-T</strong></span> option permits nondatabase applications to create flat-text files that are then loaded into databases for fast, highly-concurrent access.  For example, the following command loads the standard UNIX <code class="filename">/etc/passwd</code> file into a database, with the login name as the key item and the entire password entry as the data item:</p>
       <pre class="programlisting">awk -F: '{print $1; print $0}' &lt; /etc/passwd |\
     sed 's/\\/\\\\/g' | db_load -T -t hash passwd.db</pre>
-      <p>
-        Note that backslash characters naturally occurring in the
-        text are escaped to avoid interpretation as escape characters
-        by the <a href="../api_reference/C/db_load.html" class="olink">db_load</a> utility.
-    </p>
+      <p>Note that backslash characters naturally occurring in the text are escaped to avoid interpretation as escape characters by the <a href="../api_reference/C/db_load.html" class="olink">db_load</a> utility.</p>
     </div>
     <div class="navfooter">
       <hr />
@@ -70,7 +58,9 @@
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Chapter 26. Additional References</td>
+          <td width="40%" align="right" valign="top"> Chapter 24. 
+		Additional References
+        </td>
         </tr>
       </table>
     </div>

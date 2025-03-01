@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -16,9 +16,9 @@
 proc test138 { method {nentries 1000} {start 0} {skip 0} args } {
 	source ./include.tcl
 
+	eval {test137 $method $nentries $start $skip 0 "138" "cds"} $args
+	eval {test137 $method $nentries $start $skip 0 "138" "tds"} $args
 	eval {test137 $method $nentries $start $skip 1 "138" "ds"} $args
 	eval {test137 $method $nentries $start $skip 1 "138" "cds"} $args
 	eval {test137 $method $nentries $start $skip 1 "138" "tds"} $args
-	eval {test137 $method $nentries $start $skip 0 "138" "cds"} $args
-	eval {test137 $method $nentries $start $skip 0 "138" "tds"} $args
 }

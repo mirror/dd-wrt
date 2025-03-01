@@ -18,9 +18,6 @@
 #include <string.h>
 #include <assert.h>
 
-#include "sqliteInt.h"
-#include "vdbeInt.h"
-
 
 /*
 ** Allocate nByte bytes of space using sqlite3_malloc(). If the
@@ -205,7 +202,7 @@ static void test_auxdata(
       }else {
         zRet[i*2] = '0';
       }
-      n = (int)strlen(z) + 1;
+      n = strlen(z) + 1;
       zAux = testContextMalloc(pCtx, n);
       if( zAux ){
         memcpy(zAux, z, n);
@@ -425,201 +422,11 @@ static void testHexToUtf16le(
 }
 #endif
 
-/*
-** SQL function:   real2hex(X)
-**
-** If argument X is a real number, then convert it into a string which is
-** the big-endian hexadecimal representation of the ieee754 encoding of
-** that number.  If X is not a real number, return NULL.
-*/
-static void real2hex(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  union {
-    sqlite3_uint64 i;
-    double r;
-    unsigned char x[8];
-  } v;
-  char zOut[20];
-  int i;
-  int bigEndian;
-  v.i = 1;
-  bigEndian = v.x[0]==0;
-  v.r = sqlite3_value_double(argv[0]);
-  for(i=0; i<8; i++){
-    if( bigEndian ){
-      zOut[i*2]   = "0123456789abcdef"[v.x[i]>>4];
-      zOut[i*2+1] = "0123456789abcdef"[v.x[i]&0xf];
-    }else{
-      zOut[14-i*2]   = "0123456789abcdef"[v.x[i]>>4];
-      zOut[14-i*2+1] = "0123456789abcdef"[v.x[i]&0xf];
-    }
-  }
-  zOut[16] = 0;
-  sqlite3_result_text(context, zOut, -1, SQLITE_TRANSIENT);
-}
-
-/*
-** tclcmd: test_extract(record, field)
-**
-** This function implements an SQL user-function that accepts a blob
-** containing a formatted database record as the first argument. The
-** second argument is the index of the field within that record to
-** extract and return.
-*/
-static void test_extract(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  sqlite3 *db = sqlite3_context_db_handle(context);
-  u8 *pRec;
-  u8 *pEndHdr;                    /* Points to one byte past record header */
-  u8 *pHdr;                       /* Current point in record header */
-  u8 *pBody;                      /* Current point in record data */
-  u64 nHdr;                       /* Bytes in record header */
-  int iIdx;                       /* Required field */
-  int iCurrent = 0;               /* Current field */
-
-  assert( argc==2 );
-  pRec = (u8*)sqlite3_value_blob(argv[0]);
-  iIdx = sqlite3_value_int(argv[1]);
-
-  pHdr = pRec + sqlite3GetVarint(pRec, &nHdr);
-  pBody = pEndHdr = &pRec[nHdr];
-
-  for(iCurrent=0; pHdr<pEndHdr && iCurrent<=iIdx; iCurrent++){
-    u64 iSerialType;
-    Mem mem;
-
-    memset(&mem, 0, sizeof(mem));
-    mem.db = db;
-    mem.enc = ENC(db);
-    pHdr += sqlite3GetVarint(pHdr, &iSerialType);
-    pBody += sqlite3VdbeSerialGet(pBody, (u32)iSerialType, &mem);
-
-    if( iCurrent==iIdx ){
-      sqlite3_result_value(context, &mem);
-    }
-
-    if( mem.szMalloc ) sqlite3DbFree(db, mem.zMalloc);
-  }
-}
-
-/*
-** tclcmd: test_decode(record)
-**
-** This function implements an SQL user-function that accepts a blob
-** containing a formatted database record as its only argument. It returns
-** a tcl list (type SQLITE_TEXT) containing each of the values stored
-** in the record.
-*/
-static void test_decode(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  sqlite3 *db = sqlite3_context_db_handle(context);
-  u8 *pRec;
-  u8 *pEndHdr;                    /* Points to one byte past record header */
-  u8 *pHdr;                       /* Current point in record header */
-  u8 *pBody;                      /* Current point in record data */
-  u64 nHdr;                       /* Bytes in record header */
-  Tcl_Obj *pRet;                  /* Return value */
-
-  pRet = Tcl_NewObj();
-  Tcl_IncrRefCount(pRet);
-
-  assert( argc==1 );
-  pRec = (u8*)sqlite3_value_blob(argv[0]);
-
-  pHdr = pRec + sqlite3GetVarint(pRec, &nHdr);
-  pBody = pEndHdr = &pRec[nHdr];
-  while( pHdr<pEndHdr ){
-    Tcl_Obj *pVal = 0;
-    u64 iSerialType;
-    Mem mem;
-
-    memset(&mem, 0, sizeof(mem));
-    mem.db = db;
-    mem.enc = ENC(db);
-    pHdr += sqlite3GetVarint(pHdr, &iSerialType);
-    pBody += sqlite3VdbeSerialGet(pBody, (u32)iSerialType, &mem);
-
-    switch( sqlite3_value_type(&mem) ){
-      case SQLITE_TEXT:
-        pVal = Tcl_NewStringObj((const char*)sqlite3_value_text(&mem), -1);
-        break;
-
-      case SQLITE_BLOB: {
-        char hexdigit[] = {
-          '0', '1', '2', '3', '4', '5', '6', '7',
-          '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
-        };
-        int n = sqlite3_value_bytes(&mem);
-        u8 *z = (u8*)sqlite3_value_blob(&mem);
-        int i;
-        pVal = Tcl_NewStringObj("x'", -1);
-        for(i=0; i<n; i++){
-          char hex[3];
-          hex[0] = hexdigit[((z[i] >> 4) & 0x0F)];
-          hex[1] = hexdigit[(z[i] & 0x0F)];
-          hex[2] = '\0';
-          Tcl_AppendStringsToObj(pVal, hex, 0);
-        }
-        Tcl_AppendStringsToObj(pVal, "'", 0);
-        break;
-      }
-
-      case SQLITE_FLOAT:
-        pVal = Tcl_NewDoubleObj(sqlite3_value_double(&mem));
-        break;
-
-      case SQLITE_INTEGER:
-        pVal = Tcl_NewWideIntObj(sqlite3_value_int64(&mem));
-        break;
-
-      case SQLITE_NULL:
-        pVal = Tcl_NewStringObj("NULL", -1);
-        break;
-
-      default:
-        assert( 0 );
-    }
-
-    Tcl_ListObjAppendElement(0, pRet, pVal);
-
-    if( mem.szMalloc ){
-      sqlite3DbFree(db, mem.zMalloc);
-    }
-  }
-
-  sqlite3_result_text(context, Tcl_GetString(pRet), -1, SQLITE_TRANSIENT);
-  Tcl_DecrRefCount(pRet);
-}
-
-/*
-** The implementation of scalar SQL function "test_zeroblob()". This is
-** similar to the built-in zeroblob() function, except that it does not
-** check that the integer parameter is within range before passing it
-** to sqlite3_result_zeroblob().
-*/
-static void test_zeroblob(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  int nZero = sqlite3_value_int(argv[0]);
-  sqlite3_result_zeroblob(context, nZero);
-}
-
 static int registerTestFunctions(sqlite3 *db){
   static const struct {
      char *zName;
      signed char nArg;
-     unsigned int eTextRep; /* 1: UTF-16.  0: UTF-8 */
+     unsigned char eTextRep; /* 1: UTF-16.  0: UTF-8 */
      void (*xFunc)(sqlite3_context*,int,sqlite3_value **);
   } aFuncs[] = {
     { "randstr",               2, SQLITE_UTF8, randStr    },
@@ -637,10 +444,6 @@ static int registerTestFunctions(sqlite3 *db){
     { "test_eval",             1, SQLITE_UTF8, test_eval},
     { "test_isolation",        2, SQLITE_UTF8, test_isolation},
     { "test_counter",          1, SQLITE_UTF8, counterFunc},
-    { "real2hex",              1, SQLITE_UTF8, real2hex},
-    { "test_decode",           1, SQLITE_UTF8, test_decode},
-    { "test_extract",          2, SQLITE_UTF8, test_extract},
-    { "test_zeroblob",  1, SQLITE_UTF8|SQLITE_DETERMINISTIC, test_zeroblob},
   };
   int i;
 

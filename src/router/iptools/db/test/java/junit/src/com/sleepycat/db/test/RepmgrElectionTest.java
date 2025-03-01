@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 package com.sleepycat.db.test;
@@ -21,7 +21,7 @@ import com.sleepycat.db.*;
 
 public class RepmgrElectionTest extends EventHandlerAdapter
 {
-    static String address = "::1";
+    static String address = "localhost";
     static int    basePort = 4242;
     static String baseDirName = "";
     File homedir;

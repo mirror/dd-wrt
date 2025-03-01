@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -23,30 +23,30 @@ To open a join cursor using two secondary cursors:
     Database primaryDb = ...
     SecondaryDatabase secondaryDb1 = ...
     SecondaryDatabase secondaryDb2 = ...
-
+    <p>
     SecondaryCursor cursor1 = null;
     SecondaryCursor cursor2 = null;
     JoinCursor joinCursor = null;
     try {
         DatabaseEntry key = new DatabaseEntry();
         DatabaseEntry data = new DatabaseEntry();
-
+        <p>
         cursor1 = secondaryDb1.openSecondaryCursor(txn, null);
         cursor2 = secondaryDb2.openSecondaryCursor(txn, null);
-
+        <p>
         key.setData(...); // initialize key for secondary index 1
         OperationStatus status1 =
         cursor1.getSearchKey(key, data, LockMode.DEFAULT);
         key.setData(...); // initialize key for secondary index 2
         OperationStatus status2 =
         cursor2.getSearchKey(key, data, LockMode.DEFAULT);
-
+        <p>
         if (status1 == OperationStatus.SUCCESS &amp;&amp;
                 status2 == OperationStatus.SUCCESS) {
-
+            <p>
             SecondaryCursor[] cursors = {cursor1, cursor2};
             joinCursor = primaryDb.join(cursors, null);
-
+            <p>
             while (true) {
                 OperationStatus joinStatus = joinCursor.getNext(key, data,
                     LockMode.DEFAULT);
@@ -88,6 +88,7 @@ public class JoinCursor {
     <p>
     The cursors passed to {@link Database#join Database.join} are not closed
     by this method, and should be closed by the caller.
+    <p>
     <p>
 @throws DatabaseException if a failure occurs.
     */

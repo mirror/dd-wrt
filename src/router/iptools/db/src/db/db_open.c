@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -75,7 +75,7 @@ __db_open(dbp, ip, txn, fname, dname, type, flags, mode, meta_pgno)
 		if ((ret = __db_create_internal(&tdbp, dbp->env, 0)) != 0)
 			goto err;
 		ret = __db_open(tdbp, ip, txn, fname, dname, DB_UNKNOWN,
-		     DB_NOERROR | (flags & ~(DB_TRUNCATE|DB_CREATE)),
+		     DB_NOERROR | (flags &  ~(DB_TRUNCATE|DB_CREATE)),
 		     mode, meta_pgno);
 		if (ret == 0)
 			ret = __memp_ftruncate(tdbp->mpf, txn, ip, 0, 0);
@@ -119,15 +119,6 @@ __db_open(dbp, ip, txn, fname, dname, type, flags, mode, meta_pgno)
 		goto err;
 
 	/*
-	 * Silently disabled blobs in databases that cannot support them.
-	 * Most illegal configurations will have already been caught, this
-	 * is to allow a user to set an environment wide blob threshold, but
-	 * not have to explicitly turn it off for in-memory or queue databases.
-	 */
-	if (!__db_blobs_enabled(dbp))
-		dbp->blob_threshold = 0;
-
-	/*
 	 * If both fname and subname are NULL, it's always a create, so make
 	 * sure that we have both DB_CREATE and a type specified.  It would
 	 * be nice if this checking were done in __db_open where most of the
@@ -139,13 +130,13 @@ __db_open(dbp, ip, txn, fname, dname, type, flags, mode, meta_pgno)
 		if (dbp->p_internal != NULL) {
 			__db_errx(env, DB_STR("0634",
 			    "Partitioned databases may not be in memory."));
-			return (USR_ERR(env, ENOENT));
+			return (ENOENT);
 		}
 		if (dname == NULL) {
 			if (!LF_ISSET(DB_CREATE)) {
 				__db_errx(env, DB_STR("0635",
 		    "DB_CREATE must be specified to create databases."));
-				return (USR_ERR(env, ENOENT));
+				return (ENOENT);
 			}
 
 			F_SET(dbp, DB_AM_INMEM);
@@ -208,7 +199,7 @@ __db_open(dbp, ip, txn, fname, dname, type, flags, mode, meta_pgno)
 		if (dbp->p_internal != NULL) {
 			__db_errx(env, DB_STR("0637",
     "Partitioned databases may not be included with multiple databases."));
-			return (USR_ERR(env, ENOENT));
+			return (ENOENT);
 		}
 		if ((ret = __fop_subdb_setup(dbp, ip,
 		    txn, fname, dname, mode, flags)) != 0)
@@ -232,13 +223,6 @@ __db_open(dbp, ip, txn, fname, dname, type, flags, mode, meta_pgno)
 		if (ret != 0)
 			goto err;
 	}
-
-	/*
-	 * Set the open flag here. Below, the underlying access method
-	 * open functions may want to do things like acquire cursors,
-	 * so the open flag has to be set before calling them.
-	 */
-	F_SET(dbp, DB_AM_OPEN_CALLED);
 
 	/*
 	 * Internal exclusive databases need to use the shared
@@ -274,11 +258,6 @@ __db_open(dbp, ip, txn, fname, dname, type, flags, mode, meta_pgno)
 	}
 	if (ret != 0)
 		goto err;
-
-	if (dbp->blob_file_id != 0)
-		if ((ret = __blob_make_sub_dir(env, &dbp->blob_sub_dir,
-		    dbp->blob_file_id, dbp->blob_sdb_id)) != 0)
-			goto err;
 
 #ifdef HAVE_PARTITION
 	if (dbp->p_internal != NULL && (ret =
@@ -369,10 +348,10 @@ __db_new_file(dbp, ip, txn, fhp, name)
 		break;
 	case DB_UNKNOWN:
 	default:
-		ret = USR_ERR(dbp->env, EINVAL);
 		__db_errx(dbp->env, DB_STR_A("0638",
 		    "%s: Invalid type %d specified", "%s %d"),
 		    name, dbp->type);
+		ret = EINVAL;
 		break;
 	}
 
@@ -438,7 +417,7 @@ __db_init_subdb(mdbp, dbp, name, ip, txn)
 		ret = __ham_new_subdb(mdbp, dbp, ip, txn);
 		break;
 	case DB_QUEUE:
-		ret = USR_ERR(dbp->env, EINVAL);
+		ret = EINVAL;
 		break;
 	case DB_UNKNOWN:
 	default:
@@ -453,10 +432,8 @@ err:	return (ret);
 
 /*
  * __db_chk_meta --
- *	Validate a buffer containing a possible meta-data page. It is
- *      byte-swapped as necessary and checked for having a valid magic number.
- *      If it does, then it can validate the LSN, checksum (if necessary),
- *      and possibly decrypt it.
+ *	Take a buffer containing a meta-data page and check it for a valid LSN,
+ *	checksum (and verify the checksum if necessary) and possibly decrypt it.
  *
  *	Return 0 on success, >0 (errno).
  *
@@ -470,71 +447,89 @@ __db_chk_meta(env, dbp, meta, flags)
 	u_int32_t flags;
 {
 	DB_LSN swap_lsn;
-	int is_hmac, needs_swap, ret;
+	int is_hmac, ret, swapped;
+	u_int32_t magic, orig_chk;
 	u_int8_t *chksum;
 
 	ret = 0;
+	swapped = 0;
 
-	/*
-	 * We can verify that this is some kind of db now, before any potential
-	 * decryption, because the first P_OVERHEAD() bytes of most pages are
-	 * cleartext. This gets called both before and after swapping, so we
-	 * need to check for byte swapping ourselves.
-	 */
-	switch (__db_needswap(meta->magic)) {
-	case 0:
-		needs_swap = 0;
-		break;
-	case DB_SWAPBYTES:
-		needs_swap = 1;
-		break;
-	default:
-		return (USR_ERR(env, EINVAL));
-	}
-
-	if (LOGGING_ON(env) && !LF_ISSET(DB_CHK_NOLSN)) {
-		swap_lsn = meta->lsn;
-		if (needs_swap) {
-			M_32_SWAP(swap_lsn.file);
-			M_32_SWAP(swap_lsn.offset);
-		}
-		if (!IS_REP_CLIENT(env) && !IS_NOT_LOGGED_LSN(swap_lsn) &&
-		    !IS_ZERO_LSN(swap_lsn) && (ret =
-		    __log_check_page_lsn(env, dbp, &swap_lsn)) != 0)
-			return (ret);
-	}
 	if (FLD_ISSET(meta->metaflags, DBMETA_CHKSUM)) {
 		if (dbp != NULL)
 			F_SET(dbp, DB_AM_CHKSUM);
+
+		is_hmac = meta->encrypt_alg == 0 ? 0 : 1;
+		chksum = ((BTMETA *)meta)->chksum;
+
+		/*
+		 * If we need to swap, the checksum function overwrites the
+		 * original checksum with 0, so we need to save a copy of the
+		 * original for swapping later.
+		 */
+		orig_chk = *(u_int32_t *)chksum;
+
 		/*
 		 * We cannot add this to __db_metaswap because that gets done
 		 * later after we've verified the checksum or decrypted.
 		 */
 		if (LF_ISSET(DB_CHK_META)) {
-			is_hmac = meta->encrypt_alg != 0;
-			chksum = ((BTMETA *)meta)->chksum;
-			if (needs_swap && !is_hmac)
-				M_32_SWAP(*(u_int32_t *)chksum);
-			if ((ret =
+			swapped = 0;
+chk_retry:		if ((ret =
 			    __db_check_chksum(env, NULL, env->crypto_handle,
-			    chksum, meta, DBMETASIZE, is_hmac)) != 0)
-				return (USR_ERR(env, DB_META_CHKSUM_FAIL));
+			    chksum, meta, DBMETASIZE, is_hmac)) != 0) {
+				if (is_hmac || swapped)
+					return (DB_CHKSUM_FAIL);
+
+				M_32_SWAP(orig_chk);
+				swapped = 1;
+				*(u_int32_t *)chksum = orig_chk;
+				goto chk_retry;
+			}
 		}
 	} else if (dbp != NULL)
 		F_CLR(dbp, DB_AM_CHKSUM);
 
-#ifdef HAVE_SLICES
-	/* Automatically open pre-existing sliced databases as sliced. */
-	if (FLD_ISSET(meta->metaflags, DBMETA_SLICED) &&
-	    dbp != NULL && SLICES_ON(env))
-		FLD_SET(dbp->open_flags, DB_SLICED);
-#endif
-
 #ifdef HAVE_CRYPTO
 	if (__crypto_decrypt_meta(env,
 	     dbp, (u_int8_t *)meta, LF_ISSET(DB_CHK_META)) != 0)
-		ret = USR_ERR(env, DB_META_CHKSUM_FAIL);
+	     	ret = DB_CHKSUM_FAIL;
+	else
 #endif
+
+	/* Now that we're decrypted, we can check LSN. */
+	if (LOGGING_ON(env) && !LF_ISSET(DB_CHK_NOLSN)) {
+		/*
+		 * This gets called both before and after swapping, so we
+		 * need to check ourselves.  If we already swapped it above,
+		 * we'll know that here.
+		 */
+
+		swap_lsn = meta->lsn;
+		magic = meta->magic;
+lsn_retry:
+		if (swapped) {
+			M_32_SWAP(swap_lsn.file);
+			M_32_SWAP(swap_lsn.offset);
+			M_32_SWAP(magic);
+		}
+		switch (magic) {
+		case DB_BTREEMAGIC:
+		case DB_HASHMAGIC:
+		case DB_HEAPMAGIC:
+		case DB_QAMMAGIC:
+		case DB_RENAMEMAGIC:
+			break;
+		default:
+			if (swapped)
+				return (EINVAL);
+			swapped = 1;
+			goto lsn_retry;
+		}
+		if (!IS_REP_CLIENT(env) &&
+		    !IS_NOT_LOGGED_LSN(swap_lsn) && !IS_ZERO_LSN(swap_lsn))
+			/* Need to do check. */
+			ret = __log_check_page_lsn(env, dbp, &swap_lsn);
+	}
 	return (ret);
 }
 
@@ -572,7 +567,15 @@ __db_meta_setup(env, dbp, name, meta, oflags, flags)
 	F_CLR(dbp, DB_AM_SWAP | DB_AM_IN_RENAME);
 	magic = meta->magic;
 
-	if (magic == 0) {
+swap_retry:
+	switch (magic) {
+	case DB_BTREEMAGIC:
+	case DB_HASHMAGIC:
+	case DB_HEAPMAGIC:
+	case DB_QAMMAGIC:
+	case DB_RENAMEMAGIC:
+		break;
+	case 0:
 		/*
 		 * The only time this should be 0 is if we're in the
 		 * midst of opening a subdb during recovery and that
@@ -582,22 +585,20 @@ __db_meta_setup(env, dbp, name, meta, oflags, flags)
 		if (F_ISSET(dbp, DB_AM_SUBDB) && ((IS_RECOVERING(env) &&
 		    F_ISSET(env->lg_handle, DBLOG_FORCE_OPEN)) ||
 		    meta->pgno != PGNO_INVALID))
-			return (USR_ERR(env, ENOENT));
+			return (ENOENT);
 
 		goto bad_format;
-	}
-	switch (__db_needswap(magic)) {
-	case 0:
-		break;
-	case DB_SWAPBYTES:
+	default:
+		if (F_ISSET(dbp, DB_AM_SWAP))
+			goto bad_format;
+
 		M_32_SWAP(magic);
 		F_SET(dbp, DB_AM_SWAP);
-		break;
-	default:
-		goto bad_format;
+		goto swap_retry;
 	}
 
 	/*
+	 * We can only check the meta page if we are sure we have a meta page.
 	 * If it is random data, then this check can fail.  So only now can we
 	 * checksum and decrypt.  Don't distinguish between configuration and
 	 * checksum match errors here, because we haven't opened the database
@@ -605,9 +606,9 @@ __db_meta_setup(env, dbp, name, meta, oflags, flags)
 	 * If DB_SKIP_CHK is set, it means the checksum was already checked
 	 * and the page was already decrypted.
 	 */
-	if (!LF_ISSET(DB_SKIP_CHK) &&
+	if (!LF_ISSET(DB_SKIP_CHK) && 
 	    (ret = __db_chk_meta(env, dbp, meta, flags)) != 0) {
-		if (ret == DB_META_CHKSUM_FAIL)
+		if (ret == DB_CHKSUM_FAIL) 
 			__db_errx(env, DB_STR_A("0640",
 			    "%s: metadata page checksum error", "%s"), name);
 		goto bad_format;
@@ -668,81 +669,20 @@ __db_meta_setup(env, dbp, name, meta, oflags, flags)
 	}
 
 	if (FLD_ISSET(meta->metaflags,
-	    DBMETA_PART_RANGE | DBMETA_PART_CALLBACK) &&
-	    (ret = __partition_init(dbp, meta->metaflags)) != 0)
-		return (ret);
-	if (FLD_ISSET(meta->metaflags, DBMETA_SLICED))
-		FLD_SET(dbp->open_flags, DB_SLICED);
+	    DBMETA_PART_RANGE | DBMETA_PART_CALLBACK))
+		if ((ret =
+		    __partition_init(dbp, meta->metaflags)) != 0)
+			return (ret);
 	return (0);
 
 bad_format:
 	if (F_ISSET(dbp, DB_AM_RECOVER))
-		ret = USR_ERR(env, ENOENT);
+		ret = ENOENT;
 	else
 		__db_errx(env, DB_STR_A("0641",
 		    "__db_meta_setup: %s: unexpected file type or format",
 		    "%s"), name);
-	return (ret == 0 ? USR_ERR(env, EINVAL) : ret);
-}
-
-/*
- * __db_get_metaflags --
- *	Get the DBMETA.metaflags directly from a file.
- *
- * Note that it is safe to read the file directly from disk *only* because:
- * 1 -	__fop_file_setup()'s call to __db_new_file() flushes the metadata page
- *	to disk, even before the creating transaction (if any) commits.
- * 2 -	the metaflags do not change after the database has been created.
- *
- * If not for that we'd need more setup in order to read it through mpool.
- *
- * PUBLIC: int __db_get_metaflags __P((ENV *, const char *, u_int32_t *));
- */
-int
-__db_get_metaflags(env, name, metaflagsp)
-	ENV *env;
-	const char *name;
-	u_int32_t *metaflagsp;
-{
-	DB_FH *fhp;
-	DBMETA *meta;
-	int ret;
-	char *real_name;
-	u_int8_t mbuf[DBMETASIZE];
-
-	*metaflagsp = 0;
-	/* This catches any in-memory databases, which are never sliced. */
-	if (name == NULL)
-		return (0);
-
-	real_name = NULL;
-	meta = (DBMETA *)mbuf;
-	if ((ret = __db_appname(env, DB_APP_DATA, name, NULL, &real_name)) != 0)
-		return (ret);
-
-	if ((ret = __os_open(env, real_name, 0, 0, 0, &fhp)) == 0) {
-		if ((ret = __fop_read_meta(env,
-		    name, mbuf, DBMETASIZE, fhp, 1, NULL)) == 0 &&
-		    (ret = __db_chk_meta(env, NULL, meta, DB_CHK_META)) == 0)
-			*metaflagsp = meta->metaflags;
-		(void)__os_closehandle(env, fhp);
-	}
-	__os_free(env, real_name);
-
-	/*
-	 * Prevent BDB build made without partitions or slices from accessing
-	 * those unsupported features.
-	 */
-#ifndef HAVE_PARTITION
-	if (FLD_ISSET(*metaflagsp, DBMETA_PART_RANGE | DBMETA_PART_CALLBACK))
-		ret = __db_no_partition(env);
-#endif
-#ifndef HAVE_SLICES
-	if (FLD_ISSET(*metaflagsp, DBMETA_SLICED))
-		ret = __env_no_slices(env);
-#endif
-		
-	return (ret);
+	return (ret == 0 ? EINVAL : ret);
 }
 
 /*

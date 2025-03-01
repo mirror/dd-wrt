@@ -14,16 +14,17 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Partial record storage and
-        retrieval</th>
+          <th colspan="3" align="center">Partial record storage and retrieval</th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="am_misc_bulk.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 4.  Access Method Wrapup </th>
+          <th width="60%" align="center">Chapter 4. 
+		Access Method Wrapup
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="am_misc_struct.html">Next</a></td>
         </tr>
       </table>
@@ -33,57 +34,44 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title" style="clear: both"><a id="am_misc_partial"></a>Partial record storage and
-        retrieval</h2>
+            <h2 class="title" style="clear: both"><a id="am_misc_partial"></a>Partial record storage and retrieval</h2>
           </div>
         </div>
       </div>
+      <p>It is possible to both store and retrieve parts of data items in all
+Berkeley DB access methods.  This is done by setting the
+<a href="../api_reference/C/dbt.html#dbt_DB_DBT_PARTIAL" class="olink">DB_DBT_PARTIAL</a> flag <a href="../api_reference/C/dbt.html" class="olink">DBT</a> structure passed to the
+Berkeley DB method.</p>
+      <p>The <a href="../api_reference/C/dbt.html#dbt_DB_DBT_PARTIAL" class="olink">DB_DBT_PARTIAL</a> flag is based on the values of two fields
+of the <a href="../api_reference/C/dbt.html" class="olink">DBT</a> structure: <span class="bold"><strong>dlen</strong></span> and <span class="bold"><strong>doff</strong></span>.  The value
+of <span class="bold"><strong>dlen</strong></span> is the number of bytes of the record in which the
+application is interested.  The value of <span class="bold"><strong>doff</strong></span> is the offset from
+the beginning of the data item where those bytes start.</p>
+      <p>For example, if the data item were <span class="bold"><strong>ABCDEFGHIJKL</strong></span>, a <span class="bold"><strong>doff</strong></span>
+value of 3 would indicate that the bytes of interest started at
+<span class="bold"><strong>D</strong></span>, and a <span class="bold"><strong>dlen</strong></span> value of 4 would indicate that the bytes
+of interest were <span class="bold"><strong>DEFG</strong></span>.</p>
+      <p>When retrieving a data item from a database, the <span class="bold"><strong>dlen</strong></span> bytes
+starting <span class="bold"><strong>doff</strong></span> bytes from the beginning of the record are
+returned, as if they comprised the entire record.  If any or all of the
+specified bytes do not exist in the record, the retrieval is still
+successful and any existing bytes are returned.</p>
+      <p>When storing a data item into the database, the <span class="bold"><strong>dlen</strong></span> bytes
+starting <span class="bold"><strong>doff</strong></span> bytes from the beginning of the specified key's
+data record are replaced by the data specified by the <span class="bold"><strong>data</strong></span> and
+<span class="bold"><strong>size</strong></span> fields.  If <span class="bold"><strong>dlen</strong></span> is smaller than <span class="bold"><strong>size</strong></span>, the
+record will grow, and if <span class="bold"><strong>dlen</strong></span> is larger than <span class="bold"><strong>size</strong></span>, the
+record will shrink. If the specified bytes do not exist, the record will
+be extended using nul bytes as necessary, and the store call will still
+succeed.</p>
+      <p>The following are various examples of the put case for the
+<a href="../api_reference/C/dbt.html#dbt_DB_DBT_PARTIAL" class="olink">DB_DBT_PARTIAL</a> flag. In all examples, the initial data item is 20
+bytes in length:</p>
       <p>
-        It is possible to both store and retrieve parts of data
-        items in all Berkeley DB access methods. This is done by
-        setting the <a href="../api_reference/C/dbt.html#dbt_DB_DBT_PARTIAL" class="olink">DB_DBT_PARTIAL</a> flag <a href="../api_reference/C/dbt.html" class="olink">DBT</a> structure passed to
-        the Berkeley DB method.
-    </p>
-      <p>
-        The <a href="../api_reference/C/dbt.html#dbt_DB_DBT_PARTIAL" class="olink">DB_DBT_PARTIAL</a> flag is based on the values of two
-        fields of the <a href="../api_reference/C/dbt.html" class="olink">DBT</a> structure: <span class="bold"><strong>dlen</strong></span> 
-        and <span class="bold"><strong>doff</strong></span>. The value of <span class="bold"><strong>
-        dlen</strong></span> is the number of bytes of the record in
-        which the application is interested. The value of <span class="bold"><strong>doff</strong></span> is the offset from the
-        beginning of the data item where those bytes start.
-    </p>
-      <p>
-        For example, if the data item were <span class="bold"><strong>
-        ABCDEFGHIJKL</strong></span>, a <span class="bold"><strong>doff</strong></span> 
-        value of 3 would indicate that the bytes
-        of interest started at <span class="bold"><strong>D</strong></span>, and
-        a <span class="bold"><strong>dlen</strong></span> value of 4 would
-        indicate that the bytes of interest were <span class="bold"><strong>
-        DEFG</strong></span>.
-    </p>
-      <p>
-        When retrieving a data item from a database, the <span class="bold"><strong>dlen</strong></span> bytes starting <span class="bold"><strong>doff</strong></span> bytes from the beginning of
-        the record are returned, as if they comprised the entire
-        record. If any or all of the specified bytes do not exist in
-        the record, the retrieval is still successful and any existing
-        bytes are returned.
-    </p>
-      <p>
-        When storing a data item into the database, the <span class="bold"><strong>dlen</strong></span> bytes starting <span class="bold"><strong>doff</strong></span> bytes from the beginning of
-        the specified key's data record are replaced by the data
-        specified by the <span class="bold"><strong>data</strong></span> and
-        <span class="bold"><strong>size</strong></span> fields. If <span class="bold"><strong>dlen</strong></span> is smaller than <span class="bold"><strong>size</strong></span>, the record will grow, and if
-        <span class="bold"><strong>dlen</strong></span> is larger than
-        <span class="bold"><strong>size</strong></span>, the record will
-        shrink. If the specified bytes do not exist, the record will
-        be extended using nul bytes as necessary, and the store call
-        will still succeed.
-    </p>
-      <p>
-        The following are various examples of the put case for the
-        <a href="../api_reference/C/dbt.html#dbt_DB_DBT_PARTIAL" class="olink">DB_DBT_PARTIAL</a> flag. In all examples, the initial data item
-        is 20 bytes in length: <span class="bold"><strong>ABCDEFGHIJ0123456789</strong></span>
-    </p>
+        <span class="bold">
+          <strong>ABCDEFGHIJ0123456789</strong>
+        </span>
+      </p>
       <div class="orderedlist">
         <ol type="1">
           <li>
@@ -194,8 +182,7 @@ ABCDEFGHIJ0123456789 -&gt; ABCDEFGHIJ0123456789\0\0\0\0\0abcdefghij </pre>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Storing C/C++
-        structures/objects</td>
+          <td width="40%" align="right" valign="top"> Storing C/C++ structures/objects</td>
         </tr>
       </table>
     </div>

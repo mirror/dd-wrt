@@ -1,14 +1,5 @@
 --- src/sqliteLimit.h
 +++ src/sqliteLimit.h
-@@ -102,7 +102,7 @@
- ** table and for temporary tables.  The SQLITE_DEFAULT_CACHE_SIZE
- */
- #ifndef SQLITE_DEFAULT_CACHE_SIZE
--# define SQLITE_DEFAULT_CACHE_SIZE  2000
-+# define SQLITE_DEFAULT_CACHE_SIZE  5000
- #endif
- #ifndef SQLITE_DEFAULT_TEMP_CACHE_SIZE
- # define SQLITE_DEFAULT_TEMP_CACHE_SIZE  500
 @@ -113,7 +113,8 @@
  ** checkpointing the database in WAL mode.
  */

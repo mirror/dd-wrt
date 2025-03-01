@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -19,16 +19,12 @@ public interface RawField {
 
     /**
      * Returns the name of the field.
-     *
-     * @return the name of the field.
      */
     String getName();
 
     /**
      * Returns the type of the field, without expanding parameterized types,
      * or null if the type is an interface type or the Object class.
-     *
-     * @return the type of the field.
      */
     RawType getType();
 }

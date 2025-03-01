@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -17,7 +17,7 @@ static int __lock_freelocker_int
 
 /*
  * __lock_id_pp --
- *	DB_ENV->lock_id pre/post processing.
+ *	ENV->lock_id pre/post processing.
  *
  * PUBLIC: int __lock_id_pp __P((DB_ENV *, u_int32_t *));
  */
@@ -43,11 +43,7 @@ __lock_id_pp(dbenv, idp)
 
 /*
  * __lock_id --
- *	Allocate a new lock id as well as a locker struct to hold it. If we wrap
- *	around then we find the minimum currently in use and make sure we can
- *	stay below that. This is similar to __txn_begin_int's code to recover
- *	txn ids.
- *
+ *	ENV->lock_id.
  *
  * PUBLIC: int  __lock_id __P((ENV *, u_int32_t *, DB_LOCKER **));
  */
@@ -63,15 +59,22 @@ __lock_id(env, idp, lkp)
 	u_int32_t id, *ids;
 	int nids, ret;
 
+	lk = NULL;
 	lt = env->lk_handle;
 	region = lt->reginfo.primary;
 	id = DB_LOCK_INVALIDID;
-	lk = NULL;
 	ret = 0;
+
+	id = DB_LOCK_INVALIDID;
+	lk = NULL;
 
 	LOCK_LOCKERS(env, region);
 
 	/*
+	 * Allocate a new lock id.  If we wrap around then we find the minimum
+	 * currently in use and make sure we can stay below that.  This code is
+	 * similar to code in __txn_begin_int for recovering txn ids.
+	 *
 	 * Our current valid range can span the maximum valid value, so check
 	 * for it and wrap manually.
 	 */
@@ -95,7 +98,7 @@ __lock_id(env, idp, lkp)
 	id = ++region->lock_id;
 
 	/* Allocate a locker for this id. */
-	ret = __lock_getlocker_int(lt, id, 1, NULL, &lk);
+	ret = __lock_getlocker_int(lt, id, 1, &lk);
 
 err:	UNLOCK_LOCKERS(env, region);
 
@@ -162,14 +165,13 @@ __lock_id_free_pp(dbenv, id)
 
 	LOCK_LOCKERS(env, region);
 	if ((ret =
-	    __lock_getlocker_int(env->lk_handle,
-	    id, 0, NULL, &sh_locker)) == 0) {
+	     __lock_getlocker_int(env->lk_handle, id, 0, &sh_locker)) == 0) {
 		if (sh_locker != NULL)
 			ret = __lock_freelocker_int(lt, region, sh_locker, 1);
 		else {
-			ret = USR_ERR(env, EINVAL);
 			__db_errx(env, DB_STR_A("2045",
 			    "Unknown locker id: %lx", "%lx"), (u_long)id);
+			ret = EINVAL;
 		}
 	}
 	UNLOCK_LOCKERS(env, region);
@@ -192,10 +194,8 @@ __lock_id_free(env, sh_locker)
 	ENV *env;
 	DB_LOCKER *sh_locker;
 {
-	DB_LOCKER locker;
 	DB_LOCKREGION *region;
 	DB_LOCKTAB *lt;
-	DB_MSGBUF mb;
 	int ret;
 
 	lt = env->lk_handle;
@@ -203,14 +203,9 @@ __lock_id_free(env, sh_locker)
 	ret = 0;
 
 	if (sh_locker->nlocks != 0) {
-		locker = *sh_locker;
-		ret = USR_ERR(env, EINVAL);
-		__db_errx(env, DB_STR_A("2046",
-		    "Locker %d still has %d locks", "%d %d"),
-		    locker.id, locker.nlocks );
-		DB_MSGBUF_INIT(&mb);
-		(void)__lock_dump_locker(env, &mb, lt, sh_locker);
-		DB_MSGBUF_FLUSH(env, &mb);
+		__db_errx(env, DB_STR("2046",
+		    "Locker still has locks"));
+		ret = EINVAL;
 		goto err;
 	}
 
@@ -248,19 +243,17 @@ __lock_id_set(env, cur_id, max_id)
 }
 
 /*
- * __lock_getlocker,__lock_getlocker_int --
- *	Get a locker in the locker hash table.  The create parameter indicates
- * whether the locker should be created if it doesn't exist in the table. If
- * there's a matching locker cached in the thread info, use that without
- * locking.
+ * __lock_getlocker --
+ *	Get a locker in the locker hash table.  The create parameter
+ * indicates if the locker should be created if it doesn't exist in
+ * the table.
  *
- * The internal version does not check the thread info cache; it must be called
- * with the locker mutex locked.
+ * This must be called with the locker mutex lock if create == 1.
  *
  * PUBLIC: int __lock_getlocker __P((DB_LOCKTAB *,
  * PUBLIC:     u_int32_t, int, DB_LOCKER **));
  * PUBLIC: int __lock_getlocker_int __P((DB_LOCKTAB *,
- * PUBLIC:     u_int32_t, int, DB_THREAD_INFO *, DB_LOCKER **));
+ * PUBLIC:     u_int32_t, int, DB_LOCKER **));
  */
 int
 __lock_getlocker(lt, locker, create, retp)
@@ -270,53 +263,37 @@ __lock_getlocker(lt, locker, create, retp)
 	DB_LOCKER **retp;
 {
 	DB_LOCKREGION *region;
-	DB_THREAD_INFO *ip;
 	ENV *env;
 	int ret;
 
 	COMPQUIET(region, NULL);
 	env = lt->env;
 	region = lt->reginfo.primary;
-	ENV_GET_THREAD_INFO(env, ip);
 
-	/* Check to see if the locker is already in the thread info */
-	if (ip != NULL && ip->dbth_local_locker != INVALID_ROFF) {
-		*retp = (DB_LOCKER *)
-		    R_ADDR(&lt->reginfo, ip->dbth_local_locker);
-		if ((*retp)->id == locker)  {
-			   DB_ASSERT(env, !F_ISSET(*retp, DB_LOCKER_FREE));
-#ifdef HAVE_STATISTICS
-			    region->stat.st_nlockers_hit++;
-#endif
-			return (0);
-		}
-	}
 	LOCK_LOCKERS(env, region);
-	ret = __lock_getlocker_int(lt, locker, create, ip, retp);
+	ret = __lock_getlocker_int(lt, locker, create, retp);
 	UNLOCK_LOCKERS(env, region);
+
 	return (ret);
 }
 
 int
-__lock_getlocker_int(lt, locker, create, ip, retp)
+__lock_getlocker_int(lt, locker, create, retp)
 	DB_LOCKTAB *lt;
 	u_int32_t locker;
 	int create;
-	DB_THREAD_INFO *ip;
 	DB_LOCKER **retp;
 {
 	DB_LOCKER *sh_locker;
 	DB_LOCKREGION *region;
-#ifdef DIAGNOSTIC
-	DB_THREAD_INFO *diag;
-#endif
+	DB_THREAD_INFO *ip;
 	ENV *env;
+	db_mutex_t mutex;
 	u_int32_t i, indx, nlockers;
 	int ret;
 
 	env = lt->env;
 	region = lt->reginfo.primary;
-	MUTEX_REQUIRED(env, region->mtx_lockers);
 
 	LOCKER_HASH(lt, region, locker, indx);
 
@@ -327,90 +304,59 @@ __lock_getlocker_int(lt, locker, create, ip, retp)
 	SH_TAILQ_FOREACH(sh_locker, &lt->locker_tab[indx], links, __db_locker)
 		if (sh_locker->id == locker)
 			break;
-
 	if (sh_locker == NULL && create) {
-		/* Can we reuse a locker struct cached in the thread info? */
-		if (ip != NULL && ip->dbth_local_locker != INVALID_ROFF &&
-		    (sh_locker = (DB_LOCKER*)R_ADDR(&lt->reginfo,
-		    ip->dbth_local_locker))->id == DB_LOCK_INVALIDID) {
-			   DB_ASSERT(env, !F_ISSET(sh_locker, DB_LOCKER_FREE));
-#ifdef HAVE_STATISTICS
-			    region->stat.st_nlockers_reused++;
-#endif
-		} else {
-			/* Create new locker and insert it into hash table. */
-			if ((sh_locker = SH_TAILQ_FIRST(
-			    &region->free_lockers, __db_locker)) == NULL) {
-				if (region->stat.st_maxlockers != 0 &&
-				    region->stat.st_maxlockers <=
-				    region->stat.st_lockers)
-					return (__lock_nomem(env,
-					    "locker entries"));
-				nlockers = region->stat.st_lockers >> 2;
-				/* Just in case. */
-				if (nlockers == 0)
-					nlockers = 1;
-				if (region->stat.st_maxlockers != 0 &&
-				    region->stat.st_maxlockers <
-				    region->stat.st_lockers + nlockers)
-					nlockers = region->stat.st_maxlockers -
-					region->stat.st_lockers;
-				/*
-				 * Don't hold lockers when getting the region,
-				 * we could deadlock.  When creating a locker
-				 * there is no race since the id allocation
-				 * is synchronized.
-				 */
-				UNLOCK_LOCKERS(env, region);
-				LOCK_REGION_LOCK(env);
-				/*
-				 * If the max memory is not sized for max
-				 * objects, allocate as much as possible.
-				 */
-				F_SET(&lt->reginfo, REGION_TRACKED);
-				while (__env_alloc(&lt->reginfo, nlockers *
-				    sizeof(struct __db_locker),
-				    &sh_locker) != 0) {
-					nlockers >>= 1;
-					if (nlockers == 0)
-						break;
-				}
-				F_CLR(&lt->reginfo, REGION_TRACKED);
-				LOCK_REGION_UNLOCK(lt->env);
-				LOCK_LOCKERS(env, region);
-				for (i = 0; i < nlockers; i++) {
-					SH_TAILQ_INSERT_HEAD(
-					    &region->free_lockers,
-					    sh_locker, links, __db_locker);
-					sh_locker->mtx_locker = MUTEX_INVALID;
-#ifdef DIAGNOSTIC
-					sh_locker->prev_locker = INVALID_ROFF;
-#endif
-					sh_locker++;
-				}
-				if (nlockers == 0)
-					return (__lock_nomem(env,
-					    "locker entries"));
-				region->stat.st_lockers += nlockers;
-				sh_locker = SH_TAILQ_FIRST(
-				    &region->free_lockers, __db_locker);
-			}
-			SH_TAILQ_REMOVE(
-			    &region->free_lockers,
-			    sh_locker, links, __db_locker);
-		}
-		F_CLR(sh_locker, DB_LOCKER_FREE);
-		if (sh_locker->mtx_locker == MUTEX_INVALID) {
-			if ((ret = __mutex_alloc(env, MTX_LOGICAL_LOCK,
-			    DB_MUTEX_LOGICAL_LOCK | DB_MUTEX_SELF_BLOCK,
-			    &sh_locker->mtx_locker)) != 0) {
+		nlockers = 0;
+		/* Create new locker and then insert it into hash table. */
+		if ((ret = __mutex_alloc(env, MTX_LOGICAL_LOCK,
+		    DB_MUTEX_LOGICAL_LOCK | DB_MUTEX_SELF_BLOCK,
+		    &mutex)) != 0)
+			return (ret);
+		else
+			MUTEX_LOCK(env, mutex);
+		if ((sh_locker = SH_TAILQ_FIRST(
+		    &region->free_lockers, __db_locker)) == NULL) {
+			nlockers = region->stat.st_lockers >> 2;
+			/* Just in case. */
+			if (nlockers == 0)
+				nlockers = 1;
+			if (region->stat.st_maxlockers != 0 &&
+			    region->stat.st_maxlockers <
+			    region->stat.st_lockers + nlockers)
+				nlockers = region->stat.st_maxlockers -
+				region->stat.st_lockers;
+			/*
+			 * Don't hold lockers when getting the region,
+			 * we could deadlock.  When creating a locker
+			 * there is no race since the id allocation
+			 * is synchronized.
+			 */
+			UNLOCK_LOCKERS(env, region);
+			LOCK_REGION_LOCK(env);
+			/*
+			 * If the max memory is not sized for max objects,
+			 * allocate as much as possible.
+			 */
+			F_SET(&lt->reginfo, REGION_TRACKED);
+			while (__env_alloc(&lt->reginfo, nlockers *
+			    sizeof(struct __db_locker), &sh_locker) != 0)
+				if ((nlockers >> 1) == 0)
+					break;
+			F_CLR(&lt->reginfo, REGION_TRACKED);
+			LOCK_REGION_UNLOCK(lt->env);
+			LOCK_LOCKERS(env, region);
+			for (i = 0; i < nlockers; i++) {
 				SH_TAILQ_INSERT_HEAD(&region->free_lockers,
 				    sh_locker, links, __db_locker);
-				return (ret);
+				sh_locker++;
 			}
-			MUTEX_LOCK_NO_CTR(env, sh_locker->mtx_locker);
+			if (nlockers == 0)
+				return (__lock_nomem(env, "locker entries"));
+			region->stat.st_lockers += nlockers;
+			sh_locker = SH_TAILQ_FIRST(
+			    &region->free_lockers, __db_locker);
 		}
-
+		SH_TAILQ_REMOVE(
+		    &region->free_lockers, sh_locker, links, __db_locker);
 		++region->nlockers;
 #ifdef HAVE_STATISTICS
 		STAT_PERFMON2(env, lock, nlockers, region->nlockers, locker);
@@ -419,10 +365,10 @@ __lock_getlocker_int(lt, locker, create, ip, retp)
 			    region->stat.st_maxnlockers,
 			    region->nlockers, locker);
 #endif
-
 		sh_locker->id = locker;
 		env->dbenv->thread_id(
 		    env->dbenv, &sh_locker->pid, &sh_locker->tid);
+		sh_locker->mtx_locker = mutex;
 		sh_locker->dd_id = 0;
 		sh_locker->master_locker = INVALID_ROFF;
 		sh_locker->parent_locker = INVALID_ROFF;
@@ -440,20 +386,10 @@ __lock_getlocker_int(lt, locker, create, ip, retp)
 		    &lt->locker_tab[indx], sh_locker, links, __db_locker);
 		SH_TAILQ_INSERT_HEAD(&region->lockers,
 		    sh_locker, ulinks, __db_locker);
-
-		if (ip != NULL && ip->dbth_local_locker == INVALID_ROFF)
-			ip->dbth_local_locker =
-			    R_OFFSET(&lt->reginfo, sh_locker);
+		ENV_GET_THREAD_INFO(env, ip);
 #ifdef DIAGNOSTIC
-		/*
-		 * __db_has_pagelock checks for proper locking by dbth_locker.
-		 */
-		if ((diag = ip) == NULL)
-			ENV_GET_THREAD_INFO(env, diag);
-		if (diag != NULL) {
-			sh_locker->prev_locker = diag->dbth_locker;
-			diag->dbth_locker = R_OFFSET(&lt->reginfo, sh_locker);
-		}
+		if (ip != NULL)
+			ip->dbth_locker = R_OFFSET(&lt->reginfo, sh_locker);
 #endif
 	}
 
@@ -484,7 +420,7 @@ __lock_addfamilylocker(env, pid, id, is_family)
 	LOCK_LOCKERS(env, region);
 
 	/* get/create the  parent locker info */
-	if ((ret = __lock_getlocker_int(lt, pid, 1, NULL, &mlockerp)) != 0)
+	if ((ret = __lock_getlocker_int(lt, pid, 1, &mlockerp)) != 0)
 		goto err;
 
 	/*
@@ -494,7 +430,7 @@ __lock_addfamilylocker(env, pid, id, is_family)
 	 * we manipulate it, nor can another child in the
 	 * family be created at the same time.
 	 */
-	if ((ret = __lock_getlocker_int(lt, id, 1, NULL, &lockerp)) != 0)
+	if ((ret = __lock_getlocker_int(lt, id, 1, &lockerp)) != 0)
 		goto err;
 
 	/* Point to our parent. */
@@ -530,9 +466,9 @@ err:	UNLOCK_LOCKERS(env, region);
 }
 
 /*
- * __lock_freelocker_int --
+ * __lock_freelocker_int
  *      Common code for deleting a locker; must be called with the
- *	lockers mutex locked.
+ *	locker bucket locked.
  */
 static int
 __lock_freelocker_int(lt, region, sh_locker, reallyfree)
@@ -542,21 +478,15 @@ __lock_freelocker_int(lt, region, sh_locker, reallyfree)
 	int reallyfree;
 {
 	ENV *env;
-	DB_MSGBUF mb;
-	DB_THREAD_INFO *ip;
 	u_int32_t indx;
 	int ret;
 
 	env = lt->env;
-	if (!SH_LIST_EMPTY(&sh_locker->heldby)) {
-		ret = USR_ERR(env, EINVAL);
-		__db_errx(env,
-		    DB_STR_A("2060", "Freeing locker %x with locks", "%x"),
-		    sh_locker->id);
-		DB_MSGBUF_INIT(&mb);
-		(void)__lock_dump_locker(env, &mb, lt, sh_locker);
-		DB_MSGBUF_FLUSH(env, &mb);
-		return (ret);
+
+	if (SH_LIST_FIRST(&sh_locker->heldby, __db_lock) != NULL) {
+		__db_errx(env, DB_STR("2047",
+		    "Freeing locker with locks"));
+		return (EINVAL);
 	}
 
 	/* If this is part of a family, we must fix up its links. */
@@ -564,35 +494,21 @@ __lock_freelocker_int(lt, region, sh_locker, reallyfree)
 		SH_LIST_REMOVE(sh_locker, child_link, __db_locker);
 		sh_locker->master_locker = INVALID_ROFF;
 	}
-	sh_locker->parent_locker = INVALID_ROFF;
 
 	if (reallyfree) {
 		LOCKER_HASH(lt, region, sh_locker->id, indx);
 		SH_TAILQ_REMOVE(&lt->locker_tab[indx], sh_locker,
+		    links, __db_locker);
+		if (sh_locker->mtx_locker != MUTEX_INVALID &&
+		    (ret = __mutex_free(env, &sh_locker->mtx_locker)) != 0)
+			return (ret);
+		SH_TAILQ_INSERT_HEAD(&region->free_lockers, sh_locker,
 		    links, __db_locker);
 		SH_TAILQ_REMOVE(&region->lockers, sh_locker,
 		    ulinks, __db_locker);
 		region->nlockers--;
 		STAT_PERFMON2(env,
 		    lock, nlockers, region->nlockers, sh_locker->id);
-		/*
-		 * If this locker is cached in the thread info, zero the id and
-		 * leave it allocated. Otherwise, put it back on the free list.
-		 */
-		ENV_GET_THREAD_INFO(env, ip);
-		if (ip != NULL && ip->dbth_local_locker ==
-		    R_OFFSET(&lt->reginfo, sh_locker)) {
-			DB_ASSERT(env,
-			    MUTEX_IS_BUSY(env, sh_locker->mtx_locker));
-			sh_locker->id = DB_LOCK_INVALIDID;
-		} else {
-			if (sh_locker->mtx_locker != MUTEX_INVALID && (ret =
-			    __mutex_free(env, &sh_locker->mtx_locker)) != 0)
-				return (ret);
-			F_SET(sh_locker, DB_LOCKER_FREE);
-			SH_TAILQ_INSERT_HEAD(&region->free_lockers, sh_locker,
-					links, __db_locker);
-		}
 	}
 
 	return (0);
@@ -602,7 +518,7 @@ __lock_freelocker_int(lt, region, sh_locker, reallyfree)
  * __lock_freelocker
  *	Remove a locker its family from the hash table.
  *
- * This must be called without the lockers mutex locked.
+ * This must be called without the locker bucket locked.
  *
  * PUBLIC: int __lock_freelocker  __P((DB_LOCKTAB *, DB_LOCKER *));
  */
@@ -653,43 +569,4 @@ __lock_familyremove(lt, sh_locker)
 	UNLOCK_LOCKERS(env, region);
 
 	return (ret);
-}
-
-/*
- * __lock_local_locker_invalidate --
- *	Search the thread info table's cached lockers and discard any reference
- *	to this mutex.
- *
- * PUBLIC: int __lock_local_locker_invalidate  __P((ENV *, db_mutex_t));
- */
-int
-__lock_local_locker_invalidate(env, mutex)
-	ENV *env;
-	db_mutex_t mutex;
-{
-	DB_HASHTAB *htab;
-	DB_LOCKER *locker;
-	DB_THREAD_INFO *ip;
-	u_int32_t i;
-	char buf[DB_THREADID_STRLEN];
-
-	htab = env->thr_hashtab;
-	for (i = 0; i < env->thr_nbucket; i++) {
-		SH_TAILQ_FOREACH(ip, &htab[i], dbth_links, __db_thread_info) {
-			if (ip->dbth_local_locker == INVALID_ROFF)
-				continue;
-			locker = (DB_LOCKER *)R_ADDR(&env->lk_handle->reginfo,
-			    ip->dbth_local_locker);
-			if (locker->mtx_locker == mutex) {
-				__db_msg(env,
-DB_STR_A("2061", "Removing cached locker mutex %lu reference by %s", "%lu %s"),
-				    (u_long)mutex,
-				    env->dbenv->thread_id_string(env->dbenv,
-				    locker->pid, locker->tid, buf));
-				locker->mtx_locker = MUTEX_INVALID;
-				return (0);
-			}
-		}
-	}
-	return (0);
 }

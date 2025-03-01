@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -12,7 +12,7 @@
 
 /*
  * __db_file_extend --
- *	Initialize or extend a regular file by writing to its last page.
+ *	Initialize a regular file by writing the last page of the file.
  *
  * PUBLIC: int __db_file_extend __P((ENV *, DB_FH *, size_t));
  */
@@ -27,19 +27,7 @@ __db_file_extend(env, fhp, size)
 	u_int32_t relative;
 	int ret;
 	char buf;
-#ifdef HAVE_MMAP_EXTEND
-	unsigned pagesize;
 
-	/*
-	 * Round up size to the VM pagesize. If it isn't aligned, then the bytes
-	 * ending the mapping might have no corresponding backing location on
-	 * disk, and could be silently lost when the process exits. [#23290]
-	 */
-	if (F_ISSET(fhp, DB_FH_REGION)) {
-		pagesize = (unsigned int)getpagesize();
-		size = DB_ALIGN(size, pagesize);
-	}
-#endif
 	buf = '\0';
 	/*
 	 * Extend the file by writing the last page.  If the region is >4Gb,

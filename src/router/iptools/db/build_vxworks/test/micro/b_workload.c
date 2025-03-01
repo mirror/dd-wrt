@@ -1,7 +1,7 @@
 /*
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -267,7 +267,7 @@ b_workload_run_mixed_workload(dbp, config)
 	CONFIG *config;
 {
 	DBT key, data;
-	size_t next_op, i, inscount;
+	size_t next_op, i, ioff, inscount;
 	char kbuf[KBUF_LEN];
 	struct bench_q operation_queue;
 
@@ -277,6 +277,7 @@ b_workload_run_mixed_workload(dbp, config)
 	srand(config->seed);
 	memset(&operation_queue, 0, sizeof(struct bench_q));
 
+	ioff = 0;
 	INIT_KEY(key, config);
 	memset(&data, 0, sizeof(data));
 	DB_BENCH_ASSERT(

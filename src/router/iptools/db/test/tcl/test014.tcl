@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -14,11 +14,7 @@
 # TEST	(and retrieve them) as we do in test 1 (equal key/data pairs).  Then
 # TEST	we'll try to perform partial puts of some characters at the beginning,
 # TEST	some at the end, and some at the middle.
-# TEST
-# TEST	Run the test with blob enabled and disabled.
 proc test014 { method {nentries 10000} args } {
-	source ./include.tcl
-	global has_crypto
 	set fixed 0
 	set args [convert_args $method $args]
 
@@ -26,93 +22,33 @@ proc test014 { method {nentries 10000} args } {
 		set fixed 1
 	}
 
-	#
-	# Set blob threshold as 5 since most words in the wordlist to put into
-	# the database have length <= 10.
-	#
-	set threshold 5
-	set orig_args $args
-	foreach blob [list "" " -blob_threshold $threshold"] {
-		set args $orig_args
-		set msg ""
-		if { $blob != "" } {
-			set msg "with blob"
-			#
-			# This test runs a bit slowly when blob gets enabled.
-			# Cut down the nunber of entries to 100 for blob case.
-			#
-			if { $nentries == 10000 } {
-				set nentries 100
-			}
-		}
+	puts "Test014: $method ($args) $nentries equal key/data pairs, put test"
 
-		puts "Test014: $method ($args) $nentries equal\
-		    key/data pairs, put test ($msg)"
+	# flagp indicates whether this is a postpend or a
+	# normal partial put
+	set flagp 0
 
-		if { $blob != "" } {
-			# Blob is supported by btree, hash and heap.
-			if { [is_btree $method] != 1 && \
-			    [is_hash $method] != 1 && [is_heap $method] != 1 } {
-				puts "Test014 skipping\
-				    for method $method for blob"
-				return
-			}
-			# Look for incompatible configurations of blob.
-			foreach conf { "-compress" "-dup" "-dupsort" \
-			    "-read_uncommitted" "-multiversion" } {
-				if { [lsearch -exact $args $conf] != -1 } {
-					puts "Test014 skipping $conf for blob"
-					return
-				}
-			}
-			set eindex [lsearch -exact $args "-env"]
-			if { $eindex != -1 } {
-				incr eindex
-				set env [lindex $args $eindex]
-				if { [lsearch \
-				    [$env get_flags] "-snapshot"] != -1 } {
-					puts "Test014\
-					    skipping -snapshot for blob"
-					return
-				}
-			}
-			# Set up the blob arguments.
-			append args $blob
-			if { $eindex == -1 } {
-				append args " -blob_dir $testdir/__db_bl"
-			}
-		}
+	eval {test014_body $method $flagp 1 1 $nentries} $args
+	eval {test014_body $method $flagp 1 4 $nentries} $args
+	eval {test014_body $method $flagp 2 4 $nentries} $args
+	eval {test014_body $method $flagp 1 128 $nentries} $args
+	eval {test014_body $method $flagp 2 16 $nentries} $args
+	if { $fixed == 0 } {
+		eval {test014_body $method $flagp 0 1 $nentries} $args
+		eval {test014_body $method $flagp 0 4 $nentries} $args
+		eval {test014_body $method $flagp 0 128 $nentries} $args
 
-		# flagp indicates whether this is a postpend or a
-		# normal partial put
-		set flagp 0
-
+		# POST-PENDS :
+		# partial put data after the end of the existent record
+		# chars: number of empty spaces that will be padded with null
+		# increase: is the length of the str to be appended (after pad)
+		#
+		set flagp 1
 		eval {test014_body $method $flagp 1 1 $nentries} $args
+		eval {test014_body $method $flagp 4 1 $nentries} $args
+		eval {test014_body $method $flagp 128 1 $nentries} $args
 		eval {test014_body $method $flagp 1 4 $nentries} $args
-		eval {test014_body $method $flagp 2 4 $nentries} $args
 		eval {test014_body $method $flagp 1 128 $nentries} $args
-		eval {test014_body $method $flagp 2 16 $nentries} $args
-		if { $fixed == 0 } {
-			eval {test014_body $method $flagp 0 1 $nentries} $args
-			eval {test014_body $method $flagp 0 4 $nentries} $args
-			eval {test014_body \
-			    $method $flagp 0 128 $nentries} $args
-
-			# POST-PENDS :
-			# partial put data after the end of the existent record
-			# chars: number of empty spaces that will be padded
-			# with null increase: is the length of the str to be
-			# appended (after pad)
-			#
-			set flagp 1
-			eval {test014_body $method $flagp 1 1 $nentries} $args
-			eval {test014_body $method $flagp 4 1 $nentries} $args
-			eval {test014_body \
-			    $method $flagp 128 1 $nentries} $args
-			eval {test014_body $method $flagp 1 4 $nentries} $args
-			eval {test014_body \
-			    $method $flagp 1 128 $nentries} $args
-		}
 	}
 	puts "Test014 complete."
 }

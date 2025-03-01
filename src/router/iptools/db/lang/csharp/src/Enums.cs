@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using BerkeleyDB.Internal;
@@ -40,13 +40,14 @@ namespace BerkeleyDB {
     };
 
     /// <summary>
-    /// Policy for duplicate data items in the database. Allows a key/data 
-    /// pair to be inserted into the database even if the key already exists.
+    /// Policy for duplicate data items in the database; that is, whether insertion
+    /// when the key of the key/data pair being inserted already exists in the
+    /// database will be successful. 
     /// </summary>
     public enum DuplicatesPolicy : uint {
         /// <summary>
-        /// Does not allow a key/data pair to be inserted into the database even
-        /// if the key already exists
+        /// Insertion when the key of the key/data pair being inserted already
+        /// exists in the database will fail.
         /// </summary>
         NONE = 0,
         /// <summary>
@@ -150,7 +151,7 @@ namespace BerkeleyDB {
         DEGREE_TWO,
         /// <summary>
         /// For the life of the transaction, every time a thread of control
-        /// reads a data item, it is unchanged from its previous value
+        /// reads a data item, it will be unchanged from its previous value
         /// (assuming, of course, the thread of control does not itself modify
         /// the item).  This is Berkeley DB's default degree of isolation.
         /// </summary>
@@ -169,11 +170,6 @@ namespace BerkeleyDB {
         /// environment, and recovery should be run.
         /// </remarks>
         PANIC = DbConstants.DB_EVENT_PANIC,
-        /// <summary>
-        /// The replication manager subordinate process was unable to take over
-        /// as the replication process.
-        /// </summary>
-        REP_AUTOTAKEOVER_FAILED = DbConstants.DB_EVENT_REP_AUTOTAKEOVER_FAILED,
         /// <summary>
         /// The local site is now a replication client.
         /// </summary>
@@ -206,7 +202,7 @@ namespace BerkeleyDB {
         /// receiving this event, to reconfigure the local environment as a
         /// replication master.
         /// </para>
-        /// <para>
+		/// <para>
         /// Replication Manager applications may safely ignore this event. The
         /// Replication Manager calls
         /// <see cref="DatabaseEnvironment.RepStartMaster"/>
@@ -221,15 +217,10 @@ namespace BerkeleyDB {
         /// message response from a sufficient number of remote sites.
         /// </summary>
         REP_ELECTION_FAILED = DbConstants.DB_EVENT_REP_ELECTION_FAILED,
-        /// <summary>
-        /// The internal initialization has been completed.
-        /// </summary>
-        REP_INIT_DONE = DbConstants.DB_EVENT_REP_INIT_DONE,
-        /// <summary>
-        /// Incoming messages have been dropped because the Replication Mananger
-        /// incoming queue has reached its maximum threshold.
-        /// </summary>
-        REP_INQUEUE_FULL = DbConstants.DB_EVENT_REP_INQUEUE_FULL,
+	/// <summary>
+	/// The internal initialization has been completed.
+	/// </summary>
+	REP_INIT_DONE = DbConstants.DB_EVENT_REP_INIT_DONE,
         /// <summary>
         /// The local site could not synchronize with the master because an
         /// internal initialization was required, but internal initialization

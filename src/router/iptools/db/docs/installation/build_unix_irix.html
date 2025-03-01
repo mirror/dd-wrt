@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,8 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="build_unix_iphone.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 7.  Building Berkeley DB for UNIX/POSIX
-    </th>
+          <th width="60%" align="center">Chapter 7. 
+		Building Berkeley DB for UNIX/POSIX
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="build_unix_linux.html">Next</a></td>
         </tr>
       </table>
@@ -41,20 +42,13 @@
         <ol type="1">
           <li>
             <span class="bold">
-              <strong>I can't compile and run
-                multithreaded applications.</strong>
+              <strong>I can't compile and run multithreaded applications.</strong>
             </span>
-            <p>
-                Special compile-time flags are required when
-                compiling threaded applications on IRIX. If you are
-                compiling a threaded application, you must compile
-                with the _SGI_MP_SOURCE flag: 
-            </p>
+            <p>Special compile-time flags are required when compiling threaded
+applications on IRIX.  If you are compiling a threaded application, you
+must compile with the _SGI_MP_SOURCE flag:</p>
             <pre class="programlisting">cc -D_SGI_MP_SOURCE ...</pre>
-            <p>
-                The Berkeley DB library will automatically build
-                with the correct options.
-            </p>
+            <p>The Berkeley DB library will automatically build with the correct options.</p>
           </li>
         </ol>
       </div>

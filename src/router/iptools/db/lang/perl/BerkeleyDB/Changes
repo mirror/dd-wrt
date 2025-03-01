@@ -1,59 +1,6 @@
 Revision history for Perl extension BerkeleyDB.
 
-0.56  5 January 2016
-
-        * Updates for BDB 6.2
-
-0.55  30 March 2014
-
-        * Error opening ErrFile with PerlIO_findFILE
-          [RT =#101883]
-
-        * Minor updates for BDB 6.1 
-
-0.54  9th November 2013
-
-        * memory leak in CDS locking routines
-          [RT #90134]
-
-0.53  14th August 2013
-
-        * BerkeleyDB-0.52 fails to build on 5.18.1RC3
-          [RT #87771]
-
-        * typo fixes
-          [RT #86705]
-
-0.52  7th May 2013
-
-        * Updates for BDB 6.0 - Added Blob support
-            - Added BerkeleyDB::DbStream class to interface to Blobs 
-            - Added BlobThreshold & BlobDir option to BerkeleyDB::Env 
-              constructor
-            - Added BlobThreshold & BlobDir option to Hash, Btree & Heap
-              constructors
-            - Added get_blob_threshold method to BerkeleyDB::Env
-            - Added get_blob_dir method to BerkeleyDB::Env
-            - Added get_blob_threshold method to the Hash, Btree & Heap
-            - Added get_blob_dir method to the Hash, Btree & Heap
-
-        * Added method $cursor->set_partial
-        * Added method $cursor->partial_clear
-
-        * $env->lock_detect dies due to incorrect version check
-          [RT #84179]
-
-        * (Memory leak in db_verify() method. (libdb < 4.2))
-          [RT #84409]
-
-        * Fix a few croaks
-
-0.51  19th March 2012
-
-        * Rework FETCHSIZE
-          [RT #75691]
-
-0.50  10th December 2011
+0.50  10th DEcember 2011
 
         * Updates for BDB 5.3
 
@@ -137,9 +84,6 @@ Revision history for Perl extension BerkeleyDB.
 
         * Fixed issue db_stat when it returned a null pointer.
           (#46312 rt.cpan.org)
-
-        * set_msgfile API
-          (#46313)
 
         * Fixed issue with DNM Filters & UTF8 support.
           Patch supplied by Torsten Foertsch.

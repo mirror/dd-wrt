@@ -7,14 +7,14 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="ext.html" title="Chapter 24.  Berkeley DB Extensions" />
+    <link rel="up" href="ext.html" title="Chapter 22.  Berkeley DB Extensions" />
     <link rel="prev" href="ext_perl.html" title="Using Berkeley DB with Perl" />
-    <link rel="next" href="dumpload.html" title="Chapter 25.  Dumping and Reloading Databases" />
+    <link rel="next" href="dumpload.html" title="Chapter 23.  Dumping and Reloading Databases" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,7 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="ext_perl.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 24.  Berkeley DB Extensions </th>
+          <th width="60%" align="center">Chapter 22. 
+		Berkeley DB Extensions
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="dumpload.html">Next</a></td>
         </tr>
       </table>
@@ -36,24 +38,18 @@
           </div>
         </div>
       </div>
+      <p>A PHP 4 extension for this release of Berkeley DB is included in the
+distribution package.  It can either either link directly against the
+installed Berkeley DB library (which is necessary for running in a
+non-Apache/mod_php4 environment), or against mod_db4, which provides
+additional safety when running under Apache/mod_php4.</p>
       <p>
-        A PHP 4 extension for this release of Berkeley DB is
-        included in the distribution package. It can either either
-        link directly against the installed Berkeley DB library (which
-        is necessary for running in a non-Apache/mod_php4
-        environment), or against mod_db4, which provides additional
-        safety when running under Apache/mod_php4.
-    </p>
-      <p> 
-        For installation instructions, see the
-        <code class="filename">INSTALL</code> file that resides in the
-        <code class="literal">lang/php_db4</code> directory in your
-        Berkeley DB distribution. 
-    </p>
-      <p>
-        The PHP extension provides the following classes, which
-        mirror the standard Berkeley DB C++ API.
-    </p>
+    For installation instructions, see the <code class="filename">INSTALL</code> file that
+    resides in the <code class="literal">lang/php_db4</code> directory in your
+    Berkeley DB distribution.
+</p>
+      <p>The PHP extension provides the following classes, which mirror the
+standard Berkeley DB C++ API.</p>
       <pre class="programlisting">class Db4Env {
     function Db4Env($flags = 0) {}
     function close($flags = 0) {}
@@ -64,7 +60,7 @@
                   DB_INIT_LOG | DB_INIT_MPOOL | DB_INIT_TXN, 
                   $mode = 0666) {}
     function remove($home, $flags = 0) {}
-    function add_data_dir($directory) {}
+    function set_data_dir($directory) {}
     function txn_begin($parent_txn = null, $flags = 0) {}
     function txn_checkpoint($kbytes, $minutes, $flags = 0) {}
 }
@@ -105,24 +101,14 @@ class Db4Cursor {
     function pget($key, &amp;$primary_key, $flags = 0) {}
     function put($key, $data, $flags = 0) {}
 }</pre>
-      <p>
-        The PHP extension attempts to be "smart" for you by:
-    </p>
+      <p>The PHP extension attempts to be "smart" for you by:</p>
       <div class="orderedlist">
         <ol type="1">
-          <li>
-            Auto-committing operations on transactional
-            databases if no explicit Db4Txn object is
-            specified.
-        </li>
-          <li>
-            Performing reference and dependency checking to
-            insure that all resources are closed in the correct
-            order.
-        </li>
-          <li>
-            Supplying default values for flags.
-        </li>
+          <li>Auto-committing operations on transactional databases if no explicit
+Db4Txn object is specified.</li>
+          <li>Performing reference and dependency checking to insure that all
+resources are closed in the correct order.</li>
+          <li>Supplying default values for flags.</li>
         </ol>
       </div>
     </div>
@@ -141,8 +127,9 @@ class Db4Cursor {
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Chapter 25.  Dumping and Reloading Databases
-    </td>
+          <td width="40%" align="right" valign="top"> Chapter 23. 
+		Dumping and Reloading Databases
+        </td>
         </tr>
       </table>
     </div>

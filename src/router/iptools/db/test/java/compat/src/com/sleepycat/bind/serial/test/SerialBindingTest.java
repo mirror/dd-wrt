@@ -1,22 +1,17 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package com.sleepycat.bind.serial.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.io.Serializable;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 import com.sleepycat.bind.EntityBinding;
 import com.sleepycat.bind.serial.ClassCatalog;
@@ -24,33 +19,67 @@ import com.sleepycat.bind.serial.SerialBinding;
 import com.sleepycat.bind.serial.SerialSerialBinding;
 import com.sleepycat.bind.serial.TupleSerialMarshalledBinding;
 import com.sleepycat.db.DatabaseEntry;
+import com.sleepycat.util.ExceptionUnwrapper;
 import com.sleepycat.util.FastOutputStream;
-import com.sleepycat.util.test.TestBase;
+import com.sleepycat.util.test.SharedTestUtils;
 
 /**
  * @author Mark Hayes
  */
-public class SerialBindingTest extends TestBase {
+public class SerialBindingTest extends TestCase {
 
     private ClassCatalog catalog;
     private DatabaseEntry buffer;
     private DatabaseEntry keyBuffer;
 
-    @Before
+    public static void main(String[] args) {
+        junit.framework.TestResult tr =
+            junit.textui.TestRunner.run(suite());
+        if (tr.errorCount() > 0 ||
+            tr.failureCount() > 0) {
+            System.exit(1);
+        } else {
+            System.exit(0);
+        }
+    }
+
+    public static Test suite() {
+        TestSuite suite = new TestSuite(SerialBindingTest.class);
+        return suite;
+    }
+
+    public SerialBindingTest(String name) {
+
+        super(name);
+    }
+
+    @Override
     public void setUp() {
 
+        SharedTestUtils.printTestName("SerialBindingTest." + getName());
         catalog = new TestClassCatalog();
         buffer = new DatabaseEntry();
         keyBuffer = new DatabaseEntry();
     }
 
-    @After
+    @Override
     public void tearDown() {
 
         /* Ensure that GC can cleanup. */
         catalog = null;
         buffer = null;
         keyBuffer = null;
+    }
+
+    @Override
+    public void runTest()
+        throws Throwable {
+
+        try {
+            super.runTest();
+        } catch (Exception e) {
+            throw ExceptionUnwrapper.unwrap(e);
+        }
     }
 
     private void primitiveBindingTest(Object val) {
@@ -72,7 +101,6 @@ public class SerialBindingTest extends TestBase {
         } catch (IllegalArgumentException expected) {}
     }
 
-    @Test
     public void testPrimitiveBindings() {
 
         primitiveBindingTest("abc");
@@ -86,7 +114,6 @@ public class SerialBindingTest extends TestBase {
         primitiveBindingTest(new Double(123.123));
     }
 
-    @Test
     public void testNullObjects() {
 
         SerialBinding binding = new SerialBinding(catalog, null);
@@ -96,7 +123,6 @@ public class SerialBindingTest extends TestBase {
         assertEquals(null, binding.entryToObject(buffer));
     }
 
-    @Test
     public void testSerialSerialBinding() {
 
         SerialBinding keyBinding = new SerialBinding(catalog, String.class);
@@ -116,7 +142,6 @@ public class SerialBindingTest extends TestBase {
 
     // also tests TupleSerialBinding since TupleSerialMarshalledBinding extends
     // it
-    @Test
     public void testTupleSerialMarshalledBinding() {
 
         SerialBinding valueBinding = new SerialBinding(catalog,
@@ -140,7 +165,6 @@ public class SerialBindingTest extends TestBase {
         assertEquals("index2", val.getIndexKey2());
     }
 
-    @Test
     public void testBufferSize() {
 
         CaptureSizeBinding binding =
@@ -172,7 +196,6 @@ public class SerialBindingTest extends TestBase {
         }
     }
 
-    @Test
     public void testBufferOverride() {
 
         FastOutputStream out = new FastOutputStream(10);
@@ -259,7 +282,6 @@ public class SerialBindingTest extends TestBase {
      * a crude test because to create a truly working class loader is a large
      * undertaking.
      */
-    @Test
     public void testClassloaderOverride() {
         DatabaseEntry entry = new DatabaseEntry();
 

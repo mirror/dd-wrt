@@ -14,11 +14,13 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Chapter 2.  System Installation Notes </th>
+          <th colspan="3" align="center">Chapter 2. 
+		System Installation Notes
+        </th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="ch01s02.html">Prev</a> </td>
@@ -32,7 +34,9 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title"><a id="install"></a>Chapter 2.  System Installation Notes </h2>
+            <h2 class="title"><a id="install"></a>Chapter 2. 
+		System Installation Notes
+        </h2>
           </div>
         </div>
       </div>
@@ -43,8 +47,7 @@
         <dl>
           <dt>
             <span class="sect1">
-              <a href="install.html#install_file">File utility /etc/magic
-        information</a>
+              <a href="install.html#install_file">File utility /etc/magic information</a>
             </span>
           </dt>
           <dd>
@@ -77,8 +80,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h2 class="title" style="clear: both"><a id="install_file"></a>File utility /etc/magic
-        information</h2>
+              <h2 class="title" style="clear: both"><a id="install_file"></a>File utility /etc/magic information</h2>
             </div>
           </div>
         </div>
@@ -102,28 +104,28 @@
           </dl>
         </div>
         <p>
-        The <code class="literal">file</code>(1) utility is a UNIX utility
-        that examines and classifies files, based on information found
-        in its database of file types, the /etc/magic file. The
-        following information may be added to your system's /etc/magic
-        file to enable <code class="literal">file</code>(1) to correctly
-        identify Berkeley DB database files.
+        The <code class="literal">file</code>(1) utility is a UNIX utility that
+        examines and classifies files, based on information found in its
+        database of file types, the /etc/magic file.  The following
+        information may be added to your system's /etc/magic file to enable
+        <code class="literal">file</code>(1) to correctly identify Berkeley DB
+        database files.
     </p>
         <p>
-        The <code class="literal">file</code>(1) utility
-        <code class="literal">magic</code>(5) information for the standard
-        System V UNIX implementation of the <code class="literal">file</code>(1)
-        utility is included in the Berkeley DB distribution for both
-        big-endian (for example, Sparc) and little-endian (for
-        example, x86) architectures. See <a class="xref" href="install.html#big-endian" title="Big-endian magic information">Big-endian magic information</a> and <a class="xref" href="install.html#little-endian" title="Little-endian magic information">Little-endian magic information</a>
+        The <code class="literal">file</code>(1) utility <code class="literal">magic</code>(5)
+        information for the standard System V UNIX implementation of the
+        <code class="literal">file</code>(1) utility is included in the Berkeley DB
+        distribution for both big-endian (for example, Sparc)
+        and little-endian (for example, x86) architectures. 
+        See <a class="xref" href="install.html#big-endian" title="Big-endian magic information">Big-endian magic information</a>
+        and <a class="xref" href="install.html#little-endian" title="Little-endian magic information">Little-endian magic information</a>
         respectively for this information.
     </p>
         <p>
-        The <code class="literal">file</code>(1) utility
-        <code class="literal">magic</code>(5) information for Release 3.X of
-        Ian Darwin's implementation of the file utility (as
-        distributed by FreeBSD and most Linux distributions) is
-        included in the Berkeley DB distribution. This
+        The <code class="literal">file</code>(1) utility <code class="literal">magic</code>(5)
+        information for Release 3.X of Ian Darwin's implementation of the
+        file utility (as distributed by FreeBSD and most Linux
+        distributions) is included in the Berkeley DB distribution.  This
         <code class="literal">magic.txt</code> information is correct for
         both big-endian and little-endian architectures. See the next
         section for this information.
@@ -198,7 +200,7 @@
 12	belong	0x00040988	Berkeley DB
 &gt;16	belong	&gt;0		(Log, version %d, big-endian)
 12	lelong	0x00040988	Berkeley DB
-&gt;16	lelong	&gt;0	    (Log, version %d, little-endian) </pre>
+&gt;16	lelong	&gt;0		(Log, version %d, little-endian) </pre>
         </div>
         <div class="sect2" lang="en" xml:lang="en">
           <div class="titlepage">
@@ -217,7 +219,7 @@
 # Hash and Btree 2.X and later databases store the metadata in 
 # host byte order.
 
-0	long    0x00053162	Berkeley DB 1.85/1.86 (Btree,
+0	long	0x00053162	Berkeley DB 1.85/1.86 (Btree,
 &gt;4	long	0x00000002	version 2,
 &gt;4	long	0x00000003	version 3,
 &gt;0	long	0x00053162	native byte-order)

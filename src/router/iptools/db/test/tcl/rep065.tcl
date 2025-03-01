@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2006, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2006, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -9,7 +9,7 @@
 # TEST	This capability is introduced with 4.5.
 # TEST
 # TEST	Start a replication group of 1 master and N sites, all
-# TEST	running some historical version greater than or equal to 4.7.
+# TEST	running some historical version greater than or equal to 4.4.
 # TEST	Take down a client and bring it up again running current.
 # TEST	Run some upgrades, make sure everything works.
 # TEST
@@ -28,12 +28,6 @@ proc rep065 { method { nsites 3 } args } {
 	if { $checking_valid_methods } {
 		set test_methods { btree }
 		return $test_methods
-	}
-
-
-	if { $is_windows_test } {
-		puts "Skipping rep065 for Windows platform"
-		return
 	}
 
 	if { [is_btree $method] == 0 } {
@@ -55,7 +49,7 @@ proc rep065 { method { nsites 3 } args } {
 	puts "Rep065: $msg2"
 	set count 1
 	set total [llength $mvlist]
-	set slist [upgrade_setup_sites $nsites]
+	set slist [setup_sites $nsites]
 	foreach i $mvlist {
 		puts "Rep065: Test iteration $count of $total: $i"
 		rep065_sub $count $i $nsites $slist
@@ -67,6 +61,7 @@ proc rep065 { method { nsites 3 } args } {
 proc rep065_sub { iter mv nsites slist } {
 	source ./include.tcl
 	global machids
+	global util_path
 	set machids {}
 	set method [lindex $mv 0]
 	set vers [lindex $mv 1]
@@ -129,14 +124,15 @@ proc rep065_sub { iter mv nsites slist } {
 		file mkdir $upgdir($sid)/DATADIR
 	}
 
+	# Open master env running 4.4.
 	#
 	# We know that slist has all sites starting in the histdir.
 	# So if we encounter an upgrade value, we upgrade that client
 	# from the hist dir.
 	#
 	set count 1
-	foreach siteupg $slist {
-		puts "\tRep065.b.$iter.$count: Run with sitelist $siteupg."
+	foreach sitevers $slist {
+		puts "\tRep065.b.$iter.$count: Run with sitelist $sitevers."
 		#
 		# Delete the marker directory each iteration so that
 		# we don't find old data in there.
@@ -146,7 +142,7 @@ proc rep065_sub { iter mv nsites slist } {
 		#
 		# Get the chosen master index from the list of sites.
 		#
-		set mindex [upgrade_get_master $nsites $siteupg]
+		set mindex [get_master $nsites $sitevers]
 		set meid [expr $mindex + 1]
 
 		#
@@ -155,7 +151,7 @@ proc rep065_sub { iter mv nsites slist } {
 		#
 		set pids {}
 		for { set i 0 } { $i < $nsites } { incr i } {
-			set upg [lindex $siteupg $i]
+			set upg [lindex $sitevers $i]
 			set sid $siteid($i)
 			#
 			# If we are running "old" set up an array
@@ -172,32 +168,33 @@ proc rep065_sub { iter mv nsites slist } {
 				puts -nonewline "\t\tRep065.b: Test: Upgraded site $i"
 				set sitedir($i) $upgdir($sid)
 				if { $already_upgraded($i) == 0 } {
-					upgrade_one_site $histdirs($sid) \
-					    $sitedir($i)
+					upg_repdir $histdirs($sid) $sitedir($i)
 				}
 				set already_upgraded($i) 1
 			}
 			if { $sid == $meid } {
-				set role MASTER
-				set op [list REPTEST $method 15 10]
+				set state MASTER
+				set runtest [list REPTEST $method 15 10]
 				puts " (MASTER)"
 			} else {
-				set role CLIENT
-				set op {REPTEST_GET}
+				set state CLIENT
+				set runtest {REPTEST_GET}
 				puts " (CLIENT)"
 			}
 			lappend pids [exec $tclsh_path $test_path/wrap.tcl \
 			    rep065script.tcl \
 			    $controldir/$testdir/$count.S$i.log \
 		      	    SKIP \
-			    START $role $op \
+			    START $state \
+			    $runtest \
 			    $sid $allids $controldir \
 			    $sitedir($i) $reputils_path &]
 			lappend pids [exec $tclsh_path $test_path/wrap.tcl \
 			    rep065script.tcl \
 			    $controldir/$testdir/$count.S$i.msg \
 		    	    SKIP \
-			    PROCMSGS $role NULL \
+			    PROCMSGS $state \
+		    	    NULL \
 			    $sid $allids $controldir \
 			    $sitedir($i) $reputils_path &]
 		}
@@ -225,15 +222,16 @@ proc rep065_sub { iter mv nsites slist } {
 		puts "\tRep065.c.$iter.$count: Verify all sites."
 		for { set i 0 } { $i < $nsites } { incr i } {
 			if { $siteid($i) == $meid } {
-				set role MASTER
+				set state MASTER
 			} else {
-				set role CLIENT
+				set state CLIENT
 			}
 			lappend pids [exec $tclsh_path $test_path/wrap.tcl \
 			    rep065script.tcl \
 			    $controldir/$testdir/$count.S$i.ver \
 		      	    SKIP \
-			    VERIFY $role {LOG DB} \
+			    VERIFY $state \
+		    	    {LOG DB} \
 			    $siteid($i) $allids $controldir \
 			    $sitedir($i) $reputils_path &]
 		}
@@ -252,7 +250,7 @@ proc rep065_sub { iter mv nsites slist } {
 			error_check_good db_cmp \
 			    [filecmp $sitedir($mindex)/VERIFY/dbdump \
 			    $sitedir($i)/VERIFY/dbdump] 0
-			set upg [lindex $siteupg $i]
+			set upg [lindex $sitevers $i]
 			# !!!
 			# Although db_printlog works and can read old logs,
 			# there have been some changes to the output text that
@@ -281,74 +279,131 @@ proc rep065_sub { iter mv nsites slist } {
 		# to the current version and start everyone up again.
 		incr count
 	}
-	replclose_noenv $controldir/$testdir/MSGQUEUEDIR
 }
 
-
-# Create the method/version pairs to used for a run.
-# For coverage runs, provide a canned list that exercises
-# the historical recovery functions.  This also ensures that
-# the lines covered are consistent.  For non-coverage runs, 
-# the list is randomized.
-proc method_version { } {
-
-	global valid_releases
-	
-	# As of 2014, coverage is run on slc01bjy. 
-	set coverage_host "slc01bjy"
-	set hostname [info hostname]
-	set coverage 0
-	if { [is_substr $hostname $coverage_host] == 1 } {
-		set coverage 1
+proc setup_sites { nsites } {
+	#
+	# Set up a list that goes from 0 to $nsites running
+	# upgraded.  A 0 represents running old version and 1
+	# represents running upgraded.  So, for 3 sites it will look like:
+	# { 0 0 0 } { 1 0 0 } { 1 1 0 } { 1 1 1 }
+	#
+	set sitelist {}
+	for { set i 0 } { $i <= $nsites } { incr i } {
+		set l ""
+		for { set j 1 } { $j <= $nsites } { incr j } {
+			if { $i < $j } {
+				lappend l 0
+			} else {
+				lappend l 1
+			}
+		}
+		lappend sitelist $l
 	}
+	return $sitelist
+}
+
+proc upg_repdir { histdir upgdir } {
+	global util_path
+
+	#
+	# Upgrade a site to the current version.  This entails:
+	# 1.  Removing any old files from the upgrade directory.
+	# 2.  Copy all old version files to upgrade directory.
+	# 3.  Remove any __db files from upgrade directory except __db.rep*gen.
+	# 4.  Force checkpoint in new version.
+	file delete -force $upgdir
+
+	# Recovery was run before as part of upgradescript.
+	# Archive dir by copying it to upgrade dir.
+	file copy -force $histdir $upgdir
+	set dbfiles [glob -nocomplain $upgdir/__db*]
+	foreach d $dbfiles {
+		if { $d == "$upgdir/__db.rep.gen" ||
+		    $d == "$upgdir/__db.rep.egen" } {
+			continue
+		}
+		file delete -force $d
+	}
+	# Force current version checkpoint
+	set stat [catch {eval exec $util_path/db_checkpoint -1 -h $upgdir} r]
+	if { $stat != 0 } {
+		puts "CHECKPOINT: $upgdir: $r"
+	}
+	error_check_good stat_ckp $stat 0
+}
+
+proc get_master { nsites verslist } {
+	error_check_good vlist_chk [llength $verslist] $nsites
+	#
+	# When we can, simply run an election to get a new master.
+	# We then verify we got an old client.
+	#
+	# For now, randomly pick among the old sites, or if no old
+	# sites just randomly pick anyone.
+	#
+	set old_count 0
+	# Pick 1 out of N old sites or 1 out of nsites if all upgraded.
+	foreach i $verslist {
+		if { $i == 0 } {
+			incr old_count
+		}
+	}
+	if { $old_count == 0 } {
+		set old_count $nsites
+	}
+	set master [berkdb random_int 0 [expr $old_count - 1]]
+	#
+	# Since the Nth old site may not be at the Nth place in the
+	# list unless we used the entire list, we need to loop to find
+	# the right index to return.
+	if { $old_count == $nsites } {
+		return $master
+	}
+	set ocount 0
+	set index 0
+	foreach i $verslist {
+		if { $i == 1 } {
+			incr index
+			continue
+		}
+		if { $ocount == $master } {
+			return $index
+		}
+		incr ocount
+		incr index
+	}
+	#
+	# If we get here there is a problem in the code.
+	#
+	error "FAIL: get_master problem"
+}
+
+proc method_version { } {
 
 	set mv {}
 
-	if { $coverage == 1 } {
-		lappend mv "btree $valid_releases(47)"
-		lappend mv "hash $valid_releases(48)"
-		lappend mv "btree $valid_releases(48)"
-		lappend mv "heap $valid_releases(52)"
-		lappend mv "heap $valid_releases(60)"
-		lappend mv "queue $valid_releases(51)"
-		lappend mv "recno $valid_releases(52)"
-		lappend mv "rbtree $valid_releases(47)"
-		lappend mv "queueext $valid_releases(50)"
-		lappend mv "frecno $valid_releases(51)"
-		lappend mv "btree $valid_releases(53)"
-		lappend mv "rrecno $valid_releases(60)"
-		lappend mv "btree $valid_releases(61)"
-		return $mv
-	} 
+	# Set up version 5.2, which adds the method 'heap'.  Since 
+	# heap is new, we'd like to test it heavily.  Always test a 
+	# 5.2/heap pair, plus one other 5.2 with a random non-heap 
+	# version.  Here's the hard-coded one:
+	set db52 "db-5.2.36"
+	lappend mv [list heap $db52]
 
-	# As of the 5.2 release we added the method 'heap'.
-	# For 5.2 and later versions select a method at random
-	# from the list of all methods except heap.  Always
-	# set up one pair using heap with a 5.2 or later version.
-	set post52_versions "$valid_releases(52) $valid_releases(53)\
-	   $valid_releases(60) $valid_releases(61)"
-	set post52_len [expr [llength $post52_versions] - 1]
-	set heap_version [lindex $post52_versions \
-	    [berkdb random_int 0 $post52_len]]
-	lappend mv [list heap $heap_version]
-	set methods\
-	    {btree rbtree recno frecno rrecno queue queueext hash}
-	set remaining_methods $methods
+	set methods {btree rbtree recno frecno rrecno queue queueext hash}
 	set methods_len [expr [llength $methods] - 1]
+	set midx [berkdb random_int 0 $methods_len]
+	set method [lindex $methods $midx]
+	lappend mv [list $method $db52]
 
-	foreach version $post52_versions {
-		set midx [berkdb random_int 0 $methods_len]
-		set method [lindex $remaining_methods $midx]
-		set remaining_methods [lreplace $remaining_methods $midx $midx]
-		incr methods_len -1
+	# Now take care of versions 4.4 though 5.1, which share
+	# the same list of eight valid methods.
+	set remaining_methods $methods
+	set methods_len [expr [llength $remaining_methods] - 1]
 
-		lappend mv [list $method $version]
-	}
-
-	# Now take care of versions 4.7 though 5.1. 
-	set pre52_versions "$valid_releases(51) $valid_releases(50)\
-	    $valid_releases(48) $valid_releases(47)"
-	set remaining_versions $pre52_versions
+	set versions {db-5.1.25 db-5.0.32 \
+	    db-4.8.30 db-4.7.25 db-4.6.21 db-4.5.20 db-4.4.20}
+	set remaining_versions $versions
 	set versions_len [expr [llength $remaining_versions] - 1]
 
 	# Walk through the list of methods and the list of versions and
@@ -370,12 +425,11 @@ proc method_version { } {
 	}
 
 	# If there are remaining versions, randomly assign any of 
-	# the original pre-5.2 methods to each one.
-	set pre52_methods {btree rbtree recno frecno rrecno queue queueext hash}
+	# the original methods to each one.
 	while { $versions_len >= 0 } {
 
-		set mlen [expr [llength $pre52_methods] - 1]
-		set midx [berkdb random_int 0 $mlen]
+		set methods_len [expr [llength $methods] - 1]
+		set midx [berkdb random_int 0 $methods_len]
 
 		set version [lindex $remaining_versions 0]
 		set method [lindex $methods $midx]
@@ -386,13 +440,12 @@ proc method_version { } {
 		lappend mv [list $method $version]
 	}
 
-	# If there are remaining methods, randomly assign any version
-	# to each one.
-	set versions [concat $post52_versions $pre52_versions]
+	# If there are remaining methods, randomly assign any of 
+	# the original versions to each one.
 	while { $methods_len >= 0 } { 
 
-		set vlen [expr [llength $versions] - 1]
-		set vidx [berkdb random_int 0 $vlen]
+		set versions_len [expr [llength $versions] - 1]
+		set vidx [berkdb random_int 0 $versions_len]
 
 		set version [lindex $versions $vidx]
 		set method [lindex $remaining_methods 0]

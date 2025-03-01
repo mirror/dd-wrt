@@ -6,12 +6,6 @@
 
 #include "CuTest.h"
 
-extern int TestCallbackSetterAndGetterSuiteSetup(CuSuite *suite);
-extern int TestCallbackSetterAndGetterSuiteTeardown(CuSuite *suite);
-extern int TestCallbackSetterAndGetterTestSetup(CuTest *ct);
-extern int TestCallbackSetterAndGetterTestTeardown(CuTest *ct);
-extern int TestEnvCallbacks(CuTest *ct);
-extern int TestDbCallbacks(CuTest *ct);
 extern int TestChannelSuiteSetup(CuSuite *suite);
 extern int TestChannelSuiteTeardown(CuSuite *suite);
 extern int TestChannelTestSetup(CuTest *test);
@@ -21,14 +15,11 @@ extern int TestDbHotBackupSuiteSetup(CuSuite *suite);
 extern int TestDbHotBackupSuiteTeardown(CuSuite *suite);
 extern int TestDbHotBackupTestSetup(CuTest *ct);
 extern int TestDbHotBackupTestTeardown(CuTest *ct);
-extern int TestBackupSimpleEnvNoCallback(CuTest *ct);
-extern int TestBackupSimpleEnvWithCallback(CuTest *ct);
-extern int TestBackupSimpleEnvWithConfig(CuTest *ct);
-extern int TestBackupPartitionDB(CuTest *ct);
-extern int TestBackupMultiDataDir(CuTest *ct);
-extern int TestBackupSetLogDir(CuTest *ct);
-extern int TestBackupQueueDB(CuTest *ct);
-extern int TestBackupHeapDB(CuTest *ct);
+extern int TestDbHotBackupSimpleEnv(CuTest *ct);
+extern int TestDbHotBackupPartitionDB(CuTest *ct);
+extern int TestDbHotBackupMultiDataDir(CuTest *ct);
+extern int TestDbHotBackupSetLogDir(CuTest *ct);
+extern int TestDbHotBackupQueueDB(CuTest *ct);
 extern int TestDbTuner(CuTest *ct);
 extern int TestNoEncryptedDb(CuTest *ct);
 extern int TestEncryptedDbFlag(CuTest *ct);
@@ -60,7 +51,6 @@ extern int TestSetTransactionTimeout(CuTest *ct);
 extern int TestSetCachesize(CuTest *ct);
 extern int TestSetThreadCount(CuTest *ct); /* SKIP */
 extern int TestKeyExistErrorReturn(CuTest *ct);
-extern int TestMutexAlignment(CuTest *ct);
 extern int TestPartialSuiteSetup(CuSuite *ct);
 extern int TestPartialSuiteTeardown(CuSuite *ct);
 extern int TestPartialTestSetup(CuTest *ct);
@@ -69,48 +59,7 @@ extern int TestDbPartialGet(CuTest *ct);
 extern int TestDbPartialPGet(CuTest *ct);
 extern int TestCursorPartialGet(CuTest *ct);
 extern int TestCursorPartialPGet(CuTest *ct);
-extern int TestPartitionSuiteSetup(CuSuite *suite);
-extern int TestPartitionSuiteTeardown(CuSuite *suite);
-extern int TestPartitionTestSetup(CuTest *ct);
-extern int TestPartitionTestTeardown(CuTest *ct);
-extern int TestPartOneKeyNoData(CuTest *ct);
-extern int TestPartTwoKeyNoData(CuTest *ct);
-extern int TestPartDuplicatedKey(CuTest *ct);
-extern int TestPartUnsortedKey(CuTest *ct);
-extern int TestPartNumber(CuTest *ct);
-extern int TestPartKeyCallBothSet(CuTest *ct);
-extern int TestPartKeyCallNeitherSet(CuTest *ct);
-extern int TestPreOpenSetterAndGetterSuiteSetup(CuSuite *suite);
-extern int TestPreOpenSetterAndGetterSuiteTeardown(CuSuite *suite);
-extern int TestPreOpenSetterAndGetterTestSetup(CuTest *ct);
-extern int TestPreOpenSetterAndGetterTestTeardown(CuTest *ct);
-extern int TestEnvPreOpenSetterAndGetter(CuTest *ct);
-extern int TestDbPreOpenSetterAndGetter(CuTest *ct);
-extern int TestMpoolFilePreOpenSetterAndGetter(CuTest *ct);
-extern int TestSequencePreOpenSetterAndGetter(CuTest *ct);
 extern int TestQueue(CuTest *ct);
-
-int RunCallbackSetterAndGetterTests(CuString *output)
-{
-	CuSuite *suite = CuSuiteNew("TestCallbackSetterAndGetter",
-	    TestCallbackSetterAndGetterSuiteSetup, 
-	    TestCallbackSetterAndGetterSuiteTeardown);
-	int count;
-
-	SUITE_ADD_TEST(suite, TestEnvCallbacks,
-	    TestCallbackSetterAndGetterTestSetup, 
-	    TestCallbackSetterAndGetterTestTeardown);
-	SUITE_ADD_TEST(suite, TestDbCallbacks,
-	    TestCallbackSetterAndGetterTestSetup, 
-	    TestCallbackSetterAndGetterTestTeardown);
-
-	CuSuiteRun(suite);
-	CuSuiteSummary(suite, output);
-	CuSuiteDetails(suite, output);
-	count = suite->failCount;
-	CuSuiteDelete(suite);
-	return (count);
-}
 
 int RunChannelTests(CuString *output)
 {
@@ -135,21 +84,15 @@ int RunDbHotBackupTests(CuString *output)
 	    TestDbHotBackupSuiteSetup, TestDbHotBackupSuiteTeardown);
 	int count;
 
-	SUITE_ADD_TEST(suite, TestBackupSimpleEnvNoCallback,
+	SUITE_ADD_TEST(suite, TestDbHotBackupSimpleEnv,
 	    TestDbHotBackupTestSetup, TestDbHotBackupTestTeardown);
-	SUITE_ADD_TEST(suite, TestBackupSimpleEnvWithCallback,
+	SUITE_ADD_TEST(suite, TestDbHotBackupPartitionDB,
 	    TestDbHotBackupTestSetup, TestDbHotBackupTestTeardown);
-	SUITE_ADD_TEST(suite, TestBackupSimpleEnvWithConfig,
+	SUITE_ADD_TEST(suite, TestDbHotBackupMultiDataDir,
 	    TestDbHotBackupTestSetup, TestDbHotBackupTestTeardown);
-	SUITE_ADD_TEST(suite, TestBackupPartitionDB,
+	SUITE_ADD_TEST(suite, TestDbHotBackupSetLogDir,
 	    TestDbHotBackupTestSetup, TestDbHotBackupTestTeardown);
-	SUITE_ADD_TEST(suite, TestBackupMultiDataDir,
-	    TestDbHotBackupTestSetup, TestDbHotBackupTestTeardown);
-	SUITE_ADD_TEST(suite, TestBackupSetLogDir,
-	    TestDbHotBackupTestSetup, TestDbHotBackupTestTeardown);
-	SUITE_ADD_TEST(suite, TestBackupQueueDB,
-	    TestDbHotBackupTestSetup, TestDbHotBackupTestTeardown);
-	SUITE_ADD_TEST(suite, TestBackupHeapDB,
+	SUITE_ADD_TEST(suite, TestDbHotBackupQueueDB,
 	    TestDbHotBackupTestSetup, TestDbHotBackupTestTeardown);
 
 	CuSuiteRun(suite);
@@ -289,23 +232,6 @@ int RunKeyExistErrorReturnTests(CuString *output)
 	return (count);
 }
 
-int RunMutexAlignmentTests(CuString *output)
-{
-	CuSuite *suite = CuSuiteNew("TestMutexAlignment",
-	    NULL, NULL);
-	int count;
-
-	SUITE_ADD_TEST(suite, TestMutexAlignment,
-	    NULL, NULL);
-
-	CuSuiteRun(suite);
-	CuSuiteSummary(suite, output);
-	CuSuiteDetails(suite, output);
-	count = suite->failCount;
-	CuSuiteDelete(suite);
-	return (count);
-}
-
 int RunPartialTests(CuString *output)
 {
 	CuSuite *suite = CuSuiteNew("TestPartial",
@@ -320,63 +246,6 @@ int RunPartialTests(CuString *output)
 	    TestPartialTestSetup, TestPartialTestTeardown);
 	SUITE_ADD_TEST(suite, TestCursorPartialPGet,
 	    TestPartialTestSetup, TestPartialTestTeardown);
-
-	CuSuiteRun(suite);
-	CuSuiteSummary(suite, output);
-	CuSuiteDetails(suite, output);
-	count = suite->failCount;
-	CuSuiteDelete(suite);
-	return (count);
-}
-
-int RunPartitionTests(CuString *output)
-{
-	CuSuite *suite = CuSuiteNew("TestPartition",
-	    TestPartitionSuiteSetup, TestPartitionSuiteTeardown);
-	int count;
-
-	SUITE_ADD_TEST(suite, TestPartOneKeyNoData,
-	    TestPartitionTestSetup, TestPartitionTestTeardown);
-	SUITE_ADD_TEST(suite, TestPartTwoKeyNoData,
-	    TestPartitionTestSetup, TestPartitionTestTeardown);
-	SUITE_ADD_TEST(suite, TestPartDuplicatedKey,
-	    TestPartitionTestSetup, TestPartitionTestTeardown);
-	SUITE_ADD_TEST(suite, TestPartUnsortedKey,
-	    TestPartitionTestSetup, TestPartitionTestTeardown);
-	SUITE_ADD_TEST(suite, TestPartNumber,
-	    TestPartitionTestSetup, TestPartitionTestTeardown);
-	SUITE_ADD_TEST(suite, TestPartKeyCallBothSet,
-	    TestPartitionTestSetup, TestPartitionTestTeardown);
-	SUITE_ADD_TEST(suite, TestPartKeyCallNeitherSet,
-	    TestPartitionTestSetup, TestPartitionTestTeardown);
-
-	CuSuiteRun(suite);
-	CuSuiteSummary(suite, output);
-	CuSuiteDetails(suite, output);
-	count = suite->failCount;
-	CuSuiteDelete(suite);
-	return (count);
-}
-
-int RunPreOpenSetterAndGetterTests(CuString *output)
-{
-	CuSuite *suite = CuSuiteNew("TestPreOpenSetterAndGetter",
-	    TestPreOpenSetterAndGetterSuiteSetup, 
-	    TestPreOpenSetterAndGetterSuiteTeardown);
-	int count;
-
-	SUITE_ADD_TEST(suite, TestEnvPreOpenSetterAndGetter,
-	    TestPreOpenSetterAndGetterTestSetup, 
-	    TestPreOpenSetterAndGetterTestTeardown);
-	SUITE_ADD_TEST(suite, TestDbPreOpenSetterAndGetter,
-	    TestPreOpenSetterAndGetterTestSetup, 
-	    TestPreOpenSetterAndGetterTestTeardown);
-	SUITE_ADD_TEST(suite, TestMpoolFilePreOpenSetterAndGetter,
-	    TestPreOpenSetterAndGetterTestSetup, 
-	    TestPreOpenSetterAndGetterTestTeardown);
-	SUITE_ADD_TEST(suite, TestSequencePreOpenSetterAndGetter,
-	    TestPreOpenSetterAndGetterTestSetup, 
-	    TestPreOpenSetterAndGetterTestTeardown);
 
 	CuSuiteRun(suite);
 	CuSuiteSummary(suite, output);
@@ -404,7 +273,6 @@ int RunQueueTests(CuString *output)
 }
 
 TestSuite g_suites[] = {
-	{ "TestCallbackSetterAndGetter", RunCallbackSetterAndGetterTests },
 	{ "TestChannel", RunChannelTests },
 	{ "TestDbHotBackup", RunDbHotBackupTests },
 	{ "TestDbTuner", RunDbTunerTests },
@@ -412,10 +280,7 @@ TestSuite g_suites[] = {
 	{ "TestEnvConfig", RunEnvConfigTests },
 	{ "TestEnvMethod", RunEnvMethodTests },
 	{ "TestKeyExistErrorReturn", RunKeyExistErrorReturnTests },
-	{ "TestMutexAlignment", RunMutexAlignmentTests },
 	{ "TestPartial", RunPartialTests },
-	{ "TestPartition", RunPartitionTests },
-	{ "TestPreOpenSetterAndGetter", RunPreOpenSetterAndGetterTests },
 	{ "TestQueue", RunQueueTests },
 	{ "", NULL },
 };

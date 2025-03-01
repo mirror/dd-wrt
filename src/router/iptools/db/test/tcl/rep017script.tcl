@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2003, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2003, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -80,5 +80,4 @@ puts "Processed messages"
 # Close the envs
 error_check_good script_master_close [$masterenv close] 0
 error_check_good script_client_close [$clientenv close] 0
-replclose $testdir/MSGQUEUEDIR
 puts "\tRepscript completed successfully"

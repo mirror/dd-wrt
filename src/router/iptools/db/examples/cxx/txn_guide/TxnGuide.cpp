@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$ 
  */
@@ -123,7 +123,7 @@ main(int argc, char *argv[])
 
     try {
         // Create and open the environment
-        envp = new DbEnv((u_int32_t)0);
+        envp = new DbEnv(0);
 
         // Indicate that we want db to internally perform deadlock
         // detection.  Also indicate that the transaction with

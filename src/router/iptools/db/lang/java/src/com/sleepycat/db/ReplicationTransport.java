@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -66,8 +66,6 @@ public interface ReplicationTransport {
     @param isRetry
     The message is a client request that has already been made and to which no 
     response was received.
-    <p>
-    @return 0 on success and non-zero on failure
     <p>
     @throws DatabaseException if a failure occurs.
     */

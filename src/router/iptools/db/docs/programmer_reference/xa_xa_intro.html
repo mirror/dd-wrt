@@ -7,14 +7,14 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="xa.html" title="Chapter 15.  Distributed Transactions" />
+    <link rel="up" href="xa.html" title="Chapter 13.  Distributed Transactions" />
     <link rel="prev" href="xa_build.html" title="Building a Global Transaction Manager" />
     <link rel="next" href="xa_xa_config.html" title="Configuring Berkeley DB with the Tuxedo System" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,7 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="xa_build.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 15.  Distributed Transactions </th>
+          <th width="60%" align="center">Chapter 13. 
+		Distributed Transactions
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="xa_xa_config.html">Next</a></td>
         </tr>
       </table>
@@ -36,72 +38,34 @@
           </div>
         </div>
       </div>
-      <p>
-        Berkeley DB can be used as an XA-compliant resource manager.
-        The XA implementation is known to work with the Tuxedo
-        transaction manager.
-    </p>
-      <p>
-        The XA support is encapsulated in the resource manager
-        switch db_xa_switch, which defines the following
-        functions:
-    </p>
+      <p>Berkeley DB can be used as an XA-compliant resource manager.  The XA
+implementation is known to work with the Tuxedo transaction
+manager.</p>
+      <p>The XA support is encapsulated in the resource manager switch
+db_xa_switch, which defines the following functions:</p>
       <div class="itemizedlist">
         <ul type="disc">
-          <li><span class="emphasis"><em>__db_xa_close.</em></span>
-            Close the resource manager.
-        </li>
-          <li><span class="emphasis"><em>__db_xa_commit. </em></span>
-            Commit the specified transaction.
-        </li>
-          <li><span class="emphasis"><em>__db_xa_complete.</em></span>
-            Wait for asynchronous operations to complete.
-        </li>
-          <li><span class="emphasis"><em>__db_xa_end. </em></span>
-            Disassociate the application from a
-            transaction.
-        </li>
-          <li><span class="emphasis"><em>__db_xa_forget.</em></span>
-            Forget about a transaction that was heuristically
-            completed. (Berkeley DB does not support heuristic
-            completion.)
-        </li>
-          <li><span class="emphasis"><em>__db_xa_open.</em></span> Open
-            the resource manager.
-        </li>
-          <li><span class="emphasis"><em>__db_xa_prepare.</em></span>
-            Prepare the specified transaction.
-        </li>
-          <li><span class="emphasis"><em>__db_xa_recover.</em></span>
-            Return a list of prepared, but not yet committed
-            transactions.
-        </li>
-          <li><span class="emphasis"><em>__db_xa_rollback.</em></span>
-            Abort the specified transaction.
-        </li>
-          <li><span class="emphasis"><em>__db_xa_start.</em></span>
-            Associate the application with a transaction.
-        </li>
+          <li><span class="emphasis"><em>__db_xa_close.</em></span>  Close the resource manager.</li>
+          <li><span class="emphasis"><em>__db_xa_commit. </em></span>  Commit the specified transaction.</li>
+          <li><span class="emphasis"><em>__db_xa_complete.</em></span>  Wait for asynchronous operations to complete.</li>
+          <li><span class="emphasis"><em>__db_xa_end. </em></span>  Disassociate the application from a transaction.</li>
+          <li><span class="emphasis"><em>__db_xa_forget.</em></span>  Forget about a transaction that was heuristically completed. (Berkeley DB does not support heuristic completion.)</li>
+          <li><span class="emphasis"><em>__db_xa_open.</em></span>  Open the resource manager.</li>
+          <li><span class="emphasis"><em>__db_xa_prepare.</em></span>  Prepare the specified transaction.</li>
+          <li><span class="emphasis"><em>__db_xa_recover.</em></span>  Return a list of prepared, but not yet committed transactions.</li>
+          <li><span class="emphasis"><em>__db_xa_rollback.</em></span>  Abort the specified transaction.</li>
+          <li><span class="emphasis"><em>__db_xa_start.</em></span>  Associate the application with a transaction.</li>
         </ul>
       </div>
-      <p>
-        The Berkeley DB resource manager does not support the
-        following optional XA features:
-    </p>
+      <p>The Berkeley DB resource manager does not support the following optional
+XA features:</p>
       <div class="itemizedlist">
         <ul type="disc">
-          <li>
-            Asynchronous operations
-        </li>
-          <li>
-            Transaction migration
-        </li>
+          <li>Asynchronous operations</li>
+          <li>Transaction migration</li>
         </ul>
       </div>
-      <p>
-        The Tuxedo System is available from <a class="ulink" href="http://www.oracle.com/us/corporate/Acquisitions/bea/index.html" target="_top">Oracle BEA
-        Systems</a>.
-    </p>
+      <p>The Tuxedo System is available from <a class="ulink" href="http://www.oracle.com/us/bea/index.html" target="_top">Oracle BEA Systems</a>.</p>
     </div>
     <div class="navfooter">
       <hr />

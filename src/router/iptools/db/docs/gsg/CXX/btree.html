@@ -13,7 +13,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -416,7 +416,7 @@ try {
                     do not sort well when viewed as byte strings. There are
                     several solutions to this problem, one being to provide a
                     custom comparison function. See
-                    <a class="ulink" href="http://docs.oracle.com/cd/E17076_02/html/programmer_reference/am_misc_faq.html" target="_top">http://docs.oracle.com/cd/E17076_02/html/programmer_reference/am_misc_faq.html</a> 
+                    <a class="ulink" href="http://download.oracle.com/docs/cd/E17076_02/html/programmer_reference/am_misc_faq.html" target="_top">http://download.oracle.com/docs/cd/E17076_02/html/programmer_reference/am_misc_faq.html</a> 
                     for more information.
                 </p>
             </li>
@@ -473,13 +473,10 @@ try {
             occur.
          </p>
           <p>
-            The value that you provide to the 
-	    <code class="methodname">set_bt_compare()</code> method 
-            is a pointer to a function that has the following signature:
-         </p>
-          <pre class="programlisting">
-int (*function)(Db *db, const Dbt *key1, const Dbt *key2, size_t *locp)
-	 </pre>
+                The value that you provide to the <code class="methodname">set_bt_compare()</code> method 
+                is a pointer to a function that has the following signature:
+            </p>
+          <pre class="programlisting">int (*function)(Db *db, const Dbt *key1, const Dbt *key2)</pre>
           <p>
                 This function must return an integer value less than, equal to,
                 or greater than 0. If key1 is considered to be greater than
@@ -502,11 +499,10 @@ int (*function)(Db *db, const Dbt *key1, const Dbt *key2, size_t *locp)
             </p>
           <a id="cxx_btree1"></a>
           <pre class="programlisting">int
-compare_int(Db *dbp, const Dbt *a, const Dbt *b, size_t *locp)
+compare_int(Db *dbp, const Dbt *a, const Dbt *b)
 {
     int ai, bi;
 
-    locp = NULL;
     // Returns: 
     // &lt; 0 if a &lt; b 
     // = 0 if a = b 

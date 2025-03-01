@@ -119,7 +119,7 @@ do_test crash-1.11 {
 } {0 {}}
 
 #--------------------------------------------------------------------------
-# The following tests test recovery when both the database file and the
+# The following tests test recovery when both the database file and the the
 # journal file contain corrupt data. This can happen after pages are
 # written to the database file before a transaction is committed due to
 # cache-pressure.
@@ -215,8 +215,8 @@ for {set i 1} {$i < $repeats} {incr i} {
 #
 ifcapable attach {
   do_test crash-4.0 {
-    forcedelete test2.db
-    forcedelete test2.db-journal
+    file delete -force test2.db
+    file delete -force test2.db-journal
     execsql {
       ATTACH 'test2.db' AS aux;
       PRAGMA aux.default_cache_size = 10;
@@ -318,7 +318,7 @@ ifcapable attach {
 # in test crash-5.3 for details.
 #
 db close
-forcedelete test.db
+file delete -force test.db
 sqlite3 db test.db
 do_test crash-5.1 {
   execsql {

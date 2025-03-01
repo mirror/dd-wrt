@@ -13,7 +13,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -138,7 +138,7 @@
  * create our own thread IDs for reporting purposes.
  */
 int global_thread_num;
-mutex_t thread_num_lock;
+pthread_mutex_t thread_num_lock;
 
 /* Forward declarations */
 int count_records(DB *, DB_TXN *);
@@ -162,7 +162,7 @@ main(void)
     DB *dbp = NULL;
     DB_ENV *envp = NULL;
 
-    thread_t writer_threads[NUMWRITERS];
+    pthread_t writer_threads[NUMWRITERS];
     int i, ret, ret_t;
     u_int32_t env_flags;
 
@@ -294,16 +294,16 @@ main(void)
     we change the error message string so as to not reference the database filename.
   </p>
       <pre class="programlisting">    /* Initialize a pthread mutex. Used to help provide thread ids. */
-    (void)mutex_init(&amp;thread_num_lock, NULL);
+    (void)pthread_mutex_init(&amp;thread_num_lock, NULL);
 
     /* Start the writer threads. */
     for (i = 0; i &lt; NUMWRITERS; i++)
-        (void)thread_create(
+        (void)pthread_create(
       &amp;writer_threads[i], NULL, (void *)writer_thread, (void *)dbp);
 
     /* Join the writers */
     for (i = 0; i &lt; NUMWRITERS; i++)
-        (void)thread_join(writer_threads[i], NULL);
+        (void)pthread_join(writer_threads[i], NULL);
 
 err:
     /* Close our database handle, if it was opened. */
@@ -360,16 +360,16 @@ writer_thread(void *args)
                            "key 9", "key 10"};
 
     DB *dbp = (DB *)args;
-    DbEnv *envp = dbp-&gt;get_env();
+    DbEnv *envp = dbp-&amp;gt;get_env();
 
     /* Get the thread number */
-    (void)mutex_lock(&amp;thread_num_lock);
+    (void)pthread_mutex_lock(&amp;thread_num_lock);
     global_thread_num++;
     thread_num = global_thread_num;
-    (void)mutex_unlock(&amp;thread_num_lock);
+    (void)pthread_mutex_unlock(&amp;thread_num_lock);
 
     /* Initialize the random number generator */
-    srand(thread_num);
+    srand((u_int)pthread_self());
 
     /* Write 50 times and then quit */
     for (i = 0; i &lt; 50; i++) {
@@ -379,13 +379,13 @@ retry:
         ret = envp-&gt;txn_begin(envp, NULL, &amp;txn, 0);
         if (ret != 0) {
             envp-&gt;err(envp, ret, "txn_begin failed");
-            return ((void *)EXIT_FAILURE);
+            return (EXIT_FAILURE);
         }
         for (j = 0; j &lt; 10; j++) {
             /* Set up our key and values DBTs */
             memset(&amp;key, 0, sizeof(DBT));
             key.data = key_strings[j];
-            key.size = (u_int32_t)strlen(key_strings[j]) + 1;
+            key.size = (strlen(key_strings[j]) + 1) * sizeof(char);
 
             memset(&amp;value, 0, sizeof(DBT));
             payload = rand() + i;
@@ -463,7 +463,7 @@ retry:
 
         /* 
          * If all goes well, we can commit the transaction and
-         * exit the thread.
+         * loop to the next transaction.
          */
         ret = txn-&gt;commit(txn, 0);
         if (ret != 0) {
@@ -595,7 +595,7 @@ open_db(DB **dbpp, const char *progname, const char *file_name,
     experiment with this code, you can find the example in the following
     location in your DB distribution:
 </p>
-      <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples/c/txn_guide</pre>
+      <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples_c/txn_guide</pre>
     </div>
     <div class="navfooter">
       <hr />

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 #include "../utilities/bdb_xa_util.h"
@@ -15,55 +15,32 @@
 #include <stdlib.h>
 #include <errno.h>
 
-static char itoc(int num)
-{
-	char vals[] = {'0', '1', '2', '3', '4',
-		'5', '6', '7', '8', '9'};
-	if (num > 9 || num < 0)
-		return '0';
-	return vals[num];
-}
-
 /*
- * This function syncs all clients by having each one create
- * a file called [num]_[test_num]_[call], and attempting to read the files
- * the other clients create until it succeeds.
+ * The sync function syncs all threads by putting them to
+ * sleep until the last thread enters and sync function and
+ * forces the rest to wake up.
  */
-int sync_clients(num, num_clients, call, test_num)
-	int num;
-	int num_clients;
-	int call;
-	int test_num;
+pthread_mutex_t sync_mutex     = PTHREAD_MUTEX_INITIALIZER;
+
+int sync_thr(counter, num_threads, cond_var)
+int *counter;
+int num_threads;
+pthread_cond_t *cond_var;
 {
-	FILE *fp;
-	int i, ret;
-	char name[6];
+	int ret;
 
-	name[5] = 0;
-	name[0] = itoc(num);
-	name[1] = '_';
-	name[2] = itoc(test_num);
-	name[3] = '_';
-	name[4] = itoc(call);
+	ret = 0;
 
-	//printf("client %d waiting in call %d\n", num, call);
-
-	fp = fopen(name, "w");
-	if (fp == NULL)
-		return ENOENT;
-	fprintf(fp, "success");
-	if ((ret = fclose(fp)) != 0)
-		return (ret);
-	for (i = 1; i < (num_clients + 1); i++) {
-		if (i == num)
-			continue;
-		name[0] = itoc(i);
-		while ((fp = fopen(name, "r")) == NULL) {
-			sleep(1);
-		}
-	}
-	//printf ("client %d continuing in call %d\n", num, call);
-	return (0);
+	pthread_mutex_lock(&sync_mutex);
+	*counter = *counter + 1;
+	if ((*counter) == num_threads) 
+		pthread_cond_signal( cond_var );
+        else 
+		ret = pthread_cond_wait( cond_var, 
+		    &sync_mutex);
+	pthread_mutex_unlock(&sync_mutex);
+	
+	return ret;
 }
 
 /*

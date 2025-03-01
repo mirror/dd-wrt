@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -315,7 +315,7 @@ __memp_set_lsn_offset(dbmfp, lsn_offset)
 
 /*
  * __memp_get_maxsize --
- *	Get the file's maximum size, returning zeroes if none is set.
+ *	Get the file's maximum size.
  */
 static int
 __memp_get_maxsize(dbmfp, gbytesp, bytesp)
@@ -334,22 +334,11 @@ __memp_get_maxsize(dbmfp, gbytesp, bytesp)
 		ENV_ENTER(env, ip);
 
 		MUTEX_LOCK(env, mfp->mutex);
-		if (mfp->maxpgno == 0) {
-			*gbytesp = *bytesp = 0;
-		} else {
-			*gbytesp = (u_int32_t)
-			    (mfp->maxpgno / (GIGABYTE / mfp->pagesize));
-			*bytesp = (u_int32_t) (mfp->maxpgno %
-			    (GIGABYTE / mfp->pagesize) + 1) * mfp->pagesize;
-			/*
-			 * After converting from 0-based maxpgno to #pages, we
-			 * might have bumped into the next gigabyte boundary.
-			 */
-			if (*bytesp >= GIGABYTE) {
-				*bytesp -= GIGABYTE;
-				*gbytesp += 1;
-			}
-		}
+		*gbytesp = (u_int32_t)
+		    (mfp->maxpgno / (GIGABYTE / mfp->pagesize));
+		*bytesp = (u_int32_t)
+		    ((mfp->maxpgno % (GIGABYTE / mfp->pagesize)) *
+		    mfp->pagesize);
 		MUTEX_UNLOCK(env, mfp->mutex);
 
 		ENV_LEAVE(env, ip);
@@ -359,34 +348,8 @@ __memp_get_maxsize(dbmfp, gbytesp, bytesp)
 }
 
 /*
- * __memp_set_maxpgno --
- *	Set the file's maxpgno from the configured max size. If that size is
- *	pagesize or less then the filesize limit is disabled.
- *
- * PUBLIC: void __memp_set_maxpgno __P((MPOOLFILE *, u_int32_t, u_int32_t));
- */
-void
-__memp_set_maxpgno(mfp, gbytes, bytes)
-	MPOOLFILE *mfp;
-	u_int32_t gbytes, bytes;
-{
-	if (gbytes == 0 && bytes <= mfp->pagesize)
-		mfp->maxpgno = 0;
-	else {
-		mfp->maxpgno = (db_pgno_t)
-		    (gbytes * (GIGABYTE / mfp->pagesize));
-		/* Round up to account for any fractional page. */
-		mfp->maxpgno += (db_pgno_t)
-		    ((bytes + mfp->pagesize - 1) / mfp->pagesize);
-		/* Convert from #pages to the zero-based max pgno. */
-		mfp->maxpgno--;
-	}
-}
-
-/*
  * __memp_set_maxsize --
- *	Set the file's maximum size; if the size is <= pagesize then
- *	remove any file size limit.
+ *	Set the file's maximum size.
  */
 static int
 __memp_set_maxsize(dbmfp, gbytes, bytes)
@@ -405,7 +368,10 @@ __memp_set_maxsize(dbmfp, gbytes, bytes)
 		ENV_ENTER(env, ip);
 
 		MUTEX_LOCK(env, mfp->mutex);
-		__memp_set_maxpgno(mfp, gbytes, bytes);
+		mfp->maxpgno = (db_pgno_t)
+		    (gbytes * (GIGABYTE / mfp->pagesize));
+		mfp->maxpgno += (db_pgno_t)
+		    ((bytes + mfp->pagesize - 1) / mfp->pagesize);
 		MUTEX_UNLOCK(env, mfp->mutex);
 
 		ENV_LEAVE(env, ip);

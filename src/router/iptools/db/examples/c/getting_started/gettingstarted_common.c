@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2004, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2004, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 #include "gettingstarted_common.h"
@@ -49,11 +49,9 @@ get_item_name(DB *dbp, const DBT *pkey, const DBT *pdata, DBT *skey)
 
 /* Opens a database */
 int
-open_database(DB **dbpp,       /* The DB handle that we are opening */
-    const char *file_name,     /* The file in which the db lives */
-    const char *program_name,  /* Name of the program */
-    FILE *error_file_pointer,
-    int is_secondary)
+open_database(DB **dbpp, const char *file_name,
+  const char *program_name, FILE *error_file_pointer,
+  int is_secondary)
 {
     DB *dbp;    /* For convenience */
     u_int32_t open_flags;
@@ -175,8 +173,8 @@ initialize_stockdbs(STOCK_DBS *my_stock)
     my_stock->inventory_dbp = NULL;
     my_stock->vendor_dbp = NULL;
     my_stock->itemname_sdbp = NULL;
-    my_stock->inventory_db_name = NULL;
     my_stock->vendor_db_name = NULL;
+    my_stock->inventory_db_name = NULL;
     my_stock->itemname_db_name = NULL;
 }
 

@@ -14,16 +14,17 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Storing C/C++
-        structures/objects</th>
+          <th colspan="3" align="center">Storing C/C++ structures/objects</th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="am_misc_partial.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 4.  Access Method Wrapup </th>
+          <th width="60%" align="center">Chapter 4. 
+		Access Method Wrapup
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="am_misc_perm.html">Next</a></td>
         </tr>
       </table>
@@ -33,23 +34,16 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title" style="clear: both"><a id="am_misc_struct"></a>Storing C/C++
-        structures/objects</h2>
+            <h2 class="title" style="clear: both"><a id="am_misc_struct"></a>Storing C/C++ structures/objects</h2>
           </div>
         </div>
       </div>
-      <p>
-        Berkeley DB can store any kind of data, that is, it is
-        entirely 8-bit clean. How you use this depends, to some
-        extent, on the application language you are using. In the
-        C/C++ languages, there are a couple of different ways to store
-        structures and objects.
-    </p>
-      <p>
-        First, you can do some form of run-length encoding and copy
-        your structure into another piece of memory before storing
-        it:
-    </p>
+      <p>Berkeley DB can store any kind of data, that is, it is entirely 8-bit clean.
+How you use this depends, to some extent, on the application language
+you are using.  In the C/C++ languages, there are a couple of different
+ways to store structures and objects.</p>
+      <p>First, you can do some form of run-length encoding and copy your
+structure into another piece of memory before storing it:</p>
       <a id="prog_am23"></a>
       <pre class="programlisting">struct {
     char *data1;
@@ -69,15 +63,11 @@ memcpy(p, &amp;info.data2, sizeof(info.data2));
 p += sizeof(info.data2);
 ...
 </pre>
-      <p>
-        and so on, until all the fields of the structure have been
-        loaded into the byte array. If you want more examples, see the
-        Berkeley DB logging routines (for example,
-        btree/btree_auto.c:__bam_split_log()). This technique is
-        generally known as "marshalling". If you use this technique,
-        you must then un-marshall the data when you read it
-        back:
-    </p>
+      <p>and so on, until all the fields of the structure have been loaded into
+the byte array.  If you want more examples, see the Berkeley DB logging
+routines (for example, btree/btree_auto.c:__bam_split_log()).  This
+technique is generally known as "marshalling".  If you use this
+technique, you must then un-marshall the data when you read it back:</p>
       <a id="prog_am24"></a>
       <pre class="programlisting">struct {
     char *data1;
@@ -97,41 +87,27 @@ memcpy(&amp;info.data2, p, sizeof(info.data2));
 p += sizeof(info.data2);
 ...
 </pre>
-      <p>
-        and so on.
-    </p>
-      <p>
-        The second way to solve this problem only works if you have
-        just one variable length field in the structure. In that case,
-        you can declare the structure as follows:
-    </p>
+      <p>and so on.</p>
+      <p>The second way to solve this problem only works if you have just one
+variable length field in the structure.  In that case, you can declare
+the structure as follows:</p>
       <pre class="programlisting">struct {
     int a, b, c;
     u_int8_t buf[1];
 } info;</pre>
-      <p>
-        Then, let's say you have a string you want to store in this
-        structure. When you allocate the structure, you allocate it
-        as:
-    </p>
+      <p>Then, let's say you have a string you want to store in this structure.
+When you allocate the structure, you allocate it as:</p>
       <pre class="programlisting">malloc(sizeof(struct info) + strlen(string));</pre>
-      <p>
-        Since the allocated memory is contiguous, you can the
-        initialize the structure as:
-    </p>
+      <p>Since the allocated memory is contiguous, you can the initialize the
+structure as:</p>
       <pre class="programlisting">info.a = 1;
 info.b = 2;
 info.c = 3;
 memcpy(&amp;info.buf[0], string, strlen(string) + 1);</pre>
-      <p>
-        and give it to Berkeley DB to store, with a length
-        of:
-    </p>
+      <p>and give it to Berkeley DB to store, with a length of:</p>
       <pre class="programlisting">sizeof(struct info) + strlen(string);</pre>
-      <p>
-        In this case, the structure can be copied out of the
-        database and used without any additional work.
-    </p>
+      <p>In this case, the structure can be copied out of the database and used
+without any additional work.</p>
     </div>
     <div class="navfooter">
       <hr />
@@ -144,8 +120,7 @@ memcpy(&amp;info.buf[0], string, strlen(string) + 1);</pre>
           <td width="40%" align="right"> <a accesskey="n" href="am_misc_perm.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Partial record storage and
-        retrieval </td>
+          <td width="40%" align="left" valign="top">Partial record storage and retrieval </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

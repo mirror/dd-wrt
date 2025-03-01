@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -42,7 +42,6 @@ public final class ReplicationStatus {
 
     /**
     The operation succeeded.
-    @return if the operation succeeded
     */
     public boolean isSuccess() {
         return errCode == 0;
@@ -53,7 +52,6 @@ public final class ReplicationStatus {
     This is an indication that this message is irrelevant to the current
     replication state (for example, an old message from a previous
     generation arrives and is processed late).
-    @return if the message cannot be processed
     **/
     public boolean isIgnore() {
         return errCode == DbConstants.DB_REP_IGNORE;
@@ -63,7 +61,6 @@ public final class ReplicationStatus {
     Processing this message resulted in the processing of records that
     are permanent.  The maximum LSN of the permanent records stored is
     available from the getLSN method.
-    @return if the message is a permanent message
     */
     public boolean isPermanent() {
         return errCode == DbConstants.DB_REP_ISPERM;
@@ -76,7 +73,6 @@ public final class ReplicationStatus {
     getCDAta method.  The application should take whatever action is
     needed to establish a communication channel with this new
     environment.
-    @return if the system received contact information from a new environment
     */
     public boolean isNewSite() {
         return errCode == DbConstants.DB_REP_NEWSITE;
@@ -87,7 +83,6 @@ public final class ReplicationStatus {
     but was not written to disk.  The LSN of this record is available from
     the getLSN method.  The application should take whatever action is
     deemed necessary to retain its recoverability characteristics.
-    @return if a permanent message was not written to disk
     */
     public boolean isNotPermanent() {
         return errCode == DbConstants.DB_REP_NOTPERM;
@@ -100,7 +95,6 @@ public final class ReplicationStatus {
     from the getCDAta method.  The application should take whatever
     action is needed to establish a communication channel with this new
     environment.
-    @return the opaque data received from a new environment
     */
     public DatabaseEntry getCData() {
         return cdata;
@@ -112,7 +106,6 @@ public final class ReplicationStatus {
     method returns the environment ID of the new master.  It is the
     application's responsibility to ensure that the matching node begins acting
     as the master environment.
-    @return the environment ID
     */
     public int getEnvID() {
         return envid;
@@ -125,7 +118,6 @@ public final class ReplicationStatus {
     the record is available from the getLSN method.  The application
     should take whatever action is deemed necessary to retain its
     recoverability characteristics.
-    @return the LSN of the last processed permanent message
     */
     public LogSequenceNumber getLSN() {
         return lsn;

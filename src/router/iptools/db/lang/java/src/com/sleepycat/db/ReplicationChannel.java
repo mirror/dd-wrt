@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -24,7 +24,6 @@ public class ReplicationChannel {
 
     /**
     Close the channel.
-    @throws DatabaseException if a failure occurs.
     */
     public void close()
         throws DatabaseException {
@@ -35,8 +34,7 @@ public class ReplicationChannel {
     /**
     Send a message on the message channel asynchronously.
     <p>
-    @param messages the messages
-    @throws DatabaseException if a failure occurs.
+    @param messages
     */
     public void sendMessage(java.util.Set messages) 
         throws DatabaseException {
@@ -49,10 +47,9 @@ public class ReplicationChannel {
     Send request on the message channel. It blocks waiting for a response 
     before returning.
     <p>
-    @param messages the messages
-    @param response the response
-    @param timeout the timeout
-    @throws DatabaseException if a failure occurs.
+    @param messages
+    @param response
+    @param timeout
     */
     public void sendRequest(
         java.util.Set messages, DatabaseEntry response, long timeout) 
@@ -65,8 +62,7 @@ public class ReplicationChannel {
     /**
     Sets the default timeout value for the channel.
     <p>
-    @param timeout the timeout
-    @throws DatabaseException if a failure occurs.
+    @param timeout
     */
     public void setTimeout(long timeout) 
         throws DatabaseException {

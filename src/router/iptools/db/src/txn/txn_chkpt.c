@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1995, 1996
@@ -56,10 +56,9 @@ __txn_checkpoint_pp(dbenv, kbytes, minutes, flags)
 	DB_ENV *dbenv;
 	u_int32_t kbytes, minutes, flags;
 {
-	DB_ENV *slice;
 	DB_THREAD_INFO *ip;
 	ENV *env;
-	int i, ret;
+	int ret;
 
 	env = dbenv->env;
 
@@ -82,12 +81,6 @@ __txn_checkpoint_pp(dbenv, kbytes, minutes, flags)
 	REPLICATION_WRAP(env,
 	    (__txn_checkpoint(env, kbytes, minutes, flags)), 0, ret);
 	ENV_LEAVE(env, ip);
-
-	if (ret == 0)
-		SLICE_FOREACH(dbenv, slice, i)
-			if ((ret = __txn_checkpoint_pp(slice,
-			    kbytes, minutes, flags)) != 0)
-				break;
 	return (ret);
 }
 
@@ -384,7 +377,7 @@ __txn_getckp(env, lsnp)
 	TXN_SYSTEM_UNLOCK(env);
 
 	if (IS_ZERO_LSN(lsn))
-		return (USR_ERR(env, DB_NOTFOUND));
+		return (DB_NOTFOUND);
 
 	*lsnp = lsn;
 	return (0);

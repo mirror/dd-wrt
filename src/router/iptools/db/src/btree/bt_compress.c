@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 #include "db_config.h"
@@ -352,19 +352,15 @@ __bam_compress_marshal_data(dbp, data, destbuf)
  * __bam_compress_dupcmp --
  *	Duplicate comparison function for compressed BTrees.
  *
- * PUBLIC: int __bam_compress_dupcmp __P((DB *, const DBT *, const DBT *,
- * PUBLIC:     size_t *));
+ * PUBLIC: int __bam_compress_dupcmp __P((DB *, const DBT *, const DBT *));
  */
 int
-__bam_compress_dupcmp(db, a, b, locp)
+__bam_compress_dupcmp(db, a, b)
 	DB *db;
 	const DBT *a;
 	const DBT *b;
-	size_t *locp;
 {
 	DBT dcmp_a, dcmp_b;
-
-	COMPQUIET(locp, NULL);
 
 	/* Decompress the initial data in a */
 	CMP_UNMARSHAL_DATA(a, &dcmp_a);
@@ -384,7 +380,7 @@ __bam_compress_dupcmp(db, a, b, locp)
 
 	/* Call the user's duplicate compare function */
 	return ((BTREE *)db->bt_internal)->
-		compress_dup_compare(db, &dcmp_a, &dcmp_b, NULL);
+		compress_dup_compare(db, &dcmp_a, &dcmp_b);
 }
 
 /*
@@ -403,6 +399,8 @@ __bam_defcompress(dbp, prevKey, prevData, key, data, dest)
 	u_int8_t *ptr;
 	const u_int8_t *k, *p;
 	size_t len, prefix, suffix;
+
+	COMPQUIET(dbp, NULL);
 
 	k = (const u_int8_t*)key->data;
 	p = (const u_int8_t*)prevKey->data;
@@ -428,7 +426,7 @@ __bam_defcompress(dbp, prevKey, prevData, key, data, dest)
 		dest->size = (u_int32_t)(1 + __db_compress_count_int(prefix) +
 			__db_compress_count_int(suffix) + suffix);
 		if (dest->size > dest->ulen)
-			return (USR_ERR(dbp->env, DB_BUFFER_SMALL));
+			return (DB_BUFFER_SMALL);
 
 		/* Magic identifying byte */
 		ptr = (u_int8_t*)dest->data;
@@ -452,7 +450,7 @@ __bam_defcompress(dbp, prevKey, prevData, key, data, dest)
 		__db_compress_count_int(suffix) +
 		__db_compress_count_int(data->size) + suffix + data->size);
 	if (dest->size > dest->ulen)
-		return (USR_ERR(dbp->env, DB_BUFFER_SMALL));
+		return (DB_BUFFER_SMALL);
 
 	/* prefix length */
 	ptr = (u_int8_t*)dest->data;
@@ -470,8 +468,6 @@ __bam_defcompress(dbp, prevKey, prevData, key, data, dest)
 
 	/* data */
 	memcpy(ptr, data->data, data->size);
-
-	COMPQUIET(dbp, NULL);
 
 	return (0);
 }
@@ -492,6 +488,8 @@ __bam_defdecompress(dbp, prevKey, prevData, compressed, destKey, destData)
 	u_int8_t *s, *d;
 	u_int32_t prefix, suffix, size;
 
+	COMPQUIET(dbp, NULL);
+
 	/*
 	 * Check for the magic identifying byte, that tells us that this is a
 	 * compressed duplicate value.
@@ -504,27 +502,27 @@ __bam_defdecompress(dbp, prevKey, prevData, compressed, destKey, destData)
 		/* Unmarshal prefix and suffix */
 		size += __db_decompress_count_int(s);
 		if (size > compressed->size)
-			return (USR_ERR(dbp->env, EINVAL));
+			return (EINVAL);
 		s += __db_decompress_int32(s, &prefix);
 
 		size += __db_decompress_count_int(s);
 		if (size > compressed->size)
-			return (USR_ERR(dbp->env, EINVAL));
+			return (EINVAL);
 		s += __db_decompress_int32(s, &suffix);
 
 		/* Check destination lengths */
 		destKey->size = prevKey->size;
 		destData->size = prefix + suffix;
 		if (destKey->size > destKey->ulen ||
-		    destData->size > destData->ulen)
-			return (USR_ERR(dbp->env, DB_BUFFER_SMALL));
+			destData->size > destData->ulen)
+			return (DB_BUFFER_SMALL);
 
 		/* Write the key */
 		memcpy(destKey->data, prevKey->data, destKey->size);
 
 		/* Write the prefix */
 		if (prefix > prevData->size)
-			return (USR_ERR(dbp->env, EINVAL));
+			return (EINVAL);
 		d = (u_int8_t*)destData->data;
 		memcpy(d, prevData->data, prefix);
 		d += prefix;
@@ -532,7 +530,7 @@ __bam_defdecompress(dbp, prevKey, prevData, compressed, destKey, destData)
 		/* Write the suffix */
 		size += suffix;
 		if (size > compressed->size)
-			return (USR_ERR(dbp->env, EINVAL));
+			return (EINVAL);
 		memcpy(d, s, suffix);
 		s += suffix;
 
@@ -544,27 +542,27 @@ __bam_defdecompress(dbp, prevKey, prevData, compressed, destKey, destData)
 	/* Unmarshal prefix, suffix and data length */
 	size = __db_decompress_count_int(s);
 	if (size > compressed->size)
-		return (USR_ERR(dbp->env, EINVAL));
+		return (EINVAL);
 	s += __db_decompress_int32(s, &prefix);
 
 	size += __db_decompress_count_int(s);
 	if (size > compressed->size)
-		return (USR_ERR(dbp->env, EINVAL));
+		return (EINVAL);
 	s += __db_decompress_int32(s, &suffix);
 
 	size += __db_decompress_count_int(s);
 	if (size > compressed->size)
-		return (USR_ERR(dbp->env, EINVAL));
+		return (EINVAL);
 	s += __db_decompress_int32(s, &destData->size);
 
 	/* Check destination lengths */
 	destKey->size = prefix + suffix;
 	if (destKey->size > destKey->ulen || destData->size > destData->ulen)
-		return (USR_ERR(dbp->env, DB_BUFFER_SMALL));
+		return (DB_BUFFER_SMALL);
 
 	/* Write the prefix */
 	if (prefix > prevKey->size)
-		return (USR_ERR(dbp->env, EINVAL));
+		return (EINVAL);
 	d = (u_int8_t*)destKey->data;
 	memcpy(d, prevKey->data, prefix);
 	d += prefix;
@@ -572,21 +570,19 @@ __bam_defdecompress(dbp, prevKey, prevData, compressed, destKey, destData)
 	/* Write the suffix */
 	size += suffix;
 	if (size > compressed->size)
-		return (USR_ERR(dbp->env, EINVAL));
+		return (EINVAL);
 	memcpy(d, s, suffix);
 	s += suffix;
 
 	/* Write the data */
 	size += destData->size;
 	if (size > compressed->size)
-		return (USR_ERR(dbp->env, EINVAL));
+		return (EINVAL);
 	memcpy(destData->data, s, destData->size);
 	s += destData->size;
 
 	/* Return bytes read */
 	compressed->size = (u_int32_t)(s - (u_int8_t*)compressed->data);
-	COMPQUIET(dbp, NULL);
-
 	return (0);
 }
 
@@ -640,7 +636,7 @@ __bamc_next_decompress(dbc)
 	db = dbc->dbp;
 
 	if (cp->compcursor >= cp->compend)
-		return (DBC_ERR(dbc, DB_NOTFOUND));
+		return (DB_NOTFOUND);
 
 	cp->prevKey = cp->currentKey;
 	cp->prevData = cp->currentData;
@@ -1255,7 +1251,7 @@ __bamc_compress_merge_delete(dbc, stream, countp)
 					 * chunk, but don't delete any more
 					 * entries.
 					 */
-					bulk_ret = DBC_ERR(dbc, DB_NOTFOUND);
+					bulk_ret = DB_NOTFOUND;
 					moreStream = 0;
 					iSmallEnough = 0;
 				} else
@@ -1322,7 +1318,7 @@ __bamc_compress_merge_delete(dbc, stream, countp)
 	CMP_FREE_DBT(env, &nextk);
 	CMP_FREE_DBT(env, &nextc);
 
-	return (ret != 0 ? ret : DBC_ERR(dbc, bulk_ret));
+	return (ret != 0 ? ret : bulk_ret);
 }
 
 /*
@@ -1393,7 +1389,7 @@ __bamc_compress_merge_delete_dups(dbc, stream, countp)
 				 * in the database
 				 */
 				if (ifound == 0) {
-					bulk_ret = DBC_ERR(dbc, DB_NOTFOUND);
+					bulk_ret = DB_NOTFOUND;
 				} else
 					++chunk_count;
 				break;
@@ -1467,7 +1463,7 @@ __bamc_compress_merge_delete_dups(dbc, stream, countp)
 					 * current chunk, but don't delete
 					 * any more entries.
 					 */
-					bulk_ret = DBC_ERR(dbc, DB_NOTFOUND);
+					bulk_ret = DB_NOTFOUND;
 					moreStream = 0;
 					iSmallEnough = 0;
 				} else
@@ -1545,7 +1541,7 @@ __bamc_compress_merge_delete_dups(dbc, stream, countp)
 	CMP_FREE_DBT(env, &pdestdata);
 	CMP_FREE_DBT(env, &nextk);
 
-	return (ret != 0 ? ret : DBC_ERR(dbc, bulk_ret));
+	return (ret != 0 ? ret : bulk_ret);
 }
 
 /******************************************************************************/
@@ -1632,7 +1628,7 @@ __bamc_compress_get_prev_dup(dbc, flags)
 	t = (BTREE *)dbp->bt_internal;
 
 	if (cp->currentKey == 0)
-		return (USR_ERR(dbp->env, EINVAL));
+		return (EINVAL);
 
 	/* If this is a deleted entry, del_key is already set, otherwise we
 	   have to set it now */
@@ -1645,8 +1641,8 @@ __bamc_compress_get_prev_dup(dbc, flags)
 	if ((ret = __bamc_compress_get_prev(dbc, flags)) != 0)
 		return (ret);
 
-	if (t->bt_compare(dbp, cp->currentKey, &cp->del_key, NULL) != 0)
-		return (DBC_ERR(dbc, DB_NOTFOUND));
+	if (t->bt_compare(dbp, cp->currentKey, &cp->del_key) != 0)
+		return (DB_NOTFOUND);
 
 	return (0);
 }
@@ -1688,7 +1684,7 @@ __bamc_compress_get_prev_nodup(dbc, flags)
 	do
 		if ((ret = __bamc_compress_get_prev(dbc, flags)) != 0)
 			return (ret);
-	while (t->bt_compare(dbp, cp->currentKey, &cp->del_key, NULL) == 0);
+	while (t->bt_compare(dbp, cp->currentKey, &cp->del_key) == 0);
 
 	return (0);
 }
@@ -1706,7 +1702,7 @@ __bamc_compress_get_next(dbc, flags)
 
 	if (F_ISSET(cp, C_COMPRESS_DELETED)) {
 		if (cp->currentKey == 0)
-			return (DBC_ERR(dbc, DB_NOTFOUND));
+			return (DB_NOTFOUND);
 		F_CLR(cp, C_COMPRESS_DELETED);
 		return (0);
 	} else if (cp->currentKey) {
@@ -1726,7 +1722,7 @@ __bamc_compress_get_next(dbc, flags)
 		 * to the right place
 		 */
 		__bamc_compress_reset(dbc);
-		return (DBC_ERR(dbc, DB_NOTFOUND));
+		return (DB_NOTFOUND);
 	} else if (ret != 0)
 		return (ret);
 
@@ -1757,18 +1753,17 @@ __bamc_compress_get_next_dup(dbc, key, flags)
 		 * deleted entry.
 		 */
 		if (cp->currentKey == 0)
-			return (DBC_ERR(dbc, DB_NOTFOUND));
+			return (DB_NOTFOUND);
 		F_CLR(cp, C_COMPRESS_DELETED);
-		return (t->bt_compare(dbp, cp->currentKey,
-		    &cp->del_key, NULL) == 0 ? 0 : DB_NOTFOUND);
+		return (t->bt_compare(dbp,
+		    cp->currentKey, &cp->del_key) == 0 ? 0 : DB_NOTFOUND);
 	} else if (cp->currentKey == 0)
-		return (USR_ERR(dbp->env, EINVAL));
+		return (EINVAL);
 
 	/* Check that the next entry has the same key as the previous entry */
 	ret = __bamc_next_decompress(dbc);
-	if (ret == 0 && t->bt_compare(dbp,
-	    cp->currentKey, cp->prevKey, NULL) != 0)
-		return (DBC_ERR(dbc, DB_NOTFOUND));
+	if (ret == 0 && t->bt_compare(dbp, cp->currentKey, cp->prevKey) != 0)
+		return (DB_NOTFOUND);
 	if (ret != DB_NOTFOUND)
 		return (ret);
 
@@ -1788,7 +1783,7 @@ __bamc_compress_get_next_dup(dbc, key, flags)
 		 * will end up pointing to the right place
 		 */
 		__bamc_compress_reset(dbc);
-		return (DBC_ERR(dbc, DB_NOTFOUND));
+		return (DB_NOTFOUND);
 	} else if (ret != 0)
 		return (ret);
 
@@ -1796,8 +1791,8 @@ __bamc_compress_get_next_dup(dbc, key, flags)
 		return (ret);
 
 	/* Check the keys are the same */
-	if (t->bt_compare(dbp, cp->currentKey, key, NULL) != 0)
-		return (DBC_ERR(dbc, DB_NOTFOUND));
+	if (t->bt_compare(dbp, cp->currentKey, key) != 0)
+		return (DB_NOTFOUND);
 
 	return (0);
 }
@@ -1833,7 +1828,7 @@ __bamc_compress_get_next_nodup(dbc, flags)
 	do
 		if ((ret = __bamc_compress_get_next(dbc, flags)) != 0)
 			return (ret);
-	while (t->bt_compare(dbp, cp->currentKey, &cp->del_key, NULL) == 0);
+	while (t->bt_compare(dbp, cp->currentKey, &cp->del_key) == 0);
 
 	return (ret);
 }
@@ -1893,14 +1888,14 @@ __bamc_compress_get_set(dbc, key, data, method, flags)
 		if (ret == 0 &&
 		    __db_compare_both(dbp, cp->currentKey, 0, key, 0) != 0) {
 			/* We didn't find the key */
-			ret = DBC_ERR(dbc, DB_NOTFOUND);
+			ret = DB_NOTFOUND;
 		}
 		break;
 	case DB_GET_BOTH:
 		if (ret == 0 && (cmp != 0 || (!F_ISSET(dbp, DB_AM_DUPSORT) &&
-		    __dbt_defcmp(dbp, cp->currentData, data, NULL) != 0))) {
+		    __bam_defcmp(dbp, cp->currentData, data) != 0))) {
 			/* We didn't find the key/data pair */
-			ret = DBC_ERR(dbc, DB_NOTFOUND);
+			ret = DB_NOTFOUND;
 		}
 		break;
 	default:
@@ -1928,7 +1923,7 @@ __bamc_compress_get_bothc(dbc, data, flags)
 	   position */
 	if (__db_compare_both(dbp, cp->currentKey,
 	    cp->currentData, cp->currentKey, data) >= 0)
-		return (DBC_ERR(dbc, DB_NOTFOUND));
+		return (DB_NOTFOUND);
 
 	cmp = 0;
 	/* Perform a linear search for the data in the current chunk */
@@ -1938,7 +1933,7 @@ __bamc_compress_get_bothc(dbc, data, flags)
 		continue;
 
 	if (ret == 0)
-		return (cmp == 0 ? 0 : DBC_ERR(dbc, DB_NOTFOUND));
+		return (cmp == 0 ? 0 : DB_NOTFOUND);
 	if (ret != DB_NOTFOUND)
 		return (ret);
 
@@ -2091,7 +2086,7 @@ __bamc_compress_iget(dbc, key, data, flags)
 		if (F_ISSET(cp, C_COMPRESS_DELETED))
 			ret = DB_KEYEMPTY;
 		else if (cp->currentKey == NULL)
-			ret = USR_ERR(dbp->env, EINVAL);
+			ret = EINVAL;
 		break;
 	case DB_FIRST:
 		__bamc_compress_reset(dbc);
@@ -2121,7 +2116,7 @@ __bamc_compress_iget(dbc, key, data, flags)
 		break;
 	case DB_SET:
 		if (((BTREE *)
-		    dbc->dbp->bt_internal)->bt_compare == __dbt_defcmp)
+		    dbc->dbp->bt_internal)->bt_compare == __bam_defcmp)
 			F_SET(key, DB_DBT_ISSET);
 		/* FALL THROUGH */
 	case DB_SET_RANGE:
@@ -2129,12 +2124,12 @@ __bamc_compress_iget(dbc, key, data, flags)
 		break;
 	case DB_GET_BOTH:
 		if (!F_ISSET(dbc->dbp, DB_AM_DUPSORT) || ((BTREE *)dbc->dbp->
-		   bt_internal)->compress_dup_compare == __dbt_defcmp)
+		   bt_internal)->compress_dup_compare == __bam_defcmp)
 			F_SET(data, DB_DBT_ISSET);
 		/* FALL THROUGH */
 	case DB_GET_BOTH_RANGE:
 		if (((BTREE *)
-		    dbc->dbp->bt_internal)->bt_compare == __dbt_defcmp)
+		    dbc->dbp->bt_internal)->bt_compare == __bam_defcmp)
 			F_SET(key, DB_DBT_ISSET);
 		ret = __bamc_compress_get_set(dbc, key, data, method, flags);
 		break;
@@ -2282,7 +2277,7 @@ __bamc_compress_iput(dbc, key, data, flags)
 	switch (flags) {
 	case DB_CURRENT:
 		if (cp->currentKey == 0 || F_ISSET(cp, C_COMPRESS_DELETED)) {
-			ret = DBC_ERR(dbc, DB_NOTFOUND);
+			ret = DB_NOTFOUND;
 			goto end;
 		}
 
@@ -2295,10 +2290,10 @@ __bamc_compress_iput(dbc, key, data, flags)
 
 		if (F_ISSET(dbp, DB_AM_DUPSORT) &&
 		    ((BTREE *)dbp->bt_internal)->compress_dup_compare(
-		    dbp, cp->currentData, data, NULL) != 0) {
-			ret = USR_ERR(env, EINVAL);
+		    dbp, cp->currentData, data) != 0) {
 			__db_errx(env, DB_STR("1032",
 			    "Existing data sorts differently from put data"));
+			ret = EINVAL;
 			goto end;
 		}
 		CMP_INIT_DBT(&kcpy);
@@ -2469,7 +2464,7 @@ __bamc_compress_idel(dbc, flags)
 	if (F_ISSET(cp, C_COMPRESS_DELETED))
 		return DB_KEYEMPTY;
 	if (cp->currentKey == 0)
-		return (DBC_ERR(dbc, DB_NOTFOUND));
+		return DB_NOTFOUND;
 
 	if ((ret = __bam_compress_set_dbt(dbp, &cp->del_key,
 		     cp->currentKey->data, cp->currentKey->size)) != 0)
@@ -2736,7 +2731,7 @@ __bamc_compress_cmp(dbc, other_dbc, result)
  err:
 	__db_errx(dbc->env, DB_STR("1033",
 	    "Both cursors must be initialized before calling DBC->cmp."));
-	return (USR_ERR(dbp->env, EINVAL));
+	return (EINVAL);
 }
 
 /*
@@ -3020,8 +3015,7 @@ __bam_compress_count(dbc, nkeysp, ndatap)
 		if (ret != 0)
 			goto err;
 
-		if (t->bt_compare(dbp,
-		    cp_n->currentKey, cp_n->prevKey, NULL) != 0)
+		if (t->bt_compare(dbp, cp_n->currentKey, cp_n->prevKey) != 0)
 			nkeys += 1;
 	}
 
@@ -3074,7 +3068,7 @@ __bam_compress_check_sort_multiple_key(dbp, key)
 		if (__db_compare_both(dbp, &key1, &data1, &key2, &data2) < 0) {
 			__db_errx(dbp->env, DB_STR("1170",
 		    "The key/data pairs in the buffer are not sorted."));
-			return (USR_ERR(dbp->env, EINVAL));
+			return (EINVAL);
 		}
 		key2.data = key1.data;
 		key2.size = key1.size;
@@ -3121,7 +3115,7 @@ __bam_compress_check_sort_multiple(dbp, key, data)
 		if (__db_compare_both(dbp, &key1, &data1, &key2, &data2) < 0) {
 			__db_errx(dbp->env, DB_STR("1171",
 		    "The key/data pairs in the buffer are not sorted."));
-			return (USR_ERR(dbp->env, EINVAL));
+			return (EINVAL);
 		}
 		key2.data = key1.data;
 		key2.size = key1.size;
@@ -3164,7 +3158,7 @@ __bam_compress_check_sort_multiple_keyonly(dbp, key)
 		if (__db_compare_both(dbp, &key1, NULL, &key2, NULL) < 0) {
 			__db_errx(dbp->env, DB_STR("1172",
 			    "The DBT items in the buffer are not sorted"));
-			return (USR_ERR(dbp->env, EINVAL));
+			return (EINVAL);
 		}
 		key2.data = key1.data;
 		key2.size = key1.size;

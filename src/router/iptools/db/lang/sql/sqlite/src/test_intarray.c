@@ -37,13 +37,13 @@ struct sqlite3_intarray {
 typedef struct intarray_vtab intarray_vtab;
 typedef struct intarray_cursor intarray_cursor;
 
-/* An intarray table object */
+/* A intarray table object */
 struct intarray_vtab {
   sqlite3_vtab base;            /* Base class */
   sqlite3_intarray *pContent;   /* Content of the integer array */
 };
 
-/* An intarray cursor object */
+/* A intarray cursor object */
 struct intarray_cursor {
   sqlite3_vtab_cursor base;    /* Base class */
   int i;                       /* Current cursor position */
@@ -85,7 +85,7 @@ static int intarrayCreate(
   char **pzErr              /* Put error message text here */
 ){
   int rc = SQLITE_NOMEM;
-  intarray_vtab *pVtab = sqlite3_malloc64(sizeof(intarray_vtab));
+  intarray_vtab *pVtab = sqlite3_malloc(sizeof(intarray_vtab));
 
   if( pVtab ){
     memset(pVtab, 0, sizeof(intarray_vtab));
@@ -102,7 +102,7 @@ static int intarrayCreate(
 static int intarrayOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   int rc = SQLITE_NOMEM;
   intarray_cursor *pCur;
-  pCur = sqlite3_malloc64(sizeof(intarray_cursor));
+  pCur = sqlite3_malloc(sizeof(intarray_cursor));
   if( pCur ){
     memset(pCur, 0, sizeof(intarray_cursor));
     *ppCursor = (sqlite3_vtab_cursor *)pCur;
@@ -216,7 +216,7 @@ static sqlite3_module intarrayModule = {
 ** explicitly by the application, the virtual table will be dropped implicitly
 ** by the system when the database connection is closed.
 */
-SQLITE_API int sqlite3_intarray_create(
+int sqlite3_intarray_create(
   sqlite3 *db,
   const char *zName,
   sqlite3_intarray **ppReturn
@@ -225,7 +225,7 @@ SQLITE_API int sqlite3_intarray_create(
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   sqlite3_intarray *p;
 
-  *ppReturn = p = sqlite3_malloc64( sizeof(*p) );
+  *ppReturn = p = sqlite3_malloc( sizeof(*p) );
   if( p==0 ){
     return SQLITE_NOMEM;
   }
@@ -250,7 +250,7 @@ SQLITE_API int sqlite3_intarray_create(
 ** any query against the corresponding virtual table.  If the integer
 ** array does change or is deallocated undefined behavior will result.
 */
-SQLITE_API int sqlite3_intarray_bind(
+int sqlite3_intarray_bind(
   sqlite3_intarray *pIntArray,   /* The intarray object to bind to */
   int nElements,                 /* Number of elements in the intarray */
   sqlite3_int64 *aElements,      /* Content of the intarray */
@@ -278,7 +278,7 @@ SQLITE_API int sqlite3_intarray_bind(
 extern int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
 extern void *sqlite3TestTextToPtr(const char*);
 extern int sqlite3TestMakePointerStr(Tcl_Interp*, char *zPtr, void*);
-extern const char *sqlite3ErrName(int);
+extern const char *sqlite3TestErrorName(int);
 
 /*
 **    sqlite3_intarray_create  DB  NAME
@@ -309,7 +309,7 @@ static int test_intarray_create(
 #endif
   if( rc!=SQLITE_OK ){
     assert( pArray==0 );
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), (char*)0);
+    Tcl_AppendResult(interp, sqlite3TestErrorName(rc), (char*)0);
     return TCL_ERROR;
   }
   sqlite3TestMakePointerStr(interp, zPtr, pArray);
@@ -340,19 +340,18 @@ static int test_intarray_bind(
   pArray = (sqlite3_intarray*)sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
   n = objc - 2;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  a = sqlite3_malloc64( sizeof(a[0])*n );
+  a = sqlite3_malloc( sizeof(a[0])*n );
   if( a==0 ){
     Tcl_AppendResult(interp, "SQLITE_NOMEM", (char*)0);
     return TCL_ERROR;
   }
   for(i=0; i<n; i++){
-    Tcl_WideInt x = 0;
-    Tcl_GetWideIntFromObj(0, objv[i+2], &x);
-    a[i] = x;
+    a[i] = 0;
+    Tcl_GetWideIntFromObj(0, objv[i+2], &a[i]);
   }
   rc = sqlite3_intarray_bind(pArray, n, a, sqlite3_free);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), (char*)0);
+    Tcl_AppendResult(interp, sqlite3TestErrorName(rc), (char*)0);
     return TCL_ERROR;
   }
 #endif

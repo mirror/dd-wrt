@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -110,7 +110,7 @@ __lock_inherit_timeout(env, parent, locker)
 	if (parent == NULL ||
 	    (timespecisset(&parent->tx_expire) &&
 	    !F_ISSET(parent, DB_LOCKER_TIMEOUT))) {
-		ret = USR_ERR(env, EINVAL);
+		ret = EINVAL;
 		goto err;
 	}
 
@@ -120,7 +120,7 @@ __lock_inherit_timeout(env, parent, locker)
 		locker->lk_timeout = parent->lk_timeout;
 		F_SET(locker, DB_LOCKER_TIMEOUT);
 		if (!timespecisset(&parent->tx_expire))
-			ret = USR_ERR(env, EINVAL);
+			ret = EINVAL;
 	}
 
 err:	LOCK_REGION_UNLOCK(env);

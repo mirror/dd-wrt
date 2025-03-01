@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -133,8 +133,6 @@ proc test015_body { method off_low off_hi rcount {nentries 10000} args } {
 
 	# Here is the loop where we put and get each key/data pair
 	# Each put is a partial put of a record that does not exist.
-	# Put in the -nooverwrite flag to exercise that code path -- 
-	# it should not make any difference on this initial put.  
 	set did [open $dict]
 	while { [gets $did str] != -1 && $count < $nentries } {
 		if { [is_record_based $method] == 1 } {
@@ -187,7 +185,7 @@ proc test015_body { method off_low off_hi rcount {nentries 10000} args } {
 			error_check_good txn [is_valid_txn $t $env] TRUE
 			set txn "-txn $t"
 		}
-		set ret [eval {$db put} $txn -nooverwrite \
+		set ret [eval {$db put} $txn \
 		    {-partial [list $off [string length $data]] $key $data}]
 		error_check_good put $ret 0
 		if { $txnenv == 1 } {

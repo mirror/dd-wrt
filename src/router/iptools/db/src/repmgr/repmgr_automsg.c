@@ -463,7 +463,6 @@ __repmgr_membership_data_marshal(env, argp, bp)
 	__repmgr_membership_data_args *argp;
 	u_int8_t *bp;
 {
-	DB_HTONL_COPYOUT(env, bp, argp->status);
 	DB_HTONL_COPYOUT(env, bp, argp->flags);
 }
 
@@ -482,7 +481,6 @@ __repmgr_membership_data_unmarshal(env, argp, bp, max, nextp)
 {
 	if (max < __REPMGR_MEMBERSHIP_DATA_SIZE)
 		goto too_few;
-	DB_NTOHL_COPYIN(env, argp->status, bp);
 	DB_NTOHL_COPYIN(env, argp->flags, bp);
 
 	if (nextp != NULL)
@@ -492,46 +490,6 @@ __repmgr_membership_data_unmarshal(env, argp, bp, max, nextp)
 too_few:
 	__db_errx(env, DB_STR("3675",
 	    "Not enough input bytes to fill a __repmgr_membership_data message"));
-	return (EINVAL);
-}
-
-/*
- * PUBLIC: void __repmgr_v4membership_data_marshal __P((ENV *,
- * PUBLIC:	 __repmgr_v4membership_data_args *, u_int8_t *));
- */
-void
-__repmgr_v4membership_data_marshal(env, argp, bp)
-	ENV *env;
-	__repmgr_v4membership_data_args *argp;
-	u_int8_t *bp;
-{
-	DB_HTONL_COPYOUT(env, bp, argp->flags);
-}
-
-/*
- * PUBLIC: int __repmgr_v4membership_data_unmarshal __P((ENV *,
- * PUBLIC:	 __repmgr_v4membership_data_args *, u_int8_t *, size_t,
- * PUBLIC:	 u_int8_t **));
- */
-int
-__repmgr_v4membership_data_unmarshal(env, argp, bp, max, nextp)
-	ENV *env;
-	__repmgr_v4membership_data_args *argp;
-	u_int8_t *bp;
-	size_t max;
-	u_int8_t **nextp;
-{
-	if (max < __REPMGR_V4MEMBERSHIP_DATA_SIZE)
-		goto too_few;
-	DB_NTOHL_COPYIN(env, argp->flags, bp);
-
-	if (nextp != NULL)
-		*nextp = bp;
-	return (0);
-
-too_few:
-	__db_errx(env, DB_STR("3675",
-	    "Not enough input bytes to fill a __repmgr_v4membership_data message"));
 	return (EINVAL);
 }
 
@@ -711,7 +669,6 @@ __repmgr_site_info_marshal(env, argp, bp, max, lenp)
 		bp += argp->host.size;
 	}
 	DB_HTONS_COPYOUT(env, bp, argp->port);
-	DB_HTONL_COPYOUT(env, bp, argp->status);
 	DB_HTONL_COPYOUT(env, bp, argp->flags);
 
 	*lenp = (size_t)(bp - start);
@@ -745,7 +702,6 @@ __repmgr_site_info_unmarshal(env, argp, bp, max, nextp)
 		goto too_few;
 	bp += argp->host.size;
 	DB_NTOHS_COPYIN(env, argp->port, bp);
-	DB_NTOHL_COPYIN(env, argp->status, bp);
 	DB_NTOHL_COPYIN(env, argp->flags, bp);
 
 	if (nextp != NULL)
@@ -755,75 +711,6 @@ __repmgr_site_info_unmarshal(env, argp, bp, max, nextp)
 too_few:
 	__db_errx(env, DB_STR("3675",
 	    "Not enough input bytes to fill a __repmgr_site_info message"));
-	return (EINVAL);
-}
-
-/*
- * PUBLIC: int __repmgr_v4site_info_marshal __P((ENV *,
- * PUBLIC:	 __repmgr_v4site_info_args *, u_int8_t *, size_t, size_t *));
- */
-int
-__repmgr_v4site_info_marshal(env, argp, bp, max, lenp)
-	ENV *env;
-	__repmgr_v4site_info_args *argp;
-	u_int8_t *bp;
-	size_t *lenp, max;
-{
-	u_int8_t *start;
-
-	if (max < __REPMGR_V4SITE_INFO_SIZE
-	    + (size_t)argp->host.size)
-		return (ENOMEM);
-	start = bp;
-
-	DB_HTONL_COPYOUT(env, bp, argp->host.size);
-	if (argp->host.size > 0) {
-		memcpy(bp, argp->host.data, argp->host.size);
-		bp += argp->host.size;
-	}
-	DB_HTONS_COPYOUT(env, bp, argp->port);
-	DB_HTONL_COPYOUT(env, bp, argp->flags);
-
-	*lenp = (size_t)(bp - start);
-	return (0);
-}
-
-/*
- * PUBLIC: int __repmgr_v4site_info_unmarshal __P((ENV *,
- * PUBLIC:	 __repmgr_v4site_info_args *, u_int8_t *, size_t, u_int8_t **));
- */
-int
-__repmgr_v4site_info_unmarshal(env, argp, bp, max, nextp)
-	ENV *env;
-	__repmgr_v4site_info_args *argp;
-	u_int8_t *bp;
-	size_t max;
-	u_int8_t **nextp;
-{
-	size_t needed;
-
-	needed = __REPMGR_V4SITE_INFO_SIZE;
-	if (max < needed)
-		goto too_few;
-	DB_NTOHL_COPYIN(env, argp->host.size, bp);
-	if (argp->host.size == 0)
-		argp->host.data = NULL;
-	else
-		argp->host.data = bp;
-	needed += (size_t)argp->host.size;
-	if (max < needed)
-		goto too_few;
-	bp += argp->host.size;
-	DB_NTOHS_COPYIN(env, argp->port, bp);
-	DB_NTOHL_COPYIN(env, argp->flags, bp);
-
-	if (nextp != NULL)
-		*nextp = bp;
-	return (0);
-
-too_few:
-	__db_errx(env, DB_STR("3675",
-	    "Not enough input bytes to fill a __repmgr_v4site_info message"));
 	return (EINVAL);
 }
 
@@ -839,7 +726,6 @@ __repmgr_connect_reject_marshal(env, argp, bp)
 {
 	DB_HTONL_COPYOUT(env, bp, argp->version);
 	DB_HTONL_COPYOUT(env, bp, argp->gen);
-	DB_HTONL_COPYOUT(env, bp, argp->status);
 }
 
 /*
@@ -858,7 +744,6 @@ __repmgr_connect_reject_unmarshal(env, argp, bp, max, nextp)
 		goto too_few;
 	DB_NTOHL_COPYIN(env, argp->version, bp);
 	DB_NTOHL_COPYIN(env, argp->gen, bp);
-	DB_NTOHL_COPYIN(env, argp->status, bp);
 
 	if (nextp != NULL)
 		*nextp = bp;
@@ -867,97 +752,6 @@ __repmgr_connect_reject_unmarshal(env, argp, bp, max, nextp)
 too_few:
 	__db_errx(env, DB_STR("3675",
 	    "Not enough input bytes to fill a __repmgr_connect_reject message"));
-	return (EINVAL);
-}
-
-/*
- * PUBLIC: void __repmgr_v4connect_reject_marshal __P((ENV *,
- * PUBLIC:	 __repmgr_v4connect_reject_args *, u_int8_t *));
- */
-void
-__repmgr_v4connect_reject_marshal(env, argp, bp)
-	ENV *env;
-	__repmgr_v4connect_reject_args *argp;
-	u_int8_t *bp;
-{
-	DB_HTONL_COPYOUT(env, bp, argp->version);
-	DB_HTONL_COPYOUT(env, bp, argp->gen);
-}
-
-/*
- * PUBLIC: int __repmgr_v4connect_reject_unmarshal __P((ENV *,
- * PUBLIC:	 __repmgr_v4connect_reject_args *, u_int8_t *, size_t,
- * PUBLIC:	 u_int8_t **));
- */
-int
-__repmgr_v4connect_reject_unmarshal(env, argp, bp, max, nextp)
-	ENV *env;
-	__repmgr_v4connect_reject_args *argp;
-	u_int8_t *bp;
-	size_t max;
-	u_int8_t **nextp;
-{
-	if (max < __REPMGR_V4CONNECT_REJECT_SIZE)
-		goto too_few;
-	DB_NTOHL_COPYIN(env, argp->version, bp);
-	DB_NTOHL_COPYIN(env, argp->gen, bp);
-
-	if (nextp != NULL)
-		*nextp = bp;
-	return (0);
-
-too_few:
-	__db_errx(env, DB_STR("3675",
-	    "Not enough input bytes to fill a __repmgr_v4connect_reject message"));
-	return (EINVAL);
-}
-
-/*
- * PUBLIC: void __repmgr_lsnhist_match_marshal __P((ENV *,
- * PUBLIC:	 __repmgr_lsnhist_match_args *, u_int8_t *));
- */
-void
-__repmgr_lsnhist_match_marshal(env, argp, bp)
-	ENV *env;
-	__repmgr_lsnhist_match_args *argp;
-	u_int8_t *bp;
-{
-	DB_HTONL_COPYOUT(env, bp, argp->lsn.file);
-	DB_HTONL_COPYOUT(env, bp, argp->lsn.offset);
-	DB_HTONL_COPYOUT(env, bp, argp->hist_sec);
-	DB_HTONL_COPYOUT(env, bp, argp->hist_nsec);
-	DB_HTONL_COPYOUT(env, bp, argp->next_gen_lsn.file);
-	DB_HTONL_COPYOUT(env, bp, argp->next_gen_lsn.offset);
-}
-
-/*
- * PUBLIC: int __repmgr_lsnhist_match_unmarshal __P((ENV *,
- * PUBLIC:	 __repmgr_lsnhist_match_args *, u_int8_t *, size_t, u_int8_t **));
- */
-int
-__repmgr_lsnhist_match_unmarshal(env, argp, bp, max, nextp)
-	ENV *env;
-	__repmgr_lsnhist_match_args *argp;
-	u_int8_t *bp;
-	size_t max;
-	u_int8_t **nextp;
-{
-	if (max < __REPMGR_LSNHIST_MATCH_SIZE)
-		goto too_few;
-	DB_NTOHL_COPYIN(env, argp->lsn.file, bp);
-	DB_NTOHL_COPYIN(env, argp->lsn.offset, bp);
-	DB_NTOHL_COPYIN(env, argp->hist_sec, bp);
-	DB_NTOHL_COPYIN(env, argp->hist_nsec, bp);
-	DB_NTOHL_COPYIN(env, argp->next_gen_lsn.file, bp);
-	DB_NTOHL_COPYIN(env, argp->next_gen_lsn.offset, bp);
-
-	if (nextp != NULL)
-		*nextp = bp;
-	return (0);
-
-too_few:
-	__db_errx(env, DB_STR("3675",
-	    "Not enough input bytes to fill a __repmgr_lsnhist_match message"));
 	return (EINVAL);
 }
 

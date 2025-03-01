@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -145,9 +145,6 @@ __memp_backup_mpf(env, mpf, ip, first_pgno, last_pgno, fp, handle, flags)
 
 	if (backup == NULL || (len = backup->size) == 0)
 		len = MEGABYTE;
-	/* Ensure backup page size is at least as big as db page size */
-	if (len < mfp->pagesize)
-		len = mfp->pagesize;
 	if ((ret = __os_malloc(env, len, &buf)) != 0)
 		return (ret);
 	write_size = (u_int32_t)(len / mfp->pagesize);
@@ -191,7 +188,7 @@ __memp_backup_mpf(env, mpf, ip, first_pgno, last_pgno, fp, handle, flags)
 
 		if (backup != NULL && backup->write != NULL) {
 			if ((ret = backup->write(
-			     env->dbenv, gigs, off, (u_int32_t)nr,
+			     env->dbenv, gigs, off, (u_int32_t)nr, 
 			     buf, handle)) != 0)
 				break;
 		} else {

@@ -7,14 +7,14 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="rep.html" title="Chapter 13.  Berkeley DB Replication" />
-    <link rel="prev" href="rep.html" title="Chapter 13.  Berkeley DB Replication" />
+    <link rel="up" href="rep.html" title="Chapter 12.  Berkeley DB Replication" />
+    <link rel="prev" href="rep.html" title="Chapter 12.  Berkeley DB Replication" />
     <link rel="next" href="rep_pri.html" title="Replication environment priorities" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,7 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="rep.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 13.  Berkeley DB Replication </th>
+          <th width="60%" align="center">Chapter 12. 
+		Berkeley DB Replication
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="rep_pri.html">Next</a></td>
         </tr>
       </table>
@@ -36,37 +38,26 @@
           </div>
         </div>
       </div>
+      <p>Each database environment included in a replication group must have a
+unique identifier for itself and for the other members of the
+replication group.   The identifiers do not need to be global, that is,
+each database environment can assign local identifiers to members of
+the replication group as it encounters them.  For example, given three
+sites: A, B and C, site A might assign the identifiers 1 and 2 to sites
+B and C respectively, while site B might assign the identifiers 301 and
+302 to sites A and C respectively.  Note that it is not wrong to have
+global identifiers, it is just not a requirement.</p>
       <p>
-        Each database environment included in a replication group
-        must have a unique identifier for itself and for the other
-        members of the replication group. The identifiers do not need
-        to be global, that is, each database environment can assign
-        local identifiers to members of the replication group as it
-        encounters them. For example, given three sites: A, B and C,
-        site A might assign the identifiers 1 and 2 to sites B and C
-        respectively, while site B might assign the identifiers 301
-        and 302 to sites A and C respectively. Note that it is not
-        wrong to have global identifiers, it is just not a
-        requirement.
-    </p>
-      <p>
-        Replication Manager assigns and manages environment IDs on
-        behalf of the application.
-    </p>
-      <p>
-        It is the responsibility of a Base API application to label
-        each incoming replication message passed to <a href="../api_reference/C/repmessage.html" class="olink">DB_ENV-&gt;rep_process_message()</a>
-        method with the appropriate identifier. Subsequently, Berkeley
-        DB will label outgoing messages to the <span class="bold"><strong>send</strong></span>
-        function with those same
-        identifiers.
-    </p>
-      <p>
-        Negative identifiers are reserved for use by Berkeley DB,
-        and should never be assigned to environments by the
-        application. Two of these reserved identifiers are intended
-        for application use, as follows:
-    </p>
+    Replication Manager assigns and manages environment IDs on behalf of
+    the application.
+</p>
+      <p>It is the responsibility of a Base API application to label each incoming
+replication message passed to <a href="../api_reference/C/repmessage.html" class="olink">DB_ENV-&gt;rep_process_message()</a> method with the appropriate
+identifier.  Subsequently, Berkeley DB will label outgoing messages to the
+<span class="bold"><strong>send</strong></span> function with those same identifiers.</p>
+      <p>Negative identifiers are reserved for use by Berkeley DB, and should never be
+assigned to environments by the application.  Two of these reserved
+identifiers are intended for application use, as follows:</p>
       <div class="variablelist">
         <dl>
           <dt>
@@ -75,11 +66,10 @@
             </span>
           </dt>
           <dd>
-            <p> 
-                    The <a href="../api_reference/C/reptransport.html#transport_DB_EID_BROADCAST" class="olink">DB_EID_BROADCAST</a> identifier indicates a
-                    message should be broadcast to all members of a
-                    replication group.
-                </p>
+            <p>
+                The <a href="../api_reference/C/reptransport.html#transport_DB_EID_BROADCAST" class="olink">DB_EID_BROADCAST</a> identifier indicates a message should be
+                broadcast to all members of a replication group.
+            </p>
           </dd>
           <dt>
             <a id="rep_id.DB_EID_INVALID"></a>
@@ -87,11 +77,10 @@
           </dt>
           <dd>
             <p>
-                    The DB_EID_INVALID identifier is an invalid
-                    environment ID, and may be used to initialize
-                    environment ID variables that are subsequently
-                    checked for validity. 
-                </p>
+                The DB_EID_INVALID identifier is an invalid environment ID,
+                and may be used to initialize environment ID variables that
+                are subsequently checked for validity.
+            </p>
           </dd>
         </dl>
       </div>
@@ -107,7 +96,9 @@
           <td width="40%" align="right"> <a accesskey="n" href="rep_pri.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Chapter 13.  Berkeley DB Replication  </td>
+          <td width="40%" align="left" valign="top">Chapter 12. 
+		Berkeley DB Replication
+         </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

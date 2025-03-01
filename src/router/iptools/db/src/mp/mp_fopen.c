@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -14,9 +14,6 @@
 #include "dbinc/db_page.h"
 #include "dbinc/hash.h"
 
-#ifdef HAVE_MUTEX_SUPPORT
-static int __memp_count_dead_mutex __P((DB_MPOOL *, u_int32_t *));
-#endif
 static int __memp_mpf_alloc __P((DB_MPOOL *,
     DB_MPOOLFILE *, const char *, u_int32_t, u_int32_t, MPOOLFILE **));
 static int __memp_mpf_find __P((ENV *,
@@ -92,9 +89,8 @@ __memp_fopen_pp(dbmfp, path, flags, mode, pagesize)
  * Generate the number of user opens.  If there is no backing file
  * there is an extra open count to keep the in memory db around.
  */
-#define	MFP_OPEN_CNT(mfp)	((mfp)->mpf_cnt - ((mfp)->neutral_cnt +	\
+#define MFP_OPEN_CNT(mfp)	((mfp)->mpf_cnt - ((mfp)->neutral_cnt +	\
 				   (u_int32_t)(mfp)->no_backing_file))
-#define	MP_IOINFO_RETRIES	5
 /*
  * __memp_fopen --
  *	DB_MPOOLFILE->open.
@@ -122,7 +118,7 @@ __memp_fopen(dbmfp, mfp, path, dirp, flags, mode, pgsize)
 	size_t maxmap;
 	db_pgno_t last_pgno;
 	u_int32_t bucket, mbytes, bytes, oflags, pagesize;
-	int isdir, refinc, ret, tries;
+	int refinc, ret, isdir;
 	char *rpath;
 
 	/* If this handle is already open, return. */
@@ -177,7 +173,7 @@ __memp_fopen(dbmfp, mfp, path, dirp, flags, mode, pgsize)
 				goto err;
 			ret = __os_exists(env, rpath, &isdir);
 			if (ret == 0 && isdir) {
-				ret = USR_ERR(env, EINVAL);
+				ret = EINVAL;
 				goto err;
 			} else if (ret == 0) {
 				if  ((ret = __os_fileid(env,
@@ -232,7 +228,7 @@ __memp_fopen(dbmfp, mfp, path, dirp, flags, mode, pgsize)
 						MUTEX_UNLOCK(env, hp->mtx_hash);
 						goto mvcc_err;
 					}
-					(void)atomic_inc(env, &mfp->multiversion);
+					atomic_inc(env, &mfp->multiversion);
 					F_SET(dbmfp, MP_MULTIVERSION);
 				}
 			}
@@ -253,12 +249,12 @@ __memp_fopen(dbmfp, mfp, path, dirp, flags, mode, pgsize)
 				if (MFP_OPEN_CNT(mfp) > 0 &&
 				     atomic_read(&mfp->multiversion) == 0) {
 mvcc_err:				__db_errx(env, DB_STR("3041",
-"DB_MULTIVERSION cannot be specified on a database file that is already open"));
-					ret = USR_ERR(env, EINVAL);
+"DB_MULTIVERSION cannot be specified on a database file which is already open"));
+					ret = EINVAL;
 					goto err;
 				}
 
-				(void)atomic_inc(env, &mfp->multiversion);
+				atomic_inc(env, &mfp->multiversion);
 				F_SET(dbmfp, MP_MULTIVERSION);
 			}
 			/*
@@ -284,7 +280,7 @@ mvcc_err:				__db_errx(env, DB_STR("3041",
 		 * The error will be ignored, so don't output an error message.
 		 */
 		if (mfp->deadfile) {
-			ret = USR_ERR(env, EINVAL);
+			ret = EINVAL;
 			goto err;
 		}
 	}
@@ -318,13 +314,6 @@ mvcc_err:				__db_errx(env, DB_STR("3041",
 	 * but there's nothing to read from disk.
 	 */
 	if (!FLD_ISSET(dbmfp->config_flags, DB_MPOOL_NOFILE)) {
-		/* This detects when a metadata page has a bad size. [#24223] */
-		if (pagesize == 0 || !IS_VALID_PAGESIZE(pagesize)) {
-			ret = USR_ERR(env, EINVAL);
-			 __db_errx(env, DB_STR("0511",
-			     "page sizes must be a power-of-2"));
-			goto err;
-		}
 		/* Convert MP open flags to DB OS-layer open flags. */
 		oflags = 0;
 		if (LF_ISSET(DB_CREATE))
@@ -335,7 +324,7 @@ mvcc_err:				__db_errx(env, DB_STR("3041",
 			oflags |= DB_OSO_RDONLY;
 
 		/*
-		 * Note:
+		 * XXX
 		 * A grievous layering violation, the DB_DSYNC_DB flag
 		 * was left in the ENV structure and not driven through
 		 * the cache API.  This needs to be fixed when the general
@@ -394,53 +383,27 @@ mvcc_err:				__db_errx(env, DB_STR("3041",
 		}
 
 		/*
+		 * Don't permit files that aren't a multiple of the pagesize,
+		 * and find the number of the last page in the file, all the
+		 * time being careful not to overflow 32 bits.
+		 *
 		 * During verify or recovery, we might have to cope with a
 		 * truncated file; if the file size is not a multiple of the
 		 * page size, round down to a page, we'll take care of the
 		 * partial page outside the mpool system.
+		 *
+		 * Pagesize of 0 is only allowed for in-mem dbs.
 		 */
+		DB_ASSERT(env, pagesize != 0);
 		if (bytes % pagesize != 0) {
 			if (LF_ISSET(DB_ODDFILESIZE))
 				bytes -= (u_int32_t)(bytes % pagesize);
 			else {
-				/*
-				 * If the file size is not a multiple of the
-				 * pagesize, it is likely because the ioinfo
-				 * call is racing with a write that is extending
-				 * the file.  Many file systems will extend
-				 * in fs block size units, and if the pagesize
-				 * is larger than that, we can briefly see a
-				 * file size that is not a multiple of pagesize.
-				 *
-				 * Yield the processor to allow that to finish
-				 * and try again a few times.
-				 */
-				tries = 0;
-				STAT((mp->stat.st_oddfsize_detect++));
-				while (tries < MP_IOINFO_RETRIES) {
-					if ((ret = __os_ioinfo(env, rpath,
-					    dbmfp->fhp, &mbytes, &bytes,
-					    NULL)) != 0) {
-						__db_err(env, ret, "%s", rpath);
-						goto err;
-					}
-					if (bytes % pagesize != 0) {
-						__os_yield(env, 0, 50000);
-						tries++;
-					} else {
-					    STAT((
-					    mp->stat.st_oddfsize_resolve++));
-					    break;
-					}
-				}
-				if (tries == MP_IOINFO_RETRIES) {
-					__db_errx(env, DB_STR_A("3043",
-    "%s: file size (%lu %lu) not a multiple of the pagesize %lu",
-    "%s %lu %lu %lu"),
-    rpath, (u_long)mbytes, (u_long)bytes, (u_long)pagesize);
-					ret = USR_ERR(env, EINVAL);
-					goto err;
-				}
+				__db_errx(env, DB_STR_A("3037",
+		    "%s: file size not a multiple of the pagesize", "%s"),
+				    rpath);
+				ret = EINVAL;
+				goto err;
 			}
 		}
 
@@ -507,7 +470,7 @@ check:	MUTEX_LOCK(env, hp->mtx_hash);
 		    "%s: clear length, page size or LSN location changed",
 			    "%s"), path);
 			MUTEX_UNLOCK(env, hp->mtx_hash);
-			ret = USR_ERR(env, EINVAL);
+			ret = EINVAL;
 			goto err;
 		}
 	}
@@ -517,7 +480,7 @@ check:	MUTEX_LOCK(env, hp->mtx_hash);
 			MUTEX_UNLOCK(env, hp->mtx_hash);
 			goto mvcc_err;
 		}
-		(void)atomic_inc(env, &mfp->multiversion);
+		atomic_inc(env, &mfp->multiversion);
 		F_SET(dbmfp, MP_MULTIVERSION);
 	}
 
@@ -535,7 +498,7 @@ check:	MUTEX_LOCK(env, hp->mtx_hash);
 		 */
 		if (FLD_ISSET(dbmfp->config_flags, DB_MPOOL_NOFILE) &&
 		    !LF_ISSET(DB_CREATE)) {
-			ret = USR_ERR(env, ENOENT);
+			ret = ENOENT;
 			goto err;
 		}
 
@@ -544,9 +507,9 @@ alloc:		if ((ret = __memp_mpf_alloc(dbmp,
 			goto err;
 
 		/*
-		 * If the user specifies DB_MPOOL_LAST or DB_MPOOL_NEW on a page
-		 * get, we have to increment the last page in the file. Figure
-		 * it out and save it away. Be careful not to overflow 32 bits.
+		 * If the user specifies DB_MPOOL_LAST or DB_MPOOL_NEW on a
+		 * page get, we have to increment the last page in the file.
+		 * Figure it out and save it away.
 		 *
 		 * Note correction: page numbers are zero-based, not 1-based.
 		 */
@@ -568,7 +531,7 @@ alloc:		if ((ret = __memp_mpf_alloc(dbmp,
 		mfp = alloc_mfp;
 
 		if (LF_ISSET(DB_MULTIVERSION)) {
-			(void)atomic_inc(env, &mfp->multiversion);
+			atomic_inc(env, &mfp->multiversion);
 			F_SET(dbmfp, MP_MULTIVERSION);
 		}
 
@@ -592,7 +555,7 @@ have_mfp:
 		    !F_ISSET(mfp, MP_NOT_DURABLE)) {
 			__db_errx(env, DB_STR("3039",
 	     "Cannot open DURABLE and NOT DURABLE handles in the same file"));
-			ret = USR_ERR(env, EINVAL);
+			ret = EINVAL;
 			goto err;
 		}
 	}
@@ -748,11 +711,7 @@ __memp_mpf_find(env, dbmfp, hp, path, flags, mfpp)
 		 */
 		if (LF_ISSET(DB_TRUNCATE)) {
 			MUTEX_LOCK(env, mfp->mutex);
-			/*
-			 * We cannot purge dead files here, because the caller
-			 * is holding the mutex of the hash bucket of mfp.
-			 */
-			__memp_mf_mark_dead(dbmp, mfp, NULL);
+			mfp->deadfile = 1;
 			MUTEX_UNLOCK(env, mfp->mutex);
 			continue;
 		}
@@ -827,7 +786,13 @@ __memp_mpf_alloc(dbmp, dbmfp, path, pagesize, flags, retmfp)
 	mfp->lsn_off = dbmfp->lsn_offset;
 	mfp->clear_len = dbmfp->clear_len;
 	mfp->priority = dbmfp->priority;
-	__memp_set_maxpgno(mfp, dbmfp->gbytes, dbmfp->bytes);
+	if (dbmfp->gbytes != 0 || dbmfp->bytes != 0) {
+		mfp->maxpgno = (db_pgno_t)
+		    (dbmfp->gbytes * (GIGABYTE / mfp->pagesize));
+		mfp->maxpgno += (db_pgno_t)
+		    ((dbmfp->bytes + mfp->pagesize - 1) /
+		    mfp->pagesize);
+	}
 	if (FLD_ISSET(dbmfp->config_flags, DB_MPOOL_NOFILE))
 		mfp->no_backing_file = 1;
 	if (FLD_ISSET(dbmfp->config_flags, DB_MPOOL_UNLINK))
@@ -944,11 +909,10 @@ __memp_fclose(dbmfp, flags)
 	MPOOLFILE *mfp;
 	char *rpath;
 	u_int32_t ref;
-	int deleted, purge_dead, ret, t_ret;
+	int deleted, ret, t_ret;
 
 	env = dbmfp->env;
 	dbmp = env->mp_handle;
-	purge_dead = 0;
 	ret = 0;
 
 	/*
@@ -1032,7 +996,7 @@ __memp_fclose(dbmfp, flags)
 	if (!LF_ISSET(DB_MPOOL_NOLOCK))
 		MUTEX_LOCK(env, mfp->mutex);
 	if (F_ISSET(dbmfp, MP_MULTIVERSION))
-		(void)atomic_dec(env, &mfp->multiversion);
+		atomic_dec(env, &mfp->multiversion);
 	if (F_ISSET(dbmfp, MP_READONLY) ||
 	    (LF_ISSET(DB_FLUSH) && F_ISSET(dbmfp, MP_FOR_FLUSH))) {
 		DB_ASSERT(env, mfp->neutral_cnt != 0);
@@ -1042,7 +1006,7 @@ __memp_fclose(dbmfp, flags)
 	if (--mfp->mpf_cnt == 0 || LF_ISSET(DB_MPOOL_DISCARD)) {
 		if (LF_ISSET(DB_MPOOL_DISCARD) ||
 		    F_ISSET(mfp, MP_TEMP) || mfp->unlink_on_close) {
-			__memp_mf_mark_dead(dbmp, mfp, &purge_dead);
+			mfp->deadfile = 1;
 		}
 		if (mfp->unlink_on_close) {
 			if ((t_ret = __db_appname(dbmp->env, DB_APP_DATA,
@@ -1055,7 +1019,6 @@ __memp_fclose(dbmfp, flags)
 					ret = t_ret;
 				__os_free(env, rpath);
 			}
-			mfp->unlink_on_close = 0;
 		}
 		if (MFP_OPEN_CNT(mfp) == 0) {
 			F_CLR(mfp, MP_NOT_DURABLE);
@@ -1076,8 +1039,6 @@ __memp_fclose(dbmfp, flags)
 	}
 	if (!deleted && !LF_ISSET(DB_MPOOL_NOLOCK))
 		MUTEX_UNLOCK(env, mfp->mutex);
-	if (purge_dead)
-		(void)__memp_purge_dead_files(env);
 
 done:	/* Discard the DB_MPOOLFILE structure. */
 	if (dbmfp->pgcookie != NULL) {
@@ -1107,7 +1068,6 @@ __memp_mf_discard(dbmp, mfp, hp_locked)
 	DB_MPOOL_STAT *sp;
 #endif
 	MPOOL *mp;
-	char *rpath;
 	int need_sync, ret, t_ret;
 
 	env = dbmp->env;
@@ -1133,26 +1093,9 @@ __memp_mf_discard(dbmp, mfp, hp_locked)
 	 * mutex so we don't deadlock.  Make sure nobody ever looks at this
 	 * structure again.
 	 */
-	__memp_mf_mark_dead(dbmp, mfp, NULL);
+	mfp->deadfile = 1;
 
-	/* We should unlink the file if necessary. */
-	if (mfp->block_cnt == 0 && mfp->mpf_cnt == 0 && mfp->unlink_on_close &&
-	    !F_ISSET(mfp, MP_TEMP) && !mfp->no_backing_file) {
-		if ((t_ret = __db_appname(env, DB_APP_DATA,
-		    R_ADDR(dbmp->reginfo, mfp->path_off), NULL,
-		    &rpath)) != 0 && ret == 0)
-			ret = t_ret;
-		if (t_ret == 0) {
-			if ((t_ret = __os_unlink(
-			    dbmp->env, rpath, 0)) != 0 && ret == 0)
-				ret = t_ret;
-			__os_free(env, rpath);
-		}
-		mfp->unlink_on_close = 0;
-		need_sync = 0;
-	}
-
-	/* Discard the mutex we're holding and return it to the pool. */
+	/* Discard the mutex we're holding and return it too the pool. */
 	MUTEX_UNLOCK(env, mfp->mutex);
 	if ((t_ret = __mutex_free(env, &mfp->mutex)) != 0 && ret == 0)
 		ret = t_ret;
@@ -1275,105 +1218,3 @@ nomem:	MUTEX_UNLOCK(env, hp->mtx_hash);
 	*namesp = NULL;
 	return (ret);
 }
-
-/*
- * __memp_mf_mark_dead --
- *	Mark an MPOOLFILE as dead because its contents are no longer necessary.
- *	This happens when removing, truncation, or closing an unnamed in-memory
- *	database. Return, in the purgep parameter, whether the caller should
- *	call __memp_purge_dead_files() after the lock on mfp is released. The
- *	caller must hold an exclusive lock on the mfp handle.
- *
- * PUBLIC: void __memp_mf_mark_dead __P((DB_MPOOL *, MPOOLFILE *, int*));
- */
-void
-__memp_mf_mark_dead(dbmp, mfp, purgep)
-	DB_MPOOL *dbmp;	
-	MPOOLFILE *mfp;
-	int *purgep;
-{
-	ENV *env;
-#ifdef HAVE_MUTEX_SUPPORT
-	REGINFO *infop;
-	DB_MUTEXREGION *mtxregion;
-	u_int32_t mutex_max, mutex_inuse, dead_mutex;
-#endif
-
-	if (purgep != NULL)
-		*purgep = 0;
-
-	env = dbmp->env;
-
-#ifdef HAVE_MUTEX_SUPPORT
-	MUTEX_REQUIRED(env, mfp->mutex);
-
-	if (MUTEX_ON(env) && mfp->deadfile == 0) {
-		infop = &env->mutex_handle->reginfo;
-		mtxregion = infop->primary;
-
-		mutex_inuse = mtxregion->stat.st_mutex_inuse;
-		if ((mutex_max = env->dbenv->mutex_max) == 0)
-			mutex_max = infop->rp->max / mtxregion->mutex_size;
-
-		/*
-		 * Purging dead pages requires a full scan of the entire cache
-		 * buffer, so it is a slow operation. We only want to do it
-		 * when it is necessary and provides enough benefits. Below is
-		 * a simple heuristic that determines when to purge all dead
-		 * pages.
-		 */
-		if (purgep != NULL && mutex_inuse > mutex_max - 200) {
-			/*
-			 * If the mutex region is almost full and there are
-			 * many mutexes held by dead files, purge dead files.
-			 */
-			(void)__memp_count_dead_mutex(dbmp, &dead_mutex);
-			dead_mutex += mfp->block_cnt + 1;
-
-			if (dead_mutex > mutex_inuse / 20)
-				*purgep = 1;
-		}
-	}
-#endif
-
-	mfp->deadfile = 1;
-}
-
-#ifdef HAVE_MUTEX_SUPPORT
-/*
- * __memp_count_dead_mutex --
- *	Estimate the number of mutexes held by dead files.
- */
-static int
-__memp_count_dead_mutex(dbmp, dead_mutex)
-	DB_MPOOL *dbmp;
-	u_int32_t *dead_mutex;
-{
-	ENV *env;
-	DB_MPOOL_HASH *hp;
-	MPOOL *mp;
-	MPOOLFILE *mfp;
-	u_int32_t mutex_per_file;
-	int i;
-
-	env = dbmp->env;
-	*dead_mutex = 0;
-	mutex_per_file = 1;
-#ifndef HAVE_ATOMICFILEREAD
-	mutex_per_file = 2;
-#endif
-	mp = dbmp->reginfo[0].primary;
-	hp = R_ADDR(dbmp->reginfo, mp->ftab);
-	for (i = 0; i < MPOOL_FILE_BUCKETS; i++, hp++) {
-		if (MUTEX_TRYLOCK(env, hp->mtx_hash) != 0)
-			continue;
-		SH_TAILQ_FOREACH(mfp, &hp->hash_bucket, q, __mpoolfile) {
-			if (mfp->deadfile)
-				*dead_mutex += mfp->block_cnt + mutex_per_file;
-		}
-		MUTEX_UNLOCK(env, hp->mtx_hash);
-	}
-
-	return (0);
-}
-#endif

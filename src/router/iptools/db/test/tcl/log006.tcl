@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -42,9 +42,14 @@ proc log006 { } {
 	set remlen [llength $lfiles]
 	error_check_good lfiles_len [expr $remlen < $log_expect] 1
 	error_check_good lfiles [lsearch $lfiles $testdir/log.0000000001] -1
+	# Save last log file for later check.
+	# Files may not be sorted, sort them and then save the last filename.
+	set oldfile [lindex [lsort -ascii $lfiles] end]
 
 	# Rerun log006_put with a long lived txn.
+	#
 	puts "\tLog006.c: Rerun put loop with long-lived transaction."
+	cleanup $testdir $env
 	set txn [$env txn]
 	error_check_good txn [is_valid_txn $txn $env] TRUE
 
@@ -54,20 +59,13 @@ proc log006 { } {
 	    -env $env -txn $txn -pagesize 8192 -btree $testfile]
 	error_check_good dbopen [is_valid_db $db] TRUE
 
-	# Save the name of the last log file for later check.
-	# Files may not be sorted, so sort them first.  We do 
-	# this after putting the transaction to work just in 
-	# case we moved to a new log file.
-	set lfiles [glob -nocomplain $testdir/log.*]
-	set oldfile [lindex [lsort -ascii $lfiles] end]
-
 	log006_put $testdir $env
 
 	puts "\tLog006.d: Check log files not removed."
 	set lfiles [glob -nocomplain $testdir/log.*]
 	error_check_good lfiles2_len [expr [llength $lfiles] > $remlen] 1
 	set lfiles [lsort -ascii $lfiles]
-	error_check_bad lfiles_chk [lsearch $lfiles $oldfile] -1
+	error_check_good lfiles_chk [lsearch $lfiles $oldfile] 0
 	error_check_good txn_commit [$txn commit] 0
 	error_check_good db_close [$db close] 0
 	error_check_good ckp1 [$env txn_checkpoint] 0

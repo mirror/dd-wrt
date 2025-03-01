@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -75,14 +75,9 @@ foreach handle $handlelist {
 }
 error_check_good txn_commit [$txn commit] 0
 
-foreach handle $handlelist {
-	error_check_good db_close [$handle close] 0
-}
-
 # Archive, deleting the log files we think we no longer need.
 # Flush first to be sure everything is on disk for db_archive.
 $dbenv log_flush
-error_check_good env_close [$dbenv close] 0
 set stat [eval exec $util_path/db_archive -d -h $testdir]
 
 # Child is done.  Exit, abandoning the env instead of closing it.

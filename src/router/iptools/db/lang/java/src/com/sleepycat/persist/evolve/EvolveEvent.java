@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -28,9 +28,7 @@ public class EvolveEvent {
     }
 
     /**
-     * The cumulative statistics gathered during eager evolution.
-     *
-     * @return the cumulative statistics.
+     * The cummulative statistics gathered during eager evolution.
      */
     public EvolveStats getStats() {
         return stats;
@@ -38,8 +36,6 @@ public class EvolveEvent {
 
     /**
      * The class name of the current entity class being converted.
-     *
-     * @return the class name.
      */
     public String getEntityClassName() {
         return entityClassName;

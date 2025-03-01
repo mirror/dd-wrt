@@ -13,7 +13,7 @@
 <projects>
   <variable name="sourcePath">../../</variable>
   <variable name="outputBase.7.10">../../build_wince/</variable>
-  <variable name="outputBase.9.00">../../build_wince/</variable>
+  <variable name="outputBase.8.00">../../build_wince/</variable>
   <variable name="mobile">true</variable>
   
   <preprocessor config="all">DB_WIN32;DB_WINCE;_WIN32_WCE=$(CEVER);$(CePlatform);ARM;_ARM_;ARMV4;UNDER_CE=$(CEVER);UNICODE;_UNICODE;__NO_SYSTEM_INCLUDES</preprocessor>
@@ -63,10 +63,6 @@
     <preprocessor config="Debug">DIAGNOSTIC;CONFIG_TEST</preprocessor>
     <preprocessor config="Static Debug">DIAGNOSTIC;</preprocessor>
     <files>
-      <file name="src\blob\blob_fileops.c"/>
-      <file name="src\blob\blob_page.c"/>
-      <file name="src\blob\blob_stream.c"/>
-      <file name="src\blob\blob_util.c"/>
       <file name="src\btree\bt_compact.c"/>
       <file name="src\btree\bt_compare.c"/>
       <file name="src\btree\bt_conv.c"/>
@@ -136,7 +132,6 @@
       <file name="src\db\db_ret.c"/>
       <file name="src\db\db_setid.c"/>
       <file name="src\db\db_setlsn.c"/>
-      <file name="src\db\db_slice.c"/>
       <file name="src\db\db_sort_multiple.c"/>
       <file name="src\db\db_stati.c"/>
       <file name="src\db\db_truncate.c"/>
@@ -162,7 +157,6 @@
       <file name="src\env\env_region.c"/>
       <file name="src\env\env_register.c"/>
       <file name="src\env\env_sig.c"/>
-      <file name="src\env\env_slice.c"/>
       <file name="src\env\env_stat.c"/>
       <file name="src\fileops\fileops_auto.c"/>
       <file name="src\fileops\fop_basic.c"/>
@@ -210,7 +204,6 @@
       <file name="src\log\log_debug.c"/>
       <file name="src\log\log_get.c"/>
       <file name="src\log\log_method.c"/>
-      <file name="src\log\log_print.c"/>
       <file name="src\log\log_put.c"/>
       <file name="src\log\log_stat.c"/>
       <file name="src\log\log_verify.c"/>
@@ -249,11 +242,6 @@
       <file name="src\os\os_tmpdir.c"/>
       <file name="src\os\os_uid.c"/>
       <file name="src\os_windows\ce_ctime.c"/>
-      <file name="src\os_windows\ce_freopen.c"/>
-      <file name="src\os_windows\ce_gmtime.c"/>
-      <file name="src\os_windows\ce_mktime.c"/>
-      <file name="src\os_windows\ce_remove.c"/>
-      <file name="src\os_windows\ce_util_sig.c"/>
       <file name="src\os_windows\os_abs.c"/>
       <file name="src\os_windows\os_clock.c"/>
       <file name="src\os_windows\os_config.c"/>
@@ -269,7 +257,6 @@
       <file name="src\os_windows\os_mkdir.c"/>
       <file name="src\os_windows\os_open.c"/>
       <file name="src\os_windows\os_rename.c"/>
-      <file name="src\os_windows\os_rmdir.c"/>
       <file name="src\os_windows\os_rw.c"/>
       <file name="src\os_windows\os_seek.c"/>
       <file name="src\os_windows\os_stat.c"/>
@@ -312,10 +299,6 @@
     <preprocessor config="Debug">DIAGNOSTIC</preprocessor>
     <preprocessor config="Static Debug">DIAGNOSTIC</preprocessor>
     <files>
-      <file name="src\blob\blob_fileops.c"/>
-      <file name="src\blob\blob_page.c"/>
-      <file name="src\blob\blob_stream.c"/>
-      <file name="src\blob\blob_util.c"/>
       <file name="src\btree\bt_compact.c"/>
       <file name="src\btree\bt_compare.c"/>
       <file name="src\btree\bt_conv.c"/>
@@ -379,7 +362,6 @@
       <file name="src\db\db_ret.c"/>
       <file name="src\db\db_setid.c"/>
       <file name="src\db\db_setlsn.c"/>
-      <file name="src\db\db_slice.c"/>
       <file name="src\db\db_sort_multiple.c"/>
       <file name="src\db\db_stati.c"/>
       <file name="src\db\db_truncate.c"/>
@@ -404,7 +386,6 @@
       <file name="src\env\env_region.c"/>
       <file name="src\env\env_register.c"/>
       <file name="src\env\env_sig.c"/>
-      <file name="src\env\env_slice.c"/>
       <file name="src\env\env_stat.c"/>
       <file name="src\fileops\fileops_auto.c"/>
       <file name="src\fileops\fop_basic.c"/>
@@ -481,7 +462,6 @@
       <file name="src\os_windows\os_mkdir.c"/>
       <file name="src\os_windows\os_open.c"/>
       <file name="src\os_windows\os_rename.c"/>
-      <file name="src\os_windows\os_rmdir.c"/>
       <file name="src\os_windows\os_rw.c"/>
       <file name="src\os_windows\os_seek.c"/>
       <file name="src\os_windows\os_stat.c"/>
@@ -571,11 +551,9 @@
       <file name="lang\sql\sqlite\src\select.c"/>
       <file name="lang\sql\sqlite\src\status.c"/>
       <file name="lang\sql\sqlite\src\table.c"/>
-      <file name="lang\sql\sqlite\src\threads.c"/>
       <file name="lang\sql\sqlite\src\tokenize.c"/>
       <file name="lang\sql\sqlite\src\trigger.c"/>
       <file name="lang\sql\sqlite\src\update.c"/>
-      <file name="lang\sql\adapter\userauth.c"/>
       <file name="lang\sql\sqlite\src\utf.c"/>
       <file name="lang\sql\sqlite\src\util.c"/>
       <file name="lang\sql\adapter\vacuum.c"/>
@@ -584,7 +562,6 @@
       <file name="lang\sql\sqlite\src\vdbeaux.c"/>
       <file name="lang\sql\sqlite\src\vdbeblob.c"/>
       <file name="lang\sql\sqlite\src\vdbemem.c"/>
-      <file name="lang\sql\sqlite\src\vdbesort.c"/>
       <file name="lang\sql\sqlite\src\vdbetrace.c"/>
       <file name="lang\sql\sqlite\src\vtab.c"/>
       <file name="lang\sql\adapter\wal.c"/>
@@ -592,162 +569,11 @@
       <file name="lang\sql\sqlite\src\where.c"/>
     </files>
   </project>
-
-  <!-- Utilities -->
-  <project name="db_archive" guid="56056344-53A1-4FA6-B20B-862C0BA68953">
-    <type>app</type>
-    <configuration></configuration>
-    <include type="ref">all</include>
-    <files>
-       <file name="util/db_archive.c"/>
-      <file name="src/clib/getopt.c"/>
-    </files>
-  </project>
-  <project name="db_checkpoint" guid="A3BE0163-1E6C-4235-9B6B-3A36ABB5E285">
-    <type>app</type>
-    <configuration></configuration>
-    <include type="ref">all</include>
-    <files>
-      <file name="util/db_checkpoint.c"/>
-      <file name="src/clib/getopt.c"/>
-    </files>
-  </project>
-  <project name="db_convert" guid="D02E4151-D602-44A2-AFB7-7BA1DB253BD4">
-    <type>app</type>
-    <configuration></configuration>
-    <depends>db</depends>
-    <references>db</references>
-    <include type="ref">all</include>
-    <files>
-      <file name="util/db_convert.c"/>
-      <file name="src/clib/getopt.c"/>
-    </files>
-  </project>
-  <project name="db_deadlock" guid="CD0FD995-B4D1-4907-987B-99CF3304E7E0">
-    <type>app</type>
-    <configuration></configuration>
-    <include type="ref">all</include>
-    <files>
-      <file name="util/db_deadlock.c"/>
-      <file name="src/clib/getopt.c"/>
-    </files>
-  </project>
-  <project name="db_dump" guid="DB067D2C-7163-428B-AAF8-642316AB173B">
-    <type>app</type>
-    <configuration></configuration>
-    <include type="ref">all</include>
-    <files>
-      <file name="util/db_dump.c"/>
-      <file name="src/clib/getopt.c"/>
-    </files>
-  </project>
-  <project name="db_hotbackup" guid="67C0DABC-353A-491F-9A77-8E2E601ED52B">
-    <type>app</type>
-    <configuration></configuration>
-    <include type="ref">all</include>
-    <files>
-      <file name="util/db_hotbackup.c"/>
-      <file name="src/clib/getopt.c"/>
-    </files>
-  </project>
-  <project name="db_load" guid="7640133F-4AB8-42DA-ADB5-95F21447F7D5">
-    <type>app</type>
-    <configuration></configuration>
-    <include type="ref">all</include>
-    <files>
-      <file name="util/db_load.c"/>
-      <file name="src/clib/getopt.c"/>
-    </files>
-  </project>
-  <project name="db_log_verify" guid="872961A3-877A-4B53-886D-F1FB65073608">
-    <type>app</type>
-    <configuration></configuration>
-    <include type="ref">all</include>
-    <files>
-      <file name="util/db_log_verify.c"/>
-      <file name="src/clib/getopt.c"/>
-    </files>
-  </project>
-  <project name="db_printlog" guid="D505F51B-2B92-4850-A08F-9113D947FF4B">
-    <type>app</type>
-    <configuration></configuration>
-    <include type="ref">all</include>
-    <files>
-      <file name="util/db_printlog.c"/>
-      <file name="src/btree/btree_autop.c"/>
-      <file name="src/db/crdel_autop.c"/>
-      <file name="src/db/db_autop.c"/>
-      <file name="src/dbreg/dbreg_autop.c"/>
-      <file name="src/fileops/fileops_autop.c"/>
-      <file name="src/hash/hash_autop.c"/>
-      <file name="src/heap/heap_autop.c"/>
-      <file name="src/qam/qam_autop.c"/>
-      <file name="src/repmgr/repmgr_autop.c"/>
-      <file name="src/txn/txn_autop.c"/>
-      <file name="src/clib/getopt.c"/>
-      <file name="src/os_windows/ce_localtime.c"/>
-    </files>
-  </project>
-  <project name="db_recover" guid="9E03FD51-E387-4EEF-9EEA-E71707A56212">
-    <type>app</type>
-    <configuration></configuration>
-    <include type="ref">all</include>
-    <files>
-      <file name="util/db_recover.c"/>
-      <file name="src/clib/getopt.c"/>
-      <file name="src/os_windows/ce_localtime.c"/>
-    </files>
-  </project>
-  <project name="db_replicate" guid="2AA9FB16-F1B0-47A7-AE10-7830E4E317E2">
-    <type>app</type>
-    <configuration></configuration>
-    <include type="ref">all</include>
-    <files>
-      <file name="util/db_replicate.c"/>
-      <file name="src/clib/getopt.c"/>
-    </files>
-  </project>
-  <project name="db_stat" guid="19D3A4CB-1C12-43D4-A94B-D2B387AD43E5">
-    <type>app</type>
-    <configuration></configuration>
-    <include type="ref">all</include>
-    <files>
-      <file name="util/db_stat.c"/>
-      <file name="src/clib/getopt.c"/>
-    </files>
-  </project>
-  <project name="db_tuner" guid="A86208B6-BEEB-11DF-BCF9-116EDFD72085">
-    <type>app</type>
-    <configuration></configuration>
-    <include type="ref">all</include>
-    <files>
-      <file name="util/db_tuner.c"/>
-      <file name="src/clib/getopt.c"/>
-    </files>
-  </project>
-  <project name="db_upgrade" guid="5F4D66DB-8D75-43D4-A1BB-60A01BC6B32F">
-    <type>app</type>
-    <configuration></configuration>
-    <include type="ref">all</include>
-    <files>
-      <file name="util/db_upgrade.c"/>
-      <file name="src/clib/getopt.c"/>
-    </files>
-  </project>
-  <project name="db_verify" guid="12E118CA-CAAE-4F54-AE81-8D9981AA0635">
-    <type>app</type>
-    <configuration></configuration>
-    <include type="ref">all</include>
-    <files>
-      <file name="util/db_verify.c"/>
-      <file name="src/clib/getopt.c"/>
-    </files>
-  </project> 
   
   <!-- Applications -->
   <project name="wce_sql" guid="75DF98AA-25DF-4183-A022-024CF918480D">
     <type>app</type>
-    <configuration>WinMain</configuration>
+    <configuration></configuration>
     <include type="ref">all</include>
     <include type="ref">sql_app</include>
     <files>
@@ -765,7 +591,7 @@
   
   <project name="wce_tpcb" guid="F2CE670A-ABAE-414A-9A17-8079AB58613F">
     <type>app</type>
-    <configuration>WinMain</configuration>
+    <configuration></configuration>
     <include type="ref">all</include>
     <files>
       <file name="examples/cxx/wce_tpcb/TpcbExample.cpp"/>

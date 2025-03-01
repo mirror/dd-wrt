@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -44,10 +44,9 @@ int
 DB_SEQUENCE-&gt;open(DB_SEQUENCE *seq, DB_TXN *txnid, DBT *key, 
                   u_int32_t flags); </pre>
       <p>
-         The <code class="methodname">DB_SEQUENCE-&gt;open()</code> method opens the
-         sequence represented by the <span class="bold"><strong>key</strong></span>.
-         The key must be compatible with the underlying database specified
-         in the corresponding call to 
+         The <code class="methodname">DB_SEQUENCE-&gt;open()</code> method opens the sequence represented by the
+         <span class="bold"><strong>key</strong></span>. The key must be compatible with
+         the underlying database specified in the corresponding call to 
          <a class="xref" href="seqcreate.html" title="db_sequence_create">db_sequence_create</a>.
     </p>
       <p>
@@ -62,7 +61,7 @@ DB_SEQUENCE-&gt;open(DB_SEQUENCE *seq, DB_TXN *txnid, DBT *key,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711172602144"></a>Parameters</h3>
+              <h3 class="title"><a id="idp54642408"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -70,75 +69,61 @@ DB_SEQUENCE-&gt;open(DB_SEQUENCE *seq, DB_TXN *txnid, DBT *key,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711172601328"></a>key</h4>
+                <h4 class="title"><a id="idp54642880"></a>key</h4>
               </div>
             </div>
           </div>
           <p>
-                  The <span class="bold"><strong>key</strong></span> specifies which
-                  record in the database stores the persistent sequence
-                  data.
-             </p>
+                          The <span class="bold"><strong>key</strong></span> specifies which record in the
+                          database stores the persistent sequence data.
+                     </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711172595920"></a>flags</h4>
+                <h4 class="title"><a id="idp54645816"></a>flags</h4>
               </div>
             </div>
           </div>
           <p>
-                  The <span class="bold"><strong>flags</strong></span> parameter must
-                  be set to 0 or by bitwise inclusively 
-                  <span class="bold"><strong>OR</strong></span>'ing together one or
-                  more of the following values:
-             </p>
+                          The <span class="bold"><strong>flags</strong></span> parameter must be set to 0
+                          or by bitwise inclusively <span class="bold"><strong>OR</strong></span>'ing
+                          together one or more of the following values:
+                     </p>
           <div class="itemizedlist">
             <ul type="disc">
               <li>
                 <p>
-                          <code class="literal">DB_CREATE</code>
-                    </p>
+                  <code class="literal">DB_CREATE</code>
+            </p>
                 <p>
-                         Create the sequence.  If the sequence does not
-                         already exist and the <code class="literal">DB_CREATE</code>
-                         flag is not specified, the
-                         <code class="methodname">DB_SEQUENCE-&gt;open()</code> method will
-                         fail.
-                    </p>
+                 Create the sequence.  If the sequence does not already exist and the
+                 <code class="literal">DB_CREATE</code> flag is not specified, the 
+                 <code class="methodname">DB_SEQUENCE-&gt;open()</code> method will fail.
+            </p>
               </li>
               <li>
                 <p>
-                         <code class="literal">DB_EXCL</code>
-                    </p>
+                 <code class="literal">DB_EXCL</code>
+            </p>
                 <p>
-                         Return an error if the sequence already exists.
-                         This  flag is only meaningful when specified with
-                         the <code class="literal">DB_CREATE</code>  flag.
-                    </p>
+                 Return an error if the sequence already exists.  This  flag is only
+                 meaningful when specified with the <code class="literal">DB_CREATE</code>  flag.
+            </p>
               </li>
               <li>
                 <p><a id="seqopen_DB_THREAD"></a>
-                          <code class="literal">DB_THREAD</code>
-                    </p>
+                  <code class="literal">DB_THREAD</code>
+            </p>
                 <p>
-                         Cause the <a class="link" href="seq.html" title="Chapter 11.  The DB_SEQUENCE Handle">DB_SEQUENCE</a> 
-                         handle returned by <code class="methodname">DB_SEQUENCE-&gt;open()</code> to be
-                         <span class="emphasis"><em>free-threaded</em></span>; that is, usable by multiple
-                         threads within a single address space.  Note that if multiple threads
-                         create multiple sequences using the same database handle that handle
-                         must have been opened specifying this flag.
-                    </p>
-                <p>
-                        Be aware that enabling this flag will serialize
-                        calls to DB when using the handle across
-                        threads. If concurrent scaling is important to
-                        your application we recommend opening separate
-                        handles for each thread (and not specifying
-                        this flag), rather than sharing handles between
-                        threads.
-                    </p>
+                 Cause the <a class="link" href="seq.html" title="Chapter 11.  The DB_SEQUENCE Handle">DB_SEQUENCE</a> 
+                 handle returned by <code class="methodname">DB_SEQUENCE-&gt;open()</code> to be
+                 <span class="emphasis"><em>free-threaded</em></span>; that is, usable by multiple
+                 threads within a single address space.  Note that if multiple threads
+                 create multiple sequences using the same database handle that handle
+                 must have been opened specifying this flag.
+            </p>
               </li>
             </ul>
           </div>
@@ -147,7 +132,7 @@ DB_SEQUENCE-&gt;open(DB_SEQUENCE *seq, DB_TXN *txnid, DBT *key,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711172587600"></a>txnid</h4>
+                <h4 class="title"><a id="idp54636792"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -172,25 +157,25 @@ DB_SEQUENCE-&gt;open(DB_SEQUENCE *seq, DB_TXN *txnid, DBT *key,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711172613856"></a>Class</h3>
+              <h3 class="title"><a id="idp54649584"></a>Class</h3>
             </div>
           </div>
         </div>
         <p>
-             <a class="link" href="seq.html" title="Chapter 11.  The DB_SEQUENCE Handle">DB_SEQUENCE</a>  
-        </p>
+                 <a class="link" href="seq.html" title="Chapter 11.  The DB_SEQUENCE Handle">DB_SEQUENCE</a>  
+            </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711172599584"></a>See Also</h3>
+              <h3 class="title"><a id="idp54627704"></a>See Also</h3>
             </div>
           </div>
         </div>
         <p>
-             <a class="xref" href="seq.html#seqlist" title="Sequences and Related Methods">Sequences and Related Methods</a> 
-        </p>
+                     <a class="xref" href="seq.html#seqlist" title="Sequences and Related Methods">Sequences and Related Methods</a> 
+                </p>
       </div>
     </div>
     <div class="navfooter">

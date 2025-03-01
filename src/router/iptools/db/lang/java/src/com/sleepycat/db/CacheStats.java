@@ -4,7 +4,7 @@
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 package com.sleepycat.db;
@@ -19,7 +19,6 @@ public class CacheStats {
     private int st_gbytes;
     /**
     Gigabytes of cache (total cache size is st_gbytes + st_bytes).
-    @return gigabytes of cache
     */
     public int getGbytes() {
         return st_gbytes;
@@ -28,7 +27,6 @@ public class CacheStats {
     private int st_bytes;
     /**
     Bytes of cache (total cache size is st_gbytes + st_bytes).
-    @return bytes of cache
     */
     public int getBytes() {
         return st_bytes;
@@ -37,7 +35,6 @@ public class CacheStats {
     private int st_ncache;
     /**
     Number of caches.
-    @return number of caches
     */
     public int getNumCache() {
         return st_ncache;
@@ -47,7 +44,6 @@ public class CacheStats {
     /**
     Maximum number of caches, as configured with
     {@link EnvironmentConfig#setCacheMax}.
-    @return maximum number of caches
     */
     public int getMaxNumCache() {
         return st_max_ncache;
@@ -56,8 +52,7 @@ public class CacheStats {
     private long st_mmapsize;
     /**
     Maximum file size for mmap.
-    @return maximum file size for mmap.
-    */
+     */
     public long getMmapSize() {
         return st_mmapsize;
     }
@@ -65,8 +60,7 @@ public class CacheStats {
     private int st_maxopenfd;
     /**
     Maximum number of open file descriptors.
-    @return maximum number of open file descriptors
-    */
+     */
     public int getMaxOpenfd() {
         return st_maxopenfd;
     }
@@ -75,9 +69,7 @@ public class CacheStats {
     /**
     The maximum number of sequential write operations scheduled by the library
     when flushing dirty pages from the cache.
-    @return the maximum number of sequential write operations scheduled by
-    the library when flushing dirty pages from the cache
-    */
+     */
     public int getMaxWrite() {
         return st_maxwrite;
     }
@@ -86,9 +78,7 @@ public class CacheStats {
     /**
     The number of microseconds the thread of control should pause before
     scheduling further write operations.
-    @return the number of microseconds the thread of control should
-    pause before scheduling further write operations
-    */
+     */
     public int getMaxWriteSleep() {
         return st_maxwrite_sleep;
     }
@@ -96,7 +86,6 @@ public class CacheStats {
     private int st_pages;
     /**
     Pages in the cache.
-    @return pages in the cache
     */
     public int getPages() {
         return st_pages;
@@ -107,7 +96,6 @@ public class CacheStats {
     Requested pages mapped into the process' address space (there is no
     available information about whether or not this request caused disk I/O,
     although examining the application page fault rate may be helpful).
-    @return requested pages mapped into the process' address space
     */
     public int getMap() {
         return st_map;
@@ -116,7 +104,6 @@ public class CacheStats {
     private long st_cache_hit;
     /**
     Requested pages found in the cache.
-    @return requested pages found in the cache
     */
     public long getCacheHit() {
         return st_cache_hit;
@@ -125,7 +112,6 @@ public class CacheStats {
     private long st_cache_miss;
     /**
     Requested pages not found in the cache.
-    @return requested pages not found in the cache
     */
     public long getCacheMiss() {
         return st_cache_miss;
@@ -134,7 +120,6 @@ public class CacheStats {
     private long st_page_create;
     /**
     Pages created in the cache.
-    @return pages created in the cache
     */
     public long getPageCreate() {
         return st_page_create;
@@ -143,7 +128,6 @@ public class CacheStats {
     private long st_page_in;
     /**
     Pages read into the cache.
-    @return pages read into the cache
     */
     public long getPageIn() {
         return st_page_in;
@@ -152,7 +136,6 @@ public class CacheStats {
     private long st_page_out;
     /**
     Pages written from the cache to the backing file.
-    @return pages written from the cache to the backing file
     */
     public long getPageOut() {
         return st_page_out;
@@ -161,7 +144,6 @@ public class CacheStats {
     private long st_ro_evict;
     /**
     Clean pages forced from the cache.
-    @return clean pages forced from the cache
     */
     public long getRoEvict() {
         return st_ro_evict;
@@ -170,7 +152,6 @@ public class CacheStats {
     private long st_rw_evict;
     /**
     Dirty pages forced from the cache.
-    @return dirty pages forced from the cache
     */
     public long getRwEvict() {
         return st_rw_evict;
@@ -179,7 +160,6 @@ public class CacheStats {
     private long st_page_trickle;
     /**
     Dirty pages written using {@link com.sleepycat.db.Environment#trickleCacheWrite Environment.trickleCacheWrite}.
-    @return dirty pages written using {@link com.sleepycat.db.Environment#trickleCacheWrite Environment.trickleCacheWrite}
     */
     public long getPageTrickle() {
         return st_page_trickle;
@@ -188,7 +168,6 @@ public class CacheStats {
     private int st_page_clean;
     /**
     Clean pages currently in the cache.
-    @return clean pages currently in the cache
     */
     public int getPageClean() {
         return st_page_clean;
@@ -197,7 +176,6 @@ public class CacheStats {
     private int st_page_dirty;
     /**
     Dirty pages currently in the cache.
-    @return dirty pages currently in the cache
     */
     public int getPageDirty() {
         return st_page_dirty;
@@ -206,17 +184,13 @@ public class CacheStats {
     private int st_hash_buckets;
     /**
     Number of hash buckets in the buffer hash table.
-    @return number of hash buckets in the buffer hash table
     */
     public int getHashBuckets() {
         return st_hash_buckets;
     }
 
     private int st_hash_mutexes;
-    /**
-    The number of hash bucket mutexes in the buffer hash table.
-    @return the number of hash bucket mutexes in the buffer hash table
-    */
+    /** The number of hash bucket mutexes in the buffer hash table. */
     public int getHashMutexes() {
         return st_hash_mutexes;
     }
@@ -224,7 +198,6 @@ public class CacheStats {
     private int st_pagesize;
     /**
     Page size in bytes.
-    @return page size in bytes
     */
     public int getPageSize() {
         return st_pagesize;
@@ -233,7 +206,6 @@ public class CacheStats {
     private int st_hash_searches;
     /**
     Total number of buffer hash table lookups.
-    @return total number of buffer hash table lookups
     */
     public int getHashSearches() {
         return st_hash_searches;
@@ -242,7 +214,6 @@ public class CacheStats {
     private int st_hash_longest;
     /**
     The longest chain ever encountered in buffer hash table lookups.
-    @return the longest chain ever encountered in buffer hash table lookups
     */
     public int getHashLongest() {
         return st_hash_longest;
@@ -251,7 +222,6 @@ public class CacheStats {
     private long st_hash_examined;
     /**
     Total number of hash elements traversed during hash table lookups.
-    @return total number of hash elements traversed during hash table lookups
     */
     public long getHashExamined() {
         return st_hash_examined;
@@ -261,8 +231,6 @@ public class CacheStats {
     /**
     The number of times that a thread of control was able to obtain a
     hash bucket lock without waiting.
-    @return the number of times that a thread of control was able to obtain
-    a hash bucket lock without waiting
     */
     public long getHashNowait() {
         return st_hash_nowait;
@@ -272,8 +240,6 @@ public class CacheStats {
     /**
     The number of times that a thread of control was forced to wait
     before obtaining a hash bucket lock.
-    @return the number of times that a thread of control was forced
-    to wait before obtaining a hash bucket lock
     */
     public long getHashWait() {
         return st_hash_wait;
@@ -284,9 +250,6 @@ public class CacheStats {
     The number of times a thread of control was able to obtain the
     hash bucket lock without waiting on the bucket which had the
     maximum number of times that a thread of control needed to wait.
-    @return the number of times a thread of control was able to obtain
-    the hash bucket lock without waiting on the bucket which had the
-    maximum number of times that a thread of control was able to obtain
     */
     public long getHashMaxNowait() {
         return st_hash_max_nowait;
@@ -296,8 +259,6 @@ public class CacheStats {
     /**
     The maximum number of times any hash bucket lock was waited for by
     a thread of control.
-    @return the maximum number of times any hash bucket lock was waited
-    for by a thread of control
     */
     public long getHashMaxWait() {
         return st_hash_max_wait;
@@ -306,9 +267,7 @@ public class CacheStats {
     private long st_region_nowait;
     /**
     The number of times that a thread of control was able to obtain a
-    cache region mutex without waiting.
-    @return the number of times that a thread of control was able to
-    obtain a cache region mutex without waiting
+    region lock without waiting.
     */
     public long getRegionNowait() {
         return st_region_nowait;
@@ -317,9 +276,7 @@ public class CacheStats {
     private long st_region_wait;
     /**
     The number of times that a thread of control was forced to wait
-    before obtaining a cache region mutex.
-    @return the number of times that a thread of control was forced
-    to wait before obtaining a cache region mutex
+    before obtaining a region lock.
     */
     public long getRegionWait() {
         return st_region_wait;
@@ -328,7 +285,6 @@ public class CacheStats {
     private long st_mvcc_frozen;
     /**
     Number of buffers frozen.
-    @return number of buffers frozen
     */
     public long getMultiversionFrozen() {
         return st_mvcc_frozen;
@@ -337,7 +293,6 @@ public class CacheStats {
     private long st_mvcc_thawed;
     /**
     Number of buffers thawed.
-    @return number of buffers thawed
     */
     public long getMultiversionThawed() {
         return st_mvcc_thawed;
@@ -346,25 +301,14 @@ public class CacheStats {
     private long st_mvcc_freed;
     /**
     Number of frozen buffers freed.
-    @return number of frozen buffers freed
     */
     public long getMultiversionFreed() {
         return st_mvcc_freed;
     }
 
-    private long st_mvcc_reused;
-    /**
-    Number of outdated intermediate versions reused.
-    @return number of outdated intermediate versions reused
-    */
-    public long getMultiversionReused() {
-        return st_mvcc_reused;
-    }
-
     private long st_alloc;
     /**
     Number of page allocations.
-    @return number of page allocations
     */
     public long getAlloc() {
         return st_alloc;
@@ -373,7 +317,6 @@ public class CacheStats {
     private long st_alloc_buckets;
     /**
     Number of hash buckets checked during allocation.
-    @return number of hash buckets checked during allocation
     */
     public long getAllocBuckets() {
         return st_alloc_buckets;
@@ -382,7 +325,6 @@ public class CacheStats {
     private long st_alloc_max_buckets;
     /**
     Maximum number of hash buckets checked during an allocation.
-    @return maximum number of hash buckets checked during an allocation
     */
     public long getAllocMaxBuckets() {
         return st_alloc_max_buckets;
@@ -391,7 +333,6 @@ public class CacheStats {
     private long st_alloc_pages;
     /**
     Number of pages checked during allocation.
-    @return number of pages checked during allocation
     */
     public long getAllocPages() {
         return st_alloc_pages;
@@ -400,7 +341,6 @@ public class CacheStats {
     private long st_alloc_max_pages;
     /**
     Maximum number of pages checked during an allocation.
-    @return maximum number of pages checked during an allocation
     */
     public long getAllocMaxPages() {
         return st_alloc_max_pages;
@@ -409,7 +349,6 @@ public class CacheStats {
     private long st_io_wait;
     /**
     Number of operations blocked waiting for I/O to complete.
-    @return number of operations blocked waiting for I/O to complete
     */
     public long getIoWait() {
         return st_io_wait;
@@ -418,38 +357,21 @@ public class CacheStats {
     private long st_sync_interrupted;
     /**
     Number of mpool sync operations interrupted.
-    @return number of mpool sync operations interrupted
     */
     public long getSyncInterrupted() {
         return st_sync_interrupted;
     }
 
-    private int st_oddfsize_detect;
-    /** TODO */
-    /* package */ int getOddfSizeDetect() {
-        return st_oddfsize_detect;
-    }
-
-    private int st_oddfsize_resolve;
-    /** TODO */
-    /* package */ int getOddfSizeResolve() {
-        return st_oddfsize_resolve;
-    }
-
     private long st_regsize;
     /**
     Individual cache size.
-    @return individual cache size
     */
     public long getRegSize() {
         return st_regsize;
     }
 
     private long st_regmax;
-    /**
-    The maximum size, in bytes, of the mutex region.
-    @return the maximum size, in bytes, of the mutex region
-    */
+    /** The max size of the mutex region size. */
     public long getRegmax() {
         return st_regmax;
     }
@@ -457,7 +379,6 @@ public class CacheStats {
     /**
     For convenience, the CacheStats class has a toString method that
     lists all the data fields.
-    @return a String that lists all the data fields
     */
     public String toString() {
         return "CacheStats:"
@@ -496,7 +417,6 @@ public class CacheStats {
             + "\n  st_mvcc_frozen=" + st_mvcc_frozen
             + "\n  st_mvcc_thawed=" + st_mvcc_thawed
             + "\n  st_mvcc_freed=" + st_mvcc_freed
-            + "\n  st_mvcc_reused=" + st_mvcc_reused
             + "\n  st_alloc=" + st_alloc
             + "\n  st_alloc_buckets=" + st_alloc_buckets
             + "\n  st_alloc_max_buckets=" + st_alloc_max_buckets

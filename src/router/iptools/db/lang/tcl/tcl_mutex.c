@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2004, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2004, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -81,40 +81,6 @@ tcl_Mutex(interp, objc, objv, dbenv)
 		Tcl_SetObjResult(interp, res);
 	}
 	return (result);
-}
-
-/*
- * tcl_MutexFailchkTimeout --
- *
- * PUBLIC: int tcl_MutexFailchkTimeout __P((Tcl_Interp *, int,
- * PUBLIC:    Tcl_Obj * CONST*, DB_ENV *));
- */
-int
-tcl_MutexFailchkTimeout(interp, objc, objv, dbenv)
-	Tcl_Interp *interp;             /* Interpreter */
-	int objc;                       /* How many arguments? */
-	Tcl_Obj *CONST objv[];          /* The argument objects */
-	DB_ENV *dbenv;                  /* Environment pointer */
-{
-	long timeout;
-	int result, ret;
-
-	/*
-	* One arg, the timeout.
-	*/
-	if (objc != 3) {
-		Tcl_WrongNumArgs(interp, 2, objv, "?timeout?");
-		return (TCL_ERROR);
-	}
-	result = Tcl_GetLongFromObj(interp, objv[2], &timeout);
-	if (result != TCL_OK)
-		return (result);
-	_debug_check();
-	ret = dbenv->set_timeout(dbenv, (u_int32_t)timeout,
-	    DB_SET_MUTEX_FAILCHK_TIMEOUT);
-	result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret),
-	    "mutex failchk timeout");
-		return (result);
 }
 
 /*
@@ -348,13 +314,11 @@ tcl_MutStatPrint(interp, objc, objv, dbenv)
 {
 	static const char *mutstatprtopts[] = {
 		"-all",
-		"-alloc",
 		"-clear",
 		 NULL
 	};
 	enum mutstatprtopts {
 		MUTSTATPRTALL,
-		MUTSTATPRTALLOC,
 		MUTSTATPRTCLEAR
 	};
 	u_int32_t flag;
@@ -374,9 +338,6 @@ tcl_MutStatPrint(interp, objc, objv, dbenv)
 		switch ((enum mutstatprtopts)optindex) {
 		case MUTSTATPRTALL:
 			flag |= DB_STAT_ALL;
-			break;
-		case MUTSTATPRTALLOC:
-			flag |= DB_STAT_ALLOC;
 			break;
 		case MUTSTATPRTCLEAR:
 			flag |= DB_STAT_CLEAR;

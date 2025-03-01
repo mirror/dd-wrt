@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2004, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -73,10 +73,9 @@ switch -exact -- $apicall {
 		}
 	}
 	default {
-		puts "FAIL: unrecognized API call $apicall"
+		puts "FAIL: unrecognized API call $apicall
 	}
 }
 
 error_check_good clientenv_close [$clientenv close] 0
-replclose $testdir/MSGQUEUEDIR
 

@@ -8,20 +8,20 @@
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C API Reference" />
     <link rel="up" href="rep.html" title="Chapter 10.  Replication Methods" />
-    <link rel="prev" href="dbchannel_set_timeout.html" title="DB_CHANNEL-&gt;set_timeout()" />
+    <link rel="prev" href="dbsite_close.html" title="DB_SITE-&gt;close()" />
     <link rel="next" href="dbsite_get_address.html" title="DB_SITE-&gt;get_address()" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">DB_SITE-&gt;get_config()</th>
         </tr>
         <tr>
-          <td width="20%" align="left"><a accesskey="p" href="dbchannel_set_timeout.html">Prev</a> </td>
+          <td width="20%" align="left"><a accesskey="p" href="dbsite_close.html">Prev</a> </td>
           <th width="60%" align="center">Chapter 10. 
                 Replication Methods
         </th>
@@ -67,7 +67,7 @@ DB_SITE-&gt;get_config(DB_SITE *site, u_int32_t which,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711174168528"></a>Parameters</h3>
+              <h3 class="title"><a id="idp53910296"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -75,7 +75,7 @@ DB_SITE-&gt;get_config(DB_SITE *site, u_int32_t which,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711174101840"></a>which</h4>
+                <h4 class="title"><a id="idp53910768"></a>which</h4>
               </div>
             </div>
           </div>
@@ -91,7 +91,7 @@ DB_SITE-&gt;get_config(DB_SITE *site, u_int32_t which,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711174094432"></a>valuep</h4>
+                <h4 class="title"><a id="idp53890248"></a>valuep</h4>
               </div>
             </div>
           </div>
@@ -100,7 +100,7 @@ DB_SITE-&gt;get_config(DB_SITE *site, u_int32_t which,
                   memory into which  the configuration of the specified <span class="bold"><strong>which</strong></span> parameter is copied.
              </p>
           <p>
-                 If the returned value is zero, the configuration flag is off;
+                 If the returned value is zero, the parameter is off;
                  otherwise it is on. 
              </p>
         </div>
@@ -109,7 +109,7 @@ DB_SITE-&gt;get_config(DB_SITE *site, u_int32_t which,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711174127408"></a>Class</h3>
+              <h3 class="title"><a id="idp53859752"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -121,7 +121,7 @@ DB_SITE-&gt;get_config(DB_SITE *site, u_int32_t which,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711174133168"></a>See Also</h3>
+              <h3 class="title"><a id="idp53896328"></a>See Also</h3>
             </div>
           </div>
         </div>
@@ -135,14 +135,14 @@ DB_SITE-&gt;get_config(DB_SITE *site, u_int32_t which,
       <hr />
       <table width="100%" summary="Navigation footer">
         <tr>
-          <td width="40%" align="left"><a accesskey="p" href="dbchannel_set_timeout.html">Prev</a> </td>
+          <td width="40%" align="left"><a accesskey="p" href="dbsite_close.html">Prev</a> </td>
           <td width="20%" align="center">
             <a accesskey="u" href="rep.html">Up</a>
           </td>
           <td width="40%" align="right"> <a accesskey="n" href="dbsite_get_address.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">DB_CHANNEL-&gt;set_timeout() </td>
+          <td width="40%" align="left" valign="top">DB_SITE-&gt;close() </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -385,8 +385,6 @@ public interface Conversion extends Serializable {
     /**
      * Initializes the conversion, allowing it to obtain raw type information
      * from the entity model.
-     *
-     * @param model the EntityModel.
      */
     void initialize(EntityModel model);
 

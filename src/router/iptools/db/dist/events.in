@@ -16,7 +16,7 @@
 # alphabetically. For instance allocation and free events are adjacent.
 # New, unrelated events are placed at the end of their event class.
 #
-# Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 
 # The alloc class covers the allocation of "on disk" database pages.
@@ -238,20 +238,14 @@ race
 
 # The statistics counters for replication are for internal use.
 rep
-    election(unsigned count, unsigned generation);
-    election_won(unsigned count, unsigned generation);
-    ext_chunk_rereq(unsigned rereq, unsigned master_id);
-    ext_deleted(unsigned deleted, unsigned eid);
-    ext_duplicated(unsigned duplicated, unsigned eid);
-    ext_records(unsigned records, unsigned eid);
-    ext_truncated(unsigned truncated, unsigned eid);
-    ext_update_rereq(unsigned update_rereq, unsigned eid);
     log_queued(unsigned count, DB_LSN *lsn);
-    log_request(unsigned count, unsigned eid);
-    master_change(unsigned count, unsigned eid);
     pg_duplicated(unsigned eid, unsigned pgno, unsigned file, unsigned count);
     pg_record(unsigned count, unsigned eid);
     pg_request(unsigned count, unsigned eid);
+    election_won(unsigned count, unsigned generation);
+    election(unsigned count, unsigned generation);
+    log_request(unsigned count, unsigned eid);
+    master_change(unsigned count, unsigned eid);
 
 # The txn category covers the basic transaction operations.
 txn

@@ -1,19 +1,19 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 #include "db_config.h"
 
 #include "db_int.h"
-#include "dbinc/blob.h"
 #include "dbinc/crypto.h"
 #include "dbinc/db_page.h"
 #include "dbinc/db_swap.h"
 #include "dbinc/fop.h"
 #include "dbinc/heap.h"
 #include "dbinc/lock.h"
+#include "dbinc/log.h"
 #include "dbinc/mp.h"
 
 static void __heap_init_meta __P((DB *, HEAPMETA *, db_pgno_t, DB_LSN*));
@@ -82,7 +82,6 @@ __heap_metachk(dbp, name, hm)
 
 	env = dbp->env;
 	h = (HEAP *)dbp->heap_internal;
-	ret = 0;
 
 	/*
 	 * At this point, all we know is that the magic number is for a Heap.
@@ -93,7 +92,6 @@ __heap_metachk(dbp, name, hm)
 		M_32_SWAP(vers);
 	switch (vers) {
 	case 1:
-	case 2:
 		break;
 	default:
 		__db_errx(env,
@@ -117,26 +115,6 @@ __heap_metachk(dbp, name, hm)
 
 	/* Set the page size. */
 	dbp->pgsize = hm->dbmeta.pagesize;
-
-	dbp->blob_threshold = hm->blob_threshold;
-	GET_BLOB_FILE_ID(env, hm, dbp->blob_file_id, ret);
-	if (ret != 0)
-		return (ret);
-	/* Blob databases must be upgraded. */
-	if (vers == 1 && dbp->blob_file_id != 0) {
-	    __db_errx(env, DB_STR_A("1209",
-"%s: databases that support external files must be upgraded.", "%s"),
-		    name);
-		return (EINVAL);
-	}
-#ifndef HAVE_64BIT_TYPES
-	if (dbp->blob_file_id != 0) {
-		__db_errx(env, DB_STR_A("1205",
-	    "%s: external files require 64 integer compiler support.", "%s"),
-		    name);
-		return (EINVAL);
-	}
-#endif
 
 	/* Copy the file's ID. */
 	memcpy(dbp->fileid, hm->dbmeta.uid, DB_FILE_ID_LEN);
@@ -201,8 +179,7 @@ __heap_read_meta(dbp, ip, txn, meta_pgno, flags)
 		h->region_size = meta->region_size;
 
 		if (PGNO(meta) == PGNO_BASE_MD && !F_ISSET(dbp, DB_AM_RECOVER))
-			(void)__memp_set_last_pgno(
-			    mpf, meta->dbmeta.last_pgno);
+			__memp_set_last_pgno(mpf, meta->dbmeta.last_pgno);
 	} else {
 		DB_ASSERT(dbp->env,
 		    IS_RECOVERING(dbp->env) || F_ISSET(dbp, DB_AM_RECOVER));
@@ -308,12 +285,6 @@ __heap_new_file(dbp, ip, txn, fhp, name)
 		pginfo.type = dbp->type;
 		pdbt.data = &pginfo;
 		pdbt.size = sizeof(pginfo);
-		if (dbp->blob_threshold) {
-			if ((ret = __blob_generate_dir_ids(
-			    dbp, txn, &dbp->blob_file_id)) != 0)
-				return (ret);
-
-		}
 		if ((ret = __os_calloc(env, 1, dbp->pgsize, &buf)) != 0)
 			return (ret);
 		meta = (HEAPMETA *)buf;
@@ -423,9 +394,7 @@ done:	if (region != NULL && (t_ret = __memp_fput(mpf,
 	    dbc->thread_info, region, dbc->priority)) != 0 && ret == 0)
 		ret = t_ret;
 
-	if ((t_ret = __memp_fput(mpf,
-	    dbc->thread_info, meta, dbc->priority)) != 0 && ret == 0)
-		ret = t_ret;
+	ret = __memp_fput(mpf, dbc->thread_info, meta, dbc->priority);
 	if ((t_ret = __TLPUT(dbc, meta_lock)) != 0 && ret == 0)
 		ret = t_ret;
 
@@ -467,6 +436,4 @@ __heap_init_meta(dbp, meta, pgno, lsnp)
 	meta->region_size = h->region_size;
 	meta->nregions = 1;
 	meta->curregion = 1;
-	meta->blob_threshold = dbp->blob_threshold;
-	SET_BLOB_META_FILE_ID(meta, dbp->blob_file_id, HEAPMETA);
 }

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -55,7 +55,6 @@ To create a transactional database that supports duplicates:
 */
 public class Database {
     Db db;
-    private Database [] slices = null;
     private int autoCommitFlag;
     int rmwFlag;
 
@@ -113,8 +112,6 @@ parameter.  Further, the databaseName parameter is not supported by the
 Queue format.
 <p>
 @param config The database open attributes.  If null, default attributes are used.
-@throws DatabaseException if a failure occurs.
-@throws java.io.FileNotFoundException if the database file does not exist
     */
     public Database(final String filename,
                     final String databaseName,
@@ -167,6 +164,7 @@ scratch after any system or application crash.
 <b>
 It is important to understand that flushing cached information to disk
 only minimizes the window of opportunity for corrupted data.
+<p>
 </b>
 Although unlikely, it is possible for database corruption to happen if
 a system or application crash occurs while writing data to the database.
@@ -260,8 +258,6 @@ it will be closed when the environment handle that owns the database handle is c
     Recno database. It is generally the first key of the page where processing
     stopped.
     @param config The compaction operation attributes.  If null, default attributes are used.
-    @return compaction operation statistics
-    @throws DatabaseException if a failure occurs.
     **/
     public CompactStats compact(final Transaction txn,
                                 final DatabaseEntry start,
@@ -354,8 +350,6 @@ it will be closed when the environment handle that owns the database handle is c
     <p>
     @param config
     The sequence attributes.  If null, default attributes are used.
-    <p>
-    @throws DatabaseException if a failure occurs.
     */
     public void removeSequence(final Transaction txn,
                                final DatabaseEntry key,
@@ -366,16 +360,9 @@ it will be closed when the environment handle that owns the database handle is c
         final DbSequence seq = config.openSequence(
             db, (txn == null) ? null : txn.txn, key);
         seq.remove((txn == null) ? null : txn.txn,
-            (txn == null && db.get_transactional() &&
-            config.getAutoCommitNoSync()) ? DbConstants.DB_TXN_NOSYNC : 0);
-    }
-
-    private java.io.File getBlobSubDir()
-        throws DatabaseException {
-        String blobDirStr = db.get_blob_sub_dir();
-        if (blobDirStr != null)
-            return (new java.io.File(blobDirStr));
-        return null;
+            (txn == null && db.get_transactional()) ?
+            DbConstants.DB_AUTO_COMMIT | (config.getAutoCommitNoSync() ?
+            DbConstants.DB_TXN_NOSYNC : 0) : 0);
     }
 
     /**
@@ -385,7 +372,6 @@ This method may be called at any time during the life of the application.
 <p>
 @return
 The database's underlying file name.
-@throws DatabaseException if a failure occurs.
     */
     public String getDatabaseFile()
         throws DatabaseException {
@@ -400,7 +386,6 @@ This method may be called at any time during the life of the application.
 <p>
 @return
 The database name.
-@throws DatabaseException if a failure occurs.
     */
     public String getDatabaseName()
         throws DatabaseException {
@@ -417,6 +402,7 @@ The database name.
     @return
     This Database object's configuration.
     <p>
+    <p>
 @throws DatabaseException if a failure occurs.
     */
     public DatabaseConfig getConfig()
@@ -429,6 +415,7 @@ The database name.
     Change the settings in an existing database handle.
     <p>
     @param config The environment attributes.  If null, default attributes are used.
+    <p>
     <p>
 @throws IllegalArgumentException if an invalid parameter was specified.
 <p>
@@ -450,6 +437,7 @@ This method may be called at any time during the life of the application.
 The {@link com.sleepycat.db.Environment Environment} handle for the database environment
     underlying the {@link com.sleepycat.db.Database Database}.
 <p>
+<p>
 @throws DatabaseException if a failure occurs.
     */
     public Environment getEnvironment()
@@ -465,6 +453,7 @@ This method may be called at any time during the life of the application.
 <p>
 @return
 The handle for the cache file underlying the database.
+<p>
 <p>
 @throws DatabaseException if a failure occurs.
     */
@@ -500,7 +489,7 @@ must be specified.
 <p>
 @param data the data {@link com.sleepycat.db.DatabaseEntry DatabaseEntry} stored.
 <p>
-@return {@link com.sleepycat.db.OperationStatus#SUCCESS OperationStatus.SUCCESS}
+<p>
 <p>
 @throws DeadlockException if the operation was selected to resolve a
 deadlock.
@@ -543,6 +532,7 @@ status <code>NOTFOUND</code>.
 <p>
 @return {@link com.sleepycat.db.OperationStatus#NOTFOUND OperationStatus.NOTFOUND} if no matching key/data pair is
 found; {@link com.sleepycat.db.OperationStatus#KEYEMPTY OperationStatus.KEYEMPTY} if the database is a Queue or Recno database and the specified key exists, but was never explicitly created by the application or was later deleted; otherwise, {@link com.sleepycat.db.OperationStatus#SUCCESS OperationStatus.SUCCESS}.
+<p>
 <p>
 @throws DeadlockException if the operation was selected to resolve a
 deadlock.
@@ -599,6 +589,7 @@ database, the operation will be implicitly transaction protected.
     deleted;
     otherwise the method will return {@link com.sleepycat.db.OperationStatus#SUCCESS OperationStatus.SUCCESS}.
     <p>
+    <p>
 @throws DeadlockException if the operation was selected to resolve a
 deadlock.
 <p>
@@ -651,6 +642,7 @@ deadlock.
     deleted; otherwise the method will return
     {@link com.sleepycat.db.OperationStatus#SUCCESS OperationStatus.SUCCESS}.
     <p>
+    <p>
     @throws DeadlockException if the operation was selected to resolve a 
     deadlock.
     <p>
@@ -702,6 +694,7 @@ deadlock.
     deleted; otherwise the method will return
     {@link com.sleepycat.db.OperationStatus#SUCCESS OperationStatus.SUCCESS}.
     <p>
+    <p>
     @throws DeadlockException if the operation was selected to resolve a 
     deadlock.
     <p>
@@ -739,6 +732,7 @@ caller.
 <p>
 @return {@link com.sleepycat.db.OperationStatus#NOTFOUND OperationStatus.NOTFOUND} if no matching key/data pair is
 found; {@link com.sleepycat.db.OperationStatus#KEYEMPTY OperationStatus.KEYEMPTY} if the database is a Queue or Recno database and the specified key exists, but was never explicitly created by the application or was later deleted; otherwise, {@link com.sleepycat.db.OperationStatus#SUCCESS OperationStatus.SUCCESS}.
+<p>
 <p>
 @throws DeadlockException if the operation was selected to resolve a
 deadlock.
@@ -788,6 +782,7 @@ transactional database, the operation will be implicitly transaction protected.
 used as input.  It must be initialized with a non-null byte array by the
 caller.
 <p>
+<p>
 @param data the  data
 returned as output.  Its byte array does not need to be initialized by the
 caller.
@@ -796,6 +791,7 @@ caller.
 <p>
 @return {@link com.sleepycat.db.OperationStatus#NOTFOUND OperationStatus.NOTFOUND} if no matching key/data pair is
 found; {@link com.sleepycat.db.OperationStatus#KEYEMPTY OperationStatus.KEYEMPTY} if the database is a Queue or Recno database and the specified key exists, but was never explicitly created by the application or was later deleted; otherwise, {@link com.sleepycat.db.OperationStatus#SUCCESS OperationStatus.SUCCESS}.
+<p>
 <p>
 @throws DeadlockException if the operation was selected to resolve a
 deadlock.
@@ -846,6 +842,7 @@ transactional database, the operation will be implicitly transaction protected.
     An estimate of the proportion of keys in the database less than,
     equal to, and greater than the specified key.
     <p>
+    <p>
 @throws DeadlockException if the operation was selected to resolve a
 deadlock.
 <p>
@@ -880,6 +877,7 @@ caller.
 <p>
 @return {@link com.sleepycat.db.OperationStatus#NOTFOUND OperationStatus.NOTFOUND} if no matching key/data pair is
 found; {@link com.sleepycat.db.OperationStatus#KEYEMPTY OperationStatus.KEYEMPTY} if the database is a Queue or Recno database and the specified key exists, but was never explicitly created by the application or was later deleted; otherwise, {@link com.sleepycat.db.OperationStatus#SUCCESS OperationStatus.SUCCESS}.
+<p>
 <p>
 @throws DeadlockException if the operation was selected to resolve a
 deadlock.
@@ -924,11 +922,6 @@ deadlock.
 <p>
 @throws DatabaseException if a failure occurs.
 <p>
-@param txn
-For a transactional database, an explicit transaction may be specified to
-transaction-protect the operation, or null may be specified to perform the
-operation without transaction protection.  For a non-transactional database,
-null must be specified.
 @param key the  key
 returned as output.  Its byte array does not need to be initialized by the
 caller.
@@ -982,7 +975,7 @@ database, the operation will be implicitly transaction protected.
 <p>
 @param data the data {@link com.sleepycat.db.DatabaseEntry DatabaseEntry} stored.
 <p>
-@return {@link com.sleepycat.db.OperationStatus#SUCCESS OperationStatus.SUCCESS}
+<p>
 <p>
 @throws DeadlockException if the operation was selected to resolve a
 deadlock.
@@ -1032,6 +1025,7 @@ database, the operation will be implicitly transaction protected.
 If any of the key/data pairs already appear in the database, this method will
 return {@link com.sleepycat.db.OperationStatus#KEYEXIST OperationStatus.KEYEXIST}.
 <p>
+<p>
 @throws DeadlockException if the operation was selected to resolve a
 deadlock.
 <p>
@@ -1076,6 +1070,7 @@ database, the operation will be implicitly transaction protected.
 @return
 If any of the key/data pairs already appear in the database, this method will
 return {@link com.sleepycat.db.OperationStatus#KEYEXIST OperationStatus.KEYEXIST}.
+<p>
 <p>
 @throws DeadlockException if the operation was selected to resolve a
 deadlock.
@@ -1124,6 +1119,7 @@ database, the operation will be implicitly transaction protected.
 If the key/data pair already appears in the database, this method will
 return {@link com.sleepycat.db.OperationStatus#KEYEXIST OperationStatus.KEYEXIST}.
 <p>
+<p>
 @throws DeadlockException if the operation was selected to resolve a
 deadlock.
 <p>
@@ -1169,6 +1165,7 @@ database, the operation will be implicitly transaction protected.
 If the key already appears in the database, this method will return
 {@link com.sleepycat.db.OperationStatus#KEYEXIST OperationStatus.KEYEXIST}.
 <p>
+<p>
 @throws DeadlockException if the operation was selected to resolve a
 deadlock.
 <p>
@@ -1211,6 +1208,7 @@ deadlock.
     operation.
     <p>
     @throws DatabaseException if a failure occurs.
+    <p>
     @see JoinCursor
     */
     public JoinCursor join(final Cursor[] cursors, JoinConfig config)
@@ -1313,28 +1311,6 @@ from the {@link com.sleepycat.db.Environment#beginCDSGroup Environment.beginCDSG
     }
 
     /**
-    Print database statistics to a specified output channel (see the
-    setMsgfile() method for more information), or passed to an application
-    callback function (see the setMsgcall() method for more information).
-    <p>
-    @param config
-    The statistics returned; if null, default statistics are returned.
-    <p>
-    @return
-    A non-zero error value on failure and 0 on success.
-    <p>
-    @throws DeadlockException if the operation was selected to resolve a
-    deadlock.
-    <p>
-    @throws DatabaseException if a failure occurs.
-    */
-    public int printStats(StatsConfig config)
-        throws DatabaseException {
-
-        return db.stat_print(StatsConfig.checkNull(config).getFlags());
-    }
-
-    /**
     <p>
 Remove the database specified by the file and database parameters.
 <p>
@@ -1376,16 +1352,15 @@ The database to be removed.
 <p>
 @param config The database remove attributes.  If null, default attributes are used.
 <p>
+<p>
 @throws DatabaseException if a failure occurs.
-@throws java.io.FileNotFoundException if the database file does not exist
     */
     public static void remove(final String fileName,
                               final String databaseName,
                               DatabaseConfig config)
         throws DatabaseException, java.io.FileNotFoundException {
 
-        final Db db = DatabaseConfig.DEFAULT.createDatabase(null);
-        DatabaseConfig.checkNull(config).configureDatabase(db, DatabaseConfig.DEFAULT);
+        final Db db = DatabaseConfig.checkNull(config).createDatabase(null);
         db.remove(fileName, databaseName, 0);
     }
 
@@ -1434,8 +1409,8 @@ The new name of the database or file.
 <p>
 @param config The database rename attributes.  If null, default attributes are used.
 <p>
+<p>
 @throws DatabaseException if a failure occurs.
-@throws java.io.FileNotFoundException if the database file does not exist
     */
     public static void rename(final String fileName,
                               final String oldDatabaseName,
@@ -1456,7 +1431,6 @@ The new name of the database or file.
     @param entries
     A MultipleKeyDataEntry that contains matching pairs of key/data items,
     the sorted entries will be returned in the original entries object.
-    @throws DatabaseException if a failure occurs.
     */
     public static void sortMultipleKeyData(MultipleKeyDataEntry entries)
         throws DatabaseException {
@@ -1472,7 +1446,6 @@ The new name of the database or file.
     @param entries
     A MultipleDataEntry that contains multiple key or data items,
     the sorted entries will be returned in the original entries object.
-    @throws DatabaseException if a failure occurs.
     */
     public static void sortMultipleKeyOrData(MultipleDataEntry entries)
         throws DatabaseException {
@@ -1493,7 +1466,6 @@ The new name of the database or file.
     @param datas
     A MultipleDataEntry that contains multiple data items, the sorted entries
     will be returned in the original entries object.
-    @throws DatabaseException if a failure occurs.
     */
     public static void sortMultipleKeyAndData(
         MultipleDataEntry keys, MultipleDataEntry datas)
@@ -1526,6 +1498,7 @@ The new name of the database or file.
     or edit a copy of the database, and once all applications using the
     database have successfully closed the copy of the database,
     atomically replace the original database with the updated copy.
+    <p>
     <p>
 @throws DatabaseException if a failure occurs.
     */
@@ -1589,10 +1562,8 @@ The new name of the database or file.
     @param fileName
     The physical file containing the databases to be upgraded.
     <p>
-    @param config The database attributes.  If null, default attributes are used.
     <p>
 @throws DatabaseException if a failure occurs.
-@throws java.io.FileNotFoundException if the database file does not exist
     */
     public static void upgrade(final String fileName,
                         DatabaseConfig config)
@@ -1655,8 +1626,8 @@ or failure.
     {@link com.sleepycat.db.VerifyConfig#setSalvage VerifyConfig.setSalvage}, all of the key/data pairs in the
     file may not have been successfully output.
     <p>
+    <p>
 @throws DatabaseException if a failure occurs.
-@throws java.io.FileNotFoundException if the database file does not exist
     */
     public static boolean verify(final String fileName,
                                  final String databaseName,
@@ -1666,71 +1637,7 @@ or failure.
         throws DatabaseException, java.io.FileNotFoundException {
 
         final Db db = DatabaseConfig.checkNull(dbConfig).createDatabase(null);
-        /* Configure db with dbConfig */
-        dbConfig.configureDatabase(db, DatabaseConfig.DEFAULT);
         return db.verify(fileName, databaseName, dumpStream,
             VerifyConfig.checkNull(verifyConfig).getFlags());
-    }
-
-    /**
-    Sets the path of a file to store statistical information.
-    <p>
-    @param file
-    The path of a file to store statistical information.
-    <p>
-    @throws DatabaseException if a failure occurs.
-    */
-    public void setMsgfile(java.io.File file) throws DatabaseException {
-        if (file != null) {
-            db.set_msgfile(file.toString());
-        }
-        else {
-            db.set_msgfile(null);
-        }
-    }
-
-    /**
-    <p>
-    Get the Database handles of the underlying slices of the database.
-    <p>
-    @return an array of Database handles of the underlying slices of the
-    sliced database.
-    <p>
-    @throws DatabaseException if a failure occurs.
-    */
-    public Database[] getSlices()
-        throws DatabaseException {
-	    if (slices != null)
-	    	return slices;
-	    Db [] dbs = db.get_slices();
-	    slices = new Database[dbs.length];
-	    for (int i = 0; i < slices.length; i++) {
-		dbs[i].slice_init();
-		slices[i] = new Database(dbs[i]);
-	    }
-	    return slices;
-    }
-
-    /**
-    <p>
-    Get the Database handle of the slice that contains the given key.
-    <p>
-    @param key a key {@link com.sleepycat.db.DatabaseEntry DatabaseEntry} that contains
-    a value stored in the sliced database.
-    <p>
-    @return The Database handle of the slice that contains the key.
-    <p>
-    @throws DatabaseException if a failure occurs.
-    */
-    public Database sliceLookup(final DatabaseEntry key)
-        throws DatabaseException {
-	    Database slice = null;
-	    Db db_slice = null;
-	    db_slice = db.slice_lookup(key, 0);
-	    if (db_slice != null) {
-		db_slice.slice_init();
-		slice = new Database(db_slice);
-	    }
-	    return slice;
     }
 }

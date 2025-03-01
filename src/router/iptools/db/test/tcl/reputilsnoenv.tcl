@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # The procs in this file are used for replication messaging
 # ONLY when the default mechanism of setting up a queue of
@@ -315,39 +315,11 @@ proc replcreatefromfiles_noenv { fromid queuedir } {
 proc replsetuptempfile_noenv { to from queuedir } {
 	global queuedbs
 
-	# Create a temp database and get its byte order.
 	set pid [pid]
 # puts "Open new temp.$to.$from.$pid"
 	set queuedbs($to.$from.$pid) [berkdb_open -create -excl -recno\
 	    -renumber $queuedir/temp.$to.$from.$pid]
 	error_check_good open_queuedbs [is_valid_db $queuedbs($to.$from.$pid)] TRUE
-	set lorder [$queuedbs($to.$from.$pid) get_lorder]
-	$queuedbs($to.$from.$pid) close
-
-	# In rep065 databases as far back as BDB version 4.4 must be able to
-	# read the recno database.  A BDB 6.0 patch increased the version of
-	# recno from 9 to 10, to support new blob database records in other
-	# access methods.  BDB versions older than this 6.0 patch throw
-	# an error when trying to open a 6.0 database, even though it can
-	# read the database without error. As a hack to get the 
-	# test to work, replace the version number at file offset 16 with 
-	# a "9".
-	set fh [open $queuedir/temp.$to.$from.$pid a+]
-	fconfigure $fh -translation binary
-	seek $fh 16
-	if { $lorder == "1234" } {
-		# Write 9 as a 32 bit little endian value.
-		puts -nonewline $fh [binary format i 9]
-	} else {
-		# Write 9 as a 32 bit big endian value.
-		puts -nonewline $fh [binary format I 9]
-    	}
-	close $fh
-
-	# Reopen the database
-	set queuedbs($to.$from.$pid) [berkdb_open -recno\
-	    -renumber $queuedir/temp.$to.$from.$pid]
-	error_check_good open_queuedbss [is_valid_db $queuedbs($to.$from.$pid)] TRUE
 }
 
 # Process a queue of messages, skipping every "skip_interval" entry.

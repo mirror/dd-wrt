@@ -288,7 +288,7 @@ static int tmpWrite(
 ){
   tmp_file *pTmp = (tmp_file *)pFile;
   if( (iAmt+iOfst)>pTmp->nAlloc ){
-    int nNew = (int)(2*(iAmt+iOfst+pTmp->nAlloc));
+    int nNew = 2*(iAmt+(int)iOfst+pTmp->nAlloc);
     char *zNew = sqlite3_realloc(pTmp->zAlloc, nNew);
     if( !zNew ){
       return SQLITE_NOMEM;
@@ -595,9 +595,9 @@ static int fsOpen(
   int rc = SQLITE_OK;
 
   if( 0==(flags&(SQLITE_OPEN_MAIN_DB|SQLITE_OPEN_MAIN_JOURNAL)) ){
-    tmp_file *p2 = (tmp_file *)pFile;
-    memset(p2, 0, sizeof(*p2));
-    p2->base.pMethods = &tmp_io_methods;
+    tmp_file *p = (tmp_file *)pFile;
+    memset(p, 0, sizeof(*p));
+    p->base.pMethods = &tmp_io_methods;
     return SQLITE_OK;
   }
 
@@ -606,7 +606,7 @@ static int fsOpen(
   p->eType = eType;
 
   assert(strlen("-journal")==8);
-  nName = (int)strlen(zName)-((eType==JOURNAL_FILE)?8:0);
+  nName = strlen(zName)-((eType==JOURNAL_FILE)?8:0);
   pReal=pFsVfs->pFileList; 
   for(; pReal && strncmp(pReal->zName, zName, nName); pReal=pReal->pNext);
 
@@ -687,7 +687,7 @@ static int fsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
   fs_vfs_t *pFsVfs = (fs_vfs_t *)pVfs;
   fs_real_file *pReal;
   sqlite3_file *pF;
-  int nName = (int)strlen(zPath) - 8;
+  int nName = strlen(zPath) - 8;
 
   assert(strlen("-journal")==8);
   assert(strcmp("-journal", &zPath[nName])==0);
@@ -717,7 +717,7 @@ static int fsAccess(
   fs_vfs_t *pFsVfs = (fs_vfs_t *)pVfs;
   fs_real_file *pReal;
   int isJournal = 0;
-  int nName = (int)strlen(zPath);
+  int nName = strlen(zPath);
 
   if( flags!=SQLITE_ACCESS_EXISTS ){
     sqlite3_vfs *pParent = ((fs_vfs_t *)pVfs)->pParent;

@@ -140,7 +140,7 @@ sub chkMsg
     # -ErrFile with a filename
     my $errfile = "./errfile" ;
     my $home = "./fred" ;
-    ok my $lexD = new LexDir($home), "lexdir" ;
+    ok my $lexD = new LexDir($home) ;
     my $lex = new LexFile $errfile ;
     ok my $env = new BerkeleyDB::Env( -ErrFile => $errfile, 
     					  -Flags => DB_CREATE,
@@ -148,7 +148,7 @@ sub chkMsg
     my $db = new BerkeleyDB::Hash -Filename => $Dfile,
 			     -Env      => $env,
 			     -Flags    => -1;
-    ok !$db, "no db" ;
+    ok !$db ;
 
     my $ErrMsg = join "'", 'illegal flag specified to (db_open|DB->open)',
                            'DB_AUTO_COMMIT may not be specified in non-transactional environment';

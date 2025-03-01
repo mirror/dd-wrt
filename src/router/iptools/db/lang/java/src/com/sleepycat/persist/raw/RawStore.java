@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -62,14 +62,8 @@ public class RawStore
      * @param config the store configuration, or null to use default
      * configuration properties.
      *
-     * @throws StoreNotFoundException when the {@link
-     * StoreConfig#setAllowCreate AllowCreate} configuration parameter is false
-     * and the store's internal catalog database does not exist.
-     *
      * @throws IllegalArgumentException if the <code>Environment</code> is
      * read-only and the <code>config ReadOnly</code> property is false.
-     *
-     * @throws DatabaseException the base class for all BDB exceptions.
      */
     public RawStore(Environment env, String storeName, StoreConfig config)
         throws StoreNotFoundException, DatabaseException {
@@ -88,10 +82,6 @@ public class RawStore
     /**
      * Opens the primary index for a given entity class.
      *
-     * @param entityClass the name of the entity class.
-     *
-     * @return the PrimaryIndex.
-     *
      * @throws DatabaseException the base class for all BDB exceptions.
      */
     public PrimaryIndex<Object, RawObject> getPrimaryIndex(String entityClass)
@@ -104,12 +94,6 @@ public class RawStore
     /**
      * Opens the secondary index for a given entity class and secondary key
      * name.
-     *
-     * @param entityClass the name of the entity class.
-     *
-     * @param keyName the secondary key name.
-     *
-     * @return the SecondaryIndex.
      *
      * @throws DatabaseException the base class for all BDB exceptions.
      */
@@ -124,8 +108,6 @@ public class RawStore
 
     /**
      * Returns the environment associated with this store.
-     *
-     * @return the Environment.
      */
     public Environment getEnvironment() {
         return store.getEnvironment();
@@ -133,8 +115,6 @@ public class RawStore
 
     /**
      * Returns a copy of the entity store configuration.
-     *
-     * @return the StoreConfig.
      */
     public StoreConfig getConfig() {
         return store.getConfig();
@@ -142,8 +122,6 @@ public class RawStore
 
     /**
      * Returns the name of this store.
-     *
-     * @return the store name.
      */
     public String getStoreName() {
         return store.getStoreName();
@@ -151,8 +129,6 @@ public class RawStore
 
     /**
      * Returns the last configured and stored entity model for this store.
-     *
-     * @return the EntityModel.
      */
     public EntityModel getModel() {
         return store.getModel();
@@ -160,8 +136,6 @@ public class RawStore
 
     /**
      * Returns the set of mutations that were configured and stored previously.
-     *
-     * @return the Mutations.
      */
     public Mutations getMutations() {
         return store.getMutations();

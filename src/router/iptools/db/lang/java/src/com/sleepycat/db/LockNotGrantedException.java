@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1997, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -49,7 +49,6 @@ public class LockNotGrantedException extends DeadlockException {
     /**
     Returns -1 when {@link com.sleepycat.db.Environment#getLock Environment.getLock} was called, and
     returns the index of the failed LockRequest when {@link com.sleepycat.db.Environment#lockVector Environment.lockVector} was called.
-    @return the index of the failed LockRequest, or -1
     */
     public int getIndex() {
         return index;
@@ -58,7 +57,6 @@ public class LockNotGrantedException extends DeadlockException {
     /**
     Returns null when {@link com.sleepycat.db.Environment#getLock Environment.getLock} was called, and
     returns the lock in the failed LockRequest when {@link com.sleepycat.db.Environment#lockVector Environment.lockVector} was called.
-    @return the lock in the failed LockRequest, or null
     */
     public Lock getLock() {
         return lock;
@@ -68,7 +66,6 @@ public class LockNotGrantedException extends DeadlockException {
     Returns the mode parameter when {@link com.sleepycat.db.Environment#getLock Environment.getLock} was
     called, and returns the mode for the failed LockRequest when
     {@link com.sleepycat.db.Environment#lockVector Environment.lockVector} was called.
-    @return the mode
     */
     public int getMode() {
         return mode;
@@ -78,7 +75,6 @@ public class LockNotGrantedException extends DeadlockException {
     Returns the object parameter when {@link com.sleepycat.db.Environment#getLock Environment.getLock} was
     called, and returns the object for the failed LockRequest when
     {@link com.sleepycat.db.Environment#lockVector Environment.lockVector} was called.
-    @return the object
     */
     public DatabaseEntry getObj() {
         return obj;
@@ -87,7 +83,6 @@ public class LockNotGrantedException extends DeadlockException {
     /**
     Returns 0 when {@link com.sleepycat.db.Environment#getLock Environment.getLock} was called, and returns
     the op parameter for the failed LockRequest when {@link com.sleepycat.db.Environment#lockVector Environment.lockVector} was called.
-    @return the op parameter for the failed LockRequest, or 0
     */
     public int getOp() {
         return op;

@@ -7,14 +7,14 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="lock.html" title="Chapter 18.  The Locking Subsystem" />
+    <link rel="up" href="lock.html" title="Chapter 16.  The Locking Subsystem" />
     <link rel="prev" href="lock_max.html" title="Configuring locking: sizing the system" />
     <link rel="next" href="lock_dead.html" title="Deadlock detection" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,7 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="lock_max.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 18.  The Locking Subsystem </th>
+          <th width="60%" align="center">Chapter 16. 
+		The Locking Subsystem
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="lock_dead.html">Next</a></td>
         </tr>
       </table>
@@ -36,22 +38,16 @@
           </div>
         </div>
       </div>
-      <p>
-        The Berkeley DB locking protocol is described by a conflict
-        matrix. A conflict matrix is an NxN array in which N is the
-        number of different lock modes supported, and the (i, j)th
-        entry of the array indicates whether a lock of mode i
-        conflicts with a lock of mode j. In addition, Berkeley DB
-        defines the type <span class="bold"><strong>db_lockmode_t</strong></span>, 
-        which is the type of a lock mode within a conflict matrix.
-    </p>
-      <p>
-        The following is an example of a conflict matrix. The actual
-        conflict matrix used by Berkeley DB to support the underlying
-        access methods is more complicated, but this matrix shows the
-        lock mode relationships available to applications using the
-        Berkeley DB Locking subsystem interfaces directly.
-    </p>
+      <p>The Berkeley DB locking protocol is described by a conflict matrix.  A
+conflict matrix is an NxN array in which N is the number of different
+lock modes supported, and the (i, j)th entry of the array indicates
+whether a lock of mode i conflicts with a lock of mode j.  In addition,
+Berkeley DB defines the type <span class="bold"><strong>db_lockmode_t</strong></span>, which is the type of a
+lock mode within a conflict matrix.</p>
+      <p>The following is an example of a conflict matrix.  The actual conflict
+matrix used by Berkeley DB to support the underlying access methods is more
+complicated, but this matrix shows the lock mode relationships available
+to applications using the Berkeley DB Locking subsystem interfaces directly.</p>
       <div class="variablelist">
         <dl>
           <dt>
@@ -80,13 +76,10 @@
           <dd>intention to read and write (shared)</dd>
         </dl>
       </div>
-      <p>
-        In a conflict matrix, the rows indicate the lock that is
-        held, and the columns indicate the lock that is requested. A 1
-        represents a conflict (that is, do not grant the lock if the
-        indicated lock is held), and a 0 indicates that it is OK to
-        grant the lock.
-    </p>
+      <p>In a conflict matrix, the rows indicate the lock that is held, and the
+columns indicate the lock that is requested.  A 1 represents a conflict
+(that is, do not grant the lock if the indicated lock is held), and a
+0 indicates that it is OK to grant the lock.</p>
       <pre class="programlisting">               Notheld    Read    Write    IWrite    IRead    IRW
 Notheld           0         0       0         0         0      0
 Read*             0         0       1         1         0      1
@@ -99,20 +92,14 @@ Intent RW         0         1       1         0         0      0</pre>
           <dt>
             <span class="term">*</span>
           </dt>
-          <dd>
-                In this case, suppose that there is a read lock
-                held on an object. A new request for a read lock would
-                be granted, but a request for a write lock would
-                not.
-            </dd>
+          <dd>In this case, suppose that there is a read lock held on an object.  A new
+request for a read lock would be granted, but a request for a write lock
+would not.</dd>
           <dt>
             <span class="term">**</span>
           </dt>
-          <dd>
-                In this case, suppose that there is a write lock
-                held on an object. A new request for either a read or
-                write lock would be denied.
-            </dd>
+          <dd>In this case, suppose that there is a write lock held on an object.  A
+new request for either a read or write lock would be denied.</dd>
         </dl>
       </div>
     </div>
@@ -127,8 +114,7 @@ Intent RW         0         1       1         0         0      0</pre>
           <td width="40%" align="right"> <a accesskey="n" href="lock_dead.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Configuring locking: sizing the
-        system </td>
+          <td width="40%" align="left" valign="top">Configuring locking: sizing the system </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

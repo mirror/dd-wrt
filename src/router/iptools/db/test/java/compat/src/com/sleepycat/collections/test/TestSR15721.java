@@ -1,34 +1,62 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package com.sleepycat.collections.test;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 import com.sleepycat.collections.CurrentTransaction;
 import com.sleepycat.db.Environment;
-import com.sleepycat.util.test.TestBase;
 import com.sleepycat.util.test.TestEnv;
 
 /**
  * @author Chao Huang
  */
-public class TestSR15721 extends TestBase {
+public class TestSR15721 extends TestCase {
+
+    /**
+     * Runs a command line collection test.
+     * @see #usage
+     */
+    public static void main(String[] args) {
+        if (args.length == 1 &&
+            (args[0].equals("-h") || args[0].equals("-help"))) {
+            usage();
+        } else {
+            junit.framework.TestResult tr =
+                junit.textui.TestRunner.run(suite());
+            if (tr.errorCount() > 0 ||
+                tr.failureCount() > 0) {
+                System.exit(1);
+            } else {
+                System.exit(0);
+            }
+        }
+    }
+
+    private static void usage() {
+
+        System.out.println(
+              "Usage: java com.sleepycat.collections.test.TestSR15721"
+            + " [-h | -help]\n");
+        System.exit(2);
+    }
+
+    public static Test suite() {
+        TestSuite suite = new TestSuite(TestSR15721.class);
+        return suite;
+    }
 
     private Environment env;
     private CurrentTransaction currentTxn;
 
-    @Before
+    @Override
     public void setUp()
         throws Exception {
 
@@ -36,7 +64,7 @@ public class TestSR15721 extends TestBase {
         currentTxn = CurrentTransaction.getInstance(env);
     }
 
-    @After
+    @Override
     public void tearDown() {
         try {
             if (env != null) {
@@ -55,7 +83,6 @@ public class TestSR15721 extends TestBase {
      * Tests that the CurrentTransaction instance doesn't indeed allow GC to
      * reclaim while attached environment is open. [#15721]
      */
-    @Test
     public void testSR15721Fix()
         throws Exception {
 

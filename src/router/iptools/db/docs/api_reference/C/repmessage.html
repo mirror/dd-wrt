@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -106,7 +106,7 @@ DB_ENV-&gt;rep_process_message(DB_ENV *env,
                  The <code class="methodname">DB_ENV-&gt;rep_process_message()</code> method will return
                  <code class="literal">DB_REP_IGNORE</code> if this message cannot be processed. This is an
                  indication that this message is irrelevant to the current replication state (for
-                 example, an old message from a previous master arrives and is processed late).
+                 example, an old message from a previous generation arrives and is processed late).
             </p>
           </li>
           <li>
@@ -130,11 +130,7 @@ DB_ENV-&gt;rep_process_message(DB_ENV *env,
                  client is unable to synchronize with the new master. This is possibly because the client
                  has turned off automatic internal initialization by setting the
                  <a class="link" href="repconfig.html#config_DB_REP_CONF_AUTOINIT">DB_REP_CONF_AUTOINIT</a> 
-                 flag to <code class="literal">0</code>. Another possible reason is that
-                 an unencrypted client is attempting to join a replication
-                 group where encryption is use, or an encrypted client is
-                 attempting to join a replication group where encryption is
-                 not in use.
+                 flag to <code class="literal">0</code>.
             </p>
           </li>
           <li>
@@ -179,7 +175,7 @@ DB_ENV-&gt;rep_process_message(DB_ENV *env,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711173815840"></a>Parameters</h3>
+              <h3 class="title"><a id="idp54061176"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -187,7 +183,7 @@ DB_ENV-&gt;rep_process_message(DB_ENV *env,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711173817488"></a>control</h4>
+                <h4 class="title"><a id="idp54060272"></a>control</h4>
               </div>
             </div>
           </div>
@@ -202,7 +198,7 @@ See the <a class="xref" href="reptransport.html" title="DB_ENV-&gt;rep_set_trans
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711173802736"></a>rec</h4>
+                <h4 class="title"><a id="idp54068096"></a>rec</h4>
               </div>
             </div>
           </div>
@@ -217,7 +213,7 @@ See the <a class="xref" href="reptransport.html" title="DB_ENV-&gt;rep_set_trans
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711173809776"></a>envid</h4>
+                <h4 class="title"><a id="idp54069544"></a>envid</h4>
               </div>
             </div>
           </div>
@@ -232,7 +228,7 @@ See the <a class="xref" href="reptransport.html" title="DB_ENV-&gt;rep_set_trans
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711173794672"></a>ret_lsnp</h4>
+                <h4 class="title"><a id="idp54072224"></a>ret_lsnp</h4>
               </div>
             </div>
           </div>
@@ -255,7 +251,7 @@ See the <a class="xref" href="reptransport.html" title="DB_ENV-&gt;rep_set_trans
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711173824640"></a>Errors</h3>
+              <h3 class="title"><a id="idp54056240"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -272,7 +268,7 @@ See the <a class="xref" href="reptransport.html" title="DB_ENV-&gt;rep_set_trans
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711173783936"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp54077968"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -291,7 +287,7 @@ See the <a class="xref" href="reptransport.html" title="DB_ENV-&gt;rep_set_trans
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711173782192"></a>Class</h3>
+              <h3 class="title"><a id="idp54078824"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -303,7 +299,7 @@ See the <a class="xref" href="reptransport.html" title="DB_ENV-&gt;rep_set_trans
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711173779024"></a>See Also</h3>
+              <h3 class="title"><a id="idp54080656"></a>See Also</h3>
             </div>
           </div>
         </div>

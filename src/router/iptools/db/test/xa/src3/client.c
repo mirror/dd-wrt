@@ -1,18 +1,18 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 /*
- * This is the multi-process test for XA.  The application creates several
- * client processes and uses each process to send requests to the servers.
- * There are two tests.  The first one runs two client processes
- * that send requests to the servers then exit.  In the second
- * test there are 3 client processes.  The first 2 execute the same as in
- * the first test, but the third process calls the servers with a command
+ * This is the multithreaded test for XA.  The client creates several threads
+ * and uses each thread to send requests to the servers, which are also
+ * multithreaded.  There are two tests.  The first one runs the client with
+ * two threads that sends requests to the servers then exit.  In the second
+ * test the client creates 3 threads.  The first 2 execute the same as in
+ * the first test, but the third thread calls the servers with a command
  * to kill that server.  This is done to test that the environment and
- * servers can recover from a failure.
+ * servers can recover from a thread failure.
  */
 #include <sys/types.h>
 #include <sys/time.h>
@@ -36,7 +36,9 @@
 #define	HOME	"../data"
 #define	TABLE1	"../data/table1.db"
 #define	TABLE2	"../data/table2.db"
-#define NUM_SERVERS 2
+#define NUM_SERVERS 3
+
+static int expected_error = 0;
 
 char *progname;					/* Client run-time name. */
 
@@ -45,46 +47,48 @@ usage()
 {
 	fprintf(stderr, "usage: %s [-v] [-k]\n", progname);
 	return (EXIT_FAILURE);
-} 
+}
+
+static int thread_error = 1; 
 
 /*
- * In this function the clients call the servers.  There are three possible
- * clients, two both called "lives", and one called "dies". The clients named
- * "lives" send requests to both servers.  The client named "dies", if it
- * exists, calls one of the servers with a command that causes it to fail
- * and exit.
+ * This function is called by the client threads.  Threads 1 and 2 randomly 
+ * call each of the servers.  If thread 3 is created it calls one of the
+ * servers and orders it to exit.
  */
-int call_server(char *client_name, int expected_error)
+void *
+call_server_thread(void *server_name)
 {
 	FBFR *replyBuf;
 	long replyLen;
 	char *server_names[NUM_SERVERS];
-	char *name, *kill_server;
-	int commit, j, iterations, ret;
+	char *name, *thread_name, *kill_thread;
+	int commit, j, iterations;
 	void *result = NULL;
 	TPINIT *initBuf = NULL;
-	kill_server = NULL;
+	kill_thread = NULL;
 	iterations = 100;
 	replyBuf = NULL;
-	ret = 0;
 
 	/* Names of the function to call in the servers. */
 	server_names[0] = "TestThread1";
 	server_names[1] = "TestThread2";
+	thread_name = (char *)server_name;
 	
 	/* Allocate init buffer */
 	if ((initBuf = (TPINIT *)tpalloc("TPINIT", NULL, TPINITNEED(0))) == 0)
 		goto tuxedo_err;
+	initBuf->flags = TPMULTICONTEXTS;
 
 	if (tpinit(initBuf) == -1)
 		goto tuxedo_err;
 	if (verbose)
-	        printf("%s:%s: tpinit() OK\n", progname, client_name);
+	        printf("%s:%s: tpinit() OK\n", progname, thread_name);
 
 	/* Create the command to kill the server. */
-	if (strcmp(client_name, "dies") == 0) {
-		kill_server = (char *)tpalloc("STRING", NULL, 1);
-		if (kill_server == NULL)
+	if (strcmp(thread_name, "3") == 0) {
+		kill_thread = (char *)tpalloc("STRING", NULL, 1);
+		if (kill_thread == NULL)
 		  	goto tuxedo_err;
 		iterations = 1;
 	} else if (expected_error)
@@ -106,16 +110,16 @@ int call_server(char *client_name, int expected_error)
 			goto tuxedo_err;
 		if (verbose)
 		        printf("%s:%s: tpalloc(\"FML32\"), reply buffer OK\n", 
-			    progname, client_name);
+			    progname, thread_name);
 
 		/* Begin the XA transaction. */
 		if (tpbegin(60L, 0L) == -1)
 			goto tuxedo_err;
 		if (verbose)
-		        printf("%s:%s: tpbegin() OK\n", progname, client_name);
+		        printf("%s:%s: tpbegin() OK\n", progname, thread_name);
 		/* Call the server to kill it. */
-		if (kill_server != NULL) {
-		  	tpcall(name, kill_server,  1L, (char **)&replyBuf, 
+		if (kill_thread != NULL) {
+		  	tpcall(name, kill_thread,  1L, (char **)&replyBuf, 
 			    &replyLen, 0L);
 			goto abort;
 		} else {
@@ -140,7 +144,7 @@ int call_server(char *client_name, int expected_error)
 		if (commit) {
 commit:			if (verbose) {
 			        printf("%s:%s: txn success\n", progname, 
-				    client_name);
+				    thread_name);
 			}
 			if (tpcommit(0L) == -1) {
 			  	if (expected_error && tperrno == TPETIME) 
@@ -152,12 +156,12 @@ commit:			if (verbose) {
 			}
 			if (verbose) {
 				printf("%s:%s: tpcommit() OK\n", progname, 
-				    client_name);
+				    thread_name);
 			}
 		} else {
 abort:			if (verbose) {
 				printf("%s:%s: txn failure\n", progname, 
-				    client_name);
+				    thread_name);
 			}
 		  	if (tpabort(0L) == -1) {
 			  	if (expected_error && tperrno == TPETIME) 
@@ -167,30 +171,30 @@ abort:			if (verbose) {
 		  	}
 			if (verbose) {
 				printf("%s:%s: tpabort() OK\n", progname, 
-				    client_name);
+				    thread_name);
 			}
-			if (strcmp(client_name, "dies") == 0) 
+			if (strcmp(thread_name, "3") == 0) 
 			  	break;
 		}
 	}
 
 	if (0) {
 tuxedo_err:	fprintf(stderr, "%s:%s: TUXEDO ERROR: %s (code %d)\n",
-			progname, client_name, tpstrerror(tperrno), tperrno);
-		ret = -1;
+		    progname, thread_name, tpstrerror(tperrno), tperrno);
+	  	result = (void *)&thread_error;
 	}
 end:	tpterm();
 	if (verbose)
-		printf("%s:%s: tpterm() OK\n", progname, client_name);	
+		printf("%s:%s: tpterm() OK\n", progname, thread_name);	
 
 	if (replyBuf != NULL)
 		tpfree((char *)replyBuf);
 	if (initBuf != NULL)
 		tpfree((char *)initBuf);
-	if(kill_server != NULL)
-		tpfree((char *)kill_server);	  
+	if(kill_thread != NULL)
+		tpfree((char *)kill_thread);	  
 
-	return(ret);
+	return(result);
 }
 
 /*
@@ -200,27 +204,25 @@ end:	tpterm();
 int
 main(int argc, char* argv[])
 {
-	int ch, expected_error, i, ret;
-	char *name;
+  int ch, i, ret, num_threads;
+	pthread_t threads[NUM_SERVERS];
+	void *results = NULL;
+	char *names[NUM_SERVERS];
 	DB_ENV *dbenv;
 	u_int32_t flags = DB_INIT_MPOOL | DB_INIT_LOG | DB_INIT_TXN |
 	  DB_INIT_LOCK | DB_CREATE | DB_THREAD | DB_RECOVER | DB_REGISTER;
-	int check_results;
 
-	name = "lives";
+	names[0] = "1";
+	names[1] = "2";
+	names[2] = "3";
 	progname = argv[0];
+	num_threads = 2;
 	dbenv = NULL;
-	check_results = 1;
-	ret = 0;
 
-	while ((ch = getopt(argc, argv, "n:vkd")) != EOF)
+	while ((ch = getopt(argc, argv, "n:vk")) != EOF)
 		switch (ch) {
-		case 'd':
-			expected_error = 1;
-			check_results = 0;
-			break;
 		case 'k':
-			name = "dies";
+		  	num_threads = 3;
 			expected_error = 1;
 			break;
 		case 'v':
@@ -236,11 +238,33 @@ main(int argc, char* argv[])
 	if (verbose)
 		printf("%s: called\n", progname);
 
-	if (call_server(name, expected_error) != 0)
-	    goto err;
+	
+	/* Create threads for different contexts*/
+	for (i = 0; i < num_threads; i++) {
+		if (verbose)
+		       printf("calling server thread\n");
+		ret = pthread_create(&threads[i], NULL, 
+		    call_server_thread, names[i]);
+		if (ret) {
+		       fprintf(stderr, "%s: failed to create thread %s.\n",
+			    progname, ret);
+		       goto err;
+		}
+        }
 
-	/* If a server is not killed, check the data in the two tables.*/
-	if (check_results) {
+	/* Wait for each thread to finish. */
+	for (i = 0; i < num_threads; i++) {
+		if ((ret = pthread_join(threads[i], &results)) != 0) {
+			fprintf(stderr, "%s: failed to join thread %s.\n",
+			    progname, ret);
+			goto err;
+		}
+		if (results != NULL)
+		 	goto err; 
+	}	
+
+	/* If the kill thread was not used, check the data in the two tables.*/
+	if (num_threads < NUM_SERVERS) {
 	    /* Join the DB environment. */
 		if ((ret = db_env_create(&dbenv, 0)) != 0 ||
 		    (ret = dbenv->open(dbenv, HOME, flags, 0)) != 0) {

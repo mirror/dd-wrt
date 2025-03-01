@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -18,8 +18,8 @@ namespace BerkeleyDB {
     /// <para>
     /// Values are in the range of 0 to 1; for example, if the field less is
     /// 0.05, 5% of the keys in the database are less than the key parameter.
-    /// The value for equal is zero if there is no matching key, and is
-    /// non-zero otherwise. 
+    /// The value for equal will be zero if there is no matching key, and will
+    /// be non-zero otherwise. 
     /// </para>
     /// </summary>
     public class KeyRange {

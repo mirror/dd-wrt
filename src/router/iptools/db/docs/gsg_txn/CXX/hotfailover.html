@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -152,10 +152,9 @@
       <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
         <h3 class="title">Note</h3>
         <p>
-            Rather than use the previous procedure, you can use the
-            <span class="command"><strong>db_hotbackup</strong></span> command line utility to do the
-            same thing. This utility will (optionally) run a checkpoint and
-            then copy all necessary files to a target directory for you.  
+            Rather than use the previous procedure, you can use the <span class="command"><strong>db_hotbackup</strong></span> command line utility
+            to do the same thing. This utility will (optionally) run a checkpoint and then copy all necessary files to a target
+            directory for you.  
         </p>
       </div>
       <p>
@@ -170,18 +169,14 @@
           </li>
           <li>
             <p>
-                    If you have an archival copy of the backup environment,
-                    you can optionally try copying the remaining log files
-                    from the original environment and running catastrophic
-                    recovery against that backup environment. Do this
-                    <span class="emphasis"><em>only</em></span> if you have a an archival
-                    copy of the backup environment.
+                    If you have an archival copy of the backup environment, you can optionally try copying the remaining
+                    log files from the original environment and running catastrophic recovery against that backup
+                    environment. Do this <span class="emphasis"><em>only</em></span> if you have a an archival copy of the backup
+                    environment.
                 </p>
             <p>
-                    This step can allow you to recover data created or
-                    modified in the original environment, but which did not
-                    have a chance to be reflected in the hot backup
-                    environment.
+                    This step can allow you to recover data created or modified in the original environment, but which
+                    did not have a chance to be reflected in the hot backup environment.
                 </p>
           </li>
           <li>

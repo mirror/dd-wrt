@@ -15,7 +15,7 @@ public class JDBCStatement implements java.sql.Statement {
 	this.conn = conn;
 	this.updcnt = 0;
 	this.rs = null;
-	this.batch = null;
+	this.batch = null;	
     }
 
     public void setFetchSize(int fetchSize) throws SQLException {

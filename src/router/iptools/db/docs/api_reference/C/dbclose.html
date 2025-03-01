@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -77,11 +77,6 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
          indices referencing it have been closed.
     </p>
       <p>
-         When called on a database that has been opened with sliced
-         support, the <code class="methodname">DB-&gt;close()</code> method is
-         automatically called on each supporting slice database. 
-     </p>
-      <p>
              When multiple threads are using the <a class="link" href="db.html" title="Chapter 2.  The DB Handle">DB</a>
              concurrently, only a single thread may call the <code class="methodname">DB-&gt;close()</code> method.
     </p>
@@ -106,7 +101,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h4 class="title"><a id="idm140711189065872"></a>DB_LOCK_DEADLOCK</h4>
+              <h4 class="title"><a id="idp49255952"></a>DB_LOCK_DEADLOCK</h4>
             </div>
           </div>
         </div>
@@ -119,7 +114,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h4 class="title"><a id="idm140711189121344"></a>DB_LOCK_NOTGRANTED</h4>
+              <h4 class="title"><a id="idp49273128"></a>DB_LOCK_NOTGRANTED</h4>
             </div>
           </div>
         </div>
@@ -139,20 +134,19 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h4 class="title"><a id="idm140711189140624"></a>EINVAL</h4>
+              <h4 class="title"><a id="idp49252240"></a>EINVAL</h4>
             </div>
           </div>
         </div>
         <p>
-                If the cursor is already closed; or if an invalid flag
-                value or parameter was specified.
+                If the cursor is already closed; or if an invalid flag value or parameter was specified.
             </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711189200800"></a>Parameters</h3>
+              <h3 class="title"><a id="idp49378640"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -160,7 +154,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711189203040"></a>flags</h4>
+                <h4 class="title"><a id="idp49378832"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -207,7 +201,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711189211232"></a>Errors</h3>
+              <h3 class="title"><a id="idp49382496"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -223,7 +217,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711189594960"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp49387736"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -238,7 +232,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711189743472"></a>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="idp49360320"></a>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -251,7 +245,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711189757520"></a>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="idp49385048"></a>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -271,13 +265,12 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711189767920"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp49390696"></a>EINVAL</h4>
               </div>
             </div>
           </div>
           <p>
-                If the cursor is already closed; or if an invalid flag
-                value or parameter was specified.
+                If the cursor is already closed; or if an invalid flag value or parameter was specified.
             </p>
         </div>
       </div>
@@ -285,7 +278,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711189489456"></a>Class</h3>
+              <h3 class="title"><a id="idp49390400"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -297,7 +290,7 @@ DB-&gt;close(DB *db, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711189846608"></a>See Also</h3>
+              <h3 class="title"><a id="idp49392336"></a>See Also</h3>
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -28,6 +28,8 @@ import com.sleepycat.db.EnvironmentConfig;
 import com.sleepycat.db.LockMode;
 import com.sleepycat.db.OperationStatus;
 import com.sleepycat.db.Transaction;
+import com.sleepycat.util.FastInputStream;
+import com.sleepycat.util.FastOutputStream;
 import com.sleepycat.util.RuntimeExceptionWrapper;
 import com.sleepycat.util.UtfOps;
 
@@ -236,6 +238,29 @@ public class StoredClassCatalog implements ClassCatalog {
             DatabaseEntry data = new DatabaseEntry();
             OperationStatus status = db.get(null, key, data, LockMode.DEFAULT);
             if (status != OperationStatus.SUCCESS) {
+            
+                /*
+                 * Workaround for a Harmony bug that appears on Android.  The
+                 * ObjectStreamClass is not properly initialized, and using it
+                 * later will cause NullPointerException.  Serializing it and
+                 * then deserializing it causes is to be initialized properly.
+                 * [#18163]
+                 */
+                if (DbCompat.isDalvik()) {
+                    try {
+                        /* Serialize classFormat first. */
+                        FastOutputStream fo = new FastOutputStream();
+                        ObjectOutputStream oos = new ObjectOutputStream(fo);
+                        oos.writeObject(classFormat);
+                        byte[] bytes = fo.toByteArray();
+                        /* Then deserialize classFormat. */
+                        FastInputStream fi = new FastInputStream(bytes);
+                        ObjectInputStream ois = new ObjectInputStream(fi);
+                        classFormat = (ObjectStreamClass) ois.readObject();
+                    } catch (Exception e) {
+                        throw RuntimeExceptionWrapper.wrapIfNeeded(e);
+                    }
+                }
                 
                 /*
                  * Not found in the database, write class info and class

@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# Copyright (c) 2012, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # Display environment's deadlocks based on "db_stat -Co" output.
 

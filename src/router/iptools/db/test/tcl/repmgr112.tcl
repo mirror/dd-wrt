@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2010, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # TEST repmgr112
 # TEST Multi-process repmgr ack policies.
@@ -11,7 +11,6 @@
 
 proc repmgr112 { } {
 	source ./include.tcl
-	global ipversion
 
 	set tnum "112"
 	puts "Repmgr$tnum: consistent ack policy among processes."
@@ -27,7 +26,6 @@ proc repmgr112 { } {
 	file mkdir $clientdir
 	file mkdir $clientdir2
 
-	set hoststr [get_hoststr $ipversion]
 	set ports [available_ports 3]
 	set master_port [lindex $ports 0]
 	set client_port [lindex $ports 1]
@@ -40,7 +38,7 @@ proc repmgr112 { } {
 	make_dbconfig $masterdir {}
 	puts $master "output $testdir/m1output"
 	puts $master "open_env"
-	puts $master "local $hoststr $master_port"
+	puts $master "local $master_port"
 	puts $master "start master"
 	set ignored [gets $master]
 
@@ -53,11 +51,11 @@ proc repmgr112 { } {
 	set client [open "| $site_prog" "r+"]
 	fconfigure $client -buffering line
 	puts $client "home $clientdir"
-	puts $client "local $hoststr $client_port"
+	puts $client "local $client_port"
 	make_dbconfig $clientdir {}
 	puts $client "output $testdir/coutput"
 	puts $client "open_env"
-	puts $client "remote $hoststr $master_port"
+	puts $client "remote 127.0.0.1 $master_port"
 	puts $client "start client"
 	error_check_match start_client [gets $client] "*Successful*"
 
@@ -72,11 +70,11 @@ proc repmgr112 { } {
 	set client2 [open "| $site_prog" "r+"]
 	fconfigure $client2 -buffering line
 	puts $client2 "home $clientdir2"
-	puts $client2 "local $hoststr $client2_port"
+	puts $client2 "local $client2_port"
 	make_dbconfig $clientdir2 {}
 	puts $client2 "output $testdir/c2output"
 	puts $client2 "open_env"
-	puts $client2 "remote $hoststr $master_port"
+	puts $client2 "remote 127.0.0.1 $master_port"
 	puts $client2 "start client"
 	error_check_match start_client2 [gets $client2] "*Successful*"
 

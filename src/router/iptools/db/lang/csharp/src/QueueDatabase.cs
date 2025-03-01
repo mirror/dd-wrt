@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -25,7 +25,7 @@ namespace BerkeleyDB {
         private void Config(QueueDatabaseConfig cfg) {
             base.Config(cfg);
             /* 
-             * Database.Config calls set_flags, but that does not get the Queue
+             * Database.Config calls set_flags, but that doesn't get the Queue
              * specific flags.  No harm in calling it again.
              */
             db.set_flags(cfg.flags);
@@ -51,13 +51,13 @@ namespace BerkeleyDB {
         /// </para>
         /// <para>
         /// If <see cref="DatabaseConfig.AutoCommit"/> is set, the operation
-        /// is implicitly transaction protected. Transactionally
-        /// protected operations on a database object requires the object itself
+        /// will be implicitly transaction protected. Note that transactionally
+        /// protected operations on a datbase object requires the object itself
         /// be transactionally protected during its open.
         /// </para>
         /// </remarks>
         /// <param name="Filename">
-        /// The name of an underlying file that is used to back the
+        /// The name of an underlying file that will be used to back the
         /// database. In-memory databases never intended to be preserved on disk
         /// may be created by setting this parameter to null.
         /// </param>
@@ -80,15 +80,15 @@ namespace BerkeleyDB {
         /// </para>
         /// <para>
         /// If <paramref name="txn"/> is null, but
-        /// <see cref="DatabaseConfig.AutoCommit"/> is set, the operation is
-        /// implicitly transaction protected. Transactionally
-        /// protected operations on a database object requires the object itself
-        /// be transactionally protected during its open. The
+        /// <see cref="DatabaseConfig.AutoCommit"/> is set, the operation will
+        /// be implicitly transaction protected. Note that transactionally
+        /// protected operations on a datbase object requires the object itself
+        /// be transactionally protected during its open. Also note that the
         /// transaction must be committed before the object is closed.
         /// </para>
         /// </remarks>
         /// <param name="Filename">
-        /// The name of an underlying file that is used to back the
+        /// The name of an underlying file that will be used to back the
         /// database. In-memory databases never intended to be preserved on disk
         /// may be created by setting this parameter to null.
         /// </param>
@@ -129,7 +129,7 @@ namespace BerkeleyDB {
 
         /// <summary>
         /// If true, modify the operation of <see cref="QueueDatabase.Consume"/>
-        /// to return key/data pairs in order. They always return
+        /// to return key/data pairs in order. That is, they will always return
         /// the key/data item from the head of the queue. 
         /// </summary>
         public bool InOrder {
@@ -180,8 +180,8 @@ namespace BerkeleyDB {
         /// <see cref="RecnoDatabase.Append"/> and
         /// <see cref="QueueDatabase.Append"/>. If a transaction enclosing an
         /// Append operation aborts, the record number may be reallocated in a
-        /// subsequent <see cref="RecnoDatabase.Append"/> operation, but it
-        /// is not reallocated in a subsequent
+        /// subsequent <see cref="RecnoDatabase.Append"/> operation, but it will
+        /// not be reallocated in a subsequent
         /// <see cref="QueueDatabase.Append"/> operation.
         /// </remarks>
         /// <param name="data">The data item to store in the database</param>
@@ -205,8 +205,8 @@ namespace BerkeleyDB {
         /// to the head of the queue, and delete the record.
         /// </summary>
         /// <param name="wait">
-        /// If true and the Queue database is empty, the thread of control
-        /// waits until there is data in the queue before returning.
+        /// If true and the Queue database is empty, the thread of control will
+        /// wait until there is data in the queue before returning.
         /// </param>
         /// <exception cref="LockNotGrantedException">
         /// If lock or transaction timeouts have been specified, a
@@ -226,8 +226,8 @@ namespace BerkeleyDB {
         /// to the head of the queue, and delete the record.
         /// </summary>
         /// <param name="wait">
-        /// If true and the Queue database is empty, the thread of control
-        /// waits until there is data in the queue before returning.
+        /// If true and the Queue database is empty, the thread of control will
+        /// wait until there is data in the queue before returning.
         /// </param>
         /// <param name="txn">
         /// <paramref name="txn"/> is a Transaction object returned from
@@ -255,8 +255,8 @@ namespace BerkeleyDB {
         /// to the head of the queue, and delete the record.
         /// </summary>
         /// <param name="wait">
-        /// If true and the Queue database is empty, the thread of control 
-        /// waits until there is data in the queue before returning.
+        /// If true and the Queue database is empty, the thread of control will
+        /// wait until there is data in the queue before returning.
         /// </param>
         /// <param name="txn">
         /// <paramref name="txn"/> is a Transaction object returned from

@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -41,8 +41,8 @@
       <pre class="programlisting">#include &lt;db.h&gt;
 
 int
-DB-&gt;set_dup_compare(DB *db, int (*dup_compare_fcn)(DB *db,
-    const DBT *dbt1, const DBT *dbt2, size_t *locp));  </pre>
+DB-&gt;set_dup_compare(DB *db,
+    int (*dup_compare_fcn)(DB *db, const DBT *dbt1, const DBT *dbt2));  </pre>
       <p>
          Set the duplicate data item comparison function.  The comparison
          function is called whenever it is necessary to compare a data item
@@ -75,7 +75,7 @@ DB-&gt;set_dup_compare(DB *db, int (*dup_compare_fcn)(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711191723328"></a>Parameters</h3>
+              <h3 class="title"><a id="idp50184312"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -83,14 +83,14 @@ DB-&gt;set_dup_compare(DB *db, int (*dup_compare_fcn)(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711191727840"></a>dup_compare_fcn</h4>
+                <h4 class="title"><a id="idp50192288"></a>dup_compare_fcn</h4>
               </div>
             </div>
           </div>
           <p>
                           The <span class="bold"><strong>dup_compare_fcn</strong></span> function is the
                           application-specified duplicate data item comparison function.  The
-                          function takes four arguments:
+                          function takes three arguments:
                      </p>
           <div class="itemizedlist">
             <ul type="disc">
@@ -123,15 +123,6 @@ DB-&gt;set_dup_compare(DB *db, int (*dup_compare_fcn)(DB *db,
                                  tree's data item.
                             </p>
               </li>
-              <li>
-                <p>
-                                <code class="literal">locp</code>
-                             </p>
-                <p>
-                                 The <span class="bold"><strong>locp</strong></span> parameter is currently
-                                 unused, and must be set to NULL or corruption can occur.
-                             </p>
-              </li>
             </ul>
           </div>
           <p>
@@ -154,7 +145,7 @@ DB-&gt;set_dup_compare(DB *db, int (*dup_compare_fcn)(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711191441328"></a>Errors</h3>
+              <h3 class="title"><a id="idp50203736"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -170,7 +161,7 @@ DB-&gt;set_dup_compare(DB *db, int (*dup_compare_fcn)(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711192678112"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp50215768"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -183,7 +174,7 @@ DB-&gt;set_dup_compare(DB *db, int (*dup_compare_fcn)(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711192973824"></a>Class</h3>
+              <h3 class="title"><a id="idp50214344"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -195,7 +186,7 @@ DB-&gt;set_dup_compare(DB *db, int (*dup_compare_fcn)(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711193117440"></a>See Also</h3>
+              <h3 class="title"><a id="idp50214624"></a>See Also</h3>
             </div>
           </div>
         </div>

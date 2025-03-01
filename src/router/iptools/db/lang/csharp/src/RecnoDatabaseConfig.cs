@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -16,46 +16,46 @@ namespace BerkeleyDB {
     public class RecnoDatabaseConfig : DatabaseConfig {
         /* Fields for DB->set_flags() */
         /// <summary>
-        /// Causes the logical record numbers to be mutable, and change as
+        /// Cause the logical record numbers to be mutable, and change as
         /// records are added to and deleted from the database.
         /// </summary>
         /// <remarks>
         /// <para>
         /// Using <see cref="Database.Put"/> or <see cref="Cursor.Put"/> to
-        /// create new records causes the creation of multiple records if
+        /// create new records will cause the creation of multiple records if
         /// the record number is more than one greater than the largest record
-        /// currently in the database. For example, creating record 28 when
-        /// record 25 was previously the last record in the database
-        /// creates records 26 and 27 as well as 28. Attempts to retrieve records
-        /// that were created in this manner throw a
+        /// currently in the database. For example, creating record 28, when
+        /// record 25 was previously the last record in the database, will
+        /// create records 26 and 27 as well as 28. Attempts to retrieve records
+        /// that were created in this manner will throw a
         /// <see cref="KeyEmptyException"/>.
         /// </para>
         /// <para>
         /// If a created record is not at the end of the database, all records
-        /// following the new record are automatically renumbered upward by
+        /// following the new record will be automatically renumbered upward by
         /// one. For example, the creation of a new record numbered 8 causes
         /// records numbered 8 and greater to be renumbered upward by one. If a
         /// cursor was positioned to record number 8 or greater before the
-        /// insertion, it is shifted upward one logical record, continuing
+        /// insertion, it will be shifted upward one logical record, continuing
         /// to refer to the same record as it did before.
         /// </para>
         /// <para>
         /// If a deleted record is not at the end of the database, all records
-        /// following the removed record are automatically renumbered
+        /// following the removed record will be automatically renumbered
         /// downward by one. For example, deleting the record numbered 8 causes
         /// records numbered 9 and greater to be renumbered downward by one.  If
         /// a cursor was positioned to record number 9 or greater before the
-        /// removal, it is shifted downward one logical record, continuing
+        /// removal, it will be shifted downward one logical record, continuing
         /// to refer to the same record as it did before.
         /// </para>
         /// <para>
         /// If a record is deleted, all cursors that were positioned on that
-        /// record prior to the removal are no longer positioned on a valid
+        /// record prior to the removal will no longer be positioned on a valid
         /// entry. This includes cursors used to delete an item. For example, if
         /// a cursor was positioned to record number 8 before the removal of
         /// that record, subsequent calls to <see cref="Cursor.Refresh"/>
-        /// returns false until the cursor is moved to another record. A
-        /// call to <see cref="Cursor.MoveNext"/> returns the new record
+        /// will return false until the cursor is moved to another record. A
+        /// call to <see cref="Cursor.MoveNext"/> will return the new record
         /// numbered 8 - which is the record that was numbered 9 prior to the
         /// delete (if such a record existed).
         /// </para>
@@ -66,12 +66,12 @@ namespace BerkeleyDB {
         /// </para>
         /// <para>
         /// If the database already exists, this setting must be the same as the
-        /// existing database or an exception is thrown.
+        /// existing database or an exception will be thrown.
         /// </para>
         /// </remarks>
         public bool Renumber;
         /// <summary>
-        /// If true, any <see cref="BackingFile"/> file is read in its
+        /// If true, any <see cref="BackingFile"/> file will be read in its
         /// entirety when <see cref="RecnoDatabase.Open"/> is called. If false,
         /// <see cref="BackingFile"/> may be read lazily. 
         /// </summary>
@@ -91,7 +91,7 @@ namespace BerkeleyDB {
         /// <remarks>
         /// If the database does not already exist and
         /// <see cref="CreatePolicy.NEVER"/> is set,
-        /// <see cref="RecnoDatabase.Open"/> fails.
+        /// <see cref="RecnoDatabase.Open"/> will fail.
         /// </remarks>
         public CreatePolicy Creation;
         internal new uint openFlags {
@@ -110,7 +110,7 @@ namespace BerkeleyDB {
         /// <para>
         /// When using <see cref="QueueDatabase.Append"/>, it may be useful to
         /// modify the stored data based on the generated key. If a delegate is
-        /// specified, it is called after the record number has been
+        /// specified, it will be called after the record number has been
         /// selected, but before the data has been stored.
         /// </para>
         /// </remarks>
@@ -127,10 +127,10 @@ namespace BerkeleyDB {
         /// This byte is used for variable length records if
         /// <see cref="BackingFile"/> is set. If <see cref="BackingFile"/> is
         /// specified and no delimiting byte was specified, newline characters
-        /// (ASCII 0x0a) are interpreted as end-of-record markers.
+        /// (that is, ASCII 0x0a) are interpreted as end-of-record markers.
         /// </para>
         /// <para>
-        /// If the database already exists, this setting is ignored.
+        /// If the database already exists, this setting will be ignored.
         /// </para>
         /// </remarks>
         public int Delimiter {
@@ -155,11 +155,11 @@ namespace BerkeleyDB {
         /// </para>
         /// <para>
         /// Any attempt to insert records into the database that are greater
-        /// than Length bytes long cause the call to fail immediately and
+        /// than Length bytes long will cause the call to fail immediately and
         /// return an error. 
         /// </para>
         /// <para>
-        /// If the database already exists, this setting is ignored.
+        /// If the database already exists, this setting will be ignored.
         /// </para>
         /// </remarks>
         public uint Length {
@@ -177,11 +177,11 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// <para>
-        /// If no pad character is specified, space characters (ASCII
+        /// If no pad character is specified, space characters (that is, ASCII
         /// 0x20) are used for padding.
         /// </para>
         /// <para>
-        /// If the database already exists, this setting is ignored.
+        /// If the database already exists, this setting will be ignored.
         /// </para>
         /// </remarks>
         public int PadByte {
@@ -214,10 +214,10 @@ namespace BerkeleyDB {
         /// underlying database file (for example,
         /// <see cref="BaseDatabase.Close"/> or
         /// <see cref="BaseDatabase.Sync"/>), the in-memory copy of the
-        /// database is written back to the source file.
+        /// database will be written back to the source file.
         /// </para>
         /// <para>
-        /// By default, the backing source file is read lazily; records
+        /// By default, the backing source file is read lazily; that is, records
         /// are not read from the file until they are requested by the
         /// application. If multiple processes (not threads) are accessing a
         /// Recno database concurrently, and are either inserting or deleting
@@ -236,7 +236,7 @@ namespace BerkeleyDB {
         /// the system crashes at the right instant. If a file is used to hold
         /// the database, normal database recovery on that file can be used to
         /// prevent information loss, although it is still possible that the
-        /// contents of source are lost if the system crashes.
+        /// contents of source will be lost if the system crashes.
         /// </para>
         /// <para>
         /// The source file must already exist (but may be zero-length) when 
@@ -247,10 +247,10 @@ namespace BerkeleyDB {
         /// a database, nor is it an error to modify the resulting database.
         /// However, any attempt to write the changes to the backing source file
         /// using either the <see cref="BaseDatabase.Sync"/> or
-        /// <see cref="BaseDatabase.Close"/> methods fail, of course.
+        /// <see cref="BaseDatabase.Close"/> methods will fail, of course.
         /// Use <see cref="BaseDatabase.Close(bool)"/> to stop it from
         /// attempting to write the changes to the backing file; instead, they
-        /// are silently discarded.
+        /// will be silently discarded.
         /// </para>
         /// <para>
         /// For all of the previous reasons, the source file is generally used

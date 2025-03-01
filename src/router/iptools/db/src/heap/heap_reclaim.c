@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1998, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1998, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -50,7 +50,7 @@ __heap_truncate(dbc, countp)
 		return (ret);
 	if ((ret = __memp_fget(mpf, &pgno,
 	    dbc->thread_info, dbc->txn, DB_MPOOL_DIRTY, &meta)) != 0) {
-		(void)__TLPUT(dbc, lock);
+		__TLPUT(dbc, lock);
 		goto err;
 	}
 

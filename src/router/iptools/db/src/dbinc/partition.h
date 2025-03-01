@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * $Id$
@@ -22,7 +22,6 @@ typedef struct __db_partition {
 	u_int32_t	(*callback) (DB *, DBT *);
 #define	PART_CALLBACK	0x01
 #define	PART_RANGE	0x02
-#define	PART_KEYS_SETUP	0x04
 	u_int32_t	flags;
 } DB_PARTITION;
 
@@ -37,16 +36,9 @@ typedef struct __part_internal {
 
 #ifdef HAVE_PARTITION
 #define	PART_NAME	"__dbp.%s.%03d"
-/*
- * Currently we only support no more than 1000000 partitions.
- * If the limit is changed, the PART_DIGITS and PART_MAXIMUM
- * should be changed accordingly.
- */
-#define	PART_DIGITS	6
-#define	PART_MAXIMUM	1000000
-#define	PART_LEN	(sizeof("__dbp..") + PART_DIGITS)
+#define	PART_LEN	(strlen("__dbp..")+3)
 #define	PART_PREFIX	"__dbp."
-#define	IS_PARTITION_DB_FILE(name)	(strncmp(name, PART_PREFIX,	\
+#define IS_PARTITION_DB_FILE(name)	(strncmp(name, PART_PREFIX,	\
 					    sizeof(PART_PREFIX) - 1) == 0)
 
 #define	DB_IS_PARTITIONED(dbp)						\

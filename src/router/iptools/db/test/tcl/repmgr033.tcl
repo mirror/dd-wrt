@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # TEST	repmgr033
 # TEST	Under quorum policy, if the number of peers in the group is less than a
@@ -26,7 +26,6 @@ proc repmgr033 { { tnum "033" } args } {
 proc repmgr033_sub { method tnum largs } {
 	global rep_verbose
 	global testdir
-	global ipversion
 
 	set rv off
 	if { $rep_verbose == 1 } {
@@ -35,7 +34,6 @@ proc repmgr033_sub { method tnum largs } {
 
 	env_cleanup $testdir
 	foreach {portA portB portC portD portE} [available_ports 5] {}
-	set hoststr [get_hoststr $ipversion]
 
 	set dirA $testdir/A
 	set dirB $testdir/B
@@ -52,35 +50,35 @@ proc repmgr033_sub { method tnum largs } {
 	puts -nonewline "\tRepmgr$tnum: Set up a group of 5"
 	set envA [berkdb env -create -errpfx A -home $dirA -txn -rep -thread \
 	    -verbose [list rep $rv] -event]
-	$envA repmgr -local [list $hoststr $portA] -start master
+	$envA repmgr -local [list 127.0.0.1 $portA] -start master
 	puts -nonewline "." ; flush stdout
 
 	set envB [berkdb env -create -errpfx B -home $dirB -txn -rep -thread \
 	    -verbose [list rep $rv]]
-	$envB repmgr -local [list $hoststr $portB] \
-	    -remote [list $hoststr $portA] -start client
+	$envB repmgr -local [list 127.0.0.1 $portB] \
+	    -remote [list 127.0.0.1 $portA] -start client
 	await_startup_done $envB
 	puts -nonewline "." ; flush stdout
 
 	# These last three clients have priority 0, making them unelectable. 
 	set envC [berkdb env -create -errpfx C -home $dirC -txn -rep -thread \
 	    -verbose [list rep $rv]]
-	$envC repmgr -local [list $hoststr $portC] \
-	    -remote [list $hoststr $portA] -start client -pri 0
+	$envC repmgr -local [list 127.0.0.1 $portC] \
+	    -remote [list 127.0.0.1 $portA] -start client -pri 0
 	await_startup_done $envC
 	puts -nonewline "." ; flush stdout
 
 	set envD [berkdb env -create -errpfx D -home $dirD -txn -rep -thread \
 	    -verbose [list rep $rv]]
-	$envD repmgr -local [list $hoststr $portD] \
-	    -remote [list $hoststr $portA] -start client -pri 0
+	$envD repmgr -local [list 127.0.0.1 $portD] \
+	    -remote [list 127.0.0.1 $portA] -start client -pri 0
 	await_startup_done $envD
 	puts -nonewline "." ; flush stdout
 
 	set envE [berkdb env -create -errpfx E -home $dirE -txn -rep -thread \
 	    -verbose [list rep $rv]]
-	$envE repmgr -local [list $hoststr $portE] \
-	    -remote [list $hoststr $portA] -pri 0 -start client
+	$envE repmgr -local [list 127.0.0.1 $portE] \
+	    -remote [list 127.0.0.1 $portA] -pri 0 -start client
 	await_startup_done $envE
 	puts "."
 

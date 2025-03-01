@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -1087,7 +1087,7 @@ namespace CsharpAPITest
 		 */
 		public static XmlElement TestSetUp(string testFixtureName, string testName)
 		{
-			XMLReader xmlReader = new XMLReader("../../../AllTestData.xml");
+			XMLReader xmlReader = new XMLReader("../../AllTestData.xml");
 			XmlElement xmlElem = xmlReader.GetXmlElement(testFixtureName, testName);
 			if (xmlElem == null)
 				throw new ConfigNotFoundException(testFixtureName + ":" + testName);

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -91,11 +91,6 @@ public class ClassResolver {
      * If the loader param and thread-context loader are both null, of if they
      * throw ClassNotFoundException, then Class.forName is called and the
      * "current loader" (the one used to load JE) will be used.
-     *
-     * @param className the class name.
-     * @param classLoader the ClassLoader.
-     * @return the Class.
-     * @throws ClassNotFoundException if the class is not found.
      */
     public static Class resolveClass(String className,
                                      ClassLoader classLoader)

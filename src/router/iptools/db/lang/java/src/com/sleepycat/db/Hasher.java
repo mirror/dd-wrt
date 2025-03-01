@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -23,8 +23,7 @@ public interface Hasher {
     The byte string to be hashed.
     @param len
     The length of the byte string in bytes.
-    <p>
-    @return
+    <p>    @return
     The hash value of the byte string.
     */
     int hash(Database db, byte[] data, int len);

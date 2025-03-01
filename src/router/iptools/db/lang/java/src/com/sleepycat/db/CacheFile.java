@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -31,6 +31,7 @@ This method may be called at any time during the life of the application.
 @return
 The cache priority for pages from the specified file.
 <p>
+<p>
 @throws DatabaseException if a failure occurs.
     */
     public CacheFilePriority getPriority()
@@ -54,6 +55,7 @@ This method may be called at any time during the life of the application.
 @param priority
 The cache priority for pages from the specified file.
 <p>
+<p>
 @throws DatabaseException if a failure occurs.
     */
     public void setPriority(final CacheFilePriority priority)
@@ -71,6 +73,7 @@ This method may be called at any time during the life of the application.
 @return
 The maximum size for the file backing the database, or 0 if
     no maximum file size has been configured.
+<p>
 <p>
 @throws DatabaseException if a failure occurs.
     */
@@ -91,6 +94,7 @@ This method may be called at any time during the life of the application.
 @param bytes
 The maximum size for the file backing the database.
 <p>
+<p>
 @throws DatabaseException if a failure occurs.
     */
     public void setMaximumSize(final long bytes)
@@ -108,6 +112,7 @@ This method may be called at any time during the life of the application.
 @return
 True if the opening of backing temporary files for in-memory
     databases has been disallowed.
+<p>
 <p>
 @throws DatabaseException if a failure occurs.
     */
@@ -130,6 +135,7 @@ If true,
 disallow opening backing temporary files for in-memory
     databases, even if they expand to fill the entire cache.
 <p>
+<p>
 @throws DatabaseException if a failure occurs.
     */
     public void setNoFile(final boolean onoff)
@@ -148,6 +154,7 @@ This method may be called at any time during the life of the application.
 True if the file will be removed when the last reference to it is
     closed.
 <p>
+<p>
 @throws DatabaseException if a failure occurs.
     */
     public boolean getUnlink()
@@ -164,6 +171,7 @@ This method may be called at any time during the life of the application.
 @param onoff
 If true,
 remove the file when the last reference to it is closed.
+<p>
 <p>
 @throws DatabaseException if a failure occurs.
     */

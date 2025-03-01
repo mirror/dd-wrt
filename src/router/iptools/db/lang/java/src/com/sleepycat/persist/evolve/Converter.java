@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -55,10 +55,6 @@ public class Converter extends Mutation {
     /**
      * Creates a mutation for converting all instances of the given class
      * version to the current version of the class.
-     *
-     * @param className the class to which this mutation applies.
-     * @param classVersion the class version to which this mutation applies.
-     * @param conversion converter instance.
      */
     public Converter(String className,
                      int classVersion,
@@ -70,12 +66,6 @@ public class Converter extends Mutation {
      * Creates a mutation for converting all values of the given field in the
      * given class version to a type compatible with the current declared type
      * of the field.
-     *
-     * @param declaringClassName the class to which this mutation applies.
-     * @param declaringClassVersion the class version to which this mutation
-     * applies.
-     * @param fieldName field name to which this mutation applies.
-     * @param conversion converter instance.
      */
     public Converter(String declaringClassName,
                      int declaringClassVersion,
@@ -101,8 +91,6 @@ public class Converter extends Mutation {
 
     /**
      * Returns the converter instance specified to the constructor.
-     *
-     * @return  the converter instance.
      */
     public Conversion getConversion() {
         return conversion;

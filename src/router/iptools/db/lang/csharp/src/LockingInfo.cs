@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -19,14 +19,14 @@ namespace BerkeleyDB {
         /// </summary>
         public Isolation IsolationDegree;
         /// <summary>
-        /// If true and if locking is configured, acquire write locks instead of
-        /// read locks when doing a read.
+        /// If true, acquire write locks instead of read locks when doing a
+        /// read, if locking is configured.
         /// </summary>
         /// <remarks>
         /// Setting ReadModifyWrite can eliminate deadlock during a
         /// read-modify-write cycle by acquiring the write lock during the read
         /// part of the cycle so that another thread of control acquiring a read
-        /// lock for the same item, in its own read-modify-write cycle, does not
+        /// lock for the same item, in its own read-modify-write cycle, will not
         /// result in deadlock.
         /// </remarks>
         public bool ReadModifyWrite;

@@ -9,36 +9,14 @@
 #include "dbinc/txn.h"
 
 DB_LOG_RECSPEC __heap_addrem_desc[] = {
-	{LOGREC_OP, SSZ(__heap_addrem_args, opcode), "opcode", "%lu"},
+	{LOGREC_ARG, SSZ(__heap_addrem_args, opcode), "opcode", "%lu"},
 	{LOGREC_DB, SSZ(__heap_addrem_args, fileid), "fileid", ""},
 	{LOGREC_ARG, SSZ(__heap_addrem_args, pgno), "pgno", "%lu"},
 	{LOGREC_ARG, SSZ(__heap_addrem_args, indx), "indx", "%lu"},
 	{LOGREC_ARG, SSZ(__heap_addrem_args, nbytes), "nbytes", "%lu"},
-	{LOGREC_HDR, SSZ(__heap_addrem_args, hdr), "hdr", ""},
-	{LOGREC_DATA, SSZ(__heap_addrem_args, dbt), "dbt", ""},
+	{LOGREC_DBT, SSZ(__heap_addrem_args, hdr), "hdr", ""},
+	{LOGREC_DBT, SSZ(__heap_addrem_args, dbt), "dbt", ""},
 	{LOGREC_POINTER, SSZ(__heap_addrem_args, pagelsn), "pagelsn", ""},
-	{LOGREC_Done, 0, "", ""}
-};
-DB_LOG_RECSPEC __heap_addrem_60_desc[] = {
-	{LOGREC_OP, SSZ(__heap_addrem_60_args, opcode), "opcode", "%lu"},
-	{LOGREC_DB, SSZ(__heap_addrem_60_args, fileid), "fileid", ""},
-	{LOGREC_ARG, SSZ(__heap_addrem_60_args, pgno), "pgno", "%lu"},
-	{LOGREC_ARG, SSZ(__heap_addrem_60_args, indx), "indx", "%lu"},
-	{LOGREC_ARG, SSZ(__heap_addrem_60_args, nbytes), "nbytes", "%lu"},
-	{LOGREC_HDR, SSZ(__heap_addrem_60_args, hdr), "hdr", ""},
-	{LOGREC_DBT, SSZ(__heap_addrem_60_args, dbt), "dbt", ""},
-	{LOGREC_POINTER, SSZ(__heap_addrem_60_args, pagelsn), "pagelsn", ""},
-	{LOGREC_Done, 0, "", ""}
-};
-DB_LOG_RECSPEC __heap_addrem_50_desc[] = {
-	{LOGREC_ARG, SSZ(__heap_addrem_50_args, opcode), "opcode", "%lu"},
-	{LOGREC_DB, SSZ(__heap_addrem_50_args, fileid), "fileid", ""},
-	{LOGREC_ARG, SSZ(__heap_addrem_50_args, pgno), "pgno", "%lu"},
-	{LOGREC_ARG, SSZ(__heap_addrem_50_args, indx), "indx", "%lu"},
-	{LOGREC_ARG, SSZ(__heap_addrem_50_args, nbytes), "nbytes", "%lu"},
-	{LOGREC_DBT, SSZ(__heap_addrem_50_args, hdr), "hdr", ""},
-	{LOGREC_DBT, SSZ(__heap_addrem_50_args, dbt), "dbt", ""},
-	{LOGREC_POINTER, SSZ(__heap_addrem_50_args, pagelsn), "pagelsn", ""},
 	{LOGREC_Done, 0, "", ""}
 };
 DB_LOG_RECSPEC __heap_pg_alloc_desc[] = {

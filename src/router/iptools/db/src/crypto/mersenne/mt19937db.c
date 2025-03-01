@@ -156,7 +156,7 @@ __db_genrand(env)
 		 * function will return 4 bytes if we don't send in a key.
 		 */
 		do {
-			__os_gettime(env, &ts, 0);
+			__os_gettime(env, &ts, 1);
 			__db_chksum(NULL, (u_int8_t *)&ts.tv_sec,
 			    sizeof(ts.tv_sec), NULL, (u_int8_t *)&seed);
 		} while (seed == 0);

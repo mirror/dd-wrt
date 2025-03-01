@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2000, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -11,7 +11,7 @@
 
 source ./include.tcl
 source $test_path/testutils.tcl
-source $tcl_utils/common_test_utils.tcl
+source $tcl_utils/multi_proc_utils.tcl
 
 # Arguments:
 if { $argc < 2 } {
@@ -31,7 +31,7 @@ if { $argc >= 2 } {
 #
 # Account in args for SKIP command, or not.
 #
-if { $skip != "SKIP" && $skip != "ALLOW_PIPE_CLOSE_ERROR" && $argc >= 2 } {
+if { $skip != "SKIP" && $argc >= 2 } {
 	set args [lrange $argv 2 end]
 }
 
@@ -96,8 +96,6 @@ close $f
 set f [open $testdir/end.$parentpid w]
 close $f
 
-if { $skip != "ALLOW_PIPE_CLOSE_ERROR" } {
-	error_check_good "Pipe close ($childpid: $script $argv: logfile\
-	    $logfile)" $ret 0
-}
+error_check_good "Pipe close ($childpid: $script $argv: logfile $logfile)"\
+    $ret 0
 exit $ret

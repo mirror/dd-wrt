@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -10,6 +10,10 @@
 
 #include "db_int.h"
 #include "dbinc/lock.h"
+
+static inline int __db_tas_mutex_lock_int
+	    __P((ENV *, db_mutex_t, db_timeout_t, int));
+static inline int __db_tas_mutex_readlock_int __P((ENV *, db_mutex_t, int));
 
 /*
  * __db_tas_mutex_init --
@@ -48,7 +52,8 @@ __db_tas_mutex_init(env, mutex, flags)
 #endif
 	if (MUTEX_INIT(&mutexp->tas)) {
 		ret = __os_get_syserr();
-		__db_syserr(env, ret, DB_STR("2029", "TAS: mutex initialize"));
+		__db_syserr(env, ret, DB_STR("2029",
+		    "TAS: mutex initialize"));
 		return (__os_posix_err(ret));
 	}
 #ifdef HAVE_MUTEX_HYBRID
@@ -60,34 +65,28 @@ __db_tas_mutex_init(env, mutex, flags)
 }
 
 /*
- * __db_tas_mutex_lock --
- *	Exclusive lock function for test-and-set mutexes/latches.
-
- *	On error, leave any mtx_ctr increment in place -- failchk must not
- *	attempt recovering from an incompletely acquired mutex.
- *
- * PUBLIC: int __db_tas_mutex_lock
- * PUBLIC:     __P((ENV *, db_mutex_t, db_timeout_t, u_int32_t));
+ * __db_tas_mutex_lock_int
+ *     Internal function to lock a mutex, or just try to lock it without waiting
  */
-int
-__db_tas_mutex_lock(env, mutex, timeout, flags)
+inline static int
+__db_tas_mutex_lock_int(env, mutex, timeout, nowait)
 	ENV *env;
 	db_mutex_t mutex;
 	db_timeout_t timeout;
-	u_int32_t flags;
+	int nowait;
 {
 	DB_ENV *dbenv;
 	DB_MUTEX *mutexp;
 	DB_MUTEXMGR *mtxmgr;
 	DB_MUTEXREGION *mtxregion;
 	DB_THREAD_INFO *ip;
-	db_timespec now, timeout_timespec;
+	db_timespec now, timespec;
 	u_int32_t nspins;
-	u_long micros;
 	int ret;
-	char buf[DB_THREADID_STRLEN];
-#ifndef HAVE_MUTEX_HYBRID
-	u_long max_micros;
+#ifdef HAVE_MUTEX_HYBRID
+	const u_long micros = 0;
+#else
+	u_long micros, max_micros;
 	db_timeout_t time_left;
 #endif
 
@@ -96,21 +95,21 @@ __db_tas_mutex_lock(env, mutex, timeout, flags)
 	if (!MUTEX_ON(env) || F_ISSET(dbenv, DB_ENV_NOLOCKING))
 		return (0);
 
-	PANIC_CHECK(env);
-
 	mtxmgr = env->mutex_handle;
 	mtxregion = mtxmgr->reginfo.primary;
 	mutexp = MUTEXP_SET(env, mutex);
 
+	CHECK_MTX_THREAD(env, mutexp);
+
+#ifdef HAVE_STATISTICS
 	if (F_ISSET(mutexp, DB_MUTEX_LOCKED))
 		STAT_INC(env, mutex, set_wait, mutexp->mutex_set_wait, mutex);
 	else
 		STAT_INC(env,
 		    mutex, set_nowait, mutexp->mutex_set_nowait, mutex);
+#endif
 
-#ifdef HAVE_MUTEX_HYBRID
-	micros = 0;
-#else
+#ifndef HAVE_MUTEX_HYBRID
 	/*
 	 * Wait 1ms initially, up to 10ms for mutexes backing logical database
 	 * locks, and up to 25 ms for mutual exclusion data structure mutexes.
@@ -120,28 +119,17 @@ __db_tas_mutex_lock(env, mutex, timeout, flags)
 	max_micros = F_ISSET(mutexp, DB_MUTEX_LOGICAL_LOCK) ? 10000 : 25000;
 #endif
 
-	/* Clear the ending timespec so it'll be initialized upon first need. */
+	/* Clear the ending timespec so it'll be initialed upon first need. */
 	if (timeout != 0)
-		timespecclear(&timeout_timespec);
+		timespecclear(&timespec);
 
 	 /*
-	  * Fetch the current thread's state struct, if there is a thread hash
-	  * table and we are keeping track of this mutex.  We increment the
-	  * mtx_ctr before we know that this call succeeds, and decrement it on
-	  * failure or in __db_pthread_mutex_unlock.  By incrementing it before
-	  * the attempt, we detect crashing that occur during this function.
-	  * A crash while holding a non-counted mutex will not be detected by
-	  * failchk's mtx_ctr code: those have to be detected some other way.
-	  */
+	 * Only check the thread state once, by initializing the thread
+	 * control block pointer to null.  If it is not the failchk
+	 * thread, then ip will have a valid value subsequent times
+	 * in the loop.
+	 */
 	ip = NULL;
-	if (env->thr_hashtab != NULL && LF_ISSET(MUTEX_CTR)) {
-		if ((ret = __env_set_state(env, &ip, THREAD_CTR_VERIFY)) != 0)
-			return (__env_panic(env, ret));
-		if (ip != NULL) {
-			DB_ASSERT(env, ip->mtx_ctr < 20);
-			ip->mtx_ctr++;
-		}
-	}
 
 loop:	/* Attempt to acquire the resource for N spins. */
 	for (nspins =
@@ -160,48 +148,16 @@ loop:	/* Attempt to acquire the resource for N spins. */
 		 * succeed by first checking whether it is held
 		 */
 		if (MUTEXP_IS_BUSY(mutexp) || !MUTEXP_ACQUIRE(mutexp)) {
-			if (F_ISSET(dbenv, DB_ENV_FAILCHK) && ip != NULL &&
-			    dbenv->is_alive(dbenv,
+			if (F_ISSET(dbenv, DB_ENV_FAILCHK) &&
+			    ip == NULL && dbenv->is_alive(dbenv,
 			    mutexp->pid, mutexp->tid, 0) == 0) {
-				/*
-				 * The process owing the mutex is "dead" now,
-				 * but it may have already released the mutex.
-				 * We need to check again by going back to the
-				 * top of the loop if the mutex is still held
-				 * by the "dead" process. We yield 10 us to
-				 * increase the likelyhood of mutexp fields
-				 * being up-to-date. Spin just one more time;
-				 * there is no need for additional spins if
-				 * the owner is dead.
-				 */
-				if (nspins > 1) {
-					nspins = 2;
-					__os_yield(env, 0, 10);
-					continue;
-				}
-				if (ip->dbth_state == THREAD_FAILCHK) {
-					ret = USR_ERR(env, DB_RUNRECOVERY);
-					__db_err(env, ret,
-			    "Failchk blocked by dead process %s on mutex %ld",
-					    dbenv->thread_id_string(dbenv,
-					    mutexp->pid, mutexp->tid, buf),
-					    (u_long)mutex);
-					return (ret);
-				}
-						
+				ret = __env_set_state(env, &ip, THREAD_VERIFY);
+				if (ret != 0 ||
+				    ip->dbth_state == THREAD_FAILCHK)
+					return (DB_RUNRECOVERY);
 			}
-			if (!LF_ISSET(MUTEX_WAIT)) {
-				/*
-				 * Since DB_LOCK_NOTGRANTED has not corrupted
-				 * the mutex, failchk can still clean up without
-				 * recovery.
-				 */
-				if (ip != NULL) {
-					DB_ASSERT(env, ip->mtx_ctr > 0);
-					ip->mtx_ctr--;
-				}
-				return (USR_ERR(env, DB_LOCK_NOTGRANTED));
-			}
+			if (nowait)
+				return (DB_LOCK_NOTGRANTED);
 			/*
 			 * Some systems (notably those with newer Intel CPUs)
 			 * need a small pause here. [#6975]
@@ -233,14 +189,9 @@ loop:	/* Attempt to acquire the resource for N spins. */
 		 * the DB mutex unlock function.
 		 */
 #endif
-#ifdef HAVE_FAILCHK_BROADCAST
-		if (F_ISSET(mutexp, DB_MUTEX_OWNER_DEAD)) {
-			MUTEX_UNSET(&mutexp->tas);
-			return (__mutex_died(env, mutex));
-		}
-#endif
 #ifdef DIAGNOSTIC
 		if (F_ISSET(mutexp, DB_MUTEX_LOCKED)) {
+			char buf[DB_THREADID_STRLEN];
 			__db_errx(env, DB_STR_A("2030",
 		    "TAS lock failed: lock %ld currently in use: ID: %s",
 			    "%ld %s"), (long)mutex,
@@ -251,12 +202,6 @@ loop:	/* Attempt to acquire the resource for N spins. */
 #endif
 		F_SET(mutexp, DB_MUTEX_LOCKED);
 		dbenv->thread_id(dbenv, &mutexp->pid, &mutexp->tid);
-#if defined(MUTEX_DIAG)
-		__os_gettime(env, &mutexp->mutex_history.when, 0);
-		/* Why 3? Skip __os_stack_text, __db_tas_mutex_lock{_int,} */
-		__os_stack_text(env, mutexp->mutex_history.stacktext,
-		    sizeof(mutexp->mutex_history.stacktext), 12, 3);
-#endif
 
 #ifdef DIAGNOSTIC
 		/*
@@ -266,33 +211,24 @@ loop:	/* Attempt to acquire the resource for N spins. */
 		if (F_ISSET(dbenv, DB_ENV_YIELDCPU))
 			__os_yield(env, 0, 0);
 #endif
-		/*
-		 * On successful returns do not touch mtx_ctr; if it was
-		 * incremented it stays that way.
-		 */
 		return (0);
 	}
 
 	/*
-	 * We need to wait for the lock to become available.  Setup timeouts if
-	 * this is the first wait, or the failchk timeout is smaller than the
-	 * wait timeout. Check expiration times for subsequent waits.
+	 * We need to wait for the lock to become available.
+	 * Possibly setup timeouts if this is the first wait, or
+	 * check expiration times for the second and subsequent waits.
 	 */
 	if (timeout != 0) {
 		/* Set the expiration time if this is the first sleep . */
-		if (!timespecisset(&timeout_timespec))
-			__clock_set_expires(env, &timeout_timespec, timeout);
+		if (!timespecisset(&timespec))
+			__clock_set_expires(env, &timespec, timeout);
 		else {
 			timespecclear(&now);
-			if (__clock_expired(env, &now, &timeout_timespec)) {
-				if (ip != NULL) {
-					DB_ASSERT(env, ip->mtx_ctr > 0);
-					ip->mtx_ctr--;
-				}
-				return (USR_ERR(env, DB_TIMEOUT));
-			}
+			if (__clock_expired(env, &now, &timespec))
+				return (DB_TIMEOUT);
 #ifndef HAVE_MUTEX_HYBRID
-			timespecsub(&now, &timeout_timespec);
+			timespecsub(&now, &timespec);
 			DB_TIMESPEC_TO_TIMEOUT(time_left, &now, 0);
 			time_left = timeout - time_left;
 			if (micros > time_left)
@@ -316,26 +252,14 @@ loop:	/* Attempt to acquire the resource for N spins. */
 	if (!MUTEXP_IS_BUSY(mutexp))
 		goto loop;
 	/* Wait until the mutex can be obtained exclusively or it times out. */
-	if ((ret = __db_hybrid_mutex_suspend(env, mutex,
-	    timeout == 0 ? NULL : &timeout_timespec, ip, TRUE)) != 0) {
-		DB_DEBUG_MSG(env,
-		    "mutex_lock %ld suspend returned %d", (u_long)mutex, ret);
-		if (ip != NULL) {
-			DB_ASSERT(env, ip->mtx_ctr > 0);
-			ip->mtx_ctr--;
-		}
+	if ((ret = __db_hybrid_mutex_suspend(env,
+	    mutex, timeout == 0 ? NULL : &timespec, TRUE)) != 0)
 		return (ret);
-	}
 #else
 	if ((micros <<= 1) > max_micros)
 		micros = max_micros;
 #endif
 
-#ifdef HAVE_FAILCHK_BROADCAST
-	if (F_ISSET(mutexp, DB_MUTEX_OWNER_DEAD) &&
-	    dbenv->mutex_failchk_timeout != 0)
-		return (__mutex_died(env, mutex));
-#endif
 	/*
 	 * We're spinning.  The environment might be hung, and somebody else
 	 * has already recovered it.  The first thing recovery does is panic
@@ -345,32 +269,64 @@ loop:	/* Attempt to acquire the resource for N spins. */
 	PANIC_CHECK(env);
 
 	goto loop;
+}
 
+/*
+ * __db_tas_mutex_lock
+ *	Lock on a mutex, blocking if necessary.
+ *
+ * PUBLIC: int __db_tas_mutex_lock __P((ENV *, db_mutex_t, db_timeout_t));
+ */
+int
+__db_tas_mutex_lock(env, mutex, timeout)
+	ENV *env;
+	db_mutex_t mutex;
+	db_timeout_t timeout;
+{
+	return (__db_tas_mutex_lock_int(env, mutex, timeout, 0));
+}
+
+/*
+ * __db_tas_mutex_trylock
+ *	Try to exclusively lock a mutex without ever blocking - ever!
+ *
+ *	Returns 0 on success,
+ *		DB_LOCK_NOTGRANTED on timeout
+ *		Possibly DB_RUNRECOVERY if DB_ENV_FAILCHK or panic.
+ *
+ *	This will work for DB_MUTEX_SHARED, though it always tries
+ *	for exclusive access.
+ *
+ * PUBLIC: int __db_tas_mutex_trylock __P((ENV *, db_mutex_t));
+ */
+int
+__db_tas_mutex_trylock(env, mutex)
+	ENV *env;
+	db_mutex_t mutex;
+{
+	return (__db_tas_mutex_lock_int(env, mutex, 0, 1));
 }
 
 #if defined(HAVE_SHARED_LATCHES)
 /*
- * __db_tas_mutex_readlock --
- *	Acquire a shared readlock on o latch, possibly waiting if necessary.
+ * __db_tas_mutex_readlock_int
+ *    Internal function to get a shared lock on a latch, blocking if necessary.
  *
- *	
- *
- * PUBLIC: int __db_tas_mutex_readlock __P((ENV *, db_mutex_t, u_int32_t));
  */
-int
-__db_tas_mutex_readlock(env, mutex, flags)
+static inline int
+__db_tas_mutex_readlock_int(env, mutex, nowait)
 	ENV *env;
 	db_mutex_t mutex;
-	u_int32_t flags;
+	int nowait;
 {
 	DB_ENV *dbenv;
 	DB_MUTEX *mutexp;
 	DB_MUTEXMGR *mtxmgr;
 	DB_MUTEXREGION *mtxregion;
 	DB_THREAD_INFO *ip;
-	MUTEX_STATE *state;
-	int lock, ret;
+	int lock;
 	u_int32_t nspins;
+	int ret;
 #ifndef HAVE_MUTEX_HYBRID
 	u_long micros, max_micros;
 #endif
@@ -383,23 +339,17 @@ __db_tas_mutex_readlock(env, mutex, flags)
 	mtxregion = mtxmgr->reginfo.primary;
 	mutexp = MUTEXP_SET(env, mutex);
 
-	ip = NULL;
-	state = NULL;
-	if (env->thr_hashtab != NULL) {
-		if ((ret = __env_set_state(env, &ip, THREAD_VERIFY)) != 0)
-			return (__env_panic(env, ret));
-		if ((ret = __mutex_record_lock(env,
-		    mutex, ip, MUTEX_ACTION_INTEND_SHARE, &state)) != 0)
-			return (ret);
-	}
+	CHECK_MTX_THREAD(env, mutexp);
 
 	DB_ASSERT(env, F_ISSET(mutexp, DB_MUTEX_SHARED));
+#ifdef HAVE_STATISTICS
 	if (F_ISSET(mutexp, DB_MUTEX_LOCKED))
 		STAT_INC(env,
 		    mutex, set_rd_wait, mutexp->mutex_set_rd_wait, mutex);
 	else
 		STAT_INC(env,
 		    mutex, set_rd_nowait, mutexp->mutex_set_rd_nowait, mutex);
+#endif
 
 #ifndef HAVE_MUTEX_HYBRID
 	/*
@@ -425,58 +375,34 @@ loop:	/* Attempt to acquire the resource for N spins. */
 			MUTEX_PAUSE
 			continue;
 		}
-#ifdef HAVE_FAILCHK_BROADCAST
-		if (F_ISSET(mutexp, DB_MUTEX_OWNER_DEAD) &&
-		    !F_ISSET(dbenv, DB_ENV_FAILCHK)) {
-			(void)atomic_compare_exchange(env,
-			    &mutexp->sharecount, lock, lock - 1);
-			if (state != NULL)
-				state->action = MUTEX_ACTION_UNLOCKED;
-		       return (__mutex_died(env, mutex));
-	       }
-#endif
 
 		MEMBAR_ENTER();
-#ifdef MUTEX_DIAG
-		__os_gettime(env, &mutexp->mutex_history.when, 0);
-		__os_stack_text(env, mutexp->mutex_history.stacktext,
-		    sizeof(mutexp->mutex_history.stacktext), 12, 3);
-#endif
 		/* For shared latches the threadid is the last requestor's id.
 		 */
 		dbenv->thread_id(dbenv, &mutexp->pid, &mutexp->tid);
-		if (state != NULL)
-			state->action = MUTEX_ACTION_SHARED;
 
 		return (0);
 	}
 
-	/* Waiting for the latch must be avoided if it could hang up failchk. */
+	/*
+	 * Waiting for the latched must be avoided when it could allow a
+	 * 'failchk'ing thread to hang.
+	 */
 	if (F_ISSET(dbenv, DB_ENV_FAILCHK) &&
-	    dbenv->is_alive(dbenv, mutexp->pid, mutexp->tid, 0) == 0 &&
-	    ip->dbth_state == THREAD_FAILCHK) {
-		if (state != NULL)
-			state->action = MUTEX_ACTION_UNLOCKED;
-		return (USR_ERR(env, DB_RUNRECOVERY));
+	    dbenv->is_alive(dbenv, mutexp->pid, mutexp->tid, 0) == 0) {
+		ret = __env_set_state(env, &ip, THREAD_VERIFY);
+		if (ret != 0 || ip->dbth_state == THREAD_FAILCHK)
+			return (DB_RUNRECOVERY);
 	}
-#ifdef HAVE_FAILCHK_BROADCAST
-       if (F_ISSET(mutexp, DB_MUTEX_OWNER_DEAD)) {
-	       if (state != NULL)
-		       state->action = MUTEX_ACTION_UNLOCKED;
-	       return (__mutex_died(env, mutex));
-       }
-#endif
 
 	/*
 	 * It is possible to spin out when the latch is just shared, due to
 	 * many threads or interrupts interfering with the compare&exchange.
 	 * Avoid spurious DB_LOCK_NOTGRANTED returns by retrying.
 	 */
-	if (!LF_ISSET(MUTEX_WAIT)) {
+	if (nowait) {
 		if (atomic_read(&mutexp->sharecount) != MUTEX_SHARE_ISEXCLUSIVE)
 			goto loop;
-		if (state != NULL)
-			state->action = MUTEX_ACTION_UNLOCKED;
 		return (DB_LOCK_NOTGRANTED);
 	}
 
@@ -493,11 +419,8 @@ loop:	/* Attempt to acquire the resource for N spins. */
 	if (atomic_read(&mutexp->sharecount) != MUTEX_SHARE_ISEXCLUSIVE)
 		goto loop;
 	/* Wait until the mutex is no longer exclusively locked. */
-	if ((ret = __db_hybrid_mutex_suspend(env, mutex, NULL, ip, FALSE)) != 0) {
-		if (state != NULL)
-			state->action = MUTEX_ACTION_UNLOCKED;
+	if ((ret = __db_hybrid_mutex_suspend(env, mutex, NULL, FALSE)) != 0)
 		return (ret);
-	}
 #else
 	PERFMON4(env, mutex, suspend, mutex, FALSE, mutexp->alloc_id, mutexp);
 	__os_yield(env, 0, micros);
@@ -516,15 +439,45 @@ loop:	/* Attempt to acquire the resource for N spins. */
 
 	goto loop;
 }
+
+/*
+ * __db_tas_mutex_readlock
+ *	Get a shared lock on a latch, waiting if necessary.
+ *
+ * PUBLIC: #if defined(HAVE_SHARED_LATCHES)
+ * PUBLIC: int __db_tas_mutex_readlock __P((ENV *, db_mutex_t));
+ * PUBLIC: #endif
+ */
+int
+__db_tas_mutex_readlock(env, mutex)
+	ENV *env;
+	db_mutex_t mutex;
+{
+	return (__db_tas_mutex_readlock_int(env, mutex, 0));
+}
+
+/*
+ * __db_tas_mutex_tryreadlock
+ *	Try to get a shared lock on a latch; don't wait when busy.
+ *
+ * PUBLIC: #if defined(HAVE_SHARED_LATCHES)
+ * PUBLIC: int __db_tas_mutex_tryreadlock __P((ENV *, db_mutex_t));
+ * PUBLIC: #endif
+ */
+int
+__db_tas_mutex_tryreadlock(env, mutex)
+	ENV *env;
+	db_mutex_t mutex;
+{
+	return (__db_tas_mutex_readlock_int(env, mutex, 1));
+}
 #endif
 
 /*
  * __db_tas_mutex_unlock --
- *	Release a test-and-set mutex/latch.
- *	The DB_THREAD_INFO allows one to unlock on behalf of another thread.  
+ *	Release a mutex.
  *
- * PUBLIC: int __db_tas_mutex_unlock
- * PUBLIC:     __P((ENV *, db_mutex_t, DB_THREAD_INFO *, u_int32_t));
+ * PUBLIC: int __db_tas_mutex_unlock __P((ENV *, db_mutex_t));
  *
  * Hybrid shared latch wakeup
  *	When an exclusive requester waits for the last shared holder to
@@ -532,16 +485,18 @@ loop:	/* Attempt to acquire the resource for N spins. */
  *	last shared unlock calls __db_pthread_mutex_unlock() to wake it.
  */
 int
-__db_tas_mutex_unlock(env, mutex, ip, flags)
-	ENV *env;
+__db_tas_mutex_unlock(env, mutex)
+    ENV *env;
 	db_mutex_t mutex;
-	DB_THREAD_INFO *ip;
-	u_int32_t flags;
 {
 	DB_ENV *dbenv;
 	DB_MUTEX *mutexp;
-	int ret, was_exclusive;
-	char description[DB_MUTEX_DESCRIBE_STRLEN];
+#ifdef HAVE_MUTEX_HYBRID
+	int ret;
+#ifdef MUTEX_DIAG
+	int waiters;
+#endif
+#endif
 #ifdef HAVE_SHARED_LATCHES
 	int sharecount;
 #endif
@@ -550,28 +505,15 @@ __db_tas_mutex_unlock(env, mutex, ip, flags)
 	if (!MUTEX_ON(env) || F_ISSET(dbenv, DB_ENV_NOLOCKING))
 		return (0);
 
-	if (env->thr_hashtab != NULL && ip == NULL &&
-	    (ret = __env_set_state(env, &ip, THREAD_CTR_VERIFY)) != 0)
-		return (__env_panic(env, ret));
-
 	mutexp = MUTEXP_SET(env, mutex);
-	was_exclusive = F_ISSET(mutexp, DB_MUTEX_LOCKED);
-
-	/*
-	 * Bump the mutex counter when releasing a shared latch.  This lets us
-	 * detect a crash crashes during this unlock call, and treats it as a
-	 * hard (DB_RUNRECOVERY) failchk case.
-	 */
-	if (!was_exclusive && ip != NULL)
-		ip->mtx_ctr++;
+#if defined(HAVE_MUTEX_HYBRID) && defined(MUTEX_DIAG)
+	waiters = mutexp->wait;
+#endif
 
 #if defined(DIAGNOSTIC)
 #if defined(HAVE_SHARED_LATCHES)
 	if (F_ISSET(mutexp, DB_MUTEX_SHARED)) {
 		if (atomic_read(&mutexp->sharecount) == 0) {
-			ret = USR_ERR(env, DB_RUNRECOVERY);
-			if (PANIC_ISSET(env))
-				return (__env_panic(env, ret));
 			__db_errx(env, DB_STR_A("2031",
 			    "shared unlock %ld already unlocked", "%ld"),
 			    (long)mutex);
@@ -580,39 +522,16 @@ __db_tas_mutex_unlock(env, mutex, ip, flags)
 	} else
 #endif
 	if (!F_ISSET(mutexp, DB_MUTEX_LOCKED)) {
-		if (PANIC_ISSET(env))
-			return (__env_panic(env,
-			    USR_ERR(env, DB_RUNRECOVERY)));
 		__db_errx(env, DB_STR_A("2032",
 		    "unlock %ld already unlocked", "%ld"), (long)mutex);
 		return (__env_panic(env, EACCES));
 	}
 #endif
-#ifdef MUTEX_DIAG
-	timespecclear(&mutexp->mutex_history.when);
-#endif
 
 #ifdef HAVE_SHARED_LATCHES
 	if (F_ISSET(mutexp, DB_MUTEX_SHARED)) {
 		sharecount = atomic_read(&mutexp->sharecount);
-		/*
-		 * Many code paths contain sequence of the form
-		 *	MUTEX_LOCK(); ret = function(); MUTEX_UNLOCK();
-		 * If function() sees or causes a panic while it had temporarily
-		 * unlocked the mutex it won't be locked anymore. Don't confuse
-		 * the error by generating spurious follow-on messages.
-		 */
-		if (sharecount == 0) {
-was_not_locked:
-			if (!PANIC_ISSET(env)) {
-				ret = USR_ERR(env, DB_RUNRECOVERY);
-				__db_errx(env, DB_STR_A("2070",
-				    "Shared unlock %s: already unlocked", "%s"),
-				    __mutex_describe(env, mutex, description));
-				return (__env_panic(env, ret));
-			}
-			return (__env_panic(env, EACCES));
-		}
+		/*MUTEX_MEMBAR(mutexp->sharecount);*/		/* XXX why? */
 		if (sharecount == MUTEX_SHARE_ISEXCLUSIVE) {
 			F_CLR(mutexp, DB_MUTEX_LOCKED);
 			/* Flush flag update before zeroing count */
@@ -624,15 +543,12 @@ was_not_locked:
 			sharecount = atomic_dec(env, &mutexp->sharecount);
 			DB_ASSERT(env, sharecount >= 0);
 			if (sharecount > 0)
-				goto finish;
+				return (0);
 		}
 	} else
 #endif
 	{
-		if (!F_ISSET(mutexp, DB_MUTEX_LOCKED))
-			goto was_not_locked;
 		F_CLR(mutexp, DB_MUTEX_LOCKED);
-		MEMBAR_EXIT();
 		MUTEX_UNSET(&mutexp->tas);
 	}
 
@@ -642,29 +558,19 @@ was_not_locked:
 		__os_yield(env, 0, 0);
 #endif
 
-	/* Prevent the load of wait from being hoisted before MUTEX_UNSET. */
-	(void)MUTEX_MEMBAR(mutexp->flags);
+	/* Prevent the load of wait from being hoisted before MUTEX_UNSET */
+	MUTEX_MEMBAR(mutexp->flags);
 	if (mutexp->wait &&
-	    (ret = __db_pthread_mutex_unlock(env, mutex, ip, 0)) != 0)
+	    (ret = __db_pthread_mutex_unlock(env, mutex)) != 0)
 		    return (ret);
+
+#ifdef MUTEX_DIAG
+	if (mutexp->wait)
+		printf("tas_unlock %ld %x waiters! busy %x waiters %d/%d\n",
+		    mutex, pthread_self(),
+		    MUTEXP_BUSY_FIELD(mutexp), waiters, mutexp->wait);
 #endif
-	if (was_exclusive) {
-		if (ip != NULL && LF_ISSET(MUTEX_CTR)) {
-			DB_ASSERT(env, ip->mtx_ctr > 0);
-			ip->mtx_ctr--;
-		}
-	} else {
-finish:
-		if (ip != NULL) {
-			if ((ret = __mutex_record_unlock(env, mutex, ip)) != 0)
-				return (ret);
-			/*
-			 * Now that the shared unlock is complete, reduce the
-			 * counter that failchk uses to detect 'fatal' cases.
-			 */
-			ip->mtx_ctr--;
-		}
-	}
+#endif
 
 	return (0);
 }

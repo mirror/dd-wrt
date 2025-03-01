@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -103,14 +103,6 @@ namespace BerkeleyDB {
         /// </summary>
         public uint Lockers { get { return st.st_nlockers; } }
         /// <summary>
-        /// Number of hits in the thread locker cache. 
-        /// </summary>
-        public ulong LockersHit { get { return st.st_nlockers_hit; } }
-        /// <summary>
-        /// Total number of lockers reused. 
-        /// </summary>
-        public ulong LockersReused { get { return st.st_nlockers_reused; } }
-        /// <summary>
         /// Current number of locks. 
         /// </summary>
         public uint Locks { get { return st.st_nlocks; } }
@@ -167,11 +159,11 @@ namespace BerkeleyDB {
         /// </summary>
         public uint MaxUnusedID { get { return st.st_cur_maxid; } }
         /// <summary>
-        /// Maximum number of objects in table. 
+        /// Maximum num of objects in table. 
         /// </summary>
         public uint MaxObjectsInTable { get { return st.st_maxobjects; } }
         /// <summary>
-        /// Number of partitions. 
+        /// number of partitions. 
         /// </summary>
         public uint nPartitions { get { return st.st_partitions; } }
         /// <summary>
@@ -225,4 +217,3 @@ namespace BerkeleyDB {
         
     }
 }
-

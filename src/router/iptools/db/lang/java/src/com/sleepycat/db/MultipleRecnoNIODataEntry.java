@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -53,7 +53,7 @@ public class MultipleRecnoNIODataEntry extends MultipleEntry {
     {@link com.sleepycat.db.Cursor Cursor} get method with this object as the data parameter.
     <p>
     When used with the Queue and Recno access methods,
-    <code>data.getData()</code> will return <code>null</code> for deleted
+    <code>data.getData()<code> will return <code>null</code> for deleted
     records.
     <p>
     @param recno

@@ -63,7 +63,6 @@
     <ClCompile Include="..\..\src\dbreg\dbreg_autop.c"/>
     <ClCompile Include="..\..\src\fileops\fileops_autop.c"/>
     <ClCompile Include="..\..\src\hash\hash_autop.c"/>
-    <ClCompile Include="..\..\src\heap\heap_autop.c"/>
     <ClCompile Include="..\..\src\qam\qam_autop.c"/>
     <ClCompile Include="..\..\src\repmgr\repmgr_autop.c"/>
     <ClCompile Include="..\..\src\txn\txn_autop.c"/>
@@ -74,7 +73,7 @@
   </ImportGroup>
   <ItemGroup>
     <ProjectReference Condition="exists('db.vcxproj')" Include="db.vcxproj">
-      <Project>{FD045D60-ABAD-4A6C-9794-9BFB085FC3E7}</Project>
+      <Project>{fd045d60-abad-4a6c-9794-9bfb085fc3e7}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>

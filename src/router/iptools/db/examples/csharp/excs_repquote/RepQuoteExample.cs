@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -167,24 +167,23 @@ namespace excs_repquote
 						if (args[i].Equals("-L"))
 							isCreator = true;
 						i++;
-						/* Look for index of the last colon in the args[i] string. */
-						int sep = args[i].LastIndexOf(':');
-						if (sep == -1 || sep == 0)
+						string[] words = args[i].Split(':');
+						if (words.Length != 2)
 						{
-							Console.Error.WriteLine("Invalid local host " + 
+							Console.Error.WriteLine("Invalid host " + 
 							    "specification host:port needed.");
 							usage();
 						}
 						try 
 						{
-							tmpPort = uint.Parse(args[i].Substring(sep + 1));
+							tmpPort = uint.Parse(words[1]);
 						} catch (InvalidCastException)
 						{
-							Console.Error.WriteLine("Invalid local host " + 
+							Console.Error.WriteLine("Invalid host " + 
 							    "specification, could not parse port number.");
 							usage();
 						}
-						config.localSite.Host = args[i].Substring(0, sep);
+						config.localSite.Host = words[0];
 						config.localSite.Port = tmpPort;
 						config.localSite.GroupCreator = isCreator;
 						config.localSite.LocalSite = true;
@@ -212,26 +211,25 @@ namespace excs_repquote
 						if (args[i].Equals("-R"))
 							isPeer = true;
 						i++;
-						/* Look for index of the last colon in the args[i] string. */
-						sep = args[i].LastIndexOf(':');
-						if (sep == -1 || sep == 0)
+						words = args[i].Split(':');
+						if (words.Length != 2)
 						{
-							Console.Error.WriteLine("Invalid remote host " + 
+							Console.Error.WriteLine("Invalid host " + 
 							    "specification host:port needed.");
 							usage();
 						}
 						try 
 						{
-							tmpPort = uint.Parse(args[i].Substring(sep + 1));
+							tmpPort = uint.Parse(words[1]);
 						} catch (InvalidCastException)
 						{
-							Console.Error.WriteLine("Invalid remote host " + 
+							Console.Error.WriteLine("Invalid host " + 
 							    "specification, could not parse port number.");
 							usage();
 						}
 						DbSiteConfig remoteConfig = new DbSiteConfig();
 						remoteConfig.Helper = true;
-						remoteConfig.Host = args[i].Substring(0, sep);
+						remoteConfig.Host = words[0];
 						remoteConfig.Port = tmpPort;
 						remoteConfig.Peer = isPeer;
 						config.remoteSites.Add(remoteConfig);

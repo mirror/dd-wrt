@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -32,29 +32,29 @@ namespace BerkeleyDB {
         public bool returnEnd;
         /// <summary>
         /// If non-null, the starting point for compaction.  For a Btree or
-        /// Recno database compaction starts at the smallest key greater
-        /// than or equal to the starting point.  For a Hash database,
-        /// compaction starts in the bucket specified by the integer stored
-        /// in the starting point.  If null, compaction starts at the
+        /// Recno database compaction will start at the smallest key greater
+        /// than or equal to the starting point.  For a Hash database the
+        /// compaction will start in the bucket specified by the integer stored
+        /// in the starting point.  If null, compaction will start at the
         /// beginning of the database. 
         /// </summary>
         public DatabaseEntry start;
         /// <summary>
         /// If non-null, the stopping point for compaction.  For a Btree or
-        /// Recno database compaction stops at the page with the smallest
+        /// Recno database compaction will stop at the page with the smallest
         /// key greater than the stopping point.  For a Hash database
-        /// compaction stops in the bucket specified by the integer stored
-        /// in the stopping point.  If null, compaction stops at the
+        /// compaction will stop in the bucked specified by the integer stored
+        /// in the stopping point.  If null, compaction will stop at the
         /// end of the database. 
         /// </summary>
         public DatabaseEntry stop;
         /// <summary>
         /// If true, return pages to the filesystem when possible. If false,
-        /// pages emptied as a result of compaction are placed on the free
+        /// pages emptied as a result of compaction will be placed on the free
         /// list for re-use, but never returned to the filesystem.
         /// </summary>
         /// <remarks>
-        /// Only pages at the end of a file can be returned to the
+        /// Note that only pages at the end of a file can be returned to the
         /// filesystem. Because of the one-pass nature of the compaction
         /// algorithm, any unemptied page near the end of the file inhibits
         /// returning pages to the file system. A repeated call to
@@ -82,7 +82,7 @@ namespace BerkeleyDB {
         /// <summary>
         /// If non-zero, this provides the goal for filling pages, specified as
         /// a percentage between 1 and 100. Any page not at or above this
-        /// percentage full is considered for compaction. The default
+        /// percentage full will be considered for compaction. The default
         /// behavior is to consider every page for compaction, regardless of its
         /// page fill percentage. 
         /// </summary>
@@ -94,7 +94,7 @@ namespace BerkeleyDB {
             }
         }
         /// <summary>
-        /// If non-zero, compaction completes after the specified number of
+        /// If non-zero, compaction will complete after the specified number of
         /// pages have been freed.
         /// </summary>
         public uint Pages {

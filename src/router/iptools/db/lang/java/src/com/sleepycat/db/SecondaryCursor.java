@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -61,6 +61,7 @@ public class SecondaryCursor extends Cursor {
     <p>
     @return
     The SecondaryDatabase handle associated with this Cursor.
+    <p>
     */
     public SecondaryDatabase getSecondaryDatabase() {
         return (SecondaryDatabase)super.getDatabase();
@@ -81,16 +82,7 @@ public class SecondaryCursor extends Cursor {
     <p>
     Calling this method is the equivalent of calling {@link #dup} and
     casting the result to {@link SecondaryCursor}.
-    @param samePosition
-    If true, the newly created cursor is initialized to refer to the
-    same position in the database as the original cursor (if any) and
-    hold the same locks (if any). If false, or the original cursor does
-    not hold a database position and locks, the returned cursor is
-    uninitialized and will behave like a newly created cursor.
-    @return
-    a new cursor with the same transaction and locker ID as the original
-    cursor
-    @throws DatabaseException if a failure occurs.
+    <p>
     @see #dup
     */
     public SecondaryCursor dupSecondary(final boolean samePosition)
@@ -780,9 +772,6 @@ deadlock.
 <p>
 @param secondaryRecno the secondary record number
 used as input.  It must be initialized with a non-null byte array by the
-caller.
-@param pKey the primary key
-returned as output.  Its byte array does not need to be initialized by the
 caller.
 @param data the primary data
 returned as output.  Multiple results can be retrieved by passing an object

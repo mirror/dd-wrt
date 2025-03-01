@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -176,12 +176,13 @@ public class SampleViews
         {
         }
 
-        public Object entryToObject(TupleInput input) 
+        public Object entryToObject(TupleInput input)
         {
-             String partNumber = input.readString();
-             String supplierNumber = input.readString();
-             return new ShipmentKey(partNumber, supplierNumber);
+            String partNumber = input.readString();
+            String supplierNumber = input.readString();
+            return new ShipmentKey(partNumber, supplierNumber);
         }
+
         public void objectToEntry(Object object, TupleOutput output)
         {
             ShipmentKey key = (ShipmentKey) object;

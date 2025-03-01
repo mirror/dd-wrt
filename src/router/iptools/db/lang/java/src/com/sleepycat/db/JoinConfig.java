@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -79,6 +79,7 @@ public class JoinConfig implements Cloneable {
     Returns whether automatic sorting of the input cursors is disabled.
     <p>
     @return whether automatic sorting of the input cursors is disabled.
+    <p>
     @see #setNoSort
     */
     public boolean getNoSort() {

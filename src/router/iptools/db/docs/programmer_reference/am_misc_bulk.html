@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,7 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="am_misc.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 4.  Access Method Wrapup </th>
+          <th width="60%" align="center">Chapter 4. 
+		Access Method Wrapup
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="am_misc_partial.html">Next</a></td>
         </tr>
       </table>
@@ -55,12 +57,11 @@
           </dt>
         </dl>
       </div>
-      <p>
-        When retrieving or modifying large numbers of records, the
-        number of method calls can often dominate performance.
-        Berkeley DB offers bulk get, put and delete interfaces which
-        can significantly increase performance for some applications.
-    </p>
+      <p>When retrieving or modifying large numbers of records, the number
+of method calls can often dominate performance.  Berkeley DB offers bulk get,
+put and delete interfaces which can significantly increase performance for some
+applications.
+</p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
@@ -69,78 +70,68 @@
             </div>
           </div>
         </div>
-        <p> 
-            To retrieve records in bulk, an application buffer must
-            be specified to the <a href="../api_reference/C/dbget.html" class="olink">DB-&gt;get()</a> or <a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a> methods. This is
-            done in the C API by setting the <span class="bold"><strong>data</strong></span> 
-            and <span class="bold"><strong>ulen</strong></span> fields of the 
-            <span class="bold"><strong>data</strong></span> <a href="../api_reference/C/dbt.html" class="olink">DBT</a> to reference an application
-            buffer, and the <span class="bold"><strong>flags</strong></span>
-            field of that structure to <a href="../api_reference/C/dbt.html#dbt_DB_DBT_USERMEM" class="olink">DB_DBT_USERMEM</a>. In the
-            Berkeley DB C++ and Java APIs, the actions are similar,
-            although there are API-specific methods to set the <a href="../api_reference/C/dbt.html" class="olink">DBT</a>
-            values. Then, the <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE" class="olink">DB_MULTIPLE</a> or <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE_KEY" class="olink">DB_MULTIPLE_KEY</a> flags
-            are specified to the <a href="../api_reference/C/dbget.html" class="olink">DB-&gt;get()</a> or <a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a> methods, which
-            cause multiple records to be returned in the specified
-            buffer.
-        </p>
         <p>
-            The difference between <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE" class="olink">DB_MULTIPLE</a> and
-            <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE_KEY" class="olink">DB_MULTIPLE_KEY</a> is as follows: <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE" class="olink">DB_MULTIPLE</a> returns
-            multiple data items for a single key. For example, the
-            <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE" class="olink">DB_MULTIPLE</a> flag would be used to retrieve all of the
-            duplicate data items for a single key in a single call.
-            The <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE_KEY" class="olink">DB_MULTIPLE_KEY</a> flag is used to retrieve multiple
-            key/data pairs, where each returned key may or may not
-            have duplicate data items.
-        </p>
-        <p> 
-            Once the <a href="../api_reference/C/dbget.html" class="olink">DB-&gt;get()</a> or <a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a> method has returned, the
-            application will walk through the buffer handling the
-            returned records. This is implemented for the C and C++
-            APIs using four macros: <a href="../api_reference/C/DB_MULTIPLE_INIT.html" class="olink">DB_MULTIPLE_INIT</a>,
-            <a href="../api_reference/C/DB_MULTIPLE_NEXT.html" class="olink">DB_MULTIPLE_NEXT</a>, <a href="../api_reference/C/DB_MULTIPLE_KEY_NEXT.html" class="olink">DB_MULTIPLE_KEY_NEXT</a>, and
-            <a href="../api_reference/C/DB_MULTIPLE_RECNO_NEXT.html" class="olink">DB_MULTIPLE_RECNO_NEXT</a>. For the Java API, this is
-            implemented as three iterator classes: <a class="ulink" href="../java/com/sleepycat/db/MultipleDataEntry.html" target="_top">MultipleDataEntry</a>, 
-            <a class="ulink" href="../java/com/sleepycat/db/MultipleKeyDataEntry.html" target="_top">MultipleKeyDataEntry</a>,
-            and <a class="ulink" href="../java/com/sleepycat/db/MultipleRecnoDataEntry.html" target="_top">
-            MultipleRecnoDataEntry</a>. 
-        </p>
+    To retrieve records in bulk, an application buffer must be specified to
+    the <a href="../api_reference/C/dbget.html" class="olink">DB-&gt;get()</a> or <a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a> methods.  This is done in the C API by setting
+    the <span class="bold"><strong>data</strong></span> and <span class="bold"><strong>ulen</strong></span> fields of the <span class="bold"><strong>data</strong></span> <a href="../api_reference/C/dbt.html" class="olink">DBT</a> to reference an application
+    buffer, and the
+    <span class="bold"><strong>flags</strong></span> field of that structure to
+    <a href="../api_reference/C/dbt.html#dbt_DB_DBT_USERMEM" class="olink">DB_DBT_USERMEM</a>.  In the Berkeley DB C++ and Java APIs, the actions
+    are similar, although there are API-specific methods to set the <a href="../api_reference/C/dbt.html" class="olink">DBT</a>
+    values.  Then, the <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE" class="olink">DB_MULTIPLE</a> or <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE_KEY" class="olink">DB_MULTIPLE_KEY</a> flags are
+    specified to the <a href="../api_reference/C/dbget.html" class="olink">DB-&gt;get()</a> or <a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a> methods, which cause multiple
+    records to be returned in the specified buffer.
+</p>
         <p>
-            The <a href="../api_reference/C/DB_MULTIPLE_INIT.html" class="olink">DB_MULTIPLE_INIT</a> macro is always called first. It
-            initializes a local application variable and the <span class="bold"><strong>data</strong></span> <a href="../api_reference/C/dbt.html" class="olink">DBT</a> for stepping through
-            the set of returned records. Then, the application calls
-            one of the remaining three macros: <a href="../api_reference/C/DB_MULTIPLE_NEXT.html" class="olink">DB_MULTIPLE_NEXT</a>,
-            <a href="../api_reference/C/DB_MULTIPLE_KEY_NEXT.html" class="olink">DB_MULTIPLE_KEY_NEXT</a>, and <a href="../api_reference/C/DB_MULTIPLE_RECNO_NEXT.html" class="olink">DB_MULTIPLE_RECNO_NEXT</a>.
-        </p>
+    The difference between <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE" class="olink">DB_MULTIPLE</a> and <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE_KEY" class="olink">DB_MULTIPLE_KEY</a> is as
+    follows: <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE" class="olink">DB_MULTIPLE</a> returns multiple data items for a single key.
+    For example, the <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE" class="olink">DB_MULTIPLE</a> flag would be used to retrieve all of
+    the duplicate data items for a single key in a single call.  The
+    <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE_KEY" class="olink">DB_MULTIPLE_KEY</a> flag is used to retrieve multiple key/data pairs,
+    where each returned key may or may not have duplicate data items.
+</p>
         <p>
-            If the <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE" class="olink">DB_MULTIPLE</a> flag was specified to the <a href="../api_reference/C/dbget.html" class="olink">DB-&gt;get()</a>
-            or <a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a> method, the application will always call the
-            <a href="../api_reference/C/DB_MULTIPLE_NEXT.html" class="olink">DB_MULTIPLE_NEXT</a> macro. If the <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE_KEY" class="olink">DB_MULTIPLE_KEY</a> flag
-            was specified to the <a href="../api_reference/C/dbget.html" class="olink">DB-&gt;get()</a> or <a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a> method, and the
-            underlying database is a Btree or Hash database, the
-            application will always call the <a href="../api_reference/C/DB_MULTIPLE_KEY_NEXT.html" class="olink">DB_MULTIPLE_KEY_NEXT</a>
-            macro. If the <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE_KEY" class="olink">DB_MULTIPLE_KEY</a> flag was specified to the
-            <a href="../api_reference/C/dbget.html" class="olink">DB-&gt;get()</a> or <a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a> method, and the underlying database is
-            a Queue or Recno database, the application will always
-            call the <a href="../api_reference/C/DB_MULTIPLE_RECNO_NEXT.html" class="olink">DB_MULTIPLE_RECNO_NEXT</a> macro. The
-            <a href="../api_reference/C/DB_MULTIPLE_NEXT.html" class="olink">DB_MULTIPLE_NEXT</a>, <a href="../api_reference/C/DB_MULTIPLE_KEY_NEXT.html" class="olink">DB_MULTIPLE_KEY_NEXT</a>, and
-            <a href="../api_reference/C/DB_MULTIPLE_RECNO_NEXT.html" class="olink">DB_MULTIPLE_RECNO_NEXT</a> macros are called repeatedly,
-            until the end of the returned records is reached. The end
-            of the returned records is detected by the application's
-            local pointer variable being set to NULL.
-        </p>
-        <p> 
-            Note that if you want to use a cursor for bulk
-            retrieval of records in a Btree database, you should open
-            the cursor using the <code class="literal">DB_CURSOR_BULK</code>
-            flag. This optimizes the cursor for bulk retrieval.
-        </p>
-        <p> 
-            The following is an example of a routine that displays
-            the contents of a Btree database using the bulk return
-            interfaces. 
-        </p>
+    Once the <a href="../api_reference/C/dbget.html" class="olink">DB-&gt;get()</a> or <a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a> method has returned, the application will
+    walk through the buffer handling the returned records.  This is
+    implemented for the C and C++ APIs using four macros:
+    <a href="../api_reference/C/DB_MULTIPLE_INIT.html" class="olink">DB_MULTIPLE_INIT</a>, <a href="../api_reference/C/DB_MULTIPLE_NEXT.html" class="olink">DB_MULTIPLE_NEXT</a>, <a href="../api_reference/C/DB_MULTIPLE_KEY_NEXT.html" class="olink">DB_MULTIPLE_KEY_NEXT</a>, and
+    <a href="../api_reference/C/DB_MULTIPLE_RECNO_NEXT.html" class="olink">DB_MULTIPLE_RECNO_NEXT</a>.  For the Java API, this is implemented as
+    three iterator classes: 
+    <a class="ulink" href="../java/com/sleepycat/db/MultipleDataEntry.html" target="_top">MultipleDataEntry</a>,
+    <a class="ulink" href="../java/com/sleepycat/db/MultipleKeyDataEntry.html" target="_top">MultipleKeyDataEntry</a>,
+    and <a class="ulink" href="../java/com/sleepycat/db/MultipleRecnoDataEntry.html" target="_top">MultipleRecnoDataEntry</a>.
+</p>
+        <p>
+    The <a href="../api_reference/C/DB_MULTIPLE_INIT.html" class="olink">DB_MULTIPLE_INIT</a> macro is always called first.  It initializes a
+    local application variable and the <span class="bold"><strong>data</strong></span> <a href="../api_reference/C/dbt.html" class="olink">DBT</a> for stepping through the set of
+    returned records.  Then, the application calls one of the remaining
+    three macros: <a href="../api_reference/C/DB_MULTIPLE_NEXT.html" class="olink">DB_MULTIPLE_NEXT</a>, <a href="../api_reference/C/DB_MULTIPLE_KEY_NEXT.html" class="olink">DB_MULTIPLE_KEY_NEXT</a>, and
+    <a href="../api_reference/C/DB_MULTIPLE_RECNO_NEXT.html" class="olink">DB_MULTIPLE_RECNO_NEXT</a>.
+</p>
+        <p>
+    If the <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE" class="olink">DB_MULTIPLE</a> flag was specified to the <a href="../api_reference/C/dbget.html" class="olink">DB-&gt;get()</a> or <a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a>
+    method, the application will always call the <a href="../api_reference/C/DB_MULTIPLE_NEXT.html" class="olink">DB_MULTIPLE_NEXT</a> macro.
+    If the <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE_KEY" class="olink">DB_MULTIPLE_KEY</a> flag was specified to the <a href="../api_reference/C/dbget.html" class="olink">DB-&gt;get()</a> or <a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a>
+    method, and the underlying database is a Btree or Hash database, the
+    application will always call the <a href="../api_reference/C/DB_MULTIPLE_KEY_NEXT.html" class="olink">DB_MULTIPLE_KEY_NEXT</a> macro.  If the
+    <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE_KEY" class="olink">DB_MULTIPLE_KEY</a> flag was specified to the <a href="../api_reference/C/dbget.html" class="olink">DB-&gt;get()</a> or <a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a> method,
+    and the underlying database is a Queue or Recno database, the
+    application will always call the <a href="../api_reference/C/DB_MULTIPLE_RECNO_NEXT.html" class="olink">DB_MULTIPLE_RECNO_NEXT</a> macro. The
+    <a href="../api_reference/C/DB_MULTIPLE_NEXT.html" class="olink">DB_MULTIPLE_NEXT</a>, <a href="../api_reference/C/DB_MULTIPLE_KEY_NEXT.html" class="olink">DB_MULTIPLE_KEY_NEXT</a>, and
+    <a href="../api_reference/C/DB_MULTIPLE_RECNO_NEXT.html" class="olink">DB_MULTIPLE_RECNO_NEXT</a> macros are called repeatedly, until the end of
+    the returned records is reached.  The end of the returned records is
+    detected by the application's local pointer variable being set to NULL.
+</p>
+        <p>
+    Note that if you want to use a cursor for bulk retrieval of records in
+    a Btree database, you should open the cursor using the
+    <code class="literal">DB_CURSOR_BULK</code> flag. This optimizes the cursor for
+    bulk retrieval.
+</p>
+        <p>
+    The following is an example of a routine that displays the contents of
+    a Btree database using the bulk return interfaces.
+</p>
         <a id="prog_am22"></a>
         <pre class="programlisting">int
 rec_display(DB *dbp)
@@ -214,34 +205,13 @@ rec_display(DB *dbp)
             </div>
           </div>
         </div>
+        <p>To put records in bulk with the btree or hash access methods, construct bulk buffers in the <span class="bold"><strong>key</strong></span> and <span class="bold"><strong>data</strong></span> <a href="../api_reference/C/dbt.html" class="olink">DBT</a> using <a href="../api_reference/C/DB_MULTIPLE_WRITE_INIT.html" class="olink">DB_MULTIPLE_WRITE_INIT</a> and <a href="../api_reference/C/DB_MULTIPLE_WRITE_NEXT.html" class="olink">DB_MULTIPLE_WRITE_NEXT</a>.  To put records in bulk with the recno or queue access methods, construct bulk buffers in the <span class="bold"><strong>data</strong></span> <a href="../api_reference/C/dbt.html" class="olink">DBT</a> as before, but construct the <span class="bold"><strong>key</strong></span> <a href="../api_reference/C/dbt.html" class="olink">DBT</a> using <a href="../api_reference/C/DB_MULTIPLE_RECNO_WRITE_INIT.html" class="olink">DB_MULTIPLE_RECNO_WRITE_INIT</a> and <a href="../api_reference/C/DB_MULTIPLE_RECNO_WRITE_NEXT.html" class="olink">DB_MULTIPLE_RECNO_WRITE_NEXT</a> with a data size of zero;.  In both cases, set the <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE" class="olink">DB_MULTIPLE</a> flag to <a href="../api_reference/C/dbput.html" class="olink">DB-&gt;put()</a>.</p>
+        <p>Alternatively, for btree and hash access methods, construct a single bulk buffer in the <span class="bold"><strong>key</strong></span> <a href="../api_reference/C/dbt.html" class="olink">DBT</a> using <a href="../api_reference/C/DB_MULTIPLE_WRITE_INIT.html" class="olink">DB_MULTIPLE_WRITE_INIT</a> and <a href="../api_reference/C/DB_MULTIPLE_KEY_WRITE_NEXT.html" class="olink">DB_MULTIPLE_KEY_WRITE_NEXT</a>.  For recno and queue access methods, construct a bulk buffer in the <span class="bold"><strong>key</strong></span> <a href="../api_reference/C/dbt.html" class="olink">DBT</a> using <a href="../api_reference/C/DB_MULTIPLE_RECNO_WRITE_INIT.html" class="olink">DB_MULTIPLE_RECNO_WRITE_INIT</a> and <a href="../api_reference/C/DB_MULTIPLE_RECNO_WRITE_NEXT.html" class="olink">DB_MULTIPLE_RECNO_WRITE_NEXT</a>.  In both cases, set the <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE_KEY" class="olink">DB_MULTIPLE_KEY</a> flag to <a href="../api_reference/C/dbput.html" class="olink">DB-&gt;put()</a>.
+
+</p>
+        <p>A successful bulk operation is logically equivalent to a loop through each key/data pair, performing a <a href="../api_reference/C/dbput.html" class="olink">DB-&gt;put()</a> for each one.</p>
         <p>
-            To put records in bulk with the btree or hash access
-            methods, construct bulk buffers in the <span class="bold"><strong>key</strong></span> and <span class="bold"><strong>data</strong></span> 
-            <a href="../api_reference/C/dbt.html" class="olink">DBT</a> using <a href="../api_reference/C/DB_MULTIPLE_WRITE_INIT.html" class="olink">DB_MULTIPLE_WRITE_INIT</a>
-            and <a href="../api_reference/C/DB_MULTIPLE_WRITE_NEXT.html" class="olink">DB_MULTIPLE_WRITE_NEXT</a>. To put records in bulk with
-            the recno or queue access methods, construct bulk buffers
-            in the <span class="bold"><strong>data</strong></span> <a href="../api_reference/C/dbt.html" class="olink">DBT</a> as
-            before, but construct the <span class="bold"><strong>key</strong></span> 
-            <a href="../api_reference/C/dbt.html" class="olink">DBT</a> using <a href="../api_reference/C/DB_MULTIPLE_RECNO_WRITE_INIT.html" class="olink">DB_MULTIPLE_RECNO_WRITE_INIT</a> and
-            <a href="../api_reference/C/DB_MULTIPLE_RECNO_WRITE_NEXT.html" class="olink">DB_MULTIPLE_RECNO_WRITE_NEXT</a> with a data size of zero;.
-            In both cases, set the <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE" class="olink">DB_MULTIPLE</a> flag to
-            <a href="../api_reference/C/dbput.html" class="olink">DB-&gt;put()</a>.
-        </p>
-        <p>
-            Alternatively, for btree and hash access methods,
-            construct a single bulk buffer in the <span class="bold"><strong>key</strong></span> <a href="../api_reference/C/dbt.html" class="olink">DBT</a> using
-            <a href="../api_reference/C/DB_MULTIPLE_WRITE_INIT.html" class="olink">DB_MULTIPLE_WRITE_INIT</a> and <a href="../api_reference/C/DB_MULTIPLE_KEY_WRITE_NEXT.html" class="olink">DB_MULTIPLE_KEY_WRITE_NEXT</a>.
-            For recno and queue access methods, construct a bulk
-            buffer in the <span class="bold"><strong>key</strong></span> <a href="../api_reference/C/dbt.html" class="olink">DBT</a>
-            using <a href="../api_reference/C/DB_MULTIPLE_RECNO_WRITE_INIT.html" class="olink">DB_MULTIPLE_RECNO_WRITE_INIT</a> and
-            <a href="../api_reference/C/DB_MULTIPLE_RECNO_WRITE_NEXT.html" class="olink">DB_MULTIPLE_RECNO_WRITE_NEXT</a>. In both cases, set the
-            <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE_KEY" class="olink">DB_MULTIPLE_KEY</a> flag to <a href="../api_reference/C/dbput.html" class="olink">DB-&gt;put()</a>. 
-        </p>
-        <p>
-            A successful bulk operation is logically equivalent to a loop through
-            each key/data pair, performing a <a href="../api_reference/C/dbput.html" class="olink">DB-&gt;put()</a> for each
-            one.
-        </p>
+</p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
@@ -251,40 +221,9 @@ rec_display(DB *dbp)
             </div>
           </div>
         </div>
-        <p>
-            To delete all records with a specified set of keys with
-            the btree or hash access methods, construct a bulk buffer
-            in the <span class="bold"><strong>key</strong></span> <a href="../api_reference/C/dbt.html" class="olink">DBT</a> using
-            <a href="../api_reference/C/DB_MULTIPLE_WRITE_INIT.html" class="olink">DB_MULTIPLE_WRITE_INIT</a> and <a href="../api_reference/C/DB_MULTIPLE_WRITE_NEXT.html" class="olink">DB_MULTIPLE_WRITE_NEXT</a>. To
-            delete a set of records with the recno or queue access
-            methods, construct the <span class="bold"><strong>key</strong></span> <a href="../api_reference/C/dbt.html" class="olink">DBT</a> using
-            <a href="../api_reference/C/DB_MULTIPLE_RECNO_WRITE_INIT.html" class="olink">DB_MULTIPLE_RECNO_WRITE_INIT</a> and
-            <a href="../api_reference/C/DB_MULTIPLE_RECNO_WRITE_NEXT.html" class="olink">DB_MULTIPLE_RECNO_WRITE_NEXT</a> with a data size of zero.
-            In both cases, set the <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE" class="olink">DB_MULTIPLE</a> flag to <a href="../api_reference/C/dbdel.html" class="olink">DB-&gt;del()</a>. This
-            is equivalent to calling <a href="../api_reference/C/dbdel.html" class="olink">DB-&gt;del()</a> for each key in the bulk
-            buffer. In particular, if the database supports
-            duplicates, all records with the matching key are
-            deleted.
-        </p>
-        <p>
-            Alternatively, to delete a specific set of key/data
-            pairs, which may be items within a set of duplicates,
-            there are also two cases depending on whether the access
-            method uses record numbers for keys. For btree and hash
-            access methods, construct a single bulk buffer in the
-            <span class="bold"><strong>key</strong></span> <a href="../api_reference/C/dbt.html" class="olink">DBT</a> using
-            <a href="../api_reference/C/DB_MULTIPLE_WRITE_INIT.html" class="olink">DB_MULTIPLE_WRITE_INIT</a> and <a href="../api_reference/C/DB_MULTIPLE_KEY_WRITE_NEXT.html" class="olink">DB_MULTIPLE_KEY_WRITE_NEXT</a>.
-            For recno and queue access methods, construct a bulk
-            buffer in the <span class="bold"><strong>key</strong></span> <a href="../api_reference/C/dbt.html" class="olink">DBT</a>
-            using <a href="../api_reference/C/DB_MULTIPLE_RECNO_WRITE_INIT.html" class="olink">DB_MULTIPLE_RECNO_WRITE_INIT</a> and
-            <a href="../api_reference/C/DB_MULTIPLE_RECNO_WRITE_NEXT.html" class="olink">DB_MULTIPLE_RECNO_WRITE_NEXT</a>. In both cases, set the
-            <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE_KEY" class="olink">DB_MULTIPLE_KEY</a> flag to <a href="../api_reference/C/dbdel.html" class="olink">DB-&gt;del()</a>.
-        </p>
-        <p>
-            A successful bulk operation is logically equivalent to a
-            loop through each key/data pair, performing a <a href="../api_reference/C/dbdel.html" class="olink">DB-&gt;del()</a> for
-            each one.
-        </p>
+        <p>To delete all records with a specified set of keys with the btree or hash access methods, construct a bulk buffer in the <span class="bold"><strong>key</strong></span> <a href="../api_reference/C/dbt.html" class="olink">DBT</a> using <a href="../api_reference/C/DB_MULTIPLE_WRITE_INIT.html" class="olink">DB_MULTIPLE_WRITE_INIT</a> and <a href="../api_reference/C/DB_MULTIPLE_WRITE_NEXT.html" class="olink">DB_MULTIPLE_WRITE_NEXT</a>.  To delete a set of records with the recno or queue access methods, construct the <span class="bold"><strong>key</strong></span> <a href="../api_reference/C/dbt.html" class="olink">DBT</a> using <a href="../api_reference/C/DB_MULTIPLE_RECNO_WRITE_INIT.html" class="olink">DB_MULTIPLE_RECNO_WRITE_INIT</a> and <a href="../api_reference/C/DB_MULTIPLE_RECNO_WRITE_NEXT.html" class="olink">DB_MULTIPLE_RECNO_WRITE_NEXT</a> with a data size of zero.  In both cases, set the <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE" class="olink">DB_MULTIPLE</a> flag to <a href="../api_reference/C/dbdel.html" class="olink">DB-&gt;del()</a>.  This is equivalent to calling <a href="../api_reference/C/dbdel.html" class="olink">DB-&gt;del()</a> for each key in the bulk buffer.  In particular, if the database supports duplicates, all records with the matching key are deleted.</p>
+        <p>Alternatively, to delete a specific set of key/data pairs, which may be items within a set of duplicates, there are also two cases depending on whether the access method uses record numbers for keys.  For btree and hash access methods, construct a single bulk buffer in the <span class="bold"><strong>key</strong></span> <a href="../api_reference/C/dbt.html" class="olink">DBT</a> using <a href="../api_reference/C/DB_MULTIPLE_WRITE_INIT.html" class="olink">DB_MULTIPLE_WRITE_INIT</a> and <a href="../api_reference/C/DB_MULTIPLE_KEY_WRITE_NEXT.html" class="olink">DB_MULTIPLE_KEY_WRITE_NEXT</a>.  For recno and queue access methods, construct a bulk buffer in the <span class="bold"><strong>key</strong></span> <a href="../api_reference/C/dbt.html" class="olink">DBT</a> using <a href="../api_reference/C/DB_MULTIPLE_RECNO_WRITE_INIT.html" class="olink">DB_MULTIPLE_RECNO_WRITE_INIT</a> and <a href="../api_reference/C/DB_MULTIPLE_RECNO_WRITE_NEXT.html" class="olink">DB_MULTIPLE_RECNO_WRITE_NEXT</a>.  In both cases, set the <a href="../api_reference/C/dbcget.html#dbcget_DB_MULTIPLE_KEY" class="olink">DB_MULTIPLE_KEY</a> flag to <a href="../api_reference/C/dbdel.html" class="olink">DB-&gt;del()</a>.</p>
+        <p>A successful bulk operation is logically equivalent to a loop through each key/data pair, performing a <a href="../api_reference/C/dbdel.html" class="olink">DB-&gt;del()</a> for each one.</p>
       </div>
     </div>
     <div class="navfooter">
@@ -298,12 +237,13 @@ rec_display(DB *dbp)
           <td width="40%" align="right"> <a accesskey="n" href="am_misc_partial.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Chapter 4.  Access Method Wrapup  </td>
+          <td width="40%" align="left" valign="top">Chapter 4. 
+		Access Method Wrapup
+         </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Partial record storage and
-        retrieval</td>
+          <td width="40%" align="right" valign="top"> Partial record storage and retrieval</td>
         </tr>
       </table>
     </div>

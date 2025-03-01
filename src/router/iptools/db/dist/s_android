@@ -93,15 +93,12 @@ s/@uintmax_t_decl@//
 s/@uintptr_t_decl@//
 /@FILE_t_decl@/d
 /@off_t_decl@/d
-s/@db_off_t_decl@/typedef int64_t db_off_t;/
-s/@db_off_t_max_decl@/#define DB_OFF_T_MAX INT64_MAX/
 /@pid_t_decl@/d
 /@size_t_decl@/d
 /@ssize_t_decl@/d
 /@time_t_decl@/d
 s/@db_seq_decl@/typedef int64_t db_seq_t;/
 s/@db_threadid_t_decl@/typedef pthread_t db_threadid_t;/
-s/@socket_decl@/typedef int DB_REPMGR_SOCKET;/
 s/@DB_VERSION_FAMILY@/$DB_VERSION_FAMILY/
 s/@DB_VERSION_RELEASE@/$DB_VERSION_RELEASE/
 s/@DB_VERSION_MAJOR@/$DB_VERSION_MAJOR/

@@ -57,9 +57,9 @@ class GenWix:
         # use excludes to exclude paths, e.g. add files to the array:
         # ...os.path.normpath("dbxml/test"), os.path.normpath("a/b/c")...
 	self.excludes = []
-	self.groups = ["group_csharp", "group_cxx", "group_devo", "group_doc", "group_examples", "group_java", "group_runtime", "group_sql", "group_thrift"]
-	self.groupfiles = ["group.csharp", "group.cxx", "group.devo", "group.doc", "group.examples", "group.java", "group.runtime", "group.sql", "group.thrift"]
-	self.groupcontent = ["","","","","","","","",""]
+	self.groups = ["group_csharp", "group_cxx", "group_devo", "group_doc", "group_examples", "group_java", "group_runtime", "group_sql"]
+	self.groupfiles = ["group.csharp", "group.cxx", "group.devo", "group.doc", "group.examples", "group.java", "group.runtime", "group.sql"]
+	self.groupcontent = ["","","","","","","",""]
 	self.outputFile = outfile
 	self.out = open(self.outputFile, "ab")
 	self.out.truncate(0)
@@ -313,4 +313,4 @@ if __name__ == "__main__":
     gw = GenWix(os.path.realpath("."),outfile,False)
     # extra directory names here that don't exist are fine and make it easier to
     # share this script across products
-    gw.generate(["bin","lib","include","jar","docs", "examples", "src", "build_windows", "clib","perl","python","php"])   
+    gw.generate(["bin","lib","include","jar","docs", "examples", "src", "build_windows", "clib", "perl","python","php"])   

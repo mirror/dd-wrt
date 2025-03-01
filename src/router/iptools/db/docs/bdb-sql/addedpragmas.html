@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -75,27 +75,12 @@
           </dt>
           <dt>
             <span class="sect2">
-              <a href="addedpragmas.html#large_record_opt">PRAGMA large_record_opt</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect2">
               <a href="addedpragmas.html#multiversion">PRAGMA multiversion</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
               <a href="addedpragmas.html#snapshot_isolation">PRAGMA snapshot_isolation</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect2">
-              <a href="addedpragmas.html#statistics">PRAGMA statistics</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect2">
-              <a href="addedpragmas.html#statistics_file">PRAGMA statistics_file</a>
             </span>
           </dt>
           <dt>
@@ -111,26 +96,6 @@
           <dt>
             <span class="sect2">
               <a href="addedpragmas.html#replication_pragmas">Replication PRAGMAs</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect2">
-              <a href="addedpragmas.html#bdb_add_user_auth">PRAGMA bdbsql_userauth_add</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect2">
-              <a href="addedpragmas.html#bdb_user_login">PRAGMA bdbsql_user_login</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect2">
-              <a href="addedpragmas.html#bdb_user_edit">PRAGMA bdbsql_user_edit</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect2">
-              <a href="addedpragmas.html#delete_user">PRAGMA bdbsql_user_delete</a>
             </span>
           </dt>
         </dl>
@@ -328,38 +293,6 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="large_record_opt"></a>PRAGMA large_record_opt</h3>
-            </div>
-          </div>
-        </div>
-        <pre class="programlisting">PRAGMA large_record_opt [= number bytes]</pre>
-        <p>
-                    Enables optimized storage of large records. Any record
-                    larger than the given number of bytes will be stored in
-                    a new format that improves read and write performance
-                    for large records. 
-                </p>
-        <p>
-                    This pragma must be called before any data is added to
-                    the database, otherwise it will be ignored. 
-                </p>
-        <p>
-                    This optimization is incompatible with encryption, and
-                    <code class="literal">SQLITE_ReadUncommitted</code>.
-                </p>
-        <p>
-                    This optimization stores large records in a folder
-                    called <code class="literal">__db_bl</code> in the journal folder.
-                    So if the database is manually moved to a new location,
-                    the folder with the large records most also be moved.
-                    The Online Backup Function will automatically backup up
-                    these records with the rest of the database.
-                </p>
-      </div>
-      <div class="sect2" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
               <h3 class="title"><a id="multiversion"></a>PRAGMA multiversion</h3>
             </div>
           </div>
@@ -400,41 +333,6 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="statistics"></a>PRAGMA statistics</h3>
-            </div>
-          </div>
-        </div>
-        <pre class="programlisting">PRAGMA statistics [= LOCK|LOG|MEM|MUTEX|REP]</pre>
-        <p>
-                Prints various statistics to the entered subsystem, or 
-                general environment statistics if no subsystem is entered.
-                The subsystems are locking, logging, memory pool, mutex
-                and replication.  The output is printed to stdout, unless
-                the statistics_file PRAGMA is used to set a file to which
-                the output is directed.
-            </p>
-      </div>
-      <div class="sect2" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
-              <h3 class="title"><a id="statistics_file"></a>PRAGMA statistics_file</h3>
-            </div>
-          </div>
-        </div>
-        <pre class="programlisting">PRAGMA statistics_file [= filename]</pre>
-        <p>
-                Sets a file to which the output from the statistics PRAGMA
-                is printed.  Otherwise the output is printed to stdout.  The
-                file will be automatically created if it does not exist, and
-                output will be appended to the end of the file if it does
-                exist.
-            </p>
-      </div>
-      <div class="sect2" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
               <h3 class="title"><a id="trickle"></a>PRAGMA trickle</h3>
             </div>
           </div>
@@ -451,6 +349,12 @@
                     ensure that a page is available for reading new
                     information into the shared cache without waiting
                     for a write operation to complete.
+                </p>
+        <p>
+                    Specifying this PRAGMA without a percentage value
+                    causes the current trickle value to be displayed.
+                    Specify <code class="literal">0</code> to turn the trickle
+                    functionality off.
                 </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
@@ -477,9 +381,9 @@
           </div>
         </div>
         <p>
-                    Fourteen PRAGMAs were added to manage and control replication.
+                    Seven PRAGMAs were added to control replication.
                     They are described in 
-                    <a class="xref" href="sqlrep.html" title="Chapter 5. Using Replication with the SQL API">Using Replication with the SQL API</a>:
+                    <a class="xref" href="sqlrep.html" title="Chapter 4. Using Replication with the SQL API">Using Replication with the SQL API</a>:
                 </p>
         <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
           <h3 class="title">Note</h3>
@@ -495,155 +399,40 @@
           <ul type="disc">
             <li>
               <p>
-                            <a class="xref" href="reppragma.html#pragma_replication" title="PRAGMA replication">PRAGMA replication</a>
+                            <span class="bold"><strong>PRAGMA replication</strong></span>
                         </p>
             </li>
             <li>
               <p>
-                            <a class="xref" href="reppragma.html#pragma_replication_ack_policy" title="PRAGMA replication_ack_policy">PRAGMA replication_ack_policy</a>
+                            <span class="bold"><strong>PRAGMA replication_initial_master</strong></span>
                         </p>
             </li>
             <li>
               <p>
-                            <a class="xref" href="reppragma.html#pragma_replication_ack_timeout" title="PRAGMA replication_ack_timeout">PRAGMA replication_ack_timeout</a>
+                            <span class="bold"><strong>PRAGMA replication_local_site</strong></span>
                         </p>
             </li>
             <li>
               <p>
-                            <a class="xref" href="reppragma.html#pragma_replication_get_master" title="PRAGMA replication_get_master">PRAGMA replication_get_master</a>
+                            <span class="bold"><strong>PRAGMA replication_remote_site</strong></span>
                         </p>
             </li>
             <li>
               <p>
-                            <a class="xref" href="reppragma.html#pragma_replication_initial_master" title="PRAGMA replication_initial_master">PRAGMA replication_initial_master</a>
+                            <span class="bold"><strong>PRAGMA replication_remove_site</strong></span>
                         </p>
             </li>
             <li>
               <p>
-                            <a class="xref" href="reppragma.html#pragma_replication_local_site" title="PRAGMA replication_local_site">PRAGMA replication_local_site</a>
+                            <span class="bold"><strong>PRAGMA replication_verbose_output</strong></span>
                         </p>
             </li>
             <li>
               <p>
-                            <a class="xref" href="reppragma.html#pragma_replication_num_sites" title="PRAGMA replication_num_sites">PRAGMA replication_num_sites</a>
-                        </p>
-            </li>
-            <li>
-              <p>
-                            <a class="xref" href="reppragma.html#pragma_replication_perm_failed" title="PRAGMA replication_perm_failed">PRAGMA replication_perm_failed</a>
-                        </p>
-            </li>
-            <li>
-              <p>
-                            <a class="xref" href="reppragma.html#pragma_replication_priority" title="PRAGMA replication_priority">PRAGMA replication_priority</a>
-                        </p>
-            </li>
-            <li>
-              <p>
-                            <a class="xref" href="reppragma.html#pragma_replication_remote_site" title="PRAGMA replication_remote_site">PRAGMA replication_remote_site</a>
-                        </p>
-            </li>
-            <li>
-              <p>
-                            <a class="xref" href="reppragma.html#pragma_replication_remove_site" title="PRAGMA replication_remove_site">PRAGMA replication_remove_site</a>
-                        </p>
-            </li>
-            <li>
-              <p>
-                            <a class="xref" href="reppragma.html#pragma_replication_site_status" title="PRAGMA replication_site_status">PRAGMA replication_site_status</a>
-                        </p>
-            </li>
-            <li>
-              <p>
-                            <a class="xref" href="reppragma.html#pragma_replication_verbose_output" title="PRAGMA replication_verbose_output">PRAGMA replication_verbose_output</a>
-                        </p>
-            </li>
-            <li>
-              <p>
-                            <a class="xref" href="reppragma.html#pragma_replication_verbose_file" title="PRAGMA replication_verbose_file">PRAGMA replication_verbose_file</a>
+                            <span class="bold"><strong>PRAGMA replication_verbose_file</strong></span>
                         </p>
             </li>
           </ul>
-        </div>
-      </div>
-      <div class="sect2" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
-              <h3 class="title"><a id="bdb_add_user_auth"></a>PRAGMA bdbsql_userauth_add</h3>
-            </div>
-          </div>
-        </div>
-        <pre class="programlisting">PRAGMA bdbsql_userauth_add = "user:password:isAdmin";</pre>
-        <p>
-                    Creates a new user. isAdmin should only be 0 (non-admin user) or 1 (admin user).
-                </p>
-        <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
-          <h3 class="title">Note</h3>
-          <p>
-                        ':' is not alowed to appear in the user name/password
-                        when working with BDB SQL user authentication pragmas.
-                    </p>
-        </div>
-      </div>
-      <div class="sect2" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
-              <h3 class="title"><a id="bdb_user_login"></a>PRAGMA bdbsql_user_login</h3>
-            </div>
-          </div>
-        </div>
-        <pre class="programlisting">PRAGMA bdbsql_user_login = "user:password";</pre>
-        <p>
-                    Authenticates a user.
-                </p>
-        <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
-          <h3 class="title">Note</h3>
-          <p>
-                        ':' is not alowed to appear in the user name/password
-                        when working with BDB SQL user authentication pragmas.
-                    </p>
-        </div>
-      </div>
-      <div class="sect2" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
-              <h3 class="title"><a id="bdb_user_edit"></a>PRAGMA bdbsql_user_edit</h3>
-            </div>
-          </div>
-        </div>
-        <pre class="programlisting">PRAGMA bdbsql_user_edit = "user:password:isAdmin";</pre>
-        <p>
-                    Change a user's login credentials or admin privilege. isAdmin should only be 0 (non-admin user) or 1 (admin user).
-                </p>
-        <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
-          <h3 class="title">Note</h3>
-          <p>
-                        ':' is not alowed to appear in the user name/password
-                        when working with BDB SQL user authentication pragmas.
-                    </p>
-        </div>
-      </div>
-      <div class="sect2" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
-              <h3 class="title"><a id="delete_user"></a>PRAGMA bdbsql_user_delete</h3>
-            </div>
-          </div>
-        </div>
-        <pre class="programlisting">PRAGMA bdbsql_user_delete = "user";</pre>
-        <p>
-                    Deletes a user.
-                </p>
-        <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
-          <h3 class="title">Note</h3>
-          <p>
-                        ':' is not alowed to appear in the user name/password
-                        when working with BDB SQL user authentication pragmas.
-                    </p>
         </div>
       </div>
     </div>

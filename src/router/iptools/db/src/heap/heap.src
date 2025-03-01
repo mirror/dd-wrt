@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -29,29 +29,7 @@ INCLUDE
  * dbt:		data that is to be added or deleted.
  * pagelsn:	former lsn of the page.
  */
-BEGIN addrem		61	151
-OP	opcode		u_int32_t	lu
-DB	fileid		int32_t		ld
-ARG	pgno		db_pgno_t	lu
-ARG	indx		u_int32_t	lu
-ARG	nbytes		u_int32_t	lu
-HDR	hdr		DBT		s
-DATA	dbt		DBT		s
-POINTER	pagelsn		DB_LSN *	lu
-END
-
-BEGIN_COMPAT addrem		60	151
-OP	opcode		u_int32_t	lu
-DB	fileid		int32_t		ld
-ARG	pgno		db_pgno_t	lu
-ARG	indx		u_int32_t	lu
-ARG	nbytes		u_int32_t	lu
-HDR	hdr		DBT		s
-DBT	dbt		DBT		s
-POINTER	pagelsn		DB_LSN *	lu
-END
-
-BEGIN_COMPAT addrem		50	151
+BEGIN addrem		49	151
 ARG	opcode		u_int32_t	lu
 DB	fileid		int32_t		ld
 ARG	pgno		db_pgno_t	lu

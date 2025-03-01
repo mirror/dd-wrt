@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -83,8 +83,8 @@ public class SampleViews
 
         public void objectToKey(Object object, TupleOutput output)
         {
-            Supplier supplier = (Supplier) object;
-            output.writeString(supplier.getNumber());
+            Part part = (Part) object;
+            output.writeString(part.getNumber());
         }
 
         public Object objectToData(Object object)

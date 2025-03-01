@@ -1,9 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
- * $Id$
+ * $Id: db_log_verify.c,v 0f73af5ae3da 2010/05/10 05:38:40 alexander $
  */
 #include "db_config.h"
 
@@ -14,6 +14,7 @@
 int db_log_verify_main __P((int, char *[]));
 int db_log_verify_lsn_arg __P((char *, DB_LSN *));
 int db_log_verify_usage __P((void));
+int db_log_verify_version_check __P((void));
 int db_log_verify_app_record __P((DB_ENV *, DBT *, DB_LSN *, db_recops));
 const char *progname;
 
@@ -46,9 +47,12 @@ db_log_verify_main(argc, argv)
 	DB_LOG_VERIFY_CONFIG lvconfig;
 
 	vsn_mismtch = 0;
-	progname = __db_util_arg_progname(argv[0]);
+	if ((progname = __db_rpath(argv[0])) == NULL)
+		progname = argv[0];
+	else
+		++progname;
 
-	if ((ret = __db_util_version_check(progname)) != 0)
+	if ((ret = db_log_verify_version_check()) != 0)
 		return (ret);
 
 	dbenv = NULL;
@@ -98,9 +102,11 @@ db_log_verify_main(argc, argv)
 			nflag = 1;
 			break;
 		case 'P':
-			if (__db_util_arg_password(progname, 
-			    optarg, &passwd) != 0)
-				goto err;
+			if ((ret = __os_strdup(NULL, optarg, &passwd)) != 0) {
+				__db_err(NULL, ret, "__os_strdup: ");
+				return (EXIT_FAILURE);
+			}
+			memset(optarg, 0, strlen(optarg));
 			break;
 		case 'V':
 			printf("%s\n", db_version(NULL, NULL, NULL));
@@ -133,8 +139,18 @@ db_log_verify_main(argc, argv)
 	lvconfig.end_time = endtime;
 
 create_again:
-	if (__db_util_env_create(&dbenv, progname, passwd, NULL) != 0)
+	/*
+	 * Create an environment object and initialize it for error
+	 * reporting.
+	 */
+	if ((ret = db_env_create(&dbenv, 0)) != 0) {
+		fprintf(stderr,
+		    "%s: db_env_create: %s\n", progname, db_strerror(ret));
 		goto err;
+	}
+
+	dbenv->set_errfile(dbenv, stderr);
+	dbenv->set_errpfx(dbenv, progname);
 
 	if (nflag) {
 		if ((ret = dbenv->set_flags(dbenv, DB_NOLOCKING, 1)) != 0) {
@@ -145,6 +161,12 @@ create_again:
 			dbenv->err(dbenv, ret, "set_flags: DB_NOPANIC");
 			goto err;
 		}
+	}
+
+	if (passwd != NULL && (ret = dbenv->set_encrypt(dbenv,
+	    passwd, DB_ENCRYPT_AES)) != 0) {
+		dbenv->err(dbenv, ret, "set_passwd");
+		goto err;
 	}
 
 	/*
@@ -199,7 +221,7 @@ err:		exitval = 1;
 	__db_util_sigresend();
 
 	if (passwd != NULL)
-		free(passwd);
+		__os_free(NULL, passwd);
 
 	return (exitval == 0 ? EXIT_SUCCESS : EXIT_FAILURE);
 }
@@ -216,6 +238,24 @@ db_log_verify_usage()
 	    "[-s start time] [-z end time]");
 
 	return (EXIT_FAILURE);
+}
+
+int
+db_log_verify_version_check()
+{
+	int v_major, v_minor, v_patch;
+
+	/* Make sure we're loaded with the right version of the DB library. */
+	(void)db_version(&v_major, &v_minor, &v_patch);
+	if (v_major != DB_VERSION_MAJOR || v_minor != DB_VERSION_MINOR) {
+		fprintf(stderr, DB_STR_A("5003",
+		    "%s: version %d.%d doesn't match library version %d.%d\n",
+		    "%s %d %d %d %d\n"), progname,
+		    DB_VERSION_MAJOR, DB_VERSION_MINOR,
+		    v_major, v_minor);
+		return (EXIT_FAILURE);
+	}
+	return (0);
 }
 
 /*
@@ -277,7 +317,7 @@ db_log_verify_app_record(dbenv, dbt, lsnp, op)
 	len2 = (u_int32_t)strlen(buf);
 	p = buf + len2;
 	snprintf(p, len - len2 - 1, "\n\n");
-	dbenv->msg(dbenv, "%s", buf);
+	__db_msg(dbenv->env, "%s", buf);
 
 err:	if (buf != NULL)
 		__os_free(dbenv->env, buf);

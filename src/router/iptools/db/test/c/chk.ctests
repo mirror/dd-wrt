@@ -37,12 +37,7 @@ echo "Building DB library, this can take a while."
 CINC="-I$b -I$s -I$s/dbinc"
 [ `uname` = "Linux" ] && CINC="$CINC -pthread"
 
-C_TESTS="\
-test_api_methods.c
-test_db185.c
-test_log_verify.c"
-
-for i in $C_TESTS; do
+for i in `ls test_*.c`; do
 
 	echo "=== Running $i ===" | tee -a compile.out
 	if cc -g -Wall $CINC $i $b/libdb.a -o t >> compile.out 2>&1; then

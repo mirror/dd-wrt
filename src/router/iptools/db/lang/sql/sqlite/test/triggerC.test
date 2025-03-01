@@ -12,7 +12,6 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set testprefix triggerC
 ifcapable {!trigger} {
   finish_test
   return
@@ -158,7 +157,7 @@ do_test triggerC-1.14 {
 } {}
 do_test triggerC-1.15 {
   catchsql { UPDATE OR ROLLBACK t1 SET a=100 }
-} {1 {UNIQUE constraint failed: t1.a}}
+} {1 {PRIMARY KEY must be unique}}
 
 
 #-------------------------------------------------------------------------
@@ -223,31 +222,31 @@ foreach {n tdefn rc} {
     execsql  $tdefn
     catchsql {
       INSERT INTO t2 VALUES(10);
-      SELECT * FROM t2 ORDER BY rowid;
+      SELECT * FROM t2;
     }
   } $rc
 }
 
 do_test triggerC-2.2 {
-  execsql "
+  execsql {
     CREATE TABLE t22(x);
 
     CREATE TRIGGER t22a AFTER INSERT ON t22 BEGIN
       INSERT INTO t22 SELECT x + (SELECT max(x) FROM t22) FROM t22;
     END;
     CREATE TRIGGER t22b BEFORE INSERT ON t22 BEGIN
-      SELECT CASE WHEN (SELECT count(*) FROM t22) >= [expr $SQLITE_MAX_TRIGGER_DEPTH / 2]
+      SELECT CASE WHEN (SELECT count(*) FROM t22) >= 100
                   THEN RAISE(IGNORE)
                   ELSE NULL END;
     END;
 
     INSERT INTO t22 VALUES(1);
     SELECT count(*) FROM t22;
-  "
-} [list [expr $SQLITE_MAX_TRIGGER_DEPTH / 2]]
+  }
+} {100}
 
 do_test triggerC-2.3 {
-  execsql "
+  execsql {
     CREATE TABLE t23(x PRIMARY KEY);
 
     CREATE TRIGGER t23a AFTER INSERT ON t23 BEGIN
@@ -255,15 +254,15 @@ do_test triggerC-2.3 {
     END;
 
     CREATE TRIGGER t23b BEFORE INSERT ON t23 BEGIN
-      SELECT CASE WHEN new.x>[expr $SQLITE_MAX_TRIGGER_DEPTH / 2]
+      SELECT CASE WHEN new.x>500
                   THEN RAISE(IGNORE)
                   ELSE NULL END;
     END;
 
     INSERT INTO t23 VALUES(1);
     SELECT count(*) FROM t23;
-  "
-} [list [expr $SQLITE_MAX_TRIGGER_DEPTH / 2]]
+  }
+} {500}
  
 
 #-----------------------------------------------------------------------
@@ -289,12 +288,12 @@ do_test triggerC-3.1.3 {
 } {}
 
 do_test triggerC-3.2.1 {
-  execsql "
+  execsql {
     CREATE TABLE t3b(x);
-    CREATE TRIGGER t3bi AFTER INSERT ON t3b WHEN new.x<[expr $SQLITE_MAX_TRIGGER_DEPTH * 2] BEGIN
+    CREATE TRIGGER t3bi AFTER INSERT ON t3b WHEN new.x<2000 BEGIN
       INSERT INTO t3b VALUES(new.x+1);
     END;
-  "
+  }
   catchsql {
     INSERT INTO t3b VALUES(1);
   }
@@ -304,39 +303,39 @@ do_test triggerC-3.2.2 {
 } {}
 
 do_test triggerC-3.3.1 {
-  catchsql "
-    INSERT INTO t3b VALUES([expr $SQLITE_MAX_TRIGGER_DEPTH + 1]);
-  "
+  catchsql {
+    INSERT INTO t3b VALUES(1001);
+  }
 } {0 {}}
 do_test triggerC-3.3.2 {
   db eval {SELECT count(*), max(x), min(x) FROM t3b}
-} [list $SQLITE_MAX_TRIGGER_DEPTH [expr $SQLITE_MAX_TRIGGER_DEPTH * 2] [expr $SQLITE_MAX_TRIGGER_DEPTH + 1]]
+} {1000 2000 1001}
 
 do_test triggerC-3.4.1 {
-  catchsql "
+  catchsql {
     DELETE FROM t3b;
-    INSERT INTO t3b VALUES([expr $SQLITE_MAX_TRIGGER_DEPTH - 1]);
-  "
+    INSERT INTO t3b VALUES(999);
+  }
 } {1 {too many levels of trigger recursion}}
 do_test triggerC-3.4.2 {
   db eval {SELECT count(*), max(x), min(x) FROM t3b}
 } {0 {} {}}
 
 do_test triggerC-3.5.1 {
-  sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH  [expr $SQLITE_MAX_TRIGGER_DEPTH / 10]
-  catchsql "
-    INSERT INTO t3b VALUES([expr ($SQLITE_MAX_TRIGGER_DEPTH * 2) - ($SQLITE_MAX_TRIGGER_DEPTH / 10) + 1]);
-  "
+  sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 100
+  catchsql {
+    INSERT INTO t3b VALUES(1901);
+  }
 } {0 {}}
 do_test triggerC-3.5.2 {
   db eval {SELECT count(*), max(x), min(x) FROM t3b}
-} [list [expr $SQLITE_MAX_TRIGGER_DEPTH / 10] [expr $SQLITE_MAX_TRIGGER_DEPTH * 2] [expr ($SQLITE_MAX_TRIGGER_DEPTH * 2) - ($SQLITE_MAX_TRIGGER_DEPTH / 10) + 1]]
+} {100 2000 1901}
 
 do_test triggerC-3.5.3 {
-  catchsql "
+  catchsql {
     DELETE FROM t3b;
-    INSERT INTO t3b VALUES([expr ($SQLITE_MAX_TRIGGER_DEPTH * 2) - ($SQLITE_MAX_TRIGGER_DEPTH / 10)]);
-  "
+    INSERT INTO t3b VALUES(1900);
+  }
 } {1 {too many levels of trigger recursion}}
 do_test triggerC-3.5.4 {
   db eval {SELECT count(*), max(x), min(x) FROM t3b}
@@ -344,25 +343,25 @@ do_test triggerC-3.5.4 {
 
 do_test triggerC-3.6.1 {
   sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 1
-  catchsql "
-    INSERT INTO t3b VALUES([expr $SQLITE_MAX_TRIGGER_DEPTH * 2]);
-  "
+  catchsql {
+    INSERT INTO t3b VALUES(2000);
+  }
 } {0 {}}
 do_test triggerC-3.6.2 {
   db eval {SELECT count(*), max(x), min(x) FROM t3b}
-} [list 1 [expr $SQLITE_MAX_TRIGGER_DEPTH * 2] [expr $SQLITE_MAX_TRIGGER_DEPTH * 2]]
+} {1 2000 2000}
 
 do_test triggerC-3.6.3 {
-  catchsql "
+  catchsql {
     DELETE FROM t3b;
-    INSERT INTO t3b VALUES([expr ($SQLITE_MAX_TRIGGER_DEPTH * 2) - 1]);
-  "
+    INSERT INTO t3b VALUES(1999);
+  }
 } {1 {too many levels of trigger recursion}}
 do_test triggerC-3.6.4 {
   db eval {SELECT count(*), max(x), min(x) FROM t3b}
 } {0 {} {}}
-sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH $SQLITE_MAX_TRIGGER_DEPTH
-
+sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 1000
+      
 
 #-----------------------------------------------------------------------
 # This next block of tests, triggerC-4.*, checks that affinity 
@@ -548,7 +547,7 @@ foreach {n insert log} {
     eval concat [execsql " 
       DELETE FROM log;
       $insert ; 
-      SELECT * FROM log ORDER BY rowid;
+      SELECT * FROM log;
     "]
   } [join $log " "]
 } 
@@ -585,8 +584,8 @@ foreach {n dml t5g t5} {
     execsql "
       BEGIN;
         $dml ;
-        SELECT * FROM t5g ORDER BY rowid;
-        SELECT * FROM t5 ORDER BY rowid;
+        SELECT * FROM t5g;
+        SELECT * FROM t5;
       ROLLBACK;
     "
   } [concat $t5g $t5]
@@ -612,8 +611,8 @@ foreach {n dml t5g t5} {
     execsql "
       BEGIN;
         $dml ;
-        SELECT * FROM t5g ORDER BY rowid;
-        SELECT * FROM t5 ORDER BY rowid;
+        SELECT * FROM t5g;
+        SELECT * FROM t5;
       ROLLBACK;
     "
   } [concat $t5g $t5]
@@ -634,8 +633,8 @@ foreach {n dml t5g t5} {
     execsql "
       BEGIN;
         $dml ;
-        SELECT * FROM t5g ORDER BY rowid;
-        SELECT * FROM t5 ORDER BY rowid;
+        SELECT * FROM t5g;
+        SELECT * FROM t5;
       ROLLBACK;
     "
   } [concat $t5g $t5]
@@ -919,7 +918,7 @@ do_test triggerC-11.4 {
 
 do_test triggerC-12.1 {
   db close
-  forcedelete test.db
+  file delete -force test.db
   sqlite3 db test.db
 
   execsql {
@@ -950,96 +949,6 @@ do_catchsql_test triggerC-13.2 {
   UPDATE t12 SET a=a+1, b=b+1;
 } {1 {too many levels of trigger recursion}}
 
-#-------------------------------------------------------------------------
-# The following tests seek to verify that constant values (i.e. literals)
-# are not factored out of loops within trigger programs. SQLite does
-# not factor constants out of loops within trigger programs as it may only
-# do so in code generated before the first table or index is opened. And
-# by the time a trigger program is coded, at least one table or index has
-# always been opened.
-#
-# At one point, due to a bug allowing constant factoring within triggers,
-# the following SQL would produce the wrong result.
-#
-set SQL {
-  CREATE TABLE t1(a, b, c);
-  CREATE INDEX i1 ON t1(a, c);
-  CREATE INDEX i2 ON t1(b, c);
-  INSERT INTO t1 VALUES(1, 2, 3);
 
-  CREATE TABLE t2(e, f);
-  CREATE INDEX i3 ON t2(e);
-  INSERT INTO t2 VALUES(1234567, 3);
-
-  CREATE TABLE empty(x);
-  CREATE TABLE not_empty(x);
-  INSERT INTO not_empty VALUES(2);
-
-  CREATE TABLE t4(x);
-  CREATE TABLE t5(g, h, i);
-
-  CREATE TRIGGER trig BEFORE INSERT ON t4 BEGIN
-    INSERT INTO t5 SELECT * FROM t1 WHERE 
-        (a IN (SELECT x FROM empty) OR b IN (SELECT x FROM not_empty)) 
-        AND c IN (SELECT f FROM t2 WHERE e=1234567);
-  END;
-
-  INSERT INTO t4 VALUES(0);
-  SELECT * FROM t5;
-}
-
-reset_db
-do_execsql_test triggerC-14.1 $SQL {1 2 3}
-reset_db
-optimization_control db factor-constants 0
-do_execsql_test triggerC-14.2 $SQL {1 2 3}
-
-#-------------------------------------------------------------------------
-# Check that table names used by trigger programs are dequoted exactly
-# once.
-#
-do_execsql_test 15.1.1 {
-  PRAGMA recursive_triggers = 1;
-  CREATE TABLE node(
-      id int not null primary key, 
-      pid int not null default 0 references node,
-      key varchar not null, 
-      path varchar default '',
-      unique(pid, key)
-      );
-  CREATE TRIGGER node_delete_referencing AFTER DELETE ON "node"
-    BEGIN
-    DELETE FROM "node" WHERE pid = old."id";
-  END;
-}
-do_execsql_test 15.1.2 {
-  INSERT INTO node(id, pid, key) VALUES(9, 0, 'test');
-  INSERT INTO node(id, pid, key) VALUES(90, 9, 'test1');
-  INSERT INTO node(id, pid, key) VALUES(900, 90, 'test2');
-  DELETE FROM node WHERE id=9;
-  SELECT * FROM node;
-}
-
-do_execsql_test 15.2.1 {
-  CREATE TABLE   x1  (x);
-
-  CREATE TABLE   x2  (a, b);
-  CREATE TABLE '"x2"'(a, b);
-
-  INSERT INTO x2 VALUES(1, 2);
-  INSERT INTO x2 VALUES(3, 4);
-  INSERT INTO '"x2"' SELECT * FROM x2;
-
-  CREATE TRIGGER x1ai AFTER INSERT ON x1 BEGIN
-    INSERT INTO """x2""" VALUES('x', 'y');
-    DELETE FROM """x2""" WHERE a=1;
-    UPDATE """x2""" SET b = 11 WHERE a = 3;
-  END;
-
-  INSERT INTO x1 VALUES('go!');
-}
-
-do_execsql_test 15.2.2 { SELECT * FROM x2;       } {1 2 3 4}
-do_execsql_test 15.2.3 { SELECT * FROM """x2"""; } {3 11 x y}
 
 finish_test

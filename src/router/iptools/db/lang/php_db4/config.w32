@@ -20,7 +20,7 @@
 ARG_ENABLE("db4","Berkeley DB support","no,shared");
 if (PHP_DB4 != "no") {
 	EXTENSION("db4", "db4.cpp", null, "", "php_db4.dll");
-	CHECK_LIB("libdb62.lib", "db4", "<path_to_lib>;");
+	CHECK_LIB("libdb53.lib", "db4", "<path_to_lib>;");
 	CHECK_HEADER_ADD_INCLUDE("db.h", "CFLAGS_DB4", "<path_to_build_windows>;../db4;");
 	ADD_FLAG("CFLAGS_DB4", "/EHsc");
 }

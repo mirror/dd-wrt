@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993
@@ -65,7 +65,8 @@ __ham_func2(dbp, key, len)
 	u_int32_t h;
 	u_int8_t c;
 
-	COMPQUIET(dbp, NULL);
+	if (dbp != NULL)
+		COMPQUIET(dbp, NULL);
 
 	k = key;
 	e = k + len;
@@ -98,7 +99,8 @@ __ham_func3(dbp, key, len)
 	const u_int8_t *k;
 	u_int32_t n, loop;
 
-	COMPQUIET(dbp, NULL);
+	if (dbp != NULL)
+		COMPQUIET(dbp, NULL);
 
 	if (len == 0)
 		return (0);
@@ -148,7 +150,8 @@ __ham_func4(dbp, key, len)
 	const u_int8_t *k;
 	u_int32_t h, loop;
 
-	COMPQUIET(dbp, NULL);
+	if (dbp != NULL)
+		COMPQUIET(dbp, NULL);
 
 	if (len == 0)
 		return (0);
@@ -192,7 +195,7 @@ __ham_func4(dbp, key, len)
  * later improved on their algorithm.
  *
  * The magic is in the interesting relationship between the special prime
- * 16777619 (2^24 + 2^8 + 0x93) and 2^32 and 2^8.
+ * 16777619 (2^24 + 403) and 2^32 and 2^8.
  *
  * This hash produces the fewest collisions of any function that we've seen so
  * far, and works well on both numbers and strings.
@@ -208,40 +211,12 @@ __ham_func5(dbp, key, len)
 	const u_int8_t *k, *e;
 	u_int32_t h;
 
-	COMPQUIET(dbp, NULL);
+	if (dbp != NULL)
+		COMPQUIET(dbp, NULL);
 
 	k = key;
 	e = k + len;
 	for (h = 0; k < e; ++k) {
-		h *= 16777619;
-		h ^= *k;
-	}
-	return (h);
-}
-
-/*
- * __ham_func6 -- Fowler/Noll/Vo hash version 1A
- *
- *	This differs slightly from __ham_func5()'s FNV function, in that the
- *	hash is initialized to 2166136261 rather than 0, so that all-zero
- *	inputs don't always hash to 0.
- *
- * PUBLIC: u_int32_t __ham_func6 __P((DB *, const void *, u_int32_t));
- */
-u_int32_t
-__ham_func6(dbp, key, len)
-	DB *dbp;
-	const void *key;
-	u_int32_t len;
-{
-	const u_int8_t *k, *e;
-	u_int32_t h;
-
-	COMPQUIET(dbp, NULL);
-
-	k = key;
-	e = k + len;
-	for (h = 2166136261U; k < e; ++k) {
 		h *= 16777619;
 		h ^= *k;
 	}

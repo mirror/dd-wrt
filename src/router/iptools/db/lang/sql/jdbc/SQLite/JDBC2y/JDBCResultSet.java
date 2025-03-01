@@ -157,7 +157,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	JDBCResultSetMetaData m = (JDBCResultSetMetaData) getMetaData();
 	return m.findColByName(columnName);
     }
-
+  
     public int getRow() throws SQLException {
 	if (tr == null) {
 	    throw new SQLException("no rows");
@@ -475,7 +475,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	}
 	return null;
     }
-
+    
     public double getDouble(String columnName) throws SQLException {
 	int col = findColumn(columnName);
 	return getDouble(col);
@@ -671,12 +671,12 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	return getObject(col);
     }
 
-    public Object getObject(int columnIndex, java.util.Map map)
+    public Object getObject(int columnIndex, java.util.Map map) 
 	throws SQLException {
 	throw new SQLException("not supported");
     }
 
-    public Object getObject(String columnIndex, java.util.Map map)
+    public Object getObject(String columnIndex, java.util.Map map) 
 	throws SQLException {
 	throw new SQLException("not supported");
     }
@@ -740,7 +740,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
     public boolean wasNull() throws SQLException {
 	return lastg == null;
     }
-
+	
     public void clearWarnings() throws SQLException {
 	throw new SQLException("not supported");
     }

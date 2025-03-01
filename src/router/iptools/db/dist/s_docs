@@ -22,7 +22,7 @@ tmp_dir=$distdir/s_docs.tmp
 rm -rf $tmp_dir && mkdir $tmp_dir && mkdir $tmp_dir/logs
 
 if [ "$docs_dir" = "" ]; then
-	docs_dir=$rootdir/docs_books
+	docs_dir=$rootdir/docs_books-5.3
 fi
 
 # Verify that the docs_books repository is where we expect it.
@@ -90,7 +90,7 @@ cd $docs_dir/tools/buildBooks
 for book in DB_PROG_REF DB_REF_C DB_REF_CXX DB_REF_STL DB_REF_TCL \
 	    DB_GSG_C DB_GSG_CXX DB_GSG_JAVA DB_REP_C DB_REP_CXX \
 	    DB_REP_JAVA DB_COLLECTIONS DB_TXN_C DB_TXN_CXX DB_TXN_JAVA \
-	    DB_PORT DB_INSTALL DB_UPGRADE DB_SQL DB_SQL_ADO DB_SERVER_JAVA \
+	    DB_PORT DB_INSTALL DB_UPGRADE DB_SQL DB_SQL_ADO \
 	    core_inmem_app core_mssgtxt; do
 
 	    case $book in

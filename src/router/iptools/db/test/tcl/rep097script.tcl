@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2010, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -149,4 +149,4 @@ for { set i 0 } { $i < $num_dbs } { incr i } {
 error_check_good newm_close [$newmenv close] 0
 error_check_good marker_db_close [$marker close] 0
 error_check_good markerenv_close [$markerenv close] 0
-replclose $testdir/MSGQUEUEDIR
+

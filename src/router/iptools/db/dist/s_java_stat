@@ -9,7 +9,7 @@ msgjava="/*-
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  */"
 
 s=/tmp/__java.sed
@@ -96,14 +96,6 @@ $2        return (\1 != 0);\\
 $2    }/p
 		d
 	}
-	/u_int32_t.*st_view/{
-		s/^[     ]*[^    ]*[     ]*\([^[;]*\).*/\\
-$2    private int \1;\\
-$2    public boolean get_\1() {\\
-$2        return (\1 != 0);\\
-$2    }/p
-		d
-	}
 	/db_size_t/{
 		s/^[	 ]*[^	 ]*[	 ]*\([^;]*\).*/\\
 $2    private long \1;\\
@@ -124,14 +116,6 @@ $2    }/p
 		s/^[	 ]*[^	 ]*[	 ]*\([^;]*\).*/\\
 $2    private long \1;\\
 $2    public long get_\1() {\\
-$2        return \1;\\
-$2    }/p
-		d
-	}
-	/DB_TXN_ACTIVE_SLICE[	 ]*\*/{
-		s/^[	 ]*[^\*]*\*[	 ]*\([^;]*\).*/\\
-$2    private int[] \1;\\
-$2    public int[] get_\1() {\\
 $2        return \1;\\
 $2    }/p
 		d
@@ -226,77 +210,6 @@ EOF
 	echo '}' >> $c
 }
 
-# Script to convert DB C structure declarations into a JNI method to fill the
-# corresponding Java class.  This is specific for txn_stat
-jclass_jni_txn()
-{
-	fill=__dbj_fill_$1
-	j_class=$2
-	jni_fieldid_decls $1 $2
-	jni_fieldids $1 $2
-	cat > $s <<EOF
-/struct __db_$1 {/,/^}/{
-	/__db_$1/d
-	/CONFIG_TEST/,/#endif/d
-	/;/!d
-	/^}/d
-	/db_threadid_t/d
-	/u_int32_t status/d
-	/xa_status/d
-	/char[	 ]*/{
-		s/^[	 ]*char[*	 ]*[	 ]*\([^[;]*\).*/	JAVADB_STAT_STRING(jnienv, jobj, $1_\1_fid, statp, \1);/p
-		d
-	}
-	/db_seq_t/{
-		s/^[	 ]*[^	 ]*[	 ]*\([^;]*\).*/	JAVADB_STAT_LONG(jnienv, jobj, $1_\1_fid, statp, \1);/p
-		d
-	}
-	/time_t/{
-		s/^[	 ]*[^	 ]*[	 ]*\([^;]*\).*/	JAVADB_STAT_LONG(jnienv, jobj, $1_\1_fid, statp, \1);/p
-		d
-	}
-	/uintmax_t/{
-		s/^[	 ]*[^	 ]*[	 ]*\([^;]*\).*/	JAVADB_STAT_LONG(jnienv, jobj, $1_\1_fid, statp, \1);/p
-		d
-	}
-	/DB_LSN[	 ]*/{
-		s/^[	 ]*[^	 ]*[	 ]*\([^;]*\).*/	JAVADB_STAT_LSN(jnienv, jobj, $1_\1_fid, statp, \1);/p
-		d
-	}
-	/DB_TXN_ACTIVE[	 ]*\*/{
-		s/^[	 ]*[^\*]*\*[	 ]*\([^;]*\).*/	JAVADB_STAT_ACTIVE(jnienv, jobj, $1_\1_fid, statp, \1);/p
-		d
-	}
-	/u_int8_t[	 ]*gid\[/{
-		s/^[	 ]*[^	 ]*[	 ]*\([^[;]*\).*/	JAVADB_STAT_GID(jnienv, jobj, $1_\1_fid, statp, \1);/p
-		d
-	}
-	/db_size_t/{
-		s/^[	 ]*[^	 ]*[	 ]*\([^;]*\).*/	JAVADB_STAT_LONG(jnienv, jobj, $1_\1_fid, statp, \1);/p
-		d
-	}
-	/db_ssize_t/{
-		s/^[	 ]*[^	 ]*[	 ]*\([^;]*\).*/	JAVADB_STAT_LONG(jnienv, jobj, $1_\1_fid, statp, \1);/p
-		d
-	}
-	/roff_t/{
-		s/^[	 ]*[^	 ]*[	 ]*\([^;]*\).*/	JAVADB_STAT_LONG(jnienv, jobj, $1_\1_fid, statp, \1);/p
-		d
-	}
-	/DB_TXN_ACTIVE_SLICE[	 ]*\*/{
-		s/^[	 ]*[^\*]*\*[	 ]*\([^;]*\).*/	JAVADB_STAT_ACTIVE_SLICE(jnienv, jobj, $1_\1_fid, statp, \1, dbenv);/p
-		d
-	}
-	s/^[	 ]*[^	 ]*[	 ]*\([^;]*\).*/	JAVADB_STAT_INT(jnienv, jobj, $1_\1_fid, statp, \1);/p
-}
-EOF
-	echo "static int $fill(JNIEnv *jnienv," >> $c
-	echo "    jobject jobj, struct __db_$1 *statp, struct DbEnv *dbenv) {" >> $c
-	sed -n -f $s < ../src/dbinc/db.in >> $c
-        echo '	return (0);' >> $c
-	echo '}' >> $c
-}
-
 jni_fieldid_decls()
 {
 	cat > $s <<EOF
@@ -346,10 +259,6 @@ jni_fieldid_decls()
 	}
 	/roff_t/{
 		s/^[	 ]*[^	 ]*[	 ]*\([^;]*\).*/static jfieldID $1_\1_fid;/p
-		d
-	}
-	/DB_TXN_ACTIVE_SLICE[	 ]*\*/{
-		s/^[	 ]*[^\*]*\*[	 ]*\([^;]*\).*/static jfieldID $1_\1_fid;/p
 		d
 	}
 	s/^[	 ]*[^	 ]*[	 ]*\([^;]*\).*/static jfieldID $1_\1_fid;/p
@@ -409,10 +318,6 @@ jni_fieldids()
 		s/^[	 ]*[^	 ]*[	 ]*\([^;]*\).*/	{ \&$1_\1_fid, \&$1_class, \"\1\", \"J\" },/p
 		d
 	}
-	/DB_TXN_ACTIVE_SLICE[	 ]*\*/{
-		s/^[	 ]*[^\*]*\*[	 ]*\([^;]*\).*/	{ \&$1_\1_fid, \&$1_class, \"\1\", \"[I\" },/p
-		d
-	}
 	s/^[	 ]*[^	 ]*[	 ]*\([^;]*\).*/	{ \&$1_\1_fid, \&$1_class, \"\1\", \"I\" },/p
 }
 EOF
@@ -445,10 +350,6 @@ jclass_toString()
 	}
 	/u_int32_t.*startup_complete/{
 		s/^[	 ]*[^	 ]*[	 ]*\([^[;]*\).*/$3            + \"\\\\n$3  \1=\" + (\1 != 0)/p
-		d
-	}
-	/DB_TXN_ACTIVE_SLICE[	 ]*\*/{
-		s/^[	 ]*[^\*]*\*[	 ]*\([^;]*\).*/$3            + \"\\\\n$3  \1=\" + DbUtil.integerArrayToString(\1)/p
 		d
 	}
 	s/^[	 ]*[^	 ]*[	 ]*\([^;]*\).*/$3            + \"\\\\n$3  \1=\" + \1/p
@@ -519,8 +420,7 @@ EOF
  jclass compact
  jclass_toString compact CompactStats
  echo '}') |
-   perl -w -p -e 's,public int get(FillPercent|Pages\(|Timeout|Truncate),/* package */ int get$1,g;'> $t
-   sed '/+ compact_fillpercent$/d;/+ compact_pages$/d;/+ compact_timeout$/d;/+ compact_truncate$/d' < $t > $t0
+   perl -w -p -e 's,public int get(FillPercent|Pages\(|Timeout|Truncate),/* package */ int get$1,g;'> $t0
 f=../lang/java/src/com/sleepycat/db/CompactStats.java
 ./s_javadoc_merge $f $t0 > $t
 cmp $t $f > /dev/null 2>&1 ||
@@ -533,10 +433,6 @@ stat_class lock_stat LockStats
 stat_class log_stat LogStats
 stat_class mpool_fstat CacheFileStats
 stat_class mpool_stat CacheStats
-f=../lang/java/src/com/sleepycat/db/CacheStats.java
-perl -w -p -e 's,public int getOddfSize(Detect|Resolve),/* package */ int getOddfSize$1,g;' < $f > $t
-sed '/+ st_oddfsize_detect$/d;/+ st_oddfsize_resolve$/d' < $t > $f
-
 stat_class mutex_stat MutexStats
 stat_class qam_stat QueueStats " extends DatabaseStats"
 stat_class rep_stat ReplicationStats "" "
@@ -548,12 +444,7 @@ import com.sleepycat.db.internal.DbConstants;
 
     public static final int REP_NONE = 0;"
 
-# Build the ReplicationManagerStats and do not expose st_incoming_queue_size in the Java APIs.
 stat_class repmgr_stat ReplicationManagerStats
-f=../lang/java/src/com/sleepycat/db/ReplicationManagerStats.java
-perl -w -p -e 's,public int getIncomingQueueSize,/* package */ int getIncomingQueueSize,g;' < $f > $t
-sed '/+ st_incoming_queue_size$/d' < $t > $f
-
 stat_class seq_stat SequenceStats
 
 # Build TransactionStats.java - special because of embedded Active class
@@ -582,7 +473,7 @@ f=../lang/java/src/com/sleepycat/db/TransactionStats.java
 cmp $t $f > /dev/null 2>&1 ||
     (echo "Building $f" && rm -f $f && cp $t $f)
 jclass_jni txn_stat __dbj_fill_txn_stat
-jclass_jni_txn txn_active __dbj_fill_txn_active
+jclass_jni txn_active __dbj_fill_txn_active
 
 mv $c $t
 f=../lang/java/libdb_java/java_stat_auto.c

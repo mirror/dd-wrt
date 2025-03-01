@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -63,17 +63,12 @@ proc test030 { method {nentries 10000} args } {
 	set db [eval {berkdb_open -create \
 		-mode 0644 -dup} $args {$omethod $testfile}]
 	error_check_good dbopen [is_valid_db $db] TRUE
-	set cargs $args
-	set issliced [$db is_sliced]
-	if { $issliced } {
-		set cargs [string map {"-sliced" " "} $cargs]
-	}
 
 	# Use a second DB to keep track of how many duplicates
 	# we enter per key
 
 	set cntdb [eval {berkdb_open -create \
-		-mode 0644} $cargs {-btree $cntfile}]
+		-mode 0644} $args {-btree $cntfile}]
 	error_check_good dbopen:cntfile [is_valid_db $db] TRUE
 
 	set pflags ""
@@ -166,14 +161,6 @@ proc test030 { method {nentries 10000} args } {
 		}
 		error_check_good Test030:numdups $x 1
 		incr count
-		if { $issliced } {
-			error_check_good db_curs_close [$dbc close] 0
-			error_check_good txn [$t commit] 0
-			set t [$env txn]
-			error_check_good txn [is_valid_txn $t $env] TRUE
-			set txn "-txn $t"
-			set dbc [eval {$db cursor} $txn]
-		}
 	}
 	close $did
 
@@ -233,15 +220,6 @@ proc test030 { method {nentries 10000} args } {
 		error_check_good ndups_found $howmany $ndup
 	}
 
-	if { $issliced } {
-		error_check_good db_curs_close [$dbc close] 0
-		error_check_good txn [$t commit] 0
-		set t [$env txn]
-		error_check_good txn [is_valid_txn $t $env] TRUE
-		set txn "-txn $t"
-		set dbc [eval {$db cursor} $txn]
-	}
-
 	# Verify on key lookup
 	puts "\tTest030.c: keyed check"
 	set cnt_dbc [$cntdb cursor]
@@ -269,14 +247,7 @@ proc test030 { method {nentries 10000} args } {
 			error_check_good inner_get_loop:id $id $i
 		}
 		error_check_good keyed_count $i $howmany
-		if { $issliced } {
-			error_check_good db_curs_close [$dbc close] 0
-			error_check_good txn [$t commit] 0
-			set t [$env txn]
-			error_check_good txn [is_valid_txn $t $env] TRUE
-			set txn "-txn $t"
-			set dbc [eval {$db cursor} $txn]
-		}
+
 	}
 	error_check_good cnt_curs_close [$cnt_dbc close] 0
 	error_check_good db_curs_close [$dbc close] 0

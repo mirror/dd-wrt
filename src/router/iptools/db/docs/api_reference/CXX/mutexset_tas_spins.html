@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -45,7 +45,7 @@ DbEnv::mutex_set_tas_spins(u_int32_t tas_spins); </pre>
       <p>
          Specify that test-and-set mutexes should spin <span class="bold"><strong>tas_spins</strong></span> times without blocking.  The value
          defaults to 1 on uniprocessor systems and to 50 times the number of
-         processors on multiprocessor systems, up to a maximum of 200.
+         processors on multiprocessor systems.
     </p>
       <p>
          The database environment's test-and-set spin count may also be
@@ -80,7 +80,7 @@ DbEnv::mutex_set_tas_spins(u_int32_t tas_spins); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670057041568"></a>Parameters</h3>
+              <h3 class="title"><a id="idp9256688"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -88,7 +88,7 @@ DbEnv::mutex_set_tas_spins(u_int32_t tas_spins); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670057042816"></a>tas_spins</h4>
+                <h4 class="title"><a id="idp9256040"></a>tas_spins</h4>
               </div>
             </div>
           </div>
@@ -102,7 +102,7 @@ DbEnv::mutex_set_tas_spins(u_int32_t tas_spins); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670057053568"></a>Errors</h3>
+              <h3 class="title"><a id="idp9248160"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -120,7 +120,7 @@ DbEnv::mutex_set_tas_spins(u_int32_t tas_spins); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670057028736"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp9264576"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -133,7 +133,7 @@ DbEnv::mutex_set_tas_spins(u_int32_t tas_spins); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670057030816"></a>Class</h3>
+              <h3 class="title"><a id="idp9263280"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -145,7 +145,7 @@ DbEnv::mutex_set_tas_spins(u_int32_t tas_spins); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670057055312"></a>See Also</h3>
+              <h3 class="title"><a id="idp9246792"></a>See Also</h3>
             </div>
           </div>
         </div>

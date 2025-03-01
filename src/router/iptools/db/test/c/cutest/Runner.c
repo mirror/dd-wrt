@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -85,9 +85,9 @@ int main(int argc, char **argv)
 		}
 	}
 	while(num_suites != 0)
-		free(suites[--num_suites]);
+		free(suites[num_suites--]);
 	while(num_tests != 0)
-		free(tests[--num_tests]);
+		free(tests[num_tests--]);
 	if (failed > 0)
 		return (1);
 	else

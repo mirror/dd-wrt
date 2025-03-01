@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -508,13 +508,6 @@ proc test046 { method args } {
 			set ret [$dbc get -nextdup] } {
 		set dup_set($i) [lindex [lindex $ret 0] 1]
 		incr i
-	}
-
-	# Read dups backwards.
-	for { set ret [$dbc get -current]} {[llength $ret] != 0} {\
-	    set ret [$dbc get -prevdup] } {
-		incr i -1
-		set dup_set($i) [lindex [lindex $ret 0] 1]
 	}
 
 	# put cursor on item in middle of dups

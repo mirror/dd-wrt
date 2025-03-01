@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2010, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # TEST	rep091
 # TEST	Read-your-writes consistency.
@@ -72,7 +72,6 @@ proc rep091a_sub { method niter tnum future_gen dbname largs } {
 	global testdir
 	global verbose_type
 	global repfiles_in_memory
-	global tcl_platform
 
 	puts -nonewline "Rep$tnum: read-your-writes consistency, basic test"
 	if { $future_gen } {
@@ -179,19 +178,10 @@ proc rep091a_sub { method niter tnum future_gen dbname largs } {
 	set result [$clientenv txn_applied $token]
 	error_check_good not_applied [is_substr $result DB_TIMEOUT] 1
 
-	# Tcl timer behavior is abnormal on Windows 2003; decrease
-	# the expected duration by 1 second. 
-	set exp_dur 10
-	set os_name $tcl_platform(os)
-	set os_version $tcl_platform(osVersion)
-	if { [string match "Windows NT" $os_name] && 
-	     [string match "5.2" $os_version] } {
-		set exp_dur [expr $exp_dur - 1]
-	}
 	set start [clock seconds]
 	set result [$clientenv txn_applied -timeout 10000000 $token]
 	set duration [expr [clock seconds] - $start]
-	error_check_good not_yet_applied [expr $duration >= $exp_dur] 1
+	error_check_good not_yet_applied [expr $duration >= 10] 1
 
 	process_msgs $envlist
 	error_check_good txn_applied [$clientenv txn_applied $token] 0

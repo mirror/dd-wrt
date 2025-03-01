@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -37,24 +37,8 @@ proc hsearch { { nentries 1000 } } {
 	}
 	close $did
 
-	puts "\tHSEARCH.b: overwrite loop"
-	# When we try to add an existing key, hsearch fails, but 
-	# returns the existing key.  Just do a few items. 
+	puts "\tHSEARCH.b: re-get loop"
 	set did [open $dict]
-	set count 0
-	while { [gets $did str] != -1 && $count < [expr $nentries / 100] } {
-		set ret [berkdb hsearch $str $str enter]
-		error_check_good hsearch:enter $ret 0
-
-		set d [berkdb hsearch $str 0 find]
-		error_check_good hsearch:find $d $str
-		incr count
-	}
-	close $did
-
-	puts "\tHSEARCH.c: re-get loop"
-	set did [open $dict]
-	set count 0
 	# Here is the loop where we retrieve each key
 	while { [gets $did str] != -1 && $count < $nentries } {
 		set d [berkdb hsearch $str 0 find]
@@ -62,10 +46,5 @@ proc hsearch { { nentries 1000 } } {
 		incr count
 	}
 	close $did
-
-	puts "\tHSEARCH.d: search for an item that's not there"
-	set str "zebra"
-	error_check_good hsearch:missing [berkdb hsearch $str 0 find] -1
-
 	error_check_good hdestroy [berkdb hdestroy] 0
 }

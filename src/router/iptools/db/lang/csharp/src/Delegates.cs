@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -46,15 +46,8 @@ namespace BerkeleyDB {
         BTreeDecompressDelegate(DatabaseEntry prevKey,
         DatabaseEntry prevData, byte[] compressed, out uint bytesRead);
     /// <summary>
-    /// An application-specified partitioning function.
-    /// </summary>
-    /// <param name="key">
-    /// The value used to determine which partition number should be returned.
-    /// </param>
-    public delegate uint PartitionDelegate(DatabaseEntry key);
-    /// <summary>
-    /// The application-specified feedback function called to report the operation 
-    /// progress of Berkeley DB.
+    /// The application-specified feedback function called to report Berkeley DB
+    /// operation progress.
     /// </summary>
     /// <param name="opcode">
     /// An operation code specifying the Berkley DB operation
@@ -118,7 +111,7 @@ namespace BerkeleyDB {
     /// <param name="event_info">
     /// Additional information describing an event. By default, event_info is
     /// null; specific events may pass non-null values, in which case the event
-    /// also describes the information's structure.
+    /// will also describe the information's structure.
     /// </param>
     public delegate void EventNotifyDelegate(
         NotificationEvent eventcode, byte[] event_info);
@@ -157,30 +150,6 @@ namespace BerkeleyDB {
     /// </param>
     public delegate void MessageDispatchDelegate(DbChannel channel,
         ref DatabaseEntry[] requests, out uint size, bool need_response);
-    /// <summary>
-    /// The application-specified reporting function.
-    /// </summary>
-    /// <param name="msgPrefix">The prefix string</param>
-    /// <param name="Message">The message string</param>
-    public delegate void MessageFeedbackDelegate(
-        string msgPrefix, string Message);
-    /// <summary>
-    /// Application-specific function used by a replication view to determine
-    /// whether a database file is replicated to the local site.
-    /// </summary>
-    /// <param name="name">
-    /// The name of the database file.
-    /// </param>
-    /// <param name="result">
-    /// Indicates whether or not the database file should be replicated.
-    /// If non-zero, the database file is replicated; otherwise the database
-    /// file is not replicated. 
-    /// </param>
-    /// <param name="flags">
-    /// Currently unused.
-    /// </param>
-    public delegate int ReplicationViewDelegate(string name,
-        ref int result, uint flags);
     /// <summary>
     /// The function used to transmit data using the replication application's
     /// communication infrastructure.

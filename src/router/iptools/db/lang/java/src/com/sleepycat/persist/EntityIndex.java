@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -15,11 +15,11 @@ import com.sleepycat.collections.StoredSortedMap;
 import com.sleepycat.db.CursorConfig;
 import com.sleepycat.db.Database;
 import com.sleepycat.db.DatabaseEntry;
-import com.sleepycat.db.DatabaseException;
+import com.sleepycat.db.DatabaseException; // for javadoc
 import com.sleepycat.db.Environment;
 import com.sleepycat.db.EnvironmentConfig;
 import com.sleepycat.db.LockMode;
-import com.sleepycat.db.SecondaryDatabase;
+import com.sleepycat.db.SecondaryDatabase; // for javadoc
 import com.sleepycat.db.Transaction;
 
 /**
@@ -72,29 +72,29 @@ import com.sleepycat.db.Transaction;
  *
  * <p>Consider that we have stored the entities below:</p>
  *
- * <div><table class="code" border="1" summary="">
+ * <p><table class="code" border="1">
  *   <tr><th colspan="3">Entities</th></tr>
  *   <tr><th>ID</th><th>Department</th><th>Name</th></tr>
  *   <tr><td>1</td><td>Engineering</td><td>Jane Smith</td></tr>
  *   <tr><td>2</td><td>Sales</td><td>Joan Smith</td></tr>
  *   <tr><td>3</td><td>Engineering</td><td>John Smith</td></tr>
  *   <tr><td>4</td><td>Sales</td><td>Jim Smith</td></tr>
- * </table></div>
- *
+ * </table></p>
+*
  * <p>{@link PrimaryIndex} maps primary keys to entities:</p>
  *
  * <pre class="code">
  * {@code PrimaryIndex<Long, Employee>} primaryIndex =
  *     store.getPrimaryIndex(Long.class, Employee.class);</pre>
  *
- * <div><table class="code" border="1" summary="">
+ * <p><table class="code" border="1">
  *   <tr><th colspan="4">primaryIndex</th></tr>
  *   <tr><th>Primary Key</th><th colspan="3">Entity</th></tr>
  *   <tr><td>1</td><td>1</td><td>Engineering</td><td>Jane Smith</td></tr>
  *   <tr><td>2</td><td>2</td><td>Sales</td><td>Joan Smith</td></tr>
  *   <tr><td>3</td><td>3</td><td>Engineering</td><td>John Smith</td></tr>
  *   <tr><td>4</td><td>4</td><td>Sales</td><td>Jim Smith</td></tr>
- * </table></div>
+ * </table></p>
  *
  * <p>{@link SecondaryIndex} maps secondary keys to entities:</p>
  *
@@ -102,14 +102,14 @@ import com.sleepycat.db.Transaction;
  * {@code SecondaryIndex<String, Long, Employee>} secondaryIndex =
  *     store.getSecondaryIndex(primaryIndex, String.class, "department");</pre>
  *
- * <div><table class="code" border="1" summary="">
+ * <p><table class="code" border="1">
  *   <tr><th colspan="4">secondaryIndex</th></tr>
  *   <tr><th>Secondary Key</th><th colspan="3">Entity</th></tr>
  *   <tr><td>Engineering</td><td>1</td><td>Engineering</td><td>Jane Smith</td></tr>
  *   <tr><td>Engineering</td><td>3</td><td>Engineering</td><td>John Smith</td></tr>
  *   <tr><td>Sales</td><td>2</td><td>Sales</td><td>Joan Smith</td></tr>
  *   <tr><td>Sales</td><td>4</td><td>Sales</td><td>Jim Smith</td></tr>
- * </table></div>
+ * </table></p>
  *
  * <p>{@link SecondaryIndex#keysIndex} maps secondary keys to primary
  * keys:</p>
@@ -117,14 +117,14 @@ import com.sleepycat.db.Transaction;
  * <pre class="code">
  * {@code EntityIndex<String, Long>} keysIndex = secondaryIndex.keysIndex();</pre>
  *
- * <div><table class="code" border="1" summary="">
+ * <p><table class="code" border="1">
  *   <tr><th colspan="4">keysIndex</th></tr>
  *   <tr><th>Secondary Key</th><th colspan="3">Primary Key</th></tr>
  *   <tr><td>Engineering</td><td>1</td></tr>
  *   <tr><td>Engineering</td><td>3</td></tr>
  *   <tr><td>Sales</td><td>2</td></tr>
  *   <tr><td>Sales</td><td>4</td></tr>
- * </table></div>
+ * </table></p>
  *
  * <p>{@link SecondaryIndex#subIndex} maps primary keys to entities, for the
  * subset of entities having a specified secondary key:</p>
@@ -132,12 +132,12 @@ import com.sleepycat.db.Transaction;
  * <pre class="code">
  * {@code EntityIndex<Long, Entity>} subIndex = secondaryIndex.subIndex("Engineering");</pre>
  *
- * <div><table class="code" border="1" summary="">
+ * <p><table class="code" border="1">
  *   <tr><th colspan="4">subIndex</th></tr>
  *   <tr><th>Primary Key</th><th colspan="3">Entity</th></tr>
  *   <tr><td>1</td><td>1</td><td>Engineering</td><td>Jane Smith</td></tr>
  *   <tr><td>3</td><td>3</td><td>Engineering</td><td>John Smith</td></tr>
- * </table></div>
+ * </table></p>
  *
  * <h3>Accessing the Index</h3>
  *
@@ -505,7 +505,7 @@ import com.sleepycat.db.Transaction;
  * href="{@docRoot}/../gsg_txn/JAVA/index.html">Writing
  * Transactional Applications</a>.</p>
  *
- * <h3><a name="retries">Performing Transaction Retries</a></h3>
+ * <a name="retries"><h3>Performing Transaction Retries</h3></a>
  *
  * <p>Lock conflict handling is another important topic discussed in <a
  * href="{@docRoot}/../gsg_txn/JAVA/index.html">Writing
@@ -586,13 +586,6 @@ import com.sleepycat.db.Transaction;
 public interface EntityIndex<K, V> {
 
     /**
-     * Returns the underlying database for this index.
-     *
-     * @return the database.
-     */
-    Database getDatabase();
-
-    /**
      * Checks for existence of a key in this index.
      *
      * <p>The operation will not be transaction protected, and {@link
@@ -666,10 +659,15 @@ public interface EntityIndex<K, V> {
     V get(Transaction txn, K key, LockMode lockMode)
         throws DatabaseException;
 
-
     /**
      * Returns a non-transactional count of the entities in this index.
      *
+     * <p>This operation is faster than obtaining a count by scanning the index
+     * manually, and will not perturb the current contents of the cache.
+     * However, the count is not guaranteed to be accurate if there are
+     * concurrent updates. Note that this method does scan a significant
+     * portion of the index and should be considered a fairly expensive
+     * operation.</p>
      *
      * @return the number of entities in this index.
      *
@@ -678,7 +676,6 @@ public interface EntityIndex<K, V> {
      */
     long count()
         throws DatabaseException;
-
 
     /**
      * Deletes all entities with a given index key.
@@ -710,7 +707,6 @@ public interface EntityIndex<K, V> {
      */
     boolean delete(Transaction txn, K key)
         throws DatabaseException;
-
 
     /**
      * Opens a cursor for traversing all keys in this index.

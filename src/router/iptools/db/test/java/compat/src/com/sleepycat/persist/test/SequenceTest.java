@@ -1,19 +1,13 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package com.sleepycat.persist.test;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.File;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 import com.sleepycat.db.Environment;
 import com.sleepycat.db.EnvironmentConfig;
@@ -36,24 +30,26 @@ public class SequenceTest extends DualTestCase {
     private File envHome;
     private Environment env;
 
-    @Before
+    @Override
     public void setUp()
         throws Exception {
 
         super.setUp();
-        envHome = SharedTestUtils.getTestDir();
+
+        envHome = new File(System.getProperty(SharedTestUtils.DEST_DIR));
+        SharedTestUtils.emptyDir(envHome);
     }
 
-    @After
+    @Override
     public void tearDown()
         throws Exception {
 
         super.tearDown();
+
         envHome = null;
         env = null;
     }
 
-    @Test
     public void testSequenceKeys()
         throws Exception {
 

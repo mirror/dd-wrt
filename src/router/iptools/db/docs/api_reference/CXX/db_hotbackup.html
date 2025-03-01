@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -154,13 +154,6 @@
                  recovery impossible, log file removal must be integrated with log file
                  archival.</strong></span>
             </p>
-            <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
-              <h3 class="title">Note</h3>
-              <p>
-                    This option cannot be used when backing up
-                    environments replicated using the base replication API.
-                </p>
-            </div>
           </li>
           <li>
             <p>
@@ -239,7 +232,7 @@
                  Please note the database environment recovery log references database
                  files as they are named by the application program.  <span class="bold"><strong>If the application uses absolute or relative pathnames to
                  name database files, (rather than filenames and the 
-                 <a class="xref" href="envadd_data_dir.html" title="DbEnv::add_data_dir()">DbEnv::add_data_dir()</a>
+                 <a class="xref" href="envset_data_dir.html" title="DbEnv::set_data_dir()">DbEnv::set_data_dir()</a>
                  method or the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> configuration file to specify
                  filenames), running recovery in the target directory may
                  not properly find the copies of the files or might even
@@ -353,7 +346,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670053993264"></a>Environment Variables</h3>
+              <h3 class="title"><a id="idp10688784"></a>Environment Variables</h3>
             </div>
           </div>
         </div>
@@ -361,7 +354,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670054043376"></a>DB_HOME</h4>
+                <h4 class="title"><a id="idp10695888"></a>DB_HOME</h4>
               </div>
             </div>
           </div>

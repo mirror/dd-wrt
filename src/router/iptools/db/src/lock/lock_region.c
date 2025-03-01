@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -110,9 +110,9 @@ __lock_open(env)
 		if (region->detect != DB_LOCK_NORUN &&
 		    dbenv->lk_detect != DB_LOCK_DEFAULT &&
 		    region->detect != dbenv->lk_detect) {
-			ret = USR_ERR(env, EINVAL);
 			__db_errx(env, DB_STR("2041",
 			    "lock_open: incompatible deadlock detector mode"));
+			ret = EINVAL;
 			goto err;
 		}
 		if (region->detect == DB_LOCK_NORUN)
@@ -120,15 +120,13 @@ __lock_open(env)
 	}
 
 	/*
-	 * Lock and transaction timeouts will be ignored when joining the
-	 * environment, so print a warning if either was set.
+	 * A process joining the region may have reset the lock and transaction
+	 * timeouts.
 	 */
-	if (dbenv->lk_timeout != 0 && region->lk_timeout != dbenv->lk_timeout)
-		__db_msg(env, DB_STR("2058",
-"Warning: Ignoring DB_SET_LOCK_TIMEOUT when joining the environment."));
-	if (dbenv->tx_timeout != 0 && region->tx_timeout != dbenv->tx_timeout)
-		__db_msg(env, DB_STR("2059",
-"Warning: Ignoring DB_SET_TXN_TIMEOUT when joining the environment."));
+	if (dbenv->lk_timeout != 0)
+		region->lk_timeout = dbenv->lk_timeout;
+	if (dbenv->tx_timeout != 0)
+		region->tx_timeout = dbenv->tx_timeout;
 
 	LOCK_REGION_UNLOCK(env);
 	region_locked = 0;
@@ -324,28 +322,23 @@ __lock_region_init(env, lt)
 	/* Initialize lockers onto a free list.  */
 	SH_TAILQ_INIT(&region->lockers);
 	SH_TAILQ_INIT(&region->free_lockers);
-	if (region->stat.st_lockers == 0)
-		region->locker_mem_off = INVALID_ROFF;
-	else {
-		if ((ret = __env_alloc(&lt->reginfo,
-		    sizeof(DB_LOCKER) * region->stat.st_lockers, &lidp)) != 0)
-			goto mem_err;
+	if ((ret =
+		__env_alloc(&lt->reginfo,
+		    sizeof(DB_LOCKER) * region->stat.st_lockers,
+		    &lidp)) != 0)
+		goto mem_err;
 
-		region->locker_mem_off = R_OFFSET(&lt->reginfo, lidp);
-		for (i = 0; i < region->stat.st_lockers; ++i) {
-			memset(lidp, 0, sizeof(*lidp));
-			SH_TAILQ_INSERT_HEAD(&region->free_lockers,
-			    lidp, links, __db_locker);
-			++lidp;
-		}
+	region->locker_mem_off = R_OFFSET(&lt->reginfo, lidp);
+	for (i = 0; i < region->stat.st_lockers; ++i) {
+		SH_TAILQ_INSERT_HEAD(
+			&region->free_lockers, lidp, links, __db_locker);
+		++lidp;
 	}
-
 	return (0);
-mem_err:
-	__db_errx(env, DB_STR("2042",
-	    "unable to allocate memory for the lock table"));
-	return (ret);
-}
+mem_err:		__db_errx(env, DB_STR("2042",
+			    "unable to allocate memory for the lock table"));
+			return (ret);
+		}
 
 /*
  * __lock_env_refresh --
@@ -399,35 +392,17 @@ __lock_env_refresh(env)
 		/* Discard the object partition array. */
 		__env_alloc_free(reginfo, R_ADDR(reginfo, lr->part_off));
 		SH_TAILQ_INIT(&lr->free_lockers);
-		if (lr->locker_mem_off != INVALID_ROFF)
-			__env_alloc_free(reginfo,
-			    R_ADDR(reginfo, lr->locker_mem_off));
+		__env_alloc_free(reginfo,
+		    R_ADDR(reginfo, lr->locker_mem_off));
 	}
 
-	ret = __lock_region_detach(env, lt);
+	/* Detach from the region. */
+	ret = __env_region_detach(env, reginfo, 0);
 
-	return (ret);
-}
+	/* Discard DB_LOCKTAB. */
+	__os_free(env, lt);
+	env->lk_handle = NULL;
 
-/*
- * __lock_region_detach --
- *
- * PUBLIC: int __lock_region_detach __P((ENV *, DB_LOCKTAB *));
- */
-int
-__lock_region_detach(env, lt)
-	ENV *env;
-	DB_LOCKTAB *lt;
-{
-	int ret;
-
-	ret = 0;
-	if (lt != NULL) {
-		ret = __env_region_detach(env, &lt->reginfo, 0);
-		/* Discard DB_LOCKTAB. */
-		__os_free(env, lt);
-		env->lk_handle = NULL;
-	}
 	return (ret);
 }
 
@@ -527,8 +502,7 @@ __lock_region_size(env, other_alloc)
 {
 	DB_ENV *dbenv;
 	size_t retval;
-	u_int32_t count, size_per_obj;
-	int lk_modes;
+	u_int32_t count;
 
 	dbenv = env->dbenv;
 
@@ -543,14 +517,10 @@ __lock_region_size(env, other_alloc)
 	 */
 	retval = 0;
 	retval += __env_alloc_size(sizeof(DB_LOCKREGION));
-	lk_modes = dbenv->lk_modes;
-	if (lk_modes == 0)
-		lk_modes = DB_LOCK_RIW_N;
-	retval += __env_alloc_size((size_t)(lk_modes * lk_modes));
+	retval += __env_alloc_size((size_t)(dbenv->lk_modes * dbenv->lk_modes));
 	/*
 	 * Try to figure out the size of the locker hash table.
 	 */
-	size_per_obj = sizeof(DB_LOCKER) + sizeof(DB_HASHTAB);
 	if (dbenv->lk_max_lockers != 0)
 		dbenv->locker_t_size = __db_tablesize(dbenv->lk_max_lockers);
 	else if (dbenv->tx_max != 0)
@@ -559,7 +529,7 @@ __lock_region_size(env, other_alloc)
 		if (dbenv->memory_max != 0)
 			count = (u_int32_t)
 			    (((dbenv->memory_max - other_alloc) / 10) /
-				size_per_obj);
+				sizeof(DB_LOCKER));
 		else
 			count = DB_LOCK_DEFAULT_N / 10;
 		if (count < dbenv->lk_init_lockers)
@@ -568,7 +538,7 @@ __lock_region_size(env, other_alloc)
 	}
 	retval += __env_alloc_size(dbenv->locker_t_size * (sizeof(DB_HASHTAB)));
 	retval += __env_alloc_size(sizeof(DB_LOCKER)) * dbenv->lk_init_lockers;
-	retval += __env_alloc_size(sizeof(struct __db_lock)) * dbenv->lk_init;
+	retval += __env_alloc_size(sizeof(struct __db_lock) * dbenv->lk_init);
 	other_alloc += retval;
 	/*
 	 * We want to allocate a object hash table that is big enough to
@@ -579,15 +549,11 @@ __lock_region_size(env, other_alloc)
 	 * using the default value.  If this winds up being less than
 	 * the init value then we just make the table fit the init value.
 	 */
-	size_per_obj = sizeof(DB_LOCKOBJ) + sizeof(DB_HASHTAB);
-#ifdef HAVE_STATISTICS
-	size_per_obj += sizeof(DB_LOCK_HSTAT);
-#endif
 	if ((count = dbenv->lk_max_objects) == 0) {
 		if (dbenv->memory_max != 0)
 			count = (u_int32_t)(
 			    ((dbenv->memory_max - other_alloc) / 2)
-			    / size_per_obj);
+			    / sizeof(DB_LOCKOBJ));
 		else
 			count = DB_LOCK_DEFAULT_N;
 		if (count < dbenv->lk_init_objects)
@@ -598,14 +564,15 @@ __lock_region_size(env, other_alloc)
 	count /= 3;
 	if (dbenv->object_t_size == 0)
 		dbenv->object_t_size = __db_tablesize(count);
-	retval += __env_alloc_size(dbenv->object_t_size * (sizeof(DB_HASHTAB)));
+	retval += __env_alloc_size(
+	    __db_tablesize(dbenv->object_t_size) * (sizeof(DB_HASHTAB)));
 #ifdef HAVE_STATISTICS
 	retval += __env_alloc_size(
-	    dbenv->object_t_size * (sizeof(DB_LOCK_HSTAT)));
+	    __db_tablesize(dbenv->object_t_size) * (sizeof(DB_LOCK_HSTAT)));
 #endif
 	retval +=
 	    __env_alloc_size(dbenv->lk_partitions * (sizeof(DB_LOCKPART)));
-	retval += __env_alloc_size(sizeof(DB_LOCKOBJ)) * dbenv->lk_init_objects;
+	retval += __env_alloc_size(sizeof(DB_LOCKOBJ) * dbenv->lk_init_objects);
 
 	return (retval);
 }

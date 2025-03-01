@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -39,12 +39,9 @@
       <p>
         Berkeley DB provides support for managing everything from very small
         databases that fit entirely in memory, to extremely large databases
-        holding millions of records and terabytes of data. An individual
-        DB database can store up to 256 terabytes of data.  By using
-        multiple databases, it is possible to use DB to store and
-        manage petabytes of information.  Within a single database,
-        individual record keys or record data can be used to store up to 4
-        gigabytes of data. 
+        holding millions of records and terabytes of data. DB databases can
+        store up to 256 terabytes of data. Individual record keys or record
+        data can store up to 4 gigabytes of data.
     </p>
       <p>
         DB's databases store data in a binary format that is portable across
@@ -58,11 +55,9 @@
         access — they are thread-safe, and they share well across multiple
         processes. That said, in order to allow multiple processes to share
         databases and the cache, DB makes use of mechanisms that do not work
-        well on some network-shared drives (NFS or Windows networks shares, for
-        example). For more information, see the 
-        <span class="emphasis"><em>Remote filesystems</em></span> section in 
-        <span class="emphasis"><em>The Berkeley DB Environment</em></span>
-        chapter of the <em class="citetitle">Berkeley DB Programmer's Reference Guide</em>.
+        well on network-shared drives (NFS or Windows networks shares, for
+        example). For this reason, you cannot place your DB databases and
+        environments on network-mounted drives.
     </p>
     </div>
     <div class="navfooter">

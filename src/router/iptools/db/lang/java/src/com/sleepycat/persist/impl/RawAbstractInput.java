@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -9,10 +9,10 @@ package com.sleepycat.persist.impl;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.IdentityHashMap;
 
 import com.sleepycat.compat.DbCompat;
 import com.sleepycat.persist.raw.RawObject;
+import java.util.IdentityHashMap;
 
 /**
  * Base class for EntityInput implementations that type-check RawObject

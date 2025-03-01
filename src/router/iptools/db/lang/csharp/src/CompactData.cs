@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -30,7 +30,7 @@ namespace BerkeleyDB {
             get { return  cdata.compact_deadlock; }
         }
         /// <summary>
-        /// The number of empty hash buckets that were found in the compaction
+        /// The number of empty hash buckets that were found the compaction
         /// phase.
         /// </summary>
         public uint EmptyBuckets {

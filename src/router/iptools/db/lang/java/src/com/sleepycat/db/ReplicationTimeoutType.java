@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -93,14 +93,6 @@ public final class ReplicationTimeoutType {
     public static final ReplicationTimeoutType LEASE_TIMEOUT =
         new ReplicationTimeoutType("LEASE_TIMEOUT", DbConstants.DB_REP_LEASE_TIMEOUT);
 
-    /**
-    Configure the amount of time a Replication Manager client waits for a response
-    from a forwarded write operation before returning a failure indication.
-    The default value is 5 seconds.
-    **/
-    public static final ReplicationTimeoutType WRITE_FORWARD_TIMEOUT =
-        new ReplicationTimeoutType("WRITE_FORWARD_TIMEOUT", DbConstants.DB_REP_WRITE_FORWARD_TIMEOUT);
-
     /* package */
     static ReplicationTimeoutType fromInt(int type) {
         switch(type) {
@@ -114,8 +106,6 @@ public final class ReplicationTimeoutType {
             return CONNECTION_RETRY;
         case DbConstants.DB_REP_LEASE_TIMEOUT:
             return LEASE_TIMEOUT;
-        case DbConstants.DB_REP_WRITE_FORWARD_TIMEOUT:
-            return WRITE_FORWARD_TIMEOUT;
         default:
             throw new IllegalArgumentException(
                 "Unknown timeout type: " + type);

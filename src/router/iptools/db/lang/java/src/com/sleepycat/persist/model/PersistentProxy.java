@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -89,7 +89,7 @@ import com.sleepycat.persist.raw.RawStore; // for javadoc
  * <p>A proxy for proxied class P does not handle instances of subclasses of P.
  * To proxy a subclass of P, a separate proxy class is needed.</p>
  *
- * <p>Several <a href="Entity.html#proxyTypes">built in proxy types</a>
+ * <p>Several {@link <a href="Entity.html#proxyTypes">built in proxy types</a>}
  * are used implicitly.  An application defined proxy will be used instead of a
  * built-in proxy, if both exist for the same proxied class.</p>
  *
@@ -115,16 +115,12 @@ public interface PersistentProxy<T> {
     /**
      * Copies the state of a given proxied class instance to this proxy
      * instance.
-     *
-     * @param object the proxied class instance.
      */
     void initializeProxy(T object);
 
     /**
      * Returns a new proxied class instance to which the state of this proxy
      * instance has been copied.
-     *
-     * @return the new proxied class instance.
      */
     T convertProxy();
 }

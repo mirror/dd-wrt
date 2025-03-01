@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -13,12 +13,6 @@ import static com.sleepycat.persist.model.Relationship.MANY_TO_MANY;
 import static com.sleepycat.persist.model.Relationship.MANY_TO_ONE;
 import static com.sleepycat.persist.model.Relationship.ONE_TO_MANY;
 import static com.sleepycat.persist.model.Relationship.ONE_TO_ONE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -28,11 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.junit.After;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import junit.framework.Test;
 
 import com.sleepycat.compat.DbCompat;
 import com.sleepycat.db.Database;
@@ -62,21 +52,13 @@ import com.sleepycat.util.test.TxnTestCase;
  *
  * @author Mark Hayes
  */
-@RunWith(Parameterized.class)
 public class OperationTest extends TxnTestCase {
 
     private static final String STORE_NAME = "test";
 
-    @Parameters
-    public static List<Object[]> genParams() {
-        return getTxnParams(null, false);
-    }
-    
-    public OperationTest(String type){
-        initEnvConfig();
-        txnType = type;
-        isTransactional = (txnType != TXN_NULL);
-        customName = txnType;
+    public static Test suite() {
+        testClass = OperationTest.class;
+        return txnTestSuite(null, null);
     }
 
     private EntityStore store;
@@ -123,10 +105,17 @@ public class OperationTest extends TxnTestCase {
         store = null;
     }
 
+    @Override
+    public void setUp()
+        throws Exception {
+
+        super.setUp();
+    }
+
     /**
      * The store must be closed before closing the environment.
      */
-    @After
+    @Override
     public void tearDown()
         throws Exception {
 
@@ -141,7 +130,6 @@ public class OperationTest extends TxnTestCase {
         super.tearDown();
     }
 
-    @Test
     public void testReadOnly()
         throws DatabaseException {
 
@@ -169,7 +157,6 @@ public class OperationTest extends TxnTestCase {
 
 
 
-    @Test
     public void testUninitializedCursor()
         throws DatabaseException {
 
@@ -217,7 +204,6 @@ public class OperationTest extends TxnTestCase {
         close();
     }
 
-    @Test
     public void testCursorCount()
         throws DatabaseException {
 
@@ -252,7 +238,6 @@ public class OperationTest extends TxnTestCase {
         close();
     }
 
-    @Test
     public void testCursorUpdate()
         throws DatabaseException {
 
@@ -336,7 +321,6 @@ public class OperationTest extends TxnTestCase {
         close();
     }
 
-    @Test
     public void testCursorDelete()
         throws DatabaseException {
 
@@ -442,7 +426,6 @@ public class OperationTest extends TxnTestCase {
         close();
     }
 
-    @Test
     public void testDeleteFromSubIndex()
         throws DatabaseException {
 
@@ -520,7 +503,6 @@ public class OperationTest extends TxnTestCase {
         private MyEntity() {}
     }
 
-    @Test
     public void testSharedSequence()
         throws DatabaseException {
 
@@ -564,7 +546,6 @@ public class OperationTest extends TxnTestCase {
         private Integer key;
     }
 
-    @Test
     public void testSeparateSequence()
         throws DatabaseException {
 
@@ -610,7 +591,6 @@ public class OperationTest extends TxnTestCase {
         private Integer key;
     }
 
-    @Test
     public void testCompositeSequence()
         throws DatabaseException {
 
@@ -719,7 +699,6 @@ public class OperationTest extends TxnTestCase {
      * NullPointerException in JE 3.0.12.  No SR was created because the use
      * case is very obscure and was discovered by code inspection.
      */
-    @Test
     public void testOpenRawStoreReadOnly()
         throws DatabaseException {
 
@@ -744,7 +723,6 @@ public class OperationTest extends TxnTestCase {
      * referenced when getSecondaryIndex was called.  This was a bug in JE
      * 3.0.12, reported on OTN.  [#15103]
      */
-    @Test
     public void testToManyKeyClass()
         throws DatabaseException {
 
@@ -766,7 +744,6 @@ public class OperationTest extends TxnTestCase {
      * fail with "IllegalArgumentException: Wrong secondary key class: ..."
      * when the store was opened read-only.  [#15156]
      */
-    @Test
     public void testToManyReadOnly()
         throws DatabaseException {
 
@@ -813,7 +790,6 @@ public class OperationTest extends TxnTestCase {
      * be opened automatically.  If X is not opened, foreign key constraints
      * will not be enforced. [#15358]
      */
-    @Test
     public void testAutoOpenRelatedEntity()
         throws DatabaseException {
 
@@ -878,14 +854,12 @@ public class OperationTest extends TxnTestCase {
         }
     }
 
-    @Test
     public void testSecondaryBulkLoad1()
         throws DatabaseException {
 
         doSecondaryBulkLoad(true);
     }
 
-    @Test
     public void testSecondaryBulkLoad2()
         throws DatabaseException {
 
@@ -971,7 +945,6 @@ public class OperationTest extends TxnTestCase {
         close();
     }
 
-    @Test
     public void testPersistentFields()
         throws DatabaseException {
 
@@ -1031,7 +1004,6 @@ public class OperationTest extends TxnTestCase {
      * getSecondaryConfig.  This was a bug in JE 3.3.69, reported on OTN.
      * [#16407]
      */
-    @Test
     public void testKeyClassInitialization()
         throws DatabaseException {
 
@@ -1040,7 +1012,6 @@ public class OperationTest extends TxnTestCase {
         close();
     }
 
-    @Test
     public void testKeyName()
         throws DatabaseException {
 
@@ -1092,7 +1063,6 @@ public class OperationTest extends TxnTestCase {
      * subclass instance, which contains a secondary key, without registering
      * the subclass up front. [#16399]
      */
-    @Test
     public void testPutEntitySubclassWithoutRegisterClass()
         throws DatabaseException {
 
@@ -1122,7 +1092,6 @@ public class OperationTest extends TxnTestCase {
      * Checks that registerClass avoids an exception when storing an entity
      * subclass instance, which defines a secondary key. [#16399]
      */
-    @Test
     public void testPutEntitySubclassWithRegisterClass()
         throws DatabaseException {
 
@@ -1154,7 +1123,6 @@ public class OperationTest extends TxnTestCase {
      * registerClass is sufficient and subsequent use of the store does not
      * require it.  [#16399]
      */
-    @Test
     public void testPutEntitySubclassWithRegisterClass2()
         throws DatabaseException {
 
@@ -1192,7 +1160,6 @@ public class OperationTest extends TxnTestCase {
      * avoid an exception when storing an entity subclass instance, which
      * defines a secondary key. [#16399]
      */
-    @Test
     public void testPutEntitySubclassWithGetSubclassIndex()
         throws DatabaseException {
 
@@ -1224,7 +1191,6 @@ public class OperationTest extends TxnTestCase {
      * getSubclassIndex is sufficient and subsequent use of the store does not
      * require it.  [#16399]
      */
-    @Test
     public void testPutEntitySubclassWithGetSubclassIndex2()
         throws DatabaseException {
 
@@ -1294,7 +1260,6 @@ public class OperationTest extends TxnTestCase {
         private ExtendedStatement() {}
     } 
 
-    @Test
     public void testCustomCompare()
         throws DatabaseException {
 
@@ -1364,7 +1329,7 @@ public class OperationTest extends TxnTestCase {
         private ReverseIntKey secKey1;
 
         @SecondaryKey(relate=ONE_TO_MANY)
-        private final Set<ReverseIntKey> secKey2 = new HashSet<ReverseIntKey>();
+        private Set<ReverseIntKey> secKey2 = new HashSet<ReverseIntKey>();
 
         private CustomCompareEntity() {}
 
@@ -1425,7 +1390,6 @@ public class OperationTest extends TxnTestCase {
      * comparator.  The comparator is initialized on its first use, just as if
      * recovery were run.
      */
-    @Test
     public void testStoredComparators()
         throws DatabaseException {
 
@@ -1598,7 +1562,6 @@ public class OperationTest extends TxnTestCase {
         }
     }
     
-    @Test
     public void testEmbeddedMapTypes()
         throws DatabaseException {
         open();

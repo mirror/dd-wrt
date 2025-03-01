@@ -1,21 +1,16 @@
 /*-
- * Copyright (c) 2010, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * The following provides the information necessary to build Berkeley
  * DB on native Windows, and other Windows environments such as MinGW.
  */
 
 /*
- * Berkeley DB requires at least Windows 2008, and Windows Vista if we are using
- * Visual Studio 2008. Tell Visual Studio of the requirement.
+ * Berkeley DB requires at least Windows 2000, tell Visual Studio of the
+ * requirement.
  */
 #ifndef _WIN32_WINNT
-#if _MSC_VER >= 1500
-#define	_WIN32_WINNT 0x0600
-#define	NTDDI_VERSION 0x06000000
-#else
 #define	_WIN32_WINNT 0x0500
-#endif
 #endif
 
 #ifndef DB_WINCE
@@ -74,45 +69,11 @@
 #endif
 #define	getpid			GetCurrentProcessId
 #define	snprintf		_snprintf
-#ifndef strcasecmp
 #define	strcasecmp		_stricmp
 #define	strncasecmp		_strnicmp
-#endif
 #define	vsnprintf		_vsnprintf
 
 #define	h_errno			WSAGetLastError()
-
-#ifdef DB_WINCE
-/* Macros used by setvbuf on WINCE */
-#ifndef _IOFBF
-#define	_IOFBF			0x0000
-#endif
-#ifndef _IOLBF
-#define	_IOLBF			0x0040
-#endif
-#ifndef _IONBF
-#define	_IONBF			0x0004
-#endif
-/* The macros for time functions */
-#define	freopen			__ce_freopen
-#define	gmtime			__ce_gmtime
-#define	mktime			__ce_mktime
-#define	remove			__ce_remove
-#define	SECSPERMIN		60
-#define	MINSPERHOUR		60
-#define	HOURSPERDAY		24
-#define	DAYSPERWEEK		7
-#define	DAYSPERNYEAR		365
-#define	DAYSPERLYEAR		366
-#define	SECSPERHOUR		(SECSPERMIN * MINSPERHOUR)
-#define	SECSPERDAY		((long) SECSPERHOUR * HOURSPERDAY)
-#define	MONSPERYEAR		12
-#define	TM_YEAR_BASE		1900
-#define	TM_YEAR_EPOCH		1970
-#define	isleap(y) ((((y) % 4) == 0 && ((y) % 100) != 0) || ((y) % 400) == 0)
-extern const __DB_IMPORT unsigned int mon_lengths[][MONSPERYEAR];
-extern const __DB_IMPORT unsigned int year_lengths[];
-#endif
 
 /*
  * Win32 does not have getopt.

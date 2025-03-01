@@ -19,29 +19,6 @@ copy_if_changes()
 	rm -f $f2
 }
 
-# Check or recheck-and-apply each patch
-try_patches()
-{
-	doit=$1
-	for f in $sqldir/../adapter/sqlite-patches/[0-9][0-9]_*.patch ; do
-		msgs=$( patch -d $sqldir -p0 --dry-run --force < $f 2>&1 )
-		if test $? -ne 0 ;  then
-			echo "Patch $f would fail:"
-			echo "$msgs" | sed -e 's/^/	/'
-			echo "Exiting."
-			exit 1
-		else
-			if test $doit = 1 ; then
-				echo "Applying patch $f"
-				patch -d $sqldir -p0 --force --quiet < $f
-			fi
-		fi
-	done
-}
-
-# echo "Testing patch files for the sqlite source tree."
-# try_patches 0
-
 # Update the SQLite Makefile to refer to the replaced source files.
 MAKEFILE_NAME=$sqldir/Makefile.in
 for f in ../lang/sql/adapter/*.[ch]; do
@@ -50,7 +27,7 @@ for f in ../lang/sql/adapter/*.[ch]; do
 	copy_if_changes $MAKEFILE_NAME $MAKEFILE_NAME.tmp
 done
 # Update the include path so that headers in sql/adapter dir can be found.
-sed -e '/^TCC/s/-I\. -I${TOP}\/src/& -I${TOP}\/..\/adapter -I${TOP}\/ext\/fts3/' $MAKEFILE_NAME > $MAKEFILE_NAME.tmp
+sed -e '/^TCC/s/-I\. -I${TOP}\/src/& -I${TOP}\/..\/adapter/ -I${TOP}\/ext\/fts3' $MAKEFILE_NAME > $MAKEFILE_NAME.tmp
 copy_if_changes $MAKEFILE_NAME $MAKEFILE_NAME.tmp
 
 # We will be building from a different directory level, update the makefile
@@ -59,7 +36,15 @@ sed -e 's/TOP = \.\.\/sqlite/TOP = \.\.\/\.\.\/sql\/sqlite/' $sqldir/Makefile.li
 copy_if_changes $sqldir/Makefile.linux-gcc $sqldir/Makefile.linux-gcc.tmp
 
 echo "Applying patch files to the sqlite source tree."
-try_patches 1
+for f in $sqldir/../adapter/sqlite-patches/[0-9][0-9]_*.patch ; do
+	if (cd $sqldir && patch -p0 --dry-run --force --quiet) < $f > /dev/null; then
+		echo "Applying patch $f"
+		(cd $sqldir && patch -p0 --force --quiet) < $f
+	else
+		echo "Patch $f would fail. Exiting."
+		exit 1
+	fi
+done
 
 # Remove files from the SQLite source tree that have been replaced by db.
 ( cd $sqldir/../adapter &&

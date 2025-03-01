@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -46,8 +46,6 @@ namespace BerkeleyDB {
                     throw new LockNotGrantedException();
                 case ErrorCodes.DB_LOG_BUFFER_FULL:
                     throw new FullLogBufferException();
-                case ErrorCodes.DB_META_CHKSUM_FAIL:
-                    throw new MetaCheckSumFailException();
                 case ErrorCodes.DB_OLD_VERSION:
                     throw new OldVersionException();
                 case ErrorCodes.DB_PAGE_NOTFOUND:
@@ -135,12 +133,12 @@ namespace BerkeleyDB {
     /// <summary>
     /// The requested key/data pair logically exists but was never explicitly
     /// created by the application, or that the requested key/data pair was
-    /// deleted and never re-created. In addition, the Queue access method 
-    /// throws a KeyEmptyException for records that were created as part of a
+    /// deleted and never re-created. In addition, the Queue access method will
+    /// throw a KeyEmptyException for records that were created as part of a
     /// transaction that was later aborted and never re-created.
     /// </summary>
     /// <remarks>
-    /// The Recno and Queue access methods automatically create key/data
+    /// The Recno and Queue access methods will automatically create key/data
     /// pairs under some circumstances.
     /// </remarks>
     public class KeyEmptyException : DatabaseException {
@@ -193,7 +191,7 @@ namespace BerkeleyDB {
     /// <summary>
     /// If <see cref="DatabaseEnvironmentConfig.TimeNotGranted"/> is true,
     /// database calls timing out based on lock or transaction timeout values
-    /// throw a LockNotGrantedException, instead of a DeadlockException.
+    /// will throw a LockNotGrantedException, instead of a DeadlockException.
     /// </summary>
     public class LockNotGrantedException : DatabaseException {
         /// <summary>
@@ -208,19 +206,6 @@ namespace BerkeleyDB {
         /// Initialize a new instance of the MemoryException
         /// </summary>
         internal MemoryException() : base(ErrorCodes.DB_BUFFER_SMALL) { }
-    }
-
-    /// <summary>
-    /// A checksum mismatch was detected on a database metadata page.  Either
-    /// the database is corrupted or the file is not a Berkeley DB database
-    /// file. 
-    /// </summary>
-    public class MetaCheckSumFailException : DatabaseException {
-        /// <summary>
-        /// Initialize a new instance of the MetaCheckSumFailException
-        /// </summary>
-        public MetaCheckSumFailException()
-            : base(ErrorCodes.DB_META_CHKSUM_FAIL) { }
     }
 
     /// <summary>
@@ -257,7 +242,7 @@ namespace BerkeleyDB {
     /// <summary>
     /// Berkeley DB has encountered an error it considers fatal to an entire
     /// environment. Once a RunRecoveryException has been thrown by any
-    /// interface, it is returned from all subsequent Berkeley DB calls
+    /// interface, it will be returned from all subsequent Berkeley DB calls
     /// made by any threads of control participating in the environment.
     /// </summary>
     /// <remarks>
@@ -289,7 +274,7 @@ namespace BerkeleyDB {
     }
 
     /// <summary>
-    /// The version of the Berkeley DB library does not match the version that
+    /// The version of the Berkeley DB library doesn't match the version that
     /// created the database environment.
     /// </summary>
     public class VersionMismatchException : DatabaseException {

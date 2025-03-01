@@ -7,14 +7,14 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Getting Started with the Oracle Berkeley DB SQL APIs" />
-    <link rel="up" href="sqlrep.html" title="Chapter 5. Using Replication with the SQL API" />
-    <link rel="prev" href="sqlrep.html" title="Chapter 5. Using Replication with the SQL API" />
+    <link rel="up" href="sqlrep.html" title="Chapter 4. Using Replication with the SQL API" />
+    <link rel="prev" href="sqlrep.html" title="Chapter 4. Using Replication with the SQL API" />
     <link rel="next" href="repstatistics.html" title="Displaying Replication Statistics" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,7 +22,7 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="sqlrep.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 5. Using Replication with the SQL API</th>
+          <th width="60%" align="center">Chapter 4. Using Replication with the SQL API</th>
           <td width="20%" align="right"> <a accesskey="n" href="repstatistics.html">Next</a></td>
         </tr>
       </table>
@@ -45,21 +45,6 @@
           </dt>
           <dt>
             <span class="sect2">
-              <a href="reppragma.html#pragma_replication_ack_policy">PRAGMA replication_ack_policy</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect2">
-              <a href="reppragma.html#pragma_replication_ack_timeout">PRAGMA replication_ack_timeout</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect2">
-              <a href="reppragma.html#pragma_replication_get_master">PRAGMA replication_get_master</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect2">
               <a href="reppragma.html#pragma_replication_initial_master">PRAGMA replication_initial_master</a>
             </span>
           </dt>
@@ -70,32 +55,12 @@
           </dt>
           <dt>
             <span class="sect2">
-              <a href="reppragma.html#pragma_replication_num_sites">PRAGMA replication_num_sites</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect2">
-              <a href="reppragma.html#pragma_replication_perm_failed">PRAGMA replication_perm_failed</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect2">
-              <a href="reppragma.html#pragma_replication_priority">PRAGMA replication_priority</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect2">
               <a href="reppragma.html#pragma_replication_remote_site">PRAGMA replication_remote_site</a>
             </span>
           </dt>
           <dt>
             <span class="sect2">
               <a href="reppragma.html#pragma_replication_remove_site">PRAGMA replication_remove_site</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect2">
-              <a href="reppragma.html#pragma_replication_site_status">PRAGMA replication_site_status</a>
             </span>
           </dt>
           <dt>
@@ -127,9 +92,7 @@
         <pre class="programlisting">PRAGMA replication=ON|OFF </pre>
         <p>
                     Enables the local environment to participate in
-                    replication. You only need to specify this PRAGMA
-                    once to turn on replication; all future uses of the
-                    database will automatically enable replication.
+                    replication. 
                 </p>
         <p>
                     Before invoking this PRAGMA for a brand new
@@ -162,166 +125,6 @@
                     <code class="literal">replication_initial_master</code>
                     PRAGMA, followed by 
                     <code class="literal">PRAGMA replication=ON</code>.
-                </p>
-      </div>
-      <div class="sect2" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
-              <h3 class="title"><a id="pragma_replication_ack_policy"></a>PRAGMA replication_ack_policy</h3>
-            </div>
-          </div>
-        </div>
-        <pre class="programlisting">PRAGMA replication_ack_policy=all|all_available|none|one|quorum </pre>
-        <p>
-                    Sets the replication group's acknowledgement policy. If
-                    no policy is specified, then this PRAGMA returns the
-                    current acknowledgement policy.  This PRAGMA may be
-                    called at any time during the life of the application.
-                </p>
-        <p>
-                    Acknowledgement policies are used to describe how
-                    permanent messages will be handled. A message is
-                    considered to be permanent if the master site has
-                    received enough responses (acknowledgements) from its
-                    replicas. Once the master is satisfied that a message is 
-                    permanent, it considers the transaction that generated
-                    the message to be complete. Therefore, the
-                    acknowledgement policy you set affects your
-                    application's write throughput, as well as the
-                    durability strength of your transactions.
-                </p>
-        <p>
-                    Message acknowledgements must be returned within a set
-                    timeout period. See
-                    <a class="xref" href="reppragma.html#pragma_replication_ack_timeout" title="PRAGMA replication_ack_timeout">PRAGMA replication_ack_timeout</a>
-                    for information on how to manage this timeout.
-                    Also, 
-                    <a class="xref" href="reppragma.html#pragma_replication_perm_failed" title="PRAGMA replication_perm_failed">PRAGMA replication_perm_failed</a>
-                    provides useful diagnostic information that you can use
-                    to fine-tune your acknowledgement policy.
-                </p>
-        <p>
-                    See 
-                    <a class="xref" href="sqlrep.html#permmessage" title="Permanent Message Handling">Permanent Message Handling</a>
-                    for more information on message acknowledgements.
-                </p>
-        <p>
-                    Possible permanent acknowledgement policies are:
-                </p>
-        <div class="itemizedlist">
-          <ul type="disc">
-            <li>
-              <p>
-                            <code class="literal">all</code>
-                        </p>
-              <p>
-                            All sites belonging to the replication group must
-                            acknowledge the message before the generating
-                            transaction is considered to be complete. This
-                            provides the strongest possible durability
-                            guarantee, but also the slowest possible write
-                            throughput.
-                        </p>
-              <p>
-                            Note that if any site is shutdown or otherwise
-                            cannot be reached due to networking errors,
-                            this acknowledgement policy will prevent your
-                            application from considering any transactions
-                            durable.
-                        </p>
-            </li>
-            <li>
-              <p>
-                            <code class="literal">all_available</code>
-                        </p>
-              <p>
-                            All currently connected sites must acknowledge the message.
-                        </p>
-            </li>
-            <li>
-              <p>
-                            <code class="literal">none</code>
-                        </p>
-              <p>
-                            The master will not wait for any message
-                            acknowledgements before completing the
-                            transaction. This results in the fastest
-                            possible write throughput, but also the weakest
-                            durability guarantee.
-                        </p>
-            </li>
-            <li>
-              <p>
-                            <code class="literal">one</code>
-                        </p>
-              <p>
-                            At least one site must acknowledge the message
-                            before the transaction is considered to be
-                            complete.
-                        </p>
-            </li>
-            <li>
-              <p>
-                            <code class="literal">quorum</code>
-                        </p>
-              <p>
-                            The master waits until it has received
-                            acknowledgements from the minimum number of
-                            electable sites sufficient to ensure the record
-                            change is durable in the event of an election.
-                            This is the default acknowledgement policy.
-                        </p>
-            </li>
-          </ul>
-        </div>
-      </div>
-      <div class="sect2" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
-              <h3 class="title"><a id="pragma_replication_ack_timeout"></a>PRAGMA replication_ack_timeout</h3>
-            </div>
-          </div>
-        </div>
-        <pre class="programlisting">PRAGMA replication_ack_timeout=&lt;timeout in microseconds&gt; </pre>
-        <p>
-                    Sets the replication site's acknowledgement timeout
-                    value. If the acknowledgement policy cannot be met
-                    within this timeout period, then the encompassing
-                    transaction is not considered to be complete.  This
-                    PRAGMA may be called at any time during the life of the
-                    application. The default is 1 second (1000000).
-                </p>
-        <p>
-                    If no timeout is provided, then this PRAGMA returns
-                    the replication site's current message acknowledgement
-                    timeout value.
-                </p>
-        <p>
-                    For information on specifying acknowledgement policies,
-                    see
-                    <a class="xref" href="reppragma.html#pragma_replication_ack_policy" title="PRAGMA replication_ack_policy">PRAGMA replication_ack_policy</a>.
-                    Also, 
-                    <a class="xref" href="reppragma.html#pragma_replication_perm_failed" title="PRAGMA replication_perm_failed">PRAGMA replication_perm_failed</a>
-                    provides useful diagnostic information that you can use
-                    to fine-tune your acknowledgement timeouts.
-                </p>
-      </div>
-      <div class="sect2" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
-              <h3 class="title"><a id="pragma_replication_get_master"></a>PRAGMA replication_get_master</h3>
-            </div>
-          </div>
-        </div>
-        <pre class="programlisting">PRAGMA replication_get_master </pre>
-        <p>
-                    Returns a host/port pair representing the current
-                    master. If replication has not yet started, or if the
-                    master is currently not known (such as during an
-                    election), <code class="literal">NULL</code> is returned.
                 </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
@@ -376,84 +179,6 @@
         <pre class="programlisting">PRAGMA replication_local_site="hostname:port" </pre>
         <p>
                     Sets the local site information for replication.
-                </p>
-      </div>
-      <div class="sect2" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
-              <h3 class="title"><a id="pragma_replication_num_sites"></a>PRAGMA replication_num_sites</h3>
-            </div>
-          </div>
-        </div>
-        <pre class="programlisting">PRAGMA replication_num_sites</pre>
-        <p>
-                    Returns the number of sites in the replication group,
-                    or <code class="literal">0</code> if replication has not yet
-                    started. Any input provided to this PRAGMA is ignored.
-                </p>
-      </div>
-      <div class="sect2" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
-              <h3 class="title"><a id="pragma_replication_perm_failed"></a>PRAGMA replication_perm_failed</h3>
-            </div>
-          </div>
-        </div>
-        <pre class="programlisting">PRAGMA replication_perm_failed </pre>
-        <p>
-                    Returns the number of times that a permanent message
-                    has failed the replication group's acknowledgement
-                    policy since the last time this PRAGMA was called. Zero
-                    is returned if replication has not yet started.
-                </p>
-        <p>
-                    Every time a permanent message has failed
-                    acknowledgement, a transaction was not considered
-                    durable and the master waited the full acknowldgement
-                    timeout period before returning from its commit.  If
-                    you are seeing a high number of permanent message
-                    acknowledgement failures, then that might represent a
-                    significant reduction in your application's
-                    write-throughput.
-                </p>
-        <p>
-                    To fix the problem, begin by examining your replicas to
-                    make sure they are operating correctly, as well as your
-                    network to make sure its performance is what you expect.
-                    If all looks well, then you should either reduce your
-                    acknowledgement policy (and accept a lessened
-                    durability guarantee) or increase your acknowledgement
-                    timeout period (which might reduce your write-throughput).
-                </p>
-        <p>
-                    To manage your acknowledgement policies, see
-                    <a class="xref" href="reppragma.html#pragma_replication_ack_policy" title="PRAGMA replication_ack_policy">PRAGMA replication_ack_policy</a>.
-                    To manage your acknowledgement timeout policy, see
-                    <a class="xref" href="reppragma.html#pragma_replication_ack_timeout" title="PRAGMA replication_ack_timeout">PRAGMA replication_ack_timeout</a>.
-                </p>
-      </div>
-      <div class="sect2" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
-              <h3 class="title"><a id="pragma_replication_priority"></a>PRAGMA replication_priority</h3>
-            </div>
-          </div>
-        </div>
-        <pre class="programlisting">PRAGMA replication_priority=&lt;non-0 positive integer&gt; </pre>
-        <p>
-                    Sets the site's election priority.  When holding
-                    elections, if more than one site has the most
-                    up-to-date copy of the data then the site with the
-                    highest priority will become master.  This PRAGMA may
-                    be called at any time during the life of the
-                    application.  The default is 100.
-                </p>
-        <p>
-                    If no priority is provided, then this PRAGMA returns
-                    the site's current priority.
                 </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
@@ -516,26 +241,6 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="pragma_replication_site_status"></a>PRAGMA replication_site_status</h3>
-            </div>
-          </div>
-        </div>
-        <pre class="programlisting">PRAGMA replication_site_status </pre>
-        <p>
-                    Returns whether the local site is the
-                    <code class="literal">MASTER</code>, <code class="literal">CLIENT</code>,
-                    or <code class="literal">UNKNOWN</code>. 
-                </p>
-        <p>
-                    <code class="literal">UNKNOWN</code> is returned if replication
-                    has not yet started. CLIENT is another term for
-                    replica.
-                </p>
-      </div>
-      <div class="sect2" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
               <h3 class="title"><a id="pragma_replication_verbose_output"></a>PRAGMA replication_verbose_output</h3>
             </div>
           </div>
@@ -572,7 +277,7 @@
           <td width="40%" align="right"> <a accesskey="n" href="repstatistics.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Chapter 5. Using Replication with the SQL API </td>
+          <td width="40%" align="left" valign="top">Chapter 4. Using Replication with the SQL API </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

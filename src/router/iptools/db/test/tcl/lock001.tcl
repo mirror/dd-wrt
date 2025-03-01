@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -29,10 +29,9 @@ proc lock001 { {iterations 1000} } {
 
 	# Open the region we'll use for testing.
 	set eflags "-create -lock -home $testdir -mode 0644 \
-	    -lock_conflict {$nmodes {$conflicts}} -mutex_set_incr 5000"
+	    -lock_conflict {$nmodes {$conflicts}}"
 	set env [eval {berkdb_env} $eflags]
 	error_check_good env [is_valid_env $env] TRUE
-
 	error_check_good lock_id_set \
 	     [$env lock_id_set $lock_curid $lock_maxid] 0
 
@@ -107,25 +106,9 @@ proc lock001 { {iterations 1000} } {
 	# Now release new locks
 	release_list $locklist
 	error_check_good free_id [$env lock_id_free $locker] 0
-	error_check_good envclose [$env close] 0
-
-	# Testing running out of lockers; it should no longer hang.
-	# Reopen env with _noerr so we can catch the error.
-	puts "\tLock001.f: Allocate all lockers; expecting a BDB2055 failure"
-	set env [eval {berkdb_env_noerr} $eflags]
-	set lastlocker -1;
-	set limit [expr $iterations + 6000]
-	for {set i 0} { $i < $limit } {incr i} {
-		if { [catch {$env lock_id} res] } {
-			error_check_match "Expecting to run out" \
-			    $res "*not enough memory"
-			break
-		}
-		set lastlocker $i
-	}
-	error_check_bad alloc_all_lockers $lastlocker $iterations
 
 	error_check_good envclose [$env close] 0
+
 }
 
 # Blocked locks appear as lockmgrN.lockM\nBLOCKED

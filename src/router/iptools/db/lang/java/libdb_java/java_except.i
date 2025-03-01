@@ -92,10 +92,6 @@ static jthrowable __dbj_get_except(JNIEnv *jenv,
 		return (jthrowable)(*jenv)->NewObject(jenv, heapfullex_class,
 		    heapfullex_construct, jmsg, ret, jdbenv);
 
-	case DB_META_CHKSUM_FAIL:        
-		return (jthrowable)(*jenv)->NewObject(jenv, metachkfailex_class,
-		    metachkfailex_construct, jmsg, ret, jdbenv);      
-
 	case DB_REP_DUPMASTER:
 		return (jthrowable)(*jenv)->NewObject(jenv,
 		    repdupmasterex_class, repdupmasterex_construct,
@@ -142,10 +138,6 @@ static jthrowable __dbj_get_except(JNIEnv *jenv,
 	case DB_LOCK_NOTGRANTED:
 		return (jthrowable)(*jenv)->NewObject(jenv, lockex_class,
 		    lockex_construct, jmsg, ret, 0, NULL, NULL, 0, jdbenv);
-
-	case DB_SLICE_CORRUPT:
-		return (jthrowable)(*jenv)->NewObject(jenv, sliceex_class,
-		    sliceex_construct, jmsg, ret, jdbenv);
 
 	case DB_VERSION_MISMATCH:
 		return (jthrowable)(*jenv)->NewObject(jenv, versionex_class,

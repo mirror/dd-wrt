@@ -29,6 +29,13 @@
 # error "The MEMORY_DEBUG macro is obsolete.  Use SQLITE_DEBUG instead."
 #endif
 
+#ifdef SQLITE_DEBUG
+int sqlite3OSTrace = 0;
+#define OSTRACE(X)          if( sqlite3OSTrace ) sqlite3DebugPrintf X
+#else
+#define OSTRACE(X)
+#endif
+
 /*
 ** Macros for performance tracing.  Normally turned off.  Only works
 ** on i486 hardware.
@@ -58,13 +65,13 @@ static sqlite_uint64 g_elapsed;
 ** is used for testing the I/O recovery logic.
 */
 #ifdef SQLITE_TEST
-extern int sqlite3_io_error_hit;            /* Total number of I/O Errors */
-extern int sqlite3_io_error_hardhit;        /* Number of non-benign errors */
-extern int sqlite3_io_error_pending;        /* Count down to first I/O error */
-extern int sqlite3_io_error_persist;        /* True if I/O errors persist */
-extern int sqlite3_io_error_benign;         /* True if errors are benign */
-extern int sqlite3_diskfull_pending;
-extern int sqlite3_diskfull;
+int sqlite3_io_error_hit = 0;            /* Total number of I/O Errors */
+int sqlite3_io_error_hardhit = 0;        /* Number of non-benign errors */
+int sqlite3_io_error_pending = 0;        /* Count down to first I/O error */
+int sqlite3_io_error_persist = 0;        /* True if I/O errors persist */
+int sqlite3_io_error_benign = 0;         /* True if errors are benign */
+int sqlite3_diskfull_pending = 0;
+int sqlite3_diskfull = 0;
 #define SimulateIOErrorBenign(X) sqlite3_io_error_benign=(X)
 #define SimulateIOError(CODE)  \
   if( (sqlite3_io_error_persist && sqlite3_io_error_hit) \
@@ -96,7 +103,7 @@ static void local_ioerr(){
 ** When testing, keep a count of the number of open files.
 */
 #ifdef SQLITE_TEST
-extern int sqlite3_open_file_count;
+int sqlite3_open_file_count = 0;
 #define OpenCounter(X)  sqlite3_open_file_count+=(X)
 #else
 #define OpenCounter(X)

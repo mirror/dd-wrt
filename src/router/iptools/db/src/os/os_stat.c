@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1997, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -93,7 +93,7 @@ __os_ioinfo(env, path, fhp, mbytesp, bytesp, iosizep)
 	/*
 	 * Return the underlying filesystem I/O size, if available.
 	 *
-	 * !!!
+	 * XXX
 	 * Check for a 0 size -- the HP MPE/iX architecture has st_blksize,
 	 * but it's always 0.
 	 */

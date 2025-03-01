@@ -27,7 +27,7 @@ do_test tkt-94c94-1.1 {
 
 # Grow the file to larger than 4096MB (2^32 bytes)
 db close
-if {[catch {fake_big_file 4096 [get_pwd]/test.db} msg]} {
+if {[catch {fake_big_file 4096 [pwd]/test.db} msg]} {
   puts "**** Unable to create a file larger than 4096 MB. *****"
   finish_test
   return
@@ -44,6 +44,7 @@ do_test tkt-94c94-2.1 {
   execsql { CREATE TABLE t2(x, y) } db
 } {}
 do_test tkt-94c94-2.2 {
+breakpoint
   execsql { INSERT INTO t2 VALUES(1, 2) } db2
 } {}
 do_test tkt-94c94-2.3 {

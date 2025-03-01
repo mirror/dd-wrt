@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -12,7 +12,7 @@ using BerkeleyDB.Internal;
 
 namespace BerkeleyDB {
     /// <summary>
-    /// A class representing database cursors, which allows for traversal of 
+    /// A class representing database cursors, which allow for traversal of 
     /// database records.
     /// </summary>
     public class Cursor
@@ -61,7 +61,7 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// Only one of <see cref="Current"/>, <see cref="CurrentMultiple"/> and
-        /// <see cref="CurrentMultipleKey"/> is ever non-empty.
+        /// <see cref="CurrentMultipleKey"/> will ever be non-empty.
         /// </remarks>
         public KeyValuePair<DatabaseEntry, DatabaseEntry> Current {
             private set {
@@ -78,7 +78,7 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// Only one of <see cref="Current"/>, <see cref="CurrentMultiple"/> and
-        /// <see cref="CurrentMultipleKey"/> is ever non-empty.
+        /// <see cref="CurrentMultipleKey"/> will ever be non-empty.
         /// </remarks>
         public
             KeyValuePair<DatabaseEntry, MultipleDatabaseEntry> CurrentMultiple {
@@ -95,7 +95,7 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// Only one of <see cref="Current"/>, <see cref="CurrentMultiple"/> and
-        /// <see cref="CurrentMultipleKey"/> is ever non-empty.
+        /// <see cref="CurrentMultipleKey"/> will ever be non-empty.
         /// </remarks>
         public MultipleKeyDatabaseEntry CurrentMultipleKey {
             private set {
@@ -112,22 +112,22 @@ namespace BerkeleyDB {
         /// <remarks>
         /// The priority of a page biases the replacement algorithm to be more
         /// or less likely to discard a page when space is needed in the buffer
-        /// pool. The bias is temporary, and pages are eventually discarded
+        /// pool. The bias is temporary, and pages will eventually be discarded
         /// if they are not referenced again. The setting is only advisory, and
-        /// does not guarantee pages are treated in a specific way.
+        /// does not guarantee pages will be treated in a specific way.
         /// </remarks>
         public CachePriority Priority {
             get { 
-        uint pri = 0;
-        dbc.get_priority(ref pri);
-        return CachePriority.fromUInt(pri);
-        }
+		uint pri = 0;
+		dbc.get_priority(ref pri);
+		return CachePriority.fromUInt(pri);
+	    }
             set { dbc.set_priority(value.priority); }
         }
 
         internal Cursor(DBC dbc, DatabaseType DbType, uint pagesize)
             : base(dbc) {
-        Priority = CachePriority.DEFAULT;
+	    Priority = CachePriority.DEFAULT;
             pgsz = pagesize;
             dbtype = DbType;
         }
@@ -174,7 +174,7 @@ namespace BerkeleyDB {
         /// </summary>
         /// <param name="data">The duplicate data item to add</param>
         /// <param name="loc">
-        /// Whether to add the duplicate data before or after the current cursor
+        /// Whether to add the dup data before or after the current cursor
         /// position
         /// </param>
         protected void Insert(DatabaseEntry data, InsertLocation loc) {
@@ -352,9 +352,9 @@ namespace BerkeleyDB {
         /// <param name="keepPosition">
         /// If true, the newly created cursor is initialized to refer to the
         /// same position in the database as the original cursor (if any) and
-        /// hold the same locks (if any). If false, or if the original cursor does
+        /// hold the same locks (if any). If false, or the original cursor does
         /// not hold a database position and locks, the created cursor is
-        /// uninitialized and behaves like a cursor newly created by
+        /// uninitialized and will behave like a cursor newly created by
         /// <see cref="BaseDatabase.Cursor"/>.</param>
         /// <returns>A newly created cursor</returns>
         public Cursor Duplicate(bool keepPosition) {
@@ -371,7 +371,7 @@ namespace BerkeleyDB {
         /// <see cref="Cursor"/>.
         /// </summary>
         /// <remarks>
-        /// The enumerator begins at the cursor's current position (or the
+        /// The enumerator will begin at the cursor's current position (or the
         /// first record if the cursor has not yet been positioned) and iterate 
         /// forwards (i.e. in the direction of <see cref="MoveNext"/>) over the
         /// remaining records.
@@ -390,7 +390,7 @@ namespace BerkeleyDB {
         /// stored in <see cref="Current"/>.
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <returns>
@@ -404,7 +404,7 @@ namespace BerkeleyDB {
         /// stored in <see cref="Current"/>.
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="info">The locking behavior to use.</param>
@@ -431,7 +431,7 @@ namespace BerkeleyDB {
         /// returned. 
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="key">The retrieved key</param>
@@ -456,7 +456,7 @@ namespace BerkeleyDB {
         /// returned. 
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="key">The retrieved key</param>
@@ -477,8 +477,8 @@ namespace BerkeleyDB {
         /// <see cref="CurrentMultiple"/>.
         /// </summary>
         /// <overloads>
-        /// If positioning the cursor fails, <see cref="CurrentMultiple"/>
-        /// contains an empty
+        /// If positioning the cursor fails, <see cref="CurrentMultiple"/> will
+        /// contain an empty
         /// <see cref="KeyValuePair{T,T}"/>.
         /// </overloads>
         /// <returns>
@@ -610,7 +610,7 @@ namespace BerkeleyDB {
         /// duplicates is stored in <see cref="Current"/>.
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="key">The key at which to position the cursor</param>
@@ -633,7 +633,7 @@ namespace BerkeleyDB {
         /// duplicates is stored in <see cref="Current"/>.
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="key">The key at which to position the cursor</param>
@@ -666,7 +666,7 @@ namespace BerkeleyDB {
         /// returned.
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="key">The key at which to position the cursor</param>
@@ -697,7 +697,7 @@ namespace BerkeleyDB {
         /// returned. 
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="key">The key at which to position the cursor</param>
@@ -725,7 +725,7 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// <para>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </para>
         /// <para>
@@ -757,7 +757,7 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// <para>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </para>
         /// <para>
@@ -792,7 +792,7 @@ namespace BerkeleyDB {
         /// stored in <see cref="Current"/>.
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <returns>
@@ -806,7 +806,7 @@ namespace BerkeleyDB {
         /// stored in <see cref="Current"/>.
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="info">The locking behavior to use.</param>
@@ -833,7 +833,7 @@ namespace BerkeleyDB {
         /// returned.
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="key">The retrieved key</param>
@@ -858,7 +858,7 @@ namespace BerkeleyDB {
         /// returned.
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="key">The retrieved key</param>
@@ -1309,7 +1309,7 @@ namespace BerkeleyDB {
         /// value of <see cref="Current">Current.Key</see> may not change. 
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <returns>
@@ -1324,7 +1324,7 @@ namespace BerkeleyDB {
         /// value of <see cref="Current">Current.Key</see> may not change. 
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="info">The locking behavior to use.</param>
@@ -1352,7 +1352,7 @@ namespace BerkeleyDB {
         /// returned.
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="key">The retrieved key</param>
@@ -1378,7 +1378,7 @@ namespace BerkeleyDB {
         /// returned.
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="key">The retrieved key</param>
@@ -1554,12 +1554,12 @@ namespace BerkeleyDB {
         /// If the next key/data pair of the database is a duplicate data record
         /// for the current key/data pair, move the cursor to the next key/data
         /// pair in the database, and store that pair in <see cref="Current"/>.
-        /// MoveNextDuplicate returns false if the next key/data pair of the
+        /// MoveNextDuplicate will return false if the next key/data pair of the
         /// database is not a duplicate data record for the current key/data
         /// pair.
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <returns>
@@ -1570,12 +1570,12 @@ namespace BerkeleyDB {
         /// If the next key/data pair of the database is a duplicate data record
         /// for the current key/data pair, move the cursor to the next key/data
         /// pair in the database, and store that pair in <see cref="Current"/>.
-        /// MoveNextDuplicate returns false if the next key/data pair of the
+        /// MoveNextDuplicate will return false if the next key/data pair of the
         /// database is not a duplicate data record for the current key/data
         /// pair.
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="info">The locking behavior to use.</param>
@@ -1592,7 +1592,7 @@ namespace BerkeleyDB {
         /// If the next key/data pair of the database is a duplicate data record
         /// for the current key/data pair, move the cursor to the next key/data
         /// pair in the database, and store that pair in <see cref="Current"/>.
-        /// MoveNextDuplicate returns false if the next key/data pair of the
+        /// MoveNextDuplicate will return false if the next key/data pair of the
         /// database is not a duplicate data record for the current key/data
         /// pair. If either the key or the data is partial
         /// <see cref="DatabaseEntry"/>, its 
@@ -1604,7 +1604,7 @@ namespace BerkeleyDB {
         /// bytes are returned. 
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="key">The retrieved key</param>
@@ -1619,7 +1619,7 @@ namespace BerkeleyDB {
         /// If the next key/data pair of the database is a duplicate data record
         /// for the current key/data pair, move the cursor to the next key/data
         /// pair in the database, and store that pair in <see cref="Current"/>.
-        /// MoveNextDuplicate returns false if the next key/data pair of the
+        /// MoveNextDuplicate will return false if the next key/data pair of the
         /// database is not a duplicate data record for the current key/data
         /// pair. If either the key or the data is partial
         /// <see cref="DatabaseEntry"/>, its 
@@ -1631,7 +1631,7 @@ namespace BerkeleyDB {
         /// bytes are returned. 
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="key">The retrieved key</param>
@@ -1650,7 +1650,7 @@ namespace BerkeleyDB {
         /// for the current key/data pair, move the cursor to the next key/data
         /// pair in the database, and store that pair and as many duplicate data
         /// items that can fit in a buffer the size of one database page in
-        /// <see cref="CurrentMultiple"/>. MoveNextDuplicateMultiple returns
+        /// <see cref="CurrentMultiple"/>. MoveNextDuplicateMultiple will return
         /// false if the next key/data pair of the database is not a duplicate
         /// data record for the current key/data pair.
         /// </summary>
@@ -1666,7 +1666,7 @@ namespace BerkeleyDB {
         /// pair in the database, and store that pair and as many duplicate data
         /// items that can fit in a buffer the size of
         /// <paramref name="BufferSize"/> in <see cref="CurrentMultiple"/>.
-        /// MoveNextDuplicateMultiple returns false if the next key/data
+        /// MoveNextDuplicateMultiple will return false if the next key/data
         /// pair of the database is not a duplicate data record for the current
         /// key/data pair.
         /// </summary>
@@ -1686,7 +1686,7 @@ namespace BerkeleyDB {
         /// for the current key/data pair, move the cursor to the next key/data
         /// pair in the database, and store that pair and as many duplicate data
         /// items that can fit in a buffer the size of one database page in
-        /// <see cref="CurrentMultiple"/>. MoveNextDuplicateMultiple returns
+        /// <see cref="CurrentMultiple"/>. MoveNextDuplicateMultiple will return
         /// false if the next key/data pair of the database is not a duplicate
         /// data record for the current key/data pair.
         /// </summary>
@@ -1703,7 +1703,7 @@ namespace BerkeleyDB {
         /// pair in the database, and store that pair and as many duplicate data
         /// items that can fit in a buffer the size of
         /// <paramref name="BufferSize"/> in <see cref="CurrentMultiple"/>.
-        /// MoveNextDuplicateMultiple returns false if the next key/data
+        /// MoveNextDuplicateMultiple will return false if the next key/data
         /// pair of the database is not a duplicate data record for the current
         /// key/data pair.
         /// </summary>
@@ -1730,8 +1730,8 @@ namespace BerkeleyDB {
         /// for the current key/data pair, move the cursor to the next key/data
         /// pair in the database, and store that pair and as many duplicate data
         /// items that can fit in a buffer the size of one database page in
-        /// <see cref="CurrentMultipleKey"/>. MoveNextDuplicateMultipleKey
-        /// returns false if the next key/data pair of the database is not a
+        /// <see cref="CurrentMultipleKey"/>. MoveNextDuplicateMultipleKey will
+        /// return false if the next key/data pair of the database is not a
         /// duplicate data record for the current key/data pair.
         /// </summary>
         /// <returns>
@@ -1746,7 +1746,7 @@ namespace BerkeleyDB {
         /// pair in the database, and store that pair and as many duplicate data
         /// items that can fit in a buffer the size of
         /// <paramref name="BufferSize"/> in <see cref="CurrentMultipleKey"/>.
-        /// MoveNextDuplicateMultipleKey returns false if the next key/data
+        /// MoveNextDuplicateMultipleKey will return false if the next key/data
         /// pair of the database is not a duplicate data record for the current
         /// key/data pair.
         /// </summary>
@@ -1765,8 +1765,8 @@ namespace BerkeleyDB {
         /// for the current key/data pair, move the cursor to the next key/data
         /// pair in the database, and store that pair and as many duplicate data
         /// items that can fit in a buffer the size of one database page in
-        /// <see cref="CurrentMultipleKey"/>. MoveNextDuplicateMultipleKey
-        /// returns false if the next key/data pair of the database is not a
+        /// <see cref="CurrentMultipleKey"/>. MoveNextDuplicateMultipleKey will
+        /// return false if the next key/data pair of the database is not a
         /// duplicate data record for the current key/data pair.
         /// </summary>
         /// <param name="info">The locking behavior to use.</param>
@@ -1782,7 +1782,7 @@ namespace BerkeleyDB {
         /// pair in the database, and store that pair and as many duplicate data
         /// items that can fit in a buffer the size of
         /// <paramref name="BufferSize"/> in <see cref="CurrentMultipleKey"/>.
-        /// MoveNextDuplicateMultipleKey returns false if the next key/data
+        /// MoveNextDuplicateMultipleKey will return false if the next key/data
         /// pair of the database is not a duplicate data record for the current
         /// key/data pair.
         /// </summary>
@@ -1807,12 +1807,12 @@ namespace BerkeleyDB {
         /// If the cursor is not yet initialized, MoveNextUnique is identical to 
         /// <see cref="MoveFirst()"/>. Otherwise, move the cursor to the next
         /// non-duplicate key in the database, and store that key and associated
-        /// datum in <see cref="Current"/>. MoveNextUnique returns false if
+        /// datum in <see cref="Current"/>. MoveNextUnique will return false if
         /// no non-duplicate key/data pairs exist after the cursor position in
         /// the database. 
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <returns>
@@ -1823,18 +1823,18 @@ namespace BerkeleyDB {
         /// If the cursor is not yet initialized, MoveNextUnique is identical to 
         /// <see cref="MoveFirst(LockingInfo)"/>. Otherwise, move the cursor to
         /// the next non-duplicate key in the database, and store that key and 
-        /// associated datum in <see cref="Current"/>. MoveNextUnique
-        /// returns false if no non-duplicate key/data pairs exist after the
+        /// associated datum in <see cref="Current"/>. MoveNextUnique will
+        /// return false if no non-duplicate key/data pairs exist after the
         /// cursor position in the database. 
         /// </summary>
         /// <remarks>
         /// <para>
-        /// If the database is a Queue or Recno database, MoveNextUnique
-        /// ignores any keys that exist but were never explicitly created by the
+        /// If the database is a Queue or Recno database, MoveNextUnique will
+        /// ignore any keys that exist but were never explicitly created by the
         /// application, or those that were created and later deleted.
         /// </para>
         /// <para>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </para>
         /// </remarks>
@@ -1852,7 +1852,7 @@ namespace BerkeleyDB {
         /// If the cursor is not yet initialized, MoveNextUnique is identical to 
         /// <see cref="MoveFirst()"/>. Otherwise, move the cursor to the next
         /// non-duplicate key in the database, and store that key and associated
-        /// datum in <see cref="Current"/>. MoveNextUnique returns false if
+        /// datum in <see cref="Current"/>. MoveNextUnique will return false if
         /// no non-duplicate key/data pairs exist after the cursor position in
         /// the database. If either the key or the data is
         /// partial <see cref="DatabaseEntry"/>, its 
@@ -1865,12 +1865,12 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// <para>
-        /// If the database is a Queue or Recno database, MoveNextUnique 
-        /// ignores any keys that exist but were never explicitly created by the
+        /// If the database is a Queue or Recno database, MoveNextUnique will
+        /// ignore any keys that exist but were never explicitly created by the
         /// application, or those that were created and later deleted.
         /// </para>
         /// <para>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </para>
         /// </remarks>
@@ -1886,8 +1886,8 @@ namespace BerkeleyDB {
         /// If the cursor is not yet initialized, MoveNextUnique is identical to 
         /// <see cref="MoveFirst(LockingInfo)"/>. Otherwise, move the cursor to
         /// the next non-duplicate key in the database, and store that key and 
-        /// associated datum in <see cref="Current"/>. MoveNextUnique 
-        /// returns false if no non-duplicate key/data pairs exist after the
+        /// associated datum in <see cref="Current"/>. MoveNextUnique will
+        /// return false if no non-duplicate key/data pairs exist after the
         /// cursor position in the database. If either the key or the data is
         /// partial <see cref="DatabaseEntry"/>, its 
         /// <see cref="DatabaseEntry.PartialLen"/> bytes starting
@@ -1899,12 +1899,12 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// <para>
-        /// If the database is a Queue or Recno database, MoveNextUnique 
-        /// ignores any keys that exist but were never explicitly created by the
+        /// If the database is a Queue or Recno database, MoveNextUnique will
+        /// ignore any keys that exist but were never explicitly created by the
         /// application, or those that were created and later deleted.
         /// </para>
         /// <para>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </para>
         /// </remarks>
@@ -1925,7 +1925,7 @@ namespace BerkeleyDB {
         /// cursor to the next non-duplicate key in the database, and store that
         /// key and associated datum and as many duplicate data items that can
         /// fit in a buffer the size of one database page in
-        /// <see cref="CurrentMultiple"/>. MoveNextUniqueMultiple returns
+        /// <see cref="CurrentMultiple"/>. MoveNextUniqueMultiple will return
         /// false if no non-duplicate key/data pairs exist after the cursor
         /// position in the database. 
         /// </summary>
@@ -1941,7 +1941,7 @@ namespace BerkeleyDB {
         /// the cursor to the next non-duplicate key in the database, and store
         /// that key and associated datum and as many duplicate data items that
         /// can fit in a buffer the size of <paramref name="BufferSize"/> in
-        /// <see cref="CurrentMultiple"/>. MoveNextUniqueMultiple returns
+        /// <see cref="CurrentMultiple"/>. MoveNextUniqueMultiple will return
         /// false if no non-duplicate key/data pairs exist after the cursor
         /// position in the database. 
         /// </summary>
@@ -1963,7 +1963,7 @@ namespace BerkeleyDB {
         /// database, and store that key and associated datum and as many
         /// duplicate data items that can fit in a buffer the size of one
         /// database page in <see cref="CurrentMultiple"/>.
-        /// MoveNextUniqueMultiple returns false if no non-duplicate
+        /// MoveNextUniqueMultiple will return false if no non-duplicate
         /// key/data pairs exist after the cursor position in the database. 
         /// </summary>
         /// <param name="info">The locking behavior to use.</param>
@@ -1980,7 +1980,7 @@ namespace BerkeleyDB {
         /// database, and store that key and associated datum and as many
         /// duplicate data items that can fit in a buffer the size of
         /// <paramref name="BufferSize"/> in <see cref="CurrentMultiple"/>.
-        /// MoveNextUniqueMultiple returns false if no non-duplicate
+        /// MoveNextUniqueMultiple will return false if no non-duplicate
         /// key/data pairs exist after the cursor position in the database. 
         /// </summary>
         /// <param name="BufferSize">
@@ -2006,8 +2006,8 @@ namespace BerkeleyDB {
         /// the cursor to the next non-duplicate key in the database, and store
         /// that key and associated datum and as many ensuing key/data pairs
         /// that can fit in a buffer the size of one database page in
-        /// <see cref="CurrentMultipleKey"/>. MoveNextUniqueMultipleKey 
-        /// returns false if no non-duplicate key/data pairs exist after the
+        /// <see cref="CurrentMultipleKey"/>. MoveNextUniqueMultipleKey will
+        /// return false if no non-duplicate key/data pairs exist after the
         /// cursor position in the database. 
         /// </summary>
         /// <returns>
@@ -2023,7 +2023,7 @@ namespace BerkeleyDB {
         /// store that key and associated datum and as many ensuing key/data
         /// pairs that can fit in a buffer the size of
         /// <paramref name="BufferSize"/> in <see cref="CurrentMultipleKey"/>.
-        /// MoveNextUniqueMultipleKey returns false if no non-duplicate
+        /// MoveNextUniqueMultipleKey will return false if no non-duplicate
         /// key/data pairs exist after the cursor position in the database. 
         /// </summary>
         /// <param name="BufferSize">
@@ -2043,7 +2043,7 @@ namespace BerkeleyDB {
         /// database, and store that key and associated datum and as many
         /// ensuing key/data pairs that can fit in a buffer the size of one
         /// database page in <see cref="CurrentMultipleKey"/>.
-        /// MoveNextUniqueMultipleKey returns false if no non-duplicate
+        /// MoveNextUniqueMultipleKey will return false if no non-duplicate
         /// key/data pairs exist after the cursor position in the database. 
         /// </summary>
         /// <param name="info">The locking behavior to use.</param>
@@ -2060,7 +2060,7 @@ namespace BerkeleyDB {
         /// database, and store that key and associated datum and as many
         /// ensuing key/data pairs that can fit in a buffer the size of
         /// <paramref name="BufferSize"/> in <see cref="CurrentMultipleKey"/>.
-        /// MoveNextUniqueMultipleKey returns false if no non-duplicate
+        /// MoveNextUniqueMultipleKey will return false if no non-duplicate
         /// key/data pairs exist after the cursor position in the database. 
         /// </summary>
         /// <param name="BufferSize">
@@ -2088,7 +2088,7 @@ namespace BerkeleyDB {
         /// value of <see cref="Current">Current.Key</see> may not change. 
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <returns>
@@ -2103,7 +2103,7 @@ namespace BerkeleyDB {
         /// value of <see cref="Current">Current.Key</see> may not change. 
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="info">The locking behavior to use.</param>
@@ -2131,7 +2131,7 @@ namespace BerkeleyDB {
         /// bytes are returned. 
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="key">The retrieved key</param>
@@ -2157,7 +2157,7 @@ namespace BerkeleyDB {
         /// bytes are returned. 
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="key">The retrieved key</param>
@@ -2175,12 +2175,12 @@ namespace BerkeleyDB {
         /// If the previous key/data pair of the database is a duplicate data
         /// record for the current key/data pair, the cursor is moved to the
         /// previous key/data pair of the database, and that pair is stored in
-        /// <see cref="Current"/>. MovePrevDuplicate returns false if the
+        /// <see cref="Current"/>. MovePrevDuplicate will return false if the
         /// previous key/data pair of the database is not a duplicate data
         /// record for the current key/data pair.
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <returns>
@@ -2191,12 +2191,12 @@ namespace BerkeleyDB {
         /// If the previous key/data pair of the database is a duplicate data
         /// record for the current key/data pair, the cursor is moved to the
         /// previous key/data pair of the database, and that pair is stored in
-        /// <see cref="Current"/>. MovePrevDuplicate returns false if the
+        /// <see cref="Current"/>. MovePrevDuplicate will return false if the
         /// previous key/data pair of the database is not a duplicate data
         /// record for the current key/data pair.
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="info">The locking behavior to use.</param>
@@ -2213,7 +2213,7 @@ namespace BerkeleyDB {
         /// If the previous key/data pair of the database is a duplicate data
         /// record for the current key/data pair, the cursor is moved to the
         /// previous key/data pair of the database, and that pair is stored in
-        /// <see cref="Current"/>. MovePrevDuplicate returns false if the
+        /// <see cref="Current"/>. MovePrevDuplicate will return false if the
         /// previous key/data pair of the database is not a duplicate data
         /// record for the current key/data pair. If either the key or the
         /// data is partial <see cref="DatabaseEntry"/>, its
@@ -2225,7 +2225,7 @@ namespace BerkeleyDB {
         /// bytes are returned.
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="key">The retrieved key</param>
@@ -2240,7 +2240,7 @@ namespace BerkeleyDB {
         /// If the previous key/data pair of the database is a duplicate data
         /// record for the current key/data pair, the cursor is moved to the
         /// previous key/data pair of the database, and that pair is stored in
-        /// <see cref="Current"/>. MovePrevDuplicate returns false if the
+        /// <see cref="Current"/>. MovePrevDuplicate will return false if the
         /// previous key/data pair of the database is not a duplicate data
         /// record for the current key/data pair. If either the key or the
         /// data is partial <see cref="DatabaseEntry"/>, its
@@ -2252,7 +2252,7 @@ namespace BerkeleyDB {
         /// bytes are returned. 
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="key">The retrieved key</param>
@@ -2270,12 +2270,12 @@ namespace BerkeleyDB {
         /// If the cursor is not yet initialized, MovePrevUnique is identical to 
         /// <see cref="MoveLast()"/>. Otherwise, move the cursor to the previous
         /// non-duplicate key in the database, and store that key and associated
-        /// datum in <see cref="Current"/>. MovePrevUnique returns false if
+        /// datum in <see cref="Current"/>. MovePrevUnique will return false if
         /// no non-duplicate key/data pairs exist after the cursor position in
         /// the database. 
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <returns>
@@ -2286,12 +2286,12 @@ namespace BerkeleyDB {
         /// If the cursor is not yet initialized, MovePrevUnique is identical to 
         /// <see cref="MoveLast(LockingInfo)"/>. Otherwise, move the cursor to
         /// the previous non-duplicate key in the database, and store that key
-        /// and associated datum in <see cref="Current"/>. MovePrevUnique 
-        /// returns false if no non-duplicate key/data pairs exist after the
+        /// and associated datum in <see cref="Current"/>. MovePrevUnique will
+        /// return false if no non-duplicate key/data pairs exist after the
         /// cursor position in the database. 
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="info">The locking behavior to use.</param>
@@ -2308,7 +2308,7 @@ namespace BerkeleyDB {
         /// If the cursor is not yet initialized, MovePrevUnique is identical to 
         /// <see cref="MoveLast()"/>. Otherwise, move the cursor to the previous
         /// non-duplicate key in the database, and store that key and associated
-        /// datum in <see cref="Current"/>. MovePrevUnique returns false if
+        /// datum in <see cref="Current"/>. MovePrevUnique will return false if
         /// ntheo non-duplicate key/data pairs exist after the cursor position in
         /// database. If either the key or the data is partial
         /// <see cref="DatabaseEntry"/>, its
@@ -2320,7 +2320,7 @@ namespace BerkeleyDB {
         /// bytes are returned.
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="key">The retrieved key</param>
@@ -2335,8 +2335,8 @@ namespace BerkeleyDB {
         /// If the cursor is not yet initialized, MovePrevUnique is identical to 
         /// <see cref="MoveLast(LockingInfo)"/>. Otherwise, move the cursor to
         /// the previous non-duplicate key in the database, and store that key
-        /// and associated datum in <see cref="Current"/>. MovePrevUnique 
-        /// returns false if no non-duplicate key/data pairs exist after the
+        /// and associated datum in <see cref="Current"/>. MovePrevUnique will
+        /// return false if no non-duplicate key/data pairs exist after the
         /// cursor position in the database. If either the key or the data
         /// is partial <see cref="DatabaseEntry"/>, its
         /// <see cref="DatabaseEntry.PartialLen"/> bytes starting
@@ -2347,7 +2347,7 @@ namespace BerkeleyDB {
         /// bytes are returned.
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="key">The retrieved key</param>
@@ -2377,7 +2377,7 @@ namespace BerkeleyDB {
         /// <see cref="Current"/>.
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <returns>
@@ -2389,7 +2389,7 @@ namespace BerkeleyDB {
         /// <see cref="Current"/>.
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="info">The locking behavior to use.</param>
@@ -2414,7 +2414,7 @@ namespace BerkeleyDB {
         /// bytes are returned.
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="key">The retrieved key</param>
@@ -2437,7 +2437,7 @@ namespace BerkeleyDB {
         /// bytes are returned.
         /// </summary>
         /// <remarks>
-        /// If positioning the cursor fails, <see cref="Current"/> contains
+        /// If positioning the cursor fails, <see cref="Current"/> will contain
         /// an empty <see cref="KeyValuePair{T,T}"/>.
         /// </remarks>
         /// <param name="key">The retrieved key</param>

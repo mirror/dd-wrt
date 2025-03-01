@@ -14,17 +14,17 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Changing compile or load
-        options</th>
+          <th colspan="3" align="center">Changing compile or load options</th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="build_unix_small.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 7.  Building Berkeley DB for UNIX/POSIX
-    </th>
+          <th width="60%" align="center">Chapter 7. 
+		Building Berkeley DB for UNIX/POSIX
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="cross_compile_unix.html">Next</a></td>
         </tr>
       </table>
@@ -34,79 +34,49 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title" style="clear: both"><a id="build_unix_flags"></a>Changing compile or load
-        options</h2>
+            <h2 class="title" style="clear: both"><a id="build_unix_flags"></a>Changing compile or load options</h2>
           </div>
         </div>
       </div>
-      <p>
-        You can specify compiler and/or compile and load time flags
-        by using environment variables during Berkeley DB
-        configuration. For example, if you want to use a specific
-        compiler, specify the CC environment variable before running
-        configure:
-    </p>
+      <p>You can specify compiler and/or compile and load time flags by using
+environment variables during Berkeley DB configuration.  For
+example, if you want to use a specific compiler, specify the CC
+environment variable before running configure:</p>
       <pre class="programlisting">prompt: env CC=gcc ../dist/configure</pre>
-      <p>
-        Using anything other than the native compiler will almost
-        certainly mean that you'll want to check the flags specified
-        to the compiler and loader, too. 
-    </p>
-      <p>
-        To specify debugging and optimization options for the C
-        compiler, use the CFLAGS environment variable: 
-    </p>
+      <p>Using anything other than the native compiler will almost certainly mean
+that you'll want to check the flags specified to the compiler and
+loader, too.</p>
+      <p>To specify debugging and optimization options for the C compiler,
+use the CFLAGS environment variable:</p>
       <pre class="programlisting">prompt: env CFLAGS=-O2 ../dist/configure</pre>
-      <p>
-        To specify header file search directories and other
-        miscellaneous options for the C preprocessor and compiler, use
-        the CPPFLAGS environment variable: 
-    </p>
+      <p>To specify header file search directories and other miscellaneous options
+for the C preprocessor and compiler, use the CPPFLAGS environment variable:</p>
       <pre class="programlisting">prompt: env CPPFLAGS=-I/usr/contrib/include ../dist/configure</pre>
-      <p> 
-        To specify debugging and optimization options for the C++
-        compiler, use the CXXFLAGS environment variable: 
-    </p>
+      <p>To specify debugging and optimization options for the C++ compiler,
+use the CXXFLAGS environment variable:</p>
       <pre class="programlisting">prompt: env CXXFLAGS=-Woverloaded-virtual ../dist/configure</pre>
-      <p>
-        To specify miscellaneous options or additional library
-        directories for the linker, use the LDFLAGS environment
-        variable: 
-    </p>
+      <p>To specify miscellaneous options or additional library directories for
+the linker, use the LDFLAGS environment variable:</p>
       <pre class="programlisting">prompt: env LDFLAGS="-N32 -L/usr/local/lib" ../dist/configure</pre>
-      <p>
-        If you want to specify additional libraries, set the LIBS
-        environment variable before running configure. For example,
-        the following would specify two additional libraries to load,
-        "posix" and "socket":
-    </p>
+      <p>If you want to specify additional libraries, set the LIBS environment
+variable before running configure.  For example, the following would
+specify two additional libraries to load, "posix" and "socket":</p>
       <pre class="programlisting">prompt: env LIBS="-lposix -lsocket" ../dist/configure</pre>
-      <p>
-        Make sure that you prepend -L to any library directory
-        names and that you prepend -I to any include file directory
-        names! Also, if the arguments you specify contain blank or tab
-        characters, be sure to quote them as shown previously; that is
-        with single or double quotes around the values you are
-        specifying for LIBS. 
-    </p>
-      <p>
-        The env command, which is available on most systems, simply
-        sets one or more environment variables before running a
-        command. If the env command is not available to you, you can
-        set the environment variables in your shell before running
-        configure. For example, in sh or ksh, you could do the
-        following:
-    </p>
+      <p>Make sure that you prepend -L to any library directory names and that you
+prepend -I to any include file directory names!  Also, if the arguments
+you specify contain blank or tab characters, be sure to quote them as
+shown previously; that is with single or double quotes around the values
+you are specifying for LIBS.</p>
+      <p>The env command, which is available on most systems, simply sets one or
+more environment variables before running a command.  If the env command
+is not available to you, you can set the environment variables in your
+shell before running configure.  For example, in sh or ksh, you could
+do the following:</p>
       <pre class="programlisting">prompt: LIBS="-lposix -lsocket" ../dist/configure</pre>
-      <p>
-        In csh or tcsh, you could do the following: 
-    </p>
+      <p>In csh or tcsh, you could do the following:</p>
       <pre class="programlisting">prompt: setenv LIBS "-lposix -lsocket"
 prompt: ../dist/configure</pre>
-      <p>
-        See your command shell's manual page for further
-        information.
-    </p>
+      <p>See your command shell's manual page for further information.</p>
     </div>
     <div class="navfooter">
       <hr />
@@ -123,8 +93,7 @@ prompt: ../dist/configure</pre>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Cross-Compiling on
-        Unix</td>
+          <td width="40%" align="right" valign="top"> Cross-Compiling on Unix</td>
         </tr>
       </table>
     </div>

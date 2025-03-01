@@ -36,10 +36,10 @@ public class TableResultX extends SQLite.TableResult {
 	    for (int i = 0; i < tr.types.length; i++) {
 		sql_type[i] = JDBCDatabaseMetaData.mapSqlType(tr.types[i]);
 	    }
-	}
+	}	
     }
 
     void sql_types(int types[]) {
 	sql_type = types;
-    }
+    } 
 }

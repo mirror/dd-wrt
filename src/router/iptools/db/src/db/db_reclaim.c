@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -181,7 +181,6 @@ __db_truncate_callback(dbc, p, cookie, putp)
 			switch (*H_PAIRDATA(dbp, p, indx)) {
 			case H_OFFDUP:
 				break;
-			case H_BLOB:
 			case H_OFFPAGE:
 			case H_KEYDATA:
 				++*countp;

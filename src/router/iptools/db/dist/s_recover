@@ -2,9 +2,6 @@
 #	$Id$
 #
 # Build the automatically generated logging/recovery files.
-#
-# When adding a new log record, the log record needs a unique id. Currently
-# there is a large gap of unused ids from 87-137.
 
 header=/tmp/__db_a
 loglist=/tmp/__db_b
@@ -49,7 +46,7 @@ for i in $DIR; do
 		    -v header_file=$header \
 		    -v print_file=$print\
 		    -v source_file=$source \
-		    -v template_file=$template $f
+		    -v template_file=$template < $f
 
 		f=../src/dbinc_auto/${subsystem}_auto.h
 		cmp $header $f > /dev/null 2>&1 ||

@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -202,22 +202,11 @@ proc test038 { method {nentries 10000} {ndups 5} {tnum "038"} args } {
 			# sorts larger than the one we deleted.
 			set ret [$dbc get -get_both_range $k $pref]
 			if { [llength $ret] != 0 } {
-				set datastr [lindex [lindex $ret 0] 1]
-				if {[string compare $pref $datastr] >= 0} {
+				set datastr [lindex [lindex $ret 0] 1]]
+				if {[string compare \
+				    $pref [lindex [lindex $ret 0] 1]] >= 0} {
 					error_check_good \
 				error_case_range:sorted_dups($pref,$datastr) 0 1
-				}
-			}
-
-			# Do the get_both_range again but with the exact deleted data.
-			# This would exercise the code that handles exact matches that
-			# are deleted.
-			set ret [$dbc get -get_both_range $k $data]
-			if { [llength $ret] != 0 } {
-				set datastr [lindex [lindex $ret 0] 1]
-				if {[string compare $data $datastr] >= 0} {
-					error_check_good \
-				error_case_range:deleted_sorted_dups($data,$datastr) 0 1
 				}
 			}
 

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -29,7 +29,7 @@ extern "C" {
 
 /* Complain about a totally zeroed page where we don't expect one. */
 #define	ZEROPG_ERR_PRINT(dbenv, pgno, str) do {				\
-	EPRINT(((dbenv), DB_STR_A("0501",				\
+	EPRINT(((dbenv), DB_STR_A("0501", 				\
 	    "Page %lu: %s is of inappropriate type %lu", "%lu %s %lu"),	\
 	    (u_long)(pgno), str, (u_long)P_INVALID));			\
 	EPRINT(((dbenv), DB_STR_A("0502",				\
@@ -120,10 +120,9 @@ struct __vrfy_dbinfo {
 #define	SALVAGE_PRINTABLE	0x01	/* Output printable chars literally. */
 #define	SALVAGE_PRINTHEADER	0x02	/* Print the unknown-key header. */
 #define	SALVAGE_PRINTFOOTER	0x04	/* Print the unknown-key footer. */
-#define	SALVAGE_STREAM_BLOB	0x08	/* Currently streaming a blob. */
-#define	SALVAGE_HASSUBDBS	0x10	/* There are subdatabases to salvage. */
-#define	SALVAGE_LEAFCHAIN_BROKEN 0x20	/* Lost one or more Btree leaf pgs. */
-#define	SALVAGE_QMETA_SET	0x40    /* We've seen a QUEUE meta page and
+#define	SALVAGE_HASSUBDBS	0x08	/* There are subdatabases to salvage. */
+#define	VRFY_LEAFCHAIN_BROKEN	0x10	/* Lost one or more Btree leaf pgs. */
+#define	VRFY_QMETA_SET		0x20    /* We've seen a QUEUE meta page and
 					   set things up for it. */
 	u_int32_t	flags;
 }; /* VRFY_DBINFO */
@@ -166,24 +165,22 @@ struct __vrfy_pageinfo {
 	u_int32_t	refcount;
 	u_int32_t	olen;
 
-#define	VRFY_DUPS_UNSORTED	0x00001	/* Have to flag the negative! */
-#define	VRFY_HAS_CHKSUM		0x00002
-#define	VRFY_HAS_DUPS		0x00004
-#define	VRFY_HAS_DUPSORT	0x00008	/* Has the flag set. */
-#define	VRFY_HAS_PART_RANGE	0x00010	/* Has the flag set. */
-#define	VRFY_HAS_PART_CALLBACK	0x00020	/* Has the flag set. */
-#define	VRFY_HAS_RECNUMS	0x00040
-#define	VRFY_HAS_SLICES		0x00080
-#define	VRFY_HAS_SUBDBS		0x00100
-#define	VRFY_INCOMPLETE		0x00200	/* Meta or item order checks incomp. */
-#define	VRFY_IS_ALLZEROES	0x00400	/* Hash page we haven't touched? */
-#define	VRFY_IS_FIXEDLEN	0x00800
-#define	VRFY_IS_RECNO		0x01000
-#define	VRFY_IS_RRECNO		0x02000
-#define	VRFY_ITEM_BAD		0x04000	/* The page has a bad inp or item. */
-#define	VRFY_OVFL_LEAFSEEN	0x08000
-#define	VRFY_HAS_COMPRESS	0x10000
-#define	VRFY_NONEXISTENT	0x20000
+#define	VRFY_DUPS_UNSORTED	0x0001	/* Have to flag the negative! */
+#define	VRFY_HAS_CHKSUM		0x0002
+#define	VRFY_HAS_DUPS		0x0004
+#define	VRFY_HAS_DUPSORT	0x0008	/* Has the flag set. */
+#define	VRFY_HAS_PART_RANGE	0x0010	/* Has the flag set. */
+#define	VRFY_HAS_PART_CALLBACK	0x0020	/* Has the flag set. */
+#define	VRFY_HAS_RECNUMS	0x0040
+#define	VRFY_HAS_SUBDBS		0x0080
+#define	VRFY_INCOMPLETE		0x0100	/* Meta or item order checks incomp. */
+#define	VRFY_IS_ALLZEROES	0x0200	/* Hash page we haven't touched? */
+#define	VRFY_IS_FIXEDLEN	0x0400
+#define	VRFY_IS_RECNO		0x0800
+#define	VRFY_IS_RRECNO		0x1000
+#define	VRFY_OVFL_LEAFSEEN	0x2000
+#define	VRFY_HAS_COMPRESS	0x4000
+#define	VRFY_NONEXISTENT	0x8000
 	u_int32_t	flags;
 
 	LIST_ENTRY(__vrfy_pageinfo) links;

@@ -17,7 +17,7 @@
 #
 # $Id: corruptC.test,v 1.14 2009/07/11 06:55:34 danielk1977 Exp $
 
-catch {forcedelete test.db test.db-journal test.bu}
+catch {file delete -force test.db test.db-journal test.bu}
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -26,10 +26,6 @@ source $testdir/tester.tcl
 # manipulated directly using tcl scripts (using the [hexio_write] command).
 #
 do_not_use_codec
-
-# These tests deal with corrupt database files
-#
-database_may_be_corrupt
 
 # Construct a compact, dense database for testing.
 #
@@ -62,10 +58,16 @@ proc random {range} {
   return [expr {round(rand()*$range)}]
 }
 
+# Copy file $from into $to
+#
+proc copy_file {from to} {
+  file copy -force $from $to
+}
+
 # Setup for the tests.  Make a backup copy of the good database in test.bu.
 #
 db close
-forcecopy test.db test.bu
+copy_file test.db test.bu
 sqlite3 db test.db
 set fsize [file size test.db]
 
@@ -90,7 +92,7 @@ expr srand($qseed)
 # test that a corrupt content offset size is handled (seed 5577)
 do_test corruptC-2.1 {
   db close
-  forcecopy test.bu test.db
+  copy_file test.bu test.db
 
   # insert corrupt byte(s)
   hexio_write test.db 2053 [format %02x 0x04]
@@ -102,7 +104,7 @@ do_test corruptC-2.1 {
 # test that a corrupt content offset size is handled (seed 5649)
 do_test corruptC-2.2 {
   db close
-  forcecopy test.bu test.db
+  copy_file test.bu test.db
 
   # insert corrupt byte(s)
   hexio_write test.db 27   [format %02x 0x08]
@@ -123,7 +125,7 @@ do_test corruptC-2.2 {
 # test that a corrupt free cell size is handled (seed 13329)
 do_test corruptC-2.3 {
   db close
-  forcecopy test.bu test.db
+  copy_file test.bu test.db
 
   # insert corrupt byte(s)
   hexio_write test.db 1094 [format %02x 0x76]
@@ -135,7 +137,7 @@ do_test corruptC-2.3 {
 # test that a corrupt free cell size is handled (seed 169571)
 do_test corruptC-2.4 {
   db close
-  forcecopy test.bu test.db
+  copy_file test.bu test.db
 
   # insert corrupt byte(s)
   hexio_write test.db 3119 [format %02x 0xdf]
@@ -147,7 +149,7 @@ do_test corruptC-2.4 {
 # test that a corrupt free cell size is handled (seed 169571)
 do_test corruptC-2.5 {
   db close
-  forcecopy test.bu test.db
+  copy_file test.bu test.db
 
   # insert corrupt byte(s)
   hexio_write test.db 3119 [format %02x 0xdf]
@@ -167,7 +169,7 @@ Page 4: btreeInitPage() returns error code 11}}}
 # test that a corrupt free cell size is handled (seed 169595)
 do_test corruptC-2.6 {
   db close
-  forcecopy test.bu test.db
+  copy_file test.bu test.db
 
   # insert corrupt byte(s)
   hexio_write test.db 619 [format %02x 0xe2]
@@ -180,7 +182,7 @@ do_test corruptC-2.6 {
 # corruption (seed 178692)
 do_test corruptC-2.7 {
   db close
-  forcecopy test.bu test.db
+  copy_file test.bu test.db
 
   # insert corrupt byte(s)
   hexio_write test.db 3074 [format %02x 0xa0]
@@ -192,7 +194,7 @@ do_test corruptC-2.7 {
 # corruption (seed 179069)
 do_test corruptC-2.8 {
   db close
-  forcecopy test.bu test.db
+  copy_file test.bu test.db
 
   # insert corrupt byte(s)
   hexio_write test.db 1393 [format %02x 0x7d]
@@ -206,25 +208,21 @@ do_test corruptC-2.8 {
 } {1 {database disk image is malformed}}
 
 # corruption (seed 170434)
-#
-# UPDATE: Prior to 3.8.2, this used to return SQLITE_CORRUPT. It no longer
-# does. That is Ok, the point of these tests is to verify that no buffer
-# overruns or overreads can be caused by corrupt databases.
 do_test corruptC-2.9 {
   db close
-  forcecopy test.bu test.db
+  copy_file test.bu test.db
 
   # insert corrupt byte(s)
   hexio_write test.db 2095 [format %02x 0xd6]
 
   sqlite3 db test.db
   catchsql {BEGIN; DELETE FROM t1 WHERE x>13; ROLLBACK;}
-} {0 {}}
+} {1 {database disk image is malformed}}
 
 # corruption (seed 186504)
 do_test corruptC-2.10 {
   db close
-  forcecopy test.bu test.db
+  copy_file test.bu test.db
 
   # insert corrupt byte(s)
   hexio_write test.db 3130 [format %02x 0x02]
@@ -236,7 +234,7 @@ do_test corruptC-2.10 {
 # corruption (seed 1589)
 do_test corruptC-2.11 {
   db close
-  forcecopy test.bu test.db
+  copy_file test.bu test.db
 
   # insert corrupt byte(s)
   hexio_write test.db 55 [format %02x 0xa7]
@@ -248,7 +246,7 @@ do_test corruptC-2.11 {
 # corruption (seed 14166)
 do_test corruptC-2.12 {
   db close
-  forcecopy test.bu test.db
+  copy_file test.bu test.db
 
   # insert corrupt byte(s)
   hexio_write test.db 974 [format %02x 0x2e]
@@ -260,7 +258,7 @@ do_test corruptC-2.12 {
 # corruption (seed 218803)
 do_test corruptC-2.13 {
   db close
-  forcecopy test.bu test.db
+  copy_file test.bu test.db
 
   # insert corrupt byte(s)
   hexio_write test.db 102 [format %02x 0x12]
@@ -271,7 +269,7 @@ do_test corruptC-2.13 {
 
 do_test corruptC-2.14 {
   db close
-  forcecopy test.bu test.db
+  copy_file test.bu test.db
 
   sqlite3 db test.db
   set blob [string repeat abcdefghij 10000]
@@ -288,11 +286,11 @@ do_test corruptC-2.14 {
 #
 do_test corruptC-2.15 {
   db close
-  forcecopy test.bu test.db
+  copy_file test.bu test.db
   hexio_write test.db 986 b9
   sqlite3 db test.db
   catchsql {SELECT count(*) FROM sqlite_master;}
-} {1 {database disk image is malformed}}
+} {1 {malformed database schema (t1i1) - no such table: main.t1}}
 
 #
 # Now test for a series of quasi-random seeds.
@@ -302,7 +300,7 @@ for {set tn 0} {$tn<$fsize} {incr tn 1} {
 
   # setup for test
   db close
-  forcecopy test.bu test.db
+  copy_file test.bu test.db
   sqlite3 db test.db
 
   # Seek to a random location in the file, and write a random single byte

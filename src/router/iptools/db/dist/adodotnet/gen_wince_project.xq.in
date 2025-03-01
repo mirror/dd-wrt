@@ -1,98 +1,86 @@
 (:
-*  This script will generate the configuration for the following 3 platforms:
-*    Smartphone 2003 (ARMV4)
-*    Windows Mobile 6 Professional SDK (ARMV4I)
-*    Windows Mobile 6.5.3 Professional DTK (ARMV4I)
+*  This script will copy a WinCE configuration from default Win32
+* configuration for SQLite.Interop.2008.vcproj
 :)
+declare variable $PLATFORM_NAME := '@PLATFORM_NAME@';
+declare variable $PROJECT_GUID := '@PROJECT_GUID@';
+declare variable $PROJECT_FILE := '@PROJECT_FILE@';
 
-declare function local:getCopyNodes1($node)
+(: Copy WinCE Configurations from exisitng Win32 project :)
+declare function local:renameConfig($config)
 {
-  copy $node1 := $node
-  modify replace value of node $node1/@Name with "Debug|Smartphone 2003 (ARMV4)"
-  return $node1
-};
-
-declare function local:getCopyNodes2($node)
-{
-  copy $node2 := $node
-  modify replace value of node $node2/@Name with "Release|Smartphone 2003 (ARMV4)"
-       return $node2
-};
-
-declare function local:getCopyNodes3($node)
-{
-  copy $node3 := $node
+  copy $newConfig := $config
   modify (
-  replace value of node $node3/@Name with "Debug|Windows Mobile 6 Professional SDK (ARMV4I)" ,
-  replace value of node $node3/Tool[@Name="VCLinkerTool"]/@AdditionalOptions with '/subsystem:windowsce,5.02' ,
-  delete node $node3/Tool[@Name='VCLinkerTool']/@AdditionalDependencies
+    (: Change Win32 to PLATFORM_NAME :)
+    replace value of node $newConfig/@Name with
+      fn:replace($config/@Name/string(), 'Win32', $PLATFORM_NAME)
   )
-  return $node3
-};
-
-declare function local:getCopyNodes4($node)
-{
-  copy $node4 := $node
-  modify (
-  replace value of node $node4/@Name with "Release|Windows Mobile 6 Professional SDK (ARMV4I)" ,
-  replace value of node $node4/Tool[@Name="VCLinkerTool"]/@AdditionalOptions with '/subsystem:windowsce,5.02' ,
-  delete node $node4/Tool[@Name='VCLinkerTool']/@AdditionalDependencies
-  )
-  return $node4
-};
-
-declare function local:getCopyNodes5($node)
-{
-  copy $node5 := $node
-  modify (
-  replace value of node $node5/@Name with "Debug|Windows Mobile 6.5.3 Professional DTK (ARMV4I)" ,
-  replace value of node $node5/Tool[@Name="VCLinkerTool"]/@AdditionalOptions with '/subsystem:windowsce,5.02' ,
-  delete node $node5/Tool[@Name='VCLinkerTool']/@AdditionalDependencies
-  )
-  return $node5
-};
-
-declare function local:getCopyNodes6($node)
-{
-  copy $node6 := $node
-  modify (
-  replace value of node $node6/@Name with "Release|Windows Mobile 6.5.3 Professional DTK (ARMV4I)" ,
-  replace value of node $node6/Tool[@Name="VCLinkerTool"]/@AdditionalOptions with '/subsystem:windowsce,5.02' ,
-  delete node $node6/Tool[@Name='VCLinkerTool']/@AdditionalDependencies
-  )
-  return $node6
+  return $newConfig
 };
 
 let $root := VisualStudioProject
 return
 (
-  (: Add the new platforms into "FileConfiguration" and "Platforms" :)
+  (: Change VisualStudioProject attributes :)
   (
-  for $platforms in ("Smartphone 2003 (ARMV4)", "Windows Mobile 6 Professional SDK (ARMV4I)",
-     "Windows Mobile 6.5.3 Professional DTK (ARMV4I)")
-    return
+    (replace value of node $root/@ProjectGUID with '@PROJECT_GUID@'),
+    (replace value of node $root/@Keyword with 'WinCE_Proj'),
+    (replace value of node $root/@Name with '@PROJECT_FILE@')
+  ),
+
+  (: Add WinCE Platform and remove others:)
+  (
     (
-    insert node <Platform Name="{$platforms}" /> as last into $root/Platforms,
-    for $n in $root/Files/Filter[@Name="Source Files"]/File/FileConfiguration[1]
-    for $conf in ("Debug", "Release")
-    return insert node <FileConfiguration ExcludedFromBuild="true" Name="{$conf}|{$platforms}">
-      <Tool Name="VCCLCompilerTool" /></FileConfiguration> as last  into $n/parent::*
+      for $platforms in $root/Platforms/* return delete node $platforms
+    ),
+    (
+      for $platforms in $root/Platforms
+      return insert node <Platform Name="{$PLATFORM_NAME}" /> as last into $platforms
     )
   ),
 
-  (: 
-   * Add the new platforms into "Configurations".
-   * We copy settings from "Debug|Pocket PC 2003(ARMV4)" and then
-   * do necessary changes.
-   :)
+  (: Copy WinCE Project from exisitng Win32 project :)
   (
-    let $node1 := local:getCopyNodes1($root/Configurations/Configuration[1])
-    let $node2 := local:getCopyNodes2($root/Configurations/Configuration[2])
-    let $node3 := local:getCopyNodes3($root/Configurations/Configuration[1])
-    let $node4 := local:getCopyNodes4($root/Configurations/Configuration[2])
-    let $node5 := local:getCopyNodes5($root/Configurations/Configuration[1])
-    let $node6 := local:getCopyNodes6($root/Configurations/Configuration[2])
-    for $node in ($node1, $node2, $node3, $node4, $node5, $node6)
-      return insert node $node as last into $root/Configurations
+    for $config in $root/Configurations/Configuration
+    return
+    (
+      (
+        if (fn:contains($config/@Name, "Win32")) then (
+          let $newConfig := local:renameConfig($config)
+          return replace node $config with $newConfig
+        ) else ()
+      ),
+
+      (: Remove Win32/x64 platform :)
+      (
+        if (fn:contains($config/@Name, "Win32") or
+            fn:contains($config/@Name, "x64")) then (
+           delete node $config
+        ) else ()
+      )
+    )
+  ),
+
+  (: Copy FileConfiguration for WinCE from exisitng Win32 FileConfiguration :)
+  (
+    for $fconfig in $root/Files/Filter/File/FileConfiguration
+    return
+    (
+      (
+        if (fn:contains($fconfig/@Name, "Win32")) then (
+          let $newConfig := local:renameConfig($fconfig)
+          return replace node $fconfig with $newConfig
+        ) else ()
+      ),
+
+      (: Remove Win32/x64 platform :)
+      (
+        if (fn:contains($fconfig/@Name, "Win32") or
+            fn:contains($fconfig/@Name, "x64")) then (
+           delete node $fconfig
+        ) else ()
+      )
+    )
   )
 )
+

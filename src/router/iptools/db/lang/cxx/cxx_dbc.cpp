@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1997, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -50,24 +50,6 @@ DBC_METHOD(cmp, (Dbc *other_cursor, int *result, u_int32_t _flags),
     (dbc, other_cursor, result, _flags), DB_RETOK_STD)
 DBC_METHOD(count, (db_recno_t *countp, u_int32_t _flags),
     (dbc, countp, _flags), DB_RETOK_STD)
-
-int Dbc::db_stream(DbStream** dbsp, u_int32_t _flags)
-{
-	int ret;
-	DBC *dbc = this;
-	DB_STREAM *dbs = 0;
-
-	ret = dbc->db_stream(dbc, &dbs, _flags);
-
-	if (DB_RETOK_STD(ret))
-		*dbsp = (DbStream*)dbs;
-	else
-		DB_ERROR(DbEnv::get_DbEnv(dbc->dbenv),
-		    "Dbc::db_stream", ret, ON_ERROR_UNKNOWN);
-
-	return (ret);
-}
-
 DBC_METHOD(del, (u_int32_t _flags),
     (dbc, _flags), DB_RETOK_DBCDEL)
 

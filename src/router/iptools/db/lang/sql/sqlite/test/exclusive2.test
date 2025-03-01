@@ -25,14 +25,6 @@ ifcapable {!pager_pragmas} {
   return
 }
 
-# Tests in this file verify that locking_mode=exclusive causes SQLite to
-# use cached pages even if the database is changed on disk. This doesn't
-# work with mmap.
-if {[permutation]=="mmap"} {
-  finish_test
-  return
-}
-
 # This module does not work right if the cache spills at unexpected
 # moments.  So disable the soft-heap-limit.
 #
@@ -267,8 +259,8 @@ do_test exclusive2-2.8 {
 
 db close
 catch {close $::fd}
-forcedelete test.db
-forcedelete test.db-journal
+file delete -force test.db
+file delete -force test.db-journal
 
 do_test exclusive2-3.0 {
   sqlite3 db test.db
@@ -301,6 +293,7 @@ do_test exclusive2-3.3 {
   readPagerChangeCounter test.db
 } {4}
 do_test exclusive2-3.4 {
+breakpoint
   execsql {
     INSERT INTO t1 VALUES(randstr(200, 200));
   }

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -42,7 +42,7 @@ class SubIndexCursor<V> extends BasicCursor<V> {
     public V nextNoDup(LockMode lockMode)
         throws DatabaseException {
 
-        return next(lockMode);
+        return returnValue(cursor.getNext(key, pkey, data, lockMode));
     }
 
     @Override
@@ -55,7 +55,6 @@ class SubIndexCursor<V> extends BasicCursor<V> {
     public V prevNoDup(LockMode lockMode)
         throws DatabaseException {
 
-        return prev(lockMode);
+        return returnValue(cursor.getPrev(key, pkey, data, lockMode));
     }
-
 }

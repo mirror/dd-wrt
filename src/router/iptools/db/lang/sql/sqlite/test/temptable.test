@@ -150,7 +150,7 @@ do_test temptable-3.4 {
 # Check for correct name collision processing. A name collision can
 # occur when process A creates a temporary table T then process B
 # creates a permanent table also named T.  The temp table in process A
-# hides the existence of the permanent table.
+# hides the existance of the permanent table.
 #
 do_test temptable-4.1 {
   execsql {
@@ -292,7 +292,6 @@ do_test temptable-5.1 {
   execsql {
     CREATE TEMP TABLE mask(a,b,c)
   } db2
-  if {[permutation]=="prepare"} { db2 cache flush }
   execsql {
     CREATE INDEX mask ON t2(x);
     SELECT * FROM t2;
@@ -404,7 +403,7 @@ do_test temptable-6.8 {
   }
 } {1 {no such table: t9}}
 
-forcedelete test2.db test2.db-journal
+file delete -force test2.db test2.db-journal
 ifcapable attach {
   do_test temptable-7.1 {
     catchsql {
@@ -415,14 +414,14 @@ ifcapable attach {
 }
 
 # Need to do the following for tcl 8.5 on mac. On that configuration, the
-# -readonly flag is taken so seriously that a subsequent [forcedelete]
+# -readonly flag is taken so seriously that a subsequent [file delete -force]
 # (required before the next test file can be executed) will fail.
 #
 catch {file attributes test.db -readonly 0}
 
 do_test temptable-8.0 {
   db close
-  catch {forcedelete test.db}
+  catch {file delete -force test.db}
   sqlite3 db test.db
 } {}
 do_test temptable-8.1 {

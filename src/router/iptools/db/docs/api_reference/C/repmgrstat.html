@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -84,51 +84,6 @@ DB_ENV-&gt;repmgr_stat(DB_ENV *env, DB_REPMGR_STAT **statp,
           </li>
           <li>
             <p>
-                    <span class="bold"><strong>u_int32_t st_elect_threads;</strong></span>
-                </p>
-            <p>
-                    The number of currently active election threads.
-                </p>
-          </li>
-          <li>
-            <p>
-                    <span class="bold"><strong>uintmax_t st_incoming_msgs_dropped;</strong></span>
-                </p>
-            <p>
-                    The number of incoming messages that were dropped because the incoming
-                    queue was full. (Berkeley DB replication is tolerant of dropped
-                    messages, and will automatically request retransmission of any missing
-                    messages as needed.)
-                </p>
-          </li>
-          <li>
-            <p>
-                    <span class="bold"><strong>u_int32_t st_incoming_queue_bytes;</strong></span>
-                </p>
-            <p>
-                    Bytes component of the memory consumption for the messages currently
-                    in the incoming queue.
-                </p>
-          </li>
-          <li>
-            <p>
-                    <span class="bold"><strong>u_int32_t st_incoming_queue_gbytes;</strong></span>
-                </p>
-            <p>
-                    Gigabytes component of the memory consumption for the messages currently
-                    in the incoming queue.
-                </p>
-          </li>
-          <li>
-            <p>
-                    <span class="bold"><strong>u_int32_t st_max_elect_threads;</strong></span>
-                </p>
-            <p>
-                    The number of election threads for which space is reserved.
-                </p>
-          </li>
-          <li>
-            <p>
                     <span class="bold"><strong>uintmax_t st_msgs_dropped;</strong></span>
                 </p>
             <p>
@@ -162,52 +117,18 @@ DB_ENV-&gt;repmgr_stat(DB_ENV *env, DB_REPMGR_STAT **statp,
           </li>
           <li>
             <p>
-                    <span class="bold"><strong>u_int32_t st_site_participants;</strong></span>
+                    <span class="bold"><strong>uintmax_t st_elect_threads;</strong></span>
                 </p>
             <p>
-                    The number of participant sites in the replication group.
-                </p>
-          </li>
-          <li>
-            <p>
-                    <span class="bold"><strong>u_int32_t st_site_total;</strong></span>
-                </p>
-            <p>
-                    The total number of sites in the replication group.
+                    The number of currently active election threads.
                 </p>
           </li>
           <li>
             <p>
-                    <span class="bold"><strong>u_int32_t st_site_views;</strong></span>
+                    <span class="bold"><strong>uintmax_t st_max_elect_threads;</strong></span>
                 </p>
             <p>
-                    The number of view sites in the replication group.
-                </p>
-          </li>
-          <li>
-            <p>
-                <span class="bold"><strong>uintmax_t st_takeovers;</strong></span>
-            </p>
-            <p>
-                The number of times a subordinate process took over as the
-                replication process after a previous replication
-                process has finished successfully.
-            </p>
-          </li>
-          <li>
-            <p>
-                    <span class="bold"><strong>uintmax_t st_write_ops_forwarded;</strong></span>
-                </p>
-            <p>
-                    The total number of outgoing write operations forwarded by this client. 
-                </p>
-          </li>
-          <li>
-            <p>
-                    <span class="bold"><strong>uintmax_t st_write_ops_received;</strong></span>
-                </p>
-            <p>
-                    The total number of incoming forwarded write operations received by this master. 
+                    The number of election threads for which space is reserved.
                 </p>
           </li>
         </ul>
@@ -228,7 +149,7 @@ DB_ENV-&gt;repmgr_stat(DB_ENV *env, DB_REPMGR_STAT **statp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711172857136"></a>Parameters</h3>
+              <h3 class="title"><a id="idp54503880"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -236,7 +157,7 @@ DB_ENV-&gt;repmgr_stat(DB_ENV *env, DB_REPMGR_STAT **statp,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711172874432"></a>statp</h4>
+                <h4 class="title"><a id="idp54502976"></a>statp</h4>
               </div>
             </div>
           </div>
@@ -249,7 +170,7 @@ DB_ENV-&gt;repmgr_stat(DB_ENV *env, DB_REPMGR_STAT **statp,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711172850480"></a>flags</h4>
+                <h4 class="title"><a id="idp54478328"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -275,7 +196,7 @@ DB_ENV-&gt;repmgr_stat(DB_ENV *env, DB_REPMGR_STAT **statp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711172872944"></a>Errors</h3>
+              <h3 class="title"><a id="idp54513312"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -291,7 +212,7 @@ DB_ENV-&gt;repmgr_stat(DB_ENV *env, DB_REPMGR_STAT **statp,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711172864304"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp54517744"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -305,7 +226,7 @@ DB_ENV-&gt;repmgr_stat(DB_ENV *env, DB_REPMGR_STAT **statp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711172830736"></a>Class</h3>
+              <h3 class="title"><a id="idp54518824"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -317,7 +238,7 @@ DB_ENV-&gt;repmgr_stat(DB_ENV *env, DB_REPMGR_STAT **statp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711172828400"></a>See Also</h3>
+              <h3 class="title"><a id="idp54520032"></a>See Also</h3>
             </div>
           </div>
         </div>

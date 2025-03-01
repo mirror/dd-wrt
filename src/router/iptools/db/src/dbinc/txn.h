@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -82,7 +82,7 @@ typedef struct __txn_detail {
 	DB_LSN	begin_lsn;		/* LSN of begin record. */
 	roff_t	parent;			/* Offset of transaction's parent. */
 	roff_t	name;			/* Offset of txn name. */
-
+	
 	u_int32_t	nlog_dbs;	/* Number of databases used. */
 	u_int32_t	nlog_slots;	/* Number of allocated slots. */
 	roff_t		log_dbs;	/* Databases used. */
@@ -120,7 +120,6 @@ typedef struct __txn_detail {
 	u_int32_t gtrid;		/* gtrid_length from XID */
 	int32_t format;			/* XA format */
 	roff_t slots[TXN_NSLOTS];	/* Initial DB slot allocation. */
-	roff_t slice_details;		/* get_slice_count() slice details. */
 } TXN_DETAIL;
 
 /*

@@ -14,17 +14,17 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Cross-Compiling on
-        Unix</th>
+          <th colspan="3" align="center">Cross-Compiling on Unix</th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="build_unix_flags.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 7.  Building Berkeley DB for UNIX/POSIX
-    </th>
+          <th width="60%" align="center">Chapter 7. 
+		Building Berkeley DB for UNIX/POSIX
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="build_unix_install.html">Next</a></td>
         </tr>
       </table>
@@ -34,35 +34,32 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title" style="clear: both"><a id="cross_compile_unix"></a>Cross-Compiling on
-        Unix</h2>
+            <h2 class="title" style="clear: both"><a id="cross_compile_unix"></a>Cross-Compiling on Unix</h2>
           </div>
         </div>
       </div>
-      <p> 
-        The purpose of cross-compiling is to build a Berkeley DB
-        library on one platform that is to be used on a different
-        platform. This section demonstrates how to build a library
-        compatible with the ARM platform from a 32-bit x86 Linux
-        platform. You will need to adjust the build tools and options
-        to match your particular platforms.
+      <p>
+        The purpose of cross-compiling is to build a Berkeley DB library on
+        one platform that is to be used on a different platform. This
+        section demonstrates how to build a library compatible with the ARM
+        platform from a 32-bit x86 Linux platform. You will need to adjust
+        the build tools and options to match your particular platforms.
     </p>
       <div class="orderedlist">
         <ol type="1">
           <li>
             <p>
-                Download, install, and test a toolchain that can
-                build the desired target binaries. In this example, we
-                use the <code class="literal">arm-linux-gnueabi-gcc</code>
-                package.
+                Download, install, and test a toolchain that can build the
+                desired target binaries. In this example, we use the
+                <code class="literal">arm-linux-gnueabi-gcc</code> package.
             </p>
           </li>
           <li>
-            <p> 
-                Decide on your configuration options, and set up
-                your environment to use the appropriate compiler and
-                compiler tools. It is often easiest to set this up as
-                a small shell script. For example:
+            <p>
+                Decide on your configuration options, and set up your
+                environment to use the appropriate compiler and compiler
+                tools.  It is often easiest to set this up as a small shell
+                script.  For example:
             </p>
             <pre class="programlisting">#!/bin/sh -f
 env \
@@ -79,36 +76,32 @@ STRIP=/usr/bin/arm-linux-gnueabi-strip \
 --enable-stripped_messages \
 --prefix=$HOME/ARM-linux/install \
 $* </pre>
-            <p> 
-                The <code class="literal">--build</code> flag indicates the
-                system on which you are compiling and the
-                <code class="literal">--host</code> flag indicates the
-                target platform. Adjust or omit the
-                <code class="literal">--enable</code> and
-                <code class="literal">--prefix</code> flag settings as
-                dictated by your own needs.
+            <p>
+                The <code class="literal">--build</code> flag indicates the system on
+                which you are compiling and the <code class="literal">--host</code>
+                flag indicates the target platform.  Adjust or omit the
+                <code class="literal">--enable</code> and <code class="literal">--prefix</code>
+                flag settings as dictated by your own needs.
             </p>
           </li>
           <li>
             <p>
                 Unpack your Berkeley DB distribution and go to the
-                <code class="literal">build_unix</code> directory.
-                Alternatively, you may create a more
-                appropriately-named directory at the same level and
-                build in it. For example,
-                <code class="literal">build_arm</code>. 
+                <code class="literal">build_unix</code> directory. Alternatively, you
+                may create a more appropriately-named directory at the same
+                level and build in it. For example,
+                <code class="literal">build_arm</code>.
             </p>
           </li>
           <li>
-            <p> 
-                In your build directory, configure by executing
-                your script, then <code class="literal">make</code> and
-                <code class="literal">make install</code>. Review any
-                compiler warnings and fix if necessary, repeating the
-                <code class="literal">configure</code> and
-                <code class="literal">make</code> steps until you are
-                satisfied. The resulting libraries and executables can
-                then be transferred to your target system. 
+            <p>
+                In your build directory, configure by executing your
+                script, then <code class="literal">make</code> and 
+                <code class="literal">make install</code>. Review any compiler
+                warnings and fix if necessary, repeating the
+                <code class="literal">configure</code> and <code class="literal">make</code>
+                steps until you are satisfied. The resulting libraries and
+                executables can then be transferred to your target system.
             </p>
           </li>
         </ol>
@@ -125,13 +118,11 @@ $* </pre>
           <td width="40%" align="right"> <a accesskey="n" href="build_unix_install.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Changing compile or load
-        options </td>
+          <td width="40%" align="left" valign="top">Changing compile or load options </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Installing Berkeley
-        DB</td>
+          <td width="40%" align="right" valign="top"> Installing Berkeley DB</td>
         </tr>
       </table>
     </div>

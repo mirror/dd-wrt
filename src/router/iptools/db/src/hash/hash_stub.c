@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -111,40 +111,6 @@ __ham_46_hash(dbp, real_name, flags, fhp, h, dirtyp)
 
 int
 __ham_46_hashmeta(dbp, real_name, flags, fhp, h, dirtyp)
-	DB *dbp;
-	char *real_name;
-	u_int32_t flags;
-	DB_FH *fhp;
-	PAGE *h;
-	int *dirtyp;
-{
-	COMPQUIET(real_name, NULL);
-	COMPQUIET(flags, 0);
-	COMPQUIET(fhp, NULL);
-	COMPQUIET(h, NULL);
-	COMPQUIET(dirtyp, NULL);
-	return (__db_no_hash_am(dbp->env));
-}
-
-int
-__ham_60_hashmeta(dbp, real_name, flags, fhp, h, dirtyp)
-	DB *dbp;
-	char *real_name;
-	u_int32_t flags;
-	DB_FH *fhp;
-	PAGE *h;
-	int *dirtyp;
-{
-	COMPQUIET(real_name, NULL);
-	COMPQUIET(flags, 0);
-	COMPQUIET(fhp, NULL);
-	COMPQUIET(h, NULL);
-	COMPQUIET(dirtyp, NULL);
-	return (__db_no_hash_am(dbp->env));
-}
-
-int
-__ham_60_hash(dbp, real_name, flags, fhp, h, dirtyp)
 	DB *dbp;
 	char *real_name;
 	u_int32_t flags;

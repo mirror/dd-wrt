@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,8 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="build_unix_solaris.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 7.  Building Berkeley DB for UNIX/POSIX
-    </th>
+          <th width="60%" align="center">Chapter 7. 
+		Building Berkeley DB for UNIX/POSIX
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="build_vxworks.html">Next</a></td>
         </tr>
       </table>
@@ -41,17 +42,13 @@
         <ol type="1">
           <li>
             <span class="bold">
-              <strong>I can't specify the <a href="../api_reference/C/envopen.html#envopen_DB_SYSTEM_MEM" class="olink">DB_SYSTEM_MEM</a>
-                flag to <a href="../api_reference/C/envopen.html" class="olink">DB_ENV-&gt;open()</a>.</strong>
+              <strong>I can't specify the <a href="../api_reference/C/envopen.html#envopen_DB_SYSTEM_MEM" class="olink">DB_SYSTEM_MEM</a> flag to <a href="../api_reference/C/envopen.html" class="olink">DB_ENV-&gt;open()</a>.</strong>
             </span>
-            <p> 
-                The <code class="literal">shmget</code>(2) interfaces are not
-                used on SunOS releases prior to 5.0, even though they
-                apparently exist, because the distributed include
-                files did not allow them to be compiled. For this
-                reason, it will not be possible to specify the
-                <a href="../api_reference/C/envopen.html#envopen_DB_SYSTEM_MEM" class="olink">DB_SYSTEM_MEM</a> flag to those versions of SunOS.
-            </p>
+            <p>The <code class="literal">shmget</code>(2) interfaces are not used on SunOS releases prior
+to 5.0, even though they apparently exist, because the distributed
+include files did not allow them to be compiled.  For this reason, it
+will not be possible to specify the <a href="../api_reference/C/envopen.html#envopen_DB_SYSTEM_MEM" class="olink">DB_SYSTEM_MEM</a> flag to those
+versions of SunOS.</p>
           </li>
         </ol>
       </div>
@@ -71,7 +68,9 @@
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Chapter 8.  Building Berkeley DB for VxWorks </td>
+          <td width="40%" align="right" valign="top"> Chapter 8. 
+		Building Berkeley DB for VxWorks
+        </td>
         </tr>
       </table>
     </div>

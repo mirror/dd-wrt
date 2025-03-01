@@ -27,7 +27,6 @@ trap 'rm -f $t; exit 0' 0 1 2 3 13 15
  echo "global dict"				&& \
  echo "global util_path"			&& \
  echo ""					&& \
- echo "global is_aix_test"			&& \
  echo "global is_freebsd_test"			&& \
  echo "global is_hp_test"			&& \
  echo "global is_linux_test"			&& \
@@ -64,7 +63,6 @@ cmp $t $f > /dev/null 2>&1 ||
  echo "global dict"				&& \
  echo "global util_path"			&& \
  echo ""					&& \
- echo "global is_aix_test"			&& \
  echo "global is_freebsd_test"			&& \
  echo "global is_hp_test"			&& \
  echo "global is_linux_test"			&& \

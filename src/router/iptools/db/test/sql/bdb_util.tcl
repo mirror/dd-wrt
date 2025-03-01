@@ -7,6 +7,7 @@
 # Utility functions for bdb tests.
 
 source $testdir/tester.tcl
+source $testdir/../../../../test/tcl_utils/multi_proc_utils.tcl
 source $testdir/../../../../test/tcl_utils/common_test_utils.tcl
 
 # 
@@ -58,10 +59,8 @@ set ::bdb_thread_procs {
 #
 proc setup_rep_sites {} {
 	global site1addr site2addr site3addr site1dir site2dir site3dir
-	global ipversion
 
 	# Get free ports in safe range for most platforms.
-	set hoststr [get_hoststr $ipversion]
 	set ports [available_ports 3]
 
 	# Set up site1 directory and database.
@@ -72,7 +71,7 @@ proc setup_rep_sites {} {
 	file delete -force $site1dir
 	file mkdir $site1dir
 	sqlite3 db $site1dir/rep.db
-	set site1addr "$hoststr:[lindex $ports 0]"
+	set site1addr "127.0.0.1:[lindex $ports 0]"
 
 	# Set up site2 directory and database.
 	set site2dir ./repsite2
@@ -82,7 +81,7 @@ proc setup_rep_sites {} {
 	file delete -force $site2dir
 	file mkdir $site2dir
 	sqlite3 db2 $site2dir/rep.db
-	set site2addr "$hoststr:[lindex $ports 1]"
+	set site2addr "127.0.0.1:[lindex $ports 1]"
 
 	# Set up site3 directory and database.
 	set site3dir ./repsite3
@@ -92,5 +91,5 @@ proc setup_rep_sites {} {
 	file delete -force $site3dir
 	file mkdir $site3dir
 	sqlite3 db3 $site3dir/rep.db
-	set site3addr "$hoststr:[lindex $ports 2]"
+	set site3addr "127.0.0.1:[lindex $ports 2]"
 }

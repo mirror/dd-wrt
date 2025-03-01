@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -66,10 +66,6 @@ DB::associate_foreign(Db *secondary,,
         in the <em class="citetitle">Berkeley DB Programmer's Reference Guide</em> for more information.
    </p>
       <p>
-        The <code class="methodname">Db::associate_foreign()</code> method can
-        not be used with a sliced database.
-    </p>
-      <p>
         The <code class="methodname">Db::associate_foreign()</code> <span>
             
             <span>
@@ -83,7 +79,7 @@ DB::associate_foreign(Db *secondary,,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670065975472"></a>Parameters</h3>
+              <h3 class="title"><a id="idp87016"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -91,7 +87,7 @@ DB::associate_foreign(Db *secondary,,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670065949760"></a>secondary</h4>
+                <h4 class="title"><a id="idp113288"></a>secondary</h4>
               </div>
             </div>
           </div>
@@ -105,7 +101,7 @@ DB::associate_foreign(Db *secondary,,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670066025120"></a>callback</h4>
+                <h4 class="title"><a id="idm149216"></a>callback</h4>
               </div>
             </div>
           </div>
@@ -185,7 +181,7 @@ DB::associate_foreign(Db *secondary,,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670065868704"></a>flags</h4>
+                <h4 class="title"><a id="idm2106272"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -231,7 +227,7 @@ DB::associate_foreign(Db *secondary,,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670065987184"></a>Errors</h3>
+              <h3 class="title"><a id="idp719440"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -249,7 +245,7 @@ DB::associate_foreign(Db *secondary,,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670065988048"></a> <span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="idp4471568"></a> <span>DbRepHandleDeadException or</span> DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -271,7 +267,7 @@ DB::associate_foreign(Db *secondary,,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670065921952"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="idp4064360"></a><span>DbDeadlockException or </span>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -288,7 +284,7 @@ DB::associate_foreign(Db *secondary,,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670065973792"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp3435160"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -297,8 +293,7 @@ DB::associate_foreign(Db *secondary,,
                          database handle has been configured to allow duplicates; the foreign
                          database handle is a renumbering recno database; callback is
                          configured and DB_FOREIGN_NULLIFY is not; DB_FOREIGN_NULLIFY is
-                         configured and callback is not; if this method is
-                         called on a sliced database.
+                         configured and callback is not.
                        </p>
         </div>
       </div>
@@ -306,7 +301,7 @@ DB::associate_foreign(Db *secondary,,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670065952512"></a>Class</h3>
+              <h3 class="title"><a id="idm2353024"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -318,7 +313,7 @@ DB::associate_foreign(Db *secondary,,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670065862608"></a>See Also</h3>
+              <h3 class="title"><a id="idp3385048"></a>See Also</h3>
             </div>
           </div>
         </div>

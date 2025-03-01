@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * Some parts of this code originally written by Adam Stubblefield,
  * -- astubble@rice.edu.
@@ -17,6 +17,9 @@
 #include "dbinc/hash.h"
 #include "dbinc/hmac.h"
 #include "dbinc/log.h"
+
+#define	HMAC_OUTPUT_SIZE	20
+#define	HMAC_BLOCK_SIZE	64
 
 static void __db_hmac __P((u_int8_t *, u_int8_t *, size_t, u_int8_t *));
 

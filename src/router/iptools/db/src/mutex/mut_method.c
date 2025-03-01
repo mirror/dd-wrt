@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -93,7 +93,7 @@ __mutex_lock_pp(dbenv, indx)
 		return (EINVAL);
 
 	ENV_ENTER(env, ip);
-	ret = MUTEX_LOCK_RET(env, indx);
+	ret = __mutex_lock(env, indx);
 	ENV_LEAVE(env, ip);
 	return (ret);
 }
@@ -119,7 +119,7 @@ __mutex_unlock_pp(dbenv, indx)
 		return (EINVAL);
 
 	ENV_ENTER(env, ip);
-	ret = MUTEX_UNLOCK_RET(env, indx);
+	ret = __mutex_unlock(env, indx);
 	ENV_LEAVE(env, ip);
 	return (ret);
 }
@@ -371,33 +371,6 @@ __mutex_set_tas_spins(dbenv, tas_spins)
 	return (0);
 }
 
-#ifdef HAVE_ERROR_HISTORY
-/*
- * __mutex_diags --
- *
- * PUBLIC: #ifdef HAVE_ERROR_HISTORY
- * PUBLIC: int __mutex_diags __P((ENV *, db_mutex_t, int));
- * PUBLIC: #endif
- */
-int
-__mutex_diags(env, mutex, error)
-	ENV *env;
-	db_mutex_t mutex;
-	int error;
-{
-	DB_MSGBUF *mb;
-
-	if ((mb = __db_deferred_get()) != NULL) {
-		(void)__db_remember_context(env, mb, error);
-		__db_msgadd(env, mb, "Mutex %u ", (unsigned int)mutex);
-#ifdef HAVE_STATISTICS
-		__mutex_print_debug_stats(env, mb, mutex, 0);
-#endif
-	}
-	return (error);
-}
-#endif
-
 #if !defined(HAVE_ATOMIC_SUPPORT) && defined(HAVE_MUTEX_SUPPORT)
 /*
  * Provide atomic operations for platforms which have mutexes yet do not have
@@ -424,37 +397,59 @@ static inline db_mutex_t atomic_get_mutex(env, v)
 }
 
 /*
- * __atomic_add_int
- *	Use a mutex to provide an atomic add function
+ * __atomic_inc
+ *	Use a mutex to provide an atomic increment function
  *
  * PUBLIC: #if !defined(HAVE_ATOMIC_SUPPORT) && defined(HAVE_MUTEX_SUPPORT)
- * PUBLIC: atomic_value_t __atomic_add_int __P((ENV *, db_atomic_t *, int));
+ * PUBLIC: atomic_value_t __atomic_inc __P((ENV *, db_atomic_t *));
  * PUBLIC: #endif
  */
 atomic_value_t
-__atomic_add_int(env, v, delta)
+__atomic_inc(env, v)
 	ENV *env;
 	db_atomic_t *v;
-	int delta;
 {
 	db_mutex_t mtx;
 	int ret;
 
 	mtx = atomic_get_mutex(env, v);
 	MUTEX_LOCK(env, mtx);
-	v->value += delta;
-	ret = v->value;
+	ret = ++v->value;
 	MUTEX_UNLOCK(env, mtx);
 
 	return (ret);
 }
 
 /*
- * __atomic_compare_exchange_int
+ * __atomic_dec
  *	Use a mutex to provide an atomic decrement function
  *
  * PUBLIC: #if !defined(HAVE_ATOMIC_SUPPORT) && defined(HAVE_MUTEX_SUPPORT)
- * PUBLIC: int __atomic_compare_exchange_int
+ * PUBLIC: atomic_value_t __atomic_dec __P((ENV *, db_atomic_t *));
+ * PUBLIC: #endif
+ */
+atomic_value_t
+__atomic_dec(env, v)
+	ENV *env;
+	db_atomic_t *v;
+{
+	db_mutex_t mtx;
+	int ret;
+
+	mtx = atomic_get_mutex(env, v);
+	MUTEX_LOCK(env, mtx);
+	ret = --v->value;
+	MUTEX_UNLOCK(env, mtx);
+
+	return (ret);
+}
+
+/*
+ * atomic_compare_exchange
+ *	Use a mutex to provide an atomic decrement function
+ *
+ * PUBLIC: #if !defined(HAVE_ATOMIC_SUPPORT) && defined(HAVE_MUTEX_SUPPORT)
+ * PUBLIC: int atomic_compare_exchange
  * PUBLIC:     __P((ENV *, db_atomic_t *, atomic_value_t, atomic_value_t));
  * PUBLIC: #endif
  *	Returns 1 if the *v was equal to oldval, else 0
@@ -463,7 +458,7 @@ __atomic_add_int(env, v, delta)
  *		Sets the value to newval if and only if returning 1
  */
 int
-__atomic_compare_exchange_int(env, v, oldval, newval)
+atomic_compare_exchange(env, v, oldval, newval)
 	ENV *env;
 	db_atomic_t *v;
 	atomic_value_t oldval;

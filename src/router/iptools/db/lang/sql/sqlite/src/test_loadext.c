@@ -91,9 +91,6 @@ static void statusFunc(
 /*
 ** Extension load function.
 */
-#ifdef _WIN32
-__declspec(dllexport)
-#endif
 int testloadext_init(
   sqlite3 *db, 
   char **pzErrMsg, 
@@ -112,9 +109,6 @@ int testloadext_init(
 /*
 ** Another extension entry point. This one always fails.
 */
-#ifdef _WIN32
-__declspec(dllexport)
-#endif
 int testbrokenext_init(
   sqlite3 *db, 
   char **pzErrMsg, 

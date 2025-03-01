@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -10,7 +10,7 @@
 #include "csv_local.h"
 #include "csv_extern.h"
 
-static int compare_uint32(DB *, const DBT *, const DBT *, size_t *);
+static int compare_uint32(DB *, const DBT *, const DBT *);
 
 /*
  * csv_env_init --
@@ -138,7 +138,7 @@ csv_secondary_open()
 {
 	DB *sdb;
 	DbField *f;
-	int ret, (*fcmp)(DB *, const DBT *, const DBT *, size_t *);
+	int ret, (*fcmp)(DB *, const DBT *, const DBT *);
 
 	/*
 	 * Create secondary database handles.
@@ -232,13 +232,11 @@ csv_secondary_close()
  *	Compare two keys.
  */
 static int
-compare_uint32(DB *db_arg, const DBT *a_arg, const DBT *b_arg, size_t *locp)
+compare_uint32(DB *db_arg, const DBT *a_arg, const DBT *b_arg)
 {
 	u_int32_t a, b;
 
-	/* Quiet compiler. */
-	db_arg = db_arg;
-	locp = NULL;
+	db_arg = db_arg;			/* Quiet compiler. */
 
 	memcpy(&a, a_arg->data, sizeof(u_int32_t));
 	memcpy(&b, b_arg->data, sizeof(u_int32_t));

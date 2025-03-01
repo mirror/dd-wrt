@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -40,7 +40,7 @@ namespace BerkeleyDB {
 
         /// <summary>
         /// Release the resources held by this object, and close the channel if
-        /// it is still open.
+        /// it's still open.
         /// </summary>
         public void Dispose() {
             if (isOpen)
@@ -67,8 +67,8 @@ namespace BerkeleyDB {
         /// <para>
         /// The sent message is received and handled at remote sites using a
         /// message dispatch callback, which is configured using
-        /// <see cref="DatabaseEnvironment.RepMessageDispatch"/>. This
-        /// method may be used within the message dispatch callback on the
+        /// <see cref="DatabaseEnvironment.RepMessageDispatch"/>. Note that this
+        /// method may be used within the the message dispatch callback on the
         /// remote site to send a reply or acknowledgement for messages that it
         /// receives and is handling.
         /// </para>

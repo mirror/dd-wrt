@@ -1,45 +1,65 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package com.sleepycat.bind.tuple.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
 import com.sleepycat.db.DatabaseEntry;
+import com.sleepycat.util.test.SharedTestUtils;
 
 /**
  * @author Mark Hayes
  */
-public class TupleFormatTest {
+public class TupleFormatTest extends TestCase {
 
     private TupleInput in;
     private TupleOutput out;
     private DatabaseEntry buffer;
 
-    @Before
+    public static void main(String[] args) {
+        junit.framework.TestResult tr =
+            junit.textui.TestRunner.run(suite());
+        if (tr.errorCount() > 0 ||
+            tr.failureCount() > 0) {
+            System.exit(1);
+        } else {
+            System.exit(0);
+        }
+    }
+
+    public static Test suite() {
+        TestSuite suite = new TestSuite(TupleFormatTest.class);
+        return suite;
+    }
+
+    public TupleFormatTest(String name) {
+
+        super(name);
+    }
+
+    @Override
     public void setUp() {
 
+        SharedTestUtils.printTestName("TupleFormatTest." + getName());
         buffer = new DatabaseEntry();
         out = new TupleOutput();
     }
 
-    @After
+    @Override
     public void tearDown() {
 
         /* Ensure that GC can cleanup. */
@@ -67,7 +87,6 @@ public class TupleFormatTest {
         assertEquals(0, in.available());
     }
 
-    @Test
     public void testString() {
 
         stringTest("");
@@ -111,7 +130,6 @@ public class TupleFormatTest {
         assertEquals(0, in.available());
     }
 
-    @Test
     public void testFixedString() {
 
         fixedStringTest(new char[0]);
@@ -139,7 +157,6 @@ public class TupleFormatTest {
         assertEquals(0, in.available());
     }
 
-    @Test
     public void testNullString() {
 
         out.reset();
@@ -212,7 +229,6 @@ public class TupleFormatTest {
         }
     }
 
-    @Test
     public void testChars() {
 
         charsTest(new char[0]);
@@ -266,7 +282,6 @@ public class TupleFormatTest {
         }
     }
 
-    @Test
     public void testBytes() {
 
         bytesTest(new char[0]);
@@ -305,7 +320,6 @@ public class TupleFormatTest {
         assertEquals(0, in.available());
     }
 
-    @Test
     public void testBoolean() {
 
         booleanTest(true);
@@ -346,7 +360,6 @@ public class TupleFormatTest {
         assertEquals(expected, in.readUnsignedByte());
     }
 
-    @Test
     public void testUnsignedByte() {
 
         unsignedByteTest(0);
@@ -384,7 +397,6 @@ public class TupleFormatTest {
         assertEquals(expected, in.readUnsignedShort());
     }
 
-    @Test
     public void testUnsignedShort() {
 
         unsignedShortTest(0);
@@ -430,7 +442,6 @@ public class TupleFormatTest {
         assertEquals(expected, in.readUnsignedInt());
     }
 
-    @Test
     public void testUnsignedInt() {
 
         unsignedIntTest(0L);
@@ -474,7 +485,6 @@ public class TupleFormatTest {
         assertEquals((byte) val, in.readByte());
     }
 
-    @Test
     public void testByte() {
 
         byteTest(0);
@@ -514,7 +524,6 @@ public class TupleFormatTest {
         assertEquals((short) val, in.readShort());
     }
 
-    @Test
     public void testShort() {
 
         shortTest(0);
@@ -554,7 +563,6 @@ public class TupleFormatTest {
         assertEquals(val, in.readInt());
     }
 
-    @Test
     public void testInt() {
 
         intTest(0);
@@ -594,7 +602,6 @@ public class TupleFormatTest {
         assertEquals(val, in.readLong());
     }
 
-    @Test
     public void testLong() {
 
         longTest(0);
@@ -640,7 +647,6 @@ public class TupleFormatTest {
         }
     }
 
-    @Test
     public void testFloat() {
 
         floatTest(0);
@@ -698,7 +704,6 @@ public class TupleFormatTest {
         }
     }
 
-    @Test
     public void testDouble() {
 
         doubleTest(0);
@@ -759,7 +764,6 @@ public class TupleFormatTest {
         }
     }
 
-    @Test
     public void testSortedFloat() {
 
         sortedFloatTest(0);
@@ -817,7 +821,6 @@ public class TupleFormatTest {
         }
     }
 
-    @Test
     public void testSortedDouble() {
 
         sortedDoubleTest(0);
@@ -875,7 +878,6 @@ public class TupleFormatTest {
         assertEquals(val, in.readPackedInt());
     }
 
-    @Test
     public void testPackedInt() {
 
         /* Exhaustive value testing is in PackedIntTest. */
@@ -905,7 +907,6 @@ public class TupleFormatTest {
         assertEquals(val, in.readPackedLong());
     }
 
-    @Test
     public void testPackedLong() {
 
         /* Exhaustive value testing is in PackedIntTest. */
@@ -935,7 +936,6 @@ public class TupleFormatTest {
         assertEquals(val, in.readSortedPackedInt());
     }
     
-    @Test
     public void testSortedPackedInt() {
 
         /* Exhaustive value testing is in sortedPackedIntTest. */
@@ -987,7 +987,6 @@ public class TupleFormatTest {
         assertEquals(val, in.readSortedPackedLong());
     }
     
-    @Test
     public void testSortedPackedLong() {
 
         /* Exhaustive value testing is in sortedPackedLongTest. */
@@ -1054,7 +1053,6 @@ public class TupleFormatTest {
         assertEquals(val, in.readBigInteger());
     }
     
-    @Test
     public void testBigInteger() {
 
         /* Exhaustive value testing is in bigIntegerTest. */
@@ -1096,7 +1094,6 @@ public class TupleFormatTest {
         assertEquals(val, in.readBigDecimal());
     }
     
-    @Test
     public void testBigDecimal() {
 
         /* Exhaustive value testing is in BigDecimal. */
@@ -1148,7 +1145,6 @@ public class TupleFormatTest {
         assertEquals(0, val.compareTo(in.readSortedBigDecimal()));
     }
     
-    @Test
     public void testSortedBigDecimal() {
 
         /* Exhaustive value testing is in BigDecimal. */

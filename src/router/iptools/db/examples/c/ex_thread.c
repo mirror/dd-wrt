@@ -1,39 +1,9 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1997, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
- * ex_thread-- A basic example with multithreaded access.
- *   
- *   This sample program demonstrates a simple threaded application of some numbers 
- *   of readers and writers to compete for a set of words. It shows how to prepare and   
- *   open the environment and database handles so that they can be safely shared by freely  
- *   running threads. The application use two kinds of threads: reader and writer to compete 
- *   for the word list. During the time, a statistics function is used to record the number of 
- *   reader or writer threads. In addition, deadlock detection is included in the application.
- *
- *   The program first receives argument options from command line tool to determine the
- *   number of reading threads, writing threads and so on. Then the program builds the key
- *   list by extracting word from woldlist file. After the initialization of environment 
- *   and database, the program creates a new transaction in the environment. Some numbers 
- *   of reading threads and writing threads are created to access words concurently. Every 
- *   thread has one unique identifier for reader or writer.
- *   
- *   At last, the program displays reader/writer thread statistics and exits.
- *
- * program name: ex_thread
- * database: access.db
- *
- * Options:
- *    -d    specify the duration that the program shall run, in seconds
- *    -h    specify the home directory for the environment
- *    -p    set punish flag: switch threads frequently
- *    -n    specify the number of records
- *    -r    specify the number of reading threads
- *    -v    print verbose messages during processing
- *    -w    specify the number of writing threads
- *
- * $Id: ex_thread.c,v 8c6aae1f7250 2015/10/27 17:49:51 charles $
+ * $Id$
  */
 
 #include <sys/types.h>
@@ -55,17 +25,10 @@ extern int getopt(int, char * const *, const char *);
 
 #include <db.h>
 
-/* Suppress unused variable warnings. */
-#define	COMPQUIET(n, v)	do {	\
-	(n) = (v);		\
-	(n) = (n);		\
-} while (0)
-
 /*
  * NB: This application is written using POSIX 1003.1b-1993 pthreads
  * interfaces, which may not be portable to your system.
  */
-/* Forward declarations */
 extern int sched_yield __P((void));		/* Pthread yield function. */
 
 int	db_init __P((const char *));
@@ -81,17 +44,16 @@ int	usage __P((void));
 void	word __P((void));
 int	writer __P((int));
 
-time_t	EndTime;		/* -d <#seconds> set the end time of the run. */
-int	Quit = 0;		/* Interrupt handling flag. */
+int	quit;					/* Interrupt handling flag. */
 
 struct _statistics {
-	int aborted;			/* Write. */
-	int aborts;			/* Read/write. */
-	int adds;			/* Write. */
-	int deletes;			/* Write. */
-	int txns;			/* Write. */
-	int found;			/* Read. */
-	int notfound;			/* Read. */
+	int aborted;				/* Write. */
+	int aborts;				/* Read/write. */
+	int adds;				/* Write. */
+	int deletes;				/* Write. */
+	int txns;				/* Write. */
+	int found;				/* Read. */
+	int notfound;				/* Read. */
 } *perf;
 
 const char
@@ -131,42 +93,36 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	extern char *optarg;		/* argument associated with option */
-	extern int errno, optind;       /* index into parent argv vector */
-	DB_TXN *txnp;   		/* Transaction handle. */
-	pthread_t *tids;		/* Thread ID structure. */
-	int ch;				/* The current command line option char. */
-	int i;				/* Variable to record thread number. */
-	int ret;			/* Return code from call into Berkeley DB. */
-	const char *home;		/* The environment home directory. */
-	void *retp;			/* Return pointer of the thread. */
+	extern char *optarg;
+	extern int errno, optind;
+	DB_TXN *txnp;
+	pthread_t *tids;
+	int ch, i, ret;
+	const char *home;
+	void *retp;
 
 	txnp = NULL;
 	nlist = 1000;
 	nreaders = nwriters = 4;
 	home = "TESTDIR";
-	/* Parse the command line arguments */
-	while ((ch = getopt(argc, argv, "d:h:n:pr:vw:")) != EOF)
+	while ((ch = getopt(argc, argv, "h:pn:r:vw:")) != EOF)
 		switch (ch) {
-		case 'd':
-			EndTime = atoi(optarg) + time(NULL);
-			break;
-		case 'h':	/* Specify the home directory for the environment. */
+		case 'h':
 			home = optarg;
 			break;
-		case 'n':	/* Specify the number of records. */
-			nlist = atoi(optarg);
-			break;
-		case 'p':	/* Set punish flag. */
+		case 'p':
 			punish = 1;
 			break;
-		case 'r':	/* Specify the number of reading threads. */
+		case 'n':
+			nlist = atoi(optarg);
+			break;
+		case 'r':
 			nreaders = atoi(optarg);
 			break;
-		case 'v':	/* Print verbose messages during processing. */
+		case 'v':
 			verbose = 1;
 			break;
-		case 'w':	/* Specify the number of writing threads. */
+		case 'w':
 			nwriters = atoi(optarg);
 			break;
 		case '?':
@@ -198,15 +154,13 @@ main(argc, argv)
 		(void)dbenv->close(dbenv, 0);
 		return (EXIT_FAILURE);
 	}
-	/* Set page size for the database. */
 	if ((ret = dbp->set_pagesize(dbp, 1024)) != 0) {
 		dbp->err(dbp, ret, "set_pagesize");
 		goto err;
 	}
-	/* Create a new transaction in the environment. */
+
 	if ((ret = dbenv->txn_begin(dbenv, NULL, &txnp, 0)) != 0)
 		fatal("txn_begin", ret, 1);
-	/* Trasactionally open database with DB_BTREE access method. */
 	if ((ret = dbp->open(dbp, txnp,
 	     DATABASE, NULL, DB_BTREE, DB_CREATE | DB_THREAD, 0664)) != 0) {
 		dbp->err(dbp, ret, "%s: open", DATABASE);
@@ -260,29 +214,18 @@ err:	if (txnp != NULL)
 	return (EXIT_SUCCESS);
 }
 
-/*
- * reader --
- * 	Reading thread to read data from buffer, the buffer 
- * stores data from wordlist.
- *
- * Parameter:
- *	id		thread identifier
- */
-
 int
 reader(id)
 	int id;
 {
-	DBT key, data;    /* The key/data pair. */
-	int n;            /* Number of key. */
-	int ret;          /* The return value. */
-	char buf[64];     /* Data buffer to hold the data from wordlist. */
+	DBT key, data;
+	int n, ret;
+	char buf[64];
 
 	/*
 	 * DBT's must use local memory or malloc'd memory if the DB handle
 	 * is accessed in a threaded fashion.
 	 */
-	/*Zero out the DBTs before using them*/
 	memset(&key, 0, sizeof(DBT));
 	memset(&data, 0, sizeof(DBT));
 	data.flags = DB_DBT_MALLOC;
@@ -291,7 +234,7 @@ reader(id)
 	 * Read-only threads do not require transaction protection, unless
 	 * there's a need for repeatable reads.
 	 */
-	while (!Quit) {
+	while (!quit) {
 		/* Pick a key at random, and look it up. */
 		n = rand() % nlist;
 		key.data = list[n];
@@ -322,26 +265,15 @@ reader(id)
 	return (0);
 }
 
-/*
- * writer --
- * 	Writing thread to write data to data buffer.
- *
- * Parameter:
- *	id		thread identifier
- */
-
 int
 writer(id)
 	int id;
 {
-	DBT key, data;               /* The key/data pair. */
-	DB_TXN *tid;                 /* Transaction identifier. */
-	time_t now;                  /* The start time.*/
-	time_t then;                 /* The end time. */
-	int n;                       /* Number of key. */
-	int ret;                     /* The return value. */
-	char buf[256];               /* Buffer to store read data. */
-	char dbuf[10000];            /* Buffer to store write data. */
+	DBT key, data;
+	DB_TXN *tid;
+	time_t now, then;
+	int n, ret;
+	char buf[256], dbuf[10000];
 
 	time(&now);
 	then = now;
@@ -350,14 +282,13 @@ writer(id)
 	 * DBT's must use local memory or malloc'd memory if the DB handle
 	 * is accessed in a threaded fashion.
 	 */
-	/*Zero out the DBTs before using them*/
 	memset(&key, 0, sizeof(DBT));
 	memset(&data, 0, sizeof(DBT));
 	data.data = dbuf;
 	data.ulen = sizeof(dbuf);
 	data.flags = DB_DBT_USERMEM;
 
-	while (!Quit) {
+	while (!quit) {
 		/* Pick a random key. */
 		n = rand() % nlist;
 		key.data = list[n];
@@ -374,8 +305,6 @@ retry:			if ((ret = tid->abort(tid)) != 0)
 				fatal("DB_TXN->abort", ret, 1);
 			++perf[id].aborts;
 			++perf[id].aborted;
-			if (Quit)
-				break;
 		}
 
 		/* Thread #1 prints out the stats every 20 seconds. */
@@ -442,10 +371,10 @@ commit:		/* The transaction finished, commit it. */
 			fatal("DB_TXN->commit", ret, 1);
 
 		/*
-		 * Every time the thread completes 10000 transactions, show
+		 * Every time the thread completes 20 transactions, show
 		 * our progress.
 		 */
-		if (++perf[id].txns % 10000 == 0) {
+		if (++perf[id].txns % 20 == 0) {
 			sprintf(buf,
 "writer: %2d: adds: %4d: deletes: %4d: aborts: %4d: txns: %4d\n",
 			    id, perf[id].adds, perf[id].deletes,
@@ -477,9 +406,8 @@ commit:		/* The transaction finished, commit it. */
 void
 stats()
 {
-	int id;		/* Thread identifier. */
-	char *p;	/* Statistics pointer. */
-	char buf[8192]; /* Buffer to store statistics data. */
+	int id;
+	char *p, buf[8192];
 
 	p = buf + sprintf(buf, "-------------\n");
 	for (id = 0; id < nreaders + nwriters;)
@@ -501,37 +429,26 @@ stats()
 /*
  * db_init --
  *	Initialize the environment.
- *
- * Parameter:
- *      home	environment home directory
  */
 int
 db_init(home)
 	const char *home;
 {
-	int ret;	/* Return code. */
+	int ret;
 
-	/* Create the environment object. */
 	if ((ret = db_env_create(&dbenv, 0)) != 0) {
 		fprintf(stderr,
 		    "%s: db_env_create: %s\n", progname, db_strerror(ret));
 		return (EXIT_FAILURE);
 	}
-	/* If punish is set, tell DB to yield CPU often. */
 	if (punish)
 		(void)dbenv->set_flags(dbenv, DB_YIELDCPU, 1);
 
 	dbenv->set_errfile(dbenv, stderr);
 	dbenv->set_errpfx(dbenv, progname);
-	(void)dbenv->set_cachesize(dbenv, 0, 10 * 1024 * 1024, 0);
-	(void)dbenv->set_lg_max(dbenv, 10 * 1024 * 1024);
-	(void)dbenv->set_flags(dbenv, DB_TXN_NOSYNC, 1);
-	(void)dbenv->set_lk_detect(dbenv, DB_LOCK_YOUNGEST);
+	(void)dbenv->set_cachesize(dbenv, 0, 100 * 1024, 0);
+	(void)dbenv->set_lg_max(dbenv, 200000);
 
-	/* 
-	 * Open a transactional thread-safe environment. Note the use of
-	 * the DB_THREAD flag which makes the handle thread-safe.
-	 */
 	if ((ret = dbenv->open(dbenv, home,
 	    DB_CREATE | DB_INIT_LOCK | DB_INIT_LOG |
 	    DB_INIT_MPOOL | DB_INIT_TXN | DB_THREAD, 0)) != 0) {
@@ -546,16 +463,13 @@ db_init(home)
 /*
  * tstart --
  *	Thread start function for readers and writers.
- *
- * Parameter:
- *      arg	thread identifer argument
  */
 void *
 tstart(arg)
 	void *arg;
 {
-	pthread_t tid;	/* Transaction identifier. */
-	u_int id;	/* Thread identifier. */
+	pthread_t tid;
+	u_int id;
 
 	id = (uintptr_t)arg + 1;
 
@@ -578,18 +492,15 @@ tstart(arg)
 /*
  * deadlock --
  *	Thread start function for DB_ENV->lock_detect.
- *
- * Parameter:
- *      arg	argument
  */
 void *
 deadlock(arg)
 	void *arg;
 {
-	struct timeval t;	/* Time variable. */
-	pthread_t tid;		/* Transaction identifier. */
+	struct timeval t;
+	pthread_t tid;
 
-	COMPQUIET(arg, NULL);
+	arg = arg;				/* XXX: shut the compiler up. */
 	tid = pthread_self();
 
 	printf("deadlock thread starting: tid: %lu\n", (u_long)tid);
@@ -597,14 +508,11 @@ deadlock(arg)
 
 	t.tv_sec = 0;
 	t.tv_usec = 100000;
-	while (!Quit) {
-		/* Run deadlock dectection. */
+	while (!quit) {
 		(void)dbenv->lock_detect(dbenv, 0, DB_LOCK_YOUNGEST, NULL);
 
 		/* Check every 100ms. */
 		(void)select(0, NULL, NULL, NULL, &t);
-		if (time(NULL) > EndTime)
-			Quit = 1;
 	}
 
 	return (NULL);
@@ -613,29 +521,22 @@ deadlock(arg)
 /*
  * trickle --
  *	Thread start function for memp_trickle.
- *
- * Parameter:
- *      arg	argument
  */
 void *
 trickle(arg)
 	void *arg;
 {
-	pthread_t tid;		/* Transaction identifier. */
-	int wrote;		/* Write flag. */
-	char buf[64];		/* Data buffer. */
+	pthread_t tid;
+	int wrote;
+	char buf[64];
 
-	COMPQUIET(arg, NULL);
+	arg = arg;				/* XXX: shut the compiler up. */
 	tid = pthread_self();
 
 	printf("trickle thread starting: tid: %lu\n", (u_long)tid);
 	fflush(stdout);
 
-	while (!Quit) {
-		/*
-		 * Make sure there are some clean pages, possibly flushing
-		 * some dirty pages.
-		 */
+	while (!quit) {
 		(void)dbenv->memp_trickle(dbenv, 10, &wrote);
 		if (verbose) {
 			sprintf(buf, "trickle: wrote %d\n", wrote);
@@ -657,10 +558,9 @@ trickle(arg)
 void
 word()
 {
-	FILE *fp;	/* File pointer. */
-	int cnt;	/* Count number of words. */
-	char buf[256];	/* Buffer data. */
-	char *eol;
+	FILE *fp;
+	int cnt;
+	char buf[256];
 
 	if ((fp = fopen(WORDLIST, "r")) == NULL)
 		fatal(WORDLIST, errno, 1);
@@ -671,9 +571,6 @@ word()
 	for (cnt = 0; cnt < nlist; ++cnt) {
 		if (fgets(buf, sizeof(buf), fp) == NULL)
 			break;
-		/* Remove trailing newline */
-		if ((eol = strrchr(buf, '\n')) != NULL)
-			*eol = '\0';
 		if ((list[cnt] = strdup(buf)) == NULL)
 			fatal(NULL, errno, 1);
 	}
@@ -683,11 +580,6 @@ word()
 /*
  * fatal --
  *	Report a fatal error and quit.
- *
- * Parameters:
- *      msg	variable to store error message
- *      err	error variable
- *      syserr	system error variable
  */
 void
 fatal(msg, err, syserr)
@@ -710,7 +602,7 @@ fatal(msg, err, syserr)
 
 /*
  * usage --
- *	Describe this program's command line options, then exit.
+ *	Usage message.
  */
 int
 usage()
@@ -724,14 +616,11 @@ usage()
 /*
  * onint --
  *	Interrupt signal handler.
- *
- * Parameter:
- *      signo	number of signal
  */
 void
 onint(signo)
 	int signo;
 {
 	signo = 0;		/* Quiet compiler. */
-	Quit = 1;
+	quit = 1;
 }

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -186,8 +186,8 @@ struct __mpool { /* SHARED */
 	u_int32_t htab_buckets;		/* Number of hash table entries. */
 	u_int32_t last_checked;		/* Last bucket checked for free. */
 	u_int32_t lru_priority;		/* Priority counter for buffer LRU. */
-	u_int32_t lru_generation;      /* Allocation race condition detector. */
-	u_int32_t htab_mutexes;	       /* Number of hash mutexes per region. */
+	u_int32_t lru_generation;	/* Allocation race condition detector. */
+	u_int32_t htab_mutexes;		/* Number of hash mutexes per region. */
 
 	 /*
 	  * The pages field keeps track of the number of pages in the cache
@@ -226,15 +226,10 @@ struct __mpool { /* SHARED */
 #define	DB_MEMP_SYNC_INTERRUPT	0x02
 	u_int32_t config_flags;
 
-	/* These MVCC fields are protected by the mpool region lock. */
-
-	/* This is the free list of BH_FROZEN_PAGEs, the frozen headers. */
+	/* Free frozen buffer headers, protected by the region lock. */
 	SH_TAILQ_HEAD(__free_frozen) free_frozen;
 
-	/*
-	 * This list of BH_FROZEN_ALLOCs contains all the BH_FROZEN_PAGEs,
-	 * whether they are in free_frozen or busy (in a bh.vc version chain).
-	 */
+	/* Allocated blocks of frozen buffer headers. */
 	SH_TAILQ_HEAD(__alloc_frozen) alloc_frozen;
 };
 
@@ -409,7 +404,7 @@ struct __mpoolfile { /* SHARED */
 	db_mutex_t  mtx_write;		/* block writers while updating.*/
 	db_pgno_t   low_pgno, high_pgno;/* Low and high backup range.*/
 #endif
-
+	
 	/* Protected by MPOOLFILE mutex. */
 	u_int32_t revision;		/* Bumped on any movement subdbs. */
 	u_int32_t mpf_cnt;		/* Ref count: DB_MPOOLFILEs. */
@@ -555,10 +550,9 @@ struct __bh { /* SHARED */
 #define	BH_FROZEN	0x040		/* Frozen buffer: allocate & re-read. */
 #define	BH_TRASH	0x080		/* Page is garbage. */
 #define	BH_THAWED	0x100		/* Page was thawed. */
-#define	BH_UNREACHABLE	0x200		/* Discard this defunct MVCC version. */
 	u_int16_t	flags;
 
-	u_int32_t	priority;	/* Cache priority. */
+	u_int32_t	priority;	/* Priority. */
 	SH_TAILQ_ENTRY	hq;		/* MPOOL hash bucket queue. */
 
 	db_pgno_t	pgno;		/* Underlying MPOOLFILE page number. */
@@ -593,12 +587,9 @@ struct __bh_frozen_p {
 
 /*
  * BH_FROZEN_ALLOC --
- *	This structure is the container for one or more frozen buffer headers.
- *	Blocks of BH_FROZEN_PAGE structs are usually allocated a page at a time,
- *	though when an mpool is nearly full and a whole page isn't available
- *	there can be single-item blocks.  BH_FROZEN_ALLOC is the block header
- *	allocated at the beginning of the chunk and is linked to the mpool's
- *	alloc_frozen so that the allocation chunks can be tracked and freed.
+ *	Frozen buffer headers are allocated a page at a time in general.  This
+ *	structure is allocated at the beginning of the page so that the
+ *	allocation chunks can be tracked and freed (for private environments).
  */
 struct __bh_frozen_a {
 	SH_TAILQ_ENTRY links;
@@ -611,36 +602,33 @@ struct __bh_frozen_a {
     (F_ISSET(PAGE_TO_BH(p), BH_DIRTY|BH_EXCLUSIVE) == (BH_DIRTY|BH_EXCLUSIVE))
 
 #define	BH_OWNER(env, bhp)						\
-    ((TXN_DETAIL *)R_ADDR(&(env)->tx_handle->reginfo, (bhp)->td_off))
+    ((TXN_DETAIL *)R_ADDR(&env->tx_handle->reginfo, bhp->td_off))
 
 #define	BH_OWNED_BY(env, bhp, txn)	((txn) != NULL &&		\
-    (bhp)->td_off != INVALID_ROFF && (txn)->td == BH_OWNER(env, bhp))
+    (bhp)->td_off != INVALID_ROFF &&					\
+    (txn)->td == BH_OWNER(env, bhp))
 
-#define	VISIBLE_LSN(env, bhp)	(&BH_OWNER(env, bhp)->visible_lsn)
+#define	VISIBLE_LSN(env, bhp)						\
+    (&BH_OWNER(env, bhp)->visible_lsn)
 
 /*
- * MVCC Versions are visible only to snapshot transactions whose read_lsn is at
- * least as recent (large) as the buffer's lsn. Visibility checks must be made
- * from newest to oldest along bhp.vc, stopping at the first visible one.
- * Unversioned buffers (those with invalid td_off) are always visible.
+ * Make a copy of the buffer's visible LSN, one field at a time.  We rely on the
+ * 32-bit operations being atomic.  The visible_lsn starts at MAX_LSN and is
+ * set during commit or abort to the current LSN.
  *
- * BH_VISIBLE() makes a copy of the buffer's visible LSN, one field at a time.
- * We rely on the 32-bit operations being atomic.  The visible_lsn starts at
- * MAX_LSN and is set during commit or abort to the current LSN.
- *
- * If we race with a commit or abort, we may see either the file or the offset
+ * If we race with a commit / abort, we may see either the file or the offset
  * still at UINT32_MAX, so vlsn is guaranteed to be in the future.  That's OK,
  * since we had to take the log region lock to allocate the read LSN so we were
  * never going to see this buffer anyway.
  */
 #define	BH_VISIBLE(env, bhp, read_lsnp, vlsn)				\
     (bhp->td_off == INVALID_ROFF ||					\
-    ((vlsn).file = VISIBLE_LSN(env, bhp)->file,				\
+    ((vlsn).file = VISIBLE_LSN(env, bhp)->file,			\
     (vlsn).offset = VISIBLE_LSN(env, bhp)->offset,			\
     LOG_COMPARE((read_lsnp), &(vlsn)) >= 0))
 
 #define	BH_OBSOLETE(bhp, old_lsn, vlsn)	(SH_CHAIN_HASNEXT(bhp, vc) ?	\
-    BH_VISIBLE(env, SH_CHAIN_NEXTP(bhp, vc, __bh), &(old_lsn), vlsn) :	\
+    BH_VISIBLE(env, SH_CHAIN_NEXTP(bhp, vc, __bh), &(old_lsn), vlsn) :\
     BH_VISIBLE(env, bhp, &(old_lsn), vlsn))
 
 #define	MVCC_SKIP_CURADJ(dbc, pgno) (dbc->txn != NULL &&		\

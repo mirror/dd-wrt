@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -66,10 +66,6 @@ DB-&gt;associate_foreign(DB *foreign, DB *secondary,,
         in the <em class="citetitle">Berkeley DB Programmer's Reference Guide</em> for more information.
    </p>
       <p>
-        The <code class="methodname">DB-&gt;associate_foreign()</code> method can
-        not be used with a sliced database.
-    </p>
-      <p>
         The <code class="methodname">DB-&gt;associate_foreign()</code> <span>
             <span>
                   method returns a non-zero error value on failure and 0 on success.
@@ -81,7 +77,7 @@ DB-&gt;associate_foreign(DB *foreign, DB *secondary,,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711187328272"></a>Parameters</h3>
+              <h3 class="title"><a id="idp49290208"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -89,7 +85,7 @@ DB-&gt;associate_foreign(DB *foreign, DB *secondary,,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711187476192"></a>foreign</h4>
+                <h4 class="title"><a id="idp49302368"></a>foreign</h4>
               </div>
             </div>
           </div>
@@ -102,7 +98,7 @@ DB-&gt;associate_foreign(DB *foreign, DB *secondary,,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711187420304"></a>secondary</h4>
+                <h4 class="title"><a id="idp49305584"></a>secondary</h4>
               </div>
             </div>
           </div>
@@ -116,7 +112,7 @@ DB-&gt;associate_foreign(DB *foreign, DB *secondary,,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711187493424"></a>callback</h4>
+                <h4 class="title"><a id="idp49229248"></a>callback</h4>
               </div>
             </div>
           </div>
@@ -196,7 +192,7 @@ DB-&gt;associate_foreign(DB *foreign, DB *secondary,,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711187572336"></a>flags</h4>
+                <h4 class="title"><a id="idp49360192"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -242,7 +238,7 @@ DB-&gt;associate_foreign(DB *foreign, DB *secondary,,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711187384992"></a>Errors</h3>
+              <h3 class="title"><a id="idp49300904"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -258,7 +254,7 @@ DB-&gt;associate_foreign(DB *foreign, DB *secondary,,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711188189616"></a>  DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="idp49355232"></a>  DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -277,7 +273,7 @@ DB-&gt;associate_foreign(DB *foreign, DB *secondary,,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711188694400"></a>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="idp49293408"></a>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -289,7 +285,7 @@ DB-&gt;associate_foreign(DB *foreign, DB *secondary,,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711188742064"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp49348072"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -298,8 +294,7 @@ DB-&gt;associate_foreign(DB *foreign, DB *secondary,,
                          database handle has been configured to allow duplicates; the foreign
                          database handle is a renumbering recno database; callback is
                          configured and DB_FOREIGN_NULLIFY is not; DB_FOREIGN_NULLIFY is
-                         configured and callback is not; if this method is
-                         called on a sliced database.
+                         configured and callback is not.
                        </p>
         </div>
       </div>
@@ -307,7 +302,7 @@ DB-&gt;associate_foreign(DB *foreign, DB *secondary,,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711188624496"></a>Class</h3>
+              <h3 class="title"><a id="idp49259880"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -319,7 +314,7 @@ DB-&gt;associate_foreign(DB *foreign, DB *secondary,,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711188773456"></a>See Also</h3>
+              <h3 class="title"><a id="idp49357296"></a>See Also</h3>
             </div>
           </div>
         </div>

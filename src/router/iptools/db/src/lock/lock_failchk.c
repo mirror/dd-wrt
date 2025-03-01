@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -15,7 +15,7 @@
 /*
  * __lock_failchk --
  *	Check for locks held by dead threads of control and release
- *	read locks.  If any write locks were held by dead non-transactional
+ *	read locks.  If any write locks were held by dead non-trasnactional
  *	lockers then we must abort and run recovery.  Otherwise we release
  *	read locks for lockers owned by dead threads.  Write locks for
  *	dead transactional lockers will be freed when we abort the transaction.
@@ -98,8 +98,9 @@ retry:	LOCK_LOCKERS(env, lrp);
 			/*
 			 * This locker is most likely referenced by a cursor
 			 * which is owned by a dead thread.  Normally the
-			 * cursor would be available for other threads but we
-			 * assume the dead thread will never release it.
+			 * cursor would be available for other threads
+			 * but we assume the dead thread will never release
+			 * it.
 			 */
 			if (lip->id < TXN_MINIMUM &&
 			    (ret = __lock_freelocker(lt, lip)) != 0)

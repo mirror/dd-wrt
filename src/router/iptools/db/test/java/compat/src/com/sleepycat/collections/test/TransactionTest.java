@@ -1,18 +1,11 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package com.sleepycat.collections.test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -21,9 +14,9 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 import com.sleepycat.collections.CurrentTransaction;
 import com.sleepycat.collections.StoredCollections;
@@ -48,18 +41,49 @@ import com.sleepycat.db.Transaction;
 import com.sleepycat.db.TransactionConfig;
 import com.sleepycat.util.RuntimeExceptionWrapper;
 import com.sleepycat.util.test.SharedTestUtils;
-import com.sleepycat.util.test.TestBase;
 import com.sleepycat.util.test.TestEnv;
 
 /**
  * @author Mark Hayes
  */
-public class TransactionTest extends TestBase {
+public class TransactionTest extends TestCase {
 
     private static final Long ONE = new Long(1);
     private static final Long TWO = new Long(2);
     private static final Long THREE = new Long(3);
 
+    /**
+     * Runs a command line collection test.
+     * @see #usage
+     */
+    public static void main(String[] args) {
+        if (args.length == 1 &&
+            (args[0].equals("-h") || args[0].equals("-help"))) {
+            usage();
+        } else {
+            junit.framework.TestResult tr =
+                junit.textui.TestRunner.run(suite());
+            if (tr.errorCount() > 0 ||
+                tr.failureCount() > 0) {
+                System.exit(1);
+            } else {
+                System.exit(0);
+            }
+        }
+    }
+
+    private static void usage() {
+
+        System.out.println(
+              "Usage: java com.sleepycat.collections.test.TransactionTest"
+            + " [-h | -help]\n");
+        System.exit(2);
+    }
+
+    public static Test suite() {
+        TestSuite suite = new TestSuite(TransactionTest.class);
+        return suite;
+    }
 
     private Environment env;
     private CurrentTransaction currentTxn;
@@ -67,16 +91,16 @@ public class TransactionTest extends TestBase {
     private StoredSortedMap map;
     private TestStore testStore = TestStore.BTREE_UNIQ;
 
-    public TransactionTest() {
+    public TransactionTest(String name) {
 
-        customName = "TransactionTest";
+        super(name);
     }
 
-    @Before
+    @Override
     public void setUp()
         throws Exception {
 
-        super.setUp();
+        SharedTestUtils.printTestName(SharedTestUtils.qualifiedTestName(this));
         env = TestEnv.TXN.open("TransactionTests");
         currentTxn = CurrentTransaction.getInstance(env);
         store = testStore.open(env, dbName(0));
@@ -84,7 +108,7 @@ public class TransactionTest extends TestBase {
                                   testStore.getValueBinding(), true);
     }
 
-    @After
+    @Override
     public void tearDown() {
 
         try {
@@ -108,10 +132,9 @@ public class TransactionTest extends TestBase {
 
     private String dbName(int i) {
 
-        return "txn-test-" + i;
+        return "txn-test-" + getName() + '-' + i;
     }
 
-    @Test
     public void testGetters()
         throws Exception {
 
@@ -168,7 +191,6 @@ public class TransactionTest extends TestBase {
         assertTrue(!isReadCommitted(map.entrySet()));
     }
 
-    @Test
     public void testTransactional()
         throws Exception {
 
@@ -210,7 +232,6 @@ public class TransactionTest extends TestBase {
         db.close();
     }
 
-    @Test
     public void testExceptions()
         throws Exception {
 
@@ -225,7 +246,6 @@ public class TransactionTest extends TestBase {
         } catch (IllegalStateException expected) {}
     }
 
-    @Test
     public void testNested()
         throws Exception {
 
@@ -297,14 +317,12 @@ public class TransactionTest extends TestBase {
         assertEquals(ONE, map.get(ONE));
     }
 
-    @Test
     public void testRunnerCommit()
         throws Exception {
 
         commitTest(false);
     }
 
-    @Test
     public void testExplicitCommit()
         throws Exception {
 
@@ -355,14 +373,12 @@ public class TransactionTest extends TestBase {
         assertNull(currentTxn.getTransaction());
     }
 
-    @Test
     public void testRunnerAbort()
         throws Exception {
 
         abortTest(false);
     }
 
-    @Test
     public void testExplicitAbort()
         throws Exception {
 
@@ -420,7 +436,6 @@ public class TransactionTest extends TestBase {
         assertNull(currentTxn.getTransaction());
     }
 
-    @Test
     public void testReadCommittedCollection()
         throws Exception {
 
@@ -469,7 +484,6 @@ public class TransactionTest extends TestBase {
                storedContainer.getCursorConfig().getReadCommitted();
     }
 
-    @Test
     public void testReadCommittedTransaction()
         throws Exception {
 
@@ -510,7 +524,6 @@ public class TransactionTest extends TestBase {
         assertNull(currentTxn.getTransaction());
     }
 
-    @Test
     public void testReadUncommittedCollection()
         throws Exception {
 
@@ -556,7 +569,6 @@ public class TransactionTest extends TestBase {
                storedContainer.getCursorConfig().getReadUncommitted();
     }
 
-    @Test
     public void testReadUncommittedTransaction()
         throws Exception {
 
@@ -584,7 +596,6 @@ public class TransactionTest extends TestBase {
      * This test only succeeds intermittently, probably due to its reliance
      * on the GC call.
      */
-    @Test
     public void testCurrentTransactionGC()
         throws Exception {
 

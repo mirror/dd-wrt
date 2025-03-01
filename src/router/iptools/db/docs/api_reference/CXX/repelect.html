@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -99,7 +99,7 @@ DbEnv::rep_elect(u_int32_t nsites, u_int32_t nvotes, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670056811632"></a>How Elections are Held</h3>
+              <h3 class="title"><a id="idp9406320"></a>How Elections are Held</h3>
             </div>
           </div>
         </div>
@@ -110,12 +110,6 @@ DbEnv::rep_elect(u_int32_t nsites, u_int32_t nvotes, u_int32_t flags);</pre>
                 expires. Once the second phase is triggered, the replication site will cast a vote for the new master of
                 its choice if, and only if, the site has election information from at least <span class="bold"><strong>nvotes</strong></span> sites. If a site receives <span class="bold"><strong>nvotes</strong></span>
                 votes for it to become the new master, then it will become the new master.
-            </p>
-        <p>
-	 	    Replication view sites never participate in elections.  Values
-		    chosen for <span class="bold"><strong>nsites</strong></span> and
-                    <span class="bold"><strong>nvotes</strong></span> must not include
-		    any replication view sites.
             </p>
         <p>
                     We recommend <span class="bold"><strong>nvotes</strong></span> be set to at least:
@@ -134,8 +128,7 @@ DbEnv::rep_elect(u_int32_t nsites, u_int32_t nvotes, u_int32_t flags);</pre>
         <pre class="programlisting">         number of sites in the replication group - 1</pre>
         <p>
                     when choosing a new master after a current master fails. This allows the group to reach a consensus
-                    without having to wait for the timeout to expire or for
-                    the failed master to restart.
+                    without having to wait for the timeout to expire.
             </p>
         <p>
                     When choosing a master from among a group of client sites all restarting at the same time, it makes
@@ -157,7 +150,7 @@ DbEnv::rep_elect(u_int32_t nsites, u_int32_t nvotes, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670056793936"></a>Parameters</h3>
+              <h3 class="title"><a id="idp9425040"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -165,13 +158,13 @@ DbEnv::rep_elect(u_int32_t nsites, u_int32_t nvotes, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670056739488"></a>nsites</h4>
+                <h4 class="title"><a id="idp9428808"></a>nsites</h4>
               </div>
             </div>
           </div>
           <p>
                   The <span class="bold"><strong>nsites</strong></span> parameter specifies the
-                  number of replication sites expected to participate in the election.
+                  number of replication sites expected to participate in the election. 
                   Once the current site has election information from that many sites,
                   it will short-circuit the election and immediately cast its vote for a
                   new master. The <span class="bold"><strong>nsites</strong></span> parameter must
@@ -181,15 +174,14 @@ DbEnv::rep_elect(u_int32_t nsites, u_int32_t nvotes, u_int32_t flags);</pre>
                   method.  If an application is using master leases, then the value
                   <span class="bold"><strong>must</strong></span> be 0 and the value from 
                   <a class="xref" href="repnsites.html" title="DbEnv::rep_set_nsites()">DbEnv::rep_set_nsites()</a> 
-                  method must be used.  The value should exclude any replication
-		  views.
+                  method must be used.
              </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670056702096"></a>nvotes</h4>
+                <h4 class="title"><a id="idp9450312"></a>nvotes</h4>
               </div>
             </div>
           </div>
@@ -207,7 +199,7 @@ DbEnv::rep_elect(u_int32_t nsites, u_int32_t nvotes, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670056725872"></a>flags</h4>
+                <h4 class="title"><a id="idp9441920"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -221,7 +213,7 @@ DbEnv::rep_elect(u_int32_t nsites, u_int32_t nvotes, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670056736832"></a>Errors</h3>
+              <h3 class="title"><a id="idp9429976"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -239,7 +231,7 @@ DbEnv::rep_elect(u_int32_t nsites, u_int32_t nvotes, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670056690320"></a>DB_REP_UNAVAIL</h4>
+                <h4 class="title"><a id="idp9400200"></a>DB_REP_UNAVAIL</h4>
               </div>
             </div>
           </div>
@@ -254,7 +246,7 @@ DbEnv::rep_elect(u_int32_t nsites, u_int32_t nvotes, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670056685472"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp9459424"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -272,7 +264,7 @@ DbEnv::rep_elect(u_int32_t nsites, u_int32_t nvotes, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670056720720"></a>Class</h3>
+              <h3 class="title"><a id="idp9438720"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -284,7 +276,7 @@ DbEnv::rep_elect(u_int32_t nsites, u_int32_t nvotes, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670056740032"></a>See Also</h3>
+              <h3 class="title"><a id="idp9406968"></a>See Also</h3>
             </div>
           </div>
         </div>

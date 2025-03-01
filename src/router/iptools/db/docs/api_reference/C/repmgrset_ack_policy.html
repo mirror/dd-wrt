@@ -9,12 +9,12 @@
     <link rel="start" href="index.html" title="Berkeley DB C API Reference" />
     <link rel="up" href="rep.html" title="Chapter 10.  Replication Methods" />
     <link rel="prev" href="repmgr_msg_dispatch.html" title="DB_ENV-&gt;repmgr_msg_dispatch()" />
-    <link rel="next" href="repmgrset_incoming_queue_max.html" title="DB_ENV-&gt;repmgr_set_incoming_queue_max()" />
+    <link rel="next" href="repmgr_site.html" title="DB_ENV-&gt;repmgr_site()" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -25,7 +25,7 @@
           <th width="60%" align="center">Chapter 10. 
                 Replication Methods
         </th>
-          <td width="20%" align="right"> <a accesskey="n" href="repmgrset_incoming_queue_max.html">Next</a></td>
+          <td width="20%" align="right"> <a accesskey="n" href="repmgr_site.html">Next</a></td>
         </tr>
       </table>
       <hr />
@@ -45,10 +45,8 @@ DB_ENV-&gt;repmgr_set_ack_policy(DB_ENV *env, int ack_policy);  </pre>
       <p>
          The <code class="methodname">DB_ENV-&gt;repmgr_set_ack_policy()</code> method specifies how master and
          client sites will handle acknowledgment of replication messages which are necessary for
-         "permanent" records.  View sites never send these
-         acknowledgements and are not counted by any acknowledgement policy.
-         The current implementation requires all sites in a replication group
-         to configure the same acknowledgement policy.  
+         "permanent" records.  The current implementation requires all sites in a replication group
+         configure the same acknowledgement policy.
     </p>
       <p>
          The database environment's replication subsystem may also be configured using the
@@ -96,7 +94,7 @@ DB_ENV-&gt;repmgr_set_ack_policy(DB_ENV *env, int ack_policy);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711173156144"></a>Parameters</h3>
+              <h3 class="title"><a id="idp54387176"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -104,7 +102,7 @@ DB_ENV-&gt;repmgr_set_ack_policy(DB_ENV *env, int ack_policy);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711173153664"></a>ack_policy</h4>
+                <h4 class="title"><a id="idp54384360"></a>ack_policy</h4>
               </div>
             </div>
           </div>
@@ -194,7 +192,7 @@ DB_ENV-&gt;repmgr_set_ack_policy(DB_ENV *env, int ack_policy);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711173143568"></a>Errors</h3>
+              <h3 class="title"><a id="idp54426072"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -211,7 +209,7 @@ DB_ENV-&gt;repmgr_set_ack_policy(DB_ENV *env, int ack_policy);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711173153168"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp54402176"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -226,7 +224,7 @@ DB_ENV-&gt;repmgr_set_ack_policy(DB_ENV *env, int ack_policy);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711173063808"></a>Class</h3>
+              <h3 class="title"><a id="idp54429432"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -238,7 +236,7 @@ DB_ENV-&gt;repmgr_set_ack_policy(DB_ENV *env, int ack_policy);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711173058176"></a>See Also</h3>
+              <h3 class="title"><a id="idp54432352"></a>See Also</h3>
             </div>
           </div>
         </div>
@@ -255,16 +253,14 @@ DB_ENV-&gt;repmgr_set_ack_policy(DB_ENV *env, int ack_policy);  </pre>
           <td width="20%" align="center">
             <a accesskey="u" href="rep.html">Up</a>
           </td>
-          <td width="40%" align="right"> <a accesskey="n" href="repmgrset_incoming_queue_max.html">Next</a></td>
+          <td width="40%" align="right"> <a accesskey="n" href="repmgr_site.html">Next</a></td>
         </tr>
         <tr>
           <td width="40%" align="left" valign="top">DB_ENV-&gt;repmgr_msg_dispatch() </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> 
-        DB_ENV-&gt;repmgr_set_incoming_queue_max()
-    </td>
+          <td width="40%" align="right" valign="top"> DB_ENV-&gt;repmgr_site()</td>
         </tr>
       </table>
     </div>

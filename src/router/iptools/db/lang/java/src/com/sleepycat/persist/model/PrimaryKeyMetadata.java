@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -24,12 +24,6 @@ public class PrimaryKeyMetadata extends FieldMetadata {
 
     /**
      * Used by an {@code EntityModel} to construct primary key metadata.
-     *
-     * @param name the field name.
-     * @param className the class name.
-     * @param declaringClassName the name of the class where the field is
-     * declared.
-     * @param sequenceName the sequence name.
      */
     public PrimaryKeyMetadata(String name,
                               String className,
@@ -42,8 +36,6 @@ public class PrimaryKeyMetadata extends FieldMetadata {
     /**
      * Returns the name of the sequence for assigning key values.  This may be
      * specified using the {@link PrimaryKey#sequence} annotation.
-     *
-     * @return the sequence name.
      */
     public String getSequenceName() {
         return sequenceName;

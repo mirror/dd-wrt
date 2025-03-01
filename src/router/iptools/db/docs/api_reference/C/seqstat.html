@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -86,7 +86,7 @@ DB_SEQUENCE-&gt;stat(DB_SEQUENCE *db, DB_SEQUENCE_STAT **spp,
         <ul type="disc">
           <li>
             <p>
-                    <span class="bold"><strong>u_int32_t st_cache_size;</strong></span>
+                    <span class="bold"><strong>int32_t st_cache_size;</strong></span>
                 </p>
             <p>
                     The number of values that will be cached in this handle.
@@ -118,18 +118,18 @@ DB_SEQUENCE-&gt;stat(DB_SEQUENCE *db, DB_SEQUENCE_STAT **spp,
           </li>
           <li>
             <p>
-                    <span class="bold"><strong>db_seq_t st_max;</strong></span>
-                </p>
-            <p>
-                    The maximum permitted value of the sequence.
-                </p>
-          </li>
-          <li>
-            <p>
                     <span class="bold"><strong>db_seq_t st_min;</strong></span>
                 </p>
             <p>
                     The minimum permitted value of the sequence.
+                </p>
+          </li>
+          <li>
+            <p>
+                    <span class="bold"><strong>db_seq_t st_max;</strong></span>
+                </p>
+            <p>
+                    The maximum permitted value of the sequence.
                 </p>
           </li>
           <li>
@@ -164,7 +164,7 @@ DB_SEQUENCE-&gt;stat(DB_SEQUENCE *db, DB_SEQUENCE_STAT **spp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711172471968"></a>Parameters</h3>
+              <h3 class="title"><a id="idp54713496"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -172,7 +172,7 @@ DB_SEQUENCE-&gt;stat(DB_SEQUENCE *db, DB_SEQUENCE_STAT **spp,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711172473216"></a>flags</h4>
+                <h4 class="title"><a id="idp54683728"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -207,7 +207,7 @@ DB_SEQUENCE-&gt;stat(DB_SEQUENCE *db, DB_SEQUENCE_STAT **spp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711172473088"></a>Class</h3>
+              <h3 class="title"><a id="idp54696312"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -219,7 +219,7 @@ DB_SEQUENCE-&gt;stat(DB_SEQUENCE *db, DB_SEQUENCE_STAT **spp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711172477440"></a>See Also</h3>
+              <h3 class="title"><a id="idp54721808"></a>See Also</h3>
             </div>
           </div>
         </div>

@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,7 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="am_misc_struct.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 4.  Access Method Wrapup </th>
+          <th width="60%" align="center">Chapter 4. 
+		Access Method Wrapup
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="am_misc_error.html">Next</a></td>
         </tr>
       </table>
@@ -36,26 +38,20 @@
           </div>
         </div>
       </div>
-      <p>
-        When using the non-cursor Berkeley DB calls to retrieve
-        key/data items under the C/C++ APIs (for example, <a href="../api_reference/C/dbget.html" class="olink">DB-&gt;get()</a>),
-        the memory to which the pointer stored into the <a href="../api_reference/C/dbt.html" class="olink">DBT</a> refers
-        is only valid until the next call to Berkeley DB using the
-        <a href="../api_reference/C/db.html" class="olink">DB</a> handle. (This includes <span class="bold"><strong>any</strong></span> use of the returned <a href="../api_reference/C/db.html" class="olink">DB</a> handle, including
-        by another thread of control within the process. For this
-        reason, when multiple threads are using the returned <a href="../api_reference/C/db.html" class="olink">DB</a>
-        handle concurrently, one of the <a href="../api_reference/C/dbt.html#dbt_DB_DBT_MALLOC" class="olink">DB_DBT_MALLOC</a>,
-        <a href="../api_reference/C/dbt.html#dbt_DB_DBT_REALLOC" class="olink">DB_DBT_REALLOC</a> or <a href="../api_reference/C/dbt.html#dbt_DB_DBT_USERMEM" class="olink">DB_DBT_USERMEM</a> flags must be specified
-        with any non-cursor <a href="../api_reference/C/dbt.html" class="olink">DBT</a> used for key or data
-        retrieval.)
-    </p>
-      <p>
-        When using the cursor Berkeley DB calls to retrieve key/data
-        items under the C/C++ APIs (for example, <a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a>), the memory
-        to which the pointer stored into the <a href="../api_reference/C/dbt.html" class="olink">DBT</a> refers is only
-        valid until the next call to Berkeley DB using the <a href="../api_reference/C/dbc.html" class="olink">DBC</a>
-        returned by <a href="../api_reference/C/dbcursor.html" class="olink">DB-&gt;cursor()</a>.
-    </p>
+      <p>When using the non-cursor Berkeley DB calls to retrieve key/data items under
+the C/C++ APIs (for example, <a href="../api_reference/C/dbget.html" class="olink">DB-&gt;get()</a>), the memory to which the
+pointer stored into the <a href="../api_reference/C/dbt.html" class="olink">DBT</a> refers is only valid until the next
+call to Berkeley DB using the <a href="../api_reference/C/db.html" class="olink">DB</a> handle.  (This includes <span class="bold"><strong>any</strong></span>
+use of the returned <a href="../api_reference/C/db.html" class="olink">DB</a> handle, including by another thread of
+control within the process.  For this reason, when multiple threads are
+using the returned <a href="../api_reference/C/db.html" class="olink">DB</a> handle concurrently, one of the
+<a href="../api_reference/C/dbt.html#dbt_DB_DBT_MALLOC" class="olink">DB_DBT_MALLOC</a>, <a href="../api_reference/C/dbt.html#dbt_DB_DBT_REALLOC" class="olink">DB_DBT_REALLOC</a> or <a href="../api_reference/C/dbt.html#dbt_DB_DBT_USERMEM" class="olink">DB_DBT_USERMEM</a>
+flags must be specified with any non-cursor <a href="../api_reference/C/dbt.html" class="olink">DBT</a> used for key or
+data retrieval.)</p>
+      <p>When using the cursor Berkeley DB calls to retrieve key/data items under the
+C/C++ APIs (for example, <a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a>), the memory to which the
+pointer stored into the <a href="../api_reference/C/dbt.html" class="olink">DBT</a> refers is only valid until the next
+call to Berkeley DB using the <a href="../api_reference/C/dbc.html" class="olink">DBC</a> returned by <a href="../api_reference/C/dbcursor.html" class="olink">DB-&gt;cursor()</a>.</p>
     </div>
     <div class="navfooter">
       <hr />
@@ -68,8 +64,7 @@
           <td width="40%" align="right"> <a accesskey="n" href="am_misc_error.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Storing C/C++
-        structures/objects </td>
+          <td width="40%" align="left" valign="top">Storing C/C++ structures/objects </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

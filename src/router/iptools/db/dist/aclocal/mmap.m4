@@ -1,4 +1,4 @@
-# Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
 
 # Detect mmap capability: If the file underlying an mmap is extended,
 # does the addressable memory grow too?
@@ -28,10 +28,8 @@ if test "$mmap_ok" = "yes" ; then
     /* Not all these includes are needed, but the minimal set varies from
      * system to system.
      */
-    #include <stdlib.h>
     #include <stdio.h>
     #include <string.h>
-    #include <unistd.h>
     #include <sys/types.h>
     #include <sys/stat.h>
     #include <fcntl.h>
@@ -43,25 +41,18 @@ if test "$mmap_ok" = "yes" ; then
     #ifndef MAP_FAILED
     #define MAP_FAILED (-1)
     #endif
-    /* Prevent unused variabl warnings by setting and using it. */
-    #define	COMPQUIET(n, v)	do {	\
-	    (n) = (v);			\
-	    (n) = (n);			\
-    } while (0)
 
-
-    void catch_sig(sig)
+    int catch_sig(sig)
 	    int sig;
     {
-	    COMPQUIET(sig,0);
 	    exit(1);
     }
 
-    int main() {
+    main() {
 	    const char *underlying;
 	    unsigned gapsize;
 	    char *base;
-	    int count, fd, i, mode, open_flags, total_size;
+	    int count, fd, i, mode, open_flags, ret, total_size;
 	    char buf[TEST_MMAP_BUFSIZE];
 
 	    gapsize = 1024;

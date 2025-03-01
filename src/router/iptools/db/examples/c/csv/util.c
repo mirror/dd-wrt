@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -156,13 +156,11 @@ secondary_callback(DB *db_arg, const DBT *key, const DBT *data, DBT *result)
  *	Compare two keys.
  */
 int
-compare_double(DB *db_arg, const DBT *a_arg, const DBT *b_arg, size_t *locp)
+compare_double(DB *db_arg, const DBT *a_arg, const DBT *b_arg)
 {
 	double a, b;
 
-	/* Quiet compiler. */
-	db_arg = db_arg;
-	locp = NULL;
+	db_arg = db_arg;			/* Quiet compiler. */
 
 	memcpy(&a, a_arg->data, sizeof(double));
 	memcpy(&b, b_arg->data, sizeof(double));
@@ -174,13 +172,11 @@ compare_double(DB *db_arg, const DBT *a_arg, const DBT *b_arg, size_t *locp)
  *	Compare two keys.
  */
 int
-compare_ulong(DB *db_arg, const DBT *a_arg, const DBT *b_arg, size_t *locp)
+compare_ulong(DB *db_arg, const DBT *a_arg, const DBT *b_arg)
 {
 	u_long a, b;
 
-	/* Quiet compiler. */
-	db_arg = db_arg;
-	locp = NULL;	
+	db_arg = db_arg;			/* Quiet compiler. */
 
 	memcpy(&a, a_arg->data, sizeof(u_long));
 	memcpy(&b, b_arg->data, sizeof(u_long));

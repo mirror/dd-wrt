@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -38,7 +38,7 @@ namespace BerkeleyDB {
         /// <para>
         /// If the database environment already exists when
         /// <see cref="DatabaseEnvironment.Open"/> is called, the value of
-        /// Conflicts is ignored.
+        /// Conflicts will be ignored.
         /// </para>
         /// </remarks>
         public byte[,] Conflicts {
@@ -71,7 +71,7 @@ namespace BerkeleyDB {
         /// <para>
         /// If the database environment already exists when
         /// <see cref="DatabaseEnvironment.Open"/> is called, the value of
-        /// InitLockers is ignored.
+        /// InitLockers will be ignored.
         /// </para>
         /// </remarks>
         public uint InitLockerCount {
@@ -98,7 +98,7 @@ namespace BerkeleyDB {
         /// <para>
         /// If the database environment already exists when
         /// <see cref="DatabaseEnvironment.Open"/> is called, the value of
-        /// InitLocks is ignored.
+        /// InitLocks will be ignored.
         /// </para>
         /// </remarks>
         public uint InitLockCount {
@@ -126,7 +126,7 @@ namespace BerkeleyDB {
         /// <para>
         /// If the database environment already exists when
         /// <see cref="DatabaseEnvironment.Open"/> is called, the value of
-        /// InitLockObjects is ignored.
+        /// InitLockObjects will be ignored.
         /// </para>
         /// </remarks>
         public uint InitLockObjectCount {
@@ -155,7 +155,7 @@ namespace BerkeleyDB {
         /// <para>
         /// If the database environment already exists when
         /// <see cref="DatabaseEnvironment.Open"/> is called, the value of
-        /// MaxLockers is ignored.
+        /// MaxLockers will be ignored.
         /// </para>
         /// </remarks>
         public uint MaxLockers {
@@ -183,7 +183,7 @@ namespace BerkeleyDB {
         /// <para>
         /// If the database environment already exists when
         /// <see cref="DatabaseEnvironment.Open"/> is called, the value of
-        /// MaxLocks is ignored.
+        /// MaxLocks will be ignored.
         /// </para>
         /// </remarks>
         public uint MaxLocks {
@@ -211,7 +211,7 @@ namespace BerkeleyDB {
         /// <para>
         /// If the database environment already exists when
         /// <see cref="DatabaseEnvironment.Open"/> is called, the value of
-        /// MaxObjects is ignored.
+        /// MaxObjects will be ignored.
         /// </para>
         /// </remarks>
         public uint MaxObjects {
@@ -240,7 +240,7 @@ namespace BerkeleyDB {
         /// <para>
         /// If the database environment already exists when
         /// <see cref="DatabaseEnvironment.Open"/> is called, the value of
-        /// Partitions is ignored.
+        /// Partitions will be ignored.
         /// </para>
         /// </remarks>
         public uint Partitions {
@@ -265,7 +265,7 @@ namespace BerkeleyDB {
         /// <para>
         /// If the database environment already exists when
         /// <see cref="DatabaseEnvironment.Open"/> is called, the value of
-        /// tablesize is ignored.
+        /// tablesize will be ignored.
         /// </para>
         /// </remarks>
         public uint TableSize {

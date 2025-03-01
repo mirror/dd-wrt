@@ -28,40 +28,6 @@ __heap_addrem_print(env, dbtp, lsnp, notused2, info)
 }
 
 /*
- * PUBLIC: int __heap_addrem_60_print __P((ENV *, DBT *, DB_LSN *,
- * PUBLIC:     db_recops, void *));
- */
-int
-__heap_addrem_60_print(env, dbtp, lsnp, notused2, info)
-	ENV *env;
-	DBT *dbtp;
-	DB_LSN *lsnp;
-	db_recops notused2;
-	void *info;
-{
-	COMPQUIET(notused2, DB_TXN_PRINT);
-
-	return (__log_print_record(env, dbtp, lsnp, "__heap_addrem_60", __heap_addrem_60_desc, info));
-}
-
-/*
- * PUBLIC: int __heap_addrem_50_print __P((ENV *, DBT *, DB_LSN *,
- * PUBLIC:     db_recops, void *));
- */
-int
-__heap_addrem_50_print(env, dbtp, lsnp, notused2, info)
-	ENV *env;
-	DBT *dbtp;
-	DB_LSN *lsnp;
-	db_recops notused2;
-	void *info;
-{
-	COMPQUIET(notused2, DB_TXN_PRINT);
-
-	return (__log_print_record(env, dbtp, lsnp, "__heap_addrem_50", __heap_addrem_50_desc, info));
-}
-
-/*
  * PUBLIC: int __heap_pg_alloc_print __P((ENV *, DBT *, DB_LSN *,
  * PUBLIC:     db_recops, void *));
  */

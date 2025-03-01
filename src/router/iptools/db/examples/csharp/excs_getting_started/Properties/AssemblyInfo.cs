@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Oracle Corporation")]
 [assembly: AssemblyProduct("excs_getting_started")]
-[assembly: AssemblyCopyright("Copyright © 2009, 2017 Oracle Corporation and/or its affiliates.  All rights reserved.")]
+[assembly: AssemblyCopyright("Copyright © 2009, 2013 Oracle Corporation and/or its affiliates.  All rights reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

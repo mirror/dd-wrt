@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -17,8 +17,7 @@
 # TEST	pid to the data string (sometimes doing a rewrite sometimes doing a
 # TEST	partial put).  Some will use cursors to traverse through a few keys
 # TEST	before finding one to write.
-# TEST
-# TEST	Run the test with blob enabled and disabled.
+
 proc test042 { method {nentries 1000} args } {
 	global encrypt
 
@@ -38,45 +37,14 @@ proc test042 { method {nentries 1000} args } {
 		return
 	}
 
-	if { [is_heap $method] } {
-		puts "Test042 skipping for method $method"
-		return
-	}
-
-	#
-	# Set blob threshold as 5 since most words in the wordlist to put into
-	# the database have length <= 10.
-	#
-	set threshold 5
-	set orig_args $args
-	foreach blob [list "" " -blob_threshold $threshold"] {
-		set args $orig_args
-
-		if { $blob != "" } {
-			# Blob is supported by btree, hash and heap.
-			if { [is_btree $method] != 1 &&
-			    [is_hash $method] != 1 } {
-				puts "Test042 skipping\
-				    for method $method for blob"
-				return
-			}
-			# Look for incompatible configurations of blob.
-			foreach conf { "-compress" \
-			    "-dup" "-dupsort" "-read_uncommitted" \
-			    "-multiversion" } {
-				if { [lsearch -exact $args $conf] != -1 } {
-					puts "Test042 skipping $conf for blob"
-					return
-				}
-			}
-			# Set up the blob arguments.
-			append args $blob
-		}
-		# Don't 'eval' the args here -- we want them to stay in 
-		# a lump until we pass them to berkdb_open and mdbscript.
-		test042_body $method $nentries 0 $args
-		test042_body $method $nentries 1 $args
-	}
+    if { [is_heap $method] } {
+	puts "Test042 skipping for method $method"
+	return
+    }
+	# Don't 'eval' the args here -- we want them to stay in 
+	# a lump until we pass them to berkdb_open and mdbscript.
+	test042_body $method $nentries 0 $args
+	test042_body $method $nentries 1 $args
 }
 
 proc test042_body { method nentries alldb args } {
@@ -87,25 +55,12 @@ proc test042_body { method nentries alldb args } {
 	} else {
 		set eflag "-cdb"
 	}
-	set msg ""
-	puts "Test042: CDB Test ($eflag) $method $nentries ($msg)"
+	puts "Test042: CDB Test ($eflag) $method $nentries"
 
 	# Set initial parameters
 	set do_exit 0
 	set iter 10000
 	set procs 5
-
-	if { [lsearch -exact [lindex $args 0] "-blob_threshold"] != -1 } {
-		set msg "with blob"
-		#
-		# This test runs a bit slowly when blob gets enabled, so
-		# reduce the number of entries and iterations for blobs.
-		#
-		if { $nentries == 1000 } {
-			set nentries 100
-		}
-		set iter 1000
-	}
 
 	# Process arguments
 	set oargs ""
@@ -136,9 +91,7 @@ proc test042_body { method nentries alldb args } {
 
 	env_cleanup $testdir
 
-	set env_cmd "berkdb_env -create\
-	    -cachesize {0 1048576 1} $pageargs $eflag -home $testdir"
-	set env [eval $env_cmd]
+	set env [eval {berkdb_env -create} $eflag $pageargs -home $testdir]
 	error_check_good dbenv [is_valid_env $env] TRUE
 
 	# Env is created, now set up database
@@ -155,7 +108,8 @@ proc test042_body { method nentries alldb args } {
 	set ret [berkdb envremove -home $testdir]
 	error_check_good env_remove $ret 0
 
-	set env [eval $env_cmd]
+	set env [eval {berkdb_env \
+	    -create -cachesize {0 1048576 1}} $pageargs $eflag -home $testdir]
 	error_check_good dbenv [is_valid_widget $env env] TRUE
 
 	if { $do_exit == 1 } {

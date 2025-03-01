@@ -17,9 +17,9 @@
 +# DBSQL does not do "db2 close" here because incrvacuum-12.2 is excluded 
 +# so db2 is not opended.
  db close
- forcedelete test.db test.db-journal
+ file delete -force test.db test.db-journal
  sqlite3 db test.db  ;  set ::DB [sqlite3_connection_pointer db]
-@@ -736,8 +739,8 @@
+@@ -736,8 +737,8 @@
      catchsql {
        PRAGMA incremental_vacuum(10);
      } db3
@@ -31,7 +31,7 @@
  do_test incrvacuum-15.1 {
 --- test/vacuum4.test
 +++ test/vacuum4.test
-@@ -65,3 +65,5 @@
+@@ -65,3 +65,5 @@ do_test vacuum4-1.1 {
      VACUUM;
    }
  } {}

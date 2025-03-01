@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -82,9 +82,6 @@ proc env016 { } {
 		{ "rep_set_config" "db_rep_conf_delayclient" 
 		    "Env016.b1: Rep config: delayclient"
 		    "rep_get_config delayclient" "1" }
-		{ "rep_set_config" "db_rep_conf_elect_loglength" 
-		    "Env016.b1: Rep config: electloglength"
-		    "rep_get_config electloglength" "1" }
 		{ "rep_set_config" "db_rep_conf_inmem" 
 		    "Env016.b1: Rep config: inmem"
 		    "rep_get_config inmem" "1" }
@@ -100,15 +97,6 @@ proc env016 { } {
 		{ "rep_set_config" "db_repmgr_conf_2site_strict" 
 		    "Env016.b1: Repmgr config: 2 site strict"
 		    "rep_get_config mgr2sitestrict" "1" }
-		{ "rep_set_config" "db_repmgr_conf_prefmas_client" 
-		    "Env016.b1: Repmgr config: prefmas client"
-		    "rep_get_config mgrprefmasclient" "1" }
-		{ "rep_set_config" "db_repmgr_conf_prefmas_master" 
-		    "Env016.b1: Repmgr config: prefmas master"
-		    "rep_get_config mgrprefmasmaster" "1" }
-		{ "rep_set_config" "db_repmgr_conf_forward_writes" 
-		    "Env016.b1: Repmgr config: forward writes"
-		    "rep_get_config mgrforwardwrites" "1" }
 		{ "rep_set_limit" "0 1048576" "Env016.b2: Rep limit"
 		    "rep_get_limit" }
 		{ "rep_set_nsites" "6" "Env016.b3: Rep nsites"
@@ -145,9 +133,6 @@ proc env016 { } {
 		{ "rep_set_timeout" "db_rep_lease_timeout 500"
 		    "Env016.b6: Rep lease timeout"
 		    "rep_get_timeout lease" "500" }
-		{ "rep_set_timeout" "db_rep_write_forward_timeout 2000000"
-		    "Env016.b6: Rep write forwarding timeout"
-		    "rep_get_timeout write_forward" "2000000" }
 		{ "repmgr_set_ack_policy" "db_repmgr_acks_all"
 		    "Env016.b8: Repmgr acks_all"
 		    "repmgr_get_ack_policy" "all" }
@@ -169,11 +154,8 @@ proc env016 { } {
 		{ "repmgr_set_ack_policy" "db_repmgr_acks_quorum"
 		    "Env016.b8: Repmgr acks_quorum"
 		    "repmgr_get_ack_policy" "quorum" }
-		{ "repmgr_set_incoming_queue_max" "1000000 1000"
-		    "Env016.b9: Repmgr incoming queue max"
-		    "repmgr_get_inqueue_max" }
 		{ "repmgr_site" "example.com 49200 db_local_site on"
-		    "Env016.b10: Repmgr set local site"
+		    "Env016.b9: Repmgr set local site"
 		    "repmgr_get_local_site" "example.com 49200" }
 	}
 	puts "\tEnv016.b: Check settings via getter functions."

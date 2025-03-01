@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -54,8 +54,6 @@ public class StoredCollections {
      * performed via the new collection instance; null may be specified to use
      * the default configuration.
      *
-     * @param <E> the element class.
-     *
      * @return the configured collection.
      *
      * @throws ClassCastException if the given container is not a
@@ -80,8 +78,6 @@ public class StoredCollections {
      * performed via the new list instance; null may be specified to use the
      * default configuration.
      *
-     * @param <E> the element class.
-     *
      * @return the configured list.
      *
      * @throws ClassCastException if the given container is not a
@@ -100,10 +96,6 @@ public class StoredCollections {
      * @param config is the cursor configuration to be used for all operations
      * performed via the new map instance; null may be specified to use the
      * default configuration.
-     *
-     * @param <K> the key class.
-     *
-     * @param <V> the value class.
      *
      * @return the configured map.
      *
@@ -124,8 +116,6 @@ public class StoredCollections {
      * performed via the new set instance; null may be specified to use the
      * default configuration.
      *
-     * @param <E> the element class.
-     *
      * @return the configured set.
      *
      * @throws ClassCastException if the given container is not a
@@ -144,10 +134,6 @@ public class StoredCollections {
      * @param config is the cursor configuration to be used for all operations
      * performed via the new map instance; null may be specified to use the
      * default configuration.
-     *
-     * @param <K> the key class.
-     *
-     * @param <V> the value class.
      *
      * @return the configured map.
      *
@@ -169,8 +155,6 @@ public class StoredCollections {
      * performed via the new set instance; null may be specified to use the
      * default configuration.
      *
-     * @param <E> the element class.
-     *
      * @return the configured set.
      *
      * @throws ClassCastException if the given container is not a
@@ -187,8 +171,6 @@ public class StoredCollections {
      * Clones an iterator preserving its current position.
      *
      * @param iter an iterator to clone.
-     *
-     * @param <E> the element class.
      *
      * @return a new {@code Iterator} having the same position as the given
      * iterator.

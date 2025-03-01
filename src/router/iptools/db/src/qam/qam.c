@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -126,7 +126,7 @@ __qam_pitem(dbc, pagep, indx, recno, data)
 		if (data->doff + data->dlen > t->re_len) {
 			__db_errx(env, DB_STR_A("1142",
 "Record length error: data offset plus length larger than record size of %lu",
-			    "%lu"), (u_long)t->re_len);
+			    "%s %lu"), (u_long)t->re_len);
 			return (EINVAL);
 		}
 
@@ -260,7 +260,7 @@ __qamc_put(dbc, key, data, flags, pgnop)
 	}
 
 	if (exact != 0 && flags == DB_NOOVERWRITE)
-		ret = DBC_ERR(dbc, DB_KEYEXIST);
+		ret = DB_KEYEXIST;
 	else
 		/* Put the item on the page. */
 		ret = __qam_pitem(dbc,
@@ -526,7 +526,7 @@ __qamc_del(dbc, flags)
 		return (ret);
 
 	if (QAM_NOT_VALID(meta, cp->recno)) {
-		ret = DBC_ERR(dbc, DB_NOTFOUND);
+		ret = DB_NOTFOUND;
 		goto err;
 	}
 	first = meta->first_recno;
@@ -549,7 +549,7 @@ __qamc_del(dbc, flags)
 		goto err;
 
 	if (!exact) {
-		ret = DBC_ERR(dbc, DB_NOTFOUND);
+		ret = DB_NOTFOUND;
 		goto err;
 	}
 
@@ -636,9 +636,9 @@ __qamc_get(dbc, key, data, flags, pgnop)
 	QUEUE_CURSOR *cp;
 	db_lockmode_t lock_mode;
 	db_pgno_t metapno;
-	db_recno_t first, old_first;
+	db_recno_t first;
 	int exact, inorder, is_first, ret, t_ret, wait, with_delete;
-	int retrying, stay;
+	int retrying;
 	u_int32_t skip, meta_mode;
 
 	dbp = dbc->dbp;
@@ -653,8 +653,6 @@ __qamc_get(dbc, key, data, flags, pgnop)
 	*pgnop = 0;
 	pg = NULL;
 	retrying = t_ret = wait = with_delete = 0;
-	stay = 1;
-	old_first = RECNO_OOB;
 
 	if (flags == DB_CONSUME_WAIT) {
 		wait = 1;
@@ -678,25 +676,25 @@ __qamc_get(dbc, key, data, flags, pgnop)
 	t = (QUEUE *)dbp->q_internal;
 	metapno = t->q_meta;
 
+	/*
+	 * Get the meta page first
+	 */
+	if ((ret = __memp_fget(mpf, &metapno,
+	     dbc->thread_info, dbc->txn, meta_mode, &meta)) != 0)
+		return (ret);
+
 	/* Release any previous lock if not in a transaction. */
 	if ((ret = __TLPUT(dbc, cp->lock)) != 0)
 		goto err;
 
 	skip = 0;
-retry:
-	/*
-	 * Get the meta page first
-	 */
-	if (meta == NULL && (ret = __memp_fget(mpf, &metapno,
-	     dbc->thread_info, dbc->txn, meta_mode, &meta)) != 0)
-		return (ret);	/* Update the record number. */
-
+retry:	/* Update the record number. */
 	switch (flags) {
 	case DB_CURRENT:
 		break;
 	case DB_NEXT_DUP:
 	case DB_PREV_DUP:
-		ret = DBC_ERR(dbc, DB_NOTFOUND);
+		ret = DB_NOTFOUND;
 		goto err;
 		/* NOTREACHED */
 	case DB_NEXT:
@@ -711,10 +709,9 @@ retry:
 			 * Check to see if we are out of data.
 			 */
 			if (QAM_AFTER_CURRENT(meta, cp->recno)) {
-aftercurrent:
 				pg = NULL;
 				if (!wait) {
-					ret = DBC_ERR(dbc, DB_NOTFOUND);
+					ret = DB_NOTFOUND;
 					goto err;
 				}
 				/*
@@ -777,7 +774,6 @@ aftercurrent:
 				    DB_LOCK_UPGRADE, &metalock)) != 0) {
 					if (ret == DB_LOCK_DEADLOCK)
 						ret = DB_LOCK_NOTGRANTED;
-					(void)DBC_ERR(dbc, ret);
 					goto err;
 				}
 
@@ -796,17 +792,14 @@ aftercurrent:
 
 		/* get the first record number */
 		cp->recno = first = meta->first_recno;
-		if (old_first == RECNO_OOB)
-			old_first = first;
-		if (QAM_AFTER_CURRENT(meta, cp->recno))
-			goto aftercurrent;
+
 		break;
 	case DB_PREV:
 	case DB_PREV_NODUP:
 		if (cp->recno != RECNO_OOB) {
 			if (cp->recno == meta->first_recno ||
 			   QAM_BEFORE_FIRST(meta, cp->recno)) {
-				ret = DBC_ERR(dbc, DB_NOTFOUND);
+				ret = DB_NOTFOUND;
 				goto err;
 			}
 			QAM_DEC_RECNO(cp->recno);
@@ -815,7 +808,7 @@ aftercurrent:
 		/* FALLTHROUGH */
 	case DB_LAST:
 		if (meta->first_recno == meta->cur_recno) {
-			ret = DBC_ERR(dbc, DB_NOTFOUND);
+			ret = DB_NOTFOUND;
 			goto err;
 		}
 		cp->recno = meta->cur_recno;
@@ -899,11 +892,11 @@ dolock:	if (!with_delete || inorder || retrying) {
 					LOCK_INIT(lock);
 					goto release_retry;
 				}
-				ret = DBC_ERR(dbc, DB_NOTFOUND);
+				ret = DB_NOTFOUND;
 				goto lerr;
 			}
 			if (QAM_AFTER_CURRENT(meta, cp->recno)) {
-				ret = DBC_ERR(dbc, DB_NOTFOUND);
+				ret = DB_NOTFOUND;
 				goto lerr;
 			}
 		}
@@ -958,40 +951,9 @@ release_retry:	/* Release locks and retry, if possible. */
 		case DB_NEXT_NODUP:
 			if (!with_delete)
 				is_first = 0;
-			else if (first == cp->recno) {
-				if (QAM_AFTER_CURRENT(meta, cp->recno))
-					goto aftercurrent;
+			else if (first == cp->recno)
 				/* we have verified that this record is gone. */
 				QAM_INC_RECNO(first);
-				/*
-				 * If we are reading in order and the first
-				 * record was not there, we need to reflect
-				 * this in the meta page, so that we can
-				 * avoid checking this record again and again.
-				 */
-				if (inorder && cp->recno == meta->first_recno) {
-					if (DBC_LOGGING(dbc)) {
-#ifdef QDEBUG
-						(void)__log_printf(
-						    dbp->env, dbc->txn,
-						    "Queue O: %x %u %u %u",
-						    dbc->locker ?
-						    dbc->locker->id : 0,
-						    cp->recno, first,
-						    meta->cur_recno);
-#endif
-						if ((ret = __qam_incfirst_log(
-						    dbp, dbc->txn,
-						    &meta->dbmeta.lsn, 0,
-						    cp->recno,
-						    PGNO_BASE_MD)) != 0)
-							goto err;
-					} else
-						LSN_NOT_LOGGED(
-						    meta->dbmeta.lsn);
-					meta->first_recno = first;
-				}
-			}
 			if (QAM_BEFORE_FIRST(meta, cp->recno) &&
 			    DONT_NEED_LOCKS(dbc))
 				flags = DB_FIRST;
@@ -1017,7 +979,7 @@ release_retry:	/* Release locks and retry, if possible. */
 
 		default:
 			/* this is for the SET and GET_BOTH cases */
-			ret = DBC_ERR(dbc, DB_KEYEMPTY);
+			ret = DB_KEYEMPTY;
 			goto err1;
 		}
 		retrying = 0;
@@ -1069,10 +1031,10 @@ release_retry:	/* Release locks and retry, if possible. */
 		 */
 		tmp.data = qp->data;
 		tmp.size = t->re_len;
-		if ((ret = __dbt_defcmp(dbp, data, &tmp, NULL)) != 0) {
+		if ((ret = __bam_defcmp(dbp, data, &tmp)) != 0) {
 			if (flags == DB_GET_BOTH_RANGE)
 				goto release_retry;
-			ret = DBC_ERR(dbc, DB_NOTFOUND);
+			ret = DB_NOTFOUND;
 			goto err1;
 		}
 	}
@@ -1177,17 +1139,14 @@ release_retry:	/* Release locks and retry, if possible. */
 		 * If we deleted the first record we checked then we moved
 		 * the first pointer  properly.
 		 */
-		if (((QUEUE *)dbp->q_internal)->page_ext != 0)
-			stay = (QAM_RECNO_EXTENT(dbp, old_first) ==
-			    QAM_RECNO_EXTENT(dbp, first));
-		if (stay && first == cp->recno &&
-		    (skip = (first % t->rec_page)) != 0)
+
+		if (first == cp->recno && (skip = (first % t->rec_page)) != 0)
 			goto done;
 		if (meta == NULL &&
 		     (ret = __memp_fget(mpf, &metapno,
 		     dbc->thread_info, dbc->txn, 0, &meta)) != 0)
 			goto err;
-		if (stay && skip && !QAM_BEFORE_FIRST(meta, first))
+		if (skip && !QAM_BEFORE_FIRST(meta, first))
 			goto done;
 
 #ifdef QDEBUG
@@ -1197,11 +1156,7 @@ release_retry:	/* Release locks and retry, if possible. */
 			    dbc->locker ? dbc->locker->id : 0,
 			    cp->recno, first, meta->first_recno);
 #endif
-		if (stay) {
-			ret = __qam_consume(dbc, meta, first);
-		} else {
-			ret = __qam_consume(dbc, meta, old_first);
-		}
+		ret = __qam_consume(dbc, meta, first);
 	}
 
 err1:	if (cp->page != NULL) {
@@ -1317,8 +1272,8 @@ __qam_consume(dbc, meta, first)
 		 */
 		if (rec_extent != 0 &&
 		    ((exact = (first % rec_extent == 0)) ||
-		    (exact = (first == UINT32_MAX)) ||
-		    (first % meta->rec_page == 0))) {
+		    (first % meta->rec_page == 0) ||
+		    first == UINT32_MAX)) {
 #ifdef QDEBUG
 			if (DBC_LOGGING(dbc))
 				(void)__log_printf(dbp->env, dbc->txn,

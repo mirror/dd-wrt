@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1998, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1998, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -121,7 +121,7 @@ extern "C" {
 #define	DB_REGION_PREFIX	"__db"		/* DB file name prefix. */
 #define	DB_REGION_FMT		"__db.%03d"	/* Region file name format. */
 #define	DB_REGION_ENV		"__db.001"	/* Primary environment name. */
-#define	IS_DB_FILE(name)	(strncmp(name, DB_REGION_PREFIX,	\
+#define IS_DB_FILE(name)	(strncmp(name, DB_REGION_PREFIX,	\
 				    sizeof(DB_REGION_PREFIX) - 1) == 0)
 
 #define	INVALID_REGION_ID	0	/* Out-of-band region ID. */
@@ -134,10 +134,7 @@ typedef enum {
 	REGION_TYPE_LOG,
 	REGION_TYPE_MPOOL,
 	REGION_TYPE_MUTEX,
-	REGION_TYPE_TXN,
-	/* This enum always must be the last, and is the largest valid type. */
-	REGION_TYPE_MAX = REGION_TYPE_TXN
-} reg_type_t;
+	REGION_TYPE_TXN } reg_type_t;
 
 #define	INVALID_REGION_SEGID	-1	/* Segment IDs are either shmget(2) or
 					 * Win16 segment identifiers.  They are
@@ -163,9 +160,9 @@ typedef struct __db_reg_env { /* SHARED */
 	/*
 	 * !!!
 	 * The magic, panic, version, envid and signature fields of the region
-	 * are fixed in size and position, to guarantee we can always read them,
-	 * no matter what release we have.  The timestamp field is the first
-	 * field which might change size between systems or releases.
+	 * are fixed in size, the timestamp field is the first field which is
+	 * variable length.  These fields must never change in order, to
+	 * guarantee we can always read them, no matter what release we have.
 	 *
 	 * !!!
 	 * The magic and panic fields are NOT protected by any mutex, and for
@@ -197,11 +194,12 @@ typedef struct __db_reg_env { /* SHARED */
 #define	DB_INITENV_REP		0x0020	/* DB_INIT_REP */
 #define	DB_INITENV_TXN		0x0040	/* DB_INIT_TXN */
 
+
 	/*
-	 * The mtx_regenv mutex protects the environment reference count,
-	 * blob threshold and memory allocation from the primary shared region
-	 * (the crypto, thread control block and replication implementations
-	 * allocate memory from the primary shared region).
+	 * The mtx_regenv mutex protects the environment reference count and
+	 * memory allocation from the primary shared region (the crypto, thread
+	 * control block and replication implementations allocate memory from
+	 * the primary shared region).
 	 *
 	 * The rest of the fields are initialized at creation time, and don't
 	 * need mutex protection.  The flags, op_timestamp and rep_timestamp
@@ -211,7 +209,6 @@ typedef struct __db_reg_env { /* SHARED */
 	 */
 	db_mutex_t mtx_regenv;		/* Refcnt, region allocation mutex. */
 	u_int32_t  refcnt;		/* References to the environment. */
-	u_int32_t  blob_threshold;	/* Environment wide blob threshold. */
 
 	u_int32_t region_cnt;		/* Number of REGIONs. */
 	roff_t	  region_off;		/* Offset of region array */
@@ -230,8 +227,6 @@ typedef struct __db_reg_env { /* SHARED */
 	time_t	  op_timestamp;		/* Timestamp for operations. */
 	time_t	  rep_timestamp;	/* Timestamp for rep db handles. */
 	u_int32_t reg_panic;		/* DB_REGISTER triggered panic */
-	u_int32_t failure_panic;	/* Failchk or mutex lock saw a crash. */
-	char	  failure_symptom[DB_FAILURE_SYMPTOM_SIZE];
 	uintmax_t unused;		/* The ALLOC_LAYOUT structure follows
 					 * the REGENV structure in memory and
 					 * contains uintmax_t fields.  Force
@@ -257,7 +252,7 @@ typedef struct __db_region { /* SHARED */
  */
 
 /*
- * Structure used for tracking allocations in DB_PRIVATE regions.
+ * Structure used for tracking allocations in DB_PRIVATE regions. 
  */
 struct __db_region_mem_t;	typedef struct __db_region_mem_t REGION_MEM;
 struct __db_region_mem_t {
@@ -313,21 +308,18 @@ struct __db_reginfo_t {		/* __env_region_attach IN parameters. */
 
 /*
  * PANIC_ISSET, PANIC_CHECK:
- *	Check to see if the DB environment is dead. If the environment is still
- *	attached to its regions, look in the REGENV. Otherwise, check whether
- *	the region had the panic state set when this even detached from it.
+ *	Check to see if the DB environment is dead.
  */
 #define	PANIC_ISSET(env)						\
-	((env) != NULL && ((env)->reginfo != NULL ?			\
-	    ((REGENV *)(env)->reginfo->primary)->panic != 0 :		\
-	    F_ISSET(env, ENV_REMEMBER_PANIC)) &&			\
+	((env) != NULL && (env)->reginfo != NULL &&			\
+	    ((REGENV *)(env)->reginfo->primary)->panic != 0 &&		\
 	    !F_ISSET((env)->dbenv, DB_ENV_NOPANIC))
 
 #define	PANIC_CHECK(env)						\
 	if (PANIC_ISSET(env))						\
 		return (__env_panic_msg(env));
 
-#define	PANIC_CHECK_RET(env, ret)					\
+#define	PANIC_CHECK_RET(env, ret)			       		\
 	if (PANIC_ISSET(env))						\
 		ret = (__env_panic_msg(env));
 

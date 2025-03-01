@@ -17,11 +17,7 @@ $DB_VERSION_FULL_STRING
 
 This is Berkeley DB $DB_VERSION_FAMILY$DB_VERSION_LETTER Release $DB_VERSION_RELEASE from Oracle.  To view release and
 installation documentation, load the distribution file docs/index.html
-into your web browser.  Technical support can be obtained by visiting 
-the Berkeley DB Oracle Technical Network (OTN) forum, here:
-
-https://forums.oracle.com/forums/forum.jspa?forumID=271
-
+into your web browser.
 END_OF_README
 
 f=../README

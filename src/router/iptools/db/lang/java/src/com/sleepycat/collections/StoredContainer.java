@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -209,8 +209,6 @@ public abstract class StoredContainer implements Cloneable {
      * map.  This method conforms to the {@link java.util.Collection#size} and
      * {@link java.util.Map#size} interfaces.
      *
-     *
-     * @return the number of records.
      *
      *
      * @throws RuntimeExceptionWrapper if a checked exception is thrown,

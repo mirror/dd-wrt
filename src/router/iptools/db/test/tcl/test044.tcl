@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -41,11 +41,6 @@ proc test044 { method {nprocs 5} {nfiles 10} {cont 0} args } {
 		incr eindex
 		set env [lindex $args $eindex]
 		puts "Test044 skipping for env $env"
-		return
-	}
-	# This test throws spurious errors with AIX's mutex implementation.
-	if { $is_aix_test == 1 } {
-		puts "Test044 skipping for AIX."
 		return
 	}
 	if { $encrypt != 0 } {

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -10,9 +10,7 @@ package com.sleepycat.compat;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.Comparator;
-import java.util.regex.Pattern;
 
 import com.sleepycat.db.Cursor;
 import com.sleepycat.db.CursorConfig;
@@ -23,7 +21,6 @@ import com.sleepycat.db.DatabaseException;
 import com.sleepycat.db.DatabaseType;
 import com.sleepycat.db.Environment;
 import com.sleepycat.db.EnvironmentConfig;
-import com.sleepycat.db.ErrorHandler;
 import com.sleepycat.db.LockDetectMode;
 import com.sleepycat.db.LockMode;
 import com.sleepycat.db.OperationStatus;
@@ -514,106 +511,6 @@ public class DbCompat {
 
     public static boolean hasCaseInsensitiveOnDiskDbFile(){
         return !fSystemCaseSensitive;
-    }
-
-    public static void enableDeadlockDetection(EnvironmentConfig envConfig,
-                                               boolean isCDB) {
-        if (isCDB) {
-            envConfig.setCDBLockAllDatabases(true);
-        } else {
-            envConfig.setLockDetectMode(LockDetectMode.MAXWRITE);
-        }
-    }
-
-    public static Object getErrorHandler(Environment env)
-        throws DatabaseException {
-        return env.getConfig().getErrorHandler();
-    }
-
-    public static void setErrorHandler(Environment env, Object errHandler)
-        throws DatabaseException {
-        EnvironmentConfig config = env.getConfig();
-        config.setErrorHandler((ErrorHandler) errHandler);
-        env.setConfig(config);
-    }
-
-    public static void suppressError(Environment env, final Pattern errPattern)
-        throws DatabaseException{
-        if (errPattern != null) {
-            final EnvironmentConfig config = env.getConfig();
-            ErrorHandler handler = new ErrorHandler() {
-                public void error(Environment environment, String errpfx, String msg) {
-                    if (!errPattern.matcher(msg).matches()) {
-                        try {
-                            config.getErrorStream().write(msg.getBytes());
-                            config.getErrorStream().write("\n".getBytes());
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            };
-            config.setErrorHandler(handler);
-            env.setConfig(config);
-        }
-    }
-
-    public static class OpResult {
-
-        public static final OpResult SUCCESS =
-            new OpResult(OperationStatus.SUCCESS);
-
-        public static final OpResult FAILURE =
-            new OpResult(OperationStatus.NOTFOUND);
-
-        private OperationStatus status;
-
-        private OpResult(OperationStatus result) {
-            status = result;
-        }
-
-        public boolean isSuccess() {
-            return (this == SUCCESS);
-        }
-
-        public OperationStatus status() {
-            return status;
-        }
-
-        public static OpResult make(OperationStatus status) {
-            return (status == OperationStatus.SUCCESS) ?
-                SUCCESS : FAILURE;
-        }
-    }
-
-    public static class OpReadOptions {
-
-        public static final OpReadOptions EMPTY =
-            new OpReadOptions(null);
-
-        private LockMode lockMode;
-
-        private OpReadOptions(LockMode options) {
-            lockMode = options;
-        }
-
-        public LockMode getLockMode() {
-            return lockMode;
-        }
-
-        public static OpReadOptions make(LockMode lockMode) {
-            return (lockMode != null) ?
-                new OpReadOptions(lockMode) : EMPTY;
-        }
-    }
-
-    public static class OpWriteOptions {
-
-        public static final OpWriteOptions EMPTY =
-            new OpWriteOptions();
-
-        private OpWriteOptions() {
-        }
-    }
+    } 
 
 }

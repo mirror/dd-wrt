@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -17,7 +17,7 @@
 static db_size_t __mutex_align_size __P((ENV *));
 static int __mutex_region_init __P((ENV *, DB_MUTEXMGR *));
 static size_t __mutex_region_size __P((ENV *));
-static size_t __mutex_region_max __P((ENV *, u_int32_t));
+static size_t __mutex_region_max __P((ENV *));
 
 /*
  * __mutex_open --
@@ -34,7 +34,7 @@ __mutex_open(env, create_ok)
 	DB_MUTEXMGR *mtxmgr;
 	DB_MUTEXREGION *mtxregion;
 	size_t size;
-	u_int32_t cpu_count, tas_spins, mutex_needed;
+	u_int32_t cpu_count;
 	int ret;
 #ifndef HAVE_ATOMIC_SUPPORT
 	u_int i;
@@ -55,32 +55,25 @@ __mutex_open(env, create_ok)
 		dbenv->mutex_align = MUTEX_ALIGN;
 	if (dbenv->mutex_tas_spins == 0) {
 		cpu_count = __os_cpu_count();
-		if (cpu_count == 1)
-			tas_spins = 1;
-		else {
-			tas_spins = cpu_count * MUTEX_SPINS_PER_PROCESSOR;
-			if (tas_spins > MUTEX_SPINS_DEFAULT_MAX)
-			    tas_spins = MUTEX_SPINS_DEFAULT_MAX;
-		}
-		if ((ret = __mutex_set_tas_spins(dbenv, tas_spins)) != 0)
+		if ((ret = __mutex_set_tas_spins(dbenv, cpu_count == 1 ?
+		    cpu_count : cpu_count * MUTEX_SPINS_PER_PROCESSOR)) != 0)
 			return (ret);
 	}
 
 	/*
-	 * Figure out the number of mutexes we'll need.  We're conservative in
-	 * our allocation, we need mutexes for DB handles, group-commit queues
-	 * and other things applications allocate at run-time.  The application
-	 * may have kicked up our count to allocate its own mutexes, add that
-	 * in.
+	 * If the user didn't set an absolute value on the number of mutexes
+	 * we'll need, figure it out.  We're conservative in our allocation,
+	 * we need mutexes for DB handles, group-commit queues and other things
+	 * applications allocate at run-time.  The application may have kicked
+	 * up our count to allocate its own mutexes, add that in.
 	 */
-	mutex_needed =
-	    __lock_region_mutex_count(env) +
-	    __log_region_mutex_count(env) +
-	    __memp_region_mutex_count(env) +
-	    __txn_region_mutex_count(env);
 	if (dbenv->mutex_cnt == 0 &&
 	    F_ISSET(env, ENV_PRIVATE | ENV_THREAD) != ENV_PRIVATE)
-		dbenv->mutex_cnt = mutex_needed;
+		dbenv->mutex_cnt =
+		    __lock_region_mutex_count(env) +
+		    __log_region_mutex_count(env) +
+		    __memp_region_mutex_count(env) +
+		    __txn_region_mutex_count(env);
 
 	if (dbenv->mutex_max != 0 && dbenv->mutex_cnt > dbenv->mutex_max)
 		dbenv->mutex_cnt = dbenv->mutex_max;
@@ -97,8 +90,8 @@ __mutex_open(env, create_ok)
 	size = __mutex_region_size(env);
 	if (create_ok)
 		F_SET(&mtxmgr->reginfo, REGION_CREATE_OK);
-	if ((ret = __env_region_attach(env, &mtxmgr->reginfo,
-	    size, size + __mutex_region_max(env, mutex_needed))) != 0)
+	if ((ret = __env_region_attach(env,
+	    &mtxmgr->reginfo, size, size + __mutex_region_max(env))) != 0)
 		goto err;
 
 	/* If we created the region, initialize it. */
@@ -125,29 +118,11 @@ __mutex_open(env, create_ok)
 
 	return (0);
 
-err:	(void)__mutex_region_detach(env, mtxmgr);
-	return (ret);
-}
+err:	env->mutex_handle = NULL;
+	if (mtxmgr->reginfo.addr != NULL)
+		(void)__env_region_detach(env, &mtxmgr->reginfo, 0);
 
-/*
- * __mutex_region_detach --
- *
- * PUBLIC: int __mutex_region_detach __P((ENV *, DB_MUTEXMGR *));
- */
-int
-__mutex_region_detach(env, mtxmgr)
-	ENV *env;
-	DB_MUTEXMGR *mtxmgr;
-{
-	int ret;
-
-	ret = 0;
-	if (mtxmgr != NULL) {
-		if (mtxmgr->reginfo.addr != NULL)
-			ret = __env_region_detach(env, &mtxmgr->reginfo, 0);
-		__os_free(env, mtxmgr);
-		env->mutex_handle = NULL;
-	}
+	__os_free(env, mtxmgr);
 	return (ret);
 }
 
@@ -161,12 +136,15 @@ __mutex_region_init(env, mtxmgr)
 	DB_MUTEXMGR *mtxmgr;
 {
 	DB_ENV *dbenv;
+	DB_MUTEX *mutexp;
 	DB_MUTEXREGION *mtxregion;
 	db_mutex_t mutex;
 	int ret;
 	void *mutex_array;
 
 	dbenv = env->dbenv;
+
+	COMPQUIET(mutexp, NULL);
 
 	if ((ret = __env_alloc(&mtxmgr->reginfo,
 	    sizeof(DB_MUTEXREGION), &mtxmgr->reginfo.primary)) != 0) {
@@ -227,11 +205,26 @@ __mutex_region_init(env, mtxmgr)
 	 * in each link.
 	 */
 	env->mutex_handle = mtxmgr;
-	mtxregion->mutex_next = (F_ISSET(env, ENV_PRIVATE) ?
-	    ((uintptr_t)mutex_array + mtxregion->mutex_size) : 1);
-	MUTEX_BULK_INIT(env,
-	    mtxregion, mtxregion->mutex_next, mtxregion->stat.st_mutex_cnt);
-
+	if (F_ISSET(env, ENV_PRIVATE)) {
+		mutexp = (DB_MUTEX *)mutex_array;
+		mutexp++;
+		mutexp = ALIGNP_INC(mutexp, mtxregion->stat.st_mutex_align);
+		mtxregion->mutex_next = (db_mutex_t)mutexp;
+	} else {
+		mtxregion->mutex_next = 1;
+		mutexp = MUTEXP_SET(env, 1);
+	}
+	for (mutex = 1; mutex < mtxregion->stat.st_mutex_cnt; ++mutex) {
+		mutexp->flags = 0;
+		if (F_ISSET(env, ENV_PRIVATE))
+			mutexp->mutex_next_link = (db_mutex_t)(mutexp + 1);
+		else
+			mutexp->mutex_next_link = mutex + 1;
+		mutexp++;
+		mutexp = ALIGNP_INC(mutexp, mtxregion->stat.st_mutex_align);
+	}
+	mutexp->flags = 0;
+	mutexp->mutex_next_link = MUTEX_INVALID;
 	mtxregion->stat.st_mutex_free = mtxregion->stat.st_mutex_cnt;
 	mtxregion->stat.st_mutex_inuse = mtxregion->stat.st_mutex_inuse_max = 0;
 	if ((ret = __mutex_alloc(env, MTX_MUTEX_REGION, 0, &mutex)) != 0)
@@ -249,32 +242,26 @@ __mutex_region_init(env, mtxmgr)
 	mutex = MUTEX_INVALID;
 	if ((ret =
 	    __mutex_alloc(env, MTX_MUTEX_TEST, 0, &mutex) != 0) ||
-	    (ret = __mutex_lock(env, mutex, 0, MUTEX_WAIT)) != 0 ||
-	    (ret = __mutex_unlock(env, mutex, NULL, 0)) != 0 ||
-	    (ret = __mutex_lock(env, mutex, 0, MUTEX_WAIT)) != 0 ||
-	    (ret = __mutex_unlock(env, mutex, NULL, 0)) != 0 ||
+	    (ret = __mutex_lock(env, mutex)) != 0 ||
+	    (ret = __mutex_unlock(env, mutex)) != 0 ||
+	    (ret = __mutex_trylock(env, mutex)) != 0 ||
+	    (ret = __mutex_unlock(env, mutex)) != 0 ||
 	    (ret = __mutex_free(env, &mutex)) != 0) {
 		__db_errx(env, DB_STR("2015",
 	    "Unable to acquire/release a mutex; check configuration"));
 		return (ret);
 	}
 #ifdef HAVE_SHARED_LATCHES
-	/*
-	 * Run some simple tests verifing that mutexes work adequately. We
-	 * expect failure when attempting to get shared access to an exlusively
-	 * held rwlock (perhaps with EDEADLK when using pthread locks) and that
-	 * we can get shared access mulitple times.
-	 */
 	if ((ret =
 	    __mutex_alloc(env,
 		MTX_MUTEX_TEST, DB_MUTEX_SHARED, &mutex) != 0) ||
-	    (ret = __mutex_lock(env, mutex, 0, MUTEX_WAIT)) != 0 ||
-	    (ret = __mutex_rdlock(env, mutex, 0)) == 0 ||
-	    (ret = __mutex_unlock(env, mutex, NULL, 0)) != 0 ||
-	    (ret = __mutex_rdlock(env, mutex, MUTEX_WAIT)) != 0 ||
-	    (ret = __mutex_rdlock(env, mutex, MUTEX_WAIT)) != 0 ||
-	    (ret = __mutex_unlock(env, mutex, NULL, 0)) != 0 ||
-	    (ret = __mutex_unlock(env, mutex, NULL, 0)) != 0 ||
+	    (ret = __mutex_lock(env, mutex)) != 0 ||
+	    (ret = __mutex_tryrdlock(env, mutex)) != DB_LOCK_NOTGRANTED ||
+	    (ret = __mutex_unlock(env, mutex)) != 0 ||
+	    (ret = __mutex_rdlock(env, mutex)) != 0 ||
+	    (ret = __mutex_rdlock(env, mutex)) != 0 ||
+	    (ret = __mutex_unlock(env, mutex)) != 0 ||
+	    (ret = __mutex_unlock(env, mutex)) != 0 ||
 	    (ret = __mutex_free(env, &mutex)) != 0) {
 		__db_errx(env, DB_STR("2016",
     "Unable to acquire/release a shared latch; check configuration"));
@@ -365,13 +352,9 @@ __mutex_region_size(env)
 
 	s = sizeof(DB_MUTEXMGR) + 1024;
 
-	/* 
-	 * We discard one mutex for the OOB slot. Make sure mutex_cnt doesn't
-	 * overflow.
-	 */
+	/* We discard one mutex for the OOB slot. */
 	s += __env_alloc_size(
-	    (dbenv->mutex_cnt + (dbenv->mutex_cnt == UINT32_MAX ? 0 : 1)) *
-	    __mutex_align_size(env));
+	    (dbenv->mutex_cnt + 1) *__mutex_align_size(env));
 
 	return (s);
 }
@@ -381,43 +364,28 @@ __mutex_region_size(env)
  *	 Return the amount of space needed to reach the maximum size.
  */
 static size_t
-__mutex_region_max(env, mutex_needed)
+__mutex_region_max(env)
 	ENV *env;
-	u_int32_t mutex_needed;
 {
 	DB_ENV *dbenv;
-	u_int32_t max, mutex_cnt;
+	u_int32_t max;
 
 	dbenv = env->dbenv;
-	mutex_cnt = dbenv->mutex_cnt;
 
-	/*
-	 * We want to limit the region size to accommodate at most UINT32_MAX
-	 * mutexes. If mutex_cnt is UINT32_MAX, no more space is allowed.
-	 */
-	if ((max = dbenv->mutex_max) == 0 && mutex_cnt != UINT32_MAX) {
+	if ((max = dbenv->mutex_max) == 0) {
 		if (F_ISSET(env, ENV_PRIVATE | ENV_THREAD) == ENV_PRIVATE)
-			if (dbenv->mutex_inc + 1 < UINT32_MAX - mutex_cnt)
-				max = dbenv->mutex_inc + 1 + mutex_cnt;
-			else
-				max = UINT32_MAX;
-		else {
+			max = dbenv->mutex_inc + 1;
+		else
 			max = __lock_region_mutex_max(env) +
 			    __txn_region_mutex_max(env) +
 			    __log_region_mutex_max(env) +
 			    dbenv->mutex_inc + 100;
-			if (max < UINT32_MAX - mutex_needed)
-				max += mutex_needed;
-			else
-				max = UINT32_MAX;
-		}
-	}
-
-	if (max <= mutex_cnt)
+	} else if (max <= dbenv->mutex_cnt)
 		return (0);
 	else
-		return (__env_alloc_size(
-		    (max - mutex_cnt) * __mutex_align_size(env)));
+		max -= dbenv->mutex_cnt;
+
+	return ( __env_alloc_size(max * __mutex_align_size(env)));
 }
 
 #ifdef	HAVE_MUTEX_SYSTEM_RESOURCES

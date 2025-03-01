@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 /*
@@ -58,7 +58,7 @@ int btreeVacuum(Btree *p, char **pzErrMsg) {
 	if (rc != SQLITE_DONE) {
 		sqlite3SetString(pzErrMsg, db,
 		    "error during vacuum, rolled back");
-		(void)sqlite3BtreeRollback(p, SQLITE_OK, 0);
+		(void)sqlite3BtreeRollback(p);
 	} else if ((rc = sqlite3BtreeCommit(p)) != SQLITE_OK) {
 		sqlite3SetString(pzErrMsg, db,
 		    "failed to commit the vacuum transaction");

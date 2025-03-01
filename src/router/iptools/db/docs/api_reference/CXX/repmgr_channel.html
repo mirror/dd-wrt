@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -75,7 +75,7 @@ DbEnv::repmgr_channel(int eid, DB_CHANNEL **channelp, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670055927664"></a>Parameters</h3>
+              <h3 class="title"><a id="idp9843560"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -83,7 +83,7 @@ DbEnv::repmgr_channel(int eid, DB_CHANNEL **channelp, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670055928912"></a>eid</h4>
+                <h4 class="title"><a id="idp9843408"></a>eid</h4>
               </div>
             </div>
           </div>
@@ -94,7 +94,7 @@ DbEnv::repmgr_channel(int eid, DB_CHANNEL **channelp, u_int32_t flags);</pre>
             <ul type="disc">
               <li>
                 <p>
-                         The numerical environment ID of a remote site in the
+                         The numerical env ID of a remote site in the
                          replication group.
                      </p>
               </li>
@@ -108,7 +108,7 @@ DbEnv::repmgr_channel(int eid, DB_CHANNEL **channelp, u_int32_t flags);</pre>
                          the current master, even if the master has changed
                          since the channel was opened. If the current
                          master is disconnected or unknown, the operation
-                         fails and Replication Manager returns an error code.
+                         fails and repmgr returns an error code.
                      </p>
                 <p>
                          If the local site is the master, then sending
@@ -124,7 +124,7 @@ DbEnv::repmgr_channel(int eid, DB_CHANNEL **channelp, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670055938672"></a>channelp</h4>
+                <h4 class="title"><a id="idp9849240"></a>channelp</h4>
               </div>
             </div>
           </div>
@@ -137,7 +137,7 @@ DbEnv::repmgr_channel(int eid, DB_CHANNEL **channelp, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670055929328"></a>flags</h4>
+                <h4 class="title"><a id="idp9846952"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -151,7 +151,7 @@ DbEnv::repmgr_channel(int eid, DB_CHANNEL **channelp, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670055955360"></a>Errors</h3>
+              <h3 class="title"><a id="idp9845872"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -170,21 +170,7 @@ DbEnv::repmgr_channel(int eid, DB_CHANNEL **channelp, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670055902544"></a>DB_REP_UNAVAIL</h4>
-              </div>
-            </div>
-          </div>
-          <p>
-                If the <span class="bold"><strong>eid</strong></span> parameter is 
-                <code class="literal">DB_EID_MASTER</code> but the current master is
-                disconnected or unknown.
-            </p>
-        </div>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h4 class="title"><a id="idm139670055949760"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp9857288"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -198,7 +184,7 @@ DbEnv::repmgr_channel(int eid, DB_CHANNEL **channelp, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670055913152"></a>Class</h3>
+              <h3 class="title"><a id="idp9856208"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -210,13 +196,12 @@ DbEnv::repmgr_channel(int eid, DB_CHANNEL **channelp, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670055955552"></a>See Also</h3>
+              <h3 class="title"><a id="idp9851896"></a>See Also</h3>
             </div>
           </div>
         </div>
         <p>
-            <a class="xref" href="rep.html#replist" title="Replication and Related Methods">Replication and Related Methods</a>,
-            <a class="xref" href="db_channel.html" title="The DbChannel Handle">The DbChannel Handle</a>
+             <a class="xref" href="rep.html#replist" title="Replication and Related Methods">Replication and Related Methods</a> 
         </p>
       </div>
     </div>

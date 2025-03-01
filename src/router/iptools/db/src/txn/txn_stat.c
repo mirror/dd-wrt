@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -21,10 +21,6 @@ static int  __txn_stat __P((ENV *, DB_TXN_STAT **, u_int32_t));
 static char *__txn_status __P((DB_TXN_ACTIVE *));
 static char *__txn_xa_status __P((DB_TXN_ACTIVE *));
 static void __txn_gid __P((ENV *, DB_MSGBUF *, DB_TXN_ACTIVE *));
-#ifdef HAVE_SLICES
-static void __txn_print_stats_slices
-    __P((ENV *, DB_MSGBUF *, DB_TXN_ACTIVE_SLICE *));
-#endif
 
 /*
  * __txn_stat_pp --
@@ -73,7 +69,6 @@ __txn_stat(env, statp, flags)
 	TXN_DETAIL *td;
 	size_t nbytes;
 	u_int32_t maxtxn, ndx;
-	DB_TXN_ACTIVE_SLICE *next_slice_txn;
 	int ret;
 
 	*statp = NULL;
@@ -83,8 +78,6 @@ __txn_stat(env, statp, flags)
 	TXN_SYSTEM_LOCK(env);
 	maxtxn = region->curtxns;
 	nbytes = sizeof(DB_TXN_STAT) + sizeof(DB_TXN_ACTIVE) * maxtxn;
-	/* Allocate enough space for each txn to be affecting slices too. */
-	nbytes += maxtxn * env->dbenv->slice_cnt * sizeof(DB_TXN_ACTIVE_SLICE);
 	if ((ret = __os_umalloc(env, nbytes, &stats)) != 0) {
 		TXN_SYSTEM_UNLOCK(env);
 		return (ret);
@@ -95,7 +88,6 @@ __txn_stat(env, statp, flags)
 	stats->st_last_ckp = region->last_ckp;
 	stats->st_time_ckp = region->time_ckp;
 	stats->st_txnarray = (DB_TXN_ACTIVE *)&stats[1];
-	next_slice_txn = (DB_TXN_ACTIVE_SLICE *)(&stats->st_txnarray[maxtxn]);
 
 	for (ndx = 0,
 	    td = SH_TAILQ_FIRST(&region->active_txn, __txn_detail);
@@ -128,16 +120,6 @@ __txn_stat(env, statp, flags)
 			    sizeof(stats->st_txnarray[ndx].name) - 1] = '\0';
 		} else
 			stats->st_txnarray[ndx].name[0] = '\0';
-		if (td->slice_details == INVALID_ROFF)
-			stats->st_txnarray[ndx].slice_txns = NULL;
-		else {
-			stats->st_txnarray[ndx].slice_txns = next_slice_txn;
-			memmove(next_slice_txn,
-			    R_ADDR(&mgr->reginfo, td->slice_details),
-			    (size_t)env->dbenv->slice_cnt * sizeof(u_int32_t));
-			next_slice_txn += env->dbenv->slice_cnt;
-			/* DB_ASSERT: that this doesn't go too far. */
-		}
 	}
 
 	__mutex_set_wait_info(env, region->mtx_region,
@@ -219,32 +201,6 @@ __txn_stat_print(env, flags)
 
 	return (0);
 }
-
-#ifdef HAVE_SLICES
-/*
- * __txn_print_stats_slices --
- *	Print which slices have active related transactions.
- */
-static void
-__txn_print_stats_slices(env, mbp, txns)
-	ENV *env;
-	DB_MSGBUF *mbp;
-	DB_TXN_ACTIVE_SLICE *txns;
-{
-	db_slice_t i;
-	char *prefix;
-
-	prefix = " Active slices:";
-	for (i = 0; i != env->dbenv->slice_cnt; i++) {
-		if (txns[i].txnid != TXN_INVALID) {
-			__db_msgadd(env, mbp, "%s %s:%x ", prefix,
-			    env->slice_envs[i]->env->db_home,
-			    txns[i].txnid);
-			prefix = ";";
-		}
-	}
-}
-#endif
 
 /*
  * __txn_print_stats --
@@ -335,10 +291,6 @@ __txn_print_stats(env, flags)
 			__db_msgadd(env, &mb, "; \"%s\"", txn->name);
 		if (txn->status == TXN_PREPARE)
 			__txn_gid(env, &mb, txn);
-#ifdef HAVE_SLICES
-		if (txn->slice_txns != NULL)
-			__txn_print_stats_slices(env, &mb, txn->slice_txns);
-#endif
 		DB_MSGBUF_FLUSH(env, &mb);
 	}
 

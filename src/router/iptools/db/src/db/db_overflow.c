@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -58,93 +58,6 @@
  */
 
 /*
- * __db_alloc_dbt
- *
- *	Allocate enough space in the dbt to hold the data. Also used by the
- *	blob file API.
- *
- * PUBLIC: int __db_alloc_dbt __P((ENV *, DBT *, u_int32_t, u_int32_t *,
- * PUBLIC:	u_int32_t *, void **, u_int32_t *));
- */
-int
-__db_alloc_dbt(env, dbt, tlen, nd, st, bpp, bpsz)
-	ENV *env;
-	DBT *dbt;
-	u_int32_t tlen;
-	u_int32_t *nd;
-	u_int32_t *st;
-	void **bpp;
-	u_int32_t *bpsz;
-{
-	int ret;
-	u_int32_t needed, start;
-
-	/*
-	 * Check if the buffer is big enough; if it is not and we are
-	 * allowed to malloc space, then we'll malloc it.  If we are
-	 * not (DB_DBT_USERMEM), then we'll set the dbt and return
-	 * appropriately.
-	 */
-	if (F_ISSET(dbt, DB_DBT_PARTIAL)) {
-		start = dbt->doff;
-		if (start > tlen)
-			needed = 0;
-		else if (dbt->dlen > tlen - start)
-			needed = tlen - start;
-		else
-			needed = dbt->dlen;
-	} else {
-		start = 0;
-		needed = tlen;
-	}
-	*nd = needed;
-	*st = start;
-
-	/*
-	 * If the caller has not requested any data, return success. This
-	 * "early-out" also avoids setting up the streaming optimization when
-	 * no page would be retrieved. If it were removed, the streaming code
-	 * should only initialize when needed is not 0.
-	 */
-	if (needed == 0) {
-		dbt->size = 0;
-		return (0);
-	}
-
-	if (F_ISSET(dbt, DB_DBT_USERCOPY))
-		return (0);
-
-	/* Allocate any necessary memory. */
-	if (F_ISSET(dbt, DB_DBT_USERMEM)) {
-		if (needed > dbt->ulen) {
-			dbt->size = needed;
-			return (DB_BUFFER_SMALL);
-		}
-	} else if (F_ISSET(dbt, DB_DBT_MALLOC)) {
-		if ((ret = __os_umalloc(env, needed, &dbt->data)) != 0)
-			return (ret);
-	} else if (F_ISSET(dbt, DB_DBT_REALLOC)) {
-		if ((ret = __os_urealloc(env, needed, &dbt->data)) != 0)
-			return (ret);
-	} else if (bpsz != NULL && (*bpsz == 0 || *bpsz < needed)) {
-		if ((ret = __os_realloc(env, needed, bpp)) != 0)
-			return (ret);
-		*bpsz = needed;
-		dbt->data = *bpp;
-	} else if (bpp != NULL)
-		dbt->data = *bpp;
-	else {
-		DB_ASSERT(env,
-		    F_ISSET(dbt,
-		    DB_DBT_USERMEM | DB_DBT_MALLOC | DB_DBT_REALLOC) ||
-		    bpsz != NULL);
-		return (DB_BUFFER_SMALL);
-	}
-
-	return (0);
-}
-
-/*
  * __db_goff --
  *	Get an offpage item.
  *
@@ -179,10 +92,67 @@ __db_goff(dbc, dbt, tlen, pgno, bpp, bpsz)
 	mpf = dbp->mpf;
 	txn = dbc->txn;
 
-	if (((ret = __db_alloc_dbt(
-	    env, dbt, tlen, &needed, &start, bpp, bpsz)) != 0) || needed == 0)
-		return (ret);
+	/*
+	 * Check if the buffer is big enough; if it is not and we are
+	 * allowed to malloc space, then we'll malloc it.  If we are
+	 * not (DB_DBT_USERMEM), then we'll set the dbt and return
+	 * appropriately.
+	 */
+	if (F_ISSET(dbt, DB_DBT_PARTIAL)) {
+		start = dbt->doff;
+		if (start > tlen)
+			needed = 0;
+		else if (dbt->dlen > tlen - start)
+			needed = tlen - start;
+		else
+			needed = dbt->dlen;
+	} else {
+		start = 0;
+		needed = tlen;
+	}
 
+	/*
+	 * If the caller has not requested any data, return success. This
+	 * "early-out" also avoids setting up the streaming optimization when
+	 * no page would be retrieved. If it were removed, the streaming code
+	 * should only initialize when needed is not 0.
+	 */
+	if (needed == 0) {
+		dbt->size = 0;
+		return (0);
+	}
+
+	if (F_ISSET(dbt, DB_DBT_USERCOPY))
+		goto skip_alloc;
+
+	/* Allocate any necessary memory. */
+	if (F_ISSET(dbt, DB_DBT_USERMEM)) {
+		if (needed > dbt->ulen) {
+			dbt->size = needed;
+			return (DB_BUFFER_SMALL);
+		}
+	} else if (F_ISSET(dbt, DB_DBT_MALLOC)) {
+		if ((ret = __os_umalloc(env, needed, &dbt->data)) != 0)
+			return (ret);
+	} else if (F_ISSET(dbt, DB_DBT_REALLOC)) {
+		if ((ret = __os_urealloc(env, needed, &dbt->data)) != 0)
+			return (ret);
+	} else if (bpsz != NULL && (*bpsz == 0 || *bpsz < needed)) {
+		if ((ret = __os_realloc(env, needed, bpp)) != 0)
+			return (ret);
+		*bpsz = needed;
+		dbt->data = *bpp;
+	} else if (bpp != NULL)
+		dbt->data = *bpp;
+	else {
+		DB_ASSERT(env,
+		    F_ISSET(dbt,
+		    DB_DBT_USERMEM | DB_DBT_MALLOC | DB_DBT_REALLOC) ||
+		    bpsz != NULL);
+		return (DB_BUFFER_SMALL);
+	}
+
+skip_alloc:
 	/* Set up a start page in the overflow chain if streaming. */
 	if (cp->stream_start_pgno != PGNO_INVALID &&
 	    pgno == cp->stream_start_pgno && start >= cp->stream_off &&
@@ -515,33 +485,28 @@ __db_doff(dbc, pgno)
 
 /*
  * __db_moff --
- *	Match on overflow pages from a specific offset.
+ *	Match on overflow pages.
  *
- * Given a starting page number and a key, store <0, 0, >0 in 'cmpp' to indicate
- * if the key on the page is less than, equal to or greater than the key
- * specified. We optimize this by doing a chunk at a time comparison unless the
- * user has specified a comparison function. In this case, we need to
- * materialize the entire object and call their comparison routine.
- *
- * We start the comparison at an offset and update the offset with the
- * longest matching count after the comparison.
+ * Given a starting page number and a key, return <0, 0, >0 to indicate if the
+ * key on the page is less than, equal to or greater than the key specified.
+ * We optimize this by doing chunk at a time comparison unless the user has
+ * specified a comparison function.  In this case, we need to materialize
+ * the entire object and call their comparison routine.
  *
  * __db_moff and __db_coff are generic functions useful in searching and
  * ordering off page items. __db_moff matches an overflow DBT with an offpage
  * item. __db_coff compares two offpage items for lexicographic sort order.
  *
  * PUBLIC: int __db_moff __P((DBC *, const DBT *, db_pgno_t, u_int32_t,
- * PUBLIC:     int (*)(DB *, const DBT *, const DBT *, size_t *),
- * PUBLIC:     int *, size_t *));
+ * PUBLIC:     int (*)(DB *, const DBT *, const DBT *), int *));
  */
 int
-__db_moff(dbc, dbt, pgno, tlen, cmpfunc, cmpp, locp)
+__db_moff(dbc, dbt, pgno, tlen, cmpfunc, cmpp)
 	DBC *dbc;
 	const DBT *dbt;
 	db_pgno_t pgno;
 	u_int32_t tlen;
-	int (*cmpfunc) __P((DB *, const DBT *, const DBT *, size_t *)), *cmpp;
-	size_t *locp;
+	int (*cmpfunc) __P((DB *, const DBT *, const DBT *)), *cmpp;
 {
 	DB *dbp;
 	DBT local_dbt;
@@ -552,7 +517,6 @@ __db_moff(dbc, dbt, pgno, tlen, cmpfunc, cmpp, locp)
 	u_int32_t bufsize, cmp_bytes, key_left;
 	u_int8_t *p1, *p2;
 	int ret;
-	size_t pos, start;
 
 	dbp = dbc->dbp;
 	ip = dbc->thread_info;
@@ -571,76 +535,40 @@ __db_moff(dbc, dbt, pgno, tlen, cmpfunc, cmpp, locp)
 		    &local_dbt, tlen, pgno, &buf, &bufsize)) != 0)
 			return (ret);
 		/* Pass the key as the first argument */
-		*cmpp = cmpfunc(dbp, dbt, &local_dbt, NULL);
+		*cmpp = cmpfunc(dbp, dbt, &local_dbt);
 		__os_free(dbp->env, buf);
 		return (0);
 	}
 
-	/*
-	 * We start the comparison from the location of 'locp' and store the
-	 * last matching location into 'locp'.
-	 */
-	start = (locp == NULL ? 0 : *locp);
-	pos = 0;
-
-	/* Subtract prefix length from lengths. */
-	tlen -= (u_int32_t)start;
-	key_left = dbt->size - (u_int32_t)start;
-	p1 = (u_int8_t *)dbt->data + start;
-
 	/* While there are both keys to compare. */
-	for (*cmpp = 0; key_left > 0 &&
-	    tlen > 0 && pgno != PGNO_INVALID;) {
+	for (*cmpp = 0, p1 = dbt->data,
+	    key_left = dbt->size; key_left > 0 && pgno != PGNO_INVALID;) {
 		if ((ret =
 		    __memp_fget(mpf, &pgno, ip, dbc->txn, 0, &pagep)) != 0)
 			return (ret);
 
-		/*
-		 * Figure out where to start comparison, and how many
-		 * bytes to compare.
-		 */
-		if (pos >= start) {
-			p2 = (u_int8_t *)pagep + P_OVERHEAD(dbp);
-			cmp_bytes = OV_LEN(pagep);
-		} else if (pos + OV_LEN(pagep) > start) {
-			p2 = (u_int8_t *)pagep +
-			    P_OVERHEAD(dbp) + (start - pos);
-			cmp_bytes = OV_LEN(pagep) - (u_int32_t)(start - pos);
-		} else {
-			p2 = NULL;
-			cmp_bytes = 0;
-		}
-
-		pos += OV_LEN(pagep);
-
-		if (cmp_bytes != 0) {
-			if (cmp_bytes > key_left)
-				cmp_bytes = key_left;
-			tlen -= cmp_bytes;
-			key_left -= cmp_bytes;
-			for (;cmp_bytes-- > 0; ++p1, ++p2) {
-				if (*p1 != *p2) {
-					*cmpp = (long)*p1 - (long)*p2;
-					break;
-				}
-				if (locp != NULL)
-					++(*locp);
+		DB_ASSERT(dbc->env, TYPE(pagep) == P_OVERFLOW);
+		cmp_bytes = OV_LEN(pagep) < key_left ? OV_LEN(pagep) : key_left;
+		tlen -= cmp_bytes;
+		key_left -= cmp_bytes;
+		for (p2 = (u_int8_t *)pagep + P_OVERHEAD(dbp);
+		    cmp_bytes-- > 0; ++p1, ++p2)
+			if (*p1 != *p2) {
+				*cmpp = (long)*p1 - (long)*p2;
+				break;
 			}
-
-		}
 		pgno = NEXT_PGNO(pagep);
 		if ((ret = __memp_fput(mpf, ip, pagep, dbp->priority)) != 0)
 			return (ret);
 		if (*cmpp != 0)
 			return (0);
 	}
-
-	if (*cmpp == 0) {
-		if (key_left > 0) /* DBT is longer than the page key. */
-			*cmpp = 1;
-		else if (tlen > 0) /* DBT is shorter than the page key. */
-			*cmpp = -1;
-	}
+	if (key_left > 0)		/* DBT is longer than the page key. */
+		*cmpp = 1;
+	else if (tlen > 0)		/* DBT is shorter than the page key. */
+		*cmpp = -1;
+	else
+		*cmpp = 0;
 
 	return (0);
 }
@@ -660,13 +588,13 @@ __db_moff(dbc, dbt, pgno, tlen, cmpfunc, cmpp, locp)
  * DBT type.
  *
  * PUBLIC: int __db_coff __P((DBC *, const DBT *, const DBT *,
- * PUBLIC:     int (*)(DB *, const DBT *, const DBT *, size_t *), int *));
+ * PUBLIC:     int (*)(DB *, const DBT *, const DBT *), int *));
  */
 int
 __db_coff(dbc, dbt, match, cmpfunc, cmpp)
 	DBC *dbc;
 	const DBT *dbt, *match;
-	int (*cmpfunc) __P((DB *, const DBT *, const DBT *, size_t *)), *cmpp;
+	int (*cmpfunc) __P((DB *, const DBT *, const DBT *)), *cmpp;
 {
 	DB *dbp;
 	DB_THREAD_INFO *ip;
@@ -716,7 +644,7 @@ __db_coff(dbc, dbt, match, cmpfunc, cmpp)
 		    match_pgno, &match_buf, &match_bufsz)) != 0)
 			goto err1;
 		/* The key needs to be the first argument for sort order */
-		*cmpp = cmpfunc(dbp, &local_key, &local_match, NULL);
+		*cmpp = cmpfunc(dbp, &local_key, &local_match);
 
 err1:		if (dbt_buf != NULL)
 			__os_free(dbp->env, dbt_buf);

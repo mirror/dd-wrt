@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -287,8 +287,7 @@ err:	if ((t_ret =
 /*
  * __db_safe_goff --
  *	Get an overflow item, very carefully, from an untrusted database,
- *	in the context of the salvager. If it detects a loop in the overflow
- *	pages then return DB_VERIFY_BAD.
+ *	in the context of the salvager.
  *
  * PUBLIC: int __db_safe_goff __P((DB *, VRFY_DBINFO *,
  * PUBLIC:      db_pgno_t, DBT *, void *, u_int32_t *, u_int32_t));
@@ -305,18 +304,16 @@ __db_safe_goff(dbp, vdp, pgno, dbt, buf, bufsz, flags)
 {
 	DB_MPOOLFILE *mpf;
 	PAGE *h;
-	db_pgno_t origpgno;
 	int ret, t_ret;
-	u_int32_t bytes, bytesgot, pagecount;
+	u_int32_t bytesgot, bytes;
 	u_int8_t *src, *dest;
 
 	mpf = dbp->mpf;
 	h = NULL;
 	ret = t_ret = 0;
-	bytesgot = bytes = pagecount = 0;
-	origpgno = pgno;
+	bytesgot = bytes = 0;
 
-	DB_ASSERT(dbp->env, bufsz != NULL);
+    DB_ASSERT(dbp->env, bufsz != NULL);
 
 	/*
 	 * Back up to the start of the overflow chain (if necessary) via the
@@ -332,13 +329,6 @@ __db_safe_goff(dbp, vdp, pgno, dbt, buf, bufsz, flags)
 		if (PREV_PGNO(h) == PGNO_INVALID ||
 		    !IS_VALID_PGNO(PREV_PGNO(h)))
 			break;
-		if (++pagecount >= mpf->mfp->last_pgno) {
-			(void)USR_ERR(dbp->env, DB_VERIFY_BAD);
-			__db_errx(dbp->env,
-			    "Loop detected in overflow item starting at %lu",
-			    (u_long)origpgno);
-			break;
-		}
 
 		pgno = PREV_PGNO(h);
 

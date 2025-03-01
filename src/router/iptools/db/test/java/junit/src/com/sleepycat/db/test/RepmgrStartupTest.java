@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -33,7 +33,7 @@ import com.sleepycat.db.*;
 
 public class RepmgrStartupTest extends EventHandlerAdapter
 {
-    static String address = "::1";
+    static String address = "localhost";
     static int    port = 4242;
     static int    priority = 100;
     static String homedirName = "TESTDIR";
@@ -117,21 +117,6 @@ public class RepmgrStartupTest extends EventHandlerAdapter
         try {
             // start replication manager
             dbenv.replicationManagerStart(3, ReplicationManagerStartPolicy.REP_MASTER);
-            EnvironmentConfig cfg = dbenv.getConfig();
-            assertEquals(cfg.getReplicationManagerIncomingQueueMax(), 100L * 1024L * 1024L);
-            long gigabyte = 1024L * 1024L * 1024L;
-            long megabyte = 1024L * 1024L;
-            // Test setting repmgr incoming queue size > 1GB.
-            cfg.setReplicationManagerIncomingQueueMax(123456L * gigabyte + 654321L);
-            dbenv.setConfig(cfg);
-            cfg = dbenv.getConfig();
-            assertEquals(cfg.getReplicationManagerIncomingQueueMax(), 123456L * gigabyte + 654321L);
-            // Test setting repmgr incoming queue size < 1GB.
-            cfg.setReplicationManagerIncomingQueueMax(10L * megabyte);
-            dbenv.setConfig(cfg);
-            cfg = dbenv.getConfig();
-            assertEquals(cfg.getReplicationManagerIncomingQueueMax(), 10L * megabyte);
-
         } catch(DatabaseException dbe) {
             fail("Unexpected database exception came from replicationManagerStart." + dbe);
         }

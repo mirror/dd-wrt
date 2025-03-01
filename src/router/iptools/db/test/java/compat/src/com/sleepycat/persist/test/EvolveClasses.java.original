@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2017 Oracle.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle.  All rights reserved.
  *
  */
 package com.sleepycat.persist.test;
@@ -3142,35 +3142,6 @@ class EvolveClasses {
 
         public ProxiedClass convertProxy() {
             return new ProxiedClass(data[0]);
-        }
-    }
-
-    /* [#21869] */
-    @Persistent
-    static class MultipleSelfRefsEmbed {
-        MultipleSelfRefs ref;
-        MultipleSelfRefsEmbed embed;
-    }
-
-    @Entity
-    static class MultipleSelfRefs
-        extends EvolveCase {
-
-        @PrimaryKey
-        int key;
-
-        MultipleSelfRefs ref;
-        MultipleSelfRefsEmbed embed;
-
-        @Override
-        void writeObjects(EntityStore store)
-            throws DatabaseException {
-
-            PrimaryIndex<Integer, MultipleSelfRefs>
-                index = store.getPrimaryIndex
-                    (Integer.class, MultipleSelfRefs.class);
-            key = 99;
-            index.put(this);
         }
     }
 }

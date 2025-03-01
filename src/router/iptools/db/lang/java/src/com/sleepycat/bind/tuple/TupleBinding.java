@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -25,8 +25,6 @@ import com.sleepycat.db.DatabaseEntry;
  * <li> {@link #entryToObject(TupleInput)} </li>
  * <li> {@link #objectToEntry(Object,TupleOutput)} </li>
  * </ul>
- *
- * @param <E> is the class representing the key or data.
  *
  * @see <a href="package-summary.html#formats">Tuple Formats</a>
  *
@@ -115,9 +113,7 @@ public abstract class TupleBinding<E>
      * {@link SortedFloatBinding} and {@link SortedDoubleBinding} for
      * details.</p>
      *
-     * @param <T> the primitive Java class.
-     *
-     * @param cls the primitive Java class.
+     * @param cls is the primitive Java class.
      *
      * @return a new binding for the primitive class or null if the cls
      * parameter is not one of the supported classes.

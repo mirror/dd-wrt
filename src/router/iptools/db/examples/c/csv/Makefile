@@ -1,8 +1,8 @@
 # $Id$
 
 # Berkeley DB installation.
-DB_INCLUDE=../../../build_unix
-LIBS=	-L../../../build_unix -L../../../build_unix/.libs/ -ldb -lpthread
+DB_INCLUDE=../../build_unix
+LIBS=	-L../../build_unix -L../../build_unix/.libs/ -ldb
 
 INC=	-I. -I$(DB_INCLUDE)
 CFLAGS=	$(INC) -g -W -Wall -Wpointer-arith -Wmissing-prototypes

@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -133,7 +133,7 @@
             Remember that you can find the complete implementation of these functions
             in:
         </p>
-        <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples/c/getting_started</pre>
+        <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples_c/getting_started</pre>
         <p>
             where <code class="literal"><span class="emphasis"><em>DB_INSTALL</em></span></code> is the location where you
             placed your DB distribution.
@@ -222,8 +222,8 @@ get_item_name(DB *dbp, const DBT *pkey, const DBT *pdata, DBT *skey)
 
     /* Now set the secondary key's data to be the item name */
     memset(skey, 0, sizeof(DBT));
-    skey-&gt;data = (u_int8_t *)pdata-&gt;data + offset;
-    skey-&gt;size = (u_int32_t)strlen(skey-&gt;data) + 1;
+    skey-&gt;data = pdata-&gt;data + offset;
+    skey-&gt;size = strlen(skey-&gt;data) + 1;
 
     return (0);
 }</code></strong> </pre>
@@ -300,7 +300,8 @@ set_db_filenames(STOCK_DBS *my_stock)
 int
 open_database(DB **dbpp,       /* The DB handle that we are opening */
     const char *file_name,     /* The file in which the db lives */
-    const char *program_name,  /* Name of the program. */
+    const char *program_name,  /* Name of the program calling this
+                                * function */
     FILE *error_file_pointer,
     <strong class="userinput"><code>int is_secondary</code></strong>)
 {
@@ -612,7 +613,7 @@ main(int argc, char *argv[])
             application
             in:
         </p>
-          <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples/c/getting_started</pre>
+          <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples_c/getting_started</pre>
           <p>
             where <code class="literal"><span class="emphasis"><em>DB_INSTALL</em></span></code> is the location where you
             placed your DB distribution.

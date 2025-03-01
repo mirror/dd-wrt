@@ -1,17 +1,16 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
 # TEST	sec001
 # TEST	Test of security interface
-proc sec001 { {args "" } } {
+proc sec001 { } {
 	global errorInfo
 	global errorCode
 	global has_crypto
 	global is_hp_test
-	global number_of_slices
 
 	source ./include.tcl
 	# Skip test if release does not support encryption.
@@ -25,11 +24,7 @@ proc sec001 { {args "" } } {
 	set subdb1 sub1
 	set subdb2 sub2
 
-	if { [llength $args] > 0 } {
-		puts "Sec001: Test of basic encryption interface $args."
-	} else {
-		puts "Sec001: Test of basic encryption interface."
-	}
+	puts "Sec001: Test of basic encryption interface."
 	env_cleanup $testdir
 
 	set passwd1 "passwd1"
@@ -220,36 +215,8 @@ proc sec001 { {args "" } } {
 	set env1 [berkdb_env -home $testdir -encryptaes $passwd1]
 	error_check_good env [is_valid_env $env1] TRUE
 
-	if { $number_of_slices > 0 } {
-		puts "\tSec001.i: Open an encrypted database in a sliced env."
-		set db [berkdb_open -create \
-		    -encrypt -chksum -env $env -btree $args $testfile1]
-		error_check_good valid_slice [is_valid_db $db] TRUE
-		if { [string match "*-sliced*" $args] } {
-			puts "\tSec001.i.1: Check the slices are encrypted."
-			set slices [$db get_slices]
-			foreach slice $slices {
-				set flags [$slice get_flags]
-				error_check_good slice_encrypt \
-				    [string match "*-encrypt*" $flags] 1
-				error_check_good slice_chksum \
-				    [string match "*-chksum*" $flags] 1
-			}
-		}
-		error_check_good dbslice_close [$db close] 0
-
-		# Since a non-standard password is used on the encrypted
-		# slice environment, calling env_cleanup will not work.
-		# Have to do the directory cleanup locally.
-		error_check_good envclose [$env1 close] 0
-		cleanup $testdir $env
-		error_check_good envclose [$env close] 0
-		log_cleanup $testdir
-		cleanup $testdir NULL
-	} else {
-		error_check_good envclose [$env1 close] 0
-		error_check_good envclose [$env close] 0
-	}
+	error_check_good envclose [$env1 close] 0
+	error_check_good envclose [$env close] 0
 
 	puts "\tSec001 complete."
 }

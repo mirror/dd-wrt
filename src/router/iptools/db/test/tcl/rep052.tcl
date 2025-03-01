@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2004, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -10,13 +10,13 @@
 # TEST	One master, one client.  After initializing
 # TEST	everything normally, close client and let the
 # TEST	master get ahead -- far enough that the master
-# TEST	no longer has the client's last log file.
+# TEST 	no longer has the client's last log file.
 # TEST	Reopen the client and turn on NOWAIT.
 # TEST	Process a few messages to get the client into
-# TEST	recovery mode, and verify that a lockout error occurs
-# TEST	on a txn API call (txn_begin) and a list of env API calls
-# TEST	as well as utilities.
-# TEST	Process all the messages and verify that lockout is over.
+# TEST	recovery mode, and verify that lockout occurs
+# TEST 	on a txn API call (txn_begin) and an env API call.
+# TEST	Process all the messages and verify that lockout
+# TEST 	is over.
 
 proc rep052 { method { niter 200 } { tnum "052" } args } {
 
@@ -95,7 +95,6 @@ proc rep052_sub { method niter tnum envargs logset recargs largs } {
 	global env_private
 	global rep_verbose
 	global verbose_type
-	global EXE
 
 	set verbargs ""
 	if { $rep_verbose == 1 } {
@@ -169,7 +168,6 @@ proc rep052_sub { method niter tnum envargs logset recargs largs } {
 	# Run rep_test in the master (and update client).
 	puts "\tRep$tnum.a: Running rep_test in replicated env."
 	set start 0
-	set testfile "test.db"
 	eval rep_test $method $masterenv NULL $niter $start $start 0 $largs
 	incr start $niter
 	process_msgs $envlist
@@ -202,92 +200,39 @@ proc rep052_sub { method niter tnum envargs logset recargs largs } {
 		set nproced [proc_msgs_once $envlist NONE err]
 	}
 
-	#
-	# Test a representative sample of utilities (db_*) and API calls
-	# (anything else) for lockout.  The correct output includes the
-	# DB_REP_LOCKOUT error. Other misleading messages may appear, e.g.
-	# "Operation locked out. Waiting for replication lockout to complete"
-	# but they are not enough to say that the operation wasn't attempted.
-	set testlist {
-	    {backup "-clean -create TESTDIR"}
-	    {db_archive ""}
-	    {db_checkpoint "-1"}
-	    {db_dump "-f $testfile.dump $testfile"}
-	    {db_hotbackup "-b $clientdir.backup"}
-	    {db_printlog ""}
-	    {db_upgrade "$testfile"}
-	    {db_verify "$testfile"}
-	    {dbbackup "$testfile TESTDIR"}
-	    {dbremove "$testfile"}
-	    {dbrename "$testfile $testfile.new"}
-	    {id_reset "$testfile"}
-	    {lock_id ""}
-	    {lock_stat ""}
-	    {log_flush ""}
-	    {log_stat ""}
-	    {log_verify ""}
-	    {lsn_reset "$testfile"}
-	    {mpool_stat ""}
-	    {mpool_sync ""}
-	    {mutex_stat ""}
-	    {txn ""}
-	    {txn_stat ""}
+	puts "\tRep$tnum.f: Verify we are locked out of txn API calls."
+	if { [catch { set txn [$clientenv txn] } res] } {
+		error_check_good txn_lockout [is_substr $res "DB_REP_LOCKOUT"] 1
+	} else {
+		error "FAIL:[timestamp] Not locked out of txn API calls."
 	}
-	# Test db_tuner only if it has been built.
-	if { [file exists $util_path/db_tuner$EXE] == 1 } {
-		lappend testlist {db_tuner "-d $testfile"}
-	}
-	set i 0
-	foreach test [subst $testlist] {
-		set cmd [lindex $test 0]
-		set cmdarg [lindex $test 1]
-		#
-		# Private envs don't support a second process.
-		#
-		if { $env_private } {
-			continue
-		}
-		puts "\tRep$tnum.f.$i: Verify that $cmd is locked out."
-		if { [string match "db_*" $cmd] } {
-			set doit { [eval exec $util_path/$cmd -h $clientdir $cmdarg] }
-		} else {
-			set doit { [eval $clientenv $cmd $cmdarg] }
-		}
-		if { [catch $doit res] } {
-			set substr [is_substr $res "DB_REP_LOCKOUT"]
-			if { $substr != 1 } {
-				puts "Bad result: $res"
-			}
-			error_check_good "${cmd}_lockout DB_REP_LOCKOUT" $substr 1
-		} else {
-			error "FAIL:[timestamp] $cmd was not locked out."
-		}
-		incr i
+
+	puts "\tRep$tnum.g: Verify we are locked out of env API calls."
+	if { [catch { set stat [$clientenv lock_stat] } res] } {
+		error_check_good env_lockout [is_substr $res "DB_REP_LOCKOUT"] 1
+	} else {
+		error "FAIL:[timestamp] Not locked out of env API calls."
 	}
 
 	# Now catch up and make sure we're not locked out anymore.
 	process_msgs $envlist
 
-	#
-	# No need to try every API.  Just do a txn call and an env call.
-	#
-	puts "\tRep$tnum.g: No longer locked out of txn API calls."
+	puts "\tRep$tnum.h: No longer locked out of txn API calls."
 	if { [catch { set txn [$clientenv txn] } res] } {
 		puts "FAIL: unable to start txn: $res"
 	} else {
 		error_check_good txn_no_lockout [$txn commit] 0
 	}
 
-	puts "\tRep$tnum.h: No longer locked out of env API calls."
+	puts "\tRep$tnum.i: No longer locked out of env API calls."
 	if { [catch { set stat [$clientenv rep_stat] } res] } {
 		puts "FAIL: unable to make env call: $res"
 	}
 
-	puts "\tRep$tnum.i: Verify logs and databases"
+	puts "\tRep$tnum.h: Verify logs and databases"
 	rep_verify $masterdir $masterenv $clientdir $clientenv 1 1 1
 
 	error_check_good masterenv_close [$masterenv close] 0
 	error_check_good clientenv_close [$clientenv close] 0
 	replclose $testdir/MSGQUEUEDIR
-	puts "\tRep$tnum.j: All envs closed."
 }

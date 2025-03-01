@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -30,9 +30,9 @@ namespace BerkeleyDB {
         /// <param name="keepPosition">
         /// If true, the newly created cursor is initialized to refer to the
         /// same position in the database as the original cursor (if any) and
-        /// hold the same locks (if any). If false, or if the original cursor does
+        /// hold the same locks (if any). If false, or the original cursor does
         /// not hold a database position and locks, the created cursor is
-        /// uninitialized and behaves like a cursor newly created by
+        /// uninitialized and will behave like a cursor newly created by
         /// <see cref="RecnoDatabase.Cursor"/>.</param>
         /// <returns>A newly created cursor</returns>
         public new RecnoCursor Duplicate(bool keepPosition) {

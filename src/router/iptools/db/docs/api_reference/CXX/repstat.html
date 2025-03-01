@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -66,7 +66,7 @@ DbEnv::rep_stat(DB_REP_STAT **statp, u_int32_t flags); </pre>
         <ul type="disc">
           <li>
             <p>
-                    <span class="bold"><strong>uintmax_t st_bulk_fills;</strong></span>
+                <span class="bold"><strong>uintmax_t st_bulk_fills;</strong></span>
             </p>
             <p>
                 The number of times the bulk buffer filled up, forcing the buffer
@@ -283,47 +283,6 @@ DbEnv::rep_stat(DB_REP_STAT **statp, u_int32_t flags); </pre>
           </li>
           <li>
             <p>
-                      <span class="bold"><strong>uintmax_t st_ext_duplicated;</strong></span>
-            </p>
-            <p>
-		The number of external file data messages received multiple
-        	times.  This happens when the client assumes a external file 
-        	data message was lost because it took too long to arrive, and
-        	so the client unnecessarily re-requests it.
-	    </p>
-          </li>
-          <li>
-            <p>
-                      <span class="bold"><strong>uintmax_t st_ext_records;</strong></span>
-            </p>
-            <p>
-		The number of external file data messages received and written
-		to disk.
-	    </p>
-          </li>
-          <li>
-            <p>
-                      <span class="bold"><strong>uintmax_t st_ext_rereq;</strong></span>
-            </p>
-            <p>
-		The number of external file data messages re-requested because
-		the original message was not recieved before the configured
-		timeout was reached.
-	    </p>
-          </li>
-          <li>
-            <p>
-                      <span class="bold"><strong>uintmax_t st_ext_update_rereq;</strong></span>
-            </p>
-            <p>
-		The number of external file update messages re-requested.
-		External file update messages are expensive to create and send,
-		so it is best to set the re-request timer high enough to avoid
-		re-requesting them.
-	    </p>
-          </li>
-          <li>
-            <p>
                      <span class="bold"><strong>u_int32_t st_gen;</strong></span>
             </p>
             <p>
@@ -533,7 +492,7 @@ DbEnv::rep_stat(DB_REP_STAT **statp, u_int32_t flags); </pre>
                      <span class="bold"><strong>uintmax_t st_nthrottles;</strong></span>
             </p>
             <p>
-                The number of times that data
+                Transmission limited. This indicates the number of times that data
                 transmission was stopped to limit the amount of data sent in response
                 to a single call to <a class="xref" href="repmessage.html" title="DbEnv::rep_process_message()">DbEnv::rep_process_message()</a>.
             </p>
@@ -594,7 +553,7 @@ DbEnv::rep_stat(DB_REP_STAT **statp, u_int32_t flags); </pre>
                      <span class="bold"><strong>u_int32_t st_status;</strong></span>
             </p>
             <p>
-                    The current replication role.  Set to 
+                    The current replication mode.  Set to 
                     <a class="link" href="repmgrstart.html#repmgrstart_DB_REP_MASTER">DB_REP_MASTER</a> 
                     if the environment is a replication master, 
                     <a class="link" href="repmgrstart.html#repmgrstart_DB_REP_CLIENT">DB_REP_CLIENT</a> 
@@ -608,14 +567,6 @@ DbEnv::rep_stat(DB_REP_STAT **statp, u_int32_t flags); </pre>
             </p>
             <p>
                 The number of transactions applied.
-            </p>
-          </li>
-          <li>
-            <p>
-                <span class="bold"><strong>u_int32_t st_view;</strong></span>
-            </p>
-            <p>
-                The current site is a replication view.
             </p>
           </li>
           <li>
@@ -656,7 +607,7 @@ DbEnv::rep_stat(DB_REP_STAT **statp, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670056101696"></a>Parameters</h3>
+              <h3 class="title"><a id="idp9801736"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -664,7 +615,7 @@ DbEnv::rep_stat(DB_REP_STAT **statp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670056078352"></a>statp</h4>
+                <h4 class="title"><a id="idp9770864"></a>statp</h4>
               </div>
             </div>
           </div>
@@ -677,7 +628,7 @@ DbEnv::rep_stat(DB_REP_STAT **statp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670056010304"></a>flags</h4>
+                <h4 class="title"><a id="idp9805048"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -703,7 +654,7 @@ DbEnv::rep_stat(DB_REP_STAT **statp, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670055994400"></a>Errors</h3>
+              <h3 class="title"><a id="idp9810800"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -721,7 +672,7 @@ DbEnv::rep_stat(DB_REP_STAT **statp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670055972400"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp9818328"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -735,7 +686,7 @@ DbEnv::rep_stat(DB_REP_STAT **statp, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670055974896"></a>Class</h3>
+              <h3 class="title"><a id="idp9817248"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -747,7 +698,7 @@ DbEnv::rep_stat(DB_REP_STAT **statp, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670055982640"></a>See Also</h3>
+              <h3 class="title"><a id="idp9813880"></a>See Also</h3>
             </div>
           </div>
         </div>

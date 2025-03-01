@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1998, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1998, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -90,11 +90,11 @@ __os_openhandle(env, name, flags, mode, fhpp)
 					 * return EEXISTS.
 					 */
 					DB_END_SINGLE_THREAD;
-					ret = USR_ERR(env, EEXIST);
+					ret = EEXIST;
 					goto err;
 				}
 				/*
-				 * !!!
+				 * XXX
 				 * Assume any error means non-existence.
 				 * Unfortunately return values (even for
 				 * non-existence) are driver specific so
@@ -127,8 +127,7 @@ __os_openhandle(env, name, flags, mode, fhpp)
 			break;
 		}
 
-		ret = USR_ERR(env, __os_posix_err(__os_get_syserr()));
-		switch (ret) {
+		switch (ret = __os_posix_err(__os_get_syserr())) {
 		case EMFILE:
 		case ENFILE:
 		case ENOSPC:
@@ -161,8 +160,9 @@ __os_openhandle(env, name, flags, mode, fhpp)
 		/* Deny file descriptor access to any child process. */
 		if ((fcntl_flags = fcntl(fhp->fd, F_GETFD)) == -1 ||
 		    fcntl(fhp->fd, F_SETFD, fcntl_flags | FD_CLOEXEC) == -1) {
-			ret = USR_ERR(env, __os_get_syserr());
-			__db_syserr(env, ret, DB_STR("0162", "fcntl(F_SETFD)"));
+			ret = __os_get_syserr();
+			__db_syserr(env, ret, DB_STR("0162",
+			    "fcntl(F_SETFD)"));
 			ret = __os_posix_err(ret);
 			goto err;
 		}
@@ -226,9 +226,8 @@ __os_closehandle(env, fhp)
 		else
 			RETRY_CHK((close(fhp->fd)), ret);
 		if (ret != 0) {
-			ret = USR_ERR(env, __os_posix_err(ret));
 			__db_syserr(env, ret, DB_STR("0164", "close"));
-
+			ret = __os_posix_err(ret);
 		}
 	}
 

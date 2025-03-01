@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -59,12 +59,6 @@ Db::upgrade(const char *file, u_int32_t flags);</pre>
          on a system with the same byte-order as the database.
     </p>
       <p>
-         The <code class="methodname">Db::upgrade()</code> method is non-atomic
-         when used on a sliced database. If the operation fails, it is
-         possible for the underlying database files to be in an
-         inconsistent state.
-     </p>
-      <p>
          The <code class="methodname">Db::upgrade()</code> <span>
             
             <span>
@@ -78,7 +72,7 @@ Db::upgrade(const char *file, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670063048992"></a>Parameters</h3>
+              <h3 class="title"><a id="idp6000704"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -86,7 +80,7 @@ Db::upgrade(const char *file, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670063047744"></a>file</h4>
+                <h4 class="title"><a id="idp6001352"></a>file</h4>
               </div>
             </div>
           </div>
@@ -99,7 +93,7 @@ Db::upgrade(const char *file, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670063103408"></a>flags</h4>
+                <h4 class="title"><a id="idp5978128"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -149,7 +143,7 @@ Db::upgrade(const char *file, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670063013680"></a>Environment Variables</h3>
+              <h3 class="title"><a id="idp6019936"></a>Environment Variables</h3>
             </div>
           </div>
         </div>
@@ -160,8 +154,8 @@ Db::upgrade(const char *file, u_int32_t flags);</pre>
                     </p>
         <p>
                             <code class="methodname">Db::upgrade()</code> is affected by any database directory specified using the
-                            <a class="xref" href="envadd_data_dir.html" title="DbEnv::add_data_dir()">DbEnv::add_data_dir()</a>
-                            method, or by setting the "add_data_dir" string
+                            <a class="xref" href="envset_data_dir.html" title="DbEnv::set_data_dir()">DbEnv::set_data_dir()</a>
+                            method, or by setting the "set_data_dir" string
                             in the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.
                     </p>
       </div>
@@ -169,7 +163,7 @@ Db::upgrade(const char *file, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670063045472"></a>Errors</h3>
+              <h3 class="title"><a id="idp6020792"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -187,7 +181,7 @@ Db::upgrade(const char *file, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670062996640"></a>DB_OLD_VERSION</h4>
+                <h4 class="title"><a id="idp6028776"></a>DB_OLD_VERSION</h4>
               </div>
             </div>
           </div>
@@ -201,7 +195,7 @@ Db::upgrade(const char *file, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670062999136"></a>Class</h3>
+              <h3 class="title"><a id="idp6027696"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -213,7 +207,7 @@ Db::upgrade(const char *file, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670063007120"></a>See Also</h3>
+              <h3 class="title"><a id="idp6024424"></a>See Also</h3>
             </div>
           </div>
         </div>

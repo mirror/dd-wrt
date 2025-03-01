@@ -23,7 +23,6 @@ public class Database {
      *
      * @param filename the name of the database file
      * @param mode open mode (e.g. SQLITE_OPEN_READONLY)
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public void open(String filename, int mode) throws SQLite.Exception {
@@ -51,8 +50,7 @@ public class Database {
      *
      * @param filename the name of the database file
      * @param mode open mode (e.g. SQLITE_OPEN_READONLY)
-     * @param vfs VFS name (for SQLite &ge; 3.5)
-     * @throws SQLite.Exception indicating SQLite error
+     * @param vfs VFS name (for SQLite >= 3.5)
      */
 
     public void open(String filename, int mode, String vfs)
@@ -81,9 +79,8 @@ public class Database {
      *
      * @param filename the name of the database file
      * @param mode open mode (e.g. SQLITE_OPEN_READONLY)
-     * @param vfs VFS name (for SQLite &ge; 3.5)
+     * @param vfs VFS name (for SQLite >= 3.5)
      * @param ver2 flag to force version on create (false = SQLite3, true = SQLite2)
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public void open(String filename, int mode, String vfs, boolean ver2)
@@ -127,7 +124,6 @@ public class Database {
      * tables.
      *
      * @param filename the name of the auxiliary file or null
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public void open_aux_file(String filename) throws SQLite.Exception {
@@ -153,8 +149,6 @@ public class Database {
 
     /**
      * Close the underlying SQLite database file.
-     *
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public void close()	throws SQLite.Exception {
@@ -176,7 +170,6 @@ public class Database {
      *
      * @param sql the SQL statement to be executed
      * @param cb the object implementing the callback methods
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public void exec(String sql, SQLite.Callback cb) throws SQLite.Exception {
@@ -209,7 +202,6 @@ public class Database {
      * @param sql the SQL statement to be executed
      * @param cb the object implementing the callback methods
      * @param args arguments for the SQL statement, '%q' substitution
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public void exec(String sql, SQLite.Callback cb,
@@ -225,8 +217,6 @@ public class Database {
     /**
      * Return the row identifier of the last inserted
      * row.
-     *
-     * @return rowid of last inserted row
      */
 
     public long last_insert_rowid() {
@@ -251,8 +241,6 @@ public class Database {
 
     /**
      * Return the number of changed rows for the last statement.
-     *
-     * @return number of changed rows
      */
 
     public long changes() {
@@ -300,7 +288,6 @@ public class Database {
      * @param sql the SQL statement to be executed
      * @param maxrows the max. number of rows to retrieve
      * @return result set
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public TableResult get_table(String sql, int maxrows)
@@ -340,7 +327,6 @@ public class Database {
      *
      * @param sql the SQL statement to be executed
      * @return result set
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public TableResult get_table(String sql) throws SQLite.Exception {
@@ -355,7 +341,6 @@ public class Database {
      * @param maxrows the max. number of rows to retrieve
      * @param args arguments for the SQL statement, '%q' substitution
      * @return result set
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public TableResult get_table(String sql, int maxrows, String args[])
@@ -396,7 +381,6 @@ public class Database {
      * @param sql the SQL statement to be executed
      * @param args arguments for the SQL statement, '%q' substitution
      * @return result set
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public TableResult get_table(String sql, String args[])
@@ -411,7 +395,6 @@ public class Database {
      * @param sql the SQL statement to be executed
      * @param args arguments for the SQL statement, '%q' substitution
      * @param tbl TableResult to receive result set
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public void get_table(String sql, String args[], TableResult tbl)
@@ -449,7 +432,6 @@ public class Database {
      * one or more complete SQL statements.
      *
      * @param sql the SQL statement to be checked
-     * @return true if string is a complete SQL statement
      */
 
     public synchronized static boolean complete(String sql) {
@@ -462,17 +444,13 @@ public class Database {
      * Return SQLite version number as string.
      * Don't rely on this when both SQLite 2 and 3 are compiled
      * into the native part. Use the class method in this case.
-     *
-     * @return version string
      */
 
     public native static String version();
 
     /**
      * Return SQLite version number as string.
-     * If the database is not open, the string "unknown" is returned.
-     *
-     * @return version string
+     * If the database is not open, <tt>unknown</tt> is returned.
      */
 
     public native String dbversion();
@@ -526,7 +504,7 @@ public class Database {
     private native void _function_type(String name, int type);
 
     /**
-     * Return the code of the last error occurred in
+     * Return the code of the last error occured in
      * any of the exec() methods. The value is valid
      * after an Exception has been reported by one of
      * these methods. See the <A HREF="Constants.html">Constants</A>
@@ -541,7 +519,6 @@ public class Database {
 
     /**
      * Internal: set error code.
-     *
      * @param error_code new error code
      */
 
@@ -574,9 +551,7 @@ public class Database {
 
     /**
      * Set character encoding.
-     *
      * @param enc name of encoding
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public void set_encoding(String enc) throws SQLite.Exception {
@@ -625,7 +600,6 @@ public class Database {
      * @param destName schema of destination database to be backed up
      * @param srcName schema of source database
      * @return Backup object to perform the backup operation
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public Backup backup(Database dest, String destName, String srcName)
@@ -701,7 +675,6 @@ public class Database {
      *
      * @param sql SQL statement to be compiled
      * @return a Vm object
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public Vm compile(String sql) throws SQLite.Exception {
@@ -719,7 +692,6 @@ public class Database {
      * @param sql SQL statement to be compiled
      * @param args arguments for the SQL statement, '%q' substitution
      * @return a Vm object
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public Vm compile(String sql, String args[]) throws SQLite.Exception {
@@ -736,7 +708,6 @@ public class Database {
      *
      * @param sql SQL statement to be prepared
      * @return a Stmt object
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public Stmt prepare(String sql) throws SQLite.Exception {
@@ -749,14 +720,12 @@ public class Database {
 
     /**
      * Open an SQLite3 blob. Only available in SQLite 3.4.0 and above.
-     *
      * @param db database name
      * @param table table name
      * @param column column name
      * @param row row identifier
      * @param rw if true, open for read-write, else read-only
      * @return a Blob object
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public Blob open_blob(String db, String table, String column,
@@ -770,7 +739,6 @@ public class Database {
 
     /**
      * Check type of open database.
-     *
      * @return true if SQLite3 database
      */
 
@@ -778,10 +746,8 @@ public class Database {
 
     /**
      * Internal compile method.
-     *
      * @param sql SQL statement
      * @param vm Vm object
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     private native void vm_compile(String sql, Vm vm)
@@ -789,11 +755,9 @@ public class Database {
 
     /**
      * Internal compile method, SQLite 3.0 only.
-     *
      * @param sql SQL statement
      * @param args arguments for the SQL statement, '%q' substitution
      * @param vm Vm object
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     private native void vm_compile_args(String sql, Vm vm, String args[])
@@ -801,10 +765,8 @@ public class Database {
 
     /**
      * Internal SQLite3 prepare method.
-     *
      * @param sql SQL statement
      * @param stmt Stmt object
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     private native void stmt_prepare(String sql, Stmt stmt)
@@ -812,14 +774,12 @@ public class Database {
 
     /**
      * Internal SQLite open blob method.
-     *
      * @param db database name
      * @param table table name
      * @param column column name
      * @param row row identifier
      * @param rw if true, open for read-write, else read-only
      * @param blob Blob object
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     private native void _open_blob(String db, String table, String column,
@@ -848,7 +808,6 @@ public class Database {
      * Not available in public releases of SQLite.
      *
      * @param ekey the key as byte array
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public void key(byte[] ekey) throws SQLite.Exception {
@@ -863,7 +822,6 @@ public class Database {
      * Not available in public releases of SQLite.
      *
      * @param skey the key as String
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public void key(String skey) throws SQLite.Exception {
@@ -888,7 +846,6 @@ public class Database {
      * Not available in public releases of SQLite.
      *
      * @param ekey the key as byte array
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public void rekey(byte[] ekey) throws SQLite.Exception {
@@ -903,7 +860,6 @@ public class Database {
      * Not available in public releases of SQLite.
      *
      * @param skey the key as String
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public void rekey(String skey) throws SQLite.Exception {
@@ -955,7 +911,6 @@ public class Database {
      *
      * @param s string (double value) (julian date in SQLite3 format)
      * @return long
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public static long long_from_julian(String s) throws SQLite.Exception {

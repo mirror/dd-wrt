@@ -1,7 +1,7 @@
 
 This test suite is designed to test the basic functionality of the core DB Java API.
 
-To build and run the test suite you need to have JUnit 4 or higher installed, and set in your environment as JUNIT_JAR. JUnit 4 may require hamcrest-core.jar, make sure it is in the same directory as junit.jar.
+To build and run the test suite you need to have JUnit 4 or higher installed, and set in your environment as JUNIT_JAR.
 
 The script chk.bdb builds and runs all of the test cases currently enabled.
 

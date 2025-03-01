@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -42,7 +42,7 @@
       <p>This class is also used to support auto commit transactions. Autocommit is enabled when DB_AUTO_COMMIT is set to the database or database environment handle and the environment is transactional.</p>
       <p>Inside dbstl, there are transactions begun and committed/aborted if the backing database and/or environment requires auto commit, and there are cursors opened internally, and you can set the flags used by the transaction and cursor functions via set functions of this class.</p>
       <p>All dbstl containers are fully multi-threaded, you should not need any synchronization to use them in the correct way, but this class is not thread safe, access to its members are not proctected by any mutex because the data members of this class are supposed to be set before they are used, and remain read only afterwards. If this is not the case, you must synchronize the access. </p>
-      <h4><a id="idm139782129682896"></a> Public Members </h4>
+      <h4><a id="idp49992448"></a> Public Members </h4>
       <div class="informaltable">
         <table border="1" width="80%">
           <colgroup>
@@ -159,7 +159,7 @@ db_container
           </tbody>
         </table>
       </div>
-      <h4><a id="idm139782128771760"></a>
+      <h4><a id="idp49996024"></a>
 Group</h4>
       <p>
 <a class="xref" href="dbstl_containers.html" title="Chapter 2.  Dbstl Container Classes">
@@ -191,7 +191,7 @@ u_int32_t get_db_open_flags() const
             <div class="titlepage">
               <div>
                 <div>
-                  <h4 class="title"><a id="idm139782128845920"></a>Return Value</h4>
+                  <h4 class="title"><a id="idp50014384"></a>Return Value</h4>
                 </div>
               </div>
             </div>
@@ -202,7 +202,7 @@ u_int32_t get_db_open_flags() const
           <div class="titlepage">
             <div>
               <div>
-                <h3 class="title"><a id="idm139782128848272"></a>Group: Get and set functions for data members.</h3>
+                <h3 class="title"><a id="idp50022288"></a>Group: Get and set functions for data members.</h3>
               </div>
             </div>
           </div>
@@ -213,7 +213,7 @@ u_int32_t get_db_open_flags() const
           <div class="titlepage">
             <div>
               <div>
-                <h3 class="title"><a id="idm139782129088544"></a>Class</h3>
+                <h3 class="title"><a id="idp50033728"></a>Class</h3>
               </div>
             </div>
           </div>

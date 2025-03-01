@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2007, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2007, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -37,10 +37,6 @@ proc repmgr025 { { niter 100 } { tnum "025" } args } {
 
 	puts "Repmgr$tnum ($method): repmgr heartbeat rerequest test."
 	repmgr025_sub $method $niter $tnum $args
-
-	append args " -blob_threshold 100"
-	puts "Repmgr$tnum ($method): repmgr heartbeat rerequest test blobs."
-	repmgr025_sub $method $niter $tnum $args
 }
 
 proc repmgr025_sub { method niter tnum largs } {
@@ -48,7 +44,6 @@ proc repmgr025_sub { method niter tnum largs } {
 	global rep_verbose
 	global util_path
 	global verbose_type
-	global ipversion
 	set nsites 3
 
 	set verbargs ""
@@ -58,7 +53,6 @@ proc repmgr025_sub { method niter tnum largs } {
 
 	env_cleanup $testdir
 	set ports [available_ports $nsites]
-	set hoststr [get_hoststr $ipversion]
 	set omethod [convert_method $method]
 
 	set masterdir $testdir/MASTERDIR
@@ -86,15 +80,15 @@ proc repmgr025_sub { method niter tnum largs } {
 	set cl_envcmd "$common -errpfx CLIENT -home $clientdir"
 	set cl2_envcmd "$common -errpfx CLIENT2 -home $clientdir2"
 	set masterenv [eval $ma_envcmd]
-	$masterenv repmgr -local [list $hoststr [lindex $ports 0]] \
+	$masterenv repmgr -local [list 127.0.0.1 [lindex $ports 0]] \
 	    -start master
 	set clientenv [eval $cl_envcmd]
-	$clientenv repmgr -local [list $hoststr [lindex $ports 1]] \
-	    -remote [list $hoststr [lindex $ports 0]] -start client
+	$clientenv repmgr -local [list 127.0.0.1 [lindex $ports 1]] \
+	    -remote [list 127.0.0.1 [lindex $ports 0]] -start client
 	await_startup_done $clientenv
 	set clientenv2 [eval $cl2_envcmd]
-	$clientenv2 repmgr -local [list $hoststr [lindex $ports 2]] \
-	    -remote [list $hoststr [lindex $ports 0]] -start client
+	$clientenv2 repmgr -local [list 127.0.0.1 [lindex $ports 2]] \
+	    -remote [list 127.0.0.1 [lindex $ports 0]] -start client
 	await_startup_done $clientenv2
 	$clientenv close
 	$clientenv2 close
@@ -105,7 +99,7 @@ proc repmgr025_sub { method niter tnum largs } {
 	set masterenv [eval $ma_envcmd]
 	$masterenv repmgr -timeout {heartbeat_send 500000}
 	$masterenv repmgr -ack all \
-	    -local [list $hoststr [lindex $ports 0]] \
+	    -local [list 127.0.0.1 [lindex $ports 0]] \
 	    -start master
 
 	# Open first client
@@ -113,7 +107,7 @@ proc repmgr025_sub { method niter tnum largs } {
 	set clientenv [eval $cl_envcmd]
 	$clientenv repmgr -timeout {heartbeat_monitor 1100000}
 	$clientenv repmgr -ack all \
-	    -local [list $hoststr [lindex $ports 1]] \
+	    -local [list 127.0.0.1 [lindex $ports 1]] \
 	    -start client
 	await_startup_done $clientenv
 
@@ -139,16 +133,8 @@ proc repmgr025_sub { method niter tnum largs } {
 		}
 	}
 
-	set msg ""
-	if { [lsearch $largs "-blob_threshold"] != -1 } {
-		puts "\tRepmgr$tnum.e: Inhibit BLOB_CHUNK_REQ processing."
-		$masterenv test abort no_chunks
-		set msg "blob"
-	} else {
-		puts "\tRepmgr$tnum.e: Inhibit PAGE_REQ processing at master."
-		$masterenv test abort no_pages
-		set msg "page"
-	}
+	puts "\tRepmgr$tnum.e: Inhibit PAGE_REQ processing at master."
+	$masterenv test abort no_pages
 
 	# Open second client.  The test hook will cause
 	# this client to be stuck in internal init until the updates
@@ -157,7 +143,7 @@ proc repmgr025_sub { method niter tnum largs } {
 	set clientenv2 [eval $cl2_envcmd]
 	$clientenv2 repmgr -timeout {heartbeat_monitor 1100000}
 	$clientenv2 repmgr -ack all \
-	    -local [list $hoststr [lindex $ports 2]] \
+	    -local [list 127.0.0.1 [lindex $ports 2]] \
 	    -start client
 
 	puts "\tRepmgr$tnum.g: Test for page requests from rerequest thread."
@@ -165,30 +151,17 @@ proc repmgr025_sub { method niter tnum largs } {
 	# process all page requests resulting from master transactions.
 	set max_wait 5
 	tclsleep $max_wait
-	if { [lsearch $largs "-blob_threshold"] == -1 } {
-		set init_pagereq [stat_field \
-		    $clientenv2 rep_stat "Pages requested"]
-		# Any further page requests can only be from the heartbeat
-		# rerequest because we processed all other lingering page
-		# requests above.
-		await_condition {[stat_field $clientenv2 rep_stat \
-	    	    "Pages requested"] > $init_pagereq} $max_wait
-	}
+	set init_pagereq [stat_field $clientenv2 rep_stat "Pages requested"]
+	# Any further page requests can only be from the heartbeat rerequest
+	# because we processed all other lingering page requests above.
+	await_condition {[stat_field $clientenv2 rep_stat \
+	    "Pages requested"] > $init_pagereq} $max_wait
 
 	puts "\tRepmgr$tnum.h: Rescind test hook, finish client startup."
 	$masterenv test abort none
 	await_startup_done $clientenv2
 
-	set itr "i"
-	if { [lsearch $largs "-blob_threshold"] != -1 } {
-		puts "\tRepmgr$tnum.i: Test blob rerequests."
-		set bl_rereq [stat_field $clientenv2 \
-		    rep_stat "External file data messages re-requested"]
-		error_check_good blob_rerequest 9 $bl_rereq
-		set itr "j"
-	}
-
-	puts "\tRepmgr$tnum.$itr: Verifying client database contents."
+	puts "\tRepmgr$tnum.i: Verifying client database contents."
 	rep_verify $masterdir $masterenv $clientdir $clientenv 1 1 1
 	rep_verify $masterdir $masterenv $clientdir2 $clientenv2 1 1 1
 

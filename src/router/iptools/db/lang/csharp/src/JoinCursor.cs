@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -55,7 +55,7 @@ namespace BerkeleyDB {
 
         /// <summary>
         /// Release the resources held by this object, and close the cursor if
-        /// it is still open.
+        /// it's still open.
         /// </summary>
         public void Dispose() {
             try {
@@ -88,7 +88,7 @@ namespace BerkeleyDB {
         /// <see cref="JoinCursor"/>.
         /// </summary>
         /// <remarks>
-        /// The enumerator begins at the cursor's current position (or the
+        /// The enumerator will begin at the cursor's current position (or the
         /// first record if the cursor has not yet been positioned) and iterate 
         /// forwards (i.e. in the direction of <see cref="MoveNext"/>) over the
         /// remaining records.
@@ -137,7 +137,7 @@ namespace BerkeleyDB {
         /// <see cref="Current">Current.Key</see>.
         /// </summary>
         /// <remarks>
-        /// <see cref="Current">Current.Value</see> contains an empty
+        /// <see cref="Current">Current.Value</see> will contain an empty
         /// <see cref="DatabaseEntry"/>.
         /// </remarks>
         /// <returns>
@@ -154,7 +154,7 @@ namespace BerkeleyDB {
         /// <see cref="Current">Current.Key</see>.
         /// </summary>
         /// <remarks>
-        /// <see cref="Current">Current.Value</see> contains an empty
+        /// <see cref="Current">Current.Value</see> will contain an empty
         /// <see cref="DatabaseEntry"/>.
         /// </remarks>
         /// <param name="info">The locking behavior to use.</param>

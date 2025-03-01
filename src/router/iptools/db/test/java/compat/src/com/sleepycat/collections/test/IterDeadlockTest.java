@@ -1,22 +1,18 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package com.sleepycat.collections.test;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.util.Iterator;
 import java.util.ListIterator;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 import com.sleepycat.bind.ByteArrayBinding;
 import com.sleepycat.collections.StoredIterator;
@@ -28,7 +24,6 @@ import com.sleepycat.db.Database;
 import com.sleepycat.db.DatabaseConfig;
 import com.sleepycat.db.Environment;
 import com.sleepycat.db.DeadlockException;
-import com.sleepycat.util.test.TestBase;
 import com.sleepycat.util.test.TestEnv;
 
 /**
@@ -38,9 +33,25 @@ import com.sleepycat.util.test.TestEnv;
  * the first element.
  * @author Mark Hayes
  */
-public class IterDeadlockTest extends TestBase {
+public class IterDeadlockTest extends TestCase {
 
     private static final byte[] ONE = { 1 };
+
+    public static void main(String[] args) {
+        junit.framework.TestResult tr =
+            junit.textui.TestRunner.run(suite());
+        if (tr.errorCount() > 0 ||
+            tr.failureCount() > 0) {
+            System.exit(1);
+        } else {
+            System.exit(0);
+        }
+    }
+
+    public static Test suite() {
+        TestSuite suite = new TestSuite(IterDeadlockTest.class);
+        return suite;
+    }
 
     private Environment env;
     private Database store1;
@@ -49,7 +60,12 @@ public class IterDeadlockTest extends TestBase {
     private StoredSortedMap map2;
     private final ByteArrayBinding binding = new ByteArrayBinding();
 
-    @Before
+    public IterDeadlockTest(String name) {
+
+        super(name);
+    }
+
+    @Override
     public void setUp()
         throws Exception {
 
@@ -60,7 +76,7 @@ public class IterDeadlockTest extends TestBase {
         map2 = new StoredSortedMap(store2, binding, binding, true);
     }
 
-    @After
+    @Override
     public void tearDown() {
 
         if (store1 != null) {
@@ -103,7 +119,6 @@ public class IterDeadlockTest extends TestBase {
         return DbCompat.testOpenDatabase(env, null, file, null, config);
     }
 
-    @Test
     public void testIterDeadlock()
         throws Exception {
 

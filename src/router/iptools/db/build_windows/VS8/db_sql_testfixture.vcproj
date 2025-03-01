@@ -1,4 +1,4 @@
-<VisualStudioProject ProjectType="Visual C++" Version="9.00" Name="db_sql_testfixture" ProjectGUID="{5D79B660-0667-11DF-8A39-0800200C9A66}">
+<VisualStudioProject ProjectType="Visual C++" Version="8.00" Name="db_sql_testfixture" ProjectGUID="{5D79B660-0667-11DF-8A39-0800200C9A66}">
   <Platforms>
     <Platform Name="Win32"/>
     <Platform Name="x64"/>
@@ -10,8 +10,8 @@
       <Tool Name="VCXMLDataGeneratorTool"/>
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-      <Tool Name="VCCLCompilerTool" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../../build_windows,../../src,../../src/dbinc,../../include,../../lang/sql/generated,../../lang/sql/adapter,../../lang/sql/sqlite/src,../../lang/sql/sqlite/ext/fts3,../../lang/sql/sqlite/ext/rtree" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;DIAGNOSTIC;WIN32;_CONSOL;STATIC_BUILD;SQLITE_TEST;TCLSH;SQLITE_NO_SYNC;SQLITE_CRASH_TEST;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;SQLITE_THREADSAFE=1;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;SQLITE_MEMDEBUG;;_CONSOLE" StringPooling="TRUE" RuntimeLibrary="3" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql_testfixture.pch" AssemblerListingLocation="$(OutDir)/testfixture/" ObjectFile="$(OutDir)/testfixture/" WarningLevel="3" Detect64BitPortabilityProblems="TRUE" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x86" AdditionalDependencies="libdb62d.lib tcl86.lib" AdditionalLibraryDirectories="$(OutDir);C:/tcl/lib;../../lib" OutputFile="$(OutDir)/testfixture.exe" ProgramDatabaseFile="$(OutDir)/testfixture.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" TargetMachine="0"/>
+      <Tool Name="VCCLCompilerTool" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../../build_windows,../../src,../../src/dbinc,../../include,../../lang/sql/generated,../../lang/sql/adapter,../../lang/sql/sqlite/src,../../lang/sql/sqlite/ext/fts3,../../lang/sql/sqlite/ext/rtree" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;DIAGNOSTIC;WIN32;_CONSOL;STATIC_BUILD;SQLITE_TEST;TCLSH;SQLITE_NO_SYNC;SQLITE_CRASH_TEST;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;SQLITE_THREADSAFE=1;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;SQLITE_MEMDEBUG;;_CONSOLE" StringPooling="TRUE" RuntimeLibrary="3" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql_testfixture.pch" AssemblerListingLocation="$(OutDir)/testfixture/" ObjectFile="$(OutDir)/testfixture/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
+      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x86" AdditionalDependencies="libdb53d.lib tcl85g.lib" AdditionalLibraryDirectories="$(OutDir);C:/tcl/lib;../../lib" OutputFile="$(OutDir)/testfixture.exe" ProgramDatabaseFile="$(OutDir)/testfixture.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" TargetMachine="0"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/></Configuration>
@@ -21,8 +21,8 @@
       <Tool Name="VCXMLDataGeneratorTool"/>
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-      <Tool Name="VCCLCompilerTool" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../../build_windows,../../src,../../src/dbinc,../../include,../../lang/sql/generated,../../lang/sql/adapter,../../lang/sql/sqlite/src,../../lang/sql/sqlite/ext/fts3,../../lang/sql/sqlite/ext/rtree" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;WIN32;_CONSOL;STATIC_BUILD;SQLITE_TEST;TCLSH;SQLITE_NO_SYNC;SQLITE_CRASH_TEST;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;SQLITE_THREADSAFE=1;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;_CONSOLE" StringPooling="TRUE" RuntimeLibrary="2" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql_testfixture.pch" AssemblerListingLocation="$(OutDir)/testfixture/" ObjectFile="$(OutDir)/testfixture/" WarningLevel="3" Detect64BitPortabilityProblems="TRUE" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x86" AdditionalDependencies="libdb62.lib tcl86.lib" AdditionalLibraryDirectories="$(OutDir);C:/tcl/lib;../../lib" OutputFile="$(OutDir)/testfixture.exe" ProgramDatabaseFile="$(OutDir)/testfixture.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" TargetMachine="0"/>
+      <Tool Name="VCCLCompilerTool" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../../build_windows,../../src,../../src/dbinc,../../include,../../lang/sql/generated,../../lang/sql/adapter,../../lang/sql/sqlite/src,../../lang/sql/sqlite/ext/fts3,../../lang/sql/sqlite/ext/rtree" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;WIN32;_CONSOL;STATIC_BUILD;SQLITE_TEST;TCLSH;SQLITE_NO_SYNC;SQLITE_CRASH_TEST;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;SQLITE_THREADSAFE=1;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;_CONSOLE" StringPooling="TRUE" RuntimeLibrary="2" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql_testfixture.pch" AssemblerListingLocation="$(OutDir)/testfixture/" ObjectFile="$(OutDir)/testfixture/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
+      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x86" AdditionalDependencies="libdb53.lib tcl85.lib" AdditionalLibraryDirectories="$(OutDir);C:/tcl/lib;../../lib" OutputFile="$(OutDir)/testfixture.exe" ProgramDatabaseFile="$(OutDir)/testfixture.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" TargetMachine="0"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/></Configuration>
@@ -32,8 +32,8 @@
       <Tool Name="VCXMLDataGeneratorTool"/>
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-      <Tool Name="VCCLCompilerTool" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../../build_windows,../../src,../../src/dbinc,../../include,../../lang/sql/generated,../../lang/sql/adapter,../../lang/sql/sqlite/src,../../lang/sql/sqlite/ext/fts3,../../lang/sql/sqlite/ext/rtree" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;DIAGNOSTIC;WIN32;_CONSOL;STATIC_BUILD;SQLITE_TEST;TCLSH;SQLITE_NO_SYNC;SQLITE_CRASH_TEST;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;SQLITE_THREADSAFE=1;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;SQLITE_MEMDEBUG;;_CONSOLE" StringPooling="TRUE" RuntimeLibrary="3" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql_testfixture.pch" AssemblerListingLocation="$(OutDir)/testfixture/" ObjectFile="$(OutDir)/testfixture/" WarningLevel="3" Detect64BitPortabilityProblems="TRUE" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x64" AdditionalDependencies="libdb62d.lib tcl86.lib" AdditionalLibraryDirectories="$(OutDir);C:/tcl/lib;../../lib" OutputFile="$(OutDir)/testfixture.exe" ProgramDatabaseFile="$(OutDir)/testfixture.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" TargetMachine="0"/>
+      <Tool Name="VCCLCompilerTool" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../../build_windows,../../src,../../src/dbinc,../../include,../../lang/sql/generated,../../lang/sql/adapter,../../lang/sql/sqlite/src,../../lang/sql/sqlite/ext/fts3,../../lang/sql/sqlite/ext/rtree" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;DIAGNOSTIC;WIN32;_CONSOL;STATIC_BUILD;SQLITE_TEST;TCLSH;SQLITE_NO_SYNC;SQLITE_CRASH_TEST;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;SQLITE_THREADSAFE=1;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;SQLITE_MEMDEBUG;;_CONSOLE" StringPooling="TRUE" RuntimeLibrary="3" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql_testfixture.pch" AssemblerListingLocation="$(OutDir)/testfixture/" ObjectFile="$(OutDir)/testfixture/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
+      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x64" AdditionalDependencies="libdb53d.lib tcl85g.lib" AdditionalLibraryDirectories="$(OutDir);C:/tcl/lib;../../lib" OutputFile="$(OutDir)/testfixture.exe" ProgramDatabaseFile="$(OutDir)/testfixture.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" TargetMachine="0"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/></Configuration>
@@ -43,8 +43,8 @@
       <Tool Name="VCXMLDataGeneratorTool"/>
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-      <Tool Name="VCCLCompilerTool" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../../build_windows,../../src,../../src/dbinc,../../include,../../lang/sql/generated,../../lang/sql/adapter,../../lang/sql/sqlite/src,../../lang/sql/sqlite/ext/fts3,../../lang/sql/sqlite/ext/rtree" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;WIN32;_CONSOL;STATIC_BUILD;SQLITE_TEST;TCLSH;SQLITE_NO_SYNC;SQLITE_CRASH_TEST;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;SQLITE_THREADSAFE=1;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;_CONSOLE" StringPooling="TRUE" RuntimeLibrary="2" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql_testfixture.pch" AssemblerListingLocation="$(OutDir)/testfixture/" ObjectFile="$(OutDir)/testfixture/" WarningLevel="3" Detect64BitPortabilityProblems="TRUE" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x64" AdditionalDependencies="libdb62.lib tcl86.lib" AdditionalLibraryDirectories="$(OutDir);C:/tcl/lib;../../lib" OutputFile="$(OutDir)/testfixture.exe" ProgramDatabaseFile="$(OutDir)/testfixture.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" TargetMachine="0"/>
+      <Tool Name="VCCLCompilerTool" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../../build_windows,../../src,../../src/dbinc,../../include,../../lang/sql/generated,../../lang/sql/adapter,../../lang/sql/sqlite/src,../../lang/sql/sqlite/ext/fts3,../../lang/sql/sqlite/ext/rtree" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;WIN32;_CONSOL;STATIC_BUILD;SQLITE_TEST;TCLSH;SQLITE_NO_SYNC;SQLITE_CRASH_TEST;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;SQLITE_THREADSAFE=1;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;_CONSOLE" StringPooling="TRUE" RuntimeLibrary="2" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql_testfixture.pch" AssemblerListingLocation="$(OutDir)/testfixture/" ObjectFile="$(OutDir)/testfixture/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
+      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x64" AdditionalDependencies="libdb53.lib tcl85.lib" AdditionalLibraryDirectories="$(OutDir);C:/tcl/lib;../../lib" OutputFile="$(OutDir)/testfixture.exe" ProgramDatabaseFile="$(OutDir)/testfixture.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" TargetMachine="0"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/></Configuration>
@@ -66,7 +66,6 @@
     <File RelativePath="..\..\lang\sql\sqlite\src\date.c"/>
     <File RelativePath="..\..\lang\sql\adapter\db_pragma.c"/>
     <File RelativePath="..\..\lang\sql\adapter\db_sequence.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\src\dbstat.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\delete.c"/>
     <File RelativePath="..\..\lang\sql\adapter\db_encrypt.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\expr.c"/>
@@ -79,29 +78,9 @@
     <File RelativePath="..\..\lang\sql\sqlite\ext\fts3\fts3_icu.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\ext\fts3\fts3_porter.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\ext\fts3\fts3_snippet.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\ext\fts3\fts3_term.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\ext\fts3\fts3_test.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\ext\fts3\fts3_tokenizer1.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\ext\fts3\fts3_tokenizer.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\ext\fts3\fts3_tokenize_vtab.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\ext\fts3\fts3_unicode.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\ext\fts3\fts3_unicode2.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\ext\fts3\fts3_write.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\ext\misc\amatch.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\ext\misc\closure.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\ext\misc\eval.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\ext\misc\fileio.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\ext\misc\fuzzer.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\ext\misc\ieee754.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\ext\misc\nextchar.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\ext\misc\percentile.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\ext\misc\regexp.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\ext\misc\rot13.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\ext\misc\spellfix.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\ext\misc\totype.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\ext\misc\vfslog.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\ext\misc\vtshim.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\ext\misc\wholenumber.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\func.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\global.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\hash.c"/>
@@ -138,11 +117,9 @@
     <File RelativePath="..\..\lang\sql\sqlite\src\select.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\status.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\table.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\src\threads.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\tokenize.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\trigger.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\update.c"/>
-    <File RelativePath="..\..\lang\sql\adapter\userauth.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\utf.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\util.c"/>
     <File RelativePath="..\..\lang\sql\adapter\vacuum.c"/>
@@ -151,7 +128,6 @@
     <File RelativePath="..\..\lang\sql\sqlite\src\vdbeaux.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\vdbeblob.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\vdbemem.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\src\vdbesort.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\vdbetrace.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\vtab.c"/>
     <File RelativePath="..\..\lang\sql\adapter\wal.c"/>
@@ -171,13 +147,12 @@
     <File RelativePath="..\..\lang\sql\sqlite\src\test_async.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\test_autoext.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\test_backup.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\src\test_blob.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\test_btree.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\test_config.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\test_demovfs.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\test_devsym.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\src\test_fs.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\test_func.c"/>
+    <File RelativePath="..\..\lang\sql\sqlite\src\test_fuzzer.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\test_hexio.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\test_intarray.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\test_journal.c"/>
@@ -194,10 +169,12 @@
     <File RelativePath="..\..\lang\sql\sqlite\src\test_server.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\test_syscall.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\test_superlock.c"/>
+    <File RelativePath="..\..\lang\sql\sqlite\src\test_stat.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\test_tclvar.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\test_thread.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\test_vfs.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\test_vfstrace.c"/>
+    <File RelativePath="..\..\lang\sql\sqlite\src\test_wholenumber.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\test_wsd.c"/>
   </Files>
   <Globals/>

@@ -60,12 +60,6 @@ declare function local:isRelease($config) as xs:boolean
   contains($config,"Release")
 };
 
-(: whether use WinMainCRTStartup as EntryPoint :)
-declare function local:isWinMain($project) as xs:boolean
-{
-  contains($project/configuration/text(),"WinMain")
-};
-
 declare function local:characterSet()
 {
   if ($mobile) then "1" else "2"
@@ -303,9 +297,8 @@ local:indent(6),<Tool>
   {local:makeImportLibrary($project,$config)}
   {local:makeModuleDefinition($project,$config)}
   {attribute{"TargetMachine"}{if (contains($platform, "(ARMV4)")) then "3" else "0"}}
-  {if ($mobile) then (attribute{"SubSystem"}{"9"}) else ()}
   {if ($project/type eq "app" and $mobile) then 
-      (attribute{"EntryPointSymbol"}{if (local:isWinMain($project)) then "WinMainCRTStartup" else "mainACRTStartup"})
+      (attribute{"SubSystem"}{"9"},attribute{"EntryPointSymbol"}{"WinMainCRTStartup"})
    else ()}
 </Tool>
 };

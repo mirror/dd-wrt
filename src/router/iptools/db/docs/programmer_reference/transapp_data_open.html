@@ -7,14 +7,14 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="transapp.html" title="Chapter 12.  Berkeley DB Transactional Data Store Applications" />
+    <link rel="up" href="transapp.html" title="Chapter 11.  Berkeley DB Transactional Data Store Applications" />
     <link rel="prev" href="transapp_env_open.html" title="Opening the environment" />
     <link rel="next" href="transapp_put.html" title="Recoverability and deadlock handling" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,7 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="transapp_env_open.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 12.  Berkeley DB Transactional Data Store Applications </th>
+          <th width="60%" align="center">Chapter 11. 
+		Berkeley DB Transactional Data Store Applications
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="transapp_put.html">Next</a></td>
         </tr>
       </table>
@@ -36,13 +38,10 @@
           </div>
         </div>
       </div>
-      <p>
-        Next, we open three databases ("color" and "fruit" and
-        "cats"), in the database environment. Again, our <a href="../api_reference/C/db.html" class="olink">DB</a> database
-        handles are declared to be free-threaded using the <a href="../api_reference/C/dbopen.html#open_DB_THREAD" class="olink">DB_THREAD</a>
-        flag, and so may be used by any number of threads we
-        subsequently create.
-    </p>
+      <p>Next, we open three databases ("color" and "fruit" and "cats"), in the
+database environment.  Again, our <a href="../api_reference/C/db.html" class="olink">DB</a> database handles are
+declared to be free-threaded using the <a href="../api_reference/C/dbopen.html#open_DB_THREAD" class="olink">DB_THREAD</a> flag, and so
+may be used by any number of threads we subsequently create.</p>
       <a id="prog_transapp2"></a>
       <pre class="programlisting">int
 main(int argc, char *argv[])
@@ -120,10 +119,8 @@ db_open(DB_ENV *dbenv, DB **dbp, char *name, int dups)
     *dbp = db;
     return (0);
 }</pre>
-      <p>
-        After opening the database, we can use the <a href="../api_reference/C/db_stat.html" class="olink">db_stat</a> utility to
-        display information about a database we have created:
-    </p>
+      <p>After opening the database, we can use the <a href="../api_reference/C/db_stat.html" class="olink">db_stat</a> utility to
+display information about a database we have created:</p>
       <pre class="programlisting">prompt&gt; db_stat -h TXNAPP -d color
 53162   Btree magic number.
 8       Btree version number.
@@ -142,40 +139,30 @@ Flags:
 0       Number of tree overflow pages.
 0       Number of bytes free in tree overflow pages (0% ff).
 0       Number of pages on the free list.</pre>
-      <p>
-        The database open must be enclosed within a transaction in
-        order to be recoverable. The transaction will ensure that
-        created files are re-created in recovered environments (or do
-        not appear at all). Additional database operations or
-        operations on other databases can be included in the same
-        transaction, of course. In the simple case, where the open is
-        the only operation in the transaction, an application can set
-        the <a href="../api_reference/C/envset_flags.html#envset_flags_DB_AUTO_COMMIT" class="olink">DB_AUTO_COMMIT</a> flag instead of creating and managing its
-        own transaction handle. The <a href="../api_reference/C/envset_flags.html#envset_flags_DB_AUTO_COMMIT" class="olink">DB_AUTO_COMMIT</a> flag will
-        internally wrap the operation in a transaction, simplifying
-        application code.
-    </p>
-      <p>
-        The previous example is the simplest case of transaction
-        protection for database open. Obviously, additional database
-        operations can be done in the scope of the same transaction.
-        For example, an application maintaining a list of the
-        databases in a database environment in a well-known file might
-        include an update of the list in the same transaction in which
-        the database is created. Or, an application might create both
-        a primary and secondary database in a single
-        transaction.
-    </p>
-      <p>
-        <a href="../api_reference/C/db.html" class="olink">DB</a> handles that will later be used for transactionally
-        protected database operations must be opened within a
-        transaction. Specifying a transaction handle to database
-        operations using <a href="../api_reference/C/db.html" class="olink">DB</a> handles not opened within a transaction
-        will return an error. Similarly, not specifying a transaction
-        handle to database operations that will modify the database,
-        using handles that were opened within a transaction, will also
-        return an error.
-    </p>
+      <p>The database open must be enclosed within a transaction in order to be
+recoverable.  The transaction will ensure that created files are
+re-created in recovered environments (or do not appear at all).
+Additional database operations or operations on other databases can be
+included in the same transaction, of course.  In the simple case, where
+the open is the only operation in the transaction, an application can
+set the <a href="../api_reference/C/envset_flags.html#envset_flags_DB_AUTO_COMMIT" class="olink">DB_AUTO_COMMIT</a> flag instead of creating and managing
+its own transaction handle.  The <a href="../api_reference/C/envset_flags.html#envset_flags_DB_AUTO_COMMIT" class="olink">DB_AUTO_COMMIT</a> flag will
+internally wrap the operation in a transaction, simplifying application
+code.</p>
+      <p>The previous example is the simplest case of transaction protection for
+database open.  Obviously, additional database operations can be done
+in the scope of the same transaction.  For example, an application
+maintaining a list of the databases in a database environment in a
+well-known file might include an update of the list in the same
+transaction in which the database is created.  Or, an application might
+create both a primary and secondary database in a single transaction.</p>
+      <p><a href="../api_reference/C/db.html" class="olink">DB</a> handles that will later be used for transactionally protected
+database operations must be opened within a transaction.  Specifying a
+transaction handle to database operations using <a href="../api_reference/C/db.html" class="olink">DB</a> handles not
+opened within a transaction will return an error.  Similarly, not
+specifying a transaction handle to database operations that will modify
+the database, using handles that were opened within a transaction, will
+also return an error.</p>
     </div>
     <div class="navfooter">
       <hr />

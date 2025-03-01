@@ -42,25 +42,20 @@ public class Vm {
      * @param cb the object implementing the callback methods.
      * @return true as long as more row data can be retrieved,
      * false, otherwise.
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public native boolean step(Callback cb) throws SQLite.Exception;
 
     /**
      * Compile the next SQL statement for the SQLite VM instance.
-     *
      * @return true when SQL statement has been compiled, false
      * on end of statement sequence.
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public native boolean compile() throws SQLite.Exception;
 
     /**
      * Abort the compiled SQLite VM.
-     *
-     * @throws SQLite.Exception indicating SQLite error
      */
 
     public native void stop() throws SQLite.Exception;

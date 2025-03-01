@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -33,8 +33,8 @@ import com.sleepycat.asm.ClassWriter;
  * <p>{@code ClassEnhancer} objects are thread-safe.  Multiple threads may
  * safely call the methods of a shared {@code ClassEnhancer} object.</p>
  *
- * <p>As described in the <a
- * href="../package-summary.html#bytecode">package summary</a>, bytecode
+ * <p>As described in the {@link <a
+ * href="../package-summary.html#bytecode">package summary</a>}, bytecode
  * enhancement may be used either at runtime or offline (at build time).</p>
  *
  * <p>To use enhancement offline, this class may be used as a {@link #main main
@@ -54,6 +54,7 @@ import com.sleepycat.asm.ClassWriter;
  * classloader are searched.
  * <p>The "-v" option may be included in the comma separated list to print the
  * name of each class that is enhanced.</p></li>
+ * <br>
  * <li>The {@link #enhance} method may be called to implement a class loader
  * that performs enhancement.  Using this approach, it is the developer's
  * responsibility to implement and configure the class loader.</li>
@@ -82,8 +83,6 @@ public class ClassEnhancer implements ClassFileTransformer {
      * @param args one or more directories containing classes to be enhanced.
      * Subdirectories of these directories will also be searched.  Optionally,
      * -v may be included to print the name of every class file enhanced.
-     *
-     * @throws Exception if a problem occurs.
      */
     public static void main(String[] args) throws Exception {
         try {
@@ -119,10 +118,6 @@ public class ClassEnhancer implements ClassFileTransformer {
 
     /**
      * Enhances classes as specified by a JVM -javaagent argument.
-     *
-     * @param args see java.lang.instrument.Instrumentation.
-     *
-     * @param inst see java.lang.instrument.Instrumentation.
      *
      * @see java.lang.instrument.Instrumentation
      */
@@ -168,8 +163,6 @@ public class ClassEnhancer implements ClassFileTransformer {
      *
      * <p>True may be specified to print the name of each class file that is
      * enhanced.  This property is false by default.</p>
-     *
-     * @param verbose whether to use verbose mode.
      */
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
@@ -177,8 +170,6 @@ public class ClassEnhancer implements ClassFileTransformer {
 
     /**
      * Gets verbose mode.
-     *
-     * @return whether to use verbose mode.
      *
      * @see #setVerbose
      */

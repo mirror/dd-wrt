@@ -73,7 +73,7 @@ test_contents backup-1.2 db main db main
 # Check that it is possible to create and finish backup operations.
 #
 do_test backup-1.3.1 {
-  forcedelete test2.db
+  file delete test2.db
   sqlite3 db2 test2.db
   sqlite3_backup B db2 main db main
 } {B}
@@ -168,8 +168,8 @@ foreach pgsz_dest {1024} {
 foreach nPagePerStep {1 200} {
 
   # Open the databases.
-  catch { forcedelete test.db }
-  catch { forcedelete test2.db }
+  catch { file delete -force -- test.db }
+  catch { file delete -force -- test2.db }
   eval $zOpenScript
 
   # Set to true if copying to an in-memory destination. Copying to an 
@@ -210,7 +210,6 @@ foreach nPagePerStep {1 200} {
     execsql "PRAGMA ${file_dest}.cache_size = 4000" $db_dest
     if {$rows_dest != 0} {
       execsql "
-        BEGIN; 
         CREATE TABLE ${file_dest}.t1(a, b);
         CREATE INDEX ${file_dest}.i1 ON t1(a, b);
       " $db_dest
@@ -219,7 +218,6 @@ foreach nPagePerStep {1 200} {
           INSERT INTO ${file_dest}.t1 VALUES(1, randstr(1000,1000))
         " $db_dest
       }
-      execsql COMMIT $db_dest
     }
   
     # Backup the source database.
@@ -246,6 +244,7 @@ foreach nPagePerStep {1 200} {
 #
 # End of backup-2.* tests.
 #---------------------------------------------------------------------
+
 
 #---------------------------------------------------------------------
 # The following tests, backup-4.*, test various error conditions:
@@ -281,8 +280,8 @@ do_test backup-4.1.4 {
 } {unknown database aux}
 
 do_test backup-4.2.1 {
-  catch { forcedelete test3.db }
-  catch { forcedelete test4.db }
+  catch { file delete -force test3.db }
+  catch { file delete -force test4.db }
   execsql { 
     ATTACH 'test3.db' AS aux1;
     CREATE TABLE aux1.t1(a, b);
@@ -312,7 +311,7 @@ do_test backup-4.3.2 {
 } {SQLITE_BUSY}
 do_test backup-4.3.3 {
   sqlite3_errmsg db2
-} {unable to close due to unfinalized statements or unfinished backups}
+} {unable to close due to unfinished backup operation}
 do_test backup-4.3.4 {
   B step 50
 } {SQLITE_DONE}
@@ -328,7 +327,7 @@ db close
 db2 close
 
 do_test backup-4.5.1 {
-  catch { forcedelete test.db }
+  catch { file delete -force -- test.db }
   sqlite3 db test.db
   sqlite3 db2 :memory:
   execsql {
@@ -352,7 +351,7 @@ do_test backup-4.5.3 {
 db close
 db2 close
 #
-# End of backup-4.* tests.
+# End of backup-5.* tests.
 #---------------------------------------------------------------------
 
 #---------------------------------------------------------------------
@@ -380,12 +379,12 @@ db2 close
 #   3) Backing up memory-to-file. 
 #
 set iTest 0
-forcedelete bak.db-wal
+file delete -force bak.db-wal
 foreach {writer file} {db test.db db :memory:} {
   incr iTest
-  catch { forcedelete bak.db }
+  catch { file delete -force bak.db }
   sqlite3 db2 bak.db
-  catch { forcedelete $file }
+  catch { file delete -force $file }
   sqlite3 db $file
   sqlite3 db3 $file
 
@@ -486,9 +485,9 @@ foreach {writer file} {db test.db db :memory:} {
   catch {db close}
   catch {db2 close}
   catch {db3 close}
-  catch { forcedelete bak.db }
+  catch { file delete -force -- bak.db }
   sqlite3 db2 bak.db
-  catch { forcedelete $file }
+  catch { file delete -force -- $file }
   sqlite3 db $file
   sqlite3 db3 $file
   do_test backup-5.$iTest.5.1 {
@@ -532,8 +531,8 @@ foreach {writer file} {db test.db db :memory:} {
 # Test the sqlite3_backup_remaining() and backup_pagecount() APIs.
 #
 do_test backup-6.1 {
-  catch { forcedelete test.db }
-  catch { forcedelete test2.db }
+  catch { file delete -force -- test.db }
+  catch { file delete -force -- test2.db }
   sqlite3 db test.db
   sqlite3 db2 test2.db
   execsql {
@@ -589,8 +588,8 @@ catch {db2 close}
 # backup-7.3.*: Destination database is externally locked (return SQLITE_BUSY).
 #
 do_test backup-7.0 {
-  catch { forcedelete test.db }
-  catch { forcedelete test2.db }
+  catch { file delete -force -- test.db }
+  catch { file delete -force -- test2.db }
   sqlite3 db2 test2.db
   sqlite3 db test.db
   sqlite3 db3 test.db
@@ -631,13 +630,13 @@ integrity_check backup-7.3.6 db2
 do_test backup-7.3.1 {
   db2 close
   db3 close
-  forcedelete test2.db
+  file delete -force -- test2.db
   sqlite3 db2 test2.db
   sqlite3 db3 test2.db
 
   sqlite3_backup B db2 main db main
   execsql { BEGIN ; CREATE TABLE t2(a, b); COMMIT; } db3
-
+ 
   B step 5
 } {SQLITE_BUSY}
 do_test backup-7.3.2 {
@@ -659,8 +658,8 @@ catch { db2 close }
 # These tests reuse the database "test.db" left over from backup-7.*.
 #
 do_test backup-8.1 {
-  catch { forcedelete test2.db }
-  catch { forcedelete test3.db }
+  catch { file delete -force -- test2.db }
+  catch { file delete -force -- test3.db }
   sqlite3 db2 test2.db
   sqlite3 db3 test3.db
 
@@ -741,8 +740,8 @@ catch {db2 close}
 
 ifcapable memorymanage {
   db close
-  forcedelete test.db
-  forcedelete bak.db
+  file delete -force -- test.db
+  file delete -force -- bak.db
 
   sqlite3 db test.db
   sqlite3 db2 test.db
@@ -791,7 +790,6 @@ ifcapable memorymanage {
 # used as the source by a backup operation:
 #
 #   10.1.*: If the db is in-memory, the backup is restarted.
-#   10.2.*: If the db is a file, the backup is not restarted.
 #   10.2.*: If the db is a file, the backup is restarted.
 #   10.3.*: If the db is in-memory, and not updated, the backup is not
 #           restarted
@@ -799,9 +797,9 @@ ifcapable memorymanage {
 #           restarted
 #
 db close
-forcedelete test.db test.db-journal
+file delete -force -- test.db test.db-journal
 foreach {tn file update rc} {
-  1 test.db  1 SQLITE_DONE
+  1 test.db  1 SQLITE_OK
   2 :memory: 1 SQLITE_OK
   1 test.db  0 SQLITE_DONE
   2 :memory: 0 SQLITE_DONE
@@ -827,7 +825,7 @@ foreach {tn file update rc} {
   } {256}
 
   do_test backup-10.$tn.3 {
-    forcedelete bak.db bak.db-journal
+    file delete -force -- bak.db bak.db-journal
     sqlite3 db2 bak.db
     sqlite3_backup B db2 main db main
     B step 50

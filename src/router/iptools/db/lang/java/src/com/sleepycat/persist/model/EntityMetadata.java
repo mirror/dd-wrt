@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -29,10 +29,6 @@ public class EntityMetadata implements Serializable {
 
     /**
      * Used by an {@code EntityModel} to construct entity metadata.
-     *
-     * @param className the class name.
-     * @param primaryKey the primary key metadata.
-     * @param secondaryKeys the secondary key metadata.
      */
     public EntityMetadata(String className,
                           PrimaryKeyMetadata primaryKey,
@@ -44,8 +40,6 @@ public class EntityMetadata implements Serializable {
 
     /**
      * Returns the name of the entity class.
-     *
-     * @return the name of the entity class.
      */
     public String getClassName() {
         return className;
@@ -55,8 +49,6 @@ public class EntityMetadata implements Serializable {
      * Returns the primary key metadata for this entity.  Note that the primary
      * key field may be declared in this class or in a subclass. This metadata
      * may be specified using the {@link PrimaryKey} annotation.
-     *
-     * @return the primary key metadata.
      */
     public PrimaryKeyMetadata getPrimaryKey() {
         return primaryKey;
@@ -68,8 +60,6 @@ public class EntityMetadata implements Serializable {
      * returned map contains a mapping for each secondary key of this entity,
      * including secondary keys declared in subclasses and superclasses.  This
      * metadata may be specified using {@link SecondaryKey} annotations.
-     *
-     * @return the secondary key metadata.
      */
     public Map<String, SecondaryKeyMetadata> getSecondaryKeys() {
         return secondaryKeys;

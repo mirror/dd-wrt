@@ -1,19 +1,19 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package com.sleepycat.persist.impl;
 
 import java.lang.reflect.Array;
-import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
 import com.sleepycat.persist.model.EntityModel;
 import com.sleepycat.persist.raw.RawObject;
+import java.util.IdentityHashMap;
 
 /**
  * An array of primitives having one dimension.  Multidimensional arrays are

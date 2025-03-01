@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -38,9 +38,6 @@ public interface ClassCatalog
 
     /**
      * Close a catalog database and release any cached resources.
-     *
-     * @throws DatabaseException if an error occurs closing the catalog
-     * database.
      */
     public void close()
         throws DatabaseException;
@@ -58,11 +55,6 @@ public interface ClassCatalog
      * class ID.
      *
      * @return The class ID for the current version of the class.
-     *
-     * @throws DatabaseException if an error occurs accessing the catalog
-     * database.
-     *
-     * @throws ClassNotFoundException if the class does not exist.
      */
     public byte[] getClassID(ObjectStreamClass classDesc)
         throws DatabaseException, ClassNotFoundException;
@@ -76,27 +68,19 @@ public interface ClassCatalog
      *
      * @return The class format for the given class ID, which may or may not
      * represent the current version of the class.
-     *
-     * @throws DatabaseException if an error occurs accessing the catalog
-     * database.
-     *
-     * @throws ClassNotFoundException if the class does not exist.
      */
     public ObjectStreamClass getClassFormat(byte[] classID)
         throws DatabaseException, ClassNotFoundException;
 
     /**
-     * Returns the ClassLoader to be used by bindings that use this catalog, or
-     * null if a default class loader should be used. The ClassLoader is used
-     * by {@link SerialBinding} to load classes whose description is stored in
-     * the catalog.
+     * Returns the ClassLoader to be used by bindings that use this catalog.
+     * The ClassLoader is used by {@link SerialBinding} to load classes whose
+     * description is stored in the catalog.
      *
      * <p>In BDB JE, the implementation of this method in {@link
      * StoredClassCatalog} returns the ClassLoader property of the catalog
      * database Environment.  This ensures that the Environment's ClassLoader
      * property is used for loading all user-supplied classes.</p>
-     *
-     * @return the ClassLoader or null.
      */
     public ClassLoader getClassLoader();
 }

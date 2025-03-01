@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 #include "sqliteInt.h"
@@ -60,27 +60,10 @@ sqlite3_file *sqlite3PagerFile(Pager *pPager) {
 /*
 ** Return the full pathname of the database file.
 */
-const char *sqlite3PagerFilename(Pager *pPager, int nullIfMemDb) {
+const char *sqlite3PagerFilename(Pager *pPager) {
 	Btree *p = (Btree *)pPager;
 	BtShared *pBt = p->pBt;
-	return ((nullIfMemDb && (pBt->dbStorage == DB_STORE_TMP
-	    || pBt->dbStorage == DB_STORE_INMEM)) ? "" : pBt->orig_name);
-}
-
-/*
-** Return TRUE if the database file is opened read-only.  Return FALSE
-** if the database is (in theory) writable.
-*/
-u8 sqlite3PagerIsreadonly(Pager *pPager){
-	Btree *p = (Btree *)pPager;
-	return (p->readonly ? 1 : 0);
-}
-
-/*
-** Free as much memory as possible from the pager.
-*/
-void sqlite3PagerShrink(Pager *pPager){
-	/***************IMPLEMENT***************/
+	return (pBt->orig_name);
 }
 
 /*
@@ -217,39 +200,6 @@ int sqlite3PagerWalSupported(Pager *pPager) {
 }
 
 #endif /* SQLITE_OMIT_WAL */
-
-/*
-** Parameter eStat must be either SQLITE_DBSTATUS_CACHE_HIT or
-** SQLITE_DBSTATUS_CACHE_MISS. Before returning, *pnVal is incremented by the
-** current cache hit or miss count, according to the value of eStat. If the 
-** reset parameter is non-zero, the cache hit or miss count is zeroed before 
-** returning.
-*/
-void sqlite3PagerCacheStat(Pager *pPager, int eStat, int reset, int *pnVal){
-	Btree *p;
-	BtShared *pBt;
-	DB_MPOOL_STAT *mpstat;
-	uintmax_t stat;
-
-	p = (Btree *)pPager;
-	pBt = p->pBt;
-
-	assert(eStat == SQLITE_DBSTATUS_CACHE_HIT ||
-	    eStat==SQLITE_DBSTATUS_CACHE_MISS);
-	/*
-	 * TODO: reset differs from SQLite here. We clear all mpool stats, they
-	 * clear only the particular field queried.
-	 */
-	if (pBt->dbenv->memp_stat(
-	    pBt->dbenv, &mpstat, NULL, reset ? DB_STAT_CLEAR : 0) != 0)
-		return;
-	if (eStat == SQLITE_DBSTATUS_CACHE_HIT)
-		stat = mpstat->st_cache_hit;
-	else
-		stat = mpstat->st_cache_miss;
-	*pnVal += (int)stat;
-	sqlite3_free(mpstat);
-}
 
 #ifdef SQLITE_TEST
 int sqlite3_pager_readdb_count = 0;    /* Number of full pages read from DB */

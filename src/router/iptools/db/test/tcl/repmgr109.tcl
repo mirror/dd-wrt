@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # TEST repmgr109
 # TEST Test repmgr's internal juggling of peer EID's.
@@ -27,7 +27,6 @@ proc repmgr109 { } {
 
 proc repmgr109_sub { {a_too false} {while_active true} } {
 	source ./include.tcl
-	global ipversion
 
 	if {$a_too} {
 		set part1 "shuffle with peer reassignment"
@@ -43,7 +42,6 @@ proc repmgr109_sub { {a_too false} {while_active true} } {
 	puts "Repmgr$tnum: ($part1, then peer change $part2)"
 
 	env_cleanup $testdir
-	set hoststr [get_hoststr $ipversion]
 	foreach {mport aport bport cport} [available_ports 4] {}
 	file mkdir [set dirm $testdir/M]
 	file mkdir [set dira $testdir/A]
@@ -59,7 +57,7 @@ proc repmgr109_sub { {a_too false} {while_active true} } {
 	puts "\tRepmgr$tnum.a: Create a master and first two clients."
 	set cmds {
 		"home $dirm"
-		"local $hoststr $mport"
+		"local $mport"
 		"output $testdir/moutput"
 		"open_env"
 		"start master"
@@ -68,9 +66,9 @@ proc repmgr109_sub { {a_too false} {while_active true} } {
 
 	set cmds {
 		"home $dira"
-		"local $hoststr $aport"
+		"local $aport"
 		"output $testdir/aoutput"
-		"remote $hoststr $mport"
+		"remote 127.0.0.1 $mport"
 		"open_env"
 		"start client"
 	}
@@ -78,9 +76,9 @@ proc repmgr109_sub { {a_too false} {while_active true} } {
 
 	set cmds {
 		"home $dirb"
-		"local $hoststr $bport"
+		"local $bport"
 		"output $testdir/boutput"
-		"remote $hoststr $mport"
+		"remote 127.0.0.1 $mport"
 		"open_env"
 		"start client"
 	}
@@ -100,20 +98,20 @@ proc repmgr109_sub { {a_too false} {while_active true} } {
 	}
 	set cmds {
 		"home $dirc"
-		"local $hoststr $cport"
+		"local $cport"
 		"output $testdir/c1output"
-		"remote $peer_flag $hoststr $aport"
-		"remote $hoststr $mport"
+		"remote $peer_flag 127.0.0.1 $aport"
+		"remote 127.0.0.1 $mport"
 		"open_env"
 	}
 	set c1 [open_site_prog [subst $cmds]]
 
 	set cmds {
 		"home $dirc"
-		"local $hoststr $cport"
+		"local $cport"
 		"output $testdir/c2output"
-		"remote -p $hoststr $bport"
-		"remote $hoststr $aport"
+		"remote -p 127.0.0.1 $bport"
+		"remote 127.0.0.1 $aport"
 		"open_env"
 	}
 	set c2 [open_site_prog [subst $cmds]]
@@ -161,16 +159,16 @@ proc repmgr109_sub { {a_too false} {while_active true} } {
 			"home $dirc"
 			"output $testdir/c1output2"
 			"open_env"
-			"remote $hoststr $bport"
-			"remote -p $hoststr $aport"
+			"remote 127.0.0.1 $bport"
+			"remote -p 127.0.0.1 $aport"
 			"start client"
 		}
 	} else {
 		set cmds {
 			"home $dirc"
 			"output $testdir/c1output2"
-			"remote $hoststr $bport"
-			"remote -p $hoststr $aport"
+			"remote 127.0.0.1 $bport"
+			"remote -p 127.0.0.1 $aport"
 			"open_env"
 			"start client"
 		}

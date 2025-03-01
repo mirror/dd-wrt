@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -12,11 +12,12 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.\n";
+    "Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.\n";
 #endif
 
 int db_upgrade_main __P((int, char *[]));
-void db_upgrade_usage __P((void));
+int db_upgrade_usage __P((void));
+int db_upgrade_version_check __P((void));
 
 const char *progname;
 
@@ -45,58 +46,79 @@ db_upgrade_main(argc, argv)
 	DB_ENV *dbenv;
 	u_int32_t flags;
 	int ch, exitval, nflag, ret, t_ret, verbose;
-	char *home, *msgpfx, *passwd;
+	char *home, *passwd;
 
-	progname = __db_util_arg_progname(argv[0]);
+	if ((progname = __db_rpath(argv[0])) == NULL)
+		progname = argv[0];
+	else
+		++progname;
 
-	if ((ret = __db_util_version_check(progname)) != 0)
+	if ((ret = db_upgrade_version_check()) != 0)
 		return (ret);
 
 	dbenv = NULL;
 	flags = nflag = verbose = 0;
-	exitval = EXIT_SUCCESS;
-	home = msgpfx = passwd = NULL;
+	exitval = 0;
+	home = passwd = NULL;
 	__db_getopt_reset = 1;
-	while ((ch = getopt(argc, argv, "h:m:NP:sVv")) != EOF)
+	while ((ch = getopt(argc, argv, "h:NP:sVv")) != EOF)
 		switch (ch) {
 		case 'h':
 			home = optarg;
-			break;
-		case 'm':
-			msgpfx = optarg;
 			break;
 		case 'N':
 			nflag = 1;
 			break;
 		case 'P':
-			if (__db_util_arg_password(progname, 
- 			    optarg, &passwd) != 0)
-  				goto err;
+			if (passwd != NULL) {
+				fprintf(stderr, DB_STR("5131",
+					"Password may not be specified twice"));
+				free(passwd);
+				return (EXIT_FAILURE);
+			}
+			passwd = strdup(optarg);
+			memset(optarg, 0, strlen(optarg));
+			if (passwd == NULL) {
+				fprintf(stderr, DB_STR_A("5018",
+				    "%s: strdup: %s\n", "%s %s\n"),
+				    progname, strerror(errno));
+				return (EXIT_FAILURE);
+			}
 			break;
 		case 's':
 			LF_SET(DB_DUPSORT);
 			break;
 		case 'V':
 			printf("%s\n", db_version(NULL, NULL, NULL));
-			goto done;
+			return (EXIT_SUCCESS);
 		case 'v':
 			verbose = 1;
 			break;
 		case '?':
 		default:
-			goto usage_err;
+			return (db_upgrade_usage());
 		}
 	argc -= optind;
 	argv += optind;
 
 	if (argc <= 0)
-		goto usage_err;
+		return (db_upgrade_usage());
 
 	/* Handle possible interruptions. */
 	__db_util_siginit();
 
-	if (__db_util_env_create(&dbenv, progname, passwd, msgpfx) != 0)
+	/*
+	 * Create an environment object and initialize it for error
+	 * reporting.
+	 */
+	if ((ret = db_env_create(&dbenv, 0)) != 0) {
+		fprintf(stderr, "%s: db_env_create: %s\n",
+		    progname, db_strerror(ret));
 		goto err;
+	}
+
+	dbenv->set_errfile(dbenv, stderr);
+	dbenv->set_errpfx(dbenv, progname);
 
 	if (nflag) {
 		if ((ret = dbenv->set_flags(dbenv, DB_NOLOCKING, 1)) != 0) {
@@ -109,8 +131,24 @@ db_upgrade_main(argc, argv)
 		}
 	}
 
-	if (__db_util_env_open(dbenv, home, 0, 1, DB_INIT_MPOOL, 0, NULL) != 0)
+	if (passwd != NULL && (ret = dbenv->set_encrypt(dbenv,
+	    passwd, DB_ENCRYPT_AES)) != 0) {
+		dbenv->err(dbenv, ret, "set_passwd");
 		goto err;
+	}
+
+	/*
+	 * If attaching to a pre-existing environment fails, create a
+	 * private one and try again.
+	 */
+	if ((ret = dbenv->open(dbenv, home, DB_USE_ENVIRON, 0)) != 0 &&
+	    (ret == DB_VERSION_MISMATCH || ret == DB_REP_LOCKOUT ||
+	    (ret = dbenv->open(dbenv, home,
+	    DB_CREATE | DB_INIT_MPOOL | DB_PRIVATE | DB_USE_ENVIRON,
+	    0)) != 0)) {
+		dbenv->err(dbenv, ret, "DB_ENV->open");
+		goto err;
+	}
 
 	for (; !__db_util_interrupted() && argv[0] != NULL; ++argv) {
 		if ((ret = db_create(&dbp, dbenv, 0)) != 0) {
@@ -139,11 +177,10 @@ db_upgrade_main(argc, argv)
 	}
 
 	if (0) {
-usage_err:	db_upgrade_usage();
-err:		exitval = EXIT_FAILURE;
+err:		exitval = 1;
 	}
-done:	if (dbenv != NULL && (ret = dbenv->close(dbenv, 0)) != 0) {
-		exitval = EXIT_FAILURE;
+	if (dbenv != NULL && (ret = dbenv->close(dbenv, 0)) != 0) {
+		exitval = 1;
 		fprintf(stderr,
 		    "%s: dbenv->close: %s\n", progname, db_strerror(ret));
 	}
@@ -154,12 +191,30 @@ done:	if (dbenv != NULL && (ret = dbenv->close(dbenv, 0)) != 0) {
 	/* Resend any caught signal. */
 	__db_util_sigresend();
 
-	return (exitval);
+	return (exitval == 0 ? EXIT_SUCCESS : EXIT_FAILURE);
 }
 
-void
+int
 db_upgrade_usage()
 {
 	fprintf(stderr, "usage: %s %s\n", progname,
-	    "[-NsVv] [-h home] [-m msg_pfx] [-P password] db_file ...");
+	    "[-NsVv] [-h home] [-P password] db_file ...");
+	return (EXIT_FAILURE);
+}
+
+int
+db_upgrade_version_check()
+{
+	int v_major, v_minor, v_patch;
+
+	/* Make sure we're loaded with the right version of the DB library. */
+	(void)db_version(&v_major, &v_minor, &v_patch);
+	if (v_major != DB_VERSION_MAJOR || v_minor != DB_VERSION_MINOR) {
+		fprintf(stderr, DB_STR_A("5020",
+		    "%s: version %d.%d doesn't match library version %d.%d\n",
+		    "%s %d %d %d %d\n"), progname, DB_VERSION_MAJOR,
+		    DB_VERSION_MINOR, v_major, v_minor);
+		return (EXIT_FAILURE);
+	}
+	return (0);
 }

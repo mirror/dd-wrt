@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -54,7 +54,7 @@ void assign(InputIterator first, InputIterator last,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139782131333024"></a>Parameters</h4>
+                <h4 class="title"><a id="idp50216120"></a>Parameters</h4>
               </div>
             </div>
           </div>
@@ -62,7 +62,7 @@ void assign(InputIterator first, InputIterator last,
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="idm139782132422528"></a>b_truncate</h5>
+                  <h5 class="title"><a id="idp50205312"></a>b_truncate</h5>
                 </div>
               </div>
             </div>
@@ -72,7 +72,7 @@ void assign(InputIterator first, InputIterator last,
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="idm139782132477344"></a>last</h5>
+                  <h5 class="title"><a id="idp50228432"></a>last</h5>
                 </div>
               </div>
             </div>
@@ -82,7 +82,7 @@ void assign(InputIterator first, InputIterator last,
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="idm139782132484896"></a>first</h5>
+                  <h5 class="title"><a id="idp50228752"></a>first</h5>
                 </div>
               </div>
             </div>
@@ -98,7 +98,7 @@ void assign(const_iterator first, const_iterator last,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139782132515808"></a>Parameters</h4>
+                <h4 class="title"><a id="idp50229072"></a>Parameters</h4>
               </div>
             </div>
           </div>
@@ -106,7 +106,7 @@ void assign(const_iterator first, const_iterator last,
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="idm139782132521344"></a>b_truncate</h5>
+                  <h5 class="title"><a id="idp50229264"></a>b_truncate</h5>
                 </div>
               </div>
             </div>
@@ -116,7 +116,7 @@ void assign(const_iterator first, const_iterator last,
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="idm139782127406016"></a>last</h5>
+                  <h5 class="title"><a id="idp50230104"></a>last</h5>
                 </div>
               </div>
             </div>
@@ -126,7 +126,7 @@ void assign(const_iterator first, const_iterator last,
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="idm139782127609696"></a>first</h5>
+                  <h5 class="title"><a id="idp50230424"></a>first</h5>
                 </div>
               </div>
             </div>
@@ -142,7 +142,7 @@ void assign(size_type n, const T &amp;u,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139782128021104"></a>Parameters</h4>
+                <h4 class="title"><a id="idp50230816"></a>Parameters</h4>
               </div>
             </div>
           </div>
@@ -150,7 +150,7 @@ void assign(size_type n, const T &amp;u,
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="idm139782128018960"></a>b_truncate</h5>
+                  <h5 class="title"><a id="idp50231008"></a>b_truncate</h5>
                 </div>
               </div>
             </div>
@@ -160,7 +160,7 @@ void assign(size_type n, const T &amp;u,
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="idm139782127983872"></a>u</h5>
+                  <h5 class="title"><a id="idp50231928"></a>u</h5>
                 </div>
               </div>
             </div>
@@ -170,7 +170,7 @@ void assign(size_type n, const T &amp;u,
             <div class="titlepage">
               <div>
                 <div>
-                  <h5 class="title"><a id="idm139782127975232"></a>n</h5>
+                  <h5 class="title"><a id="idp50232248"></a>n</h5>
                 </div>
               </div>
             </div>
@@ -182,7 +182,7 @@ void assign(size_type n, const T &amp;u,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139782131533504"></a>Group: Assign functions</h3>
+              <h3 class="title"><a id="idp50212368"></a>Group: Assign functions</h3>
             </div>
           </div>
         </div>
@@ -190,7 +190,7 @@ void assign(size_type n, const T &amp;u,
         <p>The following four member functions have default parameter b_truncate, because they require all key/data pairs in the database be deleted before the real operation, and by default we use Db::truncate to truncate the database rather than delete the key/data pairs one by one, but Db::truncate requirs no open cursors on the database handle, and the four member functions will close any open cursors of backing database handle in current thread, but can do nothing to cursors of other threads opened from the same database handle. So you must make sure there are no open cursors of the database handle in any other threads. On the other hand, users can specify "false" to the b_truncate parameter and thus the key/data pairs will be deleted one by one. Other than that, they have identical behaviors as their counterparts in std::vector. </p>
         <div class="simplesect" lang="en" xml:lang="en">
           <div class="titlepage"></div>
-          <p><a class="ulink" href="http://www.cplusplus.com/reference/vector/vector/assign/" target="_top">http://www.cplusplus.com/reference/vector/vector/assign/</a>. </p>
+          <p><a class="ulink" href="http://www.cplusplus.com/reference/stl/vector/assign/" target="_top">http://www.cplusplus.com/reference/stl/vector/assign/</a>. </p>
         </div>
         <p>
 </p>
@@ -199,7 +199,7 @@ void assign(size_type n, const T &amp;u,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139782128043184"></a>Class</h3>
+              <h3 class="title"><a id="idp50216184"></a>Class</h3>
             </div>
           </div>
         </div>

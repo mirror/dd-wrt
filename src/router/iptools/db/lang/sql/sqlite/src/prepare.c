@@ -67,7 +67,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
   if( argv==0 ) return 0;   /* Might happen if EMPTY_RESULT_CALLBACKS are on */
   if( argv[1]==0 ){
     corruptSchema(pData, argv[0], 0);
-  }else if( sqlite3_strnicmp(argv[2],"create ",7)==0 ){
+  }else if( argv[2] && argv[2][0] ){
     /* Call the parser to process a CREATE TABLE, INDEX or VIEW.
     ** But because db->init.busy is set to 1, no VDBE code is generated
     ** or executed.  All the parser does is build the internal data
@@ -98,8 +98,8 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
       }
     }
     sqlite3_finalize(pStmt);
-  }else if( argv[0]==0 || (argv[2]!=0 && argv[2][0]!=0) ){
-    corruptSchema(pData, argv[0], 0);
+  }else if( argv[0]==0 ){
+    corruptSchema(pData, 0, 0);
   }else{
     /* If the SQL column is blank it means this is an index that
     ** was created to be the PRIMARY KEY or to fulfill a UNIQUE
@@ -134,9 +134,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
 static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   int rc;
   int i;
-#ifndef SQLITE_OMIT_DEPRECATED
   int size;
-#endif
   Table *pTab;
   Db *pDb;
   char const *azArg[4];
@@ -179,7 +177,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
 
   /* zMasterSchema and zInitScript are set to point at the master schema
   ** and initialisation script appropriate for the database being
-  ** initialized. zMasterName is the name of the master table.
+  ** initialised. zMasterName is the name of the master table.
   */
   if( !OMIT_TEMPDB && iDb==1 ){
     zMasterSchema = temp_master_schema;
@@ -263,15 +261,12 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   */
   if( meta[BTREE_TEXT_ENCODING-1] ){  /* text encoding */
     if( iDb==0 ){
-#ifndef SQLITE_OMIT_UTF16
       u8 encoding;
       /* If opening the main database, set ENC(db). */
       encoding = (u8)meta[BTREE_TEXT_ENCODING-1] & 3;
       if( encoding==0 ) encoding = SQLITE_UTF8;
       ENC(db) = encoding;
-#else
-      ENC(db) = SQLITE_UTF8;
-#endif
+      db->pDfltColl = sqlite3FindCollSeq(db, SQLITE_UTF8, "BINARY", 0);
     }else{
       /* If opening an attached database, the encoding much match ENC(db) */
       if( meta[BTREE_TEXT_ENCODING-1]!=ENC(db) ){
@@ -287,13 +282,9 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   pDb->pSchema->enc = ENC(db);
 
   if( pDb->pSchema->cache_size==0 ){
-#ifndef SQLITE_OMIT_DEPRECATED
     size = sqlite3AbsInt32(meta[BTREE_DEFAULT_CACHE_SIZE-1]);
     if( size==0 ){ size = SQLITE_DEFAULT_CACHE_SIZE; }
     pDb->pSchema->cache_size = size;
-#else
-    pDb->pSchema->cache_size = SQLITE_DEFAULT_CACHE_SIZE;
-#endif
     sqlite3BtreeSetCacheSize(pDb->pBt, pDb->pSchema->cache_size);
   }
 
@@ -332,7 +323,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
         db->aDb[iDb].zName, zMasterName);
 #ifndef SQLITE_OMIT_AUTHORIZATION
     {
-      sqlite3_xauth xAuth;
+      int (*xAuth)(void*,int,const char*,const char*,const char*,const char*);
       xAuth = db->xAuth;
       db->xAuth = 0;
 #endif
@@ -351,7 +342,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   }
   if( db->mallocFailed ){
     rc = SQLITE_NOMEM;
-    sqlite3ResetAllSchemasOfConnection(db);
+    sqlite3ResetInternalSchema(db, -1);
   }
   if( rc==SQLITE_OK || (db->flags&SQLITE_RecoveryMode)){
     /* Black magic: If the SQLITE_RecoveryMode flag is set, then consider
@@ -398,29 +389,26 @@ int sqlite3Init(sqlite3 *db, char **pzErrMsg){
   int commit_internal = !(db->flags&SQLITE_InternChanges);
   
   assert( sqlite3_mutex_held(db->mutex) );
-  assert( sqlite3BtreeHoldsMutex(db->aDb[0].pBt) );
-  assert( db->init.busy==0 );
   rc = SQLITE_OK;
   db->init.busy = 1;
-  ENC(db) = SCHEMA_ENC(db);
   for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
     if( DbHasProperty(db, i, DB_SchemaLoaded) || i==1 ) continue;
     rc = sqlite3InitOne(db, i, pzErrMsg);
     if( rc ){
-      sqlite3ResetOneSchema(db, i);
+      sqlite3ResetInternalSchema(db, i);
     }
   }
 
-  /* Once all the other databases have been initialized, load the schema
+  /* Once all the other databases have been initialised, load the schema
   ** for the TEMP database. This is loaded last, as the TEMP database
   ** schema may contain references to objects in other databases.
   */
 #ifndef SQLITE_OMIT_TEMPDB
-  assert( db->nDb>1 );
-  if( rc==SQLITE_OK && !DbHasProperty(db, 1, DB_SchemaLoaded) ){
+  if( rc==SQLITE_OK && ALWAYS(db->nDb>1)
+                    && !DbHasProperty(db, 1, DB_SchemaLoaded) ){
     rc = sqlite3InitOne(db, 1, pzErrMsg);
     if( rc ){
-      sqlite3ResetOneSchema(db, 1);
+      sqlite3ResetInternalSchema(db, 1);
     }
   }
 #endif
@@ -434,7 +422,7 @@ int sqlite3Init(sqlite3 *db, char **pzErrMsg){
 }
 
 /*
-** This routine is a no-op if the database schema is already initialized.
+** This routine is a no-op if the database schema is already initialised.
 ** Otherwise, the schema is loaded. An error code is returned.
 */
 int sqlite3ReadSchema(Parse *pParse){
@@ -491,7 +479,7 @@ static void schemaIsValid(Parse *pParse){
       pParse->rc = db->errCode;
     if( pParse->rc != SQLITE_BUSY &&
       cookie!=db->aDb[iDb].pSchema->schema_cookie ){
-      sqlite3ResetOneSchema(db, iDb);
+      sqlite3ResetInternalSchema(db, iDb);
       pParse->rc = SQLITE_SCHEMA;
     }
 
@@ -532,17 +520,6 @@ int sqlite3SchemaToIndex(sqlite3 *db, Schema *pSchema){
     assert( i>=0 && i<db->nDb );
   }
   return i;
-}
-
-/*
-** Free all memory allocations in the pParse object
-*/
-void sqlite3ParserReset(Parse *pParse){
-  if( pParse ){
-    sqlite3 *db = pParse->db;
-    sqlite3DbFree(db, pParse->aLabel);
-    sqlite3ExprListDelete(db, pParse->pConstExpr);
-  }
 }
 
 /*
@@ -603,7 +580,7 @@ static int sqlite3Prepare(
       rc = sqlite3BtreeSchemaLocked(pBt);
       if( rc ){
         const char *zDb = db->aDb[i].zName;
-        sqlite3ErrorWithMsg(db, rc, "database schema is locked: %s", zDb);
+        sqlite3Error(db, rc, "database schema is locked: %s", zDb);
         testcase( db->flags & SQLITE_ReadUncommitted );
         goto end_prepare;
       }
@@ -613,14 +590,14 @@ static int sqlite3Prepare(
   sqlite3VtabUnlockList(db);
 
   pParse->db = db;
-  pParse->nQueryLoop = 0;  /* Logarithmic, so 0 really means 1 */
+  pParse->nQueryLoop = (double)1;
   if( nBytes>=0 && (nBytes==0 || zSql[nBytes-1]!=0) ){
     char *zSqlCopy;
     int mxLen = db->aLimit[SQLITE_LIMIT_SQL_LENGTH];
     testcase( nBytes==mxLen );
     testcase( nBytes==mxLen+1 );
     if( nBytes>mxLen ){
-      sqlite3ErrorWithMsg(db, SQLITE_TOOBIG, "statement too long");
+      sqlite3Error(db, SQLITE_TOOBIG, "statement too long");
       rc = sqlite3ApiExit(db, SQLITE_TOOBIG);
       goto end_prepare;
     }
@@ -635,7 +612,7 @@ static int sqlite3Prepare(
   }else{
     sqlite3RunParser(pParse, zSql, &zErrMsg);
   }
-  assert( 0==pParse->nQueryLoop );
+  assert( 1==(int)pParse->nQueryLoop );
 
   if( db->mallocFailed ){
     pParse->rc = SQLITE_NOMEM;
@@ -675,6 +652,7 @@ static int sqlite3Prepare(
   }
 #endif
 
+  assert( db->init.busy==0 || saveSqlFlag==0 );
   if( db->init.busy==0 ){
     Vdbe *pVdbe = pParse->pVdbe;
     sqlite3VdbeSetSql(pVdbe, zSql, (int)(pParse->zTail-zSql), saveSqlFlag);
@@ -687,10 +665,10 @@ static int sqlite3Prepare(
   }
 
   if( zErrMsg ){
-    sqlite3ErrorWithMsg(db, rc, "%s", zErrMsg);
+    sqlite3Error(db, rc, "%s", zErrMsg);
     sqlite3DbFree(db, zErrMsg);
   }else{
-    sqlite3Error(db, rc);
+    sqlite3Error(db, rc, 0);
   }
 
   /* Delete any TriggerPrg structures allocated while parsing this statement. */
@@ -702,7 +680,6 @@ static int sqlite3Prepare(
 
 end_prepare:
 
-  sqlite3ParserReset(pParse);
   sqlite3StackFree(db, pParse);
   rc = sqlite3ApiExit(db, rc);
   assert( (rc&db->errMask)==rc );
@@ -718,12 +695,9 @@ static int sqlite3LockAndPrepare(
   const char **pzTail       /* OUT: End of parsed string */
 ){
   int rc;
-
-#ifdef SQLITE_ENABLE_API_ARMOR
-  if( ppStmt==0 ) return SQLITE_MISUSE_BKPT;
-#endif
+  assert( ppStmt!=0 );
   *ppStmt = 0;
-  if( !sqlite3SafetyCheckOk(db)||zSql==0 ){
+  if( !sqlite3SafetyCheckOk(db) ){
     return SQLITE_MISUSE_BKPT;
   }
   sqlite3_mutex_enter(db->mutex);
@@ -735,7 +709,6 @@ static int sqlite3LockAndPrepare(
   }
   sqlite3BtreeLeaveAll(db);
   sqlite3_mutex_leave(db->mutex);
-  assert( rc==SQLITE_OK || *ppStmt==0 );
   return rc;
 }
 
@@ -830,18 +803,10 @@ static int sqlite3Prepare16(
   const char *zTail8 = 0;
   int rc = SQLITE_OK;
 
-#ifdef SQLITE_ENABLE_API_ARMOR
-  if( ppStmt==0 ) return SQLITE_MISUSE_BKPT;
-#endif
+  assert( ppStmt );
   *ppStmt = 0;
-  if( !sqlite3SafetyCheckOk(db)||zSql==0 ){
+  if( !sqlite3SafetyCheckOk(db) ){
     return SQLITE_MISUSE_BKPT;
-  }
-  if( nBytes>=0 ){
-    int sz;
-    const char *z = (const char*)zSql;
-    for(sz=0; sz<nBytes && (z[sz]!=0 || z[sz+1]!=0); sz += 2){}
-    nBytes = sz;
   }
   sqlite3_mutex_enter(db->mutex);
   zSql8 = sqlite3Utf16to8(db, zSql, nBytes, SQLITE_UTF16NATIVE);

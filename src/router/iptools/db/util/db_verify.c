@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -12,11 +12,12 @@
 
 #ifndef lint
 static const char copyright[] =
-    "Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.\n";
+    "Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.\n";
 #endif
 
 int main __P((int, char *[]));
-void usage __P((void));
+int usage __P((void));
+int version_check __P((void));
 
 const char *progname;
 
@@ -32,25 +33,24 @@ main(argc, argv)
 	u_int32_t flags, cache;
 	int ch, exitval, mflag, nflag, private;
 	int quiet, resize, ret;
-	char *blob_dir, *dname, *fname, *home, *passwd;
+	char *dname, *fname, *home, *passwd;
 
-	progname = __db_util_arg_progname(argv[0]);
+	if ((progname = __db_rpath(argv[0])) == NULL)
+		progname = argv[0];
+	else
+		++progname;
 
-	if ((ret = __db_util_version_check(progname)) != 0)
+	if ((ret = version_check()) != 0)
 		return (ret);
 
 	dbenv = NULL;
 	dbp = NULL;
 	cache = MEGABYTE;
-	mflag = nflag = quiet = 0;
+	exitval = mflag = nflag = quiet = 0;
 	flags = 0;
-	exitval = EXIT_SUCCESS;
-	blob_dir = home = passwd = NULL;
-	while ((ch = getopt(argc, argv, "b:h:mNoP:quV")) != EOF)
+	home = passwd = NULL;
+	while ((ch = getopt(argc, argv, "h:mNoP:quV")) != EOF)
 		switch (ch) {
-		case 'b':
-			blob_dir = optarg;
-			break;
 		case 'h':
 			home = optarg;
 			break;
@@ -61,9 +61,19 @@ main(argc, argv)
 			nflag = 1;
 			break;
 		case 'P':
-			if (__db_util_arg_password(progname, 
- 			    optarg, &passwd) != 0)
-  				goto err;
+			if (passwd != NULL) {
+				fprintf(stderr, DB_STR("5132",
+					"Password may not be specified twice"));
+				free(passwd);
+				return (EXIT_FAILURE);
+			}
+			passwd = strdup(optarg);
+			memset(optarg, 0, strlen(optarg));
+			if (passwd == NULL) {
+				fprintf(stderr, "%s: strdup: %s\n",
+				    progname, strerror(errno));
+				return (EXIT_FAILURE);
+			}
 			break;
 		case 'o':
 			LF_SET(DB_NOORDERCHK);
@@ -76,16 +86,24 @@ main(argc, argv)
 			break;
 		case 'V':
 			printf("%s\n", db_version(NULL, NULL, NULL));
-			goto done;
+			return (EXIT_SUCCESS);
 		case '?':
 		default:
-			goto usage_err;
+			return (usage());
 		}
 	argc -= optind;
 	argv += optind;
 
 	if (argc <= 0)
-		goto usage_err;
+		return (usage());
+
+	if (mflag) {
+		dname = argv[0];
+		fname = NULL;
+	} else {
+		fname = argv[0];
+		dname = NULL;
+	}
 
 	/* Handle possible interruptions. */
 	__db_util_siginit();
@@ -103,12 +121,6 @@ retry:	if ((ret = db_env_create(&dbenv, 0)) != 0) {
 	if (!quiet) {
 		dbenv->set_errfile(dbenv, stderr);
 		dbenv->set_errpfx(dbenv, progname);
-	}
-
-	if (blob_dir != NULL &&
-	    (ret = dbenv->set_blob_dir(dbenv, blob_dir)) != 0) {
-		dbenv->err(dbenv, ret, "set_blob_dir");
-		goto err;
 	}
 
 	if (nflag) {
@@ -132,9 +144,24 @@ retry:	if ((ret = db_env_create(&dbenv, 0)) != 0) {
 	 * private region.  In the latter case, declare a reasonably large
 	 * cache so that we don't fail when verifying large databases.
 	 */
-	if (__db_util_env_open(dbenv, home, DB_INIT_MPOOL,
-	    1, DB_INIT_MPOOL, cache, &private) != 0)
-		goto err;
+	private = 0;
+	if ((ret =
+	    dbenv->open(dbenv, home, DB_INIT_MPOOL | DB_USE_ENVIRON, 0)) != 0) {
+		if (ret != DB_VERSION_MISMATCH && ret != DB_REP_LOCKOUT) {
+			if ((ret =
+			    dbenv->set_cachesize(dbenv, 0, cache, 1)) != 0) {
+				dbenv->err(dbenv, ret, "set_cachesize");
+				goto err;
+			}
+			private = 1;
+			ret = dbenv->open(dbenv, home, DB_CREATE |
+			    DB_INIT_MPOOL | DB_PRIVATE | DB_USE_ENVIRON, 0);
+		}
+		if (ret != 0) {
+			dbenv->err(dbenv, ret, "DB_ENV->open");
+			goto err;
+		}
+	}
 
 	/*
 	 * Find out if we have a transactional environment so that we can
@@ -142,14 +169,6 @@ retry:	if ((ret = db_env_create(&dbenv, 0)) != 0) {
 	 * enabled.
 	 */
 	for (; !__db_util_interrupted() && argv[0] != NULL; ++argv) {
-		if (mflag) {
-			dname = argv[0];
-			fname = NULL;
-		} else {
-			fname = argv[0];
-			dname = NULL;
-		}
-
 		if ((ret = db_create(&dbp, dbenv, 0)) != 0) {
 			dbenv->err(dbenv, ret, "%s: db_create", progname);
 			goto err;
@@ -214,7 +233,7 @@ retry:	if ((ret = db_env_create(&dbenv, 0)) != 0) {
 		ret = dbp->verify(dbp, fname, dname, NULL, flags);
 		dbp = NULL;
 		if (ret != 0)
-			exitval = EXIT_FAILURE;
+			exitval = 1;
 		if (!quiet)
 			printf(DB_STR_A("5105", "Verification of %s %s.\n",
 			    "%s %s\n"), argv[0], ret == 0 ? 
@@ -222,16 +241,15 @@ retry:	if ((ret = db_env_create(&dbenv, 0)) != 0) {
 	}
 
 	if (0) {
-usage_err:	usage();
-err:		exitval = EXIT_FAILURE;
+err:		exitval = 1;
 	}
-done:
+
 	if (dbp != NULL && (ret = dbp->close(dbp, 0)) != 0) {
-		exitval = EXIT_FAILURE;
+		exitval = 1;
 		dbenv->err(dbenv, ret, DB_STR("5106", "close"));
 	}
 	if (dbenv != NULL && (ret = dbenv->close(dbenv, 0)) != 0) {
-		exitval = EXIT_FAILURE;
+		exitval = 1;
 		fprintf(stderr,
 		    "%s: dbenv->close: %s\n", progname, db_strerror(ret));
 	}
@@ -242,12 +260,30 @@ done:
 	/* Resend any caught signal. */
 	__db_util_sigresend();
 
-	return (exitval);
+	return (exitval == 0 ? EXIT_SUCCESS : EXIT_FAILURE);
 }
 
-void
+int
 usage()
 {
 	fprintf(stderr, "usage: %s %s\n", progname,
-	    "[-mNoqV] [-b blob_dir] [-h home] [-P password] db_file ...");
+	    "[-NoqV] [-h home] [-P password] db_file ...");
+	return (EXIT_FAILURE);
+}
+
+int
+version_check()
+{
+	int v_major, v_minor, v_patch;
+
+	/* Make sure we're loaded with the right version of the DB library. */
+	(void)db_version(&v_major, &v_minor, &v_patch);
+	if (v_major != DB_VERSION_MAJOR || v_minor != DB_VERSION_MINOR) {
+		fprintf(stderr, DB_STR_A("5107",
+		    "%s: version %d.%d doesn't match library version %d.%d\n",
+		    "%s %d %d %d %d\n"), progname, DB_VERSION_MAJOR,
+		    DB_VERSION_MINOR, v_major, v_minor);
+		return (EXIT_FAILURE);
+	}
+	return (0);
 }

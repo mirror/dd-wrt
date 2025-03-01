@@ -14,11 +14,13 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Chapter 8.  Building Berkeley DB for VxWorks </th>
+          <th colspan="3" align="center">Chapter 8. 
+		Building Berkeley DB for VxWorks
+        </th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="build_unix_sunos.html">Prev</a> </td>
@@ -32,7 +34,9 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title"><a id="build_vxworks"></a>Chapter 8.  Building Berkeley DB for VxWorks </h2>
+            <h2 class="title"><a id="build_vxworks"></a>Chapter 8. 
+		Building Berkeley DB for VxWorks
+        </h2>
           </div>
         </div>
       </div>
@@ -50,8 +54,7 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="build_vxworks.html#idm140188017679808">Building With Wind
-            River Workbench using the Makefile</a>
+                  <a href="build_vxworks.html#idp450128">Building With Wind River Workbench using the Makefile</a>
                 </span>
               </dt>
             </dl>
@@ -65,17 +68,17 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="build_vxworks_notes.html#idm140188017689744">Building and Running the Demo Program</a>
+                  <a href="build_vxworks_notes.html#idp736192">Building and Running the Demo Program</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_vxworks_notes.html#idm140188017765120">Building and Running the Utility Programs</a>
+                  <a href="build_vxworks_notes.html#idp759688">Building and Running the Utility Programs</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_vxworks_notes.html#idm140188017676704">Support for Replication Manager</a>
+                  <a href="build_vxworks_notes.html#idp762736">Support for Replication Manager</a>
                 </span>
               </dt>
             </dl>
@@ -99,8 +102,7 @@
           <dl>
             <dt>
               <span class="sect2">
-                <a href="build_vxworks.html#idm140188017679808">Building With Wind
-            River Workbench using the Makefile</a>
+                <a href="build_vxworks.html#idp450128">Building With Wind River Workbench using the Makefile</a>
               </span>
             </dt>
           </dl>
@@ -109,67 +111,41 @@
           <div class="titlepage">
             <div>
               <div>
-                <h3 class="title"><a id="idm140188017679808"></a>Building With Wind
-            River Workbench using the Makefile</h3>
+                <h3 class="title"><a id="idp450128"></a>Building With Wind River Workbench using the Makefile</h3>
               </div>
             </div>
           </div>
-          <p>
-            In VxWorks6.x, developers use Wind River Workbench for
-            software development. Two makefiles are provided in the
-            db/build_vxworks directory. Use them to build Berkeley DB
-            or Berkeley DB small build, using the build chain provided
-            with Wind River Workbench.
-        </p>
-          <p>
-            We assume that you have installed all necessary
-            VxWorks6.x software including the Wind River Workbench,
-            and that you know how to use it.
-        </p>
-          <p>
-            Use the following steps to build Berkeley DB: 
-        </p>
-          <p>
-            1. Setting variables in the Makefile. Open the Makefile
-            and modify the BDB_ROOT variable to the path of your
-            Berkeley DB source tree's root directory. You may need to
-            set other variables when you build on different platforms,
-            such as BUILD_SPEC, DEBUG_MODE, PROJECT_TYPE,
-            CC_ARCH_SPEC, VXVER, build tool flags, and BUILD_SPEC
-            specific settings. Please refer to the documentation of
-            the Workbench for a complete list of available values of
-            each variable. You can also find out the list of values by
-            creating a project using the Workbench. Each variable's
-            available values will be listed in the GUI window which
-            assigns values to that variable. 
-        </p>
-          <p>
-            2. Make sure "make" can be found. Basically you need to
-            set the make utility's path to environment variables.
-        </p>
-          <p>
-            3. Start up the wrenv utility of the Wind River
-            Workbench.
-        </p>
-          <p>
-            4. In the command console, move to the
-            $(BDB_ROOT)/build_vxworks/ directory, rename the target
-            makefile (Makefile.6x or Makefile.6x.small) to "Makefile",
-            and run "make". The make process will start and create the
-            directory "bdbvxw". It will contain all intermediate
-            object files as well as the final built image
-            "bdbvxw.out". 
-        </p>
-          <p>
-            5. After the "bdbvxw.out" image is built, you can use
-            command tools or the Workbench IDE to download and run
-            it.
-        </p>
-          <p>
-            6. Test and Verification. There is a dbdemo and
-            test_micro, which you can run to verify whether everything
-            works fine.
-        </p>
+          <p>In VxWorks6.x, developers use Wind River Workbench for software
+development. Two makefiles are provided in the db/build_vxworks
+directory. Use them to build Berkeley DB or Berkeley DB small build, using 
+the build chain provided with Wind River Workbench. </p>
+          <p>We assume that you have installed all necessary VxWorks6.x software 
+including the Wind River Workbench, and that you know how to use it. </p>
+          <p>Use the following steps to build Berkeley DB: </p>
+          <p>1. Setting variables in the Makefile.
+Open the Makefile and modify the BDB_ROOT variable to the path of your
+Berkeley DB source tree's root directory. You may need to set other
+variables when you build on different platforms, such as BUILD_SPEC,
+DEBUG_MODE, PROJECT_TYPE, CC_ARCH_SPEC, VXVER, build tool flags, and BUILD_SPEC specific settings.
+Please refer to the documentation of the Workbench for a complete list of
+available values of each variable. You can also find out the list of values
+by creating a project using the Workbench. Each variable's available values 
+will be listed in the GUI window which assigns values to that
+variable. </p>
+          <p>2. Make sure "make" can be found.
+Basically you need to set the make utility's path to environment variables.
+</p>
+          <p>3. Start up the wrenv utility of the Wind River Workbench. </p>
+          <p>4. In the command console, move to the $(BDB_ROOT)/build_vxworks/ directory,
+rename the target makefile (Makefile.6x or Makefile.6x.small) to "Makefile",
+and run "make".  The make process will start and create the directory 
+"bdbvxw". It will contain all intermediate object files as well as the
+final built image "bdbvxw.out". </p>
+          <p>5. After the "bdbvxw.out" image is built, you can use command tools
+or the Workbench IDE to download and run it.</p>
+          <p>6. Test and Verification.
+There is a dbdemo and test_micro, which you can run to verify whether
+everything works fine.</p>
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -217,31 +217,18 @@ tcl_LockStat(interp, objc, objv, dbenv)
 {
 	DB_LOCK_STAT *sp;
 	Tcl_Obj *res;
-	u_int32_t flag;
-	char *arg;
 	int result, ret;
 
-	flag = 0;
 	result = TCL_OK;
-
-	if (objc > 3) {
-		Tcl_WrongNumArgs(interp, 2, objv, "?-clear?");
+	/*
+	 * No args for this.  Error if there are some.
+	 */
+	if (objc != 2) {
+		Tcl_WrongNumArgs(interp, 2, objv, NULL);
 		return (TCL_ERROR);
 	}
-
-	if (objc == 3) {
-		arg = Tcl_GetStringFromObj(objv[2], NULL);
-		if (strcmp(arg, "-clear") == 0)
-			flag = DB_STAT_CLEAR;
-		else {
-			Tcl_SetResult(interp,
-			    "db stat: unknown arg", TCL_STATIC);
-			return (TCL_ERROR);
-		}
-	}
-
 	_debug_check();
-	ret = dbenv->lock_stat(dbenv, &sp, flag);
+	ret = dbenv->lock_stat(dbenv, &sp, 0);
 	result = _ReturnSetup(interp, ret, DB_RETOK_STD(ret), "lock stat");
 	if (result == TCL_ERROR)
 		return (result);
@@ -250,6 +237,7 @@ tcl_LockStat(interp, objc, objv, dbenv)
 	 * list pairs and free up the memory.
 	 */
 	res = Tcl_NewObj();
+#ifdef HAVE_STATISTICS
 	/*
 	 * MAKE_STAT_LIST assumes 'res' and 'error' label.
 	 */
@@ -278,9 +266,6 @@ tcl_LockStat(interp, objc, objv, dbenv)
 	    sp->st_maxlsteals);
 	MAKE_STAT_LIST("Current number of lockers", sp->st_nlockers);
 	MAKE_STAT_LIST("Maximum number of lockers so far", sp->st_maxnlockers);
-	MAKE_STAT_LIST("Number of hits in the thread locker cache",
-	    sp->st_nlockers_hit);
-	MAKE_STAT_LIST("Total number of lockers reused", sp->st_nlockers_reused);
 	MAKE_STAT_LIST("Current number of objects", sp->st_nobjects);
 	MAKE_STAT_LIST("Maximum number of objects so far", sp->st_maxnobjects);
 	MAKE_STAT_LIST("Maximum number of objects in any hash bucket",
@@ -319,7 +304,7 @@ tcl_LockStat(interp, objc, objv, dbenv)
 	    sp->st_part_max_wait);
 	MAKE_STAT_LIST("Maximum number nowaits on any lock partition mutex",
 	    sp->st_part_max_nowait);
-
+#endif
 	Tcl_SetObjResult(interp, res);
 error:
 	__os_ufree(dbenv->env, sp);
@@ -341,7 +326,6 @@ tcl_LockStatPrint(interp, objc, objv, dbenv)
 {
 	static const char *lkstatprtopts[] = {
 		"-all",
-		"-alloc",
 		"-clear",
 		"-lk_conf",
 		"-lk_lockers",
@@ -351,7 +335,6 @@ tcl_LockStatPrint(interp, objc, objv, dbenv)
 	};
 	enum lkstatprtopts {
 		LKSTATPRTALL,
-		LKSTATPRTALLOC,
 		LKSTATPRTCLEAR,
 		LKSTATPRTCONF,
 		LKSTATPRTLOCKERS,
@@ -375,9 +358,6 @@ tcl_LockStatPrint(interp, objc, objv, dbenv)
 		switch ((enum lkstatprtopts)optindex) {
 		case LKSTATPRTALL:
 			flag |= DB_STAT_ALL;
-			break;
-		case LKSTATPRTALLOC:
-			flag |= DB_STAT_ALLOC;
 			break;
 		case LKSTATPRTCLEAR:
 			flag |= DB_STAT_CLEAR;

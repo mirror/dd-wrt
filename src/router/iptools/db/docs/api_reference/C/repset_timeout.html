@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -52,7 +52,7 @@ DB_ENV-&gt;rep_set_timeout(DB_ENV *env, int which, u_int32_t timeout);  </pre>
          of the entry in that file is a single line with the string
          "rep_set_timeout", one or more whitespace characters, and the
          <span class="bold"><strong>which</strong></span> parameter specified as a
-         string and the timeout. For example,
+         string and the timeout specified as two parts. For example,
          "rep_set_timeout DB_REP_CONNECTION_RETRY 15000000"  specifies the
          connection retry timeout for 15 seconds.  Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
          file is read when the database environment is opened, it will
@@ -85,7 +85,7 @@ DB_ENV-&gt;rep_set_timeout(DB_ENV *env, int which, u_int32_t timeout);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711173566608"></a>Parameters</h3>
+              <h3 class="title"><a id="idp54187968"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -93,7 +93,21 @@ DB_ENV-&gt;rep_set_timeout(DB_ENV *env, int which, u_int32_t timeout);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711173565792"></a>which</h4>
+                <h4 class="title"><a id="idp54188440"></a>timeout</h4>
+              </div>
+            </div>
+          </div>
+          <p>
+                The <span class="bold"><strong>timeout</strong></span> parameter is the timeout value. It
+                must be specified as an unsigned 32-bit number of microseconds, limiting the
+                maximum timeout to roughly 71 minutes.
+            </p>
+        </div>
+        <div class="sect3" lang="en" xml:lang="en">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h4 class="title"><a id="idp54158080"></a>which</h4>
               </div>
             </div>
           </div>
@@ -113,9 +127,6 @@ DB_ENV-&gt;rep_set_timeout(DB_ENV *env, int which, u_int32_t timeout);  </pre>
                          enough acknowledgments from replication group
                          clients, before giving up and returning a failure
                          indication.  The default wait time is 1 second.
-                         Automatic takeover of a subordinate process is most
-                         reliable when this value is the same on all sites in
-                         the replication group.
                     </p>
               </li>
               <li>
@@ -157,16 +168,13 @@ DB_ENV-&gt;rep_set_timeout(DB_ENV *env, int which, u_int32_t timeout);  </pre>
                      </p>
               </li>
               <li>
-                <p><a id="set_timeout_DB_REP_ELECTION_RETRY"></a>
+                <p>
                           <code class="literal">DB_REP_ELECTION_RETRY</code>
                     </p>
                 <p>
                          Configure the amount of time the Replication
                          Manager will wait before retrying a failed
                          election.  The default wait time is 10 seconds.
-                         In preferred master mode, a shorter wait time is
-                         recommended to facilitate automatic takeovers,
-                         so the default wait time is reduced to 1 second.
                     </p>
               </li>
               <li>
@@ -185,7 +193,7 @@ DB_ENV-&gt;rep_set_timeout(DB_ENV *env, int which, u_int32_t timeout);  </pre>
                     </p>
               </li>
               <li>
-                <p><a id="set_timeout_DB_REP_HEARTBEAT_MONITOR"></a>
+                <p>
                           <code class="literal">DB_REP_HEARTBEAT_MONITOR</code>
                     </p>
                 <p>
@@ -197,14 +205,11 @@ DB_ENV-&gt;rep_set_timeout(DB_ENV *env, int which, u_int32_t timeout);  </pre>
                          should be of longer duration than the
                          <code class="literal">DB_REP_HEARTBEAT_SEND</code> timeout
                          to ensure that heartbeats are not missed.  When 0
-                         (the default), no monitoring is performed. In
-                         preferred master mode the default is 2 seconds and
-                         heartbeat monitoring cannot be turned off because
-                         heartbeats are required for automatic takeovers.
+                         (the default), no monitoring is performed. 
                     </p>
               </li>
               <li>
-                <p><a id="set_timeout_DB_REP_HEARTBEAT_SEND"></a>
+                <p>
                           <code class="literal">DB_REP_HEARTBEAT_SEND</code>
                     </p>
                 <p>
@@ -215,9 +220,7 @@ DB_ENV-&gt;rep_set_timeout(DB_ENV *env, int which, u_int32_t timeout);  </pre>
                          connection to the master and to help request missing
                          master changes in the absence of master activity.
                          When 0 (the default), no heartbeat messages will be
-                         sent. In preferred master mode the default is 0.75
-                         second and heartbeats cannot be turned off because
-                         they are required for automatic takeovers.
+                         sent.
                     </p>
               </li>
               <li>
@@ -230,53 +233,22 @@ DB_ENV-&gt;rep_set_timeout(DB_ENV *env, int which, u_int32_t timeout);  </pre>
                          leases all sites in a replication group must use
                          the same lease timeout value.  There is no default
                          value.  If leases are desired, this method must be
-                         called prior to calling the
-                         <a class="xref" href="repmgrstart.html" title="DB_ENV-&gt;repmgr_start()">DB_ENV-&gt;repmgr_start()</a>
-                         method or the
-                         <a class="xref" href="repstart.html" title="DB_ENV-&gt;rep_start()">DB_ENV-&gt;rep_start()</a>
-                         method. 
+                         called prior to calling 
+                         <a class="xref" href="repstart.html" title="DB_ENV-&gt;rep_start()">DB_ENV-&gt;rep_start()</a>  method. 
                          See also <a class="xref" href="repclockskew.html" title="DB_ENV-&gt;rep_set_clockskew()">DB_ENV-&gt;rep_set_clockskew()</a> 
                          method, <a class="xref" href="repconfig.html" title="DB_ENV-&gt;rep_set_config()">DB_ENV-&gt;rep_set_config()</a> 
-                         method and <a href="../../programmer_reference/rep_lease.html" class="olink">Master leases</a>.
-                    </p>
-              </li>
-              <li>
-                <p>
-                          <code class="literal">DB_REP_WRITE_FORWARD_TIMEOUT</code>
-                    </p>
-                <p>
-                         Configure the amount of time a Replication Manager client waits for a response
-                         from a forwarded write operation before returning a failure indication.
-                         The default value is 5 seconds.
-                    </p>
-                <p>
-                         For more information on write forwarding, see
-                         the <em class="citetitle">Berkeley DB Programmer's Reference Guide</em>.
+                         method or <a href="../../programmer_reference/rep_lease.html" class="olink">Master leases</a>.
                     </p>
               </li>
             </ul>
           </div>
-        </div>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h4 class="title"><a id="idm140711173523456"></a>timeout</h4>
-              </div>
-            </div>
-          </div>
-          <p>
-                The <span class="bold"><strong>timeout</strong></span> parameter is the timeout value. It
-                must be specified as an unsigned 32-bit number of microseconds, limiting the
-                maximum timeout to roughly 71 minutes.
-            </p>
         </div>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711173552464"></a>Errors</h3>
+              <h3 class="title"><a id="idp54210128"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -292,15 +264,13 @@ DB_ENV-&gt;rep_set_timeout(DB_ENV *env, int which, u_int32_t timeout);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711173593952"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp54189080"></a>EINVAL</h4>
               </div>
             </div>
           </div>
           <p>
-                If setting the lease timeout and replication has already been
-                started; if turning off a heartbeat timeout in Replication
-                Manager preferred master mode; if setting a Replication
-                Manager timeout for a Base API application;
+                If setting the lease timeout and replication has already been started; if
+                setting a Replication Manager timeout for a Base API application;
                 or if an invalid flag value or parameter was specified.
             </p>
         </div>
@@ -309,7 +279,7 @@ DB_ENV-&gt;rep_set_timeout(DB_ENV *env, int which, u_int32_t timeout);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711173538976"></a>Class</h3>
+              <h3 class="title"><a id="idp54212896"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -321,7 +291,7 @@ DB_ENV-&gt;rep_set_timeout(DB_ENV *env, int which, u_int32_t timeout);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711173560000"></a>See Also</h3>
+              <h3 class="title"><a id="idp54204696"></a>See Also</h3>
             </div>
           </div>
         </div>

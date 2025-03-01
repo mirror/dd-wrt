@@ -192,7 +192,7 @@ public class JDBCConnection
     public SQLite.Database getSQLiteDatabase() {
 	return db;
     }
-
+  
     public Statement createStatement() {
 	JDBCStatement s = new JDBCStatement(this);
 	return s;
@@ -213,7 +213,7 @@ public class JDBCConnection
 	JDBCStatement s = new JDBCStatement(this);
 	return s;
     }
-
+	
     public DatabaseMetaData getMetaData() throws SQLException {
 	if (meta == null) {
 	    meta = new JDBCDatabaseMetaData(this);
@@ -401,7 +401,7 @@ public class JDBCConnection
     public void setTypeMap(java.util.Map map) throws SQLException {
 	throw new SQLException("not supported");
     }
-
+  
 }
 
 class DatabaseX extends SQLite.Database {

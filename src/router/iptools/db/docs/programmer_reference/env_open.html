@@ -7,23 +7,24 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="env.html" title="Chapter 10.  The Berkeley DB Environment" />
+    <link rel="up" href="env.html" title="Chapter 9.  The Berkeley DB Environment" />
     <link rel="prev" href="env_size.html" title="Sizing a database environment" />
     <link rel="next" href="env_error.html" title="Error support" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Opening databases within the
-        environment</th>
+          <th colspan="3" align="center">Opening databases within the environment</th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="env_size.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 10.  The Berkeley DB Environment </th>
+          <th width="60%" align="center">Chapter 9. 
+		The Berkeley DB Environment
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="env_error.html">Next</a></td>
         </tr>
       </table>
@@ -33,29 +34,21 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title" style="clear: both"><a id="env_open"></a>Opening databases within the
-        environment</h2>
+            <h2 class="title" style="clear: both"><a id="env_open"></a>Opening databases within the environment</h2>
           </div>
         </div>
       </div>
-      <p>
-        Once the environment has been created, database handles may
-        be created and then opened within the environment. This is
-        done by calling the <a href="../api_reference/C/dbcreate.html" class="olink">db_create()</a> function and specifying the
-        appropriate environment as an argument.
-    </p>
-      <p>
-        File naming, database operations, and error handling will
-        all be done as specified for the environment. For example, if
-        the <a href="../api_reference/C/envopen.html#envopen_DB_INIT_LOCK" class="olink">DB_INIT_LOCK</a> or <a href="../api_reference/C/envopen.html#envopen_DB_INIT_CDB" class="olink">DB_INIT_CDB</a> flags were specified when
-        the environment was created or joined, database operations
-        will automatically perform all necessary locking operations
-        for the application.
-    </p>
-      <p>
-        The following is a simple example of opening two databases
-        within a database environment:
-    </p>
+      <p>Once the environment has been created, database handles may be created
+and then opened within the environment.  This is done by calling the
+<a href="../api_reference/C/dbcreate.html" class="olink">db_create()</a> function and specifying the appropriate environment
+as an argument.</p>
+      <p>File naming, database operations, and error handling will all be done as
+specified for the environment.  For example, if the <a href="../api_reference/C/envopen.html#envopen_DB_INIT_LOCK" class="olink">DB_INIT_LOCK</a>
+or <a href="../api_reference/C/envopen.html#envopen_DB_INIT_CDB" class="olink">DB_INIT_CDB</a> flags were specified when the environment was
+created or joined, database operations will automatically perform all
+necessary locking operations for the application.</p>
+      <p>The following is a simple example of opening two databases within a
+database environment:</p>
       <a id="prog_env28"></a>
       <pre class="programlisting">DB_ENV *dbenv;
     DB *dbp1, *dbp2;
@@ -63,7 +56,7 @@
 
     dbenv = NULL;
     dbp1 = dbp2 = NULL;
-    /*
+	/*
      * Create an environment and initialize it for additional error
      * reporting.
      */

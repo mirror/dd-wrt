@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -97,7 +97,7 @@ extern int getopt(int, char * const *, const char *);
  * create our own thread IDs for reporting purposes.
  */
 int global_thread_num;
-mutex_t thread_num_lock;
+pthread_mutex_t thread_num_lock;
 
 /* Forward declarations */
 int count_records(DB *, DB_TXN *);
@@ -128,7 +128,7 @@ main(int argc, char *argv[])
     DB *dbp = NULL;
     DB_ENV *envp = NULL; 
 
-    thread_t writer_threads[NUMWRITERS];
+    pthread_t writer_threads[NUMWRITERS];
     int ch, i, ret, ret_t;
     u_int32_t env_flags;
     char *db_home_dir;
@@ -274,16 +274,16 @@ main(int argc, char *argv[])
         thread.
     </p>
       <pre class="programlisting">     /* Initialize a pthread mutex. Used to help provide thread ids. */
-    (void)mutex_init(&amp;thread_num_lock, NULL);
+    (void)pthread_mutex_init(&amp;thread_num_lock, NULL);
 
     /* Start the writer threads. */
     for (i = 0; i &lt; NUMWRITERS; i++)
-        (void)thread_create(&amp;writer_threads[i], NULL, 
+        (void)pthread_create(&amp;writer_threads[i], NULL, 
             writer_thread, (void *)dbp);
 
     /* Join the writers */
     for (i = 0; i &lt; NUMWRITERS; i++)
-        (void)thread_join(writer_threads[i], NULL);  </pre>
+        (void)pthread_join(writer_threads[i], NULL);  </pre>
       <p>
         Finally, to wrap up <code class="function">main()</code>, we close out our
         database and environment handle, as is normal for any DB
@@ -359,13 +359,13 @@ writer_thread(void *args)
     We use this random number generator for data generation.
 </p>
       <pre class="programlisting">    /* Get the thread number */
-    (void)mutex_lock(&amp;thread_num_lock);
+    (void)pthread_mutex_lock(&amp;thread_num_lock);
     global_thread_num++;
     thread_num = global_thread_num;
-    (void)mutex_unlock(&amp;thread_num_lock); 
+    (void)pthread_mutex_unlock(&amp;thread_num_lock); 
 
     /* Initialize the random number generator */
-    srand(thread_num);  </pre>
+    srand((u_int)pthread_self());  </pre>
       <p>
         Now we begin the loop that we use to write data to the database.
         <span>
@@ -429,8 +429,8 @@ retry:
       <pre class="programlisting">        for (j = 0; j &lt; 10; j++) {
             /* Set up our key and values DBTs */
             memset(&amp;key, 0, sizeof(DBT));
-            key.data = (void *)key_strings[j];
-            key.size = (u_int32_t)(strlen(key_strings[j]) + 1);
+            key.data = key_strings[j];
+            key.size = (strlen(key_strings[j]) + 1) * sizeof(char);
 
             memset(&amp;value, 0, sizeof(DBT));
             payload = rand() + i;
@@ -523,7 +523,7 @@ retry:
 
         /* 
          * If all goes well, we can commit the transaction and
-         * exit the thread.
+         * loop to the next transaction.
          */
         ret = txn-&gt;commit(txn, 0);
         if (ret != 0) {
@@ -615,22 +615,12 @@ retry:
     </p>
       <pre class="programlisting">/* 
  * This simply counts the number of records contained in the
- * database and returns the result. You can use this function
- * in three ways:
- *
- * First call it with an active txn handle.
- * Secondly, configure the cursor for uncommitted reads (this
- *    is what the example currently does).
- * Third, call count_records AFTER the writer has committed
- *    its transaction.
- *
- * If you do none of these things, the writer thread will
- * self-deadlock.
+ * database and returns the result.
  *
  * Note that this function exists only for illustrative purposes.
  * A more straight-forward way to count the number of records in
  * a database is to use DB-&gt;stat() or DB-&gt;stat_print().
-*/
+ */
 
 int
 count_records(DB *dbp, DB_TXN *txn)
@@ -746,7 +736,7 @@ open_db(DB **dbpp, const char *progname, const char *file_name,
     experiment with this code, you can find the example in the following
     location in your DB distribution:
 </p>
-      <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples/c/txn_guide</pre>
+      <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples_c/txn_guide</pre>
     </div>
     <div class="navfooter">
       <hr />

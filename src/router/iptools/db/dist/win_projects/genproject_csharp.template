@@ -3,43 +3,23 @@
 *
 *  @PROJECT_NAME@  - name of the Visual Studio project
 *  @PROJECT_INPUT@ - input XML document that drives the script.
-*  @VISUAL_STUDIO_VERSION@ - Visual Studio version.
 :)
 declare boundary-space preserve;
-declare variable $vsversion := "@VISUAL_STUDIO_VERSION@";
 
 declare function local:getProjects()
 {
   doc("@PROJECT_INPUT@")/projects/project[@name="@PROJECT_NAME@"]
 };
 
-declare function local:getTargetFramework()
-{
-  if ($vsversion eq "9.00") then ("v3.5") else ("v4.0")
-};
-
-declare function local:getToolsVersion()
-{
-  if ($vsversion eq "9.00") then ("3.5") else ("4.0")
-};
-
-declare function local:getOldToolsVersion()
-{
-  if ($vsversion eq "9.00") then ("2.0") else ("3.5")
-};
-
 declare function local:genDllProjects($project)
 {
-let $ToolsVersion := local:getToolsVersion()
-let $OldToolsVersion := local:getOldToolsVersion()
-let $TargetFramework := local:getTargetFramework()
 let $guid := $project/@guid/string()
 let $path := $project/files/@path/string()
 let $files := $project/files/file
 let $AssemblyName := $project/AssemblyName/string()
 let $DocumentationFile := $project/DocumentationFile/string()
 return
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="{$ToolsVersion}">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -48,6 +28,12 @@ return
     <NoStandardLibraries>false</NoStandardLibraries>
     <AssemblyName>{$AssemblyName}</AssemblyName>
     <RootNamespace>BerkeleyDB</RootNamespace>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <OldToolsVersion>2.0</OldToolsVersion>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -94,6 +80,23 @@ return
       return (<Compile Include="{$path}{$file/@name/string()}" />, "&#xa;    ")
     }
   </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 2.0 %28x86%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.0 %28x86%29</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSHARP.Targets" />
   <ProjectExtensions>
     <VisualStudio AllowExistingFolder="true" />
@@ -103,7 +106,6 @@ return
 
 declare function local:genAppProjects($project)
 {
-let $ToolsVersion := local:getToolsVersion()
 let $guid := $project/@guid/string()
 let $files := $project/files/file
 let $path := $project/files/@path/string()
@@ -111,10 +113,12 @@ let $projectName := $project/@name/string()
 let $ProjectReference := $project/../ProjectReference
 let $PreBuildEvent := $project/PreBuildEvent/string()
 return
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="{$ToolsVersion}">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{"&#x7B;"}{$guid}{"&#x7D;"}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -170,7 +174,6 @@ return
 
 declare function local:genTestProjects($project)
 {
-let $ToolsVersion := local:getToolsVersion()
 let $guid := $project/@guid/string()
 let $files := $project/files/file
 let $path := $project/files/@path/string()
@@ -178,10 +181,12 @@ let $projectName := $project/@name/string()
 let $ProjectReference := $project/ProjectReference
 let $PreBuildEvent := $project/PreBuildEvent/string()
 return
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"  ToolsVersion="{$ToolsVersion}">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{"&#x7B;"}{$guid}{"&#x7D;"}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -240,10 +245,10 @@ return
     <PreBuildEvent>{$PreBuildEvent}</PreBuildEvent>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="..\AllTestData.xml" />
+    <Content Include="AllTestData.xml" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\bdb4.7.db" />
+    <None Include="bdb4.7.db" />
   </ItemGroup>
 </Project>
 };

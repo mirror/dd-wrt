@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -51,18 +51,15 @@ DB_ENV-&gt;cdsgroup_begin(DB_ENV *dbenv, DB_TXN **tid);  </pre>
          Calling the 
          <a class="xref" href="txncommit.html" title="DB_TXN-&gt;commit()">DB_TXN-&gt;commit()</a>  method will
          discard the allocated locker ID.
-     </p>
+    </p>
       <p>
-         See <a href="../../programmer_reference/cam.html#cam_intro" class="olink">Berkeley DB Concurrent Data Store applications</a> 
-         for more information about when this is required.
-     </p>
-      <p>
-        This method may not be called on a sliced database.
-     </p>
+         See <a href="../../programmer_reference/cam.html#cam_intro" class="olink">Berkeley DB Concurrent Data Store applications</a> for more information about when this is
+         required.
+    </p>
       <p>
          The <code class="methodname">DB_ENV-&gt;cdsgroup_begin()</code> method may be called at any time during
          the life of the application.
-     </p>
+    </p>
       <p>
          The <code class="methodname">DB_ENV-&gt;cdsgroup_begin()</code> <span>
             <span>
@@ -70,41 +67,28 @@ DB_ENV-&gt;cdsgroup_begin(DB_ENV *dbenv, DB_TXN **tid);  </pre>
             </span>
             
         </span>
-     </p>
+    </p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711172445744"></a>Errors</h3>
+              <h3 class="title"><a id="idp54730216"></a>Errors</h3>
             </div>
           </div>
         </div>
         <p>
-             The <code class="methodname">DB_ENV-&gt;cdsgroup_begin()</code> <span>
+                     The <code class="methodname">DB_ENV-&gt;cdsgroup_begin()</code> <span>
             <span>
                  method may fail and return one of the following non-zero errors:
             </span>
             
         </span>
-        </p>
+                </p>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711172418640"></a>EINVAL</h4>
-              </div>
-            </div>
-          </div>
-          <p>
-                If this method is called on a sliced database;
-                or if an invalid flag value or parameter was specified.
-            </p>
-        </div>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h4 class="title"><a id="idm140711172418880"></a>ENOMEM</h4>
+                <h4 class="title"><a id="idp54743016"></a>ENOMEM</h4>
               </div>
             </div>
           </div>
@@ -117,25 +101,25 @@ DB_ENV-&gt;cdsgroup_begin(DB_ENV *dbenv, DB_TXN **tid);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711172420064"></a>Class</h3>
+              <h3 class="title"><a id="idp54742488"></a>Class</h3>
             </div>
           </div>
         </div>
         <p>
-            <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>, <a class="link" href="txn.html" title="Chapter 12.  The DB_TXN Handle">DB_TXN</a>  
-        </p>
+                <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>, <a class="link" href="txn.html" title="Chapter 12.  The DB_TXN Handle">DB_TXN</a>  
+            </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711172443664"></a>See Also</h3>
+              <h3 class="title"><a id="idp54740280"></a>See Also</h3>
             </div>
           </div>
         </div>
         <p>
-             <a class="xref" href="txn.html#txnlist" title="Transaction Subsystem and Related Methods">Transaction Subsystem and Related Methods</a> 
-        </p>
+                     <a class="xref" href="txn.html#txnlist" title="Transaction Subsystem and Related Methods">Transaction Subsystem and Related Methods</a> 
+                </p>
       </div>
     </div>
     <div class="navfooter">

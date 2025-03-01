@@ -15,17 +15,9 @@ ex_dbclient.c	Using DB from an RPC client.
 
 ex_env.c	Setting up the DB environment.
 
-ex_firewall/
-		This example shows how Oracle Berkeley DB can be used
-		to implement a simple firewall.
-
 ex_lock.c	Locking.
 
 ex_mpool.c	Shared memory buffer pools.
-
-ex_priority_msg/
-		This example shows how Oracle Berkeley DB can be used to
-		 implement a simple case of priority message handling.
 
 ex_rep/		Replication.  This creates a toy stock quote server
 		with DB's single-master, multiple-client replication,

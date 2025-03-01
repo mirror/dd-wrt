@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -11,7 +11,6 @@
 #include "db_int.h"
 #include "dbinc/db_page.h"
 #include "dbinc/btree.h"
-#include "dbinc/fop.h"
 #include "dbinc/hash.h"
 #include "dbinc/heap.h"
 #include "dbinc/mp.h"
@@ -26,11 +25,6 @@ static int	 __db_hmeta __P((ENV *, DB *, HMETA *, u_int32_t));
 static void	 __db_meta __P((ENV *, DB *, DBMETA *, FN const *, u_int32_t));
 static void	 __db_proff __P((ENV *, DB_MSGBUF *, void *));
 static int	 __db_qmeta __P((ENV *, DB *, QMETA *, u_int32_t));
-static int	 __db_prblob __P((DBC *, DBT *, DBT *, int, const char *,
-    void *, int (*callback) __P((void *, const void *)), int, int));
-static int	 __db_prblob_id __P((DB *, db_seq_t,
-		    off_t, DBT *, int, const char *, void *,
-		    int (*callback) __P((void *, const void *))));
 #ifdef HAVE_STATISTICS
 static void	 __db_prdb __P((DB *, u_int32_t));
 static int	 __db_prtree __P((DB *, DB_TXN *,
@@ -54,10 +48,7 @@ __db_loadme()
 #ifdef HAVE_STATISTICS
 /*
  * __db_dumptree --
- *	Dump the 'tree' of a database to a named file, or when that is null, to
- *	the __db_msg() output stream. This function really is about displaying
- *	the internal format of the pages of any database type, not just btree.
- *	It can print just the subset of pages from first through last.
+ *	Dump the tree to a file.
  *
  * PUBLIC: int __db_dumptree __P((DB *, DB_TXN *,
  * PUBLIC:     char *, char *, db_pgno_t, db_pgno_t));
@@ -69,7 +60,6 @@ __db_dumptree(dbp, txn, op, name, first, last)
 	char *op, *name;
 	db_pgno_t first, last;
 {
-	DB_THREAD_INFO *ip;
 	ENV *env;
 	FILE *fp, *orig_fp;
 	u_int32_t flags;
@@ -88,12 +78,12 @@ __db_dumptree(dbp, txn, op, name, first, last)
 			LF_SET(DB_PR_RECOVERYTEST);
 			break;
 		default:
-			return (USR_ERR(env, EINVAL));
+			return (EINVAL);
 		}
 
 	if (name != NULL) {
 		if ((fp = fopen(name, "w")) == NULL)
-			return (USR_ERR(env, __os_get_errno()));
+			return (__os_get_errno());
 
 		orig_fp = dbp->dbenv->db_msgfile;
 		dbp->dbenv->db_msgfile = fp;
@@ -104,9 +94,7 @@ __db_dumptree(dbp, txn, op, name, first, last)
 
 	__db_msg(env, "%s", DB_GLOBAL(db_line));
 
-	ENV_ENTER(dbp->env, ip);
 	ret = __db_prtree(dbp, txn, flags, first, last);
-	ENV_LEAVE(dbp->env, ip);
 
 	if (fp != NULL) {
 		(void)fclose(fp);
@@ -498,53 +486,6 @@ __db_meta(env, dbp, dbmeta, fn, flags)
 }
 
 /*
- * __db_get_bmeta_fn --
- *	Return the address of the flag names array for btree metadata flags.
- *
- * Making this is a function reduces the number of global data symbols.
- *
- * PUBLIC: const FN *__db_get_bmeta_fn __P((void));
- */
-const FN *
-__db_get_bmeta_fn()
-{
-	static const FN fn[] = {
-		{ BTM_DUP,	"duplicates" },
-		{ BTM_RECNO,	"recno" },
-		{ BTM_RECNUM,	"btree:recnum" },
-		{ BTM_FIXEDLEN,	"recno:fixed-length" },
-		{ BTM_RENUMBER,	"recno:renumber" },
-		{ BTM_SUBDB,	"multiple-databases" },
-		{ BTM_DUPSORT,	"sorted duplicates" },
-		{ BTM_COMPRESS,	"compressed" },
-		{ BTM_SLICED,	"sliced" },
-		{ 0,		NULL }
-	};
-
-	return (fn);
-}
-
-/*
- * __db_get_hmeta_fn --
- *	Return the address of the flag names array for hash metadata flags.
- *
- * PUBLIC: const FN *__db_get_hmeta_fn __P((void));
- */
-const FN *
-__db_get_hmeta_fn()
-{
-	static const FN fn[] = {
-		{ HASHM_DUP,		"duplicates" },
-		{ HASHM_SUBDB,	"multiple-databases" },
-		{ HASHM_DUPSORT,	"sorted duplicates" },
-		{ HASHM_SLICED,	"sliced" },
-		{ 0,			NULL }
-	};
-
-	return (fn);
-}
-
-/*
  * __db_bmeta --
  *	Print out the btree meta-data page.
  */
@@ -555,19 +496,25 @@ __db_bmeta(env, dbp, h, flags)
 	BTMETA *h;
 	u_int32_t flags;
 {
+	static const FN fn[] = {
+		{ BTM_DUP,	"duplicates" },
+		{ BTM_RECNO,	"recno" },
+		{ BTM_RECNUM,	"btree:recnum" },
+		{ BTM_FIXEDLEN,	"recno:fixed-length" },
+		{ BTM_RENUMBER,	"recno:renumber" },
+		{ BTM_SUBDB,	"multiple-databases" },
+		{ BTM_DUPSORT,	"sorted duplicates" },
+		{ BTM_COMPRESS,	"compressed" },
+		{ 0,		NULL }
+	};
 
-	__db_meta(env, dbp, (DBMETA *)h, __db_get_bmeta_fn(), flags);
+	__db_meta(env, dbp, (DBMETA *)h, fn, flags);
 
 	__db_msg(env, "\tminkey: %lu", (u_long)h->minkey);
 	if (F_ISSET(&h->dbmeta, BTM_RECNO))
 		__db_msg(env, "\tre_len: %#lx re_pad: %#lx",
 		    (u_long)h->re_len, (u_long)h->re_pad);
 	__db_msg(env, "\troot: %lu", (u_long)h->root);
-	__db_msg(env, "\tblob_threshold: %lu", (u_long)h->blob_threshold);
-	__db_msg(env, "\tblob_file_lo: %lu", (u_long)h->blob_file_lo);
-	__db_msg(env, "\tblob_file_hi: %lu", (u_long)h->blob_file_hi);
-	__db_msg(env, "\tblob_sdb_lo: %lu", (u_long)h->blob_sdb_lo);
-	__db_msg(env, "\tblob_sdb_hi: %lu", (u_long)h->blob_sdb_hi);
 
 	return (0);
 }
@@ -583,12 +530,18 @@ __db_hmeta(env, dbp, h, flags)
 	HMETA *h;
 	u_int32_t flags;
 {
+	static const FN fn[] = {
+		{ DB_HASH_DUP,		"duplicates" },
+		{ DB_HASH_SUBDB,	"multiple-databases" },
+		{ DB_HASH_DUPSORT,	"sorted duplicates" },
+		{ 0,			NULL }
+	};
 	DB_MSGBUF mb;
 	int i;
 
 	DB_MSGBUF_INIT(&mb);
 
-	__db_meta(env, dbp, (DBMETA *)h, __db_get_hmeta_fn(), flags);
+	__db_meta(env, dbp, (DBMETA *)h, fn, flags);
 
 	__db_msg(env, "\tmax_bucket: %lu", (u_long)h->max_bucket);
 	__db_msg(env, "\thigh_mask: %#lx", (u_long)h->high_mask);
@@ -596,11 +549,6 @@ __db_hmeta(env, dbp, h, flags)
 	__db_msg(env, "\tffactor: %lu", (u_long)h->ffactor);
 	__db_msg(env, "\tnelem: %lu", (u_long)h->nelem);
 	__db_msg(env, "\th_charkey: %#lx", (u_long)h->h_charkey);
-	__db_msg(env, "\tblob_threshold: %lu", (u_long)h->blob_threshold);
-	__db_msg(env, "\tblob_file_lo: %lu", (u_long)h->blob_file_lo);
-	__db_msg(env, "\tblob_file_hi: %lu", (u_long)h->blob_file_hi);
-	__db_msg(env, "\tblob_sdb_lo: %lu", (u_long)h->blob_sdb_lo);
-	__db_msg(env, "\tblob_sdb_hi: %lu", (u_long)h->blob_sdb_hi);
 	__db_msgadd(env, &mb, "\tspare points:\n\t");
 	for (i = 0; i < NCACHED; i++) {
 		__db_msgadd(env, &mb, "%lu (%lu) ", (u_long)h->spares[i],
@@ -656,9 +604,6 @@ __db_heapmeta(env, dbp, h, flags)
 	__db_msg(env, "\tnregions: %lu", (u_long)h->nregions);
 	__db_msg(env, "\tgbytes: %lu", (u_long)h->gbytes);
 	__db_msg(env, "\tbytes: %lu", (u_long)h->bytes);
-	__db_msg(env, "\tblob_threshold: %lu", (u_long)h->blob_threshold);
-	__db_msg(env, "\tblob_file_lo: %lu", (u_long)h->blob_file_lo);
-	__db_msg(env, "\tblob_file_hi: %lu", (u_long)h->blob_file_hi);
 
 	return (0);
 }
@@ -737,19 +682,14 @@ __db_prpage_int(env, mbp, dbp, lead, h, pagesize, data, flags)
 {
 	BINTERNAL *bi;
 	BKEYDATA *bk;
-	BBLOB bl;
 	HOFFPAGE a_hkd;
-	HBLOB hblob;
 	QAMDATA *qp, *qep;
 	RINTERNAL *ri;
 	HEAPHDR *hh;
 	HEAPSPLITHDR *hs;
-	HEAPBLOBHDR bhdr;
 	db_indx_t dlen, len, i, *inp, max;
 	db_pgno_t pgno;
 	db_recno_t recno;
-	off_t blob_size;
-	db_seq_t blob_id;
 	u_int32_t qlen;
 	u_int8_t *ep, *hk, *p;
 	int deleted, ret;
@@ -822,7 +762,6 @@ __db_prpage_int(env, mbp, dbp, lead, h, pagesize, data, flags)
 			__db_msgadd(env, mbp, "[%03lu] %4lu ", (u_long)recno,
 			    (u_long)((u_int8_t *)qp - (u_int8_t *)h));
 			__db_prbytes(env, mbp, qp->data, qlen);
-			DB_MSGBUF_FLUSH(env, mbp);
 		}
 		return (0);
 	case P_HEAPMETA:
@@ -857,7 +796,6 @@ __db_prpage_int(env, mbp, dbp, lead, h, pagesize, data, flags)
 		else
 			__db_prbytes(env,
 			    mbp, (u_int8_t *)h + P_OVERHEAD(dbp), OV_LEN(h));
-		DB_MSGBUF_FLUSH(env, mbp);
 		return (0);
 	}
 	__db_msgadd(env, mbp, "%sentries: %4lu", s, (u_long)NUM_ENT(h));
@@ -881,10 +819,10 @@ __db_prpage_int(env, mbp, dbp, lead, h, pagesize, data, flags)
 		if ((uintptr_t)(P_ENTRY(dbp, h, i) - (u_int8_t *)h) <
 		    (uintptr_t)(P_OVERHEAD(dbp)) ||
 		    (size_t)(P_ENTRY(dbp, h, i) - (u_int8_t *)h) >= pagesize) {
-			ret = USR_ERR(env, EINVAL);
 			__db_msg(env,
 			    "ILLEGAL PAGE OFFSET: indx: %lu of %lu",
 			    (u_long)i, (u_long)inp[i]);
+			ret = EINVAL;
 			continue;
 		}
 		deleted = 0;
@@ -961,29 +899,11 @@ __db_prpage_int(env, mbp, dbp, lead, h, pagesize, data, flags)
 				    (u_long)a_hkd.tlen, (u_long)a_hkd.pgno);
 				DB_MSGBUF_FLUSH(env, mbp);
 				break;
-			case H_BLOB:
-				memcpy(&hblob, hk, HBLOB_SIZE);
-				blob_id = (db_seq_t)hblob.id;
-				__db_msgadd(env, mbp,
-				    "external file: id: %llu ",
-				    (long long)blob_id);
-				GET_BLOB_SIZE(env, hblob, blob_size, ret);
-				if (ret != 0)
-					__db_msgadd(env, mbp,
-				    "external file: blob_size overflow. ");
-				__db_msgadd(env, mbp, 
-				    "external file: size: %llu",
-				    (long long)blob_size);
-				/*
-				 * No point printing the blob file, it is
-				 * likely not readable by humans.
-				 */
-				break;
 			default:
 				DB_MSGBUF_FLUSH(env, mbp);
-				ret = USR_ERR(env, EINVAL);
 				__db_msg(env, "ILLEGAL HASH PAGE TYPE: %lu",
 				    (u_long)HPAGE_PTYPE(hk));
+				ret = EINVAL;
 				break;
 			}
 			break;
@@ -1005,11 +925,10 @@ __db_prpage_int(env, mbp, dbp, lead, h, pagesize, data, flags)
 				__db_proff(env, mbp, bi->data);
 				break;
 			default:
-				/* B_BLOB does not appear on internal pages. */
 				DB_MSGBUF_FLUSH(env, mbp);
-				ret = USR_ERR(env, EINVAL);
 				__db_msg(env, "ILLEGAL BINTERNAL TYPE: %lu",
 				    (u_long)B_TYPE(bi->type));
+				ret = EINVAL;
 				break;
 			}
 			break;
@@ -1031,54 +950,20 @@ __db_prpage_int(env, mbp, dbp, lead, h, pagesize, data, flags)
 			case B_OVERFLOW:
 				__db_proff(env, mbp, bk);
 				break;
-			case B_BLOB:
-				memcpy(&bl, bk, BBLOB_SIZE);
-				blob_id = (db_seq_t)bl.id;
-				__db_msgadd(env, mbp, 
-				    "external file: id: %llu ",
-				    (long long)blob_id);
-				GET_BLOB_SIZE(env, bl, blob_size, ret);
-				if (ret != 0)
-					__db_msgadd(env, mbp,
-				    "external file: blob_size overflow. ");
-				__db_msgadd(env, mbp, 
-				    "external file: size: %llu",
-				    (long long)blob_size);
-				DB_MSGBUF_FLUSH(env, mbp);
-				break;
 			default:
 				DB_MSGBUF_FLUSH(env, mbp);
-				ret = USR_ERR(env, EINVAL);
 				__db_msg(env,
 			    "ILLEGAL DUPLICATE/LBTREE/LRECNO TYPE: %lu",
 				    (u_long)B_TYPE(bk->type));
+				ret = EINVAL;
 				break;
 			}
 			break;
 		case P_HEAP:
 			hh = sp;
-			if (!F_ISSET(hh,HEAP_RECSPLIT) &&
-			    !F_ISSET(hh, HEAP_RECBLOB))
+			if (!F_ISSET(hh,HEAP_RECSPLIT))
 				hdata = (u_int8_t *)hh + sizeof(HEAPHDR);
-			else if (F_ISSET(hh, HEAP_RECBLOB)) {
-				memcpy(&bhdr, hh, HEAPBLOBREC_SIZE);
-				blob_id = (db_seq_t)bhdr.id;
-				__db_msgadd(env, mbp,
-				    "external file: id: %llu ",
-				    (long long)blob_id);
-				GET_BLOB_SIZE(env, bhdr, blob_size, ret);
-				if (ret != 0)
-					__db_msgadd(env, mbp,
-				    "external file: blob_size overflow. ");
-				__db_msgadd(env, mbp,
-				    "external file: size: %llu",
-				    (long long)blob_size);
-				/*
-				 * No point printing the blob file, it is
-				 * likely not readable by humans.
-				 */
-				break;
-			} else {
+			else {
 				hs = sp;
 				__db_msgadd(env, mbp,
 				     "split: 0x%02x tsize: %lu next: %lu.%lu ",
@@ -1091,20 +976,18 @@ __db_prpage_int(env, mbp, dbp, lead, h, pagesize, data, flags)
 			break;
 		default:
 type_err:		DB_MSGBUF_FLUSH(env, mbp);
-			ret = USR_ERR(env, EINVAL);
 			__db_msg(env,
 			    "ILLEGAL PAGE TYPE: %lu", (u_long)TYPE(h));
+			ret = EINVAL;
 			continue;
 		}
-		DB_MSGBUF_FLUSH(env, mbp);
 	}
 	return (ret);
 }
 
 /*
  * __db_prbytes --
- *	Print out a data element, guessing whether it is best displayed as a hex
- *	string or regular printable characters.
+ *	Print out a data element.
  *
  * PUBLIC: void __db_prbytes __P((ENV *, DB_MSGBUF *, u_int8_t *, u_int32_t));
  */
@@ -1130,7 +1013,7 @@ __db_prbytes(env, mbp, bytes, len)
 		 * heuristic because we're displaying things like
 		 * lock objects that could be either text or data.
 		 */
-		if (env != NULL && len > env->data_len) {
+		if (len > env->data_len) {
 			len = env->data_len;
 			msg_truncated = 1;
 		} else
@@ -1158,6 +1041,7 @@ __db_prbytes(env, mbp, bytes, len)
 		if (msg_truncated)
 			__db_msgadd(env, mbp, "...");
 	}
+	DB_MSGBUF_FLUSH(env, mbp);
 }
 
 /*
@@ -1230,11 +1114,8 @@ __db_prflags(env, mbp, flags, fn, prefix, suffix)
 			__db_msgadd(env, mbp, "%s%s", sep, fnp->name);
 			sep = ", ";
 			found = 1;
-			LF_CLR(fnp->mask);
 		}
 
-	if (flags != 0)
-		__db_msgadd(env, mbp, "unknown(%x)", flags);
 	if ((standalone || found) && suffix != NULL)
 		__db_msgadd(env, mbp, "%s", suffix);
 	if (standalone)
@@ -1333,7 +1214,7 @@ __db_pagetype_to_string(type)
 
 /*
  * __db_dump_pp --
- *	DB->dump pre/post processing. Undocumented private interface.
+ *	DB->dump pre/post processing.
  *
  * PUBLIC: int __db_dump_pp __P((DB *, const char *,
  * PUBLIC:     int (*)(void *, const void *), void *, int, int));
@@ -1375,7 +1256,7 @@ err:	ENV_LEAVE(env, ip);
 
 /*
  * __db_dump --
- *	DB->dump(), an undocumented interface.
+ *	DB->dump.
  *
  * PUBLIC: int __db_dump __P((DB *, const char *,
  * PUBLIC:     int (*)(void *, const void *), void *, int, int));
@@ -1388,24 +1269,17 @@ __db_dump(dbp, subname, callback, handle, pflag, keyflag)
 	void *handle;
 	int pflag, keyflag;
 {
-	DBC *dbc;
+	DBC *dbcp;
 	DBT key, data;
 	DBT keyret, dataret;
 	DB_HEAP_RID rid;
 	ENV *env;
-	int (*get_func) __P((DBC *, DBT *, DBT *, u_int32_t));
 	db_recno_t recno;
 	int is_recno, is_heap, ret, t_ret;
-	u_int32_t blob_threshold, flags;
 	void *pointer;
 
 	env = dbp->env;
 	is_heap = 0;
-	memset(&dataret, 0, sizeof(DBT));
-	memset(&keyret, 0, sizeof(DBT));
-
-	if ((ret = __db_get_blob_threshold(dbp, &blob_threshold)) != 0)
-		return (ret);
 
 	if ((ret = __db_prheader(
 	    dbp, subname, pflag, keyflag, handle, callback, NULL, 0)) != 0)
@@ -1413,18 +1287,17 @@ __db_dump(dbp, subname, callback, handle, pflag, keyflag)
 
 	/*
 	 * Get a cursor and step through the database, printing out each
-	 * key/data pair. Give the cursor the same sliced-ness as the db.
+	 * key/data pair.
 	 */
-	if ((ret = __db_cursor(dbp,
-	     NULL, NULL, &dbc, FLD_ISSET(dbp->open_flags, DB_SLICED))) != 0)
+	if ((ret = __db_cursor(dbp, NULL, NULL, &dbcp, 0)) != 0)
 		return (ret);
 
 	memset(&key, 0, sizeof(key));
 	memset(&data, 0, sizeof(data));
+	if ((ret = __os_malloc(env, 1024 * 1024, &data.data)) != 0)
+		goto err;
 	data.ulen = 1024 * 1024;
 	data.flags = DB_DBT_USERMEM;
-	if ((ret = __os_malloc(env, data.ulen, &data.data)) != 0)
-		goto err;
 	is_recno = (dbp->type == DB_RECNO || dbp->type == DB_QUEUE);
 	keyflag = is_recno ? keyflag : 1;
 	if (is_recno) {
@@ -1439,20 +1312,13 @@ __db_dump(dbp, subname, callback, handle, pflag, keyflag)
 		key.flags = DB_DBT_USERMEM;
 	}
 
-#ifdef HAVE_SLICES
-	if (FLD_ISSET(dbp->open_flags, DB_SLICED))
-		get_func = __dbc_slice_dump_get;
-	else
-#endif
-		/*lint -e{539} Did not expect positive indentation. */
-		get_func = __dbc_get;
-	flags = is_heap ? DB_NEXT : DB_NEXT | DB_MULTIPLE_KEY;
-
-retry: while ((ret = (*get_func)(dbc, &key, &data, flags)) == 0) {
+retry: while ((ret =
+	    __dbc_get(dbcp, &key, &data,
+	    !is_heap ? DB_NEXT | DB_MULTIPLE_KEY : DB_NEXT )) == 0) {
 		if (is_heap) {
 			/* Never dump keys for HEAP */
-			if ((ret = __db_prdbt(&data,
-			    pflag, " ", handle, callback, 0, 0, 0)) != 0)
+			if ((ret = __db_prdbt(
+			    &data, pflag, " ", handle, callback, 0, 0)) != 0)
 				goto err;
 			continue;
 		}
@@ -1471,24 +1337,17 @@ retry: while ((ret = (*get_func)(dbc, &key, &data, flags)) == 0) {
 
 			if ((keyflag &&
 			    (ret = __db_prdbt(&keyret, pflag, " ",
-			    handle, callback, is_recno, 0, 0)) != 0) ||
+			    handle, callback, is_recno, 0)) != 0) ||
 			    (ret = __db_prdbt(&dataret, pflag, " ",
-			    handle, callback, 0, 0, 0)) != 0)
+			    handle, callback, 0, 0)) != 0)
 					goto err;
 		}
 	}
 	if (ret == DB_BUFFER_SMALL) {
-		if (blob_threshold != 0 && data.size >= blob_threshold) {
-			if ((ret = __db_prblob(dbc, &key, &data, pflag,
-			    " ", handle, callback, is_heap, keyflag)) != 0)
-				goto err;
-		} else {
-			data.size = (u_int32_t)DB_ALIGN(data.size, 1024);
-			if ((ret = __os_realloc(
-			    env, data.size, &data.data)) != 0)
-				goto err;
-			data.ulen = data.size;
-		}
+		data.size = (u_int32_t)DB_ALIGN(data.size, 1024);
+		if ((ret = __os_realloc(env, data.size, &data.data)) != 0)
+			goto err;
+		data.ulen = data.size;
 		goto retry;
 	}
 	if (ret == DB_NOTFOUND)
@@ -1497,7 +1356,7 @@ retry: while ((ret = (*get_func)(dbc, &key, &data, flags)) == 0) {
 	if ((t_ret = __db_prfooter(handle, callback)) != 0 && ret == 0)
 		ret = t_ret;
 
-err:	if ((t_ret = __dbc_close(dbc)) != 0 && ret == 0)
+err:	if ((t_ret = __dbc_close(dbcp)) != 0 && ret == 0)
 		ret = t_ret;
 	if (data.data != NULL)
 		__os_free(env, data.data);
@@ -1506,153 +1365,14 @@ err:	if ((t_ret = __dbc_close(dbc)) != 0 && ret == 0)
 }
 
 /*
- * __db_prblob
- *	Print a blob file.
- */
-static int
-__db_prblob(dbc, key, data, checkprint,
-    prefix, handle, callback, is_heap, keyflag)
-	DBC *dbc;
-	DBT *key;
-	DBT *data;
-	int checkprint;
-	const char *prefix;
-	void *handle;
-	int (*callback) __P((void *, const void *));
-	int is_heap;
-	int keyflag;
-{
-	DBC *local;
-	DBT partial;
-	int ret, t_ret;
-	off_t blob_size;
-	db_seq_t blob_id;
-
-	local = NULL;
-	memset(&partial, 0, sizeof(DBT));
-	partial.flags = DB_DBT_PARTIAL;
-
-	if ((ret = __dbc_idup(dbc, &local, DB_POSITION)) != 0)
-		goto err;
-
-	/* Move the cursor to the blob. */
-	if ((ret = __dbc_get(local, key, &partial, DB_NEXT)) != 0)
-		return (ret);
-
-	if ((ret = __dbc_get_blob_id(local, &blob_id)) != 0) {
-		/*
-		 * It is possible this is not a blob.  Non-blob items that are
-		 * larger than the blob threshold can exist if the item was
-		 * smaller than the threshold when created, then later updated
-		 * to larger than the threshold value.
-		 */
-		if (ret == EINVAL) {
-			ret = 0;
-			data->size = (u_int32_t)DB_ALIGN(data->size, 1024);
-			if ((ret = __os_realloc(
-			    dbc->env, data->size, &data->data)) != 0)
-				goto err;
-			data->ulen = data->size;
-		}
-		goto err;
-	}
-
-	if (data->ulen < MEGABYTE) {
-		if ((data->data = realloc(
-		    data->data, data->ulen = MEGABYTE)) == NULL) {
-			ret = ENOMEM;
-			goto err;
-		}
-	}
-
-	if ((ret = __dbc_get_blob_size(local, &blob_size)) != 0)
-		goto err;
-
-	if (keyflag && !is_heap && (ret = __db_prdbt(
-	    key, checkprint, " ", handle, callback, 0, 0, 0)) != 0)
-		goto err;
-
-	if ((ret = __db_prblob_id(local->dbp, blob_id, blob_size,
-	    data, checkprint, prefix, handle, callback)) != 0)
-		goto err;
-
-	/* Move the cursor. */
-	ret = __dbc_get(dbc, key, &partial, DB_NEXT);
-
-err:	if (local != NULL) {
-		if ((t_ret = __dbc_close(local)) != 0 && ret == 0)
-			ret = t_ret;
-	}
-
-	return (ret);
-}
-
-/*
- * __db_prblob_id --
- *	Print a blob file identified by the given id.
- */
-static int
-__db_prblob_id(dbp, blob_id,
-    blob_size, data, checkprint, prefix, handle, callback)
-	DB *dbp;
-	db_seq_t blob_id;
-	off_t blob_size;
-	DBT *data;
-	int checkprint;
-	const char *prefix;
-	void *handle;
-	int (*callback) __P((void *, const void *));
-{
-	DB_FH *fhp;
-	const char *pre;
-	int ret, skip_newline, t_ret;
-	off_t left, offset;
-
-	fhp = NULL;
-	offset = 0;
-
-	if ((ret = __blob_file_open(
-	    dbp, &fhp, blob_id, DB_FOP_READONLY, 1)) != 0)
-		goto err;
-
-	left = blob_size;
-	while (left > 0) {
-		if ((ret = __blob_file_read(
-		    dbp->env, fhp, data, offset, data->ulen)) != 0)
-			goto err;
-		if (offset == 0)
-			pre = prefix;
-		else
-			pre = NULL;
-		skip_newline = data->size < left ? 1 : 0;
-		if ((ret = __db_prdbt(data, checkprint, pre,
-		    handle, callback, 0, 0, skip_newline)) != 0)
-			goto err;
-		if (data->size > left)
-			left = 0;
-		else
-			left = left - data->size;
-		offset = offset + data->size;
-	}
-
-err:	if (fhp != NULL) {
-		if ((t_ret = __os_closehandle(dbp->env, fhp)) != 0 && ret == 0)
-			ret = t_ret;
-	}
-
-	return (ret);
-}
-
-/*
  * __db_prdbt --
- *	Print out a DBT data element, in the db_dump format
+ *	Print out a DBT data element.
  *
  * PUBLIC: int __db_prdbt __P((DBT *, int, const char *, void *,
- * PUBLIC:     int (*)(void *, const void *), int, int, int));
+ * PUBLIC:     int (*)(void *, const void *), int, int));
  */
 int
-__db_prdbt(dbtp, checkprint,
-    prefix, handle, callback, is_recno, is_heap, no_newline)
+__db_prdbt(dbtp, checkprint, prefix, handle, callback, is_recno, is_heap)
 	DBT *dbtp;
 	int checkprint;
 	const char *prefix;
@@ -1660,17 +1380,16 @@ __db_prdbt(dbtp, checkprint,
 	int (*callback) __P((void *, const void *));
 	int is_recno;
 	int is_heap;
-	int no_newline;
 {
+	static const u_char hex[] = "0123456789abcdef";
 	db_recno_t recno;
 	DB_HEAP_RID rid;
-	size_t count, len;
+	size_t len;
 	int ret;
-	u_int8_t *p;
 #define	DBTBUFLEN	100
-	char buf[DBTBUFLEN], hexbuf[DB_TOHEX_BUFSIZE(DBTBUFLEN)];
+	u_int8_t *p, *hp;
+	char buf[DBTBUFLEN], hbuf[DBTBUFLEN];
 
-	ret = 0;
 	/*
 	 * !!!
 	 * This routine is the routine that dumps out items in the format
@@ -1690,8 +1409,13 @@ __db_prdbt(dbtp, checkprint,
 
 		/* If we're printing data as hex, print keys as hex too. */
 		if (!checkprint) {
-			(void)__db_tohex(buf, strlen(buf), hexbuf);
-			ret = callback(handle, hexbuf);
+			for (len = strlen(buf), p = (u_int8_t *)buf,
+			    hp = (u_int8_t *)hbuf; len-- > 0; ++p) {
+				*hp++ = hex[(u_int8_t)(*p & 0xf0) >> 4];
+				*hp++ = hex[*p & 0x0f];
+			}
+			*hp = '\0';
+			ret = callback(handle, hbuf);
 		} else
 			ret = callback(handle, buf);
 
@@ -1709,46 +1433,44 @@ __db_prdbt(dbtp, checkprint,
 
 		/* If we're printing data as hex, print keys as hex too. */
 		if (!checkprint) {
-			(void)__db_tohex(buf, strlen(buf), hexbuf);
-			ret = callback(handle, hexbuf);
+			for (len = strlen(buf), p = (u_int8_t *)buf,
+			    hp = (u_int8_t *)hbuf; len-- > 0; ++p) {
+				*hp++ = hex[(u_int8_t)(*p & 0xf0) >> 4];
+				*hp++ = hex[*p & 0x0f];
+			}
+			*hp = '\0';
+			ret = callback(handle, hbuf);
 		} else
 			ret = callback(handle, buf);
 
 		if (ret != 0)
 			return (ret);
 	} else if (checkprint) {
-		/*
-		 * Prepare buf for the 'isprint()' case: printable single char
-		 * strings; prepare hexbuf for the other case '\<2 hex digits>'.
-		 */
-		buf[1] = '\0';
-		hexbuf[0] = '\\';
 		for (len = dbtp->size, p = dbtp->data; len--; ++p)
 			if (isprint((int)*p)) {
 				if (*p == '\\' &&
 				    (ret = callback(handle, "\\")) != 0)
 					return (ret);
-				buf[0] = (char)*p;
+				snprintf(buf, DBTBUFLEN, "%c", *p);
 				if ((ret = callback(handle, buf)) != 0)
 					return (ret);
 			} else {
-				(void)__db_tohex(p, 1, hexbuf + 1);
-				if ((ret = callback(handle, hexbuf)) != 0)
+				snprintf(buf, DBTBUFLEN, "\\%c%c",
+				    hex[(u_int8_t)(*p & 0xf0) >> 4],
+				    hex[*p & 0x0f]);
+				if ((ret = callback(handle, buf)) != 0)
 					return (ret);
 			}
 	} else
-		for (len = dbtp->size, p = dbtp->data, count = DBTBUFLEN;
-		     len > 0; len -= count, p += count) {
-			if (count > len)
-				count = len;
-			(void)__db_tohex(p, count, hexbuf);
-			if ((ret = callback(handle, hexbuf)) != 0)
+		for (len = dbtp->size, p = dbtp->data; len--; ++p) {
+			snprintf(buf, DBTBUFLEN, "%c%c",
+			    hex[(u_int8_t)(*p & 0xf0) >> 4],
+			    hex[*p & 0x0f]);
+			if ((ret = callback(handle, buf)) != 0)
 				return (ret);
 		}
-	if (no_newline == 0)
-		return (callback(handle, "\n"));
-	else
-		return (ret);
+
+	return (callback(handle, "\n"));
 }
 
 /*
@@ -1876,7 +1598,7 @@ __db_prheader(dbp, subname, pflag, keyflag, handle, callback, vdp, meta_pgno)
 			goto err;
 		DB_INIT_DBT(dbt, subname, strlen(subname));
 		if ((ret = __db_prdbt(&dbt, 1,
-		    NULL, handle, callback, 0, 0, 0)) != 0)
+		    NULL, handle, callback, 0, 0)) != 0)
 			goto err;
 	}
 	switch (dbtype) {
@@ -2146,7 +1868,7 @@ __db_prheader(dbp, subname, pflag, keyflag, handle, callback, vdp, meta_pgno)
 				goto err;
 			for (i = 0; i < tmp_u_int32 - 1; i++)
 			    if ((ret = __db_prdbt(&keys[i],
-				pflag, " ", handle, callback, 0, 0, 0)) != 0)
+				pflag, " ", handle, callback, 0, 0)) != 0)
 					goto err;
 		}
 	}
@@ -2231,96 +1953,4 @@ __db_dbtype_to_string(type)
 		break;
 	}
 	return ("UNKNOWN TYPE");
-}
-
-/*
- * __db_tohex --
- *	Generate a hex string representation of a byte array.
- *	The size of the destination must be at least 2*len + 1 bytes long,
- *	to allow for the '\0' terminator, which is always added.
- *	DB_TOHEX_BUFSIZE() computes that size.
- *
- *	Returns:
- *		the beginning of the 'dest' argument, so that this function
- *		can be used in a printf or __db_msgadd() argument list.
- *
- * PUBLIC: char *__db_tohex __P((const void *, size_t, char *));
- */
-char *
-__db_tohex(source, len, dest)
-	const void *source;
-	size_t  len;
-	char *dest;
-{
-	static const char hex[] = "0123456789abcdef";
-	const u_int8_t *s;
-	char *d;
-
-	s = source;
-	d = dest;
-	while (len > 0) {
-	    *d++ = hex[(*s & 0xf0) >> 4];
-	    *d++ = hex[*s & 0x0f];
-	    s++;
-	    len--;
-	}
-	*d = '\0';
-	return ((char *)dest);
-}
-
-/*
- * __db_dbt_print --
- *	 'Print' a DBT into a message stream, suitable for a diagnostic message.
- *
- *	A different take on __db_prbytes(). Eventually print sequences of 4 or
- *	more printable characters as strings, non-' ' whitespace as escape
- *	sequences, the rest as 0x-prefixed hex strings.
- *
- * PUBLIC: char *__db_dbt_print __P((ENV *, DB_MSGBUF *, const DBT *));
- */
-char *
-__db_dbt_print(env, mbp, dbt)
-	ENV *env;
-	DB_MSGBUF *mbp;
-	const DBT *dbt;
-{
-	__db_msgadd(env, mbp, "[");
-	if (dbt->size > ENV_DEF_DATA_LEN ||
-	    (env != NULL && dbt->size > env->data_len / 2)) {
-		__db_prbytes(env, mbp, dbt->data, env->data_len);
-		__db_msgadd(env, mbp, "...");
-	} else
-		__db_prbytes(env, mbp, dbt->data, dbt->size);
-	__db_msgadd(env, mbp, "]");
-
-	return (0);
-}
-
-/*
- * __db_dbt_printpair
- *	 'Printf' a message and a pair of DBTs to the message output.
- *
- *
- * PUBLIC: int __db_dbt_printpair
- * PUBLIC:     __P((ENV *, const DBT *, const DBT *, const char *, ...));
- */
-int
-__db_dbt_printpair(ENV *env, const DBT *key, const DBT *data, const char *fmt, ...)
-{
-	DB_MSGBUF mb;
-	va_list ap;
-
-	DB_MSGBUF_INIT(&mb);
-
-	va_start(ap, fmt);
-	__db_msgadd_ap(env, &mb, fmt, ap);
-	va_end(ap);
-
-	__db_msgadd(env, &mb, " key ");
-	(void)__db_dbt_print(env, &mb, key);
-	__db_msgadd(env, &mb, " data ");
-	(void)__db_dbt_print(env, &mb, data);
-	DB_MSGBUF_FLUSH(env, &mb);
-
-	return (0);
 }

@@ -14,11 +14,13 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Chapter 4.  Access Method Wrapup </th>
+          <th colspan="3" align="center">Chapter 4. 
+		Access Method Wrapup
+        </th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="am_cursor.html">Prev</a> </td>
@@ -32,7 +34,9 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title"><a id="am_misc"></a>Chapter 4.  Access Method Wrapup </h2>
+            <h2 class="title"><a id="am_misc"></a>Chapter 4. 
+		Access Method Wrapup
+        </h2>
           </div>
         </div>
       </div>
@@ -72,14 +76,12 @@
           </dd>
           <dt>
             <span class="sect1">
-              <a href="am_misc_partial.html">Partial record storage and
-        retrieval</a>
+              <a href="am_misc_partial.html">Partial record storage and retrieval</a>
             </span>
           </dt>
           <dt>
             <span class="sect1">
-              <a href="am_misc_struct.html">Storing C/C++
-        structures/objects</a>
+              <a href="am_misc_struct.html">Storing C/C++ structures/objects</a>
             </span>
           </dt>
           <dt>
@@ -104,62 +106,26 @@
           </dt>
           <dt>
             <span class="sect1">
-              <a href="am_misc_diskspace.html">Disk space
-        requirements</a>
+              <a href="am_misc_diskspace.html">Disk space requirements</a>
             </span>
           </dt>
           <dd>
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="am_misc_diskspace.html#idm140526455812992">Btree</a>
+                  <a href="am_misc_diskspace.html#idp51253016">Btree</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="am_misc_diskspace.html#idm140526455812864">Hash</a>
+                  <a href="am_misc_diskspace.html#idp51253080">Hash</a>
                 </span>
               </dt>
             </dl>
           </dd>
           <dt>
             <span class="sect1">
-              <a href="blobs.html">External File support</a>
-            </span>
-          </dt>
-          <dd>
-            <dl>
-              <dt>
-                <span class="sect2">
-                  <a href="blobs.html#blob_threshold">The external file threshold</a>
-                </span>
-              </dt>
-              <dt>
-                <span class="sect2">
-                  <a href="blobs.html#blob_create">Creating external files</a>
-                </span>
-              </dt>
-              <dt>
-                <span class="sect2">
-                  <a href="blobs.html#blob_access">External file access</a>
-                </span>
-              </dt>
-              <dt>
-                <span class="sect2">
-                  <a href="blobs.html#blob_storage">External file storage</a>
-                </span>
-              </dt>
-              <dt>
-                <span class="sect2">
-                  <a href="blobs.html#blob_replication">External Files and Replication</a>
-                </span>
-              </dt>
-            </dl>
-          </dd>
-          <dt>
-            <span class="sect1">
-              <a href="am_misc_db_sql.html">Specifying a Berkeley DB schema
-        using SQL DDL</a>
+              <a href="am_misc_db_sql.html">Specifying a Berkeley DB schema using SQL DDL</a>
             </span>
           </dt>
           <dt>
@@ -182,15 +148,12 @@
             </div>
           </div>
         </div>
-        <p>
-        The Berkeley DB access methods provide no guarantees about
-        byte alignment for returned key/data pairs, or callback
-        functions which take <a href="../api_reference/C/dbt.html" class="olink">DBT</a> references as arguments, and
-        applications are responsible for arranging any necessary
-        alignment. The <a href="../api_reference/C/dbt.html#dbt_DB_DBT_MALLOC" class="olink">DB_DBT_MALLOC</a>, <a href="../api_reference/C/dbt.html#dbt_DB_DBT_REALLOC" class="olink">DB_DBT_REALLOC</a>, and
-        <a href="../api_reference/C/dbt.html#dbt_DB_DBT_USERMEM" class="olink">DB_DBT_USERMEM</a> flags may be used to store returned items in
-        memory of arbitrary alignment.
-    </p>
+        <p>The Berkeley DB access methods provide no guarantees about byte alignment for
+returned key/data pairs, or callback functions which take <a href="../api_reference/C/dbt.html" class="olink">DBT</a>
+references as arguments, and applications are responsible for arranging
+any necessary alignment.  The <a href="../api_reference/C/dbt.html#dbt_DB_DBT_MALLOC" class="olink">DB_DBT_MALLOC</a>, <a href="../api_reference/C/dbt.html#dbt_DB_DBT_REALLOC" class="olink">DB_DBT_REALLOC</a>, and
+<a href="../api_reference/C/dbt.html#dbt_DB_DBT_USERMEM" class="olink">DB_DBT_USERMEM</a> flags may be used to
+store returned items in memory of arbitrary alignment.</p>
       </div>
     </div>
     <div class="navfooter">

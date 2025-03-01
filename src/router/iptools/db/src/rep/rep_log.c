@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2004, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2004, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -14,7 +14,7 @@
 static int __rep_chk_newfile __P((ENV *, DB_LOGC *, REP *,
     __rep_control_args *, int));
 static int __rep_log_split __P((ENV *, DB_THREAD_INFO *,
-    __rep_control_args *, DBT *, DB_LSN *, DB_LSN *, DB_LSN *));
+    __rep_control_args *, DBT *, DB_LSN *, DB_LSN *));
 
 /*
  * __rep_allreq --
@@ -110,7 +110,7 @@ __rep_allreq(env, rp, eid)
 	 */
 	if (ret == 0 && repth.lsn.file != 1 && flags == DB_FIRST) {
 		if (F_ISSET(rep, REP_F_CLIENT))
-			ret = USR_ERR(env, DB_NOTFOUND);
+			ret = DB_NOTFOUND;
 		else
 			(void)__rep_send_message(env, eid,
 			    REP_VERIFY_FAIL, &repth.lsn, NULL, 0, 0);
@@ -155,10 +155,15 @@ __rep_allreq(env, rp, eid)
 			if ((ret = __logc_version(logc, &nf_args.version)) != 0)
 				break;
 			memset(&newfiledbt, 0, sizeof(newfiledbt));
-			if ((ret = __rep_newfile_marshal(env, &nf_args,
-			    buf, __REP_NEWFILE_SIZE, &len)) != 0)
-				goto err;
-			DB_INIT_DBT(newfiledbt, buf, len);
+			if (rep->version < DB_REPVERSION_47)
+				DB_INIT_DBT(newfiledbt, &nf_args.version,
+				    sizeof(nf_args.version));
+			else {
+				if ((ret = __rep_newfile_marshal(env, &nf_args,
+				    buf, __REP_NEWFILE_SIZE, &len)) != 0)
+					goto err;
+				DB_INIT_DBT(newfiledbt, buf, len);
+			}
 			(void)__rep_send_message(env,
 			    eid, REP_NEWFILE, &oldfilelsn, &newfiledbt,
 			    REPCTL_RESEND, 0);
@@ -230,10 +235,10 @@ err:
  *      Handle a REP_LOG/REP_LOG_MORE message.
  *
  * PUBLIC: int __rep_log __P((ENV *, DB_THREAD_INFO *,
- * PUBLIC:     __rep_control_args *, DBT *, int, time_t, DB_LSN *, DB_LSN *));
+ * PUBLIC:     __rep_control_args *, DBT *, int, time_t, DB_LSN *));
  */
 int
-__rep_log(env, ip, rp, rec, eid, savetime, ret_lsnp, ckp_lsnp)
+__rep_log(env, ip, rp, rec, eid, savetime, ret_lsnp)
 	ENV *env;
 	DB_THREAD_INFO *ip;
 	__rep_control_args *rp;
@@ -241,7 +246,6 @@ __rep_log(env, ip, rp, rec, eid, savetime, ret_lsnp, ckp_lsnp)
 	int eid;
 	time_t savetime;
 	DB_LSN *ret_lsnp;
-	DB_LSN *ckp_lsnp;
 {
 	DB_LOG *dblp;
 	DB_LSN last_lsn, lsn;
@@ -257,8 +261,7 @@ __rep_log(env, ip, rp, rec, eid, savetime, ret_lsnp, ckp_lsnp)
 	dblp = env->lg_handle;
 	lp = dblp->reginfo.primary;
 
-	ret = __rep_apply(env, ip, rp, rec, ret_lsnp, &is_dup, &last_lsn,
-	    ckp_lsnp);
+	ret = __rep_apply(env, ip, rp, rec, ret_lsnp, &is_dup, &last_lsn);
 	switch (ret) {
 	/*
 	 * We're in an internal backup and we've gotten
@@ -350,17 +353,16 @@ out:
  *      Handle a REP_BULK_LOG message.
  *
  * PUBLIC: int __rep_bulk_log __P((ENV *, DB_THREAD_INFO *,
- * PUBLIC:     __rep_control_args *, DBT *, time_t, DB_LSN *, DB_LSN *));
+ * PUBLIC:     __rep_control_args *, DBT *, time_t, DB_LSN *));
  */
 int
-__rep_bulk_log(env, ip, rp, rec, savetime, ret_lsnp, ckp_lsnp)
+__rep_bulk_log(env, ip, rp, rec, savetime, ret_lsnp)
 	ENV *env;
 	DB_THREAD_INFO *ip;
 	__rep_control_args *rp;
 	DBT *rec;
 	time_t savetime;
 	DB_LSN *ret_lsnp;
-	DB_LSN *ckp_lsnp;
 {
 	DB_LSN last_lsn;
 	DB_REP *db_rep;
@@ -370,7 +372,7 @@ __rep_bulk_log(env, ip, rp, rec, savetime, ret_lsnp, ckp_lsnp)
 	db_rep = env->rep_handle;
 	rep = db_rep->region;
 
-	ret = __rep_log_split(env, ip, rp, rec, ret_lsnp, &last_lsn, ckp_lsnp);
+	ret = __rep_log_split(env, ip, rp, rec, ret_lsnp, &last_lsn);
 	switch (ret) {
 	/*
 	 * We're in an internal backup and we've gotten
@@ -396,14 +398,13 @@ __rep_bulk_log(env, ip, rp, rec, savetime, ret_lsnp, ckp_lsnp)
  * master and convert it into individual __rep_apply requests.
  */
 static int
-__rep_log_split(env, ip, rp, rec, ret_lsnp, last_lsnp, ckp_lsnp)
+__rep_log_split(env, ip, rp, rec, ret_lsnp, last_lsnp)
 	ENV *env;
 	DB_THREAD_INFO *ip;
 	__rep_control_args *rp;
 	DBT *rec;
 	DB_LSN *ret_lsnp;
 	DB_LSN *last_lsnp;
-	DB_LSN *ckp_lsnp;
 {
 	DBT logrec;
 	DB_LSN next_new_lsn, save_lsn, tmp_lsn;
@@ -439,12 +440,22 @@ __rep_log_split(env, ip, rp, rec, ret_lsnp, last_lsnp, ckp_lsnp)
 		 * First thing in the buffer is the length.  Then the LSN
 		 * of this record, then the record itself.
 		 */
-		if ((ret = __rep_bulk_unmarshal(env,
-		    &b_args, p, rec->size, &p)) != 0)
-			return (ret);
-		tmprp.lsn = b_args.lsn;
-		logrec.data = b_args.bulkdata.data;
-		logrec.size = b_args.len;
+		if (rp->rep_version < DB_REPVERSION_47) {
+			memcpy(&b_args.len, p, sizeof(b_args.len));
+			p += sizeof(b_args.len);
+			memcpy(&tmprp.lsn, p, sizeof(DB_LSN));
+			p += sizeof(DB_LSN);
+			logrec.data = p;
+			logrec.size = b_args.len;
+			p += b_args.len;
+		} else {
+			if ((ret = __rep_bulk_unmarshal(env,
+			    &b_args, p, rec->size, &p)) != 0)
+				return (ret);
+			tmprp.lsn = b_args.lsn;
+			logrec.data = b_args.bulkdata.data;
+			logrec.size = b_args.len;
+		}
 		VPRINT(env, (env, DB_VERB_REP_MISC,
 		    "log_rep_split: Processing LSN [%lu][%lu]",
 		    (u_long)tmprp.lsn.file, (u_long)tmprp.lsn.offset));
@@ -455,8 +466,8 @@ __rep_log_split(env, ip, rp, rec, ret_lsnp, last_lsnp, ckp_lsnp)
 		if (p >= ep && save_flags)
 			F_SET(&tmprp, save_flags);
 		/*
-		 * A previous call to __rep_apply indicated an earlier record
-		 * is a past dup and the next_new_lsn for which we are waiting.
+		 * A previous call to __rep_apply indicated an earlier
+		 * record is a dup and the next_new_lsn we are waiting for.
 		 * Skip log records until we catch up with next_new_lsn.
 		 */
 		if (is_dup && LOG_COMPARE(&tmprp.lsn, &next_new_lsn) < 0) {
@@ -467,24 +478,11 @@ __rep_log_split(env, ip, rp, rec, ret_lsnp, last_lsnp, ckp_lsnp)
 		}
 		is_dup = 0;
 		ret = __rep_apply(env, ip,
-		    &tmprp, &logrec, &tmp_lsn, &is_dup, last_lsnp, ckp_lsnp);
+		    &tmprp, &logrec, &tmp_lsn, &is_dup, last_lsnp);
 		VPRINT(env, (env, DB_VERB_REP_MISC,
 		    "log_split: rep_apply ret %d, dup %d, tmp_lsn [%lu][%lu]",
 		    ret, is_dup, (u_long)tmp_lsn.file, (u_long)tmp_lsn.offset));
-		/*
-		 * We can skip log records between a past dup and tmp_lsn
-		 * returned by rep_apply() because we know we have all
-		 * those log records.  For a past dup, this log record is
-		 * less than or equal to tmp_lsn (which is either ready_lsn
-		 * or max_perm_lsn) and we only have records to skip when
-		 * it is less than tmp_lsn.
-		 *
-		 * We cannot skip log records for a future dup because we
-		 * may not have all of them.  In this case, this log record
-		 * is greater than or equal to tmp_lsn (which is either
-		 * ready_lsn or this log record).
-		 */
-		if (is_dup && LOG_COMPARE(&tmprp.lsn, &tmp_lsn) < 0)
+		if (is_dup)
 			next_new_lsn = tmp_lsn;
 		switch (ret) {
 		/*
@@ -563,7 +561,9 @@ __rep_logreq(env, rp, rec, eid)
 	ZERO_LSN(lr_args.endlsn);
 
 	if (rec != NULL && rec->size != 0) {
-		if ((ret = __rep_logreq_unmarshal(env, &lr_args,
+		if (rp->rep_version < DB_REPVERSION_47)
+			lr_args.endlsn = *(DB_LSN *)rec->data;
+		else if ((ret = __rep_logreq_unmarshal(env, &lr_args,
 		    rec->data, rec->size, NULL)) != 0)
 			return (ret);
 		RPRINT(env, (env, DB_VERB_REP_MISC,
@@ -637,7 +637,7 @@ __rep_logreq(env, rp, rec, eid)
 		if (LOG_COMPARE(&firstlsn, &rp->lsn) > 0) {
 			/* Case 3 */
 			if (F_ISSET(rep, REP_F_CLIENT)) {
-				ret = USR_ERR(env, DB_NOTFOUND);
+				ret = DB_NOTFOUND;
 				goto err;
 			}
 			(void)__rep_send_message(env, eid,
@@ -662,7 +662,7 @@ __rep_logreq(env, rp, rec, eid)
 				ret = 0;
 				goto err;
 			} else
-				ret = USR_ERR(env, DB_NOTFOUND);
+				ret = DB_NOTFOUND;
 		}
 	}
 
@@ -711,10 +711,15 @@ __rep_logreq(env, rp, rec, eid)
 			if ((ret = __logc_version(logc, &nf_args.version)) != 0)
 				break;
 			memset(&newfiledbt, 0, sizeof(newfiledbt));
-			if ((ret = __rep_newfile_marshal(env, &nf_args,
-			    buf, __REP_NEWFILE_SIZE, &len)) != 0)
-				goto err;
-			DB_INIT_DBT(newfiledbt, buf, len);
+			if (rep->version < DB_REPVERSION_47)
+				DB_INIT_DBT(newfiledbt, &nf_args.version,
+				    sizeof(nf_args.version));
+			else {
+				if ((ret = __rep_newfile_marshal(env, &nf_args,
+				    buf, __REP_NEWFILE_SIZE, &len)) != 0)
+					goto err;
+				DB_INIT_DBT(newfiledbt, buf, len);
+			}
 			(void)__rep_send_message(env,
 			    eid, REP_NEWFILE, &oldfilelsn, &newfiledbt,
 			    REPCTL_RESEND, 0);
@@ -807,14 +812,6 @@ __rep_loggap_req(env, rep, lsnp, gapflags)
 	ret = 0;
 
 	/*
-	 * If we are in SYNC_LOG and have all the log we need (i.e.
-	 * rep->last_lsn is ZERO_LSN), just return, as there is nothing
-	 * to do while recovery is running.
-	 */
-	if (rep->sync_state == SYNC_LOG && IS_ZERO_LSN(rep->last_lsn))
-		return (0);
-
-	/*
 	 * Check if we need to ask for the gap.
 	 * We ask for the gap if:
 	 *	We are forced to with gapflags.
@@ -858,10 +855,15 @@ __rep_loggap_req(env, rep, lsnp, gapflags)
 			type = REP_ALL_REQ;
 		memset(&max_lsn_dbt, 0, sizeof(max_lsn_dbt));
 		lr_args.endlsn = lp->max_wait_lsn;
-		if ((ret = __rep_logreq_marshal(env, &lr_args, buf,
-		    __REP_LOGREQ_SIZE, &len)) != 0)
-			goto err;
-		DB_INIT_DBT(max_lsn_dbt, buf, len);
+		if (rep->version < DB_REPVERSION_47)
+			DB_INIT_DBT(max_lsn_dbt, &lp->max_wait_lsn,
+			    sizeof(DB_LSN));
+		else {
+			if ((ret = __rep_logreq_marshal(env, &lr_args, buf,
+			    __REP_LOGREQ_SIZE, &len)) != 0)
+				goto err;
+			DB_INIT_DBT(max_lsn_dbt, buf, len);
+		}
 		max_lsn_dbtp = &max_lsn_dbt;
 		/*
 		 * Gap requests are "new" and can go anywhere, unless
@@ -1012,7 +1014,7 @@ __rep_chk_newfile(env, logc, rep, rp, eid)
 			 * client asked for a log record
 			 * we no longer have and it is
 			 * outdated.
-			 * Note: This could be optimized by
+			 * XXX - This could be optimized by
 			 * having the master perform and
 			 * send a REP_UPDATE message.  We
 			 * currently want the client to set
@@ -1028,25 +1030,31 @@ __rep_chk_newfile(env, logc, rep, rp, eid)
 				    REP_VERIFY_FAIL, &rp->lsn,
 				    NULL, 0, 0);
 			} else
-				ret = USR_ERR(env, DB_NOTFOUND);
+				ret = DB_NOTFOUND;
 		} else {
 			endlsn.offset += logc->len;
 			if ((ret = __logc_version(logc,
 			    &nf_args.version)) == 0) {
 				memset(&newfiledbt, 0,
 				    sizeof(newfiledbt));
-				if ((ret = __rep_newfile_marshal(env,
-				    &nf_args, buf, __REP_NEWFILE_SIZE,
-				    &len)) != 0)
-					return (ret);
-				DB_INIT_DBT(newfiledbt, buf, len);
+				if (rep->version < DB_REPVERSION_47)
+					DB_INIT_DBT(newfiledbt,
+					    &nf_args.version,
+					    sizeof(nf_args.version));
+				else {
+					if ((ret = __rep_newfile_marshal(env,
+					    &nf_args, buf, __REP_NEWFILE_SIZE,
+					    &len)) != 0)
+						return (ret);
+					DB_INIT_DBT(newfiledbt, buf, len);
+				}
 				(void)__rep_send_message(env, eid,
 				    REP_NEWFILE, &endlsn,
 				    &newfiledbt, REPCTL_RESEND, 0);
 			}
 		}
 	} else
-		ret = USR_ERR(env, DB_NOTFOUND);
+		ret = DB_NOTFOUND;
 
 	return (ret);
 }

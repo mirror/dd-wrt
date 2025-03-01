@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -85,16 +85,11 @@ DB-&gt;verify(DB *db, const char *file,
             
         </span>
     </p>
-      <p>
-         When called on a database that has been opened with sliced
-         support, the <code class="methodname">DB-&gt;verify()</code> method is
-         automatically called on each supporting slice database. 
-     </p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711179910368"></a>Parameters</h3>
+              <h3 class="title"><a id="idp50744672"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -102,7 +97,7 @@ DB-&gt;verify(DB *db, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711179910656"></a>file</h4>
+                <h4 class="title"><a id="idp50752312"></a>file</h4>
               </div>
             </div>
           </div>
@@ -115,7 +110,7 @@ DB-&gt;verify(DB *db, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711179905696"></a>database</h4>
+                <h4 class="title"><a id="idp50706024"></a>database</h4>
               </div>
             </div>
           </div>
@@ -134,7 +129,7 @@ DB-&gt;verify(DB *db, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711179939520"></a>outfile</h4>
+                <h4 class="title"><a id="idp50753976"></a>outfile</h4>
               </div>
             </div>
           </div>
@@ -147,7 +142,7 @@ DB-&gt;verify(DB *db, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711179923312"></a>flags</h4>
+                <h4 class="title"><a id="idp50741816"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -267,7 +262,7 @@ DB-&gt;verify(DB *db, const char *file,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711179866192"></a>Environment Variables</h3>
+              <h3 class="title"><a id="idp50778072"></a>Environment Variables</h3>
             </div>
           </div>
         </div>
@@ -278,8 +273,8 @@ DB-&gt;verify(DB *db, const char *file,
                     </p>
         <p>
                             <code class="methodname">DB-&gt;verify()</code> is affected by any database directory specified using the
-                            <a class="xref" href="envadd_data_dir.html" title="DB_ENV-&gt;add_data_dir()">DB_ENV-&gt;add_data_dir()</a>
-                            method, or by setting the "add_data_dir" string
+                            <a class="xref" href="envset_data_dir.html" title="DB_ENV-&gt;set_data_dir()">DB_ENV-&gt;set_data_dir()</a>
+                            method, or by setting the "set_data_dir" string
                             in the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.
                     </p>
       </div>
@@ -287,7 +282,7 @@ DB-&gt;verify(DB *db, const char *file,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711179864112"></a>Errors</h3>
+              <h3 class="title"><a id="idp50747720"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -303,7 +298,7 @@ DB-&gt;verify(DB *db, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711179874864"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp50783800"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -316,7 +311,7 @@ DB-&gt;verify(DB *db, const char *file,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711179874592"></a>ENOENT</h4>
+                <h4 class="title"><a id="idp50773720"></a>ENOENT</h4>
               </div>
             </div>
           </div>
@@ -329,7 +324,7 @@ DB-&gt;verify(DB *db, const char *file,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711179891200"></a>Class</h3>
+              <h3 class="title"><a id="idp50786032"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -341,7 +336,7 @@ DB-&gt;verify(DB *db, const char *file,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711179857136"></a>See Also</h3>
+              <h3 class="title"><a id="idp50765792"></a>See Also</h3>
             </div>
           </div>
         </div>

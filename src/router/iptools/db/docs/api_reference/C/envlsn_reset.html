@@ -9,12 +9,12 @@
     <link rel="start" href="index.html" title="Berkeley DB C API Reference" />
     <link rel="up" href="env.html" title="Chapter 5.  The DB_ENV Handle" />
     <link rel="prev" href="envlog_verify.html" title="DB_ENV-&gt;log_verify()" />
-    <link rel="next" href="envmsg.html" title="DB_ENV-&gt;msg()" />
+    <link rel="next" href="envopen.html" title="DB_ENV-&gt;open()" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -25,7 +25,7 @@
           <th width="60%" align="center">Chapter 5. 
                 The DB_ENV Handle
         </th>
-          <td width="20%" align="right"> <a accesskey="n" href="envmsg.html">Next</a></td>
+          <td width="20%" align="right"> <a accesskey="n" href="envopen.html">Next</a></td>
         </tr>
       </table>
       <hr />
@@ -66,11 +66,6 @@ DB_ENV-&gt;lsn_reset(DB_ENV *dbenv, const char *file, u_int32_t flags);  </pre>
          Applications should not reset LSNs in files that are currently in use.
     </p>
       <p>
-         The <code class="methodname">DB_ENV-&gt;lsn_reset()</code> method is a
-         non-atomic operation. If the operation fails, it is possible for the
-         database to be in an inconsistent state.
-    </p>
-      <p>
          The <code class="methodname">DB_ENV-&gt;lsn_reset()</code> method may be called at any time during the
          life of the application.
     </p>
@@ -86,7 +81,7 @@ DB_ENV-&gt;lsn_reset(DB_ENV *dbenv, const char *file, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711178310176"></a>Parameters</h3>
+              <h3 class="title"><a id="idp51662856"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -94,7 +89,7 @@ DB_ENV-&gt;lsn_reset(DB_ENV *dbenv, const char *file, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711178344912"></a>file</h4>
+                <h4 class="title"><a id="idp51662512"></a>file</h4>
               </div>
             </div>
           </div>
@@ -106,7 +101,7 @@ DB_ENV-&gt;lsn_reset(DB_ENV *dbenv, const char *file, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711178237744"></a>flags</h4>
+                <h4 class="title"><a id="idp51668992"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -132,7 +127,7 @@ DB_ENV-&gt;lsn_reset(DB_ENV *dbenv, const char *file, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711178235328"></a>Errors</h3>
+              <h3 class="title"><a id="idp51670176"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -148,7 +143,7 @@ DB_ENV-&gt;lsn_reset(DB_ENV *dbenv, const char *file, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711178225952"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp51669872"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -161,7 +156,7 @@ DB_ENV-&gt;lsn_reset(DB_ENV *dbenv, const char *file, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711178232352"></a>Class</h3>
+              <h3 class="title"><a id="idp51674208"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -173,7 +168,7 @@ DB_ENV-&gt;lsn_reset(DB_ENV *dbenv, const char *file, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711178247680"></a>See Also</h3>
+              <h3 class="title"><a id="idp51662704"></a>See Also</h3>
             </div>
           </div>
         </div>
@@ -190,14 +185,14 @@ DB_ENV-&gt;lsn_reset(DB_ENV *dbenv, const char *file, u_int32_t flags);  </pre>
           <td width="20%" align="center">
             <a accesskey="u" href="env.html">Up</a>
           </td>
-          <td width="40%" align="right"> <a accesskey="n" href="envmsg.html">Next</a></td>
+          <td width="40%" align="right"> <a accesskey="n" href="envopen.html">Next</a></td>
         </tr>
         <tr>
           <td width="40%" align="left" valign="top">DB_ENV-&gt;log_verify() </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> DB_ENV-&gt;msg()</td>
+          <td width="40%" align="right" valign="top"> DB_ENV-&gt;open()</td>
         </tr>
       </table>
     </div>

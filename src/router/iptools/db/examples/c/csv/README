@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -67,7 +67,7 @@ the build process for two more programs: csv_load and csv_query.
 You can load now load the csv file into a Berkeley DB database with the
 following command:
 
-	% ./csv_load -h TESTDIR -f sample.csv
+	% ./csv_load -h TESTDIR < sample.csv
 
 The csv_load command will create a directory and four databases:
 

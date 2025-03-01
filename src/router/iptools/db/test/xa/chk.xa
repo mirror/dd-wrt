@@ -114,18 +114,17 @@ src3/run.sh 0
 if test "$?" -ne 0; then
 	exit 1
 fi
-# multi threaded test where one server thread dies
+# multi threaded test where one thread dies
 func_clean
-utilities/multi_tuxconfig.sh 200105
+utilities/tuxconfig.sh 200105
 src3/run.sh 1
 if test "$?" -ne 0; then
 	exit 1
 fi
 echo "TEST 4"
-# Tests that the application recovers gracefully after
-# a txn timeout.
+# multi threaded test
 func_clean 
-utilities/tuxconfig.sh 200103
+utilities/multi_tuxconfig.sh 200103
 src4/run.sh 0
 if test "$?" -ne 0; then
 	exit 1

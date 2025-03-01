@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2010, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -197,8 +197,16 @@ proc test130 { method {nentries 10000} {num_db 3} {tnum "130"} args } {
 		}
 		error_check_good db_sync [$db(0,$i) sync] 0
 
-		puts "\tTest$tnum.c: Save contents."
-		dump_file_env  $env $db(0,$i) $t1
+		puts "\tTest$tnum.c: Do a dump_file on contents."
+		if { $txnenv == 1 } {
+			set t [$env txn]
+			error_check_good txn [is_valid_txn $t $env] TRUE
+			set txn "-txn $t"
+		}
+		dump_file $db(0,$i) $txn $t1
+		if { $txnenv == 1 } {
+			error_check_good txn_commit [$t commit] 0
+		}
 
 		puts "\tTest$tnum.d: Compact and verify databases"
 		for {set commit 0} {$commit <= $txnenv} {incr commit} {
@@ -219,7 +227,6 @@ proc test130 { method {nentries 10000} {num_db 3} {tnum "130"} args } {
 			}
 
 			# Now compact for real.
-			set orig_size [file size $filename]
 			if {[catch {eval {$db(0,$i) compact} \
 			    $txn {-freespace}} ret] } {
 				error "FAIL: db compact: $ret"
@@ -236,20 +243,6 @@ proc test130 { method {nentries 10000} {num_db 3} {tnum "130"} args } {
 			error_check_good db_sync [$db(0,$i) sync] 0
 			error_check_good verify_dir \
 			    [verify_dir $testdir "" 0 0 $nodump ] 0
-			#
-			# The compaction of subdb$i with i < (numdb - 1) is not
-			# expected to reduce the file size because the last
-			# page of the file is owned by subdb${num_db-1}.
-			#
-			set after_compact_size [file size $filename]
-			if { $i < [expr $num_db - 1] || 
-			    ($txnenv == 1 && $commit == 0) } {
-				error_check_good file_size \
-				    [expr $orig_size == $after_compact_size] 1
-			} else {
-				error_check_good file_size \
-				    [expr $orig_size >= $after_compact_size] 1
-			}
 		}
 	}
 

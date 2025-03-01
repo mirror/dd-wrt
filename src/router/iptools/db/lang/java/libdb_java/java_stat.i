@@ -26,14 +26,6 @@
 	(*jenv)->SetObjectField(jenv, jobj, fid, jarr);			\
 	}
 
-#define JAVADB_STAT_ACTIVE_SLICE(jenv, jobj, fid, statp, name, dbenv) {   \
-	jobject jarr =							\
-	    (*jenv)->NewIntArray(jenv, dbenv->slice_cnt);		\
-	(*jenv)->SetIntArrayRegion(jenv, jarr,				\
-	    0, dbenv->slice_cnt, (jint *)statp->name);			\
-	(*jenv)->SetObjectField(jenv, jobj, fid, jarr);			\
-	}
-
 /*
  * We build the active list separately.
  */
@@ -51,14 +43,14 @@ JAVA_TYPEMAP(_ctype, _jtype, jobject)
 	else {
 		$result = (*jenv)->NewObject(jenv, _name##_class, _name##_construct);
 		if ($result != NULL)
-		  __dbj_fill_##_name(jenv, $result, $1);
+			__dbj_fill_##_name(jenv, $result, $1);
 		__os_ufree(NULL, $1);
 	}
 %}
 %enddef
 
 JAVA_STAT_CLASS(DB_COMPACT *, com.sleepycat.db.CompactStats, compact)
-  %typemap(freearg) DB_COMPACT * %{ __dbj_fill_compact(jenv, $input, $1); %}
+%typemap(freearg) DB_COMPACT * %{ __dbj_fill_compact(jenv, $input, $1); %}
 %typemap(in) DB_COMPACT * (DB_COMPACT compact) %{
         memset(&compact, 0, sizeof (DB_COMPACT));
         $1 = &compact;
@@ -118,7 +110,7 @@ JAVA_TYPEMAP(DB_TXN_STAT *, com.sleepycat.db.TransactionStats, jobject)
 	else {
 		$result = (*jenv)->NewObject(jenv, txn_stat_class, txn_stat_construct);
 		if ($result != NULL)
-		        __dbj_fill_txn_stat(jenv, $result, $1);
+			__dbj_fill_txn_stat(jenv, $result, $1);
 
 		actives = (*jenv)->NewObjectArray(jenv, (jsize)$1->st_nactive,
 		    txn_active_class, 0);
@@ -136,7 +128,7 @@ JAVA_TYPEMAP(DB_TXN_STAT *, com.sleepycat.db.TransactionStats, jobject)
 				return $null; /* an exception is pending */
 			}
 			(*jenv)->SetObjectArrayElement(jenv, actives, (jsize)i, obj);
-			__dbj_fill_txn_active(jenv, obj, &$1->st_txnarray[i], arg1);
+			__dbj_fill_txn_active(jenv, obj, &$1->st_txnarray[i]);
 		}
 		__os_ufree(NULL, $1);
 	}

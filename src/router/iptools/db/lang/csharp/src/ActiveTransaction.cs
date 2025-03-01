@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -54,16 +54,16 @@ namespace BerkeleyDB {
         public LSN SnapshotReads { get { return _read_lsn; } }
         /// <summary>
         /// The number of MVCC buffer copies created by this transaction that
-        /// remains in the cache.
+        /// remain in cache.
         /// </summary>
         public uint BufferCopiesInCache { get { return txn.mvcc_ref; } }
         /// <summary>
-        /// If the transaction is a prepared transaction, return the transaction's
+        /// If the transaction is a prepare transaction, the transaction's
         /// Global ID. Otherwise, the GlobalID contents are undefined. 
         /// </summary>
         public byte[] GlobalID { get { return gid; } }
         /// <summary>
-        /// If a name was specified for the transaction, return up to the first 50
+        /// If a name was specified for the transaction, up to the first 50
         /// bytes of that name. 
         /// </summary>
         public string Name { get { return txnname; } }

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -171,11 +171,8 @@ public class FastOutputStream extends OutputStream {
     // --- end ByteArrayOutputStream compatible methods ---
 
     /**
-     * Equivalent to <code>write(int)</code> but does not throw
+     * Equivalent to <code>write(int)<code> but does not throw
      * <code>IOException</code>.
-     *
-     * @param b the byte to write.
-     *
      * @see #write(int)
      */
     public final void writeFast(int b) {
@@ -187,11 +184,8 @@ public class FastOutputStream extends OutputStream {
     }
 
     /**
-     * Equivalent to <code>write(byte[])</code> but does not throw
+     * Equivalent to <code>write(byte[])<code> but does not throw
      * <code>IOException</code>.
-     *
-     * @param fromBuf the buffer to write.
-     *
      * @see #write(byte[])
      */
     public final void writeFast(byte[] fromBuf) {
@@ -205,15 +199,8 @@ public class FastOutputStream extends OutputStream {
     }
 
     /**
-     * Equivalent to <code>write(byte[],int,int)</code> but does not throw
+     * Equivalent to <code>write(byte[],int,int)<code> but does not throw
      * <code>IOException</code>.
-     *
-     * @param fromBuf the buffer to write.
-     *
-     * @param offset the start offset in the buffer.
-     *
-     * @param length the number of bytes to write.
-     *
      * @see #write(byte[],int,int)
      */
     public final void writeFast(byte[] fromBuf, int offset, int length) {

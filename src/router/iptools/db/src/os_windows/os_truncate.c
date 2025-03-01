@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2004, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2004, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -15,12 +15,11 @@
  *	Truncate the file.
  */
 int
-__os_truncate(env, fhp, pgno, pgsize, relative)
+__os_truncate(env, fhp, pgno, pgsize)
 	ENV *env;
 	DB_FH *fhp;
 	db_pgno_t pgno;
 	u_int32_t pgsize;
-	off_t relative;
 {
 	/* Yes, this really is how Microsoft have designed their API */
 	union {
@@ -35,7 +34,7 @@ __os_truncate(env, fhp, pgno, pgsize, relative)
 	int ret;
 
 	dbenv = env == NULL ? NULL : env->dbenv;
-	offset = (off_t)pgsize * pgno + relative;
+	offset = (off_t)pgsize * pgno;
 	ret = 0;
 
 	if (dbenv != NULL &&
@@ -85,7 +84,7 @@ __os_truncate(env, fhp, pgno, pgsize, relative)
 	 * We can't switch to SetFilePointerEx, which knows about 64-bit
 	 * offsets, because it isn't supported on Win9x/ME.
 	 */
-	RETRY_CHK((off.bigint = (__int64)pgsize * pgno + relative,
+	RETRY_CHK((off.bigint = (__int64)pgsize * pgno,
 	    (SetFilePointer(fhp->trunc_handle, off.low, &off.high, FILE_BEGIN)
 	    == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR) ||
 	    !SetEndOfFile(fhp->trunc_handle)), ret);

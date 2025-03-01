@@ -5,7 +5,7 @@
 # Assumes current dir is db/dist inside a clean, unzipped 
 # tree from a source distribution package
 #
-# Usage:  bash s_winmsi [Win32|x64]
+# Usage:  bash s_winmsi []
 # 
 # Steps:
 #  1. Build release and debug binaries (including java and php)
@@ -16,18 +16,8 @@
 # db-version.msi ends up in $PRODUCT_BLDDIR/wix
 #
 # Options:
-#  Need to pick either Win32 or x64 build.
+#  TBD -- add some
 ############################################################
-
-if [ $# != 1 ]; then 
-  echo "Usage: s_winmsi [Win32|x64]"
-  exit
-fi
-
-if [ $1 != "Win32" ] && [ $1 != "x64" ]; then
-  echo "Usage: s_winmsi [Win32|x64]"
-  exit
-fi
 
 #
 # Get utility functions
@@ -40,7 +30,6 @@ SetupErrorLog
 # Do this before parsing options, we need the version number
 . ./RELEASE
 dbver=db-$DB_VERSION
-winbuild=$1
 
 # Set variables used by functions to customize this installer
 PRODUCT_NAME=`printf "Berkeley DB %d%sR%d" $DB_VERSION_FAMILY $DB_VERSION_LETTER $DB_VERSION_RELEASE`
@@ -77,13 +66,13 @@ StageSourceComponents
 #
 # Build from source
 #
-BuildProduct $winbuild
+BuildProduct
 
 #
 # Stage runtime files in a directory tree that looks like
 # bin, lib, include, etc
 #
-StageRuntimeComponents $winbuild
+StageRuntimeComponents
 
 #
 # Build the license file as rtf
@@ -98,7 +87,7 @@ CreateRuntimeComponents
 #
 # Create the .msi
 #
-CreateMsi $winbuild
+CreateMsi
 
 Progress "s_winmsi finished, $OPT_OUTFILE created."
 exit 0

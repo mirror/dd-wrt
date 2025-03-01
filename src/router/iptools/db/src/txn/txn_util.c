@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -9,7 +9,6 @@
 #include "db_config.h"
 
 #include "db_int.h"
-#include "dbinc/blob.h"
 #include "dbinc/db_page.h"
 #include "dbinc/lock.h"
 #include "dbinc/mp.h"
@@ -168,8 +167,8 @@ __txn_lockevent(env, txn, dbp, lock, locker)
 	DB_LOCK *lock;
 	DB_LOCKER *locker;
 {
-	TXN_EVENT *e;
 	int ret;
+	TXN_EVENT *e;
 
 	if (!LOCKING_ON(env))
 		return (0);
@@ -194,10 +193,8 @@ __txn_lockevent(env, txn, dbp, lock, locker)
 
 /*
  * __txn_remlock --
- *	Remove lock events when a database handle is closed and its locker
- * is going away. Also used to remove lock events when its locker or lock
- * is updated and is going to be replaced by a new event with the updated
- * locker or lock.
+ *	Remove a lock event because the locker is going away.  We can remove
+ * by lock (using offset) or by locker_id (or by both).
  *
  * PUBLIC: void __txn_remlock __P((ENV *, DB_TXN *, DB_LOCK *, DB_LOCKER *));
  */
@@ -212,12 +209,12 @@ __txn_remlock(env, txn, lock, locker)
 
 	for (e = TAILQ_FIRST(&txn->events); e != NULL; e = next_e) {
 		next_e = TAILQ_NEXT(e, links);
-		if ((e->op == TXN_TRADE || e->op == TXN_TRADED ||
-		    e->op == TXN_XTRADE) && e->u.t.locker == locker &&
-		    (lock == NULL || e->u.t.lock.off == lock->off)) {
-			TAILQ_REMOVE(&txn->events, e, links);
-			__os_free(env, e);
-		}
+		if ((e->op != TXN_TRADE && e->op != TXN_TRADED && 
+		    e->op != TXN_XTRADE) ||
+		    (e->u.t.lock.off != lock->off && e->u.t.locker != locker))
+			continue;
+		TAILQ_REMOVE(&txn->events, e, links);
+		__os_free(env, e);
 	}
 
 	return;
@@ -283,21 +280,13 @@ __txn_doevents(env, txn, opcode, preprocess)
 		    e != NULL; e = enext) {
 			enext = TAILQ_NEXT(e, links);
 			/*
-			 * Move all exclusive handle locks and
+			 * Move all exclusive handle locks and 
 			 * read handle locks to the handle locker.
 			 */
 			if (!(opcode == TXN_COMMIT && e->op == TXN_XTRADE) &&
-			    (e->op != TXN_TRADE ||
-			    IS_WRITELOCK(e->u.t.lock.mode))) {
-				if (opcode == TXN_PREPARE &&
-				    e->op == TXN_REMOVE) {
-					__db_errx(env, DB_STR_A("4501",
-"TXN->prepare is not allowed because this transaction removes \"%s\"", "%s"),
-					    e->u.r.name);
-					return (EINVAL);
-				}
+			    (e->op != TXN_TRADE || 
+			    IS_WRITELOCK(e->u.t.lock.mode)))
 				continue;
-			}
 			DO_TRADE;
 			if (txn->parent != NULL) {
 				TAILQ_REMOVE(&txn->events, e, links);
@@ -332,38 +321,17 @@ __txn_doevents(env, txn, opcode, preprocess)
 				ret = t_ret;
 			break;
 		case TXN_REMOVE:
-			if (FLD_ISSET(env->dbenv->verbose,
-			    DB_VERB_FILEOPS | DB_VERB_FILEOPS_ALL))
-				__db_msg(env, DB_STR_A("4575",
-				    "txn_doevents: remove %s %s",
-				    "%s %s"), e->u.r.name,
-				    txn->parent == NULL ?
-					"" : "merge into parent");
-			if (txn->parent != NULL) {
+			if (txn->parent != NULL)
 				TAILQ_INSERT_TAIL(
 				    &txn->parent->events, e, links);
-				continue;
-			} else if (e->u.r.fileid != NULL) {
+			else if (e->u.r.fileid != NULL) {
 				if ((t_ret = __memp_nameop(env,
 				    e->u.r.fileid, NULL, e->u.r.name,
 				    NULL, e->u.r.inmem)) != 0 && ret == 0)
 					ret = t_ret;
-#ifdef HAVE_SLICES
-				if (ret == 0 && SLICES_ON(env))
-					ret = __env_slice_dbremove(env,
-					    e->u.r.name, NULL, DB_AUTO_COMMIT);
-#endif
-			} else if ((t_ret = __os_unlink(
-			    env, e->u.r.name, 0)) != 0 && ret == 0) {
-				/*
-				 * It is possible for blob files to be deleted
-				 * multiple times when truncating a database,
-				 * so ignore ENOENT errors with blob files.
-				 */
-				if (t_ret != ENOENT || strstr(
-				    e->u.r.name, BLOB_FILE_PREFIX) == NULL)
-					ret = t_ret;
-			}
+			} else if ((t_ret =
+			    __os_unlink(env, e->u.r.name, 0)) != 0 && ret == 0)
+				ret = t_ret;
 			break;
 		case TXN_TRADE:
 		case TXN_XTRADE:
@@ -403,6 +371,8 @@ dofree:
 		/* Free resources here. */
 		switch (e->op) {
 		case TXN_REMOVE:
+			if (txn->parent != NULL)
+				continue;
 			if (e->u.r.fileid != NULL)
 				__os_free(env, e->u.r.fileid);
 			__os_free(env, e->u.r.name);
@@ -578,8 +548,9 @@ __txn_reset_fe_watermarks(txn)
 {
 	DB *db;
 
-	if (txn->parent)
+	if (txn->parent) {
 		DB_ASSERT(txn->mgrp->env, TAILQ_FIRST(&txn->femfs) == NULL);
+	}
 
 	while ((db = TAILQ_FIRST(&txn->femfs)))
 		__clear_fe_watermark(txn, db);

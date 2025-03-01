@@ -17,26 +17,19 @@
 # After the "tsrc" directory has been created and populated, run
 # this script:
 #
-#      tclsh mksqlite3c.tcl --srcdir $SRC
+#      tclsh mksqlite3c.tcl
 #
 # The amalgamated SQLite code will be written into sqlite3.c
 #
 
 # Begin by reading the "sqlite3.h" header file.  Extract the version number
-# from in this file.  The version number is needed to generate the header
+# from in this file.  The versioon number is needed to generate the header
 # comment of the amalgamation.
 #
-set addstatic 1
-set linemacros 0
-for {set i 0} {$i<[llength $argv]} {incr i} {
-  set x [lindex $argv $i]
-  if {[regexp {^-+nostatic$} $x]} {
-    set addstatic 0
-  } elseif {[regexp {^-+linemacros} $x]} {
-    set linemacros 1
-  } else {
-    error "unknown command-line option: $x"
-  }
+if {[lsearch $argv --nostatic]>=0} {
+  set addstatic 0
+} else {
+  set addstatic 1
 }
 set in [open tsrc/sqlite3.h]
 set cnt 0
@@ -53,8 +46,6 @@ close $in
 # of the file.
 #
 set out [open sqlite3.c w]
-# Force the output to use unix line endings, even on Windows.
-fconfigure $out -translation lf
 set today [clock format [clock seconds] -format "%Y-%m-%d %H:%M:%S UTC" -gmt 1]
 puts $out [subst \
 {/******************************************************************************
@@ -82,6 +73,9 @@ if {$addstatic} {
   puts $out \
 {#ifndef SQLITE_PRIVATE
 # define SQLITE_PRIVATE static
+#endif
+#ifndef SQLITE_API
+# define SQLITE_API
 #endif}
 }
 
@@ -99,51 +93,27 @@ foreach hdr {
    hash.h
    hwtime.h
    keywordhash.h
-   msvc.h
    mutex.h
    opcodes.h
    os_common.h
-   os_setup.h
-   os_win.h
    os.h
+   os_os2.h
    pager.h
    parse.h
    pcache.h
-   pragma.h
    rtree.h
    sqlite3ext.h
    sqlite3.h
-   sqlite3userauth.h
    sqliteicu.h
    sqliteInt.h
    sqliteLimit.h
-   userauth.h
    vdbe.h
    vdbeInt.h
-   vxworks.h
    wal.h
-   whereInt.h
 } {
   set available_hdr($hdr) 1
 }
 set available_hdr(sqliteInt.h) 0
-
-# These headers should be copied into the amalgamation without modifying any
-# of their function declarations or definitions.
-set varonly_hdr(sqlite3.h) 1
-
-# These are the functions that accept a variable number of arguments.  They
-# always need to use the "cdecl" calling convention even when another calling
-# convention (e.g. "stcall") is being used for the rest of the library.
-set cdecllist {
-  sqlite3_config
-  sqlite3_db_config
-  sqlite3_log
-  sqlite3_mprintf
-  sqlite3_snprintf
-  sqlite3_test_control
-  sqlite3_vtab_config
-}
 
 # 78 stars used for comment formatting.
 set s78 \
@@ -161,24 +131,21 @@ proc section_comment {text} {
 
 # Read the source file named $filename and write it into the
 # sqlite3.c output file.  If any #include statements are seen,
-# process them appropriately.
+# process them approprately.
 #
 proc copy_file {filename} {
-  global seen_hdr available_hdr varonly_hdr cdecllist out addstatic linemacros
-  set ln 0
+  global seen_hdr available_hdr out addstatic
   set tail [file tail $filename]
   section_comment "Begin file $tail"
-  if {$linemacros} {puts $out "#line 1 \"$filename\""}
   set in [open $filename r]
   set varpattern {^[a-zA-Z][a-zA-Z_0-9 *]+(sqlite3[_a-zA-Z0-9]+)(\[|;| =)}
-  set declpattern {([a-zA-Z][a-zA-Z_0-9 ]+ \**)(sqlite3[_a-zA-Z0-9]+)(\(.*)}
+  set declpattern {[a-zA-Z][a-zA-Z_0-9 ]+ \**(sqlite3[_a-zA-Z0-9]+)\(}
   if {[file extension $filename]==".h"} {
     set declpattern " *$declpattern"
   }
-  set declpattern ^$declpattern\$
+  set declpattern ^$declpattern
   while {![eof $in]} {
     set line [gets $in]
-    incr ln
     if {[regexp {^\s*#\s*include\s+["<]([^">]+)[">]} $line all hdr]} {
       if {[info exists available_hdr($hdr)]} {
         if {$available_hdr($hdr)} {
@@ -188,70 +155,42 @@ proc copy_file {filename} {
           section_comment "Include $hdr in the middle of $tail"
           copy_file tsrc/$hdr
           section_comment "Continuing where we left off in $tail"
-          if {$linemacros} {puts $out "#line [expr {$ln+1}] \"$filename\""}
         }
       } elseif {![info exists seen_hdr($hdr)]} {
-        if {![regexp {/\*\s+amalgamator:\s+dontcache\s+\*/} $line]} {
-          set seen_hdr($hdr) 1
-        }
+        set seen_hdr($hdr) 1
         puts $out $line
-      } elseif {[regexp {/\*\s+amalgamator:\s+keep\s+\*/} $line]} {
-        # This include file must be kept because there was a "keep"
-        # directive inside of a line comment.
-        puts $out $line
-      } else {
-        # Comment out the entire line, replacing any nested comment
-        # begin/end markers with the harmless substring "**".
-        puts $out "/* [string map [list /* ** */ **] $line] */"
       }
     } elseif {[regexp {^#ifdef __cplusplus} $line]} {
       puts $out "#if 0"
-    } elseif {!$linemacros && [regexp {^#line} $line]} {
+    } elseif {[regexp {^#line} $line]} {
       # Skip #line directives.
     } elseif {$addstatic && ![regexp {^(static|typedef)} $line]} {
-      # Skip adding the SQLITE_PRIVATE or SQLITE_API keyword before
-      # functions if this header file does not need it.
-      if {![info exists varonly_hdr($tail)]
-       && [regexp $declpattern $line all rettype funcname rest]} {
-        regsub {^SQLITE_API } $line {} line
+      regsub {^SQLITE_API } $line {} line
+      if {[regexp $declpattern $line all funcname]} {
         # Add the SQLITE_PRIVATE or SQLITE_API keyword before functions.
         # so that linkage can be modified at compile-time.
         if {[regexp {^sqlite3_} $funcname]} {
-          set line SQLITE_API
-          append line " " [string trim $rettype]
-          if {[string index $rettype end] ne "*"} {
-            append line " "
-          }
-          if {[lsearch -exact $cdecllist $funcname] >= 0} {
-            append line SQLITE_CDECL
-          } else {
-            append line SQLITE_STDCALL
-          }
-          append line " " $funcname $rest
-          puts $out $line
+          puts $out "SQLITE_API $line"
         } else {
           puts $out "SQLITE_PRIVATE $line"
         }
       } elseif {[regexp $varpattern $line all varname]} {
-          # Add the SQLITE_PRIVATE before variable declarations or
-          # definitions for internal use
-          regsub {^SQLITE_API } $line {} line
-          if {![regexp {^sqlite3_} $varname]} {
-            regsub {^extern } $line {} line
-            puts $out "SQLITE_PRIVATE $line"
-          } else {
-            if {[regexp {const char sqlite3_version\[\];} $line]} {
-              set line {const char sqlite3_version[] = SQLITE_VERSION;}
-            }
-            regsub {^SQLITE_EXTERN } $line {} line
-            puts $out "SQLITE_API $line"
+        # Add the SQLITE_PRIVATE before variable declarations or
+        # definitions for internal use
+        if {![regexp {^sqlite3_} $varname]} {
+          regsub {^extern } $line {} line
+          puts $out "SQLITE_PRIVATE $line"
+        } else {
+          if {[regexp {const char sqlite3_version\[\];} $line]} {
+            set line {const char sqlite3_version[] = SQLITE_VERSION;}
           }
+          regsub {^SQLITE_EXTERN } $line {} line
+          puts $out "SQLITE_API $line"
+        }
       } elseif {[regexp {^(SQLITE_EXTERN )?void \(\*sqlite3IoTrace\)} $line]} {
-        regsub {^SQLITE_API } $line {} line
         regsub {^SQLITE_EXTERN } $line {} line
-        puts $out $line
+        puts $out "SQLITE_PRIVATE $line"
       } elseif {[regexp {^void \(\*sqlite3Os} $line]} {
-        regsub {^SQLITE_API } $line {} line
         puts $out "SQLITE_PRIVATE $line"
       } else {
         puts $out $line
@@ -286,17 +225,18 @@ foreach file {
    mem5.c
    mutex.c
    mutex_noop.c
+   mutex_os2.c
    mutex_unix.c
    mutex_w32.c
    malloc.c
    printf.c
    random.c
-   threads.c
    utf.c
    util.c
    hash.c
    opcodes.c
 
+   os_os2.c
    os_unix.c
    os_win.c
 
@@ -321,7 +261,6 @@ foreach file {
    vdbetrace.c
    vdbe.c
    vdbeblob.c
-   vdbesort.c
    journal.c
    memjournal.c
 
@@ -365,17 +304,12 @@ foreach file {
    fts3_porter.c
    fts3_tokenizer.c
    fts3_tokenizer1.c
-   fts3_tokenize_vtab.c
    fts3_write.c
    fts3_snippet.c
-   fts3_unicode.c
-   fts3_unicode2.c
 
    rtree.c
    icu.c
    fts3_icu.c
-   dbstat.c
-   userauth.c
 } {
   copy_file tsrc/$file
 }

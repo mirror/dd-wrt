@@ -163,7 +163,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	JDBCResultSetMetaData m = (JDBCResultSetMetaData) getMetaData();
 	return m.findColByName(columnName);
     }
-
+  
     @Override
     public int getRow() throws SQLException {
 	if (tr == null) {
@@ -511,7 +511,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
 	}
 	return null;
     }
-
+    
     @Override
     public double getDouble(String columnName) throws SQLException {
 	int col = findColumn(columnName);
@@ -733,7 +733,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
     }
 
     @Override
-    public Object getObject(int columnIndex, java.util.Map map)
+    public Object getObject(int columnIndex, java.util.Map map) 
 	throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
@@ -820,7 +820,7 @@ public class JDBCResultSet implements java.sql.ResultSet {
     public boolean wasNull() throws SQLException {
 	return lastg == null;
     }
-
+	
     @Override
     public void clearWarnings() throws SQLException {
 	throw new SQLException("not supported");

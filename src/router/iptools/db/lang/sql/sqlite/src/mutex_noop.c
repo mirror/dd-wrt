@@ -107,7 +107,7 @@ static int debugMutexEnd(void){ return SQLITE_OK; }
 ** that means that a mutex could not be allocated. 
 */
 static sqlite3_mutex *debugMutexAlloc(int id){
-  static sqlite3_debug_mutex aStatic[SQLITE_MUTEX_STATIC_APP3 - 1];
+  static sqlite3_debug_mutex aStatic[6];
   sqlite3_debug_mutex *pNew = 0;
   switch( id ){
     case SQLITE_MUTEX_FAST:
@@ -120,12 +120,8 @@ static sqlite3_mutex *debugMutexAlloc(int id){
       break;
     }
     default: {
-#ifdef SQLITE_ENABLE_API_ARMOR
-      if( id-2<0 || id-2>=ArraySize(aStatic) ){
-        (void)SQLITE_MISUSE_BKPT;
-        return 0;
-      }
-#endif
+      assert( id-2 >= 0 );
+      assert( id-2 < (int)(sizeof(aStatic)/sizeof(aStatic[0])) );
       pNew = &aStatic[id-2];
       pNew->id = id;
       break;
@@ -140,13 +136,8 @@ static sqlite3_mutex *debugMutexAlloc(int id){
 static void debugMutexFree(sqlite3_mutex *pX){
   sqlite3_debug_mutex *p = (sqlite3_debug_mutex*)pX;
   assert( p->cnt==0 );
-  if( p->id==SQLITE_MUTEX_RECURSIVE || p->id==SQLITE_MUTEX_FAST ){
-    sqlite3_free(p);
-  }else{
-#ifdef SQLITE_ENABLE_API_ARMOR
-    (void)SQLITE_MISUSE_BKPT;
-#endif
-  }
+  assert( p->id==SQLITE_MUTEX_FAST || p->id==SQLITE_MUTEX_RECURSIVE );
+  sqlite3_free(p);
 }
 
 /*
@@ -211,5 +202,5 @@ sqlite3_mutex_methods const *sqlite3NoopMutex(void){
 sqlite3_mutex_methods const *sqlite3DefaultMutex(void){
   return sqlite3NoopMutex();
 }
-#endif /* defined(SQLITE_MUTEX_NOOP) */
-#endif /* !defined(SQLITE_MUTEX_OMIT) */
+#endif /* SQLITE_MUTEX_NOOP */
+#endif /* SQLITE_MUTEX_OMIT */

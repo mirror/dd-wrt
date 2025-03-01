@@ -17,7 +17,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable {!pager_pragmas||secure_delete||direct_read} {
+ifcapable {!pager_pragmas||secure_delete} {
   finish_test
   return
 }
@@ -87,17 +87,12 @@ do_test pageropt-1.4 {
 # But if the other thread modifies the database, then the cache
 # must refill.
 #
-ifcapable mmap {
-  set x [expr {[permutation]=="mmap" ? 1 : 6}]
-} else {
-  set x 6
-}
 do_test pageropt-1.5 {
   db2 eval {CREATE TABLE t2(y)}
   pagercount_sql {
     SELECT hex(x) FROM t1
   }
-} [list $x 0 0 $blobcontent]
+} [list 6 0 0 $blobcontent]
 do_test pageropt-1.6 {
   pagercount_sql {
     SELECT hex(x) FROM t1

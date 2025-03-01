@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -363,24 +363,8 @@ struct __cursor {
 	 * when it is next accessed.
 	 */
 #define	C_COMPRESS_MODIFIED	0x0010	/* Compressed record was modified. */
-	/*
-	 * The root page of the tree has collapsed because its next-to-last
-	 * child page was deleted. The collapse was done by copying the content
-	 * of the lone child page to the root and deleting the lone child.
-	 * Following operations may need to be adjusted if they depend on the
-	 * existence of the deleted child page.
-	 */
-#define	C_ROOT_COLLAPSED	0x0020	/* Tree root was collapsed. */
 	u_int32_t	 flags;
 };
-
-/*
- * The maximum number of key/value pairs on a Btree leaf page, as a function
- * of page size.
- */
-#define	B_MINKEY_UPPER_LIMIT(dbp)	\
-	((u_int16_t)(((dbp)->pgsize - P_OVERHEAD(dbp)) / \
-	    ((BKEYDATA_PSIZE(0) + DB_ALIGN(1, sizeof(int32_t))) * P_INDX)))
 
 /*
  * Threshhold value, as a function of bt_minkey, of the number of
@@ -418,7 +402,7 @@ struct __cursor {
  * database it will exclusively latch both the old and new pages so we will
  * synchronize on that.
  */
-#define	BAM_GET_ROOT(dbc, root_pgno,					\
+#define BAM_GET_ROOT(dbc, root_pgno, 					\
 	     page, get_mode, lock_mode, lock, ret) do {			\
 	BTREE *__t = (dbc)->dbp->bt_internal;				\
 	BTREE_CURSOR *__cp = (BTREE_CURSOR *)(dbc)->internal;		\
@@ -428,7 +412,7 @@ struct __cursor {
 		if (__cp->root == PGNO_INVALID) {			\
 			__root = __t->bt_root;				\
 			__rev = __t->revision;				\
-		} else							\
+		} else 							\
 			__root = root_pgno = __cp->root;		\
 	} else								\
 		__root = root_pgno;					\
@@ -445,13 +429,13 @@ struct __cursor {
 		if (F_ISSET(dbc, DBC_OPD) ||				\
 		    !F_ISSET((dbc)->dbp, DB_AM_SUBDB) ||		\
 		     (__t->bt_root == __root &&				\
-		     (LEVEL(page) == LEAFLEVEL || TYPE(page) ==	\
+		     (LEVEL(page) == LEAFLEVEL || TYPE(page) == 	\
 		     (dbc->dbtype == DB_BTREE ? P_IBTREE : P_IRECNO)) &&\
 		     __rev == (dbc)->dbp->mpf->mfp->revision)) {	\
 			root_pgno = __root;				\
 			break;						\
 		}							\
-		if ((ret = __memp_fput((dbc)->dbp->mpf,		\
+		if ((ret = __memp_fput((dbc)->dbp->mpf, 		\
 		     (dbc)->thread_info, page, (dbc)->priority)) != 0)	\
 			break;						\
 	} else if (ret != DB_PAGE_NOTFOUND)				\
@@ -466,10 +450,12 @@ struct __cursor {
  * Return the root of this tree. If this is an off page duplicate tree
  * then its in the cursor, otherwise we must look in the db handle.
  */
-#define	BAM_ROOT_PGNO(dbc)						\
+#define BAM_ROOT_PGNO(dbc)						\
 	(((BTREE_CURSOR *)(dbc)->internal)->root == PGNO_INVALID ?	\
 	    ((BTREE*)(dbc)->dbp->bt_internal)->bt_root :		\
 	    ((BTREE_CURSOR *)(dbc)->internal)->root)
+
+	
 
 /*
  * The in-memory, per-tree btree/recno data structure.
@@ -486,7 +472,7 @@ struct __btree {			/* Btree access method. */
 	u_int32_t bt_minkey;		/* Minimum keys per page. */
 
 					/* Btree comparison function. */
-	int (*bt_compare) __P((DB *, const DBT *, const DBT *, size_t *));
+	int (*bt_compare) __P((DB *, const DBT *, const DBT *));
 					/* Btree prefix function. */
 	size_t (*bt_prefix) __P((DB *, const DBT *, const DBT *));
 					/* Btree compress function. */
@@ -497,8 +483,7 @@ struct __btree {			/* Btree access method. */
 	int (*bt_decompress) __P((DB *, const DBT *, const DBT *, DBT *, DBT *,
 					 DBT *));
 					/* dup_compare for compression */
-	int (*compress_dup_compare) __P((DB *, const DBT *, const DBT *,
-	    size_t *));
+	int (*compress_dup_compare) __P((DB *, const DBT *, const DBT *));
 #endif
 
 					/* Recno access method. */

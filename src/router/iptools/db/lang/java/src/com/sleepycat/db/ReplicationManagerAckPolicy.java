@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -11,8 +11,8 @@ package com.sleepycat.db;
 import com.sleepycat.db.internal.DbConstants;
 
 /**
-A class that provides definitions for the types of network ack policy to use
-when transmitting messages between replication sites using the Replication
+A class that provides definitions for the types of network ack policyto use
+when transmitting messages between replication sites using theReplication
 Manager.
 <p>
 Set using the {@link com.sleepycat.db.EnvironmentConfig#setReplicationManagerAckPolicy EnvironmentConfig.setReplicationManagerAckPolicy} API.

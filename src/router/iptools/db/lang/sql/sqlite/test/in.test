@@ -258,28 +258,16 @@ do_test in-7.5 {
     SELECT a FROM t1 WHERE a IN (5) AND b NOT IN ();
   }
 } {5}
-do_test in-7.6.1 {
+do_test in-7.6 {
   execsql {
     SELECT a FROM ta WHERE a IN ();
   }
 } {}
-do_test in-7.6.2 {
-  db status step
-} {0}
 do_test in-7.7 {
   execsql {
     SELECT a FROM ta WHERE a NOT IN ();
   }
 } {1 2 3 4 6 8 10}
-
-do_test in-7.8.1 {
-  execsql {
-    SELECT * FROM ta LEFT JOIN tb ON (ta.b=tb.b) WHERE ta.a IN ();
-  }
-} {}
-do_test in-7.8.2 {
-  db status step
-} {0}
 
 do_test in-8.1 {
   execsql {
@@ -332,7 +320,7 @@ do_test in-10.2 {
   catchsql {
     INSERT INTO t5 VALUES(4);
   }
-} {1 {CHECK constraint failed: t5}}
+} {1 {constraint failed}}
 
 # Ticket #1821
 #
@@ -443,7 +431,6 @@ do_test in-12.9 {
 } {1 {SELECTs to the left and right of INTERSECT do not have the same number of result columns}}
 }
 
-ifcapable compound {
 do_test in-12.10 {
   catchsql {
     SELECT * FROM t2 WHERE a IN (
@@ -472,7 +459,6 @@ do_test in-12.13 {
     );
   }
 } {1 {only a single result allowed for a SELECT that is part of an expression}}
-}; #ifcapable compound
 
 
 #------------------------------------------------------------------------
@@ -614,12 +600,6 @@ do_test in-13.14 {
     SELECT * FROM a WHERE id NOT IN (SELECT id FROM b);
   }
 } {}
-
-do_test in-13.15 {
-  catchsql {
-    SELECT 0 WHERE (SELECT 0,0) OR (0 IN (1,2));
-  }
-} {1 {only a single result allowed for a SELECT that is part of an expression}}
 
 
 do_test in-13.X {

@@ -8,21 +8,22 @@
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Installation and Build Guide" />
     <link rel="up" href="index.html" title="Berkeley DB Installation and Build Guide" />
-    <link rel="prev" href="build_winec_intro.html" title="Building for Windows Embedded Compact 7" />
+    <link rel="prev" href="build_wince_faq.html" title="Windows Mobile FAQ" />
     <link rel="next" href="build_unix_conf.html" title="Configuring Berkeley DB" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Chapter 7.  Building Berkeley DB for UNIX/POSIX
-    </th>
+          <th colspan="3" align="center">Chapter 7. 
+		Building Berkeley DB for UNIX/POSIX
+        </th>
         </tr>
         <tr>
-          <td width="20%" align="left"><a accesskey="p" href="build_winec_intro.html">Prev</a> </td>
+          <td width="20%" align="left"><a accesskey="p" href="build_wince_faq.html">Prev</a> </td>
           <th width="60%" align="center"> </th>
           <td width="20%" align="right"> <a accesskey="n" href="build_unix_conf.html">Next</a></td>
         </tr>
@@ -33,8 +34,9 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title"><a id="build_unix"></a>Chapter 7.  Building Berkeley DB for UNIX/POSIX
-    </h2>
+            <h2 class="title"><a id="build_unix"></a>Chapter 7. 
+		Building Berkeley DB for UNIX/POSIX
+        </h2>
           </div>
         </div>
       </div>
@@ -64,8 +66,7 @@
           </dt>
           <dt>
             <span class="sect1">
-              <a href="build_unix_sql.html">Configuring the SQL
-        Interface</a>
+              <a href="build_unix_sql.html">Configuring the SQL Interface</a>
             </span>
           </dt>
           <dd>
@@ -77,7 +78,7 @@
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_unix_sql.html#idm140188018126512">Enabling Extensions</a>
+                  <a href="build_unix_sql.html#idp500824">Enabling Extensions</a>
                 </span>
               </dt>
               <dt>
@@ -87,12 +88,12 @@
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_unix_sql.html#idm140188018072496">Using the JDBC Driver</a>
+                  <a href="build_unix_sql.html#idp571856">Using the JDBC Driver</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="build_unix_sql.html#idm140188018034496">Building the ODBC Driver</a>
+                  <a href="build_unix_sql.html#idp593744">Building the ODBC Driver</a>
                 </span>
               </dt>
               <dt>
@@ -109,20 +110,17 @@
           </dt>
           <dt>
             <span class="sect1">
-              <a href="build_unix_flags.html">Changing compile or load
-        options</a>
+              <a href="build_unix_flags.html">Changing compile or load options</a>
             </span>
           </dt>
           <dt>
             <span class="sect1">
-              <a href="cross_compile_unix.html">Cross-Compiling on
-        Unix</a>
+              <a href="cross_compile_unix.html">Cross-Compiling on Unix</a>
             </span>
           </dt>
           <dt>
             <span class="sect1">
-              <a href="build_unix_install.html">Installing Berkeley
-        DB</a>
+              <a href="build_unix_install.html">Installing Berkeley DB</a>
             </span>
           </dt>
           <dt>
@@ -132,8 +130,7 @@
           </dt>
           <dt>
             <span class="sect1">
-              <a href="build_unix_test.html">Running the test suite under
-        UNIX</a>
+              <a href="build_unix_test.html">Running the test suite under UNIX</a>
             </span>
           </dt>
           <dd>
@@ -158,11 +155,6 @@
           <dt>
             <span class="sect1">
               <a href="build_unix_freebsd.html">FreeBSD</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect1">
-              <a href="build_unix_hpux.html">HP-UX</a>
             </span>
           </dt>
           <dt>
@@ -225,31 +217,30 @@
           </dl>
         </div>
         <p>
-        The Berkeley DB distribution builds up to six separate
-        libraries: the base C API Berkeley DB library and the optional
-        C++, Java, Tcl, SQL, and JDBC API libraries. For portability
-        reasons, each library is standalone and contains the full
-        Berkeley DB support necessary to build applications; that is,
-        the C++ API Berkeley DB library does not require any other
-        Berkeley DB libraries to build and run C++ applications. 
+        The Berkeley DB distribution builds up to four separate libraries:
+        the base C API Berkeley DB library and the optional C++, Java, and
+        Tcl API libraries.  For portability reasons, each library is
+        standalone and contains the full Berkeley DB support necessary to
+        build applications; that is, the C++ API Berkeley DB library does
+        not require any other Berkeley DB libraries to build and run C++
+        applications.
     </p>
-        <p> 
-        Building for Linux, Apple iOS (known as iPhone OS
-        previously), Mac OS X or the QNX Neutrino release is the same
-        as building for a conventional UNIX platform. 
+        <p>
+        Building for Linux, Apple iOS (known as iPhone OS previously), Mac OS X or the QNX Neutrino release is the same
+        as building for a conventional UNIX platform.
     </p>
-        <p> 
-        The Berkeley DB distribution uses the Free Software
-        Foundation's <a class="ulink" href="http://www.gnu.org/software/autoconf/autoconf.html" target="_top">autoconf</a> 
+        <p>
+        The Berkeley DB distribution uses the Free Software Foundation's
+        <a class="ulink" href="http://www.gnu.org/software/autoconf/autoconf.html" target="_top">autoconf</a>
         and <a class="ulink" href="http://www.gnu.org/software/libtool/libtool.html" target="_top">libtool</a> 
-        tools to build on UNIX platforms. In
-        general, the standard configuration and installation options
-        for these tools apply to the Berkeley DB distribution.
+        tools to build on UNIX platforms.  In general, the standard
+        configuration and installation options for these tools apply to the
+        Berkeley DB distribution.
     </p>
-        <p> 
-        To perform a standard UNIX build of Berkeley DB, change to
-        the <span class="bold"><strong>build_unix</strong></span> directory and
-        then enter the following two commands:
+        <p>
+        To perform a standard UNIX build of Berkeley DB, change to the 
+        <span class="bold"><strong>build_unix</strong></span>
+        directory and then enter the following two commands:
     </p>
         <pre class="programlisting">../dist/configure
 make</pre>
@@ -257,32 +248,30 @@ make</pre>
         This will build the Berkeley DB library.
     </p>
         <p>
-        To install the Berkeley DB library, enter the following
-        command:
+        To install the Berkeley DB library, enter the following command:
     </p>
         <pre class="programlisting">make install</pre>
-        <p> 
+        <p>
         To rebuild Berkeley DB, enter:
     </p>
         <pre class="programlisting">make clean
 make</pre>
         <p>
-        If you change your mind about how Berkeley DB is to be
-        configured, you must start from scratch by entering the
-        following command: 
+        If you change your mind about how Berkeley DB is to be configured, you must
+        start from scratch by entering the following command:
     </p>
         <pre class="programlisting">make realclean
 ../dist/configure
 make</pre>
-        <p> 
+        <p>
         To uninstall Berkeley DB, enter:
     </p>
         <pre class="programlisting">make uninstall</pre>
         <p>
-        To build multiple UNIX versions of Berkeley DB in the same
-        source tree, create a new directory at the same level as the
-        build_unix directory, and then configure and build in that
-        directory as described previously.
+        To build multiple UNIX versions of Berkeley DB in the same source
+        tree, create a new directory at the same level as the build_unix
+        directory, and then configure and build in that directory as
+        described previously.
     </p>
         <div class="sect2" lang="en" xml:lang="en">
           <div class="titlepage">
@@ -292,40 +281,37 @@ make</pre>
               </div>
             </div>
           </div>
-          <p> 
-            To perform a standard UNIX build of the Berkeley DB SQL
-            interface, go to the <span class="bold"><strong>build_unix</strong></span>
-            directory and then enter the following two commands:
+          <p>
+            To perform a standard UNIX build of the Berkeley DB SQL interface, go
+            to the <span class="bold"><strong>build_unix</strong></span> directory and then
+            enter the following two commands: 
         </p>
           <pre class="programlisting">../dist/configure --enable-sql
 make </pre>
-          <p> 
-            This creates a library, <code class="literal">libdb_sql</code>,
-            and a command line tool, <code class="literal">dbsql</code>. You can
-            create and manipulate SQL databases using the
-            <code class="literal">dbsql</code> shell.
+          <p>
+            This creates a library, <code class="literal">libdb_sql</code>, and a command
+            line tool, <code class="literal">dbsql</code>. You can create and manipulate SQL
+            databases using the <code class="literal">dbsql</code> shell. 
         </p>
           <p>
-            You can optionally provide the
-            <code class="literal">--enable-sql_compat</code> argument to the
-            <code class="literal">configure</code> script. In addition to
-            creating <code class="literal">libdb_sql</code> and
-            <code class="literal">dbsql</code> this causes a thin wrapper
-            library called <code class="literal">libsqlite3</code> and a command
-            line tool called <code class="literal">sqlite3</code> to be built.
-            This library can be used as a drop-in replacement for
-            SQLite. The <code class="literal">sqlite3</code> command line tool
-            is identical to the <code class="literal">dbsql</code> executable
-            but is named so that existing scripts for SQLite can
-            easily work with Berkeley DB.
+            You can optionally provide the <code class="literal">--enable-sql_compat</code>
+            argument to the <code class="literal">configure</code> script.  In addition to
+            creating <code class="literal">libdb_sql</code> and <code class="literal">dbsql</code> this
+            causes a thin wrapper library called <code class="literal">libsqlite3</code> and
+            a command line tool called <code class="literal">sqlite3</code> to be built. This
+            library can be used as a drop-in replacement for SQLite. The
+            <code class="literal">sqlite3</code> command line tool is identical to the
+            <code class="literal">dbsql</code> executable but is named so that existing
+            scripts for SQLite can easily work with Berkeley DB.
         </p>
           <pre class="programlisting">
 ../dist/configure --enable-sql_compat
 make </pre>
           <p>
-            There are several arguments you can specify when
-            configuring the Berkeley DB SQL Interface. See <a class="xref" href="build_unix_sql.html" title="Configuring the SQL Interface">Configuring the SQL
-        Interface</a> for more information.
+            There are several arguments you can specify when configuring the
+            Berkeley DB SQL Interface. See 
+            <a class="xref" href="build_unix_sql.html" title="Configuring the SQL Interface">Configuring the SQL Interface</a> 
+            for more information.
         </p>
         </div>
       </div>
@@ -334,13 +320,12 @@ make </pre>
       <hr />
       <table width="100%" summary="Navigation footer">
         <tr>
-          <td width="40%" align="left"><a accesskey="p" href="build_winec_intro.html">Prev</a> </td>
+          <td width="40%" align="left"><a accesskey="p" href="build_wince_faq.html">Prev</a> </td>
           <td width="20%" align="center"> </td>
           <td width="40%" align="right"> <a accesskey="n" href="build_unix_conf.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Building for Windows
-        Embedded Compact 7 </td>
+          <td width="40%" align="left" valign="top">Windows Mobile FAQ </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

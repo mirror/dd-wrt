@@ -91,22 +91,10 @@ esac
 # !!! END COPIED from autoconf distribution
 
 sqlite_dir=$srcdir/../lang/sql/sqlite
-orig_CPPFLAGS="$CPPFLAGS"
-jdbc_variables=""
-if test "$db_cv_build_cryptography" = "yes"; then
-	CPPFLAGS="$CPPFLAGS -DSQLITE_HAS_CODEC=1"
-fi
-if test "$db_cv_debug" = "yes"; then
-  CPPFLAGS="$CPPFLAGS -g"
-fi
-(cd sql && eval "\$SHELL ../$sqlite_dir/configure --disable-option-checking $ac_sub_configure_args CPPFLAGS=\"-I.. $CPPFLAGS\" --enable-amalgamation=$db_cv_sql_amalgamation --enable-readline=$with_readline " && cat build_config.h >> config.h) || exit 1
+(cd sql && eval "\$SHELL ../$sqlite_dir/configure --disable-option-checking $ac_sub_configure_args CPPFLAGS=\"-I.. $CPPFLAGS\" --enable-amalgamation=$db_cv_sql_amalgamation --enable-readline=$with_readline" && cat build_config.h >> config.h) || exit 1
 
 # Configure JDBC if --enable-jdbc
 if test "$db_cv_jdbc" != "no"; then
-
-  # Get the absolute directory path to javac
-  AC_REQUIRE([AC_JNI_INCLUDE_DIR])
-  JAVA_BIN=`dirname $_ACJNI_JAVAC`
 
   # Deal with user-defined jdbc source path
   if test "$with_jdbc" != "no"; then
@@ -126,11 +114,11 @@ if test "$db_cv_jdbc" != "no"; then
   # . --prefix
   # . --enable-shared/--disable-shared
   # . --enable-static/--disable-static
-  # . CFLAGS, CPPFLAGS, LDFLAGS and JAVACFLAGS
+  # . CFLAGS, CPPFLAGS and LDFLAGS
   jdbc_args=""
   jdbc_flags=""
 
-  test "$prefix" != "" && jdbc_args="--prefix=$prefix --with-jardir=$prefix/lib"
+  test "$prefix" != "" && jdbc_args="--prefix=$prefix --with-jardir=$prefix/jar"
   test "$enable_shared" != "" && jdbc_args="$jdbc_args --enable-shared=$enable_shared"
   test "$enable_static" != "" && jdbc_args="$jdbc_args --enable-static=$enable_static"
   test "$cross_compiling" = "yes" && jdbc_args="$jdbc_args --build=$build --host=$host "
@@ -139,13 +127,11 @@ if test "$db_cv_jdbc" != "no"; then
   #    to that.
   # 2. The JDBC driver does not accept CPPFLAGS. So we move the CPPFLAGS options
   #    into CFLAGS for the JDBC driver.
-  jdbc_flags="$jdbc_flags CFLAGS=\"-I.. -I../../src/dbinc -I../../src -I../sql \
+  jdbc_flags="$jdbc_flags CFLAGS=\"-I.. -I../../src/dbinc -I../sql \
     -DHAVE_ERRNO_H -D_HAVE_SQLITE_CONFIG_H -DHAVE_SQLITE3_MALLOC \
     $CFLAGS $CPPFLAGS\""
   # Set LDFLAGS for JDBC driver
   test "$LDFLAGS" != "" && jdbc_flags="$jdbc_flags LDFLAGS=\"$LDFLAGS\""
-  test "$JAVACFLAGS" != "" && jdbc_flags="$jdbc_flags JAVAC_FLAGS=\"$JAVACFLAGS\""
-  test "$db_cv_build_cryptography" = "yes" && jdbc_flags="$jdbc_flags HAVE_SQLITE3_KEY=1"
 
   # Copy ../lang/sql/jdbc to build_unix/
   test ! -d jdbc && cp -r $jdbc_dir .
@@ -158,8 +144,6 @@ if test "$db_cv_jdbc" != "no"; then
   cd jdbc
   test ! -e Makefile.in.tmp && mv Makefile.in Makefile.in.tmp
   sed "s/@BDB_LIB@/$BDB_LIB/g" Makefile.in.tmp > Makefile.in
-  eval "env JAVA_BIN=$JAVA_BIN \$SHELL ./configure --with-sqlite3=../../lang/sql/generated $jdbc_args $jdbc_flags"
+  eval "\$SHELL ./configure --with-sqlite3=../../lang/sql/generated $jdbc_args $jdbc_flags"
 fi
-
-CPPFLAGS="$orig_CPPFLAGS"
 ])

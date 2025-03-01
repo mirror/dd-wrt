@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -12,9 +12,9 @@
 
 static db_timeout_t __repmgr_compute_response_time __P((ENV *));
 static int __repmgr_elect __P((ENV *, u_int32_t, db_timespec *));
-static int __repmgr_elect_main __P((ENV *,
-    DB_THREAD_INFO *, REPMGR_RUNNABLE *));
+static int __repmgr_elect_main __P((ENV *, REPMGR_RUNNABLE *));
 static void *__repmgr_elect_thread __P((void *));
+static int send_membership __P((ENV *));
 
 /*
  * Starts an election thread.
@@ -90,39 +90,26 @@ __repmgr_elect_thread(argsp)
 {
 	REPMGR_RUNNABLE *th;
 	ENV *env;
-	DB_THREAD_INFO *ip;
 	int ret;
 
 	th = argsp;
 	env = th->env;
-	ip = NULL;
-	ret = 0;
 
-	ENV_ENTER_RET(env, ip, ret);
-	if (ret == 0)
-		RPRINT(env, (env,
-		    DB_VERB_REPMGR_MISC, "starting election thread"));
+	RPRINT(env, (env, DB_VERB_REPMGR_MISC, "starting election thread"));
 
-	if (ret != 0 || (ret = __repmgr_elect_main(env, ip, th)) != 0) {
+	if ((ret = __repmgr_elect_main(env, th)) != 0) {
 		__db_err(env, ret, "election thread failed");
-		RPRINT(env, (env,
-		    DB_VERB_REPMGR_MISC, "election thread is exiting"));
-		ENV_LEAVE(env, ip);
 		(void)__repmgr_thread_failure(env, ret);
 	}
-	if (ret == 0) {
-		RPRINT(env, (env,
-		    DB_VERB_REPMGR_MISC, "election thread is exiting"));
-		ENV_LEAVE(env, ip);
-	}
+
+	RPRINT(env, (env, DB_VERB_REPMGR_MISC, "election thread is exiting"));
 	th->finished = TRUE;
 	return (NULL);
 }
 
 static int
-__repmgr_elect_main(env, ip, th)
+__repmgr_elect_main(env, th)
 	ENV *env;
-	DB_THREAD_INFO *ip;
 	REPMGR_RUNNABLE *th;
 {
 	DB_REP *db_rep;
@@ -136,13 +123,10 @@ __repmgr_elect_main(env, ip, th)
 	db_timespec failtime, now, repstart_time, target, wait_til;
 	db_timeout_t delay_time, response_time, tmp_time;
 	u_long sec, usec;
-	u_int32_t flags, max_tries, tries;
-	int client_detected, done_repstart, lsnhist_match, master_detected;
-	int ret, suppress_election;
+	u_int32_t flags;
+	int done_repstart, ret, suppress_election;
 	enum { ELECTION, REPSTART } action;
 
-	COMPQUIET(usec, 0);
-	COMPQUIET(max_tries, 0);
 	COMPQUIET(action, ELECTION);
 
 	db_rep = env->rep_handle;
@@ -197,120 +181,6 @@ __repmgr_elect_main(env, ip, th)
 	UNLOCK_MUTEX(db_rep->mutex);
 
 	/*
-	 * In preferred master mode, the select thread signals when a
-	 * client has lost its connection to the master via prefmas_pending,
-	 * but the actual restart as temporary master is done here in an
-	 * election thread.
-	 */
-	if (IS_PREFMAS_MODE(env) && F_ISSET(rep, REP_F_CLIENT) &&
-	    db_rep->prefmas_pending == start_temp_master) {
-		db_rep->prefmas_pending = no_action;
-		RPRINT(env, (env, DB_VERB_REPMGR_MISC,
-		    "elect_main preferred master restart temp master"));
-		ret = __repmgr_become_master(env, 0);
-		goto out;
-	}
-
-	/* Get preferred master wait limits for detecting the other site. */
-	if (IS_PREFMAS_MODE(env) &&
-	    (ret = __repmgr_prefmas_get_wait(env, &max_tries, &usec)) != 0)
-		goto out;
-
-	/* Preferred master mode master site start-up. */
-	if (IS_PREFMAS_MODE(env) &&
-	    FLD_ISSET(rep->config, REP_C_PREFMAS_MASTER) &&
-	    LF_ISSET(ELECT_F_STARTUP)) {
-		RPRINT(env, (env, DB_VERB_REPMGR_MISC,
-		    "elect_main preferred master site startup"));
-		client_detected = FALSE;
-		lsnhist_match = FALSE;
-		tries = 0;
-		while (!client_detected && tries < max_tries) {
-			__os_yield(env, 0, usec);
-			tries++;
-			client_detected = __repmgr_prefmas_connected(env);
-		}
-		if (client_detected) {
-			RPRINT(env, (env, DB_VERB_REPMGR_MISC,
-			    "elect_main preferred master client detected"));
-			/*
-			 * Restart remote site as a client.  Depending on the
-			 * outcome of lsnhist_match below, this site will
-			 * either restart as master or it will start an
-			 * election.  In either case, the remote site should
-			 * be running as a client.
-			 *
-			 * Then perform the lsnhist_match comparison.
-			 */
-			if ((ret = __repmgr_restart_site_as_client(
-			    env, 1)) != 0 ||
-			    (ret = __repmgr_lsnhist_match(env,
-			    ip, 1, &lsnhist_match)) != 0)
-				goto out;
-			/*
-			 * An lsnhist_match means that we have a continuous
-			 * set of transactions and it is safe to call a
-			 * comparison election to preserve any temporary master
-			 * transactions that were committed while this site
-			 * was down.
-			 */
-			if (lsnhist_match) {
-				F_CLR(rep, REP_F_HOLD_GEN);
-				LF_SET(ELECT_F_IMMED);
-				LF_CLR(ELECT_F_STARTUP);
-				/* Continue on to election code below. */
-			}
-		}
-		/*
-		 * If we didn't detect a client within a reasonable time or
-		 * we failed the lsnhist_match (meaning we have conflicting
-		 * sets of transactions), we start this site as a master and
-		 * possibly force rollback of temporary master transactions.
-		 */
-		if (!client_detected || !lsnhist_match) {
-			RPRINT(env, (env, DB_VERB_REPMGR_MISC,
-			    "elect_main preferred master site start master"));
-			ret = __repmgr_become_master(env, 0);
-			F_CLR(rep, REP_F_HOLD_GEN);
-			goto out;
-		}
-	}
-
-	/* Preferred master mode client site start-up. */
-	if (IS_PREFMAS_MODE(env) &&
-	    FLD_ISSET(rep->config, REP_C_PREFMAS_CLIENT) &&
-	    LF_ISSET(ELECT_F_STARTUP)) {
-		RPRINT(env, (env, DB_VERB_REPMGR_MISC,
-		    "elect_main preferred master client site startup"));
-		master_detected = FALSE;
-		tries = 0;
-		while (!master_detected && tries < max_tries) {
-			__os_yield(env, 0, usec);
-			tries++;
-			master_detected = __repmgr_prefmas_connected(env);
-		}
-		/*
-		 * If we find the master, restart as client here so that we
-		 * send a newclient message after we are connected to the
-		 * master.  The master will send a newmaster message so that
-		 * we can start the client sync process.
-		 *
-		 * If we haven't found the master after the timeout, start as
-		 * temporary master.
-		 */
-		if (master_detected) {
-			RPRINT(env, (env, DB_VERB_REPMGR_MISC,
-			    "elect_main preferred master detected"));
-			ret = __repmgr_become_client(env);
-		} else {
-			RPRINT(env, (env, DB_VERB_REPMGR_MISC,
-			    "elect_main preferred master client start master"));
-			ret = __repmgr_become_master(env, 0);
-		}
-		goto out;
-	}
-
-	/*
 	 * The 'done_repstart' flag keeps track of which was our most recent
 	 * operation (repstart or election), so that we can alternate
 	 * appropriately.  There are a few different ways this thread can be
@@ -318,7 +188,7 @@ __repmgr_elect_main(env, ip, th)
 	 * called.  The one exception is at initial start-up, where we
 	 * first probe for a master by sending out rep_start(CLIENT) calls.
 	 */
-	if (LF_ISSET(ELECT_F_IMMED) && !IS_VIEW_SITE(env)) {
+	if (LF_ISSET(ELECT_F_IMMED)) {
 		/*
 		 * When the election succeeds, we've successfully completed
 		 * everything we need to do.  If it fails in an unexpected way,
@@ -386,13 +256,11 @@ __repmgr_elect_main(env, ip, th)
 		/*
 		 * See if it's time to retry the operation.  Normally it's an
 		 * election we're interested in retrying.  But we refrain from
-		 * calling for elections if so configured or we are a view.
+		 * calling for elections if so configured.
 		 */
-		suppress_election = IS_VIEW_SITE(env) ||
-		    (LF_ISSET(ELECT_F_STARTUP) ?
+		suppress_election = LF_ISSET(ELECT_F_STARTUP) ?
 		    db_rep->init_policy == DB_REP_CLIENT :
-		    !FLD_ISSET(rep->config, REP_C_ELECTIONS)) ||
-		    LF_ISSET(ELECT_F_CLIENT_RESTART);
+		    !FLD_ISSET(rep->config, REP_C_ELECTIONS);
 		repstart_time = db_rep->repstart_time;
 		target = suppress_election ? repstart_time : failtime;
 		TIMESPEC_ADD_DB_TIMEOUT(&target, rep->election_retry_wait);
@@ -475,8 +343,7 @@ __repmgr_elect_main(env, ip, th)
 			DB_ASSERT(env, action == REPSTART);
 
 			db_rep->new_connection = FALSE;
-			if ((ret = __repmgr_repstart(env,
-			    DB_REP_CLIENT, 0)) != 0)
+			if ((ret = __repmgr_repstart(env, DB_REP_CLIENT)) != 0)
 				goto out;
 			done_repstart = TRUE;
 
@@ -609,20 +476,7 @@ __repmgr_elect(env, flags, failtimep)
 	case DB_REP_UNAVAIL:
 		__os_gettime(env, failtimep, 1);
 		DB_EVENT(env, DB_EVENT_REP_ELECTION_FAILED, NULL);
-		/*
-		 * If an election fails with DB_REP_UNAVAIL, it could be
-		 * because a participating site has an obsolete, too-high
-		 * notion of the group size.  (This could happen if the site
-		 * was down/disconnected during removal of some (other) sites.)
-		 * To remedy this, broadcast a current copy of the membership
-		 * list.  Since all sites are doing this, and we always ratchet
-		 * to the most up-to-date version, this should bring all sites
-		 * up to date.  We only do this after a failure, during what
-		 * will normally be an idle period anyway, so that we don't
-		 * slow down a first election following the loss of an active
-		 * master.
-		 */
-		if ((t_ret = __repmgr_bcast_member_list(env)) != 0)
+		if ((t_ret = send_membership(env)) != 0)
 			ret = t_ret;
 		break;
 
@@ -644,6 +498,40 @@ __repmgr_elect(env, flags, failtimep)
 }
 
 /*
+ * If an election fails with DB_REP_UNAVAIL, it could be because a participating
+ * site has an obsolete, too-high notion of the group size.  (This could happen
+ * if the site was down/disconnected during removal of some (other) sites.)  To
+ * remedy this, broadcast a current copy of the membership list.  Since all
+ * sites are doing this, and we always ratchet to the most up-to-date version,
+ * this should bring all sites up to date.  We only do this after a failure,
+ * during what will normally be an idle period anyway, so that we don't slow
+ * down a first election following the loss of an active master.
+ */
+static int
+send_membership(env)
+	ENV *env;
+{
+	DB_REP *db_rep;
+	u_int8_t *buf;
+	size_t len;
+	int ret;
+
+	db_rep = env->rep_handle;
+	buf = NULL;
+	LOCK_MUTEX(db_rep->mutex);
+	if ((ret = __repmgr_marshal_member_list(env, &buf, &len)) != 0)
+		goto out;
+	RPRINT(env, (env, DB_VERB_REPMGR_MISC,
+	    "Broadcast latest membership list"));
+	ret = __repmgr_bcast_own_msg(env, REPMGR_SHARING, buf, len);
+out:
+	UNLOCK_MUTEX(db_rep->mutex);
+	if (buf != NULL)
+		__os_free(env, buf);
+	return (ret);
+}
+
+/*
  * Becomes master after we've won an election, if we can.
  *
  * PUBLIC: int __repmgr_claim_victory __P((ENV *));
@@ -655,7 +543,7 @@ __repmgr_claim_victory(env)
 	int ret;
 
 	env->rep_handle->takeover_pending = FALSE;
-	if ((ret = __repmgr_become_master(env, 0)) == DB_REP_UNAVAIL) {
+	if ((ret = __repmgr_become_master(env)) == DB_REP_UNAVAIL) {
 		ret = 0;
 		RPRINT(env, (env, DB_VERB_REPMGR_MISC,
 		    "Won election but lost race with DUPMASTER client intent"));

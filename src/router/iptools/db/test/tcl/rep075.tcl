@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -160,13 +160,6 @@ proc rep075_sub { method tnum logset prep op after largs } {
 	    -home $clientdir2 -rep_transport \[list 3 replsend\]"
 	set env2 [eval $cl2_envcmd -rep_client]
 	set clientenv2 $env2
-	#
-	# Give env2 a shorter rerequest time because, unlike env1, it is not
-	# explicitly restarted for some prep options.  In these cases it must
-	# rely on rerequests to get all log records, but on faster platforms
-	# the test may complete before the default rerequest time has passed.
-	#
-	$clientenv2 rep_request 4000 128000
 	error_check_good client_env [is_valid_env $env2] TRUE
 
 	set omethod [convert_method $method]
@@ -516,8 +509,8 @@ proc rep075_sub { method tnum logset prep op after largs } {
 	# Verify whether or not the key exists in the databases both
 	# on the client and the master.
 	#
+	puts "\tRep$tnum.d: Verify prepared data."
 	foreach e $envlist {
-		puts "\tRep$tnum.d: Verify prepared data for env ($e)."
 		set env [lindex $e 0]
 		if { $databases_in_memory } {
 			set db1 [eval {berkdb_open_noerr -env $env\
@@ -535,14 +528,14 @@ proc rep075_sub { method tnum logset prep op after largs } {
 		set k1 [$db1 get $key]
 		set k2 [$db2 get $key]
 		if { $op1 == "commit" } {
-			error_check_good key1 [llength $k1] 1
+			error_check_good key [llength $k1] 1
 		} else {
-			error_check_good key1 [llength $k1] 0
+			error_check_good key [llength $k1] 0
 		}
 		if { $op2 == "commit" } {
-			error_check_good key2 [llength $k2] 1
+			error_check_good key [llength $k2] 1
 		} else {
-			error_check_good key2 [llength $k2] 0
+			error_check_good key [llength $k2] 0
 		}
 
 		error_check_good db_close [$db1 close] 0

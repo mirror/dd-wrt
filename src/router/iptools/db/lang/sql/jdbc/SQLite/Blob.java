@@ -25,8 +25,6 @@ class BlobR extends InputStream {
 
     /**
      * Contruct InputStream from blob instance.
-     *
-     * @param blob blob to make input stream from
      */
 
     BlobR(Blob blob) {
@@ -36,9 +34,7 @@ class BlobR extends InputStream {
 
     /**
      * Return number of available bytes for reading.
-     *
      * @return available input bytes
-     * @throws IOException on I/O error
      */
 
     public int available() throws IOException {
@@ -55,8 +51,6 @@ class BlobR extends InputStream {
 
     /**
      * Reset method; dummy to satisfy InputStream class.
-     *
-     * @throws IOException on I/O error
      */
 
     public void reset() throws IOException {
@@ -64,7 +58,6 @@ class BlobR extends InputStream {
 
     /**
      * Mark support; not for this class.
-     *
      * @return always false
      */
 
@@ -74,8 +67,6 @@ class BlobR extends InputStream {
 
     /**
      * Close this blob InputStream.
-     *
-     * @throws IOException on I/O error
      */
 
     public void close() throws IOException {
@@ -86,9 +77,6 @@ class BlobR extends InputStream {
 
     /**
      * Skip over blob data.
-     *
-     * @param n number of bytes to skip
-     * @throws IOException on I/O error
      */
 
     public long skip(long n) throws IOException {
@@ -107,9 +95,7 @@ class BlobR extends InputStream {
 
     /**
      * Read single byte from blob.
-     *
      * @return byte read
-     * @throws IOException on I/O error
      */
 
     public int read() throws IOException {
@@ -124,10 +110,8 @@ class BlobR extends InputStream {
 
     /**
      * Read byte array from blob.
-     *
      * @param b byte array to be filled
      * @return number of bytes read
-     * @throws IOException on I/O error
      */
 
     public int read(byte b[]) throws IOException {
@@ -141,12 +125,10 @@ class BlobR extends InputStream {
 
     /**
      * Read slice of byte array from blob.
-     *
      * @param b byte array to be filled
      * @param off offset into byte array
      * @param len length to be read
      * @return number of bytes read
-     * @throws IOException on I/O error
      */
 
     public int read(byte b[], int off, int len) throws IOException {
@@ -189,8 +171,6 @@ class BlobW extends OutputStream {
 
     /**
      * Contruct OutputStream from blob instance.
-     *
-     * @param blob blob to make output stream from
      */
 
     BlobW(Blob blob) {
@@ -200,8 +180,6 @@ class BlobW extends OutputStream {
 
     /**
      * Flush blob; dummy to satisfy OutputStream class.
-     *
-     * @throws IOException on I/O error
      */
 
     public void flush() throws IOException {
@@ -209,8 +187,6 @@ class BlobW extends OutputStream {
 
     /**
      * Close this blob OutputStream.
-     *
-     * @throws IOException on I/O error
      */
 
     public void close() throws IOException {
@@ -221,9 +197,7 @@ class BlobW extends OutputStream {
 
     /**
      * Write blob data.
-     *
      * @param v byte to be written at current position.
-     * @throws IOException on I/O error
      */
 
     public void write(int v) throws IOException {
@@ -234,9 +208,7 @@ class BlobW extends OutputStream {
 
     /**
      * Write blob data.
-     *
      * @param b byte array to be written at current position.
-     * @throws IOException on I/O error
      */
 
     public void write(byte[] b) throws IOException {
@@ -247,11 +219,9 @@ class BlobW extends OutputStream {
 
     /**
      * Write blob data.
-     *
      * @param b byte array to be written.
      * @param off offset within byte array
      * @param len length of data to be written
-     * @throws IOException on I/O error
      */
 
     public void write(byte[] b, int off, int len) throws IOException {
@@ -293,7 +263,6 @@ public class Blob {
 
     /**
      * Return InputStream for this blob
-     *
      * @return InputStream
      */
 
@@ -303,7 +272,6 @@ public class Blob {
 
     /**
      * Return OutputStream for this blob
-     *
      * @return OutputStream
      */
 
@@ -319,26 +287,22 @@ public class Blob {
 
     /**
      * Internal blob write method.
-     *
      * @param b byte array to be written
      * @param off offset into byte array
      * @param pos offset into blob
      * @param len length to be written
      * @return number of bytes written to blob
-     * @throws IOException on I/O error
      */
 
     native int write(byte[] b, int off, int pos, int len) throws IOException;
 
     /**
      * Internal blob read method.
-     *
      * @param b byte array to be written
      * @param off offset into byte array
      * @param pos offset into blob
      * @param len length to be written
      * @return number of bytes written to blob
-     * @throws IOException on I/O error
      */
 
     native int read(byte[] b, int off, int pos, int len) throws IOException;

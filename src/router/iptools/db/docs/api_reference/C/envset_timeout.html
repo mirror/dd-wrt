@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -88,7 +88,7 @@ DB_ENV-&gt;set_timeout(DB_ENV *dbenv, db_timeout_t timeout,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711177130512"></a>Parameters</h3>
+              <h3 class="title"><a id="idp52265048"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -96,7 +96,7 @@ DB_ENV-&gt;set_timeout(DB_ENV *dbenv, db_timeout_t timeout,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711177122464"></a>timeout</h4>
+                <h4 class="title"><a id="idp52264400"></a>timeout</h4>
               </div>
             </div>
           </div>
@@ -110,7 +110,7 @@ DB_ENV-&gt;set_timeout(DB_ENV *dbenv, db_timeout_t timeout,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711177076352"></a>flags</h4>
+                <h4 class="title"><a id="idp52270568"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -122,103 +122,76 @@ DB_ENV-&gt;set_timeout(DB_ENV *dbenv, db_timeout_t timeout,
             <ul type="disc">
               <li>
                 <p><a id="set_timeout_DB_SET_LOCK_TIMEOUT"></a>
-                          <code class="literal">DB_SET_LOCK_TIMEOUT</code>
-                    </p>
+                      <code class="literal">DB_SET_LOCK_TIMEOUT</code>
+                </p>
                 <p>
-                         Set the timeout value for locks in this database environment.
-                    </p>
+                     Set the timeout value for locks in this database environment.
+                </p>
                 <p>
-                         The database environment's lock timeout value may also
-                         be configured using the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
-                         file.  The syntax of the entry in that file is a
-                         single line with the string "set_lock_timeout", one or
-                         more whitespace characters, and the lock timeout
-                         value. Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is read when the
-                         database environment is opened, it will silently
-                         overrule configuration done before that time.
-                    </p>
+                     The database environment's lock timeout value may also
+                     be configured using the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
+                     file.  The syntax of the entry in that file is a
+                     single line with the string "set_lock_timeout", one or
+                     more whitespace characters, and the lock timeout
+                     value. Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is read when the
+                     database environment is opened, it will silently
+                     overrule configuration done before that time.
+                </p>
                 <p>
-                         This flag configures a database environment, not only operations
-                         performed using the specified 
-                         <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>  handle.
-                    </p>
-              </li>
-              <li>
-                <p><a id="set_timeout_DB_SET_MUTEX_FAILCHK_TIMEOUT"></a>
-                        <code class="literal">DB_SET_MUTEX_FAILCHK_TIMEOUT</code>
-                    </p>
-                <p>
-                        If failchk broadcasting has been configured, then set
-                        the timeout value on how long a thread will wait for a
-                        mutex lock before checking whether <a class="xref" href="envfailchk.html" title="DB_ENV-&gt;failchk()">DB_ENV-&gt;failchk()</a> has
-                        marked the mutex as failed. The default is to check
-                        once every second.
-                    </p>
-                <p>
-                        This wait timeout value may also be configured using
-                        the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The syntax of the
-                        entry in that file is a single line with the string
-                        "set_mutex_failchk_timeout", one or more whitespace characters,
-                        and the wait timeout value. Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
-                        file is read when the database environment is opened,
-                        it will silently overrule configuration done before
-                        that time.
-                    </p>
-                <p>
-                        This flag configures operations performed using the
-                        specified <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>
-                        handle.
-                    </p>
+                     This flag configures a database environment, not only operations
+                     performed using the specified 
+                     <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>  handle.
+                </p>
               </li>
               <li>
                 <p><a id="set_timeout_DB_SET_REG_TIMEOUT"></a>
-                    <code class="literal">DB_SET_REG_TIMEOUT</code>
-                    </p>
+                <code class="literal">DB_SET_REG_TIMEOUT</code>
+                </p>
                 <p>
-                        Set the timeout value on how long to wait for processes to exit the environment 
-                        before recovery is started when the 
-                        <a class="xref" href="envopen.html" title="DB_ENV-&gt;open()">DB_ENV-&gt;open()</a> method was called with the 
-                        <a class="link" href="envopen.html#envopen_DB_REGISTER">DB_REGISTER</a>		
-                        flag and recovery must be performed.  
-                    </p>
+                    Set the timeout value on how long to wait for processes to exit the environment 
+                    before recovery is started when the 
+                    <a class="xref" href="envopen.html" title="DB_ENV-&gt;open()">DB_ENV-&gt;open()</a> method was called with the 
+                    <a class="link" href="envopen.html#envopen_DB_REGISTER">DB_REGISTER</a>		
+                    flag and recovery must be performed.  
+                </p>
                 <p>
-                        This wait timeout value may also be configured using
-                        the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The syntax of the
-                        entry in that file is a single line with the string
-                        "set_reg_timeout", one or more whitespace characters,
-                        and the wait timeout value. Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
-                        file is read when the database environment is opened,
-                        it will silently overrule configuration done before
-                        that time.
-                    </p>
+                    This wait timeout value may also be configured using
+                    the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The syntax of the
+                    entry in that file is a single line with the string
+                    "set_reg_timeout", one or more whitespace characters,
+                    and the wait timeout value. Because the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
+                    file is read when the database environment is opened,
+                    it will silently overrule configuration done before
+                    that time.
+                </p>
                 <p>
-                     This flag configures operations performed using the specified 
-                     <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>  handle.
-                    </p>
+                 This flag configures operations performed using the specified 
+                 <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>  handle.
+                </p>
               </li>
               <li>
                 <p><a id="set_timeout_DB_SET_TXN_TIMEOUT"></a>
-                          <code class="literal">DB_SET_TXN_TIMEOUT</code>
-                    </p>
+                      <code class="literal">DB_SET_TXN_TIMEOUT</code>
+                </p>
                 <p>
-                         Set the timeout value for transactions in this database environment.
-                    </p>
+                     Set the timeout value for transactions in this database environment.
+                </p>
                 <p>
-                         The database environment's transaction timeout value
-                         may also be configured using the environment's
-                         <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The syntax of the entry in that
-                         file is a single line with the string
-                         "set_txn_timeout", one or more whitespace characters,
-                         and the transaction timeout value. Because the
-                         <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is read when the database environment
-                         is opened, it will silently overrule configuration
-                         done before that time.
-                    </p>
+                     The database environment's transaction timeout value
+                     may also be configured using the environment's
+                     <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.  The syntax of the entry in that
+                     file is a single line with the string
+                     "set_txn_timeout", one or more whitespace characters,
+                     and the transaction timeout value. Because the
+                     <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is read when the database environment
+                     is opened, it will silently overrule configuration
+                     done before that time.
+                </p>
                 <p>
-                         This flag configures a database environment, not only
-                         operations performed using the specified 
-                         <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>  handle.
-                    </p>
+                     This flag configures a database environment, not only
+                     operations performed using the specified 
+                     <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>  handle.
+                </p>
               </li>
             </ul>
           </div>
@@ -228,32 +201,28 @@ DB_ENV-&gt;set_timeout(DB_ENV *dbenv, db_timeout_t timeout,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711177046592"></a>Errors</h3>
+              <h3 class="title"><a id="idp52304968"></a>Errors</h3>
             </div>
           </div>
         </div>
         <p>
-            The <code class="methodname">DB_ENV-&gt;set_timeout()</code> <span>
+                         The <code class="methodname">DB_ENV-&gt;set_timeout()</code> <span>
             <span>
                  method may fail and return one of the following non-zero errors:
             </span>
             
         </span>
-        </p>
+                    </p>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711177037776"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp52311472"></a>EINVAL</h4>
               </div>
             </div>
           </div>
           <p>
-                <code class="literal">DB_SET_MUTEX_FAILCHK_TIMEOUT</code>
-                was specified even though Berkeley DB was not
-                configured with
-                <code class="literal">--enable-failchk_broadcast</code>;
-                an invalid flag value or parameter was specified;
+                An invalid flag value or parameter was specified.
             </p>
         </div>
       </div>
@@ -261,25 +230,25 @@ DB_ENV-&gt;set_timeout(DB_ENV *dbenv, db_timeout_t timeout,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711177037360"></a>Class</h3>
+              <h3 class="title"><a id="idp52311152"></a>Class</h3>
             </div>
           </div>
         </div>
         <p>
-            <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>  
-        </p>
+                <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>  
+            </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711177030656"></a>See Also</h3>
+              <h3 class="title"><a id="idp52314424"></a>See Also</h3>
             </div>
           </div>
         </div>
         <p>
-            <a class="xref" href="env.html#envlist" title="Database Environments and Related Methods">Database Environments and Related Methods</a> 
-        </p>
+                     <a class="xref" href="env.html#envlist" title="Database Environments and Related Methods">Database Environments and Related Methods</a> 
+                </p>
       </div>
     </div>
     <div class="navfooter">

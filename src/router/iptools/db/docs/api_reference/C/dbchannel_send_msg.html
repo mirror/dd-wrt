@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -65,7 +65,7 @@ DB_CHANNEL-&gt;send_msg(DB_CHANNEL *channel, DBT *msg, u_int32_t nmsg,
         remote sites using a message dispatch callback, which is configured
         using the <a class="xref" href="repmgr_msg_dispatch.html" title="DB_ENV-&gt;repmgr_msg_dispatch()">DB_ENV-&gt;repmgr_msg_dispatch()</a>
         method. Note that the DB_CHANNEL-&gt;send_msg() method may be used
-        within the message dispatch callback on the remote site to send
+        within the the message dispatch callback on the remote site to send
         a response or acknowledgement for messages that it receives and is
         handling.
     </p>
@@ -86,7 +86,7 @@ DB_CHANNEL-&gt;send_msg(DB_CHANNEL *channel, DBT *msg, u_int32_t nmsg,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711174167824"></a>Parameters</h3>
+              <h3 class="title"><a id="idp53859888"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -94,7 +94,7 @@ DB_CHANNEL-&gt;send_msg(DB_CHANNEL *channel, DBT *msg, u_int32_t nmsg,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711174167008"></a>msg</h4>
+                <h4 class="title"><a id="idp53860304"></a>msg</h4>
               </div>
             </div>
           </div>
@@ -114,7 +114,7 @@ DB_CHANNEL-&gt;send_msg(DB_CHANNEL *channel, DBT *msg, u_int32_t nmsg,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711174161296"></a>nmsg</h4>
+                <h4 class="title"><a id="idp53863320"></a>nmsg</h4>
               </div>
             </div>
           </div>
@@ -127,7 +127,7 @@ DB_CHANNEL-&gt;send_msg(DB_CHANNEL *channel, DBT *msg, u_int32_t nmsg,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711174268608"></a>flags</h4>
+                <h4 class="title"><a id="idp53668392"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -141,7 +141,7 @@ DB_CHANNEL-&gt;send_msg(DB_CHANNEL *channel, DBT *msg, u_int32_t nmsg,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711174532992"></a>Errors</h3>
+              <h3 class="title"><a id="idp53658848"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -158,24 +158,24 @@ DB_CHANNEL-&gt;send_msg(DB_CHANNEL *channel, DBT *msg, u_int32_t nmsg,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711174166880"></a>DB_NOSERVER</h4>
+                <h4 class="title"><a id="idp53860368"></a>DB_NOSERVER</h4>
               </div>
             </div>
           </div>
           <p>
                 A message was sent to a remote site that has not
-                configured a message dispatch callback function.
+                configured a message dispatch call-back function.
                 Use the
                 <a class="xref" href="repmgr_msg_dispatch.html" title="DB_ENV-&gt;repmgr_msg_dispatch()">DB_ENV-&gt;repmgr_msg_dispatch()</a>
                 method at every site belonging to the replication group to configure a 
-                message dispatch callback function.
+                message dispatch call-back function.
             </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711174149536"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp53870056"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -189,20 +189,19 @@ DB_CHANNEL-&gt;send_msg(DB_CHANNEL *channel, DBT *msg, u_int32_t nmsg,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711174153888"></a>Class</h3>
+              <h3 class="title"><a id="idp53867704"></a>Class</h3>
             </div>
           </div>
         </div>
         <p>
-            <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>,  
-            <a class="link" href="db_channel.html" title="The DB_CHANNEL Handle">DB_CHANNEL</a>
+            <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>  
         </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711174147456"></a>See Also</h3>
+              <h3 class="title"><a id="idp53871136"></a>See Also</h3>
             </div>
           </div>
         </div>

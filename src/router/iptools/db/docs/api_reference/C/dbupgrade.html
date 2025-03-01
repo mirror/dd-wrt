@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -59,12 +59,6 @@ DB-&gt;upgrade(DB *db, const char *file, u_int32_t flags);  </pre>
          on a system with the same byte-order as the database.
     </p>
       <p>
-         The <code class="methodname">DB-&gt;upgrade()</code> method is non-atomic
-         when used on a sliced database. If the operation fails, it is
-         possible for the underlying database files to be in an
-         inconsistent state.
-     </p>
-      <p>
          The <code class="methodname">DB-&gt;upgrade()</code> <span>
             <span>
                   method returns a non-zero error value on failure and 0 on success.
@@ -82,7 +76,7 @@ DB-&gt;upgrade(DB *db, const char *file, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711179938592"></a>Parameters</h3>
+              <h3 class="title"><a id="idp50732032"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -90,7 +84,7 @@ DB-&gt;upgrade(DB *db, const char *file, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711179944784"></a>file</h4>
+                <h4 class="title"><a id="idp50733624"></a>file</h4>
               </div>
             </div>
           </div>
@@ -103,7 +97,7 @@ DB-&gt;upgrade(DB *db, const char *file, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711179944496"></a>flags</h4>
+                <h4 class="title"><a id="idp50733808"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -153,7 +147,7 @@ DB-&gt;upgrade(DB *db, const char *file, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711179922624"></a>Environment Variables</h3>
+              <h3 class="title"><a id="idp50745904"></a>Environment Variables</h3>
             </div>
           </div>
         </div>
@@ -164,8 +158,8 @@ DB-&gt;upgrade(DB *db, const char *file, u_int32_t flags);  </pre>
                     </p>
         <p>
                             <code class="methodname">DB-&gt;upgrade()</code> is affected by any database directory specified using the
-                            <a class="xref" href="envadd_data_dir.html" title="DB_ENV-&gt;add_data_dir()">DB_ENV-&gt;add_data_dir()</a>
-                            method, or by setting the "add_data_dir" string
+                            <a class="xref" href="envset_data_dir.html" title="DB_ENV-&gt;set_data_dir()">DB_ENV-&gt;set_data_dir()</a>
+                            method, or by setting the "set_data_dir" string
                             in the environment's <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file.
                     </p>
       </div>
@@ -173,7 +167,7 @@ DB-&gt;upgrade(DB *db, const char *file, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711179937600"></a>Errors</h3>
+              <h3 class="title"><a id="idp50723688"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -189,7 +183,7 @@ DB-&gt;upgrade(DB *db, const char *file, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711179972672"></a>DB_OLD_VERSION</h4>
+                <h4 class="title"><a id="idp50751504"></a>DB_OLD_VERSION</h4>
               </div>
             </div>
           </div>
@@ -203,7 +197,7 @@ DB-&gt;upgrade(DB *db, const char *file, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711179914288"></a>Class</h3>
+              <h3 class="title"><a id="idp50750424"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -215,7 +209,7 @@ DB-&gt;upgrade(DB *db, const char *file, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711179982208"></a>See Also</h3>
+              <h3 class="title"><a id="idp50752616"></a>See Also</h3>
             </div>
           </div>
         </div>

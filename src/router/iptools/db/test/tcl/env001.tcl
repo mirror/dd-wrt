@@ -1,15 +1,14 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
 # TEST	env001
 # TEST	Test of env remove interface (formerly env_remove).
-proc env001 { {args ""} } {
+proc env001 { } {
 	global errorInfo
 	global errorCode
-	global number_of_slices
 
 	source ./include.tcl
 
@@ -17,9 +16,6 @@ proc env001 { {args ""} } {
 	set t1 $testdir/t1
 
 	puts "Env001: Test of environment remove interface."
-	if { [llength $args] > 0 } { 
-		puts "Env001: with $args"
-	}
 	env_cleanup $testdir
 
 	# Try opening without Create flag should error
@@ -145,33 +141,5 @@ proc env001 { {args ""} } {
 	error_check_good berkdb:envremove \
 	    [berkdb envremove -home $testdir/NEWDIR] 0
 
-	puts "\tEnv001.g: Remove environment when Region dir is set."
-	set regdir "REGIONDIR"
-    	file mkdir $testdir/$regdir
-	for {set i 0} {$i < $number_of_slices} {incr i} {
-		file mkdir $testdir/__db.slice00$i
-		file mkdir $testdir/__db.slice00$i/$regdir
-	}
-	if {$number_of_slices > 0} {
-	    	set container [list "set_region_dir $regdir"]
-	        set sliceall [list "set_region_dir $regdir"]
-		slice_db_config $number_of_slices $container $sliceall
-	}
-	set env [berkdb_env -create \
-	    -mode 0644 -home $testdir -region_dir $regdir]
-    	error_check_good regenv_open [is_valid_env $env] TRUE
-    	error_check_good regenv_close [$env close] 0
-    	error_check_good reg_exists [file exists $testdir/$regdir/__db.001] 1
-	for {set i 0} {$i < $number_of_slices} {incr i} {
-	    error_check_good reg_slice_exists \
-		    [file exists $testdir/__db.slice00$i/$regdir/__db.001] 1
-	}
-    	error_check_good regenv_remove \
-	    [berkdb envremove -home $testdir -region_dir $regdir] 0
-    	error_check_good reg_no_exist [file exists $testdir/$regdir/__db.001] 0
-	for {set i 0} {$i < $number_of_slices} {incr i} {
-	    error_check_good reg_slice_no_exists \
-		    [file exists $testdir/__db.slice00$i/$regdir/__db.001] 0
-	}
 	puts "\tEnv001 complete."
 }

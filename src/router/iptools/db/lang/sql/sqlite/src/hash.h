@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This is the header file for the generic hash-table implementation
+** This is the header file for the generic hash-table implemenation
 ** used in SQLite.
 */
 #ifndef _SQLITE_HASH_H_
@@ -59,15 +59,15 @@ struct Hash {
 struct HashElem {
   HashElem *next, *prev;       /* Next and previous elements in the table */
   void *data;                  /* Data associated with this element */
-  const char *pKey;            /* Key associated with this element */
+  const char *pKey; int nKey;  /* Key associated with this element */
 };
 
 /*
 ** Access routines.  To delete, insert a NULL pointer.
 */
 void sqlite3HashInit(Hash*);
-void *sqlite3HashInsert(Hash*, const char *pKey, void *pData);
-void *sqlite3HashFind(const Hash*, const char *pKey);
+void *sqlite3HashInsert(Hash*, const char *pKey, int nKey, void *pData);
+void *sqlite3HashFind(const Hash*, const char *pKey, int nKey);
 void sqlite3HashClear(Hash*);
 
 /*

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2004, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2004, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -14,16 +14,14 @@
  * __os_truncate --
  *	Truncate the file.
  *
- * PUBLIC: int __os_truncate
- * PUBLIC:	__P((ENV *, DB_FH *, db_pgno_t, u_int32_t, off_t));
+ * PUBLIC: int __os_truncate __P((ENV *, DB_FH *, db_pgno_t, u_int32_t));
  */
 int
-__os_truncate(env, fhp, pgno, pgsize, relative)
+__os_truncate(env, fhp, pgno, pgsize)
 	ENV *env;
 	DB_FH *fhp;
 	db_pgno_t pgno;
 	u_int32_t pgsize;
-	off_t relative;
 {
 	DB_ENV *dbenv;
 	off_t offset;
@@ -35,7 +33,7 @@ __os_truncate(env, fhp, pgno, pgsize, relative)
 	 * Truncate a file so that "pgno" is discarded from the end of the
 	 * file.
 	 */
-	offset = (off_t)pgsize * pgno + relative;
+	offset = (off_t)pgsize * pgno;
 
 	if (dbenv != NULL &&
 	    FLD_ISSET(dbenv->verbose, DB_VERB_FILEOPS | DB_VERB_FILEOPS_ALL))

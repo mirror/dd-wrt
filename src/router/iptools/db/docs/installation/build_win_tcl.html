@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,7 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="build_win_sql.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 5.  Building Berkeley DB for Windows </th>
+          <th width="60%" align="center">Chapter 5. 
+		Building Berkeley DB for Windows
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="win_build_dist_dll.html">Next</a></td>
         </tr>
       </table>
@@ -36,117 +38,80 @@
           </div>
         </div>
       </div>
-      <p>
-            Tcl support is not built automatically. See <a href="../programmer_reference/tcl.html#tcl_intro" class="olink">Loading Berkeley DB with Tcl</a>
-            for information on sites from which you can download Tcl
-            and which Tcl versions are compatible with Berkeley DB.
-            These notes assume that Tcl is installed as
-            <code class="filename">d:\tcl</code>, but you can change that
-            if you want.
-        </p>
-      <p>
-            The Tcl library must be built as the same build type as
-            the Berkeley DB library (both Release or both Debug). We
-            found that the binary release of Tcl can be used with the
-            Release configuration of Berkeley DB, but you will need to
-            build Tcl from sources for the Debug configuration. Before
-            building Tcl, you will need to modify its makefile to make
-            sure that you are building a debug version, including
-            thread support. This is because the set of DLLs linked
-            into the Tcl executable must match the corresponding set
-            of DLLs used by Berkeley DB.
-        </p>
+      <p>Tcl support is not built automatically.  See
+    <a href="../programmer_reference/tcl.html#tcl_intro" class="olink">Loading Berkeley DB with Tcl</a> for
+information on sites from which you can download Tcl and which Tcl
+versions are compatible with Berkeley DB.  These notes assume that Tcl is
+installed as <code class="filename">d:\tcl</code>, but you can change that if you want.</p>
+      <p>The Tcl library must be built as the same build type as the Berkeley DB
+library (both Release or both Debug).  We found that the binary
+release of Tcl can be used with the Release configuration of Berkeley DB,
+but you will need to build Tcl from sources for the Debug
+configuration.  Before building Tcl, you will need to modify its
+makefile to make sure that you are building a debug version, including
+thread support.  This is because the set of DLLs linked into the Tcl
+executable must match the corresponding set of DLLs used by Berkeley DB.</p>
       <div class="orderedlist">
         <ol type="1">
+          <li>Set the include directories.  
+<div class="itemizedlist"><ul type="disc"><li>
+In Visual Studio 2005/Visual Studio 2008 -
+Choose <span class="emphasis"><em>Tools -&gt; Options
+-&gt; Projects -&gt; VC++ Directories</em></span>.  Under the "Show
+directories for" pull-down, select "Include files".  Add the full
+pathname for <code class="filename">d:\tcl\include</code>, then click OK.  
+</li><li>
+In Visual Studio 2010 - Right-click db_tcl project, choose <span class="emphasis"><em>Properties-&gt;Configuration Properties-&gt; VC++ Directories-&gt;Include Directories</em></span>. 
+Add the full pathnames for <code class="filename">d:\tcl\include</code>, then click OK.
+</li></ul></div>
+This is the
+directory that contains <code class="filename">tcl.h</code>.</li>
+          <li>Set the library files directory.  
+<div class="itemizedlist"><ul type="disc"><li>
+In Visual Studio 2005/Visual Studio 2008 -
+Choose <span class="emphasis"><em>Tools -&gt;
+Options -&gt; Projects -&gt; VC++ Directories</em></span>.  Under the "Show
+directories for" pull-down, select "Library files".  Add the full
+pathname for the <code class="filename">d:\tcl\lib</code> directory, then click OK.
+</li><li>
+In Visual Studio 2010 -  Right-click db_tcl project, choose <span class="emphasis"><em>Properties-&gt;Configuration Properties-&gt; VC++ Directories-&gt;Library Directories</em></span>. Add the full pathname for the <code class="filename">d:\tcl\lib</code> directory, then click OK.
+</li></ul></div>
+
+This is the directory needed to find
+<code class="filename">tcl85g.lib</code> (or whatever the
+library is named in your distribution).</li>
+          <li>Set the build type to Release or Debug in the drop-down on the
+tool bar.</li>
           <li>
-                Set the include directories.
-                <div class="itemizedlist"><ul type="disc"><li>
-                        In Visual Studio
-                        2008 - Choose <span class="emphasis"><em>Tools -&gt; Options
-                        -&gt; Projects -&gt; VC++
-                        Directories</em></span>. Under the "Show
-                        directories for" pull-down, select "Include
-                        files". Add the full pathname for
-                        <code class="filename">d:\tcl\include</code>, then
-                        click OK. 
-                    </li><li>
-                        In Visual Studio 2010/Visual Studio 2012 - Right-click
-                        db_tcl project, choose
-                        <span class="emphasis"><em>Properties-&gt;Configuration
-                        Properties-&gt; VC++
-                        Directories-&gt;Include
-                        Directories</em></span>. Add the full
-                        pathnames for
-                       <code class="filename">d:\tcl\include</code>, then
-                        click OK. 
-                    </li></ul></div>
-                This is the directory that contains
-                    <code class="filename">tcl.h</code>.
-            </li>
-          <li>
-                Set the library files directory. 
-                <div class="itemizedlist"><ul type="disc"><li>
-                        In Visual Studio
-                        2008 - Choose <span class="emphasis"><em>Tools -&gt; Options
-                        -&gt; Projects -&gt; VC++
-                        Directories</em></span>. Under the "Show
-                        directories for" pull-down, select "Library
-                        files". Add the full pathname for the
-                       <code class="filename">d:\tcl\lib</code> directory,
-                        then click OK. 
-                    </li><li>
-                        In Visual Studio 2010/Visual Studio 2012 -
-			Right-click db_tcl project, choose
-                        <span class="emphasis"><em>Properties-&gt;Configuration
-                        Properties-&gt; VC++
-                        Directories-&gt;Library
-                        Directories</em></span>. Add the full
-                        pathname for the
-                        <code class="filename">d:\tcl\lib</code> directory,
-                        then click OK. 
-                    </li></ul></div>
-                This is the directory needed to find
-                    <code class="filename">tcl86.lib</code> (or whatever the
-                library is named in your distribution).
-            </li>
-          <li>
-                Set the build type to Release or Debug in the
-                drop-down on the tool bar.
-            </li>
-          <li>
-            <p> 
-                    To build, right-click on db_tcl and select
-                    Build. This builds the Tcl support library for
-                    Berkeley DB, placing the result into one of the
-                    following Berkeley DB subdirectories, depending
-                    upon the configuration that you chose:
-                </p>
+            <p>
+        To build, right-click on db_tcl and select Build.  This builds the Tcl
+        support library for Berkeley DB, placing the result into one of the
+        following Berkeley DB subdirectories, depending upon the
+        configuration that you chose:
+    </p>
             <table class="simplelist" border="0" summary="Simple list">
               <tr>
                 <td>
-                  <code class="filename">build_windows\Win32\Debug\libdb_tcl62d.dll</code>
+                  <code class="filename">build_windows\Win32\Debug\libdb_tcl53d.dll</code>
                 </td>
               </tr>
               <tr>
                 <td>
-                  <code class="filename">build_windows\Win32\Release\libdb_tcl62.dll</code>
+                  <code class="filename">build_windows\Win32\Release\libdb_tcl53.dll</code>
                 </td>
               </tr>
             </table>
           </li>
         </ol>
       </div>
-      <p>
-            If you use a version different from Tcl 8.6.x you will
-            need to change the name of the Tcl library used in the
-            build (for example, <code class="filename">tcl86.lib</code>) to the
-            appropriate name. To do this, right click on
-            <span class="emphasis"><em>db_tcl</em></span>, go to
-            <span class="emphasis"><em>Properties -&gt; Linker -&gt; Input -&gt;
-            Additional dependencies</em></span> and change
-            <code class="filename">tcl85.lib</code> to match the Tcl
-            version you are using.
-        </p>
+      <p>If you use a version different from Tcl 8.5.x you will
+need to change the name of the Tcl library used in the build (for
+example, <code class="filename">tcl85g.lib</code>) to the
+appropriate name.  To do this, right click on <span class="emphasis"><em>db_tcl</em></span>, go to
+<span class="emphasis"><em>Properties -&gt; Linker -&gt; Input -&gt; Additional
+dependencies</em></span> and change
+<code class="filename">tcl85g.lib</code> to match the Tcl
+version you are using.</p>
     </div>
     <div class="navfooter">
       <hr />

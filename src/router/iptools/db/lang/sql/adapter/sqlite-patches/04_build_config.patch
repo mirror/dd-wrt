@@ -1,4 +1,4 @@
---- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+--- /dev/null
 +++ build_config.h.in
 @@ -0,0 +1,47 @@
 +
@@ -50,7 +50,7 @@
 +#endif
 --- configure
 +++ configure
-@@ -13600,7 +13600,7 @@
+@@ -13548,7 +13548,7 @@ ac_config_headers="$ac_config_headers co
  # Generate the output files.
  #
  
@@ -59,7 +59,7 @@
  
  cat >confcache <<\_ACEOF
  # This file is a shell script that caches the results of configure
-@@ -14454,6 +14454,7 @@
+@@ -14402,6 +14402,7 @@ do
      "config.h") CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
      "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
      "sqlite3.pc") CONFIG_FILES="$CONFIG_FILES sqlite3.pc" ;;
@@ -69,7 +69,7 @@
  $as_echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
 --- configure.ac
 +++ configure.ac
-@@ -690,4 +690,5 @@
+@@ -714,4 +714,5 @@ AC_SUBST(BUILD_CFLAGS)
  AC_OUTPUT([
  Makefile
  sqlite3.pc

@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Chapter 25.  Dumping and Reloading Databases</title>
+    <title>Chapter 23.  Dumping and Reloading Databases</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
@@ -14,12 +14,13 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Chapter 25.  Dumping and Reloading Databases
-    </th>
+          <th colspan="3" align="center">Chapter 23. 
+		Dumping and Reloading Databases
+        </th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="ext_php.html">Prev</a> </td>
@@ -33,8 +34,9 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title"><a id="dumpload"></a>Chapter 25.  Dumping and Reloading Databases
-    </h2>
+            <h2 class="title"><a id="dumpload"></a>Chapter 23. 
+		Dumping and Reloading Databases
+        </h2>
           </div>
         </div>
       </div>
@@ -68,46 +70,12 @@
             </div>
           </div>
         </div>
-        <p>
-        There are three utilities used for dumping and loading
-        Berkeley DB databases: the <a href="../api_reference/C/db_dump.html" class="olink">db_dump</a> utility, the <a href="../api_reference/C/db_dump.html" class="olink">db_dump185</a> utility and the
-        <a href="../api_reference/C/db_load.html" class="olink">db_load</a> utility.
-    </p>
-        <p>
-        The <a href="../api_reference/C/db_dump.html" class="olink">db_dump</a> utility and the <a href="../api_reference/C/db_dump.html" class="olink">db_dump185</a> utility dump Berkeley DB
-        databases into a flat-text representation of the data that can
-        be read by <a href="../api_reference/C/db_load.html" class="olink">db_load</a> utility. The only difference between them is that
-        the <a href="../api_reference/C/db_dump.html" class="olink">db_dump</a> utility reads Berkeley DB version 2 and greater database
-        formats, whereas the <a href="../api_reference/C/db_dump.html" class="olink">db_dump185</a> utility reads Berkeley DB version
-        1.85 and 1.86 database formats.
-    </p>
-        <p>
-        The <a href="../api_reference/C/db_load.html" class="olink">db_load</a> utility reads either the output format used by the
-        dump utilities or (optionally) a flat-text representation
-        created using other tools, and stores it into a Berkeley DB
-        database.
-    </p>
-        <p>
-        Dumping and reloading Hash databases that use user-defined
-        hash functions will result in new databases that use the
-        default hash function. Although using the default hash
-        function may not be optimal for the new database, it will
-        continue to work correctly.
-    </p>
-        <p>
-        Dumping and reloading Btree databases that use user-defined
-        prefix or comparison functions will result in new databases
-        that use the default prefix and comparison functions. In this
-        case, it is quite likely that applications will be unable to
-        retrieve records, and it is possible that the load process
-        itself will fail.
-    </p>
-        <p>
-        The only available workaround for either Hash or Btree
-        databases is to modify the sources for the <a href="../api_reference/C/db_load.html" class="olink">db_load</a> utility to load
-        the database using the correct hash, prefix, and comparison
-        functions.
-    </p>
+        <p>There are three utilities used for dumping and loading Berkeley DB databases: the <a href="../api_reference/C/db_dump.html" class="olink">db_dump</a> utility, the <a href="../api_reference/C/db_dump.html" class="olink">db_dump185</a> utility and the <a href="../api_reference/C/db_load.html" class="olink">db_load</a> utility.</p>
+        <p>The <a href="../api_reference/C/db_dump.html" class="olink">db_dump</a> utility and the <a href="../api_reference/C/db_dump.html" class="olink">db_dump185</a> utility dump Berkeley DB databases into a flat-text representation of the data that can be read by <a href="../api_reference/C/db_load.html" class="olink">db_load</a> utility.  The only difference between them is that the <a href="../api_reference/C/db_dump.html" class="olink">db_dump</a> utility reads Berkeley DB version 2 and greater database formats, whereas the <a href="../api_reference/C/db_dump.html" class="olink">db_dump185</a> utility reads Berkeley DB version 1.85 and 1.86 database formats.</p>
+        <p>The <a href="../api_reference/C/db_load.html" class="olink">db_load</a> utility reads either the output format used by the dump utilities or (optionally) a flat-text representation created using other tools, and stores it into a Berkeley DB database.</p>
+        <p>Dumping and reloading Hash databases that use user-defined hash functions will result in new databases that use the default hash function. Although using the default hash function may not be optimal for the new database, it will continue to work correctly.</p>
+        <p>Dumping and reloading Btree databases that use user-defined prefix or comparison functions will result in new databases that use the default prefix and comparison functions. In this case, it is quite likely that applications will be unable to retrieve records, and it is possible that the load process itself will fail.</p>
+        <p>The only available workaround for either Hash or Btree databases is to modify the sources for the <a href="../api_reference/C/db_load.html" class="olink">db_load</a> utility to load the database using the correct hash, prefix, and comparison functions.</p>
       </div>
     </div>
     <div class="navfooter">

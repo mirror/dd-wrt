@@ -50,7 +50,7 @@ do_test tkt35xx-1.1 {
 # Trigger the problem using statement rollback.
 #
 db close
-delete_file test.db
+file delete test.db
 sqlite3 db test.db
 set big [string repeat abcdefghij 22]    ;# 220 byte string
 do_test tkt35xx-1.2.1 {
@@ -74,7 +74,7 @@ do_test tkt35xx-1.2.2 {
     DROP TABLE t5;
     INSERT INTO t3(a, b) SELECT c, d FROM t4;
   }
-} {1 {UNIQUE constraint failed: t3.a}}
+} {1 {PRIMARY KEY must be unique}}
 do_test tkt35xx-1.2.3 {
   # Show that the transaction has not been rolled back.
   catchsql BEGIN

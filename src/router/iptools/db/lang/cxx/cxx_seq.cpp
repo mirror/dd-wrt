@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1997, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -76,10 +76,10 @@ DBSEQ_METHOD(stat, (DB_SEQUENCE_STAT **sp, u_int32_t flags),
 DBSEQ_METHOD(stat_print, (u_int32_t flags), (seq, flags), 0)
 
 DBSEQ_METHOD(get,
-    (DbTxn  *txnid, u_int32_t delta, db_seq_t *retp, u_int32_t flags),
+    (DbTxn  *txnid, int32_t delta, db_seq_t *retp, u_int32_t flags),
     (seq, unwrap(txnid), delta, retp, flags), 0)
-DBSEQ_METHOD(get_cachesize, (u_int32_t *sizep), (seq, sizep), 0)
-DBSEQ_METHOD(set_cachesize, (u_int32_t size), (seq, size), 0)
+DBSEQ_METHOD(get_cachesize, (int32_t *sizep), (seq, sizep), 0)
+DBSEQ_METHOD(set_cachesize, (int32_t size), (seq, size), 0)
 DBSEQ_METHOD(get_flags, (u_int32_t *flagsp), (seq, flagsp), 0)
 DBSEQ_METHOD(set_flags, (u_int32_t flags), (seq, flags), 0)
 DBSEQ_METHOD(get_range, (db_seq_t *minp, db_seq_t *maxp), (seq, minp, maxp), 0)

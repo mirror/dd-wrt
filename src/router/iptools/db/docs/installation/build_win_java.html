@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,7 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="win_build_stl.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 5.  Building Berkeley DB for Windows </th>
+          <th width="60%" align="center">Chapter 5. 
+		Building Berkeley DB for Windows
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="build_win_csharp.html">Next</a></td>
         </tr>
       </table>
@@ -36,82 +38,47 @@
           </div>
         </div>
       </div>
-      <p>
-            Java support is not built automatically. The following
-            instructions assume that you have installed the Sun Java
-            Development Kit in <code class="filename">d:\java</code>. Of
-            course, if you installed elsewhere or have different Java
-            software, you will need to adjust the pathnames
-            accordingly.
-        </p>
+      <p>Java support is not built automatically.  The following instructions
+assume that you have installed the Sun Java Development Kit in
+<code class="filename">d:\java</code>.  Of course, if you installed elsewhere or have
+different Java software, you will need to adjust the pathnames
+accordingly.</p>
       <div class="orderedlist">
         <ol type="1">
+          <li>Set your include directories.  
+<div class="itemizedlist"><ul type="disc"><li>
+In Visual Studio 2005/Visual Studio 2008 - Choose <span class="emphasis"><em>Tools -&gt; Options
+-&gt; Projects -&gt; VC++ Directories</em></span>.  Under the "Show
+directories for" pull-down, select "Include files".  Add the full
+pathnames for the <code class="filename">d:\java\include</code> and
+<code class="filename">d:\java\include\win32</code> directories.  Then click OK. 
+</li><li>
+In Visual Studio 2010 - Right-click db_java project, choose <span class="emphasis"><em>Properties-&gt;Configuration Properties-&gt; VC++ Directories-&gt;Include Directories</em></span>. 
+Add the full pathnames for the <code class="filename">d:\java\include</code> and <code class="filename">d:\java\include\win32</code> directories. Then click OK.
+</li></ul></div>
+These are
+the directories needed when including jni.h.</li>
+          <li>Set the executable files directories.  
+<div class="itemizedlist"><ul type="disc"><li>
+In Visual Studio 2005/Visual Studio 2008 - Choose <span class="emphasis"><em>Tools -&gt;
+Options -&gt; Projects -&gt; VC++ Directories</em></span>.  Under the "Show
+directories for" pull-down, select "Executable files".  Add the full
+pathname for the <code class="filename">d:\java\bin</code> directory, then click OK.
+</li><li>
+In Visual Studio 2010 -  Right-click db_java project, choose <span class="emphasis"><em>Properties-&gt;Configuration Properties-&gt; VC++ Directories-&gt;Executable Directories</em></span>. Add the full pathnames for the <code class="filename">d:\java\bin</code> directories. Then click OK.
+</li></ul></div>
+
+This is the directory needed to find javac.</li>
+          <li>Set the build type to Release or Debug in the drop-down on the 
+tool bar.</li>
           <li>
-                Set your include directories. 
-                <div class="itemizedlist"><ul type="disc"><li>
-                        In Visual Studio
-                        2008 - Choose <span class="emphasis"><em>Tools -&gt; Options
-                        -&gt; Projects -&gt; VC++
-                        Directories</em></span>. Under the "Show
-                        directories for" pull-down, select "Include
-                        files". Add the full pathnames for the
-                        <code class="filename">d:\java\include</code> and
-                        <code class="filename">d:\java\include\win32</code>
-                        directories. Then click OK. 
-                    </li><li> 
-                        In Visual Studio 2010/Visual Studio 2012
-                        - Right-click db_java project, choose
-                        <span class="emphasis"><em>Properties-&gt;Configuration
-                        Properties-&gt; VC++
-                        Directories-&gt;Include
-                        Directories</em></span>. Add the full
-                        pathnames for the
-                        <code class="filename">d:\java\include</code> and
-                        <code class="filename">d:\java\include\win32</code>
-                        directories. Then click OK. 
-                    </li></ul></div><p>
-                   These are the directories needed when
-                   including jni.h.
-                </p></li>
-          <li>
-                Set the executable files directories. 
-                <div class="itemizedlist"><ul type="disc"><li>
-                        In Visual Studio
-                        2008 - Choose <span class="emphasis"><em>Tools -&gt; Options
-                        -&gt; Projects -&gt; VC++
-                        Directories</em></span>. Under the "Show
-                        directories for" pull-down, select "Executable
-                        files". Add the full pathname for the
-                        <code class="filename">d:\java\bin</code>
-                        directory, then click OK. 
-                    </li><li>
-                        In Visual Studio 2010/Visual Studio 2012
-                         - Right-click db_java project, choose
-                        <span class="emphasis"><em>Properties-&gt;Configuration
-                        Properties-&gt; VC++
-                        Directories-&gt;Executable
-                        Directories</em></span>. Add the full
-                        pathnames for the
-                        <code class="filename">d:\java\bin</code>
-                        directories. Then click OK. 
-                    </li></ul></div>
-                This is the directory needed to find
-                javac.
-            </li>
-          <li>
-                Set the build type to Release or Debug in the
-                drop-down on the tool bar.
-            </li>
-          <li>
-            <p> 
-                    To build, right-click on db_java and select
-                    Build. This builds the Java support library for
-                    Berkeley DB and compiles all the java files,
-                    placing the resulting <code class="filename">db.jar</code>
-                    and <code class="filename">dbexamples.jar</code> files in
-                    one of the following Berkeley DB subdirectories,
-                    depending on the configuration that you chose: 
-                </p>
+            <p>
+    To build, right-click on db_java and select Build.  This builds the
+    Java support library for Berkeley DB and compiles all the java files,
+    placing the resulting <code class="filename">db.jar</code> and
+    <code class="filename">dbexamples.jar</code> files in one of the following
+    Berkeley DB subdirectories, depending on the configuration that you chose:
+</p>
             <table class="simplelist" border="0" summary="Simple list">
               <tr>
                 <td>

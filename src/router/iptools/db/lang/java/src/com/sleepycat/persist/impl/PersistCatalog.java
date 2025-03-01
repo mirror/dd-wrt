@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -19,7 +19,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,6 +33,7 @@ import com.sleepycat.db.DeadlockException;
 import com.sleepycat.db.Environment;
 import com.sleepycat.db.OperationStatus;
 import com.sleepycat.db.Transaction;
+import java.util.IdentityHashMap;
 import com.sleepycat.persist.DatabaseNamer;
 import com.sleepycat.persist.StoreExistsException;
 import com.sleepycat.persist.StoreNotFoundException;
@@ -106,7 +106,7 @@ public class PersistCatalog implements Catalog {
      * used.
      *
      * <p>This field, like formatMap, is volatile because it is reassigned
-     * when dynamically adding new formats.  See {@link #addNewFormat}.</p>
+     * when dynamically adding new formats.  See {@link addNewFormat}.</p>
      */
     private volatile List<Format> formatList;
 
@@ -114,7 +114,7 @@ public class PersistCatalog implements Catalog {
      * A map of the current/live formats in formatList, indexed by class name.
      *
      * <p>This field, like formatList, is volatile because it is reassigned
-     * when dynamically adding new formats.  See {@link #addNewFormat}.</p>
+     * when dynamically adding new formats.  See {@link addNewFormat}.</p>
      */
     private volatile Map<String, Format> formatMap;
 
@@ -123,7 +123,7 @@ public class PersistCatalog implements Catalog {
      * indexed by class name.
      *
      * <p>This field, like formatMap, is volatile because it is reassigned
-     * when dynamically adding new formats.  See {@link #addNewFormat}.</p>
+     * when dynamically adding new formats.  See {@link addNewFormat}.</p>
      */
     private volatile Map<String, Format> latestFormatMap;
 

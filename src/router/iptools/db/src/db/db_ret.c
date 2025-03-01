@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -29,27 +29,18 @@ __db_ret(dbc, h, indx, dbt, memp, memsize)
 	void **memp;
 	u_int32_t *memsize;
 {
-	BBLOB bl;
 	BKEYDATA *bk;
 	BOVERFLOW *bo;
 	DB *dbp;
-	ENV *env;
-	HBLOB hblob;
-	HEAPBLOBHDR bhdr;
 	HEAPHDR *hdr;
-	db_seq_t blob_id;
-	int ret;
 	HOFFPAGE ho;
-	off_t blob_size;
 	u_int32_t len;
 	u_int8_t *hk;
 	void *data;
 
 	if (F_ISSET(dbt, DB_DBT_READONLY))
 		return (0);
-	ret = 0;
 	dbp = dbc->dbp;
-	env = dbp->env;
 
 	switch (TYPE(h)) {
 	case P_HASH_UNSORTED:
@@ -59,20 +50,6 @@ __db_ret(dbc, h, indx, dbt, memp, memsize)
 			memcpy(&ho, hk, sizeof(HOFFPAGE));
 			return (__db_goff(dbc, dbt,
 			    ho.tlen, ho.pgno, memp, memsize));
-		} else if (HPAGE_PTYPE(hk) == H_BLOB) {
-			/* Get the record instead of the blob item. */
-			if (F_ISSET(dbt, DB_DBT_BLOB_REC)) {
-				data = P_ENTRY(dbp, h, indx);
-				len = HBLOB_SIZE;
-				break;
-			}
-			memcpy(&hblob, hk, HBLOB_SIZE);
-			blob_id = (db_seq_t)hblob.id;
-			GET_BLOB_SIZE(env, hblob, blob_size, ret);
-			if (ret != 0)
-				return (ret);
-			return (__blob_get(
-			    dbc, dbt, blob_id, blob_size, memp, memsize));
 		}
 		len = LEN_HKEYDATA(dbp, h, dbp->pgsize, indx);
 		data = HKEYDATA_DATA(hk);
@@ -81,21 +58,6 @@ __db_ret(dbc, h, indx, dbt, memp, memsize)
 		hdr = (HEAPHDR *)P_ENTRY(dbp, h, indx);
 		if (F_ISSET(hdr,(HEAP_RECSPLIT | HEAP_RECFIRST)))
 			return (__heapc_gsplit(dbc, dbt, memp, memsize));
-		else if (F_ISSET(hdr, HEAP_RECBLOB)) {
-			/* Get the record instead of the blob item. */
-			if (F_ISSET(dbt, DB_DBT_BLOB_REC)) {
-				data = P_ENTRY(dbp, h, indx);
-				len = HEAPBLOBREC_SIZE;
-				break;
-			}
-			memcpy(&bhdr, hdr, HEAPBLOBREC_SIZE);
-			blob_id = (db_seq_t)bhdr.id;
-			GET_BLOB_SIZE(env, bhdr, blob_size, ret);
-			if (ret != 0)
-				return (ret);
-			return (__blob_get(
-			    dbc, dbt, blob_id, blob_size, memp, memsize));
-		}
 		len = hdr->size;
 		data = (u_int8_t *)hdr + sizeof(HEAPHDR);
 		break;
@@ -107,20 +69,6 @@ __db_ret(dbc, h, indx, dbt, memp, memsize)
 			bo = (BOVERFLOW *)bk;
 			return (__db_goff(dbc, dbt,
 			    bo->tlen, bo->pgno, memp, memsize));
-		} else if (B_TYPE(bk->type) == B_BLOB) {
-			/* Get the record instead of the blob item. */
-			if (F_ISSET(dbt, DB_DBT_BLOB_REC)) {
-				data = P_ENTRY(dbp, h, indx);
-				len = BBLOB_SIZE;
-				break;
-			}
-			memcpy(&bl, bk, BBLOB_SIZE);
-			blob_id = (db_seq_t)bl.id;
-			GET_BLOB_SIZE(env, bl, blob_size, ret);
-			if (ret != 0)
-				return (ret);
-			return (__blob_get(
-			    dbc, dbt, blob_id, blob_size, memp, memsize));
 		}
 		len = bk->len;
 		data = bk->data;
@@ -194,7 +142,7 @@ __db_retcopy(env, dbt, data, len, memp, memsize)
 		if (len != 0 && (dbt->data == NULL || dbt->ulen < len))
 			ret = DB_BUFFER_SMALL;
 	} else if (memp == NULL || memsize == NULL)
-		ret = USR_ERR(env, EINVAL);
+		ret = EINVAL;
 	else {
 		if (len != 0 && (*memsize == 0 || *memsize < len)) {
 			if ((ret = __os_realloc(env, len, memp)) == 0)
@@ -218,72 +166,4 @@ __db_retcopy(env, dbt, data, len, memp, memsize)
 	dbt->size = len;
 
 	return (ret);
-}
-
-/*
- * __db_dbt_clone --
- *	Clone a DBT from another DBT.
- * The input dest DBT must be a zero initialized DBT that will be populated.
- * The function does not allocate a dest DBT to allow for cloning into stack
- * or locally allocated variables. It is the callers responsibility to free
- * the memory allocated in dest->data.
- *
- * PUBLIC: int __db_dbt_clone __P((ENV *, DBT *, const DBT *));
- */
-int
-__db_dbt_clone(env, dest, src)
-	ENV *env;
-	DBT *dest;
-	const DBT *src;
-{
-	u_int32_t err_flags;
-	int ret;
-
-	DB_ASSERT(env, dest->data == NULL);
-
-	ret = 0;
-
-	/* The function does not support the following DBT flags. */
-	err_flags = DB_DBT_MALLOC | DB_DBT_REALLOC |
-	    DB_DBT_MULTIPLE | DB_DBT_PARTIAL;
-	if (F_ISSET(src, err_flags)) {
-		__db_errx(env, DB_STR("0758",
-		    "Unsupported flags when cloning the DBT."));
-		return (EINVAL);
-	}
-
-	if ((ret = __os_malloc(env, src->size, &dest->data)) != 0)
-		return (ret);
-
-	memcpy(dest->data, src->data, src->size);
-	dest->ulen = src->size;
-	dest->size = src->size;
-	dest->flags = DB_DBT_USERMEM;
-
-	return (ret);
-}
-
-/*
- * __db_dbt_clone_free --
- *	Free a DBT cloned by __db_dbt_clone
- *
- * PUBLIC: int __db_dbt_clone_free __P((ENV *, DBT *));
- */
-int
-__db_dbt_clone_free(env, dbt)
-	ENV *env;
-	DBT *dbt;
-{
-	/* Currently only DB_DBT_USERMEM is supported. */
-	if (dbt->flags != DB_DBT_USERMEM) {
-		__db_errx(env, DB_STR("0759",
-		    "Unsupported flags when freeing the cloned DBT."));
-		return (EINVAL);
-	}
-
-	if (dbt->data != NULL)
-		__os_free(env, dbt->data);
-	dbt->size = dbt->ulen = 0;
-
-	return (0);
 }

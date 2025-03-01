@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -43,15 +43,7 @@ static int
 __cdsgroup_abort(txn)
 	DB_TXN *txn;
 {
-	ENV *env;
-
-	env = txn->mgrp->env;
-	/*
-	 * As the txn handle can not be used any more, we call
-	 * __cdsgroup_commit to release the lock and destroy the handle.
-	 */
-	(void)__cdsgroup_commit(txn, 0);
-	return (__cdsgroup_notsup(env, "abort"));
+	return (__cdsgroup_notsup(txn->mgrp->env, "abort"));
 }
 
 static int
@@ -91,16 +83,8 @@ static int __cdsgroup_discard(txn, flags)
 	DB_TXN *txn;
 	u_int32_t flags;
 {
-	ENV *env;
-
 	COMPQUIET(flags, 0);
-	env = txn->mgrp->env;
-	/*
-	 * As the txn handle can not be used any more, we call
-	 * __cdsgroup_commit to release the lock and destroy the handle.
-	 */
-	(void)__cdsgroup_commit(txn, 0);
-	return (__cdsgroup_notsup(env, "discard"));
+	return (__cdsgroup_notsup(txn->mgrp->env, "discard"));
 }
 
 static u_int32_t __cdsgroup_id(txn)

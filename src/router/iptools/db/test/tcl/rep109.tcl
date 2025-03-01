@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -31,7 +31,8 @@ proc rep109 { method { niter 10 } { tnum "109" } args } {
 	# Run the body of the test with and without recovery.
 	foreach r $test_recopts {
 		foreach l $logsets {
-			puts "Rep$tnum ($method $r): DB_TXN_SNAPSHOT and HA."
+			puts "Rep$tnum ($method $r): \
+			    DB_TXN_SNAPSHOT and HA."
 			puts "Rep$tnum: Master logs are [lindex $l 0]"
 			puts "Rep$tnum: Client logs are [lindex $l 1]"
 			rep109_sub $method $niter $tnum $l $r $args
@@ -123,7 +124,8 @@ proc rep109_sub { method niter tnum logset recargs largs } {
 	    -multiversion -mode 0644 $dbargs $testfile ]
 	error_check_good reptest_db [is_valid_db $mdb] TRUE
 
-	# Since cursor does not have a -snapshot flag in Tcl, set it here.
+	# The -snapshot switch is not implemented for Tcl cursor,
+	# so set it as an environment flag.
 	error_check_good set_snapshot_master \
 	    [$masterenv set_flags -snapshot on] 0
 	set cur [$mdb cursor]
@@ -141,7 +143,8 @@ proc rep109_sub { method niter tnum logset recargs largs } {
 	    -multiversion -mode 0644 $dbargs $testfile ]
 	error_check_good reptest_db [is_valid_db $cdb] TRUE
 
-	# Since cursor does not have a -snapshot flag in Tcl, set it here.
+	# The -snapshot switch is not implemented for Tcl cursor,
+	# so set it as an environment flag.
 	error_check_good set_snapshot_client \
 	    [$clientenv set_flags -snapshot on] 0
 	catch { [$cdb cursor] } ret

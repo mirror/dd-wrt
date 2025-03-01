@@ -183,7 +183,7 @@ public abstract class Benchmark {
 	    }
 	    vClient.removeAllElements();
 	    reportDone();
-
+        
 	    transactions = true;
 	    prepared_stmt = false;
 	    start_time = System.currentTimeMillis();
@@ -193,7 +193,7 @@ public abstract class Benchmark {
 		Client.start();
 		vClient.addElement(Client);
 	    }
-
+ 
 	    /*
 	     * Barrier to complete this test session
 	     */
@@ -204,7 +204,7 @@ public abstract class Benchmark {
 	    }
 	    vClient.removeAllElements();
 	    reportDone();
-
+ 
 	    transactions = false;
 	    prepared_stmt = true;
 	    start_time = System.currentTimeMillis();
@@ -218,7 +218,7 @@ public abstract class Benchmark {
 	    /*
 	     * Barrier to complete this test session
 	     */
-
+        
 	    en = vClient.elements();
 	    while (en.hasMoreElements()) {
 		Client = (Thread) en.nextElement();
@@ -236,7 +236,7 @@ public abstract class Benchmark {
 		Client.start();
 		vClient.addElement(Client);
 	    }
-
+ 
 	    /*
 	     * Barrier to complete this test session
 	     */

@@ -1,7 +1,7 @@
 %global __provides_exclude_from ^%{_libdir}/%{name}/.*\.so$
 
 Name:           javasqlite
-Version:        20150419
+Version:        20120209
 Release:        1%{?dist}
 Summary:        SQLite Java Wrapper/JDBC Driver
 
@@ -82,5 +82,5 @@ done
 %{_javadocdir}/%{name}
 
 %changelog
-* Sun May  1 2011 Ville Skyttä <ville.skytta@iki.fi> - 20150419-1
+* Sun May  1 2011 Ville Skyttä <ville.skytta@iki.fi> - 20120209-1
 - Use rpmbuild >= 4.9's built in Provides filtering.

@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -78,7 +78,7 @@
           </dt>
           <dt>
             <span class="sect1">
-              <a href="fwrkpermmessage.html">Replication Manager Permanent Message Handling</a>
+              <a href="fwrkpermmessage.html">Permanent Message Handling</a>
             </span>
           </dt>
           <dd>
@@ -175,8 +175,10 @@
                 environment's priority, setting the TCP/IP address that
                 this replication environment will use for incoming
                 replication messages, identifying TCP/IP addresses of other
-                replication environments, and so forth.  These actions are
-                discussed throughout the remainder of this chapter.
+                replication environments, setting the number of replication
+                environments in the replication group, and so forth.  These
+                actions are discussed throughout the remainder of this
+                chapter.
             </p>
           </li>
           <li>
@@ -217,6 +219,13 @@
             </p>
           </li>
         </ol>
+      </div>
+      <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
+        <h3 class="title">Note</h3>
+        <p>
+            The Replication Manager allows you to only use one environment handle per
+            process.
+        </p>
       </div>
       <p>
         When you are ready to shut down your application: 

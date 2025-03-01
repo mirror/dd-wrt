@@ -19,7 +19,11 @@ class BatchArg {
     boolean blob;
 
     BatchArg(String arg, boolean blob) {
-	this.arg = arg;
+	if (arg == null) {
+	    this.arg = null;
+	} else {
+	    this.arg = new String(arg);
+	}
 	this.blob = blob;
     }
 }
@@ -151,7 +155,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	args[parameterIndex - 1] = nullrepl ? "" : null;
 	blobs[parameterIndex - 1] = false;
     }
-
+    
     public void setBoolean(int parameterIndex, boolean x)
 	throws SQLException {
 	if (parameterIndex < 1 || parameterIndex > args.length) {
@@ -268,7 +272,7 @@ public class JDBCPreparedStatement extends JDBCStatement
 	blobs[parameterIndex - 1] = false;
     }
 
-    public void setTime(int parameterIndex, java.sql.Time x)
+    public void setTime(int parameterIndex, java.sql.Time x) 
 	throws SQLException {
 	if (parameterIndex < 1 || parameterIndex > args.length) {
 	    throw new SQLException("bad parameter index");
@@ -308,7 +312,7 @@ public class JDBCPreparedStatement extends JDBCStatement
     }
 
     @Deprecated
-    public void setUnicodeStream(int parameterIndex, java.io.InputStream x,
+    public void setUnicodeStream(int parameterIndex, java.io.InputStream x, 
 				 int length) throws SQLException {
 	throw new SQLException("not supported");
     }

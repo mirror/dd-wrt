@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -13,7 +13,6 @@
 #include "dbinc/db_swap.h"
 #include "dbinc/btree.h"
 #include "dbinc/hash.h"
-#include "dbinc/heap.h"
 #include "dbinc/qam.h"
 
 /*
@@ -35,18 +34,15 @@ __db_upgrade_pp(dbp, fname, flags)
 
 	env = dbp->env;
 
+	/*
+	 * !!!
+	 * The actual argument checking is simple, do it inline.
+	 */
 	if ((ret = __db_fchk(env, "DB->upgrade", flags, DB_DUPSORT)) != 0)
 		return (ret);
 
 	ENV_ENTER(env, ip);
 	ret = __db_upgrade(dbp, fname, flags);
-
-#ifdef HAVE_SLICES
-	if (ret == 0)
-		ret = __db_slice_process(dbp, fname, flags,
-		    __db_upgrade_pp, "db_upgrade");
-#endif
-
 	ENV_LEAVE(env, ip);
 	return (ret);
 #else
@@ -102,27 +98,8 @@ static int (* const func_46_list[P_PAGETYPE_MAX])
 	NULL,			/* P_IHEAP */
 };
 
-static int (* const func_60_list[P_PAGETYPE_MAX])
-    __P((DB *, char *, u_int32_t, DB_FH *, PAGE *, int *)) = {
-	NULL,			/* P_INVALID */
-	NULL,			/* __P_DUPLICATE */
-	NULL,			/* P_HASH_UNSORTED */
-	NULL,			/* P_IBTREE */
-	NULL,			/* P_IRECNO */
-	__bam_60_lbtree,	/* P_LBTREE */
-	NULL,			/* P_LRECNO */
-	NULL,			/* P_OVERFLOW */
-	__ham_60_hashmeta,	/* P_HASHMETA */
-	__bam_60_btreemeta,	/* P_BTREEMETA */
-	NULL,			/* P_QAMMETA */
-	NULL,			/* P_QAMDATA */
-	NULL,			/* P_LDUP */
-	__ham_60_hash,		/* P_HASH */
-	__heap_60_heapmeta,	/* P_HEAPMETA */
-	__heap_60_heap,		/* P_HEAP */
-	NULL,			/* P_IHEAP */
-};
-
+static int __db_page_pass __P((DB *, char *, u_int32_t, int (* const [])
+	       (DB *, char *, u_int32_t, DB_FH *, PAGE *, int *), DB_FH *));
 static int __db_set_lastpgno __P((DB *, char *, DB_FH *));
 
 /*
@@ -194,8 +171,8 @@ __db_upgrade(dbp, fname, flags)
 			 */
 			memcpy(&dbp->pgsize, mbuf + 20, sizeof(u_int32_t));
 
-			if ((ret = __db_page_pass(dbp, real_name, flags,
-			    func_31_list, fhp, DB_UPGRADE)) != 0)
+			if ((ret = __db_page_pass(
+			    dbp, real_name, flags, func_31_list, fhp)) != 0)
 				goto err;
 			/* FALLTHROUGH */
 		case 8:
@@ -204,34 +181,6 @@ __db_upgrade(dbp, fname, flags)
 				goto err;
 			/* FALLTHROUGH */
 		case 9:
-			/*
-			 * Various blob ids and size use two u_int32_t values
-			 * to represent 64 bit integers in early 6.0.  Change
-			 * those values to 64 bit integers.
-			 */
-			/*
-			 * Read the encrypt_alg and chksum fields from the
-			 * metadata page.
-			 */
-			meta = (DBMETA *)mbuf;
-			if (FLD_ISSET(meta->metaflags, DBMETA_CHKSUM))
-				F_SET(dbp, DB_AM_CHKSUM);
-			if (meta->encrypt_alg != 0) {
-				if (!CRYPTO_ON(dbp->env)) {
-					ret = USR_ERR(env, EINVAL);
-					__db_errx(env, DB_STR("0777",
-"Attempt to upgrade an encrypted database without providing a password."));
-					goto err;
-				}
-				F_SET(dbp, DB_AM_ENCRYPT);
-			}
-			memcpy(&dbp->pgsize,
-			    &meta->pagesize, sizeof(u_int32_t));
-			if ((ret = __db_page_pass(dbp, real_name, flags,
- 			    func_60_list, fhp, DB_UPGRADE)) != 0)
-				goto err;
-			/* FALLTHROUGH */
-		case 10:
 			break;
 		default:
 			__db_errx(env, DB_STR_A("0666",
@@ -283,8 +232,8 @@ __db_upgrade(dbp, fname, flags)
 			 */
 			memcpy(&dbp->pgsize, mbuf + 20, sizeof(u_int32_t));
 
-			if ((ret = __db_page_pass(dbp, real_name, flags,
-			    func_31_list, fhp, DB_UPGRADE)) != 0)
+			if ((ret = __db_page_pass(
+			    dbp, real_name, flags, func_31_list, fhp)) != 0)
 				goto err;
 			/* FALLTHROUGH */
 		case 7:
@@ -323,9 +272,9 @@ __db_upgrade(dbp, fname, flags)
 			memcpy(&tmpflags, &meta->encrypt_alg, sizeof(u_int8_t));
 			if (tmpflags != 0) {
 				if (!CRYPTO_ON(dbp->env)) {
-					ret = USR_ERR(env, EINVAL);
 					__db_errx(env, DB_STR("0667",
 "Attempt to upgrade an encrypted database without providing a password."));
+					ret = EINVAL;
 					goto err;
 				}
 				F_SET(dbp, DB_AM_ENCRYPT);
@@ -341,8 +290,6 @@ __db_upgrade(dbp, fname, flags)
 			 * page pass only updates DB_HASH_UNSORTED pages
 			 * in-place, and the mpool file is only used to read
 			 * OFFPAGE items.
-			 * XXX DB_HASH_UNSORTED no longer exists. since ~db-4.4.
-			 * Is this code, and the lesser versions above, needed?
 			 */
 			use_mp_open = 1;
 			if ((ret = __os_closehandle(env, fhp)) != 0)
@@ -354,40 +301,12 @@ __db_upgrade(dbp, fname, flags)
 			fhp = dbp->mpf->fhp;
 
 			/* Do the actual conversion pass. */
-			if ((ret = __db_page_pass(dbp, real_name, flags,
-			    func_46_list, fhp, DB_UPGRADE)) != 0)
+			if ((ret = __db_page_pass(
+			    dbp, real_name, flags, func_46_list, fhp)) != 0)
 				goto err;
 
 			/* FALLTHROUGH */
 		case 9:
-			/*
-			 * Various blob ids and size use two u_int32_t values
-			 * to represent 64 bit integers in early 6.0.  Change
-			 * those values to 64 bit integers.
-			 */
-			meta = (DBMETA*)mbuf;
-			memcpy(&dbp->pgsize,
-			    &meta->pagesize, sizeof(u_int32_t));
-			/*
-			 * Read the encrypt_alg and chksum fields from the
-			 * metadata page.
-			 */
-			if (FLD_ISSET(meta->metaflags, DBMETA_CHKSUM))
-				F_SET(dbp, DB_AM_CHKSUM);
-			if (meta->encrypt_alg != 0) {
-				if (!CRYPTO_ON(dbp->env)) {
-					ret = USR_ERR(env, EINVAL);
-					__db_errx(env, DB_STR("0778",
-"Attempt to upgrade an encrypted database without providing a password."));
-					goto err;
-				}
-				F_SET(dbp, DB_AM_ENCRYPT);
-			}
-			if ((ret = __db_page_pass(dbp, real_name, flags,
- 			    func_60_list, fhp, DB_UPGRADE)) != 0)
-				goto err;
-			/* FALLTHROUGH */
-		case 10:
 			break;
 		default:
 			__db_errx(env, DB_STR_A("0668",
@@ -398,45 +317,9 @@ __db_upgrade(dbp, fname, flags)
 		}
 		break;
 	case DB_HEAPMAGIC:
-		switch (((DBMETA *)mbuf)->version) {
-		case 1:
-			/*
-			 * Various blob ids and size use two u_int32_t values
-			 * to represent 64 bit integers in early 6.0.  Change
-			 * those values to 64 bit integers.
-			 */
-			meta = (DBMETA*)mbuf;
-			memcpy(&dbp->pgsize,
-			    &meta->pagesize, sizeof(u_int32_t));
-			/*
-			 * Read the encrypt_alg and chksum fields from the
-			 * metadata page.
-			 */
-			if (FLD_ISSET(meta->metaflags, DBMETA_CHKSUM))
-				F_SET(dbp, DB_AM_CHKSUM);
-			if (meta->encrypt_alg != 0) {
-				if (!CRYPTO_ON(dbp->env)) {
-					ret = USR_ERR(env, EINVAL);
-					__db_errx(env, DB_STR("0779",
-"Attempt to upgrade an encrypted database without providing a password."));
-					goto err;
-				}
-				F_SET(dbp, DB_AM_ENCRYPT);
-			}
-			if ((ret = __db_page_pass(dbp, real_name, flags,
- 			    func_60_list, fhp, DB_UPGRADE)) != 0)
-				goto err;
-			/* FALLTHROUGH */
-		case 2:
-			break;
-		default:
-			__db_errx(env, DB_STR_A("0776",
-			    "%s: unsupported heap version: %lu",
-			    "%s %lu"), real_name,
-			    (u_long)((DBMETA *)mbuf)->version);
-			ret = DB_OLD_VERSION;
-			goto err;
-		}
+		/*
+		 * There's no upgrade needed for Heap yet.
+		 */
 		break;
 	case DB_QAMMAGIC:
 		switch (((DBMETA *)mbuf)->version) {
@@ -485,7 +368,7 @@ __db_upgrade(dbp, fname, flags)
 			    "%s: unrecognized file type", "%s"), real_name);
 			break;
 		}
-		ret = USR_ERR(env, EINVAL);
+		ret = EINVAL;
 		goto err;
 	}
 
@@ -508,56 +391,17 @@ err:	if (use_mp_open == 0 && fhp != NULL &&
 }
 
 /*
- * __db_set_lastpgno --
- *	Update the meta->last_pgno field.
- *
- * Code assumes that we do not have checksums/crypto on the page.
+ * __db_page_pass --
+ *	Walk the pages of the database, upgrading whatever needs it.
  */
 static int
-__db_set_lastpgno(dbp, real_name, fhp)
-	DB *dbp;
-	char *real_name;
-	DB_FH *fhp;
-{
-	DBMETA meta;
-	ENV *env;
-	int ret;
-	size_t n;
-
-	env = dbp->env;
-	if ((ret = __os_seek(env, fhp, 0, 0, 0)) != 0)
-		return (ret);
-	if ((ret = __os_read(env, fhp, &meta, sizeof(meta), &n)) != 0)
-		return (ret);
-	dbp->pgsize = meta.pagesize;
-	if ((ret = __db_lastpgno(dbp, real_name, fhp, &meta.last_pgno)) != 0)
-		return (ret);
-	if ((ret = __os_seek(env, fhp, 0, 0, 0)) != 0)
-		return (ret);
-	if ((ret = __os_write(env, fhp, &meta, sizeof(meta), &n)) != 0)
-		return (ret);
-
-	return (0);
-}
-#endif /* HAVE_UPGRADE_SUPPORT */
-
-/*
- * __db_page_pass --
- *	Walk the pages of the database, doing whatever needs it.
- *
- * PUBLIC: int __db_page_pass __P((DB *, char *, u_int32_t, int (* const [])
- * PUBLIC:     (DB *, char *, u_int32_t, DB_FH *, PAGE *, int *), DB_FH *,
- * PUBLIC:     int));
- */
-int
-__db_page_pass(dbp, real_name, flags, fl, fhp, feedback_code)
+__db_page_pass(dbp, real_name, flags, fl, fhp)
 	DB *dbp;
 	char *real_name;
 	u_int32_t flags;
 	int (* const fl[P_PAGETYPE_MAX])
 	    __P((DB *, char *, u_int32_t, DB_FH *, PAGE *, int *));
 	DB_FH *fhp;
-	int feedback_code;
 {
 	ENV *env;
 	PAGE *page;
@@ -579,7 +423,7 @@ __db_page_pass(dbp, real_name, flags, fl, fhp, feedback_code)
 	for (i = 0; i < pgno_last; ++i) {
 		if (dbp->db_feedback != NULL)
 			dbp->db_feedback(
-			    dbp, feedback_code, (int)((i * 100)/pgno_last));
+			    dbp, DB_UPGRADE, (int)((i * 100)/pgno_last));
 		if ((ret = __os_seek(env, fhp, i, dbp->pgsize, 0)) != 0)
 			break;
 		if ((ret = __os_read(env, fhp, page, dbp->pgsize, &n)) != 0)
@@ -648,3 +492,36 @@ __db_lastpgno(dbp, real_name, fhp, pgno_lastp)
 	return (0);
 }
 
+/*
+ * __db_set_lastpgno --
+ *	Update the meta->last_pgno field.
+ *
+ * Code assumes that we do not have checksums/crypto on the page.
+ */
+static int
+__db_set_lastpgno(dbp, real_name, fhp)
+	DB *dbp;
+	char *real_name;
+	DB_FH *fhp;
+{
+	DBMETA meta;
+	ENV *env;
+	int ret;
+	size_t n;
+
+	env = dbp->env;
+	if ((ret = __os_seek(env, fhp, 0, 0, 0)) != 0)
+		return (ret);
+	if ((ret = __os_read(env, fhp, &meta, sizeof(meta), &n)) != 0)
+		return (ret);
+	dbp->pgsize = meta.pagesize;
+	if ((ret = __db_lastpgno(dbp, real_name, fhp, &meta.last_pgno)) != 0)
+		return (ret);
+	if ((ret = __os_seek(env, fhp, 0, 0, 0)) != 0)
+		return (ret);
+	if ((ret = __os_write(env, fhp, &meta, sizeof(meta), &n)) != 0)
+		return (ret);
+
+	return (0);
+}
+#endif /* HAVE_UPGRADE_SUPPORT */

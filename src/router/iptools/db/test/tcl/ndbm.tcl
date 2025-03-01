@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -42,20 +42,9 @@ proc ndbm { { nentries 1000 } } {
 			continue
 		}
 
-		# First we write in the strings backwards.  
-		# When we overwrite this will be fixed. 
-		set ret [$db store $str [reverse $str] insert]
+		set ret [$db store $str $str insert]
 		error_check_good ndbm_store $ret 0
 
-		# Overwrite with 'insert' - should fail.
-		set ret [$db store $str $str insert]
-		error_check_bad ndbm_overwrite $ret 0
-
-		# Overwrite with 'replace' - should work.
-		set ret [$db store $str $str replace]
-		error_check_good ndbm_replace $ret 0
-
-		# Verify string value.
 		set d [$db fetch $str]
 		error_check_good ndbm_fetch $d $str
 		incr count
@@ -82,6 +71,7 @@ proc ndbm { { nentries 1000 } } {
 	close $oid
 
 	# Now compare the keys to see if they match the dictionary (or ints)
+	set q q
 	filehead $nentries $dict $t3
 	filesort $t3 $t2
 	filesort $t1 $t3
@@ -149,28 +139,5 @@ proc ndbm { { nentries 1000 } } {
 
 	error_check_good NDBM:diff($t2,$t3) \
 	    [filecmp $t2 $t3] 0
-	error_check_good ndbm_close [$db close] 0
-
-	# Reopen db and try various error conditions.
-	set db [berkdb ndbm_open -mode 0644 $testfile]
-	error_check_good ndbm_open [is_substr $db ndbm] 1
-	error_check_good ndbm_firstkey [$db firstkey] -1
-	error_check_good ndbm_store [$db store "KEY" "DATA" insert] 0
-	error_check_good ndbm_nextkey [$db nextkey] "KEY"
-	error_check_good ndbm_nextkey [$db nextkey] -1 
-	
-	set did [open $dict]
-	while { [gets $did str] != -1 && $count < $nentries } {
-		# NDBM can't handle zero-length keys
-		if { [string length $str] == 0 } {
-			set skippednullkey 1
-			continue
-		}
-
-		set d [$db fetch $str]
-		error_check_good ndbm_fetch $d -1
-		incr count
-	}
-	close $did
 	error_check_good ndbm_close [$db close] 0
 }

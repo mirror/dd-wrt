@@ -12,7 +12,7 @@ as well as various configuration files and scripts in dist/winmsi.
 The scripts must be run from a cygwin bash shell.
 Prerequisites:
 o Cygwin
-o Visual Studio (Visual Studio 2008), make sure that the 64-bit compiler option is installed (do that by trying to build something with x64 selected).
+o Visual Studio (Visual Studio 2005)
 o WiX (version 3.x)
 o Python
 o Java/JDK
@@ -31,20 +31,16 @@ setting up your machine):
 3.  Install WiX 3.x and add the installation dir to PATH 
 if it is not already set.
 4.  Install a recent Java JDK and make sure java and javac
-are in your PATH.  If building the 32-bit binaries, use a 32-bit
-Java install, otherwise use a 64-bit Java install.
-  Also modify the proper variables in Visual
+are in your PATH.  Also modify the proper variables in Visual
 Studio to find jni.h (<JDK installation dir>/include and 
-<JDK installation dir>/include/win32). Note you will have to do this
-for both the Win32 and x64 platform setting for Visual Studio.
+<JDK installation dir>/include/win32). 
 5.  If changing the release minor version (5.x->5.y), you must change 
 UpgradeCode and Upgrade id in db.wxs.  It is a GUID/UUID. You can generate
 a GUID from the Python shell:
   import uuid
   uuid.uuid1()
 This GUID is used for upgrade between releases.
-6.  From db-x.y.z/dist run "bash s_winmsi Win32" for 32-bit binaries, and
-"bash s_winmsi x64" for 64-bit binaries.
+6.  From db-x.y.z/dist run "bash s_winmsi"
 
 The "staged" tree for building the binaries is created
 in db-x.y.z/stage.  The resulting .msi ends up in stage/wix.

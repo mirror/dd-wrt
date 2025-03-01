@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -45,15 +45,15 @@ DbEnv::rep_set_clockskew(u_int32_t fast_clock, u_int32_t slow_clock); </pre>
       <p>
          The <code class="methodname">DbEnv::rep_set_clockskew()</code> method sets the
          clock skew ratio among replication group members based on the fastest
-         and slowest clock measurements among the group for use with master
-         leases.
+         and slowest measurements among the group for use with master leases.
          Calling this method is optional; the default values for clock skew
-         assume no skew.  The application must also configure leases via the 
+         assume no skew.  The user must also configure leases via the 
          <a class="xref" href="repconfig.html" title="DbEnv::rep_set_config()">DbEnv::rep_set_config()</a> 
-         method and set the master lease timeout via the 
+         method. Additionally, the user must also set the master lease timeout
+         via the 
          <a class="xref" href="repset_timeout.html" title="DbEnv::rep_set_timeout()">DbEnv::rep_set_timeout()</a> 
-         method. Base API applications must also set the
-         number of sites in the replication group via the 
+         method. For Base API applications, the user must also set the number of
+         sites in the replication group via the 
          <a class="xref" href="repnsites.html" title="DbEnv::rep_set_nsites()">DbEnv::rep_set_nsites()</a> 
          method.  These methods may be called in any order.  For a description
          of the clock skew values, see 
@@ -105,7 +105,7 @@ DbEnv::rep_set_clockskew(u_int32_t fast_clock, u_int32_t slow_clock); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670056494848"></a>Parameters</h3>
+              <h3 class="title"><a id="idp9563696"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -113,7 +113,7 @@ DbEnv::rep_set_clockskew(u_int32_t fast_clock, u_int32_t slow_clock); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670056495776"></a>fast_clock</h4>
+                <h4 class="title"><a id="idp9563216"></a>fast_clock</h4>
               </div>
             </div>
           </div>
@@ -126,7 +126,7 @@ DbEnv::rep_set_clockskew(u_int32_t fast_clock, u_int32_t slow_clock); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670056554752"></a>slow_clock</h4>
+                <h4 class="title"><a id="idp9557520"></a>slow_clock</h4>
               </div>
             </div>
           </div>
@@ -139,7 +139,7 @@ DbEnv::rep_set_clockskew(u_int32_t fast_clock, u_int32_t slow_clock); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670056560736"></a>Errors</h3>
+              <h3 class="title"><a id="idp9528032"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -157,7 +157,7 @@ DbEnv::rep_set_clockskew(u_int32_t fast_clock, u_int32_t slow_clock); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670056473872"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp9576208"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -174,7 +174,7 @@ DbEnv::rep_set_clockskew(u_int32_t fast_clock, u_int32_t slow_clock); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670056471312"></a>Class</h3>
+              <h3 class="title"><a id="idp9574152"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -186,7 +186,7 @@ DbEnv::rep_set_clockskew(u_int32_t fast_clock, u_int32_t slow_clock); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670056516192"></a>See Also</h3>
+              <h3 class="title"><a id="idp9563912"></a>See Also</h3>
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -111,11 +111,6 @@ proc rep001_sub { method niter tnum envargs logset recargs largs } {
 		set privargs " -private "
 	}
 
-    	set blobargs ""
-    	if { [can_support_blobs $method $largs] == 1 } {
-		set blobargs "-blob_threshold 100"
-    	}
-
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -145,7 +140,7 @@ proc rep001_sub { method niter tnum envargs logset recargs largs } {
 	set env_cmd(M) "berkdb_env_noerr -create $repmemargs $privargs \
 	    -log_max 1000000 $envargs $m_logargs $recargs $verbargs \
 	    -home $masterdir -errpfx MASTER $m_txnargs -rep_master \
-	    $blobargs -rep_transport \[list 1 replsend\]"
+	    -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $env_cmd(M)]
 
 	# Open a client
@@ -153,7 +148,7 @@ proc rep001_sub { method niter tnum envargs logset recargs largs } {
 	set env_cmd(C) "berkdb_env_noerr -create $repmemargs $privargs \
 	    -log_max 1000000 $envargs $c_logargs $recargs $verbargs \
 	    -home $clientdir -errpfx CLIENT $c_txnargs -rep_client \
-	    $blobargs -rep_transport \[list 2 replsend\]"
+	    -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $env_cmd(C)]
 
 	# Bring the client online by processing the startup messages.
@@ -204,7 +199,7 @@ proc rep001_sub { method niter tnum envargs logset recargs largs } {
 	$newmasterenv rep_limit 0 [expr 64 * 1024]
 	set newclientenv [eval {berkdb_env_noerr -create -recover} \
 	    $envargs $m_logargs $m_txnargs -errpfx NEWCLIENT $verbargs \
-	    $blobargs $privargs $repmemargs \
+	    $privargs $repmemargs \
 	    {-home $masterdir -rep_client -rep_transport [list 1 replsend]}]
 	set envlist "{$newclientenv 1} {$newmasterenv 2}"
 	process_msgs $envlist

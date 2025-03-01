@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -49,10 +49,6 @@ namespace CsharpAPITest
 			repConfig.RetransmissionRequest(10, 100);
 			Assert.AreEqual(100, repConfig.RetransmissionRequestMax);
 			Assert.AreEqual(10, repConfig.RetransmissionRequestMin);
-
-			repConfig.RepmgrIncomingQueueMax(123, 456);
-			Assert.AreEqual(123, repConfig.RepmgrIncomingQueueMaxGBytes);
-			Assert.AreEqual(456, repConfig.RepmgrIncomingQueueMaxBytes);
 		}
 
 		[Test]

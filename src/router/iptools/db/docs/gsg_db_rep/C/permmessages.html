@@ -9,12 +9,12 @@
     <link rel="start" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
     <link rel="up" href="introduction.html" title="Chapter 1. Introduction" />
     <link rel="prev" href="elections.html" title="Holding Elections" />
-    <link rel="next" href="eventhandling.html" title="Event Handling" />
+    <link rel="next" href="txnapp.html" title="Chapter 2. Transactional Application" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -23,7 +23,7 @@
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="elections.html">Prev</a> </td>
           <th width="60%" align="center">Chapter 1. Introduction</th>
-          <td width="20%" align="right"> <a accesskey="n" href="eventhandling.html">Next</a></td>
+          <td width="20%" align="right"> <a accesskey="n" href="txnapp.html">Next</a></td>
         </tr>
       </table>
       <hr />
@@ -90,29 +90,29 @@
                     message acknowledgment.
             </p>
       <p>
-                For the master (again, using the Replication Manager), things are a
-                little more complicated than simple message acknowledgment.
-                Usually in a replicated application, the master commits
-                transactions asynchronously; that is, the commit operation
-                does not block waiting for log data to be flushed to disk
-                before returning. So when a master is managing permanent
+                    For the master (again, using the Replication Manager), things are a little more complicated than
+                simple message acknowledgment.  Usually in a replicated
+                application, the master commits transactions
+                asynchronously; that is, the commit operation does not
+                block waiting for log data to be flushed to disk before
+                returning. So when a master is managing permanent
                 messages, it typically blocks the committing thread
                 immediately before <code class="methodname">commit()</code>
-                returns. The thread then waits for acknowledgments from its
-                replicas. If it receives enough acknowledgments, it
+                returns. The thread then waits for acknowledgments from
+                its replicas. If it receives enough acknowledgments, it
                 continues to operate as normal. 
             </p>
       <p>
-                If the master does not receive message acknowledgments
-                — or, more likely, it does not receive
+                If the master does not
+                receive message acknowledgments — or, more likely, it does not receive
                 <span class="emphasis"><em>enough</em></span> acknowledgments — the
                 committing thread flushes its log data to disk and then
                 continues operations as normal. The master application can
                 do this because replicas that fail to handle a message, for
                 whatever reason, will eventually catch up to the master. So
                 by flushing the transaction logs to disk, the master is
-                ensuring that the data modifications have made it to stable
-                storage in one location (its own hard drive).
+                ensuring that the data modifications have made it to
+                stable storage in one location (its own hard drive).
             </p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
@@ -195,7 +195,7 @@
                             replicas. 
                     </p>
         <p>
-                        That said, remember that
+                        That said, it is important to remember that
                         managing permanent messages involves a fair amount
                         of network traffic. The messages must be sent to
                         the replicas and the replicas must acknowledge
@@ -268,16 +268,85 @@
                             depends on which API you are using to implement
                             replication. If you are using the Replication Manager, then
                             permanent message handling is configured using
-                            policies that you specify to the framework. 
-                            For a list of these policies, see
-                            <a class="xref" href="fwrkpermmessage.html" title="Replication Manager Permanent Message Handling">Replication Manager Permanent Message Handling</a>.
+                            policies that you specify to the framework. In
+                            this case, you can configure your application
+                            to:
+                   </p>
+        <div class="itemizedlist">
+          <ul type="disc">
+            <li>
+              <p>
+                                    Ignore permanent messages (the master
+                                    does not wait for acknowledgments). 
+                                   </p>
+            </li>
+            <li>
+              <p>
+                                           Require acknowledgments from a
+                                           quorum. A quorum is reached when
+                                           acknowledgments are received from the
+                                           minimum number of electable
+                                           peers needed to ensure that
+                                           the record remains durable if
+                                           an election is held. 
+                                   </p>
+              <p>
+                                       An <span class="emphasis"><em>electable peer</em></span> is any other
+                                       site that potentially can be elected master.
+                                   </p>
+              <p>
+                                           The goal here is to be
+                                           absolutely sure the record is
+                                           durable. The master wants to
+                                           hear from enough electable
+                                           peer that they have
+                                           committed the record so that if
+                                           an election is held, the master
+                                           knows the record will exist even
+                                           if a new master is selected.
+                                   </p>
+              <p>
+                                           This is the default policy.
+                                   </p>
+            </li>
+            <li>
+              <p>
+                                     Require an acknowledgment from at least one replica. 
+                                   </p>
+            </li>
+            <li>
+              <p>
+                                           Require acknowledgments from
+                                           all replicas.
+                                   </p>
+            </li>
+            <li>
+              <p>
+                                      Require an acknowledgment from at least one electable peer.
+                                   </p>
+            </li>
+            <li>
+              <p>
+                                           Require acknowledgments from all electable peers.
+                                   </p>
+            </li>
+          </ul>
+        </div>
+        <p>
+                        Note that the Replication Manager simply flushes its transaction
+                        logs and moves on if a permanent message is not
+                        sufficiently acknowledged.
+                   </p>
+        <p>
+                        For details on permanent message handling with the
+                        Replication Manager, see <a class="xref" href="fwrkpermmessage.html" title="Permanent Message Handling">Permanent Message Handling</a>.
                    </p>
         <p>
                         If these policies are not sufficient for your
                         needs, or if you want your application to take more
                         corrective action than simply flushing log buffers
                         in the event of an unsuccessful commit, then you
-                        must implement replication using the Base APIs.
+                        must use implement replication using the Base APIs.
                    </p>
         <p>
                         When using the Base APIs, messages are
@@ -326,14 +395,14 @@
           <td width="20%" align="center">
             <a accesskey="u" href="introduction.html">Up</a>
           </td>
-          <td width="40%" align="right"> <a accesskey="n" href="eventhandling.html">Next</a></td>
+          <td width="40%" align="right"> <a accesskey="n" href="txnapp.html">Next</a></td>
         </tr>
         <tr>
           <td width="40%" align="left" valign="top">Holding Elections </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Event Handling</td>
+          <td width="40%" align="right" valign="top"> Chapter 2. Transactional Application</td>
         </tr>
       </table>
     </div>

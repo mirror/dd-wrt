@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -77,7 +77,7 @@ public abstract class MultipleEntry extends DatabaseEntry {
             return (false);
         if (recno > 0) {
             pos -= INT32SZ;
-            DbUtil.int2array(recno, this.data, pos);
+            DbUtil.int2array(curr_off, this.data, pos);
         }
         pos -= INT32SZ;
         DbUtil.int2array(curr_off, this.data, pos);

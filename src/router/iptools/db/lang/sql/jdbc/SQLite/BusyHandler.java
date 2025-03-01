@@ -14,7 +14,6 @@ public interface BusyHandler {
      *
      * @param table the name of the locked table
      * @param count number of times the table was locked
-     * @return true if still blocked
      */
 
     public boolean busy(String table, int count);

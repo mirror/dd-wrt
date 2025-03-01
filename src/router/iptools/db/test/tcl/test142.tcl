@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -16,7 +16,7 @@
 # TEST   configuration.
 proc test142 {method {tnum "142"} args } {
 	source ./include.tcl
-	source $tcl_utils/common_test_utils.tcl
+	source $tcl_utils/multi_proc_utils.tcl
 
 	# Skip this test if threads are not enabled
 	if [catch {package require Thread}] {
@@ -87,7 +87,7 @@ proc test142 {method {tnum "142"} args } {
 	}
 
     	if { $noerr_env } {
-		puts "\tTest$tnum.b: Exclusive databases can have only 1 active txn."
+		puts "\t Test$tnum.b: Exclusive databases can have only 1 active txn."
  		set db [eval {berkdb_open_noerr -create -mode 0644 \
 		    -auto_commit $omethod -lk_exclusive 0} $args \
 		    ./multitxn.db ]
@@ -203,7 +203,7 @@ proc test142_script1 {} {
 		source ./include.tcl
 		source $test_path/test.tcl
 		source $test_path/testutils.tcl
-		source $tcl_utils/common_test_utils.tcl
+		source $tcl_utils/multi_proc_utils.tcl
 	
 		set usage \
 		"script omethod nowait args testfile cyrargs myPort clientPort homedir databaseName"
@@ -325,7 +325,7 @@ proc test142_script2 {} {
 		source ./include.tcl
 		source $test_path/test.tcl
 		source $test_path/testutils.tcl
-		source $tcl_utils/common_test_utils.tcl
+		source $tcl_utils/multi_proc_utils.tcl
 
 		set usage \
 	"script omethod nowait args testfile myPort clientPort homedir databaseName"

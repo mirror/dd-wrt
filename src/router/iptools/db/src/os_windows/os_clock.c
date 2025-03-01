@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -16,7 +16,7 @@
  */
 void
 __os_gettime(env, tp, monotonic)
-	const ENV *env;
+	ENV *env;
 	db_timespec *tp;
 	int monotonic;
 {

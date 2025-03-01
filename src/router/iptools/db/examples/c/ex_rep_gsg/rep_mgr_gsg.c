@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2006, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2006, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -75,7 +75,7 @@ main(int argc, char *argv[])
     DB_SITE *dbsite;
     extern char *optarg;
     const char *home;
-    char ch, *host, *last_colon, *portstr;
+    char ch, *host, *portstr;
     int local_is_set, ret, is_group_creator;
     u_int16_t port;
     /* Used to track whether this is a replica or a master. */
@@ -110,22 +110,11 @@ main(int argc, char *argv[])
 	case 'L':
 	    is_group_creator = 1; /* FALLTHROUGH */
 	case 'l':
-	    host = optarg;
-	    /*
-	     * The final colon in host:port string is the
-	     * boundary between the host and the port portions
-	     * of the string.
-	     */
-	    if ((last_colon = strrchr(host, ':')) == NULL ) {
-		fprintf(stderr, "Bad local host specification.\n");
+	    host = strtok(optarg, ":");
+	    if ((portstr = strtok(NULL, ":")) == NULL) {
+		fprintf(stderr, "Bad host specification.\n");
 		goto err;
 	    }
-	    /*
-	     * Separate the host and port portions of the
-	     * string for further processing.
-	     */
-	    portstr = last_colon + 1;
-	    *last_colon = '\0';
 	    port = (unsigned short)atoi(portstr);
 	    if ((ret =
 	      dbenv->repmgr_site(dbenv, host, port, &dbsite, 0)) != 0){
@@ -149,22 +138,11 @@ main(int argc, char *argv[])
 	    break;
 	/* Identify another site in the replication group. */
 	case 'r':
-	    host = optarg;
-	    /*
-	     * The final colon in host:port string is the
-	     * boundary between the host and the port portions
-	     * of the string.
-	     */
-	    if ((last_colon = strrchr(host, ':')) == NULL ) {
-		fprintf(stderr, "Bad remote host specification.\n");
+	    host = strtok(optarg, ":");
+	    if ((portstr = strtok(NULL, ":")) == NULL) {
+		fprintf(stderr, "Bad host specification.\n");
 		goto err;
 	    }
-	    /*
-	     * Separate the host and port portions of the
-	     * string for further processing.
-	     */
-	    portstr = last_colon + 1;
-	    *last_colon = '\0';
 	    port = (unsigned short)atoi(portstr);
 	    if ((ret = dbenv->repmgr_site(dbenv, host, port, &dbsite, 0)) != 0) {
 		dbenv->err(dbenv, ret, "DB_ENV->repmgr_site");

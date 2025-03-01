@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -116,14 +116,6 @@ DB_ENV-&gt;memp_stat(DB_ENV *env, DB_MPOOL_STAT **gsp,
           </li>
           <li>
             <p>
-                         <span class="bold"><strong>roff_t st_regmax;</strong></span>
-                </p>
-            <p>
-                        The maximum size, in bytes, of the mutex region.
-                </p>
-          </li>
-          <li>
-            <p>
                          <span class="bold"><strong>size_t st_mmapsize;</strong></span>
                 </p>
             <p>
@@ -135,7 +127,7 @@ DB_ENV-&gt;memp_stat(DB_ENV *env, DB_MPOOL_STAT **gsp,
                          <span class="bold"><strong>int st_maxopenfd;</strong></span>
                 </p>
             <p>
-                        Maximum number of open file descriptors.
+                        Maximum open file descriptors.
                 </p>
           </li>
           <li>
@@ -143,8 +135,7 @@ DB_ENV-&gt;memp_stat(DB_ENV *env, DB_MPOOL_STAT **gsp,
                          <span class="bold"><strong>int st_maxwrite;</strong></span>
                 </p>
             <p>
-                        The maximum number of sequential write operations scheduled by the
-                        library when flushing dirty pages from the cache. 
+                        Maximum sequential buffer writes.
                 </p>
           </li>
           <li>
@@ -152,8 +143,7 @@ DB_ENV-&gt;memp_stat(DB_ENV *env, DB_MPOOL_STAT **gsp,
                          <span class="bold"><strong>db_timeout_t st_maxwrite_sleep;</strong></span>
                 </p>
             <p>
-                        The number of microseconds the thread of control should pause
-                        before scheduling further write operations.
+                         Microseconds to pause after writing maximum sequential buffers.
                 </p>
           </li>
           <li>
@@ -239,14 +229,6 @@ DB_ENV-&gt;memp_stat(DB_ENV *env, DB_MPOOL_STAT **gsp,
                 </p>
             <p>
                         Pages in the cache.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>size_t st_pagesize;</strong></span>
-                </p>
-            <p>
-                        Page size in bytes.
                 </p>
           </li>
           <li>
@@ -347,7 +329,7 @@ DB_ENV-&gt;memp_stat(DB_ENV *env, DB_MPOOL_STAT **gsp,
                          <span class="bold"><strong>uintmax_t st_region_wait;</strong></span>
                 </p>
             <p>
-                         The number of times that a thread of control was forced to wait before
+                         Number of times that a thread of control was forced to wait before
                          obtaining a cache region mutex.
                 </p>
           </li>
@@ -356,8 +338,8 @@ DB_ENV-&gt;memp_stat(DB_ENV *env, DB_MPOOL_STAT **gsp,
                          <span class="bold"><strong>uintmax_t st_region_nowait;</strong></span>
                 </p>
             <p>
-                         The number of times that a thread of control was able to obtain a
-                         cache region mutex without waiting.
+                         Number of times that a thread of control was able to obtain a cache
+                         region mutex without waiting.
                 </p>
           </li>
           <li>
@@ -366,14 +348,6 @@ DB_ENV-&gt;memp_stat(DB_ENV *env, DB_MPOOL_STAT **gsp,
                 </p>
             <p>
                         Number of buffers frozen.
-                </p>
-          </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>uintmax_t st_mvcc_reused;</strong></span>
-                </p>
-            <p>
-                         The number of outdated intermediate versions reused.
                 </p>
           </li>
           <li>
@@ -529,14 +503,6 @@ DB_ENV-&gt;memp_stat(DB_ENV *env, DB_MPOOL_STAT **gsp,
                         Pages written from the cache to the backing file.
                 </p>
           </li>
-          <li>
-            <p>
-                         <span class="bold"><strong>uintmax_t st_backup_spins;</strong></span>
-                </p>
-            <p>
-                        Spins while trying to back up the file.
-                </p>
-          </li>
         </ul>
       </div>
       <p>
@@ -555,7 +521,7 @@ DB_ENV-&gt;memp_stat(DB_ENV *env, DB_MPOOL_STAT **gsp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711175254080"></a>Parameters</h3>
+              <h3 class="title"><a id="idp53261848"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -563,7 +529,7 @@ DB_ENV-&gt;memp_stat(DB_ENV *env, DB_MPOOL_STAT **gsp,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711175253792"></a>gsp</h4>
+                <h4 class="title"><a id="idp53286184"></a>gsp</h4>
               </div>
             </div>
           </div>
@@ -577,7 +543,7 @@ DB_ENV-&gt;memp_stat(DB_ENV *env, DB_MPOOL_STAT **gsp,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711175264704"></a>fsp</h4>
+                <h4 class="title"><a id="idp53289784"></a>fsp</h4>
               </div>
             </div>
           </div>
@@ -591,7 +557,7 @@ DB_ENV-&gt;memp_stat(DB_ENV *env, DB_MPOOL_STAT **gsp,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711175251600"></a>flags</h4>
+                <h4 class="title"><a id="idp53290560"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -617,7 +583,7 @@ DB_ENV-&gt;memp_stat(DB_ENV *env, DB_MPOOL_STAT **gsp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711175231456"></a>Errors</h3>
+              <h3 class="title"><a id="idp53295480"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -633,7 +599,7 @@ DB_ENV-&gt;memp_stat(DB_ENV *env, DB_MPOOL_STAT **gsp,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711175249856"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp53300128"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -646,7 +612,7 @@ DB_ENV-&gt;memp_stat(DB_ENV *env, DB_MPOOL_STAT **gsp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711175223328"></a>Class</h3>
+              <h3 class="title"><a id="idp53298832"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -658,7 +624,7 @@ DB_ENV-&gt;memp_stat(DB_ENV *env, DB_MPOOL_STAT **gsp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711175220832"></a>See Also</h3>
+              <h3 class="title"><a id="idp53301208"></a>See Also</h3>
             </div>
           </div>
         </div>

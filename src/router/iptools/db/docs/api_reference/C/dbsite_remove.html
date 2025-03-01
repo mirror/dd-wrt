@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -45,16 +45,13 @@ DB_SITE-&gt;remove(DB_SITE *site); </pre>
       <p>
          The <code class="methodname">DB_SITE-&gt;remove()</code> method removes the
          site from the replication group.  If called at the master site,
-         Replication Manager updates the group membership database directly. If
-         called from a
+         repmgr updates the membership database directly. If called from a
          client, this method causes a request to be sent to the master to
          perform the operation. The method then awaits confirmation.
     </p>
       <p>
          The DB_SITE handle must not be accessed again after this
          method is called, regardless of the return value.
-         This method may not be
-         called before starting Replication Manager.
     </p>
       <p>
          The <code class="methodname">DB_SITE-&gt;remove()</code> <span>
@@ -68,7 +65,7 @@ DB_SITE-&gt;remove(DB_SITE *site); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711174045600"></a>Errors</h3>
+              <h3 class="title"><a id="idp53933480"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -84,28 +81,15 @@ DB_SITE-&gt;remove(DB_SITE *site); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711174058544"></a>DB_REP_UNAVAIL</h4>
+                <h4 class="title"><a id="idp53936800"></a>DB_REP_UNAVAIL</h4>
               </div>
             </div>
           </div>
           <p>
-                The master updated the group membership database but did not
-                receive enough
-                acknowledgements from clients to meet the current
-                acknowledgement policy or there was an attempt to remove the
+                The master updated the database but did not receive enough
+                acknowledgements from clients sufficient to meet the
+                current ack policy or there was an attempt to remove the
                 current master site from the replication group.
-            </p>
-        </div>
-        <div class="sect3" lang="en" xml:lang="en">
-          <div class="titlepage">
-            <div>
-              <div>
-                <h4 class="title"><a id="idm140711174057904"></a>EINVAL</h4>
-              </div>
-            </div>
-          </div>
-          <p>
-                If Replication Manager has not been started.
             </p>
         </div>
       </div>
@@ -113,7 +97,7 @@ DB_SITE-&gt;remove(DB_SITE *site); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711174040544"></a>Class</h3>
+              <h3 class="title"><a id="idp53926584"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -125,7 +109,7 @@ DB_SITE-&gt;remove(DB_SITE *site); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711174051936"></a>See Also</h3>
+              <h3 class="title"><a id="idp53911144"></a>See Also</h3>
             </div>
           </div>
         </div>

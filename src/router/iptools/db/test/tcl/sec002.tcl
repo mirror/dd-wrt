@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -85,7 +85,7 @@ proc sec002 { } {
 
 	#
 	# First just touch some bits in the file.  We know that in btree
-	# meta pages, bytes 112-459 are unused.  Scribble on them in both
+	# meta pages, bytes 92-459 are unused.  Scribble on them in both
 	# an encrypted, and both unencrypted files.  We should get
 	# a checksum error for the encrypted, and checksummed files.
 	# We should get no error for the normal file.
@@ -101,12 +101,12 @@ proc sec002 { } {
 	puts "\tSec002.c: Overwrite unused space in meta-page"
 	foreach f $fidlist {
 		fconfigure $f -translation binary
-		seek $f 120 start
+		seek $f 100 start
 		set byte [read $f 1]
 		binary scan $byte c val
 		set newval [expr ~$val]
 		set newbyte [binary format c $newval]
-		seek $f 120 start
+		seek $f 100 start
 		puts -nonewline $f $newbyte
 		close $f
 	}

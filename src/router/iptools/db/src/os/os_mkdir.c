@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1997, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -38,14 +38,14 @@ __os_mkdir(env, name, mode)
 	RETRY_CHK((mkdir(name, DB_MODE_700)), ret);
 #endif
 	if (ret != 0)
-		return (USR_ERR(env, __os_posix_err(ret)));
+		return (__os_posix_err(ret));
 
 	/* Set the absolute permissions, if specified. */
 #if !defined(HAVE_VXWORKS)
 	if (mode != 0) {
 		RETRY_CHK((chmod(name, mode)), ret);
 		if (ret != 0)
-			ret = USR_ERR(env, __os_posix_err(ret));
+			ret = __os_posix_err(ret);
 	}
 #endif
 	return (ret);

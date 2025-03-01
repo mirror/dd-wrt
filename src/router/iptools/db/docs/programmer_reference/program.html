@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Chapter 17.  Programmer Notes</title>
+    <title>Chapter 15.  Programmer Notes</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
@@ -14,11 +14,13 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Chapter 17.  Programmer Notes </th>
+          <th colspan="3" align="center">Chapter 15. 
+		Programmer Notes
+        </th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="apprec_config.html">Prev</a> </td>
@@ -32,7 +34,9 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title"><a id="program"></a>Chapter 17.  Programmer Notes </h2>
+            <h2 class="title"><a id="program"></a>Chapter 15. 
+		Programmer Notes
+        </h2>
           </div>
         </div>
       </div>
@@ -48,34 +52,9 @@
           </dt>
           <dt>
             <span class="sect1">
-              <a href="program_errorret.html">Error returns to
-        applications</a>
+              <a href="program_errorret.html">Error returns to applications</a>
             </span>
           </dt>
-          <dt>
-            <span class="sect1">
-              <a href="program_i18n.html">Globalization Support</a>
-            </span>
-          </dt>
-          <dd>
-            <dl>
-              <dt>
-                <span class="sect2">
-                  <a href="program_i18n.html#idm140526452645808">Message Format</a>
-                </span>
-              </dt>
-              <dt>
-                <span class="sect2">
-                  <a href="program_i18n.html#idm140526452616816">Enable Globalization Support</a>
-                </span>
-              </dt>
-              <dt>
-                <span class="sect2">
-                  <a href="program_i18n.html#localization_example">Localization Example</a>
-                </span>
-              </dt>
-            </dl>
-          </dd>
           <dt>
             <span class="sect1">
               <a href="program_environ.html">Environment variables</a>
@@ -100,21 +79,19 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="program_namespace.html#idm140526452527296">C Language Name
-            Space</a>
+                  <a href="program_namespace.html#idp52962960">C Language Name Space</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="program_namespace.html#idm140526452579440">Filesystem Name Space</a>
+                  <a href="program_namespace.html#idp53001824">Filesystem Name Space</a>
                 </span>
               </dt>
             </dl>
           </dd>
           <dt>
             <span class="sect1">
-              <a href="program_ram.html">Memory-only or Flash
-        configurations</a>
+              <a href="program_ram.html">Memory-only or Flash configurations</a>
             </span>
           </dt>
           <dt>
@@ -139,8 +116,7 @@
           </dt>
           <dt>
             <span class="sect1">
-              <a href="program_perfmon.html">Performance Event
-        Monitoring</a>
+              <a href="program_perfmon.html">Performance Event Monitoring</a>
             </span>
           </dt>
           <dd>
@@ -157,8 +133,7 @@
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="program_perfmon.html#program_perfmon_examples">Example
-            Scripts</a>
+                  <a href="program_perfmon.html#program_perfmon_examples">Example Scripts</a>
                 </span>
               </dt>
               <dt>
@@ -183,32 +158,22 @@
             </div>
           </div>
         </div>
-        <p>
-        When applications using Berkeley DB receive signals, it is
-        important that they exit gracefully, discarding any Berkeley
-        DB locks that they may hold. This is normally done by setting
-        a flag when a signal arrives and then checking for that flag
-        periodically within the application. Because Berkeley DB is
-        not re-entrant, the signal handler should not attempt to
-        release locks and/or close the database handles itself.
-        Re-entering Berkeley DB is not guaranteed to work correctly,
-        and the results are undefined.
-    </p>
-        <p>
-        If an application exits holding a lock, the situation is no
-        different than if the application crashed, and all
-        applications participating in the database environment must be
-        shut down, and then recovery must be performed. If this is not
-        done, databases may be left in an inconsistent state, or locks
-        the application held may cause unresolvable deadlocks inside
-        the environment, causing applications to hang.
-    </p>
-        <p>
-        Berkeley DB restarts all system calls interrupted by
-        signals, that is, any underlying system calls that return
-        failure with errno set to EINTR will be restarted rather than
-        failing.
-    </p>
+        <p>When applications using Berkeley DB receive signals, it is important that they
+exit gracefully, discarding any Berkeley DB locks that they may hold.  This is
+normally done by setting a flag when a signal arrives and then checking
+for that flag periodically within the application.  Because Berkeley DB is not
+re-entrant, the signal handler should not attempt to release locks and/or
+close the database handles itself.  Re-entering Berkeley DB is not guaranteed to
+work correctly, and the results are undefined.</p>
+        <p>If an application exits holding a lock, the situation is no different
+than if the application crashed, and all applications participating in
+the database environment must be shut down, and then recovery must be
+performed.  If this is not done,  databases may be left in an
+inconsistent state, or locks the application held may cause unresolvable
+deadlocks inside the environment, causing applications to hang.</p>
+        <p>Berkeley DB restarts all system calls interrupted by signals, that is, any
+underlying system calls that return failure with errno set to EINTR will
+be restarted rather than failing.</p>
       </div>
     </div>
     <div class="navfooter">
@@ -224,8 +189,7 @@
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Error returns to
-        applications</td>
+          <td width="40%" align="right" valign="top"> Error returns to applications</td>
         </tr>
       </table>
     </div>

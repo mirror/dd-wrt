@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,7 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="am_foreign.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 3.  Access Method Operations </th>
+          <th width="60%" align="center">Chapter 3. 
+		Access Method Operations
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="am_misc.html">Next</a></td>
         </tr>
       </table>
@@ -40,8 +42,7 @@
         <dl>
           <dt>
             <span class="sect2">
-              <a href="am_cursor.html#am_curget">Retrieving records with a
-        cursor</a>
+              <a href="am_cursor.html#am_curget">Retrieving records with a cursor</a>
             </span>
           </dt>
           <dt>
@@ -76,61 +77,57 @@
           </dt>
         </dl>
       </div>
-      <p> 
-        A database cursor refers to a single key/data pair in the
-        database. It supports traversal of the database and is the
-        only way to access individual duplicate data items. Cursors
-        are used for operating on collections of records, for
-        iterating over a database, and for saving handles to
-        individual records, so that they can be modified after they
-        have been read. 
+      <p>
+        A database cursor refers to a single key/data pair in the database.
+        It supports traversal of the database and is the only way to access
+        individual duplicate data items.  Cursors are used for operating on
+        collections of records, for iterating over a database, and for
+        saving handles to individual records, so that they can be modified
+        after they have been read.
     </p>
       <p>
-        The <a href="../api_reference/C/dbcursor.html" class="olink">DB-&gt;cursor()</a> method opens a cursor into a database. Upon
-        return the cursor is uninitialized, cursor positioning occurs
-        as part of the first cursor operation. 
+        The <a href="../api_reference/C/dbcursor.html" class="olink">DB-&gt;cursor()</a> method opens a cursor into a database.  Upon return
+        the cursor is uninitialized, cursor positioning occurs as part of
+        the first cursor operation.
     </p>
       <p>
-        Once a database cursor has been opened, records may be
-        retrieved (<a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a>), stored (<a href="../api_reference/C/dbcput.html" class="olink">DBC-&gt;put()</a>), and deleted
-        (<a href="../api_reference/C/dbcdel.html" class="olink">DBC-&gt;del()</a>).
-    </p>
-      <p> 
-        Additional operations supported by the cursor handle
-        include duplication (<a href="../api_reference/C/dbcdup.html" class="olink">DBC-&gt;dup()</a>), equality join (<a href="../api_reference/C/dbjoin.html" class="olink">DB-&gt;join()</a>), and
-        a count of duplicate data items (<a href="../api_reference/C/dbccount.html" class="olink">DBC-&gt;count()</a>). Cursors are
-        eventually closed using <a href="../api_reference/C/dbcclose.html" class="olink">DBC-&gt;close()</a>.
+        Once a database cursor has been opened, records may be retrieved
+        (<a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a>), stored (<a href="../api_reference/C/dbcput.html" class="olink">DBC-&gt;put()</a>), and deleted (<a href="../api_reference/C/dbcdel.html" class="olink">DBC-&gt;del()</a>).
     </p>
       <p>
-        For more information on the operations supported by the
-        cursor handle, see the <a href="../api_reference/C/dbc.html#dbclist" class="olink">Database Cursors and Related
-        Methods</a> section in the
-        <em class="citetitle">Berkeley DB C API Reference Guide.</em>
+        Additional operations supported by the cursor handle include
+        duplication (<a href="../api_reference/C/dbcdup.html" class="olink">DBC-&gt;dup()</a>), equality join (<a href="../api_reference/C/dbjoin.html" class="olink">DB-&gt;join()</a>), and a count of
+        duplicate data items (<a href="../api_reference/C/dbccount.html" class="olink">DBC-&gt;count()</a>).  Cursors are eventually closed
+        using <a href="../api_reference/C/dbcclose.html" class="olink">DBC-&gt;close()</a>.
+    </p>
+      <p>
+        For more information on the operations supported by the cursor
+        handle, see the 
+        <a href="../api_reference/C/dbc.html#dbclist" class="olink">Database Cursors and Related Methods</a> 
+        section in the <em class="citetitle">Berkeley DB C API Reference Guide.</em>
     </p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="am_curget"></a>Retrieving records with a
-        cursor</h3>
+              <h3 class="title"><a id="am_curget"></a>Retrieving records with a cursor</h3>
             </div>
           </div>
         </div>
         <p>
-        The <a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a> method retrieves records from the database
-        using a cursor. The <a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a> method takes a flag which
-        controls how the cursor is positioned within the database and
-        returns the key/data item associated with that positioning.
-        Similar to <a href="../api_reference/C/dbget.html" class="olink">DB-&gt;get()</a>, <a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a> may also take a supplied key and
-        retrieve the data associated with that key from the database.
-        There are several flags that you can set to customize
-        retrieval. 
+        The <a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a> method retrieves records from the database using a
+        cursor.  The <a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a> method takes a flag which controls how the
+        cursor is positioned within the database and returns the key/data
+        item associated with that positioning.  Similar to <a href="../api_reference/C/dbget.html" class="olink">DB-&gt;get()</a>,
+        <a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a> may also take a supplied key and retrieve the data
+        associated with that key from the database.  There are several
+        flags that you can set to customize retrieval.
     </p>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140526456133072"></a>Cursor position flags</h4>
+                <h4 class="title"><a id="idp51071280"></a>Cursor position flags</h4>
               </div>
             </div>
           </div>
@@ -139,45 +136,43 @@
               <dt>
                 <span class="term"><a href="../api_reference/C/dbcget.html#dbcget_DB_FIRST" class="olink">DB_FIRST</a>, <a href="../api_reference/C/dbcget.html#dbcget_DB_LAST" class="olink">DB_LAST</a></span>
               </dt>
-              <dd> 
-                    Return the first (last) record in the
-                    database. 
+              <dd>
+                    Return the first (last) record in the database.
                 </dd>
               <dt>
                 <span class="term"><a href="../api_reference/C/dbcget.html#dbcget_DB_NEXT" class="olink">DB_NEXT</a>, <a href="../api_reference/C/dbcget.html#dbcget_DB_PREV" class="olink">DB_PREV</a></span>
               </dt>
-              <dd> 
-                    Return the next (previous) record in the
-                    database.
+              <dd>
+                    Return the next (previous) record in the database.
                 </dd>
               <dt>
                 <span class="term">
                   <a href="../api_reference/C/dbcget.html#dbcget_DB_NEXT_DUP" class="olink">DB_NEXT_DUP</a>
                 </span>
               </dt>
-              <dd> 
-                    Return the next record in the database, if
-                    it is a duplicate data item for the current key.
-                    For Heap databases, this flag always results in
-                    the cursor returning the
-                    <code class="literal">DB_NOTFOUND</code> error.
+              <dd>
+                    Return the next record in the database, if it is a
+                    duplicate data item for the current key. For Heap
+                    databases, this flag always results in the cursor
+                    returning the <code class="literal">DB_NOTFOUND</code>
+                    error.
                 </dd>
               <dt>
                 <span class="term"><a href="../api_reference/C/dbcget.html#dbcget_DB_NEXT_NODUP" class="olink">DB_NEXT_NODUP</a>, <a href="../api_reference/C/dbcget.html#dbcget_DB_PREV_NODUP" class="olink">DB_PREV_NODUP</a></span>
               </dt>
               <dd>
-                    Return the next (previous) record in the
-                    database that is not a duplicate data item for the
-                    current key.
+                    Return the next (previous) record in the database that
+                    is not a duplicate data item for the current
+                    key.
                 </dd>
               <dt>
                 <span class="term">
                   <a href="../api_reference/C/dbcget.html#dbcget_DB_CURRENT" class="olink">DB_CURRENT</a>
                 </span>
               </dt>
-              <dd> 
-                    Return the record from the database to
-                    which the cursor currently refers.
+              <dd>
+                    Return the record from the database to which the cursor
+                    currently refers.
                 </dd>
             </dl>
           </div>
@@ -186,7 +181,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140526456122336"></a>Retrieving specific key/data pairs</h4>
+                <h4 class="title"><a id="idp51079560"></a>Retrieving specific key/data pairs</h4>
               </div>
             </div>
           </div>
@@ -198,12 +193,12 @@
                 </span>
               </dt>
               <dd>
-                    Return the record from the database that
-                    matches the supplied key. In the case of
-                    duplicates the first duplicate is returned and the
-                    cursor is positioned at the beginning of the
-                    duplicate list. The user can then traverse the
-                    duplicate entries for the key. 
+                    Return the record from the database that matches the
+                    supplied key.  In the case of duplicates the first
+                    duplicate is returned and the cursor is positioned at
+                    the beginning of the duplicate list.  The user can then
+                    traverse the duplicate entries for the
+                    key.
                 </dd>
               <dt>
                 <span class="term">
@@ -211,24 +206,23 @@
                 </span>
               </dt>
               <dd>
-                    Return the smallest record in the database
-                    greater than or equal to the supplied key. This
-                    functionality permits partial key matches and
-                    range searches in the Btree access method.
+                    Return the smallest record in the database greater than
+                    or equal to the supplied key.  This functionality
+                    permits partial key matches and range searches in the
+                    Btree access method.
                 </dd>
               <dt>
                 <span class="term">
                   <a href="../api_reference/C/dbcget.html#dbcget_DB_GET_BOTH" class="olink">DB_GET_BOTH</a>
                 </span>
               </dt>
-              <dd> 
-                    Return the record from the database that
-                    matches both the supplied key and data items. This
-                    is particularly useful when there are large
-                    numbers of duplicate records for a key, as it
-                    allows the cursor to easily be positioned at the
-                    correct place for traversal of some part of a
-                    large set of duplicate records. 
+              <dd>
+                    Return the record from the database that matches both
+                    the supplied key and data items.  This is particularly
+                    useful when there are large numbers of duplicate
+                    records for a key, as it allows the cursor to easily be
+                    positioned at the correct place for traversal of some
+                    part of a large set of duplicate records.
                 </dd>
               <dt>
                 <span class="term">
@@ -236,13 +230,11 @@
                 </span>
               </dt>
               <dd>
-                    If used on a database configured for sorted
-                    duplicates, this returns the smallest record in
-                    the database greater than or equal to the supplied
-                    key and data items. If used on a database that is
-                    <span class="emphasis"><em>not</em></span> configured for sorted
-                    duplicates, this flag behaves identically to
-                    <code class="literal">DB_GET_BOTH</code>.
+                    If used on a database configured for sorted duplicates, this
+                    returns the smallest record in the database greater than or equal
+                    to the supplied key and data items. If used on a database that is 
+                    <span class="emphasis"><em>not</em></span> configured for sorted duplicates, this
+                    flag behaves identically to <code class="literal">DB_GET_BOTH</code>.
                 </dd>
             </dl>
           </div>
@@ -251,7 +243,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140526456140992"></a>Retrieving based on record numbers</h4>
+                <h4 class="title"><a id="idp51066936"></a>Retrieving based on record numbers</h4>
               </div>
             </div>
           </div>
@@ -263,21 +255,21 @@
                 </span>
               </dt>
               <dd>
-                    If the underlying database is a Btree, and
-                    was configured so that it is possible to search it
-                    by logical record number, retrieve a specific
-                    record based on a record number argument.
+                    If the underlying database is a Btree, and was
+                    configured so that it is possible to search it by
+                    logical record number, retrieve a specific record based
+                    on a record number argument.
                 </dd>
               <dt>
                 <span class="term">
                   <a href="../api_reference/C/dbcget.html#dbcget_DB_GET_RECNO" class="olink">DB_GET_RECNO</a>
                 </span>
               </dt>
-              <dd> 
-                    If the underlying database is a Btree, and
-                    was configured so that it is possible to search it
-                    by logical record number, return the record number
-                    for the record to which the cursor refers.
+              <dd>
+                    If the underlying database is a Btree, and was
+                    configured so that it is possible to search it by
+                    logical record number, return the record number for the
+                    record to which the cursor refers.
                 </dd>
             </dl>
           </div>
@@ -286,7 +278,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140526456124000"></a>Special-purpose flags</h4>
+                <h4 class="title"><a id="idp51078104"></a>Special-purpose flags</h4>
               </div>
             </div>
           </div>
@@ -297,10 +289,10 @@
                   <a href="../api_reference/C/dbget.html#dbget_DB_CONSUME" class="olink">DB_CONSUME</a>
                 </span>
               </dt>
-              <dd> 
-                    Read-and-delete: the first record (the
-                    head) of the queue is returned and deleted. The
-                    underlying database must be a Queue.
+              <dd>
+                    Read-and-delete: the first record (the head) of the
+                    queue is returned and deleted.  The underlying database
+                    must be a Queue.
                 </dd>
               <dt>
                 <span class="term">
@@ -308,22 +300,22 @@
                 </span>
               </dt>
               <dd>
-                    Read-modify-write: acquire write locks
-                    instead of read locks during retrieval. This can
-                    enhance performance in threaded applications by
-                    reducing the chance of deadlock.
+                    Read-modify-write: acquire write locks instead of read
+                    locks during retrieval. This can enhance performance in
+                    threaded applications by reducing the chance of
+                    deadlock.
                 </dd>
             </dl>
           </div>
-          <p> 
+          <p>
             In all cases, the cursor is repositioned by a <a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a>
-            operation to point to the newly-returned key/data pair in
-            the database.
+            operation to point to the newly-returned key/data pair in the
+            database.
         </p>
           <p>
-            The following is a code example showing a cursor
-            walking through a database and displaying the records it
-            contains to the standard output:
+            The following is a code example showing a cursor walking
+            through a database and displaying the records it contains to
+            the standard output:
         </p>
           <a id="prog_am19"></a>
           <pre class="programlisting">int
@@ -395,14 +387,13 @@ err:    if (close_dbc &amp;&amp; (ret = dbcp-&gt;close(dbcp)) != 0)
           </div>
         </div>
         <p>
-        The <a href="../api_reference/C/dbcput.html" class="olink">DBC-&gt;put()</a> method stores records into the database using
-        a cursor. In general, <a href="../api_reference/C/dbcput.html" class="olink">DBC-&gt;put()</a> takes a key and inserts the
-        associated data into the database, at a location controlled by
-        a specified flag.
+        The <a href="../api_reference/C/dbcput.html" class="olink">DBC-&gt;put()</a> method stores records into the database using a
+        cursor.  In general, <a href="../api_reference/C/dbcput.html" class="olink">DBC-&gt;put()</a> takes a key and inserts the
+        associated data into the database, at a location controlled by a
+        specified flag.
     </p>
         <p>
-        There are several flags that you can set to customize
-        storage:
+        There are several flags that you can set to customize storage:
     </p>
         <div class="variablelist">
           <dl>
@@ -411,18 +402,18 @@ err:    if (close_dbc &amp;&amp; (ret = dbcp-&gt;close(dbcp)) != 0)
                 <a href="../api_reference/C/dbcput.html#dbcput_DB_AFTER" class="olink">DB_AFTER</a>
               </span>
             </dt>
-            <dd> 
-                Create a new record, immediately after the
-                record to which the cursor refers. 
+            <dd>
+                Create a new record, immediately after the record to which
+                the cursor refers.
             </dd>
             <dt>
               <span class="term">
                 <a href="../api_reference/C/dbcput.html#dbcput_DB_BEFORE" class="olink">DB_BEFORE</a>
               </span>
             </dt>
-            <dd> 
-                Create a new record, immediately before the
-                record to which the cursor refers.
+            <dd>
+                Create a new record, immediately before the record to
+                which the cursor refers.
             </dd>
             <dt>
               <span class="term">
@@ -430,17 +421,17 @@ err:    if (close_dbc &amp;&amp; (ret = dbcp-&gt;close(dbcp)) != 0)
               </span>
             </dt>
             <dd>
-                Replace the data part of the record to which
-                the cursor refers. 
+                Replace the data part of the record to which the cursor
+                refers.
             </dd>
             <dt>
               <span class="term">
                 <a href="../api_reference/C/dbcput.html#dbcput_DB_KEYFIRST" class="olink">DB_KEYFIRST</a>
               </span>
             </dt>
-            <dd> 
-                Create a new record as the first of the
-                duplicate records for the supplied key. 
+            <dd>
+                Create a new record as the first of the duplicate records
+                for the supplied key.
             </dd>
             <dt>
               <span class="term">
@@ -448,20 +439,18 @@ err:    if (close_dbc &amp;&amp; (ret = dbcp-&gt;close(dbcp)) != 0)
               </span>
             </dt>
             <dd>
-                Create a new record, as the last of the
-                duplicate records for the supplied key. 
+                Create a new record, as the last of the duplicate records
+                for the supplied key.
             </dd>
           </dl>
         </div>
-        <p> 
-        In all cases, the cursor is repositioned by a <a href="../api_reference/C/dbcput.html" class="olink">DBC-&gt;put()</a>
-        operation to point to the newly inserted key/data pair in the
-        database. 
+        <p>
+        In all cases, the cursor is repositioned by a <a href="../api_reference/C/dbcput.html" class="olink">DBC-&gt;put()</a> operation to
+        point to the newly inserted key/data pair in the database.
     </p>
-        <p> 
-        The following is a code example showing a cursor storing
-        two data items in a database that supports duplicate data
-        items: 
+        <p>
+        The following is a code example showing a cursor storing two data
+        items in a database that supports duplicate data items:
     </p>
         <a id="prog_am20"></a>
         <pre class="programlisting">int
@@ -515,12 +504,12 @@ err:    if ((ret = dbcp-&gt;close(dbcp)) != 0)
         <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
           <h3 class="title">Note</h3>
           <p>
-            If you are using the Heap access method and you are
-            creating a new record in the database, then the key that
-            you provide to the <a href="../api_reference/C/dbcput.html" class="olink">DBC-&gt;put()</a> method should be empty. The
-            <a href="../api_reference/C/dbcput.html" class="olink">DBC-&gt;put()</a> method will return the record's ID (RID) in the
-            key. The RID is automatically created for you when Heap
-            database records are created. 
+            If you are using the Heap access method and you are creating a
+            new record in the database, then the key that you provide to
+            the <a href="../api_reference/C/dbcput.html" class="olink">DBC-&gt;put()</a> method should be empty.  The <a href="../api_reference/C/dbcput.html" class="olink">DBC-&gt;put()</a> method will
+            return the record's ID (RID) in the key. The RID is
+            automatically created for you when Heap database records are
+            created.
         </p>
         </div>
       </div>
@@ -532,12 +521,10 @@ err:    if ((ret = dbcp-&gt;close(dbcp)) != 0)
             </div>
           </div>
         </div>
-        <p>
-        The <a href="../api_reference/C/dbcdel.html" class="olink">DBC-&gt;del()</a> method deletes records from the database using
-        a cursor. The <a href="../api_reference/C/dbcdel.html" class="olink">DBC-&gt;del()</a> method deletes the record to which the
-        cursor currently refers. In all cases, the cursor position is
-        unchanged after a delete.
-    </p>
+        <p>The <a href="../api_reference/C/dbcdel.html" class="olink">DBC-&gt;del()</a> method deletes records from the database using a cursor.
+The <a href="../api_reference/C/dbcdel.html" class="olink">DBC-&gt;del()</a> method deletes the record to which the cursor currently
+refers.  In all cases, the cursor position is unchanged after a
+delete.</p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
@@ -547,24 +534,18 @@ err:    if ((ret = dbcp-&gt;close(dbcp)) != 0)
             </div>
           </div>
         </div>
-        <p>
-        Once a cursor has been initialized (for example, by a call
-        to <a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a>), it can be thought of as identifying a particular
-        location in a database. The <a href="../api_reference/C/dbcdup.html" class="olink">DBC-&gt;dup()</a> method permits an
-        application to create a new cursor that has the same locking
-        and transactional information as the cursor from which it is
-        copied, and which optionally refers to the same position in
-        the database.
-    </p>
-        <p>
-        In order to maintain a cursor position when an application
-        is using locking, locks are maintained on behalf of the cursor
-        until the cursor is closed. In cases when an application is
-        using locking without transactions, cursor duplication is
-        often required to avoid self-deadlocks. For further details,
-        refer to <a class="xref" href="lock_am_conv.html" title="Berkeley DB Transactional Data Store locking conventions">Berkeley DB Transactional Data
-        Store locking conventions</a>.
-    </p>
+        <p>Once a cursor has been initialized (for example, by a call to
+<a href="../api_reference/C/dbcget.html" class="olink">DBC-&gt;get()</a>), it can be thought of as identifying a particular
+location in a database.  The <a href="../api_reference/C/dbcdup.html" class="olink">DBC-&gt;dup()</a> method permits an application to
+create a new cursor that has the same locking and transactional
+information as the cursor from which it is copied, and which optionally
+refers to the same position in the database.</p>
+        <p>In order to maintain a cursor position when an application is using
+locking, locks are maintained on behalf of the cursor until the cursor is
+closed.  In cases when an application is using locking without
+transactions, cursor duplication is often required to avoid
+self-deadlocks.  For further details, refer to
+<a class="xref" href="lock_am_conv.html" title="Berkeley DB Transactional Data Store locking conventions">Berkeley DB Transactional Data Store locking conventions</a>.</p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
@@ -574,25 +555,18 @@ err:    if ((ret = dbcp-&gt;close(dbcp)) != 0)
             </div>
           </div>
         </div>
-        <p>
-        Berkeley DB supports "equality" (also known as "natural"),
-        joins on secondary indices. An equality join is a method of
-        retrieving data from a primary database using criteria stored
-        in a set of secondary indices. It requires the data be
-        organized as a primary database which contains the primary key
-        and primary data field, and a set of secondary indices. Each
-        of the secondary indices is indexed by a different secondary
-        key, and, for each key in a secondary index, there is a set of
-        duplicate data items that match the primary keys in the
-        primary database.
-    </p>
-        <p>
-        For example, let's assume the need for an application that
-        will return the names of stores in which one can buy fruit of
-        a given color. We would first construct a primary database
-        that lists types of fruit as the key item, and the store where
-        you can buy them as the data item:
-    </p>
+        <p>Berkeley DB supports "equality" (also known as "natural"), joins on secondary
+indices.  An equality join is a method of retrieving data from a primary
+database using criteria stored in a set of secondary indices.  It
+requires the data be organized as a primary database which contains the
+primary key and primary data field, and a set of secondary indices.
+Each of the secondary indices is indexed by a different secondary key,
+and, for each key in a secondary index, there is a set of duplicate data
+items that match the primary keys in the primary database.</p>
+        <p>For example, let's assume the need for an application that will return
+the names of stores in which one can buy fruit of a given color.  We
+would first construct a primary database that lists types of fruit as
+the key item, and the store where you can buy them as the data item:</p>
         <div class="informaltable">
           <table border="1" width="80%">
             <colgroup>
@@ -633,11 +607,8 @@ err:    if ((ret = dbcp-&gt;close(dbcp)) != 0)
             </tbody>
           </table>
         </div>
-        <p>
-        We would then create a secondary index with the key
-        <span class="bold"><strong>color</strong></span>, and, as the data
-        items, the names of fruits of different colors.
-    </p>
+        <p>We would then create a secondary index with the key <span class="bold"><strong>color</strong></span>, and,
+as the data items, the names of fruits of different colors.</p>
         <div class="informaltable">
           <table border="1" width="80%">
             <colgroup>
@@ -678,54 +649,35 @@ err:    if ((ret = dbcp-&gt;close(dbcp)) != 0)
             </tbody>
           </table>
         </div>
-        <p>
-        This secondary index would allow an application to look up a
-        color, and then use the data items to look up the stores where
-        the colored fruit could be purchased. For example, by first
-        looking up <span class="bold"><strong>blue</strong></span>, the data
-        item <span class="bold"><strong>blueberry</strong></span> could be used
-        as the lookup key in the primary database, returning <span class="bold"><strong>Farmer's Market</strong></span>.
-    </p>
-        <p>
-        Your data must be organized in the following manner in order
-        to use the <a href="../api_reference/C/dbjoin.html" class="olink">DB-&gt;join()</a> method:
-    </p>
+        <p>This secondary index would allow an application to look up a color, and
+then use the data items to look up the stores where the colored fruit
+could be purchased.  For example, by first looking up <span class="bold"><strong>blue</strong></span>,
+the data item <span class="bold"><strong>blueberry</strong></span> could be used as the lookup key in the
+primary database, returning <span class="bold"><strong>Farmer's Market</strong></span>.</p>
+        <p>Your data must be organized in the following manner in order to use the
+<a href="../api_reference/C/dbjoin.html" class="olink">DB-&gt;join()</a> method:</p>
         <div class="orderedlist">
           <ol type="1">
-            <li>
-            The actual data should be stored in the database
-            represented by the <a href="../api_reference/C/db.html" class="olink">DB</a> object used to invoke this method.
-            Generally, this <a href="../api_reference/C/db.html" class="olink">DB</a> object is called the
-            <span class="emphasis"><em>primary</em></span>.
-        </li>
-            <li>
-            Secondary indices should be stored in separate
-            databases, whose keys are the values of the secondary
-            indices and whose data items are the primary keys
-            corresponding to the records having the designated
-            secondary key value. It is acceptable (and expected) that
-            there may be duplicate entries in the secondary indices.
-                <p>
-                    These duplicate entries should be sorted for
-                    performance reasons, although it is not required. For
-                    more information see the <a href="../api_reference/C/dbset_flags.html#dbset_flags_DB_DUPSORT" class="olink">DB_DUPSORT</a> flag to the
-                    <a href="../api_reference/C/dbset_flags.html" class="olink">DB-&gt;set_flags()</a> method.
-                </p></li>
+            <li>The actual data should be stored in the database represented by the
+<a href="../api_reference/C/db.html" class="olink">DB</a> object used to invoke this method.  Generally, this
+<a href="../api_reference/C/db.html" class="olink">DB</a> object is called the <span class="emphasis"><em>primary</em></span>.</li>
+            <li>Secondary indices should be stored in separate databases, whose keys
+are the values of the secondary indices and whose data items are the
+primary keys corresponding to the records having the designated
+secondary key value.  It is acceptable (and expected) that there may be
+duplicate entries in the secondary indices.
+<p>These duplicate entries should be sorted for performance reasons, although
+it is not required.  For more information see the <a href="../api_reference/C/dbset_flags.html#dbset_flags_DB_DUPSORT" class="olink">DB_DUPSORT</a> flag
+to the <a href="../api_reference/C/dbset_flags.html" class="olink">DB-&gt;set_flags()</a> method.</p></li>
           </ol>
         </div>
-        <p>
-        What the <a href="../api_reference/C/dbjoin.html" class="olink">DB-&gt;join()</a> method does is review a list of secondary
-        keys, and, when it finds a data item that appears as a data
-        item for all of the secondary keys, it uses that data item as
-        a lookup into the primary database, and returns the associated
-        data item.
-    </p>
-        <p>
-        If there were another secondary index that had as its key
-        the <span class="bold"><strong>cost</strong></span> of the fruit, a
-        similar lookup could be done on stores where inexpensive fruit
-        could be purchased:
-    </p>
+        <p>What the <a href="../api_reference/C/dbjoin.html" class="olink">DB-&gt;join()</a> method does is review a list of secondary keys, and,
+when it finds a data item that appears as a data item for all of the
+secondary keys, it uses that data item as a lookup into the primary
+database, and returns the associated data item.</p>
+        <p>If there were another secondary index that had as its key the <span class="bold"><strong>cost</strong></span>
+of the fruit, a similar lookup could be done on stores where inexpensive
+fruit could be purchased:</p>
         <div class="informaltable">
           <table border="1" width="80%">
             <colgroup>
@@ -770,33 +722,25 @@ err:    if ((ret = dbcp-&gt;close(dbcp)) != 0)
             </tbody>
           </table>
         </div>
-        <p>
-        The <a href="../api_reference/C/dbjoin.html" class="olink">DB-&gt;join()</a> method provides equality join functionality.
-        While not strictly cursor functionality, in that it is not a
-        method off a cursor handle, it is more closely related to the
-        cursor operations than to the standard <a href="../api_reference/C/db.html" class="olink">DB</a> operations.
-    </p>
-        <p>
-        It is also possible to do lookups based on multiple criteria
-        in a single operation. For example, it is possible to look up
-        fruits that are both red and expensive in a single operation.
-        If the same fruit appeared as a data item in both the color
-        and expense indices, then that fruit name would be used as the
-        key for retrieval from the primary index, and would then
-        return the store where expensive, red fruit could be
-        purchased.
-    </p>
+        <p>The <a href="../api_reference/C/dbjoin.html" class="olink">DB-&gt;join()</a> method provides equality join functionality.  While not
+strictly cursor functionality, in that it is not a method off a cursor
+handle, it is more closely related to the cursor operations than to the
+standard <a href="../api_reference/C/db.html" class="olink">DB</a> operations.</p>
+        <p>It is also possible to do lookups based on multiple criteria in a single
+operation.  For example, it is possible to look up fruits that are both
+red and expensive in a single operation.  If the same fruit appeared as
+a data item in both the color and expense indices, then that fruit name
+would be used as the key for retrieval from the primary index, and would
+then return the store where expensive, red fruit could be purchased.</p>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140526456046816"></a>Example</h4>
+                <h4 class="title"><a id="idp51124888"></a>Example</h4>
               </div>
             </div>
           </div>
-          <p>
-            Consider the following three databases:
-        </p>
+          <p>Consider the following three databases:</p>
           <div class="variablelist">
             <dl>
               <dt>
@@ -806,9 +750,7 @@ err:    if ((ret = dbcp-&gt;close(dbcp)) != 0)
                 <div class="itemizedlist">
                   <ul type="disc">
                     <li>key = SSN</li>
-                    <li>data = record containing name,
-                            address, phone number, job
-                            title</li>
+                    <li>data = record containing name, address, phone number, job title</li>
                   </ul>
                 </div>
               </dd>
@@ -836,22 +778,15 @@ err:    if ((ret = dbcp-&gt;close(dbcp)) != 0)
               </dd>
             </dl>
           </div>
-          <p>
-            Consider the following query:
-        </p>
+          <p>Consider the following query:</p>
           <pre class="programlisting">Return the personnel records of all people named smith with the job
 title manager.</pre>
-          <p>
-            This query finds are all the records in the primary
-            database (personnel) for whom the criteria <span class="bold"><strong>lastname=smith and job
-            title=manager</strong></span> is true.
-        </p>
-          <p>
-            Assume that all databases have been properly opened and
-            have the handles: pers_db, name_db, job_db. We also assume
-            that we have an active transaction to which the handle txn
-            refers.
-        </p>
+          <p>This query finds are all the records in the primary database (personnel)
+for whom the criteria <span class="bold"><strong>lastname=smith and job title=manager</strong></span> is
+true.</p>
+          <p>Assume that all databases have been properly opened and have the
+handles:  pers_db, name_db, job_db.  We also assume that we have an
+active transaction to which the handle txn refers.</p>
           <a id="prog_am21"></a>
           <pre class="programlisting">DBC *name_curs, *job_curs, *join_curs;
 DBC *carray[3];
@@ -911,15 +846,11 @@ if (job_curs != NULL &amp;&amp;
     ret = tret;
 
 return (ret);</pre>
-          <p>
-            The name cursor is positioned at the beginning of the
-            duplicate list for <span class="bold"><strong>smith</strong></span>
-            and the job cursor is placed at the beginning of the
-            duplicate list for <span class="bold"><strong>manager</strong></span>.
-            The join cursor is returned from the join method. This code then
-            loops over the join cursor getting the personnel records of each one
-            until there are no more.
-        </p>
+          <p>The name cursor is positioned at the beginning of the duplicate list
+for <span class="bold"><strong>smith</strong></span> and the job cursor is placed at the beginning of
+the duplicate list for <span class="bold"><strong>manager</strong></span>.  The join cursor is returned
+from the join method.  This code then loops over the join cursor getting
+the personnel records of each one until there are no more.</p>
         </div>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
@@ -930,15 +861,12 @@ return (ret);</pre>
             </div>
           </div>
         </div>
-        <p>
-        Once a cursor has been initialized to refer to a particular
-        key in the database, it can be used to determine the number of
-        data items that are stored for any particular key. The
-        <a href="../api_reference/C/dbccount.html" class="olink">DBC-&gt;count()</a> method returns this number of data items. The
-        returned value is always one, unless the database supports
-        duplicate data items, in which case it may be any number of
-        items.
-    </p>
+        <p>Once a cursor has been initialized to refer to a particular key in the
+database, it can be used to determine the number of data items that are
+stored for any particular key.  The <a href="../api_reference/C/dbccount.html" class="olink">DBC-&gt;count()</a> method returns
+this number of data items.  The returned value is always one, unless
+the database supports duplicate data items, in which case it may be any
+number of items.</p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
@@ -948,15 +876,12 @@ return (ret);</pre>
             </div>
           </div>
         </div>
-        <p>
-        The <a href="../api_reference/C/dbcclose.html" class="olink">DBC-&gt;close()</a> method closes the <a href="../api_reference/C/dbc.html" class="olink">DBC</a> cursor, after which
-        the cursor may no longer be used. Although cursors are
-        implicitly closed when the database they point to are closed,
-        it is good programming practice to explicitly close cursors.
-        In addition, in transactional systems, cursors may not exist
-        outside of a transaction and so must be explicitly
-        closed.
-    </p>
+        <p>The <a href="../api_reference/C/dbcclose.html" class="olink">DBC-&gt;close()</a> method closes the <a href="../api_reference/C/dbc.html" class="olink">DBC</a> cursor, after which the
+cursor may no longer be used.  Although cursors are implicitly closed
+when the database they point to are closed, it is good programming
+practice to explicitly close cursors.  In addition, in transactional
+systems, cursors may not exist outside of a transaction and so must be
+explicitly closed.</p>
       </div>
     </div>
     <div class="navfooter">
@@ -974,7 +899,9 @@ return (ret);</pre>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Chapter 4.  Access Method Wrapup </td>
+          <td width="40%" align="right" valign="top"> Chapter 4. 
+		Access Method Wrapup
+        </td>
         </tr>
       </table>
     </div>

@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2000, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -11,7 +11,6 @@ proc fop001 { method { inmem 0 } { childtxn 0 } args } {
 
 	set args [convert_args $method $args]
 	set omethod [convert_method $method]
-	set skipblob 0
 
 	# The variable inmem determines whether the test is being
 	# run with regular named databases or named in-memory databases.
@@ -27,8 +26,6 @@ proc fop001 { method { inmem 0 } { childtxn 0 } args } {
 		set string "regular named databases"
 		set operator do_op
 	} else {
-		set skipblob 1
-		set skipmsg "Skipping fop007 (fop001 + in-mem) for blobs."
 		if {[is_queueext $method] } {
 			puts "Skipping in-memory test for method $method."
 			return
@@ -44,21 +41,6 @@ proc fop001 { method { inmem 0 } { childtxn 0 } args } {
 		}
 		set string "in-memory named databases"
 		set operator do_inmem_op
-	}
-
-	# Look for incompatible configurations of blob.
-	foreach conf { "-compress" "-dup" "-dupsort" \
-	    "-read_uncommitted" "-multiversion" } {
-		if { [lsearch -exact $args $conf] != -1 } {
-			set skipblob 1
-			set skipmsg "Fop001 skipping $conf for blob"
-			break
-		}
-	}
-	if { [is_btree $omethod] != 1 && \
-	    [is_hash $omethod] != 1 && [is_heap $omethod] != 1 } {
-		set skipblob 1
-		set skipmsg "Fop001 skipping $omethod for blob"
 	}
 
 	puts "\nFop$tnum: ($method)\
@@ -114,276 +96,183 @@ proc fop001 { method { inmem 0 } { childtxn 0 } args } {
 
 	set testid 0
 
-	foreach format { "normal" "blob" } {
-		if { $format == "blob" } {
-			append args " -blob_threshold 1 "
-			if { $skipblob != 0 } {
-				puts $skipmsg
-				continue
+	# Run all the cases
+	foreach case $cases {
+		env_cleanup $testdir
+		incr testid
+
+		# Extract elements of the case
+		set op1 [lindex [lindex $case 0] 0]
+		set names1 [lindex [lindex $case 0] 1]
+		set res1 [lindex [lindex $case 0] 2]
+
+		set op2 [lindex [lindex $case 1] 0]
+		set names2 [lindex [lindex $case 1] 1]
+		set res2 [lindex [lindex $case 1] 2]
+		set remaining [lindex [lindex $case 1] 3]
+
+		# Use the list of remaining files to derive
+		# the list of files that should be gone.
+		set allnames { a b foo bar }
+		set gone {}
+		foreach f $allnames {
+			set idx [lsearch -exact $remaining $f]
+			if { $idx == -1 } {
+				lappend gone $f
 			}
 		}
-		# Run all the cases
-		foreach case $cases {
-			env_cleanup $testdir
-			incr testid
 
-			# Extract elements of the case
-			set op1 [lindex [lindex $case 0] 0]
-			set names1 [lindex [lindex $case 0] 1]
-			set res1 [lindex [lindex $case 0] 2]
+		puts -nonewline "\tFop$tnum.$testid: $op1 ($names1), " 
+		puts "then $op2 ($names2)."
 
-			set op2 [lindex [lindex $case 1] 0]
-			set names2 [lindex [lindex $case 1] 1]
-			set res2 [lindex [lindex $case 1] 2]
-			set remaining [lindex [lindex $case 1] 3]
+		# The variable 'when' describes when to resolve a txn -- 
+		# before or after closing any open databases. 
+		foreach when { before after } {
 
-			# Use the list of remaining files to derive
-			# the list of files that should be gone.
-			set allnames { a b foo bar }
-			set gone {}
-			foreach f $allnames {
-				set idx [lsearch -exact $remaining $f]
-				if { $idx == -1 } {
-					lappend gone $f
-				}
-			}
-
-			puts -nonewline "\tFop$tnum.$testid: $op1 ($names1), "
-			puts -nonewline "then $op2 ($names2)"
-			if { $format == "blob" } {
-				puts ", with blobs enabled."
+			# Create transactional environment.
+			set env [berkdb_env -create -home $testdir -txn nosync]
+			error_check_good is_valid_env [is_valid_env $env] TRUE
+	
+			# Create two databases, dba and dbb.
+			if { $inmem == 0 } {
+				set dba [eval {berkdb_open -create} $omethod \
+				    $args -env $env -auto_commit a]
 			} else {
-				puts "."
+				set dba [eval {berkdb_open -create} $omethod \
+				    $args -env $env -auto_commit { "" a }]
 			}
-
-			# The variable 'when' describes when to resolve a txn
-			# -- before or after closing any open databases. 
-			foreach when { before after } {
-
-				# Create transactional environment.
-				set env [berkdb_env -create \
-				    -home $testdir -txn nosync]
-				error_check_good is_valid_env \
-				    [is_valid_env $env] TRUE
+			error_check_good dba_open [is_valid_db $dba] TRUE
+			error_check_good dba_put [$dba put 1 a] 0
+			error_check_good dba_close [$dba close] 0
 	
-				# Create two databases, dba and dbb.
-				if { $inmem == 0 } {
-					set dba [eval \
-					    {berkdb_open -create} $omethod \
-					    $args -env $env -auto_commit a]
+			if { $inmem == 0 } {
+				set dbb [eval {berkdb_open -create} $omethod \
+				    $args -env $env -auto_commit b]
+			} else {
+				set dbb [eval {berkdb_open -create} $omethod \
+				    $args -env $env -auto_commit { "" b }]
+			}
+			error_check_good dbb_open [is_valid_db $dbb] TRUE
+			error_check_good dbb_put [$dbb put 1 b] 0
+			error_check_good dbb_close [$dbb close] 0
+	
+			# The variable 'end' describes how to resolve the txn.
+			# We run the 'abort' first because that leaves the env
+			# properly set up for the 'commit' test.
+			foreach end {abort commit} {
+	
+				# Start transaction
+				set parent [$env txn]
+				set parent_end "commit"
+				set msg ""
+				if { $childtxn } {
+					set child [$env txn -parent $parent]
+					set txn $child
+					set msg "(committing parent)"
+					if { [berkdb random_int 0 1] == 0 } {
+						set parent_end "abort"
+						set msg "(aborting parent)"
+					}
 				} else {
-					set dba [eval {berkdb_open -create} \
-					    $omethod $args -env $env \
-					    -auto_commit { "" a }]
+					set txn $parent
 				}
-				error_check_good \
-				    dba_open [is_valid_db $dba] TRUE
-				error_check_good dba_put [$dba put 1 a] 0
-				set blobsubdira [$dba get_blob_sub_dir]
-				error_check_good dba_close [$dba close] 0
+
+				puts "\t\tFop$tnum.$testid:\
+				    $end $when closing database. $msg"
 	
-				if { $inmem == 0 } {
-					set dbb [eval \
-					    {berkdb_open -create} $omethod \
-					    $args -env $env -auto_commit b]
+				# Execute and check operation 1
+				set result1 [$operator \
+				    $omethod $op1 $names1 $txn $env $args]
+				if { $res1 == 0 } {
+					error_check_good \
+					    op1_should_succeed $result1 $res1
 				} else {
-					set dbb [eval {berkdb_open -create} \
-					    $omethod $args -env $env \
-					    -auto_commit { "" b }]
+					set error [extract_error $result1]
+					error_check_good \
+					    op1_wrong_failure $error $res1
 				}
-				error_check_good \
-				    dbb_open [is_valid_db $dbb] TRUE
-				error_check_good dbb_put [$dbb put 1 b] 0
-				set blobsubdirb [$dbb get_blob_sub_dir]
-				error_check_good dbb_close [$dbb close] 0
 	
-				# The variable 'end' describes how to resolve
-				# the txn.  We run the 'abort' first because
-				# that leaves the env properly set up for the
-				# 'commit' test.
-				foreach end {abort commit} {
+				# Execute and check operation 2
+				set result2 [$operator \
+				    $omethod $op2 $names2 $txn $env $args]
+				if { $res2 == 0 } {
+					error_check_good \
+					    op2_should_succeed $result2 $res2
+				} else {
+					set error [extract_error $result2]
+					error_check_good \
+					    op2_wrong_failure $error $res2
+				}
 	
-					# Start transaction
-					set parent [$env txn]
-					set parent_end "commit"
-					set msg ""
+				if { $when == "before" } {
+					error_check_good txn_$end [$txn $end] 0
 					if { $childtxn } {
-						set child \
-						    [$env txn -parent $parent]
-						set txn $child
-						set msg "(committing parent)"
-						if { [berkdb random_int 0 1] \
-						    == 0 } {
-							set parent_end "abort"
-							set msg \
-							    "(aborting parent)"
-						}
-					} else {
-						set txn $parent
+						error_check_good parent_end \
+						    [$parent $parent_end] 0 
 					}
-
-					puts "\t\tFop$tnum.$testid:\
-					    $end $when closing database. $msg"
-	
-					# Execute and check operation 1
-					set result1 [$operator $omethod \
-					    $op1 $names1 $txn $env $args]
-					if { $res1 == 0 } {
-						error_check_good \
-						    op1_should_succeed \
-						    $result1 $res1
-					} else {
-						set error \
-						    [extract_error $result1]
-						error_check_good \
-						    op1_wrong_failure \
-						    $error $res1
-					}
-	
-					# Execute and check operation 2
-					set result2 [$operator $omethod \
-					    $op2 $names2 $txn $env $args]
-					if { $res2 == 0 } {
-						error_check_good \
-						    op2_should_succeed \
-						    $result2 $res2
-					} else {
-						set error \
-						    [extract_error $result2]
-						error_check_good \
-						    op2_wrong_failure \
-						    $error $res2
-					}
-	
-					if { $when == "before" } {
-						error_check_good \
-						    txn_$end [$txn $end] 0
-						if { $childtxn } {
-							error_check_good \
-							    parent_end \
-							    [$parent \
-							    $parent_end] 0
-						}
 		
-						# If the txn was aborted, we
-						# still have the original two
-						# databases.  Otherwise check
-						# for the expected remaining
-						# files.
-						if { $end == "abort" ||\
-						    $parent_end == "abort" } {
-							error_check_good \
-							    db_exists \
-							    [database_exists \
-							    $inmem $testdir \
-							    a] 1
-							if { $format == \
-							    "blob" } {
-								error_check_good \
-								    bloba_exists \
-								    [blob_exists \
-								    $testdir \
-								    $blobsubdira] 1
-							}
-							error_check_good \
-							    db_exists \
-							    [database_exists \
-							    $inmem $testdir \
-							    b] 1
-							if { $format == "blob" } {
-								error_check_good \
-								    blobb_exists \
-								    [blob_exists \
-								    $testdir \
-								    $blobsubdirb] 1
-							}
-						} else {
-							foreach db $remaining {
-								error_check_good \
-								    db_exists \
-								    [database_exists \
-								    $inmem \
-								    $testdir \
-								    $db] 1
-							}
-							foreach db $gone {
-								error_check_good \
-								    db_gone \
-								    [database_exists \
-								    $inmem \
-								    $testdir \
-								    $db] 0
-							}
-						}
-
-						close_db_handles 
+					# If the txn was aborted, we still
+					# have the original two databases.
+					# Otherwise check for the expected
+					# remaining files.
+					if { $end == "abort" ||\
+					    $parent_end == "abort" } {
+						error_check_good db_exists \
+						    [database_exists \
+						    $inmem $testdir a] 1
+						error_check_good db_exists \
+						    [database_exists \
+						    $inmem $testdir b] 1
 					} else {
-						close_db_handles
-						error_check_good \
-						    txn_$end [$txn $end] 0
-						if { $childtxn } {
-							error_check_good \
-							    resolve_parent \
-							    [$parent \
-							    $parent_end] 0
+						foreach db $remaining {
+							error_check_good db_exists \
+							    [database_exists \
+							    $inmem $testdir $db] 1
 						}
-	
-						if { $end == "abort" || \
-						    $parent_end == "abort" } {
-							error_check_good \
-							    db_exists \
+						foreach db $gone {
+							error_check_good db_gone \
 							    [database_exists \
-							    $inmem $testdir \
-							    a] 1
-							if { $format == \
-							    "blob" } {
-								error_check_good \
-								    bloba_exists \
-								    [blob_exists \
-								    $testdir \
-								    $blobsubdira] 1
-							}
-							error_check_good \
-							    db_exists \
-							    [database_exists \
-							    $inmem $testdir \
-							    b] 1
-							if { $format == \
-							    "blob" } {
-								error_check_good \
-								    blobb_exists \
-								    [blob_exists \
-								    $testdir \
-								    $blobsubdirb] 1
-							}
-						} else {
-							foreach db $remaining {
-								error_check_good \
-								    db_exists \
-								    [database_exists \
-								    $inmem \
-								    $testdir \
-								    $db] 1
-							}
-							foreach db $gone {
-								error_check_good \
-								    db_gone \
-								    [database_exists \
-								    $inmem \
-								    $testdir \
-								    $db] 0
-							}
+							    $inmem $testdir $db] 0
+						}
+					}
 
-						}
-					}		
-				}
+					close_db_handles 
+				} else {
+					close_db_handles
+					error_check_good txn_$end [$txn $end] 0
+					if { $childtxn } {
+						error_check_good resolve_parent \
+						    [$parent $parent_end] 0 
+					}
 	
-				# Clean up for next case
-				error_check_good env_close [$env close] 0
-				error_check_good envremove \
-				    [berkdb envremove -home $testdir] 0
-				env_cleanup $testdir
+					if { $end == "abort" || $parent_end == "abort" } {
+						error_check_good db_exists \
+						    [database_exists \
+						    $inmem $testdir a] 1
+						error_check_good db_exists \
+						    [database_exists \
+						    $inmem $testdir b] 1
+					} else {
+						foreach db $remaining {
+							error_check_good db_exists \
+							    [database_exists \
+							    $inmem $testdir $db] 1
+						}
+						foreach db $gone {
+							error_check_good db_gone \
+							    [database_exists \
+							    $inmem $testdir $db] 0
+						}
+
+					}
+				}		
 			}
+	
+			# Clean up for next case
+			error_check_good env_close [$env close] 0
+			error_check_good envremove \
+			    [berkdb envremove -home $testdir] 0
+			env_cleanup $testdir
 		}
 	}
 }
@@ -395,11 +284,6 @@ proc database_exists { inmem testdir name } {
 		return [file exists $testdir/$name]
 	}	
 
-}
-
-proc blob_exists { testdir blobsubdir } {
-	set blob_file $testdir/__db_bl/$blobsubdir/__db.bl001
-	return [file exists $blob_file]
 }
 
 # This is a real hack.  We need to figure out if an in-memory named

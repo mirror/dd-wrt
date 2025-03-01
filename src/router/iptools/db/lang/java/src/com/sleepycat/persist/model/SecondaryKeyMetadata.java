@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -29,16 +29,6 @@ public class SecondaryKeyMetadata extends FieldMetadata {
 
     /**
      * Used by an {@code EntityModel} to construct secondary key metadata.
-     *
-     * @param name the field name.
-     * @param className the class name.
-     * @param declaringClassName the name of the class where the field is
-     * declared.
-     * @param elementClassName the element class name.
-     * @param keyName the key name.
-     * @param relationship the Relationship.
-     * @param relatedEntity the class name of the related (foreign) entity.
-     * @param deleteAction the DeleteAction.
      */
     public SecondaryKeyMetadata(String name,
                                 String className,
@@ -62,8 +52,6 @@ public class SecondaryKeyMetadata extends FieldMetadata {
      * Relationship#MANY_TO_MANY MANY_TO_MANY} relationship, or null for a
      * Relationship#ONE_TO_ONE ONE_TO_ONE} or {@link Relationship#MANY_TO_ONE
      * MANY_TO_ONE} relationship.
-     *
-     * @return the element class name.
      */
     public String getElementClassName() {
         return elementClassName;
@@ -71,8 +59,6 @@ public class SecondaryKeyMetadata extends FieldMetadata {
 
     /**
      * Returns the key name, which may be different from the field name.
-     *
-     * @return the key name.
      */
     public String getKeyName() {
         return keyName;
@@ -82,8 +68,6 @@ public class SecondaryKeyMetadata extends FieldMetadata {
      * Returns the relationship between instances of the entity class and the
      * secondary keys.  This may be specified using the {@link
      * SecondaryKey#relate} annotation.
-     *
-     * @return the Relationship.
      */
     public Relationship getRelationship() {
         return relationship;
@@ -93,8 +77,6 @@ public class SecondaryKeyMetadata extends FieldMetadata {
      * Returns the class name of the related (foreign) entity, for which
      * foreign key constraints are specified using the {@link
      * SecondaryKey#relatedEntity} annotation.
-     *
-     * @return the class name of the related (foreign) entity.
      */
     public String getRelatedEntity() {
         return relatedEntity;
@@ -105,8 +87,6 @@ public class SecondaryKeyMetadata extends FieldMetadata {
      * primary key value that exists as a secondary key value for this entity.
      * This may be specified using the {@link
      * SecondaryKey#onRelatedEntityDelete} annotation.
-     *
-     * @return the DeleteAction.
      */
     public DeleteAction getDeleteAction() {
         return deleteAction;

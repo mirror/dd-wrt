@@ -12,7 +12,7 @@ use util;
 plan(skip_all => "Queue needs Berkeley DB 3.3.x or better\n" )
     if $BerkeleyDB::db_version < 3.3;
     
-plan tests => 260;
+plan tests => 257;
 
 
 my $Dfile = "dbhash.tmp";
@@ -866,28 +866,6 @@ EOM
 
     undef $db ;
     untie @array ;
-}
-
-{
-    # RT #75691: scalar(@array) returns incorrect value after shift() on tied array
-    my $lex = new LexFile $Dfile ;
-    my @array ;
-    my $db ;
-    $db = tie @array, 'BerkeleyDB::Queue', 
-                        -Flags  => DB_CREATE ,
-				    	-Len       => 2,
-						-Filename => $Dfile ;
-    isa_ok $db, 'BerkeleyDB::Queue';                        
-    $FA ? push @array,  "ab", "cd", "ef", "gh"
-        : $db->push("ab", "cd", "ef", "gh") ;
-    is scalar(@array), 4;
-
-    $FA ? shift @array : $db->shift() ;
-    is scalar(@array), 3;
-
-    undef $db;
-    untie @array ;
-
 }
 __END__
 

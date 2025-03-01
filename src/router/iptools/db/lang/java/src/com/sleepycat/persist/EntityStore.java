@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -35,8 +35,8 @@ import com.sleepycat.persist.model.SecondaryKey;
  * <p>{@code EntityStore} objects are thread-safe.  Multiple threads may safely
  * call the methods of a shared {@code EntityStore} object.</p>
  *
- * <p>See the <a href="package-summary.html#example">package
- * summary example</a> for an example of using an {@code EntityStore}.</p>
+ * <p>See the {@link <a href="package-summary.html#example">package
+ * summary example</a>} for an example of using an {@code EntityStore}.</p>
  *
  * <p>Before creating an <code>EntityStore</code> you must create an {@link
  * Environment} object using the Berkeley DB engine API.  The environment may
@@ -95,14 +95,6 @@ public class EntityStore
      *
      * @param config the entity store configuration, or null to use default
      * configuration properties.
-     *
-     * @throws StoreExistsException when the {@link
-     * StoreConfig#setExclusiveCreate ExclusiveCreate} configuration parameter
-     * is true and the store's internal catalog database already exists.
-     *
-     * @throws StoreNotFoundException when when the {@link
-     * StoreConfig#setAllowCreate AllowCreate} configuration parameter is false
-     * and the store's internal catalog database does not exist.
      *
      * @throws IncompatibleClassException if an incompatible class change has
      * been made and mutations are not configured for handling the change.  See
@@ -187,10 +179,6 @@ public class EntityStore
      *
      * @param entityClass the entity class for which to open the primary index.
      *
-     * @param <PK> the primary key class.
-     *
-     * @param <E> the entity class.
-     *
      * @return the primary index.
      *
      * @throws IllegalArgumentException if the entity class or classes
@@ -242,12 +230,6 @@ public class EntityStore
      *
      * @param keyName the name of the secondary key field, or the {@link
      * SecondaryKey#name} if this name annotation property was specified.
-     *
-     * @param <SK> the secondary key class.
-     *
-     * @param <PK> the primary key class.
-     *
-     * @param <E> the entity class.
      *
      * @return the secondary index.
      *
@@ -305,14 +287,6 @@ public class EntityStore
      * @param keyName the name of the secondary key field, or the {@link
      * SecondaryKey#name} if this name annotation property was specified.
      *
-     * @param <SK> the secondary key class.
-     *
-     * @param <PK> the primary key class.
-     *
-     * @param <E1> the entity class.
-     *
-     * @param <E2> the entity sub-class.
-     *
      * @return the secondary index.
      *
      * @throws IllegalArgumentException if the given entity subclass does not
@@ -363,10 +337,6 @@ public class EntityStore
      * appropriate {@link Mutations} are deleted.  Therefore, if this method is
      * called twice successfully without changing class definitions, the second
      * call will do nothing.</p>
-     *
-     * @param config the EvolveConfig.
-     *
-     * @return the EvolveStats.
      *
      *
      * @throws DatabaseException the base class for all BDB exceptions.
@@ -465,7 +435,6 @@ public class EntityStore
      * Closes all databases and sequences that were opened via this store.  The
      * caller must ensure that no databases opened via this store are in use.
      *
-     *
      * <p>WARNING: To guard against memory leaks, the application should
      * discard all references to the closed handle.  While BDB makes an effort
      * to discard references from closed objects to the allocated memory for an
@@ -502,7 +471,7 @@ public class EntityStore
      * Returns the default Berkeley DB engine API configuration for a named key
      * sequence.
      *
-     * <p>The returned configuration is as follows.  All other properties have
+     * </p>The returned configuration is as follows.  All other properties have
      * default values.</p>
      * <ul>
      * <li>The {@link SequenceConfig#setInitialValue InitialValue} is one.</li>
@@ -558,7 +527,7 @@ public class EntityStore
      * Returns the default primary database Berkeley DB engine API
      * configuration for an entity class.
      *
-     * <p>The returned configuration is as follows.  All other properties have
+     * </p>The returned configuration is as follows.  All other properties have
      * default values.</p>
      * <ul>
      * <li>{@link DatabaseConfig#setTransactional Transactional} is set to
@@ -613,7 +582,7 @@ public class EntityStore
      * Returns the default secondary database Berkeley DB engine API
      * configuration for an entity class and key name.
      *
-     * <p>The returned configuration is as follows.  All other properties have
+     * </p>The returned configuration is as follows.  All other properties have
      * default values.</p>
      * <ul>
      * <li>{@link DatabaseConfig#setTransactional Transactional} is set to
@@ -626,12 +595,12 @@ public class EntityStore
      * <li>{@link DatabaseConfig#setBtreeComparator BtreeComparator} is set to
      * an internal class if a key comparator is used.</li>
      * <li>{@link DatabaseConfig#setSortedDuplicates SortedDuplicates} is set
-     * according to {@link SecondaryKey#relate}.</li>
+     * according to {@link SecondaryKey#relate}.</p>
      * <li>{@link SecondaryConfig#setAllowPopulate AllowPopulate} is set to
      * true when a secondary key is added to an existing primary index.</li>
      * <li>{@link SecondaryConfig#setKeyCreator KeyCreator} or {@link
      * SecondaryConfig#setMultiKeyCreator MultiKeyCreator} is set to an
-     * internal instance.</li>
+     * internal instance.</p>
      * <li>{@link SecondaryConfig#setForeignMultiKeyNullifier
      * ForeignMultiKeyNullifier} is set to an internal instance if {@link
      * SecondaryKey#onRelatedEntityDelete} is {@link DeleteAction#NULLIFY}.</li>

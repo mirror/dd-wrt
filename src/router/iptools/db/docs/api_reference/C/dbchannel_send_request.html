@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -76,7 +76,7 @@ DB_CHANNEL-&gt;send_request(DB_CHANNEL *channel, DBT *request,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711174141808"></a>Parameters</h3>
+              <h3 class="title"><a id="idp53870984"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -84,7 +84,7 @@ DB_CHANNEL-&gt;send_request(DB_CHANNEL *channel, DBT *request,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711174148576"></a>request</h4>
+                <h4 class="title"><a id="idp53870616"></a>request</h4>
               </div>
             </div>
           </div>
@@ -104,7 +104,7 @@ DB_CHANNEL-&gt;send_request(DB_CHANNEL *channel, DBT *request,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711174136448"></a>nrequest</h4>
+                <h4 class="title"><a id="idp53865680"></a>nrequest</h4>
               </div>
             </div>
           </div>
@@ -117,7 +117,7 @@ DB_CHANNEL-&gt;send_request(DB_CHANNEL *channel, DBT *request,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711174168112"></a>response</h4>
+                <h4 class="title"><a id="idp53855328"></a>response</h4>
               </div>
             </div>
           </div>
@@ -153,7 +153,7 @@ DB_CHANNEL-&gt;send_request(DB_CHANNEL *channel, DBT *request,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711174134848"></a>timeout</h4>
+                <h4 class="title"><a id="idp53858888"></a>timeout</h4>
               </div>
             </div>
           </div>
@@ -180,7 +180,7 @@ DB_CHANNEL-&gt;send_request(DB_CHANNEL *channel, DBT *request,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711174132880"></a>flags</h4>
+                <h4 class="title"><a id="idp53878992"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -201,7 +201,7 @@ DB_CHANNEL-&gt;send_request(DB_CHANNEL *channel, DBT *request,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711174130800"></a>Errors</h3>
+              <h3 class="title"><a id="idp53880072"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -218,7 +218,7 @@ DB_CHANNEL-&gt;send_request(DB_CHANNEL *channel, DBT *request,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711174122608"></a>DB_BUFFER_SMALL</h4>
+                <h4 class="title"><a id="idp53884376"></a>DB_BUFFER_SMALL</h4>
               </div>
             </div>
           </div>
@@ -234,24 +234,24 @@ DB_CHANNEL-&gt;send_request(DB_CHANNEL *channel, DBT *request,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711174135808"></a>DB_NOSERVER</h4>
+                <h4 class="title"><a id="idp53885216"></a>DB_NOSERVER</h4>
               </div>
             </div>
           </div>
           <p>
                 A message was sent to a remote site that has not
-                configured a message dispatch callback function.
+                configured a message dispatch call-back function.
                 Use the
                 <a class="xref" href="repmgr_msg_dispatch.html" title="DB_ENV-&gt;repmgr_msg_dispatch()">DB_ENV-&gt;repmgr_msg_dispatch()</a>
                 method at every site belonging to the replication group to configure a 
-                message dispatch callback function.
+                message dispatch call-back function.
             </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711174257376"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp53856712"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -265,20 +265,19 @@ DB_CHANNEL-&gt;send_request(DB_CHANNEL *channel, DBT *request,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711174124688"></a>Class</h3>
+              <h3 class="title"><a id="idp53886672"></a>Class</h3>
             </div>
           </div>
         </div>
         <p>
-            <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>,
-            <a class="link" href="db_channel.html" title="The DB_CHANNEL Handle">DB_CHANNEL</a>
+            <a class="link" href="env.html" title="Chapter 5.  The DB_ENV Handle">DB_ENV</a>  
         </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711174112912"></a>See Also</h3>
+              <h3 class="title"><a id="idp53870120"></a>See Also</h3>
             </div>
           </div>
         </div>

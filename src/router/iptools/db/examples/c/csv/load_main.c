@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -15,12 +15,11 @@ static int usage(void);
 /*
  * Globals
  */
-DB_ENV	*dbenv;				/* Database environment */
-DB	*db;				/* Primary database */
+DB_ENV	 *dbenv;			/* Database environment */
+DB	 *db;				/* Primary database */
 DB	**secondary;			/* Secondaries */
-int	verbose;			/* Program verbosity */
-char	*progname;			/* Program name */
-FILE	*ffp;				/* CSV file */
+int	  verbose;			/* Program verbosity */
+char	 *progname;			/* Program name */
 
 int
 main(int argc, char *argv[])
@@ -38,7 +37,6 @@ main(int argc, char *argv[])
 	else
 		++progname;
 	verbose = 0;
-	ffp = NULL;
 
 	/* Initialize arguments. */
 	home = NULL;
@@ -48,8 +46,8 @@ main(int argc, char *argv[])
 	/* Process arguments. */
 	while ((ch = getopt(argc, argv, "F:f:h:V:v")) != EOF)
 		switch (ch) {
-		case 'f':		/* Required argument */
-			if ((ffp = freopen(optarg, "r", stdin)) == NULL) {
+		case 'f':
+			if (freopen(optarg, "r", stdin) == NULL) {
 				fprintf(stderr,
 				    "%s: %s\n", optarg, db_strerror(errno));
 				return (EXIT_FAILURE);
@@ -78,7 +76,7 @@ main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	if (*argv != NULL || ffp == NULL)
+	if (*argv != NULL)
 		return (usage());
 
 	/*

@@ -28,7 +28,31 @@ static int t3_tcl_function_stub(
   return TCL_OK;
 }
 
-extern const char *sqlite3ErrName(int);
+/*
+** Interpret an SQLite error number
+*/
+static char *errorName(int rc){
+  char *zName;
+  switch( rc ){
+    case SQLITE_OK:         zName = "SQLITE_OK";          break;
+    case SQLITE_ERROR:      zName = "SQLITE_ERROR";       break;
+    case SQLITE_PERM:       zName = "SQLITE_PERM";        break;
+    case SQLITE_ABORT:      zName = "SQLITE_ABORT";       break;
+    case SQLITE_BUSY:       zName = "SQLITE_BUSY";        break;
+    case SQLITE_NOMEM:      zName = "SQLITE_NOMEM";       break;
+    case SQLITE_READONLY:   zName = "SQLITE_READONLY";    break;
+    case SQLITE_INTERRUPT:  zName = "SQLITE_INTERRUPT";   break;
+    case SQLITE_IOERR:      zName = "SQLITE_IOERR";       break;
+    case SQLITE_CORRUPT:    zName = "SQLITE_CORRUPT";     break;
+    case SQLITE_FULL:       zName = "SQLITE_FULL";        break;
+    case SQLITE_CANTOPEN:   zName = "SQLITE_CANTOPEN";    break;
+    case SQLITE_PROTOCOL:   zName = "SQLITE_PROTOCOL";    break;
+    case SQLITE_EMPTY:      zName = "SQLITE_EMPTY";       break;
+    case SQLITE_LOCKED:     zName = "SQLITE_LOCKED";      break;
+    default:                zName = "SQLITE_Unknown";     break;
+  }
+  return zName;
+}
 
 /*
 ** A bogus sqlite3 connection structure for use in the btree
@@ -51,8 +75,6 @@ static int btree_open(
   Btree *pBt;
   int rc, nCache;
   char zBuf[100];
-  int n;
-  char *zFilename;
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
        " FILENAME NCACHE FLAGS\"", 0);
@@ -65,16 +87,10 @@ static int btree_open(
     sDb.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_RECURSIVE);
     sqlite3_mutex_enter(sDb.mutex);
   }
-  n = (int)strlen(argv[1]);
-  zFilename = sqlite3_malloc( n+2 );
-  if( zFilename==0 ) return TCL_ERROR;
-  memcpy(zFilename, argv[1], n+1);
-  zFilename[n+1] = 0;
-  rc = sqlite3BtreeOpen(sDb.pVfs, zFilename, &sDb, &pBt, 0, 
+  rc = sqlite3BtreeOpen(argv[1], &sDb, &pBt, 0, 
      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MAIN_DB);
-  sqlite3_free(zFilename);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
   }
   sqlite3BtreeSetCacheSize(pBt, nCache);
@@ -104,7 +120,7 @@ static int btree_close(
   pBt = sqlite3TestTextToPtr(argv[1]);
   rc = sqlite3BtreeClose(pBt);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
   }
   nRefSqlite3--;
@@ -141,7 +157,7 @@ static int btree_begin_transaction(
   rc = sqlite3BtreeBeginTrans(pBt, 1);
   sqlite3BtreeLeave(pBt);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
   }
   return TCL_OK;
@@ -235,7 +251,7 @@ static int btree_cursor(
   sqlite3BtreeLeave(pBt);
   if( rc ){
     ckfree((char *)pCur);
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
   }
   sqlite3_snprintf(sizeof(zBuf), zBuf,"%p", pCur);
@@ -270,7 +286,7 @@ static int btree_close_cursor(
   sqlite3BtreeLeave(pBt);
   ckfree((char *)pCur);
   if( rc ){
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
   }
   return SQLITE_OK;
@@ -304,7 +320,7 @@ static int btree_next(
   rc = sqlite3BtreeNext(pCur, &res);
   sqlite3BtreeLeave(pCur->pBtree);
   if( rc ){
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
   }
   sqlite3_snprintf(sizeof(zBuf),zBuf,"%d",res);
@@ -339,7 +355,7 @@ static int btree_first(
   rc = sqlite3BtreeFirst(pCur, &res);
   sqlite3BtreeLeave(pCur->pBtree);
   if( rc ){
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
   }
   sqlite3_snprintf(sizeof(zBuf),zBuf,"%d",res);
@@ -422,7 +438,6 @@ static int btree_from_db(
   return TCL_OK;
 }
 
-
 /*
 ** Register commands with the TCL interpreter.
 */
@@ -434,17 +449,17 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
      { "btree_open",               (Tcl_CmdProc*)btree_open               },
      { "btree_close",              (Tcl_CmdProc*)btree_close              },
      { "btree_begin_transaction",  (Tcl_CmdProc*)btree_begin_transaction  },
-     { "btree_pager_stats",        (Tcl_CmdProc*)btree_pager_stats        },
+     { "btree_pager_stats",        (Tcl_CmdProc*)btree_pager_stats		  },
      { "btree_cursor",             (Tcl_CmdProc*)btree_cursor             },
      { "btree_close_cursor",       (Tcl_CmdProc*)btree_close_cursor       },
      { "btree_next",               (Tcl_CmdProc*)btree_next               },
-     { "btree_eof",                (Tcl_CmdProc*)t3_tcl_function_stub     },
-     { "btree_payload_size",       (Tcl_CmdProc*)btree_payload_size       },
+     { "btree_eof",                (Tcl_CmdProc*)t3_tcl_function_stub	  },
+     { "btree_payload_size",       (Tcl_CmdProc*)btree_payload_size		  },
      { "btree_first",              (Tcl_CmdProc*)btree_first              },
-     { "btree_varint_test",        (Tcl_CmdProc*)t3_tcl_function_stub     },
-     { "btree_from_db",            (Tcl_CmdProc*)btree_from_db            },
-     { "btree_ismemdb",            (Tcl_CmdProc*)t3_tcl_function_stub     },
-     { "btree_set_cache_size",     (Tcl_CmdProc*)t3_tcl_function_stub     }
+     { "btree_varint_test",        (Tcl_CmdProc*)t3_tcl_function_stub	  },
+     { "btree_from_db",            (Tcl_CmdProc*)btree_from_db			  },
+     { "btree_ismemdb",            (Tcl_CmdProc*)t3_tcl_function_stub	  },
+     { "btree_set_cache_size",     (Tcl_CmdProc*)t3_tcl_function_stub	  }
   };
   int i;
 

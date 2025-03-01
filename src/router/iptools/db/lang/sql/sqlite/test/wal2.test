@@ -23,18 +23,6 @@ set testprefix wal2
 
 ifcapable !wal {finish_test ; return }
 
-set sqlite_sync_count 0
-proc cond_incr_sync_count {adj} {
-  global sqlite_sync_count
-  if {$::tcl_platform(platform) == "windows"} {
-    incr sqlite_sync_count $adj
-  } {
-    ifcapable !dirsync {
-      incr sqlite_sync_count $adj
-    }
-  }
-}
-
 proc set_tvfs_hdr {file args} {
 
   # Set $nHdr to the number of bytes in the wal-index header:
@@ -46,7 +34,6 @@ proc set_tvfs_hdr {file args} {
   }
 
   set blob [tvfs shm $file]
-  if {$::tcl_platform(byteOrder)=="bigEndian"} {set fmt I} {set fmt i}
 
   if {[llength $args]} {
     set ia [lindex $args 0]
@@ -55,11 +42,11 @@ proc set_tvfs_hdr {file args} {
       set ib [lindex $args 1]
     }
     binary scan $blob a[expr $nHdr*2]a* dummy tail
-    set blob [binary format ${fmt}${nInt}${fmt}${nInt}a* $ia $ib $tail]
+    set blob [binary format i${nInt}i${nInt}a* $ia $ib $tail]
     tvfs shm $file $blob
   }
 
-  binary scan $blob ${fmt}${nInt} ints
+  binary scan $blob i${nInt} ints
   return $ints
 }
 
@@ -86,7 +73,7 @@ proc incr_tvfs_hdr {file idx incrval} {
 #
 #   2. Attempt to read the database using the reader. Before the reader
 #      has a chance to snapshot the wal-index header, increment one
-#      of the integer fields (so that the reader ends up with a corrupted
+#      of the the integer fields (so that the reader ends up with a corrupted
 #      header).
 #
 #   3. Check that the reader recovers the wal-index and reads the correct
@@ -126,10 +113,8 @@ set RECOVER [list                                      \
   {1 7 unlock exclusive} {0 1 unlock exclusive}        \
 ]
 set READ [list                                         \
-  {4 1 lock shared}    {4 1 unlock shared}             \
-]
-set INITSLOT [list                                     \
   {4 1 lock exclusive} {4 1 unlock exclusive}          \
+  {4 1 lock shared}    {4 1 unlock shared}             \
 ]
 
 foreach {tn iInsert res wal_index_hdr_mod wal_locks} "
@@ -143,7 +128,7 @@ foreach {tn iInsert res wal_index_hdr_mod wal_locks} "
          9   12   {12 78}   7             {$RECOVER $READ}
         10   13   {13 91}   8             {$RECOVER $READ}
         11   14   {14 105}  9             {$RECOVER $READ}
-        12   15   {15 120}  -1            {$INITSLOT $READ}
+        12   15   {15 120}  -1            {$READ}
 " {
 
   do_test wal2-1.$tn.1 {
@@ -167,7 +152,7 @@ foreach {tn iInsert res wal_index_hdr_mod wal_locks} "
 db close
 db2 close
 tvfs delete
-forcedelete test.db test.db-wal test.db-journal
+file delete -force test.db test.db-wal test.db-journal
 
 #-------------------------------------------------------------------------
 # This test case is very similar to the previous one, except, after
@@ -274,7 +259,7 @@ foreach {tn iInsert res0 res1 wal_index_hdr_mod} {
 db close
 db2 close
 tvfs delete
-forcedelete test.db test.db-wal test.db-journal
+file delete -force test.db test.db-wal test.db-journal
 
 
 if 0 {
@@ -347,7 +332,7 @@ do_test wal2-3.5 {
 } {0 0}
 db close
 tvfs delete
-forcedelete test.db test.db-wal test.db-journal
+file delete -force test.db test.db-wal test.db-journal
 
 }
 
@@ -364,9 +349,7 @@ do_test wal2-4.1 {
     INSERT INTO data VALUES('need xShmOpen to see this');
     PRAGMA wal_checkpoint;
   }
-  # Three pages in the WAL file at this point: One copy of page 1 and two
-  # of the root page for table "data".
-} {wal 0 3 3}
+} {wal 0 5 5}
 do_test wal2-4.2 {
   db close
   testvfs tvfs -noshm 1
@@ -446,7 +429,7 @@ tvfs delete
 #               connection silently remains in exclusive mode.
 #
 do_test wal2-6.1.1 {
-  forcedelete test.db test.db-wal test.db-journal
+  file delete -force test.db test.db-wal test.db-journal
   sqlite3 db test.db
   execsql {
     Pragma Journal_Mode = Wal;
@@ -489,7 +472,7 @@ do_test wal2-6.1.6 {
 db close
 
 do_test wal2-6.2.1 {
-  forcedelete test.db test.db-wal test.db-journal
+  file delete -force test.db test.db-wal test.db-journal
   sqlite3 db test.db
   execsql {
     Pragma Locking_Mode = Exclusive;
@@ -557,7 +540,7 @@ do_test wal2-6.2.9 {
 db close
 
 do_test wal2-6.3.1 {
-  forcedelete test.db test.db-wal test.db-journal
+  file delete -force test.db test.db-wal test.db-journal
   sqlite3 db test.db
   execsql {
     PRAGMA journal_mode = WAL;
@@ -602,7 +585,7 @@ db close
 # as expected when a WAL database is used with locking_mode=exclusive.
 #
 do_test wal2-6.4.1 {
-  forcedelete test.db test.db-wal test.db-journal
+  file delete -force test.db test.db-wal test.db-journal
   proc tvfs_cb {method args} {
     set ::shm_file [lindex $args 0]
     if {$method == "xShmLock"} { lappend ::locks [lindex $args 2] }
@@ -611,7 +594,6 @@ do_test wal2-6.4.1 {
   testvfs tvfs
   tvfs script tvfs_cb
   sqlite3 db test.db -vfs tvfs
-  set {} {}
 } {}
 
 set RECOVERY {
@@ -735,7 +717,7 @@ do_test wal2-6.5.1 {
     INSERT INTO t2 VALUES('I', 'II');
     PRAGMA journal_mode;
   }
-} {wal exclusive 0 2 2 wal}
+} {wal exclusive 0 3 3 wal}
 do_test wal2-6.5.2 {
   execsql {
     PRAGMA locking_mode = normal;
@@ -746,7 +728,7 @@ do_test wal2-6.5.2 {
 } {normal exclusive I II III IV}
 do_test wal2-6.5.3 {
   execsql { PRAGMA wal_checkpoint }
-} {0 2 2}
+} {0 4 4}
 db close
 
 proc lock_control {method filename handle spec} {
@@ -798,7 +780,7 @@ T delete
 # Test a theory about the checksum algorithm. Theory was false and this
 # test did not provoke a bug.
 #
-forcedelete test.db test.db-wal test.db-journal
+file delete -force test.db test.db-wal test.db-journal
 do_test wal2-7.1.1 {
   sqlite3 db test.db
   execsql {
@@ -809,15 +791,9 @@ do_test wal2-7.1.1 {
   file size test.db
 } {4096}
 do_test wal2-7.1.2 {
-  forcecopy test.db test2.db
-  forcecopy test.db-wal test2.db-wal
-  # The first 32 bytes of the WAL file contain the WAL header. Offset 48
-  # is the first byte of the checksum for the first frame in the WAL. 
-  # The following three lines replaces the contents of that byte with 
-  # a different value.
-  set newval FF
-  if {$newval == [hexio_read test2.db-wal 48 1]} { set newval 00 }
-  hexio_write test2.db-wal 48 $newval
+  file copy -force test.db test2.db
+  file copy -force test.db-wal test2.db-wal
+  hexio_write test2.db-wal 48 FF
 } {1}
 do_test wal2-7.1.3 {
   sqlite3 db2 test2.db
@@ -826,7 +802,7 @@ do_test wal2-7.1.3 {
 } {}
 db close
 db2 close
-forcedelete test.db test.db-wal test.db-journal
+file delete -force test.db test.db-wal test.db-journal
 do_test wal2-8.1.2 {
   sqlite3 db test.db
   execsql {
@@ -882,7 +858,7 @@ testvfs tvfs
 tvfs script get_name
 tvfs filter xShmOpen
 
-forcedelete test.db test.db-wal test.db-journal
+file delete -force test.db test.db-wal test.db-journal
 do_test wal2-9.1 {
   sqlite3 db test.db -vfs tvfs
   execsql {
@@ -1051,10 +1027,7 @@ tvfs delete
 #
 if {$::tcl_platform(platform) == "unix"} {
   faultsim_delete_and_reopen
-  # Changed on 2012-02-13: umask is deliberately ignored for -wal files.
-  #set umask [exec /bin/sh -c umask]
-  set umask 0
-  
+  set umask [exec /bin/sh -c umask]
 
   do_test wal2-12.1 {
     sqlite3 db test.db
@@ -1190,15 +1163,14 @@ if {$::tcl_platform(platform) == "unix"} {
 # Test that "PRAGMA checkpoint_fullsync" appears to be working.
 #
 foreach {tn sql reslist} {
-  1 { }                                 {10 0 4 0 6 0}
-  2 { PRAGMA checkpoint_fullfsync = 1 } {10 4 4 2 6 2}
-  3 { PRAGMA checkpoint_fullfsync = 0 } {10 0 4 0 6 0}
+  1 { }                                 {8 0 3 0 5 0}
+  2 { PRAGMA checkpoint_fullfsync = 1 } {8 4 3 2 5 2}
+  3 { PRAGMA checkpoint_fullfsync = 0 } {8 0 3 0 5 0}
 } {
   faultsim_delete_and_reopen
 
   execsql {PRAGMA auto_vacuum = 0}
   execsql $sql
-  do_execsql_test wal2-14.$tn.0 { PRAGMA page_size = 4096 }   {}
   do_execsql_test wal2-14.$tn.1 { PRAGMA journal_mode = WAL } {wal}
 
   set sqlite_sync_count 0
@@ -1207,17 +1179,16 @@ foreach {tn sql reslist} {
   do_execsql_test wal2-14.$tn.2 {
     PRAGMA wal_autocheckpoint = 10;
     CREATE TABLE t1(a, b);                -- 2 wal syncs
-    INSERT INTO t1 VALUES(1, 2);          -- 2 wal sync
+    INSERT INTO t1 VALUES(1, 2);          -- 1 wal sync
     PRAGMA wal_checkpoint;                -- 1 wal sync, 1 db sync
     BEGIN;
       INSERT INTO t1 VALUES(3, 4);
       INSERT INTO t1 VALUES(5, 6);
-    COMMIT;                               -- 2 wal sync
+    COMMIT;                               -- 1 wal sync
     PRAGMA wal_checkpoint;                -- 1 wal sync, 1 db sync
-  } {10 0 3 3 0 1 1}
+  } {10 0 5 5 0 2 2}
 
   do_test wal2-14.$tn.3 {
-    cond_incr_sync_count 1
     list $sqlite_sync_count $sqlite_fullsync_count
   } [lrange $reslist 0 1]
 
@@ -1248,22 +1219,22 @@ catch { db close }
 # PRAGMA fullfsync
 # PRAGMA synchronous
 #
-foreach {tn settings restart_sync commit_sync ckpt_sync} {
-  1  {0 0 off}     {0 0}  {0 0}  {0 0}
-  2  {0 0 normal}  {1 0}  {0 0}  {2 0}
-  3  {0 0 full}    {2 0}  {1 0}  {2 0}
+foreach {tn settings commit_sync ckpt_sync} {
+  1  {0 0 off}     {0 0}  {0 0}
+  2  {0 0 normal}  {0 0}  {2 0}
+  3  {0 0 full}    {1 0}  {2 0}
 
-  4  {0 1 off}     {0 0}  {0 0}  {0 0}
-  5  {0 1 normal}  {0 1}  {0 0}  {0 2}
-  6  {0 1 full}    {0 2}  {0 1}  {0 2}
+  4  {0 1 off}     {0 0}  {0 0}
+  5  {0 1 normal}  {0 0}  {0 2}
+  6  {0 1 full}    {0 1}  {0 2}
 
-  7  {1 0 off}     {0 0}  {0 0}  {0 0}
-  8  {1 0 normal}  {1 0}  {0 0}  {0 2}
-  9  {1 0 full}    {2 0}  {1 0}  {0 2}
+  7  {1 0 off}     {0 0}  {0 0}
+  8  {1 0 normal}  {0 0}  {0 2}
+  9  {1 0 full}    {1 0}  {0 2}
 
-  10 {1 1 off}     {0 0}  {0 0}  {0 0}
-  11 {1 1 normal}  {0 1}  {0 0}  {0 2}
-  12 {1 1 full}    {0 2}  {0 1}  {0 2}
+  10 {1 1 off}     {0 0}  {0 0}
+  11 {1 1 normal}  {0 0}  {0 2}
+  12 {1 1 full}    {0 1}  {0 2}
 } {
   forcedelete test.db
 
@@ -1276,37 +1247,28 @@ foreach {tn settings restart_sync commit_sync ckpt_sync} {
 
   sqlite3 db test.db
   do_execsql_test 15.$tn.1 "
-    PRAGMA page_size = 4096;
     CREATE TABLE t1(x);
-    PRAGMA wal_autocheckpoint = OFF;
     PRAGMA journal_mode = WAL;
     PRAGMA checkpoint_fullfsync = [lindex $settings 0];
     PRAGMA fullfsync = [lindex $settings 1];
     PRAGMA synchronous = [lindex $settings 2];
-  " {0 wal}
+  " {wal}
 
   do_test 15.$tn.2 {
     set sync(normal) 0
     set sync(full) 0
     execsql { INSERT INTO t1 VALUES('abc') }
     list $::sync(normal) $::sync(full)
-  } $restart_sync
-
-  do_test 15.$tn.3 {
-    set sync(normal) 0
-    set sync(full) 0
-    execsql { INSERT INTO t1 VALUES('abc') }
-    list $::sync(normal) $::sync(full)
   } $commit_sync
 
-  do_test 15.$tn.4 {
+  do_test 15.$tn.3 {
     set sync(normal) 0
     set sync(full) 0
     execsql { INSERT INTO t1 VALUES('def') }
     list $::sync(normal) $::sync(full)
   } $commit_sync
 
-  do_test 15.$tn.5 {
+  do_test 15.$tn.4 {
     set sync(normal) 0
     set sync(full) 0
     execsql { PRAGMA wal_checkpoint }

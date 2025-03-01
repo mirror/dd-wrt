@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -17,13 +17,13 @@ namespace BerkeleyDB {
         /* Fields for DB->set_flags() */
         /// <summary>
         /// If true, modify the operation of <see cref="QueueDatabase.Consume"/>
-        /// to return key/data pairs in order. They always return
+        /// to return key/data pairs in order. That is, they will always return
         /// the key/data item from the head of the queue. 
         /// </summary>
         /// <remarks>
         /// <para>
         /// The default behavior of queue databases is optimized for multiple
-        /// readers, and does not guarantee records to be retrieved in the
+        /// readers, and does not guarantee that record will be retrieved in the
         /// order they are added to the queue. Specifically, if a writing thread
         /// adds multiple records to an empty queue, reading threads may skip
         /// some of the initial records when the next
@@ -32,7 +32,7 @@ namespace BerkeleyDB {
         /// <para>
         /// This setting modifies <see cref="QueueDatabase.Consume"/> to verify
         /// that the record being returned is in fact the head of the queue.
-        /// This increases contention and reduces concurrency when there are
+        /// This will increase contention and reduce concurrency when there are
         /// many reading threads.
         /// </para>
         /// </remarks>
@@ -51,7 +51,7 @@ namespace BerkeleyDB {
         /// <remarks>
         /// If the database does not already exist and
         /// <see cref="CreatePolicy.NEVER"/> is set,
-        /// <see cref="QueueDatabase.Open"/> fails.
+        /// <see cref="QueueDatabase.Open"/> will fail.
         /// </remarks>
         public CreatePolicy Creation;
         internal new uint openFlags {
@@ -70,7 +70,7 @@ namespace BerkeleyDB {
         /// <para>
         /// When using <see cref="QueueDatabase.Append"/>, it may be useful to
         /// modify the stored data based on the generated key. If a delegate is
-        /// specified, it is called after the record number has been
+        /// specified, it will be called after the record number has been
         /// selected, but before the data has been stored.
         /// </para>
         /// </remarks>
@@ -94,11 +94,11 @@ namespace BerkeleyDB {
         /// </para>
         /// <para>
         /// Any attempt to insert records into the database that are greater
-        /// than Length bytes long causes the call to fail immediately and
+        /// than Length bytes long will cause the call to fail immediately and
         /// return an error. 
         /// </para>
         /// <para>
-        /// If the database already exists, this setting is ignored.
+        /// If the database already exists, this setting will be ignored.
         /// </para>
         /// </remarks>
         public uint Length {
@@ -113,11 +113,11 @@ namespace BerkeleyDB {
         /// </summary>
         /// <remarks>
         /// <para>
-        /// If no pad character is specified, space characters (ASCII
+        /// If no pad character is specified, space characters (that is, ASCII
         /// 0x20) are used for padding.
         /// </para>
         /// <para>
-        /// If the database already exists, this setting is ignored.
+        /// If the database already exists, this setting will be ignored.
         /// </para>
         /// </remarks>
         public int PadByte {
@@ -145,7 +145,7 @@ namespace BerkeleyDB {
         /// size in the Programmer's Reference Guide.
         /// </para>
         /// <para>
-        /// If the database already exists, this setting is ignored.
+        /// If the database already exists, this setting will be ignored.
         /// </para>
         /// </remarks>
         public uint ExtentSize {

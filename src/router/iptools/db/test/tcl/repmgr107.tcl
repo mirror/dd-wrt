@@ -1,19 +1,17 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # TEST repmgr107
 # TEST Repmgr combined with replication-unaware process at master.
 
 proc repmgr107 { } {
 	source ./include.tcl
-	global ipversion
 
 	set tnum "107"
 	puts "Repmgr$tnum: Replication-unaware process at master."
 
 	env_cleanup $testdir
-	set hoststr [get_hoststr $ipversion]
 	set ports [available_ports 2]
 	foreach {mport cport} $ports {}
 
@@ -30,7 +28,7 @@ proc repmgr107 { } {
 		{rep_set_timeout DB_REP_HEARTBEAT_MONITOR 1100000}
 	}
 	make_dbconfig $mdir \
-            [linsert $dbconfig 0 [list repmgr_site $hoststr $mport db_local_site on]]
+            [linsert $dbconfig 0 [list repmgr_site 127.0.0.1 $mport db_local_site on]]
 	set cmds {
 		"home $mdir"
 		"output $testdir/moutput"
@@ -44,8 +42,8 @@ proc repmgr107 { } {
 
 	make_dbconfig $cdir \
             [linsert $dbconfig 0 \
-                 [list repmgr_site $hoststr $cport db_local_site on] \
-                 [list repmgr_site $hoststr $mport db_bootstrap_helper on]]
+                 [list repmgr_site 127.0.0.1 $cport db_local_site on] \
+                 [list repmgr_site 127.0.0.1 $mport db_bootstrap_helper on]]
 	set cmds {
 		"home $cdir"
 		"output $testdir/coutput"

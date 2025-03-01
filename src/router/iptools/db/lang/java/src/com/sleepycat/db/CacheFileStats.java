@@ -4,7 +4,7 @@
  *
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 package com.sleepycat.db;
@@ -19,7 +19,6 @@ public class CacheFileStats {
     private int st_pagesize;
     /**
     Page size in bytes.
-    @return page size in bytes
     */
     public int getPageSize() {
         return st_pagesize;
@@ -28,7 +27,6 @@ public class CacheFileStats {
     private int st_map;
     /**
     Requested pages mapped into the process' address space.
-    @return requested pages mapped into the process' address space
     */
     public int getMap() {
         return st_map;
@@ -37,7 +35,6 @@ public class CacheFileStats {
     private long st_cache_hit;
     /**
     Requested pages found in the cache.
-    @return requested pages found in the cache
     */
     public long getCacheHit() {
         return st_cache_hit;
@@ -46,7 +43,6 @@ public class CacheFileStats {
     private long st_cache_miss;
     /**
     Requested pages not found in the cache.
-    @return requested pages not found in the cache
     */
     public long getCacheMiss() {
         return st_cache_miss;
@@ -55,7 +51,6 @@ public class CacheFileStats {
     private long st_page_create;
     /**
     Pages created in the cache.
-    @return pages created in the cache
     */
     public long getPageCreate() {
         return st_page_create;
@@ -64,7 +59,6 @@ public class CacheFileStats {
     private long st_page_in;
     /**
     Pages read into the cache.
-    @return pages read into the cache
     */
     public long getPageIn() {
         return st_page_in;
@@ -73,17 +67,13 @@ public class CacheFileStats {
     private long st_page_out;
     /**
     Pages written from the cache to the backing file.
-    @return pages written from the cache to the backing file
     */
     public long getPageOut() {
         return st_page_out;
     }
 
     private long st_backup_spins;
-    /**
-    Spins while trying to back up the file.
-    @return spins while trying to back up the file
-    */
+    /** TODO */
     public long getBackupSpins() {
         return st_backup_spins;
     }
@@ -91,7 +81,6 @@ public class CacheFileStats {
     private String file_name;
     /**
     The name of the file.
-    @return the name of the file
     */
     public String getFileName() {
         return file_name;
@@ -100,7 +89,6 @@ public class CacheFileStats {
     /**
     For convenience, the CacheFileStats class has a toString method
     that lists all the data fields.
-    @return a String that lists all the data fields
     */
     public String toString() {
         return "CacheFileStats:"

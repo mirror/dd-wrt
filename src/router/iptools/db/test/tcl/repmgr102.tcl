@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # TEST repmgr102
 # TEST Ensuring exactly one listener process.
@@ -9,18 +9,13 @@
 # TEST Start a second process, and see that it does not become the listener.
 # TEST Shut down the first process (gracefully).  Now a second process should
 # TEST become listener.
-# TEST Kill the listener process abruptly.  Run recovery and start a clean
-# TEST listener.
+# TEST Kill the listener process abruptly.  Running failchk should show that
+# TEST recovery is necessary.  Run recovery and start a clean listener.
 
 proc repmgr102 {  } {
 	source ./include.tcl
 	source $test_path/testutils.tcl
-	global ipversion
 
-	if { $is_freebsd_test == 1 } {
-		puts "Skipping replication manager test on FreeBSD platform."
-		return
-	}
 
 	set tnum "102"
 
@@ -39,15 +34,14 @@ proc repmgr102 {  } {
 
 	file mkdir $masterdir
 
-	set hoststr [get_hoststr $ipversion]
 	set ports [available_ports 1]
 	set master_port [lindex $ports 0]
 
 	make_dbconfig $masterdir \
-	    [list [list repmgr_site $hoststr $master_port db_local_site on] \
+	    [list [list repmgr_site 127.0.0.1 $master_port db_local_site on] \
 	    "rep_set_config db_repmgr_conf_2site_strict off"]
 	set masterenv [berkdb_env -rep -txn -thread -home $masterdir \
-	    -isalive my_isalive -create]
+			   -isalive my_isalive -create]
 	$masterenv close
 
 	puts "\tRepmgr$tnum.a: Set up the master (on TCP port $master_port)."
@@ -116,11 +110,11 @@ proc repmgr102 {  } {
 	catch {close $master}
 
 	# In realistic, correct operation, the application should have called
-	# recover before trying to restart a new process.  But let's just prove
+	# failchk before trying to restart a new process.  But let's just prove
 	# to ourselves that it's actually doing something.  This first try
 	# should fail.
 	# 
-	puts "\tRepmgr$tnum.g: Start take-over process without recovery."
+	puts "\tRepmgr$tnum.g: Start take-over process without failchk."
 	set m2 [open "| $site_prog" "r+"]
 	fconfigure $m2 -buffering line
 	puts $m2 "home $masterdir"
@@ -131,11 +125,11 @@ proc repmgr102 {  } {
 	error_check_match ignored3 $answer "*DB_REP_IGNORE*"
 	close $m2
 
-	set masterenv [berkdb_env -create -rep -txn -thread \
-	    -home $masterdir -recover]
+	set masterenv [berkdb_env -thread -home $masterdir -isalive my_isalive]
+	$masterenv failchk
 
 	# This time it should work.
-	puts "\tRepmgr$tnum.h: Start take-over process after recovery."
+	puts "\tRepmgr$tnum.h: Start take-over process after failchk."
 	set m2 [open "| $site_prog" "r+"]
 	fconfigure $m2 -buffering line
 	puts $m2 "home $masterdir"
@@ -144,31 +138,6 @@ proc repmgr102 {  } {
 	puts $m2 "start master"
 	set answer [gets $m2]
 	error_check_match ok4 $answer "*Successful*" 
-
-	close $m2
-	$masterenv close
-
-	puts "\tRepmgr$tnum.i: Start the first process on master with\
-	    0 msgth (error)."
-	set masterenv [berkdb_env_noerr -create -rep -txn -thread \
-	    -home $masterdir -recover]
-	set ret [catch {$masterenv repmgr -start master -msgth 0}]
-	error_check_bad disallow_msgth_0 [is_substr $ret "invalid argument"] 1
-
-	puts "\tRepmgr$tnum.j: Start master listener in another process."
-	set m2 [open "| $site_prog" "r+"]
-	fconfigure $m2 -buffering line
-	puts $m2 "home $masterdir"
-	puts $m2 "output $testdir/m2output4"
-	puts $m2 "open_env"
-	puts $m2 "start master"
-	set answer [gets $m2]
-	error_check_match ok5 $answer "*Successful*"
-
-	puts "\tRepmgr$tnum.k: Start repmgr again with valid msgth in the\
-	    first process."
-	error_check_match allow_msgth_nonzero \
-	    [$masterenv repmgr -start master] "*DB_REP_IGNORE*"
 
 	close $m2
 	$masterenv close

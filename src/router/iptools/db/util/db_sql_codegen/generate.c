@@ -1,7 +1,7 @@
 /*
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -245,22 +245,20 @@ such as x86. cf. discussion of btree comparators in 'Getting Started        \n\
 with Data Storage' manual.";
 	static char *comparator_functions =
 "static int                                                                 \n\
-compare_int(DB *dbp, const DBT *a, const DBT *b, size_t *locp)              \n\
+compare_int(DB *dbp, const DBT *a, const DBT *b)                            \n\
 {                                                                           \n\
  int ai, bi;                                                                \n\
 									    \n\
- locp = NULL;								    \n\
  memcpy(&ai, a->data, sizeof(int));                                         \n\
  memcpy(&bi, b->data, sizeof(int));                                         \n\
  return (ai - bi);                                                          \n\
 }                                                                           \n\
 									    \n\
 int                                                                         \n\
-compare_long(DB *dbp, const DBT *a, const DBT *b, size_t *locp)             \n\
+compare_long(DB *dbp, const DBT *a, const DBT *b)                           \n\
 {                                                                           \n\
  long ai, bi;                                                               \n\
 									    \n\
- locp = NULL;								    \n\
  memcpy(&ai, a->data, sizeof(long));                                        \n\
  memcpy(&bi, b->data, sizeof(long));                                        \n\
  return (ai - bi);                                                          \n\
@@ -279,7 +277,7 @@ create_database(DB_ENV *envp,                                               \n\
  int flags,                                                                 \n\
  DBTYPE type,                                                               \n\
  int moreflags,                                                             \n\
- int (*comparator)(DB *, const DBT *, const DBT *, size_t *))               \n\
+ int (*comparator)(DB *, const DBT *, const DBT *))                         \n\
 {                                                                           \n\
  int ret;                                                                   \n\
  FILE *errfilep;                                                            \n\

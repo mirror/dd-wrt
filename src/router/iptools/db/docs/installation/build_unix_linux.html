@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,8 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="build_unix_irix.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 7.  Building Berkeley DB for UNIX/POSIX
-    </th>
+          <th width="60%" align="center">Chapter 7. 
+		Building Berkeley DB for UNIX/POSIX
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="build_unix_macosx.html">Next</a></td>
         </tr>
       </table>
@@ -41,48 +42,32 @@
         <ol type="1">
           <li>
             <span class="bold">
-              <strong>I can't compile and run
-                multithreaded applications.</strong>
+              <strong>I can't compile and run multithreaded applications.</strong>
             </span>
-            <p> 
-                Special compile-time flags are required when
-                compiling threaded applications on Linux. If you are
-                compiling a threaded application, you must compile
-                with the _REENTRANT flag:
-            </p>
+            <p>Special compile-time flags are required when compiling threaded
+applications on Linux.  If you are compiling a threaded application, you
+must compile with the _REENTRANT flag:</p>
             <pre class="programlisting">cc -D_REENTRANT ...</pre>
-            <p>
-                The Berkeley DB library will automatically build
-                with the correct options.
-            </p>
+            <p>The Berkeley DB library will automatically build with the correct options.</p>
           </li>
           <li>
             <span class="bold">
-              <strong>I see database corruption when
-                accessing databases.</strong>
+              <strong>I see database corruption when accessing databases.</strong>
             </span>
-            <p> 
-                Some Linux filesystems do not support POSIX
-                filesystem semantics. Specifically, ext2 and early
-                releases of ReiserFS, and ext3 in some configurations,
-                do not support "ordered data mode" and may insert
-                random data into database or log files when systems
-                crash. Berkeley DB files should not be placed on a
-                filesystem that does not support, or is not configured
-                to support, POSIX semantics. 
-            </p>
+            <p>Some Linux filesystems do not support POSIX filesystem semantics.
+Specifically, ext2 and early releases of ReiserFS, and ext3 in some
+configurations, do not support "ordered data mode" and may insert random
+data into database or log files when systems crash.  Berkeley DB files should
+not be placed on a filesystem that does not support, or is not
+configured to support, POSIX semantics.</p>
           </li>
           <li>
             <span class="bold">
-              <strong>What scheduler should I
-                use?</strong>
+              <strong>What scheduler should I use?</strong>
             </span>
-            <p> 
-                In some Linux kernels you can select schedulers,
-                and the default is the "anticipatory" scheduler. We
-                recommend not using the "anticipatory" scheduler for
-                transaction processing workloads. 
-            </p>
+            <p>In some Linux kernels you can select schedulers, and the default is the
+"anticipatory" scheduler.  We recommend not using the "anticipatory"
+scheduler for transaction processing workloads.</p>
           </li>
         </ol>
       </div>

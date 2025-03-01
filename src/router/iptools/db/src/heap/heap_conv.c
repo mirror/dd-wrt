@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 #include "db_config.h"
@@ -86,10 +86,7 @@ __heap_mswap(env, pg)
 	SWAP32(p);		/* gbytes */
 	SWAP32(p);		/* bytes */
 	SWAP32(p);		/* region_size */
-	SWAP32(p);		/* threshold */
-	SWAP32(p);		/* file id lo */
-	SWAP32(p);		/* file id hi */
-	p += 89 * sizeof(u_int32_t); /* unused */
+	p += 92 * sizeof(u_int32_t); /* unused */
 	SWAP32(p);		/* crypto_magic */
 
 	return (0);

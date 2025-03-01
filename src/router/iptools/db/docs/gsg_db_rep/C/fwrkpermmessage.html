@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Replication Manager Permanent Message Handling</title>
+    <title>Permanent Message Handling</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
@@ -14,11 +14,11 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Replication Manager Permanent Message Handling</th>
+          <th colspan="3" align="center">Permanent Message Handling</th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="repmgr_init_example_c.html">Prev</a> </td>
@@ -32,7 +32,7 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title" style="clear: both"><a id="fwrkpermmessage"></a>Replication Manager Permanent Message Handling</h2>
+            <h2 class="title" style="clear: both"><a id="fwrkpermmessage"></a>Permanent Message Handling</h2>
           </div>
         </div>
       </div>
@@ -140,6 +140,41 @@
           <ul type="disc">
             <li>
               <p>
+                        <code class="literal">DB_REPMGR_ACKS_NONE</code>
+                        
+                </p>
+              <p>
+                    No permanent message acknowledgments are required. If
+                    this policy is selected, permanent message handling is
+                    essentially "turned off." That is, the master will
+                    never wait for replica acknowledgments. In this case,
+                    transaction log data is either flushed or not strictly
+                    depending on the type of commit that is being performed
+                    (synchronous or asynchronous).
+                </p>
+            </li>
+            <li>
+              <p>
+                        <code class="literal">DB_REPMGR_ACKS_ONE</code>
+                        
+                </p>
+              <p>
+                    At least one replica must acknowledge the permanent
+                    message within the timeout period.  
+                </p>
+            </li>
+            <li>
+              <p>
+                        <code class="literal">DB_REPMGR_ACKS_ONE_PEER</code>
+                        
+                </p>
+              <p>
+                    At least one electable peer must acknowledge the permanent
+                    message within the timeout period. 
+                </p>
+            </li>
+            <li>
+              <p>
                     <code class="literal">DB_REPMGR_ACKS_ALL</code>
                     
                 </p>
@@ -175,41 +210,6 @@
                     policy should be selected only if your replication
                     group is small, and its various environments
                     are on extremely reliable networks and servers.
-                </p>
-            </li>
-            <li>
-              <p>
-                        <code class="literal">DB_REPMGR_ACKS_NONE</code>
-                        
-                </p>
-              <p>
-                    No permanent message acknowledgments are required. If
-                    this policy is selected, permanent message handling is
-                    essentially "turned off." That is, the master will
-                    never wait for replica acknowledgments. In this case,
-                    transaction log data is either flushed or not strictly
-                    depending on the type of commit that is being performed
-                    (synchronous or asynchronous).
-                </p>
-            </li>
-            <li>
-              <p>
-                        <code class="literal">DB_REPMGR_ACKS_ONE</code>
-                        
-                </p>
-              <p>
-                    At least one replica must acknowledge the permanent
-                    message within the timeout period.  
-                </p>
-            </li>
-            <li>
-              <p>
-                        <code class="literal">DB_REPMGR_ACKS_ONE_PEER</code>
-                        
-                </p>
-              <p>
-                    At least one electable peer must acknowledge the permanent
-                    message within the timeout period. 
                 </p>
             </li>
             <li>
@@ -318,7 +318,7 @@
     dbenv-&gt;rep_set_timeout(dbenv, DB_REP_ACK_TIMEOUT, 500);</code></strong>
 
     /* Collect the command line options */
-    while ((ch = getopt(argc, argv, "h:<strong class="userinput"><code>l:L:p:r:</code></strong>")) != EOF)
+    while ((ch = getopt(argc, argv, "h:<strong class="userinput"><code>l:n:p:r:</code></strong>")) != EOF)
 
     ... </pre>
       </div>

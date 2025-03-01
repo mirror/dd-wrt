@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -57,13 +57,13 @@ namespace BerkeleyDB {
         /// </para>
         /// <para>
         /// If <see cref="DatabaseConfig.AutoCommit"/> is set, the operation
-        /// is implicitly transaction protected. Transactionally
-        /// protected operations on a database object requires the object itself
+        /// will be implicitly transaction protected. Note that transactionally
+        /// protected operations on a datbase object requires the object itself
         /// be transactionally protected during its open.
         /// </para>
         /// </remarks>
         /// <param name="Filename">
-        /// The name of an underlying file used to back the
+        /// The name of an underlying file that will be used to back the
         /// database. In-memory databases never intended to be preserved on disk
         /// may be created by setting this parameter to null.
         /// </param>
@@ -93,13 +93,13 @@ namespace BerkeleyDB {
         /// </para>
         /// <para>
         /// If <see cref="DatabaseConfig.AutoCommit"/> is set, the operation
-        /// is implicitly transaction protected. Transactionally
-        /// protected operations on a database object requires the object itself
+        /// will be implicitly transaction protected. Note that transactionally
+        /// protected operations on a datbase object requires the object itself
         /// be transactionally protected during its open.
         /// </para>
         /// </remarks>
         /// <param name="Filename">
-        /// The name of an underlying file used to back the
+        /// The name of an underlying file that will be used to back the
         /// database. In-memory databases never intended to be preserved on disk
         /// may be created by setting this parameter to null.
         /// </param>
@@ -130,15 +130,15 @@ namespace BerkeleyDB {
         /// </para>
         /// <para>
         /// If <paramref name="txn"/> is null, but
-        /// <see cref="DatabaseConfig.AutoCommit"/> is set, the operation
-        /// is implicitly transaction protected. Transactionally
-        /// protected operations on a database object requires the object itself
-        /// be transactionally protected during its open. The
+        /// <see cref="DatabaseConfig.AutoCommit"/> is set, the operation will
+        /// be implicitly transaction protected. Note that transactionally
+        /// protected operations on a datbase object requires the object itself
+        /// be transactionally protected during its open. Also note that the
         /// transaction must be committed before the object is closed.
         /// </para>
         /// </remarks>
         /// <param name="Filename">
-        /// The name of an underlying file used to back the
+        /// The name of an underlying file that will be used to back the
         /// database. In-memory databases never intended to be preserved on disk
         /// may be created by setting this parameter to null.
         /// </param>
@@ -176,15 +176,15 @@ namespace BerkeleyDB {
         /// </para>
         /// <para>
         /// If <paramref name="txn"/> is null, but
-        /// <see cref="DatabaseConfig.AutoCommit"/> is set, the operation
-        /// is implicitly transaction protected. Transactionally
-        /// protected operations on a database object requires the object itself
-        /// be transactionally protected during its open. The
+        /// <see cref="DatabaseConfig.AutoCommit"/> is set, the operation will
+        /// be implicitly transaction protected. Note that transactionally
+        /// protected operations on a datbase object requires the object itself
+        /// be transactionally protected during its open. Also note that the
         /// transaction must be committed before the object is closed.
         /// </para>
         /// </remarks>
         /// <param name="Filename">
-        /// The name of an underlying file used to back the
+        /// The name of an underlying file that will be used to back the
         /// database. In-memory databases never intended to be preserved on disk
         /// may be created by setting this parameter to null.
         /// </param>
@@ -235,12 +235,10 @@ namespace BerkeleyDB {
 
         #region Callbacks
         private static int doDupCompare(
-            IntPtr dbp, IntPtr dbt1p, IntPtr dbt2p, IntPtr locp) {
+            IntPtr dbp, IntPtr dbt1p, IntPtr dbt2p) {
             DB db = new DB(dbp, false);
             DBT dbt1 = new DBT(dbt1p, false);
             DBT dbt2 = new DBT(dbt2p, false);
-            if (locp != IntPtr.Zero)
-                locp = IntPtr.Zero;
 
             SecondaryHashDatabase tmp = (SecondaryHashDatabase)db.api_internal;
             return tmp.DupCompare(
@@ -254,13 +252,10 @@ namespace BerkeleyDB {
             SecondaryHashDatabase tmp = (SecondaryHashDatabase)db.api_internal;
             return tmp.HashFunction(t_data);
         }
-        private static int doCompare(IntPtr dbp,
-	    IntPtr dbtp1, IntPtr dbtp2, IntPtr locp) {
+        private static int doCompare(IntPtr dbp, IntPtr dbtp1, IntPtr dbtp2) {
             DB db = new DB(dbp, false);
             DBT dbt1 = new DBT(dbtp1, false);
             DBT dbt2 = new DBT(dbtp2, false);
-            if (locp != IntPtr.Zero)
-                locp = IntPtr.Zero;
 
             SecondaryHashDatabase tmp = (SecondaryHashDatabase)db.api_internal;
             return tmp.Compare(

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -43,9 +43,6 @@ __db_vrfy_dbinfo_create(env, ip, pgsize, vdpp)
 	if ((ret = __db_create_internal(&cdbp, env, 0)) != 0)
 		goto err;
 
-	if ((ret = __db_set_blob_threshold(cdbp, 0, 0)) != 0)
-		goto err;
-
 	if ((ret = __db_set_flags(cdbp, DB_DUP)) != 0)
 		goto err;
 
@@ -61,9 +58,6 @@ __db_vrfy_dbinfo_create(env, ip, pgsize, vdpp)
 		goto err;
 
 	if ((ret = __db_create_internal(&pgdbp, env, 0)) != 0)
-		goto err;
-
-	if ((ret = __db_set_blob_threshold(pgdbp, 0, 0)) != 0)
 		goto err;
 
 	if ((ret = __db_set_pagesize(pgdbp, pgsize)) != 0)
@@ -934,6 +928,5 @@ __db_vrfy_prdbt(dbtp, checkprint, prefix,
 	}
 	return (
 	    __db_prdbt(dbtp, checkprint,
-	    prefix, handle, callback, is_recno, is_heap,
-	    vdp != NULL && F_ISSET(vdp, SALVAGE_STREAM_BLOB) ? 1 : 0));
+	    prefix, handle, callback, is_recno, is_heap));
 }

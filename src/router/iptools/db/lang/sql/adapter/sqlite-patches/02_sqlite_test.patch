@@ -1,45 +1,76 @@
+--- src/tclsqlite.c
++++ src/tclsqlite.c
+@@ -761,7 +761,7 @@
+         case SQLITE_INTEGER: {
+           sqlite_int64 v = sqlite3_value_int64(pIn);
+           if( v>=-2147483647 && v<=2147483647 ){
+-            pVal = Tcl_NewIntObj(v);
++            pVal = Tcl_NewIntObj((int)v);
+           }else{
+             pVal = Tcl_NewWideIntObj(v);
+           }
+@@ -1441,7 +1441,7 @@
+     case SQLITE_INTEGER: {
+       sqlite_int64 v = sqlite3_column_int64(pStmt, iCol);
+       if( v>=-2147483647 && v<=2147483647 ){
+-        return Tcl_NewIntObj(v);
++        return Tcl_NewIntObj((int)v);
+       }else{
+         return Tcl_NewWideIntObj(v);
+       }
 --- src/test1.c
 +++ src/test1.c
-@@ -3602,7 +3602,7 @@
+@@ -3207,7 +3207,7 @@
+   char *value;
+   int rc;
+ 
+-  void (*xDel)() = (objc==6?SQLITE_STATIC:SQLITE_TRANSIENT);
++  void (*xDel)(void*) = (objc==6?SQLITE_STATIC:SQLITE_TRANSIENT);
+   Tcl_Obj *oStmt    = objv[objc-4];
+   Tcl_Obj *oN       = objv[objc-3];
+   Tcl_Obj *oString  = objv[objc-2];
+@@ -3555,7 +3555,7 @@
      if( bytes>=0 ){
-       bytes = bytes - (int)(zTail-zSql);
+       bytes = bytes - (zTail-zSql);
      }
--    if( (int)strlen(zTail)<bytes ){
-+    if(bytes>-1 && (int)strlen(zTail)<(unsigned int)bytes ){
-       bytes = (int)strlen(zTail);
+-    if( strlen(zTail)<bytes ){
++    if(bytes>-1 && strlen(zTail)<(unsigned int)bytes ){
+       bytes = strlen(zTail);
      }
      Tcl_ObjSetVar2(interp, objv[4], 0, Tcl_NewStringObj(zTail, bytes), 0);
-@@ -6696,8 +6696,6 @@
+@@ -5389,8 +5389,6 @@
    extern int sqlite3_hostid_num;
  #endif
    extern int sqlite3_max_blobsize;
 -  extern int sqlite3BtreeSharedCacheReport(void*,
 -                                          Tcl_Interp*,int,Tcl_Obj*CONST*);
-   static int iZero = 0;
    static struct {
       char *zName;
-@@ -6891,7 +6891,6 @@
+      Tcl_CmdProc *xProc;
+@@ -5554,7 +5552,6 @@
       { "tcl_variable_type",       tcl_variable_type, 0       },
  #ifndef SQLITE_OMIT_SHARED_CACHE
       { "sqlite3_enable_shared_cache", test_enable_shared, 0  },
 -     { "sqlite3_shared_cache_report", sqlite3BtreeSharedCacheReport, 0},
  #endif
       { "sqlite3_libversion_number", test_libversion_number, 0  },
-      { "sqlite3_table_column_metadata", test_table_column_metadata, 0  },
+ #ifdef SQLITE_ENABLE_COLUMN_METADATA
 --- src/test2.c
 +++ src/test2.c
-@@ -21,475 +21,14 @@
-
- extern const char *sqlite3ErrName(int);
+@@ -19,6 +19,7 @@
+ #include <string.h>
+ #include <ctype.h>
  
 +#ifndef SQLITE_OMIT_DISKIO
-+
  /*
+ ** Interpret an SQLite error number
+ */
+@@ -53,470 +54,6 @@
  ** Page size and reserved size used for testing.
  */
  static int test_pagesize = 1024;
- 
- /*
+-
+-/*
 -** Dummy page reinitializer
 -*/
 -static void pager_test_reiniter(DbPage *pNotUsed){
@@ -72,7 +103,7 @@
 -      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MAIN_DB,
 -      pager_test_reiniter);
 -  if( rc!=SQLITE_OK ){
--    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+-    Tcl_AppendResult(interp, errorName(rc), 0);
 -    return TCL_ERROR;
 -  }
 -  sqlite3PagerSetCachesize(pPager, nPage);
@@ -104,7 +135,7 @@
 -  pPager = sqlite3TestTextToPtr(argv[1]);
 -  rc = sqlite3PagerClose(pPager);
 -  if( rc!=SQLITE_OK ){
--    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+-    Tcl_AppendResult(interp, errorName(rc), 0);
 -    return TCL_ERROR;
 -  }
 -  return TCL_OK;
@@ -131,7 +162,7 @@
 -  pPager = sqlite3TestTextToPtr(argv[1]);
 -  rc = sqlite3PagerRollback(pPager);
 -  if( rc!=SQLITE_OK ){
--    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+-    Tcl_AppendResult(interp, errorName(rc), 0);
 -    return TCL_ERROR;
 -  }
 -  return TCL_OK;
@@ -158,12 +189,12 @@
 -  pPager = sqlite3TestTextToPtr(argv[1]);
 -  rc = sqlite3PagerCommitPhaseOne(pPager, 0, 0);
 -  if( rc!=SQLITE_OK ){
--    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+-    Tcl_AppendResult(interp, errorName(rc), 0);
 -    return TCL_ERROR;
 -  }
 -  rc = sqlite3PagerCommitPhaseTwo(pPager);
 -  if( rc!=SQLITE_OK ){
--    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+-    Tcl_AppendResult(interp, errorName(rc), 0);
 -    return TCL_ERROR;
 -  }
 -  return TCL_OK;
@@ -190,7 +221,7 @@
 -  pPager = sqlite3TestTextToPtr(argv[1]);
 -  rc = sqlite3PagerOpenSavepoint(pPager, 1);
 -  if( rc!=SQLITE_OK ){
--    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+-    Tcl_AppendResult(interp, errorName(rc), 0);
 -    return TCL_ERROR;
 -  }
 -  return TCL_OK;
@@ -218,7 +249,7 @@
 -  rc = sqlite3PagerSavepoint(pPager, SAVEPOINT_ROLLBACK, 0);
 -  sqlite3PagerSavepoint(pPager, SAVEPOINT_RELEASE, 0);
 -  if( rc!=SQLITE_OK ){
--    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+-    Tcl_AppendResult(interp, errorName(rc), 0);
 -    return TCL_ERROR;
 -  }
 -  return TCL_OK;
@@ -245,7 +276,7 @@
 -  pPager = sqlite3TestTextToPtr(argv[1]);
 -  rc = sqlite3PagerSavepoint(pPager, SAVEPOINT_RELEASE, 0);
 -  if( rc!=SQLITE_OK ){
--    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+-    Tcl_AppendResult(interp, errorName(rc), 0);
 -    return TCL_ERROR;
 -  }
 -  return TCL_OK;
@@ -323,7 +354,7 @@
 -){
 -  Pager *pPager;
 -  char zBuf[100];
--  DbPage *pPage = 0;
+-  DbPage *pPage;
 -  int pgno;
 -  int rc;
 -  if( argc!=3 ){
@@ -338,7 +369,7 @@
 -    rc = sqlite3PagerGet(pPager, pgno, &pPage);
 -  }
 -  if( rc!=SQLITE_OK ){
--    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+-    Tcl_AppendResult(interp, errorName(rc), 0);
 -    return TCL_ERROR;
 -  }
 -  sqlite3_snprintf(sizeof(zBuf),zBuf,"%p",pPage);
@@ -492,7 +523,7 @@
 -  pPage = (DbPage *)sqlite3TestTextToPtr(argv[1]);
 -  rc = sqlite3PagerWrite(pPage);
 -  if( rc!=SQLITE_OK ){
--    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+-    Tcl_AppendResult(interp, errorName(rc), 0);
 -    return TCL_ERROR;
 -  }
 -  pData = sqlite3PagerGetData(pPage);
@@ -502,11 +533,10 @@
 -}
 -
 -#ifndef SQLITE_OMIT_DISKIO
--/*
- ** Usage:   fake_big_file  N  FILENAME
- **
- ** Write a few bytes at the N megabyte point of FILENAME.  This will
-@@ -518,6 +57,12 @@
+ /*
+  ** Usage:   fake_big_file  N  FILENAME
+  **
+@@ -544,6 +77,12 @@
    }
    if( Tcl_GetInt(interp, argv[1], &n) ) return TCL_ERROR;
  
@@ -517,12 +547,14 @@
 +  return TCL_ERROR;
 +
    pVfs = sqlite3_vfs_find(0);
-   nFile = (int)strlen(argv[2]);
-   zFile = sqlite3_malloc( nFile+2 );
-@@ -547,30 +92,6 @@
+   rc = sqlite3OsOpenMalloc(pVfs, argv[2], &fd, 
+       (SQLITE_OPEN_CREATE|SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_DB), 0
+@@ -564,31 +103,6 @@
+ }
+ #endif
  
- 
- /*
+-
+-/*
 -** test_control_pending_byte  PENDING_BYTE
 -**
 -** Set the PENDING_BYTE using the sqlite3_test_control() interface.
@@ -544,13 +576,12 @@
 -  rc = sqlite3_test_control(SQLITE_TESTCTRL_PENDING_BYTE, pbyte);
 -  Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
 -  return TCL_OK;
--}
+-}  
 -
--/*
- ** The sqlite3FaultSim() callback:
- */
- static Tcl_Interp *faultSimInterp = 0;
-@@ -687,59 +208,50 @@
+ /*
+ ** sqlite3BitvecBuiltinTest SIZE PROGRAM
+ **
+@@ -623,58 +137,49 @@
    return TCL_OK;
  }  
  
@@ -613,9 +644,8 @@
      { "fake_big_file",           (Tcl_CmdProc*)fake_big_file       },
  #endif
      { "sqlite3BitvecBuiltinTest",(Tcl_CmdProc*)testBitvecBuiltinTest     },
--    { "sqlite3_test_control_pending_byte",  (Tcl_CmdProc*)testPendingByte },
+-    { "sqlite3_test_control_pending_byte", (Tcl_CmdProc*)testPendingByte },
 +    { "sqlite3_test_control_pending_byte", (Tcl_CmdProc*)t2_tcl_function_stub },
-     { "sqlite3_test_control_fault_install", (Tcl_CmdProc*)faultInstallCmd },
    };
    int i;
    for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){
@@ -651,10 +681,10 @@
 +  return TCL_OK;
 +}
 +
- extern const char *sqlite3ErrName(int);
- 
  /*
-@@ -339,36 +348,6 @@
+ ** Interpret an SQLite error number
+ */
+@@ -355,36 +364,6 @@
  }
  
  /*
@@ -691,7 +721,7 @@
  ** Usage:   btree_payload_size ID
  **
  ** Return the number of bytes of payload
-@@ -380,8 +359,7 @@
+@@ -396,8 +375,7 @@
    const char **argv      /* Text of each argument */
  ){
    BtCursor *pCur;
@@ -701,7 +731,7 @@
    char zBuf[50];
  
    if( argc!=2 ){
-@@ -394,108 +372,13 @@
+@@ -410,103 +388,13 @@
  
    /* The cursor may be in "require-seek" state. If this is the case, the
    ** call to BtreeDataSize() will fix it. */
@@ -754,25 +784,22 @@
 -  if( Tcl_GetInt(interp, argv[4], (int*)&incr) ) return TCL_ERROR;
 -  in = start;
 -  in *= mult;
--  for(i=0; i<(int)count; i++){
+-  for(i=0; i<count; i++){
 -    char zErr[200];
 -    n1 = putVarint(zBuf, in);
 -    if( n1>9 || n1<1 ){
--      sqlite3_snprintf(sizeof(zErr), zErr,
--         "putVarint returned %d - should be between 1 and 9", n1);
+-      sprintf(zErr, "putVarint returned %d - should be between 1 and 9", n1);
 -      Tcl_AppendResult(interp, zErr, 0);
 -      return TCL_ERROR;
 -    }
 -    n2 = getVarint(zBuf, &out);
 -    if( n1!=n2 ){
--      sqlite3_snprintf(sizeof(zErr), zErr,
--          "putVarint returned %d and getVarint returned %d", n1, n2);
+-      sprintf(zErr, "putVarint returned %d and getVarint returned %d", n1, n2);
 -      Tcl_AppendResult(interp, zErr, 0);
 -      return TCL_ERROR;
 -    }
 -    if( in!=out ){
--      sqlite3_snprintf(sizeof(zErr), zErr,
--          "Wrote 0x%016llx and got back 0x%016llx", in, out);
+-      sprintf(zErr, "Wrote 0x%016llx and got back 0x%016llx", in, out);
 -      Tcl_AppendResult(interp, zErr, 0);
 -      return TCL_ERROR;
 -    }
@@ -781,15 +808,13 @@
 -      n2 = getVarint32(zBuf, out32);
 -      out = out32;
 -      if( n1!=n2 ){
--        sqlite3_snprintf(sizeof(zErr), zErr,
--          "putVarint returned %d and GetVarint32 returned %d", 
+-        sprintf(zErr, "putVarint returned %d and GetVarint32 returned %d", 
 -                  n1, n2);
 -        Tcl_AppendResult(interp, zErr, 0);
 -        return TCL_ERROR;
 -      }
 -      if( in!=out ){
--        sqlite3_snprintf(sizeof(zErr), zErr,
--          "Wrote 0x%016llx and got back 0x%016llx from GetVarint32",
+-        sprintf(zErr, "Wrote 0x%016llx and got back 0x%016llx from GetVarint32",
 -            in, out);
 -        Tcl_AppendResult(interp, zErr, 0);
 -        return TCL_ERROR;
@@ -812,11 +837,10 @@
  ** usage:   btree_from_db  DB-HANDLE
  **
  ** This command returns the btree handle for the main database associated
-@@ -539,66 +422,6 @@
-   return TCL_OK;
+@@ -551,67 +439,6 @@
  }
  
--/*
+ /*
 -** Usage:   btree_ismemdb ID
 -**
 -** Return true if the B-Tree is in-memory.
@@ -876,27 +900,94 @@
 -}      
 -
 -
- 
- /*
+-
+-/*
  ** Register commands with the TCL interpreter.
-@@ -615,13 +438,13 @@
+ */
+ int Sqlitetest3_Init(Tcl_Interp *interp){
+@@ -622,17 +449,17 @@
+      { "btree_open",               (Tcl_CmdProc*)btree_open               },
+      { "btree_close",              (Tcl_CmdProc*)btree_close              },
+      { "btree_begin_transaction",  (Tcl_CmdProc*)btree_begin_transaction  },
+-     { "btree_pager_stats",        (Tcl_CmdProc*)btree_pager_stats        },
++     { "btree_pager_stats",        (Tcl_CmdProc*)btree_pager_stats		  },
       { "btree_cursor",             (Tcl_CmdProc*)btree_cursor             },
       { "btree_close_cursor",       (Tcl_CmdProc*)btree_close_cursor       },
       { "btree_next",               (Tcl_CmdProc*)btree_next               },
 -     { "btree_eof",                (Tcl_CmdProc*)btree_eof                },
-+     { "btree_eof",                (Tcl_CmdProc*)t3_tcl_function_stub     },
-      { "btree_payload_size",       (Tcl_CmdProc*)btree_payload_size       },
+-     { "btree_payload_size",       (Tcl_CmdProc*)btree_payload_size       },
++     { "btree_eof",                (Tcl_CmdProc*)t3_tcl_function_stub	  },
++     { "btree_payload_size",       (Tcl_CmdProc*)btree_payload_size		  },
       { "btree_first",              (Tcl_CmdProc*)btree_first              },
 -     { "btree_varint_test",        (Tcl_CmdProc*)btree_varint_test        },
-+     { "btree_varint_test",        (Tcl_CmdProc*)t3_tcl_function_stub     },
-      { "btree_from_db",            (Tcl_CmdProc*)btree_from_db            },
+-     { "btree_from_db",            (Tcl_CmdProc*)btree_from_db            },
 -     { "btree_ismemdb",            (Tcl_CmdProc*)btree_ismemdb            },
 -     { "btree_set_cache_size",     (Tcl_CmdProc*)btree_set_cache_size     }
-+     { "btree_ismemdb",            (Tcl_CmdProc*)t3_tcl_function_stub     },
-+     { "btree_set_cache_size",     (Tcl_CmdProc*)t3_tcl_function_stub     }
++     { "btree_varint_test",        (Tcl_CmdProc*)t3_tcl_function_stub	  },
++     { "btree_from_db",            (Tcl_CmdProc*)btree_from_db			  },
++     { "btree_ismemdb",            (Tcl_CmdProc*)t3_tcl_function_stub	  },
++     { "btree_set_cache_size",     (Tcl_CmdProc*)t3_tcl_function_stub	  }
    };
    int i;
-
+ 
+--- src/test6.c
++++ src/test6.c
+@@ -177,7 +177,7 @@
+     iSkip = 512;
+   }
+   if( (iAmt-iSkip)>0 ){
+-    rc = sqlite3OsWrite(p->pRealFile, &z[iSkip], iAmt-iSkip, iOff+iSkip);
++    rc = sqlite3OsWrite(p->pRealFile, &z[iSkip], (int)iAmt-iSkip, iOff+iSkip);
+   }
+   return rc;
+ }
+@@ -306,8 +306,8 @@
+       }
+       case 3: {               /* Trash sectors */
+         u8 *zGarbage;
+-        int iFirst = (pWrite->iOffset/g.iSectorSize);
+-        int iLast = (pWrite->iOffset+pWrite->nBuf-1)/g.iSectorSize;
++        int iFirst = ((int)pWrite->iOffset/g.iSectorSize);
++        int iLast = ((int)pWrite->iOffset+pWrite->nBuf-1)/g.iSectorSize;
+ 
+         assert(pWrite->zBuf);
+ 
+@@ -430,7 +430,7 @@
+ ){
+   CrashFile *pCrash = (CrashFile *)pFile;
+   if( iAmt+iOfst>pCrash->iSize ){
+-    pCrash->iSize = iAmt+iOfst;
++    pCrash->iSize = iAmt+(int)iOfst;
+   }
+   while( pCrash->iSize>pCrash->nData ){
+     u8 *zNew;
+@@ -454,7 +454,7 @@
+   CrashFile *pCrash = (CrashFile *)pFile;
+   assert(size>=0);
+   if( pCrash->iSize>size ){
+-    pCrash->iSize = size;
++    pCrash->iSize = (int)size;
+   }
+   return writeListAppend(pFile, size, 0, 0);
+ }
+@@ -612,7 +612,7 @@
+       ** never contains valid data anyhow. So avoid doing such a read here.
+       */
+       const int isDb = (flags&SQLITE_OPEN_MAIN_DB);
+-      i64 iChunk = pWrapper->iSize;
++      int iChunk = pWrapper->iSize;
+       if( iChunk>PENDING_BYTE && isDb ){
+         iChunk = PENDING_BYTE;
+       }
+@@ -620,7 +620,7 @@
+       rc = sqlite3OsRead(pReal, pWrapper->zData, iChunk, 0); 
+       if( SQLITE_OK==rc && pWrapper->iSize>(PENDING_BYTE+512) && isDb ){
+         i64 iOff = PENDING_BYTE+512;
+-        iChunk = pWrapper->iSize - iOff;
++        iChunk = pWrapper->iSize - (int)iOff;
+         rc = sqlite3OsRead(pReal, &pWrapper->zData[iOff], iChunk, iOff);
+       }
+     }else{
 --- src/test_btree.c
 +++ src/test_btree.c
 @@ -13,50 +13,3 @@
@@ -923,7 +1014,7 @@
 -  BtShared *pBt;
 -  Tcl_Obj *pRet = Tcl_NewObj();
 -  for(pBt=GLOBAL(BtShared*,sqlite3SharedCacheList); pBt; pBt=pBt->pNext){
--    const char *zFile = sqlite3PagerFilename(pBt->pPager, 1);
+-    const char *zFile = sqlite3PagerFilename(pBt->pPager);
 -    Tcl_ListObjAppendElement(interp, pRet, Tcl_NewStringObj(zFile, -1));
 -    Tcl_ListObjAppendElement(interp, pRet, Tcl_NewIntObj(pBt->nRef));
 -  }
@@ -941,7 +1032,7 @@
 -  BtShared *pBt = p->pBt;
 -  for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
 -    MemPage *pPage = pCur->apPage[pCur->iPage];
--    char *zMode = (pCur->curFlags & BTCF_WriteFlag) ? "rw" : "ro";
+-    char *zMode = pCur->wrFlag ? "rw" : "ro";
 -    sqlite3DebugPrintf("CURSOR %p rooted at %4d(%s) currently at %d.%d%s\n",
 -       pCur, pCur->pgnoRoot, zMode,
 -       pPage ? pPage->pgno : 0, pCur->aiIdx[pCur->iPage],
@@ -950,14 +1041,155 @@
 -  }
 -#endif
 -}
+--- src/test_journal.c
++++ src/test_journal.c
+@@ -136,7 +136,7 @@
+ */
+ static int jtClose(sqlite3_file*);
+ static int jtRead(sqlite3_file*, void*, int iAmt, sqlite3_int64 iOfst);
+-static int jtWrite(sqlite3_file*,const void*,int iAmt, sqlite3_int64 iOfst);
++static int jtWrite(sqlite3_file*,const void*, int iAmt, sqlite3_int64 iOfst);
+ static int jtTruncate(sqlite3_file*, sqlite3_int64 size);
+ static int jtSync(sqlite3_file*, int flags);
+ static int jtFileSize(sqlite3_file*, sqlite3_int64 *pSize);
+@@ -405,7 +405,7 @@
+ 
+     /* Calculate and store a checksum for each page in the database file. */
+     if( rc==SQLITE_OK ){
+-      int ii;
++      unsigned int ii;
+       for(ii=0; rc==SQLITE_OK && ii<pMain->nPage; ii++){
+         i64 iOff = (i64)(pMain->nPagesize) * (i64)ii;
+         if( iOff==PENDING_BYTE ) continue;
+@@ -467,7 +467,7 @@
+           continue;
+         }
+       }
+-      nRec = (iSize-iOff) / (pMain->nPagesize+8);
++      nRec = (u32)((iSize-iOff) / (pMain->nPagesize+8));
+     }
+ 
+     /* Read all the records that follow the journal-header just read. */
+@@ -539,7 +539,7 @@
+   }
+ 
+   if( p->flags&SQLITE_OPEN_MAIN_DB && p->pWritable ){
+-    if( iAmt<p->nPagesize 
++    if( (u32)iAmt<p->nPagesize 
+      && p->nPagesize%iAmt==0 
+      && iOfst>=(PENDING_BYTE+512) 
+      && iOfst+iAmt<=PENDING_BYTE+p->nPagesize
+@@ -550,7 +550,7 @@
+       ** pending-byte page.
+       */
+     }else{
+-      u32 pgno = iOfst/p->nPagesize + 1;
++      u32 pgno = (u32)(iOfst/p->nPagesize + 1);
+       assert( (iAmt==1||iAmt==p->nPagesize) && ((iOfst+iAmt)%p->nPagesize)==0 );
+       assert( pgno<=p->nPage || p->nSync>0 );
+       assert( pgno>p->nPage || sqlite3BitvecTest(p->pWritable, pgno) );
+@@ -579,7 +579,7 @@
+   if( p->flags&SQLITE_OPEN_MAIN_DB && p->pWritable ){
+     u32 pgno;
+     u32 locking_page = (u32)(PENDING_BYTE/p->nPagesize+1);
+-    for(pgno=size/p->nPagesize+1; pgno<=p->nPage; pgno++){
++    for(pgno=(u32)(size/p->nPagesize+1); pgno<=p->nPage; pgno++){
+       assert( pgno==locking_page || sqlite3BitvecTest(p->pWritable, pgno) );
+     }
+   }
 --- src/test_malloc.c
 +++ src/test_malloc.c
-@@ -756,7 +756,7 @@
+@@ -749,7 +749,7 @@
      int isNew;
  
      int aKey[MALLOC_LOG_KEYINTS];
--    unsigned int nKey = sizeof(int)*MALLOC_LOG_KEYINTS;
+-    int nKey = sizeof(int)*MALLOC_LOG_KEYINTS;
 +    unsigned int nKey = sizeof(int)*MALLOC_LOG_FRAMES;
  
      memset(aKey, 0, nKey);
      if( (sizeof(void*)*nFrame)<nKey ){
+--- src/test_onefile.c
++++ src/test_onefile.c
+@@ -288,7 +288,7 @@
+ ){
+   tmp_file *pTmp = (tmp_file *)pFile;
+   if( (iAmt+iOfst)>pTmp->nAlloc ){
+-    int nNew = 2*(iAmt+iOfst+pTmp->nAlloc);
++    int nNew = 2*(iAmt+(int)iOfst+pTmp->nAlloc);
+     char *zNew = sqlite3_realloc(pTmp->zAlloc, nNew);
+     if( !zNew ){
+       return SQLITE_NOMEM;
+@@ -297,7 +297,7 @@
+     pTmp->nAlloc = nNew;
+   }
+   memcpy(&pTmp->zAlloc[iOfst], zBuf, iAmt);
+-  pTmp->nSize = MAX(pTmp->nSize, iOfst+iAmt);
++  pTmp->nSize = (int)MAX(pTmp->nSize, iOfst+iAmt);
+   return SQLITE_OK;
+ }
+ 
+@@ -306,7 +306,7 @@
+ */
+ static int tmpTruncate(sqlite3_file *pFile, sqlite_int64 size){
+   tmp_file *pTmp = (tmp_file *)pFile;
+-  pTmp->nSize = MIN(pTmp->nSize, size);
++  pTmp->nSize = (int)MIN(pTmp->nSize, size);
+   return SQLITE_OK;
+ }
+ 
+@@ -418,7 +418,7 @@
+     /* Journal file. */
+     int iRem = iAmt;
+     int iBuf = 0;
+-    int ii = iOfst;
++    int ii = (int)iOfst;
+     while( iRem>0 && rc==SQLITE_OK ){
+       int iRealOff = pReal->nBlob - BLOCKSIZE*((ii/BLOCKSIZE)+1) + ii%BLOCKSIZE;
+       int iRealAmt = MIN(iRem, BLOCKSIZE - (iRealOff%BLOCKSIZE));
+@@ -453,14 +453,14 @@
+     }else{
+       rc = pF->pMethods->xWrite(pF, zBuf, iAmt, iOfst+BLOCKSIZE);
+       if( rc==SQLITE_OK ){
+-        pReal->nDatabase = MAX(pReal->nDatabase, iAmt+iOfst);
++        pReal->nDatabase = (int)MAX(pReal->nDatabase, iAmt+iOfst);
+       }
+     }
+   }else{
+     /* Journal file. */
+     int iRem = iAmt;
+     int iBuf = 0;
+-    int ii = iOfst;
++    int ii = (int)iOfst;
+     while( iRem>0 && rc==SQLITE_OK ){
+       int iRealOff = pReal->nBlob - BLOCKSIZE*((ii/BLOCKSIZE)+1) + ii%BLOCKSIZE;
+       int iRealAmt = MIN(iRem, BLOCKSIZE - (iRealOff%BLOCKSIZE));
+@@ -475,7 +475,7 @@
+       }
+     }
+     if( rc==SQLITE_OK ){
+-      pReal->nJournal = MAX(pReal->nJournal, iAmt+iOfst);
++      pReal->nJournal = (int)MAX(pReal->nJournal, iAmt+iOfst);
+     }
+   }
+ 
+@@ -489,9 +489,9 @@
+   fs_file *p = (fs_file *)pFile;
+   fs_real_file *pReal = p->pReal;
+   if( p->eType==DATABASE_FILE ){
+-    pReal->nDatabase = MIN(pReal->nDatabase, size);
++    pReal->nDatabase = (int)MIN(pReal->nDatabase, size);
+   }else{
+-    pReal->nJournal = MIN(pReal->nJournal, size);
++    pReal->nJournal = (int)MIN(pReal->nJournal, size);
+   }
+   return SQLITE_OK;
+ }
+@@ -641,7 +641,7 @@
+       pReal->nBlob = BLOBSIZE;
+     }else{
+       unsigned char zS[4];
+-      pReal->nBlob = size;
++      pReal->nBlob = (int)size;
+       rc = pRealFile->pMethods->xRead(pRealFile, zS, 4, 0);
+       pReal->nDatabase = (zS[0]<<24)+(zS[1]<<16)+(zS[2]<<8)+zS[3];
+       if( rc==SQLITE_OK ){

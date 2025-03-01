@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -50,7 +50,6 @@ proc repmgr034_sub { method tnum niter nentries} {
 	global repfiles_in_memory
 	global rep_verbose
 	global verbose_type
-	global ipversion
 
 	if { $databases_in_memory } {
 		set dbmemmsg "using in-memory databases "
@@ -100,7 +99,6 @@ proc repmgr034_sub { method tnum niter nentries} {
 	    with $nentries record(s)"
 
 	foreach {port0 port1 port2} [available_ports 3] {}
-	set hoststr [get_hoststr $ipversion]
 	env_cleanup $testdir
 	file mkdir [set masterdir $testdir/MASTERDIR]
 	file mkdir [set clientdir1 $testdir/CLIENTDIR1]
@@ -110,7 +108,7 @@ proc repmgr034_sub { method tnum niter nentries} {
 	set env0 [eval "berkdb_env -create -errpfx MASTER -home $masterdir \
 	    -txn -rep -thread -recover $privargs $repmemargs $verbargs"]
 	$env0 repmgr -timeout {heartbeat_send 500000}
-	$env0 repmgr -local [list $hoststr $port0] -start master
+	$env0 repmgr -local [list 127.0.0.1 $port0] -start master
 	error_check_good nsites_A0 [$env0 rep_get_nsites] 1
 	set db [berkdb_open_noerr -create -auto_commit -env $env0 \
 	    $omethod $dbname]
@@ -121,8 +119,8 @@ proc repmgr034_sub { method tnum niter nentries} {
 	    -home $clientdir1 -txn -rep -thread -recover -event \
 	    $privargs $repmemargs $verbargs"]
 	$env1 repmgr -timeout {heartbeat_monitor 1100000}
-	$env1 repmgr -local [list $hoststr $port1] \
-	    -remote [list $hoststr $port0] -start client
+	$env1 repmgr -local [list 127.0.0.1 $port1] \
+	    -remote [list 127.0.0.1 $port0] -start client
 	await_startup_done $env1
 	error_check_good nsites_B0 [$env0 rep_get_nsites] 2
 	error_check_good nsites_A1 [$env1 rep_get_nsites] 2
@@ -141,7 +139,7 @@ proc repmgr034_sub { method tnum niter nentries} {
 		$env1 event_info -clear
 		puts "\t\tRepmgr$tnum.c.$count.(a): Client1 removes itself from\
 		    the group: iter $count"
-		$env1 repmgr -remove [list $hoststr $port1]
+		$env1 repmgr -remove [list 127.0.0.1 $port1]
 		await_event $env1 local_site_removed
 		error_check_good nsites_C0 [$env0 rep_get_nsites] 1
 
@@ -169,12 +167,12 @@ proc repmgr034_sub { method tnum niter nentries} {
 		$env1 repmgr -timeout {heartbeat_monitor 1100000}
 		# Allow a retry in case client1 didn't have time to fully
 		# shut down.
-		if {[catch {$env1 repmgr -local [list $hoststr $port1] \
-		    -remote [list $hoststr $port0] -start client} result] && \
+		if {[catch {$env1 repmgr -local [list 127.0.0.1 $port1] \
+		    -remote [list 127.0.0.1 $port0] -start client} result] && \
 		    [string match "*REP_UNAVAIL*" $result]} {
 			tclsleep 10
-			$env1 repmgr -local [list $hoststr $port1] \
-			-remote [list $hoststr $port0] -start client
+			$env1 repmgr -local [list 127.0.0.1 $port1] \
+			-remote [list 127.0.0.1 $port0] -start client
 		}
 		await_event $env1 connection_established		
 		error_check_good nsites_D0 [$env0 rep_get_nsites] 2
@@ -204,17 +202,17 @@ proc repmgr034_sub { method tnum niter nentries} {
 	# It is possible, especially when nentries=0, that we need a delay
 	# before the recently restarted client1 can ack a new site addition.
 	$env2 repmgr -timeout {heartbeat_monitor 1200000}
-	if {[catch {$env2 repmgr -local [list $hoststr $port2] \
-	    -remote [list $hoststr $port0] -start client} result] && \
+	if {[catch {$env2 repmgr -local [list 127.0.0.1 $port2] \
+	    -remote [list 127.0.0.1 $port0] -start client} result] && \
 	    [string match "*REP_UNAVAIL*" $result]} {
 		tclsleep 3
-		$env2 repmgr -local [list $hoststr $port2] \
-		    -remote [list $hoststr $port0] -start client
+		$env2 repmgr -local [list 127.0.0.1 $port2] \
+		    -remote [list 127.0.0.1 $port0] -start client
 	}
 	await_startup_done $env2 100
 
 	puts "\tRepmgr$tnum.e: Client2 removes client1 from the group"
-	$env2 repmgr -remove [list $hoststr $port1]
+	$env2 repmgr -remove [list 127.0.0.1 $port1]
 	await_event $env1 local_site_removed
 	error_check_good nsites_F0 [$env0 rep_get_nsites] 2
 	catch { [$db1 put "key" "data"] } ret

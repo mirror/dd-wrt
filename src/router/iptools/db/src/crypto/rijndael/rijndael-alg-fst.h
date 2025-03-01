@@ -33,24 +33,8 @@
 #define MAXKB	(256/8)
 #define MAXNR	14
 
-/*
- * The types of u8/u16/u32 are also defined in the BDB SQL layer. To avoid the 
- * "redefinition of typedef" compile error, we use the macros of 
- * U8_TYPE_DEFINED/U16_TYPE_DEFINED/U32_TYPE_DEFINED as below.
- */
-#ifndef U8_TYPE_DEFINED
 typedef u_int8_t	u8;
-#define U8_TYPE_DEFINED
-#endif
-
-#ifndef U16_TYPE_DEFINED
 typedef u_int16_t	u16;
-#define U16_TYPE_DEFINED
-#endif
-
-#ifndef U32_TYPE_DEFINED
 typedef u_int32_t	u32;
-#define U32_TYPE_DEFINED
-#endif
 
 #endif /* __RIJNDAEL_ALG_FST_H */

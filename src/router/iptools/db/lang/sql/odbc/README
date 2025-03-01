@@ -1,9 +1,11 @@
 SQLite ODBC Driver
 ------------------
 
-This is an open source ODBC driver for the wonderful SQLite 2.8.*
-and SQLite 3.* Database Engine/Library. The driver is usable but may
-contain bugs. Use it on your own risk.
+This is an open source ODBC driver for the wonderful
+SQLite 2.8.* and SQLite 3.* Database Engine/Library.
+The driver is usable but may contain lots of memory
+leaks and all other kinds of bugs. Use it on your own
+risk.
 
 The current source can be downloaded from
 
@@ -13,7 +15,7 @@ WIN32 binaries (the ODBC driver DLL, install/uninstall programs) are in
 
     http://www.ch-werner.de/sqliteodbc/sqliteodbc.exe
 
-The binaries were made with SQLite 2.8.17, SQLite 3.8.9, MingW
+The binaries were made with SQLite 2.8.17, SQLite 3.7.8, MingW
 cross compiler and tested on Windows NT 4.0 with the query tool
 of MS Excel 97, with StarOffice 5.2 and OpenOffice 1.1 and 2.x.
 Execute the sqliteodbc.exe NSIS installer to unpack the necessary
@@ -26,7 +28,7 @@ on as an absolute pathname including the drive letter, eg as
 can be specified in the respective field. If empty a default value
 of 100000 milliseconds is used.
 
-The Win64 installer (sqliteodbc_w64.exe) was made with SQLite 3.8.9,
+The Win64 installer (sqliteodbc_w64.exe) was made with SQLite 3.7.8,
 MingW cross compiler and only rudimentary tested on Windows Vista 64.
 
 Other tests were made on Linux with the "isql" command line tool
@@ -64,10 +66,7 @@ Restrictions of data type mapping:
 - The driver puts the ODBC string representations for date/time,
   (eg for "{ts '2001-10-10 12:58:00'}" the substring within the
   single quotes) directly into the SQLite column
-- When the DSN Option "JDConv" (Julian Day conversion) is enabled
-  the SQLite 3 driver translates floating point column data
-  interpreted as Julian Day to/from SQL_DATE, SQL_TIME, and
-  SQL_TIMESTAMP data types (supported since May 2013)
+
 
 Since November 17th, 2001, configure/libtool is used for the Un*x
 version which should automatically find the SQLite and unixODBC
@@ -142,54 +141,6 @@ following steps:
     Timeout=2000
 
 
-DSN-less connection to the driver
-
-  Using the SQLDriverConnect() API it is possible to connect to
-  a SQLite database with these strings (Win32 and UN*X)
-
-    DSN=SQLite Datasource;Database=full-path-to-db;...
-    DSN=SQLite3 Datasource;Database=full-path-to-db;...
-
-  alternatively
-
-  Win32:
-
-    Driver=SQLite ODBC Driver;Database=full-path-to-db;...
-    Driver=SQLite3 ODBC Driver;Database=full-path-to-db;...
-
-  UN*X (Linux RPM):
-
-    Driver=SQLITE;Database=full-path-to-db;...
-    Driver=SQLITE3;Database=full-path-to-db;...
-
-
-Connect string parameters for DSN-less connects
-
-  Database (string)	name of SQLite2/3 database file; default empty
-  PWD (string)		password when built with SEE support; default empty
-  Timeout (integer)	lock time out in milliseconds; default 100000
-  StepAPI (boolean)	if true, use sqlite[3]_step et.al.; default false
-  NoTXN (boolean)	if true, only pretend transactions; default false
-  NoWCHAR (boolean)	if true, don't support WCHAR types for character
-			data; default false
-  NoCreat (boolean)	if true and database file doesn't exist, don't
-			create it automatically; default false, unsupported
-			for SQLite2
-  LongNames (boolean)	if true, don't shorten column names; default false
-  ShortNames (boolean)	if true, enforce short column names; default false
-  SyncPragma (string)	value for PRAGMA SYNCHRONOUS; default empty
-  FKSupport (boolean)	if true, support SQLite3 foreign key constraints;
-			default false
-  JournalMode (string)	value for PRAGMA JOURNAL_MODE; default empty
-  OEMCP (boolean)	Win32 only: if true, translate strings from/to
-			UTF8 to current code page; default false
-  BigInt (boolean)	if true, force integer columns to SQL_BIGINT;
-			default false
-  JDConv (boolean)	if true, use SQLite3 julian day representation for
-			SQL_TIME, SQL_TIMESTAMP, SQL_DATE types; default false
-  TraceFile (string)	name of file to write SQLite traces to; default empty
-
-
 Python sample usage with eGenix mx-Extension
 (see http://www.lemburg.com/files/python/mxODBC.html)
 
@@ -215,7 +166,6 @@ Python sample usage with eGenix mx-Extension
 
 
 Build instructions for MS Visual C++ 6.0:
-  (unsupported, needs manual fiddling makefiles depending on SQLite version)
 
 ... for SQLite 2.x.x
 
@@ -273,12 +223,61 @@ Build instructions for MingW cross compiler for Win64 targets:
   final step is creating an NSIS installer.
 
 
-Special build to use System.Data.SQLite on Win32/Win64
+Win32 install/remove/shell by RUNDLL32
 
-  A variant of the SQLite3 ODBC driver can be build which uses
-  internal dynamic linking to System.Data.SQLite.dll or sqlite3.dll.
-  This feature is turned on when running the mingw*-cross-build.sh
-  scripts with SQLITE_DLLS=2.
+  Each driver DLL provides entry points for ODBC driver installation
+  and removal which can be invoked from RUNDLL32.EXE, eg
+
+  ### install sqliteodbc.dll
+  C:\> rundll32 [path]sqliteodbc.dll,install [quiet]
+
+  ### remove sqlite3odbc.dll
+  C:\> rundll32 [path]sqlite3odbc.dll,uninstall [quiet]
+
+  If [path] is not provided newer Windows OSes tend to favor the
+  sqlite*odbc*dll in system directories over the current directory,
+  thus better provide an absolute path to the DLL of interest.
+  If the word "quiet" appears anywhere after the DLL/function
+  name, no info message boxes pop up (but errors are shown).
+
+  An (interactive or batch) SQLite shell can be invoked, too, eg
+
+  ### run SQLite shell on database C:\bla\my.db
+  C:\> rundll32 [path]sqliteodbc.dll,shell C:\bla\my.db ...
+
+  ### batch run with given SQL
+  C:\> rundll32 [path]sqliteodbc.dll,shell -batch C:\bla\my.db
+       "select * from table" <NUL: 2>NUL: >out.txt
+
+
+Win64 notes
+
+  On Win64 (64 bit versions of Vista, Windows 7) both 32 bit and 64 bit
+  drivers can be installed in parallel. The 32 bit drivers are required
+  when using 32 bit applications. In order to manage 32 bit data
+  sources, the 32 bit ODBC admin tool C:\Windows\SysWOW64\odbcad32.exe
+  must be used.
+
+
+DSN-less connection to the driver
+
+  Using the SQLDriverConnect() API it should be possible to connect to
+  a SQLite database with these strings (Win32 and UN*X)
+
+    DSN=SQLite Datasource;Database=full-path-to-db;...
+    DSN=SQLite3 Datasource;Database=full-path-to-db;...
+
+  alternatively
+
+  Win32:
+
+    Driver=SQLite ODBC Driver;Database=full-path-to-db;...
+    Driver=SQLite3 ODBC Driver;Database=full-path-to-db;...
+
+  UN*X (Linux RPM):
+
+    Driver=SQLITE;Database=full-path-to-db;...
+    Driver=SQLITE3;Database=full-path-to-db;...
 
 
 Build Instructions for Alpha/Tru64 (OSF1 V5.1) and HP/UX (B.11.23 U ia64)
@@ -316,41 +315,12 @@ Build Instructions for Debian based systems
   ./configure && make deb
 
 
-Win32 install/remove/shell using RUNDLL32
+Special build to use System.Data.SQLite on Win32/Win64
 
-  Each driver DLL provides entry points for ODBC driver installation
-  and removal which can be invoked from RUNDLL32.EXE, eg
-
-  ### install sqliteodbc.dll
-  C:\> RUNDLL32 [path]sqliteodbc.dll,install [quiet]
-
-  ### remove sqlite3odbc.dll
-  C:\> RUNDLL32 [path]sqlite3odbc.dll,uninstall [quiet]
-
-  If [path] is not provided newer Windows OSes tend to favor the
-  sqlite*odbc*dll in system directories over the current directory,
-  thus better provide an absolute path to the DLL of interest.
-  If the word "quiet" appears anywhere after the DLL/function
-  name, no info message boxes pop up (but errors are shown).
-
-  An (interactive or batch) SQLite shell can be invoked, too, eg
-
-  ### run SQLite shell on database C:\bla\my.db
-  C:\> RUNDLL32 [path]sqliteodbc.dll,shell C:\bla\my.db ...
-
-  ### batch run with given SQL
-  C:\> RUNDLL32 [path]sqliteodbc.dll,shell -batch C:\bla\my.db
-       "select * from table" <NUL: 2>NUL: >out.txt
-
-
-Win64 notes
-
-  On Win64 (64 bit versions of Vista, Windows 7 ...) both 32 bit and 64 bit
-  drivers can be installed in parallel. The 32 bit drivers are required
-  when using 32 bit applications. In order to manage 32 bit data
-  sources, the 32 bit ODBC admin tool C:\Windows\SysWOW64\odbcad32.exe
-  must be used.
-
+  A variant of the SQLite3 ODBC driver can be build which uses
+  internal dynamic linking to System.Data.SQLite.dll or sqlite3.dll.
+  This feature is turned on when running the mingw*-cross-build.sh
+  scripts with SQLITE_DLLS=2.
 
 
 
@@ -359,7 +329,7 @@ TODO:
 - improve documentation
 
 
-2015-04-13
+2011-11-15
 Christian Werner
 mailto:chw@ch-werner.de
 

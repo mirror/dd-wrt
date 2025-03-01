@@ -9,12 +9,12 @@
     <link rel="start" href="index.html" title="Berkeley DB C API Reference" />
     <link rel="up" href="utilities.html" title="Appendix A.  Berkeley DB Command Line Utilities" />
     <link rel="prev" href="db_archive.html" title="db_archive" />
-    <link rel="next" href="db_convert.html" title="db_convert" />
+    <link rel="next" href="db_deadlock.html" title="db_deadlock" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -25,7 +25,7 @@
           <th width="60%" align="center">Appendix A. 
                 Berkeley DB Command Line Utilities
         </th>
-          <td width="20%" align="right"> <a accesskey="n" href="db_convert.html">Next</a></td>
+          <td width="20%" align="right"> <a accesskey="n" href="db_deadlock.html">Next</a></td>
         </tr>
       </table>
       <hr />
@@ -46,13 +46,6 @@
             <a class="xref" href="txncheckpoint.html" title="DB_ENV-&gt;txn_checkpoint()">DB_ENV-&gt;txn_checkpoint()</a>
          to checkpoint it.
     </p>
-      <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
-        <h3 class="title">Note</h3>
-        <p>
-            This utility cannot be used to checkpoint a database
-            environment which is replicated using the base replication API.
-        </p>
-      </div>
       <p>
         The options are as follows:
     </p>
@@ -181,7 +174,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711171558880"></a>Environment Variables</h3>
+              <h3 class="title"><a id="idp55074952"></a>Environment Variables</h3>
             </div>
           </div>
         </div>
@@ -189,7 +182,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711171553056"></a>DB_HOME</h4>
+                <h4 class="title"><a id="idp55075264"></a>DB_HOME</h4>
               </div>
             </div>
           </div>
@@ -210,14 +203,14 @@
           <td width="20%" align="center">
             <a accesskey="u" href="utilities.html">Up</a>
           </td>
-          <td width="40%" align="right"> <a accesskey="n" href="db_convert.html">Next</a></td>
+          <td width="40%" align="right"> <a accesskey="n" href="db_deadlock.html">Next</a></td>
         </tr>
         <tr>
           <td width="40%" align="left" valign="top">db_archive </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> db_convert</td>
+          <td width="40%" align="right" valign="top"> db_deadlock</td>
         </tr>
       </table>
     </div>

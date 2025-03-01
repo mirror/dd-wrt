@@ -5,12 +5,9 @@ set IGNORE_CASES {
   autovacuum-[279].*	{# file size, root page }
   autovacuum-3.7	{# file size }
   backup-4.5.*	 	{# Can backup databases with different pages sizes }
-  backup-4.3.4	 	{# Different ways in BDB handles contention }	
   backup-5.*.1.1	{# different database sizes in backup }
-  backup-5.*.[234].2	{# 6.1 gets SQLITE_DONE instead of SQLITE_OK}
-  backup-10.*.[23]	{# DB uses a larger page size, so the backup finishes
-	                  faster than it does in SQLite. We return done not OK}
-  backup-10.2.5
+  backup-10.*.[35]	{# DB uses a larger page size, so the backup finishes
+	                   faster than it does in SQLite. We return done not OK}
   backup2-6 		{# different error codes for opening a readonly file }
   backup2-7 
   backup2-10
@@ -19,21 +16,12 @@ set IGNORE_CASES {
   cast-3.[37]		{# differences in representing numbers }
   cast-3.1[37]		{# differences in representing numbers }
   cast-3.23		{# differences in representing numbers }
-  capi3d-4.2.3		{# Vacuum works with SQL in progress in BDB, not in SQLite }
   collate5-2.1.[134]	{# Result order doesn't match with NOCASE collation }
   collate5-2.[23].[13]
-  e_select-4.9.1        {# sqlite changed formerly working test, investigating }
-  e_select-4.10.1       {# sqlite changed formerly working test, investigating }
   e_select-7.10.[235689]	{# both answers are correct for NOCASE union}
-  e_select-8.4.[89]	{# sqlite changed formerly working test, investigating }
-  e_select-8.5.[34]	{# sqlite changed formerly working test, investigating }
-  fts4aa-1.9		{# Defer fixing this until later }
-  fts4merge-fts3-5.*	{# Also defered }
-  fts4merge-fts4-5.*
-  fts4merge-fts*-7.3
-  func-29.4		{# Test unsupported pager function. }
-  hook-3.3		{# we commit when opening the environment }
-  hook-3.4
+  fts3defer-2.*.1.4	{# SR19764 }
+  fts3defer-2.*.5.0.2 {# SR19764 }
+  fts3defer-2.3.5.* {# SR19764 }
   incrblob-7.3.2	{# file size }
   incrvacuum-3.[234]	{# file size }
   incrvacuum-[456].*	{# file size }
@@ -48,11 +36,9 @@ set IGNORE_CASES {
   autovacuum-3.[36]	{# BDB allows setting vacuum at any time while SQLite does not }
   expr-13.[14567]	{# differences in representing numbers }
   pagesize-1.[14]	{# different page size defaults }
-  misc8-1.4		{# Different behavior of rollback between BDB and SQLite, #24498 }
   nan-*			{# Output is system dependent ("inf"/"Infinity") }
-  rollback-1.[56]	{# Different behavior of rollback between BDB and SQLite, #24498 }
-  savepoint7-2.2	{# Different messages when aborting a txn. }
   tempdb-2.[23]		{# Uses open file counts, #17964 }
+  tkt-313723c356.1	{# differences in wal behavior }
   thread003.1.2		{# BDB db file size not accurate until close, #17965 }
   thread1-2.[3467]	{# BDB expects different results for threaded case. }
   thread1-2.11		{# BDB expects different results for threaded case. }
@@ -66,7 +52,6 @@ set IGNORE_CASES {
   vacuum2-4.1		{# In DBSQL, metadata settings cannot be changed by vacuum. #18545 }
   vacuum2-4.[47]	{# vacuum setting is not persistent }
   vacuum2-5.[234]	{# Concurrent vacuum works in Berkeley DB }
-  vacuum2-6.3		{# The collation function cannot be changed by vacuum in BDB }
   zeroblob-1.1.1	{# Makes assumptions about memory usage }
 }
 
@@ -78,22 +63,19 @@ set EXCLUDE_CASES {
   alter4-5.5
   alter4-7.*
   autovacuum-8.2	{# vacuum blocked by an exclusive transaction }
-  backup-5.*.2.1	{# btreeHandleDbError assumes app_private is only BtShared}
+  backup-5.1.5.*	{# Hangs as of 18549 }
   backup-6.3		{# Backup remaining and total not exact }
   backup-6.4
   backup-6.5
   backup-6.6
-  backup-7.1.2		{# Hangs because locks block instead of throw }
-  backup-7.1.3
-  backup-7.2.2
   backup-8.9		{# Slightly different error message }
-  backup-10.2.1*	{# btreeHandleDbError assumes app_private is only BtShared}
   backup2-3.1		{# Hangs because locks block instead of throw }
   createtab-[012].2
   descidx1-[1236].*
   descidx2-*
   descidx3-*
   fts3aj-*		{# DBSQL does not support two phase commit across databases. #18340}
+  fts3shared-*		{# Locks block instead of throwing an exception. }
   incrblob-2.1.2	{# Pager implementation specific tests }
   incrblob-6.[23456]	{# Cannot read a table that is write locked }
   incrblob-6.12
@@ -111,7 +93,6 @@ set EXCLUDE_CASES {
   pagesize-1.3		{# different default page size }
   pagesize-2.*.3	{# file size }
   pagesize-2.*.30	{# different default page size }
-  pagesize-3.*		{# different default page size }
   rdonly-*
   server1-1.[5679]	{# Two read threads block }
   server1-2.[23456]	{# Two read threads block }
@@ -119,7 +100,6 @@ set EXCLUDE_CASES {
   shared2-2.[12]	{# Cannot read a database during a rollback }
   shared3-2.4		{# Cannot change the cache size after opening }
   shared3-2.[678]	{# One handle per process for DB_REGISTER }
-  shared3-3.4		{# Temporarily removed for 6.1 release testing - no create inside txn?  }
   shared6-1.2.[3] 	{# Locks block instead of throwing an exception }
   shared6-1.3.[2345] 	{# Locks block instead of throwing an exception }
   shared6-1.4.[123]
@@ -137,7 +117,6 @@ set EXCLUDE_CASES {
   vtab_shared-1.8.2	{# Locks block instead of throwing an exception }
   vtab_shared-1.8.3
   vtab_shared-1.10
-  unixexcl-3.[12]*	{# Hangs }
 }
 
 # Add ignore/exclude cases for Windows/cygwin platform.
@@ -151,12 +130,6 @@ if {[string first "windows" [string tolower $tcl_platform(os)]] >=0 } {
 # manydb.test fails on HP-UX because of resource limitations, not a real bug 
 if {$tcl_platform(os) == "HP-UX"} {
   lappend EXCLUDE_CASES manydb-*
-}
-
-# fts3conf-3.test has some test failures on bigendian systems because it 
-# looks at raw data on the disk. 
-if {$tcl_platform(byteOrder) == "bigEndian"} {
-  lappend IGNORE_CASES fts3conf-3.\[1234568\]*
 }
 
 # These errors only appear if encryption is turned on

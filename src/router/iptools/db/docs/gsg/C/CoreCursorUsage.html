@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -94,7 +94,7 @@
         Remember that you can find the complete implementation of this application
         in:
     </p>
-      <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples/c/getting_started</pre>
+      <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples_c/getting_started</pre>
       <p>
         where <code class="literal"><span class="emphasis"><em>DB_INSTALL</em></span></code> is the location where you
         placed your DB distribution.
@@ -126,12 +126,7 @@ int show_vendor_record(char *, DB *); </pre>
    </p>
           <a id="c_cursor11"></a>
           <pre class="programlisting">/*
- * Searches for an inventory item based on that item's name. The search is
- * performed using the item name secondary database. Displays all
- * inventory items that use the specified name, as well as the vendor
- * associated with that inventory item.
- *
- * If no item name is provided, then all inventory items are displayed.
+ * Displays all inventory items and the associated vendor record.
  */
 int
 main(int argc, char *argv[])
@@ -181,7 +176,7 @@ main(int argc, char *argv[])
           <a id="c_cursor12"></a>
           <pre class="programlisting">int show_all_records(STOCK_DBS *my_stock)
 {
-    DBC *inventory_cursorp;
+    DBC *cursorp;
     DBT key, data;
     char *the_vendor;
     int exit_value, ret;
@@ -192,7 +187,7 @@ main(int argc, char *argv[])
 
     /* Get a cursor to the itemname db */
     my_stock-&gt;inventory_dbp-&gt;cursor(my_stock-&gt;inventory_dbp, NULL,
-      &amp;inventory_cursorp, 0);
+      &amp;cursorp, 0);
 
     /*
      * Iterate over the inventory database, from the first record
@@ -200,7 +195,7 @@ main(int argc, char *argv[])
      */
     exit_value = 0;
     while ((ret =
-      inventory_cursorp-&gt;get(inventory_cursorp, &amp;key, &amp;data, DB_NEXT))
+      cursorp-&gt;get(cursorp, &amp;key, &amp;data, DB_NEXT))
       == 0)
     {
         the_vendor = show_inventory_item(data.data);
@@ -212,7 +207,7 @@ main(int argc, char *argv[])
     }
 
     /* Close the cursor */
-    inventory_cursorp-&gt;close(inventory_cursorp);
+    cursorp-&gt;close(cursorp);
     return(exit_value);
 } </pre>
           <p>
@@ -229,18 +224,13 @@ main(int argc, char *argv[])
     </p>
           <a id="c_cursor13"></a>
           <pre class="programlisting">/*
- * Shows an inventory item. How we retrieve the inventory
- * item values from the provided buffer is strictly dependent
- * on the order that those items were originally stored in the
- * DBT. See load_inventory_database in example_database_load
- * for how this was done.
+ * Shows an inventory item.
  */
 char *
 show_inventory_item(void *vBuf)
 {
     float price;
-    int quantity;
-    size_t buf_pos;
+    int buf_pos, quantity;
     char *category, *name, *sku, *vendor_name;
     char *buf = (char *)vBuf;
 
@@ -308,7 +298,7 @@ show_vendor_record(char *vendor_name, DB *vendor_dbp)
 
     /* Set the search key to the vendor's name */
     key.data = vendor_name;
-    key.size = (u_int32_t)strlen(vendor_name) + 1;
+    key.size = strlen(vendor_name) + 1;
 
     /*
      * Make sure we use the memory we set aside for the VENDOR
@@ -322,7 +312,7 @@ show_vendor_record(char *vendor_name, DB *vendor_dbp)
     data.flags = DB_DBT_USERMEM;
 
     /* Get the record */
-    ret = vendor_dbp-&gt;get(vendor_dbp, NULL, &amp;key, &amp;data, 0);
+    ret = vendor_dbp-&gt;get(vendor_dbp, 0, &amp;key, &amp;data, 0);
     if (ret != 0) {
         vendor_dbp-&gt;err(vendor_dbp, ret, 
             "Error searching for vendor: '%s'", vendor_name);

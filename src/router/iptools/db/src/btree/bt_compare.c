@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -49,39 +49,27 @@
 
 /*
  * __bam_cmp --
- *	Compare a key to a given record. We always start the comparison
- *	at an offset and update the offset with longest matching count
- *	after the comparison.
+ *	Compare a key to a given record.
  *
  * PUBLIC: int __bam_cmp __P((DBC *, const DBT *, PAGE *, u_int32_t,
- * PUBLIC:    int (*)(DB *, const DBT *, const DBT *, size_t *),
- * PUBLIC:    int *, size_t *));
+ * PUBLIC:    int (*)(DB *, const DBT *, const DBT *), int *));
  */
 int
-__bam_cmp(dbc, dbt, h, indx, func, cmpp, locp)
+__bam_cmp(dbc, dbt, h, indx, func, cmpp)
 	DBC *dbc;
 	const DBT *dbt;
 	PAGE *h;
 	u_int32_t indx;
-	int (*func)__P((DB *, const DBT *, const DBT *, size_t *));
+	int (*func)__P((DB *, const DBT *, const DBT *));
 	int *cmpp;
-	size_t *locp;
 {
-	BBLOB bl;
 	BINTERNAL *bi;
 	BKEYDATA *bk;
 	BOVERFLOW *bo;
 	DB *dbp;
 	DBT pg_dbt;
-	off_t blob_size;
-	int ret;
-	db_seq_t blob_id;
 
 	dbp = dbc->dbp;
-	ret = 0;
-
-	/* Assert that the func is non-Null. */
-	DB_ASSERT(dbp->env, func != NULL);
 
 	/*
 	 * Returns:
@@ -103,49 +91,11 @@ __bam_cmp(dbc, dbt, h, indx, func, cmpp, locp)
 		bk = GET_BKEYDATA(dbp, h, indx);
 		if (B_TYPE(bk->type) == B_OVERFLOW)
 			bo = (BOVERFLOW *)bk;
-		else if (B_TYPE(bk->type) == B_BLOB) {
-			/*
-			 * This is very slow, but since blobs cannot be
-			 * in databases with duplicates or be keys, it should
-			 * only happen when using DB_GET_BOTH or DB_SET.
-			 */
-			memcpy(&bl, bk, BBLOB_SIZE);
-			memset(&pg_dbt, 0, sizeof(DBT));
-			GET_BLOB_SIZE(dbc->env, bl, blob_size, ret);
-			if (ret != 0)
-				return (ret);
-			if (blob_size > UINT32_MAX)
-				pg_dbt.size = UINT32_MAX;
-			else
-				pg_dbt.size = (u_int32_t)blob_size;
-			blob_id = (db_seq_t)bl.id;
-			pg_dbt.flags = DB_DBT_USERMEM;
-			if ((ret = __os_malloc(
-			    dbc->env, pg_dbt.size, &pg_dbt.data)) != 0)
-				return (ret);
-			pg_dbt.ulen = pg_dbt.size;
-			if ((ret = __blob_get(dbc,
-			    &pg_dbt, blob_id, blob_size, NULL, NULL)) != 0) {
-				__os_free(dbc->env, pg_dbt.data);
-				return (ret);
-			}
-			*cmpp = func(dbp, dbt, &pg_dbt, locp);
-			/*
-			 * There is no way to directly compare a blob file that
-			 * is greater in size than UINT32_MAX, so instead we
-			 * compare the data up to UINT32_MAX, and if they are
-			 * equal return that the blob is larger, since it is
-			 * longer than the input data.
-			 */
-			if (*cmpp == 0 && (blob_size > UINT32_MAX))
-				*cmpp = -1;
-			__os_free(dbc->env, pg_dbt.data);
-			return (0);
-		} else {
+		else {
 			pg_dbt.app_data = NULL;
 			pg_dbt.data = bk->data;
 			pg_dbt.size = bk->len;
-			*cmpp = func(dbp, dbt, &pg_dbt, locp);
+			*cmpp = func(dbp, dbt, &pg_dbt);
 			return (0);
 		}
 		break;
@@ -180,7 +130,7 @@ __bam_cmp(dbc, dbt, h, indx, func, cmpp, locp)
 			pg_dbt.app_data = NULL;
 			pg_dbt.data = bi->data;
 			pg_dbt.size = bi->len;
-			*cmpp = func(dbp, dbt, &pg_dbt, locp);
+			*cmpp = func(dbp, dbt, &pg_dbt);
 			return (0);
 		}
 		break;
@@ -192,7 +142,42 @@ __bam_cmp(dbc, dbt, h, indx, func, cmpp, locp)
 	 * Overflow.
 	 */
 	return (__db_moff(dbc, dbt, bo->pgno, bo->tlen,
-		    func == __dbt_defcmp ? NULL : func, cmpp, locp));
+	    func == __bam_defcmp ? NULL : func, cmpp));
+}
+
+/*
+ * __bam_defcmp --
+ *	Default comparison routine.
+ *
+ * PUBLIC: int __bam_defcmp __P((DB *, const DBT *, const DBT *));
+ */
+int
+__bam_defcmp(dbp, a, b)
+	DB *dbp;
+	const DBT *a, *b;
+{
+	size_t len;
+	u_int8_t *p1, *p2;
+
+	COMPQUIET(dbp, NULL);
+
+	/*
+	 * Returns:
+	 *	< 0 if a is < b
+	 *	= 0 if a is = b
+	 *	> 0 if a is > b
+	 *
+	 * XXX
+	 * If a size_t doesn't fit into a long, or if the difference between
+	 * any two characters doesn't fit into an int, this routine can lose.
+	 * What we need is a signed integral type that's guaranteed to be at
+	 * least as large as a size_t, and there is no such thing.
+	 */
+	len = a->size > b->size ? b->size : a->size;
+	for (p1 = a->data, p2 = b->data; len--; ++p1, ++p2)
+		if (*p1 != *p2)
+			return ((long)*p1 - (long)*p2);
+	return ((long)a->size - (long)b->size);
 }
 
 /*

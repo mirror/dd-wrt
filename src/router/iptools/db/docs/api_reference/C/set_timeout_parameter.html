@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -37,11 +37,9 @@
         </div>
       </div>
       <p>
-                Sets timeout values, in microseconds, for locks or
-                transactions in the database environment, the wait time for
-                a process to exit the environment when DB_REGISTER recovery
-                is needed, and how frequently to check for failed processes
-                during mutex waits.
+            Sets timeout values for locks or transactions in
+			the database environment, and the wait time for a process to exit the environment when
+			DB_REGISTER recovery is needed.
             </p>
       <p>
                 The syntax for setting timeout value for database
@@ -51,70 +49,36 @@
       <div class="itemizedlist">
         <ul type="disc">
           <li>
+            DB_SET_LOCK_TIMEOUT
             <p>
-                        DB_SET_LOCK_TIMEOUT
-                    </p>
-            <p>
-                        Configures the database environment's lock timeout value.
-                        The syntax of the entry in the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is a single
-                        line with the string <code class="literal">set_lock_timeout</code>,
-                        one or more whitespace characters, and the lock timeout
-                        value.         
-                    </p>
-          </li>
+                Configures the database environment's lock timeout value.
+                The syntax of the entry in the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is a single
+                line with the string <code class="literal">set_lock_timeout</code>,
+                one or more whitespace characters, and the lock timeout
+                value.         
+            </p></li>
           <li>
+            DB_SET_REG_TIMEOUT
             <p>
-                        DB_SET_MUTEX_FAILCHK_TIMEOUT
-                    </p>
-            <p>
-                        If failchk broadcasting has been configured, then
-                        this sets the timeout value on how long a thread will
-                        wait for a mutex lock before checking whether
-                        <a class="xref" href="envfailchk.html" title="DB_ENV-&gt;failchk()">DB_ENV-&gt;failchk()</a> has marked the mutex as failed. The
-                        default is to check once every second. The syntax
-                        of the entry in the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is a single
-                        line with the string
-                        <code class="literal">set_mutex_failchk_timeout</code>,
-                        one or more whitespace characters, and the wait
-                        timeout value.
-                    </p>
-            <p>
-                        If failchk broadcasting has not been configured,
-                        then setting this timeout value results in an
-                        error.
-                    </p>
-          </li>
+                Sets the timeout value on how long to wait for processes to
+                exit the environment before recovery is started.  The
+                syntax of the entry in the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is a single
+                line with the string <code class="literal">set_reg_timeout</code>,
+                one or more whitespace characters, and the wait timeout
+                value.         
+            </p></li>
           <li>
+            DB_SET_TXN_TIMEOUT
             <p>
-                        DB_SET_REG_TIMEOUT
-                    </p>
-            <p>
-                        Sets the timeout value on how long to wait for processes to
-                        exit the environment before recovery is started.  The
-                        syntax of the entry in the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a> file is a single
-                        line with the string <code class="literal">set_reg_timeout</code>,
-                        one or more whitespace characters, and the wait timeout
-                        value.         
-                    </p>
-          </li>
-          <li>
-            <p>
-                        DB_SET_TXN_TIMEOUT
-                    </p>
-            <p>
-                        Sets the timeout value for transactions in this database
-                        environment. The syntax of the entry in the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
-                        file is a single line with the string
-                        <code class="literal">set_txn_timeout</code>, one or more whitespace
-                        characters, and the transaction timeout value.
-                    </p>
-          </li>
+                Sets the timeout value for transactions in this database
+                environment. The syntax of the entry in the <a href="../../programmer_reference/env_db_config.html#env_db_config.DB_CONFIG" class="olink">DB_CONFIG</a>
+                file is a single line with the string
+                <code class="literal">set_txn_timeout</code>, one or more whitespace
+                characters, and the transaction timeout value
+            </p></li>
         </ul>
       </div>
-      <p>
-                For more information, see 
-                <a class="xref" href="envset_timeout.html" title="DB_ENV-&gt;set_timeout()">DB_ENV-&gt;set_timeout()</a>. 
-            </p>
+      <p>For more information, see <a class="xref" href="envset_timeout.html" title="DB_ENV-&gt;set_timeout()">DB_ENV-&gt;set_timeout()</a>. </p>
     </div>
     <div class="navfooter">
       <hr />

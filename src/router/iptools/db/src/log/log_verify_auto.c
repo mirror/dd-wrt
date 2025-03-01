@@ -174,9 +174,6 @@ __fop_init_verify(env, dtabp)
 	    __fop_write_verify, DB___fop_write)) != 0)
 		return (ret);
 	if ((ret = __db_add_recovery_int(env, dtabp,
-	    __fop_write_file_verify, DB___fop_write_file)) != 0)
-		return (ret);
-	if ((ret = __db_add_recovery_int(env, dtabp,
 	    __fop_rename_verify, DB___fop_rename)) != 0)
 		return (ret);
 	if ((ret = __db_add_recovery_int(env, dtabp,

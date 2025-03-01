@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -143,21 +143,20 @@ public class RepQuoteExample
                     isCreator = true;
                 /* "local" should be host:port. */
                 i++;
-                /* Look for index of the last colon in the argv[i] string. */
-                int sep = argv[i].lastIndexOf(':');
-                if (sep == -1 || sep == 0) {
+                String[] words = argv[i].split(":");
+                if (words.length != 2) {
                     System.err.println(
-                        "Invalid local host specification host:port needed.");
+                        "Invalid host specification host:port needed.");
                     usage();
                 }
                 try {
-                    tmpPort = Integer.parseInt(argv[i].substring(sep + 1));
+                    tmpPort = Integer.parseInt(words[1]);
                 } catch (NumberFormatException nfe) {
-                    System.err.println("Invalid local host specification, " +
+                    System.err.println("Invalid host specification, " +
                         "could not parse port number.");
                     usage();
                 }
-                config.setThisHost(argv[i].substring(0, sep), tmpPort, isCreator);
+                config.setThisHost(words[0], tmpPort, isCreator);
             } else if (argv[i].compareTo("-M") == 0) {
                 config.startPolicy = ReplicationManagerStartPolicy.REP_MASTER;
             } else if (argv[i].compareTo("-p") == 0) {
@@ -172,21 +171,20 @@ public class RepQuoteExample
                 if (argv[i].equals("-R"))
                     isPeer = true;
                 i++;
-                /* Look for index of the last colon in the argv[i] string. */
-                int sep = argv[i].lastIndexOf(':');
-                if (sep == -1 || sep == 0) {
+                String[] words = argv[i].split(":");
+                if (words.length != 2) {
                     System.err.println(
-                        "Invalid remote host specification host:port needed.");
+                        "Invalid host specification host:port needed.");
                     usage();
                 }
                 try {
-                    tmpPort = Integer.parseInt(argv[i].substring(sep + 1));
+                    tmpPort = Integer.parseInt(words[1]);
                 } catch (NumberFormatException nfe) {
-                    System.err.println("Invalid remote host specification, " +
+                    System.err.println("Invalid host specification, " +
                         "could not parse port number.");
                     usage();
                 }
-                config.addOtherHost(argv[i].substring(0, sep), tmpPort, isPeer);
+                config.addOtherHost(words[0], tmpPort, isPeer);
             } else if (argv[i].compareTo("-v") == 0) {
                 config.verbose = true;
             } else {

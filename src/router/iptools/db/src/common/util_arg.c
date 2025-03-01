@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -51,57 +51,6 @@ __db_util_arg(arg0, str, argcp, argvp)
 
 	*argcp = (int)(ap - argv);
 	*argvp = argv;
-
-	return (0);
-}
-
-/*
- * __db_util_arg_progname --
- *	Return the program name.
- *
- * PUBLIC: const char *__db_util_arg_progname __P((const char *));
- */
-const char *
-__db_util_arg_progname(arg0)
-	const char *arg0;
-{
-	char *progname;
-
-	if ((progname = __db_rpath(arg0)) == NULL)
-		return (arg0);
-	else
-		return (progname + 1);
-}
-
-/*
- * __db_util_arg_password --
- *	Handle the password argument.
- *
- * PUBLIC: int __db_util_arg_password __P((const char *, char *, char **));
- */
-int
-__db_util_arg_password(progname, opt_arg, passwdp)
-	const char *progname;
-	char *opt_arg;
-	char **passwdp;
-{
-	if (passwdp == NULL)
-		return (EINVAL);
-
-	if (*passwdp != NULL) {
-		fprintf(stderr, DB_STR("5130",
-		    "Password may not be specified twice"));
-		return (EINVAL);
-	}
-
-	*passwdp = strdup(opt_arg);
-	memset(opt_arg, 0, strlen(opt_arg));
-	if (*passwdp == NULL) {
-		fprintf(stderr, DB_STR_A("5005",
-		    "%s: strdup: %s\n", "%s %s\n"),
-		    progname, strerror(errno));
-		return (errno);
-	}
 
 	return (0);
 }

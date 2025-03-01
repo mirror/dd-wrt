@@ -14,17 +14,17 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Running the test suite under
-        UNIX</th>
+          <th colspan="3" align="center">Running the test suite under UNIX</th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="build_unix_shlib.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 7.  Building Berkeley DB for UNIX/POSIX
-    </th>
+          <th width="60%" align="center">Chapter 7. 
+		Building Berkeley DB for UNIX/POSIX
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="build_unix_notes.html">Next</a></td>
         </tr>
       </table>
@@ -34,8 +34,7 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title" style="clear: both"><a id="build_unix_test"></a>Running the test suite under
-        UNIX</h2>
+            <h2 class="title" style="clear: both"><a id="build_unix_test"></a>Running the test suite under UNIX</h2>
           </div>
         </div>
       </div>
@@ -48,54 +47,38 @@
           </dt>
         </dl>
       </div>
-      <p> 
-        The Berkeley DB test suite is built if you specify <a class="link" href="build_unix_conf.html#build_unix_conf.--enable-test">--enable-test</a> as an argument 
-        when configuring Berkeley DB. The test suite also requires that you configure
-        and build the Tcl interface to the library. 
-    </p>
-      <p> 
-        Before running the tests for the first time, you may need
-        to edit the <code class="filename">include.tcl</code> file in your
-        build directory. The Berkeley DB configuration assumes that
-        you intend to use the version of the tclsh utility included in
-        the Tcl installation with which Berkeley DB was configured to
-        run the test suite, and further assumes that the test suite
-        will be run with the libraries prebuilt in the Berkeley DB
-        build directory. If either of these assumptions are incorrect,
-        you will need to edit the <code class="filename">include.tcl</code>
-        file and change the following line to correctly specify the
-        full path to the version of tclsh with which you are going to
-        run the test suite:
-    </p>
+      <p>The Berkeley DB test suite is built if you specify
+<a class="link" href="build_unix_conf.html#build_unix_conf.--enable-test">--enable-test</a>
+as an argument when configuring Berkeley DB.  The test suite also
+requires that you configure and build the Tcl interface to the
+library.</p>
+      <p>Before running the tests for the first time, you may need to edit the
+<code class="filename">include.tcl</code> file in your build directory.  The
+Berkeley DB configuration assumes that you intend to use the
+version of the tclsh utility included in the Tcl installation with which
+Berkeley DB was configured to run the test suite, and further
+assumes that the test suite will be run with the libraries prebuilt in
+the Berkeley DB build directory.  If either of these assumptions
+are incorrect, you will need to edit the <code class="filename">include.tcl</code> file and
+change the following line to correctly specify the full path to the
+version of tclsh with which you are going to run the test suite:</p>
       <pre class="programlisting">set tclsh_path ...</pre>
-      <p> 
-        You may also need to change the following line to correctly
-        specify the path from the directory where you are running the
-        test suite to the location of the Berkeley DB Tcl library you
-        built:
-    </p>
+      <p>You may also need to change the following line to correctly specify the
+path from the directory where you are running the test suite to the
+location of the Berkeley DB Tcl library you built:</p>
       <pre class="programlisting">set test_path ...</pre>
-      <p>
-        It may not be necessary that this be a full path if you
-        have configured your system's shared library mechanisms to
-        search the directory where you built or installed the Tcl
-        library.
-    </p>
-      <p> 
-        All Berkeley DB tests are run from within <span class="bold"><strong>tclsh</strong></span>. After starting tclsh, you
-        must source the file <code class="filename">test.tcl</code> in the test
-        directory. For example, if you built in the
-        <code class="filename">build_unix</code> directory of the
-        distribution, this would be done using the following command: 
-    </p>
+      <p>It may not be necessary that this be a full path if you have configured
+your system's shared library mechanisms to search the directory where
+you built or installed the Tcl library.</p>
+      <p>All Berkeley DB tests are run from within <span class="bold"><strong>tclsh</strong></span>.  After
+starting tclsh, you must source the file <code class="filename">test.tcl</code> in the test
+directory.  For example, if you built in the <code class="filename">build_unix</code>
+directory of the distribution, this would be done using the following
+command:</p>
       <pre class="programlisting">% source ../test/tcl/test.tcl</pre>
-      <p> 
-        If no errors occur, you should get a "%" prompt.
-    </p>
-      <p> 
-        You are now ready to run tests in the test suite; see
-        Running the test suite for more information.
-    </p>
+      <p>If no errors occur, you should get a "%" prompt.</p>
+      <p>You are now ready to run tests in the test suite; see
+    Running the test suite for more information.</p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
@@ -105,25 +88,19 @@
           </div>
         </div>
         <p>
-            The Berkeley DB SQL interface test suite is built if
-            you specify <a class="link" href="build_unix_conf.html#build_unix_conf.--enable-test">
-            --enable-test</a> and <a class="link" href="build_unix_conf.html#build_unix_conf.--enable-sql">--enable-sql
-            </a> as arguments, when configuring Berkeley DB. The
-            test suite also requires that you build the Berkeley DB
-            Tcl API.
-        </p>
+    The Berkeley DB SQL interface test suite is built if you specify
+<a class="link" href="build_unix_conf.html#build_unix_conf.--enable-test">--enable-test</a> and <a class="link" href="build_unix_conf.html#build_unix_conf.--enable-sql">--enable-sql </a>
+as arguments, when configuring Berkeley DB.  The test suite also
+requires that you build the Berkeley DB Tcl API.
+</p>
         <pre class="programlisting">
 ../dist/configure --enable-sql --enable-test --with-tcl=/usr/lib
 </pre>
         <p>
-            This builds the <span class="emphasis"><em>testfixture</em></span>
-            project in <code class="literal">../build_unix/sql</code>. 
-        </p>
-        <p> 
-            To enable extensions like full text search layer and
-            R-Tree layer in the SQL test suite, configure with
-            --enable-amalgamation. 
-        </p>
+This builds the <span class="emphasis"><em>testfixture</em></span> project in <code class="literal">../build_unix/sql</code>.
+</p>
+        <p>To enable extensions like full text search layer and R-Tree layer in the SQL test suite, configure with --enable-amalgamation.
+</p>
       </div>
     </div>
     <div class="navfooter">

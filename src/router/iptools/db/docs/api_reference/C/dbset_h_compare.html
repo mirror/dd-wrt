@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -41,8 +41,8 @@
       <pre class="programlisting">#include &lt;db.h&gt;
 
 int
-DB-&gt;set_h_compare(DB *db, int (*compare_fcn)(DB *db,
-    const DBT *dbt1, const DBT *dbt2, size_t *locp));  </pre>
+DB-&gt;set_h_compare(DB *db,
+    int (*compare_fcn)(DB *db, const DBT *dbt1, const DBT *dbt2));  </pre>
       <p>
          Set the Hash key comparison function.  The comparison function is
          called whenever it is necessary to compare a key specified by the
@@ -76,7 +76,7 @@ DB-&gt;set_h_compare(DB *db, int (*compare_fcn)(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711187665728"></a>Parameters</h3>
+              <h3 class="title"><a id="idp50304224"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -84,14 +84,14 @@ DB-&gt;set_h_compare(DB *db, int (*compare_fcn)(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711189105328"></a>compare_fcn</h4>
+                <h4 class="title"><a id="idp50296192"></a>compare_fcn</h4>
               </div>
             </div>
           </div>
           <p>
                           The <span class="bold"><strong>compare_fcn</strong></span> function is the
                           application-specified Hash comparison function.  The comparison
-                          function takes four parameters:
+                          function takes three parameters:
                      </p>
           <div class="itemizedlist">
             <ul type="disc">
@@ -122,15 +122,6 @@ DB-&gt;set_h_compare(DB *db, int (*compare_fcn)(DB *db,
                      representing the current database's key.
             </p>
               </li>
-              <li>
-                <p>
-                     <code class="literal">locp</code>
-            </p>
-                <p>
-                     The <span class="bold"><strong>locp</strong></span> parameter is currently
-                     unused, and must be set to NULL or corruption can occur.
-            </p>
-              </li>
             </ul>
           </div>
           <p>
@@ -151,7 +142,7 @@ DB-&gt;set_h_compare(DB *db, int (*compare_fcn)(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711182298496"></a>Errors</h3>
+              <h3 class="title"><a id="idp50272400"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -167,7 +158,7 @@ DB-&gt;set_h_compare(DB *db, int (*compare_fcn)(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711183716176"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp50271544"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -181,7 +172,7 @@ DB-&gt;set_h_compare(DB *db, int (*compare_fcn)(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711183221520"></a>Class</h3>
+              <h3 class="title"><a id="idp50366416"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -193,7 +184,7 @@ DB-&gt;set_h_compare(DB *db, int (*compare_fcn)(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711182549232"></a>See Also</h3>
+              <h3 class="title"><a id="idp50369056"></a>See Also</h3>
             </div>
           </div>
         </div>

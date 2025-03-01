@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -241,10 +241,6 @@ proc rep045_sub { method tnum logset largs } {
 		if { $version > $maxversion } {
 			set version 1
 		}
-		# Instant Internal Init can be trigger becasue
-		# databases were deleted, so clobber the timeout
-		# again.
-		$menv test force noarchive_timeout
 	}
 
 	# Signal to child that we are done.

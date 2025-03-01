@@ -14,17 +14,17 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Installing Berkeley
-        DB</th>
+          <th colspan="3" align="center">Installing Berkeley DB</th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="cross_compile_unix.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 7.  Building Berkeley DB for UNIX/POSIX
-    </th>
+          <th width="60%" align="center">Chapter 7. 
+		Building Berkeley DB for UNIX/POSIX
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="build_unix_shlib.html">Next</a></td>
         </tr>
       </table>
@@ -34,15 +34,12 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title" style="clear: both"><a id="build_unix_install"></a>Installing Berkeley
-        DB</h2>
+            <h2 class="title" style="clear: both"><a id="build_unix_install"></a>Installing Berkeley DB</h2>
           </div>
         </div>
       </div>
-      <p> 
-        Berkeley DB installs the following files into the following
-        locations, with the following default values: 
-    </p>
+      <p>Berkeley DB installs the following files into the following locations,
+with the following default values:</p>
       <div class="informaltable">
         <table border="1" width="80%">
           <colgroup>
@@ -115,51 +112,33 @@
           </tbody>
         </table>
       </div>
-      <p> 
-        With one exception, this follows the GNU Autoconf and GNU
-        Coding Standards installation guidelines; please see that
-        documentation for more information and rationale. 
-    </p>
-      <p> 
-        The single exception is the Berkeley DB documentation. The
-        Berkeley DB documentation is provided in HTML format, not in
-        UNIX-style man or GNU info format. For this reason, Berkeley
-        DB configuration does not support <span class="bold"><strong>--infodir</strong></span>
-        or <span class="bold"><strong>--mandir</strong></span>. To change the default installation
-        location for the Berkeley DB documentation, modify the
-        Makefile variable, <span class="bold"><strong>docdir</strong></span>. 
-    </p>
-      <p> 
-        When installing Berkeley DB on filesystems shared by
-        machines of different architectures, please note that although
-        Berkeley DB include files are installed based on the value of
-        $(prefix), rather than $(exec_prefix), the Berkeley DB include
-        files are not always architecture independent.
-    </p>
-      <p>
-        To move the entire installation tree to somewhere besides
-        <span class="bold"><strong>/usr/local</strong></span>, change the
-        value of <span class="bold"><strong>prefix</strong></span>. 
-    </p>
-      <p>
-        To move the binaries and libraries to a different location,
-        change the value of <span class="bold"><strong>exec_prefix</strong></span>. The 
-        values of <span class="bold"><strong>includedir</strong></span> and <span class="bold"><strong>libdir</strong></span> may be similarly changed. 
-    </p>
-      <p> 
-        Any of these values except for <span class="bold"><strong>docdir</strong></span> 
-        may be set as part of the configuration:
-    </p>
+      <p>With one exception, this follows the GNU Autoconf and GNU Coding
+Standards installation guidelines; please see that documentation for
+more information and rationale.</p>
+      <p>The single exception is the Berkeley DB documentation.  The
+Berkeley DB documentation is provided in HTML format, not in
+UNIX-style man or GNU info format.  For this reason, Berkeley DB
+configuration does not support <span class="bold"><strong>--infodir</strong></span> or <span class="bold"><strong>--mandir</strong></span>.
+To change the default installation location for the Berkeley DB
+documentation, modify the Makefile variable, <span class="bold"><strong>docdir</strong></span>.</p>
+      <p>When installing Berkeley DB on filesystems shared by machines of
+different architectures, please note that although Berkeley DB
+include files are installed based on the value of $(prefix), rather than
+$(exec_prefix), the Berkeley DB include files are not always
+architecture independent.</p>
+      <p>To move the entire installation tree to somewhere besides
+<span class="bold"><strong>/usr/local</strong></span>, change the value of <span class="bold"><strong>prefix</strong></span>.</p>
+      <p>To move the binaries and libraries to a different location, change the
+value of <span class="bold"><strong>exec_prefix</strong></span>.  The values of <span class="bold"><strong>includedir</strong></span> and
+<span class="bold"><strong>libdir</strong></span> may be similarly changed.</p>
+      <p>Any of these values except for <span class="bold"><strong>docdir</strong></span> may be set as part of
+the configuration:</p>
       <pre class="programlisting">prompt: ../dist/configure --bindir=/usr/local/bin</pre>
-      <p>
-        Any of these values, including <span class="bold"><strong>docdir</strong></span>, 
-        may be changed when doing the install itself:
-    </p>
+      <p>Any of these values, including <span class="bold"><strong>docdir</strong></span>, may be changed when doing
+the install itself:</p>
       <pre class="programlisting">prompt: make prefix=/usr/contrib/bdb install</pre>
-      <p>
-        The Berkeley DB installation process will attempt to create
-        any directories that do not already exist on the system.
-    </p>
+      <p>The Berkeley DB installation process will attempt to create any
+directories that do not already exist on the system.</p>
     </div>
     <div class="navfooter">
       <hr />
@@ -172,8 +151,7 @@
           <td width="40%" align="right"> <a accesskey="n" href="build_unix_shlib.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Cross-Compiling on
-        Unix </td>
+          <td width="40%" align="left" valign="top">Cross-Compiling on Unix </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

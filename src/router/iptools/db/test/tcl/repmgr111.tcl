@@ -1,13 +1,12 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2010, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # TEST repmgr111
 # TEST Multi-process repmgr with env open before set local site.
 
 proc repmgr111 { } {
 	source ./include.tcl
-	global ipversion
 
 	set tnum "111"
 	puts "Repmgr$tnum: set local site after env open."
@@ -21,7 +20,6 @@ proc repmgr111 { } {
 	file mkdir $masterdir
 	file mkdir $clientdir
 
-	set hoststr [get_hoststr $ipversion]
 	set ports [available_ports 2]
 	set master_port [lindex $ports 0]
 	set client_port [lindex $ports 1]
@@ -33,7 +31,7 @@ proc repmgr111 { } {
 	make_dbconfig $masterdir {{rep_set_config db_repmgr_conf_2site_strict off}}
 	puts $master "output $testdir/m1output"
 	puts $master "open_env"
-	puts $master "local $hoststr $master_port"
+	puts $master "local $master_port"
 	puts $master "start master"
 	set ignored [gets $master]
 
@@ -41,11 +39,11 @@ proc repmgr111 { } {
 	set client [open "| $site_prog" "r+"]
 	fconfigure $client -buffering line
 	puts $client "home $clientdir"
-	puts $client "local $hoststr $client_port"
+	puts $client "local $client_port"
 	make_dbconfig $clientdir {{rep_set_config db_repmgr_conf_2site_strict off}}
 	puts $client "output $testdir/coutput"
 	puts $client "open_env"
-	puts $client "remote $hoststr $master_port"
+	puts $client "remote 127.0.0.1 $master_port"
 	puts $client "start client"
 	error_check_match start_client [gets $client] "*Successful*"
 

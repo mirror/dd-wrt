@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * Some parts of this code originally written by Adam Stubblefield
  * -- astubble@rice.edu
@@ -14,8 +14,6 @@
 #include "db_int.h"
 #include "dbinc/db_page.h"
 #include "dbinc/crypto.h"
-
-static void randomize __P((ENV *, void *, size_t));
 
 /*
  * __crypto_region_init --
@@ -109,9 +107,13 @@ __crypto_region_init(env)
 
 	/*
 	 * On success, no matter if we allocated it or are using the already
-	 * existing one, we are done with the passwd in the env.
+	 * existing one, we are done with the passwd in the env.  We smash
+	 * N-1 bytes so that we don't overwrite the nul.
 	 */
-	__crypto_erase_passwd(env, &dbenv->passwd, &dbenv->passwd_len);
+	memset(dbenv->passwd, 0xff, dbenv->passwd_len-1);
+	__os_free(env, dbenv->passwd);
+	dbenv->passwd = NULL;
+	dbenv->passwd_len = 0;
 
 	return (ret);
 }
@@ -133,7 +135,9 @@ __crypto_env_close(env)
 	dbenv = env->dbenv;
 
 	if (dbenv->passwd != NULL) {
-		__crypto_erase_passwd(env, &dbenv->passwd, &dbenv->passwd_len);
+		memset(dbenv->passwd, 0xff, dbenv->passwd_len-1);
+		__os_free(env, dbenv->passwd);
+		dbenv->passwd = NULL;
 	}
 
 	if (!CRYPTO_ON(env))
@@ -221,8 +225,7 @@ __crypto_algsetup(env, db_cipher, alg, do_init)
 
 /*
  * __crypto_decrypt_meta --
- *	Perform decryption on a possible metadata page, if needed. This is used
- *	to help decide whether this is a real DB. Don't trust random data.
+ *	Perform decryption on a metapage if needed.
  *
  * PUBLIC:  int __crypto_decrypt_meta __P((ENV *, DB *, u_int8_t *, int));
  */
@@ -238,7 +241,6 @@ __crypto_decrypt_meta(env, dbp, mbuf, do_metachk)
 	DB_CIPHER *db_cipher;
 	size_t pg_off;
 	int ret;
-	unsigned added_flags;
 	u_int8_t *iv;
 
 	/*
@@ -291,7 +293,6 @@ __crypto_decrypt_meta(env, dbp, mbuf, do_metachk)
 	 */
 	if (meta->encrypt_alg != 0) {
 		db_cipher = env->crypto_handle;
-		added_flags = 0;
 		if (!F_ISSET(dbp, DB_AM_ENCRYPT)) {
 			if (!CRYPTO_ON(env)) {
 				__db_errx(env, DB_STR("0178",
@@ -299,14 +300,12 @@ __crypto_decrypt_meta(env, dbp, mbuf, do_metachk)
 				return (EINVAL);
 			}
 			/*
-			 * User has a correct, secure env and has encountered
-			 * a database in that env that APPEARS TO BE secure, but
-			 * user didn't set the encryption flags. Since the db
-			 * already exists, turn encryption on. Remember what was
-			 * set, so the flags can restored if it doesn't decrypt.
+			 * User has a correct, secure env, but has encountered
+			 * a database in that env that is secure, but user
+			 * didn't dbp->set_flags.  Since it is existing, use
+			 * encryption if it is that way already.
 			 */
-			added_flags = DB_AM_ENCRYPT | DB_AM_CHKSUM;
-			F_SET(dbp, added_flags);
+			F_SET(dbp, DB_AM_ENCRYPT|DB_AM_CHKSUM);
 		}
 		/*
 		 * This was checked in set_flags when DB_AM_ENCRYPT was set.
@@ -317,7 +316,6 @@ __crypto_decrypt_meta(env, dbp, mbuf, do_metachk)
 		    meta->encrypt_alg != db_cipher->alg) {
 			__db_errx(env, DB_STR("0179",
 			    "Database encrypted using a different algorithm"));
-			F_CLR(dbp, added_flags);
 			return (EINVAL);
 		}
 		DB_ASSERT(env, F_ISSET(dbp, DB_AM_CHKSUM));
@@ -336,14 +334,12 @@ alg_retry:
 		if (!F_ISSET(db_cipher, CIPHER_ANY)) {
 			if (do_metachk && (ret = db_cipher->decrypt(env,
 			    db_cipher->data, iv, mbuf + pg_off,
-			    DBMETASIZE - pg_off))) {
-				F_CLR(dbp, added_flags);
+			    DBMETASIZE - pg_off)))
 				return (ret);
-			}
-			if (((BTMETA *)meta)->crypto_magic != meta->magic) {
+			if (((BTMETA *)meta)->crypto_magic !=
+			    meta->magic) {
 				__db_errx(env, DB_STR("0180",
 				    "Invalid password"));
-				F_CLR(dbp, added_flags);
 				return (EINVAL);
 			}
 			/*
@@ -412,66 +408,4 @@ __crypto_set_passwd(env_src, env_dest)
 	cipher = R_ADDR(infop, renv->cipher_off);
 	sh_passwd = R_ADDR(infop, cipher->passwd);
 	return (__env_set_encrypt(env_dest->dbenv, sh_passwd, DB_ENCRYPT_AES));
-}
-
-/*
- * __crypto_erase_passwd --
- *	Erase the password stored in the given pointer and nullify the pointer.
- *
- * PUBLIC: void __crypto_erase_passwd __P((ENV*, char **, size_t *));
- */
-void
-__crypto_erase_passwd (env, passwdp, passwd_lenp)
-	ENV *env;
-	char **passwdp;
-	size_t *passwd_lenp;
-{
-	/* We smash N-1 bytes so that we don't overwrite the null. */
-	randomize(env, *passwdp, *passwd_lenp - 1);
-	__os_free(env, *passwdp);
-	*passwdp = NULL;
-	*passwd_lenp = 0;
-}
-
-/*
- * randomize
- *
- */
-static void
-randomize(env, base, size)
-	ENV *env;
-	void *base;
-	size_t size;
-{
-	size_t i, copysize;
-	u_int8_t  last, *p;
-	u_int32_t value;
-
-	last = ((u_int8_t *)base)[size];
-	for (i = 0, p = base; i < size; i += copysize, p += copysize) {
-		value = __os_random();
-		if ((copysize = (size - i)) > sizeof(int32_t))
-			copysize = sizeof(int32_t);
-		switch (copysize)
-		{
-		default:
-			memmove(p, &value, sizeof(int32_t));
-			break;
-		case 3:
-			p[2] = (u_int8_t)(value >> 16);
-			/* FALLTHROUGH */
-		case 2:
-			p[1] = (u_int8_t)(value >> 8);
-			/* FALLTHROUGH */
-		case 1:
-			p[0] = (u_int8_t)(value);
-			break;
-		case 0:
-			DB_ASSERT(env, "randomize size 0?");
-			break;
-		}
-
-	}
-	DB_ASSERT(env, last == *p);
-	COMPQUIET(env, NULL);
 }

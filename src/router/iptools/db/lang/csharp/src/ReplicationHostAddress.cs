@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -33,8 +33,7 @@ namespace BerkeleyDB {
         /// </summary>
         /// <param name="HostAndPort">A string in host:port format</param>
         public ReplicationHostAddress(string HostAndPort) {
-            /// Look for index of the last colon in the HostAndPort string.
-            int sep = HostAndPort.LastIndexOf(':');
+            int sep = HostAndPort.IndexOf(':');
             if (sep == -1)
                 throw new ArgumentException(
                     "Hostname and port must be separated by a colon.");

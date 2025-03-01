@@ -1,6 +1,6 @@
 --- test/e_fts3.test
 +++ test/e_fts3.test
-@@ -509,6 +509,7 @@
+@@ -509,6 +509,7 @@ error_test 2.1.8 {
  # of the document examples above.
  #
  do_malloc_test e_fts3-3 -tclbody { 

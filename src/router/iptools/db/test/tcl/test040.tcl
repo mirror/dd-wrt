@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1998, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1998, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #

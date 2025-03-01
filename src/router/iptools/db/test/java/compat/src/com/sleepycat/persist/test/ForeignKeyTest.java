@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -11,19 +11,11 @@ import static com.sleepycat.persist.model.DeleteAction.ABORT;
 import static com.sleepycat.persist.model.DeleteAction.CASCADE;
 import static com.sleepycat.persist.model.DeleteAction.NULLIFY;
 import static com.sleepycat.persist.model.Relationship.ONE_TO_ONE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Enumeration;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import junit.framework.Test;
+import junit.framework.TestSuite;
 
 import com.sleepycat.compat.DbCompat;
 import com.sleepycat.db.DatabaseException;
@@ -42,53 +34,39 @@ import com.sleepycat.util.test.TxnTestCase;
 /**
  * @author Mark Hayes
  */
-@RunWith(Parameterized.class)
 public class ForeignKeyTest extends TxnTestCase {
 
-    protected static final DeleteAction[] ACTIONS = {
+    private static final DeleteAction[] ACTIONS = {
         ABORT,
         NULLIFY,
         CASCADE,
     };
 
-    protected static final String[] ACTION_LABELS = {
+    private static final String[] ACTION_LABELS = {
         "ABORT",
         "NULLIFY",
         "CASCADE",
     };
 
-    @Parameters
-    public static List<Object[]> genParams() {
-        return paramsHelper(false);
-    }
-    
-    protected static List<Object[]> paramsHelper(boolean rep) {
-        final String[] txnTypes = getTxnTypes(null, rep);
-        final List<Object[]> newParams = new ArrayList<Object[]>();
-        int i = 0;
-        for (final DeleteAction action : ACTIONS) {
-            for (final String type : txnTypes) {
-                newParams.add(new Object[]
-                    {type, action, ACTION_LABELS[i], "UseSubclass"});
-                newParams.add(new Object[]
-                    {type, action, ACTION_LABELS[i], "UseBaseclass"});
+    public static Test suite() {
+        testClass = ForeignKeyTest.class;
+        TestSuite suite = new TestSuite();
+        for (int i = 0; i < ACTIONS.length; i += 1) {
+            for (int j = 0; j < 2; j++) {
+                TestSuite txnSuite = txnTestSuite(null, null);
+                Enumeration e = txnSuite.tests();
+                while (e.hasMoreElements()) {
+                    ForeignKeyTest test = (ForeignKeyTest) e.nextElement();
+                    test.onDelete = ACTIONS[i];
+                    test.onDeleteLabel = ACTION_LABELS[i];
+                    test.useSubclass = (j == 0);
+                    test.useSubclassLabel =
+                        (j == 0) ? "UseSubclass" : "UseBaseclass";
+                    suite.addTest(test);
+                }
             }
-            i++;
         }
-        return newParams;
-    }
-    
-    public ForeignKeyTest(String type, 
-                          DeleteAction action, 
-                          String label, 
-                          String useClassLabel){
-        initEnvConfig();
-        txnType = type;
-        isTransactional = (txnType != TXN_NULL);
-        onDelete = action;
-        onDeleteLabel = label;
-        useSubclassLabel = useClassLabel;
-        customName = txnType + '-' + onDeleteLabel + "-" + useSubclassLabel;
+        return suite;
     }
 
     private EntityStore store;
@@ -96,10 +74,18 @@ public class ForeignKeyTest extends TxnTestCase {
     private PrimaryIndex<String, Entity2> pri2;
     private SecondaryIndex<String, String, Entity1> sec1;
     private SecondaryIndex<String, String, Entity2> sec2;
-    private final DeleteAction onDelete;
-    private final String onDeleteLabel;
+    private DeleteAction onDelete;
+    private String onDeleteLabel;
     private boolean useSubclass;
-    private final String useSubclassLabel;
+    private String useSubclassLabel;
+
+    @Override
+    public void tearDown()
+        throws Exception {
+
+        super.tearDown();
+        setName(getName() + '-' + onDeleteLabel + "-" + useSubclassLabel);
+    }
 
     private void open()
         throws DatabaseException {
@@ -123,7 +109,6 @@ public class ForeignKeyTest extends TxnTestCase {
         store.close();
     }
 
-    @Test
     public void testForeignKeys()
         throws Exception {
 

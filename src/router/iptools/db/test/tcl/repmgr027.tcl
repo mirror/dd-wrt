@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # TEST	repmgr027
 # TEST	Test of "full election" timeouts, where a client starts up and joins the
@@ -24,7 +24,6 @@ proc repmgr027_sub { tnum } {
 	global repfiles_in_memory
 	global rep_verbose
 	global verbose_type
-	global ipversion
 	
 	set verbargs ""
 	if { $rep_verbose == 1 } {
@@ -41,7 +40,6 @@ proc repmgr027_sub { tnum } {
 	file mkdir [set dirb $testdir/SITE_B]
 	file mkdir [set dirc $testdir/SITE_C]
 	foreach { porta portb portc } [available_ports 3] {}
-	set hoststr [get_hoststr $ipversion]
 
 	# The election times are arbitrary, but the full election timeout should
 	# be long enough to allow the test to start two sites, wait for them to
@@ -63,14 +61,14 @@ proc repmgr027_sub { tnum } {
 	set cmdb "berkdb_env_noerr $common -errpfx SITE_B -home $dirb"
 	set cmdc "berkdb_env_noerr $common -errpfx SITE_C -home $dirc"
 	set enva [eval $cmda]
-	eval $enva repmgr $common_mgr -local {[list $hoststr $porta creator]}
+	eval $enva repmgr $common_mgr -local {[list 127.0.0.1 $porta creator]}
 	set envb [eval $cmdb]
 	eval $envb repmgr $common_mgr \
-	    -local {[list $hoststr $portb]} -remote {[list $hoststr $porta]}
+	    -local {[list 127.0.0.1 $portb]} -remote {[list 127.0.0.1 $porta]}
 	await_startup_done $envb
 	set envc [eval $cmdc]
 	eval $envc repmgr $common_mgr \
-	    -local {[list $hoststr $portc]} -remote {[list $hoststr $porta]}
+	    -local {[list 127.0.0.1 $portc]} -remote {[list 127.0.0.1 $porta]}
 	await_startup_done $envc
 	$envc close
 	$envb close
@@ -80,10 +78,10 @@ proc repmgr027_sub { tnum } {
 	# 
 	puts "\tRepmgr$tnum.a: Start first two sites."
 	set enva [eval $cmda]
-	eval $enva repmgr $common_mgr -pri 200 -local {[list $hoststr $porta]}
+	eval $enva repmgr $common_mgr -pri 200 -local {[list 127.0.0.1 $porta]}
 
 	set envb [eval $cmdb]
-	eval $envb repmgr $common_mgr -pri 100 -local {[list $hoststr $portb]}
+	eval $envb repmgr $common_mgr -pri 100 -local {[list 127.0.0.1 $portb]}
 
 	# Wait until both sites recognize that they're in an election, plus a
 	# few extra seconds just for good measure.
@@ -102,7 +100,7 @@ proc repmgr027_sub { tnum } {
 	puts "\tRepmgr$tnum.c: Start 3rd site."
 
 	set envc [eval $cmdc]
-	eval $envc repmgr $common_mgr -pri 100 -local {[list $hoststr $portc]}
+	eval $envc repmgr $common_mgr -pri 100 -local {[list 127.0.0.1 $portc]}
 
 	# Wait for results, and make sure they're correct.  The election should
 	# complete right away, once the third client has joined, regardless of

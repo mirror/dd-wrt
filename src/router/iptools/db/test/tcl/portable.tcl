@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 
@@ -95,10 +95,11 @@ foreach version [glob $portable_dir/*] {
 				set curdir [pwd]
 				cd $testdir
 				set tarfd [open "|tar xf -" w]
-				cd $curdir 
+				cd $curdir
 
 				catch {exec gunzip -c \
-	    "$portable_dir/$version/$method/$name.tar.gz" >@$tarfd}
+				    "$portable_dir/$version/$method/$name.tar.gz" \
+				    >@$tarfd}
 				close $tarfd
 
 				set f [open $testdir/$name.tcldump \
@@ -155,35 +156,31 @@ proc _recover_test { dir version method name dbendianness } {
 
 	# Move the saved database; we'll need to compare it to 
 	# the recovered database.
-	catch { file rename -force $dir/$name.db \
-	    $dir/$name.db.init } res
+	catch { file rename -force $testdir/$name.db \
+	    $testdir/$name.db.init } res
 	if { [is_heap $method] == 1 } { 
-		file rename -force $dir/$name.db1 \
-		    $dir/$name.db.init1
-		file rename -force $dir/$name.db2 \
-		    $dir/$name.db.init2
-	}
-	if { [file exists $dir/__db_bl] } {
-		file copy -force $dir/__db_bl $dir/__db_init
+		file rename -force $testdir/$name.db1 \
+		    $testdir/$name.db.init1
+		file rename -force $testdir/$name.db2 \
+		    $testdir/$name.db.init2
 	}
 
+
 	# Recover.
-        set ret [catch {eval {exec} $util_path/db_recover -h $dir} res]
+        set ret [catch {eval {exec} $util_path/db_recover -h $testdir} res]
         if { $ret != 0 } {
                 puts "FAIL: db_recover outputted $res"
         }
         error_check_good db_recover $ret 0
 
 	# Compare the original database to the recovered database.
-	set dbinit\
- 	    [berkdb_open -blob_dir $dir/__db_init $omethod $dir/$name.db.init]
-	set db\
-	    [berkdb_open -blob_dir $dir/__db_bl $omethod $dir/$name.db]
-	db_compare $dbinit $db $dir/$name.db.init \
-	    $dir/$name.db
+	set dbinit [berkdb_open $omethod $testdir/$name.db.init]
+	set db [berkdb_open $omethod $testdir/$name.db]
+	db_compare $dbinit $db $testdir/$name.db.init \
+	    $testdir/$name.db
 
 	# Verify.
-	error_check_good db_verify [verify_dir $dir "" 0 0 1] 0
+	error_check_good db_verify [verify_dir $testdir "" 0 0 1] 0
 
 }
 
@@ -248,9 +245,8 @@ proc generate_portable_logs { destination_dir } {
 		set portable_method $method
 
 # Select a variety of tests.  
-#set test_names(test) "test002 test011 test013 test017 \
-#    test021 test024 test027 test028"
-set test_names(test) "test008"
+set test_names(test) "test002 test011 test013 test017 \
+    test021 test024 test027 test028"
 		foreach test $test_names(test) {
 			if { [info exists parms($test)] != 1 } {
 				continue
@@ -350,12 +346,11 @@ proc save_portable_files { dir } {
 			set dest [pwd]
 			cd $cwd
 			cd $dir
-
 			if { [catch {
-				eval exec tar -cf $dest/$basename.tar \
+				eval exec tar -cvf $dest/$basename.tar \
 				    [glob -nocomplain *.db *.db1 *.db2 \
-				    __db_bl log.* __dbq.$basename-$en.db.*]
-				exec gzip --fast -r $dest/$basename.tar
+				    log.* __dbq.$basename-$en.db.*]
+				exec gzip --best $dest/$basename.tar
 			} res ] } {
 				puts "FAIL: tar/gzip of $basename failed\
 				    with message $res"

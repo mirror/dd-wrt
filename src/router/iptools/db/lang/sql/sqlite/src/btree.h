@@ -19,7 +19,7 @@
 /* TODO: This definition is just included so other modules compile. It
 ** needs to be revisited.
 */
-#define SQLITE_N_BTREE_META 16
+#define SQLITE_N_BTREE_META 10
 
 /*
 ** If defined as non-zero, auto-vacuum is enabled by default. Otherwise
@@ -42,7 +42,6 @@ typedef struct BtShared BtShared;
 
 
 int sqlite3BtreeOpen(
-  sqlite3_vfs *pVfs,       /* VFS to use with this b-tree */
   const char *zFilename,   /* Name of database file to open */
   sqlite3 *db,             /* Associated database connection */
   Btree **ppBtree,         /* Return open Btree* here */
@@ -57,31 +56,28 @@ int sqlite3BtreeOpen(
 ** pager.h.
 */
 #define BTREE_OMIT_JOURNAL  1  /* Do not create or use a rollback journal */
-#define BTREE_MEMORY        2  /* This is an in-memory DB */
-#define BTREE_SINGLE        4  /* The file contains at most 1 b-tree */
-#define BTREE_UNORDERED     8  /* Use of a hash implementation is OK */
+#define BTREE_NO_READLOCK   2  /* Omit readlocks on readonly files */
+#define BTREE_MEMORY        4  /* This is an in-memory DB */
+#define BTREE_SINGLE        8  /* The file contains at most 1 b-tree */
+#define BTREE_UNORDERED    16  /* Use of a hash implementation is OK */
 
 int sqlite3BtreeClose(Btree*);
 int sqlite3BtreeSetCacheSize(Btree*,int);
-#if SQLITE_MAX_MMAP_SIZE>0
-  int sqlite3BtreeSetMmapLimit(Btree*,sqlite3_int64);
-#endif
-int sqlite3BtreeSetPagerFlags(Btree*,unsigned);
+int sqlite3BtreeSetSafetyLevel(Btree*,int,int,int);
 int sqlite3BtreeSyncDisabled(Btree*);
 int sqlite3BtreeSetPageSize(Btree *p, int nPagesize, int nReserve, int eFix);
 int sqlite3BtreeGetPageSize(Btree*);
 int sqlite3BtreeMaxPageCount(Btree*,int);
 u32 sqlite3BtreeLastPage(Btree*);
 int sqlite3BtreeSecureDelete(Btree*,int);
-int sqlite3BtreeGetOptimalReserve(Btree*);
-int sqlite3BtreeGetReserveNoMutex(Btree *p);
+int sqlite3BtreeGetReserve(Btree*);
 int sqlite3BtreeSetAutoVacuum(Btree *, int);
 int sqlite3BtreeGetAutoVacuum(Btree *);
 int sqlite3BtreeBeginTrans(Btree*,int);
 int sqlite3BtreeCommitPhaseOne(Btree*, const char *zMaster);
 int sqlite3BtreeCommitPhaseTwo(Btree*, int);
 int sqlite3BtreeCommit(Btree*);
-int sqlite3BtreeRollback(Btree*,int,int);
+int sqlite3BtreeRollback(Btree*);
 int sqlite3BtreeBeginStmt(Btree*,int);
 int sqlite3BtreeCreateTable(Btree*, int*, int flags);
 int sqlite3BtreeIsInTrans(Btree*);
@@ -98,6 +94,14 @@ int sqlite3BtreeCopyFile(Btree *, Btree *);
 
 int sqlite3BtreeIncrVacuum(Btree *);
 
+/*
+ * BEGIN Berkeley DB specific btree APIs.
+ */
+int sqlite3BtreeHandleCacheUpdate(Btree *p, int schema_changed);
+/*
+ * END Berkeley DB specific btree APIs.
+ */
+
 /* The flags parameter to sqlite3BtreeCreateTable can be the bitwise OR
 ** of the flags shown below.
 **
@@ -113,21 +117,10 @@ int sqlite3BtreeIncrVacuum(Btree *);
 
 int sqlite3BtreeDropTable(Btree*, int, int*);
 int sqlite3BtreeClearTable(Btree*, int, int*);
-int sqlite3BtreeClearTableOfCursor(BtCursor*);
-int sqlite3BtreeTripAllCursors(Btree*, int, int);
+void sqlite3BtreeTripAllCursors(Btree*, int);
 
 void sqlite3BtreeGetMeta(Btree *pBtree, int idx, u32 *pValue);
 int sqlite3BtreeUpdateMeta(Btree*, int idx, u32 value);
-
-int sqlite3BtreeNewDb(Btree *p);
-
-/*
- * BEGIN Berkeley DB specific function forward declarations.
- */
-int sqlite3BtreeHandleCacheFixup(Btree *, int);
-/*
- * END Berkeley DB specific function forward declarations.
- */
 
 /*
 ** The second parameter to sqlite3BtreeGetMeta or sqlite3BtreeUpdateMeta
@@ -140,11 +133,6 @@ int sqlite3BtreeHandleCacheFixup(Btree *, int);
 ** For example, the free-page-count field is located at byte offset 36 of
 ** the database file header. The incr-vacuum-flag field is located at
 ** byte offset 64 (== 36+4*7).
-**
-** The BTREE_DATA_VERSION value is not really a value stored in the header.
-** It is a read-only number computed by the pager.  But we merge it with
-** the header value access routines since its access pattern is the same.
-** Call it a "virtual meta value".
 */
 #define BTREE_FREE_PAGE_COUNT     0
 #define BTREE_SCHEMA_VERSION      1
@@ -154,24 +142,6 @@ int sqlite3BtreeHandleCacheFixup(Btree *, int);
 #define BTREE_TEXT_ENCODING       5
 #define BTREE_USER_VERSION        6
 #define BTREE_INCR_VACUUM         7
-#define BTREE_APPLICATION_ID      8
-#define BTREE_DATA_VERSION        15  /* A virtual meta-value */
-
-/*
-** Values that may be OR'd together to form the second argument of an
-** sqlite3BtreeCursorHints() call.
-**
-** The BTREE_BULKLOAD flag is set on index cursors when the index is going
-** to be filled with content that is already in sorted order.
-**
-** The BTREE_SEEK_EQ flag is set on cursors that will get OP_SeekGE or
-** OP_SeekLE opcodes for a range search, but where the range of entries
-** selected will all have the same key.  In other words, the cursor will
-** be used only for equality key searches.
-**
-*/
-#define BTREE_BULKLOAD 0x00000001  /* Used to full index in sorted order */
-#define BTREE_SEEK_EQ  0x00000002  /* EQ seeks only - no range seeks */
 
 int sqlite3BtreeCursor(
   Btree*,                              /* BTree containing table to open */
@@ -191,8 +161,7 @@ int sqlite3BtreeMovetoUnpacked(
   int bias,
   int *pRes
 );
-int sqlite3BtreeCursorHasMoved(BtCursor*);
-int sqlite3BtreeCursorRestore(BtCursor*, int*);
+int sqlite3BtreeCursorHasMoved(BtCursor*, int*);
 int sqlite3BtreeDelete(BtCursor*);
 int sqlite3BtreeInsert(BtCursor*, const void *pKey, i64 nKey,
                                   const void *pData, int nData,
@@ -204,24 +173,21 @@ int sqlite3BtreeEof(BtCursor*);
 int sqlite3BtreePrevious(BtCursor*, int *pRes);
 int sqlite3BtreeKeySize(BtCursor*, i64 *pSize);
 int sqlite3BtreeKey(BtCursor*, u32 offset, u32 amt, void*);
-const void *sqlite3BtreeKeyFetch(BtCursor*, u32 *pAmt);
-const void *sqlite3BtreeDataFetch(BtCursor*, u32 *pAmt);
+const void *sqlite3BtreeKeyFetch(BtCursor*, int *pAmt);
+const void *sqlite3BtreeDataFetch(BtCursor*, int *pAmt);
 int sqlite3BtreeDataSize(BtCursor*, u32 *pSize);
 int sqlite3BtreeData(BtCursor*, u32 offset, u32 amt, void*);
+void sqlite3BtreeSetCachedRowid(BtCursor*, sqlite3_int64);
+sqlite3_int64 sqlite3BtreeGetCachedRowid(BtCursor*);
 
 char *sqlite3BtreeIntegrityCheck(Btree*, int *aRoot, int nRoot, int, int*);
 struct Pager *sqlite3BtreePager(Btree*);
 
 int sqlite3BtreePutData(BtCursor*, u32 offset, u32 amt, void*);
-void sqlite3BtreeIncrblobCursor(BtCursor *);
+void sqlite3BtreeCacheOverflow(BtCursor *);
 void sqlite3BtreeClearCursor(BtCursor *);
+
 int sqlite3BtreeSetVersion(Btree *pBt, int iVersion);
-void sqlite3BtreeCursorHints(BtCursor *, unsigned int mask);
-#ifdef SQLITE_DEBUG
-int sqlite3BtreeCursorHasHint(BtCursor*, unsigned int mask);
-#endif
-int sqlite3BtreeIsReadonly(Btree *pBt);
-int sqlite3HeaderSizeBtree(void);
 
 #ifndef NDEBUG
 int sqlite3BtreeCursorIsValid(BtCursor*);

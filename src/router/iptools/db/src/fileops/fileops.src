@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -30,14 +30,7 @@ ARG	appname		u_int32_t	lu
 ARG	mode		u_int32_t	o
 END
 
-BEGIN_COMPAT create		60	143
-DBT	name		DBT		s
-DBT	dirname		DBT		s
-ARG	appname		u_int32_t	lu
-ARG	mode		u_int32_t	o
-END
-
-BEGIN create		60p1	143
+BEGIN create		48	143
 DBT	name		DBT		s
 DBT	dirname		DBT		s
 ARG	appname		u_int32_t	lu
@@ -50,13 +43,7 @@ END
  * name: name in the file system
  * appname: indicates if the name needs to go through __db_appname
  */
-BEGIN_COMPAT remove		60	144
-DBT	name		DBT		s
-DBT	fid		DBT		s
-ARG	appname		u_int32_t	lu
-END
-
-BEGIN remove		60p1	144
+BEGIN remove		42	144
 DBT	name		DBT		s
 DBT	fid		DBT		s
 ARG	appname		u_int32_t	lu
@@ -84,7 +71,7 @@ DBT	page		DBT		s
 ARG	flag		u_int32_t	lu
 END
 
-BEGIN_COMPAT write	60	145
+BEGIN write	48	145
 DBT	name		DBT		s
 DBT	dirname		DBT		s
 ARG	appname		u_int32_t	lu
@@ -92,53 +79,6 @@ ARG	pgsize		u_int32_t	lu
 ARG	pageno		db_pgno_t	lu
 ARG	offset		u_int32_t	lu
 DBT	page		DBT		s
-ARG	flag		u_int32_t	lu
-END
-
-BEGIN write	60p1	145
-DBT	name		DBT		s
-DBT	dirname		DBT		s
-ARG	appname		u_int32_t	lu
-ARG	pgsize		u_int32_t	lu
-ARG	pageno		db_pgno_t	lu
-ARG	offset		u_int32_t	lu
-DBT	page		DBT		s
-ARG	flag		u_int32_t	lu
-END
-
-/*
- * write_file: log the writing of data into a file.
- *
- * name: file containing the data.
- * appname: indicates if the name needs to go through __db_appname
- * offset_lo: offset in the file, low part of a 64 bit integer.
- * offset_hi: offset in the file, high part of a 64 bit integer.
- * old_data: Data being overwritten, if there is any
- * new_data: Data being written to the file.
- * flag: DB_FOP_APPEND (0x00000001), DB_FOP_CREATE (0x00000002) and
- *  DB_FOP_REDO (0x00000008).  Used to tell how the operation can be
- *  undone, truncating in the case of append and deleting the file in
- *  the case of create, and whether enough information was logged so
- *  that the operation can be redone.
- */
-BEGIN_COMPAT write_file	60	86
-DBT	name		DBT		s
-DBT	dirname		DBT		s
-ARG	appname		u_int32_t	lu
-ARG	offset_lo	u_int32_t	lu
-ARG	offset_hi	u_int32_t	lu
-DBT	old_data	DBT		s
-DBT	new_data	DBT		s
-ARG	flag		u_int32_t	lu
-END
-
-BEGIN write_file	60p1	86
-DBT	name		DBT		s
-DBT	dirname		DBT		s
-ARG	appname		u_int32_t	lu
-LONGARG	offset		u_int64_t	llu
-DBT	old_data	DBT		s
-DBT	new_data	DBT		s
 ARG	flag		u_int32_t	lu
 END
 
@@ -165,17 +105,8 @@ DBT	fileid		DBT		s
 ARG	appname		u_int32_t	lu
 END
 
-BEGIN_COMPAT rename	60	146
-DUPLICATE rename_noundo 60	150
-DBT	oldname		DBT		s
-DBT	newname		DBT		s
-DBT	dirname		DBT		s
-DBT	fileid		DBT		s
-ARG	appname		u_int32_t	lu
-END
-
-BEGIN rename	60p1	146
-DUPLICATE rename_noundo	60p1	150
+BEGIN rename	48	146
+DUPLICATE rename_noundo	46	150
 DBT	oldname		DBT		s
 DBT	newname		DBT		s
 DBT	dirname		DBT		s
@@ -197,15 +128,7 @@ END
  * child:	The transaction that removed or renamed the file.
  */
  */
-BEGIN_COMPAT file_remove	60	141
-DBT	real_fid	DBT	s
-DBT	tmp_fid		DBT	s
-DBT	name		DBT	s
-ARG	appname		u_int32_t	lu
-ARG	child		u_int32_t	lx
-END
-
-BEGIN file_remove	60p1	141
+BEGIN file_remove	42	141
 DBT	real_fid	DBT	s
 DBT	tmp_fid		DBT	s
 DBT	name		DBT	s

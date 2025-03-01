@@ -449,8 +449,12 @@ int main(int argc, char* argv[])
 unsigned char ParseArg(int argc, char* argv[], struct ParstArgsData_Struct *pDestArg, unsigned char MaxDestArg )
 {
 	unsigned char ArgCount;	// Counters
+	unsigned char Status;	// Status of parsing: 0x01 value needed
 	int DestArg;	// Count of parst arguments
 	char *pValues;	// Pointer to values
+
+	// Nothing startet
+	Status	= 0;
 
 	// No args parst yet
 	DestArg	= -1;

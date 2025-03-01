@@ -55,8 +55,8 @@ proc do_multiclient_test {varname script} {
     uplevel set $varname $tn
     uplevel $script
 
-    catch { code2 { db2 close } }
-    catch { code3 { db3 close } }
+    code2 { db2 close }
+    code3 { db3 close }
     catch { close $::code2_chan }
     catch { close $::code3_chan }
     catch { db close }
@@ -86,51 +86,21 @@ proc launch_testfixture {{prg ""}} {
 # Execute a command in a child testfixture process, connected by two-way
 # channel $chan. Return the result of the command, or an error message.
 #
-proc testfixture {chan cmd args} {
-
-  if {[llength $args] == 0} {
-    fconfigure $chan -blocking 1
-    puts $chan $cmd
-    puts $chan OVER
-
-    set r ""
-    while { 1 } {
-      set line [gets $chan]
-      if { $line == "OVER" } { 
-        set res [lindex $r 1]
-        if { [lindex $r 0] } { error $res }
-        return $res
-      }
-      if {[eof $chan]} {
-        return "ERROR: Child process hung up"
-      }
-      append r $line
-    }
-    return $r
-  } else {
-    set ::tfnb($chan) ""
-    fconfigure $chan -blocking 0 -buffering none
-    puts $chan $cmd
-    puts $chan OVER
-    fileevent $chan readable [list testfixture_script_cb $chan [lindex $args 0]]
-    return ""
-  }
-}
-
-proc testfixture_script_cb {chan script} {
-  if {[eof $chan]} {
-    append ::tfnb($chan) "ERROR: Child process hung up"
-    set line "OVER"
-  } else {
+proc testfixture {chan cmd} {
+  puts $chan $cmd
+  puts $chan OVER
+  set r ""
+  while { 1 } {
     set line [gets $chan]
-  }
-
-  if { $line == "OVER" } {
-    uplevel #0 $script [list [lindex $::tfnb($chan) 1]]
-    unset ::tfnb($chan)
-    fileevent $chan readable ""
-  } else {
-    append ::tfnb($chan) $line
+    if { $line == "OVER" } { 
+      set res [lindex $r 1]
+      if { [lindex $r 0] } { error $res }
+      return $res
+    }
+    if {[eof $chan]} {
+      return "ERROR: Child process hung up"
+    }
+    append r $line
   }
 }
 

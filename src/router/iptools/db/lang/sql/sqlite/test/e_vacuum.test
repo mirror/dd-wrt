@@ -65,7 +65,7 @@ proc fragment_count {name} {
 }
 
 
-# -- syntax diagram vacuum-stmt
+# EVIDENCE-OF: R-63707-33375 -- syntax diagram vacuum-stmt
 #
 do_execsql_test e_vacuum-0.1 { VACUUM } {}
 
@@ -122,7 +122,7 @@ foreach {tn avmode sz} {
 #   e_vacuum-1.2.4 - Verify that t1 and its indexes are now much 
 #                    less fragmented.
 #
-ifcapable vtab&&compound {
+ifcapable vtab {
   create_db 
   register_dbstat_vtab db
   do_execsql_test e_vacuum-1.2.1 {

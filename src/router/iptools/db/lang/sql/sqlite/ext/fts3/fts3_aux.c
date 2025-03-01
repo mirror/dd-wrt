@@ -11,9 +11,10 @@
 ******************************************************************************
 **
 */
-#include "fts3Int.h"
+
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
 
+#include "fts3Int.h"
 #include <string.h>
 #include <assert.h>
 
@@ -27,11 +28,10 @@ struct Fts3auxTable {
 
 struct Fts3auxCursor {
   sqlite3_vtab_cursor base;       /* Base class used by SQLite core */
-  Fts3MultiSegReader csr;        /* Must be right after "base" */
+  Fts3SegReaderCursor csr;        /* Must be right after "base" */
   Fts3SegFilter filter;
   char *zStop;
   int nStop;                      /* Byte-length of string zStop */
-  int iLangid;                    /* Language id to query */
   int isEof;                      /* True if cursor is at EOF */
   sqlite3_int64 iRowid;           /* Current rowid */
 
@@ -46,8 +46,7 @@ struct Fts3auxCursor {
 /*
 ** Schema of the terms table.
 */
-#define FTS3_AUX_SCHEMA \
-  "CREATE TABLE x(term, col, documents, occurrences, languageid HIDDEN)"
+#define FTS3_TERMS_SCHEMA "CREATE TABLE x(term, col, documents, occurrences)"
 
 /*
 ** This function does all the work for both the xConnect and xCreate methods.
@@ -72,29 +71,20 @@ static int fts3auxConnectMethod(
 
   UNUSED_PARAMETER(pUnused);
 
-  /* The user should invoke this in one of two forms:
-  **
-  **     CREATE VIRTUAL TABLE xxx USING fts4aux(fts4-table);
-  **     CREATE VIRTUAL TABLE xxx USING fts4aux(fts4-table-db, fts4-table);
-  */
-  if( argc!=4 && argc!=5 ) goto bad_args;
+  /* The user should specify a single argument - the name of an fts3 table. */
+  if( argc!=4 ){
+    *pzErr = sqlite3_mprintf(
+        "wrong number of arguments to fts4aux constructor"
+    );
+    return SQLITE_ERROR;
+  }
 
   zDb = argv[1]; 
-  nDb = (int)strlen(zDb);
-  if( argc==5 ){
-    if( nDb==4 && 0==sqlite3_strnicmp("temp", zDb, 4) ){
-      zDb = argv[3]; 
-      nDb = (int)strlen(zDb);
-      zFts3 = argv[4];
-    }else{
-      goto bad_args;
-    }
-  }else{
-    zFts3 = argv[3];
-  }
-  nFts3 = (int)strlen(zFts3);
+  nDb = strlen(zDb);
+  zFts3 = argv[3];
+  nFts3 = strlen(zFts3);
 
-  rc = sqlite3_declare_vtab(db, FTS3_AUX_SCHEMA);
+  rc = sqlite3_declare_vtab(db, FTS3_TERMS_SCHEMA);
   if( rc!=SQLITE_OK ) return rc;
 
   nByte = sizeof(Fts3auxTable) + sizeof(Fts3Table) + nDb + nFts3 + 2;
@@ -106,7 +96,6 @@ static int fts3auxConnectMethod(
   p->pFts3Tab->zDb = (char *)&p->pFts3Tab[1];
   p->pFts3Tab->zName = &p->pFts3Tab->zDb[nDb+1];
   p->pFts3Tab->db = db;
-  p->pFts3Tab->nIndex = 1;
 
   memcpy((char *)p->pFts3Tab->zDb, zDb, nDb);
   memcpy((char *)p->pFts3Tab->zName, zFts3, nFts3);
@@ -114,10 +103,6 @@ static int fts3auxConnectMethod(
 
   *ppVtab = (sqlite3_vtab *)p;
   return SQLITE_OK;
-
- bad_args:
-  sqlite3Fts3ErrMsg(pzErr, "invalid arguments to fts4aux constructor");
-  return SQLITE_ERROR;
 }
 
 /*
@@ -154,8 +139,6 @@ static int fts3auxBestIndexMethod(
   int iEq = -1;
   int iGe = -1;
   int iLe = -1;
-  int iLangid = -1;
-  int iNext = 1;                  /* Next free argvIndex value */
 
   UNUSED_PARAMETER(pVTab);
 
@@ -167,47 +150,35 @@ static int fts3auxBestIndexMethod(
     pInfo->orderByConsumed = 1;
   }
 
-  /* Search for equality and range constraints on the "term" column. 
-  ** And equality constraints on the hidden "languageid" column. */
+  /* Search for equality and range constraints on the "term" column. */
   for(i=0; i<pInfo->nConstraint; i++){
-    if( pInfo->aConstraint[i].usable ){
+    if( pInfo->aConstraint[i].usable && pInfo->aConstraint[i].iColumn==0 ){
       int op = pInfo->aConstraint[i].op;
-      int iCol = pInfo->aConstraint[i].iColumn;
-
-      if( iCol==0 ){
-        if( op==SQLITE_INDEX_CONSTRAINT_EQ ) iEq = i;
-        if( op==SQLITE_INDEX_CONSTRAINT_LT ) iLe = i;
-        if( op==SQLITE_INDEX_CONSTRAINT_LE ) iLe = i;
-        if( op==SQLITE_INDEX_CONSTRAINT_GT ) iGe = i;
-        if( op==SQLITE_INDEX_CONSTRAINT_GE ) iGe = i;
-      }
-      if( iCol==4 ){
-        if( op==SQLITE_INDEX_CONSTRAINT_EQ ) iLangid = i;
-      }
+      if( op==SQLITE_INDEX_CONSTRAINT_EQ ) iEq = i;
+      if( op==SQLITE_INDEX_CONSTRAINT_LT ) iLe = i;
+      if( op==SQLITE_INDEX_CONSTRAINT_LE ) iLe = i;
+      if( op==SQLITE_INDEX_CONSTRAINT_GT ) iGe = i;
+      if( op==SQLITE_INDEX_CONSTRAINT_GE ) iGe = i;
     }
   }
 
   if( iEq>=0 ){
     pInfo->idxNum = FTS4AUX_EQ_CONSTRAINT;
-    pInfo->aConstraintUsage[iEq].argvIndex = iNext++;
+    pInfo->aConstraintUsage[iEq].argvIndex = 1;
     pInfo->estimatedCost = 5;
   }else{
     pInfo->idxNum = 0;
     pInfo->estimatedCost = 20000;
     if( iGe>=0 ){
       pInfo->idxNum += FTS4AUX_GE_CONSTRAINT;
-      pInfo->aConstraintUsage[iGe].argvIndex = iNext++;
+      pInfo->aConstraintUsage[iGe].argvIndex = 1;
       pInfo->estimatedCost /= 2;
     }
     if( iLe>=0 ){
       pInfo->idxNum += FTS4AUX_LE_CONSTRAINT;
-      pInfo->aConstraintUsage[iLe].argvIndex = iNext++;
+      pInfo->aConstraintUsage[iLe].argvIndex = 1 + (iGe>=0);
       pInfo->estimatedCost /= 2;
     }
-  }
-  if( iLangid>=0 ){
-    pInfo->aConstraintUsage[iLangid].argvIndex = iNext++;
-    pInfo->estimatedCost--;
   }
 
   return SQLITE_OK;
@@ -368,38 +339,16 @@ static int fts3auxFilterMethod(
   Fts3auxCursor *pCsr = (Fts3auxCursor *)pCursor;
   Fts3Table *pFts3 = ((Fts3auxTable *)pCursor->pVtab)->pFts3Tab;
   int rc;
-  int isScan = 0;
-  int iLangVal = 0;               /* Language id to query */
-
-  int iEq = -1;                   /* Index of term=? value in apVal */
-  int iGe = -1;                   /* Index of term>=? value in apVal */
-  int iLe = -1;                   /* Index of term<=? value in apVal */
-  int iLangid = -1;               /* Index of languageid=? value in apVal */
-  int iNext = 0;
+  int isScan;
 
   UNUSED_PARAMETER(nVal);
-  UNUSED_PARAMETER(idxStr);
 
   assert( idxStr==0 );
   assert( idxNum==FTS4AUX_EQ_CONSTRAINT || idxNum==0
        || idxNum==FTS4AUX_LE_CONSTRAINT || idxNum==FTS4AUX_GE_CONSTRAINT
        || idxNum==(FTS4AUX_LE_CONSTRAINT|FTS4AUX_GE_CONSTRAINT)
   );
-
-  if( idxNum==FTS4AUX_EQ_CONSTRAINT ){
-    iEq = iNext++;
-  }else{
-    isScan = 1;
-    if( idxNum & FTS4AUX_GE_CONSTRAINT ){
-      iGe = iNext++;
-    }
-    if( idxNum & FTS4AUX_LE_CONSTRAINT ){
-      iLe = iNext++;
-    }
-  }
-  if( iNext<nVal ){
-    iLangid = iNext++;
-  }
+  isScan = (idxNum!=FTS4AUX_EQ_CONSTRAINT);
 
   /* In case this cursor is being reused, close and zero it. */
   testcase(pCsr->filter.zTerm);
@@ -411,35 +360,22 @@ static int fts3auxFilterMethod(
   pCsr->filter.flags = FTS3_SEGMENT_REQUIRE_POS|FTS3_SEGMENT_IGNORE_EMPTY;
   if( isScan ) pCsr->filter.flags |= FTS3_SEGMENT_SCAN;
 
-  if( iEq>=0 || iGe>=0 ){
+  if( idxNum&(FTS4AUX_EQ_CONSTRAINT|FTS4AUX_GE_CONSTRAINT) ){
     const unsigned char *zStr = sqlite3_value_text(apVal[0]);
-    assert( (iEq==0 && iGe==-1) || (iEq==-1 && iGe==0) );
     if( zStr ){
       pCsr->filter.zTerm = sqlite3_mprintf("%s", zStr);
       pCsr->filter.nTerm = sqlite3_value_bytes(apVal[0]);
       if( pCsr->filter.zTerm==0 ) return SQLITE_NOMEM;
     }
   }
-
-  if( iLe>=0 ){
-    pCsr->zStop = sqlite3_mprintf("%s", sqlite3_value_text(apVal[iLe]));
-    pCsr->nStop = sqlite3_value_bytes(apVal[iLe]);
+  if( idxNum&FTS4AUX_LE_CONSTRAINT ){
+    int iIdx = (idxNum&FTS4AUX_GE_CONSTRAINT) ? 1 : 0;
+    pCsr->zStop = sqlite3_mprintf("%s", sqlite3_value_text(apVal[iIdx]));
+    pCsr->nStop = sqlite3_value_bytes(apVal[iIdx]);
     if( pCsr->zStop==0 ) return SQLITE_NOMEM;
   }
-  
-  if( iLangid>=0 ){
-    iLangVal = sqlite3_value_int(apVal[iLangid]);
 
-    /* If the user specified a negative value for the languageid, use zero
-    ** instead. This works, as the "languageid=?" constraint will also
-    ** be tested by the VDBE layer. The test will always be false (since
-    ** this module will not return a row with a negative languageid), and
-    ** so the overall query will return zero rows.  */
-    if( iLangVal<0 ) iLangVal = 0;
-  }
-  pCsr->iLangid = iLangVal;
-
-  rc = sqlite3Fts3SegReaderCursor(pFts3, iLangVal, 0, FTS3_SEGCURSOR_ALL,
+  rc = sqlite3Fts3SegReaderCursor(pFts3, FTS3_SEGCURSOR_ALL,
       pCsr->filter.zTerm, pCsr->filter.nTerm, 0, isScan, &pCsr->csr
   );
   if( rc==SQLITE_OK ){
@@ -463,37 +399,24 @@ static int fts3auxEofMethod(sqlite3_vtab_cursor *pCursor){
 */
 static int fts3auxColumnMethod(
   sqlite3_vtab_cursor *pCursor,   /* Cursor to retrieve value from */
-  sqlite3_context *pCtx,          /* Context for sqlite3_result_xxx() calls */
+  sqlite3_context *pContext,      /* Context for sqlite3_result_xxx() calls */
   int iCol                        /* Index of column to read value from */
 ){
   Fts3auxCursor *p = (Fts3auxCursor *)pCursor;
 
   assert( p->isEof==0 );
-  switch( iCol ){
-    case 0: /* term */
-      sqlite3_result_text(pCtx, p->csr.zTerm, p->csr.nTerm, SQLITE_TRANSIENT);
-      break;
-
-    case 1: /* col */
-      if( p->iCol ){
-        sqlite3_result_int(pCtx, p->iCol-1);
-      }else{
-        sqlite3_result_text(pCtx, "*", -1, SQLITE_STATIC);
-      }
-      break;
-
-    case 2: /* documents */
-      sqlite3_result_int64(pCtx, p->aStat[p->iCol].nDoc);
-      break;
-
-    case 3: /* occurrences */
-      sqlite3_result_int64(pCtx, p->aStat[p->iCol].nOcc);
-      break;
-
-    default: /* languageid */
-      assert( iCol==4 );
-      sqlite3_result_int(pCtx, p->iLangid);
-      break;
+  if( iCol==0 ){        /* Column "term" */
+    sqlite3_result_text(pContext, p->csr.zTerm, p->csr.nTerm, SQLITE_TRANSIENT);
+  }else if( iCol==1 ){  /* Column "col" */
+    if( p->iCol ){
+      sqlite3_result_int(pContext, p->iCol-1);
+    }else{
+      sqlite3_result_text(pContext, "*", -1, SQLITE_STATIC);
+    }
+  }else if( iCol==2 ){  /* Column "documents" */
+    sqlite3_result_int64(pContext, p->aStat[p->iCol].nDoc);
+  }else{                /* Column "occurrences" */
+    sqlite3_result_int64(pContext, p->aStat[p->iCol].nOcc);
   }
 
   return SQLITE_OK;
@@ -536,10 +459,7 @@ int sqlite3Fts3InitAux(sqlite3 *db){
      0,                           /* xCommit       */
      0,                           /* xRollback     */
      0,                           /* xFindFunction */
-     0,                           /* xRename       */
-     0,                           /* xSavepoint    */
-     0,                           /* xRelease      */
-     0                            /* xRollbackTo   */
+     0                            /* xRename       */
   };
   int rc;                         /* Return code */
 

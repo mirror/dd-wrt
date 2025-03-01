@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -44,14 +44,12 @@ int
 Db::get_partition_callback(u_int32_t *partsp,
 	u_int32_t (**callback_fcn) (DB *dbp, DBT *key);</pre>
       <p>
-        The <code class="methodname">Db::get_partition_callback()</code> method
-        returns the database partitioning callback as set by the 
-        <a class="xref" href="dbset_partition.html" title="Db::set_partition()">Db::set_partition()</a>
-        method.
+        The <code class="methodname">Db::get_partition_callback()</code> method returns the partitioning information as
+        set by the <a class="xref" href="dbset_partition.html" title="Db::set_partition()">Db::set_partition()</a> method.
     </p>
       <p>
-         The <code class="methodname">Db::get_partition_callback()</code> method
-         may be called at any time during the life of the application.
+         The <code class="methodname">Db::get_partition_callback()</code> method may be called at any time during the life
+         of the application.
     </p>
       <p>
          The <code class="methodname">Db::get_partition_callback()</code> <span>
@@ -67,7 +65,7 @@ Db::get_partition_callback(u_int32_t *partsp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670065125120"></a>Parameters</h3>
+              <h3 class="title"><a id="idp284000"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -75,27 +73,28 @@ Db::get_partition_callback(u_int32_t *partsp,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670065126368"></a>partsp</h4>
+                <h4 class="title"><a id="idm278192"></a>partsp</h4>
               </div>
             </div>
           </div>
           <p>
-                  The <span class="bold"><strong>partsp</strong></span>
-                  parameter returns the number of partitions used by the
-                  database.
-             </p>
+                          The
+                          <code class="methodname">Db::get_partition_callback()</code>
+                          method returns number of partitions in the
+                          <span class="bold"><strong>partsp</strong></span>
+                          parameter.
+                     </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670065147696"></a>callback_fcn</h4>
+                <h4 class="title"><a id="idp307080"></a>callback_fcn</h4>
               </div>
             </div>
           </div>
           <p>
-                 The <span class="bold"><strong>callback_fcn</strong></span>
-                 parameter returns the partitioning callback.
+		         The <span class="bold"><strong>callback_fcn</strong></span> parameter will be set to the partitioning function.
              </p>
         </div>
       </div>
@@ -103,7 +102,7 @@ Db::get_partition_callback(u_int32_t *partsp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670065161424"></a>Class</h3>
+              <h3 class="title"><a id="idp1419648"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -115,14 +114,14 @@ Db::get_partition_callback(u_int32_t *partsp,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670065146144"></a>See Also</h3>
+              <h3 class="title"><a id="idp2753824"></a>See Also</h3>
             </div>
           </div>
         </div>
         <p>
-                <a class="xref" href="db.html#dblist" title="Database and Related Methods">Database and Related Methods</a>,
-                <a class="xref" href="dbset_partition.html" title="Db::set_partition()">Db::set_partition()</a>
-        </p>
+                        <a class="xref" href="db.html#dblist" title="Database and Related Methods">Database and Related Methods</a>,
+                        <a class="xref" href="dbset_partition.html" title="Db::set_partition()">Db::set_partition()</a>
+                </p>
       </div>
     </div>
     <div class="navfooter">

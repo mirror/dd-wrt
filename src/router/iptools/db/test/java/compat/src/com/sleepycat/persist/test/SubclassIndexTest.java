@@ -1,24 +1,15 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package com.sleepycat.persist.test;
 
 import static com.sleepycat.persist.model.Relationship.MANY_TO_ONE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.io.File;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 import com.sleepycat.db.DatabaseException;
 import com.sleepycat.db.Environment;
@@ -45,19 +36,22 @@ public class SubclassIndexTest extends DualTestCase {
     private Environment env;
     private EntityStore store;
 
-    @Before
+    @Override
     public void setUp()
         throws Exception {
 
-        envHome = SharedTestUtils.getTestDir();
         super.setUp();
+
+        envHome = new File(System.getProperty(SharedTestUtils.DEST_DIR));
+        SharedTestUtils.emptyDir(envHome);
     }
 
-    @After
+    @Override
     public void tearDown()
         throws Exception {
 
         super.tearDown();
+
         envHome = null;
         env = null;
     }
@@ -89,7 +83,6 @@ public class SubclassIndexTest extends DualTestCase {
         env = null;
     }
 
-    @Test
     public void testSubclassIndex()
         throws DatabaseException {
 
@@ -168,7 +161,6 @@ public class SubclassIndexTest extends DualTestCase {
      * created up front also.  So this test is somewhat less useful, but still
      * nice to have around.  [#16399]
      */
-    @Test
     public void testAddSecKey()
         throws DatabaseException {
 

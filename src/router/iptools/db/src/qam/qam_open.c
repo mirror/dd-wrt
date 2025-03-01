@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -89,7 +89,7 @@ __qam_open(dbp, ip, txn, name, base_pgno, mode, flags)
 		__db_errx(env, DB_STR_A("1136",
 		    "__qam_open: %s: unexpected file type or format", "%s"),
 		    name);
-		ret = USR_ERR(env, EINVAL);
+		ret = EINVAL;
 		goto err;
 	}
 

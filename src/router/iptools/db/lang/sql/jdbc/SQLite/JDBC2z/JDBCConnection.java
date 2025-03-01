@@ -197,7 +197,7 @@ public class JDBCConnection
     public SQLite.Database getSQLiteDatabase() {
 	return db;
     }
-
+  
     @Override
     public Statement createStatement() {
 	JDBCStatement s = new JDBCStatement(this);
@@ -220,7 +220,7 @@ public class JDBCConnection
 	JDBCStatement s = new JDBCStatement(this);
 	return s;
     }
-
+	
     @Override
     public DatabaseMetaData getMetaData() throws SQLException {
 	if (meta == null) {
@@ -430,7 +430,7 @@ public class JDBCConnection
     public void setTypeMap(java.util.Map map) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
-
+  
     @Override
     public int getHoldability() throws SQLException {
 	return ResultSet.HOLD_CURSORS_OVER_COMMIT;

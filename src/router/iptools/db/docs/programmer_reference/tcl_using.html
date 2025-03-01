@@ -7,14 +7,14 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="tcl.html" title="Chapter 23.  Berkeley DB Extensions: Tcl" />
-    <link rel="prev" href="tcl.html" title="Chapter 23.  Berkeley DB Extensions: Tcl" />
+    <link rel="up" href="tcl.html" title="Chapter 21.  Berkeley DB Extensions: Tcl" />
+    <link rel="prev" href="tcl.html" title="Chapter 21.  Berkeley DB Extensions: Tcl" />
     <link rel="next" href="tcl_program.html" title="Tcl API programming notes" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,7 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="tcl.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 23.  Berkeley DB Extensions: Tcl </th>
+          <th width="60%" align="center">Chapter 21. 
+		Berkeley DB Extensions: Tcl
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="tcl_program.html">Next</a></td>
         </tr>
       </table>
@@ -36,33 +38,22 @@
           </div>
         </div>
       </div>
-      <p>
-        All commands in the Berkeley DB Tcl interface are in the
-        following form:
-    </p>
+      <p>All commands in the Berkeley DB Tcl interface are in the following form:</p>
       <pre class="programlisting">command_handle operation options</pre>
-      <p>
-        The <span class="emphasis"><em>command handle</em></span> is <span class="bold"><strong>berkdb</strong></span> or one of the additional
-        commands that may be created. The
-        <span class="emphasis"><em>operation</em></span> is what you want to do to
-        that handle, and the <span class="emphasis"><em>options</em></span> apply to the
-        operation. Commands that get created on behalf of the
-        application have their own sets of operations. Generally, any
-        calls in DB that result in new object handles will translate
-        into a new command handle in Tcl. Then, the user can access
-        the operations of the handle via the new Tcl command
-        handle.
-    </p>
-      <p>
-        Newly created commands are named with an abbreviated form of
-        their objects, followed by a number. Some created commands are
-        subcommands of other created commands and will be the first
-        command, followed by a period (.), and then followed by the
-        new subcommand. For example, suppose that you have a database
-        already existing called my_data.db. The following example
-        shows the commands created when you open the database and when
-        you open a cursor:
-    </p>
+      <p>The <span class="emphasis"><em>command handle</em></span> is <span class="bold"><strong>berkdb</strong></span> or one of the additional
+commands that may be created. The <span class="emphasis"><em>operation</em></span> is what you want
+to do to that handle, and the <span class="emphasis"><em>options</em></span> apply to the operation.
+Commands that get created on behalf of the application have their own sets
+of operations.  Generally, any calls in DB that result in new object
+handles will translate into a new command handle in Tcl. Then, the user
+can access the operations of the handle via the new Tcl command handle.</p>
+      <p>Newly created commands are named with an abbreviated form of their
+objects, followed by a number. Some created commands are subcommands of
+other created commands and will be the first command, followed by a
+period (.), and then followed by the new subcommand. For example,
+suppose that you have a database already existing called my_data.db.
+The following example shows the commands created when you open the
+database and when you open a cursor:</p>
       <pre class="programlisting"># First open the database and get a database command handle
 % berkdb open my_data.db
 db0
@@ -75,16 +66,10 @@ db0.c0
 #Get the first data from the cursor
 % db0.c0 get -first
 {{first_key first_data}}</pre>
-      <p>
-        All commands in the library support a special option
-        <span class="bold"><strong>-?</strong></span> that will list the
-        correct operations for a command or the correct
-        options.
-    </p>
-      <p>
-        A list of commands and operations can be found in the <a href="../api_reference/TCL/index.html" class="olink">Tcl API</a>
-        documentation.
-    </p>
+      <p>All commands in the library support a special option <span class="bold"><strong>-?</strong></span> that will
+list the correct operations for a command or the correct options.</p>
+      <p>A list of commands and operations can be found in the 
+    <a href="../api_reference/TCL/index.html" class="olink">Tcl API</a> documentation.</p>
     </div>
     <div class="navfooter">
       <hr />
@@ -97,7 +82,9 @@ db0.c0
           <td width="40%" align="right"> <a accesskey="n" href="tcl_program.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Chapter 23.  Berkeley DB Extensions: Tcl  </td>
+          <td width="40%" align="left" valign="top">Chapter 21. 
+		Berkeley DB Extensions: Tcl
+         </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

@@ -1,38 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997, 2017 Oracle and/or its affiliates.  All rights reserved.
- *
- * ex_tpcb--
- *
- *   This example is an early transaction processing benchmark that simulates bank
- *   transfers from one account to another. The program is first run in an initialization
- *   mode which loads the data. Subsequent runs in one or more processes perform a 
- *   workload. This program implements a basic TPC/B driver program. To create the TPC/B 
- *   database, run with the -i(init) flag. The number of records with which to populate the 
- *   account, history, branch, and teller tables is specified by the a, s, b, and t flags 
- *   respectively. To run a TPC/B test, use the n flag to indicate a number of transactions 
- *   to run.
- *
- *   The program requires two invocations, both taking in integer identifier as an argument.
- *   This identifier allows for multiple sets of databases to be used within the same 
- *   environment. The first is to initialize the databases, the second is to run the program
- *   on those databases.
- *
- *   After the transaction message is printed, the program closes the environment and exits.
- *
- * Options:
- *    -a	set the number of accounts per teller
- *    -b	set the number of branches
- *    -c	set the cache size in bytes
- *    -f	fast I/O mode: no txn sync
- *    -h	set the home directory
- *    -i	initialize the environment and load databases
- *    -n	set the number of transactions
- *    -S	set the random number seed
- *    -s	set the number of history records
- *    -t	set the number of bank tellers
- *    -v	print verbose messages during processing
+ * Copyright (c) 1997, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -48,14 +17,17 @@
 #define	NS_PER_US	1000		/* Nanoseconds in a microsecond */
 #ifdef _WIN32
 #include <sys/timeb.h>
-#include <winsock2.h>
 extern int getopt(int, char * const *, const char *);
 /* Implement a basic high res timer with a POSIX interface for Windows. */
+struct timeval {
+	time_t tv_sec;
+	long tv_usec;
+};
 int gettimeofday(struct timeval *tv, struct timezone *tz)
 {
 	struct _timeb now;
 	_ftime(&now);
-	tv->tv_sec = (long)now.time;
+	tv->tv_sec = now.time;
 	tv->tv_usec = now.millitm * NS_PER_US;
 	return (0);
 }
@@ -81,14 +53,23 @@ int	  invarg __P((const char *, int, const char *));
 int	  main __P((int, char *[]));
 int	  usage __P((const char *));
 
+/*
+ * This program implements a basic TPC/B driver program.  To create the
+ * TPC/B database, run with the -i (init) flag.  The number of records
+ * with which to populate the account, history, branch, and teller tables
+ * is specified by the a, s, b, and t flags respectively.  To run a TPC/B
+ * test, use the n flag to indicate a number of transactions to run (note
+ * that you can run many of these processes in parallel to simulate a
+ * multiuser test run).
+ */
 #define	TELLERS_PER_BRANCH	10
 #define	ACCOUNTS_PER_TELLER	10000
 #define	HISTORY_PER_BRANCH	2592000
 
 /*
  * The default configuration that adheres to TPCB scaling rules requires
- * nearly 3 GB of space. To avoid requiring that much space for testing,
- * we set the parameters much lower. If you want to run a valid 10 TPS
+ * nearly 3 GB of space.  To avoid requiring that much space for testing,
+ * we set the parameters much lower.  If you want to run a valid 10 TPS
  * configuration, define VALID_SCALING.
  */
 #ifdef	VALID_SCALING
@@ -144,68 +125,58 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	extern char *optarg;    /* argument associated with option */
-	extern int optind;      /* index into parent argv vector */
-	DB_ENV *dbenv;          /* The environment handle. */
-	int accounts;           /* The account variable. */
-	int branches;           /* The branch variable. */
-	int seed;               /* The random number seed variable. */
-	int tellers;            /* The teller variable. */
-	int history;            /* The history record variable. */
-	int ch;                 /* The current command line option char. */
-	int iflag;              /* The initialization flag. */
-	int mpool;              /* Memory pool variable. */
-	int ntxns;              /* The number of transactions. */
-	int ret;                /* Return code from call into Berkeley DB. */
-	int txn_no_sync;        /* Transaction no synchronization flag. */
-	int verbose;            /* Verbose message flag. */
-	const char *home;       /* Home directory constant. */
+	extern char *optarg;
+	extern int optind;
+	DB_ENV *dbenv;
+	int accounts, branches, seed, tellers, history;
+	int ch, iflag, mpool, ntxns, ret, txn_no_sync, verbose;
+	const char *home;
 
 	home = "TESTDIR";
 	accounts = branches = history = tellers = 0;
 	iflag = mpool = ntxns = txn_no_sync = verbose = 0;
 	seed = (int)time(NULL);
-	/* Parse the command line arguments */
+
 	while ((ch = getopt(argc, argv, "a:b:c:fh:in:S:s:t:v")) != EOF)
 		switch (ch) {
-		case 'a':			/* Set the number of accounts per teller. */
+		case 'a':			/* Number of account records */
 			if ((accounts = atoi(optarg)) <= 0)
 				return (invarg(progname, ch, optarg));
 			break;
-		case 'b':			/* Set the number of branches. */
+		case 'b':			/* Number of branch records */
 			if ((branches = atoi(optarg)) <= 0)
 				return (invarg(progname, ch, optarg));
 			break;
-		case 'c':			/* Set the cache size in bytes. */
+		case 'c':			/* Cachesize in bytes */
 			if ((mpool = atoi(optarg)) <= 0)
 				return (invarg(progname, ch, optarg));
 			break;
-		case 'f':			/* Fast I/O mode: no txn sync. */
+		case 'f':			/* Fast mode: no txn sync. */
 			txn_no_sync = 1;
 			break;
-		case 'h':			/* Set the home directory. */
+		case 'h':			/* DB  home. */
 			home = optarg;
 			break;
-		case 'i':			/* Initialize the environment and load databases. */
+		case 'i':			/* Initialize the test. */
 			iflag = 1;
 			break;
-		case 'n':			/* Set the number of transactions */
+		case 'n':			/* Number of transactions */
 			if ((ntxns = atoi(optarg)) <= 0)
 				return (invarg(progname, ch, optarg));
 			break;
-		case 'S':			/* Set the random number seed. */
+		case 'S':			/* Random number seed. */
 			if ((seed = atoi(optarg)) <= 0)
 				return (invarg(progname, ch, optarg));
 			break;
-		case 's':			/* Set the number of history records */
+		case 's':			/* Number of history records */
 			if ((history = atoi(optarg)) <= 0)
 				return (invarg(progname, ch, optarg));
 			break;
-		case 't':			/* Set the number of bank tellers. */
+		case 't':			/* Number of teller records */
 			if ((tellers = atoi(optarg)) <= 0)
 				return (invarg(progname, ch, optarg));
 			break;
-		case 'v':			/* Print verbose messages during processing. */
+		case 'v':			/* Verbose option. */
 			verbose = 1;
 			break;
 		case '?':
@@ -252,15 +223,6 @@ main(argc, argv)
 	return (EXIT_SUCCESS);
 }
 
-/*
- * invarg --
- *	Describe invalid command line argument, then exit.
- *
- * Parameters:
- *   progname        program name
- *   arg             argument variable
- *   str             invalid input string
- */
 int
 invarg(progname, arg, str)
 	const char *progname;
@@ -272,13 +234,6 @@ invarg(progname, arg, str)
 	return (EXIT_FAILURE);
 }
 
-/*
- * usage --
- *	Describe this program's command line options, then exit.
- *
- * Parameters:
- *  progname        program name
- */
 int
 usage(progname)
 	const char *progname;
@@ -296,12 +251,6 @@ usage(progname)
 /*
  * db_init --
  *	Initialize the environment.
- *
- * Parameters:
- *    home        home directory
- *    prefix      an error output stream 
- *    cachesize   cache size of the database environment
- *    flags       environment open flag
  */
 DB_ENV *
 db_init(home, prefix, cachesize, flags)
@@ -309,45 +258,27 @@ db_init(home, prefix, cachesize, flags)
 	int cachesize;
 	u_int32_t flags;
 {
-	DB_ENV *dbenv;            /* Database environment handle. */
-	u_int32_t local_flags;    /* Local flags to open environment. */
-	int ret;                  /* Return code. */
+	DB_ENV *dbenv;
+	u_int32_t local_flags;
+	int ret;
 
-	/* Create the environment object. */
 	if ((ret = db_env_create(&dbenv, 0)) != 0) {
 		fprintf(stderr,
 		    "%s: db_env_create: %s\n", progname, db_strerror(ret));
 		return (NULL);
 	}
-
-	/*
-	 * Prefix any error messages with the name of this program and a ':'.
-	 * Setting the errfile to stderr is not necessary, since that is the
-	 * default; it is provided here as a placeholder showing where one
-	 * could direct error messages to an application-specific log file.
-	 */
 	dbenv->set_errfile(dbenv, stderr);
 	dbenv->set_errpfx(dbenv, prefix);
-
-	/* Use the default deadlock detector. */
 	(void)dbenv->set_lk_detect(dbenv, DB_LOCK_DEFAULT);
-	/* Set the cache size. */
 	(void)dbenv->set_cachesize(dbenv, 0,
 	    cachesize == 0 ? 4 * 1024 * 1024 : (u_int32_t)cachesize, 0);
 
-	/* 
-	 * If -f option is specified, do not synchronize on transaction
-	 * commit. This reduces the durability of the database but improves
-	 * transaction throughput.
-	 */
 	if (flags & (DB_TXN_NOSYNC))
 		(void)dbenv->set_flags(dbenv, DB_TXN_NOSYNC, 1);
 	flags &= ~(DB_TXN_NOSYNC);
 
-	/* Open a transactional environment. */
 	local_flags = flags | DB_CREATE | DB_INIT_LOCK | DB_INIT_LOG |
 	    DB_INIT_MPOOL | DB_INIT_TXN;
-	/* Open environment with local flags. */
 	if ((ret = dbenv->open(dbenv, home, local_flags, 0)) != 0) {
 		dbenv->err(dbenv, ret, "DB_ENV->open: %s", home);
 		(void)dbenv->close(dbenv, 0);
@@ -357,60 +288,40 @@ db_init(home, prefix, cachesize, flags)
 }
 
 /*
- * tp_populate --
- *        Initialize the database to the specified number of accounts, branches,
+ * Initialize the database to the specified number of accounts, branches,
  * history records, and tellers.
- *
- * Parameters:
- *    env        environment handle
- *    accounts   account variable to specify
- *    branches   branch variable to specify
- *    history    history record
- *    tellers    teller variable to specify
- *    verbose    verbose message 
  */
 int
 tp_populate(env, accounts, branches, history, tellers, verbose)
 	DB_ENV *env;
 	int accounts, branches, history, tellers, verbose;
 {
-	DB *dbp;                  /* The database handle. */
-	u_int32_t balance;        /* Balance of account. */
-	u_int32_t idnum;          /* Number of transaction identifier. */
-	u_int32_t oflags;         /* Open flag for the database. */
-	u_int32_t end_anum;       /* End number of accounts. */
-	u_int32_t end_bnum;       /* End number of branches. */
-	u_int32_t end_tnum;       /* End number of tellers. */
-	u_int32_t start_anum;     /* Start number of accounts. */
-	u_int32_t start_bnum;     /* Start number of branches. */
-	u_int32_t start_tnum;     /* Start number of tellers. */
-	int ret;                  /* Return code. */
+	DB *dbp;
+	u_int32_t balance, idnum, oflags;
+	u_int32_t end_anum, end_bnum, end_tnum;
+	u_int32_t start_anum, start_bnum, start_tnum;
+	int ret;
 
 	idnum = BEGID;
 	balance = 500000;
 	oflags = DB_CREATE;
 
-	/* Create the database object for accounts. */
 	if ((ret = db_create(&dbp, env, 0)) != 0) {
 		env->err(env, ret, "db_create");
 		return (1);
 	}
-	/* Set the estimated final size of the account database. */
 	(void)dbp->set_h_nelem(dbp, (u_int32_t)accounts);
 
-	/* Create the account database with the hash access method. */
 	if ((ret = dbp->open(dbp, NULL, "account", NULL,
 	    DB_HASH, oflags, 0644)) != 0) {
 		env->err(env, ret, "DB->open: account");
 		return (1);
 	}
 
-	/* Populate the account database. */
 	start_anum = idnum;
 	populate(dbp, idnum, balance, accounts, "account");
 	idnum += accounts;
 	end_anum = idnum - 1;
-	/* Close the account database. */
 	if ((ret = dbp->close(dbp, 0)) != 0) {
 		env->err(env, ret, "DB->close: account");
 		return (1);
@@ -428,20 +339,14 @@ tp_populate(env, accounts, branches, history, tellers, verbose)
 		env->err(env, ret, "db_create");
 		return (1);
 	}
-	/* Set the fill factor to be 1, allowing approximately 1 key per bucket. */
 	(void)dbp->set_h_ffactor(dbp, 1);
-	/* Set the estimated final size of the branch database. */
 	(void)dbp->set_h_nelem(dbp, (u_int32_t)branches);
-	/* Use a small page size to reduce the number of keys per page. */
 	(void)dbp->set_pagesize(dbp, 512);
-	/* Open the branch database with the hash access method. */
 	if ((ret = dbp->open(dbp, NULL, "branch", NULL,
 	    DB_HASH, oflags, 0644)) != 0) {
 		env->err(env, ret, "DB->open: branch");
 		return (1);
 	}
-
-	/* Populate the branch database. */
 	start_bnum = idnum;
 	populate(dbp, idnum, balance, branches, "branch");
 	idnum += branches;
@@ -462,20 +367,15 @@ tp_populate(env, accounts, branches, history, tellers, verbose)
 		env->err(env, ret, "db_create");
 		return (1);
 	}
-	/* Set the fill factor to 0 to allow it dynamically adjust itself. */
 	(void)dbp->set_h_ffactor(dbp, 0);
-	/* Set the estimated final size of the teller database. */
 	(void)dbp->set_h_nelem(dbp, (u_int32_t)tellers);
-	/* Use a small page size. */
 	(void)dbp->set_pagesize(dbp, 512);
-	/* Open the teller database with the hash access method. */
 	if ((ret = dbp->open(dbp, NULL, "teller", NULL,
 	    DB_HASH, oflags, 0644)) != 0) {
 		env->err(env, ret, "DB->open: teller");
 		return (1);
 	}
 
-	/* Populate the teller database. */
 	start_tnum = idnum;
 	populate(dbp, idnum, balance, tellers, "teller");
 	idnum += tellers;
@@ -492,16 +392,13 @@ tp_populate(env, accounts, branches, history, tellers, verbose)
 		env->err(env, ret, "db_create");
 		return (1);
 	}
-	/* Set the record length of history records. */
 	(void)dbp->set_re_len(dbp, HISTORY_LEN);
-	/* Open the history database with the recno access method. */
 	if ((ret = dbp->open(dbp, NULL, "history", NULL,
 	    DB_RECNO, oflags, 0644)) != 0) {
 		env->err(env, ret, "DB->open: history");
 		return (1);
 	}
 
-	/* Populate the history records. */
 	hpopulate(dbp, history, accounts, branches, tellers);
 	if ((ret = dbp->close(dbp, 0)) != 0) {
 		env->err(env, ret, "DB->close: history");
@@ -510,17 +407,6 @@ tp_populate(env, accounts, branches, history, tellers, verbose)
 	return (0);
 }
 
-/*
- * populate --
- *        Initialize the database to the specified value according to the file type.
- *
- * Parameters:
- *    dbp        database handle
- *    start_id   start position
- *    balance    the balance of account
- *    nrecs      number of records
- *    msg        error message
- */
 int
 populate(dbp, start_id, balance, nrecs, msg)
 	DB *dbp;
@@ -528,13 +414,10 @@ populate(dbp, start_id, balance, nrecs, msg)
 	int nrecs;
 	const char *msg;
 {
-	DBT kdbt;         /* The key value of the database. */
-	DBT ddbt;         /* The data value of the database. */
-	defrec drec;      /* database record. */
-	int i;            /* Variable to indicate the position of the record. */
-	int ret;          /* Return code. */
+	DBT kdbt, ddbt;
+	defrec drec;
+	int i, ret;
 
-	/* Set the key to be record's id, and data to be the entire record. */
 	kdbt.flags = 0;
 	kdbt.data = &drec.id;
 	kdbt.size = sizeof(u_int32_t);
@@ -543,7 +426,6 @@ populate(dbp, start_id, balance, nrecs, msg)
 	ddbt.size = sizeof(drec);
 	memset(&drec.pad[0], 1, sizeof(drec.pad));
 
-	/* Insert records. */
 	for (i = 0; i < nrecs; i++) {
 		drec.id = start_id + (u_int32_t)i;
 		drec.balance = balance;
@@ -557,33 +439,16 @@ populate(dbp, start_id, balance, nrecs, msg)
 	return (0);
 }
 
-/*
- * hpopulate --
- *        Initialize the database to the specified number of history records.
- *
- * Parameters:
- *    dbp        database handle
- *    history    history record variable
- *    accounts   account variable to specify
- *    branches   branch variable to specify
- *    tellers    teller variable to specify
- */
 int
 hpopulate(dbp, history, accounts, branches, tellers)
 	DB *dbp;
 	int history, accounts, branches, tellers;
 {
-	DBT kdbt;         /* The key value of the database. */
-	DBT ddbt;         /* The data value of the database. */
-	histrec hrec;     /* History record. */
-	db_recno_t key;   /* The record number variable of the transaction database. */
-	int i;            /* variable to indicate the position of history record. */
-	int ret;          /* Return code. */
+	DBT kdbt, ddbt;
+	histrec hrec;
+	db_recno_t key;
+	int i, ret;
 
-	/* 
-	 * The key must be a record number. Set the data to be the entire
-	 * history record.
-	 */
 	memset(&kdbt, 0, sizeof(kdbt));
 	memset(&ddbt, 0, sizeof(ddbt));
 	ddbt.data = &hrec;
@@ -593,7 +458,6 @@ hpopulate(dbp, history, accounts, branches, tellers)
 	memset(&hrec.pad[0], 1, sizeof(hrec.pad));
 	hrec.amount = 10;
 
-	/* Insert history records. */
 	for (i = 1; i <= history; i++) {
 		hrec.aid = random_id(ACCOUNT, accounts, branches, tellers);
 		hrec.bid = random_id(BRANCH, accounts, branches, tellers);
@@ -606,20 +470,12 @@ hpopulate(dbp, history, accounts, branches, tellers)
 	return (0);
 }
 
-/*
- * random_int --
- *        function to generate random integer within the range
- *
- * Parameters:
- *    lo    the low bound of the range
- *    hi    the high bound of the range
- */
 u_int32_t
 random_int(lo, hi)
 	u_int32_t lo, hi;
 {
-	u_int32_t ret;          /* Return code. */
-	int t;                  /* random integer. */
+	u_int32_t ret;
+	int t;
 
 #ifndef RAND_MAX
 #define	RAND_MAX	0x7fffffff
@@ -631,24 +487,12 @@ random_int(lo, hi)
 	return (ret);
 }
 
-/*
- * random_int --
- *        function to generate transaction identifier.
- *
- * Parameters:
- *    type        the file type
- *    accounts    the account variable
- *    branches    the branch variable
- *    tellers      the teller variable
- */
 u_int32_t
 random_id(type, accounts, branches, tellers)
 	FTYPE type;
 	int accounts, branches, tellers;
 {
-	u_int32_t min;        /* The minimum value of the transaction identifier. */
-	u_int32_t max;        /* The maximum value of the transaction identifier. */
-	u_int32_t num;        /* The range between the minimum value and maximum value. */
+	u_int32_t min, max, num;
 
 	max = min = BEGID;
 	num = accounts;
@@ -668,34 +512,15 @@ random_id(type, accounts, branches, tellers)
 	return (random_int(min, max));
 }
 
-/*
- * tp_run --
- *        function to run the transaction.
- *
- * Parameters:
- *    dbenv        the database environment handle
- *    n            the number of transactions
- *    accounts     the account variable
- *    branches     the branch variable
- *    tellers      the teller variable
- *    verbose      verbose message
- */
 int
 tp_run(dbenv, n, accounts, branches, tellers, verbose)
 	DB_ENV *dbenv;
 	int n, accounts, branches, tellers, verbose;
 {
-	DB *adb;          /* The accounts database. */
-	DB *bdb;          /* The branches database. */
-	DB *hdb;          /* The history record database. */
-	DB *tdb;          /* The tellers database. */
-	int failed;       /* Transaction running fail flag. */
-	int ret;          /* Return code. */
-	int txns;         /* Number of transactions. */
-	struct timeval start_tv;        /* Time variable to store the start time. */   
-	struct timeval end_tv;          /* Time variable to store the end time. */
-	double start_time;              /* Start time variable. */
-	double end_time;                /* End time varialbe. */
+	DB *adb, *bdb, *hdb, *tdb;
+	int failed, ret, txns;
+	struct timeval start_tv, end_tv;
+	double start_time, end_time;
 
 	adb = bdb = hdb = tdb = NULL;
 
@@ -739,16 +564,13 @@ tp_run(dbenv, n, accounts, branches, tellers, verbose)
 		goto err;
 	}
 
-	/* Get the start time. */
 	(void)gettimeofday(&start_tv, NULL);
 
-	/* Run n transactions. */
 	for (txns = n, failed = 0; n-- > 0;)
 		if ((ret = tp_txn(dbenv, adb, bdb, tdb, hdb,
 		    accounts, branches, tellers, verbose)) != 0)
 			++failed;
 
-	/* Get the end time. */
 	(void)gettimeofday(&end_tv, NULL);
 
 	start_time = start_tv.tv_sec + ((start_tv.tv_usec + 0.0)/NS_PER_MS);
@@ -756,12 +578,10 @@ tp_run(dbenv, n, accounts, branches, tellers, verbose)
 	if (end_time == start_time)
 		end_time += 1/NS_PER_MS;
 
-	/* Print the result. */
 	printf("%s: %d txns: %d failed, %.3f sec, %.2f TPS\n", progname,
 	    txns, failed, (end_time - start_time),
 	    (txns - failed) / (double)(end_time - start_time));
 
-	/* Close databases. */
 err:	if (adb != NULL)
 		(void)adb->close(adb, 0);
 	if (bdb != NULL)
@@ -774,19 +594,7 @@ err:	if (adb != NULL)
 }
 
 /*
- * tp_txn --
- *        function to run one single specified transaction.
- *
- * Parameters:
- *    dbenv        the database environment handle
- *    adb          the accounts database
- *    bdb          the branches database
- *    tdb          the tellers database
- *    hdb          the history record database
- *    accounts     the account variable
- *    branches     the branch variable
- *    tellers      the teller variable
- *    verbose      verbose message
+ * XXX Figure out the appropriate way to pick out IDs.
  */
 int
 tp_txn(dbenv, adb, bdb, tdb, hdb, accounts, branches, tellers, verbose)
@@ -794,21 +602,13 @@ tp_txn(dbenv, adb, bdb, tdb, hdb, accounts, branches, tellers, verbose)
 	DB *adb, *bdb, *tdb, *hdb;
 	int accounts, branches, tellers, verbose;
 {
-	DBC *acurs;        /* The accounts database cursor. */
-	DBC *bcurs;        /* The branches database cursor. */
-	DBC *tcurs;        /* The tellers database cursor. */
-	DBT d_dbt;         /* The data value of the database. */
-	DBT d_histdbt;     /* The data value of the history record database. */
-	DBT k_dbt;         /* The key value of the database. */
-	DBT k_histdbt;     /* The key value of the history record database. */
-	DB_TXN *t;         /* The transaction handle. */
-	db_recno_t key;    /* The record number variable of the transaction database. */
-	defrec rec;        /* The record variable. */
-	histrec hrec;      /* The history record. */
-	int account;       /* The account variable. */
-	int branch;        /* The branch variable. */
-	int teller;        /* The teller variable. */
-	int ret;           /* Return code. */
+	DBC *acurs, *bcurs, *tcurs;
+	DBT d_dbt, d_histdbt, k_dbt, k_histdbt;
+	DB_TXN *t;
+	db_recno_t key;
+	defrec rec;
+	histrec hrec;
+	int account, branch, teller, ret;
 
 	t = NULL;
 	acurs = bcurs = tcurs = NULL;
@@ -822,14 +622,12 @@ tp_txn(dbenv, adb, bdb, tdb, hdb, accounts, branches, tellers, verbose)
 	branch = random_id(BRANCH, accounts, branches, tellers);
 	teller = random_id(TELLER, accounts, branches, tellers);
 
-	/* Initialize history key/data pairs. */
 	memset(&d_histdbt, 0, sizeof(d_histdbt));
 
 	memset(&k_histdbt, 0, sizeof(k_histdbt));
 	k_histdbt.data = &key;
 	k_histdbt.size = sizeof(key);
 
-	/* Initialize database key/data pairs. */
 	memset(&k_dbt, 0, sizeof(k_dbt));
 	k_dbt.size = sizeof(int);
 
@@ -856,13 +654,12 @@ tp_txn(dbenv, adb, bdb, tdb, hdb, accounts, branches, tellers, verbose)
 	if (dbenv->txn_begin(dbenv, NULL, &t, 0) != 0)
 		goto err;
 
-	/* Create transactional cursors for account, branch and teller databases. */
 	if (adb->cursor(adb, t, &acurs, 0) != 0 ||
 	    bdb->cursor(bdb, t, &bcurs, 0) != 0 ||
 	    tdb->cursor(tdb, t, &tcurs, 0) != 0)
 		goto err;
 
-	/* Read and update one account record */
+	/* Account record */
 	k_dbt.data = &account;
 	if (acurs->get(acurs, &k_dbt, &d_dbt, DB_SET) != 0)
 		goto err;
@@ -870,7 +667,7 @@ tp_txn(dbenv, adb, bdb, tdb, hdb, accounts, branches, tellers, verbose)
 	if (acurs->put(acurs, &k_dbt, &d_dbt, DB_CURRENT) != 0)
 		goto err;
 
-	/* Read and update one branch record */
+	/* Branch record */
 	k_dbt.data = &branch;
 	if (bcurs->get(bcurs, &k_dbt, &d_dbt, DB_SET) != 0)
 		goto err;
@@ -878,7 +675,7 @@ tp_txn(dbenv, adb, bdb, tdb, hdb, accounts, branches, tellers, verbose)
 	if (bcurs->put(bcurs, &k_dbt, &d_dbt, DB_CURRENT) != 0)
 		goto err;
 
-	/* Read and update one teller record */
+	/* Teller record */
 	k_dbt.data = &teller;
 	if (tcurs->get(tcurs, &k_dbt, &d_dbt, DB_SET) != 0)
 		goto err;
@@ -886,18 +683,17 @@ tp_txn(dbenv, adb, bdb, tdb, hdb, accounts, branches, tellers, verbose)
 	if (tcurs->put(tcurs, &k_dbt, &d_dbt, DB_CURRENT) != 0)
 		goto err;
 
-	/* Add one history record */
+	/* History record */
 	d_histdbt.flags = 0;
 	d_histdbt.data = &hrec;
 	d_histdbt.ulen = sizeof(hrec);
 	if (hdb->put(hdb, t, &k_histdbt, &d_histdbt, DB_APPEND) != 0)
 		goto err;
 
-	/* Close all cursors. */
 	if (acurs->close(acurs) != 0 || bcurs->close(bcurs) != 0 ||
 	    tcurs->close(tcurs) != 0)
 		goto err;
-	/* Commit the transaction. */
+
 	ret = t->commit(t, 0);
 	t = NULL;
 	if (ret != 0)

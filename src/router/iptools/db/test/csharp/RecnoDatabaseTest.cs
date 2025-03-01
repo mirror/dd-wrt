@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -160,61 +160,6 @@ namespace CsharpAPITest
 				Assert.IsNotNull(compactData.End);
 				Assert.AreNotEqual(0, compactData.PagesExamined);
 			}
-		}
-
-		[Test]
-		public void TestMessageFile()
-		{
-			testName = "TestMessageFile";
-			SetUpTest(true);
-
-			// Configure and open an environment.
-			DatabaseEnvironmentConfig envConfig =
-			    new DatabaseEnvironmentConfig();
-			envConfig.Create = true;
-			envConfig.UseMPool = true;
-			DatabaseEnvironment env = DatabaseEnvironment.Open(
-			    testHome, envConfig);
-
-			// Configure and open a database.
-			RecnoDatabaseConfig DBConfig =
-			    new RecnoDatabaseConfig();
-			DBConfig.Env = env;
-			DBConfig.Creation = CreatePolicy.IF_NEEDED;
-
-			string DBFileName = testName + ".db";
-			RecnoDatabase db = RecnoDatabase.Open(
-			    DBFileName, DBConfig);
-
-			// Confirm message file does not exist.
-			string messageFile = testHome + "/" + "msgfile";
-			Assert.AreEqual(false, File.Exists(messageFile));
-
-			// Call set_msgfile() of db.
-			db.Msgfile = messageFile;
-
-			// Print db statistic to message file.
-			db.PrintStats(true);
-
-			// Confirm message file exists now.
-			Assert.AreEqual(true, File.Exists(messageFile));
-
-			db.Msgfile = "";
-			string line = null;
-
-			// Read the third line of message file.
-			System.IO.StreamReader file = new System.IO.StreamReader(@"" + messageFile);
-			line = file.ReadLine();
-			line = file.ReadLine();
-			line = file.ReadLine();
-
-			// Confirm the message file is not empty.
-			Assert.AreEqual(line, "DB handle information:");
-			file.Close();
-
-			// Close database and environment.
-			db.Close();
-			env.Close();
 		}
 
 		[Test]
@@ -380,7 +325,7 @@ namespace CsharpAPITest
 			Assert.AreEqual(4096, stats.PageSize);
 			Assert.AreEqual(4000, stats.RecordLength);
 			Assert.AreEqual(256, stats.RecordPadByte);
-			Assert.AreEqual(10, stats.Version);
+			Assert.AreEqual(9, stats.Version);
 		}
 
 		public void ConfirmStatsPart2Case1(RecnoStats stats)

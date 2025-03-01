@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -22,12 +22,14 @@ all of caching, locking, logging and transactions.
 <p>
 To open an existing environment with default attributes the application
 may use a default environment configuration object or null:
+<p>
 <blockquote><pre>
     // Open an environment handle with default attributes.
     Environment env = new Environment(home, new EnvironmentConfig());
 </pre></blockquote>
 <p>
 or
+<p>
 <blockquote><pre>
     Environment env = new Environment(home, null);
 </pre></blockquote>
@@ -36,12 +38,13 @@ Note that many Environment objects may access a single environment.
 <p>
 To create an environment or customize attributes, the application should
 customize the configuration class. For example:
+<p>
 <blockquote><pre>
     EnvironmentConfig envConfig = new EnvironmentConfig();
     envConfig.setTransactional(true);
     envConfig.setAllowCreate(true);
     envConfig.setCacheSize(1000000);
-
+    <p>
     Environment newlyCreatedEnv = new Environment(home, envConfig);
 </pre></blockquote>
 <p>
@@ -60,7 +63,6 @@ whether or not it throws an exception.
 */
 public class Environment {
     private DbEnv dbenv;
-    private Environment [] slices = null;
     private int autoCommitFlag;
 
     /* package */
@@ -84,10 +86,11 @@ public class Environment {
     <p>
     @param config The database environment attributes.  If null, default attributes are used.
     <p>
+    <p>
     @throws IllegalArgumentException if an invalid parameter was specified.
     <p>
+    <p>
     @throws DatabaseException if a failure occurs.
-    @throws java.io.FileNotFoundException if the environment home directory does not exist
     */
     public Environment(final java.io.File home, EnvironmentConfig config)
         throws DatabaseException, java.io.FileNotFoundException {
@@ -141,6 +144,7 @@ public class Environment {
     After this method has been called, regardless of its return, the
     {@link com.sleepycat.db.Environment Environment} handle may not be accessed again.
     <p>
+    <p>
 @throws DatabaseException if a failure occurs.
     */
     public void close()
@@ -152,43 +156,14 @@ public class Environment {
     Close the database environment, freeing any allocated resources and
     closing any underlying subsystems. 
     <p>
-    This function is similar to Environment.close(), except that
-    each open database is synchronized as it is closed.
-    @throws DatabaseException if a failure occurs.
+    This function has verify similar
+    behavior as Environment.close(), except the following:
+    When each open database handle is closed, the database is synchronized.
     */
     public void closeForceSync()
         throws DatabaseException {
 
         dbenv.close(DbConstants.DB_FORCESYNC);
-    }
-
-    /**
-    Close the database environment, freeing any allocated resources and
-    closing any underlying subsystems. 
-    <p>
-    This function is similar to Environment.close(), except that
-    all memory mapped environment regions are synchronized as the
-    environment is closed.
-    @throws DatabaseException if a failure occurs.
-    */
-    public void closeForceSyncEnv()
-        throws DatabaseException {
-
-        dbenv.close(DbConstants.DB_FORCESYNCENV);
-    }
-
-    /**
-    Close the database environment, freeing any allocated resources and
-    closing any underlying subsystems. 
-    <p>
-    This function is similar to Environment.close(), except that
-    it has the effect of both closeForceSync() and closeForceSyncEnv().
-    @throws DatabaseException if a failure occurs.
-    */
-    public void closeForceSyncAndForceSyncEnv()
-        throws DatabaseException {
-
-        dbenv.close(DbConstants.DB_FORCESYNC | DbConstants.DB_FORCESYNCENV);
     }
 
     /* package */
@@ -253,10 +228,8 @@ public class Environment {
     were unable to shut down cleanly, and there is a risk that an
     application may have died holding a Berkeley DB mutex or lock.
     <p>
-    @param config The database environment attributes.  If null, default attributes are used.
     <p>
     @throws DatabaseException if a failure occurs.
-    @throws java.io.FileNotFoundException if the database file does not exist
     */
     public static void remove(final java.io.File home,
                               final boolean force,
@@ -278,6 +251,7 @@ public class Environment {
     <p>
     @param config The database environment attributes.  If null, default attributes are used.
     <p>
+    <p>
 @throws IllegalArgumentException if an invalid parameter was specified.
 <p>
 @throws DatabaseException if a failure occurs.
@@ -293,6 +267,7 @@ public class Environment {
     <p>
     @return
     This object's configuration.
+    <p>
     <p>
 @throws DatabaseException if a failure occurs.
     */
@@ -354,10 +329,6 @@ parameter.  Further, the databaseName parameter is not supported by the
 Queue format.
 <p>
 @param config The database open attributes.  If null, default attributes are used.
-<p>
-@return a Database handle
-@throws DatabaseException if a failure occurs.
-@throws java.io.FileNotFoundException if the database file does not exist
     */
     public Database openDatabase(final Transaction txn,
                                  final String fileName,
@@ -365,27 +336,10 @@ Queue format.
                                  DatabaseConfig config)
         throws DatabaseException, java.io.FileNotFoundException {
 
-        Database newDb = null;    
-
-        newDb = new Database(
+        return new Database(
             DatabaseConfig.checkNull(config).openDatabase(dbenv,
                 (txn == null) ? null : txn.txn,
                 fileName, databaseName));
-
-	if (newDb == null)
-	    return newDb;
-
-	/* 
-	 * Initializes the slices so that dbt_usercopy is properly
-	 * set in the C library.
-	 */
-	if (Environment.slices_enabled()) {
-	    if (newDb.getConfig().getSliced()) {
-	        newDb.getSlices();
-	    }
-	}
-
-	return newDb;
     }
 
     /**
@@ -442,9 +396,6 @@ Queue format.
 a database handle for the primary database that is to be indexed.
 <p>
 @param config The secondary database open attributes.  If null, default attributes are used.
-@return a SecondaryDatabase handle
-@throws DatabaseException if a failure occurs.
-@throws java.io.FileNotFoundException if the database file does not exist
     */
     public SecondaryDatabase openSecondaryDatabase(
             final Transaction txn,
@@ -504,11 +455,11 @@ string, which is equivalent to ASCII for Latin characters.
 @param databaseName
 The database to be removed.
 <p>
+<p>
 @throws DeadlockException if the operation was selected to resolve a
 deadlock.
 <p>
 @throws DatabaseException if a failure occurs.
-@throws java.io.FileNotFoundException if the database file does not exist
     */
     public void removeDatabase(final Transaction txn,
                                final String fileName,
@@ -568,11 +519,11 @@ The database to be renamed.
 @param newName
 The new name of the database or file.
 <p>
+<p>
 @throws DeadlockException if the operation was selected to resolve a
 deadlock.
 <p>
 @throws DatabaseException if a failure occurs.
-@throws java.io.FileNotFoundException if the database file does not exist
     */
     public void renameDatabase(final Transaction txn,
                                final String fileName,
@@ -590,7 +541,6 @@ deadlock.
     identified in the {@link com.sleepycat.db.Environment} constructor.
     <p>
     @return The database environment home directory.
-    @throws DatabaseException if a failure occurs.
     */
     public java.io.File getHome()
         throws DatabaseException {
@@ -615,6 +565,7 @@ deadlock.
     The number of pages that were written to reach the specified
     percentage.
     <p>
+    <p>
 @throws DatabaseException if a failure occurs.
     */
     public int trickleCacheWrite(int percent)
@@ -635,6 +586,7 @@ deadlock.
     <p>
     @return
     The number of lock requests that were rejected.
+    <p>
     <p>
 @throws DatabaseException if a failure occurs.
     */
@@ -666,7 +618,6 @@ deadlock.
     inadvertently lock objects that happen to be equal to the unique
     file IDs used to lock files.
     <p>
-    @return a lock
     <p>
 @throws DatabaseException if a failure occurs.
     */
@@ -687,6 +638,7 @@ deadlock.
     @param lock
     The lock to be released.
     <p>
+    <p>
 @throws DatabaseException if a failure occurs.
     */
     public void putLock(Lock lock)
@@ -705,7 +657,6 @@ deadlock.
     <p>
     @return
     A locker ID.
-    @throws DatabaseException if a failure occurs.
     */
     public int createLockerID()
         throws DatabaseException {
@@ -718,6 +669,7 @@ deadlock.
     <p>
     @param id
     The locker id to be freed.
+    <p>
     <p>
 @throws DatabaseException if a failure occurs.
     */
@@ -733,7 +685,6 @@ deadlock.
     @param id
     The locker id
     <p>
-    @return the deadlock priority
     @throws DatabaseException if a failure occurs.
     */
     public int getLockerPriority(int id) throws DatabaseException {
@@ -784,6 +735,7 @@ deadlock.
     An array of {@link com.sleepycat.db.LockRequest LockRequest} objects, listing the requested lock
     operations.
     <p>
+    <p>
 @throws DatabaseException if a failure occurs.
     */
     public void lockVector(int locker, boolean noWait, LockRequest[] list)
@@ -799,6 +751,7 @@ deadlock.
     <p>
     @return
     A log cursor.
+    <p>
     <p>
 @throws DatabaseException if a failure occurs.
     */
@@ -825,6 +778,7 @@ deadlock.
     @return
     The name of the log file that contains the log record specified by a
     LogSequenceNumber object.
+    <p>
     <p>
 @throws IllegalArgumentException if an invalid parameter was specified.
 <p>
@@ -923,6 +877,7 @@ deadlock.
     Configure the environment as a replication master.  If false, the
     environment will be configured as as a replication client.
     <p>
+    <p>
 @throws DatabaseException if a failure occurs.
     */
     public void startReplication(DatabaseEntry cdata, boolean master)
@@ -1001,6 +956,7 @@ Setting nsites to lower values can increase the speed of an election, but can al
     fewer votes are required to win an election as that can potentially
     lead to multiple masters in the face of a network partition.
     <p>
+    <p>
 @throws DatabaseException if a failure occurs.
     */
     public void electReplicationMaster(int nsites, int nvotes)
@@ -1013,6 +969,7 @@ Setting nsites to lower values can increase the speed of an election, but can al
     lost messages and don't know it.
     <p>
     This method may not be called before the database environment is opened.
+    <p>
     <p>
 @throws DatabaseException if a failure occurs.
     **/
@@ -1051,7 +1008,6 @@ Setting nsites to lower values can increase the speed of an election, but can al
     <p>
     @return
     A {@link com.sleepycat.db.ReplicationStatus ReplicationStatus} object.
-    @throws DatabaseException if a failure occurs.
     */
     public ReplicationStatus processReplicationMessage(DatabaseEntry control,
                                                        DatabaseEntry rec,
@@ -1086,7 +1042,6 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     A replication feature to be configured.
     @param onoff
     If true, the feature is enabled, otherwise it is disabled.
-    @throws DatabaseException if a failure occurs.
     **/
     public void setReplicationConfig(ReplicationConfig config, boolean onoff)
         throws DatabaseException {
@@ -1097,10 +1052,8 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     /**
     Get the configuration of the replication subsystem.
     This method may be called at any time during the life of the application.
-    @param config the feature to be checked
     @return
     Whether the specified feature is enabled or disabled.
-    @throws DatabaseException if a failure occurs.
     **/
     public boolean getReplicationConfig(ReplicationConfig config)
         throws DatabaseException {
@@ -1137,7 +1090,6 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     <p>
     @param replicationTimeout
     The time in microseconds of the desired timeout.
-    @throws DatabaseException if a failure occurs.
     **/
     public void setReplicationTimeout(
         final ReplicationTimeoutType type, final int replicationTimeout)
@@ -1153,6 +1105,7 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     <p>
     @return
     The timeout applied to the specified timout type, in microseconds.
+    <p>
     <p>
 @throws DatabaseException if a failure occurs.
     **/
@@ -1176,6 +1129,7 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     <p>
     Before calling this method, the enclosing database environment must 
     already have been opened and must already have been configured to send replication messages. 
+    <p>
     <p>
 @throws DatabaseException if a failure occurs.
     **/
@@ -1206,7 +1160,6 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     @param policy
     The policy defines the startup characteristics of a replication group.
     See {@link com.sleepycat.db.ReplicationManagerStartPolicy ReplicationManagerStartPolicy} for more information.
-    @throws DatabaseException if a failure occurs.
     **/
     public void replicationManagerStart(
         int nthreads, ReplicationManagerStartPolicy policy)
@@ -1217,8 +1170,6 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
 
     /**
     Return a handle for the local replication site.
-    @return a handle for the local replication site
-    @throws DatabaseException if a failure occurs.
     */
     public ReplicationManagerSite getReplicationManagerLocalSite()
         throws DatabaseException {
@@ -1232,8 +1183,6 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     Return an array of all the sites known to the replication manager.
     This method may only be called after replication has been started
     using the {@link com.sleepycat.db.Environment#replicationManagerStart replicationManagerStart} method.
-    @return an array of all the sites known to the replication manager
-    @throws DatabaseException if a failure occurs.
     */
     public ReplicationManagerSiteInfo[] getReplicationManagerSiteList() 
         throws DatabaseException {
@@ -1244,9 +1193,7 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     /**
     Return a site known to the replication manager by its eid.
     <p>
-    @param eid the site's environment id
-    @return a replication site
-    @throws DatabaseException if a failure occurs.
+    @param eid
     */
     public ReplicationManagerSite getReplicationManagerSite(int eid) 
         throws DatabaseException {
@@ -1257,10 +1204,8 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     /**
     Return a site in the replication manager by its host and port.
     <p>
-    @param host the site's host name
-    @param port the site's port
-    @return a replication site
-    @throws DatabaseException if a failure occurs.
+    @param host
+    @param port
     */
     public ReplicationManagerSite getReplicationManagerSite(
         String host, long port)
@@ -1272,9 +1217,7 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     /**
     Create a channel.
     <p>
-    @param eid the environment id of a remote site
-    @return a replication channel
-    @throws DatabaseException if a failure occurs.
+    @param eid
     */
     public ReplicationChannel openChannel(int eid)
         throws DatabaseException {
@@ -1290,8 +1233,7 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     Manager message channels.
     @param flags
     This flag is DB_REPMGR_NEED_RESPONSE if the message requires a response.
-    Otherwise, it is 0.
-    @throws DatabaseException if a failure occurs.
+    Otherwise, it is 0. 
     */
     public void setReplicationManagerMessageDispatch(
         ReplicationManagerMessageDispatch dispatch, int flags) 
@@ -1304,10 +1246,7 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     /**
     Returns the memory pool (that is, the buffer cache) subsystem statistics. 
     <p>
-    @param config The statistics attributes.  If null, default attributes are used.
-    <p>
     @return the memory pool (that is, the buffer cache) subsystem statistics.
-    @throws DatabaseException if a failure occurs.
     */
     public CacheStats getCacheStats(StatsConfig config)
         throws DatabaseException {
@@ -1318,10 +1257,7 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     /**
     Return statistics for individual files in the cache.
     <p>
-    @param config The statistics attributes.  If null, default attributes are used.
-    <p>
     @return statistics for individual files in the cache.
-    @throws DatabaseException if a failure occurs.
     */
     public CacheFileStats[] getCacheFileStats(StatsConfig config)
         throws DatabaseException {
@@ -1336,6 +1272,7 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     <p>
     @return
     The database environment's logging statistics.
+    <p>
     <p>
 @throws DatabaseException if a failure occurs.
     */
@@ -1353,6 +1290,7 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     @return
     The database environment's replication statistics.
     <p>
+    <p>
 @throws DatabaseException if a failure occurs.
     */
     public ReplicationStats getReplicationStats(StatsConfig config)
@@ -1368,6 +1306,7 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     <p>
     @return
     The database environment's replication manager statistics.
+    <p>
     <p>
 @throws DatabaseException if a failure occurs.
     */
@@ -1386,6 +1325,7 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     @return
     The database environment's locking statistics.
     <p>
+    <p>
 @throws DatabaseException if a failure occurs.
     */
     public LockStats getLockStats(StatsConfig config)
@@ -1401,6 +1341,7 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     <p>
     @return
     The database environment's mutex statistics.
+    <p>
     <p>
 @throws DatabaseException if a failure occurs.
     */
@@ -1418,6 +1359,7 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     @return
     The database environment's transactional statistics.
     <p>
+    <p>
 @throws DatabaseException if a failure occurs.
     */
     public TransactionStats getTransactionStats(StatsConfig config)
@@ -1425,154 +1367,6 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
 
         return dbenv.txn_stat(StatsConfig.checkNull(config).getFlags());
     }
-
-    /* Statistics */
-    /**
-    Print the cache subsystem statistical information to a specified output
-    channel (see the setMsgfile() method for more information), or passed to an
-    application callback function (see the setMsgcall() method for more
-    information).
-    <p>
-    @param config The statistics attributes. If null, default attributes are used.
-    <p>
-    @return A non-zero error value on failure and 0 on success.
-    <p>
-@throws DatabaseException if a failure occurs.
-    */
-    public int printMempStats(StatsConfig config)
-        throws DatabaseException {
-
-        return dbenv.memp_stat_print(StatsConfig.checkNull(config).getFlags());
-    }
-
-    /**
-    Print the logging subsystem statistical information to a specified output
-    channel (see the setMsgfile() method for more information), or passed to an
-    application callback function (see the setMsgcall() method for more
-    information).
-    <p>
-    @param config The statistics attributes. If null, default attributes are used.
-    <p>
-    @return A non-zero error value on failure and 0 on success.
-    <p>
-@throws DatabaseException if a failure occurs.
-    */
-    public int printLogStats(StatsConfig config)
-        throws DatabaseException {
-
-        return dbenv.log_stat_print(StatsConfig.checkNull(config).getFlags());
-    }
-
-    /**
-    Print the replication subsystem statistical information to a specified output
-    channel (see the setMsgfile() method for more information), or passed to an
-    application callback function (see the setMsgcall() method for more
-    information).
-    <p>
-    @param config The statistics attributes. If null, default attributes are used.
-    <p>
-    @return A non-zero error value on failure and 0 on success.
-    <p>
-@throws DatabaseException if a failure occurs.
-    */
-    public int printReplicationStats(StatsConfig config)
-        throws DatabaseException {
-
-        return dbenv.rep_stat_print(StatsConfig.checkNull(config).getFlags());
-    }
-
-    /**
-    Print the Replication Manager subsystem statistical information to a
-    specified output channel (see the setMsgfile() method for more
-    information), or passed to an application callback function (see the
-    setMsgcall() method for more information).
-    <p>
-    @param config The statistics attributes. If null, default attributes are used.
-    <p>
-    @return A non-zero error value on failure and 0 on success.
-    <p>
-@throws DatabaseException if a failure occurs.
-    */
-    public int printReplicationManagerStats(
-        StatsConfig config)
-        throws DatabaseException {
-
-        return dbenv.repmgr_stat_print(StatsConfig.checkNull(config).getFlags());
-    }
-
-    /**
-    Print the locking subsystem statistical information to a specified output
-    channel (see the setMsgfile() method for more information), or passed to an
-    application callback function (see the setMsgcall() method for more
-    information).
-    <p>
-    @param config The statistics attributes. If null, default attributes are used.
-    <p>
-    @return A non-zero error value on failure and 0 on success.
-    <p>
-@throws DatabaseException if a failure occurs.
-    */
-    public int printLockStats(StatsConfig config)
-        throws DatabaseException {
-
-        return dbenv.lock_stat_print(StatsConfig.checkNull(config).getFlags());
-    }
-
-    /**
-    Print the mutex subsystem statistical information to a specified output
-    channel (see the setMsgfile() method for more information), or passed to an
-    application callback function (see the setMsgcall() method for more
-    information).
-    <p>
-    @param config The statistics attributes. If null, default attributes are used.
-    <p>
-    @return A non-zero error value on failure and 0 on success.
-    <p>
-@throws DatabaseException if a failure occurs.
-    */
-    public int printMutexStats(StatsConfig config)
-        throws DatabaseException {
-
-        return dbenv.mutex_stat_print(StatsConfig.checkNull(config).getFlags());
-    }
-
-    /**
-    Print environment statistical information to a specified output
-    channel (see the setMsgfile() method for more information), or passed to an
-    application callback function (see the setMsgcall() method for more
-    information).
-    <p>
-    @param config The statistics attributes. If null, default attributes are used.
-    <p>
-    @return A non-zero error value on failure and 0 on success.
-    <p>
-@throws DatabaseException if a failure occurs.
-    */
-    public int printStats(StatsConfig config)
-        throws DatabaseException {
-
-        return dbenv.stat_print(StatsConfig.checkNull(config).getFlags());
-    }
-
-
-    /**
-    Print the transaction subsystem statistical information to a specified
-    output channel (see the setMsgfile() method for more information), or
-    passed to an application callback function (see the setMsgcall() method
-    for more information).
-    <p>
-    @param config The statistics attributes. If null, default attributes are used.
-    <p>
-    @return A non-zero error value on failure and 0 on success.
-    <p>
-@throws DatabaseException if a failure occurs.
-    */
-    public int printTransactionStats(StatsConfig config)
-        throws DatabaseException {
-
-        return dbenv.txn_stat_print(StatsConfig.checkNull(config).getFlags());
-    }
-
 
     /* Transaction management */
     /**
@@ -1588,7 +1382,6 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     <p>
     @return
     A transaction handle that wraps a CDS locker ID.
-    @throws DatabaseException if a failure occurs.
     */
     public Transaction beginCDSGroup() throws DatabaseException {
 
@@ -1643,6 +1436,7 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     /**
     Synchronously checkpoint the database environment.
     <p>
+    <p>
     @param config
     The checkpoint attributes.  If null, default attributes are used.
     <p>
@@ -1661,6 +1455,7 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     All log records with LogSequenceNumber values less than or equal to
     the lsn parameter are written to stable storage.  If lsn is null,
     all records in the log are flushed.
+    <p>
     <p>
 @throws DatabaseException if a failure occurs.
     */
@@ -1693,6 +1488,7 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     @return
     The LogSequenceNumber of the put record.
     <p>
+    <p>
 @throws DatabaseException if a failure occurs.
     */
     public LogSequenceNumber logPut(DatabaseEntry data, boolean flush)
@@ -1716,7 +1512,6 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     the <code>txn</code> parameter is a transaction handle, otherwise
     <code>null</code>.
     <p>
-    @param message the message
     <p>
 @throws DatabaseException if a failure occurs.
     **/
@@ -1761,7 +1556,6 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     system.
     <p>
     @return An array of log files
-    @throws DatabaseException if a failure occurs.
     */
     public java.io.File[] getArchiveLogFiles(boolean includeInUse)
         throws DatabaseException {
@@ -1791,7 +1585,6 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     for more information on database archival procedures. 
     <p>
     @return An array of database files
-    @throws DatabaseException if a failure occurs.
     */
     public java.io.File[] getArchiveDatabases()
         throws DatabaseException {
@@ -1814,6 +1607,7 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     When Replication Manager is in use, log archiving is performed in a
     replication group-aware manner such that the log file status of other sites
     in the group is considered to determine if a log file is in use.
+    <p>
     <p>
 @throws DatabaseException if a failure occurs.
     */
@@ -1840,12 +1634,8 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     {@link com.sleepycat.db.Transaction#discard Transaction.discard()} to discard
     each transaction they do not resolve.
     <p>
-    @param count the number of transactions returned
-    @param continued if set to false, return the first count number of transactions;
-    if set to true, continue to return the next count number of transactions
     @return a list of {@link com.sleepycat.db.PreparedTransaction transactions}
     that must be resolved by the application (committed, aborted or discarded).
-    @throws DatabaseException if a failure occurs.
     */
     public PreparedTransaction[] recover(final int count,
                                          final boolean continued)
@@ -1934,7 +1724,6 @@ performed using a specified {@link com.sleepycat.db.Environment Environment} han
     <p>
     @param onoff
     If true, set the panic state for the database environment.
-    @throws DatabaseException if a failure occurs.
     */
     public void panic(boolean onoff)
         throws DatabaseException {
@@ -2142,7 +1931,6 @@ certain time have been written to disk.
 All modified pages with a log sequence number less than the logSequenceNumber
 parameter are written to disk. If logSequenceNumber is null, all modified
 pages in the cache are written to disk.
-@throws DatabaseException if a failure occurs.
     */
     public void syncCache(LogSequenceNumber logSequenceNumber) 
         throws DatabaseException {
@@ -2155,8 +1943,6 @@ been applied at the local replication environment.
 <p>
 This method may not be called before the database environment is opened.
 <p>
-@param token the commit token
-<p>
 @param maxwait
 The maximum time to wait for the transaction to arrive by replication,
 expressed in microseconds.  To check the status of the transaction
@@ -2164,7 +1950,6 @@ without waiting, the timeout may be specified as 0.
 <p>
 @return
 TransactionStatus indicating the status of the applicaton of the transaction.
-@throws DatabaseException if a failure occurs.
     */
     public TransactionStatus isTransactionApplied(byte[] token, int maxwait)
         throws DatabaseException {
@@ -2209,87 +1994,4 @@ The release patch number.
     to create channel to send messages only to the master site.
     */
     public static final int EID_MASTER = DbConstants.DB_EID_MASTER;
-
-    /**
-    @deprecated Replaced with {@link #setExternalFileThreshold}.
-    @param value
-    The external file threshold size.
-    <p>
-    @throws DatabaseException if a failure occurs.
-    */
-    public void setBlobThreshold(int value) throws DatabaseException {
-        setExternalFileThreshold(value);
-    }
-
-    /**
-    Set the external file threshold size.
-    <p>
-    @param value
-    The external file threshold size.
-    <p>
-    Any data item that is equal to or larger in size than the
-    threshold value will automatically be stored as an external file.
-    <p>
-    @throws DatabaseException if a failure occurs.
-    */
-    public void setExternalFileThreshold(int value) throws DatabaseException {
-        dbenv.set_ext_file_threshold(value, 0);
-    }
-
-    /**
-    Sets the path of a file to store statistical information.
-    <p>
-    @param file
-    The path of a file to store statistical information.
-    <p>
-    @throws DatabaseException if a failure occurs.
-    */
-    public void setMsgfile(java.io.File file) throws DatabaseException {
-        if (file != null) {
-            dbenv.set_msgfile(file.toString());
-        }
-        else {
-            dbenv.set_msgfile(null);
-        }
-    }
-
-    /**
-    Get the number of slices in the environment.
-    <p>
-    Returns the number of slice environments configured for this
-    environment.
-    <p>
-    @return The number of slice environments.
-    <p>
-    @throws DatabaseException if a failure occurs.
-    */
-    public int getSliceCount() throws DatabaseException {
-        return dbenv.get_slice_count();
-    }
-
-    /**
-    Gets the Environment handles for the underlying slice environments.
-    <p>
-    @return An array of the Environment handles. There is one handle for each slice.
-    <p>
-    @throws DatabaseException if a failure occurs.
-    */
-    public Environment[] getSlices() throws DatabaseException {
-	if (slices != null)
-	    return slices;
-        DbEnv [] dbenvs = dbenv.get_slices();
-	slices = new Environment[dbenvs.length];
-	for (int i = 0; i < slices.length; i++) {
-	    	dbenvs[i].slice_init();	    
-		slices[i] = new Environment(dbenvs[i]);
-	}
-	return slices;
-    }
-
-    // For testing only.
-    public static boolean slices_enabled() throws DatabaseException {
-	if (DbEnv.slices_enabled() != 0)
-	    return true;
-	return false;
-    }
 }

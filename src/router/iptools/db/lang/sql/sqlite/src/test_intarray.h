@@ -75,15 +75,6 @@
 ** action to free the intarray objects.
 */
 #include "sqlite3.h"
-#ifndef _INTARRAY_H_
-#define _INTARRAY_H_
-
-/*
-** Make sure we can call this stuff from C++.
-*/
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /*
 ** An sqlite3_intarray is an abstract type to stores an instance of
@@ -102,7 +93,7 @@ typedef struct sqlite3_intarray sqlite3_intarray;
 ** explicitly by the application, the virtual table will be dropped implicitly
 ** by the system when the database connection is closed.
 */
-SQLITE_API int sqlite3_intarray_create(
+int sqlite3_intarray_create(
   sqlite3 *db,
   const char *zName,
   sqlite3_intarray **ppReturn
@@ -115,14 +106,9 @@ SQLITE_API int sqlite3_intarray_create(
 ** any query against the corresponding virtual table.  If the integer
 ** array does change or is deallocated undefined behavior will result.
 */
-SQLITE_API int sqlite3_intarray_bind(
+int sqlite3_intarray_bind(
   sqlite3_intarray *pIntArray,   /* The intarray object to bind to */
   int nElements,                 /* Number of elements in the intarray */
   sqlite3_int64 *aElements,      /* Content of the intarray */
   void (*xFree)(void*)           /* How to dispose of the intarray when done */
 );
-
-#ifdef __cplusplus
-}  /* End of the 'extern "C"' block */
-#endif
-#endif /* _INTARRAY_H_ */

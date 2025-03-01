@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1998, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1998, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -191,7 +191,7 @@ __xa_get_txn(env, xid, td, txnp, flags, ending)
 				    "xa_get_txn: transaction does not exist"));
 				ret = XAER_PROTO;
 			} else if ((ret =
-			    __os_calloc(env, 1, sizeof(DB_TXN), txnp)) == 0) {
+			    __os_malloc(env, sizeof(DB_TXN), txnp)) == 0) {
 				/* We are joining this branch. */
 				ret = __txn_continue(env, *txnp, td, ip, 1);
 				if (ret != 0) {
@@ -233,8 +233,8 @@ __xa_put_txn(env, txnp)
 	SH_TAILQ_REMOVE(&ip->dbth_xatxn, txnp, xa_links, __db_txn);
 	TAILQ_REMOVE(&txnp->mgrp->txn_chain, txnp, links);
 	td = txnp->td;
-	if (td->xa_ref > 0)
-		td->xa_ref--;
+	DB_ASSERT(env, td->xa_ref > 0);
+	td->xa_ref--;
 	__os_free(env, txnp);
 	ip->dbth_xa_status = TXN_XA_THREAD_UNASSOCIATED;
 }
@@ -495,7 +495,6 @@ __db_xa_start(xid, rmid, arg_flags)
 
 	flags = (u_long)arg_flags;	/* Conversion for bit operations. */
 	ret = 0;
-	txnp = NULL;
 
 #define	OK_FLAGS	(TMJOIN | TMRESUME | TMNOWAIT | TMASYNC | TMNOFLAGS)
 	if (LF_ISSET(~OK_FLAGS))
@@ -560,8 +559,6 @@ __db_xa_end(xid, rmid, arg_flags)
 	int ret;
 	u_long flags;
 
-	txn = NULL;
-
 	flags = (u_long)arg_flags;	/* Convert for bit manipulation. */
 	if (flags != TMNOFLAGS && !LF_ISSET(TMSUSPEND | TMSUCCESS | TMFAIL))
 		return (XAER_INVAL);
@@ -621,7 +618,7 @@ __db_xa_end(xid, rmid, arg_flags)
 	 * if we are active and the only handle, then make this transaction
 	 * idle.
 	 */
-	if (td->xa_ref <= 1 && td->xa_br_status == TXN_XA_ACTIVE)
+	if (td->xa_ref == 1 && td->xa_br_status == TXN_XA_ACTIVE)
 		td->xa_br_status = TXN_XA_IDLE;
 	if (LF_ISSET(TMSUSPEND)) {
 		txn->thread_info->dbth_xa_status = TXN_XA_THREAD_SUSPENDED;
@@ -707,7 +704,6 @@ __db_xa_prepare(xid, rmid, arg_flags)
 
 	flags = (u_long)arg_flags;	/* Conversion for bit operations. */
 	ret = 0;
-	txnp = NULL;
 
 	if (LF_ISSET(TMASYNC))
 		return (XAER_ASYNC);
@@ -794,7 +790,6 @@ __db_xa_commit(xid, rmid, arg_flags)
 
 	flags = (u_long)arg_flags;	/* Conversion for bit operations. */
 	ret = 0;
-	txnp = NULL;
 
 	if (LF_ISSET(TMASYNC))
 		return (XAER_ASYNC);
@@ -857,9 +852,9 @@ __db_xa_commit(xid, rmid, arg_flags)
 		return (ret);
 
 	/*
-	 * Because this transaction is currently associated, commit will
-	 * not free the transaction structure, which is good, because we
-	 * need to do that in xa_put_txn below.
+	 * Because this transaction is currently associated, commit will not free
+	 * the transaction structure, which is good, because we need to do that
+	 * in xa_put_txn below.
 	 */
 	if ((ret = txnp->commit(txnp, 0)) != 0) {
 		dbenv->err(dbenv, ret, DB_STR("4563",
@@ -931,7 +926,6 @@ __db_xa_rollback(xid, rmid, arg_flags)
 
 	flags = (u_long)arg_flags;	/* Conversion for bit operations. */
 	ret = 0;
-	txnp = NULL;
 
 	if (LF_ISSET(TMASYNC))
 		return (XAER_ASYNC);
@@ -1018,7 +1012,6 @@ __db_xa_forget(xid, rmid, arg_flags)
 	u_long flags;
 
 	flags = (u_long)arg_flags;	/* Conversion for bit operations. */
-	txnp = NULL;
 
 	if (LF_ISSET(TMASYNC))
 		return (XAER_ASYNC);

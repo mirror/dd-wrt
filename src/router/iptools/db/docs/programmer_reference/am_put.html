@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,7 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="am_get.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 3.  Access Method Operations </th>
+          <th width="60%" align="center">Chapter 3. 
+		Access Method Operations
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="am_delete.html">Next</a></td>
         </tr>
       </table>
@@ -37,13 +39,12 @@
         </div>
       </div>
       <p>
-        The <a href="../api_reference/C/dbput.html" class="olink">DB-&gt;put()</a> method stores records into the database. In
-        general, <a href="../api_reference/C/dbput.html" class="olink">DB-&gt;put()</a> takes a key and stores the associated data
-        into the database. 
+        The <a href="../api_reference/C/dbput.html" class="olink">DB-&gt;put()</a> method stores records into the database.  In general,
+        <a href="../api_reference/C/dbput.html" class="olink">DB-&gt;put()</a> takes a key and stores the associated data into the
+        database.
     </p>
       <p>
-        There are a few flags that you can set to customize
-        storage: 
+        There are a few flags that you can set to customize storage:
     </p>
       <div class="variablelist">
         <dl>
@@ -52,40 +53,39 @@
               <a href="../api_reference/C/dbput.html#dbput_DB_APPEND" class="olink">DB_APPEND</a>
             </span>
           </dt>
-          <dd> 
-                Simply append the data to the end of the
-                database, treating the database much like a simple
-                log. This flag is only valid for the Heap, Queue and
-                Recno access methods. This flag is required if you are
-                creating a new record in a Heap database.
+          <dd>
+                Simply append the data to the end of the database, treating
+                the database much like a simple log.  This flag is only
+                valid for the Heap, Queue and Recno access methods.
+                This flag is required if you are creating a new record in a Heap
+                database.
             </dd>
           <dt>
             <span class="term">
               <a href="../api_reference/C/dbput.html#put_DB_NOOVERWRITE" class="olink">DB_NOOVERWRITE</a>
             </span>
           </dt>
-          <dd> 
-                Only store the data item if the key does not
-                already appear in the database.
+          <dd>
+                Only store the data item if the key does not already appear
+                in the database.
             </dd>
         </dl>
       </div>
-      <p> 
-        If the database has been configured to support duplicate
-        records, the <a href="../api_reference/C/dbput.html" class="olink">DB-&gt;put()</a> method will add the new data value at the
-        end of the duplicate set. If the database supports sorted
-        duplicates, the new data value is inserted at the correct
-        sorted location.
+      <p>
+        If the database has been configured to support duplicate records,
+        the <a href="../api_reference/C/dbput.html" class="olink">DB-&gt;put()</a> method will add the new data value at the end of the
+        duplicate set.  If the database supports sorted duplicates, the new
+        data value is inserted at the correct sorted location.
     </p>
       <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
         <h3 class="title">Note</h3>
         <p>
-            If you are using the Heap access method and you are
-            creating a new record in the database, then the key that
-            you provide to the <a href="../api_reference/C/dbput.html" class="olink">DB-&gt;put()</a> method should be empty. The
-            <a href="../api_reference/C/dbput.html" class="olink">DB-&gt;put()</a> method will return the record's ID (RID) in the
-            key. The RID is automatically created for you when Heap
-            database records are created.
+            If you are using the Heap access method and you are creating a
+            new record in the database, then the key that you provide to
+            the <a href="../api_reference/C/dbput.html" class="olink">DB-&gt;put()</a> method should be empty.  The <a href="../api_reference/C/dbput.html" class="olink">DB-&gt;put()</a> method will
+            return the record's ID (RID) in the key. The RID is
+            automatically created for you when Heap database records are
+            created.
         </p>
       </div>
     </div>

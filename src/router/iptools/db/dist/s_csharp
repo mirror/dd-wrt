@@ -1,8 +1,7 @@
 #!/bin/sh -
 #	$Id$
 #
-# Build the C# files.
+# Build the Java files.
 
-sh s_csharp_swig		# Create core C# API with SWIG
-sh s_csharp_const		# Create C# constants
-sh s_csharp_stat		# Build the CSharp stat structures
+sh s_csharp_swig		# Create core Java API with SWIG
+sh s_csharp_const		# Create Java constants

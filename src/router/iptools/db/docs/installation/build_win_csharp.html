@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,7 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="build_win_java.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 5.  Building Berkeley DB for Windows </th>
+          <th width="60%" align="center">Chapter 5. 
+		Building Berkeley DB for Windows
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="build_win_sql.html">Next</a></td>
         </tr>
       </table>
@@ -36,29 +38,27 @@
           </div>
         </div>
       </div>
-      <p> 
-            The C# support is built by a separate Visual Studio
-            solution and requires version 2.0 (or higher) of the .NET
-            platform. If the Berkeley DB utilities are required, build
-            Berkeley DB first following the instructions under <a class="xref" href="build_win.html#win_build32" title="Building Berkeley DB for 32 bit Windows">Building Berkeley DB for 32 bit Windows</a> or
-            <a class="xref" href="win_build64.html" title="Building Berkeley DB for 64-bit Windows">Building Berkeley DB for 64-bit Windows</a>.
-        </p>
       <p>
-            To build the C# API in Visual Studio 2008, the solution is
-            <code class="filename">build_windows\BDB_dotnet.sln</code>; in
-            Visual Studio 2010 the solution is
-            <code class="filename">build_windows\BDB_dotnet_vs2010.sln</code>; 
-	    and in Visual Studio 2012 the solution is
-            <code class="filename">build_windows\BDB_dotnet_vs2012.sln</code>.
-        </p>
+        The C# support is built by a separate Visual Studio solution and
+        requires version 2.0 (or higher) of the .NET platform. If the Berkeley
+        DB utilities are required, build Berkeley DB first following the
+        instructions under <a class="xref" href="build_win.html#win_build32" title="Building Berkeley DB for 32 bit Windows">Building Berkeley DB for 32 bit Windows</a> 
+        or <a class="xref" href="win_build64.html" title="Building Berkeley DB for 64-bit Windows">Building Berkeley DB for 64-bit Windows</a>.
+    </p>
       <p>
-            By default, the solution will build the native
-            libraries, the managed assembly and all example programs.
-            The NUnit tests need to be built explicitly because of
-            their dependence upon the NUnit assembly. The native
-            libraries will be placed in one of the following
-            subdirectories, depending upon the chosen configuration: 
-        </p>
+        To build the C# API in Visual Studio
+        2005/Visual Studio 2008, the solution is
+        <code class="filename">build_windows\BDB_dotnet.sln</code>; in Visual Studio
+        2010, the solution is
+        <code class="filename">build_windows\BDB_dotnet_vs2010.sln</code>.
+    </p>
+      <p>
+        By default, the solution will build the native libraries, the
+        managed assembly and all example programs.  The NUnit tests need to
+        be built explicitly because of their dependence upon the NUnit
+        assembly.  The native libraries will be placed in one of the
+        following subdirectories, depending upon the chosen configuration:
+    </p>
       <table class="simplelist" border="0" summary="Simple list">
         <tr>
           <td>
@@ -82,10 +82,9 @@
         </tr>
       </table>
       <p>
-            The managed assembly and all C# example programs will
-            be placed in one of the following subdirectories,
-            depending upon the chosen configuration: 
-        </p>
+    The managed assembly and all C# example programs will be placed in one of
+    the following subdirectories, depending upon the chosen configuration:
+</p>
       <table class="simplelist" border="0" summary="Simple list">
         <tr>
           <td>
@@ -98,14 +97,13 @@
           </td>
         </tr>
       </table>
-      <p> 
-            The native libraries need to be locatable by the .NET
-            platform, meaning they must be copied into an
-            application's directory, the Windows or System directory,
-            or their location must be added to the PATH environment
-            variable. The example programs demonstrate how to
-            programmatically edit the PATH variable. 
-        </p>
+      <p>
+    The native libraries need to be locatable by the .NET platform, meaning
+    they must be copied into an application's directory, the Windows or
+    System directory, or their location must be added to the PATH
+    environment variable.  The example programs demonstrate how to
+    programmatically edit the PATH variable.
+</p>
     </div>
     <div class="navfooter">
       <hr />

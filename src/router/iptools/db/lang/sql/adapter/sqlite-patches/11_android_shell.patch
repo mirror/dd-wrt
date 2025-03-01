@@ -1,28 +1,29 @@
 --- src/shell.c
 +++ src/shell.c
-@@ -42,6 +42,12 @@
- # define _LARGEFILE_SOURCE 1
+@@ -25,6 +25,12 @@
+ #include "config.h"
  #endif
-
+ 
 +#ifdef ANDROID
 +#ifndef NO_ANDROID_FUNCS
 +#include<sqlite3_android.h>
 +#endif
 +#endif
 +
- /*
- ** Include the configuration header output by 'configure' if we're using the
- ** autoconf-based build
-@@ -1931,6 +1937,12 @@
-       sqlite3_create_function(p->db, "shellstatic", 0, SQLITE_UTF8, 0,
+ #include <stdlib.h>
+ #include <string.h>
+ #include <stdio.h>
+@@ -1389,6 +1395,13 @@ static void open_db(struct callback_data
+       sqlite3_create_function(db, "shellstatic", 0, SQLITE_UTF8, 0,
            shellstaticFunc, 0, 0);
      }
 +#ifdef ANDROID
 +#ifndef NO_ANDROID_FUNCS
-+    register_android_functions(p->db, 0);
-+    register_localized_collators(p->db, "", 0);
++    register_android_functions(db, 0);
++    register_localized_collators(db, "", 0);
 +#endif
 +#endif
-     if( p->db==0 || SQLITE_OK!=sqlite3_errcode(p->db) ){
-       fprintf(stderr,"Error: unable to open database \"%s\": %s\n",
-           p->zDbFilename, sqlite3_errmsg(p->db));
++
+     if( db==0 || SQLITE_OK!=sqlite3_errcode(db) ){
+       fprintf(stderr,"Error: unable to open database \"%s\": %s\n", 
+           p->zDbFilename, sqlite3_errmsg(db));

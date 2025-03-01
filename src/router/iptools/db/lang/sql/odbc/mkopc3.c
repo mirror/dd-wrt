@@ -211,9 +211,6 @@ main(int argc, char **argv)
     for (count = 0; count < 10; count++) {
 	fprintf(h_file, "#define NOPUSH_MASK_%d %d\n", count, nopush[count]);
     }
-    if (opa != NULL) {
-	free(opa);
-    }
     fclose(h_file);
     fclose(c_file);
     return 0;

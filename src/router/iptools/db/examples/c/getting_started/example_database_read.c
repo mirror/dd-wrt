@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2004, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2004, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 #include "gettingstarted_common.h"
@@ -72,10 +72,6 @@ main(int argc, char *argv[])
 	return (ret);
     }
 
-	/*
-	 * Show either a single item or all items, depending
-	 * on whether itemname is set to a value.
-	 */
     if (itemname == NULL)
 	ret = show_all_records(&my_stock);
     else
@@ -201,33 +197,23 @@ show_inventory_item(void *vBuf)
     char *category, *name, *sku, *vendor_name;
     char *buf = (char *)vBuf;
 
-    /* Get the price. */
     price = *((float *)buf);
     buf_pos = sizeof(float);
 
-    /* Get the quantity. */
     quantity = *((int *)(buf + buf_pos));
     buf_pos += sizeof(int);
 
-    /* Get the inventory item's name */
     name = buf + buf_pos;
     buf_pos += strlen(name) + 1;
 
-    /* Get the inventory item's sku */
     sku = buf + buf_pos;
     buf_pos += strlen(sku) + 1;
 
-    /*
-     * Get the category (fruits, vegetables, desserts) that this
-     * item belongs to.
-     */
     category = buf + buf_pos;
     buf_pos += strlen(category) + 1;
 
-    /* Get the vendor's name */
     vendor_name = buf + buf_pos;
 
-    /* Display all this information */
     printf("name: %s\n", name);
     printf("\tSKU: %s\n", sku);
     printf("\tCategory: %s\n", category);
@@ -235,7 +221,6 @@ show_inventory_item(void *vBuf)
     printf("\tQuantity: %i\n", quantity);
     printf("\tVendor:\n");
 
-    /* Return the vendor's name */
     return (vendor_name);
 }
 

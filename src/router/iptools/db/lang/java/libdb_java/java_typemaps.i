@@ -69,7 +69,6 @@ struct __db_repmgr_sites {
 #define        DbMpoolFile __db_mpoolfile
 #define        DbSequence __db_sequence
 #define        DbSite __db_site
-#define        DbStream __db_stream
 #define        DbTxn __db_txn
 
 /* Suppress a compilation warning for an unused symbol */
@@ -91,11 +90,6 @@ typedef struct __dbt_locked {
 	u_int32_t orig_size;
 	jsize array_len;
 } DBT_LOCKED;
-
-struct __dbt_arr {
-	DBT *arr_ptr;
-	int len;
-};
 
 static int __dbj_dbt_memcopy(DBT *dbt, u_int32_t offset, void *buf, u_int32_t size, u_int32_t flags) {
 	DBT_LOCKED *ldbt = dbt->app_data;
@@ -311,149 +305,15 @@ static void __dbj_dbt_release(
 		return $null; /* An exception will be pending. */
 	}%}
 
-/* Special cases for DBTs that may be null: DbEnv.rep_start, Db.compact */
+/* Special cases for DBTs that may be null: DbEnv.rep_start, Db.compact Db.set_partition */
 %typemap(in) DBT *data_or_null (DBT_LOCKED ldbt) %{
 	if (__dbj_dbt_copyin(jenv, &ldbt, &$1, $input, 1) != 0) {
 		return $null; /* An exception will be pending. */
 	}%}
 
-%apply DBT *data_or_null {DBT *cdata, DBT *start, DBT *stop, DBT *end, DBT *db_put_data};
+%apply DBT *data_or_null {DBT *cdata, DBT *start, DBT *stop, DBT *end, DBT *db_put_data, DBT *keys};
 
 %typemap(freearg) DBT * %{ __dbj_dbt_release(jenv, $input, $1, &ldbt$argnum); %}
-
-/* Special case for Db.set_partition. */
-%typemap(in) DBT *keys { 
-	DBT_LOCKED lresult;
-	DBT *dbt;
-	void *ptr, *retdata;
-	int cnt, i, ret;
-	u_int32_t retlen;
-
-	if ($input == NULL)
-		$1 = NULL;
-	else {
-		/* Copy the DBT from Java to C. */
-		if ((ret = __dbj_dbt_copyin(jenv,
-		    &lresult, &dbt, $input, 0)) != 0)
-			/* An exception will be pending. */
-			return $null;
-
-		/* Get the number of DBT from the bulk buffer. */
-		DB_MULTIPLE_INIT(ptr, dbt);
-		DB_MULTIPLE_NEXT(ptr, dbt, retdata, retlen);
-		cnt = 0;
-		while (ptr != NULL) {
-			cnt++;
-			DB_MULTIPLE_NEXT(ptr, dbt, retdata, retlen);
-		}
-
-		/* Make an array of DBTs. */
-		if ((ret = __os_malloc(NULL,
-		    (cnt + 1) * sizeof(DBT), &$1)) != 0) {
-			__dbj_throw(jenv, ret, NULL, NULL, NULL);
-			goto err;
-		}
-		memset($1, 0, (cnt + 1) * sizeof(DBT));
-		/*
-		 * Save the key array size in the last entry so that it can
-		 * be used later when free the key array and mark its flags
-		 * as DB_DBT_BULK which is an internal flag that can't be
-		 * passed by users. The last entry will not be read by the C
-		 * call __partition_set since it only reads the first cnt
-		 * DBTs from the key array.
-		 */
-		$1[cnt].size = sizeof(int);
-		$1[cnt].data = &cnt;
-		$1[cnt].flags = DB_DBT_BULK;
-		DB_MULTIPLE_INIT(ptr, dbt);
-		for (i = 0; i < cnt; i++) {
-			DB_MULTIPLE_NEXT(ptr, dbt, retdata, retlen);
-			if (retlen != 0) {
-				/*
-				 * If there's data, we need to take a copy
-				 * of it.
-				 */
-				$1[i].size = retlen;
-				if ((ret = __os_malloc(NULL,
-				    $1[i].size, &$1[i].data)) != 0) {
-					__dbj_throw(jenv,
-					    ret, NULL, NULL, NULL);
-					goto err;
-				}
-				memcpy($1[i].data, retdata, retlen);
-			}
-		}
-
-err:		if (ret != 0) {
-			if ($1 != NULL) {
-				for (i = 0; i < cnt; i++)
-					__os_free(NULL, $1[i].data);
-			__os_free(NULL, $1);
-			}
-			return $null; 
-		}
-	}
-}
-
-%typemap(freearg) DBT *keys %{
-{
-	int cnt, i;
-
-	if ($1 != NULL) {
-		/* Get the array size. */
-		cnt = 0;
-		while ($1[cnt].flags != DB_DBT_BULK)
-			cnt++;
-		for (i = 0; i < cnt; i++)
-			__os_free(NULL, $1[i].data);
-		__os_free(NULL, $1);
-	}
-}
-%}
-
-JAVA_TYPEMAP(struct __dbt_arr, com.sleepycat.db.DatabaseEntry, jobject)
-%typemap(out) struct __dbt_arr {
-	DBT *dbt;
-	void *ptr;
-	int i, ret;
-	u_int32_t buflen;
-
-	if ($1.arr_ptr == NULL || $1.len <= 0)
-		$result = NULL;
-	else {
-		/* Allocate the bulk buffer and make the bulk DBT. */
-		for (i = 0, buflen = 0; i < $1.len; i++)
-			buflen += $1.arr_ptr[i].size * sizeof(u_int32_t);
-		buflen += ($1.len * 2 + 1) * sizeof(u_int32_t);
-		if ((ret = __os_malloc(NULL, sizeof(DBT), &dbt)) != 0) {
-			__dbj_throw(jenv, ret, NULL, NULL, NULL);
-			goto err;
-		}
-		if ((ret = __os_malloc(NULL, buflen, &dbt->data)) != 0) {
-			__dbj_throw(jenv, ret, NULL, NULL, NULL);
-			goto err;
-		}
-		dbt->size = dbt->ulen = buflen;
-		DB_MULTIPLE_INIT(ptr, dbt);
-		for (i = 0; i < $1.len; i++)
-			DB_MULTIPLE_WRITE_NEXT(ptr, dbt,
-			    $1.arr_ptr[i].data, $1.arr_ptr[i].size);
-
-		/* Map a bulk DBT into a DatabaseEntry. */
-		$result = (*jenv)->NewObject(jenv, dbt_class, dbt_construct);
-		__dbj_dbt_copyout(jenv, dbt, NULL, $result);
-		if ($result == NULL)
-			goto err;
-
-err:		if (dbt != NULL) {
-			if (dbt->data != NULL)
-				__os_free(NULL, dbt->data);
-			__os_free(NULL, dbt);
-		}
-		if (ret != 0 || $result == NULL)
-			return $null;
-	}
-}
 
 /* DB_TXN_TOKEN handling */
 JAVA_TYPEMAP(DB_TXN_TOKEN *, byte[], jobject)
@@ -471,13 +331,13 @@ JAVA_TYPEMAP(DB_TXN_TOKEN *, byte[], jobject)
                $1 = NULL;
        } else {
                $1 = &token;
-               (*jenv)->GetByteArrayRegion(jenv, (jbyteArray)$input, 0, DB_TXN_TOKEN_SIZE, (jbyte *)$1->buf);
+               (*jenv)->GetByteArrayRegion(jenv, (jbyteArray)$input, 0, DB_TXN_TOKEN_SIZE, $1->buf);
        }
 %}
 
 %typemap(out) DB_TXN_TOKEN * %{
        if ($input != NULL) {
-               (*jenv)->SetByteArrayRegion(jenv, (jbyteArray)$input, 0, DB_TXN_TOKEN_SIZE, (jbyte *)$1->buf);
+               (*jenv)->SetByteArrayRegion(jenv, (jbyteArray)$input, 0, DB_TXN_TOKEN_SIZE, $1->buf);
        }
 %}
 
@@ -532,7 +392,7 @@ JAVA_TYPEMAP(u_int *, long, jlong)
 %}
 
 %typemap(in) u_int %{
-        $1 = (u_int)$input;
+        $1 = $input;
 %}
 
 JAVA_TYPEMAP(DB_KEY_RANGE *, com.sleepycat.db.KeyRange, jobject)
@@ -574,43 +434,6 @@ JAVA_TYPEMAP(DBC **, Dbc[], jobjectArray)
 %typemap(freearg) DBC ** %{
 	__os_free(NULL, $1);
 %}
-
-JAVA_TYPEMAP(DB **, Db[], jobjectArray)
-%typemap(out) DB ** { 
-	int i, len;
-
-	len = 0;
-	while ($1[len] != NULL)
-		len++;
-	if (($result = (*jenv)->NewObjectArray(jenv, (jsize)len, db_class,
-	    NULL)) == NULL)
-		return $null; /* an exception is pending */
-	for (i = 0; i < len; i++) {
-		jobject jdb = (*jenv)->NewObject(jenv, db_class,
-			    db_construct, $1[i], JNI_FALSE);
-		(*jenv)->SetObjectArrayElement(jenv, $result, (jsize)i, jdb);
-	}
-}
-
-
-JAVA_TYPEMAP(DB_ENV **, DbEnv[], jobjectArray)
-%typemap(out) DB_ENV ** {
-	int i, len;
-
-	len = 0;
-	while ($1[len] != NULL)
-		len++;
-	if (($result = (*jenv)->NewObjectArray(jenv, (jsize)len, dbenv_class,
-	    NULL)) == NULL)
-		return $null; /* an exception is pending */
-	for (i = 0; i < len; i++) {
-		jobject jdbenv = (*jenv)->NewObject(jenv, dbenv_class,
-			    dbenv_construct, $1[i], JNI_FALSE);
-		(*jenv)->SetObjectArrayElement(
-		    jenv, $result, (jsize)i, jdbenv);
-	}
-}
-
 
 JAVA_TYPEMAP(u_int8_t *gid, byte[], jbyteArray)
 %typemap(check) u_int8_t *gid %{
@@ -656,48 +479,6 @@ JAVA_TYPEMAP(char **, String[], jobjectArray)
 		STRING_ARRAY_OUT
 		__os_ufree(NULL, $1);
 	}
-}
-
-%define STRING_ARRAY_IN
-	int i, ret;
-	size_t sz;
-
-	size = (*jenv)->GetArrayLength(jenv, $input);
-	sz = (size_t)(size + 1) * sizeof(char *); 
-	if ((ret = __os_malloc(NULL, sz, &$1)) != 0) {
-		__dbj_throw(jenv, ret, NULL, NULL, NULL);
-		return $null;
-	}
-	/* Make a copy of each string. */
-	for (i = 0; i < size; i++) {
-		jstring j_string = (jstring)(*jenv)->GetObjectArrayElement(jenv, $input, i);
-		const char * c_string = (*jenv)->GetStringUTFChars(jenv, j_string, 0);
-		sz = strlen(c_string) + 1;
-		if ((ret = __os_malloc(NULL, sz, &$1[i])) != 0) {
-			__dbj_throw(jenv, ret, NULL, NULL, NULL);
-			return $null;
-		}
-		strcpy($1[i], c_string);
-		(*jenv)->ReleaseStringUTFChars(jenv, j_string, c_string);
-		(*jenv)->DeleteLocalRef(jenv, j_string);
-	}
-	$1[i] = 0;
-%enddef
-
-/* This cleans up the memory we malloc'd before the function call. */
-%typemap(freearg) char ** {
-	int i;
-	for (i = 0; i < size$argnum-1; i++)
-		__os_free(NULL, $1[i]);
-	__os_free(NULL, $1);
-}
-
-%typemap(in) char ** (jint size) {
-        STRING_ARRAY_IN
-}
-
-%typemap(in) const char ** (jint size) {
-        STRING_ARRAY_IN
 }
 
 JAVA_TYPEMAP(char **hostp, String, jobjectArray)
@@ -1053,14 +834,11 @@ SWIGEXPORT void JNICALL
 Java_com_sleepycat_db_internal_db_1javaJNI_DbTxn_1commit(JNIEnv *jenv,
     jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
   struct DbTxn *txn = (struct DbTxn *) 0 ;
-  DB_ENV *dbenv = (DB_ENV *) 0 ;
-  DB_REP_STAT *rep_stat = (DB_REP_STAT *) 0 ;
   ENV *env = (ENV *) 0 ;
   u_int32_t flags;
   DB_TXN_TOKEN token;
   db_ret_t result;
   db_ret_t result1;
-  db_ret_t result2;
   int is_nested, is_logging_enabled, is_rep_client, commit_token_enabled;
   
   (void)jcls;
@@ -1082,22 +860,11 @@ Java_com_sleepycat_db_internal_db_1javaJNI_DbTxn_1commit(JNIEnv *jenv,
    * client node.
    */
   env = txn->mgrp->env;
-  dbenv = env->dbenv;
   is_nested = (txn->parent != NULL);
   is_logging_enabled = env->lg_handle != NULL;
-  /*
-   * It is an illegal configuration to enable Java and disable statistics
-   * or enable the small build, so Java should always have access to the
-   * stat function.
-   */
-  is_rep_client = 0;
-  if (env->rep_handle != NULL && env->rep_handle->region != NULL) {
-    result2 = dbenv->rep_stat(dbenv, &rep_stat, 0);
-    if (DB_RETOK_STD(result2)) {
-      is_rep_client = (rep_stat->st_status == DB_REP_CLIENT);
-      free(rep_stat);
-    }
-  }
+  is_rep_client = (env->rep_handle != NULL && 
+                   env->rep_handle->region != NULL &&
+                   F_ISSET((env->rep_handle->region), REP_F_CLIENT));
   commit_token_enabled = (!is_nested && is_logging_enabled && !is_rep_client);
 
   if (commit_token_enabled) {

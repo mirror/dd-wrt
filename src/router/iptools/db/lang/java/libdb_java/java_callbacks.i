@@ -49,15 +49,12 @@ static void __dbj_env_feedback(DB_ENV *dbenv, int opcode, int percent)
 		__dbj_detach();
 }
 
-static void __dbj_message(const DB_ENV *dbenv,
-    const char *prefix, const char *msg)
+static void __dbj_message(const DB_ENV *dbenv, const char *msg)
 {
 	int detach;
 	JNIEnv *jenv = __dbj_get_jnienv(&detach);
 	jobject jdbenv = (jobject)DB_ENV_INTERNAL(dbenv);
 	jobject jmsg;
-
-	COMPQUIET(prefix, NULL);
 
 	if (jdbenv != NULL){
 		jmsg = (*jenv)->NewStringUTF(jenv, msg);
@@ -177,10 +174,6 @@ static void __dbj_event_notify(DB_ENV *dbenv, u_int32_t event_id, void * info)
 		(*jenv)->CallNonvirtualVoidMethod(jenv, jdbenv,
 		    dbenv_class, panic_event_notify_method);
 		break;
-	case DB_EVENT_REP_AUTOTAKEOVER_FAILED:
-		(*jenv)->CallNonvirtualVoidMethod(jenv, jdbenv,
-		    dbenv_class, rep_autotakeover_failed_event_notify_method);
-		break;
 	case DB_EVENT_REP_CLIENT:
 		(*jenv)->CallNonvirtualVoidMethod(jenv, jdbenv,
 		    dbenv_class, rep_client_event_notify_method);
@@ -212,10 +205,6 @@ static void __dbj_event_notify(DB_ENV *dbenv, u_int32_t event_id, void * info)
 	case DB_EVENT_REP_INIT_DONE:
 		(*jenv)->CallNonvirtualVoidMethod(jenv, jdbenv,
 		    dbenv_class, rep_init_done_event_notify_method);
-		break;
-	case DB_EVENT_REP_INQUEUE_FULL:
-		(*jenv)->CallNonvirtualVoidMethod(jenv, jdbenv,
-		    dbenv_class, rep_inqueue_full_event_notify_method);
 		break;
 	case DB_EVENT_REP_JOIN_FAILURE:
 		(*jenv)->CallNonvirtualVoidMethod(jenv, jdbenv,
@@ -430,9 +419,6 @@ static int __dbj_seckey_create(DB *db,
 	DBT *tresult;
 	int ret;
 
-	jskeys = NULL;
-	jkeyarr = jdataarr = NULL;
-	jkey = jdata = NULL;
 	if (jdb == NULL) {
 		ret = EINVAL;
 		goto err;
@@ -543,8 +529,6 @@ static int __dbj_append_recno(DB *db, DBT *dbt, db_recno_t recno)
 	jbyteArray jdbtarr;
 	int ret;
 
-	jdbtarr = NULL;
-	jdbt = NULL;
 	if (jdb == NULL) {
 		ret = EINVAL;
 		goto err;
@@ -662,11 +646,8 @@ err:	if (dbt1->app_data == NULL)
 	return (ret);
 }
 
-static int __dbj_bt_compare(DB *db,
-    const DBT *dbt1, const DBT *dbt2, size_t *locp)
+static int __dbj_bt_compare(DB *db, const DBT *dbt1, const DBT *dbt2)
 {
-	if (locp != NULL)
-		locp = NULL;
 	return __dbj_am_compare(db, dbt1, dbt2, bt_compare_method);
 }
 
@@ -872,8 +853,7 @@ err:	if (dbt1->app_data == NULL) {
 	return (ret);
 }
 
-static int __dbj_dup_compare(DB *db,
-    const DBT *dbt1, const DBT *dbt2, size_t *locp)
+static int __dbj_dup_compare(DB *db, const DBT *dbt1, const DBT *dbt2)
 {
 	int detach;
 	JNIEnv *jenv = __dbj_get_jnienv(&detach);
@@ -881,8 +861,6 @@ static int __dbj_dup_compare(DB *db,
 	jbyteArray jdbtarr1, jdbtarr2;
 	int ret;
 
-	if (locp != NULL)
-		locp = NULL;
 	if (jdb == NULL)
 		return (EINVAL);
 
@@ -928,11 +906,8 @@ static void __dbj_db_feedback(DB *db, int opcode, int percent)
 		__dbj_detach();
 }
 
-static int __dbj_h_compare(DB *db,
-    const DBT *dbt1, const DBT *dbt2, size_t *locp)
+static int __dbj_h_compare(DB *db, const DBT *dbt1, const DBT *dbt2)
 {
-	if (locp != NULL)
-		locp = NULL;
 	return __dbj_am_compare(db, dbt1, dbt2, h_compare_method);
 }
 
@@ -1076,78 +1051,6 @@ err:	if (detach)
 		__dbj_detach();
 	return (ret);
 }
-
-static int __dbj_rep_view(DB_ENV *dbenv, const char *name, int *result, u_int32_t flags) {
-	int detach;
-	JNIEnv *jenv = __dbj_get_jnienv(&detach);
-	jobject jdbenv = (jobject)DB_ENV_INTERNAL(dbenv);
-	jobject jname;
-	jboolean jresult;
-	int ret;
-
-	if (jdbenv == NULL) {
-		ret = EINVAL;
-		goto err;
-	}
-
-	jname = (*jenv)->NewStringUTF(jenv, name);
-
-	jresult = (*jenv)->CallNonvirtualBooleanMethod(jenv, jdbenv, dbenv_class, rep_view_method, jname, flags);
-
-	if ((*jenv)->ExceptionOccurred(jenv)) {
-		/* The exception will be thrown, so this could be any error. */
-		ret = EINVAL;
-		goto err;
-	}
-
-	ret = 0;
-	if (jresult == JNI_FALSE)
-		*result = 0;
-	else
-		*result = 1;
-
-err:	if (detach)
-		__dbj_detach();
-	return (ret);
-}
-
-static int __dbj_slice(const DB *db, const DBT *dbt1, DBT *dbt2)
-{
-	int detach;
-	JNIEnv *jenv = __dbj_get_jnienv(&detach);
-	jobject jdb = (jobject)DB_INTERNAL(db);
-	jobject jdbt1, jdbt2;
-	jbyteArray jdbtarr1, jdbtarr2;
-	DBT_LOCKED lresult;
-	int ret;
-
-	if (jdb == NULL) {
-		ret = EINVAL;
-		goto err;
-	}
-
-	jdbt1 = jdbt2 = NULL;
-
-	DBT_COPYOUT(1);
-	DBT_COPYOUT(2);
-
-	ret = (int)(*jenv)->CallNonvirtualIntMethod(jenv, jdb, db_class,
-	    slice_method, jdbt1, jdbt2);
-
-	if ((*jenv)->ExceptionOccurred(jenv)) {
-		/* The exception will be thrown, so this could be any error. */
-		ret = EINVAL;
-		goto err;
-	}
-
-	DBT_COPYIN_DATA(2);
-
-err:	DBT_COPIED_FREE(1);
-	DBT_COPIED_FREE(2);
-	if (detach)
-		__dbj_detach();
-	return (ret);
-}
 %}
 
 JAVA_CALLBACK(int (*backup_close_fcn)(DB_ENV *,
@@ -1160,8 +1063,8 @@ JAVA_CALLBACK(void (*db_errcall_fcn)(const DB_ENV *,
     const char *, const char *), com.sleepycat.db.ErrorHandler, error)
 JAVA_CALLBACK(void (*env_feedback_fcn)(DB_ENV *, int, int),
     com.sleepycat.db.FeedbackHandler, env_feedback)
-JAVA_CALLBACK(void (*db_msgcall_fcn)(const DB_ENV *,
-    const char *, const char *), com.sleepycat.db.MessageHandler, message)
+JAVA_CALLBACK(void (*db_msgcall_fcn)(const DB_ENV *, const char *),
+    com.sleepycat.db.MessageHandler, message)
 JAVA_CALLBACK(void (*db_panic_fcn)(DB_ENV *, int),
     com.sleepycat.db.PanicHandler, panic)
 JAVA_CALLBACK(void (*event_notify)(DB_ENV *, u_int32_t, void *),
@@ -1195,7 +1098,7 @@ JAVA_CALLBACK(int (*callback)(DB *, const DBT *, DBT *, const DBT *, int *),
 
 JAVA_CALLBACK(int (*db_append_recno_fcn)(DB *, DBT *, db_recno_t),
     com.sleepycat.db.RecordNumberAppender, append_recno)
-JAVA_CALLBACK(int (*bt_compare_fcn)(DB *, const DBT *, const DBT *, size_t *),
+JAVA_CALLBACK(int (*bt_compare_fcn)(DB *, const DBT *, const DBT *),
     java.util.Comparator, bt_compare)
 JAVA_CALLBACK(int (*bt_compress_fcn)(DB *, const DBT *, const DBT *,
     const DBT *, const DBT *, DBT *), 
@@ -1206,15 +1109,11 @@ JAVA_CALLBACK(u_int32_t (*db_partition_fcn)(DB *, DBT *),
     com.sleepycat.db.PartitionHandler, partition)
 JAVA_CALLBACK(size_t (*bt_prefix_fcn)(DB *, const DBT *, const DBT *),
     com.sleepycat.db.BtreePrefixCalculator, bt_prefix)
-JAVA_CALLBACK(int (*dup_compare_fcn)(DB *, const DBT *, const DBT *, size_t *),
+JAVA_CALLBACK(int (*dup_compare_fcn)(DB *, const DBT *, const DBT *),
     java.util.Comparator, dup_compare)
 JAVA_CALLBACK(void (*db_feedback_fcn)(DB *, int, int),
     com.sleepycat.db.FeedbackHandler, db_feedback)
-JAVA_CALLBACK(int (*h_compare_fcn)(DB *, const DBT *, const DBT *, size_t *),
+JAVA_CALLBACK(int (*h_compare_fcn)(DB *, const DBT *, const DBT *),
     java.util.Comparator, h_compare)
 JAVA_CALLBACK(u_int32_t (*h_hash_fcn)(DB *, const void *, u_int32_t),
     com.sleepycat.db.Hasher, h_hash)
-JAVA_CALLBACK(int (*rep_view_fcn)(DB_ENV *, const char *, int *, u_int32_t),
-    com.sleepycat.db.ReplicationViewHandler, rep_view);
-JAVA_CALLBACK(int (*slice_fcn)(const DB *, const DBT *, DBT *), 
-    com.sleepycat.db.Slice, slice)

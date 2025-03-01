@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -9,7 +9,6 @@
 #include "db_config.h"
 
 #include "db_int.h"
-#include "dbinc/db_swap.h"
 
 /*
  * __db_isbigendian --
@@ -61,36 +60,4 @@ __db_byteorder(env, lorder)
 		return (EINVAL);
 	}
 	return (0);
-}
-
-/*
- * __db_needswap --
- *	Return if a database requires byte swapping based on its magic value.
- *
- * PUBLIC: int __db_needswap __P((u_int32_t));
- */
-int
-__db_needswap(magic)
-	u_int32_t magic;
-{
-	int ret;
-
-	ret = 0;
-
-swap_retry:
-	switch (magic) {
-	case DB_BTREEMAGIC:
-	case DB_HASHMAGIC:
-	case DB_HEAPMAGIC:
-	case DB_QAMMAGIC:
-	case DB_RENAMEMAGIC:
-		return (ret);
-	default:
-		if (ret == DB_SWAPBYTES)
-			/* It's already been swapped, so it's invalid. */
-			return (EINVAL);
-		M_32_SWAP(magic);
-		ret = DB_SWAPBYTES;
-		goto swap_retry;
-	}
 }

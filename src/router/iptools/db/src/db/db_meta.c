@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994, 1995, 1996
@@ -583,7 +583,7 @@ err:	if (h != NULL && (t_ret = __memp_fput(mpf,
 
 	PERFMON4(dbp->env, alloc, free, dbp->fname, dbp->dname, pgno, ret);
 	/*
-	 * !!!
+	 * XXX
 	 * We have to unlock the caller's page in the caller!
 	 */
 	return (ret);

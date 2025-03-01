@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -68,10 +68,6 @@ DB_TXN-&gt;prepare(DB_TXN *tid, u_int8_t gid[DB_GID_SIZE]);  </pre>
      	first cursor close error will be returned.
     </p>
       <p>
-         The <code class="methodname">DB_TXN-&gt;prepare()</code> method can not be used
-         with sliced environments.
-    </p>
-      <p>
          The <code class="methodname">DB_TXN-&gt;prepare()</code> <span>
             <span>
                   method returns a non-zero error value on failure and 0 on success.
@@ -86,7 +82,7 @@ DB_TXN-&gt;prepare(DB_TXN *tid, u_int8_t gid[DB_GID_SIZE]);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h4 class="title"><a id="idm140711171993504"></a>DB_LOCK_DEADLOCK</h4>
+              <h4 class="title"><a id="idp54977056"></a>DB_LOCK_DEADLOCK</h4>
             </div>
           </div>
         </div>
@@ -99,7 +95,7 @@ DB_TXN-&gt;prepare(DB_TXN *tid, u_int8_t gid[DB_GID_SIZE]);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h4 class="title"><a id="idm140711171990048"></a>DB_LOCK_NOTGRANTED</h4>
+              <h4 class="title"><a id="idp54979288"></a>DB_LOCK_NOTGRANTED</h4>
             </div>
           </div>
         </div>
@@ -119,20 +115,19 @@ DB_TXN-&gt;prepare(DB_TXN *tid, u_int8_t gid[DB_GID_SIZE]);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h4 class="title"><a id="idm140711172043424"></a>EINVAL</h4>
+              <h4 class="title"><a id="idp54982024"></a>EINVAL</h4>
             </div>
           </div>
         </div>
         <p>
-                If the cursor is already closed; or if an invalid flag
-                value or parameter was specified.
+                If the cursor is already closed; or if an invalid flag value or parameter was specified.
             </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711172042960"></a>Parameters</h3>
+              <h3 class="title"><a id="idp54993584"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -140,7 +135,7 @@ DB_TXN-&gt;prepare(DB_TXN *tid, u_int8_t gid[DB_GID_SIZE]);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711171965200"></a>gid</h4>
+                <h4 class="title"><a id="idp54993776"></a>gid</h4>
               </div>
             </div>
           </div>
@@ -157,7 +152,7 @@ DB_TXN-&gt;prepare(DB_TXN *tid, u_int8_t gid[DB_GID_SIZE]);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711171991312"></a>Class</h3>
+              <h3 class="title"><a id="idp54977672"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -169,7 +164,7 @@ DB_TXN-&gt;prepare(DB_TXN *tid, u_int8_t gid[DB_GID_SIZE]);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711171974688"></a>See Also</h3>
+              <h3 class="title"><a id="idp54988152"></a>See Also</h3>
             </div>
           </div>
         </div>

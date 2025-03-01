@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -113,9 +113,6 @@ proc env017_lock_stat { } {
 		    st_maxlsteals }
 		{ "Current number of lockers"	    st_nlockers }
 		{ "Maximum number of lockers so far"	    st_maxnlockers }
-		{ "Number of hits in the thread locker cache"
-		    st_nlockers_hit }
-		{ "Total number of lockers reused"  st_nlockers_reused }
 		{ "Current number of objects"	    st_nobjects }
 		{ "Maximum number of objects so far"	    st_maxnobjects }
 		{ "Maximum number of objects in any hash bucket"
@@ -157,14 +154,13 @@ proc env017_lock_stat { } {
 	    st_maxlocks st_maxlockers st_maxobjects \
 	    st_partitions st_tablesize st_nlocks st_maxnlocks \
 	    st_maxhlocks st_locksteals st_maxlsteals st_nlockers \
-	    st_maxnlockers st_nlockers_hit st_nlockers_reused st_nobjects \
-	    st_maxnobjects st_maxhobjects st_objectsteals st_maxosteals \
-	    st_nrequests st_nreleases st_nupgrade st_ndowngrade st_lock_wait \
-	    st_lock_nowait st_ndeadlocks st_locktimeout st_nlocktimeouts \
-	    st_txntimeout st_ntxntimeouts st_objs_wait st_objs_nowait \
-	    st_lockers_wait st_lockers_nowait st_hash_len st_regsize \
-	    st_part_wait st_part_nowait st_part_max_wait st_part_max_nowait \
-	    st_region_wait st_region_nowait]
+	    st_maxnlockers st_nobjects st_maxnobjects st_maxhobjects \
+	    st_objectsteals st_maxosteals st_nrequests st_nreleases st_nupgrade\
+	    st_ndowngrade st_lock_wait st_lock_nowait st_ndeadlocks \
+	    st_locktimeout st_nlocktimeouts st_txntimeout st_ntxntimeouts \
+	    st_objs_wait st_objs_nowait st_lockers_wait st_lockers_nowait \
+	    st_hash_len st_regsize st_part_wait st_part_nowait st_part_max_wait\
+	    st_part_max_nowait st_region_wait st_region_nowait]
 	env017_stat_check \
 	    $map_list $doc_list $check_type $stat_method $envargs
 }
@@ -241,13 +237,6 @@ proc env017_rep_stat { } {
 		{ "Next LSN expected"	    st_next_lsn }
 		{ "First missed LSN"	    st_waiting_lsn }
 		{ "Maximum permanent LSN"	    st_max_perm_lsn }
-		{ "External files found deleted"    st_ext_deleted }
-		{ "External files duplicated"	    st_ext_duplicated }
-		{ "External file data messages recieved"	    \
-		      st_ext_records }
-		{ "External file data messages re-requested"     st_ext_rereq }
-		{ "External files found truncated"  st_ext_truncated }
-		{ "External file updates re-requested"	    st_ext_update_rereq }
 		{ "Bulk buffer fills"	    st_bulk_fills }
 		{ "Bulk buffer overflows"	    st_bulk_overflows }
 		{ "Bulk records stored"	    st_bulk_records }
@@ -307,12 +296,8 @@ proc env017_rep_stat { } {
 		{ "Maximum lease seconds"	    st_max_lease_sec }
 		{ "Maximum lease usecs"	    st_max_lease_usec }
 		{ "File fail cleanups done"	st_filefail_cleanups }
-		{ "Is view"		st_view }
-		{ "Future duplicated log records" 	st_log_futuredup }
 	}
-	set doc_list [list st_ext_deleted st_ext_duplicated \
-	    st_ext_records st_ext_rereq st_ext_truncated st_ext_update_rereq \
-	    st_bulk_fills st_bulk_overflows st_bulk_records \
+	set doc_list [list st_bulk_fills st_bulk_overflows st_bulk_records \
 	    st_bulk_transfers st_client_rerequests st_client_svc_miss \
 	    st_client_svc_req st_dupmasters st_egen st_election_cur_winner \
 	    st_election_gen st_election_datagen st_election_lsn st_election_nsites \
@@ -321,15 +306,15 @@ proc env017_rep_stat { } {
 	    st_election_votes st_elections st_elections_won st_env_id \
 	    st_env_priority st_filefail_cleanups st_gen st_lease_sends \
 	    st_lease_chk st_lease_chk_misses st_lease_chk_refresh \
-	    st_log_duplicated st_log_futuredup \
+	    st_log_duplicated \
 	    st_log_queued st_log_queued_max st_log_queued_total st_log_records \
 	    st_log_requested st_master st_master_changes st_max_lease_sec \
 	    st_max_lease_usec st_max_perm_lsn st_msgs_badgen st_msgs_processed\
 	    st_msgs_recover st_msgs_send_failures st_msgs_sent st_newsites \
 	    st_next_lsn st_next_pg st_nsites st_nthrottles st_outdated \
 	    st_pg_duplicated st_pg_records st_pg_requested \
-	    st_startsync_delayed st_startup_complete st_status \
-	    st_txns_applied st_view st_waiting_lsn st_waiting_pg ]
+	    st_startsync_delayed st_startup_complete st_status st_txns_applied\
+	    st_waiting_lsn st_waiting_pg ]
 	env017_stat_check \
 	    $map_list $doc_list $check_type $stat_method $envargs
 }
@@ -348,22 +333,10 @@ proc env017_repmgr_stat { } {
 		{ "Failed re-connects"	    st_connect_fail}
 		{ "Election threads"	    st_elect_threads}
 		{ "Max elect threads"	    st_max_elect_threads}
-		{ "Total sites"		    st_site_total}
-		{ "View sites"		    st_site_views}
-		{ "Participant sites"	    st_site_participants}
-		{ "Automatic replication process takeovers"	st_takeovers }
-		{ "Incoming messages size (gbytes)"	st_incoming_queue_gbytes }
-		{ "Incoming messages size (bytes)"	st_incoming_queue_bytes }
-		{ "Incoming messages discarded"		st_incoming_msgs_dropped }
-		{ "Forwarded write operations received"	st_write_ops_received }
-		{ "Write operations forwarded"		st_write_ops_forwarded }
 	}
 	set doc_list [list st_perm_failed st_msgs_queued st_msgs_dropped \
 	    st_connection_drop st_connect_fail st_elect_threads \
-	    st_max_elect_threads st_site_total st_site_views \
-	    st_site_participants st_takeovers st_incoming_queue_gbytes \
-	    st_incoming_queue_bytes st_incoming_msgs_dropped \
-	    st_write_ops_received st_write_ops_forwarded]
+	    st_max_elect_threads ]
 	env017_stat_check \
 	    $map_list $doc_list $check_type $stat_method $envargs
 }
@@ -374,7 +347,7 @@ proc env017_mpool_stat { } {
 	set check_type mpool_stat_check
 	set stat_method mpool_stat
 	set envargs {-create}
-	set gsp_map_list {
+	set map_list {
 		{ "Cache size (gbytes)"	    st_gbytes }
 		{ "Cache size (bytes)"	    st_bytes }
 		{ "Number of caches"	    st_ncache }
@@ -413,8 +386,6 @@ proc env017_mpool_stat { } {
 		{ "Buffers frozen"	    st_mvcc_frozen }
 		{ "Buffers thawed"	    st_mvcc_thawed }
 		{ "Frozen buffers freed"	    st_mvcc_freed }
-		{ "The number of outdated intermediate versions reused"
-		    st_mvcc_reused } 
 		{ "Page allocations"	    st_alloc }
 		{ "Buckets examined during allocation"	    st_alloc_buckets }
 		{ "Maximum buckets examined during allocation"
@@ -424,21 +395,8 @@ proc env017_mpool_stat { } {
 		    st_alloc_max_pages }
 		{ "Threads waiting on buffer I/O"    st_io_wait}
 		{ "Number of syncs interrupted"		st_sync_interrupted}
-		{ "Odd file size detected"		st_oddfsize_detect}
-		{ "Odd file size resolved"		st_oddfsize_resolve}
 	}
-	set fsp_map_list {
-		{ "File Name"		file_name}
-		{ "Page size"		st_pagesize}
-		{ "Pages mapped into address space"		st_map}
-		{ "Cache hits"		st_cache_hit}
-		{ "Cache misses"		st_cache_miss}
-		{ "Pages created"		st_page_create}
-		{ "Pages read in"		st_page_in}
-		{ "Pages written"		st_page_out}
-		{ "Backup spins"		st_backup_spins}
-	}
-	set gsp_doc_list [list st_gbytes st_bytes st_ncache st_max_ncache \
+	set doc_list [list st_gbytes st_bytes st_ncache st_max_ncache \
 	    st_regsize st_regmax st_mmapsize st_maxopenfd st_maxwrite \
 	    st_maxwrite_sleep st_map st_cache_hit st_cache_miss \
 	    st_page_create st_page_in st_page_out st_ro_evict st_rw_evict \
@@ -447,16 +405,10 @@ proc env017_mpool_stat { } {
 	    st_hash_longest st_hash_examined st_hash_nowait st_hash_wait \
 	    st_hash_max_nowait st_hash_max_wait st_region_wait \
 	    st_region_nowait st_mvcc_frozen st_mvcc_thawed st_mvcc_freed \
-	    st_mvcc_reused \
 	    st_alloc st_alloc_buckets st_alloc_max_buckets st_alloc_pages \
-	    st_alloc_max_pages st_io_wait st_sync_interrupted \
-	    st_oddfsize_detect st_oddfsize_resolve]
-	set fsp_doc_list [list file_name st_pagesize st_map st_cache_hit \
-	    st_cache_miss st_page_create st_page_in st_page_out st_backup_spins]
+	    st_alloc_max_pages st_io_wait st_sync_interrupted ] 
 	env017_stat_check \
-	    $gsp_map_list $gsp_doc_list $check_type $stat_method $envargs
-	env017_mpstat_check $gsp_map_list $fsp_map_list \
-	    $gsp_doc_list $fsp_doc_list $check_type $stat_method $envargs
+	    $map_list $doc_list $check_type $stat_method $envargs
 }
 
 # Check the db stat field.
@@ -469,7 +421,6 @@ proc env017_db_stat { } {
 		{ "Page count"	    hash_pagecnt }
 		{ "Number of keys"	    hash_nkeys }
 		{ "Number of records"	    hash_ndata }
-		{ "Number of external files" hash_nblobs }
 		{ "Fill factor"	    hash_ffactor }
 		{ "Buckets"	    hash_buckets }
 		{ "Free pages"	    hash_free }
@@ -482,17 +433,6 @@ proc env017_db_stat { } {
 		{ "Duplicate pages bytes free"	    hash_dup_free }
 		{ "Flags"	flags }
 	}
-	set heap_map_list {
-		{ "Magic"	    heap_magic }
-		{ "Version"	    heap_version }
-		{ "Number of external files"         heap_nblobs }
-		{ "Number of records"	    heap_nrecs }
-		{ "Page size"	    heap_pagesize }
-		{ "Page count"	    heap_pagecnt }
-		{ "Number of regions"	    heap_nregions }
-		{ "Number of pages in a region"	    heap_regionsize }
-		{ "Flags"	flags }
-	}
 	set queue_map_list {
 		{ "Magic"	    qs_magic }
 		{ "Version"	    qs_version }
@@ -503,7 +443,7 @@ proc env017_db_stat { } {
 		{ "Record length"	    qs_re_len }
 		{ "Record pad"	    qs_re_pad }
 		{ "First record number"	    qs_first_recno }
-		{ "Next available record number"	    qs_cur_recno }
+		{ "Last record number"	    qs_cur_recno }
 		{ "Number of pages"	    qs_pages }
 		{ "Bytes free"	    qs_pgfree}
 		{ "Flags"	flags }
@@ -513,7 +453,6 @@ proc env017_db_stat { } {
 		{ "Version"	    bt_version }
 		{ "Number of keys"	    bt_nkeys }
 		{ "Number of records"	    bt_ndata }
-		{ "Number of external files"         bt_nblobs }
 		{ "Minimum keys per page"	    bt_minkey }
 		{ "Fixed record length"	    bt_re_len }
 		{ "Record pad"	    bt_re_pad }
@@ -533,18 +472,14 @@ proc env017_db_stat { } {
 		{ "Flags"	flags }
 	}
 	set hash_doc_list [list hash_magic hash_version hash_nkeys hash_ndata \
-	    hash_nblobs hash_pagecnt hash_pagesize hash_ffactor hash_buckets \
-	    hash_free hash_bfree hash_bigpages hash_big_bfree hash_overflows \
+	    hash_pagecnt hash_pagesize hash_ffactor hash_buckets hash_free \
+	    hash_bfree hash_bigpages hash_big_bfree hash_overflows \
 	    hash_ovfl_free hash_dup hash_dup_free flags]
 
-	set heap_doc_list [list heap_magic heap_version heap_nblobs heap_nrecs \
-	    heap_pagesize heap_pagecnt heap_nregions heap_regionsize flags ]
-
 	set btree_doc_list [list bt_magic bt_version bt_nkeys bt_ndata \
-	    bt_nblobs bt_pagecnt bt_pagesize bt_minkey bt_re_len bt_re_pad \
-	    bt_levels bt_int_pg bt_leaf_pg bt_dup_pg bt_over_pg bt_empty_pg \
-	    bt_free  bt_int_pgfree bt_leaf_pgfree bt_dup_pgfree \
-	    bt_over_pgfree flags ]
+	    bt_pagecnt bt_pagesize bt_minkey bt_re_len bt_re_pad bt_levels \
+	    bt_int_pg bt_leaf_pg bt_dup_pg bt_over_pg bt_empty_pg bt_free \
+	    bt_int_pgfree bt_leaf_pgfree bt_dup_pgfree bt_over_pgfree flags ]
 
 	set queue_doc_list [list qs_magic qs_version qs_nkeys qs_ndata \
 	    qs_pagesize qs_extentsize qs_pages qs_re_len qs_re_pad qs_pgfree \
@@ -554,11 +489,6 @@ proc env017_db_stat { } {
 	puts "\tEnv017: Check the hash db stat"
 	env017_dbstat_check \
 	    $hash_map_list $hash_doc_list {hash_db_stat_check} {-create -hash}
-
-	# Check the heap db stat field.
-	puts "\tEnv017: Check the heap db stat"
-	env017_dbstat_check \
-	    $heap_map_list $heap_doc_list {heap_db_stat_check} {-create -heap}
 
 	# Check the queue db stat field.
 	puts "\tEnv017: Check the queue db stat"
@@ -598,11 +528,7 @@ proc env017_seq_stat { } {
 	}
 	set doc_list [list st_wait st_nowait st_current st_value \
 	    st_last_value st_min st_max st_cache_size st_flags]
-	env017_do_check $map_list $stat_list $doc_list {seq_stat}
-	set stat_list_clear [$seq stat -clear]
-	env017_do_check $map_list $stat_list_clear $doc_list {seq_stat}
-	set stat_list_all [$seq stat -all]
-	env017_do_check $map_list $stat_list_all $doc_list {seq_stat}
+	env017_do_check $map_list $stat_list $doc_list {seq_stat} 
 	error_check_good "$seq close" [$seq close] 0
 	error_check_good "$db1 close" [$db1 close] 0
 }
@@ -669,58 +595,6 @@ proc env017_stat_check { map_list doc_list check_type stat_method \
 			set stat_list [$env $stat_method]
 			env017_do_check \
 			    $map_list $stat_list $doc_list $check_type
-		} else {
-			set ret [catch {eval $env $stat_method} res]
-			error_check_bad $stat_method $ret 0
-			error_check_bad chk_err [regexp $failmsg $res] 0
-		}
-		error_check_good "$env close" [$env close] 0
-	}
-}
-
-# This is a proc for the mpool stat method called by env handle.
-proc env017_mpstat_check { gsp_map_list fsp_map_list gsp_doc_list fsp_doc_list \
-    check_type stat_method {envargs {}} } {
-	source ./include.tcl
-	set extopts {
-		{""}
-		{"-thread"}
-		{"-private" {"mutex_stat" "requires.*mutex.*subsystem"}}
-		{"-thread -private"}
-	}
-
-	foreach extopt $extopts {
-		set extarg [lindex $extopt 0]
-		set failmsg ""
-		set fail 0
-		if {[llength $extopt] > 1} {
-			set len [llength $extopt]
-			for {set i 1} {$i < $len} {incr i} {
-				set item [lindex $extopt $i]
-				set stat [lindex $item 0]
-				if {$stat == $stat_method} {
-					set failmsg [lindex $item 1]
-					set fail 1
-					break
-				}
-			}
-		}
-
-		env_cleanup $testdir
-		puts "\tEnv017: Check DB_ENV->$stat_method ($envargs $extarg)"
-		set env [eval berkdb_env_noerr $extarg $envargs -home $testdir]
-		error_check_good is_valid_env [is_valid_env $env] TRUE
-		set mpools \
-		    [$env mpool -create -pagesize 65536 -mode 0644 mpool_file]
-		if {$fail == 0} {
-			set stat_list [$env $stat_method]
-			set stat_len [llength $stat_list]
-			set gsp_stat_list [lrange $stat_list 0 [expr $stat_len -2]]
-			set fsp_stat_list [lindex $stat_list [expr $stat_len -1]]
-			env017_do_check \
-			    $gsp_map_list $gsp_stat_list $gsp_doc_list $check_type
-			env017_do_check \
-			    $fsp_map_list $fsp_stat_list $fsp_doc_list $check_type
 		} else {
 			set ret [catch {eval $env $stat_method} res]
 			error_check_bad $stat_method $ret 0

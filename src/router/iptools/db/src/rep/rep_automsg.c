@@ -194,16 +194,18 @@ too_few:
 }
 
 /*
- * PUBLIC: int __rep_fileinfo_marshal __P((ENV *,
+ * PUBLIC: int __rep_fileinfo_marshal __P((ENV *, u_int32_t,
  * PUBLIC:	 __rep_fileinfo_args *, u_int8_t *, size_t, size_t *));
  */
 int
-__rep_fileinfo_marshal(env, argp, bp, max, lenp)
+__rep_fileinfo_marshal(env, version, argp, bp, max, lenp)
 	ENV *env;
+	u_int32_t version;
 	__rep_fileinfo_args *argp;
 	u_int8_t *bp;
 	size_t *lenp, max;
 {
+	int copy_only;
 	u_int8_t *start;
 
 	if (max < __REP_FILEINFO_SIZE
@@ -213,42 +215,84 @@ __rep_fileinfo_marshal(env, argp, bp, max, lenp)
 		return (ENOMEM);
 	start = bp;
 
-	DB_HTONL_COPYOUT(env, bp, argp->pgsize);
-	DB_HTONL_COPYOUT(env, bp, argp->pgno);
-	DB_HTONL_COPYOUT(env, bp, argp->max_pgno);
-	DB_HTONL_COPYOUT(env, bp, argp->filenum);
-	DB_HTONL_COPYOUT(env, bp, argp->finfo_flags);
-	DB_HTONL_COPYOUT(env, bp, argp->type);
-	DB_HTONL_COPYOUT(env, bp, argp->db_flags);
-	DB_HTONL_COPYOUT(env, bp, argp->uid.size);
+	copy_only = 0;
+	if (version < DB_REPVERSION_47)
+		copy_only = 1;
+	if (copy_only) {
+		memcpy(bp, &argp->pgsize, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_HTONL_COPYOUT(env, bp, argp->pgsize);
+	if (copy_only) {
+		memcpy(bp, &argp->pgno, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_HTONL_COPYOUT(env, bp, argp->pgno);
+	if (copy_only) {
+		memcpy(bp, &argp->max_pgno, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_HTONL_COPYOUT(env, bp, argp->max_pgno);
+	if (copy_only) {
+		memcpy(bp, &argp->filenum, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_HTONL_COPYOUT(env, bp, argp->filenum);
+	if (copy_only) {
+		memcpy(bp, &argp->finfo_flags, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_HTONL_COPYOUT(env, bp, argp->finfo_flags);
+	if (copy_only) {
+		memcpy(bp, &argp->type, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_HTONL_COPYOUT(env, bp, argp->type);
+	if (copy_only) {
+		memcpy(bp, &argp->db_flags, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_HTONL_COPYOUT(env, bp, argp->db_flags);
+	if (copy_only) {
+		memcpy(bp, &argp->uid.size, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_HTONL_COPYOUT(env, bp, argp->uid.size);
 	if (argp->uid.size > 0) {
 		memcpy(bp, argp->uid.data, argp->uid.size);
 		bp += argp->uid.size;
 	}
-	DB_HTONL_COPYOUT(env, bp, argp->info.size);
+	if (copy_only) {
+		memcpy(bp, &argp->info.size, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_HTONL_COPYOUT(env, bp, argp->info.size);
 	if (argp->info.size > 0) {
 		memcpy(bp, argp->info.data, argp->info.size);
 		bp += argp->info.size;
 	}
-	DB_HTONL_COPYOUT(env, bp, argp->dir.size);
+	if (copy_only) {
+		memcpy(bp, &argp->dir.size, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_HTONL_COPYOUT(env, bp, argp->dir.size);
 	if (argp->dir.size > 0) {
 		memcpy(bp, argp->dir.data, argp->dir.size);
 		bp += argp->dir.size;
 	}
-	DB_HTONL_COPYOUT(env, bp, argp->blob_fid_lo);
-	DB_HTONL_COPYOUT(env, bp, argp->blob_fid_hi);
 
 	*lenp = (size_t)(bp - start);
 	return (0);
 }
 
 /*
- * PUBLIC: int __rep_fileinfo_unmarshal __P((ENV *,
+ * PUBLIC: int __rep_fileinfo_unmarshal __P((ENV *, u_int32_t,
  * PUBLIC:	 __rep_fileinfo_args **, u_int8_t *, size_t, u_int8_t **));
  */
 int
-__rep_fileinfo_unmarshal(env, argpp, bp, max, nextp)
+__rep_fileinfo_unmarshal(env, version, argpp, bp, max, nextp)
 	ENV *env;
+	u_int32_t version;
 	__rep_fileinfo_args **argpp;
 	u_int8_t *bp;
 	size_t max;
@@ -257,6 +301,7 @@ __rep_fileinfo_unmarshal(env, argpp, bp, max, nextp)
 	size_t needed;
 	__rep_fileinfo_args *argp;
 	int ret;
+	int copy_only;
 
 	needed = __REP_FILEINFO_SIZE;
 	if (max < needed)
@@ -264,14 +309,49 @@ __rep_fileinfo_unmarshal(env, argpp, bp, max, nextp)
 	if ((ret = __os_malloc(env, sizeof(*argp), &argp)) != 0)
 		return (ret);
 
-	DB_NTOHL_COPYIN(env, argp->pgsize, bp);
-	DB_NTOHL_COPYIN(env, argp->pgno, bp);
-	DB_NTOHL_COPYIN(env, argp->max_pgno, bp);
-	DB_NTOHL_COPYIN(env, argp->filenum, bp);
-	DB_NTOHL_COPYIN(env, argp->finfo_flags, bp);
-	DB_NTOHL_COPYIN(env, argp->type, bp);
-	DB_NTOHL_COPYIN(env, argp->db_flags, bp);
-	DB_NTOHL_COPYIN(env, argp->uid.size, bp);
+	copy_only = 0;
+	if (version < DB_REPVERSION_47)
+		copy_only = 1;
+	if (copy_only) {
+		memcpy(&argp->pgsize, bp, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_NTOHL_COPYIN(env, argp->pgsize, bp);
+	if (copy_only) {
+		memcpy(&argp->pgno, bp, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_NTOHL_COPYIN(env, argp->pgno, bp);
+	if (copy_only) {
+		memcpy(&argp->max_pgno, bp, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_NTOHL_COPYIN(env, argp->max_pgno, bp);
+	if (copy_only) {
+		memcpy(&argp->filenum, bp, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_NTOHL_COPYIN(env, argp->filenum, bp);
+	if (copy_only) {
+		memcpy(&argp->finfo_flags, bp, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_NTOHL_COPYIN(env, argp->finfo_flags, bp);
+	if (copy_only) {
+		memcpy(&argp->type, bp, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_NTOHL_COPYIN(env, argp->type, bp);
+	if (copy_only) {
+		memcpy(&argp->db_flags, bp, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_NTOHL_COPYIN(env, argp->db_flags, bp);
+	if (copy_only) {
+		memcpy(&argp->uid.size, bp, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_NTOHL_COPYIN(env, argp->uid.size, bp);
 	if (argp->uid.size == 0)
 		argp->uid.data = NULL;
 	else
@@ -280,7 +360,11 @@ __rep_fileinfo_unmarshal(env, argpp, bp, max, nextp)
 	if (max < needed)
 		goto too_few;
 	bp += argp->uid.size;
-	DB_NTOHL_COPYIN(env, argp->info.size, bp);
+	if (copy_only) {
+		memcpy(&argp->info.size, bp, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_NTOHL_COPYIN(env, argp->info.size, bp);
 	if (argp->info.size == 0)
 		argp->info.data = NULL;
 	else
@@ -289,7 +373,11 @@ __rep_fileinfo_unmarshal(env, argpp, bp, max, nextp)
 	if (max < needed)
 		goto too_few;
 	bp += argp->info.size;
-	DB_NTOHL_COPYIN(env, argp->dir.size, bp);
+	if (copy_only) {
+		memcpy(&argp->dir.size, bp, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_NTOHL_COPYIN(env, argp->dir.size, bp);
 	if (argp->dir.size == 0)
 		argp->dir.data = NULL;
 	else
@@ -298,8 +386,6 @@ __rep_fileinfo_unmarshal(env, argpp, bp, max, nextp)
 	if (max < needed)
 		goto too_few;
 	bp += argp->dir.size;
-	DB_NTOHL_COPYIN(env, argp->blob_fid_lo, bp);
-	DB_NTOHL_COPYIN(env, argp->blob_fid_hi, bp);
 
 	if (nextp != NULL)
 		*nextp = bp;
@@ -313,131 +399,18 @@ too_few:
 }
 
 /*
- * PUBLIC: int __rep_fileinfo_v7_marshal __P((ENV *,
- * PUBLIC:	 __rep_fileinfo_v7_args *, u_int8_t *, size_t, size_t *));
- */
-int
-__rep_fileinfo_v7_marshal(env, argp, bp, max, lenp)
-	ENV *env;
-	__rep_fileinfo_v7_args *argp;
-	u_int8_t *bp;
-	size_t *lenp, max;
-{
-	u_int8_t *start;
-
-	if (max < __REP_FILEINFO_V7_SIZE
-	    + (size_t)argp->uid.size
-	    + (size_t)argp->info.size
-	    + (size_t)argp->dir.size)
-		return (ENOMEM);
-	start = bp;
-
-	DB_HTONL_COPYOUT(env, bp, argp->pgsize);
-	DB_HTONL_COPYOUT(env, bp, argp->pgno);
-	DB_HTONL_COPYOUT(env, bp, argp->max_pgno);
-	DB_HTONL_COPYOUT(env, bp, argp->filenum);
-	DB_HTONL_COPYOUT(env, bp, argp->finfo_flags);
-	DB_HTONL_COPYOUT(env, bp, argp->type);
-	DB_HTONL_COPYOUT(env, bp, argp->db_flags);
-	DB_HTONL_COPYOUT(env, bp, argp->uid.size);
-	if (argp->uid.size > 0) {
-		memcpy(bp, argp->uid.data, argp->uid.size);
-		bp += argp->uid.size;
-	}
-	DB_HTONL_COPYOUT(env, bp, argp->info.size);
-	if (argp->info.size > 0) {
-		memcpy(bp, argp->info.data, argp->info.size);
-		bp += argp->info.size;
-	}
-	DB_HTONL_COPYOUT(env, bp, argp->dir.size);
-	if (argp->dir.size > 0) {
-		memcpy(bp, argp->dir.data, argp->dir.size);
-		bp += argp->dir.size;
-	}
-
-	*lenp = (size_t)(bp - start);
-	return (0);
-}
-
-/*
- * PUBLIC: int __rep_fileinfo_v7_unmarshal __P((ENV *,
- * PUBLIC:	 __rep_fileinfo_v7_args **, u_int8_t *, size_t, u_int8_t **));
- */
-int
-__rep_fileinfo_v7_unmarshal(env, argpp, bp, max, nextp)
-	ENV *env;
-	__rep_fileinfo_v7_args **argpp;
-	u_int8_t *bp;
-	size_t max;
-	u_int8_t **nextp;
-{
-	size_t needed;
-	__rep_fileinfo_v7_args *argp;
-	int ret;
-
-	needed = __REP_FILEINFO_V7_SIZE;
-	if (max < needed)
-		goto too_few;
-	if ((ret = __os_malloc(env, sizeof(*argp), &argp)) != 0)
-		return (ret);
-
-	DB_NTOHL_COPYIN(env, argp->pgsize, bp);
-	DB_NTOHL_COPYIN(env, argp->pgno, bp);
-	DB_NTOHL_COPYIN(env, argp->max_pgno, bp);
-	DB_NTOHL_COPYIN(env, argp->filenum, bp);
-	DB_NTOHL_COPYIN(env, argp->finfo_flags, bp);
-	DB_NTOHL_COPYIN(env, argp->type, bp);
-	DB_NTOHL_COPYIN(env, argp->db_flags, bp);
-	DB_NTOHL_COPYIN(env, argp->uid.size, bp);
-	if (argp->uid.size == 0)
-		argp->uid.data = NULL;
-	else
-		argp->uid.data = bp;
-	needed += (size_t)argp->uid.size;
-	if (max < needed)
-		goto too_few;
-	bp += argp->uid.size;
-	DB_NTOHL_COPYIN(env, argp->info.size, bp);
-	if (argp->info.size == 0)
-		argp->info.data = NULL;
-	else
-		argp->info.data = bp;
-	needed += (size_t)argp->info.size;
-	if (max < needed)
-		goto too_few;
-	bp += argp->info.size;
-	DB_NTOHL_COPYIN(env, argp->dir.size, bp);
-	if (argp->dir.size == 0)
-		argp->dir.data = NULL;
-	else
-		argp->dir.data = bp;
-	needed += (size_t)argp->dir.size;
-	if (max < needed)
-		goto too_few;
-	bp += argp->dir.size;
-
-	if (nextp != NULL)
-		*nextp = bp;
-	*argpp = argp;
-	return (0);
-
-too_few:
-	__db_errx(env, DB_STR("3675",
-	    "Not enough input bytes to fill a __rep_fileinfo_v7 message"));
-	return (EINVAL);
-}
-
-/*
- * PUBLIC: int __rep_fileinfo_v6_marshal __P((ENV *,
+ * PUBLIC: int __rep_fileinfo_v6_marshal __P((ENV *, u_int32_t,
  * PUBLIC:	 __rep_fileinfo_v6_args *, u_int8_t *, size_t, size_t *));
  */
 int
-__rep_fileinfo_v6_marshal(env, argp, bp, max, lenp)
+__rep_fileinfo_v6_marshal(env, version, argp, bp, max, lenp)
 	ENV *env;
+	u_int32_t version;
 	__rep_fileinfo_v6_args *argp;
 	u_int8_t *bp;
 	size_t *lenp, max;
 {
+	int copy_only;
 	u_int8_t *start;
 
 	if (max < __REP_FILEINFO_V6_SIZE
@@ -446,19 +419,58 @@ __rep_fileinfo_v6_marshal(env, argp, bp, max, lenp)
 		return (ENOMEM);
 	start = bp;
 
-	DB_HTONL_COPYOUT(env, bp, argp->pgsize);
-	DB_HTONL_COPYOUT(env, bp, argp->pgno);
-	DB_HTONL_COPYOUT(env, bp, argp->max_pgno);
-	DB_HTONL_COPYOUT(env, bp, argp->filenum);
-	DB_HTONL_COPYOUT(env, bp, argp->finfo_flags);
-	DB_HTONL_COPYOUT(env, bp, argp->type);
-	DB_HTONL_COPYOUT(env, bp, argp->db_flags);
-	DB_HTONL_COPYOUT(env, bp, argp->uid.size);
+	copy_only = 0;
+	if (version < DB_REPVERSION_47)
+		copy_only = 1;
+	if (copy_only) {
+		memcpy(bp, &argp->pgsize, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_HTONL_COPYOUT(env, bp, argp->pgsize);
+	if (copy_only) {
+		memcpy(bp, &argp->pgno, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_HTONL_COPYOUT(env, bp, argp->pgno);
+	if (copy_only) {
+		memcpy(bp, &argp->max_pgno, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_HTONL_COPYOUT(env, bp, argp->max_pgno);
+	if (copy_only) {
+		memcpy(bp, &argp->filenum, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_HTONL_COPYOUT(env, bp, argp->filenum);
+	if (copy_only) {
+		memcpy(bp, &argp->finfo_flags, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_HTONL_COPYOUT(env, bp, argp->finfo_flags);
+	if (copy_only) {
+		memcpy(bp, &argp->type, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_HTONL_COPYOUT(env, bp, argp->type);
+	if (copy_only) {
+		memcpy(bp, &argp->db_flags, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_HTONL_COPYOUT(env, bp, argp->db_flags);
+	if (copy_only) {
+		memcpy(bp, &argp->uid.size, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_HTONL_COPYOUT(env, bp, argp->uid.size);
 	if (argp->uid.size > 0) {
 		memcpy(bp, argp->uid.data, argp->uid.size);
 		bp += argp->uid.size;
 	}
-	DB_HTONL_COPYOUT(env, bp, argp->info.size);
+	if (copy_only) {
+		memcpy(bp, &argp->info.size, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_HTONL_COPYOUT(env, bp, argp->info.size);
 	if (argp->info.size > 0) {
 		memcpy(bp, argp->info.data, argp->info.size);
 		bp += argp->info.size;
@@ -469,12 +481,13 @@ __rep_fileinfo_v6_marshal(env, argp, bp, max, lenp)
 }
 
 /*
- * PUBLIC: int __rep_fileinfo_v6_unmarshal __P((ENV *,
+ * PUBLIC: int __rep_fileinfo_v6_unmarshal __P((ENV *, u_int32_t,
  * PUBLIC:	 __rep_fileinfo_v6_args **, u_int8_t *, size_t, u_int8_t **));
  */
 int
-__rep_fileinfo_v6_unmarshal(env, argpp, bp, max, nextp)
+__rep_fileinfo_v6_unmarshal(env, version, argpp, bp, max, nextp)
 	ENV *env;
+	u_int32_t version;
 	__rep_fileinfo_v6_args **argpp;
 	u_int8_t *bp;
 	size_t max;
@@ -483,6 +496,7 @@ __rep_fileinfo_v6_unmarshal(env, argpp, bp, max, nextp)
 	size_t needed;
 	__rep_fileinfo_v6_args *argp;
 	int ret;
+	int copy_only;
 
 	needed = __REP_FILEINFO_V6_SIZE;
 	if (max < needed)
@@ -490,14 +504,49 @@ __rep_fileinfo_v6_unmarshal(env, argpp, bp, max, nextp)
 	if ((ret = __os_malloc(env, sizeof(*argp), &argp)) != 0)
 		return (ret);
 
-	DB_NTOHL_COPYIN(env, argp->pgsize, bp);
-	DB_NTOHL_COPYIN(env, argp->pgno, bp);
-	DB_NTOHL_COPYIN(env, argp->max_pgno, bp);
-	DB_NTOHL_COPYIN(env, argp->filenum, bp);
-	DB_NTOHL_COPYIN(env, argp->finfo_flags, bp);
-	DB_NTOHL_COPYIN(env, argp->type, bp);
-	DB_NTOHL_COPYIN(env, argp->db_flags, bp);
-	DB_NTOHL_COPYIN(env, argp->uid.size, bp);
+	copy_only = 0;
+	if (version < DB_REPVERSION_47)
+		copy_only = 1;
+	if (copy_only) {
+		memcpy(&argp->pgsize, bp, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_NTOHL_COPYIN(env, argp->pgsize, bp);
+	if (copy_only) {
+		memcpy(&argp->pgno, bp, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_NTOHL_COPYIN(env, argp->pgno, bp);
+	if (copy_only) {
+		memcpy(&argp->max_pgno, bp, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_NTOHL_COPYIN(env, argp->max_pgno, bp);
+	if (copy_only) {
+		memcpy(&argp->filenum, bp, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_NTOHL_COPYIN(env, argp->filenum, bp);
+	if (copy_only) {
+		memcpy(&argp->finfo_flags, bp, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_NTOHL_COPYIN(env, argp->finfo_flags, bp);
+	if (copy_only) {
+		memcpy(&argp->type, bp, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_NTOHL_COPYIN(env, argp->type, bp);
+	if (copy_only) {
+		memcpy(&argp->db_flags, bp, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_NTOHL_COPYIN(env, argp->db_flags, bp);
+	if (copy_only) {
+		memcpy(&argp->uid.size, bp, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_NTOHL_COPYIN(env, argp->uid.size, bp);
 	if (argp->uid.size == 0)
 		argp->uid.data = NULL;
 	else
@@ -506,7 +555,11 @@ __rep_fileinfo_v6_unmarshal(env, argpp, bp, max, nextp)
 	if (max < needed)
 		goto too_few;
 	bp += argp->uid.size;
-	DB_NTOHL_COPYIN(env, argp->info.size, bp);
+	if (copy_only) {
+		memcpy(&argp->info.size, bp, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_NTOHL_COPYIN(env, argp->info.size, bp);
 	if (argp->info.size == 0)
 		argp->info.data = NULL;
 	else
@@ -679,38 +732,59 @@ too_few:
 }
 
 /*
- * PUBLIC: int __rep_update_marshal __P((ENV *, __rep_update_args *,
- * PUBLIC:	 u_int8_t *, size_t, size_t *));
+ * PUBLIC: int __rep_update_marshal __P((ENV *, u_int32_t,
+ * PUBLIC:	 __rep_update_args *, u_int8_t *, size_t, size_t *));
  */
 int
-__rep_update_marshal(env, argp, bp, max, lenp)
+__rep_update_marshal(env, version, argp, bp, max, lenp)
 	ENV *env;
+	u_int32_t version;
 	__rep_update_args *argp;
 	u_int8_t *bp;
 	size_t *lenp, max;
 {
+	int copy_only;
 	u_int8_t *start;
 
 	if (max < __REP_UPDATE_SIZE)
 		return (ENOMEM);
 	start = bp;
 
-	DB_HTONL_COPYOUT(env, bp, argp->first_lsn.file);
-	DB_HTONL_COPYOUT(env, bp, argp->first_lsn.offset);
-	DB_HTONL_COPYOUT(env, bp, argp->first_vers);
-	DB_HTONL_COPYOUT(env, bp, argp->num_files);
+	copy_only = 0;
+	if (version < DB_REPVERSION_47)
+		copy_only = 1;
+	if (copy_only) {
+		memcpy(bp, &argp->first_lsn.file, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+		memcpy(bp, &argp->first_lsn.offset, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else {
+		DB_HTONL_COPYOUT(env, bp, argp->first_lsn.file);
+		DB_HTONL_COPYOUT(env, bp, argp->first_lsn.offset);
+	}
+	if (copy_only) {
+		memcpy(bp, &argp->first_vers, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_HTONL_COPYOUT(env, bp, argp->first_vers);
+	if (copy_only) {
+		memcpy(bp, &argp->num_files, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_HTONL_COPYOUT(env, bp, argp->num_files);
 
 	*lenp = (size_t)(bp - start);
 	return (0);
 }
 
 /*
- * PUBLIC: int __rep_update_unmarshal __P((ENV *,
+ * PUBLIC: int __rep_update_unmarshal __P((ENV *, u_int32_t,
  * PUBLIC:	 __rep_update_args **, u_int8_t *, size_t, u_int8_t **));
  */
 int
-__rep_update_unmarshal(env, argpp, bp, max, nextp)
+__rep_update_unmarshal(env, version, argpp, bp, max, nextp)
 	ENV *env;
+	u_int32_t version;
 	__rep_update_args **argpp;
 	u_int8_t *bp;
 	size_t max;
@@ -718,16 +792,35 @@ __rep_update_unmarshal(env, argpp, bp, max, nextp)
 {
 	__rep_update_args *argp;
 	int ret;
+	int copy_only;
 
 	if (max < __REP_UPDATE_SIZE)
 		goto too_few;
 	if ((ret = __os_malloc(env, sizeof(*argp), &argp)) != 0)
 		return (ret);
 
-	DB_NTOHL_COPYIN(env, argp->first_lsn.file, bp);
-	DB_NTOHL_COPYIN(env, argp->first_lsn.offset, bp);
-	DB_NTOHL_COPYIN(env, argp->first_vers, bp);
-	DB_NTOHL_COPYIN(env, argp->num_files, bp);
+	copy_only = 0;
+	if (version < DB_REPVERSION_47)
+		copy_only = 1;
+	if (copy_only) {
+		memcpy(&argp->first_lsn.file, bp, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+		memcpy(&argp->first_lsn.offset, bp, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else {
+		DB_NTOHL_COPYIN(env, argp->first_lsn.file, bp);
+		DB_NTOHL_COPYIN(env, argp->first_lsn.offset, bp);
+	}
+	if (copy_only) {
+		memcpy(&argp->first_vers, bp, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_NTOHL_COPYIN(env, argp->first_vers, bp);
+	if (copy_only) {
+		memcpy(&argp->num_files, bp, sizeof(u_int32_t));
+		bp += sizeof(u_int32_t);
+	} else
+		DB_NTOHL_COPYIN(env, argp->num_files, bp);
 
 	if (nextp != NULL)
 		*nextp = bp;
@@ -943,296 +1036,6 @@ __rep_lsn_hist_data_unmarshal(env, argp, bp, max, nextp)
 too_few:
 	__db_errx(env, DB_STR("3675",
 	    "Not enough input bytes to fill a __rep_lsn_hist_data message"));
-	return (EINVAL);
-}
-
-/*
- * PUBLIC: void __rep_blob_update_req_marshal __P((ENV *,
- * PUBLIC:	 __rep_blob_update_req_args *, u_int8_t *));
- */
-void
-__rep_blob_update_req_marshal(env, argp, bp)
-	ENV *env;
-	__rep_blob_update_req_args *argp;
-	u_int8_t *bp;
-{
-	DB_HTONLL_COPYOUT(env, bp, argp->blob_fid);
-	DB_HTONLL_COPYOUT(env, bp, argp->blob_sid);
-	DB_HTONLL_COPYOUT(env, bp, argp->blob_id);
-	DB_HTONLL_COPYOUT(env, bp, argp->highest_id);
-	DB_HTONL_COPYOUT(env, bp, argp->flags);
-}
-
-/*
- * PUBLIC: int __rep_blob_update_req_unmarshal __P((ENV *,
- * PUBLIC:	 __rep_blob_update_req_args *, u_int8_t *, size_t, u_int8_t **));
- */
-int
-__rep_blob_update_req_unmarshal(env, argp, bp, max, nextp)
-	ENV *env;
-	__rep_blob_update_req_args *argp;
-	u_int8_t *bp;
-	size_t max;
-	u_int8_t **nextp;
-{
-	if (max < __REP_BLOB_UPDATE_REQ_SIZE)
-		goto too_few;
-	DB_NTOHLL_COPYIN(env, argp->blob_fid, bp);
-	DB_NTOHLL_COPYIN(env, argp->blob_sid, bp);
-	DB_NTOHLL_COPYIN(env, argp->blob_id, bp);
-	DB_NTOHLL_COPYIN(env, argp->highest_id, bp);
-	DB_NTOHL_COPYIN(env, argp->flags, bp);
-
-	if (nextp != NULL)
-		*nextp = bp;
-	return (0);
-
-too_few:
-	__db_errx(env, DB_STR("3675",
-	    "Not enough input bytes to fill a __rep_blob_update_req message"));
-	return (EINVAL);
-}
-
-/*
- * PUBLIC: void __rep_blob_update_req_v8_marshal __P((ENV *,
- * PUBLIC:	 __rep_blob_update_req_v8_args *, u_int8_t *));
- */
-void
-__rep_blob_update_req_v8_marshal(env, argp, bp)
-	ENV *env;
-	__rep_blob_update_req_v8_args *argp;
-	u_int8_t *bp;
-{
-	DB_HTONLL_COPYOUT(env, bp, argp->blob_fid);
-	DB_HTONLL_COPYOUT(env, bp, argp->blob_sid);
-	DB_HTONLL_COPYOUT(env, bp, argp->blob_id);
-	DB_HTONLL_COPYOUT(env, bp, argp->highest_id);
-}
-
-/*
- * PUBLIC: int __rep_blob_update_req_v8_unmarshal __P((ENV *,
- * PUBLIC:	 __rep_blob_update_req_v8_args *, u_int8_t *, size_t,
- * PUBLIC:	 u_int8_t **));
- */
-int
-__rep_blob_update_req_v8_unmarshal(env, argp, bp, max, nextp)
-	ENV *env;
-	__rep_blob_update_req_v8_args *argp;
-	u_int8_t *bp;
-	size_t max;
-	u_int8_t **nextp;
-{
-	if (max < __REP_BLOB_UPDATE_REQ_V8_SIZE)
-		goto too_few;
-	DB_NTOHLL_COPYIN(env, argp->blob_fid, bp);
-	DB_NTOHLL_COPYIN(env, argp->blob_sid, bp);
-	DB_NTOHLL_COPYIN(env, argp->blob_id, bp);
-	DB_NTOHLL_COPYIN(env, argp->highest_id, bp);
-
-	if (nextp != NULL)
-		*nextp = bp;
-	return (0);
-
-too_few:
-	__db_errx(env, DB_STR("3675",
-	    "Not enough input bytes to fill a __rep_blob_update_req_v8 message"));
-	return (EINVAL);
-}
-
-/*
- * PUBLIC: void __rep_blob_update_marshal __P((ENV *,
- * PUBLIC:	 __rep_blob_update_args *, u_int8_t *));
- */
-void
-__rep_blob_update_marshal(env, argp, bp)
-	ENV *env;
-	__rep_blob_update_args *argp;
-	u_int8_t *bp;
-{
-	DB_HTONLL_COPYOUT(env, bp, argp->blob_fid);
-	DB_HTONLL_COPYOUT(env, bp, argp->highest_id);
-	DB_HTONL_COPYOUT(env, bp, argp->flags);
-	DB_HTONL_COPYOUT(env, bp, argp->num_blobs);
-}
-
-/*
- * PUBLIC: int __rep_blob_update_unmarshal __P((ENV *,
- * PUBLIC:	 __rep_blob_update_args *, u_int8_t *, size_t, u_int8_t **));
- */
-int
-__rep_blob_update_unmarshal(env, argp, bp, max, nextp)
-	ENV *env;
-	__rep_blob_update_args *argp;
-	u_int8_t *bp;
-	size_t max;
-	u_int8_t **nextp;
-{
-	if (max < __REP_BLOB_UPDATE_SIZE)
-		goto too_few;
-	DB_NTOHLL_COPYIN(env, argp->blob_fid, bp);
-	DB_NTOHLL_COPYIN(env, argp->highest_id, bp);
-	DB_NTOHL_COPYIN(env, argp->flags, bp);
-	DB_NTOHL_COPYIN(env, argp->num_blobs, bp);
-
-	if (nextp != NULL)
-		*nextp = bp;
-	return (0);
-
-too_few:
-	__db_errx(env, DB_STR("3675",
-	    "Not enough input bytes to fill a __rep_blob_update message"));
-	return (EINVAL);
-}
-
-/*
- * PUBLIC: void __rep_blob_file_marshal __P((ENV *,
- * PUBLIC:	 __rep_blob_file_args *, u_int8_t *));
- */
-void
-__rep_blob_file_marshal(env, argp, bp)
-	ENV *env;
-	__rep_blob_file_args *argp;
-	u_int8_t *bp;
-{
-	DB_HTONLL_COPYOUT(env, bp, argp->blob_sid);
-	DB_HTONLL_COPYOUT(env, bp, argp->blob_id);
-	DB_HTONLL_COPYOUT(env, bp, argp->blob_size);
-}
-
-/*
- * PUBLIC: int __rep_blob_file_unmarshal __P((ENV *,
- * PUBLIC:	 __rep_blob_file_args *, u_int8_t *, size_t, u_int8_t **));
- */
-int
-__rep_blob_file_unmarshal(env, argp, bp, max, nextp)
-	ENV *env;
-	__rep_blob_file_args *argp;
-	u_int8_t *bp;
-	size_t max;
-	u_int8_t **nextp;
-{
-	if (max < __REP_BLOB_FILE_SIZE)
-		goto too_few;
-	DB_NTOHLL_COPYIN(env, argp->blob_sid, bp);
-	DB_NTOHLL_COPYIN(env, argp->blob_id, bp);
-	DB_NTOHLL_COPYIN(env, argp->blob_size, bp);
-
-	if (nextp != NULL)
-		*nextp = bp;
-	return (0);
-
-too_few:
-	__db_errx(env, DB_STR("3675",
-	    "Not enough input bytes to fill a __rep_blob_file message"));
-	return (EINVAL);
-}
-
-/*
- * PUBLIC: void __rep_blob_chunk_marshal __P((ENV *,
- * PUBLIC:	 __rep_blob_chunk_args *, u_int8_t *));
- */
-void
-__rep_blob_chunk_marshal(env, argp, bp)
-	ENV *env;
-	__rep_blob_chunk_args *argp;
-	u_int8_t *bp;
-{
-	DB_HTONL_COPYOUT(env, bp, argp->flags);
-	DB_HTONLL_COPYOUT(env, bp, argp->blob_fid);
-	DB_HTONLL_COPYOUT(env, bp, argp->blob_sid);
-	DB_HTONLL_COPYOUT(env, bp, argp->blob_id);
-	DB_HTONLL_COPYOUT(env, bp, argp->offset);
-	DB_HTONL_COPYOUT(env, bp, argp->data.size);
-	if (argp->data.size > 0) {
-		memcpy(bp, argp->data.data, argp->data.size);
-		bp += argp->data.size;
-	}
-}
-
-/*
- * PUBLIC: int __rep_blob_chunk_unmarshal __P((ENV *,
- * PUBLIC:	 __rep_blob_chunk_args *, u_int8_t *, size_t, u_int8_t **));
- */
-int
-__rep_blob_chunk_unmarshal(env, argp, bp, max, nextp)
-	ENV *env;
-	__rep_blob_chunk_args *argp;
-	u_int8_t *bp;
-	size_t max;
-	u_int8_t **nextp;
-{
-	size_t needed;
-
-	needed = __REP_BLOB_CHUNK_SIZE;
-	if (max < needed)
-		goto too_few;
-	DB_NTOHL_COPYIN(env, argp->flags, bp);
-	DB_NTOHLL_COPYIN(env, argp->blob_fid, bp);
-	DB_NTOHLL_COPYIN(env, argp->blob_sid, bp);
-	DB_NTOHLL_COPYIN(env, argp->blob_id, bp);
-	DB_NTOHLL_COPYIN(env, argp->offset, bp);
-	DB_NTOHL_COPYIN(env, argp->data.size, bp);
-	if (argp->data.size == 0)
-		argp->data.data = NULL;
-	else
-		argp->data.data = bp;
-	needed += (size_t)argp->data.size;
-	if (max < needed)
-		goto too_few;
-	bp += argp->data.size;
-
-	if (nextp != NULL)
-		*nextp = bp;
-	return (0);
-
-too_few:
-	__db_errx(env, DB_STR("3675",
-	    "Not enough input bytes to fill a __rep_blob_chunk message"));
-	return (EINVAL);
-}
-
-/*
- * PUBLIC: void __rep_blob_chunk_req_marshal __P((ENV *,
- * PUBLIC:	 __rep_blob_chunk_req_args *, u_int8_t *));
- */
-void
-__rep_blob_chunk_req_marshal(env, argp, bp)
-	ENV *env;
-	__rep_blob_chunk_req_args *argp;
-	u_int8_t *bp;
-{
-	DB_HTONLL_COPYOUT(env, bp, argp->blob_fid);
-	DB_HTONLL_COPYOUT(env, bp, argp->blob_sid);
-	DB_HTONLL_COPYOUT(env, bp, argp->blob_id);
-	DB_HTONLL_COPYOUT(env, bp, argp->offset);
-}
-
-/*
- * PUBLIC: int __rep_blob_chunk_req_unmarshal __P((ENV *,
- * PUBLIC:	 __rep_blob_chunk_req_args *, u_int8_t *, size_t, u_int8_t **));
- */
-int
-__rep_blob_chunk_req_unmarshal(env, argp, bp, max, nextp)
-	ENV *env;
-	__rep_blob_chunk_req_args *argp;
-	u_int8_t *bp;
-	size_t max;
-	u_int8_t **nextp;
-{
-	if (max < __REP_BLOB_CHUNK_REQ_SIZE)
-		goto too_few;
-	DB_NTOHLL_COPYIN(env, argp->blob_fid, bp);
-	DB_NTOHLL_COPYIN(env, argp->blob_sid, bp);
-	DB_NTOHLL_COPYIN(env, argp->blob_id, bp);
-	DB_NTOHLL_COPYIN(env, argp->offset, bp);
-
-	if (nextp != NULL)
-		*nextp = bp;
-	return (0);
-
-too_few:
-	__db_errx(env, DB_STR("3675",
-	    "Not enough input bytes to fill a __rep_blob_chunk_req message"));
 	return (EINVAL);
 }
 

@@ -17,7 +17,7 @@ namespace BerkeleyDB.Internal {
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate int BDB_BackupWriteDelegate(IntPtr dbenv, uint off_gbytes, uint off_bytes, uint size, IntPtr buf, IntPtr handle);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int BDB_CompareDelegate(IntPtr db, IntPtr dbt1, IntPtr dbt2, IntPtr locp);
+    internal delegate int BDB_CompareDelegate(IntPtr db, IntPtr dbt1, IntPtr dbt2);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate uint BDB_PrefixCompareDelegate(IntPtr db, IntPtr dbt1, IntPtr dbt2);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -40,12 +40,6 @@ namespace BerkeleyDB.Internal {
     internal delegate int BDB_IsAliveDelegate(IntPtr dbenv, int pid, uint tid, uint flags);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate void BDB_MessageDispatchDelegate(IntPtr dbenv, IntPtr channel, IntPtr request, uint nrequest, uint cb_flags);
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate void BDB_MsgcallDelegate(IntPtr env, string pfx, string msg);
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int BDB_ReplicationViewDelegate(IntPtr dbenv, string name, ref int result, uint flags);
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate uint BDB_PartitionDelegate(IntPtr db, IntPtr key);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate int BDB_RepTransportDelegate(IntPtr dbenv, IntPtr control, IntPtr rec, IntPtr lsnp, int envid, uint flags);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]

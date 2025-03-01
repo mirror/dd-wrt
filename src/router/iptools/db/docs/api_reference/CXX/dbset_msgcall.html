@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -41,8 +41,7 @@
       <pre class="programlisting">#include &lt;db_cxx.h&gt;
  
 void Db::set_msgcall(void (*db_msgcall_fcn)(const DbEnv *dbenv, 
-                                            const char *msgpfx,
-                                            const char *msg));</pre>
+                                            char *msg));</pre>
       <p>
          There are interfaces in the Berkeley DB library which either directly
          output informational messages or statistical information, or configure
@@ -102,7 +101,7 @@ void Db::set_msgcall(void (*db_msgcall_fcn)(const DbEnv *dbenv,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670063625856"></a>Parameters</h3>
+              <h3 class="title"><a id="idp5726776"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -110,14 +109,14 @@ void Db::set_msgcall(void (*db_msgcall_fcn)(const DbEnv *dbenv,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670063625472"></a>db_msgcall_fcn</h4>
+                <h4 class="title"><a id="idp5726968"></a>db_msgcall_fcn</h4>
               </div>
             </div>
           </div>
           <p>
                           The <span class="bold"><strong>db_msgcall_fcn</strong></span> parameter is the
                           application-specified message reporting function.  The function takes
-                          three parameters:
+                          two parameters:
                      </p>
           <div class="itemizedlist">
             <ul type="disc">
@@ -128,17 +127,6 @@ void Db::set_msgcall(void (*db_msgcall_fcn)(const DbEnv *dbenv,
                 <p>
                                  The <span class="bold"><strong>dbenv</strong></span> parameter is the enclosing
                                  database environment.
-                            </p>
-              </li>
-              <li>
-                <p>
-                                <code class="literal">msgpfx</code>
-                             </p>
-                <p>
-                                 The <span class="bold"><strong>msgpfx</strong></span> parameter is the message
-                                 prefix string that appears before informational messages.
-                                 This value is the environmental default, and can be
-                                 changed at any time using <a class="xref" href="envset_msgpfx.html" title="DbEnv::set_msgpfx()">DbEnv::set_msgpfx()</a> or <a class="xref" href="dbset_msgpfx.html" title="Db::set_msgpfx()">Db::set_msgpfx()</a>.
                             </p>
               </li>
               <li>
@@ -158,7 +146,7 @@ void Db::set_msgcall(void (*db_msgcall_fcn)(const DbEnv *dbenv,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670063616416"></a>Class</h3>
+              <h3 class="title"><a id="idp5730624"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -170,7 +158,7 @@ void Db::set_msgcall(void (*db_msgcall_fcn)(const DbEnv *dbenv,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670063633888"></a>See Also</h3>
+              <h3 class="title"><a id="idp5721896"></a>See Also</h3>
             </div>
           </div>
         </div>

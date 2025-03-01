@@ -907,32 +907,6 @@ EOM
     untie @array ;
 
 }
-
-SKIP:
-if(0)
-{
-    # RT #75691: scalar(@array) returns incorrect value after shift() on tied array
-    skip "Test needs Berkeley DB 3.2 or better", 4 
-        if $BerkeleyDB::db_version < 3.3;
-
-    my $lex = new LexFile $Dfile ;
-    my @array ;
-    my $db ;
-    ok $db = tie @array, 'BerkeleyDB::Recno', 
-                        -Flags  => DB_CREATE ,
-						-Filename => $Dfile ;
-
-    isa_ok $db, 'BerkeleyDB::Recno';
-    $FA ? push @array,  7, 9, 11, 13
-        : $db->push(7, 9, 11, 13) ;
-    is scalar(@array), 4;
-    $FA ? shift @array : $db->shift() ;
-    is scalar(@array), 3;
-
-    undef $db;
-    untie @array ;
-
-}
 __END__
 
 

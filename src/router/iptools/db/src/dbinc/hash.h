@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1990, 1993, 1994
@@ -56,7 +56,7 @@ typedef struct hash_t {
 	u_int32_t h_nelem;	/* Number of elements. */
 				/* Hash and compare functions. */
 	u_int32_t (*h_hash) __P((DB *, const void *, u_int32_t));
-	int (*h_compare) __P((DB *, const DBT *, const DBT *, size_t *));
+	int (*h_compare) __P((DB *, const DBT *, const DBT *));
 } HASH;
 
 /* Cursor structure definitions. */

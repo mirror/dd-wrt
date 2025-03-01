@@ -25,7 +25,7 @@ BEGIN
             VALUE "FileDescription", "SQLite3 Extension BLOB to X/Y\0"
             VALUE "FileVersion", VERSION "\0"
             VALUE "InternalName", "BLOBTOXY\0"
-            VALUE "LegalCopyright", "Copyright © 2007-2014 <chw@ch-werner.de>\0"
+            VALUE "LegalCopyright", "Copyright © 2007-2011 <chw@ch-werner.de>\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "SQLITE3_MOD_BLOBTOXY.DLL\0"
             VALUE "PrivateBuild", "\0"

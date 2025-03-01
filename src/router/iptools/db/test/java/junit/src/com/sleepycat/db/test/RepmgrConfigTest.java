@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -88,7 +88,7 @@ public class RepmgrConfigTest extends EventHandlerAdapter
         boolean validPolicy;
     }
 
-    static String address     = "::1";
+    static String address     = "localhost";
     static int    port        = 4242;
     static int    priority    = 100;
     static String homedirName = "";

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -32,8 +32,6 @@ public class TupleSerialFactory {
 
     /**
      * Creates a tuple-serial factory for given environment and class catalog.
-     *
-     * @param catalog the ClassCatalog.
      */
     public TupleSerialFactory(ClassCatalog catalog) {
 
@@ -42,8 +40,6 @@ public class TupleSerialFactory {
 
     /**
      * Returns the class catalog associated with this factory.
-     *
-     * @return the catalog.
      */
     public final ClassCatalog getCatalog() {
 
@@ -65,12 +61,6 @@ public class TupleSerialFactory {
      *
      * @param writeAllowed is true to create a read-write collection or false
      * to create a read-only collection.
-     *
-     * @param <K> the key class.
-     *
-     * @param <V> the value base class.
-     *
-     * @return the map.
      */
     public <K, V extends MarshalledTupleKeyEntity> StoredMap<K, V>
         newMap(Database db,
@@ -99,12 +89,6 @@ public class TupleSerialFactory {
      *
      * @param writeAllowed is true to create a read-write collection or false
      * to create a read-only collection.
-     *
-     * @param <K> the key class.
-     *
-     * @param <V> the value base class.
-     *
-     * @return the sorted map.
      */
     public <K, V extends MarshalledTupleKeyEntity> StoredSortedMap<K, V>
         newSortedMap(Database db,
@@ -130,10 +114,6 @@ public class TupleSerialFactory {
      * @param keyName is the key name passed to the {@link
      * MarshalledTupleKeyEntity#marshalSecondaryKey} method to identify the
      * secondary key.
-     *
-     * @param <V> the value base class.
-     *
-     * @return the key creator.
      */
     public <V extends MarshalledTupleKeyEntity>
         TupleSerialMarshalledKeyCreator<V>

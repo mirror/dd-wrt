@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Chapter 6. Administrating Berkeley DB SQL Databases</title>
+    <title>Chapter 5. Administrating Berkeley DB SQL Databases</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Getting Started with the Oracle Berkeley DB SQL APIs" />
@@ -14,11 +14,11 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Chapter 6. Administrating Berkeley DB SQL Databases</th>
+          <th colspan="3" align="center">Chapter 5. Administrating Berkeley DB SQL Databases</th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="rep_usageexamples.html">Prev</a> </td>
@@ -32,7 +32,7 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title"><a id="admin"></a>Chapter 6. Administrating Berkeley DB SQL Databases</h2>
+            <h2 class="title"><a id="admin"></a>Chapter 5. Administrating Berkeley DB SQL Databases</h2>
           </div>
         </div>
       </div>
@@ -50,7 +50,7 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="admin.html#idm140388646900112">Backing Up Replicated Berkeley DB SQL Databases</a>
+                  <a href="admin.html#idp50739296">Backing Up Replicated Berkeley DB SQL Databases</a>
                 </span>
               </dt>
             </dl>
@@ -93,21 +93,6 @@
               </dt>
             </dl>
           </dd>
-          <dt>
-            <span class="sect1">
-              <a href="recoverysql.html">Catastrophic Recovery</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect1">
-              <a href="statsql.html">Database Statistics</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect1">
-              <a href="verifysql.html">Verify Database Structure</a>
-            </span>
-          </dt>
         </dl>
       </div>
       <p>
@@ -126,7 +111,7 @@
           <dl>
             <dt>
               <span class="sect2">
-                <a href="admin.html#idm140388646900112">Backing Up Replicated Berkeley DB SQL Databases</a>
+                <a href="admin.html#idp50739296">Backing Up Replicated Berkeley DB SQL Databases</a>
               </span>
             </dt>
           </dl>
@@ -146,22 +131,23 @@
                 To learn how to use SQLite Online Backup API, see the official <a class="ulink" href="http://www.sqlite.org/backup.html" target="_top">SQLite
                 Documentation Page.</a>
             </p>
+        <p>
+                If you are using replication, you will also need to copy the
+                file that contains the replication pragma information in order
+                to have a full backup. To do that copy the file named <code class="literal">
+                pragma</code> from the database journal directory.
+            </p>
         <div class="sect2" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h3 class="title"><a id="idm140388646900112"></a>Backing Up Replicated Berkeley DB SQL Databases</h3>
+                <h3 class="title"><a id="idp50739296"></a>Backing Up Replicated Berkeley DB SQL Databases</h3>
               </div>
             </div>
           </div>
           <p>
-	        When BDB SQL interface databases are replicated .dump and the SQLite Online
-		Backup API are not sufficient to create a backup.  In a separate 
-		process you should use the <a href="../api_reference/C/db_hotbackup.html" class="olink">db_hotbackup</a>
-                   utility or other methods
-		described in the 
-		<a href="../gsg_txn/C/backuprestore.html" class="olink">Oracle Berkeley DB Backup Procedures</a>
-                section.  You must then copy
+	        When BDB SQL interface databases are replicated the process for backing up
+		a regular database should be followed. The user must then copy
 		some additional files for the backup to be complete.
 	    </p>
           <p>
@@ -189,9 +175,6 @@
               </li>
               <li>
                 <code class="literal">__db.rep.system</code>
-              </li>
-              <li>
-                <code class="literal">pragma</code>
               </li>
             </ul>
           </div>

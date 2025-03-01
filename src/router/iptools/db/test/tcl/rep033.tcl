@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2004, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -85,11 +85,6 @@ proc rep033_sub { method niter tnum envargs recargs clean when largs } {
 		set repmemargs "-rep_inmem_files "
 	}
 
-	set blobargs ""
-    	if { [can_support_blobs $method $largs] == 1 } {
-		set blobargs "-blob_threshold 100"
-	}
-
 	env_cleanup $testdir
 
 	replsetup $testdir/MSGQUEUEDIR
@@ -119,8 +114,7 @@ proc rep033_sub { method niter tnum envargs recargs clean when largs } {
 	set ma_envcmd "berkdb_env_noerr -create -txn nosync \
 	    -log_buffer $log_buf -log_max $log_max $envargs \
 	    -errpfx MASTER $verbargs $repmemargs $cacheargs \
-	    -home $masterdir $blobargs \
-	    -rep_transport \[list 1 replsend\]"
+	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set masterenv [eval $ma_envcmd $recargs -rep_master]
 
 	# Open a client
@@ -128,8 +122,7 @@ proc rep033_sub { method niter tnum envargs recargs clean when largs } {
 	set cl_envcmd "berkdb_env_noerr -create -txn nosync \
 	    -log_buffer $log_buf -log_max $log_max $envargs \
 	    -errpfx CLIENT $verbargs $repmemargs $cacheargs \
-	    -home $clientdir $blobargs \
-	    -rep_transport \[list 2 replsend\]"
+	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set clientenv [eval $cl_envcmd $recargs -rep_client]
 
 	# Bring the clients online by processing the startup messages.

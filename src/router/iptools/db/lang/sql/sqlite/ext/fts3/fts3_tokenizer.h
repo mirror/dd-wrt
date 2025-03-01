@@ -52,7 +52,7 @@ typedef struct sqlite3_tokenizer_cursor sqlite3_tokenizer_cursor;
 struct sqlite3_tokenizer_module {
 
   /*
-  ** Structure version. Should always be set to 0 or 1.
+  ** Structure version. Should always be set to 0.
   */
   int iVersion;
 
@@ -70,7 +70,7 @@ struct sqlite3_tokenizer_module {
   ** This method should return either SQLITE_OK (0), or an SQLite error 
   ** code. If SQLITE_OK is returned, then *ppTokenizer should be set
   ** to point at the newly created tokenizer structure. The generic
-  ** sqlite3_tokenizer.pModule variable should not be initialized by
+  ** sqlite3_tokenizer.pModule variable should not be initialised by
   ** this callback. The caller will do so.
   */
   int (*xCreate)(
@@ -133,15 +133,6 @@ struct sqlite3_tokenizer_module {
     int *piEndOffset,    /* OUT: Byte offset of end of token in input buffer */
     int *piPosition      /* OUT: Number of tokens returned before this one */
   );
-
-  /***********************************************************************
-  ** Methods below this point are only available if iVersion>=1.
-  */
-
-  /* 
-  ** Configure the language id of a tokenizer cursor.
-  */
-  int (*xLanguageid)(sqlite3_tokenizer_cursor *pCsr, int iLangid);
 };
 
 struct sqlite3_tokenizer {

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -60,7 +60,6 @@ namespace CsharpAPITest {
 
             // Get and confirm locking subsystem statistics.
             LockStats stats = env.LockingSystemStats();
-	    env.Msgfile = testHome + "/" + testName+ ".log";
             env.PrintLockingSystemStats(true, true);
             Assert.AreEqual(0, stats.AllocatedLockers);
             Assert.AreNotEqual(0, stats.AllocatedLocks);
@@ -198,115 +197,6 @@ namespace CsharpAPITest {
             Assert.LessOrEqual(0, stats.LockConflictsWait);
 
             db.Close(); 
-            env.Close();
-        }
-
-
-        [Test]
-        public void TestLockStatPrint()
-        {
-            testName = "TestLockStatPrint";
-            SetUpTest(true);
-
-            string[] messageInfo = new string[]
-                { 
-                  "Last allocated locker ID",
-                  "Current maximum unused locker ID",
-                  "Number of lock modes",
-                  "Initial number of locks allocated",
-                  "Initial number of lockers allocated",
-                  "Initial number of lock objects allocated",
-                  "Maximum number of locks possible",
-                  "Maximum number of lockers possible",
-                  "Maximum number of lock objects possible",
-                  "Current number of locks allocated",
-                  "Current number of lockers allocated",
-                  "Current number of lock objects allocated",
-                  "Number of lock object partitions",
-                  "Size of object hash table",
-                  "Number of current locks",
-                  "Maximum number of locks at any one time",
-                  "Maximum number of locks in any one bucket",
-                  "Maximum number of locks stolen by for an empty partition",
-                  "Maximum number of locks stolen for any one partition",
-                  "Number of current lockers",
-                  "Maximum number of lockers at any one time",
-                  "Number of hits in the thread locker cache",
-                  "Total number of lockers reused",
-                  "Number of current lock objects",
-                  "Maximum number of lock objects at any one time",
-                  "Maximum number of lock objects in any one bucket",
-                  "Maximum number of objects stolen by for an empty partition",
-                  "Maximum number of objects stolen for any one partition",
-                  "Total number of locks requested",
-                  "Total number of locks released",
-                  "Total number of locks upgraded",
-                  "Total number of locks downgraded",
-                  "Lock requests not available due to conflicts, for which we waited",
-                  "Lock requests not available due to conflicts, for which we did not wait",
-                  "Number of deadlocks",
-                  "Lock timeout value",
-                  "Number of locks that have timed out",
-                  "Transaction timeout value",
-                  "Number of transactions that have timed out",
-                  "Region size",
-                  "The number of partition locks that required waiting (0%)",
-                  "The maximum number of times any partition lock was waited for (0%)",
-                  "The number of object queue operations that required waiting (0%)",
-                  "The number of locker allocations that required waiting (0%)",
-                  "The number of region locks that required waiting (0%)",
-                  "Maximum hash bucket length"
-                };
-
-            // Configure locking subsystem.
-            LockingConfig lkConfig = new LockingConfig();
-            lkConfig.MaxLockers = 60;
-            lkConfig.MaxLocks = 50;
-            lkConfig.MaxObjects = 70;
-            lkConfig.Partitions = 20;
-            lkConfig.DeadlockResolution = DeadlockPolicy.DEFAULT;
-
-            // Configure and open an environment.
-            DatabaseEnvironmentConfig envConfig =
-                new DatabaseEnvironmentConfig();
-            envConfig.Create = true;
-            envConfig.LockSystemCfg = lkConfig;
-            envConfig.LockTimeout = 1000;
-            envConfig.NoLocking = false;
-            envConfig.UseLocking = true;
-            DatabaseEnvironment env =
-                DatabaseEnvironment.Open(testHome, envConfig);
-
-            // Confirm message file does not exist.
-            string messageFile = testHome + "/" + "msgfile";
-            Assert.AreEqual(false, File.Exists(messageFile));
-
-            // Call set_msgfile() of env.
-            env.Msgfile = messageFile;
-
-            // Print env statistic to message file.
-            env.PrintLockingSystemStats();
-
-            // Confirm message file exists now.
-            Assert.AreEqual(true, File.Exists(messageFile));
-
-            env.Msgfile = "";
-            int counter = 0;
-            string line;
-            line = null;
-
-            // Read the message file line by line.
-            System.IO.StreamReader file = new System.IO.StreamReader(@"" + messageFile);
-            while ((line = file.ReadLine()) != null)
-            {
-                string[] tempStr = line.Split('\t');
-                // Confirm the content of the message file.
-                Assert.AreEqual(tempStr[1], messageInfo[counter]);
-                counter++;
-            }
-            Assert.AreNotEqual(counter, 0);
-
-            file.Close();
             env.Close();
         }
 

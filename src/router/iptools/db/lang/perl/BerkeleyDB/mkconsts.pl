@@ -1035,7 +1035,7 @@ use constant IGNORE => 'ignore' ;
 	DB_MEM_THREAD              => '5.2.14',
 
 	#########
-	# 5.3.15
+	# 5.3.5
 	#########
 
 	DB2_AM_EXCL                => DEFINE,
@@ -1047,86 +1047,16 @@ use constant IGNORE => 'ignore' ;
 	DB_BACKUP_NO_LOGS          => DEFINE,
 	DB_BACKUP_SINGLE_DIR       => DEFINE,
 	DB_BACKUP_UPDATE           => DEFINE,
-	DB_CHKSUM_FAIL             => DEFINE,
 	DB_INTERNAL_PERSISTENT_DB  => DEFINE,
 	DB_INTERNAL_TEMPORARY_DB   => DEFINE,
 	DB_LOCK_IGNORE_REC         => DEFINE,
 	DB_VERB_BACKUP             => DEFINE,
-	MP_FOR_FLUSH               => IGNORE,
 
 	# enum DB_BACKUP_CONFIG
-	DB_BACKUP_READ_COUNT       => '5.3.15',
-	DB_BACKUP_READ_SLEEP       => '5.3.15',
-	DB_BACKUP_SIZE             => '5.3.15',
-	DB_BACKUP_WRITE_DIRECT     => '5.3.15',
-
-	#########
-	# 6.0.19
-	#########
-
-	DB_DBT_BLOB                => IGNORE,
-	DB_DBT_BLOB_REC            => IGNORE,
-	DB_EVENT_REP_AUTOTAKEOVER_FAILED => DEFINE,
-	DB_INTERNAL_BLOB_DB        => DEFINE,
-	DB_LOG_BLOB                => DEFINE,
-	DB_REPMGR_ISVIEW           => DEFINE,
-	DB_STREAM_READ             => DEFINE,
-	DB_STREAM_SYNC_WRITE       => DEFINE,
-	DB_STREAM_WRITE            => DEFINE,
-	DB_VERB_MVCC               => DEFINE,
-
-	#########
-	# 6.0.30
-	#########
-
-
-	# enum log_rec_type_t
-	LOGREC_LONGARG             => '6.0.30',
-
-	#########
-	# 6.0.35
-	#########
-
-	DB_NOINTMP                 => DEFINE,
-
-	#########
-	# 6.1.10
-	#########
-
-	DB_EVENT_FAILCHK_PANIC     => DEFINE,
-	DB_EVENT_MUTEX_DIED        => DEFINE,
-	DB_EVENT_REP_INQUEUE_FULL  => DEFINE,
-	DB_EXIT_FAILCHK            => DEFINE,
-	DB_EXIT_FILE_EXISTS        => DEFINE,
-	DB_FAILURE_SYMPTOM_SIZE    => DEFINE,
-	DB_LOG_NOSYNC              => DEFINE,
-	DB_MUTEX_DESCRIBE_STRLEN   => DEFINE,
-	DB_MUTEX_OWNER_DEAD        => DEFINE,
-	DB_REPMGR_CONF_PREFMAS_CLIENT => DEFINE,
-	DB_REPMGR_CONF_PREFMAS_MASTER => DEFINE,
-	DB_REP_CONF_ELECT_LOGLENGTH => DEFINE,
-	DB_SET_MUTEX_FAILCHK_TIMEOUT => DEFINE,
-
-	#########
-	# 6.1.19
-	#########
-
-	DB_FORCESYNCENV            => DEFINE,
-	DB_META_CHKSUM_FAIL        => DEFINE,
-
-	#########
-	# 6.2.7
-	#########
-
-	DB2_AM_MPOOL_OPENED        => DEFINE,
-	DB_OFF_T_MAX               => DEFINE,
-	DB_REPMGR_CONF_FORWARD_WRITES => DEFINE,
-	DB_REP_WRITE_FORWARD_TIMEOUT => DEFINE,
-	DB_SLICED                  => DEFINE,
-	DB_SLICE_CORRUPT           => DEFINE,
-	DB_SLICE_INCONSISTENT      => DEFINE,
-	DB_VERB_SLICE              => DEFINE,
-
+	DB_BACKUP_READ_COUNT       => '5.3.5',
+	DB_BACKUP_READ_SLEEP       => '5.3.5',
+	DB_BACKUP_SIZE             => '5.3.5',
+	DB_BACKUP_WRITE_DIRECT     => '5.3.5',
 	) ;
 
 sub enum_Macro

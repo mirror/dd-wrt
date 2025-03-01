@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # TEST	rep087
 # TEST  Abbreviated internal init with open file handles.
@@ -219,18 +219,6 @@ proc rep087_sub { method niter tnum with_nimdb largs } {
 		error_check_good access_ok [catch {$db get $a_key} ret] 0
 	}
 
-	#
-	# If we're a queue database, add in a check to make sure a client
-	# cannot do a db get -consume because that is an update operation.
-	#
-	set dbtype [$db get_type]
-	if { $dbtype == "queue" } {
-		puts "\tRep$tnum: Try to consume a queue entry on a client."
-		set ret [catch {$db get -consume} res]
-		error_check_bad client_consume $ret 0
-		error_check_good right_error \
-		    [is_substr $res "permission denied"] 1 
-	}
 	puts "\tRep$tnum: Clean up."
 	$db close
 	$envs(A) close

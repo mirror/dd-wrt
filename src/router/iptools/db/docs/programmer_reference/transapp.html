@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Chapter 12.  Berkeley DB Transactional Data Store Applications</title>
+    <title>Chapter 11.  Berkeley DB Transactional Data Store Applications</title>
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
@@ -14,11 +14,13 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Chapter 12.  Berkeley DB Transactional Data Store Applications </th>
+          <th colspan="3" align="center">Chapter 11. 
+		Berkeley DB Transactional Data Store Applications
+        </th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="cam_app.html">Prev</a> </td>
@@ -32,7 +34,9 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title"><a id="transapp"></a>Chapter 12.  Berkeley DB Transactional Data Store Applications </h2>
+            <h2 class="title"><a id="transapp"></a>Chapter 11. 
+		Berkeley DB Transactional Data Store Applications
+        </h2>
           </div>
         </div>
       </div>
@@ -63,8 +67,7 @@
           </dt>
           <dt>
             <span class="sect1">
-              <a href="transapp_app.html">Architecting Transactional Data
-        Store applications</a>
+              <a href="transapp_app.html">Architecting Transactional Data Store applications</a>
             </span>
           </dt>
           <dt>
@@ -118,8 +121,7 @@
           </dt>
           <dt>
             <span class="sect1">
-              <a href="transapp_admin.html">Environment
-        infrastructure</a>
+              <a href="transapp_admin.html">Environment infrastructure</a>
             </span>
           </dt>
           <dt>
@@ -134,8 +136,7 @@
           </dt>
           <dt>
             <span class="sect1">
-              <a href="transapp_archival.html">Database and log file
-        archival</a>
+              <a href="transapp_archival.html">Database and log file archival</a>
             </span>
           </dt>
           <dt>
@@ -175,8 +176,7 @@
           </dt>
           <dt>
             <span class="sect1">
-              <a href="transapp_throughput.html">Transaction
-        throughput</a>
+              <a href="transapp_throughput.html">Transaction throughput</a>
             </span>
           </dt>
           <dt>
@@ -194,33 +194,25 @@
             </div>
           </div>
         </div>
-        <p>
-        It is difficult to write a useful transactional tutorial and
-        still keep within reasonable bounds of documentation; that is,
-        without writing a book on transactional programming. We have
-        two goals in this section: to familiarize readers with the
-        transactional interfaces of Berkeley DB and to provide code
-        building blocks that will be useful for creating
-        applications.
-    </p>
-        <p>
-        We have not attempted to present this information using a
-        real-world application. First, transactional applications are
-        often complex and time-consuming to explain. Also, one of our
-        goals is to give you an understanding of the wide variety of
-        tools Berkeley DB makes available to you, and no single
-        application would use most of the interfaces included in the
-        Berkeley DB library. For these reasons, we have chosen to
-        simply present the Berkeley DB data structures and programming
-        solutions, using examples that differ from page to page. All
-        the examples are included in a standalone program you can
-        examine, modify, and run; and from which you will be able to
-        extract code blocks for your own applications. Fragments of
-        the program will be presented throughout this chapter, and the
-        complete text of the <a class="ulink" href="transapp.cs" target="_top">example
-        program</a> for IEEE/ANSI Std 1003.1 (POSIX) standard
-        systems is included in the Berkeley DB distribution.
-    </p>
+        <p>It is difficult to write a useful transactional tutorial and still keep
+within reasonable bounds of documentation; that is, without writing a
+book on transactional programming.  We have two goals in this section:
+to familiarize readers with the transactional interfaces of Berkeley DB and
+to provide code building blocks that will be useful for creating
+applications.</p>
+        <p>We have not attempted to present this information using a real-world
+application.  First, transactional applications are often complex and
+time-consuming to explain.  Also, one of our goals is to give you an
+understanding of the wide variety of tools Berkeley DB makes available to you,
+and no single application would use most of the interfaces included in
+the Berkeley DB library.  For these reasons, we have chosen to simply present
+the Berkeley DB data structures and programming solutions, using examples that
+differ from page to page.  All the examples are included in a standalone
+program you can examine, modify, and run; and from which you will be able
+to extract code blocks for your own applications.  Fragments of the
+program will be presented throughout this chapter, and the complete text
+of the <a class="ulink" href="transapp.cs" target="_top">example program</a> for IEEE/ANSI Std 1003.1 (POSIX)
+standard systems is included in the Berkeley DB distribution.</p>
       </div>
     </div>
     <div class="navfooter">

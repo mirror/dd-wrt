@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 /*
  * Copyright (c) 1995, 1996
@@ -639,7 +639,7 @@ __db_txnlist_find(env, hp, txnid, statusp)
 	DB_TXNLIST *entry;
 
 	if (txnid == 0)
-		return (USR_ERR(env, DB_NOTFOUND));
+		return (DB_NOTFOUND);
 
 	return (__db_txnlist_find_internal(env, hp,
 	    TXNLIST_TXNID, txnid, &entry, 0, statusp));
@@ -666,7 +666,7 @@ __db_txnlist_update(env, hp, txnid, status, lsn, ret_status, add_ok)
 	int ret;
 
 	if (txnid == 0)
-		return (USR_ERR(env, DB_NOTFOUND));
+		return (DB_NOTFOUND);
 
 	ret = __db_txnlist_find_internal(env,
 	    hp, TXNLIST_TXNID, txnid, &elp, 0, ret_status);
@@ -715,7 +715,7 @@ __db_txnlist_find_internal(env,
 	ret = 0;
 
 	if (hp == NULL)
-		return (USR_ERR(env, DB_NOTFOUND));
+		return (DB_NOTFOUND);
 
 	switch (type) {
 	case TXNLIST_TXNID:
@@ -759,7 +759,7 @@ __db_txnlist_find_internal(env,
 		return (ret);
 	}
 
-	return (USR_ERR(env, DB_NOTFOUND));
+	return (DB_NOTFOUND);
 }
 
 /*

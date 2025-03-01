@@ -69,11 +69,11 @@
   </ImportGroup>
   <ItemGroup>
     <ProjectReference Condition="exists('db.vcxproj')" Include="db.vcxproj">
-      <Project>{FD045D60-ABAD-4A6C-9794-9BFB085FC3E7}</Project>
+      <Project>{fd045d60-abad-4a6c-9794-9bfb085fc3e7}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Condition="exists('ex_csvcode.vcxproj')" Include="ex_csvcode.vcxproj">
-      <Project>{54E6A58D-561D-467E-B378-6BA2EE138880}</Project>
+      <Project>{54e6a58d-561d-467e-b378-6ba2ee138880}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>

@@ -1,21 +1,19 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
 package com.sleepycat.util.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import org.junit.Test;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 import com.sleepycat.util.ExceptionUnwrapper;
 import com.sleepycat.util.IOExceptionWrapper;
@@ -24,9 +22,35 @@ import com.sleepycat.util.RuntimeExceptionWrapper;
 /**
  * @author Mark Hayes
  */
-public class ExceptionWrapperTest extends TestBase {
+public class ExceptionWrapperTest extends TestCase {
 
-    @Test
+    public static void main(String[] args) {
+        junit.framework.TestResult tr =
+            junit.textui.TestRunner.run(suite());
+        if (tr.errorCount() > 0 ||
+            tr.failureCount() > 0) {
+            System.exit(1);
+        } else {
+            System.exit(0);
+        }
+    }
+
+    public static Test suite() {
+        TestSuite suite = new TestSuite(ExceptionWrapperTest.class);
+        return suite;
+    }
+
+    public ExceptionWrapperTest(String name) {
+
+        super(name);
+    }
+
+    @Override
+    public void setUp() {
+
+        SharedTestUtils.printTestName("ExceptionWrapperTest." + getName());
+    }
+
     public void testIOWrapper() {
         try {
             throw new IOExceptionWrapper(new RuntimeException("msg"));
@@ -41,7 +65,6 @@ public class ExceptionWrapperTest extends TestBase {
         }
     }
 
-    @Test
     public void testRuntimeWrapper() {
         try {
             throw new RuntimeExceptionWrapper(new IOException("msg"));
@@ -56,7 +79,6 @@ public class ExceptionWrapperTest extends TestBase {
         }
     }
 
-    @Test
     public void testErrorWrapper() {
         try {
             throw new RuntimeExceptionWrapper(new Error("msg"));
@@ -79,7 +101,6 @@ public class ExceptionWrapperTest extends TestBase {
      * Generates a stack trace for a nested exception and checks the output
      * for the nested exception.
      */
-    @Test
     public void testStackTrace() {
 
         /* Nested stack traces are not avilable in Java 1.3. */

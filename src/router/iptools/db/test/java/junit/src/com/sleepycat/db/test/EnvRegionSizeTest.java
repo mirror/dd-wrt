@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  * 
- * Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -125,9 +125,9 @@ public class EnvRegionSizeTest {
         EnvironmentConfig envc = new EnvironmentConfig();
         envc.setAllowCreate(true);
         envc.setInitializeCache(true);
-        envc.setRegionMemoryMax(10 * 1024 * 1024);
-        assertEquals(envc.getRegionMemoryMax(), 10 * 1024 * 1024);
+        envc.setRegionMemoryMax(5 * 1024 * 1024);
+        assertEquals(envc.getRegionMemoryMax(), 5 * 1024 * 1024);
         Environment dbEnv = new Environment(TestUtils.BASETEST_DBFILE, envc);
-        assertEquals(envc.getRegionMemoryMax(), 10 * 1024 * 1024);
+        assertEquals(envc.getRegionMemoryMax(), 5 * 1024 * 1024);
     }
 }

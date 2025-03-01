@@ -20,7 +20,7 @@ if {[info commands sqlite3async_initialize] eq ""} {
 }
 
 db close
-forcedelete test2.db
+file delete -force test2.db
 sqlite3async_initialize "" 1
 sqlite3async_control halt never
 sqlite3 db test.db
@@ -66,3 +66,4 @@ sqlite3async_control halt never
 sqlite3async_shutdown
 set sqlite3async_trace 0
 finish_test
+

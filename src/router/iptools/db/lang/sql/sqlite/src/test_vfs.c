@@ -10,6 +10,10 @@
 **
 ******************************************************************************
 **
+*/
+#if SQLITE_TEST          /* This file is used for testing only */
+
+/*
 ** This file contains the implementation of the Tcl [testvfs] command,
 ** used to create SQLite VFS implementations with various properties and
 ** instrumentation to support testing SQLite.
@@ -24,11 +28,9 @@
 **   -mxpathname INTEGER        (Value for sqlite3_vfs.mxPathname)
 **   -iversion   INTEGER        (Value for sqlite3_vfs.iVersion)
 */
-#if SQLITE_TEST          /* This file is used for testing only */
 
 #include "sqlite3.h"
 #include "sqliteInt.h"
-#include <tcl.h>
 
 typedef struct Testvfs Testvfs;
 typedef struct TestvfsShm TestvfsShm;
@@ -80,9 +82,10 @@ struct Testvfs {
   sqlite3_vfs *pVfs;              /* The testvfs registered with SQLite */
   Tcl_Interp *interp;             /* Interpreter to run script in */
   Tcl_Obj *pScript;               /* Script to execute */
+  int nScript;                    /* Number of elements in array apScript */
+  Tcl_Obj **apScript;             /* Array version of pScript */
   TestvfsBuffer *pBuffer;         /* List of shared buffers */
   int isNoshm;
-  int isFullshm;
 
   int mask;                       /* Mask controlling [script] and [ioerr] */
 
@@ -111,26 +114,20 @@ struct Testvfs {
 **   + Simulating IO errors, and
 **   + Invoking the Tcl callback script.
 */
-#define TESTVFS_SHMOPEN_MASK      0x00000001
-#define TESTVFS_SHMLOCK_MASK      0x00000010
-#define TESTVFS_SHMMAP_MASK       0x00000020
-#define TESTVFS_SHMBARRIER_MASK   0x00000040
-#define TESTVFS_SHMCLOSE_MASK     0x00000080
+#define TESTVFS_SHMOPEN_MASK    0x00000001
+#define TESTVFS_SHMLOCK_MASK    0x00000010
+#define TESTVFS_SHMMAP_MASK     0x00000020
+#define TESTVFS_SHMBARRIER_MASK 0x00000040
+#define TESTVFS_SHMCLOSE_MASK   0x00000080
 
-#define TESTVFS_OPEN_MASK         0x00000100
-#define TESTVFS_SYNC_MASK         0x00000200
-#define TESTVFS_DELETE_MASK       0x00000400
-#define TESTVFS_CLOSE_MASK        0x00000800
-#define TESTVFS_WRITE_MASK        0x00001000
-#define TESTVFS_TRUNCATE_MASK     0x00002000
-#define TESTVFS_ACCESS_MASK       0x00004000
-#define TESTVFS_FULLPATHNAME_MASK 0x00008000
-#define TESTVFS_READ_MASK         0x00010000
-#define TESTVFS_UNLOCK_MASK       0x00020000
-#define TESTVFS_LOCK_MASK         0x00040000
-#define TESTVFS_CKLOCK_MASK       0x00080000
-
-#define TESTVFS_ALL_MASK          0x000FFFFF
+#define TESTVFS_OPEN_MASK       0x00000100
+#define TESTVFS_SYNC_MASK       0x00000200
+#define TESTVFS_DELETE_MASK     0x00000400
+#define TESTVFS_CLOSE_MASK      0x00000800
+#define TESTVFS_WRITE_MASK      0x00001000
+#define TESTVFS_TRUNCATE_MASK   0x00002000
+#define TESTVFS_ACCESS_MASK     0x00004000
+#define TESTVFS_ALL_MASK        0x00007FFF
 
 
 #define TESTVFS_MAX_PAGES 1024
@@ -193,11 +190,8 @@ static int tvfsShmMap(sqlite3_file*,int,int,int, void volatile **);
 static void tvfsShmBarrier(sqlite3_file*);
 static int tvfsShmUnmap(sqlite3_file*, int);
 
-static int tvfsFetch(sqlite3_file*, sqlite3_int64, int, void**);
-static int tvfsUnfetch(sqlite3_file*, sqlite3_int64, void*);
-
 static sqlite3_io_methods tvfs_io_methods = {
-  3,                              /* iVersion */
+  2,                              /* iVersion */
   tvfsClose,                      /* xClose */
   tvfsRead,                       /* xRead */
   tvfsWrite,                      /* xWrite */
@@ -213,9 +207,7 @@ static sqlite3_io_methods tvfs_io_methods = {
   tvfsShmMap,                     /* xShmMap */
   tvfsShmLock,                    /* xShmLock */
   tvfsShmBarrier,                 /* xShmBarrier */
-  tvfsShmUnmap,                   /* xShmUnmap */
-  tvfsFetch,
-  tvfsUnfetch
+  tvfsShmUnmap                    /* xShmUnmap */
 };
 
 static int tvfsResultCode(Testvfs *p, int *pRc){
@@ -274,30 +266,50 @@ static void tvfsExecTcl(
   const char *zMethod,
   Tcl_Obj *arg1,
   Tcl_Obj *arg2,
-  Tcl_Obj *arg3,
-  Tcl_Obj *arg4
+  Tcl_Obj *arg3
 ){
   int rc;                         /* Return code from Tcl_EvalObj() */
-  Tcl_Obj *pEval;
+  int nArg;                       /* Elements in eval'd list */
+  int nScript;
+  Tcl_Obj ** ap;
+
   assert( p->pScript );
 
-  assert( zMethod );
-  assert( p );
-  assert( arg2==0 || arg1!=0 );
-  assert( arg3==0 || arg2!=0 );
+  if( !p->apScript ){
+    int nByte;
+    int i;
+    if( TCL_OK!=Tcl_ListObjGetElements(p->interp, p->pScript, &nScript, &ap) ){
+      Tcl_BackgroundError(p->interp);
+      Tcl_ResetResult(p->interp);
+      return;
+    }
+    p->nScript = nScript;
+    nByte = (nScript+TESTVFS_MAX_ARGS)*sizeof(Tcl_Obj *);
+    p->apScript = (Tcl_Obj **)ckalloc(nByte);
+    memset(p->apScript, 0, nByte);
+    for(i=0; i<nScript; i++){
+      p->apScript[i] = ap[i];
+    }
+  }
 
-  pEval = Tcl_DuplicateObj(p->pScript);
-  Tcl_IncrRefCount(p->pScript);
-  Tcl_ListObjAppendElement(p->interp, pEval, Tcl_NewStringObj(zMethod, -1));
-  if( arg1 ) Tcl_ListObjAppendElement(p->interp, pEval, arg1);
-  if( arg2 ) Tcl_ListObjAppendElement(p->interp, pEval, arg2);
-  if( arg3 ) Tcl_ListObjAppendElement(p->interp, pEval, arg3);
-  if( arg4 ) Tcl_ListObjAppendElement(p->interp, pEval, arg4);
+  p->apScript[p->nScript] = Tcl_NewStringObj(zMethod, -1);
+  p->apScript[p->nScript+1] = arg1;
+  p->apScript[p->nScript+2] = arg2;
+  p->apScript[p->nScript+3] = arg3;
 
-  rc = Tcl_EvalObjEx(p->interp, pEval, TCL_EVAL_GLOBAL);
+  for(nArg=p->nScript; p->apScript[nArg]; nArg++){
+    Tcl_IncrRefCount(p->apScript[nArg]);
+  }
+
+  rc = Tcl_EvalObjv(p->interp, nArg, p->apScript, TCL_EVAL_GLOBAL);
   if( rc!=TCL_OK ){
     Tcl_BackgroundError(p->interp);
     Tcl_ResetResult(p->interp);
+  }
+
+  for(nArg=p->nScript; p->apScript[nArg]; nArg++){
+    Tcl_DecrRefCount(p->apScript[nArg]);
+    p->apScript[nArg] = 0;
   }
 }
 
@@ -313,7 +325,7 @@ static int tvfsClose(sqlite3_file *pFile){
 
   if( p->pScript && p->mask&TESTVFS_CLOSE_MASK ){
     tvfsExecTcl(p, "xClose", 
-        Tcl_NewStringObj(pFd->zFilename, -1), pFd->pShmId, 0, 0
+        Tcl_NewStringObj(pFd->zFilename, -1), pFd->pShmId, 0
     );
   }
 
@@ -339,22 +351,8 @@ static int tvfsRead(
   int iAmt, 
   sqlite_int64 iOfst
 ){
-  int rc = SQLITE_OK;
-  TestvfsFd *pFd = tvfsGetFd(pFile);
-  Testvfs *p = (Testvfs *)pFd->pVfs->pAppData;
-  if( p->pScript && p->mask&TESTVFS_READ_MASK ){
-    tvfsExecTcl(p, "xRead", 
-        Tcl_NewStringObj(pFd->zFilename, -1), pFd->pShmId, 0, 0
-    );
-    tvfsResultCode(p, &rc);
-  }
-  if( rc==SQLITE_OK && p->mask&TESTVFS_READ_MASK && tvfsInjectIoerr(p) ){
-    rc = SQLITE_IOERR;
-  }
-  if( rc==SQLITE_OK ){
-    rc = sqlite3OsRead(pFd->pReal, zBuf, iAmt, iOfst);
-  }
-  return rc;
+  TestvfsFd *p = tvfsGetFd(pFile);
+  return sqlite3OsRead(p->pReal, zBuf, iAmt, iOfst);
 }
 
 /*
@@ -372,8 +370,7 @@ static int tvfsWrite(
 
   if( p->pScript && p->mask&TESTVFS_WRITE_MASK ){
     tvfsExecTcl(p, "xWrite", 
-        Tcl_NewStringObj(pFd->zFilename, -1), pFd->pShmId, 
-        Tcl_NewWideIntObj(iOfst), Tcl_NewIntObj(iAmt)
+        Tcl_NewStringObj(pFd->zFilename, -1), pFd->pShmId, 0
     );
     tvfsResultCode(p, &rc);
   }
@@ -401,7 +398,7 @@ static int tvfsTruncate(sqlite3_file *pFile, sqlite_int64 size){
 
   if( p->pScript && p->mask&TESTVFS_TRUNCATE_MASK ){
     tvfsExecTcl(p, "xTruncate", 
-        Tcl_NewStringObj(pFd->zFilename, -1), pFd->pShmId, 0, 0
+        Tcl_NewStringObj(pFd->zFilename, -1), pFd->pShmId, 0
     );
     tvfsResultCode(p, &rc);
   }
@@ -421,7 +418,7 @@ static int tvfsSync(sqlite3_file *pFile, int flags){
   Testvfs *p = (Testvfs *)pFd->pVfs->pAppData;
 
   if( p->pScript && p->mask&TESTVFS_SYNC_MASK ){
-    char *zFlags = 0;
+    char *zFlags;
 
     switch( flags ){
       case SQLITE_SYNC_NORMAL:
@@ -442,7 +439,7 @@ static int tvfsSync(sqlite3_file *pFile, int flags){
 
     tvfsExecTcl(p, "xSync", 
         Tcl_NewStringObj(pFd->zFilename, -1), pFd->pShmId,
-        Tcl_NewStringObj(zFlags, -1), 0
+        Tcl_NewStringObj(zFlags, -1)
     );
     tvfsResultCode(p, &rc);
   }
@@ -468,46 +465,24 @@ static int tvfsFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
 ** Lock an tvfs-file.
 */
 static int tvfsLock(sqlite3_file *pFile, int eLock){
-  TestvfsFd *pFd = tvfsGetFd(pFile);
-  Testvfs *p = (Testvfs *)pFd->pVfs->pAppData;
-  if( p->pScript && p->mask&TESTVFS_LOCK_MASK ){
-    char zLock[30];
-    sqlite3_snprintf(sizeof(zLock),zLock,"%d",eLock);
-    tvfsExecTcl(p, "xLock", Tcl_NewStringObj(pFd->zFilename, -1), 
-                   Tcl_NewStringObj(zLock, -1), 0, 0);
-  }
-  return sqlite3OsLock(pFd->pReal, eLock);
+  TestvfsFd *p = tvfsGetFd(pFile);
+  return sqlite3OsLock(p->pReal, eLock);
 }
 
 /*
 ** Unlock an tvfs-file.
 */
 static int tvfsUnlock(sqlite3_file *pFile, int eLock){
-  TestvfsFd *pFd = tvfsGetFd(pFile);
-  Testvfs *p = (Testvfs *)pFd->pVfs->pAppData;
-  if( p->pScript && p->mask&TESTVFS_UNLOCK_MASK ){
-    char zLock[30];
-    sqlite3_snprintf(sizeof(zLock),zLock,"%d",eLock);
-    tvfsExecTcl(p, "xUnlock", Tcl_NewStringObj(pFd->zFilename, -1), 
-                   Tcl_NewStringObj(zLock, -1), 0, 0);
-  }
-  if( p->mask&TESTVFS_WRITE_MASK && tvfsInjectIoerr(p) ){
-    return SQLITE_IOERR_UNLOCK;
-  }
-  return sqlite3OsUnlock(pFd->pReal, eLock);
+  TestvfsFd *p = tvfsGetFd(pFile);
+  return sqlite3OsUnlock(p->pReal, eLock);
 }
 
 /*
 ** Check if another file-handle holds a RESERVED lock on an tvfs-file.
 */
 static int tvfsCheckReservedLock(sqlite3_file *pFile, int *pResOut){
-  TestvfsFd *pFd = tvfsGetFd(pFile);
-  Testvfs *p = (Testvfs *)pFd->pVfs->pAppData;
-  if( p->pScript && p->mask&TESTVFS_CKLOCK_MASK ){
-    tvfsExecTcl(p, "xCheckReservedLock", Tcl_NewStringObj(pFd->zFilename, -1),
-                   0, 0, 0);
-  }
-  return sqlite3OsCheckReservedLock(pFd->pReal, pResOut);
+  TestvfsFd *p = tvfsGetFd(pFile);
+  return sqlite3OsCheckReservedLock(p->pReal, pResOut);
 }
 
 /*
@@ -515,27 +490,6 @@ static int tvfsCheckReservedLock(sqlite3_file *pFile, int *pResOut){
 */
 static int tvfsFileControl(sqlite3_file *pFile, int op, void *pArg){
   TestvfsFd *p = tvfsGetFd(pFile);
-  if( op==SQLITE_FCNTL_PRAGMA ){
-    char **argv = (char**)pArg;
-    if( sqlite3_stricmp(argv[1],"error")==0 ){
-      int rc = SQLITE_ERROR;
-      if( argv[2] ){
-        const char *z = argv[2];
-        int x = atoi(z);
-        if( x ){
-          rc = x;
-          while( sqlite3Isdigit(z[0]) ){ z++; }
-          while( sqlite3Isspace(z[0]) ){ z++; }
-        }
-        if( z[0] ) argv[0] = sqlite3_mprintf("%s", z);
-      }
-      return rc;
-    }
-    if( sqlite3_stricmp(argv[1], "filename")==0 ){
-      argv[0] = sqlite3_mprintf("%s", p->zFilename);
-      return SQLITE_OK;
-    }
-  }
   return sqlite3OsFileControl(p->pReal, op, pArg);
 }
 
@@ -591,7 +545,7 @@ static int tvfsOpen(
 
   /* Evaluate the Tcl script: 
   **
-  **   SCRIPT xOpen FILENAME KEY-VALUE-ARGS
+  **   SCRIPT xOpen FILENAME
   **
   ** If the script returns an SQLite error code other than SQLITE_OK, an
   ** error is returned to the caller. If it returns SQLITE_OK, the new
@@ -600,19 +554,7 @@ static int tvfsOpen(
   */
   Tcl_ResetResult(p->interp);
   if( p->pScript && p->mask&TESTVFS_OPEN_MASK ){
-    Tcl_Obj *pArg = Tcl_NewObj();
-    Tcl_IncrRefCount(pArg);
-    if( flags&SQLITE_OPEN_MAIN_DB ){
-      const char *z = &zName[strlen(zName)+1];
-      while( *z ){
-        Tcl_ListObjAppendElement(0, pArg, Tcl_NewStringObj(z, -1));
-        z += strlen(z) + 1;
-        Tcl_ListObjAppendElement(0, pArg, Tcl_NewStringObj(z, -1));
-        z += strlen(z) + 1;
-      }
-    }
-    tvfsExecTcl(p, "xOpen", Tcl_NewStringObj(pFd->zFilename, -1), pArg, 0, 0);
-    Tcl_DecrRefCount(pArg);
+    tvfsExecTcl(p, "xOpen", Tcl_NewStringObj(pFd->zFilename, -1), 0, 0);
     if( tvfsResultCode(p, &rc) ){
       if( rc!=SQLITE_OK ) return rc;
     }else{
@@ -644,10 +586,7 @@ static int tvfsOpen(
 
     pMethods = (sqlite3_io_methods *)ckalloc(nByte);
     memcpy(pMethods, &tvfs_io_methods, nByte);
-    pMethods->iVersion = pFd->pReal->pMethods->iVersion;
-    if( pMethods->iVersion>pVfs->iVersion ){
-      pMethods->iVersion = pVfs->iVersion;
-    }
+    pMethods->iVersion = pVfs->iVersion;
     if( pVfs->iVersion>1 && ((Testvfs *)pVfs->pAppData)->isNoshm ){
       pMethods->xShmUnmap = 0;
       pMethods->xShmLock = 0;
@@ -671,7 +610,7 @@ static int tvfsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
 
   if( p->pScript && p->mask&TESTVFS_DELETE_MASK ){
     tvfsExecTcl(p, "xDelete", 
-        Tcl_NewStringObj(zPath, -1), Tcl_NewIntObj(dirSync), 0, 0
+        Tcl_NewStringObj(zPath, -1), Tcl_NewIntObj(dirSync), 0
     );
     tvfsResultCode(p, &rc);
   }
@@ -699,7 +638,7 @@ static int tvfsAccess(
     if( flags==SQLITE_ACCESS_READWRITE ) zArg = "SQLITE_ACCESS_READWRITE";
     if( flags==SQLITE_ACCESS_READ ) zArg = "SQLITE_ACCESS_READ";
     tvfsExecTcl(p, "xAccess", 
-        Tcl_NewStringObj(zPath, -1), Tcl_NewStringObj(zArg, -1), 0, 0
+        Tcl_NewStringObj(zPath, -1), Tcl_NewStringObj(zArg, -1), 0
     );
     if( tvfsResultCode(p, &rc) ){
       if( rc!=SQLITE_OK ) return rc;
@@ -724,14 +663,6 @@ static int tvfsFullPathname(
   int nOut, 
   char *zOut
 ){
-  Testvfs *p = (Testvfs *)pVfs->pAppData;
-  if( p->pScript && p->mask&TESTVFS_FULLPATHNAME_MASK ){
-    int rc;
-    tvfsExecTcl(p, "xFullPathname", Tcl_NewStringObj(zPath, -1), 0, 0, 0);
-    if( tvfsResultCode(p, &rc) ){
-      if( rc!=SQLITE_OK ) return rc;
-    }
-  }
   return sqlite3OsFullPathname(PARENTVFS(pVfs), zPath, nOut, zOut);
 }
 
@@ -798,7 +729,6 @@ static int tvfsShmOpen(sqlite3_file *pFile){
 
   pFd = tvfsGetFd(pFile);
   p = (Testvfs *)pFd->pVfs->pAppData;
-  assert( 0==p->isFullshm );
   assert( pFd->pShmId && pFd->pShm==0 && pFd->pNext==0 );
 
   /* Evaluate the Tcl script: 
@@ -807,7 +737,7 @@ static int tvfsShmOpen(sqlite3_file *pFile){
   */
   Tcl_ResetResult(p->interp);
   if( p->pScript && p->mask&TESTVFS_SHMOPEN_MASK ){
-    tvfsExecTcl(p, "xShmOpen", Tcl_NewStringObj(pFd->zFilename, -1), 0, 0, 0);
+    tvfsExecTcl(p, "xShmOpen", Tcl_NewStringObj(pFd->zFilename, -1), 0, 0);
     if( tvfsResultCode(p, &rc) ){
       if( rc!=SQLITE_OK ) return rc;
     }
@@ -823,12 +753,11 @@ static int tvfsShmOpen(sqlite3_file *pFile){
     if( 0==strcmp(pFd->zFilename, pBuffer->zFile) ) break;
   }
   if( !pBuffer ){
-    int szName = (int)strlen(pFd->zFilename);
-    int nByte = sizeof(TestvfsBuffer) + szName + 1;
+    int nByte = sizeof(TestvfsBuffer) + strlen(pFd->zFilename) + 1;
     pBuffer = (TestvfsBuffer *)ckalloc(nByte);
     memset(pBuffer, 0, nByte);
     pBuffer->zFile = (char *)&pBuffer[1];
-    memcpy(pBuffer->zFile, pFd->zFilename, szName+1);
+    strcpy(pBuffer->zFile, pFd->zFilename);
     pBuffer->pNext = p->pBuffer;
     p->pBuffer = pBuffer;
   }
@@ -860,10 +789,6 @@ static int tvfsShmMap(
   TestvfsFd *pFd = tvfsGetFd(pFile);
   Testvfs *p = (Testvfs *)(pFd->pVfs->pAppData);
 
-  if( p->isFullshm ){
-    return sqlite3OsShmMap(pFd->pReal, iPage, pgsz, isWrite, pp);
-  }
-
   if( 0==pFd->pShm ){
     rc = tvfsShmOpen(pFile);
     if( rc!=SQLITE_OK ){
@@ -878,7 +803,7 @@ static int tvfsShmMap(
     Tcl_ListObjAppendElement(p->interp, pArg, Tcl_NewIntObj(pgsz));
     Tcl_ListObjAppendElement(p->interp, pArg, Tcl_NewIntObj(isWrite));
     tvfsExecTcl(p, "xShmMap", 
-        Tcl_NewStringObj(pFd->pShm->zFile, -1), pFd->pShmId, pArg, 0
+        Tcl_NewStringObj(pFd->pShm->zFile, -1), pFd->pShmId, pArg
     );
     tvfsResultCode(p, &rc);
     Tcl_DecrRefCount(pArg);
@@ -908,19 +833,15 @@ static int tvfsShmLock(
   int nLock;
   char zLock[80];
 
-  if( p->isFullshm ){
-    return sqlite3OsShmLock(pFd->pReal, ofst, n, flags);
-  }
-
   if( p->pScript && p->mask&TESTVFS_SHMLOCK_MASK ){
     sqlite3_snprintf(sizeof(zLock), zLock, "%d %d", ofst, n);
-    nLock = (int)strlen(zLock);
+    nLock = strlen(zLock);
     if( flags & SQLITE_SHM_LOCK ){
       strcpy(&zLock[nLock], " lock");
     }else{
       strcpy(&zLock[nLock], " unlock");
     }
-    nLock += (int)strlen(&zLock[nLock]);
+    nLock += strlen(&zLock[nLock]);
     if( flags & SQLITE_SHM_SHARED ){
       strcpy(&zLock[nLock], " shared");
     }else{
@@ -928,7 +849,7 @@ static int tvfsShmLock(
     }
     tvfsExecTcl(p, "xShmLock", 
         Tcl_NewStringObj(pFd->pShm->zFile, -1), pFd->pShmId,
-        Tcl_NewStringObj(zLock, -1), 0
+        Tcl_NewStringObj(zLock, -1)
     );
     tvfsResultCode(p, &rc);
   }
@@ -968,13 +889,9 @@ static void tvfsShmBarrier(sqlite3_file *pFile){
   Testvfs *p = (Testvfs *)(pFd->pVfs->pAppData);
 
   if( p->pScript && p->mask&TESTVFS_SHMBARRIER_MASK ){
-    const char *z = pFd->pShm ? pFd->pShm->zFile : "";
-    tvfsExecTcl(p, "xShmBarrier", Tcl_NewStringObj(z, -1), pFd->pShmId, 0, 0);
-  }
-
-  if( p->isFullshm ){
-    sqlite3OsShmBarrier(pFd->pReal);
-    return;
+    tvfsExecTcl(p, "xShmBarrier", 
+        Tcl_NewStringObj(pFd->pShm->zFile, -1), pFd->pShmId, 0
+    );
   }
 }
 
@@ -988,16 +905,12 @@ static int tvfsShmUnmap(
   TestvfsBuffer *pBuffer = pFd->pShm;
   TestvfsFd **ppFd;
 
-  if( p->isFullshm ){
-    return sqlite3OsShmUnmap(pFd->pReal, deleteFlag);
-  }
-
   if( !pBuffer ) return SQLITE_OK;
   assert( pFd->pShmId && pFd->pShm );
 
   if( p->pScript && p->mask&TESTVFS_SHMCLOSE_MASK ){
     tvfsExecTcl(p, "xShmUnmap", 
-        Tcl_NewStringObj(pFd->pShm->zFile, -1), pFd->pShmId, 0, 0
+        Tcl_NewStringObj(pFd->pShm->zFile, -1), pFd->pShmId, 0
     );
     tvfsResultCode(p, &rc);
   }
@@ -1020,21 +933,6 @@ static int tvfsShmUnmap(
   pFd->pShm = 0;
 
   return rc;
-}
-
-static int tvfsFetch(
-    sqlite3_file *pFile, 
-    sqlite3_int64 iOfst, 
-    int iAmt, 
-    void **pp
-){
-  TestvfsFd *pFd = tvfsGetFd(pFile);
-  return sqlite3OsFetch(pFd->pReal, iOfst, iAmt, pp);
-}
-
-static int tvfsUnfetch(sqlite3_file *pFile, sqlite3_int64 iOfst, void *p){
-  TestvfsFd *pFd = tvfsGetFd(pFile);
-  return sqlite3OsUnfetch(pFd->pReal, iOfst, p);
 }
 
 static int testvfs_obj_cmd(
@@ -1080,7 +978,7 @@ static int testvfs_obj_cmd(
   switch( aSubcmd[i].eCmd ){
     case CMD_SHM: {
       Tcl_Obj *pObj;
-      int rc;
+      int i;
       TestvfsBuffer *pBuffer;
       char *zName;
       if( objc!=3 && objc!=4 ){
@@ -1088,16 +986,10 @@ static int testvfs_obj_cmd(
         return TCL_ERROR;
       }
       zName = ckalloc(p->pParent->mxPathname);
-      rc = p->pParent->xFullPathname(
+      p->pParent->xFullPathname(
           p->pParent, Tcl_GetString(objv[2]), 
           p->pParent->mxPathname, zName
       );
-      if( rc!=SQLITE_OK ){
-        Tcl_AppendResult(interp, "failed to get full path: ",
-                         Tcl_GetString(objv[2]), 0);
-        ckfree(zName);
-        return TCL_ERROR;
-      }
       for(pBuffer=p->pBuffer; pBuffer; pBuffer=pBuffer->pNext){
         if( 0==strcmp(pBuffer->zFile, zName) ) break;
       }
@@ -1131,35 +1023,27 @@ static int testvfs_obj_cmd(
       break;
     }
 
-    /*  TESTVFS filter METHOD-LIST
-    **
-    **     Activate special processing for those methods contained in the list
-    */
     case CMD_FILTER: {
       static struct VfsMethod {
         char *zName;
         int mask;
       } vfsmethod [] = {
-        { "xShmOpen",           TESTVFS_SHMOPEN_MASK },
-        { "xShmLock",           TESTVFS_SHMLOCK_MASK },
-        { "xShmBarrier",        TESTVFS_SHMBARRIER_MASK },
-        { "xShmUnmap",          TESTVFS_SHMCLOSE_MASK },
-        { "xShmMap",            TESTVFS_SHMMAP_MASK },
-        { "xSync",              TESTVFS_SYNC_MASK },
-        { "xDelete",            TESTVFS_DELETE_MASK },
-        { "xWrite",             TESTVFS_WRITE_MASK },
-        { "xRead",              TESTVFS_READ_MASK },
-        { "xTruncate",          TESTVFS_TRUNCATE_MASK },
-        { "xOpen",              TESTVFS_OPEN_MASK },
-        { "xClose",             TESTVFS_CLOSE_MASK },
-        { "xAccess",            TESTVFS_ACCESS_MASK },
-        { "xFullPathname",      TESTVFS_FULLPATHNAME_MASK },
-        { "xUnlock",            TESTVFS_UNLOCK_MASK },
-        { "xLock",              TESTVFS_LOCK_MASK },
-        { "xCheckReservedLock", TESTVFS_CKLOCK_MASK },
+        { "xShmOpen",    TESTVFS_SHMOPEN_MASK },
+        { "xShmLock",    TESTVFS_SHMLOCK_MASK },
+        { "xShmBarrier", TESTVFS_SHMBARRIER_MASK },
+        { "xShmUnmap",   TESTVFS_SHMCLOSE_MASK },
+        { "xShmMap",     TESTVFS_SHMMAP_MASK },
+        { "xSync",       TESTVFS_SYNC_MASK },
+        { "xDelete",     TESTVFS_DELETE_MASK },
+        { "xWrite",      TESTVFS_WRITE_MASK },
+        { "xTruncate",   TESTVFS_TRUNCATE_MASK },
+        { "xOpen",       TESTVFS_OPEN_MASK },
+        { "xClose",      TESTVFS_CLOSE_MASK },
+        { "xAccess",     TESTVFS_ACCESS_MASK },
       };
       Tcl_Obj **apElem = 0;
       int nElem = 0;
+      int i;
       int mask = 0;
       if( objc!=3 ){
         Tcl_WrongNumArgs(interp, 2, objv, "LIST");
@@ -1187,17 +1071,14 @@ static int testvfs_obj_cmd(
       break;
     }
 
-    /*
-    **  TESTVFS script ?SCRIPT?
-    **
-    **  Query or set the script to be run when filtered VFS events
-    **  occur.
-    */
     case CMD_SCRIPT: {
       if( objc==3 ){
         int nByte;
         if( p->pScript ){
           Tcl_DecrRefCount(p->pScript);
+          ckfree((char *)p->apScript);
+          p->apScript = 0;
+          p->nScript = 0;
           p->pScript = 0;
         }
         Tcl_GetStringFromObj(objv[2], &nByte);
@@ -1224,7 +1105,7 @@ static int testvfs_obj_cmd(
     case CMD_CANTOPENERR:
     case CMD_IOERR:
     case CMD_FULLERR: {
-      TestFaultInject *pTest = 0;
+      TestFaultInject *pTest;
       int iRet;
 
       switch( aSubcmd[i].eCmd ){
@@ -1266,20 +1147,18 @@ static int testvfs_obj_cmd(
         int iValue;
       } aFlag[] = {
         { "default",               -1 },
-        { "atomic",                SQLITE_IOCAP_ATOMIC                },
-        { "atomic512",             SQLITE_IOCAP_ATOMIC512             },
-        { "atomic1k",              SQLITE_IOCAP_ATOMIC1K              },
-        { "atomic2k",              SQLITE_IOCAP_ATOMIC2K              },
-        { "atomic4k",              SQLITE_IOCAP_ATOMIC4K              },
-        { "atomic8k",              SQLITE_IOCAP_ATOMIC8K              },
-        { "atomic16k",             SQLITE_IOCAP_ATOMIC16K             },
-        { "atomic32k",             SQLITE_IOCAP_ATOMIC32K             },
-        { "atomic64k",             SQLITE_IOCAP_ATOMIC64K             },
-        { "sequential",            SQLITE_IOCAP_SEQUENTIAL            },
-        { "safe_append",           SQLITE_IOCAP_SAFE_APPEND           },
+        { "atomic",                SQLITE_IOCAP_ATOMIC      },
+        { "atomic512",             SQLITE_IOCAP_ATOMIC512   },
+        { "atomic1k",              SQLITE_IOCAP_ATOMIC1K    },
+        { "atomic2k",              SQLITE_IOCAP_ATOMIC2K    },
+        { "atomic4k",              SQLITE_IOCAP_ATOMIC4K    },
+        { "atomic8k",              SQLITE_IOCAP_ATOMIC8K    },
+        { "atomic16k",             SQLITE_IOCAP_ATOMIC16K   },
+        { "atomic32k",             SQLITE_IOCAP_ATOMIC32K   },
+        { "atomic64k",             SQLITE_IOCAP_ATOMIC64K   },
+        { "sequential",            SQLITE_IOCAP_SEQUENTIAL  },
+        { "safe_append",           SQLITE_IOCAP_SAFE_APPEND },
         { "undeletable_when_open", SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN },
-        { "powersafe_overwrite",   SQLITE_IOCAP_POWERSAFE_OVERWRITE   },
-        { "immutable",             SQLITE_IOCAP_IMMUTABLE             },
         { 0, 0 }
       };
       Tcl_Obj *pRet;
@@ -1313,7 +1192,7 @@ static int testvfs_obj_cmd(
           iNew |= aFlag[idx].iValue;
         }
 
-        p->iDevchar = iNew| 0x10000000;
+        p->iDevchar = iNew;
       }
 
       pRet = Tcl_NewObj();
@@ -1353,6 +1232,7 @@ static void testvfs_obj_del(ClientData cd){
   Testvfs *p = (Testvfs *)cd;
   if( p->pScript ) Tcl_DecrRefCount(p->pScript);
   sqlite3_vfs_unregister(p->pVfs);
+  ckfree((char *)p->apScript);
   ckfree((char *)p->pVfs);
   ckfree((char *)p);
 }
@@ -1399,7 +1279,7 @@ static int testvfs_cmd(
   Tcl_Obj *CONST objv[]
 ){
   static sqlite3_vfs tvfs_vfs = {
-    3,                            /* iVersion */
+    2,                            /* iVersion */
     0,                            /* szOsFile */
     0,                            /* mxPathname */
     0,                            /* pNext */
@@ -1425,9 +1305,6 @@ static int testvfs_cmd(
     tvfsCurrentTime,              /* xCurrentTime */
     0,                            /* xGetLastError */
     0,                            /* xCurrentTimeInt64 */
-    0,                            /* xSetSystemCall */
-    0,                            /* xGetSystemCall */
-    0,                            /* xNextSystemCall */
   };
 
   Testvfs *p;                     /* New object */
@@ -1437,11 +1314,10 @@ static int testvfs_cmd(
 
   int i;
   int isNoshm = 0;                /* True if -noshm is passed */
-  int isFullshm = 0;              /* True if -fullshm is passed */
   int isDefault = 0;              /* True if -default is passed */
   int szOsFile = 0;               /* Value passed to -szosfile */
   int mxPathname = -1;            /* Value passed to -mxpathname */
-  int iVersion = 3;               /* Value passed to -iversion */
+  int iVersion = 2;               /* Value passed to -iversion */
 
   if( objc<2 || 0!=(objc%2) ) goto bad_args;
   for(i=2; i<objc; i += 2){
@@ -1453,7 +1329,6 @@ static int testvfs_cmd(
       if( Tcl_GetBooleanFromObj(interp, objv[i+1], &isNoshm) ){
         return TCL_ERROR;
       }
-      if( isNoshm ) isFullshm = 0;
     }
     else if( nSwitch>2 && 0==strncmp("-default", zSwitch, nSwitch) ){
       if( Tcl_GetBooleanFromObj(interp, objv[i+1], &isDefault) ){
@@ -1475,12 +1350,6 @@ static int testvfs_cmd(
         return TCL_ERROR;
       }
     }
-    else if( nSwitch>2 && 0==strncmp("-fullshm", zSwitch, nSwitch) ){
-      if( Tcl_GetBooleanFromObj(interp, objv[i+1], &isFullshm) ){
-        return TCL_ERROR;
-      }
-      if( isFullshm ) isNoshm = 0;
-    }
     else{
       goto bad_args;
     }
@@ -1491,7 +1360,7 @@ static int testvfs_cmd(
   }
 
   zVfs = Tcl_GetString(objv[1]);
-  nByte = sizeof(Testvfs) + (int)strlen(zVfs)+1;
+  nByte = sizeof(Testvfs) + strlen(zVfs)+1;
   p = (Testvfs *)ckalloc(nByte);
   memset(p, 0, nByte);
   p->iDevchar = -1;
@@ -1522,7 +1391,6 @@ static int testvfs_cmd(
   pVfs->szOsFile = szOsFile;
   p->pVfs = pVfs;
   p->isNoshm = isNoshm;
-  p->isFullshm = isFullshm;
   p->mask = TESTVFS_ALL_MASK;
 
   sqlite3_vfs_register(pVfs, isDefault);
@@ -1530,7 +1398,7 @@ static int testvfs_cmd(
   return TCL_OK;
 
  bad_args:
-  Tcl_WrongNumArgs(interp, 1, objv, "VFSNAME ?-noshm BOOL? ?-fullshm BOOL? ?-default BOOL? ?-mxpathname INT? ?-szosfile INT? ?-iversion INT?");
+  Tcl_WrongNumArgs(interp, 1, objv, "VFSNAME ?-noshm BOOL? ?-default BOOL? ?-mxpathname INT? ?-szosfile INT? ?-iversion INT?");
   return TCL_ERROR;
 }
 

@@ -14,16 +14,17 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Building a small memory
-        footprint library</th>
+          <th colspan="3" align="center">Building a small memory footprint library</th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="win_additional_options.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 5.  Building Berkeley DB for Windows </th>
+          <th width="60%" align="center">Chapter 5. 
+		Building Berkeley DB for Windows
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="build_win_test.html">Next</a></td>
         </tr>
       </table>
@@ -33,54 +34,50 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title" style="clear: both"><a id="build_win_small"></a>Building a small memory
-        footprint library</h2>
+            <h2 class="title" style="clear: both"><a id="build_win_small"></a>Building a small memory footprint library</h2>
           </div>
         </div>
       </div>
       <p>
-        For applications that don't require all of the
-        functionality of the full Berkeley DB library, an option is
-        provided to build a static library with certain functionality
-        disabled. In particular, cryptography, hash, heap and queue
-        access methods, replication and verification are all turned
-        off. In addition, all message text is stripped from the
-        library. This can reduce the memory footprint of Berkeley DB
-        significantly.
+        For applications that don't require all of the functionality of the
+        full Berkeley DB library, an option is provided to build a static
+        library with certain functionality disabled.  In particular,
+        cryptography, hash and queue access methods, replication and
+        verification are all turned off.  In addition, all message text
+        is stripped from the library. This can reduce the memory
+        footprint of Berkeley DB significantly.
     </p>
       <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
         <h3 class="title">Note</h3>
         <p>
-            If your library has stripped messages, you can get an
-            idea of what text should be issued for a given error
-            message by using the <a href="../articles/mssgtxt/index.html" class="olink">Berkeley DB Message Reference Guide
-            </a>. 
+            If your library has stripped messages, you can get an idea of
+            what text should be issued for a given error message by using
+            the <a href="../articles/mssgtxt/index.html" class="olink">Message
+                Reference for Stripped Libraries</a> guide.
         </p>
       </div>
-      <p> 
-        In general on Windows systems, you will want to evaluate
-        the size of the final application, not the library build. The
-        Microsoft LIB file format (like UNIX archives) includes copies
-        of all of the object files and additional information. The
-        linker rearranges symbols and strips out the overhead, and the
-        resulting application is much smaller than the library. There
-        is also a Visual C++ optimization to "Minimize size" that will
-        reduce the library size by a few percent. 
-    </p>
-      <p> 
-        A Visual C++ project file called
-        <code class="filename">db_small</code> is provided for this small
-        memory configuration. During a build, static libraries are
-        created in <code class="filename">Release</code> or
-        <code class="filename">Debug</code>, respectively. The library name
-        is <code class="filename">libdb_small60sd.lib</code> for the debug
-        build, or <code class="filename">libdb_small60s.lib</code> for the
-        release build.
+      <p>
+        In general on Windows systems, you will want to evaluate the size
+        of the final application, not the library build.  The Microsoft LIB
+        file format (like UNIX archives) includes copies of all of the
+        object files and additional information.  The linker rearranges
+        symbols and strips out the overhead, and the resulting application
+        is much smaller than the library.   There is also a Visual C++
+        optimization to "Minimize size" that will reduce the library size
+        by a few percent.
     </p>
       <p>
-        For assistance in further reducing the size of the Berkeley
-        DB library, or in building small memory footprint libraries on
-        other systems, please contact Berkeley DB support.
+        A Visual C++ project file called <code class="filename">db_small</code> is
+        provided for this small memory configuration.  During a build,
+        static libraries are created in <code class="filename">Release</code> or
+        <code class="filename">Debug</code>, respectively.  The library name is
+        <code class="filename">libdb_small48sd.lib</code> for the debug build, or
+        <code class="filename">libdb_small48s.lib</code> for the release
+        build.</p>
+      <p>For assistance in further reducing the size of
+        the Berkeley DB library, or in building small memory footprint
+        libraries on other systems, please contact Berkeley DB
+        support.
     </p>
     </div>
     <div class="navfooter">
@@ -98,8 +95,7 @@
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Running the test suite under
-        Windows</td>
+          <td width="40%" align="right" valign="top"> Running the test suite under Windows</td>
         </tr>
       </table>
     </div>

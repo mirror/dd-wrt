@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -108,7 +108,7 @@ namespace CsharpAPITest
 			 * Check the delta of two sequence number get 
 			 * from sequence.
 			 */
-			uint delta = 100;
+			int delta = 100;
 			long seqNum1 = seq.Get(delta);
 			long seqNum2 = seq.Get(delta);
 			Assert.AreEqual(delta, seqNum2 - seqNum1);
@@ -136,7 +136,7 @@ namespace CsharpAPITest
 			 * Check the delta of two sequence number get 
 			 * from sequence.
 			 */
-			uint delta = 100;
+			int delta = 100;
 			long seqNum1 = seq.Get(delta, true);
 			long seqNum2 = seq.Get(delta, true);
 			Assert.AreEqual(delta, seqNum2 - seqNum1);
@@ -165,7 +165,7 @@ namespace CsharpAPITest
 			 * Check the delta of two sequence number get 
 			 * from sequence.
 			 */
-			uint delta = 100;
+			int delta = 100;
 			Transaction txn = env.BeginTransaction();
 			long seqNum1 = seq.Get(delta, txn);
 			long seqNum2 = seq.Get(delta, txn);
@@ -300,63 +300,6 @@ namespace CsharpAPITest
 			db.Close();
 		}
 
-		[Test]
-		public void TestSequenceStatPrint()
-		{
-			testName = "TestSequenceStatPrint";
-			SetUpTest(true);
-
-			string[] messageInfo = new string[]
-			{ "The number of sequence locks that required waiting (0%)",
-			  "The current sequence value",
-			  "The cached sequence value",
-			  "The last cached sequence value",
-			  "The minimum sequence value",
-			  "The maximum sequence value",
-			  "The cache size",
-			  "Sequence flags"
-			};
-
-			DatabaseEnvironment env;
-			BTreeDatabase db;
-			Sequence seq;
-			OpenNewSequenceInEnv(testHome, testName, out env, out db, out seq);
-
-			// Confirm message file does not exist.
-			string messageFile = testHome + "/" + "msgfile";
-			Assert.AreEqual(false, File.Exists(messageFile));
-
-			// Call set_msgfile() of env.
-			env.Msgfile = messageFile;
-
-			// Print env statistic to message file.
-			seq.PrintStats();
-
-			// Confirm message file exists now.
-			Assert.AreEqual(true, File.Exists(messageFile));
-
-			env.Msgfile = "";
-			int counter = 0;
-			string line;
-			line = null;
-
-			// Read the message file line by line.
-			System.IO.StreamReader file = new System.IO.StreamReader(@"" + messageFile);
-			while ((line = file.ReadLine()) != null)
-			{
-				string[] tempStr = line.Split('\t');
-				// Confirm the content of the message file.
-				Assert.AreEqual(tempStr[1], messageInfo[counter]);
-				counter++;
-			}
-			Assert.AreNotEqual(counter, 0);
-
-			file.Close();
-			seq.Close();
-			db.Close();
-			env.Close();
-		}
-
 		public void OpenNewSequence(string dbFileName,
 		    out BTreeDatabase db, out Sequence seq)
 		{
@@ -370,7 +313,7 @@ namespace CsharpAPITest
 			SequenceConfig seqConfig = new SequenceConfig();
 			seqConfig.BackingDatabase = db;
 			seqConfig.CacheSize = 1000;
-			seqConfig.Creation = CreatePolicy.ALWAYS;
+            seqConfig.Creation = CreatePolicy.ALWAYS;
 			seqConfig.Decrement = false;
 			seqConfig.FreeThreaded = true;
 			seqConfig.Increment = true;
@@ -422,7 +365,7 @@ namespace CsharpAPITest
 		public static void Confirm(XmlElement xmlElement,
 		    Sequence seq, bool compulsory)
 		{
-			Configuration.ConfirmUint(xmlElement, "CacheSize",
+			Configuration.ConfirmInt(xmlElement, "CacheSize",
 			    seq.Cachesize, compulsory);
 			Configuration.ConfirmBool(xmlElement, "Decrement",
 			    seq.Decrement, compulsory);

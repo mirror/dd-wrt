@@ -50,7 +50,7 @@
 ** No INSERTs may occurs after a SMALLEST.  An assertion will fail if
 ** that is attempted.
 **
-** The cost of an INSERT is roughly constant.  (Sometimes new memory
+** The cost of an INSERT is roughly constant.  (Sometime new memory
 ** has to be allocated on an INSERT.)  The cost of a TEST with a new
 ** batch number is O(NlogN) where N is the number of elements in the RowSet.
 ** The cost of a TEST using the same batch number is O(logN).  The cost
@@ -76,11 +76,6 @@
 
 /*
 ** Each entry in a RowSet is an instance of the following object.
-**
-** This same object is reused to store a linked list of trees of RowSetEntry
-** objects.  In that alternative use, pRight points to the next entry
-** in the list, pLeft points to the tree, and v is unused.  The
-** RowSet.pForest value points to the head of this forest list.
 */
 struct RowSetEntry {            
   i64 v;                        /* ROWID value for this entry */
@@ -110,17 +105,11 @@ struct RowSet {
   struct RowSetEntry *pEntry;    /* List of entries using pRight */
   struct RowSetEntry *pLast;     /* Last entry on the pEntry list */
   struct RowSetEntry *pFresh;    /* Source of new entry objects */
-  struct RowSetEntry *pForest;   /* List of binary trees of entries */
+  struct RowSetEntry *pTree;     /* Binary tree of entries */
   u16 nFresh;                    /* Number of objects on pFresh */
-  u16 rsFlags;                   /* Various flags */
-  int iBatch;                    /* Current insert batch */
+  u8 isSorted;                   /* True if pEntry is sorted */
+  u8 iBatch;                     /* Current insert batch */
 };
-
-/*
-** Allowed values for RowSet.rsFlags
-*/
-#define ROWSET_SORTED  0x01   /* True if RowSet.pEntry is sorted */
-#define ROWSET_NEXT    0x02   /* True if sqlite3RowSetNext() has been called */
 
 /*
 ** Turn bulk memory into a RowSet object.  N bytes of memory
@@ -142,10 +131,10 @@ RowSet *sqlite3RowSetInit(sqlite3 *db, void *pSpace, unsigned int N){
   p->db = db;
   p->pEntry = 0;
   p->pLast = 0;
-  p->pForest = 0;
+  p->pTree = 0;
   p->pFresh = (struct RowSetEntry*)(ROUND8(sizeof(*p)) + (char*)p);
   p->nFresh = (u16)((N - ROUND8(sizeof(*p)))/sizeof(struct RowSetEntry));
-  p->rsFlags = ROWSET_SORTED;
+  p->isSorted = 1;
   p->iBatch = 0;
   return p;
 }
@@ -165,33 +154,8 @@ void sqlite3RowSetClear(RowSet *p){
   p->nFresh = 0;
   p->pEntry = 0;
   p->pLast = 0;
-  p->pForest = 0;
-  p->rsFlags = ROWSET_SORTED;
-}
-
-/*
-** Allocate a new RowSetEntry object that is associated with the
-** given RowSet.  Return a pointer to the new and completely uninitialized
-** objected.
-**
-** In an OOM situation, the RowSet.db->mallocFailed flag is set and this
-** routine returns NULL.
-*/
-static struct RowSetEntry *rowSetEntryAlloc(RowSet *p){
-  assert( p!=0 );
-  if( p->nFresh==0 ){
-    struct RowSetChunk *pNew;
-    pNew = sqlite3DbMallocRaw(p->db, sizeof(*pNew));
-    if( pNew==0 ){
-      return 0;
-    }
-    pNew->pNextChunk = p->pChunk;
-    p->pChunk = pNew;
-    p->pFresh = pNew->aEntry;
-    p->nFresh = ROWSET_ENTRY_PER_CHUNK;
-  }
-  p->nFresh--;
-  return p->pFresh++;
+  p->pTree = 0;
+  p->isSorted = 1;
 }
 
 /*
@@ -203,21 +167,30 @@ static struct RowSetEntry *rowSetEntryAlloc(RowSet *p){
 void sqlite3RowSetInsert(RowSet *p, i64 rowid){
   struct RowSetEntry *pEntry;  /* The new entry */
   struct RowSetEntry *pLast;   /* The last prior entry */
-
-  /* This routine is never called after sqlite3RowSetNext() */
-  assert( p!=0 && (p->rsFlags & ROWSET_NEXT)==0 );
-
-  pEntry = rowSetEntryAlloc(p);
-  if( pEntry==0 ) return;
+  assert( p!=0 );
+  if( p->nFresh==0 ){
+    struct RowSetChunk *pNew;
+    pNew = sqlite3DbMallocRaw(p->db, sizeof(*pNew));
+    if( pNew==0 ){
+      return;
+    }
+    pNew->pNextChunk = p->pChunk;
+    p->pChunk = pNew;
+    p->pFresh = pNew->aEntry;
+    p->nFresh = ROWSET_ENTRY_PER_CHUNK;
+  }
+  pEntry = p->pFresh++;
+  p->nFresh--;
   pEntry->v = rowid;
   pEntry->pRight = 0;
   pLast = p->pLast;
   if( pLast ){
-    if( (p->rsFlags & ROWSET_SORTED)!=0 && rowid<=pLast->v ){
-      p->rsFlags &= ~ROWSET_SORTED;
+    if( p->isSorted && rowid<=pLast->v ){
+      p->isSorted = 0;
     }
     pLast->pRight = pEntry;
   }else{
+    assert( p->pEntry==0 ); /* Fires if INSERT after SMALLEST */
     p->pEntry = pEntry;
   }
   p->pLast = pEntry;
@@ -229,7 +202,7 @@ void sqlite3RowSetInsert(RowSet *p, i64 rowid){
 ** The input lists are connected via pRight pointers and are 
 ** assumed to each already be in sorted order.
 */
-static struct RowSetEntry *rowSetEntryMerge(
+static struct RowSetEntry *rowSetMerge(
   struct RowSetEntry *pA,    /* First sorted list to be merged */
   struct RowSetEntry *pB     /* Second sorted list to be merged */
 ){
@@ -263,29 +236,32 @@ static struct RowSetEntry *rowSetEntryMerge(
 }
 
 /*
-** Sort all elements on the list of RowSetEntry objects into order of
-** increasing v.
+** Sort all elements on the pEntry list of the RowSet into ascending order.
 */ 
-static struct RowSetEntry *rowSetEntrySort(struct RowSetEntry *pIn){
+static void rowSetSort(RowSet *p){
   unsigned int i;
-  struct RowSetEntry *pNext, *aBucket[40];
+  struct RowSetEntry *pEntry;
+  struct RowSetEntry *aBucket[40];
 
+  assert( p->isSorted==0 );
   memset(aBucket, 0, sizeof(aBucket));
-  while( pIn ){
-    pNext = pIn->pRight;
-    pIn->pRight = 0;
+  while( p->pEntry ){
+    pEntry = p->pEntry;
+    p->pEntry = pEntry->pRight;
+    pEntry->pRight = 0;
     for(i=0; aBucket[i]; i++){
-      pIn = rowSetEntryMerge(aBucket[i], pIn);
+      pEntry = rowSetMerge(aBucket[i], pEntry);
       aBucket[i] = 0;
     }
-    aBucket[i] = pIn;
-    pIn = pNext;
+    aBucket[i] = pEntry;
   }
-  pIn = 0;
+  pEntry = 0;
   for(i=0; i<sizeof(aBucket)/sizeof(aBucket[0]); i++){
-    pIn = rowSetEntryMerge(pIn, aBucket[i]);
+    pEntry = rowSetMerge(pEntry, aBucket[i]);
   }
-  return pIn;
+  p->pEntry = pEntry;
+  p->pLast = 0;
+  p->isSorted = 1;
 }
 
 
@@ -379,37 +355,20 @@ static struct RowSetEntry *rowSetListToTree(struct RowSetEntry *pList){
 }
 
 /*
-** Take all the entries on p->pEntry and on the trees in p->pForest and
-** sort them all together into one big ordered list on p->pEntry.
-**
-** This routine should only be called once in the life of a RowSet.
+** Convert the list in p->pEntry into a sorted list if it is not
+** sorted already.  If there is a binary tree on p->pTree, then
+** convert it into a list too and merge it into the p->pEntry list.
 */
 static void rowSetToList(RowSet *p){
-
-  /* This routine is called only once */
-  assert( p!=0 && (p->rsFlags & ROWSET_NEXT)==0 );
-
-  if( (p->rsFlags & ROWSET_SORTED)==0 ){
-    p->pEntry = rowSetEntrySort(p->pEntry);
+  if( !p->isSorted ){
+    rowSetSort(p);
   }
-
-  /* While this module could theoretically support it, sqlite3RowSetNext()
-  ** is never called after sqlite3RowSetText() for the same RowSet.  So
-  ** there is never a forest to deal with.  Should this change, simply
-  ** remove the assert() and the #if 0. */
-  assert( p->pForest==0 );
-#if 0
-  while( p->pForest ){
-    struct RowSetEntry *pTree = p->pForest->pLeft;
-    if( pTree ){
-      struct RowSetEntry *pHead, *pTail;
-      rowSetTreeToList(pTree, &pHead, &pTail);
-      p->pEntry = rowSetEntryMerge(p->pEntry, pHead);
-    }
-    p->pForest = p->pForest->pRight;
+  if( p->pTree ){
+    struct RowSetEntry *pHead, *pTail;
+    rowSetTreeToList(p->pTree, &pHead, &pTail);
+    p->pTree = 0;
+    p->pEntry = rowSetMerge(p->pEntry, pHead);
   }
-#endif
-  p->rsFlags |= ROWSET_NEXT;  /* Verify this routine is never called again */
 }
 
 /*
@@ -421,12 +380,7 @@ static void rowSetToList(RowSet *p){
 ** routine may not be called again.  
 */
 int sqlite3RowSetNext(RowSet *p, i64 *pRowid){
-  assert( p!=0 );
-
-  /* Merge the forest into a single sorted list on first call */
-  if( (p->rsFlags & ROWSET_NEXT)==0 ) rowSetToList(p);
-
-  /* Return the next entry on the list */
+  rowSetToList(p);
   if( p->pEntry ){
     *pRowid = p->pEntry->v;
     p->pEntry = p->pEntry->pRight;
@@ -440,68 +394,28 @@ int sqlite3RowSetNext(RowSet *p, i64 *pRowid){
 }
 
 /*
-** Check to see if element iRowid was inserted into the rowset as
+** Check to see if element iRowid was inserted into the the rowset as
 ** part of any insert batch prior to iBatch.  Return 1 or 0.
-**
-** If this is the first test of a new batch and if there exist entries
-** on pRowSet->pEntry, then sort those entries into the forest at
-** pRowSet->pForest so that they can be tested.
 */
-int sqlite3RowSetTest(RowSet *pRowSet, int iBatch, sqlite3_int64 iRowid){
-  struct RowSetEntry *p, *pTree;
-
-  /* This routine is never called after sqlite3RowSetNext() */
-  assert( pRowSet!=0 && (pRowSet->rsFlags & ROWSET_NEXT)==0 );
-
-  /* Sort entries into the forest on the first test of a new batch 
-  */
+int sqlite3RowSetTest(RowSet *pRowSet, u8 iBatch, sqlite3_int64 iRowid){
+  struct RowSetEntry *p;
   if( iBatch!=pRowSet->iBatch ){
-    p = pRowSet->pEntry;
-    if( p ){
-      struct RowSetEntry **ppPrevTree = &pRowSet->pForest;
-      if( (pRowSet->rsFlags & ROWSET_SORTED)==0 ){
-        p = rowSetEntrySort(p);
-      }
-      for(pTree = pRowSet->pForest; pTree; pTree=pTree->pRight){
-        ppPrevTree = &pTree->pRight;
-        if( pTree->pLeft==0 ){
-          pTree->pLeft = rowSetListToTree(p);
-          break;
-        }else{
-          struct RowSetEntry *pAux, *pTail;
-          rowSetTreeToList(pTree->pLeft, &pAux, &pTail);
-          pTree->pLeft = 0;
-          p = rowSetEntryMerge(pAux, p);
-        }
-      }
-      if( pTree==0 ){
-        *ppPrevTree = pTree = rowSetEntryAlloc(pRowSet);
-        if( pTree ){
-          pTree->v = 0;
-          pTree->pRight = 0;
-          pTree->pLeft = rowSetListToTree(p);
-        }
-      }
+    if( pRowSet->pEntry ){
+      rowSetToList(pRowSet);
+      pRowSet->pTree = rowSetListToTree(pRowSet->pEntry);
       pRowSet->pEntry = 0;
       pRowSet->pLast = 0;
-      pRowSet->rsFlags |= ROWSET_SORTED;
     }
     pRowSet->iBatch = iBatch;
   }
-
-  /* Test to see if the iRowid value appears anywhere in the forest.
-  ** Return 1 if it does and 0 if not.
-  */
-  for(pTree = pRowSet->pForest; pTree; pTree=pTree->pRight){
-    p = pTree->pLeft;
-    while( p ){
-      if( p->v<iRowid ){
-        p = p->pRight;
-      }else if( p->v>iRowid ){
-        p = p->pLeft;
-      }else{
-        return 1;
-      }
+  p = pRowSet->pTree;
+  while( p ){
+    if( p->v<iRowid ){
+      p = p->pRight;
+    }else if( p->v>iRowid ){
+      p = p->pLeft;
+    }else{
+      return 1;
     }
   }
   return 0;

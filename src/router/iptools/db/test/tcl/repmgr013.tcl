@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2007, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2007, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -32,7 +32,6 @@ proc repmgr013_sub { method niter tnum largs } {
 	global testdir
 	global rep_verbose
 	global verbose_type
-	global ipversion
 	set nsites 3
 
 	set small_iter [expr $niter / 10]
@@ -44,7 +43,6 @@ proc repmgr013_sub { method niter tnum largs } {
 
 	env_cleanup $testdir
 	set ports [available_ports $nsites]
-	set hoststr [get_hoststr $ipversion]
 
 	set masterdir $testdir/MASTERDIR
 	set clientdir $testdir/CLIENTDIR
@@ -59,7 +57,7 @@ proc repmgr013_sub { method niter tnum largs } {
 	    -errpfx MASTER -home $masterdir -txn -rep -thread"
 	set masterenv [eval $ma_envcmd]
 	$masterenv repmgr -ack all \
-	    -local [list $hoststr [lindex $ports 0]] \
+	    -local [list 127.0.0.1 [lindex $ports 0]] \
 	    -start master
 
 	puts "\tRepmgr$tnum.b: Start first client."
@@ -67,9 +65,9 @@ proc repmgr013_sub { method niter tnum largs } {
 	    -errpfx CLIENT -home $clientdir -txn -rep -thread"
 	set clientenv [eval $cl_envcmd]
 	$clientenv repmgr -ack all \
-	    -local [list $hoststr [lindex $ports 1]] \
-	    -remote [list $hoststr [lindex $ports 0]] \
-	    -remote [list $hoststr [lindex $ports 2]] \
+	    -local [list 127.0.0.1 [lindex $ports 1]] \
+	    -remote [list 127.0.0.1 [lindex $ports 0]] \
+	    -remote [list 127.0.0.1 [lindex $ports 2]] \
 	    -start client
 	await_startup_done $clientenv
 
@@ -78,9 +76,9 @@ proc repmgr013_sub { method niter tnum largs } {
 	    -errpfx CLIENT2 -home $clientdir2 -txn -rep -thread"
 	set clientenv2 [eval $cl2_envcmd]
 	$clientenv2 repmgr -ack all \
-	    -local [list $hoststr [lindex $ports 2]] \
-	    -remote [list $hoststr [lindex $ports 0]] \
-	    -remote [list $hoststr [lindex $ports 1] peer] \
+	    -local [list 127.0.0.1 [lindex $ports 2]] \
+	    -remote [list 127.0.0.1 [lindex $ports 0]] \
+	    -remote [list 127.0.0.1 [lindex $ports 1] peer] \
 	    -start client
 	await_startup_done $clientenv2
 
@@ -97,8 +95,6 @@ proc repmgr013_sub { method niter tnum largs } {
 # For numsites, supply the nsites value defined for the test.
 # For peervec, supply a list of ports whose sites should be considered peers.
 proc verify_sitelist { env numsites peervec } {
-	global ipversion
-	set hoststr [get_hoststr $ipversion]
 	set sitelist [$env repmgr_site_list]
 
 	# Make sure there are expected number of other sites.
@@ -110,7 +106,7 @@ proc verify_sitelist { env numsites peervec } {
 	foreach tuple $sitelist {
 		error_check_good eidchk [string is integer -strict \
 					     [lindex $tuple 0]] 1
-		error_check_good hostchk [lindex $tuple 1] "$hoststr"
+		error_check_good hostchk [lindex $tuple 1] "127.0.0.1"
 		set port [lindex $tuple 2]
 		error_check_good portchk [string is integer -strict $port] 1
 		error_check_good statchk [lindex $tuple 3] connected

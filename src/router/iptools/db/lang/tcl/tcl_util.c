@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -135,7 +135,7 @@ tcl_LockMutex(dbenv, mutex)
 	 * HAVE_MUTEX_SUPPORT, checking for MUTEX_INVALID, etc., you've created
 	 * a maintenance burden, and it's just not worth it.
 	 */ 
-	MUTEX_LOCK_NO_CTR(dbenv->env, mutex);
+	MUTEX_LOCK(dbenv->env, mutex);
 	return (0);
 }
 
@@ -147,6 +147,6 @@ tcl_UnlockMutex(dbenv, mutex)
 	DB_ENV *dbenv;
 	db_mutex_t mutex;
 {
-	MUTEX_UNLOCK_NO_CTR(dbenv->env, mutex);
+	MUTEX_UNLOCK(dbenv->env, mutex);
 	return (0);
 }

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -105,12 +105,9 @@ __os_detach(env, infop, destroy)
 	int destroy;
 {
 	DB_ENV *dbenv;
-	REGION *rp;
 	int ret, t_ret;
 
 	dbenv = env->dbenv;
-	rp = infop->rp;
-	ret = 0;
 
 	if (infop->wnt_handle != NULL) {
 		(void)CloseHandle(infop->wnt_handle);
@@ -123,19 +120,10 @@ __os_detach(env, infop, destroy)
 			return (ret);
 	}
 
-	if (F_ISSET(env, ENV_FORCESYNCENV))
-		if (!FlushViewOfFile(infop->addr, rp->max)) {
-			ret = __os_get_syserr();
-			__db_syserr(env, ret, DB_STR("0249",
-			    "FlushViewOfFile failed on closing environment"));
-			ret = __os_posix_err(ret);
-		}
-
-	t_ret = !UnmapViewOfFile(infop->addr) ? __os_get_syserr() : 0;
-	if (t_ret != 0) {
-		__db_syserr(env, t_ret, DB_STR("0007", "UnmapViewOfFile"));
-		if (ret == 0)
-			ret = __os_posix_err(t_ret);
+	ret = !UnmapViewOfFile(infop->addr) ? __os_get_syserr() : 0;
+	if (ret != 0) {
+		__db_syserr(env, ret, DB_STR("0007", "UnmapViewOfFile"));
+		ret = __os_posix_err(ret);
 	}
 
 	if (!F_ISSET(env, ENV_SYSTEM_MEM) && destroy &&
@@ -325,7 +313,7 @@ __os_map(env, path, infop, fhp, len, is_region, is_system, is_rdonly, addr)
 	}
 
 	/*
-	 * !!!
+	 * XXX
 	 * DB: We have not implemented copy-on-write here.
 	 *
 	 * If this is an region in system memory, we try to open it using the
@@ -387,7 +375,7 @@ __os_map(env, path, infop, fhp, len, is_region, is_system, is_rdonly, addr)
 	}
 
 	/*
-	 * !!!
+	 * XXX
 	 * It turns out that the kernel object underlying the named section
 	 * is reference counted, but that the call to MapViewOfFile() above
 	 * does NOT increment the reference count! So, if we close the handle

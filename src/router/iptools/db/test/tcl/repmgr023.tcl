@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # TEST	repmgr023
 # TEST	Test of JOIN_FAILURE event for repmgr applications.
@@ -35,7 +35,6 @@ proc repmgr023_sub { method niter tnum  largs } {
 	global repfiles_in_memory
 	global rep_verbose
 	global verbose_type
-	global ipversion
 
 	set verbargs ""
 	if { $rep_verbose == 1 } {
@@ -52,7 +51,6 @@ proc repmgr023_sub { method niter tnum  largs } {
 	file mkdir [set dirb $testdir/SITE_B]
 	file mkdir [set dirc $testdir/SITE_C]
 	foreach { porta portb portc } [available_ports 3] {}
-	set hoststr [get_hoststr $ipversion]
 
 	# Log size is small so we quickly create more than one.
 	# The documentation says that the log file must be at least
@@ -68,7 +66,7 @@ proc repmgr023_sub { method niter tnum  largs } {
 	    -home $dira"
 	set enva [eval $cmda]
 	$enva repmgr -timeout {connection_retry 5000000} \
-	    -local [list $hoststr $porta] -start master
+	    -local [list 127.0.0.1 $porta] -start master
 
 	set cmdb "berkdb_env_noerr -create -txn nosync \
 	    $verbargs $repmemargs -rep -thread \
@@ -76,8 +74,8 @@ proc repmgr023_sub { method niter tnum  largs } {
 	    -home $dirb"
 	set envb [eval $cmdb]
 	$envb repmgr -timeout {connection_retry 5000000} \
-	    -local [list $hoststr $portb] -start client \
-	    -remote [list $hoststr $porta]
+	    -local [list 127.0.0.1 $portb] -start client \
+	    -remote [list 127.0.0.1 $porta]
 	puts "\tRepmgr$tnum.a: wait for client B to sync with master."
 	await_startup_done $envb
 
@@ -87,8 +85,8 @@ proc repmgr023_sub { method niter tnum  largs } {
 	    -home $dirc"
 	set envc [eval $cmdc]
 	$envc repmgr -timeout {connection_retry 5000000} \
-	    -local [list $hoststr $portc] -start client \
-	    -remote [list $hoststr $porta]
+	    -local [list 127.0.0.1 $portc] -start client \
+	    -remote [list 127.0.0.1 $porta]
 	puts "\tRepmgr$tnum.b: wait for client C to sync with master."
 	await_startup_done $envc
 
@@ -130,8 +128,8 @@ proc repmgr023_sub { method niter tnum  largs } {
 	set envc [eval $cmdc -recover -event]
 	$envc rep_config {autoinit off}
 	$envc repmgr -timeout {connection_retry 5000000} \
-	    -local [list $hoststr $portc] -start client \
-	    -remote [list $hoststr $porta]
+	    -local [list 127.0.0.1 $portc] -start client \
+	    -remote [list 127.0.0.1 $porta]
 
 	# Since we've turned off auto-init, but are too far behind to sync, we
 	# expect a join_failure event.

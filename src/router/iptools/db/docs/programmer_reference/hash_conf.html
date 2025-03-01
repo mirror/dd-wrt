@@ -14,16 +14,17 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Hash access method specific
-        configuration</th>
+          <th colspan="3" align="center">Hash access method specific configuration</th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="bt_conf.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 2.  Access Method Configuration </th>
+          <th width="60%" align="center">Chapter 2. 
+		Access Method Configuration
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="heap_conf.html">Next</a></td>
         </tr>
       </table>
@@ -33,8 +34,7 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title" style="clear: both"><a id="hash_conf"></a>Hash access method specific
-        configuration</h2>
+            <h2 class="title" style="clear: both"><a id="hash_conf"></a>Hash access method specific configuration</h2>
           </div>
         </div>
       </div>
@@ -57,11 +57,10 @@
           </dt>
         </dl>
       </div>
-      <p> 
-        There are a series of configuration tasks which you can
-        perform when using the Hash access method. They are described
-        in the following sections. 
-    </p>
+      <p>
+    There are a series of configuration tasks which you can perform when
+    using the Hash access method.  They are described in the following sections.
+</p>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
@@ -70,21 +69,15 @@
             </div>
           </div>
         </div>
-        <p>
-        The density, or page fill factor, is an approximation of the
-        number of keys allowed to accumulate in any one bucket,
-        determining when the hash table grows or shrinks. If you know
-        the average sizes of the keys and data in your data set,
-        setting the fill factor can enhance performance. A reasonable
-        rule to use to compute fill factor is:
-    </p>
+        <p>The density, or page fill factor, is an approximation of the number of
+keys allowed to accumulate in any one bucket, determining when the hash
+table grows or shrinks.  If you know the average sizes of the keys and
+data in your data set, setting the fill factor can enhance performance.
+A reasonable rule to use to compute fill factor is:</p>
         <pre class="programlisting">(pagesize - 32) / (average_key_size + average_data_size + 8)</pre>
-        <p>
-        The desired density within the hash table can be specified
-        by calling the <a href="../api_reference/C/dbset_h_ffactor.html" class="olink">DB-&gt;set_h_ffactor()</a> method. If no density is
-        specified, one will be selected dynamically as pages are
-        filled.
-    </p>
+        <p>The desired density within the hash table can be specified by calling
+the <a href="../api_reference/C/dbset_h_ffactor.html" class="olink">DB-&gt;set_h_ffactor()</a> method.  If no density is specified, one will
+be selected dynamically as pages are filled.</p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
@@ -94,32 +87,23 @@
             </div>
           </div>
         </div>
-        <p>
-        The database hash determines in which bucket a particular
-        key will reside. The goal of hashing keys is to distribute
-        keys equally across the database pages, therefore it is
-        important that the hash function work well with the specified
-        keys so that the resulting bucket usage is relatively uniform.
-        A hash function that does not work well can effectively turn
-        into a sequential list.
-    </p>
-        <p>
-        No hash performs equally well on all possible data sets. It
-        is possible that applications may find that the default hash
-        function performs poorly with a particular set of keys. The
-        distribution resulting from the hash function can be checked
-        using the <a href="../api_reference/C/db_stat.html" class="olink">db_stat</a> utility. By comparing the number of hash buckets
-        and the number of keys, one can decide if the entries are
-        hashing in a well-distributed manner.
-    </p>
-        <p>
-        The hash function for the hash table can be specified by
-        calling the <a href="../api_reference/C/dbset_h_hash.html" class="olink">DB-&gt;set_h_hash()</a> method. If no hash function is
-        specified, a default function will be used. Any
-        application-specified hash function must take a reference to a
-        <a href="../api_reference/C/db.html" class="olink">DB</a> object, a pointer to a byte string and its length, as
-        arguments and return an unsigned, 32-bit hash value.
-    </p>
+        <p>The database hash determines in which bucket a particular key will reside.
+The goal of hashing keys is to distribute keys equally across the database
+pages, therefore it is important that the hash function work well with
+the specified keys so that the resulting bucket usage is relatively
+uniform.  A hash function that does not work well can effectively turn
+into a sequential list.</p>
+        <p>No hash performs equally well on all possible data sets.  It is possible
+that applications may find that the default hash function performs poorly
+with a particular set of keys.  The distribution resulting from the hash
+function can be checked using the <a href="../api_reference/C/db_stat.html" class="olink">db_stat</a> utility.  By comparing the
+number of hash buckets and the number of keys, one can decide if the entries
+are hashing in a well-distributed manner.</p>
+        <p>The hash function for the hash table can be specified by calling the
+<a href="../api_reference/C/dbset_h_hash.html" class="olink">DB-&gt;set_h_hash()</a> method.  If no hash function is specified, a default
+function will be used.  Any application-specified hash function must
+take a reference to a <a href="../api_reference/C/db.html" class="olink">DB</a> object, a pointer to a byte string and
+its length, as arguments and return an unsigned, 32-bit hash value.</p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
@@ -129,23 +113,16 @@
             </div>
           </div>
         </div>
-        <p>
-        When setting up the hash database, knowing the expected
-        number of elements that will be stored in the hash table is
-        useful. This value can be used by the Hash access method
-        implementation to more accurately construct the necessary
-        number of buckets that the database will eventually
-        require.
-    </p>
-        <p>
-        The anticipated number of elements in the hash table can be
-        specified by calling the <a href="../api_reference/C/dbset_h_nelem.html" class="olink">DB-&gt;set_h_nelem()</a> method. If not
-        specified, or set too low, hash tables will expand gracefully
-        as keys are entered, although a slight performance degradation
-        may be noticed. In order for the estimated number of elements
-        to be a useful value to Berkeley DB, the <a href="../api_reference/C/dbset_h_ffactor.html" class="olink">DB-&gt;set_h_ffactor()</a>
-        method must also be called to set the page fill factor.
-    </p>
+        <p>When setting up the hash database, knowing the expected number of elements
+that will be stored in the hash table is useful.  This value can be used
+by the Hash access method implementation to more accurately construct the
+necessary number of buckets that the database will eventually require.</p>
+        <p>The anticipated number of elements in the hash table can be specified by
+calling the <a href="../api_reference/C/dbset_h_nelem.html" class="olink">DB-&gt;set_h_nelem()</a> method.  If not specified, or set too low,
+hash tables will expand gracefully as keys are entered, although a slight
+performance degradation may be noticed.  In order for the estimated number
+of elements to be a useful value to Berkeley DB, the <a href="../api_reference/C/dbset_h_ffactor.html" class="olink">DB-&gt;set_h_ffactor()</a> method
+must also be called to set the page fill factor.</p>
       </div>
     </div>
     <div class="navfooter">
@@ -163,8 +140,7 @@
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Heap access method specific
-        configuration</td>
+          <td width="40%" align="right" valign="top"> Heap access method specific configuration</td>
         </tr>
       </table>
     </div>

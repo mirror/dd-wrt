@@ -9,12 +9,12 @@
     <link rel="start" href="index.html" title="Getting Started with Replicated Berkeley DB Applications" />
     <link rel="up" href="repapp.html" title="Chapter 3. The DB Replication Manager" />
     <link rel="prev" href="rep_init_code.html" title="Starting and Stopping Replication" />
-    <link rel="next" href="fwrkpermmessage.html" title="Replication Manager Permanent Message Handling" />
+    <link rel="next" href="fwrkpermmessage.html" title="Permanent Message Handling" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -190,7 +190,7 @@ public:
         REP_HOST_INFO *CurItem = other_hosts;
         while (CurItem-&gt;next != NULL)
         {
-            REP_HOST_INFO *TmpItem = CurItem-&gt;next;
+            REP_HOST_INFO *TmpItem = CurItem;
             free(CurItem);
             CurItem = TmpItem;
         }
@@ -285,7 +285,7 @@ static void usage()
          &lt;&lt; "-h home<strong class="userinput"><code>-l|L host:port [-r host:port]</code></strong>"
          <strong class="userinput"><code>&lt;&lt; "[-p priority]" &lt;&lt; endl;</code></strong>
 
-    cerr &lt;&lt; "\t -h home directory (required)" &lt;&lt; endl
+    cerr &lt;&lt; "\t -h home directory" &lt;&lt; endl
          <strong class="userinput"><code>&lt;&lt; "\t -l host:port (required unless -L is specified;"
          &lt;&lt; "\t   l stands for local)" &lt;&lt; endl
          &lt;&lt; "\t -L host:port (optional, L means group "
@@ -505,7 +505,7 @@ err:
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Replication Manager Permanent Message Handling</td>
+          <td width="40%" align="right" valign="top"> Permanent Message Handling</td>
         </tr>
       </table>
     </div>

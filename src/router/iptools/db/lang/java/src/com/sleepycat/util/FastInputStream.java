@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -112,12 +112,9 @@ public class FastInputStream extends InputStream {
     // --- end ByteArrayInputStream compatible methods ---
 
     /**
-     * Equivalent to <code>skip()</code> but takes an int parameter instead of a
+     * Equivalent to <code>skip()<code> but takes an int parameter instead of a
      * long, and does not check whether the count given is larger than the
      * number of remaining bytes.
-     *
-     * @param count the number of bytes to skip.
-     *
      * @see #skip(long)
      */
     public final void skipFast(int count) {
@@ -125,11 +122,8 @@ public class FastInputStream extends InputStream {
     }
 
     /**
-     * Equivalent to <code>read()</code> but does not throw
+     * Equivalent to <code>read()<code> but does not throw
      * <code>IOException</code>.
-     *
-     * @return the next byte of data, or -1 if at the end of the stream.
-     *
      * @see #read()
      */
     public final int readFast() {
@@ -138,13 +132,8 @@ public class FastInputStream extends InputStream {
     }
 
     /**
-     * Equivalent to <code>read(byte[])</code> but does not throw
+     * Equivalent to <code>read(byte[])<code> but does not throw
      * <code>IOException</code>.
-
-     * @param toBuf the buffer into which the data is read.
-     *
-     * @return the number of bytes read, or -1 if at the end of the stream.
-     *
      * @see #read(byte[])
      */
     public final int readFast(byte[] toBuf) {
@@ -153,17 +142,8 @@ public class FastInputStream extends InputStream {
     }
 
     /**
-     * Equivalent to <code>read(byte[],int,int)</code> but does not throw
+     * Equivalent to <code>read(byte[],int,int)<code> but does not throw
      * <code>IOException</code>.
-     *
-     * @param toBuf the buffer into which the data is read.
-     *
-     * @param offset the start offset in array at which the data is written.
-     *
-     * @param length the maximum number of bytes to read.
-     *
-     * @return the number of bytes read, or -1 if at the end of the stream.
-     *
      * @see #read(byte[],int,int)
      */
     public final int readFast(byte[] toBuf, int offset, int length) {

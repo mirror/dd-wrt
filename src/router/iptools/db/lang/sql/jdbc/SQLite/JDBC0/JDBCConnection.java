@@ -181,7 +181,7 @@ public class JDBCConnection
     public SQLite.Database getSQLiteDatabase() {
 	return (SQLite.Database) db;
     }
-
+  
     public Statement createStatement() {
 	JDBCStatement s = new JDBCStatement(this);
 	return s;
@@ -202,7 +202,7 @@ public class JDBCConnection
 	JDBCStatement s = new JDBCStatement(this);
 	return s;
     }
-
+	
     public DatabaseMetaData getMetaData() throws SQLException {
 	if (meta == null) {
 	    meta = new JDBCDatabaseMetaData(this);

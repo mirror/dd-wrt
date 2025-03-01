@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -36,8 +36,9 @@ import com.sleepycat.persist.PrimaryIndex;
  *
  * <p>The type of a key field must either be one of the following:</p>
  * <ul>
- * <li>Any of the <a href="Entity.html#simpleTypes">simple types</a>.</li>
- * <li>An enum type.</li>
+ * <li>Any of the {@link <a href="Entity.html#simpleTypes">simple
+ * types</a>}.</li>
+ * <li>An enum type.</p>
  * <li>A composite key class containing one or more simple type or enum
  * fields.</li>
  * </ul>
@@ -57,6 +58,7 @@ import com.sleepycat.persist.PrimaryIndex;
  * <li>All simple types except for {@code String} are encoded so that they are
  * sorted as expected, that is, as if the {@link Comparable#compareTo} method
  * of their class (or, for primitives, their wrapper class) is called.</li>
+ * <br>
  * <li>Strings are encoded as UTF-8 byte arrays.  Zero (0x0000) character
  * values are UTF encoded as non-zero values, and therefore embedded zeros in
  * the string are supported.  The sequence {@literal {0xC0,0x80}} is used to
@@ -73,7 +75,7 @@ import com.sleepycat.persist.PrimaryIndex;
  * override the default sort order, you can use a composite key class that
  * implements {@link Comparable}.  This allows overriding the sort order and is
  * therefore useful even when there is only one key field in the composite key
- * class.  See <a href="KeyField.html#comparable">Custom Sort Order</a>
+ * class.  See {@link <a href="KeyField.html#comparable">Custom Sort Order</a>}
  * for more information on sorting of composite keys.</p>
  *
  * <p><a name="inherit"><strong>Inherited Primary Key</strong></a></p>
@@ -169,8 +171,6 @@ public @interface PrimaryKey {
      * is called and a new key is assigned, the assigned value is returned to
      * the caller via the key field of the entity object that is passed as a
      * parameter.</p>
-     *
-     * @return the sequence name or an empty string.
      */
     String sequence() default "";
 }

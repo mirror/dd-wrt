@@ -122,7 +122,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
     }
 
     public String getNumericFunctions() throws SQLException {
-	return "";
+	return ""; 
     }
 
     public String getStringFunctions() throws SQLException {
@@ -160,7 +160,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
     public boolean nullPlusNonNullIsNull() throws SQLException {
 	return false;
     }
-
+    
     public boolean supportsConvert() throws SQLException {
 	return false;
     }
@@ -217,7 +217,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 
     public boolean supportsMinimumSQLGrammar() throws SQLException {
 	return true;
-    }
+    } 
 
     public boolean supportsCoreSQLGrammar() throws SQLException {
 	return false;
@@ -287,7 +287,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
     public boolean supportsSchemasInTableDefinitions() throws SQLException {
 	return false;
     }
-
+    
     public boolean supportsSchemasInIndexDefinitions() throws SQLException {
 	return false;
     }
@@ -502,7 +502,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 
     public ResultSet getProcedureColumns(String catalog,
 					 String schemaPattern,
-					 String procedureNamePattern,
+					 String procedureNamePattern, 
 					 String columnNamePattern)
 	throws SQLException {
 	return null;
@@ -529,7 +529,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	    sb.append("(type = 'table' or type = 'view')");
 	} else {
 	    sb.append("(");
-	    String sep = "";
+	    String sep = ""; 
 	    for (int i = 0; i < types.length; i++) {
 		sb.append(sep);
 		sb.append("type = ");
@@ -1363,8 +1363,8 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 	return rs;
     }
 
-    public ResultSet getUDTs(String catalog, String schemaPattern,
-		      String typeNamePattern, int[] types)
+    public ResultSet getUDTs(String catalog, String schemaPattern, 
+		      String typeNamePattern, int[] types) 
 	throws SQLException {
 	return null;
     }

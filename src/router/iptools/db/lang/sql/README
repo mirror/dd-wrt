@@ -3,7 +3,7 @@ Berkeley DB SQL API
 
 Content overview:
 ===============================================================================
-1) sql/adapter: the source files that implement the changes to SQLite in order
+1) sql/adapater: the source files that implement the changes to SQLite in order
    to use Berkeley DB as a storage engine, instead of the default btree
    implementation in SQLite.
 
@@ -54,10 +54,7 @@ Running tests
 ===============================================================================
 Configure based builds:
 	$ cd build_unix/sql
-	$ ./testfixture ../../lang/sql/sqlite/test/insert.test
-		(for tests that come with the SQLite package)
-	$ ./testfixture ../../test/sql/bdb_multi_proc.test
-		(for tests written specifically for Berkeley DB's SQLite API)
+	$ ./testfixture ../../sqlite-3.*/test/insert.test
 
 	To debug into the SQLite code:
 	$ gdb --args ./.libs/testfixture ../sqlite-3.*/test/insert.test

@@ -944,7 +944,7 @@ static int asyncFileControl(sqlite3_file *id, int op, void *pArg){
       return SQLITE_OK;
     }
   }
-  return SQLITE_NOTFOUND;
+  return SQLITE_ERROR;
 }
 
 /* 
@@ -1044,18 +1044,15 @@ static int asyncOpen(
   char *z;
   int isAsyncOpen = doAsynchronousOpen(flags);
 
-  /* If zName is NULL, then the upper layer is requesting an anonymous file.
-  ** Otherwise, allocate enough space to make a copy of the file name (along
-  ** with the second nul-terminator byte required by xOpen).
-  */
+  /* If zName is NULL, then the upper layer is requesting an anonymous file */
   if( zName ){
-    nName = (int)strlen(zName);
+    nName = (int)strlen(zName)+1;
   }
 
   nByte = (
     sizeof(AsyncFileData) +        /* AsyncFileData structure */
     2 * pVfs->szOsFile +           /* AsyncFileData.pBaseRead and pBaseWrite */
-    nName + 2                      /* AsyncFileData.zName */
+    nName                          /* AsyncFileData.zName */
   ); 
   z = sqlite3_malloc(nByte);
   if( !z ){
@@ -1510,7 +1507,6 @@ static void asyncWriterThread(void){
       case ASYNC_DELETE:
         ASYNC_TRACE(("DELETE %s\n", p->zBuf));
         rc = pVfs->xDelete(pVfs, p->zBuf, (int)p->iOffset);
-        if( rc==SQLITE_IOERR_DELETE_NOENT ) rc = SQLITE_OK;
         break;
 
       case ASYNC_OPENEXCLUSIVE: {

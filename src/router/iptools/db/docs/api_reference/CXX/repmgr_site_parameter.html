@@ -8,20 +8,20 @@
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB C++ API Reference" />
     <link rel="up" href="configuration_reference.html" title="Appendix B. DB_CONFIG Parameter Reference" />
-    <link rel="prev" href="repmgr_set_incoming_queue_max_parameter.html" title="repmgr_set_incoming_queue_max" />
+    <link rel="prev" href="repmgr_set_ack_policy_parameter.html" title="repmgr_set_ack_policy" />
     <link rel="next" href="set_cachesize_parameter.html" title="set_cachesize" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
           <th colspan="3" align="center">repmgr_site</th>
         </tr>
         <tr>
-          <td width="20%" align="left"><a accesskey="p" href="repmgr_set_incoming_queue_max_parameter.html">Prev</a> </td>
+          <td width="20%" align="left"><a accesskey="p" href="repmgr_set_ack_policy_parameter.html">Prev</a> </td>
           <th width="60%" align="center">Appendix B. DB_CONFIG Parameter Reference</th>
           <td width="20%" align="right"> <a accesskey="n" href="set_cachesize_parameter.html">Next</a></td>
         </tr>
@@ -74,7 +74,7 @@
                     </p>
             <p>
                         If turned <code class="literal">on</code>, this site should
-                        create the initial group membership database contents,
+                        create the initial membership database contents,
                         defining a "group" of just the one site, rather
                         than trying to join an existing group when it
                         starts for the first time.  This setting is only
@@ -90,7 +90,7 @@
                         If turned <code class="literal">on</code>, specifies that the
                         site is already part of an existing group. This
                         setting causes the site to be upgraded from a
-                        previous version of Berkeley DB. All sites in the legacy
+                        previous version of BDB. All sites in the legacy
                         group must specify this setting for themselves (the
                         local site) and for all other sites currently
                         existing in the group. Once the upgrade has been
@@ -131,16 +131,14 @@
       <hr />
       <table width="100%" summary="Navigation footer">
         <tr>
-          <td width="40%" align="left"><a accesskey="p" href="repmgr_set_incoming_queue_max_parameter.html">Prev</a> </td>
+          <td width="40%" align="left"><a accesskey="p" href="repmgr_set_ack_policy_parameter.html">Prev</a> </td>
           <td width="20%" align="center">
             <a accesskey="u" href="configuration_reference.html">Up</a>
           </td>
           <td width="40%" align="right"> <a accesskey="n" href="set_cachesize_parameter.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">
-                 repmgr_set_incoming_queue_max
-             </td>
+          <td width="40%" align="left" valign="top">repmgr_set_ack_policy </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>

@@ -5,12 +5,12 @@ AC_DEFUN(AM_PTHREADS_SHARED, [
 AC_TRY_RUN([
 #include <stdlib.h>
 #include <pthread.h>
-int main() {
+main() {
 	pthread_cond_t cond;
 	pthread_mutex_t mutex;
 	pthread_condattr_t condattr;
 	pthread_mutexattr_t mutexattr;
-	return (
+	exit (
 	pthread_condattr_init(&condattr) ||
 	pthread_condattr_setpshared(&condattr, PTHREAD_PROCESS_SHARED) ||
 	pthread_mutexattr_init(&mutexattr) ||
@@ -31,7 +31,7 @@ AC_TRY_LINK([
 	pthread_mutex_t mutex;
 	pthread_condattr_t condattr;
 	pthread_mutexattr_t mutexattr;
-	return (
+	exit (
 	pthread_condattr_init(&condattr) ||
 	pthread_condattr_setpshared(&condattr, PTHREAD_PROCESS_SHARED) ||
 	pthread_mutexattr_init(&mutexattr) ||
@@ -49,12 +49,12 @@ AC_DEFUN(AM_PTHREADS_PRIVATE, [
 AC_TRY_RUN([
 #include <stdlib.h>
 #include <pthread.h>
-int main() {
+main() {
 	pthread_cond_t cond;
 	pthread_mutex_t mutex;
 	pthread_condattr_t condattr;
 	pthread_mutexattr_t mutexattr;
-	return (
+	exit (
 	pthread_condattr_init(&condattr) ||
 	pthread_mutexattr_init(&mutexattr) ||
 	pthread_cond_init(&cond, &condattr) ||
@@ -73,7 +73,7 @@ AC_TRY_LINK([
 	pthread_mutex_t mutex;
 	pthread_condattr_t condattr;
 	pthread_mutexattr_t mutexattr;
-	return (
+	exit (
 	pthread_condattr_init(&condattr) ||
 	pthread_mutexattr_init(&mutexattr) ||
 	pthread_cond_init(&cond, &condattr) ||
@@ -89,10 +89,10 @@ AC_DEFUN(AM_PTHREADS_CONDVAR_DUPINITCHK, [
 AC_TRY_RUN([
 #include <stdlib.h>
 #include <pthread.h>
-int main() {
+main() {
 	pthread_cond_t cond;
 	pthread_condattr_t condattr;
-	return (pthread_condattr_init(&condattr) ||
+	exit(pthread_condattr_init(&condattr) ||
 	pthread_cond_init(&cond, &condattr) ||
 	pthread_cond_init(&cond, &condattr));
 }], [db_cv_pthread_condinit_dupgood="yes"], 
@@ -102,7 +102,7 @@ AC_TRY_LINK([
 #include <pthread.h>], [
 	pthread_cond_t cond;
 	pthread_condattr_t condattr;
-	return (pthread_condattr_init(&condattr) ||
+	exit(pthread_condattr_init(&condattr) ||
 	pthread_cond_init(&cond, &condattr));
 ], [db_cv_pthread_condinit_dupgood="yes"], 
 [db_cv_pthread_condinit_dupgood="no"]))])
@@ -110,10 +110,10 @@ AC_DEFUN(AM_PTHREADS_RWLOCKVAR_DUPINITCHK, [
 AC_TRY_RUN([
 #include <stdlib.h>
 #include <pthread.h>
-int main() {
+main() {
 	pthread_rwlock_t rwlock;
 	pthread_rwlockattr_t rwlockattr;
-	return (pthread_rwlockattr_init(&rwlockattr) ||
+	exit(pthread_rwlockattr_init(&rwlockattr) ||
 	pthread_rwlock_init(&rwlock, &rwlockattr) ||
 	pthread_rwlock_init(&rwlock, &rwlockattr));
 }], [db_cv_pthread_rwlockinit_dupgood="yes"], 
@@ -123,7 +123,7 @@ AC_TRY_LINK([
 #include <pthread.h>], [
 	pthread_rwlock_t rwlock;
 	pthread_rwlockattr_t rwlockattr;
-	exit (pthread_rwlockattr_init(&rwlockattr) ||
+	exit(pthread_rwlockattr_init(&rwlockattr) ||
 	pthread_rwlock_init(&rwlock, &rwlockattr));
 ], [db_cv_pthread_rwlockinit_dupgood="yes"], 
 [db_cv_pthread_rwlockinit_dupgood="no"]))])
@@ -282,7 +282,7 @@ if test "$db_cv_mutex" = no; then
 	# x86/gcc: FreeBSD, NetBSD, BSD/OS, Linux
 	AC_TRY_COMPILE(,[
 	#if (defined(i386) || defined(__i386__)) && defined(__GNUC__)
-		return (0);
+		exit(0);
 	#else
 		FAIL TO COMPILE/LINK
 	#endif
@@ -291,7 +291,7 @@ if test "$db_cv_mutex" = no; then
 	# x86_64/gcc: FreeBSD, NetBSD, BSD/OS, Linux
 	AC_TRY_COMPILE(,[
 	#if (defined(x86_64) || defined(__x86_64__)) && defined(__GNUC__)
-		return (0);
+		exit(0);
 	#else
 		FAIL TO COMPILE/LINK
 	#endif
@@ -314,7 +314,7 @@ if test "$db_cv_mutex" = no; then
 	AC_TRY_COMPILE(,[
 	#if defined(__sparc__) && defined(__GNUC__)
 		asm volatile ("membar #StoreStore|#StoreLoad|#LoadStore");
-		return (0);
+		exit(0);
 	#else
 		FAIL TO COMPILE/LINK
 	#endif
@@ -356,7 +356,7 @@ AC_TRY_LINK([
 	msem_init(&x, 0);
 	msem_lock(&x, 0);
 	msem_unlock(&x, 0);
-	return (0);
+	exit(0);
 #else
 	FAIL TO COMPILE/LINK
 #endif
@@ -373,7 +373,7 @@ AC_TRY_LINK([
 	msem_init(&x, 0);
 	msem_lock(&x, 0);
 	msem_unlock(&x, 0);
-	return (0);
+	exit(0);
 ], [db_cv_mutex=UNIX/msem_init])
 fi
 
@@ -395,7 +395,7 @@ fi
 if test "$db_cv_mutex" = no; then
 AC_TRY_COMPILE(,[
 #if defined(__USLC__)
-	return (0);
+	exit(0);
 #else
 	FAIL TO COMPILE/LINK
 #endif
@@ -439,19 +439,7 @@ AC_TRY_LINK([
 ], [db_cv_mutex=AIX/_check_lock])
 fi
 
-# OSSpinLockTry/OSSpinLockUnlock: Initially from BSD, also used in Apple/Darwin.
-if test "$db_cv_mutex" = no; then
-AC_TRY_LINK([
-#include <libkern/OSAtomic.h>],[
-	OSSpinLock x;
-	OsSpinLockTry(&x);
-	OsSpinLockUnLock(&x);
-], [db_cv_mutex=BSD/OSSpinLockTry])
-fi
-
-# _spin_lock_try/_spin_unlock: This BSD/Apple/Darwin interface is not
-# documented, and so is not allowed for iOS applications. Usually
-# BSD/OSSpinLockTry will be used instead of this one.
+# _spin_lock_try/_spin_unlock: Apple/Darwin
 if test "$db_cv_mutex" = no; then
 AC_TRY_LINK(,[
 	int x;
@@ -464,7 +452,7 @@ fi
 if test "$db_cv_mutex" = no; then
 AC_TRY_COMPILE(,[
 #if defined(__alpha) && defined(__DECC)
-	return (0);
+	exit(0);
 #else
 	FAIL TO COMPILE/LINK
 #endif
@@ -475,7 +463,7 @@ fi
 if test "$db_cv_mutex" = no; then
 AC_TRY_COMPILE(,[
 #if defined(__alpha) && defined(__GNUC__)
-	return (0);
+	exit(0);
 #else
 	FAIL TO COMPILE/LINK
 #endif
@@ -486,29 +474,18 @@ fi
 if test "$db_cv_mutex" = no; then
 AC_TRY_COMPILE(,[
 #if defined(__arm__) && defined(__GNUC__)
-	return (0);
+	exit(0);
 #else
 	FAIL TO COMPILE/LINK
 #endif
 ], [db_cv_mutex=ARM/gcc-assembly])
 fi
 
-# ARM64/gcc: Linux
-if test "$db_cv_mutex" = no; then
-AC_TRY_COMPILE(,[
-#if defined(__arm64__) && defined(__GNUC__)
-	return (0);
-#else
-	FAIL TO COMPILE/LINK
-#endif
-], [db_cv_mutex=ARM64/gcc-assembly])
-fi
-
 # MIPS/gcc: Linux
 if test "$db_cv_mutex" = no; then
 AC_TRY_COMPILE(,[
 #if (defined(__mips) || defined(__mips__)) && defined(__GNUC__)
-	return (0);
+	exit(0);
 #else
 	FAIL TO COMPILE/LINK
 #endif
@@ -519,7 +496,7 @@ fi
 if test "$db_cv_mutex" = no; then
 AC_TRY_COMPILE(,[
 #if (defined(__hppa) || defined(__hppa__)) && defined(__GNUC__)
-	return (0);
+	exit(0);
 #else
 	FAIL TO COMPILE/LINK
 #endif
@@ -530,7 +507,7 @@ fi
 if test "$db_cv_mutex" = no; then
 AC_TRY_COMPILE(,[
 #if (defined(__powerpc__) || defined(__ppc__)) && defined(__GNUC__)
-	return (0);
+	exit(0);
 #else
 	FAIL TO COMPILE/LINK
 #endif
@@ -541,7 +518,7 @@ fi
 if test "$db_cv_mutex" = no; then
 AC_TRY_COMPILE(,[
 #if (defined(mc68020) || defined(sun3)) && defined(__GNUC__)
-	return (0);
+	exit(0);
 #else
 	FAIL TO COMPILE/LINK
 #endif
@@ -552,7 +529,7 @@ fi
 if test "$db_cv_mutex" = no; then
 AC_TRY_COMPILE(,[
 #if defined(__MVS__) && defined(__IBMC__)
-	return (0);
+	exit(0);
 #else
 	FAIL TO COMPILE/LINK
 #endif
@@ -563,7 +540,7 @@ fi
 if test "$db_cv_mutex" = no; then
 AC_TRY_COMPILE(,[
 #if defined(__s390__) && defined(__GNUC__)
-	return (0);
+	exit(0);
 #else
 	FAIL TO COMPILE/LINK
 #endif
@@ -574,7 +551,7 @@ fi
 if test "$db_cv_mutex" = no; then
 AC_TRY_COMPILE(,[
 #if defined(__ia64) && defined(__GNUC__)
-	return (0);
+	exit(0);
 #else
 	FAIL TO COMPILE/LINK
 #endif
@@ -585,7 +562,7 @@ fi
 if test "$db_cv_mutex" = no; then
 AC_TRY_COMPILE(,[
 #if defined(_UTS)
-	return (0);
+	exit(0);
 #else
 	FAIL TO COMPILE/LINK
 #endif
@@ -679,10 +656,6 @@ AIX/_check_lock)	ADDITIONAL_OBJS="mut_tas${o} $ADDITIONAL_OBJS"
 			AC_DEFINE(HAVE_MUTEX_AIX_CHECK_LOCK)
 			AH_TEMPLATE(HAVE_MUTEX_AIX_CHECK_LOCK,
 			    [Define to 1 to use the AIX _check_lock mutexes.]);;
-BSD/OSSpinLockTry)	ADDITIONAL_OBJS="mut_tas${o} $ADDITIONAL_OBJS"
-			AC_DEFINE(HAVE_MUTEX_BSD_OSSPINLOCKTRY)
-			AH_TEMPLATE(HAVE_MUTEX_BSD_OSSPINLOCKTRY,
-			    [Define to 1 to use the BSD/Apple/Darwin OSSpinLockTry mutexes.]);;
 Darwin/_spin_lock_try)	ADDITIONAL_OBJS="mut_tas${o} $ADDITIONAL_OBJS"
 			AC_DEFINE(HAVE_MUTEX_DARWIN_SPIN_LOCK_TRY)
 			AH_TEMPLATE(HAVE_MUTEX_DARWIN_SPIN_LOCK_TRY,
@@ -695,10 +668,6 @@ ARM/gcc-assembly)	ADDITIONAL_OBJS="mut_tas${o} $ADDITIONAL_OBJS"
 			AC_DEFINE(HAVE_MUTEX_ARM_GCC_ASSEMBLY)
 			AH_TEMPLATE(HAVE_MUTEX_ARM_GCC_ASSEMBLY,
 			    [Define to 1 to use the GCC compiler and ARM assembly language mutexes.]);;
-ARM64/gcc-assembly)	ADDITIONAL_OBJS="mut_tas${o} $ADDITIONAL_OBJS"
-			AC_DEFINE(HAVE_MUTEX_ARM64_GCC_ASSEMBLY)
-			AH_TEMPLATE(HAVE_MUTEX_ARM64_GCC_ASSEMBLY,
-			    [Define to 1 to use the GCC compiler and ARM64 assembly language mutexes.]);;
 HP/msem_init)		ADDITIONAL_OBJS="mut_tas${o} $ADDITIONAL_OBJS"
 			AC_DEFINE(HAVE_MUTEX_HPPA_MSEM_INIT)
 			AH_TEMPLATE(HAVE_MUTEX_HPPA_MSEM_INIT,
@@ -921,8 +890,6 @@ AC_DEFUN(AM_DEFINE_ATOMIC, [
 
 AH_TEMPLATE(HAVE_ATOMIC_SUPPORT,
     [Define to 1 to use native atomic operations.])
-AH_TEMPLATE(HAVE_ATOMIC_GCC_BUILTIN,
-    [Define to 1 to use GCC's built-in atomic operations.])
 AH_TEMPLATE(HAVE_ATOMIC_X86_GCC_ASSEMBLY,
     [Define to 1 to use GCC and x86 or x86_64 assemlby language atomic operations.])
 AH_TEMPLATE(HAVE_ATOMIC_SOLARIS,
@@ -941,30 +908,11 @@ if test "$db_cv_mingw" = yes; then
 fi
 
 if test "$db_cv_atomic" = no; then
-	AC_LINK_IFELSE([AC_LANG_PROGRAM([], [
-		int val;
-		val = -1;
-		return __atomic_add_fetch(&val, 1, __ATOMIC_SEQ_CST);
-	])], [db_cv_atomic="gcc-builtin"], [db_cv_atomic="no"])
-
-	if test "$db_cv_cxx" = "yes" -a "$db_cv_atomic" = "gcc-builtin"; then
-		# Check if the C++ compiler supports built-in atomic functions
-		AC_LANG_PUSH(C++)
-		AC_LINK_IFELSE([AC_LANG_PROGRAM([], [
-			int val;
-			val = -1;
-			return __atomic_add_fetch(&val, 1, __ATOMIC_SEQ_CST);
-		])], [db_cv_atomic="gcc-builtin"], [db_cv_atomic="no"])
-		AC_LANG_POP
-	fi
-fi
-
-if test "$db_cv_atomic" = no; then
 	AC_TRY_COMPILE(,[
 	#if ((defined(i386) || defined(__i386__)) && defined(__GNUC__))
-		return (0);
+		exit(0);
 	#elif ((defined(x86_64) || defined(__x86_64__)) && defined(__GNUC__))
-		return (0);
+		exit(0);
 	#else
 		FAIL TO COMPILE/LINK
 	#endif
@@ -983,14 +931,11 @@ fi
 ])
 
 case "$db_cv_atomic" in
-	gcc-builtin)
-		AC_DEFINE(HAVE_ATOMIC_SUPPORT)
-		AC_DEFINE(HAVE_ATOMIC_GCC_BUILTIN)
-		;;
 	x86/gcc-assembly)
 		AC_DEFINE(HAVE_ATOMIC_SUPPORT)
 		AC_DEFINE(HAVE_ATOMIC_X86_GCC_ASSEMBLY)
 		;;
+
 	solaris/atomic)
 		AC_DEFINE(HAVE_ATOMIC_SUPPORT)
 		AC_DEFINE(HAVE_ATOMIC_SOLARIS)

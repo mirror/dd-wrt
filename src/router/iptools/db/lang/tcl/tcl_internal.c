@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -156,8 +156,6 @@ _DeleteInfo(p)
 	}	
 	if (p->i_errpfx != NULL)
 		__os_free(NULL, p->i_errpfx);
-	if (p->i_msgpfx != NULL)
-		__os_free(NULL, p->i_msgpfx);
 	if (p->i_compare != NULL) {
 		Tcl_DecrRefCount(p->i_compare);
 	}
@@ -167,26 +165,17 @@ _DeleteInfo(p)
 	if (p->i_hashproc != NULL) {
 		Tcl_DecrRefCount(p->i_hashproc);
 	}
-	if (p->i_isalive != NULL) {
-		Tcl_DecrRefCount(p->i_isalive);
-	}
 	if (p->i_part_callback != NULL) {
 		Tcl_DecrRefCount(p->i_part_callback);
 	}
 	if (p->i_second_call != NULL) {
 		Tcl_DecrRefCount(p->i_second_call);
 	}
-	if (p->i_slice_callback != NULL) {
-		Tcl_DecrRefCount(p->i_slice_callback);
-	}
 	if (p->i_rep_eid != NULL) {
 		Tcl_DecrRefCount(p->i_rep_eid);
 	}
 	if (p->i_rep_send != NULL) {
 		Tcl_DecrRefCount(p->i_rep_send);
-	}
-	if (p->i_rep_view != NULL) {
-		Tcl_DecrRefCount(p->i_rep_view);
 	}
 
 	if (p->i_type == I_ENV && p->i_event_info != NULL)
@@ -620,7 +609,6 @@ _EventFunc(dbenv, event, info)
 	/* Record the fact that this event occurred. */
 	bit_flag = 1 << event;
 	ip->i_event_info->events |= bit_flag;
-	ip->i_event_info->count[event]++;
 
 	/*
 	 * For events that have associated "info" (currently most don't), save

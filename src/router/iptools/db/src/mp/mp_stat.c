@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -87,17 +87,8 @@ __memp_stat(env, gspp, fspp, flags)
 	u_int32_t i;
 	uintmax_t tmp_wait, tmp_nowait;
 
-	/*
-	 * The array holding the lengths related to the buffer allocated
-	 * for *fspp.  The first element of the array holds the number of
-	 * entries allocated.  The second element of the array holds the
-	 * total number of bytes allocated.
-	 */
-	u_int32_t fsp_len[2];
-
 	dbmp = env->mp_handle;
 	mp = dbmp->reginfo[0].primary;
-	tfsp = NULL;
 
 	/* Global statistics. */
 	if (gspp != NULL) {
@@ -142,14 +133,7 @@ __memp_stat(env, gspp, fspp, flags)
 			sp->st_ro_evict += c_mp->stat.st_ro_evict;
 			sp->st_rw_evict += c_mp->stat.st_rw_evict;
 			sp->st_page_trickle += c_mp->stat.st_page_trickle;
-			sp->st_mvcc_reused += c_mp->stat.st_mvcc_reused;
 			sp->st_pages += c_mp->pages;
-			/* Undocumented field used by tests only. */
-			sp->st_oddfsize_detect +=
-			    c_mp->stat.st_oddfsize_detect;
-			/* Undocumented field used by tests only. */
-			sp->st_oddfsize_resolve +=
-			    c_mp->stat.st_oddfsize_resolve;
 			/*
 			 * st_page_dirty	calculated by __memp_stat_hash
 			 * st_page_clean	calculated here
@@ -209,56 +193,31 @@ __memp_stat(env, gspp, fspp, flags)
 	if (fspp != NULL) {
 		*fspp = NULL;
 
-		while (*fspp == NULL) {
-			/* Count the MPOOLFILE structures. */
-			i = 0;
-			/*
-			 * Allow space for the first __memp_get_files() to
-			 * align the structure array to uintmax_t,
-			 * DB_MPOOL_STAT's most restrictive field.  [#23150]
-			 */
-			len = sizeof(uintmax_t);
-			if ((ret = __memp_walk_files(env,
-			     mp, __memp_count_files, &len, &i, flags)) != 0)
-				return (ret);
+		/* Count the MPOOLFILE structures. */
+		i = 0;
+		len = 0;
+		if ((ret = __memp_walk_files(env,
+		     mp, __memp_count_files, &len, &i, flags)) != 0)
+			return (ret);
 
-			if (i == 0)
-				return (0);
+		if (i == 0)
+			return (0);
+		len += sizeof(DB_MPOOL_FSTAT *);	/* Trailing NULL */
 
-			/*
-			 * Copy the number of DB_MPOOL_FSTAT entries and the
-			 * number of bytes allocated for them into fsp_len. Do
-			 * not count the space reserved for allignment.
-			 */
-			fsp_len[0] = i;
-			fsp_len[1] = len - sizeof(uintmax_t);
+		/* Allocate space */
+		if ((ret = __os_umalloc(env, len, fspp)) != 0)
+			return (ret);
 
-			/* Space for the trailing NULL. */
-			len += sizeof(DB_MPOOL_FSTAT *);
+		tfsp = *fspp;
+		*tfsp = NULL;
 
-			/* Allocate space */
-			if ((ret = __os_umalloc(env, len, fspp)) != 0)
-				return (ret);
-
-			tfsp = *fspp;
-			*tfsp = NULL;
-
-			/*
-			 * Files may have been opened since we counted, if we
-			 * walk off the end of the allocated space specified
-			 * in fsp_len, retry.
-			 */
-			if ((ret = __memp_walk_files(env,
-			    mp, __memp_get_files, &tfsp,
-			    fsp_len, flags)) != 0) {
-				if (ret == DB_BUFFER_SMALL) {
-					__os_ufree(env, *fspp);
-					*fspp = NULL;
-					tfsp = NULL;
-				} else
-					return (ret);
-			}
-		}
+		/*
+		 * Files may have been opened since we counted, don't walk
+		 * off the end of the allocated space.
+		 */
+		if ((ret = __memp_walk_files(env,
+		    mp, __memp_get_files, &tfsp, &i, flags)) != 0)
+			return (ret);
 
 		*++tfsp = NULL;
 	}
@@ -293,11 +252,6 @@ __memp_file_stats(env, mfp, argp, countp, flags)
 	return (0);
 }
 
-/*
- * __memp_count_files --
- *	This __memp_walk_files() iterator counts the number of files as well as
- *	the space needed for their statistics, including file names.
- */
 static int
 __memp_count_files(env, mfp, argp, countp, flags)
 	ENV *env;
@@ -323,62 +277,39 @@ __memp_count_files(env, mfp, argp, countp, flags)
 
 /*
  * __memp_get_files --
- *	get another file's specific statistics
+ *	get file specific statistics
  *
- * Add a file statistics entry to the current list. The chunk of memory
- * starts with an array of DB_MPOOL_FSTAT pointers, a null pointer to mark
- * the last one, then an aligned array of DB_MPOOL_FSTAT structures, then
- * characters space for the file names.
- *	+-----------------------------------------------+
- *	| count * DB_MPOOL_FSTAT pointers		|
- *	+-----------------------------------------------+
- *	| null pointer					+
- *	+-----------------------------------------------|
- *	| [space for aligning DB_MPOOL_FSTAT array]	|
- *	+-----------------------------------------------+
- *	| count * DB_MPOOL_FSTAT structs		|
- *	+-----------------------------------------------+
- *	| first file name | second file name | third... |
- *	+-----------------------------------------------+
- *	| file name | ...				|
- *	+-----------------------------------------------+
+ * Build each individual entry.  We assume that an array of pointers are
+ * aligned correctly to be followed by an array of structures, which should
+ * be safe (in this particular case, the first element of the structure
+ * is a pointer, so we're doubly safe).  The array is followed by space
+ * for the text file names.
  */
 static int
-__memp_get_files(env, mfp, argp, fsp_len, flags)
+__memp_get_files(env, mfp, argp, countp, flags)
 	ENV *env;
 	MPOOLFILE *mfp;
 	void *argp;
-	u_int32_t fsp_len[];
+	u_int32_t *countp;
 	u_int32_t flags;
 {
 	DB_MPOOL *dbmp;
 	DB_MPOOL_FSTAT **tfsp, *tstruct;
 	char *name, *tname;
-	size_t nlen, tlen;
+	size_t nlen;
 
-	/* We walked through more files than argp was allocated for. */
-	if (fsp_len[0] == 0)
-		return DB_BUFFER_SMALL;
+	if (*countp == 0)
+		return (0);
 
 	dbmp = env->mp_handle;
 	tfsp = *(DB_MPOOL_FSTAT ***)argp;
 
 	if (*tfsp == NULL) {
-		/*
-		 * Add 1 to count because to skip over the NULL end marker.
-		 * Align it further for DB_MPOOL_STAT's most restrictive field
-		 * because uintmax_t might require stricter alignment than
-		 * pointers; e.g., IP32 LL64 SPARC. [#23150]
-		 */
-		tstruct = (DB_MPOOL_FSTAT *)&tfsp[fsp_len[0] + 1];
-		tstruct = ALIGNP_INC(tstruct, sizeof(uintmax_t));
-		tname = (char *)&tstruct[fsp_len[0]];
+		/* Add 1 to count because we need to skip over the NULL. */
+		tstruct = (DB_MPOOL_FSTAT *)(tfsp + *countp + 1);
+		tname = (char *)(tstruct + *countp);
 		*tfsp = tstruct;
 	} else {
-		/*
-		 * This stat struct follows the previous one; the file name
-		 * follows the previous entry's filename.
-		 */
 		tstruct = *tfsp + 1;
 		tname = (*tfsp)->file_name + strlen((*tfsp)->file_name) + 1;
 		*++tfsp = tstruct;
@@ -386,17 +317,6 @@ __memp_get_files(env, mfp, argp, fsp_len, flags)
 
 	name = __memp_fns(dbmp, mfp);
 	nlen = strlen(name) + 1;
-
-	/* The space required for file names is larger than
-	 *argp was allocated for.
-	 */
-	tlen = sizeof(DB_MPOOL_FSTAT *) + sizeof(DB_MPOOL_FSTAT) + nlen;
-	if (fsp_len[1] < tlen)
-		return DB_BUFFER_SMALL;
-	else
-		/* Count down the number of bytes left in argp. */
-		fsp_len[1] -= tlen;
-
 	memcpy(tname, name, nlen);
 	memcpy(tstruct, &mfp->stat, sizeof(mfp->stat));
 	tstruct->file_name = tname;
@@ -405,9 +325,7 @@ __memp_get_files(env, mfp, argp, fsp_len, flags)
 	tstruct->st_pagesize = mfp->pagesize;
 
 	*(DB_MPOOL_FSTAT ***)argp = tfsp;
-
-	/* Count down the number of entries left in argp. */
-	fsp_len[0]--;
+	(*countp)--;
 
 	if (LF_ISSET(DB_STAT_CLEAR))
 		memset(&mfp->stat, 0, sizeof(mfp->stat));
@@ -568,8 +486,6 @@ __memp_print_stats(env, flags)
 	    (u_long)gsp->st_mvcc_thawed);
 	__db_dl(env, "The number of frozen buffers freed",
 	    (u_long)gsp->st_mvcc_freed);
-	__db_dl(env, "The number of outdated intermediate versions reused",
-	    (u_long)gsp->st_mvcc_reused);
 	__db_dl(env, "The number of page allocations", (u_long)gsp->st_alloc);
 	__db_dl(env,
 	    "The number of hash buckets examined during allocations",
@@ -677,7 +593,7 @@ __memp_print_all(env, flags)
 		STAT_ULONG("Cache priority", dbmfp->priority);
 		STAT_POINTER("mmap address", dbmfp->addr);
 		STAT_ULONG("mmap length", dbmfp->len);
-		__db_prflags(env, NULL, dbmfp->config_flags, cfn, NULL, "\tFlags");
+		__db_prflags(env, NULL, dbmfp->flags, cfn, NULL, "\tFlags");
 		__db_print_fh(env, "File handle", dbmfp->fhp, flags);
 	}
 
@@ -828,18 +744,11 @@ __memp_print_hash(env, dbmp, reginfo, fmap, flags)
 			    vbhp != NULL;
 			    vbhp = SH_CHAIN_PREV(vbhp, vc, __bh)) {
 				__memp_print_bh(env, dbmp,
-				    " prev:\t", vbhp, fmap);
+				    " next:\t", vbhp, fmap);
 			}
 		}
 		MUTEX_UNLOCK(env, hp->mtx_hash);
 	}
-#ifdef DIAGNOSTIC
-	SH_TAILQ_FOREACH(bhp, &c_mp->free_frozen, hq, __bh) {
-		__db_msg(env, "free frozen %lu pgno %lu mtx_buf %lu",
-		    (u_long)R_OFFSET(dbmp->reginfo, bhp),
-		    (u_long)bhp->pgno, (u_long)bhp->mtx_buf);
-	}
-#endif
 
 	return (0);
 }
@@ -866,7 +775,6 @@ __memp_print_bh(env, dbmp, prefix, bhp, fmap)
 		{ BH_FROZEN,		"frozen" },
 		{ BH_TRASH,		"trash" },
 		{ BH_THAWED,		"thawed" },
-		{ BH_UNREACHABLE,	"unreachable" },
 		{ 0,			NULL }
 	};
 	DB_MSGBUF mb;

@@ -15,11 +15,6 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable !compound {
-  finish_test
-  return
-}
-
 proc do_delete_tests {args} {
   uplevel do_select_tests $args
 }
@@ -29,8 +24,9 @@ do_execsql_test e_delete-0.0 {
   CREATE INDEX i1 ON t1(a);
 } {}
 
-# -- syntax diagram delete-stmt
-# -- syntax diagram qualified-table-name
+# EVIDENCE-OF: R-24177-52883 -- syntax diagram delete-stmt
+#
+# EVIDENCE-OF: R-12802-60464 -- syntax diagram qualified-table-name
 #
 do_delete_tests e_delete-0.1 {
   1  "DELETE FROM t1"                              {}
@@ -291,7 +287,7 @@ do_delete_tests e_delete-2.5 -error { near "%s": syntax error } {
 # of the DELETE statement is extended by the addition of optional ORDER
 # BY and LIMIT clauses:
 #
-# -- syntax diagram delete-stmt-limited
+# EVIDENCE-OF: R-45897-01670 -- syntax diagram delete-stmt-limited
 #
 do_delete_tests e_delete-3.1 {
   1   "DELETE FROM t1 LIMIT 5"                                    {}
@@ -444,7 +440,7 @@ do_delete_tests e_delete-3.9 -repair rebuild_t1 -query {
 }
 
 
-# EVIDENCE-OF: R-07548-13422 The ORDER BY clause on a DELETE statement
+# EVIDENCE-OF: R-26627-30313 The ORDER BY clause on an DELETE statement
 # is used only to determine which rows fall within the LIMIT. The order
 # in which rows are deleted is arbitrary and is not influenced by the
 # ORDER BY clause.

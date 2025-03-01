@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -43,7 +43,6 @@
       <pre class="programlisting">#include &lt;db.h&gt;
 
     typedef struct {
-        void *app_data;
         void *data;
         u_int32_t size;
         u_int32_t ulen;
@@ -107,18 +106,6 @@
     </p>
       <div class="itemizedlist">
         <ul type="disc">
-          <li>
-            <p>
-                    <span class="bold"><strong>void *app_data;</strong></span>
-                </p>
-            <p>
-                    Optional field that can be used to pass information
-                    through Berkeley DB API calls into user-defined
-                    callback functions. For example, this field may be
-                    accessed to pass user-defined content when implementing
-                    the callback used by <a class="xref" href="dbset_dup_compare.html" title="DB-&gt;set_dup_compare()">DB-&gt;set_dup_compare()</a>.
-                </p>
-          </li>
           <li>
             <p>
                             <span class="bold"><strong>void *data;</strong></span>
@@ -190,19 +177,7 @@
                             one or more of the following values: 
                     </p>
             <span>
-    <div class="itemizedlist"><ul type="circle"><li><p><a id="dbt_DB_DBT_BLOB"></a>
-                            <code class="literal">DB_DBT_EXT_FILE</code>
-                    </p><p>
-                        Set this flag on a DBT used for the data
-                        portion of a record to indicate that the
-                        DBT stores 
-                        <a class="link" href="blob.html" title="Chapter 13.  External Files">external file data</a>. 
-                        If this flag is set, and if the database otherwise
-                        supports external files, then the data contained by
-                        this DBT will be stored as an external file,
-                        regardless of whether it exceeds the external file
-                        threshold in size.
-                    </p></li><li><p><a id="dbt_DB_DBT_MALLOC"></a>
+    <div class="itemizedlist"><ul type="circle"><li><p><a id="dbt_DB_DBT_MALLOC"></a>
                             <code class="literal">DB_DBT_MALLOC</code>
                     </p><p>
                             When this flag is set, Berkeley DB will allocate memory

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -122,17 +122,17 @@ typedef struct __qam_filelist {
     (DB_ALIGN((uintmax_t)SSZA(QAMDATA, data) +				\
     ((QUEUE *)(dbp)->q_internal)->re_len, sizeof(u_int32_t)) * index))))
 
-#define	QAM_OUTSIDE_QUEUE(meta, recno)					\
+#define QAM_OUTSIDE_QUEUE(meta, recno)					\
 	(((meta)->cur_recno >= (meta)->first_recno ?			\
 	    ((recno) < (meta)->first_recno ||				\
-		 (recno) > (meta)->cur_recno) :				\
-	    ((recno) > (meta)->cur_recno &&				\
-		(recno) < (meta)->first_recno)))
+	         (recno) > (meta)->cur_recno) :				\
+	    ((recno) > (meta)->cur_recno && 				\
+	        (recno) < (meta)->first_recno)))
 
 #define	QAM_AFTER_CURRENT(meta, recno)					\
 	((recno) == (meta)->cur_recno ||				\
 	(QAM_OUTSIDE_QUEUE(meta, recno) &&				\
-	((recno) - (meta)->cur_recno) <= ((meta)->first_recno - (recno))))
+        ((recno) - (meta)->cur_recno) <= ((meta)->first_recno - (recno))))
 
 #define	QAM_BEFORE_FIRST(meta, recno)					\
 	(QAM_OUTSIDE_QUEUE(meta, recno) &&				\
@@ -142,7 +142,7 @@ typedef struct __qam_filelist {
     (recno == RECNO_OOB ||						\
 	QAM_BEFORE_FIRST(meta, recno) || QAM_AFTER_CURRENT(meta, recno))
 
-#define	QAM_WAKEUP(dbc, ret) do {					\
+#define QAM_WAKEUP(dbc, ret) do {					\
 	if (STD_LOCKING(dbc)) {						\
 		dbc->lock.pgno = PGNO_INVALID;				\
 		dbc->lock.type = DB_PAGE_LOCK;				\
@@ -152,13 +152,14 @@ typedef struct __qam_filelist {
 } while (0)
 
 /* Handle wrap around. */
-#define	QAM_INC_RECNO(recno) do {					\
+#define QAM_INC_RECNO(recno) do {					\
 	recno++;							\
 } while (recno == RECNO_OOB)
 
-#define	QAM_DEC_RECNO(recno) do {					\
+#define QAM_DEC_RECNO(recno) do {					\
 	recno--;							\
 } while (recno == RECNO_OOB)
+
 
 /*
  * Log opcodes for the mvptr routine.

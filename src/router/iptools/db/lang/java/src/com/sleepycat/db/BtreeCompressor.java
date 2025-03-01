@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -33,7 +33,6 @@ public interface BtreeCompressor {
     @param dest
     A database entry representing the data stored in the tree. This is where
     the callback function should write the compressed data.
-    @return true on success and false on failure
     */
     boolean compress(Database db, DatabaseEntry prevKey, DatabaseEntry prevData,
         DatabaseEntry key, DatabaseEntry data, DatabaseEntry dest);
@@ -56,7 +55,6 @@ public interface BtreeCompressor {
     A database entry representing representing the application supplied key.
     @param data
     A database entry representing representing the application supplied data.
-    @return true on success and false on failure
     */
     boolean decompress(Database db, DatabaseEntry prevKey,
         DatabaseEntry prevData, DatabaseEntry compressed, DatabaseEntry key,

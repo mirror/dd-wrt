@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2005, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -105,14 +105,6 @@ proc rep043_sub { method rotations tnum logset recargs largs } {
 	set testfile rep043.db
 	set omethod [convert_method $method]
 
-	# When native pagesize is small(like 512B on QNX), this test
-	# requires a large number of mutexes.
-	set mutexargs ""
-	set native_pagesize [get_native_pagesize]
-	if {$native_pagesize < 2048} {
-		set mutexargs "-mutex_set_max 40000"
-	}
-
 	# Since we're constantly switching master in this test run
 	# each with a different cache size just to verify that cachesize
 	# doesn't matter for different sites.
@@ -121,7 +113,7 @@ proc rep043_sub { method rotations tnum logset recargs largs } {
 	repladd 1
 	set ma_envcmd "berkdb_env_noerr -create $m_txnargs $repmemargs \
 	    $m_logargs -errpfx ENV0 -errfile /dev/stderr $verbargs \
-	    $mutexargs -cachesize {0 4194304 3} -lock_detect default \
+	    -cachesize {0 4194304 3} -lock_detect default \
 	    -home $masterdir -rep_transport \[list 1 replsend\]"
 	set env0 [eval $ma_envcmd $recargs -rep_master]
 
@@ -129,14 +121,14 @@ proc rep043_sub { method rotations tnum logset recargs largs } {
 	repladd 2
 	set cl_envcmd "berkdb_env_noerr -create $c_txnargs $repmemargs \
 	    $c_logargs -errpfx ENV1 -errfile /dev/stderr $verbargs \
-	    $mutexargs -cachesize {0 2097152 2} -lock_detect default \
+	    -cachesize {0 2097152 2} -lock_detect default \
 	    -home $clientdir -rep_transport \[list 2 replsend\]"
 	set env1 [eval $cl_envcmd $recargs -rep_client]
 
 	repladd 3
 	set cl2_envcmd "berkdb_env_noerr -create $c2_txnargs $repmemargs \
 	    $c2_logargs -errpfx ENV2 -errfile /dev/stderr $verbargs \
-	    $mutexargs -cachesize {0 1048576 1} -lock_detect default \
+	    -cachesize {0 1048576 1} -lock_detect default \
 	    -home $clientdir2 -rep_transport \[list 3 replsend\]"
 	set env2 [eval $cl2_envcmd $recargs -rep_client]
 
@@ -145,7 +137,7 @@ proc rep043_sub { method rotations tnum logset recargs largs } {
 	process_msgs $envlist
 
 	# Set up marker file.
-	set markerenv [eval berkdb_env -create -home $testdir -txn $mutexargs]
+	set markerenv [berkdb_env -create -home $testdir -txn]
 	error_check_good marker_open [is_valid_env $markerenv] TRUE
 	set marker [eval "berkdb_open \
 	    -create -btree -auto_commit -env $markerenv marker.db"]

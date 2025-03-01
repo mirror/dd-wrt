@@ -25,7 +25,7 @@
 ** Figure out what version of the code to use.  The choices are
 **
 **   SQLITE_MUTEX_OMIT         No mutex logic.  Not even stubs.  The
-**                             mutexes implementation cannot be overridden
+**                             mutexes implemention cannot be overridden
 **                             at start-time.
 **
 **   SQLITE_MUTEX_NOOP         For single-threaded applications.  No
@@ -36,6 +36,8 @@
 **   SQLITE_MUTEX_PTHREADS     For multi-threaded applications on Unix.
 **
 **   SQLITE_MUTEX_W32          For multi-threaded applications on Win32.
+**
+**   SQLITE_MUTEX_OS2          For multi-threaded applications on OS/2.
 */
 #if !SQLITE_THREADSAFE
 # define SQLITE_MUTEX_OMIT
@@ -45,6 +47,8 @@
 #    define SQLITE_MUTEX_PTHREADS
 #  elif SQLITE_OS_WIN
 #    define SQLITE_MUTEX_W32
+#  elif SQLITE_OS_OS2
+#    define SQLITE_MUTEX_OS2
 #  else
 #    define SQLITE_MUTEX_NOOP
 #  endif
@@ -56,15 +60,12 @@
 */
 #define sqlite3_mutex_alloc(X)    ((sqlite3_mutex*)8)
 #define sqlite3_mutex_free(X)
-#define sqlite3_mutex_enter(X)    
+#define sqlite3_mutex_enter(X)
 #define sqlite3_mutex_try(X)      SQLITE_OK
-#define sqlite3_mutex_leave(X)    
+#define sqlite3_mutex_leave(X)
 #define sqlite3_mutex_held(X)     ((void)(X),1)
 #define sqlite3_mutex_notheld(X)  ((void)(X),1)
 #define sqlite3MutexAlloc(X)      ((sqlite3_mutex*)8)
 #define sqlite3MutexInit()        SQLITE_OK
 #define sqlite3MutexEnd()
-#define MUTEX_LOGIC(X)
-#else
-#define MUTEX_LOGIC(X)            X
 #endif /* defined(SQLITE_MUTEX_OMIT) */

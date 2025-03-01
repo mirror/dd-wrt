@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -18,12 +18,17 @@
 #include "dbinc/qam.h"
 #include "dbinc/txn.h"
 
+#ifndef lint
+static const char copyright[] =
+    "Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.\n";
+#endif
+
 static int	__db_log_corrupt __P((ENV *, DB_LSN *));
+static int	__env_init_rec_42 __P((ENV *));
+static int	__env_init_rec_43 __P((ENV *));
+static int	__env_init_rec_46 __P((ENV *));
 static int	__env_init_rec_47 __P((ENV *));
 static int	__env_init_rec_48 __P((ENV *));
-static int	__env_init_rec_53 __P((ENV *));
-static int	__env_init_rec_60 __P((ENV *));
-static int	__env_init_rec_60p1 __P((ENV *));
 static int	__log_earliest __P((ENV *, DB_LOGC *, int32_t *, DB_LSN *));
 
 static double	__lsn_diff __P((DB_LSN *, DB_LSN *, DB_LSN *, u_int32_t, int));
@@ -55,6 +60,7 @@ __db_apprec(env, ip, max_lsn, trunclsn, update, flags)
 	DB_TXNHEAD *txninfo;
 	DB_TXNREGION *region;
 	REGENV *renv;
+	REGINFO *infop;
 	__txn_ckp_args *ckp_args;
 	time_t now, tlow;
 	double nfiles;
@@ -81,18 +87,14 @@ __db_apprec(env, ip, max_lsn, trunclsn, update, flags)
 	 */
 	log_size = ((LOG *)env->lg_handle->reginfo.primary)->log_size;
 
-	/* When truly recovering (i.e., not replication) change the environment
-	 * magic from 0 (newly created) to recovery-in-progress.
-	 */
-	renv = env->reginfo->primary;
-	if (LF_ISSET(DB_RECOVER | DB_RECOVER_FATAL))
-		renv->magic = DB_REGION_MAGIC_RECOVER;
-
 	/*
 	 * If we need to, update the env handle timestamp.
 	 */
-	if (update && REP_ON(env))
+	if (update && REP_ON(env)) {
+		infop = env->reginfo;
+		renv = infop->primary;
 		(void)time(&renv->rep_timestamp);
+	}
 
 	/* Set in-recovery flags. */
 	F_SET(env->lg_handle, DBLOG_RECOVER);
@@ -128,10 +130,10 @@ __db_apprec(env, ip, max_lsn, trunclsn, update, flags)
 			if ((p = strchr(t2, '\n')) != NULL)
 				*p = '\0';
 
-			ret = USR_ERR(env, EINVAL);
 			__db_errx(env, DB_STR_A("1509",
 		    "Invalid recovery timestamp %s; earliest time is %s",
 			    "%s %s"), t1, t2);
+			ret = EINVAL;
 			goto err;
 		}
 	}
@@ -630,12 +632,6 @@ err:	if (logc != NULL && (t_ret = __logc_close(logc)) != 0 && ret == 0)
 
 	dbenv->tx_timestamp = 0;
 
-	/*
-	 * Failure means that the env has panicked. Disable locking so that the
-	 * env can close without its mutexes calls causing additional panics.
-	 */
-	if (ret != 0)
-		F_SET(env->dbenv, DB_ENV_NOLOCKING);
 	F_CLR(env->lg_handle, DBLOG_RECOVER);
 	F_CLR(region, TXN_IN_RECOVERY);
 
@@ -694,8 +690,7 @@ __lsn_diff(low, high, current, max, is_forward)
  * is trying to sync up with a master whose max LSN is less than this
  * client's max lsn; we want to roll back everything after that.
  *
- * Find the latest checkpoint less than or equal to max lsn and
- * return the ckp_lsn from that checkpoint.
+ * Find the latest checkpoint whose ckp_lsn is less than the max lsn.
  */
 static int
 __log_backup(env, logc, max_lsn, start_lsn)
@@ -718,11 +713,10 @@ __log_backup(env, logc, max_lsn, start_lsn)
 			return (ret);
 		/*
 		 * Follow checkpoints through the log until
-		 * we find one less than or equal max_lsn.
-		 * Then return the ckp_lsn from that checkpoint as it
-		 * is our earliest outstanding txn needed.
+		 * we find one with a ckp_lsn less than
+		 * or equal max_lsn.
 		 */
-		if (LOG_COMPARE(&lsn, max_lsn) <= 0) {
+		if (LOG_COMPARE(&ckp_args->ckp_lsn, max_lsn) <= 0) {
 			*start_lsn = ckp_args->ckp_lsn;
 			break;
 		}
@@ -733,7 +727,7 @@ __log_backup(env, logc, max_lsn, start_lsn)
 		 * done.  Break with DB_NOTFOUND.
 		 */
 		if (IS_ZERO_LSN(lsn)) {
-			ret = USR_ERR(env, DB_NOTFOUND);
+			ret = DB_NOTFOUND;
 			break;
 		}
 		__os_free(env, ckp_args);
@@ -886,9 +880,6 @@ __db_log_corrupt(env, lsnp)
 /*
  * __env_init_rec --
  *
- *	Install recover functions in the environment. Whenever this is updated,
- *	corresponding changes are needed by db_printlog's env_init_print().
- *
  * PUBLIC: int __env_init_rec __P((ENV *, u_int32_t));
  */
 int
@@ -933,42 +924,12 @@ __env_init_rec(env, version)
 	 * oldest revision that applies must be used.  Therefore we override
 	 * the recovery functions in reverse log version order.
 	 */
-	if (version == DB_LOGVERSION)
-		goto done;
-
-	/*
-	 * DB_LOGVERSION_62 added a new value to the enumeration APPNAME,
-	 * but the change does not require upgrading the logs.
-	 */
-
-	/* DB_LOGVERSION_61 add the blob file id to the dbreg logs. */
-	if (version > DB_LOGVERSION_60p1)
-		goto done;
-	if ((ret = __env_init_rec_60p1(env)) != 0)
-		goto err;
-
-	/*
-	 * DB_LOGVERSION_60p1 changed the two u_int32_t offset fields in the
-	 * log for fop_write_file into a single int64.
-	 */
-	if (version > DB_LOGVERSION_60)
-		goto done;
-	if ((ret = __env_init_rec_60(env)) != 0)
-		goto err;
-
-	/* DB_LOGVERSION_53 changed the heap addrem log record. */
-	if (version > DB_LOGVERSION_53)
-		goto done;
-	if ((ret = __env_init_rec_53(env)) != 0)
-		goto err;
 	/*
 	 * DB_LOGVERSION_53 is a strict superset of DB_LOGVERSION_50.
 	 * So, only check > DB_LOGVERSION_48p2.  If/When log records are
 	 * altered, the condition below will need to change.
 	 */
 	if (version > DB_LOGVERSION_48p2)
-		goto done;
-	if (version >= DB_LOGVERSION_50)
 		goto done;
 	if ((ret = __env_init_rec_48(env)) != 0)
 		goto err;
@@ -982,6 +943,8 @@ __env_init_rec(env, version)
 		goto err;
 	if (version == DB_LOGVERSION_47)
 		goto done;
+	if ((ret = __env_init_rec_46(env)) != 0)
+		goto err;
 	/*
 	 * There are no log record/recovery differences between 4.4 and 4.5.
 	 * The log version changed due to checksum.  There are no log recovery
@@ -990,16 +953,84 @@ __env_init_rec(env, version)
 	 */
 	if (version >= DB_LOGVERSION_44)
 		goto done;
+	if ((ret = __env_init_rec_43(env)) != 0)
+		goto err;
 	if (version == DB_LOGVERSION_43)
 		goto done;
 	if (version != DB_LOGVERSION_42) {
-		ret = USR_ERR(env, EINVAL);
 		__db_errx(env, DB_STR_A("1523", "Unknown version %lu",
 		    "%lu"), (u_long)version);
+		ret = EINVAL;
 		goto err;
 	}
+	ret = __env_init_rec_42(env);
 
 done:
+err:	return (ret);
+}
+
+static int
+__env_init_rec_42(env)
+	ENV *env;
+{
+	int ret;
+
+	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
+	    __db_relink_42_recover, DB___db_relink_42)) != 0)
+		goto err;
+	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
+	    __db_pg_alloc_42_recover, DB___db_pg_alloc_42)) != 0)
+		goto err;
+	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
+	    __db_pg_free_42_recover, DB___db_pg_free_42)) != 0)
+		goto err;
+	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
+	    __db_pg_freedata_42_recover, DB___db_pg_freedata_42)) != 0)
+		goto err;
+#ifdef HAVE_HASH
+	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
+	    __ham_metagroup_42_recover, DB___ham_metagroup_42)) != 0)
+		goto err;
+	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
+	    __ham_groupalloc_42_recover, DB___ham_groupalloc_42)) != 0)
+		goto err;
+#endif
+	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
+	    __txn_ckp_42_recover, DB___txn_ckp_42)) != 0)
+		goto err;
+err:
+	return (ret);
+}
+
+static int
+__env_init_rec_43(env)
+	ENV *env;
+{
+	int ret;
+
+	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
+	    __bam_relink_43_recover, DB___bam_relink_43)) != 0)
+		goto err;
+	/*
+	 * We want to use the 4.2-based txn_regop record.
+	 */
+	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
+	    __txn_regop_42_recover, DB___txn_regop_42)) != 0)
+		goto err;
+err:
+	return (ret);
+}
+
+static int
+__env_init_rec_46(env)
+	ENV *env;
+{
+	int ret;
+
+	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
+	    __bam_merge_44_recover, DB___bam_merge_44)) != 0)
+		goto err;
+
 err:	return (ret);
 }
 
@@ -1055,80 +1086,6 @@ __env_init_rec_48(env)
 		goto err;
 	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
 	    __ham_replace_42_recover, DB___ham_replace_42)) != 0)
-		goto err;
-#endif
-err:
-	return (ret);
-}
-
-static int
-__env_init_rec_53(env)
-	ENV *env;
-{
-	int ret;
-
-#ifdef HAVE_HEAP
-	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
-	    __heap_addrem_50_recover, DB___heap_addrem_50)) != 0)
-		goto err;
-#else
-	COMPQUIET(env, NULL);
-	COMPQUIET(ret, 0);
-	goto err;
-#endif
-err:
-	return (ret);
-}
-
-static int
-__env_init_rec_60(env)
-	ENV *env;
-{
-	int ret;
-
-	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
-	    __fop_create_60_recover, DB___fop_create_60)) != 0)
-		goto err;
-
-	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
-	    __fop_remove_60_recover, DB___fop_remove_60)) != 0)
-		goto err;
-
-	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
-	    __fop_rename_60_recover, DB___fop_rename_60)) != 0)
-		goto err;
-
-	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
-	    __fop_rename_noundo_60_recover, DB___fop_rename_noundo_60)) != 0)
-		goto err;
-
-	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
-	    __fop_file_remove_60_recover, DB___fop_file_remove_60)) != 0)
-		goto err;
-
-	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
-	    __fop_write_60_recover, DB___fop_write_60)) != 0)
-		goto err;
-
-	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
-	    __fop_write_file_60_recover, DB___fop_write_file_60)) != 0)
-		goto err;
-err:
-	return (ret);
-}
-
-static int
-__env_init_rec_60p1(env)
-	ENV *env;
-{
-	int ret;
-
-	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
-	    __dbreg_register_42_recover, DB___dbreg_register_42)) != 0)
-		goto err;
-#ifdef HAVE_HEAP
-	if ((ret = __db_add_recovery_int(env, &env->recover_dtab,
-	    __heap_addrem_60_recover, DB___heap_addrem_60)) != 0)
 		goto err;
 #endif
 err:

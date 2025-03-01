@@ -13,7 +13,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -134,7 +134,7 @@
 // Printing of pthread_t is implementation-specific, so we
 // create our own thread IDs for reporting purposes.
 int global_thread_num;
-mutex_t thread_num_lock;
+pthread_mutex_t thread_num_lock;
 
 // Forward declarations
 int countRecords(Db *, DbTxn *);
@@ -159,7 +159,7 @@ main(void)
     Db *dbp = NULL;
     DbEnv *envp = NULL;
 
-    thread_t writerThreads[NUMWRITERS];
+    pthread_t writerThreads[NUMWRITERS];
     int i;
     u_int32_t envFlags;
 
@@ -253,18 +253,18 @@ main(void)
     we change the error message string so as to not reference the database filename.
   </p>
       <pre class="programlisting">        // Initialize a pthread mutex. Used to help provide thread ids.
-        (void)mutex_init(&amp;thread_num_lock, NULL);
+        (void)pthread_mutex_init(&amp;thread_num_lock, NULL);
 
         // Start the writer threads.
         for (i = 0; i &lt; NUMWRITERS; i++)
-            (void)thread_create(
+            (void)pthread_create(
                 &amp;writerThreads[i], NULL,
                 writerThread,
                 (void *)dbp);
 
         // Join the writers
         for (i = 0; i &lt; NUMWRITERS; i++)
-            (void)thread_join(writerThreads[i], NULL);
+            (void)pthread_join(writerThreads[i], NULL);
 
     } catch(DbException &amp;e) {
         <strong class="userinput"><code>std::cerr &lt;&lt; "Error opening database environment: "</code></strong>
@@ -323,13 +323,13 @@ writerThread(void *args)
                            "key 9", "key 10"};
 
     // Get the thread number
-    (void)mutex_lock(&amp;thread_num_lock);
+    (void)pthread_mutex_lock(&amp;thread_num_lock);
     global_thread_num++;
     thread_num = global_thread_num;
-    (void)mutex_unlock(&amp;thread_num_lock);
+    (void)pthread_mutex_unlock(&amp;thread_num_lock);
 
     // Initialize the random number generator 
-    srand(thread_num);
+    srand((u_int)pthread_self());
 
     // Perform 50 transactions
     for (int i=0; i&lt;50; i++) {
@@ -359,9 +359,9 @@ writerThread(void *args)
                 // Perform the database write for this transaction.
                 for (j = 0; j &lt; 10; j++) {
                     Dbt key, value;
-                    key.set_data((void *)key_strings[j]);
-                    key.set_size(
-                        (u_int32_t)(strlen(key_strings[j]) + 1);
+                    key.set_data(key_strings[j]);
+                    key.set_size((strlen(key_strings[j]) + 1) *
+                        sizeof(char));
 
                     int payload = rand() + i;
                     value.set_data(&amp;payload);
@@ -523,7 +523,7 @@ openDb(Db **dbpp, const char *progname, const char *fileName,
     experiment with this code, you can find the example in the following
     location in your DB distribution:
 </p>
-      <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples/cxx/txn_guide</pre>
+      <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples_cxx/txn_guide</pre>
     </div>
     <div class="navfooter">
       <hr />

@@ -117,7 +117,7 @@ public final class Constants {
     public static final int SQLITE_OPEN_TEMP_DB = 512;
     public static final int SQLITE_OPEN_TEMP_JOURNAL = 4096;
     public static final int SQLITE_OPEN_TRANSIENT_DB = 1024;
-    public static final int SQLITE_OPEN_URI = 64;
+    public static final int SQLITE_OPEN_URI = 0;
     public static final int SQLITE_OPEN_WAL = 524288;
     public static final int SQLITE_STATUS_MALLOC_COUNT = 9;
     public static final int SQLITE_STATUS_MALLOC_SIZE = 5;
@@ -129,8 +129,8 @@ public final class Constants {
     public static final int SQLITE_STATUS_SCRATCH_OVERFLOW = 4;
     public static final int SQLITE_STATUS_SCRATCH_SIZE = 8;
     public static final int SQLITE_STATUS_SCRATCH_USED = 3;
-    public static final int SQLITE_DBSTATUS_CACHE_HIT = 7;
-    public static final int SQLITE_DBSTATUS_CACHE_MISS = 8;
+    public static final int SQLITE_DBSTATUS_CACHE_HIT = 0;
+    public static final int SQLITE_DBSTATUS_CACHE_MISS = 0;
     public static final int SQLITE_DBSTATUS_CACHE_USED = 1;
     public static final int SQLITE_DBSTATUS_LOOKASIDE_HIT = 4;
     public static final int SQLITE_DBSTATUS_LOOKASIDE_MISS_SIZE = 5;

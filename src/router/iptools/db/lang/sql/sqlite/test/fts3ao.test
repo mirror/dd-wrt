@@ -111,7 +111,7 @@ do_test fts3ao-2.12 {
 # be run on an initially empty db.
 #
 db close
-forcedelete test.db test.db-journal
+file delete -force test.db test.db-journal
 sqlite3 db test.db
 
 do_test fts3ao-3.1 {
@@ -136,7 +136,7 @@ do_test fts3ao-3.2 {
 # Test that it is possible to rename an fts3 table in an attached 
 # database.
 #
-forcedelete test2.db test2.db-journal
+file delete -force test2.db test2.db-journal
 
 do_test fts3ao-3.1 {
   execsql {
@@ -200,9 +200,6 @@ do_test fts3ao-4.7 {
     SELECT * FROM t5;
   }
 } {{the quick brown fox} {jumped over the} {lazy dog}}
-do_execsql_test fts3ao-4.8 {
-  SELECT snippet(t5, '[', ']') FROM t5 WHERE t5 MATCH 'the'
-} {{[the] quick brown fox} {jumped over [the]}}
 
 # Test that it is possible to rename an FTS4 table. Renaming an FTS4 table
 # involves renaming the extra %_docsize and %_stat tables.
@@ -219,32 +216,5 @@ do_execsql_test 5.2 {
   SELECT count(*) FROM sqlite_master WHERE name LIKE 't8%';
 } {0 6}
 
-# At one point this was causing a memory leak.
-#
-foreach {tn sql} {
-  1 {}
-  2 { INSERT INTO ft(ft) VALUES('merge=2,2'); }
-} {
-  reset_db
-  do_execsql_test 6.$tn.1 "
-    CREATE TABLE t1(x);
-    CREATE VIRTUAL TABLE ft USING fts3;
-    INSERT INTO ft VALUES('hello world');
-    $sql
-  "
-
-  db close
-  sqlite3 db test.db
-  do_execsql_test 6.$tn.2 { SELECT * FROM t1 } {}
-
-  do_test 6.$tn.3 {
-    sqlite3 db2 test.db
-    db2 eval { DROP TABLE t1 }
-    db2 close
-    set stmt [sqlite3_prepare db { SELECT * FROM ft } -1 dummy]
-    sqlite3_finalize $stmt
-  } {SQLITE_OK}
-  db close
-}
-
 finish_test
+

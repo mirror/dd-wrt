@@ -1,4 +1,4 @@
-<VisualStudioProject ProjectType="Visual C++" Version="9.00" Name="db_sql" ProjectGUID="{4B65E600-064A-11DF-8A39-0800200C9A66}">
+<VisualStudioProject ProjectType="Visual C++" Version="8.00" Name="db_sql" ProjectGUID="{4B65E600-064A-11DF-8A39-0800200C9A66}">
   <Platforms>
     <Platform Name="Win32"/>
     <Platform Name="x64"/>
@@ -11,7 +11,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
       <Tool Name="VCCLCompilerTool" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../../build_windows,../../src,../../src/dbinc,../../include,../../lang/sql/generated,../../lang/sql/adapter,../../lang/sql/sqlite/src,../../lang/sql/sqlite/ext/fts3,../../lang/sql/sqlite/ext/rtree" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;DIAGNOSTIC;SQLITE_EXPORTS;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;SQLITE_CORE;SQLITE_ENABLE_COLUMN_METADATA;SQLITE_ENABLE_FTS3;SQLITE_ENABLE_LOAD_EXTENSION;SQLITE_DEBUG;SQLITE_MEMDEBUG;SQLITE_API=__declspec(dllexport);_USRDLL" StringPooling="TRUE" RuntimeLibrary="3" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x86 /FIXED:NO" AdditionalDependencies="libdb62d.lib" AdditionalLibraryDirectories="$(OutDir);../../lib" OutputFile="$(OutDir)/libdb_sql62d.dll" ProgramDatabaseFile="$(OutDir)/libdb_sql62d.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb_sql62d.lib" TargetMachine="0"/>
+      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x86 /FIXED:NO" AdditionalDependencies="libdb53d.lib" AdditionalLibraryDirectories="$(OutDir);../../lib" OutputFile="$(OutDir)/libdb_sql53d.dll" ProgramDatabaseFile="$(OutDir)/libdb_sql53d.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb_sql53d.lib" TargetMachine="0"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/></Configuration>
@@ -22,7 +22,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
       <Tool Name="VCCLCompilerTool" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../../build_windows,../../src,../../src/dbinc,../../include,../../lang/sql/generated,../../lang/sql/adapter,../../lang/sql/sqlite/src,../../lang/sql/sqlite/ext/fts3,../../lang/sql/sqlite/ext/rtree" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;SQLITE_EXPORTS;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;SQLITE_CORE;SQLITE_ENABLE_COLUMN_METADATA;SQLITE_ENABLE_FTS3;SQLITE_ENABLE_LOAD_EXTENSION;SQLITE_API=__declspec(dllexport);_USRDLL" StringPooling="TRUE" RuntimeLibrary="2" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x86" AdditionalDependencies="libdb62.lib" AdditionalLibraryDirectories="$(OutDir);../../lib" OutputFile="$(OutDir)/libdb_sql62.dll" ProgramDatabaseFile="$(OutDir)/libdb_sql62.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb_sql62.lib" TargetMachine="0"/>
+      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x86" AdditionalDependencies="libdb53.lib" AdditionalLibraryDirectories="$(OutDir);../../lib" OutputFile="$(OutDir)/libdb_sql53.dll" ProgramDatabaseFile="$(OutDir)/libdb_sql53.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb_sql53.lib" TargetMachine="0"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/></Configuration>
@@ -33,7 +33,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
       <Tool Name="VCCLCompilerTool" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../../build_windows,../../src,../../src/dbinc,../../include,../../lang/sql/generated,../../lang/sql/adapter,../../lang/sql/sqlite/src,../../lang/sql/sqlite/ext/fts3,../../lang/sql/sqlite/ext/rtree" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;SQLITE_EXPORTS;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;SQLITE_CORE;SQLITE_ENABLE_COLUMN_METADATA;SQLITE_ENABLE_FTS3;SQLITE_ENABLE_LOAD_EXTENSION;SQLITE_DEBUG;SQLITE_MEMDEBUG;_LIB;" StringPooling="TRUE" RuntimeLibrary="1" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
-      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb_sql62sd.lib" AdditionalOptions="/machine:x86"/></Configuration>
+      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb_sql53sd.lib" AdditionalOptions="/machine:x86"/></Configuration>
     <Configuration Name="Static Release|Win32" OutputDirectory="..\..\build_windows\$(PlatformName)\Static_Release" IntermediateDirectory="./$(OutDir)/db_sql" ConfigurationType="4" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="FALSE" CharacterSet="2">
       <Tool Name="VCPreLinkEventTool"/>
       <Tool Name="VCResourceCompilerTool"/>
@@ -41,7 +41,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
       <Tool Name="VCCLCompilerTool" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../../build_windows,../../src,../../src/dbinc,../../include,../../lang/sql/generated,../../lang/sql/adapter,../../lang/sql/sqlite/src,../../lang/sql/sqlite/ext/fts3,../../lang/sql/sqlite/ext/rtree" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;SQLITE_EXPORTS;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;SQLITE_CORE;SQLITE_ENABLE_COLUMN_METADATA;SQLITE_ENABLE_FTS3;SQLITE_ENABLE_LOAD_EXTENSION;_LIB;" StringPooling="TRUE" RuntimeLibrary="0" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
-      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb_sql62s.lib" AdditionalOptions="/machine:x86"/></Configuration>
+      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb_sql53s.lib" AdditionalOptions="/machine:x86"/></Configuration>
     <Configuration Name="Debug|x64" OutputDirectory="..\..\build_windows\$(PlatformName)\Debug" IntermediateDirectory="./$(OutDir)/db_sql" ConfigurationType="2" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="FALSE" CharacterSet="2">
       <Tool Name="VCPreLinkEventTool"/>
       <Tool Name="VCResourceCompilerTool"/>
@@ -49,7 +49,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
       <Tool Name="VCCLCompilerTool" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../../build_windows,../../src,../../src/dbinc,../../include,../../lang/sql/generated,../../lang/sql/adapter,../../lang/sql/sqlite/src,../../lang/sql/sqlite/ext/fts3,../../lang/sql/sqlite/ext/rtree" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;DIAGNOSTIC;SQLITE_EXPORTS;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;SQLITE_CORE;SQLITE_ENABLE_COLUMN_METADATA;SQLITE_ENABLE_FTS3;SQLITE_ENABLE_LOAD_EXTENSION;SQLITE_DEBUG;SQLITE_MEMDEBUG;SQLITE_API=__declspec(dllexport);_USRDLL" StringPooling="TRUE" RuntimeLibrary="3" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x64 /FIXED:NO" AdditionalDependencies="libdb62d.lib" AdditionalLibraryDirectories="$(OutDir);../../lib" OutputFile="$(OutDir)/libdb_sql62d.dll" ProgramDatabaseFile="$(OutDir)/libdb_sql62d.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb_sql62d.lib" TargetMachine="0"/>
+      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x64 /FIXED:NO" AdditionalDependencies="libdb53d.lib" AdditionalLibraryDirectories="$(OutDir);../../lib" OutputFile="$(OutDir)/libdb_sql53d.dll" ProgramDatabaseFile="$(OutDir)/libdb_sql53d.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb_sql53d.lib" TargetMachine="0"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/></Configuration>
@@ -60,7 +60,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
       <Tool Name="VCCLCompilerTool" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../../build_windows,../../src,../../src/dbinc,../../include,../../lang/sql/generated,../../lang/sql/adapter,../../lang/sql/sqlite/src,../../lang/sql/sqlite/ext/fts3,../../lang/sql/sqlite/ext/rtree" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;SQLITE_EXPORTS;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;SQLITE_CORE;SQLITE_ENABLE_COLUMN_METADATA;SQLITE_ENABLE_FTS3;SQLITE_ENABLE_LOAD_EXTENSION;SQLITE_API=__declspec(dllexport);_USRDLL" StringPooling="TRUE" RuntimeLibrary="2" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
-      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x64" AdditionalDependencies="libdb62.lib" AdditionalLibraryDirectories="$(OutDir);../../lib" OutputFile="$(OutDir)/libdb_sql62.dll" ProgramDatabaseFile="$(OutDir)/libdb_sql62.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb_sql62.lib" TargetMachine="0"/>
+      <Tool Name="VCLinkerTool" AdditionalOptions="/machine:x64" AdditionalDependencies="libdb53.lib" AdditionalLibraryDirectories="$(OutDir);../../lib" OutputFile="$(OutDir)/libdb_sql53.dll" ProgramDatabaseFile="$(OutDir)/libdb_sql53.pdb" LinkIncremental="1" GenerateDebugInformation="TRUE" SuppressStartupBanner="TRUE" OptimizeReferences="2" ImportLibrary="$(OutDir)/libdb_sql53.lib" TargetMachine="0"/>
       <Tool Name="VCPreBuildEventTool"/>
       <Tool Name="VCPostBuildEventTool"/>
       <Tool Name="VCCustomBuildTool"/></Configuration>
@@ -71,7 +71,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
       <Tool Name="VCCLCompilerTool" Optimization="0" MinimalRebuild="TRUE" AdditionalIncludeDirectories="../../build_windows,../../src,../../src/dbinc,../../include,../../lang/sql/generated,../../lang/sql/adapter,../../lang/sql/sqlite/src,../../lang/sql/sqlite/ext/fts3,../../lang/sql/sqlite/ext/rtree" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;SQLITE_EXPORTS;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;SQLITE_CORE;SQLITE_ENABLE_COLUMN_METADATA;SQLITE_ENABLE_FTS3;SQLITE_ENABLE_LOAD_EXTENSION;SQLITE_DEBUG;SQLITE_MEMDEBUG;_LIB;" StringPooling="TRUE" RuntimeLibrary="1" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" BasicRuntimeChecks="3" CompileAs="0"/>
-      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb_sql62sd.lib" AdditionalOptions="/machine:x64"/></Configuration>
+      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb_sql53sd.lib" AdditionalOptions="/machine:x64"/></Configuration>
     <Configuration Name="Static Release|x64" OutputDirectory="..\..\build_windows\$(PlatformName)\Static_Release" IntermediateDirectory="./$(OutDir)/db_sql" ConfigurationType="4" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="FALSE" CharacterSet="2">
       <Tool Name="VCPreLinkEventTool"/>
       <Tool Name="VCResourceCompilerTool"/>
@@ -79,7 +79,7 @@
       <Tool Name="VCManagedWrapperGeneratorTool"/>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
       <Tool Name="VCCLCompilerTool" Optimization="2" MinimalRebuild="TRUE" InlineFunctionExpansion="1" AdditionalIncludeDirectories="../../build_windows,../../src,../../src/dbinc,../../include,../../lang/sql/generated,../../lang/sql/adapter,../../lang/sql/sqlite/src,../../lang/sql/sqlite/ext/fts3,../../lang/sql/sqlite/ext/rtree" PreprocessorDefinitions="WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;SQLITE_EXPORTS;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;SQLITE_CORE;SQLITE_ENABLE_COLUMN_METADATA;SQLITE_ENABLE_FTS3;SQLITE_ENABLE_LOAD_EXTENSION;_LIB;" StringPooling="TRUE" RuntimeLibrary="0" EnableFunctionLevelLinking="TRUE" UsePrecompiledHeader="0" PrecompiledHeaderFile="./$(OutDir)/db_sql.pch" AssemblerListingLocation="$(OutDir)/db_sql/" ObjectFile="$(OutDir)/db_sql/" WarningLevel="3" SuppressStartupBanner="TRUE" DebugInformationFormat="3" CompileAs="0"/>
-      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb_sql62s.lib" AdditionalOptions="/machine:x64"/></Configuration>
+      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/libdb_sql53s.lib" AdditionalOptions="/machine:x64"/></Configuration>
   </Configurations>
   <References/>
   <Files>
@@ -111,12 +111,8 @@
     <File RelativePath="..\..\lang\sql\sqlite\ext\fts3\fts3_icu.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\ext\fts3\fts3_porter.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\ext\fts3\fts3_snippet.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\ext\fts3\fts3_term.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\ext\fts3\fts3_tokenizer1.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\ext\fts3\fts3_tokenize_vtab.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\ext\fts3\fts3_tokenizer.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\ext\fts3\fts3_unicode.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\ext\fts3\fts3_unicode2.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\ext\fts3\fts3_write.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\func.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\global.c"/>
@@ -152,11 +148,9 @@
     <File RelativePath="..\..\lang\sql\sqlite\src\select.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\status.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\table.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\src\threads.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\tokenize.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\trigger.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\update.c"/>
-    <File RelativePath="..\..\lang\sql\adapter\userauth.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\utf.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\util.c"/>
     <File RelativePath="..\..\lang\sql\adapter\vacuum.c"/>
@@ -165,7 +159,6 @@
     <File RelativePath="..\..\lang\sql\sqlite\src\vdbeaux.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\vdbeblob.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\vdbemem.c"/>
-    <File RelativePath="..\..\lang\sql\sqlite\src\vdbesort.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\vdbetrace.c"/>
     <File RelativePath="..\..\lang\sql\sqlite\src\vtab.c"/>
     <File RelativePath="..\..\lang\sql\adapter\wal.c"/>

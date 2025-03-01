@@ -17,11 +17,6 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable !wal {
-  finish_test
-  return
-}
-
 # Do not use a codec for this file, as the database is manipulated using
 # external methods (the [fake_big_file] and [hexio_write] commands).
 #
@@ -52,7 +47,7 @@ do_test walbig-1.0 {
 } {wal}
 
 db close
-if {[catch {fake_big_file 5000 [get_pwd]/test.db}]} {
+if {[catch {fake_big_file 5000 [pwd]/test.db}]} {
   puts "**** Unable to create a file larger than 5000 MB. *****"
   finish_test
   return

@@ -13,16 +13,16 @@ create_projects()
 
     # xquery script template
     TEMPLATE=genproject.template
-    TEMPLATE_VS2010_VS2012=vs2010.template
+    TEMPLATE_VS2010=vs2010.template
 
-    # vs2010 and vs2012 common properties template
+    # vs2010 common properties template
     LIBTEMPLATE=library.props.template
     APPTEMPLATE=application.props.template
 
     # temporary script, post-sed-replacement
     TEMP_SCRIPT=genproject.script
 
-    # temporary common properties for vs2010 and vs2012
+    # temporary common properties for vs2010
     TEMP_LIB=library.props
     TEMP_APP=application.props
 
@@ -41,7 +41,7 @@ create_projects()
     if [ $WinVersion = "WinCE" ]; then
       VLoop=VS8
     else 
-      VLoop="VS8 VS10 VS12"
+      VLoop="VS8 VS10"
     fi
 
     # for each project, substitute 2 variables in the XQuery script, then run it
@@ -52,17 +52,15 @@ create_projects()
         if [ $v = "VS71" ]; then
             VERSION="7.10"
         elif [ $v = "VS8" ]; then
-    	    VERSION="9.00"
+    	    VERSION="8.00"
  	elif [ $v = "VS10" ]; then
 	    VERSION="10.0"
- 	elif [ $v = "VS12" ]; then
-	    VERSION="11.0"
         fi
 
 	PROJECT_OUTPUT_DIR="$PROJECT_OUTPUT_PARENT_DIR/$v"
 
     	# substitute some variables in the XML document template
-        if [[ $v = "VS10" || $v = "VS12" ]]; then
+        if [ $v = "VS10" ]; then
     	    sed -e "s/@DB_VERSION_MAJOR@/$DB_VERSION_MAJOR/g" \
                 -e "s/@DB_VERSION_MINOR@/$DB_VERSION_MINOR/g" \
                 -e "s/$//" \
@@ -83,10 +81,11 @@ create_projects()
 	
 	
         echo "Building for Visual Studio version $VERSION"
+
         for i in `cat $PROJECTS`
         do
-	    if [[ $v = "VS10" || $v = "VS12" ]]; then
-            	sed -e "s!@PROJECT_NAME@!$i!g" -e "s!@PROJECT_INPUT@!$CONFIG_OUTPUT!g" -e "s!@VISUAL_STUDIO_VERSION@!$VERSION!g" < $TEMPLATE_VS2010_VS2012 > $TEMP_SCRIPT
+	    if [ $v = "VS10" ]; then
+            	sed -e "s!@PROJECT_NAME@!$i!g" -e "s!@PROJECT_INPUT@!$CONFIG_OUTPUT!g" -e "s!@VISUAL_STUDIO_VERSION@!$VERSION!g" < $TEMPLATE_VS2010 > $TEMP_SCRIPT
             else 
             	sed -e "s!@PROJECT_NAME@!$i!g" -e "s!@PROJECT_INPUT@!$CONFIG_OUTPUT!g" -e "s!@VISUAL_STUDIO_VERSION@!$VERSION!g" < $TEMPLATE > $TEMP_SCRIPT
 	    fi 	
@@ -130,47 +129,33 @@ create_projects_csharp()
 
     # temporary xml document, post-sed-replacement
     CONFIG_OUTPUT=projects.xml
-    
-    VLoop="VS8 VS10 VS12"
-    for v in $VLoop
+
+    # substitute some variables in the XML document template
+    sed -e "s/@DB_VERSION_MAJOR@/$DB_VERSION_MAJOR/g" \
+        -e "s/@DB_VERSION_MINOR@/$DB_VERSION_MINOR/g" \
+        < $CONFIG_INPUT > $CONFIG_OUTPUT
+
+    # for each project, substitute 2 variables in the XQuery script, then run it
+    for i in `cat $PROJECTS`
     do
-        if [ $v = "VS71" ]; then
-            VERSION="7.10"
-        elif [ $v = "VS8" ]; then
-    	    VERSION="9.00"
- 	elif [ $v = "VS10" ]; then
-	    VERSION="10.0"
- 	elif [ $v = "VS12" ]; then
-	    VERSION="11.0"
-        fi
+        # Split project path into dir + basename
+        PROJECT_OUTPUT_DIR=`dirname $i`
+        i=`basename $i`
 
-        # substitute some variables in the XML document template
-        sed -e "s/@DB_VERSION_MAJOR@/$DB_VERSION_MAJOR/g" \
-            -e "s/@DB_VERSION_MINOR@/$DB_VERSION_MINOR/g" \
-            -e "s/@VISUAL_STUDIO_VERSION@/$v/g" \
-            < $CONFIG_INPUT > $CONFIG_OUTPUT
-
-    	# for each project, substitute 2 variables in the XQuery script, then run it
-    	for i in `cat $PROJECTS`
-    	do
-    	    # Split project path into dir + basename
- 	    PROJECT_OUTPUT_DIR=`dirname $i`
- 	    i=`basename $i`
-
-            sed -e "s!@PROJECT_NAME@!$i!g" -e "s!@PROJECT_INPUT@!$CONFIG_OUTPUT!g" -e "s!@VISUAL_STUDIO_VERSION@!$VERSION!g" < $TEMPLATE > $TEMP_SCRIPT
-	    TMP=$PROJECT_OUTPUT_DIR/$v/$i.tmp.csproj
-	    TARG=$PROJECT_OUTPUT_DIR/$v/${i}.csproj
-            xqilla -o $TMP $TEMP_SCRIPT
-            rm -f $TEMP_SCRIPT
-            chmod 644 $TMP
-            cmp $TMP $TARG > /dev/null 2>&1 ||
-            (echo "Building $TARG" && rm -f $TARG &&
-            cp $TMP $TARG)
-            rm -f $TMP
-        done
-        # Cleanup.
-        rm -f $CONFIG_OUTPUT
+        sed -e "s!@PROJECT_NAME@!$i!g" -e "s!@PROJECT_INPUT@!$CONFIG_OUTPUT!g" -e "s!@VISUAL_STUDIO_VERSION@!$VERSION!g" < $TEMPLATE > $TEMP_SCRIPT
+        TMP=$PROJECT_OUTPUT_DIR/$i.tmp.csproj
+        TARG=$PROJECT_OUTPUT_DIR/${i}.csproj
+        xqilla -o $TMP $TEMP_SCRIPT
+        rm -f $TEMP_SCRIPT
+        chmod 644 $TMP
+        cmp $TMP $TARG > /dev/null 2>&1 ||
+        (echo "Building $TARG" && rm -f $TARG &&
+        cp $TMP $TARG)
+        rm -f $TMP
     done
+
+    # Cleanup.
+    rm -f $CONFIG_OUTPUT
 }
 
 # Detect XQilla

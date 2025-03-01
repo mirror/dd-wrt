@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -23,19 +23,10 @@ namespace BerkeleyDB {
         private void Config(HeapDatabaseConfig cfg) {
             base.Config(cfg);
             /* 
-             * Database.Config calls set_flags, but that does not get the Heap
+             * Database.Config calls set_flags, but that doesn't get the Heap
              * specific flags.  No harm in calling it again.
              */
             db.set_flags(cfg.flags);
-	    
-	    if (cfg.BlobDir != null && cfg.Env == null)
-                db.set_ext_file_dir(cfg.BlobDir);
-
-            if (cfg.ExternalFileDir != null && cfg.Env == null)
-                db.set_ext_file_dir(cfg.ExternalFileDir);
-
-            if (cfg.blobThresholdIsSet)
-                db.set_ext_file_threshold(cfg.BlobThreshold, 0);
 
             if (cfg.maxSizeIsSet)
                 db.set_heapsize(cfg.MaxSizeGBytes, cfg.MaxSizeBytes);
@@ -56,13 +47,13 @@ namespace BerkeleyDB {
         /// </para>
         /// <para>
         /// If <see cref="DatabaseConfig.AutoCommit"/> is set, the operation
-        /// is implicitly transaction protected. Transactionally
-        /// protected operations on a database object requires the object itself
+        /// will be implicitly transaction protected. Note that transactionally
+        /// protected operations on a datbase object requires the object itself
         /// be transactionally protected during its open.
         /// </para>
         /// </remarks>
         /// <param name="Filename">
-        /// The name of an underlying file used to back up the
+        /// The name of an underlying file that will be used to back the
         /// database. In-memory databases never intended to be preserved on disk
         /// may be created by setting this parameter to null.
         /// </param>
@@ -85,15 +76,15 @@ namespace BerkeleyDB {
         /// </para>
         /// <para>
         /// If <paramref name="txn"/> is null, but
-        /// <see cref="DatabaseConfig.AutoCommit"/> is set, the operation
-        /// is implicitly transaction protected. Transactionally
-        /// protected operations on a database object requires the object itself
-        /// be transactionally protected during its open. The
+        /// <see cref="DatabaseConfig.AutoCommit"/> is set, the operation will
+        /// be implicitly transaction protected. Note that transactionally
+        /// protected operations on a datbase object requires the object itself
+        /// be transactionally protected during its open. Also note that the
         /// transaction must be committed before the object is closed.
         /// </para>
         /// </remarks>
         /// <param name="Filename">
-        /// The name of an underlying file used to back up the
+        /// The name of an underlying file that will be used to back the
         /// database. In-memory databases never intended to be preserved on disk
         /// may be created by setting this parameter to null.
         /// </param>
@@ -120,65 +111,6 @@ namespace BerkeleyDB {
         #endregion Constructors
 
         #region Properties
-        /// <summary>
-        /// Deprecated.  Replaced by ExternalFileDir.
-        /// </summary>
-        public string BlobDir {
-            get {
-                string dir;
-                db.get_ext_file_dir(out dir);
-                return dir;
-            }
-        }
-        /// <summary>
-        /// The path of the directory where external files are stored.
-        /// </summary>
-        public string ExternalFileDir {
-            get {
-                string dir;
-                db.get_ext_file_dir(out dir);
-                return dir;
-            }
-        }
-
-        internal string BlobSubDir {
-            get {
-                string dir;
-                db.get_blob_sub_dir(out dir);
-                return dir;
-            }
-        }
-
-        /// <summary>
-        /// Deprecated.  Replaced by ExternalFileThreshold. 
-        /// </summary>
-        public uint BlobThreshold {
-            get {
-                uint ret = 0;
-                db.get_ext_file_threshold(ref ret);
-                return ret;
-            }
-        }
-	/// <summary>
-        /// The threshold value in bytes beyond which data items are stored as
-        /// external files.
-        /// <para>
-        /// Any data item that is equal to or larger in size than the
-        /// threshold value is automatically stored as an external file.
-        /// </para>
-        /// <para>
-        /// A value of 0 indicates that external files are not used by the
-	/// database.
-        /// </para>
-        /// </summary>
-        public uint ExternalFileThreshold {
-            get {
-                uint ret = 0;
-                db.get_ext_file_threshold(ref ret);
-                return ret;
-            }
-        }
-
         /// <summary>
         /// The gigabytes component of the maximum on-disk database file size.
         /// </summary>
@@ -300,7 +232,7 @@ namespace BerkeleyDB {
         /// </param>
         /// <param name="isoDegree">
         /// The level of isolation for database reads.
-        /// <see cref="Isolation.DEGREE_ONE"/> is silently ignored for 
+        /// <see cref="Isolation.DEGREE_ONE"/> will be silently ignored for 
         /// databases which did not specify
         /// <see cref="DatabaseConfig.ReadUncommitted"/>.
         /// </param>
@@ -351,7 +283,7 @@ namespace BerkeleyDB {
         /// </param>
         /// <param name="isoDegree">
         /// The level of isolation for database reads.
-        /// <see cref="Isolation.DEGREE_ONE"/> is silently ignored for 
+        /// <see cref="Isolation.DEGREE_ONE"/> will be silently ignored for 
         /// databases which did not specify
         /// <see cref="DatabaseConfig.ReadUncommitted"/>.
         /// </param>

@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -87,7 +87,7 @@ DbSequence::stat(DB_SEQUENCE_STAT **spp, u_int32_t flags); </pre>
         <ul type="disc">
           <li>
             <p>
-                    <span class="bold"><strong>u_int32_t st_cache_size;</strong></span>
+                    <span class="bold"><strong>int32_t st_cache_size;</strong></span>
                 </p>
             <p>
                     The number of values that will be cached in this handle.
@@ -119,18 +119,18 @@ DbSequence::stat(DB_SEQUENCE_STAT **spp, u_int32_t flags); </pre>
           </li>
           <li>
             <p>
-                    <span class="bold"><strong>db_seq_t st_max;</strong></span>
-                </p>
-            <p>
-                    The maximum permitted value of the sequence.
-                </p>
-          </li>
-          <li>
-            <p>
                     <span class="bold"><strong>db_seq_t st_min;</strong></span>
                 </p>
             <p>
                     The minimum permitted value of the sequence.
+                </p>
+          </li>
+          <li>
+            <p>
+                    <span class="bold"><strong>db_seq_t st_max;</strong></span>
+                </p>
+            <p>
+                    The maximum permitted value of the sequence.
                 </p>
           </li>
           <li>
@@ -165,7 +165,7 @@ DbSequence::stat(DB_SEQUENCE_STAT **spp, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670055221712"></a>Parameters</h3>
+              <h3 class="title"><a id="idp10208144"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -173,7 +173,7 @@ DbSequence::stat(DB_SEQUENCE_STAT **spp, u_int32_t flags); </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670055173968"></a>flags</h4>
+                <h4 class="title"><a id="idp10169184"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -208,7 +208,7 @@ DbSequence::stat(DB_SEQUENCE_STAT **spp, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670055159664"></a>Class</h3>
+              <h3 class="title"><a id="idp10214904"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -220,7 +220,7 @@ DbSequence::stat(DB_SEQUENCE_STAT **spp, u_int32_t flags); </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670055179024"></a>See Also</h3>
+              <h3 class="title"><a id="idp10216320"></a>See Also</h3>
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2000, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 package com.sleepycat.persist.test;
@@ -7963,98 +7963,6 @@ class EvolveClasses {
 
         public ProxiedClass convertProxy() {
             return new ProxiedClass(((IntegerClass)data[0]).data);
-        }
-    }
-
-    @Persistent(version=1)
-    static class MultipleSelfRefsEmbed {
-        MultipleSelfRefs ref;
-        MultipleSelfRefsEmbed embed;
-        /* ref2 is a new field. */
-        MultipleSelfRefs ref2;
-    }
-
-    /**
-     * Test multiple refs in an attempt to reproduce a bug where an assertion
-     * fired in Evolver.evolveInternal.  This did not reproduce the bug,
-     * apparently because a very specific sequence of nested references is
-     * needed.  But the test is included in case it is useful for other
-     * reasons.  [#21869]
-     */
-    @Entity(version=1)
-    static class MultipleSelfRefs
-        extends EvolveCase {
-
-        private static final String NAME = PREFIX + "MultipleSelfRefs";
-
-        @PrimaryKey
-        int key;
-
-        MultipleSelfRefs ref;
-        MultipleSelfRefsEmbed embed;
-        /* ref2 is a new field. */
-        MultipleSelfRefs ref2;
-
-        @Override
-        void checkEvolvedModel(EntityModel model,
-                               Environment env,
-                               boolean oldTypesExist) {
-            checkEntity(true, model, env, NAME, 1, null);
-            if (oldTypesExist) {
-                checkVersions(model, NAME, 1, NAME, 0);
-            } else {
-                checkVersions(model, NAME, 1);
-            }
-        }
-
-        @Override
-        void readObjects(EntityStore store, boolean doUpdate)
-            throws DatabaseException {
-
-            PrimaryIndex<Integer, MultipleSelfRefs>
-                index = store.getPrimaryIndex
-                    (Integer.class,
-                     MultipleSelfRefs.class);
-            MultipleSelfRefs obj = index.get(99);
-            TestCase.assertNotNull(obj);
-            TestCase.assertEquals(99, obj.key);
-
-            if (doUpdate) {
-                index.put(obj);
-            }
-        }
-
-        @Override
-        void copyRawObjects(RawStore rawStore, EntityStore newStore)
-            throws DatabaseException {
-
-            PrimaryIndex<Integer, MultipleSelfRefs>
-                index = newStore.getPrimaryIndex
-                    (Integer.class,
-                     MultipleSelfRefs.class);
-            RawObject raw = rawStore.getPrimaryIndex(NAME).get(99);
-            index.put((MultipleSelfRefs)
-                      newStore.getModel().convertRawObject(raw));
-        }
-
-        @Override
-        void readRawObjects(RawStore store,
-                            boolean expectEvolved,
-                            boolean expectUpdated)
-            throws DatabaseException {
-
-            RawObject obj;
-            if (expectEvolved) {
-                obj = readRaw(store, 99, NAME, 1, CASECLS, 0);
-            } else {
-                obj = readRaw(store, 99, NAME, 0, CASECLS, 0);
-            }
-            if (expectEvolved && expectUpdated) {
-                checkRawFields(obj, "key", 99, "ref", ref, "embed", embed,
-                               "ref2", ref2);
-            } else {
-                checkRawFields(obj, "key", 99, "ref", ref, "embed", embed);
-            }
         }
     }
 }

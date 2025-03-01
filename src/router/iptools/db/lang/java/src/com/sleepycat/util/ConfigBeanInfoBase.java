@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -17,33 +17,33 @@ import java.util.ArrayList;
 
 /*
  * If someone add a property in some FooConfig.java,
- *   (1) If the setter/getter methods are setFoo/getFoo, the name of the
+ *   (1) If the setter/getter methods are setFoo/getFoo, the name of the 
  *       property should be "foo", which means the first letter of the property
  *       name should be lower case.
- *   (2) The setter method for this property setProperty should return "this",
+ *   (2) The setter method for this property setProperty should return "this", 
  *       and setPropertyVoid method which returns void value must be added.
- *       The return type of the getter method should be the same as the
+ *       The return type of the getter method should be the same as the 
  *       parameter of the setter method.
- *   (3) The setter method and getter method must be added into
+ *   (3) The setter method and getter method must be added into 
  *       FooConfigBeanInfo;
- *   (4) If for some of the setter methods in the FooConfig.java, setterVoid
- *       methods are not necessary, then add the name of such setter methods
- *       into the ArrayList ignoreMethods within the corresponding
- *       FooConfigBeanInfo.getPropertyDescriptors method. For example,
- *       setMaxSeedTestHook method in DiskOrderedCursorConfig.java is only used
- *       for unit tests, so "setMaxSeedTestHook" is added into ignoreMethods
+ *   (4) If for some of the setter methods in the FooConfig.java, setterVoid 
+ *       methods are not necessary, then add the name of such setter methods 
+ *       into the ArrayList ignoreMethods within the corresponding 
+ *       FooConfigBeanInfo.getPropertyDescriptors method. For example, 
+ *       setMaxSeedTestHook method in DiskOrderedCursorConfig.java is only used 
+ *       for unit tests, so "setMaxSeedTestHook" is added into ignoreMethods 
  *       list within DiskOrderedCursorConfigBeanInfo.getPropertyDescriptors.
- *
+ *   
  *
  * If someone adds a new FooConfig.java,
  *   (1) The definition of setter/getter mehods and the names of the properties
- *       should follow the rules described above.
+ *       should follow the rules described above. 
  *   (2) There must be FooConfigBeanInfo.java. You can write it according to
  *       the current beaninfo classes.
- *   (3) "PackagePath.FooConfig" must be added into the unit test:
+ *   (3) "PackagePath.FooConfig" must be added into the unit test: 
  *       com.sleepycat.db.ConfigBeanInfoTest.
  *
- * If someond remove an existing FooConfig.java, then "PackagePath.FooConfig"
+ * If someond remove an existing FooConfig.java, then "PackagePath.FooConfig" 
  * must be deleted in the unit test com.sleepycat.db.ConfigBeanInfoTest.
  */
 public class ConfigBeanInfoBase extends SimpleBeanInfo {
@@ -58,22 +58,22 @@ public class ConfigBeanInfoBase extends SimpleBeanInfo {
 
     private static final int defaultPropertyIndex = -1;
     private static final int defaultEventIndex = -1;
-
+    
     protected static ArrayList<String> propertiesName = new ArrayList<String>();
-    protected static ArrayList<String>
+    protected static ArrayList<String> 
         getterAndSetterMethods = new ArrayList<String>();
-
+        
     protected static ArrayList<String> ignoreMethods = new ArrayList<String>();
-
-    /*
-     * Get the propertis' infomation, including all the properties's names
+    
+    /* 
+     * Get the propertis' infomation, including all the properties's names 
      * and their getter/setter methods.
      */
-    protected static void getPropertiesInfo(Class cls) {
+    protected static void getPropertiesInfo(Class cls) { 
         propertiesName.clear();
         getterAndSetterMethods.clear();
         try {
-
+        
             /* Get all of the public methods. */
             ArrayList<String> allMethodNames = new ArrayList<String>();
             Method[] methods = cls.getMethods();
@@ -83,7 +83,7 @@ public class ConfigBeanInfoBase extends SimpleBeanInfo {
             for (int i = 0; i < allMethodNames.size(); i++) {
                 String name = allMethodNames.get(i);
                 String subName = name.substring(0, 3);
-
+                
                 /* If it is a setter method. */
                 if (subName.equals("set")) {
                     if (isIgnoreMethods(name)) {
@@ -96,18 +96,18 @@ public class ConfigBeanInfoBase extends SimpleBeanInfo {
                     } catch (NoSuchMethodException e) {
                         getterMethod = null;
                     }
-                    if (getterMethod != null) {
+                    if (getterMethod != null) {   
                         getterAndSetterMethods.add("get" + propertyName);
                         getterAndSetterMethods.add(name + "Void");
-
-                        /*
-                         * Add the real property name into propertiesName.
-                         * if the names of setter/getter methods are
-                         * setFoo/getFoo, the name of the property should be
+                            
+                        /* 
+                         * Add the real property name into propertiesName. 
+                         * if the names of setter/getter methods are 
+                         * setFoo/getFoo, the name of the property should be 
                          * "foo".
                          */
                         propertiesName.add
-                            (propertyName.substring(0, 1).toLowerCase() +
+                            (propertyName.substring(0, 1).toLowerCase() + 
                              propertyName.substring(1));
                     }
                 }
@@ -116,7 +116,7 @@ public class ConfigBeanInfoBase extends SimpleBeanInfo {
             e.printStackTrace();
         }
     }
-
+    
     private static boolean isIgnoreMethods(String methodName) {
         for (int i = 0; i < ignoreMethods.size(); i++) {
             if (ignoreMethods.get(i).equals(methodName)) {
@@ -125,16 +125,16 @@ public class ConfigBeanInfoBase extends SimpleBeanInfo {
         }
         return false;
     }
-
+    
     protected static PropertyDescriptor[] getPdescriptor(Class cls) {
         getPropertiesInfo(cls);
         final int propertyNum = propertiesName.size();
         assert propertyNum * 2 == getterAndSetterMethods.size();
-        PropertyDescriptor[] properties = new PropertyDescriptor[propertyNum];
+        PropertyDescriptor[] properties = new PropertyDescriptor[propertyNum];   
         try {
             for (int i = 0, j = 0; i < propertyNum; i += 1, j += 2) {
                 properties[i] = new PropertyDescriptor
-                    (propertiesName.get(i), cls, getterAndSetterMethods.get(j),
+                    (propertiesName.get(i), cls, getterAndSetterMethods.get(j), 
                      getterAndSetterMethods.get(j + 1));
             }
         } catch(IntrospectionException e) {
@@ -142,7 +142,7 @@ public class ConfigBeanInfoBase extends SimpleBeanInfo {
         }
         return properties;
     }
-
+    
     protected static BeanDescriptor getBdescriptor(Class cls) {
         BeanDescriptor beanDescriptor = new BeanDescriptor(cls, null);
         return beanDescriptor;
@@ -150,8 +150,6 @@ public class ConfigBeanInfoBase extends SimpleBeanInfo {
 
     /**
      * Gets the bean's <code>BeanDescriptor</code>s.
-     *
-     * @param cls the Class.
      *
      * @return BeanDescriptor describing the editable
      * properties of this bean. May return null if the
@@ -163,8 +161,6 @@ public class ConfigBeanInfoBase extends SimpleBeanInfo {
 
     /**
      * Gets the bean's <code>PropertyDescriptor</code>s.
-     *
-     * @param cls the Class.
      *
      * @return An array of PropertyDescriptors describing the editable
      * properties supported by this bean. May return null if the

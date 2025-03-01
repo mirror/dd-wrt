@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -47,8 +47,8 @@ DbEnv::repmgr_site_list(u_int *countp, DB_REPMGR_SITE **listp);</pre>
             sites currently known by the Replication Manager.
     </p>
       <p>
-            The <code class="methodname">DbEnv::repmgr_site_list()</code> method creates an array of statistical
-            structures of type <code class="literal">DB_REPMGR_SITE</code> and copies a pointer to it into a
+            The <code class="methodname">DbEnv::repmgr_site_list()</code> method creates a statistical
+            structure of type <code class="literal">DB_REPMGR_SITE</code> and copies a pointer to it into a
             user-specified memory location.
     </p>
       <p>
@@ -106,15 +106,10 @@ DbEnv::repmgr_site_list(u_int *countp, DB_REPMGR_SITE **listp);</pre>
                             <span class="bold"><strong>u_int32_t flags;</strong></span>
                     </p>
             <p>
-                        Zero or a bitwise inclusive OR of the
-                        <code class="literal">DB_REPMGR_ISPEER</code> and the
-                        <code class="literal">DB_REPMGR_ISVIEW</code> constants. 
+                        Zero or a bitwise inclusive OR of the <code class="literal">DB_REPMGR_ISPEER</code> constant. 
                         The <code class="literal">DB_REPMGR_ISPEER</code>
-                        value means that the site is a possible
-                        client-to-client peer.
-                        The <code class="literal">DB_REPMGR_ISVIEW</code>
-                        value means that the site is a view.
-                   </p>
+                        value means that the site is a possible client-to-client peer.
+                    </p>
           </li>
         </ul>
       </div>
@@ -137,7 +132,7 @@ DbEnv::repmgr_site_list(u_int *countp, DB_REPMGR_SITE **listp);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670055671088"></a>Parameters</h3>
+              <h3 class="title"><a id="idp9941720"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -145,7 +140,7 @@ DbEnv::repmgr_site_list(u_int *countp, DB_REPMGR_SITE **listp);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670055672336"></a>countp</h4>
+                <h4 class="title"><a id="idp9943816"></a>countp</h4>
               </div>
             </div>
           </div>
@@ -158,7 +153,7 @@ DbEnv::repmgr_site_list(u_int *countp, DB_REPMGR_SITE **listp);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670055661936"></a>listp</h4>
+                <h4 class="title"><a id="idp9949288"></a>listp</h4>
               </div>
             </div>
           </div>
@@ -172,7 +167,7 @@ DbEnv::repmgr_site_list(u_int *countp, DB_REPMGR_SITE **listp);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670055660384"></a>Class</h3>
+              <h3 class="title"><a id="idp9946320"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -184,7 +179,7 @@ DbEnv::repmgr_site_list(u_int *countp, DB_REPMGR_SITE **listp);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670055722672"></a>See Also</h3>
+              <h3 class="title"><a id="idp9936072"></a>See Also</h3>
             </div>
           </div>
         </div>

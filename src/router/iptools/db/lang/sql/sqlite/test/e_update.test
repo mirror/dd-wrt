@@ -49,7 +49,7 @@ proc do_update_tests {args} {
   uplevel do_select_tests $args
 }
 
-# -- syntax diagram update-stmt
+# EVIDENCE-OF: R-05685-44205 -- syntax diagram update-stmt
 #
 do_update_tests e_update-0 {
   1    "UPDATE t1 SET a=10" {}
@@ -233,9 +233,9 @@ do_update_tests e_update-1.5 -query {
       {3 1 4   1 5 9   2 6 5}
 }
 
-# EVIDENCE-OF: R-34751-18293 If a single column-name appears more than
+# EVIDENCE-OF: R-09060-20018 If a single column-name appears more than
 # once in the list of assignment expressions, all but the rightmost
-# occurrence is ignored.
+# occurence is ignored.
 #
 do_update_tests e_update-1.6 -query {
   SELECT * FROM t2
@@ -278,30 +278,30 @@ do_execsql_test e_update-1.8.0 {
 } {}
 foreach {tn sql error ac data } {
   1  "UPDATE t3 SET b='one' WHERE a=3" 
-     {UNIQUE constraint failed: t3.b} 1 {1 one 2 two 3 three 4 four}
+     {column b is not unique} 1 {1 one 2 two 3 three 4 four}
 
   2  "UPDATE OR REPLACE t3 SET b='one' WHERE a=3" 
      {} 1 {2 two 3 one 4 four}
 
   3  "UPDATE OR FAIL t3 SET b='three'"
-     {UNIQUE constraint failed: t3.b} 1 {2 three 3 one 4 four}
+     {column b is not unique} 1 {2 three 3 one 4 four}
 
   4  "UPDATE OR IGNORE t3 SET b='three' WHERE a=3" 
      {} 1 {2 three 3 one 4 four}
 
   5  "UPDATE OR ABORT t3 SET b='three' WHERE a=3" 
-     {UNIQUE constraint failed: t3.b} 1 {2 three 3 one 4 four}
+     {column b is not unique} 1 {2 three 3 one 4 four}
 
   6  "BEGIN" {} 0 {2 three 3 one 4 four}
 
   7  "UPDATE t3 SET b='three' WHERE a=3" 
-     {UNIQUE constraint failed: t3.b} 0 {2 three 3 one 4 four}
+     {column b is not unique} 0 {2 three 3 one 4 four}
 
   8  "UPDATE OR ABORT t3 SET b='three' WHERE a=3" 
-     {UNIQUE constraint failed: t3.b} 0 {2 three 3 one 4 four}
+     {column b is not unique} 0 {2 three 3 one 4 four}
 
   9  "UPDATE OR FAIL t3 SET b='two'"
-     {UNIQUE constraint failed: t3.b} 0 {2 two 3 one 4 four}
+     {column b is not unique} 0 {2 two 3 one 4 four}
 
   10 "UPDATE OR IGNORE t3 SET b='four' WHERE a=3"
      {} 0 {2 two 3 one 4 four}
@@ -310,7 +310,7 @@ foreach {tn sql error ac data } {
      {} 0 {2 two 3 four}
 
   12 "UPDATE OR ROLLBACK t3 SET b='four'"
-     {UNIQUE constraint failed: t3.b} 1 {2 three 3 one 4 four}
+     {column b is not unique} 1 {2 three 3 one 4 four}
 } {
   do_catchsql_test e_update-1.8.$tn.1 $sql [list [expr {$error!=""}] $error]
   do_execsql_test  e_update-1.8.$tn.2 {SELECT * FROM t3} [list {*}$data]
@@ -381,9 +381,11 @@ do_execsql_test e_update-2.2.X {
 # attached).
 #
 do_execsql_test e_update-2.3.0 {
-  SELECT 'main', tbl_name FROM main.sqlite_master WHERE type = 'table';
-  SELECT 'temp', tbl_name FROM sqlite_temp_master WHERE type = 'table';
-  SELECT 'aux', tbl_name FROM aux.sqlite_master WHERE type = 'table';
+  SELECT 'main', tbl_name FROM main.sqlite_master WHERE type = 'table'
+    UNION ALL
+  SELECT 'temp', tbl_name FROM sqlite_temp_master WHERE type = 'table'
+    UNION ALL
+  SELECT 'aux', tbl_name FROM aux.sqlite_master WHERE type = 'table'
 } [list {*}{
     main t1
     main t2
@@ -493,7 +495,7 @@ do_update_tests e_update-2.5 -error {
 # of the UPDATE statement is extended with optional ORDER BY and LIMIT
 # clauses
 #
-# -- syntax diagram update-stmt-limited
+# EVIDENCE-OF: R-08948-01887 -- syntax diagram update-stmt-limited
 #
 do_update_tests e_update-3.0 {
   1   "UPDATE t1 SET a=b LIMIT 5"                                    {}
@@ -603,3 +605,4 @@ do_update_tests e_update-3.5 -query { SELECT x FROM t8 ; DELETE FROM t8 } {
 } ;# ifcapable update_delete_limit
  
 finish_test
+

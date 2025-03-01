@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,7 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="am_misc_stability.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 4.  Access Method Wrapup </th>
+          <th width="60%" align="center">Chapter 4. 
+		Access Method Wrapup
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="am_misc_diskspace.html">Next</a></td>
         </tr>
       </table>
@@ -36,52 +38,30 @@
           </div>
         </div>
       </div>
-      <p> 
-        The largest database file that Berkeley DB can handle
-        depends on the page size selected by the application. Berkeley
-        DB stores database file page numbers as unsigned 32-bit
-        numbers and database file page sizes as unsigned 16-bit
-        numbers. Using the maximum database page size of 65536, this
-        results in a maximum database file size of
-        2<sup>48</sup> (256 terabytes). The
-        minimum database page size is 512 bytes, which results in a
-        minimum maximum database size of
-        2<sup>41</sup> (2 terabytes).
-    </p>
-      <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
-        <h3 class="title">Note</h3>
-        <p>
-            In order to store petabytes of data you can use
-            multiple database files.
-        </p>
-      </div>
-      <p>
-        The largest database file Berkeley DB can support is
-        potentially further limited if the host system does not have
-        filesystem support for files larger than
-        2<sup>32</sup>, including the ability to
-        seek to absolute offsets within those files.
-    </p>
-      <p>
-        The largest key or data item that Berkeley DB can support
-        is 2<sup>32</sup>, or more likely limited by
-        available memory. Specifically, while key and data byte
-        strings may be of essentially unlimited length, any one of
-        them must fit into available memory so that it can be returned
-        to the application. As some of the Berkeley DB interfaces
-        return both key and data items to the application, those
-        interfaces will require that any key/data pair fit
-        simultaneously into memory. Further, as the access methods may
-        need to compare key and data items with other key and data
-        items, it may be a requirement that any two key or two data
-        items fit into available memory. Finally, when writing
-        applications supporting transactions, it may be necessary to
-        have an additional copy of any data item in memory for logging
-        purposes. 
-    </p>
-      <p> 
-        The maximum Btree depth is 255.
-    </p>
+      <p>The largest database file that Berkeley DB can handle depends on the page size
+selected by the application.  Berkeley DB stores database file page numbers as
+unsigned 32-bit numbers and database file page sizes as unsigned 16-bit
+numbers.  Using the maximum database page size of 65536, this results in
+a maximum database file size of 2<sup>48</sup> (256 terabytes).  The
+minimum database page size is 512 bytes, which results in a minimum
+maximum database size of 2<sup>41</sup> (2 terabytes).</p>
+      <p>The largest database file Berkeley DB can support is potentially further limited
+if the host system does not have filesystem support for files larger than
+2<sup>32</sup>, including the ability to seek to absolute offsets within
+those files.</p>
+      <p>The largest key or data item that Berkeley DB can support is 2<sup>32</sup>,
+or more likely limited by available memory.  Specifically, while key and
+data byte strings may be of essentially unlimited length, any one of
+them must fit into available memory so that it can be returned to the
+application.  As some of the Berkeley DB interfaces return both key and data
+items to the application, those interfaces will require that any
+key/data pair fit simultaneously into memory.  Further, as the access
+methods may need to compare key and data items with other key and data
+items, it may be a requirement that any two key or two data items fit
+into available memory.  Finally, when writing applications supporting
+transactions, it may be necessary to have an additional copy of any data
+item in memory for logging purposes.</p>
+      <p>The maximum Btree depth is 255.</p>
     </div>
     <div class="navfooter">
       <hr />
@@ -98,8 +78,7 @@
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Disk space
-        requirements</td>
+          <td width="40%" align="right" valign="top"> Disk space requirements</td>
         </tr>
       </table>
     </div>

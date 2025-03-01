@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -105,14 +105,17 @@ import com.sleepycat.db.Environment;
  * <li>The comparison method must always return the same result, given the same
  * inputs.  The behavior of the comparison method must not change over
  * time.</li>
+ * <br>
  * <li>A corollary to the first rule is that the behavior of the comparison
  * method must not be dependent on state which may change over time.  For
  * example, if the above collation method used the default Java locale, and the
  * default locale is changed, then the sort order will change.</li>
+ * <br>
  * <li>The comparison method must not assume that it is called after the store
  * has been opened.  With Berkeley DB Java Edition, the comparison method is
  * called during database recovery, which occurs in the {@link Environment}
  * constructor.</li>
+ * <br>
  * <li>The comparison method must not assume that it will only be called with
  * keys that are currently present in the database.  The comparison method will
  * occasionally be called with deleted keys or with keys for records that were

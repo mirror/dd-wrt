@@ -2,7 +2,7 @@
 package BerkeleyDB;
 
 
-#     Copyright (c) 1997-2016 Paul Marquess. All rights reserved.
+#     Copyright (c) 1997-2011 Paul Marquess. All rights reserved.
 #     This program is free software; you can redistribute it and/or
 #     modify it under the same terms as Perl itself.
 #
@@ -10,16 +10,18 @@ package BerkeleyDB;
 # The documentation for this module is at the bottom of this file,
 # after the line __END__.
 
-use 5.006;
+BEGIN { require 5.005 }
 
 use strict;
 use Carp;
 use vars qw($VERSION @ISA @EXPORT $AUTOLOAD
 		$use_XSLoader);
 
-$VERSION = '0.56';
+$VERSION = '0.50';
 
 require Exporter;
+#require DynaLoader;
+require AutoLoader;
 
 BEGIN {
     $use_XSLoader = 1 ;
@@ -41,7 +43,6 @@ BEGIN {
 @EXPORT = qw(
 	DB2_AM_EXCL
 	DB2_AM_INTEXCL
-	DB2_AM_MPOOL_OPENED
 	DB2_AM_NOWAIT
 	DB_AFTER
 	DB_AGGRESSIVE
@@ -76,7 +77,6 @@ BEGIN {
 	DB_CDB_ALLDB
 	DB_CHECKPOINT
 	DB_CHKSUM
-	DB_CHKSUM_FAIL
 	DB_CHKSUM_SHA1
 	DB_CKP_INTERNAL
 	DB_CLIENT
@@ -160,14 +160,11 @@ BEGIN {
 	DB_ENV_TXN_WRITE_NOSYNC
 	DB_ENV_USER_ALLOC
 	DB_ENV_YIELDCPU
-	DB_EVENT_FAILCHK_PANIC
-	DB_EVENT_MUTEX_DIED
 	DB_EVENT_NOT_HANDLED
 	DB_EVENT_NO_SUCH_EVENT
 	DB_EVENT_PANIC
 	DB_EVENT_REG_ALIVE
 	DB_EVENT_REG_PANIC
-	DB_EVENT_REP_AUTOTAKEOVER_FAILED
 	DB_EVENT_REP_CLIENT
 	DB_EVENT_REP_CONNECT_BROKEN
 	DB_EVENT_REP_CONNECT_ESTD
@@ -176,7 +173,6 @@ BEGIN {
 	DB_EVENT_REP_ELECTED
 	DB_EVENT_REP_ELECTION_FAILED
 	DB_EVENT_REP_INIT_DONE
-	DB_EVENT_REP_INQUEUE_FULL
 	DB_EVENT_REP_JOIN_FAILURE
 	DB_EVENT_REP_LOCAL_SITE_REMOVED
 	DB_EVENT_REP_MASTER
@@ -189,12 +185,9 @@ BEGIN {
 	DB_EVENT_REP_WOULD_ROLLBACK
 	DB_EVENT_WRITE_FAILED
 	DB_EXCL
-	DB_EXIT_FAILCHK
-	DB_EXIT_FILE_EXISTS
 	DB_EXTENT
 	DB_FAILCHK
 	DB_FAILCHK_ISALIVE
-	DB_FAILURE_SYMPTOM_SIZE
 	DB_FAST_STAT
 	DB_FCNTL_LOCKING
 	DB_FILEOPEN
@@ -204,7 +197,6 @@ BEGIN {
 	DB_FLUSH
 	DB_FORCE
 	DB_FORCESYNC
-	DB_FORCESYNCENV
 	DB_FOREIGN_ABORT
 	DB_FOREIGN_CASCADE
 	DB_FOREIGN_CONFLICT
@@ -242,7 +234,6 @@ BEGIN {
 	DB_INIT_REP
 	DB_INIT_TXN
 	DB_INORDER
-	DB_INTERNAL_BLOB_DB
 	DB_INTERNAL_DB
 	DB_INTERNAL_PERSISTENT_DB
 	DB_INTERNAL_TEMPORARY_DB
@@ -307,7 +298,6 @@ BEGIN {
 	DB_LOGVERSION_LATCHING
 	DB_LOG_AUTOREMOVE
 	DB_LOG_AUTO_REMOVE
-	DB_LOG_BLOB
 	DB_LOG_BUFFER_FULL
 	DB_LOG_CHKPNT
 	DB_LOG_COMMIT
@@ -318,7 +308,6 @@ BEGIN {
 	DB_LOG_IN_MEMORY
 	DB_LOG_LOCKED
 	DB_LOG_NOCOPY
-	DB_LOG_NOSYNC
 	DB_LOG_NOT_DURABLE
 	DB_LOG_NO_DATA
 	DB_LOG_PERM
@@ -343,7 +332,6 @@ BEGIN {
 	DB_MEM_LOGID
 	DB_MEM_THREAD
 	DB_MEM_TRANSACTION
-	DB_META_CHKSUM_FAIL
 	DB_MPOOL_CLEAN
 	DB_MPOOL_CREATE
 	DB_MPOOL_DIRTY
@@ -365,10 +353,8 @@ BEGIN {
 	DB_MUTEXDEBUG
 	DB_MUTEXLOCKS
 	DB_MUTEX_ALLOCATED
-	DB_MUTEX_DESCRIBE_STRLEN
 	DB_MUTEX_LOCKED
 	DB_MUTEX_LOGICAL_LOCK
-	DB_MUTEX_OWNER_DEAD
 	DB_MUTEX_PROCESS_ONLY
 	DB_MUTEX_SELF_BLOCK
 	DB_MUTEX_SHARED
@@ -381,7 +367,6 @@ BEGIN {
 	DB_NODUPDATA
 	DB_NOERROR
 	DB_NOFLUSH
-	DB_NOINTMP
 	DB_NOLOCKING
 	DB_NOMMAP
 	DB_NOORDERCHK
@@ -396,7 +381,6 @@ BEGIN {
 	DB_NO_AUTO_COMMIT
 	DB_NO_CHECKPOINT
 	DB_ODDFILESIZE
-	DB_OFF_T_MAX
 	DB_OK_BTREE
 	DB_OK_HASH
 	DB_OK_HEAP
@@ -462,13 +446,9 @@ BEGIN {
 	DB_REPMGR_ACKS_QUORUM
 	DB_REPMGR_CONF_2SITE_STRICT
 	DB_REPMGR_CONF_ELECTIONS
-	DB_REPMGR_CONF_FORWARD_WRITES
-	DB_REPMGR_CONF_PREFMAS_CLIENT
-	DB_REPMGR_CONF_PREFMAS_MASTER
 	DB_REPMGR_CONNECTED
 	DB_REPMGR_DISCONNECTED
 	DB_REPMGR_ISPEER
-	DB_REPMGR_ISVIEW
 	DB_REPMGR_NEED_RESPONSE
 	DB_REPMGR_PEER
 	DB_REP_ACK_TIMEOUT
@@ -480,7 +460,6 @@ BEGIN {
 	DB_REP_CONF_AUTOROLLBACK
 	DB_REP_CONF_BULK
 	DB_REP_CONF_DELAYCLIENT
-	DB_REP_CONF_ELECT_LOGLENGTH
 	DB_REP_CONF_INMEM
 	DB_REP_CONF_LEASE
 	DB_REP_CONF_NOAUTOINIT
@@ -520,7 +499,6 @@ BEGIN {
 	DB_REP_STARTUPDONE
 	DB_REP_UNAVAIL
 	DB_REP_WOULDROLLBACK
-	DB_REP_WRITE_FORWARD_TIMEOUT
 	DB_REVSPLITOFF
 	DB_RMW
 	DB_RPCCLIENT
@@ -542,16 +520,12 @@ BEGIN {
 	DB_SET
 	DB_SET_LOCK_TIMEOUT
 	DB_SET_LTE
-	DB_SET_MUTEX_FAILCHK_TIMEOUT
 	DB_SET_RANGE
 	DB_SET_RECNO
 	DB_SET_REG_TIMEOUT
 	DB_SET_TXN_NOW
 	DB_SET_TXN_TIMEOUT
 	DB_SHALLOW_DUP
-	DB_SLICED
-	DB_SLICE_CORRUPT
-	DB_SLICE_INCONSISTENT
 	DB_SNAPSHOT
 	DB_SPARE_FLAG
 	DB_STAT_ALL
@@ -566,9 +540,6 @@ BEGIN {
 	DB_STAT_NOERROR
 	DB_STAT_SUBSYSTEM
 	DB_STAT_SUMMARY
-	DB_STREAM_READ
-	DB_STREAM_SYNC_WRITE
-	DB_STREAM_WRITE
 	DB_ST_DUPOK
 	DB_ST_DUPSET
 	DB_ST_DUPSORT
@@ -648,7 +619,6 @@ BEGIN {
 	DB_VERB_DEADLOCK
 	DB_VERB_FILEOPS
 	DB_VERB_FILEOPS_ALL
-	DB_VERB_MVCC
 	DB_VERB_RECOVERY
 	DB_VERB_REGISTER
 	DB_VERB_REPLICATION
@@ -661,7 +631,6 @@ BEGIN {
 	DB_VERB_REP_SYNC
 	DB_VERB_REP_SYSTEM
 	DB_VERB_REP_TEST
-	DB_VERB_SLICE
 	DB_VERB_WAITSFOR
 	DB_VERIFY
 	DB_VERIFY_BAD
@@ -693,7 +662,6 @@ BEGIN {
 	LOGREC_Done
 	LOGREC_HDR
 	LOGREC_LOCKS
-	LOGREC_LONGARG
 	LOGREC_OP
 	LOGREC_PGDBT
 	LOGREC_PGDDBT
@@ -951,8 +919,6 @@ sub new
 					SharedMemKey	=> undef,
 					Set_Lk_Exclusive	=> undef,
 					ThreadCount	=> 0,
-					BlobThreshold	=> 0,
-                    BlobDir	=> undef,
 					}, @_) ;
 
     my $errfile  = $got->{ErrFile} ;				
@@ -1092,10 +1058,6 @@ sub new
 			WriteKey	=> undef,
 			ReadValue	=> undef,
 			WriteValue	=> undef,
-
-            # Blob
-            BlobThreshold	=> 0,
-            BlobDir	=> undef,
 		      }, @_) ;
 
     croak("Env not of type BerkeleyDB::Env")
@@ -1156,10 +1118,6 @@ sub new
 			DupCompare	=> undef,
 			Prefix 		=> undef,
 			set_bt_compress	=> undef,
-
-            # Blob
-            BlobThreshold	=> 0,
-            BlobDir	=> undef,
 		      }, @_) ;
 
     croak("Env not of type BerkeleyDB::Env")
@@ -1232,10 +1190,6 @@ sub new
 			# Heap specific
 			HeapSize	=> undef,
 			HeapSizeGb	=> undef,
-
-            # Blob
-            BlobThreshold	=> 0,
-            BlobDir	=> undef,
 		      }, @_) ;
 
     croak("Env not of type BerkeleyDB::Env")
@@ -1945,44 +1899,11 @@ sub c_dup
     return $obj ;
 }
 
-sub c_get_db_stream
-{
-    my $cursor = shift ;
-
-    my $addr = $cursor->_c_get_db_stream(@_);
-    my $obj ;
-    $obj = bless [$addr, $cursor] , "BerkeleyDB::DbStream" if $addr ;
-    return $obj ;
-}
-
-sub db_stream
-{
-    my $db = shift ;
-    my ($addr) = $db->_db_stream(@_) ;
-    my $obj ;
-    $obj = bless [$addr, $db] , "BerkeleyDB::DbStream" if $addr ;
-    return $obj ;
-}
-
-#sub gdbs
-#{
-#    my $cursor = shift ;
-#
-#    my $k = '';
-#    my $v = '';
-#    $db->partial_set(0,0) ;
-#    ok $cursor->c_get($k, $v, DB_FIRST) == 0, "set cursor"
-#        or diag "Status is [" . $cursor->status() . "]";
-#    $db->partial_clear() ;
-#    is $k, "1";
-#}
-
 sub DESTROY
 {
     my $self = shift ;
     $self->_DESTROY() ;
 }
-
 
 package BerkeleyDB::TxnMgr ;
 
@@ -2088,8 +2009,7 @@ sub cds_unlock
         if ($Count{"$db"} == 0)
         {
             $Object{"$db"}->c_close() ;
-            delete $Object{"$db"};
-            delete $Count{"$db"};
+            undef $Object{"$db"};
         }
 
         return 1 ;
@@ -2116,6 +2036,7 @@ package BerkeleyDB ;
 
 
 
+# Autoload methods go after =cut, and are processed by the autosplit program.
 
 1;
 __END__

@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -43,18 +43,16 @@
 int
 DB-&gt;set_partition_dirs(DB *db, const char **dirs);  </pre>
       <p>
-        Specify which directories will contain the database extents.  If
-        the number of directories is less than the number of partitions,
-        the directories will be used in a round robin fashion.
+    	Specify which directories the database extents should be created in or looked for.  If the number
+	of directories is less than the number of partitions, the directories will be used in a round robin
+	fashion.
     </p>
       <p>
-             The <code class="methodname">DB-&gt;set_partition_dirs()</code> method
-             may not be called after the 
+             The <code class="methodname">DB-&gt;set_partition_dirs()</code> method may not be called after the 
              <a class="xref" href="dbopen.html" title="DB-&gt;open()">DB-&gt;open()</a>  method is called.
     </p>
       <p>
-         The <code class="methodname">DB-&gt;set_partition_dirs()</code>
-         <span>
+         The <code class="methodname">DB-&gt;set_partition_dirs()</code> <span>
             <span>
                   method returns a non-zero error value on failure and 0 on success.
             </span>
@@ -65,7 +63,7 @@ DB-&gt;set_partition_dirs(DB *db, const char **dirs);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711188991664"></a>Parameters</h3>
+              <h3 class="title"><a id="idp50516016"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -73,43 +71,40 @@ DB-&gt;set_partition_dirs(DB *db, const char **dirs);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711188734528"></a>dirs</h4>
+                <h4 class="title"><a id="idp50515368"></a>dirs</h4>
               </div>
             </div>
           </div>
           <p>
-                    The <span class="bold"><strong>dirs</strong></span> points to an
-                    array of directories that will be used to create or
-                    locate the database extent files specified to the 
-                    <a class="xref" href="dbopen.html" title="DB-&gt;open()">DB-&gt;open()</a>
-                    method.  The directories must be included in the
-                    environment list specified by 
-                    <a class="xref" href="envadd_data_dir.html" title="DB_ENV-&gt;add_data_dir()">DB_ENV-&gt;add_data_dir()</a>.
-                </p>
+                        The <span class="bold"><strong>dirs</strong></span> points to an array of directories that
+			will be used to create or locate the
+                        database extent files specified in the <a class="xref" href="dbopen.html" title="DB-&gt;open()">DB-&gt;open()</a>
+                        method call.  The directories must be included in the environment
+                        list specified by <a class="xref" href="envadd_data_dir.html" title="DB_ENV-&gt;add_data_dir()">DB_ENV-&gt;add_data_dir()</a>.
+                    </p>
         </div>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711183711504"></a>Errors</h3>
+              <h3 class="title"><a id="idp50495384"></a>Errors</h3>
             </div>
           </div>
         </div>
         <p>
-            The <code class="methodname">DB-&gt;set_partition_dirs()</code>
-            <span>
+                         The <code class="methodname">DB-&gt;set_partition_dirs()</code> <span>
             <span>
                  method may fail and return one of the following non-zero errors:
             </span>
             
         </span>
-        </p>
+                    </p>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711190462160"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp50501184"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -122,25 +117,25 @@ DB-&gt;set_partition_dirs(DB *db, const char **dirs);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711185247056"></a>Class</h3>
+              <h3 class="title"><a id="idp50493368"></a>Class</h3>
             </div>
           </div>
         </div>
         <p>
-            <a class="link" href="db.html" title="Chapter 2.  The DB Handle">DB</a>  
-        </p>
+                 <a class="link" href="db.html" title="Chapter 2.  The DB Handle">DB</a>  
+            </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711185861312"></a>See Also</h3>
+              <h3 class="title"><a id="idp50470168"></a>See Also</h3>
             </div>
           </div>
         </div>
         <p>
-            <a class="xref" href="db.html#dblist" title="Database and Related Methods">Database and Related Methods</a> 
-        </p>
+                     <a class="xref" href="db.html#dblist" title="Database and Related Methods">Database and Related Methods</a> 
+                </p>
       </div>
     </div>
     <div class="navfooter">

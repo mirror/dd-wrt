@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -102,5 +102,4 @@ error_check_good marker_db_close [$marker close] 0
 error_check_good market_env_close [$markerenv close] 0
 error_check_good script_master_close [$masterenv close] 0
 error_check_good script_client_close [$clientenv close] 0
-replclose $testdir/MSGQUEUEDIR
 puts "Repscript completed successfully"

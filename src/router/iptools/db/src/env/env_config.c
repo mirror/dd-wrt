@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -39,9 +39,7 @@ typedef enum {
 	CFG_UINT,	/* The argument is 1 unsigned integer. */
 	CFG_2INT,	/* The arguments are 2 signed integers. */
 	CFG_2UINT,	/* The arguments are 2 unsigned integers. */
-	CFG_DIR,	/* The rest of the line is a directory. Slice */
-			/* handling does extra checks for directories. */
-	CFG_STRING	/* The rest of the line is an unquoted string. */
+	CFG_STRING	/* The rest of the line is a string. */
 } __db_config_type;
 
 typedef struct __db_config_desc {
@@ -74,11 +72,10 @@ typedef int (*CFG_FUNC_2UINT) __P((DB_ENV *, u_int32_t, u_int32_t));
  *	set_tas_spins		mutex_set_tas_spins
  */
 static const CFG_DESC config_descs[] = {
-    { "add_data_dir",		CFG_DIR,	__env_add_data_dir	},
-    { "db_data_dir",		CFG_DIR,	__env_set_data_dir	},
-    { "db_log_dir",		CFG_DIR,	__log_set_lg_dir	},
-    { "db_tmp_dir",		CFG_DIR,	__env_set_tmp_dir	},
-    { "home",			CFG_DIR,	__env_set_home_dir	},
+    { "add_data_dir",		CFG_STRING,	__env_add_data_dir	},
+    { "db_data_dir",		CFG_STRING,	__env_set_data_dir	},
+    { "db_log_dir",		CFG_STRING,	__log_set_lg_dir	},
+    { "db_tmp_dir",		CFG_STRING,	__env_set_tmp_dir	},
     { "mutex_set_align",	CFG_UINT,	__mutex_set_align	},
     { "mutex_set_increment",	CFG_UINT,	__mutex_set_increment	},
     { "mutex_set_init",		CFG_UINT,	__mutex_set_init	},
@@ -87,19 +84,15 @@ static const CFG_DESC config_descs[] = {
     { "rep_set_clockskew",	CFG_2UINT,	__rep_set_clockskew	},
     { "rep_set_limit",		CFG_2UINT,	__rep_set_limit		},
     { "rep_set_nsites",		CFG_UINT,	__rep_set_nsites_pp	},
-    { "rep_set_priority",	CFG_UINT,	__rep_set_priority_pp	},
+    { "rep_set_priority",	CFG_UINT,	__rep_set_priority	},
     { "rep_set_request",	CFG_2UINT,	__rep_set_request	},
-    { "set_blob_dir",		CFG_DIR,	__env_set_blob_dir	},
-    { "set_blob_threshold",	CFG_2UINT,	__env_set_blob_threshold },
     { "set_cache_max",		CFG_2UINT,	__memp_set_cache_max	},
-    { "set_create_dir",		CFG_DIR,	__env_set_create_dir	},
-    { "set_data_dir",		CFG_DIR,	__env_set_data_dir	},
+    { "set_create_dir",		CFG_STRING,	__env_set_create_dir	},
+    { "set_data_dir",		CFG_STRING,	__env_set_data_dir	},
     { "set_data_len",		CFG_UINT,	__env_set_data_len	},
-    { "set_ext_file_dir",	CFG_DIR,	__env_set_blob_dir	},
-    { "set_ext_file_threshold",	CFG_2UINT,	__env_set_blob_threshold },
     { "set_intermediate_dir_mode",CFG_STRING, __env_set_intermediate_dir_mode },
     { "set_lg_bsize",		CFG_UINT,	__log_set_lg_bsize	},
-    { "set_lg_dir",		CFG_DIR,	__log_set_lg_dir	},
+    { "set_lg_dir",		CFG_STRING,	__log_set_lg_dir	},
     { "set_lg_filemode",	CFG_INT,	__log_set_lg_filemode	},
     { "set_lg_max",		CFG_UINT,	__log_set_lg_max	},
     { "set_lg_regionmax",	CFG_UINT,	__log_set_lg_regionmax	},
@@ -109,18 +102,16 @@ static const CFG_DESC config_descs[] = {
     { "set_lk_partitions",	CFG_UINT,	__lock_set_lk_partitions },
     { "set_lk_tablesize",	CFG_UINT,	__lock_set_lk_tablesize },
     { "set_memory_max",		CFG_2UINT,	__env_set_memory_max	},
-    { "set_metadata_dir",	CFG_DIR,	__env_set_metadata_dir	},
+    { "set_metadata_dir",	CFG_STRING,	__env_set_metadata_dir	},
     { "set_mp_max_openfd",	CFG_INT,	__memp_set_mp_max_openfd },
     { "set_mp_max_write",	CFG_2INT,	__memp_set_mp_max_write },
     { "set_mp_mmapsize",	CFG_UINT,	__memp_set_mp_mmapsize	},
     { "set_mp_mtxcount",	CFG_UINT,	__memp_set_mp_mtxcount	},
     { "set_mp_pagesize",	CFG_UINT,	__memp_set_mp_pagesize	},
-    { "set_region_dir",		CFG_DIR,	__memp_set_reg_dir	},
     { "set_shm_key",		CFG_LONG,	__env_set_shm_key	},
-    { "set_slice_count",	CFG_LONG,	__env_set_slice_count	},
     { "set_tas_spins",		CFG_UINT,	__mutex_set_tas_spins	},
     { "set_thread_count",	CFG_UINT,	__env_set_thread_count },
-    { "set_tmp_dir",		CFG_DIR,	__env_set_tmp_dir	},
+    { "set_tmp_dir",		CFG_STRING,	__env_set_tmp_dir	},
     { "set_tx_max",		CFG_UINT,	__txn_set_tx_max	}
 };
 
@@ -142,18 +133,11 @@ static const FN config_rep_config[] = {
 	{ DB_REP_CONF_AUTOROLLBACK,	"db_rep_conf_autorollback" },
 	{ DB_REP_CONF_BULK,		"db_rep_conf_bulk" },
 	{ DB_REP_CONF_DELAYCLIENT,	"db_rep_conf_delayclient" },
-	{ DB_REP_CONF_ELECT_LOGLENGTH,	"db_rep_conf_elect_loglength" },
 	{ DB_REP_CONF_INMEM,		"db_rep_conf_inmem" },
 	{ DB_REP_CONF_LEASE,		"db_rep_conf_lease" },
 	{ DB_REP_CONF_NOWAIT,		"db_rep_conf_nowait" },
 	{ DB_REPMGR_CONF_2SITE_STRICT,	"db_repmgr_conf_2site_strict" },
 	{ DB_REPMGR_CONF_ELECTIONS,	"db_repmgr_conf_elections" },
-	{ DB_REPMGR_CONF_FORWARD_WRITES,
-		"db_repmgr_conf_forward_writes" },
-	{ DB_REPMGR_CONF_PREFMAS_CLIENT,
-		"db_repmgr_conf_prefmas_client" },
-	{ DB_REPMGR_CONF_PREFMAS_MASTER,
-		"db_repmgr_conf_prefmas_master" },
 	{ 0, NULL }
 };
 
@@ -167,7 +151,6 @@ static const FN config_rep_timeout[] = {
 	{ DB_REP_HEARTBEAT_MONITOR,	"db_rep_heartbeat_monitor" },
 	{ DB_REP_HEARTBEAT_SEND,	"db_rep_heartbeat_send" },
 	{ DB_REP_LEASE_TIMEOUT,		"db_rep_lease_timeout" },
-	{ DB_REP_WRITE_FORWARD_TIMEOUT,	"db_rep_write_forward_timeout" },
 	{ 0, NULL }
 };
 
@@ -215,10 +198,7 @@ static const FN config_set_flags_forlog[] = {
 	{ DB_LOG_DIRECT,	"db_direct_log" },
 	{ DB_LOG_DSYNC,		"db_dsync_log" },
 	{ DB_LOG_AUTO_REMOVE,	"db_log_autoremove" },
-	{ DB_LOG_BLOB,		"db_log_blob" },
-	{ DB_LOG_EXT_FILE,	"db_log_ext_file" },
 	{ DB_LOG_IN_MEMORY,	"db_log_inmemory" },
-	{ DB_LOG_NOSYNC,	"db_log_nosync" },
 	{ 0, NULL }
 };
 
@@ -226,10 +206,7 @@ static const FN config_log_set_config[] = {
 	{ DB_LOG_DIRECT,	"db_log_direct" },
 	{ DB_LOG_DSYNC,		"db_log_dsync" },
 	{ DB_LOG_AUTO_REMOVE,	"db_log_auto_remove" },
-	{ DB_LOG_BLOB,		"db_log_blob" },
-	{ DB_LOG_EXT_FILE,	"db_log_ext_file" },
 	{ DB_LOG_IN_MEMORY,	"db_log_in_memory" },
-	{ DB_LOG_NOSYNC,	"db_log_nosync" },
 	{ DB_LOG_ZERO,		"db_log_zero" },
 	{ 0, NULL }
 };
@@ -260,7 +237,6 @@ static const FN config_set_verbose[] = {
 	{ DB_VERB_DEADLOCK,	"db_verb_deadlock" },
 	{ DB_VERB_FILEOPS,	"db_verb_fileops" },
 	{ DB_VERB_FILEOPS_ALL,	"db_verb_fileops_all" },
-	{ DB_VERB_MVCC,		"db_verb_mvcc" },
 	{ DB_VERB_RECOVERY,	"db_verb_recovery" },
 	{ DB_VERB_REGISTER,	"db_verb_register" },
 	{ DB_VERB_REPLICATION,	"db_verb_replication" },
@@ -273,16 +249,12 @@ static const FN config_set_verbose[] = {
 	{ DB_VERB_REP_TEST,	"db_verb_rep_test" },
 	{ DB_VERB_REPMGR_CONNFAIL,	"db_verb_repmgr_connfail" },
 	{ DB_VERB_REPMGR_MISC,	"db_verb_repmgr_misc" },
-	{ DB_VERB_SLICE,	"db_verb_slice" },
 	{ DB_VERB_WAITSFOR,	"db_verb_waitsfor" },
 	{ 0, NULL}
 };
 
-static int __config_format_err __P((ENV *, int, char *));
 static int __config_parse __P((ENV *, char *, int));
 static int __config_scan __P((char *, char **, const CFG_DESC **));
-static int __config_set_param
-    __P((DB_ENV *, const CFG_DESC *, int, char **, int));
 static int cmp_cfg_name __P((const void *, const void *element));
 
 /*
@@ -364,21 +336,9 @@ __env_read_db_config(env)
 #undef	CFG_SLOTS
 #define	CFG_SLOTS	10
 
-static int
-__config_format_err(env, lc, str)
-	ENV *env;
-	int lc;
-	char *str;
-{
-	__db_errx(env, DB_STR_A("1601",
-	    "DB_CONFIG line %d: %s: incorrect name-value pair",
-	    "%d %s"), lc, str);
-	return (EINVAL);
-}
-
 /*
  * __config_parse --
- *	Parse and process a single line NAME VALUE pair.
+ *	Parse a single NAME VALUE pair.
  */
 static int
 __config_parse(env, s, lc)
@@ -386,11 +346,16 @@ __config_parse(env, s, lc)
 	char *s;
 	int lc;
 {
-	const CFG_DESC *desc;
 	DB_ENV *dbenv;
+	DB_SITE *site;
+	u_long uv1, uv2;
+	long lv1, lv2;
+	u_int port;
+	int i, nf, onoff, bad, ret, t_ret;
 	char *argv[CFG_SLOTS];
-	int nf, ret;
+	const CFG_DESC *desc;
 
+	bad = 0;
 	dbenv = env->dbenv;
 
 	/*
@@ -398,38 +363,13 @@ __config_parse(env, s, lc)
 	 * the number of fields. If the command is one of the "simple" ones in
 	 * config_descs, also return its command descriptor.
 	 */
-	if ((nf = __config_scan(s, argv, &desc)) < 2)
-		return (__config_format_err(env, lc, argv[0]));
+	if ((nf = __config_scan(s, argv, &desc)) < 2) {
+format:		__db_errx(env, DB_STR_A("1584",
+		    "line %d: %s: incorrect name-value pair", "%d %s"),
+			    lc, argv[0]);
+		return (EINVAL);
+	}
 
-	ret = __config_set_param(dbenv, desc, nf, argv, lc);
-
-	return (ret);
-}
-
-/*
- * __config_set_param --
- *	Apply a parsed DB_CONFIG parameter to a DB_ENV.
- */
-static int
-__config_set_param(dbenv, desc, nf, argv, lc)
-	DB_ENV *dbenv;
-	const CFG_DESC *desc;
-	int nf;
-	char **argv;
-	int lc;
-{
-#ifdef HAVE_SLICES
-	DB_ENV *slice;
-#endif
-	DB_SITE *site;
-	ENV *env;
-	u_long uv1, uv2;
-	long lv1, lv2;
-	u_int port;
-	int i, onoff, bad, ret, t_ret;
-
-	bad = 0;
-	env = dbenv->env;
 	/* Handle simple configuration lines here. */
 	if (desc != NULL) {
 		ret = 0;
@@ -475,7 +415,6 @@ __config_set_param(dbenv, desc, nf, argv, lc)
 			break;
 
 		  case CFG_STRING:	/* <command> <rest of line as string> */
-		  case CFG_DIR:		/* (a directory or rwxrwxrwx mode) */
 			ret = ((CFG_FUNC_STRING) desc->func)(dbenv, argv[1]);
 			break;
 		}
@@ -523,7 +462,7 @@ __config_set_param(dbenv, desc, nf, argv, lc)
 		if ((lv1 = __db_name_to_val(config_rep_timeout, argv[1])) == -1)
 			goto format;
 		CFG_GET_UINT32(argv[2], &uv2);
-		return (__rep_set_timeout_pp(dbenv, lv1, (db_timeout_t)uv2));
+		return (__rep_set_timeout(dbenv, lv1, (db_timeout_t)uv2));
 	}
 
 	/* repmgr_set_ack_policy db_repmgr_acks_XXX */
@@ -536,20 +475,11 @@ __config_set_param(dbenv, desc, nf, argv, lc)
 		return (__repmgr_set_ack_policy(dbenv, lv1));
 	}
 
-	if (strcasecmp(argv[0], "repmgr_set_incoming_queue_max") == 0) {
-		if (nf != 3)
-			goto format;
-		CFG_GET_UINT32(argv[1], &uv1);
-		CFG_GET_UINT32(argv[2], &uv2);
-		return (__repmgr_set_incoming_queue_max(
-		    dbenv, (u_int32_t)uv1, (u_int32_t)uv2));
-	}
-
 	/*
 	 * Configure name/value pairs of config information for a site (local or
 	 * remote).
 	 *
-	 * repmgr_site host port [which value(on | off | unsigned)] ...
+	 * repmgr_site host port [which value(on | off | unsigned)}] ...
 	 */
 	if (strcasecmp(argv[0], "repmgr_site") == 0) {
 		if (nf < 3 || (nf % 2) == 0)
@@ -573,7 +503,7 @@ __config_set_param(dbenv, desc, nf, argv, lc)
 				uv2 = 0;
 			else
 				CFG_GET_UINT32(argv[i + 1], &uv2);
-			if ((ret = __repmgr_site_config_int(site,
+			if ((ret = __repmgr_site_config(site,
 			    (u_int32_t)lv1, (u_int32_t)uv2)) != 0)
 				break;
 		}
@@ -700,15 +630,6 @@ __config_set_param(dbenv, desc, nf, argv, lc)
 		    dbenv, DB_REGION_INIT, lv1 == 0 ? 0 : 1));
 	}
 
-	/* set_mutex_failchk_timeout <unsigned timeout> */
-	if (strcasecmp(argv[0], "set_mutex_failchk_timeout") == 0) {
-		if (nf != 2)
-			goto format;
-		CFG_GET_UINT32(argv[1], &uv1);
-		return (__env_set_timeout(
-		    dbenv, (u_int32_t)uv1, DB_SET_MUTEX_FAILCHK_TIMEOUT));
-	}
-
 	/* set_reg_timeout <unsigned timeout> */
 	if (strcasecmp(argv[0], "set_reg_timeout") == 0) {
 		if (nf != 2)
@@ -743,64 +664,9 @@ __config_set_param(dbenv, desc, nf, argv, lc)
 		return (__env_set_verbose(dbenv, (u_int32_t)lv1, onoff));
 	}
 
-#ifdef HAVE_SLICES
-	/* slice <slice-specifier#> <normal DB_CONFIG parameter line...> */
-	if (strcasecmp(argv[0], "slice") == 0) {
-		/* Don't permit "recursion": slice <n1> slice <n2> ..." */
-		if (strcasecmp(argv[2], "slice") == 0)
-			return (__config_format_err(env, lc, argv[2]));
-
-		/* "Decode" the rest of this slice-related command. */
-		desc = bsearch(argv[2], config_descs,
-		    sizeof(config_descs) / sizeof(config_descs[0]),
-		    sizeof(config_descs[0]), cmp_cfg_name);
-
-		if (strcasecmp(argv[1], "all") == 0) {
-			/*
-			 * Directories for "slice all" commands must not be full
-			 * paths; the slices would conflict. For the same
-			 * reason, "slice all home" is not permitted, even it is
-			 * is a relative path.
-			 */
-			if (desc != NULL && desc->type == CFG_DIR &&
-			    (desc->func == __env_set_home_dir ||
-			     __db_rpath(argv[3]) != NULL)) {
-				ret = USR_ERR(env, EINVAL);
-				if (desc->func == __env_set_home_dir)
-					__db_errx(env, DB_STR("1602",
-				    "\"slice all home\" is not permitted"));
-				else
-					__db_errx(env, DB_STR("1603",
-		"\"slice all\" configurations may not include absolute paths"));
-				return (__config_format_err(env, lc, argv[2]));
-			}
-			i = -1;
-			while ((slice = __slice_iterate(dbenv, &i)) != NULL) {
-				if ((ret = __config_set_param(slice,
-				    desc, nf - 2, argv + 2, lc)) != 0)
-					return (ret);
-			}
-			return (0);
-		}
-		CFG_GET_UINT(argv[1], &uv1);
-		if (uv1 >= dbenv->slice_cnt) {
-			ret = USR_ERR(env, EINVAL);
-			__db_errx(env, "Slice numbers may range from 0 to %d",
-				dbenv->slice_cnt);
-			return (__config_format_err(env, lc, argv[0]));
-		}
-		slice = env->slice_envs[uv1];
-		return (__config_set_param(slice, desc, nf - 2, argv + 2, lc));
-	}
-#endif
-
 	__db_errx(env,
-	    DB_STR_A("1585",
-	    "unrecognized name-value pair: %s", "%s"), argv[0]);
+	    DB_STR_A("1585", "unrecognized name-value pair: %s", "%s"), s);
 	return (EINVAL);
-
-format:
-	return (__config_format_err(env, lc, argv[0]));
 }
 
 /* cmp_cfg_name --
@@ -818,7 +684,7 @@ cmp_cfg_name(sought, element)
 
 /*
  * __config_scan --
- *      Split a DB_CONFIG line into fields. Usually each whitespace separated
+ *      Split DB_CONFIG lines into fields. Usually each whitespace separated
  *	field is scanned as a distinct argument. However, if the command is
  *	recognized as one needing a single string value, then the rest of the
  *	line is returned as the one argument. That supports strings which
@@ -855,8 +721,7 @@ __config_scan(input, argv, descptr)
 			*descptr = bsearch(argv[0], config_descs,
 			    tablecount, sizeof(config_descs[0]), cmp_cfg_name);
 			if (*descptr != NULL &&
-			    ((*descptr)->type == CFG_DIR ||
-			     (*descptr)->type == CFG_STRING)) {
+			    (*descptr)->type == CFG_STRING) {
 				count++;
 				while (isspace(*input))
 					input++;

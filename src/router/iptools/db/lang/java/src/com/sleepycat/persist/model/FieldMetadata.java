@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -28,11 +28,6 @@ public class FieldMetadata implements Serializable {
 
     /**
      * Used by an {@code EntityModel} to construct field metadata.
-     *
-     * @param name the field name.
-     * @param className the class name.
-     * @param declaringClassName the name of the class where the field is
-     * declared.
      */
     public FieldMetadata(String name,
                          String className,
@@ -44,8 +39,6 @@ public class FieldMetadata implements Serializable {
 
     /**
      * Returns the field name.
-     *
-     * @return the field name.
      */
     public String getName() {
         return name;
@@ -53,8 +46,6 @@ public class FieldMetadata implements Serializable {
 
     /**
      * Returns the class name of the field type.
-     *
-     * @return the class name.
      */
     public String getClassName() {
         return className;
@@ -62,8 +53,6 @@ public class FieldMetadata implements Serializable {
 
     /**
      * Returns the name of the class where the field is declared.
-     *
-     * @return the name of the class where the field is declared.
      */
     public String getDeclaringClassName() {
         return declaringClassName;

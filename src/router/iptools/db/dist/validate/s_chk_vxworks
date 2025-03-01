@@ -69,7 +69,7 @@ done
 echo "int"
 echo "main(int argc, char *argv[])"
 echo "{"
-echo "int r=0;"
+echo "int r;"
 for i in $SYMBOL_LIST; do
 	echo "r += ${i}_main(argc, argv);"
 done

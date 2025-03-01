@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -116,12 +116,12 @@ import com.sleepycat.persist.evolve.Mutations;
  * <p>Simple types include:</p>
  * <ul>
  * <li>Java primitive types: {@code boolean, char, byte, short, int, long,
- * float, double}</li>
- * <li>The wrapper classes for Java primitive types</li>
- * <li>{@link java.math.BigDecimal}</li>
- * <li>{@link java.math.BigInteger}</li>
- * <li>{@link java.lang.String}</li>
- * <li>{@link java.util.Date}</li>
+ * float, double}</p>
+ * <li>The wrapper classes for Java primitive types</p>
+ * <li>{@link java.math.BigDecimal}</p>
+ * <li>{@link java.math.BigInteger}</p>
+ * <li>{@link java.lang.String}</p>
+ * <li>{@link java.util.Date}</p>
  * </ul>
  *
  * <p>When null values are required (for optional key fields, for example),
@@ -249,8 +249,6 @@ public @interface Entity {
      * number must be assigned using {@link #version} that is higher than the
      * previous version number for the class.  If this is not done, an {@link
      * IncompatibleClassException} will be thrown when the store is opened.</p>
-     *
-     * @return the version.
      */
     int version() default 0;
 }

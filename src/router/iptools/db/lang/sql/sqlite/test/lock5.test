@@ -24,7 +24,7 @@ if {[catch {sqlite3 db test.db -vfs unix-none} msg]} {
   return
 }
 db close
-forcedelete test.db.lock
+file delete -force test.db.lock
 
 ifcapable lock_proxy_pragmas {
   set ::using_proxy 0
@@ -100,7 +100,7 @@ do_test lock5-dotfile.X {
 
 #####################################################################
 
-forcedelete test.db
+file delete -force test.db
 if {[catch {sqlite3 db test.db -vfs unix-flock} msg]} {
   finish_test
   return
@@ -154,7 +154,6 @@ do_test lock5-flock.8 {
 do_test lock5-none.1 {
   sqlite3 db test.db -vfs unix-none
   sqlite3 db2 test.db -vfs unix-none
-  execsql { PRAGMA mmap_size = 0 } db2
   execsql {
     BEGIN;
     INSERT INTO t1 VALUES(3, 4);
@@ -163,8 +162,8 @@ do_test lock5-none.1 {
 do_test lock5-none.2 {
   execsql { SELECT * FROM t1 }
 } {1 2 3 4}
-do_test lock5-none.3 {
-  execsql { SELECT * FROM t1; } db2
+do_test lock5-flock.3 {
+  execsql { SELECT * FROM t1 } db2
 } {1 2}
 do_test lock5-none.4 {
   execsql { 
@@ -184,7 +183,7 @@ ifcapable memorymanage {
   } {1 2 3 4}
 }
 
-do_test lock5-none.X {
+do_test lock5-flock.X {
   db close
   db2 close
 } {}

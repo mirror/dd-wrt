@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -60,14 +60,14 @@ DbEnv::repmgr_start(int nthreads, u_int32_t flags);</pre>
             <p>
                 Use <a class="xref" href="repmgr_site.html" title="DbEnv::repmgr_site()">DbEnv::repmgr_site()</a>
                 to obtain a DbSite handle, then use that handle to
-                configure the sites in the replication group.
+                configure the sites in your replication group.
             </p>
             <div class="orderedlist">
               <ol type="a">
                 <li>
                   <p>
                         Use <a class="xref" href="dbsite_set_config.html" title="DbSite::set_config()">DbSite::set_config()</a>
-                        to configure sites in the replication group.
+                        to configure sites in your replication group.
                     </p>
                 </li>
                 <li>
@@ -120,20 +120,17 @@ DbEnv::repmgr_start(int nthreads, u_int32_t flags);</pre>
         incoming connections, and starting all necessary background threads. When multiple processes
         share a database environment, only one process can open the listening socket; the
         <code class="methodname">DbEnv::repmgr_start()</code> method automatically opens the socket in the
-        first process to call it, and skips this step in the later calls from
-        other subordinate processes.
+        first process to call it, and skips this step in the later calls from other processes.
     </p>
       <p>
          The <code class="methodname">DbEnv::repmgr_start()</code> method 
          may not be called before the <a class="xref" href="envopen.html" title="DbEnv::open()">DbEnv::open()</a>  method is 
-         called to open the environment. In addition, this method may not be called before
-         at least one replication site has been configured using the 
+         called to open. In addition, this method may not be called before
+         your replication sites have been configured using the 
          <a class="link" href="db_site.html" title="The DbSite Handle">DbSite</a> class.
          In addition, the local environment must be opened with the 
         <a class="link" href="envopen.html#envopen_DB_THREAD">DB_THREAD</a>
-        flag set.  If you are starting a view, you must call the
-        <a class="xref" href="repset_view.html" title="DbEnv::rep_set_view()">DbEnv::rep_set_view()</a>
-        method before opening the local environment.
+        flag set.
     </p>
       <p>
          The <code class="methodname">DbEnv::repmgr_start()</code> method will return 
@@ -154,7 +151,7 @@ DbEnv::repmgr_start(int nthreads, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670055640192"></a>Parameters</h3>
+              <h3 class="title"><a id="idp9960648"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -162,7 +159,7 @@ DbEnv::repmgr_start(int nthreads, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670055638944"></a>nthreads</h4>
+                <h4 class="title"><a id="idp9967928"></a>nthreads</h4>
               </div>
             </div>
           </div>
@@ -180,7 +177,7 @@ DbEnv::repmgr_start(int nthreads, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670055747408"></a>flags</h4>
+                <h4 class="title"><a id="idp9960328"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -207,8 +204,7 @@ DbEnv::repmgr_start(int nthreads, u_int32_t flags);</pre>
                   <code class="literal">DB_REP_CLIENT</code>
             </p>
                 <p>
-                 Start as a client, view, or preferred master site, and do not
-                 call for an election.
+                 Start as a client site, and do not call for an election.
             </p>
               </li>
               <li>
@@ -225,8 +221,7 @@ DbEnv::repmgr_start(int nthreads, u_int32_t flags);</pre>
                           If the Replication Manager is already started, a
                           <span class="bold"><strong>flags</strong></span> value of 0 can
                           be used when making a subsequent call to change the
-                          value of <span class="bold"><strong>nthreads</strong></span>
-                          or when starting a subordinate process.
+                          value of <span class="bold"><strong>nthreads</strong></span>.
                      </p>
         </div>
       </div>
@@ -234,7 +229,7 @@ DbEnv::repmgr_start(int nthreads, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670055626848"></a>Errors</h3>
+              <h3 class="title"><a id="idp9964456"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -252,14 +247,14 @@ DbEnv::repmgr_start(int nthreads, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670055597376"></a>DB_REP_UNAVAIL</h4>
+                <h4 class="title"><a id="idp9970848"></a>DB_REP_UNAVAIL</h4>
               </div>
             </div>
           </div>
           <p>
                 The local site tried to join the group, but was unable to do
                 so for some reason (because a master site is not available,
-                or because insufficient clients are running to acknowledge
+                or because insufficient replicas are running to acknowledge
                 the new site).  When that happens the application should
                 pause and retry adding the site until it completes
                 successfully. 
@@ -269,7 +264,7 @@ DbEnv::repmgr_start(int nthreads, u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670055594192"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp9982928"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -277,11 +272,8 @@ DbEnv::repmgr_start(int nthreads, u_int32_t flags);</pre>
                 If the database environment was not already opened or was
                 opened without the <code class="literal">DB_THREAD</code> flag set; a local
                 site has not already been configured, this method is called
-                from a Base API application; a view is being started without
-                having called the 
-                <a class="xref" href="repset_view.html" title="DbEnv::rep_set_view()">DbEnv::rep_set_view()</a>
-                method before opening the database environment; or if an
-                invalid flag value or parameter was specified.
+                from a Base API application; or if an invalid
+                flag value or parameter was specified.
             </p>
         </div>
       </div>
@@ -289,7 +281,7 @@ DbEnv::repmgr_start(int nthreads, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670055613008"></a>Class</h3>
+              <h3 class="title"><a id="idp9975408"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -301,7 +293,7 @@ DbEnv::repmgr_start(int nthreads, u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670055641888"></a>See Also</h3>
+              <h3 class="title"><a id="idp9978144"></a>See Also</h3>
             </div>
           </div>
         </div>

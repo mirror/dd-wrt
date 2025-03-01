@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -130,7 +130,7 @@ __rep_elect_pp(dbenv, nsites, nvotes, flags)
 }
 
 int
-__rep_flush_pp(dbenv)
+__rep_flush(dbenv)
 	DB_ENV *dbenv;
 {
 	return (__db_norep(dbenv->env));
@@ -201,7 +201,7 @@ __rep_get_nsites(dbenv, n)
 }
 
 int
-__rep_set_priority_pp(dbenv, priority)
+__rep_set_priority(dbenv, priority)
 	DB_ENV *dbenv;
 	u_int32_t priority;
 {
@@ -219,7 +219,7 @@ __rep_get_priority(dbenv, priority)
 }
 
 int
-__rep_set_timeout_pp(dbenv, which, timeout)
+__rep_set_timeout(dbenv, which, timeout)
 	DB_ENV *dbenv;
 	int which;
 	db_timeout_t timeout;
@@ -338,16 +338,6 @@ __rep_set_transport_pp(dbenv, eid, f_send)
 {
 	COMPQUIET(eid, 0);
 	COMPQUIET(f_send, NULL);
-	return (__db_norep(dbenv->env));
-}
-
-int
-__rep_set_view(dbenv, f_partial)
-	DB_ENV *dbenv;
-	int (*f_partial) __P((DB_ENV *,
-	    const char *, int *, u_int32_t));
-{
-	COMPQUIET(f_partial, NULL);
 	return (__db_norep(dbenv->env));
 }
 

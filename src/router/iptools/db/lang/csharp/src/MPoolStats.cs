@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -19,7 +19,7 @@ namespace BerkeleyDB {
 
         internal MPoolStats(Internal.MempStatStruct stats) {
             st = stats.st;
-            ci = new CacheInfo(st.st_gbytes, st.st_bytes, (int)st.st_ncache);
+            ci = new CacheInfo(st.st_gbytes, st.st_bytes, (int)st.st_max_ncache);
             mempfiles = new List<MPoolFileStats>();
             foreach (Internal.MPoolFileStatStruct file in stats.files)
                 mempfiles.Add(new MPoolFileStats(file));
@@ -31,13 +31,13 @@ namespace BerkeleyDB {
         /// <summary>
         /// Maximum number of regions. 
         /// </summary>
-        public uint MaxCacheRegions { get { return st.st_max_ncache; } }
+        public uint CacheRegions { get { return st.st_ncache; } }
         /// <summary>
         /// Maximum file size for mmap. 
         /// </summary>
         public ulong MaxMMapSize { get { return (ulong)st.st_mmapsize.ToInt64(); } }
         /// <summary>
-        /// Maximum number of open file descriptors. 
+        /// Maximum number of open fd's. 
         /// </summary>
         public int MaxOpenFileDescriptors { get { return st.st_maxopenfd; } }
         /// <summary>
@@ -157,10 +157,6 @@ namespace BerkeleyDB {
         /// </summary>
         public ulong FrozenBuffersFreed { get { return st.st_mvcc_freed; } }
         /// <summary>
-        /// Outdated invisible buffers reused.
-        /// </summary>
-        public ulong OutdatedInvisibleBuffersReused { get { return st.st_mvcc_reused; } }
-        /// <summary>
         /// Number of page allocations. 
         /// </summary>
         public ulong PageAllocations { get { return st.st_alloc; } }
@@ -169,7 +165,7 @@ namespace BerkeleyDB {
         /// </summary>
         public ulong BucketsCheckedDuringAlloc { get { return st.st_alloc_buckets; } }
         /// <summary>
-        /// Max buckets checked during allocation. 
+        /// Max checked during allocation. 
         /// </summary>
         public ulong MaxBucketsCheckedDuringAlloc { get { return st.st_alloc_max_buckets; } }
         /// <summary>
@@ -177,7 +173,7 @@ namespace BerkeleyDB {
         /// </summary>
         public ulong PagesCheckedDuringAlloc { get { return st.st_alloc_pages; } }
         /// <summary>
-        /// Max pages checked during allocation. 
+        /// Max checked during allocation. 
         /// </summary>
         public ulong MaxPagesCheckedDuringAlloc { get { return st.st_alloc_max_pages; } }
         /// <summary>
@@ -188,14 +184,6 @@ namespace BerkeleyDB {
         /// Number of times sync interrupted.
         /// </summary>
         public ulong SyncInterrupted { get { return st.st_sync_interrupted; } }
-        /// <summary>
-        /// Odd file size detected.
-        /// </summary>
-        public uint OddFileSizeDetected { get { return st.st_oddfsize_detect; } }
-        /// <summary>
-        /// Odd file size resolved.
-        /// </summary>
-        public uint OddFileSizeResolve { get { return st.st_oddfsize_resolve; } }
         /// <summary>
         /// Region size. 
         /// </summary>

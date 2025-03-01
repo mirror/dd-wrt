@@ -7,14 +7,14 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="env.html" title="Chapter 10.  The Berkeley DB Environment" />
+    <link rel="up" href="env.html" title="Chapter 9.  The Berkeley DB Environment" />
     <link rel="prev" href="env_open.html" title="Opening databases within the environment" />
     <link rel="next" href="env_db_config.html" title="DB_CONFIG configuration file" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,7 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="env_open.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 10.  The Berkeley DB Environment </th>
+          <th width="60%" align="center">Chapter 9. 
+		The Berkeley DB Environment
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="env_db_config.html">Next</a></td>
         </tr>
       </table>
@@ -36,17 +38,12 @@
           </div>
         </div>
       </div>
-      <p>
-        Berkeley DB offers programmatic support for displaying error
-        return values. The <a href="../api_reference/C/envstrerror.html" class="olink">db_strerror()</a> function returns a pointer to
-        the error message corresponding to any Berkeley DB error
-        return. This is similar to the ANSI C strerror interface, but
-        can handle both system error returns and Berkeley DB-specific
-        return values.
-    </p>
-      <p>
-        For example:
-    </p>
+      <p>Berkeley DB offers programmatic support for displaying error return values.
+The <a href="../api_reference/C/envstrerror.html" class="olink">db_strerror()</a> function returns a pointer to the error
+message corresponding to any Berkeley DB error return.  This is similar to the
+ANSI C strerror interface, but can handle both system error returns and
+Berkeley DB-specific return values.</p>
+      <p>For example:</p>
       <a id="prog_env29"></a>
       <pre class="programlisting">int ret;
 if ((ret = dbenv-&gt;set_cachesize(dbenv, 0, 32 * 1024, 1)) != 0) {
@@ -54,28 +51,15 @@ if ((ret = dbenv-&gt;set_cachesize(dbenv, 0, 32 * 1024, 1)) != 0) {
     return (1);
 }
 </pre>
-      <p>
-        There are also two additional error methods: <a href="../api_reference/C/enverr.html" class="olink">DB_ENV-&gt;err()</a> and
-        <code class="methodname">DB_ENV-&gt;errx()</code>. These methods
-        work like the ANSI C printf function, taking a printf-style
-        format string and argument list, and writing a message
-        constructed from the format string and arguments.
-    </p>
-      <p>
-        The <a href="../api_reference/C/enverr.html" class="olink">DB_ENV-&gt;err()</a> function appends the standard error string to
-        the constructed message; the
-        <code class="methodname">DB_ENV-&gt;errx()</code> function does
-        not.
-    </p>
-      <p>
-        Error messages can be configured always to include a prefix
-        (for example, the program name) using the <a href="../api_reference/C/envset_errpfx.html" class="olink">DB_ENV-&gt;set_errpfx()</a>
-        method.
-    </p>
-      <p>
-        These functions provide simpler ways of displaying Berkeley
-        DB error messages:
-    </p>
+      <p>There are also two additional error methods: <a href="../api_reference/C/enverr.html" class="olink">DB_ENV-&gt;err()</a> and
+<code class="methodname">DB_ENV-&gt;errx()</code>.  These methods work like the ANSI C printf function,
+taking a printf-style format string and argument list, and writing a
+message constructed from the format string and arguments.</p>
+      <p>The <a href="../api_reference/C/enverr.html" class="olink">DB_ENV-&gt;err()</a> function appends the standard error string to the
+constructed message; the <code class="methodname">DB_ENV-&gt;errx()</code> function does not.</p>
+      <p>Error messages can be configured always to include a prefix (for
+example, the program name) using the <a href="../api_reference/C/envset_errpfx.html" class="olink">DB_ENV-&gt;set_errpfx()</a> method.</p>
+      <p>These functions provide simpler ways of displaying Berkeley DB error messages:</p>
       <a id="prog_env30"></a>
       <pre class="programlisting">int ret;
 ...
@@ -89,12 +73,9 @@ if ((ret = dbenv-&gt;open(dbenv, home,
         session_id);
     return (1);
 }</pre>
-      <p>
-        For example, if the program was called "my_app", and it
-        tried to open an environment home directory in "/tmp/home" and
-        the open call returned a permission error, the error messages
-        shown would look like this:
-    </p>
+      <p>For example, if the program was called "my_app", and it tried to open
+an environment home directory in "/tmp/home" and the open call returned
+a permission error, the error messages shown would look like this:</p>
       <pre class="programlisting">my_app: open: /tmp/home: Permission denied.
 my_app: contact your system administrator: session ID was 2</pre>
     </div>
@@ -109,13 +90,11 @@ my_app: contact your system administrator: session ID was 2</pre>
           <td width="40%" align="right"> <a accesskey="n" href="env_db_config.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Opening databases within the
-        environment </td>
+          <td width="40%" align="left" valign="top">Opening databases within the environment </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> DB_CONFIG configuration
-        file</td>
+          <td width="40%" align="right" valign="top"> DB_CONFIG configuration file</td>
         </tr>
       </table>
     </div>

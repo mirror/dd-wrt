@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2001, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -70,7 +70,6 @@ proc rep079_sub { method tnum logset largs } {
 	global repfiles_in_memory
 	global rep_verbose
 	global verbose_type
-	global is_qnx_test
 
 	set verbargs ""
 	if { $rep_verbose == 1 } {
@@ -117,17 +116,7 @@ proc rep079_sub { method tnum logset largs } {
 	# set it in nvotes.]
 	set nsites 4
 	set nvotes 3
-	if { $is_qnx_test } {
-		# QNX needs a longer lease timeout to avoid a failure in the
-		# "after" commit check test.  On QNX, it takes more than one
-		# second between an original log record send (the start of the
-		# lease grant) and when it gets to the "before" lease check.
-		# This causes a premature failure before it can get to the
-		# "after" lease check.
-		set lease_to 2000000
-	} else {
-		set lease_to 1000000
-	}
+	set lease_to 1000000
 	set lease_tosec [expr $lease_to / 1000000]
 	set clock_fast 101
 	set clock_slow 100
@@ -351,8 +340,6 @@ proc rep079_sub { method tnum logset largs } {
 	set txn [$masterenv txn]
 	set db [eval berkdb_open_noerr -txn $txn -env $masterenv -create \
 	    -btree -mode 0644 test.db]
-	# This is the commit that requires the longer lease timeout on QNX
-	# to avoid failing prematurely on the "before" check.
 	set stat [catch {$txn commit} ret]
 	error_check_good stat $stat 1
 	error_check_good exp [is_substr $ret DB_RUNRECOVERY] 1

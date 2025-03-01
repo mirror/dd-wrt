@@ -48,11 +48,6 @@ do_execsql_test 1.1 {
   PRAGMA journal_mode = DELETE;
 } {delete}
 
-ifcapable !wal {
-  finish_test
-  return
-}
-
 do_test 1.2 { sqlite3demo_superlock unlock test.db } {unlock}
 do_catchsql_test 1.3 { SELECT * FROM t1 } {1 {database is locked}}
 do_test 1.4 { unlock } {}
@@ -76,10 +71,7 @@ do_catchsql_test 3.4 { INSERT INTO t1 VALUES(5, 6)} {1 {database is locked}}
 do_catchsql_test 3.5 { PRAGMA wal_checkpoint }      {0 {1 -1 -1}}
 do_test 3.6 { unlock } {}
 
-# At this point the WAL file consists of a single frame only - written
-# by test case 3.1. If the ZERO_DAMAGE flag were not set, it would consist
-# of two frames - the frame written by 3.1 and a padding frame.
-do_execsql_test 4.1 { PRAGMA wal_checkpoint } {0 1 1}
+do_execsql_test 4.1 { PRAGMA wal_checkpoint } {0 2 2}
 
 do_test 4.2 { sqlite3demo_superlock unlock test.db } {unlock}
 do_catchsql_test 4.3 { SELECT * FROM t1 }           {1 {database is locked}}

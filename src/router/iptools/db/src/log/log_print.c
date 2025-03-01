@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -13,7 +13,7 @@
 #include "dbinc/db_am.h"
 #include "dbinc/lock.h"
 
-static int __log_print_dbreg_setup __P((ENV *, DBT *, DB_LOG *));
+static int __log_print_dbregister __P((ENV *, DBT *, DB_LOG *));
 
 /*
  * PUBLIC: int __log_print_record  __P((ENV *,
@@ -37,7 +37,6 @@ __log_print_record(env, recbuf, lsnp, name, spec, info)
 	LOG *lp;
 	PAGE *hdrstart, *hdrtmp;
 	int32_t inttmp;
-	u_int64_t ulltmp;
 	u_int32_t hdrsize, op, uinttmp;
 	u_int32_t type, txnid;
 	u_int8_t *bp, *datatmp;
@@ -47,7 +46,6 @@ __log_print_record(env, recbuf, lsnp, name, spec, info)
 	char time_buf[CTIME_BUFLEN], *s;
 	const char *hdrname;
 
-	DB_ASSERT(env, info != NULL);
 	COMPQUIET(hdrstart, NULL);
 	COMPQUIET(hdrname, NULL);
 	COMPQUIET(hdrsize, 0);
@@ -55,7 +53,7 @@ __log_print_record(env, recbuf, lsnp, name, spec, info)
 	COMPQUIET(op, 0);
 
 	bp = recbuf->data;
-	dblp = env->lg_handle;
+	dblp = info;
 	dbp = NULL;
 	lp = env->lg_handle->reginfo.primary;
 	downrev = lp->persist.version < DB_LOGVERSION_50;
@@ -76,14 +74,8 @@ __log_print_record(env, recbuf, lsnp, name, spec, info)
 	/* Previous LSN */
 	LOGCOPY_TOLSN(env,&prev_lsn, bp);
 	bp += sizeof(DB_LSN);
-
-#ifdef HAVE_SLICES
-	if (env->slice_container != NULL)
-		__db_msgadd(env,
-		    &msgbuf, "<slice %u> ", (unsigned int)env->slice_index);
-#endif
 	__db_msgadd(env, &msgbuf,
-	    "[%lu][%lu]%s%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
+    "[%lu][%lu]%s%s: rec: %lu txnp %lx prevlsn [%lu][%lu]\n",
 	    (u_long)lsnp->file, (u_long)lsnp->offset,
 	    name, (type & DB_debug_FLAG) ? "_debug" : "",
 	    (u_long)type,
@@ -111,8 +103,8 @@ __log_print_record(env, recbuf, lsnp, name, spec, info)
 
 		case LOGREC_DBOP:
 			/* Special op for dbreg_register records. */
-			if (info != NULL && (ret =
-			    __log_print_dbreg_setup(env, recbuf, info)) != 0)
+			if (dblp != NULL && (ret =
+			    __log_print_dbregister(env, recbuf, dblp)) != 0)
 				return (ret);
 			LOGCOPY_32(env, &uinttmp, bp);
 			switch (FLD_ISSET(uinttmp, DBREG_OP_MASK)) {
@@ -157,14 +149,6 @@ __log_print_record(env, recbuf, lsnp, name, spec, info)
 			__db_msgadd(env, &msgbuf,  sp->fmt, uinttmp);
 			__db_msgadd(env, &msgbuf,  "\n");
 			bp += sizeof(uinttmp);
-			break;
-		case LOGREC_LONGARG:
-			LOGCOPY_64(env, &ulltmp, bp);
-			__db_msgadd(env, &msgbuf,  "\t%s: ", sp->name);
-			__db_msgadd(env,
-			    &msgbuf,  "%llu", (unsigned long long)ulltmp);
-			__db_msgadd(env, &msgbuf,  "\n");
-			bp += sizeof(ulltmp);
 			break;
 		case LOGREC_TIME:
 			/* time_t is long but we only store 32 bits. */
@@ -215,7 +199,6 @@ __log_print_record(env, recbuf, lsnp, name, spec, info)
 				__db_msgadd(env, &msgbuf,  "\t%s: ", hdrname);
 				__db_prbytes(env, &msgbuf,
 				    (u_int8_t *)hdrstart, hdrsize);
-				DB_MSGBUF_FLUSH(env, &msgbuf);
 				if (has_data == 0 || uinttmp == 0)
 					break;
 				/* FALLTHROUGH */
@@ -223,7 +206,6 @@ __log_print_record(env, recbuf, lsnp, name, spec, info)
 				__db_msgadd(env, &msgbuf,  "\t%s: ", sp->name);
 			pr_data:
 				__db_prbytes(env, &msgbuf, bp, uinttmp);
-				DB_MSGBUF_FLUSH(env, &msgbuf);
 				has_data = 0;
 				break;
 			case LOGREC_PGDBT:
@@ -313,20 +295,17 @@ __log_print_record(env, recbuf, lsnp, name, spec, info)
 }
 
 /*
- * __log_print_dbreg_setup --
- *	Manage a private DB handle when printing a dbreg_register record.
- *
- * These DB handles are not opened and are only partially initialized (fileid,
- * meta_pgno, flags for byte swapping, checksums, encryption, exclusive access).
- * The flag setting code here is the inverse of some lines in __dbreg_setup():
- * that code goes from DB_ flags to DBREG_ flags; this goes the other way.
- *
- * The DB_LOG handle passed in must NOT belong to a real environment handle:
- * this would confuse actual running, aborting, or recovering transactions if
- * printing is done while the environment is active. An assert checks this.
+ * __log_print_dbregister --
+ *	So that we can properly swap and print information from databases
+ * we generate dummy DB handles here.  These are real handles that are never
+ * opened but their fileid, meta_pgno and some flags are set properly.
+ * This code uses parallel structures to those in the dbregister code.
+ * The DB_LOG handle passed in must NOT be the real environment handle
+ * since this would confuse actual running transactions if printing is
+ * done while the environment is active.
  */
 static int
-__log_print_dbreg_setup(env, recbuf, dblp)
+__log_print_dbregister(env, recbuf, dblp)
 	ENV *env;
 	DBT *recbuf;
 	DB_LOG *dblp;
@@ -335,8 +314,6 @@ __log_print_dbreg_setup(env, recbuf, dblp)
 	DB *dbp;
 	DB_ENTRY *dbe;
 	int ret;
-
-	DB_ASSERT(env, dblp->env == NULL);
 
 	if ((ret = __dbreg_register_read(env, recbuf->data, &argp)) != 0)
 		return (ret);
@@ -359,9 +336,9 @@ __log_print_dbreg_setup(env, recbuf, dblp)
 			    argp->uid.data, DB_FILE_ID_LEN) == 0 &&
 			    dbp->meta_pgno == argp->meta_pgno)
 				goto done;
-			dbe->dbp = NULL;
-			if ((ret = __db_close(dbp, NULL, DB_NOSYNC)) != 0)
+			if ((__db_close(dbp, NULL, DB_NOSYNC)) != 0)
 				goto err;
+			dbe->dbp = dbp = NULL;
 		}
 		if ((ret = __db_create_internal(&dbp, env, 0)) != 0)
 			goto err;
@@ -387,9 +364,9 @@ __log_print_dbreg_setup(env, recbuf, dblp)
 	case DBREG_RCLOSE:
 		if (dbp == NULL)
 			goto err;
-		dbe->dbp = NULL;
-		if ((ret = __db_close(dbp, NULL, DB_NOSYNC)) != 0)
+		if ((__db_close(dbp, NULL, DB_NOSYNC)) != 0)
 			goto err;
+		dbe->dbp = dbp = NULL;
 		break;
 	case DBREG_PREOPEN:
 		break;

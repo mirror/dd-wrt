@@ -70,7 +70,7 @@ do_test incrvacuum2-1.4 {
 #
 ifcapable attach {
   do_test incrvacuum2-2.1 {
-    forcedelete test2.db test2.db-journal
+    file delete -force test2.db test2.db-journal
     execsql {
       ATTACH DATABASE 'test2.db' AS aux;
       PRAGMA aux.auto_vacuum=incremental;
@@ -188,12 +188,10 @@ ifcapable wal {
     execsql { 
       PRAGMA journal_mode = WAL;
       PRAGMA incremental_vacuum(1);
+      PRAGMA wal_checkpoint;
     }
-  } {wal}
-  do_test 4.2.1 {
-    execsql { PRAGMA wal_checkpoint }
     file size test.db-wal
-  } [expr {32+2*(512+24)}]
+  } {1640}
 
   do_test 4.3 {
     db close
@@ -207,7 +205,7 @@ ifcapable wal {
       if {$newsz>$maxsz} {set maxsz $newsz}
     }
     set maxsz 
-  } [expr {32+3*(512+24)}]
+  } {2176}
 }
 
 finish_test

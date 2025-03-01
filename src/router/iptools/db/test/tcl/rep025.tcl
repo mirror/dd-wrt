@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 2004, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2004, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -14,15 +14,9 @@
 # TEST  Put one more record to the master.  At the next
 # TEST  processing of messages, the client should get JOIN_FAILURE.
 # TEST  Recover with a hot failover.
-# TEST
-# TEST  Test error handling when a client without encryption tries to
-# TEST  join an encrypted repgroup, or vice versa.  Make sure the client
-# TEST  gets the expected JOIN_FAILURE error and that the master
-# TEST  continues to operate after the error.
 #
 proc rep025 { method { niter 200 } { tnum "025" } args } {
 	source ./include.tcl
-	global has_crypto
 	global databases_in_memory
 	global repfiles_in_memory
 	global env_private
@@ -80,43 +74,6 @@ proc rep025 { method { niter 200 } { tnum "025" } args } {
 			puts "Rep$tnum: Master logs are [lindex $l 0]"
 			puts "Rep$tnum: Client logs are [lindex $l 1]"
 			rep025_sub $method $niter $tnum $l $r $args
-		}
-	}
-
-	if { $has_crypto == 0 } {
-		puts "Skipping remainder of rep025 for non-crypto."
-		return
-	}
-	if { $databases_in_memory == 1 } {
-		puts "Skipping remainder of rep025 for in-memory databases."
-		return
-	}
-
-	# Run the encryption join failure test with and without recovery.
-	# Skip recovery with in-memory logging - it doesn't make sense.
-	# This test needs a separate loop because it has a different
-	# number of sites, and therefore has different logsets.
-	set logsetsenc [create_logsets 3]
-	foreach r $test_recopts {
-		foreach l $logsetsenc {
-			set logindex [lsearch -exact $l "in-memory"]
-			if { $r == "-recover" && $logindex != -1 } {
-				puts "Skipping rep$tnum for -recover\
-				    with in-memory logs."
-				continue
-			}
-
-			puts "Rep$tnum ($method $r): Test encrypted master\
-			    clear client join failure $msg $msg2 $msg3."
-			puts "Rep$tnum: Master logs are [lindex $l 0]"
-			puts "Rep$tnum: Client logs are [lindex $l 1]"
-			rep025_enc $method $niter $tnum $l $r 1 $args
-
-			puts "Rep$tnum ($method $r): Test clear master\
-			    encrypted client join failure $msg $msg2 $msg3."
-			puts "Rep$tnum: Master logs are [lindex $l 0]"
-			puts "Rep$tnum: Client logs are [lindex $l 1]"
-			rep025_enc $method $niter $tnum $l $r 0 $args
 		}
 	}
 }
@@ -268,124 +225,5 @@ proc rep025_sub { method niter tnum logset recargs largs } {
 
 	error_check_good masterenv_close [$masterenv close] 0
 	error_check_good clientenv_close [$clientenv close] 0
-	replclose $testdir/MSGQUEUEDIR
-}
-
-#
-# Test the error handling when an unencrypted client tries to join an
-# encrypted replication group or vice versa.  The expected error in
-# either case is a JOIN_FAILURE.  The encmaster variable determines
-# whether it is the replication group or the joining client that is
-# encrypted.
-#
-proc rep025_enc { method niter tnum logset recargs encmaster largs } {
-	global testdir
-	global passwd
-	global repfiles_in_memory
-	global env_private
-	global rep_verbose
-	global verbose_type
-
-	set verbargs ""
-	if { $rep_verbose == 1 } {
-		set verbargs " -verbose {$verbose_type on} "
-	}
-
-	set repmemargs ""
-	if { $repfiles_in_memory } {
-		set repmemargs "-rep_inmem_files "
-	}
-
-	set privargs ""
-	if { $env_private == 1 } {
-		set privargs " -private "
-	}
-
-	set masenvargs ""
-	set difenvargs ""
-	set maslargs $largs
-	if { $encmaster } {
-		# Master/matching client are encrypted, joining client is clear.
-		append masenvargs " -encryptaes $passwd "
-		append maslargs " -encrypt "
-	} else {
-		# Master/matching client are clear, joining client is encrypted.
-		append difenvargs " -encryptaes $passwd "
-	}
-
-	env_cleanup $testdir
-
-	replsetup $testdir/MSGQUEUEDIR
-
-	set masterdir $testdir/MASTERDIR
-	set clientdir $testdir/CLIENTDIR
-	set clientdir2 $testdir/CLIENTDIR2
-
-	file mkdir $masterdir
-	file mkdir $clientdir
-	file mkdir $clientdir2
-
-	set m_logtype [lindex $logset 0]
-	set c_logtype [lindex $logset 1]
-	set c2_logtype [lindex $logset 2]
-
-	# In-memory logs cannot be used with -txn nosync.
-	set m_logargs [adjust_logargs $m_logtype]
-	set c_logargs [adjust_logargs $c_logtype]
-	set c2_logargs [adjust_logargs $c2_logtype]
-	set m_txnargs [adjust_txnargs $m_logtype]
-	set c_txnargs [adjust_txnargs $c_logtype]
-	set c2_txnargs [adjust_txnargs $c2_logtype]
-
-	puts "\tRep$tnum.a: Open master and matching client."
-	repladd 1
-	set ma_envcmd "berkdb_env_noerr -create $m_txnargs $repmemargs \
-	    $m_logargs $verbargs $masenvargs -errpfx MASTER $privargs \
-	    -home $masterdir -rep_transport \[list 1 replsend\]"
-	set masterenv [eval $ma_envcmd $recargs -rep_master]
-
-	repladd 2
-	set cl_envcmd "berkdb_env_noerr -create $c_txnargs $repmemargs \
-	    $c_logargs $verbargs $masenvargs -errpfx CLIENT $privargs \
-	    -home $clientdir -rep_transport \[list 2 replsend\]"
-	set clientenv [eval $cl_envcmd $recargs -rep_client]
-
-	# Bring matching client online by processing the startup messages.
-	set envlist "{$masterenv 1} {$clientenv 2}"
-	process_msgs $envlist
-
-	puts "\tRep$tnum.b: Run first set of master transactions."
-	set start 0
-	eval rep_test $method $masterenv NULL $niter $start $start 0 $maslargs
-	incr start $niter
-	process_msgs $envlist
-
-	puts "\tRep$tnum.c: Open joining client with different encryption\
-	    setting."
-	repladd 3
-	set cl2_envcmd "berkdb_env_noerr -create $c2_txnargs $repmemargs \
-	    $c2_logargs $verbargs $difenvargs -errpfx CLIENT2 $privargs \
-	    -home $clientdir2 -rep_transport \[list 3 replsend\]"
-	set clientenv2 [eval $cl2_envcmd $recargs -rep_client]
-
-	# Process startup messages to get error from joining client.
-	set envlist "{$masterenv 1} {$clientenv 2} {$clientenv2 3}"
-	process_msgs $envlist 0 NONE err
-	puts "\tRep$tnum.d: Verify join failure from joining client."
-	error_check_good error_on_right_env [lindex $err 0] $clientenv2
-	error_check_good right_error [is_substr $err DB_REP_JOIN_FAILURE] 1
-	set envlist "{$masterenv 1} {$clientenv 2}"
-
-	puts "\tRep$tnum.e: Run second set of master transactions."
-	eval rep_test $method $masterenv NULL $niter $start $start 0 $maslargs
-	incr start $niter
-	process_msgs $envlist
-
-	puts "\tRep$tnum.f: Verify master still works after join failure."
-	rep_verify $masterdir $masterenv $clientdir $clientenv 1 1 1
-
-	error_check_good masterenv_close [$masterenv close] 0
-	error_check_good clientenv_close [$clientenv close] 0
-	error_check_good clientenv2_close [$clientenv2 close] 0
 	replclose $testdir/MSGQUEUEDIR
 }

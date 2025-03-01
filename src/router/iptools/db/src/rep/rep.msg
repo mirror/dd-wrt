@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -52,27 +52,12 @@ END
  * NOTE:  The order of the DBTs is important and relevant in the
  * GET_CURINFO macro.
  */
-BEGIN_MSG fileinfo	alloc check_length
+BEGIN_MSG fileinfo	alloc check_length version
 ARG	pgsize		u_int32_t
 ARG	pgno		db_pgno_t
 ARG	max_pgno	db_pgno_t
 ARG	filenum		u_int32_t
-ARG	finfo_flags	u_int32_t
-ARG	type		u_int32_t
-ARG	db_flags	u_int32_t
-ARG	uid		DBT
-ARG	info		DBT
-ARG	dir		DBT
-ARG	blob_fid_lo	u_int32_t
-ARG	blob_fid_hi	u_int32_t
-END
-
-BEGIN_MSG fileinfo_v7	alloc check_length
-ARG	pgsize		u_int32_t
-ARG	pgno		db_pgno_t
-ARG	max_pgno	db_pgno_t
-ARG	filenum		u_int32_t
-ARG	finfo_flags	u_int32_t
+ARG	finfo_flags	u_int32_t		
 ARG	type		u_int32_t
 ARG	db_flags	u_int32_t
 ARG	uid		DBT
@@ -80,7 +65,7 @@ ARG	info		DBT
 ARG	dir		DBT
 END
 
-BEGIN_MSG fileinfo_v6	alloc check_length
+BEGIN_MSG fileinfo_v6	alloc check_length version
 ARG	pgsize		u_int32_t
 ARG	pgno		db_pgno_t
 ARG	max_pgno	db_pgno_t
@@ -127,7 +112,7 @@ END
 /*
  * update - send update information
  */
-BEGIN_MSG update	alloc check_length
+BEGIN_MSG update	alloc check_length version
 ARG	first_lsn	DB_LSN
 ARG	first_vers	u_int32_t
 ARG	num_files	u_int32_t
@@ -173,65 +158,3 @@ ARG	lsn		DB_LSN
 ARG	hist_sec	u_int32_t
 ARG	hist_nsec	u_int32_t
 END
-
-/*
- * Request for blob files.
- */
-BEGIN_MSG blob_update_req
-ARG	blob_fid	u_int64_t
-ARG	blob_sid	u_int64_t
-ARG	blob_id		u_int64_t
-ARG	highest_id	u_int64_t
-ARG	flags		u_int32_t
-END
-
-/*
- * Request for blob files for REPVERSION 8
- */
-BEGIN_MSG blob_update_req_v8
-ARG	blob_fid	u_int64_t
-ARG	blob_sid	u_int64_t
-ARG	blob_id		u_int64_t
-ARG	highest_id	u_int64_t
-END
-
-/*
- * A list of blob file for a database.
- */
-BEGIN_MSG blob_update
-ARG	blob_fid	u_int64_t
-ARG	highest_id	u_int64_t
-ARG	flags		u_int32_t
-ARG	num_blobs	u_int32_t
-END
-
-/*
- * Blob file description, part of blob_update.
- */
-BEGIN_MSG blob_file
-ARG	blob_sid	u_int64_t
-ARG	blob_id		u_int64_t
-ARG	blob_size	u_int64_t
-END
-
-/*
- * A piece of data from a blob file.
- */
-BEGIN_MSG blob_chunk
-ARG	flags		u_int32_t
-ARG	blob_fid	u_int64_t
-ARG	blob_sid	u_int64_t
-ARG	blob_id		u_int64_t
-ARG	offset		u_int64_t
-ARG	data		DBT
-END
-
-/*
- * Request for data from a blob file at the given offset.
- */
-BEGIN_MSG blob_chunk_req
-ARG	blob_fid	u_int64_t
-ARG	blob_sid	u_int64_t
-ARG	blob_id		u_int64_t
-ARG	offset		u_int64_t
-END	

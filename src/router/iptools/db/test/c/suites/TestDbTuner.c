@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -33,7 +33,7 @@ int open_db(DB_ENV **, DB **, char *, char *, u_int32_t, int);
 int run_test(CuTest *, u_int32_t, int, int, int, int, int);
 int store_db(DB *, int, int, int, int);
 
-const char *progname_dbtuner = "TestDbTuner";
+const char *progname = "TestDbTuner";
 int total_cases, success_cases;
 
 int TestDbTuner(CuTest *ct) {
@@ -201,7 +201,7 @@ open_db(dbenvp, dbpp, dbname, home, pgsize, duptype)
 	*dbenvp = dbenv;
 
 	dbenv->set_errfile(dbenv, stderr);
-	dbenv->set_errpfx(dbenv, progname_dbtuner);
+	dbenv->set_errpfx(dbenv, progname);
 
 	if ((ret =
 	    dbenv->set_cachesize(dbenv, (u_int32_t)0,

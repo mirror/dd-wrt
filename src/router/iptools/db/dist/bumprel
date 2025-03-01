@@ -9,7 +9,6 @@ R=`dirname $P`
 progname="$0"
 VERSION="$1"
 assembly="../lang/csharp/src/Properties/AssemblyInfo.cs"
-bdbserver="../lang/thrift/server/com/sleepycat/server/BdbServer.java"
 t=/tmp/__assembly
 
 # Sanity check
@@ -55,11 +54,6 @@ cd $R/dist && sh s_all
 sed -e "s:AssemblyVersion(\"[0-9]*\.[0-9]*\.[0-9]*\"):AssemblyVersion(\"$MAJOR\.$MINOR\.$PATCH\"):" < $assembly > $t
 cmp $t $assembly > /dev/null 2>&1 ||
     (rm -f $assembly && cp $t $assembly && rm -f $t && chmod 444 $assembly)
-
-# Update the Thrift information
-sed -e "s:VERSION = \"[0-9]*\.[0-9]*\.[0-9]*\":VERSION = \"$MAJOR\.$MINOR\.$PATCH\":" < $bdbserver > $t
-cmp $t $bdbserver > /dev/null 2>&1 ||
-    (rm -f $bdbserver && cp $t $bdbserver && rm -f $t && chmod 644 $bdbserver)
 
 # Commit all of the changes.
 echo "Now run 'hg commit && hg tag db-$MAJOR.$MINOR.$PATCH && hg push'"

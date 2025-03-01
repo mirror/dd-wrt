@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -68,7 +68,7 @@ DB-&gt;put(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711191541280"></a>Parameters</h3>
+              <h3 class="title"><a id="idp49947912"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -76,7 +76,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711191543008"></a>txnid</h4>
+                <h4 class="title"><a id="idp49948104"></a>txnid</h4>
               </div>
             </div>
           </div>
@@ -98,7 +98,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711192916208"></a>key</h4>
+                <h4 class="title"><a id="idp49874432"></a>key</h4>
               </div>
             </div>
           </div>
@@ -118,7 +118,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711192836960"></a>data</h4>
+                <h4 class="title"><a id="idp49892680"></a>data</h4>
               </div>
             </div>
           </div>
@@ -130,7 +130,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711195497136"></a>flags</h4>
+                <h4 class="title"><a id="idp49942656"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -333,7 +333,7 @@ DB-&gt;put(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711183061456"></a>Errors</h3>
+              <h3 class="title"><a id="idp49969776"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -349,7 +349,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711189270912"></a>DB_FOREIGN_CONFLICT</h4>
+                <h4 class="title"><a id="idp49981992"></a>DB_FOREIGN_CONFLICT</h4>
               </div>
             </div>
           </div>
@@ -383,7 +383,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711188297568"></a>DB_HEAP_FULL</h4>
+                <h4 class="title"><a id="idp49942080"></a>DB_HEAP_FULL</h4>
               </div>
             </div>
           </div>
@@ -399,7 +399,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711189948048"></a>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="idp49965376"></a>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -412,7 +412,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711189546688"></a>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="idp49960224"></a>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -432,7 +432,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711190613808"></a>  DB_REP_HANDLE_DEAD</h4>
+                <h4 class="title"><a id="idp49933520"></a>  DB_REP_HANDLE_DEAD</h4>
               </div>
             </div>
           </div>
@@ -452,7 +452,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711190771424"></a>DB_REP_LOCKOUT</h4>
+                <h4 class="title"><a id="idp49976264"></a>DB_REP_LOCKOUT</h4>
               </div>
             </div>
           </div>
@@ -464,7 +464,7 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711190841936"></a>EACCES</h4>
+                <h4 class="title"><a id="idp50009120"></a>EACCES</h4>
               </div>
             </div>
           </div>
@@ -476,25 +476,23 @@ DB-&gt;put(DB *db,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711190685920"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp50009528"></a>EINVAL</h4>
               </div>
             </div>
           </div>
           <p>
-              If a record number of 0 was specified; an attempt was made to
-              add a record to a fixed-length database that was too large to
-              fit; an attempt was made to do a partial put on a database
-              not configured for it (such as a database configured for
-              duplicate records); an attempt was made to add a record to a
-              secondary index; or if an invalid flag value or parameter was
-              specified.
+              If a record number of 0 was specified; an attempt was made to add a
+              record to a fixed-length database that was too large to fit; an
+              attempt was made to do a partial put; an attempt was made to add a
+              record to a secondary index; or if an invalid flag value or parameter
+              was specified.
          </p>
         </div>
         <div class="sect3" lang="en" xml:lang="en">
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711190522400"></a>ENOSPC</h4>
+                <h4 class="title"><a id="idp50010224"></a>ENOSPC</h4>
               </div>
             </div>
           </div>
@@ -507,7 +505,7 @@ DB-&gt;put(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711190077664"></a>Class</h3>
+              <h3 class="title"><a id="idp49969560"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -519,7 +517,7 @@ DB-&gt;put(DB *db,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711182778176"></a>See Also</h3>
+              <h3 class="title"><a id="idp49973280"></a>See Also</h3>
             </div>
           </div>
         </div>

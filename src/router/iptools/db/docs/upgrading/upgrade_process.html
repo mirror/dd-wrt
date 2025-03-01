@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -365,9 +365,9 @@
         </ol>
       </div>
       <p>
-    During live replication upgrade, while sites are running at different
-    versions, you cannot add or remove sites from the replication group.
-    Sites can be added or removed only after the entire group is upgraded.
+    During live replication upgrade, while sites are running at different versions, adding new
+    (empty) clients to the replication group is not allowed.  Those empty client environments must
+    be added after the entire group is upgraded.
 </p>
       <p>
     Also, all removal of log files must be suspended throughout this entire procedure, so that there

@@ -1,7 +1,7 @@
 --- src/shell.c
 +++ src/shell.c
-@@ -28,6 +28,14 @@
- # define _LARGEFILE_SOURCE 1
+@@ -17,6 +17,14 @@
+ #define _CRT_SECURE_NO_WARNINGS
  #endif
  
 +/*

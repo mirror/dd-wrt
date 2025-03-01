@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -121,13 +121,6 @@ __lock_set_lk_conflicts(dbenv, lk_conflicts, lk_modes)
 
 	ENV_ILLEGAL_AFTER_OPEN(env, "DB_ENV->set_lk_conflicts");
 
-	if (lk_modes == 0) {
-		ret = USR_ERR(env, EINVAL);
-		__db_errx(env, DB_STR("2076",
-		    "DB_ENV->set_lk_conflicts: nmodes cannot be 0."));
-		return (ret);
-	}
-
 	if (dbenv->lk_conflicts != NULL) {
 		__os_free(env, dbenv->lk_conflicts);
 		dbenv->lk_conflicts = NULL;
@@ -172,7 +165,7 @@ __lock_get_lk_detect(dbenv, lk_detectp)
 }
 
 /*
- * __lock_set_lk_detect --
+ * __lock_set_lk_detect
  *	DB_ENV->set_lk_detect.
  *
  * PUBLIC: int __lock_set_lk_detect __P((DB_ENV *, u_int32_t));
@@ -182,12 +175,11 @@ __lock_set_lk_detect(dbenv, lk_detect)
 	DB_ENV *dbenv;
 	u_int32_t lk_detect;
 {
-	DB_ENV *slice;
 	DB_LOCKREGION *region;
 	DB_LOCKTAB *lt;
 	DB_THREAD_INFO *ip;
 	ENV *env;
-	int i, ret;
+	int ret;
 
 	env = dbenv->env;
 
@@ -230,9 +222,9 @@ __lock_set_lk_detect(dbenv, lk_detect)
 		if (region->detect != DB_LOCK_NORUN &&
 		    lk_detect != DB_LOCK_DEFAULT &&
 		    region->detect != lk_detect) {
-			ret = USR_ERR(env, EINVAL);
 			__db_errx(env, DB_STR("2044",
 	    "DB_ENV->set_lk_detect: incompatible deadlock detector mode"));
+			ret = EINVAL;
 		} else
 			if (region->detect == DB_LOCK_NORUN)
 				region->detect = lk_detect;
@@ -240,10 +232,6 @@ __lock_set_lk_detect(dbenv, lk_detect)
 		ENV_LEAVE(env, ip);
 	} else
 		dbenv->lk_detect = lk_detect;
-	if (ret == 0)
-		SLICE_FOREACH(dbenv, slice, i)
-			if ((ret = __lock_set_lk_detect(slice, lk_detect)) != 0)
-				break;
 
 	return (ret);
 }
@@ -423,12 +411,6 @@ __lock_set_lk_partitions(dbenv, lk_partitions)
 
 	ENV_ILLEGAL_AFTER_OPEN(env, "DB_ENV->set_lk_partitions");
 
-	if (lk_partitions == 0) {
-		__db_errx(env, DB_STR("2077",
-		    "DB_ENV->set_lk_partitions: partitions cannot be 0."));
-		return (EINVAL);
-	}
-
 	dbenv->lk_partitions = lk_partitions;
 	return (0);
 }
@@ -562,7 +544,7 @@ __lock_get_env_timeout(dbenv, timeoutp, flag)
 			*timeoutp = region->tx_timeout;
 			break;
 		default:
-			ret = USR_ERR(env, EINVAL);
+			ret = 1;
 			break;
 		}
 		LOCK_REGION_UNLOCK(env);
@@ -576,7 +558,7 @@ __lock_get_env_timeout(dbenv, timeoutp, flag)
 			*timeoutp = dbenv->tx_timeout;
 			break;
 		default:
-			ret = USR_ERR(env, EINVAL);
+			ret = 1;
 			break;
 		}
 
@@ -602,14 +584,14 @@ __lock_set_env_timeout(dbenv, timeout, flags)
 	DB_LOCKTAB *lt;
 	DB_THREAD_INFO *ip;
 	ENV *env;
-	int badflag;
+	int ret;
 
 	env = dbenv->env;
 
 	ENV_NOT_CONFIGURED(env,
 	    env->lk_handle, "DB_ENV->set_env_timeout", DB_INIT_LOCK);
 
-	badflag = 0;
+	ret = 0;
 	if (LOCKING_ON(env)) {
 		lt = env->lk_handle;
 		region = lt->reginfo.primary;
@@ -623,7 +605,7 @@ __lock_set_env_timeout(dbenv, timeout, flags)
 			region->tx_timeout = timeout;
 			break;
 		default:
-			badflag = 1;
+			ret = 1;
 			break;
 		}
 		LOCK_REGION_UNLOCK(env);
@@ -637,11 +619,12 @@ __lock_set_env_timeout(dbenv, timeout, flags)
 			dbenv->tx_timeout = timeout;
 			break;
 		default:
-			badflag = 1;
+			ret = 1;
 			break;
 		}
 
-	if (badflag)
-		 return (__db_ferr(env, "DB_ENV->set_timeout", 0));
-	return (0);
+	if (ret)
+		ret = __db_ferr(env, "DB_ENV->set_timeout", 0);
+
+	return (ret);
 }

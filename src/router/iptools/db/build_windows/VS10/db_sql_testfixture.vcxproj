@@ -62,7 +62,7 @@
       <PreprocessorDefinitions>WIN32;_CONSOL;STATIC_BUILD;SQLITE_TEST;TCLSH;SQLITE_NO_SYNC;SQLITE_CRASH_TEST;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;SQLITE_THREADSAFE=1;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;SQLITE_MEMDEBUG;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>tcl86.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>tcl85g.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -71,7 +71,7 @@
       <PreprocessorDefinitions>WIN32;_CONSOL;STATIC_BUILD;SQLITE_TEST;TCLSH;SQLITE_NO_SYNC;SQLITE_CRASH_TEST;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;SQLITE_THREADSAFE=1;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>tcl86.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>tcl85.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -80,7 +80,7 @@
       <PreprocessorDefinitions>WIN32;_CONSOL;STATIC_BUILD;SQLITE_TEST;TCLSH;SQLITE_NO_SYNC;SQLITE_CRASH_TEST;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;SQLITE_THREADSAFE=1;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;SQLITE_MEMDEBUG;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>tcl86.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>tcl85g.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -89,7 +89,7 @@
       <PreprocessorDefinitions>WIN32;_CONSOL;STATIC_BUILD;SQLITE_TEST;TCLSH;SQLITE_NO_SYNC;SQLITE_CRASH_TEST;SQLITE_SERVER;SQLITE_PRIVATE;SQLITE_CORE;SQLITE_THREADSAFE=1;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>tcl86.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>tcl85.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -108,7 +108,6 @@
     <ClCompile Include="..\..\lang\sql\sqlite\src\date.c"/>
     <ClCompile Include="..\..\lang\sql\adapter\db_pragma.c"/>
     <ClCompile Include="..\..\lang\sql\adapter\db_sequence.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\src\dbstat.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\delete.c"/>
     <ClCompile Include="..\..\lang\sql\adapter\db_encrypt.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\expr.c"/>
@@ -121,29 +120,9 @@
     <ClCompile Include="..\..\lang\sql\sqlite\ext\fts3\fts3_icu.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\ext\fts3\fts3_porter.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\ext\fts3\fts3_snippet.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\ext\fts3\fts3_term.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\ext\fts3\fts3_test.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\ext\fts3\fts3_tokenizer1.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\ext\fts3\fts3_tokenizer.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\ext\fts3\fts3_tokenize_vtab.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\ext\fts3\fts3_unicode.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\ext\fts3\fts3_unicode2.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\ext\fts3\fts3_write.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\ext\misc\amatch.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\ext\misc\closure.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\ext\misc\eval.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\ext\misc\fileio.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\ext\misc\fuzzer.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\ext\misc\ieee754.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\ext\misc\nextchar.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\ext\misc\percentile.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\ext\misc\regexp.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\ext\misc\rot13.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\ext\misc\spellfix.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\ext\misc\totype.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\ext\misc\vfslog.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\ext\misc\vtshim.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\ext\misc\wholenumber.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\func.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\global.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\hash.c"/>
@@ -180,11 +159,9 @@
     <ClCompile Include="..\..\lang\sql\sqlite\src\select.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\status.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\table.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\src\threads.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\tokenize.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\trigger.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\update.c"/>
-    <ClCompile Include="..\..\lang\sql\adapter\userauth.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\utf.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\util.c"/>
     <ClCompile Include="..\..\lang\sql\adapter\vacuum.c"/>
@@ -193,7 +170,6 @@
     <ClCompile Include="..\..\lang\sql\sqlite\src\vdbeaux.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\vdbeblob.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\vdbemem.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\src\vdbesort.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\vdbetrace.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\vtab.c"/>
     <ClCompile Include="..\..\lang\sql\adapter\wal.c"/>
@@ -213,13 +189,12 @@
     <ClCompile Include="..\..\lang\sql\sqlite\src\test_async.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\test_autoext.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\test_backup.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\src\test_blob.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\test_btree.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\test_config.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\test_demovfs.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\test_devsym.c"/>
-    <ClCompile Include="..\..\lang\sql\sqlite\src\test_fs.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\test_func.c"/>
+    <ClCompile Include="..\..\lang\sql\sqlite\src\test_fuzzer.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\test_hexio.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\test_intarray.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\test_journal.c"/>
@@ -236,10 +211,12 @@
     <ClCompile Include="..\..\lang\sql\sqlite\src\test_server.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\test_syscall.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\test_superlock.c"/>
+    <ClCompile Include="..\..\lang\sql\sqlite\src\test_stat.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\test_tclvar.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\test_thread.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\test_vfs.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\test_vfstrace.c"/>
+    <ClCompile Include="..\..\lang\sql\sqlite\src\test_wholenumber.c"/>
     <ClCompile Include="..\..\lang\sql\sqlite\src\test_wsd.c"/>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
@@ -247,7 +224,7 @@
   </ImportGroup>
   <ItemGroup>
     <ProjectReference Condition="exists('db.vcxproj')" Include="db.vcxproj">
-      <Project>{FD045D60-ABAD-4A6C-9794-9BFB085FC3E7}</Project>
+      <Project>{fd045d60-abad-4a6c-9794-9bfb085fc3e7}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>

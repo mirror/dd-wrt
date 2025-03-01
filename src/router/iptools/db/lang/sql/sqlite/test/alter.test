@@ -221,8 +221,8 @@ do_test alter-1.7 {
 #
 ifcapable attach {
   do_test alter-1.8.1 {
-    forcedelete test2.db
-    forcedelete test2.db-journal
+    file delete -force test2.db
+    file delete -force test2.db-journal
     execsql {
       ATTACH 'test2.db' AS aux;
     }
@@ -349,8 +349,7 @@ db func trigfunc trigfunc
 do_test alter-3.1.0 {
   execsql {
     CREATE TABLE t6(a, b, c);
-    -- Different case for the table name in the trigger.
-    CREATE TRIGGER trig1 AFTER INSERT ON T6 BEGIN
+    CREATE TRIGGER trig1 AFTER INSERT ON t6 BEGIN
       SELECT trigfunc('trig1', new.a, new.b, new.c);
     END;
   }
@@ -413,8 +412,8 @@ do_test alter-3.1.8 {
 
 # Make sure "ON" cannot be used as a database, table or column name without
 # quoting. Otherwise the sqlite_alter_trigger() function might not work.
-forcedelete test3.db
-forcedelete test3.db-journal
+file delete -force test3.db
+file delete -force test3.db-journal
 ifcapable attach {
   do_test alter-3.2.1 {
     catchsql {
@@ -651,7 +650,7 @@ do_test alter-6.7 {
 # Ticket #1665:  Make sure ALTER TABLE ADD COLUMN works on a table
 # that includes a COLLATE clause.
 #
-do_realnum_test alter-7.1 {
+do_test alter-7.1 {
   execsql {
     CREATE TABLE t1(a TEXT COLLATE BINARY);
     ALTER TABLE t1 ADD COLUMN b INTEGER COLLATE NOCASE;
@@ -847,8 +846,7 @@ do_test alter-14.2 {
 set system_table_list {1 sqlite_master}
 catchsql ANALYZE
 ifcapable analyze { lappend system_table_list 2 sqlite_stat1 }
-ifcapable stat3   { lappend system_table_list 3 sqlite_stat3 }
-ifcapable stat4   { lappend system_table_list 4 sqlite_stat4 }
+ifcapable stat2   { lappend system_table_list 3 sqlite_stat2 }
 
 foreach {tn tbl} $system_table_list {
   do_test alter-15.$tn.1 {
@@ -860,66 +858,5 @@ foreach {tn tbl} $system_table_list {
   } [list 1 "table $tbl may not be altered"]
 }
 
-#------------------------------------------------------------------------
-# Verify that ALTER TABLE works on tables with the WITHOUT rowid option.
-#
-do_execsql_test alter-16.1 {
-  CREATE TABLE t16a(a TEXT, b REAL, c INT, PRIMARY KEY(a,b)) WITHOUT rowid;
-  INSERT INTO t16a VALUES('abc',1.25,99);
-  ALTER TABLE t16a ADD COLUMN d TEXT DEFAULT 'xyzzy';
-  INSERT INTO t16a VALUES('cba',5.5,98,'fizzle');
-  SELECT * FROM t16a ORDER BY a;
-} {abc 1.25 99 xyzzy cba 5.5 98 fizzle}
-do_execsql_test alter-16.2 {
-  ALTER TABLE t16a RENAME TO t16a_rn;
-  SELECT * FROM t16a_rn ORDER BY a;
-} {abc 1.25 99 xyzzy cba 5.5 98 fizzle}
-
-#-------------------------------------------------------------------------
-# Verify that NULL values into the internal-use-only sqlite_rename_*()
-# functions do not cause problems.
-#
-do_execsql_test alter-17.1 {
-  SELECT sqlite_rename_table('CREATE TABLE xyz(a,b,c)','abc');
-} {{CREATE TABLE "abc"(a,b,c)}}
-do_execsql_test alter-17.2 {
-  SELECT sqlite_rename_table('CREATE TABLE xyz(a,b,c)',NULL);
-} {{CREATE TABLE "(NULL)"(a,b,c)}}
-do_execsql_test alter-17.3 {
-  SELECT sqlite_rename_table(NULL,'abc');
-} {{}}
-do_execsql_test alter-17.4 {
-  SELECT sqlite_rename_trigger('CREATE TRIGGER r1 ON xyz WHEN','abc');
-} {{CREATE TRIGGER r1 ON "abc" WHEN}}
-do_execsql_test alter-17.5 {
-  SELECT sqlite_rename_trigger('CREATE TRIGGER r1 ON xyz WHEN',NULL);
-} {{CREATE TRIGGER r1 ON "(NULL)" WHEN}}
-do_execsql_test alter-17.6 {
-  SELECT sqlite_rename_trigger(NULL,'abc');
-} {{}}
-do_execsql_test alter-17.7 {
-  SELECT sqlite_rename_parent('CREATE TABLE t1(a REFERENCES "xyzzy")',
-         'xyzzy','lmnop');
-} {{CREATE TABLE t1(a REFERENCES "lmnop")}}
-do_execsql_test alter-17.8 {
-  SELECT sqlite_rename_parent('CREATE TABLE t1(a REFERENCES "xyzzy")',
-         'xyzzy',NULL);
-} {{CREATE TABLE t1(a REFERENCES "(NULL)")}}
-do_execsql_test alter-17.9 {
-  SELECT sqlite_rename_parent('CREATE TABLE t1(a REFERENCES "xyzzy")',
-         NULL, 'lmnop');
-} {{}}
-do_execsql_test alter-17.10 {
-  SELECT sqlite_rename_parent(NULL,'abc','xyz');
-} {{}}
-do_execsql_test alter-17.11 {
-  SELECT sqlite_rename_parent('create references ''','abc','xyz');
-} {{create references '}}
-do_execsql_test alter-17.12 {
-  SELECT sqlite_rename_parent('create references "abc"123" ','abc','xyz');
-} {{create references "xyz"123" }}
-do_execsql_test alter-17.13 {
-  SELECT sqlite_rename_parent("references '''",'abc','xyz');
-} {{references '''}}
 
 finish_test

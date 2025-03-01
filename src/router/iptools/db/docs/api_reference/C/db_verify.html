@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -38,11 +38,10 @@
           </div>
         </div>
       </div>
-      <pre class="programlisting">db_verify [-mNoqV] [-b ext_file_dir] [-h home] [-P password] name ...  </pre>
+      <pre class="programlisting">db_verify [-NoqV] [-h home] [-P password] file ...  </pre>
       <p>
          The <span class="command"><strong>db_verify</strong></span> utility verifies the structure of one or more files and
-         the databases they contain. If '-m' option is specified, it verifies one or more named
-         in-memory databases.
+         the databases they contain.
     </p>
       <p>
         The options are as follows:
@@ -51,31 +50,11 @@
         <ul type="disc">
           <li>
             <p>
-              <span class="bold"><strong>-b</strong></span>
-            </p>
-            <p>
-                 Specify the directory where external file data is stored. By
-                 default, if using a database environment, the external file
-                 data is placed in a subdirectory within the environment,
-                 otherwise, it is placed in a directory local to the current
-                 working directory.
-            </p>
-          </li>
-          <li>
-            <p>
               <span class="bold"><strong>-h</strong></span>
             </p>
             <p>
                  Specify a home directory for the database environment; by default, the
                  current working directory is used.
-            </p>
-          </li>
-          <li>
-            <p>
-                 <span class="bold"><strong>-m</strong></span>
-            </p>
-            <p>
-                 Verify the named in-memory databases.
             </p>
           </li>
           <li>
@@ -164,7 +143,7 @@
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711170811984"></a>Environment Variables</h3>
+              <h3 class="title"><a id="idp55486784"></a>Environment Variables</h3>
             </div>
           </div>
         </div>
@@ -172,7 +151,7 @@
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711170797840"></a>DB_HOME</h4>
+                <h4 class="title"><a id="idp55486976"></a>DB_HOME</h4>
               </div>
             </div>
           </div>

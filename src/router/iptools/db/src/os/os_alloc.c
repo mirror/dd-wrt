@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1997, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -11,7 +11,7 @@
 #include "db_int.h"
 
 #ifdef DIAGNOSTIC
-static void __os_guard __P((const ENV *));
+static void __os_guard __P((ENV *));
 
 typedef union {
 	size_t size;
@@ -204,11 +204,11 @@ __os_strdup(env, str, storep)
  * __os_calloc --
  *	The calloc(3) function for DB.
  *
- * PUBLIC: int __os_calloc __P((const ENV *, size_t, size_t, void *));
+ * PUBLIC: int __os_calloc __P((ENV *, size_t, size_t, void *));
  */
 int
 __os_calloc(env, num, size, storep)
-	const ENV *env;
+	ENV *env;
 	size_t num, size;
 	void *storep;
 {
@@ -227,11 +227,11 @@ __os_calloc(env, num, size, storep)
  * __os_malloc --
  *	The malloc(3) function for DB.
  *
- * PUBLIC: int __os_malloc __P((const ENV *, size_t, void *));
+ * PUBLIC: int __os_malloc __P((ENV *, size_t, void *));
  */
 int
 __os_malloc(env, size, storep)
-	const ENV *env;
+	ENV *env;
 	size_t size;
 	void *storep;
 {
@@ -261,11 +261,9 @@ __os_malloc(env, size, storep)
 		 * Windows/NT in an MT environment.
 		 */
 		if ((ret = __os_get_errno_ret_zero()) == 0) {
-			ret = USR_ERR(env, ENOMEM);
+			ret = ENOMEM;
 			__os_set_errno(ENOMEM);
 		}
-		else
-			(void)USR_ERR(env, ret);
 		__db_err(env, ret, DB_STR_A("0147", "malloc: %lu", "%lu"),
 		    (u_long)size);
 		return (ret);
@@ -294,11 +292,11 @@ __os_malloc(env, size, storep)
  * __os_realloc --
  *	The realloc(3) function for DB.
  *
- * PUBLIC: int __os_realloc __P((const ENV *, size_t, void *));
+ * PUBLIC: int __os_realloc __P((ENV *, size_t, void *));
  */
 int
 __os_realloc(env, size, storep)
-	const ENV *env;
+	ENV *env;
 	size_t size;
 	void *storep;
 {
@@ -347,7 +345,7 @@ __os_realloc(env, size, storep)
 		 * Windows/NT in an MT environment.
 		 */
 		if ((ret = __os_get_errno_ret_zero()) == 0) {
-			ret = USR_ERR(env, ENOMEM);
+			ret = ENOMEM;
 			__os_set_errno(ENOMEM);
 		}
 		__db_err(env, ret, DB_STR_A("0148", "realloc: %lu", "%lu"),
@@ -370,11 +368,11 @@ __os_realloc(env, size, storep)
  * __os_free --
  *	The free(3) function for DB.
  *
- * PUBLIC: void __os_free __P((const ENV *, void *));
+ * PUBLIC: void __os_free __P((ENV *, void *));
  */
 void
 __os_free(env, ptr)
-	const ENV *env;
+	ENV *env;
 	void *ptr;
 {
 #ifdef DIAGNOSTIC
@@ -418,7 +416,7 @@ __os_free(env, ptr)
  */
 static void
 __os_guard(env)
-	const ENV *env;
+	ENV *env;
 {
 	__db_errx(env, DB_STR("0149",
 	    "Guard byte incorrect during free"));

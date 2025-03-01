@@ -1,5 +1,5 @@
 
-The C test cases are currently (loosely) based on the CuTest harness. Loosely
+The C test cases are currently (loosly) based on the CuTest harness. Loosely
 because the harness has been heavily modified from the original version.
 
 There are still a few old test cases in the source tree. Those will be

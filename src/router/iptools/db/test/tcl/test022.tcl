@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -46,12 +46,12 @@ proc test022 { method args } {
 	error_check_good db2_open [is_valid_db $db2] TRUE
 
 	# Call DB->get_byteswapped on both of them.
-	set db1_order [$db1 get_byteswapped]
-	set db2_order [$db2 get_byteswapped]
+	set db1_order [$db1 is_byteswapped]
+	set db2_order [$db2 is_byteswapped]
 
 	# Make sure that both answers are either 1 or 0,
 	# and that exactly one of them is 1.
-	error_check_good get_byteswapped_sensible_1 \
+	error_check_good is_byteswapped_sensible_1 \
 	    [expr ($db1_order == 1 && $db2_order == 0) || \
 		  ($db1_order == 0 && $db2_order == 1)] 1
 

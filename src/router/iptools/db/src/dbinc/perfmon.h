@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -19,7 +19,7 @@
  *		Solaris
  *		Linux (via SystemTap's dtrace wrappers)
  *		Darwin (Mac OS X)
- *		QNX(?)
+ *		QNX(?)  
  *
  ******************************************************/
 
@@ -29,16 +29,17 @@
  * they are excluded. They can be enabled with --enable-perfmon-statistics.
  */
 #ifdef HAVE_PERFMON_STATISTICS
-#define	STAT_PERFMON1(env, cat, id, a1)		PERFMON1(env, cat, id, (a1))
-#define	STAT_PERFMON2(env, cat, id, a1, a2)	\
+#define STAT_PERFMON1(env, cat, id, a1)		PERFMON1(env, cat, id, (a1))
+#define STAT_PERFMON2(env, cat, id, a1, a2) 	\
     PERFMON2(env, cat, id, (a1), (a2))
-#define	STAT_PERFMON3(env, cat, id, a1, a2, a3)	\
+#define STAT_PERFMON3(env, cat, id, a1, a2, a3)	\
     PERFMON3(env, cat, id, (a1), (a2), (a3))
 #else
-#define	STAT_PERFMON1(env, cat, id, a1)		NOP_STATEMENT
-#define	STAT_PERFMON2(env, cat, id, a1, a2)	NOP_STATEMENT
-#define	STAT_PERFMON3(env, cat, id, a1, a2, a3)	NOP_STATEMENT
+#define STAT_PERFMON1(env, cat, id, a1)		NOP_STATEMENT
+#define STAT_PERFMON2(env, cat, id, a1, a2)	NOP_STATEMENT
+#define STAT_PERFMON3(env, cat, id, a1, a2, a3)	NOP_STATEMENT
 #endif
+
 
 #if defined(HAVE_PERFMON) && defined(HAVE_STATISTICS)
 /*
@@ -60,43 +61,43 @@ struct __db_mutex_t;
  */
 #include "db_provider.h"
 
-#define	PERFMON0(env, cat, id)		bdb_##cat##_##id()
-#define	PERFMON1(env, cat, id, a1)	bdb_##cat##_##id(a1)
-#define	PERFMON2(env, cat, id, a1, a2)					\
+#define PERFMON0(env, cat, id)		bdb_##cat##_##id()
+#define PERFMON1(env, cat, id, a1)	bdb_##cat##_##id(a1)
+#define PERFMON2(env, cat, id, a1, a2)					\
     bdb_##cat##_##id((a1), (a2))
-#define	PERFMON3(env, cat, id, a1, a2, a3)				\
+#define PERFMON3(env, cat, id, a1, a2, a3)				\
     do {								\
-	if (PERFMON_ENABLED(env, cat, id))				\
+    	if (PERFMON_ENABLED(env, cat, id))				\
 	    bdb_##cat##_##id((a1), (a2), (a3));			\
     } while (0)
-#define	PERFMON4(env, cat, id, a1, a2, a3, a4)				\
+#define PERFMON4(env, cat, id, a1, a2, a3, a4)				\
     do {								\
-	if (PERFMON_ENABLED(env, cat, id))				\
+    	if (PERFMON_ENABLED(env, cat, id))				\
 	    bdb_##cat##_##id((a1), (a2), (a3), (a4));			\
     } while (0)
-#define	PERFMON5(env, cat, id, a1, a2, a3, a4, a5)			\
+#define PERFMON5(env, cat, id, a1, a2, a3, a4, a5)			\
     do {								\
-	if (PERFMON_ENABLED(env, cat, id))				\
+    	if (PERFMON_ENABLED(env, cat, id))				\
 	    bdb_##cat##_##id((a1), (a2), (a3), (a4), (a5));		\
     } while (0)
-#define	PERFMON6(env, cat, id, a1, a2, a3, a4, a5, a6)			\
+#define PERFMON6(env, cat, id, a1, a2, a3, a4, a5, a6)			\
     do {								\
-	if (PERFMON_ENABLED(env, cat, id))				\
+    	if (PERFMON_ENABLED(env, cat, id))				\
 	    bdb_##cat##_##id((a1), (a2), (a3), (a4), (a5), (a6));	\
     } while (0)
-#define	PERFMON_ENABLED(env, cat, id)	 bdb_##cat##_##id##_enabled()
+#define PERFMON_ENABLED(env, cat, id)	 bdb_##cat##_##id##_enabled()
 #endif
 
 #else
 /* Without HAVE_PERFMON or HAVE_STATISTICS these macros map to null bodies. */
-#define	PERFMON0(env, cat, id)				NOP_STATEMENT
-#define	PERFMON1(env, cat, id, a1)			NOP_STATEMENT
-#define	PERFMON2(env, cat, id, a1, a2)			NOP_STATEMENT
-#define	PERFMON3(env, cat, id, a1, a2, a3)		NOP_STATEMENT
-#define	PERFMON4(env, cat, id, a1, a2, a3, a4)		NOP_STATEMENT
-#define	PERFMON5(env, cat, id, a1, a2, a3, a4, a5)	NOP_STATEMENT
-#define	PERFMON6(env, cat, id, a1, a2, a3, a4, a5, a6)	NOP_STATEMENT
-#define	PERFMON_ENABLED(env, cat, id)			FALSE
+#define PERFMON0(env, cat, id)				NOP_STATEMENT
+#define PERFMON1(env, cat, id, a1)			NOP_STATEMENT
+#define PERFMON2(env, cat, id, a1, a2)			NOP_STATEMENT
+#define PERFMON3(env, cat, id, a1, a2, a3)		NOP_STATEMENT
+#define PERFMON4(env, cat, id, a1, a2, a3, a4)		NOP_STATEMENT
+#define PERFMON5(env, cat, id, a1, a2, a3, a4, a5)	NOP_STATEMENT
+#define PERFMON6(env, cat, id, a1, a2, a3, a4, a5, a6)	NOP_STATEMENT
+#define PERFMON_ENABLED(env, cat, id)	 		FALSE
 #endif
 
 #endif

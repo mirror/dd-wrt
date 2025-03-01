@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -76,13 +76,13 @@ __memp_dirty(dbmfp, addrp, ip, txn, priority, flags)
 
 	if (mvcc && txn != NULL && flags == DB_MPOOL_DIRTY &&
 	    (!BH_OWNED_BY(env, bhp, ancestor) || SH_CHAIN_HASNEXT(bhp, vc))) {
-		(void)atomic_inc(env, &bhp->ref);
+		atomic_inc(env, &bhp->ref);
 		*(void **)addrp = NULL;
 		if ((ret = __memp_fput(dbmfp, ip, pgaddr, priority)) != 0) {
 			__db_errx(env, DB_STR_A("3009",
 			    "%s: error releasing a read-only page", "%s"),
 			    __memp_fn(dbmfp));
-			(void)atomic_dec(env, &bhp->ref);
+			atomic_dec(env, &bhp->ref);
 			return (ret);
 		}
 		if ((ret = __memp_fget(dbmfp,
@@ -91,10 +91,10 @@ __memp_dirty(dbmfp, addrp, ip, txn, priority, flags)
 				__db_errx(env, DB_STR_A("3010",
 				    "%s: error getting a page for writing",
 				    "%s"), __memp_fn(dbmfp));
-			(void)atomic_dec(env, &bhp->ref);
+			atomic_dec(env, &bhp->ref);
 			return (ret);
 		}
-		(void)atomic_dec(env, &bhp->ref);
+		atomic_dec(env, &bhp->ref);
 
 		/*
 		 * If the MVCC handle count hasn't changed, we should get a
@@ -117,7 +117,6 @@ __memp_dirty(dbmfp, addrp, ip, txn, priority, flags)
 	/* Drop the shared latch and get an exclusive. We have the buf ref'ed.*/
 	MUTEX_UNLOCK(env, bhp->mtx_buf);
 	MUTEX_LOCK(env, bhp->mtx_buf);
-	DB_TEST_CRASH(env->test_abort, DB_TEST_EXC_LATCH);
 	DB_ASSERT(env, !F_ISSET(bhp, BH_EXCLUSIVE));
 	F_SET(bhp, BH_EXCLUSIVE);
 
@@ -126,7 +125,7 @@ __memp_dirty(dbmfp, addrp, ip, txn, priority, flags)
 #ifdef DIAGNOSTIC
 		MUTEX_LOCK(env, hp->mtx_hash);
 #endif
-		(void)atomic_inc(env, &hp->hash_page_dirty);
+		atomic_inc(env, &hp->hash_page_dirty);
 		F_SET(bhp, BH_DIRTY);
 #ifdef DIAGNOSTIC
 		MUTEX_UNLOCK(env, hp->mtx_hash);

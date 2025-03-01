@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -59,13 +59,13 @@ namespace BerkeleyDB {
         /// <remarks>
         /// <para>
         /// If <see cref="DatabaseConfig.AutoCommit"/> is set, the operation
-        /// is implicitly transaction protected. Transactionally
-        /// protected operations on a database object requires the object itself
+        /// will be implicitly transaction protected. Note that transactionally
+        /// protected operations on a datbase object requires the object itself
         /// be transactionally protected during its open.
         /// </para>
         /// </remarks>
         /// <param name="Filename">
-        /// The name of an underlying file used to back the
+        /// The name of an underlying file that will be used to back the
         /// database.
         /// </param>
         /// <param name="cfg">The database's configuration</param>
@@ -90,13 +90,13 @@ namespace BerkeleyDB {
         /// </para>
         /// <para>
         /// If <see cref="DatabaseConfig.AutoCommit"/> is set, the operation
-        /// is implicitly transaction protected. Transactionally
-        /// protected operations on a database object requires the object itself
+        /// will be implicitly transaction protected. Note that transactionally
+        /// protected operations on a datbase object requires the object itself
         /// be transactionally protected during its open.
         /// </para>
         /// </remarks>
         /// <param name="Filename">
-        /// The name of an underlying file used to back the
+        /// The name of an underlying file that will be used to back the
         /// database.
         /// </param>
         /// <param name="DatabaseName">
@@ -121,13 +121,13 @@ namespace BerkeleyDB {
         /// <remarks>
         /// <para>
         /// If <see cref="DatabaseConfig.AutoCommit"/> is set, the operation
-        /// is implicitly transaction protected. Transactionally
-        /// protected operations on a database object requires the object itself
+        /// will be implicitly transaction protected. Note that transactionally
+        /// protected operations on a datbase object requires the object itself
         /// be transactionally protected during its open.
         /// </para>
         /// </remarks>
         /// <param name="Filename">
-        /// The name of an underlying file used to back the
+        /// The name of an underlying file that will be used to back the
         /// database.
         /// </param>
         /// <param name="cfg">The database's configuration</param>
@@ -160,13 +160,13 @@ namespace BerkeleyDB {
         /// </para>
         /// <para>
         /// If <see cref="DatabaseConfig.AutoCommit"/> is set, the operation
-        /// is implicitly transaction protected. Transactionally
-        /// protected operations on a database object requires the object itself
+        /// will be implicitly transaction protected. Note that transactionally
+        /// protected operations on a datbase object requires the object itself
         /// be transactionally protected during its open.
         /// </para>
         /// </remarks>
         /// <param name="Filename">
-        /// The name of an underlying file used to back the
+        /// The name of an underlying file that will be used to back the
         /// database.
         /// </param>
         /// <param name="DatabaseName">
@@ -253,7 +253,7 @@ namespace BerkeleyDB {
                 /* 
                  * We need a managed array to copy each DBT into and then we'll
                  * copy the managed array to the native array we just allocated.
-                 * We are not able to copy native -> native.
+                 * We're not able to copy native -> native.
                  */
                 byte[] arr = new byte[nrecs * dbt_sz];
                 IntPtr p;

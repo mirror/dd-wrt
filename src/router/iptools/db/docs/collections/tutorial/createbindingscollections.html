@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -79,14 +79,14 @@
 import com.sleepycat.bind.serial.ClassCatalog;
 import com.sleepycat.bind.serial.SerialBinding;
 import com.sleepycat.collections.StoredEntrySet;
-import com.sleepycat.collections.StoredSortedMap;
+import com.sleepycat.collections.StoredMap;
 ...
 
 public class SampleViews
 {
-    private StoredSortedMap partMap;
-    private StoredSortedMap supplierMap;
-    private StoredSortedMap shipmentMap;
+    private StoredMap partMap;
+    private StoredMap supplierMap;
+    private StoredMap shipmentMap;
 
     ...
     public SampleViews(SampleDatabase db)
@@ -95,9 +95,9 @@ public class SampleViews
 }</code></strong> </pre>
       <p>
     A 
-    <a class="ulink" href="../../java/com/sleepycat/collections/StoredMap.html" target="_top">StoredSortedMap</a>
+    <a class="ulink" href="../../java/com/sleepycat/collections/StoredMap.html" target="_top">StoredMap</a>
     
-	field is used for each database. The StoredSortedMap class implements the
+	field is used for each database. The StoredMap class implements the
 	standard Java 
     <a class="ulink" href="http://download.oracle.com/javase/1.5.0/docs/api/java/util/Map.html" target="_top">Map</a>
     
@@ -129,15 +129,15 @@ public class SampleViews
 <strong class="userinput"><code>        ClassCatalog catalog = db.getClassCatalog();
         EntryBinding partKeyBinding =
             new SerialBinding(catalog, PartKey.class);
-        EntryBinding partDataBinding =
+        EntryBinding partValueBinding =
             new SerialBinding(catalog, PartData.class);
         EntryBinding supplierKeyBinding =
             new SerialBinding(catalog, SupplierKey.class);
-        EntryBinding supplierDataBinding =
+        EntryBinding supplierValueBinding =
             new SerialBinding(catalog, SupplierData.class);
         EntryBinding shipmentKeyBinding =
             new SerialBinding(catalog, ShipmentKey.class);
-        EntryBinding shipmentDataBinding =
+        EntryBinding shipmentValueBinding =
             new SerialBinding(catalog, ShipmentData.class);</code></strong>
         ...
     } </pre>
@@ -159,7 +159,7 @@ public class SampleViews
 </p>
       <p>
     The following statements create standard Java maps using the
-	<a class="ulink" href="../../java/com/sleepycat/collections/StoredMap.html" target="_top">StoredSortedMap</a>
+	<a class="ulink" href="../../java/com/sleepycat/collections/StoredMap.html" target="_top">StoredMap</a>
 	
 	class.
 </p>
@@ -168,21 +168,21 @@ public class SampleViews
     {
         ...
 <strong class="userinput"><code>        partMap =
-            new StoredSortedMap(db.getPartDatabase(),
-                          partKeyBinding, partDataBinding, true);
+            new StoredMap(db.getPartDatabase(),
+                          partKeyBinding, partValueBinding, true);
         supplierMap =
-            new StoredSortedMap(db.getSupplierDatabase(),
-                          supplierKeyBinding, partDataBinding, true);
+            new StoredMap(db.getSupplierDatabase(),
+                          supplierKeyBinding, supplierValueBinding, true);
         shipmentMap =
-            new StoredSortedMap(db.getShipmentDatabase(),
-                          shipmentKeyBinding, partDataBinding, true);</code></strong>
+            new StoredMap(db.getShipmentDatabase(),
+                          shipmentKeyBinding, shipmentValueBinding, true);</code></strong>
     ...
     } </pre>
       <p>
     The first parameter of the 
-    <a class="ulink" href="../../java/com/sleepycat/collections/StoredMap.html" target="_top">StoredSortedMap</a>
+    <a class="ulink" href="../../java/com/sleepycat/collections/StoredMap.html" target="_top">StoredMap</a>
     
-	constructor is the database. In a StoredSortedMap, the database keys (the primary
+	constructor is the database. In a StoredMap, the database keys (the primary
     keys) are used as the map keys. The Index
 	example shows how to use secondary index keys as map keys.
 </p>
@@ -204,17 +204,17 @@ public class SampleViews
       <pre class="programlisting">public class SampleViews
 {
     ...
-<strong class="userinput"><code>    public final StoredSortedMap getPartMap()
+<strong class="userinput"><code>    public final StoredMap getPartMap()
     {
         return partMap;
     }
 
-    public final StoredSortedMap getSupplierMap()
+    public final StoredMap getSupplierMap()
     {
         return supplierMap;
     }
 
-    public final StoredSortedMap getShipmentMap()
+    public final StoredMap getShipmentMap()
     {
         return shipmentMap;
     }
@@ -236,13 +236,13 @@ public class SampleViews
     ...
 } </pre>
       <p>
-    Note that StoredSortedMap and StoredEntrySet are returned rather than
-	just returning Map and Set. Since StoredSortedMap implements the Map
+    Note that StoredMap and StoredEntrySet are returned rather than
+	just returning Map and Set. Since StoredMap implements the Map
 	interface and StoredEntrySet implements the Set interface, you may
 	ask why Map and Set were not returned directly.
 </p>
       <p>
-    <code class="classname">StoredSortedMap</code>, <code class="classname">StoredEntrySet</code>, 
+    <code class="classname">StoredMap</code>, <code class="classname">StoredEntrySet</code>, 
     and other stored collection classes
 	have a small number of extra methods beyond those in the Java
 	collection interfaces. The stored collection types are therefore

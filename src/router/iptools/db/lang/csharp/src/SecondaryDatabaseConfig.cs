@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -17,12 +17,12 @@ namespace BerkeleyDB {
     public class SecondaryDatabaseConfig : DatabaseConfig {
         private Database pdp;
         /// <summary>
-        /// All updates to the primary database are automatically reflected in the
-        /// secondary and all reads from the secondary return corresponding
+        /// All updates to Primary will be automatically reflected in the
+        /// secondary and all reads from the secondary will return corresponding
         /// data from Primary.
         /// </summary>
         /// <remarks>
-        /// As primary keys must be unique for secondary indices to
+        /// Note that as primary keys must be unique for secondary indices to
         /// work, Primary must have been configured with
         /// <see cref="DuplicatesPolicy.NONE"/>.
         /// </remarks>
@@ -68,8 +68,8 @@ namespace BerkeleyDB {
         /// modify a primary database being used to populate a secondary
         /// database, in another thread of control, until
         /// <see cref="SecondaryDatabase.Open"/> has returned successfully in
-        /// the first thread. If transactions are being used, Berkeley DB 
-        /// performs appropriate locking and the application need not do any
+        /// the first thread. If transactions are being used, Berkeley DB will
+        /// perform appropriate locking and the application need not do any
         /// special operation ordering.
         /// </para>
         /// </remarks>
@@ -80,7 +80,7 @@ namespace BerkeleyDB {
         /// <remarks>
         /// <para>
         /// This setting can be used to optimize updates when the secondary key
-        /// in a primary record is never changed after the primary record
+        /// in a primary record will never be changed after the primary record
         /// is inserted. For immutable secondary keys, a best effort is made to
         /// avoid calling the secondary callback function when primary records
         /// are updated. This optimization may reduce the overhead of update

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -67,7 +67,6 @@ __memp_get_cachesize(dbenv, gbytesp, bytesp, ncachep)
 	int *ncachep;
 {
 	DB_MPOOL *dbmp;
-	DB_THREAD_INFO *ip;
 	ENV *env;
 	MPOOL *mp;
 
@@ -79,16 +78,12 @@ __memp_get_cachesize(dbenv, gbytesp, bytesp, ncachep)
 	if (MPOOL_ON(env)) {
 		dbmp = env->mp_handle;
 		mp = dbmp->reginfo[0].primary;
-		ENV_ENTER(env, ip);
-		MUTEX_LOCK(env, mp->mtx_resize);
 		if (gbytesp != NULL)
 			*gbytesp = mp->gbytes;
 		if (bytesp != NULL)
 			*bytesp = mp->bytes;
 		if (ncachep != NULL)
 			*ncachep = (int)mp->nreg;
-		MUTEX_UNLOCK(env, mp->mtx_resize);
-		ENV_LEAVE(env, ip);
 	} else {
 		if (gbytesp != NULL)
 			*gbytesp = dbenv->mp_gbytes;
@@ -180,7 +175,7 @@ __memp_set_cachesize(dbenv, gbytes, bytes, arg_ncache)
 		ENV_ENTER(env, ip);
 		ret = __memp_resize(env->mp_handle, gbytes, bytes);
 		ENV_LEAVE(env, ip);
-		return (ret);
+		return ret;
 	}
 
 	dbenv->mp_gbytes = gbytes;
@@ -307,15 +302,12 @@ __memp_set_mp_max_openfd(dbenv, maxopenfd)
 	DB_ENV *dbenv;
 	int maxopenfd;
 {
-	DB_ENV *slice;
 	DB_MPOOL *dbmp;
 	DB_THREAD_INFO *ip;
 	ENV *env;
 	MPOOL *mp;
-	int i, ret;
 
 	env = dbenv->env;
-	ret = 0;
 
 	ENV_NOT_CONFIGURED(env,
 	    env->mp_handle, "DB_ENV->set_mp_max_openfd", DB_INIT_MPOOL);
@@ -330,10 +322,7 @@ __memp_set_mp_max_openfd(dbenv, maxopenfd)
 		ENV_LEAVE(env, ip);
 	} else
 		dbenv->mp_maxopenfd = maxopenfd;
-	SLICE_FOREACH(dbenv, slice, i)
-		if ((ret = __memp_set_mp_max_openfd(slice, maxopenfd)) != 0)
-			break;
-	return (ret);
+	return (0);
 }
 
 /*
@@ -383,18 +372,15 @@ __memp_set_mp_max_write(dbenv, maxwrite, maxwrite_sleep)
 	int maxwrite;
 	db_timeout_t maxwrite_sleep;
 {
-	DB_ENV *slice;
 	DB_MPOOL *dbmp;
 	DB_THREAD_INFO *ip;
 	ENV *env;
 	MPOOL *mp;
-	int i, ret;
 
 	env = dbenv->env;
-	ret = 0;
 
 	ENV_NOT_CONFIGURED(env,
-	    env->mp_handle, "DB_ENV->set_mp_max_write", DB_INIT_MPOOL);
+	    env->mp_handle, "DB_ENV->get_mp_max_write", DB_INIT_MPOOL);
 
 	if (MPOOL_ON(env)) {
 		dbmp = env->mp_handle;
@@ -409,11 +395,7 @@ __memp_set_mp_max_write(dbenv, maxwrite, maxwrite_sleep)
 		dbenv->mp_maxwrite = maxwrite;
 		dbenv->mp_maxwrite_sleep = maxwrite_sleep;
 	}
-	SLICE_FOREACH(dbenv, slice, i)
-		if ((ret = __memp_set_mp_max_write(slice,
-		    maxwrite, maxwrite_sleep)) != 0)
-			break;
-	return (ret);
+	return (0);
 }
 
 /*
@@ -466,7 +448,7 @@ __memp_set_mp_mmapsize(dbenv, mp_mmapsize)
 	env = dbenv->env;
 
 	ENV_NOT_CONFIGURED(env,
-	    env->mp_handle, "DB_ENV->set_mp_mmapsize", DB_INIT_MPOOL);
+	    env->mp_handle, "DB_ENV->set_mp_max_mmapsize", DB_INIT_MPOOL);
 
 	if (MPOOL_ON(env)) {
 		dbmp = env->mp_handle;
@@ -530,45 +512,11 @@ __memp_set_mp_pagesize(dbenv, mp_pagesize)
 	env = dbenv->env;
 
 	ENV_NOT_CONFIGURED(env,
-	    env->mp_handle, "DB_ENV->set_mp_pagesize", DB_INIT_MPOOL);
+	    env->mp_handle, "DB_ENV->get_mp_max_mmapsize", DB_INIT_MPOOL);
 	ENV_ILLEGAL_AFTER_OPEN(env, "DB_ENV->set_mp_pagesize");
 
 	dbenv->mp_pagesize = mp_pagesize;
 	return (0);
-}
-
-/*
- * __memp_get_reg_dir
- *
- * PUBLIC: int __memp_get_reg_dir __P((DB_ENV *, const char **));
- */
-int
-__memp_get_reg_dir(dbenv, dirp)
-	DB_ENV *dbenv;
-	const char **dirp;
-{
-	*dirp = dbenv->db_reg_dir;
-	return (0);
-}
-
-/*
- * __memp_set_reg_dir
- *
- * PUBLIC: int __memp_set_reg_dir __P((DB_ENV *, const char *));
- */
-int
-__memp_set_reg_dir(dbenv, dir)
-	DB_ENV *dbenv;
-	const char *dir;
-{
-	ENV *env;
-
-	env = dbenv->env;
-	ENV_ILLEGAL_AFTER_OPEN(env, "DB_ENV->set_region_dir");
-
-	if (dbenv->db_reg_dir != NULL)
-		__os_free(env, dbenv->db_reg_dir);
-	return (__os_strdup(env, dir, &dbenv->db_reg_dir));
 }
 
 /*
@@ -613,7 +561,7 @@ __memp_set_mp_tablesize(dbenv, mp_tablesize)
 	env = dbenv->env;
 
 	ENV_NOT_CONFIGURED(env,
-	    env->mp_handle, "DB_ENV->set_mp_tablesize", DB_INIT_MPOOL);
+	    env->mp_handle, "DB_ENV->get_mp_max_mmapsize", DB_INIT_MPOOL);
 	ENV_ILLEGAL_AFTER_OPEN(env, "DB_ENV->set_mp_tablesize");
 
 	dbenv->mp_tablesize = mp_tablesize;
@@ -635,7 +583,7 @@ __memp_get_mp_mtxcount(dbenv, mp_mtxcountp)
 	env = dbenv->env;
 
 	ENV_NOT_CONFIGURED(env,
-	    env->mp_handle, "DB_ENV->get_mp_mtxcount", DB_INIT_MPOOL);
+	    env->mp_handle, "DB_ENV->get_mp_max_mtxcount", DB_INIT_MPOOL);
 
 	if (MPOOL_ON(env)) {
 		dbmp = env->mp_handle;
@@ -662,7 +610,7 @@ __memp_set_mp_mtxcount(dbenv, mp_mtxcount)
 	env = dbenv->env;
 
 	ENV_NOT_CONFIGURED(env,
-	    env->mp_handle, "DB_ENV->set_mp_mtxcount", DB_INIT_MPOOL);
+	    env->mp_handle, "DB_ENV->get_mp_max_mmapsize", DB_INIT_MPOOL);
 	ENV_ILLEGAL_AFTER_OPEN(env, "DB_ENV->set_mp_mtxcount");
 
 	dbenv->mp_mtxcount = mp_mtxcount;
@@ -676,6 +624,7 @@ __memp_set_mp_mtxcount(dbenv, mp_mtxcount)
  * PUBLIC: int __memp_nameop __P((ENV *,
  * PUBLIC:     u_int8_t *, const char *, const char *, const char *, int));
  *
+ * XXX
  * Undocumented interface: DB private.
  */
 int
@@ -691,7 +640,7 @@ __memp_nameop(env, fileid, newname, fullold, fullnew, inmem)
 	MPOOLFILE *mfp;
 	roff_t newname_off;
 	u_int32_t bucket;
-	int locked, purge_dead, ret;
+	int locked, ret;
 	size_t nlen;
 	void *p;
 
@@ -708,7 +657,6 @@ __memp_nameop(env, fileid, newname, fullold, fullnew, inmem)
 	nhp = NULL;
 	p = NULL;
 	locked = ret = 0;
-	purge_dead = 0;
 
 	if (!MPOOL_ON(env))
 		goto fsop;
@@ -762,7 +710,7 @@ __memp_nameop(env, fileid, newname, fullold, fullnew, inmem)
 			    R_ADDR(dbmp->reginfo, mfp->path_off)) == 0)
 				break;
 		if (mfp != NULL) {
-			ret = USR_ERR(env, EEXIST);
+			ret = EEXIST;
 			goto err;
 		}
 	}
@@ -786,7 +734,7 @@ __memp_nameop(env, fileid, newname, fullold, fullnew, inmem)
 
 	if (mfp == NULL) {
 		if (inmem) {
-			ret = USR_ERR(env, ENOENT);
+			ret = ENOENT;
 			goto err;
 		}
 		goto fsop;
@@ -801,7 +749,7 @@ __memp_nameop(env, fileid, newname, fullold, fullnew, inmem)
 		 */
 		if (mfp->no_backing_file)
 			mfp->mpf_cnt--;
-		__memp_mf_mark_dead(dbmp, mfp, &purge_dead);
+		mfp->deadfile = 1;
 		MUTEX_UNLOCK(env, mfp->mutex);
 	} else {
 		/*
@@ -840,7 +788,7 @@ fsop:	/*
 			 */
 			DB_ASSERT(env, fullnew != NULL);
 			if (fullnew == NULL) {
-				ret = USR_ERR(env, EINVAL);
+				ret = EINVAL;
 				goto err;
 			}
 			ret = __os_rename(env, fullold, fullnew, 1);
@@ -860,12 +808,6 @@ err:	if (p != NULL) {
 		if (nhp != NULL && nhp != hp)
 			MUTEX_UNLOCK(env, nhp->mtx_hash);
 	}
-	/* 
-	 * __memp_purge_dead_files() must be called when the hash bucket is
-	 * unlocked.
-	 */
-	if (purge_dead)
-		(void)__memp_purge_dead_files(env);
 	return (ret);
 }
 
@@ -928,7 +870,7 @@ __memp_ftruncate(dbmfp, txn, ip, pgno, flags)
 	    !mfp->no_backing_file && pgno <= mfp->last_flushed_pgno)
 #ifdef HAVE_FTRUNCATE
 		ret = __os_truncate(env,
-		    dbmfp->fhp, pgno, mfp->pagesize, 0);
+		    dbmfp->fhp, pgno, mfp->pagesize);
 #else
 		ret = __db_zero_extend(env,
 		    dbmfp->fhp, pgno, mfp->last_pgno, mfp->pagesize);

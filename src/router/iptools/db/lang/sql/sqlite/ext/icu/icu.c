@@ -22,7 +22,7 @@
 **   * Implementations of the SQL scalar upper() and lower() functions
 **     for case mapping.
 **
-**   * Integration of ICU and SQLite collation sequences.
+**   * Integration of ICU and SQLite collation seqences.
 **
 **   * An implementation of the LIKE operator that uses ICU to 
 **     provide case-independent matching.
@@ -488,10 +488,7 @@ int sqlite3IcuInit(sqlite3 *db){
 }
 
 #if !SQLITE_CORE
-#ifdef _WIN32
-__declspec(dllexport)
-#endif
-int sqlite3_icu_init(
+int sqlite3_extension_init(
   sqlite3 *db, 
   char **pzErrMsg,
   const sqlite3_api_routines *pApi

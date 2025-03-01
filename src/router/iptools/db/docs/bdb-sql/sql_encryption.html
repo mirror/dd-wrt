@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -36,74 +36,25 @@
           </div>
         </div>
       </div>
-      <div class="toc">
-        <dl>
-          <dt>
-            <span class="sect2">
-              <a href="sql_encryption.html#sql_native_encrypt">Berkeley DB encryption</a>
-            </span>
-          </dt>
-          <dt>
-            <span class="sect2">
-              <a href="sql_encryption.html#sql_see">SQLite Encryption Extension</a>
-            </span>
-          </dt>
-        </dl>
-      </div>
       <p>
-		    When encryption is enabled, the Berkeley DB SQL API uses
-		    native Berkeley DB encryption to assure the security of 
-		    your data.  As usual, the Berkeley DB SQL API is almost 
-		    identical to the SQLite API, so you can use the syntax
-		    of the SQLite Encryption Extension to interact with your 
-		    encrypted data.
+            The Berkeley DB SQL interface supports the SQLite Encryption Extension (SEE) to ensure security of
+            your data. The supported encryption algorithm is AES-128 in CBC mode.
+            For more information on the concepts relating to BDB encryption, see the 
+            <span>
+                <a href="../programmer_reference/env_encrypt.html" class="olink">Berkeley DB Programmer's Reference Guide.</a>
+            </span>
+            
+        </p>
+      <p>
+            To learn how to use the SQLite Encryption Extension (SEE), see the
+            official <a class="ulink" href="http://www.hwaci.com/sw/sqlite/see.html" target="_top">SQLite
+            Documentation Page.</a>
+        </p>
+      <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
+        <h3 class="title">Note</h3>
+        <p>
+                The Berkeley DB SQL interface does not support the sqlite3_rekey method.
             </p>
-      <div class="sect2" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
-              <h3 class="title"><a id="sql_native_encrypt"></a>Berkeley DB encryption</h3>
-            </div>
-          </div>
-        </div>
-        <p>
-                    Berkeley DB supports encryption using the Rijndael/AES
-                    algorithm. It is configured to use a 128-bit key. Berkeley
-                    DB uses a 16-byte initialization vector generated using the
-                    Mersenne Twister. All encrypted information is additionally
-                    checksummed using the SHA1 Secure Hash Algorithm, using a
-                    160-bit message digest. For more information on BDB
-                    encryption, see the
-                   <span>
-                       <a href="../programmer_reference/env_encrypt.html" class="olink">
-                          Berkeley DB Programmer's Reference Guide.
-                       </a>
-                   </span>
-                   
-                </p>
-      </div>
-      <div class="sect2" lang="en" xml:lang="en">
-        <div class="titlepage">
-          <div>
-            <div>
-              <h3 class="title"><a id="sql_see"></a>SQLite Encryption Extension</h3>
-            </div>
-          </div>
-        </div>
-        <p>
-                   To learn about the APIs which are used in the SQLite
-                   Encryption Extension (SEE), see the official
-                   <a class="ulink" href="http://www.hwaci.com/sw/sqlite/see.html" target="_top">
-                       SQLite Documentation Page.
-                   </a>
-                </p>
-        <div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
-          <h3 class="title">Note</h3>
-          <p>
-                       The Berkeley DB SQL interface does not support the
-                       sqlite3_rekey method.
-                    </p>
-        </div>
       </div>
     </div>
     <div class="navfooter">

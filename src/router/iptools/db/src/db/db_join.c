@@ -1,7 +1,7 @@
 /*
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1998, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1998, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -518,7 +518,7 @@ retry2:		cp = jc->j_workcurs[i];
 					 * beginning (setting workcurs NULL
 					 * will achieve this next go-round).
 					 *
-					 * !!!: This is likely to break
+					 * XXX: This is likely to break
 					 * horribly if any two cursors are
 					 * both sorted, but have different
 					 * specified sort functions.  For,
@@ -793,13 +793,10 @@ __db_join_getnext(dbc, key, data, exhausted, opmods)
 	int ret, cmp;
 	DB *dbp;
 	DBT ldata;
-	int (*func) __P((DB *, const DBT *, const DBT *, size_t *));
+	int (*func) __P((DB *, const DBT *, const DBT *));
 
 	dbp = dbc->dbp;
-	if (dbp->dup_compare == NULL)
-		func = __dbt_defcmp;
-	else
-		(void)dbp->get_dup_compare(dbp, &func);
+	func = (dbp->dup_compare == NULL) ? __bam_defcmp : dbp->dup_compare;
 
 	switch (exhausted) {
 	case 0:
@@ -812,7 +809,7 @@ __db_join_getnext(dbc, key, data, exhausted, opmods)
 		if ((ret = __dbc_get(dbc,
 		    key, &ldata, opmods | DB_CURRENT)) != 0)
 			break;
-		cmp = func(dbp, data, &ldata, NULL);
+		cmp = func(dbp, data, &ldata);
 		if (cmp == 0) {
 			/*
 			 * We have to return the real data value.  Copy
@@ -837,7 +834,7 @@ __db_join_getnext(dbc, key, data, exhausted, opmods)
 		ret = __dbc_get(dbc, key, data, opmods | DB_GET_BOTHC);
 		break;
 	default:
-		ret = USR_ERR(dbc->env, EINVAL);
+		ret = EINVAL;
 		break;
 	}
 

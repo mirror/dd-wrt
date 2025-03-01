@@ -34,7 +34,7 @@ proc a_string {n} {
 # characteristics flags to "SAFE_DELETE".
 #
 testvfs tvfs -default 1
-tvfs devchar {undeletable_when_open powersafe_overwrite}
+tvfs devchar undeletable_when_open
 
 # Set up a hook so that each time a journal file is opened, closed or
 # deleted, the method name ("xOpen", "xClose" or "xDelete") and the final
@@ -167,7 +167,7 @@ do_test journal2-1.13 {
 } {1 {disk I/O error}}
 db2 close
 unset ::tvfs_error_on_write
-forcecopy test.db testX.db
+file copy -force test.db testX.db
 
 do_test journal2-1.14 { file exists test.db-journal } 1
 do_test journal2-1.15 {
@@ -231,3 +231,4 @@ ifcapable wal {
 
 tvfs delete
 finish_test
+

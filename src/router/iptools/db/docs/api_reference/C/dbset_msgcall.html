@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -41,9 +41,8 @@
       <pre class="programlisting">#include &lt;db.h&gt;
 
 void
-DB-&gt;set_msgcall(DB *, void (*db_msgcall_fcn)(const DB_ENV *dbenv,
-                                             const char *msgpfx,
-                                             const char *msg));  </pre>
+DB-&gt;set_msgcall(DB *,
+    void (*db_msgcall_fcn)(const DB_ENV *dbenv, char *msg));  </pre>
       <p>
          There are interfaces in the Berkeley DB library which either directly
          output informational messages or statistical information, or configure
@@ -98,7 +97,7 @@ DB-&gt;set_msgcall(DB *, void (*db_msgcall_fcn)(const DB_ENV *dbenv,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711194601536"></a>Parameters</h3>
+              <h3 class="title"><a id="idp50467152"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -106,14 +105,14 @@ DB-&gt;set_msgcall(DB *, void (*db_msgcall_fcn)(const DB_ENV *dbenv,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711194637632"></a>db_msgcall_fcn</h4>
+                <h4 class="title"><a id="idp50467344"></a>db_msgcall_fcn</h4>
               </div>
             </div>
           </div>
           <p>
                           The <span class="bold"><strong>db_msgcall_fcn</strong></span> parameter is the
                           application-specified message reporting function.  The function takes
-                          three parameters:
+                          two parameters:
                      </p>
           <div class="itemizedlist">
             <ul type="disc">
@@ -124,17 +123,6 @@ DB-&gt;set_msgcall(DB *, void (*db_msgcall_fcn)(const DB_ENV *dbenv,
                 <p>
                                  The <span class="bold"><strong>dbenv</strong></span> parameter is the enclosing
                                  database environment.
-                            </p>
-              </li>
-              <li>
-                <p>
-                                <code class="literal">msgpfx</code>
-                             </p>
-                <p>
-                                 The <span class="bold"><strong>msgpfx</strong></span> parameter is the message
-                                 prefix string that appears before informational messages.
-                                 This value is the environmental default, and can be
-                                 changed at any time using <a class="xref" href="envset_msgpfx.html" title="DB_ENV-&gt;set_msgpfx()">DB_ENV-&gt;set_msgpfx()</a> or <a class="xref" href="dbset_msgpfx.html" title="DB-&gt;set_msgpfx()">DB-&gt;set_msgpfx()</a>.
                             </p>
               </li>
               <li>
@@ -154,7 +142,7 @@ DB-&gt;set_msgcall(DB *, void (*db_msgcall_fcn)(const DB_ENV *dbenv,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711194772736"></a>Class</h3>
+              <h3 class="title"><a id="idp50473104"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -166,7 +154,7 @@ DB-&gt;set_msgcall(DB *, void (*db_msgcall_fcn)(const DB_ENV *dbenv,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711195121072"></a>See Also</h3>
+              <h3 class="title"><a id="idp50468488"></a>See Also</h3>
             </div>
           </div>
         </div>

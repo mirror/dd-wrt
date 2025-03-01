@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -114,7 +114,7 @@ namespace CsharpAPITest
 			}
 		}
 
-		[Test, ExpectedException(typeof(AccessViolationException))]
+		[Test]
 		public void TestDiscard()
 		{
 			DatabaseEnvironment env;
@@ -153,6 +153,7 @@ namespace CsharpAPITest
 			preparedTxns[0].Txn.Discard();
 			try {
 				preparedTxns[0].Txn.Commit();
+				throw new TestException();
 			} catch (AccessViolationException) {
 			} finally {
 				env.Close();

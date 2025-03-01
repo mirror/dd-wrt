@@ -166,14 +166,14 @@ public class test3 implements SQLite.Trace, SQLite.Profile {
 		System.err.println("error: " + ee);
 	    }
 	    int info[] = new int[2];
-	    SQLite.Database.status(SQLite.Constants.SQLITE_STATUS_MALLOC_COUNT, info, false);
-	    System.out.println("INFO: status(STATUS_MALLOC_COUNT) = "
+	    SQLite.Database.status(SQLite.Constants.SQLITE_STATUS_MEMORY_USED, info, false);
+	    System.out.println("INFO: status(STATUS_MEMORY_USED) = "
 			       + info[0] + "/" + info[1]);
 	    SQLite.Database.status(SQLite.Constants.SQLITE_STATUS_MALLOC_SIZE, info, false);
 	    System.out.println("INFO: status(STATUS_MALLOC_SIZE) = "
 			       + info[0] + "/" + info[1]);
-	    SQLite.Database.status(SQLite.Constants.SQLITE_STATUS_MEMORY_USED, info, false);
-	    System.out.println("INFO: status(STATUS_MEMORY_USED) = "
+	    SQLite.Database.status(SQLite.Constants.SQLITE_STATUS_PAGECACHE_USED, info, false);
+	    System.out.println("INFO: status(STATUS_PAGECACHE_USED) = "
 			       + info[0] + "/" + info[1]);
 	    SQLite.Database.status(SQLite.Constants.SQLITE_STATUS_PAGECACHE_OVERFLOW, info, false);
 	    System.out.println("INFO: status(STATUS_PAGECACHE_OVERFLOW) = "
@@ -181,11 +181,8 @@ public class test3 implements SQLite.Trace, SQLite.Profile {
 	    SQLite.Database.status(SQLite.Constants.SQLITE_STATUS_PAGECACHE_SIZE, info, false);
 	    System.out.println("INFO: status(STATUS_PAGECACHE_SIZE) = "
 			       + info[0] + "/" + info[1]);
-	    SQLite.Database.status(SQLite.Constants.SQLITE_STATUS_PAGECACHE_USED, info, false);
-	    System.out.println("INFO: status(STATUS_PAGECACHE_USED) = "
-			       + info[0] + "/" + info[1]);
-	    SQLite.Database.status(SQLite.Constants.SQLITE_STATUS_PARSER_STACK, info, false);
-	    System.out.println("INFO: status(STATUS_PARSER_STACK) = "
+	    SQLite.Database.status(SQLite.Constants.SQLITE_STATUS_SCRATCH_USED, info, false);
+	    System.out.println("INFO: status(STATUS_SCRATCH_USED) = "
 			       + info[0] + "/" + info[1]);
 	    SQLite.Database.status(SQLite.Constants.SQLITE_STATUS_SCRATCH_OVERFLOW, info, false);
 	    System.out.println("INFO: status(STATUS_SCRATCH_OVERFLOW) = "
@@ -193,35 +190,14 @@ public class test3 implements SQLite.Trace, SQLite.Profile {
 	    SQLite.Database.status(SQLite.Constants.SQLITE_STATUS_SCRATCH_SIZE, info, false);
 	    System.out.println("INFO: status(STATUS_SCRATCH_SIZE) = "
 			       + info[0] + "/" + info[1]);
-	    SQLite.Database.status(SQLite.Constants.SQLITE_STATUS_SCRATCH_USED, info, false);
-	    System.out.println("INFO: status(STATUS_SCRATCH_USED) = "
-			       + info[0] + "/" + info[1]);
-	    db.db_status(SQLite.Constants.SQLITE_DBSTATUS_CACHE_HIT, info, false);
-	    System.out.println("INFO: db_status(DBSTATUS_CACHE_HIT) = "
-			       + info[0] + "/" + info[1]);
-	    db.db_status(SQLite.Constants.SQLITE_DBSTATUS_CACHE_MISS, info, false);
-	    System.out.println("INFO: db_status(DBSTATUS_CACHE_MISS) = "
-			       + info[0] + "/" + info[1]);
-	    db.db_status(SQLite.Constants.SQLITE_DBSTATUS_CACHE_USED, info, false);
-	    System.out.println("INFO: db_status(DBSTATUS_CACHE_USED) = "
-			       + info[0] + "/" + info[1]);
-	    db.db_status(SQLite.Constants.SQLITE_DBSTATUS_LOOKASIDE_HIT, info, false);
-	    System.out.println("INFO: db_status(DBSTATUS_LOOKASIZE_HIT) = "
-			       + info[0] + "/" + info[1]);
-	    db.db_status(SQLite.Constants.SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL, info, false);
-	    System.out.println("INFO: db_status(DBSTATUS_LOOKASIZE_MISS_FULL) = "
-			       + info[0] + "/" + info[1]);
-	    db.db_status(SQLite.Constants.SQLITE_DBSTATUS_LOOKASIDE_MISS_SIZE, info, false);
-	    System.out.println("INFO: db_status(DBSTATUS_LOOKASIZE_MISS_SIZE) = "
+	    SQLite.Database.status(SQLite.Constants.SQLITE_STATUS_PARSER_STACK, info, false);
+	    System.out.println("INFO: status(STATUS_PARSER_STACK) = "
 			       + info[0] + "/" + info[1]);
 	    db.db_status(SQLite.Constants.SQLITE_DBSTATUS_LOOKASIDE_USED, info, false);
 	    System.out.println("INFO: db_status(DBSTATUS_LOOKASIZE_USED) = "
 			       + info[0] + "/" + info[1]);
-	    db.db_status(SQLite.Constants.SQLITE_DBSTATUS_SCHEMA_USED, info, false);
-	    System.out.println("INFO: db_status(DBSTATUS_SCHEMA_USED) = "
-			       + info[0] + "/" + info[1]);
-	    db.db_status(SQLite.Constants.SQLITE_DBSTATUS_STMT_USED, info, false);
-	    System.out.println("INFO: db_status(DBSTATUS_STMT_USED) = "
+	    db.db_status(SQLite.Constants.SQLITE_DBSTATUS_CACHE_USED, info, false);
+	    System.out.println("INFO: db_status(DBSTATUS_CACHE_USED) = "
 			       + info[0] + "/" + info[1]);
 	    T.do_exec(db, "drop table TEST3");
 	    T.do_exec(db, "drop table B");

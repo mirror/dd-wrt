@@ -52,11 +52,12 @@ void sqlite3HashClear(Hash *pH){
 /*
 ** The hashing function.
 */
-static unsigned int strHash(const char *z){
-  unsigned int h = 0;
-  unsigned char c;
-  while( (c = (unsigned char)*z++)!=0 ){
-    h = (h<<3) ^ h ^ sqlite3UpperToLower[c];
+static unsigned int strHash(const char *z, int nKey){
+  int h = 0;
+  assert( nKey>=0 );
+  while( nKey > 0  ){
+    h = (h<<3) ^ h ^ sqlite3UpperToLower[(unsigned char)*z++];
+    nKey--;
   }
   return h;
 }
@@ -112,11 +113,7 @@ static int rehash(Hash *pH, unsigned int new_size){
 
   /* The inability to allocates space for a larger hash table is
   ** a performance hit but it is not a fatal error.  So mark the
-  ** allocation as a benign. Use sqlite3Malloc()/memset(0) instead of 
-  ** sqlite3MallocZero() to make the allocation, as sqlite3MallocZero()
-  ** only zeroes the requested number of bytes whereas this module will
-  ** use the actual amount of space allocated for the hash table (which
-  ** may be larger than the requested amount).
+  ** allocation as a benign.
   */
   sqlite3BeginBenignMalloc();
   new_ht = (struct _ht *)sqlite3Malloc( new_size*sizeof(struct _ht) );
@@ -128,7 +125,7 @@ static int rehash(Hash *pH, unsigned int new_size){
   pH->htsize = new_size = sqlite3MallocSize(new_ht)/sizeof(struct _ht);
   memset(new_ht, 0, new_size*sizeof(struct _ht));
   for(elem=pH->first, pH->first=0; elem; elem = next_elem){
-    unsigned int h = strHash(elem->pKey) % new_size;
+    unsigned int h = strHash(elem->pKey, elem->nKey) % new_size;
     next_elem = elem->next;
     insertElement(pH, &new_ht[h], elem);
   }
@@ -136,33 +133,28 @@ static int rehash(Hash *pH, unsigned int new_size){
 }
 
 /* This function (for internal use only) locates an element in an
-** hash table that matches the given key.  The hash for this key is
-** also computed and returned in the *pH parameter.
+** hash table that matches the given key.  The hash for this key has
+** already been computed and is passed as the 4th parameter.
 */
-static HashElem *findElementWithHash(
+static HashElem *findElementGivenHash(
   const Hash *pH,     /* The pH to be searched */
   const char *pKey,   /* The key we are searching for */
-  unsigned int *pHash /* Write the hash value here */
+  int nKey,           /* Bytes in key (not counting zero terminator) */
+  unsigned int h      /* The hash for this key. */
 ){
   HashElem *elem;                /* Used to loop thru the element list */
   int count;                     /* Number of elements left to test */
-  unsigned int h;                /* The computed hash */
 
   if( pH->ht ){
-    struct _ht *pEntry;
-    h = strHash(pKey) % pH->htsize;
-    pEntry = &pH->ht[h];
+    struct _ht *pEntry = &pH->ht[h];
     elem = pEntry->chain;
     count = pEntry->count;
   }else{
-    h = 0;
     elem = pH->first;
     count = pH->count;
   }
-  *pHash = h;
-  while( count-- ){
-    assert( elem!=0 );
-    if( sqlite3StrICmp(elem->pKey,pKey)==0 ){ 
+  while( count-- && ALWAYS(elem) ){
+    if( elem->nKey==nKey && sqlite3StrNICmp(elem->pKey,pKey,nKey)==0 ){ 
       return elem;
     }
     elem = elem->next;
@@ -197,7 +189,7 @@ static void removeElementGivenHash(
   }
   sqlite3_free( elem );
   pH->count--;
-  if( pH->count==0 ){
+  if( pH->count<=0 ){
     assert( pH->first==0 );
     assert( pH->count==0 );
     sqlite3HashClear(pH);
@@ -205,20 +197,26 @@ static void removeElementGivenHash(
 }
 
 /* Attempt to locate an element of the hash table pH with a key
-** that matches pKey.  Return the data for this element if it is
+** that matches pKey,nKey.  Return the data for this element if it is
 ** found, or NULL if there is no match.
 */
-void *sqlite3HashFind(const Hash *pH, const char *pKey){
+void *sqlite3HashFind(const Hash *pH, const char *pKey, int nKey){
   HashElem *elem;    /* The element that matches key */
   unsigned int h;    /* A hash on key */
 
   assert( pH!=0 );
   assert( pKey!=0 );
-  elem = findElementWithHash(pH, pKey, &h);
+  assert( nKey>=0 );
+  if( pH->ht ){
+    h = strHash(pKey, nKey) % pH->htsize;
+  }else{
+    h = 0;
+  }
+  elem = findElementGivenHash(pH, pKey, nKey, h);
   return elem ? elem->data : 0;
 }
 
-/* Insert an element into the hash table pH.  The key is pKey
+/* Insert an element into the hash table pH.  The key is pKey,nKey
 ** and the data is "data".
 **
 ** If no element exists with a matching key, then a new
@@ -232,14 +230,20 @@ void *sqlite3HashFind(const Hash *pH, const char *pKey){
 ** If the "data" parameter to this function is NULL, then the
 ** element corresponding to "key" is removed from the hash table.
 */
-void *sqlite3HashInsert(Hash *pH, const char *pKey, void *data){
+void *sqlite3HashInsert(Hash *pH, const char *pKey, int nKey, void *data){
   unsigned int h;       /* the hash of the key modulo hash table size */
   HashElem *elem;       /* Used to loop thru the element list */
   HashElem *new_elem;   /* New element added to the pH */
 
   assert( pH!=0 );
   assert( pKey!=0 );
-  elem = findElementWithHash(pH,pKey,&h);
+  assert( nKey>=0 );
+  if( pH->htsize ){
+    h = strHash(pKey, nKey) % pH->htsize;
+  }else{
+    h = 0;
+  }
+  elem = findElementGivenHash(pH,pKey,nKey,h);
   if( elem ){
     void *old_data = elem->data;
     if( data==0 ){
@@ -247,6 +251,7 @@ void *sqlite3HashInsert(Hash *pH, const char *pKey, void *data){
     }else{
       elem->data = data;
       elem->pKey = pKey;
+      assert(nKey==elem->nKey);
     }
     return old_data;
   }
@@ -254,14 +259,19 @@ void *sqlite3HashInsert(Hash *pH, const char *pKey, void *data){
   new_elem = (HashElem*)sqlite3Malloc( sizeof(HashElem) );
   if( new_elem==0 ) return data;
   new_elem->pKey = pKey;
+  new_elem->nKey = nKey;
   new_elem->data = data;
   pH->count++;
   if( pH->count>=10 && pH->count > 2*pH->htsize ){
     if( rehash(pH, pH->count*2) ){
       assert( pH->htsize>0 );
-      h = strHash(pKey) % pH->htsize;
+      h = strHash(pKey, nKey) % pH->htsize;
     }
   }
-  insertElement(pH, pH->ht ? &pH->ht[h] : 0, new_elem);
+  if( pH->ht ){
+    insertElement(pH, &pH->ht[h], new_elem);
+  }else{
+    insertElement(pH, 0, new_elem);
+  }
   return 0;
 }

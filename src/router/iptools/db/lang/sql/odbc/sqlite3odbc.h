@@ -15,9 +15,9 @@
  * @file sqlite3odbc.h
  * Header file for SQLite3 ODBC driver.
  *
- * $Id: sqlite3odbc.h,v 1.46 2015/04/13 06:31:52 chw Exp chw $
+ * $Id: sqlite3odbc.h,v 1.38 2011/11/08 17:02:04 chw Exp chw $
  *
- * Copyright (c) 2004-2015 Christian Werner <chw@ch-werner.de>
+ * Copyright (c) 2004-2011 Christian Werner <chw@ch-werner.de>
  *
  * See the file "license.terms" for information on usage
  * and redistribution of this file and for a
@@ -98,6 +98,7 @@ typedef struct {
     int ov3;			/**< True for SQL_OV_ODBC3 */
 #if defined(_WIN32) || defined(_WIN64)
     CRITICAL_SECTION cs;	/**< For serializing most APIs */
+    DWORD owner;		/**< Current owner of CS or 0 */
 #endif
     struct dbc *dbcs;		/**< Pointer to first DBC */
 } ENV;
@@ -137,7 +138,6 @@ typedef struct dbc {
     int step_enable;		/**< True for sqlite_compile/step/finalize */
     int trans_disable;		/**< True for no transaction support */
     int oemcp;			/**< True for Win32 OEM CP translation */
-    int jdconv;			/**< True for julian day conversion */
     struct stmt *cur_s3stmt;	/**< Current STMT executing sqlite statement */
     int s3stmt_needmeta;	/**< True to get meta data in s3stmt_step(). */
     FILE *trace;		/**< sqlite3_trace() file pointer or NULL */
@@ -148,8 +148,6 @@ typedef struct dbc {
     int (*gpps)();
 #endif
 #if defined(_WIN32) || defined(_WIN64)
-    CRITICAL_SECTION cs;	/**< For serializing most APIs */
-    DWORD owner;		/**< Current owner of CS or 0 */
     int xcelqrx;
 #endif
 } DBC;
@@ -172,8 +170,6 @@ typedef struct {
     int prec;			/**< Precision of column */
     int autoinc;		/**< AUTO_INCREMENT column */
     int notnull;		/**< NOT NULL constraint on column */
-    int ispk;			/**< Flag for primary key (> 0) */
-    int isrowid;		/**< Flag for ROWID column (> 0) */
     char *typename;		/**< Column type name or NULL */
     char *label;		/**< Column label or NULL */
 } COL;
@@ -234,24 +230,20 @@ typedef struct stmt {
     SQLCHAR *query;		/**< Current query, raw string */
     int *ov3;			/**< True for SQL_OV_ODBC3 */
     int *oemcp;			/**< True for Win32 OEM CP translation */
-    int *jdconv;		/**< True for julian day conversion */
     int isselect;		/**< > 0 if query is a SELECT statement */
     int ncols;			/**< Number of result columns */
     COL *cols;			/**< Result column array */
     COL *dyncols;		/**< Column array, but malloc()ed */
     int dcols;			/**< Number of entries in dyncols */
     int bkmrk;			/**< True when bookmarks used */
-    SQLINTEGER *bkmrkptr;	/**< SQL_ATTR_FETCH_BOOKMARK_PTR */
     BINDCOL bkmrkcol;		/**< Bookmark bound column */
     BINDCOL *bindcols;		/**< Array of bound columns */
     int nbindcols;		/**< Number of entries in bindcols */
     int nbindparms;		/**< Number bound parameters */
     BINDPARM *bindparms;	/**< Array of bound parameters */
     int nparams;		/**< Number of parameters in query */
-    int pdcount;		/**< SQLParamData() counter */
     int nrows;			/**< Number of result rows */
     int rowp;			/**< Current result row */
-    int rowprs;			/**< Current start row of rowset */
     char **rows;		/**< 2-dim array, result set */
     void (*rowfree)();		/**< Free function for rows */
     int naterr;			/**< Native error code */
@@ -287,18 +279,6 @@ typedef struct stmt {
     char *bincache;		/**< Cache for blob data */
     int binlen;			/**< Length of blob data */
     int guessed_types;		/**< Flag for drvprepare()/drvexecute() */
-    int one_tbl;		/**< Flag for single table (> 0) */
-    int has_pk;			/**< Flag for primary key (> 0) */
-    int has_rowid;		/**< Flag for ROWID (>= 0 or -1) */
 } STMT;
 
 #endif
-
-/*
- * Local Variables:
- * mode: c
- * c-basic-offset: 4
- * fill-column: 78
- * tab-width: 8
- * End:
- */

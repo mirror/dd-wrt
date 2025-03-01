@@ -21,25 +21,6 @@ static inline int __fop_create_42_read(ENV *env,
 	return (__log_read_record(env, 
 	    NULL, NULL, data, __fop_create_42_desc, sizeof(__fop_create_42_args), (void**)arg));
 }
-#define	DB___fop_create_60	143
-typedef struct ___fop_create_60_args {
-	u_int32_t type;
-	DB_TXN *txnp;
-	DB_LSN prev_lsn;
-	DBT	name;
-	DBT	dirname;
-	u_int32_t	appname;
-	u_int32_t	mode;
-} __fop_create_60_args;
-
-extern __DB_IMPORT DB_LOG_RECSPEC __fop_create_60_desc[];
-static inline int __fop_create_60_read(ENV *env, 
-    void *data, __fop_create_60_args **arg)
-{
-	*arg = NULL;
-	return (__log_read_record(env, 
-	    NULL, NULL, data, __fop_create_60_desc, sizeof(__fop_create_60_args), (void**)arg));
-}
 #define	DB___fop_create	143
 typedef struct ___fop_create_args {
 	u_int32_t type;
@@ -71,24 +52,6 @@ static inline int __fop_create_read(ENV *env,
 	*arg = NULL;
 	return (__log_read_record(env, 
 	    NULL, NULL, data, __fop_create_desc, sizeof(__fop_create_args), (void**)arg));
-}
-#define	DB___fop_remove_60	144
-typedef struct ___fop_remove_60_args {
-	u_int32_t type;
-	DB_TXN *txnp;
-	DB_LSN prev_lsn;
-	DBT	name;
-	DBT	fid;
-	u_int32_t	appname;
-} __fop_remove_60_args;
-
-extern __DB_IMPORT DB_LOG_RECSPEC __fop_remove_60_desc[];
-static inline int __fop_remove_60_read(ENV *env, 
-    void *data, __fop_remove_60_args **arg)
-{
-	*arg = NULL;
-	return (__log_read_record(env, 
-	    NULL, NULL, data, __fop_remove_60_desc, sizeof(__fop_remove_60_args), (void**)arg));
 }
 #define	DB___fop_remove	144
 typedef struct ___fop_remove_args {
@@ -142,29 +105,6 @@ static inline int __fop_write_42_read(ENV *env,
 	return (__log_read_record(env, 
 	    NULL, NULL, data, __fop_write_42_desc, sizeof(__fop_write_42_args), (void**)arg));
 }
-#define	DB___fop_write_60	145
-typedef struct ___fop_write_60_args {
-	u_int32_t type;
-	DB_TXN *txnp;
-	DB_LSN prev_lsn;
-	DBT	name;
-	DBT	dirname;
-	u_int32_t	appname;
-	u_int32_t	pgsize;
-	db_pgno_t	pageno;
-	u_int32_t	offset;
-	DBT	page;
-	u_int32_t	flag;
-} __fop_write_60_args;
-
-extern __DB_IMPORT DB_LOG_RECSPEC __fop_write_60_desc[];
-static inline int __fop_write_60_read(ENV *env, 
-    void *data, __fop_write_60_args **arg)
-{
-	*arg = NULL;
-	return (__log_read_record(env, 
-	    NULL, NULL, data, __fop_write_60_desc, sizeof(__fop_write_60_args), (void**)arg));
-}
 #define	DB___fop_write	145
 typedef struct ___fop_write_args {
 	u_int32_t type;
@@ -203,66 +143,6 @@ static inline int __fop_write_read(ENV *env,
 	return (__log_read_record(env, 
 	    NULL, NULL, data, __fop_write_desc, sizeof(__fop_write_args), (void**)arg));
 }
-#define	DB___fop_write_file_60	86
-typedef struct ___fop_write_file_60_args {
-	u_int32_t type;
-	DB_TXN *txnp;
-	DB_LSN prev_lsn;
-	DBT	name;
-	DBT	dirname;
-	u_int32_t	appname;
-	u_int32_t	offset_lo;
-	u_int32_t	offset_hi;
-	DBT	old_data;
-	DBT	new_data;
-	u_int32_t	flag;
-} __fop_write_file_60_args;
-
-extern __DB_IMPORT DB_LOG_RECSPEC __fop_write_file_60_desc[];
-static inline int __fop_write_file_60_read(ENV *env, 
-    void *data, __fop_write_file_60_args **arg)
-{
-	*arg = NULL;
-	return (__log_read_record(env, 
-	    NULL, NULL, data, __fop_write_file_60_desc, sizeof(__fop_write_file_60_args), (void**)arg));
-}
-#define	DB___fop_write_file	86
-typedef struct ___fop_write_file_args {
-	u_int32_t type;
-	DB_TXN *txnp;
-	DB_LSN prev_lsn;
-	DBT	name;
-	DBT	dirname;
-	u_int32_t	appname;
-	u_int64_t	offset;
-	DBT	old_data;
-	DBT	new_data;
-	u_int32_t	flag;
-} __fop_write_file_args;
-
-extern __DB_IMPORT DB_LOG_RECSPEC __fop_write_file_desc[];
-static inline int
-__fop_write_file_log(ENV *env, DB_TXN *txnp, DB_LSN *ret_lsnp, u_int32_t flags,
-    const DBT *name, const DBT *dirname, u_int32_t appname, u_int64_t offset, const DBT *old_data,
-    const DBT *new_data, u_int32_t flag)
-{
-	return (__log_put_record(env, NULL, txnp, ret_lsnp,
-	    flags, DB___fop_write_file, 0,
-	    sizeof(u_int32_t) + sizeof(u_int32_t) + sizeof(DB_LSN) +
-	    LOG_DBT_SIZE(name) + LOG_DBT_SIZE(dirname) + sizeof(u_int32_t) +
-	    sizeof(u_int64_t) + LOG_DBT_SIZE(old_data) + LOG_DBT_SIZE(new_data) +
-	    sizeof(u_int32_t),
-	    __fop_write_file_desc,
-	    name, dirname, appname, offset, old_data, new_data, flag));
-}
-
-static inline int __fop_write_file_read(ENV *env, 
-    void *data, __fop_write_file_args **arg)
-{
-	*arg = NULL;
-	return (__log_read_record(env, 
-	    NULL, NULL, data, __fop_write_file_desc, sizeof(__fop_write_file_args), (void**)arg));
-}
 #define	DB___fop_rename_42	146
 #define	DB___fop_rename_noundo_46	150
 typedef struct ___fop_rename_42_args {
@@ -290,35 +170,6 @@ static inline int __fop_rename_noundo_46_read(ENV *env,
 	*arg = NULL;
 	return (__log_read_record(env, 
 	    NULL, NULL, data, __fop_rename_noundo_46_desc, sizeof(__fop_rename_42_args), (void**)arg));
-}
-#define	DB___fop_rename_60	146
-#define	DB___fop_rename_noundo_60	150
-typedef struct ___fop_rename_60_args {
-	u_int32_t type;
-	DB_TXN *txnp;
-	DB_LSN prev_lsn;
-	DBT	oldname;
-	DBT	newname;
-	DBT	dirname;
-	DBT	fileid;
-	u_int32_t	appname;
-} __fop_rename_60_args;
-
-extern __DB_IMPORT DB_LOG_RECSPEC __fop_rename_60_desc[];
-static inline int __fop_rename_60_read(ENV *env, 
-    void *data, __fop_rename_60_args **arg)
-{
-	*arg = NULL;
-	return (__log_read_record(env, 
-	    NULL, NULL, data, __fop_rename_60_desc, sizeof(__fop_rename_60_args), (void**)arg));
-}
-extern __DB_IMPORT DB_LOG_RECSPEC __fop_rename_noundo_60_desc[];
-static inline int __fop_rename_noundo_60_read(ENV *env, 
-    void *data, __fop_rename_60_args **arg)
-{
-	*arg = NULL;
-	return (__log_read_record(env, 
-	    NULL, NULL, data, __fop_rename_noundo_60_desc, sizeof(__fop_rename_60_args), (void**)arg));
 }
 #define	DB___fop_rename	146
 #define	DB___fop_rename_noundo	150
@@ -374,26 +225,6 @@ static inline int __fop_rename_noundo_read(ENV *env,
 	*arg = NULL;
 	return (__log_read_record(env, 
 	    NULL, NULL, data, __fop_rename_noundo_desc, sizeof(__fop_rename_args), (void**)arg));
-}
-#define	DB___fop_file_remove_60	141
-typedef struct ___fop_file_remove_60_args {
-	u_int32_t type;
-	DB_TXN *txnp;
-	DB_LSN prev_lsn;
-	DBT	real_fid;
-	DBT	tmp_fid;
-	DBT	name;
-	u_int32_t	appname;
-	u_int32_t	child;
-} __fop_file_remove_60_args;
-
-extern __DB_IMPORT DB_LOG_RECSPEC __fop_file_remove_60_desc[];
-static inline int __fop_file_remove_60_read(ENV *env, 
-    void *data, __fop_file_remove_60_args **arg)
-{
-	*arg = NULL;
-	return (__log_read_record(env, 
-	    NULL, NULL, data, __fop_file_remove_60_desc, sizeof(__fop_file_remove_60_args), (void**)arg));
 }
 #define	DB___fop_file_remove	141
 typedef struct ___fop_file_remove_args {

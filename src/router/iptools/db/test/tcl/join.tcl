@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -55,16 +55,11 @@ proc jointest { {psize 8192} {with_dup_dups 0} {flags 0} } {
 			# zero;  set up the option array appropriately.
 			set oa(0) $oa(5)
 
-			# Build the primary.  Test with compression if we 
-			# have -dupsort and -btree.
+			# Build the primary
 			puts "\tBuilding the primary database $m"
 			set oflags "-create -truncate -mode 0644 -env $env\
 			    [conv $m [berkdb random_int 1 2]]"
-			set compress ""
-			if { $m == "DB_BTREE" && $dopt == "-dup -dupsort" } {
-				set compress " -compress" 
-			}
-			set db [eval {berkdb_open} $compress $oflags primary.db]
+			set db [eval {berkdb_open} $oflags primary.db]
 			error_check_good dbopen [is_valid_db $db] TRUE
 			for { set i 0 } { $i < 1000 } { incr i } {
 				set key [format "%04d" $i]
@@ -262,11 +257,7 @@ proc db_build { name nkeys ndups dup_interval method psize lopt oaname \
 	# Create the database and open the dictionary
 	set oflags "-create -truncate -mode 0644 $method\
 	    -pagesize $psize"
-	set compress ""
-	if { $method == "-btree" && [is_substr $opt "dupsort"] == 1 } {
-		set compress " -compress"
-	}
-	set db [eval {berkdb_open} $compress $oflags $opt $name]
+	set db [eval {berkdb_open} $oflags $opt $name]
 	error_check_good dbopen [is_valid_db $db] TRUE
 	set did [open $dict]
 	set count 0

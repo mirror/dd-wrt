@@ -18,7 +18,6 @@ group_doc="group.doc"
 group_csharp="group.csharp"
 group_cxx="group.cxx"
 group_sql="group.sql"
-group_thrift="group.thrift"
 
 Progress()
 {
@@ -128,8 +127,8 @@ RequireJava() {
 RequireTcl() {
     Progress -minor "checking for Tcl..."
     RequireFileInPath INCLUDE "$INCLUDE" tcl.h
-    RequireFileInPath LIB "$LIB" tcl86g.lib
-    RequireFileInPath LIB "$LIB" tcl86.lib
+    RequireFileInPath LIB "$LIB" tcl85g.lib
+    RequireFileInPath LIB "$LIB" tcl85.lib
 }
 
 # RequireWix()
@@ -155,7 +154,7 @@ RequirePerl() {
 RequireTcl() {
     Progress -minor "checking for Tcl..."
     RequireFileInPath INCLUDE "$INCLUDE" tcl.h
-    RequireFileInPath LIB "$LIB" tcl86.lib
+    RequireFileInPath LIB "$LIB" tcl85.lib
 }
 
 # RequirePython()
@@ -178,35 +177,41 @@ RequirePHP() {
 #
 # Locate the Merge Modules for Visual Studio.  This MUST
 # change if/when the default compiler is changed to a
-# newer version.  What will change is the file name 
-# (*.msm) to match the new version.  Starting with VS8
-# the msm files are always located in the directory
-# C:\\Program Files (x86)\\Common Files\\Merge Modules
-# regardless of where Visual Studio is installed.
+# newer version.  What will change is the registry key
+# being used as well as the file name (*.msm) to match
+# the new version.
 #
 FindMergeModules() {
-    local winbuild=$1
     Progress "Adding redistributable Visual Studio files..."
-    if [ "$winbuild" == "Win32" ]; then
-        MERGE_MODULES_LOCATION=Microsoft_VC90_CRT_x86.msm
-    else
-        MERGE_MODULES_LOCATION=Microsoft_VC90_CRT_x86_x64.msm
-    fi
+    tscript=cmd$$a.cmd
+    tsed=sed$$a.sed
+    rm -f $tscript $tscript.out $tsed
+
+    # this short script removes leading/trailing spaces and turns
+    # '\' into '\\' in the path so *nix scripting and sed work
+    echo "s/\\\\/\\\\\\\\/g;s/^[ \\t]*//;s/[ \\t]*$//" > $tsed
+
+    # Query for location of VS Merge Module for CRT
+    # and return it to replace @MERGE_MODULES_LOCATION@ in db.wxs
+    echo "@echo off"                               > $tscript
+    echo "set DBROOTDIR="                         >> $tscript
+    echo "for /F \"tokens=2* skip=2\" %%a in ('reg query \"HKLM\\SOFTWARE\\Microsoft\\VisualStudio\\8.0\\Setup\\VS\" /v MSMDir') do echo  %%b >> $tscript.out" >> $tscript
+    cmd /c $tscript
+    TLOC=`sed -f $tsed < $tscript.out`
+    MERGE_MODULES_LOCATION=${TLOC}Microsoft_VC80_CRT_x86.msm
+    rm -f $tscript $tscript.out $tsed
 }
 
 BuildProduct() {
-    local winbuild="$1"
     local here=`pwd`
-    Progress "Building $PRODUCT_NAME ${winbuild} in ${PRODUCT_SUB_BLDDIR}"
+    Progress "Building $PRODUCT_NAME in ${PRODUCT_SUB_BLDDIR}"
     cd ${PRODUCT_SUB_BLDDIR}/dist
     # make files writeable if necessary
     chmod +w ${PRODUCT_SUB_BLDDIR}/build_windows/VS8/*.vcproj
     chmod +w ${PRODUCT_SUB_BLDDIR}/build_windows/VS10/*.vcxproj
     chmod +w ${PRODUCT_SUB_BLDDIR}/build_windows/VS10/*.props
-    chmod +w ${PRODUCT_SUB_BLDDIR}/build_windows/VS12/*.vcxproj
-    chmod +w ${PRODUCT_SUB_BLDDIR}/build_windows/VS12/*.props
     chmod +w ${PRODUCT_SUB_BLDDIR}/build_windows/*.sln
-    cmd.exe /x /c call $MSI_DIR/build.bat ${winbuild}
+    cmd.exe /x /c call $MSI_DIR/build.bat
 }
 
 CreateLicenseRtf() {
@@ -330,16 +335,14 @@ CreateLinks() {
 createCSharpExamples() {
     local here=`pwd`
     cd dist/winmsi
-    for j in VS8 VS10 VS12; do
-	mkdir -p ../../stage/examples/csharp/$j
-        for i in `ls ../../examples/csharp/$j`; do
-	    f=../../stage/examples/csharp/$j/$i
-	    xqilla.exe -u -v "inFile" $f -v "libname" libdb_dotnet$DB_VERSION_MAJOR$DB_VERSION_MINOR -v "libversion" $DB_VERSION_MAJOR.$DB_VERSION_MINOR.$DB_VERSION_PATCH.0 fixupCsharp.xq
-	    # Visual studio doesn't like XML version 1.1...
-	    sed -e's!version="1.1"!version="1.0"!g' $f > $f.tmp
-	    cp -f $f.tmp $f
-	    rm -rf $f.tmp
-        done
+    for i in `ls ../../examples/csharp`; do
+	f=../../stage/examples/csharp/$i/$i.csproj
+        mkdir -p ../../stage/examples/csharp/$i
+	xqilla.exe -u -v "inFile" $f -v "libname" libdb_dotnet$DB_VERSION_MAJOR$DB_VERSION_MINOR -v "libversion" $DB_VERSION_MAJOR.$DB_VERSION_MINOR.$DB_VERSION_PATCH.0 fixupCsharp.xq
+	# Visual studio doesn't like XML version 1.1...
+	sed -e's!version="1.1"!version="1.0"!g' $f > $f.tmp
+	cp -f $f.tmp $f
+	rm -rf $f.tmp
     done
     cd $here
 }
@@ -379,7 +382,6 @@ StageSourceComponents() {
     mkdir stage/build_windows
     mkdir stage/build_windows/VS8
     mkdir stage/build_windows/VS10
-    mkdir stage/build_windows/VS12
     mkdir stage/sql
     mkdir stage/src
     mkdir stage/src/clib
@@ -397,16 +399,11 @@ StageSourceComponents() {
     cp build_windows/BDB_dotNet_examples.sln stage/build_windows
     cp build_windows/Berkeley_DB_examples_vs2010.sln stage/build_windows
     cp build_windows/BDB_dotNet_examples_vs2010.sln stage/build_windows
-    cp build_windows/Berkeley_DB_examples_vs2012.sln stage/build_windows
-    cp build_windows/BDB_dotNet_examples_vs2012.sln stage/build_windows
     # NOTE: this assumes ALL example projects start with "ex"
     cp build_windows/VS8/ex*.vcproj stage/build_windows/VS8
     # VS2010 projects too
     cp build_windows/VS10/ex*.vcxproj stage/build_windows/VS10
     cp build_windows/VS10/*.props stage/build_windows/VS10
-    # VS2012 projects too
-    cp build_windows/VS12/ex*.vcxproj stage/build_windows/VS12
-    cp build_windows/VS12/*.props stage/build_windows/VS12
 
     # note files in example group file, starting at stage
     cd stage
@@ -446,7 +443,6 @@ StageSourceComponents() {
 }
 
 StageRuntimeComponents() {
-    local winbuild=$1
     local here=`pwd`
     Progress "Staging runtime files/executables..."
     cd "${PRODUCT_BLDDIR}"
@@ -457,7 +453,7 @@ StageRuntimeComponents() {
 
     # start clean
     rm -f stage/$group_runtime stage/$group_java stage/$group_csharp \
-	stage/$group_sql stage/$group_thrift
+	stage/$group_sql
 
     for file in `find . -name "*.exe"`; do
 	cp $file stage/bin
@@ -474,15 +470,6 @@ StageRuntimeComponents() {
 	cp $file stage/jar
     done
 
-    # copy thrift files
-    for file in `find lang/thrift/jars -name "*.jar"`; do
-	cp $file stage/jar
-    done
-    cp lang/thrift/server/bdb.properties stage/bin
-    cp lang/thrift/server/log4j.xml stage/bin
-    cp lang/thrift/bin/start_server.bat stage/bin
-    chmod 400 stage/bin/bdb.properties
-
     # don't need .lib files for Java and C#, nobody
     # links with them other than DB's DLLs.
     rm -f stage/lib/libdb_java*
@@ -491,11 +478,11 @@ StageRuntimeComponents() {
     rm -f stage/lib/sqlite3odbc.lib
 
     # copy library .pdb files by hand
-    cp build_windows/$winbuild/Release/libdb*.pdb stage/bin
+    cp build_windows/Win32/Release/libdb*.pdb stage/bin
     # SQLite header, library .pdb files
     cp lang/sql/generated/sqlite3.h stage/include
-    cp build_windows/$winbuild/Release/sqlite3odbc.pdb stage/bin
-    cp build_windows/$winbuild/Release/sqlite_jni.pdb stage/bin
+    cp build_windows/Win32/Release/sqlite3odbc.pdb stage/bin
+    cp build_windows/Win32/Release/sqlite_jni.pdb stage/bin
 
     # remove example artifacts -- they are not bundled
     rm -f stage/bin/ex*.exe
@@ -549,14 +536,6 @@ StageRuntimeComponents() {
     echo "jar/jdbc.jar" >> $group_sql
     echo "bin/dbsql.exe" >> $group_sql
     echo "include/sqlite3.h" >> $group_sql
-
-    # Thrift
-    find jar -name "*thrift*" >> $group_thrift
-    find jar -name "slf*" >> $group_thrift
-    echo "jar/log4j.jar" >> $group_thrift
-    echo "bin/bdb.properties" >> $group_thrift
-    echo "bin/log4j.xml" >> $group_thrift
-    echo "bin/start_server.bat" >> $group_thrift
     cd ..
 
     cd $here
@@ -564,7 +543,6 @@ StageRuntimeComponents() {
 
 CreateMsi() {
     local here=`pwd`
-    local winbuild=$1
     Progress "Building .msi file..."
     cd "${PRODUCT_BLDDIR}"/stage
     chmod +w README
@@ -574,21 +552,13 @@ CreateMsi() {
     mkdir wix 2>/dev/null
     cd wix
 
-    FindMergeModules $winbuild
+    FindMergeModules
     echo "MERGE: $MERGE_MODULES_LOCATION"
-
-    if [ "$winbuild" == "Win32" ]; then
-        WIN_BUILD="x86"
-	PROGRAM_FILES_FOLDER="ProgramFilesFolder"
-    else
-        WIN_BUILD="x64"
-	PROGRAM_FILES_FOLDER="ProgramFiles64Folder"
-    fi
 
     # copy/edit .wxs files to here
     # use pattern that is *NOT* in lib_paths.sed to keep it intact
     for i in db.wxs links_frag.wxs required_frag.wxs; do
-    	sed -e"s:@PRODUCT_NAME@:$PRODUCT_NAME:g" -e"s:@PROD_WIX_VERSION@:$PRODUCT_VERSION:g" -e"s:@PROD_DB_VERSION@:$DB_VERSION:g" -e"s:@REG_KEY_VERSION@:$REG_KEY_VERSION:g" -e"s:@REG_KEY_NAME@:$REG_KEY_NAME:g" -e"s:@PROD_WIX_VERSION_MIN@:$PRODUCT_VERSION_MAJOR.$PRODUCT_VERSION_MINOR.0:g " -e"s:@PRODUCT_MAJOR@:$PRODUCT_VERSION_MAJOR:g" -e"s:@PRODUCT_MINOR@:$PRODUCT_VERSION_MINOR:g" -e"s/@MERGE_MODULES_LOCATION@/$MERGE_MODULES_LOCATION/g" -e"s/@WIN_BUILD@/$WIN_BUILD/g" -e"s/@PROGRAM_FILES_FOLDER@/$PROGRAM_FILES_FOLDER/g" ${DIST_DIR}/winmsi/$i > ./$i
+    	sed -e"s:@PRODUCT_NAME@:$PRODUCT_NAME:g" -e"s:@PROD_WIX_VERSION@:$PRODUCT_VERSION:g" -e"s:@PROD_DB_VERSION@:$DB_VERSION:g" -e"s:@REG_KEY_VERSION@:$REG_KEY_VERSION:g" -e"s:@REG_KEY_NAME@:$REG_KEY_NAME:g" -e"s:@PROD_WIX_VERSION_MIN@:$PRODUCT_VERSION_MAJOR.$PRODUCT_VERSION_MINOR.0:g " -e"s:@PRODUCT_MAJOR@:$PRODUCT_VERSION_MAJOR:g" -e"s:@PRODUCT_MINOR@:$PRODUCT_VERSION_MINOR:g" -e"s/@MERGE_MODULES_LOCATION@/$MERGE_MODULES_LOCATION/g" ${DIST_DIR}/winmsi/$i > ./$i
     done
     for i in db_components.wxs; do
     	sed -e"s:@PRODUCT_NAME@:$PRODUCT_NAME:g" -e"s:@PROD_WIX_VERSION@:$PRODUCT_VERSION:g" -e"s:@PROD_WIX_VERSION_SHORT@:$PRODUCT_VERSION_MAJOR.$PRODUCT_VERSION_MINOR.$PRODUCT_VERSION_PATCH:g" -e"s:@PROD_WIX_VERSION_MIN@:$PRODUCT_VERSION_MAJOR.$PRODUCT_VERSION_MINOR.0:g" -e"s:@PRODUCT_MAJOR@:$PRODUCT_VERSION_MAJOR:g" -e"s:@PRODUCT_MINOR@:$PRODUCT_VERSION_MINOR:g" ../scripts/$i > ./$i
@@ -601,16 +571,8 @@ CreateMsi() {
     # and "light" linking below will fail without them
     CreateLinks
 
-    if [ "$winbuild" == "Win32" ]; then
-        suffix="86"
-	arch="x86"
-    else
-        suffix="64"
-	arch="x64"
-    fi
-
     # Run WiX tools (these commands work with WiX 3.x)
-    candle -arch ${arch} *.wxs
-    light -out ${dbver}_${suffix}.msi -ext WixUIExtension *.wixobj
+    candle *.wxs
+    light -out $dbver.msi -ext WixUIExtension *.wixobj
     cd $here
 }

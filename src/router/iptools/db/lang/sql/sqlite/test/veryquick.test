@@ -16,3 +16,4 @@ source $testdir/permutations.test
 run_test_suite veryquick
 
 finish_test
+

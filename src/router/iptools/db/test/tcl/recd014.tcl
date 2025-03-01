@@ -1,6 +1,6 @@
 # See the file LICENSE for redistribution information.
 #
-# Copyright (c) 1999, 2017 Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
 #
 # $Id$
 #
@@ -89,13 +89,13 @@ proc ext_recover_create { dir env_cmd method opts dbfile txncmd } {
 	set env [eval $env_cmd]
 
 	set init_file $dir/$dbfile.init
-	set noenvflags "$method -mode 0644 -pagesize 512 $opts"
+	set noenvflags "-create $method -mode 0644 -pagesize 512 $opts $dbfile"
 	set oflags "-env $env $noenvflags"
 
 	set t [$env txn]
 	error_check_good txn_begin [is_valid_txn $t $env] TRUE
 
-	set ret [catch {eval {berkdb_open} -create -txn $t $oflags $dbfile} db]
+	set ret [catch {eval {berkdb_open} -txn $t $oflags} db]
 	error_check_good txn_commit [$t commit] 0
 
 	set t [$env txn]
@@ -234,8 +234,6 @@ proc ext_recover_create { dir env_cmd method opts dbfile txncmd } {
 }
 
 proc ext_create_check { dir txncmd init_file dbfile oflags putrecno } {
-	source ./include.tcl
-
 	if { $txncmd == "commit" } {
 		#
 		# Operation was committed. Verify it did not change.
@@ -246,10 +244,9 @@ proc ext_create_check { dir txncmd init_file dbfile oflags putrecno } {
 	} else {
 		#
 		# Operation aborted.  The file is there, but make
-		# sure the item is not.  Since we're not using an
-		# env, include $testdir so we find the file.
+		# sure the item is not.
 		#
-		set xdb [eval {berkdb_open} $oflags $testdir/$dbfile]
+		set xdb [eval {berkdb_open} $oflags]
 		error_check_good db_open [is_valid_db $xdb] TRUE
 		set ret [$xdb get $putrecno]
 		error_check_good db_get [llength $ret] 0
@@ -271,14 +268,14 @@ proc ext_recover_consume { dir env_cmd method opts dbfile txncmd} {
 	# Open the environment and set the copy/abort locations
 	set env [eval $env_cmd]
 
-	set oflags " -auto_commit $method -mode 0644 -pagesize 512 \
-	   -env $env $opts "
+	set oflags "-create -auto_commit $method -mode 0644 -pagesize 512 \
+	   -env $env $opts $dbfile"
 
 	#
 	# Open our db, add some data, close and copy as our
 	# init file.
 	#
-	set db [eval {berkdb_open} -create $oflags $dbfile]
+	set db [eval {berkdb_open} $oflags]
 	error_check_good db_open [is_valid_db $db] TRUE
 
 	set extnum "/__dbq..0"
@@ -301,7 +298,7 @@ proc ext_recover_consume { dir env_cmd method opts dbfile txncmd} {
 	# If we don't abort, then we expect success.
 	# If we abort, we expect no file removed until recovery is run.
 	#
-	set db [eval {berkdb_open} $oflags $dbfile]
+	set db [eval {berkdb_open} $oflags]
 	error_check_good db_open [is_valid_db $db] TRUE
 
 	set t [$env txn]

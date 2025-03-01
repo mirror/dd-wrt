@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -45,7 +45,7 @@ namespace BerkeleyDB {
         /// </summary>
         public LSN NextLSN { get { return next; } }
         /// <summary>
-        /// Awaited LSN, if any. 
+        /// LSN we're awaiting, if any. 
         /// </summary>
         public LSN AwaitedLSN { get { return waiting; } }
         /// <summary>
@@ -53,15 +53,15 @@ namespace BerkeleyDB {
         /// </summary>
         public LSN MaxPermanentLSN { get { return maxPerm; } }
         /// <summary>
-        /// Next page expected.
+        /// Next pg we expect. 
         /// </summary>
         public uint NextPage { get { return st.st_next_pg; } }
         /// <summary>
-        /// Awaited Page, if any. 
+        /// pg we're awaiting, if any. 
         /// </summary>
         public uint AwaitedPage { get { return st.st_waiting_pg; } }
         /// <summary>
-        /// Number of times a duplicate master condition was detected.
+        /// # of times a duplicate master condition was detected.
         /// </summary>
         public uint DupMasters { get { return st.st_dupmasters; } }
         /// <summary>
@@ -112,22 +112,6 @@ namespace BerkeleyDB {
         /// Log records received multiply. 
         /// </summary>
         public ulong DuplicateLogRecords { get { return st.st_log_duplicated; } }
-	/// <summary>
-        /// Duplicate external file messages received. 
-        /// </summary>
-	public ulong ExternalFileDuplicated { get { return st.st_ext_duplicated; } }
-        /// <summary>
-        /// External file messages received. 
-        /// </summary>
-        public ulong ExternalFileRecords { get { return st.st_ext_records; } }
-        /// <summary>
-        /// External file message rerequests. 
-        /// </summary>
-        public ulong ExternalFileRerequests { get { return st.st_ext_rereq; } }
-        /// <summary>
-        /// External file update message rerequests. 
-        /// </summary>
-        public ulong ExternalFileUpdateRerequests{ get { return st.st_ext_update_rereq; } }
         /// <summary>
         /// Number of lease validity checks. 
         /// </summary>
@@ -145,11 +129,11 @@ namespace BerkeleyDB {
         /// </summary>
         public ulong LeaseSentNumber { get { return st.st_lease_sends; } }
         /// <summary>
-        /// Maximum log records queued at once. 
+        /// Max. log records queued at once. 
         /// </summary>
         public ulong MaxQueuedLogRecords { get { return st.st_log_queued_max; } }
         /// <summary>
-        /// Total number of log records ever queued. 
+        /// Total # of log recs. ever queued. 
         /// </summary>
         public ulong QueuedLogRecords { get { return st.st_log_queued_total; } }
         /// <summary>
@@ -157,7 +141,7 @@ namespace BerkeleyDB {
         /// </summary>
         public ulong ReceivedLogRecords { get { return st.st_log_records; } }
         /// <summary>
-        /// Log records missed and requested. 
+        /// Log recs. missed and requested. 
         /// </summary>
         public ulong MissedLogRecords { get { return st.st_log_requested; } }
         /// <summary>
@@ -165,11 +149,11 @@ namespace BerkeleyDB {
         /// </summary>
         public long MasterEnvID { get { return st.st_master.ToInt64(); } }
         /// <summary>
-        /// Number of times masters have switched.
+        /// # of times we've switched masters. 
         /// </summary>
         public ulong MasterChanges { get { return st.st_master_changes; } }
         /// <summary>
-        /// Messages with a bad generation number. 
+        /// Messages with a bad generation #. 
         /// </summary>
         public ulong BadGenerationMessages { get { return st.st_msgs_badgen; } }
         /// <summary>
@@ -181,27 +165,27 @@ namespace BerkeleyDB {
         /// </summary>
         public ulong IgnoredMessages { get { return st.st_msgs_recover; } }
         /// <summary>
-        /// Number of failed message sends. 
+        /// # of failed message sends. 
         /// </summary>
         public ulong FailedMessageSends { get { return st.st_msgs_send_failures; } }
         /// <summary>
-        /// Number of successful message sends. 
+        /// # of successful message sends. 
         /// </summary>
         public ulong MessagesSent { get { return st.st_msgs_sent; } }
         /// <summary>
-        /// Number of NEWSITE messages received. 
+        /// # of NEWSITE msgs. received. 
         /// </summary>
         public ulong NewSiteMessages { get { return st.st_newsites; } }
         /// <summary>
-        /// Current number of sites assumed during elections.
+        /// Current number of sites we will assume during elections.
         /// </summary>        
         public uint Sites { get { return st.st_nsites; } }
         /// <summary>
-        /// Number of throttled times. 
+        /// # of times we were throttled. 
         /// </summary>
         public ulong Throttled { get { return st.st_nthrottles; } }
         /// <summary>
-        /// Number of times an OUTDATED condition is detected and returned 
+        /// # of times we detected and returned an OUTDATED condition.
         /// </summary>
         public ulong Outdated { get { return st.st_outdated; } }
         /// <summary>
@@ -217,21 +201,21 @@ namespace BerkeleyDB {
         /// </summary>
         public ulong MissedPages { get { return st.st_pg_requested; } }
         /// <summary>
-        /// Number of transactions applied. 
+        /// # of transactions applied. 
         /// </summary>
         public ulong AppliedTransactions { get { return st.st_txns_applied; } }
         /// <summary>
-        /// Number of STARTSYNC msgs delayed. 
+        /// # of STARTSYNC msgs delayed. 
         /// </summary>
         public ulong StartSyncMessagesDelayed { get { return st.st_startsync_delayed; } }
 
         /* Elections generally. */
         /// <summary>
-        /// Number of elections held. 
+        /// # of elections held. 
         /// </summary>
         public ulong Elections { get { return st.st_elections; } }
         /// <summary>
-        /// Number of elections won by this site. 
+        /// # of elections won by this site. 
         /// </summary>
         public ulong ElectionsWon { get { return st.st_elections_won; } }
 
@@ -249,15 +233,15 @@ namespace BerkeleyDB {
         /// </summary>
         public uint ElectionDataGeneration { get { return st.st_election_datagen; } }
         /// <summary>
-        /// Maximum LSN of current winner. 
+        /// Max. LSN of current winner. 
         /// </summary>
         public LSN CurrentWinnerMaxLSN { get { return winner; } }
         /// <summary>
-        /// Number of "registered voters". 
+        /// # of "registered voters". 
         /// </summary>
         public uint RegisteredSites { get { return st.st_election_nsites; } }
         /// <summary>
-        /// Number of "registered voters" needed. 
+        /// # of "registered voters" needed. 
         /// </summary>
         public uint RegisteredSitesNeeded { get { return st.st_election_nvotes; } }
         /// <summary>
@@ -292,10 +276,5 @@ namespace BerkeleyDB {
         /// Maximum lease timestamp useconds. 
         /// </summary>
         public uint MaxLeaseUSec { get { return st.st_max_lease_usec; } }
-
-        /// <summary>
-        /// True if the site is a view and false if not.
-        /// </summary>
-        public bool View { get { return (st.st_view != 0); } }
     }
 }

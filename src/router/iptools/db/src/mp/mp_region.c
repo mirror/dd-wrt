@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -11,7 +11,7 @@
 #include "db_int.h"
 #include "dbinc/mp.h"
 
-static int	__memp_init_config __P((ENV *, MPOOL *, int));
+static int	__memp_init_config __P((ENV *, MPOOL *));
 static void	__memp_region_size __P((ENV *, roff_t *, u_int32_t *));
 
 #define	MPOOL_DEFAULT_PAGESIZE	(4 * 1024)
@@ -34,7 +34,7 @@ __memp_open(env, create_ok)
 	roff_t cache_size, max_size, reg_size;
 	u_int i, max_nreg;
 	u_int32_t htab_buckets, *regids;
-	int create, ret;
+	int ret;
 
 	dbenv = env->dbenv;
 	cache_size = 0;
@@ -77,8 +77,7 @@ __memp_open(env, create_ok)
 	 * If we created the region, initialize it.  Create or join any
 	 * additional regions.
 	 */
-	create = F_ISSET(&reginfo, REGION_CREATE);
-	if (create) {
+	if (F_ISSET(&reginfo, REGION_CREATE)) {
 		/*
 		 * We define how many regions there are going to be, allocate
 		 * the REGINFO structures and create them.  Make sure we don't
@@ -168,38 +167,23 @@ __memp_open(env, create_ok)
 	env->mp_handle = dbmp;
 
 	/* A process joining the region may reset the mpool configuration. */
-	if ((ret = __memp_init_config(env, mp, create)) != 0)
+	if ((ret = __memp_init_config(env, mp)) != 0)
 		return (ret);
 
 	return (0);
 
-err:	(void)__mutex_free(env, &dbmp->mutex);
-	(void)__memp_region_detach(env, dbmp);
-	return (ret);
-}
-
-/* __memp_region_detach
- *	Detach from any attached mempool regions.
- *
- * PUBLIC: int __memp_region_detach __P((ENV *, DB_MPOOL *));
- */
-int
-__memp_region_detach(env, dbmp)
-	ENV *env;
-	DB_MPOOL *dbmp;
-{
-	u_int i;
-
-	if (dbmp != NULL &&
-	    dbmp->reginfo != NULL && dbmp->reginfo[0].addr != NULL) {
-		for (i = 0; i < env->dbenv->mp_ncache; ++i)
+err:	env->mp_handle = NULL;
+	if (dbmp->reginfo != NULL && dbmp->reginfo[0].addr != NULL) {
+		for (i = 0; i < dbenv->mp_ncache; ++i)
 			if (dbmp->reginfo[i].id != INVALID_REGION_ID)
 				(void)__env_region_detach(
 				    env, &dbmp->reginfo[i], 0);
 		__os_free(env, dbmp->reginfo);
 	}
-	env->mp_handle = NULL;
-	return (0);
+
+	(void)__mutex_free(env, &dbmp->mutex);
+	__os_free(env, dbmp);
+	return (ret);
 }
 
 /*
@@ -223,7 +207,7 @@ __memp_init(env, dbmp, reginfo_off, htab_buckets, max_nreg)
 	MPOOL *mp, *main_mp;
 	REGINFO *infop;
 	db_mutex_t mtx_base, mtx_discard, mtx_prev;
-	u_int32_t i, mp_mtxcount;
+	u_int32_t i;
 	int ret;
 	void *p;
 
@@ -240,23 +224,6 @@ __memp_init(env, dbmp, reginfo_off, htab_buckets, max_nreg)
 	    __mutex_alloc(env, MTX_MPOOL_REGION, 0, &mp->mtx_region)) != 0)
 		return (ret);
 
-	/*
-	 * Intializing the first mpool region allocates the mpool region id
-	 * array, file table and, if not ENV_PRIVATE, all the cache regions'
-	 * hash bucket mutexes in a single contiguous block of mutex ids, which
-	 * remain allocated when the cache is resized. The block is 'known' to
-	 * start with the first id (mtx_base), and to end #regions * mp_mtxcount
-	 * later. In private environments, mutex ids are not smallish integers,
-	 * but __env_alloc()'d pointers. Since a range of (base, count) doesn't
-	 * work for these likely-scattered mutexes, we allocate private threaded
-	 * mutexes as they are needed. Private non-threaded caches don't need
-	 * any mutexes at all.
-	 */
-	if ((mp_mtxcount = dbenv->mp_mtxcount) == 0)
-		mp_mtxcount = dbenv->mp_mtxcount = htab_buckets;
-	if (!MUTEX_ON(env) ||
-	    F_ISSET(env, ENV_PRIVATE | ENV_THREAD) == ENV_PRIVATE)
-		mp_mtxcount = dbenv->mp_mtxcount = 0;
 	if (reginfo_off == 0) {
 		ZERO_LSN(mp->lsn);
 
@@ -281,10 +248,15 @@ __memp_init(env, dbmp, reginfo_off, htab_buckets, max_nreg)
 			atomic_init(&htab[i].hash_page_dirty, 0);
 		}
 
+		/*
+		 * Allocate all of the hash bucket mutexes up front.  We do
+		 * this so that we don't need to free and reallocate mutexes as
+		 * the cache is resized.
+		 */
 		mtx_base = mtx_prev = MUTEX_INVALID;
-		if (F_ISSET(env, ENV_PRIVATE))
+		if (!MUTEX_ON(env) || F_ISSET(env, ENV_PRIVATE))
 			goto no_prealloc;
-		for (i = 0; i < mp->max_nreg * mp_mtxcount; i++) {
+		for (i = 0; i < mp->max_nreg * dbenv->mp_mtxcount; i++) {
 			if ((ret = __mutex_alloc(env, MTX_MPOOL_HASH_BUCKET,
 			    DB_MUTEX_SHARED, &mtx_discard)) != 0)
 				return (ret);
@@ -302,12 +274,13 @@ __memp_init(env, dbmp, reginfo_off, htab_buckets, max_nreg)
 	}
 
 	/*
-	 * If we preallocated all the mutexes, then in regions after the first,
-	 * we skip mutexes in use in earlier regions. Each region has the same
-	 * number of buckets.
+	 * We preallocated all of the mutexes in a block, so for regions after
+	 * the first, we skip mutexes in use in earlier regions.  Each region
+	 * has the same number of buckets
 	 */
 no_prealloc:
-	mtx_base += reginfo_off * mp_mtxcount;
+	if (MUTEX_ON(env))
+		mtx_base += reginfo_off * dbenv->mp_mtxcount;
 
 	/* Allocate hash table space and initialize it. */
 	if ((ret = __env_alloc(infop,
@@ -316,21 +289,18 @@ no_prealloc:
 	mp->htab = R_OFFSET(infop, htab);
 	for (i = 0; i < htab_buckets; i++) {
 		hp = &htab[i];
-		/*
-		 * Set mtx_hash to do no locking, or share a mutex with an
-		 * earlier hash bucket in this region, or assign it from the
-		 * block of mutexes allocated above, or (in a private
-		 * environment) allocate a new mutex.
-		 */
-		if (mp_mtxcount == 0)
+		if (!MUTEX_ON(env) || dbenv->mp_mtxcount == 0)
 			hp->mtx_hash = MUTEX_INVALID;
-		else if (i >= mp_mtxcount)
-			hp->mtx_hash = htab[i % mp_mtxcount].mtx_hash;
-		else if (!F_ISSET(env, ENV_PRIVATE))
-			hp->mtx_hash = mtx_base + i;
-		else if ((ret = __mutex_alloc(env, MTX_MPOOL_HASH_BUCKET,
-		    DB_MUTEX_SHARED, &hp->mtx_hash)) != 0)
-			return (ret);
+		else if (F_ISSET(env, ENV_PRIVATE)) {
+			if (i >= dbenv->mp_mtxcount)
+				hp->mtx_hash =
+				    htab[i % dbenv->mp_mtxcount].mtx_hash;
+			else if
+			    ((ret = __mutex_alloc(env, MTX_MPOOL_HASH_BUCKET,
+			    DB_MUTEX_SHARED, &hp->mtx_hash)) != 0)
+				return (ret);
+		} else
+			hp->mtx_hash = mtx_base + (i % dbenv->mp_mtxcount);
 		SH_TAILQ_INIT(&hp->hash_bucket);
 		atomic_init(&hp->hash_page_dirty, 0);
 #ifdef HAVE_STATISTICS
@@ -341,7 +311,7 @@ no_prealloc:
 		ZERO_LSN(hp->old_reader);
 	}
 	mp->htab_buckets = htab_buckets;
-	mp->htab_mutexes = mp_mtxcount;
+	mp->htab_mutexes = dbenv->mp_mtxcount;
 	mp->pagesize = dbenv->mp_pagesize == 0 ?
 		MPOOL_DEFAULT_PAGESIZE : dbenv->mp_pagesize;
 
@@ -436,6 +406,7 @@ __memp_region_size(env, reg_sizep, htab_bucketsp)
 	 * chains a lot, they must be kept short.  We use 2.5 as this maintains
 	 * compatibility with previous releases.
 	 *
+	 * XXX
 	 * Cache sizes larger than 10TB would cause 32-bit wrapping in the
 	 * calculation of the number of hash buckets.  This probably isn't
 	 * something we need to worry about right now, but is checked when the
@@ -472,21 +443,11 @@ __memp_region_mutex_count(env)
 	dbenv = env->dbenv;
 
 	__memp_region_size(env, &reg_size, &htab_buckets);
-	if (dbenv->mp_mtxcount != 0)
-		htab_buckets = dbenv->mp_mtxcount;
+	if (F_ISSET(env->dbenv, DB_ENV_MULTIVERSION))
+		pgsize = sizeof(BH_FROZEN_ALLOC) + sizeof(BH_FROZEN_PAGE);
+	if ((pgsize = dbenv->mp_pagesize) == 0)
+		pgsize = MPOOL_DEFAULT_PAGESIZE;
 	max_region = __memp_max_regions(env);
-	if ((pgsize = dbenv->mp_pagesize) == 0) {
-		/*
-		 * If MVCC is on during environment creation, provide enough
-		 * mutexes so that half the cache can be frozen buffer headers.
-		 */
-		if (F_ISSET(env->dbenv, DB_ENV_MULTIVERSION))
-			pgsize = (MPOOL_DEFAULT_PAGESIZE +
-			    sizeof(BH_FROZEN_ALLOC) +
-			    sizeof(BH_FROZEN_PAGE)) / 2;
-		else
-			pgsize = MPOOL_DEFAULT_PAGESIZE;
-	}
 
 	/*
 	 * We need a couple of mutexes for the region itself, one for each
@@ -495,6 +456,10 @@ __memp_region_mutex_count(env)
 	 * hash bucket. We then need one mutex per page in the cache,
 	 * the worst case is really big if the pages are 512 bytes.
 	 */
+	if (dbenv->mp_mtxcount != 0)
+		htab_buckets = dbenv->mp_mtxcount;
+	else
+		dbenv->mp_mtxcount = htab_buckets;
 	num_per_cache = htab_buckets + (u_int32_t)(reg_size / pgsize);
 	return ((max_region * num_per_cache) + 50 + MPOOL_FILE_BUCKETS);
 }
@@ -504,39 +469,23 @@ __memp_region_mutex_count(env)
  *	Initialize shared configuration information.
  */
 static int
-__memp_init_config(env, mp, create)
+__memp_init_config(env, mp)
 	ENV *env;
 	MPOOL *mp;
-	int create;
 {
 	DB_ENV *dbenv;
 
 	dbenv = env->dbenv;
 
 	MPOOL_SYSTEM_LOCK(env);
-	if (create) {
+	if (dbenv->mp_mmapsize != 0)
 		mp->mp_mmapsize = (db_size_t)dbenv->mp_mmapsize;
+	if (dbenv->mp_maxopenfd != 0)
 		mp->mp_maxopenfd = dbenv->mp_maxopenfd;
+	if (dbenv->mp_maxwrite != 0)
 		mp->mp_maxwrite = dbenv->mp_maxwrite;
+	if (dbenv->mp_maxwrite_sleep != 0)
 		mp->mp_maxwrite_sleep = dbenv->mp_maxwrite_sleep;
-	} else {
-		if (dbenv->mp_mmapsize != 0 &&
-		    mp->mp_mmapsize != (db_size_t)dbenv->mp_mmapsize)
-			__db_msg(env, DB_STR("3044",
-"Warning: Ignoring maximum memory map size when joining environment"));
-
-		if (dbenv->mp_maxopenfd != 0 &&
-		    mp->mp_maxopenfd != dbenv->mp_maxopenfd)
-			__db_msg(env, DB_STR("3045",
-"Warning: Ignoring max open file descriptors value when joining environment"));
-
-		if ((dbenv->mp_maxwrite != 0 &&
-		    mp->mp_maxwrite != dbenv->mp_maxwrite) ||
-		    (dbenv->mp_maxwrite_sleep != 0 &&
-		    mp->mp_maxwrite_sleep != dbenv->mp_maxwrite_sleep))
-			__db_msg(env, DB_STR("3046",
-"Warning: Ignoring maximum sequential writes value when joining environment"));
-	}
 	MPOOL_SYSTEM_UNLOCK(env);
 
 	return (0);
@@ -552,18 +501,22 @@ int
 __memp_env_refresh(env)
 	ENV *env;
 {
+	BH *bhp;
+	BH_FROZEN_ALLOC *frozen_alloc;
 	DB_MPOOL *dbmp;
 	DB_MPOOLFILE *dbmfp;
+	DB_MPOOL_HASH *hp;
 	DB_MPREG *mpreg;
 	MPOOL *mp, *c_mp;
 	REGINFO *infop;
-	u_int32_t i, nreg;
+	u_int32_t bucket, i, nreg;
 	int ret, t_ret;
 
 	ret = 0;
 	dbmp = env->mp_handle;
 	mp = dbmp->reginfo[0].primary;
 	nreg = mp->nreg;
+	hp = R_ADDR(&dbmp->reginfo[0], mp->htab);
 
 	/*
 	 * If a private region, return the memory to the heap.  Not needed for
@@ -573,20 +526,49 @@ __memp_env_refresh(env)
 	if (!F_ISSET(env, ENV_PRIVATE))
 		goto not_priv;
 
+	/* Discard buffers. */
 	for (i = 0; i < nreg; ++i) {
 		infop = &dbmp->reginfo[i];
-		if ((t_ret = __memp_region_bhfree(infop)) != 0 && ret == 0)
-			ret = t_ret;
+		c_mp = infop->primary;
+		for (hp = R_ADDR(infop, c_mp->htab), bucket = 0;
+		    bucket < c_mp->htab_buckets; ++hp, ++bucket) {
+			while ((bhp = SH_TAILQ_FIRST(
+			    &hp->hash_bucket, __bh)) != NULL)
+				if (F_ISSET(bhp, BH_FROZEN))
+					SH_TAILQ_REMOVE(
+					    &hp->hash_bucket, bhp,
+					    hq, __bh);
+				else {
+					if (F_ISSET(bhp, BH_DIRTY)) {
+						atomic_dec(env,
+						     &hp->hash_page_dirty);
+						F_CLR(bhp,
+						    BH_DIRTY | BH_DIRTY_CREATE);
+					}
+					atomic_inc(env, &bhp->ref);
+					if ((t_ret = __memp_bhfree(dbmp, infop,
+					    R_ADDR(dbmp->reginfo,
+					    bhp->mf_offset), hp, bhp,
+					    BH_FREE_FREEMEM |
+					    BH_FREE_UNLOCKED)) != 0 && ret == 0)
+						ret = t_ret;
+				}
+		}
+		MPOOL_REGION_LOCK(env, infop);
+		while ((frozen_alloc = SH_TAILQ_FIRST(
+		    &c_mp->alloc_frozen, __bh_frozen_a)) != NULL) {
+			SH_TAILQ_REMOVE(&c_mp->alloc_frozen, frozen_alloc,
+			    links, __bh_frozen_a);
+			__env_alloc_free(infop, frozen_alloc);
+		}
+		MPOOL_REGION_UNLOCK(env, infop);
 	}
 
 not_priv:
 	/* Discard DB_MPOOLFILEs. */
 	while ((dbmfp = TAILQ_FIRST(&dbmp->dbmfq)) != NULL)
-		if ((t_ret = __memp_fclose(dbmfp, DB_FLUSH)) != 0) {
-			if (ret == 0)
-				ret = t_ret;
-			break;
-		}
+		if ((t_ret = __memp_fclose(dbmfp, DB_FLUSH)) != 0 && ret == 0)
+			ret = t_ret;
 
 	/* Discard DB_MPREGs. */
 	if (dbmp->pg_inout != NULL)
@@ -634,61 +616,5 @@ not_priv:
 	__os_free(env, dbmp);
 
 	env->mp_handle = NULL;
-	return (ret);
-}
-
-/*
- * __memp_region_bhfree --
- *	Discard the buffers for a region.
- *
- * PUBLIC: int __memp_region_bhfree __P((REGINFO *));
- */
-int
-__memp_region_bhfree(infop)
-	REGINFO *infop;
-{
-	BH *bhp;
-	BH_FROZEN_ALLOC *frozen_alloc;
-	DB_MPOOL *dbmp;
-	DB_MPOOL_HASH *hp;
-	ENV *env;
-	MPOOL *c_mp;
-	u_int32_t bucket;
-	int ret, t_ret;
-
-	env = infop->env;
-	dbmp = env->mp_handle;
-	ret = 0;
-
-	/* Discard buffers. */
-	c_mp = infop->primary;
-	for (hp = R_ADDR(infop, c_mp->htab), bucket = 0;
-	    bucket < c_mp->htab_buckets; ++hp, ++bucket) {
-		while ((bhp = SH_TAILQ_FIRST(&hp->hash_bucket, __bh)) != NULL)
-			if (F_ISSET(bhp, BH_FROZEN))
-				SH_TAILQ_REMOVE(&hp->hash_bucket,
-				    bhp, hq, __bh);
-			else {
-				__memp_bh_clear_dirty(env, hp, bhp);
-				(void)atomic_inc(env, &bhp->ref);
-				if ((t_ret = __memp_bhfree(dbmp, infop,
-				    R_ADDR(dbmp->reginfo, bhp->mf_offset),
-				    hp, bhp, BH_FREE_FREEMEM |
-				    BH_FREE_UNLOCKED)) != 0) {
-					if (ret == 0)
-						ret = t_ret;
-					break;
-				}
-			}
-	}
-	MPOOL_REGION_LOCK(env, infop);
-	while ((frozen_alloc = SH_TAILQ_FIRST(
-	    &c_mp->alloc_frozen, __bh_frozen_a)) != NULL) {
-		SH_TAILQ_REMOVE(&c_mp->alloc_frozen,
-		    frozen_alloc, links, __bh_frozen_a);
-		__env_alloc_free(infop, frozen_alloc);
-	}
-	MPOOL_REGION_UNLOCK(env, infop);
-
 	return (ret);
 }

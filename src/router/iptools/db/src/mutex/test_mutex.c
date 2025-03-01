@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1999, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1999, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * Standalone mutex tester for Berkeley DB mutexes.
  *
@@ -13,6 +13,7 @@
 #include "db_int.h"
 
 #ifdef DB_WIN32
+#define	MUTEX_THREAD_TEST	1
 
 extern int getopt(int, char * const *, const char *);
 
@@ -32,13 +33,29 @@ typedef HANDLE os_thread_t;
 #include <sys/wait.h>
 
 typedef pid_t os_pid_t;
+
+/*
+ * There's only one mutex implementation that can't support thread-level
+ * locking: UNIX/fcntl mutexes.
+ *
+ * The general Berkeley DB library configuration doesn't look for the POSIX
+ * pthread functions, with one exception -- pthread_yield.
+ *
+ * Use these two facts to decide if we're going to build with or without
+ * threads.
+ */
+#if !defined(HAVE_MUTEX_FCNTL) && defined(HAVE_PTHREAD_YIELD)
+#define	MUTEX_THREAD_TEST	1
+
+#include <pthread.h>
+
 typedef pthread_t os_thread_t;
 
 #define	os_thread_create(thrp, attr, func, arg)				\
     pthread_create((thrp), (attr), (func), (arg))
 #define	os_thread_join(thr, statusp) pthread_join((thr), (statusp))
 #define	os_thread_self() pthread_self()
-
+#endif /* HAVE_PTHREAD_YIELD */
 #endif /* !DB_WIN32 */
 
 #define	OS_BAD_PID ((os_pid_t)-1)
@@ -59,25 +76,28 @@ typedef struct {
 	u_int	   wakeme;			/* Request to awake. */
 } TM;
 
-DB_ENV	*dbenv;					/* Backing environment. */
+DB_ENV	*dbenv;					/* Backing environment */
 ENV	*env;
 size_t	 len;					/* Backing data chunk size. */
-
-u_int	alignment = 0;				/* Specify mutex alignment. */
 
 u_int8_t *gm_addr;				/* Global mutex */
 u_int8_t *lm_addr;				/* Locker mutexes */
 u_int8_t *tm_addr;				/* Thread mutexes */
 
+#ifdef MUTEX_THREAD_TEST
 os_thread_t *kidsp;				/* Locker threads */
 os_thread_t  wakep;				/* Wakeup thread */
+#endif
 
 #ifndef	HAVE_MMAP
 u_int	nprocs = 1;				/* -p: Processes. */
 u_int	nthreads = 20;				/* -t: Threads. */
-#else
+#elif	MUTEX_THREAD_TEST
 u_int	nprocs = 5;				/* -p: Processes. */
 u_int	nthreads = 4;				/* -t: Threads. */
+#else
+u_int	nprocs = 20;				/* -p: Processes. */
+u_int	nthreads = 1;				/* -t: Threads. */
 #endif
 
 u_int	maxlocks = 20;				/* -l: Backing locks. */
@@ -127,11 +147,8 @@ main(argc, argv)
 	rtype = PARENT;
 	id = 0;
 	tmpath = argv[0];
-	while ((ch = getopt(argc, argv, "a:l:n:p:T:t:v")) != EOF)
+	while ((ch = getopt(argc, argv, "l:n:p:T:t:v")) != EOF)
 		switch (ch) {
-		case 'a':
-			alignment = (u_int)atoi(optarg);
-			break;
 		case 'l':
 			maxlocks = (u_int)atoi(optarg);
 			break;
@@ -144,6 +161,14 @@ main(argc, argv)
 		case 't':
 			if ((nthreads = (u_int)atoi(optarg)) == 0)
 				nthreads = 1;
+#if !defined(MUTEX_THREAD_TEST)
+			if (nthreads != 1) {
+				fprintf(stderr,
+    "%s: thread support not available or not compiled for this platform.\n",
+				    progname);
+				return (EXIT_FAILURE);
+			}
+#endif
 			break;
 		case 'T':
 			if (!memcmp(optarg, "locker", sizeof("locker") - 1))
@@ -217,11 +242,7 @@ main(argc, argv)
 	 *
 	 * Clean up from any previous runs.
 	 */
-#ifdef DB_WIN32
-	snprintf(cmd, sizeof(cmd), "rmdir /S /Q %s", TESTDIR);
-#else
 	snprintf(cmd, sizeof(cmd), "rm -rf %s", TESTDIR);
-#endif
 	(void)system(cmd);
 	snprintf(cmd, sizeof(cmd), "mkdir %s", TESTDIR);
 	(void)system(cmd);
@@ -271,8 +292,8 @@ main(argc, argv)
 
 		/* Wait for all lockers to exit. */
 		if ((err = os_wait(pids, nprocs)) != 0) {
-			fprintf(stderr, "%s: locker wait failed with %s\n",
-			    progname, db_strerror(err));
+			fprintf(stderr, "%s: locker wait failed with %d\n",
+			    progname, err);
 			goto fail;
 		}
 
@@ -336,6 +357,7 @@ int
 locker_start(id)
 	u_long id;
 {
+#if defined(MUTEX_THREAD_TEST)
 	u_int i;
 	int err;
 
@@ -356,13 +378,17 @@ locker_start(id)
 			return (1);
 		}
 	return (0);
+#else
+	return (run_lthread((void *)id) == NULL ? 0 : 1);
+#endif
 }
 
 int
 locker_wait()
 {
+#if defined(MUTEX_THREAD_TEST)
 	u_int i;
-	void *retp = NULL;
+	void *retp;
 
 	/* Wait for the threads to exit. */
 	for (i = 0; i < nthreads; i++) {
@@ -374,6 +400,7 @@ locker_wait()
 		}
 	}
 	free(kidsp);
+#endif
 	return (0);
 }
 
@@ -387,7 +414,11 @@ run_lthread(arg)
 	int err, i;
 
 	id = (u_long)arg;
+#if defined(MUTEX_THREAD_TEST)
 	tid = (u_long)os_thread_self();
+#else
+	tid = 0;
+#endif
 	printf("Locker: ID %03lu (PID: %lu; TID: %lx)\n",
 	    id, (u_long)getpid(), tid);
 
@@ -503,6 +534,7 @@ int
 wakeup_start(id)
 	u_long id;
 {
+#if defined(MUTEX_THREAD_TEST)
 	int err;
 
 	/*
@@ -515,12 +547,16 @@ wakeup_start(id)
 		return (1);
 	}
 	return (0);
+#else
+	return (run_wthread((void *)id) == NULL ? 0 : 1);
+#endif
 }
 
 int
 wakeup_wait()
 {
-	void *retp = NULL;
+#if defined(MUTEX_THREAD_TEST)
+	void *retp;
 
 	/*
 	 * A file is created when the wakeup thread is no longer needed.
@@ -531,6 +567,7 @@ wakeup_wait()
 		    "%s: wakeup thread exited with error\n", progname);
 		return (1);
 	}
+#endif
 	return (0);
 }
 
@@ -549,7 +586,11 @@ run_wthread(arg)
 
 	id = (u_long)arg;
 	quitcheck = 0;
+#if defined(MUTEX_THREAD_TEST)
 	tid = (u_long)os_thread_self();
+#else
+	tid = 0;
+#endif
 	printf("Wakeup: ID %03lu (PID: %lu; TID: %lx)\n",
 	    id, (u_long)getpid(), tid);
 
@@ -642,12 +683,6 @@ tm_env_init()
 		home = TESTDIR;
 	if (nthreads != 1)
 		flags |= DB_THREAD;
-	if (alignment != 0 &&
-	    (ret = dbenv->mutex_set_align(dbenv, alignment)) != 0) {
-		dbenv->err(dbenv, ret, "set_align(%d): %s", alignment, home);
-		return (1);
-	}
-
 	if ((ret = dbenv->open(dbenv, home, flags, 0)) != 0) {
 		dbenv->err(dbenv, ret, "environment open: %s", home);
 		return (1);
@@ -713,10 +748,8 @@ tm_mutex_init()
 	if (verbose)
 		printf("\n");
 
-	if (verbose) {
-		(void)dbenv->mutex_stat_print(dbenv, DB_STAT_ALL);
+	if (verbose)
 		printf("Allocate %d per-lock mutexes: ", maxlocks);
-	}
 	for (i = 0; i < maxlocks; ++i) {
 		mp = (TM *)(lm_addr + i * sizeof(TM));
 		if ((err = dbenv->mutex_alloc(dbenv, 0, &mp->mutex)) != 0) {
@@ -897,7 +930,7 @@ int
 usage()
 {
 	fprintf(stderr, "usage: %s %s\n\t%s\n", progname,
-	    "[-a alignment] [-v] [-l maxlocks]",
+	    "[-v] [-l maxlocks]",
 	    "[-n locks] [-p procs] [-T locker=ID|wakeup=ID] [-t threads]");
 	return (EXIT_FAILURE);
 }

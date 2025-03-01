@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -81,7 +81,7 @@ __crdel_metasub_recover(env, dbtp, lsnp, op, info)
 		/*
 		 * If this was an in-memory database and we are re-creating
 		 * and this is the meta-data page, then we need to set up a
-		 * bunch of fields in the dbp as well.
+		 * bunch of fields in the dbo as well.
 		 */
 		if (F_ISSET(file_dbp, DB_AM_INMEM) &&
 		    argp->pgno == PGNO_BASE_MD &&
@@ -135,6 +135,8 @@ __crdel_inmem_create_recover(env, dbtp, lsnp, op, info)
 	DB *dbp;
 	int do_close, ret, t_ret;
 
+	COMPQUIET(info, NULL);
+
 	dbp = NULL;
 	do_close = 0;
 	REC_PRINT(__crdel_inmem_create_print);
@@ -143,7 +145,7 @@ __crdel_inmem_create_recover(env, dbtp, lsnp, op, info)
 	/* First, see if the DB handle already exists. */
 	if (argp->fileid == DB_LOGFILEID_INVALID) {
 		if (DB_REDO(op))
-			ret = USR_ERR(env, ENOENT);
+			ret = ENOENT;
 		else
 			ret = 0;
 	} else
@@ -213,7 +215,6 @@ out:	if (dbp != NULL) {
 		if (t_ret != 0 && ret == 0)
 			ret = t_ret;
 	}
-	COMPQUIET(info, NULL);
 	REC_NOOP_CLOSE;
 }
 
@@ -236,6 +237,8 @@ __crdel_inmem_rename_recover(env, dbtp, lsnp, op, info)
 	u_int8_t *fileid;
 	int ret;
 
+	COMPQUIET(info, NULL);
+
 	REC_PRINT(__crdel_inmem_rename_print);
 	REC_NOOP_INTRO(__crdel_inmem_rename_read);
 	fileid = argp->fid.data;
@@ -256,7 +259,6 @@ __crdel_inmem_rename_recover(env, dbtp, lsnp, op, info)
 	*lsnp = argp->prev_lsn;
 	ret = 0;
 
-	COMPQUIET(info, NULL);
 	REC_NOOP_CLOSE;
 }
 
@@ -278,6 +280,8 @@ __crdel_inmem_remove_recover(env, dbtp, lsnp, op, info)
 	__crdel_inmem_remove_args *argp;
 	int ret;
 
+	COMPQUIET(info, NULL);
+
 	REC_PRINT(__crdel_inmem_remove_print);
 	REC_NOOP_INTRO(__crdel_inmem_remove_read);
 
@@ -293,6 +297,5 @@ __crdel_inmem_remove_recover(env, dbtp, lsnp, op, info)
 	*lsnp = argp->prev_lsn;
 	ret = 0;
 
-	COMPQUIET(info, NULL);
 	REC_NOOP_CLOSE;
 }

@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -217,40 +217,10 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
               <ul type="circle">
                 <li>
                   <p>
-                                <span class="bold"><strong>u_int8_t gid[DB_GID_SIZE];</strong></span>
+                                <span class="bold"><strong>u_int32_t txnid;</strong></span>
                             </p>
                   <p>
-                              If the transaction was prepared using 
-                              <a class="xref" href="txnprepare.html" title="DB_TXN-&gt;prepare()">DB_TXN-&gt;prepare()</a>, then
-                              <span class="bold"><strong>gid</strong></span> contains the
-                              transaction's Global ID. Otherwise,
-                              <span class="bold"><strong>gid's</strong></span> contents are undefined.
-                            </p>
-                </li>
-                <li>
-                  <p>
-                                <span class="bold"><strong>DB_LSN lsn;</strong></span>
-                            </p>
-                  <p>
-                                The log sequence number of the transaction's first log record.
-                            </p>
-                </li>
-                <li>
-                  <p>
-                                <span class="bold"><strong>u_int32_t mvcc_ref;</strong></span>
-                            </p>
-                  <p>
-                                The number of buffer copies created by this transaction that remain
-                                in cache.
-                            </p>
-                </li>
-                <li>
-                  <p>
-                                <span class="bold"><strong>char name[];</strong></span>
-                            </p>
-                  <p>
-                                If a name was specified for the transaction, up to the first 50 bytes
-                                of that name, followed by a nul termination byte.
+                                The transaction ID of the transaction.
                             </p>
                 </li>
                 <li>
@@ -271,10 +241,18 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
                 </li>
                 <li>
                   <p>
-                                <span class="bold"><strong>u_int32_t priority;</strong></span>
+                                <span class="bold"><strong>db_threadid_t tid;</strong></span>
                             </p>
                   <p>
-                                This transaction's deadlock resolution priority.
+                                The thread of control ID of the originator of the transaction.
+                            </p>
+                </li>
+                <li>
+                  <p>
+                                <span class="bold"><strong>DB_LSN lsn;</strong></span>
+                            </p>
+                  <p>
+                                The current log sequence number when the transaction was begun.
                             </p>
                 </li>
                 <li>
@@ -287,16 +265,20 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
                 </li>
                 <li>
                   <p>
-                                <span class="bold"><strong>DB_TXN_ACTIVE_SLICE *slice_txns;</strong></span>
-                        </p>
+                                <span class="bold"><strong>u_int32_t mvcc_ref;</strong></span>
+                            </p>
                   <p>
-                            Either NULL, or a <a class="xref" href="envget_slice_count.html" title="DB_ENV-&gt;get_slice_count()">DB_ENV-&gt;get_slice_count()</a> sized
-                            array. If the entry for a slice is non-zero,
-                            then that slice is participating in the
-                            transaction, and the value of the entry is the
-                            integer transaction id of the subordinate
-                            transaction.
-                        </p>
+                                The number of buffer copies created by this transaction that remain
+                                in cache.
+                            </p>
+                </li>
+                <li>
+                  <p>
+                                <span class="bold"><strong>u_int32_t priority;</strong></span>
+                            </p>
+                  <p>
+                                This transaction's deadlock resolution priority.
+                            </p>
                 </li>
                 <li>
                   <p>
@@ -326,22 +308,6 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
                 </li>
                 <li>
                   <p>
-                                <span class="bold"><strong>db_threadid_t tid;</strong></span>
-                            </p>
-                  <p>
-                                The thread of control ID of the originator of the transaction.
-                            </p>
-                </li>
-                <li>
-                  <p>
-                                <span class="bold"><strong>u_int32_t txnid;</strong></span>
-                            </p>
-                  <p>
-                                The transaction ID of the transaction.
-                            </p>
-                </li>
-                <li>
-                  <p>
                                 <span class="bold"><strong>u_int32_t xa_status;</strong></span>
                             </p>
                   <p>
@@ -366,6 +332,27 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
                     </tr>
                   </table>
                 </li>
+                <li>
+                  <p>
+                                <span class="bold"><strong>u_int8_t gid[DB_GID_SIZE];</strong></span>
+                            </p>
+                  <p>
+                              If the transaction was prepared using 
+                              <a class="xref" href="txnprepare.html" title="DB_TXN-&gt;prepare()">DB_TXN-&gt;prepare()</a>, then
+                              <span class="bold"><strong>gid</strong></span> contains the
+                              transaction's Global ID. Otherwise,
+                              <span class="bold"><strong>gid's</strong></span> contents are undefined.
+                            </p>
+                </li>
+                <li>
+                  <p>
+                                <span class="bold"><strong>char name[];</strong></span>
+                            </p>
+                  <p>
+                                If a name was specified for the transaction, up to the first 50 bytes
+                                of that name, followed by a nul termination byte.
+                            </p>
+                </li>
               </ul>
             </div>
           </li>
@@ -387,7 +374,7 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711172136000"></a>Parameters</h3>
+              <h3 class="title"><a id="idp54897256"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -395,7 +382,7 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711172286560"></a>statp</h4>
+                <h4 class="title"><a id="idp54884744"></a>statp</h4>
               </div>
             </div>
           </div>
@@ -408,7 +395,7 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711172139440"></a>flags</h4>
+                <h4 class="title"><a id="idp54905552"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -434,7 +421,7 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711172184448"></a>Errors</h3>
+              <h3 class="title"><a id="idp54901832"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -450,7 +437,7 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711172304720"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp54887184"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -463,7 +450,7 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711172112288"></a>Class</h3>
+              <h3 class="title"><a id="idp54855816"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -475,7 +462,7 @@ DB_ENV-&gt;txn_stat(DB_ENV *env, DB_TXN_STAT **statp, u_int32_t flags);  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711172144960"></a>See Also</h3>
+              <h3 class="title"><a id="idp54913264"></a>See Also</h3>
             </div>
           </div>
         </div>

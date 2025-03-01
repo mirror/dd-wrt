@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -169,7 +169,7 @@ public class TxnGuideDPL { </pre>
 
     // Handles
     private static EntityStore myStore = null;
-    private static Environment myEnv = null;
+                private static Environment myEnv = null;
     private static final int NUMTHREADS = 5; </pre>
         <p>
     Next, we implement our <code class="function">usage()</code> method. This
@@ -462,7 +462,7 @@ public class StoreWriter extends Thread
 </p>
         <pre class="programlisting">    private EntityStore myStore = null;
     private Environment myEnv = null;
-    private PrimaryIndex&lt;Integer,PayloadDataEntity&gt; pdKey;
+    private PrimaryIndex&lt;Integer,PayloadDataEntity&gt; pdIndex;
     private Random generator = new Random();
     private boolean passTxn = false;
 
@@ -480,7 +480,7 @@ public class StoreWriter extends Thread
 
         // Open the data accessor. This is used to store persistent
         // objects.
-        pdKey = myStore.getPrimaryIndex(Integer.class,
+        pdIndex = myStore.getPrimaryIndex(Integer.class,
                     PayloadDataEntity.class);
     } </pre>
         <p>
@@ -565,7 +565,7 @@ public class StoreWriter extends Thread
                         pd.setDoubleData(generator.nextDouble());
 
                         // Do the put
-                        pdKey.put(txn, pd);
+                        pdIndex.put(txn, pd);
                     } </pre>
         <p>
         Having completed the inner database write loop, we could simply
@@ -713,7 +713,7 @@ public class StoreWriter extends Thread
         // This is ignored if the store is not opened with uncommitted read
         // support.
         cc.setReadUncommitted(true);
-        EntityCursor&lt;PayloadDataEntity&gt; cursor = pdKey.entities(txn, cc);
+        EntityCursor&lt;PayloadDataEntity&gt; cursor = pdIndex.entities(txn, cc);
 
         try {
             for (PayloadDataEntity pdi : cursor) {
@@ -735,7 +735,7 @@ public class StoreWriter extends Thread
     experiment with this code, you can find the example in the following
     location in your DB distribution:
 </p>
-      <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples/java/src/persist/txn</pre>
+      <pre class="programlisting"><span class="emphasis"><em>DB_INSTALL</em></span>/examples_java/src/persist/txn</pre>
     </div>
     <div class="navfooter">
       <hr />

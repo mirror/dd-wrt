@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -37,10 +37,10 @@ __repmgr_thread_start(env, runnable)
 	REPMGR_RUNNABLE *runnable;
 {
 	pthread_attr_t *attrp;
-	int ret, t_ret;
 #if defined(_POSIX_THREAD_ATTR_STACKSIZE) && defined(DB_STACKSIZE)
 	pthread_attr_t attributes;
 	size_t size;
+	int ret;
 
 	attrp = &attributes;
 	if ((ret = pthread_attr_init(&attributes)) != 0) {
@@ -68,19 +68,8 @@ __repmgr_thread_start(env, runnable)
 	runnable->quit_requested = FALSE;
 	runnable->env = env;
 
-	ret = pthread_create(&runnable->thread_id, attrp,
-		    runnable->run, runnable);
-
-	if (attrp != NULL) {
-		t_ret = pthread_attr_destroy(attrp);
-		if (t_ret != 0) {
-			__db_err(env, ret, DB_STR("3712",
-			    "pthread_attr_destroy in repmgr_thread_start"));
-			if (ret == 0)
-				ret = t_ret;
-		}
-	}
-	return (ret);
+	return (pthread_create(&runnable->thread_id, attrp,
+		    runnable->run, runnable));
 }
 
 /*

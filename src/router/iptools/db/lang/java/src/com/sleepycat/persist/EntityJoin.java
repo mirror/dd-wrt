@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -36,7 +36,7 @@ import com.sleepycat.db.Transaction;
  *
  * <p>For example:</p>
  * <pre class="code">
- *  // Index declarations -- see <a href="package-summary.html#example">package summary example</a>.
+ *  // Index declarations -- see {@link <a href="package-summary.html#example">package summary example</a>}.
  *  //
  *  {@literal PrimaryIndex<String, Person> personBySsn;}
  *  {@literal SecondaryIndex<String, String, Person> personByParentSsn;}
@@ -87,8 +87,6 @@ public class EntityJoin<PK, E> {
      * @param index the secondary index containing the given key value.
      *
      * @param key the key value to match during the join.
-     *
-     * @param <SK> the secondary key class.
      */
     public <SK> void addCondition(SecondaryIndex<SK, PK, E> index, SK key) {
 

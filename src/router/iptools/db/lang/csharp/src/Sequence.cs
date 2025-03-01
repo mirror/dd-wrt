@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -73,7 +73,7 @@ namespace BerkeleyDB {
         /// database and incremented (decremented) by enough to cover the delta
         /// and the next batch of cached values. 
         /// </para>
-        /// <para>
+	/// <para>
         /// By default, sequence ranges do not wrap; to cause the sequence to
         /// wrap around the beginning or end of its range, set
         /// <see cref="SequenceConfig.Wrap"/> to true.
@@ -84,7 +84,7 @@ namespace BerkeleyDB {
         /// greater than 0.
         /// </param>
         /// <returns>The next available element in the sequence.</returns>
-        public Int64 Get(uint Delta) {
+        public Int64 Get(int Delta) {
             return Get(Delta, false, null);
         }
         /// <summary>
@@ -100,7 +100,7 @@ namespace BerkeleyDB {
         /// do not synchronously flush the log when the transaction commits.
         /// </param>
         /// <returns>The next available element in the sequence.</returns>
-        public Int64 Get(uint Delta, bool NoSync) {
+        public Int64 Get(int Delta, bool NoSync) {
             return Get(Delta, NoSync, null);
         }
         /// <summary>
@@ -121,10 +121,10 @@ namespace BerkeleyDB {
         /// Must be null if the sequence was opened with a non-zero cache size. 
         /// </param>
         /// <returns>The next available element in the sequence.</returns>
-        public Int64 Get(uint Delta, Transaction txn) {
+        public Int64 Get(int Delta, Transaction txn) {
             return Get(Delta, false, txn);
         }
-        private Int64 Get(uint Delta, bool NoSync, Transaction txn) {
+        private Int64 Get(int Delta, bool NoSync, Transaction txn) {
             Int64 ret = DbConstants.DB_AUTO_COMMIT;
             uint flags = NoSync ? DbConstants.DB_TXN_NOSYNC : 0;
             seq.get(Transaction.getDB_TXN(txn), Delta, ref ret, flags);
@@ -223,7 +223,7 @@ namespace BerkeleyDB {
         /// sequence, the information returned by DB_SEQUENCE->stat() may be
         /// out-of-date.
         /// </para>
-        /// <para>
+		/// <para>
         /// The DB_SEQUENCE->stat() method cannot be transaction-protected. For
         /// this reason, it should be called in a thread of control that has no
         /// open cursors or active transactions. 
@@ -240,7 +240,7 @@ namespace BerkeleyDB {
 
         /// <summary>
         /// Release the resources held by this object, and close the sequence if
-        /// it is still open.
+        /// it's still open.
         /// </summary>
         public void Dispose() {
             if (isOpen)
@@ -252,9 +252,9 @@ namespace BerkeleyDB {
         /// <summary>
         /// The current cache size. 
         /// </summary>
-        public uint Cachesize {
+        public int Cachesize {
             get {
-                uint ret = 0;
+                int ret = 0;
                 seq.get_cachesize(ref ret);
                 return ret;
             }
@@ -297,7 +297,7 @@ namespace BerkeleyDB {
         }
 
         /// <summary>
-        /// If true, the sequence is incremented. This is the default. 
+        /// If true, the sequence will be incremented. This is the default. 
         /// </summary>
         public bool Increment {
             get {
@@ -308,7 +308,7 @@ namespace BerkeleyDB {
         }
 
         /// <summary>
-        /// If true, the sequence is decremented.
+        /// If true, the sequence will be decremented.
         /// </summary>
         public bool Decrement {
             get {

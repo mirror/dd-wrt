@@ -1,6 +1,6 @@
 # DO NOT EDIT: automatically built by dist/s_android.
 # Makefile for building Android.JDBC for DBSQL
-# Berkeley DB 12c Release 1, library version 12.1.6.2.32: (April  5, 2017)
+# Berkeley DB 11g Release 2, library version 11.2.5.3.28: (September  9, 2013)
 #
 # This Makefile will generate 3 files:
 #   1. Static libdb_sql library. An internal library and users don't
@@ -11,23 +11,12 @@
 ###################################################################
 LOCAL_PATH := $(call my-dir)
 BDB_ENABLE_ENCRYPTION := false
-BDB_ENABLE_USERAUTH := false
-BDB_ENABLE_USERAUTH_KEYSTORE := false
 
 ###################################################################
 # Common variables
 ###################################################################
 BDB_TOP := ../../..
 BDB_PATH := $(LOCAL_PATH)/$(BDB_TOP)
-
-# Common source files for command line tools
-COMMON_TOOL_SRCS := \
-	$(BDB_TOP)/src/common/util_arg.c \
-	$(BDB_TOP)/src/common/util_cache.c \
-	$(BDB_TOP)/src/common/util_env.c \
-	$(BDB_TOP)/src/common/util_log.c \
-	$(BDB_TOP)/src/common/util_sig.c \
-	$(BDB_TOP)/src/common/util_ver_check.c
 
 # Common include paths
 COMMON_C_INCLUDES := $(BDB_PATH)/build_android $(BDB_PATH)/src \
@@ -57,14 +46,6 @@ COMMON_CFLAGS := -Wall -DHAVE_USLEEP=1 \
 
 ifeq ($(BDB_ENABLE_ENCRYPTION),true)
 COMMON_CFLAGS += -DSQLITE_HAS_CODEC -DHAVE_CRYPTO -DHAVE_SQLITE3_KEY
-endif
-
-ifeq ($(BDB_ENABLE_USERAUTH),true)
-COMMON_CFLAGS += -DBDBSQL_USER_AUTHENTICATION
-endif
-
-ifeq ($(BDB_ENABLE_USERAUTH_KEYSTORE),true)
-COMMON_CFLAGS += -DBDBSQL_USER_AUTHENTICATION_KEYSTORE
 endif
 
 # Required for JDBC building
@@ -119,10 +100,6 @@ LOCAL_CFLAGS += $(COMMON_CFLAGS)
 
 # Source files
 LOCAL_SRC_FILES := \
-	$(BDB_TOP)/src/blob/blob_fileops.c \
-	$(BDB_TOP)/src/blob/blob_page.c \
-	$(BDB_TOP)/src/blob/blob_stream.c \
-	$(BDB_TOP)/src/blob/blob_util.c \
 	$(BDB_TOP)/src/btree/bt_compact.c \
 	$(BDB_TOP)/src/btree/bt_compare.c \
 	$(BDB_TOP)/src/btree/bt_compress.c \
@@ -183,7 +160,6 @@ LOCAL_SRC_FILES := \
 	$(BDB_TOP)/src/db/db_ret.c \
 	$(BDB_TOP)/src/db/db_setid.c \
 	$(BDB_TOP)/src/db/db_setlsn.c \
-	$(BDB_TOP)/src/db/db_slice.c \
 	$(BDB_TOP)/src/db/db_sort_multiple.c \
 	$(BDB_TOP)/src/db/db_stati.c \
 	$(BDB_TOP)/src/db/db_truncate.c \
@@ -209,7 +185,6 @@ LOCAL_SRC_FILES := \
 	$(BDB_TOP)/src/env/env_region.c \
 	$(BDB_TOP)/src/env/env_register.c \
 	$(BDB_TOP)/src/env/env_sig.c \
-	$(BDB_TOP)/src/env/env_slice.c \
 	$(BDB_TOP)/src/env/env_stat.c \
 	$(BDB_TOP)/src/fileops/fileops_auto.c \
 	$(BDB_TOP)/src/fileops/fop_basic.c \
@@ -282,7 +257,6 @@ LOCAL_SRC_FILES := \
 	$(BDB_TOP)/src/os/os_path.c \
 	$(BDB_TOP)/src/os/os_pid.c \
 	$(BDB_TOP)/src/os/os_rename.c \
-	$(BDB_TOP)/src/os/os_rmdir.c \
 	$(BDB_TOP)/src/os/os_root.c \
 	$(BDB_TOP)/src/os/os_rpath.c \
 	$(BDB_TOP)/src/os/os_rw.c \
@@ -323,9 +297,7 @@ LOCAL_SRC_FILES += $(BDB_TOP)/src/common/crypto_stub.c
 endif
 
 ifneq ($(TARGET_ARCH),arm)
-ifneq ($(TARGET_ARCH),arm64)
 LOCAL_LDLIBS += -lpthread -ldl
-endif
 endif
 
 ifneq ($(TARGET_SIMULATOR),true)
@@ -377,9 +349,7 @@ LOCAL_CFLAGS += $(COMMON_CFLAGS)
 LOCAL_CFLAGS += -DNO_ANDROID_FUNCS
 
 ifneq ($(TARGET_ARCH),arm)
-ifneq ($(TARGET_ARCH),arm64)
 LOCAL_LDLIBS += -lpthread -ldl
-endif
 endif
 
 LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLES)
@@ -387,418 +357,3 @@ LOCAL_MODULE_TAGS := debug
 include $(BUILD_EXECUTABLE)
 endif # !SDK_ONLY
 
-
-################################################################################
-##device commande line tool:db_archive
-################################################################################
-ifneq ($(SDK_ONLY),true)  # SDK doesn't need device version of db_archive
-include $(CLEAR_VARS)
-LOCAL_MODULE := db_archive
-
-LOCAL_ARM_MODE := arm
-LOCAL_STATIC_LIBRARIES := libdb_sql_static # Based on above static library
-LOCAL_SRC_FILES := \
-	$(BDB_TOP)/util/db_archive.c \
-	$(COMMON_TOOL_SRCS)
-
-# Import common flags
-LOCAL_C_INCLUDES += $(COMMON_C_INCLUDES)
-LOCAL_CFLAGS += $(COMMON_CFLAGS)
-
-ifneq ($(TARGET_ARCH),arm)
-ifneq ($(TARGET_ARCH),arm64)
-LOCAL_LDLIBS += -lpthread -ldl
-endif
-endif
-
-LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLES)
-LOCAL_MODULE_TAGS := debug
-include $(BUILD_EXECUTABLE)
-endif # !SDK_ONLY
-
-
-################################################################################
-##device commande line tool:db_checkpoint
-################################################################################
-ifneq ($(SDK_ONLY),true)  # SDK doesn't need device version of db_checkpoint
-include $(CLEAR_VARS)
-LOCAL_MODULE := db_checkpoint
-
-LOCAL_ARM_MODE := arm
-LOCAL_STATIC_LIBRARIES := libdb_sql_static # Based on above static library
-LOCAL_SRC_FILES := \
-	$(BDB_TOP)/util/db_checkpoint.c \
-	$(COMMON_TOOL_SRCS)
-
-# Import common flags
-LOCAL_C_INCLUDES += $(COMMON_C_INCLUDES)
-LOCAL_CFLAGS += $(COMMON_CFLAGS)
-
-ifneq ($(TARGET_ARCH),arm)
-ifneq ($(TARGET_ARCH),arm64)
-LOCAL_LDLIBS += -lpthread -ldl
-endif
-endif
-
-LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLES)
-LOCAL_MODULE_TAGS := debug
-include $(BUILD_EXECUTABLE)
-endif # !SDK_ONLY
-
-
-################################################################################
-##device commande line tool:db_deadlock
-################################################################################
-ifneq ($(SDK_ONLY),true)  # SDK doesn't need device version of db_deadlock
-include $(CLEAR_VARS)
-LOCAL_MODULE := db_deadlock
-
-LOCAL_ARM_MODE := arm
-LOCAL_STATIC_LIBRARIES := libdb_sql_static # Based on above static library
-LOCAL_SRC_FILES := \
-	$(BDB_TOP)/util/db_deadlock.c \
-	$(COMMON_TOOL_SRCS)
-
-# Import common flags
-LOCAL_C_INCLUDES += $(COMMON_C_INCLUDES)
-LOCAL_CFLAGS += $(COMMON_CFLAGS)
-
-ifneq ($(TARGET_ARCH),arm)
-ifneq ($(TARGET_ARCH),arm64)
-LOCAL_LDLIBS += -lpthread -ldl
-endif
-endif
-
-LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLES)
-LOCAL_MODULE_TAGS := debug
-include $(BUILD_EXECUTABLE)
-endif # !SDK_ONLY
-
-
-################################################################################
-##device commande line tool:db_dump
-################################################################################
-ifneq ($(SDK_ONLY),true)  # SDK doesn't need device version of db_dump
-include $(CLEAR_VARS)
-LOCAL_MODULE := db_dump
-
-LOCAL_ARM_MODE := arm
-LOCAL_STATIC_LIBRARIES := libdb_sql_static # Based on above static library
-LOCAL_SRC_FILES := \
-	$(BDB_TOP)/util/db_dump.c \
-	$(COMMON_TOOL_SRCS)
-
-# Import common flags
-LOCAL_C_INCLUDES += $(COMMON_C_INCLUDES)
-LOCAL_CFLAGS += $(COMMON_CFLAGS)
-
-ifneq ($(TARGET_ARCH),arm)
-ifneq ($(TARGET_ARCH),arm64)
-LOCAL_LDLIBS += -lpthread -ldl
-endif
-endif
-
-LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLES)
-LOCAL_MODULE_TAGS := debug
-include $(BUILD_EXECUTABLE)
-endif # !SDK_ONLY
-
-
-################################################################################
-##device commande line tool:db_hotbackup
-################################################################################
-ifneq ($(SDK_ONLY),true)  # SDK doesn't need device version of db_hotbackup
-include $(CLEAR_VARS)
-LOCAL_MODULE := db_hotbackup
-
-LOCAL_ARM_MODE := arm
-LOCAL_STATIC_LIBRARIES := libdb_sql_static # Based on above static library
-LOCAL_SRC_FILES := \
-	$(BDB_TOP)/util/db_hotbackup.c \
-	$(COMMON_TOOL_SRCS)
-
-# Import common flags
-LOCAL_C_INCLUDES += $(COMMON_C_INCLUDES)
-LOCAL_CFLAGS += $(COMMON_CFLAGS)
-
-ifneq ($(TARGET_ARCH),arm)
-ifneq ($(TARGET_ARCH),arm64)
-LOCAL_LDLIBS += -lpthread -ldl
-endif
-endif
-
-LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLES)
-LOCAL_MODULE_TAGS := debug
-include $(BUILD_EXECUTABLE)
-endif # !SDK_ONLY
-
-
-################################################################################
-##device commande line tool:db_load
-################################################################################
-ifneq ($(SDK_ONLY),true)  # SDK doesn't need device version of db_load
-include $(CLEAR_VARS)
-LOCAL_MODULE := db_load
-
-LOCAL_ARM_MODE := arm
-LOCAL_STATIC_LIBRARIES := libdb_sql_static # Based on above static library
-LOCAL_SRC_FILES := \
-	$(BDB_TOP)/util/db_load.c \
-	$(COMMON_TOOL_SRCS)
-
-# Import common flags
-LOCAL_C_INCLUDES += $(COMMON_C_INCLUDES)
-LOCAL_CFLAGS += $(COMMON_CFLAGS)
-
-ifneq ($(TARGET_ARCH),arm)
-ifneq ($(TARGET_ARCH),arm64)
-LOCAL_LDLIBS += -lpthread -ldl
-endif
-endif
-
-LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLES)
-LOCAL_MODULE_TAGS := debug
-include $(BUILD_EXECUTABLE)
-endif # !SDK_ONLY
-
-
-################################################################################
-##device commande line tool:db_printlog
-################################################################################
-ifneq ($(SDK_ONLY),true)  # SDK doesn't need device version of db_printlog
-include $(CLEAR_VARS)
-LOCAL_MODULE := db_printlog
-
-LOCAL_ARM_MODE := arm
-LOCAL_STATIC_LIBRARIES := libdb_sql_static # Based on above static library
-LOCAL_SRC_FILES := \
-	$(BDB_TOP)/util/db_printlog.c \
-	$(COMMON_TOOL_SRCS) \
-	$(BDB_TOP)/src/btree/btree_autop.c \
-	$(BDB_TOP)/src/db/crdel_autop.c \
-	$(BDB_TOP)/src/db/db_autop.c \
-	$(BDB_TOP)/src/dbreg/dbreg_autop.c \
-	$(BDB_TOP)/src/fileops/fileops_autop.c \
-	$(BDB_TOP)/src/hash/hash_autop.c \
-	$(BDB_TOP)/src/heap/heap_autop.c \
-	$(BDB_TOP)/src/qam/qam_autop.c \
-	$(BDB_TOP)/src/repmgr/repmgr_autop.c \
-	$(BDB_TOP)/src/txn/txn_autop.c
-
-# Import common flags
-LOCAL_C_INCLUDES += $(COMMON_C_INCLUDES)
-LOCAL_CFLAGS += $(COMMON_CFLAGS)
-
-ifneq ($(TARGET_ARCH),arm)
-ifneq ($(TARGET_ARCH),arm64)
-LOCAL_LDLIBS += -lpthread -ldl
-endif
-endif
-
-LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLES)
-LOCAL_MODULE_TAGS := debug
-include $(BUILD_EXECUTABLE)
-endif # !SDK_ONLY
-
-
-################################################################################
-##device commande line tool:db_recover
-################################################################################
-ifneq ($(SDK_ONLY),true)  # SDK doesn't need device version of db_recover
-include $(CLEAR_VARS)
-LOCAL_MODULE := db_recover
-
-LOCAL_ARM_MODE := arm
-LOCAL_STATIC_LIBRARIES := libdb_sql_static # Based on above static library
-LOCAL_SRC_FILES := \
-	$(BDB_TOP)/util/db_recover.c \
-	$(COMMON_TOOL_SRCS)
-
-# Import common flags
-LOCAL_C_INCLUDES += $(COMMON_C_INCLUDES)
-LOCAL_CFLAGS += $(COMMON_CFLAGS)
-
-ifneq ($(TARGET_ARCH),arm)
-ifneq ($(TARGET_ARCH),arm64)
-LOCAL_LDLIBS += -lpthread -ldl
-endif
-endif
-
-LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLES)
-LOCAL_MODULE_TAGS := debug
-include $(BUILD_EXECUTABLE)
-endif # !SDK_ONLY
-
-
-################################################################################
-##device commande line tool:db_replicate
-################################################################################
-ifneq ($(SDK_ONLY),true)  # SDK doesn't need device version of db_replicate
-include $(CLEAR_VARS)
-LOCAL_MODULE := db_replicate
-
-LOCAL_ARM_MODE := arm
-LOCAL_STATIC_LIBRARIES := libdb_sql_static # Based on above static library
-LOCAL_SRC_FILES := \
-	$(BDB_TOP)/util/db_replicate.c \
-	$(COMMON_TOOL_SRCS)
-
-# Import common flags
-LOCAL_C_INCLUDES += $(COMMON_C_INCLUDES)
-LOCAL_CFLAGS += $(COMMON_CFLAGS)
-
-ifneq ($(TARGET_ARCH),arm)
-ifneq ($(TARGET_ARCH),arm64)
-LOCAL_LDLIBS += -lpthread -ldl
-endif
-endif
-
-LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLES)
-LOCAL_MODULE_TAGS := debug
-include $(BUILD_EXECUTABLE)
-endif # !SDK_ONLY
-
-
-################################################################################
-##device commande line tool:db_stat
-################################################################################
-ifneq ($(SDK_ONLY),true)  # SDK doesn't need device version of db_stat
-include $(CLEAR_VARS)
-LOCAL_MODULE := db_stat
-
-LOCAL_ARM_MODE := arm
-LOCAL_STATIC_LIBRARIES := libdb_sql_static # Based on above static library
-LOCAL_SRC_FILES := \
-	$(BDB_TOP)/util/db_stat.c \
-	$(COMMON_TOOL_SRCS)
-
-# Import common flags
-LOCAL_C_INCLUDES += $(COMMON_C_INCLUDES)
-LOCAL_CFLAGS += $(COMMON_CFLAGS)
-
-ifneq ($(TARGET_ARCH),arm)
-ifneq ($(TARGET_ARCH),arm64)
-LOCAL_LDLIBS += -lpthread -ldl
-endif
-endif
-
-LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLES)
-LOCAL_MODULE_TAGS := debug
-include $(BUILD_EXECUTABLE)
-endif # !SDK_ONLY
-
-
-################################################################################
-##device commande line tool:db_tuner
-################################################################################
-ifneq ($(SDK_ONLY),true)  # SDK doesn't need device version of db_tuner
-include $(CLEAR_VARS)
-LOCAL_MODULE := db_tuner
-
-LOCAL_ARM_MODE := arm
-LOCAL_STATIC_LIBRARIES := libdb_sql_static # Based on above static library
-LOCAL_SRC_FILES := \
-	$(BDB_TOP)/util/db_tuner.c \
-	$(COMMON_TOOL_SRCS)
-
-# Import common flags
-LOCAL_C_INCLUDES += $(COMMON_C_INCLUDES)
-LOCAL_CFLAGS += $(COMMON_CFLAGS)
-
-ifneq ($(TARGET_ARCH),arm)
-ifneq ($(TARGET_ARCH),arm64)
-LOCAL_LDLIBS += -lpthread -ldl
-endif
-endif
-
-LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLES)
-LOCAL_MODULE_TAGS := debug
-include $(BUILD_EXECUTABLE)
-endif # !SDK_ONLY
-
-
-################################################################################
-##device commande line tool:db_upgrade
-################################################################################
-ifneq ($(SDK_ONLY),true)  # SDK doesn't need device version of db_upgrade
-include $(CLEAR_VARS)
-LOCAL_MODULE := db_upgrade
-
-LOCAL_ARM_MODE := arm
-LOCAL_STATIC_LIBRARIES := libdb_sql_static # Based on above static library
-LOCAL_SRC_FILES := \
-	$(BDB_TOP)/util/db_upgrade.c \
-	$(COMMON_TOOL_SRCS)
-
-# Import common flags
-LOCAL_C_INCLUDES += $(COMMON_C_INCLUDES)
-LOCAL_CFLAGS += $(COMMON_CFLAGS)
-
-ifneq ($(TARGET_ARCH),arm)
-ifneq ($(TARGET_ARCH),arm64)
-LOCAL_LDLIBS += -lpthread -ldl
-endif
-endif
-
-LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLES)
-LOCAL_MODULE_TAGS := debug
-include $(BUILD_EXECUTABLE)
-endif # !SDK_ONLY
-
-
-################################################################################
-##device commande line tool:db_verify
-################################################################################
-ifneq ($(SDK_ONLY),true)  # SDK doesn't need device version of db_verify
-include $(CLEAR_VARS)
-LOCAL_MODULE := db_verify
-
-LOCAL_ARM_MODE := arm
-LOCAL_STATIC_LIBRARIES := libdb_sql_static # Based on above static library
-LOCAL_SRC_FILES := \
-	$(BDB_TOP)/util/db_verify.c \
-	$(COMMON_TOOL_SRCS)
-
-# Import common flags
-LOCAL_C_INCLUDES += $(COMMON_C_INCLUDES)
-LOCAL_CFLAGS += $(COMMON_CFLAGS)
-
-ifneq ($(TARGET_ARCH),arm)
-ifneq ($(TARGET_ARCH),arm64)
-LOCAL_LDLIBS += -lpthread -ldl
-endif
-endif
-
-LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLES)
-LOCAL_MODULE_TAGS := debug
-include $(BUILD_EXECUTABLE)
-endif # !SDK_ONLY
-
-
-################################################################################
-##device commande line tool:db_log_verify
-################################################################################
-ifneq ($(SDK_ONLY),true)  # SDK doesn't need device version of db_log_verify
-include $(CLEAR_VARS)
-LOCAL_MODULE := db_log_verify
-
-LOCAL_ARM_MODE := arm
-LOCAL_STATIC_LIBRARIES := libdb_sql_static # Based on above static library
-LOCAL_SRC_FILES := \
-	$(BDB_TOP)/util/db_log_verify.c \
-	$(COMMON_TOOL_SRCS)
-
-# Import common flags
-LOCAL_C_INCLUDES += $(COMMON_C_INCLUDES)
-LOCAL_CFLAGS += $(COMMON_CFLAGS)
-
-ifneq ($(TARGET_ARCH),arm)
-ifneq ($(TARGET_ARCH),arm64)
-LOCAL_LDLIBS += -lpthread -ldl
-endif
-endif
-
-LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLES)
-LOCAL_MODULE_TAGS := debug
-include $(BUILD_EXECUTABLE)
-endif # !SDK_ONLY

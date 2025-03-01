@@ -1,0 +1,97 @@
+--- src/test_thread.c
++++ src/test_thread.c
+@@ -273,6 +273,9 @@
+ 
+   const char *zFilename;
+   sqlite3 *db;
++  void *pKey = 0;
++  int nKey = 0;
++  char *zErrMsg;
+   int rc;
+   char zBuf[100];
+   extern void Md5_Register(sqlite3*);
+@@ -281,7 +284,18 @@
+   UNUSED_PARAMETER(objc);
+ 
+   zFilename = Tcl_GetString(objv[2]);
++  pKey = Tcl_GetByteArrayFromObj(objv[3], &nKey);    
+   rc = sqlite3_open(zFilename, &db);
++#ifdef SQLITE_HAS_CODEC
++  if(db){
++    rc = sqlite3_key(db, pKey, nKey);
++    if( rc ){
++      zErrMsg = sqlite3_mprintf("%s", sqlite3ErrStr(rc));
++      sqlite3_close(db);
++      db = NULL;
++    }
++  }
++#endif
+   Md5_Register(db);
+   sqlite3_busy_handler(db, xBusy, 0);
+   
+@@ -330,7 +344,7 @@
+   } aSub[] = {
+     {"parent", sqlthread_parent, 1, "SCRIPT"},
+     {"spawn",  sqlthread_spawn,  2, "VARNAME SCRIPT"},
+-    {"open",   sqlthread_open,   1, "DBNAME"},
++    {"open",   sqlthread_open,   2, "DBNAME KEY"},
+     {"id",     sqlthread_id,     0, ""},
+     {0, 0, 0}
+   };
+--- test/thread001.test
++++ test/thread001.test
+@@ -77,7 +77,11 @@
+     #sqlthread parent {puts STARTING..}
+     set needToClose 0
+     if {![info exists ::DB]} {
+-      set ::DB [sqlthread open test.db]
++      set key ""
++      if {[sqlite -has-codec]} {
++        set key "xyzzy"
++      }
++      set ::DB [sqlthread open test.db $key]
+       #sqlthread parent "puts \"OPEN $::DB\""
+       set needToClose 1
+     }
+diff --git a/lang/sql/sqlite/test/thread003.test b/lang/sql/sqlite/test/thread003.test
+--- test/thread003.test
++++ test/thread003.test
+@@ -80,7 +80,11 @@
+   foreach zFile {test.db test2.db} {
+     set SCRIPT [format {
+       set iEnd [expr {[clock_seconds] + %d}]
+-      set ::DB [sqlthread open %s]
++      set key ""
++      if {[sqlite -has-codec]} {
++        set key "xyzzy"
++      }
++      set ::DB [sqlthread open %s $key]
+   
+       # Set the cache size to 15 pages per cache. 30 available globally.
+       execsql { PRAGMA cache_size = 15 }
+@@ -117,7 +121,11 @@
+     set SCRIPT [format {
+       set iStart [clock_seconds]
+       set iEnd [expr {[clock_seconds] + %d}]
+-      set ::DB [sqlthread open %s]
++      set key ""
++      if {[sqlite -has-codec]} {
++        set key "xyzzy"
++      }
++      set ::DB [sqlthread open %s $key]
+   
+       # Set the cache size to 15 pages per cache. 30 available globally.
+       execsql { PRAGMA cache_size = 15 }
+@@ -156,7 +164,11 @@
+ do_test thread003.4 {
+   thread_spawn finished(1) $thread_procs [format {
+     set iEnd [expr {[clock_seconds] + %d}]
+-    set ::DB [sqlthread open test.db]
++    set key ""
++    if {[sqlite -has-codec]} {
++      set key "xyzzy"
++    }
++    set ::DB [sqlthread open test.db $key]
+ 
+     # Set the cache size to 15 pages per cache. 30 available globally.
+     execsql { PRAGMA cache_size = 15 }

@@ -14,11 +14,13 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Chapter 3.  Access Method Operations </th>
+          <th colspan="3" align="center">Chapter 3. 
+		Access Method Operations
+        </th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="rq_conf.html">Prev</a> </td>
@@ -32,7 +34,9 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title"><a id="am"></a>Chapter 3.  Access Method Operations </h2>
+            <h2 class="title"><a id="am"></a>Chapter 3. 
+		Access Method Operations
+        </h2>
           </div>
         </div>
       </div>
@@ -48,25 +52,24 @@
           </dt>
           <dt>
             <span class="sect1">
-              <a href="am_opensub.html">Opening multiple databases in a
-        single file</a>
+              <a href="am_opensub.html">Opening multiple databases in a single file</a>
             </span>
           </dt>
           <dd>
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="am_opensub.html#idm140526457459376">Configuring databases sharing a file</a>
+                  <a href="am_opensub.html#idp50943544">Configuring databases sharing a file</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="am_opensub.html#idm140526460261584">Caching databases sharing a file</a>
+                  <a href="am_opensub.html#idp50944288">Caching databases sharing a file</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="am_opensub.html#idm140526459479920">Locking in databases based on sharing a file</a>
+                  <a href="am_opensub.html#idp50944984">Locking in databases based on sharing a file</a>
                 </span>
               </dt>
             </dl>
@@ -80,20 +83,17 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="am_partition.html#am_partition_keys">Specifying partition
-            keys</a>
+                  <a href="am_partition.html#am_partition_keys">Specifying partition keys</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="am_partition.html#am_partition_function">Partitioning
-            callback</a>
+                  <a href="am_partition.html#am_partition_function">Partitioning callback</a>
                 </span>
               </dt>
               <dt>
                 <span class="sect2">
-                  <a href="am_partition.html#partition_file_placement">Placing partition
-            files</a>
+                  <a href="am_partition.html#partition_file_placement">Placing partition files</a>
                 </span>
               </dt>
             </dl>
@@ -130,8 +130,7 @@
           </dt>
           <dt>
             <span class="sect1">
-              <a href="am_verify.html">Database verification and
-        salvage</a>
+              <a href="am_verify.html">Database verification and salvage</a>
             </span>
           </dt>
           <dt>
@@ -153,7 +152,7 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="am_second.html#idm140526459658848">Error Handling With Secondary Indexes</a>
+                  <a href="am_second.html#idp51040080">Error Handling With Secondary Indexes</a>
                 </span>
               </dt>
             </dl>
@@ -172,8 +171,7 @@
             <dl>
               <dt>
                 <span class="sect2">
-                  <a href="am_cursor.html#am_curget">Retrieving records with a
-        cursor</a>
+                  <a href="am_cursor.html#am_curget">Retrieving records with a cursor</a>
                 </span>
               </dt>
               <dt>
@@ -210,33 +208,21 @@
           </dd>
         </dl>
       </div>
-      <p>
-        Once a database handle has been created using <a href="../api_reference/C/dbcreate.html" class="olink">db_create()</a>,
-        there are several standard access method operations. Each of
-        these operations is performed using a method referred to by
-        the returned handle. Generally, the database will be opened
-        using <a href="../api_reference/C/dbopen.html" class="olink">DB-&gt;open()</a>. If the database is from an old release of
-        Berkeley DB, it may need to be upgraded to the current release
-        before it is opened using <a href="../api_reference/C/dbupgrade.html" class="olink">DB-&gt;upgrade()</a>.
-    </p>
-      <p>
-        Once a database has been opened, records may be retrieved
-        (<a href="../api_reference/C/dbget.html" class="olink">DB-&gt;get()</a>), stored (<a href="../api_reference/C/dbput.html" class="olink">DB-&gt;put()</a>), and deleted (<a href="../api_reference/C/dbdel.html" class="olink">DB-&gt;del()</a>).
-    </p>
-      <p>
-        Additional operations supported by the database handle
-        include statistics (<a href="../api_reference/C/dbstat.html" class="olink">DB-&gt;stat()</a>), truncation (<a href="../api_reference/C/dbtruncate.html" class="olink">DB-&gt;truncate()</a>),
-        version upgrade (<a href="../api_reference/C/dbupgrade.html" class="olink">DB-&gt;upgrade()</a>), verification and salvage
-        (<a href="../api_reference/C/dbverify.html" class="olink">DB-&gt;verify()</a>), flushing to a backing file (<a href="../api_reference/C/dbsync.html" class="olink">DB-&gt;sync()</a>), and
-        association of secondary indices (<a href="../api_reference/C/dbassociate.html" class="olink">DB-&gt;associate()</a>). Database
-        handles are eventually closed using <a href="../api_reference/C/dbclose.html" class="olink">DB-&gt;close()</a>.
-    </p>
-      <p>
-        For more information on the access method operations
-        supported by the database handle, see the <a href="../api_reference/C/db.html#dblist" class="olink">Database and Related
-        Methods</a> section in the
-        <em class="citetitle">Berkeley DB C API Reference Guide.</em>
-    </p>
+      <p>Once a database handle has been created using <a href="../api_reference/C/dbcreate.html" class="olink">db_create()</a>, there
+are several standard access method operations.  Each of these operations
+is performed using a method referred to by the returned handle.
+Generally, the database will be opened using <a href="../api_reference/C/dbopen.html" class="olink">DB-&gt;open()</a>.  If the
+database is from an old release of Berkeley DB, it may need to be upgraded to
+the current release before it is opened using <a href="../api_reference/C/dbupgrade.html" class="olink">DB-&gt;upgrade()</a>.</p>
+      <p>Once a database has been opened, records may be retrieved (<a href="../api_reference/C/dbget.html" class="olink">DB-&gt;get()</a>),
+stored (<a href="../api_reference/C/dbput.html" class="olink">DB-&gt;put()</a>), and deleted (<a href="../api_reference/C/dbdel.html" class="olink">DB-&gt;del()</a>).</p>
+      <p>Additional operations supported by the database handle include
+statistics (<a href="../api_reference/C/dbstat.html" class="olink">DB-&gt;stat()</a>), truncation (<a href="../api_reference/C/dbtruncate.html" class="olink">DB-&gt;truncate()</a>),
+version upgrade (<a href="../api_reference/C/dbupgrade.html" class="olink">DB-&gt;upgrade()</a>), verification and salvage
+(<a href="../api_reference/C/dbverify.html" class="olink">DB-&gt;verify()</a>), flushing to a backing file (<a href="../api_reference/C/dbsync.html" class="olink">DB-&gt;sync()</a>),
+and association of secondary indices (<a href="../api_reference/C/dbassociate.html" class="olink">DB-&gt;associate()</a>).  Database
+handles are eventually closed using <a href="../api_reference/C/dbclose.html" class="olink">DB-&gt;close()</a>.</p>
+      <p>For more information on the access method operations supported by the database handle, see the <a href="../api_reference/C/db.html#dblist" class="olink">Database and Related Methods</a> section in the <em class="citetitle">Berkeley DB C API Reference Guide.</em> </p>
       <div class="sect1" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
@@ -246,8 +232,7 @@
           </div>
         </div>
         <p>
-        The <a href="../api_reference/C/dbopen.html" class="olink">DB-&gt;open()</a> method opens a database, and takes five
-        arguments: 
+        The <a href="../api_reference/C/dbopen.html" class="olink">DB-&gt;open()</a> method opens a database, and takes five arguments:
     </p>
         <div class="variablelist">
           <dl>
@@ -255,7 +240,7 @@
               <span class="term">file</span>
             </dt>
             <dd>
-                The name of the file to be opened. 
+                The name of the file to be opened.
             </dd>
             <dt>
               <span class="term">database</span>
@@ -266,24 +251,23 @@
             <dt>
               <span class="term">type</span>
             </dt>
-            <dd> 
-                The type of database to open. This value will
-                be one of the five access methods Berkeley DB
-                supports: DB_BTREE, DB_HASH, DB_HEAP, DB_QUEUE or
-                DB_RECNO, or the special value DB_UNKNOWN, which
-                allows you to open an existing file without knowing
-                its type.
+            <dd>
+                The type of database to open.  This value will be one of
+                the five access methods Berkeley DB supports: DB_BTREE,
+                DB_HASH, DB_HEAP, DB_QUEUE or DB_RECNO, or the special
+                value DB_UNKNOWN, which allows you to open an existing file
+                without knowing its type.
             </dd>
             <dt>
               <span class="term">mode</span>
             </dt>
-            <dd> 
+            <dd>
                 The permissions to give to any created file.
             </dd>
           </dl>
         </div>
-        <p> 
-       There are a few flags that you can set to customize open: 
+        <p>
+        There are a few flags that you can set to customize open:
     </p>
         <div class="variablelist">
           <dl>
@@ -292,9 +276,8 @@
                 <a href="../api_reference/C/dbopen.html#open_DB_CREATE" class="olink">DB_CREATE</a>
               </span>
             </dt>
-            <dd> 
-                Create the underlying database and any
-                necessary physical files.
+            <dd>
+                Create the underlying database and any necessary physical files.
             </dd>
             <dt>
               <span class="term">
@@ -318,9 +301,8 @@
               </span>
             </dt>
             <dd>
-                The returned handle is free-threaded, that is,
-                it can be used simultaneously by multiple threads
-                within the process. 
+                The returned handle is free-threaded, that is, it can be
+                used simultaneously by multiple threads within the process.
             </dd>
             <dt>
               <span class="term">
@@ -328,19 +310,19 @@
               </span>
             </dt>
             <dd>
-                Physically truncate the underlying database
-                file, discarding all databases it contained.
-                Underlying filesystem primitives are used to implement
-                this flag. For this reason it is only applicable to
-                the physical file and cannot be used to discard
-                individual databases from within physical files.
+                Physically truncate the underlying database file,
+                discarding all databases it contained. Underlying
+                filesystem primitives are used to implement this flag. For
+                this reason it is only applicable to the physical file and
+                cannot be used to discard individual databases from within
+                physical files.
             </dd>
             <dt>
               <span class="term">
                 <a href="../api_reference/C/dbset_feedback.html#set_feedback_DB_UPGRADE" class="olink">DB_UPGRADE</a>
               </span>
             </dt>
-            <dd> 
+            <dd>
                 Upgrade the database format as necessary.
             </dd>
           </dl>
@@ -360,8 +342,7 @@
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Opening multiple databases in a
-        single file</td>
+          <td width="40%" align="right" valign="top"> Opening multiple databases in a single file</td>
         </tr>
       </table>
     </div>

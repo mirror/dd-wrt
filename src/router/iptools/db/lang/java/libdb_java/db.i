@@ -18,7 +18,6 @@
 
 typedef	unsigned char u_int8_t;
 typedef	long int32_t;
-typedef	long long db_off_t;
 typedef	long long db_seq_t;
 typedef	long long pid_t;
 #ifndef SWIGJAVA
@@ -44,15 +43,11 @@ struct DbLsn;	typedef struct DbLsn DB_LSN;
 struct DbMpoolFile;	typedef struct DbMpoolFile DB_MPOOLFILE;
 struct DbSequence;		typedef struct Db DB_SEQUENCE;
 struct DbSite;	typedef struct DbSite DB_SITE;
-struct DbStream;	typedef struct DbStream DB_STREAM;
 struct DbTxn;	typedef struct DbTxn DB_TXN;
 
 /* Methods that allocate new objects */
 %newobject Db::join(DBC **curslist, u_int32_t flags);
 %newobject Db::dup(u_int32_t flags);
-%newobject Db::get_slices();
-%newobject Db::slice_lookup(const Dbt *key, u_int32_t flags);
-%newobject DbEnv::get_slices();
 %newobject DbEnv::lock_get(u_int32_t locker,
 	u_int32_t flags, DBT *object, db_lockmode_t lock_mode);
 %newobject DbEnv::log_cursor(u_int32_t flags);
@@ -95,11 +90,6 @@ struct Db
 	int close(u_int32_t flags) {
 		errno = self->close(self, flags);
 		return errno;
-	}
-
-	JAVA_EXCEPT(DB_RETOK_STD, DB2JDBENV)
-	db_ret_t convert(const char *file, int lorder) {
-		return self->convert(self, file, lorder);
 	}
 
 	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, DB2JDBENV)
@@ -148,12 +138,6 @@ struct Db
 		return ret;
 	}
 
-	const char *get_blob_sub_dir() {
-		const char *ret;
-		errno = self->get_blob_sub_dir(self, &ret);
-		return ret;
-	}
-
 	int_bool get_byteswapped() {
 		int ret = 0;
 		errno = self->get_byteswapped(self, &ret);
@@ -196,18 +180,6 @@ struct Db
 		return ret;
 	}
 
-	const char *get_ext_file_dir() {
-		const char *ret;
-		errno = self->get_ext_file_dir(self, &ret);
-		return ret;
-	}
-
-	u_int32_t get_ext_file_threshold () {
-	  	u_int32_t ret = 0;
-	  	errno = self->get_ext_file_threshold(self, &ret);
-	  	return ret;
-	}
-
 	/*
 	 * This method is implemented in Java to avoid wrapping the object on
 	 * every call.
@@ -223,12 +195,6 @@ struct Db
 		const char *ret = NULL;
 		errno = 0;
 		self->get_errpfx(self, &ret);
-		return ret;
-	}
-
-	const char *get_msgpfx() {
-		const char *ret = NULL;
-		self->get_msgpfx(self, &ret);
 		return ret;
 	}
 #endif
@@ -316,13 +282,9 @@ struct Db
 		return ret;
 	}
 
-	/* __dbt_arr is used to differentiate from DBT * as a return value. */
-	struct __dbt_arr get_partition_keys() {
-		struct __dbt_arr ret;
-                u_int32_t len;
-		errno = self->get_partition_keys(self, &len, &ret.arr_ptr);
-                ret.len = (int)len;
-		ret.len--;
+	DBT *get_partition_keys() {
+		DBT *ret = NULL;
+		errno = self->get_partition_keys(self, NULL, &ret);
 		return ret;
 	}
 
@@ -362,20 +324,6 @@ struct Db
 	JAVA_EXCEPT_NONE
 	int_bool get_multiple() {
 		return self->get_multiple(self);
-	}
-
-	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, DB2JDBENV)
-	DB **get_slices() {
-		DB **dbps;
-		u_int32_t i, count = 0;
-		errno = self->get_slices(self, &dbps);
-		if (errno == 0) {
-		  	self->dbenv->get_slice_count(self->dbenv, &count);
-			dbps[count] = NULL;
-			for (i = 0; dbps[i] != NULL; i++)
-			  	dbps[i]->env->dbt_usercopy = __dbj_dbt_memcopy;
-		}
-		return dbps;
 	}
 
 	int_bool get_transactional() {
@@ -436,7 +384,7 @@ struct Db
 	}
 
 	db_ret_t set_bt_compare(
-	    int (*bt_compare_fcn)(DB *, const DBT *, const DBT *, size_t *)) {
+	    int (*bt_compare_fcn)(DB *, const DBT *, const DBT *)) {
 		return self->set_bt_compare(self, bt_compare_fcn);
 	}
 
@@ -469,7 +417,7 @@ struct Db
 	}
 
 	db_ret_t set_dup_compare(
-	    int (*dup_compare_fcn)(DB *, const DBT *, const DBT *, size_t *)) {
+	    int (*dup_compare_fcn)(DB *, const DBT *, const DBT *)) {
 		return self->set_dup_compare(self, dup_compare_fcn);
 	}
 
@@ -488,14 +436,6 @@ struct Db
 		self->set_errpfx(self, errpfx);
 	}
 #endif /* SWIGJAVA */
-
-	db_ret_t set_ext_file_dir(const char *dir) {
-		return self->set_ext_file_dir(self, dir);
-	}
-
-	db_ret_t set_ext_file_threshold(u_int32_t bytes, u_int32_t flags) {
-		return self->set_ext_file_threshold(self, bytes, flags);
-	}
 
 	JAVA_EXCEPT(DB_RETOK_STD, DB2JDBENV)
 	db_ret_t set_feedback(void (*db_feedback_fcn)(DB *, int, int)) {
@@ -517,7 +457,7 @@ struct Db
 	}
 
 	db_ret_t set_h_compare(
-	    int (*h_compare_fcn)(DB *, const DBT *, const DBT *, size_t *)) {
+	    int (*h_compare_fcn)(DB *, const DBT *, const DBT *)) {
 		return self->set_h_compare(self, h_compare_fcn);
 	}
 
@@ -543,42 +483,10 @@ struct Db
 	}
 
 #ifndef SWIGJAVA
-	void set_msgcall(
-	   void (*db_msgcall_fcn)(const DB_ENV *, const char *, const char *)) {
+	void set_msgcall(void (*db_msgcall_fcn)(const DB_ENV *, const char *)) {
 		self->set_msgcall(self, db_msgcall_fcn);
 	}
-
-	void set_msgpfx(const char *msgpfx) {
-		self->set_msgpfx(self, msgpfx);
-	}
 #endif /* SWIGJAVA */
-
-	int set_msgfile(const char *msgfile) {
-		int ret;
-		FILE *fmsg;
-		ret = 0;
-		fmsg = NULL;
-		self->get_msgfile(self, &fmsg);
-		if (fmsg != NULL && fmsg != stdout && fmsg != stderr) {
-			fclose(fmsg);
-			fmsg = NULL;
-		}
-		if (strcmp(msgfile, "") == 0 || msgfile == NULL)
-			self->set_msgfile(self, NULL);
-		else if (strcmp(msgfile, "stdout") == 0)
-			self->set_msgfile(self, stdout);
-		else if (strcmp(msgfile, "stderr") == 0)
-			self->set_msgfile(self, stderr);
-		else {
-			fmsg = fopen(msgfile, "a");
-			if (fmsg != NULL) {
-				self->set_msgfile(self, fmsg);
-			}
-			else
-				ret = 1;
-		}
-		return ret;
-	}
 
 	db_ret_t set_pagesize(u_int32_t pagesize) {
 		return self->set_pagesize(self, pagesize);
@@ -623,21 +531,6 @@ struct Db
 		return self->set_q_extentsize(self, extentsize);
 	}
 
-	JAVA_EXCEPT(DB_RETOK_STD, DB2JDBENV)
-	db_ret_t set_slice_callback(
-	    int (*slice_fcn)(const DB *, const DBT *, DBT *)) {
-		return self->set_slice_callback(self, slice_fcn);
-	}
-
-	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, DB2JDBENV)
-	DB *slice_lookup(const DBT *key, u_int32_t flags) {
-		DB *slice = NULL;
-		errno = self->slice_lookup(self, key, &slice, flags);
-		if (slice != NULL)
-			slice->env->dbt_usercopy = __dbj_dbt_memcopy;
-		return slice;
-	}
-
 	db_ret_t sort_multiple(DBT *key, DBT *data) {
 		return self->sort_multiple(self, key, data, 0);
 	}
@@ -647,10 +540,6 @@ struct Db
 		void *statp = NULL;
 		errno = self->stat(self, txnid, &statp, flags);
 		return statp;
-	}
-
-	int stat_print(u_int32_t flags) {
-		return self->stat_print(self, flags);
 	}
 
 	JAVA_EXCEPT(DB_RETOK_STD, DB2JDBENV)
@@ -710,13 +599,6 @@ struct Dbc
 		db_recno_t count = 0;
 		errno = self->count(self, &count, flags);
 		return count;
-	}
-
-	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, DB2JDBENV)
-	DB_STREAM *db_stream(u_int32_t flags) {
-		DB_STREAM *dbsp = NULL;
-		errno = self->db_stream(self, &dbsp, flags);
-		return dbsp;
 	}
 
 	JAVA_EXCEPT(DB_RETOK_DBCDEL, DBC2JDBENV)
@@ -844,18 +726,6 @@ struct DbEnv
 	}
 #endif
 
-	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, JDBENV)
-	DB_ENV **get_slices() {
-		DB_ENV **slices = NULL;
-		int i;
-		errno = self->get_slices(self, &slices);
-		if (slices != NULL) {
-		  	for (i = 0; slices[i] != NULL; i++)
-				slices[i]->env->dbt_usercopy = __dbj_dbt_memcopy;
-		}
-		return slices;
-	}
-
 	DB_TXN *cdsgroup_begin() {
 		DB_TXN *tid = NULL;
 		errno = self->cdsgroup_begin(self, &tid);
@@ -866,6 +736,7 @@ struct DbEnv
 		return self->fileid_reset(self, file, flags);
 	}
 
+	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, JDBENV)
 	const char **get_data_dirs() {
 		const char **ret;
 		errno = self->get_data_dirs(self, &ret);
@@ -878,30 +749,11 @@ struct DbEnv
 		return ret;
 	}
 
-	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, JDBENV)
-	const char *get_ext_file_dir() {
-		const char *ret;
-		errno = self->get_ext_file_dir(self, &ret);
-		return ret;
-	}
-
-	u_int32_t get_ext_file_threshold() {
-		u_int32_t ret;
-		errno = self->get_ext_file_threshold(self, &ret);
-		return ret;
-	}
-
 #ifndef SWIGJAVA
 	const char *get_errpfx() {
 		const char *ret;
 		errno = 0;
 		self->get_errpfx(self, &ret);
-		return ret;
-	}
-
-	const char *get_msgpfx() {
-		const char *ret;
-		self->get_msgpfx(self, &ret);
 		return ret;
 	}
 #endif /* SWIGJAVA */
@@ -942,13 +794,6 @@ struct DbEnv
 		return ret;
 	}
 
-	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, JDBENV)
-	u_int32_t get_slice_count() {
-		u_int32_t ret;
-		errno = self->get_slice_count(self, &ret);
-		return ret;
-	}
-
 	const char *get_tmp_dir() {
 		const char *ret;
 		errno = self->get_tmp_dir(self, &ret);
@@ -980,6 +825,7 @@ struct DbEnv
 		return self->remove(self, db_home, flags);
 	}
 
+	JAVA_EXCEPT(DB_RETOK_STD, JDBENV)
 	db_ret_t set_cachesize(jlong bytes, int ncache) {
 		return self->set_cachesize(self,
 		    (u_int32_t)(bytes / GIGABYTE),
@@ -1021,15 +867,6 @@ struct DbEnv
 #endif
 
 	JAVA_EXCEPT(DB_RETOK_STD, JDBENV)
-	db_ret_t set_ext_file_dir(const char *dir) {
-		return self->set_ext_file_dir(self, dir);
-	}
-
-	db_ret_t set_ext_file_threshold(u_int32_t bytes, u_int32_t flags) {
-		return self->set_ext_file_threshold(self, bytes, flags);
-	}
-
-	JAVA_EXCEPT(DB_RETOK_STD, JDBENV)
 	db_ret_t set_flags(u_int32_t flags, int_bool onoff) {
 		return self->set_flags(self, flags, onoff);
 	}
@@ -1063,42 +900,8 @@ struct DbEnv
 	}
 
 	JAVA_EXCEPT_NONE
-	void set_msgcall(void (*db_msgcall_fcn)(const DB_ENV *, const char *,
-	    const char *)) {
+	void set_msgcall(void (*db_msgcall_fcn)(const DB_ENV *, const char *)) {
 		self->set_msgcall(self, db_msgcall_fcn);
-	}
-
-#ifndef SWIGJAVA
-	void set_msgpfx(const char *msgpfx) {
-		self->set_msgpfx(self, msgpfx);
-	}
-#endif
-
-	int set_msgfile(const char *msgfile) {
-		int ret;
-		FILE *fmsg;
-		ret = 0;
-		fmsg = NULL;
-		self->get_msgfile(self, &fmsg);
-		if (fmsg != NULL && fmsg != stdout && fmsg != stderr) {
-			fclose(fmsg);
-			fmsg = NULL;
-		}
-		if (strcmp(msgfile, "") == 0 || msgfile == NULL)
-			self->set_msgfile(self, NULL);
-		else if (strcmp(msgfile, "stdout") == 0)
-			self->set_msgfile(self, stdout);
-		else if (strcmp(msgfile, "stderr") == 0)
-			self->set_msgfile(self, stderr);
-		else {
-			fmsg = fopen(msgfile, "a");
-			if (fmsg != NULL) {
-				self->set_msgfile(self, fmsg);
-			}
-			else
-				ret = 1;
-		}
-		return ret;
 	}
 
 	JAVA_EXCEPT(DB_RETOK_STD, JDBENV)
@@ -1238,10 +1041,6 @@ struct DbEnv
 		DB_LOCK_STAT *statp = NULL;
 		errno = self->lock_stat(self, &statp, flags);
 		return statp;
-	}
-
-	int lock_stat_print(u_int32_t flags) {
-		return self->lock_stat_print(self, flags);
 	}
 
 #ifndef SWIGJAVA
@@ -1388,10 +1187,6 @@ struct DbEnv
 		return sp;
 	}
 
-	int log_stat_print(u_int32_t flags) {
-		return self->log_stat_print(self, flags);
-	}
-
         int log_verify(const char *envhome, u_int32_t cachesz, 
             const char *dbfile, const char *dbname, 
             time_t stime, time_t etime,
@@ -1494,10 +1289,6 @@ struct DbEnv
 		return mp_stat;
 	}
 
-	int memp_stat_print(u_int32_t flags) {
-		return self->memp_stat_print(self, flags);
-	}
-
 	DB_MPOOL_FSTAT **memp_fstat(u_int32_t flags) {
 		DB_MPOOL_FSTAT **mp_fstat = NULL;
 		errno = self->memp_stat(self, NULL, &mp_fstat, flags);
@@ -1575,20 +1366,6 @@ struct DbEnv
 		return statp;
 	}
 
-	int mutex_stat_print(u_int32_t flags) {
-		return self->mutex_stat_print(self, flags);
-	}
-
-	const char *get_region_dir() {
-		const char *ret;
-		errno = self->get_region_dir(self, &ret);
-		return ret;
-	}
-
-	db_ret_t set_region_dir(const char *dir) {
-		return self->set_region_dir(self, dir);
-	}
-
 	/* Transaction functions */
 	u_int32_t get_tx_max() {
 		u_int32_t ret;
@@ -1606,10 +1383,6 @@ struct DbEnv
 		db_timeout_t ret;
 		errno = self->get_timeout(self, &ret, flag);
 		return ret;
-	}
-
-	int stat_print(u_int32_t flags) {
-		return self->stat_print(self, flags);
 	}
 
 	JAVA_EXCEPT(DB_RETOK_TXNAPPLIED, JDBENV)
@@ -1654,10 +1427,6 @@ struct DbEnv
 		DB_TXN_STAT *statp = NULL;
 		errno = self->txn_stat(self, &statp, flags);
 		return statp;
-	}
-
-	int txn_stat_print(u_int32_t flags) {
-		return self->txn_stat_print(self, flags);
 	}
 
 	/* Replication functions */
@@ -1727,10 +1496,6 @@ struct DbEnv
 		return statp;
 	}
 
-	int rep_stat_print(u_int32_t flags) {
-		return self->rep_stat_print(self, flags);
-	}
-
 	JAVA_EXCEPT(DB_RETOK_STD, JDBENV)
 	db_ret_t rep_set_limit(jlong bytes) {
 		return self->rep_set_limit(self,
@@ -1766,11 +1531,6 @@ struct DbEnv
 	    int (*send)(DB_ENV *, const DBT *, const DBT *,
 	    const DB_LSN *, int, u_int32_t)) {
 		return self->rep_set_transport(self, envid, send);
-	}
-
-	db_ret_t rep_set_view(int (*rep_view_fcn)(DB_ENV *,
-	    const char *, int *, u_int32_t)) {
-		return self->rep_set_view(self, rep_view_fcn);
 	}
 
 	/* Advanced replication functions. */
@@ -1813,13 +1573,6 @@ struct DbEnv
 		return ret;
 	}
 
-	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, JDBENV)
-	jlong repmgr_get_incoming_queue_max() {
-		u_int32_t gbytes = 0, bytes = 0;
-		errno = self->repmgr_get_incoming_queue_max(self, &gbytes, &bytes);
-		return (jlong)gbytes * GIGABYTE + bytes;
-	}
-
 	JAVA_EXCEPT_ERRNO(DB_RETOK_REPMGR_LOCALSITE, JDBENV)
 	DB_SITE *repmgr_local_site() {
 		DB_SITE *site = NULL;
@@ -1830,13 +1583,6 @@ struct DbEnv
 	JAVA_EXCEPT(DB_RETOK_STD, JDBENV)
 	db_ret_t repmgr_set_ack_policy(int policy) {
 		return self->repmgr_set_ack_policy(self, policy);
-	}
-
-	JAVA_EXCEPT(DB_RETOK_STD, JDBENV)
-	db_ret_t repmgr_set_incoming_queue_max(jlong bytes) {
-		return self->repmgr_set_incoming_queue_max(self, 
-		    (u_int32_t)(bytes / GIGABYTE),
-		    (u_int32_t)(bytes % GIGABYTE));
 	}
 
 	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, JDBENV)
@@ -1878,18 +1624,9 @@ struct DbEnv
 		return statp;
 	}
 
-	int repmgr_stat_print(u_int32_t flags) {
-		return self->repmgr_stat_print(self, flags);
-	}
-
 	u_int32_t get_backup_config(u_int32_t config_type) {
 		u_int32_t ret;
 		errno = self->get_backup_config(self, (DB_BACKUP_CONFIG)config_type, &ret);
-		if (errno == EINVAL) {
-			errno = 0;
-			ret = 0;
-		}
-
 		return ret;
 	}
 
@@ -1949,26 +1686,6 @@ struct DbEnv
 
 	static const char *get_version_full_string() {
 		return DB_VERSION_FULL_STRING;
-	}
-
-	static int slices_enabled() {
-		DB_ENV *dbenv;
-		u_int32_t slices;
-		int enabled, ret;
-		enabled = 0;
-		if (db_env_create(&dbenv, 0) == 0) {
-			/* Hide any error messages. */
-			dbenv->set_errcall(dbenv, NULL);
-			dbenv->set_errfile(dbenv, NULL);
-			/* Will return DB_OPNOTSUP if not enabled.*/
-			ret = dbenv->get_slice_count(dbenv, &slices);
-			if (ret == DB_OPNOTSUP)
-				enabled = 0;
-			else
-				enabled = 1;
-			dbenv->close(dbenv, 0);
-		}
-		return enabled;
 	}
 }
 };
@@ -2095,14 +1812,14 @@ struct DbSequence
 	}
 
 	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, NULL)
-	db_seq_t get(DB_TXN *txnid, u_int32_t delta, u_int32_t flags) {
+	db_seq_t get(DB_TXN *txnid, int32_t delta, u_int32_t flags) {
 		db_seq_t ret = 0;
 		errno = self->get(self, txnid, delta, &ret, flags);
 		return ret;
 	}
 
-	u_int32_t get_cachesize() {
-		u_int32_t ret = 0;
+	int32_t get_cachesize() {
+		int32_t ret = 0;
 		errno = self->get_cachesize(self, &ret);
 		return ret;
 	}
@@ -2150,7 +1867,7 @@ struct DbSequence
 		return self->remove(self, txnid, flags);
 	}
 
-	db_ret_t set_cachesize(u_int32_t size) {
+	db_ret_t set_cachesize(int32_t size) {
 		return self->set_cachesize(self, size);
 	}
 
@@ -2167,10 +1884,6 @@ struct DbSequence
 		DB_SEQUENCE_STAT *ret = NULL;
 		errno = self->stat(self, &ret, flags);
 		return ret;
-	}
-
-	int stat_print(u_int32_t flags) {
-		return self->stat_print(self, flags);
 	}
 }
 };
@@ -2209,32 +1922,6 @@ struct DbSite
 
 	db_ret_t set_config(u_int32_t which, int_bool onoff) {
 		return self->set_config(self, which, onoff);
-	}
-}
-};
-
-struct DbStream
-{
-%extend {
-	JAVA_EXCEPT(DB_RETOK_STD, NULL)
-	db_ret_t close(u_int32_t flags) {
-		return self->close(self, flags);
-	}
-
-	int read(DBT *data, db_off_t offset, u_int32_t size, u_int32_t flags) {
-		return self->read(self, data, offset, size, flags);
-	}
-
-	JAVA_EXCEPT_ERRNO(DB_RETOK_STD, NULL)
-	db_off_t size(u_int32_t flags) {
-		db_off_t ret = 0;
-		errno = self->size(self, &ret, flags);
-		return ret;
-	}
-
-	JAVA_EXCEPT(DB_RETOK_STD, NULL)
-	int write(DBT *data, db_off_t offset, u_int32_t flags) {
-		return self->write(self, data, offset, flags);
 	}
 }
 };

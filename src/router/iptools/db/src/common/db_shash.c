@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -23,7 +23,7 @@ __db_tablesize(n_buckets)
 	/*
 	 * We try to be clever about how big we make the hash tables.  Use a
 	 * prime number close to the "suggested" number of elements that will
-	 * be in the hash table.  Use 16 as the minimum hash table size.
+	 * be in the hash table.  Use 32 as the minimum hash table size.
 	 *
 	 * Ref: Sedgewick, Algorithms in C, "Hash Functions"
 	 *
@@ -42,7 +42,6 @@ __db_tablesize(n_buckets)
 	if ((power) >= n_buckets)					\
 		return (prime);						\
 }
-	HASH_SIZE(16, 17);			/* 2^4 */
 	HASH_SIZE(32, 37);			/* 2^5 */
 	HASH_SIZE(64, 67);			/* 2^6 */
 	HASH_SIZE(128, 131);			/* 2^7 */

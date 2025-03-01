@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1997, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1997, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -100,7 +100,7 @@ main(int argc, char *argv[])
 }
 
 LockExample::LockExample(const char *home, u_int32_t maxlocks, int do_unlink)
-:	DbEnv((u_int32_t)0)
+:	DbEnv(0)
 ,	ecode(0)
 {
 	int ret;

@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -12,7 +12,6 @@ import java.util.SortedMap;
 
 import com.sleepycat.bind.EntryBinding;
 import com.sleepycat.collections.StoredSortedMap;
-import com.sleepycat.compat.DbCompat;
 import com.sleepycat.db.Database;
 import com.sleepycat.db.DatabaseEntry;
 import com.sleepycat.db.DatabaseException;
@@ -58,7 +57,6 @@ class KeysIndex<SK, PK> extends BasicIndex<SK, PK> {
     public PK get(Transaction txn, SK key, LockMode lockMode)
         throws DatabaseException {
 
-
         DatabaseEntry keyEntry = new DatabaseEntry();
         DatabaseEntry pkeyEntry = new DatabaseEntry();
         keyBinding.objectToEntry(key, keyEntry);
@@ -71,7 +69,6 @@ class KeysIndex<SK, PK> extends BasicIndex<SK, PK> {
             return null;
         }
     }
-
 
     public Map<SK, PK> map() {
         return sortedMap();

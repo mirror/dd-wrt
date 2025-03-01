@@ -1,11 +1,11 @@
                                 BerkeleyDB
 
-                               Version 0.56
+                               Version 0.50
 
-                             5th January 2016
+                            10th December 2011
                               
 
-     Copyright (c) 1997-2016 Paul Marquess. All rights reserved. This
+     Copyright (c) 1997-2011 Paul Marquess. All rights reserved. This
       program is free software; you can redistribute it and/or modify
                   it under the same terms as Perl itself.
 
@@ -35,7 +35,7 @@ installed on your system:
       directory where you have untarred this module is NOT a network
       drive, e.g. NFS or AFS.
 
-    * Perl 5.6.0 or greater.
+    * Perl 5.00 or greater.
 
     * Berkeley DB Version 2.6.4 or greater
 

@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -77,11 +77,6 @@ Db::close(u_int32_t flags);</pre>
          indices referencing it have been closed.
     </p>
       <p>
-         When called on a database that has been opened with sliced
-         support, the <code class="methodname">Db::close()</code> method is
-         automatically called on each supporting slice database. 
-     </p>
-      <p>
              When multiple threads are using the <a class="link" href="db.html" title="Chapter 2.  The Db Handle">Db</a>
              concurrently, only a single thread may call the <code class="methodname">Db::close()</code> method.
     </p>
@@ -108,7 +103,7 @@ Db::close(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h4 class="title"><a id="idm139670065846144"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
+              <h4 class="title"><a id="idp3734048"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
             </div>
           </div>
         </div>
@@ -126,7 +121,7 @@ Db::close(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h4 class="title"><a id="idm139670065854544"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
+              <h4 class="title"><a id="idp2491512"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
             </div>
           </div>
         </div>
@@ -151,20 +146,19 @@ Db::close(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h4 class="title"><a id="idm139670065883264"></a>EINVAL</h4>
+              <h4 class="title"><a id="idp2411120"></a>EINVAL</h4>
             </div>
           </div>
         </div>
         <p>
-                If the cursor is already closed; or if an invalid flag
-                value or parameter was specified.
+                If the cursor is already closed; or if an invalid flag value or parameter was specified.
             </p>
       </div>
       <div class="sect2" lang="en" xml:lang="en">
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670065817008"></a>Parameters</h3>
+              <h3 class="title"><a id="idp2080096"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -172,7 +166,7 @@ Db::close(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670065816624"></a>flags</h4>
+                <h4 class="title"><a id="idp1872976"></a>flags</h4>
               </div>
             </div>
           </div>
@@ -219,7 +213,7 @@ Db::close(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670065813248"></a>Errors</h3>
+              <h3 class="title"><a id="idp2046584"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -237,7 +231,7 @@ Db::close(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670065786944"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp1982528"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -252,7 +246,7 @@ Db::close(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670065796576"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
+                <h4 class="title"><a id="idp957072"></a><span>DbDeadlockException or </span>DB_LOCK_DEADLOCK</h4>
               </div>
             </div>
           </div>
@@ -270,7 +264,7 @@ Db::close(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670065834416"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
+                <h4 class="title"><a id="idp1043208"></a><span>DbLockNotGrantedException or </span>DB_LOCK_NOTGRANTED</h4>
               </div>
             </div>
           </div>
@@ -295,13 +289,12 @@ Db::close(u_int32_t flags);</pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670065926992"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp3690800"></a>EINVAL</h4>
               </div>
             </div>
           </div>
           <p>
-                If the cursor is already closed; or if an invalid flag
-                value or parameter was specified.
+                If the cursor is already closed; or if an invalid flag value or parameter was specified.
             </p>
         </div>
       </div>
@@ -309,7 +302,7 @@ Db::close(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670065833600"></a>Class</h3>
+              <h3 class="title"><a id="idp1040496"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -321,7 +314,7 @@ Db::close(u_int32_t flags);</pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670065917856"></a>See Also</h3>
+              <h3 class="title"><a id="idp84192"></a>See Also</h3>
             </div>
           </div>
         </div>

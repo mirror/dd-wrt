@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 
@@ -53,9 +53,9 @@ import com.sleepycat.persist.StoreConfig;
  * <em>x-to-one</em> relationship is used; see {@link #relate}.</p>
  *
  * <p>The field type (or element type, when a Set, Collection or array type is
- * used) of a secondary key field must follow the same rules as for a
- * <a href="PrimaryKey.html#keyTypes">primary key type</a>.  The <a
- * href="PrimaryKey.html#sortOrder">key sort order</a> is also the same.</p>
+ * used) of a secondary key field must follow the same rules as for a {@link
+ * <a href="PrimaryKey.html#keyTypes">primary key type</a>}.  The {@link <a
+ * href="PrimaryKey.html#sortOrder">key sort order</a>} is also the same.</p>
  *
  * <p>For a secondary key field with a collection type, a type parameter must
  * be used to specify the element type.  For example {@code Collection<String>}
@@ -73,7 +73,7 @@ public @interface SecondaryKey {
      * <p>The table below summarizes how to create all four variations of
      * relationships.</p>
      * <div>
-     * <table border="yes" summary="">
+     * <table border="yes">
      *     <tr><th>Relationship</th>
      *         <th>Field type</th>
      *         <th>Key type</th>
@@ -122,8 +122,6 @@ public @interface SecondaryKey {
      * subtype of this interface) or an array type may also be used.  In that
      * case, any duplicate key values in the Collection or array are
      * ignored.</p>
-     *
-     * @return the Relationship.
      */
     Relationship relate();
 
@@ -154,8 +152,6 @@ public @interface SecondaryKey {
      * entity.  Note, however, that a transactional store must be configured
      * to guarantee this to be true in the face of a crash; see {@link
      * StoreConfig#setTransactional}.</p>
-     *
-     * @return the related entity class, or void.class if none is specified.
      */
     Class relatedEntity() default void.class;
 
@@ -182,9 +178,6 @@ public @interface SecondaryKey {
      * key field type is an array or collection type, the key is deleted from
      * the array (the array is resized) or from the collection (using {@link
      * java.util.Collection#remove Collection.remove}).</p>
-     *
-     * @return the DeleteAction, or {@link DeleteAction#ABORT} if none is
-     * specified.
      */
     DeleteAction onRelatedEntityDelete() default DeleteAction.ABORT;
 
@@ -206,9 +199,6 @@ public @interface SecondaryKey {
      * and both fields are used as secondary keys.  The {@code name} property
      * can be specified for one or both fields to give each key a unique
      * name.</p>
-     *
-     * @return the key name that overrides the field name, or empty string if
-     * none is specified.
      */
     String name() default "";
 }

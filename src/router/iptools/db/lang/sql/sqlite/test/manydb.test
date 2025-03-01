@@ -18,7 +18,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-set N 50
+set N 100
 # if we're using proxy locks, we use 5 filedescriptors for a db
 # that is open and in the middle of writing changes, normally
 # sqlite uses 3 (proxy locking adds the conch and the local lock)
@@ -44,7 +44,7 @@ foreach fd $filehandles {
   close $fd
 }
 catch {
-  forcedelete testfile.1
+  file delete -force testfile.1
 }
 set N [expr $i / $num_fd_per_openwrite_db]
 
@@ -93,7 +93,7 @@ for {set i 0} {$i<$N} {incr i} {
 for {set i 0} {$i<$N} {incr i} {
   do_test manydb-3.$i {
     db$i close
-    forcedelete $dbname($i)
+    file delete -force $dbname($i)
   } {}
 }
 

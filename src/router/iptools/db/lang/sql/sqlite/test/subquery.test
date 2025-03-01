@@ -241,11 +241,8 @@ do_test subquery-2.5.3.1 {
 } {10.0}
 do_test subquery-2.5.3.2 {
   # Verify that the t4i index was not used in the previous query
-  execsql {
-    EXPLAIN QUERY PLAN
-    SELECT * FROM t4 WHERE x IN (SELECT a FROM t3);
-  }
-} {~/t4i/}
+  set ::sqlite_query_plan
+} {t4 {}}
 do_test subquery-2.5.4 {
   execsql {
     DROP TABLE t3;
@@ -334,97 +331,12 @@ do_test subquery-3.3.5 {
   }
 } {1 1 2 1}
 
-# The following tests check for aggregate subqueries in an aggregate
-# query.
-#
-do_test subquery-3.4.1 {
-  execsql {
-    CREATE TABLE t34(x,y);
-    INSERT INTO t34 VALUES(106,4), (107,3), (106,5), (107,5);
-    SELECT a.x, avg(a.y)
-      FROM t34 AS a
-     GROUP BY a.x
-     HAVING NOT EXISTS( SELECT b.x, avg(b.y)
-                          FROM t34 AS b
-                         GROUP BY b.x
-                         HAVING avg(a.y) > avg(b.y));
-  }
-} {107 4.0}
-do_test subquery-3.4.2 {
-  execsql {
-    SELECT a.x, avg(a.y) AS avg1
-      FROM t34 AS a
-     GROUP BY a.x
-     HAVING NOT EXISTS( SELECT b.x, avg(b.y) AS avg2
-                          FROM t34 AS b
-                         GROUP BY b.x
-                         HAVING avg1 > avg2);
-  }
-} {107 4.0}
-do_test subquery-3.4.3 {
-  execsql {
-    SELECT
-       a.x,
-       avg(a.y),
-       NOT EXISTS ( SELECT b.x, avg(b.y)
-                      FROM t34 AS b
-                      GROUP BY b.x
-                     HAVING avg(a.y) > avg(b.y)),
-       EXISTS ( SELECT c.x, avg(c.y)
-                  FROM t34 AS c
-                  GROUP BY c.x
-                 HAVING avg(a.y) > avg(c.y))
-      FROM t34 AS a
-     GROUP BY a.x
-     ORDER BY a.x;
-  }
-} {106 4.5 0 1 107 4.0 1 0}
-
-do_test subquery-3.5.1 {
-  execsql {
-    CREATE TABLE t35a(x); INSERT INTO t35a VALUES(1),(2),(3);
-    CREATE TABLE t35b(y); INSERT INTO t35b VALUES(98), (99);
-    SELECT max((SELECT avg(y) FROM t35b)) FROM t35a;
-  }
-} {98.5}
-do_test subquery-3.5.2 {
-  execsql {
-    SELECT max((SELECT count(y) FROM t35b)) FROM t35a;
-  }
-} {2}
-do_test subquery-3.5.3 {
-  execsql {
-    SELECT max((SELECT count() FROM t35b)) FROM t35a;
-  }
-} {2}
-do_test subquery-3.5.4 {
-  catchsql {
-    SELECT max((SELECT count(x) FROM t35b)) FROM t35a;
-  }
-} {1 {misuse of aggregate: count()}}
-do_test subquery-3.5.5 {
-  catchsql {
-    SELECT max((SELECT count(x) FROM t35b)) FROM t35a;
-  }
-} {1 {misuse of aggregate: count()}}
-do_test subquery-3.5.6 {
-  catchsql {
-    SELECT max((SELECT a FROM (SELECT count(x) AS a FROM t35b))) FROM t35a;
-  }
-} {1 {misuse of aggregate: count()}}
-do_test subquery-3.5.7 {
-  execsql {
-    SELECT max((SELECT a FROM (SELECT count(y) AS a FROM t35b))) FROM t35a;
-  }
-} {2}
-
-
 #------------------------------------------------------------------
 # These tests - subquery-4.* - use the TCL statement cache to try 
 # and expose bugs to do with re-using statements that have been 
 # passed to sqlite3_reset().
 #
-# One problem was that VDBE memory cells were not being initialized
+# One problem was that VDBE memory cells were not being initialised
 # to NULL on the second and subsequent executions.
 #
 do_test subquery-4.1.1 {
@@ -583,15 +495,5 @@ do_test subquery-7.11 {
   }
 } {30303}
 }  ;############# Disabled
-
-# 2015-04-21.
-# Verify that a memory leak in the table column type and collation analysis
-# is plugged.
-#
-do_execsql_test subquery-8.1 {
-  CREATE TABLE t8(a TEXT, b INT);
-  SELECT (SELECT 0 FROM (SELECT * FROM t1)) AS x WHERE x;
-  SELECT (SELECT 0 FROM (SELECT * FROM (SELECT 0))) AS x WHERE x;
-} {}
 
 finish_test

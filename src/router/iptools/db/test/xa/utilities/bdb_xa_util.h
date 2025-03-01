@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 #include <pthread.h>
@@ -24,11 +24,13 @@ static int verbose = 0;
 DB *dbs[MAX_NUMDB]; 
 
 /*
- * This function syncs all clients by having each one create
- * a file called [num]_[test_num]_[call], and attempting to read the files
- * the other clients create until it succeeds.
+ * This function syncs all threads threads by putting them to
+ * sleep until the last thread enters and sync function and
+ * forces the rest to wake up.
+ * counter - A counter starting at 0 shared by all threads
+ * num_threads - the number of threads being synced.
  */
-int sync_clients(int num, int num_clients, int call, int test_num);
+int sync_thr(int *counter, int num_threads, pthread_cond_t *cond_var);
 
 /*
  * Print callback for __db_prdbt.

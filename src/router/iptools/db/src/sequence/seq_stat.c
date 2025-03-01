@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2004, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2004, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -124,12 +124,10 @@ __seq_stat_print(seq, flags)
 	DB *dbp;
 	DB_THREAD_INFO *ip;
 	ENV *env;
-	u_int32_t orig_flags;
 	int handle_check, ret, t_ret;
 
 	dbp = seq->seq_dbp;
 	env = dbp->env;
-	ret = 0;
 
 	SEQ_ILLEGAL_BEFORE_OPEN(seq, "DB_SEQUENCE->stat_print");
 
@@ -142,16 +140,11 @@ __seq_stat_print(seq, flags)
 		goto err;
 	}
 
-	orig_flags = flags;
-	LF_CLR(DB_STAT_CLEAR | DB_STAT_SUBSYSTEM);
-	if (flags == 0 || LF_ISSET(DB_STAT_ALL)) {
-		ret = __seq_print_stats(seq, orig_flags);
-		if (flags == 0 || ret != 0)
-			goto err;
-	}
+	if ((ret = __seq_print_stats(seq, flags)) != 0)
+		goto err;
 
 	if (LF_ISSET(DB_STAT_ALL) &&
-	    (ret = __seq_print_all(seq, orig_flags)) != 0)
+	    (ret = __seq_print_all(seq, flags)) != 0)
 		goto err;
 
 	/* Release replication block. */

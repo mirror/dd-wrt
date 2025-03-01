@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  * $Id$
  */
 
@@ -529,8 +529,7 @@ __ham_compact_hash(dbp, ip, txn, c_data)
 	}
 	if (ret == 0 && F_ISSET(dbp, DB_AM_SUBDB) &&
 	    PGNO(hcp->hdr) > c_data->compact_truncate)
-		ret = __db_move_metadata(dbc, (DBMETA**)&hcp->hdr,
-		    c_data, &pgs_done);
+		ret = __db_move_metadata(dbc, (DBMETA**)&hcp->hdr, c_data, &pgs_done);
 
 err:	if (oldpage != NULL && (t_ret = __memp_fput(dbp->mpf,
 	    dbc->thread_info, oldpage, dbc->priority)) != 0 && ret == 0)

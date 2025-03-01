@@ -483,13 +483,6 @@ after $replication_delay
 catch {db2 close}
 sqlite3 db2 $site2dir/rep.db
 
-# Execute a statement to open the environment
-do_test replication-3.4.5.1 {
-  execsql {
-    drop table if exists does_not_exist;
-  } db2
-} {}
-
 after $client_sync_delay
 
 db eval "
@@ -499,7 +492,7 @@ db eval "
 after $replication_delay
 
 # Make sure db2 rejoined the replication group and is caught up.
-do_test replication-3.4.5.2 {
+do_test replication-3.4.5.1 {
   execsql {
     select * from reptab;
   } db2
@@ -599,21 +592,6 @@ catch {db close}
 ## Test cases replication-4.*
 ## Verify replication startup, shutdown and election scenarios.
 ##
-
-# This function is called by a thread so as to start an election,
-# if this is done in the same thread, it will block waiting for
-# the other site to be called and join the election
-set open_site1 {
-  set ::DB [sqlthread open $site1dir/rep.db]
-  execsql { select * from reptab; }
-  sqlite3_close $::DB
-}
-
-set open_site2 {
-  set ::DB [sqlthread open $site2dir/rep.db]
-  execsql { select * from reptab; }
-  sqlite3_close $::DB
-}
 
 ## Cases 4.0.* test a 2-site replication group starting up both sites,
 ## shutting down and restarting the client, and verifying that replication
@@ -768,57 +746,49 @@ close $s2config
 # Shut down and reopen master and client sites.
 catch {db2 close}
 catch {db close}
+sqlite3 db $site1dir/rep.db
+sqlite3 db2 $site2dir/rep.db
 
-# These tests require threads
-if {[run_thread_tests]!=0} {
+# Execute queries on each site to trigger environment opens after shutdown.
+# This will throw the sites into an election.
+execsql {select * from reptab order by a;} db
+execsql {select * from reptab order by a;} db2
+after $election_delay
 
-    sqlite3 db $site1dir/rep.db
-    sqlite3 db2 $site2dir/rep.db
+# Insert more data on master.
+do_test replication-4.1.4 {
+  execsql {
+    insert into reptab values (2);
+    select * from reptab order by a;
+  } db
+} {1 2}
+after $replication_delay
 
-    # Execute queries on each site to trigger environment opens after shutdown.
-    # This will throw the sites into an election.  One site is called in
-    # a different thread so it will not block waiting for the other
-    # site to open.
-    array unset finished
-    thread_spawn finished(0) "" $bdb_thread_procs $open_site1
-    execsql {select * from reptab order by a;} db2
-    after $election_delay
+# Make sure client got additional master data.
+do_test replication-4.1.5 {
+  execsql {
+    select * from reptab order by a;
+  } db2
+} {1 2}
 
-    # Insert more data on master.
-    do_test replication-4.1.4 {
-      execsql {
-	insert into reptab values (2);
-	select * from reptab order by a;
-      } db
-    } {1 2}
-    after $replication_delay
+# Insert more data on master.
+do_test replication-4.1.6 {
+  execsql {
+    insert into reptab values (3);
+    select * from reptab order by a;
+  } db
+} {1 2 3}
+after $replication_delay
 
-    # Make sure client got additional master data.
-    do_test replication-4.1.5 {
-      execsql {
-	select * from reptab order by a;
-      } db2
-    } {1 2}
+# Make sure client got additional master data.
+do_test replication-4.1.7 {
+  execsql {
+    select * from reptab order by a;
+  } db2
+} {1 2 3}
 
-    # Insert more data on master.
-    do_test replication-4.1.6 {
-      execsql {
-	insert into reptab values (3);
-	select * from reptab order by a;
-      } db
-    } {1 2 3}
-    after $replication_delay
-
-    # Make sure client got additional master data.
-    do_test replication-4.1.7 {
-      execsql {
-	select * from reptab order by a;
-      } db2
-    } {1 2 3}
-
-    catch {db2 close}
-    catch {db close}
-}
+catch {db2 close}
+catch {db close}
 
 ## Cases 4.2.* test a 2-site replication group starting up both sites,
 ## shutting down first the master then the client and restarting the
@@ -884,57 +854,49 @@ close $s2config
 # Shut down and reopen master and client sites.
 catch {db close}
 catch {db2 close}
+sqlite3 db $site1dir/rep.db
+sqlite3 db2 $site2dir/rep.db
 
-if {[run_thread_tests]!=0} {
+# Execute queries on each site to trigger environment opens after shutdown.
+# This will throw the sites into an election.
+execsql {select * from reptab order by a;} db
+execsql {select * from reptab order by a;} db2
+after $election_delay
 
-    sqlite3 db $site1dir/rep.db
-    sqlite3 db2 $site2dir/rep.db
+# Insert more data on master.
+do_test replication-4.2.4 {
+  execsql {
+    insert into reptab values (2);
+    select * from reptab order by a;
+  } db
+} {1 2}
+after $replication_delay
 
-    # Execute queries on each site to trigger environment opens after shutdown.
-    # This will throw the sites into an election.  Open one site in another
-    # thread because it will block waiting for the other site to join
-    # the election.
-    array unset finished
-    thread_spawn finished(0) "" $bdb_thread_procs $open_site1
-    execsql {select * from reptab order by a;} db2
-    after $election_delay
+# Make sure client got additional master data.
+do_test replication-4.2.5 {
+  execsql {
+    select * from reptab order by a;
+  } db2
+} {1 2}
 
-    # Insert more data on master.
-    do_test replication-4.2.4 {
-      execsql {
-	insert into reptab values (2);
-	select * from reptab order by a;
-      } db
-    } {1 2}
-    after $replication_delay
+# Insert more data on master.
+do_test replication-4.2.6 {
+  execsql {
+    insert into reptab values (3);
+    select * from reptab order by a;
+  } db
+} {1 2 3}
+after $replication_delay
 
-    # Make sure client got additional master data.
-    do_test replication-4.2.5 {
-      execsql {
-	select * from reptab order by a;
-      } db2
-    } {1 2}
+# Make sure client got additional master data.
+do_test replication-4.2.7 {
+  execsql {
+    select * from reptab order by a;
+  } db2
+} {1 2 3}
 
-    # Insert more data on master.
-    do_test replication-4.2.6 {
-      execsql {
-	insert into reptab values (3);
-	select * from reptab order by a;
-      } db
-    } {1 2 3}
-    after $replication_delay
-
-    # Make sure client got additional master data.
-    do_test replication-4.2.7 {
-      execsql {
-	select * from reptab order by a;
-      } db2
-    } {1 2 3}
-
-    catch {db2 close}
-    catch {db close}
-
-}
+catch {db2 close}
+catch {db close}
 
 ## Cases 4.3.* test that a 2-site replication group, using DB_CONFIG to turn
 ## off the 2SITE_STRICT setting, can shut down the master and have the client
@@ -992,48 +954,29 @@ do_test replication-4.3.2 {
 } {1 2}
 after $replication_delay
 
+# Turn off 2SITE_STRICT on both sites.
+set s1config [open $site1dir/rep.db-journal/DB_CONFIG a]
+puts $s1config "rep_set_config db_repmgr_conf_2site_strict off"
+close $s1config
+set s2config [open $site2dir/rep.db-journal/DB_CONFIG a]
+puts $s2config "rep_set_config db_repmgr_conf_2site_strict off"
+close $s2config
+
 # Shut down both sites.
 catch {db close}
 catch {db2 close}
 
-setup_rep_sites
-
-# Turn off 2SITE_STRICT on both sites.
-file mkdir $site1dir/rep.db-journal
-set s1config [open $site1dir/rep.db-journal/DB_CONFIG w]
-puts $s1config "rep_set_config db_repmgr_conf_2site_strict off"
-close $s1config
-file mkdir $site2dir/rep.db-journal
-set s2config [open $site2dir/rep.db-journal/DB_CONFIG w]
-puts $s2config "rep_set_config db_repmgr_conf_2site_strict off"
-close $s2config
-
-db eval "
-  pragma replication_local_site='$site1addr';
-  pragma replication_initial_master=ON;
-  pragma replication=ON;
-  create table reptab(a);
-"
-db2 eval "
-  pragma replication_local_site='$site2addr';
-  pragma replication_remote_site='$site1addr';
-  pragma replication=ON;
-"
-execsql { insert into reptab values (1); } db
-
-after $client_sync_delay
-
-# Shut down the current master, the client can become master
-catch {db close}
+# Make sure previous client can now become master.
+sqlite3 db2 $site2dir/rep.db
 
 after $election_delay
 
 do_test replication-4.3.3 {
   execsql {
-    insert into reptab values (2);
+    insert into reptab values (3);
     select * from reptab order by a;
   } db2
-} {1 2}
+} {1 2 3}
 
 catch {db2 close}
 
@@ -1373,14 +1316,6 @@ catch {db close}
 ## replication group fails to complete.
 setup_rep_sites
 
-# Set tiny values for election timeout and election retry so that election
-# takes minimal time to fail.
-file mkdir $site1dir/rep.db-journal
-set s1config [open $site1dir/rep.db-journal/DB_CONFIG w]
-puts $s1config "rep_set_timeout db_rep_election_timeout 1"
-puts $s1config "rep_set_timeout db_rep_election_retry 1"
-close $s1config
-
 # Initialize and start replication on master site1.
 db eval "
   pragma replication_local_site='$site1addr';
@@ -1425,6 +1360,14 @@ do_test replication-7.0.3 {
 # Shut down master and client sites.
 catch {db2 close}
 catch {db close}
+
+# Set tiny values for election timeout and election retry so that election
+# takes minimal time to fail.
+file mkdir $site1dir/rep.db-journal
+set s1config [open $site1dir/rep.db-journal/DB_CONFIG w]
+puts $s1config "rep_set_timeout db_rep_election_timeout 1"
+puts $s1config "rep_set_timeout db_rep_election_retry 1"
+close $s1config
 
 sqlite3 db $site1dir/rep.db
 
@@ -1496,278 +1439,6 @@ do_test replication-7.1.4 {
   } db2
 } {1}
 
-catch {db2 close}
-catch {db close}
-
-##
-## Test cases replication-8.*
-## Test new replication related pragmas.
-##
-
-setup_rep_sites
-
-# Set the priority
-do_test replication-8.1.0 {
-  execsql {
-    pragma replication_priority=100;
-  } db
-} {100}
-
-do_test replication-8.1.1 {
-  execsql {
-    pragma replication_priority=100000;
-  } db2
-} {100000}
-
-do_test replication-8.1.2 {
-  execsql {
-    pragma replication_priority=10;
-  } db3
-} {10}
-
-# Set the ack policy
-do_test replication-8.2.0.1 {
-  execsql {
-    pragma replication_ack_policy=quorum;
-  } db
-} {quorum}
-
-do_test replication-8.2.0.2 {
-  execsql {
-    pragma replication_ack_policy=none;
-  } db
-} {none}
-
-do_test replication-8.2.0.3 {
-  execsql {
-    pragma replication_ack_policy=all_available;
-  } db
-} {all_available}
-
-do_test replication-8.2.0.3 {
-  execsql {
-    pragma replication_ack_policy=one;
-  } db
-} {one}
-
-do_test replication-8.2.0.5 {
-  execsql {
-    pragma replication_ack_policy=all_sites;
-  } db
-} {all_sites}
-
-do_test replication-8.2.1 {
-  execsql {
-    pragma replication_ack_policy=all_sites;
-  } db2
-} {all_sites}
-
-do_test replication-8.2.2 {
-  execsql {
-    pragma replication_ack_policy=all_sites;
-  } db3
-} {all_sites}
-
-# Set the ack timeout
-do_test replication-8.3.0 {
-  catchsql {
-    pragma replication_ack_timeout=-1;
-  } db
-} {1 {Invalid value replication_ack_timeout -1}}
-
-#Get number of replication sites before starting replication
-do_test replication-8.4.0 {
-  execsql {
-    pragma replication_num_sites;
-  } 
-} {0}
-
-# Site status before replication is started
-do_test replication-8.5 {
-  execsql {
-    pragma replication_site_status;
-  }
-} {UNKNOWN}
-
-# Get master before replication is started
-do_test replication-8.6 {
-  execsql {
-    pragma replication_get_master;
-  }
-} {NULL}
-
-# Get number for perm failures before replication is started
-do_test replication-8.7 {
-  execsql {
-    pragma replication_perm_failed;
-  }
-} {0}
-
-# Turn on replication on the master
-db eval "
-  pragma replication_local_site='$site1addr';
-  pragma replication_initial_master=ON;
-  pragma replication=ON;
-"
-db2 eval "
-  pragma replication_local_site='$site2addr';
-  pragma replication_remote_site='$site1addr';
-  pragma replication=ON;
-"
-db3 eval "
-  pragma replication_local_site='$site3addr';
-  pragma replication_remote_site='$site1addr';
-  pragma replication=ON;
-"
-
-after $replication_delay
-
-# Get the priority
-do_test replication-8.8.0 {
-  execsql {
-    pragma replication_priority;
-  } db
-} {100}
-
-do_test replication-8.8.1 {
-  execsql {
-    pragma replication_priority;
-  } db2
-} {100000}
-
-do_test replication-8.8.2 {
-  execsql {
-    pragma replication_priority;
-  } db3
-} {10}
-
-# Get the ack policy
-do_test replication-8.9.0 {
-  execsql {
-    pragma replication_ack_policy;
-  } db
-} {all_sites}
-
-do_test replication-8.9.1 {
-  execsql {
-    pragma replication_ack_policy;
-  } db2
-} {all_sites}
-
-do_test replication-8.9.2 {
-  execsql {
-    pragma replication_ack_policy;
-  } db3
-} {all_sites}
-
-# Set the ack timeout, make it 1ms to create
-# a perm failed event, so that pragma can
-# be tested.
-do_test replication-8.10.0 {
-  execsql {
-    pragma replication_ack_timeout=1;
-  } db
-} {1}
-
-do_test replication-8.10.1 {
-  execsql {
-    pragma replication_ack_timeout=1;
-  } db2
-} {1}
-
-do_test replication-8.10.2 {
-  execsql {
-    pragma replication_ack_timeout=1;
-  } db3
-} {1}
-
-#Get number of replication sites
-do_test replication-8.11.0 {
-  execsql {
-    pragma replication_num_sites;
-  } db
-} {3}
-
-do_test replication-8.11.1 {
-  execsql {
-    pragma replication_num_sites;
-  } db2
-} {3}
-
-do_test replication-8.11.2 {
-  execsql {
-    pragma replication_num_sites;
-  } db3
-} {3}
-
-# Site status
-do_test replication-8.12.0 {
-  execsql {
-    pragma replication_site_status;
-  }
-} {MASTER}
-
-do_test replication-8.12.1 {
-  execsql {
-    pragma replication_site_status;
-  } db2
-} {CLIENT}
-
-do_test replication-8.12.2 {
-  execsql {
-    pragma replication_site_status;
-  } db3
-} {CLIENT}
-
-# Get master
-do_test replication-8.13.0 {
-  execsql {
-    pragma replication_get_master;
-  }
-} $site1addr
-
-do_test replication-8.13.1 {
-  execsql {
-    pragma replication_get_master;
-  } db2
-} $site1addr
-
-do_test replication-8.13.2 {
-  execsql {
-    pragma replication_get_master;
-  } db3
-} $site1addr
- 
-# Since the ack timeout is 1ms, and the ack policy is all
-# this should produce a perm failure.
-do_test replication-8.14 {
-  execsql {
-    create table t1(a);
-  }
-} {}
-
-do_test replication-8.14.1 {
-  execsql {
-    pragma replication_perm_failed;
-  }
-} {1}
-
-# Test the statisics pragma for replication
-do_test replication-8.15 {
-  execsql {
-    pragma statistics_file="rep_stats.txt";
-    pragma statistics=rep;
-  }
-  set fd [open rep_stats.txt r]
-  set res [read $fd]
-  close $fd
-  file delete -force rep_stats.txt
-  set pat {Current master ID}
-  regexp $pat $res
-} {1}
-
-
-catch {db3 close}
 catch {db2 close}
 catch {db close}
 

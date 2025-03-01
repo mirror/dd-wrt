@@ -8,27 +8,6 @@
   <env name="jar" group="group_java">
     <Environment Id="classpathdb" Name="CLASSPATH" Action="set" System="yes" Part="last" Permanent="no" Value="[INSTALLDIR]jar\db.jar" />
   </env>
-  <env name="jar" group="group_thrift">
-    <Environment Id="classpathdts" Name="CLASSPATH" Action="set" System="yes" Part="last" Permanent="no" Value="[INSTALLDIR]jar\db_thrift_server.jar" />
-  </env>
-  <env name="jar" group="group_thrift">
-    <Environment Id="classpathdtc" Name="CLASSPATH" Action="set" System="yes" Part="last" Permanent="no" Value="[INSTALLDIR]jar\db_thrift_client.jar" />
-  </env>
-  <env name="jar" group="group_thrift">
-    <Environment Id="classpathdti" Name="CLASSPATH" Action="set" System="yes" Part="last" Permanent="no" Value="[INSTALLDIR]jar\db_thrift_interface.jar" />
-  </env>
-  <env name="jar" group="group_thrift">
-    <Environment Id="classpathlt" Name="CLASSPATH" Action="set" System="yes" Part="last" Permanent="no" Value="[INSTALLDIR]jar\libthrift.jar" />
-  </env>
-  <env name="jar" group="group_thrift">
-    <Environment Id="classpathl4j" Name="CLASSPATH" Action="set" System="yes" Part="last" Permanent="no" Value="[INSTALLDIR]jar\log4j.jar" />
-  </env>
-  <env name="jar" group="group_thrift">
-    <Environment Id="classpathslfa" Name="CLASSPATH" Action="set" System="yes" Part="last" Permanent="no" Value="[INSTALLDIR]jar\slf4j-api.jar" />
-  </env>
-  <env name="jar" group="group_thrift">
-    <Environment Id="classpathsl4" Name="CLASSPATH" Action="set" System="yes" Part="last" Permanent="no" Value="[INSTALLDIR]jar\slf4j-log4j12.jar" />
-  </env>
   <env name="jar" group="group_sql">
     <Environment Id="classpathjdbc" Name="CLASSPATH" Action="set" System="yes" Part="last" Permanent="no" Value="[INSTALLDIR]jar\jdbc.jar" />
   </env>

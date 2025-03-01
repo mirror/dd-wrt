@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -46,15 +46,15 @@ DB_ENV-&gt;rep_set_clockskew(DB_ENV *env,
       <p>
          The <code class="methodname">DB_ENV-&gt;rep_set_clockskew()</code> method sets the
          clock skew ratio among replication group members based on the fastest
-         and slowest clock measurements among the group for use with master
-         leases.
+         and slowest measurements among the group for use with master leases.
          Calling this method is optional; the default values for clock skew
-         assume no skew.  The application must also configure leases via the 
+         assume no skew.  The user must also configure leases via the 
          <a class="xref" href="repconfig.html" title="DB_ENV-&gt;rep_set_config()">DB_ENV-&gt;rep_set_config()</a> 
-         method and set the master lease timeout via the 
+         method. Additionally, the user must also set the master lease timeout
+         via the 
          <a class="xref" href="repset_timeout.html" title="DB_ENV-&gt;rep_set_timeout()">DB_ENV-&gt;rep_set_timeout()</a> 
-         method. Base API applications must also set the
-         number of sites in the replication group via the 
+         method. For Base API applications, the user must also set the number of
+         sites in the replication group via the 
          <a class="xref" href="repnsites.html" title="DB_ENV-&gt;rep_set_nsites()">DB_ENV-&gt;rep_set_nsites()</a> 
          method.  These methods may be called in any order.  For a description
          of the clock skew values, see 
@@ -104,7 +104,7 @@ DB_ENV-&gt;rep_set_clockskew(DB_ENV *env,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711173815648"></a>Parameters</h3>
+              <h3 class="title"><a id="idp54086744"></a>Parameters</h3>
             </div>
           </div>
         </div>
@@ -112,7 +112,7 @@ DB_ENV-&gt;rep_set_clockskew(DB_ENV *env,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711173789696"></a>fast_clock</h4>
+                <h4 class="title"><a id="idp54061616"></a>fast_clock</h4>
               </div>
             </div>
           </div>
@@ -125,7 +125,7 @@ DB_ENV-&gt;rep_set_clockskew(DB_ENV *env,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711173819024"></a>slow_clock</h4>
+                <h4 class="title"><a id="idp54076984"></a>slow_clock</h4>
               </div>
             </div>
           </div>
@@ -138,7 +138,7 @@ DB_ENV-&gt;rep_set_clockskew(DB_ENV *env,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711173831648"></a>Errors</h3>
+              <h3 class="title"><a id="idp54052304"></a>Errors</h3>
             </div>
           </div>
         </div>
@@ -154,7 +154,7 @@ DB_ENV-&gt;rep_set_clockskew(DB_ENV *env,
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm140711173747920"></a>EINVAL</h4>
+                <h4 class="title"><a id="idp54097928"></a>EINVAL</h4>
               </div>
             </div>
           </div>
@@ -171,7 +171,7 @@ DB_ENV-&gt;rep_set_clockskew(DB_ENV *env,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711173750000"></a>Class</h3>
+              <h3 class="title"><a id="idp54061680"></a>Class</h3>
             </div>
           </div>
         </div>
@@ -183,7 +183,7 @@ DB_ENV-&gt;rep_set_clockskew(DB_ENV *env,
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm140711173809936"></a>See Also</h3>
+              <h3 class="title"><a id="idp54100152"></a>See Also</h3>
             </div>
           </div>
         </div>

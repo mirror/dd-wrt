@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -38,8 +38,8 @@
           </div>
         </div>
       </div>
-      <pre class="programlisting">db_load [-nTV] [-b ext_file_dir] [-c name=value]
-    [-f file] [-h home] [-P password] [-o ext_file_threshold] 
+      <pre class="programlisting">db_load [-nTV] [-b blob_dir] [-c name=value] [-f file]
+    [-h home] [-P password] [-o blob_threshold] 
     [-t btree | hash | queue | recno] file
 
 db_load [-r lsn | fileid] [-h home] [-P password] file  </pre>
@@ -65,10 +65,10 @@ db_load [-r lsn | fileid] [-h home] [-P password] file  </pre>
               <span class="bold"><strong>-b</strong></span>
             </p>
             <p>
-                Identifies the directory where external file data is stored.
-                If this option is not specified, then external file data is
-                placed in a subdirectory within the DB's environment. See also
-                the <span class="bold"><strong>-o</strong></span> option.
+                Identifies the directory where BLOB data is stored.  If
+                this option is not specified, then BLOB data is placed in a
+                subdirectory within the DB's environment. See also the
+                <span class="bold"><strong>-o</strong></span> option.
             </p>
           </li>
           <li>
@@ -129,13 +129,13 @@ db_load [-r lsn | fileid] [-h home] [-P password] file  </pre>
               <span class="bold"><strong>-o</strong></span>
             </p>
             <p>
-                Identifies the external file threshold in bytes. This threshold
-                determines when a data item will be stored as an external file.
-                Data items sized less than this threshold are stored as normal
-                data within the database. Data items larger than this size are
-                stored on-disk in a subdirectory set aside for the purpose.
+                Identifies the BLOB threshold in bytes. This threshold determines
+                when a data item will be stored as a BLOB. Data items sized
+                less than this threshold are stored as normal data within
+                the database. Data items larger than this size are stored
+                on-disk in a subdirectory set aside for the purpose.
                 Use the <span class="bold"><strong>-b</strong></span> command line
-                option to identify where external file data is stored.
+                option to identify where BLOB data is stored.
             </p>
           </li>
           <li>
@@ -268,7 +268,7 @@ db_load [-r lsn | fileid] [-h home] [-P password] file  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670053951216"></a>Examples</h3>
+              <h3 class="title"><a id="idp10696392"></a>Examples</h3>
             </div>
           </div>
         </div>
@@ -290,7 +290,7 @@ db_load [-r lsn | fileid] [-h home] [-P password] file  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670053999680"></a>Environment Variables</h3>
+              <h3 class="title"><a id="idp10523592"></a>Environment Variables</h3>
             </div>
           </div>
         </div>
@@ -298,7 +298,7 @@ db_load [-r lsn | fileid] [-h home] [-P password] file  </pre>
           <div class="titlepage">
             <div>
               <div>
-                <h4 class="title"><a id="idm139670053936112"></a>DB_HOME</h4>
+                <h4 class="title"><a id="idp10716184"></a>DB_HOME</h4>
               </div>
             </div>
           </div>
@@ -314,7 +314,7 @@ db_load [-r lsn | fileid] [-h home] [-P password] file  </pre>
         <div class="titlepage">
           <div>
             <div>
-              <h3 class="title"><a id="idm139670053959888"></a>Supported Keywords</h3>
+              <h3 class="title"><a id="idp10699304"></a>Supported Keywords</h3>
             </div>
           </div>
         </div>

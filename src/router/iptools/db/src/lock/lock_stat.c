@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -15,6 +15,8 @@
 #include "dbinc/db_am.h"
 
 #ifdef HAVE_STATISTICS
+static int  __lock_dump_locker
+		__P((ENV *, DB_MSGBUF *, DB_LOCKTAB *, DB_LOCKER *));
 static int  __lock_dump_object __P((DB_LOCKTAB *, DB_MSGBUF *, DB_LOCKOBJ *));
 static int  __lock_print_all __P((ENV *, u_int32_t));
 static int  __lock_print_stats __P((ENV *, u_int32_t));
@@ -361,11 +363,6 @@ __lock_print_stats(env, flags)
 	__db_dl(env, "Maximum number of lockers at any one time",
 	    (u_long)sp->st_maxnlockers);
 	__db_dl(env,
-	    "Number of hits in the thread locker cache",
-	    (u_long)sp->st_nlockers_hit);
-	__db_dl(env,
-	    "Total number of lockers reused", (u_long)sp->st_nlockers_reused);
-	__db_dl(env,
 	    "Number of current lock objects", (u_long)sp->st_nobjects);
 	__db_dl(env, "Maximum number of lock objects at any one time",
 	    (u_long)sp->st_maxnobjects);
@@ -466,17 +463,9 @@ __lock_print_all(env, flags)
 		if (timespecisset(&lrp->next_timeout)) {
 #ifdef HAVE_STRFTIME
 			time_t t = (time_t)lrp->next_timeout.tv_sec;
-			struct tm *tm_p;
 			char tbuf[64];
-#ifdef HAVE_LOCALTIME_R
-			struct tm tm;
-
-			tm_p = localtime_r(&t, &tm);
-#else
-			tm_p = localtime(&t);
-#endif
 			if (strftime(tbuf, sizeof(tbuf),
-			    "%m-%d-%H:%M:%S", tm_p) != 0)
+			    "%m-%d-%H:%M:%S", localtime(&t)) != 0)
 				__db_msg(env, "next_timeout: %s.%09lu",
 				     tbuf, (u_long)lrp->next_timeout.tv_nsec);
 			else
@@ -530,6 +519,80 @@ __lock_print_all(env, flags)
 }
 
 static int
+__lock_dump_locker(env, mbp, lt, lip)
+	ENV *env;
+	DB_MSGBUF *mbp;
+	DB_LOCKTAB *lt;
+	DB_LOCKER *lip;
+{
+	DB_LOCKREGION *lrp;
+	struct __db_lock *lp;
+	char buf[DB_THREADID_STRLEN];
+	u_int32_t ndx;
+
+	lrp = lt->reginfo.primary;
+
+	__db_msgadd(env,
+	    mbp, "%8lx dd=%2ld locks held %-4d write locks %-4d pid/thread %s",
+	    (u_long)lip->id, (long)lip->dd_id, lip->nlocks, lip->nwrites,
+	    env->dbenv->thread_id_string(env->dbenv, lip->pid, lip->tid, buf));
+	__db_msgadd(env, mbp,
+	    " flags %-4x priority %-10u", lip->flags, lip->priority);
+
+	if (timespecisset(&lip->tx_expire)) {
+#ifdef HAVE_STRFTIME
+		time_t t = (time_t)lip->tx_expire.tv_sec;
+		char tbuf[64];
+		if (strftime(tbuf, sizeof(tbuf),
+		    "%m-%d-%H:%M:%S", localtime(&t)) != 0)
+			__db_msgadd(env, mbp, "expires %s.%09lu",
+			    tbuf, (u_long)lip->tx_expire.tv_nsec);
+		else
+#endif
+			__db_msgadd(env, mbp, "expires %lu.%09lu",
+			    (u_long)lip->tx_expire.tv_sec,
+			    (u_long)lip->tx_expire.tv_nsec);
+	}
+	if (F_ISSET(lip, DB_LOCKER_TIMEOUT))
+		__db_msgadd(
+		    env, mbp, " lk timeout %lu", (u_long)lip->lk_timeout);
+	if (timespecisset(&lip->lk_expire)) {
+#ifdef HAVE_STRFTIME
+		time_t t = (time_t)lip->lk_expire.tv_sec;
+		char tbuf[64];
+		if (strftime(tbuf,
+		    sizeof(tbuf), "%m-%d-%H:%M:%S", localtime(&t)) != 0)
+			__db_msgadd(env, mbp, " lk expires %s.%09lu",
+			    tbuf, (u_long)lip->lk_expire.tv_nsec);
+		else
+#endif
+			__db_msgadd(env, mbp, " lk expires %lu.%09lu",
+			    (u_long)lip->lk_expire.tv_sec,
+			    (u_long)lip->lk_expire.tv_nsec);
+	}
+	DB_MSGBUF_FLUSH(env, mbp);
+
+	/*
+	 * We need some care here since the list may change while we
+	 * look.
+	 */
+retry:	SH_LIST_FOREACH(lp, &lip->heldby, locker_links, __db_lock) {
+		if (!SH_LIST_EMPTY(&lip->heldby) && lp != NULL) {
+			ndx = lp->indx;
+			OBJECT_LOCK_NDX(lt, lrp, ndx);
+			if (lp->indx == ndx)
+				__lock_printlock(lt, mbp, lp, 1);
+			else {
+				OBJECT_UNLOCK(lt, lrp, ndx);
+				goto retry;
+			}
+			OBJECT_UNLOCK(lt, lrp, ndx);
+		}
+	}
+	return (0);
+}
+
+static int
 __lock_dump_object(lt, mbp, op)
 	DB_LOCKTAB *lt;
 	DB_MSGBUF *mbp;
@@ -555,31 +618,6 @@ __lock_print_header(env)
 	    "Locker", "Mode",
 	    "Count", "Status", "----------------- Object ---------------");
 }
-
-#else /* !HAVE_STATISTICS */
-
-int
-__lock_stat_pp(dbenv, statp, flags)
-	DB_ENV *dbenv;
-	DB_LOCK_STAT **statp;
-	u_int32_t flags;
-{
-	COMPQUIET(statp, NULL);
-	COMPQUIET(flags, 0);
-
-	return (__db_stat_not_built(dbenv->env));
-}
-
-int
-__lock_stat_print_pp(dbenv, flags)
-	DB_ENV *dbenv;
-	u_int32_t flags;
-{
-	COMPQUIET(flags, 0);
-
-	return (__db_stat_not_built(dbenv->env));
-}
-#endif
 
 /*
  * __lock_printlock --
@@ -706,89 +744,27 @@ __lock_printlock(lt, mbp, lp, ispgno)
 	DB_MSGBUF_FLUSH(env, mbp);
 }
 
-/*
- * __lock_dump_locker --
- *	Display the identity and statistics of a locker. This is used during
- *	diagnostic error paths as well as when printing statistics.
- *
- * PUBLIC: int  __lock_dump_locker
- * PUBLIC:     __P((ENV *, DB_MSGBUF *, DB_LOCKTAB *, DB_LOCKER *));
- */
+#else /* !HAVE_STATISTICS */
+
 int
-__lock_dump_locker(env, mbp, lt, lip)
-	ENV *env;
-	DB_MSGBUF *mbp;
-	DB_LOCKTAB *lt;
-	DB_LOCKER *lip;
+__lock_stat_pp(dbenv, statp, flags)
+	DB_ENV *dbenv;
+	DB_LOCK_STAT **statp;
+	u_int32_t flags;
 {
-	DB_LOCKREGION *lrp;
-	struct __db_lock *lp;
-	char buf[DB_THREADID_STRLEN];
-	u_int32_t ndx;
+	COMPQUIET(statp, NULL);
+	COMPQUIET(flags, 0);
 
-	lrp = lt->reginfo.primary;
-
-	__db_msgadd(env,
-	    mbp, "%8lx dd=%2ld locks held %-4d write locks %-4d pid/thread %s",
-	    (u_long)lip->id, (long)lip->dd_id, lip->nlocks, lip->nwrites,
-	    env->dbenv->thread_id_string(env->dbenv, lip->pid, lip->tid, buf));
-	__db_msgadd(env, mbp,
-	    " flags %-4x priority %-10u", lip->flags, lip->priority);
-	if (lip->parent_locker != INVALID_ROFF)
-		__db_msgadd(env, mbp, " parent %x",
-		    ((DB_LOCKER *)R_ADDR(&lt->reginfo,
-		    lip->parent_locker))->id);
-	if (lip->master_locker != INVALID_ROFF)
-		__db_msgadd(env, mbp, " master %x",
-		    ((DB_LOCKER *)R_ADDR(&lt->reginfo,
-		    lip->master_locker))->id);
-
-	if (timespecisset(&lip->tx_expire)) {
-#ifdef HAVE_STRFTIME
-		time_t t = (time_t)lip->tx_expire.tv_sec;
-		char tbuf[64];
-		if (strftime(tbuf, sizeof(tbuf),
-		    "%m-%d-%H:%M:%S", localtime(&t)) != 0)
-			__db_msgadd(env, mbp, "expires %s.%09lu",
-			    tbuf, (u_long)lip->tx_expire.tv_nsec);
-		else
-#endif
-			__db_msgadd(env, mbp, "expires %lu.%09lu",
-			    (u_long)lip->tx_expire.tv_sec,
-			    (u_long)lip->tx_expire.tv_nsec);
-	}
-	if (F_ISSET(lip, DB_LOCKER_TIMEOUT))
-		__db_msgadd(
-		    env, mbp, " lk timeout %lu", (u_long)lip->lk_timeout);
-	if (timespecisset(&lip->lk_expire)) {
-#ifdef HAVE_STRFTIME
-		time_t t = (time_t)lip->lk_expire.tv_sec;
-		char tbuf[64];
-		if (strftime(tbuf,
-		    sizeof(tbuf), "%m-%d-%H:%M:%S", localtime(&t)) != 0)
-			__db_msgadd(env, mbp, " lk expires %s.%09lu",
-			    tbuf, (u_long)lip->lk_expire.tv_nsec);
-		else
-#endif
-			__db_msgadd(env, mbp, " lk expires %lu.%09lu",
-			    (u_long)lip->lk_expire.tv_sec,
-			    (u_long)lip->lk_expire.tv_nsec);
-	}
-	DB_MSGBUF_FLUSH(env, mbp);
-
-	/* We need some care here since the list may change while we look. */
-retry:	SH_LIST_FOREACH(lp, &lip->heldby, locker_links, __db_lock) {
-		if (!SH_LIST_EMPTY(&lip->heldby) && lp != NULL) {
-			ndx = lp->indx;
-			OBJECT_LOCK_NDX(lt, lrp, ndx);
-			if (lp->indx == ndx)
-				__lock_printlock(lt, mbp, lp, 1);
-			else {
-				OBJECT_UNLOCK(lt, lrp, ndx);
-				goto retry;
-			}
-			OBJECT_UNLOCK(lt, lrp, ndx);
-		}
-	}
-	return (0);
+	return (__db_stat_not_built(dbenv->env));
 }
+
+int
+__lock_stat_print_pp(dbenv, flags)
+	DB_ENV *dbenv;
+	u_int32_t flags;
+{
+	COMPQUIET(flags, 0);
+
+	return (__db_stat_not_built(dbenv->env));
+}
+#endif

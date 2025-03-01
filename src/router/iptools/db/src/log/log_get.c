@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 1996, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 1996, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -472,7 +472,7 @@ nextrec:
 			/* If at start-of-file, move to the previous file. */
 			if (nlsn.offset == 0) {
 				if (nlsn.file == 1) {
-					ret = USR_ERR(env, DB_NOTFOUND);
+					ret = DB_NOTFOUND;
 					goto err;
 				}
 				if ((!lp->db_log_inmemory &&
@@ -480,7 +480,7 @@ nextrec:
 				    0, &status, NULL) != 0 ||
 				    (status != DB_LV_NORMAL &&
 				    status != DB_LV_OLD_READABLE)))) {
-					ret = USR_ERR(env, DB_NOTFOUND);
+					ret = DB_NOTFOUND;
 					goto err;
 				}
 
@@ -607,7 +607,7 @@ nohdr:		switch (flags) {
 			if (eof && logc->bp_lsn.file != nlsn.file)
 				__db_errx(env, DB_STR_A("2583",
 	     "Log file %d not found, check log directory configuration", "%d"),
-				     nlsn.file);
+	     			     nlsn.file);
 			else
 				__db_errx(env, DB_STR("2576",
 		"Encountered zero length records while traversing backwards"));
@@ -624,7 +624,7 @@ nohdr:		switch (flags) {
 			/* FALLTHROUGH */
 		case DB_SET:
 		default:
-			ret = USR_ERR(env, DB_NOTFOUND);
+			ret = DB_NOTFOUND;
 			goto err;
 		}
 	}
@@ -830,7 +830,7 @@ __logc_incursor(logc, lsn, hdr, pp)
 	if (LOG_SWAPPED(env))
 		__log_hdrswap(hdr, CRYPTO_ON(env));
 	if (__logc_hdrchk(logc, lsn, hdr, &eof))
-		return (USR_ERR(env, DB_NOTFOUND));
+		return (DB_NOTFOUND);
 	if (eof || logc->bp_lsn.offset + logc->bp_rlen < lsn->offset + hdr->len)
 		return (0);
 
@@ -914,7 +914,7 @@ __logc_inregion(logc, lsn, rlockp, last_lsn, hdr, pp, need_cksump)
 	if (IS_ZERO_LSN(lp->lsn))
 		return (0);
 	if (LOG_COMPARE(lsn, &lp->lsn) >= 0)
-		return (USR_ERR(env, DB_NOTFOUND));
+		return (DB_NOTFOUND);
 	else if (lp->db_log_inmemory) {
 		if ((ret = __log_inmem_lsnoff(dblp, lsn, &b_region)) != 0)
 			return (ret);
@@ -949,14 +949,14 @@ __logc_inregion(logc, lsn, rlockp, last_lsn, hdr, pp, need_cksump)
 		if (LOG_SWAPPED(env))
 			__log_hdrswap(hdr, CRYPTO_ON(env));
 		if (__logc_hdrchk(logc, lsn, hdr, &eof) != 0)
-			return (USR_ERR(env, DB_NOTFOUND));
+			return (DB_NOTFOUND);
 		if (eof)
 			return (0);
 		if (lp->db_log_inmemory) {
 			if (RINGBUF_LEN(lp, b_region, lp->b_off) < hdr->len)
-				return (USR_ERR(env, DB_NOTFOUND));
+				return (DB_NOTFOUND);
 		} else if (lsn->offset + hdr->len > lp->w_off + lp->buffer_size)
-			return (USR_ERR(env, DB_NOTFOUND));
+			return (DB_NOTFOUND);
 		if (logc->bp_size <= hdr->len) {
 			len = (size_t)DB_ALIGN((uintmax_t)hdr->len * 2, 128);
 			if ((ret =
@@ -1534,10 +1534,6 @@ __log_read_record(env, dbpp, td, recbuf, spec, size, argpp)
 		case LOGREC_DBOP:
 			LOGCOPY_32(env, ap + sp->offset, bp);
 			bp += sizeof(uinttmp);
-			break;
-		case LOGREC_LONGARG:
-			LOGCOPY_64(env, ap + sp->offset, bp);
-			bp += sizeof(u_int64_t);
 			break;
 		case LOGREC_OP:
 			LOGCOPY_32(env, &op, bp);

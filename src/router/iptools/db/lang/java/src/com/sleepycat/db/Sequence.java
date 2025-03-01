@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2001, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -37,6 +37,7 @@ public class Sequence {
     The sequence handle may not be used again after this method has been
     called, regardless of the method's success or failure.
     <p>
+    <p>
 @throws DatabaseException if a failure occurs.
     */
     public void close()
@@ -71,7 +72,6 @@ must be specified.
     <p>
     @return
     the next available element in the sequence
-    @throws DatabaseException if a failure occurs.
     */
     public long get(Transaction txn, int delta)
         throws DatabaseException {
@@ -85,7 +85,6 @@ must be specified.
     <p>
     @return
     The Database handle associated with this sequence.
-    @throws DatabaseException if a failure occurs.
     */
     public Database getDatabase()
         throws DatabaseException {
@@ -98,7 +97,6 @@ must be specified.
     <p>
     @return
     The DatabaseEntry used to open this sequence.
-    @throws DatabaseException if a failure occurs.
     */
     public DatabaseEntry getKey()
         throws DatabaseException {
@@ -123,30 +121,10 @@ must be specified.
     <p>
     @return
     Sequence statistics.
-    @throws DatabaseException if a failure occurs.
     */
     public SequenceStats getStats(StatsConfig config)
         throws DatabaseException {
 
         return seq.stat(config.getFlags());
-    }
-
-    /**
-    Print statistical information about the sequence to a specified output
-    channel (see the setMsgfile() method for more information), or passed to an
-    application callback function (see the setMsgcall() method for more
-    information).
-    <p>
-    @param config
-    The statistics returned; if null, default statistics are returned.
-    <p>
-    @return
-    A non-zero error value on failure and 0 on success.
-    @throws DatabaseException if a failure occurs.
-    */
-    public int printStats(StatsConfig config)
-        throws DatabaseException {
-
-        return seq.stat_print(config.getFlags());
     }
 }

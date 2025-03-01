@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2005, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -57,7 +57,6 @@ struct sending_msg {
  * whether the PERM message should be considered durable.
  */
 struct repmgr_permanence {
-	u_int32_t gen;		/* Master generation for LSN. */
 	DB_LSN lsn;		/* LSN whose ack this thread is waiting for. */
 	u_int threshold;	/* Number of client acks to wait for. */
 	u_int quorum;		/* Durability threshold for QUORUM policy. */
@@ -73,7 +72,6 @@ static int flatten __P((ENV *, struct sending_msg *));
 static int got_acks __P((ENV *, void *));
 static int __repmgr_finish_connect
     __P((ENV *, socket_t s, REPMGR_CONNECTION **));
-static void __repmgr_print_addrlist __P((ENV *, const char *, ADDRINFO *));
 static int __repmgr_propose_version __P((ENV *, REPMGR_CONNECTION *));
 static int __repmgr_start_connect __P((ENV*, socket_t *, ADDRINFO *, int *));
 static void setup_sending_msg __P((ENV *,
@@ -86,18 +84,6 @@ static REPMGR_SITE *connected_site __P((ENV *, int));
 static REPMGR_SITE *__repmgr_find_available_peer __P((ENV *));
 static int send_connection __P((ENV *, u_int,
     REPMGR_CONNECTION *, struct sending_msg *, int *));
-
-#ifdef DB_WIN32
-/*
- * InetNtop is available for desktop apps on Windows Vista+ and Windows
- * Server 2008+. InetNtop is NOT available for Windows mobile, Windows CE,
- * Windows Store apps or Windows Phone Store apps. We leave the support for
- * them in future when customers request them.
- */
-#define	__os_inet_ntop InetNtop
-#else
-#define	__os_inet_ntop inet_ntop
-#endif
 
 /*
  * Connects to the given network address, using blocking operations.  Any thread
@@ -116,7 +102,7 @@ __repmgr_connect(env, netaddr, connp, errp)
 	REPMGR_CONNECTION *conn;
 	ADDRINFO *ai0, *ai;
 	socket_t sock;
-	int err, ipversion, ret;
+	int err, ret;
 	u_int port;
 
 	COMPQUIET(err, 0);
@@ -127,25 +113,13 @@ __repmgr_connect(env, netaddr, connp, errp)
 #endif
 	if ((ret = __repmgr_getaddr(env, netaddr->host, port, 0, &ai0)) != 0)
 		return (ret);
-	__repmgr_print_addrlist(env, "repmgr_connect", ai0);
 
 	/*
 	 * Try each address on the list, until success.  Note that if several
 	 * addresses on the list produce retryable error, we can only pass back
 	 * to our caller the last one.
-	 *
-	 * We make one or two passes through this loop.  The first pass
-	 * tries any IPv6 addresses in the list.  If there are no successful
-	 * IPv6 connections after the first pass, we make a second pass to
-	 * try any IPv4 addresses in the list.  This helps us avoid use of
-	 * IPv4 mapped addresses if IPv6 addresses are available on both
-	 * sides of a connection.
 	 */
-	ipversion = AF_INET6;
-retry:
 	for (ai = ai0; ai != NULL; ai = ai->ai_next) {
-		if (ai->ai_family != ipversion)
-			continue;
 		switch ((ret = __repmgr_start_connect(env, &sock, ai, &err))) {
 		case 0:
 			if ((ret = __repmgr_finish_connect(env,
@@ -159,14 +133,6 @@ retry:
 		default:
 			goto out;
 		}
-	}
-	/*
-	 * If the first pass reaches here, it did not make a successful IPv6
-	 * connection.  Make the second pass to try IPv4.
-	 */
-	if (ipversion == AF_INET6) {
-		ipversion = AF_INET;
-		goto retry;
 	}
 
 out:
@@ -185,11 +151,8 @@ __repmgr_start_connect(env, socket_result, ai, err)
 	ADDRINFO *ai;
 	int *err;
 {
-	DB_REP *db_rep;
 	socket_t s;
-	int ret, sock_approved;
-
-	db_rep = env->rep_handle;
+	int ret;
 
 	if ((s = socket(ai->ai_family,
 		    ai->ai_socktype, ai->ai_protocol)) == SOCKET_ERROR) {
@@ -198,31 +161,12 @@ __repmgr_start_connect(env, socket_result, ai, err)
 		return (ret);
 	}
 
-	/*
-	 * Invoke any application-supplied socket approval function just
-	 * before actually making the connection.  If the function rejects
-	 * this socket, return DB_REP_UNAVAIL so that the caller will try
-	 * any additional addresses in its list.
-	 */
-	sock_approved = 1;
-	if (db_rep->approval != NULL &&
-	    (ret = db_rep->approval(env->dbenv, s, &sock_approved, 0)) != 0) {
-		VPRINT(env, (env, DB_VERB_REP_SYNC,
-		    "repmgr_start_connect: approval callback error %d for:",
-		    ret));
-		__repmgr_print_addr(env, ai->ai_addr, "", 1, 0);
-		return (ret);
-	}
-	if (!sock_approved)
-		return (DB_REP_UNAVAIL);
-
 	if (connect(s, ai->ai_addr, (socklen_t)ai->ai_addrlen) != 0) {
 		*err = net_errno;
 		(void)closesocket(s);
 		return (DB_REP_UNAVAIL);
 	}
-	__repmgr_print_addr(env, ai->ai_addr,
-	    "connection established", 1, 0);
+	RPRINT(env, (env, DB_VERB_REPMGR_MISC, "connection established"));
 
 	*socket_result = s;
 	return (0);
@@ -237,12 +181,11 @@ __repmgr_finish_connect(env, s, connp)
 	REPMGR_CONNECTION *conn;
 	int ret;
 
-	if ((ret = __repmgr_new_connection(env,
-	    &conn, s, CONN_CONNECTED)) != 0 ||
-	    (ret = __repmgr_set_keepalive(env, conn)) != 0)
+	if ((ret = __repmgr_new_connection(env, &conn, s, CONN_CONNECTED)) != 0)
 		return (ret);
 
-	if ((ret = __repmgr_propose_version(env, conn)) == 0)
+	if ((ret = __repmgr_set_keepalive(env, conn)) == 0 &&
+	    (ret = __repmgr_propose_version(env, conn)) == 0)
 		*connp = conn;
 	else
 		(void)__repmgr_destroy_conn(env, conn);
@@ -283,10 +226,6 @@ __repmgr_propose_version(env, conn)
 	 *  +-----------------+----+------------------+------+
 	 *
 	 * The "extra info" contains the version parameters, in marshaled form.
-	 *
-	 * While we no longer support 4.6/V1, the repmgr protocol still uses
-	 * the simpler V1 handshake as the initial message sent for version
-	 * negotiation on a new connection.
 	 */
 
 	hostname_len = strlen(my_addr->host);
@@ -439,7 +378,7 @@ __repmgr_send(dbenv, control, rec, lsnp, eid, flags)
 			goto out;
 #undef	SEND_ONE_CONNECTION
 
-		nsites_sent = FLD_ISSET(site->gmdb_flags, SITE_VIEW) ? 0 : 1;
+		nsites_sent = 1;
 		npeers_sent = F_ISSET(site, SITE_ELECTABLE) ? 1 : 0;
 		missed_peer = FALSE;
 	}
@@ -479,13 +418,7 @@ __repmgr_send(dbenv, control, rec, lsnp, eid, flags)
 				nclients = 0;
 			else if ((policy == DB_REPMGR_ACKS_ONE ||
 			    policy == DB_REPMGR_ACKS_ONE_PEER) &&
-			    nclients < 2) {
-				/*
-				 * Adjust to QUORUM when first other
-				 * participant joins (nclients=1) or when there
-				 * are no other participants but a view joins
-				 * (nclients=0) to get enough acks.
-				 */
+			    nclients == 1) {
 				nclients = 0;
 				policy = DB_REPMGR_ACKS_QUORUM;
 			}
@@ -565,16 +498,9 @@ __repmgr_send(dbenv, control, rec, lsnp, eid, flags)
 			if (nclients > 1 ||
 			    FLD_ISSET(db_rep->region->config,
 			    REP_C_2SITE_STRICT) ||
-			    db_rep->active_gmdb_update == gmdb_primary) {
+			    db_rep->active_gmdb_update == gmdb_primary)
 				quorum = nclients / 2;
-				/*
-				 * An unelectable master can't be part of the
-				 * QUORUM policy quorum.
-				 */
-				if (rep->priority == 0 &&
-				    policy == DB_REPMGR_ACKS_QUORUM)
-					quorum++;
-			} else
+			else
 				quorum = nclients;
 
 			if (policy == DB_REPMGR_ACKS_ALL_AVAILABLE) {
@@ -634,7 +560,6 @@ __repmgr_send(dbenv, control, rec, lsnp, eid, flags)
 		/* In ALL_PEERS case, display of "needed" might be confusing. */
 		VPRINT(env, (env, DB_VERB_REPMGR_MISC,
 		    "will await acknowledgement: need %u", needed));
-		perm.gen = rep->gen;
 		perm.lsn = *lsnp;
 		perm.threshold = needed;
 		perm.policy = policy;
@@ -809,13 +734,8 @@ __repmgr_send_broadcast(env, type, control, rec, nsitesp, npeersp, missingp)
 		 * useful to keep letting a removed site see updates so that it
 		 * learns of its own removal, and will know to rejoin at its
 		 * next reboot.
-		 *
-		 * We never count sends to views because views cannot
-		 * contribute to durability, but we always do the sends.
 		 */
-		if (FLD_ISSET(site->gmdb_flags, SITE_VIEW))
-			full_member = FALSE;
-		else if (site->membership == SITE_PRESENT)
+		if (site->membership == SITE_PRESENT)
 			full_member = TRUE;
 		else {
 			full_member = FALSE;
@@ -882,9 +802,7 @@ send_connection(env, type, conn, msg, sent)
 		REPMGR_MAX_V1_MSG_TYPE,
 		REPMGR_MAX_V2_MSG_TYPE,
 		REPMGR_MAX_V3_MSG_TYPE,
-		REPMGR_MAX_V4_MSG_TYPE,
-		REPMGR_MAX_V5_MSG_TYPE,
-		REPMGR_MAX_V6_MSG_TYPE
+		REPMGR_MAX_V4_MSG_TYPE
 	};
 
 	db_rep = env->rep_handle;
@@ -1214,24 +1132,18 @@ got_acks(env, context)
 	has_unacked_peer = FALSE;
 	FOR_EACH_REMOTE_SITE_INDEX(eid) {
 		site = SITE_FROM_EID(eid);
-		/*
-		 * Do not count an ack from a view because a view cannot
-		 * contribute to durability.
-		 */
-		if (FLD_ISSET(site->gmdb_flags, SITE_VIEW))
+		if (site->membership != SITE_PRESENT)
 			continue;
 		if (!F_ISSET(site, SITE_HAS_PRIO)) {
 			/*
-			 * We have not reconnected to this site since the last
-			 * recovery.  Since we don't yet know whether it's a
-			 * peer, assume the worst.
+			 * Never connected to this site: since we can't know
+			 * whether it's a peer, assume the worst.
 			 */
 			has_unacked_peer = TRUE;
 			continue;
 		}
 
-		if (site->max_ack_gen == perm->gen &&
-		    LOG_COMPARE(&site->max_ack, &perm->lsn) >= 0) {
+		if (LOG_COMPARE(&site->max_ack, &perm->lsn) >= 0) {
 			sites_acked++;
 			if (F_ISSET(site, SITE_ELECTABLE))
 				peers_acked++;
@@ -1294,7 +1206,6 @@ __repmgr_bust_connection(env, conn)
 	DB_REP *db_rep;
 	REP *rep;
 	REPMGR_SITE *site;
-	db_timespec now;
 	u_int32_t flags;
 	int ret, eid;
 
@@ -1348,9 +1259,7 @@ __repmgr_bust_connection(env, conn)
 	} else			/* Subordinate connection. */
 		goto out;
 
-	/* Defer connection attempt if rejoining 2SITE_STRICT=off repgroup. */
-	if (!db_rep->rejoin_pending &&
-	    (ret = __repmgr_schedule_connection_attempt(env, eid, FALSE)) != 0)
+	if ((ret = __repmgr_schedule_connection_attempt(env, eid, FALSE)) != 0)
 		goto out;
 
 	/*
@@ -1358,47 +1267,11 @@ __repmgr_bust_connection(env, conn)
 	 * master, assume that the master may have failed, and call for
 	 * an election.  But only do this for the connection to the main
 	 * master process, not a subordinate one.  And only do it if
-	 * we're our site's listener process, not a subordinate one.  And
+	 * we're our site's main process, not a subordinate one.  And
 	 * skip it if the application has configured us not to do
 	 * elections.
 	 */
 	if (!IS_SUBORDINATE(db_rep) && eid == rep->master_id) {
-		if (FLD_ISSET(rep->config, REP_C_AUTOTAKEOVER)) {
-			/*
-			 * When the connection is from master's listener, if
-			 * there is any other connection from a master's
-			 * subordinate process that could take over as
-			 * listener, we delay the election to allow some time
-			 * for a new master listener to start.  At the end of
-			 * the delay, if there is still no master listener,
-			 * call an election.  There is a slight chance that
-			 * we will delay the election to wait for an inactive
-			 * connection which would never become the next main
-			 * connection.
-			 */
-			TAILQ_FOREACH(conn, &site->sub_conns, entries) {
-				if (conn->auto_takeover) {
-					if (!timespecisset(
-					    &db_rep->m_listener_chk)) {
-						__os_gettime(env, &now, 1);
-						TIMESPEC_ADD_DB_TIMEOUT(&now,
-						    db_rep->m_listener_wait);
-						db_rep->m_listener_chk = now;
-					}
-					RPRINT(env, (env, DB_VERB_REPMGR_MISC,
-		"Master failure, but delay elections for takeover on master"));
-					return (0);
-				}
-			}
-		}
-
-		/* Defer election if rejoining 2SITE_STRICT=off repgroup. */
-		if (db_rep->rejoin_pending) {
-			RPRINT(env, (env, DB_VERB_REPMGR_MISC,
-			    "Deferring election after rejoin rejection"));
-			goto out;
-		}
-
 		/*
 		 * Even if we're not doing elections, defer the event
 		 * notification to later execution in the election
@@ -1411,17 +1284,6 @@ __repmgr_bust_connection(env, conn)
 		else
 			RPRINT(env, (env, DB_VERB_REPMGR_MISC,
 			    "Master failure, but no elections"));
-
-		/*
-		 * In preferred master mode, a client that has lost its
-		 * connection to the master uses an election thread to
-		 * restart as master.
-		 */
-		if (IS_PREFMAS_MODE(env)) {
-			RPRINT(env, (env, DB_VERB_REPMGR_MISC,
-"bust_connection setting preferred master temp master"));
-			db_rep->prefmas_pending = start_temp_master;
-		}
 
 		if ((ret = __repmgr_init_election(env, flags)) != 0)
 			goto out;
@@ -1478,59 +1340,25 @@ __repmgr_disable_connection(env, conn)
 	REPMGR_CONNECTION *conn;
 {
 	DB_REP *db_rep;
-	REP *rep;
-	REPMGR_RESPONSE *resp;
 	REPMGR_SITE *site;
-	SITEINFO *sites;
+	REPMGR_RESPONSE *resp;
 	u_int32_t i;
-	int eid, is_subord, orig_state, ret, t_ret;
+	int eid, ret, t_ret;
 
 	db_rep = env->rep_handle;
-	rep = db_rep->region;
 	ret = 0;
-	is_subord = 0;
 
-	orig_state = conn->state;
 	conn->state = CONN_DEFUNCT;
 	if (conn->type == REP_CONNECTION) {
 		eid = conn->eid;
 		if (IS_VALID_EID(eid)) {
 			site = SITE_FROM_EID(eid);
 			if (conn != site->ref.conn.in &&
-			    conn != site->ref.conn.out) {
-				/*
-				 * It is a subordinate connection to disable.
-				 * Remove it from the subordinate connection
-				 * list, and decrease the number of listener
-				 * candidates by 1 if it is from a subordinate
-				 * rep-aware process that allows takeover.
-				 */
+			    conn != site->ref.conn.out)
+				/* It's a subordinate connection. */
 				TAILQ_REMOVE(&site->sub_conns, conn, entries);
-				SET_LISTENER_CAND(conn->auto_takeover, --);
-				is_subord = 1;
-			}
 			TAILQ_INSERT_TAIL(&db_rep->connections, conn, entries);
 			conn->ref_count++;
-			/*
-			 * Do not decrease sites_avail for a subordinate
-			 * connection.
-			 */
-			if (site->state == SITE_CONNECTED && !is_subord &&
-			    (orig_state == CONN_READY ||
-			    orig_state == CONN_CONGESTED)) {
-				/*
-				 * Some thread orderings can cause a brief
-				 * dip into a negative sites_avail value.
-				 * Once it goes negative it stays negative,
-				 * so avoid this.  Future connections will
-				 * be counted correctly.
-				 */
-				if (rep->sites_avail > 0)
-					rep->sites_avail--;
-				RPRINT(env, (env, DB_VERB_REPMGR_MISC,
-	    "disable_conn: EID %lu disabled.  sites_avail %lu",
-				    (u_long)eid, (u_long)rep->sites_avail));
-			}
 		}
 		conn->eid = -1;
 	} else if (conn->type == APP_CONNECTION) {
@@ -1818,10 +1646,8 @@ flatten(env, msg)
 }
 
 /*
- * Scan the list of remote sites, returning the first participant that is a
- * peer, is not the current master, and is available.  If there are no
- * available participant peers but there is an available view peer, return the
- * first available view peer.
+ * Scan the list of remote sites, returning the first one that is a peer,
+ * is not the current master, and is available.
  */
 static REPMGR_SITE *
 __repmgr_find_available_peer(env)
@@ -1830,28 +1656,23 @@ __repmgr_find_available_peer(env)
 	DB_REP *db_rep;
 	REP *rep;
 	REPMGR_CONNECTION *conn;
-	REPMGR_SITE *site, *view;
-	u_int avail, i;
+	REPMGR_SITE *site;
+	u_int i;
 
 	db_rep = env->rep_handle;
 	rep = db_rep->region;
-	view = NULL;
 	FOR_EACH_REMOTE_SITE_INDEX(i) {
 		site = &db_rep->sites[i];
-		avail = (site->state == SITE_CONNECTED &&
+		if (FLD_ISSET(site->config, DB_REPMGR_PEER) &&
+		    EID_FROM_SITE(site) != rep->master_id &&
+		    site->state == SITE_CONNECTED &&
 		    (((conn = site->ref.conn.in) != NULL &&
 		    conn->state == CONN_READY) ||
 		    ((conn = site->ref.conn.out) != NULL &&
-		    conn->state == CONN_READY)));
-		if (FLD_ISSET(site->config, DB_REPMGR_PEER) &&
-		    !FLD_ISSET(site->gmdb_flags, SITE_VIEW) &&
-		    EID_FROM_SITE(site) != rep->master_id && avail)
+		    conn->state == CONN_READY)))
 			return (site);
-		if (!view && FLD_ISSET(site->config, DB_REPMGR_PEER) &&
-		    FLD_ISSET(site->gmdb_flags, SITE_VIEW) && avail)
-			view = site;
 	}
-	return (view);
+	return (NULL);
 }
 
 /*
@@ -1928,11 +1749,11 @@ int
 __repmgr_listen(env)
 	ENV *env;
 {
-	ADDRINFO *ai, *ai0;
+	ADDRINFO *ai;
 	DB_REP *db_rep;
 	repmgr_netaddr_t *addrp;
 	char *why;
-	int ipversion, sockopt, ret;
+	int sockopt, ret;
 	socket_t s;
 
 	db_rep = env->rep_handle;
@@ -1942,9 +1763,8 @@ __repmgr_listen(env)
 
 	addrp = &SITE_FROM_EID(db_rep->self_eid)->net_addr;
 	if ((ret = __repmgr_getaddr(env,
-	    addrp->host, addrp->port, AI_PASSIVE, &ai0)) != 0)
+	    addrp->host, addrp->port, AI_PASSIVE, &ai)) != 0)
 		return (ret);
-	__repmgr_print_addrlist(env, "repmgr_listen", ai0);
 
 	/*
 	 * Given the assert is correct, we execute the loop at least once, which
@@ -1952,21 +1772,8 @@ __repmgr_listen(env)
 	 * course lint doesn't know about DB_ASSERT.
 	 */
 	COMPQUIET(why, "");
-	DB_ASSERT(env, ai0 != NULL);
-
-	/*
-	 * We make one or two passes through this loop.  The first pass
-	 * tries any IPv6 addresses in the list.  If there are no successful
-	 * IPv6 connections after the first pass, we make a second pass to
-	 * try any IPv4 addresses in the list.  This helps us avoid use of
-	 * IPv4 mapped addresses if IPv6 addresses are available on both
-	 * sides of a connection.
-	 */
-	ipversion = AF_INET6;
-retry:
-	for (ai = ai0; ai != NULL; ai = ai->ai_next) {
-		if (ai->ai_family != ipversion)
-			continue;
+	DB_ASSERT(env, ai != NULL);
+	for (; ai != NULL; ai = ai->ai_next) {
 
 		if ((s = socket(ai->ai_family,
 		    ai->ai_socktype, ai->ai_protocol)) == INVALID_SOCKET) {
@@ -1984,7 +1791,7 @@ retry:
 		    sizeof(sockopt)) != 0) {
 			why = DB_STR("3585",
 			    "can't set REUSEADDR socket option");
-			goto err;
+			break;
 		}
 
 		if (bind(s, ai->ai_addr, (socklen_t)ai->ai_addrlen) != 0) {
@@ -1998,7 +1805,7 @@ retry:
 
 		if (listen(s, 5) != 0) {
 			why = DB_STR("3587", "listen()");
-			goto err;
+			break;
 		}
 
 		if ((ret = __repmgr_set_nonblocking(s)) != 0) {
@@ -2011,23 +1818,13 @@ retry:
 		goto out;
 	}
 
-	/*
-	 * If the first pass reaches here, it did not make a successful IPv6
-	 * connection.  Make the second pass to try IPv4.
-	 */
-	if (ipversion == AF_INET6) {
-		ipversion = AF_INET;
-		goto retry;
-	}
-	goto out;
-
-err:	if (ret == 0)
+	if (ret == 0)
 		ret = net_errno;
 	__db_err(env, ret, "%s", why);
 clean:	if (s != INVALID_SOCKET)
 		(void)closesocket(s);
 out:
-	__os_freeaddrinfo(env, ai0);
+	__os_freeaddrinfo(env, ai);
 	return (ret);
 }
 
@@ -2055,7 +1852,6 @@ __repmgr_net_close(env)
 			site->ref.conn.out = NULL;
 		}
 	}
-	rep->sites_avail = 0;
 
 	if (db_rep->listen_fd != INVALID_SOCKET) {
 		if (closesocket(db_rep->listen_fd) == SOCKET_ERROR && ret == 0)
@@ -2074,28 +1870,22 @@ final_cleanup(env, conn, unused)
 	void *unused;
 {
 	DB_REP *db_rep;
-	REP *rep;
 	REPMGR_SITE *site;
-	SITEINFO *sites;
-	int eid, ret, t_ret;
+	int ret, t_ret;
 
 	COMPQUIET(unused, NULL);
 	db_rep = env->rep_handle;
-	rep = db_rep->region;
-	eid = conn->eid;
 
 	ret = __repmgr_close_connection(env, conn);
 	/* Remove the connection from whatever list it's on, if any. */
-	if (conn->type == REP_CONNECTION && IS_VALID_EID(eid)) {
-		site = SITE_FROM_EID(eid);
+	if (conn->type == REP_CONNECTION && IS_VALID_EID(conn->eid)) {
+		site = SITE_FROM_EID(conn->eid);
 
 		if (site->state == SITE_CONNECTED &&
 		    (conn == site->ref.conn.in || conn == site->ref.conn.out)) {
 			/* Not on any list, so no need to do anything. */
-		} else {
+		} else
 			TAILQ_REMOVE(&site->sub_conns, conn, entries);
-			SET_LISTENER_CAND(conn->auto_takeover, --);
-		}
 		t_ret = __repmgr_destroy_conn(env, conn);
 
 	} else {
@@ -2251,80 +2041,3 @@ err:
 	return (port);
 }
 #endif
-
-/*
- * Print a single IP address in IPv6 or IPv4 format as needed.  Use
- * idstring to supply information to help identify the caller.  Set
- * single to 1 if only printing a single IP address.  Use index
- * to supply an index value if printing out a list of IP addresses
- * (in this case single should be 0).
- *
- * PUBLIC: void __repmgr_print_addr __P((ENV *,
- * PUBLIC:    struct sockaddr *, const char *, int, int));
- */
-void
-__repmgr_print_addr(env, addr, idstring, single, idx)
-	ENV *env;
-	struct sockaddr *addr;
-	const char *idstring;
-	int single;
-	int idx;
-{
-	struct sockaddr_in6 *saddr6;
-	struct sockaddr_in *saddr4;
-	char host[MAXHOSTNAMELEN];
-	char addrstr6[INET6_ADDRSTRLEN];
-	char addrstr4[INET_ADDRSTRLEN];
-	const char *p;
-
-	p = NULL;
-	if (addr->sa_family == AF_INET6) {
-		saddr6 = (struct sockaddr_in6 *)(addr);
-		if (getnameinfo((struct sockaddr *)saddr6,
-		    sizeof(struct sockaddr_in6), host, sizeof(host),
-		    0, 0, 0) != 0)
-			return;
-		p = __os_inet_ntop(saddr6->sin6_family, &saddr6->sin6_addr,
-		    addrstr6, sizeof(addrstr6));
-	} else if (addr->sa_family == AF_INET) {
-		saddr4 = (struct sockaddr_in *)(addr);
-		if (getnameinfo((struct sockaddr *)saddr4,
-		    sizeof(struct sockaddr_in), host, sizeof(host),
-		    0, 0, 0) != 0)
-			return;
-		p = __os_inet_ntop(saddr4->sin_family, &saddr4->sin_addr,
-		    addrstr4, sizeof(addrstr4));
-	} else {
-		VPRINT(env, (env, DB_VERB_REPMGR_MISC,
-		    "repmgr_print_addr: address family not recognized"));
-		return;
-	}
-
-	if (single)
-		VPRINT(env, (env, DB_VERB_REPMGR_MISC,
-		    "%s IPv%s host %s address %s", idstring,
-		    addr->sa_family == AF_INET6 ? "6" : "4", host, p));
-	else
-		VPRINT(env, (env, DB_VERB_REPMGR_MISC,
-		    "%s addrlist[%d] IPv%s host %s address %s",
-		    idstring, idx,
-		    addr->sa_family == AF_INET6 ? "6" : "4", host, p));
-}
-
-/*
- * Print a list of IP addresses in IPv6 or IPv4 format as needed.
- */
-static void
-__repmgr_print_addrlist(env, idstring, ai0)
-	ENV *env;
-	const char *idstring;
-	ADDRINFO *ai0;
-{
-	ADDRINFO *ai;
-	int i;
-
-	if (env->dbenv->verbose == 0)
-		return;
-	for (ai = ai0, i = 0; ai != NULL; ai = ai->ai_next, i++)
-		__repmgr_print_addr(env, ai->ai_addr, idstring, 0, i);
-}

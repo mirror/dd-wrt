@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2011, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2011, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -119,7 +119,6 @@ public class HeapRecordId {
     }
     /**
        Set the database page number where the record is stored.
-       @param pgno the database page number
     */
     public void setPageNumber(final int pgno) {
         this.pgno = pgno;
@@ -136,7 +135,6 @@ public class HeapRecordId {
     }
     /**
        Set the index in the offset table where the record can be found.
-       @param indx the index in the offset table
     */
     public void setIndex(final short indx) {
         this.indx = indx;

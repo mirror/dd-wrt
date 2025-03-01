@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -92,13 +92,6 @@
                   its state.
           </p>
       <p>
-                  As an alternative, write forwarding simplifies adding replication
-                  to an application. Once configured, there is no need to confine
-                  write operations to the master or even to know which site is the master. 
-                  For more information, see
-                  <a class="xref" href="writeforwarding.html" title="Chapter 5. Configuring for Write Forwarding">Configuring for Write Forwarding</a>.
-		  </p>
-      <p>
                   This chapter shows you how to determine your environment's
                   state, and it then shows you some sample code on how
                   an application might behave depending on whether it is a
@@ -113,28 +106,241 @@
           </div>
         </div>
         <p>
-                In order to determine whether your code is running as a
-                master or a replica, you implement an event handling
-                callback, which we initially describe in 
-                <a class="xref" href="eventhandling.html" title="Event Handling">Event Handling</a>.  
-                When the current environment becomes a client —
-                including at application startup — the
-                <code class="literal">DB_EVENT_REP_CLIENT</code> event is raised.
-                When an election is held and a replica is elected to be a
-                master, the <code class="literal">DB_EVENT_REP_MASTER</code> event is
-                raised on the newly elected master and the
-                <code class="literal">DB_EVENT_REP_NEWMASTER</code> is raised on the
-                other replicas.
-            </p>
+                        In order to determine whether your code is running
+                        as a master or a replica, you must write your
+                        application as an implementation of
+                        <code class="classname">com.sleepycat.db.EventHandler</code>.
+                        This class gives you a series of methods within
+                        which you can detect and respond to various events
+                        that occur in your DB code.  Some, but not all,
+                        of these methods have to do with elections:
+                  </p>
         <p>
-                The <code class="classname">EventHandler</code> implementation is
-                fairly simple. First you detect the event, and then you
-                record the state change in some data member maintained in a
-                location that is convenient to you.
-            </p>
+                      Some of the more commonly handled events are
+                      described below. For a complete list of events, see
+                      the
+
+                      
+                      
+                      <span>
+                        <code class="classname">com.sleepycat.db.EventHandler</code>
+                        javadoc page.
+                      </span>
+                  </p>
+        <div class="itemizedlist">
+          <ul type="disc">
+            <li>
+              <p>
+                                      <code class="methodname">EventHandler.handlePanicEvent()</code>
+                              </p>
+              <p>
+                                  An error has occured in the Berkeley DB library requiring your
+                                  application to shut down and then run recovery.
+                              </p>
+            </li>
+            <li>
+              <p>
+                                      
+                                      <code class="methodname">EventHandler.handleRepClientEvent()</code>
+                              </p>
+              <p>
+                                      The local environment is now a replica.
+                              </p>
+            </li>
+            <li>
+              <p>
+                              
+                              <code class="methodname">EventHandler.handleRepConnectBrokenEvent()</code>
+                          </p>
+              <p>
+                              A previously established connection between
+                              two sites in the replication group has been
+                              broken.
+                          </p>
+            </li>
+            <li>
+              <p>
+                              
+                              <code class="methodname">EventHandler.handleRepConnectEstablishedEvent()</code>
+                          </p>
+              <p>
+                              A connection has been established between
+                              two sites in the replication group.
+                          </p>
+            </li>
+            <li>
+              <p>
+                              
+                              <code class="methodname">EventHandler.handleRepConnectTryFailedEvent()</code>
+                          </p>
+              <p>
+                              An attempt was made to establish a connection
+                              to a known remote site, but the connection
+                              attempt failed.
+                          </p>
+            </li>
+            <li>
+              <p>
+                              
+                              <code class="methodname">EventHandler.handleRepDupmasterEvent()</code>
+                          </p>
+              <p>
+                              A duplicate master has been discovered in the
+                              replication group.
+                          </p>
+            </li>
+            <li>
+              <p>
+                              
+                              <code class="methodname">EventHandler.handleRepElectedEvent()</code>
+                          </p>
+              <p>
+                              The local site has just won an election and
+                              is now the master. Your code should now
+                              reconfigure itself to operation as a master
+                              site.
+                          </p>
+            </li>
+            <li>
+              <p>
+                              
+                              <code class="methodname">EventHandler.handleRepElectionFailedEvent()</code>
+                          </p>
+              <p>
+                              The local site's attempt to initiate or
+                              participate in a replication master election
+                              failed, due to the lack of timely message
+                              response from a sufficient number of remote
+                              sites. 
+                          </p>
+            </li>
+            <li>
+              <p>
+                              <code class="methodname">EventHandler.handleRepJoinFailureEvent()</code>
+                          </p>
+              <p>
+                              The local site could not synchronize with the
+                              master because an internal initialization was
+                              required, but internal initialization has
+                              been turned off
+                          </p>
+            </li>
+            <li>
+              <p>
+                              
+                              <code class="methodname">EventHandler.handleRepLocalSiteRemovedEvent()</code>
+                          </p>
+              <p>
+                                  The local site has been removed from the group.
+                          </p>
+            </li>
+            <li>
+              <p>
+                                      
+                                      <code class="methodname">EventHandler.handleRepNewMasterEvent()</code>
+                              </p>
+              <p>
+                                      An election was held and a new environment was made a
+                                      master.  However, the current environment <span class="emphasis"><em>is
+                                          not</em></span> the master. This event exists so that
+                                      you can cause your code to take some unique action in the
+                                      event that the replication groups switches masters.
+                              </p>
+            </li>
+            <li>
+              <p>
+                                  
+                                  <code class="methodname">EventHandler.handleRepMasterEvent()</code>
+                              </p>
+              <p>
+                                      The local environment is now a master.
+                              </p>
+            </li>
+            <li>
+              <p>
+                              
+                              <code class="methodname">EventHandler.handleRepMasterFailureEvent()</code>
+                          </p>
+              <p>
+                              The connection to the remote master replication site has failed. 
+                          </p>
+            </li>
+            <li>
+              <p>
+                              
+                              <code class="methodname">EventHandler.handleRepPermFailedEvent()</code>
+                          </p>
+              <p>
+                              The Replication Manager did not receive enough acknowledgements to
+                              ensure the transaction's durability within the replicationg group.
+                              The Replication Manager has therefore flushed the transaction to
+                              the master's local disk for storage.
+                          </p>
+              <p>
+                              How the Replication Manager knows whether the acknowledgements it
+                              has received is determined by the ack policy you have set for your
+                              applicaton. See <a class="xref" href="fwrkpermmessage.html#fmwrkpermpolicy" title="Identifying Permanent Message Policies">Identifying Permanent Message Policies</a>
+                              for more information.
+                          </p>
+            </li>
+            <li>
+              <p>
+                              
+                              <code class="methodname">EventHandler.handleRepSiteAddedEvent()</code>
+                          </p>
+              <p>
+                              A new site has joined the replication group.
+                          </p>
+            </li>
+            <li>
+              <p>
+                              
+                              <code class="methodname">EventHandler.handleRepSiteRemovedEvent()</code>
+                          </p>
+              <p>
+                              An existing site has been removed from the replication group.
+                          </p>
+            </li>
+            <li>
+              <p>
+                                      
+                                      <code class="methodname">EventHandler.handleRepStartupDoneEvent()</code>
+                              </p>
+              <p>
+                                      The replica has completed startup
+                                      synchronization and is now processing
+                                      log records received from the master.
+                              </p>
+            </li>
+            <li>
+              <p>
+                              
+                              <code class="methodname">EventHandler.handleWriteFailedEvent()</code>
+                          </p>
+              <p>
+                              A Berkeley DB write to stable storage failed.
+                          </p>
+            </li>
+          </ul>
+        </div>
         <p>
-                For example:
-            </p>
+                          Note that these events are raised whenever the
+                          state is established. That is, when the current
+                          environment becomes a replica, and that includes
+                          at application startup, the event is raised.
+                          Also, when an election is held and a replica is elected to be a
+                          master, then the event occurs.
+                  </p>
+        <p>
+                          The <code class="classname">EventHandler</code>
+                          implementation is fairly simple. First you detect
+                          the event, and then you record the state change
+                          in some data member maintained in a location that
+                          is convenient to you.
+                  </p>
+        <p>
+                          For example:
+                  </p>
         <pre class="programlisting">
 package db.repquote;
 
@@ -166,10 +372,9 @@ isMaster = false;
 // "this" class as the event handler
 envConfig.setEventHandler(this); </pre>
         <p>
-            That done, we still need to implement the methods required for
-            handling replication events.  For a simple application like
-            this one, these implementations can be trivial.
-        </p>
+        That done, we still need to implement the methods required for handling replication events.
+        For a simple application like this one, these implementations can be trivial.
+</p>
         <pre class="programlisting">    public void handleRepClientEvent()
     {
         dbenv.setIsMaster(false);
@@ -276,11 +481,11 @@ envConfig.setEventHandler(this); </pre>
         System.exit(-1);
     }</pre>
         <p>
-            Of course, this only gives us the current state of the
-            environment. We still need the code that determines what to do
-            when the environment changes state and how to behave depending
-            on the state (described in the next section).
-        </p>
+        Of course, this only gives us the current state of the environment. We
+        still need the code that determines what to do when the environment 
+        changes state and how to behave depending on the state (described
+        in the next section).
+</p>
       </div>
     </div>
     <div class="navfooter">

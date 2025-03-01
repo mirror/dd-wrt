@@ -151,10 +151,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Condition="exists('..\..\src\crypto\aes_method.c')" Include="..\..\src\crypto\aes_method.c"/>
-    <ClCompile Include="..\..\src\blob\blob_fileops.c"/>
-    <ClCompile Include="..\..\src\blob\blob_page.c"/>
-    <ClCompile Include="..\..\src\blob\blob_stream.c"/>
-    <ClCompile Include="..\..\src\blob\blob_util.c"/>
     <ClCompile Include="..\..\src\btree\bt_compact.c"/>
     <ClCompile Include="..\..\src\btree\bt_compare.c"/>
     <ClCompile Include="..\..\src\btree\bt_compress.c"/>
@@ -181,7 +177,6 @@
     <ClCompile Include="..\..\lang\cxx\cxx_channel.cpp"/>
     <ClCompile Include="..\..\lang\cxx\cxx_db.cpp"/>
     <ClCompile Include="..\..\lang\cxx\cxx_dbc.cpp"/>
-    <ClCompile Include="..\..\lang\cxx\cxx_dbstream.cpp"/>
     <ClCompile Include="..\..\lang\cxx\cxx_dbt.cpp"/>
     <ClCompile Include="..\..\lang\cxx\cxx_env.cpp"/>
     <ClCompile Include="..\..\lang\cxx\cxx_except.cpp"/>
@@ -226,7 +221,6 @@
     <ClCompile Include="..\..\src\db\db_setid.c"/>
     <ClCompile Include="..\..\src\db\db_setlsn.c"/>
     <ClCompile Include="..\..\src\common\db_shash.c"/>
-    <ClCompile Include="..\..\src\db\db_slice.c"/>
     <ClCompile Include="..\..\src\db\db_sort_multiple.c"/>
     <ClCompile Include="..\..\src\db\db_stati.c"/>
     <ClCompile Include="..\..\src\db\db_truncate.c"/>
@@ -255,7 +249,6 @@
     <ClCompile Include="..\..\src\env\env_region.c"/>
     <ClCompile Include="..\..\src\env\env_register.c"/>
     <ClCompile Include="..\..\src\env\env_sig.c"/>
-    <ClCompile Include="..\..\src\env\env_slice.c"/>
     <ClCompile Include="..\..\src\env\env_stat.c"/>
     <ClCompile Include="..\..\src\fileops\fileops_auto.c"/>
     <ClCompile Include="..\..\src\fileops\fop_basic.c"/>
@@ -278,6 +271,7 @@
     <ClCompile Include="..\..\src\hash\hash_verify.c"/>
     <ClCompile Include="..\..\src\heap\heap.c"/>
     <ClCompile Include="..\..\src\heap\heap_auto.c"/>
+    <ClCompile Include="..\..\src\heap\heap_autop.c"/>
     <ClCompile Include="..\..\src\heap\heap_backup.c"/>
     <ClCompile Include="..\..\src\heap\heap_conv.c"/>
     <ClCompile Include="..\..\src\heap\heap_method.c"/>
@@ -285,7 +279,6 @@
     <ClCompile Include="..\..\src\heap\heap_rec.c"/>
     <ClCompile Include="..\..\src\heap\heap_reclaim.c"/>
     <ClCompile Include="..\..\src\heap\heap_stat.c"/>
-    <ClCompile Include="..\..\src\heap\heap_upgrade.c"/>
     <ClCompile Include="..\..\src\heap\heap_verify.c"/>
     <ClCompile Include="..\..\src\hmac\hmac.c"/>
     <ClCompile Include="..\..\lang\hsearch\hsearch.c"/>
@@ -356,7 +349,6 @@
     <ClCompile Include="..\..\src\os_windows\os_map.c"/>
     <ClCompile Include="..\..\src\os_windows\os_mkdir.c"/>
     <ClCompile Include="..\..\src\os_windows\os_open.c"/>
-    <ClCompile Include="..\..\src\os_windows\os_rmdir.c"/>
     <ClCompile Include="..\..\src\os\os_path.c"/>
     <ClCompile Include="..\..\src\os\os_pid.c"/>
     <ClCompile Include="..\..\src\os_windows\os_rename.c"/>
@@ -421,12 +413,9 @@
     <ClCompile Include="..\..\src\txn\txn_stat.c"/>
     <ClCompile Include="..\..\src\txn\txn_util.c"/>
     <ClCompile Include="..\..\src\common\os_method.c"/>
-    <ClCompile Include="..\..\src\common\util_arg.c"/>
     <ClCompile Include="..\..\src\common\util_cache.c"/>
-    <ClCompile Include="..\..\src\common\util_env.c"/>
     <ClCompile Include="..\..\src\common\util_log.c"/>
     <ClCompile Include="..\..\src\common\util_sig.c"/>
-    <ClCompile Include="..\..\src\common\util_ver_check.c"/>
     <ClCompile Include="..\..\src\common\zerofill.c"/>
     <ClCompile Include="..\..\src\xa\xa.c"/>
     <ClCompile Include="..\..\src\xa\xa_map.c"/>

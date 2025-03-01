@@ -7,14 +7,14 @@
     <link rel="stylesheet" href="gettingStarted.css" type="text/css" />
     <meta name="generator" content="DocBook XSL Stylesheets V1.73.2" />
     <link rel="start" href="index.html" title="Berkeley DB Programmer's Reference Guide" />
-    <link rel="up" href="tcl.html" title="Chapter 23.  Berkeley DB Extensions: Tcl" />
+    <link rel="up" href="tcl.html" title="Chapter 21.  Berkeley DB Extensions: Tcl" />
     <link rel="prev" href="tcl_program.html" title="Tcl API programming notes" />
     <link rel="next" href="tcl_faq.html" title="Tcl FAQ" />
   </head>
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -22,7 +22,9 @@
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="tcl_program.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 23.  Berkeley DB Extensions: Tcl </th>
+          <th width="60%" align="center">Chapter 21. 
+		Berkeley DB Extensions: Tcl
+        </th>
           <td width="20%" align="right"> <a accesskey="n" href="tcl_faq.html">Next</a></td>
         </tr>
       </table>
@@ -36,23 +38,18 @@
           </div>
         </div>
       </div>
-      <p>
-        The Tcl interfaces to Berkeley DB generally return TCL_OK on
-        success and throw a Tcl error on failure, using the
-        appropriate Tcl interfaces to provide the user with an
-        informative error message. There are some "expected" failures,
-        however, for which no Tcl error will be thrown and for which
-        Tcl commands will return TCL_OK. These failures include times
-        when a searched-for key is not found, a requested key/data
-        pair was previously deleted, or a key/data pair cannot be
-        written because the key already exists.
-    </p>
-      <p>
-        These failures can be detected by searching the Berkeley DB
-        error message that is returned. For example, use the following
-        to detect that an attempt to put a record into the database
-        failed because the key already existed:
-    </p>
+      <p>The Tcl interfaces to Berkeley DB generally return TCL_OK on success and throw
+a Tcl error on failure, using the appropriate Tcl interfaces to provide
+the user with an informative error message.  There are some "expected"
+failures, however, for which no Tcl error will be thrown and for which
+Tcl commands will return TCL_OK.  These failures include times when a
+searched-for key is not found, a requested key/data pair was previously
+deleted, or a key/data pair cannot be written because the key already
+exists.</p>
+      <p>These failures can be detected by searching the Berkeley DB error message that
+is returned.  For example, use the following to detect that an attempt
+to put a record into the database failed because the key already
+existed:</p>
       <pre class="programlisting">% berkdb open -create -btree a.db
 db0
 % db0 put dog cat
@@ -66,46 +63,30 @@ This was an error; the key existed
 % db0 close
 0
 % exit</pre>
-      <p>
-        To simplify parsing, it is recommended that the initial
-        Berkeley DB error name be checked; for example, <a href="../api_reference/C/dbcput.html#dbcput_DB_KEYEXIST" class="olink">DB_MULTIPLE</a>
-        in the previous example. To ensure that Tcl scripts are not
-        broken by upgrading to new releases of Berkeley DB, these
-        values will not change in future releases of Berkeley DB.
-        There are currently only three such "expected" error
-        returns:
-    </p>
+      <p>To simplify parsing, it is recommended that the initial Berkeley DB error name
+be checked; for example, <a href="../api_reference/C/dbcput.html#dbcput_DB_KEYEXIST" class="olink">DB_MULTIPLE</a> in the previous example.
+To ensure that Tcl scripts are not broken by upgrading to new releases
+of Berkeley DB, these values will not change in future releases of Berkeley DB.
+There are currently only three such "expected" error returns:</p>
       <pre class="programlisting">DB_NOTFOUND: No matching key/data pair found
 DB_KEYEMPTY: Nonexistent key/data pair
 DB_KEYEXIST: Key/data pair already exists</pre>
-      <p>
-        Finally, sometimes Berkeley DB will output additional error
-        information when a Berkeley DB error occurs. By default, all
-        Berkeley DB error messages will be prefixed with the created
-        command in whose context the error occurred (for example,
-        "env0", "db2", and so on). There are several ways to capture
-        and access this information.
-    </p>
-      <p>
-        First, if Berkeley DB invokes the error callback function,
-        the additional information will be placed in the error result
-        returned from the command and in the errorInfo backtrace
-        variable in Tcl.
-    </p>
-      <p>
-        Also, the two calls to open an environment and open a
-        database take an option, <span class="bold"><strong>-errfile
-        filename</strong></span>, which sets an output file to which
-        these additional error messages should be written.
-    </p>
-      <p>
-        Additionally, the two calls to open an environment and open
-        a database take an option, <span class="bold"><strong>-errpfx
-        string</strong></span>, which sets the error prefix to the
-        given string. This option may be useful in circumstances where
-        a more descriptive prefix is desired or where a constant
-        prefix indicating an error is desired.
-    </p>
+      <p>Finally, sometimes Berkeley DB will output additional error information when
+a Berkeley DB error occurs.  By default, all Berkeley DB error messages will be
+prefixed with the created command in whose context the error occurred
+(for example, "env0", "db2", and so on).  There are several ways to
+capture and access this information.</p>
+      <p>First, if Berkeley DB invokes the error callback function, the additional
+information will be placed in the error result returned from the command
+and in the errorInfo backtrace variable in Tcl.</p>
+      <p>Also, the two calls to open an environment and open a database take an
+option, <span class="bold"><strong>-errfile filename</strong></span>, which sets an output file to which
+these additional error messages should be written.</p>
+      <p>Additionally, the two calls to open an environment and open a database
+take an option, <span class="bold"><strong>-errpfx string</strong></span>, which sets the error prefix to
+the given string.  This option may be useful in circumstances where a
+more descriptive prefix is desired or where a constant prefix indicating
+an error is desired.</p>
     </div>
     <div class="navfooter">
       <hr />

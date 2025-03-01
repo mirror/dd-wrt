@@ -1,5 +1,5 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"> 
-  <Product Id='*' UpgradeCode='89316d6e-b68c-11e3-8d9b-001d099e0a33'
+  <Product Id='*' UpgradeCode='2df79540-9c19-11df-b5e4-00262db1b537'
    Name='@PRODUCT_NAME@' Version='@PROD_WIX_VERSION@'
    Manufacturer='Oracle' Language='1033'>
 
@@ -9,10 +9,10 @@
      Keywords="Embedded Database Datastore"
      Description='@PRODUCT_NAME@ @PROD_WIX_VERSION@'
      Comments='includes sources and binaries' InstallerVersion='300'
-     Compressed='yes' Platform="@WIN_BUILD@"
+     Compressed='yes' Platform="x86"
      Languages="1033" SummaryCodepage="1252" />
     <!-- The upgrade id should be the same to the UpgradeCode of the previous version you want upgrade -->
-    <Upgrade Id='2ef4dbf0-b1a7-11e2-af6c-001e4f951af2'>
+    <Upgrade Id='529068a1-2ba8-11df-8e8e-00262db1b537'>
     <UpgradeVersion OnlyDetect="yes" 
 			Minimum="@PROD_WIX_VERSION@" 
 			Property="NEWERFOUND" 
@@ -41,7 +41,7 @@
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="DesktopFolder" Name="." />
       <Directory Id="FavoritesFolder" Name="." />
-      <Directory Id="@PROGRAM_FILES_FOLDER@" Name=".">
+      <Directory Id="ProgramFilesFolder" Name=".">
         <Directory Id="OracleFolder" Name="Oracle">
           <Directory Id="INSTALLDIR"
                    Name="@PRODUCT_NAME@ @PROD_WIX_VERSION@">
@@ -63,8 +63,8 @@
      in the WiX manual and can be safely ignored.  Errors cannot be 
      ignored.
     -->
-    <DirectoryRef Id="TARGETDIR">
-      <Merge Id="VCRedist" SourceFile="C:\Program Files (x86)\Common Files\Merge Modules\@MERGE_MODULES_LOCATION@" DiskId="1" Language="0"/>
+    <DirectoryRef Id="INSTALLDIR">
+      <Merge Id="VCRedist" SourceFile="@MERGE_MODULES_LOCATION@" DiskId="1" Language="0"/>
     </DirectoryRef>
     <!-- Features:
 	o required stuff
@@ -76,7 +76,6 @@
 	o C# runtime
 	o C/C++ devo
 	o examples
-  o Thrift server/client
     -->
     <Feature Id="Complete" Title="@PRODUCT_NAME@ @PROD_WIX_VERSION@" Description="Complete installation"
 	      Display="expand" Level="1" ConfigurableDirectory="INSTALLDIR">
@@ -119,11 +118,6 @@
 	<ComponentGroupRef Id="group_examples"/>
 	<ComponentGroupRef Id="group_devo"/>
 	<ComponentGroupRef Id="group_runtime"/>
-    </Feature>
-    <Feature Id="Thrift" Title="Server/Client runtime and configuration files" Description="Thrift .jar and configuration files required for running a BDB Server and Client.  This option includes the Core Runtime and Java Runtime." AllowAdvertise="no" Display="expand" Level="1" InstallDefault="source" ConfigurableDirectory="INSTALLDIR">
-      <ComponentGroupRef Id="group_thrift"/>
-      <ComponentGroupRef Id="group_java"/>
-      <ComponentGroupRef Id="group_runtime"/>
     </Feature>
     </Feature> <!-- end of all Features -->
 

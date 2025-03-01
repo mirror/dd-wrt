@@ -50,7 +50,7 @@
 
   <target name="build" depends="init">
     <echo message="Using db.jar: ${db.jar}"/>
-    <javac destdir="classes" debug="on" source="1.7" target="1.7">
+    <javac destdir="classes" debug="on" source="1.5" target="1.5">
       <classpath refid="classpath"/>
       <src path="${test.src}"/>
       <src path="${examples.src}"/>
@@ -61,7 +61,7 @@
               value="com/sleepycat/collections/test/serial/TestSerial"/>
     <copy file="${test.src}/${testserialpath}.java.original"
           tofile="testserialdir/${testserialpath}.java"/>
-    <javac destdir="testserialdir" debug="on" source="1.7" target="1.7"
+    <javac destdir="testserialdir" debug="on" source="1.5" target="1.5"
            includeAntRuntime="true" srcdir="testserialdir">
       <include name="${testserialpath}.java"/>
       <classpath refid="classpath"/>
@@ -79,7 +79,7 @@
       "${test.src}/com/sleepycat/persist/test/PersistTestUtils.java"
           tofile=
       "testevolvedir/com/sleepycat/persist/test/PersistTestUtils.java"/>
-    <javac debug="on" source="1.7" target="1.7">
+    <javac debug="on" source="1.5" target="1.5">
       <src path="testevolvedir"/>
       <classpath refid="classpath"/>
     </javac>
@@ -105,7 +105,7 @@
 
     <!-- Performs initialization needed before StoredClassCatalogTest. -->
     <junit fork="yes" dir="." printsummary="on" haltonfailure="on"
-           showoutput="on" clonevm="true">
+           showoutput="on">
       <jvmarg value="-ea"/>
       <classpath path="testserialdir"/> <!-- Must be first -->
       <classpath refid="classpath"/>
@@ -120,7 +120,7 @@
 
     <!-- Performs initialization needed before persist EvolveTest. -->
     <junit fork="yes" dir="." printsummary="on" haltonfailure="on"
-           showoutput="on" clonevm="true">
+           showoutput="on">
       <jvmarg value="-ea"/>
       <classpath path="testevolvedir"/>
       <classpath refid="classpath"/>
@@ -134,7 +134,7 @@
 
     <!-- Performs testcase if set, or batch tests. -->
     <junit fork="yes" dir="." printsummary="on" haltonfailure="on"
-           showoutput="on" clonevm="true">
+           showoutput="on">
       <jvmarg value="-ea"/>
       <classpath refid="classpath"/>
       <sysproperty key="testdestdir" value="./tmp"/>
@@ -153,7 +153,7 @@
          classes are not enhanced.  -->
     <echo message="Run persist tests with -javaagent"/>
     <junit fork="yes" dir="." printsummary="on" haltonfailure="on"
-           showoutput="on" clonevm="true">
+           showoutput="on">
       <jvmarg value="-ea"/>
       <jvmarg value="-javaagent:${db.jar}=enhance:-v,com.sleepycat.persist"/>
       <classpath refid="classpath"/>
@@ -220,7 +220,7 @@
       <classpath refid="classpath"/>
     </java>
     <junit fork="yes" dir="." printsummary="on" haltonfailure="on"
-           showoutput="on" clonevm="true">
+           showoutput="on">
       <jvmarg value="-ea"/>
       <classpath refid="enhanced.classpath"/>
       <classpath refid="classpath"/>
@@ -243,7 +243,7 @@
   <target name="examples" depends="build">
     <echo message="=== HelloDatabaseWorld ==="/>
     <java dir="." fork="yes" classpathref="classpath" failonerror="true"
-         classname="collections.hello.HelloDatabaseWorld" clonevm="true"/>
+         classname="collections.hello.HelloDatabaseWorld"/>
     <echo message=""/>
     <antcall target="one_shipment_example">
       <param name="param_name" value="basic"/>
@@ -293,7 +293,7 @@
     <delete dir="tmp"/>
     <mkdir dir="tmp"/>
     <java dir="." fork="yes" classpathref="classpath" failonerror="true"
-     classname="collections.ship.${param_name}.Sample" clonevm="true"/>
+     classname="collections.ship.${param_name}.Sample"/>
   </target>
 
   <target name="one_persist_example">
@@ -301,7 +301,7 @@
     <delete dir="tmp"/>
     <mkdir dir="tmp"/>
     <java fork="yes" dir="." classname="persist.${param_name}"
-          failonerror="true" clonevm="true">
+          failonerror="true">
       <jvmarg value="-ea"/>
       <arg line="-h tmp"/>
       <classpath refid="classpath"/>
@@ -315,8 +315,7 @@
   -->
   <target name="DplDump">
     <echo message="=== DplDump ${home} ${store} ==="/>
-    <java fork="yes" dir="." classname="persist.DplDump" failonerror="true"
-      clonevm="true">
+    <java fork="yes" dir="." classname="persist.DplDump" failonerror="true">
       <jvmarg value="-ea"/>
       <arg line="-h ${home} -s ${store}"/>
       <classpath refid="classpath"/>
@@ -326,7 +325,7 @@
   <target name="access_example" depends="build">
     <echo message="=== AccessExample ==="/>
     <java fork="yes" dir="." classpathref="classpath" failonerror="true"
-          classname="collections.access.AccessExample" clonevm="true">
+          classname="collections.access.AccessExample">
     </java>
   </target>
 
@@ -343,13 +342,13 @@
     </copy>
     <java fork="yes" dir="tmp"
         classname="db.GettingStarted.ExampleDatabaseLoad"
-        failonerror="true" clonevm="true">
+        failonerror="true">
       <arg line="-h ."/>
       <classpath refid="classpath"/>
     </java>
     <java fork="yes" dir="tmp"
         classname="db.GettingStarted.ExampleDatabaseRead"
-        failonerror="true" clonevm="true">
+        failonerror="true">
       <arg line="-h ."/>
       <classpath refid="classpath"/>
     </java>
@@ -362,7 +361,7 @@
     <mkdir dir="tmp"/>
     <java fork="yes" dir="."
         classname="db.txn.TxnGuide"
-        failonerror="true" clonevm="true">
+        failonerror="true">
       <arg line="-h tmp"/>
       <classpath refid="classpath"/>
     </java>
@@ -380,13 +379,13 @@
     </copy>
     <java fork="yes" dir="tmp"
         classname="persist.gettingStarted.SimpleStorePut"
-        failonerror="true" clonevm="true">
+        failonerror="true">
       <arg line="-h ."/>
       <classpath refid="classpath"/>
     </java>
     <java fork="yes" dir="tmp"
         classname="persist.gettingStarted.SimpleStoreGet"
-        failonerror="true" clonevm="true">
+        failonerror="true">
       <arg line="-h ."/>
       <classpath refid="classpath"/>
     </java>
@@ -399,7 +398,7 @@
     <mkdir dir="tmp"/>
     <java fork="yes" dir="."
         classname="persist.txn.TxnGuideDPL"
-        failonerror="true" clonevm="true">
+        failonerror="true">
       <arg line="-h tmp"/>
       <classpath refid="classpath"/>
     </java>
@@ -407,7 +406,7 @@
 
   <target name="report">
     <java classname="com.cortexeb.tools.clover.reporters.html.HtmlReporter"
-          failonerror="true" fork="true" clonevm="true">
+          failonerror="true" fork="true">
        <arg line="--outputdir reports --showSrc --initstring ${clover.initstring} --title 'Berkeley DB Java BDB API'"/>
        <classpath refid="clover.classpath"/>
     </java>

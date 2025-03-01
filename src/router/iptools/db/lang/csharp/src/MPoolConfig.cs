@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2009, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2009, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  */
 using System;
@@ -15,7 +15,7 @@ namespace BerkeleyDB {
     /// </summary>
     public class MPoolConfig {
         /// <summary>
-        /// The size of the shared memory buffer pool (the cache).
+        /// The size of the shared memory buffer pool — that is, the cache.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -30,7 +30,7 @@ namespace BerkeleyDB {
         /// by 25% to account for buffer pool overhead; cache sizes larger than
         /// 500MB are used as specified. The maximum size of a single cache is
         /// 4GB on 32-bit systems and 10TB on 64-bit systems. (All sizes are in
-        /// powers-of-two, 256KB is 2^18 not 256,000.) For information
+        /// powers-of-two, that is, 256KB is 2^18 not 256,000.) For information
         /// on tuning the Berkeley DB cache size, see Selecting a cache size in
         /// the Programmer's Reference Guide.
         /// </para>
@@ -52,7 +52,7 @@ namespace BerkeleyDB {
         internal bool maxOpenFDIsSet;
         private int maxOpenFD;
         /// <summary>
-        /// The number of file descriptors the library opens concurrently
+        /// The number of file descriptors the library will open concurrently
         /// when flushing dirty pages from the cache.
         /// </summary>
         public int MaxOpenFiles {

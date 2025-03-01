@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2010, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2010, 2013 Oracle and/or its affiliates.  All rights reserved.
  */
 
 /*
@@ -26,35 +26,7 @@ int sqlite3_key(sqlite3 *db, const void *key, int nkey) {
 	return sqlite3CodecAttach(db, 0, key, nkey);
 }
 
-int sqlite3_key_v2(
-    sqlite3 *db, const char *zDbName, const void *key, int nkey) {
-	int backend;
-	const char *dbname;
-
-	// NULL is an alias of the "main" database.
-	if (zDbName == NULL)
-		dbname = "main";
-	else
-		dbname = zDbName;
-
-	for(backend = 0; backend < db->nDb; backend++) {
-		if (db->aDb[backend].zName == NULL)
-			continue;
-
-		if (sqlite3StrICmp(db->aDb[backend].zName, dbname) == 0)
-			break;
-	}
-	if (backend == db->nDb)
-		return SQLITE_NOTFOUND;
-	return sqlite3CodecAttach(db, backend, key, nkey);
-}
-
 int sqlite3_rekey(sqlite3 *db, const void *key, int nkey) {
-	return 0;
-}
-
-int sqlite3_rekey_v2(
-    sqlite3 *db, const char *zDbName, const void *key, int nkey) {
 	return 0;
 }
 

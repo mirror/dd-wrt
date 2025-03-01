@@ -1,7 +1,7 @@
 /*-
  * See the file LICENSE for redistribution information.
  *
- * Copyright (c) 2002, 2017 Oracle and/or its affiliates.  All rights reserved.
+ * Copyright (c) 2002, 2013 Oracle and/or its affiliates.  All rights reserved.
  *
  * $Id$
  */
@@ -58,6 +58,8 @@ public class Transaction {
     This operation can only be performed after this transaction has committed.
     @return
     The commit token generated at the commit time of this transaction.
+    <p>
+    @throws DatabaseException if a failure occurs
     */
     public byte[] getCommitToken() throws IllegalStateException {
 
@@ -98,6 +100,7 @@ public class Transaction {
     <p>
     After Transaction.abort has been called, regardless of its return, the
     {@link com.sleepycat.db.Transaction Transaction} handle may not be accessed again.
+    <p>
     <p>
 @throws DatabaseException if a failure occurs.
     */
@@ -144,6 +147,7 @@ regardless of the method's success or failure. If the
 method encounters an error, the transaction and all child transactions
 of the transaction will have been aborted when the call returns.
 <p>
+<p>
 @throws DatabaseException if a failure occurs.
     */
     public void commit()
@@ -186,6 +190,7 @@ accessed again (except to retrieve the commit token),
 regardless of the method's success or failure. If the
 method encounters an error, the transaction and all child transactions
 of the transaction will have been aborted when the call returns.
+<p>
 <p>
 @throws DatabaseException if a failure occurs.
     */
@@ -231,6 +236,7 @@ accessed again (except to retrieve the commit token),
 regardless of the method's success or failure. If the
 method encounters an error, the transaction and all child transactions
 of the transaction will have been aborted when the call returns.
+<p>
 <p>
 @throws DatabaseException if a failure occurs.
     */
@@ -279,6 +285,7 @@ regardless of the method's success or failure. If the
 method encounters an error, the transaction and all child transactions
 of the transaction will have been aborted when the call returns.
 <p>
+<p>
 @throws DatabaseException if a failure occurs.
     */
     public void commitWriteNoSync()
@@ -303,6 +310,7 @@ of the transaction will have been aborted when the call returns.
     The {@link com.sleepycat.db.Transaction Transaction} handle may not be accessed again after this
     method has been called, regardless of the method's success or failure.
     <p>
+    <p>
 @throws DatabaseException if a failure occurs.
     */
     public void discard()
@@ -322,6 +330,7 @@ of the transaction will have been aborted when the call returns.
     @return
     The transaction's unique ID.
     <p>
+    <p>
 @throws DatabaseException if a failure occurs.
     */
     public int getId()
@@ -335,7 +344,7 @@ of the transaction will have been aborted when the call returns.
     <p>
     @return
     The user visible name for the transaction.
-    @throws DatabaseException if a failure occurs.
+    <p>
     */
     public String getName()
         throws DatabaseException {
@@ -387,6 +396,7 @@ of the transaction will have been aborted when the call returns.
     at least DB_XIDDATASIZE (currently 128) bytes; only the first
     DB_XIDDATASIZE bytes are used.
     <p>
+    <p>
 @throws DatabaseException if a failure occurs.
     */
     public void prepare(final byte[] gid)
@@ -400,7 +410,7 @@ of the transaction will have been aborted when the call returns.
     <p>
     @param name
     The user visible name for the transaction.
-    @throws DatabaseException if a failure occurs.
+    <p>
     */
     public void setName(final String name)
         throws DatabaseException {
@@ -443,6 +453,7 @@ of the transaction will have been aborted when the call returns.
     <p>
     This method may be called at any time during the life of the application.
     <p>
+    <p>
 @throws DatabaseException if a failure occurs.
     */
     public void setTxnTimeout(final long timeOut)
@@ -469,6 +480,7 @@ of the transaction will have been aborted when the call returns.
     transaction.
     <p>
     This method may be called at any time during the life of the application.
+    <p>
     <p>
 @throws DatabaseException if a failure occurs.
     */

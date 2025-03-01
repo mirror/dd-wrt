@@ -14,17 +14,15 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
-          <th colspan="3" align="center">Building the Android JDBC
-        Driver</th>
+          <th colspan="3" align="center">Building the Android JDBC Driver</th>
         </tr>
         <tr>
           <td width="20%" align="left"><a accesskey="p" href="build_android_intro.html">Prev</a> </td>
-          <th width="60%" align="center">Chapter 4. Building Berkeley DB for
-        Android</th>
+          <th width="60%" align="center">Chapter 4. Building Berkeley DB for Android</th>
           <td width="20%" align="right"> <a accesskey="n" href="build_android_config.html">Next</a></td>
         </tr>
       </table>
@@ -34,40 +32,32 @@
       <div class="titlepage">
         <div>
           <div>
-            <h2 class="title" style="clear: both"><a id="build_android_jdbc"></a>Building the Android JDBC
-        Driver</h2>
+            <h2 class="title" style="clear: both"><a id="build_android_jdbc"></a>Building the Android JDBC Driver</h2>
           </div>
         </div>
       </div>
       <p>
-        The JDBC API is an alternative to the drop-in replacement.
-        It is possible to build Berkeley DB SQL for Android in such a
-        way that a JDBC API is exposed to Android application
-        developers. This is done using the Android NDK. 
-    </p>
-      <p>
-        This section describes how to build and use the BDB JDBC
-        driver for Android. Note that the BDB JDBC driver cannot
-        currently be built on a Windows platform. 
+        This section describes how to build and use the BDB JDBC driver
+        for Android. Note that the BDB JDBC driver cannot currently be
+        built on a Windows platform.
     </p>
       <div class="orderedlist">
         <ol type="1">
           <li>
-            <p> 
-                Download and install the Android SDK. The
-                installation instructions can be found here:
+            <p>
+                Download and install the Android SDK. The installation
+                instructions can be found here:
             </p>
             <p>
-                <a class="ulink" href="http://developer.android.com/sdk/installing/index.html" target="_top">http://developer.android.com/sdk/installing/index.html</a>
+                <a class="ulink" href="http://developer.android.com/sdk/installing.html" target="_top">http://developer.android.com/sdk/installing.html</a>
             </p>
           </li>
           <li>
             <p>
-                Download and install the Android NDK. It can be
-                found here:
+                Download and install the Android NDK. It can be found here:
             </p>
             <p>
-                <a class="ulink" href="http://developer.android.com/tools/sdk/ndk/index.html" target="_top">http://developer.android.com/tools/sdk/ndk/index.html</a>
+                <a class="ulink" href="http://developer.android.com/sdk/ndk/index.html" target="_top">http://developer.android.com/sdk/ndk/index.html</a>
             </p>
           </li>
           <li>
@@ -82,56 +72,56 @@
                         Berkeley DB package from here:
                     </p>
                   <p>
-                        <a class="ulink" href="http://www.oracle.com/technetwork/database/database-technologies/berkeleydb/downloads/index.html" target="_top">http://www.oracle.com/technetwork/database/database-technologies/berkeleydb/downloads/index.html</a>
+                        <a class="ulink" href="http://www.oracle.com/technetwork/database/berkeleydb/downloads/index.html" target="_top">http://www.oracle.com/technetwork/database/berkeleydb/downloads/index.html</a>
                     </p>
                   <p>
-                        Note that you must be using a 5.3.x or
-                        higher version of the product in order for
-                        these instructions to work. Once you have the
-                        package, unpack it: 
+                        Note that you must be using a 5.3.x or higher
+                        version of the product in order for these
+                        instructions to work.  Once you have the package,
+                        unpack it:
                     </p>
                   <pre class="programlisting">$ tar zxvf db-x.y.z.tar.gz
 $ cd db-x.y.z</pre>
-                  <p> 
-                        Where <code class="literal">x.y.z</code> the major,
-                        minor, and point release version of the
-                        Berkeley DB distribution which you are using.
+                  <p>
+                        Where <code class="literal">x.y.z</code> the major, minor,
+                        and point release version of the Berkeley DB
+                        distribution which you are using. 
                     </p>
                   <p>
-                        Also, note that in the following
-                        instructions, the directory denoted by
-                            <code class="literal">db-x.y.z</code>, above, is
-                        referred to as <code class="literal">&lt;db&gt;</code>.
+                        Also, note that in the following instructions, the
+                        directory denoted by <code class="literal">db-x.y.z</code>,
+                        above, is referred to as
+                        <code class="literal">&lt;db&gt;</code>.
                     </p>
                 </li>
                 <li>
-                  <p> 
-                        Build an x86/x64 JDBC package. This is
-                        required because the building process will
-                        generate target files which are required to
-                        build Android NDK. Also, the built JAR file
-                        can be imported by eclipse, which will then
-                        convert it to the Android Dalvik JAR format. 
-                    </p>
-                  <p> 
-                        To do this, edit
-                            <code class="literal">&lt;db&gt;/lang/sql/jdbc/SQLit/Database.java</code>
-                        and replace all instances of
-                            <code class="literal">System.loadLibrary("sqlite_jni")</code>
-                        with
-                            <code class="literal">System.loadLibrary("oracle-jdbc")</code>. 
+                  <p>
+                        Build an x86/x64 JDBC package. This is required
+                        because the building process will generate target
+                        files which are required to build Android NDK.
+                        Also, the built JAR file can be imported by
+                        eclipse, which will then convert it to the Android
+                        Dalvik JAR format.
                     </p>
                   <p>
-                        Once you have done this, configure and make
-                        the library. The following example shows the
-                        minimum configuration options that you need to
-                        use in order to configure the Berkeley DB JDBC
-                        driver. For your particular installation,
-                        other configuration options might be
-                        interesting to you. See <a class="xref" href="build_unix_conf.html" title="Configuring Berkeley DB">Configuring Berkeley DB</a> and
-                            <a class="xref" href="build_android_config.html" title="Android Configuration Options">Android Configuration
-        Options</a> for
-                        more information.
+                        To do this, edit
+                        <code class="literal">&lt;db&gt;/lang/sql/jdbc/SQLit/Database.java</code>
+                        and replace all instances of
+                        <code class="literal">System.loadLibrary("sqlite_jni")</code>
+                        with
+                        <code class="literal">System.loadLibrary("oracle-jdbc")</code>.
+                    </p>
+                  <p>
+                        Once you have done this, configure and make the
+                        library. The following example shows the minimum
+                        configuration options that you need to use in order
+                        to configure the Berkeley DB JDBC driver. For your
+                        particular installation, other configuration
+                        options might be interesting to you. See 
+                        <a class="xref" href="build_unix_conf.html" title="Configuring Berkeley DB">Configuring Berkeley DB</a>
+                        and 
+                        <a class="xref" href="build_android_config.html" title="Android Configuration Options">Android Configuration Options</a>
+                        for more information.
                     </p>
                   <pre class="programlisting">cd &lt;db&gt;/build_unix
 ../dist/configure --enable-jdbc &amp;&amp; make</pre>
@@ -140,136 +130,51 @@ $ cd db-x.y.z</pre>
             </div>
           </li>
           <li>
-            <p> 
-                Enable encryption if required. 
-            </p>
             <p>
-                By default, encryption is disabled. To enable it,
-                edit
-                    <code class="literal">&lt;db&gt;/build_android/jdbc/jni/Android.mk</code>
-                and change <code class="literal">BDB_ENABLE_ENCRYPTION</code>
-                from <code class="literal">false</code> to
-                    <code class="literal">true</code>. 
-            </p>
-            <p>
-                After enabling encryption, use <code class="literal">pragma
-                    key</code> to set the password. You must do
-                this before performing any database operations. For
-                example:
-            </p>
-            <pre class="programlisting"> # ./dbsql test.db
-dbsql&gt; pragma key="xyzzy";
-dbsql&gt; create table t1(x);
-dbsql&gt; .quit
-
-# ./dbsql test.db
-dbsql&gt; pragma key="xyzzy";
-dbsql&gt; .tables
-t1 </pre>
-          </li>
-          <li>
-            <p>
-                Enable user authentication if required. 
-            </p>
-            <p>
-                By default, user authentication is disabled. To enable it, edit
-                <code class="literal">&lt;db&gt;/build_android/jdbc/jni/Android.mk</code> and
-                change <code class="literal">BDB_ENABLE_USERAUTH</code> from false to true.
-                BDB encryption must also be enabled.
-            </p>
-            <p>
-                For more information, see the "User Authentication" section in
-                <em class="citetitle">Berkeley DB Getting Started with the SQL APIs</em>.
-            </p>
-          </li>
-          <li>
-            <p>
-                Enable key-store based user authentication if required.
-            </p>
-            <p>
-                By default, key-store based user authentication is disabled. To enable it,
-                edit <code class="literal">&lt;db&gt;/build_android/jdbc/jni/Android.mk</code> and
-                change <code class="literal">BDB_ENABLE_USERAUTH_KEYSTORE</code> from false to true. 
-                BDB encryption must also be enabled. 
-            </p>
-            <p>
-                For more information, see "Key-store Based User Authentication" section in
-                the <em class="citetitle">Berkeley DB Getting Started with the SQL APIs</em>.
-            </p>
-          </li>
-          <li>
-            <p>
-                Build the Android NDK: 
+                Build the Android NDK:
             </p>
             <pre class="programlisting">$ cd &lt;db&gt;/build_android/jdbc/jni
-$ &lt;ndk-install-directory&gt;/ndk-build APP_ABI:=&lt;ABI&gt;</pre>
+$ &lt;ndk-install-directory&gt;/ndk-build </pre>
             <p>
                 This results in the following required files:
             </p>
             <table class="simplelist" border="0" summary="Simple list">
               <tr>
-                <td>&lt;db&gt;/build_android/jdbc/libs/&lt;ABI&gt;/liboracle-jdbc.so</td>
+                <td>&lt;db&gt;/build_android/jdbc/libs/armeabi/liboracle-jdbc.so</td>
               </tr>
               <tr>
-                <td>&lt;db&gt;/build_android/jdbc/libs/&lt;ABI&gt;/dbsql</td>
+                <td>&lt;db&gt;/build_android/jdbc/libs/armeabi/dbsql</td>
               </tr>
               <tr>
                 <td>&lt;db&gt;/build_unix/jdbc/sqlite.jar</td>
               </tr>
             </table>
-            <p>
-                If you are using a 6.1.x or lower version of the product,
-                the supported ABI is armeabi. If you are using a 6.2.x or
-                higher version of the product, the supported ABIs are
-                armeabi-v7a and arm64-v8a.
-            </p>
-            <p>
-                If you are targeting a 64-bit arm platform, 
-                you need to change the 
-		<code class="literal">build_android/db_config.h</code>
-                file to undefine 
-		<code class="literal">HAVE_MUTEX_ARM_GCC_ASSEMBLY</code>
-                and define 
-		<code class="literal">HAVE_MUTEX_ARM64_GCC_ASSEMBLY</code>
-                like the following:
-                </p>
-            <pre class="programlisting">
-/* Define to 1 to use the GCC compiler and ARM64 assembly 
-   language mutexes. */
-#define HAVE_MUTEX_ARM64_GCC_ASSEMBLY 1
-
-/* Define to 1 to use the GCC compiler and ARM assembly 
-   language mutexes. */
-/* #undef HAVE_MUTEX_ARM_GCC_ASSEMBLY */
-                </pre>
-            <p>
-            </p>
           </li>
         </ol>
       </div>
-      <p> 
-        Having built the JDBC driver, you can now use it with your
-        project. You can do this using Eclipse and the ADT plugin,
-        which you can get from here: 
+      <p>
+        Having built the JDBC driver, you can now use it with your project.
+        You can do this using Eclipse and the ADT plugin, which you can get
+        from here:
     </p>
       <p>
-        <a class="ulink" href="http://developer.android.com/tools/sdk/eclipse-adt.html" target="_top">http://developer.android.com/tools/sdk/eclipse-adt.html</a>
+        <a class="ulink" href="http://developer.android.com/sdk/eclipse-adt.html" target="_top">http://developer.android.com/sdk/eclipse-adt.html</a>
     </p>
-      <p> 
+      <p>
         To make sure everything is working:
     </p>
       <div class="orderedlist">
         <ol type="1">
           <li>
-            <p> 
-                Start Eclipse and create an Android project. Use: 
+            <p>
+                Start Eclipse and create an Android project. Use:
             </p>
             <div class="itemizedlist">
               <ul type="disc">
                 <li>
                   <p>
-                        <code class="literal">test_jdbc</code> as the Android
-                        project name. 
+                        <code class="literal">test_jdbc</code> as the Android project
+                        name.
                     </p>
                 </li>
                 <li>
@@ -278,18 +183,18 @@ $ &lt;ndk-install-directory&gt;/ndk-build APP_ABI:=&lt;ABI&gt;</pre>
                     </p>
                 </li>
                 <li>
-                  <p> 
+                  <p>
                         For the package name, use
-                            <code class="literal">example.jdbc</code>. 
+                        <code class="literal">example.jdbc</code>.  
                     </p>
                 </li>
               </ul>
             </div>
           </li>
           <li>
-            <p> 
-                This results in an empty code file. Copy and paste
-                the following example code into that file: 
+            <p>
+                This results in an empty code file. Copy and paste the
+                following example code into that file:
             </p>
             <pre class="programlisting">package example.testjdbc;
 
@@ -380,8 +285,8 @@ public class Test_jdbcActivity extends Activity {
 } </pre>
           </li>
           <li>
-            <p> 
-                Copy the following files into place: 
+            <p>
+                Copy the following files into place:
             </p>
             <pre class="programlisting">$ cd &lt;workspace&gt;/test_jdbc
 $ mkdir -p libs/armeabi
@@ -390,16 +295,18 @@ libs/armeabi
 $ cp -r &lt;db&gt;/build_unix/jdbc/sqlite.jar libs</pre>
           </li>
           <li>
-            <p> 
-                Back in Eclipse, right click the project name, and
-                select the <code class="literal">refresh</code> option to reload
-                the project from the directory. The two new files that
-                were copied into place in the previous step are now
-                included in the project view.
+            <p>
+                Back in Eclipse, right click the project name, and select
+                the <code class="literal">refresh</code> option to reload the project
+                from the directory. The two new files that were copied into
+                place in the previous step are now included in the project
+                view.
             </p>
           </li>
           <li>
-            <p> Convert the JAR file to the Android Dalvik format: </p>
+            <p>
+                Convert the JAR file to the Android Dalvik format:
+            </p>
             <div class="orderedlist">
               <ol type="a">
                 <li>
@@ -409,8 +316,7 @@ $ cp -r &lt;db&gt;/build_unix/jdbc/sqlite.jar libs</pre>
                 </li>
                 <li>
                   <p>
-                        Choose <code class="literal">Build Path -&gt; Configure
-                            Build Path</code>
+                        Choose <code class="literal">Build Path -&gt; Configure Build Path</code>
                     </p>
                 </li>
                 <li>
@@ -419,42 +325,39 @@ $ cp -r &lt;db&gt;/build_unix/jdbc/sqlite.jar libs</pre>
                     </p>
                 </li>
                 <li>
-                  <p> 
-                        Click <code class="literal">Add JARS</code>. 
+                  <p>
+                        Click <code class="literal">Add JARS</code>.
                     </p>
                 </li>
               </ol>
             </div>
           </li>
           <li>
-            <p> 
-                Run the project: 
+            <p>
+                Run the project:
             </p>
             <div class="orderedlist">
               <ol type="a">
                 <li>
                   <p>
-                        Choose <code class="literal">Property -&gt;
-                            Android</code> and select any one of
-                        the usable build targets.
+                        Choose <code class="literal">Property -&gt; Android</code>
+                        and select any one of the usable build targets.
                     </p>
                 </li>
                 <li>
-                  <p> 
-                        Right click the project. Choose
-                            <code class="literal">Run As -&gt; Android</code>
+                  <p>
+                        Right click the project. Choose <code class="literal">Run As -&gt; Android</code>
                     </p>
                 </li>
               </ol>
             </div>
           </li>
           <li>
-            <p> 
-                Verify your installation. After a short pause
-                (depending on the speed of your system), the
-                application logo is displayed. Use the Android adb
-                command line application to make sure the application
-                is running as expected: 
+            <p>
+                Verify your installation.  After a short pause (depending
+                on the speed of your system), the application logo is
+                displayed. Use the Android adb command line application to
+                make sure the application is running as expected:
             </p>
             <pre class="programlisting">$ cd &lt;android-sdk&gt;/platform-tools
 $ ./adb logcat
@@ -465,9 +368,9 @@ I/System.out(  539): French_Roast   8.99
 I/System.out(  539): Espresso   9.99
 I/System.out(  539): Colombian_Decaf   8.99
 I/System.out(  539): French_Roast_Decaf   9.99</pre>
-            <p> 
+            <p>
                 You can also check if the database
-                    (<code class="literal">example.db</code>) exists in the
+                (<code class="literal">example.db</code>) exists in the
                 emulator:
             </p>
             <pre class="programlisting">$ ./adb shell ls /data/data/example.testjdbc
@@ -475,8 +378,7 @@ example.db
 example.db-journal
 lib </pre>
             <p>
-                Finally, check the database using the BDB SQL
-                shell:
+                Finally, check the database using the BDB SQL shell:
             </p>
             <pre class="programlisting">
 $ ./adb push &lt;db&gt;/build_android/jdbc/libs/armeabi/dbsql \
@@ -512,13 +414,11 @@ dbsql&gt; .quit </pre>
           <td width="40%" align="right"> <a accesskey="n" href="build_android_config.html">Next</a></td>
         </tr>
         <tr>
-          <td width="40%" align="left" valign="top">Chapter 4. Building Berkeley DB for
-        Android </td>
+          <td width="40%" align="left" valign="top">Chapter 4. Building Berkeley DB for Android </td>
           <td width="20%" align="center">
             <a accesskey="h" href="index.html">Home</a>
           </td>
-          <td width="40%" align="right" valign="top"> Android Configuration
-        Options</td>
+          <td width="40%" align="right" valign="top"> Android Configuration Options</td>
         </tr>
       </table>
     </div>

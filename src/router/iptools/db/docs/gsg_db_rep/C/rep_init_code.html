@@ -14,7 +14,7 @@
   <body>
     <div xmlns="" class="navheader">
       <div class="libver">
-        <p>Library Version 12.1.6.2</p>
+        <p>Library Version 11.2.5.3</p>
       </div>
       <table width="100%" summary="Navigation header">
         <tr>
@@ -130,7 +130,7 @@
      * host/port network address.
      */
      if ((ret = dbenv-&gt;repmgr_site(dbenv, listen_host, listen_port,
-                                   &amp;dbsite, 0)) != 0) {
+                                   &amp;dbsite;, 0)) != 0) {
         fprintf(stderr, "Could not set local address (%d).\n", ret);
         goto err;
      }
