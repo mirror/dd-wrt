@@ -306,6 +306,9 @@ void start_init_stop(void)
 #ifdef HAVE_IPVS
 	stop_service(ipvs);
 #endif
+#ifdef HAVE_IPTOOLS
+	stop_service(arpd);
+#endif
 #ifdef HAVE_VLANTAGGING
 	stop_service(bridging);
 #endif
@@ -466,6 +469,9 @@ void start_init_start(void)
 #ifdef HAVE_VLANTAGGING
 	start_service(vlantagging);
 	start_service(bridgesif);
+#endif
+#ifdef HAVE_IPTOOLS
+	start_service(arpd);
 #endif
 #ifdef HAVE_USTEER
 	start_service(usteer);

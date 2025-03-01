@@ -4950,7 +4950,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				"<fieldset><legend><script type=\"text/javascript\">Capture(wl_basic.mesh_settings)</script></legend>");
 
 			mesh_radio(wp, prefix, "mesh_fwding", 1);
-			mesh_radio(wp, prefix, "mesh_nolearn", 0);
+			mesh_radio(wp, prefix, "mesh_nolearn", 1);
 			mesh_radio(wp, prefix, "mesh_gate_announcements", 0);
 			{
 				char mparam[64];
