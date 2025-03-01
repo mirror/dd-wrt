@@ -40,7 +40,11 @@ void start_arpd(void)
 	char vifs[512];
 	char *ifnames[128] = { "arpd", "-b", NULL, "-a", "3", "-k" };
 	int cnt = 0;
-	getIfLists(vifs, sizeof(vifs));
+#ifdef HAVE_MVEBU
+	getIfListNoPorts(vifs, sizeof(vifs), "ixp vlan wan lan");
+#else
+	getIfListNoPorts(vifs, sizeof(vifs), "eth ixp vlan wan lan 10g-sfp 10g-copper");
+#endif
 	char var[32], *wordlist;
 	const char *next;
 	char *dbname;
