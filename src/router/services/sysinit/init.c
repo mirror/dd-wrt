@@ -275,8 +275,7 @@ void start_init_restart(void)
 		char var[80];
 		char *vifs = nvram_nget("wl%d_vifs", c);
 
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			eval("ifconfig", var, "down");
 		}
 	}

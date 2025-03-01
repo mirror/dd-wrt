@@ -49,8 +49,7 @@ void config_macs(char *wlifname) // reconfigure macs which
 	char var[80];
 
 	if (!strcmp(mbss, "0") || nvram_nmatch("apsta", "wl%d_mode", unit) || nvram_nmatch("ap", "wl%d_mode", unit)) {
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			eval("ifconfig", var, "down");
 			eval("wl", "-i", var, "down");
 			eval("wl", "-i", var, "cur_etheraddr", nvram_nget("%s_hwaddr", var));

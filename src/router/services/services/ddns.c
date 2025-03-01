@@ -250,8 +250,7 @@ static int init_ddns(FILE *fp)
 			char *hn = nvram_safe_get(_hostname);
 			fprintf(fp, "hostname = {");
 			int idx = 0;
-			foreach(var, hn, next)
-			{
+			foreach(var, hn, next) {
 				if (idx)
 					fprintf(fp, ", ");
 				fprintf(fp, "\"%s\"", var);
@@ -289,8 +288,7 @@ static int init_ddns(FILE *fp)
 			char *hn = nvram_safe_get(_hostname);
 			fprintf(fp, "hostname = {");
 			int idx = 0;
-			foreach(var, hn, next)
-			{
+			foreach(var, hn, next) {
 				if (idx)
 					fprintf(fp, ", ");
 				fprintf(fp, "\"%s\"", var);

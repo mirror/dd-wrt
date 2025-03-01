@@ -224,8 +224,7 @@ void start_setup_vlans(void)
 	i = 0;
 	char portvlan[32];
 	const char *next;
-	foreach(portvlan, c, next)
-	{
+	foreach(portvlan, c, next) {
 		vlanlist[i++] = atoi(portvlan);
 	}
 	int wancpuportidx = -1;
@@ -246,16 +245,14 @@ void start_setup_vlans(void)
 		const char *next;
 		char vlan[32];
 		int mask = 0;
-		foreach(vlan, vlans, next)
-		{
+		foreach(vlan, vlans, next) {
 			int tmp = atoi(vlan);
 			if (tmp == 16000) {
 				tagged[i] = 1;
 				vlan_enable = 1;
 			}
 		}
-		foreach(vlan, vlans, next)
-		{
+		foreach(vlan, vlans, next) {
 			int tmp = atoi(vlan);
 			if (tmp >= 16000) {
 				switch (tmp) {
@@ -544,8 +541,7 @@ void start_setup_vlans(void)
 		vlanlist[i] = i;
 	i = 0;
 	char *portvlan[32];
-	foreach(portvlan, c, next)
-	{
+	foreach(portvlan, c, next) {
 		vlanlist[i++] = atoi(portvlan);
 	}
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -581,15 +577,13 @@ void start_setup_vlans(void)
 			int lastvlan = 0;
 			int portmask = 3;
 			int mask = 0;
-			foreach(vlan, vlans, next)
-			{
+			foreach(vlan, vlans, next) {
 				tmp = atoi(vlan);
 				if (tmp == 16000)
 					tagged[i] = 1;
 			}
 
-			foreach(vlan, vlans, next)
-			{
+			foreach(vlan, vlans, next) {
 				tmp = atoi(vlan);
 				if (tmp < 16000) {
 					lastvlan = tmp;
@@ -680,8 +674,7 @@ void start_setup_vlans(void)
 		strcpy(port, portsettings[i]);
 		bzero(portsettings[i], 64);
 		char strvid[32];
-		foreach(vlan, port, next)
-		{
+		foreach(vlan, port, next) {
 			int vlan_number = vlan[0] - '0';
 			char strvid[32];
 			sprintf(strvid, "%d*", vlan_number);
@@ -906,8 +899,7 @@ int flush_interfaces(void)
 
 	c = nvram_safe_get("port5vlans");
 	if (c) {
-		foreach(buff, c, next)
-		{
+		foreach(buff, c, next) {
 			if (atoi(buff) > 15)
 				continue;
 			snprintf(buff2, sizeof(buff2), " vlan%s", buff);
@@ -916,8 +908,7 @@ int flush_interfaces(void)
 	}
 	c = nvram_safe_get("port6vlans");
 	if (c) {
-		foreach(buff, c, next)
-		{
+		foreach(buff, c, next) {
 			if (atoi(buff) > 15)
 				continue;
 			snprintf(buff2, sizeof(buff2), " vlan%s", buff);
@@ -925,8 +916,7 @@ int flush_interfaces(void)
 		}
 	}
 
-	foreach(buff, all_ifnames, next)
-	{
+	foreach(buff, all_ifnames, next) {
 		if (strcmp(buff, "br0") == 0)
 			continue;
 		eval("ifconfig", buff, "0.0.0.0", "down");

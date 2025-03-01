@@ -3234,8 +3234,7 @@ void start_sysinit(void)
 	const char *next;
 	int port = 0;
 	int wanport = 0;
-	foreach(var, vlan2, next)
-	{
+	foreach(var, vlan2, next) {
 		if (strlen(var) == 1) {
 			nvram_set("sw_wan", var);
 			wanport = atoi(var);
@@ -3247,8 +3246,7 @@ void start_sysinit(void)
 	int swap = 0;
 	int first = -1;
 	int last = -1;
-	foreach(var, vlan1, next)
-	{
+	foreach(var, vlan1, next) {
 		if (strlen(var) == 1) {
 			if (wanport > atoi(var))
 				swap++;

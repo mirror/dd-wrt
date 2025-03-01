@@ -195,8 +195,7 @@ void start_dhcp6c(void)
 			} else {
 				strlcpy(ipv6_iflist, nvram_safe_get("dnsipv6_interfaces"), sizeof(ipv6_iflist));
 			}
-			foreach(ifname, ipv6_iflist, next)
-			{
+			foreach(ifname, ipv6_iflist, next) {
 				fprintf(fpc,
 					" prefix-interface %s {\n"
 					"  sla-id %d;\n"

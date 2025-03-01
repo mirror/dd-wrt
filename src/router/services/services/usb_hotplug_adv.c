@@ -134,8 +134,7 @@ static bool usb_startservices(void)
 	const char *next;
 	char *services = nvram_safe_get("custom_configs");
 	char service[32];
-	foreach(service, services, next)
-	{
+	foreach(service, services, next) {
 		eval("service", service, "stop");
 		eval("service", service, "start");
 	}

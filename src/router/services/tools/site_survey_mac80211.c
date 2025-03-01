@@ -116,8 +116,7 @@ static void fillENC(const char *text)
 	char var[64];
 	const char *next;
 	buf = site_survey_lists[sscount].ENCINFO;
-	foreach(var, buf, next)
-	{
+	foreach(var, buf, next) {
 		if (!strcmp(var, text))
 			return;
 	}

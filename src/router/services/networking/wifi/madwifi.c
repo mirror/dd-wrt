@@ -118,8 +118,7 @@ static void deconfigure_single(int count)
 		br_del_interface("br0", dev);
 		eval("ifconfig", dev, "down");
 	}
-	foreach(var, vifs, next)
-	{
+	foreach(var, vifs, next) {
 		if (ifexists(var)) {
 			eval("ifconfig", var, "down");
 		}
@@ -129,8 +128,7 @@ static void deconfigure_single(int count)
 	if (ifexists(dev))
 		eval("wlanconfig", dev, "destroy");
 
-	foreach(var, vifs, next)
-	{
+	foreach(var, vifs, next) {
 		if (ifexists(var)) {
 			eval("wlanconfig", var, "destroy");
 		}
@@ -267,8 +265,7 @@ void get_pairwise(const char *prefix, char *pwstring, char *grpstring, int isadh
 	if (grpstring) {
 		const char *next;
 		char var[32];
-		foreach(var, temp_grpstring, next)
-		{
+		foreach(var, temp_grpstring, next) {
 			if (!strhas(grpstring, var)) {
 				strspcattach(grpstring, var);
 			}
@@ -1072,8 +1069,7 @@ static void checkhostapd(char *ifname, int force)
 					}
 				}
 				char *vifs = nvram_nget("%s_vifs", ifname);
-				foreach(var, vifs, next)
-				{
+				foreach(var, vifs, next) {
 					char bridged[32];
 					sprintf(bridged, "%s_bridged", var);
 					if (nvram_matchi(bridged, 0)) {
@@ -1105,8 +1101,7 @@ static void s_checkhostapd(int force)
 				sprintf(wifivifs, "%s_vifs", athname);
 				vifs = nvram_safe_get(wifivifs);
 				if (vifs != NULL && *vifs) {
-					foreach(var, vifs, next)
-					{
+					foreach(var, vifs, next) {
 						checkhostapd(var, force);
 					}
 				}
@@ -1350,8 +1345,7 @@ void start_ses_led_control(void)
 		char *vifs = nvram_nget("wlan%d_vifs", i);
 
 		if (vifs != NULL)
-			foreach(var, vifs, next)
-			{
+			foreach(var, vifs, next) {
 				sprintf(akm, "%s_akm", var);
 				if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "owe") ||
 				    nvhas(akm, "psk2-sha256") || nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") ||
@@ -1813,8 +1807,7 @@ static void set_scanlist(char *dev, char *wif)
 
 	eval("iwpriv", dev, "setscanlist", "-ALL");
 	if (*sl && strcmp(sl, "default")) {
-		foreach(var, sl, next)
-		{
+		foreach(var, sl, next) {
 			sprintf(list, "+%s", var);
 			eval("iwpriv", dev, "setscanlist", list);
 		}
@@ -2032,8 +2025,7 @@ static void setMacFilter(char *iface)
 
 		sprintf(nvlist, "%s_maclist", iface);
 
-		foreach(var, nvram_safe_get(nvlist), next)
-		{
+		foreach(var, nvram_safe_get(nvlist), next) {
 			eval("iwpriv", iface, "addmac", var);
 		}
 	} else if (nvram_match(nvvar, "allow")) {
@@ -2043,8 +2035,7 @@ static void setMacFilter(char *iface)
 
 		sprintf(nvlist, "%s_maclist", iface);
 
-		foreach(var, nvram_safe_get(nvlist), next)
-		{
+		foreach(var, nvram_safe_get(nvlist), next) {
 			eval("iwpriv", iface, "addmac", var);
 		}
 	}
@@ -2133,8 +2124,7 @@ static void configure_single(int count, char **configs, int *configidx)
 
 	char *vifs = nvram_safe_get(wifivifs);
 	int countvaps = 1;
-	foreach(var, vifs, next)
-	{
+	foreach(var, vifs, next) {
 		countvaps++;
 	}
 	if (countvaps < 4)
@@ -2152,8 +2142,7 @@ static void configure_single(int count, char **configs, int *configidx)
 	}
 
 	if (vifs != NULL)
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			sprintf(mode, "%s_mode", var);
 			char *vapm = nvram_default_get(mode, "ap");
 			// create device
@@ -2204,8 +2193,7 @@ static void configure_single(int count, char **configs, int *configidx)
 	char copyvap[64];
 
 	if (vifs != NULL)
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			// fprintf(stderr,"vifs %s, %s\n",vifs, var);
 			if (!useif) {
 				strcpy(copyvap, var);
@@ -2415,8 +2403,7 @@ static void configure_single(int count, char **configs, int *configidx)
 
 	vifs = nvram_safe_get(wifivifs);
 	if (vifs != NULL)
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			sprintf(net, "%s_net_mode", var);
 			if (nvram_match(net, "disabled"))
 				continue;
@@ -2665,8 +2652,7 @@ static void configure_single(int count, char **configs, int *configidx)
 	setMacFilter(dev);
 	//      setupKey(dev);
 	if (vifs != NULL && *vifs) {
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			setMacFilter(var);
 			//                      setupKey(var);
 		}
@@ -2733,8 +2719,7 @@ static void configure_single(int count, char **configs, int *configidx)
 	// vif netconfig
 	vifs = nvram_safe_get(wifivifs);
 	if (vifs != NULL && *vifs) {
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			sprintf(mode, "%s_mode", var);
 			char *m2 = nvram_default_get(mode, "ap");
 
@@ -2776,8 +2761,7 @@ static void configure_single(int count, char **configs, int *configidx)
 
 	vifs = nvram_safe_get(wifivifs);
 	if (vifs != NULL)
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			sprintf(mode, "%s_mode", var);
 			char *vapm = nvram_default_get(mode, "ap");
 			if (strcmp(vapm, "sta") && strcmp(vapm, "wdssta") && strcmp(vapm, "wdssta_mtik") && strcmp(vapm, "wet"))
@@ -2854,8 +2838,7 @@ void start_vifs(void)
 		sprintf(wifivifs, "wlan%d_vifs", count);
 		vifs = nvram_safe_get(wifivifs);
 		if (vifs != NULL && *vifs) {
-			foreach(var, vifs, next)
-			{
+			foreach(var, vifs, next) {
 				setMacFilter(var);
 
 				sprintf(mode, "%s_mode", var);
@@ -2898,8 +2881,7 @@ void stop_vifs(void)
 		sprintf(wifivifs, "wlan%d_vifs", count);
 		vifs = nvram_safe_get(wifivifs);
 		if (vifs != NULL && *vifs) {
-			foreach(var, vifs, next)
-			{
+			foreach(var, vifs, next) {
 				eval("ifconfig", var, "down");
 			}
 		}

@@ -460,8 +460,7 @@ static int use_nss_11_4(int setcur)
 			return 1;
 		vifs = nvram_safe_get(wifivifs);
 		if (vifs != NULL && *vifs) {
-			foreach(var, vifs, next)
-			{
+			foreach(var, vifs, next) {
 				if (nvram_nmatch("mesh", "%s_mode", var) && !nvram_nmatch("disabled", "%s_net_mode", var))
 					return 1;
 			}
@@ -489,13 +488,13 @@ int nss_disabled(int setcur)
 		char base[32];
 		sprintf(base, "wlan%d", count);
 		sprintf(wifivifs, "wlan%d_vifs", count);
-		if ((nvram_nmatch("wdssta", "wlan%d_mode", count) || nvram_nmatch("wdssta_mtik", "wlan%d_mode", count) || nvram_nmatch("wdsap", "wlan%d_mode", count) || nvram_nmatch("apup", "wlan%d_mode", count)) &&
+		if ((nvram_nmatch("wdssta", "wlan%d_mode", count) || nvram_nmatch("wdssta_mtik", "wlan%d_mode", count) ||
+		     nvram_nmatch("wdsap", "wlan%d_mode", count) || nvram_nmatch("apup", "wlan%d_mode", count)) &&
 		    !nvram_nmatch("disabled", "wlan%d_net_mode", count))
 			return 1;
 		vifs = nvram_safe_get(wifivifs);
 		if (vifs != NULL && *vifs) {
-			foreach(var, vifs, next)
-			{
+			foreach(var, vifs, next) {
 				if ((nvram_nmatch("wdsap", "%s_mode", var) || nvram_nmatch("apup", "%s_mode", var)) &&
 				    !nvram_nmatch("disabled", "%s_net_mode", var))
 					return 1;
@@ -1616,7 +1615,6 @@ void start_sysinit(void)
 		nvram_set("wan_default", "wan");
 		nvram_set("wan_iface", "wan");
 	}
-
 
 	detect_usbdrivers();
 

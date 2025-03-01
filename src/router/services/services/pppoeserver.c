@@ -269,8 +269,7 @@ void start_pppoeserver(void)
 
 			fp = fopen("/tmp/pppoeserver/chap-secrets", "wb");
 
-			foreach(word, wordlist, next)
-			{
+			foreach(word, wordlist, next) {
 				GETENTRYBYIDX(user, word, 0);
 				GETENTRYBYIDX(pass, word, 1);
 				GETENTRYBYIDX(ip, word, 2);

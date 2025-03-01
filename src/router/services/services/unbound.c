@@ -102,8 +102,7 @@ static void unbound_config(void)
 		getIfLists(vifs, sizeof(vifs));
 		char var[256], *wordlist;
 		const char *next;
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				char *ipaddr = nvram_nget("%s_ipaddr", var);
 				char *netmask = nvram_nget("%s_netmask", var);

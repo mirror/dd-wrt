@@ -518,8 +518,7 @@ static int enable_dhcprelay(char *ifname)
 	 * WET interface is meaningful only in bridged environment 
 	 */
 	if (strncmp(ifname, "br", 2) == 0) {
-		foreach(name, nvram_safe_get("lan_ifnames"), next)
-		{
+		foreach(name, nvram_safe_get("lan_ifnames"), next) {
 			char mode[] = "wlXXXXXXXXXX_mode";
 			int unit;
 			/*
@@ -2090,8 +2089,7 @@ void start_lan(void)
 		eval("killall", "-9", "ead");
 #endif
 
-		foreach(name, lan_ifnames, next)
-		{
+		foreach(name, lan_ifnames, next) {
 			int ex = ifexists(name);
 			if (!ex)
 				continue;
@@ -2777,8 +2775,7 @@ void start_lan(void)
 	for (i = 0; i < ifs; i++) {
 		vifs = nvram_nget("wl%d_vifs", i);
 		if (vifs != NULL) {
-			foreach(var, vifs, nxt)
-			{
+			foreach(var, vifs, nxt) {
 				eval("wl", "-i", var, "bss", "up");
 			}
 		}
@@ -2811,8 +2808,7 @@ void stop_lan(void)
 	for (c = 0; c < cnt; c++) {
 		sprintf(vifs_name, "wl%d_vifs", c);
 		char *vifs = nvram_safe_get(vifs_name);
-		foreach(name, vifs, next)
-		{
+		foreach(name, vifs, next) {
 			br_del_interface(lan_ifname, vifs);
 			ifconfig(vifs, 0, NULL, NULL);
 		}
@@ -2824,8 +2820,7 @@ void stop_lan(void)
 	 */
 	if (strncmp(lan_ifname, "br", 2) == 0) {
 		char *lanifnames = nvram_safe_get("lan_ifnames");
-		foreach(name, lanifnames, next)
-		{
+		foreach(name, lanifnames, next) {
 			if (nvram_match("wan_ifname", name))
 				continue;
 			if (!ifexists(name))
@@ -2857,7 +2852,9 @@ int wan_valid(char *ifname)
 	char name[80];
 	const char *next;
 
-	foreach(name, nvram_safe_get("wan_ifnames"), next) if (ifname && !strcmp(ifname, name)) return 1;
+	foreach(name, nvram_safe_get("wan_ifnames"), next)
+		if (ifname && !strcmp(ifname, name))
+			return 1;
 
 	if (getSTA() && !strcmp(getSTA(), ifname))
 		return 1;
@@ -4764,8 +4761,7 @@ static void apply_rules(char *method, char *pbr)
 {
 	char word[512];
 	const char *tmp;
-	foreach(word, pbr, tmp)
-	{
+	foreach(word, pbr, tmp) {
 		char cmd[256] = { 0 };
 		char add[256];
 		char del[256];
@@ -4876,8 +4872,7 @@ void start_set_routes(void)
 	}
 #ifdef HAVE_MICRO
 	char *sr = nvram_safe_get("static_route");
-	foreach(word, sr, tmp)
-	{
+	foreach(word, sr, tmp) {
 		GETENTRYBYIDX_DEL(ipaddr, word, 0, ":");
 		GETENTRYBYIDX_DEL(netmask, word, 1, ":");
 		GETENTRYBYIDX_DEL(gateway, word, 2, ":");
@@ -4897,8 +4892,7 @@ void start_set_routes(void)
 	}
 #else
 	char *sr = nvram_safe_get("static_route");
-	foreach(word, sr, tmp)
-	{
+	foreach(word, sr, tmp) {
 		GETENTRYBYIDX_DEL(ipaddr, word, 0, ":");
 		GETENTRYBYIDX_DEL(netmask, word, 1, ":");
 		GETENTRYBYIDX_DEL(gateway, word, 2, ":");

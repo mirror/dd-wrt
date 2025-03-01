@@ -210,8 +210,7 @@ void start_raid(void)
 	char *raid = nvram_nget("raid%d", i);
 	const char *next;
 	char drive[64];
-	foreach(drive, raid, next)
-	{
+	foreach(drive, raid, next) {
 		eval("hdparm", "-S", "242", drive);
 		eval("blockdev", "--setra", nvram_safe_get("drive_ra"), drive);
 	}
@@ -225,8 +224,7 @@ void start_raid(void)
 		char *poolname = nvram_nget("raidname%d", i);
 		if (strcmp(done, "1")) {
 			int drives = 0;
-			foreach(drive, raid, next)
-			{
+			foreach(drive, raid, next) {
 				drives++;
 				sysprintf("umount %s", drive);
 			}
@@ -295,8 +293,7 @@ void start_raid(void)
 					sysprintf("zpool create -f -m \"/tmp/mnt/%s\" \"%s\" %s", poolname, poolname, raid);
 			}
 			/* reread partition table */
-			foreach(drive, raid, next)
-			{
+			foreach(drive, raid, next) {
 				int fd = open(drive, O_RDONLY | O_NONBLOCK);
 				ioctl(fd, BLKRRPART, NULL);
 				close(fd);
@@ -337,8 +334,7 @@ void start_raid(void)
 		}
 		if (!strcmp(type, "md")) {
 			// disable NCQ
-			foreach(drive, raid, next)
-			{
+			foreach(drive, raid, next) {
 				char *tmp = strrchr(drive, '/');
 				if (!tmp)
 					tmp = drive;

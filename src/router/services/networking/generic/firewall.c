@@ -358,8 +358,7 @@ static void parse_port_forward(char *wan_iface, char *wanaddr, char *lan_cclass,
 	/*
 	 * name:enable:proto:port>ip name:enable:proto:port>ip 
 	 */
-	foreach(var, wordlist, next)
-	{
+	foreach(var, wordlist, next) {
 		GETENTRYBYIDX(name, var, 0);
 		GETENTRYBYIDX(enable, var, 1);
 		GETENTRYBYIDX(proto, var, 2);
@@ -610,8 +609,7 @@ static void parse_spec_forward(char *wan_iface, char *wanaddr, char *wordlist)
 	 * name:enable:proto:ext_port>ip:int_port
 	 * name:enable:proto:ext_port>ip:int_port 
 	 */
-	foreach(var, wordlist, next)
-	{
+	foreach(var, wordlist, next) {
 		GETENTRYBYIDX(name, var, 0);
 		GETENTRYBYIDX(enable, var, 1);
 		GETENTRYBYIDX(proto, var, 2);
@@ -683,8 +681,7 @@ static void parse_ip_forward(int mode, char *wanface)
 	 * name:enale:src:dest
 	 */
 	int cnt = 0;
-	foreach(var, wordlist, next)
-	{
+	foreach(var, wordlist, next) {
 		GETENTRYBYIDX(name, var, 0);
 		GETENTRYBYIDX(enable, var, 1);
 		GETENTRYBYIDX(src, var, 2);
@@ -714,8 +711,7 @@ static void destroy_ip_forward(char *wan_iface)
 	 * name:enale:src:dest
 	 */
 	int cnt = 0;
-	foreach(var, wordlist, next)
-	{
+	foreach(var, wordlist, next) {
 		snprintf(buff, sizeof(buff), "%s:%d", wan_iface, cnt++);
 		eval("ifconfig", buff, "0.0.0.0");
 	}
@@ -735,8 +731,7 @@ static void nat_prerouting_bridged(char *wanface, char *vifs)
 		}
 
 		char vif_ip[32];
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			if ((!wanface || strcmp(wanface, var)) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				if (nvram_nmatch("1", "%s_tor", var) && isstandalone(var)) {
 					save2file_A_prerouting("-i %s -p udp --dport 53 -j DNAT --to %s:5353", var,
@@ -764,8 +759,7 @@ static void nat_prerouting_bridged(char *wanface, char *vifs)
 					       nvram_safe_get("lan_ipaddr"));
 		}
 	}
-	foreach(var, vifs, next)
-	{
+	foreach(var, vifs, next) {
 		if ((!wanface || strcmp(wanface, var)) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (nvram_nmatch("1", "%s_dns_redirect", var)) {
 				char *target = nvram_nget("%s_dns_ipaddr", var);
@@ -805,8 +799,7 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 #ifdef HAVE_PRIVOXY
 	if (nvram_matchi("privoxy_transp_enable", 1) && nvram_matchi("privoxy_enable", 1)) {
 		char vif_ip[32];
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			if ((!wanface || strcmp(wanface, var)) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				if (nvram_nmatch("1", "%s_isolation", var)) {
 					save2file_A_prerouting("-i %s -d %s/%s -j RETURN", var, lan_ip,
@@ -843,8 +836,7 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 			sscanf(remote_ip, "%s %s", from, to);
 			wordlist = range(from, get_complete_ip(from, to), tmp, sizeof(tmp));
 
-			foreach(var, wordlist, next)
-			{
+			foreach(var, wordlist, next) {
 				save2file_A_prerouting("-p tcp -s %s -d %s --dport %s -j DNAT --to-destination %s:%d", var, wanaddr,
 						       nvram_safe_get("http_wanport"), lan_ip, web_lanport);
 			}
@@ -863,8 +855,7 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 
 			wordlist = range(from, get_complete_ip(from, to), tmp, sizeof(tmp));
 
-			foreach(var, wordlist, next)
-			{
+			foreach(var, wordlist, next) {
 				save2file_A_prerouting("-p tcp -s %s -d %s --dport %s -j DNAT --to-destination %s:%s", var, wanaddr,
 						       nvram_safe_get("sshd_wanport"), lan_ip, nvram_safe_get("sshd_port"));
 			}
@@ -885,8 +876,7 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 
 			wordlist = range(from, get_complete_ip(from, to), tmp, sizeof(tmp));
 
-			foreach(var, wordlist, next)
-			{
+			foreach(var, wordlist, next) {
 				save2file_A_prerouting("-p tcp -s %s -d %s --dport %s -j DNAT --to-destination %s:23", var, wanaddr,
 						       nvram_safe_get("telnet_wanport"), lan_ip);
 			}
@@ -1002,8 +992,7 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 			save2file_A_postrouting("-s %s/%d -o %s -j SNAT --to-source %s", nvram_safe_get("lan_ipaddr"), loopmask,
 						wanface, wanaddr);
 			char *sr = nvram_safe_get("static_route");
-			foreach(word, sr, tmp)
-			{
+			foreach(word, sr, tmp) {
 				GETENTRYBYIDX_DEL(ipaddr, word, 0, ":");
 				GETENTRYBYIDX_DEL(netmask, word, 1, ":");
 				GETENTRYBYIDX_DEL(nat, word, 5, ":");
@@ -1052,8 +1041,7 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 
 		// char *vifs = nvram_safe_get ("lan_ifnames");
 		// if (vifs != NULL)
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			if (strcmp(wanface, var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				if (isstandalone(var)) {
 					char nat[32];
@@ -1070,8 +1058,7 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 		if ((nvram_matchi("block_loopback", 0) || nvram_match("filter", "off")))
 			insmod("xt_pkttype");
 
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			if (strcmp(wanface, var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				if (isstandalone(var)) {
 					char nat[32];
@@ -1140,8 +1127,7 @@ static void parse_port_filter(char *lanface, char *wordlist)
 	/*
 	 * Parse protocol:lan_port0-lan_port1 ... 
 	 */
-	foreach(var, wordlist, next)
-	{
+	foreach(var, wordlist, next) {
 		GETENTRYBYIDX(protocol, var, 0);
 		GETENTRYBYIDX(lan_port0, var, 1);
 		GETENTRYBYIDX(lan_port1, var, 2);
@@ -1339,13 +1325,11 @@ static void macgrp_chain(int seq, int urlenable, char *iflist, char *target)
 
 	insmod("ipt_mac xt_mac");
 
-	foreach(var, wordlist, next)
-	{
+	foreach(var, wordlist, next) {
 		char ifname[32];
 		const char *nextif;
 		if (iflist) {
-			foreach(ifname, iflist, nextif)
-			{
+			foreach(ifname, iflist, nextif) {
 				save2file_A("grp_%d -i %s -m mac --mac-source %s -j %s", seq, ifname, var, target);
 				save2file_A("grp_%d -i %s -m mac --mac-destination %s -j %s", seq, ifname, var, target);
 			}
@@ -1372,8 +1356,7 @@ static void ipgrp_chain(char *lan_cclass, int seq, int urlenable, char *iflist, 
 	if (strcmp(wordlist1, "") == 0)
 		return;
 
-	foreach(var1, wordlist1, next1)
-	{
+	foreach(var1, wordlist1, next1) {
 		if (strchr(var1, '-')) {
 			char *end = var1;
 			char *start = strsep(&end, "-");
@@ -1410,13 +1393,11 @@ static void ipgrp_chain(char *lan_cclass, int seq, int urlenable, char *iflist, 
 
 		DEBUG("range=%s\n", wordlist2);
 
-		foreach(var2, wordlist2, next2)
-		{
+		foreach(var2, wordlist2, next2) {
 			char ifname[32];
 			const char *nextif;
 			if (iflist) {
-				foreach(ifname, iflist, nextif)
-				{
+				foreach(ifname, iflist, nextif) {
 					save2file_A("grp_%d -i %s -s %s -j %s", seq, ifname, var2, target);
 					save2file_A("grp_%d -i %s -d %s -j %s", seq, ifname, var2, target);
 				}
@@ -1442,8 +1423,7 @@ static void portgrp_chain(int seq, int urlenable, char *iflist, char *target)
 	/*
 	 * Parse protocol:lan_port0-lan_port1 ... 
 	 */
-	foreach(var, wordlist, next)
-	{
+	foreach(var, wordlist, next) {
 		GETENTRYBYIDX(protocol, var, 0);
 		GETENTRYBYIDX(lan_port0, var, 1);
 		GETENTRYBYIDX(lan_port1, var, 2);
@@ -1456,8 +1436,7 @@ static void portgrp_chain(int seq, int urlenable, char *iflist, char *target)
 		char ifname[32];
 		const char *nextif;
 		if (iflist) {
-			foreach(ifname, iflist, nextif)
-			{
+			foreach(ifname, iflist, nextif) {
 				if (!strcmp(protocol, "tcp") || !strcmp(protocol, "both")) {
 					save2file_A("grp_%d -i %s -p tcp --dport %s:%s -j %s", seq, ifname, lan_port0, lan_port1,
 						    target);
@@ -2321,8 +2300,7 @@ static void parse_trigger_out(char *wordlist)
 	/*
 	 * port_trigger=name:[on|off]:[tcp|udp|both]:wport0-wport1>lport0-lport1 
 	 */
-	foreach(var, wordlist, next)
-	{
+	foreach(var, wordlist, next) {
 		GETENTRYBYIDX(name, var, 0);
 		GETENTRYBYIDX(enable, var, 1);
 		GETENTRYBYIDX(proto, var, 2);
@@ -2358,8 +2336,7 @@ static void add_bridges(char *wanface, char *chain, int forward)
 	char word[256];
 	const char *next, *wordlist;
 	wordlist = nvram_safe_get("bridges");
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(tag, word, 0);
 		if (!tag)
 			break;
@@ -2495,8 +2472,7 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	   save2file_A_input("-p udp -i %s --dport %d -j %s", lanface, RIP_PORT, log_drop);
 	 */
 	iflist = nvram_safe_get("no_route_if");
-	foreach(buff, iflist, next)
-	{
+	foreach(buff, iflist, next) {
 		save2file_A_input("-p udp -i %s --dport %d -j %s", buff, RIP_PORT, log_drop);
 	}
 	/* is this rule necessary?? perhaps that is why the drop rules are there but they do not take other interfaces like tun/oet into account so removed 16-03-2021
@@ -2639,15 +2615,13 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	 * lonewolf mods for extra VLANs / interfaces 
 	 */
 	iflist = nvram_safe_get("no_firewall_if");
-	foreach(buff, iflist, next)
-	{
+	foreach(buff, iflist, next) {
 		save2file_A_input("-i %s -m state --state NEW -j %s", buff, log_accept);
 	}
 	char var[80];
 	// char *vifs = nvram_safe_get ("lan_ifnames");
 	// if (vifs != NULL)
-	foreach(var, vifs, next)
-	{
+	foreach(var, vifs, next) {
 		if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (nvram_nmatch("1", "%s_isolation", var)) {
 				save2file_A_input("-i %s -p udp --dport 67 -j %s", var, log_accept);
@@ -2721,8 +2695,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	}
 #endif
 
-	foreach(var, vifs, next)
-	{
+	foreach(var, vifs, next) {
 		if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (nvram_nmatch("1", "%s_isolation", var)) {
 				save2file_A_forward("-i %s -d %s/%s -m state --state NEW -j %s", var, nvram_safe_get("lan_ipaddr"),
@@ -2749,8 +2722,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 		save2file_A_forward("-o %s -j %s", nvram_safe_get("tvnicfrom"), log_accept);
 	}
 
-	foreach(var, vifs, next)
-	{
+	foreach(var, vifs, next) {
 		if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (isstandalone(var) && nvram_nmatch("1", "%s_nat", var)) {
 				save2file_A_forward("-i %s -j lan2wan", var);
@@ -2915,8 +2887,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	 */
 	if (dmzenable)
 		save2file_A_forward("-o %s -d %s%s -j %s", lanface, lan_cclass, nvram_safe_get("dmz_ipaddr"), log_accept);
-	foreach(var, vifs, next)
-	{
+	foreach(var, vifs, next) {
 		if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (nvram_nmatch("1", "%s_isolation", var)) {
 				save2file_A_forward("-i br0 -o %s -m state --state NEW -j %s", var, log_drop);
@@ -3141,8 +3112,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 		char var[80];
 		char vifs[256];
 		const char *next;
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				if (nvram_nmatch("1", "%s_isolation", var)) {
 					save2file_A_input("-i %s -p udp --dport 67 -j %s", var, log_accept);
@@ -3360,8 +3330,7 @@ static void run_firewall6(char *vifs)
 	eval("ip6tables", "-A", "FORWARD", "-m", "conntrack", "--ctstate", "NEW", "-i", nvram_safe_get("lan_ifname"), "-j",
 	     log_accept);
 
-	foreach(var, vifs, next)
-	{
+	foreach(var, vifs, next) {
 		if (strcmp(wanface, var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (isstandalone(var)) {
 				eval("ip6tables", "-A", "FORWARD", "-m", "conntrack", "--ctstate", "NEW", "-i", var, "-j",
@@ -3883,8 +3852,7 @@ void start_firewall(void)
 	char *wordlist = nvram_safe_get("ral");
 	char var[256];
 	const char *next;
-	foreach(var, wordlist, next)
-	{
+	foreach(var, wordlist, next) {
 		sysprintf("iptables -I INPUT -s %s -j %s", var, log_accept);
 	}
 #endif

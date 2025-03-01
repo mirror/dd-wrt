@@ -298,8 +298,7 @@ void chilli_config(void)
 	}
 	char *users = nvram_safe_get("fon_userlist");
 	char word[128];
-	foreach(word, users, next)
-	{
+	foreach(word, users, next) {
 		char *pass = word;
 		char *user = strsep(&pass, "=");
 		if (user && pass)
@@ -334,8 +333,7 @@ void chilli_config(void)
 	} else if (nvram_invmatch("wan_get_dns", "0.0.0.0") && nvram_invmatch("wan_get_dns", "")) {
 		dnslist = nvram_safe_get("wan_get_dns");
 		i = 1;
-		foreach(var, dnslist, next)
-		{
+		foreach(var, dnslist, next) {
 			if (i > 2)
 				break;
 			fprintf(fp, "dns%d %s\n", i, var);
@@ -344,8 +342,7 @@ void chilli_config(void)
 	} else if (nvram_invmatch("wan_dns", "0.0.0.0") && nvram_invmatch("wan_dns", "")) {
 		dnslist = nvram_safe_get("wan_dns");
 		i = 1;
-		foreach(var, dnslist, next)
-		{
+		foreach(var, dnslist, next) {
 			if (i > 2)
 				break;
 			fprintf(fp, "dns%d %s\n", i, var);
@@ -366,8 +363,7 @@ void chilli_config(void)
 #ifdef HAVE_COOVA_CHILLI
 	if (nvram_invmatch("chilli_uamdomain", "")) {
 		dnslist = nvram_safe_get("hotss_uamdomain");
-		foreach(var, dnslist, next)
-		{
+		foreach(var, dnslist, next) {
 			fprintf(fp, "uamdomain %s\n", var);
 		}
 	}
@@ -480,8 +476,7 @@ void hotspotsys_config(void)
 	if (nvram_invmatch("wan_get_dns", "0.0.0.0") && nvram_invmatch("wan_get_dns", "")) {
 		dnslist = nvram_safe_get("wan_get_dns");
 		i = 1;
-		foreach(var, dnslist, next)
-		{
+		foreach(var, dnslist, next) {
 			if (i > 2)
 				break;
 			fprintf(fp, "dns%d %s\n", i, var);
@@ -490,8 +485,7 @@ void hotspotsys_config(void)
 	} else if (nvram_invmatch("wan_dns", "0.0.0.0") && nvram_invmatch("wan_dns", "")) {
 		dnslist = nvram_safe_get("wan_dns");
 		i = 1;
-		foreach(var, dnslist, next)
-		{
+		foreach(var, dnslist, next) {
 			if (i > 2)
 				break;
 			fprintf(fp, "dns%d %s\n", i, var);
@@ -519,8 +513,7 @@ void hotspotsys_config(void)
 #ifdef HAVE_COOVA_CHILLI
 	if (nvram_invmatch("hotss_uamdomain", "") && nvram_matchi("hotss_uamenable", 1)) {
 		dnslist = nvram_safe_get("hotss_uamdomain");
-		foreach(var, dnslist, next)
-		{
+		foreach(var, dnslist, next) {
 			fprintf(fp, "uamdomain %s\n", var);
 		}
 	}

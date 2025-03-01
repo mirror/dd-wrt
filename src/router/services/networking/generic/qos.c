@@ -67,7 +67,9 @@ int client_bridged_enabled(void)
 	int bridged_clients = 0;
 
 	// any interface in client_bridged mode?
-	foreach(word, iflist, next) if (nvram_nmatch("wet", "%s_mode", word)) bridged_clients++;
+	foreach(word, iflist, next)
+		if (nvram_nmatch("wet", "%s_mode", word))
+			bridged_clients++;
 
 	return bridged_clients;
 }
@@ -277,8 +279,7 @@ static int s_hasIF(char *list, char *ifname)
 	const char *next;
 	if (!list)
 		return 0;
-	foreach(word, list, next)
-	{
+	foreach(word, list, next) {
 		if (!strcmp(word, ifname))
 			return 1;
 	}
@@ -319,8 +320,7 @@ static void down_upIF(void)
 	const char *next;
 	if (!s_downlist)
 		return;
-	foreach(word, s_downlist, next)
-	{
+	foreach(word, s_downlist, next) {
 		if (!is_mac80211(word)) {
 			eval("ifconfig", word, "up");
 		}
@@ -1301,8 +1301,7 @@ void stop_qos(void)
 	const char *next;
 	char var[80];
 	char *vifs = eths;
-	foreach(var, vifs, next)
-	{
+	foreach(var, vifs, next) {
 		if (ifexists(var)) {
 			eval("tc", "qdisc", "del", "dev", var, "root");
 		}

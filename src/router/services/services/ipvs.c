@@ -43,8 +43,7 @@ void start_ipvs(void)
 	if (!*ipvs || !*ipvstarget)
 		return;
 	wordlist = ipvs;
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(ipvsname, word, 0);
 		GETENTRYBYIDX(sourceip, word, 1);
 		GETENTRYBYIDX(sourceport, word, 2);
@@ -93,8 +92,7 @@ void start_ipvs(void)
 	}
 
 	wordlist = ipvstarget;
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(ipvsname, word, 0);
 		GETENTRYBYIDX(targetip, word, 1);
 		GETENTRYBYIDX(targetport, word, 2);
@@ -107,8 +105,7 @@ void start_ipvs(void)
 		int found = 0;
 		char *sourceipcopy;
 		char *sourceportcopy;
-		foreach(tword, twordlist, tnext)
-		{
+		foreach(tword, twordlist, tnext) {
 			GETENTRYBYIDX(matchname, word, 0);
 			GETENTRYBYIDX(sourceip, word, 1);
 			sourceipcopy = sourceip;

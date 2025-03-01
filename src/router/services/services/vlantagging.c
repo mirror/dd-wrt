@@ -72,8 +72,7 @@ void start_vlantagging(void)
 	const char *next, *wordlist;
 
 	wordlist = nvram_safe_get("vlan_tags");
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(tag, word, 0);
 		GETENTRYBYIDX(port, word, 1);
 		GETENTRYBYIDX(prio, word, 2);
@@ -113,8 +112,7 @@ void start_vlantagging(void)
 		}
 	}
 
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(tag, word, 0);
 		GETENTRYBYIDX(port, word, 1);
 		GETENTRYBYIDX(prio, word, 2);
@@ -162,8 +160,7 @@ void stop_vlantagging(void)
 
 	wordlist = nvram_safe_get("vlan_tags");
 	eval("vconfig", "set_name_type", "DEV_PLUS_VID_NO_PAD");
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(tag, word, 0);
 		GETENTRYBYIDX(port, word, 1);
 		GETENTRYBYIDX(prio, word, 2);
@@ -180,8 +177,7 @@ void stop_vlantagging(void)
 			eval("vconfig", "rem", vlan_name);
 		}
 	}
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(tag, word, 0);
 		GETENTRYBYIDX(port, word, 1);
 		GETENTRYBYIDX(prio, word, 2);
@@ -226,8 +222,7 @@ void apply_bridgeif(char *ifname, char *realport)
 	br_init();
 #endif
 	wordlist = nvram_safe_get("bridgesif");
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(tag, word, 0);
 		GETENTRYBYIDX(port, word, 1);
 		GETENTRYBYIDX(prio, word, 2);
@@ -262,8 +257,7 @@ void start_bridgesif(void)
 	set_stp_state("br0", getBridgeSTPType("br0", stp));
 
 	wordlist = nvram_safe_get("bridgesif");
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(tag, word, 0);
 		GETENTRYBYIDX(port, word, 1);
 		GETENTRYBYIDX(prio, word, 2);
@@ -297,8 +291,7 @@ void start_bridging(void)
 	br_init();
 #endif
 	wordlist = nvram_safe_get("bridges");
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(bridge, word, 0);
 		GETENTRYBYIDX(stp, word, 1);
 		GETENTRYBYIDX(prio, word, 2);
@@ -342,8 +335,7 @@ char *getRealBridge(const char *ifname, char *word)
 {
 	const char *next, *wordlist;
 	wordlist = nvram_safe_get("bridgesif");
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(tag, word, 0);
 		GETENTRYBYIDX(port, word, 1);
 		if (!tag || !port)
@@ -365,8 +357,7 @@ void stop_bridgesif(void)
 #endif
 
 	wordlist = nvram_safe_get("bridgesif");
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(tag, word, 0);
 		GETENTRYBYIDX(port, word, 1);
 		if (!tag || !port)
@@ -388,8 +379,7 @@ void stop_bridging(void)
 #endif
 
 	wordlist = nvram_safe_get("bridges");
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(tag, word, 0);
 		if (!tag)
 			break;
@@ -436,8 +426,7 @@ int setportprio_main(int argc, char *argv[])
 	br_init();
 #endif
 	wordlist = nvram_safe_get("bridgesif");
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		char *tag = argv[1];
 		GETENTRYBYIDX(port, word, 1);
 		GETENTRYBYIDX(prio, word, 2);

@@ -65,8 +65,7 @@ void start_mdns(void)
 	const char *next;
 	char *wordlist = nvram_safe_get("mdns_interfaces");
 	int idx = 0;
-	foreach(ifname, wordlist, next)
-	{
+	foreach(ifname, wordlist, next) {
 		if (!idx)
 			fprintf(fp, "allow-interfaces=");
 		else

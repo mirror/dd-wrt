@@ -284,8 +284,7 @@ void mesh_params_main(int argc, char *argv[])
 		char vifs[32];
 		sprintf(vifs, "wlan%d_vifs", i);
 		char *vaps = nvram_safe_get(vifs);
-		foreach(var, vaps, next)
-		{
+		foreach(var, vaps, next) {
 			if (nvram_nmatch("disabled", "%s_mode", var))
 				continue;
 			if (nvram_nmatch("mesh", "%s_mode", var))
@@ -588,8 +587,7 @@ void configure_single_ath9k(int count)
 	}
 	char *vifs = nvram_safe_get(wifivifs);
 	int countvaps = 1;
-	foreach(var, vifs, next)
-	{
+	foreach(var, vifs, next) {
 		countvaps++;
 	}
 	MAC80211DEBUG();
@@ -600,8 +598,7 @@ void configure_single_ath9k(int count)
 	int counter = 1;
 	char compr[32];
 	if (*vifs) {
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			if (nvram_nmatch("disabled", "%s_mode", var)) {
 				counter++;
 				continue;
@@ -675,8 +672,7 @@ int has_hidden_ssid(const char *prefix)
 	char vap[32];
 	const char *next;
 	char *vifs = nvram_nget("%s_vifs", prefix);
-	foreach(vap, vifs, next)
-	{
+	foreach(vap, vifs, next) {
 		if (nvram_nmatch("1", "%s_closed", vap))
 			return 1;
 	}
@@ -691,8 +687,7 @@ int has_vaps(const char *prefix)
 	char vap[32];
 	const char *next;
 	char *vifs = nvram_nget("%s_vifs", prefix);
-	foreach(vap, vifs, next)
-	{
+	foreach(vap, vifs, next) {
 		if (!nvram_nmatch("disabled", "%s_net_mode", vap) && !nvram_nmatch("disabled", "%s_mode", vap)) {
 			return 1;
 		}
@@ -1517,8 +1512,7 @@ static void setMacFilter(FILE *fp, char *iface)
 		sprintf(name, "/tmp/%s_deny", iface);
 		FILE *out = fopen(name, "wb");
 		char *list = nvram_safe_get(nvlist);
-		foreach(var, list, next)
-		{
+		foreach(var, list, next) {
 			fprintf(out, "%s\n", var);
 		}
 		fclose(out);
@@ -1531,8 +1525,7 @@ static void setMacFilter(FILE *fp, char *iface)
 		sprintf(name, "/tmp/%s_accept", iface);
 		FILE *out = fopen(name, "wb");
 		char *list = nvram_safe_get(nvlist);
-		foreach(var, list, next)
-		{
+		foreach(var, list, next) {
 			fprintf(out, "%s\n", var);
 		}
 		fclose(out);
@@ -1933,8 +1926,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			const char *next;
 			int oexists = 0;
 			char *vifs = nvram_nget("%s_vifs", maininterface);
-			foreach(oif, vifs, next)
-			{
+			foreach(oif, vifs, next) {
 				if (!strcmp(oif, owe_ifname) && !nvram_nmatch("disabled", "%s_net_mode", owe_ifname) &&
 				    !nvram_nmatch("disabled", "%s_mode", owe_ifname)) {
 					oexists = 1;
@@ -2016,8 +2008,7 @@ static char *makescanlist(const char *prefix, char *value)
 	}
 	const char *next;
 	char var[128];
-	foreach(var, clone, next)
-	{
+	foreach(var, clone, next) {
 		char *sep = strchr(var, '-');
 		if (!sep) {
 			char *old = new;
@@ -2693,8 +2684,7 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 			if (*vifs) {
 				int ctrl = 0;
 				int last = 0;
-				foreach(var, vifs, next)
-				{
+				foreach(var, vifs, next) {
 					ctrl++;
 					if (nvram_nmatch("disabled", "%s_net_mode", var) ||
 					    nvram_nmatch("disabled", "%s_mode", var))
@@ -2798,8 +2788,7 @@ void post_hostapd_actions(int count)
 			if (*vifs) {
 				int ctrl = 0;
 				int last = 0;
-				foreach(var, vifs, next)
-				{
+				foreach(var, vifs, next) {
 					ctrl++;
 					if (nvram_nmatch("disabled", "%s_net_mode", var) ||
 					    nvram_nmatch("disabled", "%s_mode", var))
@@ -2860,8 +2849,7 @@ skip:;
 		}
 
 		if (*vifs) {
-			foreach(var, vifs, next)
-			{
+			foreach(var, vifs, next) {
 				sprintf(mode, "%s_mode", var);
 				char *m2 = nvram_safe_get(mode);
 				char bridged[32];

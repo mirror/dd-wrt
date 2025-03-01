@@ -1068,12 +1068,12 @@ void start_restore_defaults(void)
 #elif HAVE_IPQ6018
 	struct nvram_param *generic = NULL;
 	struct nvram_param generic_all[] = { { "lan_ifname", "br0" },
-						{ "lan_ifnames", "wan lan1 lan2 lan3 lan4 wlan0 wlan1 wlan2" },
-						{ "wan_ifname", "wan" },
-						{ "wan_ifname2", "wan" },
-						{ "wan_ifnames", "wan" },
-						{ "wan_default", "wan" },
-						{ 0, 0 } };
+					     { "lan_ifnames", "wan lan1 lan2 lan3 lan4 wlan0 wlan1 wlan2" },
+					     { "wan_ifname", "wan" },
+					     { "wan_ifname2", "wan" },
+					     { "wan_ifnames", "wan" },
+					     { "wan_default", "wan" },
+					     { 0, 0 } };
 	struct nvram_param generic_ax89[] = { { "lan_ifname", "br0" },
 					      { "lan_ifnames",
 						"wan lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8 lan9 lan10 wlan0 wlan1" },
@@ -1083,12 +1083,12 @@ void start_restore_defaults(void)
 					      { "wan_default", "wan" },
 					      { 0, 0 } };
 	struct nvram_param generic_fap231f[] = { { "lan_ifname", "br0" },
-					      { "lan_ifnames", "wan lan1 wlan0 wlan1 wlan2" },
-					      { "wan_ifname", "wan" },
-					      { "wan_ifname2", "wan" },
-					      { "wan_ifnames", "wan" },
-					      { "wan_default", "wan" },
-					      { 0, 0 } };
+						 { "lan_ifnames", "wan lan1 wlan0 wlan1 wlan2" },
+						 { "wan_ifname", "wan" },
+						 { "wan_ifname2", "wan" },
+						 { "wan_ifnames", "wan" },
+						 { "wan_default", "wan" },
+						 { 0, 0 } };
 	int wrt_brand = getRouterBrand();
 	switch (wrt_brand) {
 	case ROUTER_ASUS_AX89X:
@@ -2857,8 +2857,7 @@ static void set_led_usbport(char *led, char *ports)
 
 	sysprintf("echo usbport > /sys/class/leds/%s/trigger", led);
 
-	foreach(word, ports, next)
-	{
+	foreach(word, ports, next) {
 		sysprintf("echo 1 > /sys/class/leds/%s/ports/%s", led, word);
 	}
 }
@@ -3468,8 +3467,7 @@ void start_nvram(void)
 			char *entry = malloc(strlen(value) + 1);
 			*newvalue = 0;
 			int first = 1;
-			foreach(entry, value, next)
-			{
+			foreach(entry, value, next) {
 				if (!strncmp(entry, "ath", 3) && isdigit(entry[3])) {
 					found = 1;
 					if (first)
@@ -3499,8 +3497,7 @@ void start_nvram(void)
 		size_t slen = strlen(wordlist) * 2 + 1;
 		char *newwordlist = malloc(slen);
 		*newwordlist = 0;
-		foreach(word, wordlist, next)
-		{
+		foreach(word, wordlist, next) {
 			GETENTRYBYIDX(tag, word, 0);
 			GETENTRYBYIDX(port, word, 1);
 			GETENTRYBYIDX(prio, word, 2);
@@ -3530,8 +3527,7 @@ void start_nvram(void)
 		slen = strlen(wordlist) * 2 + 1;
 		newwordlist = malloc(slen);
 		*newwordlist = 0;
-		foreach(word, wordlist, next)
-		{
+		foreach(word, wordlist, next) {
 			GETENTRYBYIDX(ifname, word, 0);
 			GETENTRYBYIDX(tag, word, 1);
 			GETENTRYBYIDX(prio, word, 2);
@@ -3550,8 +3546,7 @@ void start_nvram(void)
 		slen = strlen(wordlist) * 2 + 1;
 		newwordlist = malloc(slen);
 		*newwordlist = 0;
-		foreach(word, wordlist, next)
-		{
+		foreach(word, wordlist, next) {
 			GETENTRYBYIDX(ipaddr, word, 0);
 			GETENTRYBYIDX(netmask, word, 1);
 			GETENTRYBYIDX(gateway, word, 2);
@@ -3574,8 +3569,7 @@ void start_nvram(void)
 		slen = strlen(wordlist) * 2 + 1;
 		newwordlist = malloc(slen);
 		*newwordlist = 0;
-		foreach(word, wordlist, next)
-		{
+		foreach(word, wordlist, next) {
 			GETENTRYBYIDX(ifname, word, 0);
 			GETENTRYBYIDX(status, word, 1);
 			GETENTRYBYIDX(start, word, 2);
@@ -3599,8 +3593,7 @@ void start_nvram(void)
 		newwordlist = malloc(slen);
 		*newwordlist = 0;
 
-		foreach(word, wordlist, next)
-		{
+		foreach(word, wordlist, next) {
 			GETENTRYBYIDX(interface, word, 0);
 			GETENTRYBYIDX(hellointerval, word, 1);
 			GETENTRYBYIDX(hellovaliditytime, word, 2);
@@ -3641,8 +3634,7 @@ void start_nvram(void)
 		for (i = 0; i < 7; i++) {
 			char *port = nvram_nget("port%dvlans", i);
 			char conv[1024] = { 0 };
-			foreach(var, port, next)
-			{
+			foreach(var, port, next) {
 				int tmp = atoi(var);
 				if (tmp >= 16 && tmp < 32) {
 					if (tmp == 21)

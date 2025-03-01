@@ -116,8 +116,7 @@ void start_aoss(void)
 		char var[80];
 		char *vifs = nvram_safe_get("wlan0_vifs");
 		int counter = 1;
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			counter++;
 		}
 		setupHostAP_ath9k("wlan0", 0, counter, 1);
@@ -141,8 +140,7 @@ void start_aoss(void)
 		char var[80];
 		char *vifs = nvram_safe_get("wlan1_vifs");
 		int counter = 1;
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			counter++;
 		}
 		setupHostAP_ath9k("wlan1", 0, counter, 1);
@@ -199,8 +197,7 @@ void start_aoss(void)
 			char var[80];
 			char *vifs = nvram_safe_get("wlan0_vifs");
 			int counter = 1;
-			foreach(var, vifs, next)
-			{
+			foreach(var, vifs, next) {
 				counter++;
 			}
 			setupHostAP_ath9k("wlan0", 0, counter, 1);

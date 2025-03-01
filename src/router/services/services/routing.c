@@ -52,8 +52,7 @@ static int zebra_init(void)
 	sprintf(daemons, "watchquagga -dz -r '%%s -d' zebra");
 #endif
 	sub = nvram_safe_get("wk_mode");
-	foreach(var, sub, next)
-	{
+	foreach(var, sub, next) {
 		if (!strcmp(var, "ospf")) {
 			int res = zebra_ospf_init();
 			if (!res) {
@@ -258,8 +257,7 @@ static int zebra_ospf_init(void)
 		strcat(eths, " ");
 		strcat(eths, eths2);
 		getIfListB(bufferif, sizeof(bufferif), NULL, 1, 1, 1);
-		foreach(var, eths, next)
-		{
+		foreach(var, eths, next) {
 			if (!strcmp("etherip0", var))
 				continue;
 			char *ipaddr = nvram_nget("%s_ipaddr", var);
@@ -274,8 +272,7 @@ static int zebra_ospf_init(void)
 				}
 			}
 		}
-		foreach(var, bufferif, next)
-		{
+		foreach(var, bufferif, next) {
 			if (!strcmp("br0", var)) {
 				char *ipaddr = nvram_safe_get("lan_ipaddr");
 				char *netmask = nvram_safe_get("lan_netmask");
@@ -304,8 +301,7 @@ static int zebra_ospf_init(void)
 		fprintf(fp, " redistribute kernel metric-type 1\n");
 		fprintf(fp, " redistribute connected metric-type 1\n");
 		fprintf(fp, " redistribute static metric-type 1\n");
-		foreach(var, eths, next)
-		{
+		foreach(var, eths, next) {
 			if (!strcmp(safe_get_wan_face(wan_if_buffer), var)) {
 				char *ipaddr = nvram_safe_get("wan_ipaddr");
 				char *netmask = nvram_safe_get("wan_netmask");
@@ -323,8 +319,7 @@ static int zebra_ospf_init(void)
 			}
 		}
 
-		foreach(var, bufferif, next)
-		{
+		foreach(var, bufferif, next) {
 			if (strcmp(safe_get_wan_face(wan_if_buffer), "br0") && !strcmp(safe_get_wan_face(wan_if_buffer), var)) {
 				char *ipaddr = nvram_safe_get("wan_ipaddr");
 				char *netmask = nvram_safe_get("wan_netmask");

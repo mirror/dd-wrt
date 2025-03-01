@@ -120,8 +120,7 @@ void start_olsrd(void)
 		const char *next;
 		char word[128];
 
-		foreach(word, wordlist, next)
-		{
+		foreach(word, wordlist, next) {
 			GETENTRYBYIDX(interface, word, 0);
 			GETENTRYBYIDX(hellointerval, word, 1);
 			GETENTRYBYIDX(hellovaliditytime, word, 2);

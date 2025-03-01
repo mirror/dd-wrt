@@ -451,8 +451,7 @@ void start_sysinit(void)
 	if (gpios != NULL) {
 		var = (char *)malloc(strlen(gpios) + 1);
 		if (var != NULL) {
-			foreach(var, gpios, next)
-			{
+			foreach(var, gpios, next) {
 				sprintf(nvgpio, "gpio%s", var);
 				fprintf(stderr, "GPIO foreach  %s\n", var);
 				if (nvram_default_matchi(nvgpio, 1, 0))

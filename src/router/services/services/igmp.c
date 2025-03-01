@@ -74,8 +74,7 @@ void start_igmprt(void)
 	char ifnames[256];
 
 	getIfLists(ifnames, sizeof(ifnames));
-	foreach(name, ifnames, next)
-	{
+	foreach(name, ifnames, next) {
 		if (strcmp(safe_get_wan_face(wan_if_buffer), name) && strcmp(nvram_safe_get("lan_ifname"), name) &&
 		    strcmp(nvram_safe_get("tvnicfrom"), name)) {
 			if ((nvram_nmatch("0", "%s_bridged", name) || isbridge(name)) && nvram_nmatch("1", "%s_multicast", name)) {

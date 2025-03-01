@@ -457,8 +457,7 @@ char *getmdhcp(int count, int index, char *buffer)
 	const char *next, *wordlist;
 	char word[128];
 	wordlist = nvram_safe_get("mdhcpd");
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		if (cnt < index) {
 			cnt++;
 			continue;
@@ -641,8 +640,7 @@ void start_dnsmasq(void)
 		getIfLists(vifs, sizeof(vifs));
 		char var[256], *wordlist;
 		const char *next;
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				char *ipaddr = nvram_nget("%s_ipaddr", var);
 				if (*ipaddr && strcmp(ipaddr, "0.0.0.0") && nvram_nmatch("0", "%s_bridged", var))
@@ -662,8 +660,7 @@ void start_dnsmasq(void)
 		getIfLists(vifs, sizeof(vifs));
 		char var[256], *wordlist;
 		const char *next;
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				char *ipaddr = nvram_nget("%s_ipaddr", var);
 				if (*ipaddr && strcmp(ipaddr, "0.0.0.0") && nvram_nmatch("0", "%s_bridged", var))
@@ -752,8 +749,7 @@ void start_dnsmasq(void)
 			const char *next;
 			char *wordlist = nvram_safe_get("dnsipv6_interfaces");
 			//dd_loginfo("dnsipv6if", "dnsmasq dnsipv6if: %s", wordlist);
-			foreach(ifname, wordlist, next)
-			{
+			foreach(ifname, wordlist, next) {
 				fprintf(fp, "dhcp-range=::%s,::%s,constructor:%s,ra-names,%s,%s\n",
 					nvram_safe_get("dnsipv6_range_start"), nvram_safe_get("dnsipv6_range_end"), ifname,
 					dnsipv6_rastate, ipv6_leasetime);

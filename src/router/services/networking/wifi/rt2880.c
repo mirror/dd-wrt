@@ -273,8 +273,7 @@ void setMacFilter(char *iface)
 
 		sprintf(nvlist, "%s_maclist", iface);
 
-		foreach(var, nvram_safe_get(nvlist), next)
-		{
+		foreach(var, nvram_safe_get(nvlist), next) {
 			sysprintf("iwpriv %s set ACLAddEntry=%s", getRADev(iface), var);
 		}
 	}
@@ -285,8 +284,7 @@ void setMacFilter(char *iface)
 
 		sprintf(nvlist, "%s_maclist", iface);
 
-		foreach(var, nvram_safe_get(nvlist), next)
-		{
+		foreach(var, nvram_safe_get(nvlist), next) {
 			sysprintf("iwpriv %s set ACLAddEntry=%s", getRADev(iface), var);
 		}
 	}
@@ -566,8 +564,7 @@ void configure_wifi_single(int idx) // madwifi implementation for atheros based
 		vifs = nvram_nget("wl%d_vifs", idx);
 
 		if (vifs != NULL)
-			foreach(var, vifs, next)
-			{
+			foreach(var, vifs, next) {
 				fprintf(fp, "SSID%d=%s\n", count, nvram_nget("%s_ssid", var));
 				count++;
 			}
@@ -672,8 +669,7 @@ void configure_wifi_single(int idx) // madwifi implementation for atheros based
 
 	vifs = nvram_nget("wl%d_vifs", idx);
 	if (vifs != NULL)
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			if (nvram_nmatch("1", "%s_closed", var))
 				strcat(hidestr, ";1");
 			else
@@ -831,8 +827,7 @@ void configure_wifi_single(int idx) // madwifi implementation for atheros based
 	count = 2;
 	vifs = nvram_nget("wl%d_vifs", idx);
 	if (vifs != NULL)
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			strcat(eapifname, ";");
 			if (nvram_nmatch("0", "%s_bridged", getRADev(var)))
 				strcat(eapifname, getRADev(var));
@@ -1339,8 +1334,7 @@ void init_network(int idx)
 		if (vifs != NULL && *vifs) {
 			int count = 1;
 
-			foreach(var, vifs, next)
-			{
+			foreach(var, vifs, next) {
 				sprintf(bridged, "%s_bridged", getRADev(var));
 				if (nvram_default_matchi(bridged, 1, 1)) {
 					char ra[32];
@@ -1408,8 +1402,7 @@ void init_network(int idx)
 	}
 	vifs = nvram_nget("wl%d_vifs", idx);
 	if (vifs != NULL && *vifs) {
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			setMacFilter(var);
 		}
 	}

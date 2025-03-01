@@ -6541,8 +6541,7 @@ next:;
 	vlan1 = brcm_to_swconfig(vlan1, vlan1buf);
 	vlan2 = brcm_to_swconfig(vlan2, vlan2buf);
 	int wanport = 0;
-	foreach(var, vlan2, next)
-	{
+	foreach(var, vlan2, next) {
 		if (strlen(var) == 1) {
 			char *tv = strdup(var);
 			nvram_set("sw_wan", tv);
@@ -6556,8 +6555,7 @@ next:;
 	int swap = 0;
 	int first = -1;
 	int last = -1;
-	foreach(var, vlan1, next)
-	{
+	foreach(var, vlan1, next) {
 		if (strlen(var) == 1) {
 			if (wanport > atoi(var))
 				swap++;

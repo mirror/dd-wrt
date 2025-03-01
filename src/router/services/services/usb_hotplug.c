@@ -365,8 +365,7 @@ static int usb_process_path(char *path, char *fs, char *target)
 	const char *next;
 	char *services = nvram_safe_get("custom_configs");
 	char service[32];
-	foreach(service, services, next)
-	{
+	foreach(service, services, next) {
 		eval("service", service, "stop");
 		eval("service", service, "start");
 	}
@@ -577,8 +576,7 @@ retry:;
 
 					if (strstr(line, "EFI GPT")) {
 						partitions = "1 2 3 4 5 6";
-						foreach(part, partitions, next)
-						{
+						foreach(part, partitions, next) {
 							sprintf(path, "/dev/%s%s", entry->d_name, part);
 							if (stat(path, &tmp_stat))
 								continue;
@@ -617,8 +615,7 @@ retry:;
 				 */
 				if (is_part && !new) {
 					partitions = "part1 part2 part3 part4 part5 part6";
-					foreach(part, partitions, next)
-					{
+					foreach(part, partitions, next) {
 						sprintf(path, "/dev/discs/%s/%s", entry->d_name, part);
 						if (stat(path, &tmp_stat))
 							continue;
@@ -632,8 +629,7 @@ retry:;
 				}
 				if (is_part && new) {
 					partitions = "1 2 3 4 5 6";
-					foreach(part, partitions, next)
-					{
+					foreach(part, partitions, next) {
 						sprintf(path, "/dev/%s%s", entry->d_name, part);
 						if (stat(path, &tmp_stat))
 							continue;

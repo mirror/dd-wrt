@@ -54,8 +54,7 @@ int mk_nodog_conf(void)
 	char var[64];
 	const char *next;
 	char *list = nvram_safe_get("ND_ExcludePorts");
-	foreach(var, list, next)
-	{
+	foreach(var, list, next) {
 		fprintf(fp, "\tFirewallRule allow tcp port %s\n", var);
 		fprintf(fp, "\tFirewallRule allow udp port %s\n", var);
 	}

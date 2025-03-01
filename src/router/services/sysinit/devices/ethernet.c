@@ -248,8 +248,7 @@ static int detect_drivers(char *buspath, char *enabled, char *list, char **drive
 	} else {
 		if (!*wordlist)
 			return 0;
-		foreach(word, wordlist, next)
-		{
+		foreach(word, wordlist, next) {
 			if (insmod)
 				eval("insmod", word);
 			else

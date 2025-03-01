@@ -70,8 +70,7 @@ void start_usteer(void)
 		char vifs[32];
 		sprintf(vifs, "wlan%d_vifs", i);
 		char *vaps = nvram_safe_get(vifs);
-		foreach(var, vaps, next)
-		{
+		foreach(var, vaps, next) {
 			if (nvram_nmatch("disabled", "%s_mode", var))
 				continue;
 			if (!nvram_nmatch("1", "%s_80211k", var))

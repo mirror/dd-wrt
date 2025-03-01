@@ -169,8 +169,7 @@ static void convert_wds(int instance)
 		char mac[254];
 		const char *next;
 
-		foreach(mac, wds_mac, next)
-		{
+		foreach(mac, wds_mac, next) {
 			snprintf(buf, sizeof(buf), "%s,auto,%s,%s,%s,%s", mac, nvram_nget("wl%d_crypto", instance),
 				 nvram_nget("wl%d_security_mode", instance), nvram_nget("wl%d_ssid", instance),
 				 nvram_nget("wl%d_wpa_psk", instance));
@@ -282,8 +281,7 @@ static void start_nas_lan(int c)
 	sprintf(vifname, "wl%d_vifs", c);
 	char *vifs = nvram_safe_get(vifname);
 
-	foreach(var, vifs, next)
-	{
+	foreach(var, vifs, next) {
 		dd_loginfo("nas", "start nas for %s", var);
 		start_nas_single("lan", var);
 	}
@@ -301,8 +299,7 @@ static void start_nas_wan(int c)
 	char vif[16];
 	char *vifs = nvram_nget("wl%d_vifs", c);
 
-	foreach(var, vifs, next)
-	{
+	foreach(var, vifs, next) {
 		sprintf(vif, "%s_mode", var);
 		if (nvram_match(vif, "sta") || nvram_match(vif, "wet") || nvram_match(vif, "apsta") ||
 		    nvram_match(vif, "apstawet")) {
@@ -343,8 +340,7 @@ static void stop_nas_process(void)
 		unlink(pidname);
 		sprintf(vifs_name, "wl%d_vifs", c);
 		char *vifs = nvram_safe_get(vifs_name);
-		foreach(name, vifs, next)
-		{
+		foreach(name, vifs, next) {
 			sprintf(pidname, "/tmp/nas.%slan.pid", name);
 			unlink(pidname);
 		}
