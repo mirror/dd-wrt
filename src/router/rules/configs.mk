@@ -577,6 +577,7 @@ obj-$(CONFIG_IPQ806X) += cryptodev
 obj-$(CONFIG_MVEBU) += cryptodev
 obj-$(CONFIG_NUT) += nut
 obj-$(CONFIG_BLUEZ) += json-c libffi expat glib20 readline dbus bluez bluez-tools
+obj-$(CONFIG_IPTOOLS) += iptools
 
 ifneq ($(CONFIG_DIST),"micro")
 obj-y+=wrtbwmon
