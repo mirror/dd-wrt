@@ -49,6 +49,8 @@ void start_arpd(void)
 	else
 		ifnames[2] = "/jffs/arpd.db";
 	cnt = 6;
+	if (nvram_match("arpd_enable","1"))
+	    ifnames[cnt++] = strdup("br0");
 	int active = 0;
 	foreach(var, vifs, next) {
 		if (cnt == ARRAY_SIZE(ifnames))
@@ -59,7 +61,9 @@ void start_arpd(void)
 	}
 	if (active)
 		_log_evalpid(ifnames, NULL, 0, NULL);
-
+	int i;
+	for (i=6;i<cnt;i++)
+		free(ifnames[i]);
 	return;
 }
 
