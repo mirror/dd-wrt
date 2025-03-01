@@ -1296,7 +1296,7 @@ void stop_qos(void)
 #ifdef HAVE_MVEBU
 	getIfList(eths, sizeof(eths), "ixp imq ppp tun tap vlan wlan wl ra rb lan wan");
 #else
-	getIfList(eths, sizeof(eths), "ixp eth imq ppp tun tap vlan wlan wl ra rb lan wan");
+	getIfList(eths, sizeof(eths), "ixp eth imq ppp tun tap vlan wlan wl ra rb lan wan 10g-copper 10g-sfp");
 #endif
 	const char *next;
 	char var[80];
