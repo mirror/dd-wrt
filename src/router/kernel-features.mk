@@ -560,6 +560,14 @@ define kernelfeatures
 		sed -i 's/CONFIG_MSDOS_FS=m/\# CONFIG_MSDOS_FS is not set/g' $(LINUXDIR)/.config; \
 		sed -i 's/CONFIG_VFAT_FS=m/\# CONFIG_VFAT_FS is not set/g' $(LINUXDIR)/.config; \
 	fi	
+	if [ "$(CONFIG_IPTOOLS)" != "y" ]; then \
+		sed -i 's/\# CONFIG_NETLINK_DIAG is not set/CONFIG_NETLINK_DIAG=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_PACKET_DIAG is not set/CONFIG_PACKET_DIAG=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_UNIX_DIAG is not set/CONFIG_UNIX_DIAG=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_INET_DIAG is not set/CONFIG_INET_DIAG=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_MPTCP_DIAG is not set/CONFIG_MPTCP_DIAG=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_SCTP_DIAG is not set/CONFIG_SCTP_DIAG=y/g' $(LINUXDIR)/.config; \
+	fi	
 	if [ "$(CONFIG_EXFAT)" != "y" ]; then \
 		sed -i 's/CONFIG_EXFAT_FS=m/\# CONFIG_EXFAT_FS is not set/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_EXFAT_FS is not set" >> $(LINUXDIR)/.config; \
