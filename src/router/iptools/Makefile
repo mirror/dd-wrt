@@ -25,7 +25,7 @@ configure:
 	--enable-compat185 \
 	--disable-debug \
 	--prefix=/usr --libdir=/usr/lib --host=$(ARCH)-linux \
-	CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB) $(CHILLIEXTRA_CFLAGS) -fcommon -DHAVE_MALLOC=1 -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="$(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	AR_FLAGS="cru $(LTOPLUGIN)" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
