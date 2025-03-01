@@ -567,6 +567,8 @@ define kernelfeatures
 		sed -i 's/\# CONFIG_INET_DIAG is not set/CONFIG_INET_DIAG=y/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_MPTCP_DIAG is not set/CONFIG_MPTCP_DIAG=y/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_SCTP_DIAG is not set/CONFIG_SCTP_DIAG=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_UDP_DIAG is not set/CONFIG_UDP_DIAG=y/g' $(LINUXDIR)/.config; \
+		echo "CONFIG_UDP_DIAG=y" >> $(LINUXDIR)/.config; \
 	fi	
 	if [ "$(CONFIG_EXFAT)" != "y" ]; then \
 		sed -i 's/CONFIG_EXFAT_FS=m/\# CONFIG_EXFAT_FS is not set/g' $(LINUXDIR)/.config; \
