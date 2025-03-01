@@ -2971,6 +2971,7 @@ void configure_wifi(void) // madwifi implementation for atheros based
 		sprintf(regdomain, "wlan0_regdomain");
 		country = nvram_default_get(regdomain, "UNITED_STATES");
 		eval("iw", "reg", "set", "PA");
+		sleep(2);
 		const char *iso = getIsoName(country);
 		if (!iso)
 			iso = "DE";
@@ -3007,6 +3008,7 @@ void configure_wifi(void) // madwifi implementation for atheros based
 		sprintf(regdomain, "wlan0_regdomain");
 		country = nvram_default_get(regdomain, "UNITED_STATES");
 		eval("iw", "reg", "set", "PA");
+		sleep(2);
 		const char *iso = getIsoName(country);
 		if (!iso)
 			iso = "DE";
