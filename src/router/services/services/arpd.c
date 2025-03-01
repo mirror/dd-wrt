@@ -37,30 +37,28 @@
 
 void start_arpd(void)
 {
-		char vifs[512];
-		char *ifnames[128] = {"arpd","-b",NULL,"-a","3", "-k"};
-		int cnt=0;
-		getIfLists(vifs, sizeof(vifs));
-		char var[32], *wordlist;
-		const char *next;
-		char *dbname;
+	char vifs[512];
+	char *ifnames[128] = { "arpd", "-b", NULL, "-a", "3", "-k" };
+	int cnt = 0;
+	getIfLists(vifs, sizeof(vifs));
+	char var[32], *wordlist;
+	const char *next;
+	char *dbname;
 	if (!jffs_mounted() && (freediskSpace("/jffs") < 8 * 1024 * 1024))
 		ifnames[2] = "/tmp/arpd.db";
 	else
 		ifnames[2] = "/jffs/arpd.db";
-		cnt = 6;
-		int active = 0;
-		foreach(var, vifs, next)
-		{
-		    if (cnt == ARRAY_SIZE(ifnames))
-			    break;
-		    if (nvram_nmatch("1", "%s_arpd", var)) 
-			    ifnames[cnt++] = strdup(var);
-		    active = 1;
-		}
+	cnt = 6;
+	int active = 0;
+	foreach(var, vifs, next) {
+		if (cnt == ARRAY_SIZE(ifnames))
+			break;
+		if (nvram_nmatch("1", "%s_arpd", var))
+			ifnames[cnt++] = strdup(var);
+		active = 1;
+	}
 	_log_evalpid(ifnames, NULL, 0, NULL);
 
-	
 	return;
 }
 
