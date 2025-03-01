@@ -727,16 +727,10 @@ int flush_interfaces(void)
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_IPQ6018
 	int brand = getRouterBrand();
-	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_DYNALINK_DLWRX36)
-		snprintf(all_ifnames, 255, "%s %s %s", "eth4", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
-	else if (brand == ROUTER_LINKSYS_MR5500)
-		snprintf(all_ifnames, 255, "%s %s %s", "eth5", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
-	else if (brand == ROUTER_LINKSYS_MX5500 || brand == ROUTER_FORTINET_FAP231F || brand == ROUTER_BUFFALO_WXR5950AX12)
+	if (brand == ROUTER_FORTINET_FAP231F)
 		snprintf(all_ifnames, 255, "%s %s %s", "eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
-	else if (brand == ROUTER_ASUS_AX89X)
-		snprintf(all_ifnames, 255, "%s %s %s", "eth2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 	else
-		snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+		snprintf(all_ifnames, 255, "%s %s %s", "wan", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_VENTANA
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_NEWPORT

@@ -1735,80 +1735,80 @@ void start_lan(void)
 #elif defined(HAVE_IPQ6018)
 	int brand = getRouterBrand();
 	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_DYNALINK_DLWRX36) {
-		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 wlan0 wlan1");
+		nvram_setz(lan_ifnames, "wan lan1 lan2 lan3 lan4 wlan0 wlan1");
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			PORTSETUPWAN("");
 		} else {
-			PORTSETUPWAN("eth4");
+			PORTSETUPWAN("wan");
 		}
-		nvram_set("wan_default", "eth4");
+		nvram_set("wan_default", "wan");
 		if (nvram_match("et0macaddr", ""))
 			nvram_set("et0macaddr", get_hwaddr("eth4", macaddr));
 		strcpy(mac, nvram_safe_get("et0macaddr"));
 	} else if (brand == ROUTER_LINKSYS_MR5500) {
-		nvram_setz(lan_ifnames, "eth1 eth2 eth3 eth4 eth5 wlan0 wlan1");
+		nvram_setz(lan_ifnames, "wan lan1 lan2 lan3 lan4 wlan0 wlan1");
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			PORTSETUPWAN("");
 		} else {
-			PORTSETUPWAN("eth5");
+			PORTSETUPWAN("wan");
 		}
-		nvram_set("wan_default", "eth5");
+		nvram_set("wan_default", "wan");
 		if (nvram_match("et0macaddr", ""))
-			nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
+			nvram_set("et0macaddr", get_hwaddr("lan1", macaddr));
 		strcpy(mac, nvram_safe_get("et0macaddr"));
 	} else if (brand == ROUTER_LINKSYS_MX5500) {
-		nvram_setz(lan_ifnames, "eth1 eth2 eth3 eth4 eth5 wlan0 wlan1");
+		nvram_setz(lan_ifnames, "wan lan1 lan2 lan3 lan4 wlan0 wlan1");
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			PORTSETUPWAN("");
 		} else {
-			PORTSETUPWAN("eth1");
+			PORTSETUPWAN("wan");
 		}
-		nvram_set("wan_default", "eth1");
+		nvram_set("wan_default", "wan");
 		if (nvram_match("et0macaddr", ""))
-			nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
+			nvram_set("et0macaddr", get_hwaddr("lan1", macaddr));
 		strcpy(mac, nvram_safe_get("et0macaddr"));
 	} else if (brand == ROUTER_ASUS_AX89X) {
-		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 wlan0 wlan1");
+		nvram_setz(lan_ifnames, "wan lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8 10g-sfp 10g-copper wlan0 wlan1");
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			PORTSETUPWAN("");
 		} else {
-			PORTSETUPWAN("eth2");
+			PORTSETUPWAN("wan");
 		}
-		nvram_set("wan_default", "eth2");
+		nvram_set("wan_default", "wan");
 		if (nvram_match("et0macaddr", ""))
-			nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
+			nvram_set("et0macaddr", get_hwaddr("lan1", macaddr));
 		strcpy(mac, nvram_safe_get("et0macaddr"));
 	} else if (brand == ROUTER_FORTINET_FAP231F) {
-		nvram_setz(lan_ifnames, "eth0 eth1 wlan0 wlan1 wlan2");
+		nvram_setz(lan_ifnames, "wan lan1 wlan0 wlan1 wlan2");
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			PORTSETUPWAN("");
 		} else {
-			PORTSETUPWAN("eth1");
+			PORTSETUPWAN("wan");
 		}
-		nvram_set("wan_default", "eth1");
+		nvram_set("wan_default", "wan");
 		if (nvram_match("et0macaddr", ""))
-			nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
+			nvram_set("et0macaddr", get_hwaddr("lan1", macaddr));
 		strcpy(mac, nvram_safe_get("et0macaddr"));
 	} else if (brand == ROUTER_BUFFALO_WXR5950AX12) {
-		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 wlan0 wlan1 wlan2");
+		nvram_setz(lan_ifnames, "wan lan1 lan2 lan3 lan4 wlan0 wlan1 wlan2");
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			PORTSETUPWAN("");
 		} else {
-			PORTSETUPWAN("eth1");
+			PORTSETUPWAN("wan");
 		}
-		nvram_set("wan_default", "eth1");
+		nvram_set("wan_default", "wan");
 		if (nvram_match("et0macaddr", ""))
-			nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
+			nvram_set("et0macaddr", get_hwaddr("lan1", macaddr));
 		strcpy(mac, nvram_safe_get("et0macaddr"));
 	} else {
-		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 wlan0 wlan1 wlan2");
+		nvram_setz(lan_ifnames, "wan lan1 lan2 lan3 lan4 wlan0 wlan1 wlan2");
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			PORTSETUPWAN("");
 		} else {
-			PORTSETUPWAN("eth0");
+			PORTSETUPWAN("wan");
 		}
 		if (nvram_match("et0macaddr", ""))
-			nvram_set("et0macaddr", get_hwaddr("eth4", macaddr));
+			nvram_set("et0macaddr", get_hwaddr("lan1", macaddr));
 		strcpy(mac, nvram_safe_get("et0macaddr"));
 	}
 #elif defined(HAVE_VENTANA)

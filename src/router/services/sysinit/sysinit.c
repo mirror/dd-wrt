@@ -1067,66 +1067,63 @@ void start_restore_defaults(void)
 					 { 0, 0 } };
 #elif HAVE_IPQ6018
 	struct nvram_param *generic = NULL;
-	struct nvram_param generic_mr7350[] = { { "lan_ifname", "br0" },
-						{ "lan_ifnames", "eth0 eth1 eth2 eth3 eth4 wlan0 wlan1" },
-						{ "wan_ifname", "eth4" },
-						{ "wan_ifname2", "eth4" },
-						{ "wan_ifnames", "eth4" },
-						{ "wan_default", "eth4" },
-						{ 0, 0 } };
 	struct nvram_param generic_mr7500[] = { { "lan_ifname", "br0" },
-						{ "lan_ifnames", "eth0 eth1 eth2 eth3 eth4 wlan0 wlan1 wlan2" },
-						{ "wan_ifname", "eth0" },
-						{ "wan_ifname2", "eth0" },
-						{ "wan_ifnames", "eth0" },
-						{ "wan_default", "eth0" },
+						{ "lan_ifnames", "wan lan1 lan2 lan3 lan4 wlan0 wlan1 wlan2" },
+						{ "wan_ifname", "wan" },
+						{ "wan_ifname2", "wan" },
+						{ "wan_ifnames", "wan" },
+						{ "wan_default", "wan" },
 						{ 0, 0 } };
 	struct nvram_param generic_mx4200[] = { { "lan_ifname", "br0" },
-						{ "lan_ifnames", "eth0 eth1 eth2 eth3 wlan0 wlan1" },
-						{ "wan_ifname", "eth0" },
-						{ "wan_ifname2", "eth0" },
-						{ "wan_ifnames", "eth0" },
-						{ "wan_default", "eth0" },
-						{ 0, 0 } };
-	struct nvram_param generic_mr5500[] = { { "lan_ifname", "br0" },
-						{ "lan_ifnames", "eth0 eth1 eth2 eth3 eth4 eth5 wlan0 wlan1" },
-						{ "wan_ifname", "eth5" },
-						{ "wan_ifname2", "eth5" },
-						{ "wan_ifnames", "eth5" },
-						{ "wan_default", "eth5" },
+						{ "lan_ifnames", "wan lan1 lan2 lan3 lan4 wlan0 wlan1" },
+						{ "wan_ifname", "wan" },
+						{ "wan_ifname2", "wan" },
+						{ "wan_ifnames", "wan" },
+						{ "wan_default", "wan" },
 						{ 0, 0 } };
 	struct nvram_param generic_mx5500[] = { { "lan_ifname", "br0" },
-						{ "lan_ifnames", "eth0 eth1 eth2 eth3 eth4 wlan0 wlan1" },
-						{ "wan_ifname", "eth1" },
-						{ "wan_ifname2", "eth1" },
-						{ "wan_ifnames", "eth1" },
-						{ "wan_default", "eth1" },
+						{ "lan_ifnames", "wan lan1 lan2 lan3 wlan0 wlan1" },
+						{ "wan_ifname", "wan" },
+						{ "wan_ifname2", "wan" },
+						{ "wan_ifnames", "wan" },
+						{ "wan_default", "wan" },
 						{ 0, 0 } };
 	struct nvram_param generic_ax89[] = { { "lan_ifname", "br0" },
 					      { "lan_ifnames",
-						"eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 wlan0 wlan1" },
-					      { "wan_ifname", "eth2" },
-					      { "wan_ifname2", "eth2" },
-					      { "wan_ifnames", "eth2" },
-					      { "wan_default", "eth2" },
+						"wan lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8 lan9 lan10 wlan0 wlan1" },
+					      { "wan_ifname", "wan" },
+					      { "wan_ifname2", "wan" },
+					      { "wan_ifnames", "wan" },
+					      { "wan_default", "wan" },
+					      { 0, 0 } };
+	struct nvram_param generic_fap231f] = { { "lan_ifname", "br0" },
+					      { "lan_ifnames",
+						"wan lan1 wlan0 wlan1 wlan2" },
+					      { "wan_ifname", "wan" },
+					      { "wan_ifname2", "wan" },
+					      { "wan_ifnames", "wan" },
+					      { "wan_default", "wan" },
 					      { 0, 0 } };
 	int wrt_brand = getRouterBrand();
-	if (wrt_brand == ROUTER_LINKSYS_MR7350 || wrt_brand == ROUTER_DYNALINK_DLWRX36)
-		generic = generic_mr7350;
-	else if (wrt_brand == ROUTER_LINKSYS_MR5500 || wrt_brand == ROUTER_FORTINET_FAP231F)
-		generic = generic_mr5500;
-	else if (wrt_brand == ROUTER_LINKSYS_MX5500 || wrt_brand == ROUTER_BUFFALO_WXR5950AX12)
+	switch (wrt_brand) {
+	case ROUTER_LINKSYS_MX5500:
+	case ROUTER_BUFFALO_WXR5950AX12:
 		generic = generic_mx5500;
-	else if (wrt_brand == ROUTER_ASUS_AX89X)
+		break;
+	case ROUTER_ASUS_AX89X:
 		generic = generic_ax89;
-	else if (wrt_brand == ROUTER_LINKSYS_MR7500)
+		break;
+	case ROUTER_LINKSYS_MR7500:
+	case ROUTER_LINKSYS_MX8500:
+	case ROUTER_LINKSYS_MX5300:
 		generic = generic_mr7500;
-	else if (wrt_brand == ROUTER_LINKSYS_MX8500)
-		generic = generic_mr7500;
-	else if (wrt_brand == ROUTER_LINKSYS_MX5300)
-		generic = generic_mr7500;
-	else
+		break;
+	case ROUTER_FORTINET_FAP231F:
+		generic = generic_fap231f;
+		break;
+	default:
 		generic = generic_mx4200;
+	}
 #elif HAVE_VENTANA
 	struct nvram_param generic[] = { { "lan_ifname", "br0" },
 					 { "lan_ifnames", "eth0 eth1 wlan0 wlan1 wlan2 wlan3" },

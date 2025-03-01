@@ -1127,10 +1127,10 @@ void start_sysinit(void)
 		//              sysprintf("echo eth3 > /sys/class/leds/white:wan/device_name");
 		//              sysprintf("echo link > /sys/class/leds/white:wan/link");
 		sysprintf("echo netdev > /sys/class/leds/white:sfp/trigger");
-		sysprintf("echo eth1 > /sys/class/leds/white:sfp/device_name");
+		sysprintf("echo 10g-sfp > /sys/class/leds/white:sfp/device_name");
 		sysprintf("echo 1 > /sys/class/leds/white:sfp/link");
 		sysprintf("echo netdev > /sys/class/leds/white:aqr10g/trigger");
-		sysprintf("echo eth0 > /sys/class/leds/white:aqr10g/device_name");
+		sysprintf("echo 10g-copper > /sys/class/leds/white:aqr10g/device_name");
 		sysprintf("echo 1 > /sys/class/leds/white:aqr10g/link");
 		nvram_default_get("sfe", "3");
 
@@ -1303,11 +1303,11 @@ void start_sysinit(void)
 			newmac[3] & 0xff, newmac[4] & 0xff, newmac[5] & 0xff);
 		nvram_set("et0macaddr", ethaddr);
 		nvram_set("et0macaddr_safe", ethaddr);
-		set_hwaddr("eth0", ethaddr);
-		set_hwaddr("eth1", ethaddr);
-		set_hwaddr("eth2", ethaddr);
-		set_hwaddr("eth3", ethaddr);
-		set_hwaddr("eth4", ethaddr);
+		set_hwaddr("wan", ethaddr);
+		set_hwaddr("lan1", ethaddr);
+		set_hwaddr("lan2", ethaddr);
+		set_hwaddr("lan3", ethaddr);
+		set_hwaddr("lan4", ethaddr);
 	}
 	switch (brand) {
 	case ROUTER_LINKSYS_MR7350:
@@ -1494,14 +1494,14 @@ void start_sysinit(void)
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
 		insmod("qca8k");
 		start_initvlans();
-		eval_silence("ifconfig", "eth0", "up");
+		eval_silence("ifconfig", "lan1", "up");
 		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_LINKSYS_MX5500:
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
 		insmod("qca8k");
 		start_initvlans();
-		eval_silence("ifconfig", "eth0", "up");
+		eval_silence("ifconfig", "wan", "up");
 		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_LINKSYS_MR7350:
@@ -1535,16 +1535,16 @@ void start_sysinit(void)
 		break;
 	case ROUTER_FORTINET_FAP231F:
 		sysprintf("echo netdev > /sys/class/leds/eth1G/trigger");
-		sysprintf("echo eth0 > /sys/class/leds/eth1G/device_name");
+		sysprintf("echo lan1 > /sys/class/leds/eth1G/device_name");
 		sysprintf("echo 1 > /sys/class/leds/eth1G/link_1000");
 		sysprintf("echo netdev > /sys/class/leds/eth100/trigger");
-		sysprintf("echo eth0 > /sys/class/leds/eth100/device_name");
+		sysprintf("echo lan1 > /sys/class/leds/eth100/device_name");
 		sysprintf("echo 1 > /sys/class/leds/eth100/link_100");
 		sysprintf("echo netdev > /sys/class/leds/eth1G_lan2/trigger");
-		sysprintf("echo eth1 > /sys/class/leds/eth1G_lan2/device_name");
+		sysprintf("echo wan > /sys/class/leds/eth1G_lan2/device_name");
 		sysprintf("echo 1 > /sys/class/leds/eth1G_lan2/link_1000");
 		sysprintf("echo netdev > /sys/class/leds/eth100_lan2/trigger");
-		sysprintf("echo eth1 > /sys/class/leds/eth100_lan2/device_name");
+		sysprintf("echo wan > /sys/class/leds/eth100_lan2/device_name");
 		sysprintf("echo 1 > /sys/class/leds/eth100_lan2/link_100");
 		setscaling(1800000);
 		disableportlearn();
@@ -1607,6 +1607,17 @@ void start_sysinit(void)
 	nvram_unset("sw_cpuport");
 	nvram_unset("sw_wancpuport");
 	nvram_set("old_nss", nvram_safe_get("nss"));
+
+	if (nvram_geti("nvram_ver") < 11) {
+		nvram_set("nvram_ver", "11");
+		nvram_set("wan_ifname2", "wan");
+		nvram_set("wan_ifname", "wan");
+		nvram_set("wan_ifnames", "wan");
+		nvram_set("wan_default", "wan");
+		nvram_set("wan_iface", "wan");
+	}
+
+
 	detect_usbdrivers();
 
 	return;
@@ -1780,7 +1791,7 @@ void start_overclocking(void)
 
 char *enable_dtag_vlan(int enable)
 {
-	return "eth0";
+	return "wan";
 }
 
 char *set_wan_state(int state)
