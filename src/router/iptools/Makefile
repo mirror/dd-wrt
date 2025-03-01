@@ -12,7 +12,7 @@ ifeq ($(HAVE_BERKELEY_DB),y)
 	TARGETS += arpd
 endif
 
-all: $(TARGETS)
+all: db $(TARGETS)
 
 
 configure:
@@ -30,11 +30,11 @@ configure:
 	AR_FLAGS="cru $(LTOPLUGIN)" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 	$(MAKE) -C db/build_unix
-	$(MAKE) -C db/build_unix install DESTDIR=$(TOP)/iptools/db/staging
+	make -C db/build_unix install DESTDIR=$(TOP)/iptools/db/staging
 
 db:
 	$(MAKE) -C db/build_unix
-	$(MAKE) -C db/build_unix install DESTDIR=$(TOP)/iptools/db/staging
+	make -C db/build_unix install DESTDIR=$(TOP)/iptools/db/staging
 
 ss: ss.o ssfilter_check.o ssfilter.tab.o $(SSOBJ)
 	$(QUIET_LINK)$(CC) $^ $(LDFLAGS) $(LDLIBS) -o $@
@@ -58,7 +58,7 @@ lnstat: $(LNSTATOBJ) $(SSOBJ)
 	$(QUIET_LINK)$(CC) $^ $(LDFLAGS) $(LDLIBS) -o $@
 
 install: all
-	$(MAKE) -C db/build_unix install DESTDIR=$(INSTALLDIR)
+	make -C db/build_unix install DESTDIR=$(INSTALLDIR)
 	rm -rf $(INSTALLDIR)/$(DESTDIR)/usr/include
 	rm -rf $(INSTALLDIR)/$(DESTDIR)/usr/docs
 	rm -f $(INSTALLDIR)/$(DESTDIR)/usr/lib/*.la
