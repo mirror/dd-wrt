@@ -20,8 +20,6 @@ ifeq ($(VERBOSE), 0)
     QUIET_LEX      = @echo '    LEX      '$@;
 endif
 PKG_CONFIG:=pkg-config
-AR:=ar
-CC:=gcc
 YACC:=bison
 TC_CONFIG_IPSET:=y
 LIBDIR:=/usr/lib
@@ -29,7 +27,7 @@ IPT_LIB_DIR:=/usr/lib/xtables
 IP_CONFIG_SETNS:=y
 CFLAGS += -DHAVE_SETNS
 CFLAGS += -DHAVE_HANDLE_AT
-HAVE_SELINUX:=y
+#HAVE_SELINUX:=y
 #LDLIBS += -lselinux
 #CFLAGS += -DHAVE_SELINUX
 HAVE_RPC:=y
@@ -42,7 +40,7 @@ CFLAGS += -DHAVE_ELF
 #CFLAGS += -DHAVE_LIBMNL
 #LDLIBS += -lmnl
 HAVE_BERKELEY_DB:=y
-CFLAGS += -DNEED_STRLCPY
+#CFLAGS += -DNEED_STRLCPY
 #HAVE_CAP:=y
 #CFLAGS += -DHAVE_LIBCAP
 #LDLIBS += -lcap
