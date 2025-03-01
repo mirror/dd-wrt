@@ -132,7 +132,7 @@
  "dns_redirectdot"  "DNS Redirection DoT"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "recursive_dns"  "DNS Recursive"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "dnsipv6_enable"  "DNS enable IPv6  RA"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
- "dnsipv6_rastate"  "IPv6 slaac or ra-stateless"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
+ "dnsipv6_rastate"  "IPv6 ra-stateless, ra-stateful, ra-only"  "CHOICE" "3" "0" "1" "2" "FALSE" "0"
  "dnsipv6_leasetime"  "IPv6 leasetime"  "RANGE"  "0" "99999" "FALSE" "0"
  "dnsipv6_enable" "dnsipv6 handler" "DNSIPV6" "FALSE" "0"
  "dnsipv6_range_start"  "IPv6 DHCP start" "NULL" "TRUE" "0"
