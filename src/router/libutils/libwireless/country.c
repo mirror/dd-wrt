@@ -1009,8 +1009,7 @@ static int checkfilter(char *filter, char *check, int sc)
 	char var[32];
 	if (!filter)
 		return 1;
-	foreach(var, filter, next)
-	{
+	foreach(var, filter, next) {
 		if (!strcmp(var, check))
 			return 1;
 	}

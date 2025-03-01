@@ -258,8 +258,7 @@ static int internal_eval_va(int silence, int space, const char *cmd, va_list arg
 			s_args[i++] = arg;
 		else {
 			char *c = strdup(arg);
-			foreach(word, c, next)
-			{
+			foreach(word, c, next) {
 				s_args[i++] = strdup(word);
 			}
 			free(c);
@@ -812,8 +811,7 @@ int strhas(char *list, char *value)
 
 	if (!list)
 		return 0;
-	foreach(word, list, next)
-	{
+	foreach(word, list, next) {
 		if (!strcmp(word, value))
 			return 1;
 	}

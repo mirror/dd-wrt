@@ -528,8 +528,7 @@ static void add_dnslist(struct dns_lists *dns_list, char *dns, int custom, int i
 	char word[128];
 	if (!dns)
 		return;
-	foreach(word, dns, next)
-	{
+	foreach(word, dns, next) {
 		add_dnslist_internal(dns_list, word, custom, ipv6);
 	}
 }
@@ -610,8 +609,7 @@ struct dns_lists *get_dns_list(int v6)
 		if (!nvram_match("ignore_wan_dns", "1") || nvram_match("wan_proto", "static")) {
 			const char *next, *wordlist = nvram_safe_get("ipv6_get_dns");
 			char word[64];
-			foreach(word, wordlist, next)
-			{
+			foreach(word, wordlist, next) {
 				add_dnslist(dns_list, word, 0, 1);
 			}
 		}
@@ -1510,8 +1508,7 @@ int doMultiCast(void)
 	char ifnames[256];
 
 	getIfLists(ifnames, 256);
-	foreach(name, ifnames, next)
-	{
+	foreach(name, ifnames, next) {
 		if (strcmp(safe_get_wan_face(wan_if_buffer), name) && strcmp(nvram_safe_get("lan_ifname"), name) &&
 		    strcmp(nvram_safe_get("tvnicfrom"), name)) {
 			if ((nvram_nmatch("0", "%s_bridged", name) || isbridge(name)) && nvram_nmatch("1", "%s_multicast", name)) {
@@ -1927,8 +1924,7 @@ static void addactions(char *nv, char *action)
 		return;
 	char *services = nvram_safe_get(nv);
 
-	foreach(service, services, next)
-	{
+	foreach(service, services, next) {
 		if (!strcmp(service, action)) {
 			return;
 		}

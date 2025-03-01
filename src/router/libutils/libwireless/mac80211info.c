@@ -817,8 +817,7 @@ struct mac80211_info *mac80211_assoclist(const char *interface)
 		if (history) {
 			const char *next;
 			char ifcheck[64];
-			foreach(ifcheck, history, next)
-			{
+			foreach(ifcheck, history, next) {
 				if (!strcmp(ifcheck, ifname + 1))
 					goto skip;
 			}

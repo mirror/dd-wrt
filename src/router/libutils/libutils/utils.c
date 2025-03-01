@@ -279,8 +279,7 @@ char *getBridge(const char *ifname, char *word)
 {
 	const char *next, *wordlist;
 	wordlist = nvram_safe_get("bridgesif");
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(bridge, word, 0);
 		GETENTRYBYIDX(port, word, 1);
 		if (!bridge)
@@ -304,8 +303,7 @@ char *getBridgeMTU(const char *ifname, char *word)
 	const char *next, *wordlist;
 
 	wordlist = nvram_safe_get("bridges");
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(bridge, word, 0);
 		GETENTRYBYIDX(mtu, word, 3);
 		if (!bridge)
@@ -1129,8 +1127,7 @@ int getIfListB(char *buffer, size_t len, const char *ifprefix, int bridgesonly, 
 	int cnt = 0;
 	bzero(buffer, len);
 	if (ifprefix) {
-		foreach(word, ifprefix, next)
-		{
+		foreach(word, ifprefix, next) {
 			char **presort = _getIfListB(word, bridgesonly, noports, &cnt);
 			if (presort) {
 				if (!sort) {
@@ -1379,8 +1376,7 @@ int _domod(char *module, char *loader)
 	int ret = 0;
 	char *target;
 	wordlist = module;
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		target = word;
 		if (nvram_match("module_testing", "1")) {
 			sprintf(check, "/jffs/modules_debug/%s.ko", word);
@@ -1416,8 +1412,7 @@ void rmmod(char *module)
 	char word[256];
 	const char *next, *wordlist;
 	wordlist = module;
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		_evalpid((char *const[]){ "rmmod", word, NULL }, ">/dev/null", 0, NULL);
 	}
 }
@@ -1766,8 +1761,7 @@ void set_named_smp_affinity_list(char *name, char *cpulist, int entry)
 	char var[32];
 	const char *next;
 	int mask = 0;
-	foreach(var, cpulist, next)
-	{
+	foreach(var, cpulist, next) {
 		mask |= 1 << atoi(var);
 	}
 	set_named_smp_affinity_mask(name, mask, entry);
@@ -2191,8 +2185,7 @@ char *getBridgeSTPType(char *br, char *word)
 {
 	const char *next, *wordlist;
 	wordlist = nvram_safe_get("bridges");
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(bridge, word, 0);
 		GETENTRYBYIDX(stp, word, 1);
 		if (bridge && br && strcmp(bridge, br))
@@ -2218,8 +2211,7 @@ int getBridgeForwardDelay(char *br)
 	const char *next, *wordlist;
 	char word[128];
 	wordlist = nvram_safe_get("bridges");
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(bridge, word, 0);
 		GETENTRYBYIDX(fd, word, 4);
 		if (bridge && br && strcmp(bridge, br))
@@ -2236,8 +2228,7 @@ int getBridgeMaxAge(char *br)
 	const char *next, *wordlist;
 	char word[128];
 	wordlist = nvram_safe_get("bridges");
-	foreach(word, wordlist, next)
-	{
+	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(bridge, word, 0);
 		GETENTRYBYIDX(age, word, 5);
 		if (bridge && br && strcmp(bridge, br))
@@ -2334,8 +2325,7 @@ static char *s_getDrives(int type)
 			char var[64];
 			const char *next;
 			if (mounts) {
-				foreach(var, mounts, next)
-				{
+				foreach(var, mounts, next) {
 					if (!strcmp(drv, var))
 						goto next;
 				}

@@ -355,8 +355,7 @@ void sync_multicast_to_unicast(void)
 	getIfLists(vifs, sizeof(vifs));
 	char var[256];
 	const char *wordlist, *next;
-	foreach(var, vifs, next)
-	{
+	foreach(var, vifs, next) {
 		set_multicast_to_unicast(var);
 	}
 }

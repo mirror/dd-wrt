@@ -205,8 +205,7 @@ int has_vht160(const char *prefix)
 
 	if (wl_iovar_get(ifname, "cap", (void *)caps, sizeof(caps)))
 		return 0; // error
-	foreach(cap, caps, next)
-	{
+	foreach(cap, caps, next) {
 		if (!strcmp(cap, "160")) {
 			return 1;
 		}
@@ -913,8 +912,7 @@ int has_mumimo(const char *prefix)
 	if (wl_iovar_get(name, "cap", (void *)caps, sizeof(caps)))
 		return -1;
 
-	foreach(cap, caps, next)
-	{
+	foreach(cap, caps, next) {
 		if (!strcmp(cap, "multi-user-beamformer"))
 			return 1;
 	}
@@ -4251,8 +4249,7 @@ void set_vifsmac(char *base) // corrects hwaddr and bssid assignment
 	char mac[80];
 	char *vifs = nvram_nget("%s_vifs", base);
 
-	foreach(var, vifs, next)
-	{
+	foreach(var, vifs, next) {
 		eval("ifconfig", var, "down");
 		wl_getbssid(var, mac);
 		set_hwaddr(var, mac);
@@ -4475,8 +4472,7 @@ int wlconf_up(char *name)
 	eval("wl", "-i", name, "vlan_mode", "0");
 	char *vifs = nvram_nget("%s_vifs", ifinst);
 	if (vifs != NULL) {
-		foreach(var, vifs, next)
-		{
+		foreach(var, vifs, next) {
 			char tmp[256];
 			eval("ifconfig", var, "down");
 			char *mac = nvram_nget("%s_hwaddr", var);
@@ -4489,8 +4485,7 @@ int wlconf_up(char *name)
 			}
 		}
 		if (nvram_nmatch("apstawet", "wl%d_mode", instance)) {
-			foreach(var, vifs, next)
-			{
+			foreach(var, vifs, next) {
 				eval("wl", "-i", var, "down");
 				eval("wl", "-i", var, "apsta", "0");
 				eval("wl", "-i", var, "up");
@@ -4868,8 +4863,7 @@ int get_maxbssid(char *name)
 	char *ifname = nvram_nget("%s_ifname", name);
 	if (wl_iovar_get(ifname, "cap", (void *)caps, sizeof(caps)))
 		return 4; //minimum is default
-	foreach(cap, caps, next)
-	{
+	foreach(cap, caps, next) {
 		if (!strcmp(cap, "mbss16")) {
 			return 16;
 		}
@@ -4891,8 +4885,7 @@ int has_acktiming(const char *name)
 	char *ifname = nvram_nget("%s_ifname", name);
 	if (wl_iovar_get(ifname, "cap", (void *)caps, sizeof(caps)))
 		return 0;
-	foreach(cap, caps, next)
-	{
+	foreach(cap, caps, next) {
 		if (!strcmp(cap, "acktiming")) {
 			return 1;
 		}
