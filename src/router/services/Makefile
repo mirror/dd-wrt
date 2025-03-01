@@ -455,6 +455,10 @@ ifeq ($(CONFIG_GPSI),y)
   CFLAGS_EXTRA += -DHAVE_GPSI
   OBJS+=gps.o
 endif
+ifeq ($(CONFIG_IPTOOLS),y)
+  CFLAGS_EXTRA += -DHAVE_ARPD
+  OBJS+=arpd.o
+endif
 ifeq ($(CONFIG_SYSLOG),y)
 CFLAGS_EXTRA += -DHAVE_SYSLOG
 endif
