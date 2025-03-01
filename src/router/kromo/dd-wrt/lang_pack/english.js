@@ -1612,6 +1612,7 @@ networking.ipvs_weight="Weight";
 networking.ipvs_role="Role";
 networking.ipvs_config="Configuration";
 networking.arpd="ARPd Caching";
+networking.arpd_en="Enable ARPd";
 
 //help container
 var hnetworking=new Object();
