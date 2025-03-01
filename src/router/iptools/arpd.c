@@ -435,10 +435,13 @@ static void get_kern_msg(void)
 	struct iovec iov;
 	char   buf[8192];
 	struct msghdr msg = {
-		(void *)&nladdr, sizeof(nladdr),
-		&iov,	1,
-		NULL,	0,
-		0
+		.msg_name = (void *)&nladdr, 
+		.msg_namelen = sizeof(nladdr),
+		.msg_iov = &iov,	
+		.msg_iovlen = 1,
+		.msg_control = NULL,	
+		.msg_controllen = 0,
+		.msg_flags = 0
 	};
 
 	iov.iov_base = buf;
