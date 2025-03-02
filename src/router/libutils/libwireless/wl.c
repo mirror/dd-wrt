@@ -1909,9 +1909,7 @@ void mac80211_radio_on_off(int idx, int on)
 	int needrestart = 1;
 	if (idx >= ARRAY_SIZE(radiostate))
 		return;
-	if (radiostate[idx] == 1 && on)
-		return;
-	if (radiostate[idx] == 0 && !on)
+	if (radiostate[idx] == on)
 		return;
 	radiostate[idx] = on;
 
