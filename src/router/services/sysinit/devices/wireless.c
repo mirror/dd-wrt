@@ -64,7 +64,7 @@ static char *has_device(char *dev)
 static void wait_for_wifi(int min)
 {
 	int cnt = 0;
-	while ((cnt++) < 10 && getdevicecount() < (min * 10)) {
+	while ((cnt++) < 100 && getdevicecount() < min) {
 		usleep(100 * 1000);
 	}
 }
