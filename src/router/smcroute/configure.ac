@@ -99,23 +99,7 @@ AS_IF([test "x$PKG_CONFIG" = "x"], [
 	AC_MSG_WARN([Cannot find pkg-config tool, disabling systemd check.])])
 
 with_libsystemd=no
-AS_IF([test "x$with_systemd" = "xyes" -o "x$with_systemd" = "xauto"], [
-	def_systemd=$($PKG_CONFIG --variable=systemdsystemunitdir systemd)
-	AS_IF([test "x$def_systemd" = "x"], [
-        	AS_IF([test "x$with_systemd" = "xyes"],[
-	    		AC_MSG_ERROR([systemd support requested but pkg-config unable to query systemd package])])
-		with_systemd=no], [with_systemd="$def_systemd"])])
 
-AS_IF([test "x$with_systemd" != "xno"], [
-	PKG_CHECK_MODULES([libsystemd], [libsystemd], [with_libsystemd=yes], [true])
-	AC_SUBST([systemddir], [$with_systemd])])
-AM_CONDITIONAL([HAVE_SYSTEMD], [test "x$with_systemd" != "xno"])
-
-AS_IF([test "x$with_libsystemd" != "xno"], [
-	AC_DEFINE([HAVE_LIBSYSTEMD], [1], [Define to 1 if you have libsystemd-dev])
-	AC_SUBST([DAEMON_TYPE], "notify")], [
-	AC_SUBST([DAEMON_TYPE], "simple")])
-AM_CONDITIONAL([HAVE_LIBSYSTEMD], [test "x$with_libsystemd" != "xno"])
 
 # Check if we need -lpthread (building statically) and -lrt (older GLIBC)
 # Unset cached values when retrying with -lpthread and reset LIBS for each API
@@ -216,7 +200,7 @@ AS_IF([test "x$ac_cv_header_sys_capability_h" = "xno"], [
 
 # Workaround for as-of-yet unreleased runstatedir support, planned for
 # autoconf 2.70, which some major distros have backported.
-AS_IF([test -z "$runstatedir"], runstatedir="$localstatedir/run")
+AS_IF([test -z "$runstatedir"], runstatedir="/var/run")
 AC_SUBST(runstatedir)
 
 AC_OUTPUT

@@ -17,12 +17,6 @@ smcrouted_SOURCES   += cap.c cap.h
 smcrouted_LDADD	    += -lcap
 endif
 
-if HAVE_LIBSYSTEMD
-smcrouted_SOURCES   += systemd.c
-smcrouted_CFLAGS    += $(libsystemd_CFLAGS)
-smcrouted_LDADD	    += $(libsystemd_LIBS)
-endif
-
 if USE_MRDISC
 smcrouted_SOURCES   += mrdisc.c mrdisc.h
 endif

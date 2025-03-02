@@ -10,10 +10,6 @@ if ENABLE_TEST
 SUBDIRS                += test
 endif
 
-if HAVE_SYSTEMD
-systemd_DATA            = smcroute.service
-endif
-
 ## Check if tagged in git
 release-hook:
 	@if [ ! `git tag -l $(PACKAGE_VERSION) | grep $(PACKAGE_VERSION)` ]; then	\
