@@ -85,7 +85,7 @@ void start_sfe(void)
 		insmod("hyfi-bridging");
 		eval("insmod", "ecm", "front_end_selection=2");
 #if !defined(HAVE_IPQ6018) && defined(HAVE_IPQ806X)
-		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
+		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect");
 #endif
 		dd_loginfo("ecm-nss", "shortcut (NSS-SFE) forwarding engine successfully started");
 	} else if (nvram_match("sfe", "5") && has_nss) { // ecm sfe & nss
