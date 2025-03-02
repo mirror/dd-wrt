@@ -277,6 +277,9 @@ static int start_services_main(int argc, char **argv)
 #ifdef HAVE_BLUEZ
 	start_service_f("bluetooth");
 #endif
+#ifdef HAVE_SMCROUTE
+	start_service_f("smcrouted");
+#endif
 	return 0;
 }
 
@@ -392,6 +395,9 @@ static int stop_services_main(int argc, char **argv)
 
 #ifdef HAVE_LLTD
 	stop_service_f("lltd");
+#endif
+#ifdef HAVE_SMCROUTE
+	stop_service_f("smcrouted");
 #endif
 
 #ifdef HAVE_WOL
@@ -818,6 +824,10 @@ static void handle_services(void)
 #ifdef HAVE_BLUEZ
 	restart_f("bluetooth");
 #endif
+#ifdef HAVE_SMCROUTE
+	restart_f("smcrouted");
+#endif
+
 #ifdef HAVE_CHRONY
 	stop_service("chronyd");
 	start_service_f("chronyd");
@@ -881,6 +891,10 @@ static void handle_nassrv(void)
 #ifdef HAVE_BLUEZ
 	restart_f("bluetooth");
 #endif
+#ifdef HAVE_SMCROUTE
+	restart_f("smcrouted");
+#endif
+
 	restart("firewall");
 }
 
