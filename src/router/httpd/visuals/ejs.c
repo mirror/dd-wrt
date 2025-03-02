@@ -2044,8 +2044,12 @@ EJ_VISIBLE void ej_getwirelessstatus(webs_t wp, int argc, char_t **argv)
 	strncpy(m, nvram_safe_get("wifi_display"), 5);
 	m[5] = 0;
 	sprintf(var, "%s_mode", m);
-
-	if (is_ap(m)) {
+	if (is_mesh(m)) {
+		showmesh = 1;
+		sprintf(var, "%s_vifs", m);
+		if (*(nvram_safe_get(var)))
+			showap = 1; // " & Clients"
+	} else if (is_ap(m)) {
 		showap = 1; // "Clients"
 	} else {
 		showcli = 1; // "Access Point"
@@ -2054,9 +2058,11 @@ EJ_VISIBLE void ej_getwirelessstatus(webs_t wp, int argc, char_t **argv)
 			showap = 1; // " & Clients"
 	}
 
+	if (showmesh)
+		websWrite(wp, "<script type=\"text/javascript\">Capture(info.mesh)</script>");
 	if (showcli)
 		websWrite(wp, "<script type=\"text/javascript\">Capture(info.ap)</script>");
-	if (showcli && showap)
+	if ((showcli || showmesh) && showap)
 		websWrite(wp, " & ");
 	if (showap)
 		websWrite(wp, "<script type=\"text/javascript\">Capture(status_wireless.legend3)</script>");

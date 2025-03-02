@@ -227,6 +227,7 @@ void show_custominputlabel(webs_t wp, char *labelname, char *propertyname, char 
 #endif
 int do_file(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
 int is_ap(const char *prefix);
+int is_mesh(const char *prefix);
 
 void delete_old_routes(void);
 void delete_old_pbr(void);

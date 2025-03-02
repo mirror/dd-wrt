@@ -1197,6 +1197,7 @@ info.h2="System Information";
 info.wlanmac="Wireless MAC";
 info.srv="Services";
 info.ap="Access Point";
+info.mesh="Mesh Nodes";
 
 // ** index_heartbeat.asp **//
 var idx_h=new Object();
