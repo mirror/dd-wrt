@@ -3550,8 +3550,6 @@ int mac80211_get_phy_ifname(const char *ifname)
 	int devnum;
 	if (!ifname)
 		return -1;
-	if (is_wil6210(ifname))
-		return 2;
 	if (strncmp(ifname, "wlan", 4))
 		return -1;
 	if (!sscanf(ifname, "wlan%d", &devnum))
@@ -3775,7 +3773,7 @@ int has_airtime_policy(const char *prefix)
 #endif
 
 #ifdef HAVE_WIL6210
-IS_DRIVER(wil6210, "pci:wil6210");
+IS_DRIVER(wil6210, "pci:wil6210", "wil6210");
 #endif
 
 /* we could read it from mac80211, but this is more complicated */
