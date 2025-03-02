@@ -35,6 +35,7 @@ OK()
     exit 0
 }
 
+# shellcheck disable=SC2068
 check_dep()
 {
     if [ -n "$2" ]; then

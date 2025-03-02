@@ -586,12 +586,14 @@ static int mfc_uninstall(struct mroute *route)
 			continue;
 
 		if (is_active(kern) || !removal) {
-			rc += kern_mroute_add(kern);
+			if (kern_mroute_add(kern))
+				rc = -1;
 			continue;
 		}
 
 	cleanup:
-		rc += kern_mroute_del(kern);
+		if (kern_mroute_del(kern))
+			rc = -1;
 		TAILQ_REMOVE(&kern_list, kern, link);
 		free(kern);
 	}
@@ -1015,9 +1017,11 @@ int mroute_add_vif(char *ifname, uint8_t mrdisc, uint8_t ttl)
 		iface->mrdisc    = mrdisc;
 		iface->threshold = ttl;
 		iface->unused    = 0;
-		rc += mroute4_add_vif(iface);
+		if (mroute4_add_vif(iface))
+			rc = -1;
 #ifdef HAVE_IPV6_MULTICAST_ROUTING
-		rc += mroute6_add_mif(iface);
+		if (mroute6_add_mif(iface))
+			rc = -1;
 #endif
 	}
 
@@ -1039,9 +1043,11 @@ int mroute_del_vif(char *ifname)
 	iface_match_init(&state);
 	while ((iface = iface_match_by_name(ifname, 1, &state))) {
 		smclog(LOG_DEBUG, "Removing multicast VIFs for %s", iface->ifname);
-		rc += mroute4_del_vif(iface);
+		if (mroute4_del_vif(iface))
+			rc = -1;
 #ifdef HAVE_IPV6_MULTICAST_ROUTING
-		rc += mroute6_del_mif(iface);
+		if (mroute6_del_mif(iface))
+			rc = -1;
 #endif
 	}
 

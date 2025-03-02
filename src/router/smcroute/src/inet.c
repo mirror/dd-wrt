@@ -116,14 +116,14 @@ inet_addr_t inet_netaddr(inet_addr_t *addr, int len)
 			bits -= 32;
 		}
 
-		s6.s6_addr32[pos] = htonl(ntohl(s6.s6_addr32[pos]) & (0xffffffffu << bits));
+		s6.s6_addr32[pos] = htonl(ntohl(s6.s6_addr32[pos]) & ((0xffffffffU << bits) & 0xffffffffU));
 		sin6->sin6_addr = s6;
 	} else
 #endif
 	{
 		struct in_addr *ina = inet_addr_get(&net);
 
-		ina->s_addr = htonl(ntohl(ina->s_addr) & (0xffffffffu << bits));
+		ina->s_addr = htonl(ntohl(ina->s_addr) & ((0xffffffffU << bits) & 0xffffffffU));
 	}
 
 	return net;

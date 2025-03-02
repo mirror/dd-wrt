@@ -11,13 +11,20 @@ in `$PATH`:
   - `tshark` (because `tcpdump -w foo.pcap` doesn't work in an unshare)
   - `valgrind`, for the memleak test
 
-> **Note:* one of the tests makes use of `iptables`, which may not work
-> in an `unshare(1)`, unless you have v1.8.7 or newer that supports the
+> [!IMPORTANT]
+> One of the tests makes use of `iptables`, which may not work in an
+> `unshare(1)`, unless you have v1.8.7 or newer that supports the
 > `XTABLES_LOCKFILE` environment variable.  As a workaround you can
 > `chmod a+rw /var/run/xtables.lock`.
 >
-> Also, the GRE test requires your system to have the `ip_gre.ko` kernel
-> module loaded.  If not, the test will be skipped.
+> Also, as of Ubuntu 24.04 blocks user namespaces for unprivileged users
+> by default, meaning you need some `sysctl` magic to set up your system
+> see <https://github.com/YoYoGames/GameMaker-Bugs/issues/6015>:
+>
+>     sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0
+>
+> Finally, the GRE test require the `ip_gre.ko` kernel module to be
+> loaded.  If not, the test will be skipped.
 
 
 Running
@@ -40,9 +47,10 @@ Each unit test is standalone.  To manually run select tests:
 The tools `ping` and `tshark` are used to create and listen to multicast
 streams "routed by" SMCRoute.
 
-> **Note:** these tests must be run in sequence, not in parallel,
->   because they use the same interface names *and*, most importantly,
->   we may run on a kernel w/o multicast policy routing support!
+> [!NOTE]
+> These tests must be run in sequence, not in parallel, because they use
+> the same interface names *and*, most importantly, we may run on a
+> kernel w/o multicast policy routing support!
 
 [1]: https://github.com/libnet/nemesis
 [2]: https://github.com/troglobit/smcroute/actions/workflows/build.yml
@@ -109,8 +117,9 @@ created on which routing takes place.
 
 Both bridge ports, `a1` and `a2`, are untagged members of each VLAN.
 
-> **Note:** interface `a1` and `vlan1` are in the same VLAN (VID 1), and
->           interface `a2` and `vlan2` are in the same VLAN (VID 2).
+> [!NOTE]
+> interface `a1` and `vlan1` are in the same VLAN (VID 1), and
+> interface `a2` and `vlan2` are in the same VLAN (VID 2).
 
 
 ### Isolated Endpoints Bridged w/ VLANs
@@ -131,8 +140,9 @@ interfaces and using ping6 as emitter instead of requiring [nemesis][1].
 
 Both bridge ports, `a1` and `a2`, are untagged members of each VLAN.
 
-> **Note:** interface `a1` and `vlan1` are in the same VLAN (VID 1), and
->           interface `a2` and `vlan2` are in the same VLAN (VID 2).
+> [!NOTE]
+> interface `a1` and `vlan1` are in the same VLAN (VID 1), and
+> interface `a2` and `vlan2` are in the same VLAN (VID 2).
 
 
 ### Isolated

@@ -86,8 +86,8 @@ static unsigned short in_cksum(unsigned short *addr, int len)
 {
 	unsigned short answer = 0;
 	unsigned short *w = addr;
+	unsigned int sum = 0;
 	int nleft = len;
-	int sum = 0;
 
 	/*
 	 * Our algorithm is simple, using a 32 bit accumulator (sum), we add
@@ -108,7 +108,7 @@ static unsigned short in_cksum(unsigned short *addr, int len)
 	/* add back carry outs from top 16 bits to low 16 bits */
 	sum  = (sum >> 16) + (sum & 0xffff);	/* add hi 16 to low 16 */
 	sum += (sum >> 16);			/* add carry */
-	answer = ~sum;				/* truncate to 16 bits */
+	answer = ~sum & 0xffff;			/* truncate to 16 bits */
 
 	return answer;
 }

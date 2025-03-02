@@ -1,0 +1,23 @@
+Authors
+=======
+
+Year:     2001-2005
+Author:   Carsten Schill <carsten@cschill.de>, original author
+Releases: --> 0.92
+URL:      http://www.cschill.de/smcroute/
+
+Year:     2006-2011
+Releases: Version 0.93 --> 0.95
+Authors:  Julien BLACHE <jb@jblache.org>,
+          Todd Hayton <todd.hayton@gmail.com>, and
+          Micha Lenk <micha@debian.org>
+URL:      http://alioth.debian.org/projects/smcroute
+
+Year:     2011-
+Releases: 1.93.0 -->
+Authors:  Joachim Wiberg <troglobit@gmail.com>,
+          Todd Hayton <todd.hayton@gmail.com>,
+          Micha Lenk <micha@debian.org>, and
+          Julien BLACHE <jb@jblache.org>
+URL:      https://github.com/troglobit/smcroute
+

@@ -57,9 +57,8 @@ static void ipc_read(int sd)
 	preallocate ipc_msg only once in advance */  
 	char msg_buf[sizeof(struct ipc_msg) + CMD_MAX_WORDS * sizeof(char *)];
 	char buf[MX_CMDPKT_SZ];
-	const char* buf_ptr;
-	ssize_t rx = 0, rx_curr;
 	int first_call = 1;
+	ssize_t pos = 0;
 
 	memset(buf, 0, sizeof(buf));
 
@@ -69,32 +68,40 @@ static void ipc_read(int sd)
 	 * all data
 	 */
 	while (1) {
-		rx_curr = ipc_receive(sd, buf + rx, sizeof(buf) - rx, first_call);
+		const char* ptr;
+		ssize_t rc;
+
+		rc = ipc_receive(sd, buf + pos, sizeof(buf) - pos - 1, first_call);
 		first_call = 0;
-		if (rx_curr <= 0) {
+		if (rc <= 0) {
 			if (errno == EAGAIN)     /* no more data from client */
 				return;
 			if (errno != ECONNRESET) /* Skip logging client disconnects */
 				smclog(LOG_WARNING, "Failed receiving IPC message from client: %s", strerror(errno));
 			return;
 		}
-		rx += rx_curr;
+
+		pos += rc;
+		if (pos > (int)sizeof(buf) - 1) {
+			smclog(LOG_WARNING, "Too large IPC message, unsupported.");
+			return;
+		}
 
 		/* Make sure to always have at least one NUL, for strlen() */
-		buf[rx] = 0;
+		buf[pos] = 0;
 
-		buf_ptr = buf;
-		while (rx > 0) {
+		ptr = buf;
+		while (pos > 0) {
 			struct ipc_msg* msg = (struct ipc_msg*)msg_buf;
 
 			/* extract one command at a time */
-			if (ipc_parse(buf_ptr, rx, msg)) {
+			if (ipc_parse(ptr, pos, msg)) {
 				if (EAGAIN == errno) {
 					/* 
 					 * need more data from client?  move last unused bytes (if any) to
 					 * the begging of the buffer and lets try to receive more data
 					 */
-					memmove(buf, buf_ptr, rx);
+					memmove(buf, ptr, pos);
 					break;
 				}
 				smclog(LOG_WARNING, "Failed to parse IPC message from client: %s", strerror(errno));
@@ -111,8 +118,8 @@ static void ipc_read(int sd)
 			}
 
 			/* shift to the next command if any and reduce remaining bytes in buffer */
-			buf_ptr += msg->len;
-			rx -= msg->len;
+			ptr += msg->len;
+			pos -= msg->len;
 		}
 	}
 }

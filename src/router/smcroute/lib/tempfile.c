@@ -19,6 +19,7 @@
 #include <fcntl.h>		/* O_TMPFILE requires -D_GNU_SOURCE */
 #include <stdio.h>		/* fdopen() */
 #include <sys/stat.h>		/* umask() */
+#include <errno.h>
 
 /**
  * tempfile - A secure tmpfile() replacement
@@ -42,8 +43,13 @@ FILE *tempfile(void)
 	oldmask = umask(0077);
 	fd = open(_PATH_TMP, O_TMPFILE | O_RDWR | O_EXCL | O_CLOEXEC, S_IRUSR | S_IWUSR);
 	umask(oldmask);
-	if (-1 == fd)
-		return NULL;
+	if (fd == -1) {
+	    /* Fall back to tmpfile() if O_TMPFILE is not supported */
+	    if (errno == EOPNOTSUPP)
+	        return tmpfile();
+	  
+	    return NULL; 
+        }
 
 	return fdopen(fd, "w+");
 #else

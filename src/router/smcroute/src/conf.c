@@ -154,7 +154,7 @@ int conf_mgroup(struct conf *conf, int cmd, char *iif, char *source, char *group
 		src_len = len_max;
 
 	if (!conf_vrfy)
-		rc += mcgroup_action(cmd, iif, &src, src_len, &grp, grp_len);
+		rc = mcgroup_action(cmd, iif, &src, src_len, &grp, grp_len);
 done:
 	return rc;
 }
@@ -251,18 +251,20 @@ int conf_mroute(struct conf *conf, int cmd, char *iif, char *source, char *group
 			smclog(LOG_DEBUG, "mroute: adding route from %s (%s/%u,%s/%u)", iface_in->ifname,
 			       inet_addr2str(&mroute.source, src, sizeof(src)), mroute.src_len,
 			       inet_addr2str(&mroute.group, grp, sizeof(grp)), mroute.len);
-			rc += mroute_add_route(&mroute);
+			if (mroute_add_route(&mroute))
+				rc = -1;
 		} else {
 			smclog(LOG_DEBUG, "mroute: deleting route from %s (%s/%u,%s/%u)", iface_in->ifname,
 			       inet_addr2str(&mroute.source, src, sizeof(src)), mroute.src_len,
 			       inet_addr2str(&mroute.group, grp, sizeof(grp)), mroute.len);
-			rc += mroute_del_route(&mroute);
+			if (mroute_del_route(&mroute))
+				rc = -1;
 		}
 	}
 
 	if (!state_in.match_count) {
 		WARN("mroute: inbound %s is not a known phyint", iif);
-		rc++;
+		rc = -1;
 	}
 
 done:
@@ -435,15 +437,18 @@ next:
 			break;
 
 		case MGROUP:
-			rc += conf_mgroup(conf, 1, iif, source, group);
+			if (conf_mgroup(conf, 1, iif, source, group))
+				rc = -1;
 			break;
 
 		case MROUTE:
-			rc += conf_mroute(conf, 1, iif, source, group, oif, num);
+			if (conf_mroute(conf, 1, iif, source, group, oif, num))
+				rc = -1;
 			break;
 
 		case PHYINT:
-			rc += conf_phyint(conf, enable, iif, mrdisc, threshold);
+			if (conf_phyint(conf, enable, iif, mrdisc, threshold))
+				rc = -1;
 			break;
 
 		case INCLUDE:
