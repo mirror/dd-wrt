@@ -105,8 +105,6 @@ int wl_hwaddr(char *name, unsigned char *hwaddr)
 	struct ifreq ifr;
 	int ret = 0;
 	int s;
-	if (is_wil6210(name))
-		name = "giwifi0";
 #if defined(HAVE_DIR862) && !defined(HAVE_DAP2680)
 	if (!strcmp(name, "wlan1"))
 		name = "wlan0";

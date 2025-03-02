@@ -3781,15 +3781,7 @@ int has_airtime_policy(const char *prefix)
 #endif
 
 #ifdef HAVE_WIL6210
-int is_wil6210(const char *prefix)
-{
-	if (!strcmp(prefix, "giwifi0"))
-		return 1;
-	if (!strcmp(prefix, "wlan2"))
-		return 1;
-	return 0;
-}
-
+IS_DRIVER(wil6210, "pci:wil6210");
 #endif
 
 /* we could read it from mac80211, but this is more complicated */
