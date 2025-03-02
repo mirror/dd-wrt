@@ -1741,7 +1741,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	sprintf(maxassoc, "%s_maxassoc", ifname);
 	if (has_ad(ifname)) {
 		fprintf(fp, "max_num_sta=%s\n",
-			nvram_default_get(maxassoc, "3")); // should not be bigger according to what i found so far
+			nvram_default_get(maxassoc, "8")); // should not be bigger according to what i found so far
 		fprintf(fp, "send_probe_response=0\n");
 	} else
 		fprintf(fp, "max_num_sta=%s\n", nvram_default_get(maxassoc, "256"));
