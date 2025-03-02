@@ -282,9 +282,6 @@ void deconfigure_single_ath9k(int count);
 void configure_single_ath9k(int count);
 void ath9k_start_supplicant(int count, char *prefix, char **configs, int *configidx);
 #endif
-int ifconfig(char *name, int flags, char *addr, char *netmask);
-
-#define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 int wlconf_up(char *name);
 
