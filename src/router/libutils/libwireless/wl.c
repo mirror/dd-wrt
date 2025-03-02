@@ -1903,7 +1903,6 @@ static void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value)
 	fprintf(fp, "0x%x", value);
 	fclose(fp);
 }
-
 void mac80211_radio_on_off(int idx, int on)
 {
 	char debugstring[64];
@@ -1911,8 +1910,17 @@ void mac80211_radio_on_off(int idx, int on)
 	char secmode[16];
 	char tpt[16];
 	char prefix[32];
+	static int radiostate[8] = { 1, 1, 1, 1, 1, 1, 1, 1 };
 	sprintf(prefix, "wlan%d", idx);
 	int needrestart = 1;
+	if (idx >= ARRAY_SIZE(radiostate))
+		return;
+	if (radiostate[idx] == 1 && on)
+		return;
+	if (radiostate[idx] == 0 && !on)
+		return;
+	radiostate[idx] = on;
+
 	nvram_nseti(!on, "wlan%s_off", prefix);
 	eval("startservice", "configurewifi", "-f");
 	eval("restart", "dnsmasq");
