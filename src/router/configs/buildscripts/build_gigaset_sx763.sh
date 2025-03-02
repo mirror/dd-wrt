@@ -3,7 +3,8 @@ OLDPATH=$PATH
 DATE=$(date +%m-%d-%Y)
 DATE+="-r"
 DATE+=$(svnversion -n danube/src/router/httpd)
-export PATH=/xfs/toolchains/toolchain-mips_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin:$OLDPATH
+export PATH=/xfs/toolchains/toolchain-mips_24kc_gcc-13.1.0_musl/bin:$OLDPATH
+#export PATH=/xfs/toolchains/toolchain-mipsel_24kc_gcc-13.1.0_musl/bin:$OLDPATH
 #export PATH=/xfs/toolchains/toolchain-mips_gcc-4.3.3+cs_uClibc-0.9.30.1/usr/bin:$OLDPATH
 cd danube/src/router
 [ -n "$DO_UPDATE" ] && svn update

@@ -5,27 +5,36 @@ DATE+="-r"
 DATE+=$(svnversion -n northstar/src/router/httpd)
 #export PATH=/xfs/toolchains/toolchain-laguna-new/bin:$OLDPATH
 
-export PATH=/xfs/toolchains/toolchain-arm_cortex-a9_gcc-5.3.0_musl-1.1.14_eabi/bin:$OLDPATH
+export PATH=/xfs/toolchains/toolchain-arm_cortex-a9_gcc-13.1.0_musl_eabi/bin:$OLDPATH
 cd northstar/src/router
 [ -n "$DO_UPDATE" ] && svn update
 #cp .config_laguna-small .config
 mkdir -p ~/GruppenLW/releases/$DATE/asus-rt-ac56u
 mkdir -p ~/GruppenLW/releases/$DATE/asus-rt-ac68u
+mkdir -p ~/GruppenLW/releases/$DATE/asus-rt-ac1900p
 mkdir -p ~/GruppenLW/releases/$DATE/asus-rt-ac88u
 mkdir -p ~/GruppenLW/releases/$DATE/asus-rt-ac5300
 mkdir -p ~/GruppenLW/releases/$DATE/asus-rt-ac3200
+mkdir -p ~/GruppenLW/releases/$DATE/asus-rt-ac3100
 mkdir -p ~/GruppenLW/releases/$DATE/asus-rt-n18u
 mkdir -p ~/GruppenLW/releases/$DATE/netgear-r6700
+mkdir -p ~/GruppenLW/releases/$DATE/netgear-r6700v3
 mkdir -p ~/GruppenLW/releases/$DATE/netgear-r7000
 mkdir -p ~/GruppenLW/releases/$DATE/netgear-r6300v2
 mkdir -p ~/GruppenLW/releases/$DATE/netgear-r6250
+mkdir -p ~/GruppenLW/releases/$DATE/netgear-r6400
+mkdir -p ~/GruppenLW/releases/$DATE/netgear-r6400v2
+mkdir -p ~/GruppenLW/releases/$DATE/netgear-r6400v2otp
+mkdir -p ~/GruppenLW/releases/$DATE/netgear-r8000
+mkdir -p ~/GruppenLW/releases/$DATE/netgear-r7000P
+mkdir -p ~/GruppenLW/releases/$DATE/netgear-r8500
 mkdir -p ~/GruppenLW/releases/$DATE/netgear-ex6200
 mkdir -p ~/GruppenLW/releases/$DATE/netgear-ac1450
-mkdir -p ~/GruppenLW/releases/$DATE/buffalo_wzr-1750dhp
-mkdir -p ~/GruppenLW/releases/$DATE/buffalo_wxr-1900dhp
-mkdir -p ~/GruppenLW/releases/$DATE/buffalo_wzr-1166dhp
-mkdir -p ~/GruppenLW/releases/$DATE/buffalo_wzr-900dhp
-mkdir -p ~/GruppenLW/releases/$DATE/buffalo_wzr-600dhp2
+mkdir -p ~/GruppenLW/releases/$DATE/buffalo-wzr-1750dhp
+mkdir -p ~/GruppenLW/releases/$DATE/buffalo-wxr-1900dhp
+mkdir -p ~/GruppenLW/releases/$DATE/buffalo-wzr-1166dhp
+mkdir -p ~/GruppenLW/releases/$DATE/buffalo-wzr-900dhp
+mkdir -p ~/GruppenLW/releases/$DATE/buffalo-wzr-600dhp2
 mkdir -p ~/GruppenLW/releases/$DATE/dlink-dir868l-reva
 mkdir -p ~/GruppenLW/releases/$DATE/dlink-dir868l-revb
 mkdir -p ~/GruppenLW/releases/$DATE/dlink-dir868l-revc
@@ -41,10 +50,14 @@ mkdir -p ~/GruppenLW/releases/$DATE/trendnet-811DRU
 mkdir -p ~/GruppenLW/releases/$DATE/trendnet-812DRUv2
 mkdir -p ~/GruppenLW/releases/$DATE/trendnet-818DRU
 mkdir -p ~/GruppenLW/releases/$DATE/trendnet-828DRU
-mkdir -p ~/GruppenLW/releases/$DATE/tplink_archer-c9v1
-mkdir -p ~/GruppenLW/releases/$DATE/tplink_archer-c9v2
-mkdir -p ~/GruppenLW/releases/$DATE/tplink_archer-c1900
-mkdir -p ~/GruppenLW/releases/$DATE/tplink_archer-c8v1
+mkdir -p ~/GruppenLW/releases/$DATE/tplink-archer-c9v1
+mkdir -p ~/GruppenLW/releases/$DATE/tplink-archer-c9v2
+mkdir -p ~/GruppenLW/releases/$DATE/tplink-archer-c9v3
+mkdir -p ~/GruppenLW/releases/$DATE/tplink-archer-c9v4
+mkdir -p ~/GruppenLW/releases/$DATE/tplink-archer-c1900
+mkdir -p ~/GruppenLW/releases/$DATE/tplink-archer-c8v1
+mkdir -p ~/GruppenLW/releases/$DATE/tplink-archer-c8v2
+mkdir -p ~/GruppenLW/releases/$DATE/tplink-archer-c8v3
 mkdir -p ~/GruppenLW/releases/$DATE/dlink-dir890l
 mkdir -p ~/GruppenLW/releases/$DATE/dlink-dir895l
 mkdir -p ~/GruppenLW/releases/$DATE/dlink-dir885l
@@ -52,6 +65,21 @@ mkdir -p ~/GruppenLW/releases/$DATE/dlink-dir885l
 
 cp .config_northstar .config
 echo "CONFIG_SMP=y" >> .config
+echo "CONFIG_SOFTETHER=y" >> .config
+echo "CONFIG_SPEEDCHECKER=y" >> .config
+echo "CONFIG_IRQBALANCE=y" >> .config
+echo "CONFIG_WIREGUARD=y" >> .config
+echo "CONFIG_RAID=y" >> .config
+echo "CONFIG_SMBD=y" >> .config
+echo "CONFIG_SMARTDNS=y" >> .config
+echo "CONFIG_HTOP=y" >> .config
+echo "CONFIG_IPSET=y" >> .config
+echo "CONFIG_MDNS=y" >> .config
+echo "CONFIG_MDNS_UTILS=y" >> .config
+#echo "CONFIG_KERNELLTO=y" >> .config
+#echo "CONFIG_KERNELLTO_CP_CLONE=y" >> .config
+#echo "CONFIG_PROFILING=y" >> .config
+
 make -f Makefile.northstar kernel clean all install
 #mkdir -p ~/GruppenLW/releases/$DATE/northstar
 cd ../../../
@@ -60,14 +88,16 @@ cp northstar/src/router/arm-uclibc/asus_rt-ac56u-firmware.trx ~/GruppenLW/releas
 
 cp northstar/src/router/arm-uclibc/asus_rt-ac68u-firmware.trx ~/GruppenLW/releases/$DATE/asus-rt-ac68u
 
-cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/buffalo_wzr-1750dhp/buffalo-wzr-1750dhp-webflash.bin
-cp northstar/src/router/arm-uclibc/buffalo-1750.encold ~/GruppenLW/releases/$DATE/buffalo_wzr-1750dhp/factory-to-dd-wrt.bin
+cp northstar/src/router/arm-uclibc/asus_rt-ac68u-firmware.trx ~/GruppenLW/releases/$DATE/asus-rt-ac1900p/asus_rt-ac1900p-firmware.trx
 
-cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/buffalo_wxr-1900dhp/buffalo-wxr-1900dhp-webflash.bin
-cp northstar/src/router/arm-uclibc/buffalo-1900.encold ~/GruppenLW/releases/$DATE/buffalo_wxr-1900dhp/factory-to-dd-wrt.bin
+cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/buffalo-wzr-1750dhp/buffalo-wzr-1750dhp-webflash.bin
+cp northstar/src/router/arm-uclibc/buffalo-1750.encold ~/GruppenLW/releases/$DATE/buffalo-wzr-1750dhp/factory-to-dd-wrt.bin
 
-cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/buffalo_wzr-1166dhp/buffalo-wzr-1166dhp-webflash.bin
-cp northstar/src/router/arm-uclibc/buffalo-1166.encold ~/GruppenLW/releases/$DATE/buffalo_wzr-1166dhp/factory-to-dd-wrt.bin
+cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/buffalo-wxr-1900dhp/buffalo-wxr-1900dhp-webflash.bin
+cp northstar/src/router/arm-uclibc/buffalo-1900.encold ~/GruppenLW/releases/$DATE/buffalo-wxr-1900dhp/factory-to-dd-wrt.bin
+
+cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/buffalo-wzr-1166dhp/buffalo-wzr-1166dhp-webflash.bin
+cp northstar/src/router/arm-uclibc/buffalo-1166.encold ~/GruppenLW/releases/$DATE/buffalo-wzr-1166dhp/factory-to-dd-wrt.bin
 
 
 cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/netgear-r7000/netgear-r7000-webflash.bin
@@ -102,6 +132,43 @@ cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/r
 
 
 cd northstar/src/router
+
+cp .config_northstar .config
+echo "CONFIG_SMP=y" >> .config
+echo "CONFIG_SOFTETHER=y" >> .config
+echo "CONFIG_NVRAM_128K=y" >> .config
+echo "CONFIG_IRQBALANCE=y" >> .config
+echo "CONFIG_SPEEDCHECKER=y" >> .config
+echo "CONFIG_WIREGUARD=y" >> .config
+echo "CONFIG_RAID=y" >> .config
+echo "CONFIG_SMBD=y" >> .config
+echo "CONFIG_SMARTDNS=y" >> .config
+echo "CONFIG_HTOP=y" >> .config
+echo "CONFIG_HTOP=y" >> .config
+echo "CONFIG_IPSET=y" >> .config
+echo "CONFIG_MDNS=y" >> .config
+echo "CONFIG_MDNS_UTILS=y" >> .config
+#echo "CONFIG_KERNELLTO=y" >> .config
+#echo "CONFIG_KERNELLTO_CP_CLONE=y" >> .config
+
+make -f Makefile.northstar kernel clean all install
+#mkdir -p ~/GruppenLW/releases/$DATE/northstar
+cd ../../../
+#cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/northstar
+
+
+
+cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/netgear-r6400/netgear-r6400-webflash.bin
+cp northstar/src/router/arm-uclibc/K3_R6400.chk ~/GruppenLW/releases/$DATE/netgear-r6400/factory-to-dd-wrt.chk
+cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/netgear-r6400v2/netgear-r6400v2-webflash.bin
+cp northstar/src/router/arm-uclibc/K3_R6400V2.chk ~/GruppenLW/releases/$DATE/netgear-r6400v2/factory-to-dd-wrt.chk
+cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/netgear-r6400v2otp/netgear-r6400v2otp-webflash.bin
+cp northstar/src/router/arm-uclibc/K3_R6400V2OTP.chk ~/GruppenLW/releases/$DATE/netgear-r6400v2otp/factory-to-dd-wrt.chk
+cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/netgear-r6700v3/netgear-r6700v3-webflash.bin
+cp northstar/src/router/arm-uclibc/K3_R6700V3.chk ~/GruppenLW/releases/$DATE/netgear-r6700v3/factory-to-dd-wrt.chk
+
+
+cd northstar/src/router
 cp .config_northstar_mini .config
 make -f Makefile.northstar kernel clean all install
 cd ../../../
@@ -120,28 +187,54 @@ cp northstar/src/router/arm-uclibc/K3_EX6200.chk ~/GruppenLW/releases/$DATE/netg
 
 cd northstar/src/router
 cp .config_northstar_16m .config
+sed -i 's/\CONFIG_PRIVOXY=y/# CONFIG_PRIVOXY is not set/g' .config
+echo "CONFIG_SPEEDCHECKER=y" >> .config
+echo "CONFIG_IRQBALANCE=y" >> .config
+echo "CONFIG_WIREGUARD=y" >> .config
+echo "CONFIG_SMBD=y" >> .config
+echo "CONFIG_SMARTDNS=y" >> .config
+#echo "CONFIG_KERNELLTO=y" >> .config
+#echo "CONFIG_KERNELLTO_CP_CLONE=y" >> .config
+
+
+
 make -f Makefile.northstar kernel clean all install
 cd ../../../
 
 cp northstar/src/router/arm-uclibc/tnet818.trx ~/GruppenLW/releases/$DATE/trendnet-818DRU/trendnet-818dru-webflash.bin
 
-cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/tplink_archer-c9v1/archer-c9v1-webflash.bin
-cp northstar/src/router/arm-uclibc/archerc9.bin ~/GruppenLW/releases/$DATE/tplink_archer-c9v1/factory-to-ddwrt.bin
+cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/tplink-archer-c9v1/archer-c9v1-webflash.bin
+cp northstar/src/router/arm-uclibc/archerc9.bin ~/GruppenLW/releases/$DATE/tplink-archer-c9v1/factory-to-ddwrt.bin
 
 
-cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/tplink_archer-c9v2/archer-c9v2-webflash.bin
-cp northstar/src/router/arm-uclibc/archerc9v2.bin ~/GruppenLW/releases/$DATE/tplink_archer-c9v2/factory-to-ddwrt.bin
+cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/tplink-archer-c9v2/archer-c9v2-webflash.bin
+cp northstar/src/router/arm-uclibc/archerc9v2.bin ~/GruppenLW/releases/$DATE/tplink-archer-c9v2/factory-to-ddwrt.bin
 
-cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/tplink_archer-c1900/archer-c1900-webflash.bin
-cp northstar/src/router/arm-uclibc/archerc1900.bin ~/GruppenLW/releases/$DATE/tplink_archer-c1900/factory-to-ddwrt.bin
 
-cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/tplink_archer-c8v1/archer-c8-webflash.bin
-cp northstar/src/router/arm-uclibc/archerc8.bin ~/GruppenLW/releases/$DATE/tplink_archer-c8v1/factory-to-ddwrt.bin
+cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/tplink-archer-c9v3/archer-c9v3-webflash.bin
+cp northstar/src/router/arm-uclibc/tplink-ARCHER-C9-v3-firmware.bin ~/GruppenLW/releases/$DATE/tplink-archer-c9v3/factory-to-ddwrt.bin
 
+cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/tplink-archer-c9v4/archer-c9v4-webflash.bin
+cp northstar/src/router/arm-uclibc/tplink-ARCHER-C9-v3-firmware.bin ~/GruppenLW/releases/$DATE/tplink-archer-c9v4/factory-to-ddwrt.bin
+
+
+cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/tplink-archer-c1900/archer-c1900-webflash.bin
+cp northstar/src/router/arm-uclibc/archerc1900.bin ~/GruppenLW/releases/$DATE/tplink-archer-c1900/factory-to-ddwrt.bin
+
+cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/tplink-archer-c8v1/archer-c8-webflash.bin
+cp northstar/src/router/arm-uclibc/archerc8.bin ~/GruppenLW/releases/$DATE/tplink-archer-c8v1/factory-to-ddwrt.bin
+
+cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/tplink-archer-c8v2/archer-c8v2-webflash.bin
+cp northstar/src/router/arm-uclibc/archerc8_v2.bin ~/GruppenLW/releases/$DATE/tplink-archer-c8v2/factory-to-ddwrt.bin
+
+cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/tplink-archer-c8v3/archer-c8v3-webflash.bin
+cp northstar/src/router/arm-uclibc/archerc8_v3.bin ~/GruppenLW/releases/$DATE/tplink-archer-c8v3/factory-to-ddwrt.bin
 
 cd northstar/src/router
 cp .config_northstar_mini .config
 echo "CONFIG_NORTHSTAR_NOSMP=y" >> .config
+#echo "CONFIG_KERNELLTO=y" >> .config
+#echo "CONFIG_KERNELLTO_CP_CLONE=y" >> .config
 make -f Makefile.northstar kernel clean all install
 cd ../../../
 cp northstar/src/router/arm-uclibc/tnet811.trx ~/GruppenLW/releases/$DATE/trendnet-811DRU/trendnet-811dru-webflash.bin
@@ -152,18 +245,31 @@ cd northstar/src/router
 cp .config_northstar .config
 
 echo "CONFIG_NORTHSTAR_NOSMP=y" >> .config
+echo "CONFIG_SOFTETHER=y" >> .config
+echo "CONFIG_SPEEDCHECKER=y" >> .config
+echo "CONFIG_IRQBALANCE=y" >> .config
+echo "CONFIG_WIREGUARD=y" >> .config
+echo "CONFIG_RAID=y" >> .config
+echo "CONFIG_SMBD=y" >> .config
+echo "CONFIG_SMARTDNS=y" >> .config
+echo "CONFIG_IPSET=y" >> .config
+echo "CONFIG_MDNS=y" >> .config
+echo "CONFIG_MDNS_UTILS=y" >> .config
+#echo "CONFIG_KERNELLTO=y" >> .config
+#echo "CONFIG_KERNELLTO_CP_CLONE=y" >> .config
+
 
 make -f Makefile.northstar kernel clean all install
 cd ../../../
 
 
-cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/buffalo_wzr-900dhp/buffalo-wzr-900dhp-webflash.bin
-cp northstar/src/router/arm-uclibc/buffalo-900.encold ~/GruppenLW/releases/$DATE/buffalo_wzr-900dhp/factory-to-dd-wrt.bin
-cp northstar/src/router/arm-uclibc/buffalo-900.enc ~/GruppenLW/releases/$DATE/buffalo_wzr-900dhp/factory-to-dd-wrt-new.bin
+cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/buffalo-wzr-900dhp/buffalo-wzr-900dhp-webflash.bin
+cp northstar/src/router/arm-uclibc/buffalo-900.encold ~/GruppenLW/releases/$DATE/buffalo-wzr-900dhp/factory-to-dd-wrt.bin
+cp northstar/src/router/arm-uclibc/buffalo-900.enc ~/GruppenLW/releases/$DATE/buffalo-wzr-900dhp/factory-to-dd-wrt-new.bin
 
-cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/buffalo_wzr-600dhp2/buffalo-wzr-600dhp2-webflash.bin
-cp northstar/src/router/arm-uclibc/buffalo-600.encold ~/GruppenLW/releases/$DATE/buffalo_wzr-600dhp2/factory-to-dd-wrt.bin
-cp northstar/src/router/arm-uclibc/buffalo-600.enc ~/GruppenLW/releases/$DATE/buffalo_wzr-600dhp2/factory-to-dd-wrt-new.bin
+cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/buffalo-wzr-600dhp2/buffalo-wzr-600dhp2-webflash.bin
+cp northstar/src/router/arm-uclibc/buffalo-600.encold ~/GruppenLW/releases/$DATE/buffalo-wzr-600dhp2/factory-to-dd-wrt.bin
+cp northstar/src/router/arm-uclibc/buffalo-600.enc ~/GruppenLW/releases/$DATE/buffalo-wzr-600dhp2/factory-to-dd-wrt-new.bin
 
 cp northstar/src/router/arm-uclibc/asus_rt-n18u-firmware.trx ~/GruppenLW/releases/$DATE/asus-rt-n18u
                                 
@@ -173,6 +279,19 @@ cd northstar/src/router
 cp .config_northstar .config
 echo "CONFIG_SMP=y" >> .config
 echo "CONFIG_DHDAP=y" >> .config
+echo "CONFIG_SOFTETHER=y" >> .config
+echo "CONFIG_IRQBALANCE=y" >> .config
+echo "CONFIG_SPEEDCHECKER=y" >> .config
+echo "CONFIG_WIREGUARD=y" >> .config
+echo "CONFIG_RAID=y" >> .config
+echo "CONFIG_SMBD=y" >> .config
+echo "CONFIG_SMARTDNS=y" >> .config
+echo "CONFIG_HTOP=y" >> .config
+echo "CONFIG_MDNS=y" >> .config
+echo "CONFIG_MDNS_UTILS=y" >> .config
+#echo "CONFIG_KERNELLTO=y" >> .config
+#echo "CONFIG_KERNELLTO_CP_CLONE=y" >> .config
+
 make -f Makefile.northstar kernel clean all install
 #mkdir -p ~/GruppenLW/releases/$DATE/northstar
 cd ../../../
@@ -190,16 +309,64 @@ cp northstar/src/router/arm-uclibc/web-dir885.img ~/GruppenLW/releases/$DATE/dli
 cp northstar/src/router/arm-uclibc/asus_rt-ac88u-firmware.trx ~/GruppenLW/releases/$DATE/asus-rt-ac88u
 cp northstar/src/router/arm-uclibc/asus_rt-ac5300-firmware.trx ~/GruppenLW/releases/$DATE/asus-rt-ac5300
 cp northstar/src/router/arm-uclibc/asus_rt-ac3200-firmware.trx ~/GruppenLW/releases/$DATE/asus-rt-ac3200
+cp northstar/src/router/arm-uclibc/asus_rt-ac3100-firmware.trx ~/GruppenLW/releases/$DATE/asus-rt-ac3100
+
+cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/netgear-r8000/netgear-r8000-webflash.bin
+cp northstar/src/router/arm-uclibc/K3_R8000.chk ~/GruppenLW/releases/$DATE/netgear-r8000/factory-to-dd-wrt.chk
+
+
+
+
+cd northstar/src/router
+
+cp .config_northstar .config
+echo "CONFIG_SMP=y" >> .config
+echo "CONFIG_DHDAP=y" >> .config
+echo "CONFIG_IRQBALANCE=y" >> .config
+echo "CONFIG_NVRAM_128K=y" >> .config
+echo "CONFIG_SOFTETHER=y" >> .config
+echo "CONFIG_SPEEDCHECKER=y" >> .config
+echo "CONFIG_WIREGUARD=y" >> .config
+echo "CONFIG_RAID=y" >> .config
+echo "CONFIG_SMBD=y" >> .config
+echo "CONFIG_SMARTDNS=y" >> .config
+echo "CONFIG_HTOP=y" >> .config
+echo "CONFIG_IPSET=y" >> .config
+echo "CONFIG_MDNS=y" >> .config
+echo "CONFIG_MDNS_UTILS=y" >> .config
+#echo "CONFIG_KERNELLTO=y" >> .config
+#echo "CONFIG_KERNELLTO_CP_CLONE=y" >> .config
+
+make -f Makefile.northstar kernel clean all install
+#mkdir -p ~/GruppenLW/releases/$DATE/northstar
+cd ../../../
+#cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/northstar
+
+
+cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/netgear-r8500/netgear-r8500-webflash.bin
+cp northstar/src/router/arm-uclibc/K3_R8500.chk ~/GruppenLW/releases/$DATE/netgear-r8500/factory-to-dd-wrt.chk
+
+cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/netgear-r7000P/netgear-r7000p-webflash.bin
+cp northstar/src/router/arm-uclibc/K3_R7000P.chk ~/GruppenLW/releases/$DATE/netgear-r7000P/factory-to-dd-wrt.chk
+
+
+
+
 
 cd northstar/src/router
 cp .config_northstar_16m .config
 echo "CONFIG_SMP=y" >> .config
 echo "CONFIG_DHDAP=y" >> .config
+echo "CONFIG_IRQBALANCE=y" >> .config
+echo "CONFIG_SMBD=y" >> .config
 sed -i 's/\CONFIG_SNORT=y/# CONFIG_SNORT is not set/g' .config
 sed -i 's/\CONFIG_PHP=y/# CONFIG_PHP is not set/g' .config
 sed -i 's/\CONFIG_ASTERISK=y/# CONFIG_ASTERISK is not set/g' .config
 sed -i 's/\CONFIG_WEBSERVER=y/# CONFIG_WEBSERVER is not set/g' .config
+sed -i 's/\CONFIG_PRIVOXY=y/# CONFIG_PRIVOXY is not set/g' .config
 sed -i 's/\CONFIG_TRANSMISSION=y/# CONFIG_TRANSMISSION is not set/g' .config
+#echo "CONFIG_KERNELLTO=y" >> .config
+#echo "CONFIG_KERNELLTO_CP_CLONE=y" >> .config
 make -f Makefile.northstar kernel clean all install
 cd ../../../
 cp northstar/src/router/arm-uclibc/tnet828.trx ~/GruppenLW/releases/$DATE/trendnet-828DRU/trendnet-828dru-webflash.bin

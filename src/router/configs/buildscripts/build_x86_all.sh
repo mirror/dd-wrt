@@ -4,7 +4,7 @@ DATE=$(date +%m-%d-%Y)
 DATE+="-r"
 DATE+=$(svnversion -n x86/src/router/httpd)
 
-export PATH=/xfs/toolchains/toolchain-i386_i486_gcc-5.1.0_musl-1.1.10/bin:$OLDPATH
+export PATH=/xfs/toolchains/toolchain-i386_pentium-mmx_gcc-13.1.0_musl/bin:$OLDPATH
 
 cd x86/src/linux/universal/linux-3.14
 cp .config_smp .config

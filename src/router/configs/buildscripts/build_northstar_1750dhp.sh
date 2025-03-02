@@ -5,7 +5,7 @@ DATE+="-r"
 DATE+=$(svnversion -n northstar/src/router/httpd)
 #export PATH=/xfs/toolchains/toolchain-laguna-new/bin:$OLDPATH
 
-export PATH=/xfs/toolchains/toolchain-arm_cortex-a9_gcc-5.3.0_musl-1.1.14_eabi/bin:$OLDPATH
+export PATH=/xfs/toolchains/toolchain-arm_cortex-a9_gcc-13.1.0_musl_eabi/bin:$OLDPATH
 cd northstar/src/router
 [ -n "$DO_UPDATE" ] && svn update
 #cp .config_laguna-small .config
@@ -18,11 +18,11 @@ cd northstar/src/router
 #mkdir -p ~/GruppenLW/releases/$DATE/netgear-r6250
 #mkdir -p ~/GruppenLW/releases/$DATE/netgear-ex6200
 #mkdir -p ~/GruppenLW/releases/$DATE/netgear-ac1450
-mkdir -p ~/GruppenLW/releases/$DATE/buffalo_wzr-1750dhp
-#mkdir -p ~/GruppenLW/releases/$DATE/buffalo_wxr-1900dhp
-#mkdir -p ~/GruppenLW/releases/$DATE/buffalo_wzr-1166dhp
-#mkdir -p ~/GruppenLW/releases/$DATE/buffalo_wzr-900dhp
-#mkdir -p ~/GruppenLW/releases/$DATE/buffalo_wzr-600dhp2
+mkdir -p ~/GruppenLW/releases/$DATE/buffalo-wzr-1750dhp
+#mkdir -p ~/GruppenLW/releases/$DATE/buffalo-wxr-1900dhp
+#mkdir -p ~/GruppenLW/releases/$DATE/buffalo-wzr-1166dhp
+#mkdir -p ~/GruppenLW/releases/$DATE/buffalo-wzr-900dhp
+#mkdir -p ~/GruppenLW/releases/$DATE/buffalo-wzr-600dhp2
 #mkdir -p ~/GruppenLW/releases/$DATE/dlink-dir868l-reva
 #mkdir -p ~/GruppenLW/releases/$DATE/dlink-dir868l-revb
 #mkdir -p ~/GruppenLW/releases/$DATE/dlink-dir868l-revc
@@ -35,7 +35,7 @@ mkdir -p ~/GruppenLW/releases/$DATE/buffalo_wzr-1750dhp
 #mkdir -p ~/GruppenLW/releases/$DATE/trendnet-812DRUv2
 #mkdir -p ~/GruppenLW/releases/$DATE/trendnet-818DRU
 #mkdir -p ~/GruppenLW/releases/$DATE/trendnet-828DRU
-#mkdir -p ~/GruppenLW/releases/$DATE/tplink_archer-c9
+#mkdir -p ~/GruppenLW/releases/$DATE/tplink-archer-c9
 #mkdir -p ~/GruppenLW/releases/$DATE/dlink-dir890l
 
 
@@ -48,14 +48,14 @@ cd ../../../
 #cp northstar/src/router/arm-uclibc/asus_rt-ac56u-firmware.trx ~/GruppenLW/releases/$DATE/asus-rt-ac56u
 #cp northstar/src/router/arm-uclibc/asus_rt-ac68u-firmware.trx ~/GruppenLW/releases/$DATE/asus-rt-ac68u
 #
-cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/buffalo_wzr-1750dhp/buffalo-wzr-1750dhp-webflash.bin
-cp northstar/src/router/arm-uclibc/buffalo-1750.encold ~/GruppenLW/releases/$DATE/buffalo_wzr-1750dhp/factory-to-dd-wrt.bin
+cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/buffalo-wzr-1750dhp/buffalo-wzr-1750dhp-webflash.bin
+cp northstar/src/router/arm-uclibc/buffalo-1750.encold ~/GruppenLW/releases/$DATE/buffalo-wzr-1750dhp/factory-to-dd-wrt.bin
 
-#cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/buffalo_wxr-1900dhp/buffalo-wxr-1900dhp-webflash.bin
-#cp northstar/src/router/arm-uclibc/buffalo-1900.encold ~/GruppenLW/releases/$DATE/buffalo_wxr-1900dhp/factory-to-dd-wrt.bin
+#cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/buffalo-wxr-1900dhp/buffalo-wxr-1900dhp-webflash.bin
+#cp northstar/src/router/arm-uclibc/buffalo-1900.encold ~/GruppenLW/releases/$DATE/buffalo-wxr-1900dhp/factory-to-dd-wrt.bin
 #
-#cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/buffalo_wzr-1166dhp/buffalo-wzr-1166dhp-webflash.bin
-#cp northstar/src/router/arm-uclibc/buffalo-1166.encold ~/GruppenLW/releases/$DATE/buffalo_wzr-1166dhp/factory-to-dd-wrt.bin
+#cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/buffalo-wzr-1166dhp/buffalo-wzr-1166dhp-webflash.bin
+#cp northstar/src/router/arm-uclibc/buffalo-1166.encold ~/GruppenLW/releases/$DATE/buffalo-wzr-1166dhp/factory-to-dd-wrt.bin
 #
 #
 #cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/netgear-r7000/netgear-r7000-webflash.bin
@@ -109,8 +109,8 @@ cp northstar/src/router/arm-uclibc/buffalo-1750.encold ~/GruppenLW/releases/$DAT
 #cd ../../../
 #
 #cp northstar/src/router/arm-uclibc/tnet818.trx ~/GruppenLW/releases/$DATE/trendnet-818DRU/trendnet-818dru-webflash.bin
-#cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/tplink_archer-c9/archer-c9-webflash.bin
-#cp northstar/src/router/arm-uclibc/archerc9.bin ~/GruppenLW/releases/$DATE/tplink_archer-c9/factory-to-ddwrt.bin
+#cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/tplink-archer-c9/archer-c9-webflash.bin
+#cp northstar/src/router/arm-uclibc/archerc9.bin ~/GruppenLW/releases/$DATE/tplink-archer-c9/factory-to-ddwrt.bin
 #
 #
 #cd northstar/src/router
@@ -131,13 +131,13 @@ cp northstar/src/router/arm-uclibc/buffalo-1750.encold ~/GruppenLW/releases/$DAT
 #cd ../../../
 #
 #
-#cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/buffalo_wzr-900dhp/buffalo-wzr-900dhp-webflash.bin
-#cp northstar/src/router/arm-uclibc/buffalo-900.encold ~/GruppenLW/releases/$DATE/buffalo_wzr-900dhp/factory-to-dd-wrt.bin
-#cp northstar/src/router/arm-uclibc/buffalo-900.enc ~/GruppenLW/releases/$DATE/buffalo_wzr-900dhp/factory-to-dd-wrt-new.bin
+#cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/buffalo-wzr-900dhp/buffalo-wzr-900dhp-webflash.bin
+#cp northstar/src/router/arm-uclibc/buffalo-900.encold ~/GruppenLW/releases/$DATE/buffalo-wzr-900dhp/factory-to-dd-wrt.bin
+#cp northstar/src/router/arm-uclibc/buffalo-900.enc ~/GruppenLW/releases/$DATE/buffalo-wzr-900dhp/factory-to-dd-wrt-new.bin
 #
-#cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/buffalo_wzr-600dhp2/buffalo-wzr-600dhp2-webflash.bin
-#cp northstar/src/router/arm-uclibc/buffalo-600.encold ~/GruppenLW/releases/$DATE/buffalo_wzr-600dhp2/factory-to-dd-wrt.bin
-#cp northstar/src/router/arm-uclibc/buffalo-600.enc ~/GruppenLW/releases/$DATE/buffalo_wzr-600dhp2/factory-to-dd-wrt-new.bin
+#cp northstar/src/router/arm-uclibc/northstar-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/buffalo-wzr-600dhp2/buffalo-wzr-600dhp2-webflash.bin
+#cp northstar/src/router/arm-uclibc/buffalo-600.encold ~/GruppenLW/releases/$DATE/buffalo-wzr-600dhp2/factory-to-dd-wrt.bin
+#cp northstar/src/router/arm-uclibc/buffalo-600.enc ~/GruppenLW/releases/$DATE/buffalo-wzr-600dhp2/factory-to-dd-wrt-new.bin
 #
 #cp northstar/src/router/arm-uclibc/asus_rt-n18u-firmware.trx ~/GruppenLW/releases/$DATE/asus-rt-n18u
 #                                

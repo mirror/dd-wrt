@@ -13,13 +13,13 @@ cd opt/etc/config
 cd ../../../
 cp .config_wr941 .config
 make -f Makefile.pb42 kernel clean all install
-mkdir -p ~/GruppenLW/releases/$DATE/tplink_tl-wr941ndv2
-mkdir -p ~/GruppenLW/releases/$DATE/tplink_tl-wr941ndv3
-mkdir -p ~/GruppenLW/releases/$DATE/tplink_tl-wr841ndv3
-mkdir -p ~/GruppenLW/releases/$DATE/tplink_tl-wa901ndv2
+mkdir -p ~/GruppenLW/releases/$DATE/tplink-tl-wr941ndv2
+mkdir -p ~/GruppenLW/releases/$DATE/tplink-tl-wr941ndv3
+mkdir -p ~/GruppenLW/releases/$DATE/tplink-tl-wr841ndv3
+mkdir -p ~/GruppenLW/releases/$DATE/tplink-tl-wa901ndv2
 cd ../../../
-cp pb42/src/router/mips-uclibc/WR941NDv2-firmware.bin ~/GruppenLW/releases/$DATE/tplink_tl-wr941ndv2/tl-wr941nd-webflash.bin
-cp pb42/src/router/mips-uclibc/WR941NDv2-firmware.bin ~/GruppenLW/releases/$DATE/tplink_tl-wr941ndv3/tl-wr941nd-webflash.bin
-cp pb42/src/router/mips-uclibc/tplink-WR941NDv2-firmware.bin ~/GruppenLW/releases/$DATE/tplink_tl-wr941ndv2/factory-to-ddwrt.bin
-cp pb42/src/router/mips-uclibc/tplink-WR941NDv2-firmware.bin ~/GruppenLW/releases/$DATE/tplink_tl-wr941ndv3/factory-to-ddwrt.bin
+cp pb42/src/router/mips-uclibc/WR941NDv2-firmware.bin ~/GruppenLW/releases/$DATE/tplink-tl-wr941ndv2/tl-wr941nd-webflash.bin
+cp pb42/src/router/mips-uclibc/WR941NDv2-firmware.bin ~/GruppenLW/releases/$DATE/tplink-tl-wr941ndv3/tl-wr941nd-webflash.bin
+cp pb42/src/router/mips-uclibc/tplink-WR941NDv2-firmware.bin ~/GruppenLW/releases/$DATE/tplink-tl-wr941ndv2/factory-to-ddwrt.bin
+cp pb42/src/router/mips-uclibc/tplink-WR941NDv2-firmware.bin ~/GruppenLW/releases/$DATE/tplink-tl-wr941ndv3/factory-to-ddwrt.bin
 cd pb42/src/router

@@ -3,7 +3,7 @@ OLDPATH=$PATH
 DATE=$(date +%m-%d-%Y)
 DATE+="-r"
 DATE+=$(svnversion -n pb42/src/router/httpd)
-export PATH=/xfs/toolchains/toolchain-mips_34kc_gcc-5.3.0_musl-1.1.14/bin:$OLDPATH
+export PATH=/xfs/toolchains/toolchain-mips_24kc_gcc-13.1.0_musl/bin:$OLDPATH
 #export PATH=/xfs/toolchains/toolchain-mips_gcc-4.3.3+cs_uClibc-0.9.30.1/usr/bin:$OLDPATH
 #export PATH=/xfs/toolchains/toolchain-mips_gcc-4.1.2-uClibc-0.9.30.1/usr/bin:$OLDPATH
 #export PATH=/xfs/toolchains/staging_dir_mips_pb42/bin:$OLDPATH
@@ -12,30 +12,167 @@ cd pb42/src/router
 cd opt/etc/config
 [ -n "$DO_UPDATE" ] && svn update
 cd ../../../
-mkdir -p ~/GruppenLW/releases/$DATE/ubnt_UAP-AC-LR
+mkdir -p ~/GruppenLW/releases/$DATE/ubnt-UAP-AC-LR
+mkdir -p ~/GruppenLW/releases/$DATE/ubnt-UAP-AC-MESH
+mkdir -p ~/GruppenLW/releases/$DATE/ubnt-UAP-AC-PRO
+mkdir -p ~/GruppenLW/releases/$DATE/ubnt-NanoBeam-AC-Gen2
+mkdir -p ~/GruppenLW/releases/$DATE/ubnt-NanoStation-AC
+
+mkdir -p ~/GruppenLW/releases/$DATE/ubnt-Rocket-AC-Lite
+mkdir -p ~/GruppenLW/releases/$DATE/ubnt-Rocket-Prism-AC
+mkdir -p ~/GruppenLW/releases/$DATE/ubnt-PrismStation-AC
+mkdir -p ~/GruppenLW/releases/$DATE/ubnt-NanoBeam-AC-Gen2-XC
+mkdir -p ~/GruppenLW/releases/$DATE/ubnt-PowerBeam-AC-500
+mkdir -p ~/GruppenLW/releases/$DATE/ubnt-PowerBeam-AC-620
+mkdir -p ~/GruppenLW/releases/$DATE/ubnt-NanoStation-AC-loco-XC
 
 cp .config_ubntm .config
+echo "CONFIG_TDMA=y" >> .config
 echo "CONFIG_UBNTXW=y" >> .config
 echo "CONFIG_UAPAC=y" >> .config
 echo "CONFIG_ATH10K=y" >> .config
+echo "CONFIG_WPA3=y" >> .config
+echo "CONFIG_MAC80211_MESH=y" >> .config
+echo "CONFIG_WPA3=y" >> .config
+echo "CONFIG_WIREGUARD=y" >> .config
+echo "CONFIG_USTEER=y" >> .config
+#echo "CONFIG_OPTIMIZE_FOR_SPEED=y" >> .config
 make -f Makefile.pb42 kernel clean all install
 cd ../../../
-cp pb42/src/router/mips-uclibc/aligned.uimage ~/GruppenLW/releases/$DATE/ubnt_UAP-AC-LR/flash-upgrade.bin
+cp pb42/src/router/ubnt-mtd/mtd2 ~/GruppenLW/releases/$DATE/ubnt-UAP-AC-LR/flash-upgrade_bin.bin
+cp pb42/src/router/ubnt-mtd/mtd2 ~/GruppenLW/releases/$DATE/ubnt-UAP-AC-MESH/flash-upgrade_bin.bin
+cp pb42/src/router/mips-uclibc/aligned.uimage ~/GruppenLW/releases/$DATE/ubnt-UAP-AC-LR/flash-upgrade.bin
+cp pb42/src/router/mips-uclibc/aligned.uimage ~/GruppenLW/releases/$DATE/ubnt-UAP-AC-MESH/flash-upgrade.bin
 
 cd pb42/src/router
 cp .config_ubntm .config
+echo "CONFIG_TDMA=y" >> .config
 echo "CONFIG_UBNTXW=y" >> .config
 echo "CONFIG_UAPAC=y" >> .config
 echo "CONFIG_ATH10K=y" >> .config
-echo "CONFIG_FREERADIUS=y" >> .config
+#echo "CONFIG_FREERADIUS=y" >> .config
 echo "CONFIG_IPTRAF=y" >> .config
-echo "CONFIG_TCPDUMP=y" >> .config
+#echo "CONFIG_TCPDUMP=y" >> .config
 echo "CONFIG_IPVS=y" >> .config
 echo "CONFIG_TOR=y" >> .config
 echo "CONFIG_PRIVOXY=y" >> .config
 echo "CONFIG_BATMANADV=y" >> .config
+echo "CONFIG_WPA3=y" >> .config
 echo "CONFIG_MC=y" >> .config
+echo "CONFIG_WIREGUARD=y" >> .config
+echo "CONFIG_IPERF=y" >> .config
+echo "CONFIG_USTEER=y" >> .config
+#echo "CONFIG_OPTIMIZE_FOR_SPEED=y" >> .config
 make -f Makefile.pb42 kernel clean all install
 cd ../../../
-cp pb42/src/router/mips-uclibc/ar7420-firmware.bin ~/GruppenLW/releases/$DATE/ubnt_UAP-AC-LR/ubnt_UAP-AC-LR-webflash-firmware.bin
-cp notes/unifi/install_uap* ~/GruppenLW/releases/$DATE/ubnt_UAP-AC-LR
+cp pb42/src/router/mips-uclibc/ar7420-firmware.bin ~/GruppenLW/releases/$DATE/ubnt-UAP-AC-LR/ubnt-UAP-AC-LR-webflash-firmware.bin
+cp notes/ubnt/* ~/GruppenLW/releases/$DATE/ubnt-UAP-AC-LR
+cp pb42/src/router/mips-uclibc/ar7420-firmware.bin ~/GruppenLW/releases/$DATE/ubnt-UAP-AC-MESH/ubnt-UAP-AC-M-webflash-firmware.bin
+cp notes/ubnt/* ~/GruppenLW/releases/$DATE/ubnt-UAP-AC-MESH
+
+cp pb42/src/router/ubnt-mtd/mtd2 ~/GruppenLW/releases/$DATE/ubnt-Rocket-AC-Lite/flash-upgrade.bin
+cp pb42/src/router/mips-uclibc/ar7420-firmware.bin ~/GruppenLW/releases/$DATE/ubnt-Rocket-AC-Lite/ubnt-Rocket-AC-Lite-webflash-firmware.bin
+cp notes/ubnt/* ~/GruppenLW/releases/$DATE/ubnt-Rocket-AC-Lite
+
+cp pb42/src/router/ubnt-mtd/mtd2 ~/GruppenLW/releases/$DATE/ubnt-Rocket-Prism-AC/flash-upgrade.bin
+cp pb42/src/router/mips-uclibc/ar7420-firmware.bin ~/GruppenLW/releases/$DATE/ubnt-Rocket-Prism-AC/ubnt-Rocket-Prism-AC-webflash-firmware.bin
+cp notes/ubnt/* ~/GruppenLW/releases/$DATE/ubnt-Rocket-Prism-AC
+
+cp pb42/src/router/ubnt-mtd/mtd2 ~/GruppenLW/releases/$DATE/ubnt-PrismStation-AC/flash-upgrade.bin
+cp pb42/src/router/mips-uclibc/ar7420-firmware.bin ~/GruppenLW/releases/$DATE/ubnt-PrismStation-AC/ubnt-PrismStation-AC-webflash-firmware.bin
+cp notes/ubnt/* ~/GruppenLW/releases/$DATE/ubnt-PrismStation-AC
+
+cp pb42/src/router/ubnt-mtd/mtd2 ~/GruppenLW/releases/$DATE/ubnt-NanoBeam-AC-Gen2-XC/flash-upgrade.bin
+cp pb42/src/router/mips-uclibc/ar7420-firmware.bin ~/GruppenLW/releases/$DATE/ubnt-NanoBeam-AC-Gen2-XC/ubnt-NanoBeam-AC-Gen2-XC-webflash-firmware.bin
+cp notes/ubnt/* ~/GruppenLW/releases/$DATE/ubnt-NanoBeam-AC-Gen2-XC
+
+cp pb42/src/router/ubnt-mtd/mtd2 ~/GruppenLW/releases/$DATE/ubnt-PowerBeam-AC-500/flash-upgrade.bin
+cp pb42/src/router/mips-uclibc/ar7420-firmware.bin ~/GruppenLW/releases/$DATE/ubnt-PowerBeam-AC-500/ubnt-PowerBeam-AC-500-webflash-firmware.bin
+cp notes/ubnt/* ~/GruppenLW/releases/$DATE/ubnt-PowerBeam-AC-500
+
+cp pb42/src/router/ubnt-mtd/mtd2 ~/GruppenLW/releases/$DATE/ubnt-PowerBeam-AC-620/flash-upgrade.bin
+cp pb42/src/router/mips-uclibc/ar7420-firmware.bin ~/GruppenLW/releases/$DATE/ubnt-PowerBeam-AC-620/ubnt-PowerBeam-AC-620-webflash-firmware.bin
+cp notes/ubnt/* ~/GruppenLW/releases/$DATE/ubnt-PowerBeam-AC-620
+
+cp pb42/src/router/ubnt-mtd/mtd2 ~/GruppenLW/releases/$DATE/ubnt-NanoStation-AC-loco-XC/flash-upgrade.bin
+cp pb42/src/router/mips-uclibc/ar7420-firmware.bin ~/GruppenLW/releases/$DATE/ubnt-NanoStation-AC-loco-XC/ubnt-NanoStation-AC-loco-XC-webflash-firmware.bin
+cp notes/ubnt/* ~/GruppenLW/releases/$DATE/ubnt-NanoStation-AC-loco-XC
+
+
+
+cd pb42/src/router
+cp .config_ubntm .config
+echo "CONFIG_TDMA=y" >> .config
+echo "CONFIG_UBNTXW=y" >> .config
+echo "CONFIG_UAPAC=y" >> .config
+echo "CONFIG_UAPACPRO=y" >> .config
+echo "CONFIG_ATH10K=y" >> .config
+echo "CONFIG_WPA3=y" >> .config
+echo "CONFIG_WIREGUARD=y" >> .config
+echo "CONFIG_USTEER=y" >> .config
+echo "CONFIG_OPTIMIZE_FOR_SPEED=y" >> .config
+make -f Makefile.pb42 kernel clean all install
+cd ../../../
+cp pb42/src/router/mips-uclibc/aligned.uimage ~/GruppenLW/releases/$DATE/ubnt-UAP-AC-PRO/flash-upgrade.bin
+
+cd pb42/src/router
+cp .config_ubntm .config
+echo "CONFIG_TDMA=y" >> .config
+echo "CONFIG_UBNTXW=y" >> .config
+echo "CONFIG_UAPAC=y" >> .config
+echo "CONFIG_UAPACPRO=y" >> .config
+echo "CONFIG_ATH10K=y" >> .config
+#echo "CONFIG_FREERADIUS=y" >> .config
+echo "CONFIG_IPTRAF=y" >> .config
+#echo "CONFIG_TCPDUMP=y" >> .config
+echo "CONFIG_IPVS=y" >> .config
+echo "CONFIG_TOR=y" >> .config
+echo "CONFIG_PRIVOXY=y" >> .config
+echo "CONFIG_BATMANADV=y" >> .config
+echo "CONFIG_WPA3=y" >> .config
+echo "CONFIG_MC=y" >> .config
+echo "CONFIG_WIREGUARD=y" >> .config
+echo "CONFIG_MAC80211_MESH=y" >> .config
+echo "CONFIG_WPA3=y" >> .config
+echo "CONFIG_IPERF=y" >> .config
+echo "CONFIG_USTEER=y" >> .config
+echo "CONFIG_OPTIMIZE_FOR_SPEED=y" >> .config
+make -f Makefile.pb42 kernel clean all install
+cd ../../../
+cp pb42/src/router/mips-uclibc/ar7420-firmware.bin ~/GruppenLW/releases/$DATE/ubnt-UAP-AC-PRO/ubnt-UAP-AC-LR-webflash-firmware.bin
+cp notes/unifi/install_uap* ~/GruppenLW/releases/$DATE/ubnt-UAP-AC-PRO
+
+cd pb42/src/router
+cp .config_ubntm .config
+echo "CONFIG_TDMA=y" >> .config
+echo "CONFIG_UBNTXW=y" >> .config
+echo "CONFIG_UAPAC=y" >> .config
+echo "CONFIG_NANOAC=y" >> .config
+echo "CONFIG_UAPACPRO=y" >> .config
+echo "CONFIG_ATH10K=y" >> .config
+#echo "CONFIG_FREERADIUS=y" >> .config
+echo "CONFIG_IPTRAF=y" >> .config
+#echo "CONFIG_TCPDUMP=y" >> .config
+echo "CONFIG_IPVS=y" >> .config
+echo "CONFIG_TOR=y" >> .config
+echo "CONFIG_PRIVOXY=y" >> .config
+echo "CONFIG_BATMANADV=y" >> .config
+echo "CONFIG_WPA3=y" >> .config
+echo "CONFIG_MC=y" >> .config
+echo "CONFIG_WIREGUARD=y" >> .config
+echo "CONFIG_MAC80211_MESH=y" >> .config
+echo "CONFIG_WPA3=y" >> .config
+echo "CONFIG_IPERF=y" >> .config
+echo "CONFIG_USTEER=y" >> .config
+echo "CONFIG_OPTIMIZE_FOR_SPEED=y" >> .config
+make -f Makefile.pb42 kernel clean all install
+cd ../../../
+
+cp pb42/src/router/ubnt-mtd/mtd2 ~/GruppenLW/releases/$DATE/ubnt-NanoBeam-AC-Gen2/flash-upgrade.bin
+cp pb42/src/router/mips-uclibc/ar7420-firmware.bin ~/GruppenLW/releases/$DATE/ubnt-NanoBeam-AC-Gen2/ubnt-NanoBeam-AC-Gen2-webflash-firmware.bin
+cp notes/unifi/install_uapv2.txt ~/GruppenLW/releases/$DATE/ubnt-NanoBeam-AC-Gen2/initial_flashing.txt
+
+cp pb42/src/router/ubnt-mtd/mtd2 ~/GruppenLW/releases/$DATE/ubnt-NanoStation-AC/flash-upgrade.bin
+cp pb42/src/router/mips-uclibc/ar7420-firmware.bin ~/GruppenLW/releases/$DATE/ubnt-NanoStation-AC/ubnt-NanoStation-AC-webflash-firmware.bin
+cp notes/unifi/install_uapv2.txt ~/GruppenLW/releases/$DATE/ubnt-NanoStation-AC/initial_flashing.txt
+

@@ -35,10 +35,10 @@ echo "CONFIG_LIBNLTINY=y" >>.config
 echo "CONFIG_UBOOTENV=y" >>.config
 
 make -f Makefile.pb42 kernel clean all install
-mkdir -p ~/GruppenLW/releases/CUSTOMER/$DATE/antaira/compex_wpj344
+mkdir -p ~/GruppenLW/releases/CUSTOMER/$DATE/antaira/compex-wpj344
 cd ../../../
-cp pb42/src/router/mips-uclibc/ap96-firmware.bin ~/GruppenLW/releases/CUSTOMER/$DATE/antaira/compex_wpj344/wpj344-firmware.bin
-cp pb42/src/router/mips-uclibc/aligned.uimage ~/GruppenLW/releases/CUSTOMER/$DATE/antaira/compex_wpj344/wpj344-uimage.bin
+cp pb42/src/router/mips-uclibc/ap96-firmware.bin ~/GruppenLW/releases/CUSTOMER/$DATE/antaira/compex-wpj344/wpj344-firmware.bin
+cp pb42/src/router/mips-uclibc/aligned.uimage ~/GruppenLW/releases/CUSTOMER/$DATE/antaira/compex-wpj344/wpj344-uimage.bin
 #cp pb42/src/router/mips-uclibc/dir825c1-uimage.bin ~/GruppenLW/releases/$DATE/dlink-dir825-c1/factory-to-ddwrt_NA.bin
 
 

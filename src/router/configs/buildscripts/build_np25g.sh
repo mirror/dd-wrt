@@ -4,7 +4,7 @@ OLDPATH=$PATH
 DATE=$(date +%m-%d-%Y)
 DATE+="-r"
 DATE+=$(svnversion -n ar531x/src/router/httpd)
-export PATH=/xfs/toolchains/toolchain-mips_mips32_gcc-5.2.0_musl-1.1.12/bin:$OLDPATH
+export PATH=/xfs/toolchains/toolchain-mips_mips32_gcc-8.2.0_musl/bin:$OLDPATH
 cd ar531x/src/router
 [ -n "$DO_UPDATE" ] && svn update
 cd opt/etc/config
@@ -12,9 +12,10 @@ cd opt/etc/config
 cd ../../../
 
 cp .config_np25g .config
+make -f Makefile.ar531x build_date
 make -f Makefile.ar531x kernel clean all install
-mkdir -p ~/GruppenLW/releases/$DATE/compex_np25g
+mkdir -p ~/GruppenLW/releases/$DATE/compex-np25g
 cd ../../../
-cp ar531x/src/router/mips-uclibc/compex-firmware-np25g.bin ~/GruppenLW/releases/$DATE/compex_np25g/compex-firmware-np25g.tftp
-cp ar531x/src/router/mips-uclibc/np25g-firmware.bin ~/GruppenLW/releases/$DATE/compex_np25g/compex-np25g-firmware.bin
+cp ar531x/src/router/mips-uclibc/compex-firmware-np25g.bin ~/GruppenLW/releases/$DATE/compex-np25g/compex-firmware-np25g.tftp
+cp ar531x/src/router/mips-uclibc/np25g-firmware.bin ~/GruppenLW/releases/$DATE/compex-np25g/compex-np25g-firmware.bin
 

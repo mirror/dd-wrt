@@ -3,46 +3,59 @@
 OLDPATH=$PATH
 DATE=$(date +%m-%d-%Y)
 DATE+="-r"
-DATE+=$(svnversion -n xscale/src/router/httpd)
-export PATH=/xfs/toolchains/toolchain-armeb_xscale_gcc-5.2.0_musl-1.1.11/bin:$OLDPATH
+DATE+=$(svnversion -n xscale/src/router/libutils)
+export PATH=/xfs/toolchains/toolchain-armeb_xscale_gcc-13.1.0_musl/bin:$OLDPATH
 cd xscale/src/router
 [ -n "$DO_UPDATE" ] && svn update
 cd opt/etc/config
 [ -n "$DO_UPDATE" ] && svn update
 cd ../../../
 cp .config_xscale .config
+#echo "CONFIG_TDMA=y" >> .config
+#echo "CONFIG_ATH5K=y" >> .config
+#sed -i 's/CONFIG_QUAGGA=y/CONFIG_FRR=y/g' .config
 make -f Makefile.armbe kernel clean all install
-mkdir -p ~/GruppenLW/releases/$DATE/gateworks_8M
-mkdir -p ~/GruppenLW/releases/$DATE/gateworks_16M
+mkdir -p ~/GruppenLW/releases/$DATE/gateworks-avila-8M
+mkdir -p ~/GruppenLW/releases/$DATE/gateworks-avila-16M
 mkdir -p ~/GruppenLW/releases/$DATE/pronghorn-SBC
-mkdir -p ~/GruppenLW/releases/$DATE/compex_wp188
+mkdir -p ~/GruppenLW/releases/$DATE/compex-wp188
 cd ../../../
-cp xscale/src/router/armeb-uclibc/gateworks-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/gateworks_8M
+cp xscale/src/router/armeb-uclibc/gateworks-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/gateworks-avila-8M
 #cp xscale/src/router/armeb-uclibc/gateworks-firmware-jffs.bin ~/GruppenLW/releases/$DATE/gateworks_8M
-cp xscale/src/router/armeb-uclibc/gateworx-firmware.raw2 ~/GruppenLW/releases/$DATE/gateworks_8M/linux.bin
+cp xscale/src/router/armeb-uclibc/gateworx-firmware.raw2 ~/GruppenLW/releases/$DATE/gateworks-avila-8M/linux.bin
 
 #cp xscale/src/router/armeb-uclibc/gateworks-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/pronghorn-SBC/pronghorn-firmware.bin
 #cp xscale/src/router/armeb-uclibc/gateworx-firmware.raw2 ~/GruppenLW/releases/$DATE/pronghorn-SBC/linux.bin
 
-cp xscale/src/router/armeb-uclibc/gateworks-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/compex_wp188/compex-firmware-webflash.bin
-cp xscale/src/router/armeb-uclibc/firmware.compex ~/GruppenLW/releases/$DATE/compex_wp188/firmware.tftp
+cp xscale/src/router/armeb-uclibc/gateworks-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/compex-wp188/compex-firmware-webflash.bin
+cp xscale/src/router/armeb-uclibc/firmware.compex ~/GruppenLW/releases/$DATE/compex-wp188/firmware.tftp
 
-cd xscale/src/router
-echo "CONFIG_PRONGHORN=y" >> .config
-make -f Makefile.armbe libutils-clean libutils install
-cd ../../../
-cp xscale/src/router/armeb-uclibc/gateworks-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/pronghorn-SBC/pronghorn-firmware.bin
-cp xscale/src/router/armeb-uclibc/gateworx-firmware.raw2 ~/GruppenLW/releases/$DATE/pronghorn-SBC/linux.bin
 
 cd xscale/src/router
 
 cp .config_xscale_16M .config
+echo "CONFIG_WIREGUARD=y" >> .config
+echo "CONFIG_SPEEDCHECKER=y" >> .config
+echo "CONFIG_TDMA=y" >> .config
+echo "CONFIG_WPA3=y" >> .config
+echo "CONFIG_ATH5K=y" >> .config
+echo "CONFIG_CAKE=y" >> .config
+echo "CONFIG_MAC80211_MESH=y" >> .config
+sed -i 's/CONFIG_QUAGGA=y/CONFIG_FRR=y/g' .config
 make -f Makefile.armbe kernel clean all install
 cd ../../../
-cp xscale/src/router/armeb-uclibc/gateworks-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/gateworks_16M
+cp xscale/src/router/armeb-uclibc/gateworks-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/gateworks-avila-16M
 #cp xscale/src/router/armeb-uclibc/gateworks-firmware-jffs.bin ~/GruppenLW/releases/$DATE/gateworks_16M
-cp xscale/src/router/armeb-uclibc/gateworx-firmware.raw2 ~/GruppenLW/releases/$DATE/gateworks_16M/linux.bin
+cp xscale/src/router/armeb-uclibc/gateworx-firmware.raw2 ~/GruppenLW/releases/$DATE/gateworks-avila-16M/linux.bin
 
+
+cd xscale/src/router
+echo "CONFIG_PRONGHORN=y" >> .config
+echo "CONFIG_ATH5K=y" >> .config
+make -f Makefile.armbe libutils-clean libutils install
+cd ../../../
+cp xscale/src/router/armeb-uclibc/gateworks-firmware-squashfs.bin ~/GruppenLW/releases/$DATE/pronghorn-SBC/pronghorn-firmware.bin
+cp xscale/src/router/armeb-uclibc/gateworx-firmware.raw2 ~/GruppenLW/releases/$DATE/pronghorn-SBC/linux.bin
 
 #./build_wrt300nv2.sh
 ./build_nop8670.sh

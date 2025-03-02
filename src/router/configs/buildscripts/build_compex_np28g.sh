@@ -3,7 +3,7 @@ OLDPATH=$PATH
 DATE=$(date +%m-%d-%Y)
 DATE+="-r"
 DATE+=$(svnversion -n adm5120/src/router/httpd)
-export PATH=/xfs/toolchains/toolchain-mipsel_gcc4.1.2/bin:$OLDPATH
+export PATH=/xfs/toolchains/toolchain-mipsel_mips32_gcc-13.1.0_musl/bin:$OLDPATH
 cd adm5120/src/router
 [ -n "$DO_UPDATE" ] && svn update
 cp .config_np28g .config

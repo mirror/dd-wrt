@@ -4,9 +4,9 @@ OLDPATH=$PATH
 DATE=$(date +%m-%d-%Y)
 DATE+="-r"
 DATE+=$(svnversion -n x86/src/router/httpd)
-export PATH=/xfs/toolchains/toolchain-i386_i486_gcc-5.1.0_musl-1.1.10/bin:$OLDPATH
+export PATH=/xfs/toolchains/toolchain-i386_pentium-mmx_gcc-13.1.0_musl/bin:$OLDPATH
 
-cd x86/src/linux/universal/linux-4.4
+cd x86/src/linux/universal/linux-4.9
 cp .config_single .config
 echo CONFIG_NET_ETHERIP=m >> .config
 
@@ -14,7 +14,8 @@ cd ../../../../../
 
 cd x86/src/router
 [ -n "$DO_UPDATE" ] && svn update
-cp .config_i386_full .config
+cp .config_i386_nowifi .config
+echo "KERNELVERSION=4.9" >> .config
 make -f Makefile.x86 kernel clean all install
 mkdir -p ~/GruppenLW/releases/$DATE/x86
 cd ../../../

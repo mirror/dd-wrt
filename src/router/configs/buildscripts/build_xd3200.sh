@@ -10,13 +10,14 @@ cd pb42/src/router
 cd opt/etc/config
 [ -n "$DO_UPDATE" ] && svn update
 cd ../../../
-cp .config_rspro .config
+cp .config_dir869 .config
+echo "CONFIG_DIR859=y" >> .config
+echo "CONFIG_ATH10K=y" >> .config
+echo "CONFIG_XD3200=y" >> .config
+echo "CONFIG_REGISTER=y" >> .config
 echo "CONFIG_SMARTDNS=y" >> .config
-echo "CONFIG_MDNS=y" >> .config
 make -f Makefile.pb42 kernel clean all install
-mkdir -p ~/GruppenLW/releases/$DATE/ubnt-routerstation_pro
+mkdir -p ~/GruppenLW/releases/$DATE/yuncore-xd3200
 cd ../../../
-cp pb42/src/router/mips-uclibc/rspro-firmware.bin ~/GruppenLW/releases/$DATE/ubnt-routerstation_pro/ubnt-rspro-firmware.bin
-cp pb42/src/router/mips-uclibc/RSPRO.dd-wrt.bin ~/GruppenLW/releases/$DATE/ubnt-routerstation_pro
-
-
+cp pb42/src/router/mips-uclibc/ap96-firmware.bin ~/GruppenLW/releases/$DATE/yuncore-xd3200/yuncore-xd3200-webflash.bin
+cp pb42/src/router/mips-uclibc/aligned.uimage ~/GruppenLW/releases/$DATE/yuncore-xd3200/factory-to-ddwrt.bin

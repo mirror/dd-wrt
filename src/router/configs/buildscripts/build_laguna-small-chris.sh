@@ -4,7 +4,7 @@ DATE=$(date +%m-%d-%Y)
 DATE+="-r"
 DATE+=$(svnversion -n laguna/src/router/httpd)
 #export PATH=/xfs/toolchains/toolchain-laguna-new/bin:$OLDPATH
-export PATH=/xfs/toolchains/toolchain-arm_mpcore+vfp_gcc-5.2.0_musl-1.1.11_eabi/bin:$OLDPATH
+export PATH=/xfs/toolchains/toolchain-arm_mpcore+vfp_gcc-13.1.0_musl_eabi/bin:$OLDPATH
 #export PATH=/xfs/toolchains/toolchain-arm_v6k_gcc-4.7-linaro_uClibc-0.9.33.2_eabi-7/bin:$OLDPATH
 cd laguna/src/router
 [ -n "$DO_UPDATE" ] && svn update

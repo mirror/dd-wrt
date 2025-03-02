@@ -3,7 +3,7 @@ OLDPATH=$PATH
 DATE=$(date +%m-%d-%Y)
 DATE+="-r"
 DATE+=$(svnversion -n xscale/src/router/httpd)
-export PATH=/xfs/toolchains/toolchain-armeb_xscale_gcc-5.2.0_musl-1.1.11/bin:$OLDPATH
+export PATH=/xfs/toolchains/toolchain-armeb_xscale_gcc-13.1.0_musl/bin:$OLDPATH
 #export PATH=/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin:$OLDPATH
 cd xscale/src/router
 [ -n "$DO_UPDATE" ] && svn update

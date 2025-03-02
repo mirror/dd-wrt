@@ -10,7 +10,7 @@
 ./build_ca8_pro.sh
 #./build_ca8_pro_maksat.sh
 ./build_fonera.sh
-./build_fonera_special.sh
+#./build_fonera_special.sh
 ./build_wrt54g2.sh
 ./build_asus_rtg32.sh
 ./build_gw54g2.sh
@@ -24,7 +24,7 @@
 ./build_wgt624v4.sh
 ./build_np25g.sh
 ./build_dir300.sh
-./build_dir300_special.sh
+#./build_dir300_special.sh
 ./build_dir400.sh
 ./build_aw6660.sh
 ./build_meraki.sh

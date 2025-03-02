@@ -2,8 +2,8 @@
 OLDPATH=$PATH
 DATE=$(date +%m-%d-%Y)
 DATE+="-r"
-DATE+=$(svnversion -n xscale/src/router/httpd)
-export PATH=/xfs/toolchains/toolchain-armeb_xscale_gcc-5.2.0_musl-1.1.11/bin:$OLDPATH
+DATE+=$(svnversion -n xscale/src/router/libutils)
+export PATH=/xfs/toolchains/toolchain-armeb_xscale_gcc-13.1.0_musl/bin:$OLDPATH
 cd xscale/src/router
 [ -n "$DO_UPDATE" ] && svn update
 cp .config_usr8200 .config
