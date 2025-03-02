@@ -209,6 +209,9 @@ endif
 ifeq ($(CONFIG_IPQ806X),y)
 IW_FLAGS+= IW_FULL=y
 endif
+ifneq ($(CONFIG_NOMESSAGE),y)
+IW_FLAGS+= IW_FULL=y
+endif
 
 ath9k-checkconfig:
 	cp $(REGPATH)/$(REGTXTORIG) $(REGPATH)/$(REGTXT)
