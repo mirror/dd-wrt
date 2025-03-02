@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r8386 | brainslayer | 2025-03-02 23:36:32 +0700 (Sun, 02 Mar 2025) | 1 line
+
+use standard naming and remove giwifi
+------------------------------------------------------------------------
 r8385 | brainslayer | 2025-03-02 22:42:41 +0700 (Sun, 02 Mar 2025) | 1 line
 
 fix broken sparrow support for wil6210 driver. to not write edma talyn registers in case sparrow hw is in use. this will crash the chipset and firmware will not boot
