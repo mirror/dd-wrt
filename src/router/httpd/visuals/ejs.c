@@ -2039,7 +2039,7 @@ EJ_VISIBLE void ej_getwirelessstatus(webs_t wp, int argc, char_t **argv)
 {
 	char var[32];
 	char m[32];
-	int showap = 0, showcli = 0;
+	int showap = 0, showcli = 0, showmesh = 0;
 
 	strncpy(m, nvram_safe_get("wifi_display"), 5);
 	m[5] = 0;
