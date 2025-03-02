@@ -1602,10 +1602,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	if (isfirst) {
 		fp = fopen(fstr, "wb");
 		setupHostAP_generic_ath9k(maininterface, fp, isrepeater, aoss);
-		if (has_ad(ifname))
-			fprintf(fp, "interface=giwifi0\n");
-		else
-			fprintf(fp, "interface=%s\n", ifname);
+		fprintf(fp, "interface=%s\n", ifname);
 	} else {
 		fp = fopen(fstr, "ab");
 		fprintf(fp, "bss=%s\n", ifname);
@@ -2657,8 +2654,6 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 		sprintf(power, "%s_txpwrdbm", prefix);
 		vifs = nvram_safe_get(wifivifs);
 		sprintf(subinterface, "-i%s", dev);
-		if (has_ad(dev))
-			sprintf(subinterface, "-igiwifi0");
 		sprintf(wmode, "%s_mode", dev);
 		sprintf(bridged, "%s_bridged", dev);
 		debug = nvram_ngeti("%s_wpa_debug", dev);
@@ -2762,8 +2757,6 @@ void post_hostapd_actions(int count)
 
 	sprintf(dev, "wlan%d", count);
 	sprintf(subinterface, "-i%s", dev);
-	if (has_ad(dev))
-		sprintf(subinterface, "-igiwifi0");
 	sprintf(wmode, "%s_mode", dev);
 	sprintf(power, "%s_txpwrdbm", dev);
 	sprintf(bridged, "%s_bridged", dev);
@@ -2786,8 +2779,6 @@ void post_hostapd_actions(int count)
 			background = "-Bdds";
 		else if (debug == 3)
 			background = "-Bddds";
-		if (has_ad(dev))
-			sprintf(dev, "giwifi0");
 
 		if ((!strcmp(apm, "sta") || !strcmp(apm, "wdssta") || !strcmp(apm, "wdssta_mtik") || !strcmp(apm, "infra") ||
 		     !strcmp(apm, "mesh") || !strcmp(apm, "tdma") || !strcmp(apm, "wet"))) {
