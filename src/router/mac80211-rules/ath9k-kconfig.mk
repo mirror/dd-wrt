@@ -197,6 +197,15 @@ IW_LDFLAGS=-L$(TOP)/libnl-tiny/
 ifeq ($(CONFIG_IPQ6018),y)
 IW_FLAGS+= IW_FULL=y
 endif
+ifeq ($(CONFIG_MVEBU),y)
+IW_FLAGS+= IW_FULL=y
+endif
+ifeq ($(CONFIG_ALPINE),y)
+IW_FLAGS+= IW_FULL=y
+endif
+ifeq ($(CONFIG_X86),y)
+IW_FLAGS+= IW_FULL=y
+endif
 ifeq ($(CONFIG_IPQ806X),y)
 IW_FLAGS+= IW_FULL=y
 endif
