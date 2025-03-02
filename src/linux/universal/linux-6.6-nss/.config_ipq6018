@@ -786,7 +786,8 @@ CONFIG_BINFMT_SCRIPT=y
 #
 # Memory Management options
 #
-# CONFIG_SWAP is not set
+CONFIG_SWAP=y
+# CONFIG_ZSWAP is not set
 
 #
 # SLAB allocator options
