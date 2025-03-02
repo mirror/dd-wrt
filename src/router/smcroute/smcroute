@@ -1,0 +1,59 @@
+#!/bin/sh
+# Compatibility wrapper for users with old startup scripts
+# Written by Joachim Wiberg, placed in the public domain
+
+OP=$1
+shift
+
+case "$OP" in
+    -d)
+	smcrouted $*
+	;;
+    -h)
+	echo "Usage: smcroute [OPTIONS] [ARGS]"
+	echo
+	echo "  -d       Start daemon"
+	echo "  -k       Kill a running daemon"
+	echo
+	echo "  -h       This help text"
+	echo "  -v       Show version"
+	echo
+	echo "  -a ARGS  Add a multicast route"
+	echo "  -r ARGS  Remove a multicast route"
+	echo
+	echo "  -j ARGS  Join a multicast group"
+	echo "  -l ARGS  Leave a multicast group"
+	echo
+	echo "     <------------- INBOUND -------------->  <----- OUTBOUND ------>"
+	echo "  -a <IFNAME> <SOURCE-IP> <MULTICAST-GROUP>  <IFNAME> [<IFNAME> ...]"
+	echo "  -r <IFNAME> <SOURCE-IP> <MULTICAST-GROUP>"
+	echo
+	echo "  -j <IFNAME> <MULTICAST-GROUP>"
+	echo "  -l <IFNAME> <MULTICAST-GROUP>"
+	echo
+	echo "NOTE: This is a compatibility wrapper script for SMCRoute.  Intended for"
+	echo "      use with old style startup scripts.   It is recommended to migrate"
+	echo "      to /etc/smcroute.conf, see the smcroute(8) man page for help."
+	return 0
+	;;
+    -k)
+	smcroutectl kill
+	;;
+    -v)
+	smcroutectl version
+	;;
+    -a)
+	smcroutectl add $*
+	;;
+    -r)
+	smcroutectl remove $*
+	;;
+    -j)
+	smcroutectl join $*
+	;;
+    *)
+	echo "Unknown command or option to the SMCRoute compatiblity wrapper script."
+	echo "See the smcroute(8) man page for help on available commands."
+	return 1
+	;;
+esac

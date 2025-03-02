@@ -1,0 +1,249 @@
+.\"  -*- nroff -*-
+.Dd November 28, 2021
+.Dt SMCROUTECTL 8 SMM
+.Os
+.Sh NAME
+.Nm smcroutectl
+.Nd Control and status tool for
+.Xr smcrouted 8
+.Sh SYNOPSIS
+.Nm smcroutectl
+.Op Fl bdptv
+.Op Fl i Ar NAME
+.Op Fl u Ar FILE
+.Op Ar COMMAND
+.Pp
+.Nm smcroutectl
+.Ao help | flush | kill | reload | version Ac
+.Nm smcroutectl
+.Ao show Ac
+.Op groups | routes
+.Nm smcroutectl
+.Ao add \ | \ \ rem Ac IIF Oo SOURCE Oc Ar GROUP[/LEN] OIF Op OIF ...
+.Nm smcroutectl
+.Ao join | leave Ac IIF Oo SOURCE Oc Ar GROUP[/LEN]
+.Sh DESCRIPTION
+.Nm
+is the control tool for
+.Xr smcrouted 8 .
+It can be used to query status, debug, modify the kernel multicast
+forwarding cache (MFC), manage group interface memberships, reload
+.Nm smcroute.conf ,
+and kill a running
+.Nm smcrouted .
+.Sh OPTIONS
+The following
+.Nm
+options are available:
+.Bl -tag -width Ds
+.It Fl b
+Batch mode, read commands from stdin.
+.Bd -unfilled -offset indent
+$ sudo smcroutectl -b <<-EOF
+	join eth0 225.1.2.3
+	add eth0 192.168.1.42 225.1.2.3 eth1 eth2
+	rem eth1 225.3.4.5 eth3
+	leave eth1 225.3.4.5
+	EOF
+.Ed
+.It Fl d
+Enable detailed output in show commands.
+.It Fl i Ar NAME
+Connect to an
+.Nm smcrouted
+instance that runs with another identity,
+.Ar NAME .
+.Pp
+This option is required for both
+.Nm smcrouted
+and
+.Nm smcroutectl
+when running multiple
+.Nm smcrouted
+instances, e.g., when using multiple routing tables, on Linux.
+.It Fl p
+Use plain table headings in
+.Cm show
+command output.  No ANSI control characters are used, not even for
+probing screen width.
+.It Fl t
+Skip table headings entirely in
+.Cm show
+command output.
+.It Fl u Ar FILE
+UNIX domain socket path, used for the IPC between
+.Nm smcrouted
+and
+.Nm .
+Use this to override the default socket path, otherwise derived from the
+identity,
+.Fl i Ar NAME .
+This option can be useful when overriding the identity is not
+sufficient, e.g. for testing.  The default depends on how
+.Nm
+is configured at build time, see
+.Sx FILES .
+.El
+.Sh OPERATION
+The
+.Ar IIF
+and
+.Ar OIF
+arguments in the below
+.Nm smcroutectl
+commands are the interface names, or interface wildcards of the form
+.Ar eth+ ,
+which matches
+.Ar eth0 , eth10 ,
+etc.  Wildcards are available for both inbound and outbound interfaces.
+.Pp
+A multicast route is defined by an input interface
+.Ar IIF ,
+the sender's unicast IP address
+.Ar SOURCE ,
+which is optional, the multicast group
+.Ar GROUP
+and a list of, at least one, output interface
+.Ar OIF [OIF ...] .
+.Pp
+Please refer to
+.Xr smcrouted 8 
+for more details on the operation and how ASM/SSM multicast works.
+.Sh COMMANDS
+Commands can be abbreviated to the minimum unambiguous prefix; for
+example,
+.Cm s g
+for
+.Cm show groups .
+The following commands are available:
+.Bl -tag -width Ds
+.It Nm add Ar IIF [SOURCE[/LEN]] GROUP[/LEN] OIF [OIF ...]
+Add a new multicast route the the kernel MFC, or modify the outbound
+interfaces (OIF) an existing route.
+.Pp
+The arguments are, in order:
+.Ar IIF
+the inbound interface,
+.Ar SOURCE
+originating IP address (may need to be reachable in the unicast routing
+table to be allowed by the kernel reverse-path check),
+.Ar GROUP
+the multicast group address, and
+.Ar OIF Oo Ar OIF ... Oc
+the outbound network interface(s).
+.Pp
+The interfaces provided as
+.Ar IIF
+and
+.Ar OIF
+can be any multicast capable network interface as listed by
+.Ql Cm ifconfig
+or
+.Ql Cm ip link list ,
+including tunnel interfaces and loopback.  Provided
+.Nm smcrouted
+has "enumerated" them.  See
+.Xr smcrouted 8 ,
+in particular the command line option
+.Fl N ,
+and the
+.Xr smcroute.conf 5
+.Ql Cm phyint
+directive.
+.Pp
+To add a (*,G) route, either omit the
+.Ar SOURCE
+argument completely, or set it to
+.Ar 0.0.0.0
+for IPv4, and if you want to specify a range of groups, use
+the
+.Ql GROUP/LEN
+modifier, e.g.
+.Ql 225.0.0.0/24 .
+.It Nm remove Ar IIF [SOURCE[/LEN]] GROUP[/LEN] [OIF [OIF ...]]
+Remove or modify the outbound interfaces of a multicast route in the
+kernel MFC.
+.Pp
+When no
+.Ar OIF
+argument is given, this command removes the entire route.  With
+one or more
+.Ar OIF
+arguments, each outbound interface listed is removed.  Skipping
+any unmatched or invalid interface names.  When no more outbound
+interfaces exist, the route will have been transformed into a
+"stop filter".  To remove the route entirely, the command must
+be given with no
+.Ar OIF
+arguments.
+.It Nm flush
+Flush dynamic (*,G) multicast routes now.  Similar to how
+.Fl c Ar SEC
+works in
+.Nm smcrouted ,
+this command initiates an immediate flush of all dynamically installed
+(*,G) multicast routes.  Useful when a topology change has been detected
+and need to be propagated to
+.Nm smcrouted.
+.It Nm join Ar IIF [SOURCE[/LEN]] GROUP[/LEN]
+Join a multicast group, with an optional prefix length, on the given
+(inbound) interface.  The source address is optional, but if given a
+source specific (SSM) join is performed.  Note, joining groups is only
+ever necessary on the inbound interface, never on the outbound.  Unless,
+two-way routing the same group.
+.Pp
+Note, as mentioned in
+.Xr smcrouted 8 ,
+joining a group to open up traffic in layer-2 network switches is only a
+workaround to direct multicast towards SMCRoute.  When routing lots of
+traffic it is advised to avoid this mechanism.  Instead, use multicast
+router ports, or similar settings on the switches, or if they support
+multicast router discovery (MRDISC), see RFC4286.
+.It Nm leave Ar IIF [SOURCE[/LEN]] GROUP[/LEN]
+Leave a multicast group, with optional prefix length, on a given
+(inbound) interface.  As with the join command, above, the source
+address is optional, but if the group was subscribed to with source it
+must be unsubscribed with source as well.
+.It Nm help [cmd]
+Print a usage information message.
+.It Nm kill
+Tell a running
+.Nm smcrouted
+to exit gracefully, same as
+.Ar SIGTERM .
+.It Nm reload
+Tell
+.Nm smcrouted
+to reload its configuration and activate the changes.  Same as
+.Ar SIGHUP .
+Note, any routes or groups added or removed with
+.Nm smcroutectl
+will be lost.  Only the configuration set in the file
+.Pa smcroute.conf
+is activated.
+.It Nm show [groups|routes]
+Show joined multicast groups or multicast routes, defaults to show
+routes.  Can be combined with the
+.Fl d
+option to get details for each multicast route.
+.It Nm version
+Show program version and support information.
+.El
+.Sh SEE ALSO
+.Xr smcrouted 8 ,
+.Xr smcroute.conf 5
+.Sh AUTHORS
+.An -nosplit
+SMCRoute was originally created by
+.An Carsten Schill Aq Mt carsten@cschill.de .
+Initial IPv6 support by
+.An Todd Hayton Aq Mt todd.hayton@gmail.com .
+Initial FreeBSD support by
+.An Micha Lenk Aq Mt micha@debian.org .
+.Pp
+SMCRoute is currently maintained by
+.An Joachim Wiberg Aq Mt troglobit@gmail.com ,
+and
+.An Micha Lenk Aq Mt micha@debian.org
+at
+.Lk https://github.com/troglobit/smcroute "GitHub" .

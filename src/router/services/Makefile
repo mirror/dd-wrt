@@ -2045,6 +2045,11 @@ CFLAGS_EXTRA += -DHAVE_DBUS -DHAVE_BLUEZ
 OBJS += dbus.o bluetooth.o
 endif
 
+ifeq ($(CONFIG_SMCROUTE),y)
+CFLAGS_EXTRA += -DHAVE_SMCROUTE
+OBJS += smcroute.o
+endif
+
 ifeq ($(CONFIG_ATH10K_CT),y)
   CFLAGS_EXTRA += -DHAVE_ATH10K_CT 
 endif

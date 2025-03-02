@@ -469,6 +469,7 @@ obj-$(CONFIG_EXFAT) += exfat-utils
 obj-$(CONFIG_DOSFSTOOLS) += dosfstools
 obj-$(CONFIG_FLASHROM) += flashrom
 obj-$(CONFIG_SMARTMONTOOLS) += smartmontools
+obj-$(CONFIG_SMCROUTE) += smcroute
 ifneq ($(KERNELVERSION),6.6-nss)
 ifneq ($(KERNELVERSION),6.1-nss)
 ifneq ($(KERNELVERSION),6.1)

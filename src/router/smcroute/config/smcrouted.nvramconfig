@@ -1,0 +1,4 @@
+"smcrouted_enable"  "smcrouted Enable"  "CHOICE"  "2"  "0"  "1"  "FALSE"  "0"
+"smcrouted_conf" "smcrouted Config" "NULL" "FALSE" "0"
+"smcrouted_loglevel"  "smcrouted log level" "CHOICE" "5" "none" "err" "notice" "info" "debug" "FALSE" "0"
+"smcrouted_flushrtsec" "smcrouted Flush unused dynamic (*,G) multicast routes every SEC seconds" "NULL" "FALSE" "0"

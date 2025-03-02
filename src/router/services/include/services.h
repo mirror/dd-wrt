@@ -156,6 +156,7 @@ DECLARE_SERVICE(setup_affinity);
 DECLARE_SERVICE(setup_vlans);
 DECLARE_SERVICE(sfe);
 DECLARE_SERVICE(smartd);
+DECLARE_SERVICE(smcrouted);
 DECLARE_SERVICE(snmp);
 DECLARE_SERVICE(softether);
 DECLARE_SERVICE(speedchecker);

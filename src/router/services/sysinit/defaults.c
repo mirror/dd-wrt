@@ -3679,6 +3679,11 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_IPTOOLS
 	{ "arpd_enable", "0" },
 #endif
+#ifdef HAVE_SMCROUTE
+	{ "smcrouted_enable", "0" },
+	{ "smcrouted_flushrtsec", "0" },
+	{ "smcrouted_loglevel", "info" },
+#endif
 	{ 0, 0 }
 };
 #else

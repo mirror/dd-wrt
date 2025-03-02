@@ -1,0 +1,39 @@
+<fieldset>
+	<legend><% tran("service.smcrouted_legend"); %></legend>
+	<div class="setting">
+		<div class="label"><% tran("service.smcrouted_srv"); %></div>
+		<input class="spaceradio" type="radio" name="smcrouted_enable" value="1" <% nvc("smcrouted_enable", "1"); %> onclick="show_layer_ext(this, 'idsmcrouted', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="smcrouted_enable" value="0" <% nvc("smcrouted_enable", "0"); %> onclick="show_layer_ext(this, 'idsmcrouted', false)" /><% tran("share.disable"); %>
+	</div>
+	<div id="idsmcrouted">
+		<div class="setting">
+			<div class="label"><% tran("service.smcrouted_loglevel"); %></div>
+			<select name="smcrouted_loglevel">
+			<option value="none" <% nvram_selected("smcrouted_loglevel","none"); %>>none</option>
+			<option value="err" <% nvram_selected("smcrouted_loglevel","err"); %>>error</option>
+			<option value="notice" <% nvram_selected("smcrouted_loglevel","notice"); %>>notice</option>
+			<option value="info" <% nvram_selected("smcrouted_loglevel","info"); %>>info</option>
+			<option value="debug" <% nvram_selected("smcrouted_loglevel","debug"); %>>debug</option>
+			</select>
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.smcrouted_flushrtsec"); %></div>
+			<input size="3" maxlength="3" class="num" name="smcrouted_flushrtsec" onblur="valid_range(this,0,999,share.port)" value="<% nvg("smcrouted_flushrtsec"); %>" />
+			<span class="default"><script type="text/javascript">
+			//<![CDATA[
+			document.write("(" + share.deflt + ": 60, 0 " + share.notset + ")");
+			//]]>
+			</script></span>
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.chronyd_conf"); %></div>
+			<textarea id="smcrouted_conf" name="smcrouted_conf" cols="60" rows="4" wrap="off">&nbsp;</textarea>
+			<script type="text/javascript">
+			//<![CDATA[
+				var var_smcrouted_conf = fix_cr( '<% nvg("smcrouted_conf"); %>' );
+				document.getElementById("smcrouted_conf").value = var_smcrouted_conf;
+			//]]>
+			</script>
+		</div>
+	</div>
+</fieldset><br />

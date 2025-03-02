@@ -1,0 +1,25 @@
+[Unit]
+Description=Static multicast routing daemon
+Documentation=man:smcrouted
+Documentation=man:smcroute.conf
+Documentation=man:smcroutectl
+Documentation=file:@DOCDIR@/README.md
+# ConditionPathExists=@SYSCONFDIR@/smcroute.conf
+After=network-online.target
+Requires=network-online.target
+
+[Service]
+Type=@DAEMON_TYPE@
+EnvironmentFile=-@SYSCONFDIR@/default/smcroute
+ExecStart=@SBINDIR@/smcrouted -n -s $SMCROUTED_OPTS $SMCROUTED_ARGS
+ExecReload=@SBINDIR@/smcroutectl reload
+NotifyAccess=main
+
+# Hardening settings
+NoNewPrivileges=true
+ProtectControlGroups=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
