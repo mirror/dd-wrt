@@ -5883,7 +5883,7 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 		{ "wpa.psk2_sha256", "psk2-sha256", has_wpa3, is_mac80211, nomesh, noad, disable_if_6ghz },
 		{ "wpa.psk3", "psk3", has_wpa3, is_mac80211, noad, alwaystrue, alwaystrue },
 		{ "wpa.wpa", "wpa", aponly, alwaystrue, nomesh, noad, disable_if_6ghz },
-		{ "wpa.wpa2", "wpa2", aponly, alwaystrue, nomesh, alwaystrue, disable_if_6ghz },
+		{ "wpa.wpa2", "wpa2", aponly, alwaystrue, nomesh, noad, disable_if_6ghz },
 		{ "wpa.wpa2_sha256", "wpa2-sha256", aponly_wpa3, is_mac80211, nomesh, noad, disable_if_6ghz },
 		{ "wpa.wpa2_sha384", "wpa2-sha384", aponly_wpa3, is_mac80211, nomesh, noad, disable_if_6ghz },
 		{ "wpa.wpa3", "wpa3", aponly_wpa3, is_mac80211, nomesh, noad, alwaystrue },
