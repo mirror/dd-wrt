@@ -14,7 +14,7 @@ smcroute-configure:
 
 smcroute:
 	install -D smcroute/config/smcrouted.webservices httpd/ej_temp/
-	$(MAKE) -C smcroute CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF"
+	$(MAKE) -C smcroute
 
 smcroute-install:
 	#$(MAKE) -C smcroute install-strip DESTDIR=$(INSTALLDIR)/smcroute
