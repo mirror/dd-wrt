@@ -2169,6 +2169,12 @@ service.chronyd_legend="Chronyd - NTP Server";
 service.chronyd_srv="Chronyd";
 service.chronyd_conf="Custom config";
 
+//service smcrouted
+service.smcrouted_legend="SMCRouted - Multicast router";
+service.smcrouted_srv="SMCRouted";
+service.smcrouted_flushrtsec="Flush unused routes (sec)";
+service.smcrouted_loglevel="Log Level";
+
 // service samba
 service.samba3_srv="Samba";
 service.samba3_srvstr="Server String";

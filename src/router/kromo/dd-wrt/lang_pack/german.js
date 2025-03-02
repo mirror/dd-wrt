@@ -1920,6 +1920,13 @@ service.warn_to="E-Mail Adresse des Empfängers";
 service.warn_domain="Domain Name des Empfängers";
 service.warn_user="SMTP Auth Benutzername";
 service.warn_pass="SMTP Auth Kennwort";
+
+//service smcrouted
+service.smcrouted_legend="SMCRouted - Multicast router";
+service.smcrouted_srv="SMCRouted";
+service.smcrouted_flushrtsec="Entferne ungenutzte Routen (sec)";
+service.smcrouted_loglevel="Log Level";
+
 service.samba3_srv="Samba";
 service.samba3_srvstr="Server String";
 service.samba3_pub="Öffentliche Freigabe";
