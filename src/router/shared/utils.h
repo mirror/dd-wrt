@@ -1659,6 +1659,8 @@ void set_named_smp_affinity(char *name, int core, int entry);
 void set_named_smp_affinity_mask(char *name, int mask, int entry);
 void set_named_smp_affinity_list(char *name, char *cpulist, int entry);
 
+int ifconfig(char *name, int flags, char *addr, char *netmask);
+
 int writevaproc(char *value, char *fmt, ...);
 
 void MAC_ADD(char *mac);
