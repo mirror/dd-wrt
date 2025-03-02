@@ -737,20 +737,21 @@ void start_dnsmasq(void)
 			char ipv6_leasetime[12] = { 0 };
 			char dnsipv6_rastate[16] = { 0 };
 			int rastate = nvram_geti("dnsipv6_rastate");
-			
+
 			/*
 			nvram_geti("dnsipv6_rastate") ? strlcpy(dnsipv6_rastate, "slaac", sizeof(dnsipv6_rastate)) :
 							strlcpy(dnsipv6_rastate, "ra-stateless", sizeof(dnsipv6_rastate));
 			*/
-			
+
 			if (rastate == 1) {
-				strlcpy(dnsipv6_rastate, "slaac", sizeof(dnsipv6_rastate));  //slaac in DNSMasq speak is ra-stateful with DHCP6v 
-			} else if  (rastate == 0) {
+				strlcpy(dnsipv6_rastate, "slaac",
+					sizeof(dnsipv6_rastate)); //slaac in DNSMasq speak is ra-stateful with DHCP6v
+			} else if (rastate == 0) {
 				strlcpy(dnsipv6_rastate, "ra-stateless", sizeof(dnsipv6_rastate));
 			} else {
 				strlcpy(dnsipv6_rastate, "ra-only", sizeof(dnsipv6_rastate));
 			}
-			
+
 			if (!strcmp(nvram_safe_get("dnsipv6_leasetime"), "0")) {
 				strlcpy(ipv6_leasetime, "infinite", sizeof(ipv6_leasetime));
 			} else {
