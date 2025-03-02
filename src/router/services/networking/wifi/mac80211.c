@@ -917,7 +917,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 
 		if (freq == 0) {
 			if (has_ad(prefix)) {
-				freq = 53320;
+				freq = 58320;
 			} else {
 				struct mac80211_ac *acs;
 				fprintf(stderr, "call mac80211autochannel for interface: %s\n", prefix);
@@ -1737,9 +1737,16 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	else
 		fprintf(fp, "ignore_broadcast_ssid=0\n");
 	sprintf(maxassoc, "%s_maxassoc", ifname);
+	if (has_ad(ifname)) {
+	fprintf(fp, "max_num_sta=%s\n", nvram_default_get(maxassoc, "3")); // should not be bigger according to what i found so far
+	fprintf(fp, "send_probe_response=0\n");
+	} else
 	fprintf(fp, "max_num_sta=%s\n", nvram_default_get(maxassoc, "256"));
 	char dtim[32];
 	sprintf(dtim, "%s_dtim", ifname);
+	if (has_ad(ifname))
+	fprintf(fp, "dtim_period=%s\n", nvram_default_get(dtim, "4"));
+else
 	fprintf(fp, "dtim_period=%s\n", nvram_default_get(dtim, "2"));
 	if (aoss) {
 		if (!strncmp(ifname, "aossa", 5))
