@@ -5,6 +5,7 @@
 #
 # Base Features
 #
+CONFIG_SWAP=y
 CONFIG_TOR_FULL=y
 CONFIG_IPTOOLS=y
 CONFIG_BLUEZ=y
