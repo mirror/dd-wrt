@@ -100,15 +100,24 @@ int _ieee80211_mhz2ieee(int has_6ghz, int freq)
 		if (freq > 5950 && freq <= 7115)
 			return (freq - 5950) / 5;
 	}
-	if (freq == 58320)
+	switch(freq) {
+	case 58320:
 		return 1;
-	if (freq == 60480)
+	case 60480:
 		return 2;
-	if (freq == 62640)
+	case 62640:
 		return 3;
-	if (freq == 64800)
+	case 64800:
 		return 4;
-
+	case 66960:
+		return 5;
+	case 69120:
+		return 6;
+	case 71280:
+		return 7;
+	case 73440:
+		return 8;
+	}
 	return ((freq - 5000) / 5) % 0xff;
 }
 
