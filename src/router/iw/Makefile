@@ -13,12 +13,12 @@ cc-option = $(shell set -e ; $(CC) $(1) -c -x c /dev/null -o /dev/null >/dev/nul
 
 CFLAGS_EVAL := $(call cc-option,-Wstringop-overflow=4)
 
-CFLAGS += $(LTO) -I$(TOP)/shared -Wall -Wextra -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common
-CFLAGS += -Werror-implicit-function-declaration -Wsign-compare -Wno-unused-parameter
-CFLAGS += -Wdeclaration-after-statement
-CFLAGS += -D__SANE_USERSPACE_TYPES__
-CFLAGS += $(CFLAGS_EVAL)
-CFLAGS += $(EXTRA_CFLAGS)
+CPPFLAGS += $(LTO) -I$(TOP)/shared -Wall -Wextra -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common
+CPPFLAGS += -Werror-implicit-function-declaration -Wsign-compare -Wno-unused-parameter
+CPPFLAGS += -Wdeclaration-after-statement
+CPPFLAGS += -D__SANE_USERSPACE_TYPES__
+CPPFLAGS += $(CFLAGS_EVAL)
+CPPFLAGS += $(EXTRA_CFLAGS)
 
 _OBJS := $(sort $(patsubst %.c,%.o,$(wildcard *.c)))
 VERSION_OBJS := $(filter-out version.o, $(_OBJS))
@@ -26,7 +26,7 @@ OBJS := $(VERSION_OBJS) version.o
 
 OBJS_FULL = ocb offch cqm wowlan coalesce roc p2p vendor mgmt ap sha256 nan bloom measurements ftm tdma
 ifdef IW_FULL
-  CFLAGS += -DIW_FULL
+  CPPFLAGS += -DIW_FULL
 else
   OBJS:=$(filter-out $(patsubst %,%.o,$(OBJS_FULL)),$(OBJS))
 endif

@@ -190,7 +190,7 @@ static void usage(int argc, char **argv)
 	bool full = argc >= 0;
 	const char *sect_filt = NULL;
 	const char *cmd_filt = NULL;
-	unsigned int i, j;
+	int i, j;
 
 	if (argc > 0)
 		sect_filt = argv[0];
