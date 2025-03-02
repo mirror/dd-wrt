@@ -80,18 +80,12 @@ static void _invalidate_channelcache(void)
 #define INITVALUECACHEi(prefix)                                  \
 	static int devs[8] = { -1, -1, -1, -1, -1, -1, -1, -1 }; \
 	int dn, ret = 0;                                         \
-	if (!strncmp(prefix, "giwifi", 6))                       \
-		dn = 2;                                          \
-	else                                                     \
-		sscanf(prefix, "wlan%d", &dn);                   \
+	sscanf(prefix, "wlan%d", &dn);                   \
 	if (dn > -1 && (dn > 7 || devs[dn] == -1)) {
 #define INITVALUECACHE()                                         \
 	static int devs[8] = { -1, -1, -1, -1, -1, -1, -1, -1 }; \
 	int dn, ret = 0;                                         \
-	if (!strncmp(prefix, "giwifi", 6))                       \
-		dn = 2;                                          \
-	else                                                     \
-		sscanf(prefix, "wlan%d", &dn);                   \
+	sscanf(prefix, "wlan%d", &dn);                   \
 	if (dn > -1 && (dn > 7 || devs[dn] == -1)) {
 #else
 
