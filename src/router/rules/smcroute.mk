@@ -5,9 +5,10 @@
 smcroute-configure:
 	cd smcroute && ./autogen.sh
 	cd smcroute && ./configure --prefix=/usr --sysconfdir=/etc \
-	    --without-libcap --build=$(BUILD) --host=$(ARCH)-linux-uclibc  \ 
+	    --without-libcap --build=$(BUILD) --host=$(ARCH)-linux-uclibc \
 	CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="-static $(LDLTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections" AR_FLAGS="cru $(LTOPLUGIN)" \
+	CXXFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="$(LDLTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections" AR_FLAGS="cru $(LTOPLUGIN)" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 	
 
