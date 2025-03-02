@@ -204,8 +204,10 @@ void delete_ath9k_devices(char *physical_iface)
 			br_del_interface(getBridge("wlan2", tmp), dev);
 		} else
 			br_del_interface(getBridge(dev, tmp), dev);
-		eval("ifconfig", dev, "down");
-		eval("iw", dev, "del");
+		if (!is_wil6210(dev)) {
+			eval("ifconfig", dev, "down");
+			eval("iw", dev, "del");
+		}
 	}
 	LEAVE;
 }
