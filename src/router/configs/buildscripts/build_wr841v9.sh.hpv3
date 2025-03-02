@@ -1,0 +1,62 @@
+#!/bin/sh
+OLDPATH=$PATH
+DATE=$(date +%m-%d-%Y)
+DATE+="-r"
+DATE+=$(svnversion -n pb42/src/router/httpd)
+export PATH=/xfs/toolchains/toolchain-mips_24kc_gcc-13.1.0_musl/bin:$OLDPATH
+#export PATH=/xfs/toolchains/toolchain-mips_gcc-4.3.3+cs_uClibc-0.9.30.1/usr/bin:$OLDPATH
+#export PATH=/xfs/toolchains/staging_dir_mips_pb42/bin:$OLDPATH
+cd pb42/src/router
+[ -n "$DO_UPDATE" ] && svn update
+cd opt/etc/config
+[ -n "$DO_UPDATE" ] && svn update
+cd ../../../
+cp .config_wr841v8 .config
+echo CONFIG_AP135=y >> .config
+echo CONFIG_AP143=y >> .config
+echo CONFIG_WR841V9=y >> .config
+make -f Makefile.pb42 kernel clean all install
+mkdir -p ~/GruppenLW/releases/$DATE/tplink-tl-wr841ndv9
+mkdir -p ~/GruppenLW/releases/$DATE/tplink-tl-wr841ndv10
+mkdir -p ~/GruppenLW/releases/$DATE/tplink-tl-wr841ndv11
+mkdir -p ~/GruppenLW/releases/$DATE/tplink-tl-wr841ndv12
+mkdir -p ~/GruppenLW/releases/$DATE/tplink-tl-wr841hpv3
+mkdir -p ~/GruppenLW/releases/$DATE/tplink-tl-wr941ndv6
+mkdir -p ~/GruppenLW/releases/$DATE/tplink-tl-wr940ndv3
+mkdir -p ~/GruppenLW/releases/$DATE/tplink-tl-wr940ndv4
+mkdir -p ~/GruppenLW/releases/$DATE/tplink-tl-wr940ndv5
+mkdir -p ~/GruppenLW/releases/$DATE/tplink-tl-wr940ndv6
+mkdir -p ~/GruppenLW/releases/$DATE/tplink-tl-wa901ndv4
+mkdir -p ~/GruppenLW/releases/$DATE/tplink-tl-wa901ndv5
+cd ../../../
+
+
+
+
+cd pb42/src/router
+cp .config_wr841v8 .config
+echo CONFIG_AP135=y >> .config
+echo CONFIG_AP143=y >> .config
+echo CONFIG_WR841V9=y >> .config
+echo CONFIG_WR841V10=y >> .config
+echo CONFIG_WR841V11=y >> .config
+echo CONFIG_WR841V12=y >> .config
+echo CONFIG_WR841HPV3=y >> .config
+echo CONFIG_WPA3=y >> .config
+echo "CONFIG_SMARTDNS=y" >> .config
+echo "CONFIG_IPERF=y" >> .config
+echo "CONFIG_OLSRD=y" >> .config
+echo "CONFIG_TOR=y" >> .config
+echo "CONFIG_OPENSSL=y" >> .config
+echo "CONFIG_OPENVPN=y" >> .config
+echo "CONFIG_WIREGUARD=y" >> .config
+echo "CONFIG_JFFS2=y" >> .config
+echo "CONFIG_MAC80211_MESH=y" >> .config
+echo "CONFIG_CAKE=y" >> .config
+make -f Makefile.pb42 libutils-clean libutils install
+cd ../../../
+
+cp pb42/src/router/mips-uclibc/WR841HPv3-firmware.bin ~/GruppenLW/releases/$DATE/tplink-tl-wr841hpv3/tl-wr841HPv3-webflash.bin
+cp pb42/src/router/mips-uclibc/tplink-WR841HPv3-firmware.bin ~/GruppenLW/releases/$DATE/tplink-tl-wr841hpv3/factory-to-ddwrt.bin
+
+

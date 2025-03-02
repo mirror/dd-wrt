@@ -1,0 +1,20 @@
+./configure_module.sh squid
+./configure_module.sh freeradius3
+./configure_module.sh tor
+./configure_module.sh php8
+./configure_module.sh aircrack-ng
+./configure_module.sh vpnc
+./configure_module.sh openvpn
+./configure_module.sh libzip
+./configure_module.sh curl
+./configure_module.sh libevent
+./configure_module.sh libevent-af
+./configure_module.sh hydra
+./configure_module.sh krb5
+./configure_module.sh softether
+./configure_module.sh ipeth
+./configure_module.sh unbound
+./configure_module.sh rsync
+./configure_module.sh transmission
+./configure_module.sh nfs-utils
+

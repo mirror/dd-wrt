@@ -1,0 +1,9 @@
+#./build_wzrag300h_buffalo.sh
+#./build_whr_hp_g300n_buffalo.sh
+#./build_wzrg300nh2_buffalo.sh
+#./build_wzrg450_buffalo.sh
+#./build_wzrg300nh_buffalo.sh
+./build_wzrg300nh.sh
+./build_wzrg300nh2.sh
+./build_wzrag300h.sh
+./build_whr_hp_g300n.sh

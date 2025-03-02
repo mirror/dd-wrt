@@ -1,0 +1,28 @@
+#!/bin/sh
+OLDPATH=$PATH
+DATE=$(date +%m-%d-%Y)
+DATE+="-r"
+DATE+=$(svnversion -n ipq806x/src/router/httpd)
+export PATH=/xfs/toolchains/toolchain-arm_cortex-a15+neon-vfpv4_gcc-8.2.0_musl_eabi/bin:$OLDPATH
+#export PATH=/xfs/toolchains/toolchain-arm_cortex-a15+neon-vfpv4_gcc-8.1.0_musl_eabi/bin:$OLDPATH
+cd ipq806x/src/router
+cp configs/ipq806x/.config_ipq806x .config
+echo "CONFIG_EA8500=y" >> .config
+echo  "CONFIG_SPEEDCHECKER=y" >>.config
+echo "CONFIG_LSOF=y" >> .config
+echo "KERNELVERSION=4.9" >> .config
+echo "CONFIG_WIREGUARD=y" >> .config
+echo "CONFIG_EA8500=y" >> .config
+echo "CONFIG_MIKROTIK_BTEST=y" >> .config
+echo "CONFIG_WPA3=y" >> .config
+
+make -f Makefile.ipq806x kernel clean all install
+mkdir -p ~/GruppenLW/releases/$DATE/linksys-ea8500
+mkdir -p ~/GruppenLW/releases/$DATE/netgear-r7500v1
+mkdir -p ~/GruppenLW/releases/$DATE/netgear-r7500v2
+mkdir -p ~/GruppenLW/releases/$DATE/netgear-r7800
+mkdir -p ~/GruppenLW/releases/$DATE/asrock-g10
+cd ../../../
+cp ipq806x/src/router/arm-uclibc/ddwrt-Linksys-EA8500.bin ~/GruppenLW/releases/$DATE/linksys-ea8500/dd-wrt-webupgrade.bin
+cp ipq806x/src/router/arm-uclibc/EA8500-factory-to-ddwrt.img ~/GruppenLW/releases/$DATE/linksys-ea8500/factory-to-ddwrt.img
+

@@ -1,0 +1,12 @@
+#!/bin/sh
+#./build_wbd111_maksat.sh
+./build_tonze_ap120.sh
+./build_compex_wp54.sh
+./build_compex_np28g.sh
+./build_x86.sh
+#./build_x86_gw700.sh
+./build_magicbox.sh
+./build_mikrotik.sh
+./build_whrg300n.sh
+#./build_whrg300n_buffalo.sh
+./build_ecb9750.sh
