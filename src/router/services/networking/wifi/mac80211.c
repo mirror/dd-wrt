@@ -239,34 +239,34 @@ static void mesh_params(char *dev, char *name, char *def)
 void set_mesh_params(char *dev)
 {
 	ENTER;
-	mesh_param(dev, "mesh_fwding",1);
-	mesh_param(dev, "mesh_retry_timeout",100);
-	mesh_param(dev, "mesh_confirm_timeout",100);
-	mesh_param(dev, "mesh_holding_timeout",100);
-	mesh_param(dev, "mesh_max_peer_links",3);
-	mesh_param(dev, "mesh_max_retries",3);
-	mesh_param(dev, "mesh_ttl",5);
-	mesh_param(dev, "mesh_element_ttl",3);
-	mesh_param(dev, "mesh_auto_open_plinks",1);
-	mesh_param(dev, "mesh_hwmp_max_preq_retries",2);
-	mesh_param(dev, "mesh_path_refresh_time",1000);
-	mesh_param(dev, "mesh_min_discovery_timeout",100);
-	mesh_param(dev, "mesh_hwmp_active_path_timeout",5000);
-	mesh_param(dev, "mesh_hwmp_preq_min_interval",10);
-	mesh_param(dev, "mesh_hwmp_net_diameter_traversal_time",50);
-	mesh_param(dev, "mesh_hwmp_rootmode",0);
-	mesh_param(dev, "mesh_hwmp_rann_interval",5000);
-	mesh_param(dev, "mesh_gate_announcements",0);
-	mesh_param(dev, "mesh_sync_offset_max_neighor",10);
-	mesh_param(dev, "mesh_rssi_threshold",-80);
-	mesh_param(dev, "mesh_hwmp_active_path_to_root_timeout",6000);
-	mesh_param(dev, "mesh_hwmp_confirmation_interval",5000);
-	mesh_params(dev, "mesh_power_mode","active");
-	mesh_param(dev, "mesh_awake_window",10);
-	mesh_param(dev, "mesh_plink_timeout",0);
-	mesh_param(dev, "mesh_nolearn",1);
-	mesh_param(dev, "mesh_connected_to_gate",0);
-	mesh_param(dev, "mesh_connected_to_as",0);
+	mesh_param(dev, "mesh_fwding", 1);
+	mesh_param(dev, "mesh_retry_timeout", 100);
+	mesh_param(dev, "mesh_confirm_timeout", 100);
+	mesh_param(dev, "mesh_holding_timeout", 100);
+	mesh_param(dev, "mesh_max_peer_links", 3);
+	mesh_param(dev, "mesh_max_retries", 3);
+	mesh_param(dev, "mesh_ttl", 5);
+	mesh_param(dev, "mesh_element_ttl", 3);
+	mesh_param(dev, "mesh_auto_open_plinks", 1);
+	mesh_param(dev, "mesh_hwmp_max_preq_retries", 2);
+	mesh_param(dev, "mesh_path_refresh_time", 1000);
+	mesh_param(dev, "mesh_min_discovery_timeout", 100);
+	mesh_param(dev, "mesh_hwmp_active_path_timeout", 5000);
+	mesh_param(dev, "mesh_hwmp_preq_min_interval", 10);
+	mesh_param(dev, "mesh_hwmp_net_diameter_traversal_time", 50);
+	mesh_param(dev, "mesh_hwmp_rootmode", 0);
+	mesh_param(dev, "mesh_hwmp_rann_interval", 5000);
+	mesh_param(dev, "mesh_gate_announcements", 0);
+	mesh_param(dev, "mesh_sync_offset_max_neighor", 10);
+	mesh_param(dev, "mesh_rssi_threshold", -80);
+	mesh_param(dev, "mesh_hwmp_active_path_to_root_timeout", 6000);
+	mesh_param(dev, "mesh_hwmp_confirmation_interval", 5000);
+	mesh_params(dev, "mesh_power_mode", "active");
+	mesh_param(dev, "mesh_awake_window", 10);
+	mesh_param(dev, "mesh_plink_timeout", 0);
+	mesh_param(dev, "mesh_nolearn", 1);
+	mesh_param(dev, "mesh_connected_to_gate", 0);
+	mesh_param(dev, "mesh_connected_to_as", 0);
 	LEAVE;
 }
 
@@ -1738,16 +1738,17 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(fp, "ignore_broadcast_ssid=0\n");
 	sprintf(maxassoc, "%s_maxassoc", ifname);
 	if (has_ad(ifname)) {
-	fprintf(fp, "max_num_sta=%s\n", nvram_default_get(maxassoc, "3")); // should not be bigger according to what i found so far
-	fprintf(fp, "send_probe_response=0\n");
+		fprintf(fp, "max_num_sta=%s\n",
+			nvram_default_get(maxassoc, "3")); // should not be bigger according to what i found so far
+		fprintf(fp, "send_probe_response=0\n");
 	} else
-	fprintf(fp, "max_num_sta=%s\n", nvram_default_get(maxassoc, "256"));
+		fprintf(fp, "max_num_sta=%s\n", nvram_default_get(maxassoc, "256"));
 	char dtim[32];
 	sprintf(dtim, "%s_dtim", ifname);
 	if (has_ad(ifname))
-	fprintf(fp, "dtim_period=%s\n", nvram_default_get(dtim, "4"));
-else
-	fprintf(fp, "dtim_period=%s\n", nvram_default_get(dtim, "2"));
+		fprintf(fp, "dtim_period=%s\n", nvram_default_get(dtim, "4"));
+	else
+		fprintf(fp, "dtim_period=%s\n", nvram_default_get(dtim, "2"));
 	if (aoss) {
 		if (!strncmp(ifname, "aossa", 5))
 			ssid = "ESSID-AOSS-1";
