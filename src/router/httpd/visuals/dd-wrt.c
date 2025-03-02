@@ -5872,25 +5872,25 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 {
 	struct pair s_cryptopair[] = {
 		{ "wpa.ccmp", "ccmp", noad, wpaauth, alwaystrue, alwaystrue, alwaystrue },
-		{ "wpa.ccmp_256", "ccmp-256", has_ccmp_256, wpaauth, alwaystrue, alwaystrue, alwaystrue },
+		{ "wpa.ccmp_256", "ccmp-256", has_ccmp_256, wpaauth, noad, alwaystrue, alwaystrue },
 		{ "wpa.tkip", "tkip", noad, wpaauth, no_suiteb_no_wpa3, cantkip, alwaystrue },
-		{ "wpa.gcmp_128", "gcmp", has_gcmp_128, wpaauth, alwaystrue, alwaystrue, alwaystrue, suiteb },
-		{ "wpa.gcmp_256", "gcmp-256", has_gcmp_256, wpaauth, alwaystrue, alwaystrue, alwaystrue, suiteb192 },
+		{ "wpa.gcmp_128", "gcmp", has_gcmp_128, wpaauth, noad, alwaystrue, alwaystrue, suiteb },
+		{ "wpa.gcmp_256", "gcmp-256", has_gcmp_256, wpaauth, noad, alwaystrue, alwaystrue, suiteb192 },
 	};
 
 	struct pair s_authpair_wpa[] = {
-		{ "wpa.psk", "psk", alwaystrue, alwaystrue, nomesh, alwaystrue, disable_if_6ghz },
+		{ "wpa.psk", "psk", noad, alwaystrue, nomesh, alwaystrue, disable_if_6ghz },
 		{ "wpa.psk2", "psk2", alwaystrue, alwaystrue, nomesh, alwaystrue, disable_if_6ghz },
-		{ "wpa.psk2_sha256", "psk2-sha256", has_wpa3, is_mac80211, nomesh, alwaystrue, disable_if_6ghz },
-		{ "wpa.psk3", "psk3", has_wpa3, is_mac80211, alwaystrue, alwaystrue, alwaystrue },
-		{ "wpa.wpa", "wpa", aponly, alwaystrue, nomesh, alwaystrue, disable_if_6ghz },
+		{ "wpa.psk2_sha256", "psk2-sha256", has_wpa3, is_mac80211, nomesh, noad, disable_if_6ghz },
+		{ "wpa.psk3", "psk3", has_wpa3, is_mac80211, noad, alwaystrue, alwaystrue },
+		{ "wpa.wpa", "wpa", aponly, alwaystrue, nomesh, noad, disable_if_6ghz },
 		{ "wpa.wpa2", "wpa2", aponly, alwaystrue, nomesh, alwaystrue, disable_if_6ghz },
-		{ "wpa.wpa2_sha256", "wpa2-sha256", aponly_wpa3, is_mac80211, nomesh, alwaystrue, disable_if_6ghz },
-		{ "wpa.wpa2_sha384", "wpa2-sha384", aponly_wpa3, is_mac80211, nomesh, alwaystrue, disable_if_6ghz },
-		{ "wpa.wpa3", "wpa3", aponly_wpa3, is_mac80211, nomesh, alwaystrue, alwaystrue },
-		{ "wpa.wpa3_128", "wpa3-128", aponly_wpa3_gcmp128, has_gmac_128, nomesh, alwaystrue, alwaystrue },
-		{ "wpa.wpa3_192", "wpa3-192", aponly_wpa3_gcmp256, has_gmac_256, nomesh, alwaystrue, alwaystrue },
-		{ "wpa.owe", "owe", aponly_wpa3, is_mac80211, owe_possible, alwaystrue, alwaystrue }
+		{ "wpa.wpa2_sha256", "wpa2-sha256", aponly_wpa3, is_mac80211, nomesh, noad, disable_if_6ghz },
+		{ "wpa.wpa2_sha384", "wpa2-sha384", aponly_wpa3, is_mac80211, nomesh, noad, disable_if_6ghz },
+		{ "wpa.wpa3", "wpa3", aponly_wpa3, is_mac80211, nomesh, noad, alwaystrue },
+		{ "wpa.wpa3_128", "wpa3-128", aponly_wpa3_gcmp128, has_gmac_128, nomesh, noad, alwaystrue },
+		{ "wpa.wpa3_192", "wpa3-192", aponly_wpa3_gcmp256, has_gmac_256, nomesh, noad, alwaystrue },
+		{ "wpa.owe", "owe", aponly_wpa3, is_mac80211, owe_possible, noad, alwaystrue }
 	};
 	struct pair s_authpair_80211x[] = {
 		{ "wpa.wpa", "wpa", alwaystrue, alwaystrue, alwaystrue, alwaystrue, disable_if_6ghz },

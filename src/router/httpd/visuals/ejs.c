@@ -2067,8 +2067,6 @@ EJ_VISIBLE void ej_getwirelessssid(webs_t wp, int argc, char_t **argv)
 	char ssid[32];
 
 	char *ifname = nvram_safe_get("wifi_display");
-	if (has_ad(ifname))
-		ifname = "wlan2";
 	sprintf(ssid, "%s_ssid", ifname);
 	tf_webWriteESCNV(wp, ssid);
 }
@@ -2078,8 +2076,6 @@ EJ_VISIBLE void ej_getwirelessmode(webs_t wp, int argc, char_t **argv)
 	char mode[32];
 
 	char *ifname = nvram_safe_get("wifi_display");
-	if (has_ad(ifname))
-		ifname = "wlan2";
 	sprintf(mode, "%s_mode", ifname);
 
 	websWrite(wp, "<script type=\"text/javascript\">");
@@ -2119,8 +2115,6 @@ EJ_VISIBLE void ej_getwirelessnetmode(webs_t wp, int argc, char_t **argv)
 	char m[32];
 
 	char *ifname = nvram_safe_get("wifi_display");
-	if (has_ad(ifname))
-		ifname = "wlan2";
 	strncpy(m, ifname, 5);
 	m[5] = 0;
 	sprintf(netmode, "%s_net_mode", m);
