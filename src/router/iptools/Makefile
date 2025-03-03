@@ -3,8 +3,8 @@ SSOBJ=libnetlink.o utils.o inet_proto.o rt_names.o json_print.o color.o ll_addr.
 LNSTATOBJ=lnstat.o lnstat_util.o
 
 TARGETS=ss nstat ifstat rtacct lnstat
-CFLAGS += -Iinclude -Iinclude/uapi -Idb/staging/usr/include -D_GNU_SOURCE $(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF
-LDFLAGS += -Ldb/staging/usr/lib
+CFLAGS += -Iinclude -Iinclude/uapi -Idb/staging/usr/include -I$(TOP)/libmnl/include -D_GNU_SOURCE $(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF
+LDFLAGS += -Ldb/staging/usr/lib -L$(TOP)/libmnl/src/.libs
 
 include config.mk
 

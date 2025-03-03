@@ -197,6 +197,7 @@ int rtnl_open_byproto(struct rtnl_handle *rth, unsigned int subscriptions,
 	rth->proto = protocol;
 	rth->fd = socket(AF_NETLINK, SOCK_RAW | SOCK_CLOEXEC, protocol);
 	if (rth->fd < 0) {
+		fprintf(stderr, "protocol %d\n", protocol);
 		perror("Cannot open netlink socket");
 		return -1;
 	}
