@@ -357,6 +357,7 @@ void start_wifi_drivers(void)
 		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
 		set_named_smp_affinity("ath10k_pci", 2, 1);
 		set_named_smp_affinity("ath10k_pci", 3, 2);
+		set_named_smp_affinity_mask("wil6210", 6, 1);
 	}
 }
 void start_arch_defaults(void)
