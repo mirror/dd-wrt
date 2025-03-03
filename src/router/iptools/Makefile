@@ -12,7 +12,8 @@ ifeq ($(HAVE_BERKELEY_DB),y)
 	TARGETS += arpd
 endif
 
-all: db $(TARGETS)
+
+all: make_db $(TARGETS)
 
 
 configure:
@@ -22,6 +23,9 @@ configure:
 	--disable-java \
 	--with-mutex=POSIX/pthreads/library \
 	--disable-tcl \
+	--disable-stl \
+	--disable-statistics \
+	--enable-stripped_messages \
 	--enable-compat185 \
 	--disable-debug \
 	--prefix=/usr --libdir=/usr/lib --host=$(ARCH)-linux \
@@ -32,7 +36,7 @@ configure:
 	$(MAKE) -C db/build_unix
 	make -C db/build_unix install DESTDIR=$(TOP)/iptools/db/staging
 
-db:
+make_db:
 	$(MAKE) -C db/build_unix
 	make -C db/build_unix install DESTDIR=$(TOP)/iptools/db/staging
 
