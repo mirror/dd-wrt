@@ -505,14 +505,11 @@ static int can_scan(char *prefix)
 			return 0;
 	} else
 		return 0;
-		
-	    
 }
 EJ_VISIBLE void ej_can_scan(webs_t wp, int argc, char_t **argv)
 {
 	char *prefix = nvram_safe_get("wifi_display");
 	websWrite(wp, can_scan(prefix));
-
 }
 EJ_VISIBLE void ej_can_survey(webs_t wp, int argc, char_t **argv)
 {
