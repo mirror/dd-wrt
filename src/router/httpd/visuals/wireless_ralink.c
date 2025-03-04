@@ -436,7 +436,11 @@ EJ_VISIBLE void ej_update_acktiming(webs_t wp, int argc, char_t **argv)
 	return;
 }
 
-EJ_VISIBLE void ej_is_6ghz(webs_t wp, int argc, char_t **argv)
+EJ_VISIBLE void ej_can_not_scan(webs_t wp, int argc, char_t **argv)
+{
+	websWrite(wp, "0");
+}
+EJ_VISIBLE void ej_can_not_survey(webs_t wp, int argc, char_t **argv)
 {
 	websWrite(wp, "0");
 }
