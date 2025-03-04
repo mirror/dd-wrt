@@ -455,7 +455,8 @@ ifeq ($(CONFIG_MAC80211_RTLWIFI),y)
 endif
 ifeq ($(CONFIG_WIL6210),y)	
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
-	-cp -av $(TOP)/firmwares/wireless/wil6210/* $(INSTALLDIR)/ath9k/lib/firmware/
+	-cp -av $(TOP)/firmwares/wireless/wil6210/wil6210.fw $(INSTALLDIR)/ath9k/lib/firmware/
+	-cp -av $(TOP)/firmwares/wireless/wil6210/wil6210.brd $(INSTALLDIR)/ath9k/lib/firmware/
 endif
 ifeq ($(CONFIG_B43),y)	
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/b43/
