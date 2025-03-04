@@ -513,6 +513,7 @@ EJ_VISIBLE void ej_can_scan(webs_t wp, int argc, char_t **argv)
 }
 EJ_VISIBLE void ej_can_survey(webs_t wp, int argc, char_t **argv)
 {
+	char *prefix = nvram_safe_get("wifi_display");
 	if (is_wil6210(prefix)) {
 		websWrite(wp, "0");
 		return;
