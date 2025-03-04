@@ -126,10 +126,10 @@ function setPacketInfo(val) {
 
 function OpenSiteSurvey () {
 
-	if( "<% radio_on(); %>" == "1" && <% can_scan(); %> == "0") {
+	if( "<% radio_on(); %>" == "1" && <% can_not_scan(); %> == "0") {
 		openWindow('Site_Survey.asp', 1024, 700);
 	}
-	else if ( <% can_scan(); %> == "1") {
+	else if ( <% can_not_scan(); %> == "1") {
 		alert(errmsg.err104);
 	} else {
 		alert(errmsg.err59);
@@ -137,9 +137,9 @@ function OpenSiteSurvey () {
 }
 
 function OpenChannelSurvey () {
-	if( "<% radio_on(); %>" == "1" && <% can_survey); %> == "0" ) {
+	if( "<% radio_on(); %>" == "1" && <% can_not_survey); %> == "0" ) {
 		openWindow('Channel_Survey.asp', 980, 700);
-	} else if ( <% can_survey(); %> == "1") {
+	} else if ( <% can_not_survey(); %> == "1") {
 		alert(errmsg.err104);
 	} else {
 		alert(errmsg.err59);
