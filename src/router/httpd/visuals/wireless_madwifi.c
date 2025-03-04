@@ -483,7 +483,7 @@ EJ_VISIBLE void ej_get_currate(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "%s", live_translate(wp, "share.auto"));
 }
 
-static int can_scan(char *prefix)
+static int can_not_scan(char *prefix)
 {
 	char base[32];
 	strncpy(base, prefix, 32);
@@ -506,19 +506,19 @@ static int can_scan(char *prefix)
 	} else
 		return 0;
 }
-EJ_VISIBLE void ej_can_scan(webs_t wp, int argc, char_t **argv)
+EJ_VISIBLE void ej_can_not_scan(webs_t wp, int argc, char_t **argv)
 {
 	char *prefix = nvram_safe_get("wifi_display");
-	websWrite(wp, "%d", can_scan(prefix));
+	websWrite(wp, "%d", can_not_scan(prefix));
 }
-EJ_VISIBLE void ej_can_survey(webs_t wp, int argc, char_t **argv)
+EJ_VISIBLE void ej_can_not_survey(webs_t wp, int argc, char_t **argv)
 {
 	char *prefix = nvram_safe_get("wifi_display");
 	if (is_wil6210(prefix)) {
 		websWrite(wp, "1");
 		return;
 	}
-	websWrite(wp, "%d", can_scan(prefix));
+	websWrite(wp, "%d", can_not_scan(prefix));
 }
 
 EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
