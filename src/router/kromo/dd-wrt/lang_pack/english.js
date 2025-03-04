@@ -476,7 +476,7 @@ errmsg.err101="Restoring configuration file...<br />Please wait.";
 errmsg.err102="Upgrading firmware...<br />Please wait.";
 errmsg.err103="Invalid symbol detected";
 
-errmsg.err104="6 GHz scanning is not yet supported in AP mode";
+errmsg.err104="scanning is not supported in AP mode on this device";
 
 // **  COMMON MENU ENTRIES  **//
 var bmenu= new Object();

@@ -471,7 +471,7 @@ errmsg.err101="Stelle Konfiguration wieder her...<br />Bitte Warten.";
 errmsg.err102="Upgrade Firmware...<br />Bitte Warten.";
 errmsg.err103="Ungültiges Zeichen";
 
-errmsg.err104="6 GHz scannen wird derzeit im AP modus nicht unterstützt.";
+errmsg.err104="Scannen wird von diesem Geräte im AP Modus nicht unterstützt.";
 
 // **  COMMON MENU ENTRIES  **//
 
