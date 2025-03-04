@@ -1995,6 +1995,11 @@ EJ_VISIBLE void ej_get_txpower(webs_t wp, int argc, char_t **argv)
 	m[5] = 0;
 	sprintf(net_mode, "%s_net_mode", m);
 	sprintf(mode, "%s_mode", m);
+	if (is_wil6210(m)) {
+		websWrite(wp, "N/A");
+		return;
+	}
+	    
 	if (nvram_match(net_mode, "disabled") || nvram_match(mode, "disabled")) {
 		txpower = 0;
 		websWrite(wp, "%s", live_translate(wp, "wl_basic.radio_off"));
