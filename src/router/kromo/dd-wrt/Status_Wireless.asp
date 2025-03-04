@@ -137,7 +137,7 @@ function OpenSiteSurvey () {
 }
 
 function OpenChannelSurvey () {
-	if( "<% radio_on(); %>" == "1" && <% can_not_survey); %> == "0" ) {
+	if( "<% radio_on(); %>" == "1" && <% can_not_survey(); %> == "0" ) {
 		openWindow('Channel_Survey.asp', 980, 700);
 	} else if ( <% can_not_survey(); %> == "1") {
 		alert(errmsg.err104);
