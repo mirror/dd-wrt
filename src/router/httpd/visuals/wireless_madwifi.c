@@ -494,7 +494,7 @@ static int can_scan(char *prefix)
 		return 0;
 	}
 	if (is_wil6210(prefix)) {
-		return 0;
+		return 1;
 	}
 	int channel = wifi_getchannel(base);
 	if (channel >= 0 && channel < 1000) {
@@ -515,7 +515,7 @@ EJ_VISIBLE void ej_can_survey(webs_t wp, int argc, char_t **argv)
 {
 	char *prefix = nvram_safe_get("wifi_display");
 	if (is_wil6210(prefix)) {
-		websWrite(wp, "0");
+		websWrite(wp, "1");
 		return;
 	}
 	websWrite(wp, "%d", can_scan(prefix));
