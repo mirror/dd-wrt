@@ -1050,7 +1050,7 @@ static char **_getIfListB(const char *ifprefix, int bridgesonly, int noports, in
 	FILE *in = fopen("/proc/net/dev", "rb");
 	if (!in)
 		return NULL;
-#ifdef HAVE_MVEBU
+#if defined(HAVE_MVEBU) || defined(HAVE_IPQ6018)
 	char *ignorelist[] = { "wifi", "ifb", "imq", "etherip", "lo",	  "teql",   "gre",    "ppp",
 			       "aux",  "ctf", "tap", "sit",	"ip6tnl", "miireg", "nssifb", "eth" };
 #else

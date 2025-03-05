@@ -1415,8 +1415,8 @@ int route_del(char *name, int metric, char *dst, char *gateway, char *genmask)
 
 void getIfLists(char *eths, size_t size)
 {
-#ifdef HAVE_MVEBU
-	getIfList(eths, size, "ixp vlan wlan ra rb apcli wds wl br oet lan wan vxlan ofdm");
+#if defined(HAVE_MVEBU) || defined(HAVE_IPQ6018)
+	getIfList(eths, size, "ixp vlan wlan ra rb apcli wds wl br oet lan wan 10g-copper 10g-sfp vxlan ofdm");
 #else
 	getIfList(eths, size, "ixp eth vlan wlan ra rb apcli wds wl br oet lan wan 10g-copper 10g-sfp vxlan ofdm");
 #endif
