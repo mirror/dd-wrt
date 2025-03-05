@@ -455,8 +455,7 @@ static int use_nss_11_4(int setcur)
 		char base[32];
 		sprintf(base, "wlan%d", count);
 		sprintf(wifivifs, "wlan%d_vifs", count);
-		if (nvram_nmatch("mesh", "wlan%d_mode", count) || nvram_nmatch("wdssta", "wlan%d_mode", count) ||
-		    nvram_nmatch("wdssta_mtik", "wlan%d_mode", count) && !nvram_nmatch("disabled", "wlan%d_net_mode", count))
+		if (nvram_nmatch("mesh", "wlan%d_mode", count) && !nvram_nmatch("disabled", "wlan%d_net_mode", count))
 			return 1;
 		vifs = nvram_safe_get(wifivifs);
 		if (vifs != NULL && *vifs) {
@@ -488,10 +487,10 @@ int nss_disabled(int setcur)
 		char base[32];
 		sprintf(base, "wlan%d", count);
 		sprintf(wifivifs, "wlan%d_vifs", count);
-		if ((nvram_nmatch("wdssta", "wlan%d_mode", count) || nvram_nmatch("wdssta_mtik", "wlan%d_mode", count) ||
-		     nvram_nmatch("wdsap", "wlan%d_mode", count) || nvram_nmatch("apup", "wlan%d_mode", count)) &&
+		if ((nvram_nmatch("wdssta", "wlan%d_mode", count) || nvram_nmatch("wdssta_mtik", "wlan%d_mode", count)) &&
 		    !nvram_nmatch("disabled", "wlan%d_net_mode", count))
 			return 1;
+#if 0
 		vifs = nvram_safe_get(wifivifs);
 		if (vifs != NULL && *vifs) {
 			foreach(var, vifs, next) {
@@ -500,6 +499,7 @@ int nss_disabled(int setcur)
 					return 1;
 			}
 		}
+#endif
 	}
 	nvram_set("nonss", "0");
 	return 0;
