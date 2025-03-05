@@ -1293,8 +1293,8 @@ void stop_qos(void)
 	deinit_qos(wan_dev, "imq0", "imq1");
 
 	char eths[512];
-#ifdef HAVE_MVEBU
-	getIfList(eths, sizeof(eths), "ixp imq ppp tun tap vlan wlan wl ra rb lan wan");
+#if defined(HAVE_MVEBU) || defined(HAVE_IPQ6018)
+	getIfList(eths, sizeof(eths), "ixp imq ppp tun tap vlan wlan wl ra rb lan wan 10g-copper 10g-sfp");
 #else
 	getIfList(eths, sizeof(eths), "ixp eth imq ppp tun tap vlan wlan wl ra rb lan wan 10g-copper 10g-sfp");
 #endif

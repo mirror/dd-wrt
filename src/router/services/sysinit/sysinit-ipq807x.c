@@ -1060,6 +1060,14 @@ static void disableportlearn(void)
 	eval_silence("ssdk_sh", "fdb", "entry", "flush", "1");
 }
 
+static void wait_for_eth(const char *eth)
+{
+	int cnt = 0;
+	while ((cnt++) < 100 && !ifexists(eth)) {
+		usleep(100 * 1000);
+	}
+}
+
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
@@ -1172,11 +1180,13 @@ void start_sysinit(void)
 	case ROUTER_LINKSYS_MR5500:
 		fwlen = 0x20000;
 		load_nss_ipq50xx(512);
+		insmod("qca8k");
 		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		break;
 	case ROUTER_LINKSYS_MX5500:
 		fwlen = 0x20000;
 		load_nss_ipq50xx(512);
+		insmod("qca8k");
 		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		break;
 	default:
@@ -1291,6 +1301,8 @@ void start_sysinit(void)
 	} else {
 		fprintf(stderr, "board data failed\n");
 	}
+	wait_for_eth("wan");
+	wait_for_eth("lan1");
 	unsigned int newmac[6];
 	char ethaddr[32];
 	if (maddr) {
@@ -1491,14 +1503,12 @@ void start_sysinit(void)
 	switch (brand) {
 	case ROUTER_LINKSYS_MR5500:
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
-		insmod("qca8k");
 		start_initvlans();
 		eval_silence("ifconfig", "lan1", "up");
 		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_LINKSYS_MX5500:
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
-		insmod("qca8k");
 		start_initvlans();
 		eval_silence("ifconfig", "wan", "up");
 		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
