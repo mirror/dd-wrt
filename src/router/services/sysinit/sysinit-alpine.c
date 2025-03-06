@@ -307,10 +307,10 @@ void start_resetleds(void)
 
 void start_postnetwork(void)
 {
-	set_gpio(442 + 17, 0); // reset wifi card gpio pin
-	set_gpio(477 + 17, 0); // reset wifi card gpio pin
-	set_gpio(442 + 17, 1); // reset wifi card gpio pin
-	set_gpio(477 + 17, 1); // reset wifi card gpio pin
+	set_gpio(434 + 17, 0); // reset wifi card gpio pin
+	set_gpio(469 + 17, 0); // reset wifi card gpio pin
+	set_gpio(434 + 17, 1); // reset wifi card gpio pin
+	set_gpio(469 + 17, 1); // reset wifi card gpio pin
 }
 
 int check_cfe_nv(void)
