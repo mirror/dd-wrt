@@ -1614,6 +1614,11 @@ networking.ipvs_role="Role";
 networking.ipvs_config="Configuration";
 networking.arpd="ARPd Caching";
 networking.arpd_en="Enable ARPd";
+networking.arpd_max_retry="Maximum request retry";
+networking.arpd_cache_timeout="Timeout of negative cache";
+networking.arpd_steady_rate="Steady rate of broadcasts (pkt/s)";
+networking.arpd_num_of_bcast="Number of broadcasts";
+
 
 //help container
 var hnetworking=new Object();
