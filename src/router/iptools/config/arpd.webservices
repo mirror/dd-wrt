@@ -3,23 +3,25 @@
 	<legend><% tran("networking.arpd"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("networking.arpd_en"); %></div>
-		<input class="spaceradio" type="radio" name="arpd_enable" value="1" <% nvsm("arpd_enable", "1", "checked"); %> /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="arpd_enable" value="0" <% nvsm("arpd_enable", "0", "checked"); %> /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" name="arpd_enable" value="1" <% nvc("arpd_enable", "1"); %> onclick="show_layer_ext(this, 'idarpd', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="arpd_enable" value="0" <% nvc("arpd_enable", "0"); %> onclick="show_layer_ext(this, 'idarpd', false)" /><% tran("share.disable"); %>
 	</div>
-	<div class="setting">
-		<div class="label"><% tran("networking.arpd_max_retry"); %></div>
-		<input class="text" maxLength="2" size="2" name="arpd_max_retry" value="<% nvg("arpd_max_retry"); %>" />
-	</div>
-	<div class="setting">
-		<div class="label"><% tran("networking.arpd_cache_timeout"); %></div>
-		<input class="text" maxLength="3" size="3" name="arpd_cache_timeout" value="<% nvg("arpd_cache_timeout"); %>" />
-	</div>
-	<div class="setting">
-		<div class="label"><% tran("networking.arpd_steady_rate"); %></div>
-		<input class="text" maxLength="2" size="2" name="arpd_steady_rate" value="<% nvg("arpd_steady_rate"); %>" />
-	</div>
-	<div class="setting">
-		<div class="label"><% tran("networking.arpd_num_of_bcast"); %></div>
-		<input class="text" maxLength="2" size="2" name="arpd_num_of_bcast" value="<% nvg("arpd_num_of_bcast"); %>" />
+	<div id="idarpd">
+		<div class="setting">
+			<div class="label"><% tran("networking.arpd_max_retry"); %></div>
+			<input class="text" maxLength="2" size="2" name="arpd_max_retry" value="<% nvg("arpd_max_retry"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("networking.arpd_cache_timeout"); %></div>
+			<input class="text" maxLength="3" size="3" name="arpd_cache_timeout" value="<% nvg("arpd_cache_timeout"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("networking.arpd_steady_rate"); %></div>
+			<input class="text" maxLength="2" size="2" name="arpd_steady_rate" value="<% nvg("arpd_steady_rate"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("networking.arpd_num_of_bcast"); %></div>
+			<input class="text" maxLength="2" size="2" name="arpd_num_of_bcast" value="<% nvg("arpd_num_of_bcast"); %>" />
+		</div>
 	</div>
 </fieldset><br />
