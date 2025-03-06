@@ -1,1 +1,6 @@
  "arpd_enable" "ARPd daemon" "NULL" "TRUE" "0"
+ "arpd_max_retry" "ARPd max retry" "NULL" "TRUE" "0"
+ "arpd_cache_timeout" "ARPd cache timeout" "NULL" "TRUE" "0"
+ "arpd_steady_rate" "ARPd steady rate" "NULL" "TRUE" "0"
+ "arpd_num_of_bcast" "ARPd num of broadcasts" "NULL" "TRUE" "0"
+ 
