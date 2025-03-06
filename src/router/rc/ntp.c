@@ -63,7 +63,8 @@ static struct syncservice service[] = {
 	{ "snmpd_enable", "snmp" },
 #endif
 #ifdef HAVE_CHILLI
-	{ "chilli_enable", "chilli" },	{ "hotss_enable", "chilli" },
+	{ "chilli_enable", "chilli" },
+	{ "hotss_enable", "chilli" },
 #endif
 #ifdef HAVE_WIFIDOG
 	{ "wd_enable", "wifidog" },
@@ -77,13 +78,17 @@ static struct syncservice service[] = {
 #ifdef HAVE_TOR
 	{ "tor_enable", "tor" },
 #endif
+#ifdef HAVE_IPTOOLS
+	{ NULL, "arpd" },
+#endif
+	{ NULL, "process_monitor" },
 };
 
 static void sync_daemons(void)
 {
 	int i;
 	for (i = 0; i < sizeof(service) / sizeof(struct syncservice); i++) {
-		if (nvram_matchi(service[i].nvram, 1)) {
+		if (service[i].nvram == NULL || nvram_matchi(service[i].nvram, 1)) {
 			dd_syslog(LOG_DEBUG, "Restarting %s (time sync change)\n", service[i].service);
 			eval("service", service[i].service, "restart");
 		}
@@ -129,9 +134,8 @@ static int do_ntp(void) // called from ntp_main and
 		//              for (seq = 1; seq <= NR_RULES; seq++)
 		//                      sysprintf("/sbin/filter del %d", seq);  // for time scheduled filtering we need to reinitialize the tables here to prevent wrong timed triggers
 		eval("restart", "firewall");
-		sync_daemons();
 		nvram_seti("ntp_success", 1);
-		eval("restart", "process_monitor");
+		sync_daemons();
 	} else {
 		eval("filtersync");
 	}
