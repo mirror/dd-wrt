@@ -1207,9 +1207,9 @@ int route_add(char *name, int metric, char *dst, char *gateway, char *genmask);
 int route_del(char *name, int metric, char *dst, char *gateway, char *genmask);
 
 #if defined(HAVE_MVEBU) || defined(HAVE_IPQ6018)
-#define DEFAULT_ETH_LIST "ixp vlan wlan ra rb apcli wds wl br oet lan wan 10g-copper 10g-sfp vxlan ofdm"
+#define DEFAULT_ETH_LIST "ixp vlan wlan ra rb apcli wds wl br oet lan wan 10gcopper 10gsfp vxlan ofdm"
 #else
-#define DEFAULT_ETH_LIST "eth ixp vlan wlan ra rb apcli wds wl br oet lan wan 10g-copper 10g-sfp vxlan ofdm"
+#define DEFAULT_ETH_LIST "eth ixp vlan wlan ra rb apcli wds wl br oet lan wan 10gcopper 10gsfp vxlan ofdm"
 #endif
 
 extern void waitfordead(const char *procname, int maxtime);
