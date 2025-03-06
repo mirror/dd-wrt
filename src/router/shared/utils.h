@@ -1205,6 +1205,20 @@ void get_broadcast(char *ipaddr, size_t len, char *netmask);
 int route_manip(int cmd, char *name, int metric, char *dst, char *gateway, char *genmask);
 int route_add(char *name, int metric, char *dst, char *gateway, char *genmask);
 int route_del(char *name, int metric, char *dst, char *gateway, char *genmask);
+
+#if defined(HAVE_MVEBU) || defined(HAVE_IPQ6018)
+#define DEFAULT_ETH_LIST "ixp vlan wlan ra rb apcli wds wl br oet lan wan 10g-copper 10g-sfp vxlan ofdm"
+#else
+#define DEFAULT_ETH_LIST "eth ixp vlan wlan ra rb apcli wds wl br oet lan wan 10g-copper 10g-sfp vxlan ofdm"
+#endif
+
+#if defined(HAVE_MVEBU) || defined(HAVE_IPQ6018)
+	getIfList(eths, size, "ixp vlan wlan ra rb apcli wds wl br oet lan wan 10g-copper 10g-sfp vxlan ofdm");
+#else
+	getIfList(eths, size, "ixp eth vlan wlan ra rb apcli wds wl br oet lan wan 10g-copper 10g-sfp vxlan ofdm");
+#endif
+
+
 extern void waitfordead(const char *procname, int maxtime);
 extern int pidof(const char *name);
 extern int killall(const char *name, int sig);
