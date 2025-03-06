@@ -73,7 +73,7 @@ void start_arpd(void)
 	if (active)
 		_log_evalpid(ifnames, NULL, 0, NULL);
 	int i;
-	for (i = 6; i < cnt; i++)
+	for (i = 12; i < cnt; i++)
 		free(ifnames[i]);
 	return;
 }
