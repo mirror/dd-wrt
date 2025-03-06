@@ -822,6 +822,9 @@ EJ_VISIBLE void validate_portsetup(webs_t wp, char *value, struct variable *v)
 		copytonv_prefix(wp, "multicast", var);
 		copytonv_prefix(wp, "m2u", var);
 		copytonv_prefix(wp, "nat", var);
+#ifdef HAVE_IPTOOLS
+		copytonv_prefix(wp, "arpd", var);
+#endif
 		copytonv_prefix(wp, "bloop", var);
 		copytonv_prefix(wp, "isolation", var);
 #ifdef HAVE_TOR

@@ -5725,7 +5725,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "bridged", prefix);
 	copytonv_prefix(wp, "nat", prefix);
 	copytonv_prefix(wp, "bloop", prefix);
-#ifdef HAVE_ARPD
+#ifdef HAVE_IPTOOLS
 	copytonv_prefix(wp, "arpd", prefix);
 #endif
 	copytonv_prefix(wp, "isolation", prefix);
