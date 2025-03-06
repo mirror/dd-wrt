@@ -14,6 +14,7 @@ endif
 
 
 all: make_db $(TARGETS)
+	install -D config/arpd.webservices $(TOP)/httpd/ej_temp/dhcpd.webservices
 
 
 configure:
