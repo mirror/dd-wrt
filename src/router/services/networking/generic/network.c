@@ -1735,7 +1735,7 @@ void start_lan(void)
 	int brand = getRouterBrand();
 	switch (brand) {
 	case ROUTER_ASUS_AX89X:
-		nvram_setz(lan_ifnames, "wan lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8 10g-sfp 10g-copper wlan0 wlan1");
+		nvram_setz(lan_ifnames, "wan lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8 10gsfp 10gcopper wlan0 wlan1");
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			PORTSETUPWAN("");
 		} else {

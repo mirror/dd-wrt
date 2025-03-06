@@ -1134,10 +1134,10 @@ void start_sysinit(void)
 		//              sysprintf("echo eth3 > /sys/class/leds/white:wan/device_name");
 		//              sysprintf("echo link > /sys/class/leds/white:wan/link");
 		sysprintf("echo netdev > /sys/class/leds/white:sfp/trigger");
-		sysprintf("echo 10g-sfp > /sys/class/leds/white:sfp/device_name");
+		sysprintf("echo 10gsfp > /sys/class/leds/white:sfp/device_name");
 		sysprintf("echo 1 > /sys/class/leds/white:sfp/link");
 		sysprintf("echo netdev > /sys/class/leds/white:aqr10g/trigger");
-		sysprintf("echo 10g-copper > /sys/class/leds/white:aqr10g/device_name");
+		sysprintf("echo 10gcopper > /sys/class/leds/white:aqr10g/device_name");
 		sysprintf("echo 1 > /sys/class/leds/white:aqr10g/link");
 		nvram_default_get("sfe", "3");
 
