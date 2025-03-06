@@ -4,6 +4,7 @@
 name: BuildTest
 on:
   pull_request:
+  workflow_dispatch:
   push:
     branches:
       - master
@@ -23,6 +24,7 @@ jobs:
         # MULTI and NOWRITEV are passed as integers to the build
         include:
           - name: plain linux
+            upload_sizes: 1
 
           - name: multi binary
             multi: 1
@@ -40,9 +42,9 @@ jobs:
             runcheck: 'no'
             make_target: PROGRAMS=dropbear
 
-          - name: bundled libtom, bionic , no writev()
+          - name: bundled libtom, 22.04, no writev()
             # test can use an older distro with bundled libtommath
-            os: ubuntu-20.04
+            os: ubuntu-22.04
             configure_flags: --enable-bundled-libtom --enable-werror
             # NOWRITEV is unrelated, test here to save a job
             nowritev: 1
@@ -60,6 +62,10 @@ jobs:
             # enable all options
             nondefault: 1
             configure_flags: --enable-pam
+            # sntrup761.c is not c89 compliant
+            localoptions: |
+              #define DROPBEAR_SNTRUP761 0
+              #define DROPBEAR_MLKEM768 0
 
           - name: macos 14
             os: macos-14
@@ -133,7 +139,7 @@ jobs:
               #define DROPBEAR_USE_PASSWORD_ENV 0
               #define DROPBEAR_SFTPSERVER 0
 
-          - name: other algo combos
+          - name: no sha1
             runcheck: 'no'
             # disables all sha1
             localoptions: |
@@ -148,6 +154,10 @@ jobs:
               #define DROPBEAR_DH_GROUP16 1
               #define DROPBEAR_SHA2_512_HMAC 1
               #define DROPBEAR_CLI_PUBKEY_AUTH 0
+
+          - name: pq, no plain x25519
+            localoptions: |
+              #define DROPBEAR_CURVE25519 0
 
           # # Fuzzers run standalone. A bit superfluous with cifuzz, but
           # # good to run the whole corpus to keep it working.
@@ -212,7 +222,7 @@ jobs:
         if: ${{ matrix.nondefault }}
         run: |
           # Turn on anything that's off by default. Rough but seems sufficient
-          grep ' 0$' src/default_options.h | sed 's/0$/1/' > localoptions.h
+          grep ' 0$' src/default_options.h | sed 's/0$/1/' >> localoptions.h
           # PAM clashes with password
           echo "#define DROPBEAR_SVR_PASSWORD_AUTH 0" >> localoptions.h
           # 1 second timeout is too short
@@ -260,6 +270,9 @@ jobs:
           chmod 700 ~ ~/.ssh ~/.ssh/authorized_keys
           ls -ld ~ ~/.ssh ~/.ssh/authorized_keys
 
+      - name: binary size
+        run: size dropbear dbclient | tee -a sizes.txt
+
         # upload config.log if something has failed
       - name: config.log
         if: ${{ !env.ACT && (failure() || cancelled()) }}
@@ -267,6 +280,13 @@ jobs:
         with:
           name: config.log
           path: config.log
+
+      - name: upload sizes
+        if: ${{ matrix.upload_sizes }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: sizes.txt
+          path: sizes.txt
 
       - name: check
         if: ${{ matrix.runcheck != 'no' }}
