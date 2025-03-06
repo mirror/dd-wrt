@@ -3678,6 +3678,10 @@ struct nvram_param srouter_defaults[] = {
 #endif
 #ifdef HAVE_IPTOOLS
 	{ "arpd_enable", "0" },
+	{ "arpd_max_retry", "3" },
+	{ "arpd_cache_timeout", "60" },
+	{ "arpd_steady_rate", "1" },
+	{ "arpd_num_of_bcast", "3" },
 #endif
 #ifdef HAVE_SMCROUTE
 	{ "smcrouted_enable", "0" },
