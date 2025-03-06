@@ -732,13 +732,13 @@
 &dp5_syn {
 	status = "okay";
 	phy-handle = <&sfp>;
-	label = "10g-sfp";
+	label = "10gsfp";
 };
 
 &dp6_syn {
 	status = "okay";
 	phy-handle = <&aqr113c>;
-	label = "10g-copper";
+	label = "10gcopper";
 };
 
 &wifi {
