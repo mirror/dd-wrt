@@ -38,7 +38,18 @@
 void start_arpd(void)
 {
 	char vifs[512];
-	char *ifnames[128] = { "arpd", "-b", NULL, "-a", "3", "-k" };
+	char *ifnames[128] = { "arpd",
+			       "-b",
+			       NULL,
+			       "-a",
+			       nvram_safe_get("arpd_max_retry"),
+			       "-k",
+			       "-n",
+			       nvram_safe_get("arpd_cache_timeout"),
+			       "-R",
+			       nvram_safe_get("arpd_steady_rate"),
+			       "-B",
+			       nvram_safe_get("arpd_num_of_bcast") };
 	int cnt = 0;
 	getIfListNoPorts(vifs, sizeof(vifs), DEFAULT_ETH_LIST);
 	char var[32], *wordlist;
@@ -48,7 +59,7 @@ void start_arpd(void)
 		ifnames[2] = "/tmp/arpd.db";
 	else
 		ifnames[2] = "/jffs/arpd.db";
-	cnt = 6;
+	cnt = 12;
 	if (nvram_match("arpd_enable", "1"))
 		ifnames[cnt++] = strdup("br0");
 	int active = 0;
