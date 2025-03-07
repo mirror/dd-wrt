@@ -5,6 +5,12 @@ define kernelfeatures
 	echo "CONFIG_RANDOM_TRUST_CPU=y" >> $(LINUXDIR)/.config
 	echo "CONFIG_INET_TABLE_PERTURB_ORDER=16" >> $(LINUXDIR)/.config
 	echo "# CONFIG_WARN_ALL_UNSEEDED_RANDOM is not set" >> $(LINUXDIR)/.config
+	# https://github.com/troglobit/smcroute/issues/137
+	if [ "$(CONFIG_SMCROUTE)" = "y" ]; then \
+		sed -i 's/\# CONFIG_IP_MROUTE is not set/CONFIG_IP_MROUTE=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_IP_PIMSM_V1 is not set/CONFIG_IP_PIMSM_V1=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_IP_PIMSM_V2 is not set/CONFIG_IP_PIMSM_V2=y/g' $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_IPSET)" = "y" ]; then \
 		sed -i 's/\# CONFIG_NETFILTER_XT_SET is not set/CONFIG_NETFILTER_XT_SET=y/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_IP_SET is not set/CONFIG_IP_SET=y/g' $(LINUXDIR)/.config; \
@@ -570,6 +576,8 @@ define kernelfeatures
 		sed -i 's/\# CONFIG_MPTCP_DIAG is not set/CONFIG_MPTCP_DIAG=y/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_SCTP_DIAG is not set/CONFIG_SCTP_DIAG=y/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_INET_UDP_DIAG is not set/CONFIG_INET_UDP_DIAG=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_INET_RAW_DIAG is not set/CONFIG_INET_RAW_DIAG=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_INET_DIAG_DESTROY is not set/CONFIG_INET_DIAG_DESTROY=y/g' $(LINUXDIR)/.config; \
 		echo "CONFIG_INET_UDP_DIAG=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_INET_RAW_DIAG=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_INET_DIAG_DESTROY=y" >> $(LINUXDIR)/.config; \
