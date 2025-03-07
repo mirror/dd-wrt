@@ -68,6 +68,7 @@ struct ipx_addr {
 
 char** next_arg(char **argv) FAST_FUNC;
 #define NEXT_ARG() do { argv = next_arg(argv); } while (0)
+#define PREV_ARG() do { argv--; } while (0)
 
 static inline void inet_prefix_reset(inet_prefix *p)
 {

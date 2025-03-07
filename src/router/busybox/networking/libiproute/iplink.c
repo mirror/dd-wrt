@@ -1056,6 +1056,43 @@ enum ipvlan_mode {
 #define IPVLAN_F_PRIVATE	0x01
 #define IPVLAN_F_VEPA		0x02
 
+/* MACVLAN section */
+enum {
+	IFLA_COMPAT_MACVLAN_UNSPEC,
+	IFLA_COMPAT_MACVLAN_MODE,
+	IFLA_COMPAT_MACVLAN_FLAGS,
+	IFLA_COMPAT_MACVLAN_MACADDR_MODE,
+	IFLA_COMPAT_MACVLAN_MACADDR,
+	IFLA_COMPAT_MACVLAN_MACADDR_DATA,
+	IFLA_COMPAT_MACVLAN_MACADDR_COUNT,
+	IFLA_COMPAT_MACVLAN_BC_QUEUE_LEN,
+	IFLA_COMPAT_MACVLAN_BC_QUEUE_LEN_USED,
+	IFLA_COMPAT_MACVLAN_BC_CUTOFF,
+	__IFLA_COMPAT_MACVLAN_MAX,
+};
+
+#define IFLA_COMPAT_MACVLAN_MAX (__IFLA_COMPAT_MACVLAN_MAX - 1)
+
+enum compat_macvlan_mode {
+	COMPAT_MACVLAN_MODE_PRIVATE = 1, /* don't talk to other macvlans */
+	COMPAT_MACVLAN_MODE_VEPA    = 2, /* talk to other ports through ext bridge */
+	COMPAT_MACVLAN_MODE_BRIDGE  = 4, /* talk to bridge ports directly */
+	COMPAT_MACVLAN_MODE_PASSTHRU = 8,/* take over the underlying device */
+	COMPAT_MACVLAN_MODE_SOURCE  = 16,/* use source MAC address list to assign */
+};
+
+enum compat_macvlan_macaddr_mode {
+	COMPAT_MACVLAN_MACADDR_ADD,
+	COMPAT_MACVLAN_MACADDR_DEL,
+	COMPAT_MACVLAN_MACADDR_FLUSH,
+	COMPAT_MACVLAN_MACADDR_SET,
+};
+
+#define COMPAT_MACVLAN_FLAG_NOPROMISC	1
+#define COMPAT_MACVLAN_FLAG_NODST	2 /* skip dst macvlan if matching src macvlan */
+
+
+
 #define VXLAN_ATTRSET(attrs, type) (((attrs) & (1L << (type))) != 0)
 
 static void check_duparg(uint64_t *attrs, int type, const char *key,
@@ -1172,6 +1209,187 @@ static void ipvlan_print_explain(void)
 		"MODE: l3 | l3s | l2\n"
 		"FLAGS: bridge | private | vepa\n"
 		"(first values are the defaults if nothing is specified).\n");
+}
+
+static void macvlan_explain(void)
+{
+	bb_simple_error_msg_and_die(
+		"Usage: ... macvlan mode MODE [flag MODE_FLAG] MODE_OPTS [bcqueuelen BC_QUEUE_LEN] [bclim BCLIM]\n"
+		"\n"
+		"MODE: private | vepa | bridge | passthru | source\n"
+		"MODE_FLAG: null | nopromisc | nodst\n"
+		"MODE_OPTS: for mode \"source\":\n"
+		"\tmacaddr { { add | del } <macaddr> | set [ <macaddr> [ <macaddr>  ... ] ] | flush }\n"
+		"BC_QUEUE_LEN: Length of the rx queue for broadcast/multicast: [0-4294967295]\n"
+		"BCLIM: Threshold for broadcast queueing: 32-bit integer\n");
+}
+
+static int get_s32(__s32 *val, const char *arg, int base)
+{
+	long res;
+	char *ptr;
+
+	errno = 0;
+
+	if (!arg || !*arg)
+		return -1;
+	res = strtol(arg, &ptr, base);
+	if (!ptr || ptr == arg || *ptr)
+		return -1;
+	if ((res == LONG_MIN || res == LONG_MAX) && errno == ERANGE)
+		return -1;
+	if (res > INT32_MAX || res < INT32_MIN)
+		return -1;
+
+	*val = res;
+	return 0;
+}
+
+static int macvlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
+{
+
+	uint32_t mode = 0;
+	uint16_t flags = 0;
+	uint32_t mac_mode = 0;
+	int has_flags = 0;
+	unsigned char mac[ETH_ALEN];
+	struct rtattr *nmac;
+	int arg;
+
+	static const char keywords[] ALIGN1 =
+		"mode\0"
+		"flag\0"
+		"macaddr\0"
+		"nopromisc\0"
+		"nodst\0"
+		"bcqueuelen\0"
+		"bclim\0"
+		"help\0"
+	;
+
+	enum {
+		ARG_mode = 0,
+		ARG_flag,
+		ARG_macaddr,
+		ARG_nopromisc,
+		ARG_nodst,
+		ARG_bcqueuelen,
+		ARG_bclim,
+		ARG_help,
+	};
+
+
+	while (*argv) {
+		arg = index_in_substrings(keywords, *argv);
+		if (arg < 0)
+			invarg_1_to_2(*argv, "type macvlan");
+		if (arg == ARG_mode) {
+			NEXT_ARG();
+
+			if (strcmp(*argv, "private") == 0)
+				mode = COMPAT_MACVLAN_MODE_PRIVATE;
+			else if (strcmp(*argv, "vepa") == 0)
+				mode = COMPAT_MACVLAN_MODE_VEPA;
+			else if (strcmp(*argv, "bridge") == 0)
+				mode = COMPAT_MACVLAN_MODE_BRIDGE;
+			else if (strcmp(*argv, "passthru") == 0)
+				mode = COMPAT_MACVLAN_MODE_PASSTHRU;
+			else if (strcmp(*argv, "source") == 0)
+				mode = COMPAT_MACVLAN_MODE_SOURCE;
+			else
+				bb_error_msg_and_die("macvlan: argument of \"mode\" must be \"private\", \"vepa\", \"bridge\", \"passthru\" or \"source\", not \"%s\"\n", *argv);
+			
+			addattr16(n, 1024, IFLA_IPVLAN_MODE, mode);
+		} else if (arg == ARG_flag) {
+			NEXT_ARG();
+
+			if (strcmp(*argv, "nopromisc") == 0)
+				flags |= COMPAT_MACVLAN_FLAG_NOPROMISC;
+			else if (strcmp(*argv, "nodst") == 0)
+				flags |= COMPAT_MACVLAN_FLAG_NODST;
+			else if (strcmp(*argv, "null") == 0)
+				flags |= 0;
+			else
+				bb_error_msg_and_die("macvlan: argument of \"flag\" must be \"nopromisc\", \"nodst\" or \"null\", not \"%s\"\n", *argv);
+			has_flags = 1;
+		} else if (arg == ARG_macaddr) {
+			NEXT_ARG();
+
+			if (strcmp(*argv, "add") == 0) {
+				mac_mode = COMPAT_MACVLAN_MACADDR_ADD;
+			} else if (strcmp(*argv, "del") == 0) {
+				mac_mode = COMPAT_MACVLAN_MACADDR_DEL;
+			} else if (strcmp(*argv, "set") == 0) {
+				mac_mode = COMPAT_MACVLAN_MACADDR_SET;
+			} else if (strcmp(*argv, "flush") == 0) {
+				mac_mode = COMPAT_MACVLAN_MACADDR_FLUSH;
+			} else {
+				macvlan_explain();
+			}
+
+			addattr32(n, 1024, IFLA_COMPAT_MACVLAN_MACADDR_MODE, mac_mode);
+
+			if (mac_mode == COMPAT_MACVLAN_MACADDR_ADD ||
+			    mac_mode == COMPAT_MACVLAN_MACADDR_DEL) {
+				NEXT_ARG();
+
+				if (ll_addr_a2n(mac, sizeof(mac),
+						*argv) != ETH_ALEN)
+					return -1;
+
+				addattr_l(n, 1024, IFLA_COMPAT_MACVLAN_MACADDR, &mac,
+					  ETH_ALEN);
+			}
+
+			if (mac_mode == COMPAT_MACVLAN_MACADDR_SET) {
+				nmac = addattr_nest(n, 1024,
+						    IFLA_COMPAT_MACVLAN_MACADDR_DATA);
+				while (*(argv+1)) {
+					NEXT_ARG();
+
+					if (ll_addr_a2n(mac, sizeof(mac),
+							*argv) != ETH_ALEN) {
+						PREV_ARG();
+						break;
+					}
+
+					addattr_l(n, 1024, IFLA_COMPAT_MACVLAN_MACADDR,
+						  &mac, ETH_ALEN);
+				}
+				addattr_nest_end(n, nmac);
+			}
+		} else if (arg == ARG_nopromisc) {
+			flags |= COMPAT_MACVLAN_FLAG_NOPROMISC;
+			has_flags = 1;
+		} else if (arg == ARG_nodst) {
+			flags |= COMPAT_MACVLAN_FLAG_NODST;
+			has_flags = 1;
+		} else if (arg == ARG_bcqueuelen) {
+			uint32_t bc_queue_len;
+			NEXT_ARG();
+
+			bc_queue_len = get_u32(*argv, "bcqueuelen");
+			
+			addattr32(n, 1024, IFLA_COMPAT_MACVLAN_BC_QUEUE_LEN, bc_queue_len);
+		} else if (arg == ARG_bclim) {
+			int32_t bclim;
+			NEXT_ARG();
+
+			if (get_s32(&bclim, *argv, 0)) {
+				bb_error_msg_and_die(
+	    			"macvlan: illegal value for \"bclim\": \"%s\"\n", *argv);
+			}
+			addattr_l(n, 1024, IFLA_COMPAT_MACVLAN_BC_CUTOFF,
+				  &bclim, sizeof(bclim));
+		} else if (arg == ARG_help) {
+			macvlan_explain();
+		} else {
+			bb_error_msg_and_die("macvlan: unknown command \"%s\"?", *argv);
+		}
+		argv++;
+	}
+	addattr16(n, 1024, IFLA_IPVLAN_FLAGS, flags);
+	return 0;
 }
 
 
@@ -1750,6 +1968,10 @@ static int do_add_or_delete(char **argv, const unsigned rtm)
 #if ENABLE_IPVLAN
 			else if (strcmp(type_str, "ipvlan") == 0)
 				ipvlan_parse_opt(argv, &req.n, sizeof(req));
+#endif
+#if ENABLE_MACVLAN
+			else if (strcmp(type_str, "macvlan") == 0)
+				macvlan_parse_opt(argv, &req.n, sizeof(req));
 #endif
 			data->rta_len = (void *)NLMSG_TAIL(&req.n) - (void *)data;
 		}
