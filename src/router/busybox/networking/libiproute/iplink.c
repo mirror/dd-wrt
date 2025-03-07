@@ -1036,6 +1036,25 @@ enum ifla_vxlan_df {
 	VXLAN_DF_MAX = __VXLAN_DF_END - 1,
 };
 
+/* IPVLAN section */
+enum {
+	IFLA_IPVLAN_UNSPEC,
+	IFLA_IPVLAN_MODE,
+	IFLA_IPVLAN_FLAGS,
+	__IFLA_IPVLAN_MAX
+};
+
+#define IFLA_IPVLAN_MAX (__IFLA_IPVLAN_MAX - 1)
+
+enum ipvlan_mode {
+	IPVLAN_MODE_L2 = 0,
+	IPVLAN_MODE_L3,
+	IPVLAN_MODE_L3S,
+	IPVLAN_MODE_MAX
+};
+
+#define IPVLAN_F_PRIVATE	0x01
+#define IPVLAN_F_VEPA		0x02
 
 #define VXLAN_ATTRSET(attrs, type) (((attrs) & (1L << (type))) != 0)
 
@@ -1109,7 +1128,7 @@ static int get_be16(const char *arg, const char *msg)
 	return htons(get_u16(arg, msg));
 }
 
-static void print_explain(void)
+static void vxlan_print_explain(void)
 {
 	bb_simple_error_msg_and_die(
 		"Usage: ... vxlan id VNI\n"
@@ -1144,10 +1163,79 @@ static void print_explain(void)
 		"	LABEL := 0-1048575");
 }
 
-static void explain(void)
+
+static void ipvlan_print_explain(void)
 {
-	print_explain();
+	bb_simple_error_msg_and_die(
+		"Usage: ...ipvlan [ mode MODE ] [ FLAGS ]\n"
+		"\n"
+		"MODE: l3 | l3s | l2\n"
+		"FLAGS: bridge | private | vepa\n"
+		"(first values are the defaults if nothing is specified).\n");
 }
+
+
+static int ipvlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
+{
+
+	uint16_t flags = 0;
+	bool mflag_given = false;
+	int arg;
+
+	static const char keywords[] ALIGN1 =
+		"mode\0"
+		"private\0"
+		"vepa\0"
+		"bridge\0"
+		"help\0"
+	;
+
+	enum {
+		ARG_mode = 0,
+		ARG_private,
+		ARG_vepa,
+		ARG_bridge,
+		ARG_help,
+	};
+
+
+	while (*argv) {
+		arg = index_in_substrings(keywords, *argv);
+		if (arg < 0)
+			invarg_1_to_2(*argv, "type ipvlan");
+		if (arg == ARG_mode) {
+			uint16_t mode = 0;
+			NEXT_ARG();
+			if (strcmp(*argv, "l2") == 0)
+				mode = IPVLAN_MODE_L2;
+			else if (strcmp(*argv, "l3") == 0)
+				mode = IPVLAN_MODE_L3;
+			else if (strcmp(*argv, "l3s") == 0)
+				mode = IPVLAN_MODE_L3S;
+			else {
+				bb_simple_error_msg_and_die("ipvlan: argument of \"mode\" must be either \"l2\", \"l3\" or \"l3s\"\n");
+			}
+			addattr16(n, 1024, IFLA_IPVLAN_MODE, mode);
+		} else if (arg == ARG_private && !mflag_given) {
+			flags |= IPVLAN_F_PRIVATE;
+			mflag_given = true;
+		} else if (arg == ARG_vepa && !mflag_given) {
+			flags |= IPVLAN_F_VEPA;
+			mflag_given = true;
+		} else if (arg == ARG_bridge && !mflag_given) {
+			mflag_given = true;
+		} else if (arg == ARG_help) {
+			ipvlan_print_explain();
+		} else {
+			bb_error_msg_and_die("ipvlan: unknown command \"%s\"?", *argv);
+		}
+		argv++;
+	}
+	addattr16(n, 1024, IFLA_IPVLAN_FLAGS, flags);
+	return 0;
+}
+
+
 
 static int vxlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 {
@@ -1502,7 +1590,7 @@ static int vxlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 			check_duparg(&attrs, IFLA_VXLAN_GPE, *argv, *argv);
 			addattr_l(n, size, IFLA_VXLAN_GPE, NULL, 0);
 		} else if (arg == ARG_help) {
-			explain();
+			vxlan_print_explain();
 		} else {
 			bb_error_msg_and_die("vxlan: unknown command \"%s\"?", *argv);
 		}
@@ -1658,6 +1746,10 @@ static int do_add_or_delete(char **argv, const unsigned rtm)
 #if ENABLE_VXLAN
 			else if (strcmp(type_str, "vxlan") == 0)
 				vxlan_parse_opt(argv, &req.n, sizeof(req));
+#endif
+#if ENABLE_IPVLAN
+			else if (strcmp(type_str, "ipvlan") == 0)
+				ipvlan_parse_opt(argv, &req.n, sizeof(req));
 #endif
 			data->rta_len = (void *)NLMSG_TAIL(&req.n) - (void *)data;
 		}
