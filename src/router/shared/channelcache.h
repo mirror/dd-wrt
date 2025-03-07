@@ -75,41 +75,30 @@ static void _invalidate_channelcache(void)
 		free(tmpcache);
 	}
 }
-#ifdef HAVE_WIL6210
 
-#define INITVALUECACHEi(prefix)                                  \
-	static int devs[8] = { -1, -1, -1, -1, -1, -1, -1, -1 }; \
-	int dn, ret = 0;                                         \
-	sscanf(prefix, "wlan%d", &dn);                   \
-	if (dn > -1 && (dn > 7 || devs[dn] == -1)) {
-#define INITVALUECACHE()                                         \
-	static int devs[8] = { -1, -1, -1, -1, -1, -1, -1, -1 }; \
-	int dn, ret = 0;                                         \
-	sscanf(prefix, "wlan%d", &dn);                   \
-	if (dn > -1 && (dn > 7 || devs[dn] == -1)) {
-#else
-
-#define INITVALUECACHEi(prefix)                                  \
-	static int devs[8] = { -1, -1, -1, -1, -1, -1, -1, -1 }; \
-	int dn, ret = 0;                                         \
-	sscanf(prefix, "wlan%d", &dn);                           \
-	if (dn > -1 && (dn > 7 || devs[dn] == -1)) {
-#define INITVALUECACHE()                                         \
-	static int devs[8] = { -1, -1, -1, -1, -1, -1, -1, -1 }; \
-	int dn, ret = 0;                                         \
-	sscanf(prefix, "wlan%d", &dn);                           \
-	if (dn > -1 && (dn > 7 || devs[dn] == -1)) {
-#endif
-#define EXITVALUECACHE()               \
-	}                              \
-	else                           \
-	{                              \
-		return (devs[dn] > 0); \
-	}                              \
-out_cache:;                            \
-	if (dn < 8 && dn > -1)         \
-		devs[dn] = ret;
-
+#define INITVALUECACHEi(prefix)         \
+	static unsigned char __set = 0; \
+	static unsigned char __val = 0; \
+	int dn, ret = 0;                \
+	sscanf(prefix, "wlan%d", &dn);  \
+	if (dn > -1 && (dn > 7 || __set & (1 << dn))) {
+#define INITVALUECACHE()                \
+	static unsigned char __set = 0; \
+	static unsigned char __val = 0; \
+	int dn, ret = 0;                \
+	sscanf(prefix, "wlan%d", &dn);  \
+	if (dn > -1 && (dn > 7 || __set & (1 << dn))) {
+#define EXITVALUECACHE()                    \
+	}                                   \
+	else                                \
+	{                                   \
+		return (__val & (1 << dn)); \
+	}                                   \
+out_cache:;                                 \
+	if (dn < 8 && dn > -1) {            \
+		__set |= 1 << dn;           \
+		__val |= (!!ret) << dn;     \
+	}
 #define RETURNVALUE(val)        \
 	{                       \
 		ret = val;      \
