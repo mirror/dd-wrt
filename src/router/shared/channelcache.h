@@ -77,14 +77,14 @@ static void _invalidate_channelcache(void)
 }
 
 #define INITVALUECACHEi(prefix)         \
-	static unsigned char __set = 0; \
-	static unsigned char __val = 0; \
+	static unsigned int __set = 0; \
+	static unsigned int __val = 0; \
 	int dn, ret = 0;                \
 	sscanf(prefix, "wlan%d", &dn);  \
 	if (dn > -1 && (dn > 7 || __set & (1 << dn))) {
 #define INITVALUECACHE()                \
-	static unsigned char __set = 0; \
-	static unsigned char __val = 0; \
+	static unsigned int __set = 0; \
+	static unsigned int __val = 0; \
 	int dn, ret = 0;                \
 	sscanf(prefix, "wlan%d", &dn);  \
 	if (dn > -1 && (dn > 7 || __set & (1 << dn))) {
