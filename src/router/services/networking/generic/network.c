@@ -4074,8 +4074,8 @@ void run_wan(int status)
 			nvram_seti("usb_enable",
 				   1); //  simply enable it, otherwise 3g might not work
 			nvram_async_commit();
-			load_drivers(1);
 		}
+		load_drivers(1);
 		insmod("usbnet");
 		insmod("cdc_ether");
 		insmod("cdc_ncm");
