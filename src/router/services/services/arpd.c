@@ -59,6 +59,7 @@ void start_arpd(void)
 		ifnames[2] = "/tmp/arpd.db";
 	else
 		ifnames[2] = "/jffs/arpd.db";
+	unlink(ifnames[2]);
 	cnt = 12;
 	if (nvram_match("arpd_enable", "1"))
 		ifnames[cnt++] = strdup("br0");
