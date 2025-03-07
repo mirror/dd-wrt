@@ -632,6 +632,13 @@ define kernelfeatures
 	if [ "$(CONFIG_BONDING)" = "y" ]; then \
 		sed -i 's/\# CONFIG_BONDING is not set/CONFIG_BONDING=m/g' $(LINUXDIR)/.config; \
 	fi	
+	if [ "$(CONFIG_IPVLAN)" = "y" ]; then \
+		sed -i 's/\# CONFIG_MACVLAN is not set/CONFIG_MACVLAN=y/g' $(LINUXDIR)/.config; \
+		echo "# CONFIG_MACVTAP is not set" >> $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_IPVLAN is not set/CONFIG_IPVLAN=y/g' $(LINUXDIR)/.config; \
+		echo "# CONFIG_IPVTAP is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NET_VRF=y" >> $(LINUXDIR)/.config; \
+	fi	
 	if [ "$(CONFIG_SWAP)" != "y" ]; then \
 		sed -i 's/CONFIG_SWAP=y/\# CONFIG_SWAP is not set/g' $(LINUXDIR)/.config; \
 	else \
