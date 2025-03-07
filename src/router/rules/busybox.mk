@@ -679,6 +679,13 @@ endif
 else
 	echo "# CONFIG_VXLAN is not set" >> busybox/.config
 endif
+ifeq ($(CONFIG_IPVLAN),y)
+	echo "CONFIG_IPVLAN=y" >> busybox/.config
+	echo "CONFIG_MACVLAN=y" >> busybox/.config
+else
+	echo "# CONFIG_IPVLAN is not set" >> busybox/.config
+	echo "# CONFIG_MACVLAN is not set" >> busybox/.config
+endif
 ifeq ($(CONFIG_MIITOOL),y)
 	sed -i 's/\CONFIG_NETSTAT=y/# CONFIG_NETSTAT is not set/g' busybox/.config
 endif
