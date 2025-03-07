@@ -80,12 +80,11 @@ static void _invalidate_channelcache(void)
 	static unsigned int __set = 0; \
 	static unsigned int __val = 0; \
 	int dn, ret = 0;                \
-	if (sscanf(prefix, "wlan%d", &dn) == 1 && (__set & (1 << dn))) {
-#define INITVALUECACHE()                \
-	static unsigned int __set = 0; \
-	static unsigned int __val = 0; \
-	int dn, ret = 0;                \
-	if (sscanf(prefix, "wlan%d", &dn) == 1 && (__set & (1 << dn))) {
+	dn = prefix[4] - '0';                \
+	if (dn >= 0 && dn <= 9 && !(__set & (1 << dn))) {
+
+#define INITVALUECACHE() INITVALUECACHEi(prefix)
+
 #define EXITVALUECACHE()                    \
 	}                                   \
 	else                                \
@@ -93,7 +92,7 @@ static void _invalidate_channelcache(void)
 		return (__val & (1 << dn)); \
 	}                                   \
 out_cache:;                                 \
-	if (dn < 8 && dn > -1) {            \
+	if (dn <= 9 && dn >= 0) {            \
 		__set |= 1 << dn;           \
 		__val |= (!!ret) << dn;     \
 	}
