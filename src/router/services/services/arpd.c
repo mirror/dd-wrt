@@ -61,17 +61,20 @@ void start_arpd(void)
 		ifnames[2] = "/jffs/arpd.db";
 	unlink(ifnames[2]);
 	cnt = 12;
-	if (nvram_match("arpd_enable", "1"))
-		ifnames[cnt++] = strdup("br0");
 	int active = 0;
+	if (nvram_match("arpd_enable", "1")) {
+		ifnames[cnt++] = strdup("br0");
+		active = 1;
+	}
 	foreach(var, vifs, next) {
 		if (cnt == ARRAY_SIZE(ifnames))
 			break;
 		if (nvram_match("arpd_enable", "1") && !strcmp(var, "br0"))
 			continue;
-		if (nvram_nmatch("1", "%s_arpd", var))
+		if (nvram_nmatch("1", "%s_arpd", var)) {
 			ifnames[cnt++] = strdup(var);
-		active = 1;
+			active = 1;
+		}
 	}
 	ifnames[cnt++]=NULL;
 	if (active)
