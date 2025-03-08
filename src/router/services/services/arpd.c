@@ -67,6 +67,8 @@ void start_arpd(void)
 	foreach(var, vifs, next) {
 		if (cnt == ARRAY_SIZE(ifnames))
 			break;
+		if (nvram_match("arpd_enable", "1") && !strcmp(var, "br0"))
+			continue;
 		if (nvram_nmatch("1", "%s_arpd", var))
 			ifnames[cnt++] = strdup(var);
 		active = 1;
