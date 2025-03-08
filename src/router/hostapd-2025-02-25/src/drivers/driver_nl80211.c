@@ -8613,13 +8613,18 @@ static int i802_set_wds_sta(void *priv, const u8 *addr, int aid, int val,
 				   "interface %s up", name);
 		}
 
-		if (add_br &&
+		ret = i802_set_sta_vlan(priv, addr, name, 0,
+					NL80211_DRV_LINK_ID_NA);
+		if (!ret && add_br &&
 		    linux_br_add_if(drv->global->ioctl_sock,
-				    bridge_ifname, name) < 0)
+				    bridge_ifname, name) < 0) {
+			wpa_printf(MSG_INFO,
+				   "nl80211: Failed to add interface %s to bridge %s: %s",
+				   name, bridge_ifname, strerror(errno));
 			return -1;
+		}
+		return ret;
 
-		return i802_set_sta_vlan(priv, addr, name, 0,
-					 NL80211_DRV_LINK_ID_NA);
 	} else {
 		if (bridge_ifname &&
 		    linux_br_del_if(drv->global->ioctl_sock, bridge_ifname,
@@ -9039,6 +9044,14 @@ static int wpa_driver_nl80211_if_add(void *priv, enum wpa_driver_if_type type,
 			return -1;
 		}
 
+		if (linux_set_iface_flags(drv->global->ioctl_sock, ifname, 1))
+		{
+			if (added)
+				nl80211_remove_iface(drv, ifidx);
+			os_free(new_bss);
+			return -1;
+		}
+
 		if (bridge &&
 		    i802_check_bridge(drv, new_bss, bridge, ifname) < 0) {
 			wpa_printf(MSG_ERROR, "nl80211: Failed to add the new "
@@ -9050,13 +9063,6 @@ static int wpa_driver_nl80211_if_add(void *priv, enum wpa_driver_if_type type,
 			return -1;
 		}
 
-		if (linux_set_iface_flags(drv->global->ioctl_sock, ifname, 1))
-		{
-			if (added)
-				nl80211_remove_iface(drv, ifidx);
-			os_free(new_bss);
-			return -1;
-		}
 		os_strlcpy(new_bss->ifname, ifname, IFNAMSIZ);
 		os_memcpy(new_bss->addr, if_addr, ETH_ALEN);
 		new_bss->ifindex = ifidx;
