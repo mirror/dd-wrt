@@ -100,6 +100,8 @@ CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -Wno-trigraphs \
 	  -fno-strict-aliasing -fno-common -fno-caller-saves -fno-stack-protector -fno-var-tracking-assignments -funit-at-a-time
 CFLAGS += -fno-builtin-strpbrk -fno-builtin-strcpy -std=gnu89 -fno-delete-null-pointer-checks
 CFLAGS += -fno-builtin-sprintf -DBCMDRIVER -DBCMVISTAROUTER -DBCM5354 -DBCMWPA2 
+CFLAGS += -fno-unwind-tables -fno-asynchronous-unwind-tables -falign-jumps=1 -falign-labels=1 -falign-loops=1 -falign-functions=1 -fno-builtin-strlen -fno-guess-branch-probability -funsigned-char -finline-limit=0 -fno-builtin-printf
+
 #-ffunction-sections -fdata-sections -Wl,--gc-sections
 
 

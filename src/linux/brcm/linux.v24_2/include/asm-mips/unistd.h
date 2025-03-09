@@ -726,6 +726,9 @@
 #define __NR_unused217			(__NR_Linux + 217)
 #define __NR_unused218			(__NR_Linux + 218)
 #define __NR_sendfile64			(__NR_Linux + 219)
+#define __NR_epoll_create		(__NR_Linux + 248)
+#define __NR_epoll_ctl			(__NR_Linux + 249)
+#define __NR_epoll_wait			(__NR_Linux + 250)
 
 /*
  * Offset of the last N32 flavoured syscall
