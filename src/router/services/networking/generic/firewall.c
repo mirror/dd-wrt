@@ -211,6 +211,14 @@ static void save2file_A_forward(const char *fmt, ...)
 	va_end(args);
 }
 
+static void save2file_A_security(const char *fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	va_save2file("-A SECURITY", fmt, args);
+	va_end(args);
+}
+
 static void save2file_I_forward(const char *fmt, ...)
 {
 	va_list args;
@@ -2372,13 +2380,13 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	const char *next;
 	char *iflist, buff[16];
 
-	if (wanactive(wanaddr)) {
-		if (nvram_matchi("block_portscan")) 
-		{
-			save2file_A_input("-m recent --name portscan --rcheck --seconds 86400 -j %s", log_drop);
+	if (nvram_invmatch("filter", "off")) {
+		if (nvram_matchi("block_portscan")) {
+			save2file_A_input("-m recent --name portscan --rcheck --seconds 86400 -j %s", logdrop);
 			save2file_A_input("-m recent --name portscan --remove");
-			save2file_A_input("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix \"portscan:\"");
-			save2file_A_input("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j DROP");
+			save2file_A_input(
+				"-p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix \"portscan:\"");
+			save2file_A_input("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j %s", logdrop);
 		}
 	}
 
@@ -2680,16 +2688,29 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	char var[80];
 	int i = 0;
 	int filter_host_url = 0;
-	if (wanactive(wanaddr)) {
-		if (nvram_matchi("block_portscan")) 
-		{
-			save2file_A_forward("-m recent --name portscan --rcheck --seconds 86400 -j %s", log_drop);
-			save2file_A_forward("-m recent --name portscan --remove");
-			save2file_A_forward("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix \"portscan:\"");
-			save2file_A_forward("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j DROP");
-		}
-	}
+	if (nvram_invmatch("filter", "off")) {
+		/* Sync-flood protection */
+		save2file_A_security("-p tcp --syn -m limit --limit 1/s -j RETURN");
+		save2file_A_security("-p tcp --syn -j %s\n", logdrop);
+		/* UDP flooding */
+		save2file_A_security("-p udp -m limit --limit 5/s -j RETURN");
+		save2file_A_security("-p udp -j %s\n", logdrop);
+		/* Ping of death */
+		save2file_A_security("-p icmp --icmp-type 8 -m limit --limit 1/s -j RETURN");
+		save2file_A_security("-p icmp --icmp-type 8 -j %s\n", logdrop);
 
+		if (nvram_matchi("block_portscan")) {
+			save2file_A_forward("-m recent --name portscan --rcheck --seconds 86400 -j %s", logdrop);
+			save2file_A_forward("-m recent --name portscan --remove");
+			save2file_A_forward(
+				"-p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix \"portscan:\"");
+			save2file_A_forward("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j %s", logdrop);
+			/* Furtive port scanner */
+			save2file_A_security("-p tcp --tcp-flags SYN,ACK,FIN,RST RST -m limit --limit 1/s -j RETURN");
+			save2file_A_security("-p tcp --tcp-flags SYN,ACK,FIN,RST RST -j %s\n", logdrop);
+		}
+		save2file_A_forward("-j SECURITY");
+	}
 	while (i < 20 && filter_host_url == 0) {
 		i++;
 		filter_web_hosts = nvram_nget("filter_web_host%d", i);
@@ -3062,7 +3083,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 	char wan_if_buffer[33];
 	int log_level = nvram_matchi("log_enable", 1) ? nvram_geti("log_level") : 0;
 
-	save2file("*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n");
+	save2file("*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]:SECURITY ACCEPT [0:0]\n\n");
 	if (log_level > 0) {
 		save2file(":logaccept - [0:0]\n:logdrop - [0:0]\n:logreject - [0:0]\n");
 #ifdef FLOOD_PROTECT
