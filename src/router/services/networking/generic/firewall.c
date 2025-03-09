@@ -3314,6 +3314,23 @@ static void run_firewall6(char *vifs)
 	eval("ip6tables", "-P", "INPUT", "DROP");
 	eval("ip6tables", "-P", "FORWARD", "DROP");
 	eval("ip6tables", "-P", "OUTPUT", "ACCEPT");
+	if (nvram_matchi("block_portscan")) {
+		eval("ip6tables", "-A", "INPUT", "-m", "recent", "--name", "portscan", "--rcheck", "--seconds", "86400", "-j",
+		     logdrop);
+		eval("ip6tables", "-A", "INPUT", "-m", "recent", "--name", "portscan", "--remove");
+		eval("ip6tables", "-A", "INPUT", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent", "--name", "portscan",
+		     "--set", "-j", "LOG", "--log-prefix", "portscan:");
+		eval("ip6tables", "-A", "INPUT", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent", "--name", "portscan",
+		     "--set", "-j", logdrop);
+
+		eval("ip6tables", "-A", "FORWARD", "-m", "recent", "--name", "portscan", "--rcheck", "--seconds", "86400", "-j",
+		     logdrop);
+		eval("ip6tables", "-A", "FORWARD", "-m", "recent", "--name", "portscan", "--remove");
+		eval("ip6tables", "-A", "FORWARD", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent", "--name", "portscan",
+		     "--set", "-j", "LOG", "--log-prefix", "portscan:");
+		eval("ip6tables", "-A", "FORWARD", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent", "--name", "portscan",
+		     "--set", "-j", logdrop);
+	}
 	/* Filter all packets that have RH0 headers */
 	eval("ip6tables", "-A", "INPUT", "-m", "rt", "--rt-type", "0", "-j", log_drop);
 	eval("ip6tables", "-A", "FORWARD", "-m", "rt", "--rt-type", "0", "-j", log_drop);
