@@ -2371,9 +2371,19 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 
 	const char *next;
 	char *iflist, buff[16];
-	/*
-	 * Filter known SPI state 
-	 */
+
+	if (wanactive(wanaddr)) {
+		if (nvram_matchi("block_portscan")) 
+		{
+			insmod("xt_recent");
+			insmod("ipt_recent");
+			save2file_A_input("-m recent --name portscan -rcheck --seconds 86400 -j %s", log_drop);
+			save2file_A_input("-m recent --name portscan --remove");
+			save2file_A_input("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix \"portscan:\"");
+			save2file_A_input("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j DROP");
+		}
+	}
+
 	/*
 	 * most of what was here has been moved to the end 
 	 */
@@ -2550,6 +2560,7 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 		save2file_A_input("-i %s -p tcp -d %s --dport 23 -j %s", wanface, nvram_safe_get("lan_ipaddr"), log_accept);
 	}
 #endif
+
 	/*
 	 * ICMP request from WAN interface 
 	 */
@@ -2671,6 +2682,16 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	char var[80];
 	int i = 0;
 	int filter_host_url = 0;
+	if (wanactive(wanaddr)) {
+		if (nvram_matchi("block_portscan")) 
+		{
+			save2file_A_forward("-m recent --name portscan -rcheck --seconds 86400 -j %s", log_drop);
+			save2file_A_forward("-m recent --name portscan --remove");
+			save2file_A_forward("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix \"portscan:\"");
+			save2file_A_forward("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j DROP");
+		}
+	}
+
 	while (i < 20 && filter_host_url == 0) {
 		i++;
 		filter_web_hosts = nvram_nget("filter_web_host%d", i);
