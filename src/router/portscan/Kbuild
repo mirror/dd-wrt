@@ -1,2 +1,3 @@
 obj-m	+= xt_psd.o
 obj-m	+= xt_lscan.o
+obj-m	+= xt_TARPIT.o
