@@ -41,15 +41,35 @@ ifeq ($(KERNELVERSION),6.1-nss)
 endif
 ifeq ($(KERNELVERSION),6.1)
 obj-$(CONFIG_IPV6) += nat46
+obj-y += portscan
+CONFIG_PORTSCAN=y
 endif
 ifeq ($(KERNELVERSION),6.6)
 obj-$(CONFIG_IPV6) += nat46
+obj-y += portscan
+CONFIG_PORTSCAN=y
 endif
 ifeq ($(KERNELVERSION),4.14)
 obj-$(CONFIG_IPV6) += nat46
+obj-y += portscan
+CONFIG_PORTSCAN=y
 endif
 ifeq ($(KERNELVERSION),4.9)
 obj-$(CONFIG_IPV6) += nat46
+obj-y += portscan
+CONFIG_PORTSCAN=y
+endif
+ifeq ($(KERNELVERSION),4.4)
+obj-y += portscan
+CONFIG_PORTSCAN=y
+endif
+ifeq ($(KERNELVERSION),3.18)
+obj-y += portscan
+CONFIG_PORTSCAN=y
+endif
+ifeq ($(KERNELVERSION),3.10)
+obj-y += portscan
+CONFIG_PORTSCAN=y
 endif
 obj-$(CONFIG_LIBIPT) += iptables-ipt
 obj-$(CONFIG_IPSEC) += ipsec
