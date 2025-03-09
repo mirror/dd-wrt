@@ -793,6 +793,7 @@ firewall.activex="Filter ActiveX";
 firewall.legend3="Block WAN Requests";
 firewall.legend4="Impede WAN DoS / Bruteforce";
 firewall.ping="Anonymous WAN Requests (ping)";
+firewall.portscan="Detect and Block Port Scans";
 firewall.muticast="Multicast Communication";
 firewall.ssh="Limit SSH Access";
 firewall.telnet="Limit Telnet Access";

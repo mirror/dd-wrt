@@ -787,6 +787,7 @@ firewall.activex="ActiveX filtern";
 firewall.legend3="WAN-Zugriffe blockieren";
 firewall.legend4="Verhindere WAN DoS/Bruteforce Attacken";
 firewall.ping="Anonyme WAN-Zugriffsversuche blockieren";
+firewall.portscan="Erkenne und blockiere Portscans";
 firewall.muticast="Multicast filtern";
 firewall.ssh="SSH Zugriff limitieren";
 firewall.telnet="Telnet Zugriff limitieren";
