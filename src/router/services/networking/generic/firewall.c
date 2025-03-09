@@ -2379,15 +2379,30 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 
 	const char *next;
 	char *iflist, buff[16];
-
 	if (nvram_invmatch("filter", "off")) {
+		/* Sync-flood protection */
+		save2file_A_security("-p tcp --syn -m limit --limit 1/s -j RETURN");
+		save2file_A_security("-p tcp --syn -j %s\n", log_drop);
+		/* UDP flooding */
+		save2file_A_security("-p udp -m limit --limit 5/s -j RETURN");
+		save2file_A_security("-p udp -j %s\n", log_drop);
+		/* Ping of death */
+		save2file_A_security("-p icmp --icmp-type 8 -m limit --limit 1/s -j RETURN");
+		save2file_A_security("-p icmp --icmp-type 8 -j %s\n", log_drop);
+
 		if (nvram_matchi("block_portscan", 1)) {
+#ifdef HAVE_PORTSCAN
+			save2file_A_input("-m lscan --stealth --synscan --cnscan --mirai -j %s", log_drop);
+			save2file_A_input("-m psd -j %s", log_drop);
+#else
 			save2file_A_input("-m recent --name portscan --rcheck --seconds 86400 -j %s", log_drop);
 			save2file_A_input("-m recent --name portscan --remove");
 			save2file_A_input(
 				"-p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix \"portscan:\"");
 			save2file_A_input("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j %s", log_drop);
+#endif
 		}
+		save2file_A_input("-j SECURITY");
 	}
 
 	/*
@@ -2688,29 +2703,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	char var[80];
 	int i = 0;
 	int filter_host_url = 0;
-	if (nvram_invmatch("filter", "off")) {
-		/* Sync-flood protection */
-		save2file_A_security("-p tcp --syn -m limit --limit 1/s -j RETURN");
-		save2file_A_security("-p tcp --syn -j %s\n", log_drop);
-		/* UDP flooding */
-		save2file_A_security("-p udp -m limit --limit 5/s -j RETURN");
-		save2file_A_security("-p udp -j %s\n", log_drop);
-		/* Ping of death */
-		save2file_A_security("-p icmp --icmp-type 8 -m limit --limit 1/s -j RETURN");
-		save2file_A_security("-p icmp --icmp-type 8 -j %s\n", log_drop);
 
-		if (nvram_matchi("block_portscan", 1)) {
-			save2file_A_forward("-m recent --name portscan --rcheck --seconds 86400 -j %s", log_drop);
-			save2file_A_forward("-m recent --name portscan --remove");
-			save2file_A_forward(
-				"-p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix \"portscan:\"");
-			save2file_A_forward("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j %s", log_drop);
-			/* Furtive port scanner */
-			save2file_A_security("-p tcp --tcp-flags SYN,ACK,FIN,RST RST -m limit --limit 1/s -j RETURN");
-			save2file_A_security("-p tcp --tcp-flags SYN,ACK,FIN,RST RST -j %s\n", log_drop);
-		}
-		save2file_A_forward("-j SECURITY");
-	}
 	while (i < 20 && filter_host_url == 0) {
 		i++;
 		filter_web_hosts = nvram_nget("filter_web_host%d", i);
@@ -3315,6 +3308,10 @@ static void run_firewall6(char *vifs)
 	eval("ip6tables", "-P", "FORWARD", "DROP");
 	eval("ip6tables", "-P", "OUTPUT", "ACCEPT");
 	if (nvram_matchi("block_portscan", 1)) {
+#ifdef HAVE_PORTSCAN
+		eval("ip6tables", "-A", "INPUT", "-m", "lscan", "--stealth", "--synscan", "--cnscan", "--mirai", "-j", log_drop);
+		eval("ip6tables", "-A", "INPUT", "-m", "psd", "-j", log_drop);
+#else
 		eval("ip6tables", "-A", "INPUT", "-m", "recent", "--name", "portscan", "--rcheck", "--seconds", "86400", "-j",
 		     log_drop);
 		eval("ip6tables", "-A", "INPUT", "-m", "recent", "--name", "portscan", "--remove");
@@ -3322,14 +3319,7 @@ static void run_firewall6(char *vifs)
 		     "--set", "-j", "LOG", "--log-prefix", "portscan:");
 		eval("ip6tables", "-A", "INPUT", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent", "--name", "portscan",
 		     "--set", "-j", log_drop);
-
-		eval("ip6tables", "-A", "FORWARD", "-m", "recent", "--name", "portscan", "--rcheck", "--seconds", "86400", "-j",
-		     log_drop);
-		eval("ip6tables", "-A", "FORWARD", "-m", "recent", "--name", "portscan", "--remove");
-		eval("ip6tables", "-A", "FORWARD", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent", "--name", "portscan",
-		     "--set", "-j", "LOG", "--log-prefix", "portscan:");
-		eval("ip6tables", "-A", "FORWARD", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent", "--name", "portscan",
-		     "--set", "-j", log_drop);
+#endif
 	}
 	/* Filter all packets that have RH0 headers */
 	eval("ip6tables", "-A", "INPUT", "-m", "rt", "--rt-type", "0", "-j", log_drop);
@@ -3589,7 +3579,7 @@ void start_loadfwmodules(void)
 	insmod("iptable_raw iptable_mangle nf_conntrack_h323 xt_NFLOG" //
 	       " xt_length xt_REDIRECT xt_CT xt_limit xt_TCPMSS" //
 	       " xt_connbytes xt_connlimit" //
-	       " xt_CLASSIFY xt_recent ipt_recent" //
+	       " xt_CLASSIFY xt_recent xt_lscan xt_psd ipt_recent" //
 	       " xt_conntrack xt_state" //
 	       " xt_string xt_LOG xt_iprange xt_tcpmss" //
 	       " xt_NETMAP compat_xtables" //
