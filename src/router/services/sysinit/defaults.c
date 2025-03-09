@@ -1879,6 +1879,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "filter", "off" },	/* Firewall Protection [on|off] */
 	{ "block_wan", "0" },	/* Block WAN Request [1|0] */
 	{ "block_ident", "0" },	/* Block IDENT passthrough [1|0] */
+	{ "block_portscan", "0" },	/* Detect and Block port scanning [1|0] */
 	{ "block_proxy", "0" },	/* Block Proxy [1|0] */
 	{ "block_java", "0" },	/* Block Java [1|0] */
 	{ "block_activex", "0" },	/* Block ActiveX [1|0] */
@@ -1899,6 +1900,7 @@ struct nvram_param srouter_defaults[] = {
 #elif HAVE_SAGAR
 	{ "filter", "off" },	/* Firewall Protection [on|off] */
 	{ "block_wan", "0" },	/* Block WAN Request [1|0] */
+	{ "block_portscan", "0" },	/* Detect and Block port scanning [1|0] */
 	{ "block_ident", "0" },	/* Block IDENT passthrough [1|0] */
 	{ "block_proxy", "0" },	/* Block Proxy [1|0] */
 	{ "block_java", "0" },	/* Block Java [1|0] */
@@ -1919,6 +1921,7 @@ struct nvram_param srouter_defaults[] = {
 #elif HAVE_DDLAN
 	{ "filter", "off" },	/* Firewall Protection [on|off] */
 	{ "block_wan", "0" },	/* Block WAN Request [1|0] */
+	{ "block_portscan", "0" },	/* Detect and Block port scanning [1|0] */
 	{ "block_ident", "0" },	/* Block IDENT passthrough [1|0] */
 	{ "block_proxy", "0" },	/* Block Proxy [1|0] */
 	{ "block_java", "0" },	/* Block Java [1|0] */
@@ -1939,6 +1942,7 @@ struct nvram_param srouter_defaults[] = {
 #elif HAVE_MAKSAT
 	{ "filter", "off" },	/* Firewall Protection [on|off] */
 	{ "block_wan", "0" },	/* Block WAN Request [1|0] */
+	{ "block_portscan", "0" },	/* Detect and Block port scanning [1|0] */
 	{ "block_ident", "0" },	/* Block IDENT passthrough [1|0] */
 	{ "block_proxy", "0" },	/* Block Proxy [1|0] */
 	{ "block_java", "0" },	/* Block Java [1|0] */
@@ -1958,6 +1962,7 @@ struct nvram_param srouter_defaults[] = {
 #elif HAVE_XIOCOM
 	{ "filter", "off" },	/* Firewall Protection [on|off] */
 	{ "block_wan", "0" },	/* Block WAN Request [1|0] */
+	{ "block_portscan", "0" },	/* Detect and Block port scanning [1|0] */
 	{ "block_ident", "0" },	/* Block IDENT passthrough [1|0] */
 	{ "block_proxy", "0" },	/* Block Proxy [1|0] */
 	{ "block_java", "0" },	/* Block Java [1|0] */
@@ -1978,6 +1983,7 @@ struct nvram_param srouter_defaults[] = {
 #elif HAVE_IDEXX
 	{ "filter", "on" },	/* Firewall Protection [on|off] */
 	{ "block_wan", "1" },	/* Block WAN Request [1|0] */
+	{ "block_portscan", "1" },	/* Detect and Block port scanning [1|0] */
 	{ "block_ident", "1" },	/* Block IDENT passthrough [1|0] */
 	{ "block_proxy", "0" },	/* Block Proxy [1|0] */
 	{ "block_java", "0" },	/* Block Java [1|0] */
@@ -2001,6 +2007,7 @@ struct nvram_param srouter_defaults[] = {
 #else
 	{ "filter", "on" },	/* Firewall Protection [on|off] */
 	{ "block_wan", "1" },	/* Block WAN Request [1|0] */
+	{ "block_portscan", "1" },	/* Detect and Block port scanning [1|0] */
 	{ "block_ident", "1" },	/* Block IDENT passthrough [1|0] */
 	{ "block_proxy", "0" },	/* Block Proxy [1|0] */
 	{ "block_java", "0" },	/* Block Java [1|0] */
