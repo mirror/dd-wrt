@@ -2381,12 +2381,12 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	char *iflist, buff[16];
 
 	if (nvram_invmatch("filter", "off")) {
-		if (nvram_matchi("block_portscan")) {
-			save2file_A_input("-m recent --name portscan --rcheck --seconds 86400 -j %s", logdrop);
+		if (nvram_matchi("block_portscan", 1)) {
+			save2file_A_input("-m recent --name portscan --rcheck --seconds 86400 -j %s", log_drop);
 			save2file_A_input("-m recent --name portscan --remove");
 			save2file_A_input(
 				"-p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix \"portscan:\"");
-			save2file_A_input("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j %s", logdrop);
+			save2file_A_input("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j %s", log_drop);
 		}
 	}
 
@@ -2691,23 +2691,23 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	if (nvram_invmatch("filter", "off")) {
 		/* Sync-flood protection */
 		save2file_A_security("-p tcp --syn -m limit --limit 1/s -j RETURN");
-		save2file_A_security("-p tcp --syn -j %s\n", logdrop);
+		save2file_A_security("-p tcp --syn -j %s\n", log_drop);
 		/* UDP flooding */
 		save2file_A_security("-p udp -m limit --limit 5/s -j RETURN");
-		save2file_A_security("-p udp -j %s\n", logdrop);
+		save2file_A_security("-p udp -j %s\n", log_drop);
 		/* Ping of death */
 		save2file_A_security("-p icmp --icmp-type 8 -m limit --limit 1/s -j RETURN");
-		save2file_A_security("-p icmp --icmp-type 8 -j %s\n", logdrop);
+		save2file_A_security("-p icmp --icmp-type 8 -j %s\n", log_drop);
 
-		if (nvram_matchi("block_portscan")) {
-			save2file_A_forward("-m recent --name portscan --rcheck --seconds 86400 -j %s", logdrop);
+		if (nvram_matchi("block_portscan", 1)) {
+			save2file_A_forward("-m recent --name portscan --rcheck --seconds 86400 -j %s", log_drop);
 			save2file_A_forward("-m recent --name portscan --remove");
 			save2file_A_forward(
 				"-p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix \"portscan:\"");
-			save2file_A_forward("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j %s", logdrop);
+			save2file_A_forward("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j %s", log_drop);
 			/* Furtive port scanner */
 			save2file_A_security("-p tcp --tcp-flags SYN,ACK,FIN,RST RST -m limit --limit 1/s -j RETURN");
-			save2file_A_security("-p tcp --tcp-flags SYN,ACK,FIN,RST RST -j %s\n", logdrop);
+			save2file_A_security("-p tcp --tcp-flags SYN,ACK,FIN,RST RST -j %s\n", log_drop);
 		}
 		save2file_A_forward("-j SECURITY");
 	}
@@ -3314,22 +3314,22 @@ static void run_firewall6(char *vifs)
 	eval("ip6tables", "-P", "INPUT", "DROP");
 	eval("ip6tables", "-P", "FORWARD", "DROP");
 	eval("ip6tables", "-P", "OUTPUT", "ACCEPT");
-	if (nvram_matchi("block_portscan")) {
+	if (nvram_matchi("block_portscan", 1)) {
 		eval("ip6tables", "-A", "INPUT", "-m", "recent", "--name", "portscan", "--rcheck", "--seconds", "86400", "-j",
-		     logdrop);
+		     log_drop);
 		eval("ip6tables", "-A", "INPUT", "-m", "recent", "--name", "portscan", "--remove");
 		eval("ip6tables", "-A", "INPUT", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent", "--name", "portscan",
 		     "--set", "-j", "LOG", "--log-prefix", "portscan:");
 		eval("ip6tables", "-A", "INPUT", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent", "--name", "portscan",
-		     "--set", "-j", logdrop);
+		     "--set", "-j", log_drop);
 
 		eval("ip6tables", "-A", "FORWARD", "-m", "recent", "--name", "portscan", "--rcheck", "--seconds", "86400", "-j",
-		     logdrop);
+		     log_drop);
 		eval("ip6tables", "-A", "FORWARD", "-m", "recent", "--name", "portscan", "--remove");
 		eval("ip6tables", "-A", "FORWARD", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent", "--name", "portscan",
 		     "--set", "-j", "LOG", "--log-prefix", "portscan:");
 		eval("ip6tables", "-A", "FORWARD", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent", "--name", "portscan",
-		     "--set", "-j", logdrop);
+		     "--set", "-j", log_drop);
 	}
 	/* Filter all packets that have RH0 headers */
 	eval("ip6tables", "-A", "INPUT", "-m", "rt", "--rt-type", "0", "-j", log_drop);
