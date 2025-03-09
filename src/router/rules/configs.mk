@@ -38,6 +38,8 @@ obj-$(CONFIG_IPTABLES) += iptables
 endif
 ifeq ($(KERNELVERSION),6.1-nss)
 #obj-$(CONFIG_IPV6) += nat46
+obj-y += portscan
+CONFIG_PORTSCAN=y
 endif
 ifeq ($(KERNELVERSION),6.1)
 obj-$(CONFIG_IPV6) += nat46
@@ -46,6 +48,11 @@ CONFIG_PORTSCAN=y
 endif
 ifeq ($(KERNELVERSION),6.6)
 obj-$(CONFIG_IPV6) += nat46
+obj-y += portscan
+CONFIG_PORTSCAN=y
+endif
+ifeq ($(KERNELVERSION),6.6-nss)
+#obj-$(CONFIG_IPV6) += nat46
 obj-y += portscan
 CONFIG_PORTSCAN=y
 endif
