@@ -2375,9 +2375,7 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	if (wanactive(wanaddr)) {
 		if (nvram_matchi("block_portscan")) 
 		{
-			insmod("xt_recent");
-			insmod("ipt_recent");
-			save2file_A_input("-m recent --name portscan -rcheck --seconds 86400 -j %s", log_drop);
+			save2file_A_input("-m recent --name portscan --rcheck --seconds 86400 -j %s", log_drop);
 			save2file_A_input("-m recent --name portscan --remove");
 			save2file_A_input("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix \"portscan:\"");
 			save2file_A_input("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j DROP");
@@ -2685,7 +2683,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	if (wanactive(wanaddr)) {
 		if (nvram_matchi("block_portscan")) 
 		{
-			save2file_A_forward("-m recent --name portscan -rcheck --seconds 86400 -j %s", log_drop);
+			save2file_A_forward("-m recent --name portscan --rcheck --seconds 86400 -j %s", log_drop);
 			save2file_A_forward("-m recent --name portscan --remove");
 			save2file_A_forward("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix \"portscan:\"");
 			save2file_A_forward("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j DROP");
@@ -3553,7 +3551,7 @@ void start_loadfwmodules(void)
 	insmod("iptable_raw iptable_mangle nf_conntrack_h323 xt_NFLOG" //
 	       " xt_length xt_REDIRECT xt_CT xt_limit xt_TCPMSS" //
 	       " xt_connbytes xt_connlimit" //
-	       " xt_CLASSIFY xt_recent" //
+	       " xt_CLASSIFY xt_recent ipt_recent" //
 	       " xt_conntrack xt_state" //
 	       " xt_string xt_LOG xt_iprange xt_tcpmss" //
 	       " xt_NETMAP compat_xtables" //
