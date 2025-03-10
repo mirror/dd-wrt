@@ -359,7 +359,7 @@ static void parse_port_forward(char *wan_iface, char *wanaddr, char *lan_cclass,
 {
 	char var[256];
 	const char *next;
-	char buff[256], ip2[16];
+	char buff[256], buff2[256], ip2[16];
 	int flag_dis = 0;
 	char *wan_proto = nvram_safe_get("wan_proto");
 
@@ -449,7 +449,7 @@ static void parse_upnp_forward(char *wanface, char *wanaddr, char *lan_cclass)
 	char value[1000];
 	char *wan_port0, *wan_port1, *lan_ipaddr, *lan_port0, *lan_port1, *proto;
 	char *enable, *desc;
-	char buff[256];
+	char buff[256], buff2[256];
 	int i;
 	int flag_dis = 0;
 
@@ -547,8 +547,12 @@ static void parse_upnp_forward(char *wanface, char *wanaddr, char *lan_cclass)
 				save2file_A_upnp("-i %s -p tcp -d %s --dport %s -j DNAT --to-destination %s%d:%s", wanface, wanaddr,
 						 wan_port0, lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0);
 			}
+			if (nvram_match("block_tarpit", "1") && !flag_dis)
+				snprintf(buff2, sizeof(buff), "-A upnp -i %s -p tcp -m tcp -d %s%d --dport %s -j %s\n", wanface,
+					 lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0, "TARPIT");
 			snprintf(buff, sizeof(buff), "-A upnp -i %s -p tcp -m tcp -d %s%d --dport %s -j %s\n", wanface, lan_cclass,
 				 get_single_ip(lan_ipaddr, 3), lan_port0, flag_dis ? log_accept : log_drop);
+			addsuspense(buff2);
 			addsuspense(buff);
 		}
 		if (!strcmp(proto, "udp") || !strcmp(proto, "both")) {
@@ -566,7 +570,7 @@ static void parse_upnp_forward(char *wanface, char *wanaddr, char *lan_cclass)
 static void create_spec_forward(char *wan_iface, char *proto, char *src, char *wanaddr, char *from, char *ip, char *to,
 				int disabled)
 {
-	char buff[256];
+	char buff[256], buff2[256];
 	char *wan_proto = nvram_safe_get("wan_proto");
 	if (src && *src) {
 		if (disabled == 0) {
@@ -579,11 +583,17 @@ static void create_spec_forward(char *wan_iface, char *proto, char *src, char *w
 		}
 
 		if (!strcmp(nvram_safe_get("lan_ipaddr"), ip)) {
+			if (nvram_match("block_tarpit", "1") && !disabled)
+				snprintf(buff2, sizeof(buff), "-I INPUT -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto,
+					 src, ip, to, "TARPIT");
 			snprintf(buff, sizeof(buff), "-I INPUT -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto, src, ip,
 				 to, !disabled ? log_accept : log_drop);
+			addsuspense(buff2);
+			addsuspense(buff);
 		} else {
 			snprintf(buff, sizeof(buff), "-A FORWARD -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto, src, ip,
 				 to, !disabled ? log_accept : log_drop);
+			addsuspense(buff);
 		}
 
 	} else {
@@ -596,14 +606,23 @@ static void create_spec_forward(char *wan_iface, char *proto, char *src, char *w
 						       proto, proto, from, ip, to);
 		}
 		if (!strcmp(nvram_safe_get("lan_ipaddr"), ip)) {
+			if (nvram_match("block_tarpit", "1") && disabled)
+				snprintf(buff2, sizeof(buff), "-I INPUT -i %s -p %s -m %s -d %s --dport %s -j %s\n", wan_iface,
+					 proto, proto, ip, to, "TARPIT");
 			snprintf(buff, sizeof(buff), "-I INPUT -i %s -p %s -m %s -d %s --dport %s -j %s\n", wan_iface, proto, proto,
 				 ip, to, !disabled ? log_accept : log_drop);
+			addsuspense(buff2);
+			addsuspense(buff);
 		} else {
+			if (nvram_match("block_tarpit", "1") && !disabled)
+				snprintf(buff2, sizeof(buff), "-A FORWARD -i %s -p %s -m %s -d %s --dport %s -j %s\n", wan_iface,
+					 proto, proto, ip, to, "TARPIT");
 			snprintf(buff, sizeof(buff), "-A FORWARD -i %s -p %s -m %s -d %s --dport %s -j %s\n", wan_iface, proto,
 				 proto, ip, to, !disabled ? log_accept : log_drop);
+			addsuspense(buff2);
+			addsuspense(buff);
 		}
 	}
-	addsuspense(buff);
 }
 
 static void parse_spec_forward(char *wan_iface, char *wanaddr, char *wordlist)
@@ -672,6 +691,10 @@ static void create_ip_forward(int mode, char *wan_iface, char *src_ip, char *des
 		}
 	} else {
 		if (mode == ANT_IPF_PREROUTING) {
+			if (nvram_match("block_tarpit", "1")) {
+				snprintf(buff, sizeof(buff), "-A FORWARD -i %s -d %s -j %s\n", wan_iface, dest_ip, "TARPIT");
+				addsuspense(buff);
+			}
 			snprintf(buff, sizeof(buff), "-A FORWARD -i %s -d %s -j %s\n", wan_iface, dest_ip, log_drop);
 			addsuspense(buff);
 		}
@@ -1151,6 +1174,8 @@ static void parse_port_filter(char *lanface, char *wordlist)
 		 * FORWARD -i br0 -p udp --dport 0:655 -j logdrop 
 		 */
 		if (!strcmp(protocol, "tcp") || !strcmp(protocol, "both")) {
+			if (nvram_match("block_tarpit", "1"))
+				save2file_A_forward("-i %s -p tcp --dport %s:%s -j %s", lanface, lan_port0, lan_port1, "TARPIT");
 			save2file_A_forward("-i %s -p tcp --dport %s:%s -j %s", lanface, lan_port0, lan_port1, log_drop);
 		}
 		if (!strcmp(protocol, "udp") || !strcmp(protocol, "both")) {
@@ -1726,8 +1751,9 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 			strncpy(ports, port + sizeof("$PORT:nnn:") - 1, len);
 			ports[len] = '\0';
 
-			if (!strcmp(protocol, "tcp") || !strcmp(protocol, "both"))
+			if (!strcmp(protocol, "tcp") || !strcmp(protocol, "both")) {
 				save2file_A("advgrp_%d -p tcp --dport %s -j %s", seq, ports, log_drop);
+			}
 			if (!strcmp(protocol, "udp") || !strcmp(protocol, "both"))
 				save2file_A("advgrp_%d -p udp --dport %s -j %s", seq, ports, log_drop);
 			if (!strcmp(protocol, "icmp"))
@@ -2393,12 +2419,18 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 		if (nvram_matchi("block_portscan", 1)) {
 #ifdef HAVE_PORTSCAN
 			save2file_A_input("-m lscan --stealth --synscan --cnscan --mirai -j %s", log_drop);
+			if (nvram_match("block_tarpit", "1"))
+				save2file_A_input("-m psd -j %s", "TARPIT");
 			save2file_A_input("-m psd -j %s", log_drop);
 #else
+			if (nvram_match("block_tarpit", "1"))
+				save2file_A_input("-m recent --name portscan --rcheck --seconds 86400 -j %s", "TARPIT");
 			save2file_A_input("-m recent --name portscan --rcheck --seconds 86400 -j %s", log_drop);
 			save2file_A_input("-m recent --name portscan --remove");
 			save2file_A_input(
 				"-p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix \"portscan:\"");
+			if (nvram_match("block_tarpit", "1"))
+				save2file_A_input("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j %s", "TARPIT");
 			save2file_A_input("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j %s", log_drop);
 #endif
 		}
@@ -2410,6 +2442,8 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	 */
 	save2file_A_input("-m state --state RELATED,ESTABLISHED -j %s", log_accept);
 	if (nvram_matchi("filter_invalid", 1)) {
+		if (nvram_match("block_tarpit", "1"))
+			save2file_A_input("-m state --state INVALID -j %s", "TARPIT");
 		save2file_A_input("-m state --state INVALID -j %s", log_drop);
 	}
 	if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1)) {
@@ -2677,6 +2711,8 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	/*
 	 * Drop those packets we are NOT recognizable 
 	 */
+	if (nvram_match("block_tarpit", "1"))
+		save2file_A_input("-j %s", "TARPIT");
 	save2file_A_input("-j %s", log_drop);
 }
 
@@ -2703,6 +2739,27 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	char var[80];
 	int i = 0;
 	int filter_host_url = 0;
+	if (nvram_invmatch("filter", "off")) {
+		if (nvram_matchi("block_portscan", 1)) {
+#ifdef HAVE_PORTSCAN
+			save2file_A_forward("-m lscan --stealth --synscan --cnscan --mirai -j %s", log_drop);
+			if (nvram_match("block_tarpit", "1"))
+				save2file_A_forward("-m psd -j %s", "TARPIT");
+			save2file_A_forward("-m psd -j %s", log_drop);
+#else
+			if (nvram_match("block_tarpit", "1"))
+				save2file_A_forward("-m recent --name portscan --rcheck --seconds 86400 -j %s", "TARPIT");
+			save2file_A_forward("-m recent --name portscan --rcheck --seconds 86400 -j %s", log_drop);
+			save2file_A_forward("-m recent --name portscan --remove");
+			save2file_A_forward(
+				"-p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix \"portscan:\"");
+			if (nvram_match("block_tarpit", "1"))
+				save2file_A_forward("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j %s", "TARPIT");
+			save2file_A_forward("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j %s", log_drop);
+#endif
+		}
+		save2file_A_forward("-j SECURITY");
+	}
 
 	while (i < 20 && filter_host_url == 0) {
 		i++;
@@ -2745,6 +2802,9 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	 */
 	//save2file_A_forward("-m state --state INVALID -j %s", log_drop);
 	if (nvram_matchi("filter_invalid", 1)) {
+		if (nvram_match("block_tarpit", "1"))
+			save2file_A_forward("! -s %s -o %s -p tcp -m state --state INVALID -j %s", nvram_safe_get("wan_ipaddr"),
+					    wanface, "TARPIT");
 		save2file_A_forward("! -s %s -o %s -p tcp -m state --state INVALID -j %s", nvram_safe_get("wan_ipaddr"), wanface,
 				    log_drop);
 	}
@@ -2948,8 +3008,11 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	/*
 	 * ...otherwise drop if firewall on 
 	 */
-	if (nvram_invmatch("filter", "off"))
+	if (nvram_invmatch("filter", "off")) {
+		if (nvram_match("block_tarpit", "1"))
+			save2file_A_forward("-j %s", "TARPIT");
 		save2file_A_forward("-j %s", log_drop);
+	}
 	lan2wan_chains(lan_cclass);
 	parse_trigger_out(nvram_safe_get("port_trigger"));
 	/*
@@ -3114,6 +3177,13 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 			 * Make sure remote management ports are filtered if it is disabled 
 			 */
 			if (!remotemanage && *wanface) {
+				if (nvram_match("block_tarpit", "1")) {
+					save2file_A_input("-p tcp -i %s --dport %s -j %s", wanface, nvram_safe_get("http_wanport"),
+							  "TARPIT");
+					save2file_A_input("-p tcp -i %s --dport 80 -j %s", wanface, "TARPIT");
+					save2file_A_input("-p tcp -i %s --dport 443 -j %s", wanface, "TARPIT");
+					save2file_A_input("-p tcp -i %s --dport 69 -j %s", wanface, "TARPIT");
+				}
 				save2file_A_input("-p tcp -i %s --dport %s -j %s", wanface, nvram_safe_get("http_wanport"),
 						  log_drop);
 				save2file_A_input("-p tcp -i %s --dport 80 -j %s", wanface, log_drop);
@@ -3126,12 +3196,17 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 			 */
 #ifdef HAVE_SSHD
 			if (!remotessh && *wanface) {
+				if (nvram_match("block_tarpit", "1"))
+					save2file_A_input("-i %s -p tcp --dport %s -j %s", wanface, nvram_safe_get("sshd_port"),
+							  "TARPIT");
 				save2file_A_input("-i %s -p tcp --dport %s -j %s", wanface, nvram_safe_get("sshd_port"), log_drop);
 			}
 #endif
 
 #ifdef HAVE_TELNET
 			if (!remotetelnet && *wanface) {
+				if (nvram_match("block_tarpit", "1"))
+					save2file_A_input("-p tcp -i %s --dport 23 -j %s", wanface, "TARPIT");
 				save2file_A_input("-p tcp -i %s --dport 23 -j %s", wanface, log_drop);
 			}
 #endif
@@ -3169,6 +3244,9 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 			save2file_A(
 				"logaccept -i %s -m state --state NEW -m limit --limit %s -j LOG --log-prefix \"FLOOD \" --log-tcp-sequence --log-tcp-options --log-ip-options",
 				wanface, FLOOD_RATE);
+		if (nvram_match("block_tarpit", "1"))
+			save2file_A("logaccept -i %s -m state --state NEW -m limit --limit %s -j %s", wanface, FLOOD_RATE,
+				    "TARPIT");
 		save2file_A("logaccept -i %s -m state --state NEW -m limit --limit %s -j %s", wanface, FLOOD_RATE, log_drop);
 #endif
 #ifndef HAVE_MICRO
@@ -3210,8 +3288,11 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 				"limaccept -i %s -m state --state NEW -m limit --limit %s -j LOG --log-prefix \"FLOOD \" --log-tcp-sequence --log-tcp-options --log-ip-options",
 				wanface, FLOOD_RATE);
 #endif
-		save2file_A("limaccept -i %s -m state --state NEW -m limit --limit %s -j %s\n-A limaccept -j ACCEPT", wanface,
-			    FLOOD_RATE, log_drop);
+		if (nvram_match("block_tarpit", "1"))
+			save2file_A("limaccept -i %s -m state --state NEW -m limit --limit %s -j %s", wanface, FLOOD_RATE,
+				    "TARPIT");
+		save2file_A("limaccept -i %s -m state --state NEW -m limit --limit %s -j %s", wanface, FLOOD_RATE, log_drop);
+		save2file_A("-A limaccept -j ACCEPT");
 #endif
 	}
 	save2file("COMMIT");
@@ -3310,15 +3391,39 @@ static void run_firewall6(char *vifs)
 	if (nvram_matchi("block_portscan", 1)) {
 #ifdef HAVE_PORTSCAN
 		eval("ip6tables", "-A", "INPUT", "-m", "lscan", "--stealth", "--synscan", "--cnscan", "--mirai", "-j", log_drop);
+		eval("ip6tables", "-A", "FORWARD", "-m", "lscan", "--stealth", "--synscan", "--cnscan", "--mirai", "-j", log_drop);
+		if (nvram_match("block_tarpit", "1")) {
+			eval("ip6tables", "-A", "INPUT", "-m", "psd", "-j", "TARPIT");
+			eval("ip6tables", "-A", "FORWARD", "-m", "psd", "-j", "TARPIT");
+		}
 		eval("ip6tables", "-A", "INPUT", "-m", "psd", "-j", log_drop);
+		eval("ip6tables", "-A", "FORWARD", "-m", "psd", "-j", log_drop);
 #else
+		if (nvram_match("block_tarpit", "1")) {
+			eval("ip6tables", "-A", "INPUT", "-m", "recent", "--name", "portscan", "--rcheck", "--seconds", "86400",
+			     "-j", "TARPIT");
+			eval("ip6tables", "-A", "FORWARD", "-m", "recent", "--name", "portscan", "--rcheck", "--seconds", "86400",
+			     "-j", "TARPIT");
+		}
 		eval("ip6tables", "-A", "INPUT", "-m", "recent", "--name", "portscan", "--rcheck", "--seconds", "86400", "-j",
 		     log_drop);
+		eval("ip6tables", "-A", "FORWARD", "-m", "recent", "--name", "portscan", "--rcheck", "--seconds", "86400", "-j",
+		     "TARPIT");
 		eval("ip6tables", "-A", "INPUT", "-m", "recent", "--name", "portscan", "--remove");
+		eval("ip6tables", "-A", "FORWARD", "-m", "recent", "--name", "portscan", "--remove");
+
 		eval("ip6tables", "-A", "INPUT", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent", "--name", "portscan",
 		     "--set", "-j", "LOG", "--log-prefix", "portscan:");
-		eval("ip6tables", "-A", "INPUT", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent", "--name", "portscan",
-		     "--set", "-j", log_drop);
+		eval("ip6tables", "-A", "FORWARD", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent", "--name", "portscan",
+		     "--set", "-j", "LOG", "--log-prefix", "portscan:");
+
+		if (nvram_match("block_tarpit", "1")) {
+			eval("ip6tables", "-A", "INPUT", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent", "--name",
+			     "portscan", "--set", "-j", "TARPIT");
+			eval("ip6tables", "-A", "FORWARD", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent", "--name",
+			     "portscan", "--set", "-j", "TARPIT");
+		}
+
 #endif
 	}
 	/* Filter all packets that have RH0 headers */
@@ -3328,6 +3433,8 @@ static void run_firewall6(char *vifs)
 	/* Filter INVALID packets */
 	eval("ip6tables", "-A", "INPUT", "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", log_accept);
 	if (nvram_matchi("filter_invalid", 1)) {
+		if (nvram_match("block_tarpit", "1"))
+			eval("ip6tables", "-A", "INPUT", "-m", "conntrack", "--ctstate", "INVALID", "-j", "TARPIT");
 		eval("ip6tables", "-A", "INPUT", "-m", "conntrack", "--ctstate", "INVALID", "-j", log_drop);
 	}
 
@@ -3353,6 +3460,12 @@ static void run_firewall6(char *vifs)
 	/* Allow loopback communication */
 	eval("ip6tables", "-A", "INPUT", "-i", "lo", "-j", log_accept);
 	/* Anti-spoofing */
+	if (nvram_match("block_tarpit", "1")) {
+		eval("ip6tables", "-A", "INPUT", "!", "-i", "lo", "-s", "::1/128", "-j", "TARPIT");
+		eval("ip6tables", "-A", "INPUT", "-i", wanface, "-s", "fc00::/7", "-j", "TARPIT");
+		eval("ip6tables", "-A", "FORWARD", "-s", "::1/128", "-j", "TARPIT");
+		eval("ip6tables", "-A", "FORWARD", "-i", wanface, "-s", "fc00::/7", "-j", "TARPIT");
+	}
 	eval("ip6tables", "-A", "INPUT", "!", "-i", "lo", "-s", "::1/128", "-j", log_drop);
 	eval("ip6tables", "-A", "FORWARD", "-s", "::1/128", "-j", log_drop);
 	eval("ip6tables", "-A", "INPUT", "-i", wanface, "-s", "fc00::/7", "-j", log_drop);
@@ -3513,6 +3626,9 @@ static void run_firewall6(char *vifs)
 			eval("ip6tables", "-A", "logaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit",
 			     "--limit", FLOOD_RATE, "-j", "LOG", "--log-prefix", "FLOOD ", "--log-tcp-sequence",
 			     "--log-tcp-options", "--log-ip-options");
+		if (nvram_match("block_tarpit", "1"))
+			eval("ip6tables", "-A", "logaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit",
+			     "--limit", FLOOD_RATE, "-j", "TARPIT");
 		eval("ip6tables", "-A", "logaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit", "--limit",
 		     FLOOD_RATE, "-j", log_drop);
 #endif
@@ -3548,6 +3664,9 @@ static void run_firewall6(char *vifs)
 			eval("ip6tables", "-A", "limaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit",
 			     "--limit", FLOOD_RATE, "-j", "LOG", "--log-prefix", "FLOOD ", "--log-tcp-sequence",
 			     "--log-tcp-options", "--log-ip-options");
+		if (nvram_match("block_tarpit", "1"))
+			eval("ip6tables", "-A", "limaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit",
+			     "--limit", FLOOD_RATE, "-j", "TARPIT");
 		eval("ip6tables", "-A", "limaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit", "--limit",
 		     FLOOD_RATE, "-j", log_drop);
 		eval("ip6tables", "-A", "limaccept", "-j", "ACCEPT");
