@@ -3099,16 +3099,21 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 
 	if (wanactive(wanaddr)) {
 		if (nvram_invmatch("filter", "off")) {
-			/* Sync-flood protection */
-			save2file_A_security("-p tcp --syn -m limit --limit 1/s -j RETURN");
-			save2file_A_security("-p tcp --syn -j %s\n", log_drop);
-			/* UDP flooding */
-			save2file_A_security("-p udp -m limit --limit 5/s -j RETURN");
-			save2file_A_security("-p udp -j %s\n", log_drop);
-			/* Ping of death */
-			save2file_A_security("-p icmp --icmp-type 8 -m limit --limit 1/s -j RETURN");
-			save2file_A_security("-p icmp --icmp-type 8 -j %s\n", log_drop);
-
+			if (nvram_matchi("block_syncflood")) {
+				/* Sync-flood protection */
+				save2file_A_security("-p tcp --syn -m limit --limit 1/s -j RETURN");
+				save2file_A_security("-p tcp --syn -j %s\n", log_drop);
+			}
+			if (nvram_matchi("block_udpflood")) {
+				/* UDP flooding */
+				save2file_A_security("-p udp -m limit --limit 5/s -j RETURN");
+				save2file_A_security("-p udp -j %s\n", log_drop);
+			}
+			if (nvram_matchi("block_pod")) {
+				/* Ping of death */
+				save2file_A_security("-p icmp --icmp-type 8 -m limit --limit 1/s -j RETURN");
+				save2file_A_security("-p icmp --icmp-type 8 -j %s\n", log_drop);
+			}
 			if (nvram_matchi("block_portscan", 1)) {
 #ifdef HAVE_PORTSCAN
 				save2file_A_input("-m lscan --stealth --synscan --cnscan --mirai -j %s", log_drop);
