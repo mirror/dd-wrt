@@ -2682,7 +2682,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	if (nvram_invmatch("filter", "off")) {
 		if (nvram_matchi("block_portscan", 1)) {
 #ifdef HAVE_PORTSCAN
-			save2file_A_forward("-p tcp -m lscan --stealth --synscan --cnscan --mirai -j %s", log_drop);
+			save2file_A_forward("-p tcp -m lscan --synscan --cnscan --mirai -j %s", log_drop);
 			save2file_A_forward("-m psd -j %s", "tarpit");
 #else
 			save2file_A_forward("-m recent --name portscan --rcheck --seconds 86400 -j %s", "tarpit");
@@ -3118,7 +3118,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 			}
 			if (nvram_matchi("block_portscan", 1)) {
 #ifdef HAVE_PORTSCAN
-				save2file_A_input("-p tcp -m lscan --stealth --synscan --cnscan --mirai -j %s", log_drop);
+				save2file_A_input("-p tcp -m lscan --synscan --cnscan --mirai -j %s", log_drop);
 				save2file_A_input("-m psd -j %s", "tarpit");
 #else
 				save2file_A_input("-m recent --name portscan --rcheck --seconds 86400 -j %s", "tarpit");
@@ -3359,8 +3359,8 @@ static void run_firewall6(char *vifs)
 
 	if (nvram_matchi("block_portscan", 1)) {
 #ifdef HAVE_PORTSCAN
-		eval("ip6tables", "-A", "INPUT", "-p", "tcp", "-m", "lscan", "--stealth", "--synscan", "--cnscan", "--mirai", "-j", log_drop);
-		eval("ip6tables", "-A", "FORWARD", "-p", "tcp", "-m", "lscan", "--stealth", "--synscan", "--cnscan", "--mirai", "-j", log_drop);
+		eval("ip6tables", "-A", "INPUT", "-p", "tcp", "-m", "lscan", "--synscan", "--cnscan", "--mirai", "-j", log_drop);
+		eval("ip6tables", "-A", "FORWARD", "-p", "tcp", "-m", "lscan", "--synscan", "--cnscan", "--mirai", "-j", log_drop);
 		eval("ip6tables", "-A", "INPUT", "-m", "psd", "-j", "tarpit");
 		eval("ip6tables", "-A", "FORWARD", "-m", "psd", "-j", "tarpit");
 #else
