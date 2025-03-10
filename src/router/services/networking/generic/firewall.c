@@ -3099,17 +3099,17 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 
 	if (wanactive(wanaddr)) {
 		if (nvram_invmatch("filter", "off")) {
-			if (nvram_matchi("block_syncflood")) {
+			if (nvram_matchi("block_syncflood", 1)) {
 				/* Sync-flood protection */
 				save2file_A_security("-p tcp --syn -m limit --limit 1/s -j RETURN");
 				save2file_A_security("-p tcp --syn -j %s\n", log_drop);
 			}
-			if (nvram_matchi("block_udpflood")) {
+			if (nvram_matchi("block_udpflood", 1)) {
 				/* UDP flooding */
 				save2file_A_security("-p udp -m limit --limit 5/s -j RETURN");
 				save2file_A_security("-p udp -j %s\n", log_drop);
 			}
-			if (nvram_matchi("block_pod")) {
+			if (nvram_matchi("block_pod", 1)) {
 				/* Ping of death */
 				save2file_A_security("-p icmp --icmp-type 8 -m limit --limit 1/s -j RETURN");
 				save2file_A_security("-p icmp --icmp-type 8 -j %s\n", log_drop);
