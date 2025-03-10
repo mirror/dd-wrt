@@ -243,10 +243,12 @@ addEvent(window, "unload", function() {
 											<div class="label"><% tran("firewall.portscan"); %></div>
 											<input class="spaceradio" type="checkbox" value="1" name="_block_portscan" <% nvc("block_portscan", "1"); %> />
 										</div>
+										<% ifndef("TARPIT", "<!--"); %>
 										<div class="setting">
 											<div class="label"><% tran("firewall.tarpit"); %></div>
 											<input class="spaceradio" type="checkbox" value="1" name="_block_tarpit" <% nvc("block_tarpit", "1"); %> />
 										</div>
+										<% ifndef("TARPIT", "-->"); %>
 										<% ifndef("MULTICAST", "<!--"); %>
 										<div class="setting">
 											<div class="label"><% tran("firewall.muticast"); %></div>
