@@ -3686,7 +3686,7 @@ static int devicecountbydriver(const const char *prefix, const char *drivername,
 	int is_##name(const char *prefix)                               \
 	{                                                               \
 		INITVALUECACHE();                                       \
-		RETURNVALUE(!!devicecountbydriver(prefix, desc, module)); \
+		RETURNVALUE(devicecountbydriver(prefix, desc, module)); \
 		EXITVALUECACHE();                                       \
 		return ret > 0;                                         \
 	}
