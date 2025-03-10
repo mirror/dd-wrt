@@ -24,6 +24,15 @@ function submitcheck(F) {
 	if (F._block_tarpit){
 		F.block_tarpit.value = F._block_tarpit.checked ? 1 : 0;
 	}
+	if (F._block_syncflood){
+		F.block_syncflood.value = F._block_syncflood.checked ? 1 : 0;
+	}
+	if (F._block_udpflood){
+		F.block_udpflood.value = F._block_udpflood.checked ? 1 : 0;
+	}
+	if (F._block_pod){
+		F.block_pod.value = F._block_pod.checked ? 1 : 0;
+	}
 	if(F._block_multicast) {
 		F.block_multicast.value = F._block_multicast.checked ? 1 : 0;
 	}
@@ -99,6 +108,15 @@ function setFirewall(F, val) {
 		}
 		if (F._block_tarpit){
 			F._block_tarpit.checked = false;
+		}
+		if (F._block_syncflood){
+			F._block_syncflood.checked = false;
+		}
+		if (F._block_udpflood){
+			F._block_udpflood.checked = false;
+		}
+		if (F._block_pod){
+			F._block_pod.checked = false;
 		}
 		if(F._block_multicast) {
 			F._block_multicast.checked = false;
@@ -177,6 +195,9 @@ addEvent(window, "unload", function() {
 						<input type="hidden" name="block_wan" />
 						<input type="hidden" name="block_portscan" />
 						<input type="hidden" name="block_tarpit" />
+						<input type="hidden" name="block_syncflood" />
+						<input type="hidden" name="block_udpflood" />
+						<input type="hidden" name="block_pod" />
 						<input type="hidden" name="block_loopback" />
 						<input type="hidden" name="block_multicast" />
 						<input type="hidden" name="block_ident" />
@@ -247,6 +268,18 @@ addEvent(window, "unload", function() {
 										<div class="setting">
 											<div class="label"><% tran("firewall.tarpit"); %></div>
 											<input class="spaceradio" type="checkbox" value="1" name="_block_tarpit" <% nvc("block_tarpit", "1"); %> />
+										</div>
+										<div class="setting">
+											<div class="label"><% tran("firewall.syncflood"); %></div>
+											<input class="spaceradio" type="checkbox" value="1" name="_block_syncflood" <% nvc("block_syncflood", "1"); %> />
+										</div>
+										<div class="setting">
+											<div class="label"><% tran("firewall.udpflood"); %></div>
+											<input class="spaceradio" type="checkbox" value="1" name="_block_udpflood" <% nvc("block_udpflood", "1"); %> />
+										</div>
+										<div class="setting">
+											<div class="label"><% tran("firewall.pod"); %></div>
+											<input class="spaceradio" type="checkbox" value="1" name="_block_pod" <% nvc("block_pod", "1"); %> />
 										</div>
 										<% ifndef("TARPIT", "-->"); %>
 										<% ifndef("MULTICAST", "<!--"); %>
