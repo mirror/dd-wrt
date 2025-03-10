@@ -2682,14 +2682,12 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	if (nvram_invmatch("filter", "off")) {
 		if (nvram_matchi("block_portscan", 1)) {
 #ifdef HAVE_PORTSCAN
-			save2file_A_forward("-p tcp -m lscan --synscan --cnscan --mirai -j %s", log_drop);
-			save2file_A_forward("-m psd -j %s", "tarpit");
+			save2file_A_forward("-p tcp -m lscan --synscan --cnscan --mirai -j %s", "portscan");
+			save2file_A_forward("-m psd -j %s", "portscan");
 #else
-			save2file_A_forward("-m recent --name portscan --rcheck --seconds 86400 -j %s", "tarpit");
+			save2file_A_forward("-m recent --name portscan --rcheck --seconds 86400 -j %s", "portscan");
 			save2file_A_forward("-m recent --name portscan --remove");
-			save2file_A_forward(
-				"-p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix \"portscan:\"");
-			save2file_A_forward("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j %s", "tarpit");
+			save2file_A_forward("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j %s", "portscan");
 #endif
 		}
 		save2file_A_forward("-j SECURITY");
@@ -3068,7 +3066,8 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 	char wan_if_buffer[33];
 	int log_level = nvram_matchi("log_enable", 1) ? nvram_geti("log_level") : 0;
 
-	save2file("*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n:SECURITY - [0:0]\n:blocklist - [0:0]\n:tarpit - [0:0]");
+	save2file(
+		"*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n:SECURITY - [0:0]\n:blocklist - [0:0]\n:tarpit - [0:0]\n:portscan - [0:0]");
 	if (log_level > 0) {
 		save2file(":logaccept - [0:0]\n:logdrop - [0:0]\n:logreject - [0:0]");
 #ifdef FLOOD_PROTECT
@@ -3096,6 +3095,8 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 		save2file_A("logbrute -j DROP");
 	}
 #endif
+	save2file_A("-A portscan -j LOG --log-prefix \"portscan:\"");
+	save2file_A("-A portscan -j tarpit");
 
 	if (wanactive(wanaddr)) {
 		save2file_A_input("-j blocklist");
@@ -3118,17 +3119,15 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 			}
 			if (nvram_matchi("block_portscan", 1)) {
 #ifdef HAVE_PORTSCAN
-				save2file_A_input("-p tcp -m lscan --synscan --cnscan --mirai -j %s", log_drop);
-				save2file_A_input("-m psd -j %s", "tarpit");
+				save2file_A_input("-p tcp -m lscan --synscan --cnscan --mirai -j %s", "portscan");
+				save2file_A_input("-m psd -j %s", "portscan");
 #else
-				save2file_A_input("-m recent --name portscan --rcheck --seconds 86400 -j %s", "tarpit");
+				save2file_A_input("-m recent --name portscan --rcheck --seconds 86400 -j %s", "portscan");
 				save2file_A_input("-m recent --name portscan --remove");
-				save2file_A_input(
-					"-p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix \"portscan:\"");
-				save2file_A_input("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j %s", "tarpit");
+				save2file_A_input("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j %s", "portscan");
 #endif
 			}
-			save2file_A_input("-j SECURITY");
+			//save2file_A_input("-j SECURITY");
 		}
 
 		/*
@@ -3335,6 +3334,7 @@ static void run_firewall6(char *vifs)
 		eval("ip6tables", "-N", "logaccept");
 		eval("ip6tables", "-N", "logreject");
 		eval("ip6tables", "-N", "tarpit");
+		eval("ip6tables", "-N", "portscan");
 		eval("ip6tables", "-N", "blocklist");
 #ifdef FLOOD_PROTECT
 		eval("ip6tables", "-N", "limaccept");
@@ -3344,8 +3344,8 @@ static void run_firewall6(char *vifs)
 	eval("ip6tables", "-P", "INPUT", "DROP");
 	eval("ip6tables", "-P", "FORWARD", "DROP");
 	eval("ip6tables", "-P", "OUTPUT", "ACCEPT");
-	eval("ip6tables", "-A","INPUT","-j","blocklist");
-	eval("ip6tables", "-A","FORWARD","-j","blocklist");
+	eval("ip6tables", "-A", "INPUT", "-j", "blocklist");
+	eval("ip6tables", "-A", "FORWARD", "-j", "blocklist");
 
 #ifdef HAVE_PORTSCAN
 	if (nvram_match("block_tarpit", "1")) {
@@ -3357,29 +3357,28 @@ static void run_firewall6(char *vifs)
 		eval("ip6tables", "-A tarpit -j %s", log_drop);
 	}
 
+	eval("ip6tables", "-A", "portscan", "-j", "LOG", "--log-prefix", "portscan:");
+	eval("ip6tables", "-A", "portscan", "-j", "tarpit");
+
 	if (nvram_matchi("block_portscan", 1)) {
 #ifdef HAVE_PORTSCAN
-		eval("ip6tables", "-A", "INPUT", "-p", "tcp", "-m", "lscan", "--synscan", "--cnscan", "--mirai", "-j", log_drop);
-		eval("ip6tables", "-A", "FORWARD", "-p", "tcp", "-m", "lscan", "--synscan", "--cnscan", "--mirai", "-j", log_drop);
-		eval("ip6tables", "-A", "INPUT", "-m", "psd", "-j", "tarpit");
-		eval("ip6tables", "-A", "FORWARD", "-m", "psd", "-j", "tarpit");
+		eval("ip6tables", "-A", "INPUT", "-p", "tcp", "-m", "lscan", "--synscan", "--cnscan", "--mirai", "-j", "portscan");
+		eval("ip6tables", "-A", "FORWARD", "-p", "tcp", "-m", "lscan", "--synscan", "--cnscan", "--mirai", "-j",
+		     "portscan");
+		eval("ip6tables", "-A", "INPUT", "-m", "psd", "-j", "portscan");
+		eval("ip6tables", "-A", "FORWARD", "-m", "psd", "-j", "portscan");
 #else
 		eval("ip6tables", "-A", "INPUT", "-m", "recent", "--name", "portscan", "--rcheck", "--seconds", "86400", "-j",
-		     "tarpit");
+		     "portscan");
 		eval("ip6tables", "-A", "FORWARD", "-m", "recent", "--name", "portscan", "--rcheck", "--seconds", "86400", "-j",
-		     "tarpit");
+		     "portscan");
 		eval("ip6tables", "-A", "INPUT", "-m", "recent", "--name", "portscan", "--remove");
 		eval("ip6tables", "-A", "FORWARD", "-m", "recent", "--name", "portscan", "--remove");
 
 		eval("ip6tables", "-A", "INPUT", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent", "--name", "portscan",
-		     "--set", "-j", "LOG", "--log-prefix", "portscan:");
+		     "--set", "-j", "portscan");
 		eval("ip6tables", "-A", "FORWARD", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent", "--name", "portscan",
-		     "--set", "-j", "LOG", "--log-prefix", "portscan:");
-
-		eval("ip6tables", "-A", "INPUT", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent", "--name", "portscan",
-		     "--set", "-j", "tarpit");
-		eval("ip6tables", "-A", "FORWARD", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent", "--name", "portscan",
-		     "--set", "-j", "tarpit");
+		     "--set", "-j", "portscan");
 
 #endif
 	}
