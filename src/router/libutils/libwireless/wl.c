@@ -3579,7 +3579,7 @@ int is_mac80211(const char *prefix)
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	free(globstring);
 	if (globresult == 0) {
-		RETURNVALUE((int)globbuf.gl_pathc);
+		RETURNVALUE(!!(int)globbuf.gl_pathc);
 	} else
 		RETURNVALUE(0);
 	globfree(&globbuf);
@@ -3610,7 +3610,7 @@ int has_spectralscanning(const char *prefix)
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	free(globstring);
 	if (globresult == 0)
-		ret = (int)globbuf.gl_pathc;
+		ret = !!(int)globbuf.gl_pathc;
 	globfree(&globbuf);
 	EXITVALUECACHE();
 	return ret;
@@ -3686,7 +3686,7 @@ static int devicecountbydriver(const const char *prefix, const char *drivername,
 	int is_##name(const char *prefix)                               \
 	{                                                               \
 		INITVALUECACHE();                                       \
-		RETURNVALUE(devicecountbydriver(prefix, desc, module)); \
+		RETURNVALUE(!!devicecountbydriver(prefix, desc, module)); \
 		EXITVALUECACHE();                                       \
 		return ret > 0;                                         \
 	}
@@ -3697,7 +3697,7 @@ IS_DRIVER(ath5k_pci, "pci:ath5k", "ath5k");
 int is_ath5k_ahb(const char *prefix)
 {
 	INITVALUECACHE();
-	RETURNVALUE(devicecountbydriver_ath5kahb(prefix));
+	RETURNVALUE(!!devicecountbydriver_ath5kahb(prefix));
 	EXITVALUECACHE();
 	return ret;
 }
