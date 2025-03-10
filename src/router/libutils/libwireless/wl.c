@@ -1909,11 +1909,12 @@ void mac80211_radio_on_off(int idx, int on)
 	int needrestart = 1;
 	if (idx >= ARRAY_SIZE(radiostate))
 		return;
-	if (radiostate[idx] == on)
+	if (radiostate[idx] == on) {
+		nvram_nseti(!on, "%s_off", prefix);
 		return;
+	}
+	nvram_nseti(!on, "%s_off", prefix);
 	radiostate[idx] = on;
-
-	nvram_nseti(!on, "wlan%s_off", prefix);
 	eval("startservice", "configurewifi", "-f");
 	eval("restart", "dnsmasq");
 	eval("startservice", "resetleds", "-f");
@@ -3424,7 +3425,7 @@ static int flagcheck(const char *prefix, int flag, int nullvalid)
 	char *wifiname = getWifiDeviceName(prefix, &flags);
 	if (!wifiname && nullvalid)
 		return 1;
-	return (flags & flag);
+	return !!(flags & flag);
 }
 
 #define FLAGCHECK(name, flag, nullvalid)                   \
