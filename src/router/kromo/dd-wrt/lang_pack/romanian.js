@@ -428,7 +428,7 @@ bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Interval înaintare port";
 bmenu.applicationspforwarding="Înaintare port";
 bmenu.applicationsptriggering="Declanșare port";
-bmenu.applicationsUpnp="UPnP";
+bmenu.applicationsUpnp="UPnP IGD";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 bmenu.applicationsP2P="P2P";
@@ -1675,12 +1675,11 @@ hupgrad.right2="Clic pe butonul <em>Alegeți fișierul, Răsfoire..., etc</em> (
 
 
 // ** UPnP.asp **//
-upnp.titl="UPnP";
-upnp.h2="Universal Plug and Play (UPnP)";
+upnp.titl="UPnP IGD";
+upnp.h2="Serviciu UPnP IGD";
 upnp.legend="Înaintări";
 upnp.legend2="Configurare UPnP";
-upnp.serv="Serviciu UPnP";
-upnp.url="Trimite URL de prezentare";
+upnp.serv="Serviciu UPnP IGD";
 upnp.msg1="Clic pentru a șterge intrarea";
 upnp.msg2="Ștergeți toate intrările?";
 

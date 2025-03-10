@@ -392,7 +392,7 @@ bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="埠區段轉發（映射）";
 bmenu.applicationspforwarding="埠轉發（映射）";
 bmenu.applicationsptriggering="通訊埠觸發";
-bmenu.applicationsUpnp="UPnP";
+bmenu.applicationsUpnp="UPnP IGD";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 bmenu.applicationsP2P="P2P";
@@ -1388,12 +1388,11 @@ hupgrad.right2="按 <em>瀏覽...</em> 按鈕選擇要更新韌體檔.<br /><br 
 
 
 // ** UPnP.asp **//
-upnp.titl="UPnP";
-upnp.h2="通用即插即用 (UPnP)";
+upnp.titl="UPnP IGD";
+upnp.h2="UPnP IGD伺服器";
 upnp.legend="虛擬伺服器（映射）";
 upnp.legend2="UPnP設定";
-upnp.serv="UPnP伺服器";
-upnp.url="發布 UPnP網址";
+upnp.serv="UPnP IGD伺服器";
 upnp.msg1="刪除租用";
 upnp.msg2="刪除所有項目？";
 
