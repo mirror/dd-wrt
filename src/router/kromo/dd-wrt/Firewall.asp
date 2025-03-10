@@ -21,6 +21,9 @@ function submitcheck(F) {
 	if (F._block_portscan){
 		F.block_portscan.value = F._block_portscan.checked ? 1 : 0;
 	}
+	if (F._block_tarpit){
+		F.block_tarpit.value = F._block_tarpit.checked ? 1 : 0;
+	}
 	if(F._block_multicast) {
 		F.block_multicast.value = F._block_multicast.checked ? 1 : 0;
 	}
@@ -93,6 +96,9 @@ function setFirewall(F, val) {
 		}
 		if (F._block_portscan){
 			F._block_portscan.checked = false;
+		}
+		if (F._block_tarpit){
+			F._block_tarpit.checked = false;
 		}
 		if(F._block_multicast) {
 			F._block_multicast.checked = false;
@@ -170,6 +176,7 @@ addEvent(window, "unload", function() {
 
 						<input type="hidden" name="block_wan" />
 						<input type="hidden" name="block_portscan" />
+						<input type="hidden" name="block_tarpit" />
 						<input type="hidden" name="block_loopback" />
 						<input type="hidden" name="block_multicast" />
 						<input type="hidden" name="block_ident" />
@@ -235,6 +242,10 @@ addEvent(window, "unload", function() {
 										<div class="setting">
 											<div class="label"><% tran("firewall.portscan"); %></div>
 											<input class="spaceradio" type="checkbox" value="1" name="_block_portscan" <% nvc("block_portscan", "1"); %> />
+										</div>
+										<div class="setting">
+											<div class="label"><% tran("firewall.tarpit"); %></div>
+											<input class="spaceradio" type="checkbox" value="1" name="_block_tarpit" <% nvc("block_tarpit", "1"); %> />
 										</div>
 										<% ifndef("MULTICAST", "<!--"); %>
 										<div class="setting">
