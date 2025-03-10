@@ -3335,6 +3335,7 @@ static void run_firewall6(char *vifs)
 		eval("ip6tables", "-N", "logaccept");
 		eval("ip6tables", "-N", "logreject");
 		eval("ip6tables", "-N", "tarpit");
+		eval("ip6tables", "-N", "blocklist");
 #ifdef FLOOD_PROTECT
 		eval("ip6tables", "-N", "limaccept");
 #endif
@@ -3343,6 +3344,8 @@ static void run_firewall6(char *vifs)
 	eval("ip6tables", "-P", "INPUT", "DROP");
 	eval("ip6tables", "-P", "FORWARD", "DROP");
 	eval("ip6tables", "-P", "OUTPUT", "ACCEPT");
+	eval("ip6tables", "-A","INPUT","-j","blocklist");
+	eval("ip6tables", "-A","FORWARD","-j","blocklist");
 
 #ifdef HAVE_PORTSCAN
 	if (nvram_match("block_tarpit", "1")) {
