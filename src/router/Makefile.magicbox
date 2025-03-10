@@ -197,6 +197,8 @@ endif
 	-$(MAKE) -f Makefile.magicbox batman-adv-install
 	-$(MAKE) -f Makefile.magicbox ndpi-netfilter
 	-$(MAKE) -f Makefile.magicbox ndpi-netfilter-install
+	-$(MAKE) -f Makefile.magicbox portscan
+	-$(MAKE) -f Makefile.magicbox portscan-install
 ifeq ($(CONFIG_NTFS3G),y)
 	-$(MAKE) -f Makefile.magicbox antfs
 	-$(MAKE) -f Makefile.magicbox antfs-install

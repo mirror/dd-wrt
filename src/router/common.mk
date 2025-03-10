@@ -276,6 +276,8 @@ kernel-relink-phase:
 	-$(MAKE) -f Makefile.$(MAKEEXT) batman-adv-install
 	-$(MAKE) -f Makefile.$(MAKEEXT) ndpi-netfilter
 	-$(MAKE) -f Makefile.$(MAKEEXT) ndpi-netfilter-install
+	-$(MAKE) -f Makefile.$(MAKEEXT) portscan
+	-$(MAKE) -f Makefile.$(MAKEEXT) portscan-install
 ifeq ($(CONFIG_ALPINE),y)
 	-$(MAKE) -f Makefile.$(MAKEEXT) qca-ssdk
 	-$(MAKE) -f Makefile.$(MAKEEXT) qca-ssdk-install
