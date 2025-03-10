@@ -2682,12 +2682,13 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	if (nvram_invmatch("filter", "off")) {
 		if (nvram_matchi("block_portscan", 1)) {
 #ifdef HAVE_PORTSCAN
-			save2file_A_forward("-p tcp -m lscan --synscan --cnscan --mirai -j %s", "portscan");
-			save2file_A_forward("-m psd -j %s", "portscan");
-#else
-			save2file_A_forward("-m recent --name portscan --rcheck --seconds 86400 -j %s", "portscan");
+			save2file_A_forward("-p tcp -m lscan --synscan --cnscan --mirai -j %s", log_drop);
+#endif
+			save2file_A_forward("-m recent --name portscan --rcheck --seconds 86400 -j %s", "tarpit");
 			save2file_A_forward("-m recent --name portscan --remove");
 			save2file_A_forward("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j %s", "portscan");
+#ifdef HAVE_PORTSCAN
+			save2file_A_forward("-m psd --psd-weight-threshold 15 --psd-hi-ports-weight 3 -j %s", "tarpit");
 #endif
 		}
 		save2file_A_forward("-j SECURITY");
@@ -3095,8 +3096,8 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 		save2file_A("logbrute -j DROP");
 	}
 #endif
-	save2file_A("-A portscan -j LOG --log-prefix \"portscan:\"");
-	save2file_A("-A portscan -j tarpit");
+	save2file_A("portscan -j LOG --log-prefix \"portscan:\"");
+	save2file_A("portscan -j tarpit");
 
 	if (wanactive(wanaddr)) {
 		save2file_A_input("-j blocklist");
@@ -3119,12 +3120,13 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 			}
 			if (nvram_matchi("block_portscan", 1)) {
 #ifdef HAVE_PORTSCAN
-				save2file_A_input("-p tcp -m lscan --synscan --cnscan --mirai -j %s", "portscan");
-				save2file_A_input("-m psd -j %s", "portscan");
-#else
-				save2file_A_input("-m recent --name portscan --rcheck --seconds 86400 -j %s", "portscan");
+				save2file_A_input("-p tcp -m lscan --synscan --cnscan --mirai -j %s", log_drop);
+#endif
+				save2file_A_input("-m recent --name portscan --rcheck --seconds 86400 -j %s", "tarpit");
 				save2file_A_input("-m recent --name portscan --remove");
 				save2file_A_input("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j %s", "portscan");
+#ifdef HAVE_PORTSCAN
+				save2file_A_input("-m psd --psd-weight-threshold 15 --psd-hi-ports-weight 3 -j %s", "tarpit");
 #endif
 			}
 			//save2file_A_input("-j SECURITY");
@@ -3362,16 +3364,13 @@ static void run_firewall6(char *vifs)
 
 	if (nvram_matchi("block_portscan", 1)) {
 #ifdef HAVE_PORTSCAN
-		eval("ip6tables", "-A", "INPUT", "-p", "tcp", "-m", "lscan", "--synscan", "--cnscan", "--mirai", "-j", "portscan");
-		eval("ip6tables", "-A", "FORWARD", "-p", "tcp", "-m", "lscan", "--synscan", "--cnscan", "--mirai", "-j",
-		     "portscan");
-		eval("ip6tables", "-A", "INPUT", "-m", "psd", "-j", "portscan");
-		eval("ip6tables", "-A", "FORWARD", "-m", "psd", "-j", "portscan");
-#else
+		eval("ip6tables", "-A", "INPUT", "-p", "tcp", "-m", "lscan", "--synscan", "--cnscan", "--mirai", "-j", log_drop);
+		eval("ip6tables", "-A", "FORWARD", "-p", "tcp", "-m", "lscan", "--synscan", "--cnscan", "--mirai", "-j", log_drop);
+#endif
 		eval("ip6tables", "-A", "INPUT", "-m", "recent", "--name", "portscan", "--rcheck", "--seconds", "86400", "-j",
-		     "portscan");
+		     "tarpit");
 		eval("ip6tables", "-A", "FORWARD", "-m", "recent", "--name", "portscan", "--rcheck", "--seconds", "86400", "-j",
-		     "portscan");
+		     "tarpit");
 		eval("ip6tables", "-A", "INPUT", "-m", "recent", "--name", "portscan", "--remove");
 		eval("ip6tables", "-A", "FORWARD", "-m", "recent", "--name", "portscan", "--remove");
 
@@ -3379,7 +3378,11 @@ static void run_firewall6(char *vifs)
 		     "--set", "-j", "portscan");
 		eval("ip6tables", "-A", "FORWARD", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent", "--name", "portscan",
 		     "--set", "-j", "portscan");
-
+#ifdef HAVE_PORTSCAN
+		eval("ip6tables", "-A", "INPUT", "-m", "psd", "--psd-weight-threshold", "15", "--psd-hi-ports-weight", "3", "-j",
+		     "tarpit");
+		eval("ip6tables", "-A", "FORWARD", "-m", "psd", "--psd-weight-threshold", "15", "--psd-hi-ports-weight", "3", "-j",
+		     "tarpit");
 #endif
 	}
 	/* Filter all packets that have RH0 headers */
