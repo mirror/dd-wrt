@@ -2380,31 +2380,6 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 
 	const char *next;
 	char *iflist, buff[16];
-	if (nvram_invmatch("filter", "off")) {
-		/* Sync-flood protection */
-		save2file_A_security("-p tcp --syn -m limit --limit 1/s -j RETURN");
-		save2file_A_security("-p tcp --syn -j %s\n", log_drop);
-		/* UDP flooding */
-		save2file_A_security("-p udp -m limit --limit 5/s -j RETURN");
-		save2file_A_security("-p udp -j %s\n", log_drop);
-		/* Ping of death */
-		save2file_A_security("-p icmp --icmp-type 8 -m limit --limit 1/s -j RETURN");
-		save2file_A_security("-p icmp --icmp-type 8 -j %s\n", log_drop);
-
-		if (nvram_matchi("block_portscan", 1)) {
-#ifdef HAVE_PORTSCAN
-			save2file_A_input("-m lscan --stealth --synscan --cnscan --mirai -j %s", log_drop);
-			save2file_A_input("-m psd -j %s", "tarpit");
-#else
-			save2file_A_input("-m recent --name portscan --rcheck --seconds 86400 -j %s", "tarpit");
-			save2file_A_input("-m recent --name portscan --remove");
-			save2file_A_input(
-				"-p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix \"portscan:\"");
-			save2file_A_input("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j %s", "tarpit");
-#endif
-		}
-		save2file_A_input("-j SECURITY");
-	}
 
 	/*
 	 * most of what was here has been moved to the end 
@@ -3123,6 +3098,32 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 #endif
 
 	if (wanactive(wanaddr)) {
+		if (nvram_invmatch("filter", "off")) {
+			/* Sync-flood protection */
+			save2file_A_security("-p tcp --syn -m limit --limit 1/s -j RETURN");
+			save2file_A_security("-p tcp --syn -j %s\n", log_drop);
+			/* UDP flooding */
+			save2file_A_security("-p udp -m limit --limit 5/s -j RETURN");
+			save2file_A_security("-p udp -j %s\n", log_drop);
+			/* Ping of death */
+			save2file_A_security("-p icmp --icmp-type 8 -m limit --limit 1/s -j RETURN");
+			save2file_A_security("-p icmp --icmp-type 8 -j %s\n", log_drop);
+
+			if (nvram_matchi("block_portscan", 1)) {
+#ifdef HAVE_PORTSCAN
+				save2file_A_input("-m lscan --stealth --synscan --cnscan --mirai -j %s", log_drop);
+				save2file_A_input("-m psd -j %s", "tarpit");
+#else
+				save2file_A_input("-m recent --name portscan --rcheck --seconds 86400 -j %s", "tarpit");
+				save2file_A_input("-m recent --name portscan --remove");
+				save2file_A_input(
+					"-p tcp -m tcp --dport 139 -m recent --name portscan --set -j LOG --log-prefix \"portscan:\"");
+				save2file_A_input("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j %s", "tarpit");
+#endif
+			}
+			save2file_A_input("-j SECURITY");
+		}
+
 		/*
 		 * Does it disable the filter? 
 		 */
