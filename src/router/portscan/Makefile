@@ -9,6 +9,7 @@ all:
 install:
 	install -v -m 644 -D xt_lscan.ko $(IDIR)/xt_lscan.ko
 	install -v -m 644 -D xt_psd.ko $(IDIR)/xt_psd.ko
+	install -v -m 644 -D xt_TARPIT.ko $(IDIR)/xt_TARPIT.ko
 
 clean:
 	@$(MAKE) -C $(KDIR) M=$(PWD) clean
