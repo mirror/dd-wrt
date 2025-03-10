@@ -24,8 +24,9 @@ dcb: $(DCBOBJ) $(SSOBJ) $(LIBNETLINK)
 	$(QUIET_LINK)$(CC) $^ $(LDFLAGS) $(LDLIBS) -o $@
 
 install: all
+	mkdir -p $(INSTALLDIR)/usr/sbin
 	for i in $(TARGETS); \
-	do install -m 0755 $$i $(INSTALLDIR)$(SBINDIR); \
+	do install -m 0755 $$i $(INSTALLDIR)/usr/sbin; \
 	done
 
 clean:
