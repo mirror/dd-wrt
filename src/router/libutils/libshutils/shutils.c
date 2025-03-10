@@ -1669,7 +1669,8 @@ void add_blocklist(const char *service, char *ip)
 				dd_loginfo(service, "5 failed login attempts reached. block client %s for %d minutes", ip,
 					   BLOCKTIME);
 				eval("iptables", "-I", "blocklist", "-p", "tcp", "-s", ip, "-j", "TARPIT");
-				eval("ip6tables", "-I", "blocklist", "-p", "tcp", "-s", ip, "-j", "TARPIT");
+				if (nvram_matchi("ipv6_enable", 1))
+					eval("ip6tables", "-I", "blocklist", "-p", "tcp", "-s", ip, "-j", "TARPIT");
 			}
 			goto end;
 		}
@@ -1724,7 +1725,8 @@ int check_blocklist(const char *service, char *ip)
 			//time over, free entry
 			if (entry->count > 4) {
 				eval("iptables", "-D", "blocklist", "-p", "tcp", "-s", &entry->ip[0], "-j", "TARPIT");
-				eval("ip6tables", "-D", "blocklist", "-p", "tcp", "-s", &entry->ip[0], "-j", "TARPIT");
+				if (nvram_matchi("ipv6_enable", 1))
+					eval("ip6tables", "-D", "blocklist", "-p", "tcp", "-s", &entry->ip[0], "-j", "TARPIT");
 				dd_loginfo(service, "time is over for client %s, so free it", &entry->ip[0]);
 				last->next = entry->next;
 				free(entry);
@@ -1735,7 +1737,8 @@ int check_blocklist(const char *service, char *ip)
 		//time over, free entry
 		if (entry->end && entry->end < cur) {
 			eval("iptables", "-D", "blocklist", "-p", "tcp", "-s", &entry->ip[0], "-j", "TARPIT");
-			eval("ip6tables", "-D", "blocklist", "-p", "tcp", "-s", &entry->ip[0], "-j", "TARPIT");
+			if (nvram_matchi("ipv6_enable", 1))
+				eval("ip6tables", "-D", "blocklist", "-p", "tcp", "-s", &entry->ip[0], "-j", "TARPIT");
 			dd_loginfo(service, "time is over for client %s, so free it", &entry->ip[0]);
 			last->next = entry->next;
 			free(entry);
