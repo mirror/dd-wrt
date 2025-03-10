@@ -2849,17 +2849,17 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 		 * DROP packets for PPTP pass through. 
 		 */
 		if (nvram_matchi("pptp_pass", 0))
-			save2file_A_forward("-o %s -p tcp --dport %d -j %s", wanface, PPTP_PORT, log_drop);
+			save2file_A_forward("-o %s -p tcp --dport %d -j %s", wanface, PPTP_PORT, "tarpit");
 		/*
 		 * DROP packets for L2TP pass through. 
 		 */
 		if (nvram_matchi("l2tp_pass", 0))
-			save2file_A_forward("-o %s -p udp --dport %d -j %s", wanface, L2TP_PORT, log_drop);
+			save2file_A_forward("-o %s -p udp --dport %d -j %s", wanface, L2TP_PORT, "tarpit");
 		/*
 		 * DROP packets for IPsec pass through 
 		 */
 		if (nvram_matchi("ipsec_pass", 0))
-			save2file_A_forward("-o %s -p udp --dport %d -j %s", wanface, ISAKMP_PORT, log_drop);
+			save2file_A_forward("-o %s -p udp --dport %d -j %s", wanface, ISAKMP_PORT, "tarpit");
 	}
 	/*
 	 * ACCEPT packets for Multicast pass through 
@@ -3186,11 +3186,11 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 #ifdef HAVE_PORTSCAN
 	if (nvram_match("block_tarpit", "1")) {
 		save2file_A("tarpit -p tcp -j TARPIT");
-		save2file_A("tarpit -p tcp -j %s", log_drop);
+		save2file_A("tarpit -j %s", log_drop);
 	} else
 #endif
 	{
-		save2file_A("tarpit -p tcp -j %s", log_drop);
+		save2file_A("tarpit -j %s", log_drop);
 	}
 	/*
 	 * logaccept chain 
@@ -3344,11 +3344,11 @@ static void run_firewall6(char *vifs)
 #ifdef HAVE_PORTSCAN
 	if (nvram_match("block_tarpit", "1")) {
 		eval("ip6tables", "-A tarpit -p tcp -j TARPIT");
-		eval("ip6tables", "-A tarpit -p tcp -j %s", log_drop);
+		eval("ip6tables", "-A tarpit -j %s", log_drop);
 	} else
 #endif
 	{
-		eval("ip6tables", "-A tarpit -p tcp -j %s", log_drop);
+		eval("ip6tables", "-A tarpit -j %s", log_drop);
 	}
 
 	if (nvram_matchi("block_portscan", 1)) {
