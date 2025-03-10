@@ -89,10 +89,10 @@ static void _invalidate_channelcache(void)
 	}                                   \
 	else                                \
 	{                                   \
-		return (__val & (1 << dn)); \
+		return !!(__val & (1 << dn)); \
 	}                                   \
 out_cache:;                                 \
-	if (dn <= 9 && dn >= 0) {            \
+	if (dn <= 9 && dn >= 0 && ret != -1) {            \
 		__set |= 1 << dn;           \
 		__val |= (!!ret) << dn;     \
 	}
