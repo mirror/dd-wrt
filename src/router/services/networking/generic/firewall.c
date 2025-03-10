@@ -3334,6 +3334,17 @@ static void run_firewall6(char *vifs)
 	eval("ip6tables", "-P", "INPUT", "DROP");
 	eval("ip6tables", "-P", "FORWARD", "DROP");
 	eval("ip6tables", "-P", "OUTPUT", "ACCEPT");
+
+#ifdef HAVE_PORTSCAN
+	if (nvram_match("block_tarpit", "1")) {
+		eval("ip6tables", "-A tarpit -p tcp -j TARPIT");
+		eval("ip6tables", "-A tarpit -p tcp -j %s", log_drop);
+	} else
+#endif
+	{
+		eval("ip6tables", "-A tarpit -p tcp -j %s", log_drop);
+	}
+
 	if (nvram_matchi("block_portscan", 1)) {
 #ifdef HAVE_PORTSCAN
 		eval("ip6tables", "-A", "INPUT", "-m", "lscan", "--stealth", "--synscan", "--cnscan", "--mirai", "-j", log_drop);
@@ -3618,7 +3629,7 @@ void start_loadfwmodules(void)
 	insmod("iptable_raw iptable_mangle nf_conntrack_h323 xt_NFLOG" //
 	       " xt_length xt_REDIRECT xt_CT xt_limit xt_TCPMSS" //
 	       " xt_connbytes xt_connlimit" //
-	       " xt_CLASSIFY xt_recent xt_lscan xt_psd ipt_recent" //
+	       " xt_CLASSIFY xt_recent xt_TARPIT xt_lscan xt_psd ipt_recent" //
 	       " xt_conntrack xt_state" //
 	       " xt_string xt_LOG xt_iprange xt_tcpmss" //
 	       " xt_NETMAP compat_xtables" //
