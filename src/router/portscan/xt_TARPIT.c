@@ -418,7 +418,7 @@ static void tarpit_tcp6(const struct xt_action_param *par,
 	nf_ct_attach(nskb, oldskb);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
-	NF_HOOK(NFPROTO_IPV6, NF_INET_LOCAL_OUT, net, nskb->sk, nskb, NULL,
+	NF_HOOK(NFPROTO_IPV6, NF_INET_LOCAL_OUT, par_net(par), nskb->sk, nskb, NULL,
 	        skb_dst(nskb)->dev, dst_output);
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
 	NF_HOOK(NFPROTO_IPV6, NF_INET_LOCAL_OUT, nskb->sk, nskb, NULL,
