@@ -758,6 +758,9 @@ static struct defrule s_conditions[] = {
 #if defined(HAVE_IPQ6018)
 	{ "IPQ6018", NULL },
 #endif
+#ifdef HAVE_PORTSCAN
+	{ "TARPIT", NULL },
+#endif
 	{ NULL, NULL }
 };
 

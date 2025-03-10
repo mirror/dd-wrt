@@ -63,6 +63,34 @@ CONFIG_ERC=
 #
 include $(TOP)/.config
 
+ifeq ($(KERNELVERSION),6.1-nss)
+CONFIG_PORTSCAN=y
+endif
+ifeq ($(KERNELVERSION),6.1)
+CONFIG_PORTSCAN=y
+endif
+ifeq ($(KERNELVERSION),6.6)
+CONFIG_PORTSCAN=y
+endif
+ifeq ($(KERNELVERSION),6.6-nss)
+CONFIG_PORTSCAN=y
+endif
+ifeq ($(KERNELVERSION),4.14)
+CONFIG_PORTSCAN=y
+endif
+ifeq ($(KERNELVERSION),4.9)
+CONFIG_PORTSCAN=y
+endif
+ifeq ($(KERNELVERSION),4.4)
+CONFIG_PORTSCAN=y
+endif
+ifeq ($(KERNELVERSION),3.18)
+CONFIG_PORTSCAN=y
+endif
+ifeq ($(KERNELVERSION),3.10)
+CONFIG_PORTSCAN=y
+endif
+
 ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
@@ -306,6 +334,9 @@ CFLAGS += -DHAVE_MULTICAST
 endif
 ifeq ($(CONFIG_NP25G),y)
 CFLAGS += -DHAVE_NP25G
+endif
+ifeq ($(CONFIG_PORTSCAN),y)
+CFLAGS += -DHAVE_PORTSCAN
 endif
 ifeq ($(CONFIG_UNIWIP),y)
 CFLAGS += -DHAVE_UNIWIP
