@@ -2615,19 +2615,6 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		tf_webWriteESCNV(wp, ssid);
 		websWrite(wp, "\" /></div>\n");
 
-		// broadcast wireless ssid
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption(wp, "label", "wl_basic.label5", NULL);
-		sprintf(ssid, "%s_closed", var);
-		websWrite(
-			wp,
-			"<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_closed\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			var, nvram_matchi(ssid, 0) ? "checked=\"checked\"" : "");
-		websWrite(
-			wp,
-			"<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_closed\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
-			var, nvram_matchi(ssid, 1) ? "checked=\"checked\"" : "");
-		websWrite(wp, "</div>\n");
 #endif
 
 #ifdef HAVE_IFL
@@ -2669,6 +2656,19 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #ifdef HAVE_MADWIFI
 		//      sprintf( wl_chanshift, "%s_chanshift", var );
 		//      show_chanshift( wp, wl_chanshift );
+		// broadcast wireless ssid
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wl_basic.label5", NULL);
+		sprintf(ssid, "%s_closed", var);
+		websWrite(
+			wp,
+			"<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_closed\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+			var, nvram_matchi(ssid, 0) ? "checked=\"checked\"" : "");
+		websWrite(
+			wp,
+			"<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_closed\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
+			var, nvram_matchi(ssid, 1) ? "checked=\"checked\"" : "");
+		websWrite(wp, "</div>\n");
 
 		showrtssettings(wp, var);
 		showairtimepolicy(wp, var, prefix);
@@ -4115,7 +4115,6 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				}
 			}
 		}
-
 		char wl_closed[16];
 		sprintf(wl_closed, "%s_closed", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -4780,16 +4779,6 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			}
 		}
 	}
-	if (is_mac80211(prefix)) {
-		char wl_overlap[16];
-		sprintf(wl_overlap, "%s_overlap", prefix);
-		showRadio(wp, "wl_basic.overlap", wl_overlap);
-	}
-	if (has_qam256(prefix) && has_2ghz(prefix)) {
-		char wl_turboqam[32];
-		sprintf(wl_turboqam, "%s_turbo_qam", prefix);
-		showRadio(wp, "wl_basic.turboqam", wl_turboqam);
-	}
 	// wireless ssid
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(
@@ -4810,27 +4799,6 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "</div>\n");
 	}
 #endif
-#if defined(HAVE_RT2880) && !defined(HAVE_MT76)
-	if (is_ap(prefix) || nvram_match(wl_mode, "infra") || nvram_match(wl_mode, "apsta") || nvram_match(wl_mode, "apstawet"))
-#else
-	if (is_ap(prefix) || nvram_match(wl_mode, "infra") || nvram_match(wl_mode, "mesh"))
-#endif
-	{
-		// ssid broadcast
-		char wl_closed[16];
-		sprintf(wl_closed, "%s_closed", prefix);
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption(wp, "label", "wl_basic.label5", NULL);
-		websWrite(
-			wp,
-			"<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			wl_closed, nvram_matchi(wl_closed, 0) ? "checked=\"checked\"" : "");
-		websWrite(
-			wp,
-			"<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
-			wl_closed, nvram_matchi(wl_closed, 1) ? "checked=\"checked\"" : "");
-		websWrite(wp, "</div>\n");
-	}
 #ifdef HAVE_IFL
 	// label
 	char wl_label[16];
@@ -4859,6 +4827,37 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		"<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.if_info)</script></div><textarea name=\"%s\" cols=\"60\" rows=\"3\">%s</textarea></div>\n",
 		wl_note, nvram_safe_get(wl_note));
 #endif
+#if defined(HAVE_RT2880) && !defined(HAVE_MT76)
+	if (is_ap(prefix) || nvram_match(wl_mode, "infra") || nvram_match(wl_mode, "apsta") || nvram_match(wl_mode, "apstawet"))
+#else
+	if (is_ap(prefix) || nvram_match(wl_mode, "infra") || nvram_match(wl_mode, "mesh"))
+#endif
+	{
+		// ssid broadcast
+		char wl_closed[16];
+		sprintf(wl_closed, "%s_closed", prefix);
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wl_basic.label5", NULL);
+		websWrite(
+			wp,
+			"<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+			wl_closed, nvram_matchi(wl_closed, 0) ? "checked=\"checked\"" : "");
+		websWrite(
+			wp,
+			"<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
+			wl_closed, nvram_matchi(wl_closed, 1) ? "checked=\"checked\"" : "");
+		websWrite(wp, "</div>\n");
+	}
+	if (is_mac80211(prefix)) {
+		char wl_overlap[16];
+		sprintf(wl_overlap, "%s_overlap", prefix);
+		showRadio(wp, "wl_basic.overlap", wl_overlap);
+	}
+	if (has_qam256(prefix) && has_2ghz(prefix)) {
+		char wl_turboqam[32];
+		sprintf(wl_turboqam, "%s_turbo_qam", prefix);
+		showRadio(wp, "wl_basic.turboqam", wl_turboqam);
+	}
 	if (is_mac80211(prefix)) {
 		if (isFXXN_PRO(prefix) == 1) {
 			char wl_cardtype[32];
