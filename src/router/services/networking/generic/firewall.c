@@ -3068,7 +3068,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 	char wan_if_buffer[33];
 	int log_level = nvram_matchi("log_enable", 1) ? nvram_geti("log_level") : 0;
 
-	save2file("*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]:SECURITY - [0:0]\n\n");
+	save2file("*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]:SECURITY - [0:0]:blocklist - [0:0]\n\n");
 	if (log_level > 0) {
 		save2file(":logaccept - [0:0]\n:logdrop - [0:0]\n:logreject - [0:0]\n:tarpit - [0:0]");
 #ifdef FLOOD_PROTECT
@@ -3098,6 +3098,8 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 #endif
 
 	if (wanactive(wanaddr)) {
+		save2file_A_input("-j blocklist");
+		save2file_A_forward("-j blocklist");
 		if (nvram_invmatch("filter", "off")) {
 			if (nvram_matchi("block_syncflood", 1)) {
 				/* Sync-flood protection */
@@ -3165,6 +3167,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 			filter_forward(wanface, lanface, lan_cclass, dmzenable, webfilter, vifs);
 		}
 	} else {
+		save2file_A_input("-j blocklist");
 		char var[80];
 		char vifs[256];
 		const char *next;
