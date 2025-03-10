@@ -3068,9 +3068,9 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 	char wan_if_buffer[33];
 	int log_level = nvram_matchi("log_enable", 1) ? nvram_geti("log_level") : 0;
 
-	save2file("*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]:SECURITY - [0:0]:blocklist - [0:0]\n\n");
+	save2file("*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n:SECURITY - [0:0]\n:blocklist - [0:0]\n:tarpit - [0:0]");
 	if (log_level > 0) {
-		save2file(":logaccept - [0:0]\n:logdrop - [0:0]\n:logreject - [0:0]\n:tarpit - [0:0]");
+		save2file(":logaccept - [0:0]\n:logdrop - [0:0]\n:logreject - [0:0]");
 #ifdef FLOOD_PROTECT
 		save2file(":limaccept - [0:0]\n");
 #endif
