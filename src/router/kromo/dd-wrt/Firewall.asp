@@ -103,21 +103,6 @@ function setFirewall(F, val) {
 		if (F._block_wan){
 			F._block_wan.checked = false;
 		}
-		if (F._block_portscan){
-			F._block_portscan.checked = false;
-		}
-		if (F._block_tarpit){
-			F._block_tarpit.checked = false;
-		}
-		if (F._block_syncflood){
-			F._block_syncflood.checked = false;
-		}
-		if (F._block_udpflood){
-			F._block_udpflood.checked = false;
-		}
-		if (F._block_pod){
-			F._block_pod.checked = false;
-		}
 		if(F._block_multicast) {
 			F._block_multicast.checked = false;
 		}
