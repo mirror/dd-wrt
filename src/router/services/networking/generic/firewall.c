@@ -3334,6 +3334,8 @@ static void run_firewall6(char *vifs)
 	eval("ip6tables", "-N", "tarpit");
 	eval("ip6tables", "-N", "portscan");
 	eval("ip6tables", "-N", "blocklist");
+	eval("ip6tables", "-N", "SECURITY");
+
 	if (log_level > 0) {
 		eval("ip6tables", "-N", "logdrop");
 		eval("ip6tables", "-N", "logaccept");
@@ -3346,6 +3348,27 @@ static void run_firewall6(char *vifs)
 	eval("ip6tables", "-P", "INPUT", "DROP");
 	eval("ip6tables", "-P", "FORWARD", "DROP");
 	eval("ip6tables", "-P", "OUTPUT", "ACCEPT");
+
+	if (nvram_matchi("block_syncflood", 1)) {
+		/* Sync-flood protection */
+		eval("ip6tables", "-A", "SECURITY", "-i", wanface, "-m", "recent", "--rcheck", "--name", "synflood", "--seconds",
+		     "60", "--reap");
+		eval("ip6tables", "-A", "SECURITY", "-i", wanface, "-p", "tcp", "-m", "tcp", "--syn", "-m", "recent", "--set",
+		     "--name", "synflood", "-mrecent", "--rcheck", "--seconds", "60", "--hitcount", "100", "-j", log_drop);
+	}
+	if (nvram_matchi("block_udpflood", 1)) { // be aware. if you need udp forwards, this should be disabled
+		/* UDP flooding */
+		eval("ip6tables", "-A", "SECURITY", "-i", wanface, "-p", "udp", "-m", "limit", "--limit", "5/s", "-j", "RETURN");
+		eval("ip6tables", "-A", "SECURITY", "-i", wanface, "-p", "udp", "-j", log_drop);
+	}
+
+	if (nvram_matchi("block_pod", 1)) { // be aware. if you need udp forwards, this should be disabled
+		/* UDP flooding */
+		eval("ip6tables", "-A", "SECURITY", "-i", wanface, "-p", "ipv6-icmp", "--icmpv6-type", "128", "-j", "RETURN", "-m",
+		     "limit", "--limit", "5/s");
+		eval("ip6tables", "-A", "SECURITY", "-i", wanface, "-p", "ipv6-icmp", "--icmpv6-type", "128", "-j", log_drop);
+	}
+
 	eval("ip6tables", "-A", "INPUT", "-j", "blocklist");
 	eval("ip6tables", "-A", "FORWARD", "-j", "blocklist");
 
@@ -3387,6 +3410,8 @@ static void run_firewall6(char *vifs)
 		     "--psd-hi-ports-weight", "3", "-j", log_drop);
 #endif
 	}
+	eval("ip6tables", "-A", "INPUT", "-j", "SECURITY");
+	eval("ip6tables", "-A", "FORWARD", "-j", "SECURITY");
 	/* Filter all packets that have RH0 headers */
 	eval("ip6tables", "-A", "INPUT", "-m", "rt", "--rt-type", "0", "-j", log_drop);
 	eval("ip6tables", "-A", "FORWARD", "-m", "rt", "--rt-type", "0", "-j", log_drop);
@@ -3464,9 +3489,6 @@ static void run_firewall6(char *vifs)
 		eval("ip6tables", "-t", "mangle", "-I", "POSTROUTING", "-o", wanface, "-j", "HL", "--hl-set", "65");
 	}
 
-	/* Permit IMCPv6 echo requests (ping) but use but ratelimit it for preventing ping flooding */
-	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "--icmpv6-type", "128", "-j", log_accept, "-m", "limit", "--limit",
-	     "30/minute");
 	/* Allow dedicated  ICMPv6 packettypes */
 	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "1", "-j", log_accept);
 	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "2", "-j", log_accept);
