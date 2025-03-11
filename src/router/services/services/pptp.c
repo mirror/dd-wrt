@@ -58,7 +58,7 @@ void start_pptpd(void)
 	mkdir("/jffs/etc", 0700);
 	mkdir("/jffs/etc/pptpd", 0700);
 	if (jffs == 1)
-		system("/bin/cp /jffs/etc/pptpd/pptp_peer.db /tmp/");
+		dd_system("/bin/cp /jffs/etc/pptpd/pptp_peer.db /tmp/");
 
 	// Create directory for use by pptpd daemon and its supporting files
 	mkdir("/tmp/pptpd", 0744);
@@ -303,7 +303,7 @@ void stop_pptpd(void)
 	stop_process("bcrelay", "pptp broadcast relay");
 	unlink("/tmp/pptp_connected");
 	if (jffs == 1)
-		system("/bin/cp /tmp/pptp_peer.db /jffs/etc/pptpd/");
+		dd_system("/bin/cp /tmp/pptp_peer.db /jffs/etc/pptpd/");
 #ifdef HAVE_PPTP_ACCEL
 	rmmod("pptp");
 #endif

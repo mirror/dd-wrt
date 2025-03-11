@@ -76,10 +76,10 @@ void start_aoss(void)
 	if (pidof("aoss") > 0)
 		return;
 	led_control(LED_SES, LED_FLASH); // when pressed, blink white
-	system("killall ledtool");
+	killall("ledtool", SIGTERM);
 	nvram_seti("aoss_success", 0);
 	led_control(LED_SES, LED_OFF);
-	system("ledtool 180 2");
+	eval("ledtool","180","2");
 	char *vifbak = nvram_safe_get("wlan0_vifs");
 	char copy[256];
 	strcpy(copy, vifbak);
