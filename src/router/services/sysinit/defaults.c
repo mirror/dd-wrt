@@ -1906,7 +1906,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "block_wan", "0" },	/* Block WAN Request [1|0] */
 	{ "block_portscan", "0" },	/* Detect and Block port scanning [1|0] */
 	{ "block_tarpit", "0" },	/* tarpit bad connections [1|0] */
-	{ "block_syncflood", "0" },	/* Block sycnflood [1|0] */
+	{ "block_syncflood", "0" },	/* Block syncflood [1|0] */
 	{ "block_udpflood", "0" },	/* Block udpflood [1|0] */
 	{ "block_pod", "0" },	/* Block Ping of Death [1|0] */
 	{ "block_ident", "0" },	/* Block IDENT passthrough [1|0] */
@@ -1931,7 +1931,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "block_wan", "0" },	/* Block WAN Request [1|0] */
 	{ "block_portscan", "0" },	/* Detect and Block port scanning [1|0] */
 	{ "block_tarpit", "0" },	/* tarpit bad connections [1|0] */
-	{ "block_syncflood", "0" },	/* Block sycnflood [1|0] */
+	{ "block_syncflood", "0" },	/* Block syncflood [1|0] */
 	{ "block_udpflood", "0" },	/* Block udpflood [1|0] */
 	{ "block_pod", "0" },	/* Block Ping of Death [1|0] */
 	{ "block_ident", "0" },	/* Block IDENT passthrough [1|0] */
@@ -1956,7 +1956,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "block_wan", "0" },	/* Block WAN Request [1|0] */
 	{ "block_portscan", "0" },	/* Detect and Block port scanning [1|0] */
 	{ "block_tarpit", "0" },	/* tarpit bad connections [1|0] */
-	{ "block_syncflood", "0" },	/* Block sycnflood [1|0] */
+	{ "block_syncflood", "0" },	/* Block syncflood [1|0] */
 	{ "block_udpflood", "0" },	/* Block udpflood [1|0] */
 	{ "block_pod", "0" },	/* Block Ping of Death [1|0] */
 	{ "block_ident", "0" },	/* Block IDENT passthrough [1|0] */
@@ -1980,7 +1980,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "block_wan", "0" },	/* Block WAN Request [1|0] */
 	{ "block_portscan", "0" },	/* Detect and Block port scanning [1|0] */
 	{ "block_tarpit", "0" },	/* tarpit bad connections [1|0] */
-	{ "block_syncflood", "0" },	/* Block sycnflood [1|0] */
+	{ "block_syncflood", "0" },	/* Block syncflood [1|0] */
 	{ "block_udpflood", "0" },	/* Block udpflood [1|0] */
 	{ "block_pod", "0" },	/* Block Ping of Death [1|0] */
 	{ "block_ident", "0" },	/* Block IDENT passthrough [1|0] */
@@ -2005,9 +2005,9 @@ struct nvram_param srouter_defaults[] = {
 	{ "block_wan", "1" },	/* Block WAN Request [1|0] */
 	{ "block_portscan", "1" },	/* Detect and Block port scanning [1|0] */
 	{ "block_tarpit", "0" },	/* tarpit bad connections [1|0] */
-	{ "block_syncflood", "0" },	/* Block sycnflood [1|0] */
-	{ "block_udpflood", "0" },	/* Block udpflood [1|0] */
-	{ "block_pod", "0" },	/* Block Ping of Death [1|0] */
+	{ "block_syncflood", "1" },	/* Block syncflood [1|0] */
+	{ "block_udpflood", "0" },	/* Block udpflood [1|0], be aware it may block external wireguard tunnels to your system */
+	{ "block_pod", "1" },	/* Block Ping of Death [1|0] */
 	{ "block_ident", "1" },	/* Block IDENT passthrough [1|0] */
 	{ "block_proxy", "0" },	/* Block Proxy [1|0] */
 	{ "block_java", "0" },	/* Block Java [1|0] */
@@ -2033,7 +2033,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "block_wan", "1" },	/* Block WAN Request [1|0] */
 	{ "block_portscan", "1" },	/* Detect and Block port scanning [1|0] */
 	{ "block_tarpit", "0" },	/* tarpit bad connections [1|0] */
-	{ "block_syncflood", "0" },	/* Block sycnflood [1|0] */
+	{ "block_syncflood", "0" },	/* Block syncflood [1|0] */
 	{ "block_udpflood", "0" },	/* Block udpflood [1|0] */
 	{ "block_pod", "0" },	/* Block Ping of Death [1|0] */
 	{ "block_ident", "1" },	/* Block IDENT passthrough [1|0] */
