@@ -103,7 +103,7 @@ void start_freeradius(void)
 		nvram_safe_get("radius_passphrase"));
 	sysprintf("sed \"s/server@localhost/%s/g\" /jffs/etc/freeradius/mods-available/eap > /jffs/etc/freeradius/mods-available/eap.new",
 		  nvram_safe_get("wan_hostname"));
-	sysprintf("cp /jffs/etc/freeradius/mods-available/eap.new /jffs/etc/freeradius/mods-available/eap");
+	sysprintf("mv -f /jffs/etc/freeradius/mods-available/eap.new /jffs/etc/freeradius/mods-available/eap");
 
 	if (!f_exists("/jffs/etc/freeradius/certs/server.pem")) {
 		//prepare certificates
