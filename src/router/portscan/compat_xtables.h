@@ -3,6 +3,7 @@
 #include <linux/kernel.h>
 #include <linux/version.h>
 #include "compat_skbuff.h"
+#include "compat_xtnu.h"
 
 #define DEBUGP Use__pr_debug__instead
 
@@ -36,6 +37,16 @@
 #	define pde_data(inode) PDE_DATA(inode)
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
+#	define nf_nat_ipv4_multi_range_compat nf_nat_multi_range_compat
+#	define nf_nat_ipv4_range nf_nat_range
+#	define NF_NAT_RANGE_MAP_IPS IP_NAT_RANGE_MAP_IPS
+#	define ipv6_skip_exthdr xtnu_ipv6_skip_exthdr
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 5, 0)
+#	define ipv6_find_hdr xtnu_ipv6_find_hdr
+#endif
 
 #ifndef NF_CT_ASSERT
 #	define NF_CT_ASSERT(x)	WARN_ON(!(x))
