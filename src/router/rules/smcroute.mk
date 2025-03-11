@@ -24,8 +24,8 @@ smcroute-install:
 	mkdir -p $(INSTALLDIR)/smcroute/etc/config/
 	install -D smcroute/src/smcrouted $(INSTALLDIR)/smcroute/usr/sbin/smcrouted
 	install -D smcroute/src/smcroutectl $(INSTALLDIR)/smcroute/usr/bin/smcroutectl
-	install -D smcroute/smcroute.conf $(INSTALLDIR)/smcroute/etc/smcroute.conf
-	install -D smcroute/smcroute $(INSTALLDIR)/smcroute/usr/bin/smcroute
+	#install -D smcroute/smcroute.conf $(INSTALLDIR)/smcroute/etc/smcroute.conf
+	#install -D smcroute/smcroute $(INSTALLDIR)/smcroute/usr/bin/smcroute
 	#ln -sf /tmp/smcroute.conf $(INSTALLDIR)/smcroute/etc/smcroute.conf
 	install -D smcroute/config/smcrouted.webservices $(INSTALLDIR)/smcroute/etc/config/
 	install -D smcroute/config/smcrouted.nvramconfig $(INSTALLDIR)/smcroute/etc/config/	
