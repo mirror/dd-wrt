@@ -43,7 +43,7 @@ static void prep(void)
 		//prepare files
 		mkdir("/jffs/etc", 0700);
 		mkdir("/jffs/etc/freeradius", 0700);
-		system("cp -R /etc/freeradius /jffs/etc");
+		dd_system("cp -R /etc/freeradius /jffs/etc");
 	}
 }
 
@@ -62,7 +62,7 @@ void start_gen_radius_cert(void)
 		 nvram_safe_get("radius_passphrase"));
 	nvram_seti("cert_running", 1);
 	//this takes a long time (depending from the cpu speed)
-	system("cd /jffs/etc/freeradius/certs && ./bootstrap");
+	dd_system("cd /jffs/etc/freeradius/certs && ./bootstrap");
 	sysprintf(
 		"sed \"s/private_key_password = whatever/private_key_password = %s/g\" /etc/freeradius/mods-available/eap > /jffs/etc/freeradius/mods-available/eap",
 		nvram_safe_get("radius_passphrase"));
@@ -118,7 +118,7 @@ void start_freeradius(void)
 			fp = fopen("/jffs/etc/freeradius/clients.conf", "wb");
 			if (!fp)
 				return;
-			system("touch /jffs/etc/freeradius/clients.manual");
+			dd_system("touch /jffs/etc/freeradius/clients.manual");
 			fprintf(fp, "$INCLUDE clients.manual\n");
 
 			for (i = 0; i < db->usercount; i++) {
@@ -146,8 +146,8 @@ void start_freeradius(void)
 			fp = fopen("/jffs/etc/freeradius/mods-config/files/authorize", "wb");
 			if (!fp)
 				return;
-			system("touch /jffs/etc/freeradius/users.manual");
-			system("touch /jffs/etc/freeradius/mods-config/files/users.manual");
+			dd_system("touch /jffs/etc/freeradius/users.manual");
+			dd_system("touch /jffs/etc/freeradius/mods-config/files/users.manual");
 			fprintf(fp, "$INCLUDE users.manual\n");
 			fprintf(fp, "DEFAULT FreeRADIUS-Proxied-To == 127.0.0.1\n"
 				    "\tSession-Timeout := 3600,\n"
