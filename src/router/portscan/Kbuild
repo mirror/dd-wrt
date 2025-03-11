@@ -1,5 +1,3 @@
 obj-m	+= xt_psd.o
-xt_psd-y += _xt_psd.o compat_xtables.o
 obj-m	+= xt_lscan.o
 obj-m	+= xt_TARPIT.o
-xt_TARPIT-y	+= _xt_TARPIT.o compat_xtables.o

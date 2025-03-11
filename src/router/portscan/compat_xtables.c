@@ -23,7 +23,6 @@
 #include <net/ipv6.h>
 #include <net/route.h>
 #include <linux/export.h>
-#include "compat_skbuff.h"
 #if IS_ENABLED(CONFIG_IP6_NF_IPTABLES)
 #	define WITH_IPV6 1
 #endif
@@ -44,7 +43,7 @@ void *HX_memmem(const void *space, size_t spacesize,
 }
 #endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0) && defined(WITH_IPV6)
-int xtnu_ipv6_skip_exthdr(const struct sk_buff *skb, int start,
+static int xtnu_ipv6_skip_exthdr(const struct sk_buff *skb, int start,
     uint8_t *nexthdrp, __be16 *fragoffp)
 {
 	return ipv6_skip_exthdr(skb, start, nexthdrp);
@@ -52,7 +51,7 @@ int xtnu_ipv6_skip_exthdr(const struct sk_buff *skb, int start,
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 5, 0) && defined(WITH_IPV6)
-int xtnu_ipv6_find_hdr(const struct sk_buff *skb, unsigned int *offset,
+static int xtnu_ipv6_find_hdr(const struct sk_buff *skb, unsigned int *offset,
     int target, unsigned short *fragoff, int *fragflg)
 {
 	return ipv6_find_hdr(skb, offset, target, fragoff);
