@@ -78,6 +78,10 @@ ifeq ($(KERNELVERSION),3.10)
 obj-y += portscan
 CONFIG_PORTSCAN=y
 endif
+ifeq ($(KERNELVERSION),3.2)
+obj-y += portscan
+CONFIG_PORTSCAN=y
+endif
 obj-$(CONFIG_LIBIPT) += iptables-ipt
 obj-$(CONFIG_IPSEC) += ipsec
 #obj-$(CONFIG_LIBPCAP) += libpcap

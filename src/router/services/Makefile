@@ -83,6 +83,9 @@ endif
 ifeq ($(KERNELVERSION),3.10)
 CONFIG_PORTSCAN=y
 endif
+ifeq ($(KERNELVERSION),3.2)
+CONFIG_PORTSCAN=y
+endif
 
 LDFLAGS	= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lcrypt -L../libnet/lib -lnet -L../libutils -lutils -lwireless -lqos -ffunction-sections -fdata-sections -Wl,--gc-sections
 
