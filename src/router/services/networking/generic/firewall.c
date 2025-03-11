@@ -3643,7 +3643,7 @@ static void run_firewall6(char *vifs)
 #endif
 void start_loadfwmodules(void)
 {
-	insmod("iptable_raw iptable_mangle nf_conntrack_h323 xt_NFLOG" //
+	modprobe("iptable_raw iptable_mangle nf_conntrack_h323 xt_NFLOG" //
 	       " xt_length xt_REDIRECT xt_CT xt_limit xt_TCPMSS" //
 	       " xt_connbytes xt_connlimit" //
 	       " xt_CLASSIFY xt_recent xt_TARPIT xt_lscan xt_psd ipt_recent" //
