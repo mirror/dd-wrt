@@ -846,6 +846,11 @@ hfirewall.page2="<dd>Identifies HTTP requests that contain the &quot;<i>Cookie:<
 hfirewall.page3="<dd>Blocks HTTP requests containing an URL ending in &quot;<i>.js</i>&quot; or &quot;<i>.class</i>&quot;.</dd>";
 hfirewall.page4="<dd>Blocks HTTP requests containing an URL ending in &quot;<i>.ocx</i>&quot; or &quot;<i>.cab</i>&quot;.</dd>";
 hfirewall.page5="<dd>Stops the router from responding to &quot;pings&quot; from the WAN.</dd>";
+hfirewall.page14="<dd>Detects and blocks the source ip of a port scanning attempt for 60 minutes,</dd>";
+hfirewall.page15="<dd>Tarpit tries to switch a incomming connection into persist state to keep it alive as long as possible without allowing any data to be send. The main approach here is to annoy brute force attackers and slow them down by stealing resources of them. Consider, if you enable that feature all ports may look open from outside even if they are not in fact. Its basicly a trap for attackers. so for real fun with annoying such attackers, keep port scan detection disabled</dd>";
+hfirewall.page16="<dd>Block TCP-SYN floods by rate limiting tcp syn connection attempts. the limit is reached with 100 connection attempts within 1 minute and the blocking lasts for another 60 seconds. use with care if you are running a server in your network</dd>";
+hfirewall.page17="<dd>Block UDP floods by rate limiting incomming udp packets. do not enable it if you are running any udp based server in your network like Wireguard</dd>";
+hfirewall.page18="<dd>Block too frequent ping echo requests and limit them to 5 per second.</dd>";
 hfirewall.page6="<dd>Prevents multicast packets from reaching the LAN.</dd>";
 hfirewall.page7="<dd>Prevents hosts on LAN from using WAN address of router to contact servers on the LAN (which have been configured using port redirection).</dd>";
 hfirewall.page8="<dd>Prevents WAN access to port 113.</dd>";
@@ -854,7 +859,6 @@ hfirewall.page10="<dd>To keep activity logs, select <em>" + share.enable + "</em
 hfirewall.page11="<dd>Set this to the required amount of information. Set <em>" + log.lvl + "</em> higher to log more actions.</dd>";
 hfirewall.page12="<dd>To see a temporary log of the router's most recent incoming traffic, click the <em>" + sbutton.log_in + "</em> button.</dd>";
 hfirewall.page13="<dd>To see a temporary log of the router's most recent outgoing traffic, click the <em>" + sbutton.log_out + "</em> button.</dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
-
 // ** Forward.asp **//
 var prforward=new Object();
 prforward.titl="Port Range Forwarding";

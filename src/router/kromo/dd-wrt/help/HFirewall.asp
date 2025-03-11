@@ -17,6 +17,16 @@
 				<% tran("hfirewall.page4"); %>
 				<dt><% tran("firewall.ping"); %></dt>
 				<% tran("hfirewall.page5"); %>
+				<dt><% tran("firewall.portscan"); %></dt>
+				<% tran("hfirewall.page14"); %>
+				<dt><% tran("firewall.tarpit"); %></dt>
+				<% tran("hfirewall.page15"); %>
+				<dt><% tran("firewall.syncflood"); %></dt>
+				<% tran("hfirewall.page16"); %>
+				<dt><% tran("firewall.udpflood"); %></dt>
+				<% tran("hfirewall.page17"); %>
+				<dt><% tran("firewall.pod"); %></dt>
+				<% tran("hfirewall.page18"); %>
 				<dt><% tran("firewall.muticast"); %></dt>
 				<% tran("hfirewall.page6"); %>
 				<dt><% tran("filter.nat"); %></dt>
