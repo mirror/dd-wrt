@@ -3333,13 +3333,13 @@ static void run_firewall6(char *vifs)
 
 	eval("ip6tables", "-F");
 	eval("ip6tables", "-X");
+	eval("ip6tables", "-N", "tarpit");
+	eval("ip6tables", "-N", "portscan");
+	eval("ip6tables", "-N", "blocklist");
 	if (log_level > 0) {
 		eval("ip6tables", "-N", "logdrop");
 		eval("ip6tables", "-N", "logaccept");
 		eval("ip6tables", "-N", "logreject");
-		eval("ip6tables", "-N", "tarpit");
-		eval("ip6tables", "-N", "portscan");
-		eval("ip6tables", "-N", "blocklist");
 #ifdef FLOOD_PROTECT
 		eval("ip6tables", "-N", "limaccept");
 #endif
