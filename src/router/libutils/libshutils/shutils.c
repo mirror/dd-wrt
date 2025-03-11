@@ -1669,11 +1669,19 @@ void add_blocklist(const char *service, char *ip)
 				dd_loginfo(service, "5 failed login attempts reached. block client %s for %d minutes", ip,
 					   BLOCKTIME);
 #ifdef HAVE_PORTSCAN
-				eval("iptables", "-I", "blocklist", "-p", "tcp", "-s", ip, "-j", "TARPIT");
+				char ipcopy[128];
+				strlcpy(ipcopy, ip, sizeof(ipcopy));
+				char *check = strrchr(ipcopy, ':');
+				int ipv6 = 0;
+				if (check) {
+					ipv6 = strncmp(ipcopy, "::ffff", 6);
+					check++;
+				} else
+					check = ipcopy;
+				eval("iptables", "-I", "blocklist", "-p", "tcp", "-s", check, "-j", "TARPIT");
 				if (nvram_matchi("ipv6_enable", 1))
 					eval("ip6tables", "-I", "blocklist", "-p", "tcp", "-s", ip, "-j", "TARPIT");
 #endif
-
 			}
 			goto end;
 		}
@@ -1728,7 +1736,17 @@ int check_blocklist(const char *service, char *ip)
 			//time over, free entry
 			if (entry->count > 4) {
 #ifdef HAVE_PORTSCAN
-				eval("iptables", "-D", "blocklist", "-p", "tcp", "-s", &entry->ip[0], "-j", "TARPIT");
+				char ipcopy[128];
+				strlcpy(ipcopy, &entry->ip[0], sizeof(ipcopy));
+				char *check = strrchr(ipcopy, ':');
+				int ipv6 = 0;
+				if (check) {
+					ipv6 = strncmp(ipcopy, "::ffff", 6);
+					check++;
+				} else
+					check = ipcopy;
+
+				eval("iptables", "-D", "blocklist", "-p", "tcp", "-s", check, "-j", "TARPIT");
 				if (nvram_matchi("ipv6_enable", 1))
 					eval("ip6tables", "-D", "blocklist", "-p", "tcp", "-s", &entry->ip[0], "-j", "TARPIT");
 #endif
