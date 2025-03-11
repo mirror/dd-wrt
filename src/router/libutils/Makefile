@@ -1605,6 +1605,10 @@ ifeq ($(CONFIG_SUBQUARTER),y)
   CFLAGS += -DHAVE_SUBQUARTER
 endif
 
+ifeq ($(CONFIG_PORTSCAN),y)
+  CFLAGS += -DHAVE_PORTSCAN
+endif
+
 include $(TOP)/rules/generic.mk
 CFLAGS += $(DD_CFLAGS)
 

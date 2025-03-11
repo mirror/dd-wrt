@@ -56,37 +56,6 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
 
-ifeq ($(KERNELVERSION),6.1-nss)
-CONFIG_PORTSCAN=y
-endif
-ifeq ($(KERNELVERSION),6.1)
-CONFIG_PORTSCAN=y
-endif
-ifeq ($(KERNELVERSION),6.6)
-CONFIG_PORTSCAN=y
-endif
-ifeq ($(KERNELVERSION),6.6-nss)
-CONFIG_PORTSCAN=y
-endif
-ifeq ($(KERNELVERSION),4.14)
-CONFIG_PORTSCAN=y
-endif
-ifeq ($(KERNELVERSION),4.9)
-CONFIG_PORTSCAN=y
-endif
-ifeq ($(KERNELVERSION),4.4)
-CONFIG_PORTSCAN=y
-endif
-ifeq ($(KERNELVERSION),3.18)
-CONFIG_PORTSCAN=y
-endif
-ifeq ($(KERNELVERSION),3.10)
-CONFIG_PORTSCAN=y
-endif
-ifeq ($(KERNELVERSION),3.2)
-CONFIG_PORTSCAN=y
-endif
-
 LDFLAGS	= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lcrypt -L../libnet/lib -lnet -L../libutils -lutils -lwireless -lqos -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 ifneq ($(CONFIG_DIST),"micro")

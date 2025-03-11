@@ -18,7 +18,7 @@ libutils-clean:
 	make -C libutils clean
 
 libutils: nvram $(TINY)  $(JANSSON) wireless-tools
-	make -C libutils
+	make -C libutils CONFIG_SSID_PROTECTION=$(CONFIG_SSID_PROTECTION) CONFIG_PORTSCAN=$(CONFIG_PORTSCAN)
 
 libutils-install:
 	make -C libutils install

@@ -63,37 +63,6 @@ CONFIG_ERC=
 #
 include $(TOP)/.config
 
-ifeq ($(KERNELVERSION),6.1-nss)
-CONFIG_PORTSCAN=y
-endif
-ifeq ($(KERNELVERSION),6.1)
-CONFIG_PORTSCAN=y
-endif
-ifeq ($(KERNELVERSION),6.6)
-CONFIG_PORTSCAN=y
-endif
-ifeq ($(KERNELVERSION),6.6-nss)
-CONFIG_PORTSCAN=y
-endif
-ifeq ($(KERNELVERSION),4.14)
-CONFIG_PORTSCAN=y
-endif
-ifeq ($(KERNELVERSION),4.9)
-CONFIG_PORTSCAN=y
-endif
-ifeq ($(KERNELVERSION),4.4)
-CONFIG_PORTSCAN=y
-endif
-ifeq ($(KERNELVERSION),3.18)
-CONFIG_PORTSCAN=y
-endif
-ifeq ($(KERNELVERSION),3.10)
-CONFIG_PORTSCAN=y
-endif
-ifeq ($(KERNELVERSION),3.2)
-CONFIG_PORTSCAN=y
-endif
-
 ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
