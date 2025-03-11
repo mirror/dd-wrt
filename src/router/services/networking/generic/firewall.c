@@ -2687,7 +2687,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 		save2file_A_forward("-i %s -m recent --name portscan --remove", wanface);
 		save2file_A_forward("-i %s -p tcp -m tcp --dport 139 -m recent --name portscan --set -j %s", wanface, "portscan");
 #ifdef HAVE_PORTSCAN
-//			save2file_A_forward("-m psd --psd-weight-threshold 15 --psd-hi-ports-weight 3 -j %s", log_drop);
+		save2file_A_forward("-i %s -m psd --psd-weight-threshold 15 --psd-hi-ports-weight 3 -j %s", wanface, log_drop);
 #endif
 	}
 	save2file_A_forward("-j SECURITY");
@@ -3126,7 +3126,8 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 			save2file_A_input("-i %s -p tcp -m tcp --dport 139 -m recent --name portscan --set -j %s", wanface,
 					  "portscan");
 #ifdef HAVE_PORTSCAN
-//				save2file_A_input("-m psd --psd-weight-threshold 15 --psd-hi-ports-weight 3 -j %s", log_drop);
+			save2file_A_input("-i %s -m psd --psd-weight-threshold 15 --psd-hi-ports-weight 3 -j %s", wanface,
+					  log_drop);
 #endif
 		}
 		save2file_A_input("-j SECURITY");
@@ -3380,10 +3381,10 @@ static void run_firewall6(char *vifs)
 		eval("ip6tables", "-i", wanface, "-A", "FORWARD", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent",
 		     "--name", "portscan", "--set", "-j", "portscan");
 #ifdef HAVE_PORTSCAN
-//		eval("ip6tables", "-A", "INPUT", "-m", "psd", "--psd-weight-threshold", "15", "--psd-hi-ports-weight", "3", "-j",
-//		     log_drop);
-//		eval("ip6tables", "-A", "FORWARD", "-m", "psd", "--psd-weight-threshold", "15", "--psd-hi-ports-weight", "3", "-j",
-//		     log_drop);
+		eval("ip6tables", "-i", wanface, "-A", "INPUT", "-m", "psd", "--psd-weight-threshold", "15",
+		     "--psd-hi-ports-weight", "3", "-j", log_drop);
+		eval("ip6tables", "-i", wanface, "-A", "FORWARD", "-m", "psd", "--psd-weight-threshold", "15",
+		     "--psd-hi-ports-weight", "3", "-j", log_drop);
 #endif
 	}
 	/* Filter all packets that have RH0 headers */
