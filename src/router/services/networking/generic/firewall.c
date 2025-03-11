@@ -3410,6 +3410,7 @@ static void run_firewall6(char *vifs)
 		     "--psd-hi-ports-weight", "3", "-j", log_drop);
 #endif
 	}
+
 	eval("ip6tables", "-A", "INPUT", "-j", "SECURITY");
 	eval("ip6tables", "-A", "FORWARD", "-j", "SECURITY");
 	/* Filter all packets that have RH0 headers */
@@ -3494,7 +3495,11 @@ static void run_firewall6(char *vifs)
 	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "2", "-j", log_accept);
 	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "3", "-j", log_accept);
 	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "4", "-j", log_accept);
-	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "128", "-j", log_accept);
+//	if (nvram_invmatch("filter", "off") && nvram_match("block_wan", "1"))
+//		eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "128", "-j", log_drop);
+//	else
+		eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "128", "-j", log_accept);
+
 	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "129", "-j", log_accept);
 	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "133", "-m", "hl", "--hl-eq", "255",
 	     "-j", log_accept);
@@ -3534,6 +3539,7 @@ static void run_firewall6(char *vifs)
 	eval("ip6tables", "-A", "FORWARD", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "2", "-j", log_accept);
 	eval("ip6tables", "-A", "FORWARD", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "3", "-j", log_accept);
 	eval("ip6tables", "-A", "FORWARD", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "4", "-j", log_accept);
+
 	eval("ip6tables", "-A", "FORWARD", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "128", "-j", log_accept);
 	eval("ip6tables", "-A", "FORWARD", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "129", "-j", log_accept);
 
