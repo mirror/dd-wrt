@@ -49,6 +49,12 @@
 #	define proc_lseek llseek
 #	define proc_release release
 #endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 8, 0)
+#	define prandom_u32() random32()
+#endif
+
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
 static inline u32 prandom_u32_max(u32 ep_ro)
 {
