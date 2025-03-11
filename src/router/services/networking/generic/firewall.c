@@ -3102,7 +3102,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 		save2file_A_forward("-j blocklist");
 		if (nvram_matchi("block_syncflood", 1)) {
 			/* Sync-flood protection */
-			save2file_A_security("-i %s -m recent --rcheck -name synflood --seconds 60 --reap", wanface);
+			save2file_A_security("-i %s -m recent --rcheck --name synflood --seconds 60 --reap", wanface);
 			save2file_A_security(
 				"-i %s -p tcp -m tcp --syn -m recent --set --name synflood -mrecent --rcheck --seconds 60 --hitcount 100 -j %s",
 				wanface, log_drop);
