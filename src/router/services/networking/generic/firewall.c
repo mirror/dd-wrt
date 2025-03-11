@@ -2683,7 +2683,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 		if (nvram_matchi("block_portscan", 1)) {
 #ifdef HAVE_PORTSCAN
 			save2file_A_forward("-p tcp -m lscan --synscan --cnscan --mirai -j %s", log_drop);
-#elsr
+#else
 			save2file_A_forward("-m recent --name portscan --rcheck --seconds 86400 -j %s", log_drop);
 			save2file_A_forward("-m recent --name portscan --remove");
 			save2file_A_forward("-p tcp -m tcp --dport 139 -m recent --name portscan --set -j %s", "portscan");
