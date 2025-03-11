@@ -127,7 +127,6 @@ freeradius3-configure: libtalloc openssl libpcap
 	--without-rlm_couchbase \
 	--without-rlm_counter \
 	--without-rlm_eap_ikev2 \
-	--without-rlm_eap_pwd \
 	--without-rlm_eap_sim \
 	--without-rlm_eap_tnc \
 	--without-rlm_example \
