@@ -2386,7 +2386,7 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	 */
 	save2file_A_input("-m state --state RELATED,ESTABLISHED -j %s", log_accept);
 	if (nvram_matchi("filter_invalid", 1)) {
-		save2file_A_input("-m state --state INVALID -j %s", "tarpit");
+		save2file_A_input("-m state --state INVALID -j %s", log_drop);
 	}
 	if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1)) {
 		save2file_A_input("-i %s -j %s", nvram_safe_get("tvnicfrom"), log_accept);
@@ -3207,7 +3207,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 			save2file_A(
 				"logaccept -i %s -m state --state NEW -m limit --limit %s -j LOG --log-prefix \"FLOOD \" --log-tcp-sequence --log-tcp-options --log-ip-options",
 				wanface, FLOOD_RATE);
-		save2file_A("logaccept -i %s -m state --state NEW -m limit --limit %s -j %s", wanface, FLOOD_RATE, "TARPIT");
+		save2file_A("logaccept -i %s -m state --state NEW -m limit --limit %s -j %s", wanface, FLOOD_RATE, "tarpit");
 #endif
 #ifndef HAVE_MICRO
 		if (nvram_matchi("log_accepted", 1))
@@ -3426,7 +3426,7 @@ static void run_firewall6(char *vifs)
 	/* Filter INVALID packets */
 	eval("ip6tables", "-A", "INPUT", "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", log_accept);
 	if (nvram_matchi("filter_invalid", 1)) {
-		eval("ip6tables", "-A", "INPUT", "-m", "conntrack", "--ctstate", "INVALID", "-j", "tarpit");
+		eval("ip6tables", "-A", "INPUT", "-m", "conntrack", "--ctstate", "INVALID", "-j", log_drop);
 	}
 
 	//      eval("ip6tables", "-A", "INPUT", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", log_accept);
