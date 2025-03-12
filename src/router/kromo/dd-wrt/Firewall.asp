@@ -254,19 +254,19 @@ addEvent(window, "unload", function() {
 											<div class="label"><% tran("firewall.tarpit"); %></div>
 											<input class="spaceradio" type="checkbox" value="1" name="_block_tarpit" <% nvc("block_tarpit", "1"); %> />
 										</div>
+										<% ifndef("TARPIT", "-->"); %>
 										<div class="setting">
 											<div class="label"><% tran("firewall.syncflood"); %></div>
-											<input class="spaceradio" type="checkbox" value="1" name="_block_syncflood" <% nvc("block_syncflood", "1"); %> />
+											<input class="spaceradio" type="checkbox" value="1" name="_block_syncflood" <% nvc("block_syncflood", "1"); %> />&nbsp;<input class="num" maxlength="8" size="6" name="tcp_maxhit" value="<% nvg("tcp_maxhit"); %>" />&nbsp;<% tran("firewall.tcp_maxhit"); %>
 										</div>
 										<div class="setting">
 											<div class="label"><% tran("firewall.udpflood"); %></div>
-											<input class="spaceradio" type="checkbox" value="1" name="_block_udpflood" <% nvc("block_udpflood", "1"); %> />
+											<input class="spaceradio" type="checkbox" value="1" name="_block_udpflood" <% nvc("block_udpflood", "1"); %> />&nbsp;<input class="num" maxlength="8" size="6" name="udp_maxhit" value="<% nvg("udp_maxhit"); %>" />&nbsp;<% tran("firewall.udp_maxhit"); %>
 										</div>
 										<div class="setting">
 											<div class="label"><% tran("firewall.pod"); %></div>
-											<input class="spaceradio" type="checkbox" value="1" name="_block_pod" <% nvc("block_pod", "1"); %> />
+											<input class="spaceradio" type="checkbox" value="1" name="_block_pod" <% nvc("block_pod", "1"); %> />&nbsp;<input class="num" maxlength="8" size="6" name="icmp_maxhit" value="<% nvg("icmp_maxhit"); %>" />&nbsp;<% tran("firewall.icmp_maxhit"); %>
 										</div>
-										<% ifndef("TARPIT", "-->"); %>
 										<% ifndef("MULTICAST", "<!--"); %>
 										<div class="setting">
 											<div class="label"><% tran("firewall.muticast"); %></div>
