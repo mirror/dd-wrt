@@ -3104,17 +3104,19 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 			/* Sync-flood protection */
 			save2file_A_security("-i %s -m recent --rcheck --name synflood --seconds 60 --reap", wanface);
 			save2file_A_security(
-				"-i %s -p tcp -m tcp --syn -m recent --set --name synflood -mrecent --rcheck --seconds 60 --hitcount 100 -j %s",
-				wanface, log_drop);
+				"-i %s -p tcp -m tcp --syn -m recent --set --name synflood -mrecent --rcheck --seconds 60 --hitcount %s -j %s",
+				wanface, nvram_default_get("tcp_maxhit", "100"), log_drop);
 		}
 		if (nvram_matchi("block_udpflood", 1)) { // be aware. if you need udp forwards, this should be disabled
 			/* UDP flooding */
-			save2file_A_security("-i %s -p udp -m limit --limit 5/s -j RETURN", wanface);
+			save2file_A_security("-i %s -p udp -m limit --limit %s/s -j RETURN", wanface,
+					     nvram_default_get("udp_maxhit", "5"));
 			save2file_A_security("-i %s -p udp -j %s", wanface, log_drop);
 		}
 		if (nvram_matchi("block_pod", 1)) {
 			/* Ping of death */
-			save2file_A_security("-i %s -p icmp --icmp-type 8 -m limit --limit 5/s -j RETURN", wanface);
+			save2file_A_security("-i %s -p icmp --icmp-type 8 -m limit --limit %s/s -j RETURN", wanface, ,
+					     nvram_default_get("icmp_maxhit", "5"));
 			save2file_A_security("-i %s -p icmp --icmp-type 8 -j %s", wanface, log_drop);
 		}
 		if (nvram_matchi("block_portscan", 1)) {
@@ -3354,18 +3356,22 @@ static void run_firewall6(char *vifs)
 		eval("ip6tables", "-A", "SECURITY", "-i", wanface, "-m", "recent", "--rcheck", "--name", "synflood", "--seconds",
 		     "60", "--reap");
 		eval("ip6tables", "-A", "SECURITY", "-i", wanface, "-p", "tcp", "-m", "tcp", "--syn", "-m", "recent", "--set",
-		     "--name", "synflood", "-mrecent", "--rcheck", "--seconds", "60", "--hitcount", "100", "-j", log_drop);
+		     "--name", "synflood", "-mrecent", "--rcheck", "--seconds", "60", "--hitcount", nvram_safe_get("tcp_maxhit"),
+		     "-j", log_drop);
 	}
+	char pps[32];
 	if (nvram_matchi("block_udpflood", 1)) { // be aware. if you need udp forwards, this should be disabled
 		/* UDP flooding */
-		eval("ip6tables", "-A", "SECURITY", "-i", wanface, "-p", "udp", "-m", "limit", "--limit", "5/s", "-j", "RETURN");
+		snprintf(pps, sizeof(pps), "%s/s", nvram_safe_get("udp_maxhit"));
+		eval("ip6tables", "-A", "SECURITY", "-i", wanface, "-p", "udp", "-m", "limit", "--limit", pps, "-j", "RETURN");
 		eval("ip6tables", "-A", "SECURITY", "-i", wanface, "-p", "udp", "-j", log_drop);
 	}
 
 	if (nvram_matchi("block_pod", 1)) { // be aware. if you need udp forwards, this should be disabled
-		/* UDP flooding */
+		/* ICMP flooding */
+		snprintf(pps, sizeof(pps), "%s/s", nvram_safe_get("icmp_maxhit"));
 		eval("ip6tables", "-A", "SECURITY", "-i", wanface, "-p", "ipv6-icmp", "--icmpv6-type", "128", "-j", "RETURN", "-m",
-		     "limit", "--limit", "5/s");
+		     "limit", "--limit", pps);
 		eval("ip6tables", "-A", "SECURITY", "-i", wanface, "-p", "ipv6-icmp", "--icmpv6-type", "128", "-j", log_drop);
 	}
 
@@ -3495,10 +3501,10 @@ static void run_firewall6(char *vifs)
 	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "2", "-j", log_accept);
 	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "3", "-j", log_accept);
 	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "4", "-j", log_accept);
-//	if (nvram_invmatch("filter", "off") && nvram_match("block_wan", "1"))
-//		eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "128", "-j", log_drop);
-//	else
-		eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "128", "-j", log_accept);
+	//	if (nvram_invmatch("filter", "off") && nvram_match("block_wan", "1"))
+	//		eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "128", "-j", log_drop);
+	//	else
+	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "128", "-j", log_accept);
 
 	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "129", "-j", log_accept);
 	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "133", "-m", "hl", "--hl-eq", "255",
