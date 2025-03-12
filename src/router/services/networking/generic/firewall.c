@@ -3115,7 +3115,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 		}
 		if (nvram_matchi("block_pod", 1)) {
 			/* Ping of death */
-			save2file_A_security("-i %s -p icmp --icmp-type 8 -m limit --limit %s/s -j RETURN", wanface, ,
+			save2file_A_security("-i %s -p icmp --icmp-type 8 -m limit --limit %s/s -j RETURN", wanface,
 					     nvram_default_get("icmp_maxhit", "5"));
 			save2file_A_security("-i %s -p icmp --icmp-type 8 -j %s", wanface, log_drop);
 		}
