@@ -851,8 +851,8 @@ hfirewall.page4="<dd>Blocks HTTP requests containing an URL ending in &quot;<i>.
 hfirewall.page5="<dd>Stops the router from responding to &quot;pings&quot; from the WAN.</dd>";
 hfirewall.page14="<dd>Detects and blocks the source ip of a port scanning attempt for 60 minutes. this means no management service or port forwarding is reachable anymore for the origin of this attempt</dd>";
 hfirewall.page15="<dd>Tarpit tries to switch a incomming connection into persist state to keep it alive as long as possible without allowing any data to be send. The main approach here is to annoy brute force attackers and slow them down by stealing resources of them. Consider, if you enable that feature all ports may look open from outside even if they are not in fact. Its basicly a trap for attackers. so for real fun with annoying such attackers, keep port scan detection disabled</dd>";
-hfirewall.page16="<dd>Block TCP-SYN floods by rate limiting tcp syn connection attempts. the limit is reached when the configured value is reached within 1 minute. The blocking lasts for another 60 seconds. use with care if you are running a server in your network</dd>";
-hfirewall.page17="<dd>Block UDP floods by rate limiting incomming udp packets to the configured value per second. do not enable it if you are running any udp based server in your network like Wireguard</dd>";
+hfirewall.page16="<dd>Block TCP-SYN floods by rate limiting TCP-SYN connection attempts. the limit is reached when the configured value is reached within 1 minute. The blocking lasts for another 60 seconds. use with care if you are running a server in your network</dd>";
+hfirewall.page17="<dd>Block UDP floods by rate limiting incomming UDP packets to the configured value per second. do not enable it if you are running any UDP based server in your network like Wireguard</dd>";
 hfirewall.page18="<dd>Block too frequent ping echo requests to the configured value per second.</dd>";
 hfirewall.page6="<dd>Prevents multicast packets from reaching the LAN.</dd>";
 hfirewall.page7="<dd>Prevents hosts on LAN from using WAN address of router to contact servers on the LAN (which have been configured using port redirection).</dd>";
@@ -878,7 +878,7 @@ hprforward.page1="<dd>Port Range Forwarding allows you to set up public services
 hprforward.page2="<dd>Enter the name of the application in the field provided.</dd>";
 hprforward.page3="<dd>Enter the number of the first port of the range you want to seen by users on the Internet and forwarded to your device.</dd>";
 hprforward.page4="<dd>Enter the number of the last port of the range you want to seen by users on the Internet and forwarded to your device.</dd>";
-hprforward.page5="<dd>Chose the right protocol <i>TCP</i>, <i>UDP</i> or <i>Both</i>. Set this to what the application requires.</dd>";
+hprforward.page5="<dd>Choose the right protocol <i>TCP</i>, <i>UDP</i> or <i>Both</i>. Set this to what the application requires.</dd>";
 hprforward.page6="<dd>Enter the IP Address of the device running the application.</dd>";
 hprforward.page7="<dd>Click the <em>" + share.enable + "</em> checkbox to enable port forwarding for the application.</dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Remember to save your changes before adding another forwarding rule.</div></div></dd>";
 
