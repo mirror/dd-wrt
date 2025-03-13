@@ -2620,7 +2620,8 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 	sprintf(wl, "%s_mode", prefix);
 	sprintf(dev, "%s", prefix);
 	sprintf(net, "%s_net_mode", dev);
-	int off = nvram_ngeti("%s_off", dev);
+	int off = nvram_default_ngeti(0, "%s_off", dev);
+	dd_loginfo("wireless", "->%s state %d\n", __func__, off);
 	if (!off && !nvram_nmatch("disabled", "%s_net_mode", dev)) {
 		char *netmode = nvram_default_get(net, "mixed");
 		if (!strcmp(netmode, "disabled"))
@@ -2771,7 +2772,8 @@ void post_hostapd_actions(int count)
 	sprintf(power, "%s_txpwrdbm", dev);
 	sprintf(bridged, "%s_bridged", dev);
 	sprintf(wifivifs, "%s_vifs", dev);
-	int off = nvram_ngeti("%s_off", dev);
+	int off = nvram_default_ngeti(0, "%s_off", dev);
+	dd_loginfo("wireless", "->%s state %d\n", __func__, off);
 	if (!off && !nvram_nmatch("disabled", "%s_net_mode", dev)) {
 		int wet = 0;
 #ifndef HAVE_RELAYD
