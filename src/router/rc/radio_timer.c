@@ -92,14 +92,14 @@ int main(int argc, char **argv)
 					case 1: // 01 - turn radio on
 						if (!firsttime[i]) {
 							//on first time call the radio is already on, no need to reinit it a second time
-							syslog(LOG_DEBUG, "Turning radio %d on\n", i);
+							dd_loginfo("radiotimer", "Turning radio %d on\n", i);
 							char on[32];
 							sprintf(on, "radio_on_%d", i);
 							start_service_force(on);
 						}
 						break;
 					case 2: // 10 - turn radio off
-						syslog(LOG_DEBUG, "Turning radio %d off\n", i);
+						dd_loginfo("radiotimer", "Turning radio %d off\n", i);
 						char off[32];
 						sprintf(off, "radio_off_%d", i);
 						start_service_force(off);

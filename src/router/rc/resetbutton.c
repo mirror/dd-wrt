@@ -959,7 +959,7 @@ static void control_wifi(int *wifi_mode, char *title, char *post, int i, int res
 		set_gpio(1, 1);
 #endif
 #endif
-		dd_syslog(LOG_DEBUG, "%s: turning radio(s) on", title);
+		dd_loginfo(title, "turning radio(s) on");
 		char on[32];
 		sprintf(on, "radio_on%s", post);
 		eval("restart", on);
@@ -974,7 +974,7 @@ static void control_wifi(int *wifi_mode, char *title, char *post, int i, int res
 #endif
 #endif
 		// (AOSS) led
-		dd_syslog(LOG_DEBUG, "%s: turning radio(s) off", title);
+		dd_loginfo(title, "turning radio(s) off");
 		char off[32];
 		sprintf(off, "radio_off%s", post);
 		eval("restart", off);
