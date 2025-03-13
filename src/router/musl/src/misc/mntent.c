@@ -115,5 +115,13 @@ int addmntent(FILE *f, const struct mntent *mnt)
 
 char *hasmntopt(const struct mntent *mnt, const char *opt)
 {
-	return strstr(mnt->mnt_opts, opt);
+	size_t l = strlen(opt);
+	char *p = mnt->mnt_opts;
+	for (;;) {
+		if (!strncmp(p, opt, l) && (!p[l] || p[l]==',' || p[l]=='='))
+			return p;
+		p = strchr(p, ',');
+		if (!p) return 0;
+		p++;
+	}
 }
