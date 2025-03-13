@@ -1687,7 +1687,7 @@ void start_wifi_drivers(void)
 	notloaded = insmod("compat");
 	char *fm = nvram_safe_get("ath11k_frame_mode");
 	int frame_mode = 2;
-	int minif = 1;
+	int minif = 2;
 	char *cert_region = "";
 	if (*fm)
 		frame_mode = atoi(fm);
