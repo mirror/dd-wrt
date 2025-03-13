@@ -1703,13 +1703,14 @@ void start_wifi_drivers(void)
 		nvram_set("mem_profile", "512");
 		switch (brand) {
 		case ROUTER_FORTINET_FAP231F:
-		case ROUTER_DYNALINK_DLWRX36:
-		case ROUTER_BUFFALO_WXR5950AX12:
-		case ROUTER_ASUS_AX89X:
 		case ROUTER_LINKSYS_MX4200V2:
 		case ROUTER_LINKSYS_MX4300:
 		case ROUTER_LINKSYS_MX8500:
 		case ROUTER_LINKSYS_MX5300:
+			minif = 3;
+		case ROUTER_DYNALINK_DLWRX36:
+		case ROUTER_BUFFALO_WXR5950AX12:
+		case ROUTER_ASUS_AX89X:
 			profile = 1024;
 			nvram_set("mem_profile", "1024");
 			break;
