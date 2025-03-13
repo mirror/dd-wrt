@@ -111,6 +111,10 @@ ifeq ($(CONFIG_IPQ6018),y)
 export SSLPATH=$(TOP)/openssl3
 include rules/openssl3.mk
 endif
+ifeq ($(CONFIG_MVEBU),y)
+export SSLPATH=$(TOP)/openssl3
+include rules/openssl3.mk
+endif
 ifeq ($(CONFIG_X86),y)
 export SSLPATH=$(TOP)/openssl3
 include rules/openssl3.mk
