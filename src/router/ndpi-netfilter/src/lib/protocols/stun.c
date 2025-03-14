@@ -1068,12 +1068,12 @@ static int stun_telegram_search_again(struct ndpi_detection_module_struct *ndpi_
 
   if(packet->payload_packet_len <= 28) {
     NDPI_LOG_DBG(ndpi_struct, "Malformed custom Telegram packet (too short)\n");
-    return keep_extra_dissection(ndpi_struct, flow);
+    return keep_extra_dissection_stun(ndpi_struct, flow);
   }
 
   if(memcmp(&packet->payload[16], pattern, sizeof(pattern)) == 0) {
     NDPI_LOG_DBG(ndpi_struct, "Custom/Unknown Telegram packet\n");
-    return keep_extra_dissection(ndpi_struct, flow);
+    return keep_extra_dissection_stun(ndpi_struct, flow);
   }
 
   /* It should be STUN/DTLS/RTP */
@@ -1082,7 +1082,7 @@ static int stun_telegram_search_again(struct ndpi_detection_module_struct *ndpi_
   if(24 + length > packet->payload_packet_len) {
     NDPI_LOG_DBG(ndpi_struct, "Malformed custom Telegram packet (too long: %d %d)\n",
                  length, packet->payload_packet_len);
-    return keep_extra_dissection(ndpi_struct, flow);
+    return keep_extra_dissection_stun(ndpi_struct, flow);
   }
 
   orig_payload = packet->payload;
@@ -1095,7 +1095,7 @@ static int stun_telegram_search_again(struct ndpi_detection_module_struct *ndpi_
   packet->payload = orig_payload;
   packet->payload_packet_len = orig_payload_length;
 
-  return keep_extra_dissection(ndpi_struct, flow);
+  return keep_extra_dissection_stun(ndpi_struct, flow);
 }
 
 /* ************************************************************ */

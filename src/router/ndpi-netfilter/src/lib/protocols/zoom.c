@@ -47,7 +47,7 @@ PACK_ON struct zoom_media_enc { /* Zoom media encapsulation */
 
 static int zoom_search_again(struct ndpi_detection_module_struct *ndpi_struct,
                              struct ndpi_flow_struct *flow);
-static int keep_extra_dissection(struct ndpi_flow_struct *flow);
+static int zoom_keep_extra_dissection(struct ndpi_flow_struct *flow);
 
 static void ndpi_int_zoom_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
 					 struct ndpi_flow_struct *flow) {
@@ -62,7 +62,7 @@ static void ndpi_int_zoom_add_connection(struct ndpi_detection_module_struct *nd
   ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_ZOOM, master, NDPI_CONFIDENCE_DPI);
 
   if(!flow->extra_packets_func) {
-    if(keep_extra_dissection(flow) &&
+    if(zoom_keep_extra_dissection(flow) &&
        ndpi_struct->cfg.zoom_max_packets_extra_dissection > 0) {
       NDPI_LOG_DBG(ndpi_struct, "Enabling extra dissection\n");
       flow->max_extra_packets_to_check = ndpi_struct->cfg.zoom_max_packets_extra_dissection;
@@ -152,7 +152,7 @@ static int is_sfu_5(struct ndpi_detection_module_struct *ndpi_struct,
   return 0;
 }
 
-static int keep_extra_dissection(struct ndpi_flow_struct *flow)
+static int zoom_keep_extra_dissection(struct ndpi_flow_struct *flow)
 {
   return flow->detected_protocol_stack[1] == NDPI_PROTOCOL_UNKNOWN; /* No sub-classification */
 }
@@ -163,7 +163,7 @@ static int zoom_search_again(struct ndpi_detection_module_struct *ndpi_struct,
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
   if(packet->payload_packet_len == 0)
-    return keep_extra_dissection(flow);
+    return zoom_keep_extra_dissection(flow);
 
   if(!flow->l4.udp.zoom_p2p &&
      is_sfu_5(ndpi_struct, flow)) {
@@ -174,7 +174,7 @@ static int zoom_search_again(struct ndpi_detection_module_struct *ndpi_struct,
     ndpi_int_zoom_add_connection(ndpi_struct, flow);
   }
 
-  return keep_extra_dissection(flow);
+  return zoom_keep_extra_dissection(flow);
 }
 
 static void ndpi_search_zoom(struct ndpi_detection_module_struct *ndpi_struct,

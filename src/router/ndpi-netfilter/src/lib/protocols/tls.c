@@ -203,7 +203,7 @@ static u_int32_t __get_master(struct ndpi_detection_module_struct *ndpi_struct,
 /* **************************************** */
 
 /* TODO: rename */
-static int keep_extra_dissection_tcp(struct ndpi_detection_module_struct *ndpi_struct,
+static int tls_keep_extra_dissection_tcp(struct ndpi_detection_module_struct *ndpi_struct,
                                      struct ndpi_flow_struct *flow)
 {
   /* Common path: found handshake on both directions */
@@ -1654,7 +1654,7 @@ static int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
      || ((ndpi_struct->num_tls_blocks_to_follow > 0)
 	 && (flow->l4.tcp.tls.num_tls_blocks == ndpi_struct->num_tls_blocks_to_follow))
      || ((ndpi_struct->num_tls_blocks_to_follow == 0)
-	 && (!keep_extra_dissection_tcp(ndpi_struct, flow)))
+	 && (!tls_keep_extra_dissection_tcp(ndpi_struct, flow)))
      ) {
 #ifdef DEBUG_TLS_BLOCKS
     printf("*** [TLS Block] No more blocks\n");

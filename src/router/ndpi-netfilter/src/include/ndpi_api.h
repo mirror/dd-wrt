@@ -2476,7 +2476,7 @@ extern "C" {
    */
   NDPI_STATIC size_t ndpi_strlcpy(char* dst, const char* src, size_t dst_len, size_t src_len);
 
-  int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
+  NDPI_STATIC int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
                                struct ndpi_flow_struct *flow);
 
 #ifdef __KERNEL__

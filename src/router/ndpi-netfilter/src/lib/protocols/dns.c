@@ -680,7 +680,7 @@ static int is_valid_dns(struct ndpi_detection_module_struct *ndpi_struct,
 
 /* *********************************************** */
 
-static int keep_extra_dissection(struct ndpi_flow_struct *flow)
+static int dns_keep_extra_dissection(struct ndpi_flow_struct *flow)
 {
   /* As a general rule, we wait for a valid response
      (in the ideal world, we want to process the request/response pair) */
@@ -693,12 +693,12 @@ static int search_dns_again(struct ndpi_detection_module_struct *ndpi_struct, st
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
   if(packet->tcp_retransmission || packet->payload_packet_len == 0)
-    return keep_extra_dissection(flow);
+    return dns_keep_extra_dissection(flow);
 
   /* possibly dissect the DNS reply */
   search_dns(ndpi_struct, flow);
 
-  return keep_extra_dissection(flow);
+  return dns_keep_extra_dissection(flow);
 }
 
 /* *********************************************** */
@@ -891,7 +891,7 @@ static void search_dns(struct ndpi_detection_module_struct *ndpi_struct, struct 
      /* We have never triggered extra-dissection for LLMNR. Keep the old behavior */
      flow->detected_protocol_stack[0] != NDPI_PROTOCOL_LLMNR &&
      flow->detected_protocol_stack[1] != NDPI_PROTOCOL_LLMNR) {
-    if(keep_extra_dissection(flow)) {
+    if(dns_keep_extra_dissection(flow)) {
       NDPI_LOG_DBG(ndpi_struct, "Enabling extra dissection\n");
       flow->max_extra_packets_to_check = 5;
       flow->extra_packets_func = search_dns_again;

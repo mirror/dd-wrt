@@ -344,7 +344,7 @@ static int get_rtp_info(struct ndpi_detection_module_struct *ndpi_struct,
 
 /* ************************************************************ */
 
-static int keep_extra_dissection(struct ndpi_flow_struct *flow) {
+static int rtp_keep_extra_dissection(struct ndpi_flow_struct *flow) {
   return ((flow->rtp[0].payload_detected && flow->rtp[1].payload_detected) ? false :true);
 }
 
@@ -356,7 +356,7 @@ static int rtp_search_again(struct ndpi_detection_module_struct *ndpi_struct,
 
   ndpi_rtp_search(ndpi_struct, flow);
 
-  return keep_extra_dissection(flow);
+  return rtp_keep_extra_dissection(flow);
 }
 
 /* *************************************************************** */
@@ -377,7 +377,7 @@ static void ndpi_int_rtp_add_connection(struct ndpi_detection_module_struct *ndp
     }
   } else if(proto == NDPI_PROTOCOL_RTP) {
     if(!flow->extra_packets_func &&
-       keep_extra_dissection(flow) &&
+       rtp_keep_extra_dissection(flow) &&
        ndpi_struct->cfg.rtp_max_packets_extra_dissection > 0) {
       NDPI_LOG_DBG(ndpi_struct, "Enabling extra dissection\n");
       flow->max_extra_packets_to_check = ndpi_struct->cfg.rtp_max_packets_extra_dissection;
