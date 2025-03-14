@@ -17,7 +17,7 @@ function to_send(url) {
 			<form>
 				<script type="text/javascript">
 				//<![CDATA[
-				document.write(join.mess1 + "&nbsp;" + SSID + "<br/>");
+				document.write(join.mess1 + "&nbsp;" + SSID + "<br/><br/>");
 				document.write("<input class=\"button\" type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"self.close();\" />");
 				//]]>
 				</script>
