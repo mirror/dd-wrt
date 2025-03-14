@@ -1426,7 +1426,7 @@ generic:;
 				fread(ver, 8, 1, fp);
 				fclose(fp);
 				char rname[32];
-				sprintf(rname, "Asus RT-AX89X %s %s\n", rev, ver);
+				sprintf(rname, "Asus RT-AX89X-%s %s\n", rev, ver);
 				setRouter(rname);
 			} else {
 				setRouter("Asus RT-AX89X");
