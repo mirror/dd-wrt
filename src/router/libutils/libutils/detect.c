@@ -1419,8 +1419,8 @@ generic:;
 				rev[0] = getc(fp);
 				rev[1] = getc(fp);
 				rev[2] = 0;
-				if (rev[1]==0xff)
-				    rev[1]=0;
+				if (rev[1] == 0xff)
+					rev[1] = 0;
 				fseek(fp, 0x4ff10, SEEK_SET);
 				char ver[9];
 				fread(ver, 8, 1, fp);
