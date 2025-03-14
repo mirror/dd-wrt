@@ -487,7 +487,8 @@
 
 	pinctrl-0 = <&mdio_pins>;
 	pinctrl-names = "default";
-	reset-gpios = <&tlmm 37 GPIO_ACTIVE_LOW>;
+	reset-gpios = <&tlmm 37 GPIO_ACTIVE_LOW>,
+		      <&tlmm 55 GPIO_ACTIVE_LOW>;
 
 	qca8337_0: ethernet-phy@0 {
 		compatible = "ethernet-phy-ieee802.3-c22";
@@ -520,6 +521,7 @@
 	 * need the QCA8035 for DSA lets fool the bootloader by using
 	 * ethernet-phy@05 even though it causes DTC to print a warning.
 	 */
+
 	qca8035: ethernet-phy@05 {
 		compatible = "ethernet-phy-ieee802.3-c22";
 		reg = <0x5>;
@@ -528,6 +530,11 @@
 	qca8033: ethernet-phy@6 {
 		compatible = "ethernet-phy-ieee802.3-c22";
 		reg = <0x6>;
+	};
+
+	aqr107: ethernet-phy@7 {
+		compatible ="ethernet-phy-ieee802.3-c45";
+		reg = <7>;
 	};
 
 	ethernet-phy-package@8 {
@@ -686,6 +693,13 @@
 			sfp_mod_present_pin = <&tlmm 46 GPIO_ACTIVE_LOW>;
 		};
 
+		/* PCB R1.00 ~ R4.20, AQR107/AQR113 A1,B0 */
+		port@5 {
+			port_id = <6>;
+			phy_address = <7>;
+			ethernet-phy-ieee802.3-c45;			
+		};
+
 		/* PCB R5.00, AQR113C */
 		port@5_113c {
 			status = "disabled";
@@ -733,6 +747,15 @@
 	status = "okay";
 	phy-handle = <&sfp>;
 	label = "10gsfp";
+};
+
+
+&dp6 {
+	status = "okay";
+	phy-handle = <&aqr107>;
+	label = "10gcopper";
+	reg = <0x3a007000 0x3fff>;
+	qcom,mactype = <1>;
 };
 
 &dp6_syn {
