@@ -2669,7 +2669,10 @@ static void filter_output(char *wanface)
 	add_bridges(wanface, "OUTPUT", 0);
 #endif
 }
-
+static int has_flood_protection(void)
+{
+return nvram_matchi("block_syncflood", 1) || nvram_matchi("block_udpflood", 1) || nvram_matchi("block_pod", 1))
+}
 static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int dmzenable, int webfilter, char *vifs)
 {
 	char wan_if_buffer[33];
@@ -2690,7 +2693,8 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 		save2file_A_forward("-i %s -m psd --psd-weight-threshold 15 --psd-hi-ports-weight 3 -j %s", wanface, log_drop);
 #endif
 	}
-	save2file_A_forward("-j SECURITY");
+	if (has_flood_protection())
+		save2file_A_forward("-j SECURITY");
 
 	while (i < 20 && filter_host_url == 0) {
 		i++;
@@ -3132,7 +3136,8 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 					  log_drop);
 #endif
 		}
-		save2file_A_input("-j SECURITY");
+		if (has_flood_protection())
+			save2file_A_input("-j SECURITY");
 
 		/*
 		 * Does it disable the filter? 
@@ -3417,8 +3422,10 @@ static void run_firewall6(char *vifs)
 #endif
 	}
 
-	eval("ip6tables", "-A", "INPUT", "-j", "SECURITY");
-	eval("ip6tables", "-A", "FORWARD", "-j", "SECURITY");
+	if (has_flood_protection()) {
+		eval("ip6tables", "-A", "INPUT", "-j", "SECURITY");
+		eval("ip6tables", "-A", "FORWARD", "-j", "SECURITY");
+	}
 	/* Filter all packets that have RH0 headers */
 	eval("ip6tables", "-A", "INPUT", "-m", "rt", "--rt-type", "0", "-j", log_drop);
 	eval("ip6tables", "-A", "FORWARD", "-m", "rt", "--rt-type", "0", "-j", log_drop);
