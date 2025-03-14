@@ -223,12 +223,12 @@ static void ndpi_int_ssdp_add_connection(struct ndpi_detection_module_struct
 static void ndpi_search_ssdp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
-	
+  unsigned int i = 0;
   NDPI_LOG_DBG(ndpi_struct, "search ssdp\n");
   if (packet->udp != NULL) {
 
     if (packet->payload_packet_len >= 19) {
-      for (unsigned int i=0; i < sizeof(SSDP_METHODS)/sizeof(SSDP_METHODS[0]); i++) {
+      for (i=0; i < sizeof(SSDP_METHODS)/sizeof(SSDP_METHODS[0]); i++) {
         if(memcmp(packet->payload, SSDP_METHODS[i].detection_line, strlen(SSDP_METHODS[i].detection_line)) == 0) {
           if(ndpi_struct->cfg.ssdp_metadata_enabled) {
             flow->protos.ssdp.method = ndpi_malloc(strlen(SSDP_METHODS[i].detection_line) + 1);
