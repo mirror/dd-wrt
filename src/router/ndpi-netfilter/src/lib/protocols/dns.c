@@ -348,6 +348,7 @@ static int process_answers(struct ndpi_detection_module_struct *ndpi_struct,
                            ndpi_master_app_protocol *proto) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int x = payload_offset;
+  u_int64_t time;
   u_int16_t rsp_type;
   u_int32_t rsp_ttl;
   u_int16_t num;
@@ -430,13 +431,19 @@ static int process_answers(struct ndpi_detection_module_struct *ndpi_struct,
               flow->protos.dns.is_rsp_addr_ipv6[flow->protos.dns.num_rsp_addr] = (data_len == 16) ? 1 : 0;
               flow->protos.dns.rsp_addr_ttl[flow->protos.dns.num_rsp_addr] = ttl;
 
-              if(ndpi_struct->cfg.address_cache_size)
-                ndpi_cache_address(ndpi_struct,
-                                   flow->protos.dns.rsp_addr[flow->protos.dns.num_rsp_addr],
-                                   flow->host_server_name,
-                                   packet->current_time_ms/1000,
-                                   flow->protos.dns.rsp_addr_ttl[flow->protos.dns.num_rsp_addr]);
-
+		    if(ndpi_struct->cfg.address_cache_size) {
+		    #if defined(__KERNEL__) && !defined(CONFIG_64BIT)
+		      time = packet->current_time_ms;
+		      do_div(time, 1000);
+		    #else
+		      time = packet->current_time_ms / 1000;
+		    #endif
+		      ndpi_cache_address(ndpi_struct,
+				         flow->protos.dns.rsp_addr[flow->protos.dns.num_rsp_addr],
+				         flow->host_server_name,
+				         time,
+				         flow->protos.dns.rsp_addr_ttl[flow->protos.dns.num_rsp_addr]);
+		      }
               ++flow->protos.dns.num_rsp_addr;
             }
 

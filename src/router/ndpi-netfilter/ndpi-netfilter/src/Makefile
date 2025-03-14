@@ -3,7 +3,7 @@ NDPI_PRO := ${NDPI_SRC}/lib/protocols
 
 ccflags-y += -I${src}/${NDPI_SRC}/include -I${src}/${NDPI_SRC}/lib -I${src}/../libre -I${src}/${NDPI_SRC}/lib/third_party/include 
 ccflags-y += -DHAVE_CONFIG_H -DNDPI_LIB_COMPILATION -DOPENDPI_NETFILTER_MODULE -DNDPI_DETECTION_SUPPORT_IPV6 -DNDPI_STATIC=static -Wno-unused-function
-ccflags-y += -Wno-declaration-after-statement
+ccflags-y += -Wno-declaration-after-statement -g3
 #ccflags-y += -Wshadow-local
 # Needed for pahole
 ccflags-y += -femit-struct-debug-detailed=any
