@@ -1408,7 +1408,27 @@ generic:;
 		return ROUTER_LINKSYS_MR7500;
 	}
 	if (!strcmp(modelstr, "RT-AX89X")) {
-		setRouter("Asus RT-AX89X");
+		int mtd = getMTD("Factory");
+		if (mtd > 0) {
+			char mtdname[32];
+			sprintf(mtdname, "/dev/mtdblock%d", mtd);
+			fp = fopen(mtdname, "rb");
+			if (fp) {
+				fseek(fp, 0x4ff00, SEEK_SET);
+				int rev = getc(fp);
+				fseek(fp, 0x4ff10, SEEK_SET);
+				char ver[9];
+				fread(ver, 8, 1, fp);
+				fclose(fp);
+				char rname[32];
+				sprintf(rname, "Asus RT-AX89X %c %s\n", rev, ver);
+				setRouter(rname);
+			} else {
+				setRouter("Asus RT-AX89X");
+			}
+		} else {
+			setRouter("Asus RT-AX89X");
+		}
 		return ROUTER_ASUS_AX89X;
 	}
 	if (!strcmp(modelstr, "MX4200v1")) {
