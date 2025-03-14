@@ -157,6 +157,7 @@ static l7filters filters_list[] = {
 	{ "dhcpv6", NDPI_ONLY, 0, NULL },
 	{ "diameter", NDPI_ONLY, 0, NULL },
 	{ "dicom", NDPI_ONLY, 0, NULL },
+	{ "digitalocean", NDPI_ONLY, 0, NULL },
 	{ "dingtalk", NDPI_ONLY, 0, NULL },
 	{ "directv", NDPI_ONLY, 0, NULL },
 #endif
@@ -391,6 +392,7 @@ static l7filters filters_list[] = {
 #endif
 	{ "kugoo", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
+	{ "lagofast", NDPI_ONLY, 0, NULL },
 	{ "lastfm", NDPI_ONLY, 0, NULL },
 	{ "ldap", NDPI_ONLY, 0, NULL },
 	{ "ldp", NDPI_ONLY, 0, NULL },
@@ -433,6 +435,8 @@ static l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "monero", NDPI_ONLY, 0, NULL },
 	{ "mongodb", NDPI_ONLY, 0, NULL },
+	{ "mozilla", NDPI_ONLY, 0, NULL },
+	{ "ms_teams_call", NDPI_ONLY, 0, NULL },
 	{ "mullvad", NDPI_ONLY, 0, NULL },
 	{ "mumble", NDPI_ONLY, 0, NULL },
 	{ "munin", NDPI_ONLY, 0, NULL },
@@ -615,6 +619,7 @@ static l7filters filters_list[] = {
 	{ "rtsp", DPI, 0, NULL },
 	{ "runesofmagic", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
+	{ "rutube", L7_ONLY, 0, NULL },
 	{ "rx", NDPI_ONLY, 0, NULL },
 	{ "s7comm", NDPI_ONLY, 0, NULL },
 	{ "s7comm_plus", NDPI_ONLY, 0, NULL },
@@ -636,8 +641,6 @@ static l7filters filters_list[] = {
 	{ "sip", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "siriusxmradio", NDPI_ONLY, 0, NULL },
-	{ "skype_teams", NDPI_ONLY, 0, NULL },
-	{ "skype_teamscall", NDPI_ONLY, 0, NULL },
 #endif
 	{ "skypeout", L7_ONLY, 0, NULL },
 	{ "skypetoskype", L7_ONLY, 0, NULL },
@@ -803,6 +806,7 @@ static l7filters filters_list[] = {
 	{ "viber", NDPI_ONLY, 0, NULL },
 	{ "viber_voip", NDPI_ONLY, 0, NULL },
 	{ "vimeo", NDPI_ONLY, 0, NULL },
+	{ "vivox", NDPI_ONLY, 0, NULL },
 	{ "vk", NDPI_ONLY, 0, NULL },
 	{ "vmware", NDPI_ONLY, 0, NULL },
 #endif
