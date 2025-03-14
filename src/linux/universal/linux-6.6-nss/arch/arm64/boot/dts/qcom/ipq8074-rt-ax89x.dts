@@ -347,6 +347,35 @@
 		bias-disable;
 		output-high;
 	};
+
+	reset_pins: reset_pinmux {
+		aqr_reset_pin {
+			/* AQR107, AR8035, QCA8337 */
+			pins = "gpio63";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+			output-high;
+		};
+
+		phy_reset_pin {
+			/* AR8033 */
+			pins = "gpio55";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+			output-high;
+		};
+
+		malibu_reset_pin {
+			/* QCA8075 */
+			pins = "gpio37";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+			output-high;
+		};
+	};
 };
 
 &blsp1_uart5 {
