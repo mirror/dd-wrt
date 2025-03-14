@@ -306,18 +306,18 @@ if(!pd1) return pd;
 memcpy(pd1,pd,sizeof(struct ndpi_port_def));
 if(!np->l4_proto) { // udp
 	if(count) 
-		memcpy( &pd1->p[0],np,count*sizeof(ndpi_port_range_t));
+		unsafe_memcpy( &pd1->p[0],np,count*sizeof(ndpi_port_range_t),/**/);
 	if(pd->count[1])
-		memcpy( &pd1->p[count], &pd->p[pd->count[0]],
-			pd->count[1]*sizeof(ndpi_port_range_t));
+		unsafe_memcpy( &pd1->p[count], &pd->p[pd->count[0]],
+			pd->count[1]*sizeof(ndpi_port_range_t),/**/);
 	pd1->count[0] = count;
 } else { // tcp
 	if(pd->count[0])
-		memcpy( &pd1->p[0], &pd->p[0],
-			pd->count[0]*sizeof(ndpi_port_range_t));
+		unsafe_memcpy( &pd1->p[0], &pd->p[0],
+			pd->count[0]*sizeof(ndpi_port_range_t),/**/);
 	if(count)
-		memcpy( &pd1->p[pd->count[0]], np,
-			count*sizeof(ndpi_port_range_t));
+		unsafe_memcpy( &pd1->p[pd->count[0]], np,
+			count*sizeof(ndpi_port_range_t),/**/);
 	pd1->count[1] = count;
 }
 

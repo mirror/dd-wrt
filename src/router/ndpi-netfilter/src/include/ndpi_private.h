@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2011-24 - ntop.org
+ * Copyright (C) 2011-25 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -82,13 +82,15 @@ typedef struct default_ports_tree_node {
 
 #define LINE_ENDS(ndpi_int_one_line_struct, string_to_compare) \
   ((ndpi_int_one_line_struct).len >= strlen(string_to_compare) && \
-   memcmp((ndpi_int_one_line_struct).ptr + \
-          ((ndpi_int_one_line_struct).len - strlen(string_to_compare)), \
-          string_to_compare, strlen(string_to_compare)) == 0)
+   ndpi_strncasestr((const char *)((ndpi_int_one_line_struct).ptr) + \
+                    ((ndpi_int_one_line_struct).len - strlen(string_to_compare)), \
+                    string_to_compare, strlen(string_to_compare)) == \
+   (const char *)((ndpi_int_one_line_struct).ptr) + ((ndpi_int_one_line_struct).len - strlen(string_to_compare)))
 
 #define LINE_CMP(ndpi_int_one_line_struct, string_to_compare, string_to_compare_length) \
   ((ndpi_int_one_line_struct).ptr != NULL && \
-   memcmp((ndpi_int_one_line_struct).ptr, string_to_compare, string_to_compare_length) == 0)
+   ndpi_strncasestr((const char *)((ndpi_int_one_line_struct).ptr), string_to_compare, \
+                    string_to_compare_length) == (const char *)((ndpi_int_one_line_struct).ptr))
 
 #define NDPI_MAX_PARSE_LINES_PER_PACKET                         64
 
@@ -102,32 +104,10 @@ struct ndpi_packet_struct {
   const struct ndpi_ipv6hdr *iphv6;
   const struct ndpi_tcphdr *tcp;
   const struct ndpi_udphdr *udp;
-  const u_int8_t *generic_l4_ptr;	/* is set only for non tcp-udp traffic */
   const u_int8_t *payload;
 
   u_int64_t current_time_ms;
   u_int64_t current_time;
-/* Don't change order! */
-
-  #define host_line_idx (1)
-  #define forwarded_line_idx (2)
-  #define referer_line_idx (3)
-  #define content_line_idx (4)
-  #define content_disposition_line_idx (5)
-  #define accept_line_idx (6)
-  #define authorization_line_idx (7)
-  #define user_agent_line_idx (8)
-  #define http_url_name_idx (9)
-  #define http_encoding_idx (10)
-  #define http_transfer_encoding_idx (11)
-  #define http_contentlen_idx (12)
-  #define http_cookie_idx (13)
-  #define http_origin_idx (14)
-  #define http_x_session_type_idx (15)
-  #define server_line_idx (16)
-  #define http_method_idx (17)
-  #define http_response_idx (18)
-  #define last_hdr_idx (19)
 
   struct ndpi_int_one_line_struct line[NDPI_MAX_PARSE_LINES_PER_PACKET];
   /* HTTP headers */
@@ -147,6 +127,24 @@ struct ndpi_packet_struct {
   struct ndpi_int_one_line_struct upgrade_line;
   struct ndpi_int_one_line_struct http_response; /* the first "word" in this pointer is the
 						    response code in the packet (200, etc) */
+  struct ndpi_int_one_line_struct bootid;
+  struct ndpi_int_one_line_struct usn;
+  struct ndpi_int_one_line_struct cache_controle;
+  struct ndpi_int_one_line_struct location;
+  struct ndpi_int_one_line_struct household_smart_speaker_audio;
+  struct ndpi_int_one_line_struct rincon_household;
+  struct ndpi_int_one_line_struct rincon_bootseq;
+  struct ndpi_int_one_line_struct rincon_wifimode;
+  struct ndpi_int_one_line_struct rincon_variant;
+  struct ndpi_int_one_line_struct sonos_securelocation;
+  struct ndpi_int_one_line_struct securelocation_upnp;
+  struct ndpi_int_one_line_struct location_smart_speaker_audio;
+  struct ndpi_int_one_line_struct nt;
+  struct ndpi_int_one_line_struct nts;
+  struct ndpi_int_one_line_struct man;
+  struct ndpi_int_one_line_struct mx;
+  struct ndpi_int_one_line_struct st;
+
   struct ndpi_int_one_line_struct *hdr_line;
   u_int8_t http_num_headers; /* number of found (valid) header lines in HTTP request or response */
 
@@ -261,18 +259,32 @@ struct ndpi_detection_module_config_struct {
   
   /* Protocols */
 
+  int http_request_content_type_enabled;
+  int http_referer_enabled;
+  int http_host_enabled;
+  int http_username_enabled;
+  int http_password_enabled;
+
   int tls_certificate_expire_in_x_days;
   int tls_app_blocks_tracking_enabled;
   int tls_heuristics;
   int tls_heuristics_max_packets;
+  int tls_versions_supported_enabled;
+  int tls_alpn_negotiated_enabled;
+  int tls_cipher_enabled;
   int tls_sha1_fingerprint_enabled;
   /* Limit for tls buffer size */
   int tls_buf_size_limit;
-  int tls_ja3c_fingerprint_enabled;
+  int tls_cert_server_names_enabled;
+  int tls_cert_validity_enabled;
+  int tls_cert_issuer_enabled;
+  int tls_cert_subject_enabled;
+  int tls_broswer_enabled;
   int tls_ja3s_fingerprint_enabled;
   int tls_ja4c_fingerprint_enabled;
   int tls_ja4r_fingerprint_enabled;
   int tls_subclassification_enabled;
+  int tls_subclassification_cert_enabled;
 
   int quic_subclassification_enabled;
 
@@ -291,11 +303,16 @@ struct ndpi_detection_module_config_struct {
 
   int stun_opportunistic_tls_enabled;
   int stun_max_packets_extra_dissection;
+  int rtp_max_packets_extra_dissection;
   int stun_mapped_address_enabled;
   int stun_response_origin_enabled;
   int stun_other_address_enabled;
   int stun_relayed_address_enabled;
   int stun_peer_address_enabled;
+
+  int bittorrent_hash_enabled;
+
+  int ssdp_metadata_enabled;
 
   int dns_subclassification_enabled;
   int dns_parse_response_enabled;
@@ -319,9 +336,12 @@ struct ndpi_detection_module_config_struct {
   NDPI_PROTOCOL_BITMASK ip_list_bitmask;
   NDPI_PROTOCOL_BITMASK monitoring;
 
+  NDPI_PROTOCOL_BITMASK flowrisk_bitmask;
+
   int flow_risk_lists_enabled;
   int risk_anonymous_subscriber_list_icloudprivaterelay_enabled;
   int risk_anonymous_subscriber_list_protonvpn_enabled;
+  int risk_anonymous_subscriber_list_tor_exit_nodes_enabled;
   int risk_crawler_bot_list_enabled;
 };
 
@@ -376,7 +396,7 @@ struct ndpi_detection_module_struct {
    * update automa_type above
    */
 
-  ndpi_str_hash *malicious_ja3_hashmap, *malicious_sha1_hashmap;
+  ndpi_str_hash *malicious_ja4_hashmap, *malicious_sha1_hashmap;
   spinlock_t host_automa_lock;
 
   ndpi_list *trusted_issuer_dn;
@@ -658,7 +678,7 @@ NDPI_STATIC u_int8_t is_a_common_alpn(struct ndpi_detection_module_struct *ndpi_
 
 NDPI_STATIC int64_t asn1_ber_decode_length(const unsigned char *payload, int payload_len, u_int16_t *value_len);
 
-NDPI_STATIC u_int8_t ips_match(u_int32_t src, u_int32_t dst,
+NDPI_STATIC u_int8_t ndpi_ips_match(u_int32_t src, u_int32_t dst,
 		   u_int32_t net, u_int32_t num_bits);
 
 NDPI_STATIC u_int8_t ends_with(struct ndpi_detection_module_struct *ndpi_struct,
@@ -683,14 +703,14 @@ NDPI_STATIC int ndpi_handle_rule(struct ndpi_detection_module_struct *, char *);
 NDPI_STATIC int load_protocols_file_fd(struct ndpi_detection_module_struct *ndpi_mod, FILE *fd);
 NDPI_STATIC int load_categories_file_fd(struct ndpi_detection_module_struct *ndpi_str, FILE *fd, void *user_data);
 NDPI_STATIC int load_malicious_sha1_file_fd(struct ndpi_detection_module_struct *ndpi_str, FILE *fd);
-NDPI_STATIC int load_malicious_ja3_file_fd(struct ndpi_detection_module_struct *ndpi_str, FILE *fd);
+NDPI_STATIC int load_malicious_ja4_file_fd(struct ndpi_detection_module_struct *ndpi_str, FILE *fd);
 NDPI_STATIC int load_risk_domain_file_fd(struct ndpi_detection_module_struct *ndpi_str, FILE *fd);
 NDPI_STATIC int load_config_file_fd(struct ndpi_detection_module_struct *ndpi_str, FILE *fd);
 NDPI_STATIC int load_category_file_fd(struct ndpi_detection_module_struct *ndpi_str,
 			  FILE *fd, ndpi_protocol_category_t category_id);
 #endif
 
-NDPI_STATIC u_int64_t fpc_dns_cache_key_from_dns_info(struct ndpi_flow_struct *flow);
+NDPI_STATIC u_int64_t fpc_dns_cache_key_from_flow(struct ndpi_flow_struct *flow);
 
 NDPI_STATIC bool ndpi_cache_address(struct ndpi_detection_module_struct *ndpi_struct,
 			ndpi_ip_addr_t ip_addr, char *hostname,
@@ -711,10 +731,6 @@ NDPI_STATIC void switch_extra_dissection_to_tls(struct ndpi_detection_module_str
 				    struct ndpi_flow_struct *flow);
 NDPI_STATIC void switch_extra_dissection_to_tls_obfuscated_heur(struct ndpi_detection_module_struct* ndpi_struct,
                                                     struct ndpi_flow_struct* flow);
-/* HTTP */
-NDPI_STATIC void http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,
-                             struct ndpi_flow_struct *flow,
-                             const u_int8_t *ua_ptr, u_int16_t ua_ptr_len);
 
 /* OOKLA */
 NDPI_STATIC int ookla_search_into_cache(struct ndpi_detection_module_struct* ndpi_struct,
@@ -727,6 +743,7 @@ NDPI_STATIC int quic_len(const uint8_t *buf, uint64_t *value);
 NDPI_STATIC int quic_len_buffer_still_required(uint8_t value);
 NDPI_STATIC int is_version_with_var_int_transport_params(uint32_t version);
 NDPI_STATIC int is_version_with_tls(uint32_t version);
+NDPI_STATIC int is_quic_ver_greater_than(uint32_t version, uint8_t min_version);
 NDPI_STATIC void process_chlo(struct ndpi_detection_module_struct *ndpi_struct,
                   struct ndpi_flow_struct *flow,
                   const u_int8_t *crypto_data, uint32_t crypto_data_len);
@@ -759,7 +776,7 @@ NDPI_STATIC int ndpi_bittorrent_gc(struct hash_ip4p_table *ht,int key,time_t now
 NDPI_STATIC int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
             struct ndpi_flow_struct *flow,
             u_int16_t *app_proto);
-NDPI_STATIC void switch_extra_dissection_to_stun(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
+NDPI_STATIC void switch_extra_dissection_to_stun(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, int std_callback);
 
 /* TPKT */
 NDPI_STATIC int tpkt_verify_hdr(const struct ndpi_packet_struct * const packet);
@@ -1027,6 +1044,12 @@ NDPI_STATIC void init_lustre_dissector(struct ndpi_detection_module_struct *ndpi
 NDPI_STATIC void init_dingtalk_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_paltalk_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_dicom_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_lagofast_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+
+
+#ifdef CUSTOM_NDPI_PROTOCOLS
+  #include "../../../nDPI-custom/custom_ndpi_private.h"
+#endif
 
 #endif
 

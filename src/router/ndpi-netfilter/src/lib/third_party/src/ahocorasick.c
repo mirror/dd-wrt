@@ -51,7 +51,7 @@ typedef __kernel_size_t size_t;
 
 /* Private function prototype */
 static int  node_edge_compare (struct edge * e, int a, int b);
-static int  node_has_matchstr (AC_NODE_t * thiz, AC_PATTERN_t * newstr);
+static int  node_has_matchstr (AC_NODE_t * thiz, AC_PATTERN_t * newstr,int exact);
 
 static AC_NODE_t * node_create            (void);
 static AC_NODE_t * node_create_next       (AC_NODE_t * thiz, AC_ALPHABET_t alpha);
@@ -260,23 +260,29 @@ AC_ERROR_t ac_automata_add (AC_AUTOMATA_t * thiz, AC_PATTERN_t * patt)
      thiz->max_str_len = patt->length;
 
   if(n->final && n->matched_patterns) {
-    /*
-      In this case an existing pattern exists and thus we overwrite
-      the previous protocol value with this one
-    */
-
-#if 1
-    /* nDPI code */
-    n->matched_patterns->patterns[0].rep.number = patt->rep.number;
-#else
-    /* original code */
-    patt->rep.number = n->matched_patterns->patterns[0].rep.number;
-#endif
-    return ACERR_DUPLICATE_PATTERN;
+      if(!patt->rep.no_override) {
+          /*
+            In this case an existing pattern exists and thus we overwrite
+            the previous protocol value with this one
+          */
+          n->matched_patterns->patterns[0].rep.number = patt->rep.number;
+          return ACERR_DUPLICATE_PATTERN;
+      } else  {
+          if(node_has_matchstr(n,patt,1)) {
+              if(patt->rep.number != n->matched_patterns->patterns[0].rep.number) {
+                  patt->rep.number = n->matched_patterns->patterns[0].rep.number;
+                  return ACERR_DUPLICATE_PATTERN;
+              } else {
+                  return ACERR_SUCCESS;
+              }
+          }
+          if(node_register_matchstr(n, patt, -1))
+               return ACERR_ERROR;
+      }
+  } else {
+    if(node_register_matchstr(n, patt, 0))
+          return ACERR_ERROR;
   }
-
-  if(node_register_matchstr(n, patt, 0))
-      return ACERR_ERROR;
  
   thiz->total_patterns++;
 
@@ -975,7 +981,7 @@ static AC_NODE_t *node_findbs_next_ac (AC_NODE_t * thiz, uint8_t alpha,int icase
  * Determine if a final node contains a pattern in its accepted pattern list
  * or not. return values: 1 = it has, 0 = it hasn't
  ******************************************************************************/
-static int node_has_matchstr (AC_NODE_t * thiz, AC_PATTERN_t * newstr)
+static int node_has_matchstr (AC_NODE_t * thiz, AC_PATTERN_t * newstr,int exact)
 {
   int i;
   
@@ -988,8 +994,14 @@ static int node_has_matchstr (AC_NODE_t * thiz, AC_PATTERN_t * newstr)
     if (str->length != newstr->length)
       continue;
     
-    if(!memcmp(str->astring,newstr->astring,str->length))
-      return 1;    
+    if(!memcmp(str->astring,newstr->astring,str->length)) {
+      if(!exact)
+        return 1;
+      return str->rep.from_start == newstr->rep.from_start &&
+          str->rep.at_end == newstr->rep.at_end &&
+          str->rep.dot == newstr->rep.dot &&
+          str->rep.number == newstr->rep.number ? 1:0;
+    }
   }
   
   return 0;
@@ -1051,7 +1063,7 @@ static int node_register_matchstr (AC_NODE_t * thiz, AC_PATTERN_t * str,int is_e
   if(!is_existing)
       thiz->final = 1;
   /* Check if the new pattern already exists in the node list */
-  if (thiz->matched_patterns && node_has_matchstr(thiz, str))
+  if (thiz->matched_patterns && node_has_matchstr(thiz, str, is_existing < 0 ? 1:0))
     return 0;
 
   if(!thiz->matched_patterns) {

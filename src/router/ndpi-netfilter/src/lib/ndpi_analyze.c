@@ -51,18 +51,14 @@
 #ifndef __KERNEL__
 
 void ndpi_init_data_analysis(struct ndpi_analyze_struct *ret, u_int16_t _max_series_len) {
-  u_int32_t len;
-
   memset(ret, 0, sizeof(*ret));
 
   if(_max_series_len > MAX_SERIES_LEN) _max_series_len = MAX_SERIES_LEN;
   ret->num_values_array_len = _max_series_len;
 
   if(ret->num_values_array_len > 0) {
-    len = sizeof(u_int64_t) * ret->num_values_array_len;
-    if((ret->values = ndpi_malloc(len)) != NULL)
-      memset(ret->values, 0, len);
-    else
+    if((ret->values = (u_int64_t *)ndpi_calloc(ret->num_values_array_len,
+					       sizeof(u_int64_t))) == NULL)
       ret->num_values_array_len = 0;
   }
 }
@@ -128,6 +124,12 @@ void ndpi_reset_data_analysis(struct ndpi_analyze_struct *d) {
 void ndpi_data_add_value(struct ndpi_analyze_struct *s, const u_int64_t value) {
   if(!s)
     return;
+
+  if(s->num_data_entries > 0) {
+    u_int64_t last = ndpi_data_last(s);
+
+    s->jitter_total += (last > value) ? (last - value) : (value - last);
+  }
 
   if(s->sum_total == 0)
     s->min_val = s->max_val = value;
@@ -214,6 +216,15 @@ float ndpi_data_stddev(struct ndpi_analyze_struct *s) {
 */
 float ndpi_data_mean(struct ndpi_analyze_struct *s) {
   return(ndpi_data_average(s));
+}
+
+/* ********************************************************************************* */
+
+float ndpi_data_jitter(struct ndpi_analyze_struct *s) {
+  if(!s || s->num_data_entries < 2)
+    return(0);
+  else
+    return((float)s->jitter_total / (float)(s->num_data_entries - 1));
 }
 
 /* ********************************************************************************* */

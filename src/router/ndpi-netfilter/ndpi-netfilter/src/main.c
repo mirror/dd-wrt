@@ -548,7 +548,7 @@ static void debug_printf(u_int16_t protocol, struct ndpi_detection_module_struct
 
 		switch(log_level) {
 		case NDPI_LOG_ERROR:
-                	pr_err("E: P=%d %s:%d %s",protocol, short_fn, line_number, /*func_name,*/ buf);
+                	pr_info("E: P=%d %s:%d %s",protocol, short_fn, line_number, /*func_name,*/ buf);
 			break;
 		case NDPI_LOG_TRACE:
                 	pr_info("T: P=%d %s:%d %s",protocol, short_fn, line_number, /*func_name,*/ buf);
@@ -1339,12 +1339,6 @@ static void ndpi_host_info(struct nf_ct_ext_ndpi *ct_ndpi) {
 	    ct_ndpi->ja3s = l+1;
 	    l += snprintf(&buf[l],sizeof(buf)-1-l,"%s",
 			  flow->protos.tls_quic.ja3_server);
-	    buf[l++] = 0;
-	}
-	if(flow->protos.tls_quic.ja3_client[0]) {
-	    ct_ndpi->ja3c = l+1;
-	    l += snprintf(&buf[l],sizeof(buf)-1-l,"%s",
-			  flow->protos.tls_quic.ja3_client);
 	    buf[l++] = 0;
 	}
 	if(flow->protos.tls_quic.ja4_client[0]) {
@@ -2938,9 +2932,8 @@ int np,nh,err=0;
         if(!ph) continue;
         for(nh = 0 ; nh < ph->last && ph->s[nh] ; nh += (uint8_t)ph->s[nh] + 2) {
 	    if(ndpi_string_to_automa(ndpi_str,(AC_AUTOMATA_t *)host_ac,
-			&ph->s[nh+1], np,0,0,0,1) < 0) {
+			&ph->s[nh+1], np,0,0,0,2) < 0) {
 		err++;
-		pr_err("%s: error add %s\n",__func__,&ph->s[nh+1]);
 	    }
         }
     }
@@ -3216,6 +3209,7 @@ static int __net_init ndpi_net_init(struct net *net)
 	ndpi_set_config(n->ndpi_struct, "any", "ip_list.load", "0");
 	ndpi_set_config(n->ndpi_struct, NULL, "flow_risk_lists.load", "0");
 	ndpi_set_config(n->ndpi_struct, NULL, "tcp_ack_payload_heuristic.load", "1");
+	ndpi_set_config(n->ndpi_struct, "tls", "subclassification_cert", "0");
 	ndpi_init_host_ac(n);
 
 	if(bt_hash_size > 512) bt_hash_size = 512;

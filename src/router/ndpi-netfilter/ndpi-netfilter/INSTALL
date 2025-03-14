@@ -415,15 +415,17 @@ set_magic_ct: Set new MAGIC_CT value. Default: 0xa55a. Set 0 for random MAGIC_CT
   "echo 'add_custom RISKS' >/proc/net/xt_ndpi/proto"
 
   For RISKY_DOMAIN we need add to host_proto
-  "echo 'RISKS:RISK_DOMAIN_bad.domain' >/proc/net/xt_ndpi/host_proto
+  "echo 'RISKS:RISK_DOMAIN_bad.domain' >/proc/net/xt_ndpi/host_proto"
+
+  Note :      If the hostname begins with a "|" character, a match is checked against the beginning of the string.
+	      If the hostname ends with a "|" character, a match is made to the end of the string.
+              "|name|" this is an exact string match.
 
   For MALICIOUS_JA3 we need add to host_proto
   "echo 'RISKS:RISK_JA3_xxxxxxxxxxxxxxxxxxxx' >/proc/net/xt_ndpi/host_proto"
 
   For MALICIOUS_SHA1_CERTIFICATE we need add to host_proto
   "echo 'RISKS:RISK_SHA1CERT_xxxxxxxxxxxxxxxxxxxx' >/proc/net/xt_ndpi/host_proto"
-
-
 
 Bittorrents-specific files:
 
@@ -440,6 +442,10 @@ Bittorrents-specific files:
   "cat /proc/net/xt_ndpi/cfg" - show current settings.
   "echo 'proto_name_or_id param_name value' >/proc/net/xt_ndpi/cfg" - change parameter for specified protocol
   "echo 'param_name value' >/proc/net/xt_ndpi/cfg" - change global parameter
+
+  Example of enabling classification of domain names specified in the certificate [SNI]:
+
+	"echo 'tls subclassification_cert 1' >/proc/net/xt_ndpi/cfg"
 
 /proc/net/xt_ndpi/magic_ct - set or show "magic_ct".
 

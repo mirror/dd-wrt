@@ -53,7 +53,7 @@ static const u_int32_t k[64] = {
 };
 
 /*********************** FUNCTION DEFINITIONS ***********************/
-NDPI_STATIC void sha256_transform(ndpi_SHA256_CTX *ctx, const u_int8_t data[])
+static void sha256_transform(ndpi_SHA256_CTX *ctx, const u_int8_t data[])
 {
   u_int32_t a, b, c, d, e, f, g, h, i, j, t1, t2, m[64];
 

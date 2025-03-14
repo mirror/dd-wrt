@@ -1,7 +1,7 @@
 /*
  * stun.c
  *
- * Copyright (C) 2011-24 - ntop.org
+ * Copyright (C) 2011-25 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -61,7 +61,8 @@ static int stun_search_again(struct ndpi_detection_module_struct *ndpi_struct,
 
 
 /* Valid classifications:
-    * STUN, DTLS, STUN/RTP, DTLS/SRTP, RTP or RTCP (the last two, only from RTP dissector)
+    * STUN, DTLS, STUN/RTP, DTLS/SRTP, RTP or RTCP (only from RTP dissector)
+      and TELEGRAM (only from Telegram dissector, note that TELEGRAM != TELEGRAM_VOIP!!)
     * STUN/APP, DTLS/APP, SRTP/APP ["real" sub-classification]
    The idea is:
     * the specific "real" application (WA/FB/Signal/...), if present, should
@@ -79,7 +80,8 @@ static int is_subclassification_real_by_proto(u_int16_t proto)
      proto == NDPI_PROTOCOL_RTP ||
      proto == NDPI_PROTOCOL_RTCP ||
      proto == NDPI_PROTOCOL_SRTP ||
-     proto == NDPI_PROTOCOL_DTLS)
+     proto == NDPI_PROTOCOL_DTLS ||
+     proto == NDPI_PROTOCOL_TELEGRAM)
     return 0;
   return 1;
 }
@@ -493,6 +495,9 @@ int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
      *app_proto = NDPI_PROTOCOL_SIGNAL_VOIP;
   }
 
+  if(flow->detected_protocol_stack[0] == NDPI_PROTOCOL_TELEGRAM)
+    *app_proto = NDPI_PROTOCOL_TELEGRAM_VOIP;
+
   off = STUN_HDR_LEN;
   while(off + 4 < payload_length) {
     u_int16_t attribute = ntohs(*((u_int16_t *)&payload[off]));
@@ -584,7 +589,7 @@ int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
       }
       break;
 
-    /* Proprietary fields found on skype calls */
+    /* Proprietary fields found on Microsoft Teams/Skype calls */
     case 0x8054: /* Candidate Identifier: Either skype for business or "normal" skype with multiparty call */
     case 0x24DF:
     case 0x3802:
@@ -594,7 +599,7 @@ int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
     case 0x8006:
     case 0x8070: /* MS Implementation Version */
     case 0x8055: /* MS Service Quality */
-      *app_proto = NDPI_PROTOCOL_SKYPE_TEAMS_CALL;
+      *app_proto = NDPI_PROTOCOL_MSTEAMS_CALL;
       break;
 
     case 0x8029: /* ICE-CONTROLLED */
@@ -781,7 +786,8 @@ static u_int32_t __get_master_stun(struct ndpi_flow_struct *flow) {
 
   if(flow->detected_protocol_stack[1] != NDPI_PROTOCOL_UNKNOWN)
     return flow->detected_protocol_stack[1];
-  if(flow->detected_protocol_stack[0] != NDPI_PROTOCOL_UNKNOWN)
+  if(flow->detected_protocol_stack[0] != NDPI_PROTOCOL_UNKNOWN &&
+     flow->detected_protocol_stack[0] != NDPI_PROTOCOL_TELEGRAM)
     return flow->detected_protocol_stack[0];
   return NDPI_PROTOCOL_STUN;
 }
@@ -953,12 +959,11 @@ static int stun_search_again(struct ndpi_detection_module_struct *ndpi_struct,
 
     rtp_rtcp = is_rtp_or_rtcp(ndpi_struct, packet->payload, packet->payload_packet_len, NULL);
     if(rtp_rtcp == IS_RTP) {
-
       NDPI_LOG_DBG(ndpi_struct, "RTP (dir %d) [%d/%d]\n", packet->packet_direction,
                                  flow->stun.rtp_counters[0], flow->stun.rtp_counters[1]);
 
       flow->stun.rtp_counters[packet->packet_direction]++;
-
+      /* TODO: store RTP information in 'struct rtp_info' */
       NDPI_LOG_INFO(ndpi_struct, "Found RTP over STUN\n");
 
       rtp_get_stream_type(packet->payload[1] & 0x7F, &flow->flow_multimedia_types, flow->detected_protocol_stack[0]);
@@ -1002,7 +1007,7 @@ static int stun_search_again(struct ndpi_detection_module_struct *ndpi_struct,
        See: https://msopenspecs.azureedge.net/files/MS-TURN/%5bMS-TURN%5d.pdf 2.2.3 */
     if(packet->payload_packet_len >= 12 &&
        ntohs(get_u_int16_t(packet->payload, 0)) == 0xFF10 &&
-       flow->detected_protocol_stack[0] == NDPI_PROTOCOL_SKYPE_TEAMS_CALL) {
+       flow->detected_protocol_stack[0] == NDPI_PROTOCOL_MSTEAMS_CALL) {
       u_int16_t ch_len;
 
       ch_len = ntohs(get_u_int16_t(packet->payload, 2));
@@ -1038,6 +1043,60 @@ static int stun_search_again(struct ndpi_detection_module_struct *ndpi_struct,
 /* ************************************************************ */
 
 //extern int ndpi_stun_cache_enable;
+
+static int stun_telegram_search_again(struct ndpi_detection_module_struct *ndpi_struct,
+                                      struct ndpi_flow_struct *flow)
+{
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
+  const u_int8_t *orig_payload;
+  u_int16_t orig_payload_length;
+  char pattern[12] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                       0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+  u_int16_t length;
+
+  NDPI_LOG_DBG2(ndpi_struct, "[T] Packet counter %d protos %d/%d Monitoring? %d\n",
+                flow->packet_counter,
+                flow->detected_protocol_stack[0], flow->detected_protocol_stack[1],
+                flow->monitoring);
+
+  /* For SOME of its STUN flows, Telegram uses a custom encapsulation
+     There is no documentation. It seems:
+     * some unknown packets (especially at the beginning/end of the flow) have a bunch of 0xFF
+     * the other packets encapsulate standard STUN/DTLS/RTP payload at offset 24
+       (with a previous field containing the payload length)
+   */
+
+  if(packet->payload_packet_len <= 28) {
+    NDPI_LOG_DBG(ndpi_struct, "Malformed custom Telegram packet (too short)\n");
+    return keep_extra_dissection(ndpi_struct, flow);
+  }
+
+  if(memcmp(&packet->payload[16], pattern, sizeof(pattern)) == 0) {
+    NDPI_LOG_DBG(ndpi_struct, "Custom/Unknown Telegram packet\n");
+    return keep_extra_dissection(ndpi_struct, flow);
+  }
+
+  /* It should be STUN/DTLS/RTP */
+
+  length = ntohs(*(u_int16_t *)&packet->payload[22]);
+  if(24 + length > packet->payload_packet_len) {
+    NDPI_LOG_DBG(ndpi_struct, "Malformed custom Telegram packet (too long: %d %d)\n",
+                 length, packet->payload_packet_len);
+    return keep_extra_dissection(ndpi_struct, flow);
+  }
+
+  orig_payload = packet->payload;
+  orig_payload_length = packet->payload_packet_len ;
+  packet->payload = packet->payload + 24;
+  packet->payload_packet_len = length;
+
+  stun_search_again(ndpi_struct, flow);
+
+  packet->payload = orig_payload;
+  packet->payload_packet_len = orig_payload_length;
+
+  return keep_extra_dissection(ndpi_struct, flow);
+}
 
 /* ************************************************************ */
 
@@ -1154,19 +1213,23 @@ static void ndpi_int_stun_add_connection(struct ndpi_detection_module_struct *nd
 #endif
   }
 
-  switch_extra_dissection_to_stun(ndpi_struct, flow);
+  switch_extra_dissection_to_stun(ndpi_struct, flow, 1);
 }
 
 /* ************************************************************ */
 
 void switch_extra_dissection_to_stun(struct ndpi_detection_module_struct *ndpi_struct,
-				     struct ndpi_flow_struct *flow)
+				     struct ndpi_flow_struct *flow,
+				     int std_callback)
 {
   if(!flow->extra_packets_func) {
     if(keep_extra_dissection_stun(ndpi_struct, flow)) {
       NDPI_LOG_DBG(ndpi_struct, "Enabling extra dissection\n");
       flow->max_extra_packets_to_check = ndpi_struct->cfg.stun_max_packets_extra_dissection;
-      flow->extra_packets_func = stun_search_again;
+      if(std_callback)
+        flow->extra_packets_func = stun_search_again;
+      else
+        flow->extra_packets_func = stun_telegram_search_again;
     }
   }
 }

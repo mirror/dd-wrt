@@ -1,10 +1,7 @@
 /*
  * ndpi_utils.c
  *
- * Copyright (C) 2011-24 - ntop.org and contributors
- *
- * This file is part of nDPI, an open source deep packet inspection
- * library based on the OpenDPI and PACE technology by ipoque GmbH
+ * Copyright (C) 2011-25 - ntop.org and contributors
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -272,9 +269,8 @@ NDPI_STATIC u_int8_t ndpi_net_match(u_int32_t ip_to_check,
   return(((ip_to_check & mask) == (net & mask)) ? 1 : 0);
 }
 
-u_int8_t ips_match(u_int32_t src, u_int32_t dst,
-		   u_int32_t net, u_int32_t num_bits)
-{
+u_int8_t ndpi_ips_match(u_int32_t src, u_int32_t dst,
+			u_int32_t net, u_int32_t num_bits) {
   return(ndpi_net_match(src, net, num_bits) || ndpi_net_match(dst, net, num_bits));
 }
 
@@ -1232,7 +1228,6 @@ static void ndpi_tls2json(ndpi_serializer *serializer, struct ndpi_flow_struct *
         ndpi_serialize_string_string(serializer, "notafter", notAfter);
       }
 
-      ndpi_serialize_string_string(serializer, "ja3", flow->protos.tls_quic.ja3_client);
       ndpi_serialize_string_string(serializer, "ja3s", flow->protos.tls_quic.ja3_server);
       ndpi_serialize_string_string(serializer, "ja4", flow->protos.tls_quic.ja4_client);
       ndpi_serialize_string_uint32(serializer, "unsafe_cipher", flow->protos.tls_quic.server_unsafe_cipher);
@@ -1402,8 +1397,8 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
 
   case NDPI_PROTOCOL_NTP:
     ndpi_serialize_start_of_block(serializer, "ntp");
-    ndpi_serialize_string_uint32(serializer, "request_code", flow->protos.ntp.request_code);
-    ndpi_serialize_string_uint32(serializer, "version", flow->protos.ntp.request_code);
+    ndpi_serialize_string_uint32(serializer, "version", flow->protos.ntp.version);
+    ndpi_serialize_string_uint32(serializer, "mode", flow->protos.ntp.mode);
     ndpi_serialize_end_of_block(serializer);
     break;
 
@@ -1609,6 +1604,92 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
 
       ndpi_serialize_end_of_block(serializer);
     }
+    break;
+
+  case NDPI_PROTOCOL_SSDP:
+    ndpi_serialize_start_of_block(serializer, "ssdp");
+
+    if (flow->protos.ssdp.method) {
+      ndpi_serialize_string_string(serializer, "METHOD", flow->protos.ssdp.method);
+    }
+
+    if (flow->protos.ssdp.cache_controle) {
+      ndpi_serialize_string_string(serializer, "CACHE-CONTROL", flow->protos.ssdp.cache_controle);
+    }
+
+    if (flow->protos.ssdp.location) {
+      ndpi_serialize_string_string(serializer, "LOCATION", flow->protos.ssdp.location);
+    }
+
+    if (flow->protos.ssdp.nt) {
+      ndpi_serialize_string_string(serializer, "NT", flow->protos.ssdp.nt);
+    }
+
+    if (flow->protos.ssdp.nts) {
+      ndpi_serialize_string_string(serializer, "NTS", flow->protos.ssdp.nts);
+    }
+
+    if (flow->protos.ssdp.server) {
+      ndpi_serialize_string_string(serializer, "SERVER", flow->protos.ssdp.server);
+    }
+
+    if (flow->protos.ssdp.usn) {
+      ndpi_serialize_string_string(serializer, "USN", flow->protos.ssdp.usn);
+    }
+
+    if (flow->protos.ssdp.rincon_household) {
+      ndpi_serialize_string_string(serializer, "X-RINCON-HOUSEHOLD", flow->protos.ssdp.rincon_household);
+    }
+
+    if (flow->protos.ssdp.rincon_bootseq) {
+      ndpi_serialize_string_string(serializer, "X-RINCON-BOOTSEQ", flow->protos.ssdp.rincon_bootseq);
+    }
+
+    if (flow->protos.ssdp.bootid) {
+      ndpi_serialize_string_string(serializer, "BOOTID.UPNP.ORG", flow->protos.ssdp.bootid);
+    }
+
+    if (flow->protos.ssdp.rincon_wifimode) {
+      ndpi_serialize_string_string(serializer, "X-RINCON-WIFIMODE", flow->protos.ssdp.rincon_wifimode);
+    }
+
+    if (flow->protos.ssdp.rincon_variant) {
+      ndpi_serialize_string_string(serializer, "X-RINCON-VARIANT", flow->protos.ssdp.rincon_variant);
+    }
+
+    if (flow->protos.ssdp.household_smart_speaker_audio) {
+      ndpi_serialize_string_string(serializer, "HOUSEHOLD.SMARTSPEAKER.AUDIO", flow->protos.ssdp.household_smart_speaker_audio);
+    }
+
+    if (flow->protos.ssdp.location_smart_speaker_audio) {
+      ndpi_serialize_string_string(serializer, "LOCATION.SMARTSPEAKER.AUDIO", flow->protos.ssdp.location_smart_speaker_audio);
+    }
+
+    if (flow->protos.ssdp.securelocation_upnp) {
+      ndpi_serialize_string_string(serializer, "SECURELOCATION.UPNP.ORG", flow->protos.ssdp.securelocation_upnp);
+    }
+
+    if (flow->protos.ssdp.sonos_securelocation) {
+      ndpi_serialize_string_string(serializer, "X-SONOS-HHSECURELOCATION", flow->protos.ssdp.sonos_securelocation);
+    }
+
+    if (flow->protos.ssdp.man) {
+      ndpi_serialize_string_string(serializer, "MAN", flow->protos.ssdp.man);
+    }
+
+    if (flow->protos.ssdp.mx) {
+      ndpi_serialize_string_string(serializer, "MX", flow->protos.ssdp.mx);
+    }
+
+    if (flow->protos.ssdp.st) {
+      ndpi_serialize_string_string(serializer, "ST", flow->protos.ssdp.st);
+    }
+
+    if (flow->protos.ssdp.user_agent) {
+      ndpi_serialize_string_string(serializer, "USER_AGENT", flow->protos.ssdp.user_agent);
+    }
+
+    ndpi_serialize_end_of_block(serializer);
     break;
 
   case NDPI_PROTOCOL_DISCORD:
@@ -1862,7 +1943,7 @@ static int ndpi_url_decode(const char *s, char *out) {
     if(c == '+') c = ' ';
     else if(c == '%' && (!ishex(*s++)||
 			 !ishex(*s++)||
-			 !sscanf(s - 2, "%2x", (unsigned int*)&c)))
+			 (sscanf(s - 2, "%2x", (unsigned int*)&c) != 1)))
       return(-1);
 
     if(out) *o = c;
@@ -2591,6 +2672,66 @@ u_int16_t ndpi_risk2score(ndpi_risk risk,
   return(score);
 }
 
+const char *ndpi_risk_shortnames[NDPI_MAX_RISK] = {
+  "unknown",                    /* NDPI_NO_RISK */
+  "xss",
+  "sql",
+  "rce",
+  "binary_transfer",
+  "non_standard_port",
+  "tls_selfsigned_cert",
+  "tls_obsolete_ver",
+  "tls_weak_cipher",
+  "tls_cert_expired",
+  "tls_cert_mismatch",          /* NDPI_TLS_CERTIFICATE_MISMATCH */
+  "http_susp_ua",
+  "numeric_ip_host",
+  "http_susp_url",
+  "http_susp_header",
+  "tls_not_https",
+  "dga",
+  "malformed_pkt",
+  "ssh_obsolete_client",
+  "ssh_obsolete_server",
+  "smb_insecure_ver",           /* NDPI_SMB_INSECURE_VERSION */
+  "tls_esni",
+  "unsafe_proto",
+  "dns_susp",
+  "tls_no_sni",
+  "http_susp_content",
+  "risky_asn",
+  "risky_domain",
+  "malicious_fingerprint",
+  "malicious_cert",
+  "desktop_sharing",            /* NDPI_DESKTOP_OR_FILE_SHARING_SESSION */
+  "uls_uncommon_alpn",
+  "tls_cert_too_long",
+  "tls_susp_ext",
+  "tls_fatal_err",
+  "susp_entropy",
+  "clear_credential",
+  "dns_large_pkt",
+  "dns_fragmented",
+  "invalid_characters",
+  "exploit",                    /* NDPI_POSSIBLE_EXPLOIT */
+  "tls_cert_about_to_expire",
+  "punycode",
+  "error_code",
+  "crawler_bot",
+  "anonymous_subscriber",
+  "unidirectional",
+  "http_obsolete_server",
+  "periodic_flow",
+  "minor_issues",
+  "tcp_issues",                 /* NDPI_TCP_ISSUES */
+  "fully_encrypted",
+  "tls_alpn_mismatch",
+  "malware_host",
+  "binary_data_transfer",
+  "probing",
+  "obfuscated",
+};
+
 /* ******************************************************************** */
 
 const char* ndpi_http_method2str(ndpi_http_method m) {
@@ -2895,6 +3036,15 @@ static u_int8_t ndpi_check_ipv6_exception(struct ndpi_detection_module_struct *n
 
 /* ********************************************************************************* */
 
+static int is_flowrisk_enabled(struct ndpi_detection_module_struct *ndpi_str, ndpi_risk_enum flowrisk_id)
+{
+  if(NDPI_COMPARE_PROTOCOL_TO_BITMASK(ndpi_str->cfg.flowrisk_bitmask, flowrisk_id) == 0)
+    return 0;
+  return 1;
+}
+
+/* ********************************************************************************* */
+
 void ndpi_handle_risk_exceptions(struct ndpi_detection_module_struct *ndpi_str,
 				 struct ndpi_flow_struct *flow) {
   if(flow->risk == 0) return; /* Nothing to do */
@@ -2950,9 +3100,12 @@ void ndpi_handle_risk_exceptions(struct ndpi_detection_module_struct *ndpi_str,
 
 /* ******************************************************************** */
 
-void ndpi_set_risk(struct ndpi_flow_struct *flow, ndpi_risk_enum r,
-		   char *risk_message) {
+void ndpi_set_risk(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow,
+                   ndpi_risk_enum r, char *risk_message) {
   if(!flow) return;
+
+  if(!is_flowrisk_enabled(ndpi_str, r))
+    return;
 
   /* Check if the risk is not yet set */
   if(!ndpi_isset_risk(flow, r)) {
@@ -3150,7 +3303,8 @@ char *ndpi_entropy2str(float entropy, char *buf, size_t len) {
 
 /* ******************************************************************** */
 
-void ndpi_entropy2risk(struct ndpi_flow_struct *flow) {
+void ndpi_entropy2risk(struct ndpi_detection_module_struct *ndpi_struct,
+                       struct ndpi_flow_struct *flow) {
   char str[64];
 
   if (NDPI_ENTROPY_PLAINTEXT(flow->entropy))
@@ -3168,7 +3322,7 @@ void ndpi_entropy2risk(struct ndpi_flow_struct *flow) {
 
   if (flow->confidence != NDPI_CONFIDENCE_DPI &&
       flow->confidence != NDPI_CONFIDENCE_DPI_CACHE) {
-    ndpi_set_risk(flow, NDPI_SUSPICIOUS_ENTROPY,
+    ndpi_set_risk(ndpi_struct, flow, NDPI_SUSPICIOUS_ENTROPY,
                   ndpi_entropy2str(flow->entropy, str, sizeof(str)));
     return;
   }
@@ -3187,7 +3341,7 @@ void ndpi_entropy2risk(struct ndpi_flow_struct *flow) {
       flow->category == NDPI_PROTOCOL_CATEGORY_UNSPECIFIED ||
       flow->category == NDPI_PROTOCOL_CATEGORY_WEB)
   {
-    ndpi_set_risk(flow, NDPI_SUSPICIOUS_ENTROPY,
+    ndpi_set_risk(ndpi_struct, flow, NDPI_SUSPICIOUS_ENTROPY,
                   ndpi_entropy2str(flow->entropy, str, sizeof(str)));
     return;
   }
@@ -3399,28 +3553,48 @@ int ndpi_snprintf(char * str, size_t size, char const * format, ...) {
 /* ******************************************* */
 
 #ifndef __KERNEL__
+static int risk_infos_pair_cmp (const void *_a, const void *_b)
+{
+  struct ndpi_risk_information *a = (struct ndpi_risk_information *)_a;
+  struct ndpi_risk_information *b = (struct ndpi_risk_information *)_b;
+
+  return b->id - a->id;
+}
+
+/* ******************************************* */
+
 char* ndpi_get_flow_risk_info(struct ndpi_flow_struct *flow,
 			      char *out, u_int out_len,
 			      u_int8_t use_json) {
   u_int i, offset = 0;
+  struct ndpi_risk_information *ordered_risk_infos;
 
   if((out == NULL)
      || (flow == NULL)
      || (flow->num_risk_infos == 0))
     return(NULL);
 
+  /* Ordered list of flow risk infos */
+  ordered_risk_infos = ndpi_malloc(sizeof(flow->risk_infos));
+  if(!ordered_risk_infos)
+    return(NULL);
+  memcpy(ordered_risk_infos, flow->risk_infos, sizeof(flow->risk_infos));
+  qsort(ordered_risk_infos, flow->num_risk_infos, sizeof(struct ndpi_risk_information), risk_infos_pair_cmp);
+
   if(use_json) {
     ndpi_serializer serializer;
     u_int32_t buffer_len;
     char *buffer;
 
-    if(ndpi_init_serializer(&serializer, ndpi_serialization_format_json) == -1)
+    if(ndpi_init_serializer(&serializer, ndpi_serialization_format_json) == -1) {
+      ndpi_free(ordered_risk_infos);
       return(NULL);
+    }
 
     for(i=0; i<flow->num_risk_infos; i++)
       ndpi_serialize_uint32_string(&serializer,
-				   flow->risk_infos[i].id,
-				   flow->risk_infos[i].info);
+                                   ordered_risk_infos[i].id,
+                                   ordered_risk_infos[i].info);
 
     buffer = ndpi_serializer_get_buffer(&serializer, &buffer_len);
 
@@ -3433,6 +3607,7 @@ char* ndpi_get_flow_risk_info(struct ndpi_flow_struct *flow,
 
     ndpi_term_serializer(&serializer);
 
+    ndpi_free(ordered_risk_infos);
     return(out);
   } else {
     out[0] = '\0', out_len--;
@@ -3440,7 +3615,7 @@ char* ndpi_get_flow_risk_info(struct ndpi_flow_struct *flow,
     for(i=0; (i<flow->num_risk_infos) && (out_len > offset); i++) {
       int rc = snprintf(&out[offset], out_len-offset, "%s%s",
 			(i == 0) ? "" : " / ",
-			flow->risk_infos[i].info);
+			ordered_risk_infos[i].info);
 
       if(rc <= 0)
 	break;
@@ -3452,6 +3627,7 @@ char* ndpi_get_flow_risk_info(struct ndpi_flow_struct *flow,
 
     out[offset] = '\0';
 
+    ndpi_free(ordered_risk_infos);
     return(out[0] == '\0' ? NULL : out);
   }
 }
@@ -4114,4 +4290,106 @@ char *ndpi_strip_leading_trailing_spaces(char *ptr, int *ptr_len) {
     return NULL;
 
   return ptr;
+}
+
+/* ************************************************************** */
+
+ndpi_protocol_qoe_category_t ndpi_find_protocol_qoe(struct ndpi_detection_module_struct *ndpi_str,
+						    u_int16_t protoId) {
+  if((ndpi_str == NULL) || (!ndpi_is_valid_protoId(protoId)))
+    return(NDPI_PROTOCOL_QOE_CATEGORY_UNSPECIFIED);
+  else
+    return(ndpi_str->proto_defaults[protoId].qoeCategory);
+}
+			     
+/* ************************************************************** */
+
+/* https://gitlab.com/wireshark/wireshark/-/blob/master/epan/dissectors/packet-rtp.c */
+const char* ndpi_rtp_payload_type2str(u_int8_t payload_type, u_int32_t evs_payload_type) {
+  switch(payload_type) {
+  case 0:   return("ITU-T G.711 PCMU");
+  case 1:   return("USA Federal Standard FS-1016");
+  case 2:   return("ITU-T G.721");
+  case 3:   return("GSM 06.10");
+  case 4:   return("ITU-T G.723");
+  case 5:   return("DVI4 8000 samples/s");
+  case 6:   return("DVI4 16000 samples/s");
+  case 8:   return("ITU-T G.711 PCMA");
+  case 9:   return("ITU-T G.722");
+  case 10:  return("16-bit uncompressed audio, stereo");
+  case 11:  return("16-bit uncompressed audio, monaural");
+  case 12:  return("Qualcomm Code Excited Linear Predictive coding");
+  case 13:  return("Comfort noise");
+  case 14:  return("MPEG-I/II Audio");
+  case 15:  return("ITU-T G.728");
+  case 16:  return("DVI4 11025 samples/s");
+  case 17:  return("DVI4 22050 samples/s");
+  case 18:  return("ITU-T G.729");
+  case 19:  return("Comfort noise (old)");
+  case 25:  return("Sun CellB video encoding");
+  case 26:  return("JPEG-compressed video");
+  case 28:  return("'nv' program");
+  case 31:  return("ITU-T H.261");
+  case 32:  return("MPEG-I/II Video");
+  case 33:  return("MPEG-II transport streams");
+  case 34:  return("ITU-T H.263");
+  case 98:  return("AMR-WB");
+  case 118: return("AMR"); /* Adptive Multirate */
+  case 126: /* Enhanced Voice Services */
+  case 127: /* Enhanced Voice Services */
+    {
+      switch(evs_payload_type) {
+	/* https://gitlab.com/wireshark/wireshark/-/blob/master/epan/dissectors/packet-evs.c */
+
+      case 0x0: return("AMR-WB IO 6.6 kbps");
+      case 0x1: return("AMR-WB IO 8.85 kbps");
+      case 0x2: return("AMR-WB IO 12.65 kbps");
+      case 0x3: return("AMR-WB IO 14.24 kbps");
+      case 0x4: return("AMR-WB IO 15.85 kbps");
+      case 0x5: return("AMR-WB IO 18.25 kbps");
+      case 0x6: return("AMR-WB IO 19.85 kbps");
+      case 0x7: return("AMR-WB IO 23.05 kbps");
+      case 0x8: return("AMR-WB IO 23.85 kbps");
+      case 0x9: return("AMR-WB IO 2.0 kbps SID");
+	
+	/* ** */
+	/* Dummy SWB 30 offset */
+      case 0x3+30: return("SWB 9.6 kbps");
+      case 0x4+30: return("SWB 13.2 kbps");
+      case 0x5+30: return("SWB 16.4 kbps");
+      case 0x6+30: return("SWB 24.4 kbps");
+      case 0x7+30: return("SWB 32 kbps");
+      case 0x8+30: return("SWB 48 kbps");
+      case 0x9+30: return("SWB 64 kbps");
+      case 0xa+30: return("SWB 96 kbps");
+      case 0xb+30: return("SWB 128 kbps");
+	
+
+      case    48: return("EVS Primary SID 2.4");
+      case   136: return("EVS AMR-WB IO 6.6");
+      case   144: return("EVS Primary 7.2");
+      case   160: return("EVS Primary 8.0");
+      case   184: return("EVS AMR-WB IO 8.85");
+      case   192: return("EVS Primary 9.6");
+      case   256: return("EVS AMR-WB IO 12.65");
+      case   264: return("EVS Primary 13.2");
+      case   288: return("EVS AMR-WB IO 14.25");
+      case   320: return("EVS AMR-WB IO 15.85");
+      case   328: return("EVS Primary 16.4");
+      case   368: return("EVS AMR-WB IO 18.25");
+      case   400: return("EVS AMR-WB IO 19.85");
+      case   464: return("EVS AMR-WB IO 23.05");
+      case   480: return("EVS AMR-WB IO 23.85");
+      case   488: return("EVS Primary 24.4");
+      case   640: return("EVS Primary 32.0");
+      case   960: return("EVS Primary 48.0");
+      case  1280: return("EVS Primary 64.0");
+      case  1920: return("EVS Primary 96.0");
+      case  2560: return("EVS Primary 128.0");
+      default:    return("EVS 13.2");
+      }
+    }
+    break;
+  default:  return("Unknown");
+  }
 }

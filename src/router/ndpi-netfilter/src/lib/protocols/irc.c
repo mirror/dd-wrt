@@ -2,7 +2,7 @@
  * irc.c
  *
  * Copyright (C) 2009-11 - ipoque GmbH
- * Copyright (C) 2011-22 - ntop.org
+ * Copyright (C) 2011-25 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -156,7 +156,7 @@ static void ndpi_search_irc_tcp(struct ndpi_detection_module_struct *ndpi_struct
 	    sp[0] = '\0';
 	  
 	  snprintf(msg, sizeof(msg), "Found IRC username (%s)", buf);
-	  ndpi_set_risk(flow, NDPI_CLEAR_TEXT_CREDENTIALS, msg);
+	  ndpi_set_risk(ndpi_struct, flow, NDPI_CLEAR_TEXT_CREDENTIALS, msg);
 	}
 	
 	NDPI_LOG_DBG2(ndpi_struct,

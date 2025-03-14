@@ -92,6 +92,9 @@
 /fuzz/fuzz_ds_ahocorasick
 /fuzz/fuzz_ds_bitmap64_fuse
 /fuzz/fuzz_ds_domain_classify
+/fuzz/fuzz_ds_kdtree
+/fuzz/fuzz_ds_btree
+/fuzz/fuzz_ds_address_cache
 /fuzz/fuzz_libinjection
 /fuzz/fuzz_binaryfusefilter
 /fuzz/fuzz_tls_certificate
@@ -113,7 +116,7 @@
 /fuzz/fuzz_filecfg_categories
 /fuzz/fuzz_filecfg_category
 /fuzz/fuzz_filecfg_malicious_sha1
-/fuzz/fuzz_filecfg_malicious_ja3
+/fuzz/fuzz_filecfg_malicious_ja4
 /fuzz/fuzz_filecfg_risk_domains
 /fuzz/fuzz_filecfg_config
 /fuzz/fuzz_readerutils_workflow
@@ -146,7 +149,7 @@
 /fuzz/fuzz_filecfg_categories_seed_corpus.zip
 /fuzz/fuzz_filecfg_category_seed_corpus.zip
 /fuzz/fuzz_filecfg_malicious_sha1_seed_corpus.zip
-/fuzz/fuzz_filecfg_malicious_ja3_seed_corpus.zip
+/fuzz/fuzz_filecfg_malicious_ja4_seed_corpus.zip
 /fuzz/fuzz_filecfg_risk_domains_seed_corpus.zip
 /fuzz/fuzz_filecfg_config_seed_corpus.zip
 /fuzz/fuzz_dga_seed_corpus.zip

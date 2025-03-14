@@ -145,6 +145,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/knxnet_ip.c \
 		     protocols/ldap.c \
 		     protocols/ldp.c \
+		     protocols/lagofast.c \
 		     protocols/lol_wild_rift.c \
 		     protocols/lotus_notes.c \
 		     protocols/line.c \

@@ -218,15 +218,15 @@ static inline u_int64_t get_u_int64_t(const u_int8_t* X, int O)
 
 #endif /* WIN32 */
 
-#define NDPI_MAX_DNS_REQUESTS                   16
-#define NDPI_MIN_NUM_STUN_DETECTION             8
-
 /*
  * Not supported for Visual Studio.
  */
 #define NDPI_MAJOR                              0
 #define NDPI_MINOR                              0
 #define NDPI_PATCH                              0
+
+#define NDPI_MAX_DNS_REQUESTS                   48
+#define NDPI_MIN_NUM_STUN_DETECTION             8
 
 /* IMPORTANT: order according to its severity */
 #define NDPI_CIPHER_SAFE                        0

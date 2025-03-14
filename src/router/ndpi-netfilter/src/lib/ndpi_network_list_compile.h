@@ -38,7 +38,7 @@ _P(NDPI_PROTOCOL_YANDEX_MUSIC),
 _P(NDPI_PROTOCOL_GNUTELLA),
 _P(NDPI_PROTOCOL_EDONKEY),
 _P(NDPI_PROTOCOL_BITTORRENT),
-_P(NDPI_PROTOCOL_SKYPE_TEAMS_CALL),
+_P(NDPI_PROTOCOL_MSTEAMS_CALL),
 _P(NDPI_PROTOCOL_SIGNAL),
 _P(NDPI_PROTOCOL_MEMCACHED),
 _P(NDPI_PROTOCOL_SMBV23),
@@ -125,7 +125,7 @@ _P(NDPI_PROTOCOL_DROPBOX),
 _P(NDPI_PROTOCOL_GMAIL),
 _P(NDPI_PROTOCOL_GOOGLE_MAPS),
 _P(NDPI_PROTOCOL_YOUTUBE),
-_P(NDPI_PROTOCOL_SKYPE_TEAMS),
+_P(NDPI_PROTOCOL_FREE_125),
 _P(NDPI_PROTOCOL_GOOGLE),
 _P(NDPI_PROTOCOL_MS_RPCH),
 _P(NDPI_PROTOCOL_NETFLOW),
@@ -440,7 +440,9 @@ _P(NDPI_PROTOCOL_TAOBAO),
 _P(NDPI_PROTOCOL_MIKROTIK),
 _P(NDPI_PROTOCOL_DICOM),
 _P(NDPI_PROTOCOL_PARAMOUNTPLUS),
-_P(NDPI_PROTOCOL_YANDEX_ALICE)
+_P(NDPI_PROTOCOL_YANDEX_ALICE),
+_P(NDPI_PROTOCOL_VIVOX),
+_P(NDPI_PROTOCOL_DIGITALOCEAN)
 
 };
 #include "inc_generated/ndpi_amazon_aws_match.c.inc"
@@ -480,6 +482,7 @@ _P(NDPI_PROTOCOL_YANDEX_ALICE)
 #include "inc_generated/ndpi_azure_match.c.inc"
 #include "inc_generated/ndpi_cachefly_match.c.inc"
 #include "inc_generated/ndpi_cloudflare_match.c.inc"
+#include "inc_generated/ndpi_digitalocean_match.c.inc"
 #include "inc_generated/ndpi_ethereum_match.c.inc"
 #include "inc_generated/ndpi_google_cloud_match.c.inc"
 #include "inc_generated/ndpi_google_match.c.inc"
@@ -487,7 +490,7 @@ _P(NDPI_PROTOCOL_YANDEX_ALICE)
 #include "inc_generated/ndpi_ms_office365_match.c.inc"
 #include "inc_generated/ndpi_ms_onedrive_match.c.inc"
 #include "inc_generated/ndpi_ms_outlook_match.c.inc"
-#include "inc_generated/ndpi_ms_skype_teams_match.c.inc"
+#include "inc_generated/ndpi_msteams_match.c.inc"
 #include "inc_generated/ndpi_mullvad_match.c.inc"
 #include "inc_generated/ndpi_nordvpn_match.c.inc"
 #include "inc_generated/ndpi_protonvpn_in_match.c.inc"
@@ -535,6 +538,7 @@ static ndpi_network * ip4list[] = {
  &ndpi_protocol_microsoft_azure_protocol_list[0],
  &ndpi_protocol_cachefly_protocol_list[0],
  &ndpi_protocol_cloudflare_protocol_list[0],
+ &ndpi_protocol_digitalocean_protocol_list[0],
  &ndpi_protocol_ethereum_protocol_list[0],
  &ndpi_protocol_google_cloud_protocol_list[0],
  &ndpi_protocol_google_protocol_list[0],
@@ -542,7 +546,7 @@ static ndpi_network * ip4list[] = {
  &ndpi_protocol_microsoft_365_protocol_list[0],
  &ndpi_protocol_ms_one_drive_protocol_list[0],
  &ndpi_protocol_ms_outlook_protocol_list[0],
- &ndpi_protocol_skype_teams_protocol_list[0],
+ &ndpi_protocol_msteams_protocol_list[0],
  &ndpi_protocol_mullvad_protocol_list[0],
  &ndpi_protocol_nordvpn_protocol_list[0],
  &ndpi_protocol_protonvpn_protocol_list[0],
@@ -590,6 +594,7 @@ static char * ip4list_file[] = {
  "inc_generated/ndpi_azure_match.c.inc",
  "inc_generated/ndpi_cachefly_match.c.inc",
  "inc_generated/ndpi_cloudflare_match.c.inc",
+ "inc_generated/ndpi_digitalocean_match.c.inc",
  "inc_generated/ndpi_ethereum_match.c.inc",
  "inc_generated/ndpi_google_cloud_match.c.inc",
  "inc_generated/ndpi_google_match.c.inc",
@@ -597,7 +602,7 @@ static char * ip4list_file[] = {
  "inc_generated/ndpi_ms_office365_match.c.inc",
  "inc_generated/ndpi_ms_onedrive_match.c.inc",
  "inc_generated/ndpi_ms_outlook_match.c.inc",
- "inc_generated/ndpi_ms_skype_teams_match.c.inc",
+ "inc_generated/ndpi_msteams_match.c.inc",
  "inc_generated/ndpi_mullvad_match.c.inc",
  "inc_generated/ndpi_nordvpn_match.c.inc",
  "inc_generated/ndpi_protonvpn_in_match.c.inc",
@@ -645,6 +650,7 @@ static ndpi_network6 * ip6list[] = {
  &ndpi_protocol_microsoft_azure_protocol_list_6[0],
  &ndpi_protocol_cachefly_protocol_list_6[0],
  &ndpi_protocol_cloudflare_protocol_list_6[0],
+ &ndpi_protocol_digitalocean_protocol_list_6[0],
  &ndpi_protocol_ethereum_protocol_list_6[0],
  &ndpi_protocol_google_cloud_protocol_list_6[0],
  &ndpi_protocol_google_protocol_list_6[0],
@@ -652,7 +658,7 @@ static ndpi_network6 * ip6list[] = {
  &ndpi_protocol_microsoft_365_protocol_list_6[0],
  &ndpi_protocol_ms_one_drive_protocol_list_6[0],
  &ndpi_protocol_ms_outlook_protocol_list_6[0],
- &ndpi_protocol_skype_teams_protocol_list_6[0],
+ &ndpi_protocol_msteams_protocol_list_6[0],
  &ndpi_protocol_mullvad_protocol_list_6[0],
  &ndpi_protocol_nordvpn_protocol_list_6[0],
  &ndpi_protocol_protonvpn_protocol_list_6[0],
@@ -700,6 +706,7 @@ static char * ip6list_file[] = {
  "inc_generated/ndpi_azure_match.c.inc",
  "inc_generated/ndpi_cachefly_match.c.inc",
  "inc_generated/ndpi_cloudflare_match.c.inc",
+ "inc_generated/ndpi_digitalocean_match.c.inc",
  "inc_generated/ndpi_ethereum_match.c.inc",
  "inc_generated/ndpi_google_cloud_match.c.inc",
  "inc_generated/ndpi_google_match.c.inc",
@@ -707,7 +714,7 @@ static char * ip6list_file[] = {
  "inc_generated/ndpi_ms_office365_match.c.inc",
  "inc_generated/ndpi_ms_onedrive_match.c.inc",
  "inc_generated/ndpi_ms_outlook_match.c.inc",
- "inc_generated/ndpi_ms_skype_teams_match.c.inc",
+ "inc_generated/ndpi_msteams_match.c.inc",
  "inc_generated/ndpi_mullvad_match.c.inc",
  "inc_generated/ndpi_nordvpn_match.c.inc",
  "inc_generated/ndpi_protonvpn_in_match.c.inc",

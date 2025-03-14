@@ -1,7 +1,7 @@
 /*
  * ndpi_main.h
  *
- * Copyright (C) 2011-22 - ntop.org
+ * Copyright (C) 2011-25 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -103,8 +103,8 @@ extern "C" {
 			       ndpi_protocol_category_t protoCategory,
 			       ndpi_port_range *tcpDefPorts,
 			       ndpi_port_range *udpDefPorts);
-  NDPI_STATIC void ndpi_set_risk(struct ndpi_flow_struct *flow, ndpi_risk_enum r,
-		     char *risk_message);
+  NDPI_STATIC void ndpi_set_risk(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow,
+                     ndpi_risk_enum r, char *risk_message);
   NDPI_STATIC void ndpi_unset_risk(struct ndpi_flow_struct *flow, ndpi_risk_enum r);    
   NDPI_STATIC int ndpi_isset_risk(struct ndpi_flow_struct *flow, ndpi_risk_enum r);
   NDPI_STATIC int ndpi_is_printable_buffer(u_int8_t const * const buf, size_t len);
@@ -117,7 +117,7 @@ extern "C" {
 #define NDPI_ENTROPY_ENCRYPTED_OR_RANDOM(entropy) (entropy >= 7.312f)
   NDPI_STATIC float ndpi_entropy(u_int8_t const * const buf, size_t len);
   NDPI_STATIC char *ndpi_entropy2str(float entropy, char *buf, size_t len);
-  NDPI_STATIC void ndpi_entropy2risk(struct ndpi_flow_struct *flow);
+  NDPI_STATIC void ndpi_entropy2risk(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
 
 #ifdef __cplusplus
 }

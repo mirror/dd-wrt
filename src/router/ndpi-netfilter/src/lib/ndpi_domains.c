@@ -1,7 +1,7 @@
 /*
  * ndpi_domains.c
  *
- * Copyright (C) 2011-24 - ntop.org and contributors
+ * Copyright (C) 2011-25 - ntop.org and contributors
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -122,7 +122,7 @@ const char* ndpi_get_host_domain_suffix(struct ndpi_detection_module_struct *ndp
   return(hostname);
 }
 
-
+/* ******************************* */
 
 /*
   Example
@@ -132,20 +132,39 @@ const char* ndpi_get_host_domain_suffix(struct ndpi_detection_module_struct *ndp
 const char* ndpi_get_host_domain(struct ndpi_detection_module_struct *ndpi_str,
 				 const char *hostname) {
   const char *ret;
-  char *dot;
-  u_int16_t domain_id;
+  char *dot, *first_dc;
+  u_int16_t domain_id, len;
   
-  if(!ndpi_str)
+  if(!ndpi_str || !hostname)
     return NULL;
 
   if(ndpi_str->public_domain_suffixes == NULL)
     return(hostname);
-  
+
+  len = strlen(hostname);
+  if(len == 0)
+    return(hostname);
+  else
+    len--;
+
+  if((isdigit(hostname[len])) || (hostname[len] == ']' /* IPv6 address [...] */ ))
+    return(hostname);
+
+  if((first_dc = strchr(hostname, ':')) != NULL) {
+    char *last_dc = strchr(hostname, ':');
+
+    if((last_dc != NULL) && (first_dc != last_dc))
+      return(hostname); /* Numeric IPv6 address */
+  }
+
   ret = ndpi_get_host_domain_suffix(ndpi_str, hostname, &domain_id);
 
   if((ret == NULL) || (ret == hostname))
     return(hostname);
 
+  if(strcmp(ret, "in-addr.arpa") == 0)
+    return(ret);
+    
   dot = ndpi_strrstr(hostname, ret);
 
   if(dot == NULL || dot == hostname)

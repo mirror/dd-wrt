@@ -2,7 +2,7 @@
  * rdp.c
  *
  * Copyright (C) 2009-11 - ipoque GmbH
- * Copyright (C) 2011-24 - ntop.org
+ * Copyright (C) 2011-25 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -41,7 +41,7 @@ static void ndpi_int_rdp_add_connection(struct ndpi_detection_module_struct *ndp
 					struct ndpi_flow_struct *flow) {
   NDPI_LOG_INFO(ndpi_struct, "found RDP\n");
   ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_RDP, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
-  ndpi_set_risk(flow, NDPI_DESKTOP_OR_FILE_SHARING_SESSION, "Found RDP"); /* Remote assistance */
+  ndpi_set_risk(ndpi_struct, flow, NDPI_DESKTOP_OR_FILE_SHARING_SESSION, "Found RDP"); /* Remote assistance */
 }
 
 /* **************************************** */

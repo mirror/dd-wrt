@@ -1,7 +1,7 @@
 /*
  * ndpi_serializer.c
  *
- * Copyright (C) 2011-23 - ntop.org and contributors
+ * Copyright (C) 2011-25 - ntop.org and contributors
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -707,7 +707,7 @@ int ndpi_serialize_end_of_record(ndpi_serializer *_serializer) {
 static inline void ndpi_serialize_csv_pre(ndpi_private_serializer *serializer) {
   if(serializer->status.flags & NDPI_SERIALIZER_STATUS_EOR) {
     serializer->status.flags &= ~NDPI_SERIALIZER_STATUS_EOR;
-  } else if (serializer->status.buffer.size_used == 0) {
+  } else if (!(serializer->status.flags & NDPI_SERIALIZER_STATUS_NOT_EMPTY)){
     /* nothing to do */
   } else {
     if(serializer->buffer.size > serializer->status.buffer.size_used) {
@@ -715,6 +715,7 @@ static inline void ndpi_serialize_csv_pre(ndpi_private_serializer *serializer) {
       serializer->status.buffer.size_used++;
     }
   }
+  serializer->status.flags |= NDPI_SERIALIZER_STATUS_NOT_EMPTY;
 }
 
 /* ********************************** */
@@ -2110,7 +2111,8 @@ int ndpi_serialize_string_string_len(ndpi_serializer *_serializer,
 
     ndpi_serialize_csv_pre(serializer);
     needed--;
-    memcpy(&serializer->buffer.data[serializer->status.buffer.size_used], value, needed);
+    if (needed > 0)
+      memcpy(&serializer->buffer.data[serializer->status.buffer.size_used], value, needed);
     serializer->status.buffer.size_used += needed;
     return(0);
   } else

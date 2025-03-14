@@ -40,6 +40,7 @@ NDPI_STATIC int inet_pton(int af, const char *src, void *dst);
 NDPI_STATIC uint32_t inet_addr(const char *ip);
 NDPI_STATIC int atoi(const char *);
 NDPI_STATIC long int atol(const char *);
+NDPI_STATIC long long int atoll(const char *buf);
 
 NDPI_STATIC void gettimeofday64(struct timespec64 *tv, void *tz);
 NDPI_STATIC char *strtok_r(char *str, const char *delim, char **saveptr);

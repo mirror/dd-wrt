@@ -1,7 +1,7 @@
 /*
  * snmp.c
  *
- * Copyright (C) 2011-22 - ntop.org
+ * Copyright (C) 2011-25 - ntop.org
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -129,7 +129,7 @@ static void ndpi_search_snmp(struct ndpi_detection_module_struct *ndpi_struct,
                   char str[64];
 
                   snprintf(str, sizeof(str), "SNMP Error %d", error_status);
-                  ndpi_set_risk(flow, NDPI_ERROR_CODE_DETECTED, str);
+                  ndpi_set_risk(ndpi_struct, flow, NDPI_ERROR_CODE_DETECTED, str);
 	        }
               }
             }

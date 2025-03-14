@@ -63,7 +63,8 @@ typedef struct {
   uint16_t        level,        /* Domain level for comparison */
                   from_start:1, /* match from start of string */
                   at_end:1,     /* match at end of string */
-                  dot:1;        /* is domain name */
+                  dot:1,        /* is domain name */
+                  no_override:1; /* Do not override existing entry */
 } AC_REP_t;
 
 /* AC_PATTERN_t:

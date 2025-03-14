@@ -6,9 +6,15 @@
 #undef HAVE_HYPERSCAN
 #include "ndpi_main.h"
 
-#include <linux/in6.h>
+// #include <linux/in6.h>
 
 #include "ndpi_strcol.h"
+#include <linux/string.h>
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,19,0)
+#define unsafe_memcpy(dest,src,length,justification) memcpy(dest,src,length)
+#endif
+
 
 void str_hosts_done(hosts_str_t *h) {
 int i;
@@ -42,7 +48,8 @@ str_collect_t *str_collect_copy(str_collect_t *c,int add_size) {
 
     str_collect_t *n = str_collect_init(c->last + 1 + add_size);
     if(n) {
-	memcpy((char *)n->s,(char *)c->s, c->last + 1 );
+	unsafe_memcpy((char *)n->s,(char *)c->s, c->last + 1,/*
+			 we copy last, max and string */);
 	n->last = c->last;
     }
     return n;
@@ -144,7 +151,7 @@ char *rstr;
 
     rstr = &c->s[c->last];
     *rstr++ = (char)(slen & 0xff);
-    memcpy(rstr,str,slen);
+    unsafe_memcpy(rstr,str,slen, /* last + slen < max */);
     rstr += slen;
     *rstr++ = '\0';
     *rstr = '\0';

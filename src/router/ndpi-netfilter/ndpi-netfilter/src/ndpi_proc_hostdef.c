@@ -112,10 +112,12 @@ ssize_t n_hostdef_proc_read(struct file *file, char __user *buf,
 				    if(p) lbuf[l++] = '\n';
 				    strcpy(&lbuf[l],t_proto);
 				    l += pl;
+				    lbuf[l++] = ':';
 				    lbuf[l] = '\0';
-				}
-				lbuf[l++] = i ? ',':':';
-				strcpy(&lbuf[l],host);
+				} else
+				    lbuf[l++] = ',';
+
+				unsafe_memcpy(&lbuf[l],host,hl,/* */);
 				l += hl;
 				lbuf[l] = '\0';
 
@@ -192,7 +194,7 @@ int n_hostdef_proc_close(struct inode *inode, struct file *file)
 			XCHGP(n->hosts,n->hosts_tmp);
 
 		} else {
-			pr_err("xt_ndpi:%s Can't update host_proto with errors\n",n->ns_name);
+			pr_info("xt_ndpi:%s Can't update host_proto with errors\n",n->ns_name);
 		}
 
 		if(_DBG_TRACE_GPROC_H)
@@ -205,7 +207,7 @@ int n_hostdef_proc_close(struct inode *inode, struct file *file)
 	}
 
 	mutex_unlock(&n->host_lock);
-        return 0;
+        return n->host_error ? -EIO : 0;
 }
 
 ssize_t

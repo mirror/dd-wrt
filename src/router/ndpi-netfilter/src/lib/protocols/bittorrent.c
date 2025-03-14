@@ -2,7 +2,7 @@
  * bittorrent.c
  *
  * Copyright (C) 2009-11 - ipoque GmbH
- * Copyright (C) 2011-24 - ntop.org
+ * Copyright (C) 2011-25 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -181,21 +181,21 @@ int ndpi_search_dht_again(struct ndpi_detection_module_struct *ndpi_struct, stru
 #define NDPI_STATICSTRING_LEN( s ) ( sizeof( s ) - 1 )
 #define NDPI_STATICSTRING( s )  s , ( sizeof( s ) - 1 )
 
-static int memcmp_packet_hdr(struct ndpi_packet_struct *packet,
-		      size_t l,const char *str,size_t len, int offs) {
+static int memcmp_packet_hdr( const struct ndpi_packet_struct *packet,
+			const  struct ndpi_int_one_line_struct *hline,
+		      const char *str,size_t len, int offs) {
 
-if(!packet->hdr_line) return 1;
-if(l >= last_hdr_idx) return 1;
-if(!packet->hdr_line[l].ptr) return 1;
+if(!hline) return 1;
+if(!hline->ptr) return 1;
 
 if(offs < 0) {
-	offs = packet->hdr_line[l].len-len;
+	offs = hline->len-len;
 	if(offs < 0) return 1;
 }
-if(packet->hdr_line[l].len < len+offs) return 1;
-if(packet->hdr_line[l].ptr+offs+len > packet->payload + packet->l3_packet_len) return 1;
+if(hline->len < len+offs) return 1;
+if(hline->ptr+offs+len > packet->payload + packet->l3_packet_len) return 1;
 
-return memcmp(packet->hdr_line[l].ptr+offs,str,len);
+return memcmp(hline->ptr+offs,str,len);
 }
 
 static int memcmp_packet_line(struct ndpi_packet_struct *packet,
@@ -1052,8 +1052,9 @@ static void ndpi_add_connection_as_bittorrent(
     ndpi_bt_add_peer_cache(ndpi_struct,packet,p1,p2);
   }
 
-  if(check_hash)
-     ndpi_search_bittorrent_hash(ndpi_struct, flow, bt_offset);
+  if(ndpi_struct->cfg.bittorrent_hash_enabled &&
+     check_hash)
+    ndpi_search_bittorrent_hash(ndpi_struct, flow, bt_offset);
 
   if(packet->iph) {
     char ip1[32],ip2[32];
@@ -1066,7 +1067,8 @@ static void ndpi_add_connection_as_bittorrent(
   ndpi_set_detected_protocol_keeping_master(ndpi_struct, flow, NDPI_PROTOCOL_BITTORRENT,
 					    confidence);
   
-  if(flow->protos.bittorrent.hash[0] == '\0') {
+  if(ndpi_struct->cfg.bittorrent_hash_enabled &&
+     flow->protos.bittorrent.hash[0] == '\0') {
     /* Don't use just 1 as in TCP DNS more packets could be returned (e.g. ACK). */
     flow->max_extra_packets_to_check = 3;
     flow->extra_packets_func = search_bittorrent_again;
@@ -1255,15 +1257,15 @@ static u_int8_t ndpi_int_search_bittorrent_tcp_zero(struct ndpi_detection_module
     /* parse complete get packet here into line structure elements */
     ndpi_parse_packet_line_info(ndpi_struct, flow);
     /* answer to this pattern is HTTP....Server: hypertracker */
-    if(     memcmp_packet_hdr(packet,user_agent_line_idx, NDPI_STATICSTRING("Azureus "), 0) == 0
-	 || memcmp_packet_hdr(packet,user_agent_line_idx, NDPI_STATICSTRING("BitTorrent"), 0) == 0
-	 || memcmp_packet_hdr(packet,user_agent_line_idx, NDPI_STATICSTRING("BTWebClient"), 0) == 0) {
+    if(     memcmp_packet_hdr(packet,&packet->user_agent_line, NDPI_STATICSTRING("Azureus "), 0) == 0
+	 || memcmp_packet_hdr(packet,&packet->user_agent_line, NDPI_STATICSTRING("BitTorrent"), 0) == 0
+	 || memcmp_packet_hdr(packet,&packet->user_agent_line, NDPI_STATICSTRING("BTWebClient"), 0) == 0) {
       NDPI_LOG_INFO(ndpi_struct, "Azureus /Bittorrent user agent line detected\n");
       ndpi_add_connection_as_bittorrent(ndpi_struct, flow, -1, 1, NDPI_CONFIDENCE_DPI);
       return 1;
     }
 
-    if( memcmp_packet_hdr(packet,user_agent_line_idx, NDPI_STATICSTRING("Shareaza "),0) == 0 &&
+    if( memcmp_packet_hdr(packet,&packet->user_agent_line, NDPI_STATICSTRING("Shareaza "),0) == 0 &&
 	 memcmp_packet_line(packet,8, NDPI_STATICSTRING("X-Queue: "), 0) == 0) {
       NDPI_LOG_INFO(ndpi_struct, "Bittorrent Shareaza detected.\n");
       ndpi_add_connection_as_bittorrent(ndpi_struct, flow, -1, 1, NDPI_CONFIDENCE_DPI);
@@ -1272,7 +1274,7 @@ static u_int8_t ndpi_int_search_bittorrent_tcp_zero(struct ndpi_detection_module
 
     /* this is a self built client, not possible to catch asymmetrically */
     if((packet->parsed_lines == 10 || (packet->parsed_lines == 11 && packet->line[10].len == 0))
-	&& memcmp_packet_hdr(packet,user_agent_line_idx, NDPI_STATICSTRING("Mozilla/4.0 "), 0) == 0
+	&& memcmp_packet_hdr(packet,&packet->user_agent_line, NDPI_STATICSTRING("Mozilla/4.0 "), 0) == 0
 	&& memcmp_packet_line(packet,2, NDPI_STATICSTRING("Keep-Alive: 300"), 0) == 0
 	&& memcmp_packet_line(packet,3, NDPI_STATICSTRING("Connection: Keep-alive"), 0) == 0
 	&& ( memcmp_packet_line(packet,4, NDPI_STATICSTRING("Accpet: */*"), 0) == 0 ||
@@ -1289,7 +1291,7 @@ static u_int8_t ndpi_int_search_bittorrent_tcp_zero(struct ndpi_detection_module
 
     /* FlashGet pattern */
     if(packet->parsed_lines == 8
-	&& memcmp_packet_hdr(packet,user_agent_line_idx, 
+	&& memcmp_packet_hdr(packet,&packet->user_agent_line, 
 				NDPI_STATICSTRING("Mozilla/4.0 (compatible; MSIE 6.0;"),0) == 0
 	&& packet->host_line.ptr != NULL && packet->host_line.len >= 7
 	&& memcmp_packet_line(packet,2, NDPI_STATICSTRING("Accept: */*"), 0) == 0
@@ -1303,7 +1305,7 @@ static u_int8_t ndpi_int_search_bittorrent_tcp_zero(struct ndpi_detection_module
 
     }
     if(packet->parsed_lines == 7
-	&& memcmp_packet_hdr(packet,user_agent_line_idx,
+	&& memcmp_packet_hdr(packet,&packet->user_agent_line,
 		NDPI_STATICSTRING("Mozilla/4.0 (compatible; MSIE 6.0;"),0) == 0
 	&& packet->host_line.ptr != NULL && packet->host_line.len >= 7
 	&& memcmp_packet_line(packet,2, NDPI_STATICSTRING("Accept: */*"),0) == 0
@@ -1415,7 +1417,7 @@ static u_int8_t ndpi_int_search_bittorrent_tcp_zero(struct ndpi_detection_module
 
       ndpi_parse_packet_line_info(ndpi_struct, flow);
       /* haven't fount this pattern ANY_BTwhere */
-      if( memcmp_packet_hdr(packet,host_line_idx, NDPI_STATICSTRING("ip2p.com:"),0) == 0) {
+      if( memcmp_packet_hdr(packet,&packet->host_line, NDPI_STATICSTRING("ip2p.com:"),0) == 0) {
 	NDPI_LOG_INFO(ndpi_struct, "found BT: Warez - Plain Host: ip2p.com: pattern\n");
 	ndpi_add_connection_as_bittorrent(ndpi_struct, flow, -1, 1, NDPI_CONFIDENCE_DPI);
 	return 1;
@@ -1464,6 +1466,8 @@ static u_int8_t is_port(u_int16_t a, u_int16_t b, u_int16_t what) {
 
 static void ndpi_skip_bittorrent(struct ndpi_detection_module_struct *ndpi_struct,
 				 struct ndpi_flow_struct *flow) {
+  if(flow->detected_protocol_stack[0] == NDPI_PROTOCOL_BITTORRENT)
+    return;
   if(search_into_bittorrent_cache(ndpi_struct, flow))
     ndpi_add_connection_as_bittorrent(ndpi_struct, flow, -1, 0, NDPI_CONFIDENCE_DPI_CACHE);
   else
