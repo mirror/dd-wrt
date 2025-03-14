@@ -2663,7 +2663,7 @@ static int qcom_op_cmd_mapping(struct nand_chip *chip, u8 opcode,
 			cmd = OP_PAGE_READ;
 		break;
 	default:
-		dev_err(nandc->dev, "Opcode not supported: %u\n", opcode);
+		dev_info(nandc->dev, "Opcode not supported: %u\n", opcode);
 		return -EOPNOTSUPP;
 	}
 
