@@ -98,7 +98,7 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"gnutella",
 	"edonkey",
 	"bittorrent",
-	"skype_teamscall",
+	"ms_teams_call",
 	"signal",
 	"memcached",
 	"smbv23",
@@ -185,7 +185,7 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"gmail",
 	"googlemaps",
 	"youtube",
-	"skype_teams",
+	"mozilla",
 	"google",
 	"ms_rpch",
 	"netflow",
@@ -501,6 +501,10 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"dicom",
 	"paramountplus",
 	"yandex_alice",
+	"vivox",
+	"digitalocean",
+	"rutube",
+	"lagofast",
 	NULL,
 };
 
