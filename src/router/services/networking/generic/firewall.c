@@ -2671,7 +2671,7 @@ static void filter_output(char *wanface)
 }
 static int has_flood_protection(void)
 {
-return nvram_matchi("block_syncflood", 1) || nvram_matchi("block_udpflood", 1) || nvram_matchi("block_pod", 1))
+return nvram_matchi("block_syncflood", 1) || nvram_matchi("block_udpflood", 1) || nvram_matchi("block_pod", 1));
 }
 static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int dmzenable, int webfilter, char *vifs)
 {
