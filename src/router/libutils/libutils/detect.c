@@ -1415,13 +1415,18 @@ generic:;
 			fp = fopen(mtdname, "rb");
 			if (fp) {
 				fseek(fp, 0x4ff00, SEEK_SET);
-				int rev = getc(fp);
+				unsigned char rev[5];
+				rev[0] = getc(fp);
+				rev[1] = getc(fp);
+				rev[2] = 0;
+				if (rev[1]==0xff)
+				    rev[1]=0;
 				fseek(fp, 0x4ff10, SEEK_SET);
 				char ver[9];
 				fread(ver, 8, 1, fp);
 				fclose(fp);
 				char rname[32];
-				sprintf(rname, "Asus RT-AX89X %c %s\n", rev, ver);
+				sprintf(rname, "Asus RT-AX89X %s %s\n", rev, ver);
 				setRouter(rname);
 			} else {
 				setRouter("Asus RT-AX89X");
