@@ -385,7 +385,7 @@ bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Redirection plage de port";
 bmenu.applicationspforwarding="Redirection de port";
 bmenu.applicationsptriggering="Déclenchement de connexion";
-bmenu.applicationsUpnp="UPnP";
+bmenu.applicationsUpnp="UPnP IGD";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 bmenu.applicationsP2P="P2P";
@@ -1302,12 +1302,11 @@ upgrad.mess1="La mise à jour du Micrologiciel peut prendre quelques minutes.<br
 hupgrad.right2="Cliquez sur le bouton <em>Parcourir...</em> pour sélectionner le Micrologiciel à charger sur le routeur.<br /><br /> Cliquez sur <em>Mettre à jour</em> pour commencer la mise à jour. La mise à jour NE DOIT SURTOUT PAS être interrompue.";
 
 // ** UPnP.asp **//
-upnp.titl="UPnP";
-upnp.h2="Universal Plug and Play (UPnP)";
+upnp.titl="UPnP IGD";
+upnp.h2="Service UPnP IGD";
 upnp.legend="Listes redirections UPnP";
 upnp.legend2="Configuration UPnP";
-upnp.serv="Service UPnP";
-upnp.url="Présentation URL";
+upnp.serv="Service UPnP IGD";
 upnp.msg1="Cliquez pour supprimer la redirection";
 upnp.msg2="Êtes-vous sûr de vouloir effacer toutes les règles UPNP ?";
 
