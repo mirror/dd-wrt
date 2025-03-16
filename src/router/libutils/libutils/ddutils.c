@@ -455,36 +455,31 @@ char *get_mac_from_ip(char *mac, char *ip)
 	int type; // HW type
 	int flags; // flags
 
-	if ((fp = fopen("/proc/net/arp", "rb")) == NULL)
-		return NULL;
-	char ipcopy[128];
-	strlcpy(ipcopy, ip, sizeof(ipcopy));
-	char *check = strrchr(ipcopy, ':');
-	int ipv6 = 0;
-	if (check) {
-		ipv6 = strncmp(ipcopy, "::ffff", 6);
-		check++;
-	} else
-		check = ipcopy;
+	char check[128];
+	int ipv6 = getipv4fromipv6(check, ip);
 
-	// Bypass header -- read until newline
-	if (fgets(line, sizeof(line) - 1, fp) != NULL) {
-		// Read the ARP cache entries.
-		// IP address HW type Flags HW address Mask Device
-		// 192.168.1.1 0x1 0x2 00:90:4C:21:00:2A * eth0
-		while (fgets(line, sizeof(line) - 1, fp)) {
-			if (sscanf(line, "%s 0x%x 0x%x %49s %49s %49s\n", ipa, &type, &flags, hwa, mask, dev) != 6)
-				continue;
-			if (strcmp(check, ipa))
-				continue;
-			strncpy(mac, hwa, 17);
+	if (!ipv6) {
+		if ((fp = fopen("/proc/net/arp", "rb")) == NULL)
+			return NULL;
+
+		// Bypass header -- read until newline
+		if (fgets(line, sizeof(line) - 1, fp) != NULL) {
+			// Read the ARP cache entries.
+			// IP address HW type Flags HW address Mask Device
+			// 192.168.1.1 0x1 0x2 00:90:4C:21:00:2A * eth0
+			while (fgets(line, sizeof(line) - 1, fp)) {
+				if (sscanf(line, "%s 0x%x 0x%x %49s %49s %49s\n", ipa, &type, &flags, hwa, mask, dev) != 6)
+					continue;
+				if (strcmp(check, ipa))
+					continue;
+				strncpy(mac, hwa, 17);
+				fclose(fp);
+				return mac;
+			}
 			fclose(fp);
-			return mac;
 		}
-	}
-	fclose(fp);
 
-	if (ipv6) {
+	} else {
 		fp = popen("ip -6 neigh", "rb");
 		if (fp) {
 			while (fgets(line, sizeof(line) - 1, fp)) {
