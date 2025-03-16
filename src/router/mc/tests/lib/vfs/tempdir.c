@@ -1,7 +1,7 @@
 /*
    lib/vfs - manipulations with temp files and  dirs
 
-   Copyright (C) 2012-2024
+   Copyright (C) 2012-2025
    Free Software Foundation, Inc.
 
    Written by:
@@ -45,6 +45,9 @@
 static void
 setup (void)
 {
+    /* Ensure that tests behave consistently irrespectively of the environment */
+    g_unsetenv ("MC_TMPDIR");
+
     str_init_strings (NULL);
 
     vfs_init ();

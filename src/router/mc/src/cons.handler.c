@@ -1,7 +1,7 @@
 /*
    Client interface for General purpose Linux console save/restore server
 
-   Copyright (C) 1994-2024
+   Copyright (C) 1994-2025
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -154,7 +154,7 @@ handle_console_linux (console_action_t action)
             break;
         }
         /* Get the console saver running */
-        cons_saver_pid = fork ();
+        cons_saver_pid = my_fork ();
         if (cons_saver_pid < 0)
         {
             /* Cannot fork */

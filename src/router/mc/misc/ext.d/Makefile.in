@@ -99,6 +99,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/nls.m4 \
 	$(top_srcdir)/m4/po.m4 $(top_srcdir)/m4/progtest.m4 \
 	$(top_srcdir)/acinclude.m4 \
+	$(top_srcdir)/m4.include/gnulib/mc-gnulib-common.m4 \
 	$(top_srcdir)/m4.include/gnulib/mode_t.m4 \
 	$(top_srcdir)/m4.include/gnulib/stat-size.m4 \
 	$(top_srcdir)/m4.include/gnulib/fstypename.m4 \
@@ -114,6 +115,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4.include/ax_append_flag.m4 \
 	$(top_srcdir)/m4.include/ax_append_compile_flags.m4 \
 	$(top_srcdir)/m4.include/mc-cflags.m4 \
+	$(top_srcdir)/m4.include/mc-stdckdint.m4 \
 	$(top_srcdir)/m4.include/ax_gcc_func_attribute.m4 \
 	$(top_srcdir)/m4.include/mc-check-search-type.m4 \
 	$(top_srcdir)/m4.include/mc-get-fs-info.m4 \
@@ -128,7 +130,6 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4.include/mc-ext2fs-attr.m4 \
 	$(top_srcdir)/m4.include/mc-glib.m4 \
 	$(top_srcdir)/m4.include/mc-vfs.m4 \
-	$(top_srcdir)/m4.include/vfs/rpc.m4 \
 	$(top_srcdir)/m4.include/vfs/socket.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-extfs.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-sfs.m4 \
@@ -148,7 +149,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
-CONFIG_CLEAN_FILES = doc.sh misc.sh text.sh web.sh
+CONFIG_CLEAN_FILES = doc.sh misc.sh text.sh
 CONFIG_CLEAN_VPATH_FILES =
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
@@ -200,7 +201,7 @@ am__can_run_installinfo = \
   esac
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/doc.sh.in \
-	$(srcdir)/misc.sh.in $(srcdir)/text.sh.in $(srcdir)/web.sh.in
+	$(srcdir)/misc.sh.in $(srcdir)/text.sh.in
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -217,7 +218,6 @@ CHECK_CFLAGS = @CHECK_CFLAGS@
 CHECK_LIBS = @CHECK_LIBS@
 COM_ERR_CFLAGS = @COM_ERR_CFLAGS@
 COM_ERR_LIBS = @COM_ERR_LIBS@
-CP1251 = @CP1251@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CSCOPE = @CSCOPE@
@@ -259,10 +259,13 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
+ENCODING_CP1251 = @ENCODING_CP1251@
+ENCODING_CP866 = @ENCODING_CP866@
 ETAGS = @ETAGS@
 EXEEXT = @EXEEXT@
 EXT2FS_CFLAGS = @EXT2FS_CFLAGS@
 EXT2FS_LIBS = @EXT2FS_LIBS@
+EXTFSHELPERSDIR = @EXTFSHELPERSDIR@
 EXTHELPERSDIR = @EXTHELPERSDIR@
 FGREP = @FGREP@
 FILECMD = @FILECMD@
@@ -344,12 +347,11 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SLANG_CFLAGS = @SLANG_CFLAGS@
 SLANG_LIBS = @SLANG_LIBS@
+STDCKDINT_H = @STDCKDINT_H@
 STRIP = @STRIP@
-TESTS_LDFLAGS = @TESTS_LDFLAGS@
 UNZIP = @UNZIP@
 USE_NLS = @USE_NLS@
 VERSION = @VERSION@
-X11_WWW = @X11_WWW@
 XGETTEXT = @XGETTEXT@
 XGETTEXT_015 = @XGETTEXT_015@
 XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
@@ -417,21 +419,20 @@ extdir = $(EXTHELPERSDIR)
 SCRIPTS_IN = \
 	doc.sh.in \
 	misc.sh.in \
-	text.sh.in \
-	web.sh.in
+	text.sh.in
 
 SCRIPTS_OUT = \
 	doc.sh \
 	misc.sh \
-	text.sh \
-	web.sh
+	text.sh
 
 SCRIPTS_UNTOUCHED = \
 	archive.sh \
 	image.sh \
 	package.sh \
 	sound.sh \
-	video.sh
+	video.sh \
+	web.sh
 
 ext_SCRIPTS = \
 	$(SCRIPTS_UNTOUCHED) \
@@ -478,8 +479,6 @@ doc.sh: $(top_builddir)/config.status $(srcdir)/doc.sh.in
 misc.sh: $(top_builddir)/config.status $(srcdir)/misc.sh.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 text.sh: $(top_builddir)/config.status $(srcdir)/text.sh.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-web.sh: $(top_builddir)/config.status $(srcdir)/web.sh.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 install-extSCRIPTS: $(ext_SCRIPTS)
 	@$(NORMAL_INSTALL)

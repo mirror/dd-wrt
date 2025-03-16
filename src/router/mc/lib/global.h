@@ -8,6 +8,13 @@
 #define MC_GLOBAL_H
 
 #include <glib.h>
+
+#if defined(HAVE_FUNC_ATTRIBUTE_WEAK) && defined(HAVE_TESTS)
+#define MC_MOCKABLE __attribute__((weak))
+#else
+#define MC_MOCKABLE
+#endif
+
 #include "glibcompat.h"
 
 #include "unixcompat.h"
@@ -41,6 +48,12 @@
 #define MC_FALLTHROUGH __attribute__((fallthrough))
 #else
 #define MC_FALLTHROUGH
+#endif
+
+#ifdef HAVE_FUNC_ATTRIBUTE_UNUSED
+#define MC_UNUSED __attribute__((unused))
+#else
+#define MC_UNUSED
 #endif
 
 #ifdef USE_MAINTAINER_MODE

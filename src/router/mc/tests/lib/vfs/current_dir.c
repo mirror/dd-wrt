@@ -1,7 +1,7 @@
 /*
    lib/vfs - manipulate with current directory
 
-   Copyright (C) 2011-2024
+   Copyright (C) 2011-2025
    Free Software Foundation, Inc.
 
    Written by:
@@ -32,6 +32,7 @@
 #include "lib/global.h"
 #include "lib/strutil.h"
 #include "lib/vfs/xdirentry.h"
+#include "lib/util.h"
 
 #include "src/vfs/local/local.c"
 
@@ -191,7 +192,7 @@ main (void)
     tc_core = tcase_create ("Core");
 
     /* writable directory where check creates temporary files */
-    cwd = g_get_current_dir ();
+    cwd = my_get_current_dir ();
     g_setenv ("TEMP", cwd, TRUE);
     g_free (cwd);
 

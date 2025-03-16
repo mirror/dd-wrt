@@ -2,7 +2,7 @@
    Routines invoked by a function key
    They normally operate on the current panel.
 
-   Copyright (C) 1994-2024
+   Copyright (C) 1994-2025
    Free Software Foundation, Inc.
 
    Written by:
@@ -38,9 +38,6 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#ifdef HAVE_MMAP
-#include <sys/mman.h>
-#endif
 #ifdef ENABLE_VFS_NET
 #include <netdb.h>
 #endif
@@ -67,7 +64,6 @@
 #include "src/setup.h"
 #include "src/execute.h"        /* toggle_panels() */
 #include "src/history.h"
-#include "src/usermenu.h"       /* MC_GLOBAL_MENU */
 #include "src/util.h"           /* check_for_default() */
 
 #include "src/viewer/mcviewer.h"
@@ -80,7 +76,7 @@
 #include "src/diffviewer/ydiff.h"
 #endif
 
-#include "fileopctx.h"
+#include "filegui.h"
 #include "filenot.h"
 #include "hotlist.h"            /* hotlist_show() */
 #include "tree.h"               /* tree_chdir() */
@@ -98,12 +94,6 @@
 /*** global variables ****************************************************************************/
 
 /*** file scope macro definitions ****************************************************************/
-
-#ifdef HAVE_MMAP
-#ifndef MAP_FILE
-#define MAP_FILE 0
-#endif
-#endif /* HAVE_MMAP */
 
 /*** file scope type declarations ****************************************************************/
 
@@ -135,6 +125,8 @@ do_view_cmd (WPanel *panel, gboolean plain_view)
     const file_entry_t *fe;
 
     fe = panel_current_entry (panel);
+    if (fe == NULL)
+        return;
 
     /* Directories are viewed by changing to them */
     if (S_ISDIR (fe->st.st_mode) || link_isdir (fe))
@@ -202,7 +194,7 @@ compare_files (const vfs_path_t *vpath1, const vfs_path_t *vpath2, off_t size)
                     ;
             }
             while (n1 == n2 && n1 == sizeof (buf1) && memcmp (buf1, buf2, sizeof (buf1)) == 0);
-            result = (n1 != n2) || memcmp (buf1, buf2, n1);
+            result = (n1 != n2) || (memcmp (buf1, buf2, n1) != 0);
             rotate_dash (FALSE);
 
             close (file2);
@@ -586,12 +578,16 @@ view_cmd (WPanel *panel)
 void
 view_file_cmd (const WPanel *panel)
 {
+    const file_entry_t *fe;
     char *filename;
     vfs_path_t *vpath;
 
+    fe = panel_current_entry (panel);
+    if (fe == NULL)
+        return;
+
     filename =
-        input_expand_dialog (_("View file"), _("Filename:"),
-                             MC_HISTORY_FM_VIEW_FILE, panel_current_entry (panel)->fname->str,
+        input_expand_dialog (_("View file"), _("Filename:"), MC_HISTORY_FM_VIEW_FILE, fe->fname->str,
                              INPUT_COMPLETE_FILENAMES);
     if (filename == NULL)
         return;
@@ -619,7 +615,15 @@ view_filtered_cmd (const WPanel *panel)
     const char *initial_command;
 
     if (input_is_empty (cmdline))
-        initial_command = panel_current_entry (panel)->fname->str;
+    {
+        const file_entry_t *fe;
+
+        fe = panel_current_entry (panel);
+        if (fe == NULL)
+            return;
+
+        initial_command = fe->fname->str;
+    }
     else
         initial_command = input_get_ctext (cmdline);
 
@@ -683,9 +687,14 @@ edit_file_at_line (const vfs_path_t *what_vpath, gboolean internal, long start_l
 void
 edit_cmd (const WPanel *panel)
 {
+    const file_entry_t *fe;
     vfs_path_t *fname;
 
-    fname = vfs_path_from_str (panel_current_entry (panel)->fname->str);
+    fe = panel_current_entry (panel);
+    if (fe == NULL)
+        return;
+
+    fname = vfs_path_from_str (fe->fname->str);
     if (regex_command (fname, "Edit") == 0)
         do_edit (fname);
     vfs_path_free (fname, TRUE);
@@ -697,9 +706,14 @@ edit_cmd (const WPanel *panel)
 void
 edit_cmd_force_internal (const WPanel *panel)
 {
+    const file_entry_t *fe;
     vfs_path_t *fname;
 
-    fname = vfs_path_from_str (panel_current_entry (panel)->fname->str);
+    fe = panel_current_entry (panel);
+    if (fe == NULL)
+        return;
+
+    fname = vfs_path_from_str (fe->fname->str);
     if (regex_command (fname, "Edit") == 0)
         edit_file_at_line (fname, TRUE, 1);
     vfs_path_free (fname, TRUE);
@@ -746,6 +760,8 @@ mkdir_cmd (WPanel *panel)
     const char *name = "";
 
     fe = panel_current_entry (panel);
+    if (fe == NULL)
+        return;
 
     /* If 'on' then automatically fills name with current item name */
     if (auto_fill_mkdir_name && !DIR_IS_DOTDOT (fe->fname->str))
@@ -1065,11 +1081,11 @@ swap_cmd (void)
 void
 link_cmd (link_type_t link_type)
 {
-    const char *filename;
+    const file_entry_t *fe;
 
-    filename = panel_current_entry (current_panel)->fname->str;
-    if (filename != NULL)
-        do_link (link_type, filename);
+    fe = panel_current_entry (current_panel);
+    if (fe != NULL)
+        do_link (link_type, fe->fname->str);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1081,6 +1097,9 @@ edit_symlink_cmd (void)
     const char *p;
 
     fe = panel_current_entry (current_panel);
+    if (fe == NULL)
+        return;
+
     p = fe->fname->str;
 
     if (!S_ISLNK (fe->st.st_mode))
@@ -1149,14 +1168,6 @@ help_cmd (void)
         event_data.node = "[main]";
 
     mc_event_raise (MCEVENT_GROUP_CORE, "help", &event_data);
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-void
-user_file_menu_cmd (void)
-{
-    (void) user_menu_cmd (NULL, NULL, -1);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1236,7 +1247,8 @@ smart_dirsize_cmd (WPanel *panel)
     const file_entry_t *entry;
 
     entry = panel_current_entry (panel);
-    if ((S_ISDIR (entry->st.st_mode) && DIR_IS_DOTDOT (entry->fname->str)) || panel->dirs_marked)
+    if ((entry != NULL && S_ISDIR (entry->st.st_mode) && DIR_IS_DOTDOT (entry->fname->str))
+        || panel->dirs_marked)
         dirsizes_cmd (panel);
     else
         single_dirsize_cmd (panel);
@@ -1251,7 +1263,7 @@ single_dirsize_cmd (WPanel *panel)
 
     entry = panel_current_entry (panel);
 
-    if (S_ISDIR (entry->st.st_mode) && !DIR_IS_DOTDOT (entry->fname->str))
+    if (entry != NULL && S_ISDIR (entry->st.st_mode) && !DIR_IS_DOTDOT (entry->fname->str))
     {
         size_t dir_count = 0;
         size_t count = 0;

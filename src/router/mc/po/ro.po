@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2024-08-23 19:34+0200\n"
+"POT-Creation-Date: 2025-01-23 10:39+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Simona Iacob <s@zp1.net>, 2021-2023\n"
 "Language-Team: Romanian (http://app.transifex.com/mc/mc/language/ro/)\n"
@@ -959,6 +959,9 @@ msgstr ""
 msgid "Diff:"
 msgstr "Diff:"
 
+msgid "File name is empty!"
+msgstr ""
+
 #, c-format
 msgid "\"%s\" is a directory"
 msgstr "\"%s\" este un dosar"
@@ -1082,9 +1085,6 @@ msgstr "Verificare &POSIX pentru o noua linie"
 msgid "Edit Save Mode"
 msgstr "Editare mod salvare"
 
-msgid "Save as"
-msgstr "Salvează ca"
-
 msgid "Cannot save: destination is not a regular file"
 msgstr "Nu se poate salva: destinația nu este un fișier obișnuit"
 
@@ -1156,14 +1156,8 @@ msgstr ""
 msgid "This function is not implemented"
 msgstr "Această funcție nu este implementată"
 
-msgid "Copy to clipboard"
-msgstr "Copiază în clipboard"
-
 msgid "Unable to save to file"
 msgstr "Nu se poate salva în fișier"
-
-msgid "Cut to clipboard"
-msgstr "Taie în clipboard"
 
 msgid "Goto line"
 msgstr "Mergi la linia"
@@ -1171,14 +1165,14 @@ msgstr "Mergi la linia"
 msgid "Save block"
 msgstr "Salvează blocul"
 
+msgid "Cannot save block"
+msgstr ""
+
 msgid "Insert file"
 msgstr "Inserează fișierul"
 
 msgid "Cannot insert file"
 msgstr "Nu se poate insera fișierul"
-
-msgid "Sort block"
-msgstr "Sortează blocul"
 
 msgid "You must first highlight a block of text"
 msgstr "Mai întâi trebuie să evidențiezi un bloc de text"
@@ -1190,9 +1184,6 @@ msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
 msgstr ""
 "Introduceți opțiunile de sortare (a se vedea pagina(1) de manual sort) "
 "separate prin spații albe:"
-
-msgid "Sort"
-msgstr "Sortare"
 
 msgid "Cannot execute sort command"
 msgstr "Nu se poate rula comanda de sortare"
@@ -1207,11 +1198,8 @@ msgstr "Lipește ieșirea unei comenzi externe"
 msgid "Enter shell command(s):"
 msgstr "Introdu comandă shell:"
 
-msgid "External command"
-msgstr "Comandă externă"
-
-msgid "Cannot execute command"
-msgstr "Nu se poate executa comanda"
+msgid "Cannot execute external command"
+msgstr ""
 
 msgid "mail -s <subject> -c <cc> <to>"
 msgstr "mail -s <subiect> -c <cc> <către>"
@@ -1605,7 +1593,7 @@ msgstr ""
 "Un editor de text ușor de utilizat\n"
 "creat pentru Midnight Commander."
 
-msgid "Copyright (C) 1996-2024 the Free Software Foundation"
+msgid "Copyright (C) 1996-2025 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -2243,11 +2231,9 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get flags of \"%s\"\n"
+"Cannot get ext2 attributes of \"%s\"\n"
 "%s"
 msgstr ""
-"Nu se pot obține indicatorii de \"%s\"\n"
-"%s"
 
 msgid "set &user ID on execution"
 msgstr "Setează ID &proprietar la executare"
@@ -2635,8 +2621,8 @@ msgstr ""
 "\"%s\"\n"
 "sunt același fișier"
 
-msgid "Ski&p all"
-msgstr "Sări t&ot"
+msgid "Ignore a&ll"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -2697,6 +2683,12 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot enter into directory \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "Cannot overwrite directory \"%s\"\n"
 "%s"
 msgstr ""
@@ -2732,13 +2724,13 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source file \"%s\"\n"
+"Cannot get ext2 attributes of source file \"%s\"\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set attributes of target file \"%s\"\n"
+"Cannot set ext2 attributes of target file \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2855,7 +2847,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set attributes for target file \"%s\"\n"
+"Cannot set ext2 attributes for target file \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2869,7 +2861,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source directory \"%s\"\n"
+"Cannot get ext2 attributes of source directory \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -3867,12 +3859,11 @@ msgstr ""
 "Dacă dorești să ieși, apasă o singură dată tasta Escape\n"
 "și așteaptă."
 
-msgid "Cannot accept this key"
-msgstr "Această tastă nu poate fi acceptată"
-
 #, c-format
-msgid "You have entered \"%s\""
-msgstr "Ai introdus \"%s\""
+msgid ""
+"Cannot accept this key.\n"
+"You have entered \"%s\""
+msgstr ""
 
 #. TRANSLATORS: This label appears near learned keys.  Keep it short.
 msgid "OK"
@@ -3955,15 +3946,15 @@ msgstr ""
 "%s"
 
 #, c-format
+msgid "Warning: Cannot change to %s.\n"
+msgstr "Atenție: Nu se poate schimba în %s.\n"
+
+#, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "Nu se poate deschide pipe %s\n"
 
 msgid "The shell is still active. Quit anyway?"
 msgstr "Terminalul este încă activ. Ieși oricum?"
-
-#, c-format
-msgid "Warning: Cannot change to %s.\n"
-msgstr "Atenție: Nu se poate schimba în %s.\n"
 
 msgid "With builtin editor and aspell support"
 msgstr ""

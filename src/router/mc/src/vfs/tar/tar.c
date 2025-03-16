@@ -1,7 +1,7 @@
 /*
    Virtual File System: GNU Tar file system.
 
-   Copyright (C) 1995-2024
+   Copyright (C) 1995-2025
    Free Software Foundation, Inc.
 
    Written by:
@@ -59,8 +59,8 @@
 
 /* Size of each record, once in blocks, once in bytes. Those two variables are always related,
    the second being BLOCKSIZE times the first. */
-const int blocking_factor = DEFAULT_BLOCKING;
-const size_t record_size = DEFAULT_BLOCKING * BLOCKSIZE;
+const idx_t blocking_factor = DEFAULT_BLOCKING;
+const idx_t record_size = DEFAULT_BLOCKING * BLOCKSIZE;
 
 /* As we open one archive at a time, it is safe to have these static */
 union block *record_end;        /* last+1 block of archive record */
@@ -327,39 +327,42 @@ tar_available_space_after (const union block *pointer)
 static read_header
 tar_checksum (const union block *header)
 {
-    size_t i;
+    unsigned int i;
     int unsigned_sum = 0;       /* the POSIX one :-) */
     int signed_sum = 0;         /* the Sun one :-( */
     int recorded_sum;
-    int parsed_sum;
-    const char *p = header->buffer;
 
-    for (i = sizeof (*header); i-- != 0;)
+    for (i = 0; i < sizeof (*header); i++)
     {
-        unsigned_sum += (unsigned char) *p;
-        signed_sum += (signed char) (*p++);
+        unsigned char uc = header->buffer[i];
+        signed char sc = header->buffer[i];
+
+        unsigned_sum += uc;
+        signed_sum += sc;
     }
 
     if (unsigned_sum == 0)
         return HEADER_ZERO_BLOCK;
 
     /* Adjust checksum to count the "chksum" field as blanks.  */
-    for (i = sizeof (header->header.chksum); i-- != 0;)
+    for (i = 0; i < sizeof (header->header.chksum); i++)
     {
-        unsigned_sum -= (unsigned char) header->header.chksum[i];
-        signed_sum -= (signed char) (header->header.chksum[i]);
+        unsigned char uc = header->header.chksum[i];
+        signed char sc = header->header.chksum[i];
+
+        unsigned_sum -= uc;
+        signed_sum -= sc;
     }
 
     unsigned_sum += ' ' * sizeof (header->header.chksum);
     signed_sum += ' ' * sizeof (header->header.chksum);
 
-    parsed_sum =
+    recorded_sum =
         tar_from_header (header->header.chksum, sizeof (header->header.chksum), NULL, 0,
                          INT_MAX, TRUE);
-    if (parsed_sum < 0)
-        return HEADER_FAILURE;
 
-    recorded_sum = parsed_sum;
+    if (recorded_sum < 0)
+        return HEADER_FAILURE;
 
     if (unsigned_sum != recorded_sum && signed_sum != recorded_sum)
         return HEADER_FAILURE;
@@ -636,8 +639,6 @@ tar_read_header (struct vfs_class *me, struct vfs_s_super *archive)
         if (header->header.typeflag == GNUTYPE_LONGNAME
             || header->header.typeflag == GNUTYPE_LONGLINK)
         {
-            size_t name_size = current_stat_info.stat.st_size;
-            size_t n;
             off_t size;
             union block *header_copy;
             char *bp;
@@ -646,16 +647,14 @@ tar_read_header (struct vfs_class *me, struct vfs_s_super *archive)
             if (arch->type == TAR_UNKNOWN)
                 arch->type = TAR_GNU;
 
-            n = name_size % BLOCKSIZE;
-            size = name_size + BLOCKSIZE;
-            if (n != 0)
-                size += BLOCKSIZE - n;
-            if ((off_t) name_size != current_stat_info.stat.st_size || size < (off_t) name_size)
+            if (ckd_add (&size, current_stat_info.stat.st_size, 2 * BLOCKSIZE - 1))
             {
                 message (D_ERROR, MSG_ERROR, _("Inconsistent tar archive"));
                 status = HEADER_FAILURE;
                 goto ret;
             }
+
+            size -= size % BLOCKSIZE;
 
             header_copy = g_malloc (size + 1);
 
@@ -681,7 +680,6 @@ tar_read_header (struct vfs_class *me, struct vfs_s_super *archive)
                 data_block = tar_find_next_block (arch);
                 if (data_block == NULL)
                 {
-                    g_free (header_copy);
                     message (D_ERROR, MSG_ERROR, _("Unexpected EOF on archive file"));
                     status = HEADER_FAILURE;
                     goto ret;
@@ -1085,12 +1083,12 @@ tar_super_same (const vfs_path_element_t *vpath_element, struct vfs_s_super *par
 }
 
 /* --------------------------------------------------------------------------------------------- */
-/* Get indes of current data chunk in a sparse file.
+/* Get index of current data chunk in a sparse file.
  *
  * @param sparse_map map of the sparse file
  * @param offset offset in the sparse file
  *
- * @return an index of ahole or a data chunk
+ * @return an index of a hole or a data chunk
  *      positive: pointer to the data chunk;
  *      negative: pointer to the hole before data chunk;
  *      zero: pointer to the hole after last data chunk
@@ -1291,8 +1289,6 @@ vfs_init_tarfs (void)
     tarfs_subclass.free_inode = tar_free_inode;
     tarfs_subclass.fh_open = tar_fh_open;
     vfs_register_class (vfs_tarfs_ops);
-
-    tar_base64_init ();
 }
 
 /* --------------------------------------------------------------------------------------------- */

@@ -1,6 +1,6 @@
 /* lib/vfs - test vfs_path_t manipulation functions
 
-   Copyright (C) 2011-2024
+   Copyright (C) 2011-2025
    Free Software Foundation, Inc.
 
    Written by:
@@ -31,6 +31,7 @@
 #include "lib/strutil.h"
 #include "lib/vfs/xdirentry.h"
 #include "lib/vfs/path.h"
+#include "lib/util.h"
 
 #include "src/vfs/local/local.c"
 
@@ -83,8 +84,6 @@ setup (void)
     vfs_init_class (vfs_test_ops1, "testfs1", VFSF_NOLINKS | VFSF_REMOTE, "test1");
     vfs_test_ops1->chdir = test_chdir;
     vfs_register_class (vfs_test_ops1);
-
-    mc_global.sysconfig_dir = (char *) TEST_SHARE_DIR;
 
     vfs_local_ops->chdir = test_chdir;
 
@@ -203,7 +202,7 @@ main (void)
     tc_core = tcase_create ("Core");
 
     /* writable directory where check creates temporary files */
-    cwd = g_get_current_dir ();
+    cwd = my_get_current_dir ();
     g_setenv ("TEMP", cwd, TRUE);
     g_free (cwd);
 

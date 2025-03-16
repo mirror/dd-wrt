@@ -1,7 +1,7 @@
 /*
    Panel managing.
 
-   Copyright (C) 1994-2024
+   Copyright (C) 1994-2025
    Free Software Foundation, Inc.
 
    Written by:
@@ -138,6 +138,8 @@ info_show_info (WInfo *info)
     my_statfs (&myfs_stats, p_rp_cwd);
 
     fe = panel_current_entry (current_panel);
+    if (fe == NULL)
+        return;
 
     st = fe->st;
 

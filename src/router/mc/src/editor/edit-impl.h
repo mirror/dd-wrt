@@ -71,10 +71,6 @@
 
 #define LB_NAMES (LB_MAC + 1)
 
-#define get_sys_error(s) (s)
-
-#define edit_error_dialog(h,s) query_dialog (h, s, D_ERROR, 1, _("&Dismiss"))
-#define edit_query_dialog(h,s) query_dialog (h, s, D_NORMAL, 1, _("&Dismiss"))
 #define edit_query_dialog2(h,t,a,b) query_dialog (h, t, D_NORMAL, 2, a, b)
 #define edit_query_dialog3(h,t,a,b,c) query_dialog (h, t, D_NORMAL, 3, a, b, c)
 
@@ -98,24 +94,11 @@ typedef enum
 
 /*** structures declarations (and typedefs of structures)*****************************************/
 
-/* search/replace options */
-typedef struct edit_search_options_t
-{
-    mc_search_type_t type;
-    gboolean case_sens;
-    gboolean backwards;
-    gboolean only_in_selection;
-    gboolean whole_words;
-    gboolean all_codepages;
-} edit_search_options_t;
-
 /*** global variables defined in .c file *********************************************************/
 
 extern const char VERTICAL_MAGIC[5];
 /* if enable_show_tabs_tws == TRUE then use visible_tab visible_tws */
 extern gboolean enable_show_tabs_tws;
-
-extern edit_search_options_t edit_search_options;
 
 extern unsigned int edit_stack_iterator;
 extern edit_arg_t edit_history_moveto[MAX_HISTORY_MOVETO];
@@ -228,9 +211,9 @@ void edit_paste_from_history (WEdit * edit);
 
 void edit_set_filename (WEdit * edit, const vfs_path_t * name_vpath);
 
-void edit_load_syntax (WEdit * edit, GPtrArray * pnames, const char *type);
+MC_MOCKABLE void edit_load_syntax (WEdit * edit, GPtrArray * pnames, const char *type);
 void edit_free_syntax_rules (WEdit * edit);
-int edit_get_syntax_color (WEdit * edit, off_t byte_index);
+MC_MOCKABLE int edit_get_syntax_color (WEdit * edit, off_t byte_index);
 void edit_syntax_dialog (WEdit * edit);
 
 void book_mark_insert (WEdit * edit, long line, int c);

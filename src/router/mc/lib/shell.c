@@ -1,7 +1,7 @@
 /*
    Provides a functions for working with shell.
 
-   Copyright (C) 2006-2024
+   Copyright (C) 2006-2025
    Free Software Foundation, Inc.
 
    Written by:
@@ -68,18 +68,26 @@ mc_shell_get_installed_in_system (void)
     /* 3rd choice: look for existing shells supported as MC subshells.  */
     if (access ("/bin/bash", X_OK) == 0)
         mc_shell->path = g_strdup ("/bin/bash");
+    else if (access ("/bin/zsh", X_OK) == 0)
+        mc_shell->path = g_strdup ("/bin/zsh");
+    else if (access ("/bin/oksh", X_OK) == 0)
+        mc_shell->path = g_strdup ("/bin/oksh");
+    else if (access ("/bin/ksh", X_OK) == 0)
+        mc_shell->path = g_strdup ("/bin/ksh");
+    else if (access ("/bin/ksh93", X_OK) == 0)
+        mc_shell->path = g_strdup ("/bin/ksh93");
     else if (access ("/bin/ash", X_OK) == 0)
         mc_shell->path = g_strdup ("/bin/ash");
     else if (access ("/bin/dash", X_OK) == 0)
         mc_shell->path = g_strdup ("/bin/dash");
     else if (access ("/bin/busybox", X_OK) == 0)
         mc_shell->path = g_strdup ("/bin/busybox");
-    else if (access ("/bin/zsh", X_OK) == 0)
-        mc_shell->path = g_strdup ("/bin/zsh");
     else if (access ("/bin/tcsh", X_OK) == 0)
         mc_shell->path = g_strdup ("/bin/tcsh");
     else if (access ("/bin/csh", X_OK) == 0)
         mc_shell->path = g_strdup ("/bin/csh");
+    else if (access ("/bin/mksh", X_OK) == 0)
+        mc_shell->path = g_strdup ("/bin/mksh");
     /* No fish as fallback because it is so much different from other shells and
      * in a way exotic (even though user-friendly by name) that we should not
      * present it as a subshell without the user's explicit intention. We rather
@@ -111,6 +119,22 @@ mc_shell_get_name_env (void)
         pwd = getpwuid (geteuid ());
         if (pwd != NULL)
             shell_name = g_strdup (pwd->pw_shell);
+    }
+    else if (strstr (mc_shell->path, "/ksh") != NULL
+             || strstr (mc_shell->real_path, "/ksh") != NULL
+             || strstr (mc_shell->path, "/ksh93") != NULL
+             || strstr (mc_shell->real_path, "/ksh93") != NULL
+             || strstr (mc_shell->path, "/oksh") != NULL
+             || strstr (mc_shell->real_path, "/oksh") != NULL)
+    {
+        mc_shell->type = SHELL_KSH;
+        mc_shell->name = "ksh";
+    }
+    else if (strstr (mc_shell->path, "/mksh") != NULL
+             || strstr (mc_shell->real_path, "/mksh") != NULL)
+    {
+        mc_shell->type = SHELL_MKSH;
+        mc_shell->name = "mksh";
     }
     else
         /* 1st choice: SHELL environment variable */

@@ -2,7 +2,7 @@
    Virtual File System: SHELL implementation for transferring files over
    shell connections.
 
-   Copyright (C) 1998-2024
+   Copyright (C) 1998-2025
    Free Software Foundation, Inc.
 
    Written by:
@@ -412,7 +412,8 @@ shell_free_archive (struct vfs_class *me, struct vfs_s_super *super)
     g_free (shell_super->scr_send);
     g_free (shell_super->scr_append);
     g_free (shell_super->scr_info);
-    g_string_free (shell_super->scr_env, TRUE);
+    if (shell_super->scr_env != NULL)
+        g_string_free (shell_super->scr_env, TRUE);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -426,7 +427,7 @@ shell_pipeopen (struct vfs_s_super *super, const char *path, const char *argv[])
     if ((pipe (fileset1) < 0) || (pipe (fileset2) < 0))
         vfs_die ("Cannot pipe(): %m.");
 
-    res = fork ();
+    res = my_fork ();
 
     if (res != 0)
     {
@@ -449,7 +450,7 @@ shell_pipeopen (struct vfs_s_super *super, const char *path, const char *argv[])
         res = open ("/dev/null", O_WRONLY);
         close (fileset2[0]);
         close (fileset2[1]);
-        execvp (path, (char **) argv);
+        my_execvp (path, (char **) argv);
         my_exit (3);
     }
 }

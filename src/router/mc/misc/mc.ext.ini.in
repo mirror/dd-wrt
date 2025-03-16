@@ -207,12 +207,12 @@ View=%cd %p/patchsetfs://
 Regex=\\.t([gp]?z|ar\\.g?[zZ])$
 Include=tar.gz
 
-[ipk]
-Shell=.ipk
-Include=tar.gz
-
 [gem]
 Shell=.gem
+Include=tar.gz
+
+[crate]
+Shell=.crate
 Include=tar.gz
 
 [tar.bzip]
@@ -417,7 +417,7 @@ View=%view{ascii} @EXTHELPERSDIR@/package.sh view debd
 [apt]
 Shell=.deba
 Open=%cd %p/deba://
-Ciew=%view{ascii} @EXTHELPERSDIR@/package.sh view deba
+View=%view{ascii} @EXTHELPERSDIR@/package.sh view deba
 
 [ISO9660]
 Shell=.iso
@@ -717,7 +717,7 @@ Include=video
 ### Documents ###
 
 [html]
-Regex=\\.html?$
+Regex=\\.s?html?$
 RegexIgnoreCase=true
 Open=@EXTHELPERSDIR@/web.sh open html
 View=%view{ascii} @EXTHELPERSDIR@/web.sh view html
@@ -868,6 +868,7 @@ View=%view{ascii} @EXTHELPERSDIR@/misc.sh view lyx
 [torrent]
 Shell=.torrent
 ShellIgnoreCase=true
+Open=%cd %p/torrent://
 View=%view{ascii} @EXTHELPERSDIR@/misc.sh view torrent
 
 
@@ -923,6 +924,17 @@ View=%view{ascii} @EXTHELPERSDIR@/archive.sh view wim
 [mailbox]
 Type=^ASCII mail text
 Open=%cd %p/mailfs://
+
+[ipk-deb]
+Shell=.ipk
+Type=^Debian binary package
+Open=%cd %p/deb://
+View=%view{ascii} @EXTHELPERSDIR@/package.sh view deb
+
+[ipk-openwrt]
+Shell=.ipk
+Type=\\(gzip compressed
+Include=tar.gz
 
 
 ### Sources ###

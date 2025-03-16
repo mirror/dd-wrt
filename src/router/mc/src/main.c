@@ -1,7 +1,7 @@
 /*
    Main program for the Midnight Commander
 
-   Copyright (C) 1994-2024
+   Copyright (C) 1994-2025
    Free Software Foundation, Inc.
 
    Written by:
@@ -208,7 +208,7 @@ init_sigchld (void)
     sigchld_action.sa_flags = SA_RESTART;
 #endif /* !SA_RESTART */
 
-    if (sigaction (SIGCHLD, &sigchld_action, NULL) == -1)
+    if (my_sigaction (SIGCHLD, &sigchld_action, NULL) == -1)
     {
 #ifdef ENABLE_SUBSHELL
         /*
@@ -499,7 +499,7 @@ main (int argc, char *argv[])
     if (mc_global.tty.alternate_plus_minus)
         numeric_keypad_mode ();
 
-    (void) signal (SIGCHLD, SIG_DFL);   /* Disable the SIGCHLD handler */
+    (void) my_signal (SIGCHLD, SIG_DFL);        /* Disable the SIGCHLD handler */
 
     if (mc_global.tty.console_flag != '\0')
         handle_console (CONSOLE_DONE);
@@ -509,8 +509,7 @@ main (int argc, char *argv[])
     {
         int last_wd_fd;
 
-        last_wd_fd = open (mc_args__last_wd_file, O_WRONLY | O_CREAT | O_TRUNC | O_EXCL,
-                           S_IRUSR | S_IWUSR);
+        last_wd_fd = open (mc_args__last_wd_file, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
         if (last_wd_fd != -1)
         {
             ssize_t ret1;

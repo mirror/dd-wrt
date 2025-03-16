@@ -3,6 +3,7 @@
 # This file is distributed under the same license as the mc package.
 #
 # Translators:
+# Appukonrad <appukonrad@gmail.com>, 2024
 # Appukonrad <appukonrad@gmail.com>, 2015,2017
 # k3dar, 2020-2021
 # Karel Kopecky <kdkopx@protonmail.com>, 2017
@@ -14,9 +15,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2024-08-23 19:34+0200\n"
+"POT-Creation-Date: 2025-01-23 10:39+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
-"Last-Translator: Pavel Borecki <pavel.borecki@gmail.com>, 2017-2023\n"
+"Last-Translator: Appukonrad <appukonrad@gmail.com>, 2024\n"
 "Language-Team: Czech (http://app.transifex.com/mc/mc/language/cs/)\n"
 "Language: cs\n"
 "MIME-Version: 1.0\n"
@@ -794,7 +795,7 @@ msgid "Arguments parse error!"
 msgstr "Chyba vyhodnocování argumentů!"
 
 msgid "MC is built without builtin editor."
-msgstr ""
+msgstr "MC je postaven bez vestavěného editoru."
 
 msgid "No arguments given to the viewer."
 msgstr "Prohlížeči nebyly zadány žádné parametry"
@@ -956,6 +957,9 @@ msgstr ""
 msgid "Diff:"
 msgstr "Rozdíl:"
 
+msgid "File name is empty!"
+msgstr ""
+
 #, c-format
 msgid "\"%s\" is a directory"
 msgstr "„%s“ je složka"
@@ -1079,9 +1083,6 @@ msgstr "Kontrolovat nový řádek &POSIX"
 msgid "Edit Save Mode"
 msgstr "Upravit ukládací režim"
 
-msgid "Save as"
-msgstr "Uložit jako"
-
 msgid "Cannot save: destination is not a regular file"
 msgstr "Nelze uložit: cíl není běžným souborem"
 
@@ -1153,14 +1154,8 @@ msgstr ""
 msgid "This function is not implemented"
 msgstr "Tato funkce není implementována"
 
-msgid "Copy to clipboard"
-msgstr "Zkopírovat do schránky"
-
 msgid "Unable to save to file"
 msgstr "Nelze uložit soubor"
-
-msgid "Cut to clipboard"
-msgstr "Vyjmout do schránky"
 
 msgid "Goto line"
 msgstr "Přejít na řádek"
@@ -1168,14 +1163,14 @@ msgstr "Přejít na řádek"
 msgid "Save block"
 msgstr "Uložit blok"
 
+msgid "Cannot save block"
+msgstr ""
+
 msgid "Insert file"
 msgstr "Vložit soubor"
 
 msgid "Cannot insert file"
 msgstr "Chyba při vkládání souboru"
-
-msgid "Sort block"
-msgstr "Setřídit blok"
 
 msgid "You must first highlight a block of text"
 msgstr "Nejprve je třeba označit blok textu"
@@ -1185,9 +1180,6 @@ msgstr "Spustit třídění"
 
 msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
 msgstr "Zadejte předvolby pro třídění (viz man sort(1) ) oddělované mezerami:"
-
-msgid "Sort"
-msgstr "Setřídit"
 
 msgid "Cannot execute sort command"
 msgstr "Chyba při spouštění příkazu sort"
@@ -1202,11 +1194,8 @@ msgstr "Vložte výstup vnějšího příkazu"
 msgid "Enter shell command(s):"
 msgstr "Zadejte shellový(é) příkaz(y):"
 
-msgid "External command"
-msgstr "Vnější příkaz"
-
-msgid "Cannot execute command"
-msgstr "Nedaří se spustit příkaz"
+msgid "Cannot execute external command"
+msgstr ""
 
 msgid "mail -s <subject> -c <cc> <to>"
 msgstr "mail -s <předmět> -c <kopie> <komu>"
@@ -1600,7 +1589,7 @@ msgstr ""
 "Uživatelsky přívětivý textový editor\n"
 "napsaný pro Midnight Commander."
 
-msgid "Copyright (C) 1996-2024 the Free Software Foundation"
+msgid "Copyright (C) 1996-2025 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -2242,11 +2231,9 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get flags of \"%s\"\n"
+"Cannot get ext2 attributes of \"%s\"\n"
 "%s"
 msgstr ""
-"Nedaří se získat příznaky „%s“\n"
-"%s"
 
 msgid "set &user ID on execution"
 msgstr "při spouštění nastavit identifikátor &uživatele"
@@ -2637,8 +2624,8 @@ msgstr ""
 "„%s“\n"
 "jsou stejný soubor"
 
-msgid "Ski&p all"
-msgstr "&Přeskočit vše"
+msgid "Ignore a&ll"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -2699,6 +2686,12 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot enter into directory \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "Cannot overwrite directory \"%s\"\n"
 "%s"
 msgstr ""
@@ -2734,13 +2727,13 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source file \"%s\"\n"
+"Cannot get ext2 attributes of source file \"%s\"\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set attributes of target file \"%s\"\n"
+"Cannot set ext2 attributes of target file \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2857,7 +2850,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set attributes for target file \"%s\"\n"
+"Cannot set ext2 attributes for target file \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2871,7 +2864,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source directory \"%s\"\n"
+"Cannot get ext2 attributes of source directory \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -3872,12 +3865,11 @@ msgstr ""
 "Pokud chcete přerušit, stiskněte jednou klávesu Esc\n"
 "a opět vyčkejte."
 
-msgid "Cannot accept this key"
-msgstr "Tuto klávesu nelze přijmout"
-
 #, c-format
-msgid "You have entered \"%s\""
-msgstr "Zadali jste „%s“"
+msgid ""
+"Cannot accept this key.\n"
+"You have entered \"%s\""
+msgstr ""
 
 #. TRANSLATORS: This label appears near learned keys.  Keep it short.
 msgid "OK"
@@ -3962,21 +3954,21 @@ msgstr ""
 "%s"
 
 #, c-format
+msgid "Warning: Cannot change to %s.\n"
+msgstr "Varování: Nedaří se přepnout do složky %s.\n"
+
+#, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "Nedaří s otevřít pojmenovanou rouru %s\n"
 
 msgid "The shell is still active. Quit anyway?"
 msgstr "Shell je stále aktivní, přesto ukončit?"
 
-#, c-format
-msgid "Warning: Cannot change to %s.\n"
-msgstr "Varování: Nedaří se přepnout do složky %s.\n"
-
 msgid "With builtin editor and aspell support"
-msgstr ""
+msgstr "S vestavěným editorem a podporou aspell"
 
 msgid "With builtin editor"
-msgstr ""
+msgstr "S vestavěným editorem"
 
 msgid "With optional subshell support"
 msgstr "S volitelnou podporou podřízeného shellu"

@@ -4,6 +4,7 @@
 #
 # Translators:
 # Atha Translate, 2016
+# Benjamin M. Berwien <alt.ji-f7q3y0v@courriel.fr.nf>, 2024
 # Benjamin M. Berwien <alt.ji-f7q3y0v@courriel.fr.nf>, 2023
 # cheese <cheese@nosuchhost.net>, 2016
 # Ettore Atalan <atalanttore@googlemail.com>, 2015-2024
@@ -12,7 +13,7 @@
 # Karsten <waldstadt@web.de>, 2016
 # Larson März <larson@protonmail.ch>, 2016
 # Michael John <amstelchen@gmail.com>, 2024
-# Mr.Update, 2019-2020,2023
+# Mr.Update, 2019-2020,2023-2024
 # Slow Rider, 2015,2018
 # Slava Zanko <slavazanko@gmail.com>, 2011
 # 14c4b06b824ec593239362517f538b29_ed1ad11 <ff0d3a0ccce92a0e8d6afacec89fb289_1123>, 2011
@@ -22,9 +23,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2024-08-23 19:34+0200\n"
+"POT-Creation-Date: 2025-01-23 10:39+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
-"Last-Translator: Ettore Atalan <atalanttore@googlemail.com>, 2015-2024\n"
+"Last-Translator: Benjamin M. Berwien <alt.ji-f7q3y0v@courriel.fr.nf>, 2024\n"
 "Language-Team: German (http://app.transifex.com/mc/mc/language/de/)\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -74,7 +75,7 @@ msgstr ""
 "Prozess-ID: %d"
 
 msgid "File locked"
-msgstr "Die Datei ist gerade gesperrt"
+msgstr "Die Datei ist gesperrt"
 
 msgid "&Grab lock"
 msgstr "Sperre &aufheben"
@@ -584,6 +585,8 @@ msgid ""
 "Cannot create temporary directory %s: %s.\n"
 "Temporary files will not be created\n"
 msgstr ""
+"Kann temporäres Verzeichnis %s nicht erstellen: %s.\n"
+"Temporäre Dateien werden nicht erstellt\n"
 
 msgid "Press any key to continue..."
 msgstr "Drücken Sie eine Taste zum Fortfahren..."
@@ -744,6 +747,26 @@ msgid ""
 "   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
+"--colors KEYWORD={FORE},{BACK},{ATTR}:KEYWORD2=...\n"
+"\n"
+"{FORE}, {BACK} und {ATTR} können weggelassen werden, dann wird der "
+"Standardwert verwendet\n"
+"\n"
+" Schlüsselwörter:\n"
+"   Global:       errors, disabled, reverse, gauge, header\n"
+"                 input, inputmark, inputunchanged, commandlinemark\n"
+"                 bbarhotkey, bbarbutton, statusbar\n"
+"   Dateianzeige: normal, selected, marked, markselect\n"
+"   Dialogfenster: dnormal, dfocus, dhotnormal, dhotfocus, errdhotnormal,\n"
+"                 errdhotfocus\n"
+"   Menüs:        menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
+"   Pop-up-Menüs:  pmenunormal, pmenusel, pmenutitle\n"
+"   Editor:       editnormal, editbold, editmarked, editwhitespace, "
+"editnonprintable,\n"
+"                 editlinestate, editbg, editframe, editframeactive, "
+"editframedrag\n"
+"   Betrachter:       viewnormal, viewbold, viewunderline, viewselected\n"
+"   Hilfe:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 
 #. TRANSLATORS: don't translate color names and attributes
 msgid ""
@@ -764,7 +787,7 @@ msgstr ""
 "Hellcyan, Hellgrau und Weiß\n"
 "\n"
 "Erweiterte Farben, wenn 256 Farben zur Verfügung stehen:\n"
-"color16 zu color255 oder rgb000 zu RGB555 und gray0 zu gray23\n"
+"color16 zu color255 oder rgb000 zu rgb555 und gray0 zu gray23\n"
 "\n"
 "Attribute:\n"
 "fett, kursiv, unterstrichen, rückwärts, blinken; weitere mit '+' anhängen\n"
@@ -969,6 +992,9 @@ msgstr ""
 msgid "Diff:"
 msgstr "Diff:"
 
+msgid "File name is empty!"
+msgstr ""
+
 #, c-format
 msgid "\"%s\" is a directory"
 msgstr "\"%s\" ist ein Verzeichnis"
@@ -1093,9 +1119,6 @@ msgstr "&POSIX-Zeilenvorschub überprüfen"
 msgid "Edit Save Mode"
 msgstr "Editor-Speichermodus"
 
-msgid "Save as"
-msgstr "Speichern unter"
-
 msgid "Cannot save: destination is not a regular file"
 msgstr "Kann nicht speichern: Ziel ist keine normale Datei"
 
@@ -1167,14 +1190,8 @@ msgstr ""
 msgid "This function is not implemented"
 msgstr "Diese Funktion ist nicht verfügbar"
 
-msgid "Copy to clipboard"
-msgstr "In die Zwischenablage kopieren"
-
 msgid "Unable to save to file"
 msgstr "Kann die Datei nicht speichern"
-
-msgid "Cut to clipboard"
-msgstr "In die Zwischenablage ausschneiden"
 
 msgid "Goto line"
 msgstr "Gehe zu Zeile"
@@ -1182,14 +1199,14 @@ msgstr "Gehe zu Zeile"
 msgid "Save block"
 msgstr "Block speichern"
 
+msgid "Cannot save block"
+msgstr ""
+
 msgid "Insert file"
 msgstr "Datei einfügen"
 
 msgid "Cannot insert file"
 msgstr "Kann Datei nicht einfügen"
-
-msgid "Sort block"
-msgstr "Block sortieren"
 
 msgid "You must first highlight a block of text"
 msgstr "Sie müssen zuerst einen Block oder Text markieren"
@@ -1201,9 +1218,6 @@ msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
 msgstr ""
 "Geben Sie Sortieroptionen ein (siehe sort(1) manpage), getrennt durch "
 "Leerzeichen:"
-
-msgid "Sort"
-msgstr "Sortieren"
 
 msgid "Cannot execute sort command"
 msgstr "Kann den Sortierbefehl nicht ausführen"
@@ -1218,11 +1232,8 @@ msgstr "Ausgabe eines externen Befehls einfügen"
 msgid "Enter shell command(s):"
 msgstr "Shell-Kommando(s) eingeben:"
 
-msgid "External command"
-msgstr "Externer Befehl"
-
-msgid "Cannot execute command"
-msgstr "Kann Befehl nicht ausführen"
+msgid "Cannot execute external command"
+msgstr ""
 
 msgid "mail -s <subject> -c <cc> <to>"
 msgstr "mail -s <betreff> -c <kopiean> <empfänger>"
@@ -1616,8 +1627,8 @@ msgstr ""
 "Ein benutzerfreundlicher Texteditor,\n"
 "geschrieben für Midnight Commander."
 
-msgid "Copyright (C) 1996-2024 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2024 the Free Software Foundation"
+msgid "Copyright (C) 1996-2025 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Über"
@@ -2256,11 +2267,9 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get flags of \"%s\"\n"
+"Cannot get ext2 attributes of \"%s\"\n"
 "%s"
 msgstr ""
-"Kann Flags für \"%s\" nicht ermitteln\n"
-"%s"
 
 msgid "set &user ID on execution"
 msgstr "Ben&utzer-ID bei Ausführung setzen"
@@ -2649,8 +2658,8 @@ msgstr ""
 "\"%s\"\n"
 "sind die gleichen Dateien"
 
-msgid "Ski&p all"
-msgstr "Alle übers&pringen"
+msgid "Ignore a&ll"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -2711,6 +2720,12 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot enter into directory \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "Cannot overwrite directory \"%s\"\n"
 "%s"
 msgstr ""
@@ -2746,13 +2761,13 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source file \"%s\"\n"
+"Cannot get ext2 attributes of source file \"%s\"\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set attributes of target file \"%s\"\n"
+"Cannot set ext2 attributes of target file \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2869,7 +2884,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set attributes for target file \"%s\"\n"
+"Cannot set ext2 attributes for target file \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2883,7 +2898,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source directory \"%s\"\n"
+"Cannot get ext2 attributes of source directory \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -3876,12 +3891,11 @@ msgstr ""
 "Wenn Sie abbrechen möchten, drücken Sie Esc einmal\n"
 "und warten ebenfalls."
 
-msgid "Cannot accept this key"
-msgstr "Kann diese Taste nicht akzeptieren"
-
 #, c-format
-msgid "You have entered \"%s\""
-msgstr "Sie haben \"%s\" eingegeben"
+msgid ""
+"Cannot accept this key.\n"
+"You have entered \"%s\""
+msgstr ""
 
 #. TRANSLATORS: This label appears near learned keys.  Keep it short.
 msgid "OK"
@@ -3964,15 +3978,15 @@ msgstr ""
 "%s"
 
 #, c-format
+msgid "Warning: Cannot change to %s.\n"
+msgstr "Warnung: Kann nicht in %s wechseln.\n"
+
+#, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "Kann benannte Pipe %s nicht öffnen\n"
 
 msgid "The shell is still active. Quit anyway?"
 msgstr "Die Shell ist immer noch aktiv. Trotzdem beenden?"
-
-#, c-format
-msgid "Warning: Cannot change to %s.\n"
-msgstr "Warnung: Kann nicht in %s wechseln.\n"
 
 msgid "With builtin editor and aspell support"
 msgstr "Mit eingebautem Editor und Aspell-Unterstützung"
@@ -4168,6 +4182,8 @@ msgid ""
 "Cannot open %s archive\n"
 "%s"
 msgstr ""
+"Kann Archiv %s nicht öffnen\n"
+"%s"
 
 #, c-format
 msgid ""

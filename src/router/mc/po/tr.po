@@ -15,7 +15,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2024-08-23 19:34+0200\n"
+"POT-Creation-Date: 2025-01-23 10:39+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Mehmet Akif 9oglu, 2023\n"
 "Language-Team: Turkish (http://app.transifex.com/mc/mc/language/tr/)\n"
@@ -955,6 +955,9 @@ msgstr ""
 msgid "Diff:"
 msgstr "Fark:"
 
+msgid "File name is empty!"
+msgstr ""
+
 #, c-format
 msgid "\"%s\" is a directory"
 msgstr "\"%s\" bir dizindir"
@@ -1080,9 +1083,6 @@ msgstr ""
 msgid "Edit Save Mode"
 msgstr "Kaydetme kipini düzenle"
 
-msgid "Save as"
-msgstr "Farklı kaydet"
-
 msgid "Cannot save: destination is not a regular file"
 msgstr "Kaydedilemedi: hedef normal bir dosya değil"
 
@@ -1154,14 +1154,8 @@ msgstr ""
 msgid "This function is not implemented"
 msgstr "Bu özellik henüz eklenmedi"
 
-msgid "Copy to clipboard"
-msgstr "Panoya kopyala"
-
 msgid "Unable to save to file"
 msgstr "Dosya kaydedilemedi"
-
-msgid "Cut to clipboard"
-msgstr "Panoya kes"
 
 msgid "Goto line"
 msgstr "Satıra git (sol)"
@@ -1169,14 +1163,14 @@ msgstr "Satıra git (sol)"
 msgid "Save block"
 msgstr "Bloku kaydet"
 
+msgid "Cannot save block"
+msgstr ""
+
 msgid "Insert file"
 msgstr "Dosya İçer"
 
 msgid "Cannot insert file"
 msgstr "Dosyayı içerirken hata oluştu"
-
-msgid "Sort block"
-msgstr "Bloku sırala"
 
 msgid "You must first highlight a block of text"
 msgstr "Önce bir metin blokunu aydınlatmalısınız"
@@ -1188,9 +1182,6 @@ msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
 msgstr ""
 "Boşlukla ayrılmış sıralama seçeneklerini girin (bkz. sort(1) kılavuz "
 "sayfası):"
-
-msgid "Sort"
-msgstr "Sıralama"
 
 msgid "Cannot execute sort command"
 msgstr "Sıralama yapılırken bir hata oluştu"
@@ -1205,11 +1196,8 @@ msgstr "Harici komutun çıktısını yapıştır"
 msgid "Enter shell command(s):"
 msgstr "Kabuk komutlarını gir:"
 
-msgid "External command"
-msgstr "Harici komut"
-
-msgid "Cannot execute command"
-msgstr "Sıralama yapılırken bir hata oluştu"
+msgid "Cannot execute external command"
+msgstr ""
 
 msgid "mail -s <subject> -c <cc> <to>"
 msgstr "mail -s <konu> -c <karbonkopya> <kime>"
@@ -1603,7 +1591,7 @@ msgstr ""
 "Kullanıcı dostu bir metin düzenleyici\n"
 "Midnight Commander için yazıldı"
 
-msgid "Copyright (C) 1996-2024 the Free Software Foundation"
+msgid "Copyright (C) 1996-2025 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -2242,7 +2230,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get flags of \"%s\"\n"
+"Cannot get ext2 attributes of \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2614,8 +2602,8 @@ msgstr ""
 "\"%s\"\n"
 "aynı dosya"
 
-msgid "Ski&p all"
-msgstr "Tümünü atla"
+msgid "Ignore a&ll"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -2676,6 +2664,12 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot enter into directory \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "Cannot overwrite directory \"%s\"\n"
 "%s"
 msgstr ""
@@ -2711,13 +2705,13 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source file \"%s\"\n"
+"Cannot get ext2 attributes of source file \"%s\"\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set attributes of target file \"%s\"\n"
+"Cannot set ext2 attributes of target file \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2834,7 +2828,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set attributes for target file \"%s\"\n"
+"Cannot set ext2 attributes for target file \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2848,7 +2842,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source directory \"%s\"\n"
+"Cannot get ext2 attributes of source directory \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -3836,12 +3830,11 @@ msgstr ""
 "escape'e basmak isterseniz, bir kere basın\n"
 " ve sonucu görün."
 
-msgid "Cannot accept this key"
-msgstr "Bu tuş kabul edilemez"
-
 #, c-format
-msgid "You have entered \"%s\""
-msgstr "\"%s\" tuşuna bastınız"
+msgid ""
+"Cannot accept this key.\n"
+"You have entered \"%s\""
+msgstr ""
 
 #. TRANSLATORS: This label appears near learned keys.  Keep it short.
 msgid "OK"
@@ -3922,15 +3915,15 @@ msgstr ""
 "%s"
 
 #, c-format
+msgid "Warning: Cannot change to %s.\n"
+msgstr "Uyarı: %s'e geçilemedi.\n"
+
+#, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr " %s isimli veri yolu açılamadı\n"
 
 msgid "The shell is still active. Quit anyway?"
 msgstr "Kabuk hala etkin. Yine de çıkılsın mı?"
-
-#, c-format
-msgid "Warning: Cannot change to %s.\n"
-msgstr "Uyarı: %s'e geçilemedi.\n"
 
 msgid "With builtin editor and aspell support"
 msgstr ""

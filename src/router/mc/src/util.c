@@ -1,7 +1,7 @@
 /*
    Various non-library utilities
 
-   Copyright (C) 2003-2024
+   Copyright (C) 2003-2025
    Free Software Foundation, Inc.
 
    Written by:
@@ -55,17 +55,14 @@ check_for_default (const vfs_path_t *default_file_vpath, const vfs_path_t *file_
     if (!exist_file (vfs_path_as_str (file_vpath)))
     {
         file_op_context_t *ctx;
-        file_op_total_context_t *tctx;
 
         if (!exist_file (vfs_path_as_str (default_file_vpath)))
             return FALSE;
 
         ctx = file_op_context_new (OP_COPY);
-        tctx = file_op_total_context_new ();
-        file_op_context_create_ui (ctx, 0, FALSE);
-        copy_file_file (tctx, ctx, vfs_path_as_str (default_file_vpath),
+        file_progress_ui_create (ctx, 0, FALSE);
+        copy_file_file (ctx, vfs_path_as_str (default_file_vpath),
                         vfs_path_as_str (file_vpath));
-        file_op_total_context_destroy (tctx);
         file_op_context_destroy (ctx);
     }
 

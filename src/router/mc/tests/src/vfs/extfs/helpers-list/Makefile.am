@@ -4,10 +4,6 @@ SUBDIRS = misc
 
 AM_CPPFLAGS = $(GLIB_CFLAGS) -I$(top_srcdir)
 
-# This lets mc_parse_ls_l.c override MC's message() without the linker
-# complaining about multiple definitions.
-AM_LDFLAGS = @TESTS_LDFLAGS@
-
 LIBS = $(top_builddir)/lib/libmc.la
 
 if ENABLE_MCLIB
@@ -54,6 +50,8 @@ data_files_to_distribute = \
 	data/rpm.glib.input \
 	data/rpm.glib.output \
 	data/rpm.rewrite.sh \
+	data/torrent.input \
+	data/torrent.output \
 	data/u7z.README \
 	data/u7z.complex.env_vars \
 	data/u7z.complex.input \

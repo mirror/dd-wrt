@@ -1,15 +1,17 @@
 PACKAGE_STRING = "/lib/vfs"
 
 AM_CPPFLAGS = \
-	-DTEST_SHARE_DIR=\"$(abs_srcdir)\" \
+	-DTEST_SHARE_DIR=\"$(abs_builddir)\" \
 	$(GLIB_CFLAGS) \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/lib/vfs \
 	@CHECK_CFLAGS@
 
-AM_LDFLAGS = @TESTS_LDFLAGS@
+EXTRA_DIST = mc.charsets.in
 
-EXTRA_DIST = mc.charsets
+if CHARSET
+CLEANFILES = mc.charsets
+endif
 
 LIBS = @CHECK_LIBS@ \
 	$(top_builddir)/lib/libmc.la

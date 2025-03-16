@@ -2,7 +2,7 @@
    Interface to the terminal controlling library.
    Ncurses wrapper.
 
-   Copyright (C) 2005-2024
+   Copyright (C) 2005-2025
    Free Software Foundation, Inc.
 
    Written by:
@@ -41,6 +41,7 @@
 
 #include "lib/global.h"
 #include "lib/strutil.h"        /* str_term_form */
+#include "lib/util.h"
 
 #ifndef WANT_TERM_H
 #define WANT_TERM_H
@@ -102,7 +103,7 @@ tty_setup_sigwinch (void (*handler) (int))
 #ifdef SA_RESTART
     act.sa_flags = SA_RESTART;
 #endif /* SA_RESTART */
-    sigaction (SIGWINCH, &act, &oact);
+    my_sigaction (SIGWINCH, &act, &oact);
 #endif /* SIGWINCH */
 
     tty_create_winch_pipe ();

@@ -1,7 +1,7 @@
 /*
    Main dialog (file panels) of the Midnight Commander
 
-   Copyright (C) 1994-2024
+   Copyright (C) 1994-2025
    Free Software Foundation, Inc.
 
    Written by:
@@ -44,13 +44,11 @@
 #include <pwd.h>                /* for username in xterm title */
 
 #include "lib/global.h"
-#include "lib/fileloc.h"        /* MC_HINT */
-
+#include "lib/fileloc.h"        /* MC_HINT, MC_FILEPOS_FILE */
 #include "lib/tty/tty.h"
 #include "lib/tty/key.h"        /* KEY_M_* masks */
 #include "lib/skin.h"
 #include "lib/util.h"
-
 #include "lib/vfs/vfs.h"
 
 #include "src/args.h"
@@ -61,7 +59,8 @@
 #include "src/setup.h"          /* variables */
 #include "src/learn.h"          /* learn_keys() */
 #include "src/keymap.h"
-#include "lib/fileloc.h"        /* MC_FILEPOS_FILE */
+#include "src/usermenu.h"       /* user_file_menu_cmd() */
+
 #include "lib/keybind.h"
 #include "lib/event.h"
 
@@ -149,9 +148,14 @@ stop_dialogs (void)
 static void
 treebox_cmd (void)
 {
+    const file_entry_t *fe;
     char *sel_dir;
 
-    sel_dir = tree_box (panel_current_entry (current_panel)->fname->str);
+    fe = panel_current_entry (current_panel);
+    if (fe == NULL)
+        return;
+
+    sel_dir = tree_box (fe->fname->str);
     if (sel_dir != NULL)
     {
         vfs_path_t *sel_vdir;
@@ -719,7 +723,7 @@ put_link (WPanel *panel)
 
     fe = panel_current_entry (panel);
 
-    if (S_ISLNK (fe->st.st_mode))
+    if (fe != NULL && S_ISLNK (fe->st.st_mode))
     {
         char buffer[MC_MAXPATHLEN];
         vfs_path_t *vpath;
@@ -760,8 +764,6 @@ put_other_link (void)
 static void
 put_current_selected (void)
 {
-    const char *tmp;
-
     if (!command_prompt)
         return;
 
@@ -772,12 +774,16 @@ put_current_selected (void)
 
         tree = (WTree *) get_panel_widget (get_current_index ());
         selected_name = tree_selected_name (tree);
-        tmp = vfs_path_as_str (selected_name);
+        command_insert (cmdline, vfs_path_as_str (selected_name), TRUE);
     }
     else
-        tmp = panel_current_entry (current_panel)->fname->str;
+    {
+        const file_entry_t *fe;
 
-    command_insert (cmdline, tmp, TRUE);
+        fe = panel_current_entry (current_panel);
+        if (fe != NULL)
+            command_insert (cmdline, fe->fname->str, TRUE);
+    }
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -791,7 +797,13 @@ put_tagged (WPanel *panel)
     input_disable_update (cmdline);
 
     if (panel->marked == 0)
-        command_insert (cmdline, panel_current_entry (panel)->fname->str, TRUE);
+    {
+        const file_entry_t *fe;
+
+        fe = panel_current_entry (current_panel);
+        if (fe != NULL)
+            command_insert (cmdline, fe->fname->str, TRUE);
+    }
     else
     {
         int i;
@@ -842,7 +854,8 @@ setup_mc (void)
 #endif /* HAVE_CHARSET */
 #endif /* HAVE_SLANG */
 
-    if ((tty_baudrate () < 9600) || mc_global.tty.slow_terminal)
+    const int baudrate = tty_baudrate ();
+    if ((baudrate > 0 && baudrate < 9600) || mc_global.tty.slow_terminal)
         verbose = FALSE;
 }
 

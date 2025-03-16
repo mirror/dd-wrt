@@ -1,7 +1,7 @@
 /*
    User Menu implementation
 
-   Copyright (C) 1994-2024
+   Copyright (C) 1994-2025
    Free Software Foundation, Inc.
 
    Written by:
@@ -65,7 +65,6 @@
 
 /*** file scope macro definitions ****************************************************************/
 
-#define MAX_ENTRIES 16
 #define MAX_ENTRY_LEN 60
 
 /*** file scope type declarations ****************************************************************/
@@ -173,10 +172,15 @@ extract_arg (char *p, char *arg, int size)
 static gboolean
 test_type (WPanel *panel, char *arg)
 {
+    const file_entry_t *fe;
     int result = 0;             /* False by default */
     mode_t st_mode;
 
-    st_mode = panel_current_entry (panel)->st.st_mode;
+    fe = panel_current_entry (panel);
+    if (fe == NULL)
+        return FALSE;
+
+    st_mode = fe->st.st_mode;
 
     for (; *arg != '\0'; arg++)
     {
@@ -268,9 +272,18 @@ test_condition (const Widget *edit_widget, char *p, gboolean *condition)
             }
             else
 #endif
-                *condition = panel != NULL &&
-                    mc_search (arg, DEFAULT_CHARSET, panel_current_entry (panel)->fname->str,
-                               search_type);
+            {
+                if (panel == NULL)
+                    *condition = FALSE;
+                else
+                {
+                    const file_entry_t *fe;
+
+                    fe = panel_current_entry (panel);
+                    *condition = fe != NULL
+                        && mc_search (arg, DEFAULT_CHARSET, fe->fname->str, search_type);
+                }
+            }
             break;
         case 'y':              /* syntax pattern */
 #ifdef USE_INTERNAL_EDIT
@@ -735,7 +748,7 @@ check_format_var (const char *p, char **v)
         {
             message (D_ERROR,
                      _("Format error on file Extensions File"),
-                     !dots ? _("The %%var macro has no default")
+                     dots == NULL ? _("The %%var macro has no default")
                      : _("The %%var macro has no variable"));
             return 0;
         }
@@ -784,6 +797,8 @@ expand_format (const Widget *edit_widget, char c, gboolean do_quote)
         else
 #endif
         {
+            const file_entry_t *fe;
+
             if (g_ascii_islower ((gchar) c))
                 panel = current_panel;
             else
@@ -793,7 +808,8 @@ expand_format (const Widget *edit_widget, char c, gboolean do_quote)
                 panel = other_panel;
             }
 
-            fname = panel_current_entry (panel)->fname->str;
+            fe = panel_current_entry (panel);
+            fname = fe == NULL ? NULL : fe->fname->str;
         }
         break;
 
@@ -973,12 +989,12 @@ expand_format (const Widget *edit_widget, char c, gboolean do_quote)
 gboolean
 user_menu_cmd (const Widget *edit_widget, const char *menu_file, int selected_entry)
 {
-    char *p;
-    char *data, **entries;
-    int max_cols, menu_lines, menu_limit;
-    int col, i;
+    char *data, *p;
+    GPtrArray *entries = NULL;
+    int max_cols = 0;
+    int col = 0;
     gboolean accept_entry = TRUE;
-    int selected;
+    int selected = 0;
     gboolean old_patterns;
     gboolean res = FALSE;
     gboolean interactive = TRUE;
@@ -988,10 +1004,10 @@ user_menu_cmd (const Widget *edit_widget, const char *menu_file, int selected_en
         message (D_ERROR, MSG_ERROR, "%s", _("Cannot execute commands on non-local filesystems"));
         return FALSE;
     }
-    if (menu_file != NULL)
-        menu = g_strdup (menu_file);
-    else
-        menu = g_strdup (edit_widget != NULL ? EDIT_LOCAL_MENU : MC_LOCAL_MENU);
+
+    menu = g_strdup (menu_file != NULL ? menu_file : edit_widget != NULL ?
+                     EDIT_LOCAL_MENU : MC_LOCAL_MENU);
+
     if (!exist_file (menu) || !menu_file_own (menu))
     {
         if (menu_file != NULL)
@@ -1003,32 +1019,23 @@ user_menu_cmd (const Widget *edit_widget, const char *menu_file, int selected_en
         }
 
         g_free (menu);
-        if (edit_widget != NULL)
-            menu = mc_config_get_full_path (EDIT_HOME_MENU);
-        else
-            menu = mc_config_get_full_path (MC_USERMENU_FILE);
-
+        menu = mc_config_get_full_path (edit_widget != NULL ? EDIT_HOME_MENU : MC_USERMENU_FILE);
         if (!exist_file (menu))
         {
+            const char *global_menu;
+
+            global_menu = edit_widget != NULL ? EDIT_GLOBAL_MENU : MC_GLOBAL_MENU;
+
             g_free (menu);
-            menu =
-                mc_build_filename (mc_config_get_home_dir (),
-                                   edit_widget != NULL ? EDIT_GLOBAL_MENU : MC_GLOBAL_MENU,
-                                   (char *) NULL);
+            menu = mc_build_filename (mc_config_get_home_dir (), global_menu, (char *) NULL);
             if (!exist_file (menu))
             {
                 g_free (menu);
-                menu =
-                    mc_build_filename (mc_global.sysconfig_dir,
-                                       edit_widget != NULL ? EDIT_GLOBAL_MENU : MC_GLOBAL_MENU,
-                                       (char *) NULL);
+                menu = mc_build_filename (mc_global.sysconfig_dir, global_menu, (char *) NULL);
                 if (!exist_file (menu))
                 {
                     g_free (menu);
-                    menu =
-                        mc_build_filename (mc_global.share_data_dir,
-                                           edit_widget != NULL ? EDIT_GLOBAL_MENU : MC_GLOBAL_MENU,
-                                           (char *) NULL);
+                    menu = mc_build_filename (mc_global.share_data_dir, global_menu, (char *) NULL);
                 }
             }
         }
@@ -1041,32 +1048,14 @@ user_menu_cmd (const Widget *edit_widget, const char *menu_file, int selected_en
         return FALSE;
     }
 
-    max_cols = 0;
-    selected = 0;
-    menu_limit = 0;
-    entries = NULL;
+    old_patterns = easy_patterns;
 
     /* Parse the menu file */
-    old_patterns = easy_patterns;
-    p = check_patterns (data);
-    for (menu_lines = col = 0; *p != '\0'; str_next_char (&p))
+    for (p = check_patterns (data); *p != '\0'; str_next_char (&p))
     {
-        if (menu_lines >= menu_limit)
-        {
-            char **new_entries;
+        unsigned int menu_lines = entries == NULL ? 0 : entries->len;
 
-            menu_limit += MAX_ENTRIES;
-            new_entries = g_try_realloc (entries, sizeof (new_entries[0]) * menu_limit);
-            if (new_entries == NULL)
-                break;
-
-            entries = new_entries;
-            new_entries += menu_limit;
-            while (--new_entries >= &entries[menu_lines])
-                *new_entries = NULL;
-        }
-
-        if (col == 0 && entries[menu_lines] == NULL)
+        if (col == 0 && (entries == NULL || menu_lines == entries->len))
             switch (*p)
             {
             case '#':
@@ -1103,9 +1092,10 @@ user_menu_cmd (const Widget *edit_widget, const char *menu_file, int selected_en
                 else
                 {
                     /* A condition for making the entry default */
-                    i = 1;
-                    p = test_line (edit_widget, p, &i);
-                    if (selected == 0 && i != 0)
+                    gboolean ok = TRUE;
+
+                    p = test_line (edit_widget, p, &ok);
+                    if (selected == 0 && ok)
                         selected = menu_lines;
                 }
                 break;
@@ -1115,7 +1105,11 @@ user_menu_cmd (const Widget *edit_widget, const char *menu_file, int selected_en
                 {
                     /* A menu entry title line */
                     if (accept_entry)
-                        entries[menu_lines] = p;
+                    {
+                        if (entries == NULL)
+                            entries = g_ptr_array_new ();
+                        g_ptr_array_add (entries, p);
+                    }
                     else
                         accept_entry = TRUE;
                 }
@@ -1124,11 +1118,8 @@ user_menu_cmd (const Widget *edit_widget, const char *menu_file, int selected_en
 
         if (*p == '\n')
         {
-            if (entries[menu_lines] != NULL)
-            {
-                menu_lines++;
+            if (entries != NULL && entries->len > menu_lines)
                 accept_entry = TRUE;
-            }
             max_cols = MAX (max_cols, col);
             col = 0;
         }
@@ -1140,11 +1131,8 @@ user_menu_cmd (const Widget *edit_widget, const char *menu_file, int selected_en
         }
     }
 
-    if (menu_lines == 0)
-    {
+    if (entries == NULL)
         message (D_ERROR, MSG_ERROR, _("No suitable entries found in %s"), menu);
-        res = FALSE;
-    }
     else
     {
         if (selected_entry >= 0)
@@ -1152,36 +1140,39 @@ user_menu_cmd (const Widget *edit_widget, const char *menu_file, int selected_en
         else
         {
             Listbox *listbox;
+            unsigned int i;
 
             max_cols = MIN (MAX (max_cols, col), MAX_ENTRY_LEN);
 
             /* Create listbox */
-            listbox = listbox_window_new (menu_lines, max_cols + 2, _("User menu"),
+            listbox = listbox_window_new (entries->len, max_cols + 2, _("User menu"),
                                           "[Edit Menu File]");
             /* insert all the items found */
-            for (i = 0; i < menu_lines; i++)
+            for (i = 0; i < entries->len; i++)
             {
-                p = entries[i];
+                p = g_ptr_array_index (entries, i);
                 LISTBOX_APPEND_TEXT (listbox, (unsigned char) p[0],
-                                     extract_line (p, p + MAX_ENTRY_LEN), p, FALSE);
+                                     extract_line (p, p + MAX_ENTRY_LEN, NULL), p, FALSE);
             }
             /* Select the default entry */
             listbox_set_current (listbox->list, selected);
 
             selected = listbox_run (listbox);
         }
+
         if (selected >= 0)
         {
-            execute_menu_command (edit_widget, entries[selected], interactive);
+            execute_menu_command (edit_widget, g_ptr_array_index (entries, selected), interactive);
             res = TRUE;
         }
+
+        g_ptr_array_free (entries, TRUE);
 
         do_refresh ();
     }
 
     easy_patterns = old_patterns;
     MC_PTR_FREE (menu);
-    g_free (entries);
     g_free (data);
     return res;
 }

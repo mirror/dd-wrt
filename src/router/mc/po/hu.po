@@ -12,7 +12,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2024-08-23 19:34+0200\n"
+"POT-Creation-Date: 2025-01-23 10:39+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: 6bdcf737f9bcb6037ecba892a70fb951_e9eeb40 "
 "<b76b5e2faba6aa74d4498ee4c87ab010_661337>, 2020\n"
@@ -937,6 +937,9 @@ msgstr ""
 msgid "Diff:"
 msgstr "Diff:"
 
+msgid "File name is empty!"
+msgstr ""
+
 #, c-format
 msgid "\"%s\" is a directory"
 msgstr "\"%s\" egy könyvtár"
@@ -1060,9 +1063,6 @@ msgstr "&POSIX soremelés vizsgálata"
 msgid "Edit Save Mode"
 msgstr "Mentési mód"
 
-msgid "Save as"
-msgstr "Mentés másként"
-
 msgid "Cannot save: destination is not a regular file"
 msgstr "Nem lehet elmenteni - a cél egy speciális fájl"
 
@@ -1134,14 +1134,8 @@ msgstr ""
 msgid "This function is not implemented"
 msgstr "Ez a funkció nincs megvalósítva."
 
-msgid "Copy to clipboard"
-msgstr "Másolás vágólapra"
-
 msgid "Unable to save to file"
 msgstr "Fájl mentése sikertelen"
-
-msgid "Cut to clipboard"
-msgstr "Kivágás a vágólapra"
 
 msgid "Goto line"
 msgstr "Ugrás adott sorra"
@@ -1149,14 +1143,14 @@ msgstr "Ugrás adott sorra"
 msgid "Save block"
 msgstr "Blokk mentése"
 
+msgid "Cannot save block"
+msgstr ""
+
 msgid "Insert file"
 msgstr "Fájl beszúrása"
 
 msgid "Cannot insert file"
 msgstr "Fájl beszúrása sikertelen"
-
-msgid "Sort block"
-msgstr "Blokk rendezése"
 
 msgid "You must first highlight a block of text"
 msgstr "Előbb ki kell jelölni egy szövegrészt."
@@ -1166,9 +1160,6 @@ msgstr "Rendezés futtatása"
 
 msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
 msgstr ""
-
-msgid "Sort"
-msgstr "Rendezés"
 
 msgid "Cannot execute sort command"
 msgstr "\"sort\" végrehajtása sikertelen"
@@ -1183,11 +1174,8 @@ msgstr "Külső parancs kimenetének beillesztése"
 msgid "Enter shell command(s):"
 msgstr "Shell-parancs(ok):"
 
-msgid "External command"
-msgstr "Külső parancs"
-
-msgid "Cannot execute command"
-msgstr "A parancs nem hajtható végre"
+msgid "Cannot execute external command"
+msgstr ""
 
 msgid "mail -s <subject> -c <cc> <to>"
 msgstr "mail -s <tárgy> -c <másolat> <címzett>"
@@ -1581,7 +1569,7 @@ msgstr ""
 "Felhasználóbarát szövegszerkesztő\n"
 "a Midnight Commander-hez készítve"
 
-msgid "Copyright (C) 1996-2024 the Free Software Foundation"
+msgid "Copyright (C) 1996-2025 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -2214,7 +2202,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get flags of \"%s\"\n"
+"Cannot get ext2 attributes of \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2582,8 +2570,8 @@ msgstr ""
 "\"%s\" \n"
 "ugyanaz a fájl"
 
-msgid "Ski&p all"
-msgstr "Ö&sszes kihagyása"
+msgid "Ignore a&ll"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -2643,6 +2631,12 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot enter into directory \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "Cannot overwrite directory \"%s\"\n"
 "%s"
 msgstr ""
@@ -2678,13 +2672,13 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source file \"%s\"\n"
+"Cannot get ext2 attributes of source file \"%s\"\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set attributes of target file \"%s\"\n"
+"Cannot set ext2 attributes of target file \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2804,7 +2798,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set attributes for target file \"%s\"\n"
+"Cannot set ext2 attributes for target file \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2819,7 +2813,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source directory \"%s\"\n"
+"Cannot get ext2 attributes of source directory \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -3807,12 +3801,11 @@ msgstr ""
 "\n"
 "Kilépéshez használja az \"Escape\" billentyűt."
 
-msgid "Cannot accept this key"
-msgstr "Ez a billentyű nem használható erre"
-
 #, c-format
-msgid "You have entered \"%s\""
-msgstr "Ezt adta meg: \"%s\""
+msgid ""
+"Cannot accept this key.\n"
+"You have entered \"%s\""
+msgstr ""
 
 #. TRANSLATORS: This label appears near learned keys.  Keep it short.
 msgid "OK"
@@ -3895,15 +3888,15 @@ msgstr ""
 "%s"
 
 #, c-format
+msgid "Warning: Cannot change to %s.\n"
+msgstr "Nem sikerült belépni a(z) \"%s\" könyvtárba.\n"
+
+#, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "Nem sikerült megnyitni a(z) \"%s\" csőfájlt.\n"
 
 msgid "The shell is still active. Quit anyway?"
 msgstr "A háttér-shell még aktív. Mégis kilép?"
-
-#, c-format
-msgid "Warning: Cannot change to %s.\n"
-msgstr "Nem sikerült belépni a(z) \"%s\" könyvtárba.\n"
 
 msgid "With builtin editor and aspell support"
 msgstr ""

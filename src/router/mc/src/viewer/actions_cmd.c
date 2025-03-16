@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Callback function for some actions (hotkeys, menu)
 
-   Copyright (C) 1994-2024
+   Copyright (C) 1994-2025
    Free Software Foundation, Inc.
 
    Written by:
@@ -97,40 +97,6 @@ mcview_remove_ext_script (WView *view)
 
 /* --------------------------------------------------------------------------------------------- */
 
-/* Both views */
-static void
-mcview_search (WView *view, gboolean start_search)
-{
-    off_t want_search_start = view->search_start;
-
-    if (start_search)
-    {
-        if (mcview_dialog_search (view))
-        {
-            if (view->mode_flags.hex)
-                want_search_start = view->hex_cursor;
-
-            mcview_do_search (view, want_search_start);
-        }
-    }
-    else
-    {
-        if (view->mode_flags.hex)
-        {
-            if (!mcview_search_options.backwards)
-                want_search_start = view->hex_cursor + 1;
-            else if (view->hex_cursor > 0)
-                want_search_start = view->hex_cursor - 1;
-            else
-                want_search_start = 0;
-        }
-
-        mcview_do_search (view, want_search_start);
-    }
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
 static void
 mcview_continue_search_cmd (WView *view)
 {
@@ -168,6 +134,7 @@ mcview_hook (void *v)
 {
     WView *view = (WView *) v;
     WPanel *panel;
+    const file_entry_t *fe;
 
     /* If the user is busy typing, wait until he finishes to update the
        screen */
@@ -187,9 +154,13 @@ mcview_hook (void *v)
     else
         return;
 
+    fe = panel_current_entry (panel);
+    if (fe == NULL)
+        return;
+
     mcview_done (view);
     mcview_init (view);
-    mcview_load (view, 0, panel_current_entry (panel)->fname->str, 0, 0, 0);
+    mcview_load (view, 0, fe->fname->str, 0, 0, 0);
     mcview_display (view);
 }
 
@@ -242,7 +213,7 @@ mcview_handle_editkey (WView *view, int key)
     if ((view->filename_vpath != NULL)
         && (*(vfs_path_get_last_path_str (view->filename_vpath)) != '\0')
         && (view->change_list == NULL))
-        view->locked = lock_file (view->filename_vpath);
+        view->locked = lock_file (view->filename_vpath) != 0;
 
     if (node == NULL)
     {

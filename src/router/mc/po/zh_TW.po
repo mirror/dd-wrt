@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2024-08-23 19:34+0200\n"
+"POT-Creation-Date: 2025-01-23 10:39+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Meng Pang Wang, 2023\n"
 "Language-Team: Chinese (Taiwan) (http://app.transifex.com/mc/mc/language/"
@@ -919,6 +919,9 @@ msgstr ""
 msgid "Diff:"
 msgstr "不同:"
 
+msgid "File name is empty!"
+msgstr ""
+
 #, c-format
 msgid "\"%s\" is a directory"
 msgstr "\"%s\" 是一個資料夾"
@@ -1040,9 +1043,6 @@ msgstr ""
 msgid "Edit Save Mode"
 msgstr ""
 
-msgid "Save as"
-msgstr "儲存為"
-
 msgid "Cannot save: destination is not a regular file"
 msgstr ""
 
@@ -1112,14 +1112,8 @@ msgstr ""
 msgid "This function is not implemented"
 msgstr "尚未實作此功能"
 
-msgid "Copy to clipboard"
-msgstr "複製到剪貼簿"
-
 msgid "Unable to save to file"
 msgstr "無法儲存為檔案"
-
-msgid "Cut to clipboard"
-msgstr "剪下到剪貼簿"
 
 msgid "Goto line"
 msgstr "前往此行"
@@ -1127,14 +1121,14 @@ msgstr "前往此行"
 msgid "Save block"
 msgstr "儲存區塊"
 
+msgid "Cannot save block"
+msgstr ""
+
 msgid "Insert file"
 msgstr "插入檔案"
 
 msgid "Cannot insert file"
 msgstr "無法插入檔案"
-
-msgid "Sort block"
-msgstr "排序區塊"
 
 msgid "You must first highlight a block of text"
 msgstr "您應該先高亮文字中的一個區塊"
@@ -1144,9 +1138,6 @@ msgstr ""
 
 msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
 msgstr ""
-
-msgid "Sort"
-msgstr "排序"
 
 msgid "Cannot execute sort command"
 msgstr "無法執行簡短的指令"
@@ -1161,11 +1152,8 @@ msgstr "貼上外部指令的輸出結果"
 msgid "Enter shell command(s):"
 msgstr "輸入指令:"
 
-msgid "External command"
-msgstr "外部指令"
-
-msgid "Cannot execute command"
-msgstr "無法執行指令"
+msgid "Cannot execute external command"
+msgstr ""
 
 msgid "mail -s <subject> -c <cc> <to>"
 msgstr ""
@@ -1555,7 +1543,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2024 the Free Software Foundation"
+msgid "Copyright (C) 1996-2025 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -2179,7 +2167,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get flags of \"%s\"\n"
+"Cannot get ext2 attributes of \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2532,7 +2520,7 @@ msgid ""
 "are the same file"
 msgstr ""
 
-msgid "Ski&p all"
+msgid "Ignore a&ll"
 msgstr ""
 
 #, c-format
@@ -2583,6 +2571,12 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot enter into directory \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "Cannot overwrite directory \"%s\"\n"
 "%s"
 msgstr ""
@@ -2616,13 +2610,13 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source file \"%s\"\n"
+"Cannot get ext2 attributes of source file \"%s\"\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set attributes of target file \"%s\"\n"
+"Cannot set ext2 attributes of target file \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2717,7 +2711,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set attributes for target file \"%s\"\n"
+"Cannot set ext2 attributes for target file \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2729,7 +2723,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source directory \"%s\"\n"
+"Cannot get ext2 attributes of source directory \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -3705,11 +3699,10 @@ msgstr ""
 "如果您想離開，請按一下 Esc 鍵\n"
 "並稍候。"
 
-msgid "Cannot accept this key"
-msgstr ""
-
 #, c-format
-msgid "You have entered \"%s\""
+msgid ""
+"Cannot accept this key.\n"
+"You have entered \"%s\""
 msgstr ""
 
 #. TRANSLATORS: This label appears near learned keys.  Keep it short.
@@ -3785,15 +3778,15 @@ msgstr ""
 "%s"
 
 #, c-format
+msgid "Warning: Cannot change to %s.\n"
+msgstr "警告： 無法切換到 %s。\n"
+
+#, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "無法開啟具名管線 %s\n"
 
 msgid "The shell is still active. Quit anyway?"
 msgstr ""
-
-#, c-format
-msgid "Warning: Cannot change to %s.\n"
-msgstr "警告： 無法切換到 %s。\n"
 
 msgid "With builtin editor and aspell support"
 msgstr ""

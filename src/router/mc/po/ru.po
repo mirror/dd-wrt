@@ -8,8 +8,8 @@
 # Alex Tkachenko <alex@bcs.zp.ua>, 1998
 # and Alex Tkachenko <alex@bcs.zp.ua>, 1998
 # Andrei Stepanov, 2023
-# Andrei Stepanov, 2023-2024
-# Andrew Borodin <aborodin@vmail.ru>, 2009-2012
+# Andrei Stepanov, 2023-2025
+# Andrew Borodin <aborodin@vmail.ru>, 2009-2012,2024
 # Andrew V. Samoilov <sav@bcs.zp.ua>, 1999,2014
 # Anton Sergeevich Chumak <nightfast@yahoo.co.uk>, 2005
 # Dimitriy Ryazantcev <DJm00n@mail.ru>, 2015
@@ -30,9 +30,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2024-08-23 19:34+0200\n"
+"POT-Creation-Date: 2025-01-23 10:39+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
-"Last-Translator: Andrei Stepanov, 2023-2024\n"
+"Last-Translator: Andrei Stepanov, 2023-2025\n"
 "Language-Team: Russian (http://app.transifex.com/mc/mc/language/ru/)\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
@@ -1001,6 +1001,9 @@ msgstr ""
 msgid "Diff:"
 msgstr "Различия:"
 
+msgid "File name is empty!"
+msgstr "Пустое имя файла!"
+
 #, c-format
 msgid "\"%s\" is a directory"
 msgstr "\"%s\" является каталогом"
@@ -1124,9 +1127,6 @@ msgstr "П&роверка перевода строки в конце файла
 msgid "Edit Save Mode"
 msgstr "Режим сохранения"
 
-msgid "Save as"
-msgstr "Сохранить как"
-
 msgid "Cannot save: destination is not a regular file"
 msgstr "Не удалось сохранить файл: файл назначения не является обычным файлом"
 
@@ -1198,14 +1198,8 @@ msgstr ""
 msgid "This function is not implemented"
 msgstr "Эта функция не реализована"
 
-msgid "Copy to clipboard"
-msgstr "Копировать в буфер"
-
 msgid "Unable to save to file"
 msgstr "Не удалось сохранить в файл"
-
-msgid "Cut to clipboard"
-msgstr "Вырезать в буфер"
 
 msgid "Goto line"
 msgstr "Перейти к строке"
@@ -1213,14 +1207,14 @@ msgstr "Перейти к строке"
 msgid "Save block"
 msgstr "Сохранить блок"
 
+msgid "Cannot save block"
+msgstr "Не удалось сохранить блок"
+
 msgid "Insert file"
 msgstr "Вставить файл"
 
 msgid "Cannot insert file"
 msgstr "Не удалось вставить файл"
-
-msgid "Sort block"
-msgstr "Сортировать блок"
 
 msgid "You must first highlight a block of text"
 msgstr "Вы должны сначала выделить блок текста"
@@ -1230,9 +1224,6 @@ msgstr "Выполнить сортировку"
 
 msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
 msgstr "Введите параметры сортировки (см. man sort(1)), разделённые пробелами:"
-
-msgid "Sort"
-msgstr "Сортировка"
 
 msgid "Cannot execute sort command"
 msgstr "Не удалось выполнить команду sort"
@@ -1247,11 +1238,8 @@ msgstr "Вставить вывод внешней команды"
 msgid "Enter shell command(s):"
 msgstr "Введите команду оболочки:"
 
-msgid "External command"
-msgstr "Внешняя команда"
-
-msgid "Cannot execute command"
-msgstr "Не удалось выполнить команду"
+msgid "Cannot execute external command"
+msgstr "Не удалось выполнить внешнюю команду"
 
 msgid "mail -s <subject> -c <cc> <to>"
 msgstr "mail -s <Тема> -c <Копии> <Кому>"
@@ -1645,8 +1633,8 @@ msgstr ""
 "Удобный текстовый редактор.\n"
 "Создан для Midnight Commander."
 
-msgid "Copyright (C) 1996-2024 the Free Software Foundation"
-msgstr "Авторское право (C) 1996-2024 Фонд свободного программного обеспечения"
+msgid "Copyright (C) 1996-2025 the Free Software Foundation"
+msgstr "Авторское право (C) 1996-2025 Фонд свободного программного обеспечения"
 
 msgid "About"
 msgstr "О программе"
@@ -2286,10 +2274,10 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get flags of \"%s\"\n"
+"Cannot get ext2 attributes of \"%s\"\n"
 "%s"
 msgstr ""
-"Невозможно получить флаги \"%s\"\n"
+"Не удаётся получить атрибуты ext2 для \"%s\"\n"
 "%s"
 
 msgid "set &user ID on execution"
@@ -2679,8 +2667,8 @@ msgstr ""
 "\"%s\"\n"
 "один и тот же файл"
 
-msgid "Ski&p all"
-msgstr "Пропустить вс&ё"
+msgid "Ignore a&ll"
+msgstr "Игнорироват&ь все"
 
 #, c-format
 msgid ""
@@ -2741,6 +2729,14 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot enter into directory \"%s\"\n"
+"%s"
+msgstr ""
+"Не удалось войти в каталог \"%s\"\n"
+"%s"
+
+#, c-format
+msgid ""
 "Cannot overwrite directory \"%s\"\n"
 "%s"
 msgstr ""
@@ -2776,18 +2772,18 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source file \"%s\"\n"
+"Cannot get ext2 attributes of source file \"%s\"\n"
 "%s"
 msgstr ""
-"Не удалось получить атрибуты исходного файла \"%s\"\n"
+"Не удаётся получить атрибуты ext2 для исходного файла \"%s\"\n"
 "%s"
 
 #, c-format
 msgid ""
-"Cannot set attributes of target file \"%s\"\n"
+"Cannot set ext2 attributes of target file \"%s\"\n"
 "%s"
 msgstr ""
-"Не удалось получить атрибуты целевого файла \"%s\"\n"
+"Не удаётся установить атрибуты ext2 для целевого файла \"%s\"\n"
 "%s"
 
 #, c-format
@@ -2903,10 +2899,10 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set attributes for target file \"%s\"\n"
+"Cannot set ext2 attributes for target file \"%s\"\n"
 "%s"
 msgstr ""
-"Не удалось задать атрибуты целевого файла \"%s\"\n"
+"Не удаётся установить атрибуты ext2 для целевого файла \"%s\"\n"
 "%s"
 
 #, c-format
@@ -2919,10 +2915,10 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source directory \"%s\"\n"
+"Cannot get ext2 attributes of source directory \"%s\"\n"
 "%s"
 msgstr ""
-"Не удалось получить атрибуты исходного каталога \"%s\"\n"
+"Не удаётся получить атрибуты ext2 для исходного каталога \"%s\"\n"
 "%s"
 
 #, c-format
@@ -3017,7 +3013,7 @@ msgid "Overwrite all files?"
 msgstr "Переписать все файлы?"
 
 msgid "Don't overwrite with &zero length file"
-msgstr "Не перезаписывать файл &нулевой длины"
+msgstr "Не перезаписывать файлами &нулевой длины"
 
 msgid "&Older"
 msgstr "&Старше"
@@ -3176,7 +3172,7 @@ msgid "Cha&ttr"
 msgstr "А&трибуты"
 
 msgid "&Rename/Move"
-msgstr "Пере&именование"
+msgstr "Пере&именование/Перенос"
 
 msgid "&Mkdir"
 msgstr "Со&здание каталога"
@@ -3923,12 +3919,13 @@ msgstr ""
 "Если вы хотите прервать обучение, нажмите\n"
 "клавишу Esc и тоже немного подождите."
 
-msgid "Cannot accept this key"
-msgstr "Не удалось принять эту клавишу"
-
 #, c-format
-msgid "You have entered \"%s\""
-msgstr "Вы ввели \"%s\""
+msgid ""
+"Cannot accept this key.\n"
+"You have entered \"%s\""
+msgstr ""
+"Не удалось принять эту клавишу.\n"
+"Вы нажали \"%s\""
 
 #. TRANSLATORS: This label appears near learned keys.  Keep it short.
 msgid "OK"
@@ -3957,7 +3954,7 @@ msgid ""
 "key, or click with the mouse to define it. Move around with Tab."
 msgstr ""
 "Нажмите все перечисленные выше клавиши. После найдите\n"
-"клавиши без пометки \"OK\". Для привязки клавиши выберите\n"
+"клавиши без пометки \"ОК\". Для привязки клавиши выберите\n"
 "её через Tab и нажмите пробел, или щёлкните мышкой."
 
 #, c-format
@@ -4010,15 +4007,15 @@ msgstr ""
 "%s"
 
 #, c-format
+msgid "Warning: Cannot change to %s.\n"
+msgstr "Внимание: не удалось перейти в %s.\n"
+
+#, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "Не удалось открыть именованный канал %s\n"
 
 msgid "The shell is still active. Quit anyway?"
 msgstr "Оболочка всё ещё активна. Всё равно выйти?"
-
-#, c-format
-msgid "Warning: Cannot change to %s.\n"
-msgstr "Внимание: не удалось перейти в %s.\n"
 
 msgid "With builtin editor and aspell support"
 msgstr "Со встроенным редактором и поддержкой Aspell"
@@ -4051,7 +4048,7 @@ msgid "With multiple codepages support"
 msgstr "С поддержкой многих кодировок"
 
 msgid "With ext2fs attributes support"
-msgstr "С поддержкой ext2fs атрибутов"
+msgstr "С поддержкой атрибутов ext2fs"
 
 #, c-format
 msgid "Built with GLib %d.%d.%d\n"
@@ -4083,7 +4080,7 @@ msgid "Virtual File Systems:"
 msgstr "Виртуальная файловая система:"
 
 msgid "Data types:"
-msgstr "Тип данных:"
+msgstr "Типы данных:"
 
 msgid "Home directory:"
 msgstr "Домашний каталог:"
@@ -4602,7 +4599,7 @@ msgstr ""
 "не похож на архив tar"
 
 msgid "tar: mc_lseek not stopped at a record boundary"
-msgstr "tar: mc_lseek не остановился границе записи"
+msgstr "tar: mc_lseek не остановился на границе записи"
 
 msgid "undelfs: error"
 msgstr "undelfs: ошибка"

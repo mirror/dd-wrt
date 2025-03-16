@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the mc package.
 #
 # Translators:
-# Antoni Bella Pérez <antonibella5@yahoo.com>, 2017-2024
+# Antoni Bella Pérez <antonibella5@yahoo.com>, 2017-2025
 # Daniel <danicases@gmail.com>, 2011
 # Daniel <danicases@gmail.com>, 2011-2012
 # Daniel <danicases@gmail.com>, 2012
@@ -16,9 +16,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2024-08-23 19:34+0200\n"
+"POT-Creation-Date: 2025-01-23 10:39+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
-"Last-Translator: Antoni Bella Pérez <antonibella5@yahoo.com>, 2017-2024\n"
+"Last-Translator: Antoni Bella Pérez <antonibella5@yahoo.com>, 2017-2025\n"
 "Language-Team: Catalan (http://app.transifex.com/mc/mc/language/ca/)\n"
 "Language: ca\n"
 "MIME-Version: 1.0\n"
@@ -988,6 +988,9 @@ msgstr ""
 msgid "Diff:"
 msgstr "Diferència:"
 
+msgid "File name is empty!"
+msgstr "El nom del fitxer és buit!"
+
 #, c-format
 msgid "\"%s\" is a directory"
 msgstr "«%s» és un directori"
@@ -1112,9 +1115,6 @@ msgstr "Comprova la línia nova &POSIX"
 msgid "Edit Save Mode"
 msgstr "Edita el mode de desament"
 
-msgid "Save as"
-msgstr "Desa com a"
-
 msgid "Cannot save: destination is not a regular file"
 msgstr "No s'ha pogut desar: la destinació no és un fitxer normal"
 
@@ -1186,14 +1186,8 @@ msgstr ""
 msgid "This function is not implemented"
 msgstr "Funció no implementada"
 
-msgid "Copy to clipboard"
-msgstr "Copia al porta-retalls"
-
 msgid "Unable to save to file"
 msgstr "No s'ha pogut desar al fitxer"
-
-msgid "Cut to clipboard"
-msgstr "Talla al porta-retalls"
 
 msgid "Goto line"
 msgstr "Ves a la línia"
@@ -1201,14 +1195,14 @@ msgstr "Ves a la línia"
 msgid "Save block"
 msgstr "Desa el bloc"
 
+msgid "Cannot save block"
+msgstr "No s'ha pogut desar el bloc"
+
 msgid "Insert file"
 msgstr "Insereix un fitxer"
 
 msgid "Cannot insert file"
 msgstr "No s'ha pogut inserir el fitxer"
-
-msgid "Sort block"
-msgstr "Ordena el bloc"
 
 msgid "You must first highlight a block of text"
 msgstr "En primer lloc, heu de ressaltar un bloc de text"
@@ -1220,9 +1214,6 @@ msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
 msgstr ""
 "Introduïu les opcions d'ordenació (vegeu la pàgina man sort(1)) separades "
 "per un espai en blanc:"
-
-msgid "Sort"
-msgstr "Ordena"
 
 msgid "Cannot execute sort command"
 msgstr "No s'ha pogut executar l'ordre per a ordenar"
@@ -1237,11 +1228,8 @@ msgstr "Enganxa la sortida de l'ordre externa"
 msgid "Enter shell command(s):"
 msgstr "Introduïu una/es ordre/s a l'intèrpret d'ordres:"
 
-msgid "External command"
-msgstr "Ordre externa"
-
-msgid "Cannot execute command"
-msgstr "No s'ha pogut executar l'ordre"
+msgid "Cannot execute external command"
+msgstr "No es pot executar una ordre externa"
 
 msgid "mail -s <subject> -c <cc> <to>"
 msgstr "mail -s <assumpte> -c <cc> <per a>"
@@ -1635,8 +1623,8 @@ msgstr ""
 "Un editor de text fàcil d'emprar\n"
 "escrit per al Midnight Commander."
 
-msgid "Copyright (C) 1996-2024 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2024 la Free Software Foundation"
+msgid "Copyright (C) 1996-2025 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2025 la Free Software Foundation"
 
 msgid "About"
 msgstr "Quant a"
@@ -2276,10 +2264,10 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get flags of \"%s\"\n"
+"Cannot get ext2 attributes of \"%s\"\n"
 "%s"
 msgstr ""
-"No s'han pogut obtenir els indicadors de «%s»\n"
+"No es poden obtenir els atributs ext2 de «%s»\n"
 "%s"
 
 msgid "set &user ID on execution"
@@ -2669,8 +2657,8 @@ msgstr ""
 "«%s»\n"
 "són el mateix fitxer"
 
-msgid "Ski&p all"
-msgstr "Saltar &tot"
+msgid "Ignore a&ll"
+msgstr "I&gnorar-ho tot"
 
 #, c-format
 msgid ""
@@ -2731,6 +2719,14 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot enter into directory \"%s\"\n"
+"%s"
+msgstr ""
+"No s'ha pogut entrar al directori «%s»\n"
+"%s"
+
+#, c-format
+msgid ""
 "Cannot overwrite directory \"%s\"\n"
 "%s"
 msgstr ""
@@ -2766,18 +2762,18 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source file \"%s\"\n"
+"Cannot get ext2 attributes of source file \"%s\"\n"
 "%s"
 msgstr ""
-"No es poden obtenir els atributs del fitxer d'origen «%s»\n"
+"No es poden obtenir els atributs ext2 del fitxer font «%s»\n"
 "%s"
 
 #, c-format
 msgid ""
-"Cannot set attributes of target file \"%s\"\n"
+"Cannot set ext2 attributes of target file \"%s\"\n"
 "%s"
 msgstr ""
-"No es poden establir els atributs del fitxer de destinació «%s»\n"
+"No es poden establir els atributs ext2 del fitxer de destinació «%s»\n"
 "%s"
 
 #, c-format
@@ -2893,10 +2889,10 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set attributes for target file \"%s\"\n"
+"Cannot set ext2 attributes for target file \"%s\"\n"
 "%s"
 msgstr ""
-"No es poden establir els atributs per al fitxer de destinació «%s»\n"
+"No es poden obtenir els atributs ext2 per al fitxer de destinació «%s»\n"
 "%s"
 
 #, c-format
@@ -2909,10 +2905,10 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source directory \"%s\"\n"
+"Cannot get ext2 attributes of source directory \"%s\"\n"
 "%s"
 msgstr ""
-"No es poden obtenir els atributs del directori d'origen «%s»\n"
+"No es poden obtenir els atributs ext2 del fitxer de destinació «%s»\n"
 "%s"
 
 #, c-format
@@ -3908,12 +3904,13 @@ msgstr ""
 "Si voleu sortir, premeu un cop la tecla\n"
 "d'Escapada i espereu."
 
-msgid "Cannot accept this key"
-msgstr "No s'ha pogut acceptar aquesta clau"
-
 #, c-format
-msgid "You have entered \"%s\""
-msgstr "Heu introduït «%s»"
+msgid ""
+"Cannot accept this key.\n"
+"You have entered \"%s\""
+msgstr ""
+"No es pot acceptar aquesta clau.\n"
+"Heu introduït «%s»"
 
 #. TRANSLATORS: This label appears near learned keys.  Keep it short.
 msgid "OK"
@@ -3997,15 +3994,15 @@ msgstr ""
 "%s"
 
 #, c-format
+msgid "Warning: Cannot change to %s.\n"
+msgstr "Avís: no s'ha pogut canviar a %s.\n"
+
+#, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "No s'ha pogut obrir la canonada anomenada %s\n"
 
 msgid "The shell is still active. Quit anyway?"
 msgstr "L'intèrpret d'ordres encara està actiu. Voleu sortir igualment?"
-
-#, c-format
-msgid "Warning: Cannot change to %s.\n"
-msgstr "Avís: no s'ha pogut canviar a %s.\n"
 
 msgid "With builtin editor and aspell support"
 msgstr "Amb editor integrat i suport aspell"
@@ -4199,6 +4196,8 @@ msgid ""
 "Cannot open %s archive\n"
 "%s"
 msgstr ""
+"No s'ha pogut obrir l'arxiu %s\n"
+"%s"
 
 #, c-format
 msgid ""

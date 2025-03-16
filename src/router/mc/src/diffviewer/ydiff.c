@@ -1,7 +1,7 @@
 /*
    File difference viewer
 
-   Copyright (C) 2007-2024
+   Copyright (C) 2007-2025
    Free Software Foundation, Inc.
 
    Written by:
@@ -607,7 +607,7 @@ dview_get_utf (const char *str, int *ch, int *ch_length)
     }
     else
     {
-        char *next_ch;
+        const char *next_ch;
 
         /* Calculate UTF-8 char length */
         next_ch = g_utf8_next_char (str);
@@ -1925,6 +1925,10 @@ get_current_hunk (WDiff *dview, int *start_line1, int *end_line1, int *start_lin
     size_t pos;
     int ch;
     int res = 0;
+
+    /* Is file empty? */
+    if (a0->len == 0)
+        return 0;
 
     *start_line1 = 1;
     *start_line2 = 1;
@@ -3460,6 +3464,12 @@ dview_diff_cmd (const void *f0, const void *f1)
             const file_entry_t *fe0, *fe1;
 
             fe0 = panel_current_entry (panel0);
+            if (fe0 == NULL)
+            {
+                message (D_ERROR, MSG_ERROR, "%s", _("File name is empty!"));
+                goto ret;
+            }
+
             file0 = vfs_path_append_new (panel0->cwd_vpath, fe0->fname->str, (char *) NULL);
             is_dir0 = S_ISDIR (fe0->st.st_mode);
             if (is_dir0)
@@ -3470,6 +3480,11 @@ dview_diff_cmd (const void *f0, const void *f1)
             }
 
             fe1 = panel_current_entry (panel1);
+            if (fe1 == NULL)
+            {
+                message (D_ERROR, MSG_ERROR, "%s", _("File name is empty!"));
+                goto ret;
+            }
             file1 = vfs_path_append_new (panel1->cwd_vpath, fe1->fname->str, (char *) NULL);
             is_dir1 = S_ISDIR (fe1->st.st_mode);
             if (is_dir1)

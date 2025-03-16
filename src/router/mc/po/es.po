@@ -13,7 +13,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2024-08-23 19:34+0200\n"
+"POT-Creation-Date: 2025-01-23 10:39+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Slava Zanko <slavazanko@gmail.com>, 2011\n"
 "Language-Team: Spanish (http://app.transifex.com/mc/mc/language/es/)\n"
@@ -978,6 +978,9 @@ msgstr ""
 msgid "Diff:"
 msgstr "Diff:"
 
+msgid "File name is empty!"
+msgstr "¡Nombre de archivo vacío!"
+
 #, c-format
 msgid "\"%s\" is a directory"
 msgstr "«%s» no es un directorio"
@@ -1103,9 +1106,6 @@ msgstr "verificar salto de línea &POSIX"
 msgid "Edit Save Mode"
 msgstr "Modo de guardar"
 
-msgid "Save as"
-msgstr "Guardar como"
-
 msgid "Cannot save: destination is not a regular file"
 msgstr "Imposible guardar: el destino no es un archivo ordinario"
 
@@ -1177,14 +1177,8 @@ msgstr ""
 msgid "This function is not implemented"
 msgstr "Esa función no está implementada."
 
-msgid "Copy to clipboard"
-msgstr "Copiar al portapapeles"
-
 msgid "Unable to save to file"
 msgstr "No pude guardar el archivo."
-
-msgid "Cut to clipboard"
-msgstr "Cortar al portapapeles"
 
 msgid "Goto line"
 msgstr "Ir a la línea"
@@ -1192,14 +1186,14 @@ msgstr "Ir a la línea"
 msgid "Save block"
 msgstr "Guardar bloque"
 
+msgid "Cannot save block"
+msgstr "Imposible guardar el bloque."
+
 msgid "Insert file"
 msgstr "Insertar archivo"
 
 msgid "Cannot insert file"
 msgstr "Imposible insertar el archivo"
-
-msgid "Sort block"
-msgstr "Ordenar bloque de texto"
 
 msgid "You must first highlight a block of text"
 msgstr "Es necesario tener un bloque seleccionado"
@@ -1209,9 +1203,6 @@ msgstr "Ordenar bloque de texto"
 
 msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
 msgstr "Opciones para «sort» (ver manual sort(1)), separadas por espacios:"
-
-msgid "Sort"
-msgstr "Ordenar"
 
 msgid "Cannot execute sort command"
 msgstr "Imposible ejecutar «sort»"
@@ -1226,11 +1217,8 @@ msgstr "Pegar desde otro programa"
 msgid "Enter shell command(s):"
 msgstr "Orden a ejecutar:"
 
-msgid "External command"
-msgstr "Programa externo"
-
-msgid "Cannot execute command"
-msgstr "Imposible ejecutar la orden"
+msgid "Cannot execute external command"
+msgstr "Imposible ejecutar programa"
 
 msgid "mail -s <subject> -c <cc> <to>"
 msgstr "mail -s <tema> -c <cc> <para>"
@@ -1624,8 +1612,8 @@ msgstr ""
 "Un editor de texto amigable\n"
 "para Midnight Commander."
 
-msgid "Copyright (C) 1996-2024 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2024 the Free Software Foundation"
+msgid "Copyright (C) 1996-2025 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2025 the Free Software Foundation"
 
 msgid "About"
 msgstr "Acerca de..."
@@ -2265,10 +2253,10 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get flags of \"%s\"\n"
+"Cannot get ext2 attributes of \"%s\"\n"
 "%s"
 msgstr ""
-"Imposible conseguir atributos de «%s»\n"
+"Imposible obtener atributos ext2 de «%s»\n"
 "%s"
 
 msgid "set &user ID on execution"
@@ -2658,8 +2646,8 @@ msgstr ""
 "«%s»\n"
 "son el mismo archivo"
 
-msgid "Ski&p all"
-msgstr "saltar &Todos"
+msgid "Ignore a&ll"
+msgstr "ignorar &Todos"
 
 #, c-format
 msgid ""
@@ -2719,6 +2707,14 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot enter into directory \"%s\"\n"
+"%s"
+msgstr ""
+"Imposible acceder al directorio «%s»\n"
+"%s"
+
+#, c-format
+msgid ""
 "Cannot overwrite directory \"%s\"\n"
 "%s"
 msgstr ""
@@ -2754,18 +2750,18 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source file \"%s\"\n"
+"Cannot get ext2 attributes of source file \"%s\"\n"
 "%s"
 msgstr ""
-"Imposible obtener atributos del archivo origen «%s»\n"
+"Imposible obtener atributos ext2 del archivo origen «%s»\n"
 "%s"
 
 #, c-format
 msgid ""
-"Cannot set attributes of target file \"%s\"\n"
+"Cannot set ext2 attributes of target file \"%s\"\n"
 "%s"
 msgstr ""
-"Imposible establecer atributos del archivo destino «%s»\n"
+"Imposible establecer atributos ext2 del archivo destino «%s»\n"
 "%s"
 
 #, c-format
@@ -2881,10 +2877,10 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set attributes for target file \"%s\"\n"
+"Cannot set ext2 attributes for target file \"%s\"\n"
 "%s"
 msgstr ""
-"Imposible establecer atributos para el archivo destino «%s»\n"
+"Imposible establecer atributos ext2 para el archivo destino «%s»\n"
 "%s"
 
 #, c-format
@@ -2897,10 +2893,10 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source directory \"%s\"\n"
+"Cannot get ext2 attributes of source directory \"%s\"\n"
 "%s"
 msgstr ""
-"Imposible obtener atributos del directorio de origen «%s»\n"
+"Imposible obtener atributos ext2 del directorio de origen «%s»\n"
 "%s"
 
 #, c-format
@@ -3896,12 +3892,13 @@ msgstr ""
 "Para abortar, presione una vez\n"
 "la tecla «Escape» y espere."
 
-msgid "Cannot accept this key"
-msgstr "Imposible aceptar esta tecla"
-
 #, c-format
-msgid "You have entered \"%s\""
-msgstr "Usted tecleó «%s»"
+msgid ""
+"Cannot accept this key.\n"
+"You have entered \"%s\""
+msgstr ""
+"Imposible aceptar esta tecla.\n"
+"Ha introducido «%s»."
 
 #. TRANSLATORS: This label appears near learned keys.  Keep it short.
 msgid "OK"
@@ -3984,15 +3981,15 @@ msgstr ""
 "%s"
 
 #, c-format
+msgid "Warning: Cannot change to %s.\n"
+msgstr "Cuidado: Imposible cambiar a %s.\n"
+
+#, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "Imposible abrir la tubería con nombre %s\n"
 
 msgid "The shell is still active. Quit anyway?"
 msgstr "El shell todavía está activo. ¿Terminar de todas maneras?"
-
-#, c-format
-msgid "Warning: Cannot change to %s.\n"
-msgstr "Cuidado: Imposible cambiar a %s.\n"
 
 msgid "With builtin editor and aspell support"
 msgstr "Con editor de textos integrado y ortografía «aspell» incluidos"

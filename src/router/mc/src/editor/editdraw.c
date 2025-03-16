@@ -1,7 +1,7 @@
 /*
    Editor text drawing.
 
-   Copyright (C) 1996-2024
+   Copyright (C) 1996-2025
    Free Software Foundation, Inc.
 
    Written by:
@@ -140,7 +140,7 @@ status_string (WEdit *edit, char *s, int w)
         g_snprintf (s, w,
                     "%c%c%c%c %3ld %5ld/%ld %6ld/%ld %s %s",
                     edit->mark1 != edit->mark2 ? (edit->column_highlight ? 'C' : 'B') : '-',
-                    edit->modified ? 'M' : '-',
+                    edit->modified != 0 ? 'M' : '-',
                     macro_index < 0 ? '-' : 'R',
                     edit->overwrite == 0 ? '-' : 'O',
                     edit->curs_col + edit->over_col,
@@ -155,7 +155,7 @@ status_string (WEdit *edit, char *s, int w)
         g_snprintf (s, w,
                     "[%c%c%c%c] %2ld L:[%3ld+%2ld %3ld/%3ld] *(%-4ld/%4ldb) %s  %s",
                     edit->mark1 != edit->mark2 ? (edit->column_highlight ? 'C' : 'B') : '-',
-                    edit->modified ? 'M' : '-',
+                    edit->modified != 0 ? 'M' : '-',
                     macro_index < 0 ? '-' : 'R',
                     edit->overwrite == 0 ? '-' : 'O',
                     edit->curs_col + edit->over_col,
@@ -279,7 +279,7 @@ edit_status_window (WEdit *edit)
         edit_move (x, 0);
         tty_printf ("[%c%c%c%c]",
                     edit->mark1 != edit->mark2 ? (edit->column_highlight ? 'C' : 'B') : '-',
-                    edit->modified ? 'M' : '-',
+                    edit->modified != 0 ? 'M' : '-',
                     macro_index < 0 ? '-' : 'R', edit->overwrite == 0 ? '-' : 'O');
     }
 
@@ -366,7 +366,7 @@ edit_draw_window_icons (const WEdit *edit, int color)
     char tmp[17];
 
     tty_setcolor (color);
-    if (edit->fullscreen)
+    if (edit->fullscreen != 0)
         widget_gotoyx (w->owner, 0, WIDGET (w->owner)->rect.cols - 6);
     else
         widget_gotoyx (w, 0, w->rect.cols - 8);
@@ -392,7 +392,7 @@ print_to_widget (WEdit *edit, long row, int start_col, int start_col_real,
     y = row + EDIT_TEXT_VERTICAL_OFFSET;
     cols_to_skip = abs (x);
 
-    if (!edit->fullscreen)
+    if (edit->fullscreen == 0)
     {
         x1++;
         y++;
@@ -503,7 +503,7 @@ edit_draw_this_line (WEdit *edit, off_t b, long row, long start_col, long end_co
     int book_mark = 0;
     char line_stat[LINE_STATE_WIDTH + 1] = "\0";
 
-    if (row > w->rect.lines - 1 - EDIT_TEXT_VERTICAL_OFFSET - 2 * (edit->fullscreen ? 0 : 1))
+    if (row > w->rect.lines - 1 - EDIT_TEXT_VERTICAL_OFFSET - 2 * (edit->fullscreen != 0 ? 0 : 1))
         return;
 
     if (book_mark_query_color (edit, edit->start_line + row, BOOK_MARK_COLOR))
@@ -517,7 +517,7 @@ edit_draw_this_line (WEdit *edit, off_t b, long row, long start_col, long end_co
         abn_style = MOD_ABNORMAL;
 
     end_col -= EDIT_TEXT_HORIZONTAL_OFFSET + edit_options.line_state_width;
-    if (!edit->fullscreen)
+    if (edit->fullscreen == 0)
     {
         end_col--;
         if (w->rect.x + w->rect.cols <= WIDGET (w->owner)->rect.cols)
@@ -573,6 +573,7 @@ edit_draw_this_line (WEdit *edit, off_t b, long row, long start_col, long end_co
                 unsigned int c;
                 gboolean wide_width_char = FALSE;
                 gboolean control_char = FALSE;
+                gboolean printable;
 
                 p->ch = 0;
                 p->style = q == edit->buffer.curs1 ? MOD_CURSOR : 0;
@@ -759,34 +760,30 @@ edit_draw_this_line (WEdit *edit, off_t b, long row, long start_col, long end_co
                         control_char = TRUE;
                         break;
                     }
+
 #ifdef HAVE_CHARSET
                     if (edit->utf8)
                     {
-                        if (g_unichar_isprint (c))
-                            p->ch = c;
+                        if (mc_global.utf8_display)
+                            /* c is gunichar */
+                            printable = g_unichar_isprint (c);
                         else
-                        {
-                            p->ch = '.';
-                            p->style = abn_style;
-                        }
-                        p++;
+                            /* c was gunichar; now c is 8-bit char converted from gunichar */
+                            printable = is_printable (c);
                     }
                     else
 #endif
+                        /* c is 8-bit char */
+                        printable = is_printable (c);
+
+                    if (printable)
+                        p->ch = c;
+                    else
                     {
-                        if ((mc_global.utf8_display && g_unichar_isprint (c)) ||
-                            (!mc_global.utf8_display && is_printable (c)))
-                        {
-                            p->ch = c;
-                            p++;
-                        }
-                        else
-                        {
-                            p->ch = '.';
-                            p->style = abn_style;
-                            p++;
-                        }
+                        p->ch = '.';
+                        p->style = abn_style;
                     }
+                    p++;
                     col++;
                     break;
                 }               /* case */
@@ -1020,7 +1017,7 @@ edit_status (WEdit *edit, gboolean active)
 {
     int color;
 
-    if (edit->fullscreen)
+    if (edit->fullscreen != 0)
     {
         color = STATUSBAR_COLOR;
         edit_status_fullscreen (edit, color);
@@ -1054,7 +1051,7 @@ edit_scroll_screen_over_cursor (WEdit *edit)
     rect_resize (w, -EDIT_TEXT_VERTICAL_OFFSET,
                  -(EDIT_TEXT_HORIZONTAL_OFFSET + edit_options.line_state_width));
 
-    if (!edit->fullscreen)
+    if (edit->fullscreen == 0)
         rect_grow (w, -1, -1);
 
     r_extreme = EDIT_RIGHT_EXTREME;
@@ -1105,7 +1102,7 @@ edit_scroll_screen_over_cursor (WEdit *edit)
 
     rect_resize (w, EDIT_TEXT_VERTICAL_OFFSET,
                  EDIT_TEXT_HORIZONTAL_OFFSET + edit_options.line_state_width);
-    if (!edit->fullscreen)
+    if (edit->fullscreen == 0)
         rect_grow (w, 1, 1);
 }
 

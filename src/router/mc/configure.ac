@@ -3,7 +3,7 @@ dnl Configure.in file for the Midnight Commander
 dnl
 
 dnl 2.64 is required at least for m4_esyscmd_s()
-AC_PREREQ(2.64)
+AC_PREREQ([2.64])
 
 AC_INIT([GNU Midnight Commander], m4_esyscmd_s([./version.sh .]),
         [https://www.midnight-commander.org/wiki/NewTicket], [mc],
@@ -41,7 +41,11 @@ dnl that ar cannot be found and linking via libtool will fail at a later stage
 AC_CHECK_TOOLS([AR], [ar gar])
 
 AC_PROG_CC
-AM_PROG_CC_C_O
+
+# AC_PROG_CC doesn't try enabling C99 in autoconf 2.69 and below, but
+# AC_PROG_CC_C99 is deprecated in newer ones. In autoconf 2.70+ both
+# will try enabling features up to C11.
+m4_version_prereq([2.70], [AC_PROG_CC], [AC_PROG_CC_C99])
 
 mc_CHECK_CFLAGS
 
@@ -50,7 +54,7 @@ if test "x$CFLAGS" = "x"; then
     CFLAGS_OPTS=" -O2 "
 fi
 if test x$USE_MAINTAINER_MODE = xyes; then
-    CFLAGS_OPTS="-g3 -O -ggdb"
+    CFLAGS_OPTS="-g3 -Og -ggdb"
     AC_DEFINE(USE_MAINTAINER_MODE, 1, [Use maintainer mode])
 fi
 
@@ -65,6 +69,8 @@ dnl which causes attribute checks to fail
 ax_gcc_func_attribute_save_flags=$[]_AC_LANG_PREFIX[]FLAGS
 _AC_LANG_PREFIX[]FLAGS=
 AX_GCC_FUNC_ATTRIBUTE([fallthrough])
+AX_GCC_FUNC_ATTRIBUTE([weak])
+AX_GCC_FUNC_ATTRIBUTE([unused])
 _AC_LANG_PREFIX[]FLAGS=$ax_gcc_func_attribute_save_flags
 unset ax_gcc_func_attribute_save_flags
 
@@ -91,9 +97,9 @@ if $HAVE_nroff; then
     AC_CACHE_VAL(mc_cv_mandoc, [
     nroff -mandoc < /dev/null > /dev/null 2>&1
     if test $? = 0; then
-	mc_cv_mandoc=-mandoc
+        mc_cv_mandoc=-mandoc
     else
-	mc_cv_mandoc=-man
+        mc_cv_mandoc=-man
     fi
     ])
     MANDOC=$mc_cv_mandoc
@@ -103,9 +109,9 @@ if $HAVE_nroff; then
     AC_CACHE_VAL(mc_cv_man_nocolor, [
     nroff -c < /dev/null > /dev/null 2>&1
     if test $? = 0; then
-	mc_cv_man_nocolor=-c
+        mc_cv_man_nocolor=-c
     else
-	mc_cv_man_nocolor=
+        mc_cv_man_nocolor=
     fi
     ])
     MAN_FLAGS=$mc_cv_man_nocolor
@@ -116,12 +122,12 @@ if $HAVE_nroff; then
     mc_cv_nroff_tascii=
     nroff -Tlatin1 < /dev/null > /dev/null 2>&1 /dev/null
     if test $? = 0; then
-	mc_cv_nroff_tascii=-Tlatin1
+        mc_cv_nroff_tascii=-Tlatin1
     else
         nroff -Tascii < /dev/null > /dev/null 2>&1 /dev/null
         if test $? = 0; then
-	    mc_cv_nroff_tascii=-Tascii
-	fi
+            mc_cv_nroff_tascii=-Tascii
+        fi
     fi
     ])
     AC_MSG_RESULT([${mc_cv_nroff_tascii-no}])
@@ -207,9 +213,6 @@ if $HAVE_FILECMD; then
     fi
 fi
 
-dnl Only list browsers here that can be run in background (i.e. with `&')
-AC_CHECK_PROGS(X11_WWW, [gnome-moz-remote mozilla firefox konqueror opera])
-
 
 dnl ############################################################################
 dnl Check for other tools
@@ -236,12 +239,14 @@ dnl Check for header files
 dnl ############################################################################
 
 AC_CHECK_HEADERS([string.h memory.h limits.h malloc.h \
-	utime.h sys/statfs.h sys/vfs.h \
-	sys/select.h sys/ioctl.h stropts.h arpa/inet.h \
-	sys/socket.h])
+    utime.h sys/statfs.h sys/vfs.h \
+    sys/select.h sys/ioctl.h stropts.h arpa/inet.h \
+    sys/socket.h])
 dnl This macro is redefined in m4.include/gnulib/sys_types_h.m4
 dnl   to work around a buggy version in autoconf <= 2.69.
 AC_HEADER_MAJOR
+
+mc_CHECK_HEADER_STDCKDINT
 
 
 dnl ############################################################################
@@ -260,8 +265,14 @@ AC_TYPE_MODE_T
 gl_PROMOTED_TYPE_MODE_T
 AC_TYPE_PID_T
 AC_TYPE_UID_T
-AC_CHECK_TYPE([major_t], [], [AC_DEFINE([major_t], [int], [Type of major device numbers.])])
-AC_CHECK_TYPE([minor_t], [], [AC_DEFINE([minor_t], [int], [Type of minor device numbers.])])
+
+dnl Taken from GNU/Linux, and should be good enough on platforms lacking these types.
+AC_CHECK_TYPE([dev_t], [unsigned long long int])
+AC_CHECK_TYPE([ino_t], [unsigned long long int])
+
+dnl Taken from GNU/Linux, and should be good enough on platforms lacking these types.
+AC_CHECK_TYPE([major_t], [unsigned int])
+AC_CHECK_TYPE([minor_t], [unsigned int])
 
 AC_STRUCT_ST_BLOCKS
 AC_CHECK_MEMBERS([struct stat.st_blksize, struct stat.st_rdev, struct stat.st_mtim, struct stat.st_mtimespec, struct stat.st_mtimensec])
@@ -307,9 +318,9 @@ dnl Check for functions
 dnl ############################################################################
 
 AC_CHECK_FUNCS([\
-	strverscmp \
-	strncasecmp \
-	realpath
+    strverscmp \
+    strncasecmp \
+    realpath
 ])
 
 dnl getpt is a GNU Extension (glibc 2.1.x)
@@ -338,19 +349,14 @@ dnl ############################################################################
 dnl OS specific stuff
 dnl ############################################################################
 
-case $host_os in
-*os400)
-    AC_PATH_PROG([PERL], [perl], [/QOpenSys/pkgs/bin/perl])
-    AC_PATH_PROG([PERL_FOR_BUILD], [perl], [/QOpenSys/pkgs/bin/perl])
-    AC_PATH_PROG([PYTHON], [python], [/QOpenSys/pkgs/bin/python2])
-    AC_PATH_PROG([RUBY], [ruby], [/QOpenSys/pkgs/bin/ruby])
-    ;;
-*)
-    AC_PATH_PROG([PERL], [perl], [/usr/bin/perl])
-    AC_PATH_PROG([PERL_FOR_BUILD], [perl], [/usr/bin/perl])
-    AC_PATH_PROG([PYTHON], [python], [/usr/bin/python])
-    AC_PATH_PROG([RUBY], [ruby], [/usr/bin/ruby])
-esac
+AC_CHECK_DECLS([environ], , ,
+  [ #include <unistd.h>
+    #include <stdlib.h> ])
+
+AC_PATH_PROG([PERL], [perl], [/usr/bin/env perl], [$PATH$PATH_SEPARATORQOpenSys/pkgs/bin])
+AC_PATH_PROG([PERL_FOR_BUILD], [perl], [/usr/bin/env perl], [$PATH$PATH_SEPARATORQOpenSys/pkgs/bin])
+AC_PATH_PROG([PYTHON], [python3], [/usr/bin/env python3], [$PATH$PATH_SEPARATORQOpenSys/pkgs/bin])
+AC_PATH_PROG([RUBY], [ruby], [/usr/bin/env ruby], [$PATH$PATH_SEPARATORQOpenSys/pkgs/bin])
 
 case $host_os in
 aux*)
@@ -360,7 +366,7 @@ aux*)
     ;;
 esac
 
-dnl If running under AIX, AC_AIX does not tell us that
+dnl If running under AIX, AC_USE_SYSTEM_EXTENSIONS does not tell us that
 AC_MSG_CHECKING([for AIX defines])
 AC_EGREP_CPP([yes],
     [
@@ -405,17 +411,16 @@ AC_ARG_WITH([gpm-mouse],
 case $host_os in
 linux*)
     if test x$with_gpm_mouse != xno; then
-	AC_CHECK_LIB(gpm, Gpm_Repeat,
-	    [AC_DEFINE(HAVE_LIBGPM, 1,
-		       [Define to enable gpm mouse support on Linux])
-	    mouse_lib="gpm and xterm"
-	    MCLIBS="$MCLIBS -lgpm"],
+        AC_CHECK_LIB(gpm, Gpm_Repeat,
+            [AC_DEFINE(HAVE_LIBGPM, 1, [Define to enable gpm mouse support on Linux])
+            mouse_lib="gpm and xterm"
+            MCLIBS="$MCLIBS -lgpm"],
             if test "x$with_gpm_mouse" = "xyes"; then
                 [AC_MSG_ERROR([libgpm is missing or older than 0.18])]
             else
                 [AC_MSG_WARN([libgpm is missing or older than 0.18])]
             fi
-	)
+        )
     fi
     ;;
 esac
@@ -462,12 +467,12 @@ AC_ARG_WITH([diff_viewer],
     AS_HELP_STRING([--with-diff-viewer], [Compile with diff viewer @<:@yes@:>@]))
 
 if test x$with_diff_viewer != xno; then
-	AC_DEFINE(USE_DIFF_VIEW, 1, [Define to enable diff viewer])
-	use_diff=yes
-	diff_msg="yes"
-	AC_MSG_NOTICE([using diff viewer])
+        AC_DEFINE(USE_DIFF_VIEW, 1, [Define to enable diff viewer])
+        use_diff=yes
+        diff_msg="yes"
+        AC_MSG_NOTICE([using diff viewer])
 else
-	diff_msg="no"
+        diff_msg="no"
 fi
 
 mc_SUBSHELL
@@ -486,12 +491,16 @@ test "x$exec_prefix" = "xNONE" && exec_prefix="${prefix}"
 
 if test x${libexecdir} = x'${exec_prefix}/libexec'; then
     EXTHELPERSDIR=${prefix}/libexec/${PACKAGE}/ext.d
+    EXTFSHELPERSDIR=${prefix}/libexec/${PACKAGE}/extfs.d
 elif test x${libexecdir} = x'${exec_prefix}/lib'; then
     EXTHELPERSDIR=${prefix}/lib/${PACKAGE}/ext.d
+    EXTFSHELPERSDIR=${prefix}/lib/${PACKAGE}/extfs.d
 else
     EXTHELPERSDIR=${libexecdir}/${PACKAGE}/ext.d
+    EXTFSHELPERSDIR=${libexecdir}/${PACKAGE}/extfs.d
 fi
 AC_SUBST(EXTHELPERSDIR)
+AC_SUBST(EXTFSHELPERSDIR)
 
 
 dnl ############################################################################
@@ -507,9 +516,9 @@ ALL_DOC_LINGUAS="es hu it pl ru sr"
 DOC_LINGUAS=
 if test "x$USE_NLS" = xyes; then
     if test -z "$LINGUAS"; then
-	langs="`grep -v '^#' $srcdir/po/LINGUAS`"
+        langs="`grep -v '^#' $srcdir/po/LINGUAS`"
     else
-	langs="$LINGUAS"
+        langs="$LINGUAS"
     fi
 else
     langs=
@@ -517,10 +526,10 @@ fi
 
 for h_lang in $ALL_DOC_LINGUAS; do
     for lang in $langs; do
-	if test "$lang" = "$h_lang"; then
-	    DOC_LINGUAS="$DOC_LINGUAS $lang"
-	    break
-	fi
+        if test "$lang" = "$h_lang"; then
+            DOC_LINGUAS="$DOC_LINGUAS $lang"
+            break
+        fi
     done
 done
 AC_SUBST(DOC_LINGUAS)
@@ -590,7 +599,6 @@ misc/ext.d/Makefile
 misc/ext.d/doc.sh
 misc/ext.d/misc.sh
 misc/ext.d/text.sh
-misc/ext.d/web.sh
 misc/macros.d/Makefile
 misc/mc.ext.ini
 
@@ -623,11 +631,13 @@ src/vfs/extfs/helpers/mailfs
 src/vfs/extfs/helpers/patchfs
 src/vfs/extfs/helpers/rpms+
 src/vfs/extfs/helpers/s3+
+src/vfs/extfs/helpers/torrent
 src/vfs/extfs/helpers/uace
 src/vfs/extfs/helpers/ualz
 src/vfs/extfs/helpers/uar
 src/vfs/extfs/helpers/uarc
 src/vfs/extfs/helpers/uarj
+src/vfs/extfs/helpers/uc1541
 src/vfs/extfs/helpers/ucab
 src/vfs/extfs/helpers/uha
 src/vfs/extfs/helpers/ulha
@@ -705,6 +715,7 @@ tests/lib/mcconfig/Makefile
 tests/lib/search/Makefile
 tests/lib/strutil/Makefile
 tests/lib/vfs/Makefile
+tests/lib/vfs/mc.charsets
 tests/lib/widget/Makefile
 tests/src/Makefile
 tests/src/filemanager/Makefile

@@ -13,7 +13,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2024-08-23 19:34+0200\n"
+"POT-Creation-Date: 2025-01-23 10:39+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Alexander Shopov <ash@kambanaria.org>, 2022\n"
 "Language-Team: Bulgarian (http://app.transifex.com/mc/mc/language/bg/)\n"
@@ -954,6 +954,9 @@ msgstr ""
 msgid "Diff:"
 msgstr "Разлика:"
 
+msgid "File name is empty!"
+msgstr ""
+
 #, c-format
 msgid "\"%s\" is a directory"
 msgstr "„%s“ е директория"
@@ -1077,9 +1080,6 @@ msgstr "Проверка за &POSIX нов ред"
 msgid "Edit Save Mode"
 msgstr "Редактиране Режим Запис"
 
-msgid "Save as"
-msgstr "Запис като"
-
 msgid "Cannot save: destination is not a regular file"
 msgstr "Не може да се запише: крайния файл не обикновен файл"
 
@@ -1151,14 +1151,8 @@ msgstr ""
 msgid "This function is not implemented"
 msgstr "Това действие все още не е внедрено"
 
-msgid "Copy to clipboard"
-msgstr "Копиране в буфера"
-
 msgid "Unable to save to file"
 msgstr "Грешка при запис на файла"
-
-msgid "Cut to clipboard"
-msgstr "Изрязване в буфера"
 
 msgid "Goto line"
 msgstr "Към ред"
@@ -1166,14 +1160,14 @@ msgstr "Към ред"
 msgid "Save block"
 msgstr "Запис на блок"
 
+msgid "Cannot save block"
+msgstr ""
+
 msgid "Insert file"
 msgstr "Вмъкване на файл"
 
 msgid "Cannot insert file"
 msgstr "Грешка при вмъкване на файл"
-
-msgid "Sort block"
-msgstr "Подредба на блок"
 
 msgid "You must first highlight a block of text"
 msgstr "Първо изберете блок от текст"
@@ -1185,9 +1179,6 @@ msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
 msgstr ""
 "Въведете опциите за подредба (вижте страницата sort(1) в ръководството), "
 "разелени с интервал:"
-
-msgid "Sort"
-msgstr "Подредба"
 
 msgid "Cannot execute sort command"
 msgstr "Командата за подредба не може да изпълни"
@@ -1202,11 +1193,8 @@ msgstr "Вмъкване на изхода от външна команда"
 msgid "Enter shell command(s):"
 msgstr "Въвеждане на конзолна команда(и):"
 
-msgid "External command"
-msgstr "Външна команда"
-
-msgid "Cannot execute command"
-msgstr "Грешка при изпълнение на команда"
+msgid "Cannot execute external command"
+msgstr ""
 
 msgid "mail -s <subject> -c <cc> <to>"
 msgstr "mail -s <ТЕМА> -c <ДОП_ПОЛУЧАТЕЛ> <ПОЛУЧАТЕЛ>"
@@ -1600,7 +1588,7 @@ msgstr ""
 "Удобен текстови редактор\n"
 "за Midnight Commander."
 
-msgid "Copyright (C) 1996-2024 the Free Software Foundation"
+msgid "Copyright (C) 1996-2025 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -2238,11 +2226,9 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get flags of \"%s\"\n"
+"Cannot get ext2 attributes of \"%s\"\n"
 "%s"
 msgstr ""
-"Не може да се получат флаговете на „%s“\n"
-"%s"
 
 msgid "set &user ID on execution"
 msgstr "изпълнение с UID на &собственика"
@@ -2617,8 +2603,8 @@ msgstr ""
 "„%s“\n"
 "са един и същи файл"
 
-msgid "Ski&p all"
-msgstr "Проп&ускане всички"
+msgid "Ignore a&ll"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -2679,6 +2665,12 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot enter into directory \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "Cannot overwrite directory \"%s\"\n"
 "%s"
 msgstr ""
@@ -2714,13 +2706,13 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source file \"%s\"\n"
+"Cannot get ext2 attributes of source file \"%s\"\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set attributes of target file \"%s\"\n"
+"Cannot set ext2 attributes of target file \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2837,7 +2829,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set attributes for target file \"%s\"\n"
+"Cannot set ext2 attributes for target file \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2851,7 +2843,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source directory \"%s\"\n"
+"Cannot get ext2 attributes of source directory \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -3844,12 +3836,11 @@ msgstr ""
 "За да излезете, натиснете веднъж Escape\n"
 "и изчакайте."
 
-msgid "Cannot accept this key"
-msgstr "Не може да се приеме този клавиш"
-
 #, c-format
-msgid "You have entered \"%s\""
-msgstr "Въведохте „%s“"
+msgid ""
+"Cannot accept this key.\n"
+"You have entered \"%s\""
+msgstr ""
 
 #. TRANSLATORS: This label appears near learned keys.  Keep it short.
 msgid "OK"
@@ -3933,15 +3924,15 @@ msgstr ""
 "%s"
 
 #, c-format
+msgid "Warning: Cannot change to %s.\n"
+msgstr "Внимание: Не може да се влезе в %s.\n"
+
+#, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "Не може да се отвори именуваният канал %s\n"
 
 msgid "The shell is still active. Quit anyway?"
 msgstr "Обвивката е още активна. Да се напусне ли въпреки това?"
-
-#, c-format
-msgid "Warning: Cannot change to %s.\n"
-msgstr "Внимание: Не може да се влезе в %s.\n"
 
 msgid "With builtin editor and aspell support"
 msgstr ""

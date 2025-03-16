@@ -1,7 +1,7 @@
 /*
    Editor spell checker
 
-   Copyright (C) 2012-2024
+   Copyright (C) 2012-2025
    Free Software Foundation, Inc.
 
    Written by:
@@ -174,8 +174,10 @@ spell_available (void)
 
     spell_module = g_module_open ("libaspell", G_MODULE_BIND_LAZY);
 
-    if (spell_module != NULL
-        && ASPELL_FUNCTION_AVAILABLE (new_aspell_config)
+    if (spell_module == NULL)
+        return FALSE;
+
+    if (ASPELL_FUNCTION_AVAILABLE (new_aspell_config)
         && ASPELL_FUNCTION_AVAILABLE (aspell_dict_info_list_elements)
         && ASPELL_FUNCTION_AVAILABLE (aspell_dict_info_enumeration_next)
         && ASPELL_FUNCTION_AVAILABLE (new_aspell_speller)
@@ -328,7 +330,6 @@ spell_dialog_spell_suggest_show (WEdit *edit, const char *word, char **new_word,
     char *word_label;
     unsigned int i;
     int res;
-    char *curr = NULL;
     WDialog *sug_dlg;
     WGroup *g;
     WListbox *sug_list;
@@ -391,12 +392,10 @@ spell_dialog_spell_suggest_show (WEdit *edit, const char *word, char **new_word,
     res = dlg_run (sug_dlg);
     if (res == B_ENTER)
     {
-        char *tmp = NULL;
-        listbox_get_current (sug_list, &curr, NULL);
+        char *curr = NULL;
 
-        if (curr != NULL)
-            tmp = g_strdup (curr);
-        *new_word = tmp;
+        listbox_get_current (sug_list, &curr, NULL);
+        *new_word = g_strdup (curr);
     }
 
     widget_destroy (WIDGET (sug_dlg));
@@ -421,7 +420,8 @@ aspell_add_to_dict (const char *word, int word_size)
 
     if (mc_aspell_speller_error (global_speller->speller) != 0)
     {
-        edit_error_dialog (_("Error"), mc_aspell_speller_error_message (global_speller->speller));
+        message (D_ERROR, MSG_ERROR, "%s",
+                 mc_aspell_speller_error_message (global_speller->speller));
         return FALSE;
     }
 
@@ -429,7 +429,8 @@ aspell_add_to_dict (const char *word, int word_size)
 
     if (mc_aspell_speller_error (global_speller->speller) != 0)
     {
-        edit_error_dialog (_("Error"), mc_aspell_speller_error_message (global_speller->speller));
+        message (D_ERROR, MSG_ERROR, "%s",
+                 mc_aspell_speller_error_message (global_speller->speller));
         return FALSE;
     }
 
@@ -554,7 +555,7 @@ aspell_init (void)
         global_speller->speller = mc_to_aspell_speller (error);
     else
     {
-        edit_error_dialog (_("Error"), mc_aspell_error_message (error));
+        message (D_ERROR, MSG_ERROR, "%s", mc_aspell_error_message (error));
         mc_delete_aspell_can_have_error (error);
         aspell_clean ();
     }

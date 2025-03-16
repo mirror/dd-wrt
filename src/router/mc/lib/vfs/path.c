@@ -1,7 +1,7 @@
 /*
    Virtual File System path handlers
 
-   Copyright (C) 2011-2024
+   Copyright (C) 2011-2025
    Free Software Foundation, Inc.
 
    Written by:
@@ -181,42 +181,6 @@ vfs_canon (const char *path)
 
     return result;
 }
-
-/* --------------------------------------------------------------------------------------------- */
-
-#ifdef HAVE_CHARSET
-/** get encoding after last #enc: or NULL, if part does not contain #enc:
- *
- * @param path null-terminated string
- * @param len the maximum length of path, where #enc: should be searched
- *
- * @return newly allocated string.
- */
-
-static char *
-vfs_get_encoding (const char *path, ssize_t len)
-{
-    char *semi;
-
-    /* try found #enc: */
-    semi = g_strrstr_len (path, len, VFS_ENCODING_PREFIX);
-    if (semi == NULL)
-        return NULL;
-
-    if (semi == path || IS_PATH_SEP (semi[-1]))
-    {
-        char *slash;
-
-        semi += strlen (VFS_ENCODING_PREFIX);   /* skip "#enc:" */
-        slash = strchr (semi, PATH_SEP);
-        if (slash != NULL)
-            return g_strndup (semi, slash - semi);
-        return g_strdup (semi);
-    }
-
-    return vfs_get_encoding (path, semi - path);
-}
-#endif
 
 /* --------------------------------------------------------------------------------------------- */
 /**  Extract the hostname and username from the path
@@ -896,8 +860,8 @@ vfs_path_element_clone (const vfs_path_element_t *element)
     new_element->vfs_prefix = g_strdup (element->vfs_prefix);
 #ifdef HAVE_CHARSET
     new_element->encoding = g_strdup (element->encoding);
-    if (vfs_path_element_need_cleanup_converter (element) && new_element->encoding != NULL)
-        new_element->dir.converter = str_crt_conv_from (new_element->encoding);
+    if (vfs_path_element_need_cleanup_converter (element) && element->encoding != NULL)
+        new_element->dir.converter = str_crt_conv_from (element->encoding);
     else
         new_element->dir.converter = element->dir.converter;
 #endif
@@ -1071,6 +1035,39 @@ vfs_prefix_to_class (const char *prefix)
 
 #ifdef HAVE_CHARSET
 
+/** get encoding after last #enc: or NULL, if part does not contain #enc:
+ *
+ * @param path null-terminated string
+ * @param len the maximum length of path, where #enc: should be searched
+ *
+ * @return newly allocated string.
+ */
+
+char *
+vfs_get_encoding (const char *path, ssize_t len)
+{
+    char *semi;
+
+    /* try found #enc: */
+    semi = g_strrstr_len (path, len, VFS_ENCODING_PREFIX);
+    if (semi == NULL)
+        return NULL;
+
+    if (semi == path || IS_PATH_SEP (semi[-1]))
+    {
+        char *slash;
+
+        semi += strlen (VFS_ENCODING_PREFIX);   /* skip "#enc:" */
+        slash = strchr (semi, PATH_SEP);
+        if (slash != NULL)
+            return g_strndup (semi, slash - semi);
+        return g_strdup (semi);
+    }
+
+    return vfs_get_encoding (path, semi - path);
+}
+
+/* --------------------------------------------------------------------------------------------- */
 /**
  * Check if need cleanup charset converter for vfs_path_element_t
  *
@@ -1365,7 +1362,7 @@ vfs_path_append_vpath_new (const vfs_path_t *first_vpath, ...)
 /* --------------------------------------------------------------------------------------------- */
 
 /**
- * get tockens count in path.
+ * get tokens count in path.
  *
  * @param vpath path object
  *

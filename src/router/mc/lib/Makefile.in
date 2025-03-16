@@ -103,6 +103,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/nls.m4 \
 	$(top_srcdir)/m4/po.m4 $(top_srcdir)/m4/progtest.m4 \
 	$(top_srcdir)/acinclude.m4 \
+	$(top_srcdir)/m4.include/gnulib/mc-gnulib-common.m4 \
 	$(top_srcdir)/m4.include/gnulib/mode_t.m4 \
 	$(top_srcdir)/m4.include/gnulib/stat-size.m4 \
 	$(top_srcdir)/m4.include/gnulib/fstypename.m4 \
@@ -118,6 +119,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4.include/ax_append_flag.m4 \
 	$(top_srcdir)/m4.include/ax_append_compile_flags.m4 \
 	$(top_srcdir)/m4.include/mc-cflags.m4 \
+	$(top_srcdir)/m4.include/mc-stdckdint.m4 \
 	$(top_srcdir)/m4.include/ax_gcc_func_attribute.m4 \
 	$(top_srcdir)/m4.include/mc-check-search-type.m4 \
 	$(top_srcdir)/m4.include/mc-get-fs-info.m4 \
@@ -132,7 +134,6 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4.include/mc-ext2fs-attr.m4 \
 	$(top_srcdir)/m4.include/mc-glib.m4 \
 	$(top_srcdir)/m4.include/mc-vfs.m4 \
-	$(top_srcdir)/m4.include/vfs/rpc.m4 \
 	$(top_srcdir)/m4.include/vfs/socket.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-extfs.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-sfs.m4 \
@@ -193,12 +194,12 @@ libmc_la_DEPENDENCIES = event/libmcevent.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
 	$(am__DEPENDENCIES_3)
 am__libmc_la_SOURCES_DIST = event.h event-types.h filehighlight.h \
-	mcconfig.h search.h skin.h strutil.h widget.h utilunix.c \
-	unixcompat.h util.c util.h file-entry.h fileloc.h fs.h hook.c \
-	hook.h glibcompat.c glibcompat.h global.c global.h keybind.c \
-	keybind.h lock.c lock.h serialize.c serialize.h shell.c \
-	shell.h stat-size.h timefmt.c timefmt.h logging.c logging.h \
-	charsets.c charsets.h
+	idx.h intprops-internal.h intprops.h mcconfig.h search.h \
+	skin.h strutil.h widget.h utilunix.c unixcompat.h util.c \
+	util.h file-entry.h fileloc.h fs.h hook.c hook.h glibcompat.c \
+	glibcompat.h global.c global.h keybind.c keybind.h lock.c \
+	lock.h serialize.c serialize.h shell.c shell.h stat-size.h \
+	timefmt.c timefmt.h logging.c logging.h charsets.c charsets.h
 am__objects_1 =
 am__objects_2 = utilunix.lo util.lo
 @USE_MAINTAINER_MODE_TRUE@am__objects_3 = logging.lo
@@ -337,7 +338,6 @@ CHECK_CFLAGS = @CHECK_CFLAGS@
 CHECK_LIBS = @CHECK_LIBS@
 COM_ERR_CFLAGS = @COM_ERR_CFLAGS@
 COM_ERR_LIBS = @COM_ERR_LIBS@
-CP1251 = @CP1251@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CSCOPE = @CSCOPE@
@@ -379,10 +379,13 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
+ENCODING_CP1251 = @ENCODING_CP1251@
+ENCODING_CP866 = @ENCODING_CP866@
 ETAGS = @ETAGS@
 EXEEXT = @EXEEXT@
 EXT2FS_CFLAGS = @EXT2FS_CFLAGS@
 EXT2FS_LIBS = @EXT2FS_LIBS@
+EXTFSHELPERSDIR = @EXTFSHELPERSDIR@
 EXTHELPERSDIR = @EXTHELPERSDIR@
 FGREP = @FGREP@
 FILECMD = @FILECMD@
@@ -464,12 +467,11 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SLANG_CFLAGS = @SLANG_CFLAGS@
 SLANG_LIBS = @SLANG_LIBS@
+STDCKDINT_H = @STDCKDINT_H@
 STRIP = @STRIP@
-TESTS_LDFLAGS = @TESTS_LDFLAGS@
 UNZIP = @UNZIP@
 USE_NLS = @USE_NLS@
 VERSION = @VERSION@
-X11_WWW = @X11_WWW@
 XGETTEXT = @XGETTEXT@
 XGETTEXT_015 = @XGETTEXT_015@
 XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
@@ -544,6 +546,9 @@ SUBDIRS = event filehighlight mcconfig search skin tty vfs strutil widget .
 SUBLIB_includes = \
 	event.h event-types.h \
 	filehighlight.h \
+	idx.h \
+	intprops-internal.h \
+	intprops.h \
 	mcconfig.h \
 	search.h \
 	skin.h \
@@ -560,6 +565,9 @@ libmc_la_SOURCES = $(SUBLIB_includes) $(SRC_mc_utils) file-entry.h \
 	global.c global.h keybind.c keybind.h lock.c lock.h \
 	serialize.c serialize.h shell.c shell.h stat-size.h timefmt.c \
 	timefmt.h $(am__append_1) $(am__append_2)
+EXTRA_DIST = \
+	stdckdint.in.h
+
 AM_CPPFLAGS = $(GLIB_CFLAGS) -I$(top_srcdir)
 libmc_la_LIBADD = event/libmcevent.la \
 	filehighlight/libmcfilehighlight.la mcconfig/libmcconfig.la \

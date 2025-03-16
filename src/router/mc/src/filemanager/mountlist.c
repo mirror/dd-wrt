@@ -1,7 +1,7 @@
 /*
    Return a list of mounted file systems
 
-   Copyright (C) 1991-2024
+   Copyright (C) 1991-2025
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -1215,7 +1215,7 @@ read_file_system_list (void)
 
     return g_slist_reverse (mount_list);
 
-  free_then_fail:
+  free_then_fail: MC_UNUSED;
     {
         int saved_errno = errno;
 

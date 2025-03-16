@@ -102,6 +102,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/nls.m4 \
 	$(top_srcdir)/m4/po.m4 $(top_srcdir)/m4/progtest.m4 \
 	$(top_srcdir)/acinclude.m4 \
+	$(top_srcdir)/m4.include/gnulib/mc-gnulib-common.m4 \
 	$(top_srcdir)/m4.include/gnulib/mode_t.m4 \
 	$(top_srcdir)/m4.include/gnulib/stat-size.m4 \
 	$(top_srcdir)/m4.include/gnulib/fstypename.m4 \
@@ -117,6 +118,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4.include/ax_append_flag.m4 \
 	$(top_srcdir)/m4.include/ax_append_compile_flags.m4 \
 	$(top_srcdir)/m4.include/mc-cflags.m4 \
+	$(top_srcdir)/m4.include/mc-stdckdint.m4 \
 	$(top_srcdir)/m4.include/ax_gcc_func_attribute.m4 \
 	$(top_srcdir)/m4.include/mc-check-search-type.m4 \
 	$(top_srcdir)/m4.include/mc-get-fs-info.m4 \
@@ -131,7 +133,6 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4.include/mc-ext2fs-attr.m4 \
 	$(top_srcdir)/m4.include/mc-glib.m4 \
 	$(top_srcdir)/m4.include/mc-vfs.m4 \
-	$(top_srcdir)/m4.include/vfs/rpc.m4 \
 	$(top_srcdir)/m4.include/vfs/socket.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-extfs.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-sfs.m4 \
@@ -158,17 +159,16 @@ libmcfilemanager_la_LIBADD =
 am__libmcfilemanager_la_SOURCES_DIST = achown.c boxes.c boxes.h cd.c \
 	cd.h chmod.c chown.c cmd.c cmd.h command.c command.h dir.c \
 	dir.h ext.c ext.h file.c file.h filegui.c filegui.h \
-	filemanager.h filemanager.c filenot.c filenot.h fileopctx.c \
-	fileopctx.h find.c hotlist.c hotlist.h info.c info.h \
-	ioblksize.h layout.c layout.h mountlist.c mountlist.h \
-	panelize.c panelize.h panel.c panel.h tree.c tree.h \
-	treestore.c treestore.h chattr.c
+	filemanager.h filemanager.c filenot.c filenot.h find.c \
+	hotlist.c hotlist.h info.c info.h ioblksize.h layout.c \
+	layout.h mountlist.c mountlist.h panelize.c panelize.h panel.c \
+	panel.h tree.c tree.h treestore.c treestore.h chattr.c
 @ENABLE_EXT2FS_ATTR_TRUE@am__objects_1 = chattr.lo
 am_libmcfilemanager_la_OBJECTS = achown.lo boxes.lo cd.lo chmod.lo \
 	chown.lo cmd.lo command.lo dir.lo ext.lo file.lo filegui.lo \
-	filemanager.lo filenot.lo fileopctx.lo find.lo hotlist.lo \
-	info.lo layout.lo mountlist.lo panelize.lo panel.lo tree.lo \
-	treestore.lo $(am__objects_1)
+	filemanager.lo filenot.lo find.lo hotlist.lo info.lo layout.lo \
+	mountlist.lo panelize.lo panel.lo tree.lo treestore.lo \
+	$(am__objects_1)
 libmcfilemanager_la_OBJECTS = $(am_libmcfilemanager_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -195,12 +195,11 @@ am__depfiles_remade = ./$(DEPDIR)/achown.Plo ./$(DEPDIR)/boxes.Plo \
 	./$(DEPDIR)/cmd.Plo ./$(DEPDIR)/command.Plo \
 	./$(DEPDIR)/dir.Plo ./$(DEPDIR)/ext.Plo ./$(DEPDIR)/file.Plo \
 	./$(DEPDIR)/filegui.Plo ./$(DEPDIR)/filemanager.Plo \
-	./$(DEPDIR)/filenot.Plo ./$(DEPDIR)/fileopctx.Plo \
-	./$(DEPDIR)/find.Plo ./$(DEPDIR)/hotlist.Plo \
-	./$(DEPDIR)/info.Plo ./$(DEPDIR)/layout.Plo \
-	./$(DEPDIR)/mountlist.Plo ./$(DEPDIR)/panel.Plo \
-	./$(DEPDIR)/panelize.Plo ./$(DEPDIR)/tree.Plo \
-	./$(DEPDIR)/treestore.Plo
+	./$(DEPDIR)/filenot.Plo ./$(DEPDIR)/find.Plo \
+	./$(DEPDIR)/hotlist.Plo ./$(DEPDIR)/info.Plo \
+	./$(DEPDIR)/layout.Plo ./$(DEPDIR)/mountlist.Plo \
+	./$(DEPDIR)/panel.Plo ./$(DEPDIR)/panelize.Plo \
+	./$(DEPDIR)/tree.Plo ./$(DEPDIR)/treestore.Plo
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -261,7 +260,6 @@ CHECK_CFLAGS = @CHECK_CFLAGS@
 CHECK_LIBS = @CHECK_LIBS@
 COM_ERR_CFLAGS = @COM_ERR_CFLAGS@
 COM_ERR_LIBS = @COM_ERR_LIBS@
-CP1251 = @CP1251@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CSCOPE = @CSCOPE@
@@ -303,10 +301,13 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
+ENCODING_CP1251 = @ENCODING_CP1251@
+ENCODING_CP866 = @ENCODING_CP866@
 ETAGS = @ETAGS@
 EXEEXT = @EXEEXT@
 EXT2FS_CFLAGS = @EXT2FS_CFLAGS@
 EXT2FS_LIBS = @EXT2FS_LIBS@
+EXTFSHELPERSDIR = @EXTFSHELPERSDIR@
 EXTHELPERSDIR = @EXTHELPERSDIR@
 FGREP = @FGREP@
 FILECMD = @FILECMD@
@@ -388,12 +389,11 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SLANG_CFLAGS = @SLANG_CFLAGS@
 SLANG_LIBS = @SLANG_LIBS@
+STDCKDINT_H = @STDCKDINT_H@
 STRIP = @STRIP@
-TESTS_LDFLAGS = @TESTS_LDFLAGS@
 UNZIP = @UNZIP@
 USE_NLS = @USE_NLS@
 VERSION = @VERSION@
-X11_WWW = @X11_WWW@
 XGETTEXT = @XGETTEXT@
 XGETTEXT_015 = @XGETTEXT_015@
 XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
@@ -461,10 +461,10 @@ noinst_LTLIBRARIES = libmcfilemanager.la
 libmcfilemanager_la_SOURCES = achown.c boxes.c boxes.h cd.c cd.h \
 	chmod.c chown.c cmd.c cmd.h command.c command.h dir.c dir.h \
 	ext.c ext.h file.c file.h filegui.c filegui.h filemanager.h \
-	filemanager.c filenot.c filenot.h fileopctx.c fileopctx.h \
-	find.c hotlist.c hotlist.h info.c info.h ioblksize.h layout.c \
-	layout.h mountlist.c mountlist.h panelize.c panelize.h panel.c \
-	panel.h tree.c tree.h treestore.c treestore.h $(am__append_1)
+	filemanager.c filenot.c filenot.h find.c hotlist.c hotlist.h \
+	info.c info.h ioblksize.h layout.c layout.h mountlist.c \
+	mountlist.h panelize.c panelize.h panel.c panel.h tree.c \
+	tree.h treestore.c treestore.h $(am__append_1)
 
 # Unmaintained, unsupported, etc
 #	listmode.c listmode.h
@@ -537,7 +537,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filegui.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filemanager.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filenot.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fileopctx.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/find.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hotlist.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/info.Plo@am__quote@ # am--include-marker
@@ -719,7 +718,6 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/filegui.Plo
 	-rm -f ./$(DEPDIR)/filemanager.Plo
 	-rm -f ./$(DEPDIR)/filenot.Plo
-	-rm -f ./$(DEPDIR)/fileopctx.Plo
 	-rm -f ./$(DEPDIR)/find.Plo
 	-rm -f ./$(DEPDIR)/hotlist.Plo
 	-rm -f ./$(DEPDIR)/info.Plo
@@ -788,7 +786,6 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/filegui.Plo
 	-rm -f ./$(DEPDIR)/filemanager.Plo
 	-rm -f ./$(DEPDIR)/filenot.Plo
-	-rm -f ./$(DEPDIR)/fileopctx.Plo
 	-rm -f ./$(DEPDIR)/find.Plo
 	-rm -f ./$(DEPDIR)/hotlist.Plo
 	-rm -f ./$(DEPDIR)/info.Plo

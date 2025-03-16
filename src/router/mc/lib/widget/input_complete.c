@@ -2,7 +2,7 @@
    Input line filename/username/hostname/variable/command completion.
    (Let mc type for you...)
 
-   Copyright (C) 1995-2024
+   Copyright (C) 1995-2025
    Free Software Foundation, Inc.
 
    Written by:
@@ -54,8 +54,7 @@
 
 /*** global variables ****************************************************************************/
 
-/* Linux declares environ in <unistd.h>, so don't repeat it here. */
-#if (!(defined(__linux__) && defined (__USE_GNU)) && !defined(__CYGWIN__))
+#if !HAVE_DECL_ENVIRON
 extern char **environ;
 #endif
 
@@ -88,7 +87,8 @@ typedef struct
 
 /*** forward declarations (file scope functions) *************************************************/
 
-GPtrArray *try_complete (char *text, int *lc_start, int *lc_end, input_complete_t flags);
+MC_MOCKABLE GPtrArray *try_complete (char *text, int *lc_start, int *lc_end,
+                                     input_complete_t flags);
 void complete_engine_fill_completions (WInput * in);
 
 /*** file scope variables ************************************************************************/

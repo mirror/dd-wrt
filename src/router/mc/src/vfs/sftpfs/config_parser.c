@@ -1,7 +1,7 @@
 /* Virtual File System: SFTP file system.
    The SSH config parser
 
-   Copyright (C) 2011-2024
+   Copyright (C) 2011-2025
    Free Software Foundation, Inc.
 
    Written by:
@@ -393,9 +393,12 @@ sftpfs_fill_connection_data_from_config (struct vfs_s_super *super, GError **mce
 
     if (config_entity->real_host != NULL)
     {
-        g_free (super->path_element->host);
+        char *tmp_str = super->path_element->host;
+
         super->path_element->host =
             sftpsfs_expand_hostname (super->path_element->host, config_entity->real_host);
+
+        g_free (tmp_str);
     }
 
     if (config_entity->identity_file != NULL)

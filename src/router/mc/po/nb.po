@@ -5,16 +5,16 @@
 # Translators:
 # heskjestad, 2021-2023
 # heskjestad, 2024
-# heskjestad, 2024
+# heskjestad, 2024-2025
 # heskjestad, 2019-2021
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2024-08-23 19:34+0200\n"
+"POT-Creation-Date: 2025-01-23 10:39+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
-"Last-Translator: heskjestad, 2024\n"
+"Last-Translator: heskjestad, 2024-2025\n"
 "Language-Team: Norwegian Bokmål (http://app.transifex.com/mc/mc/language/"
 "nb/)\n"
 "Language: nb\n"
@@ -979,6 +979,9 @@ msgstr ""
 msgid "Diff:"
 msgstr "Diff:"
 
+msgid "File name is empty!"
+msgstr "Filnavnet er tomt!"
+
 #, c-format
 msgid "\"%s\" is a directory"
 msgstr "«%s» er en mappe"
@@ -1102,9 +1105,6 @@ msgstr "Sjekk om linjeskift avslutter fil (&POSIX)"
 msgid "Edit Save Mode"
 msgstr "Rediger lagringsinnstillinger"
 
-msgid "Save as"
-msgstr "Lagre som"
-
 msgid "Cannot save: destination is not a regular file"
 msgstr "Kan ikke lagre: Målet er ikke en vanlig fil"
 
@@ -1176,14 +1176,8 @@ msgstr ""
 msgid "This function is not implemented"
 msgstr "Denne funksjonen er ikke implementert"
 
-msgid "Copy to clipboard"
-msgstr "Kopier til utklippstavle"
-
 msgid "Unable to save to file"
 msgstr "Klarte ikke lagre til fil"
-
-msgid "Cut to clipboard"
-msgstr "Klipp ut til utklippstavle"
 
 msgid "Goto line"
 msgstr "Gå til linje"
@@ -1191,14 +1185,14 @@ msgstr "Gå til linje"
 msgid "Save block"
 msgstr "Lagre blokk"
 
+msgid "Cannot save block"
+msgstr "Klarte ikke lagre blokk"
+
 msgid "Insert file"
 msgstr "Sett inn fil"
 
 msgid "Cannot insert file"
 msgstr "Klarte ikke sette inn fil"
-
-msgid "Sort block"
-msgstr "Sorter blokk"
 
 msgid "You must first highlight a block of text"
 msgstr "Du må først utheve en tekstblokk"
@@ -1210,9 +1204,6 @@ msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
 msgstr ""
 "Angi sorteringsalternativer (jf. «man 1 sort»),\n"
 "og skill dem med blanktegn:"
-
-msgid "Sort"
-msgstr "Sortering"
 
 msgid "Cannot execute sort command"
 msgstr "Klarte ikke utføre sorteringskommando"
@@ -1227,11 +1218,8 @@ msgstr "Lim inn utdata fra ekstern kommando"
 msgid "Enter shell command(s):"
 msgstr "Angi skallkommando(er):"
 
-msgid "External command"
-msgstr "Ekstern kommando"
-
-msgid "Cannot execute command"
-msgstr "Klarte ikke kjøre kommando"
+msgid "Cannot execute external command"
+msgstr "Klarte ikke kjøre ekstern kommando"
 
 msgid "mail -s <subject> -c <cc> <to>"
 msgstr "mail -s <emne> -c <kopi til> <til>"
@@ -1625,8 +1613,8 @@ msgstr ""
 "Et brukervennlig skriveprogram\n"
 "skrevet for Midnight Commander."
 
-msgid "Copyright (C) 1996-2024 the Free Software Foundation"
-msgstr "Opphavsrett (C) 1996-2024 Free Software Foundation"
+msgid "Copyright (C) 1996-2025 the Free Software Foundation"
+msgstr "Opphavsrett (C) 1996-2025 Free Software Foundation"
 
 msgid "About"
 msgstr "Om"
@@ -2266,10 +2254,10 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get flags of \"%s\"\n"
+"Cannot get ext2 attributes of \"%s\"\n"
 "%s"
 msgstr ""
-"Klarte ikke hente flaggene til «%s»\n"
+"Klarte ikke hente ext2-attributtene til «%s»\n"
 "%s"
 
 msgid "set &user ID on execution"
@@ -2658,8 +2646,8 @@ msgstr ""
 "«%s»\n"
 "er samme fil"
 
-msgid "Ski&p all"
-msgstr "H&opp over alle"
+msgid "Ignore a&ll"
+msgstr "Ignorer a&lle"
 
 #, c-format
 msgid ""
@@ -2720,6 +2708,14 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot enter into directory \"%s\"\n"
+"%s"
+msgstr ""
+"Kan ikke åpne mappa «%s»\n"
+"%s"
+
+#, c-format
+msgid ""
 "Cannot overwrite directory \"%s\"\n"
 "%s"
 msgstr ""
@@ -2755,18 +2751,18 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source file \"%s\"\n"
+"Cannot get ext2 attributes of source file \"%s\"\n"
 "%s"
 msgstr ""
-"Klarte ikke hente attributtene til kildefila «%s»\n"
+"Klarte ikke hente ext2-attributtene til kildefila «%s»\n"
 "%s"
 
 #, c-format
 msgid ""
-"Cannot set attributes of target file \"%s\"\n"
+"Cannot set ext2 attributes of target file \"%s\"\n"
 "%s"
 msgstr ""
-"Klarte ikke skrive attributtene til målfila «%s»\n"
+"Klarte ikke skrive ext2-attributtene til målfila «%s»\n"
 "%s"
 
 #, c-format
@@ -2882,10 +2878,10 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set attributes for target file \"%s\"\n"
+"Cannot set ext2 attributes for target file \"%s\"\n"
 "%s"
 msgstr ""
-"Klarte ikke skrive attributtene til målfila «%s»\n"
+"Klarte ikke skrive ext2-attributtene til målfila «%s»\n"
 "%s"
 
 #, c-format
@@ -2898,10 +2894,10 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source directory \"%s\"\n"
+"Cannot get ext2 attributes of source directory \"%s\"\n"
 "%s"
 msgstr ""
-"Klarte ikke hente attributtene til kildemappa «%s»\n"
+"Klarte ikke hente ext2-attributtene til kildemappa «%s»\n"
 "%s"
 
 #, c-format
@@ -3892,12 +3888,13 @@ msgstr ""
 "\n"
 "Trykk Escape og vent litt for å avbryte."
 
-msgid "Cannot accept this key"
-msgstr "Kan ikke godta denne tasten"
-
 #, c-format
-msgid "You have entered \"%s\""
-msgstr "Du tastet «%s»"
+msgid ""
+"Cannot accept this key.\n"
+"You have entered \"%s\""
+msgstr ""
+"Aksepterer ikke denne tasten.\n"
+"Du skrev «%s»"
 
 #. TRANSLATORS: This label appears near learned keys.  Keep it short.
 msgid "OK"
@@ -3980,15 +3977,15 @@ msgstr ""
 "%s"
 
 #, c-format
+msgid "Warning: Cannot change to %s.\n"
+msgstr "Advarsel: Klarte ikke bytte til %s.\n"
+
+#, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "Klarte ikke åpne navngitt rør %s\n"
 
 msgid "The shell is still active. Quit anyway?"
 msgstr "Skallet er fortsatt aktivt. Avslutte likevel?"
-
-#, c-format
-msgid "Warning: Cannot change to %s.\n"
-msgstr "Advarsel: Klarte ikke bytte til %s.\n"
 
 msgid "With builtin editor and aspell support"
 msgstr "Med innebygget tekstprogram og aspell-støtte"

@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Function for search data
 
-   Copyright (C) 1994-2024
+   Copyright (C) 1994-2025
    Free Software Foundation, Inc.
 
    Written by:
@@ -116,6 +116,20 @@ mcview_search_status_update_cb (status_msg_t *sm)
 
 /* --------------------------------------------------------------------------------------------- */
 
+static inline off_t
+mcview_calculate_start_of_previous_line (WView *view, const off_t current_pos)
+{
+    const off_t bol = mcview_bol (view, current_pos, 0);
+
+    /* Are we in the 1st line? */
+    if (bol == 0)
+        return (-1);
+
+    return mcview_bol (view, bol - 1, 0);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
 static void
 mcview_search_update_steps (WView *view)
 {
@@ -150,6 +164,10 @@ mcview_find (mcview_search_status_msg_t *ssm, off_t search_start, off_t search_e
     if (mcview_search_options.backwards)
     {
         search_end = mcview_get_filesize (view);
+
+        if ((view->search_line_type & MC_SEARCH_LINE_BEGIN) != 0)
+            search_start = mcview_bol (view, search_start, 0);
+ 
         while (search_start >= 0)
         {
             gboolean ok;
@@ -174,12 +192,19 @@ mcview_find (mcview_search_status_msg_t *ssm, off_t search_start, off_t search_e
             if (!ok && view->search->error != MC_SEARCH_E_NOTFOUND)
                 return FALSE;
 
-            search_start--;
+            if ((view->search_line_type & MC_SEARCH_LINE_BEGIN) != 0)
+                search_start = mcview_calculate_start_of_previous_line (view, search_start);
+            else
+                search_start--;
         }
 
         mc_search_set_error (view->search, MC_SEARCH_E_NOTFOUND, "%s", _(STR_E_NOTFOUND));
         return FALSE;
     }
+
+    if ((view->search_line_type & MC_SEARCH_LINE_BEGIN) != 0 && search_start != 0)
+        search_start = mcview_eol (view, search_start);
+
     view->search_nroff_seq->index = search_start;
     mcview_nroff_seq_info (view->search_nroff_seq);
 
@@ -211,143 +236,8 @@ mcview_search_show_result (WView *view, size_t match_len)
 }
 
 /* --------------------------------------------------------------------------------------------- */
-/*** public functions ****************************************************************************/
-/* --------------------------------------------------------------------------------------------- */
 
-gboolean
-mcview_search_init (WView *view)
-{
-#ifdef HAVE_CHARSET
-    view->search = mc_search_new (view->last_search_string, cp_source);
-#else
-    view->search = mc_search_new (view->last_search_string, NULL);
-#endif
-
-    view->search_nroff_seq = mcview_nroff_seq_new (view);
-
-    if (view->search == NULL)
-        return FALSE;
-
-    view->search->search_type = mcview_search_options.type;
-#ifdef HAVE_CHARSET
-    view->search->is_all_charsets = mcview_search_options.all_codepages;
-#endif
-    view->search->is_case_sensitive = mcview_search_options.case_sens;
-    view->search->whole_words = mcview_search_options.whole_words;
-    view->search->search_fn = mcview_search_cmd_callback;
-    view->search->update_fn = mcview_search_update_cmd_callback;
-
-    return TRUE;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-void
-mcview_search_deinit (WView *view)
-{
-    mc_search_free (view->search);
-    g_free (view->last_search_string);
-    mcview_nroff_seq_free (&view->search_nroff_seq);
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-mc_search_cbret_t
-mcview_search_cmd_callback (const void *user_data, gsize char_offset, int *current_char)
-{
-    WView *view = ((const mcview_search_status_msg_t *) user_data)->view;
-
-    /*    view_read_continue (view, &view->search_onechar_info); *//* AB:FIXME */
-    if (!view->mode_flags.nroff)
-    {
-        mcview_get_byte (view, char_offset, current_char);
-        return MC_SEARCH_CB_OK;
-    }
-
-    if (view->search_numNeedSkipChar != 0)
-    {
-        view->search_numNeedSkipChar--;
-        return MC_SEARCH_CB_SKIP;
-    }
-
-    if (search_cb_char_curr_index == -1
-        || search_cb_char_curr_index >= view->search_nroff_seq->char_length)
-    {
-        if (search_cb_char_curr_index != -1)
-            mcview_nroff_seq_next (view->search_nroff_seq);
-
-        search_cb_char_curr_index = 0;
-        if (view->search_nroff_seq->char_length > 1)
-            g_unichar_to_utf8 (view->search_nroff_seq->current_char, search_cb_char_buffer);
-        else
-            search_cb_char_buffer[0] = (char) view->search_nroff_seq->current_char;
-
-        if (view->search_nroff_seq->type != NROFF_TYPE_NONE)
-        {
-            switch (view->search_nroff_seq->type)
-            {
-            case NROFF_TYPE_BOLD:
-                view->search_numNeedSkipChar = 1 + view->search_nroff_seq->char_length; /* real char length and 0x8 */
-                break;
-            case NROFF_TYPE_UNDERLINE:
-                view->search_numNeedSkipChar = 2;       /* underline symbol and ox8 */
-                break;
-            default:
-                break;
-            }
-        }
-        return MC_SEARCH_CB_INVALID;
-    }
-
-    *current_char = search_cb_char_buffer[search_cb_char_curr_index];
-    search_cb_char_curr_index++;
-
-    return (*current_char != -1) ? MC_SEARCH_CB_OK : MC_SEARCH_CB_INVALID;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-mc_search_cbret_t
-mcview_search_update_cmd_callback (const void *user_data, gsize char_offset)
-{
-    status_msg_t *sm = STATUS_MSG (user_data);
-    mcview_search_status_msg_t *vsm = (mcview_search_status_msg_t *) user_data;
-    WView *view = vsm->view;
-    gboolean do_update = FALSE;
-    mc_search_cbret_t result = MC_SEARCH_CB_OK;
-
-    vsm->offset = (off_t) char_offset;
-
-    if (mcview_search_options.backwards)
-    {
-        if (vsm->offset <= view->update_activate)
-        {
-            view->update_activate -= view->update_steps;
-
-            do_update = TRUE;
-        }
-    }
-    else
-    {
-        if (vsm->offset >= view->update_activate)
-        {
-            view->update_activate += view->update_steps;
-
-            do_update = TRUE;
-        }
-    }
-
-    if (do_update && sm->update (sm) == B_CANCEL)
-        result = MC_SEARCH_CB_ABORT;
-
-    /* may be in future return from this callback will change current position in searching block. */
-
-    return result;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-void
+static void
 mcview_do_search (WView *view, off_t want_search_start)
 {
     mcview_search_status_msg_t vsm;
@@ -359,7 +249,7 @@ mcview_do_search (WView *view, off_t want_search_start)
     size_t match_len;
 
     view->search_start = want_search_start;
-    /* for avoid infinite search loop we need to increase or decrease start offset of search */
+    /* to avoid infinite search loop we need to increase or decrease start offset of search */
 
     if (view->search_start != 0)
     {
@@ -431,7 +321,7 @@ mcview_do_search (WView *view, off_t want_search_start)
     }
     while (search_start > 0 && mcview_may_still_grow (view));
 
-    /* After mcview_may_still_grow (view) == FALSE we have remained last chunk. Search there. */
+    /* After mcview_may_still_grow (view) == FALSE, last chunk remains. Search there. */
     if (view->growbuf_in_use && !found && view->search->error == MC_SEARCH_E_NOTFOUND
         && !mcview_search_options.backwards
         && mcview_find (&vsm, search_start, mcview_get_filesize (view), &match_len))
@@ -481,11 +371,183 @@ mcview_do_search (WView *view, off_t want_search_start)
         mcview_update (view);
 
         if (view->search->error == MC_SEARCH_E_NOTFOUND)
-            query_dialog (_("Search"), _(STR_E_NOTFOUND), D_NORMAL, 1, _("&Dismiss"));
+            message (D_NORMAL, _("Search"), "%s", _(STR_E_NOTFOUND));
         else if (view->search->error_str != NULL)
-            query_dialog (_("Search"), view->search->error_str, D_NORMAL, 1, _("&Dismiss"));
+            message (D_NORMAL, _("Search"), "%s", view->search->error_str);
     }
+
     view->dirty++;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+/*** public functions ****************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
+
+gboolean
+mcview_search_init (WView *view)
+{
+#ifdef HAVE_CHARSET
+    view->search = mc_search_new (view->last_search_string, cp_source);
+#else
+    view->search = mc_search_new (view->last_search_string, NULL);
+#endif
+
+    view->search_nroff_seq = mcview_nroff_seq_new (view);
+
+    if (view->search == NULL)
+        return FALSE;
+
+    view->search->search_type = mcview_search_options.type;
+#ifdef HAVE_CHARSET
+    view->search->is_all_charsets = mcview_search_options.all_codepages;
+#endif
+    view->search->is_case_sensitive = mcview_search_options.case_sens;
+    view->search->whole_words = mcview_search_options.whole_words;
+    view->search->search_fn = mcview_search_cmd_callback;
+    view->search->update_fn = mcview_search_update_cmd_callback;
+
+    view->search_line_type = mc_search_get_line_type (view->search);
+
+    return TRUE;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+void
+mcview_search_deinit (WView *view)
+{
+    mc_search_free (view->search);
+    g_free (view->last_search_string);
+    mcview_nroff_seq_free (&view->search_nroff_seq);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+mc_search_cbret_t
+mcview_search_cmd_callback (const void *user_data, off_t char_offset, int *current_char)
+{
+    WView *view = ((const mcview_search_status_msg_t *) user_data)->view;
+
+    /*    view_read_continue (view, &view->search_onechar_info); *//* AB:FIXME */
+    if (!view->mode_flags.nroff)
+    {
+        mcview_get_byte (view, char_offset, current_char);
+        return MC_SEARCH_CB_OK;
+    }
+
+    if (view->search_numNeedSkipChar != 0)
+    {
+        view->search_numNeedSkipChar--;
+        return MC_SEARCH_CB_SKIP;
+    }
+
+    if (search_cb_char_curr_index == -1
+        || search_cb_char_curr_index >= view->search_nroff_seq->char_length)
+    {
+        if (search_cb_char_curr_index != -1)
+            mcview_nroff_seq_next (view->search_nroff_seq);
+
+        search_cb_char_curr_index = 0;
+        if (view->search_nroff_seq->char_length > 1)
+            g_unichar_to_utf8 (view->search_nroff_seq->current_char, search_cb_char_buffer);
+        else
+            search_cb_char_buffer[0] = (char) view->search_nroff_seq->current_char;
+
+        if (view->search_nroff_seq->type != NROFF_TYPE_NONE)
+        {
+            switch (view->search_nroff_seq->type)
+            {
+            case NROFF_TYPE_BOLD:
+                view->search_numNeedSkipChar = 1 + view->search_nroff_seq->char_length; /* real char length and 0x8 */
+                break;
+            case NROFF_TYPE_UNDERLINE:
+                view->search_numNeedSkipChar = 2;       /* underline symbol and ox8 */
+                break;
+            default:
+                break;
+            }
+        }
+        return MC_SEARCH_CB_INVALID;
+    }
+
+    *current_char = search_cb_char_buffer[search_cb_char_curr_index];
+    search_cb_char_curr_index++;
+
+    return (*current_char != -1) ? MC_SEARCH_CB_OK : MC_SEARCH_CB_INVALID;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+mc_search_cbret_t
+mcview_search_update_cmd_callback (const void *user_data, off_t char_offset)
+{
+    status_msg_t *sm = STATUS_MSG (user_data);
+    mcview_search_status_msg_t *vsm = (mcview_search_status_msg_t *) user_data;
+    WView *view = vsm->view;
+    gboolean do_update = FALSE;
+    mc_search_cbret_t result = MC_SEARCH_CB_OK;
+
+    vsm->offset = char_offset;
+
+    if (mcview_search_options.backwards)
+    {
+        if (vsm->offset <= view->update_activate)
+        {
+            view->update_activate -= view->update_steps;
+
+            do_update = TRUE;
+        }
+    }
+    else
+    {
+        if (vsm->offset >= view->update_activate)
+        {
+            view->update_activate += view->update_steps;
+
+            do_update = TRUE;
+        }
+    }
+
+    if (do_update && sm->update (sm) == B_CANCEL)
+        result = MC_SEARCH_CB_ABORT;
+
+    /* may be in future return from this callback will change current position in searching block. */
+
+    return result;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+/* Both views */
+void
+mcview_search (WView *view, gboolean start_search)
+{
+    off_t want_search_start = view->search_start;
+
+    if (start_search)
+    {
+        if (mcview_dialog_search (view))
+        {
+            if (view->mode_flags.hex)
+                want_search_start = view->hex_cursor;
+
+            mcview_do_search (view, want_search_start);
+        }
+    }
+    else
+    {
+        if (view->mode_flags.hex)
+        {
+            if (!mcview_search_options.backwards)
+                want_search_start = view->hex_cursor + 1;
+            else if (view->hex_cursor > 0)
+                want_search_start = view->hex_cursor - 1;
+            else
+                want_search_start = 0;
+        }
+
+        mcview_do_search (view, want_search_start);
+    }
 }
 
 /* --------------------------------------------------------------------------------------------- */

@@ -82,6 +82,7 @@ void vfs_path_element_free (vfs_path_element_t * element);
 struct vfs_class *vfs_prefix_to_class (const char *prefix);
 
 #ifdef HAVE_CHARSET
+char *vfs_get_encoding(const char *path, ssize_t len);
 gboolean vfs_path_element_need_cleanup_converter (const vfs_path_element_t * element);
 vfs_path_t *vfs_path_change_encoding (vfs_path_t * vpath, const char *encoding);
 #endif
@@ -111,6 +112,7 @@ static inline const char *
 vfs_path_get_last_path_str (const vfs_path_t *vpath)
 {
     const vfs_path_element_t *element;
+
     if (vpath == NULL)
         return NULL;
     element = vfs_path_get_by_index (vpath, -1);
@@ -123,6 +125,7 @@ static inline const struct vfs_class *
 vfs_path_get_last_path_vfs (const vfs_path_t *vpath)
 {
     const vfs_path_element_t *element;
+
     if (vpath == NULL)
         return NULL;
     element = vfs_path_get_by_index (vpath, -1);

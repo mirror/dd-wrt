@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2024-08-23 19:34+0200\n"
+"POT-Creation-Date: 2025-01-23 10:39+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Slava Zanko <slavazanko@gmail.com>, 2011\n"
 "Language-Team: Serbian (http://app.transifex.com/mc/mc/language/sr/)\n"
@@ -936,6 +936,9 @@ msgstr ""
 msgid "Diff:"
 msgstr "Разлике:"
 
+msgid "File name is empty!"
+msgstr ""
+
 #, c-format
 msgid "\"%s\" is a directory"
 msgstr "„%s“ је директоријум"
@@ -1059,9 +1062,6 @@ msgstr "Провери нови ред &ПОСИКС-а"
 msgid "Edit Save Mode"
 msgstr "Уредите режим чувања"
 
-msgid "Save as"
-msgstr "Сачувај као"
-
 msgid "Cannot save: destination is not a regular file"
 msgstr "Не могу да сачувам: одредиште није обична датотека"
 
@@ -1133,14 +1133,8 @@ msgstr ""
 msgid "This function is not implemented"
 msgstr "Ова функција није примењена"
 
-msgid "Copy to clipboard"
-msgstr "Умножи у оставу"
-
 msgid "Unable to save to file"
 msgstr "Не могу да сачувам у датотеку"
-
-msgid "Cut to clipboard"
-msgstr "Исеци у оставу"
 
 msgid "Goto line"
 msgstr "Иди на ред"
@@ -1148,14 +1142,14 @@ msgstr "Иди на ред"
 msgid "Save block"
 msgstr "Сачувај блок"
 
+msgid "Cannot save block"
+msgstr ""
+
 msgid "Insert file"
 msgstr "Уметни датотеку"
 
 msgid "Cannot insert file"
 msgstr "Не могу да уметнем датотеку"
-
-msgid "Sort block"
-msgstr "Поређај блок"
 
 msgid "You must first highlight a block of text"
 msgstr "Морате прво да изаберете блок текста"
@@ -1165,9 +1159,6 @@ msgstr "Покрени ређање"
 
 msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
 msgstr ""
-
-msgid "Sort"
-msgstr "Поређај"
 
 msgid "Cannot execute sort command"
 msgstr "Не могу да извршим наредбу ређања"
@@ -1182,11 +1173,8 @@ msgstr "Убаци излаз спољне наредбе"
 msgid "Enter shell command(s):"
 msgstr "Унесите наредбе љуске:"
 
-msgid "External command"
-msgstr "Спољна наредба"
-
-msgid "Cannot execute command"
-msgstr "Не могу да извршим наредбу"
+msgid "Cannot execute external command"
+msgstr ""
 
 msgid "mail -s <subject> -c <cc> <to>"
 msgstr "mail -s <тема> -c <уу> <прима>"
@@ -1580,7 +1568,7 @@ msgstr ""
 "Уређивач текста наклоњен кориснику\n"
 "написан за Поноћног наредника."
 
-msgid "Copyright (C) 1996-2024 the Free Software Foundation"
+msgid "Copyright (C) 1996-2025 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -2214,7 +2202,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get flags of \"%s\"\n"
+"Cannot get ext2 attributes of \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2583,8 +2571,8 @@ msgstr ""
 "„%s“\n"
 "су једна иста датотека"
 
-msgid "Ski&p all"
-msgstr "Прескочи &све"
+msgid "Ignore a&ll"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -2645,6 +2633,12 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot enter into directory \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "Cannot overwrite directory \"%s\"\n"
 "%s"
 msgstr ""
@@ -2680,13 +2674,13 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source file \"%s\"\n"
+"Cannot get ext2 attributes of source file \"%s\"\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set attributes of target file \"%s\"\n"
+"Cannot set ext2 attributes of target file \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2801,7 +2795,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set attributes for target file \"%s\"\n"
+"Cannot set ext2 attributes for target file \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2815,7 +2809,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source directory \"%s\"\n"
+"Cannot get ext2 attributes of source directory \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -3808,12 +3802,11 @@ msgstr ""
 "Ако желите да одустанете, притисните једном тастер\n"
 "„Escape“ и сачекајте."
 
-msgid "Cannot accept this key"
-msgstr "Не могу да прихватим овај тастер"
-
 #, c-format
-msgid "You have entered \"%s\""
-msgstr "Унесли сте „%s“"
+msgid ""
+"Cannot accept this key.\n"
+"You have entered \"%s\""
+msgstr ""
 
 #. TRANSLATORS: This label appears near learned keys.  Keep it short.
 msgid "OK"
@@ -3893,15 +3886,15 @@ msgstr ""
 "%s"
 
 #, c-format
+msgid "Warning: Cannot change to %s.\n"
+msgstr "Упозорење: Не могу да пређем на „%s“.\n"
+
+#, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "Не могу да отворим именовану спојку „%s“\n"
 
 msgid "The shell is still active. Quit anyway?"
 msgstr "Љуска је још увек радна. Да ипак изађем?"
-
-#, c-format
-msgid "Warning: Cannot change to %s.\n"
-msgstr "Упозорење: Не могу да пређем на „%s“.\n"
 
 msgid "With builtin editor and aspell support"
 msgstr ""

@@ -2,7 +2,7 @@
 
 /* Background support.
 
-   Copyright (C) 1996-2024
+   Copyright (C) 1996-2025
    Free Software Foundation, Inc.
 
    Written by:
@@ -49,8 +49,7 @@
 #include "lib/tty/key.h"        /* add_select_channel(), delete_select_channel() */
 #include "lib/widget.h"         /* message() */
 #include "lib/event-types.h"
-
-#include "filemanager/fileopctx.h"      /* file_op_context_t */
+#include "lib/util.h"           /* my_fork() */
 
 #include "background.h"
 
@@ -535,7 +534,7 @@ do_background (file_op_context_t *ctx, char *info)
         return (-1);
     }
 
-    pid = fork ();
+    pid = my_fork ();
     if (pid == -1)
     {
         int saved_errno = errno;

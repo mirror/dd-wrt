@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2024-08-23 19:34+0200\n"
+"POT-Creation-Date: 2025-01-23 10:39+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Yury V. Zaytsev <yury@shurup.com>, 2022\n"
 "Language-Team: Esperanto (http://app.transifex.com/mc/mc/language/eo/)\n"
@@ -970,6 +970,9 @@ msgstr ""
 msgid "Diff:"
 msgstr "Diff:"
 
+msgid "File name is empty!"
+msgstr ""
+
 #, c-format
 msgid "\"%s\" is a directory"
 msgstr "\"%s\" estas dosierujo"
@@ -1093,9 +1096,6 @@ msgstr "Kontroli la novan linion laŭ &POSIX"
 msgid "Edit Save Mode"
 msgstr "Reĝimo de redakta konservado"
 
-msgid "Save as"
-msgstr "Konservi kiel"
-
 msgid "Cannot save: destination is not a regular file"
 msgstr "Ne eblas konservi: celo ne estas normala dosiero"
 
@@ -1167,14 +1167,8 @@ msgstr ""
 msgid "This function is not implemented"
 msgstr "Tiu funkcio ne estas realigita"
 
-msgid "Copy to clipboard"
-msgstr "Enpoŝigi"
-
 msgid "Unable to save to file"
 msgstr "Ne eblas konservi al dosiero"
-
-msgid "Cut to clipboard"
-msgstr "Tranĉi en poŝon"
 
 msgid "Goto line"
 msgstr "Iri linion"
@@ -1182,14 +1176,14 @@ msgstr "Iri linion"
 msgid "Save block"
 msgstr "Konservi blokon"
 
+msgid "Cannot save block"
+msgstr ""
+
 msgid "Insert file"
 msgstr "Enmeti dosieron"
 
 msgid "Cannot insert file"
 msgstr "Ne eblas enmeti dosieron"
-
-msgid "Sort block"
-msgstr "Ordigi blokon"
 
 msgid "You must first highlight a block of text"
 msgstr "Vi devas antaŭe elekti blokon da teksto"
@@ -1201,9 +1195,6 @@ msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
 msgstr ""
 "Enmetu ordigajn agordaĵon (vidu la man-elementon sort(1)) apartigante ilin "
 "per blankspacoj:"
-
-msgid "Sort"
-msgstr "Ordigi"
 
 msgid "Cannot execute sort command"
 msgstr "Ne eblas plenumi ordigan komandon"
@@ -1218,11 +1209,8 @@ msgstr "Alglui eligon de ekstera komando"
 msgid "Enter shell command(s):"
 msgstr "Enmetu ŝela(j)n komando(j)n"
 
-msgid "External command"
-msgstr "Ekstera komando"
-
-msgid "Cannot execute command"
-msgstr "Ne eblas plenumi komandon"
+msgid "Cannot execute external command"
+msgstr ""
 
 msgid "mail -s <subject> -c <cc> <to>"
 msgstr "mail -s <temo> -c <aliaj_ricevontoj> <al>"
@@ -1616,8 +1604,8 @@ msgstr ""
 "Afabla tekstoredaktilo\n"
 "verkita por Midnight Commander."
 
-msgid "Copyright (C) 1996-2024 the Free Software Foundation"
-msgstr "Kopirajto (C) 1996-2024 Fondaĵo pri Liberaj Programoj"
+msgid "Copyright (C) 1996-2025 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Pri"
@@ -2257,11 +2245,9 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get flags of \"%s\"\n"
+"Cannot get ext2 attributes of \"%s\"\n"
 "%s"
 msgstr ""
-"Ne eblas akiri flagojn de \"%s\"\n"
-"%s"
 
 msgid "set &user ID on execution"
 msgstr "agordi &uzantan identigilon dum plenumigo"
@@ -2647,8 +2633,8 @@ msgstr ""
 "\"%s\"\n"
 "estas la sama dosiero"
 
-msgid "Ski&p all"
-msgstr "Preter&lasi ĉion"
+msgid "Ignore a&ll"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -2709,6 +2695,12 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot enter into directory \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "Cannot overwrite directory \"%s\"\n"
 "%s"
 msgstr ""
@@ -2744,19 +2736,15 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source file \"%s\"\n"
+"Cannot get ext2 attributes of source file \"%s\"\n"
 "%s"
 msgstr ""
-"Ne eblas atingi atributojn de fonta dosiero \"%s\"\n"
-"%s"
 
 #, c-format
 msgid ""
-"Cannot set attributes of target file \"%s\"\n"
+"Cannot set ext2 attributes of target file \"%s\"\n"
 "%s"
 msgstr ""
-"Ne eblas agordi atributojn de cela dosiero \"%s\"\n"
-"%s"
 
 #, c-format
 msgid ""
@@ -2871,11 +2859,9 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set attributes for target file \"%s\"\n"
+"Cannot set ext2 attributes for target file \"%s\"\n"
 "%s"
 msgstr ""
-"Ne eblas agordi atributojn por cela dosiero \"%s\"\n"
-"%s"
 
 #, c-format
 msgid ""
@@ -2887,11 +2873,9 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source directory \"%s\"\n"
+"Cannot get ext2 attributes of source directory \"%s\"\n"
 "%s"
 msgstr ""
-"Ne eblas atingi atributojn de fonta dosierujon \"%s\"\n"
-"%s"
 
 #, c-format
 msgid ""
@@ -3882,12 +3866,11 @@ msgstr ""
 "Se vi volas eskapi, unufoje premu la klavon Eskapo\n"
 "kaj ankaŭ atendu."
 
-msgid "Cannot accept this key"
-msgstr "Ne eblas akcepti tiun klavon"
-
 #, c-format
-msgid "You have entered \"%s\""
-msgstr "Vi enmetis je \"%s\""
+msgid ""
+"Cannot accept this key.\n"
+"You have entered \"%s\""
+msgstr ""
 
 #. TRANSLATORS: This label appears near learned keys.  Keep it short.
 msgid "OK"
@@ -3970,15 +3953,15 @@ msgstr ""
 "%s"
 
 #, c-format
+msgid "Warning: Cannot change to %s.\n"
+msgstr "Averto: Ne eblas ŝanĝi al %s.\n"
+
+#, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "Ne eblas malfermi nomitan dukton %s\n"
 
 msgid "The shell is still active. Quit anyway?"
 msgstr "La ŝelo estas aktiva. Ĉu senkonsidere eliri?"
-
-#, c-format
-msgid "Warning: Cannot change to %s.\n"
-msgstr "Averto: Ne eblas ŝanĝi al %s.\n"
 
 msgid "With builtin editor and aspell support"
 msgstr "Kun interna tekstoredaktilo kaj literumilo"

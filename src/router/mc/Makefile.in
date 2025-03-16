@@ -101,6 +101,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/nls.m4 \
 	$(top_srcdir)/m4/po.m4 $(top_srcdir)/m4/progtest.m4 \
 	$(top_srcdir)/acinclude.m4 \
+	$(top_srcdir)/m4.include/gnulib/mc-gnulib-common.m4 \
 	$(top_srcdir)/m4.include/gnulib/mode_t.m4 \
 	$(top_srcdir)/m4.include/gnulib/stat-size.m4 \
 	$(top_srcdir)/m4.include/gnulib/fstypename.m4 \
@@ -116,6 +117,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4.include/ax_append_flag.m4 \
 	$(top_srcdir)/m4.include/ax_append_compile_flags.m4 \
 	$(top_srcdir)/m4.include/mc-cflags.m4 \
+	$(top_srcdir)/m4.include/mc-stdckdint.m4 \
 	$(top_srcdir)/m4.include/ax_gcc_func_attribute.m4 \
 	$(top_srcdir)/m4.include/mc-check-search-type.m4 \
 	$(top_srcdir)/m4.include/mc-get-fs-info.m4 \
@@ -130,7 +132,6 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4.include/mc-ext2fs-attr.m4 \
 	$(top_srcdir)/m4.include/mc-glib.m4 \
 	$(top_srcdir)/m4.include/mc-vfs.m4 \
-	$(top_srcdir)/m4.include/vfs/rpc.m4 \
 	$(top_srcdir)/m4.include/vfs/socket.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-extfs.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-sfs.m4 \
@@ -282,7 +283,6 @@ CHECK_CFLAGS = @CHECK_CFLAGS@
 CHECK_LIBS = @CHECK_LIBS@
 COM_ERR_CFLAGS = @COM_ERR_CFLAGS@
 COM_ERR_LIBS = @COM_ERR_LIBS@
-CP1251 = @CP1251@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CSCOPE = @CSCOPE@
@@ -324,10 +324,13 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
+ENCODING_CP1251 = @ENCODING_CP1251@
+ENCODING_CP866 = @ENCODING_CP866@
 ETAGS = @ETAGS@
 EXEEXT = @EXEEXT@
 EXT2FS_CFLAGS = @EXT2FS_CFLAGS@
 EXT2FS_LIBS = @EXT2FS_LIBS@
+EXTFSHELPERSDIR = @EXTFSHELPERSDIR@
 EXTHELPERSDIR = @EXTHELPERSDIR@
 FGREP = @FGREP@
 FILECMD = @FILECMD@
@@ -409,12 +412,11 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SLANG_CFLAGS = @SLANG_CFLAGS@
 SLANG_LIBS = @SLANG_LIBS@
+STDCKDINT_H = @STDCKDINT_H@
 STRIP = @STRIP@
-TESTS_LDFLAGS = @TESTS_LDFLAGS@
 UNZIP = @UNZIP@
 USE_NLS = @USE_NLS@
 VERSION = @VERSION@
-X11_WWW = @X11_WWW@
 XGETTEXT = @XGETTEXT@
 XGETTEXT_015 = @XGETTEXT_015@
 XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
@@ -478,7 +480,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AUTOMAKE_OPTIONS = 1.12
+AUTOMAKE_OPTIONS = 1.14
 SUBDIRS = po lib src doc contrib misc $(am__append_1)
 EXTRA_DIST = 
 dist_noinst_SCRIPTS = \

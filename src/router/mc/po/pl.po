@@ -3,16 +3,16 @@
 # This file is distributed under the same license as the mc package.
 #
 # Translators:
-# Piotr Drąg <piotrdrag@gmail.com>, 2011-2024
+# Piotr Drąg <piotrdrag@gmail.com>, 2011-2025
 # Slava Zanko <slavazanko@gmail.com>, 2011
 # Waldemar Stoczkowski, 2021
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2024-08-23 19:34+0200\n"
+"POT-Creation-Date: 2025-01-23 10:39+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>, 2011-2024\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>, 2011-2025\n"
 "Language-Team: Polish (http://app.transifex.com/mc/mc/language/pl/)\n"
 "Language: pl\n"
 "MIME-Version: 1.0\n"
@@ -980,6 +980,9 @@ msgstr ""
 msgid "Diff:"
 msgstr "Różnica:"
 
+msgid "File name is empty!"
+msgstr "Nazwa pliku jest pusta."
+
 #, c-format
 msgid "\"%s\" is a directory"
 msgstr "„%s” jest katalogiem"
@@ -1103,9 +1106,6 @@ msgstr "Sprawdź nowe wiersze &POSIX"
 msgid "Edit Save Mode"
 msgstr "Modyfikuj tryb zapisu"
 
-msgid "Save as"
-msgstr "Zapisz jako"
-
 msgid "Cannot save: destination is not a regular file"
 msgstr "Nie można zapisać: cel nie jest zwykłym plikiem"
 
@@ -1177,14 +1177,8 @@ msgstr ""
 msgid "This function is not implemented"
 msgstr "Ta funkcja nie jest zaimplementowana."
 
-msgid "Copy to clipboard"
-msgstr "Skopiuj do schowka"
-
 msgid "Unable to save to file"
 msgstr "Nie można zapisać do pliku"
-
-msgid "Cut to clipboard"
-msgstr "Wytnij do schowka"
 
 msgid "Goto line"
 msgstr "Przejście do wiersza"
@@ -1192,14 +1186,14 @@ msgstr "Przejście do wiersza"
 msgid "Save block"
 msgstr "Zapisz blok"
 
+msgid "Cannot save block"
+msgstr "Nie można zapisać bloku"
+
 msgid "Insert file"
 msgstr "Wstaw plik"
 
 msgid "Cannot insert file"
 msgstr "Nie można wstawić pliku"
-
-msgid "Sort block"
-msgstr "Posortuj blok"
 
 msgid "You must first highlight a block of text"
 msgstr "Należy najpierw wyróżnić blok tekstu"
@@ -1211,9 +1205,6 @@ msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
 msgstr ""
 "Proszę podać opcje polecenia sort (strona podręcznika sort(1) zawiera więcej "
 "informacji), rozdzielone spacjami:"
-
-msgid "Sort"
-msgstr "Posortuj"
 
 msgid "Cannot execute sort command"
 msgstr "Nie można wykonać polecenia sort"
@@ -1228,11 +1219,8 @@ msgstr "Wklej wyjście zewnętrznego polecenia"
 msgid "Enter shell command(s):"
 msgstr "Polecenia powłoki:"
 
-msgid "External command"
-msgstr "Zewnętrzne polecenie"
-
-msgid "Cannot execute command"
-msgstr "Nie można wykonać polecenia"
+msgid "Cannot execute external command"
+msgstr "Nie można wykonać zewnętrznego polecenia"
 
 msgid "mail -s <subject> -c <cc> <to>"
 msgstr "mail -s <temat> -c <cc> <do>"
@@ -1626,8 +1614,8 @@ msgstr ""
 "Łatwy w obsłudze edytor tekstu,\n"
 "napisany dla programu Midnight Commander."
 
-msgid "Copyright (C) 1996-2024 the Free Software Foundation"
-msgstr "Copyright © 1996-2024 Free Software Foundation"
+msgid "Copyright (C) 1996-2025 the Free Software Foundation"
+msgstr "Copyright © 1996-2025 Free Software Foundation"
 
 msgid "About"
 msgstr "O programie"
@@ -2266,10 +2254,10 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get flags of \"%s\"\n"
+"Cannot get ext2 attributes of \"%s\"\n"
 "%s"
 msgstr ""
-"Nie można uzyskać flag „%s”\n"
+"Nie można uzyskać atrybutów ext2 „%s”\n"
 "%s"
 
 msgid "set &user ID on execution"
@@ -2659,8 +2647,8 @@ msgstr ""
 "„%s”\n"
 "to ten sam plik"
 
-msgid "Ski&p all"
-msgstr "&Pomiń wszystko"
+msgid "Ignore a&ll"
+msgstr "Zignoruj &wszystko"
 
 #, c-format
 msgid ""
@@ -2721,6 +2709,14 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot enter into directory \"%s\"\n"
+"%s"
+msgstr ""
+"Nie można przejść do katalogu „%s”\n"
+"%s"
+
+#, c-format
+msgid ""
 "Cannot overwrite directory \"%s\"\n"
 "%s"
 msgstr ""
@@ -2756,18 +2752,18 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source file \"%s\"\n"
+"Cannot get ext2 attributes of source file \"%s\"\n"
 "%s"
 msgstr ""
-"Nie można uzyskać atrybutów pliku źródłowego „%s”\n"
+"Nie można uzyskać atrybutów ext2 pliku źródłowego „%s”\n"
 "%s"
 
 #, c-format
 msgid ""
-"Cannot set attributes of target file \"%s\"\n"
+"Cannot set ext2 attributes of target file \"%s\"\n"
 "%s"
 msgstr ""
-"Nie można ustawić atrybutów pliku docelowego „%s”\n"
+"Nie można ustawić atrybutów ext2 pliku docelowego „%s”\n"
 "%s"
 
 #, c-format
@@ -2883,10 +2879,10 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set attributes for target file \"%s\"\n"
+"Cannot set ext2 attributes for target file \"%s\"\n"
 "%s"
 msgstr ""
-"Nie można ustawić atrybutów dla pliku docelowego „%s”\n"
+"Nie można ustawić atrybutów ext2 dla pliku docelowego „%s”\n"
 "%s"
 
 #, c-format
@@ -2899,10 +2895,10 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source directory \"%s\"\n"
+"Cannot get ext2 attributes of source directory \"%s\"\n"
 "%s"
 msgstr ""
-"Nie można uzyskać atrybutów katalogu źródłowego „%s”\n"
+"Nie można uzyskać atrybutów ext2 katalogu źródłowego „%s”\n"
 "%s"
 
 #, c-format
@@ -3903,12 +3899,13 @@ msgstr ""
 "Aby zrezygnować, należy nacisnąć klawisz Escape\n"
 "i poczekać."
 
-msgid "Cannot accept this key"
-msgstr "Nie można zaakceptować tego klawisza"
-
 #, c-format
-msgid "You have entered \"%s\""
-msgstr "Wprowadzono „%s”"
+msgid ""
+"Cannot accept this key.\n"
+"You have entered \"%s\""
+msgstr ""
+"Nie można zaakceptować tego klawisza.\n"
+"Wprowadzono „%s”"
 
 #. TRANSLATORS: This label appears near learned keys.  Keep it short.
 msgid "OK"
@@ -3992,15 +3989,15 @@ msgstr ""
 "%s"
 
 #, c-format
+msgid "Warning: Cannot change to %s.\n"
+msgstr "Ostrzeżenie: nie można zmienić katalogu na %s.\n"
+
+#, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "Nie można otworzyć nazwanego potoku %s\n"
 
 msgid "The shell is still active. Quit anyway?"
 msgstr "Powłoka jest wciąż aktywna. Zakończyć mimo to?"
-
-#, c-format
-msgid "Warning: Cannot change to %s.\n"
-msgstr "Ostrzeżenie: nie można zmienić katalogu na %s.\n"
 
 msgid "With builtin editor and aspell support"
 msgstr "Z wbudowanym edytorem i obsługą aspell"

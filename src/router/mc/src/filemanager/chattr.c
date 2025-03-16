@@ -1,7 +1,7 @@
 /*
    Chattr command -- for the Midnight Commander
 
-   Copyright (C) 2020-2024
+   Copyright (C) 2020-2025
    Free Software Foundation, Inc.
 
    Written by:
@@ -288,10 +288,9 @@ fileattrtext_callback (Widget *w, Widget *sender, widget_msg_t msg, int parm, vo
     {
     case MSG_DRAW:
         {
-            int color;
+            int color = COLOR_NORMAL;
             size_t i;
 
-            color = COLOR_NORMAL;
             tty_setcolor (color);
 
             if (w->rect.cols > fat->filename_width)
@@ -478,7 +477,6 @@ chattrboxes_rename (WChattrBoxes *cb)
     gboolean active;
     int i;
     GList *l;
-    char btext[BUF_SMALL];      /* FIXME: is 128 bytes enough? */
 
     active = widget_get_state (w, WST_ACTIVE);
 
@@ -489,9 +487,9 @@ chattrboxes_rename (WChattrBoxes *cb)
     for (i = cb->top, l = GROUP (cb)->widgets; l != NULL; i++, l = g_list_next (l))
     {
         WCheck *c = CHECK (l->data);
-        int m;
+        int m = check_attr_mod[i];
+        char btext[BUF_SMALL];  /* FIXME: are 128 bytes enough? */
 
-        m = check_attr_mod[i];
         g_snprintf (btext, sizeof (btext), "(%c) %s", check_attr[m].attr, check_attr[m].text);
         check_set_text (c, btext);
         c->state = check_attr[m].state;
@@ -514,9 +512,8 @@ checkboxes_save_state (const WChattrBoxes *cb)
 
     for (i = cb->top, l = CONST_GROUP (cb)->widgets; l != NULL; i++, l = g_list_next (l))
     {
-        int m;
+        int m = check_attr_mod[i];
 
-        m = check_attr_mod[i];
         check_attr[m].state = CHECK (l->data)->state;
     }
 }
@@ -895,10 +892,8 @@ chattrboxes_new (const WRect *r)
     /* create checkboxes */
     for (i = 0; i < r->lines; i++)
     {
-        int m;
+        int m = check_attr_mod[i];
         WCheck *check;
-
-        m = check_attr_mod[i];
 
         check = check_new (i, 0, check_attr[m].state, NULL);
         group_add_widget (cbg, check);
@@ -1092,17 +1087,6 @@ chattr_done (gboolean need_update)
 
 /* --------------------------------------------------------------------------------------------- */
 
-static const GString *
-next_file (const WPanel *panel)
-{
-    while (panel->dir.list[current_file].f.marked == 0)
-        current_file++;
-
-    return panel->dir.list[current_file].fname;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
 static gboolean
 try_chattr (const vfs_path_t *p, unsigned long m)
 {
@@ -1178,7 +1162,7 @@ chattr_apply_mask (WPanel *panel, vfs_path_t *vpath, unsigned long m)
     {
         const GString *fname;
 
-        fname = next_file (panel);
+        fname = panel_find_marked_file (panel, &current_file);
         vpath = vfs_path_from_str (fname->str);
         ok = (mc_fgetflags (vpath, &m) == 0);
 
@@ -1229,16 +1213,15 @@ chattr_cmd (WPanel *panel)
         need_update = FALSE;
         end_chattr = FALSE;
 
-        if (panel->marked != 0)
-            fname = next_file (panel);  /* next marked file */
-        else
-            fname = panel_current_entry (panel)->fname; /* single file */
+        fname = panel_get_marked_file (panel, &current_file);
+        if (fname == NULL)
+            break;
 
         vpath = vfs_path_from_str (fname->str);
 
         if (mc_fgetflags (vpath, &flags) != 0)
         {
-            message (D_ERROR, MSG_ERROR, _("Cannot get flags of \"%s\"\n%s"), fname->str,
+            message (D_ERROR, MSG_ERROR, _("Cannot get ext2 attributes of \"%s\"\n%s"), fname->str,
                      unix_error_string (errno));
             vfs_path_free (vpath, TRUE);
             break;

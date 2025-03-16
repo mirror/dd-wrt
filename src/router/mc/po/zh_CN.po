@@ -18,7 +18,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2024-08-23 19:34+0200\n"
+"POT-Creation-Date: 2025-01-23 10:39+0100\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Gurbuzguven <6mehmet6@gmail.com>, 2021\n"
 "Language-Team: Chinese (China) (http://app.transifex.com/mc/mc/language/"
@@ -949,6 +949,9 @@ msgstr ""
 msgid "Diff:"
 msgstr "差异: "
 
+msgid "File name is empty!"
+msgstr ""
+
 #, c-format
 msgid "\"%s\" is a directory"
 msgstr "“%s”是一个目录"
@@ -1072,9 +1075,6 @@ msgstr "检查 &POSIX 换行"
 msgid "Edit Save Mode"
 msgstr "编辑保存模式"
 
-msgid "Save as"
-msgstr "另存为"
-
 msgid "Cannot save: destination is not a regular file"
 msgstr "无法保存: 目标位置不是常规文件"
 
@@ -1146,14 +1146,8 @@ msgstr ""
 msgid "This function is not implemented"
 msgstr "该功能尚未实现"
 
-msgid "Copy to clipboard"
-msgstr "复制到剪贴板"
-
 msgid "Unable to save to file"
 msgstr "无法保存到文件"
-
-msgid "Cut to clipboard"
-msgstr "剪切到剪贴板"
 
 msgid "Goto line"
 msgstr "转到行"
@@ -1161,14 +1155,14 @@ msgstr "转到行"
 msgid "Save block"
 msgstr "保存块"
 
+msgid "Cannot save block"
+msgstr ""
+
 msgid "Insert file"
 msgstr "插入文件"
 
 msgid "Cannot insert file"
 msgstr "无法插入文件"
-
-msgid "Sort block"
-msgstr "排序块"
 
 msgid "You must first highlight a block of text"
 msgstr "您必需先突出显示一个文字块"
@@ -1178,9 +1172,6 @@ msgstr "运行 sort"
 
 msgid "Enter sort options (see sort(1) manpage) separated by whitespace:"
 msgstr ""
-
-msgid "Sort"
-msgstr "排序"
 
 msgid "Cannot execute sort command"
 msgstr "试图执行 sort 命令时发生错误"
@@ -1195,11 +1186,8 @@ msgstr "粘贴外部命令的输出"
 msgid "Enter shell command(s):"
 msgstr "输入Shell 命令: "
 
-msgid "External command"
-msgstr "外部命令"
-
-msgid "Cannot execute command"
-msgstr "无法执行命令"
+msgid "Cannot execute external command"
+msgstr ""
 
 msgid "mail -s <subject> -c <cc> <to>"
 msgstr "mail -s <subject> -c <cc> <to>"
@@ -1593,7 +1581,7 @@ msgstr ""
 "为 Midnight Commander 编写的\n"
 "一个界面友好的文本编辑器。"
 
-msgid "Copyright (C) 1996-2024 the Free Software Foundation"
+msgid "Copyright (C) 1996-2025 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -2227,7 +2215,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get flags of \"%s\"\n"
+"Cannot get ext2 attributes of \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2601,8 +2589,8 @@ msgstr ""
 "“%s”\n"
 "是同一个文件"
 
-msgid "Ski&p all"
-msgstr "路过全部(&I)"
+msgid "Ignore a&ll"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -2663,6 +2651,12 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot enter into directory \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "Cannot overwrite directory \"%s\"\n"
 "%s"
 msgstr ""
@@ -2698,13 +2692,13 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source file \"%s\"\n"
+"Cannot get ext2 attributes of source file \"%s\"\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set attributes of target file \"%s\"\n"
+"Cannot set ext2 attributes of target file \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2821,7 +2815,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set attributes for target file \"%s\"\n"
+"Cannot set ext2 attributes for target file \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2835,7 +2829,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get attributes of source directory \"%s\"\n"
+"Cannot get ext2 attributes of source directory \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -3819,12 +3813,11 @@ msgstr ""
 "如果您想离开，请按下Esc键\n"
 "并稍等。"
 
-msgid "Cannot accept this key"
-msgstr "无法接受这个按键"
-
 #, c-format
-msgid "You have entered \"%s\""
-msgstr "您输入了“%s”"
+msgid ""
+"Cannot accept this key.\n"
+"You have entered \"%s\""
+msgstr ""
 
 #. TRANSLATORS: This label appears near learned keys.  Keep it short.
 msgid "OK"
@@ -3904,15 +3897,15 @@ msgstr ""
 "%s"
 
 #, c-format
+msgid "Warning: Cannot change to %s.\n"
+msgstr "警告: 无法切换至 %s。\n"
+
+#, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "无法打开有名管道 %s\n"
 
 msgid "The shell is still active. Quit anyway?"
 msgstr "Shell 仍在运行中。依然退出?"
-
-#, c-format
-msgid "Warning: Cannot change to %s.\n"
-msgstr "警告: 无法切换至 %s。\n"
 
 msgid "With builtin editor and aspell support"
 msgstr ""
