@@ -294,7 +294,7 @@ share.veryhigh="Sehr Hoch";
 
 
 
-sbutton.save="Speichern";
+sbutton.save="Anwenden & Speichern";
 sbutton.download_config="Exportiere Partner Konfiguration";
 sbutton.savetitle="Nur speichern, ohne bereitstellen";
 sbutton.apply="Anwenden";
