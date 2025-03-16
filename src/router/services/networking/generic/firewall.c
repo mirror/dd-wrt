@@ -2693,8 +2693,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 		save2file_A_forward("-i %s -m psd --psd-weight-threshold 15 --psd-hi-ports-weight 3 -j %s", wanface, log_drop);
 #endif
 	}
-	if (has_flood_protection())
-		save2file_A_forward("-j SECURITY");
+	save2file_A_forward("-j SECURITY");
 
 	while (i < 20 && filter_host_url == 0) {
 		i++;
@@ -3070,7 +3069,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 	int log_level = nvram_matchi("log_enable", 1) ? nvram_geti("log_level") : 0;
 
 	save2file(
-		"*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n:SECURITY - [0:0]\n:blocklist - [0:0]\n:tarpit - [0:0]\n:portscan - [0:0]");
+		"*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n:SECURITY - [0:0]\n:tarpit - [0:0]\n:portscan - [0:0]");
 	if (log_level > 0) {
 		save2file(":logaccept - [0:0]\n:logdrop - [0:0]\n:logreject - [0:0]");
 #ifdef FLOOD_PROTECT
@@ -3102,8 +3101,6 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 	save2file_A("portscan -j %s", log_drop);
 
 	if (wanactive(wanaddr)) {
-		save2file_A_input("-j blocklist");
-		save2file_A_forward("-j blocklist");
 		if (nvram_matchi("block_syncflood", 1)) {
 			/* Sync-flood protection */
 			save2file_A_security("-i %s -m recent --rcheck --name synflood --seconds 60 --reap", wanface);
@@ -3136,8 +3133,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 					  log_drop);
 #endif
 		}
-		if (has_flood_protection())
-			save2file_A_input("-j SECURITY");
+		save2file_A_input("-j SECURITY");
 
 		/*
 		 * Does it disable the filter? 
@@ -3175,10 +3171,10 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 			filter_forward(wanface, lanface, lan_cclass, dmzenable, webfilter, vifs);
 		}
 	} else {
-		save2file_A_input("-j blocklist");
 		char var[80];
 		char vifs[256];
 		const char *next;
+		save2file_A_input("-j SECURITY");
 		foreach(var, vifs, next) {
 			if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				if (nvram_nmatch("1", "%s_isolation", var)) {
@@ -3340,7 +3336,6 @@ static void run_firewall6(char *vifs)
 	eval("ip6tables", "-X");
 	eval("ip6tables", "-N", "tarpit");
 	eval("ip6tables", "-N", "portscan");
-	eval("ip6tables", "-N", "blocklist");
 	eval("ip6tables", "-N", "SECURITY");
 
 	if (log_level > 0) {
@@ -3379,9 +3374,6 @@ static void run_firewall6(char *vifs)
 		     "limit", "--limit", pps);
 		eval("ip6tables", "-A", "SECURITY", "-i", wanface, "-p", "ipv6-icmp", "--icmpv6-type", "128", "-j", log_drop);
 	}
-
-	eval("ip6tables", "-A", "INPUT", "-j", "blocklist");
-	eval("ip6tables", "-A", "FORWARD", "-j", "blocklist");
 
 #ifdef HAVE_PORTSCAN
 	if (nvram_match("block_tarpit", "1")) {
@@ -3422,10 +3414,9 @@ static void run_firewall6(char *vifs)
 #endif
 	}
 
-	if (has_flood_protection()) {
-		eval("ip6tables", "-A", "INPUT", "-j", "SECURITY");
-		eval("ip6tables", "-A", "FORWARD", "-j", "SECURITY");
-	}
+	eval("ip6tables", "-A", "INPUT", "-j", "SECURITY");
+	eval("ip6tables", "-A", "FORWARD", "-j", "SECURITY");
+
 	/* Filter all packets that have RH0 headers */
 	eval("ip6tables", "-A", "INPUT", "-m", "rt", "--rt-type", "0", "-j", log_drop);
 	eval("ip6tables", "-A", "FORWARD", "-m", "rt", "--rt-type", "0", "-j", log_drop);
