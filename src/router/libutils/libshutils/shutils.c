@@ -1654,7 +1654,7 @@ static void init_blocklist(void)
 
 int getipv4fromipv6(char *dstip, const char *srcip)
 {
-	char ipcopy[128];
+	char ipcopy[INET6_ADDRSTRLEN];
 	strlcpy(ipcopy, srcip, sizeof(ipcopy));
 	char *check = strrchr(ipcopy, ':');
 	int ipv6 = 0;
@@ -1664,9 +1664,9 @@ int getipv4fromipv6(char *dstip, const char *srcip)
 	} else
 		check = ipcopy;
 	if (ipv6)
-		strcpy(srcip);
+		strcpy(dstip, srcip);
 	else
-		strcpy(dstip);
+		strcpy(dstip, check);
 	return ipv6;
 }
 
@@ -1687,7 +1687,7 @@ void add_blocklist(const char *service, char *ip)
 				dd_loginfo(service, "5 failed login attempts reached. block client %s for %d minutes", ip,
 					   BLOCKTIME);
 #ifdef HAVE_PORTSCAN
-				char check[128];
+				char check[INET6_ADDRSTRLEN];
 				int ipv6 = getipv4fromipv6(check, ip);
 				if (!ipv6)
 					eval("iptables", "-I", "SECURITY", "-p", "tcp", "-s", check, "-j", "TARPIT");
@@ -1749,7 +1749,7 @@ int check_blocklist(const char *service, char *ip)
 			if (entry->count > 4) {
 #ifdef HAVE_PORTSCAN
 
-				char check[128];
+				char check[INET6_ADDRSTRLEN];
 				int ipv6 = getipv4fromipv6(check, ip);
 				if (!ipv6)
 					eval("iptables", "-D", "SECURITY", "-p", "tcp", "-s", check, "-j", "TARPIT");
@@ -1765,7 +1765,7 @@ int check_blocklist(const char *service, char *ip)
 		}
 		//time over, free entry
 		if (entry->end && entry->end < cur) {
-			char check[128];
+			char check[INET6_ADDRSTRLEN];
 			int ipv6 = getipv4fromipv6(check, ip);
 			if (!ipv6)
 				eval("iptables", "-D", "SECURITY", "-p", "tcp", "-s", check, "-j", "TARPIT");

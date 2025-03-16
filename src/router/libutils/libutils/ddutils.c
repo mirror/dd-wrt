@@ -455,7 +455,7 @@ char *get_mac_from_ip(char *mac, char *ip)
 	int type; // HW type
 	int flags; // flags
 
-	char check[128];
+	char check[INET6_ADDRSTRLEN];
 	int ipv6 = getipv4fromipv6(check, ip);
 
 	if (!ipv6) {
