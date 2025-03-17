@@ -14,6 +14,7 @@
 
 #ifndef _shutils_h_
 #define _shutils_h_
+#include <malloc.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -186,9 +187,21 @@ char *dd_strncat(char *dst, const char *src, size_t len);
 extern int dd_sprintf(char *str, const char *fmt, ...);
 extern int dd_snprintf(char *str, size_t len, const char *fmt, ...);
 
-extern void *dd_malloc(size_t len);
+//extern void *dd_malloc(size_t len);
 
-#define malloc(len) dd_malloc(len)
+void *iso_alloc(size_t size);
+void *iso_calloc(size_t nmemb, size_t size);
+void *iso_realloc(void *p, size_t size);
+void iso_free(void *p);
+char *iso_strdup(const char *str);
+
+//#define malloc(len) dd_malloc(len)
+#define malloc iso_alloc
+#define realloc iso_realloc
+#define calloc iso_calloc
+#define free iso_free
+#define strdup iso_strdup
+
 #define strcpy(dst, src) (sizeof(dst) == sizeof(void *) ? strcpy(dst, src) : strncpy(dst, src, sizeof(dst) - 1))
 #define sprintf(output, format, args...)                                         \
 	(sizeof(output) == sizeof(void *) ? dd_sprintf(output, format, ##args) : \

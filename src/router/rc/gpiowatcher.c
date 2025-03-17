@@ -35,6 +35,7 @@
 #include <stdarg.h>
 #include <dirent.h>
 #include <syslog.h>
+#include <shutils.h>
 
 #define NORMAL_INTERVAL 1 /* second */
 #define URGENT_INTERVAL 100 * 1000 /* microsecond */

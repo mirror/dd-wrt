@@ -41,6 +41,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <shutils.h>
 #include "mac80211regulatory.h"
 
 static void *crda_get_file_ptr(__u8 *db, int dblen, int structlen, __be32 ptr)

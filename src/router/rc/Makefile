@@ -26,7 +26,7 @@ CFLAGS  += $(COPTS)
 LDFLAGS	+= -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/libutils -lutils -ldl
 CFLAGS += $(LTO) -I$(LINUXDIR) -I$(TOP)/libutils/include -D_GNU_SOURCE
 CFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
-CFLAGS += $(MIPS16_OPT) $(THUMB) $(LERROR)
+CFLAGS += $(MIPS16_OPT) $(THUMB) $(LERROR) -include $(TOP)/shared/shutils.h
 
 cc-option = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null \
              > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)
@@ -1379,7 +1379,7 @@ init:
 
 writetool:
 	@echo "[LD] writetool"
-	@$(CC) $(CFLAGS) $(LTO) $(LDLTO) $(INITCFLAGS) -o writetool writetool.c
+	@$(CC) $(CFLAGS) $(LTO) $(LDLTO) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -o writetool writetool.c -lshutils -lnvram
 
 et:
 ifeq ($(CONFIG_NORTHSTAR),y)

@@ -42,6 +42,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <utils.h>
+#include <shutils.h>
 
 #include <typedefs.h>
 

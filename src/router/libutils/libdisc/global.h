@@ -1,5 +1,6 @@
 #include <disc.h>
 #include <endian.h>
+#include <shutils.h>
 
 #ifndef bswap_64
 #define bswap_64(x)                                                                                                              \

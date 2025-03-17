@@ -52,19 +52,234 @@ CONFIG_ERC=
 CONFIG_CARAMBOLA=
 CONFIG_FMS2111=
 
-#
-# Linux router shared code Makefile
-#
-# Copyright 2001-2003, Broadcom Corporation
-# All Rights Reserved.
-#
-# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
-# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
-# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
-# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
-#
-# $Id: Makefile,v 1.10 2005/11/30 11:53:42 seg Exp $
-#
+
+## DISABLE_CANARY - Disables the use of canaries, improves performance
+DISABLE_CANARY = -DDISABLE_CANARY=0
+
+## Clear user chunks upon free
+SANITIZE_CHUNKS = -DSANITIZE_CHUNKS=0
+
+## Call verify_all_zones upon alloc/free, never reuse private zones
+## Adds significant performance over head
+FUZZ_MODE = -DFUZZ_MODE=0
+
+## Permanently free any realloc'd chunk
+PERM_FREE_REALLOC = -DPERM_FREE_REALLOC=0
+
+## Enable memory tagging support. This will generate a random
+## 1 byte tag per addressable chunk of memory. These tags can
+## be retrieved and verified. This feature will likely interfere
+## with ARM MTE and PAC. See MEMORY_TAGGING.md for more information
+MEMORY_TAGGING = -DMEMORY_TAGGING=0
+
+## Enable abort() when isoalloc can't gather enough entropy.
+ABORT_NO_ENTROPY = -DABORT_NO_ENTROPY=1
+
+## This enables Address Sanitizer support for manually
+## poisoning and unpoisoning zones. It adds significant
+## performance and memory overhead
+## This is slow, and it's incompatible with other sanitizers
+#ENABLE_ASAN = -fsanitize=address -DENABLE_ASAN=1
+
+## Enable memory sanitizer to catch uninitialized reads.
+## This is slow, and it's incompatible with other sanitizers
+#ENABLE_MSAN = -fsanitize=memory -fsanitize-memory-track-origins -DENABLE_MSAN=1
+
+## Enable undefined behavior sanitizer to catch undefined behavior.
+## This is slow, and it's incompatible with other sanitizers
+#ENABLE_UBSAN = -fsanitize=undefined
+
+## Enable thread sanitizer. The slowest sanitizer of them
+## all. But useful for finding thread related data race issues
+## in the allocator in code paths that use atomic_flag
+#ENABLE_TSAN = -fsanitize=thread
+
+SANITIZER_SUPPORT = $(ENABLE_ASAN) $(ENABLE_MSAN) $(ENABLE_UBSAN) $(ENABLE_TSAN)
+
+## Support for threads adds a performance overhead
+## You can safely disable it here if you know your
+## program does not require concurrent access
+## to the IsoAlloc APIs
+THREAD_SUPPORT = -DTHREAD_SUPPORT=1 -pthread
+
+## By default IsoAlloc uses a pthread mutex to synchronize
+## thread safe access to the root structure. By enabling this
+## IsoAlloc will use a C11 atomic spinlock
+USE_SPINLOCK = -DUSE_SPINLOCK=0
+
+## This tells IsoAlloc to only start with 4 default zones.
+## If you set it to 0 IsoAlloc will startup with 10. The
+## performance penalty for setting it to 0 is a one time
+## startup cost but more memory may be wasted. See the
+## comments in iso_alloc_internal.h for modifying this
+STARTUP_MEM_USAGE = -DSMALL_MEM_STARTUP=0
+
+## Instructs the kernel (via mmap) to prepopulate
+## page tables which will reduce page faults and
+## sometimes improve performance. If you're using
+## IsoAlloc for small short lived programs you probably
+## want to disable this. This is ignored on MacOS
+PRE_POPULATE_PAGES = -DPRE_POPULATE_PAGES=0
+
+## Enable some functionality that like IsoAlloc internals
+## for tests that need to verify security properties.
+## Only test code should use this.
+UNIT_TESTING = -DUNIT_TESTING=1
+
+## Enable the malloc/free and new/delete hooks
+MALLOC_HOOK = -DMALLOC_HOOK=1
+
+## Use Huge pages for any allocation that is a multiple
+## of 2 megabytes. See PERFORMANCE.md for additional info
+HUGE_PAGES = -DHUGE_PAGES=1
+THP_PAGES = -DTHP_PAGES=1
+
+## Enable the built-in heap profiler. When this is enabled
+## IsoAlloc will write a file to disk upon exit of the
+## program. This file encodes the heap usage patterns of
+## the target. This file can be consumed by the profiler
+## CLI utility. See PROFILER.md for the format of this file
+#HEAP_PROFILER = -DHEAP_PROFILER=1 -fno-omit-frame-pointer \
+#				-fno-optimize-sibling-calls -ldl
+
+## Enable CPU pinning support on a per-zone basis. This is
+## a minor security feature which introduces an allocation
+## isolation property that is defined by CPU core. See the
+## README for more detailed information. This is Linux only
+## and has negative performance implications
+CPU_PIN = -DCPU_PIN=0
+SCHED_GETCPU =
+
+## Enable the allocation sanity feature. This works a lot
+## like GWP-ASAN does. It samples calls to iso_alloc and
+## randomly swaps them out for raw page allocations that
+## are surrounded by guard pages. These pages are unmapped
+## upon free. Much like GWP-ASAN this is designed to be
+## used in production builds and should not incur too
+## much of a performance penalty
+ALLOC_SANITY = -DALLOC_SANITY=0
+
+## Enable hooking of memcpy/memmove/memset to detect out of bounds
+## r/w operations on chunks allocated with IsoAlloc. Does
+## not require ALLOC_SANITY is enabled. On MacOS you need
+## to set FORTIFY_SOURCE to 0. Leave these commented if
+## you aren't enabling them.
+MEMCPY_SANITY = -DMEMCPY_SANITY=0
+MEMSET_SANITY = -DMEMSET_SANITY=0
+
+## Enable the userfaultfd based uninitialized read detection
+## feature. This samples calls to malloc, and allocates raw
+## pages of memory with mmap which are registered with the
+## userfaultfd subsystem. We detect uninitialized reads by
+## looking for the first read access of that page before a
+## previous call to write. Think of it as GWP-ASAN but for
+## uninitialized reads. Enabling this feature does incur a
+## performance penalty. This requires that both ALLOC_SANITY
+## and THREAD_SUPPORT are enabled. Linux only
+UNINIT_READ_SANITY = -DUNINIT_READ_SANITY=0
+
+## By default IsoAlloc may select a zone that holds chunks
+## that are larger than were requested. This is intended
+## to reduce memory consumption and is only done for smaller
+## sizes. Enabling this feature configures IsoAlloc to only
+## use zones that are a perfect fit for the requested size
+## once its been rounded up to an aligned size.
+STRONG_SIZE_ISOLATION = -DSTRONG_SIZE_ISOLATION=0
+
+## Enable a sampling mechanism that searches for references
+## to a chunk currently being freed. The search only overwrites
+## the first reference to that chunk because searching all
+## zones is very slow.
+UAF_PTR_PAGE = -DUAF_PTR_PAGE=0
+
+## Verifies the free bit slot cache does not contain duplicate
+## entries which might lead to IsoAlloc handing out an in-use
+## chunk to a caller. This is a slow search that has a small
+## performance penalty
+VERIFY_FREE_BIT_SLOTS = -DVERIFY_FREE_BIT_SLOTS=0
+
+## Randomizes the free bit slot list upon creation. This can
+## impact perf. You can control the minimum size of the list
+## to be randomized with MIN_RAND_FREELIST in conf.h
+RANDOMIZE_FREELIST = -DRANDOMIZE_FREELIST=1
+
+## Enable experimental features that are not guaranteed to
+## compile, or introduce stability and performance bugs
+EXPERIMENTAL = -DEXPERIMENTAL=0
+
+## These control log, memory leak, and memory usage code
+## In a release build they are all set to 0
+DEBUG_LOG_FLAGS = -DDEBUG=1 -DLEAK_DETECTOR=1 -DMEM_USAGE=1
+
+## On Android we use prctl to name mappings so they are
+## visible in /proc/pid/maps - But the Android build does
+## not use this Makefile. You want to modify Android.mk
+NAMED_MAPPINGS = -DNAMED_MAPPINGS=0
+
+## Abort when the allocator cannot return a valid chunk
+ABORT_ON_NULL = -DABORT_ON_NULL=0
+
+## Enable protection against misusing 0 sized allocations
+NO_ZERO_ALLOCATIONS = -DNO_ZERO_ALLOCATIONS=1
+
+## Enables mlock() on performance sensitive pages. For lower
+## end devices with less memory you may want to disable this
+USE_MLOCK = -DUSE_MLOCK=1
+
+## When enabled the default library constructor and destructor
+## will be used to initialize and tear down the library. If
+## you disable this you can call iso_alloc_initialize and
+## iso_alloc_destroy to perform the same functions. Note if
+## you disable this you will want to enable ISO_DTOR_CLEANUP
+AUTO_CTOR_DTOR = -DAUTO_CTOR_DTOR=1
+
+## Unmap user and bitmap in the destructor. You probably
+## don't want this as theres no guarantee the IsoAlloc
+## destructor will be called last and other destructors
+## may reference objects within these pages
+ISO_DTOR_CLEANUP = -DISO_DTOR_CLEANUP=0
+
+## Register a signal handler for SIGSEGV that inspects si_addr
+## for an address managed by IsoAlloc. Optionally used when
+## UAF_PTR_PAGE is enabled for better crash handling
+SIGNAL_HANDLER = -DSIGNAL_HANDLER=0
+
+## Enable AARCH64 / ARMv8.5a Memory Tagging Extension support
+#ARM_MTE = -DARM_MTE=1 -march=armv8.5-a+memtag
+
+## If you know your target will have an ARMv8.1-A or newer and
+## supports Top Byte Ignore (TBI) then you want to enable this.
+## (Currently unused)
+ARM_TBI = 0
+
+## Enables guard pages around big zone meta data. Big zones
+## are zones with a size greater than SMALL_SIZE_MAX as defined
+## in conf.h. Disabling this will save 2 pages per big zone
+## allocation. On systems with pages > 4k this results in
+## substantial memory usage
+BIG_ZONE_META_DATA_GUARD = -DBIG_ZONE_META_DATA_GUARD=0
+
+## Enables guard pages around big zone user pages. On systems
+## with pages > 4k this results in substantial memory usage
+BIG_ZONE_GUARD = -DBIG_ZONE_GUARD=0
+
+## Ensures all big zone user data pages are marked PROT_NONE
+## while on the free list to catch UAF. This is disabled because
+## it incurs a syscall (mprotect) per call to free and again
+## upon reuse to mark them R/W again.
+PROTECT_FREE_BIG_ZONES = -DPROTECT_FREE_BIG_ZONES=0
+
+## By default IsoAlloc will mask pointers to protect against
+## certain memory disclosures. This can be beneficial but also
+## incurs a small performance cost
+MASK_PTRS = -DMASK_PTRS=1
+
+## IsoAlloc uses ARM64 Neon instructions where possible. You can
+## explicitly disable that here
+DONT_USE_NEON = -DDONT_USE_NEON=1
+
+
+
 include $(TOP)/.config
 
 ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
@@ -93,17 +308,44 @@ cc-option = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null \
              > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)
 COPTS +=$(call cc-option,-Werror=return-local-addr,)
 
+STDC=c11
+
 
 CFLAGS += $(MIPS16_OPT) -g3 $(THUMB)
 
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Iinclude
+
+HOOKS = $(MALLOC_HOOK)
+OPTIMIZE = -fstrict-aliasing -Wstrict-aliasing
+COMMON_CFLAGS = -Wall $(THREAD_SUPPORT) $(PRE_POPULATE_PAGES) $(STARTUP_MEM_USAGE)
+BUILD_ERROR_FLAGS = -Wno-pointer-arith -Wno-gnu-zero-variadic-macro-arguments -Wno-format-pedantic
+#ifneq ($(CC), gcc)
+#BUILD_ERROR_FLAGS := $(BUILD_ERROR_FLAGS) -Werror -pedantic
+#else
+#BUILD_ERROR_FLAGS := $(BUILD_ERROR_FLAGS) -Wno-attributes -Wno-unused-variable
+#endif
+
+CFLAGS += $(COMMON_CFLAGS) $(DISABLE_CANARY) $(BUILD_ERROR_FLAGS) $(HOOKS) $(HEAP_PROFILER) \
+	$(SANITIZER_SUPPORT) $(ALLOC_SANITY) $(MEMCPY_SANITY) $(UNINIT_READ_SANITY) $(CPU_PIN) $(SCHED_GETCPU) \
+	$(EXPERIMENTAL) $(UAF_PTR_PAGE) $(VERIFY_FREE_BIT_SLOTS) $(NAMED_MAPPINGS) $(ABORT_ON_NULL) $(NO_ZERO_ALLOCATIONS) \
+	$(ABORT_NO_ENTROPY) $(ISO_DTOR_CLEANUP) $(RANDOMIZE_FREELIST) $(USE_SPINLOCK) $(HUGE_PAGES) ${THP_PAGES} $(USE_MLOCK) \
+	$(MEMORY_TAGGING) $(STRONG_SIZE_ISOLATION) $(MEMSET_SANITY) $(AUTO_CTOR_DTOR) $(SIGNAL_HANDLER) \
+	$(BIG_ZONE_META_DATA_GUARD) $(BIG_ZONE_GUARD) $(PROTECT_UNUSED_BIG_ZONE) $(MASK_PTRS) $(SANITIZE_CHUNKS) $(FUZZ_MODE) \
+	$(PERM_FREE_REALLOC) $(ARM_MTE) $(DONT_USE_NEON) -Ilibshutils/isoalloc/include
+
+
 #  -Werror=maybe-uninitialized -Werror=int-conversion -Werror=array-bounds
 CFLAGS	+= -fPIC
 LDFLAGS += -L. -ldl
 OBJS := libutils/utils.o libutils/ledconfig.o libutils/bridgetools.o libutils/detect.o libutils/linux_timer.o libutils/gpio.o libutils/md5c.o libutils/nvparse.o libutils/ddutils.o libutils/linux_osl.o  libutils/ipfmt.o
 SHOBJS =  libshutils/timezones.o libshutils/shutils.o libshutils/sha1.o libshutils/list.o libshutils/list_sort.o libshutils/airbag.o
+SHOBJS += libshutils/isoalloc/iso_alloc_mem_tags.o  libshutils/isoalloc/iso_alloc_printf.o    libshutils/isoalloc/iso_alloc_random.o  libshutils/isoalloc/iso_alloc_search.o  libshutils/isoalloc/iso_alloc_util.o  libshutils/isoalloc/malloc_hook.o
+SHOBJS += libshutils/isoalloc/iso_alloc.o  libshutils/isoalloc/iso_alloc_interfaces.o  libshutils/isoalloc/iso_alloc_mte.o       libshutils/isoalloc/iso_alloc_profiler.o  libshutils/isoalloc/iso_alloc_sanity.o  libshutils/isoalloc/iso_alloc_signal.o  libshutils/isoalloc/libc_hook.o
+
+
 WOBJS := libwireless/wl.o libwireless/wl_basic.o libwireless/wl_linux.o libwireless/country.o libwireless/wl_macfuncs.o
+
 
 DISCOBJS   = libdisc/lib.o \
          libdisc/buffer.o libdisc/file.o libdisc/cdaccess.o libdisc/cdimage.o libdisc/vpc.o libdisc/compressed.o \

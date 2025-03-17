@@ -70,7 +70,7 @@ COPTS += $(MIPS16_OPT) -D_GNU_SOURCE $(THUMB)
 
 cc-option = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null \
              > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)
-COPTS +=$(call cc-option,-Werror=return-local-addr,)
+COPTS +=$(call cc-option,-Werror=return-local-addr,)  -include $(TOP)/shared/shutils.h
 
 ifeq ($(CONFIG_80211AC),y)
 BCFLAGS	= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall
@@ -85,7 +85,7 @@ BCFLAGS	 += $(COPTS) -I. -I$(TOP)/shared  -I$(SRCBASE)/include.bcm -Wall -I$(SRC
 BCFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN -I$(LINUXDIR)/brcm/shared/bcmwifi/include -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 BCFLAGS  += -I$(TOP)/services/include $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections
 BCFLAGS  += -DARCH_$(ARCHITECTURE)
-BCFLAGS  += -DBUILD_YEAR="\"$(shell date +%Y)\""
+BCFLAGS  += -DBUILD_YEAR="\"$(shell date +%Y)\"" 
 
 
 ifeq ($(CONFIG_DIST),"micro")
