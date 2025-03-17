@@ -10,7 +10,7 @@ export GCCRANLIB := ${shell which $(ARCH)-linux-gcc-ranlib}
 
 
 #COPTS+= -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -fno-unwind-tables -fno-asynchronous-unwind-tables -funsigned-char
-COPTS+=  -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -DNDEBUG
+COPTS+=  -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -DNDEBUG -Wno-unused-variable -Wno-unused-parameter -Wno-unused-function -Wno-unused-but-set-variable
 ifeq ($(AGGRESSIVE_SIZE),y)
 COPTS+= -falign-jumps=1 -falign-labels=1 -falign-loops=1 -falign-functions=1 -fno-guess-branch-probability -funsigned-char -finline-limit=0 -fno-builtin-printf
 endif
@@ -229,7 +229,7 @@ ifneq ($(CONFIG_MUSL),y)
 else
 	cp mklibs/* ${shell $(ARCH)-linux-gcc -print-file-name=include}/../../../../../bin
 	rm -f /tmp/$(ARCHITECTURE)/lib/*
-	cp musl/lib/*.so $(TARGETDIR)/lib
+	cp musl-mimalloc/lib/*.so $(TARGETDIR)/lib
 	-./mklibs/mklibs.py -D \
 		-d /tmp/$(ARCHITECTURE)/mklibs-out \
 		--sysroot $(TARGETDIR) \
