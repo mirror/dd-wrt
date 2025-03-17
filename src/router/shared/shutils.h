@@ -185,6 +185,7 @@ char *dd_strncat(char *dst, size_t len, const char *src);
 #ifndef FROM_NVRAM
 extern int dd_sprintf(char *str, const char *fmt, ...);
 extern int dd_snprintf(char *str, int len, const char *fmt, ...);
+
 extern void *dd_malloc(size_t len);
 
 #define malloc(len) dd_malloc(len)
@@ -343,6 +344,8 @@ char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short, ch
 	}
 #endif
 #include <sys/time.h>
+int getipv4fromipv6(char *dstip, const char *srcip);
+
 void add_blocklist(const char *service, char *ip);
 int check_blocklist(const char *service, char *ip);
 void add_blocklist_sock(const char *service, int socket);
