@@ -132,6 +132,30 @@ assert(sizeof(size_t) >= 64)
 #define OK 0
 #define ERR -1
 
+#ifndef HAVE_SYSLOG
+#define dd_syslog(a, args...) \
+	do {                  \
+	} while (0)
+#define dd_loginfo(a, fmt, args...) \
+	do {                        \
+	} while (0)
+#define dd_logdebug(a, fmt, args...) \
+	do {                         \
+	} while (0)
+#define dd_logerror(a, fmt, args...) \
+	do {                         \
+	} while (0)
+#define dd_logstart(a, ret) \
+	do {                \
+	} while (0)
+#else
+#define dd_syslog(a, args...) syslog(a, ##args);
+void dd_loginfo(const char *servicename, const char *fmt, ...);
+void dd_logdebug(const char *servicename, const char *fmt, ...);
+void dd_logerror(const char *servicename, const char *fmt, ...);
+void dd_logstart(const char *servicename, int ret);
+#endif
+
 /* GCC complains if your constructor priority is
  * 0-100 but Clang does not. We need the lowest
  * priority constructor for MALLOC_HOOK */
@@ -140,13 +164,13 @@ assert(sizeof(size_t) >= 64)
 
 #if DEBUG
 #define LOG(msg, ...) \
-    _iso_alloc_printf(STDOUT_FILENO, "[LOG][%d](%s:%d %s()) " msg "\n", getpid(), __FILE__, __LINE__, __func__, ##__VA_ARGS__);
+    dd_logerror("iso_alloc", "[LOG][%d](%s:%d %s()) " msg "\n", getpid(), __FILE__, __LINE__, __func__, ##__VA_ARGS__);
 #else
 #define LOG(msg, ...)
 #endif
 
 #define LOG_AND_ABORT(msg, ...)                                                                                                      \
-    _iso_alloc_printf(STDOUT_FILENO, "[ABORTING][%d](%s:%d %s()) " msg "\n", getpid(), __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
+    dd_logerror("iso_alloc",  "[ABORTING][%d](%s:%d %s()) " msg "\n", getpid(), __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
     abort();
 
 /* The number of bits in the bitmap that correspond

@@ -209,7 +209,7 @@ EXPERIMENTAL = -DEXPERIMENTAL=0
 
 ## These control log, memory leak, and memory usage code
 ## In a release build they are all set to 0
-DEBUG_LOG_FLAGS = -DDEBUG=1 -DLEAK_DETECTOR=1 -DMEM_USAGE=1
+#DEBUG_LOG_FLAGS = -DDEBUG=1 -DLEAK_DETECTOR=1 -DMEM_USAGE=1
 
 ## On Android we use prctl to name mappings so they are
 ## visible in /proc/pid/maps - But the Android build does
@@ -1915,7 +1915,7 @@ install: all
 
 clean:
 #	rm -f countrycode/countrycode_$(ARCH).o
-	rm -f libutils/*.o libqos/*.o libwireless/*.o libshutils/*.o libdisc/*.o libsharetools/*.o *.o *.so
+	rm -f libutils/*.o libqos/*.o libwireless/*.o libshutils/*.o libshutils/isoalloc/*.o libdisc/*.o libsharetools/*.o *.o *.so
 	rm -f $(TOP)/register/*.o
 	rm -f *.a
 	rm -f *.o
