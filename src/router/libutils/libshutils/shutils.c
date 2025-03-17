@@ -1107,7 +1107,7 @@ int killall(const char *name, int sig)
 #undef sprintf
 #undef snprintf
 
-int dd_snprintf(char *str, int len, const char *fmt, ...)
+int dd_snprintf(char *str, size_t len, const char *fmt, ...)
 {
 	va_list ap;
 	int n;
@@ -1124,7 +1124,7 @@ int dd_snprintf(char *str, int len, const char *fmt, ...)
 }
 #undef strcat
 
-char *dd_strncat(char *dst, size_t len, const char *src)
+char *dd_strncat(char *dst, const char *src, size_t len)
 {
 	return ((len - 1) - strlen(dst)) > 0 ? strncat(dst, src, ((len - 1) - strlen(dst))) : dst;
 }
@@ -1140,7 +1140,7 @@ char *strcat_r(const char *s1, const char *s2, char *buf)
 char *strlcat_r(const char *s1, const char *s2, char *buf, size_t len)
 {
 	strncpy(buf, s1, len - 1);
-	return dd_strncat(buf, len, s2);
+	return dd_strncat(buf, s2, len);
 }
 
 u_int64_t freediskSpace(char *path)
