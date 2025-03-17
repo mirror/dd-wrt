@@ -191,59 +191,6 @@ void dd_debug(int target, const char *fmt, ...)
 	return;
 }
 
-#ifdef HAVE_SYSLOG
-void dd_loginfo(const char *servicename, const char *fmt, ...)
-{
-	char *str;
-	va_list args;
-	va_start(args, (char *)fmt);
-	vasprintf(&str, fmt, args);
-	va_end(args);
-	fprintf(stdout, "[%s] : %s\n", servicename, str);
-	dd_syslog(LOG_INFO, "[%s] : %s", servicename, str);
-	free(str);
-}
-
-void dd_logdebug(const char *servicename, const char *fmt, ...)
-{
-	char *str;
-	int service = DEBUG_SERVICE;
-	va_list args;
-	va_start(args, (char *)fmt);
-	vasprintf(&str, fmt, args);
-	va_end(args);
-	if (!strcmp(servicename, "httpd"))
-		service = DEBUG_HTTPD;
-
-#ifdef SYS_gettid
-	unsigned int thread = syscall(SYS_gettid);
-	dd_debug(service, "[%s][%d] : %s", servicename, thread, str);
-#else
-	dd_debug(service, "[%s] : %s", servicename, str);
-#endif
-	free(str);
-}
-
-void dd_logerror(const char *servicename, const char *fmt, ...)
-{
-	char *str;
-	va_list args;
-	va_start(args, (char *)fmt);
-	vasprintf(&str, fmt, args);
-	va_end(args);
-	fprintf(stderr, "[%s] : %s\n", servicename, str);
-	dd_syslog(LOG_ERR, "[%s] : %s", servicename, str);
-	free(str);
-}
-
-void dd_logstart(const char *servicename, int retcode)
-{
-	if (retcode)
-		dd_loginfo(servicename, "Error on startup, returncode %d", retcode);
-	else
-		dd_loginfo(servicename, "successfully started");
-}
-#endif
 
 static int internal_eval_va(int silence, int space, const char *cmd, va_list args)
 {
@@ -1122,6 +1069,7 @@ int dd_snprintf(char *str, size_t len, const char *fmt, ...)
 	free(dest);
 	return n;
 }
+
 #undef strcat
 
 char *dd_strncat(char *dst, const char *src, size_t len)
@@ -1238,6 +1186,7 @@ int dd_sprintf(char *str, const char *fmt, ...)
 
 	return n;
 }
+
 
 static void strcpyto(char *dest, const char *src, char *delim, size_t max)
 {
@@ -1902,4 +1851,59 @@ void showmemdebugstat(void)
 	}
 }
 
+#endif
+
+#ifdef HAVE_SYSLOG
+#undef free
+void dd_loginfo(const char *servicename, const char *fmt, ...)
+{
+	char *str;
+	va_list args;
+	va_start(args, (char *)fmt);
+	vasprintf(&str, fmt, args);
+	va_end(args);
+	fprintf(stdout, "[%s] : %s\n", servicename, str);
+	dd_syslog(LOG_INFO, "[%s] : %s", servicename, str);
+	free(str);
+}
+
+void dd_logdebug(const char *servicename, const char *fmt, ...)
+{
+	char *str;
+	int service = DEBUG_SERVICE;
+	va_list args;
+	va_start(args, (char *)fmt);
+	vasprintf(&str, fmt, args);
+	va_end(args);
+	if (!strcmp(servicename, "httpd"))
+		service = DEBUG_HTTPD;
+
+#ifdef SYS_gettid
+	unsigned int thread = syscall(SYS_gettid);
+	dd_debug(service, "[%s][%d] : %s", servicename, thread, str);
+#else
+	dd_debug(service, "[%s] : %s", servicename, str);
+#endif
+	free(str);
+}
+
+void dd_logerror(const char *servicename, const char *fmt, ...)
+{
+	char *str;
+	va_list args;
+	va_start(args, (char *)fmt);
+	vasprintf(&str, fmt, args);
+	va_end(args);
+	fprintf(stderr, "[%s] : %s\n", servicename, str);
+	dd_syslog(LOG_ERR, "[%s] : %s", servicename, str);
+	free(str);
+}
+
+void dd_logstart(const char *servicename, int retcode)
+{
+	if (retcode)
+		dd_loginfo(servicename, "Error on startup, returncode %d", retcode);
+	else
+		dd_loginfo(servicename, "successfully started");
+}
 #endif

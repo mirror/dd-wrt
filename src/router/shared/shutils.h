@@ -179,15 +179,27 @@ extern int strhas(char *list, char *key);
 char *strcat_r(const char *s1, const char *s2, char *buf);
 char *strlcat_r(const char *s1, const char *s2, char *buf, size_t len);
 char *dd_strncat(char *dst, const char *src, size_t len);
+size_t dd_strlcat(char *dst, const char *src, size_t len);
+
+static inline char * strlhelp(char *dst, const char *s, size_t len) {
+	strlcpy(dst, s, len);
+	return dst;
+}
 
 #define strcat_r(s1, s2, buf) (sizeof(buf) == sizeof(void *) ? strcat_r(s1, s2, buf) : strlcat_r(s1, s2, buf, sizeof(buf)))
-#define strcat(buf, s1) sizeof(buf) == sizeof(void *) ? strcat(buf, s1) : dd_strncat(buf, s1, sizeof(buf))
+#define strcat(buf, s1) sizeof(buf) == sizeof(void *) ? strcat(buf, s1) : strlhelp(buf, s1, sizeof(buf))
 
 #ifndef FROM_NVRAM
 extern int dd_sprintf(char *str, const char *fmt, ...);
 extern int dd_snprintf(char *str, size_t len, const char *fmt, ...);
 
-//extern void *dd_malloc(size_t len);
+void *dd_malloc(size_t size);
+/*
+void *dd_calloc(size_t nmemb, size_t size);
+void *dd_realloc(void *p, size_t size);
+void dd_free(void *p);
+char *dd_strdup(const char *str);
+
 
 void *iso_alloc(size_t size);
 void *iso_calloc(size_t nmemb, size_t size);
@@ -195,13 +207,21 @@ void *iso_realloc(void *p, size_t size);
 void iso_free(void *p);
 char *iso_strdup(const char *str);
 
-//#define malloc(len) dd_malloc(len)
-#define malloc iso_alloc
+*/
+#define malloc(len) dd_malloc(len)
+/*#define malloc iso_alloc
 #define realloc iso_realloc
 #define calloc iso_calloc
 #define free iso_free
 #define strdup iso_strdup
+*/
 
+/*#define malloc dd_malloc
+#define realloc dd_realloc
+#define calloc dd_calloc
+#define free dd_free
+#define strdup dd_strdup
+*/
 #define strcpy(dst, src) (sizeof(dst) == sizeof(void *) ? strcpy(dst, src) : strncpy(dst, src, sizeof(dst) - 1))
 #define sprintf(output, format, args...)                                         \
 	(sizeof(output) == sizeof(void *) ? dd_sprintf(output, format, ##args) : \

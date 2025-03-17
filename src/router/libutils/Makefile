@@ -70,7 +70,7 @@ PERM_FREE_REALLOC = -DPERM_FREE_REALLOC=0
 ## 1 byte tag per addressable chunk of memory. These tags can
 ## be retrieved and verified. This feature will likely interfere
 ## with ARM MTE and PAC. See MEMORY_TAGGING.md for more information
-MEMORY_TAGGING = -DMEMORY_TAGGING=0
+MEMORY_TAGGING = -DMEMORY_TAGGING=1
 
 ## Enable abort() when isoalloc can't gather enough entropy.
 ABORT_NO_ENTROPY = -DABORT_NO_ENTROPY=1
@@ -209,7 +209,7 @@ EXPERIMENTAL = -DEXPERIMENTAL=0
 
 ## These control log, memory leak, and memory usage code
 ## In a release build they are all set to 0
-#DEBUG_LOG_FLAGS = -DDEBUG=1 -DLEAK_DETECTOR=1 -DMEM_USAGE=1
+DEBUG_LOG_FLAGS = -DDEBUG=1 -DLEAK_DETECTOR=1 -DMEM_USAGE=1
 
 ## On Android we use prctl to name mappings so they are
 ## visible in /proc/pid/maps - But the Android build does
@@ -308,7 +308,7 @@ cc-option = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null \
              > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)
 COPTS +=$(call cc-option,-Werror=return-local-addr,)
 
-STDC=c11
+#STDC=c11
 
 
 CFLAGS += $(MIPS16_OPT) -g3 $(THUMB)
@@ -316,32 +316,32 @@ CFLAGS += $(MIPS16_OPT) -g3 $(THUMB)
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Iinclude
 
-HOOKS = $(MALLOC_HOOK)
-OPTIMIZE = -fstrict-aliasing -Wstrict-aliasing
-COMMON_CFLAGS = -Wall $(THREAD_SUPPORT) $(PRE_POPULATE_PAGES) $(STARTUP_MEM_USAGE)
-BUILD_ERROR_FLAGS = -Wno-pointer-arith -Wno-gnu-zero-variadic-macro-arguments -Wno-format-pedantic
+#HOOKS = $(MALLOC_HOOK)
+#OPTIMIZE = -fstrict-aliasing -Wstrict-aliasing
+#COMMON_CFLAGS = -Wall $(THREAD_SUPPORT) $(PRE_POPULATE_PAGES) $(STARTUP_MEM_USAGE)
+#BUILD_ERROR_FLAGS = -Wno-pointer-arith -Wno-gnu-zero-variadic-macro-arguments -Wno-format-pedantic
 #ifneq ($(CC), gcc)
 #BUILD_ERROR_FLAGS := $(BUILD_ERROR_FLAGS) -Werror -pedantic
 #else
 #BUILD_ERROR_FLAGS := $(BUILD_ERROR_FLAGS) -Wno-attributes -Wno-unused-variable
 #endif
 
-CFLAGS += $(COMMON_CFLAGS) $(DISABLE_CANARY) $(BUILD_ERROR_FLAGS) $(HOOKS) $(HEAP_PROFILER) \
-	$(SANITIZER_SUPPORT) $(ALLOC_SANITY) $(MEMCPY_SANITY) $(UNINIT_READ_SANITY) $(CPU_PIN) $(SCHED_GETCPU) \
-	$(EXPERIMENTAL) $(UAF_PTR_PAGE) $(VERIFY_FREE_BIT_SLOTS) $(NAMED_MAPPINGS) $(ABORT_ON_NULL) $(NO_ZERO_ALLOCATIONS) \
-	$(ABORT_NO_ENTROPY) $(ISO_DTOR_CLEANUP) $(RANDOMIZE_FREELIST) $(USE_SPINLOCK) $(HUGE_PAGES) ${THP_PAGES} $(USE_MLOCK) \
-	$(MEMORY_TAGGING) $(STRONG_SIZE_ISOLATION) $(MEMSET_SANITY) $(AUTO_CTOR_DTOR) $(SIGNAL_HANDLER) \
-	$(BIG_ZONE_META_DATA_GUARD) $(BIG_ZONE_GUARD) $(PROTECT_UNUSED_BIG_ZONE) $(MASK_PTRS) $(SANITIZE_CHUNKS) $(FUZZ_MODE) \
-	$(PERM_FREE_REALLOC) $(ARM_MTE) $(DONT_USE_NEON) -Ilibshutils/isoalloc/include
+#CFLAGS += $(COMMON_CFLAGS) $(DISABLE_CANARY) $(BUILD_ERROR_FLAGS) $(HOOKS) $(HEAP_PROFILER) \
+#	$(SANITIZER_SUPPORT) $(ALLOC_SANITY) $(MEMCPY_SANITY) $(UNINIT_READ_SANITY) $(CPU_PIN) $(SCHED_GETCPU) \
+#	$(EXPERIMENTAL) $(UAF_PTR_PAGE) $(VERIFY_FREE_BIT_SLOTS) $(NAMED_MAPPINGS) $(ABORT_ON_NULL) $(NO_ZERO_ALLOCATIONS) \
+#	$(ABORT_NO_ENTROPY) $(ISO_DTOR_CLEANUP) $(RANDOMIZE_FREELIST) $(USE_SPINLOCK) $(HUGE_PAGES) ${THP_PAGES} $(USE_MLOCK) \
+#	$(MEMORY_TAGGING) $(STRONG_SIZE_ISOLATION) $(MEMSET_SANITY) $(AUTO_CTOR_DTOR) $(SIGNAL_HANDLER) \
+#	$(BIG_ZONE_META_DATA_GUARD) $(BIG_ZONE_GUARD) $(PROTECT_UNUSED_BIG_ZONE) $(MASK_PTRS) $(SANITIZE_CHUNKS) $(FUZZ_MODE) \
+#	$(PERM_FREE_REALLOC) $(ARM_MTE) $(DONT_USE_NEON) -Ilibshutils/isoalloc/include
 
 
 #  -Werror=maybe-uninitialized -Werror=int-conversion -Werror=array-bounds
 CFLAGS	+= -fPIC
 LDFLAGS += -L. -ldl
 OBJS := libutils/utils.o libutils/ledconfig.o libutils/bridgetools.o libutils/detect.o libutils/linux_timer.o libutils/gpio.o libutils/md5c.o libutils/nvparse.o libutils/ddutils.o libutils/linux_osl.o  libutils/ipfmt.o
-SHOBJS =  libshutils/timezones.o libshutils/shutils.o libshutils/sha1.o libshutils/list.o libshutils/list_sort.o libshutils/airbag.o
-SHOBJS += libshutils/isoalloc/iso_alloc_mem_tags.o  libshutils/isoalloc/iso_alloc_printf.o    libshutils/isoalloc/iso_alloc_random.o  libshutils/isoalloc/iso_alloc_search.o  libshutils/isoalloc/iso_alloc_util.o  libshutils/isoalloc/malloc_hook.o
-SHOBJS += libshutils/isoalloc/iso_alloc.o  libshutils/isoalloc/iso_alloc_interfaces.o  libshutils/isoalloc/iso_alloc_mte.o       libshutils/isoalloc/iso_alloc_profiler.o  libshutils/isoalloc/iso_alloc_sanity.o  libshutils/isoalloc/iso_alloc_signal.o  libshutils/isoalloc/libc_hook.o
+SHOBJS =  libshutils/timezones.o libshutils/shutils.o libshutils/sha1.o  libshutils/list.o libshutils/list_sort.o libshutils/airbag.o
+#SHOBJS += libshutils/isoalloc/iso_alloc_mem_tags.o  libshutils/isoalloc/iso_alloc_printf.o    libshutils/isoalloc/iso_alloc_random.o  libshutils/isoalloc/iso_alloc_search.o  libshutils/isoalloc/iso_alloc_util.o  libshutils/isoalloc/malloc_hook.o
+#SHOBJS += libshutils/isoalloc/iso_alloc.o  libshutils/isoalloc/iso_alloc_interfaces.o  libshutils/isoalloc/iso_alloc_mte.o       libshutils/isoalloc/iso_alloc_profiler.o  libshutils/isoalloc/iso_alloc_sanity.o  libshutils/isoalloc/iso_alloc_signal.o  libshutils/isoalloc/libc_hook.o
 
 
 WOBJS := libwireless/wl.o libwireless/wl_basic.o libwireless/wl_linux.o libwireless/country.o libwireless/wl_macfuncs.o
