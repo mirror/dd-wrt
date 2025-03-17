@@ -120,22 +120,6 @@ mc_shell_get_name_env (void)
         if (pwd != NULL)
             shell_name = g_strdup (pwd->pw_shell);
     }
-    else if (strstr (mc_shell->path, "/ksh") != NULL
-             || strstr (mc_shell->real_path, "/ksh") != NULL
-             || strstr (mc_shell->path, "/ksh93") != NULL
-             || strstr (mc_shell->real_path, "/ksh93") != NULL
-             || strstr (mc_shell->path, "/oksh") != NULL
-             || strstr (mc_shell->real_path, "/oksh") != NULL)
-    {
-        mc_shell->type = SHELL_KSH;
-        mc_shell->name = "ksh";
-    }
-    else if (strstr (mc_shell->path, "/mksh") != NULL
-             || strstr (mc_shell->real_path, "/mksh") != NULL)
-    {
-        mc_shell->type = SHELL_MKSH;
-        mc_shell->name = "mksh";
-    }
     else
         /* 1st choice: SHELL environment variable */
         shell_name = g_strdup (shell_env);
