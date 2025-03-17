@@ -152,7 +152,7 @@ endif
 #	sh $(srcdir)/mimalloc-verify-syms.sh $(EXTRA_OBJ)
 
 $(EXTRA_OBJ): $(GENH) $(IMPH)
-	$(CC) -I$(srcdir)/mimalloc/include $(CFLAGS_ALL) -std=gnu11 -fPIC -O3 -DNDEBUG -fvisibility=hidden -c -o $(EXTRA_OBJ) $(srcdir)/mimalloc/src/mimalloc.c
+	$(CC) -I$(srcdir)/mimalloc/include $(CFLAGS_ALL) -std=gnu11 -fPIC -DNDEBUG -fvisibility=hidden -c -o $(EXTRA_OBJ) $(srcdir)/mimalloc/src/mimalloc.c
 	sh $(srcdir)/mimalloc-verify-syms.sh $(EXTRA_OBJ)
 
 obj/%.o: $(srcdir)/%.s
