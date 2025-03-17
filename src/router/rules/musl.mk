@@ -26,6 +26,7 @@ musl-mimalloc-clean:
 musl-mimalloc:
 	rm -f $(TOP)/musl-mimalloc/src/malloc/external/mimalloc.o
 	make -C musl-mimalloc EXTRA_OBJ=$(TOP)/musl-mimalloc/src/malloc/external/mimalloc.o $(TOP)/musl-mimalloc/src/malloc/external/mimalloc.o
+	make -C musl-mimalloc EXTRA_OBJ=$(TOP)/musl-mimalloc/src/malloc/external/mimalloc.o
 
 musl-mimalloc-install:
 	@true
