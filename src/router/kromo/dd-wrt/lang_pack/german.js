@@ -294,10 +294,10 @@ share.veryhigh="Sehr Hoch";
 
 
 
-sbutton.save="Anwenden & Speichern";
+sbutton.save="Speichern";
 sbutton.download_config="Exportiere Partner Konfiguration";
 sbutton.savetitle="Nur speichern, ohne bereitstellen";
-sbutton.apply="Anwenden";
+sbutton.apply="Speichern & Anwenden";
 sbutton.applied="Angewendet";
 sbutton.applytitle="Wende Einstellungen unmittelbar an";
 sbutton.saving="Gespeichert";

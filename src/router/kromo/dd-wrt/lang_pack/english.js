@@ -297,10 +297,10 @@ share.high="High";
 share.veryhigh="Very High";
 
 var sbutton=new Object();
-sbutton.save="Apply & Save";
+sbutton.save="Save";
 sbutton.download_config="Export Peer Config";
 sbutton.savetitle="Only save settings without commit";
-sbutton.apply="Apply Settings";
+sbutton.apply="Save & Apply";
 sbutton.applied="Applying Settings";
 sbutton.applytitle="Apply settings immediately";
 sbutton.saving="Saved";
