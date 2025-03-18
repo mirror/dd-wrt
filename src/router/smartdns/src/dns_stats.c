@@ -22,23 +22,37 @@
 
 struct dns_stats dns_stats;
 
+#ifndef __LP64__
+unsigned long long __sync_add_and_fetch_8(volatile unsigned long long *ptr, unsigned long long v)
+{
+*ptr += v;
+return *ptr;
+}
+unsigned long long __sync_lock_test_and_set_8(volatile unsigned long long *ptr, unsigned long long v)
+{
+volatile unsigned long long ret = *ptr;
+*ptr = v;
+return ret;
+}
+#endif
+
 #define SAMPLE_PERIOD 5
 
-void dns_stats_avg_time_update_add(struct dns_stats_avg_time *avg_time, statint_t time)
+void dns_stats_avg_time_update_add(struct dns_stats_avg_time *avg_time, uint64_t time)
 {
 	if (avg_time == NULL) {
 		return;
 	}
 
-	statint_t total = (statint_t)1 << 32 | time;
+	uint64_t total = (uint64_t)1 << 32 | time;
 	return stats_add(&avg_time->total, total);
 }
 
 void dns_stats_avg_time_update(struct dns_stats_avg_time *avg_time)
 {
-	statint_t total = stats_read_and_set(&avg_time->total, 0);
-	statint_t count = total >> 32;
-	statint_t time = total & 0xFFFFFFFF;
+	uint64_t total = stats_read_and_set(&avg_time->total, 0);
+	uint64_t count = total >> 32;
+	uint64_t time = total & 0xFFFFFFFF;
 
 	if (count == 0) {
 		return;
@@ -75,35 +89,35 @@ float dns_stats_avg_time_get(void)
 	return dns_stats.avg_time.avg_time;
 }
 
-statint_t dns_stats_request_total_get(void)
+uint64_t dns_stats_request_total_get(void)
 {
 	return stats_read(&dns_stats.request.total);
 }
 
-statint_t dns_stats_request_success_get(void)
+uint64_t dns_stats_request_success_get(void)
 {
 	return stats_read(&dns_stats.request.success_count);
 }
 
-statint_t dns_stats_request_from_client_get(void)
+uint64_t dns_stats_request_from_client_get(void)
 {
 	return stats_read(&dns_stats.request.from_client_count);
 }
 
-statint_t dns_stats_request_blocked_get(void)
+uint64_t dns_stats_request_blocked_get(void)
 {
 	return stats_read(&dns_stats.request.blocked_count);
 }
 
-statint_t dns_stats_cache_hit_get(void)
+uint64_t dns_stats_cache_hit_get(void)
 {
 	return stats_read(&dns_stats.cache.hit_count);
 }
 
 float dns_stats_cache_hit_rate_get(void)
 {
-	statint_t total = stats_read(&dns_stats.cache.check_count);
-	statint_t hit = stats_read(&dns_stats.cache.hit_count);
+	uint64_t total = stats_read(&dns_stats.cache.check_count);
+	uint64_t hit = stats_read(&dns_stats.cache.hit_count);
 
 	if (total == 0) {
 		return 0;
@@ -112,7 +126,7 @@ float dns_stats_cache_hit_rate_get(void)
 	return (float)(hit * 100) / total;
 }
 
-void dns_stats_server_stats_avg_time_add(struct dns_server_stats *server_stats, statint_t time)
+void dns_stats_server_stats_avg_time_add(struct dns_server_stats *server_stats, uint64_t time)
 {
 	dns_stats_avg_time_update_add(&server_stats->avg_time, time);
 }
@@ -122,7 +136,7 @@ void dns_stats_server_stats_avg_time_update(struct dns_server_stats *server_stat
 	dns_stats_avg_time_update(&server_stats->avg_time);
 }
 
-statint_t dns_stats_server_stats_total_get(struct dns_server_stats *server_stats)
+uint64_t dns_stats_server_stats_total_get(struct dns_server_stats *server_stats)
 {
 	if (server_stats == NULL) {
 		return 0;
@@ -131,7 +145,7 @@ statint_t dns_stats_server_stats_total_get(struct dns_server_stats *server_stats
 	return stats_read(&server_stats->total);
 }
 
-statint_t dns_stats_server_stats_success_get(struct dns_server_stats *server_stats)
+uint64_t dns_stats_server_stats_success_get(struct dns_server_stats *server_stats)
 {
 	if (server_stats == NULL) {
 		return 0;
@@ -140,7 +154,7 @@ statint_t dns_stats_server_stats_success_get(struct dns_server_stats *server_sta
 	return stats_read(&server_stats->success_count);
 }
 
-statint_t dns_stats_server_stats_recv_get(struct dns_server_stats *server_stats)
+uint64_t dns_stats_server_stats_recv_get(struct dns_server_stats *server_stats)
 {
 	if (server_stats == NULL) {
 		return 0;
