@@ -1,0 +1,25 @@
+export PATH=/bin:/usr/bin:/sbin:/usr/sbin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/sbin:/opt/bin:/opt/usr/sbin:/opt/usr/bin
+export LD_LIBRARY_PATH=/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/jffs/usr/local/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib
+export PS1='\[\033]0;\u@\h: \w\a\]\[\033[01;31m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+export TZ=`cat /etc/TZ`
+export HISTFILE=/tmp/.ash_history
+export LD_PRELOAD=/usr/lib/libjemalloc.so
+
+alias ll='ls -lahrt'
+
+[[ -f "/tmp/root/.ashrc" ]] && . /tmp/root/.ashrc
+
+reboot() {
+  for f in /opt/etc/init.d/K* ; do
+    [ -x "$f" ] && "$f" stop
+  done
+  echo "#!/bin/sh" > /tmp/.rc_shutdown
+  echo "$(nvram get rc_shutdown)" >> /tmp/.rc_shutdown
+  if [ -f /tmp/.rc_shutdown ]; then
+    chmod +x /tmp/.rc_shutdown
+    /tmp/.rc_shutdown
+  fi
+  /sbin/reboot
+  }
+
+ 
