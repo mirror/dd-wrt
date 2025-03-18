@@ -2080,7 +2080,7 @@ ifeq ($(CONFIG_E1700),y)
 	$(CC) $(CFLAGS) -DNEED_PRINTF -o switch tools/switch_7530.c -DCONFIG_RALINK_MT7620
 endif
 else
-	$(CC) $(CFLAGS) -DNEED_PRINTF -o switch tools/switch.c -L$(TOP)/libutils -lshutils
+	$(CC) $(CFLAGS) -DNEED_PRINTF -o switch tools/switch.c -L$(TOP)/libutils -lshutils -L$(TOP)/nvram -lnvram
 endif
 	$(CC) $(CFLAGS) -DNEED_PRINTF -o mii_mgr tools/mii_mgr.c 
 endif
