@@ -98,9 +98,9 @@ else
 	install profile $(INSTALLDIR)/etc
 endif
 endif
-ifdef CONFIG_SER
+ifdef CONFIG_JEMALLOC
 	install profile.jemalloc $(INSTALLDIR)/etc/profile
-else
+endif
 ifndef CONFIG_MAKSAT
 ifndef CONFIG_WIKINGS
 ifndef CONFIG_ERC
