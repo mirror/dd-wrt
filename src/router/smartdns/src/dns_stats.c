@@ -23,6 +23,7 @@
 struct dns_stats dns_stats;
 
 #ifndef __LP64__
+/* mips, powerpc, i386 cannot handle this */
 unsigned long long __sync_add_and_fetch_8(volatile unsigned long long *ptr, unsigned long long v)
 {
 	*ptr += v;
