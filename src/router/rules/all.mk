@@ -403,6 +403,7 @@ include rules/nut.mk
 include rules/smcroute.mk
 include rules/bluez.mk
 include rules/bluez-tools.mk
+include rules/jemalloc.mk
 
 #
 # Generic rules

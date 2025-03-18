@@ -603,6 +603,7 @@ obj-$(CONFIG_PLEX) += plex
 obj-$(CONFIG_ANTAIRA_AGENT) += curl zlib openssl json-c antaira-agent
 obj-$(CONFIG_BOINC) += zlib openssl curl boinc
 obj-$(CONFIG_MUSL) += musl
+obj-$(CONFIG_JEMALLOC) += jemalloc
 obj-$(CONFIG_X86) += cpupower
 obj-$(CONFIG_CPUPOWER) += cpupower
 obj-$(CONFIG_BTOP) += btop atop glib20
