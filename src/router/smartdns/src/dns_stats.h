@@ -25,22 +25,28 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus */
+#ifdef __LP64__
+typedef	uint64_t statint_t;
+#else
+typedef	uint32_t statint_t;
+#endif
+
 
 struct dns_stats_avg_time {
-	uint64_t total; /* Hight 4 bytes, count, Low 4 bytes time*/
+	statint_t total; /* Hight 4 bytes, count, Low 4 bytes time*/
 	float avg_time;
 };
 
 struct dns_request_stats {
-	uint64_t total;
-	uint64_t success_count;
-	uint64_t from_client_count;
-	uint64_t blocked_count;
+	statint_t total;
+	statint_t success_count;
+	statint_t from_client_count;
+	statint_t blocked_count;
 };
 
 struct dns_cache_stats {
-	uint64_t check_count;
-	uint64_t hit_count;
+	statint_t check_count;
+	statint_t hit_count;
 };
 
 struct dns_stats {
@@ -50,83 +56,83 @@ struct dns_stats {
 };
 
 struct dns_server_stats {
-	uint64_t total;
-	uint64_t success_count;
-	uint64_t recv_count;
+	statint_t total;
+	statint_t success_count;
+	statint_t recv_count;
 	struct dns_stats_avg_time avg_time;
 };
 
 extern struct dns_stats dns_stats;
 
-static inline uint64_t stats_read(const uint64_t *s)
+static inline statint_t stats_read(const statint_t *s)
 {
 	return READ_ONCE((*s));
 }
 
-static inline uint64_t stats_read_and_set(uint64_t *s, uint64_t v)
+static inline statint_t stats_read_and_set(statint_t *s, statint_t v)
 {
 	return __sync_lock_test_and_set(s, v);
 }
 
-static inline void stats_set(uint64_t *s, uint64_t v)
+static inline void stats_set(statint_t *s, statint_t v)
 {
 	*s = v;
 }
 
-static inline void stats_add(uint64_t *s, uint64_t v)
+static inline void stats_add(statint_t *s, statint_t v)
 {
 	(void)__sync_add_and_fetch(s, v);
 }
 
-static inline void stats_inc(uint64_t *s)
+static inline void stats_inc(statint_t *s)
 {
 	(void)__sync_add_and_fetch(s, 1);
 }
 
-static inline void stats_sub(uint64_t *s, uint64_t v)
+static inline void stats_sub(statint_t *s, statint_t v)
 {
 	(void)__sync_sub_and_fetch(s, v);
 }
 
-static inline void stats_dec(uint64_t *s)
+static inline void stats_dec(statint_t *s)
 {
 	(void)__sync_sub_and_fetch(s, 1);
 }
 
 void dns_stats_avg_time_update(struct dns_stats_avg_time *avg_time);
 
-void dns_stats_avg_time_update_add(struct dns_stats_avg_time *avg_time, uint64_t time);
+void dns_stats_avg_time_update_add(struct dns_stats_avg_time *avg_time, statint_t time);
 
-static inline void dns_stats_avg_time_add(uint64_t time)
+static inline void dns_stats_avg_time_add(statint_t time)
 {
 	dns_stats_avg_time_update_add(&dns_stats.avg_time, time);
 }
 
 float dns_stats_avg_time_get(void);
 
-uint64_t dns_stats_request_total_get(void);
+statint_t dns_stats_request_total_get(void);
 
-uint64_t dns_stats_request_success_get(void);
+statint_t dns_stats_request_success_get(void);
 
-uint64_t dns_stats_request_from_client_get(void);
+statint_t dns_stats_request_from_client_get(void);
 
-uint64_t dns_stats_request_blocked_get(void);
+statint_t dns_stats_request_blocked_get(void);
 
-uint64_t dns_stats_cache_hit_get(void);
+statint_t dns_stats_cache_hit_get(void);
 
 float dns_stats_cache_hit_rate_get(void);
 
 void dns_stats_period_run_second(void);
 
-void dns_stats_server_stats_avg_time_add(struct dns_server_stats *server_stats, uint64_t time);
+void dns_stats_server_stats_avg_time_add(struct dns_server_stats *server_stats, statint_t time);
 
 void dns_stats_server_stats_avg_time_update(struct dns_server_stats *server_stats);
 
-uint64_t dns_stats_server_stats_total_get(struct dns_server_stats *server_stats);
+statint_t dns_stats_server_stats_total_get(struct dns_server_stats *server_stats);
 
-uint64_t dns_stats_server_stats_success_get(struct dns_server_stats *server_stats);
+statint_t dns_stats_server_stats_success_get(struct dns_server_stats *server_stats);
 
-uint64_t dns_stats_server_stats_recv_get(struct dns_server_stats *server_stats);
+statint_t dns_stats_server_stats_recv_get(struct dns_server_stats *server_stats);
 
 float dns_stats_server_stats_avg_time_get(struct dns_server_stats *server_stats);
 
