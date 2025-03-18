@@ -123,6 +123,9 @@ endif
 ifeq ($(CONFIG_E380AC),y)
 CFLAGS += -DHAVE_E380AC
 endif
+ifeq ($(CONFIG_JEMALLOC),y)
+CFLAGS += -DHAVE_JEMALLOC
+endif
 ifeq ($(CONFIG_E325N),y)
 CFLAGS += -DHAVE_E325N
 endif

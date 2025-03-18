@@ -168,6 +168,9 @@ pid_t ddrun_shell(int timeout, int nowait)
 		"PS1=\\[\\033]0;\\u@\\h: \\w\\a\\]\\[\\033[01;31m\\]\\u@\\h\\[\\033[00m\\]:\\[\\033[01;34m\\]\\w\\[\\033[00m\\]\\$ ",
 		"PATH=/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin",
 		"LD_LIBRARY_PATH=/usr/lib:/lib:/jffs/usr/lib:/jffs/lib:/opt/lib:/opt/usr/lib",
+#ifdef HAVE_JEMALLOC
+		"LD_PRELOAD=/usr/lib/libjemalloc.so",
+#endif
 		"SHELL=" SHELL,
 		"USER=root",
 		tz,
@@ -531,6 +534,9 @@ int main(int argc, char **argv)
 			       1);
 			setenv("LD_LIBRARY_PATH",
 			       "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
+#ifdef HAVE_JEMALLOC
+			setenv("LD_PRELOAD", "/usr/lib/libjemalloc.so", 1);
+#endif
 #ifdef HAVE_REGISTER
 			if (isregistered_real())
 #endif
@@ -553,6 +559,9 @@ int main(int argc, char **argv)
 			       1);
 			setenv("LD_LIBRARY_PATH",
 			       "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
+#ifdef HAVE_JEMALLOC
+			setenv("LD_PRELOAD", "/usr/lib/libjemalloc.so", 1);
+#endif
 			update_timezone();
 			start_service_force("init_start");
 
