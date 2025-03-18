@@ -42,6 +42,12 @@
 /* arena purge timing stuff (may fix later), stats (can patch out) */
 #if ATOMIC_LLONG_LOCK_FREE != 2
 typedef unsigned UWORD __attribute__((mode(word)));
+#define UNUSED		__attribute__((unused))
+#ifdef HAVE_ATTRIBUTE_VISIBILITY
+# define HIDDEN		__attribute__((visibility("hidden")))
+#else
+# define HIDDEN
+#endif
 
 static inline void __attribute__((always_inline, artificial))
 pre_seq_barrier(int model)
@@ -90,13 +96,13 @@ addr_hash (void *ptr)
   return ((uintptr_t)ptr / WATCH_SIZE) % NLOCKS;
 }
 
-void
+static inline void
 libat_lock_1 (void *ptr)
 {
   pthread_mutex_lock (&locks[addr_hash (ptr)].mutex);
 }
 
-void
+static inline void
 libat_unlock_1 (void *ptr)
 {
   pthread_mutex_unlock (&locks[addr_hash (ptr)].mutex);
@@ -117,30 +123,40 @@ protect_end (void *ptr, UWORD dummy UNUSED)
 
 #define ATOMIC_LOAD(TYPE, WIDTH)					\
   TYPE							\
-  __atomic_load_##WIDTH (volatile void *ptr, int smodel)			\
+  __atomic_load_##WIDTH (void *ptr, int smodel)			\
   {									\
   TYPE ret; \
   UWORD magic; \
   pre_seq_barrier (smodel); \
-  magic = protect_start (mptr); \
-  ret = *mptr; \
-  protect_end (mptr, magic); \
+  magic = protect_start (ptr); \
+  ret = *(TYPE *)ptr; \
+  protect_end (ptr, magic); \
   post_seq_barrier (smodel); \
     return ret;					\
   }
 
 #define ATOMIC_FETCH_ADD(TYPE, WIDTH)					\
   TYPE							\
-  __atomic_fetch_add_##WIDTH (volatile void *counter, long long unsigned int add, int type)			\
+  __atomic_fetch_add_##WIDTH (void *ptr, long long unsigned int add, int smodel)			\
   {									\
-    return *(volatile TYPE *)(counter) + add;					\
+  UWORD magic; \
+  pre_seq_barrier (smodel); \
+  magic = protect_start (ptr); \
+    return *(volatile TYPE *)(ptr) + add;					\
+  protect_end (ptr, magic); \
+  post_seq_barrier (smodel); \
   }
 
 #define ATOMIC_STORE(TYPE, WIDTH)					\
   void							\
-  __atomic_store_##WIDTH (volatile void *ptr, TYPE val, int type)			\
+  __atomic_store_##WIDTH (void *ptr, TYPE val, int smodel)			\
   {									\
+  UWORD magic; \
+  pre_seq_barrier (smodel); \
+  magic = protect_start (ptr); \
     *(volatile TYPE *)(ptr) = val;					\
+  protect_end (ptr, magic); \
+  post_seq_barrier (smodel); \
   }
 
 ATOMIC_LOAD (long long unsigned int, 8)
@@ -149,15 +165,24 @@ ATOMIC_STORE (long long unsigned int, 8)
 
 #define ATOMIC_COMPARE_EXCHANGE(TYPE,SIZE)				      \
 _Bool									      \
-__atomic_compare_exchange_##SIZE (volatile void *ptr, void *expected,		      \
+__atomic_compare_exchange_##SIZE (void *ptr, void *expected,		      \
 				  TYPE desired, _Bool weak,		      \
-				  int success_memorder, int failure_memorder) \
+				  int smodel, int failure_memorder) \
 {									      \
-  if (*(volatile TYPE *)(ptr) == *(volatile TYPE *)(expected)) {	      \
-	*(volatile TYPE *)(ptr) = desired;	\
-	return 1;		\
-  }		\
-  return 0;		\
+  TYPE oldval; \
+  UWORD magic; \
+  _Bool ret; \
+  pre_seq_barrier (smodel); \
+  magic = protect_start (ptr); \
+  oldval = *(TYPE *)ptr; \
+  ret = (oldval == *(TYPE *)expected); \
+  if (ret) \
+    *(TYPE *)(ptr) = desired; \
+  else \
+    *(TYPE *)(expected) = oldval; \
+  protect_end (ptr, magic); \
+  post_seq_barrier (smodel); \
+  return ret;		\
 }
 
 ATOMIC_COMPARE_EXCHANGE (long long unsigned int, 8)
