@@ -1,4 +1,6 @@
 #ifdef HAVE_WLANLED
+#undef sprintf
+#undef strcpy
 /*
  *   Copyright (C) 2012 Felix Fietkau <nbd@openwrt.org>
  *
