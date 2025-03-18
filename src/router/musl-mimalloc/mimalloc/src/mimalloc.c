@@ -115,9 +115,10 @@ static inline void protect_end(void *ptr, UWORD dummy UNUSED)
 	{                                                 \
 		TYPE ret;                                 \
 		UWORD magic;                              \
+		TYPE *tptr = (TYPE *)ptr;                 \
 		pre_seq_barrier(smodel);                  \
 		magic = protect_start(ptr);               \
-		ret = *(TYPE *)ptr;                       \
+		ret = *tptr;                              \
 		protect_end(ptr, magic);                  \
 		post_seq_barrier(smodel);                 \
 		return ret;                               \
@@ -127,20 +128,25 @@ static inline void protect_end(void *ptr, UWORD dummy UNUSED)
 	TYPE __atomic_fetch_add_##WIDTH(void *ptr, long long unsigned int add, int smodel) \
 	{                                                                                  \
 		UWORD magic;                                                               \
+		TYPE ret;                                                                  \
+		TYPE *tptr = (TYPE *)ptr;                                                  \
 		pre_seq_barrier(smodel);                                                   \
 		magic = protect_start(ptr);                                                \
-		return *(volatile TYPE *)(ptr) + add;                                      \
+		ret = *tptr;                                                               \
+		*tptr += add;                                                              \
 		protect_end(ptr, magic);                                                   \
 		post_seq_barrier(smodel);                                                  \
+		return ret;                                                                \
 	}
 
 #define ATOMIC_STORE(TYPE, WIDTH)                                    \
 	void __atomic_store_##WIDTH(void *ptr, TYPE val, int smodel) \
 	{                                                            \
 		UWORD magic;                                         \
+		TYPE *tptr = (TYPE *)ptr;                            \
 		pre_seq_barrier(smodel);                             \
 		magic = protect_start(ptr);                          \
-		*(volatile TYPE *)(ptr) = val;                       \
+		*tptr = val;                                         \
 		protect_end(ptr, magic);                             \
 		post_seq_barrier(smodel);                            \
 	}
@@ -156,14 +162,16 @@ ATOMIC_STORE(long long unsigned int, 8)
 		TYPE oldval;                                                                                    \
 		UWORD magic;                                                                                    \
 		_Bool ret;                                                                                      \
+		TYPE *tptr = (TYPE *)ptr;                                                                       \
+		TYPE *texp = (TYPE *)expected;                                                                  \
 		pre_seq_barrier(smodel);                                                                        \
 		magic = protect_start(ptr);                                                                     \
-		oldval = *(TYPE *)ptr;                                                                          \
-		ret = (oldval == *(TYPE *)expected);                                                            \
+		oldval = *tptr;                                                                                 \
+		ret = (oldval == *texp);                                                                        \
 		if (ret)                                                                                        \
-			*(TYPE *)(ptr) = desired;                                                               \
+			*tptr = desired;                                                                        \
 		else                                                                                            \
-			*(TYPE *)(expected) = oldval;                                                           \
+			*texp = oldval;                                                                         \
 		protect_end(ptr, magic);                                                                        \
 		post_seq_barrier(smodel);                                                                       \
 		return ret;                                                                                     \
