@@ -1,0 +1,4127 @@
+{
+  "MediaContainer": {
+    "size": 1,
+    "allowSync": true,
+    "identifier": "com.plexapp.plugins.library",
+    "librarySectionID": 3,
+    "librarySectionTitle": "Movies",
+    "librarySectionUUID": "add32799-ad0d-4767-a24f-875719895c2d",
+    "mediaTagPrefix": "/system/bundle/media/flags/",
+    "mediaTagVersion": 1736959860,
+    "Metadata": [
+      {
+        "ratingKey": "61466",
+        "key": "/library/metadata/61466",
+        "guid": "plex://movie/5d776b127a53e9001e719244",
+        "slug": "shazam",
+        "studio": "New Line Cinema",
+        "type": "movie",
+        "title": "Shazam!",
+        "librarySectionTitle": "Movies",
+        "librarySectionID": 3,
+        "librarySectionKey": "/library/sections/3",
+        "contentRating": "PG-13",
+        "summary": "A newly fostered young boy in search of his mother instead finds unexpected super powers and soon gains a powerful enemy.",
+        "rating": 9.0,
+        "audienceRating": 8.2,
+        "viewOffset": 3111000,
+        "viewCount": 1,
+        "skipCount": 6,
+        "lastViewedAt": 1737555183,
+        "year": 2019,
+        "tagline": "Just say the word.",
+        "thumb": "/library/metadata/61466/thumb/1735087149",
+        "art": "/library/metadata/61466/art/1735087149",
+        "duration": 7903092,
+        "originallyAvailableAt": "2019-04-02",
+        "addedAt": 1562013436,
+        "updatedAt": 1735087149,
+        "audienceRatingImage": "rottentomatoes://image.rating.upright",
+        "chapterSource": "media",
+        "primaryExtraKey": "/library/metadata/211513",
+        "ratingImage": "rottentomatoes://image.rating.ripe",
+        "Media": [
+          {
+            "id": 428217,
+            "duration": 7903092,
+            "bitrate": 85340,
+            "width": 3840,
+            "height": 2160,
+            "aspectRatio": 1.78,
+            "audioChannels": 8,
+            "audioCodec": "truehd",
+            "videoCodec": "hevc",
+            "videoResolution": "4k",
+            "container": "mkv",
+            "videoFrameRate": "24p",
+            "videoProfile": "main 10",
+            "hasVoiceActivity": true,
+            "Part": [
+              {
+                "accessible": true,
+                "exists": true,
+                "id": 431684,
+                "key": "/library/parts/431684/1562327081/file.mkv",
+                "duration": 7903092,
+                "file": "/mnt/HD/HD_a2/media_2/Movies (4K)/Shazam! (2019)/Shazam! (2019) [Remux-2160p].mkv",
+                "size": 84378629300,
+                "container": "mkv",
+                "deepAnalysisVersion": "6",
+                "indexes": "sd",
+                "requiredBandwidths": "101790,94300,93224,92266,91358,90499,87340,86417",
+                "videoProfile": "main 10",
+                "Stream": [
+                  {
+                    "id": 1212840,
+                    "streamType": 1,
+                    "default": true,
+                    "codec": "hevc",
+                    "index": 0,
+                    "bitrate": 76739,
+                    "language": "English",
+                    "languageTag": "en",
+                    "languageCode": "eng",
+                    "bitDepth": 10,
+                    "chromaLocation": "topleft",
+                    "chromaSubsampling": "4:2:0",
+                    "codedHeight": 2160,
+                    "codedWidth": 3840,
+                    "colorPrimaries": "bt2020",
+                    "colorRange": "tv",
+                    "colorSpace": "bt2020nc",
+                    "colorTrc": "smpte2084",
+                    "frameRate": 23.976,
+                    "height": 2160,
+                    "level": 153,
+                    "profile": "main 10",
+                    "refFrames": 1,
+                    "requiredBandwidths": "92461,84846,84251,83343,82454,81597,79161,78184",
+                    "title": "English",
+                    "width": 3840,
+                    "displayTitle": "4K HDR10",
+                    "extendedDisplayTitle": "English (4K HDR10 HEVC Main 10)"
+                  },
+                  {
+                    "id": 1212841,
+                    "streamType": 2,
+                    "default": true,
+                    "codec": "truehd",
+                    "index": 1,
+                    "channels": 8,
+                    "bitrate": 3645,
+                    "language": "English",
+                    "languageTag": "en",
+                    "languageCode": "eng",
+                    "audioChannelLayout": "7.1",
+                    "bitDepth": 24,
+                    "requiredBandwidths": "4581,4369,3854,3829,3829,3829,3829,3829",
+                    "samplingRate": 48000,
+                    "title": "English",
+                    "displayTitle": "English (TRUEHD 7.1)",
+                    "extendedDisplayTitle": "English (TRUEHD 7.1)"
+                  },
+                  {
+                    "id": 1212842,
+                    "streamType": 2,
+                    "selected": true,
+                    "codec": "ac3",
+                    "index": 2,
+                    "channels": 6,
+                    "bitrate": 448,
+                    "language": "English",
+                    "languageTag": "en",
+                    "languageCode": "eng",
+                    "audioChannelLayout": "5.1(side)",
+                    "requiredBandwidths": "448,448,448,448,448,448,448,448",
+                    "samplingRate": 48000,
+                    "title": "English",
+                    "displayTitle": "English (AC3 5.1)",
+                    "extendedDisplayTitle": "English (AC3 5.1)"
+                  },
+                  {
+                    "id": 1212843,
+                    "streamType": 2,
+                    "codec": "dca",
+                    "index": 3,
+                    "channels": 8,
+                    "bitrate": 4219,
+                    "language": "English",
+                    "languageTag": "en",
+                    "languageCode": "eng",
+                    "audioChannelLayout": "7.1",
+                    "bitDepth": 24,
+                    "profile": "ma",
+                    "requiredBandwidths": "5017,4628,4452,4315,4270,4239,4239,4239",
+                    "samplingRate": 48000,
+                    "title": "English",
+                    "displayTitle": "English (DTS-HD MA 7.1)",
+                    "extendedDisplayTitle": "English (DTS-HD MA 7.1)"
+                  },
+                  {
+                    "id": 1212844,
+                    "streamType": 3,
+                    "canAutoSync": false,
+                    "codec": "pgs",
+                    "index": 4,
+                    "bitrate": 37,
+                    "language": "English",
+                    "languageTag": "en",
+                    "languageCode": "eng",
+                    "requiredBandwidths": "45,45,45,45,45,45,45,45",
+                    "title": "English",
+                    "displayTitle": "English",
+                    "extendedDisplayTitle": "English (PGS)"
+                  },
+                  {
+                    "id": 1212845,
+                    "streamType": 3,
+                    "canAutoSync": false,
+                    "codec": "pgs",
+                    "index": 5,
+                    "bitrate": 23,
+                    "language": "Français",
+                    "languageTag": "fr",
+                    "languageCode": "fra",
+                    "requiredBandwidths": "30,30,30,30,30,30,30,30",
+                    "title": "French",
+                    "displayTitle": "Français",
+                    "extendedDisplayTitle": "French (Français PGS)"
+                  },
+                  {
+                    "id": 1212846,
+                    "streamType": 3,
+                    "canAutoSync": false,
+                    "codec": "pgs",
+                    "index": 6,
+                    "bitrate": 36,
+                    "language": "Italiano",
+                    "languageTag": "it",
+                    "languageCode": "ita",
+                    "requiredBandwidths": "42,42,42,42,42,42,42,42",
+                    "title": "Italian",
+                    "displayTitle": "Italiano",
+                    "extendedDisplayTitle": "Italian (Italiano PGS)"
+                  },
+                  {
+                    "id": 1212847,
+                    "streamType": 3,
+                    "canAutoSync": false,
+                    "codec": "pgs",
+                    "index": 7,
+                    "bitrate": 30,
+                    "language": "Español",
+                    "languageTag": "es",
+                    "languageCode": "spa",
+                    "requiredBandwidths": "39,39,39,39,39,39,39,39",
+                    "title": "Spanish",
+                    "displayTitle": "Español",
+                    "extendedDisplayTitle": "Spanish (Español PGS)"
+                  },
+                  {
+                    "id": 1212848,
+                    "streamType": 3,
+                    "canAutoSync": false,
+                    "codec": "pgs",
+                    "index": 8,
+                    "bitrate": 26,
+                    "language": "Dansk",
+                    "languageTag": "da",
+                    "languageCode": "dan",
+                    "requiredBandwidths": "37,37,37,37,37,37,37,37",
+                    "title": "Danish",
+                    "displayTitle": "Dansk",
+                    "extendedDisplayTitle": "Danish (Dansk PGS)"
+                  },
+                  {
+                    "id": 1212849,
+                    "streamType": 3,
+                    "canAutoSync": false,
+                    "codec": "pgs",
+                    "index": 9,
+                    "bitrate": 25,
+                    "language": "Suomi",
+                    "languageTag": "fi",
+                    "languageCode": "fin",
+                    "requiredBandwidths": "35,35,35,35,35,35,35,35",
+                    "title": "Finnish",
+                    "displayTitle": "Suomi",
+                    "extendedDisplayTitle": "Finnish (Suomi PGS)"
+                  },
+                  {
+                    "id": 1212850,
+                    "streamType": 3,
+                    "canAutoSync": false,
+                    "codec": "pgs",
+                    "index": 10,
+                    "bitrate": 27,
+                    "language": "norsk",
+                    "languageTag": "no",
+                    "languageCode": "nor",
+                    "requiredBandwidths": "34,34,34,34,34,34,34,34",
+                    "title": "Norwegian",
+                    "displayTitle": "norsk",
+                    "extendedDisplayTitle": "Norwegian (norsk PGS)"
+                  },
+                  {
+                    "id": 1212851,
+                    "streamType": 3,
+                    "canAutoSync": false,
+                    "codec": "pgs",
+                    "index": 11,
+                    "bitrate": 27,
+                    "language": "polski",
+                    "languageTag": "pl",
+                    "languageCode": "pol",
+                    "requiredBandwidths": "51,51,51,51,51,51,51,51",
+                    "title": "Polish",
+                    "displayTitle": "polski",
+                    "extendedDisplayTitle": "Polish (polski PGS)"
+                  },
+                  {
+                    "id": 1212852,
+                    "streamType": 3,
+                    "canAutoSync": false,
+                    "codec": "pgs",
+                    "index": 12,
+                    "bitrate": 27,
+                    "language": "Svenska",
+                    "languageTag": "sv",
+                    "languageCode": "swe",
+                    "requiredBandwidths": "34,34,34,34,34,34,34,34",
+                    "title": "Swedish",
+                    "displayTitle": "Svenska",
+                    "extendedDisplayTitle": "Swedish (Svenska PGS)"
+                  },
+                  {
+                    "id": 1212853,
+                    "streamType": 3,
+                    "canAutoSync": false,
+                    "codec": "pgs",
+                    "index": 13,
+                    "bitrate": 30,
+                    "language": "Türkçe",
+                    "languageTag": "tr",
+                    "languageCode": "tur",
+                    "requiredBandwidths": "38,38,38,38,38,38,38,38",
+                    "title": "Turkish",
+                    "displayTitle": "Türkçe",
+                    "extendedDisplayTitle": "Turkish (Türkçe PGS)"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": 375774,
+            "duration": 7903182,
+            "bitrate": 29685,
+            "width": 1920,
+            "height": 1080,
+            "aspectRatio": 1.78,
+            "audioChannels": 8,
+            "audioCodec": "truehd",
+            "videoCodec": "h264",
+            "videoResolution": "1080",
+            "container": "mkv",
+            "videoFrameRate": "24p",
+            "videoProfile": "high",
+            "hasVoiceActivity": true,
+            "Part": [
+              {
+                "accessible": true,
+                "exists": true,
+                "id": 377742,
+                "key": "/library/parts/377742/1660023912/file.mkv",
+                "duration": 7903182,
+                "file": "/mnt/HD/HD_a2/media_2/Movies/Shazam! (2019)/Shazam! (2019) {imdb-tt0448115} [Remux-1080p].mkv",
+                "size": 29325265064,
+                "container": "mkv",
+                "deepAnalysisVersion": "6",
+                "indexes": "sd",
+                "requiredBandwidths": "34468,34065,32997,32409,31872,31336,29913,29913",
+                "videoProfile": "high",
+                "Stream": [
+                  {
+                    "id": 1021234,
+                    "streamType": 1,
+                    "default": true,
+                    "codec": "h264",
+                    "index": 0,
+                    "bitrate": 29045,
+                    "language": "English",
+                    "languageTag": "en",
+                    "languageCode": "eng",
+                    "bitDepth": 8,
+                    "chromaLocation": "left",
+                    "chromaSubsampling": "4:2:0",
+                    "codedHeight": 1088,
+                    "codedWidth": 1920,
+                    "frameRate": 23.976,
+                    "hasScalingMatrix": false,
+                    "height": 1080,
+                    "level": 41,
+                    "profile": "high",
+                    "refFrames": 4,
+                    "requiredBandwidths": "29358,29056,28559,27926,27389,26887,25582,25582",
+                    "scanType": "progressive",
+                    "width": 1920,
+                    "displayTitle": "1080p",
+                    "extendedDisplayTitle": "1080p (H.264)"
+                  },
+                  {
+                    "id": 1021235,
+                    "streamType": 2,
+                    "default": true,
+                    "codec": "truehd",
+                    "index": 1,
+                    "channels": 8,
+                    "bitrate": 3645,
+                    "language": "English",
+                    "languageTag": "en",
+                    "languageCode": "eng",
+                    "audioChannelLayout": "7.1",
+                    "bitDepth": 24,
+                    "requiredBandwidths": "4581,4369,3854,3829,3829,3829,3829,3829",
+                    "samplingRate": 48000,
+                    "title": "TrueHD",
+                    "displayTitle": "English (TRUEHD 7.1)",
+                    "extendedDisplayTitle": "TrueHD (English 7.1)"
+                  },
+                  {
+                    "id": 1021236,
+                    "streamType": 2,
+                    "selected": true,
+                    "codec": "ac3",
+                    "index": 2,
+                    "channels": 6,
+                    "bitrate": 640,
+                    "language": "English",
+                    "languageTag": "en",
+                    "languageCode": "eng",
+                    "audioChannelLayout": "5.1(side)",
+                    "requiredBandwidths": "640,640,640,640,640,640,640,640",
+                    "samplingRate": 48000,
+                    "title": "AC3",
+                    "displayTitle": "English (AC3 5.1)",
+                    "extendedDisplayTitle": "AC3 (English 5.1)"
+                  },
+                  {
+                    "id": 1021237,
+                    "streamType": 3,
+                    "canAutoSync": false,
+                    "default": true,
+                    "codec": "srt",
+                    "index": 3,
+                    "bitrate": 0,
+                    "language": "Dansk",
+                    "languageTag": "da",
+                    "languageCode": "dan",
+                    "requiredBandwidths": "1,1,1,1,1,1,1,1",
+                    "displayTitle": "Dansk",
+                    "extendedDisplayTitle": "Dansk (SRT)"
+                  },
+                  {
+                    "id": 1021238,
+                    "streamType": 3,
+                    "canAutoSync": false,
+                    "codec": "srt",
+                    "index": 4,
+                    "bitrate": 0,
+                    "language": "Svenska",
+                    "languageTag": "sv",
+                    "languageCode": "swe",
+                    "requiredBandwidths": "1,1,1,1,1,1,1,1",
+                    "displayTitle": "Svenska",
+                    "extendedDisplayTitle": "Svenska (SRT)"
+                  },
+                  {
+                    "id": 1021239,
+                    "streamType": 3,
+                    "canAutoSync": false,
+                    "codec": "srt",
+                    "index": 5,
+                    "bitrate": 0,
+                    "language": "norsk",
+                    "languageTag": "no",
+                    "languageCode": "nor",
+                    "requiredBandwidths": "1,1,1,1,1,1,1,1",
+                    "displayTitle": "norsk",
+                    "extendedDisplayTitle": "norsk (SRT)"
+                  },
+                  {
+                    "id": 1021240,
+                    "streamType": 3,
+                    "canAutoSync": false,
+                    "codec": "srt",
+                    "index": 6,
+                    "bitrate": 0,
+                    "language": "Suomi",
+                    "languageTag": "fi",
+                    "languageCode": "fin",
+                    "requiredBandwidths": "1,1,1,1,1,1,1,1",
+                    "displayTitle": "Suomi",
+                    "extendedDisplayTitle": "Suomi (SRT)"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "Image": [
+          {
+            "alt": "Shazam!",
+            "type": "coverPoster",
+            "url": "/library/metadata/61466/thumb/1735087149"
+          },
+          {
+            "alt": "Shazam!",
+            "type": "background",
+            "url": "/library/metadata/61466/art/1735087149"
+          },
+          {
+            "alt": "Shazam!",
+            "type": "clearLogo",
+            "url": "/library/metadata/61466/clearLogo/1735087149"
+          }
+        ],
+        "Genre": [
+          {
+            "id": 473424,
+            "filter": "genre=473424",
+            "tag": "Action"
+          },
+          {
+            "id": 99,
+            "filter": "genre=99",
+            "tag": "Adventure"
+          },
+          {
+            "id": 101,
+            "filter": "genre=101",
+            "tag": "Fantasy"
+          },
+          {
+            "id": 263,
+            "filter": "genre=263",
+            "tag": "Comedy"
+          }
+        ],
+        "Country": [
+          {
+            "id": 98589,
+            "filter": "country=98589",
+            "tag": "United States of America"
+          }
+        ],
+        "Guid": [
+          {
+            "id": "imdb://tt0448115"
+          },
+          {
+            "id": "tmdb://287947"
+          },
+          {
+            "id": "tvdb://2487"
+          }
+        ],
+        "Rating": [
+          {
+            "image": "imdb://image.rating",
+            "value": 7.0,
+            "type": "audience"
+          },
+          {
+            "image": "rottentomatoes://image.rating.ripe",
+            "value": 9.0,
+            "type": "critic"
+          },
+          {
+            "image": "rottentomatoes://image.rating.upright",
+            "value": 8.2,
+            "type": "audience"
+          },
+          {
+            "image": "themoviedb://image.rating",
+            "value": 7.0,
+            "type": "audience"
+          }
+        ],
+        "Director": [
+          {
+            "id": 529077,
+            "filter": "director=529077",
+            "tag": "David F. Sandberg",
+            "tagKey": "5d776ab1ad5437001f785ef7",
+            "thumb": "https://metadata-static.plex.tv/4/people/49c6a4b6a89ddb35094f96bc20d045dc.jpg"
+          }
+        ],
+        "Writer": [
+          {
+            "id": 529078,
+            "filter": "writer=529078",
+            "tag": "Henry Gayden",
+            "tagKey": "5d776a7996b655001fdef937",
+            "thumb": "https://metadata-static.plex.tv/7/people/7df39eb10de50b18517e268698914895.jpg"
+          },
+          {
+            "id": 529079,
+            "filter": "writer=529079",
+            "tag": "C.C. Beck",
+            "tagKey": "5e164aa8cd0850003b77301f"
+          },
+          {
+            "id": 529080,
+            "filter": "writer=529080",
+            "tag": "Bill Parker",
+            "tagKey": "5e164aa861c6140040d805a7"
+          },
+          {
+            "id": 516328,
+            "filter": "writer=516328",
+            "tag": "Darren Lemke",
+            "tagKey": "5d776895374a5b001fec9daf",
+            "thumb": "https://metadata-static.plex.tv/3/people/33db3d0dfa6c720f44a0fa8d0d7d3253.jpg"
+          }
+        ],
+        "Role": [
+          {
+            "id": 529081,
+            "filter": "actor=529081",
+            "tag": "Zachary Levi",
+            "tagKey": "5d7768373c3c2a001fbcebef",
+            "role": "Shazam",
+            "thumb": "https://metadata-static.plex.tv/iva/person/83401/227ee21dea4ee56b997d05d30190ca1c.jpg"
+          },
+          {
+            "id": 502224,
+            "filter": "actor=502224",
+            "tag": "Mark Strong",
+            "tagKey": "5d7768253c3c2a001fbca9ac",
+            "role": "Dr. Sivana",
+            "thumb": "https://metadata-static.plex.tv/1/people/1fa83a48ef819f83d6781ff73f961b8a.jpg"
+          },
+          {
+            "id": 529082,
+            "filter": "actor=529082",
+            "tag": "Asher Angel",
+            "tagKey": "5d77687c33f255001e857d12",
+            "role": "Billy Batson",
+            "thumb": "https://metadata-static.plex.tv/4/people/436a55a939c5cf3f3bb9fdff4b209699.jpg"
+          },
+          {
+            "id": 520526,
+            "filter": "actor=520526",
+            "tag": "Jack Dylan Grazer",
+            "tagKey": "5d776b127a53e9001e719279",
+            "role": "Freddy Freeman",
+            "thumb": "https://metadata-static.plex.tv/8/people/85ae4515ad08920eb4bcba5ac494ca32.jpg"
+          },
+          {
+            "id": 527056,
+            "filter": "actor=527056",
+            "tag": "Adam Brody",
+            "tagKey": "5d776828a091de001f2e64aa",
+            "role": "Super Hero Freddy",
+            "thumb": "https://metadata-static.plex.tv/c/people/c8169fe43278107431a6af06b1197e91.jpg"
+          },
+          {
+            "id": 504750,
+            "filter": "actor=504750",
+            "tag": "Djimon Hounsou",
+            "tagKey": "5d7768267228e5001f1dcdb9",
+            "role": "Wizard",
+            "thumb": "https://metadata-static.plex.tv/5/people/534fa784b6cc321c266494c055bf4b57.jpg"
+          },
+          {
+            "id": 687430,
+            "filter": "actor=687430",
+            "tag": "Faithe Herman",
+            "tagKey": "5f404f9502101b0040faae90",
+            "role": "Darla Dudley",
+            "thumb": "https://metadata-static.plex.tv/8/people/8fba949637d569c3b6441625e6706e33.jpg"
+          },
+          {
+            "id": 504149,
+            "filter": "actor=504149",
+            "tag": "Meagan Good",
+            "tagKey": "5d776826999c64001ec2c5d1",
+            "role": "Super Hero Darla",
+            "thumb": "https://metadata-static.plex.tv/c/people/c0fb30408cd5d9bd2a25e4c896e1e9c5.jpg"
+          },
+          {
+            "id": 639732,
+            "filter": "actor=639732",
+            "tag": "Grace Caroline Currey",
+            "tagKey": "5d776831eb5d26001f1dfe79",
+            "role": "Mary Bromfield",
+            "thumb": "https://metadata-static.plex.tv/b/people/b807b7030baa792d3ae72c269f33faa3.jpg"
+          },
+          {
+            "id": 529085,
+            "filter": "actor=529085",
+            "tag": "Michelle Borth",
+            "tagKey": "5d7768458718ba001e3179ef",
+            "role": "Super Hero Mary",
+            "thumb": "https://metadata-static.plex.tv/f/people/f65ed507fdec213a64b79a92e208b32b.jpg"
+          },
+          {
+            "id": 529086,
+            "filter": "actor=529086",
+            "tag": "Ian Chen",
+            "tagKey": "5d776b127a53e9001e71927b",
+            "role": "Eugene Choi",
+            "thumb": "https://metadata-static.plex.tv/f/people/fd194cfec58fe87ecca75eab56442d00.jpg"
+          },
+          {
+            "id": 527274,
+            "filter": "actor=527274",
+            "tag": "Ross Butler",
+            "tagKey": "5d776b127a53e9001e71927c",
+            "role": "Super Hero Eugene",
+            "thumb": "https://metadata-static.plex.tv/people/5d776b127a53e9001e71927c.jpg"
+          },
+          {
+            "id": 529087,
+            "filter": "actor=529087",
+            "tag": "Jovan Armand",
+            "tagKey": "5d776b127a53e9001e71927d",
+            "role": "Pedro Pena",
+            "thumb": "https://metadata-static.plex.tv/1/people/1e38094f5f63a719e1ca4452707aad3e.jpg"
+          },
+          {
+            "id": 516285,
+            "filter": "actor=516285",
+            "tag": "D.J. Cotrona",
+            "tagKey": "5d776831eb5d26001f1dfcf7",
+            "role": "Super Hero Pedro",
+            "thumb": "https://metadata-static.plex.tv/9/people/9db31cd0e71707e7b10e7cdab15e66b6.jpg"
+          },
+          {
+            "id": 529088,
+            "filter": "actor=529088",
+            "tag": "Marta Milans",
+            "tagKey": "5d7768ba1999bc0020dcf51c",
+            "role": "Rosa Vasquez",
+            "thumb": "https://metadata-static.plex.tv/0/people/098996158b6bcd5259b4c3f4440ee800.jpg"
+          },
+          {
+            "id": 529089,
+            "filter": "actor=529089",
+            "tag": "Cooper Andrews",
+            "tagKey": "5d776b127a53e9001e71927e",
+            "role": "Victor Vasquez",
+            "thumb": "https://metadata-static.plex.tv/b/people/bbb7163a77836f020dbbf1aa010987cd.jpg"
+          },
+          {
+            "id": 529090,
+            "filter": "actor=529090",
+            "tag": "Ethan Pugiotto",
+            "tagKey": "5d776b127a53e9001e71927f",
+            "role": "Thaddeus Sivana (1974)",
+            "thumb": "https://metadata-static.plex.tv/4/people/4751b8ee0a121469a691af5459d32347.jpg"
+          },
+          {
+            "id": 506612,
+            "filter": "actor=506612",
+            "tag": "John Glover",
+            "tagKey": "5d776826103a2d001f563f62",
+            "role": "Mr. Sivana",
+            "thumb": "https://metadata-static.plex.tv/a/people/ae1661cc26e560d83101b7a30fb740cd.jpg"
+          },
+          {
+            "id": 529091,
+            "filter": "actor=529091",
+            "tag": "Landon Doak",
+            "tagKey": "5d776b127a53e9001e719280",
+            "role": "Sid Sivana (1974)",
+            "thumb": "https://metadata-static.plex.tv/a/people/a20c316385a2a52019f0d55f1916f6aa.jpg"
+          },
+          {
+            "id": 529122,
+            "filter": "actor=529122",
+            "tag": "Wayne Ward",
+            "tagKey": "5d77683c6f4521001ea9d5f2",
+            "role": "Sid Sivana",
+            "thumb": "https://metadata-static.plex.tv/people/5d77683c6f4521001ea9d5f2.jpg"
+          },
+          {
+            "id": 529092,
+            "filter": "actor=529092",
+            "tag": "Paul Braunstein",
+            "tagKey": "5d7768a0431c830024c113d7",
+            "role": "Officer",
+            "thumb": "https://metadata-static.plex.tv/f/people/f966867d312d01bc929cd09ce6f85df6.jpg"
+          },
+          {
+            "id": 725469,
+            "filter": "actor=725469",
+            "tag": "Nadine Whiteman",
+            "tagKey": "5d776b127a53e9001e719282",
+            "role": "Officer",
+            "thumb": "https://metadata-static.plex.tv/people/5d776b127a53e9001e719282.jpg"
+          },
+          {
+            "id": 529093,
+            "filter": "actor=529093",
+            "tag": "David Kohlsmith",
+            "tagKey": "5d776b127a53e9001e719283",
+            "role": "Young Billy",
+            "thumb": "https://metadata-static.plex.tv/3/people/3d154fc39261d3097b93226d7ab6bcad.jpg"
+          },
+          {
+            "id": 529094,
+            "filter": "actor=529094",
+            "tag": "Caroline Palmer",
+            "tagKey": "5d776b127a53e9001e719284",
+            "role": "Billy's Mom",
+            "thumb": "https://metadata-static.plex.tv/people/5d776b127a53e9001e719284.jpg"
+          },
+          {
+            "id": 529095,
+            "filter": "actor=529095",
+            "tag": "Emily Nixon",
+            "tagKey": "5d776b127a53e9001e719285",
+            "role": "Woman in Red Coat",
+            "thumb": "https://metadata-static.plex.tv/people/5d776b127a53e9001e719285.jpg"
+          },
+          {
+            "id": 639733,
+            "filter": "actor=639733",
+            "tag": "Michael Xavier",
+            "tagKey": "5d776a5fad5437001f77bc3f",
+            "role": "Carnival Cop",
+            "thumb": "https://metadata-static.plex.tv/3/people/30a83f500e3188084d448323caddaca8.jpg"
+          },
+          {
+            "id": 639734,
+            "filter": "actor=639734",
+            "tag": "Keisha T. Fraser",
+            "tagKey": "5f3fdddb5a76a80042cf7c00",
+            "role": "Rachel Batson"
+          },
+          {
+            "id": 529098,
+            "filter": "actor=529098",
+            "tag": "Andi Osho",
+            "tagKey": "5d7768a896b655001fdbe4d8",
+            "role": "Ms. E.B. Glover",
+            "thumb": "https://metadata-static.plex.tv/e/people/e779b9ab7ffd0540758cdb554c6e6e49.jpg"
+          },
+          {
+            "id": 529097,
+            "filter": "actor=529097",
+            "tag": "Lotta Losten",
+            "tagKey": "5d776ab1ad5437001f785ef8",
+            "role": "Dr. Lynn Crosby",
+            "thumb": "https://metadata-static.plex.tv/5/people/5af75ebea31011988e3d516d3281d89e.jpg"
+          },
+          {
+            "id": 529125,
+            "filter": "actor=529125",
+            "tag": "Lisa Truong",
+            "tagKey": "5e16491491c2030041224acc",
+            "role": "Ms. Kwan",
+            "thumb": "https://metadata-static.plex.tv/people/5e16491491c2030041224acc.jpg"
+          },
+          {
+            "id": 529096,
+            "filter": "actor=529096",
+            "tag": "Carson MacCormac",
+            "tagKey": "5d776b127a53e9001e719286",
+            "role": "Brett Bryer",
+            "thumb": "https://metadata-static.plex.tv/2/people/2ac795d724d9e638af22cdc1af6a3d28.jpg"
+          },
+          {
+            "id": 529116,
+            "filter": "actor=529116",
+            "tag": "Evan Marsh",
+            "tagKey": "5d776b127a53e9001e719296",
+            "role": "Burke Breyer",
+            "thumb": "https://metadata-static.plex.tv/people/5d776b127a53e9001e719296.jpg"
+          },
+          {
+            "id": 593551,
+            "filter": "actor=593551",
+            "tag": "Joseph Pierre",
+            "tagKey": "5d776c21fb0d55001f57dcc1",
+            "role": "Drunk Guy",
+            "thumb": "https://metadata-static.plex.tv/people/5d776c21fb0d55001f57dcc1.jpg"
+          },
+          {
+            "id": 529106,
+            "filter": "actor=529106",
+            "tag": "Jhaleil Swaby",
+            "tagKey": "5d776b127a53e9001e71928e",
+            "role": "Passing Teen",
+            "thumb": "https://metadata-static.plex.tv/people/5d776b127a53e9001e71928e.jpg"
+          },
+          {
+            "id": 639735,
+            "filter": "actor=639735",
+            "tag": "Misha Rasaiah",
+            "tagKey": "5d776a6723d5a3001f504556",
+            "role": "Woman"
+          },
+          {
+            "id": 773192,
+            "filter": "actor=773192",
+            "tag": "Luke Gallo",
+            "tagKey": "5d7768d37a53e9001e6da052",
+            "role": "Mugger"
+          },
+          {
+            "id": 526762,
+            "filter": "actor=526762",
+            "tag": "Lovina Yavari",
+            "tagKey": "5d776b127a53e9001e71928b",
+            "role": "Store Clerk",
+            "thumb": "https://metadata-static.plex.tv/2/people/258c13957679f2a2c1b9430790065f7f.jpg"
+          },
+          {
+            "id": 586896,
+            "filter": "actor=586896",
+            "tag": "Craig Henry",
+            "tagKey": "5d7769a3fb0d55001f52ba06",
+            "role": "Robber",
+            "thumb": "https://metadata-static.plex.tv/people/5d7769a3fb0d55001f52ba06.jpg"
+          },
+          {
+            "id": 529362,
+            "filter": "actor=529362",
+            "tag": "Shawn Stewart",
+            "tagKey": "5d7768377228e5001f1deec3",
+            "role": "Robber",
+            "thumb": "https://metadata-static.plex.tv/people/5d7768377228e5001f1deec3.jpg"
+          },
+          {
+            "id": 529117,
+            "filter": "actor=529117",
+            "tag": "Kerri Kamara",
+            "tagKey": "5d776b127a53e9001e719297",
+            "role": "Attractive Woman",
+            "thumb": "https://metadata-static.plex.tv/people/5d776b127a53e9001e719297.jpg"
+          },
+          {
+            "id": 639737,
+            "filter": "actor=639737",
+            "tag": "Adam Rodness",
+            "tagKey": "5d776895594b2b001e6902e2",
+            "role": "Receptionist",
+            "thumb": "https://metadata-static.plex.tv/6/people/63c29fa13098abfa22b94e46fa96bdee.jpg"
+          },
+          {
+            "id": 645091,
+            "filter": "actor=645091",
+            "tag": "Cliff Saunders",
+            "tagKey": "5dcd37823bb54a001f8526cd",
+            "role": "School Security Guard",
+            "thumb": "https://metadata-static.plex.tv/2/people/2e425672ebb5e1180ad7532718ae8d29.jpg"
+          },
+          {
+            "id": 510874,
+            "filter": "actor=510874",
+            "tag": "Simon Northwood",
+            "tagKey": "5d77683454f42c001f8c4310",
+            "role": "Pissed Off Phone Owner",
+            "thumb": "https://metadata-static.plex.tv/people/5d77683454f42c001f8c4310.jpg"
+          },
+          {
+            "id": 773193,
+            "filter": "actor=773193",
+            "tag": "Ken Mohabir",
+            "tagKey": "5f3ff50302101b0040f0a8dd",
+            "role": "Freaked Out Man"
+          },
+          {
+            "id": 597435,
+            "filter": "actor=597435",
+            "tag": "Paloma Nuñez",
+            "tagKey": "5d776b5c594b2b001e6d79e3",
+            "role": "Realtor",
+            "thumb": "https://metadata-static.plex.tv/d/people/d90aa6b0b0aa2b40ab6df8af766b1071.jpg"
+          },
+          {
+            "id": 639739,
+            "filter": "actor=639739",
+            "tag": "Ilan O'Driscoll",
+            "tagKey": "5f3fbecdfea1a1003f960280",
+            "role": "Student"
+          },
+          {
+            "id": 529108,
+            "filter": "actor=529108",
+            "tag": "Bryce Arden Poe",
+            "tagKey": "5d776b127a53e9001e719290",
+            "role": "Student"
+          },
+          {
+            "id": 529109,
+            "filter": "actor=529109",
+            "tag": "Tosh Robertson",
+            "tagKey": "5d77683f880197001ec959ff",
+            "role": "Student"
+          },
+          {
+            "id": 529104,
+            "filter": "actor=529104",
+            "tag": "Rachel Boyd",
+            "tagKey": "5d776b127a53e9001e71928c",
+            "role": "Senior Girl",
+            "thumb": "https://metadata-static.plex.tv/people/5d776b127a53e9001e71928c.jpg"
+          },
+          {
+            "id": 529880,
+            "filter": "actor=529880",
+            "tag": "Jeff Sanca",
+            "tagKey": "5d776858880197001ec99b93",
+            "role": "Bus Driver",
+            "thumb": "https://metadata-static.plex.tv/people/5d776858880197001ec99b93.jpg"
+          },
+          {
+            "id": 639740,
+            "filter": "actor=639740",
+            "tag": "Dan Skene",
+            "tagKey": "5d77683c4de0ee001fccce80",
+            "role": "Bus Passenger",
+            "thumb": "https://metadata-static.plex.tv/9/people/9a3aae3a0a9c552d8c9dd651d6244f89.jpg"
+          },
+          {
+            "id": 529113,
+            "filter": "actor=529113",
+            "tag": "Angelica Lisk-Hann",
+            "tagKey": "5d7768324de0ee001fccad09",
+            "role": "Bus Passenger",
+            "thumb": "https://metadata-static.plex.tv/b/people/b0a6fd668c2da402fe1e99eaf79800bb.jpg"
+          },
+          {
+            "id": 529111,
+            "filter": "actor=529111",
+            "tag": "Cassandra Ebner",
+            "tagKey": "5d776b127a53e9001e719293",
+            "role": "Bus Passenger",
+            "thumb": "https://metadata-static.plex.tv/people/5d776b127a53e9001e719293.jpg"
+          },
+          {
+            "id": 639741,
+            "filter": "actor=639741",
+            "tag": "John Stead",
+            "tagKey": "5d77684261141d001fb17100",
+            "role": "Bus Passenger",
+            "thumb": "https://metadata-static.plex.tv/7/people/7bd67116fb23fdb01c3d37b4498b69bb.jpg"
+          },
+          {
+            "id": 529129,
+            "filter": "actor=529129",
+            "tag": "Allen Keng",
+            "tagKey": "5d776a8c47dd6e001f6d3f85",
+            "role": "Bus Passenger",
+            "thumb": "https://metadata-static.plex.tv/people/5d776a8c47dd6e001f6d3f85.jpg"
+          },
+          {
+            "id": 552484,
+            "filter": "actor=552484",
+            "tag": "Mitra Suri",
+            "tagKey": "5e16534a91c20300412301d3",
+            "role": "Bus Passenger",
+            "thumb": "https://metadata-static.plex.tv/6/people/6ab666f25e2dfb3a36cfe021f897befb.jpg"
+          },
+          {
+            "id": 663365,
+            "filter": "actor=663365",
+            "tag": "Stephannie Hawkins",
+            "tagKey": "5d776b127a53e9001e719294",
+            "role": "Bus Passenger",
+            "thumb": "https://metadata-static.plex.tv/d/people/d43f49a1278097f8e0c82f3eb205df19.jpg"
+          },
+          {
+            "id": 582647,
+            "filter": "actor=582647",
+            "tag": "Eli Martyr",
+            "tagKey": "5d776b1bfb0d55001f55c33b",
+            "role": "Bus Passenger",
+            "thumb": "https://metadata-static.plex.tv/7/people/797cd87e8a540a56ec2e4041b793ca4a.jpg"
+          },
+          {
+            "id": 510868,
+            "filter": "actor=510868",
+            "tag": "Nneka Elliott",
+            "tagKey": "5d776d3bfb0d55001f59adab",
+            "role": "Newscaster",
+            "thumb": "https://metadata-static.plex.tv/2/people/20ac91daa865e0f3566a3ce04af3e938.jpg"
+          },
+          {
+            "id": 639742,
+            "filter": "actor=639742",
+            "tag": "Aria Anthony",
+            "tagKey": "5f0d309f90f2a8003a22b62d",
+            "role": "Little Girl With Santa"
+          },
+          {
+            "id": 578988,
+            "filter": "actor=578988",
+            "tag": "Brian Kaulback",
+            "tagKey": "5d7768366f4521001ea9c377",
+            "role": "Mall Santa",
+            "thumb": "https://metadata-static.plex.tv/people/5d7768366f4521001ea9c377.jpg"
+          },
+          {
+            "id": 639743,
+            "filter": "actor=639743",
+            "tag": "Chemika Bennett-Heath",
+            "tagKey": "5d776a25f617c9002016937b",
+            "role": "Sales Assistant",
+            "thumb": "https://metadata-static.plex.tv/people/5d776a25f617c9002016937b.jpg"
+          },
+          {
+            "id": 567133,
+            "filter": "actor=567133",
+            "tag": "Deborah Tennant",
+            "tagKey": "5d776874eb5d26001f1ec012",
+            "role": "Customer in Changing Room",
+            "thumb": "https://metadata-static.plex.tv/people/5d776874eb5d26001f1ec012.jpg"
+          },
+          {
+            "id": 510867,
+            "filter": "actor=510867",
+            "tag": "Martin Roach",
+            "tagKey": "5d7768266f4521001ea98cf4",
+            "role": "Bill Parker",
+            "thumb": "https://metadata-static.plex.tv/f/people/f7d88961da557251e5d8b5d432411858.jpg"
+          },
+          {
+            "id": 529124,
+            "filter": "actor=529124",
+            "tag": "Allison Brennan",
+            "tagKey": "5d7768e951dd69001fe12527",
+            "role": "Cissie Sommerly",
+            "thumb": "https://metadata-static.plex.tv/2/people/25340844db64480d9120f89672a5ec1e.jpg"
+          },
+          {
+            "id": 597366,
+            "filter": "actor=597366",
+            "tag": "Damir Andrei",
+            "tagKey": "5d77682a85719b001f3a1572",
+            "role": "Charlie Beck"
+          },
+          {
+            "id": 639744,
+            "filter": "actor=639744",
+            "tag": "Steve Newburn",
+            "tagKey": "5e16449120b9e6003e34f0cb",
+            "role": "Crocodile Puppeteer"
+          },
+          {
+            "id": 639745,
+            "filter": "actor=639745",
+            "tag": "Neil Morrill",
+            "tagKey": "5e163b41cd0850003b7643a0",
+            "role": "Crocodile Puppeteer"
+          },
+          {
+            "id": 789213,
+            "filter": "actor=789213",
+            "tag": "Stephen Alexander",
+            "tagKey": "5e204208785b5a003bb2e9ea",
+            "role": "Carnival Goer",
+            "thumb": "https://metadata-static.plex.tv/1/people/16cbfa99a87dcd4afbe5a19f13c056c1.jpg"
+          },
+          {
+            "id": 687073,
+            "filter": "actor=687073",
+            "tag": "Pearl Sun",
+            "tagKey": "5d776b127a53e9001e719292",
+            "role": "Carnival Goer",
+            "thumb": "https://metadata-static.plex.tv/people/5d776b127a53e9001e719292.jpg"
+          },
+          {
+            "id": 645092,
+            "filter": "actor=645092",
+            "tag": "Anthony Gritsyuk",
+            "tagKey": "5f3fc5241ae7100041fd0d45",
+            "role": "Carnival Goer"
+          },
+          {
+            "id": 529114,
+            "filter": "actor=529114",
+            "tag": "Jesse Bond",
+            "tagKey": "5d7768a66f6af7001ee59c06",
+            "role": "Father at Carnival",
+            "thumb": "https://metadata-static.plex.tv/5/people/5f462c26ebc5d189c2d73414a64db23d.jpg"
+          },
+          {
+            "id": 529115,
+            "filter": "actor=529115",
+            "tag": "Harper Gunn",
+            "tagKey": "5d776b127a53e9001e719295",
+            "role": "Little Girl at Carnival",
+            "thumb": "https://metadata-static.plex.tv/people/5d776b127a53e9001e719295.jpg"
+          },
+          {
+            "id": 780028,
+            "filter": "actor=780028",
+            "tag": "Matthew Binkley",
+            "tagKey": "5f401fd2ce2564003f8d9c27",
+            "role": "Love Park Couple",
+            "thumb": "https://metadata-static.plex.tv/c/people/c84a272bbaa04fef63b2b1820bf39d56.jpg"
+          },
+          {
+            "id": 639748,
+            "filter": "actor=639748",
+            "tag": "Violetta Pioro",
+            "tagKey": "5f402e8ec63b480040dfabc7",
+            "role": "Love Park Couple"
+          },
+          {
+            "id": 529107,
+            "filter": "actor=529107",
+            "tag": "Jackson Reid",
+            "tagKey": "5d776b127a53e9001e71928f",
+            "role": "Little Boy",
+            "thumb": "https://metadata-static.plex.tv/people/5d776b127a53e9001e71928f.jpg"
+          },
+          {
+            "id": 567077,
+            "filter": "actor=567077",
+            "tag": "Hazel Gorin",
+            "tagKey": "5e16474b91c203004122316a",
+            "role": "Stunned Lunch Lady",
+            "thumb": "https://metadata-static.plex.tv/people/5e16474b91c203004122316a.jpg"
+          },
+          {
+            "id": 506984,
+            "filter": "actor=506984",
+            "tag": "Steve Blum",
+            "tagKey": "5d776828103a2d001f564975",
+            "role": "Sins Voice Actor (voice)",
+            "thumb": "https://metadata-static.plex.tv/people/5d776828103a2d001f564975.jpg"
+          },
+          {
+            "id": 518993,
+            "filter": "actor=518993",
+            "tag": "Darin De Paul",
+            "tagKey": "5d776a3bad5437001f776969",
+            "role": "Sins Voice Actor (voice)",
+            "thumb": "https://metadata-static.plex.tv/people/5d776a3bad5437001f776969.jpg"
+          },
+          {
+            "id": 501862,
+            "filter": "actor=501862",
+            "tag": "Fred Tatasciore",
+            "tagKey": "5d776829999c64001ec2cf80",
+            "role": "Sins Voice Actor (voice)",
+            "thumb": "https://metadata-static.plex.tv/0/people/0c74f8f5487d737d7a32299876a1129b.jpg"
+          },
+          {
+            "id": 639749,
+            "filter": "actor=639749",
+            "tag": "Callie Presniak",
+            "tagKey": "5d7770a4dd931c001e3910da",
+            "role": "Interviewee"
+          },
+          {
+            "id": 624450,
+            "filter": "actor=624450",
+            "tag": "Craig Warnock",
+            "tagKey": "5d7768693ab0e7001f500918",
+            "role": "Interviewee",
+            "thumb": "https://metadata-static.plex.tv/people/5d7768693ab0e7001f500918.jpg"
+          },
+          {
+            "id": 529123,
+            "filter": "actor=529123",
+            "tag": "Pamela Matthews",
+            "tagKey": "5d7768cbfb0d55001f519d65",
+            "role": "Interviewee",
+            "thumb": "https://metadata-static.plex.tv/people/5d7768cbfb0d55001f519d65.jpg"
+          },
+          {
+            "id": 529101,
+            "filter": "actor=529101",
+            "tag": "Ava Preston",
+            "tagKey": "5d776b127a53e9001e71928a",
+            "role": "Interviewee",
+            "thumb": "https://metadata-static.plex.tv/b/people/b95ebd410759546e917c40cc12dec731.jpg"
+          },
+          {
+            "id": 529102,
+            "filter": "actor=529102",
+            "tag": "Manuel Rodriguez-Saenz",
+            "tagKey": "5d77697d96b655001fdd01bf",
+            "role": "Interviewee",
+            "thumb": "https://metadata-static.plex.tv/0/people/0eecc64ed3f5d04587aa446c82602999.jpg"
+          },
+          {
+            "id": 529103,
+            "filter": "actor=529103",
+            "tag": "Ali Badshah",
+            "tagKey": "5d776966fb0d55001f5251d7",
+            "role": "Interviewee",
+            "thumb": "https://metadata-static.plex.tv/3/people/3be066e71d7960c8ae4495df8efb9dde.jpg"
+          },
+          {
+            "id": 529127,
+            "filter": "actor=529127",
+            "tag": "Tabitha Tao",
+            "tagKey": "5f4025ae8642250042837174",
+            "role": "Interviewee",
+            "thumb": "https://image.tmdb.org/t/p/original/iEugbVlkxcj4oE3zYHtmZo7iIcI.jpg"
+          },
+          {
+            "id": 515493,
+            "filter": "actor=515493",
+            "tag": "Lisa Codrington",
+            "tagKey": "5d776c48fb0d55001f5832b8",
+            "role": "Interviewee",
+            "thumb": "https://metadata-static.plex.tv/people/5d776c48fb0d55001f5832b8.jpg"
+          },
+          {
+            "id": 505358,
+            "filter": "actor=505358",
+            "tag": "Seth Green",
+            "tagKey": "5d776828961905001eb91705",
+            "role": "Friend (uncredited)",
+            "thumb": "https://metadata-static.plex.tv/people/5d776828961905001eb91705.jpg"
+          },
+          {
+            "id": 529120,
+            "filter": "actor=529120",
+            "tag": "David F. Sandberg",
+            "tagKey": "5d776ab1ad5437001f785ef7",
+            "role": "Mr. Mind / Travis / Gangster Crocodile-Men (uncredited)",
+            "thumb": "https://metadata-static.plex.tv/4/people/49c6a4b6a89ddb35094f96bc20d045dc.jpg"
+          },
+          {
+            "id": 529121,
+            "filter": "actor=529121",
+            "tag": "Ryan Handley",
+            "tagKey": "5d776b127a53e9001e71929a",
+            "role": "Superman (uncredited)"
+          },
+          {
+            "id": 529126,
+            "filter": "actor=529126",
+            "tag": "Bill R. Dean",
+            "tagKey": "5e163a58cd0850003b76348c",
+            "role": "Batman Toy (voice) (uncredited)"
+          },
+          {
+            "id": 780669,
+            "filter": "actor=780669",
+            "tag": "Jim Pagiamtzis",
+            "tagKey": "663a18d5a4aa4bdc9e6b9db6",
+            "role": "Night Club Patron (uncredited)",
+            "thumb": "https://image.tmdb.org/t/p/original/gJf9HSkLokZGw8CaQzbXl2UITKL.jpg"
+          },
+          {
+            "id": 504752,
+            "filter": "actor=504752",
+            "tag": "Natalia Safran",
+            "tagKey": "5d77682b61141d001fb13ebe",
+            "role": "Mrs. Sivana (uncredited)",
+            "thumb": "https://metadata-static.plex.tv/2/people/2cd06d5d56bc04fb51b17c8e074fcb0b.jpg"
+          }
+        ],
+        "Producer": [
+          {
+            "id": 504782,
+            "filter": "producer=504782",
+            "tag": "Peter Safran",
+            "tagKey": "5d77683b4de0ee001fcccc4c",
+            "thumb": "https://metadata-static.plex.tv/6/people/64470586773fac92b1b55c22c6920336.jpg"
+          }
+        ],
+        "Chapter": [
+          {
+            "id": 4,
+            "filter": "thumb=4",
+            "index": 1,
+            "startTimeOffset": 0,
+            "endTimeOffset": 498790,
+            "thumb": "/library/media/375774/chapterImages/1"
+          },
+          {
+            "id": 4,
+            "filter": "thumb=4",
+            "index": 2,
+            "startTimeOffset": 498790,
+            "endTimeOffset": 911285,
+            "thumb": "/library/media/375774/chapterImages/2"
+          },
+          {
+            "id": 4,
+            "filter": "thumb=4",
+            "index": 3,
+            "startTimeOffset": 911285,
+            "endTimeOffset": 1522400,
+            "thumb": "/library/media/375774/chapterImages/3"
+          },
+          {
+            "id": 4,
+            "filter": "thumb=4",
+            "index": 4,
+            "startTimeOffset": 1522400,
+            "endTimeOffset": 1917620,
+            "thumb": "/library/media/375774/chapterImages/4"
+          },
+          {
+            "id": 4,
+            "filter": "thumb=4",
+            "index": 5,
+            "startTimeOffset": 1917620,
+            "endTimeOffset": 2340250,
+            "thumb": "/library/media/375774/chapterImages/5"
+          },
+          {
+            "id": 4,
+            "filter": "thumb=4",
+            "index": 6,
+            "startTimeOffset": 2340250,
+            "endTimeOffset": 3007710,
+            "thumb": "/library/media/375774/chapterImages/6"
+          },
+          {
+            "id": 4,
+            "filter": "thumb=4",
+            "index": 7,
+            "startTimeOffset": 3007710,
+            "endTimeOffset": 3688810,
+            "thumb": "/library/media/375774/chapterImages/7"
+          },
+          {
+            "id": 4,
+            "filter": "thumb=4",
+            "index": 8,
+            "startTimeOffset": 3688810,
+            "endTimeOffset": 4131500,
+            "thumb": "/library/media/375774/chapterImages/8"
+          },
+          {
+            "id": 4,
+            "filter": "thumb=4",
+            "index": 9,
+            "startTimeOffset": 4131500,
+            "endTimeOffset": 4600470,
+            "thumb": "/library/media/375774/chapterImages/9"
+          },
+          {
+            "id": 4,
+            "filter": "thumb=4",
+            "index": 10,
+            "startTimeOffset": 4600470,
+            "endTimeOffset": 5069360,
+            "thumb": "/library/media/375774/chapterImages/10"
+          },
+          {
+            "id": 4,
+            "filter": "thumb=4",
+            "index": 11,
+            "startTimeOffset": 5069360,
+            "endTimeOffset": 5640680,
+            "thumb": "/library/media/375774/chapterImages/11"
+          },
+          {
+            "id": 4,
+            "filter": "thumb=4",
+            "index": 12,
+            "startTimeOffset": 5640680,
+            "endTimeOffset": 6181180,
+            "thumb": "/library/media/375774/chapterImages/12"
+          },
+          {
+            "id": 4,
+            "filter": "thumb=4",
+            "index": 13,
+            "startTimeOffset": 6181180,
+            "endTimeOffset": 6773850,
+            "thumb": "/library/media/375774/chapterImages/13"
+          },
+          {
+            "id": 4,
+            "filter": "thumb=4",
+            "index": 14,
+            "startTimeOffset": 6773850,
+            "endTimeOffset": 7244450,
+            "thumb": "/library/media/375774/chapterImages/14"
+          },
+          {
+            "id": 4,
+            "filter": "thumb=4",
+            "index": 15,
+            "startTimeOffset": 7244450,
+            "endTimeOffset": 7903090,
+            "thumb": "/library/media/375774/chapterImages/15"
+          }
+        ],
+        "Marker": [
+          {
+            "id": 118430,
+            "type": "credits",
+            "startTimeOffset": 7246784,
+            "endTimeOffset": 7298784,
+            "Attributes": {
+              "id": 118430,
+              "version": 4
+            }
+          },
+          {
+            "id": 118430,
+            "type": "credits",
+            "startTimeOffset": 7314784,
+            "endTimeOffset": 7420784,
+            "Attributes": {
+              "id": 118430,
+              "version": 4
+            }
+          },
+          {
+            "id": 118430,
+            "type": "credits",
+            "startTimeOffset": 7496784,
+            "endTimeOffset": 7866784,
+            "Attributes": {
+              "id": 118430,
+              "version": 4
+            }
+          },
+          {
+            "id": 118430,
+            "type": "credits",
+            "startTimeOffset": 7246863,
+            "endTimeOffset": 7298863,
+            "Attributes": {
+              "id": 118430,
+              "version": 4
+            }
+          },
+          {
+            "id": 118430,
+            "type": "credits",
+            "startTimeOffset": 7314863,
+            "endTimeOffset": 7420863,
+            "Attributes": {
+              "id": 118430,
+              "version": 4
+            }
+          },
+          {
+            "id": 118430,
+            "type": "credits",
+            "startTimeOffset": 7496863,
+            "endTimeOffset": 7866863,
+            "Attributes": {
+              "id": 118430,
+              "version": 4
+            }
+          }
+        ],
+        "Review": [
+          {
+            "id": 2597,
+            "filter": "art=2597",
+            "tag": "Matthew Lickona",
+            "text": "Director David F. Sandberg remains a horror guy at heart (Lights Out, Annabelle: Creation), and the ping-ponging between yuks and yikes leads to a pretty nasty case of aesthetic whiplash.",
+            "image": "rottentomatoes://image.review.rotten",
+            "link": "https://www.sandiegoreader.com/movies/shazam/",
+            "source": "San Diego Reader"
+          },
+          {
+            "id": 49906,
+            "filter": "art=49906",
+            "tag": "Matthew Rozsa",
+            "text": "\"Shazam!\" is the funniest, sweetest and most innocent movie in the DC Extended Universe - a sign that it is at last ready to compete with Marvel.",
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "https://www.salon.com/2019/04/05/shazam-proves-dcs-extended-universe-is-finally-ready-to-compete-with-marvels/",
+            "source": "Salon.com"
+          },
+          {
+            "id": 162442,
+            "filter": "art=162442",
+            "tag": "Steven D. Greydanus",
+            "text": "Goofy, often quite funny, sometimes touching, and occasionally a bit darker or nastier than I expected from a superhero movie that seems to want to skew younger than most.",
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "http://www.ncregister.com/daily-news/sdg-reviews-shazam",
+            "source": "National Catholic Register"
+          },
+          {
+            "id": 127921,
+            "filter": "art=127921",
+            "tag": "Roxana Hadadi",
+            "text": "The stakes in Shazam! aren't quite world-endingly high but are resonant for their universality, and the film bounces well between kid-focused humor and suitably scary action sequences.",
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "https://chesapeakefamily.com/fun/movies/9450-family-movie-review-shazam-pg-13",
+            "source": "Chesapeake Family Magazine"
+          },
+          {
+            "id": 623020,
+            "filter": "art=623020",
+            "tag": "Andrea Gronvall",
+            "text": "It's an interesting departure for Swedish horror director David F. Sandberg (Annabelle: Creation, Lights Out), who proves he has more tricks up his sleeve than just things that go bump in the night.",
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "https://www.chicagoreader.com/chicago/shazam/Film?oid=69027910",
+            "source": "Chicago Reader"
+          },
+          {
+            "id": 509,
+            "filter": "art=509",
+            "tag": "Peter Rainer",
+            "text": "Pretty bland... A little too light, fluffy, and negligible.",
+            "image": "rottentomatoes://image.review.rotten",
+            "link": "https://www.scpr.org/programs/filmweek/2019/04/05/64357/filmweek-pet-sematary-amazing-grace-shazam-and-mor/",
+            "source": "FilmWeek (KPCC - NPR Los Angeles)"
+          },
+          {
+            "id": 2622,
+            "filter": "art=2622",
+            "tag": "Michael Sragow",
+            "text": "...[T]his film melds the unpretentious, dreamy joys of old-time comic books with the sly, rambunctious humor of Rocky and Bullwinkle cartoon featurettes...",
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "https://www.filmcomment.com/blog/deep-focus-shazam/",
+            "source": "Film Comment Magazine"
+          },
+          {
+            "id": 613967,
+            "filter": "art=613967",
+            "tag": "David Edelstein",
+            "text": "It's a bummer when the bad guy shows up and Shazam becomes like every other superhero movie - worse, really, because the storyboarding is so poor that it's hard to tell what's going on. In the climax, Sandberg misses nearly every one of his marks.",
+            "image": "rottentomatoes://image.review.rotten",
+            "link": "https://www.vulture.com/2019/04/movie-review-shazam-2019.html?utm_source=nym&utm_medium=f1&utm_campaign=feed-full",
+            "source": "New York Magazine/Vulture"
+          },
+          {
+            "id": 1590,
+            "filter": "art=1590",
+            "tag": "Leonard Maltin",
+            "text": "Shazam! wants to be slick & smartassy except when it suddenly chooses to be warm and sincere-like a TV commercial for some medication or life insurance. You can't have it both ways but this film repeatedly tries to do so. This movie is a muddle",
+            "image": "rottentomatoes://image.review.rotten",
+            "link": "http://leonardmaltin.com/shazam-never-takes-off/",
+            "source": "leonardmaltin.com"
+          },
+          {
+            "id": 613970,
+            "filter": "art=613970",
+            "tag": "Joe Morgenstern",
+            "text": "What \"Shazam!\" lacks most obviously is gravitas. And grimness. Also bleakness, darkness and relentless self-seriousness. In other words, it's terrific fun.",
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "https://www.wsj.com/articles/shazam-review-bang-pow-zowie-is-fun-again-11554405399",
+            "source": "Wall Street Journal"
+          },
+          {
+            "id": 604,
+            "filter": "art=604",
+            "tag": "Adam Graham",
+            "text": "\"Shazam!\" is a superhero story that's rooted in a tale of family. It's able to fly because it's so grounded.",
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "https://www.detroitnews.com/story/entertainment/2019/04/03/review-shock-fun-runs-through-shazam/3353025002/",
+            "source": "Detroit News"
+          },
+          {
+            "id": 659,
+            "filter": "art=659",
+            "tag": "Richard Roeper",
+            "text": "I loved the spirit and the heart of this film.",
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "https://chicago.suntimes.com/entertainment/shazam-review-movie-dceu-zachary-levi-richard-roeper/",
+            "source": "Chicago Sun-Times"
+          },
+          {
+            "id": 335465,
+            "filter": "art=335465",
+            "tag": "Matthew Monagle",
+            "text": "Shazam!, a movie explicitly built around our childhood fascination with superheroes. One wonders how the franchise producers manage to make sense of it all.",
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "https://www.austinchronicle.com/events/film/2019-04-05/shazam/",
+            "source": "Austin Chronicle"
+          },
+          {
+            "id": 66749,
+            "filter": "art=66749",
+            "tag": "Nell Minow",
+            "text": "Wildly entertaining, downright delightful, and, yes, adorable.",
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "https://moviemom.com/shazam/",
+            "source": "Movie Mom"
+          },
+          {
+            "id": 575,
+            "filter": "art=575",
+            "tag": "Stephanie Zacharek",
+            "text": "Best of all, Shazam! feels young, a world apart from that stone-cold cosmos in which self-serious villains descend upon humanity with their dumb jeweled gloves.",
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "http://time.com/5563007/shazam-dceu-movie-review/",
+            "source": "TIME Magazine"
+          },
+          {
+            "id": 574,
+            "filter": "art=574",
+            "tag": "Moira MacDonald",
+            "text": "This movie is basically \"Big\" with a superhero. Need I say anything more? That premise already has you in the popcorn line, right?",
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "https://www.seattletimes.com/entertainment/movies/shazam-review-a-rare-charmer-from-the-dc-comics-universe/?utm_source=RSS&utm_medium=Referral&utm_campaign=RSS_movies",
+            "source": "Seattle Times"
+          },
+          {
+            "id": 335717,
+            "filter": "art=335717",
+            "tag": "Linda Marric",
+            "text": "An impressive first cinematic outing for one of DC's most loved superheroes.",
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "https://www.thejc.com/culture/film/film-review-shazam-1.482533",
+            "source": "The Jewish Chronicle"
+          },
+          {
+            "id": 335466,
+            "filter": "art=335466",
+            "tag": "Kristen Lopez",
+            "text": "Shazam! is a heartwarming story that talks about finding the joy in being a hero, and in finding the family that understands you.",
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "https://culturess.com/2019/04/04/shazam-is-peppy-family-focused-superhero-film-youll-enjoy/",
+            "source": "Culturess"
+          },
+          {
+            "id": 69234,
+            "filter": "art=69234",
+            "tag": "Pat Padua",
+            "text": "\"Shazam!\" operates as a thrilling fantasy and a comedy about the learning curve of growing up. It's also a stirring tale of the heroic potential that lies inside each of us, if only we're put to the test.",
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "https://www.washingtonpost.com/goingoutguide/movies/shazam-is-the-relatable-reluctant-superhero-tale-weve-been-waiting-for/2019/04/03/ee7dfe58-4f66-11e9-a3f7-78b7525a8d5f_story.html",
+            "source": "Washington Post"
+          },
+          {
+            "id": 623711,
+            "filter": "art=623711",
+            "tag": "Justin Chang",
+            "text": "\"Shazam!\" is hardly a solution. But at its best, it's just deft and clever enough to not feel like part of the problem.",
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "https://www.latimes.com/entertainment/movies/la-et-mn-shazam-review-20190404-story.html",
+            "source": "Los Angeles Times"
+          }
+        ],
+        "Field": [
+          {
+            "locked": true,
+            "name": "collection"
+          }
+        ],
+        "Preferences": {
+          "Setting": [
+            {
+              "id": "languageOverride",
+              "label": "Metadata language",
+              "summary": "Language to use for item metadata such as synopsis and title.",
+              "type": "text",
+              "default": "",
+              "value": "",
+              "hidden": false,
+              "advanced": false,
+              "group": "",
+              "enumValues": ":Library default|ca-ES:català|cs-CZ:Čeština|da-DK:Dansk|de-DE:Deutsch|et-EE:eesti|en-US:English|en-AU:English (Australia)|en-CA:English (Canada)|en-GB:English (UK)|es-ES:Español|es-MX:Español (México)|fr-FR:Français|fr-CA:Français (Canada)|hr-HR:Hrvatski|id-ID:Indonesia|it-IT:Italiano|lv-LV:latviešu|lt-LT:lietuvių|hu-HU:magyar|nl-NL:Nederlands|nb-NO:norsk bokmål|pl-PL:polski|pt-BR:Português|pt-PT:Português (Portugal)|ro-RO:română|sk-SK:Slovenčina|fi-FI:Suomi|sv-SE:Svenska|vi-VN:Tiếng Việt|tr-TR:Türkçe|el-GR:Ελληνικά|bg-BG:български|ru-RU:Русский|uk-UA:Українська|he-IL:עברית|ar-SA:العربية (المملكة العربية السعودية)|fa-IR:فارسی|hi-IN:हिन्दी|th-TH:ไทย|ko-KR:한국어|zh-CN:中文|zh-HK:中文（中國香港）|zh-TW:中文（台灣）|ja-JP:日本語"
+            },
+            {
+              "id": "useOriginalTitle",
+              "label": "Use original title",
+              "summary": "Use the original title for this item regardless of the library language.",
+              "type": "int",
+              "default": "-1",
+              "value": "-1",
+              "hidden": false,
+              "advanced": false,
+              "group": "",
+              "enumValues": "-1:Library default|0:No|1:Yes"
+            },
+            {
+              "id": "enableCreditsMarkerGeneration",
+              "label": "Enable credits detection",
+              "summary": "Generate credits markers for this item.",
+              "type": "int",
+              "default": "-1",
+              "value": "-1",
+              "hidden": false,
+              "advanced": false,
+              "group": "",
+              "enumValues": "-1:Library default|0:Disabled"
+            }
+          ]
+        },
+        "Extras": {
+          "size": 7,
+          "Metadata": [
+            {
+              "ratingKey": "211513",
+              "key": "/library/metadata/211513",
+              "guid": "iva://api.internetvideoarchive.com/2.0/DataService/VideoAssets(292843)",
+              "type": "clip",
+              "title": "Shazam!",
+              "summary": "",
+              "index": 1,
+              "thumb": "/library/metadata/211513/thumb/1678496112",
+              "primaryGuid": "plex://movie/5d776b127a53e9001e719244",
+              "subtype": "trailer",
+              "duration": 173000,
+              "addedAt": 1678496112,
+              "extraType": 1,
+              "Media": [
+                {
+                  "id": 402254,
+                  "duration": 173000,
+                  "bitrate": 5000,
+                  "width": 1920,
+                  "height": 810,
+                  "aspectRatio": 2.35,
+                  "audioCodec": "aac",
+                  "videoCodec": "h264",
+                  "videoResolution": "1080",
+                  "container": "mp4",
+                  "optimizedForStreaming": 1,
+                  "protocol": "mp4",
+                  "premium": true,
+                  "hasVoiceActivity": false,
+                  "Part": [
+                    {
+                      "id": 404510,
+                      "duration": 173000,
+                      "container": "mp4",
+                      "key": "/services/iva/assets/292843/video.mp4?fmt=4&bitrate=5000",
+                      "Stream": [
+                        {
+                          "id": 1095623,
+                          "streamType": 1,
+                          "codec": "h264",
+                          "index": 0,
+                          "bitrate": 5000,
+                          "height": 810,
+                          "width": 1920,
+                          "displayTitle": "1080p",
+                          "extendedDisplayTitle": "1080p (H.264)"
+                        },
+                        {
+                          "id": 1095624,
+                          "streamType": 2,
+                          "selected": true,
+                          "codec": "aac",
+                          "index": 1,
+                          "channels": 2,
+                          "language": "English",
+                          "languageTag": "en",
+                          "languageCode": "eng",
+                          "displayTitle": "English (AAC Stereo)",
+                          "extendedDisplayTitle": "English (AAC Stereo)"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": 402255,
+                  "duration": 173000,
+                  "bitrate": 2500,
+                  "width": 1280,
+                  "height": 540,
+                  "aspectRatio": 2.35,
+                  "audioCodec": "aac",
+                  "videoCodec": "h264",
+                  "videoResolution": "720",
+                  "container": "mp4",
+                  "optimizedForStreaming": 1,
+                  "protocol": "mp4",
+                  "premium": true,
+                  "hasVoiceActivity": false,
+                  "Part": [
+                    {
+                      "id": 404511,
+                      "duration": 173000,
+                      "container": "mp4",
+                      "key": "/services/iva/assets/292843/video.mp4?fmt=4&bitrate=2500",
+                      "Stream": [
+                        {
+                          "id": 1095625,
+                          "streamType": 1,
+                          "codec": "h264",
+                          "index": 0,
+                          "bitrate": 2500,
+                          "height": 540,
+                          "width": 1280,
+                          "displayTitle": "720p",
+                          "extendedDisplayTitle": "720p (H.264)"
+                        },
+                        {
+                          "id": 1095626,
+                          "streamType": 2,
+                          "selected": true,
+                          "codec": "aac",
+                          "index": 1,
+                          "channels": 2,
+                          "language": "English",
+                          "languageTag": "en",
+                          "languageCode": "eng",
+                          "displayTitle": "English (AAC Stereo)",
+                          "extendedDisplayTitle": "English (AAC Stereo)"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": 402256,
+                  "duration": 173000,
+                  "bitrate": 750,
+                  "width": 480,
+                  "height": 202,
+                  "aspectRatio": 2.35,
+                  "audioCodec": "aac",
+                  "videoCodec": "h264",
+                  "videoResolution": "sd",
+                  "container": "mp4",
+                  "optimizedForStreaming": 1,
+                  "protocol": "mp4",
+                  "premium": true,
+                  "hasVoiceActivity": false,
+                  "Part": [
+                    {
+                      "id": 404512,
+                      "duration": 173000,
+                      "container": "mp4",
+                      "key": "/services/iva/assets/292843/video.mp4?fmt=4&bitrate=750",
+                      "Stream": [
+                        {
+                          "id": 1095627,
+                          "streamType": 1,
+                          "codec": "h264",
+                          "index": 0,
+                          "bitrate": 750,
+                          "height": 202,
+                          "width": 480,
+                          "displayTitle": "SD",
+                          "extendedDisplayTitle": "SD (H.264)"
+                        },
+                        {
+                          "id": 1095628,
+                          "streamType": 2,
+                          "selected": true,
+                          "codec": "aac",
+                          "index": 1,
+                          "channels": 2,
+                          "language": "English",
+                          "languageTag": "en",
+                          "languageCode": "eng",
+                          "displayTitle": "English (AAC Stereo)",
+                          "extendedDisplayTitle": "English (AAC Stereo)"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "Image": [
+                {
+                  "alt": "Shazam!",
+                  "type": "coverPoster",
+                  "url": "/library/metadata/211513/thumb/1678496112"
+                }
+              ]
+            },
+            {
+              "ratingKey": "211514",
+              "key": "/library/metadata/211514",
+              "guid": "iva://api.internetvideoarchive.com/2.0/DataService/VideoAssets(594983)",
+              "type": "clip",
+              "title": "Shazam! (Trailer 2)",
+              "summary": "",
+              "index": 2,
+              "thumb": "/library/metadata/211514/thumb/1678496112",
+              "primaryGuid": "plex://movie/5d776b127a53e9001e719244",
+              "subtype": "trailer",
+              "duration": 54000,
+              "addedAt": 1678496112,
+              "extraType": 1,
+              "Media": [
+                {
+                  "id": 402257,
+                  "duration": 54000,
+                  "bitrate": 5000,
+                  "width": 1920,
+                  "height": 800,
+                  "aspectRatio": 2.35,
+                  "audioCodec": "aac",
+                  "videoCodec": "h264",
+                  "videoResolution": "1080",
+                  "container": "mp4",
+                  "optimizedForStreaming": 1,
+                  "protocol": "mp4",
+                  "premium": true,
+                  "hasVoiceActivity": false,
+                  "Part": [
+                    {
+                      "id": 404513,
+                      "duration": 54000,
+                      "container": "mp4",
+                      "key": "/services/iva/assets/594983/video.mp4?fmt=4&bitrate=5000",
+                      "Stream": [
+                        {
+                          "id": 1095629,
+                          "streamType": 1,
+                          "codec": "h264",
+                          "index": 0,
+                          "bitrate": 5000,
+                          "height": 800,
+                          "width": 1920,
+                          "displayTitle": "1080p",
+                          "extendedDisplayTitle": "1080p (H.264)"
+                        },
+                        {
+                          "id": 1095630,
+                          "streamType": 2,
+                          "selected": true,
+                          "codec": "aac",
+                          "index": 1,
+                          "channels": 2,
+                          "language": "English",
+                          "languageTag": "en",
+                          "languageCode": "eng",
+                          "displayTitle": "English (AAC Stereo)",
+                          "extendedDisplayTitle": "English (AAC Stereo)"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": 402258,
+                  "duration": 54000,
+                  "bitrate": 2500,
+                  "width": 1280,
+                  "height": 533,
+                  "aspectRatio": 2.35,
+                  "audioCodec": "aac",
+                  "videoCodec": "h264",
+                  "videoResolution": "720",
+                  "container": "mp4",
+                  "optimizedForStreaming": 1,
+                  "protocol": "mp4",
+                  "premium": true,
+                  "hasVoiceActivity": false,
+                  "Part": [
+                    {
+                      "id": 404514,
+                      "duration": 54000,
+                      "container": "mp4",
+                      "key": "/services/iva/assets/594983/video.mp4?fmt=4&bitrate=2500",
+                      "Stream": [
+                        {
+                          "id": 1095631,
+                          "streamType": 1,
+                          "codec": "h264",
+                          "index": 0,
+                          "bitrate": 2500,
+                          "height": 533,
+                          "width": 1280,
+                          "displayTitle": "720p",
+                          "extendedDisplayTitle": "720p (H.264)"
+                        },
+                        {
+                          "id": 1095632,
+                          "streamType": 2,
+                          "selected": true,
+                          "codec": "aac",
+                          "index": 1,
+                          "channels": 2,
+                          "language": "English",
+                          "languageTag": "en",
+                          "languageCode": "eng",
+                          "displayTitle": "English (AAC Stereo)",
+                          "extendedDisplayTitle": "English (AAC Stereo)"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": 402259,
+                  "duration": 54000,
+                  "bitrate": 750,
+                  "width": 480,
+                  "height": 200,
+                  "aspectRatio": 2.35,
+                  "audioCodec": "aac",
+                  "videoCodec": "h264",
+                  "videoResolution": "sd",
+                  "container": "mp4",
+                  "optimizedForStreaming": 1,
+                  "protocol": "mp4",
+                  "premium": true,
+                  "hasVoiceActivity": false,
+                  "Part": [
+                    {
+                      "id": 404515,
+                      "duration": 54000,
+                      "container": "mp4",
+                      "key": "/services/iva/assets/594983/video.mp4?fmt=4&bitrate=750",
+                      "Stream": [
+                        {
+                          "id": 1095633,
+                          "streamType": 1,
+                          "codec": "h264",
+                          "index": 0,
+                          "bitrate": 750,
+                          "height": 200,
+                          "width": 480,
+                          "displayTitle": "SD",
+                          "extendedDisplayTitle": "SD (H.264)"
+                        },
+                        {
+                          "id": 1095634,
+                          "streamType": 2,
+                          "selected": true,
+                          "codec": "aac",
+                          "index": 1,
+                          "channels": 2,
+                          "language": "English",
+                          "languageTag": "en",
+                          "languageCode": "eng",
+                          "displayTitle": "English (AAC Stereo)",
+                          "extendedDisplayTitle": "English (AAC Stereo)"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "Image": [
+                {
+                  "alt": "Shazam! (Trailer 2)",
+                  "type": "coverPoster",
+                  "url": "/library/metadata/211514/thumb/1678496112"
+                }
+              ]
+            },
+            {
+              "ratingKey": "211515",
+              "key": "/library/metadata/211515",
+              "guid": "iva://api.internetvideoarchive.com/2.0/DataService/VideoAssets(515885)",
+              "type": "clip",
+              "title": "Shazam! (Trailer 3)",
+              "summary": "",
+              "index": 3,
+              "thumb": "/library/metadata/211515/thumb/1678496112",
+              "primaryGuid": "plex://movie/5d776b127a53e9001e719244",
+              "subtype": "trailer",
+              "duration": 124000,
+              "addedAt": 1678496112,
+              "extraType": 1,
+              "Media": [
+                {
+                  "id": 402260,
+                  "duration": 124000,
+                  "bitrate": 5000,
+                  "width": 1920,
+                  "height": 1080,
+                  "aspectRatio": 1.78,
+                  "audioCodec": "aac",
+                  "videoCodec": "h264",
+                  "videoResolution": "1080",
+                  "container": "mp4",
+                  "optimizedForStreaming": 1,
+                  "protocol": "mp4",
+                  "premium": true,
+                  "hasVoiceActivity": false,
+                  "Part": [
+                    {
+                      "id": 404516,
+                      "duration": 124000,
+                      "container": "mp4",
+                      "key": "/services/iva/assets/515885/video.mp4?fmt=4&bitrate=5000",
+                      "Stream": [
+                        {
+                          "id": 1095635,
+                          "streamType": 1,
+                          "codec": "h264",
+                          "index": 0,
+                          "bitrate": 5000,
+                          "height": 1080,
+                          "width": 1920,
+                          "displayTitle": "1080p",
+                          "extendedDisplayTitle": "1080p (H.264)"
+                        },
+                        {
+                          "id": 1095636,
+                          "streamType": 2,
+                          "selected": true,
+                          "codec": "aac",
+                          "index": 1,
+                          "channels": 2,
+                          "language": "English",
+                          "languageTag": "en",
+                          "languageCode": "eng",
+                          "displayTitle": "English (AAC Stereo)",
+                          "extendedDisplayTitle": "English (AAC Stereo)"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": 402261,
+                  "duration": 124000,
+                  "bitrate": 2500,
+                  "width": 1280,
+                  "height": 720,
+                  "aspectRatio": 1.78,
+                  "audioCodec": "aac",
+                  "videoCodec": "h264",
+                  "videoResolution": "720",
+                  "container": "mp4",
+                  "optimizedForStreaming": 1,
+                  "protocol": "mp4",
+                  "premium": true,
+                  "hasVoiceActivity": false,
+                  "Part": [
+                    {
+                      "id": 404517,
+                      "duration": 124000,
+                      "container": "mp4",
+                      "key": "/services/iva/assets/515885/video.mp4?fmt=4&bitrate=2500",
+                      "Stream": [
+                        {
+                          "id": 1095637,
+                          "streamType": 1,
+                          "codec": "h264",
+                          "index": 0,
+                          "bitrate": 2500,
+                          "height": 720,
+                          "width": 1280,
+                          "displayTitle": "720p",
+                          "extendedDisplayTitle": "720p (H.264)"
+                        },
+                        {
+                          "id": 1095638,
+                          "streamType": 2,
+                          "selected": true,
+                          "codec": "aac",
+                          "index": 1,
+                          "channels": 2,
+                          "language": "English",
+                          "languageTag": "en",
+                          "languageCode": "eng",
+                          "displayTitle": "English (AAC Stereo)",
+                          "extendedDisplayTitle": "English (AAC Stereo)"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": 402262,
+                  "duration": 124000,
+                  "bitrate": 750,
+                  "width": 480,
+                  "height": 270,
+                  "aspectRatio": 1.78,
+                  "audioCodec": "aac",
+                  "videoCodec": "h264",
+                  "videoResolution": "sd",
+                  "container": "mp4",
+                  "optimizedForStreaming": 1,
+                  "protocol": "mp4",
+                  "premium": true,
+                  "hasVoiceActivity": false,
+                  "Part": [
+                    {
+                      "id": 404518,
+                      "duration": 124000,
+                      "container": "mp4",
+                      "key": "/services/iva/assets/515885/video.mp4?fmt=4&bitrate=750",
+                      "Stream": [
+                        {
+                          "id": 1095639,
+                          "streamType": 1,
+                          "codec": "h264",
+                          "index": 0,
+                          "bitrate": 750,
+                          "height": 270,
+                          "width": 480,
+                          "displayTitle": "SD",
+                          "extendedDisplayTitle": "SD (H.264)"
+                        },
+                        {
+                          "id": 1095640,
+                          "streamType": 2,
+                          "selected": true,
+                          "codec": "aac",
+                          "index": 1,
+                          "channels": 2,
+                          "language": "English",
+                          "languageTag": "en",
+                          "languageCode": "eng",
+                          "displayTitle": "English (AAC Stereo)",
+                          "extendedDisplayTitle": "English (AAC Stereo)"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "Image": [
+                {
+                  "alt": "Shazam! (Trailer 3)",
+                  "type": "coverPoster",
+                  "url": "/library/metadata/211515/thumb/1678496112"
+                }
+              ]
+            },
+            {
+              "ratingKey": "211516",
+              "key": "/library/metadata/211516",
+              "guid": "iva://api.internetvideoarchive.com/2.0/DataService/VideoAssets(888669)",
+              "type": "clip",
+              "title": "Shazam! (4K Trailer)",
+              "summary": "",
+              "index": 4,
+              "thumb": "/library/metadata/211516/thumb/1678496112",
+              "primaryGuid": "plex://movie/5d776b127a53e9001e719244",
+              "subtype": "trailer",
+              "duration": 147000,
+              "addedAt": 1678496112,
+              "extraType": 1,
+              "Media": [
+                {
+                  "id": 402263,
+                  "duration": 147000,
+                  "bitrate": 5000,
+                  "width": 1920,
+                  "height": 808,
+                  "aspectRatio": 2.35,
+                  "audioCodec": "aac",
+                  "videoCodec": "h264",
+                  "videoResolution": "1080",
+                  "container": "mp4",
+                  "optimizedForStreaming": 1,
+                  "protocol": "mp4",
+                  "premium": true,
+                  "hasVoiceActivity": false,
+                  "Part": [
+                    {
+                      "id": 404519,
+                      "duration": 147000,
+                      "container": "mp4",
+                      "key": "/services/iva/assets/888669/video.mp4?fmt=4&bitrate=5000",
+                      "Stream": [
+                        {
+                          "id": 1095641,
+                          "streamType": 1,
+                          "codec": "h264",
+                          "index": 0,
+                          "bitrate": 5000,
+                          "height": 808,
+                          "width": 1920,
+                          "displayTitle": "1080p",
+                          "extendedDisplayTitle": "1080p (H.264)"
+                        },
+                        {
+                          "id": 1095642,
+                          "streamType": 2,
+                          "selected": true,
+                          "codec": "aac",
+                          "index": 1,
+                          "channels": 2,
+                          "language": "English",
+                          "languageTag": "en",
+                          "languageCode": "eng",
+                          "displayTitle": "English (AAC Stereo)",
+                          "extendedDisplayTitle": "English (AAC Stereo)"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": 402264,
+                  "duration": 147000,
+                  "bitrate": 2500,
+                  "width": 1280,
+                  "height": 538,
+                  "aspectRatio": 2.35,
+                  "audioCodec": "aac",
+                  "videoCodec": "h264",
+                  "videoResolution": "720",
+                  "container": "mp4",
+                  "optimizedForStreaming": 1,
+                  "protocol": "mp4",
+                  "premium": true,
+                  "hasVoiceActivity": false,
+                  "Part": [
+                    {
+                      "id": 404520,
+                      "duration": 147000,
+                      "container": "mp4",
+                      "key": "/services/iva/assets/888669/video.mp4?fmt=4&bitrate=2500",
+                      "Stream": [
+                        {
+                          "id": 1095643,
+                          "streamType": 1,
+                          "codec": "h264",
+                          "index": 0,
+                          "bitrate": 2500,
+                          "height": 538,
+                          "width": 1280,
+                          "displayTitle": "720p",
+                          "extendedDisplayTitle": "720p (H.264)"
+                        },
+                        {
+                          "id": 1095644,
+                          "streamType": 2,
+                          "selected": true,
+                          "codec": "aac",
+                          "index": 1,
+                          "channels": 2,
+                          "language": "English",
+                          "languageTag": "en",
+                          "languageCode": "eng",
+                          "displayTitle": "English (AAC Stereo)",
+                          "extendedDisplayTitle": "English (AAC Stereo)"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": 402265,
+                  "duration": 147000,
+                  "bitrate": 750,
+                  "width": 480,
+                  "height": 202,
+                  "aspectRatio": 2.35,
+                  "audioCodec": "aac",
+                  "videoCodec": "h264",
+                  "videoResolution": "sd",
+                  "container": "mp4",
+                  "optimizedForStreaming": 1,
+                  "protocol": "mp4",
+                  "premium": true,
+                  "hasVoiceActivity": false,
+                  "Part": [
+                    {
+                      "id": 404521,
+                      "duration": 147000,
+                      "container": "mp4",
+                      "key": "/services/iva/assets/888669/video.mp4?fmt=4&bitrate=750",
+                      "Stream": [
+                        {
+                          "id": 1095645,
+                          "streamType": 1,
+                          "codec": "h264",
+                          "index": 0,
+                          "bitrate": 750,
+                          "height": 202,
+                          "width": 480,
+                          "displayTitle": "SD",
+                          "extendedDisplayTitle": "SD (H.264)"
+                        },
+                        {
+                          "id": 1095646,
+                          "streamType": 2,
+                          "selected": true,
+                          "codec": "aac",
+                          "index": 1,
+                          "channels": 2,
+                          "language": "English",
+                          "languageTag": "en",
+                          "languageCode": "eng",
+                          "displayTitle": "English (AAC Stereo)",
+                          "extendedDisplayTitle": "English (AAC Stereo)"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "Image": [
+                {
+                  "alt": "Shazam! (4K Trailer)",
+                  "type": "coverPoster",
+                  "url": "/library/metadata/211516/thumb/1678496112"
+                }
+              ]
+            },
+            {
+              "ratingKey": "211517",
+              "key": "/library/metadata/211517",
+              "guid": "iva://api.internetvideoarchive.com/2.0/DataService/VideoAssets(196186)",
+              "type": "clip",
+              "title": "Shazam! (International Trailer 1)",
+              "summary": "",
+              "index": 5,
+              "thumb": "/library/metadata/211517/thumb/1678496112",
+              "primaryGuid": "plex://movie/5d776b127a53e9001e719244",
+              "subtype": "trailer",
+              "duration": 174000,
+              "addedAt": 1678496112,
+              "extraType": 1,
+              "Media": [
+                {
+                  "id": 402266,
+                  "duration": 174000,
+                  "bitrate": 5000,
+                  "width": 1920,
+                  "height": 1080,
+                  "aspectRatio": 1.78,
+                  "audioCodec": "aac",
+                  "videoCodec": "h264",
+                  "videoResolution": "1080",
+                  "container": "mp4",
+                  "optimizedForStreaming": 1,
+                  "protocol": "mp4",
+                  "premium": true,
+                  "hasVoiceActivity": false,
+                  "Part": [
+                    {
+                      "id": 404522,
+                      "duration": 174000,
+                      "container": "mp4",
+                      "key": "/services/iva/assets/196186/video.mp4?fmt=4&bitrate=5000",
+                      "Stream": [
+                        {
+                          "id": 1095647,
+                          "streamType": 1,
+                          "codec": "h264",
+                          "index": 0,
+                          "bitrate": 5000,
+                          "height": 1080,
+                          "width": 1920,
+                          "displayTitle": "1080p",
+                          "extendedDisplayTitle": "1080p (H.264)"
+                        },
+                        {
+                          "id": 1095648,
+                          "streamType": 2,
+                          "selected": true,
+                          "codec": "aac",
+                          "index": 1,
+                          "channels": 2,
+                          "language": "English",
+                          "languageTag": "en",
+                          "languageCode": "eng",
+                          "displayTitle": "English (AAC Stereo)",
+                          "extendedDisplayTitle": "English (AAC Stereo)"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": 402267,
+                  "duration": 174000,
+                  "bitrate": 2500,
+                  "width": 1280,
+                  "height": 720,
+                  "aspectRatio": 1.78,
+                  "audioCodec": "aac",
+                  "videoCodec": "h264",
+                  "videoResolution": "720",
+                  "container": "mp4",
+                  "optimizedForStreaming": 1,
+                  "protocol": "mp4",
+                  "premium": true,
+                  "hasVoiceActivity": false,
+                  "Part": [
+                    {
+                      "id": 404523,
+                      "duration": 174000,
+                      "container": "mp4",
+                      "key": "/services/iva/assets/196186/video.mp4?fmt=4&bitrate=2500",
+                      "Stream": [
+                        {
+                          "id": 1095649,
+                          "streamType": 1,
+                          "codec": "h264",
+                          "index": 0,
+                          "bitrate": 2500,
+                          "height": 720,
+                          "width": 1280,
+                          "displayTitle": "720p",
+                          "extendedDisplayTitle": "720p (H.264)"
+                        },
+                        {
+                          "id": 1095650,
+                          "streamType": 2,
+                          "selected": true,
+                          "codec": "aac",
+                          "index": 1,
+                          "channels": 2,
+                          "language": "English",
+                          "languageTag": "en",
+                          "languageCode": "eng",
+                          "displayTitle": "English (AAC Stereo)",
+                          "extendedDisplayTitle": "English (AAC Stereo)"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": 402268,
+                  "duration": 174000,
+                  "bitrate": 750,
+                  "width": 480,
+                  "height": 270,
+                  "aspectRatio": 1.78,
+                  "audioCodec": "aac",
+                  "videoCodec": "h264",
+                  "videoResolution": "sd",
+                  "container": "mp4",
+                  "optimizedForStreaming": 1,
+                  "protocol": "mp4",
+                  "premium": true,
+                  "hasVoiceActivity": false,
+                  "Part": [
+                    {
+                      "id": 404524,
+                      "duration": 174000,
+                      "container": "mp4",
+                      "key": "/services/iva/assets/196186/video.mp4?fmt=4&bitrate=750",
+                      "Stream": [
+                        {
+                          "id": 1095651,
+                          "streamType": 1,
+                          "codec": "h264",
+                          "index": 0,
+                          "bitrate": 750,
+                          "height": 270,
+                          "width": 480,
+                          "displayTitle": "SD",
+                          "extendedDisplayTitle": "SD (H.264)"
+                        },
+                        {
+                          "id": 1095652,
+                          "streamType": 2,
+                          "selected": true,
+                          "codec": "aac",
+                          "index": 1,
+                          "channels": 2,
+                          "language": "English",
+                          "languageTag": "en",
+                          "languageCode": "eng",
+                          "displayTitle": "English (AAC Stereo)",
+                          "extendedDisplayTitle": "English (AAC Stereo)"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "Image": [
+                {
+                  "alt": "Shazam! (International Trailer 1)",
+                  "type": "coverPoster",
+                  "url": "/library/metadata/211517/thumb/1678496112"
+                }
+              ]
+            },
+            {
+              "ratingKey": "211518",
+              "key": "/library/metadata/211518",
+              "guid": "iva://api.internetvideoarchive.com/2.0/DataService/VideoAssets(276357)",
+              "type": "clip",
+              "title": "Meet Shazam!",
+              "titleSort": "Shazam!: Meet Shazam! (Featurette)",
+              "summary": "",
+              "index": 6,
+              "thumb": "/library/metadata/211518/thumb/1735087149",
+              "subtype": "behindTheScenes",
+              "duration": 137000,
+              "addedAt": 1678496112,
+              "updatedAt": 1735087149,
+              "extraType": 5,
+              "Media": [
+                {
+                  "id": 402269,
+                  "duration": 137000,
+                  "bitrate": 5000,
+                  "width": 1920,
+                  "height": 1080,
+                  "aspectRatio": 1.78,
+                  "audioCodec": "aac",
+                  "videoCodec": "h264",
+                  "videoResolution": "1080",
+                  "container": "mp4",
+                  "optimizedForStreaming": 1,
+                  "protocol": "mp4",
+                  "premium": true,
+                  "hasVoiceActivity": false,
+                  "Part": [
+                    {
+                      "id": 404525,
+                      "duration": 137000,
+                      "container": "mp4",
+                      "key": "/services/iva/assets/276357/video.mp4?fmt=4&bitrate=5000",
+                      "Stream": [
+                        {
+                          "id": 1095653,
+                          "streamType": 1,
+                          "codec": "h264",
+                          "index": 0,
+                          "bitrate": 5000,
+                          "height": 1080,
+                          "width": 1920,
+                          "displayTitle": "1080p",
+                          "extendedDisplayTitle": "1080p (H.264)"
+                        },
+                        {
+                          "id": 1095654,
+                          "streamType": 2,
+                          "selected": true,
+                          "codec": "aac",
+                          "index": 1,
+                          "channels": 2,
+                          "language": "English",
+                          "languageTag": "en",
+                          "languageCode": "eng",
+                          "displayTitle": "English (AAC Stereo)",
+                          "extendedDisplayTitle": "English (AAC Stereo)"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": 402270,
+                  "duration": 137000,
+                  "bitrate": 2500,
+                  "width": 1280,
+                  "height": 720,
+                  "aspectRatio": 1.78,
+                  "audioCodec": "aac",
+                  "videoCodec": "h264",
+                  "videoResolution": "720",
+                  "container": "mp4",
+                  "optimizedForStreaming": 1,
+                  "protocol": "mp4",
+                  "premium": true,
+                  "hasVoiceActivity": false,
+                  "Part": [
+                    {
+                      "id": 404526,
+                      "duration": 137000,
+                      "container": "mp4",
+                      "key": "/services/iva/assets/276357/video.mp4?fmt=4&bitrate=2500",
+                      "Stream": [
+                        {
+                          "id": 1095655,
+                          "streamType": 1,
+                          "codec": "h264",
+                          "index": 0,
+                          "bitrate": 2500,
+                          "height": 720,
+                          "width": 1280,
+                          "displayTitle": "720p",
+                          "extendedDisplayTitle": "720p (H.264)"
+                        },
+                        {
+                          "id": 1095656,
+                          "streamType": 2,
+                          "selected": true,
+                          "codec": "aac",
+                          "index": 1,
+                          "channels": 2,
+                          "language": "English",
+                          "languageTag": "en",
+                          "languageCode": "eng",
+                          "displayTitle": "English (AAC Stereo)",
+                          "extendedDisplayTitle": "English (AAC Stereo)"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": 402271,
+                  "duration": 137000,
+                  "bitrate": 750,
+                  "width": 480,
+                  "height": 270,
+                  "aspectRatio": 1.78,
+                  "audioCodec": "aac",
+                  "videoCodec": "h264",
+                  "videoResolution": "sd",
+                  "container": "mp4",
+                  "optimizedForStreaming": 1,
+                  "protocol": "mp4",
+                  "premium": true,
+                  "hasVoiceActivity": false,
+                  "Part": [
+                    {
+                      "id": 404527,
+                      "duration": 137000,
+                      "container": "mp4",
+                      "key": "/services/iva/assets/276357/video.mp4?fmt=4&bitrate=750",
+                      "Stream": [
+                        {
+                          "id": 1095657,
+                          "streamType": 1,
+                          "codec": "h264",
+                          "index": 0,
+                          "bitrate": 750,
+                          "height": 270,
+                          "width": 480,
+                          "displayTitle": "SD",
+                          "extendedDisplayTitle": "SD (H.264)"
+                        },
+                        {
+                          "id": 1095658,
+                          "streamType": 2,
+                          "selected": true,
+                          "codec": "aac",
+                          "index": 1,
+                          "channels": 2,
+                          "language": "English",
+                          "languageTag": "en",
+                          "languageCode": "eng",
+                          "displayTitle": "English (AAC Stereo)",
+                          "extendedDisplayTitle": "English (AAC Stereo)"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "Image": [
+                {
+                  "alt": "Meet Shazam!",
+                  "type": "coverPoster",
+                  "url": "/library/metadata/211518/thumb/1735087149"
+                }
+              ]
+            },
+            {
+              "ratingKey": "211519",
+              "key": "/library/metadata/211519",
+              "guid": "iva://api.internetvideoarchive.com/2.0/DataService/VideoAssets(918254)",
+              "type": "clip",
+              "title": "I Can Fly!",
+              "titleSort": "Shazam!: I Can Fly!",
+              "summary": "",
+              "index": 7,
+              "thumb": "/library/metadata/211519/thumb/1735087149",
+              "subtype": "sceneOrSample",
+              "duration": 262000,
+              "addedAt": 1678496112,
+              "updatedAt": 1735087149,
+              "extraType": 6,
+              "Media": [
+                {
+                  "id": 402272,
+                  "duration": 262000,
+                  "bitrate": 5000,
+                  "width": 1920,
+                  "height": 1080,
+                  "aspectRatio": 1.78,
+                  "audioCodec": "aac",
+                  "videoCodec": "h264",
+                  "videoResolution": "1080",
+                  "container": "mp4",
+                  "optimizedForStreaming": 1,
+                  "protocol": "mp4",
+                  "premium": true,
+                  "hasVoiceActivity": false,
+                  "Part": [
+                    {
+                      "id": 404528,
+                      "duration": 262000,
+                      "container": "mp4",
+                      "key": "/services/iva/assets/918254/video.mp4?fmt=4&bitrate=5000",
+                      "Stream": [
+                        {
+                          "id": 1095659,
+                          "streamType": 1,
+                          "codec": "h264",
+                          "index": 0,
+                          "bitrate": 5000,
+                          "height": 1080,
+                          "width": 1920,
+                          "displayTitle": "1080p",
+                          "extendedDisplayTitle": "1080p (H.264)"
+                        },
+                        {
+                          "id": 1095660,
+                          "streamType": 2,
+                          "selected": true,
+                          "codec": "aac",
+                          "index": 1,
+                          "channels": 2,
+                          "language": "English",
+                          "languageTag": "en",
+                          "languageCode": "eng",
+                          "displayTitle": "English (AAC Stereo)",
+                          "extendedDisplayTitle": "English (AAC Stereo)"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": 402273,
+                  "duration": 262000,
+                  "bitrate": 2500,
+                  "width": 1280,
+                  "height": 720,
+                  "aspectRatio": 1.78,
+                  "audioCodec": "aac",
+                  "videoCodec": "h264",
+                  "videoResolution": "720",
+                  "container": "mp4",
+                  "optimizedForStreaming": 1,
+                  "protocol": "mp4",
+                  "premium": true,
+                  "hasVoiceActivity": false,
+                  "Part": [
+                    {
+                      "id": 404529,
+                      "duration": 262000,
+                      "container": "mp4",
+                      "key": "/services/iva/assets/918254/video.mp4?fmt=4&bitrate=2500",
+                      "Stream": [
+                        {
+                          "id": 1095661,
+                          "streamType": 1,
+                          "codec": "h264",
+                          "index": 0,
+                          "bitrate": 2500,
+                          "height": 720,
+                          "width": 1280,
+                          "displayTitle": "720p",
+                          "extendedDisplayTitle": "720p (H.264)"
+                        },
+                        {
+                          "id": 1095662,
+                          "streamType": 2,
+                          "selected": true,
+                          "codec": "aac",
+                          "index": 1,
+                          "channels": 2,
+                          "language": "English",
+                          "languageTag": "en",
+                          "languageCode": "eng",
+                          "displayTitle": "English (AAC Stereo)",
+                          "extendedDisplayTitle": "English (AAC Stereo)"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": 402274,
+                  "duration": 262000,
+                  "bitrate": 750,
+                  "width": 480,
+                  "height": 270,
+                  "aspectRatio": 1.78,
+                  "audioCodec": "aac",
+                  "videoCodec": "h264",
+                  "videoResolution": "sd",
+                  "container": "mp4",
+                  "optimizedForStreaming": 1,
+                  "protocol": "mp4",
+                  "premium": true,
+                  "hasVoiceActivity": false,
+                  "Part": [
+                    {
+                      "id": 404530,
+                      "duration": 262000,
+                      "container": "mp4",
+                      "key": "/services/iva/assets/918254/video.mp4?fmt=4&bitrate=750",
+                      "Stream": [
+                        {
+                          "id": 1095663,
+                          "streamType": 1,
+                          "codec": "h264",
+                          "index": 0,
+                          "bitrate": 750,
+                          "height": 270,
+                          "width": 480,
+                          "displayTitle": "SD",
+                          "extendedDisplayTitle": "SD (H.264)"
+                        },
+                        {
+                          "id": 1095664,
+                          "streamType": 2,
+                          "selected": true,
+                          "codec": "aac",
+                          "index": 1,
+                          "channels": 2,
+                          "language": "English",
+                          "languageTag": "en",
+                          "languageCode": "eng",
+                          "displayTitle": "English (AAC Stereo)",
+                          "extendedDisplayTitle": "English (AAC Stereo)"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "Image": [
+                {
+                  "alt": "I Can Fly!",
+                  "type": "coverPoster",
+                  "url": "/library/metadata/211519/thumb/1735087149"
+                }
+              ]
+            }
+          ]
+        },
+        "Related": {
+          "Hub": [
+            {
+              "hubKey": "/library/metadata/215830",
+              "key": "/library/metadata/61466/similar",
+              "title": "Related Movies",
+              "type": "movie",
+              "hubIdentifier": "movie.similar",
+              "context": "hub.movie.similar",
+              "size": 1,
+              "more": true,
+              "style": "shelf",
+              "Metadata": [
+                {
+                  "ratingKey": "215830",
+                  "key": "/library/metadata/215830",
+                  "guid": "plex://movie/5d7770d4594b2b001e7528a2",
+                  "slug": "shazam-fury-of-the-gods",
+                  "studio": "New Line Cinema",
+                  "type": "movie",
+                  "title": "Shazam! Fury of the Gods",
+                  "librarySectionTitle": "Movies",
+                  "librarySectionID": 3,
+                  "librarySectionKey": "/library/sections/3",
+                  "contentRating": "PG-13",
+                  "summary": "Bestowed with the powers of the gods, Billy Batson and his fellow foster kids are still learning how to juggle teenage life with their adult superhero alter egos. When a vengeful trio of ancient gods arrives on Earth in search of the magic stolen from them long ago, Shazam and his allies get thrust into a battle for their superpowers, their lives, and the fate of the world.",
+                  "rating": 4.9,
+                  "audienceRating": 8.5,
+                  "year": 2023,
+                  "tagline": "Oh. My. Gods.",
+                  "thumb": "/library/metadata/215830/thumb/1737510037",
+                  "art": "/library/metadata/215830/art/1737510037",
+                  "duration": 7813248,
+                  "originallyAvailableAt": "2023-03-15",
+                  "addedAt": 1683190576,
+                  "updatedAt": 1737510037,
+                  "audienceRatingImage": "rottentomatoes://image.rating.upright",
+                  "primaryExtraKey": "/library/metadata/215831",
+                  "ratingImage": "rottentomatoes://image.rating.rotten",
+                  "Media": [
+                    {
+                      "id": 412438,
+                      "duration": 7813248,
+                      "bitrate": 10365,
+                      "width": 1920,
+                      "height": 804,
+                      "aspectRatio": 2.35,
+                      "audioChannels": 6,
+                      "audioCodec": "ac3",
+                      "videoCodec": "h264",
+                      "videoResolution": "1080",
+                      "container": "mp4",
+                      "videoFrameRate": "24p",
+                      "optimizedForStreaming": 1,
+                      "has64bitOffsets": true,
+                      "videoProfile": "high",
+                      "hasVoiceActivity": false,
+                      "Part": [
+                        {
+                          "id": 414694,
+                          "key": "/library/parts/414694/1683190568/file.mp4",
+                          "duration": 7813248,
+                          "file": "/mnt/HD/HD_a2/media_2/Movies/Shazam! Fury of the Gods (2023)/Shazam! Fury of the Gods (2023) {imdb-tt10151854} [WEBDL-1080p].mp4",
+                          "size": 10125361473,
+                          "container": "mp4",
+                          "deepAnalysisVersion": "6",
+                          "has64bitOffsets": true,
+                          "indexes": "sd",
+                          "optimizedForStreaming": true,
+                          "requiredBandwidths": "11140,10422,10413,10413,10413,10413,10413,10413",
+                          "videoProfile": "high",
+                          "Stream": [
+                            {
+                              "id": 1121838,
+                              "streamType": 1,
+                              "default": true,
+                              "codec": "h264",
+                              "index": 0,
+                              "bitrate": 9917,
+                              "bitDepth": 8,
+                              "chromaLocation": "topleft",
+                              "chromaSubsampling": "4:2:0",
+                              "codedHeight": 816,
+                              "codedWidth": 1920,
+                              "colorPrimaries": "bt709",
+                              "colorRange": "tv",
+                              "colorSpace": "bt709",
+                              "colorTrc": "bt709",
+                              "frameRate": 23.976,
+                              "hasScalingMatrix": false,
+                              "height": 804,
+                              "level": 41,
+                              "profile": "high",
+                              "refFrames": 5,
+                              "requiredBandwidths": "10691,9974,9965,9965,9965,9965,9965,9965",
+                              "scanType": "progressive",
+                              "streamIdentifier": "1",
+                              "width": 1920,
+                              "displayTitle": "1080p",
+                              "extendedDisplayTitle": "1080p (H.264)"
+                            },
+                            {
+                              "id": 1121839,
+                              "streamType": 2,
+                              "selected": true,
+                              "default": true,
+                              "codec": "ac3",
+                              "index": 1,
+                              "channels": 6,
+                              "bitrate": 448,
+                              "language": "English",
+                              "languageTag": "en",
+                              "languageCode": "eng",
+                              "audioChannelLayout": "5.1(side)",
+                              "requiredBandwidths": "448,448,448,448,448,448,448,448",
+                              "samplingRate": 48000,
+                              "streamIdentifier": "2",
+                              "displayTitle": "English (AC3 5.1)",
+                              "extendedDisplayTitle": "English (AC3 5.1)"
+                            },
+                            {
+                              "id": 1121840,
+                              "streamType": 3,
+                              "canAutoSync": false,
+                              "default": true,
+                              "codec": "mov_text",
+                              "index": 2,
+                              "bitrate": 0,
+                              "language": "English",
+                              "languageTag": "en",
+                              "languageCode": "eng",
+                              "requiredBandwidths": "1,1,1,1,1,1,1,1",
+                              "streamIdentifier": "3",
+                              "displayTitle": "English",
+                              "extendedDisplayTitle": "English (MOV_TEXT)"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "Image": [
+                    {
+                      "alt": "Shazam! Fury of the Gods",
+                      "type": "coverPoster",
+                      "url": "/library/metadata/215830/thumb/1737510037"
+                    },
+                    {
+                      "alt": "Shazam! Fury of the Gods",
+                      "type": "background",
+                      "url": "/library/metadata/215830/art/1737510037"
+                    },
+                    {
+                      "alt": "Shazam! Fury of the Gods",
+                      "type": "clearLogo",
+                      "url": "/library/metadata/215830/clearLogo/1737510037"
+                    }
+                  ],
+                  "UltraBlurColors": {
+                    "topLeft": "06343e",
+                    "topRight": "73391d",
+                    "bottomRight": "a0322a",
+                    "bottomLeft": "592422"
+                  },
+                  "Genre": [
+                    {
+                      "id": 473424,
+                      "filter": "genre=473424",
+                      "tag": "Action"
+                    },
+                    {
+                      "id": 99,
+                      "filter": "genre=99",
+                      "tag": "Adventure"
+                    },
+                    {
+                      "id": 263,
+                      "filter": "genre=263",
+                      "tag": "Comedy"
+                    },
+                    {
+                      "id": 101,
+                      "filter": "genre=101",
+                      "tag": "Fantasy"
+                    },
+                    {
+                      "id": 6466,
+                      "filter": "genre=6466",
+                      "tag": "Science Fiction"
+                    },
+                    {
+                      "id": 1425,
+                      "filter": "genre=1425",
+                      "tag": "Crime"
+                    },
+                    {
+                      "id": 437,
+                      "filter": "genre=437",
+                      "tag": "Thriller"
+                    }
+                  ],
+                  "Country": [
+                    {
+                      "id": 98589,
+                      "filter": "country=98589",
+                      "tag": "United States of America"
+                    }
+                  ],
+                  "Guid": [
+                    {
+                      "id": "imdb://tt10151854"
+                    },
+                    {
+                      "id": "tmdb://594767"
+                    },
+                    {
+                      "id": "tvdb://134845"
+                    }
+                  ],
+                  "Rating": [
+                    {
+                      "image": "imdb://image.rating",
+                      "value": 5.9,
+                      "type": "audience"
+                    },
+                    {
+                      "image": "rottentomatoes://image.rating.rotten",
+                      "value": 4.9,
+                      "type": "critic"
+                    },
+                    {
+                      "image": "rottentomatoes://image.rating.upright",
+                      "value": 8.5,
+                      "type": "audience"
+                    },
+                    {
+                      "image": "themoviedb://image.rating",
+                      "value": 6.5,
+                      "type": "audience"
+                    }
+                  ],
+                  "Collection": [
+                    {
+                      "id": 678188,
+                      "filter": "collection=678188",
+                      "tag": "Shazam! Collection",
+                      "guid": "plex://collection/5f1b2a0da3fc680042d84ec4",
+                      "summary": "A series of movies about foster siblings, who transform into superheroes by saying \"Shazam!\"."
+                    }
+                  ],
+                  "Director": [
+                    {
+                      "id": 529077,
+                      "filter": "director=529077",
+                      "tag": "David F. Sandberg",
+                      "tagKey": "5d776ab1ad5437001f785ef7",
+                      "thumb": "https://metadata-static.plex.tv/4/people/49c6a4b6a89ddb35094f96bc20d045dc.jpg"
+                    }
+                  ],
+                  "Writer": [
+                    {
+                      "id": 514740,
+                      "filter": "writer=514740",
+                      "tag": "Chris Morgan",
+                      "tagKey": "5d7768332ec6b5001f6bba3a",
+                      "thumb": "https://metadata-static.plex.tv/3/people/3b2ff20fcb4c9908d1b7e56d3cea0af4.jpg"
+                    },
+                    {
+                      "id": 529078,
+                      "filter": "writer=529078",
+                      "tag": "Henry Gayden",
+                      "tagKey": "5d776a7996b655001fdef937",
+                      "thumb": "https://metadata-static.plex.tv/7/people/7df39eb10de50b18517e268698914895.jpg"
+                    }
+                  ],
+                  "Role": [
+                    {
+                      "id": 529081,
+                      "filter": "actor=529081",
+                      "tag": "Zachary Levi",
+                      "tagKey": "5d7768373c3c2a001fbcebef",
+                      "role": "Shazam",
+                      "thumb": "https://metadata-static.plex.tv/iva/person/83401/227ee21dea4ee56b997d05d30190ca1c.jpg"
+                    },
+                    {
+                      "id": 529082,
+                      "filter": "actor=529082",
+                      "tag": "Asher Angel",
+                      "tagKey": "5d77687c33f255001e857d12",
+                      "role": "Billy Batson",
+                      "thumb": "https://metadata-static.plex.tv/4/people/436a55a939c5cf3f3bb9fdff4b209699.jpg"
+                    },
+                    {
+                      "id": 520526,
+                      "filter": "actor=520526",
+                      "tag": "Jack Dylan Grazer",
+                      "tagKey": "5d776b127a53e9001e719279",
+                      "role": "Freddy Freeman",
+                      "thumb": "https://metadata-static.plex.tv/8/people/85ae4515ad08920eb4bcba5ac494ca32.jpg"
+                    },
+                    {
+                      "id": 694575,
+                      "filter": "actor=694575",
+                      "tag": "Rachel Zegler",
+                      "tagKey": "5d777031dd931c001e38947d",
+                      "role": "Anthea",
+                      "thumb": "https://metadata-static.plex.tv/4/people/4ffec13e8dd8693073b31a2a7e614a8a.jpg"
+                    },
+                    {
+                      "id": 527056,
+                      "filter": "actor=527056",
+                      "tag": "Adam Brody",
+                      "tagKey": "5d776828a091de001f2e64aa",
+                      "role": "Super Hero Freddy",
+                      "thumb": "https://metadata-static.plex.tv/c/people/c8169fe43278107431a6af06b1197e91.jpg"
+                    },
+                    {
+                      "id": 527274,
+                      "filter": "actor=527274",
+                      "tag": "Ross Butler",
+                      "tagKey": "5d776b127a53e9001e71927c",
+                      "role": "Super Hero Eugene",
+                      "thumb": "https://metadata-static.plex.tv/people/5d776b127a53e9001e71927c.jpg"
+                    },
+                    {
+                      "id": 516285,
+                      "filter": "actor=516285",
+                      "tag": "D.J. Cotrona",
+                      "tagKey": "5d776831eb5d26001f1dfcf7",
+                      "role": "Super Hero Pedro",
+                      "thumb": "https://metadata-static.plex.tv/9/people/9db31cd0e71707e7b10e7cdab15e66b6.jpg"
+                    },
+                    {
+                      "id": 639732,
+                      "filter": "actor=639732",
+                      "tag": "Grace Caroline Currey",
+                      "tagKey": "5d776831eb5d26001f1dfe79",
+                      "role": "Mary Bromfield / Super Hero Mary",
+                      "thumb": "https://metadata-static.plex.tv/b/people/b807b7030baa792d3ae72c269f33faa3.jpg"
+                    },
+                    {
+                      "id": 504149,
+                      "filter": "actor=504149",
+                      "tag": "Meagan Good",
+                      "tagKey": "5d776826999c64001ec2c5d1",
+                      "role": "Super Hero Darla",
+                      "thumb": "https://metadata-static.plex.tv/c/people/c0fb30408cd5d9bd2a25e4c896e1e9c5.jpg"
+                    },
+                    {
+                      "id": 510175,
+                      "filter": "actor=510175",
+                      "tag": "Lucy Liu",
+                      "tagKey": "5d776826103a2d001f563f77",
+                      "role": "Kalypso",
+                      "thumb": "https://metadata-static.plex.tv/f/people/f444694c931163f2adc428d8838fe0de.jpg"
+                    },
+                    {
+                      "id": 504750,
+                      "filter": "actor=504750",
+                      "tag": "Djimon Hounsou",
+                      "tagKey": "5d7768267228e5001f1dcdb9",
+                      "role": "Wizard",
+                      "thumb": "https://metadata-static.plex.tv/5/people/534fa784b6cc321c266494c055bf4b57.jpg"
+                    },
+                    {
+                      "id": 514744,
+                      "filter": "actor=514744",
+                      "tag": "Helen Mirren",
+                      "tagKey": "5d7768298718ba001e312481",
+                      "role": "Hespera",
+                      "thumb": "https://metadata-static.plex.tv/5/people/58986bd1e92416deec2dc17604378d1b.jpg"
+                    },
+                    {
+                      "id": 687430,
+                      "filter": "actor=687430",
+                      "tag": "Faithe Herman",
+                      "tagKey": "5f404f9502101b0040faae90",
+                      "role": "Darla Dudley",
+                      "thumb": "https://metadata-static.plex.tv/8/people/8fba949637d569c3b6441625e6706e33.jpg"
+                    },
+                    {
+                      "id": 529086,
+                      "filter": "actor=529086",
+                      "tag": "Ian Chen",
+                      "tagKey": "5d776b127a53e9001e71927b",
+                      "role": "Eugene Choi",
+                      "thumb": "https://metadata-static.plex.tv/f/people/fd194cfec58fe87ecca75eab56442d00.jpg"
+                    },
+                    {
+                      "id": 529087,
+                      "filter": "actor=529087",
+                      "tag": "Jovan Armand",
+                      "tagKey": "5d776b127a53e9001e71927d",
+                      "role": "Pedro Peña",
+                      "thumb": "https://metadata-static.plex.tv/1/people/1e38094f5f63a719e1ca4452707aad3e.jpg"
+                    },
+                    {
+                      "id": 529088,
+                      "filter": "actor=529088",
+                      "tag": "Marta Milans",
+                      "tagKey": "5d7768ba1999bc0020dcf51c",
+                      "role": "Rosa Vasquez",
+                      "thumb": "https://metadata-static.plex.tv/0/people/098996158b6bcd5259b4c3f4440ee800.jpg"
+                    },
+                    {
+                      "id": 529089,
+                      "filter": "actor=529089",
+                      "tag": "Cooper Andrews",
+                      "tagKey": "5d776b127a53e9001e71927e",
+                      "role": "Victor Vasquez",
+                      "thumb": "https://metadata-static.plex.tv/b/people/bbb7163a77836f020dbbf1aa010987cd.jpg"
+                    },
+                    {
+                      "id": 533518,
+                      "filter": "actor=533518",
+                      "tag": "Rizwan Manji",
+                      "tagKey": "5d7768603ab0e7001f4ff8c4",
+                      "role": "Docent",
+                      "thumb": "https://metadata-static.plex.tv/9/people/9fddc569f64b1a50e185c19265df442b.jpg"
+                    },
+                    {
+                      "id": 604590,
+                      "filter": "actor=604590",
+                      "tag": "P.J. Byrne",
+                      "tagKey": "5d7768264de0ee001fcc85ed",
+                      "role": "Dr. Dario Bava",
+                      "thumb": "https://metadata-static.plex.tv/6/people/6cbd7da9633324d2e62a1837765f7f97.jpg"
+                    },
+                    {
+                      "id": 508701,
+                      "filter": "actor=508701",
+                      "tag": "Diedrich Bader",
+                      "tagKey": "5d776826eb5d26001f1dd577",
+                      "role": "Mr. Geckle",
+                      "thumb": "https://metadata-static.plex.tv/4/people/45e14e119f64ec3a595a2077cc7affbb.jpg"
+                    },
+                    {
+                      "id": 521465,
+                      "filter": "actor=521465",
+                      "tag": "David Lengel",
+                      "tagKey": "5d776853eb5d26001f1e67eb",
+                      "role": "Museum Security Guard",
+                      "thumb": "https://metadata-static.plex.tv/people/5d776853eb5d26001f1e67eb.jpg"
+                    },
+                    {
+                      "id": 795829,
+                      "filter": "actor=795829",
+                      "tag": "Rick Andosca",
+                      "tagKey": "5d7768ad96b655001fdbee13",
+                      "role": "Landlord",
+                      "thumb": "https://metadata-static.plex.tv/b/people/b8dbdf19f841991905df4b95f5e187dc.jpg"
+                    },
+                    {
+                      "id": 566043,
+                      "filter": "actor=566043",
+                      "tag": "Erica Frene",
+                      "tagKey": "5d7768c347dd6e001f6be561",
+                      "role": "Girl Running on Bridge",
+                      "thumb": "https://metadata-static.plex.tv/f/people/f88e9aa4179d62ce1146b8b4b3dceb94.jpg"
+                    },
+                    {
+                      "id": 529097,
+                      "filter": "actor=529097",
+                      "tag": "Lotta Losten",
+                      "tagKey": "5d776ab1ad5437001f785ef8",
+                      "role": "Nurse in Need of a Hero",
+                      "thumb": "https://metadata-static.plex.tv/5/people/5af75ebea31011988e3d516d3281d89e.jpg"
+                    },
+                    {
+                      "id": 504752,
+                      "filter": "actor=504752",
+                      "tag": "Natalia Safran",
+                      "tagKey": "5d77682b61141d001fb13ebe",
+                      "role": "Driver with Kittens",
+                      "thumb": "https://metadata-static.plex.tv/2/people/2cd06d5d56bc04fb51b17c8e074fcb0b.jpg"
+                    },
+                    {
+                      "id": 694577,
+                      "filter": "actor=694577",
+                      "tag": "Hillary Harley",
+                      "tagKey": "5d776a617a53e9001e703a8e",
+                      "role": "Kitten Car Passenger",
+                      "thumb": "https://metadata-static.plex.tv/f/people/f48964a1309684ebab6efbe589464462.jpg"
+                    },
+                    {
+                      "id": 694578,
+                      "filter": "actor=694578",
+                      "tag": "Lou Lou Safran",
+                      "tagKey": "5d776b127a53e9001e719289",
+                      "role": "Kitten Car Passenger",
+                      "thumb": "https://metadata-static.plex.tv/5/people/534784911b0a5de4c3cf2de433691da8.jpg"
+                    },
+                    {
+                      "id": 698532,
+                      "filter": "actor=698532",
+                      "tag": "Tara Jones",
+                      "tagKey": "5d7769a196b655001fdd4a37",
+                      "role": "Mom on Bridge",
+                      "thumb": "https://metadata-static.plex.tv/2/people/2aed2056c37f77d329d975aedea47b2f.jpg"
+                    },
+                    {
+                      "id": 645146,
+                      "filter": "actor=645146",
+                      "tag": "Edward Force",
+                      "tagKey": "5f3fd443bf3e560040b1904b",
+                      "role": "Old Man on Bridge",
+                      "thumb": "https://metadata-static.plex.tv/3/people/3c0f119ce37cc0d2d629785b385da11c.jpg"
+                    },
+                    {
+                      "id": 680302,
+                      "filter": "actor=680302",
+                      "tag": "Milli M.",
+                      "tagKey": "5e1651d8bc1372003ea881cb",
+                      "role": "Bridge Reporter",
+                      "thumb": "https://metadata-static.plex.tv/people/5e1651d8bc1372003ea881cb.jpg"
+                    },
+                    {
+                      "id": 529096,
+                      "filter": "actor=529096",
+                      "tag": "Carson MacCormac",
+                      "tagKey": "5d776b127a53e9001e719286",
+                      "role": "Brett Breyer",
+                      "thumb": "https://metadata-static.plex.tv/2/people/2ac795d724d9e638af22cdc1af6a3d28.jpg"
+                    },
+                    {
+                      "id": 529116,
+                      "filter": "actor=529116",
+                      "tag": "Evan Marsh",
+                      "tagKey": "5d776b127a53e9001e719296",
+                      "role": "Burke Breyer",
+                      "thumb": "https://metadata-static.plex.tv/people/5d776b127a53e9001e719296.jpg"
+                    },
+                    {
+                      "id": 694582,
+                      "filter": "actor=694582",
+                      "tag": "Taylor Cahill",
+                      "tagKey": "5f40111fcae2c60042ee43b6",
+                      "role": "Fake Wonder Woman"
+                    },
+                    {
+                      "id": 698533,
+                      "filter": "actor=698533",
+                      "tag": "Sebrena Sumrah-Kelly",
+                      "tagKey": "646370e8bea5647c735fe42d",
+                      "role": "Lunch Lady"
+                    },
+                    {
+                      "id": 529323,
+                      "filter": "actor=529323",
+                      "tag": "Wolf Blitzer",
+                      "tagKey": "5d77684a85719b001f3a7826",
+                      "role": "News Reporter",
+                      "thumb": "https://metadata-static.plex.tv/4/people/49d3ebb7848357e7fb8dc654f9564aa9.jpg"
+                    },
+                    {
+                      "id": 502888,
+                      "filter": "actor=502888",
+                      "tag": "Michael Beasley",
+                      "tagKey": "5d77683b151a60001f24f20b",
+                      "role": "Colonel Cheesesteak",
+                      "thumb": "https://metadata-static.plex.tv/d/people/d7472ce69382c83611a1003326f05dac.jpg"
+                    },
+                    {
+                      "id": 551582,
+                      "filter": "actor=551582",
+                      "tag": "Robert Walker Branchaud",
+                      "tagKey": "5d776b2ef617c900201730c4",
+                      "role": "Construction Worker",
+                      "thumb": "https://metadata-static.plex.tv/people/5d776b2ef617c900201730c4.jpg"
+                    },
+                    {
+                      "id": 722225,
+                      "filter": "actor=722225",
+                      "tag": "Jessica Fontaine",
+                      "tagKey": "5d776bfc51dd69001fe36503",
+                      "role": "Terrified Mother",
+                      "thumb": "https://metadata-static.plex.tv/5/people/5472f8d0d8dabc8d526acf85a770c8d0.jpg"
+                    },
+                    {
+                      "id": 698535,
+                      "filter": "actor=698535",
+                      "tag": "Aaliyah Luu",
+                      "tagKey": "646370eb09c10b917cebbb41",
+                      "role": "Terrified Child"
+                    },
+                    {
+                      "id": 694559,
+                      "filter": "actor=694559",
+                      "tag": "Bonnie Discepolo",
+                      "tagKey": "5d776a917a53e9001e708f07",
+                      "role": "Sweaty Streetgoer",
+                      "thumb": "https://metadata-static.plex.tv/d/people/d132d55dcd2fc00eae59bbbc50c0b206.jpg"
+                    },
+                    {
+                      "id": 694581,
+                      "filter": "actor=694581",
+                      "tag": "Michael Gray",
+                      "tagKey": "5d776b58594b2b001e6d7460",
+                      "role": "Man on the Street",
+                      "thumb": "https://metadata-static.plex.tv/people/5d776b58594b2b001e6d7460.jpg"
+                    },
+                    {
+                      "id": 698536,
+                      "filter": "actor=698536",
+                      "tag": "F. Douglas Hall II",
+                      "tagKey": "646370ebf69c0fb4ff502d0c",
+                      "role": "Shazam Fan"
+                    },
+                    {
+                      "id": 786431,
+                      "filter": "actor=786431",
+                      "tag": "Patrick Reidy",
+                      "tagKey": "5f85f58a1316c900429150fe",
+                      "role": "Fleeing Pedestrian (uncredited)",
+                      "thumb": "https://metadata-static.plex.tv/a/people/a25f96a87282658e04001dfd548ac500.jpg"
+                    },
+                    {
+                      "id": 632355,
+                      "filter": "actor=632355",
+                      "tag": "Kelvin Hodge",
+                      "tagKey": "6118cf141e7b83002de2b97d",
+                      "role": "Drunk Guy (uncredited)",
+                      "thumb": "https://image.tmdb.org/t/p/original/gOUbxFLokMUFjPMloKOw4dcSPSr.jpg"
+                    },
+                    {
+                      "id": 694580,
+                      "filter": "actor=694580",
+                      "tag": "Chloe Camp",
+                      "tagKey": "5f40429c03883a0040b75058",
+                      "role": "Crying Girl (uncredited)",
+                      "thumb": "https://metadata-static.plex.tv/3/people/3c25e24557286e807878cf39ad5039e3.jpg"
+                    },
+                    {
+                      "id": 506820,
+                      "filter": "actor=506820",
+                      "tag": "Gal Gadot",
+                      "tagKey": "5d77683b8718ba001e315f4b",
+                      "role": "Diana Prince / Wonder Woman (uncredited)",
+                      "thumb": "https://metadata-static.plex.tv/6/people/66e03c1f6960d8f641572f63e1c3ccf3.jpg"
+                    },
+                    {
+                      "id": 532121,
+                      "filter": "actor=532121",
+                      "tag": "Jennifer Holland",
+                      "tagKey": "5d7768517e9a3c0020c70b0d",
+                      "role": "Emilia Harcourt (uncredited)",
+                      "thumb": "https://metadata-static.plex.tv/f/people/f9a5aad24dcc9ff05bed825d2d44a209.jpg"
+                    },
+                    {
+                      "id": 517695,
+                      "filter": "actor=517695",
+                      "tag": "Steve Agee",
+                      "tagKey": "5d77683f5af944001f1fc15e",
+                      "role": "John Economos (uncredited)",
+                      "thumb": "https://metadata-static.plex.tv/9/people/97372e726fd222b110502b301aa1f7e5.jpg"
+                    },
+                    {
+                      "id": 529120,
+                      "filter": "actor=529120",
+                      "tag": "David F. Sandberg",
+                      "tagKey": "5d776ab1ad5437001f785ef7",
+                      "role": "Pedestrian Attacked by Harpy / Mister Mind (uncredited)",
+                      "thumb": "https://metadata-static.plex.tv/4/people/49c6a4b6a89ddb35094f96bc20d045dc.jpg"
+                    },
+                    {
+                      "id": 502224,
+                      "filter": "actor=502224",
+                      "tag": "Mark Strong",
+                      "tagKey": "5d7768253c3c2a001fbca9ac",
+                      "role": "Doctor Thaddeus Sivana (uncredited)",
+                      "thumb": "https://metadata-static.plex.tv/1/people/1fa83a48ef819f83d6781ff73f961b8a.jpg"
+                    }
+                  ],
+                  "Producer": [
+                    {
+                      "id": 504782,
+                      "filter": "producer=504782",
+                      "tag": "Peter Safran",
+                      "tagKey": "5d77683b4de0ee001fcccc4c",
+                      "thumb": "https://metadata-static.plex.tv/6/people/64470586773fac92b1b55c22c6920336.jpg"
+                    }
+                  ],
+                  "Marker": [
+                    {
+                      "id": 118430,
+                      "type": "credits",
+                      "startTimeOffset": 7043922,
+                      "endTimeOffset": 7189922,
+                      "Attributes": {
+                        "id": 118430,
+                        "version": 4
+                      }
+                    },
+                    {
+                      "id": 118430,
+                      "type": "credits",
+                      "startTimeOffset": 7343922,
+                      "endTimeOffset": 7709922,
+                      "Attributes": {
+                        "id": 118430,
+                        "version": 4
+                      }
+                    }
+                  ],
+                  "Review": [
+                    {
+                      "id": 510,
+                      "filter": "art=510",
+                      "tag": "Peter Travers",
+                      "text": "The tossed-off charm of the original suffers from bloated sequelitis. It's mostly stupid kid stuff, but Zachary Levi's comic-book invitation to shake your sillies out will be hard to resist for underserved family audiences.",
+                      "image": "rottentomatoes://image.review.rotten",
+                      "link": "https://abcnews.go.com/GMA/Culture/review-shazam-fury-gods-strains-hard-magic-naturally/story?id=97908199",
+                      "source": "ABC News"
+                    },
+                    {
+                      "id": 504,
+                      "filter": "art=504",
+                      "tag": "Kyle Smith",
+                      "text": "All that really matters to the filmmakers is a make-it-up-as-they-go drive to lunge from one magical spectacle to another. Even compared to last year's franchise spinoff Black Adam, the movie is insistently goofy",
+                      "image": "rottentomatoes://image.review.rotten",
+                      "link": "https://www.wsj.com/articles/shazam-fury-of-the-gods-review-return-of-the-man-child-69874079",
+                      "source": "Wall Street Journal"
+                    },
+                    {
+                      "id": 66749,
+                      "filter": "art=66749",
+                      "tag": "Nell Minow",
+                      "text": "It is fun to watch but a lot of clutter and especially a lot of CGI overwhelms the plot and all-but obliterates the tenderness of the first story.",
+                      "image": "rottentomatoes://image.review.fresh",
+                      "link": "https://moviemom.com/shazam-fury-of-the-gods/",
+                      "source": "Movie Mom"
+                    },
+                    {
+                      "id": 659,
+                      "filter": "art=659",
+                      "tag": "Richard Roeper",
+                      "text": "Batson's alter ego muscles his way through loud, underwhelming action sequences.",
+                      "image": "rottentomatoes://image.review.rotten",
+                      "link": "https://chicago.suntimes.com/movies-and-tv/2023/3/16/23642982/shazam-fury-gods-review-sequel-dc-movie-zachary-levi",
+                      "source": "Chicago Sun-Times"
+                    },
+                    {
+                      "id": 604,
+                      "filter": "art=604",
+                      "tag": "Adam Graham",
+                      "text": "It goes for the same lighthearted tone and outsider approach to its hero and subject matter, but it runs low on whimsy and even lower on superhero magic.",
+                      "image": "rottentomatoes://image.review.rotten",
+                      "link": "https://www.detroitnews.com/story/entertainment/movies/2023/03/16/review-shazam-fury-of-the-gods-short-on-superpowers/70015566007/",
+                      "source": "Detroit News"
+                    },
+                    {
+                      "id": 335717,
+                      "filter": "art=335717",
+                      "tag": "Linda Marric",
+                      "text": "Laboured, unfocused and generally out of ideas. I was bored stiff.",
+                      "image": "rottentomatoes://image.review.rotten",
+                      "link": "https://www.thejc.com/life-and-culture/all/shazam-fury-of-the-gods-film-review-hapless-misfits-fall-flat-2mPhjz9vLVF4hiZasXK8HO",
+                      "source": "The Jewish Chronicle"
+                    },
+                    {
+                      "id": 9950,
+                      "filter": "art=9950",
+                      "tag": "Simon Abrams",
+                      "text": "It's schtickier and less assured than the first \"Shazam!\" but these leftovers still reheat well enough.",
+                      "image": "rottentomatoes://image.review.fresh",
+                      "link": "https://www.rogerebert.com/reviews/shazam-fury-of-the-gods-movie-review-2023",
+                      "source": "RogerEbert.com"
+                    },
+                    {
+                      "id": 2210,
+                      "filter": "art=2210",
+                      "tag": "Chris Vognar",
+                      "text": "Fun, clever, smartly conceived entertainment that doesn't take itself too seriously. What a concept.",
+                      "image": "rottentomatoes://image.review.fresh",
+                      "link": "https://www.rollingstone.com/tv-movies/tv-movie-reviews/shazam-fury-of-the-gods-review-dc-superhero-finest-zachary-levi-helen-mirren-1234697073/",
+                      "source": "Rolling Stone"
+                    },
+                    {
+                      "id": 623041,
+                      "filter": "art=623041",
+                      "tag": "Bilge Ebiri",
+                      "text": "It's competent, uninspired swill, undone largely by the fact that it's following up a superior first movie.",
+                      "image": "rottentomatoes://image.review.rotten",
+                      "link": "https://www.vulture.com/article/movie-review-dcs-shazam-fury-of-the-gods.html?utm_source=flipboard.com&utm_medium=social_acct&utm_campaign=feed-part",
+                      "source": "New York Magazine/Vulture"
+                    },
+                    {
+                      "id": 625003,
+                      "filter": "art=625003",
+                      "tag": "Glen Weldon",
+                      "text": "It's apparent quite early that the narrative fuel mixture of Shazam: Fury of the Gods is off.",
+                      "image": "rottentomatoes://image.review.rotten",
+                      "link": "https://www.npr.org/2023/03/17/1163927830/shazam-fury-of-the-gods-review",
+                      "source": "NPR"
+                    },
+                    {
+                      "id": 623708,
+                      "filter": "art=623708",
+                      "tag": "Brian Lowry",
+                      "text": "Everything that worked in the original works less well in this so-so sequel, blunting even the star power emitted by its high-profile villains.",
+                      "image": "rottentomatoes://image.review.rotten",
+                      "link": "https://www.cnn.com/2023/03/16/entertainment/shazam-fury-of-the-gods-review/index.html",
+                      "source": "CNN.com"
+                    },
+                    {
+                      "id": 66708,
+                      "filter": "art=66708",
+                      "tag": "Johnny Oleksinski",
+                      "text": "Do we need to start a GoFundMe page for Helen Mirren?",
+                      "image": "rottentomatoes://image.review.rotten",
+                      "link": "https://nypost.com/2023/03/17/shazam-fury-of-the-gods-review-0-stars-for-a-trainwreck/",
+                      "source": "New York Post"
+                    },
+                    {
+                      "id": 486465,
+                      "filter": "art=486465",
+                      "tag": "Thomas Floyd",
+                      "text": "Unfortunately, the new sequel proves an adage: Lightning doesn't strike twice.",
+                      "image": "rottentomatoes://image.review.rotten",
+                      "link": "https://www.washingtonpost.com/movies/2023/03/16/shazam-fury-of-the-gods-movie-review/",
+                      "source": "Washington Post"
+                    },
+                    {
+                      "id": 335189,
+                      "filter": "art=335189",
+                      "tag": "Sara Michelle Fetters",
+                      "text": "Everyone who got a kick out of the low stakes, self-contained storytelling and goofily juvenile antics on display in 2019's Shazam! will likely be equally satisfied with its sequel, Shazam! Fury of the Gods.",
+                      "image": "rottentomatoes://image.review.fresh",
+                      "link": "http://moviefreak.com/shazam-fury-of-the-gods-2023-movie-review/",
+                      "source": "MovieFreak.com"
+                    },
+                    {
+                      "id": 505,
+                      "filter": "art=505",
+                      "tag": "Claudia Puig",
+                      "text": "Neither Mirren nor unicorns are enough to make this worth seeing.",
+                      "image": "rottentomatoes://image.review.rotten",
+                      "link": "https://www.kpcc.org/podcast/filmweek/filmweek-scream-vi-shazam-fury-of-the-gods-luther-the-fallen-sun-and-more",
+                      "source": "FilmWeek (KPCC - NPR Los Angeles)"
+                    },
+                    {
+                      "id": 335465,
+                      "filter": "art=335465",
+                      "tag": "Matthew Monagle",
+                      "text": "Shazam! Fury of the Gods loses the thing that made it special.",
+                      "image": "rottentomatoes://image.review.rotten",
+                      "link": "https://www.austinchronicle.com/events/film/2023-03-24/shazam-fury-of-the-gods/",
+                      "source": "Austin Chronicle"
+                    },
+                    {
+                      "id": 634257,
+                      "filter": "art=634257",
+                      "tag": "Adam Mullins-Khatib",
+                      "text": "The original film left nothing of substance for this superhero sequel.",
+                      "image": "rottentomatoes://image.review.rotten",
+                      "link": "https://chicagoreader.com/film/review-shazam-fury-of-the-gods/",
+                      "source": "Chicago Reader"
+                    },
+                    {
+                      "id": 628115,
+                      "filter": "art=628115",
+                      "tag": "Matthew Jackson",
+                      "text": "...a frustrating case of sequel overreach after its more focused, emotionally satisfying, crowd-pleasing predecessor. It's not outright terrible, but it's hard to shake the feeling that we all could have had so much more fun.",
+                      "image": "rottentomatoes://image.review.rotten",
+                      "link": "https://www.avclub.com/a-review-of-shazam-fury-of-the-gods-1850231422",
+                      "source": "AV Club"
+                    },
+                    {
+                      "id": 271,
+                      "filter": "art=271",
+                      "tag": "Mick LaSalle",
+                      "text": "Zegler can do better. Levi can do better. Certainly, Mirren and Liu can do better...",
+                      "image": "rottentomatoes://image.review.rotten",
+                      "link": "https://datebook.sfchronicle.com/movies-tv/shazam-fury-of-the-gods-review-helen-mirren-levi-17841998",
+                      "source": "San Francisco Chronicle"
+                    },
+                    {
+                      "id": 51340,
+                      "filter": "art=51340",
+                      "tag": "Jocelyn Noveck",
+                      "text": "The sequel, again directed by David F. Sandberg, feels less breezily funny, less fresh, less fleet of foot. In its favor, though, are some elements that lent the original its pleasures, especially Zachary Levi and his goofy efforts.",
+                      "image": "rottentomatoes://image.review.fresh",
+                      "link": "https://apnews.com/article/shazam-fury-of-gods-movie-review-34f76ff3a091ca066f49fb07e70bd97f",
+                      "source": "Associated Press"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "hubKey": "/library/metadata/209311",
+              "key": "/library/sections/3/all?actor=529081&id!=61466",
+              "title": "More with Zachary Levi",
+              "type": "movie",
+              "hubIdentifier": "movie.same.actor.0",
+              "context": "hub.movie.same.actor",
+              "size": 1,
+              "more": true,
+              "style": "shelf",
+              "Metadata": [
+                {
+                  "ratingKey": "209311",
+                  "key": "/library/metadata/209311",
+                  "guid": "plex://movie/5f84ad2e1d986d0041af238d",
+                  "slug": "night-at-the-museum-kahmunrah-rises-again-2022",
+                  "studio": "21 Laps Entertainment",
+                  "type": "movie",
+                  "title": "Night at the Museum: Kahmunrah Rises Again",
+                  "contentRating": "PG",
+                  "summary": "Nick Daley is following in his father's footsteps as night watchman at the American Museum of Natural History, so he knows what happens when the sun goes down. But when the maniacal ruler Kahmunrah escapes, it is up to Nick to save the museum once and for all.",
+                  "rating": 7.7,
+                  "audienceRating": 3.6,
+                  "year": 2022,
+                  "tagline": "Same shift. Different night.",
+                  "thumb": "/library/metadata/209311/thumb/1737421413",
+                  "art": "/library/metadata/209311/art/1737421413",
+                  "duration": 4662048,
+                  "originallyAvailableAt": "2022-12-09",
+                  "addedAt": 1670832423,
+                  "updatedAt": 1737421413,
+                  "audienceRatingImage": "rottentomatoes://image.rating.spilled",
+                  "primaryExtraKey": "/library/metadata/214674",
+                  "ratingImage": "rottentomatoes://image.rating.ripe",
+                  "Media": [
+                    {
+                      "id": 395022,
+                      "duration": 4662048,
+                      "bitrate": 6410,
+                      "width": 1920,
+                      "height": 1080,
+                      "aspectRatio": 1.78,
+                      "audioChannels": 6,
+                      "audioCodec": "eac3",
+                      "videoCodec": "h264",
+                      "videoResolution": "1080",
+                      "container": "mkv",
+                      "videoFrameRate": "24p",
+                      "videoProfile": "high",
+                      "hasVoiceActivity": false,
+                      "Part": [
+                        {
+                          "id": 397025,
+                          "key": "/library/parts/397025/1670832367/file.mkv",
+                          "duration": 4662048,
+                          "file": "/mnt/HD/HD_a2/media_2/Movies/Night at the Museum Kahmunrah Rises Again (2022)/Night at the Museum Kahmunrah Rises Again (2022) {imdb-tt13623880} [WEBDL-1080p].mkv",
+                          "size": 3737972745,
+                          "container": "mkv",
+                          "deepAnalysisVersion": "6",
+                          "indexes": "sd",
+                          "requiredBandwidths": "11818,10941,9976,9976,9976,9976,9976,9976",
+                          "videoProfile": "high"
+                        }
+                      ]
+                    }
+                  ],
+                  "Image": [
+                    {
+                      "alt": "Night at the Museum: Kahmunrah Rises Again",
+                      "type": "coverPoster",
+                      "url": "/library/metadata/209311/thumb/1737421413"
+                    },
+                    {
+                      "alt": "Night at the Museum: Kahmunrah Rises Again",
+                      "type": "background",
+                      "url": "/library/metadata/209311/art/1737421413"
+                    },
+                    {
+                      "alt": "Night at the Museum: Kahmunrah Rises Again",
+                      "type": "clearLogo",
+                      "url": "/library/metadata/209311/clearLogo/1737421413"
+                    }
+                  ],
+                  "UltraBlurColors": {
+                    "topLeft": "4a2102",
+                    "topRight": "3a5c03",
+                    "bottomRight": "194156",
+                    "bottomLeft": "33602c"
+                  },
+                  "Genre": [
+                    {
+                      "tag": "Animation"
+                    },
+                    {
+                      "tag": "Adventure"
+                    }
+                  ],
+                  "Country": [
+                    {
+                      "tag": "United States of America"
+                    }
+                  ],
+                  "Director": [
+                    {
+                      "tag": "Matt Danner"
+                    }
+                  ],
+                  "Writer": [
+                    {
+                      "tag": "William Schifrin"
+                    },
+                    {
+                      "tag": "Ray DeLaurentis"
+                    }
+                  ],
+                  "Role": [
+                    {
+                      "tag": "Joshua Bassett"
+                    },
+                    {
+                      "tag": "Thomas Lennon"
+                    },
+                    {
+                      "tag": "Joseph Kamal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "hubKey": "/library/metadata/71488",
+              "key": "/library/sections/3/all?actor=502224&id!=61466",
+              "title": "More with Mark Strong",
+              "type": "movie",
+              "hubIdentifier": "movie.same.actor.1",
+              "context": "hub.movie.same.actor",
+              "size": 1,
+              "more": true,
+              "style": "shelf",
+              "Metadata": [
+                {
+                  "ratingKey": "71488",
+                  "key": "/library/metadata/71488",
+                  "guid": "plex://movie/5d77705edd931c001e38bde2",
+                  "slug": "1917",
+                  "studio": "DreamWorks Pictures",
+                  "type": "movie",
+                  "title": "1917",
+                  "contentRating": "R",
+                  "summary": "April 6th, 1917. As an infantry battalion assembles to wage war deep in enemy territory, two soldiers are assigned to race against time and deliver a message that will stop 1,600 men from walking straight into a deadly trap.",
+                  "rating": 8.8,
+                  "audienceRating": 8.8,
+                  "year": 2019,
+                  "tagline": "Time is the enemy",
+                  "thumb": "/library/metadata/71488/thumb/1737161296",
+                  "art": "/library/metadata/71488/art/1737161296",
+                  "duration": 7138153,
+                  "originallyAvailableAt": "2019-12-25",
+                  "addedAt": 1583792068,
+                  "updatedAt": 1737161296,
+                  "audienceRatingImage": "rottentomatoes://image.rating.upright",
+                  "chapterSource": "media",
+                  "primaryExtraKey": "/library/metadata/117261",
+                  "ratingImage": "rottentomatoes://image.rating.ripe",
+                  "Media": [
+                    {
+                      "id": 399066,
+                      "duration": 7138153,
+                      "bitrate": 41310,
+                      "width": 1920,
+                      "height": 1080,
+                      "aspectRatio": 1.78,
+                      "audioChannels": 8,
+                      "audioCodec": "truehd",
+                      "videoCodec": "h264",
+                      "videoResolution": "1080",
+                      "container": "mkv",
+                      "videoFrameRate": "24p",
+                      "videoProfile": "high",
+                      "hasVoiceActivity": false,
+                      "Part": [
+                        {
+                          "id": 401322,
+                          "key": "/library/parts/401322/1676812028/file.mkv",
+                          "duration": 7138153,
+                          "file": "/mnt/HD/HD_a2/media_2/Movies/1917 (2019)/1917 (2019) {imdb-tt8579674} [Remux-1080p].mkv",
+                          "size": 36923856950,
+                          "container": "mkv",
+                          "deepAnalysisVersion": "6",
+                          "hasThumbnail": "1",
+                          "indexes": "sd",
+                          "requiredBandwidths": "47083,46458,45646,44774,44292,44097,42931,42281",
+                          "videoProfile": "high"
+                        }
+                      ]
+                    }
+                  ],
+                  "Image": [
+                    {
+                      "alt": "1917",
+                      "type": "coverPoster",
+                      "url": "/library/metadata/71488/thumb/1737161296"
+                    },
+                    {
+                      "alt": "1917",
+                      "type": "background",
+                      "url": "/library/metadata/71488/art/1737161296"
+                    },
+                    {
+                      "alt": "1917",
+                      "type": "clearLogo",
+                      "url": "/library/metadata/71488/clearLogo/1737161296"
+                    }
+                  ],
+                  "UltraBlurColors": {
+                    "topLeft": "0e1d3b",
+                    "topRight": "9f350d",
+                    "bottomRight": "9d3809",
+                    "bottomLeft": "973e1f"
+                  },
+                  "Genre": [
+                    {
+                      "tag": "Drama"
+                    },
+                    {
+                      "tag": "War"
+                    }
+                  ],
+                  "Country": [
+                    {
+                      "tag": "India"
+                    },
+                    {
+                      "tag": "Spain"
+                    }
+                  ],
+                  "Director": [
+                    {
+                      "tag": "Sam Mendes"
+                    }
+                  ],
+                  "Writer": [
+                    {
+                      "tag": "Sam Mendes"
+                    },
+                    {
+                      "tag": "Krysty Wilson-Cairns"
+                    }
+                  ],
+                  "Role": [
+                    {
+                      "tag": "George MacKay"
+                    },
+                    {
+                      "tag": "Dean-Charles Chapman"
+                    },
+                    {
+                      "tag": "Mark Strong"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
