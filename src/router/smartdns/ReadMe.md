@@ -16,6 +16,12 @@ SmartDNS官网：[https://pymumu.github.io/smartdns](https://pymumu.github.io/sm
 
 ## 软件效果展示
 
+### 仪表盘
+
+![SmartDNS-WebUI](doc/smartdns-webui.png)
+
+### 速度对比
+
 **阿里 DNS**  
 使用阿里 DNS 查询百度IP，并检测结果。  
 
@@ -72,7 +78,7 @@ PING 14.215.177.39 (14.215.177.39) 56(84) bytes of data.
 rtt min/avg/max/mdev = 5.954/6.133/6.313/0.195 ms
 ```
 
-从对比看出，SmartDNS 找到了访问 www.baidu.com 最快的 IP 地址，比阿里 DNS 速度快了 5 倍。
+从对比看出，SmartDNS 找到了访问 `www.baidu.com` 最快的 IP 地址，比阿里 DNS 速度快了 5 倍。
 
 ## 特性
 

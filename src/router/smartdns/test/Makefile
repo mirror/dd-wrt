@@ -14,18 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+SMARTDNS_SRC_DIR=../src
+
 BIN=test.bin
-CFLAGS += -I../src -I../src/include
-CFLAGS += -DTEST
-CFLAGS += -g -Wall -Wstrict-prototypes -fno-omit-frame-pointer -Wstrict-aliasing -funwind-tables -Wmissing-prototypes -Wshadow -Wextra -Wno-unused-parameter -Wno-implicit-fallthrough
+SMARTDNS_TEST_LIB=$(SMARTDNS_SRC_DIR)/libsmartdns-test.a
 
 CXXFLAGS += -g
 CXXFLAGS += -DTEST
 CXXFLAGS += -I./ -I../src -I../src/include
-
-OBJS_LIB=$(patsubst %.c,%.o,$(wildcard ../src/lib/*.c))
-OBJS_MAIN=$(patsubst %.c,%.o,$(wildcard ../src/*.c))
-OBJS = $(OBJS_LIB) $(OBJS_MAIN)
 
 TEST_SOURCES := $(wildcard *.cc) $(wildcard */*.cc) $(wildcard */*/*.cc)
 TEST_OBJECTS := $(patsubst %.cc, %.o, $(TEST_SOURCES))
@@ -37,11 +33,15 @@ LDFLAGS += -lssl -lcrypto -lpthread -ldl -lgtest -lstdc++ -lm
 
 all: $(BIN)
 
-$(BIN) : $(OBJS)
-	$(CC) $(OBJS) -o $@ $(LDFLAGS)
+$(BIN) : $(OBJS) $(SMARTDNS_TEST_LIB)
+	$(CC) $^ -o $@ $(LDFLAGS)
 
 test: $(BIN)
 	./$(BIN)
 
+$(SMARTDNS_TEST_LIB):
+	$(MAKE) -C $(SMARTDNS_SRC_DIR) libsmartdns-test.a
+
 clean:
 	$(RM) $(OBJS) $(BIN)
+	$(MAKE) -C $(SMARTDNS_SRC_DIR) clean

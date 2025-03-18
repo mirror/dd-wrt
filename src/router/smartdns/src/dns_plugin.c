@@ -18,6 +18,7 @@
 
 #include "dns_plugin.h"
 
+#include "dns_conf.h"
 #include "include/conf.h"
 #include "include/hashtable.h"
 #include "include/list.h"
@@ -62,6 +63,10 @@ int smartdns_plugin_func_server_recv(struct dns_packet *packet, unsigned char *i
 	struct dns_plugin_ops *chain = NULL;
 	int ret = 0;
 
+	if (is_plugin_init == 0) {
+		return 0;
+	}
+
 	list_for_each_entry(chain, &plugins.list, list)
 	{
 		if (!chain->ops.server_recv) {
@@ -81,6 +86,10 @@ void smartdns_plugin_func_server_complete_request(struct dns_request *request)
 {
 	struct dns_plugin_ops *chain = NULL;
 
+	if (is_plugin_init == 0) {
+		return;
+	}
+
 	list_for_each_entry(chain, &plugins.list, list)
 	{
 		if (!chain->ops.server_query_complete) {
@@ -93,7 +102,27 @@ void smartdns_plugin_func_server_complete_request(struct dns_request *request)
 	return;
 }
 
-int smartdns_operations_register(struct smartdns_operations *operations)
+void smartdns_plugin_func_server_log_callback(smartdns_log_level level, const char *msg, int msg_len)
+{
+	struct dns_plugin_ops *chain = NULL;
+
+	if (is_plugin_init == 0) {
+		return;
+	}
+
+	list_for_each_entry(chain, &plugins.list, list)
+	{
+		if (!chain->ops.server_log) {
+			continue;
+		}
+
+		chain->ops.server_log(level, msg, msg_len);
+	}
+
+	return;
+}
+
+int smartdns_operations_register(const struct smartdns_operations *operations)
 {
 	struct dns_plugin_ops *chain = NULL;
 
@@ -108,7 +137,7 @@ int smartdns_operations_register(struct smartdns_operations *operations)
 	return 0;
 }
 
-int smartdns_operations_unregister(struct smartdns_operations *operations)
+int smartdns_operations_unregister(const struct smartdns_operations *operations)
 {
 	struct dns_plugin_ops *chain = NULL;
 	struct dns_plugin_ops *tmp = NULL;
@@ -342,4 +371,29 @@ void dns_server_plugin_exit(void)
 void smartdns_plugin_log(smartdns_log_level level, const char *file, int line, const char *func, const char *msg)
 {
 	tlog_ext((tlog_level)level, file, line, func, NULL, "%s", msg);
+}
+
+int smartdns_plugin_can_log(smartdns_log_level level)
+{
+	return tlog_getlevel() <= (tlog_level)level;
+}
+
+void smartdns_plugin_log_setlevel(smartdns_log_level level)
+{
+	tlog_setlevel((tlog_level)level);
+}
+
+int smartdns_plugin_log_getlevel(void)
+{
+	return tlog_getlevel();
+}
+
+const char *smartdns_plugin_get_config(const char *key)
+{
+	return dns_conf_get_plugin_conf(key);
+}
+
+void smartdns_plugin_clear_all_config(void)
+{
+	dns_conf_clear_all_plugin_conf();
 }

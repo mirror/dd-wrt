@@ -139,7 +139,7 @@ int get_uid_gid(uid_t *uid, gid_t *gid)
 	ssize_t bufsize = 0;
 	int ret = -1;
 
-	if (dns_conf_user[0] == '\0') {
+	if (dns_conf.user[0] == '\0') {
 		*uid = getuid();
 		*gid = getgid();
 		return 0;
@@ -155,7 +155,7 @@ int get_uid_gid(uid_t *uid, gid_t *gid)
 		goto out;
 	}
 
-	ret = getpwnam_r(dns_conf_user, &pwd, buf, bufsize, &result);
+	ret = getpwnam_r(dns_conf.user, &pwd, buf, bufsize, &result);
 	if (ret != 0) {
 		goto out;
 	}
@@ -218,6 +218,17 @@ int drop_root_privilege(void)
 	return 0;
 }
 
+unsigned long long get_utc_time_ms(void)
+{
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+
+	unsigned long long millisecondsSinceEpoch =
+		(unsigned long long)(tv.tv_sec) * 1000 + (unsigned long long)(tv.tv_usec) / 1000;
+
+	return millisecondsSinceEpoch;
+}
+
 char *dir_name(char *path)
 {
 	if (strstr(path, "/") == NULL) {
@@ -268,7 +279,7 @@ int create_dir_with_perm(const char *dir_path)
 	return 0;
 }
 
-char *get_host_by_addr(char *host, int maxsize, struct sockaddr *addr)
+char *get_host_by_addr(char *host, int maxsize, const struct sockaddr *addr)
 {
 	struct sockaddr_storage *addr_store = (struct sockaddr_storage *)addr;
 	host[0] = 0;
@@ -376,7 +387,7 @@ int is_private_addr(const unsigned char *addr, int addr_len)
 	return 0;
 }
 
-int is_private_addr_sockaddr(struct sockaddr *addr, socklen_t addr_len)
+int is_private_addr_sockaddr(const struct sockaddr *addr, socklen_t addr_len)
 {
 	switch (addr->sa_family) {
 	case AF_INET: {
@@ -435,19 +446,13 @@ errout:
 	return -1;
 }
 
-int get_raw_addr_by_ip(const char *ip, unsigned char *raw_addr, int *raw_addr_len)
+int get_raw_addr_by_sockaddr(const struct sockaddr_storage *addr, int addr_len, unsigned char *raw_addr,
+							 int *raw_addr_len)
 {
-	struct sockaddr_storage addr;
-	socklen_t addr_len = sizeof(addr);
-
-	if (getaddr_by_host(ip, (struct sockaddr *)&addr, &addr_len) != 0) {
-		goto errout;
-	}
-
-	switch (addr.ss_family) {
+	switch (addr->ss_family) {
 	case AF_INET: {
 		struct sockaddr_in *addr_in = NULL;
-		addr_in = (struct sockaddr_in *)&addr;
+		addr_in = (struct sockaddr_in *)addr;
 		if (*raw_addr_len < DNS_RR_A_LEN) {
 			goto errout;
 		}
@@ -456,7 +461,7 @@ int get_raw_addr_by_ip(const char *ip, unsigned char *raw_addr, int *raw_addr_le
 	} break;
 	case AF_INET6: {
 		struct sockaddr_in6 *addr_in6 = NULL;
-		addr_in6 = (struct sockaddr_in6 *)&addr;
+		addr_in6 = (struct sockaddr_in6 *)addr;
 		if (IN6_IS_ADDR_V4MAPPED(&addr_in6->sin6_addr)) {
 			if (*raw_addr_len < DNS_RR_A_LEN) {
 				goto errout;
@@ -477,6 +482,20 @@ int get_raw_addr_by_ip(const char *ip, unsigned char *raw_addr, int *raw_addr_le
 	}
 
 	return 0;
+errout:
+	return -1;
+}
+
+int get_raw_addr_by_ip(const char *ip, unsigned char *raw_addr, int *raw_addr_len)
+{
+	struct sockaddr_storage addr;
+	socklen_t addr_len = sizeof(addr);
+
+	if (getaddr_by_host(ip, (struct sockaddr *)&addr, &addr_len) != 0) {
+		goto errout;
+	}
+
+	return get_raw_addr_by_sockaddr(&addr, addr_len, raw_addr, raw_addr_len);
 errout:
 	return -1;
 }
@@ -691,6 +710,7 @@ int check_is_ipv6(const char *ip)
 
 	return 0;
 }
+
 int check_is_ipaddr(const char *ip)
 {
 	if (strstr(ip, ".")) {
@@ -1026,6 +1046,7 @@ int netlink_get_neighbors(int family,
 	if (netlink_neighbor_fd <= 0) {
 		netlink_neighbor_fd = socket(AF_NETLINK, SOCK_RAW | SOCK_CLOEXEC | SOCK_NONBLOCK, NETLINK_ROUTE);
 		if (netlink_neighbor_fd < 0) {
+			errno = EINVAL;
 			return -1;
 		}
 	}
@@ -1038,6 +1059,7 @@ int netlink_get_neighbors(int family,
 	struct msghdr msg;
 	int len;
 	int ret = 0;
+	int send_count = 0;
 
 	memset(&msg, 0, sizeof(msg));
 	msg.msg_name = &sa;
@@ -1055,15 +1077,60 @@ int netlink_get_neighbors(int family,
 	ndm = NLMSG_DATA(nlh);
 	ndm->ndm_family = family;
 
-	if (send(netlink_neighbor_fd, buf, NLMSG_SPACE(sizeof(struct ndmsg)), 0) < 0) {
-		return -1;
+	while (true) {
+		if (send_count > 5) {
+			errno = ETIMEDOUT;
+			return -1;
+		}
+
+		send_count++;
+		if (send(netlink_neighbor_fd, buf, NLMSG_SPACE(sizeof(struct ndmsg)), 0) < 0) {
+			if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
+				struct timespec waiter;
+				waiter.tv_sec = 0;
+				waiter.tv_nsec = 500000;
+				nanosleep(&waiter, NULL);
+				continue;
+			}
+
+			close(netlink_neighbor_fd);
+			netlink_neighbor_fd = -1;
+			return -1;
+		}
+
+		break;
 	}
 
-	while ((len = recvmsg(netlink_neighbor_fd, &msg, 0)) > 0) {
+	int is_received = 0;
+	int recv_count = 0;
+	while (true) {
+		recv_count++;
+		len = recvmsg(netlink_neighbor_fd, &msg, 0);
+		if (len < 0) {
+			if (recv_count > 5 && is_received == 0) {
+				errno = ETIMEDOUT;
+				return -1;
+			}
+
+			if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
+				if (is_received) {
+					break;
+				}
+				struct timespec waiter;
+				waiter.tv_sec = 0;
+				waiter.tv_nsec = 500000;
+				nanosleep(&waiter, NULL);
+				continue;
+			}
+
+			return -1;
+		}
+
 		if (ret != 0) {
 			continue;
 		}
 
+		is_received = 1;
 		uint32_t nlh_len = len;
 		for (nlh = (struct nlmsghdr *)buf; NLMSG_OK(nlh, nlh_len); nlh = NLMSG_NEXT(nlh, nlh_len)) {
 			ndm = NLMSG_DATA(nlh);
@@ -1071,7 +1138,11 @@ int netlink_get_neighbors(int family,
 			const uint8_t *mac = NULL;
 			const uint8_t *net_addr = NULL;
 			int net_addr_len = 0;
-			int rta_len = RTM_PAYLOAD(nlh);
+			unsigned int rta_len = RTM_PAYLOAD(nlh);
+
+			if (rta_len > (sizeof(buf) - ((char *)rta - buf))) {
+				continue;
+			}
 
 			for (; RTA_OK(rta, rta_len); rta = RTA_NEXT(rta, rta_len)) {
 				if (rta->rta_type == NDA_DST) {
@@ -1108,6 +1179,9 @@ int netlink_get_neighbors(int family,
 					}
 				} else if (rta->rta_type == NDA_LLADDR) {
 					mac = RTA_DATA(rta);
+					if (mac[0] == 0 && mac[1] == 0 && mac[2] == 0 && mac[3] == 0 && mac[4] == 0 && mac[5] == 0) {
+						continue;
+					}
 				}
 			}
 
@@ -1370,6 +1444,12 @@ int generate_cert_key(const char *key_path, const char *cert_path, const char *s
 	key_file = BIO_new_file(key_path, "wb");
 	cert_file = BIO_new_file(cert_path, "wb");
 	cert = X509_new();
+	if (cert == NULL) {
+		goto out;
+	}
+
+	X509_set_version(cert, 2);
+
 #if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
 	pkey = EVP_RSA_gen(RSA_KEY_LENGTH);
 #else
@@ -1412,10 +1492,24 @@ int generate_cert_key(const char *key_path, const char *cert_path, const char *s
 		if (cert_ext == NULL) {
 			goto out;
 		}
-		X509_add_ext(cert, cert_ext, -1);
+		ret = X509_add_ext(cert, cert_ext, -1);
 	}
 
 	X509_set_issuer_name(cert, name);
+
+	// Add X509v3 extensions
+	cert_ext = X509V3_EXT_conf_nid(NULL, NULL, NID_basic_constraints, "CA:FALSE");
+	ret = X509_add_ext(cert, cert_ext, -1);
+	X509_EXTENSION_free(cert_ext);
+
+	cert_ext = X509V3_EXT_conf_nid(NULL, NULL, NID_key_usage, "digitalSignature,keyEncipherment");
+	X509_add_ext(cert, cert_ext, -1);
+	X509_EXTENSION_free(cert_ext);
+
+	cert_ext = X509V3_EXT_conf_nid(NULL, NULL, NID_subject_key_identifier, "hash");
+	X509_add_ext(cert, cert_ext, -1);
+	X509_EXTENSION_free(cert_ext);
+
 	X509_sign(cert, pkey, EVP_sha256());
 
 	ret = PEM_write_bio_PrivateKey(key_file, pkey, NULL, NULL, 0, NULL, NULL);

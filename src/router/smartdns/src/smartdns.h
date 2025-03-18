@@ -19,6 +19,16 @@
 #ifndef SMART_DNS_H
 #define SMART_DNS_H
 
+
+#include "dns_cache.h"
+#include "dns_client.h"
+#include "dns_conf.h"
+#include "dns_plugin.h"
+#include "dns_server.h"
+#include "fast_ping.h"
+#include "dns_stats.h"
+#include "util.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus */
@@ -27,13 +37,23 @@ void smartdns_exit(int status);
 
 void smartdns_restart(void);
 
+int smartdns_get_cert(char *key, char *cert);
+
+int smartdns_main(int argc, char *argv[]);
+
+int smartdns_server_run(const char *config_file);
+
+int smartdns_server_stop(void);
+
+const char *smartdns_version(void);
+
 #ifdef TEST
 
 typedef void (*smartdns_post_func)(void *arg);
 
 int smartdns_reg_post_func(smartdns_post_func func, void *arg);
 
-int smartdns_main(int argc, char *argv[], int fd_notify, int no_close_allfds);
+int smartdns_test_main(int argc, char *argv[], int fd_notify, int no_close_allfds);
 
 #endif
 
