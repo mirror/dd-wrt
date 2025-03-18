@@ -25,16 +25,17 @@ struct dns_stats dns_stats;
 #ifndef __LP64__
 unsigned long long __sync_add_and_fetch_8(volatile unsigned long long *ptr, unsigned long long v)
 {
-*ptr += v;
-return *ptr;
+	*ptr += v;
+	return *ptr;
 }
 unsigned long long __sync_lock_test_and_set_8(volatile unsigned long long *ptr, unsigned long long v)
 {
-volatile unsigned long long ret = *ptr;
-*ptr = v;
-return ret;
+	volatile unsigned long long ret = *ptr;
+	*ptr = v;
+	return ret;
 }
 #endif
+
 
 #define SAMPLE_PERIOD 5
 
