@@ -41,20 +41,19 @@
 
 /* arena purge timing stuff (may fix later), stats (can patch out) */
 #if ATOMIC_LLONG_LOCK_FREE != 2
+
 typedef unsigned UWORD __attribute__((mode(word)));
-#define UNUSED		__attribute__((unused))
+#define UNUSED __attribute__((unused))
 #ifdef HAVE_ATTRIBUTE_VISIBILITY
-# define HIDDEN		__attribute__((visibility("hidden")))
+#define HIDDEN __attribute__((visibility("hidden")))
 #else
-# define HIDDEN
+#define HIDDEN
 #endif
 
-static inline void __attribute__((always_inline, artificial))
-pre_seq_barrier(int model)
+static inline void __attribute__((always_inline, artificial)) pre_seq_barrier(int model)
 {
 }
-static inline void __attribute__((always_inline, artificial))
-post_seq_barrier(int model)
+static inline void __attribute__((always_inline, artificial)) post_seq_barrier(int model)
 {
 }
 
@@ -62,132 +61,115 @@ post_seq_barrier(int model)
    lest locking fail with virtual address aliasing (i.e. a page mmaped
    at two locations).  */
 #ifndef PAGE_SIZE
-#define PAGE_SIZE	4096
+#define PAGE_SIZE 4096
 #endif
 
 /* The target cacheline size.  This is an optimization; the padding that
    should be applied to the locks to keep them from interfering.  */
 #ifndef CACHLINE_SIZE
-#define CACHLINE_SIZE	64
+#define CACHLINE_SIZE 64
 #endif
 
 /* The granularity at which locks are applied.  Almost certainly the
    cachline size is the right thing to use here.  */
 #ifndef WATCH_SIZE
-#define WATCH_SIZE	CACHLINE_SIZE
+#define WATCH_SIZE CACHLINE_SIZE
 #endif
 
-struct lock
-{
-  pthread_mutex_t mutex;
-  char pad[sizeof(pthread_mutex_t) < CACHLINE_SIZE
-	   ? CACHLINE_SIZE - sizeof(pthread_mutex_t)
-	   : 0];
+struct lock {
+	pthread_mutex_t mutex;
+	char pad[sizeof(pthread_mutex_t) < CACHLINE_SIZE ? CACHLINE_SIZE - sizeof(pthread_mutex_t) : 0];
 };
 
-#define NLOCKS		(PAGE_SIZE / WATCH_SIZE)
-static struct lock locks[NLOCKS] = {
-  [0 ... NLOCKS-1].mutex = PTHREAD_MUTEX_INITIALIZER
-};
+#define NLOCKS (PAGE_SIZE / WATCH_SIZE)
+static struct lock locks[NLOCKS] = { [0 ... NLOCKS - 1].mutex = PTHREAD_MUTEX_INITIALIZER };
 
-static inline uintptr_t 
-addr_hash (void *ptr)
+static inline uintptr_t addr_hash(void *ptr)
 {
-  return ((uintptr_t)ptr / WATCH_SIZE) % NLOCKS;
+	return ((uintptr_t)ptr / WATCH_SIZE) % NLOCKS;
 }
 
-static inline void
-libat_lock_1 (void *ptr)
+static inline void libat_lock_1(void *ptr)
 {
-  pthread_mutex_lock (&locks[addr_hash (ptr)].mutex);
+	pthread_mutex_lock(&locks[addr_hash(ptr)].mutex);
 }
 
-static inline void
-libat_unlock_1 (void *ptr)
+static inline void libat_unlock_1(void *ptr)
 {
-  pthread_mutex_unlock (&locks[addr_hash (ptr)].mutex);
+	pthread_mutex_unlock(&locks[addr_hash(ptr)].mutex);
 }
 
-static inline UWORD
-protect_start (void *ptr)
+static inline UWORD protect_start(void *ptr)
 {
-  libat_lock_1 (ptr);
-  return 0;
+	libat_lock_1(ptr);
+	return 0;
 }
 
-static inline void
-protect_end (void *ptr, UWORD dummy UNUSED)
+static inline void protect_end(void *ptr, UWORD dummy UNUSED)
 {
-  libat_unlock_1 (ptr);
+	libat_unlock_1(ptr);
 }
 
-#define ATOMIC_LOAD(TYPE, WIDTH)					\
-  TYPE							\
-  __atomic_load_##WIDTH (void *ptr, int smodel)			\
-  {									\
-  TYPE ret; \
-  UWORD magic; \
-  pre_seq_barrier (smodel); \
-  magic = protect_start (ptr); \
-  ret = *(TYPE *)ptr; \
-  protect_end (ptr, magic); \
-  post_seq_barrier (smodel); \
-    return ret;					\
-  }
+#define ATOMIC_LOAD(TYPE, WIDTH)                          \
+	TYPE __atomic_load_##WIDTH(void *ptr, int smodel) \
+	{                                                 \
+		TYPE ret;                                 \
+		UWORD magic;                              \
+		pre_seq_barrier(smodel);                  \
+		magic = protect_start(ptr);               \
+		ret = *(TYPE *)ptr;                       \
+		protect_end(ptr, magic);                  \
+		post_seq_barrier(smodel);                 \
+		return ret;                               \
+	}
 
-#define ATOMIC_FETCH_ADD(TYPE, WIDTH)					\
-  TYPE							\
-  __atomic_fetch_add_##WIDTH (void *ptr, long long unsigned int add, int smodel)			\
-  {									\
-  UWORD magic; \
-  pre_seq_barrier (smodel); \
-  magic = protect_start (ptr); \
-    return *(volatile TYPE *)(ptr) + add;					\
-  protect_end (ptr, magic); \
-  post_seq_barrier (smodel); \
-  }
+#define ATOMIC_FETCH_ADD(TYPE, WIDTH)                                                      \
+	TYPE __atomic_fetch_add_##WIDTH(void *ptr, long long unsigned int add, int smodel) \
+	{                                                                                  \
+		UWORD magic;                                                               \
+		pre_seq_barrier(smodel);                                                   \
+		magic = protect_start(ptr);                                                \
+		return *(volatile TYPE *)(ptr) + add;                                      \
+		protect_end(ptr, magic);                                                   \
+		post_seq_barrier(smodel);                                                  \
+	}
 
-#define ATOMIC_STORE(TYPE, WIDTH)					\
-  void							\
-  __atomic_store_##WIDTH (void *ptr, TYPE val, int smodel)			\
-  {									\
-  UWORD magic; \
-  pre_seq_barrier (smodel); \
-  magic = protect_start (ptr); \
-    *(volatile TYPE *)(ptr) = val;					\
-  protect_end (ptr, magic); \
-  post_seq_barrier (smodel); \
-  }
+#define ATOMIC_STORE(TYPE, WIDTH)                                    \
+	void __atomic_store_##WIDTH(void *ptr, TYPE val, int smodel) \
+	{                                                            \
+		UWORD magic;                                         \
+		pre_seq_barrier(smodel);                             \
+		magic = protect_start(ptr);                          \
+		*(volatile TYPE *)(ptr) = val;                       \
+		protect_end(ptr, magic);                             \
+		post_seq_barrier(smodel);                            \
+	}
 
-ATOMIC_LOAD (long long unsigned int, 8)
-ATOMIC_FETCH_ADD (long long unsigned int, 8)
-ATOMIC_STORE (long long unsigned int, 8)
+ATOMIC_LOAD(long long unsigned int, 8)
+ATOMIC_FETCH_ADD(long long unsigned int, 8)
+ATOMIC_STORE(long long unsigned int, 8)
 
-#define ATOMIC_COMPARE_EXCHANGE(TYPE,SIZE)				      \
-_Bool									      \
-__atomic_compare_exchange_##SIZE (void *ptr, void *expected,		      \
-				  TYPE desired, _Bool weak,		      \
-				  int smodel, int failure_memorder) \
-{									      \
-  TYPE oldval; \
-  UWORD magic; \
-  _Bool ret; \
-  pre_seq_barrier (smodel); \
-  magic = protect_start (ptr); \
-  oldval = *(TYPE *)ptr; \
-  ret = (oldval == *(TYPE *)expected); \
-  if (ret) \
-    *(TYPE *)(ptr) = desired; \
-  else \
-    *(TYPE *)(expected) = oldval; \
-  protect_end (ptr, magic); \
-  post_seq_barrier (smodel); \
-  return ret;		\
-}
+#define ATOMIC_COMPARE_EXCHANGE(TYPE, SIZE)                                                                     \
+	_Bool __atomic_compare_exchange_##SIZE(void *ptr, void *expected, TYPE desired, _Bool weak, int smodel, \
+					       int failure_memorder)                                            \
+	{                                                                                                       \
+		TYPE oldval;                                                                                    \
+		UWORD magic;                                                                                    \
+		_Bool ret;                                                                                      \
+		pre_seq_barrier(smodel);                                                                        \
+		magic = protect_start(ptr);                                                                     \
+		oldval = *(TYPE *)ptr;                                                                          \
+		ret = (oldval == *(TYPE *)expected);                                                            \
+		if (ret)                                                                                        \
+			*(TYPE *)(ptr) = desired;                                                               \
+		else                                                                                            \
+			*(TYPE *)(expected) = oldval;                                                           \
+		protect_end(ptr, magic);                                                                        \
+		post_seq_barrier(smodel);                                                                       \
+		return ret;                                                                                     \
+	}
 
-ATOMIC_COMPARE_EXCHANGE (long long unsigned int, 8)
-
-
+ATOMIC_COMPARE_EXCHANGE(long long unsigned int, 8)
 #endif
 
 /* the whole mimalloc source */
