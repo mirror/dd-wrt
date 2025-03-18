@@ -572,7 +572,7 @@ static zend_module_entry accel_module_entry = {
 	ext_functions,
 	ZEND_MINIT(zend_accelerator),
 	ZEND_MSHUTDOWN(zend_accelerator),
-	accel_activate,
+	ZEND_RINIT(zend_accelerator),
 	NULL,
 	zend_accel_info,
 	PHP_VERSION,
@@ -860,7 +860,7 @@ ZEND_FUNCTION(opcache_get_configuration)
 	add_assoc_long(&directives,   "opcache.jit_max_recursive_returns", JIT_G(max_recursive_returns));
 	add_assoc_long(&directives,   "opcache.jit_max_root_traces", JIT_G(max_root_traces));
 	add_assoc_long(&directives,   "opcache.jit_max_side_traces", JIT_G(max_side_traces));
-	add_assoc_long(&directives,   "opcache.jit_prof_threshold", JIT_G(prof_threshold));
+	add_assoc_double(&directives, "opcache.jit_prof_threshold", JIT_G(prof_threshold));
 	add_assoc_long(&directives,   "opcache.jit_max_trace_length", JIT_G(max_trace_length));
 #endif
 

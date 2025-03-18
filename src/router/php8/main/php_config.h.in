@@ -495,6 +495,10 @@
 /* Define to 1 if you have the 'dcngettext' function. */
 #undef HAVE_DCNGETTEXT
 
+/* Define to 1 if you have the declaration of 'PGRES_TUPLES_CHUNK', and to 0
+   if you don't. */
+#undef HAVE_DECL_PGRES_TUPLES_CHUNK
+
 /* Define to 1 if you have the declaration of 'P_ALL', and to 0 if you don't.
    */
 #undef HAVE_DECL_P_ALL

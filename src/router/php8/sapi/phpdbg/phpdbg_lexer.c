@@ -324,8 +324,9 @@ yy4:
 	yyleng = (size_t) YYCURSOR - (size_t) yytext;
 	{
 	phpdbg_init_param(yylval, STR_PARAM);
-	yylval->str = estrndup(yytext, yyleng - unescape_string(yytext));
-	yylval->len = yyleng;
+	size_t len = yyleng - unescape_string(yytext);
+	yylval->str = estrndup(yytext, len);
+	yylval->len = len;
 	return T_ID;
 }
 yy5:

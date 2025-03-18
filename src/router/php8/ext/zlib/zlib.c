@@ -789,6 +789,7 @@ static bool zlib_create_dictionary_string(HashTable *options, char **dict, size_
 	zval *option_buffer;
 
 	if (options && (option_buffer = zend_hash_str_find(options, ZEND_STRL("dictionary"))) != NULL) {
+		ZVAL_DEINDIRECT(option_buffer);
 		ZVAL_DEREF(option_buffer);
 		switch (Z_TYPE_P(option_buffer)) {
 			case IS_STRING: {
@@ -869,14 +870,11 @@ PHP_FUNCTION(inflate_init)
 	}
 
 	if (options && (option_buffer = zend_hash_str_find(options, ZEND_STRL("window"))) != NULL) {
+		ZVAL_DEINDIRECT(option_buffer);
 		window = zval_get_long(option_buffer);
 	}
 	if (window < 8 || window > 15) {
 		zend_value_error("zlib window size (logarithm) (" ZEND_LONG_FMT ") must be within 8..15", window);
-		RETURN_THROWS();
-	}
-
-	if (!zlib_create_dictionary_string(options, &dict, &dictlen)) {
 		RETURN_THROWS();
 	}
 
@@ -888,6 +886,10 @@ PHP_FUNCTION(inflate_init)
 		default:
 			zend_value_error("Encoding mode must be ZLIB_ENCODING_RAW, ZLIB_ENCODING_GZIP or ZLIB_ENCODING_DEFLATE");
 			RETURN_THROWS();
+	}
+
+	if (!zlib_create_dictionary_string(options, &dict, &dictlen)) {
+		RETURN_THROWS();
 	}
 
 	object_init_ex(return_value, inflate_context_ce);
@@ -1087,6 +1089,7 @@ PHP_FUNCTION(deflate_init)
 	}
 
 	if (options && (option_buffer = zend_hash_str_find(options, ZEND_STRL("level"))) != NULL) {
+		ZVAL_DEINDIRECT(option_buffer);
 		level = zval_get_long(option_buffer);
 	}
 	if (level < -1 || level > 9) {
@@ -1095,6 +1098,7 @@ PHP_FUNCTION(deflate_init)
 	}
 
 	if (options && (option_buffer = zend_hash_str_find(options, ZEND_STRL("memory"))) != NULL) {
+		ZVAL_DEINDIRECT(option_buffer);
 		memory = zval_get_long(option_buffer);
 	}
 	if (memory < 1 || memory > 9) {
@@ -1103,6 +1107,7 @@ PHP_FUNCTION(deflate_init)
 	}
 
 	if (options && (option_buffer = zend_hash_str_find(options, ZEND_STRL("window"))) != NULL) {
+		ZVAL_DEINDIRECT(option_buffer);
 		window = zval_get_long(option_buffer);
 	}
 	if (window < 8 || window > 15) {
@@ -1111,6 +1116,7 @@ PHP_FUNCTION(deflate_init)
 	}
 
 	if (options && (option_buffer = zend_hash_str_find(options, ZEND_STRL("strategy"))) != NULL) {
+		ZVAL_DEINDIRECT(option_buffer);
 		strategy = zval_get_long(option_buffer);
 	}
 	switch (strategy) {
@@ -1125,10 +1131,6 @@ PHP_FUNCTION(deflate_init)
 			RETURN_THROWS();
 	}
 
-	if (!zlib_create_dictionary_string(options, &dict, &dictlen)) {
-		RETURN_THROWS();
-	}
-
 	switch (encoding) {
 		case PHP_ZLIB_ENCODING_RAW:
 		case PHP_ZLIB_ENCODING_GZIP:
@@ -1137,6 +1139,10 @@ PHP_FUNCTION(deflate_init)
 		default:
 			zend_argument_value_error(1, "must be one of ZLIB_ENCODING_RAW, ZLIB_ENCODING_GZIP, or ZLIB_ENCODING_DEFLATE");
 			RETURN_THROWS();
+	}
+
+	if (!zlib_create_dictionary_string(options, &dict, &dictlen)) {
+		RETURN_THROWS();
 	}
 
 	object_init_ex(return_value, deflate_context_ce);

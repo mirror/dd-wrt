@@ -203,10 +203,16 @@ static zend_object *spl_filesystem_object_new(zend_class_entry *class_type)
 }
 /* }}} */
 
+static inline bool spl_intern_is_glob(const spl_filesystem_object *intern)
+{
+	/* NULL check on `dirp` is necessary as destructors may interfere. */
+	return intern->u.dir.dirp && php_stream_is(intern->u.dir.dirp, &php_glob_stream_ops);
+}
+
 PHPAPI zend_string *spl_filesystem_object_get_path(const spl_filesystem_object *intern) /* {{{ */
 {
 #ifdef HAVE_GLOB
-	if (intern->type == SPL_FS_DIR && php_stream_is(intern->u.dir.dirp, &php_glob_stream_ops)) {
+	if (intern->type == SPL_FS_DIR && spl_intern_is_glob(intern)) {
 		size_t len = 0;
 		char *tmp = php_glob_stream_get_path(intern->u.dir.dirp, &len);
 		if (len == 0) {
@@ -636,7 +642,7 @@ static inline HashTable *spl_filesystem_object_get_debug_info(zend_object *objec
 	}
 	if (intern->type == SPL_FS_DIR) {
 #ifdef HAVE_GLOB
-		if (intern->u.dir.dirp && php_stream_is(intern->u.dir.dirp ,&php_glob_stream_ops)) {
+		if (spl_intern_is_glob(intern)) {
 			ZVAL_STR_COPY(&tmp, intern->path);
 		} else {
 			ZVAL_FALSE(&tmp);
@@ -1362,6 +1368,9 @@ PHP_METHOD(SplFileInfo, getPathInfo)
 
 	if (ce == NULL) {
 		ce = intern->info_class;
+	} else if (!instanceof_function(ce, spl_ce_SplFileInfo)) {
+		zend_argument_type_error(1, "must be a class name derived from %s or null, %s given", ZSTR_VAL(spl_ce_SplFileInfo->name), ZSTR_VAL(ce->name));
+		RETURN_THROWS();
 	}
 
 	path = spl_filesystem_object_get_pathname(intern);
@@ -1590,11 +1599,11 @@ PHP_METHOD(GlobIterator, count)
 		RETURN_THROWS();
 	}
 
-	if (intern->u.dir.dirp && php_stream_is(intern->u.dir.dirp ,&php_glob_stream_ops)) {
+	if (spl_intern_is_glob(intern)) {
 		RETURN_LONG(php_glob_stream_get_count(intern->u.dir.dirp, NULL));
 	} else {
-		/* should not happen */
-		// TODO ZEND_ASSERT ?
+		/* This can happen by abusing destructors. */
+		/* TODO: relax this from E_ERROR to an exception */
 		php_error_docref(NULL, E_ERROR, "GlobIterator lost glob state");
 	}
 }
@@ -2677,6 +2686,12 @@ PHP_METHOD(SplFileObject, ftruncate)
 	}
 
 	CHECK_SPL_FILE_OBJECT_IS_INITIALIZED(intern);
+
+	if (size < 0) {
+		zend_argument_value_error(1, "must be greater than or equal to 0");
+		RETURN_THROWS();
+	}
+
 
 	if (!php_stream_truncate_supported(intern->u.file.stream)) {
 		zend_throw_exception_ex(spl_ce_LogicException, 0, "Can't truncate file %s", ZSTR_VAL(intern->file_name));

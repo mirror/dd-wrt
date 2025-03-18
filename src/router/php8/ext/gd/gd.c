@@ -3764,7 +3764,24 @@ PHP_FUNCTION(imageconvolution)
 			}
 		}
 	}
-	res = gdImageConvolution(im_src, matrix, (float)div, (float)offset);
+
+	if (UNEXPECTED(!zend_finite(div))) {
+		zend_argument_value_error(3, "must be finite");
+		RETURN_THROWS();
+	}
+
+	float div_float = (float) div;
+	if (UNEXPECTED(div_float == 0.0f)) {
+		zend_argument_value_error(3, "must not be 0");
+		RETURN_THROWS();
+	}
+
+	if (UNEXPECTED(!zend_finite(offset))) {
+		zend_argument_value_error(4, "must be finite");
+		RETURN_THROWS();
+	}
+
+	res = gdImageConvolution(im_src, matrix, div_float, (float) offset);
 
 	if (res) {
 		RETURN_TRUE;
@@ -3963,6 +3980,11 @@ PHP_FUNCTION(imagescale)
 	method = tmp_m;
 
 	im = php_gd_libgdimageptr_from_zval_p(IM);
+
+	if (tmp_h < 0 && tmp_w < 0) {
+		zend_value_error("Argument #2 ($width) and argument #3 ($height) cannot be both negative");
+		RETURN_THROWS();
+	}
 
 	if (tmp_h < 0 || tmp_w < 0) {
 		/* preserve ratio */

@@ -875,7 +875,10 @@ ZEND_COLD zend_never_inline void zend_magic_get_property_type_inconsistency_erro
 ZEND_COLD void zend_match_unhandled_error(const zval *value)
 {
 	smart_str msg = {0};
-	if (smart_str_append_zval(&msg, value, EG(exception_string_param_max_len)) != SUCCESS) {
+	if (
+		EG(exception_ignore_args)
+		|| smart_str_append_zval(&msg, value, EG(exception_string_param_max_len)) != SUCCESS
+	) {
 		smart_str_appendl(&msg, "of type ", sizeof("of type ")-1);
 		smart_str_appends(&msg, zend_zval_type_name(value));
 	}
@@ -3487,7 +3490,7 @@ static zend_always_inline void zend_assign_to_property_reference(zval *container
 
 			variable_ptr = zend_wrong_assign_to_variable_reference(
 				variable_ptr, value_ptr, &garbage OPLINE_CC EXECUTE_DATA_CC);
-		} else if (prop_info) {
+		} else if (prop_info && ZEND_TYPE_IS_SET(prop_info->type)) {
 			variable_ptr = zend_assign_to_typed_property_reference(prop_info, variable_ptr, value_ptr, &garbage EXECUTE_DATA_CC);
 		} else {
 			zend_assign_to_variable_reference(variable_ptr, value_ptr, &garbage);

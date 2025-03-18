@@ -402,7 +402,7 @@ static void php_stream_bucket_attach(int append, INTERNAL_FUNCTION_PARAMETERS)
 			bucket = php_stream_bucket_make_writeable(bucket);
 		}
 		if (bucket->buflen != Z_STRLEN_P(pzdata)) {
-			bucket->buf = perealloc(bucket->buf, Z_STRLEN_P(pzdata), bucket->is_persistent);
+			bucket->buf = perealloc(bucket->buf, MAX(Z_STRLEN_P(pzdata), 1), bucket->is_persistent);
 			bucket->buflen = Z_STRLEN_P(pzdata);
 		}
 		memcpy(bucket->buf, Z_STRVAL_P(pzdata), bucket->buflen);
@@ -521,13 +521,17 @@ PHP_FUNCTION(stream_filter_register)
 	fdat = ecalloc(1, sizeof(struct php_user_filter_data));
 	fdat->classname = zend_string_copy(classname);
 
-	if (zend_hash_add_ptr(BG(user_filter_map), filtername, fdat) != NULL &&
-			php_stream_filter_register_factory_volatile(filtername, &user_filter_factory) == SUCCESS) {
-		RETVAL_TRUE;
+	if (zend_hash_add_ptr(BG(user_filter_map), filtername, fdat) != NULL) {
+		if (php_stream_filter_register_factory_volatile(filtername, &user_filter_factory) == SUCCESS) {
+			RETURN_TRUE;
+		}
+
+		zend_hash_del(BG(user_filter_map), filtername);
 	} else {
 		zend_string_release_ex(classname, 0);
 		efree(fdat);
-		RETVAL_FALSE;
 	}
+
+	RETURN_FALSE;
 }
 /* }}} */
