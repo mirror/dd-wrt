@@ -197,6 +197,7 @@ endif
 
 
 
+	cp musl-mimalloc/lib/*.so $(TARGETDIR)/lib
 ifneq ($(CONFIG_NOOPT),y)
 	rm -rf /tmp/$(ARCHITECTURE)/mklibs-out
 	rm -f /tmp/$(ARCHITECTURE)/mklibs-progs
@@ -223,7 +224,6 @@ ifneq ($(CONFIG_MUSL),y)
 else
 	cp mklibs/* ${shell $(ARCH)-linux-gcc -print-file-name=include}/../../../../../bin
 	rm -f /tmp/$(ARCHITECTURE)/lib/*
-	cp musl-mimalloc/lib/*.so $(TARGETDIR)/lib
 	-./mklibs/mklibs.py -D \
 		-d /tmp/$(ARCHITECTURE)/mklibs-out \
 		--sysroot $(TARGETDIR) \
