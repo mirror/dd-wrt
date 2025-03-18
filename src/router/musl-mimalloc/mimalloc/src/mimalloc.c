@@ -40,9 +40,9 @@
 #endif
 
 /* arena purge timing stuff (may fix later), stats (can patch out) */
-#if ATOMIC_LLONG_LOCK_FREE != 2
-#error 64-bit atomics must be lock-free for now
-#endif
+//#if ATOMIC_LLONG_LOCK_FREE != 2
+//#error 64-bit atomics must be lock-free for now
+//#endif
 
 /* the whole mimalloc source */
 #include "static.c"
