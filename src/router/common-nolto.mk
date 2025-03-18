@@ -11,14 +11,17 @@ export GCCAR := ${shell which $(ARCH)-linux-ar}
 export GCCRANLIB := ${shell which $(ARCH)-linux-ranlib}
 
 ifeq ($(ARCH),arm)
+MUSLVARIANT:=-mimalloc
 MUSL_LD:=ld-musl-armhf.so.1
 KERNEL_HEADER_ARCH:=arm
 endif
 ifeq ($(ARCH),aarch64)
+MUSLVARIANT:=-mimalloc
 MUSL_LD:=ld-musl-aarch64.so.1
 KERNEL_HEADER_ARCH:=arm64
 endif
 ifeq ($(ARCHITECTURE),northstar)
+MUSLVARIANT:=-mimalloc
 MUSL_LD:=ld-musl-arm.so.1
 KERNEL_HEADER_ARCH:=arm
 endif
@@ -39,14 +42,17 @@ MUSL_LD:=ld-musl-mipsel-sf.so.1
 KERNEL_HEADER_ARCH:=mips
 endif
 ifeq ($(ARCH),mips64)
+MUSLVARIANT:=-mimalloc
 MUSL_LD:=ld-musl-mips64-sf.so.1
 KERNEL_HEADER_ARCH:=mips
 endif
 ifeq ($(ARCH),i386)
+MUSLVARIANT:=-mimalloc
 MUSL_LD:=ld-musl-i386.so.1
 KERNEL_HEADER_ARCH:=i386
 endif
 ifeq ($(ARCH),x86_64)
+MUSLVARIANT:=-mimalloc
 MUSL_LD:=ld-musl-x86_64.so.1
 KERNEL_HEADER_ARCH:=x86_64
 endif
@@ -197,7 +203,7 @@ endif
 
 
 
-	cp musl-mimalloc/lib/*.so $(TARGETDIR)/lib
+	cp musl$(MUSLVARIANT)/lib/*.so $(TARGETDIR)/lib
 ifneq ($(CONFIG_NOOPT),y)
 	rm -rf /tmp/$(ARCHITECTURE)/mklibs-out
 	rm -f /tmp/$(ARCHITECTURE)/mklibs-progs
