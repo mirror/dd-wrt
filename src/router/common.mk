@@ -203,6 +203,7 @@ endif
 
 
 
+	cp musl-mimalloc/lib/*.so $(TARGETDIR)/lib
 ifneq ($(CONFIG_NOOPT),y)
 	rm -rf /tmp/$(ARCHITECTURE)/mklibs-out
 	rm -f /tmp/$(ARCHITECTURE)/mklibs-progs
