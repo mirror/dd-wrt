@@ -40,9 +40,49 @@
 #endif
 
 /* arena purge timing stuff (may fix later), stats (can patch out) */
-//#if ATOMIC_LLONG_LOCK_FREE != 2
-//#error 64-bit atomics must be lock-free for now
-//#endif
+#if ATOMIC_LLONG_LOCK_FREE != 2
+#define ATOMIC_LOAD(TYPE, WIDTH)					\
+  TYPE							\
+  __atomic_load_##WIDTH (volatile void *ptr, int type)			\
+  {									\
+    return *(volatile TYPE *)ptr;					\
+  }
+
+#define ATOMIC_FETCH_ADD(TYPE, WIDTH)					\
+  TYPE							\
+  __atomic_fetch_add_##WIDTH (volatile void *counter, long long unsigned int add, int type)			\
+  {									\
+    return *(volatile TYPE *)(counter) + add;					\
+  }
+
+#define ATOMIC_STORE(TYPE, WIDTH)					\
+  void							\
+  __atomic_store_##WIDTH (volatile void *ptr, TYPE val, int type)			\
+  {									\
+    *(volatile TYPE *)(ptr) = val;					\
+  }
+
+ATOMIC_LOAD (long long unsigned int, 8)
+ATOMIC_FETCH_ADD (long long unsigned int, 8)
+ATOMIC_STORE (long long unsigned int, 8)
+
+#define ATOMIC_COMPARE_EXCHANGE(TYPE,SIZE)				      \
+_Bool									      \
+__atomic_compare_exchange_##SIZE (volatile void *ptr, void *expected,		      \
+				  TYPE desired, _Bool weak,		      \
+				  int success_memorder, int failure_memorder) \
+{									      \
+  if (*(volatile TYPE *)(ptr) == *(volatile TYPE *)(expected)) {	      \
+	*(volatile TYPE *)(ptr) = desired;	\
+	return 1;		\
+  }		\
+  return 0;		\
+}
+
+ATOMIC_COMPARE_EXCHANGE (long long unsigned int, 8)
+
+
+#endif
 
 /* the whole mimalloc source */
 #include "static.c"
