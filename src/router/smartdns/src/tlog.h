@@ -113,7 +113,7 @@ static inline int tlog_ext(tlog_level level, const char *file, int line, const c
 static inline int tlog_vext(tlog_level level, const char *file, int line, const char *func, void *userptr, const char *format, va_list ap) {return 0;}
 
 /* write buff to log file */
-extern int tlog_write_log(char *buff, int bufflen);
+extern int tlog_write_log(const char *buff, int bufflen);
 
 
 /* enalbe log to screen */
