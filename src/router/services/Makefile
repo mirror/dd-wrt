@@ -2080,9 +2080,9 @@ ifeq ($(CONFIG_E1700),y)
 	$(CC) $(CFLAGS) -DNEED_PRINTF -o switch tools/switch_7530.c -DCONFIG_RALINK_MT7620
 endif
 else
-	$(CC) $(CFLAGS) -DNEED_PRINTF -o switch tools/switch.c
+	$(CC) $(CFLAGS) -DNEED_PRINTF -o switch tools/switch.c -L$(TOP)/libutils -lshutils
 endif
-	$(CC) $(CFLAGS) -DNEED_PRINTF -o mii_mgr tools/mii_mgr.c
+	$(CC) $(CFLAGS) -DNEED_PRINTF -o mii_mgr tools/mii_mgr.c 
 endif
 #	$(CC) $(CFLAGS) $(LDFLAGS) -DNEED_PRINTF -DTEST -o tools/site_survey_test tools/site_survey_broadcom.c -lnvram
 	@echo "[MAKEDEFAULTS] bin/defaults"
