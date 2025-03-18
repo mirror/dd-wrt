@@ -41,11 +41,92 @@
 
 /* arena purge timing stuff (may fix later), stats (can patch out) */
 #if ATOMIC_LLONG_LOCK_FREE != 2
+typedef unsigned UWORD __attribute__((mode(word)));
+
+static inline void __attribute__((always_inline, artificial))
+pre_seq_barrier(int model)
+{
+}
+static inline void __attribute__((always_inline, artificial))
+post_seq_barrier(int model)
+{
+}
+
+/* The target page size.  Must be no larger than the runtime page size,
+   lest locking fail with virtual address aliasing (i.e. a page mmaped
+   at two locations).  */
+#ifndef PAGE_SIZE
+#define PAGE_SIZE	4096
+#endif
+
+/* The target cacheline size.  This is an optimization; the padding that
+   should be applied to the locks to keep them from interfering.  */
+#ifndef CACHLINE_SIZE
+#define CACHLINE_SIZE	64
+#endif
+
+/* The granularity at which locks are applied.  Almost certainly the
+   cachline size is the right thing to use here.  */
+#ifndef WATCH_SIZE
+#define WATCH_SIZE	CACHLINE_SIZE
+#endif
+
+struct lock
+{
+  pthread_mutex_t mutex;
+  char pad[sizeof(pthread_mutex_t) < CACHLINE_SIZE
+	   ? CACHLINE_SIZE - sizeof(pthread_mutex_t)
+	   : 0];
+};
+
+#define NLOCKS		(PAGE_SIZE / WATCH_SIZE)
+static struct lock locks[NLOCKS] = {
+  [0 ... NLOCKS-1].mutex = PTHREAD_MUTEX_INITIALIZER
+};
+
+static inline uintptr_t 
+addr_hash (void *ptr)
+{
+  return ((uintptr_t)ptr / WATCH_SIZE) % NLOCKS;
+}
+
+void
+libat_lock_1 (void *ptr)
+{
+  pthread_mutex_lock (&locks[addr_hash (ptr)].mutex);
+}
+
+void
+libat_unlock_1 (void *ptr)
+{
+  pthread_mutex_unlock (&locks[addr_hash (ptr)].mutex);
+}
+
+static inline UWORD
+protect_start (void *ptr)
+{
+  libat_lock_1 (ptr);
+  return 0;
+}
+
+static inline void
+protect_end (void *ptr, UWORD dummy UNUSED)
+{
+  libat_unlock_1 (ptr);
+}
+
 #define ATOMIC_LOAD(TYPE, WIDTH)					\
   TYPE							\
-  __atomic_load_##WIDTH (volatile void *ptr, int type)			\
+  __atomic_load_##WIDTH (volatile void *ptr, int smodel)			\
   {									\
-    return *(volatile TYPE *)ptr;					\
+  TYPE ret; \
+  UWORD magic; \
+  pre_seq_barrier (smodel); \
+  magic = protect_start (mptr); \
+  ret = *mptr; \
+  protect_end (mptr, magic); \
+  post_seq_barrier (smodel); \
+    return ret;					\
   }
 
 #define ATOMIC_FETCH_ADD(TYPE, WIDTH)					\
