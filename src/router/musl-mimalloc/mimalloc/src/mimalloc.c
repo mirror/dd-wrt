@@ -151,10 +151,6 @@ static inline void protect_end(void *ptr, UWORD dummy UNUSED)
 		post_seq_barrier(smodel);                            \
 	}
 
-ATOMIC_LOAD(long long unsigned int, 8)
-ATOMIC_FETCH_ADD(long long unsigned int, 8)
-ATOMIC_STORE(long long unsigned int, 8)
-
 #define ATOMIC_COMPARE_EXCHANGE(TYPE, SIZE)                                                                     \
 	_Bool __atomic_compare_exchange_##SIZE(void *ptr, void *expected, TYPE desired, _Bool weak, int smodel, \
 					       int failure_memorder)                                            \
@@ -177,6 +173,9 @@ ATOMIC_STORE(long long unsigned int, 8)
 		return ret;                                                                                     \
 	}
 
+ATOMIC_LOAD(long long unsigned int, 8)
+ATOMIC_FETCH_ADD(long long unsigned int, 8)
+ATOMIC_STORE(long long unsigned int, 8)
 ATOMIC_COMPARE_EXCHANGE(long long unsigned int, 8)
 #endif
 
