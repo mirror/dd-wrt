@@ -2078,9 +2078,9 @@ vpath %.c sysinit sysinit/switchlib services tools networking networking/wifi ne
 all: services_main
 ifeq ($(CONFIG_RT2880),y)
 ifeq ($(CONFIG_MT7620),y)
-	$(CC) $(CFLAGS) -DNEED_PRINTF -o switch tools/switch_gsw.c -DCONFIG_RALINK_MT7620
+	$(CC) $(CFLAGS) -DNEED_PRINTF -o switch tools/switch_gsw.c -DCONFIG_RALINK_MT7620 -L$(TOP)/libutils -lshutils -L$(TOP)/nvram -lnvram
 ifeq ($(CONFIG_E1700),y)
-	$(CC) $(CFLAGS) -DNEED_PRINTF -o switch tools/switch_7530.c -DCONFIG_RALINK_MT7620
+	$(CC) $(CFLAGS) -DNEED_PRINTF -o switch tools/switch_7530.c -DCONFIG_RALINK_MT7620 -L$(TOP)/libutils -lshutils -L$(TOP)/nvram -lnvram
 endif
 else
 	$(CC) $(CFLAGS) -DNEED_PRINTF -o switch tools/switch.c -L$(TOP)/libutils -lshutils -L$(TOP)/nvram -lnvram
