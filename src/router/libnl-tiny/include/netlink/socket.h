@@ -26,6 +26,9 @@ extern "C" {
 #define NL_NO_AUTO_ACK		(1<<4)
 
 struct nl_cb;
+struct nl_msg;
+
+typedef void (*nl_debug_cb)(void *priv, struct nl_msg *msg);
 struct nl_sock
 {
 	struct sockaddr_nl	s_local;
@@ -36,6 +39,11 @@ struct nl_sock
 	unsigned int		s_seq_expect;
 	int			s_flags;
 	struct nl_cb *		s_cb;
+
+	nl_debug_cb		s_debug_tx_cb;
+	nl_debug_cb		s_debug_rx_cb;
+	void *			s_debug_tx_priv;
+	void *			s_debug_rx_priv;
 };
 
 
@@ -55,6 +63,18 @@ extern int		nl_socket_recv_pktinfo(struct nl_sock *, int);
 extern void		nl_socket_disable_seq_check(struct nl_sock *);
 
 extern int		nl_socket_set_nonblocking(struct nl_sock *);
+
+static inline void nl_socket_set_tx_debug_cb(struct nl_sock *sk, nl_debug_cb cb, void *priv)
+{
+	sk->s_debug_tx_cb = cb;
+	sk->s_debug_tx_priv = priv;
+}
+
+static inline void nl_socket_set_rx_debug_cb(struct nl_sock *sk, nl_debug_cb cb, void *priv)
+{
+	sk->s_debug_rx_cb = cb;
+	sk->s_debug_rx_priv = priv;
+}
 
 /**
  * Use next sequence number
