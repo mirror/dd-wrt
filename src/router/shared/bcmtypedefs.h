@@ -59,7 +59,7 @@
 #if defined(_WIN32)
 
 #define TYPEDEF_BOOL
-typedef unsigned char bool; /* consistent w/BOOL */
+#define bool unsigned char
 
 #endif /* _WIN32 */
 
@@ -227,9 +227,9 @@ typedef unsigned __int64 uint64;
 #if !defined(__cplusplus)
 
 #if defined(__i386__)
-typedef unsigned char bool;
+#define bool unsigned char
 #else
-typedef unsigned int bool;
+#define bool unsigned int
 #endif
 #define TYPE_BOOL 1
 enum { false = 0, true = 1 };
@@ -255,7 +255,7 @@ enum { false = 0, true = 1 };
 #undef USE_TYPEDEF_DEFAULTS
 
 #ifndef TYPEDEF_BOOL
-typedef /* @abstract@ */ unsigned char bool;
+#define bool unsigned char
 #endif
 
 /* define uchar, ushort, uint, ulong */
