@@ -21,6 +21,7 @@ readline-install:
 	rm -rf $(INSTALLDIR)/readline/usr/bin
 	rm -f $(INSTALLDIR)/readline/usr/lib/*.la
 	rm -f $(INSTALLDIR)/readline/usr/lib/*.a
+	rm -rf $(INSTALLDIR)/readline/usr/lib/pkgconfig
 ifneq ($(CONFIG_SOFTETHER),y)
 	rm -f $(INSTALLDIR)/readline/usr/lib/libhistory*
 endif
