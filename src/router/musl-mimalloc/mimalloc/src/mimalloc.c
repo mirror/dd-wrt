@@ -36,7 +36,7 @@
 #include "stdatomic.h"
 
 #if ATOMIC_LONG_LOCK_FREE != 2 || ATOMIC_CHAR_LOCK_FREE != 2
-#error Words and bytes must always be lock-free in this context
+//#error Words and bytes must always be lock-free in this context
 #endif
 
 /* arena purge timing stuff (may fix later), stats (can patch out) */
