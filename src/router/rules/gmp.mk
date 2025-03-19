@@ -16,6 +16,7 @@ gmp-configure:
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 else
 gmp-configure:
+	cd gmp && autoreconf --force --install --symlink
 	cd gmp && ./configure \
 		--build=$(ARCH)-linux \
 		--host=$(ARCH)-linux-gnu \
