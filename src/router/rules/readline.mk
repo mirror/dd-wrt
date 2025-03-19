@@ -8,8 +8,8 @@ readline:
 	make -C readline
 	cd readline/shlib && rm -f libreadline.so
 	cd readline/shlib && rm -f libhistory.so
-	cd readline/shlib && ln -s libreadline.so.7.0 libreadline.so
-	cd readline/shlib && ln -s libhistory.so.7.0 libhistory.so
+	cd readline/shlib && ln -s libreadline.so.8.3 libreadline.so
+	cd readline/shlib && ln -s libhistory.so.8.3 libhistory.so
 
 readline-install:
 	rm -rf $(INSTALLDIR)/readline/usr/lib
