@@ -263,7 +263,6 @@ if test "x$GCC" = "xyes" ; then
   JE_CFLAGS_ADD([-Wno-missing-field-initializers])
   JE_CFLAGS_ADD([-Wno-missing-attributes])
   JE_CFLAGS_ADD([-pipe])
-  JE_CFLAGS_ADD([-g3])
 elif test "x$je_cv_msvc" = "xyes" ; then
   CC="$CC -nologo"
   JE_CFLAGS_ADD([-Zi])
@@ -309,7 +308,6 @@ if test "x$enable_cxx" = "x1" ; then
   if test "x${HAVE_CXX14}" = "x1" -o "x${HAVE_CXX17}" = "x1"; then
     JE_CXXFLAGS_ADD([-Wall])
     JE_CXXFLAGS_ADD([-Wextra])
-    JE_CXXFLAGS_ADD([-g3])
 
     SAVED_LIBS="${LIBS}"
     JE_APPEND_VS(LIBS, -lstdc++)
@@ -1238,19 +1236,6 @@ fi
 AC_SUBST([enable_debug])
 
 dnl Only optimize if not debugging.
-if test "x$enable_debug" = "x0" ; then
-  if test "x$GCC" = "xyes" ; then
-    JE_CFLAGS_ADD([-O3])
-    JE_CXXFLAGS_ADD([-O3])
-    JE_CFLAGS_ADD([-funroll-loops])
-  elif test "x$je_cv_msvc" = "xyes" ; then
-    JE_CFLAGS_ADD([-O2])
-    JE_CXXFLAGS_ADD([-O2])
-  else
-    JE_CFLAGS_ADD([-O])
-    JE_CXXFLAGS_ADD([-O])
-  fi
-fi
 
 dnl Enable statistics calculation by default.
 AC_ARG_ENABLE([stats],
