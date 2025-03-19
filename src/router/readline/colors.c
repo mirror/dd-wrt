@@ -2,7 +2,7 @@
 
    Modified by Chet Ramey for Readline.
 
-   Copyright (C) 1985, 1988, 1990-1991, 1995-2010, 2012, 2015
+   Copyright (C) 1985, 1988, 1990-1991, 1995-2021, 2023
    Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -32,10 +32,21 @@
 
 #include "rlconf.h"
 
+#if defined __TANDEM
+#  define _XOPEN_SOURCE_EXTENDED 1
+#  define _TANDEM_SOURCE 1
+#  include <sys/types.h>
+#  include <sys/stat.h>
+#endif
+
 #include <stdio.h>
 
 #include "posixstat.h" // stat related macros (S_ISREG, ...)
 #include <fcntl.h> // S_ISUID
+
+#ifndef S_ISDIR
+#  define	S_ISDIR(m)	(((m) & S_IFMT) == S_IFDIR)
+#endif
 
 // strlen()
 #if defined (HAVE_STRING_H)
@@ -62,11 +73,14 @@
 static bool is_colored (enum indicator_no type);
 static void restore_default_color (void);
 
+#define RL_COLOR_PREFIX_EXTENSION	"readline-colored-completion-prefix"
+
 COLOR_EXT_TYPE *_rl_color_ext_list = 0;
 
 /* Output a color indicator (which may contain nulls).  */
 void
-_rl_put_indicator (const struct bin_str *ind) {
+_rl_put_indicator (const struct bin_str *ind)
+{
   fwrite (ind->string, ind->len, 1, rl_outstream);
 }
 
@@ -98,13 +112,28 @@ _rl_set_normal_color (void)
     }
 }
 
+static struct bin_str *
+_rl_custom_readline_prefix (void)
+{
+  size_t len;
+  COLOR_EXT_TYPE *ext;
+
+  len = strlen (RL_COLOR_PREFIX_EXTENSION);
+  for (ext = _rl_color_ext_list; ext; ext = ext->next)
+    if (ext->ext.len == len && STREQN (ext->ext.string, RL_COLOR_PREFIX_EXTENSION, len))
+      return (&ext->seq);
+  return (NULL);
+}
+
 bool
 _rl_print_prefix_color (void)
 {
   struct bin_str *s;
 
   /* What do we want to use for the prefix? Let's try cyan first, see colors.h */
-  s = &_rl_color_indicator[C_PREFIX];
+  s = _rl_custom_readline_prefix ();
+  if (s == 0)
+    s = &_rl_color_indicator[C_PREFIX];
   if (s->string != NULL)
     {
       if (is_colored (C_NORM))
@@ -170,7 +199,7 @@ _rl_print_color_indicator (const char *f)
 
   if (linkok == -1 && _rl_color_indicator[C_MISSING].string != NULL)
     colored_filetype = C_MISSING;
-  else if (linkok == 0 && S_ISLNK(mode) && _rl_color_indicator[C_ORPHAN].string != NULL)
+  else if (linkok == 0 && _rl_color_indicator[C_ORPHAN].string != NULL)
     colored_filetype = C_ORPHAN;	/* dangling symlink */
   else if(stat_ok != 0)
     {
@@ -183,11 +212,17 @@ _rl_print_color_indicator (const char *f)
         {
           colored_filetype = C_FILE;
 
+#if defined (S_ISUID)
           if ((mode & S_ISUID) != 0 && is_colored (C_SETUID))
             colored_filetype = C_SETUID;
-          else if ((mode & S_ISGID) != 0 && is_colored (C_SETGID))
+          else
+#endif
+#if defined (S_ISGID)
+          if ((mode & S_ISGID) != 0 && is_colored (C_SETGID))
             colored_filetype = C_SETGID;
-          else if (is_colored (C_CAP) && 0) //f->has_capability)
+          else
+#endif
+          if (is_colored (C_CAP) && 0) //f->has_capability)
             colored_filetype = C_CAP;
           else if ((mode & S_IXUGO) != 0 && is_colored (C_EXEC))
             colored_filetype = C_EXEC;
@@ -211,14 +246,20 @@ _rl_print_color_indicator (const char *f)
             colored_filetype = C_STICKY;
 #endif
         }
+#if defined (S_ISLNK)
       else if (S_ISLNK (mode))
         colored_filetype = C_LINK;
+#endif
       else if (S_ISFIFO (mode))
         colored_filetype = C_FIFO;
+#if defined (S_ISSOCK)
       else if (S_ISSOCK (mode))
         colored_filetype = C_SOCK;
+#endif
+#if defined (S_ISBLK)
       else if (S_ISBLK (mode))
         colored_filetype = C_BLK;
+#endif
       else if (S_ISCHR (mode))
         colored_filetype = C_CHR;
       else

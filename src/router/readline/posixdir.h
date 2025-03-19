@@ -1,6 +1,6 @@
 /* posixdir.h -- Posix directory reading includes and defines. */
 
-/* Copyright (C) 1987,1991,2012 Free Software Foundation, Inc.
+/* Copyright (C) 1987,1991,2012,2019,2021 Free Software Foundation, Inc.
 
    This file is part of GNU Bash, the Bourne Again SHell.
 
@@ -46,7 +46,7 @@
 #  define D_NAMLEN(d)   ((d)->d_namlen)
 #endif /* !HAVE_DIRENT_H */
 
-/* The bash code fairly consistenly uses d_fileno; make sure it's available */
+/* The bash code fairly consistently uses d_fileno; make sure it's available */
 #if defined (HAVE_STRUCT_DIRENT_D_INO) && !defined (HAVE_STRUCT_DIRENT_D_FILENO)
 #  define d_fileno d_ino
 #endif

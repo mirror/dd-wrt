@@ -1,6 +1,6 @@
 /* kill.c -- kill ring management. */
 
-/* Copyright (C) 1994-2015 Free Software Foundation, Inc.
+/* Copyright (C) 1994-2024 Free Software Foundation, Inc.
 
    This file is part of the GNU Readline Library (Readline), a library
    for reading lines of text with interactive input and history editing.      
@@ -70,16 +70,15 @@ static int rl_kill_index;
 /* How many slots we have in the kill ring. */
 static int rl_kill_ring_length;
 
-static int _rl_copy_to_kill_ring PARAMS((char *, int));
-static int region_kill_internal PARAMS((int));
-static int _rl_copy_word_as_kill PARAMS((int, int));
-static int rl_yank_nth_arg_internal PARAMS((int, int, int));
+static int _rl_copy_to_kill_ring (char *, int);
+static int region_kill_internal (int);
+static int _rl_copy_word_as_kill (int, int);
+static int rl_yank_nth_arg_internal (int, int, int);
 
 /* How to say that you only want to save a certain amount
    of kill material. */
 int
-rl_set_retained_kills (num)
-     int num;
+rl_set_retained_kills (int num)
 {
   return 0;
 }
@@ -89,9 +88,7 @@ rl_set_retained_kills (num)
    non-zero, and the last command was a kill, the text is appended to the
    current kill ring slot, otherwise prepended. */
 static int
-_rl_copy_to_kill_ring (text, append)
-     char *text;
-     int append;
+_rl_copy_to_kill_ring (char *text, int append)
 {
   char *old, *new;
   int slot;
@@ -122,7 +119,7 @@ _rl_copy_to_kill_ring (text, append)
 	  else
 	    {
 	      slot = rl_kill_ring_length += 1;
-	      rl_kill_ring = (char **)xrealloc (rl_kill_ring, slot * sizeof (char *));
+	      rl_kill_ring = (char **)xrealloc (rl_kill_ring, (slot + 1) * sizeof (char *));
 	    }
 	  rl_kill_ring[--slot] = (char *)NULL;
 	}
@@ -131,7 +128,7 @@ _rl_copy_to_kill_ring (text, append)
     slot = rl_kill_ring_length - 1;
 
   /* If the last command was a kill, prepend or append. */
-  if (_rl_last_command_was_kill && rl_editing_mode != vi_mode)
+  if (_rl_last_command_was_kill && rl_kill_ring[slot] && rl_editing_mode != vi_mode)
     {
       old = rl_kill_ring[slot];
       new = (char *)xmalloc (1 + strlen (old) + strlen (text));
@@ -163,8 +160,7 @@ _rl_copy_to_kill_ring (text, append)
    last command was not a kill command, then a new slot is made for
    this kill. */
 int
-rl_kill_text (from, to)
-     int from, to;
+rl_kill_text (int from, int to)
 {
   char *text;
 
@@ -198,8 +194,7 @@ rl_kill_text (from, to)
 
 /* Delete the word at point, saving the text in the kill ring. */
 int
-rl_kill_word (count, key)
-     int count, key;
+rl_kill_word (int count, int key)
 {
   int orig_point;
 
@@ -222,17 +217,16 @@ rl_kill_word (count, key)
 
 /* Rubout the word before point, placing it on the kill ring. */
 int
-rl_backward_kill_word (count, ignore)
-     int count, ignore;
+rl_backward_kill_word (int count, int key)
 {
   int orig_point;
 
   if (count < 0)
-    return (rl_kill_word (-count, ignore));
+    return (rl_kill_word (-count, key));
   else
     {
       orig_point = rl_point;
-      rl_backward_word (count, ignore);
+      rl_backward_word (count, key);
 
       if (rl_point != orig_point)
 	rl_kill_text (orig_point, rl_point);
@@ -246,17 +240,16 @@ rl_backward_kill_word (count, ignore)
 /* Kill from here to the end of the line.  If DIRECTION is negative, kill
    back to the line start instead. */
 int
-rl_kill_line (direction, ignore)
-     int direction, ignore;
+rl_kill_line (int direction, int key)
 {
   int orig_point;
 
   if (direction < 0)
-    return (rl_backward_kill_line (1, ignore));
+    return (rl_backward_kill_line (1, key));
   else
     {
       orig_point = rl_point;
-      rl_end_of_line (1, ignore);
+      rl_end_of_line (1, key);
       if (orig_point != rl_point)
 	rl_kill_text (orig_point, rl_point);
       rl_point = orig_point;
@@ -269,13 +262,12 @@ rl_kill_line (direction, ignore)
 /* Kill backwards to the start of the line.  If DIRECTION is negative, kill
    forwards to the line end instead. */
 int
-rl_backward_kill_line (direction, ignore)
-     int direction, ignore;
+rl_backward_kill_line (int direction, int key)
 {
   int orig_point;
 
   if (direction < 0)
-    return (rl_kill_line (1, ignore));
+    return (rl_kill_line (1, key));
   else
     {
       if (rl_point == 0)
@@ -283,7 +275,7 @@ rl_backward_kill_line (direction, ignore)
       else
 	{
 	  orig_point = rl_point;
-	  rl_beg_of_line (1, ignore);
+	  rl_beg_of_line (1, key);
 	  if (rl_point != orig_point)
 	    rl_kill_text (orig_point, rl_point);
 	  if (rl_editing_mode == emacs_mode)
@@ -295,8 +287,7 @@ rl_backward_kill_line (direction, ignore)
 
 /* Kill the whole line, no matter where point is. */
 int
-rl_kill_full_line (count, ignore)
-     int count, ignore;
+rl_kill_full_line (int count, int key)
 {
   rl_begin_undo_group ();
   rl_point = 0;
@@ -313,8 +304,7 @@ rl_kill_full_line (count, ignore)
 /* This does what C-w does in Unix.  We can't prevent people from
    using behaviour that they expect. */
 int
-rl_unix_word_rubout (count, key)
-     int count, key;
+rl_unix_word_rubout (int count, int key)
 {
   int orig_point;
 
@@ -332,7 +322,7 @@ rl_unix_word_rubout (count, key)
 	    rl_point--;
 
 	  while (rl_point && (whitespace (rl_line_buffer[rl_point - 1]) == 0))
-	    rl_point--;
+	    rl_point--;		/* XXX - multibyte? */
 	}
 
       rl_kill_text (orig_point, rl_point);
@@ -346,8 +336,7 @@ rl_unix_word_rubout (count, key)
 /* This deletes one filename component in a Unix pathname.  That is, it
    deletes backward to directory separator (`/') or whitespace.  */
 int
-rl_unix_filename_rubout (count, key)
-     int count, key;
+rl_unix_filename_rubout (int count, int key)
 {
   int orig_point, c;
 
@@ -359,19 +348,43 @@ rl_unix_filename_rubout (count, key)
       if (count <= 0)
 	count = 1;
 
-      while (count--)
+      while (rl_point > 0 && count--)
 	{
 	  c = rl_line_buffer[rl_point - 1];
+
+	  /* First move backwards through whitespace */
+	  while (rl_point && whitespace (c))
+	    {
+	      if (--rl_point)
+		c = rl_line_buffer[rl_point - 1];
+	    }
+
+	  /* Consume one or more slashes. */
+	  if (c == '/')
+	    {
+	      int i;
+
+	      i = rl_point - 1;
+	      while (i > 0 && c == '/')
+		c = rl_line_buffer[--i];
+	      if (i == 0 || whitespace (c))
+		{
+		  rl_point = i + whitespace (c);
+		  continue;	/* slashes only */
+		}
+	      c = '/';
+	    }
+
 	  while (rl_point && (whitespace (c) || c == '/'))
 	    {
-	      rl_point--;
-	      c = rl_line_buffer[rl_point - 1];
+	      if (--rl_point)
+		c = rl_line_buffer[rl_point - 1];
 	    }
 
 	  while (rl_point && (whitespace (c) == 0) && c != '/')
 	    {
-	      rl_point--;
-	      c = rl_line_buffer[rl_point - 1];
+	      if (--rl_point)	/* XXX - multibyte? */
+		c = rl_line_buffer[rl_point - 1];
 	    }
 	}
 
@@ -390,8 +403,7 @@ rl_unix_filename_rubout (count, key)
    into the line at all, and if you aren't, then you know what you are
    doing. */
 int
-rl_unix_line_discard (count, key)
-     int count, key;
+rl_unix_line_discard (int count, int key)
 {
   if (rl_point == 0)
     rl_ding ();
@@ -408,8 +420,7 @@ rl_unix_line_discard (count, key)
 /* Copy the text in the `region' to the kill ring.  If DELETE is non-zero,
    delete the text from the line as well. */
 static int
-region_kill_internal (delete)
-     int delete;
+region_kill_internal (int delete)
 {
   char *text;
 
@@ -421,37 +432,35 @@ region_kill_internal (delete)
       _rl_copy_to_kill_ring (text, rl_point < rl_mark);
     }
 
+  _rl_fix_point (1);
   _rl_last_command_was_kill++;
   return 0;
 }
 
 /* Copy the text in the region to the kill ring. */
 int
-rl_copy_region_to_kill (count, ignore)
-     int count, ignore;
+rl_copy_region_to_kill (int count, int key)
 {
   return (region_kill_internal (0));
 }
 
 /* Kill the text between the point and mark. */
 int
-rl_kill_region (count, ignore)
-     int count, ignore;
+rl_kill_region (int count, int key)
 {
   int r, npoint;
 
   npoint = (rl_point < rl_mark) ? rl_point : rl_mark;
   r = region_kill_internal (1);
-  _rl_fix_point (1);
   rl_point = npoint;
+  _rl_fix_point (1);
   return r;
 }
 
 /* Copy COUNT words to the kill ring.  DIR says which direction we look
    to find the words. */
 static int
-_rl_copy_word_as_kill (count, dir)
-     int count, dir;
+_rl_copy_word_as_kill (int count, int dir)
 {
   int om, op, r;
 
@@ -479,8 +488,7 @@ _rl_copy_word_as_kill (count, dir)
 }
 
 int
-rl_copy_forward_word (count, key)
-     int count, key;
+rl_copy_forward_word (int count, int key)
 {
   if (count < 0)
     return (rl_copy_backward_word (-count, key));
@@ -489,8 +497,7 @@ rl_copy_forward_word (count, key)
 }
 
 int
-rl_copy_backward_word (count, key)
-     int count, key;
+rl_copy_backward_word (int count, int key)
 {
   if (count < 0)
     return (rl_copy_forward_word (-count, key));
@@ -500,8 +507,7 @@ rl_copy_backward_word (count, key)
   
 /* Yank back the last killed text.  This ignores arguments. */
 int
-rl_yank (count, ignore)
-     int count, ignore;
+rl_yank (int count, int key)
 {
   if (rl_kill_ring == 0)
     {
@@ -519,8 +525,7 @@ rl_yank (count, ignore)
    delete that text from the line, rotate the index down, and
    yank back some other text. */
 int
-rl_yank_pop (count, key)
-     int count, key;
+rl_yank_pop (int count, int key)
 {
   int l, n;
 
@@ -552,10 +557,9 @@ rl_yank_pop (count, key)
 
 #if defined (VI_MODE)
 int
-rl_vi_yank_pop (count, key)
-     int count, key;
+rl_vi_yank_pop (int count, int key)
 {
-  int l, n;
+  int l, n, origpoint;
 
   if (((rl_last_func != rl_vi_yank_pop) && (rl_last_func != rl_vi_put)) ||
       !rl_kill_ring)
@@ -565,11 +569,21 @@ rl_vi_yank_pop (count, key)
     }
 
   l = strlen (rl_kill_ring[rl_kill_index]);
+#if 1
+  origpoint = rl_point;
+  n = rl_point - l + 1;
+#else
   n = rl_point - l;
+#endif
   if (n >= 0 && STREQN (rl_line_buffer + n, rl_kill_ring[rl_kill_index], l))
     {
+#if 1
+      rl_delete_text (n, n + l);		/* remember vi cursor positioning */
+      rl_point = origpoint - l;
+#else
       rl_delete_text (n, rl_point);
       rl_point = n;
+#endif
       rl_kill_index--;
       if (rl_kill_index < 0)
 	rl_kill_index = rl_kill_ring_length - 1;
@@ -587,8 +601,7 @@ rl_vi_yank_pop (count, key)
 /* Yank the COUNTh argument from the previous history line, skipping
    HISTORY_SKIP lines before looking for the `previous line'. */
 static int
-rl_yank_nth_arg_internal (count, ignore, history_skip)
-     int count, ignore, history_skip;
+rl_yank_nth_arg_internal (int count, int key, int history_skip)
 {
   register HIST_ENTRY *entry;
   char *arg;
@@ -627,9 +640,9 @@ rl_yank_nth_arg_internal (count, ignore, history_skip)
 #if defined (VI_MODE)
   /* Vi mode always inserts a space before yanking the argument, and it
      inserts it right *after* rl_point. */
-  if (rl_editing_mode == vi_mode)
+  if (rl_editing_mode == vi_mode && _rl_keymap == vi_movement_keymap)
     {
-      rl_vi_append_mode (1, ignore);
+      rl_vi_append_mode (1, key);
       rl_insert_text (" ");
     }
 #endif /* VI_MODE */
@@ -643,18 +656,16 @@ rl_yank_nth_arg_internal (count, ignore, history_skip)
 
 /* Yank the COUNTth argument from the previous history line. */
 int
-rl_yank_nth_arg (count, ignore)
-     int count, ignore;
+rl_yank_nth_arg (int count, int key)
 {
-  return (rl_yank_nth_arg_internal (count, ignore, 0));
+  return (rl_yank_nth_arg_internal (count, key, 0));
 }
 
 /* Yank the last argument from the previous history line.  This `knows'
    how rl_yank_nth_arg treats a count of `$'.  With an argument, this
    behaves the same as rl_yank_nth_arg. */
 int
-rl_yank_last_arg (count, key)
-     int count, key;
+rl_yank_last_arg (int count, int key)
 {
   static int history_skip = 0;
   static int explicit_arg_p = 0;
@@ -692,19 +703,17 @@ rl_yank_last_arg (count, key)
 
 /* Having read the special escape sequence denoting the beginning of a
    `bracketed paste' sequence, read the rest of the pasted input until the
-   closing sequence and insert the pasted text as a single unit without
-   interpretation. */
-int
-rl_bracketed_paste_begin (count, key)
-     int count, key;
+   closing sequence and return the pasted text. */
+char *
+_rl_bracketed_text (size_t *lenp)
 {
-  int retval, c;
+  int c;
   size_t len, cap;
   char *buf;
 
-  retval = 1;
   len = 0;
   buf = xmalloc (cap = 64);
+  buf[0] = '\0';
 
   RL_SETSTATE (RL_STATE_MOREINPUT);
   while ((c = rl_read_key ()) >= 0)
@@ -728,25 +737,137 @@ rl_bracketed_paste_begin (count, key)
     }
   RL_UNSETSTATE (RL_STATE_MOREINPUT);
 
-  if (c >= 0)
-    {
-      if (len == cap)
-	buf = xrealloc (buf, cap + 1);
-      buf[len] = '\0';
-      retval = rl_insert_text (buf);
-    }
+  if (len == cap)
+    buf = xrealloc (buf, cap + 1);
+  buf[len] = '\0';
+
+  if (lenp)
+    *lenp = len;
+  return (buf);
+}
+
+/* Having read the special escape sequence denoting the beginning of a
+   `bracketed paste' sequence, read the rest of the pasted input until the
+   closing sequence and insert the pasted text as a single unit without
+   interpretation. Temporarily highlight the inserted text. */
+int
+rl_bracketed_paste_begin (int count, int key)
+{
+  int retval;
+  size_t len;
+  char *buf;
+
+  buf = _rl_bracketed_text (&len);
+  rl_mark = rl_point;
+  retval = rl_insert_text (buf) == len ? 0 : 1;
+  if (_rl_enable_active_region)
+    rl_activate_mark ();
 
   xfree (buf);
   return (retval);
 }
 
-/* A special paste command for Windows users.. */
+int
+_rl_read_bracketed_paste_prefix (int c)
+{
+  char pbuf[BRACK_PASTE_SLEN+1], *pbpref;
+  int key, ind;
+
+  pbpref = BRACK_PASTE_PREF;		/* XXX - debugging */
+  if (c != pbpref[0])
+    return (0);
+  pbuf[ind = 0] = key = c;
+  while (ind < BRACK_PASTE_SLEN-1 &&
+	 (RL_ISSTATE (RL_STATE_INPUTPENDING|RL_STATE_MACROINPUT) == 0) &&
+         _rl_pushed_input_available () == 0 &&
+         _rl_input_queued (0))
+    {
+      key = rl_read_key ();		/* XXX - for now */
+      if (key < 0)
+	break;
+      pbuf[++ind] = key;
+      if (pbuf[ind] != pbpref[ind])
+        break;
+    }
+
+  if (ind < BRACK_PASTE_SLEN-1)		/* read incomplete sequence */
+    {
+      while (ind >= 0)
+	_rl_unget_char (pbuf[ind--]);
+      return (key < 0 ? key : 0);
+    }
+  return (key < 0 ? key : 1);
+}
+
+/* Get a character from wherever we read input, handling input in bracketed
+   paste mode. If we don't have or use bracketed paste mode, this can be
+   used in place of rl_read_key(). */
+int
+_rl_bracketed_read_key ()
+{
+  int c, r;
+  char *pbuf;
+  size_t pblen;
+
+  RL_SETSTATE(RL_STATE_MOREINPUT);
+  c = rl_read_key ();
+  RL_UNSETSTATE(RL_STATE_MOREINPUT);
+
+  if (c < 0)
+    return -1;
+
+  /* read pasted data with bracketed-paste mode enabled. */
+  if (_rl_enable_bracketed_paste && c == ESC && (r = _rl_read_bracketed_paste_prefix (c)) == 1)
+    {
+      pbuf = _rl_bracketed_text (&pblen);
+      if (pblen == 0)
+	{
+	  xfree (pbuf);
+	  return 0;		/* XXX */
+	}
+      c = (unsigned char)pbuf[0];
+      if (pblen > 1)
+	{
+	  while (--pblen > 0)
+	    _rl_unget_char ((unsigned char)pbuf[pblen]);
+	}
+      xfree (pbuf);
+    }
+
+  return c;
+}
+
+/* Get a character from wherever we read input, handling input in bracketed
+   paste mode. If we don't have or use bracketed paste mode, this can be
+   used in place of rl_read_key(). */
+int
+_rl_bracketed_read_mbstring (char *mb, int mlen)
+{
+  int c;
+
+  c = _rl_bracketed_read_key ();
+  if (c < 0)
+    return -1;
+
+#if defined (HANDLE_MULTIBYTE)
+  if (MB_CUR_MAX > 1 && rl_byte_oriented == 0)
+    c = _rl_read_mbstring (c, mb, mlen);
+  else
+#endif
+    mb[0] = c;
+  mb[mlen] = '\0';		/* just in case */
+
+  return c;
+}
+
+/* A special paste command for Windows users. */
 #if defined (_WIN32)
+#define WIN32_LEAN_AND_MEAN
+
 #include <windows.h>
 
 int
-rl_paste_from_clipboard (count, key)
-     int count, key;
+rl_paste_from_clipboard (int count, int key)
 {
   char *data, *ptr;
   int len;

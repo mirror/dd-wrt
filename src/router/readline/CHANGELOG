@@ -1304,3 +1304,191 @@ configure.ac
 				   ----
 configure.ac,Makefile.in,examples/Makefile.in
 	- remove references to purify
+
+				   11/21
+				   -----
+configure.ac,config.h.in
+	- fnmatch: check for libc function, define HAVE_FNMATCH if found. Now
+	  used by vi-mode history search functions
+
+				   7/12
+				   ----
+Makefile.in,examples/Makefile.in
+	- add support for building with address sanitizer, using new target
+	  `asan'
+
+				 4/23/2018
+				 ---------
+configure.ac
+	- TERMCAP_PKG_CONFIG_LIB: new variable, defined from TERMCAP_LIB,
+	  defaults to termcap
+
+readline.pc.in
+	- change Requires.private to use TERMCAP_PKG_CONFIG_LIB instead of
+	  hardcoded `tinfo'. Report and fix from Thomas Petazzoni
+	  <thomas.petazzoni@bootlin.com>
+
+				    5/4
+				    ---
+Makefile.in
+	- new targets to install and uninstall the `readline.pc' pkgconfig
+	  file
+	- install-{static,shared}: add install-pc to the list of prereqs
+	- uninstall{,-shared}: add uninstall-pc to list of prereqs. Change
+	  from Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+
+configure.ac,Makefile.in
+	- add new configure option to optionally disable installing the
+	  source code examples. From Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+
+				   5/23
+				   ----
+Makefile.in
+	- install-pc: make sure we install readline.pc into an existing
+	  pkgconfig directory. Report from ilove zfs <ilovezfs@icloud.com>
+
+				   5/24
+				   ----
+Makefile.in
+	- installdirs: create $(pkgconfigdir) if it doesn't exist
+
+
+				 4/8/2019
+				 --------
+readline.pc.in
+	- change CFLAGS to include ${includedir} instead of ${includedir}/readline,
+	  to support the recommended `#include <readline/readline.h>'. Report
+	  and fix from Andrea Bolognani <abologna@redhat.com>
+
+				   5/13
+				   ----
+configure.ac
+	- hpux: add -DTGETENT_BROKEN to LOCAL_CFLAGS
+
+				   8/28
+				   ----
+configure.ac
+	- hpux: add -DTGETFLAG_BROKEN to LOCAL_CFLAGS
+
+				    9/6
+				    ---
+examples/autoconf/RL_LIB_READLINE_VERSION
+	- include <stdlib.h> in the AC_TRY_RUN block to accommodate compilers
+	  that treat functions without an existing prototype as fatal errors.
+	  Report and fix from Florian Weimer <fweimer@redhat.com>
+
+				   12/13
+				   -----
+support/shlib-install
+	- remove old code for FreeBSD and Dragonfly; they are ELF-only now and
+	  can use the same code as Linux. Fix from
+	  Baptiste Daroussin <bapt@FreeBSD.org>
+
+				 5/20/2020
+				 ---------
+configure.ac
+	- bumped version number up to 8.1
+
+				   6/15
+				   ----
+configure.ac
+	- add -Wno-parentheses -Wno-format-security to CFLAGS if gcc (or clang)
+	  is the compiler
+
+				   10/29
+				   -----
+configure.ac
+	- --enable-bracketed-paste-default: new invocation option, toggles the
+	  default value of enable-bracketed-paste (on by default)
+
+INSTALL
+	- document new --enable-bracketed-paste-default configure option
+
+				   12/4
+				   ----
+[readline-8.1 frozen]
+
+				 8/17/2021
+				 ---------
+configure.ac
+	- use `:+' when testing the value of $GCC, since autoconf seems to
+	  set it to the empty string if gcc isn't the compiler. Reported by
+	  Osipov, Michael (LDA IT PLM) <michael.osipov@siemens.com>
+
+				    9/2
+				    ---
+configure.ac
+	- AC_HELP_STRING -> AS_HELP_STRING
+	- AC_OUTPUT: split into AC_CONFIG_FILES and AC_CONFIG_COMMANDS, call
+	  AC_OUTPUT without any parameters
+
+				    9/3
+				    ---
+configure.ac, config.h.in
+	- AC_TYPE_SIGNAL,BASH_TYPE_SIGHANDLER: remove calls, remove mention of
+          RETSIGTYPE and VOID_SIGHANDLER 
+	- AC_HEADER_TIME: removed
+	- AC_USE_SYSTEM_EXTENSIONS: use instead of AC_AIX and AC_MINIX
+	- AC_HEADER_STDC: removed
+	- BASH_FUNC_CTYPE_NONASCII: removed
+
+				   11/25
+				   -----
+history.pc.in
+	- pkgconfig file for history library. From Siteshwar Vashisht
+	  <svashisht@redhat.com>
+
+configure.ac,MANIFEST,Makefile.in
+	- support for creating history.pc
+
+				 3/29/2022
+				 ---------
+configure.ac
+	- new option: --with-shared-termcap-library: use to force the shared
+	  readline library to be linked against a shared termcap/curses library
+	  that configure finds. If the argument begins with `-l', use that
+	  library instead; updated INSTALL accordingly
+
+				11/25/2022
+				----------
+gettimeofday.c
+	- add file from bash's lib/sh/gettimeofday.c, only compiled in if
+	  HAVE_GETTIMEOFDAY is not defined
+
+Makefile.in
+	- gettimeofday.o: link in, it will not define any symbols if
+	  HAVE_GETTIMEOFDAY is defined. This is for systems like _WIN32 that
+	  don't have gettimeofday()
+
+				 3/6/2024
+				 --------
+config.h.in
+	- added more defines that bash aclocal.m4 BASH_CHECK_MULTIBYTE checks
+	  for
+
+				   5/10
+				   ----
+examples/rlfe
+	- lots of updates to configure.ac to make it build on modern systems
+	  and more-or-less work with autoconf-2.72 (still warnings about
+	  obsolete macros)
+	- add prototypes and declarations to pty.c
+
+				   5/11
+				   ----
+configure.ac
+	- AC_PROG_GCC_TRADITIONAL: remove
+	- need to note in CHANGES that configure now supports --enable-year2038.
+	  THIS IS AN ABI CHANGE IF YOU ENABLE IT
+
+				    7/7
+				    ---
+configure.ac
+	- add ncursesw as a possible value for TERMCAP_PKG_CONFIG_LIB, with
+	  corresponding changes to aclocal.m4, which is shared with bash
+
+				   7/24
+				   ----
+configure.ac,Makefile.in
+	- STYLE_CFLAGS: set like bash if we're using gcc or clang; add to
+	  CCFLAGS so we can compile -Wno-parentheses by default

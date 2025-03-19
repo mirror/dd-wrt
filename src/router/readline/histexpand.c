@@ -1,6 +1,6 @@
 /* histexpand.c -- history expansion. */
 
-/* Copyright (C) 1989-2015 Free Software Foundation, Inc.
+/* Copyright (C) 1989-2021,2023-2024 Free Software Foundation, Inc.
 
    This file contains the GNU History Library (History), a set of
    routines for managing the text of previously typed lines.
@@ -55,7 +55,9 @@
 
 #define slashify_in_quotes "\\`\"$"
 
-typedef int _hist_search_func_t PARAMS((const char *, int));
+#define fielddelim(c)	(whitespace(c) || (c) == '\n')
+
+typedef int _hist_search_func_t (const char *, int);
 
 static char error_pointer;
 
@@ -68,14 +70,14 @@ static int subst_rhs_len;
    specifications from word designators.  Static for now */
 static char *history_event_delimiter_chars = HISTORY_EVENT_DELIMITERS;
 
-static char *get_history_word_specifier PARAMS((char *, char *, int *));
-static int history_tokenize_word PARAMS((const char *, int));
-static char **history_tokenize_internal PARAMS((const char *, int, int *));
-static char *history_substring PARAMS((const char *, int, int));
-static void freewords PARAMS((char **, int));
-static char *history_find_word PARAMS((char *, int));
+static char *get_history_word_specifier (const char *, char *, int *);
+static int history_tokenize_word (const char *, int);
+static char **history_tokenize_internal (const char *, int, int *);
+static char *history_substring (const char *, int, int);
+static void freewords (char **, int);
+static char *history_find_word (const char *, int);
 
-static char *quote_breaks PARAMS((char *));
+static char *quote_breaks (char *);
 
 /* Variables exported by this file. */
 /* The character that represents the start of a history expansion
@@ -87,9 +89,8 @@ char history_expansion_char = '!';
 char history_subst_char = '^';
 
 /* During tokenization, if this character is seen as the first character
-   of a word, then it, and all subsequent characters upto a newline are
-   ignored.  For a Bourne shell, this should be '#'.  Bash special cases
-   the interactive comment character to not be a comment delimiter. */
+   of a word, then it, and all subsequent characters up to a newline are
+   ignored.  For a Bourne shell, this should be '#'. */
 char history_comment_char = '\0';
 
 /* The list of characters which inhibit the expansion of text if found
@@ -106,6 +107,8 @@ char *history_word_delimiters = HISTORY_WORD_DELIMITERS;
 /* If set, this points to a function that is called to verify that a
    particular history expansion should be performed. */
 rl_linebuf_func_t *history_inhibit_expansion_function;
+
+int history_quoting_state = 0;
 
 /* **************************************************************** */
 /*								    */
@@ -132,16 +135,13 @@ static char *search_match;
    So you might call this function like:
    line = get_history_event ("!echo:p", &index, 0);  */
 char *
-get_history_event (string, caller_index, delimiting_quote)
-     const char *string;
-     int *caller_index;
-     int delimiting_quote;
+get_history_event (const char *string, int *caller_index, int delimiting_quote)
 {
   register int i;
   register char c;
   HIST_ENTRY *entry;
   int which, sign, local_index, substring_okay;
-  _hist_search_func_t *search_func;
+  int search_flags;
   char *temp;
 
   /* The event can be specified in a number of ways.
@@ -179,7 +179,7 @@ get_history_event (string, caller_index, delimiting_quote)
     }
 
   /* Hack case of numeric line specification. */
-  if (string[i] == '-')
+  if (string[i] == '-' && _rl_digit_p (string[i+1]))
     {
       sign = -1;
       i++;
@@ -229,10 +229,12 @@ get_history_event (string, caller_index, delimiting_quote)
         }
 
 #endif /* HANDLE_MULTIBYTE */
-      if ((!substring_okay && (whitespace (c) || c == ':' ||
-          (history_event_delimiter_chars && member (c, history_event_delimiter_chars)) ||
-	  (history_search_delimiter_chars && member (c, history_search_delimiter_chars)) ||
-	  string[i] == delimiting_quote)) ||
+      if ((!substring_okay &&
+	    (whitespace (c) || c == ':' ||
+	    (i > local_index && history_event_delimiter_chars && c == '-') ||
+	    (c != '-' && history_event_delimiter_chars && member (c, history_event_delimiter_chars)) ||
+	    (history_search_delimiter_chars && member (c, history_search_delimiter_chars)) ||
+	    string[i] == delimiting_quote)) ||
 	  string[i] == '\n' ||
 	  (substring_okay && string[i] == '?'))
 	break;
@@ -267,10 +269,10 @@ get_history_event (string, caller_index, delimiting_quote)
         FAIL_SEARCH ();
     }
 
-  search_func = substring_okay ? history_search : history_search_prefix;
+  search_flags = substring_okay ? NON_ANCHORED_SEARCH : ANCHORED_SEARCH;
   while (1)
     {
-      local_index = (*search_func) (temp, -1);
+      local_index = _hs_history_search (temp, -1, -1, search_flags);
 
       if (local_index < 0)
 	FAIL_SEARCH ();
@@ -316,9 +318,7 @@ get_history_event (string, caller_index, delimiting_quote)
    to the closing single quote.  FLAGS currently used to allow backslash
    to escape a single quote (e.g., for bash $'...'). */
 static void
-hist_string_extract_single_quoted (string, sindex, flags)
-     char *string;
-     int *sindex, flags;
+hist_string_extract_single_quoted (const char *string, int *sindex, int flags)
 {
   register int i;
 
@@ -332,8 +332,7 @@ hist_string_extract_single_quoted (string, sindex, flags)
 }
 
 static char *
-quote_breaks (s)
-     char *s;
+quote_breaks (char *s)
 {
   register char *p, *r;
   char *ret;
@@ -374,9 +373,7 @@ quote_breaks (s)
 }
 
 static char *
-hist_error(s, start, current, errtype)
-      char *s;
-      int start, current, errtype;
+hist_error(const char *s, int start, int current, int errtype)
 {
   char *temp;
   const char *emsg;
@@ -413,7 +410,10 @@ hist_error(s, start, current, errtype)
     }
 
   temp = (char *)xmalloc (ll + elen + 3);
-  strncpy (temp, s + start, ll);
+  if (s[start])
+    strncpy (temp, s + start, ll);
+  else
+    ll = 0;
   temp[ll] = ':';
   temp[ll + 1] = ' ';
   strcpy (temp + ll + 2, emsg);
@@ -433,9 +433,7 @@ hist_error(s, start, current, errtype)
    subst_rhs is allowed to be set to the empty string. */
 
 static char *
-get_subst_pattern (str, iptr, delimiter, is_rhs, lenptr)
-     char *str;
-     int *iptr, delimiter, is_rhs, *lenptr;
+get_subst_pattern (const char *str, int *iptr, int delimiter, int is_rhs, int *lenptr)
 {
   register int si, i, j, k;
   char *s;
@@ -490,7 +488,7 @@ get_subst_pattern (str, iptr, delimiter, is_rhs, lenptr)
 }
 
 static void
-postproc_subst_rhs ()
+postproc_subst_rhs (void)
 {
   char *new;
   int i, j, new_size;
@@ -510,7 +508,7 @@ postproc_subst_rhs ()
 	  /* a single backslash protects the `&' from lhs interpolation */
 	  if (subst_rhs[i] == '\\' && subst_rhs[i + 1] == '&')
 	    i++;
-	  if (j >= new_size)
+	  if (j + 1 >= new_size)
 	    new = (char *)xrealloc (new, new_size *= 2);
 	  new[j++] = subst_rhs[i];
 	}
@@ -526,17 +524,14 @@ postproc_subst_rhs ()
    if the `p' modifier was supplied and the caller should just print
    the returned string.  Returns the new index into string in
    *END_INDEX_PTR, and the expanded specifier in *RET_STRING. */
+/* need current line for !# */
 static int
-history_expand_internal (string, start, qc, end_index_ptr, ret_string, current_line)
-     char *string;
-     int start, qc, *end_index_ptr;
-     char **ret_string;
-     char *current_line;	/* for !# */
+history_expand_internal (const char *string, int start, int qc, int *end_index_ptr, char **ret_string, char *current_line)
 {
   int i, n, starting_index;
   int substitute_globally, subst_bywords, want_quotes, print_only;
   char *event, *temp, *result, *tstr, *t, c, *word_spec;
-  int result_len;
+  size_t result_len;
 #if defined (HANDLE_MULTIBYTE)
   mbstate_t ps;
 
@@ -633,7 +628,7 @@ history_expand_internal (string, start, qc, end_index_ptr, ret_string, current_l
 	     return an error state after adding this line to the
 	     history. */
 	case 'p':
-	  print_only++;
+	  print_only = 1;
 	  break;
 
 	  /* :t discards all but the last part of the pathname. */
@@ -734,7 +729,7 @@ history_expand_internal (string, start, qc, end_index_ptr, ret_string, current_l
 
 		/* If `&' appears in the rhs, it's supposed to be replaced
 		   with the lhs. */
-		if (member ('&', subst_rhs))
+		if (subst_lhs && member ('&', subst_rhs))
 		  postproc_subst_rhs ();
 	      }
 	    else
@@ -780,7 +775,7 @@ history_expand_internal (string, start, qc, end_index_ptr, ret_string, current_l
 		   the last time. */
 		if (subst_bywords && si > we)
 		  {
-		    for (; temp[si] && whitespace (temp[si]); si++)
+		    for (; temp[si] && fielddelim (temp[si]); si++)
 		      ;
 		    ws = si;
 		    we = history_tokenize_word (temp, si);
@@ -885,7 +880,7 @@ history_expand_internal (string, start, qc, end_index_ptr, ret_string, current_l
 #define ADD_STRING(s) \
 	do \
 	  { \
-	    int sl = strlen (s); \
+	    size_t sl = strlen (s); \
 	    j += sl; \
 	    if (j >= result_len) \
 	      { \
@@ -900,7 +895,7 @@ history_expand_internal (string, start, qc, end_index_ptr, ret_string, current_l
 #define ADD_CHAR(c) \
 	do \
 	  { \
-	    if (j >= result_len - 1) \
+	    if ((j + 1) >= result_len) \
 	      result = (char *)xrealloc (result, result_len += 64); \
 	    result[j++] = c; \
 	    result[j] = '\0'; \
@@ -908,16 +903,15 @@ history_expand_internal (string, start, qc, end_index_ptr, ret_string, current_l
 	while (0)
 
 int
-history_expand (hstring, output)
-     char *hstring;
-     char **output;
+history_expand (const char *hstring, char **output)
 {
-  register int j;
-  int i, r, l, passc, cc, modified, eindex, only_printing, dquote, squote, flag;
+  int j;
+  int i, r, passc, cc, modified, eindex, only_printing, dquote, squote, flag;
+  size_t l;
   char *string;
 
   /* The output string, and its length. */
-  int result_len;
+  size_t result_len;
   char *result;
 
 #if defined (HANDLE_MULTIBYTE)
@@ -955,7 +949,7 @@ history_expand (hstring, output)
   /* The quick substitution character is a history expansion all right.  That
      is to say, "^this^that^" is equivalent to "!!:s^this^that^", and in fact,
      that is the substitution that we do. */
-  if (hstring[0] == history_subst_char)
+  if ((history_quoting_state != '\'' || history_quotes_inhibit_expansion == 0) && hstring[0] == history_subst_char)
     {
       string = (char *)xmalloc (l + 5);
 
@@ -971,12 +965,29 @@ history_expand (hstring, output)
       memset (&ps, 0, sizeof (mbstate_t));
 #endif
 
-      string = hstring;
+      string = (char *)hstring;
       /* If not quick substitution, still maybe have to do expansion. */
 
       /* `!' followed by one of the characters in history_no_expand_chars
 	 is NOT an expansion. */
-      for (i = dquote = squote = 0; string[i]; i++)
+      dquote = history_quoting_state == '"';
+      squote = history_quoting_state == '\'';
+
+      /* If the calling application tells us we are already reading a
+	 single-quoted string, consume the rest of the string right now
+	 and then go on. */
+      i = 0;
+      if (squote && history_quotes_inhibit_expansion)
+	{
+	  hist_string_extract_single_quoted (string, &i, 0);
+	  squote = 0;
+	  if (string[i])
+	    i++;
+	  if (i >= l)
+	    i = l;
+	}
+
+      for ( ; string[i]; i++)
 	{
 #if defined (HANDLE_MULTIBYTE)
 	  if (MB_CUR_MAX > 1 && rl_byte_oriented == 0)
@@ -1044,6 +1055,11 @@ history_expand (hstring, output)
 	      flag = (i > 0 && string[i - 1] == '$');
 	      i++;
 	      hist_string_extract_single_quoted (string, &i, flag);
+	      if (i >= l)
+		{
+		  i = l;
+		  break;
+		}
 	    }
 	  else if (history_quotes_inhibit_expansion && string[i] == '\\')
 	    {
@@ -1054,7 +1070,7 @@ history_expand (hstring, output)
 	    }
 	  
 	}
-	  
+
       if (string[i] != history_expansion_char)
 	{
 	  xfree (result);
@@ -1064,7 +1080,29 @@ history_expand (hstring, output)
     }
 
   /* Extract and perform the substitution. */
-  for (passc = dquote = squote = i = j = 0; i < l; i++)
+  dquote = history_quoting_state == '"';
+  squote = history_quoting_state == '\'';
+
+  /* If the calling application tells us we are already reading a
+     single-quoted string, consume the rest of the string right now
+     and then go on. */
+  i = j = 0;
+  if (squote && history_quotes_inhibit_expansion)
+    {
+      int c;
+
+      hist_string_extract_single_quoted (string, &i, 0);
+      squote = 0;
+      for (c = 0; c < i; c++)
+	ADD_CHAR (string[c]);      
+      if (string[i])
+	{
+	  ADD_CHAR (string[i]);
+	  i++;
+	}
+    }
+
+  for (passc = 0; i < l; i++)
     {
       int qc, tchar = string[i];
 
@@ -1082,7 +1120,7 @@ history_expand (hstring, output)
 
 	  c = tchar;
 	  memset (mb, 0, sizeof (mb));
-	  for (k = 0; k < MB_LEN_MAX; k++)
+	  for (k = 0; k < MB_LEN_MAX && i < l; k++)
 	    {
 	      mb[k] = (char)c;
 	      memset (&ps, 0, sizeof (mbstate_t));
@@ -1176,11 +1214,34 @@ history_expand (hstring, output)
 	     characters in history_no_expand_chars, then it is not a
 	     candidate for expansion of any kind. */
 	  if (cc == 0 || member (cc, history_no_expand_chars) ||
-			 (dquote && cc == '"') ||
-	  		 (history_inhibit_expansion_function && (*history_inhibit_expansion_function) (string, i)))
+			 (dquote && cc == '"'))
 	    {
 	      ADD_CHAR (string[i]);
 	      break;
+	    }
+
+	  /* If the application has defined a function to determine whether
+	     or not a history expansion should be performed, call it here. */
+	  /* We check against what we've expanded so far, with the current
+	     expansion appended, because that seems to be what csh does. We
+	     decide to expand based on what we have to this point, not what
+	     we started with. */
+	  if (history_inhibit_expansion_function)
+	    {
+	      int save_j, temp;
+
+	      save_j = j;
+	      ADD_CHAR (string[i]);
+	      ADD_CHAR (cc);
+
+	      temp = (*history_inhibit_expansion_function) (result, save_j);
+	      if (temp)
+		{
+		  result[--j] = '\0';	/* `unadd' cc, leaving ADD_CHAR(string[i]) */
+		  break;
+		}
+	      else
+	        result[j = save_j] = '\0';
 	    }
 
 #if defined (NO_BANG_HASH_MODIFIERS)
@@ -1249,9 +1310,7 @@ history_expand (hstring, output)
    CALLER_INDEX is the offset in SPEC to start looking; it is updated
    to point to just after the last character parsed. */
 static char *
-get_history_word_specifier (spec, from, caller_index)
-     char *spec, *from;
-     int *caller_index;
+get_history_word_specifier (const char *spec, char *from, int *caller_index)
 {
   register int i = *caller_index;
   int first, last;
@@ -1332,6 +1391,11 @@ get_history_word_specifier (spec, from, caller_index)
 	  i++;
 	  last = '$';
 	}
+      else if (spec[i] == '^')
+	{
+	  i++;
+	  last = 1;
+	}
 #if 0
       else if (!spec[i] || spec[i] == ':')
 	/* check against `:' because there could be a modifier separator */
@@ -1357,13 +1421,11 @@ get_history_word_specifier (spec, from, caller_index)
    tokens, so that FIRST = -1 means the next to last token on the line).
    If LAST is `$' the last arg from STRING is used. */
 char *
-history_arg_extract (first, last, string)
-     int first, last;
-     const char *string;
+history_arg_extract (int first, int last, const char *string)
 {
   register int i, len;
   char *result;
-  int size, offset;
+  size_t size, offset;
   char **list;
 
   /* XXX - think about making history_tokenize return a struct array,
@@ -1418,17 +1480,15 @@ history_arg_extract (first, last, string)
 }
 
 static int
-history_tokenize_word (string, ind)
-     const char *string;
-     int ind;
+history_tokenize_word (const char *string, int ind)
 {
-  register int i, j;
+  int i, j;
   int delimiter, nestdelim, delimopen;
 
   i = ind;
   delimiter = nestdelim = 0;
 
-  if (member (string[i], "()\n"))
+  if (member (string[i], "()\n"))	/* XXX - included \n, but why? been here forever */
     {
       i++;
       return i;
@@ -1450,11 +1510,11 @@ history_tokenize_word (string, ind)
 	}
     }
 
-  if (member (string[i], "<>;&|$"))
+  if (member (string[i], "<>;&|"))
     {
       int peek = string[i + 1];
 
-      if (peek == string[i] && peek != '$')
+      if (peek == string[i])
 	{
 	  if (peek == '<' && string[i + 2] == '-')
 	    i++;
@@ -1477,9 +1537,8 @@ history_tokenize_word (string, ind)
 	  i += 2;
 	  return i;
 	}
-      /* XXX - separated out for later -- bash-4.2 */
-      else if ((peek == '(' && (string[i] == '>' || string[i] == '<')) || /* ) */
-	       (peek == '(' && string[i] == '$')) /*)*/
+      /* XXX - process substitution -- separated out for later -- bash-4.2 */
+      else if (peek == '(' && (string[i] == '>' || string[i] == '<')) /*)*/
 	{
 	  i += 2;
 	  delimopen = '(';
@@ -1487,34 +1546,9 @@ history_tokenize_word (string, ind)
 	  nestdelim = 1;
 	  goto get_word;
 	}
-#if 0
-      else if (peek == '\'' && string[i] == '$')
-        {
-	  i += 2;	/* XXX */
-	  return i;
-        }
-#endif
 
-      if (string[i] != '$')
-	{
-	  i++;
-	  return i;
-	}
-    }
-
-  /* same code also used for $(...)/<(...)/>(...) above */
-  if (member (string[i], "!@?+*"))
-    {
-      int peek = string[i + 1];
-
-      if (peek == '(')		/*)*/
-	{
-	  /* Shell extended globbing patterns */
-	  i += 2;
-	  delimopen = '(';
-	  delimiter = ')';	/* XXX - not perfect */
-	  nestdelim = 1;
-	}
+      i++;
+      return i;
     }
 
 get_word:
@@ -1535,6 +1569,8 @@ get_word:
 	  (delimiter != '"' || member (string[i], slashify_in_quotes)))
 	{
 	  i++;
+	  if (string[i] == 0)
+	    break;
 	  continue;
 	}
 
@@ -1559,6 +1595,18 @@ get_word:
 	  continue;
 	}
 
+      /* Command and process substitution; shell extended globbing patterns */
+      if (nestdelim == 0 && delimiter == 0 && member (string[i], "<>$!@?+*") && string[i+1] == '(') /*)*/
+	{
+	  i++;			/* string[i] == '(' */ /*)*/
+	  if (string[i+1] == 0)
+	    break;		/* could just return i here */
+	  delimopen = '(';
+	  delimiter = ')';
+	  nestdelim = 1;
+	  continue;
+	}
+      
       if (delimiter == 0 && (member (string[i], history_word_delimiters)))
 	break;
 
@@ -1570,9 +1618,7 @@ get_word:
 }
 
 static char *
-history_substring (string, start, end)
-     const char *string;
-     int start, end;
+history_substring (const char *string, int start, int end)
 {
   register int len;
   register char *result;
@@ -1589,12 +1635,11 @@ history_substring (string, start, end)
    WIND.  The position in the returned array of strings is returned in
    *INDP. */
 static char **
-history_tokenize_internal (string, wind, indp)
-     const char *string;
-     int wind, *indp;
+history_tokenize_internal (const char *string, int wind, int *indp)
 {
   char **result;
-  register int i, start, result_index, size;
+  int i, start, result_index;
+  size_t size;
 
   /* If we're searching for a string that's not part of a word (e.g., " "),
      make sure we set *INDP to a reasonable value. */
@@ -1603,10 +1648,10 @@ history_tokenize_internal (string, wind, indp)
 
   /* Get a token, and stuff it into RESULT.  The tokens are split
      exactly where the shell would split them. */
-  for (i = result_index = size = 0, result = (char **)NULL; string[i]; )
+  for (i = result_index = 0, size = 0, result = (char **)NULL; string[i]; )
     {
       /* Skip leading whitespace. */
-      for (; string[i] && whitespace (string[i]); i++)
+      for (; string[i] && fielddelim (string[i]); i++)
 	;
       if (string[i] == 0 || string[i] == history_comment_char)
 	return (result);
@@ -1644,17 +1689,14 @@ history_tokenize_internal (string, wind, indp)
 /* Return an array of tokens, much as the shell might.  The tokens are
    parsed out of STRING. */
 char **
-history_tokenize (string)
-     const char *string;
+history_tokenize (const char *string)
 {
   return (history_tokenize_internal (string, -1, (int *)NULL));
 }
 
 /* Free members of WORDS from START to an empty string */
 static void
-freewords (words, start)
-     char **words;
-     int start;
+freewords (char **words, int start)
 {
   register int i;
 
@@ -1666,9 +1708,7 @@ freewords (words, start)
    in the history line LINE.  Used to save the word matched by the
    last history !?string? search. */
 static char *
-history_find_word (line, ind)
-     char *line;
-     int ind;
+history_find_word (const char *line, int ind)
 {
   char **words, *s;
   int i, wind;

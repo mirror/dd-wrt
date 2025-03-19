@@ -2,8 +2,8 @@
 
    Modified by Chet Ramey for Readline.
 
-   Copyright (C) 1985, 1988, 1990-1991, 1995-2010, 2012 Free Software Foundation,
-   Inc.
+   Copyright (C) 1985, 1988, 1990-1991, 1995-2010, 2012, 2017
+   Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -297,7 +297,23 @@ get_funky_string (char **dest, const char **src, bool equals_end, size_t *output
 }
 #endif /* COLOR_SUPPORT */
 
-void _rl_parse_colors()
+static void
+free_color_ext_list (void)
+{
+  COLOR_EXT_TYPE *e;
+  COLOR_EXT_TYPE *e2;
+
+  for (e = _rl_color_ext_list; e != NULL; /* empty */)
+    {
+      e2 = e;
+      e = e->next;
+      free (e2);
+    }
+
+  _rl_color_ext_list = 0;  
+}
+
+void _rl_parse_colors(void)
 {
 #if defined (COLOR_SUPPORT)
   const char *p;		/* Pointer to character being parsed */
@@ -420,21 +436,32 @@ void _rl_parse_colors()
 
   if (state < 0)
     {
-      COLOR_EXT_TYPE *e;
-      COLOR_EXT_TYPE *e2;
 
       _rl_errmsg ("unparsable value for LS_COLORS environment variable");
       free (color_buf);
-      for (e = _rl_color_ext_list; e != NULL; /* empty */)
-        {
-          e2 = e;
-          e = e->next;
-          free (e2);
-        }
-      _rl_color_ext_list = NULL;
+      free_color_ext_list ();      
+
       _rl_colored_stats = 0;	/* can't have colored stats without colors */
+      _rl_colored_completion_prefix = 0;	/* or colored prefixes */
     }
 #else /* !COLOR_SUPPORT */
   ;
 #endif /* !COLOR_SUPPORT */
+}
+
+void
+rl_reparse_colors (void)
+{
+  char *v;
+
+  v = sh_get_env_value ("LS_COLORS");
+  if (v == 0 && color_buf == 0)
+    return;		/* no change */
+  if (v && color_buf && STREQ (v, color_buf))
+    return;		/* no change */
+
+  free (color_buf);
+  free_color_ext_list ();
+
+  _rl_parse_colors ();
 }

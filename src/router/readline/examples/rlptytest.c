@@ -19,17 +19,26 @@
 
 #include <signal.h>
 
+/* Need a configure check here to turn this into a real application. */
 #if 1	/* LINUX */
 #include <pty.h>
 #else
 #include <util.h>
 #endif
 
+#ifdef HAVE_LOCALE_H
+#  include <locale.h>
+#endif
+
 #ifdef READLINE_LIBRARY
 #  include "readline.h"
+#  include "history.h"
 #else
 #  include <readline/readline.h>
+#  include <readline/history.h>
 #endif
+
+int tty_reset(int fd);
 
 /**
  * Master/Slave PTY used to keep readline off of stdin/stdout.
@@ -38,8 +47,7 @@ static int masterfd = -1;
 static int slavefd;
 
 void
-sigint (s)
-     int s;
+sigint (int s)
 {
   tty_reset (STDIN_FILENO);
   close (masterfd);
@@ -49,14 +57,13 @@ sigint (s)
 }
 
 void
-sigwinch (s)
-     int s;
+sigwinch (int s)
 {
   rl_resize_terminal ();
 }
 
 static int 
-user_input()
+user_input(void)
 {
   int size;
   const int MAX = 1024;
@@ -74,7 +81,7 @@ user_input()
 }
 
 static int 
-readline_input()
+readline_input(void)
 {
   const int MAX = 1024;
   char *buf = (char *)malloc(MAX+1);
@@ -120,7 +127,7 @@ rlctx_send_user_command(char *line)
 }
 
 static void 
-custom_deprep_term_function ()
+custom_deprep_term_function (void)
 {
 }
 
@@ -220,11 +227,12 @@ static enum { RESET, TCBREAK } ttystate = RESET;
  *
  * fd    - The file descriptor of the terminal
  * 
- * Returns: 0 on sucess, -1 on error
+ * Returns: 0 on success, -1 on error
  */
-int tty_cbreak(int fd){
+int tty_cbreak(int fd)
+{
    struct termios buf;
-    int ttysavefd = -1;
+   int ttysavefd = -1;
    
    if(tcgetattr(fd, &save_termios) < 0)
       return -1;
@@ -298,7 +306,8 @@ tty_off_xon_xoff (int fd)
  * 
  * Returns: 0 on success, -1 on error
  */
-int tty_reset(int fd)
+int
+tty_reset(int fd)
 {
    if(ttystate != TCBREAK)
       return (0);
@@ -312,9 +321,14 @@ int tty_reset(int fd)
 }
 
 int 
-main()
+main(int c, char **v)
 {
   int val;
+
+#ifdef HAVE_SETLOCALE
+  setlocale (LC_ALL, "");
+#endif
+
   val = openpty (&masterfd, &slavefd, NULL, NULL, NULL);
   if (val == -1)
     return -1;

@@ -4,7 +4,7 @@
 /*								    */
 /* **************************************************************** */
 
-/* Copyright (C) 1987-2009 Free Software Foundation, Inc.
+/* Copyright (C) 1987-2009,2023 Free Software Foundation, Inc.
 
    This file is part of the GNU Readline Library (Readline), a library for
    reading lines of text with interactive input and history editing.
@@ -36,6 +36,10 @@
 extern void exit();
 #endif
 
+#ifdef HAVE_LOCALE_H
+#  include <locale.h>
+#endif
+
 #ifdef READLINE_LIBRARY
 #  include "readline.h"
 #  include "history.h"
@@ -44,12 +48,15 @@ extern void exit();
 #  include <readline/history.h>
 #endif
 
-extern HIST_ENTRY **history_list ();
-
-main ()
+int
+main (int c, char **v)
 {
   char *temp, *prompt;
   int done;
+
+#ifdef HAVE_SETLOCALE
+  setlocale (LC_ALL, "");
+#endif
 
   temp = (char *)NULL;
   prompt = "readline$ ";

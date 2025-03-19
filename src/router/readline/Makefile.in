@@ -1,6 +1,6 @@
 ## -*- text -*- ##
 # Master Makefile for the GNU readline library.
-# Copyright (C) 1994-2009 Free Software Foundation, Inc.
+# Copyright (C) 1994-2024 Free Software Foundation, Inc.
 
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -59,6 +59,7 @@ mandir = @mandir@
 includedir = @includedir@
 datadir = @datadir@
 localedir = @localedir@
+pkgconfigdir = ${libdir}/pkgconfig
 
 infodir = @infodir@
 
@@ -71,12 +72,13 @@ DESTDIR =
 
 # Programs to make tags files.
 ETAGS = etags
-CTAGS = ctags -tw
+CTAGS = ctags -w
 
 CFLAGS = @CFLAGS@
-LOCAL_CFLAGS = @LOCAL_CFLAGS@ -DRL_LIBRARY_VERSION='"$(RL_LIBRARY_VERSION)"'
+LOCAL_CFLAGS = @LOCAL_CFLAGS@ -DRL_LIBRARY_VERSION='"$(RL_LIBRARY_VERSION)"' @BRACKETED_PASTE@
 CPPFLAGS = @CPPFLAGS@
 
+STYLE_CFLAGS = @STYLE_CFLAGS@
 DEFS = @DEFS@ @CROSS_COMPILE@
 LOCAL_DEFS = @LOCAL_DEFS@
 
@@ -85,14 +87,22 @@ TERMCAP_LIB = @TERMCAP_LIB@
 # For libraries which include headers from other libraries.
 INCLUDES = -I. -I$(srcdir)
 
-XCCFLAGS = $(DEFS) $(LOCAL_DEFS) $(INCLUDES) $(CPPFLAGS)
-CCFLAGS = $(XCCFLAGS) $(LOCAL_CFLAGS) $(CFLAGS)
+XCCFLAGS = $(ASAN_CFLAGS) $(DEFS) $(LOCAL_DEFS) $(INCLUDES) $(CPPFLAGS)
+CCFLAGS = $(XCCFLAGS) $(LOCAL_CFLAGS) $(CFLAGS) $(STYLE_CFLAGS)
 
 # could add -Werror here
 GCC_LINT_FLAGS = -ansi -Wall -Wshadow -Wpointer-arith -Wcast-qual \
 		 -Wwrite-strings -Wstrict-prototypes \
 		 -Wmissing-prototypes -Wno-implicit -pedantic
 GCC_LINT_CFLAGS = $(XCCFLAGS) $(GCC_LINT_FLAGS) @CFLAGS@ @LOCAL_CFLAGS@
+
+ASAN_XCFLAGS = -fsanitize=address -fno-omit-frame-pointer
+ASAN_XLDFLAGS = -fsanitize=address
+
+UBSAN_XCFLAGS = -fsanitize=undefined -fsanitize-recover -fstack-protector
+UBSAN_XLDFLAGS = -fsanitize=undefined
+
+install_examples = @EXAMPLES_INSTALL_TARGET@
 
 .c.o:
 	${RM} $@
@@ -114,7 +124,7 @@ CSOURCES = $(srcdir)/readline.c $(srcdir)/funmap.c $(srcdir)/keymaps.c \
 	   $(srcdir)/histfile.c $(srcdir)/nls.c $(srcdir)/search.c \
 	   $(srcdir)/shell.c $(srcdir)/savestring.c $(srcdir)/tilde.c \
 	   $(srcdir)/text.c $(srcdir)/misc.c $(srcdir)/compat.c \
-	   $(srcdir)/mbutil.c
+	   $(srcdir)/mbutil.c $(srcdir)/gettimeofday.c
 
 # The header files for this library.
 HSOURCES = $(srcdir)/readline.h $(srcdir)/rldefs.h $(srcdir)/chardefs.h \
@@ -133,7 +143,7 @@ OBJECTS = readline.o vi_mode.o funmap.o keymaps.o parens.o search.o \
 	  rltty.o complete.o bind.o isearch.o display.o signals.o \
 	  util.o kill.o undo.o macro.o input.o callback.o terminal.o \
 	  text.o nls.o misc.o $(HISTOBJ) $(TILDEOBJ) $(COLORSOBJ) \
-	  xmalloc.o xfree.o compat.o
+	  xmalloc.o xfree.o compat.o gettimeofday.o
 
 # The texinfo files which document this library.
 DOCSOURCE = doc/rlman.texinfo doc/rltech.texinfo doc/rluser.texinfo
@@ -143,7 +153,7 @@ DOCUMENTATION = $(DOCSOURCE) $(DOCOBJECT) $(DOCSUPPORT)
 
 CREATED_MAKEFILES = Makefile doc/Makefile examples/Makefile shlib/Makefile
 CREATED_CONFIGURE = config.status config.h config.cache config.log \
-		    stamp-config stamp-h readline.pc
+		    stamp-config stamp-h readline.pc history.pc
 CREATED_TAGS = TAGS tags
 
 INSTALLED_HEADERS = readline.h chardefs.h keymaps.h history.h tilde.h \
@@ -159,6 +169,9 @@ INSTALL_TARGETS = @STATIC_INSTALL_TARGET@ @SHARED_INSTALL_TARGET@
 all: $(TARGETS)
 
 everything: all examples
+
+asan:
+	${MAKE} ASAN_CFLAGS='${ASAN_XCFLAGS}' ASAN_LDFLAGS='${ASAN_XLDFLAGS}' everything
 
 static: $(STATIC_LIBS)
 
@@ -182,7 +195,7 @@ readline: $(OBJECTS) readline.h rldefs.h chardefs.h ./libreadline.a
 	$(CC) $(CCFLAGS) -DREADLINE_LIBRARY -o $@ $(top_srcdir)/examples/rl.c ./libreadline.a ${TERMCAP_LIB}
 
 lint:	force
-	$(MAKE) $(MFLAGS) CCFLAGS='$(GCC_LINT_CFLAGS)' static
+	$(MAKE) CCFLAGS='$(GCC_LINT_CFLAGS)' static
 
 Makefile makefile: config.status $(srcdir)/Makefile.in
 	CONFIG_FILES=Makefile CONFIG_HEADERS= $(SHELL) ./config.status
@@ -207,15 +220,15 @@ stamp-h: config.status $(srcdir)/config.h.in
 
 shared:	force
 	-test -d shlib || mkdir shlib
-	( cd shlib ; ${MAKE} ${MFLAGS} all )
+	( cd shlib ; ${MAKE} all )
 
 documentation: force
 	-test -d doc || mkdir doc
-	-( cd doc && $(MAKE) $(MFLAGS) )
+	-( cd doc && $(MAKE) )
 
 examples: force
 	-test -d examples || mkdir examples
-	-(cd examples && ${MAKE} ${MFLAGS} all )
+	-(cd examples && ${MAKE} all )
 
 force:
 
@@ -232,7 +245,17 @@ uninstall-headers:
 
 maybe-uninstall-headers: uninstall-headers
 
-install-static: installdirs $(STATIC_LIBS) install-headers install-doc install-examples
+install-pc: installdirs
+	-$(INSTALL_DATA) $(BUILD_DIR)/readline.pc $(DESTDIR)$(pkgconfigdir)/readline.pc
+	-$(INSTALL_DATA) $(BUILD_DIR)/history.pc $(DESTDIR)$(pkgconfigdir)/history.pc
+
+uninstall-pc:
+	-test -n "$(pkgconfigdir)" && cd $(DESTDIR)$(pkgconfigdir) && \
+		${RM} readline.pc history.pc
+
+maybe-uninstall-pc: uninstall-pc
+
+install-static: installdirs $(STATIC_LIBS) install-headers install-doc ${install_examples} install-pc
 	-$(MV) $(DESTDIR)$(libdir)/libreadline.a $(DESTDIR)$(libdir)/libreadline.old
 	$(INSTALL_DATA) libreadline.a $(DESTDIR)$(libdir)/libreadline.a
 	-test -n "$(RANLIB)" && $(RANLIB) $(DESTDIR)$(libdir)/libreadline.a
@@ -243,37 +266,38 @@ install-static: installdirs $(STATIC_LIBS) install-headers install-doc install-e
 installdirs: $(srcdir)/support/mkinstalldirs
 	-$(SHELL) $(srcdir)/support/mkinstalldirs $(DESTDIR)$(includedir) \
 		$(DESTDIR)$(includedir)/readline $(DESTDIR)$(libdir) \
-		$(DESTDIR)$(infodir) $(DESTDIR)$(man3dir) $(DESTDIR)$(docdir)
+		$(DESTDIR)$(infodir) $(DESTDIR)$(man3dir) $(DESTDIR)$(docdir) \
+		$(DESTDIR)$(pkgconfigdir)
 
-uninstall: uninstall-headers uninstall-doc uninstall-examples
+uninstall: uninstall-headers uninstall-doc uninstall-examples uninstall-pc
 	-test -n "$(DESTDIR)$(libdir)" && cd $(DESTDIR)$(libdir) && \
 		${RM} libreadline.a libreadline.old libhistory.a libhistory.old $(SHARED_LIBS)
-	-( cd shlib; ${MAKE} ${MFLAGS} DESTDIR=${DESTDIR} uninstall )
+	-( cd shlib; ${MAKE} DESTDIR=${DESTDIR} uninstall )
 
-install-shared: installdirs install-headers shared install-doc
-	( cd shlib ; ${MAKE} ${MFLAGS} DESTDIR=${DESTDIR} install )
+install-shared: installdirs install-headers shared install-doc install-pc
+	( cd shlib ; ${MAKE} DESTDIR=${DESTDIR} install )
 	
-uninstall-shared: maybe-uninstall-headers
-	-( cd shlib; ${MAKE} ${MFLAGS} DESTDIR=${DESTDIR} uninstall )
+uninstall-shared: maybe-uninstall-headers maybe-uninstall-pc
+	-( cd shlib; ${MAKE} DESTDIR=${DESTDIR} uninstall )
 
 install-examples: installdirs install-headers
-	-( cd examples ; ${MAKE} ${MFLAGS} DESTDIR=${DESTDIR} install )
+	-( cd examples ; ${MAKE} DESTDIR=${DESTDIR} install )
 	
 uninstall-examples: maybe-uninstall-headers
-	-( cd examples; ${MAKE} ${MFLAGS} DESTDIR=${DESTDIR} uninstall )
+	-( cd examples; ${MAKE} DESTDIR=${DESTDIR} uninstall )
 
 install-doc:	installdirs
 	$(INSTALL_DATA) $(OTHER_DOCS) $(DESTDIR)$(docdir)
 	-( if test -d doc ; then \
 		cd doc && \
-		${MAKE} ${MFLAGS} infodir=$(infodir) DESTDIR=${DESTDIR} install; \
+		${MAKE} infodir=$(infodir) DESTDIR=${DESTDIR} install; \
 	  fi )
 
 uninstall-doc:
 	-( cd $(DESTDIR)$(docdir) && ${RM} ${OTHER_INSTALLED_DOCS} )
 	-( if test -d doc ; then \
 		cd doc && \
-		${MAKE} ${MFLAGS} infodir=$(infodir) DESTDIR=${DESTDIR} uninstall; \
+		${MAKE} infodir=$(infodir) DESTDIR=${DESTDIR} uninstall; \
 	  fi )
 
 TAGS:	force
@@ -282,22 +306,24 @@ TAGS:	force
 tags:	force
 	-( cd $(srcdir) && $(CTAGS) $(CSOURCES) $(HSOURCES) )
 
-clean:	force
+.PHONY: clean maintainer-clean distclean mostlyclean
+
+mostlyclean:	force
 	$(RM) $(OBJECTS) $(STATIC_LIBS)
 	$(RM) readline readline.exe
-	( cd shlib && $(MAKE) $(MFLAGS) $@ )
-	-( cd doc && $(MAKE) $(MFLAGS) $@ )
-	-( cd examples && $(MAKE) $(MFLAGS) $@ )
+	( cd shlib && $(MAKE) $@ )
+	-( cd doc && $(MAKE) $@ )
+	-( cd examples && $(MAKE) $@ )
 
-mostlyclean: clean
-	( cd shlib && $(MAKE) $(MFLAGS) $@ )
-	-( cd doc && $(MAKE) $(MFLAGS) $@ )
-	-( cd examples && $(MAKE) $(MFLAGS) $@ )
+clean: mostlyclean
+	( cd shlib && $(MAKE) $@ )
+	-( cd doc && $(MAKE) $@ )
+	-( cd examples && $(MAKE) $@ )
 
 distclean maintainer-clean: clean
-	( cd shlib && $(MAKE) $(MFLAGS) $@ )
-	-( cd doc && $(MAKE) $(MFLAGS) $@ )
-	-( cd examples && $(MAKE) $(MFLAGS) $@ )
+	( cd shlib && $(MAKE) $@ )
+	-( cd doc && $(MAKE) $@ )
+	-( cd examples && $(MAKE) $@ )
 	$(RM) Makefile
 	$(RM) $(CREATED_CONFIGURE)
 	$(RM) $(CREATED_TAGS)
@@ -305,8 +331,11 @@ distclean maintainer-clean: clean
 readline.pc:	config.status $(srcdir)/readline.pc.in
 	$(SHELL) config.status
 
+history.pc:	config.status $(srcdir)/history.pc.in
+	$(SHELL) config.status
+
 info dvi html pdf ps:
-	-( cd doc && $(MAKE) $(MFLAGS) $@ )
+	-( cd doc && $(MAKE) $@ )
 
 install-info:
 install-dvi:
@@ -430,6 +459,9 @@ xfree.o: ${BUILD_DIR}/config.h
 xfree.o: ansi_stdlib.h
 xmalloc.o: ${BUILD_DIR}/config.h
 xmalloc.o: ansi_stdlib.h
+
+gettimeofday.o: ${BUILD_DIR}/config.h
+gettimeofday.o: posixtime.h
 
 colors.o: ${BUILD_DIR}/config.h colors.h
 colors.o: readline.h keymaps.h rltypedefs.h chardefs.h tilde.h rlstdc.h

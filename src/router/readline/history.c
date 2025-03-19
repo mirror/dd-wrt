@@ -1,6 +1,6 @@
 /* history.c -- standalone history library */
 
-/* Copyright (C) 1989-2015 Free Software Foundation, Inc.
+/* Copyright (C) 1989-2024 Free Software Foundation, Inc.
 
    This file contains the GNU History Library (History), a set of
    routines for managing the text of previously typed lines.
@@ -42,6 +42,7 @@
 #  endif
 #  include <unistd.h>
 #endif
+#include "posixtime.h"
 
 #include <errno.h>
 
@@ -60,9 +61,13 @@ extern int errno;
 #define MAX_HISTORY_INITIAL_SIZE	8192
 
 /* The number of slots to increase the_history by. */
-#define DEFAULT_HISTORY_GROW_SIZE 50
+#define DEFAULT_HISTORY_GROW_SIZE 256
 
-static char *hist_inittime PARAMS((void));
+static char *hist_inittime (void);
+
+static int history_list_grow_size (void);
+static void history_list_resize (int);		/* XXX - size_t? */
+static void advance_history (void);
 
 /* **************************************************************** */
 /*								    */
@@ -70,14 +75,25 @@ static char *hist_inittime PARAMS((void));
 /*								    */
 /* **************************************************************** */
 
-/* An array of HIST_ENTRY.  This is where we store the history. */
+/* An array of HIST_ENTRY.  This is where we store the history. the_history is
+   a roving pointer somewhere into this, so the user-visible history list is
+   a window into real_history starting at the_history and extending
+   history_length entries. */
+static HIST_ENTRY **real_history = (HIST_ENTRY **)NULL;
+
+/* The current number of slots allocated to the input_history. */
+static int real_history_size = 0;
+
+/* A pointer to somewhere in real_history, where the user-visible history
+   starts. */
 static HIST_ENTRY **the_history = (HIST_ENTRY **)NULL;
 
 /* Non-zero means that we have enforced a limit on the amount of
    history that we save. */
 static int history_stifled;
 
-/* The current number of slots allocated to the input_history. */
+/* The number of history entries available for user use, starting at the_history.
+   real_history_size - history_size == the_history - real_history */
 static int history_size;
 
 /* If HISTORY_STIFLED is non-zero, then this is the maximum number of
@@ -89,15 +105,62 @@ int max_input_history;	/* backwards compatibility */
    life easier for outside callers. */
 int history_offset;
 
-/* The number of strings currently stored in the history list. */
+/* The number of strings currently stored in the history list. This is
+   always <= real_history_length */
 int history_length;
 
 /* The logical `base' of the history array.  It defaults to 1. */
 int history_base = 1;
 
+/* Compute the number of bits required to store a given nonnegative integer.
+
+   NOTE: _bit_length(0) == 0 */
+static inline unsigned
+_bit_length(unsigned n)
+{
+  /* This implementation is for simplicity, not for performance, but it is
+     fast enough for our purposes here. */
+  unsigned count = 0;
+  while (n)
+    {
+      n >>= 1;
+      count++;
+    }
+  return count;
+}
+
+/* Compute a grow size that adjusts to the size of the history.
+
+   We aim to grow by roughly sqrt(history_size) in order to amortize the cost of
+   realloc() and memmove().  This reduces the total cost of the memmoves from
+   O(N^2) to O(N*sqrt(N)). */
+static int
+history_list_grow_size (void)
+{
+  int width, r;
+  /* Handle small positive values and guard against history_length accidentally
+     being negative. */
+  const int MIN_BITS = 10;
+  if (history_length < (1 << MIN_BITS))
+    return DEFAULT_HISTORY_GROW_SIZE;
+
+  /* For other values, we just want something easy to compute that grows roughly
+     as sqrt(N), where N=history_length.  We use approximately 2^((k+1)/2),
+     where k is the bit length of N.  This bounds the value between sqrt(2N) and
+     2*sqrt(N). */
+  width = MIN_BITS + _bit_length(history_length >> MIN_BITS);
+
+  /* If width is odd then this is 2^((width+1)/2).  An even width gives a value
+     of 3*2^((width-2)/2) ~ 1.06*2^((width+1)/2). */
+  r = (1 << (width / 2)) + (1 << ((width - 1) / 2));
+
+  /* Make sure we always expand the list by at least DEFAULT_HISTORY_GROW_SIZE */
+  return ((r < DEFAULT_HISTORY_GROW_SIZE) ? DEFAULT_HISTORY_GROW_SIZE : r);
+}
+
 /* Return the current HISTORY_STATE of the history. */
 HISTORY_STATE *
-history_get_history_state ()
+history_get_history_state (void)
 {
   HISTORY_STATE *state;
 
@@ -115,8 +178,7 @@ history_get_history_state ()
 
 /* Set the state of the current history array to STATE. */
 void
-history_set_history_state (state)
-     HISTORY_STATE *state;
+history_set_history_state (HISTORY_STATE *state)
 {
   the_history = state->entries;
   history_offset = state->offset;
@@ -129,7 +191,7 @@ history_set_history_state (state)
 /* Begin a session in which the history functions might be used.  This
    initializes interactive variables. */
 void
-using_history ()
+using_history (void)
 {
   history_offset = history_length;
 }
@@ -138,7 +200,7 @@ using_history ()
    This just adds up the lengths of the_history->lines and the associated
    timestamps. */
 int
-history_total_bytes ()
+history_total_bytes (void)
 {
   register int i, result;
 
@@ -151,7 +213,7 @@ history_total_bytes ()
 /* Returns the magic number which says what history element we are
    looking at now.  In this implementation, it returns history_offset. */
 int
-where_history ()
+where_history (void)
 {
   return (history_offset);
 }
@@ -159,20 +221,26 @@ where_history ()
 /* Make the current history item be the one at POS, an absolute index.
    Returns zero if POS is out of range, else non-zero. */
 int
-history_set_pos (pos)
-     int pos;
+history_set_pos (int pos)
 {
   if (pos > history_length || pos < 0 || !the_history)
     return (0);
   history_offset = pos;
   return (1);
 }
+
+/* Are we currently at the end of the history list? */
+int
+_hs_at_end_of_history (void)
+{
+  return (the_history == 0 || history_offset == history_length);
+}
  
 /* Return the current history array.  The caller has to be careful, since this
    is the actual array of data, and could be bashed or made corrupt easily.
    The array is terminated with a NULL pointer. */
 HIST_ENTRY **
-history_list ()
+history_list (void)
 {
   return (the_history);
 }
@@ -180,7 +248,7 @@ history_list ()
 /* Return the history entry at the current position, as determined by
    history_offset.  If there is no entry there, return a NULL pointer. */
 HIST_ENTRY *
-current_history ()
+current_history (void)
 {
   return ((history_offset == history_length) || the_history == 0)
 		? (HIST_ENTRY *)NULL
@@ -191,7 +259,7 @@ current_history ()
    a pointer to that entry.  If there is no previous entry then return
    a NULL pointer. */
 HIST_ENTRY *
-previous_history ()
+previous_history (void)
 {
   return history_offset ? the_history[--history_offset] : (HIST_ENTRY *)NULL;
 }
@@ -200,7 +268,7 @@ previous_history ()
    a pointer to that entry.  If there is no next entry then return a
    NULL pointer. */
 HIST_ENTRY *
-next_history ()
+next_history (void)
 {
   return (history_offset == history_length) ? (HIST_ENTRY *)NULL : the_history[++history_offset];
 }
@@ -208,8 +276,7 @@ next_history ()
 /* Return the history entry which is logically at OFFSET in the history array.
    OFFSET is relative to history_base. */
 HIST_ENTRY *
-history_get (offset)
-     int offset;
+history_get (int offset)
 {
   int local_index;
 
@@ -220,9 +287,7 @@ history_get (offset)
 }
 
 HIST_ENTRY *
-alloc_history_entry (string, ts)
-     char *string;
-     char *ts;
+alloc_history_entry (char *string, char *ts)
 {
   HIST_ENTRY *temp;
 
@@ -236,8 +301,7 @@ alloc_history_entry (string, ts)
 }
 
 time_t
-history_get_time (hist)
-     HIST_ENTRY *hist;
+history_get_time (HIST_ENTRY *hist)
 {
   char *ts;
   time_t t;
@@ -255,12 +319,12 @@ history_get_time (hist)
 }
 
 static char *
-hist_inittime ()
+hist_inittime (void)
 {
   time_t t;
   char ts[64], *ret;
 
-  t = (time_t) time ((time_t *)0);
+  t = getnow ();
 #if defined (HAVE_VSNPRINTF)		/* assume snprintf if vsnprintf exists */
   snprintf (ts, sizeof (ts) - 1, "X%lu", (unsigned long) t);
 #else
@@ -272,19 +336,58 @@ hist_inittime ()
   return ret;
 }
 
+/* Ensure space for new history entries by resetting the start pointer
+   (the_history) and resizing real_history if necessary. */
+static void
+history_list_resize (int new_size)
+{
+  /* Do nothing there is already enough user space. history_length is always <=
+     real_history_size */
+  if (new_size < history_length)
+    return;
+
+  /* If we need to, reset the_history to the start of real_history and
+     start over. */
+  if (the_history != real_history)
+    memmove (real_history, the_history, history_length * sizeof (HIST_ENTRY *));
+
+  /* Don't bother if real_history_size is already big enough, since at this
+     point the_history == real_history and we will set history_size to
+     real_history_size. We don't shrink the history list. */
+  if (new_size > real_history_size)
+    {
+      real_history = (HIST_ENTRY **) xrealloc (real_history, new_size * sizeof (HIST_ENTRY *));
+      real_history_size = new_size;
+    }
+  the_history = real_history;
+  history_size = real_history_size;
+
+  if (history_size > history_length)
+    memset (real_history + history_length, 0, (history_size - history_length) * sizeof (HIST_ENTRY *));
+}
+
+static void
+advance_history (void)
+{
+  /* Advance 'the_history' pointer to simulate dropping the first entry. */
+  the_history++;
+  history_size--;
+
+  /* If full, move all the entries (and trailing NULL) to the beginning. */
+  if (history_length == history_size)
+    history_list_resize (history_length + history_list_grow_size ());
+}
+
 /* Place STRING at the end of the history list.  The data field
    is  set to NULL. */
 void
-add_history (string)
-     const char *string;
+add_history (const char *string)
 {
   HIST_ENTRY *temp;
   int new_length;
 
   if (history_stifled && (history_length == history_max_entries))
     {
-      register int i;
-
       /* If the history is stifled, and history_length is zero,
 	 and it equals history_max_entries, we don't save items. */
       if (history_length == 0)
@@ -294,9 +397,8 @@ add_history (string)
       if (the_history[0])
 	(void) free_history_entry (the_history[0]);
 
-      /* Copy the rest of the entries, moving down one slot.  Copy includes
-	 trailing NULL.  */
-      memmove (the_history, the_history + 1, history_length * sizeof (HIST_ENTRY *));
+      /* Advance the pointer into real_history, resizing if necessary. */
+      advance_history ();
 
       new_length = history_length;
       history_base++;
@@ -305,23 +407,20 @@ add_history (string)
     {
       if (history_size == 0)
 	{
+	  int initial_size;
 	  if (history_stifled && history_max_entries > 0)
-	    history_size = (history_max_entries > MAX_HISTORY_INITIAL_SIZE)
+	    initial_size = (history_max_entries > MAX_HISTORY_INITIAL_SIZE)
 				? MAX_HISTORY_INITIAL_SIZE
 				: history_max_entries + 2;
 	  else
-	    history_size = DEFAULT_HISTORY_INITIAL_SIZE;
-	  the_history = (HIST_ENTRY **)xmalloc (history_size * sizeof (HIST_ENTRY *));
+	    initial_size = DEFAULT_HISTORY_INITIAL_SIZE;
+	  history_list_resize (initial_size);
 	  new_length = 1;
 	}
       else
 	{
 	  if (history_length == (history_size - 1))
-	    {
-	      history_size += DEFAULT_HISTORY_GROW_SIZE;
-	      the_history = (HIST_ENTRY **)
-		xrealloc (the_history, history_size * sizeof (HIST_ENTRY *));
-	    }
+	    history_list_resize (real_history_size + history_list_grow_size ());
 	  new_length = history_length + 1;
 	}
     }
@@ -335,8 +434,7 @@ add_history (string)
 
 /* Change the time stamp of the most recent history entry to STRING. */
 void
-add_history_time (string)
-     const char *string;
+add_history_time (const char *string)
 {
   HIST_ENTRY *hs;
 
@@ -350,8 +448,7 @@ add_history_time (string)
 /* Free HIST and return the data so the calling application can free it
    if necessary and desired. */
 histdata_t
-free_history_entry (hist)
-     HIST_ENTRY *hist;
+free_history_entry (HIST_ENTRY *hist)
 {
   histdata_t x;
 
@@ -365,8 +462,7 @@ free_history_entry (hist)
 }
 
 HIST_ENTRY *
-copy_history_entry (hist)
-     HIST_ENTRY *hist;
+copy_history_entry (HIST_ENTRY *hist)
 {
   HIST_ENTRY *ret;
   char *ts;
@@ -388,10 +484,7 @@ copy_history_entry (hist)
    the old entry so you can dispose of the data.  In the case of an
    invalid WHICH, a NULL pointer is returned. */
 HIST_ENTRY *
-replace_history_entry (which, line, data)
-     int which;
-     const char *line;
-     histdata_t data;
+replace_history_entry (int which, const char *line, histdata_t data)
 {
   HIST_ENTRY *temp, *old_value;
 
@@ -403,7 +496,7 @@ replace_history_entry (which, line, data)
 
   temp->line = savestring (line);
   temp->data = data;
-  temp->timestamp = savestring (old_value->timestamp);
+  temp->timestamp = old_value->timestamp ? savestring (old_value->timestamp) : 0;
   the_history[which] = temp;
 
   return (old_value);
@@ -413,17 +506,26 @@ replace_history_entry (which, line, data)
    end of the current line first.  This can be used to construct multi-line
    history entries while reading lines from the history file. */
 void
-_hs_append_history_line (which, line)
-     int which;
-     const char *line;
+_hs_append_history_line (int which, const char *line)
 {
   HIST_ENTRY *hent;
-  size_t newlen, curlen;
+  size_t newlen, curlen, minlen;
   char *newline;
 
   hent = the_history[which];
   curlen = strlen (hent->line);
-  newlen = curlen + strlen (line) + 2;
+  minlen = curlen + strlen (line) + 2;	/* min space needed */
+  if (curlen > 256)		/* XXX - for now */
+    {
+      newlen = 512;		/* now realloc in powers of 2 */
+      /* we recalcluate every time; the operations are cheap */
+      while (newlen < minlen)
+	newlen <<= 1;
+    }
+  else
+    newlen = minlen;
+  /* Assume that realloc returns the same pointer and doesn't try a new
+     alloc/copy if the new size is the same as the one last passed. */
   newline = realloc (hent->line, newlen);
   if (newline)
     {
@@ -440,9 +542,7 @@ _hs_append_history_line (which, line)
    WHICH >= 0 means to replace that particular history entry's data, as
    long as it matches OLD. */
 void
-_hs_replace_history_data (which, old, new)
-     int which;
-     histdata_t *old, *new;
+_hs_replace_history_data (int which, histdata_t *old, histdata_t *new)
 {
   HIST_ENTRY *entry;
   register int i, last;
@@ -459,7 +559,7 @@ _hs_replace_history_data (which, old, new)
     }
 
   last = -1;
-  for (i = 0; i < history_length; i++)
+  for (i = history_length - 1; i >= 0; i--)
     {
       entry = the_history[i];
       if (entry == 0)
@@ -476,35 +576,102 @@ _hs_replace_history_data (which, old, new)
       entry = the_history[last];
       entry->data = new;	/* XXX - we don't check entry->old */
     }
-}      
+}
+
+int
+_hs_search_history_data (histdata_t *needle)
+{
+  register int i;
+  HIST_ENTRY *entry;
+
+  if (history_length == 0 || the_history == 0)
+    return -1;
+
+  for (i = history_length - 1; i >= 0; i--)
+    {
+      entry = the_history[i];
+      if (entry == 0)
+	continue;
+      if (entry->data == needle)
+	return i;
+    }
+  return -1;
+}
   
 /* Remove history element WHICH from the history.  The removed
    element is returned to you so you can free the line, data,
    and containing structure. */
 HIST_ENTRY *
-remove_history (which)
-     int which;
+remove_history (int which)
 {
   HIST_ENTRY *return_value;
   register int i;
+#if 1
+  int nentries;
+  HIST_ENTRY **start, **end;
+#endif
 
   if (which < 0 || which >= history_length || history_length ==  0 || the_history == 0)
     return ((HIST_ENTRY *)NULL);
 
   return_value = the_history[which];
 
+#if 1
+  /* Copy the rest of the entries, moving down one slot.  Copy includes
+     trailing NULL.  */
+  nentries = history_length - which;
+  start = the_history + which;
+  end = start + 1;
+  memmove (start, end, nentries * sizeof (HIST_ENTRY *));
+#else
   for (i = which; i < history_length; i++)
     the_history[i] = the_history[i + 1];
+#endif
 
   history_length--;
 
   return (return_value);
 }
 
+HIST_ENTRY **
+remove_history_range (int first, int last)
+{
+  HIST_ENTRY **return_value;
+  register int i;
+  int nentries;
+  HIST_ENTRY **start, **end;
+
+  if (the_history == 0 || history_length == 0)
+    return ((HIST_ENTRY **)NULL);
+  if (first < 0 || first >= history_length || last < 0 || last >= history_length)
+    return ((HIST_ENTRY **)NULL);
+  if (first > last)
+    return (HIST_ENTRY **)NULL;
+
+  nentries = last - first + 1;
+  return_value = (HIST_ENTRY **)malloc ((nentries + 1) * sizeof (HIST_ENTRY *));
+  if (return_value == 0)
+    return return_value;
+
+  /* Return all the deleted entries in a list */
+  for (i = first ; i <= last; i++)
+    return_value[i - first] = the_history[i];
+  return_value[i - first] = (HIST_ENTRY *)NULL;
+
+  /* Copy the rest of the entries, moving down NENTRIES slots.  Copy includes
+     trailing NULL.  */
+  start = the_history + first;
+  end = the_history + last + 1;
+  memmove (start, end, (history_length - last) * sizeof (HIST_ENTRY *));
+
+  history_length -= nentries;
+
+  return (return_value);
+}
+
 /* Stifle the history list, remembering only MAX number of lines. */
 void
-stifle_history (max)
-     int max;
+stifle_history (int max)
 {
   register int i, j;
 
@@ -532,7 +699,7 @@ stifle_history (max)
    number of history entries.  The value is positive if the history
    was stifled, negative if it wasn't. */
 int
-unstifle_history ()
+unstifle_history (void)
 {
   if (history_stifled)
     {
@@ -544,13 +711,13 @@ unstifle_history ()
 }
 
 int
-history_is_stifled ()
+history_is_stifled (void)
 {
   return (history_stifled);
 }
 
 void
-clear_history ()
+clear_history (void)
 {
   register int i;
 
@@ -562,4 +729,5 @@ clear_history ()
     }
 
   history_offset = history_length = 0;
+  history_base = 1;		/* reset history base to default */
 }

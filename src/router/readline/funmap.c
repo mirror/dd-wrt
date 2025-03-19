@@ -1,6 +1,6 @@
 /* funmap.c -- attach names to functions. */
 
-/* Copyright (C) 1987-2016 Free Software Foundation, Inc.
+/* Copyright (C) 1987-2024 Free Software Foundation, Inc.
 
    This file is part of the GNU Readline Library (Readline), a library
    for reading lines of text with interactive input and history editing.      
@@ -40,16 +40,12 @@
 
 #include "xmalloc.h"
 
-#ifdef __STDC__
 typedef int QSFUNC (const void *, const void *);
-#else
-typedef int QSFUNC ();
-#endif
 
-extern int _rl_qsort_string_compare PARAMS((char **, char **));
+extern int _rl_qsort_string_compare (char **, char **);
 
 FUNMAP **funmap;
-static int funmap_size;
+static size_t funmap_size;
 static int funmap_entry;
 
 /* After initializing the function map, this is the index of the first
@@ -73,6 +69,7 @@ static const FUNMAP default_funmap[] = {
   { "capitalize-word", rl_capitalize_word },
   { "character-search", rl_char_search },
   { "character-search-backward", rl_backward_char_search },
+  { "clear-display", rl_clear_display },
   { "clear-screen", rl_clear_screen },
   { "complete", rl_complete },
   { "copy-backward-word", rl_copy_backward_word },
@@ -92,6 +89,9 @@ static const FUNMAP default_funmap[] = {
   { "end-of-history", rl_end_of_history },
   { "end-of-line", rl_end_of_line },
   { "exchange-point-and-mark", rl_exchange_point_and_mark },
+  { "execute-named-command", rl_execute_named_command },
+  { "export-completions", rl_export_completions },
+  { "fetch-history", rl_fetch_history },
   { "forward-backward-delete-char", rl_rubout_or_delete },
   { "forward-byte", rl_forward_byte },
   { "forward-char", rl_forward_char },
@@ -110,17 +110,20 @@ static const FUNMAP default_funmap[] = {
   { "menu-complete", rl_menu_complete },
   { "menu-complete-backward", rl_backward_menu_complete },
   { "next-history", rl_get_next_history },
+  { "next-screen-line", rl_next_screen_line },
   { "non-incremental-forward-search-history", rl_noninc_forward_search },
   { "non-incremental-reverse-search-history", rl_noninc_reverse_search },
   { "non-incremental-forward-search-history-again", rl_noninc_forward_search_again },
   { "non-incremental-reverse-search-history-again", rl_noninc_reverse_search_again },
   { "old-menu-complete", rl_old_menu_complete },
+  { "operate-and-get-next", rl_operate_and_get_next },
   { "overwrite-mode", rl_overwrite_mode },
 #if defined (_WIN32)
   { "paste-from-clipboard", rl_paste_from_clipboard },
 #endif
   { "possible-completions", rl_possible_completions },
   { "previous-history", rl_get_previous_history },
+  { "previous-screen-line", rl_previous_screen_line },
   { "print-last-kbd-macro", rl_print_last_kbd_macro },
   { "quoted-insert", rl_quoted_insert },
   { "re-read-init-file", rl_re_read_init_file },
@@ -155,7 +158,7 @@ static const FUNMAP default_funmap[] = {
   { "vi-backward-bigword", rl_vi_bWord },
   { "vi-backward-word", rl_vi_bword },
   { "vi-bWord", rl_vi_bWord },
-  { "vi-bword", rl_vi_bword },
+  { "vi-bword", rl_vi_bword },	/* BEWARE: name matching is case insensitive */
   { "vi-change-case", rl_vi_change_case },
   { "vi-change-char", rl_vi_change_char },
   { "vi-change-to", rl_vi_change_to },
@@ -169,13 +172,13 @@ static const FUNMAP default_funmap[] = {
   { "vi-end-bigword", rl_vi_eWord },
   { "vi-end-word", rl_vi_end_word },
   { "vi-eof-maybe", rl_vi_eof_maybe },
-  { "vi-eword", rl_vi_eword },
+  { "vi-eword", rl_vi_eword },	/* BEWARE: name matching is case insensitive */
   { "vi-fWord", rl_vi_fWord },
   { "vi-fetch-history", rl_vi_fetch_history },
   { "vi-first-print", rl_vi_first_print },
   { "vi-forward-bigword", rl_vi_fWord },
   { "vi-forward-word", rl_vi_fword },
-  { "vi-fword", rl_vi_fword },
+  { "vi-fword", rl_vi_fword },	/* BEWARE: name matching is case insensitive */
   { "vi-goto-mark", rl_vi_goto_mark },
   { "vi-insert-beg", rl_vi_insert_beg },
   { "vi-insertion-mode", rl_vi_insert_mode },
@@ -194,6 +197,7 @@ static const FUNMAP default_funmap[] = {
   { "vi-set-mark", rl_vi_set_mark },
   { "vi-subst", rl_vi_subst },
   { "vi-tilde-expand", rl_vi_tilde_expand },
+  { "vi-undo", rl_vi_undo },
   { "vi-unix-word-rubout", rl_vi_unix_word_rubout },
   { "vi-yank-arg", rl_vi_yank_arg },
   { "vi-yank-pop", rl_vi_yank_pop },
@@ -204,9 +208,7 @@ static const FUNMAP default_funmap[] = {
 };
 
 int
-rl_add_funmap_entry (name, function)
-     const char *name;
-     rl_command_func_t *function;
+rl_add_funmap_entry (const char *name, rl_command_func_t *function)
 {
   if (funmap_entry + 2 >= funmap_size)
     {
@@ -226,7 +228,7 @@ static int funmap_initialized;
 
 /* Make the funmap contain all of the default entries. */
 void
-rl_initialize_funmap ()
+rl_initialize_funmap (void)
 {
   register int i;
 
@@ -244,10 +246,10 @@ rl_initialize_funmap ()
    is sorted.  The array itself is allocated, but not the strings inside.
    You should free () the array when you done, but not the pointers. */
 const char **
-rl_funmap_names ()
+rl_funmap_names (void)
 {
   const char **result;
-  int result_size, result_index;
+  size_t result_size, result_index;
 
   /* Make sure that the function map has been initialized. */
   rl_initialize_funmap ();
@@ -264,6 +266,7 @@ rl_funmap_names ()
       result[result_index + 1] = (char *)NULL;
     }
 
-  qsort (result, result_index, sizeof (char *), (QSFUNC *)_rl_qsort_string_compare);
+  if (result)
+    qsort (result, result_index, sizeof (char *), (QSFUNC *)_rl_qsort_string_compare);
   return (result);
 }

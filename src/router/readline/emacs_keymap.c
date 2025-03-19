@@ -1,6 +1,6 @@
 /* emacs_keymap.c -- the keymap for emacs_mode in readline (). */
 
-/* Copyright (C) 1987-2009 Free Software Foundation, Inc.
+/* Copyright (C) 1987-2017 Free Software Foundation, Inc.
 
    This file is part of the GNU Readline Library (Readline), a library
    for reading lines of text with interactive input and history editing.      
@@ -47,7 +47,7 @@ KEYMAP_ENTRY_ARRAY emacs_standard_keymap = {
   { ISFUNC, rl_clear_screen },			/* Control-l */
   { ISFUNC, rl_newline },			/* Control-m */
   { ISFUNC, rl_get_next_history },		/* Control-n */
-  { ISFUNC, (rl_command_func_t *)0x0 },		/* Control-o */
+  { ISFUNC, rl_operate_and_get_next },		/* Control-o */
   { ISFUNC, rl_get_previous_history },		/* Control-p */
   { ISFUNC, rl_quoted_insert },			/* Control-q */
   { ISFUNC, rl_reverse_search_history },	/* Control-r */
@@ -327,7 +327,7 @@ KEYMAP_ENTRY_ARRAY emacs_meta_keymap = {
   { ISFUNC, rl_tab_insert },		/* Meta-Control-i */
   { ISFUNC, rl_vi_editing_mode },	/* Meta-Control-j */
   { ISFUNC, (rl_command_func_t *)0x0 },	/* Meta-Control-k */
-  { ISFUNC, (rl_command_func_t *)0x0 },	/* Meta-Control-l */
+  { ISFUNC, rl_clear_display },		/* Meta-Control-l */
   { ISFUNC, rl_vi_editing_mode }, 	/* Meta-Control-m */
   { ISFUNC, (rl_command_func_t *)0x0 },	/* Meta-Control-n */
   { ISFUNC, (rl_command_func_t *)0x0 },	/* Meta-Control-o */
@@ -448,7 +448,7 @@ KEYMAP_ENTRY_ARRAY emacs_meta_keymap = {
   { ISFUNC, rl_upcase_word },		/* Meta-u */
   { ISFUNC, (rl_command_func_t *)0x0 },	/* Meta-v */
   { ISFUNC, (rl_command_func_t *)0x0 },	/* Meta-w */
-  { ISFUNC, (rl_command_func_t *)0x0 },	/* Meta-x */
+  { ISFUNC, rl_execute_named_command },	/* Meta-x */
   { ISFUNC, rl_yank_pop },		/* Meta-y */
   { ISFUNC, (rl_command_func_t *)0x0 },	/* Meta-z */
 

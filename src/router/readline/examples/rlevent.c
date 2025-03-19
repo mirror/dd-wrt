@@ -28,6 +28,13 @@
 #  include <config.h>
 #endif
 
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>
+#else
+extern int getopt();
+extern int sleep();
+#endif
+
 #include <stdio.h>
 #include <sys/types.h>
 
@@ -35,6 +42,10 @@
 #  include <stdlib.h>
 #else 
 extern void exit();
+#endif
+
+#ifdef HAVE_LOCALE_H
+#  include <locale.h>
 #endif
 
 #if defined (READLINE_LIBRARY)
@@ -58,7 +69,7 @@ static char *progname;
 static char *deftext;
 
 static int
-event_hook ()
+event_hook (void)
 {
   fprintf (stderr, "ding!\n");
   sleep (1);
@@ -66,7 +77,7 @@ event_hook ()
 }
 
 static int
-set_deftext ()
+set_deftext (void)
 {
   if (deftext)
     {
@@ -78,21 +89,23 @@ set_deftext ()
 }
 
 static void
-usage()
+usage(void)
 {
   fprintf (stderr, "%s: usage: %s [-p prompt] [-u unit] [-d default] [-n nchars]\n",
 		progname, progname);
 }
 
 int
-main (argc, argv)
-     int argc;
-     char **argv;
+main (int argc, char **argv)
 {
   char *temp, *prompt;
   struct stat sb;
   int opt, fd, nch;
   FILE *ifp;
+
+#ifdef HAVE_SETLOCALE
+  setlocale (LC_ALL, "");
+#endif
 
   progname = strrchr(argv[0], '/');
   if (progname == 0)

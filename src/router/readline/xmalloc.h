@@ -1,6 +1,6 @@
 /* xmalloc.h -- memory allocation that aborts on errors. */
 
-/* Copyright (C) 1999-2009 Free Software Foundation, Inc.
+/* Copyright (C) 1999-2009,2010-2023 Free Software Foundation, Inc.
 
    This file is part of the GNU Readline Library (Readline), a library
    for reading lines of text with interactive input and history editing.      
@@ -29,17 +29,11 @@
 #endif
 
 #ifndef PTR_T
-
-#ifdef __STDC__
-#  define PTR_T	void *
-#else
-#  define PTR_T	char *
-#endif
-
+#  define PTR_T void *
 #endif /* !PTR_T */
 
-extern PTR_T xmalloc PARAMS((size_t));
-extern PTR_T xrealloc PARAMS((void *, size_t));
-extern void xfree PARAMS((void *));
+extern PTR_T xmalloc (size_t);
+extern PTR_T xrealloc (void *, size_t);
+extern void xfree (void *);
 
 #endif /* _XMALLOC_H_ */

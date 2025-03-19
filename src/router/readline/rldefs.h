@@ -2,7 +2,7 @@
    for readline.  This should be included after any files that define
    system-specific constants like _POSIX_VERSION or USG. */
 
-/* Copyright (C) 1987-2011 Free Software Foundation, Inc.
+/* Copyright (C) 1987-2021 Free Software Foundation, Inc.
 
    This file is part of the GNU Readline Library (Readline), a library
    for reading lines of text with interactive input and history editing.      
@@ -40,7 +40,7 @@
 #  if defined (HAVE_TERMIO_H)
 #    define TERMIO_TTY_DRIVER
 #  else
-#    if !defined (__MINGW32__)
+#    if !defined (__MINGW32__) && !defined (_MSC_VER)
 #      define NEW_TTY_DRIVER
 #    else
 #      define NO_TTY_DRIVER
@@ -63,30 +63,20 @@
 #  include <strings.h>
 #endif /* !HAVE_STRING_H */
 
-#if !defined (strchr) && !defined (__STDC__)
-extern char *strchr (), *strrchr ();
-#endif /* !strchr && !__STDC__ */
-
-#if defined (PREFER_STDARG)
-#  include <stdarg.h>
-#else
-#  if defined (PREFER_VARARGS)
-#    include <varargs.h>
-#  endif
-#endif
+#include <stdarg.h>
 
 #if defined (HAVE_STRCASECMP)
 #define _rl_stricmp strcasecmp
 #define _rl_strnicmp strncasecmp
 #else
-extern int _rl_stricmp PARAMS((const char *, const char *));
-extern int _rl_strnicmp PARAMS((const char *, const char *, int));
+extern int _rl_stricmp (const char *, const char *);
+extern int _rl_strnicmp (const char *, const char *, int);
 #endif
 
-#if defined (HAVE_STRPBRK) && !defined (HAVE_MULTIBYTE)
+#if defined (HAVE_STRPBRK) && !defined (HANDLE_MULTIBYTE)
 #  define _rl_strpbrk(a,b)	strpbrk((a),(b))
 #else
-extern char *_rl_strpbrk PARAMS((const char *, const char *));
+extern char *_rl_strpbrk (const char *, const char *);
 #endif
 
 #if !defined (emacs_mode)

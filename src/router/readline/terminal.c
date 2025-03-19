@@ -1,6 +1,6 @@
 /* terminal.c -- controlling the terminal with termcap. */
 
-/* Copyright (C) 1996-2015 Free Software Foundation, Inc.
+/* Copyright (C) 1996-2023 Free Software Foundation, Inc.
 
    This file is part of the GNU Readline Library (Readline), a library
    for reading lines of text with interactive input and history editing.      
@@ -69,15 +69,15 @@
 #include "rlshell.h"
 #include "xmalloc.h"
 
-#if defined (__MINGW32__)
+#if defined (_WIN32)
 #  include <windows.h>
 #  include <wincon.h>
 
-static void _win_get_screensize PARAMS((int *, int *));
+static void _win_get_screensize (int *, int *);
 #endif
 
 #if defined (__EMX__)
-static void _emx_get_screensize PARAMS((int *, int *));
+static void _emx_get_screensize (int *, int *);
 #endif
 
 /* If the calling application sets this to a non-zero value, readline will
@@ -112,6 +112,8 @@ char PC, *BC, *UP;
 /* Some strings to control terminal actions.  These are output by tputs (). */
 char *_rl_term_clreol;
 char *_rl_term_clrpag;
+char *_rl_term_clrscroll;
+char *_rl_term_ho;
 char *_rl_term_cr;
 char *_rl_term_backspace;
 char *_rl_term_goto;
@@ -131,6 +133,7 @@ char *_rl_term_IC;
 char *_rl_term_dc;
 char *_rl_term_DC;
 
+/* How to move forward a char, non-destructively */
 char *_rl_term_forward_char;
 
 /* How to go up a line. */
@@ -149,6 +152,10 @@ static int term_has_meta;
    terminal has one. */
 static char *_rl_term_mm;
 static char *_rl_term_mo;
+
+/* The sequences to enter and exit standout mode. */
+static char *_rl_term_so;
+static char *_rl_term_se;
 
 /* The key sequences output by the arrow keys, if this terminal has any. */
 static char *_rl_term_ku;
@@ -171,11 +178,39 @@ static char *_rl_term_kD;
 /* Insert key */
 static char *_rl_term_kI;
 
+/* Page up and page down keys */
+static char *_rl_term_kP;
+static char *_rl_term_kN;
+
 /* Cursor control */
 static char *_rl_term_vs;	/* very visible */
 static char *_rl_term_ve;	/* normal */
 
-static void bind_termcap_arrow_keys PARAMS((Keymap));
+/* Bracketed paste */
+static char *_rl_term_BE;	/* enable */
+static char *_rl_term_BD;	/* disable */
+static char *_rl_term_PS;	/* paste start */
+static char *_rl_term_PE;	/* paste end */
+
+/* User-settable color sequences to begin and end the active region. Defaults
+   are rl_term_so and rl_term_se on non-dumb terminals. */
+char *_rl_active_region_start_color = NULL;
+char *_rl_active_region_end_color = NULL;
+
+/* It's not clear how HPUX is so broken here. */
+#ifdef TGETENT_BROKEN
+#  define TGETENT_SUCCESS 0
+#else
+#  define TGETENT_SUCCESS 1
+#endif
+#ifdef TGETFLAG_BROKEN
+#  define TGETFLAG_SUCCESS 0
+#else
+#  define TGETFLAG_SUCCESS 1
+#endif
+#define TGETFLAG(cap)	(tgetflag (cap) == TGETFLAG_SUCCESS)
+
+static void bind_termcap_arrow_keys (Keymap);
 
 /* Variables that hold the screen dimensions, used by the display code. */
 int _rl_screenwidth, _rl_screenheight, _rl_screenchars;
@@ -186,10 +221,12 @@ int _rl_enable_keypad;
 /* Non-zero means the user wants to enable a meta key. */
 int _rl_enable_meta = 1;
 
+/* Non-zero means this is an ANSI-compatible terminal; assume it is. */
+int _rl_term_isansi = RL_ANSI_TERM_DEFAULT;
+
 #if defined (__EMX__)
 static void
-_emx_get_screensize (swp, shp)
-     int *swp, *shp;
+_emx_get_screensize (int *swp, int *shp)
 {
   int sz[2];
 
@@ -202,10 +239,9 @@ _emx_get_screensize (swp, shp)
 }
 #endif
 
-#if defined (__MINGW32__)
+#if defined (_WIN32)
 static void
-_win_get_screensize (swp, shp)
-     int *swp, *shp;
+_win_get_screensize (int *swp, int *shp)
 {
   HANDLE hConOut;
   CONSOLE_SCREEN_BUFFER_INFO scr;
@@ -227,8 +263,7 @@ _win_get_screensize (swp, shp)
    values of $LINES and $COLUMNS.  The tests for TERM_STRING_BUFFER being
    non-null serve to check whether or not we have initialized termcap. */
 void
-_rl_get_screen_size (tty, ignore_env)
-     int tty, ignore_env;
+_rl_get_screen_size (int tty, int ignore_env)
 {
   char *ss;
 #if defined (TIOCGWINSZ)
@@ -247,7 +282,7 @@ _rl_get_screen_size (tty, ignore_env)
 
 #if defined (__EMX__)
   _emx_get_screensize (&wc, &wr);
-#elif defined (__MINGW32__)
+#elif defined (_WIN32) && !defined (__CYGWIN__)
   _win_get_screensize (&wc, &wr);
 #endif
 
@@ -318,8 +353,7 @@ _rl_get_screen_size (tty, ignore_env)
 }
 
 void
-_rl_set_screen_size (rows, cols)
-     int rows, cols;
+_rl_set_screen_size (int rows, int cols)
 {
   if (_rl_term_autowrap == -1)
     _rl_init_terminal_io (rl_terminal_name);
@@ -338,15 +372,13 @@ _rl_set_screen_size (rows, cols)
 }
 
 void
-rl_set_screen_size (rows, cols)
-     int rows, cols;
+rl_set_screen_size (int rows, int cols)
 {
   _rl_set_screen_size (rows, cols);
 }
 
 void
-rl_get_screen_size (rows, cols)
-     int *rows, *cols;
+rl_get_screen_size (int *rows, int *cols)
 {
   if (rows)
     *rows = _rl_screenheight;
@@ -355,22 +387,26 @@ rl_get_screen_size (rows, cols)
 }
 
 void
-rl_reset_screen_size ()
+rl_reset_screen_size (void)
 {
   _rl_get_screen_size (fileno (rl_instream), 0);
 }
 
 void
-_rl_sigwinch_resize_terminal ()
+_rl_sigwinch_resize_terminal (void)
 {
   _rl_get_screen_size (fileno (rl_instream), 1);
 }
 	
 void
-rl_resize_terminal ()
+rl_resize_terminal (void)
 {
+  int width, height;
+
+  width = _rl_screenwidth;
+  height = _rl_screenheight;
   _rl_get_screen_size (fileno (rl_instream), 1);
-  if (_rl_echoing_p)
+  if (_rl_echoing_p && (width != _rl_screenwidth || height != _rl_screenheight))
     {
       if (CUSTOM_REDISPLAY_FUNC ())
 	rl_forced_update_display ();
@@ -389,18 +425,26 @@ struct _tc_string {
 static const struct _tc_string tc_strings[] =
 {
   { "@7", &_rl_term_at7 },
+  { "BD", &_rl_term_BD },
+  { "BE", &_rl_term_BE },
   { "DC", &_rl_term_DC },
+  { "E3", &_rl_term_clrscroll },
   { "IC", &_rl_term_IC },
+  { "PE", &_rl_term_PE },
+  { "PS", &_rl_term_PS },
   { "ce", &_rl_term_clreol },
   { "cl", &_rl_term_clrpag },
   { "cr", &_rl_term_cr },
   { "dc", &_rl_term_dc },
   { "ei", &_rl_term_ei },
+  { "ho", &_rl_term_ho },
   { "ic", &_rl_term_ic },
   { "im", &_rl_term_im },
   { "kD", &_rl_term_kD },	/* delete */
   { "kH", &_rl_term_kH },	/* home down ?? */
   { "kI", &_rl_term_kI },	/* insert */
+  { "kN", &_rl_term_kN },	/* page down */
+  { "kP", &_rl_term_kP },	/* page up */
   { "kd", &_rl_term_kd },
   { "ke", &_rl_term_ke },	/* end keypad mode */
   { "kh", &_rl_term_kh },	/* home */
@@ -413,6 +457,8 @@ static const struct _tc_string tc_strings[] =
   { "mo", &_rl_term_mo },
   { "nd", &_rl_term_forward_char },
   { "pc", &_rl_term_pc },
+  { "se", &_rl_term_se },
+  { "so", &_rl_term_so },
   { "up", &_rl_term_up },
   { "vb", &_rl_visible_bell },
   { "vs", &_rl_term_vs },
@@ -424,8 +470,7 @@ static const struct _tc_string tc_strings[] =
 /* Read the desired terminal capability strings into BP.  The capabilities
    are described in the TC_STRINGS table. */
 static void
-get_term_capabilities (bp)
-     char **bp;
+get_term_capabilities (char **bp)
 {
 #if !defined (__DJGPP__)	/* XXX - doesn't DJGPP have a termcap library? */
   register int i;
@@ -436,20 +481,83 @@ get_term_capabilities (bp)
   tcap_initialized = 1;
 }
 
+struct _term_name {
+     const char * const name;
+     size_t len;
+};
+
+/* Non-exhaustive list of ANSI/ECMA terminals. */
+static const struct _term_name ansiterms[] =
+{
+  { "xterm",	5 },
+  { "rxvt",	4 },
+  { "eterm",	5 },
+  { "screen",	6 },
+  { "tmux",	4 },
+  { "vt100",	5 },
+  { "vt102",	5 },
+  { "vt220",	5 },
+  { "vt320",	5 },
+  { "ansi",	4 },
+  { "scoansi",	7 },
+  { "cygwin",	6 },
+  { "linux", 	5 },
+  { "konsole",	7 },
+  { "bvterm",	6 },
+  {  0, 0 }
+};
+
+static inline int
+iscsi (const char *s)
+{
+  return ((s[0] == ESC && s[1] == '[') ? 2
+				       : ((unsigned char)s[0] == 0x9b) ? 1 : 0);
+}
+
+static int
+_rl_check_ansi_terminal (const char *terminal_name)
+{
+  int i;
+  size_t len;
+
+  for (i = 0; ansiterms[i].name; i++)
+    if (STREQN (terminal_name, ansiterms[i].name, ansiterms[i].len))
+      return 1;
+
+  if (_rl_term_clreol == 0 || _rl_term_forward_char == 0 ||
+      _rl_term_ho == 0 || _rl_term_up == 0)
+    return 0;
+
+  /* check some common capabilities */
+  if (((len = iscsi (_rl_term_clreol)) && _rl_term_clreol[len] == 'K') &&	/* ce */
+      ((len = iscsi (_rl_term_forward_char)) && _rl_term_forward_char[len] == 'C') &&	/* nd */
+      ((len = iscsi (_rl_term_ho)) && _rl_term_ho[len] == 'H') &&	/* ho */
+      ((len = iscsi (_rl_term_up)) && _rl_term_up[len] == 'A'))		/* up */
+    return 1;
+
+  return 0;
+}
+
 int
-_rl_init_terminal_io (terminal_name)
-     const char *terminal_name;
+_rl_init_terminal_io (const char *terminal_name)
 {
   const char *term;
   char *buffer;
-  int tty, tgetent_ret;
+  int tty, tgetent_ret, dumbterm, reset_region_colors;
 
   term = terminal_name ? terminal_name : sh_get_env_value ("TERM");
-  _rl_term_clrpag = _rl_term_cr = _rl_term_clreol = (char *)NULL;
+  _rl_term_clrpag = _rl_term_cr = _rl_term_clreol = _rl_term_clrscroll = (char *)NULL;
   tty = rl_instream ? fileno (rl_instream) : 0;
 
   if (term == 0)
     term = "dumb";
+
+  _rl_term_isansi = RL_ANSI_TERM_DEFAULT;
+  dumbterm = STREQ (term, "dumb") || STREQ (term, "vt52") || STREQ (term, "adm3a");
+  if (dumbterm)
+    _rl_term_isansi = 0;
+
+  reset_region_colors = 1;
 
 #ifdef __MSDOS__
   _rl_term_im = _rl_term_ei = _rl_term_ic = _rl_term_IC = (char *)NULL;
@@ -458,10 +566,14 @@ _rl_init_terminal_io (terminal_name)
   _rl_term_mm = _rl_term_mo = (char *)NULL;
   _rl_terminal_can_insert = term_has_meta = _rl_term_autowrap = 0;
   _rl_term_cr = "\r";
-  _rl_term_clreol = _rl_term_clrpag = _rl_term_backspace = (char *)NULL;
+  _rl_term_backspace = (char *)NULL;
+  _rl_term_ho = (char *)NULL;
   _rl_term_goto = _rl_term_pc = _rl_term_ip = (char *)NULL;
   _rl_term_ks = _rl_term_ke =_rl_term_vs = _rl_term_ve = (char *)NULL;
   _rl_term_kh = _rl_term_kH = _rl_term_at7 = _rl_term_kI = (char *)NULL;
+  _rl_term_kN = _rl_term_kP = (char *)NULL;
+  _rl_term_so = _rl_term_se = (char *)NULL;
+  _rl_term_BD = _rl_term_BE = _rl_term_PE = _rl_term_PS = (char *)NULL;
 #if defined(HACK_TERMCAP_MOTION)
   _rl_term_forward_char = (char *)NULL;
 #endif
@@ -488,7 +600,7 @@ _rl_init_terminal_io (terminal_name)
       tgetent_ret = tgetent (term_buffer, term);
     }
 
-  if (tgetent_ret <= 0)
+  if (tgetent_ret != TGETENT_SUCCESS)
     {
       FREE (term_string_buffer);
       FREE (term_buffer);
@@ -518,16 +630,31 @@ _rl_init_terminal_io (terminal_name)
       /* Everything below here is used by the redisplay code (tputs). */
       _rl_screenchars = _rl_screenwidth * _rl_screenheight;
       _rl_term_cr = "\r";
+      _rl_term_ho = (char *)NULL;
       _rl_term_im = _rl_term_ei = _rl_term_ic = _rl_term_IC = (char *)NULL;
       _rl_term_up = _rl_term_dc = _rl_term_DC = _rl_visible_bell = (char *)NULL;
       _rl_term_ku = _rl_term_kd = _rl_term_kl = _rl_term_kr = (char *)NULL;
       _rl_term_kh = _rl_term_kH = _rl_term_kI = _rl_term_kD = (char *)NULL;
       _rl_term_ks = _rl_term_ke = _rl_term_at7 = (char *)NULL;
+      _rl_term_kN = _rl_term_kP = (char *)NULL;
       _rl_term_mm = _rl_term_mo = (char *)NULL;
       _rl_term_ve = _rl_term_vs = (char *)NULL;
       _rl_term_forward_char = (char *)NULL;
+      _rl_term_so = _rl_term_se = (char *)NULL;
       _rl_terminal_can_insert = term_has_meta = 0;
 
+      _rl_term_isansi = 0;	/* not an ANSI terminal */
+
+      /* Assume generic unknown terminal can't handle the enable/disable
+	 escape sequences */
+      _rl_term_BD = _rl_term_BE = _rl_term_PE = _rl_term_PS = (char *)NULL;
+      _rl_enable_bracketed_paste = 0;
+
+      /* No terminal so/se capabilities. */
+      _rl_enable_active_region = 0;
+      _rl_reset_region_color (0, NULL);
+      _rl_reset_region_color (1, NULL);
+    
       /* Reasonable defaults for tgoto().  Readline currently only uses
          tgoto if _rl_term_IC or _rl_term_DC is defined, but just in case we
          change that later... */
@@ -546,10 +673,10 @@ _rl_init_terminal_io (terminal_name)
   BC = _rl_term_backspace;
   UP = _rl_term_up;
 
-  if (!_rl_term_cr)
+  if (_rl_term_cr == 0)
     _rl_term_cr = "\r";
 
-  _rl_term_autowrap = tgetflag ("am") && tgetflag ("xn");
+  _rl_term_autowrap = TGETFLAG ("am") && TGETFLAG ("xn");
 
   /* Allow calling application to set default height and width, using
      rl_set_screen_size */
@@ -564,7 +691,7 @@ _rl_init_terminal_io (terminal_name)
 
   /* Check to see if this terminal has a meta key and clear the capability
      variables if there is none. */
-  term_has_meta = tgetflag ("km") != 0;
+  term_has_meta = TGETFLAG ("km");
   if (term_has_meta == 0)
     _rl_term_mm = _rl_term_mo = (char *)NULL;
 #endif /* !__MSDOS__ */
@@ -579,13 +706,27 @@ _rl_init_terminal_io (terminal_name)
   bind_termcap_arrow_keys (vi_insertion_keymap);
 #endif /* VI_MODE */
 
+  if (dumbterm == 0 && _rl_term_isansi == 0)
+    _rl_term_isansi = _rl_check_ansi_terminal (terminal_name);
+
+  /* There's no way to determine whether or not a given terminal supports
+     bracketed paste mode, so we assume a non-ANSI terminal (as best as we
+     can determine) does not. */
+  if (_rl_term_isansi == 0)
+    _rl_enable_bracketed_paste = _rl_enable_active_region = 0;
+
+  if (reset_region_colors)
+    {
+      _rl_reset_region_color (0, _rl_term_so);
+      _rl_reset_region_color (1, _rl_term_se);
+    }
+
   return 0;
 }
 
 /* Bind the arrow key sequences from the termcap description in MAP. */
 static void
-bind_termcap_arrow_keys (map)
-     Keymap map;
+bind_termcap_arrow_keys (Keymap map)
 {
   Keymap xkeymap;
 
@@ -601,13 +742,16 @@ bind_termcap_arrow_keys (map)
   rl_bind_keyseq_if_unbound (_rl_term_at7, rl_end_of_line);	/* End */
 
   rl_bind_keyseq_if_unbound (_rl_term_kD, rl_delete);
+  rl_bind_keyseq_if_unbound (_rl_term_kI, rl_overwrite_mode);	/* Insert */
+
+  rl_bind_keyseq_if_unbound (_rl_term_kN, rl_history_search_forward);	/* Page Down */
+  rl_bind_keyseq_if_unbound (_rl_term_kP, rl_history_search_backward);	/* Page Up */
 
   _rl_keymap = xkeymap;
 }
 
 char *
-rl_get_termcap (cap)
-     const char *cap;
+rl_get_termcap (const char *cap)
 {
   register int i;
 
@@ -624,8 +768,7 @@ rl_get_termcap (cap)
 /* Re-initialize the terminal considering that the TERM/TERMCAP variable
    has changed. */
 int
-rl_reset_terminal (terminal_name)
-     const char *terminal_name;
+rl_reset_terminal (const char *terminal_name)
 {
   _rl_screenwidth = _rl_screenheight = 0;
   _rl_init_terminal_io (terminal_name);
@@ -635,15 +778,13 @@ rl_reset_terminal (terminal_name)
 /* A function for the use of tputs () */
 #ifdef _MINIX
 void
-_rl_output_character_function (c)
-     int c;
+_rl_output_character_function (int c)
 {
   putc (c, _rl_out_stream);
 }
 #else /* !_MINIX */
 int
-_rl_output_character_function (c)
-     int c;
+_rl_output_character_function (int c)
 {
   return putc (c, _rl_out_stream);
 }
@@ -651,17 +792,14 @@ _rl_output_character_function (c)
 
 /* Write COUNT characters from STRING to the output stream. */
 void
-_rl_output_some_chars (string, count)
-     const char *string;
-     int count;
+_rl_output_some_chars (const char *string, int count)
 {
   fwrite (string, 1, count, _rl_out_stream);
 }
 
 /* Move the cursor back. */
 int
-_rl_backspace (count)
-     int count;
+_rl_backspace (int count)
 {
   register int i;
 
@@ -678,7 +816,7 @@ _rl_backspace (count)
 
 /* Move to the start of the next line. */
 int
-rl_crlf ()
+rl_crlf (void)
 {
 #if defined (NEW_TTY_DRIVER) || defined (__MINT__)
   if (_rl_term_cr)
@@ -688,9 +826,19 @@ rl_crlf ()
   return 0;
 }
 
+void
+_rl_cr (void)
+{
+#if defined (__MSDOS__)
+  putc ('\r', rl_outstream);
+#else
+  tputs (_rl_term_cr, 1, _rl_output_character_function);
+#endif
+}
+
 /* Ring the terminal bell. */
 int
-rl_ding ()
+rl_ding (void)
 {
   if (_rl_echoing_p)
     {
@@ -722,6 +870,91 @@ rl_ding ()
 
 /* **************************************************************** */
 /*								    */
+/*		Entering and leaving terminal standout mode	    */
+/*								    */
+/* **************************************************************** */
+
+void
+_rl_standout_on (void)
+{
+#ifndef __MSDOS__
+  if (_rl_term_so && _rl_term_se)
+    tputs (_rl_term_so, 1, _rl_output_character_function);
+#endif
+}
+
+void
+_rl_standout_off (void)
+{
+#ifndef __MSDOS__
+  if (_rl_term_so && _rl_term_se)
+    tputs (_rl_term_se, 1, _rl_output_character_function);
+#endif
+}
+
+/* **************************************************************** */
+/*								    */
+/*	     Controlling color for a portion of the line	    */
+/*								    */
+/* **************************************************************** */
+
+/* Reset the region color variables to VALUE depending on WHICH (0 == start,
+   1 == end). This is where all the memory allocation for the color variable
+   strings is performed. We might want to pass a flag saying whether or not
+   to translate VALUE like a key sequence, but it doesn't really matter. */
+int
+_rl_reset_region_color (int which, const char *value)
+{
+  int len;
+
+  if (which == 0)
+    {
+      xfree (_rl_active_region_start_color);
+      if (value && *value)
+	{
+	  _rl_active_region_start_color = (char *)xmalloc (2 * strlen (value) + 1);
+	  rl_translate_keyseq (value, _rl_active_region_start_color, &len);
+	  _rl_active_region_start_color[len] = '\0';
+	}
+      else
+	_rl_active_region_start_color = NULL;
+    }
+  else
+    {
+      xfree (_rl_active_region_end_color);
+      if (value && *value)
+	{
+	  _rl_active_region_end_color = (char *)xmalloc (2 * strlen (value) + 1);
+	  rl_translate_keyseq (value, _rl_active_region_end_color, &len);
+	  _rl_active_region_end_color[len] = '\0';
+	}
+      else
+	_rl_active_region_end_color = NULL;
+    }
+
+  return 0;
+}
+
+void
+_rl_region_color_on (void)
+{
+#ifndef __MSDOS__
+  if (_rl_active_region_start_color && _rl_active_region_end_color)
+    tputs (_rl_active_region_start_color, 1, _rl_output_character_function);
+#endif
+}
+
+void
+_rl_region_color_off (void)
+{
+#ifndef __MSDOS__
+  if (_rl_active_region_start_color && _rl_active_region_end_color)
+    tputs (_rl_active_region_end_color, 1, _rl_output_character_function);
+#endif
+}
+
+/* **************************************************************** */
+/*								    */
 /*	 	Controlling the Meta Key and Keypad		    */
 /*								    */
 /* **************************************************************** */
@@ -729,7 +962,7 @@ rl_ding ()
 static int enabled_meta = 0;	/* flag indicating we enabled meta mode */
 
 void
-_rl_enable_meta_key ()
+_rl_enable_meta_key (void)
 {
 #if !defined (__DJGPP__)
   if (term_has_meta && _rl_term_mm)
@@ -741,7 +974,7 @@ _rl_enable_meta_key ()
 }
 
 void
-_rl_disable_meta_key ()
+_rl_disable_meta_key (void)
 {
 #if !defined (__DJGPP__)
   if (term_has_meta && _rl_term_mo && enabled_meta)
@@ -753,8 +986,7 @@ _rl_disable_meta_key ()
 }
 
 void
-_rl_control_keypad (on)
-     int on;
+_rl_control_keypad (int on)
 {
 #if !defined (__DJGPP__)
   if (on && _rl_term_ks)
@@ -775,8 +1007,7 @@ _rl_control_keypad (on)
    cursor.  Overwrite mode gets a very visible cursor.  Only does
    anything if we have both capabilities. */
 void
-_rl_set_cursor (im, force)
-     int im, force;
+_rl_set_cursor (int im, int force)
 {
 #ifndef __MSDOS__
   if (_rl_term_ve && _rl_term_vs)

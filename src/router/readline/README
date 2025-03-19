@@ -1,7 +1,7 @@
 Introduction
 ============
 
-This is the Gnu Readline library, version 7.0.
+This is the Gnu Readline library, version 8.3.
 
 The Readline library provides a set of functions for use by applications
 that allow users to edit command lines as they are typed in.  Both
@@ -10,7 +10,7 @@ additional functions to maintain a list of previously-entered command
 lines, to recall and perhaps reedit those lines, and perform csh-like
 history expansion on previous commands.
 
-The history facilites are also placed into a separate library, the
+The history facilities are also placed into a separate library, the
 History library, as part of the build process.  The History library
 may be used without Readline in applications which desire its
 capabilities.
@@ -33,7 +33,8 @@ may work:
         env CC=cc ./configure
 
 Read the file INSTALL in this directory for more information about how
-to customize and control the build process.
+to customize and control the build process, including how to build readline
+in a directory other than the source directory.
 
 The file rlconf.h contains C preprocessor defines that enable and disable
 certain Readline features.
@@ -47,7 +48,7 @@ Examples
 There are several example programs that use Readline features in the
 examples directory.  The `rl' program is of particular interest.  It
 is a command-line interface to Readline, suitable for use in shell
-scripts in place of `read'.
+scripts in place of `read' (but look at bash's `read -e' first).
 
 Shared Libraries
 ================

@@ -1,6 +1,6 @@
 /* util.c -- readline utility functions */
 
-/* Copyright (C) 1987-2015 Free Software Foundation, Inc.
+/* Copyright (C) 1987-2017 Free Software Foundation, Inc.
 
    This file is part of the GNU Readline Library (Readline), a library
    for reading lines of text with interactive input and history editing.      
@@ -43,8 +43,8 @@
 #include <ctype.h>
 
 /* System-specific feature definitions and include files. */
-#include "rldefs.h"
 #include "rlmbutil.h"
+#include "rldefs.h"
 
 #if defined (TIOCSTAT_IN_SYS_IOCTL)
 #  include <sys/ioctl.h>
@@ -70,10 +70,9 @@ int _rl_allow_pathname_alphabetic_chars = 0;
 static const char * const pathname_alphabetic_chars = "/-_=~.#$";
 
 int
-rl_alphabetic (c)
-     int c;
+rl_alphabetic (int c)
 {
-  if (ALPHABETIC (c))
+  if (_rl_alphabetic_p (c))
     return (1);
 
   return (_rl_allow_pathname_alphabetic_chars &&
@@ -82,7 +81,7 @@ rl_alphabetic (c)
 
 #if defined (HANDLE_MULTIBYTE)
 int
-_rl_walphabetic (wchar_t wc)
+_rl_walphabetic (WCHAR_T wc)
 {
   int c;
 
@@ -97,16 +96,18 @@ _rl_walphabetic (wchar_t wc)
 
 /* How to abort things. */
 int
-_rl_abort_internal ()
+_rl_abort_internal (void)
 {
-  rl_ding ();
+  if (RL_ISSTATE (RL_STATE_TIMEOUT) == 0)
+    rl_ding ();			/* Don't ring the bell on a timeout */
   rl_clear_message ();
   _rl_reset_argument ();
   rl_clear_pending_input ();
+  rl_deactivate_mark ();
 
-  RL_UNSETSTATE (RL_STATE_MACRODEF);
   while (rl_executing_macro)
     _rl_pop_executing_macro ();
+  _rl_kill_kbd_macro ();
 
   RL_UNSETSTATE (RL_STATE_MULTIKEY);	/* XXX */
 
@@ -117,22 +118,19 @@ _rl_abort_internal ()
 }
 
 int
-rl_abort (count, key)
-     int count, key;
+rl_abort (int count, int key)
 {
   return (_rl_abort_internal ());
 }
 
 int
-_rl_null_function (count, key)
-     int count, key;
+_rl_null_function (int count, int key)
 {
   return 0;
 }
 
 int
-rl_tty_status (count, key)
-     int count, key;
+rl_tty_status (int count, int key)
 {
 #if defined (TIOCSTAT)
   ioctl (1, TIOCSTAT, (char *)0);
@@ -146,8 +144,7 @@ rl_tty_status (count, key)
 /* Return a copy of the string between FROM and TO.
    FROM is inclusive, TO is not. */
 char *
-rl_copy_text (from, to)
-     int from, to;
+rl_copy_text (int from, int to)
 {
   register int length;
   char *copy;
@@ -166,8 +163,7 @@ rl_copy_text (from, to)
 /* Increase the size of RL_LINE_BUFFER until it has enough space to hold
    LEN characters. */
 void
-rl_extend_line_buffer (len)
-     int len;
+rl_extend_line_buffer (int len)
 {
   while (len >= rl_line_buffer_len)
     {
@@ -181,8 +177,7 @@ rl_extend_line_buffer (len)
 
 /* A function for simple tilde expansion. */
 int
-rl_tilde_expand (ignore, key)
-     int ignore, key;
+rl_tilde_expand (int ignore, int key)
 {
   register int start, end;
   char *homedir, *temp;
@@ -200,7 +195,7 @@ rl_tilde_expand (ignore, key)
     }
   else if (start >= 0 && rl_line_buffer[start] != '~')
     {
-      for (; !whitespace (rl_line_buffer[start]) && start >= 0; start--)
+      for (; start >= 0 && !whitespace (rl_line_buffer[start]); start--)
         ;
       start++;
     }
@@ -210,9 +205,9 @@ rl_tilde_expand (ignore, key)
   end = start;
   do
     end++;
-  while (whitespace (rl_line_buffer[end]) == 0 && end < rl_end);
+  while (end < rl_end && whitespace (rl_line_buffer[end]) == 0);
 
-  if (whitespace (rl_line_buffer[end]) || end >= rl_end)
+  if (end >= rl_end || whitespace (rl_line_buffer[end]))
     end--;
 
   /* If the first character of the current word is a tilde, perform
@@ -234,26 +229,12 @@ rl_tilde_expand (ignore, key)
   return (0);
 }
 
-#if defined (USE_VARARGS)
 void
-#if defined (PREFER_STDARG)
 _rl_ttymsg (const char *format, ...)
-#else
-_rl_ttymsg (va_alist)
-     va_dcl
-#endif
 {
   va_list args;
-#if defined (PREFER_VARARGS)
-  char *format;
-#endif
 
-#if defined (PREFER_STDARG)
   va_start (args, format);
-#else
-  va_start (args);
-  format = va_arg (args, char *);
-#endif
 
   fprintf (stderr, "readline: ");
   vfprintf (stderr, format, args);
@@ -266,24 +247,11 @@ _rl_ttymsg (va_alist)
 }
 
 void
-#if defined (PREFER_STDARG)
 _rl_errmsg (const char *format, ...)
-#else
-_rl_errmsg (va_alist)
-     va_dcl
-#endif
 {
   va_list args;
-#if defined (PREFER_VARARGS)
-  char *format;
-#endif
 
-#if defined (PREFER_STDARG)
   va_start (args, format);
-#else
-  va_start (args);
-  format = va_arg (args, char *);
-#endif
 
   fprintf (stderr, "readline: ");
   vfprintf (stderr, format, args);
@@ -292,28 +260,6 @@ _rl_errmsg (va_alist)
 
   va_end (args);
 }
-
-#else /* !USE_VARARGS */
-void
-_rl_ttymsg (format, arg1, arg2)
-     char *format;
-{
-  fprintf (stderr, "readline: ");
-  fprintf (stderr, format, arg1, arg2);
-  fprintf (stderr, "\n");
-
-  rl_forced_update_display ();
-}
-
-void
-_rl_errmsg (format, arg1, arg2)
-     char *format;
-{
-  fprintf (stderr, "readline: ");
-  fprintf (stderr, format, arg1, arg2);
-  fprintf (stderr, "\n");
-}
-#endif /* !USE_VARARGS */
 
 /* **************************************************************** */
 /*								    */
@@ -324,10 +270,10 @@ _rl_errmsg (format, arg1, arg2)
 /* Determine if s2 occurs in s1.  If so, return a pointer to the
    match in s1.  The compare is case insensitive. */
 char *
-_rl_strindex (s1, s2)
-     register const char *s1, *s2;
+_rl_strindex (const char *s1, const char *s2)
 {
-  register int i, l, len;
+  int i;
+  size_t l, len;
 
   for (i = 0, l = strlen (s2), len = strlen (s1); (len - i) >= l; i++)
     if (_rl_strnicmp (s1 + i, s2, l) == 0)
@@ -335,12 +281,12 @@ _rl_strindex (s1, s2)
   return ((char *)NULL);
 }
 
-#ifndef HAVE_STRPBRK
+#if !defined (HAVE_STRPBRK) || defined (HANDLE_MULTIBYTE)
 /* Find the first occurrence in STRING1 of any character from STRING2.
-   Return a pointer to the character in STRING1. */
+   Return a pointer to the character in STRING1. Understands multibyte
+   characters. */
 char *
-_rl_strpbrk (string1, string2)
-     const char *string1, *string2;
+_rl_strpbrk (const char *string1, const char *string2)
 {
   register const char *scan;
 #if defined (HANDLE_MULTIBYTE)
@@ -374,10 +320,7 @@ _rl_strpbrk (string1, string2)
 /* Compare at most COUNT characters from string1 to string2.  Case
    doesn't matter (strncasecmp). */
 int
-_rl_strnicmp (string1, string2, count)
-     const char *string1;
-     const char *string2;
-     int count;
+_rl_strnicmp (const char *string1, const char *string2, int count)
 {
   register const char *s1;
   register const char *s2;
@@ -404,9 +347,7 @@ _rl_strnicmp (string1, string2, count)
 
 /* strcmp (), but caseless (strcasecmp). */
 int
-_rl_stricmp (string1, string2)
-     const char *string1;
-     const char *string2;
+_rl_stricmp (const char *string1, const char *string2)
 {
   register const char *s1;
   register const char *s2;
@@ -429,10 +370,51 @@ _rl_stricmp (string1, string2)
 }
 #endif /* !HAVE_STRCASECMP */
 
+/* Compare the first N characters of S1 and S2 without regard to case. If
+   FLAGS&1, apply the mapping specified by completion-map-case and make
+   `-' and `_' equivalent. Returns 1 if the strings are equal. */
+int
+_rl_strcaseeqn(const char *s1, const char *s2, size_t n, int flags)
+{
+  int c1, c2;
+  int d;
+
+  if ((flags & 1) == 0)
+    return (_rl_strnicmp (s1, s2, n) == 0);
+
+  do
+    {
+      c1 = _rl_to_lower (*s1);
+      c2 = _rl_to_lower (*s2);
+
+      d = c1 - c2;
+      if ((*s1 == '-' || *s1 == '_') && (*s2 == '-' || *s2 == '_'))
+	d = 0;		/* case insensitive character mapping */
+      if (d != 0)
+	return 0;
+      s1++;
+      s2++;
+      n--;
+    }
+  while (n != 0);
+
+  return 1;
+}
+
+/* Return 1 if the characters C1 and C2 are equal without regard to case.
+   If FLAGS&1, apply the mapping specified by completion-map-case and make
+   `-' and `_' equivalent. */
+int
+_rl_charcasecmp (int c1, int c2, int flags)
+{
+  if ((flags & 1) && (c1 == '-' || c1 == '_') && (c2 == '-' || c2 == '_'))
+    return 1;
+  return ( _rl_to_lower (c1) == _rl_to_lower (c2));
+}
+
 /* Stupid comparison routine for qsort () ing strings. */
 int
-_rl_qsort_string_compare (s1, s2)
-  char **s1, **s2;
+_rl_qsort_string_compare (char **s1, char **s2)
 {
 #if defined (HAVE_STRCOLL)
   return (strcoll (*s1, *s2));
@@ -448,7 +430,7 @@ _rl_qsort_string_compare (s1, s2)
 }
 
 /* Function equivalents for the macros defined in chardefs.h. */
-#define FUNCTION_FOR_MACRO(f)	int (f) (c) int c; { return f (c); }
+#define FUNCTION_FOR_MACRO(f)	int (f) (int c) { return f (c); }
 
 FUNCTION_FOR_MACRO (_rl_digit_p)
 FUNCTION_FOR_MACRO (_rl_digit_value)
@@ -461,8 +443,7 @@ FUNCTION_FOR_MACRO (_rl_uppercase_p)
 /* A convenience function, to force memory deallocation to be performed
    by readline.  DLLs on Windows apparently require this. */
 void
-rl_free (mem)
-     void *mem;
+rl_free (void *mem)
 {
   if (mem)
     free (mem);
@@ -472,35 +453,20 @@ rl_free (mem)
    all `public' readline header files. */
 #undef _rl_savestring
 char *
-_rl_savestring (s)
-     const char *s;
+_rl_savestring (const char *s)
 {
   return (strcpy ((char *)xmalloc (1 + (int)strlen (s)), (s)));
 }
 
 #if defined (DEBUG)
-#if defined (USE_VARARGS)
 static FILE *_rl_tracefp;
 
 void
-#if defined (PREFER_STDARG)
 _rl_trace (const char *format, ...)
-#else
-_rl_trace (va_alist)
-     va_dcl
-#endif
 {
   va_list args;
-#if defined (PREFER_VARARGS)
-  char *format;
-#endif
 
-#if defined (PREFER_STDARG)
   va_start (args, format);
-#else
-  va_start (args);
-  format = va_arg (args, char *);
-#endif
 
   if (_rl_tracefp == 0)
     _rl_tropen ();
@@ -512,7 +478,7 @@ _rl_trace (va_alist)
 }
 
 int
-_rl_tropen ()
+_rl_tropen (void)
 {
   char fnbuf[128], *x;
 
@@ -525,14 +491,14 @@ _rl_tropen ()
 #else
   x = "/var/tmp";
 #endif
-  sprintf (fnbuf, "%s/rltrace.%ld", x, (long)getpid());
+  snprintf (fnbuf, sizeof (fnbuf), "%s/rltrace.%ld", x, (long)getpid());
   unlink(fnbuf);
   _rl_tracefp = fopen (fnbuf, "w+");
   return _rl_tracefp != 0;
 }
 
 int
-_rl_trclose ()
+_rl_trclose (void)
 {
   int r;
 
@@ -542,12 +508,10 @@ _rl_trclose ()
 }
 
 void
-_rl_settracefp (fp)
-     FILE *fp;
+_rl_settracefp (FILE *fp)
 {
   _rl_tracefp = fp;
 }
-#endif
 #endif /* DEBUG */
 
 
@@ -559,8 +523,7 @@ _rl_settracefp (fp)
 
 /* Report STRING to the audit system. */
 void
-_rl_audit_tty (string)
-     char *string;
+_rl_audit_tty (char *string)
 {
   struct audit_message req;
   struct sockaddr_nl addr;
@@ -573,7 +536,10 @@ _rl_audit_tty (string)
   size = strlen (string) + 1;
 
   if (NLMSG_SPACE (size) > MAX_AUDIT_MESSAGE_LENGTH)
-    return;
+    {
+      close (fd);
+      return;
+    }
 
   memset (&req, 0, sizeof(req));
   req.nlh.nlmsg_len = NLMSG_SPACE (size);
