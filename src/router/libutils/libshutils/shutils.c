@@ -381,6 +381,9 @@ int _evalpid(char *const argv[], char *path, int timeout, int *ppid)
 		 * execute command 
 		 */
 		setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
+#ifdef HAVE_JEMALLOC
+		setenv("LD_PRELOAD", "/usr/lib/libjemalloc.so", 1);
+#endif
 		alarm(timeout);
 		execvp(argv[0], argv);
 		perror(argv[0]);
