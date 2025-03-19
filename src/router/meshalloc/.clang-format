@@ -1,0 +1,15 @@
+BasedOnStyle: Google
+ColumnLimit: 120
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AllowShortFunctionsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+IndentCaseLabels: false
+AlwaysBreakTemplateDeclarations: true
+AccessModifierOffset: -2
+Standard: Cpp11
+SortIncludes: false
+
+DerivePointerAlignment: false
+PointerAlignment: Right
