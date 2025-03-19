@@ -618,11 +618,11 @@ struct nlattr *nla_find(struct nlattr *head, int len, int attrtype)
 struct nlattr *nla_reserve(struct nl_msg *msg, int attrtype, int attrlen)
 {
 	struct nlattr *nla;
-	int tlen;
-	
+	size_t tlen;
+
 	tlen = NLMSG_ALIGN(msg->nm_nlh->nlmsg_len) + nla_total_size(attrlen);
 
-	if ((tlen + msg->nm_nlh->nlmsg_len) > msg->nm_size)
+	if (tlen > msg->nm_size || tlen > UINT32_MAX)
 		return NULL;
 
 	nla = (struct nlattr *) nlmsg_tail(msg->nm_nlh);
