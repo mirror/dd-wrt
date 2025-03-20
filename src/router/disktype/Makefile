@@ -16,8 +16,8 @@ OBJS   = main.o
 TARGET = disktype
 
 CPPFLAGS = -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
-CFLAGS   = -Wall $(COPTS) $(LTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF
-LDFLAGS  = -L$(TOP)/libutils -ldisc
+CFLAGS   = -Wall $(COPTS) $(LTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF 
+LDFLAGS  = -L$(TOP)/libutils -ldisc -L$(TOP)/libutils -L$(TOP)/nvram -lshutils -lnvram
 LIBS     =
 
 ifeq ($(NOSYS),)
