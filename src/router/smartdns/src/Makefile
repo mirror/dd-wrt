@@ -68,10 +68,10 @@ $(BIN) : $(MAIN_OBJ) $(SMARTDNS_LIB)
 	$(CC) $^ -o $@ $(LDFLAGS)
 
 $(SMARTDNS_TEST_LIB): $(TEST_OBJS)
-	$(AR) rcs $@ $^
+	$(AR) $(LTOPLUGIN) rcs $@ $^
 
 $(SMARTDNS_LIB): $(OBJS)
-	$(AR) rcs $@ $^
+	$(AR) $(LTOPLUGIN) rcs $@ $^
 
 clang-tidy:
 	clang-tidy -p=. $(OBJS_MAIN:.o=.c) -- $(CFLAGS)
