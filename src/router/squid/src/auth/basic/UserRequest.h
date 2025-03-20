@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -32,7 +32,7 @@ public:
     UserRequest() {}
     ~UserRequest() override { assert(LockCount()==0); }
 
-    int authenticated() const override;
+    bool authenticated() const override;
     void authenticate(HttpRequest * request, ConnStateData *conn, Http::HdrType type) override;
     Auth::Direction module_direction() override;
     void startHelperLookup(HttpRequest * request, AccessLogEntry::Pointer &al, AUTHCB *, void *) override;

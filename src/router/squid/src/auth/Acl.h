@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -19,7 +19,7 @@
 
 class ACLChecklist;
 /// \ingroup AuthAPI
-Acl::Answer AuthenticateAcl(ACLChecklist *ch);
+Acl::Answer AuthenticateAcl(ACLChecklist *, const Acl::Node &);
 
 #endif /* USE_AUTH */
 #endif /* SQUID_SRC_AUTH_ACL_H */

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,15 +9,18 @@
 #ifndef SQUID_SRC_HTTP_STREAM_H
 #define SQUID_SRC_HTTP_STREAM_H
 
+#include "clientStreamForward.h"
+#include "comm/forward.h"
+#include "debug/Stream.h"
+#include "error/Error.h"
 #include "http/forward.h"
+#include "log/forward.h"
 #include "mem/forward.h"
+#include "servers/forward.h"
 #include "StoreIOBuffer.h"
 #if USE_DELAY_POOLS
 #include "MessageBucket.h"
 #endif
-
-class clientStreamNode;
-class ClientHttpRequest;
 
 namespace Http
 {

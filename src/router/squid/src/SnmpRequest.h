@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -10,6 +10,8 @@
 #define SQUID_SRC_SNMPREQUEST_H
 
 #if SQUID_SNMP
+#include "acl/forward.h"
+#include "ip/Address.h"
 #include "snmp_session.h"
 
 // POD
@@ -26,7 +28,6 @@ public:
     Ip::Address from;
 
     struct snmp_pdu *PDU;
-    ACLChecklist *acl_checklist;
     u_char *community;
 
     struct snmp_session session;

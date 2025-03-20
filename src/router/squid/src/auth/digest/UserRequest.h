@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -11,6 +11,7 @@
 
 #if HAVE_AUTH_MODULE_DIGEST
 
+#include "auth/digest/Config.h"
 #include "auth/UserRequest.h"
 
 class ConnStateData;
@@ -33,7 +34,6 @@ public:
     UserRequest();
     ~UserRequest() override;
 
-    int authenticated() const override;
     void authenticate(HttpRequest * request, ConnStateData * conn, Http::HdrType type) override;
     Direction module_direction() override;
     void addAuthenticationInfoHeader(HttpReply * rep, int accel) override;

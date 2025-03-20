@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -17,6 +17,9 @@
 class LogTagsErrors
 {
 public:
+    /// constructs an object matching errno(3) of a failed I/O call
+    static LogTagsErrors FromErrno(int errNo);
+
     /// Update each of this object flags to "set" if the corresponding
     /// flag of the given object is set
     void update(const LogTagsErrors &other);

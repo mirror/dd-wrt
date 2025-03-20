@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -45,8 +45,9 @@ Mem::AllocatorProxy::getStats(PoolStats &)
 void *
 memAllocBuf(const size_t netSize, size_t * const grossSize)
 {
-    *grossSize = netSize;
-    return xcalloc(1, netSize);
+    if (grossSize)
+        *grossSize = netSize;
+    return xmalloc(netSize);
 }
 
 void *
@@ -60,30 +61,6 @@ void
 memFree(void *memory, int)
 {
     xfree(memory);
-}
-
-void *
-memAllocString(const size_t netSize, size_t * const grossSize)
-{
-    return memAllocBuf(netSize, grossSize);
-}
-
-void
-memFreeString(size_t, void *memory)
-{
-    xfree(memory);
-}
-
-void *
-memAllocRigid(const size_t netSize)
-{
-    return xmalloc(netSize);
-}
-
-void
-memFreeRigid(void * const buf, size_t)
-{
-    xfree(buf);
 }
 
 void

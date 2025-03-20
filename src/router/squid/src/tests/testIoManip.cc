@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -19,10 +19,12 @@ class TestIoManip: public CPPUNIT_NS::TestFixture
 {
     CPPUNIT_TEST_SUITE(TestIoManip);
     CPPUNIT_TEST(testAsHex);
+    CPPUNIT_TEST(testAtMostOnce);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
     void testAsHex();
+    void testAtMostOnce();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION( TestIoManip );
@@ -152,3 +154,38 @@ TestIoManip::testAsHex()
     CPPUNIT_ASSERT_EQUAL(std::string("03...4"), ss.str());
     resetStream(ss);
 }
+
+void
+TestIoManip::testAtMostOnce()
+{
+    {
+        std::ostringstream ss;
+        auto textOnce = AtMostOnce("text1");
+        ss << textOnce;
+        CPPUNIT_ASSERT_EQUAL(std::string("text1"), ss.str());
+        ss << textOnce;
+        ss << textOnce;
+        CPPUNIT_ASSERT_EQUAL(std::string("text1"), ss.str());
+    }
+
+    {
+        std::ostringstream ss;
+        // Cannot create std::string when creating textOnce because the string may be
+        // destroyed before we are done with textOnce:
+        // auto textOnce = AtMostOnce(std::string("do not do this"));
+        const std::string s("text2");
+        auto textOnce = AtMostOnce(s);
+        ss << textOnce;
+        CPPUNIT_ASSERT_EQUAL(std::string("text2"), ss.str());
+        ss << textOnce;
+        ss << textOnce;
+        CPPUNIT_ASSERT_EQUAL(std::string("text2"), ss.str());
+    }
+}
+
+int
+main(int argc, char *argv[])
+{
+    return TestProgram().run(argc, argv);
+}
+

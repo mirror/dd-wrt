@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -638,7 +638,7 @@ HappyConnOpener::handleConnOpenerAnswer(Attempt &attempt, const CommConnectCbPar
     lastError = makeError(ERR_CONNECT_FAIL);
     lastError->xerrno = params.xerrno;
 
-    NoteOutgoingConnectionFailure(params.conn->getPeer(), lastError->httpStatus);
+    NoteOutgoingConnectionFailure(params.conn->getPeer());
 
     if (spareWaiting)
         updateSpareWaitAfterPrimeFailure();

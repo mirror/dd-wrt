@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -225,6 +225,19 @@ StoreEntry::bytesWanted (Range<size_t> const aRange, bool ignoreDelayPools) cons
         return 0;
 
     return mem_obj->mostBytesWanted(aRange.end, ignoreDelayPools);
+}
+
+bool
+StoreEntry::hasParsedReplyHeader() const
+{
+    if (mem_obj) {
+        const auto &reply = mem_obj->baseReply();
+        if (reply.pstate == Http::Message::psParsed) {
+            debugs(20, 7, reply.hdr_sz);
+            return true;
+        }
+    }
+    return false;
 }
 
 bool
@@ -928,7 +941,7 @@ StoreEntry::checkCachable()
         return 0; // avoid rerequesting release below
     }
 
-    if (store_status == STORE_OK && EBIT_TEST(flags, ENTRY_BAD_LENGTH)) {
+    if (EBIT_TEST(flags, ENTRY_BAD_LENGTH)) {
         debugs(20, 2, "StoreEntry::checkCachable: NO: wrong content-length");
         ++store_check_cachable_hist.no.wrong_content_length;
     } else if (!mem_obj) {

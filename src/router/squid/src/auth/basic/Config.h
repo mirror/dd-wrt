@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -50,7 +50,7 @@ private:
 } // namespace Basic
 } // namespace Auth
 
-extern helper *basicauthenticators;
+extern Helper::ClientPointer basicauthenticators;
 
 #endif /* HAVE_AUTH_MODULE_BASIC */
 #endif /* SQUID_SRC_AUTH_BASIC_CONFIG_H */

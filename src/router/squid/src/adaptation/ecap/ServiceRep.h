@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -13,8 +13,13 @@
 
 #include "adaptation/forward.h"
 #include "adaptation/Service.h"
+
+#if HAVE_LIBECAP_COMMON_FORWARD_H
 #include <libecap/common/forward.h>
+#endif
+#if HAVE_LIBECAP_COMMON_MEMORY_H
 #include <libecap/common/memory.h>
+#endif
 
 namespace Adaptation
 {

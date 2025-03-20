@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -248,7 +248,7 @@ storeDigestAddable(const StoreEntry * e)
         return 0;
     }
 
-    if (e->store_status == STORE_OK && EBIT_TEST(e->flags, ENTRY_BAD_LENGTH)) {
+    if (EBIT_TEST(e->flags, ENTRY_BAD_LENGTH)) {
         debugs(71, 6, "storeDigestAddable: NO: wrong content-length");
         return 0;
     }
@@ -260,6 +260,10 @@ storeDigestAddable(const StoreEntry * e)
     }
 
     /* still here? check staleness */
+    // Include hittingRequiresCollapsing() entries: They are fresh _now_, but we
+    // check future freshness. They should not have enough info to judge future
+    // freshness since we are still waiting for their response headers, but
+    // admins might configure Squid to consider such entries fresh anyway.
     /* Note: We should use the time of the next rebuild, not (cur_time+period) */
     if (refreshCheckDigest(e, Config.digest.rebuild_period)) {
         debugs(71, 6, "storeDigestAdd: entry expires within " << Config.digest.rebuild_period << " secs, ignoring");

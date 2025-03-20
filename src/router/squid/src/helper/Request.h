@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,7 +9,9 @@
 #ifndef SQUID_SRC_HELPER_REQUEST_H
 #define SQUID_SRC_HELPER_REQUEST_H
 
+#include "cbdata.h"
 #include "helper/forward.h"
+#include "mem/AllocatorProxy.h"
 #include "time/gadgets.h"
 
 namespace Helper

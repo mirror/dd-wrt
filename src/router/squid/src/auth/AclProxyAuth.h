@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -15,27 +15,17 @@
 #include "acl/Checklist.h"
 #include "acl/Data.h"
 
-class ProxyAuthLookup : public ACLChecklist::AsyncState
-{
-
-public:
-    static ProxyAuthLookup *Instance();
-    void checkForAsync(ACLChecklist *) const override;
-
-private:
-    static ProxyAuthLookup instance_;
-    static void LookupDone(void *data);
-};
-
-class ACLProxyAuth : public ACL
+class ACLProxyAuth : public Acl::Node
 {
     MEMPROXY_CLASS(ACLProxyAuth);
 
 public:
+    static void StartLookup(ACLFilledChecklist &, const Acl::Node &);
+
     ~ACLProxyAuth() override;
     ACLProxyAuth(ACLData<char const *> *, char const *);
 
-    /* ACL API */
+    /* Acl::Node API */
     char const *typeString() const override;
     void parse() override;
     bool isProxyAuth() const override {return true;}
@@ -47,7 +37,9 @@ public:
     int matchForCache(ACLChecklist *checklist) override;
 
 private:
-    /* ACL API */
+    static void LookupDone(void *data);
+
+    /* Acl::Node API */
     const Acl::Options &lineOptions() override;
 
     int matchProxyAuth(ACLChecklist *);

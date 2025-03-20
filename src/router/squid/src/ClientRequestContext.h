@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,8 +9,10 @@
 #ifndef SQUID_SRC_CLIENTREQUESTCONTEXT_H
 #define SQUID_SRC_CLIENTREQUESTCONTEXT_H
 
+#include "acl/forward.h"
 #include "base/RefCount.h"
 #include "cbdata.h"
+#include "defines.h"
 #include "dns/forward.h"
 #include "helper/forward.h"
 #include "ipcache.h"
@@ -60,7 +62,6 @@ public:
 #endif
 
     ClientHttpRequest *http;
-    ACLChecklist *acl_checklist = nullptr; ///< need ptr back so we can unregister if needed
     int redirect_state = REDIRECT_NONE;
     int store_id_state = REDIRECT_NONE;
 

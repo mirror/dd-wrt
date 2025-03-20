@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,15 +9,21 @@
 #ifndef SQUID_SRC_ACL_HASCOMPONENT_H
 #define SQUID_SRC_ACL_HASCOMPONENT_H
 
-#include "acl/Strategised.h"
-#include "acl/Strategy.h"
+#include "acl/Data.h"
+#include "acl/ParameterizedNode.h"
 
-/// \ingroup ACLAPI
-class ACLHasComponentStrategy : public ACLStrategy<ACLChecklist *>
+namespace Acl
+{
+
+/// a "has" ACL
+class HasComponentCheck: public ParameterizedNode< ACLData<ACLChecklist *> >
 {
 public:
-    int match(ACLData<MatchType> * &, ACLFilledChecklist *) override;
+    /* Acl::Node API */
+    int match(ACLChecklist *) override;
 };
+
+} // namespace Acl
 
 #endif /* SQUID_SRC_ACL_HASCOMPONENT_H */
 

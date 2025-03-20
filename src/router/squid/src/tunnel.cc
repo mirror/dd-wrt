@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -211,6 +211,9 @@ public:
     /// over the (encrypted, if needed) transport connection to that cache_peer
     JobWait<Http::Tunneler> peerWait;
 
+    /// Measures time spent on selecting and communicating with peers.
+    PeeringActivityTimer peeringTimer;
+
     void copyRead(Connection &from, IOCB *completion);
 
     /// continue to set up connection to a peer, going async for SSL peers
@@ -310,7 +313,7 @@ TunnelStateData::serverClosed()
 {
     server.noteClosure();
 
-    request->hier.stopPeerClock(false);
+    peeringTimer.stop();
 
     finishWritingAndDelete(client);
 }
@@ -386,6 +389,16 @@ TunnelStateData::deleteThis()
     delete this;
 }
 
+// TODO: Replace with a reusable API guaranteeing non-nil pointer forwarding.
+/// safely extracts HttpRequest from a never-nil ClientHttpRequest pointer
+static auto &
+guaranteedRequest(const ClientHttpRequest * const cr)
+{
+    Assure(cr);
+    Assure(cr->request);
+    return *cr->request;
+}
+
 TunnelStateData::TunnelStateData(ClientHttpRequest *clientRequest) :
     startTime(squid_curtime),
     destinations(new ResolvedPeers()),
@@ -393,7 +406,8 @@ TunnelStateData::TunnelStateData(ClientHttpRequest *clientRequest) :
     committedToServer(false),
     n_tries(0),
     banRetries(nullptr),
-    codeContext(CodeContext::Current())
+    codeContext(CodeContext::Current()),
+    peeringTimer(&guaranteedRequest(clientRequest))
 {
     debugs(26, 3, "TunnelStateData constructed this=" << this);
     client.readPendingFunc = &tunnelDelayedClientRead;
@@ -477,8 +491,7 @@ TunnelStateData::retryOrBail(const char *context)
 
     /* bail */
 
-    if (request)
-        request->hier.stopPeerClock(false);
+    peeringTimer.stop();
 
     // TODO: Add sendSavedErrorOr(err_type type, Http::StatusCode, context).
     // Then, the remaining method code (below) should become the common part of
@@ -1188,7 +1201,7 @@ tunnelStart(ClientHttpRequest * http)
          * Check if this host is allowed to fetch MISSES from us (miss_access)
          * default is to allow.
          */
-        ACLFilledChecklist ch(Config.accessList.miss, request, nullptr);
+        ACLFilledChecklist ch(Config.accessList.miss, request);
         ch.al = http->al;
         ch.src_addr = request->client_addr;
         ch.my_addr = request->my_addr;
@@ -1403,8 +1416,7 @@ TunnelStateData::sendError(ErrorState *finalError, const char *reason)
 {
     debugs(26, 3, "aborting transaction for " << reason);
 
-    if (request)
-        request->hier.stopPeerClock(false);
+    peeringTimer.stop();
 
     cancelStep(reason);
 
@@ -1438,15 +1450,12 @@ TunnelStateData::cancelStep(const char *reason)
 void
 TunnelStateData::startConnecting()
 {
-    if (request)
-        request->hier.startPeerClock();
-
     assert(!destinations->empty());
     assert(!transporting());
 
     delete savedError; // may still be nil
     savedError = nullptr;
-    request->hier.peer_reply_status = Http::scNone; // TODO: Move to startPeerClock()?
+    request->hier.peer_reply_status = Http::scNone;
 
     const auto callback = asyncCallback(17, 5, TunnelStateData::noteConnection, this);
     const auto cs = new HappyConnOpener(destinations, callback, request, startTime, n_tries, al);
@@ -1463,21 +1472,11 @@ TunnelStateData::usePinned()
 {
     Must(request);
     const auto connManager = request->pinnedConnection();
+    Comm::ConnectionPointer serverConn = nullptr;
+
     try {
-        const auto serverConn = ConnStateData::BorrowPinnedConnection(request.getRaw(), al);
+        serverConn = ConnStateData::BorrowPinnedConnection(request.getRaw(), al);
         debugs(26, 7, "pinned peer connection: " << serverConn);
-
-        updateAttempts(n_tries + 1);
-
-        // Set HttpRequest pinned related flags for consistency even if
-        // they are not really used by tunnel.cc code.
-        request->flags.pinned = true;
-        if (connManager->pinnedAuth())
-            request->flags.auth = true;
-
-        // the server may close the pinned connection before this request
-        const auto reused = true;
-        connectDone(serverConn, connManager->pinning.host, reused);
     } catch (ErrorState * const error) {
         syncHierNote(nullptr, connManager ? connManager->pinning.host : request->url.host());
         // XXX: Honor clientExpectsConnectResponse() before replying.
@@ -1486,6 +1485,19 @@ TunnelStateData::usePinned()
         return;
     }
 
+    updateAttempts(n_tries + 1);
+
+    // Set HttpRequest pinned related flags for consistency even if
+    // they are not really used by tunnel.cc code.
+    request->flags.pinned = true;
+
+    Assure(connManager);
+    if (connManager->pinnedAuth())
+        request->flags.auth = true;
+
+    // the server may close the pinned connection before this request
+    const auto reused = true;
+    connectDone(serverConn, connManager->pinning.host, reused);
 }
 
 CBDATA_CLASS_INIT(TunnelStateData);

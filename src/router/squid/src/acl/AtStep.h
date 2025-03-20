@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,16 +9,22 @@
 #ifndef SQUID_SRC_ACL_ATSTEP_H
 #define SQUID_SRC_ACL_ATSTEP_H
 
-#include "acl/Strategy.h"
+#include "acl/Data.h"
+#include "acl/ParameterizedNode.h"
 #include "XactionStep.h"
 
-/// \ingroup ACLAPI
-class ACLAtStepStrategy: public ACLStrategy<XactionStep>
+namespace Acl
 {
 
+/// an "at_step" ACL
+class AtStepCheck: public ParameterizedNode< ACLData<XactionStep> >
+{
 public:
-    int match (ACLData<MatchType> * &, ACLFilledChecklist *) override;
+    /* Acl::Node API */
+    int match(ACLChecklist *) override;
 };
+
+} // namespace Acl
 
 #endif /* SQUID_SRC_ACL_ATSTEP_H */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -109,10 +109,10 @@ inline pid_t WaitForAnyPid(PidStatus &status, int flags)
     return WaitForOnePid(-1, status, flags);
 }
 
-#if _SQUID_WINDOWS_
+#if _SQUID_WINDOWS_ || _SQUID_MINGW_
 /// xstrerror(errno) equivalent for Windows errors returned by GetLastError()
 SBuf WindowsErrorMessage(DWORD errorId);
-#endif // _SQUID_WINDOWS_
+#endif // _SQUID_WINDOWS_ || _SQUID_MINGW_
 
 #endif /* SQUID_SRC_TOOLS_H */
 

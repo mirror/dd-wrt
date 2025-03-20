@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -10,10 +10,10 @@
 #include "acl/AllOf.h"
 #include "acl/BoolOps.h"
 #include "acl/Checklist.h"
-#include "acl/Gadgets.h"
 #include "cache_cf.h"
 #include "MemBuf.h"
 #include "sbuf/SBuf.h"
+#include "sbuf/Stream.h"
 
 char const *
 Acl::AllOf::typeString() const
@@ -36,7 +36,7 @@ Acl::AllOf::doMatch(ACLChecklist *checklist, Nodes::const_iterator start) const
     if (empty())
         return 1; // not 0 because in math empty product equals identity
 
-    if (checklist->matchChild(this, start, *start))
+    if (checklist->matchChild(this, start))
         return 1; // match
 
     return checklist->keepMatching() ? 0 : -1;
@@ -47,7 +47,7 @@ void
 Acl::AllOf::parse()
 {
     Acl::InnerNode *whole = nullptr;
-    ACL *oldNode = empty() ? nullptr : nodes.front();
+    const auto oldNode = empty() ? nullptr : nodes.front().getRaw();
 
     // optimization: this logic reduces subtree hight (number of tree levels)
     if (Acl::OrNode *oldWhole = dynamic_cast<Acl::OrNode*>(oldNode)) {
@@ -56,16 +56,10 @@ Acl::AllOf::parse()
     } else if (oldNode) {
         // this acl saw a single line before; create a new OR inner node
 
-        MemBuf wholeCtx;
-        wholeCtx.init();
-        wholeCtx.appendf("(%s lines)", name);
-        wholeCtx.terminate();
-
         Acl::OrNode *newWhole = new Acl::OrNode;
-        newWhole->context(wholeCtx.content(), oldNode->cfgline);
+        newWhole->context(ToSBuf('(', name, " lines)"), oldNode->cfgline);
         newWhole->add(oldNode); // old (i.e. first) line
         nodes.front() = whole = newWhole;
-        aclRegister(newWhole);
     } else {
         // this is the first line for this acl; just use it as is
         whole = this;
@@ -74,13 +68,8 @@ Acl::AllOf::parse()
     assert(whole);
     const int lineId = whole->childrenCount() + 1;
 
-    MemBuf lineCtx;
-    lineCtx.init();
-    lineCtx.appendf("(%s line #%d)", name, lineId);
-    lineCtx.terminate();
-
     Acl::AndNode *line = new AndNode;
-    line->context(lineCtx.content(), config_input_line);
+    line->context(ToSBuf('(', name, " line #", lineId, ')'), config_input_line);
     line->lineParse();
 
     whole->add(line);

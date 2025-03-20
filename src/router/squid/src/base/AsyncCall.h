@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -10,6 +10,7 @@
 #define SQUID_SRC_BASE_ASYNCCALL_H
 
 #include "base/CodeContext.h"
+#include "base/forward.h"
 #include "base/InstanceId.h"
 #include "event.h"
 #include "RefCount.h"
@@ -39,7 +40,7 @@ class CallDialer;
 class AsyncCall: public RefCountable
 {
 public:
-    typedef RefCount <AsyncCall> Pointer;
+    using Pointer = AsyncCallPointer;
 
     AsyncCall(int aDebugSection, int aDebugLevel, const char *aName);
     ~AsyncCall() override;

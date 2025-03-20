@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -57,7 +57,7 @@ StoreClient::onCollapsingPath() const
     if (!Config.accessList.collapsedForwardingAccess)
         return true;
 
-    ACLFilledChecklist checklist(Config.accessList.collapsedForwardingAccess, nullptr, nullptr);
+    ACLFilledChecklist checklist(Config.accessList.collapsedForwardingAccess, nullptr);
     fillChecklist(checklist);
     return checklist.fastCheck().allowed();
 }
@@ -80,6 +80,7 @@ StoreClient::startCollapsingOn(const StoreEntry &e, const bool doingRevalidation
             tags->collapsingHistory.otherCollapses++;
     }
 
+    didCollapse = true;
     debugs(85, 5, e << " doingRevalidation=" << doingRevalidation);
     return true;
 }
@@ -633,7 +634,7 @@ store_client::handleBodyFromDisk()
     if (!answeredOnce()) {
         // All on-disk responses have HTTP headers. First disk body read(s)
         // include HTTP headers that we must parse (if needed) and skip.
-        const auto haveHttpHeaders = entry->mem_obj->baseReply().pstate == Http::Message::psParsed;
+        const auto haveHttpHeaders = entry->hasParsedReplyHeader();
         if (!haveHttpHeaders && !parseHttpHeadersFromDisk())
             return;
         skipHttpHeadersFromDisk();
@@ -984,13 +985,7 @@ CheckQuickAbortIsReasonable(StoreEntry * entry)
         return true;
     }
 
-    // XXX: This is absurd! TODO: For positives, "a/(b/c) > d" is "a*c > b*d".
-    if (expectlen < 100) {
-        debugs(90, 3, "quick-abort? NO avoid FPE");
-        return false;
-    }
-
-    if ((curlen / (expectlen / 100)) > (Config.quickAbort.pct)) {
+    if (curlen > expectlen*(Config.quickAbort.pct/100.0)) {
         debugs(90, 3, "quick-abort? NO past point of no return");
         return false;
     }
@@ -1064,7 +1059,7 @@ store_client::dumpStats(MemBuf * output, int clientNumber) const
 
     output->appendf("\tClient #%d, %p\n", clientNumber, this);
     output->appendf("\t\tcopy_offset: %" PRId64 "\n", copyInto.offset);
-    output->appendf("\t\tcopy_size: %" PRIuSIZE "\n", copyInto.length);
+    output->appendf("\t\tcopy_size: %zu\n", copyInto.length);
     output->append("\t\tflags:", 8);
 
     if (flags.disk_io_pending)

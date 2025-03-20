@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -39,7 +39,7 @@ public:
 } // namespace Negotiate
 } // namespace Auth
 
-extern statefulhelper *negotiateauthenticators;
+extern Helper::StatefulClientPointer negotiateauthenticators;
 
 #endif /* HAVE_AUTH_MODULE_NEGOTIATE */
 #endif /* SQUID_SRC_AUTH_NEGOTIATE_CONFIG_H */

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -263,5 +263,11 @@ TestMath::testNaturalSum()
     const auto result = SetToNaturalSumOrMax(expires, max64u, zero8u);
     CPPUNIT_ASSERT_EQUAL(std::numeric_limits<long>::max(), expires);
     CPPUNIT_ASSERT_EQUAL(expires, result);
+}
+
+int
+main(int argc, char *argv[])
+{
+    return TestProgram().run(argc, argv);
 }
 

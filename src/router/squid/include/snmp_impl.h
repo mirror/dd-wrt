@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -39,9 +39,6 @@ SOFTWARE.
 ******************************************************************/
 
 #define SID_MAX_LEN 64
-
-#define READ        1
-#define WRITE       0
 
 #define SNMP_RESERVE1    0
 #define SNMP_RESERVE2    1

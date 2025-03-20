@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -232,13 +232,6 @@ static hash_table *idns_lookup_hash = nullptr;
 
 /*
  * Notes on EDNS:
- *
- * IPv4:
- *   EDNS as specified may be sent as an additional record for any request.
- *   early testing has revealed that it works on common devices, but cannot
- *   be reliably used on any A or PTR requet done for IPv4 addresses.
- *
- * As such the IPv4 packets are still hard-coded not to contain EDNS (0)
  *
  * Squid design:
  *   Squid is optimized to generate one packet and re-send it to all NS
@@ -834,8 +827,8 @@ idnsDoSendQueryVC(nsvc *vc)
     vc->busy = 1;
 
     // Comm needs seconds but idnsCheckQueue() will check the exact timeout
-    const int timeout = (Config.Timeout.idns_query % 1000 ?
-                         Config.Timeout.idns_query + 1000 : Config.Timeout.idns_query) / 1000;
+    const auto timeout = (Config.Timeout.idns_query % 1000 ?
+                          Config.Timeout.idns_query + 1000 : Config.Timeout.idns_query) / 1000;
     AsyncCall::Pointer nil;
 
     commSetConnTimeout(vc->conn, timeout, nil);
@@ -1015,10 +1008,10 @@ idnsSendQuery(idns_query * q)
     } while ( (x<0 && y<0) && q->nsends % nsCount != 0);
 
     if (y > 0) {
-        fd_bytes(DnsSocketB, y, FD_WRITE);
+        fd_bytes(DnsSocketB, y, IoDirection::Write);
     }
     if (x > 0) {
-        fd_bytes(DnsSocketA, x, FD_WRITE);
+        fd_bytes(DnsSocketA, x, IoDirection::Write);
     }
 
     ++ nameservers[nsn].nqueries;
@@ -1296,8 +1289,7 @@ idnsGrokReply(const char *buf, size_t sz, int /*from_ns*/)
             // Build new query
             q->query_id = idnsQueryID();
             debugs(78, 3, "idnsGrokReply: Trying A Query for " << q->name);
-            // see EDNS notes at top of file why this sends 0
-            q->sz = rfc3596BuildAQuery(q->name, q->buf, sizeof(q->buf), q->query_id, &q->query, 0);
+            q->sz = rfc3596BuildAQuery(q->name, q->buf, sizeof(q->buf), q->query_id, &q->query);
             if (q->sz < 0) {
                 /* problem with query data -- query not sent */
                 idnsCallback(q, "Internal error");
@@ -1374,7 +1366,7 @@ idnsRead(int fd, void *)
             break;
         }
 
-        fd_bytes(fd, len, FD_READ);
+        fd_bytes(fd, len, IoDirection::Read);
 
         assert(N);
         ++(*N);
@@ -1740,7 +1732,7 @@ idnsSendSlaveAAAAQuery(idns_query *master)
     memcpy(q->orig, master->orig, sizeof(q->orig));
     q->master = master;
     q->query_id = idnsQueryID();
-    q->sz = rfc3596BuildAAAAQuery(q->name, q->buf, sizeof(q->buf), q->query_id, &q->query, Config.dns.packet_max);
+    q->sz = rfc3596BuildAAAAQuery(q->name, q->buf, sizeof(q->buf), q->query_id, &q->query);
 
     debugs(78, 3, "buf is " << q->sz << " bytes for " << q->name <<
            ", id = 0x" << asHex(q->query_id));
@@ -1796,8 +1788,7 @@ idnsALookup(const char *name, IDNSCB * callback, void *data)
         debugs(78, 3, "idnsALookup: searchpath used for " << q->name);
     }
 
-    // see EDNS notes at top of file why this sends 0
-    q->sz = rfc3596BuildAQuery(q->name, q->buf, sizeof(q->buf), q->query_id, &q->query, 0);
+    q->sz = rfc3596BuildAQuery(q->name, q->buf, sizeof(q->buf), q->query_id, &q->query);
 
     if (q->sz < 0) {
         /* problem with query data -- query not sent */
@@ -1829,12 +1820,11 @@ idnsPTRLookup(const Ip::Address &addr, IDNSCB * callback, void *data)
     if (addr.isIPv6()) {
         struct in6_addr addr6;
         addr.getInAddr(addr6);
-        q->sz = rfc3596BuildPTRQuery6(addr6, q->buf, sizeof(q->buf), q->query_id, &q->query, Config.dns.packet_max);
+        q->sz = rfc3596BuildPTRQuery6(addr6, q->buf, sizeof(q->buf), q->query_id, &q->query);
     } else {
         struct in_addr addr4;
         addr.getInAddr(addr4);
-        // see EDNS notes at top of file why this sends 0
-        q->sz = rfc3596BuildPTRQuery4(addr4, q->buf, sizeof(q->buf), q->query_id, &q->query, 0);
+        q->sz = rfc3596BuildPTRQuery4(addr4, q->buf, sizeof(q->buf), q->query_id, &q->query);
     }
 
     if (q->sz < 0) {

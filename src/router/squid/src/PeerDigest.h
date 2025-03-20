@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -49,7 +49,7 @@ public:
     DigestFetchState(PeerDigest *,HttpRequest *);
     ~DigestFetchState();
 
-    PeerDigest *pd;
+    CbcPointer<PeerDigest> pd;
     StoreEntry *entry;
     StoreEntry *old_entry;
     store_client *sc;
@@ -79,9 +79,13 @@ public:
     PeerDigest(CachePeer *);
     ~PeerDigest();
 
-    CachePeer *peer = nullptr;          /**< pointer back to peer structure, argh */
+    /// reacts to digest transfer completion
+    /// \prec DigestFetchState stats were finalized (by calling peerDigestFetchSetStats())
+    void noteFetchFinished(const DigestFetchState &, const char *outcomeDescription, bool sawError);
+
+    CbcPointer<CachePeer> peer; ///< pointer back to peer structure, argh
     CacheDigest *cd = nullptr;            /**< actual digest structure */
-    SBuf host;                        ///< copy of peer->host
+    const SBuf host; ///< copy of peer->host
     const char *req_result = nullptr;     /**< text status of the last request */
 
     struct {
@@ -115,7 +119,6 @@ public:
 
 extern const Version CacheDigestVer;
 
-void peerDigestCreate(CachePeer * p);
 void peerDigestNeeded(PeerDigest * pd);
 void peerDigestNotePeerGone(PeerDigest * pd);
 void peerDigestStatsReport(const PeerDigest * pd, StoreEntry * e);

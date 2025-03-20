@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -11,6 +11,7 @@
 #ifndef SQUID_SRC_SNMP_FORWARDER_H
 #define SQUID_SRC_SNMP_FORWARDER_H
 
+#include "ip/forward.h"
 #include "ipc/Forwarder.h"
 #include "snmp/Pdu.h"
 #include "snmp/Session.h"

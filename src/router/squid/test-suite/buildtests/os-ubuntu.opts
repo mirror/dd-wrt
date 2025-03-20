@@ -1,0 +1,67 @@
+#!/bin/sh
+#
+## Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+##
+## Squid software is distributed under GPLv2+ license and includes
+## contributions from numerous individuals and organizations.
+## Please see the COPYING and CONTRIBUTORS files for details.
+##
+
+#
+MAKETEST="check installcheck uninstallcheck"
+#
+# Configure options currently used by Ubuntu Packaged Release
+#
+# This is to test any release build against what the package maintainers are seeing
+#
+# NP: DISTCHECK_CONFIGURE_FLAGS is a magic automake macro for the
+#     distcheck target recursive tests beteen scripted runs.
+#     we use it to perform the same duty between our nested scripts.
+DISTCHECK_CONFIGURE_FLAGS=" \
+	--build=i486-linux-gnu \
+	--prefix=/usr \
+	--includedir="\${prefix}/include" \
+	--mandir="\${prefix}/share/man" \
+	--infodir="\${prefix}/share/info" \
+	--sysconfdir=/etc \
+	--localstatedir=/var \
+	--libexecdir="\${prefix}/lib/squid3" \
+	--srcdir=. \
+	--datadir=/usr/share/squid3 \
+	--sysconfdir=/etc/squid3 \
+	--mandir=/usr/share/man \
+	--with-default-user=proxy \
+ \
+	--disable-maintainer-mode \
+	--disable-dependency-tracking \
+	--enable-inline \
+	--enable-async-io=8 \
+	--enable-storeio="ufs,aufs,coss,diskd,null" \
+	--enable-removal-policies="lru,heap" \
+	--enable-poll \
+	--enable-delay-pools \
+	--enable-cache-digests \
+	--enable-snmp \
+	--enable-htcp \
+	--enable-select \
+	--enable-carp \
+	--with-large-files \
+	--enable-underscores \
+	--enable-icap-client \
+	--enable-auth="basic,digest,ntlm" \
+	--enable-auth-basic="LDAP,MSNT,NCSA,PAM,SASL,SMB,YP,getpwnam,multi-domain-NTLM" \
+	--enable-auth-ntlm="SMB" \
+	--enable-auth-digest="ldap,password" \
+	--enable-external-acl-helpers="ip_user,ldap_group,session,unix_group,wbinfo_group" \
+	--with-filedescriptors=65536 \
+	--enable-epoll \
+	--enable-linux-netfilter \
+"
+
+# Ubuntu for some reason built using 'cc' instead of gcc
+export CC="/usr/bin/cc"
+export CXX="g++"
+export CFLAGS="-g -O2 -g -Wall -O2"
+export CXXFLAGS="-g -O2 -g -Wall -O2"
+export CPPFLAGS=""
+export LDFLAGS="-Wl,-Bsymbolic-functions"

@@ -1,4 +1,4 @@
-## Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2023 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
@@ -10,8 +10,8 @@ AC_DEFUN([SQUID_CHECK_LIBIPHLPAPI],[
     SQUID_STATE_SAVE(iphlpapi)
     LIBS="$LIBS -liphlpapi"
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-#include <windows.h>
 #include <winsock2.h>
+#include <windows.h>
 #include <iphlpapi.h>
 ]], [[
   MIB_IPNETTABLE i;

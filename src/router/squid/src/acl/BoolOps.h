@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -24,10 +24,10 @@ class NotNode: public InnerNode
     MEMPROXY_CLASS(NotNode);
 
 public:
-    explicit NotNode(ACL *acl);
+    explicit NotNode(Acl::Node *acl);
 
 private:
-    /* ACL API */
+    /* Acl::Node API */
     char const *typeString() const override;
     void parse() override;
     SBufList dump() const override;
@@ -64,7 +64,7 @@ public:
     /// on its action
     virtual bool bannedAction(ACLChecklist *, Nodes::const_iterator) const;
 
-    /* ACL API */
+    /* Acl::Node API */
     char const *typeString() const override;
     void parse() override;
 

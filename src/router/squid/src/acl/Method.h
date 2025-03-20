@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,17 +9,23 @@
 #ifndef SQUID_SRC_ACL_METHOD_H
 #define SQUID_SRC_ACL_METHOD_H
 
-#include "acl/Strategy.h"
+#include "acl/Data.h"
+#include "acl/ParameterizedNode.h"
 #include "http/RequestMethod.h"
 
-/// \ingroup ACLAPI
-class ACLMethodStrategy : public ACLStrategy<HttpRequestMethod>
+namespace Acl
 {
 
+/// a "method" ACL
+class MethodCheck: public ParameterizedNode< ACLData<HttpRequestMethod> >
+{
 public:
-    int match (ACLData<MatchType> * &, ACLFilledChecklist *) override;
+    /* Acl::Node API */
+    int match(ACLChecklist *) override;
     bool requiresRequest() const override {return true;}
 };
+
+} // namespace Acl
 
 #endif /* SQUID_SRC_ACL_METHOD_H */
 

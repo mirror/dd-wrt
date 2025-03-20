@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -101,7 +101,7 @@ Ipc::StoreMap::forgetWritingEntry(sfileno fileno)
 }
 
 const Ipc::StoreMap::Anchor *
-Ipc::StoreMap::openOrCreateForReading(const cache_key *const key, sfileno &fileno, const StoreEntry &entry)
+Ipc::StoreMap::openOrCreateForReading(const cache_key *const key, sfileno &fileno)
 {
     debugs(54, 5, "opening/creating entry with key " << storeKeyText(key)
            << " for reading " << path);
@@ -116,7 +116,7 @@ Ipc::StoreMap::openOrCreateForReading(const cache_key *const key, sfileno &filen
     // the competing openOrCreateForReading() workers race to create a new entry
     idx = fileNoByKey(key);
     if (auto anchor = openForWritingAt(idx)) {
-        anchor->set(entry, key);
+        anchor->setKey(key);
         anchor->lock.switchExclusiveToShared();
         // race ended
         assert(anchor->complete());

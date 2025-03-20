@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -8,12 +8,15 @@
 
 #include "squid.h"
 #include "acl/Gadgets.h"
+#include "base/PrecomputedCodeContext.h"
 #include "CachePeer.h"
 #include "defines.h"
 #include "neighbors.h"
 #include "NeighborTypeDomainList.h"
 #include "pconn.h"
+#include "PeerDigest.h"
 #include "PeerPoolMgr.h"
+#include "sbuf/Stream.h"
 #include "SquidConfig.h"
 #include "util.h"
 
@@ -21,7 +24,9 @@ CBDATA_CLASS_INIT(CachePeer);
 
 CachePeer::CachePeer(const char * const hostname):
     name(xstrdup(hostname)),
-    host(xstrdup(hostname))
+    host(xstrdup(hostname)),
+    tlsContext(secure, sslContext),
+    probeCodeContext(new PrecomputedCodeContext("cache_peer probe", ToSBuf("current cache_peer probe: ", *this)))
 {
     Tolower(host); // but .name preserves original spelling
 }
@@ -40,11 +45,9 @@ CachePeer::~CachePeer()
     aclDestroyAccessList(&access);
 
 #if USE_CACHE_DIGESTS
-    cbdataReferenceDone(digest);
+    delete digest;
     xfree(digest_url);
 #endif
-
-    delete next;
 
     xfree(login);
 
@@ -54,6 +57,14 @@ CachePeer::~CachePeer()
     PeerPoolMgr::Checkpoint(standby.mgr, "peer gone");
 
     xfree(domain);
+}
+
+Security::FuturePeerContext *
+CachePeer::securityContext()
+{
+    if (secure.encryptTransport)
+        return &tlsContext;
+    return nullptr;
 }
 
 void
@@ -68,20 +79,11 @@ CachePeer::noteSuccess()
     }
 }
 
-void
-CachePeer::noteFailure(const Http::StatusCode code)
-{
-    if (Http::Is4xx(code))
-        return; // this failure is not our fault
-
-    countFailure();
-}
-
 // TODO: Require callers to detail failures instead of using one (and often
 // misleading!) "connection failed" phrase for all of them.
 /// noteFailure() helper for handling failures attributed to this peer
 void
-CachePeer::countFailure()
+CachePeer::noteFailure()
 {
     stats.last_connect_failure = squid_curtime;
     if (tcp_up > 0)

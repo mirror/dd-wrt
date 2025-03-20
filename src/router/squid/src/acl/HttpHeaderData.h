@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -14,14 +14,14 @@
 #include "sbuf/SBuf.h"
 #include "SquidString.h"
 
-class ACLHTTPHeaderData : public ACLData<HttpHeader*>
+class ACLHTTPHeaderData: public ACLData<const HttpHeader &>
 {
     MEMPROXY_CLASS(ACLHTTPHeaderData);
 
 public:
     ACLHTTPHeaderData();
     ~ACLHTTPHeaderData() override;
-    bool match(HttpHeader* hdr) override;
+    bool match(const HttpHeader &) override;
     SBufList dump() const override;
     void parse() override;
     bool empty() const override;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -20,7 +20,7 @@
 #include "HttpHdrContRange.h"
 #include "HttpHdrScTarget.h" // also includes HttpHdrSc.h
 #include "HttpHeader.h"
-#include "HttpHeaderFieldInfo.h"
+#include "HttpHeaderFieldStat.h"
 #include "HttpHeaderStat.h"
 #include "HttpHeaderTools.h"
 #include "MemBuf.h"
@@ -135,7 +135,6 @@ httpHeaderInitModule(void)
     assert(HttpHeaderStats[hoEnd-1].label && "HttpHeaderStats created with all elements");
 
     /* init dependent modules */
-    httpHdrCcInitModule();
     httpHdrScInitModule();
 
     httpHeaderRegisterWithCacheManager();
@@ -144,12 +143,6 @@ httpHeaderInitModule(void)
 /*
  * HttpHeader Implementation
  */
-
-HttpHeader::HttpHeader() : owner (hoNone), len (0), conflictingContentLength_(false)
-{
-    entries.reserve(32);
-    httpHeaderMaskInit(&mask, 0);
-}
 
 HttpHeader::HttpHeader(const http_hdr_owner_type anOwner): owner(anOwner), len(0), conflictingContentLength_(false)
 {
@@ -758,32 +751,7 @@ HttpHeader::addEntry(HttpHeaderEntry * e)
 
     entries.push_back(e);
 
-    /* increment header length, allow for ": " and crlf */
-    len += e->name.length() + 2 + e->value.size() + 2;
-}
-
-/* inserts an entry;
- * does not call e->clone() so one should not reuse "*e"
- */
-void
-HttpHeader::insertEntry(HttpHeaderEntry * e)
-{
-    assert(e);
-    assert(any_valid_header(e->id));
-
-    debugs(55, 7, this << " adding entry: " << e->id << " at " << entries.size());
-
-    // Http::HdrType::BAD_HDR is filtered out by assert_any_valid_header
-    if (CBIT_TEST(mask, e->id)) {
-        ++ headerStatsTable[e->id].repCount;
-    } else {
-        CBIT_SET(mask, e->id);
-    }
-
-    entries.insert(entries.begin(),e);
-
-    /* increment header length, allow for ": " and crlf */
-    len += e->name.length() + 2 + e->value.size() + 2;
+    len += e->length();
 }
 
 bool
@@ -977,7 +945,7 @@ void
 HttpHeader::addVia(const AnyP::ProtocolVersion &ver, const HttpHeader *from)
 {
     // TODO: do not add Via header for messages where Squid itself
-    // generated the message (i.e., Downloader or ESI) there should be no Via header added at all.
+    // generated the message (i.e., Downloader) there should be no Via header added at all.
 
     if (Config.onoff.via) {
         SBuf buf;

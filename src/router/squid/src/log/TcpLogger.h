@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -13,9 +13,13 @@
 #include "base/JobWait.h"
 #include "comm/forward.h"
 #include "ip/Address.h"
+#include "log/forward.h"
 
 #include <list>
 
+class CommCloseCbParams;
+class CommConnectCbParams;
+class CommIoCbParams;
 class MemBlob;
 typedef RefCount<MemBlob> MemBlobPointer;
 

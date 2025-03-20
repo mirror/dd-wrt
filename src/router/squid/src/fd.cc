@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -223,19 +223,21 @@ fd_note(int fd, const char *s)
 }
 
 void
-fd_bytes(int fd, int len, unsigned int type)
+fd_bytes(const int fd, const int len, const IoDirection direction)
 {
     fde *F = &fd_table[fd];
 
     if (len < 0)
         return;
 
-    assert(type == FD_READ || type == FD_WRITE);
-
-    if (type == FD_READ)
+    switch (direction) {
+    case IoDirection::Read:
         F->bytes_read += len;
-    else
+        break;
+    case IoDirection::Write:
         F->bytes_written += len;
+        break;
+    }
 }
 
 void
@@ -250,7 +252,7 @@ fdDumpOpen(void)
         if (!F->flags.open)
             continue;
 
-        if (i == fileno(debug_log))
+        if (i == fileno(DebugStream()))
             continue;
 
         debugs(51, Important(17), "Open FD "<< std::left<< std::setw(10) <<

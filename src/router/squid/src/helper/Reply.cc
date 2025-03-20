@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -279,7 +279,11 @@ Helper::operator <<(std::ostream &os, const Reply &r)
     // dump the helper key=pair "notes" list
     if (!r.notes.empty()) {
         os << ", notes={";
-        os << r.notes.toString("; ");
+        // This simple format matches what most helpers use and is sufficient
+        // for debugging nearly any helper response, but the result differs from
+        // raw helper responses when the helper quotes values or escapes special
+        // characters. See also: Helper::Reply::parseResponseKeys().
+        r.notes.print(os, "=", " ");
         os << "}";
     }
 

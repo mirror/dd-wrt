@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -29,9 +29,8 @@ TypedOption<CharacterSetOptionValue>::import(const SBuf &rawValue) const
 }
 
 template <>
-inline
-void
-TypedOption<CharacterSetOptionValue>::print(std::ostream &os) const
+inline void
+TypedOption<CharacterSetOptionValue>::printValue(std::ostream &os) const
 {
     recipient_->value.printChars(os); // TODO: Quote if needed.
 }

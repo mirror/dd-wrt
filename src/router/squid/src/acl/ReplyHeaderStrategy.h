@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,26 +9,34 @@
 #ifndef SQUID_SRC_ACL_REPLYHEADERSTRATEGY_H
 #define SQUID_SRC_ACL_REPLYHEADERSTRATEGY_H
 
-#include "acl/Acl.h"
 #include "acl/Data.h"
 #include "acl/FilledChecklist.h"
-#include "acl/Strategy.h"
+#include "acl/ParameterizedNode.h"
+#include "acl/ReplyHeaderStrategy.h"
 #include "HttpReply.h"
 
-template <Http::HdrType header>
-class ACLReplyHeaderStrategy : public ACLStrategy<char const *>
+namespace Acl
 {
 
+/// matches the value of a given reply header (e.g., "rep_mime_type" ACL)
+template <Http::HdrType header>
+class ReplyHeaderCheck: public ParameterizedNode< ACLData<const char *> >
+{
 public:
-    int match (ACLData<char const *> * &, ACLFilledChecklist *) override;
+    /* Acl::Node API */
+    int match(ACLChecklist *) override;
     bool requiresReply() const override {return true;}
 };
 
+} // namespace Acl
+
 template <Http::HdrType header>
 int
-ACLReplyHeaderStrategy<header>::match (ACLData<char const *> * &data, ACLFilledChecklist *checklist)
+Acl::ReplyHeaderCheck<header>::match(ACLChecklist * const ch)
 {
-    char const *theHeader = checklist->reply->header.getStr(header);
+    const auto checklist = Filled(ch);
+
+    const auto theHeader = checklist->reply().header.getStr(header);
 
     if (nullptr == theHeader)
         return 0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -12,8 +12,9 @@
 #include "base/DelayedAsyncCalls.h"
 #include "dlink.h"
 #include "http/RequestMethod.h"
+#include "HttpReply.h"
 #include "RemovalPolicy.h"
-#include "SquidString.h"
+#include "sbuf/SBuf.h"
 #include "stmem.h"
 #include "store/forward.h"
 #include "StoreIOBuffer.h"
@@ -167,19 +168,26 @@ public:
 
     SwapOut swapout;
 
-    /* TODO: Remove this change-minimizing hack */
-    using Io = Store::IoStatus;
-    static constexpr Io ioUndecided = Store::ioUndecided;
-    static constexpr Io ioReading = Store::ioReading;
-    static constexpr Io ioWriting = Store::ioWriting;
-    static constexpr Io ioDone = Store::ioDone;
-
     /// State of an entry with regards to the [shared] in-transit table.
     class XitTable
     {
     public:
+        /// associate our StoreEntry with a Transients entry at the given index
+        void open(const int32_t anIndex, const Store::IoStatus anIo)
+        {
+            index = anIndex;
+            io = anIo;
+        }
+
+        /// stop associating our StoreEntry with a Transients entry
+        void close()
+        {
+            index = -1;
+            io = Store::ioDone;
+        }
+
         int32_t index = -1; ///< entry position inside the in-transit table
-        Io io = ioUndecided; ///< current I/O state
+        Store::IoStatus io = Store::ioUndecided; ///< current I/O state
     };
     XitTable xitTable; ///< current [shared] memory caching state for the entry
 
@@ -190,7 +198,7 @@ public:
         int32_t index = -1; ///< entry position inside the memory cache
         int64_t offset = 0; ///< bytes written/read to/from the memory cache so far
 
-        Io io = ioUndecided; ///< current I/O state
+        Store::IoStatus io = Store::ioUndecided; ///< current I/O state
     };
     MemCache memCache; ///< current [shared] memory caching state for the entry
 
@@ -219,8 +227,8 @@ private:
     HttpReplyPointer reply_; ///< \see baseReply()
     HttpReplyPointer updatedReply_; ///< \see updatedReply()
 
-    mutable String storeId_; ///< StoreId for our entry (usually request URI)
-    mutable String logUri_;  ///< URI used for logging (usually request URI)
+    mutable SBuf storeId_; ///< StoreId for our entry (usually request URI)
+    mutable SBuf logUri_;  ///< URI used for logging (usually request URI)
 
     DelayedAsyncCalls deferredReads;
 };

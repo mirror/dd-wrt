@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -17,11 +17,6 @@ enum fd_type {
     FD_PIPE,
     FD_MSGHDR,
     FD_UNKNOWN
-};
-
-enum {
-    FD_READ,
-    FD_WRITE
 };
 
 typedef enum {
@@ -203,8 +198,7 @@ typedef enum {
     DIGEST_READ_NONE,
     DIGEST_READ_REPLY,
     DIGEST_READ_CBLOCK,
-    DIGEST_READ_MASK,
-    DIGEST_READ_DONE
+    DIGEST_READ_MASK
 } digest_read_state_t;
 
 /* CygWin & Windows NT Port */

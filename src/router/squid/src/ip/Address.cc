@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -39,6 +39,16 @@
             printf(" %x", mSocketAddr_.sin6_addr.s6_addr[i]); \
         } printf("\n"); assert(b); \
     }
+
+std::optional<Ip::Address>
+Ip::Address::Parse(const char * const raw)
+{
+    Address tmp;
+    // TODO: Merge with lookupHostIP() after removing DNS lookups from Ip.
+    if (tmp.lookupHostIP(raw, true))
+        return tmp;
+    return std::nullopt;
+}
 
 int
 Ip::Address::cidr() const
@@ -99,6 +109,16 @@ Ip::Address::applyMask(Ip::Address const &mask_addr)
     }
 
     return changes;
+}
+
+void
+Ip::Address::turnMaskedBitsOn(const Address &mask)
+{
+    const auto addressWords = reinterpret_cast<uint32_t*>(&mSocketAddr_.sin6_addr);
+    const auto maskWords = reinterpret_cast<const uint32_t*>(&mask.mSocketAddr_.sin6_addr);
+    const auto len = sizeof(mSocketAddr_.sin6_addr)/sizeof(uint32_t);
+    for (size_t i = 0; i < len; ++i)
+        addressWords[i] |= ~maskWords[i];
 }
 
 void

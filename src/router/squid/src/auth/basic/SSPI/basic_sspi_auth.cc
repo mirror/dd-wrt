@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -42,12 +42,6 @@
 #include <getopt.h>
 #endif
 
-/* Check if we try to compile on a Windows Platform */
-#if !_SQUID_WINDOWS_
-/* NON Windows Platform !!! */
-#error NON WINDOWS PLATFORM
-#endif
-
 static char NTGroup[256];
 char * NTAllowedGroup;
 char * NTDisAllowedGroup;
@@ -73,7 +67,7 @@ usage(const char *name)
             name);
 }
 
-void
+static void
 process_options(int argc, char *argv[])
 {
     int opt;

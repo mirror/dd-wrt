@@ -1,4 +1,4 @@
-# Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+# Copyright (C) 1996-2023 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
@@ -99,5 +99,4 @@ AC_DEFUN([SQUID_CHECK_LDAP_API],[
   AC_SEARCH_LIBS([ldap_start_tls_s],[$LIBLDAP_NAMES],[
     AC_DEFINE(HAVE_LDAP_START_TLS_S,1,[Define to 1 if you have ldap_start_tls_s])
   ])
-  SQUID_STATE_ROLLBACK(squid_ldap_state)
 ])

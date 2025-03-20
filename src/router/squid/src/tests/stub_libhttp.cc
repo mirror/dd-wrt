@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -37,7 +37,7 @@ bool ContentLengthInterpreter::checkList(const String &) STUB_RETVAL(false)
 #include "http/Message.h"
 namespace Http
 {
-Message::Message(http_hdr_owner_type) {STUB}
+Message::Message(const http_hdr_owner_type owner): header(owner) {STUB}
 Message::~Message() {STUB}
 void Message::packInto(Packable *, bool) const STUB
 void Message::setContentLength(int64_t) STUB

@@ -1,0 +1,112 @@
+## Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+##
+## Squid software is distributed under GPLv2+ license and includes
+## contributions from numerous individuals and organizations.
+## Please see the COPYING and CONTRIBUTORS files for details.
+##
+
+#
+# Minimal configuration options.
+# - Everthing that can be disabled is
+# - Everyhing that can be done without is
+#
+#
+# Check - everything MUST work at this level
+# distcheck is not possible here since it drops our configure options...
+MAKETEST="distcheck"
+#
+#
+# The options for this level can be easily generated semi-automatically from configure.ac by:
+#	grep -E "^AC_ARG_ENABLE" ./configure.ac | grep -o -E "[0-9a-z-]+[,]" | grep -o -E "[^,]+" >disable.opts
+# followed by insertion of '	--disable-' and '\' strings
+#
+# 	grep -E "^AC_ARG_WITH" ./configure.ac | grep -o -E "[0-9a-z-]+[,]" | grep -o -E "[^,]+" >without.opts
+# followed by insertion of '	--without-' and ' \' strings
+#
+# sometimes it's just too automatic.. Following options should be just stripped
+#
+#   --without-default-user \
+#   --without-aufs-threads \
+#   --without-filedescriptors \
+#   --without-build-environment \
+#
+# NP: DISTCHECK_CONFIGURE_FLAGS is a magic automake macro for the
+#     distcheck target recursive tests beteen scripted runs.
+#     we use it to perform the same duty between our nested scripts.
+DISTCHECK_CONFIGURE_FLAGS=" \
+	--disable-build-info \
+	--disable-shared \
+	--disable-xmalloc-statistics \
+	--disable-async-io \
+	--disable-storeio \
+	--disable-disk-io \
+	--disable-removal-policies \
+	--disable-icmp \
+	--disable-delay-pools \
+	--disable-icap-client \
+	--disable-ecap \
+	--disable-useragent-log \
+	--disable-referer-log \
+	--disable-wccp \
+	--disable-wccpv2 \
+	--disable-snmp \
+	--disable-eui \
+	--disable-htcp \
+	--disable-ssl-crtd \
+	--disable-forw-via-db \
+	--disable-cache-digests \
+	--disable-poll \
+	--disable-select \
+	--disable-kqueue \
+	--disable-epoll \
+	--disable-http-violations \
+	--disable-ipfw-transparent \
+	--disable-ipf-transparent \
+	--disable-pf-transparent \
+	--disable-linux-netfilter \
+	--disable-linux-tproxy \
+	--disable-follow-x-forwarded-for \
+	--disable-default-hostsfile \
+	--disable-auth \
+	--disable-basic-auth-helpers \
+	--disable-ntlm-auth-helpers \
+	--disable-negotiate-auth-helpers \
+	--disable-digest-auth-helpers \
+	--disable-ntlm-fail-open \
+	--disable-external-acl-helpers \
+	--disable-url-rewrite-helpers \
+	--disable-mempools \
+	--disable-win32-service \
+	--disable-unlinkd \
+	--disable-stacktraces \
+	--disable-cpu-profiling \
+	--disable-vary \
+	--disable-ipv6 \
+	--disable-zph-qos \
+	--disable-auto-locale \
+	--disable-translation \
+	--disable-optimizations \
+ \
+	--without-pthreads \
+	--without-aio \
+	--without-cap \
+	--without-dl \
+	--without-gnugss \
+	--without-heimdal-krb5 \
+	--without-large-files \
+	--without-ldap \
+	--without-mit-krb5 \
+	--without-nettle \
+	--without-valgrind-debug \
+	--without-ipv6-split-stack \
+	--without-dns-cname \
+	--without-gnutls \
+	--without-openssl \
+	--without-po2html \
+	--without-psapi \
+	--without-systemd \
+	--without-tdb \
+	"
+
+# Fix the distclean testing.
+export DISTCHECK_CONFIGURE_FLAGS

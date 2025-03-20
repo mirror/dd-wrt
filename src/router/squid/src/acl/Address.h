@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -10,6 +10,7 @@
 #define SQUID_SRC_ACL_ADDRESS_H
 
 #include "acl/Acl.h"
+#include "cbdata.h"
 #include "ip/Address.h"
 
 namespace Acl

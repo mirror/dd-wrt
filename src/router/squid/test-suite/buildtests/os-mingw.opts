@@ -1,0 +1,43 @@
+#!/bin/sh
+#
+## Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+##
+## Squid software is distributed under GPLv2+ license and includes
+## contributions from numerous individuals and organizations.
+## Please see the COPYING and CONTRIBUTORS files for details.
+##
+
+#
+MAKETEST="check installcheck uninstallcheck"
+#
+#
+# Configure options currently supported by MinGW environment
+#
+# NP: DISTCHECK_CONFIGURE_FLAGS is a magic automake macro for the
+#     distcheck target recursive tests beteen scripted runs.
+#     we use it to perform the same duty between our nested scripts.
+DISTCHECK_CONFIGURE_FLAGS=" \
+	--prefix=c:/squid \
+	--enable-storeio="ufs,aufs" \
+	--enable-removal-policies="lru,heap" \
+	--enable-delay-pools \
+	--enable-cache-digests \
+	--enable-snmp \
+	--enable-htcp \
+	--enable-carp \
+	--enable-useragent-log \
+	--enable-referer-log \
+	--disable-wccp \
+	--disable-wccpv2 \
+	--enable-arp-acl \
+	--with-large-files \
+	--enable-icap-client \
+	--enable-forw-via-db \
+	--enable-icmp \
+	--enable-forw-via-db \
+	--enable-follow-x-forwarded-for \
+	--enable-cpu-profiling \
+	--enable-win32-service \
+	--enable-default-hostsfile=none \
+	--enable-disk-io="Blocking,AIO,DiskThreads" \
+"

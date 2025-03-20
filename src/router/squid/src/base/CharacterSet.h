@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -117,6 +117,9 @@ public:
     // HTTP character sets, RFC 7235
     // token68 (internal characters only, excludes '=' terminator)
     static const CharacterSet TOKEN68C;
+
+    /// allowed URI characters that do not have a reserved purpose, RFC 3986
+    static const CharacterSet &RFC3986_UNRESERVED();
 
 private:
     /** index of characters in this set

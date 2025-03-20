@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,11 +9,13 @@
 #ifndef SQUID_SRC_LOADABLEMODULES_H
 #define SQUID_SRC_LOADABLEMODULES_H
 
+#include "sbuf/forward.h"
+
 // TODO: add reporting for cachemgr
 // TODO: add reconfiguration support
 
-class wordlist;
-void LoadableModulesConfigure(const wordlist *names);
+/// dynamically load named libraries, in the listed order
+void LoadableModulesConfigure(const SBufList &);
 
 #endif /* SQUID_SRC_LOADABLEMODULES_H */
 

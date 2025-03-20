@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -33,8 +33,6 @@
 
 #define FQDN_LOOKUP_IF_MISS 0x01
 #define FQDN_MAX_NAMES 5
-
-#define USER_IDENT_SZ 64
 
 #define IP_LOOKUP_IF_MISS   0x01
 

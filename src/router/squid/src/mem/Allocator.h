@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -28,6 +28,10 @@ public:
         label(aLabel),
         objectSize(RoundedSize(sz))
     {}
+
+    /// change the allocator description if we were only able to provide an
+    /// approximate description at object construction time
+    void relabel(const char * const aLabel) { label = aLabel; }
 
     // TODO make this method const
     /**
@@ -102,7 +106,7 @@ public:
     // XXX: no counter for the number of free() calls avoided
 
     /// brief description of objects returned by alloc()
-    const char *const label;
+    const char *label;
 
     /// the size (in bytes) of objects managed by this allocator
     const size_t objectSize;

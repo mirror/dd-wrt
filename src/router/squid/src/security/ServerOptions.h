@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -45,7 +45,7 @@ public:
     void parse(const char *) override;
     void clear() override {*this = ServerOptions();}
     Security::ContextPointer createBlankContext() const override;
-    void dumpCfg(Packable *, const char *pfx) const override;
+    void dumpCfg(std::ostream &, const char *pfx) const override;
 
     /// initialize all server contexts as-needed and load PEM files.
     /// if none can be created this may do nothing.
@@ -73,7 +73,7 @@ public:
 
 #if USE_OPENSSL
     bool generateHostCertificates = true; ///< dynamically make host cert
-#elif USE_GNUTLS
+#elif HAVE_LIBGNUTLS
     // TODO: GnuTLS does implement TLS server connections so the cert
     // generate vs static choice can be reached in the code now.
     // But this feature is not fully working implemented so must not

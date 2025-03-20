@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -1103,7 +1103,7 @@ Ftp::Server::writeErrorReply(const HttpReply *reply, const int scode)
     if (request->error)
         mb.appendf("%i-%s\r\n", scode, errorPageName(request->error.category));
 
-    if (const auto &detail = request->error.detail) {
+    for (const auto &detail: request->error.details) {
         mb.appendf("%i-Error-Detail-Brief: " SQUIDSBUFPH "\r\n", scode, SQUIDSBUFPRINT(detail->brief()));
         mb.appendf("%i-Error-Detail-Verbose: " SQUIDSBUFPH "\r\n", scode, SQUIDSBUFPRINT(detail->verbose(request)));
     }
@@ -1539,7 +1539,7 @@ Ftp::Server::handleUploadRequest(String &, String &)
     if (Config.accessList.forceRequestBodyContinuation) {
         ClientHttpRequest *http = pipeline.front()->http;
         HttpRequest *request = http->request;
-        ACLFilledChecklist bodyContinuationCheck(Config.accessList.forceRequestBodyContinuation, request, nullptr);
+        ACLFilledChecklist bodyContinuationCheck(Config.accessList.forceRequestBodyContinuation, request);
         bodyContinuationCheck.al = http->al;
         bodyContinuationCheck.syncAle(request, http->log_uri);
         if (bodyContinuationCheck.fastCheck().allowed()) {

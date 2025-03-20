@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -81,6 +81,9 @@ public:
     size_t getStats(PoolStats &stats);
 
     void zeroBlocks(bool doIt);
+
+    /// \copydoc Mem::Allocator::relabel()
+    void relabel(const char * const aLabel);
 
 private:
     Allocator *getAllocator() const;

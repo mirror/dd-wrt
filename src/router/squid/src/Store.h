@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -26,10 +26,6 @@
 #include "StoreIOBuffer.h"
 #include "StoreStats.h"
 
-#if USE_SQUID_ESI
-#include "esi/Element.h"
-#endif
-
 #include <ostream>
 
 class AsyncCall;
@@ -55,6 +51,9 @@ public:
     /// \retval nullptr when mem_obj does not exist
     /// \see MemObject::freshestReply()
     const HttpReply *hasFreshestReply() const { return mem_obj ? &mem_obj->freshestReply() : nullptr; }
+
+    /// whether this entry has access to [deserialized] [HTTP] response headers
+    bool hasParsedReplyHeader() const;
 
     void write(StoreIOBuffer);
 
@@ -250,10 +249,7 @@ public:
 
     void *operator new(size_t byteCount);
     void operator delete(void *address);
-#if USE_SQUID_ESI
 
-    ESIElement::Pointer cachedESITree;
-#endif
     int64_t objectLen() const { return mem().object_sz; }
     int64_t contentLen() const { return objectLen() - mem().baseReply().hdr_sz; }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -99,6 +99,7 @@ public:
     typedef MemBlob::size_type size_type;
     typedef SBufIterator const_iterator;
     typedef SBufReverseIterator const_reverse_iterator;
+    using value_type = char;
     static const size_type npos = 0xffffffff; // max(uint32_t)
 
     /// Maximum size of a SBuf. By design it MUST be < MAX(size_type)/2. Currently 256Mb.
@@ -192,8 +193,11 @@ public:
      */
     SBuf& append(const SBuf & S);
 
+    /// \copydoc push_back(char)
+    SBuf& append(const char c) { push_back(c); return *this; }
+
     /// Append a single character. The character may be NUL (\0).
-    SBuf& append(const char c);
+    void push_back(char);
 
     /** Append operation for C-style strings.
      *

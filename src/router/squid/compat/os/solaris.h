@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -10,6 +10,12 @@
 #define SQUID_COMPAT_OS_SOLARIS_H
 
 #if _SQUID_SOLARIS_
+
+/****************************************************************************
+ *--------------------------------------------------------------------------*
+ * DO *NOT* MAKE ANY CHANGES below here unless you know what you're doing...*
+ *--------------------------------------------------------------------------*
+ ****************************************************************************/
 
 /*
  * ugly hack. System headers require wcsstr, but don't define it.
@@ -63,13 +69,6 @@ SQUIDCEXTERN int getpagesize(void);
 #if !defined(_XPG4_2) && !(defined(__EXTENSIONS__) || \
 (!defined(_POSIX_C_SOURCE) && !defined(_XOPEN_SOURCE)))
 SQUIDCEXTERN int gethostname(char *, int);
-#endif
-
-/*
- * SunStudio CC does not define C++ portability API __FUNCTION__
- */
-#if defined(__SUNPRO_CC) && !defined(__FUNCTION__)
-#define __FUNCTION__ ""
 #endif
 
 /* Bug 2500: Solaris 10/11 require s6_addr* defines. */

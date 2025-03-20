@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -58,8 +58,7 @@ Rock::IoState::~IoState()
     // assert(!readableAnchor_);
     assert(shutting_down || !writeableAnchor_);
 
-    if (callback_data)
-        cbdataReferenceDone(callback_data);
+    cbdataReferenceDone(callback_data);
     theFile = nullptr;
 
     e->unlock("rock I/O");

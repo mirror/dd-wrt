@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -12,6 +12,7 @@
 #include "acl/Acl.h"
 #include "acl/Data.h"
 #include "acl/StringData.h"
+#include "security/forward.h"
 #include "ssl/support.h"
 #include <string>
 #include <list>

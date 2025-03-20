@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -16,7 +16,7 @@
 #include "win32.h"
 
 #include <csignal>
-#if HAVE_WIN32_PSAPI
+#if HAVE_PSAPI_H
 #include <psapi.h>
 #endif
 #if HAVE_MSWSOCK_H

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -44,24 +44,6 @@
 /// \ingroup CacheManagerInternal
 #define MGR_PASSWD_SZ 128
 
-/// creates Action using supplied Action::Create method and command
-class ClassActionCreator: public Mgr::ActionCreator
-{
-public:
-    typedef Mgr::Action::Pointer Handler(const Mgr::Command::Pointer &cmd);
-
-public:
-    ClassActionCreator(Handler *aHandler): handler(aHandler) {}
-
-    Mgr::Action::Pointer create(const Mgr::Command::Pointer &cmd) const override {
-        return handler(cmd);
-    }
-
-private:
-    Handler *handler;
-};
-
-/// Registers new profiles, ignoring attempts to register a duplicate
 void
 CacheManager::registerProfile(const Mgr::ActionProfile::Pointer &profile)
 {
@@ -72,37 +54,6 @@ CacheManager::registerProfile(const Mgr::ActionProfile::Pointer &profile)
     } else {
         debugs(16, 2, "skipped duplicate profile: " << *profile);
     }
-}
-
-/**
- \ingroup CacheManagerAPI
- * Registers a C-style action, which is implemented as a pointer to a function
- * taking as argument a pointer to a StoreEntry and returning void.
- * Implemented via CacheManagerActionLegacy.
- */
-void
-CacheManager::registerProfile(char const * action, char const * desc, OBJH * handler, int pw_req_flag, int atomic)
-{
-    debugs(16, 3, "registering legacy " << action);
-    const Mgr::ActionProfile::Pointer profile = new Mgr::ActionProfile(action,
-            desc, pw_req_flag, atomic, new Mgr::FunActionCreator(handler));
-    registerProfile(profile);
-}
-
-/**
- * \ingroup CacheManagerAPI
- * Registers a C++-style action, via a pointer to a subclass of
- * a CacheManagerAction object, whose run() method will be invoked when
- * CacheManager identifies that the user has requested the action.
- */
-void
-CacheManager::registerProfile(char const * action, char const * desc,
-                              ClassActionCreator::Handler *handler,
-                              int pw_req_flag, int atomic)
-{
-    const Mgr::ActionProfile::Pointer profile = new Mgr::ActionProfile(action,
-            desc, pw_req_flag, atomic, new ClassActionCreator(handler));
-    registerProfile(profile);
 }
 
 /**
@@ -152,19 +103,6 @@ CacheManager::createRequestedAction(const Mgr::ActionParams &params)
     return cmd->profile->creator->create(cmd);
 }
 
-static const CharacterSet &
-MgrFieldChars(const AnyP::ProtocolType &protocol)
-{
-    // Deprecated cache_object:// scheme used '@' to delimit passwords
-    if (protocol == AnyP::PROTO_CACHE_OBJECT) {
-        static const CharacterSet fieldChars = CharacterSet("cache-object-field", "@?#").complement();
-        return fieldChars;
-    }
-
-    static const CharacterSet actionChars = CharacterSet("mgr-field", "?#").complement();
-    return actionChars;
-}
-
 const SBuf &
 CacheManager::WellKnownUrlPathPrefix()
 {
@@ -173,15 +111,14 @@ CacheManager::WellKnownUrlPathPrefix()
 }
 
 /**
- * define whether the URL is a cache-manager URL and parse the action
- * requested by the user. Checks via CacheManager::ActionProtection() that the
- * item is accessible by the user.
+ * Parses the action requested by the user and checks via
+ * CacheManager::ActionProtection() that the item is accessible by the user.
  *
  * Syntax:
  *
- *  scheme "://" authority [ '/squid-internal-mgr' ] path-absolute [ '@' unreserved ] '?' query-string
+ * [ scheme "://" authority ] '/squid-internal-mgr' path-absolute [ "?" query ] [ "#" fragment ]
  *
- * see RFC 3986 for definitions of scheme, authority, path-absolute, query-string
+ * see RFC 3986 for definitions of scheme, authority, path-absolute, query
  *
  * \returns Mgr::Command object with action to perform and parameters it might use
  */
@@ -190,22 +127,17 @@ CacheManager::ParseUrl(const AnyP::Uri &uri)
 {
     Parser::Tokenizer tok(uri.path());
 
-    Assure(tok.skip(WellKnownUrlPathPrefix()) || tok.skip('/'));
+    Assure(tok.skip(WellKnownUrlPathPrefix()));
 
     Mgr::Command::Pointer cmd = new Mgr::Command();
     cmd->params.httpUri = SBufToString(uri.absolute());
 
-    const auto &fieldChars = MgrFieldChars(uri.getScheme());
+    static const auto fieldChars = CharacterSet("mgr-field", "?#").complement();
 
     SBuf action;
     if (!tok.prefix(action, fieldChars)) {
-        if (uri.getScheme() == AnyP::PROTO_CACHE_OBJECT) {
-            static const SBuf menuReport("menu");
-            action = menuReport;
-        } else {
-            static const SBuf indexReport("index");
-            action = indexReport;
-        }
+        static const SBuf indexReport("index");
+        action = indexReport;
     }
     cmd->params.actionName = SBufToString(action);
 
@@ -218,12 +150,6 @@ CacheManager::ParseUrl(const AnyP::Uri &uri)
         throw TextException(ToSBuf("action '", action, "' is ", prot), Here());
     cmd->profile = profile;
 
-    SBuf passwd;
-    if (uri.getScheme() == AnyP::PROTO_CACHE_OBJECT && tok.skip('@')) {
-        (void)tok.prefix(passwd, fieldChars);
-        cmd->params.password = SBufToString(passwd);
-    }
-
     // TODO: fix when AnyP::Uri::parse() separates path?query#fragment
     SBuf params;
     if (tok.skip('?')) {
@@ -235,8 +161,7 @@ CacheManager::ParseUrl(const AnyP::Uri &uri)
         throw TextException("invalid characters in URL", Here());
     // else ignore #fragment (if any)
 
-    debugs(16, 3, "MGR request: host=" << uri.host() << ", action=" << action <<
-           ", password=" << passwd << ", params=" << params);
+    debugs(16, 3, "MGR request: host=" << uri.host() << ", action=" << action << ", params=" << params);
 
     return cmd;
 }

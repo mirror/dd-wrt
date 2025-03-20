@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -787,7 +787,17 @@ Rock::SwapDir::openStoreIO(StoreEntry &e, StoreIOState::STIOCB * const cbIo, voi
     debugs(47,5, "dir " << index << " has old filen: " <<
            asHex(sio->swap_filen).upperCase().minDigits(8));
 
-    assert(slot->sameKey(static_cast<const cache_key*>(e.key)));
+    // When StoreEntry::swap_filen for e was set by our anchorEntry(), e had a
+    // public key, but it could have gone private since then (while keeping the
+    // anchor lock). The stale anchor key is not (and cannot be) erased (until
+    // the marked-for-deletion/release anchor/entry is unlocked is recycled).
+    const auto ourAnchor = [&]() {
+        if (const auto publicKey = e.publicKey())
+            return slot->sameKey(publicKey);
+        return true; // cannot check
+    };
+    assert(ourAnchor());
+
     // For collapsed disk hits: e.swap_file_sz and slot->basics.swap_file_sz
     // may still be zero and basics.swap_file_sz may grow.
     assert(slot->basics.swap_file_sz >= e.swap_file_sz);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -124,21 +124,6 @@
 #define PRIX64 "lX"
 #endif
 #endif
-
-#ifndef PRIuSIZE
-// NP: configure checks for support of %zu and defines where possible
-#if SIZEOF_SIZE_T == 4 && _SQUID_MINGW_
-#define PRIuSIZE "I32u"
-#elif SIZEOF_SIZE_T == 4
-#define PRIuSIZE "u"
-#elif SIZEOF_SIZE_T == 8 && _SQUID_MINGW_
-#define PRIuSIZE "I64u"
-#elif SIZEOF_SIZE_T == 8
-#define PRIuSIZE "lu"
-#else
-#error size_t is not 32-bit or 64-bit
-#endif
-#endif /* PRIuSIZE */
 
 #ifndef HAVE_MODE_T
 typedef unsigned short mode_t;

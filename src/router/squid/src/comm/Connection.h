@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -172,8 +172,6 @@ public:
 
     /** COMM flags set on this connection */
     int flags;
-
-    char rfc931[USER_IDENT_SZ];
 
 #if USE_SQUID_EUI
     Eui::Eui48 remoteEui48;

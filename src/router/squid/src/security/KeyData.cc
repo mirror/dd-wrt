@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -87,7 +87,7 @@ Security::KeyData::loadCertificates()
                Debug::Extra << "problem: " << CurrentException);
     }
 
-#elif USE_GNUTLS
+#elif HAVE_LIBGNUTLS
     const char *certFilename = certFile.c_str();
     gnutls_datum_t data;
     Security::LibErrorCode x = gnutls_load_file(certFilename, &data);
@@ -152,7 +152,7 @@ Security::KeyData::loadX509PrivateKeyFromFile()
         pkey.reset();
     }
 
-#elif USE_GNUTLS
+#elif HAVE_LIBGNUTLS
     const char *keyFilename = privateKeyFile.c_str();
     gnutls_datum_t data;
     if (gnutls_load_file(keyFilename, &data) == GNUTLS_E_SUCCESS) {

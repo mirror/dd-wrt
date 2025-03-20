@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -20,7 +20,7 @@
 
 /* Debugging stuff */
 
-SQUIDCEXTERN int debug_enabled;
+extern int debug_enabled;
 
 /* the macro overload style is really a gcc-ism */
 #if defined(__GNUC__) || defined(__SUNPRO_CC)

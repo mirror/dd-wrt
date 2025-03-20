@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -15,7 +15,7 @@
 #include "acl/Checklist.h"
 #include "acl/Data.h"
 
-class ACLExtUser : public ACL
+class ACLExtUser : public Acl::Node
 {
     MEMPROXY_CLASS(ACLExtUser);
 
@@ -23,15 +23,16 @@ public:
     ACLExtUser(ACLData<char const *> *newData, char const *);
     ~ACLExtUser() override;
 
-    /* ACL API */
+    /* Acl::Node API */
     char const *typeString() const override;
     void parse() override;
     int match(ACLChecklist *checklist) override;
+    bool requiresRequest() const override { return true; }
     SBufList dump() const override;
     bool empty () const override;
 
 private:
-    /* ACL API */
+    /* Acl::Node API */
     const Acl::Options &lineOptions() override;
 
     ACLData<char const *> *data;

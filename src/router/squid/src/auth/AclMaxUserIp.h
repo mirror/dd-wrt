@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -11,10 +11,10 @@
 
 #if USE_AUTH
 
-#include "acl/Acl.h"
+#include "acl/Node.h"
 #include "auth/UserRequest.h"
 
-class ACLMaxUserIP : public ACL
+class ACLMaxUserIP : public Acl::Node
 {
     MEMPROXY_CLASS(ACLMaxUserIP);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -10,6 +10,7 @@
 
 #include "squid.h"
 #include "base/TextException.h"
+#include "comm.h"
 #include "debug/Stream.h"
 #include "fatal.h"
 #include "fd.h"
@@ -762,8 +763,10 @@ DebugFile::reset(FILE *newFile, const char *newName)
     }
     file_ = newFile; // may be nil
 
-    if (file_)
+    if (file_) {
+        commSetCloseOnExec(fileno(file_));
         fd_open(fileno(file_), FD_LOG, Debug::cache_log);
+    }
 
     xfree(name);
     name = newName ? xstrdup(newName) : nullptr;
@@ -796,11 +799,11 @@ Debug::LogMessage(const Context &context)
 
             if (!InitializeCriticalSectionAndSpinCount(dbg_mutex, 4000)) {
                 if (const auto logFile = TheLog.file()) {
-                    fprintf(logFile, "FATAL: %s: can't initialize critical section\n", __FUNCTION__);
+                    fprintf(logFile, "FATAL: %s: can't initialize critical section\n", __func__);
                     fflush(logFile);
                 }
 
-                fprintf(stderr, "FATAL: %s: can't initialize critical section\n", __FUNCTION__);
+                fprintf(stderr, "FATAL: %s: can't initialize critical section\n", __func__);
                 abort();
             } else
                 InitializeCriticalSection(dbg_mutex);
@@ -1279,7 +1282,7 @@ Debug::Context::Context(const int aSection, const int aLevel):
     forceAlert(false),
     waitingForIdle(false)
 {
-    formatStream();
+    FormatStream(buf);
 }
 
 /// Optimization: avoids new Context creation for every debugs().
@@ -1294,14 +1297,12 @@ Debug::Context::rewind(const int aSection, const int aLevel)
 
     buf.str(CompiledDebugMessageBody());
     buf.clear();
-    // debugs() users are supposed to preserve format, but
-    // some do not, so we have to waste cycles resetting it for all.
-    formatStream();
+    FormatStream(buf);
 }
 
 /// configures default formatting for the debugging stream
 void
-Debug::Context::formatStream()
+Debug::FormatStream(std::ostream &buf)
 {
     const static std::ostringstream cleanStream;
     buf.flags(cleanStream.flags() | std::ios::fixed);
@@ -1309,6 +1310,17 @@ Debug::Context::formatStream()
     buf.precision(2);
     buf.fill(' ');
     // If this is not enough, use copyfmt(cleanStream) which is ~10% slower.
+}
+
+std::ostream &
+Debug::Extra(std::ostream &os)
+{
+    // Prevent previous line formats bleeding onto this line: Previous line code
+    // may not even be aware of some detailing code automatically adding extras.
+    FormatStream(os);
+
+    os << "\n    ";
+    return os;
 }
 
 void

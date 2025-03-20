@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,15 +9,22 @@
 #ifndef SQUID_SRC_ACL_URLPORT_H
 #define SQUID_SRC_ACL_URLPORT_H
 
-#include "acl/Strategy.h"
+#include "acl/Data.h"
+#include "acl/ParameterizedNode.h"
 
-class ACLUrlPortStrategy : public ACLStrategy<int>
+namespace Acl
 {
 
+/// a "port" ACL
+class UrlPortCheck: public ParameterizedNode< ACLData<int> >
+{
 public:
-    int match (ACLData<MatchType> * &, ACLFilledChecklist *) override;
+    /* Acl::Node API */
+    int match(ACLChecklist *) override;
     bool requiresRequest() const override {return true;}
 };
+
+} // namespace Acl
 
 #endif /* SQUID_SRC_ACL_URLPORT_H */
 

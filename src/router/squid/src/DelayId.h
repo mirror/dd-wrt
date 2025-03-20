@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -29,7 +29,7 @@ public:
     unsigned short pool() const;
     DelayIdComposite::Pointer compositePosition();
     DelayIdComposite::Pointer const compositePosition() const;
-    void compositePosition(DelayIdComposite::Pointer );
+    void compositePosition(const DelayIdComposite::Pointer &);
     bool operator == (DelayId const &rhs) const;
     operator bool() const;
     int bytesWanted(int min, int max) const;

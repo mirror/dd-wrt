@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -32,6 +32,7 @@ CBDATA_NAMESPACED_CLASS_INIT(Adaptation::Icap, ServiceRep);
 
 Adaptation::Icap::ServiceRep::ServiceRep(const ServiceConfigPointer &svcCfg):
     AsyncJob("Adaptation::Icap::ServiceRep"), Adaptation::Service(svcCfg),
+    tlsContext(writeableCfg().secure, sslContext),
     theOptions(nullptr), theOptionsFetcher(nullptr), theLastUpdate(0),
     theBusyConns(0),
     theAllWaiters(0),

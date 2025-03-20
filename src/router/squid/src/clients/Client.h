@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -193,6 +193,9 @@ protected:
     bool receivedWholeAdaptedReply = false;
 #endif
     bool receivedWholeRequestBody = false; ///< handleRequestBodyProductionEnded called
+
+    /// whether we are waiting for MemObject::delayRead() to call us back
+    bool waitingForDelayAwareReadChance = false;
 
     /// whether we should not be talking to FwdState; XXX: clear fwd instead
     /// points to a string literal which is used only for debugging

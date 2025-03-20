@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -23,7 +23,7 @@
 #include "fd.h"
 #include "fde.h"
 #include "FwdState.h"
-#include "html_quote.h"
+#include "html/Quoting.h"
 #include "HttpHdrContRange.h"
 #include "HttpHeader.h"
 #include "HttpHeaderRange.h"
@@ -1022,7 +1022,7 @@ Ftp::Gateway::processReplyBody()
  * Special Case: A username-only may be provided in the URL and password in the HTTP headers.
  *
  * TODO: we might be able to do something about locating username from other sources:
- *       ie, external ACL user=* tag or ident lookup
+ *       ie, external ACL user=* tag
  *
  \retval 1  if we have everything needed to complete this request.
  \retval 0  if something is missing.
@@ -1271,8 +1271,9 @@ Ftp::Gateway::ftpRealm()
         realm.append("unknown", 7);
     else {
         realm.append(request->url.host());
-        if (request->url.port() != 21)
-            realm.appendf(" port %d", request->url.port());
+        const auto &rport = request->url.port();
+        if (rport && *rport != 21)
+            realm.appendf(" port %hu", *rport);
     }
     return realm;
 }
@@ -2271,6 +2272,7 @@ ftpWriteTransferDone(Ftp::Gateway * ftpState)
     }
 
     ftpState->entry->timestampsSet();   /* XXX Is this needed? */
+    ftpState->markParsedVirginReplyAsWhole("ftpWriteTransferDone code 226 or 250");
     ftpSendReply(ftpState);
 }
 
@@ -2637,7 +2639,7 @@ Ftp::Gateway::completeForwarding()
 {
     if (fwd == nullptr || flags.completed_forwarding) {
         debugs(9, 3, "avoid double-complete on FD " <<
-               (ctrl.conn ? ctrl.conn->fd : -1) << ", Data FD " << data.conn->fd <<
+               (ctrl.conn ? ctrl.conn->fd : -1) << ", Data FD " << (data.conn ? data.conn->fd : -1) <<
                ", this " << this << ", fwd " << fwd);
         return;
     }

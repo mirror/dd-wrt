@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -10,15 +10,19 @@
 #define SQUID_SRC_ACL_ANNOTATETRANSACTION_H
 
 #include "acl/Note.h"
-#include "Notes.h"
 
-/// \ingroup ACLAPI
-class ACLAnnotateTransactionStrategy: public Acl::AnnotationStrategy
+namespace Acl
+{
+
+/// an "annotate_transaction" ACL
+class AnnotateTransactionCheck: public Acl::AnnotationCheck
 {
 public:
-    int match(ACLData<MatchType> * &, ACLFilledChecklist *) override;
-    bool requiresRequest() const override { return true; }
+    /* Acl::Node API */
+    int match(ACLChecklist *) override;
 };
+
+} // namespace Acl
 
 #endif /* SQUID_SRC_ACL_ANNOTATETRANSACTION_H */
 

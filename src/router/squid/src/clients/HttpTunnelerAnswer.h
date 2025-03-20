@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -10,7 +10,7 @@
 #define SQUID_SRC_CLIENTS_HTTPTUNNELERANSWER_H
 
 #include "base/CbcPointer.h"
-#include "comm/forward.h"
+#include "comm/Connection.h"
 #include "http/StatusCode.h"
 #include "sbuf/SBuf.h"
 

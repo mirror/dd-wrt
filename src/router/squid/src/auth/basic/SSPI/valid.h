@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -36,11 +36,8 @@
 #ifndef SQUID_SRC_AUTH_BASIC_SSPI_VALID_H
 #define SQUID_SRC_AUTH_BASIC_SSPI_VALID_H
 
-#include "sspwin32.h"
+#include "sspi/sspwin32.h"
 
-#if HAVE_WINDOWS_H
-#include <windows.h>
-#endif
 #include <lm.h>
 #include <sys/types.h>
 #undef debug

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -63,14 +63,7 @@
 #include "fde.h"
 
 #if _SQUID_WINDOWS_
-
-#if HAVE_WINSOCK2_H
-#include <winsock2.h>
-#elif HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
 #include <process.h>
-
 #endif
 
 /* IP Header */

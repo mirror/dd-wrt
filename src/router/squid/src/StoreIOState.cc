@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -45,11 +45,8 @@ StoreIOState::~StoreIOState()
 {
     debugs(20,3, "StoreIOState::~StoreIOState: " << this);
 
-    if (read.callback_data)
-        cbdataReferenceDone(read.callback_data);
-
-    if (callback_data)
-        cbdataReferenceDone(callback_data);
+    cbdataReferenceDone(read.callback_data);
+    cbdataReferenceDone(callback_data);
 }
 
 bool StoreIOState::touchingStoreEntry() const

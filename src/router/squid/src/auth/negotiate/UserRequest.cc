@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -51,18 +51,6 @@ const char *
 Auth::Negotiate::UserRequest::connLastHeader()
 {
     return nullptr;
-}
-
-int
-Auth::Negotiate::UserRequest::authenticated() const
-{
-    if (user() != nullptr && user()->credentials() == Auth::Ok) {
-        debugs(29, 9, "user authenticated.");
-        return 1;
-    }
-
-    debugs(29, 9, "user not fully authenticated.");
-    return 0;
 }
 
 const char *

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -23,6 +23,7 @@
 #include "MessageDelayPools.h"
 #endif
 #include "Notes.h"
+#include "security/Context.h"
 #include "security/forward.h"
 #if USE_OPENSSL
 #include "ssl/support.h"
@@ -42,7 +43,8 @@ namespace Mgr
 {
 class ActionPasswordList;
 } // namespace Mgr
-class CachePeer;
+
+class CachePeers;
 class CustomLog;
 class CpuAffinityMap;
 class DebugMessages;
@@ -225,7 +227,7 @@ public:
     char *etcHostsPath;
     char *visibleHostname;
     char *uniqueHostname;
-    wordlist *hostnameAliases;
+    SBufList hostnameAliases;
     char *errHtmlText;
 
     struct {
@@ -242,7 +244,7 @@ public:
     size_t tcpRcvBufsz;
     size_t udpMaxHitObjsz;
     wordlist *mcast_group_list;
-    CachePeer *peers;
+    CachePeers *peers;
     int npeers;
 
     struct {
@@ -351,7 +353,7 @@ public:
 
     std::chrono::nanoseconds paranoid_hit_validation;
 
-    class ACL *aclList;
+    Acl::NamedAcls *namedAcls; ///< acl aclname acltype ...
 
     struct {
         acl_access *http;
@@ -445,8 +447,8 @@ public:
     MessageDelayConfig MessageDelay;
 #endif
 
-    struct {
-        struct {
+    struct CommIncoming {
+        struct Measure {
             int average;
             int min_poll;
         } dns, udp, tcp;
@@ -454,16 +456,6 @@ public:
     int max_open_disk_fds;
     int uri_whitespace;
     AclSizeLimit *rangeOffsetLimit;
-#if MULTICAST_MISS_STREAM
-
-    struct {
-
-        Ip::Address addr;
-        int ttl;
-        unsigned short port;
-        char *encode_key;
-    } mcast_miss;
-#endif
 
     /// request_header_access and request_header_replace
     HeaderManglers *request_header_access;
@@ -511,7 +503,10 @@ public:
     external_acl *externalAclHelperList;
 
     struct {
-        Security::ContextPointer sslContext;
+        Security::FuturePeerContext *defaultPeerContext;
+        // TODO: Remove when FuturePeerContext above becomes PeerContext
+        /// \deprecated Legacy storage. Use defaultPeerContext instead.
+        Security::ContextPointer *sslContext_;
 #if USE_OPENSSL
         char *foreignIntermediateCertsPath;
         acl_access *cert_error;
@@ -527,7 +522,7 @@ public:
     CpuAffinityMap *cpuAffinityMap;
 
 #if USE_LOADABLE_MODULES
-    wordlist *loadable_module_names;
+    SBufList loadable_module_names;
 #endif
 
     int client_ip_max_connections;

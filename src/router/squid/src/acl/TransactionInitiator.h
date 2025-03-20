@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -17,7 +17,7 @@ namespace Acl
 {
 
 /// transaction_initiator ACL
-class TransactionInitiator : public ACL
+class TransactionInitiator : public Acl::Node
 {
     MEMPROXY_CLASS(TransactionInitiator);
 

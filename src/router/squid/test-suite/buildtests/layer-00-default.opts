@@ -1,0 +1,22 @@
+## Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+##
+## Squid software is distributed under GPLv2+ license and includes
+## contributions from numerous individuals and organizations.
+## Please see the COPYING and CONTRIBUTORS files for details.
+##
+
+#
+# Complete Check - everything MUST work at this level
+MAKETEST="distcheck"
+#
+# Default configuration options.
+#  - Nothing special configured. Just whatever is found by "./configure"
+#
+# NP: DISTCHECK_CONFIGURE_FLAGS is a magic automake macro for the
+#     distcheck target recursive tests beteen scripted runs.
+#     we use it to perform the same duty between our nested scripts.
+DISTCHECK_CONFIGURE_FLAGS=""
+
+# Fix the distclean testing.
+export DISTCHECK_CONFIGURE_FLAGS
+

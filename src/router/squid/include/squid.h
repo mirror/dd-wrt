@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -35,12 +35,6 @@
 #ifndef USE_RE_SYNTAX
 #define USE_RE_SYNTAX   REG_EXTENDED    /* default Syntax */
 #endif
-#endif
-
-#if !defined(CACHEMGR_HOSTNAME)
-#define CACHEMGR_HOSTNAME ""
-#else
-#define CACHEMGR_HOSTNAME_DEFINED 1
 #endif
 
 #if SQUID_DETECT_UDP_SO_SNDBUF > 16384

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -8,15 +8,23 @@
 
 #ifndef SQUID_SRC_ACL_TIME_H
 #define SQUID_SRC_ACL_TIME_H
-#include "acl/Data.h"
-#include "acl/Strategised.h"
 
-class ACLTimeStrategy : public ACLStrategy<time_t>
+#include "acl/ParameterizedNode.h"
+#include "acl/TimeData.h"
+#include "mem/AllocatorProxy.h"
+
+namespace Acl
 {
 
+/// a "time" ACL
+class CurrentTimeCheck: public ParameterizedNode<ACLTimeData>
+{
 public:
-    int match (ACLData<MatchType> * &, ACLFilledChecklist *) override;
+    /* Acl::Node API */
+    int match(ACLChecklist *) override;
 };
+
+} // namespace Acl
 
 #endif /* SQUID_SRC_ACL_TIME_H */
 

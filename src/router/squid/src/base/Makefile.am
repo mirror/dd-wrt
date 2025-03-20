@@ -1,4 +1,4 @@
-## Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2023 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
@@ -6,7 +6,6 @@
 ##
 
 include $(top_srcdir)/src/Common.am
-include $(top_srcdir)/src/TestHeaders.am
 
 noinst_LTLIBRARIES = libbase.la
 
@@ -49,8 +48,10 @@ libbase_la_SOURCES = \
 	JobWait.h \
 	Lock.h \
 	LookupTable.h \
+	OnOff.h \
 	Packable.h \
 	PackableStream.h \
+	PrecomputedCodeContext.h \
 	Random.cc \
 	Random.h \
 	RandomUuid.cc \
@@ -69,6 +70,7 @@ libbase_la_SOURCES = \
 	SupportOrVeto.h \
 	TextException.cc \
 	TextException.h \
+	ToCpp.h \
 	TypeTraits.h \
 	YesNoNone.h \
 	forward.h

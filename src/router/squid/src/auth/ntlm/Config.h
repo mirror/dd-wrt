@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -42,7 +42,7 @@ public:
 } // namespace Ntlm
 } // namespace Auth
 
-extern statefulhelper *ntlmauthenticators;
+extern Helper::StatefulClientPointer ntlmauthenticators;
 
 #endif /* HAVE_AUTH_MODULE_NTLM */
 #endif /* SQUID_SRC_AUTH_NTLM_CONFIG_H */

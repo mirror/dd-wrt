@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -106,12 +106,11 @@ enum HdrType {
     VIA,                            /**< RFC 7230 */
     WWW_AUTHENTICATE,               /**< RFC 7235, 4559 */
     X_FORWARDED_FOR,                /**< obsolete Squid custom header, RFC 7239 */
-    X_REQUEST_URI,                  /**< Squid custom header appended if ADD_X_REQUEST_URI is defined */
     X_SQUID_ERROR,                  /**< Squid custom header on generated error responses */
     HDR_X_ACCELERATOR_VARY,             /**< obsolete Squid custom header. */
     X_NEXT_SERVICES,                /**< Squid custom ICAP header */
-    SURROGATE_CAPABILITY,           /**< Edge Side Includes (ESI) header */
-    SURROGATE_CONTROL,              /**< Edge Side Includes (ESI) header */
+    SURROGATE_CAPABILITY,           /**< W3C Edge Architecture Specification */
+    SURROGATE_CONTROL,              /**< W3C Edge Architecture Specification */
     FRONT_END_HTTPS,                /**< MS Exchange custom header we may have to add */
     FTP_COMMAND,                    /**< Internal header for FTP command */
     FTP_ARGUMENTS,                  /**< Internal header for FTP command arguments */

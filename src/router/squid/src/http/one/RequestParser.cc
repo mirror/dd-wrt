@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -98,9 +98,7 @@ UriValidCharacters()
         CharacterSet("gen-delims", ":/?#[]@") +
         CharacterSet("sub-delims", "!$&'()*+,;=") +
         // RFC 3986 section 2.3 - unreserved characters
-        CharacterSet::ALPHA +
-        CharacterSet::DIGIT +
-        CharacterSet("unreserved", "-._~") +
+        CharacterSet::RFC3986_UNRESERVED() +
         // RFC 3986 section 2.1 - percent encoding "%" HEXDIG
         CharacterSet("pct-encoded", "%") +
         CharacterSet::HEXDIG;

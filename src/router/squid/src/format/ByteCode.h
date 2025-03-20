@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -32,6 +32,8 @@ typedef enum {
 
     /* arbitrary string between tokens */
     LFT_STRING,
+
+    LFT_BYTE,
 
     /* client TCP connection remote end details */
     LFT_CLIENT_IP_ADDRESS,
@@ -148,7 +150,6 @@ typedef enum {
     /* client credentials */
     LFT_USER_NAME,   /* any source will do */
     LFT_USER_LOGIN,
-    LFT_USER_IDENT,
     /*LFT_USER_REALM, */
     /*LFT_USER_SCHEME, */
     LFT_USER_EXTERNAL,

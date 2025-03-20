@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,11 +9,6 @@
 /* DEBUG: section 93    eCAP Interface */
 
 #include "squid.h"
-#include <libecap/common/area.h>
-#include <libecap/common/delay.h>
-#include <libecap/common/named_values.h>
-#include <libecap/common/names.h>
-#include <libecap/adapter/xaction.h>
 #include "adaptation/Answer.h"
 #include "adaptation/ecap/Config.h"
 #include "adaptation/ecap/XactionRep.h"
@@ -22,8 +17,21 @@
 #include "base/TextException.h"
 #include "format/Format.h"
 #include "HttpReply.h"
-#include "HttpRequest.h"
 #include "MasterXaction.h"
+#include "sbuf/StringConvert.h"
+
+#if HAVE_LIBECAP_COMMON_AREA_H
+#include <libecap/common/area.h>
+#endif
+#if HAVE_LIBECAP_COMMON_DELAY_H
+#include <libecap/common/delay.h>
+#endif
+#if HAVE_LIBECAP_COMMON_NAMED_VALUES_H
+#include <libecap/common/named_values.h>
+#endif
+#if HAVE_LIBECAP_COMMON_NAMES_H
+#include <libecap/common/names.h>
+#endif
 
 CBDATA_NAMESPACED_CLASS_INIT(Adaptation::Ecap::XactionRep, XactionRep);
 
@@ -187,7 +195,7 @@ Adaptation::Ecap::XactionRep::metaValue(const libecap::Name &name) const
     HttpReply *reply = dynamic_cast<HttpReply*>(theVirginRep.raw().header);
 
     if (name.known()) { // must check to avoid empty names matching unset cfg
-        for (auto h: Adaptation::Config::metaHeaders) {
+        for (const auto &h: Adaptation::Config::metaHeaders()) {
             if (name == h->key().toStdString()) {
                 SBuf matched;
                 if (h->match(request, reply, al, matched))
@@ -209,7 +217,7 @@ Adaptation::Ecap::XactionRep::visitEachMetaHeader(libecap::NamedValueVisitor &vi
     Must(request);
     HttpReply *reply = dynamic_cast<HttpReply*>(theVirginRep.raw().header);
 
-    for (auto h: Adaptation::Config::metaHeaders) {
+    for (const auto &h: Adaptation::Config::metaHeaders()) {
         SBuf matched;
         if (h->match(request, reply, al, matched)) {
             const libecap::Name name(h->key().toStdString());
@@ -238,7 +246,7 @@ Adaptation::Ecap::XactionRep::start()
         // retrying=false because ecap never retries transactions
         adaptHistoryId = ah->recordXactStart(service().cfg().key, current_time, false);
         SBuf matched;
-        for (auto h: Adaptation::Config::metaHeaders) {
+        for (const auto &h: Adaptation::Config::metaHeaders()) {
             if (h->match(request, reply, al, matched)) {
                 if (ah->metaHeaders == nullptr)
                     ah->metaHeaders = new NotePairs();
@@ -449,7 +457,7 @@ Adaptation::Ecap::XactionRep::blockVirgin()
     sinkVb("blockVirgin");
 
     updateHistory(nullptr);
-    sendAnswer(Answer::Block(service().cfg().key));
+    sendAnswer(Answer::Block(StringToSBuf(service().cfg().key)));
     Must(done());
 }
 

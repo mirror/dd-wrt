@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -51,6 +51,9 @@ public:
     /// starts indexing the given cache_dir if that indexing is necessary
     /// \returns whether the indexing was necessary (and, hence, started)
     static bool Start(SwapDir &dir);
+
+    /* AsyncJob API */
+    virtual void callException(const std::exception &) override;
 
 protected:
     /// whether the current kid is responsible for rebuilding the given cache_dir

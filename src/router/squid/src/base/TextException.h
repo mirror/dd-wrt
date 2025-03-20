@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -51,6 +51,10 @@ public:
 
 /// prints active (i.e., thrown but not yet handled) exception
 std::ostream &CurrentException(std::ostream &);
+
+/// If there is an active (i.e., thrown but not yet handled) exception, reports
+/// it on a dedicated DebugExtra line. Otherwise, does nothing.
+std::ostream &CurrentExceptionExtra(std::ostream &);
 
 /// efficiently prints TextException
 std::ostream &operator <<(std::ostream &, const TextException &);
