@@ -1387,12 +1387,12 @@ writetool:
 et:
 ifeq ($(CONFIG_NORTHSTAR),y)
 	@echo "[LD] et"
-	@$(CC) -Dlinux -I$(LINUXDIR)/brcm/arm/include -I$(LINUXDIR)/brcm/arm/common/include $(CFLAGS) -o et et.c
+	@$(CC) -Dlinux -I$(LINUXDIR)/brcm/arm/include -I$(LINUXDIR)/brcm/arm/common/include $(CFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -o et et.c -lshutils -lnvram
 endif
 	@true
 
 rc: $(OBJS)
 	@echo "[LD] $@"
-	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ $(LDFLAGS) -lwireless -lshutils -lqos
+	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ $(LDFLAGS) -lwireless ../libutils/libshutils.a -lqos
 
 $(OBJS): $(CY_DEPS)
