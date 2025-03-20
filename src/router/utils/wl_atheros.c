@@ -48,7 +48,6 @@ static int _showAssocList(char *base, char *ifname, char *mac, struct wifi_info 
 		free_wifi_clients(mac80211_info->wci);
 		free(mac80211_info);
 	} else {
-
 		char *buf = malloc(8192);
 		memset(buf, 0, 8192);
 		int cnt = getassoclist(ifname, buf);
@@ -68,7 +67,8 @@ static int _showAssocList(char *base, char *ifname, char *mac, struct wifi_info 
 			data.txrate = getTxRate(ifname, &data.mac[0]);
 			data.uptime = getUptime(ifname, &data.mac[0]);
 			char mstr[32];
-			sprintf(mstr, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X", p[pos], p[pos + 1], p[pos + 2], p[pos + 3], p[pos + 4], p[pos + 5]);
+			sprintf(mstr, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X", p[pos], p[pos + 1], p[pos + 2], p[pos + 3], p[pos + 4],
+				p[pos + 5]);
 			char out[48];
 			sprintf(out, "/tmp/snmp_cache/%s", base);
 			mkdir(out, 0777);
@@ -81,10 +81,8 @@ static int _showAssocList(char *base, char *ifname, char *mac, struct wifi_info 
 			pos += 6;
 		}
 		free(buf);
-
 	}
 	return 1;
-
 }
 
 static int showAssocList(char *base, char *ifname, char *mac, struct wifi_info *rwc)
@@ -100,7 +98,7 @@ static int matchmac(char *base, char *ifname, char *mac, struct wifi_info *rwc)
 	char mstr[32];
 	int assoclist = 0;
 	sprintf(out, "/tmp/snmp_cache/%s/%s", base, rmac);
-      retry:;
+retry:;
 	FILE *in = fopen(out, "rb");
 	if (!in) {
 		if (!assoclist) {
@@ -128,7 +126,6 @@ static int showRssi(char *base, char *ifname, char *rmac, struct wifi_info *wc)
 		return 1;
 	}
 	return 0;
-
 }
 
 static int showNoise(char *base, char *ifname, char *rmac, struct wifi_info *wc)
@@ -139,7 +136,6 @@ static int showNoise(char *base, char *ifname, char *rmac, struct wifi_info *wc)
 		return 1;
 	}
 	return 0;
-
 }
 
 static int showRxRate(char *base, char *ifname, char *rmac, struct wifi_info *wc)
@@ -150,7 +146,6 @@ static int showRxRate(char *base, char *ifname, char *rmac, struct wifi_info *wc
 		return 1;
 	}
 	return 0;
-
 }
 
 static int showTxRate(char *base, char *ifname, char *rmac, struct wifi_info *wc)
@@ -161,7 +156,6 @@ static int showTxRate(char *base, char *ifname, char *rmac, struct wifi_info *wc
 		return 1;
 	}
 	return 0;
-
 }
 
 static int showIfname(char *base, char *ifname, char *rmac, struct wifi_info *wc)
@@ -210,26 +204,25 @@ static int showUptimeStr(char *base, char *ifname, char *rmac, struct wifi_info 
 
 typedef struct functions {
 	char *fname;
-	int (*fn) (char *base, char *ifname, char *rmac, struct wifi_info * wc);
+	int (*fn)(char *base, char *ifname, char *rmac, struct wifi_info *wc);
 	int matchmac;
 } FN;
 
 static FN fn[] = {
-	{"rssi", &showRssi, 1},	//
-	{"noise", &showNoise, 1},	//
-	{"ifname", &showIfname, 1},	//
-	{"uptime", &showUptime, 1},	//
-	{"uptimestr", &showUptimeStr, 1},	//
-	{"rxrate", &showRxRate, 1},	//
-	{"txrate", &showTxRate, 1},	//
-	{"assoclist", &showAssocList, 0}	//
+	{ "rssi", &showRssi, 1 }, //
+	{ "noise", &showNoise, 1 }, //
+	{ "ifname", &showIfname, 1 }, //
+	{ "uptime", &showUptime, 1 }, //
+	{ "uptimestr", &showUptimeStr, 1 }, //
+	{ "rxrate", &showRxRate, 1 }, //
+	{ "txrate", &showTxRate, 1 }, //
+	{ "assoclist", &showAssocList, 0 } //
 };
 
 static void evaluate(char *keyname, char *ifdecl, char *macstr)
 {
-
 	int i;
-	int (*fnp) (char *base, char *ifname, char *rmac, struct wifi_info * wc) = NULL;
+	int (*fnp)(char *base, char *ifname, char *rmac, struct wifi_info *wc) = NULL;
 	struct wifi_info wc;
 	int m;
 	for (i = 0; i < sizeof(fn) / sizeof(fn[0]); i++) {
@@ -283,7 +276,6 @@ static void evaluate(char *keyname, char *ifdecl, char *macstr)
 				}
 			}
 		}
-
 	}
 }
 #ifdef HAVE_ATH9K
@@ -312,6 +304,5 @@ int main(int argc, char *argv[])
 		char *name = argv[i];
 		evaluate(name, ifname, argv[++i]);
 		return 0;
-
 	}
 }

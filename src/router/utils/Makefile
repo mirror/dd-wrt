@@ -24,7 +24,8 @@ ifneq ($(CONFIG_DIST),"micro-special")
 endif
 endif
 
-CFLAGS += $(MIPS16_OPT) $(COPTS) -I../shared -I$(SRCBASE)/include.bcm -I$(SRCBASE)/wl/exe -I$(LINUXDIR) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(LINUXDIR)/brcm/shared/bcmwifi/include -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
+CFLAGS += $(MIPS16_OPT) $(COPTS) -I../shared -I$(SRCBASE)/wl/exe -I$(LINUXDIR) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(LINUXDIR)/brcm/include  -I$(LINUXDIR)/brcm/shared/bcmwifi/include -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
+#CFLAGS += $(MIPS16_OPT) $(COPTS) -I../shared -I$(SRCBASE)/wl/exe -I$(LINUXDIR) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(LINUXDIR)/brcm/shared/bcmwifi/include -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 LDFLAGS += -L../nvram -L../shared -L../libutils -lutils -lshutils -lnvram -lwireless -ffunction-sections -fdata-sections -Wl,--gc-sections
 ifeq ($(CONFIG_ATH9K),y)
 LDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny

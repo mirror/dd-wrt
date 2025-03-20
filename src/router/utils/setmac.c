@@ -24,8 +24,8 @@
  *	Define the maxiumum number of ethernet devices we should try
  *	and configure. Also define the default number we try to configure.
  */
-#define	MAXETHS		16
-#define	DEFAULTETHS	2
+#define MAXETHS 16
+#define DEFAULTETHS 2
 
 #ifndef ETHPREFIX
 #define ETHPREFIX "ixp"
@@ -34,7 +34,7 @@
 /*
  *	Define the default flash device to use to get MAC addresses from.
  */
-#define	DEFAULTFLASH	"/dev/flash/ethmac"
+#define DEFAULTFLASH "/dev/flash/ethmac"
 
 /****************************************************************************/
 
@@ -43,22 +43,11 @@
  *	find any other good MAC addresses.
  */
 unsigned char mactable[MAXETHS * 6] = {
-	0x00, 0xd0, 0xcf, 0x00, 0x00, 0x01,
-	0x00, 0xd0, 0xcf, 0x00, 0x00, 0x02,
-	0x00, 0xd0, 0xcf, 0x00, 0x00, 0x03,
-	0x00, 0xd0, 0xcf, 0x00, 0x00, 0x04,
-	0x00, 0xd0, 0xcf, 0x00, 0x00, 0x05,
-	0x00, 0xd0, 0xcf, 0x00, 0x00, 0x06,
-	0x00, 0xd0, 0xcf, 0x00, 0x00, 0x07,
-	0x00, 0xd0, 0xcf, 0x00, 0x00, 0x08,
-	0x00, 0xd0, 0xcf, 0x00, 0x00, 0x09,
-	0x00, 0xd0, 0xcf, 0x00, 0x00, 0x0a,
-	0x00, 0xd0, 0xcf, 0x00, 0x00, 0x0b,
-	0x00, 0xd0, 0xcf, 0x00, 0x00, 0x0c,
-	0x00, 0xd0, 0xcf, 0x00, 0x00, 0x0d,
-	0x00, 0xd0, 0xcf, 0x00, 0x00, 0x0e,
-	0x00, 0xd0, 0xcf, 0x00, 0x00, 0x0f,
-	0x00, 0xd0, 0xcf, 0x00, 0x00, 0x10,
+	0x00, 0xd0, 0xcf, 0x00, 0x00, 0x01, 0x00, 0xd0, 0xcf, 0x00, 0x00, 0x02, 0x00, 0xd0, 0xcf, 0x00, 0x00, 0x03, 0x00, 0xd0,
+	0xcf, 0x00, 0x00, 0x04, 0x00, 0xd0, 0xcf, 0x00, 0x00, 0x05, 0x00, 0xd0, 0xcf, 0x00, 0x00, 0x06, 0x00, 0xd0, 0xcf, 0x00,
+	0x00, 0x07, 0x00, 0xd0, 0xcf, 0x00, 0x00, 0x08, 0x00, 0xd0, 0xcf, 0x00, 0x00, 0x09, 0x00, 0xd0, 0xcf, 0x00, 0x00, 0x0a,
+	0x00, 0xd0, 0xcf, 0x00, 0x00, 0x0b, 0x00, 0xd0, 0xcf, 0x00, 0x00, 0x0c, 0x00, 0xd0, 0xcf, 0x00, 0x00, 0x0d, 0x00, 0xd0,
+	0xcf, 0x00, 0x00, 0x0e, 0x00, 0xd0, 0xcf, 0x00, 0x00, 0x0f, 0x00, 0xd0, 0xcf, 0x00, 0x00, 0x10,
 };
 
 int numeths = DEFAULTETHS;
@@ -108,7 +97,7 @@ char *findmtddevice(char *mtdname)
 	}
 	fclose(f);
 	int num;
-	sscanf(buf,"mtd%d",&num);
+	sscanf(buf, "mtd%d", &num);
 	if (found) {
 		sprintf(device, "/dev/mtdblock/%d", num);
 		return device;
@@ -129,12 +118,11 @@ void *memstr(void *m, const char *s, size_t n)
 	if (!slen || slen > n)
 		return NULL;
 
-	for (end=m+n-slen; m<=end; m++)
-		if (memcmp(m, s, slen)==0)
+	for (end = m + n - slen; m <= end; m++)
+		if (memcmp(m, s, slen) == 0)
 			return m;
 
 	return NULL;
-
 }
 
 /****************************************************************************/
@@ -172,12 +160,11 @@ void readmacredboot(char *flash, char *redbootconfig)
 		snprintf(name, sizeof(name), redbootconfig, i);
 		mac = memstr(m, name, flashsize);
 		if (!mac) {
-			fprintf(stderr, "setmac: redboot config '%s' not found\n",
-					name);
+			fprintf(stderr, "setmac: redboot config '%s' not found\n", name);
 			continue;
 		}
-		mac += strlen(name)+1;
-		memcpy(&mactable[i*6], mac, 6);
+		mac += strlen(name) + 1;
+		memcpy(&mactable[i * 6], mac, 6);
 	}
 
 	free(m);
@@ -191,7 +178,6 @@ void readmacflash(char *flash, off_t macoffset)
 	int fd, i;
 	off_t off;
 	unsigned char mac[6];
-
 
 	/*
 	 *	Not that many possible MAC addresses, so lets just
@@ -215,14 +201,13 @@ void readmacflash(char *flash, off_t macoffset)
 		}
 
 		/* Do simple checks for a valid MAC address */
-		if ((mac[0] == 0) && (mac[1] == 0) && (mac[2] == 0) &&
-		    (mac[3] == 0) && (mac[4] == 0) && (mac[5] == 0))
+		if ((mac[0] == 0) && (mac[1] == 0) && (mac[2] == 0) && (mac[3] == 0) && (mac[4] == 0) && (mac[5] == 0))
 			continue;
-		if ((mac[0] == 0xff) && (mac[1] == 0xff) && (mac[2] == 0xff) &&
-		    (mac[3] == 0xff) && (mac[4] == 0xff) && (mac[5] == 0xff))
+		if ((mac[0] == 0xff) && (mac[1] == 0xff) && (mac[2] == 0xff) && (mac[3] == 0xff) && (mac[4] == 0xff) &&
+		    (mac[5] == 0xff))
 			continue;
 
-		memcpy(&mactable[i*6], &mac[0], 6);
+		memcpy(&mactable[i * 6], &mac[0], 6);
 	}
 
 	close(fd);
@@ -232,7 +217,7 @@ void readmacflash(char *flash, off_t macoffset)
 
 void getmac(int port, unsigned char *mac)
 {
-	memcpy(mac, &mactable[port*6], 6);
+	memcpy(mac, &mactable[port * 6], 6);
 }
 
 /****************************************************************************/
@@ -244,8 +229,7 @@ void setmac(int port, unsigned char *mac)
 	char macs[32];
 
 	sprintf(eths, "%s%d", ETHPREFIX, port);
-	sprintf(macs, "%02x:%02x:%02x:%02x:%02x:%02x",
-		mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	sprintf(macs, "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
 	if ((pid = fork()) < 0) {
 		perror("setmac: failed to fork()");
@@ -270,12 +254,12 @@ void setmac(int port, unsigned char *mac)
 void usage(int rc)
 {
 	printf("usage: setmac [-hs?] [OPTION]...\n"
-		"\t-s\n"
-		"\t-f <flash-device>\n"
-		"\t-m <mtd-name>\n"
-		"\t-n <num-eth-interfaces>\n"
-		"\t-o <offset>\n"
-		"\t-r <redboot-config-name>\n");
+	       "\t-s\n"
+	       "\t-f <flash-device>\n"
+	       "\t-m <mtd-name>\n"
+	       "\t-n <num-eth-interfaces>\n"
+	       "\t-o <offset>\n"
+	       "\t-r <redboot-config-name>\n");
 	exit(rc);
 }
 
