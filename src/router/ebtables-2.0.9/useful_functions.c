@@ -31,6 +31,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#define _LINUX_IF_ETHER_H
 
 #include "include/ebtables_u.h"
 #include "include/ethernetdb.h"

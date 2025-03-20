@@ -12,6 +12,7 @@
 #include <string.h>
 #include <getopt.h>
 #include <netinet/ether.h>
+#define _LINUX_IF_ETHER_H
 #include "../include/ebtables_u.h"
 #include <linux/netfilter_bridge/ebt_arpreply.h>
 
