@@ -86,6 +86,24 @@ ifeq ($(KERNELVERSION),3.5)
 obj-y += portscan
 CONFIG_PORTSCAN=y
 endif
+ifeq ($(ARCH),mips)
+ifeq ($(CONFIG_OPENSSL),y)
+CONFIG_JEMALLOC=y
+COPTS+=-DHAVE_JEMALLOC=y
+endif
+endif
+ifeq ($(ARCH),mipsel)
+ifeq ($(CONFIG_OPENSSL),y)
+ifeq ($(CONFIG_BCMMODERN),y)
+ifeq ($(CONFIG_80211AC),y)
+CONFIG_JEMALLOC=y
+COPTS+=-DHAVE_JEMALLOC=y
+endif
+endif
+endif
+endif
+
+
 obj-$(CONFIG_LIBIPT) += iptables-ipt
 obj-$(CONFIG_IPSEC) += ipsec
 #obj-$(CONFIG_LIBPCAP) += libpcap
