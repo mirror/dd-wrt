@@ -129,7 +129,7 @@ void start_cron(void)
 	}
 #ifdef HAVE_HOTSPOT
 	struct tm *currtime;
-	long tloc;
+	time_t tloc;
 
 	time(&tloc);
 	currtime = localtime(&tloc);
