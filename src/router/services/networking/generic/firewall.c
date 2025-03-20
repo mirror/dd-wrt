@@ -3377,12 +3377,12 @@ static void run_firewall6(char *vifs)
 
 #ifdef HAVE_PORTSCAN
 	if (nvram_match("block_tarpit", "1")) {
-		eval("ip6tables", "-A tarpit -p tcp -j TARPIT");
-		eval("ip6tables", "-A tarpit -j %s", log_drop);
+		eval("ip6tables", "-A tarpit","-p","tcp","-j","TARPIT");
+		eval("ip6tables", "-A tarpit","-j", log_drop);
 	} else
 #endif
 	{
-		eval("ip6tables", "-A tarpit -j %s", log_drop);
+		eval("ip6tables", "-A tarpit","-j", log_drop);
 	}
 
 	eval("ip6tables", "-A", "portscan", "-j", "LOG", "--log-prefix", "portscan:");
