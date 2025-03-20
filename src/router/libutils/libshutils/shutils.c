@@ -1525,6 +1525,24 @@ char *get_hwaddr(const char *name, char *eabuf)
 	return NULL;
 }
 
+int getipv4fromipv6(char *dstip, const char *srcip)
+{
+	char ipcopy[INET6_ADDRSTRLEN];
+	strlcpy(ipcopy, srcip, sizeof(ipcopy));
+	char *check = strrchr(ipcopy, ':');
+	int ipv6 = 0;
+	if (check) {
+		ipv6 = strncmp(ipcopy, "::ffff", 6);
+		check++;
+	} else
+		check = ipcopy;
+	if (ipv6)
+		strcpy(dstip, srcip);
+	else
+		strcpy(dstip, check);
+	return ipv6;
+}
+
 #ifdef HAVE_MICRO
 void add_blocklist(const char *service, char *ip)
 {
@@ -1604,23 +1622,6 @@ static void init_blocklist(void)
 	}
 }
 
-int getipv4fromipv6(char *dstip, const char *srcip)
-{
-	char ipcopy[INET6_ADDRSTRLEN];
-	strlcpy(ipcopy, srcip, sizeof(ipcopy));
-	char *check = strrchr(ipcopy, ':');
-	int ipv6 = 0;
-	if (check) {
-		ipv6 = strncmp(ipcopy, "::ffff", 6);
-		check++;
-	} else
-		check = ipcopy;
-	if (ipv6)
-		strcpy(dstip, srcip);
-	else
-		strcpy(dstip, check);
-	return ipv6;
-}
 
 void add_blocklist(const char *service, char *ip)
 {
