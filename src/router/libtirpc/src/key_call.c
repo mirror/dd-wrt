@@ -72,9 +72,9 @@
  * implementations of these functions, and to call those in key_call().
  */
 
-cryptkeyres *(*__key_encryptsession_pk_LOCAL)() = 0;
-cryptkeyres *(*__key_decryptsession_pk_LOCAL)() = 0;
-des_block *(*__key_gendes_LOCAL)() = 0;
+cryptkeyres *(*__key_encryptsession_pk_LOCAL)(int, xdrproc_t) = 0;
+cryptkeyres *(*__key_decryptsession_pk_LOCAL)(int, xdrproc_t) = 0;
+des_block *(*__key_gendes_LOCAL)(int, xdrproc_t) = 0;
 
 static int key_call( u_long, xdrproc_t, void *, xdrproc_t, void *);
 
