@@ -1258,7 +1258,7 @@ void smb_vfs_call_rewind_dir(struct vfs_handle_struct *handle,
 	VFS_FIND(rewind_dir);
 	handle->fns->rewind_dir(handle, dirp);
 }
-
+#undef mkdir
 int smb_vfs_call_mkdir(struct vfs_handle_struct *handle, const char *path,
 		       mode_t mode)
 {
