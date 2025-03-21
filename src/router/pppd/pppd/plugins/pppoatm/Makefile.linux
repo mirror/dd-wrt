@@ -1,6 +1,10 @@
 #CC	= gcc
-COPTS	= -O2 -g
-CFLAGS	= $(COPTS) -I../.. -I../../../include -fPIC
+#COPTS	= -O2 -g
+CFLAGS=$(COPTS) $(MIPS16_OPT) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include -I../../../include -I../../../ -I../../  -fPIC '-DRP_VERSION="$(RP_VERSION)"'
+#CFLAGS=$(COPTS) -I$(LINUXDIR)/include/linux
+#LDFLAGS =  $(COPTS) $(MIPS16_OPT) $(LDLTO) -L$(TOP)/nvram -lnvram
+
+#CFLAGS	= $(COPTS) $(MIPS16_OPT) -I../.. -I../../../include -fPIC
 LDFLAGS_SHARED	= -shared
 INSTALL	= install
 
@@ -33,7 +37,7 @@ endif
 all: $(PLUGIN)
 
 $(PLUGIN): $(PLUGIN_OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(LDFLAGS_SHARED) $^ $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -fPIC -o $@ $(LDFLAGS_SHARED) $^ $(LIBS)
 
 install: all
 	$(INSTALL) -d -m 755 $(LIBDIR)
