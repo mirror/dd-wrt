@@ -1155,7 +1155,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 		     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed") || !strcmp(netmode, "ax-only") ||
 		     !strcmp(netmode, "ax6-only") || !strcmp(netmode, "ax5-only") || !strcmp(netmode, "xacn-mixed"))) {
 			if (!is_6ghz_freq_prefix(prefix, freq)) {
-				if (*caps) {
+				if (caps && *caps) {
 					fprintf(fp, "vht_capab=%s\n", caps);
 				}
 			}
@@ -1633,7 +1633,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		usebw = 8080;
 	if (isfirst && has_qam256(ifname) && has_2ghz(ifname) && (usebw < 80 || cansuperchannel(maininterface))) {
 		if (nvram_nmatch("1", "%s_turbo_qam", maininterface)) {
-			fprintf(fp, "vht_capab=%s\n", cur_caps);
+			fprintf(fp, "vht_capab=%s\n", cur_caps ? cur_caps : "");
 			fprintf(fp, "ieee80211ac=1\n");
 			switch (usebw) {
 			case 40:
@@ -2586,7 +2586,7 @@ int vhtcaps_main(int argc, char *argv[])
 					  (usebw == 80 || usebw == 160 || usebw == 8080) ? 1 : 0, usebw == 160 ? 1 : 0,
 					  usebw == 8080 ? 1 : 0, nvram_default_matchi(subf, 1, DEFAULT_BF),
 					  nvram_default_matchi(mubf, 1, DEFAULT_BF));
-	fprintf(stdout, "%s: caps = %s\n", argv[0], caps);
+	fprintf(stdout, "%s: caps = %s\n", argv[0], caps ? caps : "");
 	return 0;
 }
 
