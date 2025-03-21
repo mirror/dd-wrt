@@ -233,7 +233,7 @@ typedef struct stat              DSL_CPE_stat_t;
 /**
    LINUX User Thread - map the Thread ID.
 */
-typedef int    DSL_CPE_Thread_t;
+typedef pthread_t    DSL_CPE_Thread_t;
 
 /**
    LINUX User Thread - function type LINUX User Thread Start Routine.
