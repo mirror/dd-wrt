@@ -283,7 +283,7 @@ static void radius_das_receive(int sock, void *eloop_ctx, void *sock_ctx)
 
 		if (!radius_msg_add_msg_auth(reply)) {
 			radius_msg_free(reply);
-			return NULL;
+			return;
 		}
 
 		/* Unsupported Service */

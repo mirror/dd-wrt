@@ -312,7 +312,7 @@ SM_STATE(AUTH_PAE, AUTHENTICATED)
 		extra = " (PMKSA cache)";
 	eapol_auth_vlogger(sm->eapol, sm->addr, EAPOL_LOGGER_INFO,
 			   "%s%s authenticated - EAP type: %d (%s)%s",
-			   sm->identity ? "User:": "", sm->identity ? sm->identity : "", sm->eap_type_authsrv,
+			   sm->identity ? "User:": "", sm->identity ? (char*)sm->identity : "", sm->eap_type_authsrv,
 			   eap_server_get_name(0, sm->eap_type_authsrv),
 			   extra);
 	if (sm->identity && sm->identity_len > 0) {

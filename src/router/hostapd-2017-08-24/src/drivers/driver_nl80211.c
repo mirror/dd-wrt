@@ -6377,7 +6377,7 @@ static int have_ifidx(struct wpa_driver_nl80211_data *drv, int ifidx,
 
 
 static int i802_set_wds_sta(void *priv, const u8 *addr, int aid, int val,
-			    const char *bridge_ifname, char *ifname_wds)
+			    const char *bridge_ifname, const char *ifname_wds)
 {
 	struct i802_bss *bss = priv;
 	struct wpa_driver_nl80211_data *drv = bss->drv;
