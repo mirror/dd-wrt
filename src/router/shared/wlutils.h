@@ -526,7 +526,7 @@ extern char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80,
 #else
 static inline int  *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vht160, int vht8080, int subf, int mubf) 
 {
-	return strdup("");
+	return NULL;
 }
 static inline int has_subeamforming(const char *prefix)
 {
