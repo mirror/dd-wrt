@@ -4993,9 +4993,9 @@ static int nl80211_ht_vht_overrides(struct nl_msg *msg,
 
 	if (params->vhtcaps && params->vhtcaps_mask) {
 		int sz = sizeof(struct ieee80211_vht_capabilities);
-		wpa_hexdump(MSG_DEBUG, "  * vhtcaps", params->vhtcaps, sz);
+		wpa_hexdump(MSG_DEBUG, "  * vhtcaps", (u8*)params->vhtcaps, sz);
 		wpa_hexdump(MSG_DEBUG, "  * vhtcaps_mask",
-			    params->vhtcaps_mask, sz);
+			    (u8*)params->vhtcaps_mask, sz);
 		if (nla_put(msg, NL80211_ATTR_VHT_CAPABILITY, sz,
 			    params->vhtcaps) ||
 		    nla_put(msg, NL80211_ATTR_VHT_CAPABILITY_MASK, sz,

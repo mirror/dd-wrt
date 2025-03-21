@@ -934,7 +934,7 @@ void wpa_receive(struct wpa_authenticator *wpa_auth,
 		   (unsigned int) mic_len, key_data_length);
 	wpa_hexdump(MSG_MSGDUMP,
 		    "WPA: EAPOL-Key header (ending before Key MIC)",
-		    key, sizeof(*key));
+		    (u8*)key, sizeof(*key));
 	wpa_hexdump(MSG_MSGDUMP, "WPA: EAPOL-Key Key MIC",
 		    mic, mic_len);
 	if (key_data_length > data_len - sizeof(*hdr) - keyhdrlen) {
