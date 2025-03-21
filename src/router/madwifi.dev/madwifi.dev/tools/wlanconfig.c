@@ -297,6 +297,7 @@ static void usage(void)
 	fprintf(stderr, "usage: wlanconfig athX list [active|ap|caps|chan|freq|keys|scan|sta|wme]\n");
 	exit(-1);
 }
+int iscpe(void);
 
 static int getopmode(const char *s)
 {
