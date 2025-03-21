@@ -516,7 +516,7 @@ static inline int has_acktiming(const char *prefix)
 extern int has_acktiming(const char *prefix);
 #endif
 
-#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76)
+#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76) || defined(HAVE_MVEBU)
 extern int has_vht160(const char *interface);
 extern int has_vht80(const char *interface);
 extern int has_vht80plus80(const char *interface);
@@ -524,7 +524,10 @@ int has_subeamforming(const char *interface);
 int has_mubeamforming(const char *interface);
 extern char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vht160, int vht8080, int subf, int mubf);
 #else
-extern char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vht160, int vht8080, int subf, int mubf);
+static inline int  *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vht160, int vht8080, int subf, int mubf) 
+{
+	return strdup("");
+}
 static inline int has_subeamforming(const char *prefix)
 {
 	return 0;
