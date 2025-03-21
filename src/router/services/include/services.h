@@ -199,6 +199,7 @@ DECLARE_SERVICE(arch_defaults);
 DECLARE_SERVICE(dbus);
 DECLARE_SERVICE(bluetooth);
 DECLARE_SERVICE(arpd);
+DECLARE_SERVICE(atm);
 
 #if defined(HAVE_IPQ6018)
 int nss_disabled(int setcur);
