@@ -524,6 +524,7 @@ int has_subeamforming(const char *interface);
 int has_mubeamforming(const char *interface);
 extern char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vht160, int vht8080, int subf, int mubf);
 #else
+extern char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vht160, int vht8080, int subf, int mubf);
 static inline int has_subeamforming(const char *prefix)
 {
 	return 0;
