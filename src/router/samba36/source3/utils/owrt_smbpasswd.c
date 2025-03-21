@@ -18,6 +18,9 @@
 #include "includes.h"
 #include <endian.h>
 
+void mdfour(uint8_t *out, const uint8_t *in, int n);
+void E_P16(const uint8_t *p14,uint8_t *p16);
+
 void E_md4hash(const char *passwd, uchar p16[16])
 {
 	int len;
