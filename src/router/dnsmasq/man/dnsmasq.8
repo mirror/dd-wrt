@@ -852,13 +852,17 @@ name on successive queries, for load-balancing. This turns off that
 behaviour, so that the records are always returned in the order
 that they are received from upstream.
 .TP
-.B --no-0x20-encode
-By default, dnsmasq scrambles the case of letters in DNS queries it sends upstream as a security feature.
+.B --do-0x20-encode, --no-0x20-encode
+Dnsmasq can scramble the case of letters in DNS queries it sends upstream as a security feature.
 This technique can interact badly with rare broken DNS servers which don't preserve the case
 of the query in their reply. The first time a reply is returned
 which matches the query in all respects except case, a warning
 will be logged. If this coincides with DNS not functioning, it
-is necessary to disable this scrambling with --no-0x20-encode.
+is necessary to disable the feature. As at version 2.91, 0x20 encoding
+is disabled by default, and must be enabled with --do-0x20-encode. The default
+may change in the future, so to be sure of its status after an upgrade, set --do-0x20-encode
+or --no-0x20-encode in your config. --no-0x20-encode overrides --do-x20-encode or a future default
+0x20-encode enable.
 .TP
 .B --use-stale-cache[=<max TTL excess in s>]
 When set, if a DNS name exists in the cache, but its time-to-live has expired, dnsmasq will return the data anyway. (It attempts to refresh the

@@ -113,9 +113,11 @@ version 2.91
 	badly with rare broken DNS servers which don't preserve the case
 	of the query in their reply. The first time a reply is returned
 	which matches the query in all respects except case, a warning
-	will be logged. If this coincides with DNS not functioning, it
-	is necessary to disable bit 0x20 encoding with --no-0x20-encode.
-
+	will be logged. In this release, 0x020-encoding is default-off
+	and must be explicitly enabled with --do-0x20-encoding. In future
+	releases it may default on. You can avoid a future release
+	changing the behaviour of an installation with --no-x20-encode.
+	
 	Fix a long-standing problem when two queries which are identical
 	in every repect _except_ case, get combined by dnsmasq. If
 	dnsmasq gets eg, two queries for example.com and Example.com
