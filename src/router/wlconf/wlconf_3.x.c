@@ -2331,7 +2331,7 @@ int wlconf(char *name)
 		WL_IOVAR_SETINT(name, "dyn160", (uint32) val);
 	}
 
-	WL_IOVAR_GETINT(name, "chanspec", &prev_chspec);
+	WL_IOVAR_GETINT(name, "chanspec", (int *)&prev_chspec);
 
 	/* Set channel before setting gmode or rateset */
 	/* Manual Channel Selection - when channel # is not 0 */
