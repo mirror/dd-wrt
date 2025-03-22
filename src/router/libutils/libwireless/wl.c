@@ -219,8 +219,6 @@ int has_vht80plus80(const char *prefix)
 }
 #endif
 
-#ifndef HAVE_MADWIFI
-
 unsigned int _ieee80211_ieee2mhz(int has_6ghz, unsigned int chan)
 {
 	if (has_6ghz) {
@@ -245,6 +243,9 @@ unsigned int ieee80211_ieee2mhz(const char *prefix, unsigned int chan)
 {
 	return _ieee80211_ieee2mhz(prefix ? has_6ghz(prefix) : 0, chan);
 }
+
+#ifndef HAVE_MADWIFI
+
 
 #if defined(HAVE_RT2880) || defined(HAVE_RT61)
 char *getRADev(const char *prefix)
