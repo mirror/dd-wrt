@@ -163,7 +163,7 @@ snmp-configure: nvram libutils
 				--with-cc="$(CC)" \
 				--with-ar=$(ARCH)-linux-uclibc-ar \
 				--with-endianness=$(SNMP_ENDIAN) \
-				--with-cflags="$(COPTS) $(MIPS16_OPT) $(LTO) -DHAVE_LINUX_RTNETLINK_H -I$(SSLPATH)/include -D_GNU_SOURCE -DCAN_USE_SYSCTL=1 -I$(TOP)/libnl-tiny/include -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/shared -I$(TOP)/../include.v24" \
+				--with-cflags="$(COPTS) $(MIPS16_OPT) $(LTO) -Wno-incompatible-pointer-types -DHAVE_LINUX_RTNETLINK_H -I$(SSLPATH)/include -D_GNU_SOURCE -DCAN_USE_SYSCTL=1 -I$(TOP)/libnl-tiny/include -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/shared -I$(TOP)/../include.v24" \
 				--with-ldflags="-ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO) -L$(SSLPATH)" \
 				--enable-mini-agent \
 				--disable-debugging \
