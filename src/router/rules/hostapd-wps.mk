@@ -122,7 +122,7 @@ ATH9K_CFLAGS += $(THUMB) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include
 ATH9K_LDFLAGS +=  $(THUMB)
 
 hostapd2: $(TINY) nvram ubus
-	$(MAKE) -C wolfssl/standard_static
+#	$(MAKE) -C wolfssl/standard_static
 	cp shared/nl80211.h hostapd-$(HOSTAPDVERSION)/src/drivers/nl80211_copy.h
 	$(MAKE) -C hostapd-$(HOSTAPDVERSION)/hostapd clean
 	$(MAKE) -C hostapd-$(HOSTAPDVERSION)/wpa_supplicant clean
