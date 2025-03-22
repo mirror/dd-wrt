@@ -60,6 +60,9 @@ static char sccsid[] = "@(#)svc_tcp.c 1.21 87/08/11 Copyr 1984 Sun Micro";
 #endif
 
 
+int
+bindresvport (int sd, struct sockaddr_in *sin);
+
 /*
  * Ops vector for TCP/IP based rpc service handle
  */

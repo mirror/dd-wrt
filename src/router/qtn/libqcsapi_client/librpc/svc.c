@@ -45,6 +45,7 @@
 #include <rpc/svc.h>
 #include <rpc/pmap_clnt.h>
 #include <sys/poll.h>
+#include <strings.h>
 
 /* used by svc_[max_]pollfd */
 /* used by svc_fdset */

@@ -67,6 +67,9 @@ static char sccsid[] = "@(#)clnt_tcp.c 1.37 87/10/05 Copyr 1984 Sun Micro";
 
 extern u_long _create_xid (void) attribute_hidden;
 
+int
+bindresvport (int sd, struct sockaddr_in *sin);
+
 #define MCALL_MSG_SIZE 24
 
 struct ct_data

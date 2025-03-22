@@ -63,6 +63,8 @@ static char sccsid[] = "@(#)clnt_udp.c 1.39 87/08/11 Copyr 1984 Sun Micro";
 
 /* CMSG_NXTHDR is using it */
 
+int
+bindresvport (int sd, struct sockaddr_in *sin);
 
 extern u_long _create_xid (void) attribute_hidden;
 

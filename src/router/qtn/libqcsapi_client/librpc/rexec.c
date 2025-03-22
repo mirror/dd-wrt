@@ -54,6 +54,7 @@ extern int __libc_sa_len(sa_family_t __af) __THROW attribute_hidden;
 
 /* int rexecoptions; - google does not know it */
 static char ahostbuf[NI_MAXHOST];
+int ruserpass(const char *host, const char **aname, const char **apass);
 
 int
 rexec_af(char **ahost, int rport, const char *name, const char *pass, const char *cmd, int *fd2p, sa_family_t af)

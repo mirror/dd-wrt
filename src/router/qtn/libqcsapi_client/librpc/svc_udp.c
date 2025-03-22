@@ -65,6 +65,9 @@ static char sccsid[] = "@(#)svc_udp.c 1.24 87/08/11 Copyr 1984 Sun Micro";
 #define MAX(a, b)     ((a > b) ? a : b)
 #endif
 
+int
+bindresvport (int sd, struct sockaddr_in *sin);
+
 static bool_t svcudp_recv (SVCXPRT *, struct rpc_msg *);
 static bool_t svcudp_reply (SVCXPRT *, struct rpc_msg *);
 static enum xprt_stat svcudp_stat (SVCXPRT *);
