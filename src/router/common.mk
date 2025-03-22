@@ -65,7 +65,12 @@ ifeq ($(ARCH),powerpc)
 MUSL_LD:=ld-musl-powerpc-sf.so.1
 KERNEL_HEADER_ARCH:=powerpc
 endif
-
+ifeq ($(CONFIG_MIMALLOC),y)
+MUSLVARIANT:=-mimalloc
+endif
+ifeq ($(CONFIG_MIMALLOC_SECURE),y)
+MUSLVARIANT:=-mimalloc-secure
+endif
 
 install_headers:
 # important step, required for new kernels
