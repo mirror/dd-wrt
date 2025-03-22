@@ -484,7 +484,7 @@ void ar7240_reg_wr_nf(unsigned int phys, unsigned int val)
 	phys /= 16;
 	phys *= 16;
 	unsigned char *nvram_buf = mmap(NULL, 16, PROT_READ | PROT_WRITE, MAP_SHARED, nvram_fd, phys);
-	unsigned int *w = &nvram_buf[offs];
+	unsigned int *w = (unsigned int *)&nvram_buf[offs];
 	*w = val;
 	munmap(nvram_buf, 16);
 	close(nvram_fd);
@@ -500,7 +500,7 @@ unsigned int ar7240_reg_rd(unsigned int phys)
 
 	unsigned char *nvram_buf = mmap(NULL, 16, PROT_READ | PROT_WRITE, MAP_SHARED, nvram_fd, phys);
 
-	unsigned int *w = &nvram_buf[offs];
+	unsigned int *w = (unsigned int *)&nvram_buf[offs];
 	ret = *w;
 
 	munmap(nvram_buf, 16);
