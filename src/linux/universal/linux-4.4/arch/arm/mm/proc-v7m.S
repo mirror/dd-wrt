@@ -73,7 +73,7 @@ ENTRY(cpu_v7m_do_resume)
 ENDPROC(cpu_v7m_do_resume)
 #endif
 
-	.section ".text.init", #alloc, #execinstr
+	.section ".text.init", "ax"
 
 /*
  *	__v7m_setup
@@ -135,7 +135,7 @@ __v7m_setup_stack_top:
 	string cpu_elf_name "v7m"
 	string cpu_v7m_name "ARMv7-M"
 
-	.section ".proc.info.init", #alloc
+	.section ".proc.info.init", "a"
 
 	/*
 	 * Match any ARMv7-M processor core.
