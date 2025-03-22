@@ -434,7 +434,7 @@ static inline int is_6ghz_psc_frequency(int freq)
 }
 #endif
 extern int getdevicecount(void);
-#if !defined(HAVE_ATH10K) && !defined(HAVE_BRCMFMAC) && !defined(HAVE_MT76) && !defined(HAVE_MVEBU)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_MADWIFI_MIMO) && !defined(HAVE_ATH9K)
 extern int has_vht160(const char *interface);
 extern int has_vht80plus80(const char *prefix);
 #endif
