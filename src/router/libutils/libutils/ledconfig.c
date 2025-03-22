@@ -2078,6 +2078,10 @@ static int C_led_4702(int i)
 }
 #endif
 
+unsigned int read_gpio(char *device);
+
+unsigned int write_gpio(char *device, unsigned int val);
+
 static int diag_led_4704(int type, int act)
 {
 #if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) ||       \
