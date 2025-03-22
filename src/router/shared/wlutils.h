@@ -94,6 +94,15 @@ extern int wl_hwaddr(char *name, unsigned char *hwaddr);
 extern int wl_probe(char *name);
 #ifdef HAVE_DHDAP
 extern int dhd_probe(char *name);
+extern int dhd_iovar_setint(char *ifname, char *iovar, int val);
+extern int dhd_ioctl(char *name, int cmd, void *buf, int len);
+extern int dhd_iovar_setbuf(char *ifname, char *iovar, void *param, int paramlen, void *bufptr, int buflen);
+extern int dhd_iovar_set(char *ifname, char *iovar, void *param, int paramlen);
+extern int dhd_bssiovar_setbuf(char *ifname, char *iovar, int bssidx, void *param, int paramlen, void *bufptr, int buflen);
+extern int dhd_bssiovar_set(char *ifname, char *iovar, int bssidx, void *param, int paramlen);
+extern int dhd_bssiovar_setint(char *ifname, char *iovar, int bssidx, int val);
+
+
 #endif
 /*
  * Returns the list of associated stations in the pre-existing buffer list 
