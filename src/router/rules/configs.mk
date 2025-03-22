@@ -89,13 +89,13 @@ endif
 ifneq ($(CONFIG_MIMALLOC),y)
 ifneq ($(CONFIG_MIMALLOC_SECURE),y)
 ifeq ($(ARCH),mips)
-ifeq ($(CONFIG_OPENSSL),y)
+ifeq ($(CONFIG_FREERADIUS),y)
 CONFIG_JEMALLOC=y
 COPTS+=-DHAVE_JEMALLOC=y
 endif
 endif
 ifeq ($(ARCH),mipsel)
-ifeq ($(CONFIG_OPENSSL),y)
+ifeq ($(CONFIG_FREERADIUS),y)
 ifeq ($(CONFIG_BCMMODERN),y)
 ifeq ($(CONFIG_80211AC),y)
 CONFIG_JEMALLOC=y
@@ -211,7 +211,7 @@ obj-$(CONFIG_BIRD) += bird
 obj-$(CONFIG_DDNS) += inadyn
 obj-$(CONFIG_OTHERS) += others
 obj-$(CONFIG_EOU) += eou
-obj-$(CONFIG_OPENSER) += openser
+#obj-$(CONFIG_OPENSER) += openser
 #obj-$(CONFIG_MILKFISH) += milkfish
 obj-$(CONFIG_MC) += libffi zlib glib20 unrar ncurses mc util-linux pcre2
 #ifneq ($(CONFIG_OPENNDS),y)
@@ -221,7 +221,7 @@ obj-$(CONFIG_NOCAT) += libmicrohttpd nodogsplash
 #endif
 
 obj-$(CONFIG_POWERTOP) += pciutils ncurses powertop
-obj-$(CONFIG_RTPPROXY) += rtpproxy
+#obj-$(CONFIG_RTPPROXY) += rtpproxy
 obj-$(CONFIG_ZABBIX) += pcre zabbix
 obj-$(CONFIG_SAMBA) += samba
 ifneq ($(CONFIG_SAMBA4),y)
