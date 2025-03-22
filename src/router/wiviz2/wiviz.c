@@ -362,8 +362,6 @@ static const char *ntoa(const uint8_t mac[6])
 	return (i < 17 ? NULL : a);
 }
 
-u_int ieee80211_ieee2mhz(u_int chan, u_int flags);
-
 ////////////////////////////////////////////////////////////////////////////////
 void reloadConfig()
 {
@@ -424,7 +422,7 @@ void reloadConfig()
 					cfg->curChannel = val;
 					if (cfg->readFromWl) {
 #ifdef HAVE_MADWIFI
-						set_channel(cfg, wl_dev, ieee80211_ieee2mhz(cfg->curChannel, 0));
+						set_channel(cfg, wl_dev, ieee80211_ieee2mhz(nvram_safe_get("wifi_display"), cfg->curChannel));
 //          eval("iwconfig %s channel %d\n",wl_dev,cfg->curChannel);
 #elif HAVE_RT2880
 						if (nvram_match("wifi_display", "wl0"))
