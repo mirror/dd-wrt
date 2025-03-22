@@ -5,7 +5,7 @@
 /* the libc malloc should not read any env vars */
 #define MI_NO_GETENV 1
 /* this is a hardened build */
-#define MI_SECURE 4
+#define MI_SECURE 0
 /* this would be nice to have, but unfortunately it
  * makes some things a lot slower (e.g. sort(1) becomes
  * roughly 2.5x slower) so disable unless we figure out
