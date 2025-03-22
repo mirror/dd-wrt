@@ -310,6 +310,8 @@ extern int tlog_write_log(const char *buff, int bufflen);
 /* set log level */
 static inline int tlog_setlevel(tlog_level level) {return 0;}
 
+static inline tlog_level tlog_getlevel(void) {return 9;}
+
 /* enalbe log to screen */
 static inline void tlog_setlogscreen(int enable) {}
 
