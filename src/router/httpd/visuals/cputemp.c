@@ -585,7 +585,9 @@ static int getwifi0(void)
 {
 	return getwifi(0);
 }
-
+#ifdef HAVE_QTN
+#include <qtnapi.h>
+#endif
 static int getwifi1(void)
 {
 #ifdef HAVE_QTN

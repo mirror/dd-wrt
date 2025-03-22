@@ -198,7 +198,7 @@ int active_wireless_if(webs_t wp, int argc, char_t **argv, char *iface, char *vi
 	int i;
 
 	for (i = 0; i < maclist->count; i++) {
-		ether_etoa((uint8 *)&maclist->ea[i], mac);
+		ether_etoa((const char *)&maclist->ea[i], mac);
 
 		rssi = 0;
 		noise = 0;

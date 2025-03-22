@@ -22,6 +22,7 @@
 #ifdef HAVE_QTN
 #include <net/if.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <stdlib.h>
 #include <ddnvram.h>
 #include <shutils.h>
@@ -29,6 +30,8 @@
 #include <syslog.h>
 #include <signal.h>
 #include <services.h>
+#include <qtnapi.h>
+#include <ctype.h>
 
 struct txpower_ac_qtn_s {
 	uint16 min;

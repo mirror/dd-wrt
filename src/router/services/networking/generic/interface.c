@@ -39,6 +39,7 @@
 #include <net/if_arp.h>
 #include <proto/ethernet.h>
 #include <shutils.h>
+#include <wlutils.h>
 #include <ddnvram.h>
 #include <rc.h>
 #include <cy_conf.h>

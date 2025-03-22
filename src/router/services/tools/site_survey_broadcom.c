@@ -444,7 +444,7 @@ static void wl_dump_wpa_rsn_ies(uint8 *cp, uint len, struct site_survey_list *li
 			}
 		}
 		if (customie[1] >= 4 && !memcmp(&customie[2], mtik_oui, 3)) {
-			struct ieee80211_mtik_ie *ie = customie;
+			struct ieee80211_mtik_ie *ie = (struct ieee80211_mtik_ie *)customie;
 			if (ie->iedata.namelen <= 15) {
 				memcpy(list->radioname, ie->iedata.radioname, ie->iedata.namelen);
 			}

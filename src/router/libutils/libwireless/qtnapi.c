@@ -1398,7 +1398,7 @@ void rpc_update_wdslist()
 				break; // No such device
 			dbG("Qcsapi qcsapi_wds_get_peer_address %s error, return: %d\n", WIFINAME, ret);
 		} else
-			dbG("current WDS peer index 0 addresse: %s\n", ether_etoa((struct ether_addr *)&peer_address, tmp));
+			dbG("current WDS peer index 0 addresse: %s\n", ether_etoa((const char *)&peer_address, tmp));
 	}
 }
 
@@ -1422,7 +1422,7 @@ void rpc_update_wds_psk(const char *wds_psk)
 		} else {
 			char tmp[20];
 			//                      dbG("current WDS peer index 0 addresse: %s\n", wl_ether_etoa((struct ether_addr *) &peer_address));
-			ret = rpc_qcsapi_wds_set_psk(WIFINAME, ether_etoa((struct ether_addr *)&peer_address, tmp), wds_psk);
+			ret = rpc_qcsapi_wds_set_psk(WIFINAME, ether_etoa((const char *)&peer_address, tmp), wds_psk);
 			if (ret < 0)
 				dbG("rpc_qcsapi_wds_set_psk %s error, return: %d\n", WIFINAME, ret);
 		}

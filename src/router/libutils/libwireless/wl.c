@@ -18,6 +18,7 @@
 #include <utils.h>
 #include <wlutils.h>
 #include <shutils.h>
+#include <libbridge.h>
 #include <utils.h>
 #include <ddnvram.h>
 #include <syslog.h>
@@ -1124,7 +1125,7 @@ int wl_getbssid(char *wl, char *mac)
 	struct ether_addr ea;
 
 	wl_ioctl(wl, WLC_GET_BSSID, &ea, ETHER_ADDR_LEN);
-	ether_etoa(&ea, mac);
+	ether_etoa((const char*)&ea, mac);
 	return 0;
 }
 
@@ -1206,7 +1207,7 @@ int getwifiinfo(const char *ifname, unsigned char *macname, int field)
 			wl_ioctl(ifname, WLC_GET_RSSI, &rssi, sizeof(rssi));
 			return rssi;
 		} else {
-			ether_atoe(macname, &rssi_get.ea);
+			ether_atoe(macname, (char *)&rssi_get.ea);
 			wl_ioctl(ifname, WLC_GET_RSSI, &rssi_get, sizeof(rssi_get));
 			return rssi_get.val;
 		}

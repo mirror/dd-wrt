@@ -255,6 +255,8 @@ endif
 ifeq ($(CONFIG_QTN),y)
 CFLAGS_EXTRA += -DHAVE_QTN
 OBJS += quantenna.o
+CFLAGS_EXTRA +=  -I$(TOP)/qtn/libqcsapi_client -I$(TOP)/qtn/libqcsapi_client/librpc 
+
 endif
 ifeq ($(CONFIG_MVEBU),y)
 CFLAGS_EXTRA += -DHAVE_MVEBU

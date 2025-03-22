@@ -33,6 +33,7 @@
 #include <shutils.h>
 #include <wlutils.h>
 #include <utils.h>
+#include <ctype.h>
 
 #include <qtnapi.h>
 
@@ -216,8 +217,8 @@ QTN_RESET:
 			dbG("rpc_qcsapi_interface_get_mac_addr, return: %d\n", ret);
 		else {
 			char tmp[32];
-			nvram_set("1:macaddr", ether_etoa((struct ether_addr *)&wl_mac_addr, tmp));
-			nvram_set("wl1_hwaddr", ether_etoa((struct ether_addr *)&wl_mac_addr, tmp));
+			nvram_set("1:macaddr", ether_etoa((const char *)&wl_mac_addr, tmp));
+			nvram_set("wl1_hwaddr", ether_etoa((const char *)&wl_mac_addr, tmp));
 		}
 
 		//              rpc_update_wdslist();

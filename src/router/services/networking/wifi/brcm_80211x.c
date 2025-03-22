@@ -20,6 +20,7 @@
  * $Id:
  */
 #include <stdio.h>
+#include <sys/stat.h>
 #include <ddnvram.h>
 #include <utils.h>
 #include <shutils.h>

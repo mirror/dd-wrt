@@ -100,12 +100,17 @@ extern int dhd_probe(char *name);
  */
 int getchannels(unsigned int *list, char *ifname);
 int getwdslist(char *name, unsigned char *list);
+unsigned int ieee80211_ieee2mhz(const char *prefix, unsigned int chan);
 
 #ifdef HAVE_QTN
 int rpc_qtn_ready(void);
 int getassoclist_qtn(const char *name, unsigned char *list);
 int getNoiseIndex_qtn(const char *ifname, int index);
 int getRssiIndex_qtn(const char *ifname, int index);
+
+int getTXRate_qtn(const char *name, int index);
+int getRXRate_qtn(const char *name, int index);
+
 #endif
 struct frequency {
 	struct dd_list_head list;
@@ -428,12 +433,18 @@ static inline int is_6ghz_psc_frequency(int freq)
 	return 0;
 }
 #endif
-
+extern int getdevicecount(void);
+#ifndef HAVE_MADWIFI
+extern int has_vht160(const char *interface);
+extern int has_vht80plus80(const char *prefix);
+#endif
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
+extern int has_acktiming(const char *prefix);
+#endif
 #if defined(HAVE_MADWIFI) || defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 const char *get_channeloffset(const char *prefix, int *iht, int *channeloffset);
 extern struct wifi_channels *list_channels_11n(char *devnr);
 extern struct wifi_channels *list_channels_ath9k(char *devnr, char *country, int max_bandwidth_khz, unsigned char band);
-extern int getdevicecount(void);
 
 extern int mac80211_get_maxpower(char *interface);
 extern int mac80211_get_coverageclass(char *interface);
@@ -689,6 +700,7 @@ extern int wl_bssiovar_getbuf(char *ifname, char *iovar, int bssidx, void *param
 extern int wl_bssiovar_get(char *ifname, char *iovar, int bssidx, void *outbuf, int len);
 extern int wl_bssiovar_set(char *ifname, char *iovar, int bssidx, void *param, int paramlen);
 extern int wl_bssiovar_setint(char *ifname, char *iovar, int bssidx, int val);
+void setRegulationDomain(char *reg);
 
 int wl_getbssid(char *wl, char *mac);
 

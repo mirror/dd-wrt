@@ -128,6 +128,7 @@ CFLAGS += -DHAVE_SPECIALEDITION
 ADDOBJ = special.o
 endif
 
+
 ifeq ($(CONFIG_ANTIFLASH),y)
 CFLAGS += -DANTI_FLASH
 endif
@@ -967,6 +968,7 @@ endif
 
 ifeq ($(CONFIG_QTN),y)
 CFLAGS += -DHAVE_QTN  -DRPCOVERRIDE
+CFLAGS +=  -I$(TOP)/qtn/libqcsapi_client -I$(TOP)/qtn/libqcsapi_client/librpc 
 endif
 
 ifeq ($(CONFIG_SMBD),y)
