@@ -9,7 +9,7 @@ endif
 
 jemalloc-configure:
 	cd jemalloc && ./autogen.sh
-	cd jemalloc && ./configure --prefix=/usr --libdir=/usr/lib --host=$(ARCH)-linux --disable-debug --disable-stats --disable-fill --disable-cxx --enable-xmalloc $(JEMALLOC_FLAGS) CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" 
+	cd jemalloc && ./configure --prefix=/usr --libdir=/usr/lib --host=$(ARCH)-openwrt-linux-musl --disable-debug --disable-stats --disable-fill --disable-cxx --enable-xmalloc $(JEMALLOC_FLAGS) CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" 
 
 jemalloc:
 	$(MAKE) -C jemalloc
