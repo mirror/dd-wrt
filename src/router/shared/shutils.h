@@ -181,13 +181,13 @@ char *strlcat_r(const char *s1, const char *s2, char *buf, size_t len);
 char *dd_strncat(char *dst, const char *src, size_t len);
 size_t dd_strlcat(char *dst, const char *src, size_t len);
 
-static inline char * strlhelp(char *dst, const char *s, size_t len) {
-	strlcpy(dst, s, len);
+static inline char * strlcathelp(char *dst, const char *s, size_t len) {
+	strlcat(dst, s, len);
 	return dst;
 }
 
 #define strcat_r(s1, s2, buf) (sizeof(buf) == sizeof(void *) ? strcat_r(s1, s2, buf) : strlcat_r(s1, s2, buf, sizeof(buf)))
-#define strcat(buf, s1) sizeof(buf) == sizeof(void *) ? strcat(buf, s1) : strlhelp(buf, s1, sizeof(buf))
+#define strcat(buf, s1) sizeof(buf) == sizeof(void *) ? strcat(buf, s1) : strlcathelp(buf, s1, sizeof(buf))
 
 #ifndef FROM_NVRAM
 extern int dd_sprintf(char *str, const char *fmt, ...);
@@ -222,10 +222,16 @@ char *iso_strdup(const char *str);
 #define free dd_free
 #define strdup dd_strdup
 */
-#define strcpy(dst, src) (sizeof(dst) == sizeof(void *) ? strcpy(dst, src) : strncpy(dst, src, sizeof(dst) - 1))
+static inline char * strlcpyhelp(char *dst, const char *s, size_t len) {
+	strlcpy(dst, s, len);
+	return dst;
+}
+
+
+#define strcpy(dst, src) (sizeof(dst) == sizeof(void *) ? strcpy(dst, src) : strlcpyhelp(dst, src, sizeof(dst) - 1))
 #define sprintf(output, format, args...)                                         \
 	(sizeof(output) == sizeof(void *) ? dd_sprintf(output, format, ##args) : \
-					    dd_snprintf(output, sizeof(output), format, ##args))
+					    dd_snprintf(output, sizeof(output) - 1, format, ##args))
 #define snprintf(output, len, format, args...) dd_snprintf(output, len, format, ##args)
 #define system(cmd) dd_system(cmd)
 #endif
