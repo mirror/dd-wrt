@@ -86,6 +86,7 @@ ifeq ($(KERNELVERSION),3.5)
 obj-y += portscan
 CONFIG_PORTSCAN=y
 endif
+
 ifneq ($(CONFIG_MIMALLOC),y)
 ifneq ($(CONFIG_MIMALLOC_SECURE),y)
 ifeq ($(ARCH),mips)
@@ -93,9 +94,21 @@ ifeq ($(CONFIG_FREERADIUS),y)
 CONFIG_JEMALLOC=y
 COPTS+=-DHAVE_JEMALLOC=y
 endif
+ifeq ($(CONFIG_TOR),y)
+CONFIG_JEMALLOC=y
+COPTS+=-DHAVE_JEMALLOC=y
+endif
 endif
 ifeq ($(ARCH),mipsel)
 ifeq ($(CONFIG_FREERADIUS),y)
+ifeq ($(CONFIG_BCMMODERN),y)
+ifeq ($(CONFIG_80211AC),y)
+CONFIG_JEMALLOC=y
+COPTS+=-DHAVE_JEMALLOC=y
+endif
+endif
+endif
+ifeq ($(CONFIG_TOR),y)
 ifeq ($(CONFIG_BCMMODERN),y)
 ifeq ($(CONFIG_80211AC),y)
 CONFIG_JEMALLOC=y
