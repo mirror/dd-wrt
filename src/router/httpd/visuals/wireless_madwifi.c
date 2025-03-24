@@ -204,10 +204,8 @@ int active_wireless_if(webs_t wp, int argc, char_t **argv, char *ifname, int *cn
 	return globalcnt;
 }
 
-#if defined(HAVE_ATH9K)
 extern int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname, int *cnt, int globalcnt, int turbo,
 				    int macmask);
-#endif
 static int assoc_count[16];
 
 EJ_VISIBLE void ej_assoc_count(webs_t wp, int argc, char_t **argv)
