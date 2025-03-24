@@ -433,7 +433,7 @@ bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Prosljeđivanje Raspona Vrata";
 bmenu.applicationspforwarding="Prosljeđivanje Vrata";
 bmenu.applicationsptriggering="Aktiviranje po Vratima";
-bmenu.applicationsUpnp="UPnP";
+bmenu.applicationsUpnp="UPnP IGD";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 bmenu.applicationsP2P="P2P";
@@ -1542,12 +1542,11 @@ hupgrad.right2="Click on the <em>Pretraži...</em> button to select the firmware
 
 // ** UPnP.asp **//
 
-upnp.titl="UPnP";
-upnp.h2="Universal Plug and Play (UPnP)";
+upnp.titl="UPnP IGD";
+upnp.h2="UPnP IGD Usluga";
 upnp.legend="Prosljeđivanje";
 upnp.legend2="Konfiguracija UPnP";
-upnp.serv="UPnP Usluga";
-upnp.url="Šalji prezentacijski URL";
+upnp.serv="UPnP IGD Usluga";
 upnp.msg1="Klikni za brisanje unosa";
 upnp.msg2="Brisati sve unose?";
 
