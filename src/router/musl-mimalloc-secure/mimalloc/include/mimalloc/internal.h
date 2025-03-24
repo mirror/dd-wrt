@@ -103,7 +103,7 @@ static inline uintptr_t _mi_random_shuffle(uintptr_t x);
 
 // init.c
 mi_decl_internal mi_decl_cache_align mi_stats_t       _mi_stats_main;
-mi_decl_internal mi_decl_hidden mi_decl_cache_align const mi_page_t  _mi_page_empty;
+mi_decl_internal mi_decl_cache_align const mi_page_t  _mi_page_empty;
 mi_decl_internal void        _mi_process_load(void);
 mi_decl_internal void mi_cdecl _mi_process_done(void);
 mi_decl_internal bool        _mi_is_redirected(void);
@@ -908,7 +908,7 @@ static inline uintptr_t _mi_random_shuffle(uintptr_t x) {
 mi_decl_internal int    _mi_os_numa_node_get(void);
 mi_decl_internal size_t _mi_os_numa_node_count_get(void);
 
-mi_decl_internal mi_decl_hidden _Atomic(size_t) _mi_numa_node_count;
+mi_decl_internal _Atomic(size_t) _mi_numa_node_count;
 static inline int _mi_os_numa_node(void) {
   if mi_likely(mi_atomic_load_relaxed(&_mi_numa_node_count) == 1) { return 0; }
   else return _mi_os_numa_node_get();
