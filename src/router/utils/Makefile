@@ -43,6 +43,7 @@ ifeq ($(CONFIG_ATH9K),y)
 CFLAGS += -DHAVE_ATH9K
 endif
 ifeq ($(CONFIG_MADWIFI),y)
+CFLAGS += -DHAVE_MADWIFI
 UTILS += wl_atheros
 else
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
