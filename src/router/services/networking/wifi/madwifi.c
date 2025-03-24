@@ -97,11 +97,13 @@ static void deconfigure_single(int count)
 	}
 
 	char vifs[128];
+#ifdef HAVE_ATH9K
 	if (is_mac80211(dev)) {
 		deconfigure_single_ath9k(count);
 		sysprintf("rm -f /tmp/wlan%d_configured", count);
 		return;
 	}
+#endif
 #ifdef HAVE_MADWIFI
 	sprintf(vifs, "%s.1 %s.2 %s.3 %s.4 %s.5 %s.6 %s.7 %s.8 %s.9", dev, dev, dev, dev, dev, dev, dev, dev, dev);
 	int s;
@@ -2080,12 +2082,14 @@ static void configure_single(int count, char **configs, int *configidx)
 		led_control(LED_SEC0, LED_OFF);
 	if (!strncmp(dev, "wlan1", 4))
 		led_control(LED_SEC1, LED_OFF);
+#ifdef HAVE_ATH9K
 	if (is_mac80211(dev)) {
 		configure_single_ath9k(count);
 		ath9k_start_supplicant(count, dev, configs, configidx);
 		sysprintf("touch /tmp/wlan%d_configured", count);
 		return;
 	}
+#endif
 #ifdef HAVE_MADWIFI
 
 	sprintf(wifivifs, "wlan%d_vifs", count);
