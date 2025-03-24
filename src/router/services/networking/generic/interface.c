@@ -541,7 +541,7 @@ void start_setup_vlans(void)
 	for (i = 0; i < strlen(c); i++)
 		vlanlist[i] = i;
 	i = 0;
-	char *portvlan[32];
+	char portvlan[32];
 	foreach(portvlan, c, next) {
 		vlanlist[i++] = atoi(portvlan);
 	}
