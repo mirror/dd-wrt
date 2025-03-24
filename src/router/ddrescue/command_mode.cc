@@ -1,5 +1,5 @@
 /* GNU ddrescue - Data recovery tool
-   Copyright (C) 2004-2023 Antonio Diaz Diaz.
+   Copyright (C) 2004-2025 Antonio Diaz Diaz.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -55,8 +55,7 @@ int Rescuebook::copy_command( const char * const command )
       {
       if( complete_only ) truncate_domain( b.pos() + copied_size + error_size );
       else if( !truncate_vector( b.pos() + copied_size + error_size ) )
-        { final_msg( iname_, "EOF found below the size calculated from mapfile." );
-          retval = 1; }
+        { final_msg( iname_, early_eof_msg ); retval = 1; }
       }
     if( copied_size > 0 )
       change_chunk_status( Block( b.pos(), copied_size ), Sblock::finished );
@@ -112,7 +111,7 @@ int Rescuebook::do_commands( const int ides, const int odes )
       if( c == '\n' ) { if( command.size() ) break; else continue; }
       if( c == EOF ) { command = "f"; break; }	// discard partial command
       if( !std::isspace( c ) ) command += c;
-      else if( command.size() && !std::isspace( command[command.size()-1] ) )
+      else if( command.size() && !std::isspace( command.end()[-1] ) )
         command += ' ';
       }
     if( command == "q" ) break;

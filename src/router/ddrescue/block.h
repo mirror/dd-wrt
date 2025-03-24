@@ -1,5 +1,5 @@
 /* GNU ddrescue - Data recovery tool
-   Copyright (C) 2004-2023 Antonio Diaz Diaz.
+   Copyright (C) 2004-2025 Antonio Diaz Diaz.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -84,9 +84,11 @@ public:
   bool overlaps( const Block & b ) const
     { return ( pos_ < b.end() && b.pos_ < end() ); }
 
-  void crop( const Block & b );
+  void crop( const Block & b )
+    { const long long p = std::max( pos_, b.pos_ );
+      size_ = std::max( 0LL, std::min( end(), b.end() ) - p ); pos_ = p; }
   bool join( const Block & b );			// join contiguous blocks
-  void shift_boundary( Block & b, const long long pos );
+  void move_boundary( Block & b, const long long pos );
   Block split( long long pos, const int hardbs = 1 );
   };
 
@@ -322,9 +324,9 @@ long long initial_time();
 bool write_file_header( FILE * const f, const char * const filetype );
 bool write_timestamp( FILE * const f );
 bool write_final_timestamp( FILE * const f );
-const char * format_num( long long num, long long limit = 999999,
+const char * format_num( long long num, int limit = 999999,
                          const int set_prefix = 0 );
-const char * format_num3( long long num );
+const char * format_num3( long long num, const bool space = false );
 const char * format_percentage( long long num, long long den,
                                 const int iwidth = 3, int prec = -2,
                                 const bool rounding = true );

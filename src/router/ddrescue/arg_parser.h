@@ -1,5 +1,5 @@
-/* Arg_parser - POSIX/GNU command line argument parser. (C++ version)
-   Copyright (C) 2006-2023 Antonio Diaz Diaz.
+/* Arg_parser - POSIX/GNU command-line argument parser. (C++ version)
+   Copyright (C) 2006-2025 Antonio Diaz Diaz.
 
    This library is free software. Redistribution and use in source and
    binary forms, with or without modification, are permitted provided
@@ -36,14 +36,18 @@
    The argument '--' terminates all options; any following arguments are
    treated as non-option arguments, even if they begin with a hyphen.
 
-   The syntax for optional option arguments is '-<short_option><argument>'
-   (without whitespace), or '--<long_option>=<argument>'.
+   The syntax of options with an optional argument is
+   '-<short_option><argument>' (without whitespace), or
+   '--<long_option>=<argument>'.
+
+   The syntax of options with an empty argument is '-<short_option> ""',
+   '--<long_option> ""', or '--<long_option>=""'.
 */
 
 class Arg_parser
   {
 public:
-  enum Has_arg { no, yes, maybe };
+  enum Has_arg { no, yes, maybe, yme };		// yme = yes but maybe empty
 
   struct Option
     {

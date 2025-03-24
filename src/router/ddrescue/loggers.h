@@ -1,5 +1,5 @@
 /* GNU ddrescue - Data recovery tool
-   Copyright (C) 2013-2023 Antonio Diaz Diaz.
+   Copyright (C) 2013-2025 Antonio Diaz Diaz.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -69,7 +69,8 @@ public:
   Read_logger() : prev_is_msg( true ) {}
   bool open_file();
   bool print_line( const long long ipos, const long long size,
-                   const int copied_size, const int error_size );
+                   const int copied_size, const int error_size,
+                   const int errcode );
   bool print_msg( const long long time, const char * const msg );
   bool print_time( const long long time );
   };

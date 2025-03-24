@@ -4,7 +4,8 @@ You will need a C++98 compiler with support for 'long long'.
 (gcc 3.3.6 or newer is recommended).
 I use gcc 6.1.0 and 3.3.6, but the code should compile with any standards
 compliant compiler.
-Gcc is available at http://gcc.gnu.org.
+Gcc is available at http://gcc.gnu.org
+Lzip is available at http://www.nongnu.org/lzip/lzip.html
 
 
 Procedure
@@ -31,7 +32,8 @@ extracted from the archive.
 4. Optionally, type 'make check' to run the tests that come with ddrescue.
 
 5. Type 'make install' to install the programs and any data files and
-   documentation.
+   documentation. You need root privileges to install into a prefix owned
+   by root.
 
    Or type 'make install-compress', which additionally compresses the
    info manual and the man pages after installation.
@@ -59,7 +61,7 @@ After running 'configure', you can run 'make' and 'make install' as
 explained above.
 
 
-Copyright (C) 2004-2023 Antonio Diaz Diaz.
+Copyright (C) 2004-2025 Antonio Diaz Diaz.
 
 This file is free documentation: you have unlimited permission to copy,
 distribute, and modify it.

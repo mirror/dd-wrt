@@ -1,5 +1,5 @@
 /* GNU ddrescue - Data recovery tool
-   Copyright (C) 2004-2023 Antonio Diaz Diaz.
+   Copyright (C) 2004-2025 Antonio Diaz Diaz.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -52,14 +52,6 @@ void Block::align_end( const int alignment )
   }
 
 
-void Block::crop( const Block & b )
-  {
-  const long long p = std::max( pos_, b.pos_ );
-  const long long s = std::max( 0LL, std::min( end(), b.end() ) - p );
-  pos_ = p; size_ = s;
-  }
-
-
 bool Block::join( const Block & b )		// join contiguous blocks
   {
   if( this->follows( b ) ) pos_ = b.pos_;
@@ -71,11 +63,11 @@ bool Block::join( const Block & b )		// join contiguous blocks
   }
 
 
-// shift the boundary of two consecutive Blocks
-void Block::shift_boundary( Block & b, const long long pos )
+// move the boundary of two consecutive Blocks to pos
+void Block::move_boundary( Block & b, const long long pos )
   {
   if( end() != b.pos_ || pos <= pos_ || pos >= b.end() )
-    internal_error( "bad argument shifting the border of two Blocks." );
+    internal_error( "bad argument moving the boundary of two Blocks." );
   b.size_ = b.end() - pos; b.pos_ = pos; size_ = pos - pos_;
   }
 
@@ -98,7 +90,7 @@ Domain::Domain( const long long p, const long long s,
   {
   reset_cached_in_size();
   const Block b( p, s );
-  if( !mapname || !mapname[0] ) { block_vector.push_back( b ); return; }
+  if( !mapname || !*mapname ) { block_vector.push_back( b ); return; }
   Mapfile mapfile( mapname );
   if( !mapfile.read_mapfile( loose ? '?' : 0 ) )
     { show_file_error( mapname, "Mapfile does not exist or is not readable." );

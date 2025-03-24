@@ -1,5 +1,5 @@
 /* GNU ddrescue - Data recovery tool
-   Copyright (C) 2004-2023 Antonio Diaz Diaz.
+   Copyright (C) 2004-2025 Antonio Diaz Diaz.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 class Sliding_average		// Calculates the average of the last N terms
   {
   unsigned index;		// either index or data.size() contain N
-  std::vector<long long> data;
+  std::vector< long long > data;
 
 public:
   explicit Sliding_average( const unsigned terms ) : index( terms )
@@ -54,6 +54,7 @@ struct Rb_options
   long long min_read_rate;	// -2 = not set, -1 = reset
   long long skipbs;		// initial size to skip on read error
   long long max_skipbs;		// maximum size to skip on read error
+  std::vector< int > errno_vector;	// treat these values as non-fatal
   unsigned long max_bad_areas;
   unsigned long max_read_errors;
   unsigned long max_slow_reads;
@@ -79,7 +80,7 @@ struct Rb_options
   bool sparse;
   bool try_again;
   bool unidirectional;
-  bool verify_on_error;
+  bool check_on_error;
 
   Rb_options()
     : max_max_skipbs( 1LL << 60 ), max_error_rate( -1 ), min_outfile_size( -1 ),
@@ -93,7 +94,7 @@ struct Rb_options
       reopen_on_error( false ), reset_slow( false ), retrim( false ),
       reverse( false ), same_file( false ), simulated_poe( false ),
       sparse( false ), try_again( false ), unidirectional( false ),
-      verify_on_error( false )
+      check_on_error( false )
       {}
 
   bool operator==( const Rb_options & o ) const
@@ -102,6 +103,7 @@ struct Rb_options
                max_read_rate == o.max_read_rate &&
                min_read_rate == o.min_read_rate &&
                skipbs == o.skipbs && max_skipbs == o.max_skipbs &&
+               errno_vector == o.errno_vector &&
                max_bad_areas == o.max_bad_areas &&
                max_read_errors == o.max_read_errors &&
                max_slow_reads == o.max_slow_reads &&
@@ -123,7 +125,7 @@ struct Rb_options
                simulated_poe == o.simulated_poe &&
                sparse == o.sparse && try_again == o.try_again &&
                unidirectional == o.unidirectional &&
-               verify_on_error == o.verify_on_error ); }
+               check_on_error == o.check_on_error ); }
   bool operator!=( const Rb_options & o ) const
     { return !( *this == o ); }
   };
@@ -145,8 +147,8 @@ class Rescuebook : public Mapbook, public Rb_options
 					// 8 other (explained in final_msg),
 					// 16 read_errors, 32 slow_reads
   const bool synchronous_;
-  long long voe_ipos;			// pos of last good sector read, or -1
-  uint8_t * const voe_buf;		// copy of last good sector read
+  long long coe_ipos;			// pos of last good sector read, or -1
+  uint8_t * const coe_buf;		// copy of last good sector read
 					// variables for update_rates
   long long a_rate, c_rate, first_size, last_size;
   long long iobuf_ipos;			// last pos read in iobuf, or -1
@@ -198,8 +200,12 @@ public:
               const char * const iname, const char * const oname,
               const char * const mapname, const int cluster,
               const int hardbs, const bool synchronous );
-  ~Rescuebook() { delete[] voe_buf; }
+  ~Rescuebook() { delete[] coe_buf; }
 
   int do_commands( const int ides, const int odes );
   int do_rescue( const int ides, const int odes );
   };
+
+
+// defined in main.cc
+void show_final_msg( const char * const msg, const int errcode );

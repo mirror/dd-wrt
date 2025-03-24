@@ -1,5 +1,5 @@
 /* GNU ddrescue - Data recovery tool
-   Copyright (C) 2004-2023 Antonio Diaz Diaz.
+   Copyright (C) 2004-2025 Antonio Diaz Diaz.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ public:
 
   const Domain & domain() const { return domain_; }
   uint8_t * iobuf() const { return iobuf_; }		// main I/O buffer
-  // second buffer for compare_before_write and verify_on_error
+  // second buffer for compare_before_write and check_on_error
   uint8_t * iobuf2() const { return iobuf_ + iobuf_size_; }
   int iobuf_size() const { return iobuf_size_; }
   int hardbs() const { return hardbs_; }
@@ -172,6 +172,8 @@ inline bool block_is_zero( const uint8_t * const buf, const int size )
   return true;
   }
 
+
+const char * const early_eof_msg = "EOF found below the size calculated from mapfile.";
 
 // Defined in genbook.cc
 const char * format_time( const long long t, const bool low_prec = false );

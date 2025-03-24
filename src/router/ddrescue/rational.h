@@ -1,5 +1,5 @@
 /* Rational - Rational number class with overflow detection
-   Copyright (C) 2005-2023 Antonio Diaz Diaz.
+   Copyright (C) 2005-2025 Antonio Diaz Diaz.
 
    This library is free software. Redistribution and use in source and
    binary forms, with or without modification, are permitted provided
@@ -25,7 +25,7 @@
    to >0, <0, or 0, meaning +INF, -INF, and NAN respectively. This error
    condition can be tested with the function 'error', and can only be
    cleared by assigning a new value to the Rational.
-   While in error state, arithmetic operators become no ops and
+   While in error state, arithmetic operators become no-ops and
    relational operators return false, except !=, which returns true.
 */
 class Rational

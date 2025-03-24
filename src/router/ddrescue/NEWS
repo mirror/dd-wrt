@@ -1,17 +1,29 @@
-Changes in version 1.27:
+Changes in version 1.29:
 
-A deadlock in command mode when stdout is fully buffered has been fixed by
-flushing stdout after executing each command. (Reported by Jeffrey Bosboom).
+The new option '--continue-on-errno' has been added.
 
-The new option '-W, --compare-before-write' has been added. It omits
-superfluous writes in rescue mode.
-(Suggested by Kajetan Harald Hinner and Petr Slansky).
+If ddrescue exits because of a fatal read error, it now prints the value of
+the variable 'errno' so that it can be used as argument to
+'--continue-on-errno'.
 
-Diagnostics caused by invalid arguments to command line options now show the
-argument and the name of the option.
+When using '--ask' and '--verbose', print rescue options before asking user.
 
-The option synonym '--direct' has been removed and is no longer recognized.
+Option '--log-reads' now records the value of errno if different from EIO.
+(The four changes above suggested by Christian Franke).
 
-'long long' is now used instead of 'long' for time variables.
+The effect of option '-O, --reopen-on-error' has been extended to all phases.
 
-A missing '#include <cstdlib>' has been added.
+It has been documented in the manual that '--reopen-on-error' may be needed
+when using '--continue-on-errno'.
+
+A compilation error on FiwixOS 3.3 about an ambiguous call to std::abs has
+been fixed. (Reported by Jordi Sanfeliu).
+
+The chapter 'Syntax of command-line arguments' has been added to the manual.
+
+Two examples of combined use with lziprecover have been added to the manual.
+(One of them uses the new Forward Error Correction (FEC) feature of
+lziprecover).
+
+It has been documented in the manual that option '-b' of ddrescuelog is
+position dependent. (Reported by Winston B. E.).

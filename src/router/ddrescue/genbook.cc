@@ -1,5 +1,5 @@
 /* GNU ddrescue - Data recovery tool
-   Copyright (C) 2004-2023 Antonio Diaz Diaz.
+   Copyright (C) 2004-2025 Antonio Diaz Diaz.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -105,8 +105,7 @@ int Genbook::check_all()
     check_block( b, copied_size, error_size );
     if( copied_size + error_size < b.size() &&			// EOF
         !truncate_vector( b.pos() + copied_size + error_size ) )
-      { final_msg( iname_, "EOF found below the size calculated from mapfile." );
-        return 1; }
+      { final_msg( iname_, early_eof_msg ); return 1; }
     if( !update_mapfile() ) return -2;
     }
   return 0;
@@ -148,7 +147,7 @@ void Genbook::show_status( const long long ipos, const char * const msg,
     std::printf( "   opos: %9sB,  run time: %11s,  average rate: %8sB/s\n",
                  format_num( last_ipos + offset() ), format_time( t1 - t0 ),
                  format_num( a_rate, 99999 ) );
-    if( msg && msg[0] )
+    if( msg && *msg )
       {
       const int len = std::strlen( msg ); std::printf( "\r%s", msg );
       for( int i = len; i < oldlen; ++i ) std::fputc( ' ', stdout );

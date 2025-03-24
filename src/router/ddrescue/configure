@@ -1,12 +1,12 @@
 #! /bin/sh
 # configure script for GNU ddrescue - Data recovery tool
-# Copyright (C) 2004-2023 Antonio Diaz Diaz.
+# Copyright (C) 2004-2025 Antonio Diaz Diaz.
 #
 # This configure script is free software: you have unlimited permission
 # to copy, distribute, and modify it.
 
 pkgname=ddrescue
-pkgversion=1.27
+pkgversion=1.29
 progname=ddrescue
 use_non_posix=
 srctrigger=doc/${pkgname}.texi
@@ -68,10 +68,10 @@ while [ $# != 0 ] ; do
 		echo "  --mandir=DIR          man pages directory [${mandir}]"
 		echo "  --enable-non-posix    enable non-portable code and ioctl's [disable]"
 		echo "  CXX=COMPILER          C++ compiler to use [${CXX}]"
-		echo "  CPPFLAGS=OPTIONS      command line options for the preprocessor [${CPPFLAGS}]"
-		echo "  CXXFLAGS=OPTIONS      command line options for the C++ compiler [${CXXFLAGS}]"
+		echo "  CPPFLAGS=OPTIONS      command-line options for the preprocessor [${CPPFLAGS}]"
+		echo "  CXXFLAGS=OPTIONS      command-line options for the C++ compiler [${CXXFLAGS}]"
 		echo "  CXXFLAGS+=OPTIONS     append options to the current value of CXXFLAGS"
-		echo "  LDFLAGS=OPTIONS       command line options for the linker [${LDFLAGS}]"
+		echo "  LDFLAGS=OPTIONS       command-line options for the linker [${LDFLAGS}]"
 		echo "  MAKEINFO=NAME         makeinfo program to use [${MAKEINFO}]"
 		echo
 		exit 0 ;;
@@ -94,7 +94,7 @@ while [ $# != 0 ] ; do
 	--infodir=*)          infodir=${optarg} ;;
 	--mandir=*)            mandir=${optarg} ;;
 	--no-create)              no_create=yes ;;
-	--enable-non-posix) use_non_posix="-DUSE_NON_POSIX" ;;
+	--enable-non-posix) use_non_posix=-DUSE_NON_POSIX ;;
 
 	CXX=*)            CXX=${optarg} ;;
 	CPPFLAGS=*)  CPPFLAGS=${optarg} ;;
@@ -112,7 +112,7 @@ while [ $# != 0 ] ; do
 		exit 1 ;;
 	esac
 
-	# Check if the option took a separate argument
+	# Check whether the option took a separate argument
 	if [ "${arg2}" = yes ] ; then
 		if [ $# != 0 ] ; then args="${args} \"$1\"" ; shift
 		else echo "configure: Missing argument to '${option}'" 1>&2
@@ -153,7 +153,7 @@ if [ -z "${no_create}" ] ; then
 # This script is free software: you have unlimited permission
 # to copy, distribute, and modify it.
 
-exec /bin/sh $0 ${args} --no-create
+exec /bin/sh "$0" ${args} --no-create
 EOF
 	chmod +x config.status
 fi
@@ -175,7 +175,7 @@ echo "MAKEINFO = ${MAKEINFO}"
 rm -f Makefile
 cat > Makefile << EOF
 # Makefile for GNU ddrescue - Data recovery tool
-# Copyright (C) 2004-2023 Antonio Diaz Diaz.
+# Copyright (C) 2004-2025 Antonio Diaz Diaz.
 # This file was generated automatically by configure. Don't edit.
 #
 # This Makefile is free software: you have unlimited permission

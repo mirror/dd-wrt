@@ -1,5 +1,5 @@
 /* GNU ddrescue - Data recovery tool
-   Copyright (C) 2004-2023 Antonio Diaz Diaz.
+   Copyright (C) 2004-2025 Antonio Diaz Diaz.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@ int verbosity = 0;
 
 namespace {
 
-const char * const program_year = "2023";
+const char * const program_year = "2025";
 std::string command_line;
 const char * const inval_t_msg = "Invalid type in argument of";
 
@@ -43,8 +43,7 @@ void show_option_error( const char * const arg, const char * const msg,
   }
 
 
-// Recognized formats: <num>[YZEPTGM][i][Bs], <num>k[Bs], <num>Ki[Bs]
-//
+// Recognized formats: <num>k[Bs], <num>Ki[Bs], <num>[MGTPEZYRQ][i][Bs]
 long long getnum( const char * const arg, const char * const option_name,
                   const int hardbs, const long long llimit = -LLONG_MAX,
                   const long long ulimit = LLONG_MAX,
@@ -57,7 +56,7 @@ long long getnum( const char * const arg, const char * const option_name,
     { show_option_error( arg, "Bad or missing numerical argument in",
                          option_name ); std::exit( 1 ); }
 
-  if( !errno && tail[0] )
+  if( !errno && *tail )
     {
     char * const p = tail++;
     int factor = 1000;				// default factor
@@ -65,6 +64,8 @@ long long getnum( const char * const arg, const char * const option_name,
     char usuf = 0;			// 'B' or 's' unit suffix is present
     switch( *p )
       {
+      case 'Q': exponent = 10; break;
+      case 'R': exponent = 9; break;
       case 'Y': exponent = 8; break;
       case 'Z': exponent = 7; break;
       case 'E': exponent = 6; break;
@@ -72,17 +73,17 @@ long long getnum( const char * const arg, const char * const option_name,
       case 'T': exponent = 4; break;
       case 'G': exponent = 3; break;
       case 'M': exponent = 2; break;
-      case 'K': if( tail[0] == 'i' ) { ++tail; factor = 1024; exponent = 1; } break;
-      case 'k': if( tail[0] != 'i' ) exponent = 1; break;
+      case 'K': if( *tail == 'i' ) { ++tail; factor = 1024; exponent = 1; } break;
+      case 'k': if( *tail != 'i' ) exponent = 1; break;
       case 'B':
       case 's': usuf = *p; exponent = 0; break;
-      default : if( tailp ) { tail = p; exponent = 0; }
+      default: if( tailp ) { tail = p; exponent = 0; }
       }
-    if( exponent > 1 && tail[0] == 'i' ) { ++tail; factor = 1024; }
-    if( exponent > 0 && usuf == 0 && ( tail[0] == 'B' || tail[0] == 's' ) )
-      { usuf = tail[0]; ++tail; }
+    if( exponent > 1 && *tail == 'i' ) { ++tail; factor = 1024; }
+    if( exponent > 0 && usuf == 0 && ( *tail == 'B' || *tail == 's' ) )
+      { usuf = *tail; ++tail; }
     if( exponent < 0 || ( usuf == 's' && hardbs <= 0 ) ||
-        ( !tailp && tail[0] != 0 ) )
+        ( !tailp && *tail != 0 ) )
       { show_option_error( arg, "Bad multiplier in numerical argument of",
                            option_name ); std::exit( 1 ); }
     for( int i = 0; i < exponent; ++i )
@@ -171,7 +172,7 @@ const char * format_timestamp( const long long t = 0 )
 void show_error( const char * const msg, const int errcode, const bool help )
   {
   if( verbosity < 0 ) return;
-  if( msg && msg[0] )
+  if( msg && *msg )
     std::fprintf( stderr, "%s: %s%s%s\n", program_name, msg,
                   ( errcode > 0 ) ? ": " : "",
                   ( errcode > 0 ) ? std::strerror( errcode ) : "" );
@@ -240,7 +241,7 @@ bool write_timestamp( FILE * const f )
   {
   const char * const timestamp = format_timestamp();
 
-  return ( !timestamp || !timestamp[0] ||
+  return ( !timestamp || !*timestamp ||
            std::fprintf( f, "# Current time: %s\n", timestamp ) >= 0 );
   }
 
@@ -254,14 +255,13 @@ bool write_final_timestamp( FILE * const f )
   }
 
 
-const char * format_num( long long num, long long limit,
-                         const int set_prefix )
+const char * format_num( long long num, int limit, const int set_prefix )
   {
-  const char * const si_prefix[8] =
-    { "k", "M", "G", "T", "P", "E", "Z", "Y" };
-  const char * const binary_prefix[8] =
-    { "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi" };
-  enum { buffers = 8, bufsize = 16 };
+  enum { buffers = 8, bufsize = 16, n = 10 };
+  const char * const si_prefix[n] =
+    { "k", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q" };
+  const char * const binary_prefix[n] =
+    { "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi", "Ri", "Qi" };
   static char buffer[buffers][bufsize];	// circle of static buffers for printf
   static int current = 0;
   static bool si = true;
@@ -271,38 +271,41 @@ const char * format_num( long long num, long long limit,
   char * const buf = buffer[current++]; current %= buffers;
   const char * const * prefix = si ? si_prefix : binary_prefix;
   const char * p = "";
-  limit = std::max( 999LL, std::min( 999999LL, limit ) );
+  limit = std::max( 999, std::min( 999999, limit ) );
 
-  for( int i = 0; i < 8 && llabs( num ) > limit; ++i )
+  for( int i = 0; i < n && llabs( num ) > limit; ++i )
     { num /= factor; p = prefix[i]; }
-  snprintf( buf, bufsize, "%lld %s", num, p );
+  snprintf( buf, bufsize, "%d %s", (int)num, p );	// 6 digits or less
   return buf;
   }
 
 
 // separate numbers of 5 or more digits in groups of 3 digits using '_'
-const char * format_num3( long long num )
+const char * format_num3( long long num, const bool space )
   {
-  const char * const si_prefix = "kMGTPEZY";
-  const char * const binary_prefix = "KMGTPEZY";
-  enum { buffers = 8, bufsize = 4 * sizeof num };
+  enum { buffers = 8, bufsize = 4 * sizeof num, n = 10 };
+  const char * const si_prefix = "kMGTPEZYRQ";
+  const char * const binary_prefix = "KMGTPEZYRQ";
   static char buffer[buffers][bufsize];	// circle of static buffers for printf
   static int current = 0;
 
   char * const buf = buffer[current++]; current %= buffers;
   char * p = buf + bufsize - 1;		// fill the buffer backwards
-  *p = 0;	// terminator
+  *p = 0;				// terminator
   const bool negative = num < 0;
-  char prefix = 0;			// try binary first, then si
-  for( int i = 0; i < 8 && num != 0 && ( num / 1024 ) * 1024 == num; ++i )
-    { num /= 1024; prefix = binary_prefix[i]; }
-  if( prefix ) *(--p) = 'i';
-  else
-    for( int i = 0; i < 8 && num != 0 && ( num / 1000 ) * 1000 == num; ++i )
-      { num /= 1000; prefix = si_prefix[i]; }
-  if( prefix ) *(--p) = prefix;
+  if( num > 9999 || num < -9999 )
+    {
+    char prefix = 0;			// try binary first, then si
+    for( int i = 0; i < n && num != 0 && num % 1024 == 0; ++i )
+      { num /= 1024; prefix = binary_prefix[i]; }
+    if( prefix ) *(--p) = 'i';
+    else
+      for( int i = 0; i < n && num != 0 && num % 1000 == 0; ++i )
+        { num /= 1000; prefix = si_prefix[i]; }
+    if( prefix ) *(--p) = prefix;
+    }
   const bool split = num >= 10000 || num <= -10000;
-
+  if( space ) *(--p) = ' ';
   for( int i = 0; ; )
     {
     const long long onum = num; num /= 10;
@@ -325,7 +328,8 @@ const char * format_percentage( long long num, long long den,
                                 const int iwidth, int prec,
                                 const bool rounding )
   {
-  static char buf[80];
+  enum { bufsize = 80 };
+  static char buf[bufsize];
 
   if( den < 0 ) { num = -num; den = -den; }
   if( llabs( num ) <= LLONG_MAX / 100 && den <= LLONG_MAX / 10 ) num *= 100;
@@ -342,15 +346,15 @@ const char * format_percentage( long long num, long long den,
 
   unsigned i;
   if( num < 0 && num / den == 0 )		// negative but > -1.0
-    i = snprintf( buf, sizeof( buf ), "%*s", iwidth, "-0" );
-  else i = snprintf( buf, sizeof( buf ), "%*lld", iwidth, num / den );
-  if( i < sizeof( buf ) - 2 )
+    i = snprintf( buf, bufsize, "%*s", iwidth, "-0" );
+  else i = snprintf( buf, bufsize, "%*lld", iwidth, num / den );
+  if( i < bufsize - 2 )
     {
     long long rest = llabs( num ) % den;
     if( prec > 0 && ( rest > 0 || !trunc ) )
       {
       buf[i++] = '.';
-      while( prec > 0 && ( rest > 0 || !trunc ) && i < sizeof( buf ) - 2 )
+      while( prec > 0 && ( rest > 0 || !trunc ) && i < bufsize - 2 )
         { rest *= 10; buf[i++] = ( rest / den ) + '0'; rest %= den; --prec; }
       }
     if( rounding && rest * 2 >= den )		// round last decimal up
@@ -370,7 +374,7 @@ const char * format_percentage( long long num, long long den,
           }
         }
     }
-  else i = sizeof( buf ) - 2;
+  else i = bufsize - 2;
   buf[i++] = '%';
   buf[i] = 0;
   return buf;

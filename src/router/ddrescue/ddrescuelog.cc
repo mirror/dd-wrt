@@ -1,5 +1,5 @@
 /* GNU ddrescuelog - Tool for ddrescue mapfiles
-   Copyright (C) 2011-2023 Antonio Diaz Diaz.
+   Copyright (C) 2011-2025 Antonio Diaz Diaz.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 */
 /*
    Exit status: 0 for a normal exit, 1 for environmental problems
-   (file not found, invalid command line options, I/O errors, etc), 2 to
+   (file not found, invalid command-line options, I/O errors, etc), 2 to
    indicate a corrupt or invalid input file, 3 for an internal consistency
    error (e.g., bug) which caused ddrescuelog to panic.
 */
@@ -94,7 +94,7 @@ void show_help( const int hardbs )
                "\nNumbers may be in decimal, hexadecimal, or octal, and may be followed by a\n"
                "multiplier: s = sectors, k = 1000, Ki = 1024, M = 10^6, Mi = 2^20, etc...\n"
                "\nExit status: 0 for a normal exit, 1 for environmental problems\n"
-               "(file not found, invalid command line options, I/O errors, etc), 2 to\n"
+               "(file not found, invalid command-line options, I/O errors, etc), 2 to\n"
                "indicate a corrupt or invalid input file, 3 for an internal consistency\n"
                "error (e.g., bug) which caused ddrescuelog to panic.\n"
                "\nReport bugs to bug-ddrescue@gnu.org\n"
@@ -145,7 +145,7 @@ void parse_types( const std::string & sarg, const char * const option_name,
     { show_option_error( sarg.c_str(), inval_t_msg, option_name );
       std::exit( 1 ); }
   if( types1.size() > types2.size() )
-    types2.append( types1.size() - types2.size(), types2[types2.size()-1] );
+    types2.append( types1.size() - types2.size(), types2.end()[-1] );
   }
 
 
@@ -175,7 +175,7 @@ void parse_type( const std::string & sarg, const char * const option_name,
 
 void test_offset( const long long offset, const int hardbs )
   {
-  if( std::abs( offset ) % hardbs )
+  if( llabs( offset ) % hardbs )
     { show_error( "Offset between '-i' and '-o' must be 0 or a multiple of sector size." );
       std::exit( 1 ); }
   }
@@ -649,8 +649,7 @@ int list_blocks( const long long offset, Domain & domain,
   }
 
 
-int do_show_status( Domain & domain, const char * const mapname,
-                    const bool loose )
+int show_status( Domain & domain, const char * const mapname, const bool loose )
   {
   long long non_tried_size = 0, non_trimmed_size = 0;
   long long non_scraped_size = 0, bad_size = 0, finished_size = 0;
@@ -746,37 +745,37 @@ int main( const int argc, const char * const argv[] )
   enum Optcode { opt_shi = 256 };
   const Arg_parser::Option options[] =
     {
-    { 'a', "change-types",        Arg_parser::yes },
-    { 'A', "annotate-mapfile",    Arg_parser::no  },
-    { 'b', "block-size",          Arg_parser::yes },
-    { 'b', "sector-size",         Arg_parser::yes },
-    { 'B', "binary-prefixes",     Arg_parser::no  },
-    { 'c', "create-mapfile",      Arg_parser::maybe },
-    { 'C', "complete-mapfile",    Arg_parser::maybe },
-    { 'd', "delete-if-done",      Arg_parser::no  },
-    { 'D', "done-status",         Arg_parser::no  },
-    { 'f', "force",               Arg_parser::no  },
-    { 'F', "format",              Arg_parser::yes },
-    { 'h', "help",                Arg_parser::no  },
-    { 'i', "input-position",      Arg_parser::yes },
-    { 'l', "list-blocks",         Arg_parser::yes },
-    { 'L', "loose-domain",        Arg_parser::no  },
-    { 'm', "domain-mapfile",      Arg_parser::yes },
-    { 'n', "invert-mapfile",      Arg_parser::no  },
-    { 'o', "output-position",     Arg_parser::yes },
-    { 'p', "compare-mapfile",     Arg_parser::yes },
-    { 'P', "compare-as-domain",   Arg_parser::yes },
-    { 'q', "quiet",               Arg_parser::no  },
-    { 's', "size",                Arg_parser::yes },
-    { 's', "max-size",            Arg_parser::yes },
-    { 't', "show-status",         Arg_parser::no  },
-    { 'v', "verbose",             Arg_parser::no  },
-    { 'V', "version",             Arg_parser::no  },
-    { 'x', "xor-mapfile",         Arg_parser::yes },
-    { 'y', "and-mapfile",         Arg_parser::yes },
-    { 'z', "or-mapfile",          Arg_parser::yes },
-    { opt_shi, "shift",           Arg_parser::no  },
-    {  0 , 0,                     Arg_parser::no  } };
+    { 'a', "change-types",      Arg_parser::yes },
+    { 'A', "annotate-mapfile",  Arg_parser::no  },
+    { 'b', "block-size",        Arg_parser::yes },
+    { 'b', "sector-size",       Arg_parser::yes },
+    { 'B', "binary-prefixes",   Arg_parser::no  },
+    { 'c', "create-mapfile",    Arg_parser::maybe },
+    { 'C', "complete-mapfile",  Arg_parser::maybe },
+    { 'd', "delete-if-done",    Arg_parser::no  },
+    { 'D', "done-status",       Arg_parser::no  },
+    { 'f', "force",             Arg_parser::no  },
+    { 'F', "format",            Arg_parser::yes },
+    { 'h', "help",              Arg_parser::no  },
+    { 'i', "input-position",    Arg_parser::yes },
+    { 'l', "list-blocks",       Arg_parser::yes },
+    { 'L', "loose-domain",      Arg_parser::no  },
+    { 'm', "domain-mapfile",    Arg_parser::yes },
+    { 'n', "invert-mapfile",    Arg_parser::no  },
+    { 'o', "output-position",   Arg_parser::yes },
+    { 'p', "compare-mapfile",   Arg_parser::yes },
+    { 'P', "compare-as-domain", Arg_parser::yes },
+    { 'q', "quiet",             Arg_parser::no  },
+    { 's', "size",              Arg_parser::yes },
+    { 's', "max-size",          Arg_parser::yes },
+    { 't', "show-status",       Arg_parser::no  },
+    { 'v', "verbose",           Arg_parser::no  },
+    { 'V', "version",           Arg_parser::no  },
+    { 'x', "xor-mapfile",       Arg_parser::yes },
+    { 'y', "and-mapfile",       Arg_parser::yes },
+    { 'z', "or-mapfile",        Arg_parser::yes },
+    { opt_shi, "shift",         Arg_parser::no  },
+    { 0, 0,                     Arg_parser::no  } };
 
   const Arg_parser parser( argc, argv, options );
   if( parser.error().size() )				// bad option
@@ -828,7 +827,7 @@ int main( const int argc, const char * const argv[] )
       case 'z': set_mode( program_mode, m_or );
                 second_mapname = arg; break;
       case opt_shi: set_mode( program_mode, m_shift ); break;
-      default : internal_error( "uncaught option." );
+      default: internal_error( "uncaught option." );
       }
     } // end process options
 
@@ -840,18 +839,19 @@ int main( const int argc, const char * const argv[] )
 
   if( opos < 0 ) opos = ipos;
 
+  const int mapfiles = parser.arguments() - argind;
   if( program_mode == m_status )
     {
-    if( argind >= parser.arguments() )
+    if( mapfiles < 1 )
       { show_error( "At least one mapfile must be specified.", 0, true );
         return 1; }
+    // show mapfile names if more than one mapfile is specified
+    if( mapfiles > 1 && verbosity == 0 ) verbosity = 1;
     }
-  else if( parser.arguments() - argind != 1 )
+  else if( mapfiles != 1 )
     {
-    if( argind < parser.arguments() )
-      show_error( "Too many files.", 0, true );
-    else
-      show_error( "A mapfile must be specified.", 0, true );
+    if( mapfiles > 1 ) show_error( "Too many files.", 0, true );
+    else show_error( "A mapfile must be specified.", 0, true );
     return 1;
     }
 
@@ -883,7 +883,7 @@ int main( const int argc, const char * const argv[] )
       case m_shift:
         return shift_blocks( ipos, opos, domain, mapname );
       case m_status:
-        retval = std::max( retval, do_show_status( domain, mapname, loose ) );
+        retval = std::max( retval, show_status( domain, mapname, loose ) );
       }
     }
   return retval;

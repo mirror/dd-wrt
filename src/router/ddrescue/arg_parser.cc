@@ -1,5 +1,5 @@
-/* Arg_parser - POSIX/GNU command line argument parser. (C++ version)
-   Copyright (C) 2006-2023 Antonio Diaz Diaz.
+/* Arg_parser - POSIX/GNU command-line argument parser. (C++ version)
+   Copyright (C) 2006-2025 Antonio Diaz Diaz.
 
    This library is free software. Redistribution and use in source and
    binary forms, with or without modification, are permitted provided
@@ -75,19 +75,19 @@ bool Arg_parser::parse_long_option( const char * const opt, const char * const a
       error_ += "' requires an argument";
       return false;
       }
-    data.back().argument = &opt[len+3];
+    data.back().argument = &opt[len+3];		// argument may be empty
     return true;
     }
 
-  if( options[index].has_arg == yes )
+  if( options[index].has_arg == yes || options[index].has_arg == yme )
     {
-    if( !arg || !arg[0] )
+    if( !arg || ( options[index].has_arg == yes && !arg[0] ) )
       {
       error_ = "option '--"; error_ += options[index].long_name;
       error_ += "' requires an argument";
       return false;
       }
-    ++argind; data.back().argument = arg;
+    ++argind; data.back().argument = arg;	// argument may be empty
     return true;
     }
 
@@ -123,15 +123,16 @@ bool Arg_parser::parse_short_option( const char * const opt, const char * const 
       {
       data.back().argument = &opt[cind]; ++argind; cind = 0;
       }
-    else if( options[index].has_arg == yes )
+    else if( options[index].has_arg == yes || options[index].has_arg == yme )
       {
-      if( !arg || !arg[0] )
+      if( !arg || ( options[index].has_arg == yes && !arg[0] ) )
         {
         error_ = "option requires an argument -- '"; error_ += c;
         error_ += '\'';
         return false;
         }
-      data.back().argument = arg; ++argind; cind = 0;
+      ++argind; cind = 0;
+      data.back().argument = arg;	// argument may be empty
       }
     }
   return true;

@@ -1,5 +1,5 @@
 /* GNU ddrescue - Data recovery tool
-   Copyright (C) 2013-2023 Antonio Diaz Diaz.
+   Copyright (C) 2013-2025 Antonio Diaz Diaz.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 #define _FILE_OFFSET_BITS 64
 
 #include <algorithm>
+#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -33,7 +34,7 @@ namespace {
 
 const char * format_time_dhms( const long long t )
   {
-  static char buf[64];			// keep gcc quiet
+  static char buf[64];
   const int s = t % 60;
   const int m = ( t / 60 ) % 60;
   const int h = ( t / 3600 ) % 24;
@@ -56,7 +57,7 @@ Read_logger read_logger;
 
 void Logger::set_filename( const char * const name )
   {
-  if( !name || !name[0] ) return;			// ignore name
+  if( !name || !*name ) return;				// ignore name
   if( std::strcmp( name, "-" ) == 0 )
     { show_error( "I won't write log data to standard output." );
       std::exit( 1 ); }
@@ -166,19 +167,26 @@ bool Read_logger::open_file()
     prev_is_msg = true;
     f = std::fopen( filename_, "w" );
     error = !f || !write_file_header( f, "Reads Logfile" ) ||
-            std::fputs( "#  Ipos       Size  Copied_size  Error_size\n", f ) == EOF;
+            std::fputs( "#  Ipos       Size  Copied_size  Error_size  Errno\n",
+                        f ) == EOF;
     }
   return !error;
   }
 
 
 bool Read_logger::print_line( const long long ipos, const long long size,
-                              const int copied_size, const int error_size )
+                              const int copied_size, const int error_size,
+                              const int errcode )
   {
-  if( f && !error &&
-      std::fprintf( f, "0x%08llX	%lld	%d	%d\n",
-                    ipos, size, copied_size, error_size ) < 0 )
-    error = true;
+  if( f && !error )
+    {
+    if( errcode <= 0 || errcode == EIO )
+      { if( std::fprintf( f, "0x%08llX	%lld	%d	%d\n", ipos,
+                          size, copied_size, error_size ) < 0 ) error = true; }
+    else
+      { if( std::fprintf( f, "0x%08llX	%lld	%d	%d	%d\n", ipos,
+                 size, copied_size, error_size, errcode ) < 0 ) error = true; }
+    }
   prev_is_msg = false;
   return !error;
   }

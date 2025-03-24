@@ -2,8 +2,8 @@
 DISTNAME = $(pkgname)-$(pkgversion)
 INSTALL = install
 INSTALL_PROGRAM = $(INSTALL) -m 755
-INSTALL_DATA = $(INSTALL) -m 644
 INSTALL_DIR = $(INSTALL) -d -m 755
+INSTALL_DATA = $(INSTALL) -m 644
 SHELL = /bin/sh
 CAN_RUN_INSTALLINFO = $(SHELL) -c "install-info --version" > /dev/null 2>&1
 
@@ -41,6 +41,11 @@ ddrescuelog.o : ddrescuelog.cc
 %.o : %.cc
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
+# prevent 'make' from trying to remake source files
+$(VPATH)/configure $(VPATH)/Makefile.in $(VPATH)/doc/$(pkgname).texi : ;
+MAKEFLAGS += -r
+.SUFFIXES :
+
 $(objs)        : Makefile
 $(ddobjs)      : block.h mapbook.h
 arg_parser.o   : arg_parser.h
@@ -53,7 +58,6 @@ rational.o     : rational.h
 rescuebook.o   : rational.h loggers.h rescuebook.h
 main.o         : arg_parser.h rational.h loggers.h non_posix.h main_common.cc rescuebook.h
 ddrescuelog.o  : Makefile arg_parser.h block.h main_common.cc
-
 
 doc : info man
 

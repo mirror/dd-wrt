@@ -1,5 +1,5 @@
 /* GNU ddrescue - Data recovery tool
-   Copyright (C) 2014-2023 Antonio Diaz Diaz.
+   Copyright (C) 2014-2025 Antonio Diaz Diaz.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -57,6 +57,7 @@ bool device_id( const int fd, std::string & id_str )
   }
 
 #elif defined __CYGWIN__
+// Cygwin code based on a patch written by Christian Franke.
 #include <io.h>
 #define _WIN32_WINNT 0x0600	// >= Vista, for BusTypeSata
 #include <windows.h>
