@@ -121,6 +121,7 @@ ifeq ($(CONFIG_ATH11K),y)
   CPTCFG_ATH11K_PCI=y
   CPTCFG_MHI_BUS=y
   CPTCFG_MHI_QRTR=y
+  CPTCFG_QRTR=y
   CPTCFG_QRTR_MHI=y
 endif
 ifeq ($(CONFIG_IPQ6018),y)
@@ -259,8 +260,13 @@ ifeq ($(CONFIG_ATH11K),y)
 	echo "CPTCFG_ATH11K_SMART_ANT_ALG=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_MHI_BUS=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_MHI_QRTR=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_QRTR=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_QRTR_MHI=y" >>$(MAC80211_PATH)/.config_temp
 endif
+	cp -vf $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k/*.c $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/
+	cp -vf $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k/*.h $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/
+	touch $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/*.h
+	touch $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/*.c
 ifeq ($(CONFIG_IPQ6018),y)
 	echo "CPTCFG_ATH11K=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_DEBUGFS=y" >>$(MAC80211_PATH)/.config_temp
@@ -281,10 +287,6 @@ ifeq ($(CONFIG_IPQ6018),y)
 	echo "CPTCFG_ATH11K_DEBUGFS_STA=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_DEBUGFS_HTT_STATS=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_THERMAL=y" >>$(MAC80211_PATH)/.config_temp
-	cp -vf $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k/*.c $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/
-	cp -vf $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k/*.h $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/
-	touch $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/*.h
-	touch $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/*.c
 #	rm -f $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/*.o
 endif
 ifeq ($(CONFIG_IWLWIFI),y)
