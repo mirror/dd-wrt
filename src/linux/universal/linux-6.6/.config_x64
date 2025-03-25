@@ -5120,7 +5120,7 @@ CONFIG_VIRTIO_IOMMU=y
 #
 # Qualcomm SoC drivers
 #
-CONFIG_QCOM_QMI_HELPERS=y
+# CONFIG_QCOM_QMI_HELPERS is not set
 # end of Qualcomm SoC drivers
 
 # CONFIG_SOC_TI is not set
