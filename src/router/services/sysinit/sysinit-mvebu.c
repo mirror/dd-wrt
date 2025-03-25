@@ -239,7 +239,7 @@ void start_wifi_drivers(void)
 		eval("modprobe", "bluetooth");
 		eval("modprobe", "btmrvl");
 		eval("modprobe", "btmrvl_sdio");
-		wait_for_wifi(1);
+		wait_for_wifi(3);
 	}
 }
 void start_arch_defaults(void)
