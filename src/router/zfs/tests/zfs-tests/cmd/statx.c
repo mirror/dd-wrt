@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/syscall.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 /*
