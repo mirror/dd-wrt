@@ -239,7 +239,10 @@ void start_wifi_drivers(void)
 		eval("modprobe", "bluetooth");
 		eval("modprobe", "btmrvl");
 		eval("modprobe", "btmrvl_sdio");
-		wait_for_wifi(3);
+		if (brand == ROUTER_WRT_3200ACM)
+			wait_for_wifi(3);
+		else
+			wait_for_wifi(2);
 	}
 }
 void start_arch_defaults(void)
