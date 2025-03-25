@@ -164,7 +164,7 @@ int load_ath11k(void)
 	insmod("thermal_sys");
 	insmod("hwmon");
 	if (!nvram_match("noath11k", "1")) {
-		insmod("ath11k");
+		eval("insmod","ath11k","frame_mode=1");
 		insmod("qrtr");
 		insmod("mhi");
 		insmod("qrtr-mhi");
