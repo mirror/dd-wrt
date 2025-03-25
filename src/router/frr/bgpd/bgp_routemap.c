@@ -125,6 +125,10 @@ o Local extensions
 #define RMAP_VALUE_ADD 1
 #define RMAP_VALUE_SUB 2
 
+#define RMAP_VALUE_TYPE_RTT  1
+#define RMAP_VALUE_TYPE_IGP  2
+#define RMAP_VALUE_TYPE_AIGP 3
+
 struct rmap_value {
 	uint8_t action;
 	uint8_t variable;
@@ -140,13 +144,20 @@ static int route_value_match(struct rmap_value *rv, uint32_t value)
 }
 
 static uint32_t route_value_adjust(struct rmap_value *rv, uint32_t current,
-				   struct peer *peer)
+				   struct bgp_path_info *bpi)
 {
 	uint32_t value;
+	struct peer *peer = bpi->peer;
 
 	switch (rv->variable) {
-	case 1:
+	case RMAP_VALUE_TYPE_RTT:
 		value = peer->rtt;
+		break;
+	case RMAP_VALUE_TYPE_IGP:
+		value = bpi->extra ? bpi->extra->igpmetric : 0;
+		break;
+	case RMAP_VALUE_TYPE_AIGP:
+		value = MIN(bpi->attr->aigp_metric, UINT32_MAX);
 		break;
 	default:
 		value = rv->value;
@@ -187,11 +198,14 @@ static void *route_value_compile(const char *arg)
 		larg = strtoul(arg, &endptr, 10);
 		if (*arg == 0 || *endptr != 0 || errno || larg > UINT32_MAX)
 			return NULL;
+	} else if (strmatch(arg, "rtt")) {
+		var = RMAP_VALUE_TYPE_RTT;
+	} else if (strmatch(arg, "igp")) {
+		var = RMAP_VALUE_TYPE_IGP;
+	} else if (strmatch(arg, "aigp")) {
+		var = RMAP_VALUE_TYPE_AIGP;
 	} else {
-		if (strcmp(arg, "rtt") == 0)
-			var = 1;
-		else
-			return NULL;
+		return NULL;
 	}
 
 	rv = XMALLOC(MTYPE_ROUTE_MAP_COMPILED, sizeof(struct rmap_value));
@@ -333,6 +347,66 @@ static const struct route_map_rule_cmd route_match_peer_cmd = {
 	route_match_peer_free
 };
 
+static enum route_map_cmd_result_t route_match_src_peer(void *rule, const struct prefix *prefix,
+							void *object)
+{
+	struct bgp_match_peer_compiled *pc;
+	union sockunion *su;
+	struct peer_group *group;
+	struct peer *peer;
+	struct listnode *node, *nnode;
+	struct bgp_path_info *bpi;
+
+	pc = rule;
+	su = &pc->su;
+	bpi = object;
+	peer = bpi->from;
+
+	/* Fallback to destination (current) peer. This is mostly
+	 * happens if `match src-peer ...` is used at incoming direction.
+	 */
+	if (!peer)
+		peer = bpi->peer;
+
+	if (!peer)
+		return RMAP_NOMATCH;
+
+	if (pc->interface) {
+		if (!peer->conf_if && !peer->group)
+			return RMAP_NOMATCH;
+
+		if (peer->conf_if && strcmp(peer->conf_if, pc->interface) == 0)
+			return RMAP_MATCH;
+
+		if (peer->group && strcmp(peer->group->name, pc->interface) == 0)
+			return RMAP_MATCH;
+
+		return RMAP_NOMATCH;
+	}
+
+	if (!CHECK_FLAG(peer->sflags, PEER_STATUS_GROUP)) {
+		if (sockunion_same(su, &peer->connection->su))
+			return RMAP_MATCH;
+
+		return RMAP_NOMATCH;
+	}
+
+	group = peer->group;
+	for (ALL_LIST_ELEMENTS(group->peer, node, nnode, peer)) {
+		if (sockunion_same(su, &peer->connection->su))
+			return RMAP_MATCH;
+	}
+
+	return RMAP_NOMATCH;
+}
+
+static const struct route_map_rule_cmd route_match_src_peer_cmd = {
+	"src-peer",
+	route_match_src_peer,
+	route_match_peer_compile,
+	route_match_peer_free
+};
+
 #ifdef HAVE_SCRIPTING
 
 enum frrlua_rm_status {
@@ -383,8 +457,7 @@ route_match_script(void *rule, const struct prefix *prefix, void *object)
 		return RMAP_NOMATCH;
 	}
 
-	long long *action = frrscript_get_result(fs, routematch_function,
-						 "action", lua_tointegerp);
+	int *action = frrscript_get_result(fs, routematch_function, "action", lua_tointegerp);
 
 	int status = RMAP_NOMATCH;
 
@@ -406,7 +479,7 @@ route_match_script(void *rule, const struct prefix *prefix, void *object)
 
 		path->attr->med = newattr.med;
 
-		if (path->attr->flag & ATTR_FLAG_BIT(BGP_ATTR_LOCAL_PREF))
+		if (CHECK_FLAG(path->attr->flag, ATTR_FLAG_BIT(BGP_ATTR_LOCAL_PREF)))
 			locpref = path->attr->local_pref;
 		if (locpref != newattr.local_pref) {
 			SET_FLAG(path->attr->flag,
@@ -639,15 +712,15 @@ route_match_prefix_list_flowspec(afi_t afi, struct prefix_list *plist,
 					    afi);
 	if (ret < 0)
 		return RMAP_NOMATCH;
-	if (api.match_bitmask & PREFIX_DST_PRESENT ||
-	    api.match_bitmask_iprule & PREFIX_DST_PRESENT) {
+	if (CHECK_FLAG(api.match_bitmask, PREFIX_DST_PRESENT) ||
+	    CHECK_FLAG(api.match_bitmask_iprule, PREFIX_DST_PRESENT)) {
 		if (family2afi((&api.dst_prefix)->family) != afi)
 			return RMAP_NOMATCH;
 		return prefix_list_apply(plist, &api.dst_prefix) == PREFIX_DENY
 			? RMAP_NOMATCH
 			: RMAP_MATCH;
-	} else if (api.match_bitmask & PREFIX_SRC_PRESENT ||
-		   api.match_bitmask_iprule & PREFIX_SRC_PRESENT) {
+	} else if (CHECK_FLAG(api.match_bitmask, PREFIX_SRC_PRESENT) ||
+		   CHECK_FLAG(api.match_bitmask_iprule, PREFIX_SRC_PRESENT)) {
 		if (family2afi((&api.src_prefix)->family) != afi)
 			return RMAP_NOMATCH;
 		return (prefix_list_apply(plist, &api.src_prefix) == PREFIX_DENY
@@ -1228,6 +1301,61 @@ static const struct route_map_rule_cmd route_match_evpn_rd_cmd = {
 	route_match_rd,
 	route_match_rd_compile,
 	route_match_rd_free
+};
+
+/* `match community-limit' */
+
+/* Match function should return :
+ * - RMAP_MATCH if the bgp update community list count
+ * is less or equal to the configured limit.
+ * - RMAP_NOMATCH if the community list count is greater than the
+ * configured limit.
+ */
+static enum route_map_cmd_result_t
+route_match_community_limit(void *rule, const struct prefix *prefix, void *object)
+{
+	struct bgp_path_info *path = NULL;
+	struct community *picomm = NULL;
+	uint16_t count = 0;
+	uint16_t *limit_rule = rule;
+
+	path = (struct bgp_path_info *)object;
+
+	picomm = bgp_attr_get_community(path->attr);
+	if (picomm)
+		count = picomm->size;
+
+	if (count <= *limit_rule)
+		return RMAP_MATCH;
+
+	return RMAP_NOMATCH;
+}
+
+/* Route map `community-limit' match statement. */
+static void *route_match_community_limit_compile(const char *arg)
+{
+	uint16_t *limit = NULL;
+	char *end = NULL;
+
+	limit = XMALLOC(MTYPE_ROUTE_MAP_COMPILED, sizeof(uint16_t));
+	*limit = strtoul(arg, &end, 10);
+	if (*end != '\0') {
+		XFREE(MTYPE_ROUTE_MAP_COMPILED, limit);
+		return NULL;
+	}
+	return limit;
+}
+
+/* Free route map's compiled `community-limit' value. */
+static void route_match_community_limit_free(void *rule)
+{
+	XFREE(MTYPE_ROUTE_MAP_COMPILED, rule);
+}
+
+/* Route map commands for community limit matching. */
+static const struct route_map_rule_cmd route_match_community_limit_cmd = {
+	"community-limit", route_match_community_limit,
+	route_match_community_limit_compile, route_match_community_limit_free
 };
 
 static enum route_map_cmd_result_t
@@ -1993,11 +2121,10 @@ route_set_ip_nexthop(void *rule, const struct prefix *prefix, void *object)
 			 BATTR_RMAP_NEXTHOP_UNCHANGED);
 	} else if (rins->peer_address) {
 		if ((CHECK_FLAG(peer->rmap_type, PEER_RMAP_TYPE_IN)) &&
-		    peer->su_remote &&
-		    sockunion_family(peer->su_remote) == AF_INET) {
-			path->attr->nexthop.s_addr =
-				sockunion2ip(peer->su_remote);
-			path->attr->flag |= ATTR_FLAG_BIT(BGP_ATTR_NEXT_HOP);
+		    peer->connection->su_remote &&
+		    sockunion_family(peer->connection->su_remote) == AF_INET) {
+			path->attr->nexthop.s_addr = sockunion2ip(peer->connection->su_remote);
+			SET_FLAG(path->attr->flag, ATTR_FLAG_BIT(BGP_ATTR_NEXT_HOP));
 		} else if (CHECK_FLAG(peer->rmap_type, PEER_RMAP_TYPE_OUT)) {
 			/* The next hop value will be set as part of
 			 * packet rewrite.  Set the flags here to indicate
@@ -2010,7 +2137,7 @@ route_set_ip_nexthop(void *rule, const struct prefix *prefix, void *object)
 		}
 	} else {
 		/* Set next hop value. */
-		path->attr->flag |= ATTR_FLAG_BIT(BGP_ATTR_NEXT_HOP);
+		SET_FLAG(path->attr->flag, ATTR_FLAG_BIT(BGP_ATTR_NEXT_HOP));
 		path->attr->nexthop = *rins->address;
 		SET_FLAG(path->attr->rmap_change_flags,
 			 BATTR_RMAP_IPV4_NHOP_CHANGED);
@@ -2144,8 +2271,8 @@ route_set_local_pref(void *rule, const struct prefix *prefix, void *object)
 	if (path->attr->local_pref)
 		locpref = path->attr->local_pref;
 
-	path->attr->flag |= ATTR_FLAG_BIT(BGP_ATTR_LOCAL_PREF);
-	path->attr->local_pref = route_value_adjust(rv, locpref, path->peer);
+	SET_FLAG(path->attr->flag, ATTR_FLAG_BIT(BGP_ATTR_LOCAL_PREF));
+	path->attr->local_pref = route_value_adjust(rv, locpref, path);
 
 	return RMAP_OKAY;
 }
@@ -2172,7 +2299,7 @@ route_set_weight(void *rule, const struct prefix *prefix, void *object)
 	path = object;
 
 	/* Set weight value. */
-	path->attr->weight = route_value_adjust(rv, 0, path->peer);
+	path->attr->weight = route_value_adjust(rv, 0, path);
 
 	return RMAP_OKAY;
 }
@@ -2219,11 +2346,10 @@ route_set_metric(void *rule, const struct prefix *prefix, void *object)
 	rv = rule;
 	path = object;
 
-	if (path->attr->flag & ATTR_FLAG_BIT(BGP_ATTR_MULTI_EXIT_DISC))
+	if (CHECK_FLAG(path->attr->flag, ATTR_FLAG_BIT(BGP_ATTR_MULTI_EXIT_DISC)))
 		med = path->attr->med;
 
-	path->attr->med = route_value_adjust(rv, med, path->peer);
-	path->attr->flag |= ATTR_FLAG_BIT(BGP_ATTR_MULTI_EXIT_DISC);
+	bgp_attr_set_med(path->attr, route_value_adjust(rv, med, path));
 
 	return RMAP_OKAY;
 }
@@ -3420,7 +3546,7 @@ route_set_atomic_aggregate(void *rule, const struct prefix *pfx, void *object)
 	struct bgp_path_info *path;
 
 	path = object;
-	path->attr->flag |= ATTR_FLAG_BIT(BGP_ATTR_ATOMIC_AGGREGATE);
+	SET_FLAG(path->attr->flag, ATTR_FLAG_BIT(BGP_ATTR_ATOMIC_AGGREGATE));
 
 	return RMAP_OKAY;
 }
@@ -3498,7 +3624,7 @@ route_set_aggregator_as(void *rule, const struct prefix *prefix, void *object)
 
 	path->attr->aggregator_as = aggregator->as;
 	path->attr->aggregator_addr = aggregator->address;
-	path->attr->flag |= ATTR_FLAG_BIT(BGP_ATTR_AGGREGATOR);
+	SET_FLAG(path->attr->flag, ATTR_FLAG_BIT(BGP_ATTR_AGGREGATOR));
 
 	return RMAP_OKAY;
 }
@@ -3578,7 +3704,7 @@ route_set_label_index(void *rule, const struct prefix *prefix, void *object)
 	label_index = rv->value;
 	if (label_index) {
 		path->attr->label_index = label_index;
-		path->attr->flag |= ATTR_FLAG_BIT(BGP_ATTR_PREFIX_SID);
+		SET_FLAG(path->attr->flag, ATTR_FLAG_BIT(BGP_ATTR_PREFIX_SID));
 	}
 
 	return RMAP_OKAY;
@@ -4071,9 +4197,9 @@ route_set_ipv6_nexthop_peer(void *rule, const struct prefix *pfx, void *object)
 	path = object;
 	peer = path->peer;
 
-	if ((CHECK_FLAG(peer->rmap_type, PEER_RMAP_TYPE_IN)) &&
-	    peer->su_remote && sockunion_family(peer->su_remote) == AF_INET6) {
-		peer_address = peer->su_remote->sin6.sin6_addr;
+	if ((CHECK_FLAG(peer->rmap_type, PEER_RMAP_TYPE_IN)) && peer->connection->su_remote &&
+	    sockunion_family(peer->connection->su_remote) == AF_INET6) {
+		peer_address = peer->connection->su_remote->sin6.sin6_addr;
 		/* Set next hop value and length in attribute. */
 		if (IN6_IS_ADDR_LINKLOCAL(&peer_address)) {
 			path->attr->mp_nexthop_local = peer_address;
@@ -4245,7 +4371,7 @@ route_set_originator_id(void *rule, const struct prefix *prefix, void *object)
 	address = rule;
 	path = object;
 
-	path->attr->flag |= ATTR_FLAG_BIT(BGP_ATTR_ORIGINATOR_ID);
+	SET_FLAG(path->attr->flag, ATTR_FLAG_BIT(BGP_ATTR_ORIGINATOR_ID));
 	path->attr->originator_id = *address;
 
 	return RMAP_OKAY;
@@ -4612,7 +4738,6 @@ static void bgp_route_map_process_update(struct bgp *bgp, const char *rmap_name,
 					route_map_counter_increment(map);
 
 				aggregate->rmap.map = map;
-				aggregate->rmap.changed = true;
 
 				matched = true;
 			}
@@ -5270,6 +5395,52 @@ DEFUN_YANG (no_match_peer,
 	return nb_cli_apply_changes(vty, NULL);
 }
 
+DEFPY_YANG (match_src_peer,
+       match_src_peer_cmd,
+       "match src-peer <A.B.C.D$addrv4|X:X::X:X$addrv6|WORD$intf>",
+       MATCH_STR
+       "Match source peer address\n"
+       "IP address of peer\n"
+       "IPv6 address of peer\n"
+       "Interface name of peer or peer group name\n")
+{
+	const char *xpath = "./match-condition[condition='frr-bgp-route-map:src-peer']";
+	char xpath_value[XPATH_MAXLEN];
+
+	nb_cli_enqueue_change(vty, xpath, NB_OP_CREATE, NULL);
+
+	snprintf(xpath_value, sizeof(xpath_value),
+		 "%s/rmap-match-condition/frr-bgp-route-map:src-peer-ipv4-address", xpath);
+	nb_cli_enqueue_change(vty, xpath_value, addrv4_str ? NB_OP_MODIFY : NB_OP_DESTROY,
+			      addrv4_str);
+	snprintf(xpath_value, sizeof(xpath_value),
+		 "%s/rmap-match-condition/frr-bgp-route-map:src-peer-ipv6-address", xpath);
+	nb_cli_enqueue_change(vty, xpath_value, addrv6_str ? NB_OP_MODIFY : NB_OP_DESTROY,
+			      addrv6_str);
+	snprintf(xpath_value, sizeof(xpath_value),
+		 "%s/rmap-match-condition/frr-bgp-route-map:src-peer-interface", xpath);
+	nb_cli_enqueue_change(vty, xpath_value, intf ? NB_OP_MODIFY : NB_OP_DESTROY, intf);
+
+	return nb_cli_apply_changes(vty, NULL);
+}
+
+DEFUN_YANG (no_match_src_peer,
+	    no_match_src_peer_cmd,
+	    "no match src-peer [<A.B.C.D|X:X::X:X|WORD>]",
+	    NO_STR
+	    MATCH_STR
+	    "Match peer address\n"
+	    "IP address of peer\n"
+	    "IPv6 address of peer\n"
+	    "Interface name of peer\n")
+{
+	const char *xpath = "./match-condition[condition='frr-bgp-route-map:src-peer']";
+
+	nb_cli_enqueue_change(vty, xpath, NB_OP_DESTROY, NULL);
+
+	return nb_cli_apply_changes(vty, NULL);
+}
+
 #ifdef HAVE_SCRIPTING
 DEFUN_YANG (match_script,
 	    match_script_cmd,
@@ -5588,6 +5759,25 @@ DEFPY_YANG(
 	else
 		nb_cli_enqueue_change(vty, xpath_match, NB_OP_MODIFY, "false");
 
+	return nb_cli_apply_changes(vty, NULL);
+}
+
+DEFPY_YANG(
+	match_community_limit, match_community_limit_cmd,
+	"[no$no] match community-limit ![(0-65535)$limit]",
+	NO_STR
+	MATCH_STR
+	"Match BGP community limit\n"
+	"Community limit number\n")
+{
+	const char *xpath = "./match-condition[condition='frr-bgp-route-map:match-community-limit']";
+	char xpath_value[XPATH_MAXLEN];
+
+	nb_cli_enqueue_change(vty, xpath, no ? NB_OP_DESTROY : NB_OP_CREATE, NULL);
+	snprintf(xpath_value, sizeof(xpath_value),
+		 "%s/rmap-match-condition/frr-bgp-route-map:community-limit", xpath);
+
+	nb_cli_enqueue_change(vty, xpath_value, no ? NB_OP_DESTROY : NB_OP_MODIFY, limit_str);
 	return nb_cli_apply_changes(vty, NULL);
 }
 
@@ -7761,6 +7951,7 @@ void bgp_route_map_init(void)
 	route_map_no_set_tag_hook(generic_set_delete);
 
 	route_map_install_match(&route_match_peer_cmd);
+	route_map_install_match(&route_match_src_peer_cmd);
 	route_map_install_match(&route_match_alias_cmd);
 	route_map_install_match(&route_match_local_pref_cmd);
 #ifdef HAVE_SCRIPTING
@@ -7788,6 +7979,7 @@ void bgp_route_map_init(void)
 	route_map_install_match(&route_match_evpn_vni_cmd);
 	route_map_install_match(&route_match_evpn_route_type_cmd);
 	route_map_install_match(&route_match_evpn_rd_cmd);
+	route_map_install_match(&route_match_community_limit_cmd);
 	route_map_install_match(&route_match_evpn_default_route_cmd);
 	route_map_install_match(&route_match_vrl_source_vrf_cmd);
 
@@ -7828,6 +8020,8 @@ void bgp_route_map_init(void)
 
 	install_element(RMAP_NODE, &match_peer_cmd);
 	install_element(RMAP_NODE, &match_peer_local_cmd);
+	install_element(RMAP_NODE, &match_src_peer_cmd);
+	install_element(RMAP_NODE, &no_match_src_peer_cmd);
 	install_element(RMAP_NODE, &no_match_peer_cmd);
 	install_element(RMAP_NODE, &match_ip_route_source_cmd);
 	install_element(RMAP_NODE, &no_match_ip_route_source_cmd);
@@ -7858,6 +8052,7 @@ void bgp_route_map_init(void)
 	install_element(RMAP_NODE, &no_match_alias_cmd);
 	install_element(RMAP_NODE, &match_community_cmd);
 	install_element(RMAP_NODE, &no_match_community_cmd);
+	install_element(RMAP_NODE, &match_community_limit_cmd);
 	install_element(RMAP_NODE, &match_lcommunity_cmd);
 	install_element(RMAP_NODE, &no_match_lcommunity_cmd);
 	install_element(RMAP_NODE, &match_ecommunity_cmd);

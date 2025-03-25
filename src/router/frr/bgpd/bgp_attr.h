@@ -323,7 +323,6 @@ struct attr {
 /* rmap_change_flags definition */
 #define BATTR_RMAP_IPV4_NHOP_CHANGED (1 << 0)
 #define BATTR_RMAP_NEXTHOP_PEER_ADDRESS (1 << 1)
-#define BATTR_REFLECTED (1 << 2)
 #define BATTR_RMAP_NEXTHOP_UNCHANGED (1 << 3)
 #define BATTR_RMAP_IPV6_GLOBAL_NHOP_CHANGED (1 << 4)
 #define BATTR_RMAP_IPV6_LL_NHOP_CHANGED (1 << 5)
@@ -515,7 +514,7 @@ static inline void bgp_attr_set_ecommunity(struct attr *attr,
 {
 	attr->ecommunity = ecomm;
 
-	if (ecomm)
+	if (ecomm && ecomm->size)
 		SET_FLAG(attr->flag, ATTR_FLAG_BIT(BGP_ATTR_EXT_COMMUNITIES));
 	else
 		UNSET_FLAG(attr->flag, ATTR_FLAG_BIT(BGP_ATTR_EXT_COMMUNITIES));
@@ -566,7 +565,7 @@ static inline void bgp_attr_set_ipv6_ecommunity(struct attr *attr,
 {
 	attr->ipv6_ecommunity = ipv6_ecomm;
 
-	if (ipv6_ecomm)
+	if (ipv6_ecomm && ipv6_ecomm->size)
 		SET_FLAG(attr->flag,
 			 ATTR_FLAG_BIT(BGP_ATTR_IPV6_EXT_COMMUNITIES));
 	else
@@ -604,10 +603,17 @@ static inline uint64_t bgp_aigp_metric_total(struct bgp_path_info *bpi)
 {
 	uint64_t aigp = bgp_attr_get_aigp_metric(bpi->attr);
 
-	if (bpi->nexthop)
-		return aigp + bpi->nexthop->metric;
-	else
+	/* Don't increment if it's locally sourced */
+	if (bpi->peer == bpi->peer->bgp->peer_self)
 		return aigp;
+
+	return bpi->extra ? (aigp + bpi->extra->igpmetric) : aigp;
+}
+
+static inline void bgp_attr_set_med(struct attr *attr, uint32_t med)
+{
+	attr->med = med;
+	SET_FLAG(attr->flag, ATTR_FLAG_BIT(BGP_ATTR_MULTI_EXIT_DISC));
 }
 
 static inline struct cluster_list *bgp_attr_get_cluster(const struct attr *attr)

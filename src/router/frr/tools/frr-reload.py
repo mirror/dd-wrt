@@ -237,6 +237,14 @@ def get_normalized_interface_vrf(line):
     return line
 
 
+def get_normalized_ebgp_multihop_line(line):
+    obj = re.search(r"(.*)ebgp-multihop\s+255", line)
+    if obj:
+        line = obj.group(1) + "ebgp-multihop"
+
+    return line
+
+
 # This dictionary contains a tree of all commands that we know start a
 # new multi-line context. All other commands are treated either as
 # commands inside a multi-line context or as single-line contexts. This
@@ -255,7 +263,11 @@ ctx_keywords = {
     },
     "router rip": {},
     "router ripng": {},
-    "router isis ": {},
+    "router isis ": {
+        "segment-routing srv6": {
+            "node-msd": {},
+        },
+    },
     "router openfabric ": {},
     "router ospf": {},
     "router ospf6": {},
@@ -266,7 +278,7 @@ ctx_keywords = {
     "mpls ldp": {"address-family ": {"interface ": {}}},
     "l2vpn ": {"member pseudowire ": {}},
     "key chain ": {"key ": {}},
-    "vrf ": {},
+    "vrf ": {"rpki": {}},
     "interface ": {"link-params": {}},
     "pseudowire ": {},
     "segment-routing": {
@@ -275,7 +287,12 @@ ctx_keywords = {
             "policy ": {"candidate-path ": {}},
             "pcep": {"pcc": {}, "pce ": {}, "pce-config ": {}},
         },
-        "srv6": {"locators": {"locator ": {}}},
+        "srv6": {
+            "locators": {"locator ": {}},
+            "static-sids": {},
+            "encapsulation": {},
+            "formats": {"format": {}},
+        },
     },
     "nexthop-group ": {},
     "route-map ": {},
@@ -373,6 +390,9 @@ class Config(object):
 
             if ":" in line:
                 line = get_normalized_mac_ip_line(line)
+
+            if "ebgp-multihop" in line:
+                line = get_normalized_ebgp_multihop_line(line)
 
             # vrf static routes can be added in two ways. The old way is:
             #
@@ -940,10 +960,14 @@ def bgp_remove_neighbor_cfg(lines_to_del, del_nbr_dict):
     lines_to_del_to_del = []
 
     for ctx_keys, line in lines_to_del:
+        # lines_to_del has following
+        # (('router bgp 100',), 'neighbor swp1.10 interface peer-group dpeergrp_2'),
+        # (('router bgp 100',), 'neighbor swp1.10 advertisement-interval 1'),
+        # (('router bgp 100',), 'no neighbor swp1.10 capability dynamic'),
         if (
             ctx_keys[0].startswith("router bgp")
             and line
-            and line.startswith("neighbor ")
+            and ((line.startswith("neighbor ") or line.startswith("no neighbor ")))
         ):
             if ctx_keys[0] in del_nbr_dict:
                 for nbr in del_nbr_dict[ctx_keys[0]]:
@@ -1745,12 +1769,13 @@ def compare_context_objects(newconf, running):
                 delete_bgpd = True
                 lines_to_del.append((running_ctx_keys, None))
 
-            # We cannot do 'no interface' or 'no vrf' in FRR, and so deal with it
-            elif (
-                running_ctx_keys[0].startswith("interface")
-                or running_ctx_keys[0].startswith("vrf")
-                or running_ctx_keys[0].startswith("router pim")
-            ):
+            elif running_ctx_keys[0].startswith("interface"):
+                lines_to_del.append((running_ctx_keys, None))
+
+            # We cannot do 'no vrf' in FRR, and so deal with it
+            elif running_ctx_keys[0].startswith("vrf") or running_ctx_keys[
+                0
+            ].startswith("router pim"):
                 for line in running_ctx.lines:
                     lines_to_del.append((running_ctx_keys, line))
 

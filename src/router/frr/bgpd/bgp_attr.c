@@ -697,14 +697,9 @@ static uint32_t srv6_l3vpn_hash_key_make(const void *p)
 	uint32_t key = 0;
 
 	key = jhash(&l3vpn->sid, 16, key);
-	key = jhash_1word(l3vpn->sid_flags, key);
-	key = jhash_1word(l3vpn->endpoint_behavior, key);
-	key = jhash_1word(l3vpn->loc_block_len, key);
-	key = jhash_1word(l3vpn->loc_node_len, key);
-	key = jhash_1word(l3vpn->func_len, key);
-	key = jhash_1word(l3vpn->arg_len, key);
-	key = jhash_1word(l3vpn->transposition_len, key);
-	key = jhash_1word(l3vpn->transposition_offset, key);
+	key = jhash_3words(l3vpn->sid_flags, l3vpn->endpoint_behavior, l3vpn->loc_block_len, key);
+	key = jhash_3words(l3vpn->loc_node_len, l3vpn->func_len, l3vpn->arg_len, key);
+	key = jhash_2words(l3vpn->transposition_len, l3vpn->transposition_offset, key);
 	return key;
 }
 
@@ -863,15 +858,11 @@ unsigned int attrhash_key_make(const void *p)
 	if (vnc_subtlvs)
 		MIX(encap_hash_key_make(vnc_subtlvs));
 #endif
-	MIX(attr->mp_nexthop_len);
+	MIX3(attr->mp_nexthop_len, attr->rmap_table_id, attr->nh_type);
 	key = jhash(attr->mp_nexthop_global.s6_addr, IPV6_MAX_BYTELEN, key);
 	key = jhash(attr->mp_nexthop_local.s6_addr, IPV6_MAX_BYTELEN, key);
 	MIX3(attr->nh_ifindex, attr->nh_lla_ifindex, attr->distance);
-	MIX(attr->rmap_table_id);
-	MIX(attr->nh_type);
-	MIX(attr->bh_type);
-	MIX(attr->otc);
-	MIX(bgp_attr_get_aigp_metric(attr));
+	MIX3(attr->bh_type, attr->otc, bgp_attr_get_aigp_metric(attr));
 
 	return key;
 }
@@ -976,8 +967,11 @@ static void attr_show_all_iterator(struct hash_bucket *bucket, struct vty *vty)
 		"\n",
 		attr->flag, attr->distance, attr->med, attr->local_pref,
 		attr->origin, attr->weight, attr->label, sid, attr->aigp_metric);
-	vty_out(vty, "\taspath: %s Community: %s Large Community: %s\n",
-		aspath_print(attr->aspath),
+	vty_out(vty,
+		"\tnh_ifindex: %u nh_flags: %u distance: %u nexthop_global: %pI6 nexthop_local: %pI6 nexthop_local_ifindex: %u\n",
+		attr->nh_ifindex, attr->nh_flags, attr->distance, &attr->mp_nexthop_global,
+		&attr->mp_nexthop_local, attr->nh_lla_ifindex);
+	vty_out(vty, "\taspath: %s Community: %s Large Community: %s\n", aspath_print(attr->aspath),
 		community_str(attr->community, false, false),
 		lcommunity_str(attr->lcommunity, false, false));
 	vty_out(vty, "\tExtended Community: %s Extended IPv6 Community: %s\n",
@@ -1176,8 +1170,7 @@ struct attr *bgp_attr_aggregate_intern(
 	SET_FLAG(attr.flag, ATTR_FLAG_BIT(BGP_ATTR_ORIGIN));
 
 	/* MED */
-	attr.med = 0;
-	SET_FLAG(attr.flag, ATTR_FLAG_BIT(BGP_ATTR_MULTI_EXIT_DISC));
+	bgp_attr_set_med(&attr, 0);
 
 	/* AS path attribute. */
 	if (aspath)
@@ -1932,9 +1925,7 @@ static enum bgp_attr_parse_ret bgp_attr_med(struct bgp_attr_parser_args *args)
 					  args->total);
 	}
 
-	attr->med = stream_getl(peer->curr);
-
-	SET_FLAG(attr->flag, ATTR_FLAG_BIT(BGP_ATTR_MULTI_EXIT_DISC));
+	bgp_attr_set_med(attr, stream_getl(peer->curr));
 
 	return BGP_ATTR_PARSE_PROCEED;
 }
@@ -4485,66 +4476,22 @@ static bool bgp_append_local_as(struct peer *peer, afi_t afi, safi_t safi)
 }
 
 static void bgp_packet_ecommunity_attribute(struct stream *s, struct peer *peer,
-					    struct ecommunity *ecomm,
-					    bool transparent, int attribute)
+					    struct ecommunity *ecomm, int attribute)
 {
-	if (peer->sort == BGP_PEER_IBGP || peer->sort == BGP_PEER_CONFED ||
-	    peer->sub_sort == BGP_PEER_EBGP_OAD || transparent) {
-		if (ecomm->size * ecomm->unit_size > 255) {
-			stream_putc(s, BGP_ATTR_FLAG_OPTIONAL |
-					       BGP_ATTR_FLAG_TRANS |
-					       BGP_ATTR_FLAG_EXTLEN);
-			stream_putc(s, attribute);
-			stream_putw(s, ecomm->size * ecomm->unit_size);
-		} else {
-			stream_putc(s, BGP_ATTR_FLAG_OPTIONAL |
-					       BGP_ATTR_FLAG_TRANS);
-			stream_putc(s, attribute);
-			stream_putc(s, ecomm->size * ecomm->unit_size);
-		}
-		stream_put(s, ecomm->val, ecomm->size * ecomm->unit_size);
+	if (!ecomm || !ecomm->size)
+		return;
+
+	if (ecomm->size * ecomm->unit_size > 255) {
+		stream_putc(s, BGP_ATTR_FLAG_OPTIONAL | BGP_ATTR_FLAG_TRANS | BGP_ATTR_FLAG_EXTLEN);
+		stream_putc(s, attribute);
+		stream_putw(s, ecomm->size * ecomm->unit_size);
 	} else {
-		uint8_t *pnt;
-		int tbit;
-		int ecom_tr_size = 0;
-		uint32_t i;
-
-		for (i = 0; i < ecomm->size; i++) {
-			pnt = ecomm->val + (i * ecomm->unit_size);
-			tbit = *pnt;
-
-			if (CHECK_FLAG(tbit, ECOMMUNITY_FLAG_NON_TRANSITIVE))
-				continue;
-
-			ecom_tr_size++;
-		}
-
-		if (ecom_tr_size) {
-			if (ecom_tr_size * ecomm->unit_size > 255) {
-				stream_putc(s, BGP_ATTR_FLAG_OPTIONAL |
-						       BGP_ATTR_FLAG_TRANS |
-						       BGP_ATTR_FLAG_EXTLEN);
-				stream_putc(s, attribute);
-				stream_putw(s, ecom_tr_size * ecomm->unit_size);
-			} else {
-				stream_putc(s, BGP_ATTR_FLAG_OPTIONAL |
-						       BGP_ATTR_FLAG_TRANS);
-				stream_putc(s, attribute);
-				stream_putc(s, ecom_tr_size * ecomm->unit_size);
-			}
-
-			for (i = 0; i < ecomm->size; i++) {
-				pnt = ecomm->val + (i * ecomm->unit_size);
-				tbit = *pnt;
-
-				if (CHECK_FLAG(tbit,
-					       ECOMMUNITY_FLAG_NON_TRANSITIVE))
-					continue;
-
-				stream_put(s, pnt, ecomm->unit_size);
-			}
-		}
+		stream_putc(s, BGP_ATTR_FLAG_OPTIONAL | BGP_ATTR_FLAG_TRANS);
+		stream_putc(s, attribute);
+		stream_putc(s, ecomm->size * ecomm->unit_size);
 	}
+
+	stream_put(s, ecomm->val, ecomm->size * ecomm->unit_size);
 }
 
 /* Make attribute packet. */
@@ -4851,19 +4798,11 @@ bgp_size_t bgp_packet_attribute(struct bgp *bgp, struct peer *peer, struct strea
 
 	/* Extended IPv6/Communities attributes. */
 	if (CHECK_FLAG(peer->af_flags[afi][safi], PEER_FLAG_SEND_EXT_COMMUNITY)) {
-		bool transparent = CHECK_FLAG(peer->af_flags[afi][safi],
-					      PEER_FLAG_RSERVER_CLIENT) &&
-				   from &&
-				   CHECK_FLAG(from->af_flags[afi][safi],
-					      PEER_FLAG_RSERVER_CLIENT);
-
 		if (CHECK_FLAG(attr->flag,
 			       ATTR_FLAG_BIT(BGP_ATTR_EXT_COMMUNITIES))) {
 			struct ecommunity *ecomm = bgp_attr_get_ecommunity(attr);
 
-			bgp_packet_ecommunity_attribute(s, peer, ecomm,
-							transparent,
-							BGP_ATTR_EXT_COMMUNITIES);
+			bgp_packet_ecommunity_attribute(s, peer, ecomm, BGP_ATTR_EXT_COMMUNITIES);
 		}
 
 		if (CHECK_FLAG(attr->flag,
@@ -4872,7 +4811,6 @@ bgp_size_t bgp_packet_attribute(struct bgp *bgp, struct peer *peer, struct strea
 				bgp_attr_get_ipv6_ecommunity(attr);
 
 			bgp_packet_ecommunity_attribute(s, peer, ecomm,
-							transparent,
 							BGP_ATTR_IPV6_EXT_COMMUNITIES);
 		}
 	}
@@ -5468,7 +5406,14 @@ enum bgp_attr_parse_ret bgp_attr_ignore(struct peer *peer, uint8_t type)
 			   lookup_msg(attr_str, type, NULL),
 			   withdraw ? "treat-as-withdraw" : "discard");
 
-	return withdraw ? BGP_ATTR_PARSE_WITHDRAW : BGP_ATTR_PARSE_PROCEED;
+	/* We don't increment stat_pfx_withdraw here, because it's done in
+	 * bgp_update_receive().
+	 */
+	if (withdraw)
+		return BGP_ATTR_PARSE_WITHDRAW;
+
+	peer->stat_pfx_discard++;
+	return BGP_ATTR_PARSE_PROCEED;
 }
 
 bool route_matches_soo(struct bgp_path_info *pi, struct ecommunity *soo)

@@ -111,6 +111,11 @@ static struct cpu_event_history *cpu_records_get(struct event_loop *loop,
 	return res;
 }
 
+static void cpu_records_clear(struct cpu_event_history *p)
+{
+	memset(p->_clear_begin, 0, p->_clear_end - p->_clear_begin);
+}
+
 static void cpu_records_free(struct cpu_event_history **p)
 {
 	XFREE(MTYPE_EVENT_STATS, *p);
@@ -250,20 +255,15 @@ static void cpu_record_clear(uint8_t filter)
 		for (ALL_LIST_ELEMENTS_RO(masters, ln, m)) {
 			frr_with_mutex (&m->mtx) {
 				struct cpu_event_history *item;
-				struct cpu_records_head old[1];
 
-				cpu_records_init(old);
-				cpu_records_swap_all(old, m->cpu_records);
-
-				while ((item = cpu_records_pop(old))) {
+				/* it isn't possible to free the memory here
+				 * because some of these will be in use (e.g.
+				 * the one we're currently running in!)
+				 */
+				frr_each (cpu_records, m->cpu_records, item) {
 					if (item->types & filter)
-						cpu_records_free(&item);
-					else
-						cpu_records_add(m->cpu_records,
-								item);
+						cpu_records_clear(item);
 				}
-
-				cpu_records_fini(old);
 			}
 		}
 	}
@@ -429,9 +429,6 @@ DEFUN_NOSH (show_event_poll,
 	return CMD_SUCCESS;
 }
 
-#if CONFDATE > 20241231
-CPP_NOTICE("Remove `clear thread cpu` command")
-#endif
 DEFUN (clear_event_cpu,
        clear_event_cpu_cmd,
        "clear event cpu [FILTER]",
@@ -456,14 +453,6 @@ DEFUN (clear_event_cpu,
 	cpu_record_clear(filter);
 	return CMD_SUCCESS;
 }
-
-ALIAS (clear_event_cpu,
-       clear_thread_cpu_cmd,
-       "clear thread cpu [FILTER]",
-       "Clear stored data in all pthreads\n"
-       "Thread information\n"
-       "Thread CPU usage\n"
-       "Display filter (rwtexb)\n")
 
 static void show_event_timers_helper(struct vty *vty, struct event_loop *m)
 {
@@ -504,7 +493,6 @@ void event_cmd_init(void)
 {
 	install_element(VIEW_NODE, &show_event_cpu_cmd);
 	install_element(VIEW_NODE, &show_event_poll_cmd);
-	install_element(ENABLE_NODE, &clear_thread_cpu_cmd);
 	install_element(ENABLE_NODE, &clear_event_cpu_cmd);
 
 	install_element(CONFIG_NODE, &service_cputime_stats_cmd);
@@ -669,24 +657,6 @@ static void thread_array_free(struct event_loop *m, struct event **thread_array)
 	XFREE(MTYPE_EVENT_POLL, thread_array);
 }
 
-/*
- * event_master_free_unused
- *
- * As threads are finished with they are put on the
- * unuse list for later reuse.
- * If we are shutting down, Free up unused threads
- * So we can see if we forget to shut anything off
- */
-void event_master_free_unused(struct event_loop *m)
-{
-	frr_with_mutex (&m->mtx) {
-		struct event *t;
-
-		while ((t = event_list_pop(&m->unuse)))
-			thread_free(m, t);
-	}
-}
-
 /* Stop thread scheduler. */
 void event_master_free(struct event_loop *m)
 {
@@ -793,7 +763,6 @@ static struct event *thread_get(struct event_loop *m, uint8_t type,
 		thread = XCALLOC(MTYPE_THREAD, sizeof(struct event));
 		/* mutex only needs to be initialized at struct creation. */
 		pthread_mutex_init(&thread->mtx, NULL);
-		m->alloc++;
 	}
 
 	thread->type = type;
@@ -832,10 +801,6 @@ static struct event *thread_get(struct event_loop *m, uint8_t type,
 
 static void thread_free(struct event_loop *master, struct event *thread)
 {
-	/* Update statistics. */
-	assert(master->alloc > 0);
-	master->alloc--;
-
 	/* Free allocated resources. */
 	pthread_mutex_destroy(&thread->mtx);
 	XFREE(MTYPE_THREAD, thread);
@@ -979,7 +944,7 @@ void _event_add_read_write(const struct xref_eventsched *xref,
 		 * if we already have a pollfd for our file descriptor, find and
 		 * use it
 		 */
-		for (nfds_t i = 0; i < m->handler.pfdcount; i++)
+		for (nfds_t i = 0; i < m->handler.pfdcount; i++) {
 			if (m->handler.pfds[i].fd == fd) {
 				queuepos = i;
 
@@ -993,6 +958,15 @@ void _event_add_read_write(const struct xref_eventsched *xref,
 #endif
 				break;
 			}
+			/*
+			 * We are setting the fd = -1 for the
+			 * case when a read/write event is going
+			 * away.  if we find a -1 we can stuff it
+			 * into that spot, so note it
+			 */
+			if (m->handler.pfds[i].fd == -1 && queuepos == m->handler.pfdcount)
+				queuepos = i;
+		}
 
 		/* make sure we have room for this fd + pipe poker fd */
 		assert(queuepos + 1 < m->handler.pfdsize);
@@ -1268,6 +1242,14 @@ static void cancel_arg_helper(struct event_loop *master,
 	/* Check the io tasks */
 	for (i = 0; i < master->handler.pfdcount;) {
 		pfd = master->handler.pfds + i;
+
+		/*
+		 * Skip this spot, nothing here to see
+		 */
+		if (pfd->fd == -1) {
+			i++;
+			continue;
+		}
 
 		if (pfd->events & POLLIN)
 			t = master->read[pfd->fd];
@@ -1590,6 +1572,12 @@ static int thread_process_io_helper(struct event_loop *m, struct event *thread,
 	 * we should.
 	 */
 	m->handler.pfds[pos].events &= ~(state);
+	/*
+	 * ppoll man page says that a fd of -1 causes the particular
+	 * array item to be skipped.  So let's skip it
+	 */
+	if (m->handler.pfds[pos].events == 0)
+		m->handler.pfds[pos].fd = -1;
 
 	if (!thread) {
 		if ((actual_state & (POLLHUP|POLLIN)) != POLLHUP)

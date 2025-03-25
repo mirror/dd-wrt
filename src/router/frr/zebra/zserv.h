@@ -256,15 +256,27 @@ extern void zserv_init(void);
 extern void zserv_close(void);
 
 /*
+ * Open Zebra API server socket.
+ *
+ * Create and open the server socket.
+ *
+ * path
+ *    where to place the Unix domain socket
+ *
+ * This function *should* only ever be called from
+ * main() and only every from 1 pthread.
+ */
+extern void zserv_open(const char *path);
+
+/*
  * Start Zebra API server.
  *
- * Allocates resources, creates the server socket and begins listening on the
- * socket.
+ * Allocates resources and begins listening on the server socket.
  *
  * path
  *    where to place the Unix domain socket
  */
-extern void zserv_start(char *path);
+extern void zserv_start(const char *path);
 
 /*
  * Send a message to a connected Zebra API client.

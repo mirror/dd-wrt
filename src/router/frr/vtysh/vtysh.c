@@ -281,9 +281,6 @@ static int vtysh_client_run(struct vtysh_client *vclient, const char *line,
 		nread = vtysh_client_receive(
 			vclient, bufvalid, buf + bufsz - bufvalid - 1, pass_fd);
 
-		if (nread < 0 && (errno == EINTR || errno == EAGAIN))
-			continue;
-
 		if (nread <= 0) {
 			if (vty->of)
 				vty_out(vty,
@@ -699,7 +696,7 @@ static char *trim(char *s)
 int vtysh_mark_file(const char *filename)
 {
 	struct vty *vty;
-	FILE *confp = NULL;
+	FILE *confp = NULL, *closefp = NULL;
 	int ret;
 	vector vline;
 	int tried = 0;
@@ -712,7 +709,7 @@ int vtysh_mark_file(const char *filename)
 	if (strncmp("-", filename, 1) == 0)
 		confp = stdin;
 	else
-		confp = fopen(filename, "r");
+		confp = closefp = fopen(filename, "r");
 
 	if (confp == NULL) {
 		fprintf(stderr, "%% Can't open config file %s due to '%s'.\n",
@@ -852,9 +849,8 @@ int vtysh_mark_file(const char *filename)
 	vty_close(vty);
 	XFREE(MTYPE_VTYSH_CMD, vty_buf_copy);
 
-	if (confp != stdin)
-		fclose(confp);
-
+	if (closefp)
+		fclose(closefp);
 	return 0;
 }
 
@@ -1316,6 +1312,13 @@ static struct cmd_node srv6_node = {
 	.prompt = "%s(config-srv6)# ",
 };
 
+static struct cmd_node srv6_sids_node = {
+	.name = "srv6-sids",
+	.node = SRV6_SIDS_NODE,
+	.parent_node = SRV6_NODE,
+	.prompt = "%s(config-srv6-sids)# ",
+};
+
 static struct cmd_node srv6_locs_node = {
 	.name = "srv6-locators",
 	.node = SRV6_LOCS_NODE,
@@ -1689,11 +1692,27 @@ DEFUNSH(VTYSH_REALLYALL, vtysh_end_all, vtysh_end_all_cmd, "end",
 	return vtysh_end();
 }
 
-DEFUNSH(VTYSH_ZEBRA, srv6, srv6_cmd,
+DEFUNSH(VTYSH_ZEBRA | VTYSH_MGMTD, srv6, srv6_cmd,
 	"srv6",
 	"Segment-Routing SRv6 configuration\n")
 {
 	vty->node = SRV6_NODE;
+	return CMD_SUCCESS;
+}
+
+DEFUNSH(VTYSH_MGMTD, srv6_sids, srv6_sids_cmd,
+	"static-sids",
+	"Segment-Routing SRv6 SIDs configuration\n")
+{
+	vty->node = SRV6_SIDS_NODE;
+	return CMD_SUCCESS;
+}
+
+DEFUNSH(VTYSH_MGMTD, no_srv6_sids, no_srv6_sids_cmd,
+	"no static-sids",
+	NO_STR
+	"Segment-Routing SRv6 SIDs configuration\n")
+{
 	return CMD_SUCCESS;
 }
 
@@ -2220,7 +2239,7 @@ DEFUNSH(VTYSH_FABRICD, router_openfabric, router_openfabric_cmd, "router openfab
 }
 #endif /* HAVE_FABRICD */
 
-DEFUNSH(VTYSH_SR, segment_routing, segment_routing_cmd,
+DEFUNSH(VTYSH_SR | VTYSH_MGMTD, segment_routing, segment_routing_cmd,
 	"segment-routing",
 	"Configure segment routing\n")
 {
@@ -2389,6 +2408,79 @@ DEFUNSH(VTYSH_BFDD, bfd_peer_enter, bfd_peer_enter_cmd,
 	return CMD_SUCCESS;
 }
 
+DEFUNSH(VTYSH_BFDD, sbfd_echo_peer_enter, sbfd_echo_peer_enter_cmd,
+	"peer <A.B.C.D|X:X::X:X> bfd-mode sbfd-echo bfd-name BFDNAME [multihop$multihop] local-address <A.B.C.D|X:X::X:X> [vrf NAME] srv6-source-ipv6 X:X::X:X srv6-encap-data X:X::X:X...",
+	"Configure peer\n"
+	"IPv4 peer address\n"
+	"IPv6 peer address\n"
+	"Specify bfd session mode\n"
+	"Enable sbfd-echo mode\n"
+	"Specify bfd session name\n"
+	"bfd session name\n"
+	"Configure multihop\n"
+	"Configure local\n"
+	"IPv4 local address\n"
+	"IPv6 local address\n"
+	"Configure VRF\n"
+	"Configure VRF name\n"
+	"Configure source ipv6 address for srv6 encap\n"
+	"IPv6 local address\n"
+	"Configure sidlist data for srv6 encap\n"
+	"X:X::X:X IPv6 sid address\n")
+{
+	vty->node = BFD_PEER_NODE;
+	return CMD_SUCCESS;
+}
+
+DEFUNSH(VTYSH_BFDD, sbfd_init_peer_enter, sbfd_init_peer_enter_cmd,
+	"peer <A.B.C.D|X:X::X:X> bfd-mode sbfd-init bfd-name BFDNAME [multihop$multihop] local-address <A.B.C.D|X:X::X:X> [vrf NAME] remote-discr (1-4294967295) srv6-source-ipv6 X:X::X:X srv6-encap-data X:X::X:X...",
+	"Configure peer\n"
+	"IPv4 peer address\n"
+	"IPv6 peer address\n"
+	"Specify bfd session mode\n"
+	"Enable sbfd-init mode\n"
+	"Specify bfd session name\n"
+	"bfd session name\n"
+	"Configure multihop\n"
+	"Configure local\n"
+	"IPv4 local address\n"
+	"IPv6 local address\n"
+	"Configure VRF\n"
+	"Configure VRF name\n"
+	"Configure bfd session remote discriminator\n"
+	"Configure remote discriminator\n"
+	"Configure source ipv6 address for srv6 encap\n"
+	"IPv6 local address\n"
+	"Configure sidlist data for srv6 encap\n"
+	"X:X::X:X IPv6 sid address\n"
+	)
+{
+	vty->node = BFD_PEER_NODE;
+	return CMD_SUCCESS;
+}
+
+DEFUNSH(VTYSH_BFDD, sbfd_init_peer_raw_enter, sbfd_init_peer_raw_enter_cmd,
+	"peer <A.B.C.D|X:X::X:X> bfd-mode sbfd-init bfd-name BFDNAME [multihop$multihop] local-address <A.B.C.D|X:X::X:X> [vrf NAME] remote-discr (1-4294967295)",
+	"Configure peer\n"
+	"IPv4 peer address\n"
+	"IPv6 peer address\n"
+	"Specify bfd session mode\n"
+	"Enable sbfd-init mode\n"
+	"Specify bfd session name\n"
+	"bfd session name\n"
+	"Configure multihop\n"
+	"Configure local\n"
+	"IPv4 local address\n"
+	"IPv6 local address\n"
+	"Configure VRF\n"
+	"Configure VRF name\n"
+	"Configure bfd session remote discriminator\n"
+	"Configure remote discriminator\n")
+{
+	vty->node = BFD_PEER_NODE;
+	return CMD_SUCCESS;
+}
+
 DEFUNSH(VTYSH_BFDD, bfd_profile_enter, bfd_profile_enter_cmd,
 	"profile BFDPROF",
 	BFD_PROFILE_STR
@@ -2539,7 +2631,7 @@ DEFUNSH(VTYSH_VRF, exit_vrf_config, exit_vrf_config_cmd, "exit-vrf",
 	return CMD_SUCCESS;
 }
 
-DEFUNSH(VTYSH_ZEBRA, exit_srv6_config, exit_srv6_config_cmd, "exit",
+DEFUNSH(VTYSH_ZEBRA | VTYSH_MGMTD, exit_srv6_config, exit_srv6_config_cmd, "exit",
 	"Exit from SRv6 configuration mode\n")
 {
 	if (vty->node == SRV6_NODE)
@@ -2551,6 +2643,14 @@ DEFUNSH(VTYSH_ZEBRA, exit_srv6_locs_config, exit_srv6_locs_config_cmd, "exit",
 	"Exit from SRv6-locator configuration mode\n")
 {
 	if (vty->node == SRV6_LOCS_NODE)
+		vty->node = SRV6_NODE;
+	return CMD_SUCCESS;
+}
+
+DEFUNSH(VTYSH_MGMTD, exit_srv6_sids_config, exit_srv6_sids_config_cmd, "exit",
+	"Exit from SRv6-SIDs configuration mode\n")
+{
+	if (vty->node == SRV6_SIDS_NODE)
 		vty->node = SRV6_NODE;
 	return CMD_SUCCESS;
 }
@@ -2810,13 +2910,13 @@ DEFUNSH(VTYSH_KEYS, vtysh_quit_keys, vtysh_quit_keys_cmd, "quit",
 	return vtysh_exit_keys(self, vty, argc, argv);
 }
 
-DEFUNSH(VTYSH_SR, vtysh_exit_sr, vtysh_exit_sr_cmd, "exit",
+DEFUNSH(VTYSH_SR | VTYSH_MGMTD, vtysh_exit_sr, vtysh_exit_sr_cmd, "exit",
 	"Exit current mode and down to previous mode\n")
 {
 	return vtysh_exit(vty);
 }
 
-DEFUNSH(VTYSH_SR, vtysh_quit_sr, vtysh_quit_sr_cmd, "quit",
+DEFUNSH(VTYSH_SR | VTYSH_MGMTD, vtysh_quit_sr, vtysh_quit_sr_cmd, "quit",
 	"Exit current mode and down to previous mode\n")
 {
 	return vtysh_exit(vty);
@@ -5004,6 +5104,7 @@ void vtysh_init_vty(void)
 	install_node(&rmap_node);
 	install_node(&vty_node);
 	install_node(&srv6_node);
+	install_node(&srv6_sids_node);
 	install_node(&srv6_locs_node);
 	install_node(&srv6_loc_node);
 	install_node(&srv6_encap_node);
@@ -5277,6 +5378,9 @@ void vtysh_init_vty(void)
 	install_element(BFD_NODE, &vtysh_end_all_cmd);
 
 	install_element(BFD_NODE, &bfd_peer_enter_cmd);
+	install_element(BFD_NODE, &sbfd_init_peer_enter_cmd);
+	install_element(BFD_NODE, &sbfd_init_peer_raw_enter_cmd);
+	install_element(BFD_NODE, &sbfd_echo_peer_enter_cmd);
 	install_element(BFD_PEER_NODE, &vtysh_exit_bfdd_cmd);
 	install_element(BFD_PEER_NODE, &vtysh_quit_bfdd_cmd);
 	install_element(BFD_PEER_NODE, &vtysh_end_all_cmd);
@@ -5447,6 +5551,11 @@ void vtysh_init_vty(void)
 	install_element(SRV6_NODE, &exit_srv6_config_cmd);
 	install_element(SRV6_NODE, &vtysh_end_all_cmd);
 	install_element(SRV6_NODE, &srv6_encap_cmd);
+	install_element(SRV6_NODE, &srv6_sids_cmd);
+	install_element(SRV6_NODE, &no_srv6_sids_cmd);
+
+	install_element(SRV6_SIDS_NODE, &exit_srv6_sids_config_cmd);
+	install_element(SRV6_SIDS_NODE, &vtysh_end_all_cmd);
 
 	install_element(SRV6_LOCS_NODE, &srv6_locator_cmd);
 	install_element(SRV6_LOCS_NODE, &exit_srv6_locs_config_cmd);

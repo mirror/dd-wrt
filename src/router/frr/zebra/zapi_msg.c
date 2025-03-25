@@ -282,7 +282,7 @@ int zsend_interface_address(int cmd, struct zserv *client,
 {
 	int blen;
 	struct prefix *p;
-	struct stream *s = stream_new(ZEBRA_MAX_PACKET_SIZ);
+	struct stream *s = stream_new(ZEBRA_SMALL_PACKET_SIZE);
 
 	zclient_create_header(s, cmd, ifp->vrf->vrf_id);
 	stream_putl(s, ifp->ifindex);
@@ -323,7 +323,7 @@ static int zsend_interface_nbr_address(int cmd, struct zserv *client,
 				       struct nbr_connected *ifc)
 {
 	int blen;
-	struct stream *s = stream_new(ZEBRA_MAX_PACKET_SIZ);
+	struct stream *s = stream_new(ZEBRA_SMALL_PACKET_SIZE);
 	struct prefix *p;
 
 	zclient_create_header(s, cmd, ifp->vrf->vrf_id);
@@ -509,9 +509,8 @@ int zsend_interface_update(int cmd, struct zserv *client, struct interface *ifp)
 	return zserv_send_message(client, s);
 }
 
-int zsend_redistribute_route(int cmd, struct zserv *client,
-			     const struct route_node *rn,
-			     const struct route_entry *re, bool is_table_direct)
+int zsend_redistribute_route(int cmd, struct zserv *client, const struct route_node *rn,
+			     const struct route_entry *re, vrf_id_t *to_vrf)
 {
 	struct zapi_route api;
 	struct zapi_nexthop *api_nh;
@@ -527,9 +526,10 @@ int zsend_redistribute_route(int cmd, struct zserv *client,
 	api.vrf_id = re->vrf_id;
 	api.type = re->type;
 	api.safi = SAFI_UNICAST;
-	if (is_table_direct) {
+	if (to_vrf != NULL) {
 		api.instance = re->table;
 		api.type = ZEBRA_ROUTE_TABLE_DIRECT;
+		api.vrf_id = *to_vrf;
 	} else
 		api.instance = re->instance;
 	api.flags = re->flags;
@@ -598,7 +598,7 @@ int zsend_redistribute_route(int cmd, struct zserv *client,
 
 	/* Attributes. */
 	SET_FLAG(api.message, ZAPI_MESSAGE_DISTANCE);
-	if (is_table_direct)
+	if (to_vrf != NULL)
 		api.distance = ZEBRA_TABLEDIRECT_DISTANCE_DEFAULT;
 	else
 		api.distance = re->distance;
@@ -640,34 +640,41 @@ int zsend_redistribute_route(int cmd, struct zserv *client,
  * (Otherwise we would need to implement sending NHT updates for the result of
  * this "URIB-MRIB-combined" table, but we only decide that here on the fly,
  * so it'd be rather complex to do NHT for.)
+ *
+ * 9/19/24 NEB I've updated this API to include the SAFI in the lookup
+ * request and response. This allows PIM to do a syncronous lookup for the
+ * correct table along side NHT.
+ * This also makes this a more generic synchronous lookup not specifically
+ * tied to the mrib.
  */
-static int zsend_nexthop_lookup_mrib(struct zserv *client, struct ipaddr *addr,
-				     struct route_entry *re,
-				     struct zebra_vrf *zvrf)
+static int zsend_nexthop_lookup(struct zserv *client, struct ipaddr *addr, struct route_entry *re,
+				struct route_node *rn, struct zebra_vrf *zvrf, safi_t safi)
 {
 	struct stream *s;
 	unsigned long nump;
-	uint8_t num;
+	uint16_t num;
 	struct nexthop *nexthop;
 
 	/* Get output stream. */
-	s = stream_new(ZEBRA_MAX_PACKET_SIZ);
+	s = stream_new(ZEBRA_SMALL_PACKET_SIZE);
 	stream_reset(s);
 
 	/* Fill in result. */
-	zclient_create_header(s, ZEBRA_NEXTHOP_LOOKUP_MRIB, zvrf_id(zvrf));
+	zclient_create_header(s, ZEBRA_NEXTHOP_LOOKUP, zvrf_id(zvrf));
 	stream_put_ipaddr(s, addr);
 
-	if (re) {
+	if (re && rn) {
 		struct nexthop_group *nhg;
 
 		stream_putc(s, re->distance);
 		stream_putl(s, re->metric);
+		stream_putw(s, rn->p.prefixlen);
+
 		num = 0;
 		/* remember position for nexthop_num */
 		nump = stream_get_endp(s);
 		/* reserve room for nexthop_num */
-		stream_putc(s, 0);
+		stream_putw(s, 0);
 		nhg = rib_get_fib_nhg(re);
 		for (ALL_NEXTHOPS_PTR(nhg, nexthop)) {
 			if (rnh_nexthop_valid(re, nexthop))
@@ -675,11 +682,12 @@ static int zsend_nexthop_lookup_mrib(struct zserv *client, struct ipaddr *addr,
 		}
 
 		/* store nexthop_num */
-		stream_putc_at(s, nump, num);
+		stream_putw_at(s, nump, num);
 	} else {
 		stream_putc(s, 0); /* distance */
 		stream_putl(s, 0); /* metric */
-		stream_putc(s, 0); /* nexthop_num */
+		stream_putw(s, 0); /* prefix len */
+		stream_putw(s, 0); /* nexthop_num */
 	}
 
 	stream_putw_at(s, 0, stream_get_endp(s));
@@ -706,7 +714,7 @@ int zsend_nhg_notify(uint16_t type, uint16_t instance, uint32_t session_id,
 		zlog_debug("%s: type %d, id %d, note %s",
 			   __func__, type, id, zapi_nhg_notify_owner2str(note));
 
-	s = stream_new(ZEBRA_MAX_PACKET_SIZ);
+	s = stream_new(ZEBRA_SMALL_PACKET_SIZE);
 	stream_reset(s);
 
 	zclient_create_header(s, ZEBRA_NHG_NOTIFY_OWNER, VRF_DEFAULT);
@@ -732,6 +740,10 @@ static int route_notify_internal(const struct route_node *rn, int type,
 	struct zserv *client;
 	struct stream *s;
 	uint8_t blen;
+	const struct prefix *p, *src_p;
+	struct prefix src_dummy = {};
+
+	srcdest_rnode_prefixes(rn, &p, &src_p);
 
 	client = zserv_find_client(type, instance);
 	if (!client || !client->notify_owner) {
@@ -763,9 +775,17 @@ static int route_notify_internal(const struct route_node *rn, int type,
 
 	stream_putc(s, rn->p.family);
 
-	blen = prefix_blen(&rn->p);
-	stream_putc(s, rn->p.prefixlen);
-	stream_put(s, &rn->p.u.prefix, blen);
+	blen = prefix_blen(p);
+	stream_putc(s, p->prefixlen);
+	stream_put(s, &p->u.prefix, blen);
+
+	if (!src_p) {
+		src_dummy.family = p->family;
+		src_p = &src_dummy;
+	}
+	blen = prefix_blen(src_p);
+	stream_putc(s, src_p->prefixlen);
+	stream_put(s, &src_p->u.prefix, blen);
 
 	stream_putl(s, table_id);
 
@@ -835,7 +855,7 @@ void zsend_rule_notify_owner(const struct zebra_dplane_ctx *ctx,
 	if (!client)
 		return;
 
-	s = stream_new(ZEBRA_MAX_PACKET_SIZ);
+	s = stream_new(ZEBRA_SMALL_PACKET_SIZE);
 
 	zclient_create_header(s, ZEBRA_RULE_NOTIFY_OWNER,
 			      dplane_ctx_rule_get_vrfid(ctx));
@@ -889,7 +909,7 @@ void zsend_iptable_notify_owner(const struct zebra_dplane_ctx *ctx,
 	if (!client)
 		return;
 
-	s = stream_new(ZEBRA_MAX_PACKET_SIZ);
+	s = stream_new(ZEBRA_SMALL_PACKET_SIZE);
 
 	zclient_create_header(s, cmd, VRF_DEFAULT);
 	stream_putw(s, note);
@@ -923,7 +943,7 @@ void zsend_ipset_notify_owner(const struct zebra_dplane_ctx *ctx,
 	if (!client)
 		return;
 
-	s = stream_new(ZEBRA_MAX_PACKET_SIZ);
+	s = stream_new(ZEBRA_SMALL_PACKET_SIZE);
 
 	zclient_create_header(s, cmd, VRF_DEFAULT);
 	stream_putw(s, note);
@@ -959,7 +979,7 @@ void zsend_ipset_entry_notify_owner(const struct zebra_dplane_ctx *ctx,
 	if (!client)
 		return;
 
-	s = stream_new(ZEBRA_MAX_PACKET_SIZ);
+	s = stream_new(ZEBRA_SMALL_PACKET_SIZE);
 
 	zclient_create_header(s, cmd, VRF_DEFAULT);
 	stream_putw(s, note);
@@ -1049,13 +1069,12 @@ int zsend_router_id_update(struct zserv *client, afi_t afi, struct prefix *p,
 			   vrf_id_t vrf_id)
 {
 	int blen;
-	struct stream *s;
 
 	/* Check this client need interface information. */
 	if (!vrf_bitmap_check(&client->ridinfo[afi], vrf_id))
 		return 0;
 
-	s = stream_new(ZEBRA_MAX_PACKET_SIZ);
+	struct stream *s = stream_new(ZEBRA_SMALL_PACKET_SIZE);
 
 	/* Message type. */
 	zclient_create_header(s, ZEBRA_ROUTER_ID_UPDATE, vrf_id);
@@ -1077,7 +1096,7 @@ int zsend_router_id_update(struct zserv *client, afi_t afi, struct prefix *p,
  */
 int zsend_pw_update(struct zserv *client, struct zebra_pw *pw)
 {
-	struct stream *s = stream_new(ZEBRA_MAX_PACKET_SIZ);
+	struct stream *s = stream_new(ZEBRA_SMALL_PACKET_SIZE);
 
 	zclient_create_header(s, ZEBRA_PW_STATUS_UPDATE, pw->vrf_id);
 	stream_write(s, pw->ifname, IFNAMSIZ);
@@ -1094,7 +1113,7 @@ int zsend_pw_update(struct zserv *client, struct zebra_pw *pw)
 int zsend_assign_label_chunk_response(struct zserv *client, vrf_id_t vrf_id,
 				      struct label_manager_chunk *lmc)
 {
-	struct stream *s = stream_new(ZEBRA_MAX_PACKET_SIZ);
+	struct stream *s = stream_new(ZEBRA_SMALL_PACKET_SIZE);
 
 	zclient_create_header(s, ZEBRA_GET_LABEL_CHUNK, vrf_id);
 	/* proto */
@@ -1120,7 +1139,7 @@ int zsend_assign_label_chunk_response(struct zserv *client, vrf_id_t vrf_id,
 int zsend_label_manager_connect_response(struct zserv *client, vrf_id_t vrf_id,
 					 unsigned short result)
 {
-	struct stream *s = stream_new(ZEBRA_MAX_PACKET_SIZ);
+	struct stream *s = stream_new(ZEBRA_SMALL_PACKET_SIZE);
 
 	zclient_create_header(s, ZEBRA_LABEL_MANAGER_CONNECT, vrf_id);
 
@@ -1144,7 +1163,7 @@ static int zsend_assign_table_chunk_response(struct zserv *client,
 					     vrf_id_t vrf_id,
 					     struct table_manager_chunk *tmc)
 {
-	struct stream *s = stream_new(ZEBRA_MAX_PACKET_SIZ);
+	struct stream *s = stream_new(ZEBRA_SMALL_PACKET_SIZE);
 
 	zclient_create_header(s, ZEBRA_GET_TABLE_CHUNK, vrf_id);
 
@@ -1164,7 +1183,7 @@ static int zsend_table_manager_connect_response(struct zserv *client,
 						vrf_id_t vrf_id,
 						uint16_t result)
 {
-	struct stream *s = stream_new(ZEBRA_MAX_PACKET_SIZ);
+	struct stream *s = stream_new(ZEBRA_SMALL_PACKET_SIZE);
 
 	zclient_create_header(s, ZEBRA_TABLE_MANAGER_CONNECT, vrf_id);
 
@@ -2316,33 +2335,37 @@ static void zread_route_del(ZAPI_HANDLER_ARGS)
 	}
 }
 
-/* MRIB Nexthop lookup for IPv4. */
-static void zread_nexthop_lookup_mrib(ZAPI_HANDLER_ARGS)
+/* Syncronous Nexthop lookup. */
+static void zread_nexthop_lookup(ZAPI_HANDLER_ARGS)
 {
 	struct ipaddr addr;
 	struct route_entry *re = NULL;
+	struct route_node *rn = NULL;
 	union g_addr gaddr;
+	afi_t afi = AFI_IP;
+	safi_t safi = SAFI_UNICAST;
 
 	STREAM_GET_IPADDR(msg, &addr);
+	STREAM_GETC(msg, safi);
 
 	switch (addr.ipa_type) {
 	case IPADDR_V4:
 		gaddr.ipv4 = addr.ipaddr_v4;
-		re = rib_match_multicast(AFI_IP, zvrf_id(zvrf), &gaddr, NULL);
+		afi = AFI_IP;
 		break;
 	case IPADDR_V6:
 		gaddr.ipv6 = addr.ipaddr_v6;
-		re = rib_match_multicast(AFI_IP6, zvrf_id(zvrf), &gaddr, NULL);
+		afi = AFI_IP6;
 		break;
 	case IPADDR_NONE:
 		/* ??? */
 		goto stream_failure;
 	}
 
-	zsend_nexthop_lookup_mrib(client, &addr, re, zvrf);
+	re = rib_match(afi, safi, zvrf_id(zvrf), &gaddr, &rn);
 
 stream_failure:
-	return;
+	zsend_nexthop_lookup(client, &addr, re, rn, zvrf, safi);
 }
 
 /* Register zebra server router-id information.  Send current router-id */
@@ -2406,7 +2429,7 @@ stream_failure:
 
 static void zsend_capabilities(struct zserv *client, struct zebra_vrf *zvrf)
 {
-	struct stream *s = stream_new(ZEBRA_MAX_PACKET_SIZ);
+	struct stream *s = stream_new(ZEBRA_SMALL_PACKET_SIZE);
 
 	zclient_create_header(s, ZEBRA_CAPABILITIES, zvrf->vrf->vrf_id);
 	stream_putl(s, vrf_get_backend());
@@ -3990,8 +4013,7 @@ static inline void zebra_gre_source_set(ZAPI_HANDLER_ARGS)
 static void zsend_error_msg(struct zserv *client, enum zebra_error_types error,
 			    struct zmsghdr *bad_hdr)
 {
-
-	struct stream *s = stream_new(ZEBRA_MAX_PACKET_SIZ);
+	struct stream *s = stream_new(ZEBRA_SMALL_PACKET_SIZE);
 
 	zclient_create_header(s, ZEBRA_ERROR, bad_hdr->vrf_id);
 
@@ -4029,7 +4051,7 @@ void (*const zserv_handlers[])(ZAPI_HANDLER_ARGS) = {
 	[ZEBRA_REDISTRIBUTE_DELETE] = zebra_redistribute_delete,
 	[ZEBRA_REDISTRIBUTE_DEFAULT_ADD] = zebra_redistribute_default_add,
 	[ZEBRA_REDISTRIBUTE_DEFAULT_DELETE] = zebra_redistribute_default_delete,
-	[ZEBRA_NEXTHOP_LOOKUP_MRIB] = zread_nexthop_lookup_mrib,
+	[ZEBRA_NEXTHOP_LOOKUP] = zread_nexthop_lookup,
 	[ZEBRA_HELLO] = zread_hello,
 	[ZEBRA_NEXTHOP_REGISTER] = zread_rnh_register,
 	[ZEBRA_NEXTHOP_UNREGISTER] = zread_rnh_unregister,

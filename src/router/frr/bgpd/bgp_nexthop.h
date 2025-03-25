@@ -45,11 +45,10 @@ struct bgp_nexthop_cache {
 	 */
 	bool is_evpn_gwip_nexthop;
 
-	uint16_t change_flags;
+	uint8_t change_flags;
 #define BGP_NEXTHOP_CHANGED	      (1 << 0)
 #define BGP_NEXTHOP_METRIC_CHANGED    (1 << 1)
-#define BGP_NEXTHOP_CONNECTED_CHANGED (1 << 2)
-#define BGP_NEXTHOP_MACIP_CHANGED     (1 << 3)
+#define BGP_NEXTHOP_MACIP_CHANGED     (1 << 2)
 
 	struct nexthop *nexthop;
 	time_t last_update;
@@ -83,7 +82,7 @@ struct bgp_nexthop_cache {
  * L3 unreachable | VALID      = 0 | VALID      = 0
  *                | INCOMPLETE = 0 | INCOMPLETE = 0
  */
-#define BGP_NEXTHOP_EVPN_INCOMPLETE (1 << 7)
+#define BGP_NEXTHOP_EVPN_INCOMPLETE (1 << 8)
 
 	uint32_t srte_color;
 

@@ -57,6 +57,7 @@ extern struct zebra_privs_t zserv_privs;
 
 /* The listener socket for clients connecting to us */
 static int zsock;
+static bool started_p;
 
 /* The lock that protects access to zapi client objects */
 static pthread_mutex_t client_mutex;
@@ -183,10 +184,9 @@ void zserv_log_message(const char *errmsg, struct stream *msg,
  */
 static void zserv_client_fail(struct zserv *client)
 {
-	flog_warn(
-		EC_ZEBRA_CLIENT_IO_ERROR,
-		"Client '%s' (session id %d) encountered an error and is shutting down.",
-		zebra_route_string(client->proto), client->session_id);
+	flog_warn(EC_ZEBRA_CLIENT_IO_ERROR,
+		  "Client %d '%s' (session id %d) encountered an error and is shutting down.",
+		  client->sock, zebra_route_string(client->proto), client->session_id);
 
 	atomic_store_explicit(&client->pthread->running, false,
 			      memory_order_relaxed);
@@ -467,8 +467,8 @@ static void zserv_read(struct event *thread)
 	}
 
 	if (IS_ZEBRA_DEBUG_PACKET)
-		zlog_debug("Read %d packets from client: %s. Current ibuf fifo count: %zu. Conf P2p %d",
-			   p2p_avail - p2p, zebra_route_string(client->proto),
+		zlog_debug("Read %d packets from client: %s(%d). Current ibuf fifo count: %zu. Conf P2p %d",
+			   p2p_avail - p2p, zebra_route_string(client->proto), client->sock,
 			   client_ibuf_fifo_cnt, p2p_orig);
 
 	/* Reschedule ourselves since we have space in ibuf_fifo */
@@ -929,9 +929,20 @@ void zserv_close(void)
 
 	/* Free client list's mutex */
 	pthread_mutex_destroy(&client_mutex);
+
+	started_p = false;
 }
 
-void zserv_start(char *path)
+
+/*
+ * Open zebra's ZAPI listener socket. This is done early during startup,
+ * before zebra is ready to listen and accept client connections.
+ *
+ * This function should only ever be called from the startup pthread
+ * from main.c.  If it is called multiple times it will cause problems
+ * because it causes the zsock global variable to be setup.
+ */
+void zserv_open(const char *path)
 {
 	int ret;
 	mode_t old_mask;
@@ -973,6 +984,26 @@ void zserv_start(char *path)
 			     path, safe_strerror(errno));
 		close(zsock);
 		zsock = -1;
+	}
+
+	umask(old_mask);
+}
+
+/*
+ * Start listening for ZAPI client connections.
+ */
+void zserv_start(const char *path)
+{
+	int ret;
+
+	/* This may be called more than once during startup - potentially once
+	 * per netns - but only do this work once.
+	 */
+	if (started_p)
+		return;
+
+	if (zsock <= 0) {
+		flog_err_sys(EC_LIB_SOCKET, "Zserv socket open failed");
 		return;
 	}
 
@@ -986,7 +1017,7 @@ void zserv_start(char *path)
 		return;
 	}
 
-	umask(old_mask);
+	started_p = true;
 
 	zserv_event(NULL, ZSERV_ACCEPT);
 }

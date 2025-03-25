@@ -35,6 +35,7 @@
  * We must also process containers with lookup-next descendants last.
  */
 
+DEFINE_MTYPE_STATIC(LIB, NB_STATE, "Northbound State");
 DEFINE_MTYPE_STATIC(LIB, NB_YIELD_STATE, "NB Yield State");
 DEFINE_MTYPE_STATIC(LIB, NB_NODE_INFOS, "NB Node Infos");
 
@@ -54,6 +55,7 @@ struct nb_op_node_info {
 	struct lyd_node *inner;
 	const struct lysc_node *schema; /* inner schema in case we rm inner */
 	struct yang_list_keys keys;	/* if list, keys to locate element */
+	uint position;			/* if keyless list, list position */
 	const void *list_entry;		/* opaque entry from user or NULL */
 	uint xpath_len;		  /* length of the xpath string for this node */
 	uint niters;		  /* # list elems create this iteration */
@@ -138,6 +140,11 @@ nb_op_create_yield_state(const char *xpath, struct yang_translator *translator,
 
 	ys = XCALLOC(MTYPE_NB_YIELD_STATE, sizeof(*ys));
 	ys->xpath = darr_strdup_cap(xpath, (size_t)XPATH_MAXLEN);
+	/* remove trailing '/'s */
+	while (darr_len(ys->xpath) > 1 && ys->xpath[darr_len(ys->xpath) - 2] == '/') {
+		darr_setlen(ys->xpath, darr_len(ys->xpath) - 1);
+		*darr_last(ys->xpath) = 0;
+	}
 	ys->xpath_orig = darr_strdup(xpath);
 	ys->translator = translator;
 	ys->flags = flags;
@@ -230,6 +237,22 @@ static void nb_op_get_keys(struct lyd_node_inner *list_node,
 	}
 
 	keys->num = n;
+}
+
+static uint nb_op_get_position_predicate(struct nb_op_yield_state *ys, struct nb_op_node_info *ni)
+{
+	const char *cursor = ys->xpath + ni->xpath_len - 1;
+
+	if (cursor[0] != ']')
+		return 0;
+
+	while (--cursor > ys->xpath && isdigit(cursor[0]))
+		;
+
+	if (cursor[0] != '[')
+		return 0;
+
+	return atoi(&cursor[1]);
 }
 
 /**
@@ -344,7 +367,8 @@ static void nb_op_resume_data_tree(struct nb_op_yield_state *ys)
 /**
  * nb_op_xpath_to_trunk() - generate a lyd_node tree (trunk) using an xpath.
  * @xpath_in: xpath query string to build trunk from.
- * @dnode: resulting tree (trunk)
+ * @xpath_out: resulting xpath for the trunk.
+ * @trunk: resulting tree (trunk)
  *
  * Use the longest prefix of @xpath_in as possible to resolve to a tree (trunk).
  * This is logically as if we walked along the xpath string resolving each
@@ -352,7 +376,7 @@ static void nb_op_resume_data_tree(struct nb_op_yield_state *ys)
  *
  * Return: error if any, if no error then @dnode contains the tree (trunk).
  */
-static enum nb_error nb_op_xpath_to_trunk(const char *xpath_in,
+static enum nb_error nb_op_xpath_to_trunk(const char *xpath_in, char **xpath_out,
 					  struct lyd_node **trunk)
 {
 	char *xpath = NULL;
@@ -370,7 +394,10 @@ static enum nb_error nb_op_xpath_to_trunk(const char *xpath_in,
 		if (ret != NB_OK)
 			break;
 	}
-	darr_free(xpath);
+	if (ret == NB_OK)
+		*xpath_out = xpath;
+	else
+		darr_free(xpath);
 	return ret;
 }
 
@@ -395,8 +422,7 @@ static enum nb_error nb_op_ys_finalize_node_info(struct nb_op_yield_state *ys,
 	/* Assert that we are walking the rightmost branch */
 	assert(!inner->parent || inner == inner->parent->child->prev);
 
-	if (CHECK_FLAG(inner->schema->nodetype,
-		       LYS_CASE | LYS_CHOICE | LYS_CONTAINER)) {
+	if (CHECK_FLAG(inner->schema->nodetype, LYS_CONTAINER)) {
 		/* containers have only zero or one child on a branch of a tree */
 		inner = ((struct lyd_node_inner *)inner)->child;
 		assert(!inner || inner->prev == inner);
@@ -410,28 +436,59 @@ static enum nb_error nb_op_ys_finalize_node_info(struct nb_op_yield_state *ys,
 	ni->lookup_next_ok = yield_ok && ni->has_lookup_next &&
 			     (index == 0 || ni[-1].lookup_next_ok);
 
-	nb_op_get_keys((struct lyd_node_inner *)inner, &ni->keys);
+	if (CHECK_FLAG(nn->flags, F_NB_NODE_KEYLESS_LIST)) {
+		const void *parent_list_entry;
+		uint i;
 
-	/* A list entry cannot be present in a tree w/o it's keys */
-	assert(ni->keys.num == yang_snode_num_keys(inner->schema));
+		ni->position = nb_op_get_position_predicate(ys, ni);
+		if (!ni->position) {
+			flog_warn(EC_LIB_NB_OPERATIONAL_DATA,
+				  "%s: can't decode keyless list positional predicate in %s",
+				  __func__, ys->xpath);
+			return NB_ERR_NOT_FOUND;
+		}
 
-	/*
-	 * Get this nodes opaque list_entry object
-	 */
+		/*
+		 * Get the entry at the position given by the predicate
+		 */
 
-	if (!nn->cbs.lookup_entry) {
-		flog_warn(EC_LIB_NB_OPERATIONAL_DATA,
-			  "%s: data path doesn't support iteration over operational data: %s",
-			  __func__, ys->xpath);
-		return NB_ERR_NOT_FOUND;
-	}
+		/* ni->list_entry starts as the parent entry of this node */
+		parent_list_entry = ni->list_entry;
+		ni->list_entry = nb_callback_get_next(nn, parent_list_entry, NULL);
+		for (i = 1; i < ni->position && ni->list_entry; i++)
+			ni->list_entry = nb_callback_get_next(nn, parent_list_entry, ni->list_entry);
 
-	/* ni->list_entry starts as the parent entry of this node */
-	ni->list_entry = nb_callback_lookup_entry(nn, ni->list_entry, &ni->keys);
-	if (ni->list_entry == NULL) {
-		flog_warn(EC_LIB_NB_OPERATIONAL_DATA,
-			  "%s: list entry lookup failed", __func__);
-		return NB_ERR_NOT_FOUND;
+		if (i != ni->position || !ni->list_entry) {
+			flog_warn(EC_LIB_NB_OPERATIONAL_DATA,
+				  "%s: entry at position %d doesn't exist in: %s", __func__,
+				  ni->position, ys->xpath);
+			return NB_ERR_NOT_FOUND;
+		}
+
+	} else {
+		nb_op_get_keys((struct lyd_node_inner *)inner, &ni->keys);
+		/* A list entry cannot be present in a tree w/o it's keys */
+		assert(ni->keys.num == yang_snode_num_keys(inner->schema));
+
+		/*
+		 * Get this nodes opaque list_entry object
+		 */
+
+		/* We need a lookup entry unless this is a keyless list */
+		if (!nn->cbs.lookup_entry && ni->keys.num) {
+			flog_warn(EC_LIB_NB_OPERATIONAL_DATA,
+				  "%s: data path doesn't support iteration over operational data: %s",
+				  __func__, ys->xpath);
+			return NB_ERR_NOT_FOUND;
+		}
+
+		/* ni->list_entry starts as the parent entry of this node */
+		ni->list_entry = nb_callback_lookup_entry(nn, ni->list_entry, &ni->keys);
+		if (ni->list_entry == NULL) {
+			flog_warn(EC_LIB_NB_OPERATIONAL_DATA, "%s: list entry lookup failed",
+				  __func__);
+			return NB_ERR_NOT_FOUND;
+		}
 	}
 
 	/*
@@ -460,8 +517,9 @@ static enum nb_error nb_op_ys_init_node_infos(struct nb_op_yield_state *ys)
 	struct lyd_node *inner;
 	struct lyd_node *node = NULL;
 	enum nb_error ret;
-	uint i, len;
-	char *tmp;
+	const char *cur;
+	char *xpath = NULL;
+	uint i, len, prevlen, xplen;
 
 	/*
 	 * Obtain the trunk of the data node tree of the query.
@@ -471,8 +529,8 @@ static enum nb_error nb_op_ys_init_node_infos(struct nb_op_yield_state *ys)
 	 * node could be identified (e.g., a list-node name with no keys).
 	 */
 
-	ret = nb_op_xpath_to_trunk(ys->xpath, &node);
-	if (ret || !node) {
+	ret = nb_op_xpath_to_trunk(ys->xpath, &xpath, &node);
+	if (ret != NB_OK || !node) {
 		flog_warn(EC_LIB_LIBYANG,
 			  "%s: can't instantiate concrete path using xpath: %s",
 			  __func__, ys->xpath);
@@ -482,11 +540,17 @@ static enum nb_error nb_op_ys_init_node_infos(struct nb_op_yield_state *ys)
 	}
 
 	/* Move up to the container if on a leaf currently. */
-	if (node &&
-	    !CHECK_FLAG(node->schema->nodetype, LYS_CONTAINER | LYS_LIST)) {
+	if (!CHECK_FLAG(node->schema->nodetype, LYS_CONTAINER | LYS_LIST)) {
 		struct lyd_node *leaf = node;
 
 		node = &node->parent->node;
+
+		/* Have to trim the leaf from the xpath now */
+		ret = yang_xpath_pop_node(xpath);
+		if (ret != NB_OK) {
+			darr_free(xpath);
+			return ret;
+		}
 
 		/*
 		 * If the leaf is not a key, delete it, because it has a wrong
@@ -495,10 +559,7 @@ static enum nb_error nb_op_ys_init_node_infos(struct nb_op_yield_state *ys)
 		if (!lysc_is_key(leaf->schema))
 			lyd_free_tree(leaf);
 	}
-	assert(!node ||
-	       CHECK_FLAG(node->schema->nodetype, LYS_CONTAINER | LYS_LIST));
-	if (!node)
-		return NB_ERR_NOT_FOUND;
+	assert(CHECK_FLAG(node->schema->nodetype, LYS_CONTAINER | LYS_LIST));
 
 	inner = node;
 	for (len = 1; inner->parent; len++)
@@ -511,26 +572,43 @@ static enum nb_error nb_op_ys_init_node_infos(struct nb_op_yield_state *ys)
 	 * -- save the prefix length.
 	 */
 	inner = node;
+	prevlen = 0;
+	xplen = strlen(xpath);
+	darr_free(ys->xpath);
+	ys->xpath = xpath;
 	for (i = len; i > 0; i--, inner = &inner->parent->node) {
 		ni = &ys->node_infos[i - 1];
 		ni->inner = inner;
 		ni->schema = inner->schema;
+
+		if (i == len) {
+			prevlen = xplen;
+			ni->xpath_len = prevlen;
+			continue;
+		}
+
 		/*
-		 * NOTE: we could build this by hand with a litte more effort,
-		 * but this simple implementation works and won't be expensive
-		 * since the number of nodes is small and only done once per
-		 * query.
+		 * The only predicates we should have are concrete ones at this
+		 * point b/c of nb_op_xpath_to_trunk() above, so we aren't in
+		 * danger of finding a division symbol in the path, only '/'s
+		 * inside strings which frrstr_back_to_char skips over.
 		 */
-		tmp = yang_dnode_get_path(inner, NULL, 0);
-		ni->xpath_len = strlen(tmp);
 
-		/* Replace users supplied xpath with the libyang returned value */
-		if (i == len)
-			darr_in_strdup(ys->xpath, tmp);
+		assert(prevlen == xplen || ys->xpath[prevlen] == '/');
+		if (prevlen != xplen)
+			ys->xpath[prevlen] = 0;
+		cur = frrstr_back_to_char(ys->xpath, '/');
+		if (prevlen != xplen)
+			ys->xpath[prevlen] = '/';
 
-		/* The prefix must match the prefix of the stored xpath */
-		assert(!strncmp(tmp, ys->xpath, ni->xpath_len));
-		free(tmp);
+		if (!cur || cur == ys->xpath) {
+			flog_warn(EC_LIB_LIBYANG, "%s: error tokenizing query xpath: %s", __func__,
+				  ys->xpath);
+			return NB_ERR_VALIDATION;
+		}
+
+		prevlen = cur - ys->xpath;
+		ni->xpath_len = prevlen;
 	}
 
 	/*
@@ -584,6 +662,10 @@ static enum nb_error nb_op_iter_leaf(struct nb_op_yield_state *ys,
 	if (lysc_is_key(snode))
 		return NB_OK;
 
+	/* Check for new simple get */
+	if (nb_node->cbs.get)
+		return nb_node->cbs.get(nb_node, ni->list_entry, ni->inner);
+
 	data = nb_callback_get_elem(nb_node, xpath, ni->list_entry);
 	if (data == NULL)
 		return NB_OK;
@@ -616,6 +698,10 @@ static enum nb_error nb_op_iter_leaflist(struct nb_op_yield_state *ys,
 
 	if (CHECK_FLAG(snode->flags, LYS_CONFIG_W))
 		return NB_OK;
+
+	/* Check for new simple get */
+	if (nb_node->cbs.get)
+		return nb_node->cbs.get(nb_node, ni->list_entry, ni->inner);
 
 	do {
 		struct yang_data *data;
@@ -818,8 +904,7 @@ static const struct lysc_node *nb_op_sib_first(struct nb_op_yield_state *ys,
 	 * base of the user query, return the next schema node from the query
 	 * string (schema_path).
 	 */
-	if (last != NULL &&
-	    !CHECK_FLAG(last->schema->nodetype, LYS_CASE | LYS_CHOICE))
+	if (last != NULL)
 		assert(last->schema == parent);
 	if (darr_lasti(ys->node_infos) < ys->query_base_level)
 		return ys->schema_path[darr_lasti(ys->node_infos) + 1];
@@ -896,7 +981,8 @@ static enum nb_error __walk(struct nb_op_yield_state *ys, bool is_resume)
 	if (!walk_stem_tip)
 		return NB_ERR_NOT_FOUND;
 
-	if (ys->schema_path[0]->nodetype == LYS_CHOICE) {
+	if (ys->schema_path[0]->parent &&
+	    CHECK_FLAG(ys->schema_path[0]->parent->nodetype, LYS_CHOICE|LYS_CASE)) {
 		flog_err(EC_LIB_NB_OPERATIONAL_DATA,
 			 "%s: unable to walk root level choice node from module: %s",
 			 __func__, ys->schema_path[0]->module->name);
@@ -1003,8 +1089,12 @@ static enum nb_error __walk(struct nb_op_yield_state *ys, bool is_resume)
 			       LYS_LEAF | LYS_LEAFLIST | LYS_CONTAINER))
 			xpath_child = nb_op_get_child_path(ys->xpath, sib,
 							   xpath_child);
-		else if (CHECK_FLAG(sib->nodetype, LYS_CASE | LYS_CHOICE))
+		else if (CHECK_FLAG(sib->nodetype, LYS_CASE | LYS_CHOICE)) {
 			darr_in_strdup(xpath_child, ys->xpath);
+			len = darr_last(ys->node_infos)->xpath_len;
+			darr_setlen(xpath_child, len + 1);
+			xpath_child[len] = 0;
+		}
 
 		nn = sib->priv;
 
@@ -1402,8 +1492,9 @@ static enum nb_error __walk(struct nb_op_yield_state *ys, bool is_resume)
 			 */
 			len = darr_strlen(ys->xpath);
 			if (ni->keys.num) {
-				yang_get_key_preds(ys->xpath + len, sib,
-						   &ni->keys,
+				darr_ensure_avail(ys->xpath,
+						  yang_get_key_pred_strlen(sib, &ni->keys) + 1);
+				yang_get_key_preds(ys->xpath + len, sib, &ni->keys,
 						   darr_cap(ys->xpath) - len);
 			} else {
 				/* add a position predicate (1s based?) */
@@ -1483,17 +1574,13 @@ static void nb_op_walk_continue(struct event *thread)
 
 	ret = __walk(ys, true);
 	if (ret == NB_YIELD) {
-		if (nb_op_yield(ys) != NB_OK) {
-			if (ys->should_batch)
-				goto stopped;
-			else
-				goto finish;
-		}
-		return;
+		ret = nb_op_yield(ys);
+		if (ret == NB_OK)
+			return;
 	}
 finish:
+	assert(ret != NB_YIELD);
 	(*ys->finish)(ys_root_node(ys), ys->finish_arg, ret);
-stopped:
 	nb_op_free_yield_state(ys, false);
 }
 
@@ -1552,6 +1639,13 @@ static void nb_op_trim_yield_state(struct nb_op_yield_state *ys)
 	       (int)darr_lasti(ys->node_infos));
 }
 
+/**
+ * nb_op_yield() - Yield during the walk.
+ * @ys: the yield state tracking the walk.
+ *
+ * Return: Any error from the `ys->finish` callback which should terminate the
+ * walk. Otherwise if `ys->should_batch` == false always returns NB_OK.
+ */
 static enum nb_error nb_op_yield(struct nb_op_yield_state *ys)
 {
 	enum nb_error ret;
@@ -1621,22 +1715,22 @@ static enum nb_error nb_op_ys_init_schema_path(struct nb_op_yield_state *ys,
 	 * NOTE: appears to be a bug in nb_node linkage where parent can be NULL,
 	 * or I'm misunderstanding the code, in any case we use the libyang
 	 * linkage to walk which works fine.
-	 *
-	 * XXX: we don't actually support choice/case yet, they are container
-	 * types in the libyang schema, but won't be in data so our length
-	 * checking gets messed up.
 	 */
-	for (sn = nblast->snode, count = 0; sn; count++, sn = sn->parent)
+	for (sn = nblast->snode, count = 0; sn; sn = sn->parent) {
 		if (sn != nblast->snode)
 			assert(CHECK_FLAG(sn->nodetype,
-					  LYS_CONTAINER | LYS_LIST |
-						  LYS_CHOICE | LYS_CASE));
+					  LYS_CONTAINER | LYS_LIST | LYS_CHOICE | LYS_CASE));
+		if (!CHECK_FLAG(sn->nodetype, LYS_CHOICE | LYS_CASE))
+			count++;
+	}
 	/* create our arrays */
 	darr_append_n(ys->schema_path, count);
 	darr_append_n(ys->query_tokens, count);
 	darr_append_nz(ys->non_specific_predicate, count);
-	for (sn = nblast->snode; sn; sn = sn->parent)
-		ys->schema_path[--count] = sn;
+	for (sn = nblast->snode; sn; sn = sn->parent) {
+		if (!CHECK_FLAG(sn->nodetype, LYS_CHOICE | LYS_CASE))
+			ys->schema_path[--count] = sn;
+	}
 
 	/*
 	 * Now tokenize the query string and get pointers to each token
@@ -1655,50 +1749,42 @@ static enum nb_error nb_op_ys_init_schema_path(struct nb_op_yield_state *ys,
 		int nlen = strlen(name);
 		int mnlen = 0;
 
-		/*
-		 * Technically the query_token for choice/case should probably be pointing at
-		 * the child (leaf) rather than the parent (container), however,
-		 * we only use these for processing list nodes so KISS.
-		 */
-		if (CHECK_FLAG(ys->schema_path[i]->nodetype,
-			       LYS_CASE | LYS_CHOICE)) {
-			ys->query_tokens[i] = ys->query_tokens[i - 1];
-			continue;
-		}
-
+		s2 = s;
 		while (true) {
-			s2 = strstr(s, name);
+			/* skip past any module name prefix */
+			s2 = strstr(s2, name);
 			if (!s2)
 				goto error;
 
-			if (s2[-1] == ':') {
+			if (s2 > s && s2[-1] == ':') {
 				mnlen = strlen(modname) + 1;
-				if (ys->query_tokstr > s2 - mnlen ||
-				    strncmp(s2 - mnlen, modname, mnlen - 1))
-					goto error;
+				if (s2 - s < mnlen || strncmp(s2 - mnlen, modname, mnlen - 1)) {
+					/* No match of module prefix, advance and try again */
+					s2 += strlen(name);
+					continue;
+				}
 				s2 -= mnlen;
 				nlen += mnlen;
 			}
 
-			s = s2;
-			if ((i == 0 || s[-1] == '/') &&
-			    (s[nlen] == 0 || s[nlen] == '[' || s[nlen] == '/'))
+			if ((i == 0 || s2[-1] == '/') &&
+			    (s2[nlen] == 0 || s2[nlen] == '[' || s2[nlen] == '/')) {
+				s = s2;
 				break;
-			/*
-			 * Advance past the incorrect match, must have been
-			 * part of previous predicate.
-			 */
-			s += nlen;
+			}
+			/* No exact match at end, advance and try again */
+			s2 += strlen(name);
 		}
 
 		/* NUL terminate previous token and save this one */
-		if (i > 0)
+		if (i > 0) {
+			assert(s[-1] == '/');
 			s[-1] = 0;
+		}
 		ys->query_tokens[i] = s;
 		s += nlen;
 	}
 
-	/* NOTE: need to subtract choice/case nodes when these are supported */
 	ys->query_base_level = darr_lasti(ys->schema_path);
 
 	return NB_OK;
@@ -1752,6 +1838,20 @@ bool nb_oper_is_yang_lib_query(const char *xpath)
 	return strlen(xpath) > liblen;
 }
 
+void *nb_oper_walk_finish_arg(void *walk)
+{
+	struct nb_op_yield_state *ys = walk;
+
+	return ys->finish_arg;
+}
+
+void *nb_oper_walk_cb_arg(void *walk)
+{
+	struct nb_op_yield_state *ys = walk;
+
+	return ys->cb_arg;
+}
+
 void *nb_oper_walk(const char *xpath, struct yang_translator *translator,
 		   uint32_t flags, bool should_batch, nb_oper_data_cb cb,
 		   void *cb_arg, nb_oper_data_finish_cb finish, void *finish_arg)
@@ -1764,17 +1864,13 @@ void *nb_oper_walk(const char *xpath, struct yang_translator *translator,
 
 	ret = nb_op_walk_start(ys);
 	if (ret == NB_YIELD) {
-		if (nb_op_yield(ys) != NB_OK) {
-			if (ys->should_batch)
-				goto stopped;
-			else
-				goto finish;
-		}
-		return ys;
+		ret = nb_op_yield(ys);
+		if (ret == NB_OK)
+			return ys;
 	}
-finish:
+
+	assert(ret != NB_YIELD);
 	(void)(*ys->finish)(ys_root_node(ys), ys->finish_arg, ret);
-stopped:
 	nb_op_free_yield_state(ys, false);
 	return NULL;
 }
@@ -1824,6 +1920,87 @@ enum nb_error nb_oper_iterate_legacy(const char *xpath,
 
 	nb_op_free_yield_state(ys, true);
 	return ret;
+}
+
+static const char *__adjust_ptr(struct lysc_node_leaf *lsnode, const char *valuep, size_t *size)
+{
+	switch (lsnode->type->basetype) {
+	case LY_TYPE_INT8:
+	case LY_TYPE_UINT8:
+#ifdef BIG_ENDIAN
+		valuep += 7;
+#endif
+		*size = 1;
+		break;
+	case LY_TYPE_INT16:
+	case LY_TYPE_UINT16:
+#ifdef BIG_ENDIAN
+		valuep += 6;
+#endif
+		*size = 2;
+		break;
+	case LY_TYPE_INT32:
+	case LY_TYPE_UINT32:
+#ifdef BIG_ENDIAN
+		valuep += 4;
+#endif
+		*size = 4;
+		break;
+	case LY_TYPE_INT64:
+	case LY_TYPE_UINT64:
+		*size = 8;
+		break;
+	case LY_TYPE_UNKNOWN:
+	case LY_TYPE_BINARY:
+	case LY_TYPE_STRING:
+	case LY_TYPE_BITS:
+	case LY_TYPE_BOOL:
+	case LY_TYPE_DEC64:
+	case LY_TYPE_EMPTY:
+	case LY_TYPE_ENUM:
+	case LY_TYPE_IDENT:
+	case LY_TYPE_INST:
+	case LY_TYPE_LEAFREF:
+	case LY_TYPE_UNION:
+	default:
+		assert(0);
+	}
+	return valuep;
+}
+
+enum nb_error nb_oper_uint64_get(const struct nb_node *nb_node, const void *parent_list_entry,
+				 struct lyd_node *parent)
+{
+	struct lysc_node_leaf *lsnode = (struct lysc_node_leaf *)nb_node->snode;
+	struct lysc_node *snode = &lsnode->node;
+	ssize_t offset = (ssize_t)nb_node->cbs.get_elem;
+	uint64_t ubigval = *(uint64_t *)((char *)parent_list_entry + offset);
+	const char *valuep;
+	size_t size;
+
+	valuep = __adjust_ptr(lsnode, (const char *)&ubigval, &size);
+	if (lyd_new_term_bin(parent, snode->module, snode->name, valuep, size, LYD_NEW_PATH_UPDATE,
+			     NULL))
+		return NB_ERR_RESOURCE;
+	return NB_OK;
+}
+
+
+enum nb_error nb_oper_uint32_get(const struct nb_node *nb_node, const void *parent_list_entry,
+				 struct lyd_node *parent)
+{
+	struct lysc_node_leaf *lsnode = (struct lysc_node_leaf *)nb_node->snode;
+	struct lysc_node *snode = &lsnode->node;
+	ssize_t offset = (ssize_t)nb_node->cbs.get_elem;
+	uint64_t ubigval = *(uint64_t *)((char *)parent_list_entry + offset);
+	const char *valuep;
+	size_t size;
+
+	valuep = __adjust_ptr(lsnode, (const char *)&ubigval, &size);
+	if (lyd_new_term_bin(parent, snode->module, snode->name, valuep, size, LYD_NEW_PATH_UPDATE,
+			     NULL))
+		return NB_ERR_RESOURCE;
+	return NB_OK;
 }
 
 void nb_oper_init(struct event_loop *loop)

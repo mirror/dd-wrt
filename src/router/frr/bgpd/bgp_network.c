@@ -484,6 +484,9 @@ static void bgp_accept(struct event *thread)
 			/* Dynamic neighbor has been created, let it proceed */
 			connection1->fd = bgp_sock;
 
+			connection1->su_local = sockunion_getsockname(connection1->fd);
+			connection1->su_remote = sockunion_dup(&su);
+
 			if (bgp_set_socket_ttl(connection1) < 0) {
 				peer1->last_reset = PEER_DOWN_SOCKET_ERROR;
 				zlog_err("%s: Unable to set min/max TTL on peer %s (dynamic), error received: %s(%d)",
@@ -504,7 +507,7 @@ static void bgp_accept(struct event *thread)
 			bgp_fsm_change_status(connection1, Active);
 			EVENT_OFF(connection1->t_start);
 
-			if (peer_active(peer1)) {
+			if (peer_active(peer1->connection)) {
 				if (CHECK_FLAG(peer1->flags,
 					       PEER_FLAG_TIMER_DELAYOPEN))
 					BGP_EVENT_ADD(connection1,
@@ -557,7 +560,7 @@ static void bgp_accept(struct event *thread)
 	}
 
 	/* Check that at least one AF is activated for the peer. */
-	if (!peer_active(peer1)) {
+	if (!peer_active(connection1)) {
 		if (bgp_debug_neighbor_events(peer1))
 			zlog_debug(
 				"%s - incoming conn rejected - no AF activated for peer",
@@ -568,7 +571,7 @@ static void bgp_accept(struct event *thread)
 
 	/* Do not try to reconnect if the peer reached maximum
 	 * prefixes, restart timer is still running or the peer
-	 * is shutdown.
+	 * is shutdown, or BGP identifier is not set (0.0.0.0).
 	 */
 	if (BGP_PEER_START_SUPPRESSED(peer1)) {
 		if (bgp_debug_neighbor_events(peer1)) {
@@ -581,6 +584,14 @@ static void bgp_accept(struct event *thread)
 					"[Event] Incoming BGP connection rejected from %s due to maximum-prefix or shutdown",
 					peer1->host);
 		}
+		close(bgp_sock);
+		return;
+	}
+
+	if (peer1->bgp->router_id.s_addr == INADDR_ANY) {
+		zlog_warn("[Event] Incoming BGP connection rejected from %s due missing BGP identifier, set it with `bgp router-id`",
+			  peer1->host);
+		peer1->last_reset = PEER_DOWN_ROUTER_ID_ZERO;
 		close(bgp_sock);
 		return;
 	}
@@ -623,7 +634,10 @@ static void bgp_accept(struct event *thread)
 
 	peer->doppelganger = peer1;
 	peer1->doppelganger = peer;
+
 	connection->fd = bgp_sock;
+	connection->su_local = sockunion_getsockname(connection->fd);
+	connection->su_remote = sockunion_dup(&su);
 
 	if (bgp_set_socket_ttl(connection) < 0)
 		if (bgp_debug_neighbor_events(peer))
@@ -658,7 +672,7 @@ static void bgp_accept(struct event *thread)
 		bgp_event_update(connection1, TCP_connection_closed);
 	}
 
-	if (peer_active(peer)) {
+	if (peer_active(peer->connection)) {
 		if (CHECK_FLAG(peer->flags, PEER_FLAG_TIMER_DELAYOPEN))
 			BGP_EVENT_ADD(connection, TCP_connection_open_w_delay);
 		else
@@ -762,7 +776,7 @@ static int bgp_update_source(struct peer_connection *connection)
 }
 
 /* BGP try to connect to the peer.  */
-int bgp_connect(struct peer_connection *connection)
+enum connect_result bgp_connect(struct peer_connection *connection)
 {
 	struct peer *peer = connection->peer;
 
@@ -770,10 +784,17 @@ int bgp_connect(struct peer_connection *connection)
 	assert(!CHECK_FLAG(connection->thread_flags, PEER_THREAD_READS_ON));
 	ifindex_t ifindex = 0;
 
+	if (peer->bgp->router_id.s_addr == INADDR_ANY) {
+		peer->last_reset = PEER_DOWN_ROUTER_ID_ZERO;
+		zlog_warn("%s: BGP identifier is missing for peer %s, set it with `bgp router-id`",
+			  __func__, peer->host);
+		return connect_error;
+	}
+
 	if (peer->conf_if && BGP_CONNECTION_SU_UNSPEC(connection)) {
 		if (bgp_debug_neighbor_events(peer))
 			zlog_debug("Peer address not learnt: Returning from connect");
-		return 0;
+		return connect_error;
 	}
 	frr_with_privs(&bgpd_privs) {
 		/* Make socket for the peer. */
@@ -787,7 +808,7 @@ int bgp_connect(struct peer_connection *connection)
 			zlog_debug("%s: Failure to create socket for connection to %s, error received: %s(%d)",
 				   __func__, peer->host, safe_strerror(errno),
 				   errno);
-		return -1;
+		return connect_error;
 	}
 
 	set_nonblocking(connection->fd);
@@ -808,7 +829,7 @@ int bgp_connect(struct peer_connection *connection)
 				   __func__, peer->host, safe_strerror(errno),
 				   errno);
 
-		return -1;
+		return connect_error;
 	}
 
 	sockopt_reuseaddr(connection->fd);
@@ -844,7 +865,7 @@ int bgp_connect(struct peer_connection *connection)
 	/* If the peer is passive mode, force to move to Active mode. */
 	if (CHECK_FLAG(peer->flags, PEER_FLAG_PASSIVE)) {
 		BGP_EVENT_ADD(connection, TCP_connection_open_failed);
-		return BGP_FSM_SUCCESS;
+		return connect_error;
 	}
 
 	if (peer->conf_if || peer->ifname)
@@ -857,40 +878,42 @@ int bgp_connect(struct peer_connection *connection)
 			   peer->host, connection->fd);
 
 	/* Connect to the remote peer. */
-	return sockunion_connect(connection->fd, &connection->su,
-				 htons(peer->port), ifindex);
-}
+	enum connect_result res;
 
-void bgp_updatesockname(struct peer *peer)
-{
-	if (peer->su_local) {
-		sockunion_free(peer->su_local);
-		peer->su_local = NULL;
+	res = sockunion_connect(connection->fd, &connection->su, htons(peer->port), ifindex);
+
+	if (connection->su_remote)
+		sockunion_free(connection->su_remote);
+
+	connection->su_remote = sockunion_dup(&connection->su);
+	switch (connection->su.sa.sa_family) {
+	case AF_INET:
+		connection->su_remote->sin.sin_port = htons(peer->port);
+		break;
+	case AF_INET6:
+		connection->su_remote->sin6.sin6_port = htons(peer->port);
+		break;
 	}
 
-	if (peer->su_remote) {
-		sockunion_free(peer->su_remote);
-		peer->su_remote = NULL;
-	}
+	if (connection->su_local)
+		sockunion_free(connection->su_local);
+	connection->su_local = sockunion_getsockname(connection->fd);
 
-	peer->su_local = sockunion_getsockname(peer->connection->fd);
-	peer->su_remote = sockunion_getpeername(peer->connection->fd);
+	return res;
 }
 
 /* After TCP connection is established.  Get local address and port. */
-int bgp_getsockname(struct peer *peer)
+int bgp_getsockname(struct peer_connection *connection)
 {
-	bgp_updatesockname(peer);
+	struct peer *peer = connection->peer;
 
-	if (!bgp_zebra_nexthop_set(peer->su_local, peer->su_remote,
-				   &peer->nexthop, peer)) {
-		flog_err(
-			EC_BGP_NH_UPD,
-			"%s: nexthop_set failed, local: %pSUp remote: %pSUp update_if: %s resetting connection - intf %s",
-			peer->host, peer->su_local, peer->su_remote,
-			peer->update_if ? peer->update_if : "(None)",
-			peer->nexthop.ifp ? peer->nexthop.ifp->name
-					  : "(Unknown)");
+	if (!bgp_zebra_nexthop_set(connection->su_local, connection->su_remote, &peer->nexthop,
+				   peer)) {
+		flog_err(EC_BGP_NH_UPD,
+			 "%s: nexthop_set failed, local: %pSUp remote: %pSUp update_if: %s resetting connection - intf %s",
+			 peer->host, connection->su_local, connection->su_remote,
+			 peer->update_if ? peer->update_if : "(None)",
+			 peer->nexthop.ifp ? peer->nexthop.ifp->name : "(Unknown)");
 		return -1;
 	}
 	return 0;

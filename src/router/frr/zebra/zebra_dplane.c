@@ -35,6 +35,8 @@ DEFINE_MTYPE_STATIC(ZEBRA, DP_PROV, "Zebra DPlane Provider");
 DEFINE_MTYPE_STATIC(ZEBRA, DP_NETFILTER, "Zebra Netfilter Internal Object");
 DEFINE_MTYPE_STATIC(ZEBRA, DP_NS, "DPlane NSes");
 
+DEFINE_MTYPE(ZEBRA, VLAN_CHANGE_ARR, "Vlan Change Array");
+
 #ifndef AOK
 #  define AOK 0
 #endif
@@ -148,6 +150,11 @@ struct dplane_route_info {
 
 	/* Optional list of extra interface info */
 	struct dplane_intf_extra_list_head intf_extra_list;
+
+	/* Route-level info that aligns with some netlink route data */
+	enum blackhole_type zd_bh_type;
+	struct ipaddr zd_prefsrc;
+	struct ipaddr zd_gateway;
 };
 
 /*
@@ -371,6 +378,14 @@ struct dplane_srv6_encap_ctx {
 };
 
 /*
+ * VLAN info for the dataplane
+ */
+struct dplane_vlan_info {
+	ifindex_t ifindex;
+	struct zebra_vxlan_vlan_array *vlan_array;
+};
+
+/*
  * The context block used to exchange info about route updates across
  * the boundary between the zebra main context (and pthread) and the
  * dataplane layer (and pthread).
@@ -416,6 +431,7 @@ struct zebra_dplane_ctx {
 		struct dplane_pw_info pw;
 		struct dplane_br_port_info br_port;
 		struct dplane_intf_info intf;
+		struct dplane_vlan_info vlan_info;
 		struct dplane_mac_info macinfo;
 		struct dplane_neigh_info neigh;
 		struct dplane_rule_info rule;
@@ -885,6 +901,11 @@ static void dplane_ctx_free_internal(struct zebra_dplane_ctx *ctx)
 	case DPLANE_OP_STARTUP_STAGE:
 	case DPLANE_OP_SRV6_ENCAP_SRCADDR_SET:
 		break;
+	case DPLANE_OP_VLAN_INSTALL:
+		if (ctx->u.vlan_info.vlan_array)
+			XFREE(MTYPE_VLAN_CHANGE_ARR,
+			      ctx->u.vlan_info.vlan_array);
+		break;
 	}
 }
 
@@ -1030,144 +1051,102 @@ enum dplane_op_e dplane_ctx_get_op(const struct zebra_dplane_ctx *ctx)
 
 const char *dplane_op2str(enum dplane_op_e op)
 {
-	const char *ret = "UNKNOWN";
-
 	switch (op) {
 	case DPLANE_OP_NONE:
-		ret = "NONE";
-		break;
+		return "NONE";
 
 	/* Route update */
 	case DPLANE_OP_ROUTE_INSTALL:
-		ret = "ROUTE_INSTALL";
-		break;
+		return "ROUTE_INSTALL";
 	case DPLANE_OP_ROUTE_UPDATE:
-		ret = "ROUTE_UPDATE";
-		break;
+		return "ROUTE_UPDATE";
 	case DPLANE_OP_ROUTE_DELETE:
-		ret = "ROUTE_DELETE";
-		break;
+		return "ROUTE_DELETE";
 	case DPLANE_OP_ROUTE_NOTIFY:
-		ret = "ROUTE_NOTIFY";
-		break;
+		return "ROUTE_NOTIFY";
 
 	/* Nexthop update */
 	case DPLANE_OP_NH_INSTALL:
-		ret = "NH_INSTALL";
-		break;
+		return "NH_INSTALL";
 	case DPLANE_OP_NH_UPDATE:
-		ret = "NH_UPDATE";
-		break;
+		return "NH_UPDATE";
 	case DPLANE_OP_NH_DELETE:
-		ret = "NH_DELETE";
-		break;
+		return "NH_DELETE";
 
 	case DPLANE_OP_LSP_INSTALL:
-		ret = "LSP_INSTALL";
-		break;
+		return "LSP_INSTALL";
 	case DPLANE_OP_LSP_UPDATE:
-		ret = "LSP_UPDATE";
-		break;
+		return "LSP_UPDATE";
 	case DPLANE_OP_LSP_DELETE:
-		ret = "LSP_DELETE";
-		break;
+		return "LSP_DELETE";
 	case DPLANE_OP_LSP_NOTIFY:
-		ret = "LSP_NOTIFY";
-		break;
+		return "LSP_NOTIFY";
 
 	case DPLANE_OP_PW_INSTALL:
-		ret = "PW_INSTALL";
-		break;
+		return "PW_INSTALL";
 	case DPLANE_OP_PW_UNINSTALL:
-		ret = "PW_UNINSTALL";
-		break;
+		return "PW_UNINSTALL";
 
 	case DPLANE_OP_SYS_ROUTE_ADD:
-		ret = "SYS_ROUTE_ADD";
-		break;
+		return "SYS_ROUTE_ADD";
 	case DPLANE_OP_SYS_ROUTE_DELETE:
-		ret = "SYS_ROUTE_DEL";
-		break;
+		return "SYS_ROUTE_DEL";
 
 	case DPLANE_OP_BR_PORT_UPDATE:
-		ret = "BR_PORT_UPDATE";
-		break;
+		return "BR_PORT_UPDATE";
 
 	case DPLANE_OP_ADDR_INSTALL:
-		ret = "ADDR_INSTALL";
-		break;
+		return "ADDR_INSTALL";
 	case DPLANE_OP_ADDR_UNINSTALL:
-		ret = "ADDR_UNINSTALL";
-		break;
+		return "ADDR_UNINSTALL";
 
 	case DPLANE_OP_MAC_INSTALL:
-		ret = "MAC_INSTALL";
-		break;
+		return "MAC_INSTALL";
 	case DPLANE_OP_MAC_DELETE:
-		ret = "MAC_DELETE";
-		break;
+		return "MAC_DELETE";
 
 	case DPLANE_OP_NEIGH_INSTALL:
-		ret = "NEIGH_INSTALL";
-		break;
+		return "NEIGH_INSTALL";
 	case DPLANE_OP_NEIGH_UPDATE:
-		ret = "NEIGH_UPDATE";
-		break;
+		return "NEIGH_UPDATE";
 	case DPLANE_OP_NEIGH_DELETE:
-		ret = "NEIGH_DELETE";
-		break;
+		return "NEIGH_DELETE";
 	case DPLANE_OP_VTEP_ADD:
-		ret = "VTEP_ADD";
-		break;
+		return "VTEP_ADD";
 	case DPLANE_OP_VTEP_DELETE:
-		ret = "VTEP_DELETE";
-		break;
+		return "VTEP_DELETE";
 
 	case DPLANE_OP_RULE_ADD:
-		ret = "RULE_ADD";
-		break;
+		return "RULE_ADD";
 	case DPLANE_OP_RULE_DELETE:
-		ret = "RULE_DELETE";
-		break;
+		return "RULE_DELETE";
 	case DPLANE_OP_RULE_UPDATE:
-		ret = "RULE_UPDATE";
-		break;
+		return "RULE_UPDATE";
 
 	case DPLANE_OP_NEIGH_DISCOVER:
-		ret = "NEIGH_DISCOVER";
-		break;
+		return "NEIGH_DISCOVER";
 
 	case DPLANE_OP_IPTABLE_ADD:
-		ret = "IPTABLE_ADD";
-		break;
+		return "IPTABLE_ADD";
 	case DPLANE_OP_IPTABLE_DELETE:
-		ret = "IPTABLE_DELETE";
-		break;
+		return "IPTABLE_DELETE";
 	case DPLANE_OP_IPSET_ADD:
-		ret = "IPSET_ADD";
-		break;
+		return "IPSET_ADD";
 	case DPLANE_OP_IPSET_DELETE:
-		ret = "IPSET_DELETE";
-		break;
+		return "IPSET_DELETE";
 	case DPLANE_OP_IPSET_ENTRY_ADD:
-		ret = "IPSET_ENTRY_ADD";
-		break;
+		return "IPSET_ENTRY_ADD";
 	case DPLANE_OP_IPSET_ENTRY_DELETE:
-		ret = "IPSET_ENTRY_DELETE";
-		break;
+		return "IPSET_ENTRY_DELETE";
 	case DPLANE_OP_NEIGH_IP_INSTALL:
-		ret = "NEIGH_IP_INSTALL";
-		break;
+		return "NEIGH_IP_INSTALL";
 	case DPLANE_OP_NEIGH_IP_DELETE:
-		ret = "NEIGH_IP_DELETE";
-		break;
+		return "NEIGH_IP_DELETE";
 	case DPLANE_OP_NEIGH_TABLE_UPDATE:
-		ret = "NEIGH_TABLE_UPDATE";
-		break;
+		return "NEIGH_TABLE_UPDATE";
 
 	case DPLANE_OP_GRE_SET:
-		ret = "GRE_SET";
-		break;
+		return "GRE_SET";
 
 	case DPLANE_OP_INTF_ADDR_ADD:
 		return "INTF_ADDR_ADD";
@@ -1179,68 +1158,53 @@ const char *dplane_op2str(enum dplane_op_e op)
 		return "INTF_NETCONFIG";
 
 	case DPLANE_OP_INTF_INSTALL:
-		ret = "INTF_INSTALL";
-		break;
+		return "INTF_INSTALL";
 	case DPLANE_OP_INTF_UPDATE:
-		ret = "INTF_UPDATE";
-		break;
+		return "INTF_UPDATE";
 	case DPLANE_OP_INTF_DELETE:
-		ret = "INTF_DELETE";
-		break;
+		return "INTF_DELETE";
 
 	case DPLANE_OP_TC_QDISC_INSTALL:
-		ret = "TC_QDISC_INSTALL";
-		break;
+		return "TC_QDISC_INSTALL";
 	case DPLANE_OP_TC_QDISC_UNINSTALL:
-		ret = "TC_QDISC_UNINSTALL";
-		break;
+		return "TC_QDISC_UNINSTALL";
 	case DPLANE_OP_TC_CLASS_ADD:
-		ret = "TC_CLASS_ADD";
-		break;
+		return "TC_CLASS_ADD";
 	case DPLANE_OP_TC_CLASS_DELETE:
-		ret = "TC_CLASS_DELETE";
-		break;
+		return "TC_CLASS_DELETE";
 	case DPLANE_OP_TC_CLASS_UPDATE:
-		ret = "TC_CLASS_UPDATE";
-		break;
+		return "TC_CLASS_UPDATE";
 	case DPLANE_OP_TC_FILTER_ADD:
-		ret = "TC_FILTER_ADD";
-		break;
+		return "TC_FILTER_ADD";
 	case DPLANE_OP_TC_FILTER_DELETE:
-		ret = "TC_FILTER_DELETE";
-		break;
+		return "TC_FILTER_DELETE";
 	case DPLANE_OP_TC_FILTER_UPDATE:
-		ret = "TC__FILTER_UPDATE";
-		break;
+		return "TC__FILTER_UPDATE";
 	case DPLANE_OP_STARTUP_STAGE:
-		ret = "STARTUP_STAGE";
-		break;
+		return "STARTUP_STAGE";
 
 	case DPLANE_OP_SRV6_ENCAP_SRCADDR_SET:
-		ret = "SRV6_ENCAP_SRCADDR_SET";
-		break;
+		return "SRV6_ENCAP_SRCADDR_SET";
+
+	case DPLANE_OP_VLAN_INSTALL:
+		return "NEW_VLAN";
 	}
 
-	return ret;
+	return "UNKNOWN";
 }
 
 const char *dplane_res2str(enum zebra_dplane_result res)
 {
-	const char *ret = "<Unknown>";
-
 	switch (res) {
 	case ZEBRA_DPLANE_REQUEST_FAILURE:
-		ret = "FAILURE";
-		break;
+		return "FAILURE";
 	case ZEBRA_DPLANE_REQUEST_QUEUED:
-		ret = "QUEUED";
-		break;
+		return "QUEUED";
 	case ZEBRA_DPLANE_REQUEST_SUCCESS:
-		ret = "SUCCESS";
-		break;
+		return "SUCCESS";
 	}
 
-	return ret;
+	return "<Unknown>";
 }
 
 void dplane_ctx_set_dest(struct zebra_dplane_ctx *ctx,
@@ -1947,6 +1911,12 @@ void dplane_ctx_set_flags(struct zebra_dplane_ctx *ctx, uint32_t flags)
 	ctx->u.rinfo.zd_flags = flags;
 }
 
+void dplane_ctx_set_route_metric(struct zebra_dplane_ctx *ctx, uint32_t metric)
+{
+	DPLANE_CTX_VALID(ctx);
+	ctx->u.rinfo.zd_metric = metric;
+}
+
 uint32_t dplane_ctx_get_metric(const struct zebra_dplane_ctx *ctx)
 {
 	DPLANE_CTX_VALID(ctx);
@@ -1966,6 +1936,12 @@ uint32_t dplane_ctx_get_mtu(const struct zebra_dplane_ctx *ctx)
 	DPLANE_CTX_VALID(ctx);
 
 	return ctx->u.rinfo.zd_mtu;
+}
+
+void dplane_ctx_set_route_mtu(struct zebra_dplane_ctx *ctx, uint32_t mtu)
+{
+	DPLANE_CTX_VALID(ctx);
+	ctx->u.rinfo.zd_mtu = mtu;
 }
 
 uint32_t dplane_ctx_get_nh_mtu(const struct zebra_dplane_ctx *ctx)
@@ -1994,6 +1970,58 @@ uint8_t dplane_ctx_get_old_distance(const struct zebra_dplane_ctx *ctx)
 	DPLANE_CTX_VALID(ctx);
 
 	return ctx->u.rinfo.zd_old_distance;
+}
+
+/* Route blackhole type */
+enum blackhole_type dplane_ctx_get_route_bhtype(const struct zebra_dplane_ctx *ctx)
+{
+	DPLANE_CTX_VALID(ctx);
+	return ctx->u.rinfo.zd_bh_type;
+}
+
+void dplane_ctx_set_route_bhtype(struct zebra_dplane_ctx *ctx,
+				 enum blackhole_type bhtype)
+{
+	DPLANE_CTX_VALID(ctx);
+	ctx->u.rinfo.zd_bh_type = bhtype;
+}
+
+/* IP 'preferred source', at route-level */
+const struct ipaddr *dplane_ctx_get_route_prefsrc(const struct zebra_dplane_ctx *ctx)
+{
+	DPLANE_CTX_VALID(ctx);
+
+	if (ctx->u.rinfo.zd_prefsrc.ipa_type != 0)
+		return &(ctx->u.rinfo.zd_prefsrc);
+	else
+		return NULL;
+}
+
+void dplane_ctx_set_route_prefsrc(struct zebra_dplane_ctx *ctx,
+				  const struct ipaddr *addr)
+{
+	DPLANE_CTX_VALID(ctx);
+	if (addr)
+		ctx->u.rinfo.zd_prefsrc = *addr;
+	else
+		memset(&ctx->u.rinfo.zd_prefsrc, 0,
+		       sizeof(ctx->u.rinfo.zd_prefsrc));
+}
+
+/* Route-level 'gateway' */
+const struct ipaddr *dplane_ctx_get_route_gw(const struct zebra_dplane_ctx *ctx)
+{
+	DPLANE_CTX_VALID(ctx);
+	return &(ctx->u.rinfo.zd_gateway);
+}
+
+void dplane_ctx_set_route_gw(struct zebra_dplane_ctx *ctx, const struct ipaddr *gw)
+{
+	DPLANE_CTX_VALID(ctx);
+	if (gw)
+		ctx->u.rinfo.zd_gateway = *gw;
+	else
+		memset(&ctx->u.rinfo.zd_gateway, 0, sizeof(ctx->u.rinfo.zd_gateway));
 }
 
 int dplane_ctx_tc_qdisc_get_kind(const struct zebra_dplane_ctx *ctx)
@@ -2218,6 +2246,12 @@ uint32_t dplane_ctx_get_nhg_id(const struct zebra_dplane_ctx *ctx)
 {
 	DPLANE_CTX_VALID(ctx);
 	return ctx->u.rinfo.zd_nhg_id;
+}
+
+void dplane_ctx_set_nhg_id(struct zebra_dplane_ctx *ctx, uint32_t nhgid)
+{
+	DPLANE_CTX_VALID(ctx);
+	ctx->u.rinfo.zd_nhg_id = nhgid;
 }
 
 const struct nexthop_group *dplane_ctx_get_ng(
@@ -3319,6 +3353,35 @@ uint32_t dplane_get_in_queue_len(void)
 {
 	return atomic_load_explicit(&zdplane_info.dg_routes_queued,
 				    memory_order_seq_cst);
+}
+
+void dplane_ctx_set_vlan_ifindex(struct zebra_dplane_ctx *ctx, ifindex_t ifindex)
+{
+	DPLANE_CTX_VALID(ctx);
+	ctx->u.vlan_info.ifindex = ifindex;
+}
+
+ifindex_t dplane_ctx_get_vlan_ifindex(struct zebra_dplane_ctx *ctx)
+{
+	DPLANE_CTX_VALID(ctx);
+
+	return ctx->u.vlan_info.ifindex;
+}
+
+void dplane_ctx_set_vxlan_vlan_array(struct zebra_dplane_ctx *ctx,
+				     struct zebra_vxlan_vlan_array *vlan_array)
+{
+	DPLANE_CTX_VALID(ctx);
+
+	ctx->u.vlan_info.vlan_array = vlan_array;
+}
+
+const struct zebra_vxlan_vlan_array *
+dplane_ctx_get_vxlan_vlan_array(struct zebra_dplane_ctx *ctx)
+{
+	DPLANE_CTX_VALID(ctx);
+
+	return ctx->u.vlan_info.vlan_array;
 }
 
 /*
@@ -6720,6 +6783,12 @@ static void kernel_dplane_log_detail(struct zebra_dplane_ctx *ctx)
 			   dplane_op2str(dplane_ctx_get_op(ctx)),
 			   &ctx->u.srv6_encap.srcaddr);
 		break;
+
+	case DPLANE_OP_VLAN_INSTALL:
+		zlog_debug("Dplane %s on idx %u",
+			   dplane_op2str(dplane_ctx_get_op(ctx)),
+			   dplane_ctx_get_vlan_ifindex(ctx));
+		break;
 	}
 }
 
@@ -6888,6 +6957,7 @@ static void kernel_dplane_handle_result(struct zebra_dplane_ctx *ctx)
 	case DPLANE_OP_INTF_ADDR_ADD:
 	case DPLANE_OP_INTF_ADDR_DEL:
 	case DPLANE_OP_INTF_NETCONFIG:
+	case DPLANE_OP_VLAN_INSTALL:
 		break;
 
 	case DPLANE_OP_SRV6_ENCAP_SRCADDR_SET:
@@ -6926,20 +6996,6 @@ kernel_dplane_process_ipset_entry(struct zebra_dplane_provider *prov,
 {
 	zebra_pbr_process_ipset_entry(ctx);
 	dplane_provider_enqueue_out_ctx(prov, ctx);
-}
-
-void dplane_rib_add_multipath(afi_t afi, safi_t safi, struct prefix *p,
-			      struct prefix_ipv6 *src_p, struct route_entry *re,
-			      struct nexthop_group *ng, int startup,
-			      struct zebra_dplane_ctx *ctx)
-{
-	if (!ctx)
-		rib_add_multipath(afi, safi, p, src_p, re, ng, startup);
-	else {
-		dplane_ctx_route_init_basic(ctx, dplane_ctx_get_op(ctx), re, p,
-					    src_p, afi, safi);
-		dplane_provider_enqueue_to_zebra(ctx);
-	}
 }
 
 /*
@@ -7472,6 +7528,16 @@ static void dplane_thread_loop(struct event *event)
 		if (!zdplane_info.dg_run)
 			break;
 
+		/*
+		 * The yield should only happen after a bit of work has been
+		 * done but before we pull any new work off any provider
+		 * queue to continue looping.  This is a safe spot to
+		 * do so.
+		 */
+		if (event_should_yield(event)) {
+			reschedule = true;
+			break;
+		}
 		/* Locate next provider */
 		next_prov = dplane_prov_list_next(&zdplane_info.dg_providers,
 						  prov);
@@ -7535,11 +7601,6 @@ static void dplane_thread_loop(struct event *event)
 		if (IS_ZEBRA_DEBUG_DPLANE_DETAIL)
 			zlog_debug("dplane dequeues %d completed work from provider %s",
 				   counter, dplane_provider_get_name(prov));
-
-		if (event_should_yield(event)) {
-			reschedule = true;
-			break;
-		}
 
 		/* Locate next provider */
 		prov = next_prov;
@@ -7642,7 +7703,10 @@ static void zebra_dplane_init_internal(void)
 
 	dplane_prov_list_init(&zdplane_info.dg_providers);
 
-	dplane_ctx_list_init(&zdplane_info.dg_update_list);
+	frr_with_mutex (&zdplane_info.dg_mutex) {
+		dplane_ctx_list_init(&zdplane_info.dg_update_list);
+	}
+
 	zns_info_list_init(&zdplane_info.dg_zns_list);
 
 	zdplane_info.dg_updates_per_cycle = DPLANE_DEFAULT_NEW_WORK;

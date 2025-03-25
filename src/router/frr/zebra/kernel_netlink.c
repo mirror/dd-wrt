@@ -405,10 +405,6 @@ static int netlink_information_fetch(struct nlmsghdr *h, ns_id_t ns_id,
 		return netlink_route_change(h, ns_id, startup);
 	case RTM_DELROUTE:
 		return netlink_route_change(h, ns_id, startup);
-	case RTM_NEWLINK:
-		return netlink_link_change(h, ns_id, startup);
-	case RTM_DELLINK:
-		return 0;
 	case RTM_NEWNEIGH:
 	case RTM_DELNEIGH:
 	case RTM_GETNEIGH:
@@ -430,10 +426,6 @@ static int netlink_information_fetch(struct nlmsghdr *h, ns_id_t ns_id,
 	case RTM_NEWTFILTER:
 	case RTM_DELTFILTER:
 		return netlink_tfilter_change(h, ns_id, startup);
-	case RTM_NEWVLAN:
-		return netlink_vlan_change(h, ns_id, startup);
-	case RTM_DELVLAN:
-		return netlink_vlan_change(h, ns_id, startup);
 
 	/* Messages we may receive, but ignore */
 	case RTM_NEWCHAIN:
@@ -442,6 +434,8 @@ static int netlink_information_fetch(struct nlmsghdr *h, ns_id_t ns_id,
 		return 0;
 
 	/* Messages handled in the dplane thread */
+	case RTM_NEWLINK:
+	case RTM_DELLINK:
 	case RTM_NEWADDR:
 	case RTM_DELADDR:
 	case RTM_NEWNETCONF:
@@ -449,6 +443,8 @@ static int netlink_information_fetch(struct nlmsghdr *h, ns_id_t ns_id,
 	case RTM_NEWTUNNEL:
 	case RTM_DELTUNNEL:
 	case RTM_GETTUNNEL:
+	case RTM_NEWVLAN:
+	case RTM_DELVLAN:
 		return 0;
 	default:
 		/*
@@ -491,6 +487,10 @@ static int dplane_netlink_information_fetch(struct nlmsghdr *h, ns_id_t ns_id,
 	case RTM_NEWLINK:
 	case RTM_DELLINK:
 		return netlink_link_change(h, ns_id, startup);
+
+	case RTM_NEWVLAN:
+	case RTM_DELVLAN:
+		return netlink_vlan_change(h, ns_id, startup);
 
 	default:
 		break;
@@ -932,7 +932,7 @@ static int netlink_recv_msg(struct nlsock *nl, struct msghdr *msg)
 	} while (status == -1 && errno == EINTR);
 
 	if (status == -1) {
-		if (errno == EWOULDBLOCK || errno == EAGAIN)
+		if (errno == EWOULDBLOCK || errno == EAGAIN || errno == EMSGSIZE)
 			return 0;
 		flog_err(EC_ZEBRA_RECVMSG_OVERRUN, "%s recvmsg overrun: %s",
 			 nl->name, safe_strerror(errno));
@@ -1621,6 +1621,7 @@ static enum netlink_msg_status nl_put_msg(struct nl_batch *bth,
 	case DPLANE_OP_IPSET_ENTRY_ADD:
 	case DPLANE_OP_IPSET_ENTRY_DELETE:
 	case DPLANE_OP_STARTUP_STAGE:
+	case DPLANE_OP_VLAN_INSTALL:
 		return FRR_NETLINK_ERROR;
 
 	case DPLANE_OP_GRE_SET:
@@ -1862,8 +1863,8 @@ void kernel_init(struct zebra_ns *zns)
 	 * setsockopt multicast group subscriptions that don't fit in nl_groups
 	 */
 	grp = RTNLGRP_BRVLAN;
-	ret = setsockopt(zns->netlink.sock, SOL_NETLINK, NETLINK_ADD_MEMBERSHIP,
-			 &grp, sizeof(grp));
+	ret = setsockopt(zns->netlink_dplane_in.sock, SOL_NETLINK,
+			 NETLINK_ADD_MEMBERSHIP, &grp, sizeof(grp));
 
 	if (ret < 0)
 		zlog_notice(

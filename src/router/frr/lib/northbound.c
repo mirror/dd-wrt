@@ -273,9 +273,11 @@ static unsigned int nb_node_validate_cbs(const struct nb_node *nb_node)
 	error += nb_node_validate_cb(nb_node, NB_CB_APPLY_FINISH,
 				     !!nb_node->cbs.apply_finish, true);
 	error += nb_node_validate_cb(nb_node, NB_CB_GET_ELEM,
-				     !!nb_node->cbs.get_elem, false);
+				     (nb_node->cbs.get_elem || nb_node->cbs.get), false);
 	error += nb_node_validate_cb(nb_node, NB_CB_GET_NEXT,
-				     !!nb_node->cbs.get_next, false);
+				     (nb_node->cbs.get_next ||
+				      (nb_node->snode->nodetype == LYS_LEAFLIST && nb_node->cbs.get)),
+				     false);
 	error += nb_node_validate_cb(nb_node, NB_CB_GET_KEYS,
 				     !!nb_node->cbs.get_keys, false);
 	error += nb_node_validate_cb(nb_node, NB_CB_LOOKUP_ENTRY,
@@ -514,20 +516,33 @@ void nb_config_diff_created(const struct lyd_node *dnode, uint32_t *seq,
 static void nb_config_diff_deleted(const struct lyd_node *dnode, uint32_t *seq,
 				   struct nb_config_cbs *changes)
 {
+	struct nb_node *nb_node = dnode->schema->priv;
+	struct lyd_node *child;
+	bool recursed = false;
+
 	/* Ignore unimplemented nodes. */
-	if (!dnode->schema->priv)
+	if (!nb_node)
 		return;
+
+	/*
+	 * If the CB structure indicates it (recurse flag set), call the destroy
+	 * callbacks for the children of a containment node.
+	 */
+	if (CHECK_FLAG(dnode->schema->nodetype, LYS_CONTAINER | LYS_LIST) &&
+	    CHECK_FLAG(nb_node->cbs.flags, F_NB_CB_DESTROY_RECURSE)) {
+		recursed = true;
+		LY_LIST_FOR (lyd_child(dnode), child) {
+			nb_config_diff_deleted(child, seq, changes);
+		}
+	}
 
 	if (nb_cb_operation_is_valid(NB_CB_DESTROY, dnode->schema))
 		nb_config_diff_add_change(changes, NB_CB_DESTROY, seq, dnode);
-	else if (CHECK_FLAG(dnode->schema->nodetype, LYS_CONTAINER)) {
-		struct lyd_node *child;
-
+	else if (CHECK_FLAG(dnode->schema->nodetype, LYS_CONTAINER) && !recursed) {
 		/*
-		 * Non-presence containers need special handling since they
-		 * don't have "destroy" callbacks. In this case, what we need to
-		 * do is to call the "destroy" callbacks of their child nodes
-		 * when applicable (i.e. optional nodes).
+		 * If we didn't already above, call destroy on the children of
+		 * this container (it's an NP container) as NP containers have
+		 * no destroy CB themselves.
 		 */
 		LY_LIST_FOR (lyd_child(dnode), child) {
 			nb_config_diff_deleted(child, seq, changes);
@@ -683,19 +698,30 @@ void nb_config_diff(const struct nb_config *config1,
 	lyd_free_all(diff);
 }
 
-static int dnode_create(struct nb_config *candidate, const char *xpath,
-			const char *value, uint32_t options,
-			struct lyd_node **new_dnode)
+/**
+ * dnode_create() - create a new node in the tree
+ * @candidate: config tree to create node in.
+ * @xpath: target node to create.
+ * @value: value for the new if required.
+ * @options: lyd_new_path options
+ * @new_dnode: the newly created node. If options includes LYD_NEW_PATH_UPDATE,
+ *             and the node exists (i.e., isn't create but updated), then
+ *             new_node will be set to NULL not the existing node).
+ *
+ * Return: NB_OK or NB_ERR.
+ */
+static LY_ERR dnode_create(struct nb_config *candidate, const char *xpath, const char *value,
+			   uint32_t options, struct lyd_node **new_dnode)
 {
 	struct lyd_node *dnode;
 	LY_ERR err;
 
-	err = lyd_new_path(candidate->dnode, ly_native_ctx, xpath, value,
-			   options, &dnode);
+	err = lyd_new_path2(candidate->dnode, ly_native_ctx, xpath, value, 0, 0, options, NULL,
+			    &dnode);
 	if (err) {
 		flog_warn(EC_LIB_LIBYANG, "%s: lyd_new_path(%s) failed: %d",
 			  __func__, xpath, err);
-		return NB_ERR;
+		return err;
 	} else if (dnode) {
 		err = lyd_new_implicit_tree(dnode, LYD_IMPLICIT_NO_STATE, NULL);
 		if (err) {
@@ -706,7 +732,7 @@ static int dnode_create(struct nb_config *candidate, const char *xpath,
 	}
 	if (new_dnode)
 		*new_dnode = dnode;
-	return NB_OK;
+	return LY_SUCCESS;
 }
 
 int nb_candidate_edit(struct nb_config *candidate, const struct nb_node *nb_node,
@@ -1855,7 +1881,7 @@ int nb_callback_rpc(const struct nb_node *nb_node, const char *xpath,
 	return nb_node->cbs.rpc(&args);
 }
 
-void nb_callback_notify(const struct nb_node *nb_node, const char *xpath,
+void nb_callback_notify(const struct nb_node *nb_node, uint8_t op, const char *xpath,
 			struct lyd_node *dnode)
 {
 	struct nb_cb_notify_args args = {};
@@ -1863,6 +1889,7 @@ void nb_callback_notify(const struct nb_node *nb_node, const char *xpath,
 	DEBUGD(&nb_dbg_cbs_notify, "northbound notify: %s", xpath);
 
 	args.xpath = xpath;
+	args.op = op;
 	args.dnode = dnode;
 	nb_node->cbs.notify(&args);
 }
@@ -2752,10 +2779,15 @@ void nb_init(struct event_loop *tm,
 
 	/* Initialize oper-state */
 	nb_oper_init(tm);
+
+	/* Initialize notification-state */
+	nb_notif_init(tm);
 }
 
 void nb_terminate(void)
 {
+	nb_notif_terminate();
+
 	nb_oper_terminate();
 
 	/* Terminate the northbound CLI. */

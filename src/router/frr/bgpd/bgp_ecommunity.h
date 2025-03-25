@@ -32,9 +32,7 @@
 #define ECOMMUNITY_EXTENDED_COMMUNITY_PART_3 0x82
 
 /* Non-transitive extended community types. */
-#define ECOMMUNITY_ENCODE_AS_NON_TRANS      0x40
 #define ECOMMUNITY_ENCODE_IP_NON_TRANS      0x41
-#define ECOMMUNITY_ENCODE_AS4_NON_TRANS     0x42
 #define ECOMMUNITY_ENCODE_OPAQUE_NON_TRANS  0x43
 
 /* Low-order octet of the Extended Communities type field.  */
@@ -87,6 +85,7 @@
 
 /* Low-order octet of the Extended Communities type field for OPAQUE types */
 #define ECOMMUNITY_OPAQUE_SUBTYPE_ENCAP     0x0c
+#define ECOMMUNITY_OPAQUE_SUBTYPE_COLOR	    0x0b
 
 /* Extended communities attribute string format.  */
 #define ECOMMUNITY_FORMAT_ROUTE_MAP            0
@@ -330,26 +329,25 @@ static inline void encode_node_target(struct in_addr *node_id,
 
 /*
  * Encode BGP Color extended community
- * is's a transitive opaque Extended community (RFC 9012 4.3)
+ * is's a transitive opaque Extended community (RFC 9256  8.8.1)
  * flag is set to 0
- * RFC 9012 14.10: No values have currently been registered.
- *            4.3: this field MUST be set to zero by the originator
- *                 and ignored by the receiver;
  *
  */
-static inline void encode_color(uint32_t color_id, struct ecommunity_val *eval)
+static inline void encode_color(uint32_t color_id, uint32_t flags, struct ecommunity_val *eval)
 {
 	/*
 	 *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-	 *  | 0x03         | Sub-Type(0x0b) |    Flags                      |
+	 *  | 0x03         | Sub-Type(0x0b) |CO |         Flags             |
 	 *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 	 *  |                          Color Value                          |
 	 *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	 *  https://datatracker.ietf.org/doc/rfc9256/, Section 8.8.1
+	 *  The CO bits can have 4 different values: 00 01 10 11
 	 */
 	memset(eval, 0, sizeof(*eval));
 	eval->val[0] = ECOMMUNITY_ENCODE_OPAQUE;
 	eval->val[1] = ECOMMUNITY_COLOR;
-	eval->val[2] = 0x00;
+	eval->val[2] = (flags << 6) & 0xff;
 	eval->val[3] = 0x00;
 	eval->val[4] = (color_id >> 24) & 0xff;
 	eval->val[5] = (color_id >> 16) & 0xff;
@@ -398,6 +396,7 @@ extern struct ecommunity *ecommunity_new(void);
 extern bool ecommunity_strip(struct ecommunity *ecom, uint8_t type,
 			     uint8_t subtype);
 extern struct ecommunity *ecommunity_new(void);
+extern bool ecommunity_strip_non_transitive(struct ecommunity *ecom);
 extern bool ecommunity_del_val(struct ecommunity *ecom,
 			       struct ecommunity_val *eval);
 struct bgp_pbr_entry_action;

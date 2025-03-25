@@ -178,6 +178,7 @@ static struct peer *peer_xfer_conn(struct peer *from_peer)
 	EVENT_OFF(going_away->t_delayopen);
 	EVENT_OFF(going_away->t_connect_check_r);
 	EVENT_OFF(going_away->t_connect_check_w);
+	EVENT_OFF(going_away->t_stop_with_notify);
 	EVENT_OFF(keeper->t_routeadv);
 	EVENT_OFF(keeper->t_connect);
 	EVENT_OFF(keeper->t_delayopen);
@@ -264,7 +265,7 @@ static struct peer *peer_xfer_conn(struct peer *from_peer)
 			from_peer->addpath_paths_limit[afi][safi];
 	}
 
-	if (bgp_getsockname(peer) < 0) {
+	if (bgp_getsockname(keeper) < 0) {
 		flog_err(EC_LIB_SOCKET,
 			 "%%bgp_getsockname() failed for %s peer %s fd %d (from_peer fd %d)",
 			 (CHECK_FLAG(peer->sflags, PEER_STATUS_ACCEPT_PEER)
@@ -276,7 +277,7 @@ static struct peer *peer_xfer_conn(struct peer *from_peer)
 		return NULL;
 	}
 	if (going_away->status > Active) {
-		if (bgp_getsockname(from_peer) < 0) {
+		if (bgp_getsockname(going_away) < 0) {
 			flog_err(EC_LIB_SOCKET,
 				 "%%bgp_getsockname() failed for %s from_peer %s fd %d (peer fd %d)",
 
@@ -324,8 +325,8 @@ void bgp_timer_set(struct peer_connection *connection)
 		/* First entry point of peer's finite state machine.  In Idle
 		   status start timer is on unless peer is shutdown or peer is
 		   inactive.  All other timer must be turned off */
-		if (BGP_PEER_START_SUPPRESSED(peer) || !peer_active(peer)
-		    || peer->bgp->vrf_id == VRF_UNKNOWN) {
+		if (BGP_PEER_START_SUPPRESSED(peer) || !peer_active(connection) ||
+		    peer->bgp->vrf_id == VRF_UNKNOWN) {
 			EVENT_OFF(connection->t_start);
 		} else {
 			BGP_TIMER_ON(connection->t_start, bgp_start_timer,
@@ -490,11 +491,14 @@ static void bgp_connect_timer(struct event *thread)
 	assert(!connection->t_read);
 
 	if (bgp_debug_neighbor_events(peer))
-		zlog_debug("%s [FSM] Timer (connect timer expire)", peer->host);
+		zlog_debug("%s [FSM] Timer (connect timer (%us) expire)", peer->host,
+			   peer->v_connect);
 
 	if (CHECK_FLAG(peer->sflags, PEER_STATUS_ACCEPT_PEER))
 		bgp_stop(connection);
 	else {
+		if (!peer->connect)
+			peer->v_connect = MIN(BGP_MAX_CONNECT_RETRY, peer->v_connect * 2);
 		EVENT_VAL(thread) = ConnectRetry_timer_expired;
 		bgp_event(thread); /* bgp_event unlocks peer */
 	}
@@ -521,8 +525,9 @@ static void bgp_holdtime_timer(struct event *thread)
 	 * for systems where we are heavily loaded for one
 	 * reason or another.
 	 */
-	inq_count = atomic_load_explicit(&connection->ibuf->count,
-					 memory_order_relaxed);
+	frr_with_mutex (&connection->io_mtx) {
+		inq_count = atomic_load_explicit(&connection->ibuf->count, memory_order_relaxed);
+	}
 	if (inq_count)
 		BGP_TIMER_ON(connection->t_holdtime, bgp_holdtime_timer,
 			     peer->v_holdtime);
@@ -603,6 +608,7 @@ const char *const peer_down_str[] = {
 	"Admin. shutdown (RTT)",
 	"Suppress Fib Turned On or Off",
 	"Password config change",
+	"Router ID is missing",
 };
 
 static void bgp_graceful_restart_timer_off(struct peer_connection *connection,
@@ -1223,9 +1229,14 @@ void bgp_fsm_change_status(struct peer_connection *connection,
 
 	peer_count = bgp->established_peers;
 
-	if (status == Established)
+	if (status == Established) {
 		bgp->established_peers++;
-	else if ((peer_established(connection)) && (status != Established))
+		/* Reset the retry timer if we already established */
+		if (peer->connect)
+			peer->v_connect = peer->connect;
+		else
+			peer->v_connect = peer->bgp->default_connect_retry;
+	} else if ((peer_established(connection)) && (status != Established))
 		bgp->established_peers--;
 
 	if (bgp_debug_neighbor_events(peer)) {
@@ -1343,11 +1354,6 @@ enum bgp_fsm_state_progress bgp_stop(struct peer_connection *connection)
 
 	peer->nsf_af_count = 0;
 
-	/* deregister peer */
-	if (peer->bfd_config
-	    && peer->last_reset == PEER_DOWN_UPDATE_SOURCE_CHANGE)
-		bfd_sess_uninstall(peer->bfd_config->session);
-
 	if (peer_dynamic_neighbor_no_nsf(peer) &&
 	    !(CHECK_FLAG(peer->flags, PEER_FLAG_DELETE))) {
 		if (bgp_debug_neighbor_events(peer))
@@ -1366,6 +1372,10 @@ enum bgp_fsm_state_progress bgp_stop(struct peer_connection *connection)
 	/* Increment Dropped count. */
 	if (peer_established(connection)) {
 		peer->dropped++;
+
+		if (peer->bfd_config && (peer->last_reset == PEER_DOWN_UPDATE_SOURCE_CHANGE ||
+					 peer->last_reset == PEER_DOWN_MULTIHOP_CHANGE))
+			bfd_sess_uninstall(peer->bfd_config->session);
 
 		/* Notify BGP conditional advertisement process */
 		peer->advmap_table_change = true;
@@ -1482,6 +1492,8 @@ enum bgp_fsm_state_progress bgp_stop(struct peer_connection *connection)
 
 	EVENT_OFF(connection->t_connect_check_r);
 	EVENT_OFF(connection->t_connect_check_w);
+
+	EVENT_OFF(connection->t_stop_with_notify);
 
 	/* Stop all timers. */
 	EVENT_OFF(connection->t_start);
@@ -1692,11 +1704,11 @@ bgp_connect_success(struct peer_connection *connection)
 		return bgp_stop(connection);
 	}
 
-	if (bgp_getsockname(peer) < 0) {
+	if (bgp_getsockname(connection) < 0) {
 		flog_err_sys(EC_LIB_SOCKET,
 			     "%s: bgp_getsockname(): failed for peer %s, fd %d",
 			     __func__, peer->host, connection->fd);
-		bgp_notify_send(peer->connection, BGP_NOTIFY_FSM_ERR,
+		bgp_notify_send(connection, BGP_NOTIFY_FSM_ERR,
 				bgp_fsm_error_subcode(connection->status));
 		bgp_writes_on(connection);
 		return BGP_FSM_FAILURE;
@@ -1712,8 +1724,8 @@ bgp_connect_success(struct peer_connection *connection)
 
 	if (bgp_debug_neighbor_events(peer)) {
 		if (!CHECK_FLAG(peer->sflags, PEER_STATUS_ACCEPT_PEER))
-			zlog_debug("%s open active, local address %pSU",
-				   peer->host, peer->su_local);
+			zlog_debug("%s open active, local address %pSU", peer->host,
+				   connection->su_local);
 		else
 			zlog_debug("%s passive open", peer->host);
 	}
@@ -1738,11 +1750,11 @@ bgp_connect_success_w_delayopen(struct peer_connection *connection)
 		return bgp_stop(connection);
 	}
 
-	if (bgp_getsockname(peer) < 0) {
+	if (bgp_getsockname(connection) < 0) {
 		flog_err_sys(EC_LIB_SOCKET,
 			     "%s: bgp_getsockname(): failed for peer %s, fd %d",
 			     __func__, peer->host, connection->fd);
-		bgp_notify_send(peer->connection, BGP_NOTIFY_FSM_ERR,
+		bgp_notify_send(connection, BGP_NOTIFY_FSM_ERR,
 				bgp_fsm_error_subcode(connection->status));
 		bgp_writes_on(connection);
 		return BGP_FSM_FAILURE;
@@ -1758,8 +1770,8 @@ bgp_connect_success_w_delayopen(struct peer_connection *connection)
 
 	if (bgp_debug_neighbor_events(peer)) {
 		if (!CHECK_FLAG(peer->sflags, PEER_STATUS_ACCEPT_PEER))
-			zlog_debug("%s open active, local address %pSU",
-				   peer->host, peer->su_local);
+			zlog_debug("%s open active, local address %pSU", peer->host,
+				   connection->su_local);
 		else
 			zlog_debug("%s passive open", peer->host);
 	}
@@ -1805,16 +1817,17 @@ bgp_connect_fail(struct peer_connection *connection)
 /* after connect is called(), getpeername is able to return
  * port and address on non established streams
  */
-static void bgp_connect_in_progress_update_connection(struct peer *peer)
+static void bgp_connect_in_progress_update_connection(struct peer_connection *connection)
 {
-	bgp_updatesockname(peer);
-	if (!peer->su_remote && !BGP_CONNECTION_SU_UNSPEC(peer->connection)) {
+	struct peer *peer = connection->peer;
+
+	if (!connection->su_remote && !BGP_CONNECTION_SU_UNSPEC(connection)) {
 		/* if connect initiated, then dest port and dest addresses are well known */
-		peer->su_remote = sockunion_dup(&peer->connection->su);
-		if (sockunion_family(peer->su_remote) == AF_INET)
-			peer->su_remote->sin.sin_port = htons(peer->port);
-		else if (sockunion_family(peer->su_remote) == AF_INET6)
-			peer->su_remote->sin6.sin6_port = htons(peer->port);
+		connection->su_remote = sockunion_dup(&connection->su);
+		if (sockunion_family(connection->su_remote) == AF_INET)
+			connection->su_remote->sin.sin_port = htons(peer->port);
+		else if (sockunion_family(connection->su_remote) == AF_INET6)
+			connection->su_remote->sin6.sin6_port = htons(peer->port);
 	}
 }
 
@@ -1824,7 +1837,7 @@ static void bgp_connect_in_progress_update_connection(struct peer *peer)
 static enum bgp_fsm_state_progress bgp_start(struct peer_connection *connection)
 {
 	struct peer *peer = connection->peer;
-	int status;
+	enum connect_result status;
 
 	bgp_peer_conf_if_to_su_update(connection);
 
@@ -1914,7 +1927,7 @@ static enum bgp_fsm_state_progress bgp_start(struct peer_connection *connection)
 				 __func__, peer->connection->fd);
 			return BGP_FSM_FAILURE;
 		}
-		bgp_connect_in_progress_update_connection(peer);
+		bgp_connect_in_progress_update_connection(connection);
 
 		/*
 		 * - when the socket becomes ready, poll() will signify POLLOUT
@@ -2151,6 +2164,9 @@ bgp_establish(struct peer_connection *connection)
 	/* Increment established count. */
 	peer->established++;
 	bgp_fsm_change_status(connection, Established);
+
+	if (peer->last_reset == PEER_DOWN_WAITING_OPEN)
+		peer->last_reset = 0;
 
 	/* bgp log-neighbor-changes of neighbor Up */
 	if (CHECK_FLAG(peer->bgp->flags, BGP_FLAG_LOG_NEIGHBOR_CHANGES)) {
@@ -2743,10 +2759,7 @@ static void bgp_gr_update_mode_of_all_peers(struct bgp *bgp,
 
 			peer->last_reset = PEER_DOWN_CAPABILITY_CHANGE;
 
-			if (BGP_IS_VALID_STATE_FOR_NOTIF(peer->connection->status))
-				bgp_notify_send(peer->connection, BGP_NOTIFY_CEASE,
-						BGP_NOTIFY_CEASE_CONFIG_CHANGE);
-			else
+			if (!peer_notify_config_change(peer->connection))
 				bgp_session_reset_safe(peer, &nnode);
 		} else {
 			group = peer->group;
@@ -2766,10 +2779,7 @@ static void bgp_gr_update_mode_of_all_peers(struct bgp *bgp,
 
 				member->last_reset = PEER_DOWN_CAPABILITY_CHANGE;
 
-				if (BGP_IS_VALID_STATE_FOR_NOTIF(member->connection->status))
-					bgp_notify_send(member->connection, BGP_NOTIFY_CEASE,
-							BGP_NOTIFY_CEASE_CONFIG_CHANGE);
-				else
+				if (!peer_notify_config_change(member->connection))
 					bgp_session_reset(member);
 			}
 		}
@@ -2806,99 +2816,72 @@ int bgp_gr_update_all(struct bgp *bgp, enum global_gr_command global_gr_cmd)
 
 const char *print_peer_gr_mode(enum peer_mode pr_mode)
 {
-	const char *peer_gr_mode = NULL;
-
 	switch (pr_mode) {
 	case PEER_HELPER:
-		peer_gr_mode = "PEER_HELPER";
-		break;
+		return "PEER_HELPER";
 	case PEER_GR:
-		peer_gr_mode = "PEER_GR";
-		break;
+		return "PEER_GR";
 	case PEER_DISABLE:
-		peer_gr_mode = "PEER_DISABLE";
-		break;
+		return "PEER_DISABLE";
 	case PEER_INVALID:
-		peer_gr_mode = "PEER_INVALID";
-		break;
+		return "PEER_INVALID";
 	case PEER_GLOBAL_INHERIT:
-		peer_gr_mode = "PEER_GLOBAL_INHERIT";
-		break;
+		return "PEER_GLOBAL_INHERIT";
 	}
 
-	return peer_gr_mode;
+	return NULL;
 }
 
 const char *print_peer_gr_cmd(enum peer_gr_command pr_gr_cmd)
 {
-	const char *peer_gr_cmd = NULL;
-
 	switch (pr_gr_cmd) {
 	case PEER_GR_CMD:
-		peer_gr_cmd = "PEER_GR_CMD";
-		break;
+		return "PEER_GR_CMD";
 	case NO_PEER_GR_CMD:
-		peer_gr_cmd = "NO_PEER_GR_CMD";
-		break;
+		return "NO_PEER_GR_CMD";
 	case PEER_DISABLE_CMD:
-		peer_gr_cmd = "PEER_DISABLE_GR_CMD";
-		break;
+		return "PEER_DISABLE_GR_CMD";
 	case NO_PEER_DISABLE_CMD:
-		peer_gr_cmd = "NO_PEER_DISABLE_GR_CMD";
-		break;
+		return "NO_PEER_DISABLE_GR_CMD";
 	case PEER_HELPER_CMD:
-		peer_gr_cmd = "PEER_HELPER_CMD";
-		break;
+		return "PEER_HELPER_CMD";
 	case NO_PEER_HELPER_CMD:
-		peer_gr_cmd = "NO_PEER_HELPER_CMD";
-		break;
+		return "NO_PEER_HELPER_CMD";
 	}
 
-	return peer_gr_cmd;
+	return NULL;
 }
 
 const char *print_global_gr_mode(enum global_mode gl_mode)
 {
-	const char *global_gr_mode = "???";
-
 	switch (gl_mode) {
 	case GLOBAL_HELPER:
-		global_gr_mode = "GLOBAL_HELPER";
-		break;
+		return "GLOBAL_HELPER";
 	case GLOBAL_GR:
-		global_gr_mode = "GLOBAL_GR";
-		break;
+		return "GLOBAL_GR";
 	case GLOBAL_DISABLE:
-		global_gr_mode = "GLOBAL_DISABLE";
-		break;
+		return "GLOBAL_DISABLE";
 	case GLOBAL_INVALID:
-		global_gr_mode = "GLOBAL_INVALID";
-		break;
+		return "GLOBAL_INVALID";
 	}
 
-	return global_gr_mode;
+	return "???";
 }
 
 const char *print_global_gr_cmd(enum global_gr_command gl_gr_cmd)
 {
-	const char *global_gr_cmd = NULL;
-
 	switch (gl_gr_cmd) {
 	case GLOBAL_GR_CMD:
-		global_gr_cmd = "GLOBAL_GR_CMD";
-		break;
+		return "GLOBAL_GR_CMD";
 	case NO_GLOBAL_GR_CMD:
-		global_gr_cmd = "NO_GLOBAL_GR_CMD";
-		break;
+		return "NO_GLOBAL_GR_CMD";
 	case GLOBAL_DISABLE_CMD:
-		global_gr_cmd = "GLOBAL_DISABLE_CMD";
-		break;
+		return "GLOBAL_DISABLE_CMD";
 	case NO_GLOBAL_DISABLE_CMD:
-		global_gr_cmd = "NO_GLOBAL_DISABLE_CMD";
-		break;
+		return "NO_GLOBAL_DISABLE_CMD";
 	}
 
-	return global_gr_cmd;
+	return NULL;
 }
 
 enum global_mode bgp_global_gr_mode_get(struct bgp *bgp)
@@ -2998,10 +2981,7 @@ unsigned int bgp_peer_gr_action(struct peer *peer, enum peer_mode old_state,
 		if (!CHECK_FLAG(peer->sflags, PEER_STATUS_GROUP)) {
 			peer->last_reset = PEER_DOWN_CAPABILITY_CHANGE;
 
-			if (BGP_IS_VALID_STATE_FOR_NOTIF(peer->connection->status))
-				bgp_notify_send(peer->connection, BGP_NOTIFY_CEASE,
-						BGP_NOTIFY_CEASE_CONFIG_CHANGE);
-			else
+			if (!peer_notify_config_change(peer->connection))
 				bgp_session_reset(peer);
 		} else {
 			group = peer->group;
@@ -3009,10 +2989,7 @@ unsigned int bgp_peer_gr_action(struct peer *peer, enum peer_mode old_state,
 				member->last_reset = PEER_DOWN_CAPABILITY_CHANGE;
 				bgp_peer_move_to_gr_mode(member, new_state);
 
-				if (BGP_IS_VALID_STATE_FOR_NOTIF(member->connection->status))
-					bgp_notify_send(member->connection, BGP_NOTIFY_CEASE,
-							BGP_NOTIFY_CEASE_CONFIG_CHANGE);
-				else
+				if (!peer_notify_config_change(member->connection))
 					bgp_session_reset(member);
 			}
 		}
@@ -3102,4 +3079,11 @@ void bgp_peer_gr_flags_update(struct peer *peer)
 			peer_nsf_stop(peer);
 		}
 	}
+}
+
+void bgp_event_stop_with_notify(struct event *event)
+{
+	struct peer_connection *connection = EVENT_ARG(event);
+
+	bgp_stop_with_notify(connection, BGP_NOTIFY_SEND_HOLD_ERR, 0);
 }

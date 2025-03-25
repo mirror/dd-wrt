@@ -282,7 +282,9 @@ internal or external.
    interface and address information. In that case default router ID value is
    selected as the largest IP Address of the interfaces. When `router zebra` is
    not enabled *bgpd* can't get interface information so `router-id` is set to
-   0.0.0.0. So please set router-id by hand.
+   0.0.0.0, which is invalid and BGP session can't be established.
+
+   So please set router-id by manually.
 
 
 .. _bgp-multiple-autonomous-systems:
@@ -1169,6 +1171,14 @@ BGP GR Peer Mode Commands
    at the peer level.
 
 
+BGP GR Show Commands
+^^^^^^^^^^^^^^^^^^^^
+
+.. clicmd:: show bgp [<ipv4|ipv6>] [<view|vrf> VRF] neighbors [<A.B.C.D|X:X::X:X|WORD>] graceful-restart [json]
+
+   This command will display information about the neighbors graceful-restart status
+
+
 Long-lived Graceful Restart
 ---------------------------
 
@@ -1795,7 +1805,7 @@ Configuring Peers
    Send the extended RPKI communities to the peer. RPKI extended community
    can be send only to iBGP and eBGP-OAD peers.
 
-   Default: enabled.
+   Default: disabled.
 
 .. clicmd:: neighbor PEER weight WEIGHT
 
@@ -1849,7 +1859,8 @@ Configuring Peers
 
 .. clicmd:: neighbor <A.B.C.D|X:X::X:X|WORD> as-override
 
-   Override AS number of the originating router with the local AS number.
+   Override any AS number in the AS path that matches the neighbor's AS number
+   with the local AS number.
 
    Usually this configuration is used in PEs (Provider Edge) to replace
    the incoming customer AS number so the connected CE (Customer Edge)
@@ -2684,6 +2695,12 @@ The following commands can be used in route maps:
    happen only when BGP updates have completely same communities value
    specified in the community list.
 
+.. clicmd:: match community-limit (0-65535)
+
+   This command matches BGP updates that use community list, and with a community
+   list count less or equal than the defined limit. Setting community-limit to 0
+   will only match BGP updates with no community.
+
 .. clicmd:: set community <none|COMMUNITY> additive
 
    This command sets the community value in BGP updates.  If the attribute is
@@ -2918,6 +2935,24 @@ BGP Extended Communities in Route Map
 .. clicmd:: set extcomumnity color EXTCOMMUNITY
 
    This command sets colors values.
+
+:rfc:`9256`.
+
+``CO:COLOR``
+   This is a format to define colors value. ``CO`` part is always 00 (default),
+   it can be used to support the requirements of Color-Only steering when using
+   a Null Endpoint in the SR-TE Policy as specified in Section 8.8 of [RFC9256].
+   The below shows in detail what the different combinations of ``CO`` bits can
+   match on to for the purpose of determining what type of SR-TE Policy Tunnel
+   a BGP route can resolve over, and it also shows the order for resolving the
+   BGP route if there are different tunnels.
+
+   - ``00`` Can match on a specific endpoint only which should be the nexthop
+     of the route(Default Setting).
+   - ``01`` Can match on a specific endpoint or a null endpoint.
+   - ``10`` Can match on a specific endpoint, null endpoint or any endpoint.
+   - ``11`` Reserved for future use and shuould not be used.
+
 
 .. clicmd:: set extcommunity bandwidth <(1-25600) | cumulative | num-multipaths> [non-transitive]
 
@@ -4122,6 +4157,11 @@ Debugging
 
    Enable or disable debugging of communications between *bgpd* and *zebra*.
 
+.. clicmd:: debug bgp aggregate [prefix <A.B.C.D/M|X:X::X:X/M>]
+
+   Enable or disable debugging of route aggregation, either for one or more
+   aggregate addresses or for all aggregate addresses.
+
 Dumping Messages and Routing Tables
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -4322,6 +4362,10 @@ displays IPv6 routing table.
 
    If ``detail`` option is specified after ``json``, more verbose JSON output
    will be displayed.
+
+.. clicmd:: show bgp router [json]
+
+   This command displays information related BGP router and Graceful Restart.
 
 Some other commands provide additional options for filtering the output.
 

@@ -41,6 +41,9 @@ static void unregister_zebra_rnh(struct bgp_nexthop_cache *bnc);
 static int make_prefix(int afi, struct bgp_path_info *pi, struct prefix *p);
 static void bgp_nht_ifp_initial(struct event *thread);
 
+DEFINE_HOOK(bgp_nht_path_update, (struct bgp *bgp, struct bgp_path_info *pi, bool valid),
+	    (bgp, pi, valid));
+
 static int bgp_isvalid_nexthop(struct bgp_nexthop_cache *bnc)
 {
 	return (bgp_zebra_num_connects() == 0
@@ -1066,9 +1069,16 @@ static int make_prefix(int afi, struct bgp_path_info *pi, struct prefix *p)
 	case AFI_IP6:
 		p->family = AF_INET6;
 		if (pi->attr->srv6_l3vpn) {
-			IPV6_ADDR_COPY(&(p->u.prefix6),
-				       &(pi->attr->srv6_l3vpn->sid));
 			p->prefixlen = IPV6_MAX_BITLEN;
+			if (pi->attr->srv6_l3vpn->transposition_len != 0 &&
+			    BGP_PATH_INFO_NUM_LABELS(pi)) {
+				IPV6_ADDR_COPY(&p->u.prefix6, &pi->attr->srv6_l3vpn->sid);
+				transpose_sid(&p->u.prefix6,
+					      decode_label(&pi->extra->labels->label[0]),
+					      pi->attr->srv6_l3vpn->transposition_offset,
+					      pi->attr->srv6_l3vpn->transposition_len);
+			} else
+				IPV6_ADDR_COPY(&(p->u.prefix6), &(pi->attr->srv6_l3vpn->sid));
 		} else if (is_bgp_static) {
 			p->u.prefix6 = p_orig->u.prefix6;
 			p->prefixlen = p_orig->prefixlen;
@@ -1268,6 +1278,25 @@ void evaluate_paths(struct bgp_nexthop_cache *bnc)
 	}
 
 	LIST_FOREACH (path, &(bnc->paths), nh_thread) {
+		/*
+		 * Currently when a peer goes down, bgp immediately
+		 * sees this via the interface events( if it is directly
+		 * connected).  And in this case it takes and puts on
+		 * a special peer queue all path info's associated with
+		 * but these items are not yet processed typically when
+		 * the nexthop is being handled here.  Thus we end
+		 * up in a situation where the process Queue for BGP
+		 * is being asked to look at the same path info multiple
+		 * times.  Let's just cut to the chase here and if
+		 * the bnc has a peer associated with it and the path info
+		 * being looked at uses that peer and the peer is no
+		 * longer established we know the path_info is being
+		 * handled elsewhere and we do not need to process
+		 * it here at all since the pathinfo is going away
+		 */
+		if (peer && path->peer == peer && !peer_established(peer->connection))
+			continue;
+
 		if (path->type == ZEBRA_ROUTE_BGP &&
 		    (path->sub_type == BGP_ROUTE_NORMAL ||
 		     path->sub_type == BGP_ROUTE_STATIC ||
@@ -1441,6 +1470,9 @@ void evaluate_paths(struct bgp_nexthop_cache *bnc)
 						path);
 			}
 		}
+
+		if (path_valid != bnc_is_valid_nexthop)
+			hook_call(bgp_nht_path_update, bgp_path, path, bnc_is_valid_nexthop);
 
 		bgp_process(bgp_path, dest, path, afi, safi);
 	}

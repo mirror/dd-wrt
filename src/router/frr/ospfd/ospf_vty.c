@@ -724,7 +724,7 @@ DEFUN (ospf_area_range_not_advertise,
 
 DEFUN (no_ospf_area_range,
        no_ospf_area_range_cmd,
-       "no area <A.B.C.D|(0-4294967295)> range A.B.C.D/M [<cost (0-16777215)|advertise [cost (0-16777215)]|not-advertise>]",
+       "no area <A.B.C.D|(0-4294967295)> range A.B.C.D/M [<cost [(0-16777215)]|advertise [cost [(0-16777215)]]|not-advertise>]",
        NO_STR
        "OSPF area parameters\n"
        "OSPF area ID in IP address format\n"
@@ -753,6 +753,8 @@ DEFUN (no_ospf_area_range,
 	ospf_area_display_format_set(ospf, area, format);
 
 	ospf_area_range_unset(ospf, area, area->ranges, &p);
+
+	ospf_area_check_free(ospf, area_id);
 
 	return CMD_SUCCESS;
 }
@@ -786,6 +788,8 @@ DEFUN (no_ospf_area_range_substitute,
 	ospf_area_display_format_set(ospf, area, format);
 
 	ospf_area_range_substitute_unset(ospf, area, &p);
+
+	ospf_area_check_free(ospf, area_id);
 
 	return CMD_SUCCESS;
 }
@@ -1268,7 +1272,7 @@ DEFUN (ospf_area_vlink_intervals,
 
 DEFUN (no_ospf_area_vlink_intervals,
        no_ospf_area_vlink_intervals_cmd,
-       "no area <A.B.C.D|(0-4294967295)> virtual-link A.B.C.D {hello-interval (1-65535)|retransmit-interval (1-65535)|retransmit-window (20-1000)|transmit-delay (1-65535)|dead-interval (1-65535)}",
+       "no area <A.B.C.D|(0-4294967295)> virtual-link A.B.C.D {hello-interval [(1-65535)]|retransmit-interval [(1-65535)]|retransmit-window [(20-1000)]|transmit-delay [(1-65535)]|dead-interval [(1-65535)]}",
        NO_STR
        VLINK_HELPSTR_IPADDR
        VLINK_HELPSTR_TIME_PARAM)
@@ -1359,12 +1363,13 @@ DEFUN (ospf_area_shortcut,
 
 DEFUN (no_ospf_area_shortcut,
        no_ospf_area_shortcut_cmd,
-       "no area <A.B.C.D|(0-4294967295)> shortcut <enable|disable>",
+       "no area <A.B.C.D|(0-4294967295)> shortcut <default|enable|disable>",
        NO_STR
        "OSPF area parameters\n"
        "OSPF area ID in IP address format\n"
        "OSPF area ID as a decimal value\n"
        "Deconfigure the area's shortcutting mode\n"
+       "Deconfigure default shortcutting through the area\n"
        "Deconfigure enabled shortcutting through the area\n"
        "Deconfigure disabled shortcutting through the area\n")
 {
@@ -1584,7 +1589,7 @@ DEFPY (no_ospf_area_nssa,
        "no area <A.B.C.D|(0-4294967295)>$area_str nssa\
          [{\
 	   <translate-candidate|translate-never|translate-always>\
-	   |default-information-originate [{metric (0-16777214)|metric-type (1-2)}]\
+	   |default-information-originate [{metric [(0-16777214)]|metric-type [(1-2)]}]\
 	   |no-summary\
 	   |suppress-fa\
 	 }]",
@@ -1665,7 +1670,7 @@ DEFPY (ospf_area_nssa_range,
 
 DEFPY (no_ospf_area_nssa_range,
        no_ospf_area_nssa_range_cmd,
-       "no area <A.B.C.D|(0-4294967295)>$area_str nssa range A.B.C.D/M$prefix [<not-advertise|cost (0-16777215)>]",
+       "no area <A.B.C.D|(0-4294967295)>$area_str nssa range A.B.C.D/M$prefix [<not-advertise|cost [(0-16777215)]>]",
        NO_STR
        "OSPF area parameters\n"
        "OSPF area ID in IP address format\n"
@@ -1744,7 +1749,7 @@ DEFUN (ospf_area_default_cost,
 
 DEFUN (no_ospf_area_default_cost,
        no_ospf_area_default_cost_cmd,
-       "no area <A.B.C.D|(0-4294967295)> default-cost (0-16777215)",
+       "no area <A.B.C.D|(0-4294967295)> default-cost [(0-16777215)]",
        NO_STR
        "OSPF area parameters\n"
        "OSPF area ID in IP address format\n"
@@ -2308,34 +2313,9 @@ static int ospf_timers_spf_set(struct vty *vty, unsigned int delay,
 	return CMD_SUCCESS;
 }
 
-DEFUN (ospf_timers_min_ls_interval,
+DEFPY (ospf_timers_min_ls_interval,
        ospf_timers_min_ls_interval_cmd,
-       "timers throttle lsa all (0-5000)",
-       "Adjust routing timers\n"
-       "Throttling adaptive timer\n"
-       "LSA delay between transmissions\n"
-       "All LSA types\n"
-       "Delay (msec) between sending LSAs\n")
-{
-	VTY_DECLVAR_INSTANCE_CONTEXT(ospf, ospf);
-	int idx_number = 4;
-	unsigned int interval;
-
-	if (argc < 5) {
-		vty_out(vty, "Insufficient arguments\n");
-		return CMD_WARNING_CONFIG_FAILED;
-	}
-
-	interval = strtoul(argv[idx_number]->arg, NULL, 10);
-
-	ospf->min_ls_interval = interval;
-
-	return CMD_SUCCESS;
-}
-
-DEFUN (no_ospf_timers_min_ls_interval,
-       no_ospf_timers_min_ls_interval_cmd,
-       "no timers throttle lsa all [(0-5000)]",
+       "[no] timers throttle lsa all ![(0-5000)]$lsa_refresh_interval",
        NO_STR
        "Adjust routing timers\n"
        "Throttling adaptive timer\n"
@@ -2344,7 +2324,11 @@ DEFUN (no_ospf_timers_min_ls_interval,
        "Delay (msec) between sending LSAs\n")
 {
 	VTY_DECLVAR_INSTANCE_CONTEXT(ospf, ospf);
-	ospf->min_ls_interval = OSPF_MIN_LS_INTERVAL;
+
+	if (no)
+		ospf->min_ls_interval = OSPF_MIN_LS_INTERVAL;
+	else
+		ospf->min_ls_interval = strtoul(lsa_refresh_interval_str, NULL, 10);
 
 	return CMD_SUCCESS;
 }
@@ -2393,40 +2377,35 @@ DEFUN (no_ospf_timers_throttle_spf,
 }
 
 
-DEFUN (ospf_timers_lsa_min_arrival,
+DEFPY (ospf_timers_lsa_min_arrival,
        ospf_timers_lsa_min_arrival_cmd,
-       "timers lsa min-arrival (0-600000)",
-       "Adjust routing timers\n"
-       "OSPF LSA timers\n"
-       "Minimum delay in receiving new version of a LSA\n"
-       "Delay in milliseconds\n")
-{
-	VTY_DECLVAR_INSTANCE_CONTEXT(ospf, ospf);
-	ospf->min_ls_arrival = strtoul(argv[argc - 1]->arg, NULL, 10);
-	return CMD_SUCCESS;
-}
-
-DEFUN (no_ospf_timers_lsa_min_arrival,
-       no_ospf_timers_lsa_min_arrival_cmd,
-       "no timers lsa min-arrival [(0-600000)]",
+       "[no] timers lsa min-arrival ![(0-5000)]$min_arrival",
        NO_STR
        "Adjust routing timers\n"
        "OSPF LSA timers\n"
-       "Minimum delay in receiving new version of a LSA\n"
+       "Minimum delay in receiving new version of an LSA\n"
        "Delay in milliseconds\n")
 {
 	VTY_DECLVAR_INSTANCE_CONTEXT(ospf, ospf);
-	unsigned int minarrival;
+	if (no)
+		ospf->min_ls_arrival = OSPF_MIN_LS_ARRIVAL;
+	else
+		ospf->min_ls_arrival = strtoul(min_arrival_str, NULL, 10);
+	return CMD_SUCCESS;
+}
 
-	if (argc > 4) {
-		minarrival = strtoul(argv[argc - 1]->arg, NULL, 10);
-
-		if (ospf->min_ls_arrival != minarrival
-		    || minarrival == OSPF_MIN_LS_ARRIVAL)
-			return CMD_SUCCESS;
-	}
-
-	ospf->min_ls_arrival = OSPF_MIN_LS_ARRIVAL;
+DEFPY_HIDDEN (ospf_timers_lsa_min_arrival_deprecated,
+	      ospf_timers_lsa_min_arrival_deprecated_cmd,
+	      "timers lsa min-arrival [(5001-60000)]$min_arrival",
+	      "Adjust routing timers\n"
+	      "OSPF LSA timers\n"
+	      "Minimum delay in receiving new version of an LSA\n"
+	      "Deprecated delay in milliseconds - delays in this range default to 5000 msec\n")
+{
+	VTY_DECLVAR_INSTANCE_CONTEXT(ospf, ospf);
+	vty_out(vty, "%% OSPF `timers lsa min-arrival` set to the maximum of %u milliseconds\n",
+		OSPF_MIN_LS_ARRIVAL_MAX);
+	ospf->min_ls_arrival = OSPF_MIN_LS_ARRIVAL_MAX;
 
 	return CMD_SUCCESS;
 }
@@ -2592,7 +2571,7 @@ ALIAS(ospf_write_multiplier, write_multiplier_cmd, "write-multiplier (1-100)",
 
 DEFUN (no_ospf_write_multiplier,
        no_ospf_write_multiplier_cmd,
-       "no ospf write-multiplier (1-100)",
+       "no ospf write-multiplier [(1-100)]",
        NO_STR
        "OSPF specific commands\n"
        "Write multiplier\n"
@@ -9564,7 +9543,7 @@ DEFUN (ospf_default_information_originate,
 
 DEFUN (no_ospf_default_information_originate,
        no_ospf_default_information_originate_cmd,
-       "no default-information originate [{always|metric (0-16777214)|metric-type (1-2)|route-map RMAP_NAME}]",
+       "no default-information originate [{always|metric [(0-16777214)]|metric-type [(1-2)]|route-map [RMAP_NAME]}]",
        NO_STR
        "Control distribution of default information\n"
        "Distribute a default route\n"
@@ -9648,7 +9627,7 @@ DEFUN (ospf_distance,
 
 DEFUN (no_ospf_distance,
        no_ospf_distance_cmd,
-       "no distance (1-255)",
+       "no distance [(1-255)]",
        NO_STR
        "Administrative distance\n"
        "OSPF Administrative distance\n")
@@ -10279,8 +10258,10 @@ DEFUN (ospf_external_route_aggregation,
 		tag = strtoul(argv[idx + 2]->arg, NULL, 10);
 
 	ret = ospf_asbr_external_aggregator_set(ospf, &p, tag);
-	if (ret == OSPF_INVALID)
-		vty_out(vty, "Invalid configuration!!\n");
+	if (ret == OSPF_FAILURE) {
+		vty_out(vty, "%% Failed to set summary-address!\n");
+		return CMD_WARNING_CONFIG_FAILED;
+	}
 
 	return CMD_SUCCESS;
 }
@@ -10632,8 +10613,10 @@ DEFUN (ospf_external_route_aggregation_no_adrvertise,
 	}
 
 	ret = ospf_asbr_external_rt_no_advertise(ospf, &p);
-	if (ret == OSPF_INVALID)
-		vty_out(vty, "Invalid configuration!!\n");
+	if (ret == OSPF_FAILURE) {
+		vty_out(vty, "%% Failed to set summary-address!\n");
+		return CMD_WARNING_CONFIG_FAILED;
+	}
 
 	return CMD_SUCCESS;
 }
@@ -13717,9 +13700,8 @@ void ospf_vty_init(void)
 
 	/* LSA timers commands */
 	install_element(OSPF_NODE, &ospf_timers_min_ls_interval_cmd);
-	install_element(OSPF_NODE, &no_ospf_timers_min_ls_interval_cmd);
 	install_element(OSPF_NODE, &ospf_timers_lsa_min_arrival_cmd);
-	install_element(OSPF_NODE, &no_ospf_timers_lsa_min_arrival_cmd);
+	install_element(OSPF_NODE, &ospf_timers_lsa_min_arrival_deprecated_cmd);
 
 	/* refresh timer commands */
 	install_element(OSPF_NODE, &ospf_refresh_timer_cmd);

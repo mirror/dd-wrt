@@ -284,6 +284,9 @@ struct bgp_path_info {
 	/* Peer structure.  */
 	struct peer *peer;
 
+	/* From peer structure */
+	struct peer *from;
+
 	/* Attribute structure.  */
 	struct attr *attr;
 
@@ -446,7 +449,6 @@ struct bgp_aggregate {
 	struct {
 		char *name;
 		struct route_map *map;
-		bool changed;
 	} rmap;
 
 	/* Suppress-count. */
@@ -489,9 +491,6 @@ struct bgp_aggregate {
 
 	/* Aggregate route's as-path. */
 	struct aspath *aspath;
-
-	/* SAFI configuration. */
-	safi_t safi;
 
 	/** MED value found in current group. */
 	uint32_t med_matched_value;
@@ -586,6 +585,42 @@ enum bgp_path_type {
 	BGP_PATH_SHOW_MULTIPATH
 };
 
+/* meta-queue structure:
+ * sub-queue 0: soo routes
+ * sub-queue 1: other routes
+ */
+#define MQ_SIZE 3
+
+/* For checking that an object has already queued in some sub-queue */
+#define MQ_BIT_MASK ((1 << MQ_SIZE) - 1)
+
+struct meta_queue {
+	STAILQ_HEAD(bgp_dest_queue, bgp_dest) * subq[MQ_SIZE];
+	uint32_t size; /* sum of lengths of all subqueues */
+};
+
+/*
+ * When the update-delay expires, BGP inserts an EOIU (End-Of-Initial-Update) marker
+ * into the BGP_PROCESS_QUEUE_EOIU_MARKER meta queue. This meta queue holds only
+ * bgp_dest structures. To process the EOIU marker, we need to call bgp_process_main_one()
+ * on the corresponding BGP instance. Since the marker itself isn't a real route
+ * (a dummy dest is created for this) and doesn't inherently carry the BGP instance pointer,
+ * we store the struct bgp pointer in the dest->info field. This ensures that, when processing
+ * the EOIU marker, we have the necessary context (the relevant BGP instance) available.
+ */
+struct bgp_eoiu_info {
+	struct bgp *bgp;
+};
+
+/*
+ * Meta Q's specific names
+ */
+enum meta_queue_indexes {
+	META_QUEUE_EARLY_ROUTE,
+	META_QUEUE_OTHER_ROUTE,
+	META_QUEUE_EOIU_MARKER,
+};
+
 static inline void bgp_bump_version(struct bgp_dest *dest)
 {
 	dest->version = bgp_table_next_version(bgp_dest_table(dest));
@@ -619,13 +654,13 @@ static inline bool is_pi_family_matching(struct bgp_path_info *pi,
 }
 
 static inline void prep_for_rmap_apply(struct bgp_path_info *dst_pi,
-				       struct bgp_path_info_extra *dst_pie,
-				       struct bgp_dest *dest,
-				       struct bgp_path_info *src_pi,
-				       struct peer *peer, struct attr *attr)
+				       struct bgp_path_info_extra *dst_pie, struct bgp_dest *dest,
+				       struct bgp_path_info *src_pi, struct peer *peer,
+				       struct peer *from, struct attr *attr)
 {
 	memset(dst_pi, 0, sizeof(struct bgp_path_info));
 	dst_pi->peer = peer;
+	dst_pi->from = from;
 	dst_pi->attr = attr;
 	dst_pi->net = dest;
 	dst_pi->flags = src_pi->flags;
@@ -766,6 +801,7 @@ extern void bgp_path_info_delete(struct bgp_dest *dest,
 				 struct bgp_path_info *pi);
 extern struct bgp_path_info_extra *
 bgp_path_info_extra_get(struct bgp_path_info *path);
+extern struct bgp_path_info_extra *bgp_evpn_path_info_extra_get(struct bgp_path_info *path);
 extern bool bgp_path_info_has_valid_label(const struct bgp_path_info *path);
 extern void bgp_path_info_set_flag(struct bgp_dest *dest,
 				   struct bgp_path_info *path, uint32_t flag);
@@ -792,6 +828,7 @@ extern void bgp_redistribute_withdraw(struct bgp *, afi_t, int, unsigned short);
 
 extern void bgp_static_add(struct bgp *);
 extern void bgp_static_delete(struct bgp *);
+extern void bgp_address_family_distance_delete(void);
 extern void bgp_static_redo_import_check(struct bgp *);
 extern void bgp_purge_static_redist_routes(struct bgp *bgp);
 extern void bgp_static_update(struct bgp *bgp, const struct prefix *p,
@@ -929,11 +966,10 @@ extern void route_vty_out_detail_header(struct vty *vty, struct bgp *bgp,
 					safi_t safi, json_object *json,
 					bool incremental_print,
 					bool local_table);
-extern void route_vty_out_detail(struct vty *vty, struct bgp *bgp,
-				 struct bgp_dest *bn, const struct prefix *p,
-				 struct bgp_path_info *path, afi_t afi,
-				 safi_t safi, enum rpki_states,
-				 json_object *json_paths);
+extern void route_vty_out_detail(struct vty *vty, struct bgp *bgp, struct bgp_dest *bn,
+				 const struct prefix *p, struct bgp_path_info *path, afi_t afi,
+				 safi_t safi, enum rpki_states, json_object *json_paths,
+				 struct attr *attr);
 extern int bgp_show_table_rd(struct vty *vty, struct bgp *bgp, afi_t afi, safi_t safi,
 			     struct bgp_table *table, struct prefix_rd *prd,
 			     enum bgp_show_type type, void *output_arg,
@@ -970,4 +1006,9 @@ extern int bgp_path_info_cmp(struct bgp *bgp, struct bgp_path_info *new,
 #define bgp_path_info_add(A, B)                                                \
 	bgp_path_info_add_with_caller(__func__, (A), (B))
 #define bgp_path_info_free(B) bgp_path_info_free_with_caller(__func__, (B))
+extern void bgp_meta_queue_free(struct meta_queue *mq);
+extern int early_route_process(struct bgp *bgp, struct bgp_dest *dest);
+extern int other_route_process(struct bgp *bgp, struct bgp_dest *dest);
+extern int eoiu_marker_process(struct bgp *bgp, struct bgp_dest *dest);
+extern uint32_t bgp_med_value(struct attr *attr, struct bgp *bgp);
 #endif /* _QUAGGA_BGP_ROUTE_H */

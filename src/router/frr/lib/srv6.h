@@ -22,6 +22,8 @@
 
 #define SRV6_SID_FORMAT_NAME_SIZE 512
 
+#define DEFAULT_SRV6_IFNAME "sr0"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -186,6 +188,42 @@ enum srv6_endpoint_behavior_codepoint {
 	SRV6_ENDPOINT_BEHAVIOR_OPAQUE           = 0xFFFF,
 };
 
+/*
+ * Convert SRv6 endpoint behavior codepoints to human-friendly string.
+ */
+static inline const char *
+srv6_endpoint_behavior_codepoint2str(enum srv6_endpoint_behavior_codepoint behavior)
+{
+	switch (behavior) {
+	case SRV6_ENDPOINT_BEHAVIOR_RESERVED:
+		return "Reserved";
+	case SRV6_ENDPOINT_BEHAVIOR_END:
+		return "End";
+	case SRV6_ENDPOINT_BEHAVIOR_END_X:
+		return "End.X";
+	case SRV6_ENDPOINT_BEHAVIOR_END_DT6:
+		return "End.DT6";
+	case SRV6_ENDPOINT_BEHAVIOR_END_DT4:
+		return "End.DT4";
+	case SRV6_ENDPOINT_BEHAVIOR_END_DT46:
+		return "End.DT46";
+	case SRV6_ENDPOINT_BEHAVIOR_END_NEXT_CSID:
+		return "uN";
+	case SRV6_ENDPOINT_BEHAVIOR_END_X_NEXT_CSID:
+		return "uA";
+	case SRV6_ENDPOINT_BEHAVIOR_END_DT6_USID:
+		return "uDT6";
+	case SRV6_ENDPOINT_BEHAVIOR_END_DT4_USID:
+		return "uDT4";
+	case SRV6_ENDPOINT_BEHAVIOR_END_DT46_USID:
+		return "uDT46";
+	case SRV6_ENDPOINT_BEHAVIOR_OPAQUE:
+		return "Opaque";
+	}
+
+	return "Unspec";
+}
+
 struct nexthop_srv6 {
 	/* SRv6 localsid info for Endpoint-behaviour */
 	enum seg6local_action_t seg6local_action;
@@ -325,6 +363,7 @@ const char *seg6local_context2str(char *str, size_t size,
 				  uint32_t action);
 void seg6local_context2json(const struct seg6local_context *ctx,
 			    uint32_t action, json_object *json);
+void srv6_sid_structure2json(const struct seg6local_context *ctx, json_object *json);
 
 static inline const char *srv6_sid_ctx2str(char *str, size_t size,
 					   const struct srv6_sid_ctx *ctx)
