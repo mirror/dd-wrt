@@ -2387,7 +2387,8 @@ static void bp_sbfd_encap_srh_rth_red(struct ipv6_sr_hdr *srv6h, struct in6_addr
 	srv6h->nexthdr = IPPROTO_IPV6;
 	srv6h->hdrlen =
 		GET_RTH_HDR_LEN(RTH_BASE_HEADER_LEN + sizeof(struct in6_addr) * (seg_num - 1));
-	srv6h->type = IPV6_SRCRT_TYPE_4;
+//	srv6h->type = IPV6_SRCRT_TYPE_4;
+	srv6h->type = 4;
 	srv6h->segments_left = seg_num - 1; //if encap reduce mode , seg_num-1
 	srv6h->first_segment = seg_num - 2; //if encap reduce mode , seg_num-2
 	srv6h->flags = 0;
