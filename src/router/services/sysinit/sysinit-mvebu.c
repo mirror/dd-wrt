@@ -232,6 +232,7 @@ void start_resetbc(void)
 }
 void start_wifi_drivers(void)
 {
+	int brand = getRouterBrand();
 	if (!load_mac80211()) {
 		insmod("mwlwifi");
 		insmod("mwifiex");
