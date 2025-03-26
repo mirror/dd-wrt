@@ -926,6 +926,11 @@ sandbox_init_filter(void)
     OPEN_DATADIR("approved-routers");
     OPEN_DATADIR_SUFFIX("my-consensus-microdesc", ".tmp");
     OPEN_DATADIR_SUFFIX("my-consensus-ns", ".tmp");
+    if (options->V3BandwidthsFile) {
+      log_notice(LD_GENERAL, "Adding V3BandwidthsFile %s to sandboxing set.",
+                 options->V3BandwidthsFile);
+      OPEN(options->V3BandwidthsFile);
+    }
   }
 
   if (options->ServerDNSResolvConfFile)

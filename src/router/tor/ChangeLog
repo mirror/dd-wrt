@@ -1,3 +1,51 @@
+Changes in version 0.4.8.16 - 2025-03-24
+  This is quick second release since 0.4.8.15 due to a typo in a directory
+  authority rule file. This only affects directory authorities. Regardless,
+  upgrading to latest stable is always desired.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2025/03/24.
+
+  o Minor bugfix (dirauth):
+    - Fix typo in flag assignment approved-routers file. Fixes bug
+      41035; bugfix on 0.4.8.15
+
+Changes in version 0.4.8.15 - 2025-03-20
+  This is a minor release fixing a sandbox issue for bandwidth authority and a
+  conflux issue on the control port. It also has a client fix about relay flag
+  usage. We strongly recommend to update as soon as possible as usual.
+
+  o Minor feature (testing, CI):
+    - Use a fixed version of chutney (be881a1e) instead of its current
+      HEAD. This version should also be preferred when testing locally.
+
+  o Minor features (continuous integration):
+    - Upgrade CI runners to use Debian Bookworm instead of Bullseye.
+      Closes ticket 41029.
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on March 20, 2025.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2025/03/20.
+
+  o Minor bugfixes (control port):
+    - Correctly report conflux pair information to controller fields
+      Fixes bug 40872; bugfix on 0.4.8.1-alpha
+
+  o Minor bugfixes (relay flag usage):
+    - Fix client usage of the MiddleOnly flag so that MiddleOnly relays
+      are not used as HS IP or RP by clients or services. Additionally,
+      give dirauths the ability to remove specific flags, as an
+      alternative to MiddleOnly. Fixes bug 41023; bugfix on 0.4.7.2-alpha
+
+  o Minor bugfixes (sandbox, bwauth):
+    - Fix sandbox to work for bandwidth authority. Fixes bug 40933;
+      bugfix on 0.2.2.1-alpha
+
+
 Changes in version 0.4.8.14 - 2025-02-05
   Minor release fixing a major bug affecting onion service directory cache,
   also known as HSDir. Furthermore, the fallbackdir list had more than 25% of

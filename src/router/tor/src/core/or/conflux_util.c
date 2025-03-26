@@ -442,3 +442,33 @@ conflux_validate_legs(const conflux_t *cfx)
     conflux_log_set(LOG_PROTOCOL_WARN, cfx, is_client);
   }
 }
+
+/** Return the nonce for a circuit, for use on the control port */
+const uint8_t *
+conflux_get_nonce(const circuit_t *circ)
+{
+  if (circ->conflux_pending_nonce) {
+    return circ->conflux_pending_nonce;
+  } else if (circ->conflux) {
+    return circ->conflux->nonce;
+  } else {
+    return NULL;
+  }
+}
+
+/** Return the conflux RTT for a circuit, for use on the control port */
+uint64_t
+conflux_get_circ_rtt(const circuit_t *circ)
+{
+  if (circ->conflux) {
+    conflux_leg_t *leg = conflux_get_leg(circ->conflux, circ);
+    if (BUG(!leg)) {
+      return 0;
+    } else {
+      return leg->circ_rtts_usec;
+    }
+  } else {
+    return 0;
+  }
+}
+

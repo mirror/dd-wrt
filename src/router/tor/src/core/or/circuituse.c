@@ -2523,7 +2523,6 @@ circuit_get_open_circ_or_launch(entry_connection_t *conn,
       if (desired_circuit_purpose == CIRCUIT_PURPOSE_C_REND_JOINED &&
           new_circ_purpose == CIRCUIT_PURPOSE_C_ESTABLISH_REND &&
           ENTRY_TO_EDGE_CONN(conn)->hs_ident) {
-        flags |= CIRCLAUNCH_IS_V3_RP;
         log_info(LD_GENERAL, "Getting rendezvous circuit to v3 service!");
       }
 

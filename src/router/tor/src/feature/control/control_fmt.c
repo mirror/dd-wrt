@@ -21,6 +21,7 @@
 #include "core/or/entry_connection_st.h"
 #include "core/or/or_connection_st.h"
 #include "core/or/origin_circuit_st.h"
+#include "core/or/conflux_util.h"
 #include "core/or/socks_request_st.h"
 #include "feature/control/control_connection_st.h"
 
@@ -158,6 +159,26 @@ circuit_describe_status_for_controller(origin_circuit_t *circ)
    * was provided by the client and then verified by the service. */
   if (circ->hs_pow_effort > 0) {
     smartlist_add_asprintf(descparts, "HS_POW=v1,%u", circ->hs_pow_effort);
+  }
+
+  /* Add conflux id and RTT info, for accurate circuit display. The RTT is
+   * provided to indicate the primary (preferred) circuit of a set
+   * (which will have the lowest current RTT). */
+  if (CIRCUIT_IS_CONFLUX(TO_CIRCUIT(circ))) {
+    const uint8_t *nonce = conflux_get_nonce(TO_CIRCUIT(circ));
+    tor_assert(nonce);
+
+    /* The conflux nonce is sensitive data. Only output half of it. */
+    smartlist_add_asprintf(descparts, "CONFLUX_ID=%s",
+                           hex_str((const char *)nonce, DIGEST256_LEN/2));
+
+    /* If we have a conflux object, the circ is linked and has an RTT */
+    if (TO_CIRCUIT(circ)->conflux) {
+      uint64_t circ_rtt = conflux_get_circ_rtt(TO_CIRCUIT(circ));
+      if (circ_rtt) {
+        smartlist_add_asprintf(descparts, "CONFLUX_RTT=%" PRIu64, circ_rtt);
+      }
+    }
   }
 
   rv = smartlist_join_strings(descparts, " ", 0, NULL);
