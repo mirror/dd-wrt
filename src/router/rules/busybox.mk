@@ -640,9 +640,9 @@ ifeq ($(CONFIG_RAID),y)
 	sed -i 's/\# CONFIG_FEATURE_READLINK_FOLLOW is not set/CONFIG_FEATURE_READLINK_FOLLOW=y/g' busybox/.config
 	sed -i 's/\# CONFIG_BLOCKDEV is not set/CONFIG_BLOCKDEV=y/g' busybox/.config
 endif
-ifeq ($(CONFIG_OPENDPI),y)
+#ifeq ($(CONFIG_OPENDPI),y)
 	sed -i 's/\# CONFIG_MODPROBE is not set/CONFIG_MODPROBE=y/g' busybox/.config
-endif
+#endif
 	echo "# CONFIG_FEATURE_SYSLOG_INFO is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_SH_MATH_BASE is not set" >> busybox/.config
 	echo "# CONFIG_TS is not set" >> busybox/.config
