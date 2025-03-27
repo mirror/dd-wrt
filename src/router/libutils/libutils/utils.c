@@ -1931,7 +1931,7 @@ void getSystemMac(char *newmac, size_t len)
 	}
 }
 
-int isvlan(char *name)
+int isvlan(const char *name)
 {
 	int socket_fd;
 	struct vlan_ioctl_args ifr;
@@ -1948,7 +1948,7 @@ int isvlan(char *name)
 #define MAX_BRIDGES 1024
 
 #include <linux/if_bridge.h>
-int isbridge(char *name)
+int isbridge(const char *name)
 {
 	int i, num;
 	char ifname[IFNAMSIZ];
@@ -1976,7 +1976,7 @@ int isbridge(char *name)
 	return 0;
 }
 
-int isbridged(char *name)
+int isbridged(const char *name)
 {
 	char path[128];
 	sprintf(path, "/sys/class/net/%s/brport/learning", name);
@@ -1988,10 +1988,10 @@ int isbridged(char *name)
 	return 0;
 }
 
-int has_multicast_to_unicast(char *name)
+int has_multicast_to_unicast(const char *name)
 {
 	char fname[64];
-	snprintf(fname, sizeof(fname), "/sys/class/net/%s/brport/multicast_to_unicast", name);
+	snprintf(fname, sizeof(fname) - 1, "/sys/class/net/%s/brport/multicast_to_unicast", name);
 	FILE *fp = fopen(fname, "rb");
 	if (fp) {
 		fclose(fp);
