@@ -169,7 +169,7 @@ static void do_pagehead(webs_t wp, int argc, char_t **argv, int pwc) // Eko
 	}
 	time_t t = time(NULL);
 	struct tm *local = localtime(&t);
-	if (local->tm_mon == 11 && local->tm_mday >= 24 && local->tm_mday <= 31)
+	if (local->tm_mon == 11 && local->tm_mday >= 24 && local->tm_mday <= 31 && local->tm_year > 100)
 		show_snowflakes(wp);
 }
 
