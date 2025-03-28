@@ -2713,11 +2713,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		char wl_lowack[32];
 		sprintf(wl_lowack, "%s_d_lowack", var);
 		if (is_ap(prefix))
-#ifdef HAVE_MVEBU
 			showRadioDefaultOff(wp, "wl_basic.disassoc_low_ack", wl_lowack);
-#else
-			showRadioDefaultOn(wp, "wl_basic.disassoc_low_ack", wl_lowack);
-#endif
 
 #endif
 
@@ -3419,11 +3415,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		showRadio(wp, "wl_basic.uapsd", wl_uapsd);
 	}
 	if (is_ap(prefix))
-#ifdef HAVE_MVEBU
 		showRadioDefaultOff(wp, "wl_basic.disassoc_low_ack", wl_lowack);
-#else
-		showRadioDefaultOn(wp, "wl_basic.disassoc_low_ack", wl_lowack);
-#endif
+
 	if (is_supplicant(prefix) && has_smps(prefix)) {
 		sprintf(wl_smps, "%s_smps", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -4213,7 +4206,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(
 			wp,
 			"<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" onblur=\"valid_range(this,0,99999999,wl_basic.label6)\" value=\"%s\" />\n",
-			power, nvram_default_get(power, "500"));
+			power, nvram_default_get(power, "2000"));
 		websWrite(
 			wp,
 			"<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 500 \" + share.meters + \")\");\n//]]>\n</script></span>\n");
@@ -5115,11 +5108,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		showRadio(wp, "wl_basic.uapsd", wl_uapsd);
 	}
 	if (is_ap(prefix))
-#ifdef HAVE_MVEBU
 		showRadioDefaultOff(wp, "wl_basic.disassoc_low_ack", wl_lowack);
-#else
-		showRadioDefaultOn(wp, "wl_basic.disassoc_low_ack", wl_lowack);
-#endif
+
 	if (is_supplicant(prefix) && has_smps(prefix)) {
 		sprintf(wl_smps, "%s_smps", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -5453,7 +5443,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(
 			wp,
 			"<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" onblur=\"valid_range(this,0,99999999,wl_basic.label6)\" value=\"%s\" />\n",
-			power, nvram_default_get(power, "500"));
+			power, nvram_default_get(power, "2000"));
 		websWrite(
 			wp,
 			"<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 500 \" + share.meters + \")\");\n//]]>\n</script></span>\n");
