@@ -555,7 +555,7 @@ void configure_single_ath9k(int count)
 #endif
 	if (!*nvram_safe_get(athmac))
 		nvram_set(athmac, macaddr);
-	int distance = nvram_default_geti(sens, 500); // to meter
+	int distance = nvram_default_geti(sens, 2000); // to meter
 	char dist[32];
 	if (distance > 0)
 		sprintf(dist, "%d", distance);
@@ -1672,11 +1672,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	MAC80211DEBUG();
 	if (!vapid)
 		fprintf(fp, "preamble=%s\n", nvram_default_get(preamble, "1"));
-#ifdef HAVE_MVEBU
 	fprintf(fp, "disassoc_low_ack=%s\n", nvram_default_get(lowack, "0"));
-#else
-	fprintf(fp, "disassoc_low_ack=%s\n", nvram_default_get(lowack, "1"));
-#endif
+
 	char *mode = nvram_nget("%s_mode", ifname);
 	if (!strcmp(mode, "wdsap") || !strcmp(mode, "apup"))
 		fprintf(fp, "wds_sta=1\n");
