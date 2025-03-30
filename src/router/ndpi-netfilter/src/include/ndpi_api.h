@@ -2135,6 +2135,8 @@ extern "C" {
   NDPI_STATIC void ndpi_free_geoip(struct ndpi_detection_module_struct *ndpi_str);
   NDPI_STATIC int ndpi_get_geoip_asn(struct ndpi_detection_module_struct *ndpi_str,
 			 char *ip, u_int32_t *asn);
+  NDPI_STATIC int ndpi_get_geoip_aso(struct ndpi_detection_module_struct *ndpi_str,
+        char *ip, char *aso, u_int8_t aso_len);
   NDPI_STATIC int ndpi_get_geoip_country_continent(struct ndpi_detection_module_struct *ndpi_str, char *ip,
 				       char *country_code, u_int8_t country_code_len,
 				       char *continent, u_int8_t continent_len);

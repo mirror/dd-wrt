@@ -107,7 +107,7 @@ extern "C" {
 
   NDPI_STATIC void ndpi_set_risk(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow,
                      ndpi_risk_enum r, char *risk_message);
-  NDPI_STATIC void ndpi_unset_risk(struct ndpi_flow_struct *flow, ndpi_risk_enum r);    
+  NDPI_STATIC void ndpi_unset_risk(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow, ndpi_risk_enum r);
   NDPI_STATIC int ndpi_isset_risk(struct ndpi_flow_struct *flow, ndpi_risk_enum r);
   NDPI_STATIC int ndpi_is_printable_buffer(u_int8_t const * const buf, size_t len);
   NDPI_STATIC int ndpi_normalize_printable_string(char * const str, size_t len);
