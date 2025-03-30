@@ -1,1 +1,0 @@
-#define SVN_REVISION "60511"
