@@ -1,1 +1,0 @@
-ipt_CLUSTERIP ipt_DNAT ipt_ECN ipt_LOG ipt_MASQUERADE ipt_NETMAP ipt_REDIRECT ipt_REJECT ipt_SNAT ipt_TRIGGER ipt_TTL ipt_ULOG ipt_ah ipt_autofw ipt_icmp ipt_ipp2p ipt_ipp2pv2 ipt_realm ipt_ttl ipt_webstr
