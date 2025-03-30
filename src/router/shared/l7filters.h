@@ -232,6 +232,7 @@ static l7filters filters_list[] = {
 	{ "fuze", NDPI_ONLY, 0, NULL },
 	{ "gaijin", NDPI_ONLY, 0, NULL },
 	{ "gearman", NDPI_ONLY, 0, NULL },
+	{ "gearup_booster", NDPI_ONLY, 0, NULL },
 	{ "genshinimpact", NDPI_ONLY, 0, NULL },
 #endif
 #ifdef HAVE_OPENDPI
@@ -406,6 +407,7 @@ static l7filters filters_list[] = {
 	{ "liveforspeed", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "livestream", NDPI_ONLY, 0, NULL },
+	{ "llm", NDPI_ONLY, 0, NULL },
 	{ "llmnr", NDPI_ONLY, 0, NULL },
 	{ "lol_wild_rift", NDPI_ONLY, 0, NULL },
 	{ "lotusnotes", NDPI_ONLY, 0, NULL },
@@ -416,7 +418,6 @@ static l7filters filters_list[] = {
 	{ "malformed packet", NDPI_RISK, 17, "icmp,icmpv6,munin,tivoconnect,collectd,ipsec,tls,natpmp,fastcgi,dns,tftp,http" },
 	{ "malicious ja3 fingerp.", NDPI_RISK, 28, "tls" },
 	{ "malicious ssl cert/sha1 fingerp.", NDPI_RISK, 29, "tls" },
-	{ "maplestory", NDPI_ONLY, 0, NULL },
 	{ "mastodon", NDPI_ONLY, 0, NULL },
 	{ "mdns", NDPI_ONLY, 0, NULL },
 	{ "megaco", NDPI_ONLY, 0, NULL },
@@ -477,6 +478,7 @@ static l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "netflix", NDPI_ONLY, 0, NULL },
 	{ "netflow", NDPI_ONLY, 0, NULL },
+	{ "nexon", NDPI_ONLY, 0, NULL },
 	{ "nfs", NDPI_ONLY, 0, NULL },
 #endif
 	{ "nimda", L7_ONLY, 0, NULL },
