@@ -784,7 +784,7 @@ static void checkTLSSubprotocol(struct ndpi_detection_module_struct *ndpi_struct
 	}
 #endif
 	ndpi_check_subprotocol_risk(ndpi_struct, flow, cached_proto);
-	ndpi_unset_risk(flow, NDPI_NUMERIC_IP_HOST);
+	ndpi_unset_risk(ndpi_struct, flow, NDPI_NUMERIC_IP_HOST);
       }
     }
   }
@@ -879,10 +879,13 @@ void processCertificateElements(struct ndpi_detection_module_struct *ndpi_struct
 	   ndpi_struct->cfg.tls_cert_issuer_enabled) {
 	  flow->protos.tls_quic.issuerDN = ndpi_strdup(rdnSeqBuf);
 	  if(ndpi_normalize_printable_string(rdnSeqBuf, rdn_len) == 0) {
-	    char str[64];
-
-	    snprintf(str, sizeof(str), "Invalid issuerDN %s", flow->protos.tls_quic.issuerDN);
-	    ndpi_set_risk(ndpi_struct, flow, NDPI_INVALID_CHARACTERS, str);
+	    if(ndpi_struct->cfg.flow_risk_infos_enabled) {
+	      char str[64];
+	      snprintf(str, sizeof(str), "Invalid issuerDN %s", flow->protos.tls_quic.issuerDN);
+	      ndpi_set_risk(ndpi_struct, flow, NDPI_INVALID_CHARACTERS, str);
+	    } else {
+	      ndpi_set_risk(ndpi_struct, flow, NDPI_INVALID_CHARACTERS, NULL);
+	    }
 	  }
 	}
 
@@ -957,41 +960,53 @@ void processCertificateElements(struct ndpi_detection_module_struct *ndpi_struct
 
 	    if(flow->protos.tls_quic.notBefore > TLS_LIMIT_DATE)
 	      if((flow->protos.tls_quic.notAfter-flow->protos.tls_quic.notBefore) > TLS_THRESHOLD) {
-		char str[64];
+	        if(ndpi_struct->cfg.flow_risk_infos_enabled) {
+	          char str[64];
 
-		snprintf(str, sizeof(str), "TLS Cert lasts %u days",
-			  (flow->protos.tls_quic.notAfter-flow->protos.tls_quic.notBefore) / 86400);
+		  snprintf(str, sizeof(str), "TLS Cert lasts %u days",
+			   (flow->protos.tls_quic.notAfter-flow->protos.tls_quic.notBefore) / 86400);
 
-		ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_CERT_VALIDITY_TOO_LONG, str); /* Certificate validity longer than 13 months */
+		  ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_CERT_VALIDITY_TOO_LONG, str); /* Certificate validity longer than 13 months */
+	        } else {
+	          ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_CERT_VALIDITY_TOO_LONG, NULL);
+	        }
 	      }
 
 	    if((time_sec < flow->protos.tls_quic.notBefore) || (time_sec > flow->protos.tls_quic.notAfter)) {
-	      char str[96], b[32], e[32];
-	      struct tm result;
-	      time_t theTime;
+	      if(ndpi_struct->cfg.flow_risk_infos_enabled) {
+	        char str[96], b[32], e[32];
+	        struct tm result;
+	        time_t theTime;
 
-	      theTime = flow->protos.tls_quic.notBefore;
-	      strftime(b, sizeof(b), "%d/%b/%Y %H:%M:%S", ndpi_gmtime_r(&theTime, &result));
+	        theTime = flow->protos.tls_quic.notBefore;
+	        strftime(b, sizeof(b), "%d/%b/%Y %H:%M:%S", ndpi_gmtime_r(&theTime, &result));
 
-	      theTime = flow->protos.tls_quic.notAfter;
-	      strftime(e, sizeof(e), "%d/%b/%Y %H:%M:%S", ndpi_gmtime_r(&theTime, &result));
+	        theTime = flow->protos.tls_quic.notAfter;
+	        strftime(e, sizeof(e), "%d/%b/%Y %H:%M:%S", ndpi_gmtime_r(&theTime, &result));
 
-	      snprintf(str, sizeof(str), "%s - %s", b, e);
-	      ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_CERTIFICATE_EXPIRED, str); /* Certificate expired */
+	        snprintf(str, sizeof(str), "%s - %s", b, e);
+	        ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_CERTIFICATE_EXPIRED, str); /* Certificate expired */
+	      } else {
+	        ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_CERTIFICATE_EXPIRED, NULL);
+	      }
 	    } else if((time_sec > flow->protos.tls_quic.notBefore)
 		      && (time_sec > (flow->protos.tls_quic.notAfter - (ndpi_struct->cfg.tls_certificate_expire_in_x_days * 86400)))) {
-	      char str[96], b[32], e[32];
-	      struct tm result;
-	      time_t theTime;
+	      if(ndpi_struct->cfg.flow_risk_infos_enabled) {
+	        char str[96], b[32], e[32];
+	        struct tm result;
+	        time_t theTime;
 
-	      theTime = flow->protos.tls_quic.notBefore;
-	      strftime(b, sizeof(b), "%d/%b/%Y %H:%M:%S", ndpi_gmtime_r(&theTime, &result));
+	        theTime = flow->protos.tls_quic.notBefore;
+	        strftime(b, sizeof(b), "%d/%b/%Y %H:%M:%S", ndpi_gmtime_r(&theTime, &result));
 
-	      theTime = flow->protos.tls_quic.notAfter;
-	      strftime(e, sizeof(e), "%d/%b/%Y %H:%M:%S", ndpi_gmtime_r(&theTime, &result));
+	        theTime = flow->protos.tls_quic.notAfter;
+	        strftime(e, sizeof(e), "%d/%b/%Y %H:%M:%S", ndpi_gmtime_r(&theTime, &result));
 
-	      snprintf(str, sizeof(str), "%s - %s", b, e);
-	      ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_CERTIFICATE_ABOUT_TO_EXPIRE, str); /* Certificate almost expired */
+	        snprintf(str, sizeof(str), "%s - %s", b, e);
+	        ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_CERTIFICATE_ABOUT_TO_EXPIRE, str); /* Certificate almost expired */
+	      } else {
+	        ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_CERTIFICATE_ABOUT_TO_EXPIRE, NULL);
+	      }
 	    }
 #endif // __KERNEL__
 	  }
@@ -1125,10 +1140,11 @@ void processCertificateElements(struct ndpi_detection_module_struct *ndpi_struct
 		    }
 
 		    if(ndpi_struct->cfg.tls_subclassification_cert_enabled &&
-		       !flow->protos.tls_quic.subprotocol_detected) {
+		       !flow->protos.tls_quic.subprotocol_detected &&
+		       !flow->tls_quic.from_rdp) { /* No (other) sub-classification; we will have TLS.RDP anyway */
 		      if(ndpi_match_hostname_protocol(ndpi_struct, flow, __get_master(ndpi_struct, flow), dNSName, dNSName_len)) {
 			flow->protos.tls_quic.subprotocol_detected = 1;
-		        ndpi_unset_risk(flow, NDPI_NUMERIC_IP_HOST);
+		        ndpi_unset_risk(ndpi_struct, flow, NDPI_NUMERIC_IP_HOST);
 		      }
 		    }
 
@@ -1149,10 +1165,14 @@ void processCertificateElements(struct ndpi_detection_module_struct *ndpi_struct
 	    } /* while */
 
 	    if(!matched_name) {
-	      char str[128];
+	      if(ndpi_struct->cfg.flow_risk_infos_enabled) {
+	        char str[128];
 
-	      snprintf(str, sizeof(str), "%s vs %s", flow->host_server_name, flow->protos.tls_quic.server_names);
-	      ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_CERTIFICATE_MISMATCH, str); /* Certificate mismatch */
+	        snprintf(str, sizeof(str), "%s vs %s", flow->host_server_name, flow->protos.tls_quic.server_names);
+	        ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_CERTIFICATE_MISMATCH, str); /* Certificate mismatch */
+	      } else {
+	        ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_CERTIFICATE_MISMATCH, NULL); /* Certificate mismatch */
+	      }
 	    }
 	  }
 	}
@@ -1183,7 +1203,7 @@ void processCertificateElements(struct ndpi_detection_module_struct *ndpi_struct
 	}
 #endif
 	ndpi_check_subprotocol_risk(ndpi_struct, flow, proto_id);
-	ndpi_unset_risk(flow, NDPI_NUMERIC_IP_HOST);
+	ndpi_unset_risk(ndpi_struct, flow, NDPI_NUMERIC_IP_HOST);
 
 	if(ndpi_struct->tls_cert_cache) {
 	  u_int64_t key = make_tls_cert_key(packet, 0 /* from the server */);
@@ -1674,7 +1694,7 @@ static int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
          suited than NDPI_CONFIDENCE_DPI_CACHE */
       ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_OOKLA, NDPI_PROTOCOL_TLS, NDPI_CONFIDENCE_DPI_AGGRESSIVE);
       /* TLS over port 8080 usually triggers that risk; clear it */
-      ndpi_unset_risk(flow, NDPI_KNOWN_PROTOCOL_ON_NON_STANDARD_PORT);
+      ndpi_unset_risk(ndpi_struct, flow, NDPI_KNOWN_PROTOCOL_ON_NON_STANDARD_PORT);
       flow->extra_packets_func = NULL;
       return(0); /* That's all */
     /* Loook for TLS-in-TLS */
@@ -1987,21 +2007,25 @@ static void tlsCheckUncommonALPN(struct ndpi_detection_module_struct *ndpi_struc
     alpn_len = comma_or_nul - alpn_start;
 
     if(!is_a_common_alpn(ndpi_struct, alpn_start, alpn_len)) {
-      char str[64];
-      size_t str_len;
+      if(ndpi_struct->cfg.flow_risk_infos_enabled) {
+        char str[64];
+        size_t str_len;
 
 #ifdef DEBUG_TLS
-      printf("TLS uncommon ALPN found: %.*s\n", (int)alpn_len, alpn_start);
+        printf("TLS uncommon ALPN found: %.*s\n", (int)alpn_len, alpn_start);
 #endif
 
-      str[0] = '\0';
-      str_len = ndpi_min(alpn_len, sizeof(str));
-      if(str_len > 0) {
-        strncpy(str, alpn_start, str_len);
-        str[str_len - 1] = '\0';
-      }
+        str[0] = '\0';
+        str_len = ndpi_min(alpn_len, sizeof(str));
+        if(str_len > 0) {
+          strncpy(str, alpn_start, str_len);
+          str[str_len - 1] = '\0';
+        }
 
-      ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_UNCOMMON_ALPN, str);
+        ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_UNCOMMON_ALPN, str);
+      } else {
+        ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_UNCOMMON_ALPN, NULL);
+      }
       break;
     }
 
@@ -2092,15 +2116,20 @@ static void checkExtensions(struct ndpi_detection_module_struct *ndpi_struct,
       }
 
       if(extension_found == 0) {
-	char str[64];
-
-	snprintf(str, sizeof(str), "Extn id %u", extension_id);
 #ifdef DEBUG_TLS
-	  printf("[TLS] suspicious extension id: %u\n", extension_id);
+        printf("[TLS] suspicious extension id: %u\n", extension_id);
 #endif
+
+        if(ndpi_struct->cfg.flow_risk_infos_enabled) {
+	  char str[64];
+
+	  snprintf(str, sizeof(str), "Extn id %u", extension_id);
 	  ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_SUSPICIOUS_EXTENSION, str);
-	  return;
-	}
+        } else {
+          ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_SUSPICIOUS_EXTENSION, NULL);
+        }
+	return;
+      }
     }
 
   /* Check for DTLS-only extensions. */
@@ -2108,14 +2137,18 @@ static void checkExtensions(struct ndpi_detection_module_struct *ndpi_struct,
     {
       if(extension_id == 53 || extension_id == 54)
 	{
-	  char str[64];
-
-	  snprintf(str, sizeof(str), "Extn id %u", extension_id);
-
 #ifdef DEBUG_TLS
-	  printf("[TLS] suspicious DTLS-only extension id: %u\n", extension_id);
+          printf("[TLS] suspicious DTLS-only extension id: %u\n", extension_id);
 #endif
-	  ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_SUSPICIOUS_EXTENSION, str);
+
+          if(ndpi_struct->cfg.flow_risk_infos_enabled) {
+	    char str[64];
+
+	    snprintf(str, sizeof(str), "Extn id %u", extension_id);
+	    ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_SUSPICIOUS_EXTENSION, str);
+          } else {
+            ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_SUSPICIOUS_EXTENSION, NULL);
+          }
 	  return;
 	}
     }
@@ -2453,11 +2486,15 @@ static int _processClientServerHello(struct ndpi_detection_module_struct *ndpi_s
 
       if(ndpi_struct->cfg.tls_cipher_enabled) {
         if((flow->protos.tls_quic.server_unsafe_cipher = ndpi_is_safe_ssl_cipher(ja->server.cipher[0])) != NDPI_CIPHER_SAFE) {
-          char str[64];
-          char unknown_cipher[8];
+          if(ndpi_struct->cfg.flow_risk_infos_enabled) {
+            char str[64];
+            char unknown_cipher[8];
 
-          snprintf(str, sizeof(str), "Cipher %s", ndpi_cipher2str(ja->server.cipher[0], unknown_cipher));
-          ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_WEAK_CIPHER, str);
+            snprintf(str, sizeof(str), "Cipher %s", ndpi_cipher2str(ja->server.cipher[0], unknown_cipher));
+            ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_WEAK_CIPHER, str);
+          } else {
+            ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_WEAK_CIPHER, NULL);
+          }
         }
 
         flow->protos.tls_quic.server_cipher = ja->server.cipher[0];
@@ -2681,13 +2718,17 @@ static int _processClientServerHello(struct ndpi_detection_module_struct *ndpi_s
 
       flow->protos.tls_quic.ssl_version = ja->client.tls_handshake_version = tls_version;
       if(flow->protos.tls_quic.ssl_version < 0x0303) /* < TLSv1.2 */ {
-	char str[32], buf[32];
-	u_int8_t unknown_tls_version;
+        if(ndpi_struct->cfg.flow_risk_infos_enabled) {
+          char str[32], buf[32];
+	  u_int8_t unknown_tls_version;
 
-	snprintf(str, sizeof(str), "%s", ndpi_ssl_version2str(buf, sizeof(buf),
-							      flow->protos.tls_quic.ssl_version,
-							      &unknown_tls_version));
-	ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_OBSOLETE_VERSION, str);
+	  snprintf(str, sizeof(str), "%s", ndpi_ssl_version2str(buf, sizeof(buf),
+							        flow->protos.tls_quic.ssl_version,
+							       &unknown_tls_version));
+	  ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_OBSOLETE_VERSION, str);
+        } else {
+          ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_OBSOLETE_VERSION, NULL);
+        }
       }
 
       if((session_id_len+base_offset+3) > packet->payload_packet_len)
@@ -2906,10 +2947,14 @@ static int _processClientServerHello(struct ndpi_detection_module_struct *ndpi_s
 
 		    if(!is_quic) {
 		      if(ndpi_struct->cfg.tls_subclassification_enabled &&
+		         flow->protos.tls_quic.subprotocol_detected == 0 &&
+		         !flow->tls_quic.from_rdp && /* No (other) sub-classification; we will have TLS.RDP anyway */
 		         ndpi_match_hostname_protocol(ndpi_struct, flow, __get_master(ndpi_struct, flow), sni, sni_len))
 		        flow->protos.tls_quic.subprotocol_detected = 1;
 		    } else {
 		      if(ndpi_struct->cfg.quic_subclassification_enabled &&
+		         flow->protos.tls_quic.subprotocol_detected == 0 &&
+		         !flow->tls_quic.from_rdp && /* No (other) sub-classification; we will have TLS.RDP anyway */
 		         ndpi_match_hostname_protocol(ndpi_struct, flow, NDPI_PROTOCOL_QUIC, sni, sni_len))
 		        flow->protos.tls_quic.subprotocol_detected = 1;
 		    }

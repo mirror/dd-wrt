@@ -1215,6 +1215,8 @@ typedef enum {
   /* Gambling websites */
   NDPI_PROTOCOL_CATEGORY_GAMBLING = 107,
   NDPI_PROTOCOL_CATEGORY_HEALTH,
+  NDPI_PROTOCOL_CATEGORY_ARTIFICIAL_INTELLIGENCE,
+
   /*
     IMPORTANT
 
@@ -1403,7 +1405,7 @@ struct ndpi_flow_struct {
   u_int16_t guessed_header_category;
   u_int8_t l4_proto, protocol_id_already_guessed:1, fail_with_unknown:1, ip_port_finished:1,
     init_finished:1, client_packet_direction:1, packet_direction:1, is_ipv6:1, first_pkt_fully_encrypted:1;
-  u_int8_t skip_entropy_check: 1, monitoring:1, _pad:6;
+  u_int8_t skip_entropy_check: 1, monitoring:1, already_gaveup:1, _pad:5;
 
   u_int16_t num_dissector_calls;
   ndpi_confidence_t confidence; /* ndpi_confidence_t */
@@ -1474,7 +1476,7 @@ struct ndpi_flow_struct {
 
   struct {
     char *fingerprint;
-    u_int8_t os_hint;
+    enum operating_system_hint os_hint;
   } tcp;
 
   /*
@@ -1518,7 +1520,7 @@ struct ndpi_flow_struct {
 
   struct {
     message_t message[2]; /* Directions */
-    u_int8_t certificate_processed:1, change_cipher_from_client:1, change_cipher_from_server:1, from_opportunistic_tls:1, pad:4;
+    u_int8_t certificate_processed:1, change_cipher_from_client:1, change_cipher_from_server:1, from_opportunistic_tls:1, from_rdp:1, pad:3;
     struct tls_obfuscated_heuristic_state *obfuscated_heur_state;
     struct ndpi_tls_obfuscated_heuristic_matching_set *obfuscated_heur_matching_set;
   } tls_quic; /* Used also by DTLS and POPS/IMAPS/SMTPS/FTPS */
@@ -1700,6 +1702,12 @@ struct ndpi_flow_struct {
       char *st;
       char *user_agent;
     } ssdp;
+
+    struct {
+      ndpi_http_method method;
+      char user_agent[32];
+      char url[64];
+    } fast_cgi;
 
   } protos;
 

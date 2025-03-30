@@ -679,7 +679,7 @@ static void help(u_int long_help) {
          "                            | <b> = max pattern len to search\n"
          "                            | <c> = max num packets per flow\n"
          "                            | <d> = max packet payload dissection\n"
-         "                            | <d> = max num reported payloads\n"
+         "                            | <e> = max num reported payloads\n"
          "                            | Default: %u:%u:%u:%u:%u\n"
          "  -c <path>                 | Load custom categories from the specified file\n"
          "  -C <path>                 | Write output in CSV format on the specified file\n"
@@ -2055,6 +2055,17 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
 		fprintf(out, "[%s]", "Auth Failed");
 	      }
 	  }
+        break;
+
+      case INFO_FASTCGI:
+        if (flow->fast_cgi.url[0] != '\0')
+          {
+            fprintf(out, "[Url: %s]", flow->fast_cgi.url);
+          }
+        if (flow->fast_cgi.user_agent[0] != '\0')
+          {
+            fprintf(out, "[User-agent: %s]", flow->fast_cgi.user_agent);
+          }
         break;
       }
 

@@ -143,8 +143,6 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/mail_smtp.c"
 #undef NDPI_CURRENT_PROTO
-#include "protocols/maplestory.c"
-#undef NDPI_CURRENT_PROTO
 #include "protocols/megaco.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/memcached.c"
@@ -516,4 +514,8 @@
 #include "protocols/mikrotik.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/lagofast.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/gearup_booster.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/nexon.c"
 #undef NDPI_CURRENT_PROTO
