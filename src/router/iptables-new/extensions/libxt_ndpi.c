@@ -173,7 +173,7 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"amazonalexa",
 	"kerberos",
 	"ldap",
-	"maplestory",
+	"nexon",
 	"mssql-tds",
 	"pptp",
 	"warcraft3",
@@ -505,6 +505,8 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"digitalocean",
 	"rutube",
 	"lagofast",
+	"gearup_booster",
+	"llm",
 	NULL,
 };
 
