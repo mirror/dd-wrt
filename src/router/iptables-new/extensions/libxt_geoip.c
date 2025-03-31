@@ -342,7 +342,7 @@ static struct xtables_match geoip_match[] = {
 	},
 };
 
-static __attribute__((constructor)) void geoip_mt_ldr(void)
+void _init(void)
 {
 	xtables_register_matches(geoip_match,
 		sizeof(geoip_match) / sizeof(*geoip_match));
