@@ -14,7 +14,7 @@ install:
 	install -v -m 644 -D xt_TARPIT.ko $(IDIR)/xt_TARPIT.ko
 ifeq ($(CONFIG_GEOIP),y)
 	install -v -m 644 -D xt_geoip.ko $(IDIR)/xt_geoip.ko
-	mkdir -p $(IDIR)/usr/locao/xt_geoip
+	mkdir -p $(IDIR)/usr/local/xt_geoip
 	install -v -m 644 -D geoip/* $(IDIR)/usr/local/xt_geoip/
 endif
 
