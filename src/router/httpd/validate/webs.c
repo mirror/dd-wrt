@@ -2524,7 +2524,9 @@ Need parsing to get the file data out of the POST data
 		sprintf(idx, "oet%d_peers", key);
 		nvram_default_geti(idx, 0);
 		int peer = nvram_geti(idx);
-		char ka[3] = "26";
+		char ka[4] = "26";
+		char allowedips[196] = { 0 };
+		char strcomma[4] = { 0 };
 
 		/*debug
 		   dd_loginfo("WireGuard", "import_tunnel tun:%d; peer:%d", key, peer);
@@ -2549,8 +2551,12 @@ Need parsing to get the file data out of the POST data
 				upload_set("usepsk", "1");
 				upload_set("psk", output);
 			}
-			if (sscanf(buf, "AllowedIPs = %[^\n]", output) == 1) //scans until newline otherwise will scan until space
-				upload_set("aip", output);
+			if (sscanf(buf, "AllowedIPs = %[^\n]", output) == 1) {	//scans until newline otherwise will scan until space
+				strlcat(allowedips, strcomma, sizeof(allowedips));
+				strlcat(allowedips, output, sizeof(allowedips));
+				strlcpy(strcomma, ", ", sizeof(strcomma));
+				//upload_set("aip", allowedips);
+			}
 			if (sscanf(buf, "Endpoint = %s", output) == 1) {
 				upload_set("endpoint", "1");
 				endp = strrchr(output,
@@ -2575,6 +2581,7 @@ Need parsing to get the file data out of the POST data
 				strlcpy(ka, output, sizeof(ka));
 			}
 		}
+		upload_set("aip", allowedips);
 		upload_set("ka", ka);
 		peer++;
 		nvram_seti(idx, peer);
