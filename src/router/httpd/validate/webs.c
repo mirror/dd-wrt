@@ -2527,7 +2527,7 @@ Need parsing to get the file data out of the POST data
 		char ka[4] = "26";
 		char allowedips[196] = { 0 };
 		char strcomma[4] = { 0 };
-
+		int line = 0;
 		/*debug
 		   dd_loginfo("WireGuard", "import_tunnel tun:%d; peer:%d", key, peer);
 		   char val[32];
@@ -2552,10 +2552,8 @@ Need parsing to get the file data out of the POST data
 				upload_set("psk", output);
 			}
 			if (sscanf(buf, "AllowedIPs = %[^\n]", output) == 1) {	//scans until newline otherwise will scan until space
-				strlcat(allowedips, strcomma, sizeof(allowedips));
-				strlcat(allowedips, output, sizeof(allowedips));
-				strlcpy(strcomma, ", ", sizeof(strcomma));
-				//upload_set("aip", allowedips);
+				sprintf(allowedips, "%s%s%s",allowedips, !line ? "" : ", ", output);
+				line++;
 			}
 			if (sscanf(buf, "Endpoint = %s", output) == 1) {
 				upload_set("endpoint", "1");
