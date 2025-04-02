@@ -1972,11 +1972,10 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 	}
 #ifdef HAVE_GEOIP
 		if (*nvram_safe_get("geoip_bl")) {
-			save2file_A("advgrp_%d -m geoip --dst-cc \"%s\" -j %d", nvram_safe_get("geoip_bl"), log_reject);
+			save2file_A("advgrp_%d -m geoip --dst-cc \"%s\" -j %s", nvram_safe_get("geoip_bl"), log_reject);
 		}
 		if (*nvram_safe_get("geoip_wl")) {
-			save2file_A("advgrp_%d -m geoip --dst-cc \"%s\" -j RETURN", seq, nvram_safe_get("geoip_wl"));
-			save2file_A("advgrp_%d -j %s", seq, log_reject);
+			save2file_A("advgrp_%d -m geoip ! --dst-cc \"%s\" -j %s", seq, nvram_safe_get("geoip_wl"), log_reject);
 		}
 #endif
 
@@ -3148,8 +3147,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 			save2file_A_security("-i %s -m geoip --src-cc \"%s\" -j tarpit", wanface, nvram_safe_get("geoip_blacklist"));
 		}
 		if (*nvram_safe_get("geoip_whitelist")) {
-			save2file_A_security("-i %s -m geoip --src-cc \"%s\" -j RETURN", wanface, nvram_safe_get("geoip_whitelist"));
-			save2file_A_security("-i %s -j tarpit", wanface);
+			save2file_A_security("-i %s -m geoip ! --src-cc \"%s\" -j tarpit", wanface, nvram_safe_get("geoip_whitelist"));
 		}
 #endif
 		save2file_A_input("-j SECURITY");
