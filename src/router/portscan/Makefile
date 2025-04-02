@@ -12,6 +12,10 @@ all:
 configure:
 	./xt_geoip_dl
 	./xt_geoip_build -D geoip
+	gcc -o resort resort.c
+	gcc -o resort6 resort6.c
+	./resort geoip/*.iv4
+	./resort6 geoip/*.iv6
 
 install:
 	install -v -m 644 -D xt_lscan.ko $(IDIR)/xt_lscan.ko
