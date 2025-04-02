@@ -311,6 +311,9 @@ endif
 ifeq ($(CONFIG_PORTSCAN),y)
 CFLAGS += -DHAVE_PORTSCAN
 endif
+ifeq ($(CONFIG_GEOIP),y)
+CFLAGS += -DHAVE_GEOIP
+endif
 ifeq ($(CONFIG_UNIWIP),y)
 CFLAGS += -DHAVE_UNIWIP
 endif

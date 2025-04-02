@@ -761,6 +761,9 @@ static struct defrule s_conditions[] = {
 #ifdef HAVE_PORTSCAN
 	{ "TARPIT", NULL },
 #endif
+#ifdef HAVE_GEOIP
+	{ "GEOIP", NULL },
+#endif
 	{ NULL, NULL }
 };
 
