@@ -6,7 +6,8 @@ int main(int argc, char *argv[])
 	FILE *in, *out;
 	size_t len;
 	int i;
-	for (i = 1; i < argc; i++) {
+	int datalen = atoi(argv[1]);
+	for (i = 2; i < argc; i++) {
 		in = fopen(argv[i], "rb");
 		fseek(in, 0, SEEK_END);
 		len = ftell(in);
@@ -17,10 +18,10 @@ int main(int argc, char *argv[])
 		out = fopen(argv[i], "wb");
 		int a;
 		int b;
-		for (b = 0; b < 4; b++) {
-			for (a = 0; a < len; a += 8) {
+		for (b = 0; b < datalen; b++) {
+			for (a = 0; a < len; a += (datalen * 2)) {
 				putc(mem[a + b], out);
-				putc(mem[a + 4 + b], out);
+				putc(mem[a + datalen + b], out);
 			}
 		}
 		fclose(out);

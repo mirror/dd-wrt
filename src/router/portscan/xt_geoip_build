@@ -110,7 +110,7 @@ sub writeCountry
 		($family == AF_INET ? '4' : '6'),
 		$iso_code unless ($quiet);
 
-	my $file = "$target_dir/".uc($iso_code).".iv".($family == AF_INET ? '4' : '6');
+	my $file = "$target_dir/".($family == AF_INET ? '4' : '6').uc($iso_code);
 	if (!open($fh, '>', $file)) {
 		print STDERR "Error opening $file: $!\n";
 		exit 1;
