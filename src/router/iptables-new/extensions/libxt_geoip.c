@@ -69,10 +69,22 @@ static void geoip_swap_in6(struct in6_addr *in6)
 }
 #endif
 
+static void transform(unsigned char *src, unsigned char *dst, size_t len, int addrlen)
+{
+	size_t a, b;
+	size_t cnt = 0;
+	for (b = 0; b < addrlen; b++) {
+		for (a = 0; a < len; a += (addrlen * 2)) {
+			dst[a + b] = src[cnt++];
+			dst[a + 4 + b] = src[cnt++];
+		}
+	}
+}
+
 static void *
 geoip_get_subnets(const char *code, uint32_t *count, uint8_t nfproto)
 {
-	void *subnets;
+	void *subnets, *src;
 	struct stat sb;
 	char buf[256];
 #if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -107,12 +119,14 @@ geoip_get_subnets(const char *code, uint32_t *count, uint8_t nfproto)
 		*count /= sizeof(struct geoip_subnet4);
 		break;
 	}
+	src = malloc(sb.st_size);
 	subnets = malloc(sb.st_size);
 	if (subnets == NULL)
 		xtables_error(OTHER_PROBLEM, "geoip: insufficient memory");
-	read(fd, subnets, sb.st_size);
+	read(fd, src, sb.st_size);
 	close(fd);
-
+	transform((unsigned char *)src, (unsigned char *)subnets, sb.st_size, nfproto == NFPROTO_IPV6 ? 16 : 4);
+	free(src);
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 	for (n = 0; n < *count; ++n) {
 		switch (nfproto) {
