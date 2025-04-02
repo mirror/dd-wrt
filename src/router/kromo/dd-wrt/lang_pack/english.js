@@ -752,6 +752,7 @@ filter.legend3="Blocked Services";
 filter.catchall="Catch all P2P Protocols";
 filter.legend4="Website Blocking by URL";
 filter.legend5="Website Blocking by Keyword";
+filter.legend6="Server Blocking by Country";
 filter.mess1="Delete the Policy?";
 filter.mess2="You must select a day or days.";
 filter.mess3="The selected end time must be greater than the start time.";

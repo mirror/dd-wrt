@@ -746,6 +746,7 @@ filter.legend3="Blockierte Dienste";
 filter.catchall="Alle P2P-Protokolle abfangen";
 filter.legend4="Webseite mit Hilfe einer URL blockieren";
 filter.legend5="Webseite mit Hilfe von Schlagworten blockieren";
+filter.legend6="Server mit Hilfe des Landes blockieren";
 filter.mess1="Löschen der Richtlinie?";
 filter.mess2="Sie müssen mindestens einen Tag angeben.";
 filter.mess3="Die Endzeit muss nach der Startzeit liegen.";

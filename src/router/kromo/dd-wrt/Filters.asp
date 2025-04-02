@@ -472,6 +472,19 @@ addEvent(window, "unload", function() {
 									<input size="21" maxlength="79" name="url15" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","15"); %>" class="four_column four_column_last" />
 								</div>
 							</fieldset><br />
+							<% ifndef("GEOIP", "<!--"); %>
+							<fieldset>
+								<legend><% tran("filter.legend6"); %></legend>
+								<div class="setting">
+									<div class="label"><% tran("firewall.geoip_blacklist"); %></div>
+									<input maxlength="1000" size="20" name="geoip_bl" value="<% nvg("geoip_bl"); %>" />
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("firewall.geoip_whitelist"); %></div>
+									<input maxlength="1000" size="20" name="geoip_wl" value="<% nvg("geoip_wl"); %>" />
+								</div>
+							</fieldset><br />
+							<% ifndef("GEOIP", "-->"); %>
 							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
