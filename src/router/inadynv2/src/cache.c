@@ -47,7 +47,8 @@ static int nslookup(ddns_alias_t *alias)
 	int error;
 	struct addrinfo hints;
 	struct addrinfo *result;
-
+	int count = 0;
+	again:;
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_INET;	/* IPv4 */
 	hints.ai_socktype = SOCK_DGRAM;	/* Datagram socket */
@@ -69,8 +70,9 @@ static int nslookup(ddns_alias_t *alias)
 		freeaddrinfo(result);
 		return 0;
 	}
-
 	logit(LOG_WARNING, "Failed resolving hostname %s: %s", alias->name, gai_strerror(error));
+	if (error == EAI_AGAIN && count++ < 4)
+	    goto again;
 
 	return 1;
 }
