@@ -3383,14 +3383,25 @@ static void run_firewall6(char *vifs)
 		eval("ip6tables", "-A", "SECURITY", "-i", wanface, "-p", "ipv6-icmp", "--icmpv6-type", "128", "-j", log_drop);
 	}
 
+#ifdef HAVE_GEOIP
+	if (*nvram_safe_get("geoip_blacklist")) {
+		eval("ip6tables", "-A", "SECURITY", "-i", wanface, "-m", "geoip", "--src-cc", nvram_safe_get("geoip_blacklist"),
+		     "-j", "tarpit");
+	}
+	if (*nvram_safe_get("geoip_whitelist")) {
+		eval("ip6tables", "-A", "SECURITY", "-i", wanface, "-m", "geoip", "--src-cc", nvram_safe_get("geoip_whitelist"),
+		     "-j", "RETURN");
+	}
+#endif
+
 #ifdef HAVE_PORTSCAN
 	if (nvram_match("block_tarpit", "1")) {
-		eval("ip6tables", "-A tarpit","-p","tcp","-j","TARPIT");
-		eval("ip6tables", "-A tarpit","-j", log_drop);
+		eval("ip6tables", "-A", "tarpit", "-p", "tcp", "-j", "TARPIT");
+		eval("ip6tables", "-A", "tarpit", "-j", log_drop);
 	} else
 #endif
 	{
-		eval("ip6tables", "-A tarpit","-j", log_drop);
+		eval("ip6tables", "-A", "tarpit", "-j", log_drop);
 	}
 
 	eval("ip6tables", "-A", "portscan", "-j", "LOG", "--log-prefix", "portscan:");
@@ -3684,26 +3695,26 @@ void start_loadfwmodules(void)
 {
 #ifdef HAVE_PORTSCAN
 	insmod("iptable_raw iptable_mangle nf_conntrack_h323 xt_NFLOG" //
-		 " xt_length xt_REDIRECT xt_CT xt_limit xt_TCPMSS" //
-		 " xt_connbytes xt_connlimit" //
-		 " xt_CLASSIFY xt_recent ipv6 xt_TARPIT xt_lscan xt_psd ipt_recent" //
-		 " xt_conntrack xt_state" //
-		 " xt_string xt_LOG xt_iprange xt_tcpmss" //
-		 " xt_NETMAP compat_xtables" //
-		 " ipt_MASQUERADE iptable_filter nf_reject_ipv4" //
-		 " ipt_REJECT nf_nat_h323" //
-		 " ipt_TRIGGER nf_nat_masquerade_ipv4 ipt_ah");
+	       " xt_length xt_REDIRECT xt_CT xt_limit xt_TCPMSS" //
+	       " xt_connbytes xt_connlimit" //
+	       " xt_CLASSIFY xt_recent ipv6 xt_TARPIT xt_lscan xt_psd ipt_recent" //
+	       " xt_conntrack xt_state" //
+	       " xt_string xt_LOG xt_iprange xt_tcpmss" //
+	       " xt_NETMAP compat_xtables" //
+	       " ipt_MASQUERADE iptable_filter nf_reject_ipv4" //
+	       " ipt_REJECT nf_nat_h323" //
+	       " ipt_TRIGGER nf_nat_masquerade_ipv4 ipt_ah");
 #else
 	insmod("iptable_raw iptable_mangle nf_conntrack_h323 xt_NFLOG" //
-		 " xt_length xt_REDIRECT xt_CT xt_limit xt_TCPMSS" //
-		 " xt_connbytes xt_connlimit" //
-		 " xt_CLASSIFY xt_recent ipt_recent" //
-		 " xt_conntrack xt_state" //
-		 " xt_string xt_LOG xt_iprange xt_tcpmss" //
-		 " xt_NETMAP compat_xtables" //
-		 " ipt_MASQUERADE iptable_filter nf_reject_ipv4" //
-		 " ipt_REJECT nf_nat_h323" //
-		 " ipt_TRIGGER nf_nat_masquerade_ipv4 ipt_ah");
+	       " xt_length xt_REDIRECT xt_CT xt_limit xt_TCPMSS" //
+	       " xt_connbytes xt_connlimit" //
+	       " xt_CLASSIFY xt_recent ipt_recent" //
+	       " xt_conntrack xt_state" //
+	       " xt_string xt_LOG xt_iprange xt_tcpmss" //
+	       " xt_NETMAP compat_xtables" //
+	       " ipt_MASQUERADE iptable_filter nf_reject_ipv4" //
+	       " ipt_REJECT nf_nat_h323" //
+	       " ipt_TRIGGER nf_nat_masquerade_ipv4 ipt_ah");
 #endif
 }
 
