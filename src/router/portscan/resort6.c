@@ -17,11 +17,12 @@ int main(int argc, char *argv[])
 		out = fopen(argv[i], "wb");
 		int a;
 		int b;
-		for (b = 0; b < 16; b++)
+		for (b = 0; b < 16; b++) {
 			for (a = 0; a < len; a += 32) {
 				putc(mem[a + b], out);
 				putc(mem[a + 16 + b], out);
 			}
+		}
 		fclose(out);
 		free(mem);
 	}
