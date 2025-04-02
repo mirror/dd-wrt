@@ -3699,7 +3699,7 @@ void start_loadfwmodules(void)
 	insmod("iptable_raw iptable_mangle nf_conntrack_h323 xt_NFLOG" //
 	       " xt_length xt_REDIRECT xt_CT xt_limit xt_TCPMSS" //
 	       " xt_connbytes xt_connlimit" //
-	       " xt_CLASSIFY xt_recent ipv6 xt_TARPIT xt_lscan xt_psd ipt_recent" //
+	       " xt_CLASSIFY xt_recent ipv6 xt_geoip xt_TARPIT xt_lscan xt_psd ipt_recent" //
 	       " xt_conntrack xt_state" //
 	       " xt_string xt_LOG xt_iprange xt_tcpmss" //
 	       " xt_NETMAP compat_xtables" //
