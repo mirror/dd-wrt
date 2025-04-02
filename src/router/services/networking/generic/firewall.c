@@ -1970,6 +1970,16 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 		}
 #endif
 	}
+#ifdef HAVE_GEOIP
+		if (*nvram_safe_get("geoip_bl")) {
+			save2file_A("advgrp_%d -m geoip --dst-cc \"%s\" -j %d", nvram_safe_get("geoip_bl"), log_reject);
+		}
+		if (*nvram_safe_get("geoip_wl")) {
+			save2file_A("advgrp_%d -m geoip --dst-cc \"%s\" -j RETURN", seq, nvram_safe_get("geoip_wl"));
+			save2file_A("advgrp_%d -j %s", seq, log_reject);
+		}
+#endif
+
 	/*
 	 * Others will be accepted 
 	 */
