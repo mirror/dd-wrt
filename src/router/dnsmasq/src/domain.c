@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2025 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2024 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -115,15 +115,26 @@ int is_name_synthetic(int flags, char *name, union all_addr *addrp)
 	  
 	  *p = 0;	
 	  
-	  /* swap . or : for - */
-	  for (p = tail; *p; p++)
-	    if (*p == '-')
-	      {
-		if (prot == AF_INET)
+	  if (prot == AF_INET6 && strstr(tail, "--ffff-") == tail)
+	    {
+	      /* special hack for v4-mapped. */
+	      memcpy(tail, "::ffff:", 7);
+	      for (p = tail + 7; *p; p++)
+		if (*p == '-')
 		  *p = '.';
-		else
-		  *p = ':';
-	      }
+	    }
+	  else
+	    {
+	      /* swap . or : for - */
+	      for (p = tail; *p; p++)
+		if (*p == '-')
+		  {
+		    if (prot == AF_INET)
+		      *p = '.';
+		    else
+		      *p = ':';
+		  }
+	    }
 	  
 	  if (hostname_isequal(c->domain, p+1) && inet_pton(prot, tail, &addr))
 	    found = (prot == AF_INET) ? match_domain(addr.addr4, c) : match_domain6(&addr.addr6, c);
@@ -183,8 +194,9 @@ int is_rev_synth(int flag, union all_addr *addr, char *name)
 
    if ((flag & F_IPV6) && (c = search_domain6(&addr->addr6, daemon->synth_domains))) 
      {
+       char *p;
+       
        *name = 0;
-
        if (c->indexed)
 	 {
 	   u64 index = addr6part(&addr->addr6) - addr6part(&c->start6);
@@ -192,17 +204,24 @@ int is_rev_synth(int flag, union all_addr *addr, char *name)
 	 }
        else
 	 {
-	   int i;
-	   char frag[6];
-
 	   if (c->prefix)
-	     strncpy(name, c->prefix, MAXDNAME);
-	   
-	   for (i = 0; i < 16; i += 2)
+	     strncpy(name, c->prefix, MAXDNAME - ADDRSTRLEN);
+       
+	   inet_ntop(AF_INET6, &addr->addr6, name + strlen(name), ADDRSTRLEN);
+
+	   /* IPv6 presentation address can start with ":", but valid domain names
+	      cannot start with "-" so prepend a zero in that case. */
+	   if (!c->prefix && *name == ':')
 	     {
-	       sprintf(frag, "%s%02x%02x",  i == 0 ? "" : "-", addr->addr6.s6_addr[i], addr->addr6.s6_addr[i+1]);
-	       strncat(name, frag, MAXDNAME);
+	       *name = '0';
+	       inet_ntop(AF_INET6, &addr->addr6, name+1, ADDRSTRLEN);
 	     }
+	   
+	   /* V4-mapped have periods.... */
+	   for (p = name; *p; p++)
+	     if (*p == ':' || *p == '.')
+	       *p = '-';
+	   
 	 }
 
        strncat(name, ".", MAXDNAME);

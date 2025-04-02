@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2025 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2024 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -405,19 +405,11 @@ size_t make_local_answer(int flags, int gotname, size_t size, struct dns_header 
   int start;
   union all_addr addr;
   
-  setup_reply(header, flags, ede);
-
   if (flags & (F_NXDOMAIN | F_NOERR))
     log_query(flags | gotname | F_NEG | F_CONFIG | F_FORWARD, name, NULL, NULL, 0);
-
-  if (flags & F_RCODE)
-     {
-       union all_addr a;
-       a.log.rcode = RCODE(header);
-       a.log.ede = ede;
-       log_query(F_UPSTREAM | F_RCODE, "opcode", &a, NULL, 0);
-     }
-  
+	  
+  setup_reply(header, flags, ede);
+	  
   if (!(p = skip_questions(header, size)))
     return 0;
 	  
@@ -452,13 +444,7 @@ size_t make_local_answer(int flags, int gotname, size_t size, struct dns_header 
       }
 
   if (trunc)
-    {
-      header->hb3 |= HB3_TC;
-      if (!(p = skip_questions(header, size)))
-	return 0; /* bad packet */
-      anscount  = 0;
-    }
-  
+    header->hb3 |= HB3_TC;
   header->ancount = htons(anscount);
   
   return p - (unsigned char *)header;
@@ -555,9 +541,9 @@ static int order_qsort(const void *a, const void *b)
 
   /* Finally, order by appearance in /etc/resolv.conf etc, for --strict-order */
   if (rc == 0)
-    if (!(s1->flags & SERV_IS_LOCAL) && !(s2->flags & SERV_IS_LOCAL))
+    if (!(s1->flags & SERV_LITERAL_ADDRESS))
       rc = s1->serial - s2->serial;
-  
+
   return rc;
 }
 
@@ -753,14 +739,12 @@ int add_update_server(int flags,
 	serv->addr = *addr;
       if (source_addr)
 	serv->source_addr = *source_addr;
-
-      serv->tcpfd = -1;
     }
     
   serv->flags = flags;
   serv->domain = alloc_domain;
   serv->domain_len = strlen(alloc_domain);
-    
+  
   return 1;
 }
 

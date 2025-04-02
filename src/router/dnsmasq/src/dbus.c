@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2025 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2024 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -485,37 +485,28 @@ static DBusMessage* dbus_read_servers_ex(DBusMessage *message, int strings)
   return error;
 }
 
-static DBusMessage *dbus_get_bool(DBusMessage *message, dbus_bool_t *enabled, char *name)
+static DBusMessage *dbus_set_bool(DBusMessage *message, int flag, char *name)
 {
   DBusMessageIter iter;
+  dbus_bool_t enabled;
 
   if (!dbus_message_iter_init(message, &iter) || dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_BOOLEAN)
     return dbus_message_new_error(message, DBUS_ERROR_INVALID_ARGS, "Expected boolean argument");
   
-  dbus_message_iter_get_basic(&iter, enabled);
-  
-  if (*enabled)
-    my_syslog(LOG_INFO, _("Enabling --%s option from D-Bus"), name);
-  else
-    my_syslog(LOG_INFO, _("Disabling --%s option from D-Bus"), name);
-  
-  return NULL;
-}
+  dbus_message_iter_get_basic(&iter, &enabled);
 
-static DBusMessage *dbus_set_bool(DBusMessage *message, int flag, char *name)
-{
-  dbus_bool_t val;
-  DBusMessage *reply = dbus_get_bool(message, &val, name);
-  
-  if (!reply)
+  if (enabled)
+    { 
+      my_syslog(LOG_INFO, _("Enabling --%s option from D-Bus"), name);
+      set_option_bool(flag);
+    }
+  else
     {
-      if (val)
-	set_option_bool(flag);
-      else
-	reset_option_bool(flag);
+      my_syslog(LOG_INFO, _("Disabling --%s option from D-Bus"), name);
+      reset_option_bool(flag);
     }
 
-  return reply;
+  return NULL;
 }
 
 #ifdef HAVE_DHCP
@@ -838,37 +829,23 @@ DBusHandlerResult message_handler(DBusConnection *connection,
   else if (strcmp(method, "SetFilterA") == 0)
     {
       static int done = 0;
-      static struct rrlist list = { 0, NULL };
-      dbus_bool_t enabled;
+      static struct rrlist list = { T_A, NULL };
 
-      if (!(reply = dbus_get_bool(message, &enabled, "filter-A")))
+      if (!done)
 	{
-	  if (!done)
-	    {
-	      done = 1;
-	      list.next = daemon->filter_rr;
-	      daemon->filter_rr = &list;
-	    }
-
-	  list.rr = enabled ? T_A : 0;
+	  list.next = daemon->filter_rr;
+	  daemon->filter_rr = &list;
 	}
     }
   else if (strcmp(method, "SetFilterAAAA") == 0)
     {
       static int done = 0;
-      static struct rrlist list = { 0, NULL };
-      dbus_bool_t enabled;
-      
-      if (!(reply = dbus_get_bool(message, &enabled, "filter-AAAA")))
+      static struct rrlist list = { T_AAAA, NULL };
+
+      if (!done)
 	{
-	  if (!done)
-	    {
-	      done = 1;
-	      list.next = daemon->filter_rr;
-	      daemon->filter_rr = &list;
-	    }
-	  
-	  list.rr = enabled ? T_AAAA : 0;
+	  list.next = daemon->filter_rr;
+	  daemon->filter_rr = &list;
 	}
     }
   else if (strcmp(method, "SetLocaliseQueriesOption") == 0)
