@@ -809,8 +809,8 @@ firewall.ftp="Limit FTP Server access";
 firewall.arp_spoofing="ARP spoofing protection";
 firewall.filter_tos="Filter ToS / DSCP";
 firewall.filter_invalid="Filter invalid packets";
-firewall.goip_whitelist="Country Whitelist";
-firewall.goip_blacklist="Country Blacklist";
+firewall.geoip_whitelist="Country Whitelist";
+firewall.geoip_blacklist="Country Blacklist";
 
 
 filter.nat="WAN NAT Redirection";
