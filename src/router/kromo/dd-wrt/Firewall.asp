@@ -291,11 +291,11 @@ addEvent(window, "unload", function() {
 										<% ifndef("SNMP", "-->"); %>
 										<% ifndef("GEOIP", "<!--"); %>
 										<div class="setting">
-											<div class="label"><% tran("firewall.blacklist"); %></div>
+											<div class="label"><% tran("firewall.geoip_blacklist"); %></div>
 											<input maxlength="1000" size="20" name="geoip_blacklist" value="<% nvg("geoip_blacklist"); %>" />
 										</div>
 										<div class="setting">
-											<div class="label"><% tran("firewall.whitelist"); %></div>
+											<div class="label"><% tran("firewall.geoip_whitelist"); %></div>
 											<input maxlength="1000" size="20" name="geoip_whitelist" value="<% nvg("geoip_whitelist"); %>" />
 										</div>
 										<% ifndef("GEOIP", "-->"); %>
