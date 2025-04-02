@@ -9,10 +9,14 @@ if [ "$(nvram get usb_ses_umount )" = "1" ]; then
   `sync`
 
   #kill known services that come with dd-wrt and usually access external storage
-  killall proftpd
-  killall smbd
-  killall minidlna
-  killall lighttpd
+  service samba3 stop
+  service nfs stop
+  service rsync stop
+  service dlna stop
+  service ftpsrv stop
+  service lighttpd stop
+  service transmission stop
+  service plex stop
   
   #kill other services that are using the external storage
   killprocs() {
