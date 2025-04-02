@@ -5,6 +5,10 @@ IDIR := $(INSTALLDIR)/lib/modules/$(KERNEL_VERSION)/net/netfilter
 KDIR := $(LINUXDIR)
 PWD := $(shell pwd)
 
+configure:
+	./xt_geoip_dl
+	./xt_geoip_build -D geoip
+
 all:
 	@$(MAKE) -C $(KDIR) M=$(PWD) modules $(if $(VERSION),LDFLAGS_MODULE="--build-id=0x666")
 

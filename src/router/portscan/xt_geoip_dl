@@ -1,0 +1,5 @@
+#!/bin/sh
+
+timestamp=$(date "+%Y-%m")
+wget -q "https://download.db-ip.com/free/dbip-country-lite-$timestamp.csv.gz" -O- | \
+	gzip -cd >dbip-country-lite.csv
