@@ -3133,6 +3133,14 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 					  log_drop);
 #endif
 		}
+#ifdef HAVE_GEOIP
+		if (*nvram_safe_get("geoip_blacklist")) {
+			save2file_A_security("-i %s -m geoip --src-cc %s -j tarpit", wanface, nvram_safe_get("geoip_blacklist"));
+		}
+		if (*nvram_safe_get("geoip_whitelist")) {
+			save2file_A_security("-i %s -m geoip --src-cc %s -j RETURN", wanface, nvram_safe_get("geoip_whitelist"));
+		}
+#endif
 		save2file_A_input("-j SECURITY");
 
 		/*
