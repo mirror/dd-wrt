@@ -3139,6 +3139,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 		}
 		if (*nvram_safe_get("geoip_whitelist")) {
 			save2file_A_security("-i %s -m geoip --src-cc %s -j RETURN", wanface, nvram_safe_get("geoip_whitelist"));
+			save2file_A_security("-i %s -j tarpit", wanface);
 		}
 #endif
 		save2file_A_input("-j SECURITY");
@@ -3391,6 +3392,7 @@ static void run_firewall6(char *vifs)
 	if (*nvram_safe_get("geoip_whitelist")) {
 		eval("ip6tables", "-A", "SECURITY", "-i", wanface, "-m", "geoip", "--src-cc", nvram_safe_get("geoip_whitelist"),
 		     "-j", "RETURN");
+		eval("ip6tables", "-A", "SECURITY", "-i", wanface, "-j", "tarpit");
 	}
 #endif
 
