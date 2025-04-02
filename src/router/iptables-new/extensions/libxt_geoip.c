@@ -93,9 +93,9 @@ geoip_get_subnets(const char *code, uint32_t *count, uint8_t nfproto)
 
 	/* Use simple integer vector files */
 	if (nfproto == NFPROTO_IPV6)
-		snprintf(buf, sizeof(buf), GEOIP_DB_DIR "/%s.iv6", code);
+		snprintf(buf, sizeof(buf), GEOIP_DB_DIR "/6%s", code);
 	else
-		snprintf(buf, sizeof(buf), GEOIP_DB_DIR "/%s.iv4", code);
+		snprintf(buf, sizeof(buf), GEOIP_DB_DIR "/4%s", code);
 
 	int fd = open(buf, O_RDONLY);
 	if (fd < 0) {
