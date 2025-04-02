@@ -191,6 +191,8 @@ addEvent(window, "unload", function() {
 						<input type="hidden" name="block_proxy" />
 						<input type="hidden" name="block_activex" />
 						<input type="hidden" name="block_snmp" />
+						<input type="hidden" name="geoip_blacklist" />
+						<input type="hidden" name="geoip_whitelist" />
 						<input type="hidden" name="arp_spoofing" />
 						<input type="hidden" name="filter_tos" />
 						<input type="hidden" name="limit_ssh" />
@@ -245,11 +247,11 @@ addEvent(window, "unload", function() {
 											<div class="label"><% tran("firewall.ping"); %></div>
 											<input class="spaceradio" type="checkbox" value="1" name="_block_wan" <% nvc("block_wan", "1"); %> />
 										</div>
+										<% ifndef("TARPIT", "<!--"); %>
 										<div class="setting">
 											<div class="label"><% tran("firewall.portscan"); %></div>
 											<input class="spaceradio" type="checkbox" value="1" name="_block_portscan" <% nvc("block_portscan", "1"); %> />
 										</div>
-										<% ifndef("TARPIT", "<!--"); %>
 										<div class="setting">
 											<div class="label"><% tran("firewall.tarpit"); %></div>
 											<input class="spaceradio" type="checkbox" value="1" name="_block_tarpit" <% nvc("block_tarpit", "1"); %> />
@@ -287,6 +289,16 @@ addEvent(window, "unload", function() {
 											<input class="spaceradio" type="checkbox" value="1" name="_block_snmp" <% nvc("block_snmp", "1"); %> />
 										</div>
 										<% ifndef("SNMP", "-->"); %>
+										<% ifndef("GEOIP", "<!--"); %>
+										<div class="setting">
+											<div class="label"><% tran("filter.blacklist"); %></div>
+											<input maxlength="1000" size="20" name="geoip_blacklist" value="<% nvg("geoip_blacklist"); %>" />
+										</div>
+										<div class="setting">
+											<div class="label"><% tran("filter.whitelist"); %></div>
+											<input maxlength="1000" size="20" name="geoip_whitelist" value="<% nvg("geoip_whitelist"); %>" />
+										</div>
+										<% ifndef("GEOIP", "-->"); %>
 									</fieldset>
 								<% ifdef("MICRO", "<!--"); %>
 								<br />
