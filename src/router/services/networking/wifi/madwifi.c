@@ -235,19 +235,13 @@ void get_pairwise(const char *prefix, char *pwstring, char *grpstring, int isadh
 	if (nvram_nmatch("1", "%s_ccmp-256", prefix)) {
 		strspcattach(pwstring, "CCMP-256");
 		if (grpstring) {
-			if (ismesh)
 				strspcattach(temp_grpstring, "CCMP-256 GCMP-256 GCMP CCMP");
-			else
-				strspcattach(temp_grpstring, "CCMP-256 GCMP-256 GCMP CCMP TKIP");
 		}
 	}
 	if (nvram_nmatch("1", "%s_gcmp-256", prefix) || iswpa3_192) {
 		strspcattach(pwstring, "GCMP-256");
 		if (grpstring) {
-			if (ismesh)
 				strspcattach(temp_grpstring, "GCMP-256 GCMP CCMP");
-			else
-				strspcattach(temp_grpstring, "GCMP-256 GCMP CCMP TKIP");
 		}
 	}
 	if (nvram_nmatch("1", "%s_gcmp", prefix) || iswpa3_128) {
@@ -256,10 +250,7 @@ void get_pairwise(const char *prefix, char *pwstring, char *grpstring, int isadh
 			if (has_ad(prefix))
 				strspcattach(temp_grpstring, "GCMP");
 			else {
-				if (ismesh)
-					strspcattach(temp_grpstring, "GCMP CCMP");
-				else
-					strspcattach(temp_grpstring, "GCMP CCMP TKIP");
+				strspcattach(temp_grpstring, "GCMP CCMP");
 			}
 		}
 	}
