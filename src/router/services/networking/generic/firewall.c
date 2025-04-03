@@ -3253,7 +3253,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 #ifndef HAVE_MICRO
 		if (nvram_matchi("log_rejected", 1))
 			save2file_A(
-				"logreject -j LOG --log-prefix \"WEBDROP \" --log-tcp-sequence --log-tcp-options --log-ip-options");
+				"logreject -j LOG --log-prefix \"REJECT \" --log-tcp-sequence --log-tcp-options --log-ip-options");
 #endif
 		save2file_A("logreject -p tcp -j REJECT --reject-with tcp-reset");
 #ifdef FLOOD_PROTECT
