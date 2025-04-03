@@ -2088,7 +2088,7 @@ static void lan2wan_chains(char *lan_cclass)
 		 */
 		char target[100];
 		if (mark == MARK_DROP)
-			strncpy(target, log_drop, sizeof(log_drop));
+			strlcpy(target, log_drop, sizeof(target));
 		else
 			sprintf(target, "advgrp_%d", seq);
 
@@ -3885,6 +3885,7 @@ void start_firewall(void)
 		sprintf(log_drop, "%s", "logdrop");
 	else
 		sprintf(log_drop, "%s", "DROP");
+
 	if (log_level >= 2)
 		sprintf(log_accept, "%s", "logaccept");
 	else
