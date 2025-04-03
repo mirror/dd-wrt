@@ -116,7 +116,7 @@ extern char *nvram_default_get(const char *var, const char *def);
 
 extern int nvram_default_geti(const char *var, const int def);
 
-extern char *nvram_nget(const char *fmt, ...) __attribute__((format (printf, 2, 3)));
+extern char *nvram_nget(const char *fmt, ...) __attribute__((format (printf, 1, 2)));
 extern char *nvram_default_nget(const char *def, const char *fmt, ...) __attribute__((format (printf, 2, 3)));
 extern int nvram_default_ngeti(const int def, const char *fmt, ...) __attribute__((format (printf, 2, 3)));
 
