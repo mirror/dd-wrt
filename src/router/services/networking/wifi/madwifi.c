@@ -2961,14 +2961,15 @@ void configure_wifi(void) // madwifi implementation for atheros based
 		}
 	}
 	if (hasath9k) {
-		char regdomain[16];
+		char regdomain[32];
 		char *country;
 		sprintf(regdomain, "wlan0_regdomain");
 		country = nvram_default_get(regdomain, "UNITED_STATES");
-		eval("iw", "reg", "set", "00");
+		eval("iw", "reg", "set", "PA");
 		const char *iso = getIsoName(country);
 		if (!iso)
 			iso = "DE";
+		sleep(2);
 		eval("iw", "reg", "set", iso);
 #if defined(HAVE_ONNET) && defined(HAVE_ATH10K_CT)
 		if (nvram_geti("ath10k-ct") != nvram_geti("wlan10k-ct_bak")) {
@@ -2997,14 +2998,15 @@ void configure_wifi(void) // madwifi implementation for atheros based
 	}
 #ifdef HAVE_ATH9K
 	if (hasath9k) {
-		char regdomain[16];
+		char regdomain[32];
 		char *country;
 		sprintf(regdomain, "wlan0_regdomain");
 		country = nvram_default_get(regdomain, "UNITED_STATES");
-		eval("iw", "reg", "set", "00");
+		eval("iw", "reg", "set", "PA");
 		const char *iso = getIsoName(country);
 		if (!iso)
 			iso = "DE";
+		sleep(2);
 		eval("iw", "reg", "set", iso);
 #if defined(HAVE_ONNET) && defined(HAVE_ATH10K_CT)
 		if (nvram_geti("ath10k-ct") != nvram_geti("wlan10k-ct_bak")) {
