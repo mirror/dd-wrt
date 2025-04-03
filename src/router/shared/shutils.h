@@ -35,7 +35,7 @@
 #define DEBUG_HTTPD 1
 #define DEBUG_SERVICE 2
 
-extern void dd_debug(int target, const char *fmt, ...);
+extern void dd_debug(int target, const char *fmt, ...) __attribute__((format (printf, 2, 3)));
 
 #if defined(HAVE_X86) || defined(HAVE_NEWPORT) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900)) //special treatment
 extern int debug_ready(void);
@@ -146,7 +146,7 @@ extern char *strattach(char *src, const char *attach, const char *delimiter);
 extern char *strspcattach(char *src, const char *attach);
 
 extern int dd_system(const char *command);
-extern int sysprintf(const char *fmt, ...);
+extern int sysprintf(const char *fmt, ...) __attribute__((format (printf, 1, 2)));
 extern int f_exists(const char *path); // note: anything but a directory
 
 extern char *get_filter_services(void);
