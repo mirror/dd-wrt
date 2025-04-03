@@ -1676,7 +1676,7 @@ char *get_filter_services(void)
 			continue;
 		}
 #endif
-		sprintf(temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>", strlen(filters->name), filters->name,
+		sprintf(temp, "$NAME:%03zd:%s$PROT:%03zd:%s$PORT:003:0:0<&nbsp;>", strlen(filters->name), filters->name,
 			strlen(proto[filters->protocol]), proto[filters->protocol]);
 		if (!services) {
 			services = malloc(strlen(temp) + 1);
