@@ -3664,7 +3664,7 @@ static void run_firewall6(char *vifs)
 		 * logreject chain 
 		 */
 		if (nvram_matchi("log_rejected", 1))
-			eval("ip6tables", "-A", "logreject", "-j", "LOG", "--log-prefix", "WEBDROP ", "--log-tcp-sequence",
+			eval("ip6tables", "-A", "logreject", "-j", "LOG", "--log-prefix", "REJECT ", "--log-tcp-sequence",
 			     "--log-tcp-options", "--log-ip-options");
 		eval("ip6tables", "-A", "logreject", "-p", "tcp", "-j", "REJECT", "--reject-with", "icmp6-adm-prohibited");
 #ifdef FLOOD_PROTECT
