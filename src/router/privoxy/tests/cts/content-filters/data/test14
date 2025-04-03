@@ -1,0 +1,118 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter frameset-borders
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here are some strings the frameset-borders filter should filter:
+
+# pcrs command 1:
+
+<frameset framespacing="no"
+<frameset framespacing='0'
+
+# pcrs command 2:
+
+<frameset frameborder="no"
+<frameset frameborder='0'
+
+# pcrs command 3:
+
+<frameset border="no"
+<frameset border='0'
+
+# pcrs command 4:
+
+<frameset noresize
+
+# pcrs command 5:
+
+<frame frameborder="no"
+<frame frameborder='0'
+
+# pcrs command 6:
+
+<frame scrolling="no"
+<frame scrolling='0'
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 309
+
+# Here are some strings the frameset-borders filter should filter:
+
+# pcrs command 1:
+
+<frameset 
+<frameset 
+
+# pcrs command 2:
+
+<frameset 
+<frameset 
+
+# pcrs command 3:
+
+<frameset 
+<frameset 
+
+# pcrs command 4:
+
+<frameset noresize
+
+# pcrs command 5:
+
+<frame 
+<frame frame
+
+# pcrs command 6:
+
+<frame 
+<frame 
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{frameset-borders}
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/frameset-borders/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /frameset-borders/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

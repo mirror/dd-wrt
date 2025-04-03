@@ -2,8 +2,8 @@
 #
 #  File        :  trust
 #
-#  Purpose     :  Trustfiles can be used to build "whitelists"
-#                 (versus the usual "blacklists" techniques).
+#  Purpose     :  Trustfiles can be used to build "allowlists"
+#                 (versus the usual "blocklists" techniques).
 #
 #  Copyright   :  Written by and Copyright (C) 2001-2023 the
 #                 Privoxy team. https://www.privoxy.org/
@@ -42,8 +42,8 @@
 # with "trustfile" must be uncommented, with the name of this file following the
 # word "trustfile".
 
-# Trustfiles are an experimental feature used for building "whitelists"
-# of "trusted" sites (versus the usual "blacklists" technique). For more
+# Trustfiles are an experimental feature used for building "allowlists"
+# of "trusted" sites (versus the usual "blocklists" technique). For more
 # detail, see https://www.privoxy.org/user-manual/config.html#TRUSTFILE.
 
 # List trusted domains here. The default is to block any URL that is NOT

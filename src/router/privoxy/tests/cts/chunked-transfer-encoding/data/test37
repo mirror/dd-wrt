@@ -1,0 +1,52 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+chunked transfer encoding
+</keywords>
+</info>
+
+<reply>
+<data nonewline="yes">
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+Transfer-Encoding: chunked
+
+88888888888
+The chunk-size for this chunk causes an integer overflow.
+swsclose
+</data>
+</reply>
+<reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+Chunked transfer encoding - Invalid chunk-size that causes integer overflow.
+</name>
+<features>
+proxy
+</features>
+<command>
+--raw http://%HOSTIP:%HTTPPORT/no-filter/chunked-content/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /no-filter/chunked-content/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+
+</protocol>
+<errorcode>
+18
+</errorcode>
+</verify>
+</testcase>

@@ -1,0 +1,55 @@
+<testcase>
+<info>
+<keywords>
+HTTPS
+HTTP GET
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+Content-Length: 18
+
+Here's your data.
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 Connection established
+
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+Content-Length: 18
+
+Here's your data.
+</data>
+</proxy-reply>
+
+
+<client>
+<server>
+https
+</server>
+<name>
+Rewrite host behind the client's back
+</name>
+<command>
+--insecure https://www.example.org/%TESTNUMBER-%HOSTIP:%HTTPSPORT
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /%TESTNUMBER HTTP/1.1
+Host: www.example.org
+User-Agent: curl/%VERSION
+Accept: */*
+
+</protocol>
+</verify>
+</testcase>

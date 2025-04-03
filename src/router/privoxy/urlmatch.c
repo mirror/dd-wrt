@@ -604,6 +604,100 @@ jb_err parse_http_request(const char *req, struct http_request *http)
 }
 
 
+#ifdef HAVE_PCRE2
+/*********************************************************************
+ *
+ * Function    :  compile_pattern
+ *
+ * Description :  Compiles a host, domain or TAG pattern.
+ *
+ * Parameters  :
+ *          1  :  pattern = The pattern to compile.
+ *          2  :  anchoring = How the regex should be modified
+ *                            before compilation. Can be either
+ *                            one of NO_ANCHORING, LEFT_ANCHORED,
+ *                            RIGHT_ANCHORED or RIGHT_ANCHORED_HOST.
+ *          3  :  url     = In case of failures, the spec member is
+ *                          logged and the structure freed.
+ *          4  :  regex   = Where the compiled regex should be stored.
+ *
+ * Returns     :  JB_ERR_OK - Success
+ *                JB_ERR_PARSE - Cannot parse regex
+ *
+ *********************************************************************/
+static jb_err compile_pattern(const char *pattern, enum regex_anchoring anchoring,
+                              struct pattern_spec *url, pcre2_code **regex)
+{
+   int errcode;
+   const char *fmt = NULL;
+   char *rebuf;
+   size_t rebuf_size;
+   PCRE2_SIZE error_offset;
+   int ret;
+
+   assert(pattern);
+
+   if (pattern[0] == '\0')
+   {
+      *regex = NULL;
+      return JB_ERR_OK;
+   }
+
+   switch (anchoring)
+   {
+      case NO_ANCHORING:
+         fmt = "%s";
+         break;
+      case RIGHT_ANCHORED:
+         fmt = "%s$";
+         break;
+      case RIGHT_ANCHORED_HOST:
+         fmt = "%s\\.?$";
+         break;
+      case LEFT_ANCHORED:
+         fmt = "^%s";
+         break;
+      default:
+         log_error(LOG_LEVEL_FATAL,
+            "Invalid anchoring in compile_pattern %d", anchoring);
+   }
+   rebuf_size = strlen(pattern) + strlen(fmt);
+   rebuf = malloc_or_die(rebuf_size);
+
+   snprintf(rebuf, rebuf_size, fmt, pattern);
+
+   *regex = pcre2_compile((const unsigned char *)rebuf,
+      PCRE2_ZERO_TERMINATED, PCRE2_CASELESS, &errcode,
+      &error_offset, NULL);
+   if (*regex == NULL)
+   {
+      log_error(LOG_LEVEL_ERROR, "error compiling %s from %s: %s",
+         pattern, url->spec, rebuf);
+      freez(rebuf);
+
+      return JB_ERR_PARSE;
+   }
+
+#ifndef DISABLE_PCRE_JIT_COMPILATION
+   /* Try to enable JIT compilation but continue if it's unsupported. */
+   if ((ret = pcre2_jit_compile(*regex, PCRE2_JIT_COMPLETE)) &&
+       (ret != PCRE2_ERROR_JIT_BADOPTION))
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "Unexpected error enabling JIT compilation for %s from %s: %s",
+         pattern, url->spec, rebuf);
+      freez(rebuf);
+
+      return JB_ERR_PARSE;
+   }
+#endif
+
+   freez(rebuf);
+
+   return JB_ERR_OK;
+
+}
+#else
 /*********************************************************************
  *
  * Function    :  compile_pattern
@@ -686,6 +780,7 @@ static jb_err compile_pattern(const char *pattern, enum regex_anchoring anchorin
    return JB_ERR_OK;
 
 }
+#endif
 
 
 /*********************************************************************
@@ -1051,6 +1146,72 @@ static int simplematch(const char *pattern, const char *text)
 }
 
 
+#ifdef HAVE_PCRE2
+/*********************************************************************
+ *
+ * Function    :  pcre2_pattern_matches
+ *
+ * Description :  Checks if a compiled pcre2 pattern matches a string.
+ *
+ * Parameters  :
+ *          1  :  pattern = The compiled pattern
+ *          2  :  string = The string to check
+ *
+ * Returns     :  TRUE for yes, FALSE otherwise.
+ *
+ *********************************************************************/
+static int pcre2_pattern_matches(const pcre2_code *pattern, const char *string)
+{
+   PCRE2_SIZE offset;
+   int ret;
+   pcre2_match_data *pcre2_matches;
+
+   assert(pattern != NULL);
+   assert(string != NULL);
+
+   offset = 0;
+
+   pcre2_matches = pcre2_match_data_create_from_pattern(pattern, NULL);
+   if (NULL == pcre2_matches)
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "Out of memory while matching pattern against %s", string);
+      return FALSE;
+   }
+
+   ret = pcre2_match(pattern, (const unsigned char *)string, strlen(string),
+      offset, 0, pcre2_matches, NULL);
+
+   pcre2_match_data_free(pcre2_matches);
+
+   return (ret >= 0);
+}
+#endif
+
+
+/*********************************************************************
+ *
+ * Function    :  regex_matches
+ *
+ * Description :  Checks if a compiled regex pattern matches a string
+ *                using either pcre2 or pcre1 code.
+ *
+ * Parameters  :
+ *          1  :  pattern = The compiled pattern
+ *          2  :  string = The string to check
+ *
+ * Returns     :  TRUE for yes, FALSE otherwise.
+ *
+ *********************************************************************/
+int regex_matches(const REGEX_TYPE *pattern, const char *string)
+{
+#ifdef HAVE_PCRE2
+   return pcre2_pattern_matches(pattern, string);
+#else
+   return (0 == regexec(pattern, string, 0, NULL, 0));
+#endif
+}
+
 /*********************************************************************
  *
  * Function    :  simple_domaincmp
@@ -1268,8 +1429,12 @@ void free_pattern_spec(struct pattern_spec *pattern)
    {
       if (pattern->pattern.tag_regex)
       {
+#ifdef HAVE_PCRE2
+         pcre2_code_free(pattern->pattern.tag_regex);
+#else
          regfree(pattern->pattern.tag_regex);
          freez(pattern->pattern.tag_regex);
+#endif
       }
       return;
    }
@@ -1277,8 +1442,12 @@ void free_pattern_spec(struct pattern_spec *pattern)
 #ifdef FEATURE_PCRE_HOST_PATTERNS
    if (pattern->pattern.url_spec.host_regex)
    {
+#ifdef HAVE_PCRE2
+      pcre2_code_free(pattern->pattern.url_spec.host_regex);
+#else
       regfree(pattern->pattern.url_spec.host_regex);
       freez(pattern->pattern.url_spec.host_regex);
+#endif
    }
 #endif /* def FEATURE_PCRE_HOST_PATTERNS */
    freez(pattern->pattern.url_spec.dbuffer);
@@ -1287,8 +1456,12 @@ void free_pattern_spec(struct pattern_spec *pattern)
    freez(pattern->pattern.url_spec.port_list);
    if (pattern->pattern.url_spec.preg)
    {
+#ifdef HAVE_PCRE2
+      pcre2_code_free(pattern->pattern.url_spec.preg);
+#else
       regfree(pattern->pattern.url_spec.preg);
       freez(pattern->pattern.url_spec.preg);
+#endif
    }
 }
 
@@ -1333,8 +1506,7 @@ static int host_matches(const struct http_request *http,
    if (pattern->pattern.url_spec.host_regex_type == PCRE_HOST_PATTERN)
    {
       return ((NULL == pattern->pattern.url_spec.host_regex)
-         || (0 == regexec(pattern->pattern.url_spec.host_regex,
-               http->host, 0, NULL, 0)));
+         || regex_matches(pattern->pattern.url_spec.host_regex, http->host));
    }
 #endif
    return ((NULL == pattern->pattern.url_spec.dbuffer) || (0 == domain_match(pattern, http)));
@@ -1357,7 +1529,7 @@ static int host_matches(const struct http_request *http,
 static int path_matches(const char *path, const struct pattern_spec *pattern)
 {
    return ((NULL == pattern->pattern.url_spec.preg)
-      || (0 == regexec(pattern->pattern.url_spec.preg, path, 0, NULL, 0)));
+      || regex_matches(pattern->pattern.url_spec.preg, path));
 }
 
 

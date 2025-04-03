@@ -1,0 +1,281 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <title>HOWTOs</title>
+  <meta name="GENERATOR" content="Modular DocBook HTML Stylesheet Version 1.79">
+  <link rel="HOME" title="Privoxy 4.0.0 User Manual" href="index.html">
+  <link rel="PREVIOUS" title="Privoxy's Template Files" href="templates.html">
+  <link rel="NEXT" title="Contacting the Developers, Bug Reporting and Feature Requests" href="contact.html">
+  <link rel="STYLESHEET" type="text/css" href="../p_doc.css">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <link rel="STYLESHEET" type="text/css" href="p_doc.css">
+</head>
+<body class="SECT1" bgcolor="#EEEEEE" text="#000000" link="#0000FF" vlink="#840084" alink="#0000FF">
+  <div class="NAVHEADER">
+    <table summary="Header navigation table" width="100%" border="0" cellpadding="0" cellspacing="0">
+      <tr>
+        <th colspan="3" align="center">Privoxy 4.0.0 User Manual</th>
+      </tr>
+      <tr>
+        <td width="10%" align="left" valign="bottom"><a href="templates.html" accesskey="P">Prev</a></td>
+        <td width="80%" align="center" valign="bottom"></td>
+        <td width="10%" align="right" valign="bottom"><a href="contact.html" accesskey="N">Next</a></td>
+      </tr>
+    </table>
+    <hr align="left" width="100%">
+  </div>
+  <div class="SECT1">
+    <h1 class="SECT1"><a name="HOWTO" id="HOWTO">11. HOWTOs</a></h1>
+    <div class="SECT2">
+      <h2 class="SECT2"><a name="H2-HTTPS-INSPECTION" id="H2-HTTPS-INSPECTION">11.1. HTTPS-Inspection HOWTO</a></h2>
+      <div class="SECT3">
+        <h3 class="SECT3"><a name="H2-HI-TLS" id="H2-HI-TLS">11.1.1. How TLS Certificates for websites work</a></h3>
+        <p>The website owner generates a (private) TLS key and a Certificate Signing Request (CSR).</p>
+        <p>The CSR is then sent to a Certification Authority (CA), which verifies that the owner is the actual owner of
+        the website. This can be done by proving that the owner has technical write access to the site or the site's
+        DNS, or by verifying the identity of the organization running the site using telephone and public
+        databases.</p>
+        <p>If the verification is successful, the CA signs the CSR and creates a certificate that certifies that the
+        private TLS key actually belongs to the website name and/or organization that owns the domain.</p>
+        <p>This TLS certificate is then added to the web server configuration, and when a browser accesses the website,
+        it verifies that the TLS certificate presented to the browser is valid for that domain.</p>
+        <p>To do this, each browser has the certificates of multiple CAs in its trust store. The browser will only
+        accept the certificate if the CA that signed it is in its trust store, otherwise it will warn that the
+        certificate is not valid.</p>
+        <p>If this check passes, the browser sends a random number encrypted with the server's public key to the
+        server, and both compute a shared secret using the Diffie-Hellman key exchange algorithm. Now server and
+        browser can communicate, but no one else can break that communication because it's encrypted between them.</p>
+      </div>
+      <div class="SECT3">
+        <h3 class="SECT3"><a name="H2-HI-WORKS" id="H2-HI-WORKS">11.1.2. How HTTPS inspection works</a></h3>
+        <p>When we try to inspect HTTPS traffic, we have to break the TLS encryption between browser and web server
+        without being the browser or the web server. This is exactly what TLS is designed to prevent, because it's a
+        man-in-the-middle attack.</p>
+        <p>To do this, Privoxy uses its own (private) CA (let's call it "Privoxy CA"), which needs to be added to the
+        trust store of every single browser that you want to use with Privoxy and HTTPS inspection.</p>
+        <p>Privoxy then breaks the connection between browser and webserver by acting as a browser/client when talking
+        to the webserver (including checking the webserver's TLS certificate against it's own trust store). Now Privoxy
+        can read and modify the traffic from the webserver.</p>
+        <p>On the other hand, Privoxy itself encrypts the traffic it sends to the browser using an on the fly
+        self-created TLS server certificate that is signed by Privoxy CA.</p>
+      </div>
+      <div class="SECT3">
+        <h3 class="SECT3"><a name="H2-HI-INVALID-CERT" id="H2-HI-INVALID-CERT">11.1.3. What happens, if the original
+        certificate is invalid?</a></h3>
+        <p>If Privoxy detects that a TLS certificate is invalid, because it's expired, doesn't match the hostname, is
+        self-signed, or similar, Privoxy will block the requests and return an error message explaining the problem to
+        prevent the user/browser from communicating over an insecure channel.</p>
+        <p>To test this behavior, just go to <a href="https://badssl.com/" target="_top">https://badssl.com/</a></p>
+      </div>
+      <div class="SECT3">
+        <h3 class="SECT3"><a name="H2-HI-PREREQUISITES" id="H2-HI-PREREQUISITES">11.1.4. HTTPS inspection
+        prerequisites</a></h3>
+        <p>HTTPS inspection in Privoxy can only be used, if Privoxy is built with FEATURE_HTTPS_INSPECTION. You can
+        check if this feature is enabled at <a href="http://config.privoxy.org/show-status" target=
+        "_top">http://config.privoxy.org/show-status</a> in the "Conditional #defines" section.</p>
+        <p>If the feature is not enabled, you may need to <a href="installation.html#INSTALLATION-SOURCE">build Privoxy
+        from source</a> to enable it. FEATURE_HTTPS_INSPECTION relies on a TLS library. You can choose between <a href=
+        "https://www.libressl.org/" target="_top">LibreSSL</a>, <a href=
+        "https://www.trustedfirmware.org/projects/mbed-tls/" target="_top">MbedTLS</a>, <a href=
+        "https://www.openssl.org/" target="_top">OpenSSL</a> and <a href="https://www.wolfssl.com/" target=
+        "_top">wolfSSL</a>. Which TLS library is the best choice depends on various factors including operating system,
+        cpu and license preference so there isn't any recommendation here.</p>
+        <p>After installing the development libraries for the TLS library you want to use, you can run <b class=
+        "COMMAND">./configure</b> with the <b class="COMMAND">--with-openssl</b> for LibreSSL and OpenSSL or <b class=
+        "COMMAND">--with-mbedtls</b> or <b class="COMMAND">--with-wolfssl</b> option.</p>
+        <p>Check the output of <b class="COMMAND">./configure</b>, it must contain one of these the following two
+        lines, otherwise HTTPS inspection will not work:</p>
+        <table border="0" bgcolor="#E0E0E0" width="100%">
+          <tr>
+            <td>
+              <pre class="SCREEN">  configure: Detected OpenSSL. Enabling https inspection.
+  configure: Detected mbedTLS. Enabling https inspection.
+  configure: Detected wolfSSL. Enabling https inspection.</pre>
+            </td>
+          </tr>
+        </table>
+        <p>If you do not find any of these lines, the output of <b class="COMMAND">./configure</b> will tell you what
+        went wrong.</p>
+        <p>You should then proceed with the <a href="installation.html#INSTALLATION-SOURCE">source install</a>.
+        Finally, check the FEATURE_HTTPS_INSPECTION status in <a href="http://config.privoxy.org/show-status" target=
+        "_top">http://config.privoxy.org/show-status</a> again.</p>
+      </div>
+      <div class="SECT3">
+        <h3 class="SECT3"><a name="H2-HI-CONFIG" id="H2-HI-CONFIG">11.1.5. Configuring HTTPS inspection in
+        Privoxy</a></h3>
+        <p>First, you need to create the private key and certificate for the "Privoxy CA". This can be done using
+        openssl with the following command:</p>
+        <table border="0" bgcolor="#E0E0E0" width="100%">
+          <tr>
+            <td>
+              <pre class=
+              "SCREEN">  openssl req -new -x509 -extensions v3_ca -keyout privoxy.pem -out privoxy.crt -days 3650</pre>
+            </td>
+          </tr>
+        </table>
+        <p>In this example, a CA validity of 10 years (3650 days) is defined. You should set the appropriate validity
+        period based on your needs. A shorter validity makes your system more secure (it doesn't hurt that long if the
+        key gets lost to an attacker), but if the certificate expires before you have replaced it with a new one in
+        Privoxy and in all browsers, the communication will fail.</p>
+        <p>During key generation you will be asked to provide a "PEM pass phrase". This passphrase will appear in the
+        Privoxy config CGI, so don't reuse it elsewhere!</p>
+        <p>Then you will be asked for Country Name, State/Province, Locality, Orginzation Name, Common Name, and Email
+        Address. You should fill in some useful data here, because these entries will be shown by the browser as
+        "Issuer Name" when you inspect a certificate from an https-inspection site. Especially the "Common Name" will
+        be shown as the name of your CA, so it's good if you (and other users of your Privoxy instance) are able to
+        identify this CA.</p>
+        <p>Copy the private key (<tt class="FILENAME">privoxy.pem</tt>) and the CA certificate (<tt class=
+        "FILENAME">privoxy.crt</tt>) into the <a href="config.html#CA-DIRECTORY">ca-directory</a> (defined in <a href=
+        "config.html">config</a>).</p>
+        <p>Make sure that the private key (<tt class="FILENAME">privoxy.pem</tt> in the example above) is only
+        accessible to the user running Privoxy (usually named "privoxy"):</p>
+        <table border="0" bgcolor="#E0E0E0" width="100%">
+          <tr>
+            <td>
+              <pre class="SCREEN">  chmod 600 privoxy.pem
+  chown privoxy privoxy.pem</pre>
+            </td>
+          </tr>
+        </table>
+        <p>Now customize your Privoxy <a href="config.html">configuration</a>:</p>
+        <table border="0" bgcolor="#E0E0E0" width="100%">
+          <tr>
+            <td>
+              <pre class="SCREEN">  <a href="config.html#CA-DIRECTORY">ca-directory</a> /etc/privoxy/CA # read-only
+  <a href="config.html#CA-CERT-FILE">ca-cert-file</a> privoxy.crt     # in ca-directory
+  <a href="config.html#CA-KEY-FILE">ca-key-file</a> privoxy.pem      # in ca-directory
+  <a href="config.html#CA-PASSWORD">ca-password</a> passphrasefromabove
+  <a href="config.html#CERTIFICATE-DIRECTORY">certificate-directory</a> /var/lib/privoxy/certs
+  <a href="config.html#TRUSTED-CAS-FILE">trusted-cas-file</a> /etc/ssl/certs/ca-certificates.crt</pre>
+            </td>
+          </tr>
+        </table>
+        <p><a href="config.html#CERTIFICATE-DIRECTORY">certificate-directory</a> contains the (on the fly) created
+        webserver keys and certificates. It should only be readable by the privoxy user only:</p>
+        <table border="0" bgcolor="#E0E0E0" width="100%">
+          <tr>
+            <td>
+              <pre class="SCREEN">  chown privoxy /var/lib/privoxy/certs
+  chmod 700 /var/lib/privoxy/certs</pre>
+            </td>
+          </tr>
+        </table>
+        <p><a href="config.html#TRUSTED-CAS-FILE">trusted-cas-file</a> is the trust store containing the certificates
+        of all CAs that should be accepted. Each browser comes with it's own trust store. Most Unix systems also ship
+        with a truststore. Debian ships it's truststore in <tt class=
+        "FILENAME">/etc/ssl/certs/ca-certificates.crt</tt>, which is installed by the ca-certificates package and can
+        be updated using update-ca-certificates(8). Alternatively, such a file (extracted from Mozilla) can be
+        downloaded from <a href="https://curl.se/docs/caextract.html" target=
+        "_top">https://curl.se/docs/caextract.html</a>.</p>
+      </div>
+      <div class="SECT3">
+        <h3 class="SECT3"><a name="H2-HI-BROWSER" id="H2-HI-BROWSER">11.1.6. Browser configuration</a></h3>
+        <p>As mentioned earlier, each browser you use must now trust the newly created Privoxy CA certificate
+        (<tt class="FILENAME">privoxy.crt</tt>).</p>
+        <p>In Firefox you can do this by opening the preferences "Edit" -&#62; "Settings" -&#62; "Privacy &#38;
+        Security" or by typing <a href="about:preferences#privacy" target="_top">about:preferences#privacy</a> in the
+        URL. Then go down to the "Certificates" section and click on "View Certificates". Click on the "Authorities"
+        tab and "Import..." your <tt class="FILENAME">privoxy.crt</tt>. In the "CA certificate trust settings" select
+        "This certificate can identify websites".</p>
+        <p>In Chrome based browsers, go to the settings and select "Privacy and security" (<a href=
+        "chrome://settings/privacy" target="_top">chrome://settings/privacy</a>). Click on "Security" and on the opened
+        sub-page on "Manage certificates". Now go to the "Authorities" tab and import <tt class=
+        "FILENAME">privoxy.crt</tt> and configure it to trust the certificate for website identification.</p>
+      </div>
+      <div class="SECT3">
+        <h3 class="SECT3"><a name="H2-HI-ENABLE" id="H2-HI-ENABLE">11.1.7. Enabeling HTTPS inspection</a></h3>
+        <p>Currently no pages use HTTPS inspection, you need to enable this for some (or all) domains first using
+        <a href="actions-file.html#USER-ACTION">user.action</a> (either by editing the file by hand or via the CGI
+        (this requires <a href="config.html#ENABLE-EDIT-ACTIONS">enable-edit-actions</a> to be enabled in config) at
+        <a href="http://config.privoxy.org/show-status" target="_top">http://config.privoxy.org/show-status</a> (click
+        on user.action Edit button).</p>
+        <p>Here you can enable HTTPS inspection for individual sites:</p>
+        <table border="0" bgcolor="#E0E0E0" width="100%">
+          <tr>
+            <td>
+              <pre class="SCREEN">  {+<a href="actions-file.html#HTTPS-INSPECTION">https-inspection</a>}
+  .badssl.com
+  clienttest.ssllabs.com</pre>
+            </td>
+          </tr>
+        </table>
+        <p>You can add more individual sites or wildcards (one per line).</p>
+        <p>Alternatively, you can use a client-tag to dynamically enable/disable this feature via the browser, as
+        described in the next chapter.</p>
+      </div>
+    </div>
+    <div class="SECT2">
+      <h2 class="SECT2"><a name="H2-CLIENT-TAGS" id="H2-CLIENT-TAGS">11.2. Client Tags HOWTO</a></h2>
+      <p>Client Tags are a mechanism to dynamically or temporarily enable and disable features in Privoxy for each
+      browser instance.</p>
+      <p>In our example, we use this for the following two use cases:</p>
+      <ul>
+        <li>
+          <p>Enable Tor anonymous proxy</p>
+        </li>
+        <li>
+          <p>Enable https-inspection</p>
+        </li>
+      </ul>
+      <p>To use this feature, you must first define a tag name and a tag description for each client-tag in <a href=
+      "config.html">config</a>, like this:</p>
+      <table border="0" bgcolor="#E0E0E0" width="100%">
+        <tr>
+          <td>
+            <pre class="SCREEN">  <a href=
+            "config.html#CLIENT-SPECIFIC-TAG">client-specific-tag</a> tor Use Tor anonymous proxy
+  <a href="config.html#CLIENT-SPECIFIC-TAG">client-specific-tag</a> https-inspection Enable https-inspection</pre>
+          </td>
+        </tr>
+      </table>
+      <p>Now you can open <a href="http://config.privoxy.org/client-tags" target=
+      "_top">http://config.privoxy.org/client-tags</a> or <a href="http://p.p/client-tags" target=
+      "_top">http://p.p/client-tags</a> and enable or disable the tag there (you may want to bookmark this page for
+      quick access, though it is also available via a link at <a href="http://p.p" target="_top">http://p.p</a>).</p>
+      <p>You can also temporarily enable a tag, which by default means 3 minutes (180 seconds) (and can be changed
+      using the <a href="config.html#CLIENT-TAG-LIFETIME">client-tag-lifetime</a> option in <a href=
+      "config.html">config</a>).</p>
+      <p>Before this takes effect, you must reference the client tag in your <a href=
+      "actions-file.html#USER-ACTION">user.action</a> like this:</p>
+      <table border="0" bgcolor="#E0E0E0" width="100%">
+        <tr>
+          <td>
+            <pre class="SCREEN">  {+<a href="actions-file.html#FORWARD-OVERRIDE">forward-override</a>{<a href=
+            "config.html#SOCKS">forward-socks5t</a> 127.0.0.1:9050 .} }
+  <a href="actions-file.html#CLIENT-TAG-PATTERN">CLIENT-TAG</a>:^tor$</pre>
+          </td>
+        </tr>
+      </table>
+      <p>This means that if the "tor" client tag is enabled, all traffic will be forwarded by Privoxy through SOCKS5T
+      to a locally installed tor proxy listening on port 9050.</p>
+      <p>Similarly, you can specify to use the https-inspection client tag to enable https-inspection:</p>
+      <table border="0" bgcolor="#E0E0E0" width="100%">
+        <tr>
+          <td>
+            <pre class="SCREEN">  {+<a href="actions-file.html#HTTPS-INSPECTION">https-inspection</a>}
+  <a href="actions-file.html#CLIENT-TAG-PATTERN">CLIENT-TAG</a>:^https-inspection$</pre>
+          </td>
+        </tr>
+      </table>
+      <p>The tag will be set for all requests coming from clients that have requested it to be set. Note that "clients"
+      are distinguished by their IP address. If the IP address changes, the tag must be requested again.</p>
+    </div>
+  </div>
+  <div class="NAVFOOTER">
+    <hr align="left" width="100%">
+    <table summary="Footer navigation table" width="100%" border="0" cellpadding="0" cellspacing="0">
+      <tr>
+        <td width="33%" align="left" valign="top"><a href="templates.html" accesskey="P">Prev</a></td>
+        <td width="34%" align="center" valign="top"><a href="index.html" accesskey="H">Home</a></td>
+        <td width="33%" align="right" valign="top"><a href="contact.html" accesskey="N">Next</a></td>
+      </tr>
+      <tr>
+        <td width="33%" align="left" valign="top">Privoxy's Template Files</td>
+        <td width="34%" align="center" valign="top">&nbsp;</td>
+        <td width="33%" align="right" valign="top">Contacting the Developers, Bug Reporting and Feature Requests</td>
+      </tr>
+    </table>
+  </div>
+</body>
+</html>

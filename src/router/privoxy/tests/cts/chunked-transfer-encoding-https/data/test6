@@ -1,0 +1,88 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+chunked transfer encoding
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+Transfer-Encoding: chunked
+X-Control: swsclose
+
+3
+AA
+
+4
+BBB
+
+123
+This chunk is too small
+4
+DDD
+0
+
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 Connection established
+
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+Transfer-Encoding: chunked
+X-Control: swsclose
+
+3
+AA
+
+4
+BBB
+
+123
+This chunk is too small
+4
+DDD
+0
+
+</data>
+</proxy-reply>
+
+<client>
+<server>
+https
+</server>
+<name>
+Chunked transfer encoding - Multiple small chunks, chunk in the middle too small.
+</name>
+<features>
+proxy
+</features>
+<command>
+--insecure --raw https://%HOSTIP:%HTTPSPORT/chunked-transfer-encoding/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /chunked-transfer-encoding/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPSPORT
+User-Agent: curl/%VERSION
+Accept: */*
+
+</protocol>
+<errorcode>
+18
+</errorcode>
+</verify>
+
+</testcase>

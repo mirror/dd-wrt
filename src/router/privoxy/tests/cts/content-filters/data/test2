@@ -1,0 +1,129 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter js-annoyances
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here are some strings the js-events filter should modify:
+
+# pcrs command 1:
+
+onmouseover
+onmouseout
+onmousedown
+onmouseup
+onmousemove
+
+event.mouseover
+event.mouseout
+event.mousedown
+event.mouseup
+event.mousemove
+
+onload
+onunload
+oncontextmenu
+onselectstart
+
+event.load
+event.unload
+event.contextmenu
+event.selectstart
+
+# pcrs command 2:
+
+alert (
+confirm (
+
+# pcrs command 3:
+
+settimeout(
+setinterval(
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 263
+
+# Here are some strings the js-events filter should modify:
+
+# pcrs command 1:
+
+never
+never
+never
+never
+never
+
+never
+never
+never
+never
+never
+
+never
+never
+never
+never
+
+never
+never
+never
+never
+
+# pcrs command 2:
+
+concat(
+concat(
+
+# pcrs command 3:
+
+concat(
+concat(
+</data>
+</proxy-reply>
+
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{js-events}
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/js-events/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /js-events/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

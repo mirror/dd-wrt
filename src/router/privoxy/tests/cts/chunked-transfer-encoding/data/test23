@@ -1,0 +1,70 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+chunked transfer encoding
+</keywords>
+</info>
+
+# This reply specifies a Content-Length header even though the response is chunk-encoded.
+# Per RFC 2616 4.4 3 the Content-Length header must be ignored.
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+Transfer-Encoding: chunked
+Content-Length: 12345
+X-Control: swsclose
+
+6
+AAAAA
+
+0
+
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+Content-Length: 6
+X-Control: swsclose
+
+AAAAA
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+Chunked transfer encoding with Content-Lenght header set
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/chunked-transfer-encoding/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /chunked-transfer-encoding/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+
+</protocol>
+<errorcode>
+0
+</errorcode>
+</verify>
+</testcase>

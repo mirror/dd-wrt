@@ -1,0 +1,17 @@
+{+https-inspection +ignore-certificate-errors}
+/
+
+{+redirect{http://www.privoxy.org/}}
+/1-redirect-me-to-www.privoxy.org
+
+{+redirect{https://www.privoxy.org/}}
+/2-redirect-me-to-www.privoxy.org
+
+{+redirect{s@https://www.example.org/.*@http://www.privoxy.org/@}}
+/3-redirect-me-to-www.privoxy.org
+
+{+redirect{s@https://www.example.org/.*@https://www.privoxy.org/@}}
+/4-redirect-me-to-www.privoxy.org
+
+{+redirect{s@https://www.privoxy.org/\d-replace-me@https://www.privoxy.org/path-replaced@}}
+/5-replace-me

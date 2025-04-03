@@ -1,0 +1,65 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter crude-parental
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# This is a fairly inoffensive info page which does
+# not get blocked by the crude-parental filter:
+
+Middlesex, Sussex and Essex are counties in the UK.
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# This is a fairly inoffensive info page which does
+# not get blocked by the crude-parental filter:
+
+Middlesex, Sussex and Essex are counties in the UK.
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{crude-parental} with page containing Middlesex, Sussex and Essex
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/crude-parental/harmless-info-page/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /crude-parental/harmless-info-page/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

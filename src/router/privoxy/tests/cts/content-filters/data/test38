@@ -1,0 +1,84 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter imdb
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here are some strings the imdb filter should filter:
+
+# pcrs command 1:
+
+<div id="top_ad_wrapper"
+
+# pcrs command 2:
+
+<iframe blafasel id="top_ad" tralala></iframe>
+
+# pcrs command 3:
+
+<iframe blafasel onload="doWithAds.call bumfidel></iframe>
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 259
+
+# Here are some strings the imdb filter should filter:
+
+# pcrs command 1:
+
+<div id="top_ad_wrapper" style="display:none"
+
+# pcrs command 2:
+
+<!-- Iframe removed by Privoxy's imdb filter -->
+
+# pcrs command 3:
+
+<!-- Iframe removed by Privoxy's imdb filter -->
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{imdb}
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/imdb/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /imdb/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

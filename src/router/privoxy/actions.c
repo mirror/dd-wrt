@@ -4,7 +4,7 @@
  *
  * Purpose     :  Declares functions to work with actions files
  *
- * Copyright   :  Written by and Copyright (C) 2001-2016 the
+ * Copyright   :  Written by and Copyright (C) 2001-2025 the
  *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -829,7 +829,7 @@ int update_action_bits_for_tag(struct client_state *csp, const char *tag)
          }
 
          /* and check if one of the tag patterns matches the tag, */
-         if (0 == regexec(b->url->pattern.tag_regex, tag, 0, NULL, 0))
+         if (regex_matches(b->url->pattern.tag_regex, tag))
          {
             /* if it does, update the action bit map, */
             if (merge_current_action(csp->action, b->action))
@@ -884,7 +884,7 @@ jb_err check_negative_tag_patterns(struct client_state *csp, unsigned int flag)
          }
          for (tag = csp->tags->first; NULL != tag; tag = tag->next)
          {
-            if (0 == regexec(b->url->pattern.tag_regex, tag->str, 0, NULL, 0))
+            if (regex_matches(b->url->pattern.tag_regex, tag->str))
             {
                /*
                 * The pattern matches at least one tag, thus the action
@@ -1212,6 +1212,45 @@ static int action_spec_is_valid(struct client_state *csp, const struct action_sp
 
 /*********************************************************************
  *
+ * Function    :  newer_privoxy_version_required
+ *
+ * Description :  Figures out whether or not an action file requires
+ *                a more recent Privoxy version.
+ *
+ * Parameters  :
+ *          1  :  required_major = Required major version.
+ *          2  :  required_minor = Required minor version, or NULL.
+ *          3  :  required_point = Required point release, or NULL.
+ *
+ * Returns     :  1 => Yes, 0 => No.
+ *
+ *********************************************************************/
+static int newer_privoxy_version_required(const char *required_major,
+   const char *required_minor, const char *required_point)
+{
+   if (atoi(required_major) > VERSION_MAJOR)
+   {
+      return 1;
+   }
+   if (atoi(required_major) < VERSION_MAJOR)
+   {
+      return 0;
+   }
+   if ((required_minor == NULL) || (atoi(required_minor) < VERSION_MINOR))
+   {
+      return 0;
+   }
+   if ((required_point == NULL) || (atoi(required_point) <= VERSION_POINT))
+   {
+      return 0;
+   }
+
+   return 1;
+}
+
+
+/*********************************************************************
+ *
  * Function    :  load_one_actions_file
  *
  * Description :  Read and parse an action file and add to files
@@ -1489,9 +1528,7 @@ int load_one_actions_file(struct client_state *csp, int fileid)
                  "While loading actions file '%s': invalid line (%lu): %s",
                   csp->config->actions_file[fileid], linenum, buf);
             }
-            else if (                  (atoi(fields[0]) > VERSION_MAJOR)
-               || ((num_fields > 1) && (atoi(fields[1]) > VERSION_MINOR))
-               || ((num_fields > 2) && (atoi(fields[2]) > VERSION_POINT)))
+            else if (newer_privoxy_version_required(fields[0], fields[1], fields[2]))
             {
                fclose(fp);
                log_error(LOG_LEVEL_FATAL,

@@ -50,7 +50,7 @@
 */
 #define CERT_INFO_BUF_SIZE         4096
 #define ISSUER_NAME_BUF_SIZE       2048
-#define HASH_OF_HOST_BUF_SIZE      16
+#define HASH_OF_HOST_BUF_SIZE      32
 #endif /* FEATURE_HTTPS_INSPECTION */
 
 #ifdef FEATURE_HTTPS_INSPECTION_MBEDTLS
@@ -65,6 +65,10 @@
 
 #ifdef FEATURE_HTTPS_INSPECTION_OPENSSL
 #ifdef _WIN32
+#include <windef.h>
+#include <minwindef.h>
+#include <basetsd.h>
+#include <minwinbase.h>
 #include <wincrypt.h>
 #undef X509_NAME
 #undef X509_EXTENSIONS
@@ -73,6 +77,11 @@
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #endif /* FEATURE_HTTPS_INSPECTION_OPENSSL */
+
+#ifdef FEATURE_HTTPS_INSPECTION_WOLFSSL
+#include <wolfssl/options.h>
+#include <wolfssl/ssl.h>
+#endif /* FEATURE_HTTPS_INSPECTION_WOLFSSL */
 
 /* Need for struct sockaddr_storage */
 #ifdef HAVE_RFC2553
@@ -94,12 +103,38 @@
  */
 
 #ifdef STATIC_PCRE
-#  include "pcre.h"
+#ifdef HAVE_PCRE2
+#  include "pcre2.h"
+#  include "pcre2posix.h"
 #else
-#  ifdef PCRE_H_IN_SUBDIR
-#    include <pcre/pcre.h>
+#  include "pcre.h"
+#  include "pcreposix.h"
+#endif
+#else
+#  ifdef HAVE_PCRE2
+#    ifdef PCRE2_H_IN_SUBDIR
+#      define PCRE2_CODE_UNIT_WIDTH 8
+#      include <pcre2/pcre2.h>
+#    else
+#      define PCRE2_CODE_UNIT_WIDTH 8
+#      include <pcre2.h>
+#    endif
+#    ifdef PCRE2POSIX_H_IN_SUBDIR
+#        include <pcre2/pcre2posix.h>
+#    else
+#        include <pcre2posix.h>
+#    endif
 #  else
-#    include <pcre.h>
+#    ifdef PCRE_H_IN_SUBDIR
+#      include <pcre/pcre.h>
+#    else
+#      include <pcre.h>
+#    endif
+#    ifdef PCREPOSIX_H_IN_SUBDIR
+#        include <pcre/pcreposix.h>
+#    else
+#        include <pcreposix.h>
+#    endif
 #  endif
 #endif
 
@@ -107,16 +142,6 @@
 #  include "pcrs.h"
 #else
 #  include <pcrs.h>
-#endif
-
-#ifdef STATIC_PCRE
-#  include "pcreposix.h"
-#else
-#  ifdef PCRE_H_IN_SUBDIR
-#    include <pcre/pcreposix.h>
-#  else
-#    include <pcreposix.h>
-#  endif
 #endif
 
 #ifdef _WIN32
@@ -317,6 +342,17 @@ typedef struct {
    BIO *bio;
 } openssl_connection_attr;
 #endif /* FEATURE_HTTPS_INSPECTION_OPENSSL */
+
+#ifdef FEATURE_HTTPS_INSPECTION_WOLFSSL
+/*
+ * Struct of attributes necessary for TLS/SSL connection
+ */
+typedef struct {
+   WOLFSSL_CTX *ctx;
+   WOLFSSL *ssl;
+} wolfssl_connection_attr;
+#endif /* def FEATURE_HTTPS_INSPECTION_WOLFSSL */
+
 /**
  * A HTTP request.  This includes the method (GET, POST) and
  * the parsed URL.
@@ -404,10 +440,16 @@ struct http_response
   enum crunch_reason crunch_reason; /**< Why the response was generated in the first place. */
 };
 
+#ifdef HAVE_PCRE2
+#define REGEX_TYPE pcre2_code
+#else
+#define REGEX_TYPE regex_t
+#endif
+
 struct url_spec
 {
 #ifdef FEATURE_PCRE_HOST_PATTERNS
-   regex_t *host_regex;/**< Regex for host matching                          */
+   REGEX_TYPE *host_regex;/**< Regex for host matching                          */
    enum host_regex_type { VANILLA_HOST_PATTERN, PCRE_HOST_PATTERN } host_regex_type;
 #endif /* defined FEATURE_PCRE_HOST_PATTERNS */
    int    dcount;      /**< How many parts to this domain? (length of dvec)   */
@@ -417,7 +459,7 @@ struct url_spec
 
    char  *port_list;   /**< List of acceptable ports, or NULL to match all ports */
 
-   regex_t *preg;      /**< Regex for matching path part                      */
+  REGEX_TYPE *preg;    /**< Regex for matching path part                      */
 };
 
 /**
@@ -432,7 +474,7 @@ struct pattern_spec
    union
    {
       struct url_spec url_spec;
-      regex_t *tag_regex;
+      REGEX_TYPE *tag_regex;
    } pattern;
 
    unsigned int flags; /**< Bitmap with various pattern properties. */
@@ -982,6 +1024,9 @@ struct ssl_attr {
 #ifdef FEATURE_HTTPS_INSPECTION_OPENSSL
    openssl_connection_attr  openssl_attr; /* OpenSSL atrrs */
 #endif /* FEATURE_HTTPS_INSPECTION_OPENSSL */
+#ifdef FEATURE_HTTPS_INSPECTION_WOLFSSL
+   wolfssl_connection_attr wolfssl_attr; /* wolfSSL atrrs */
+#endif /* FEATURE_HTTPS_INSPECTION_WOLFSSL */
 };
 /**
  * The state of a Privoxy processing thread.
@@ -1123,7 +1168,7 @@ struct client_state
 #define SSL_CERT_NOT_VERIFIED   0xFFFFFFFF
    uint32_t server_cert_verification_result;
 #endif /* FEATURE_HTTPS_INSPECTION_MBEDTLS */
-#ifdef FEATURE_HTTPS_INSPECTION_OPENSSL
+#if defined(FEATURE_HTTPS_INSPECTION_OPENSSL) || defined(FEATURE_HTTPS_INSPECTION_WOLFSSL)
 #define SSL_CERT_NOT_VERIFIED    ~0L
    long server_cert_verification_result;
 #endif /* FEATURE_HTTPS_INSPECTION_OPENSSL */
@@ -1307,9 +1352,9 @@ enum filter_type
 };
 
 #ifdef FEATURE_EXTERNAL_FILTERS
-#define MAX_FILTER_TYPES        9
+#define MAX_FILTER_TYPES        10
 #else
-#define MAX_FILTER_TYPES        8
+#define MAX_FILTER_TYPES        9
 #endif
 
 /**

@@ -430,7 +430,7 @@ static int parse_numeric_value(const char *name, const char *value)
       log_error(LOG_LEVEL_FATAL, "Directive %s used without argument", name);
    }
 
-   number = (int)strtol(value, &endptr, 0);
+   number = (int)strtol(value, &endptr, 10);
    if (*endptr != '\0')
    {
       log_error(LOG_LEVEL_FATAL,

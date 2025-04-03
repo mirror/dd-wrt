@@ -1,0 +1,32 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+Content-Length: 14
+
+Blafaseldieda
+</data>
+</reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+Request from permitted IP address
+</name>
+<command>
+http://%HOSTIP:%HTTPPORT/%TESTNUMBER
+</command>
+</client>
+
+</testcase>

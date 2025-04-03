@@ -1,0 +1,39 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Content-Length: 21
+Content-Type: text/html
+
+Received your input.
+</data>
+</reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+Enabling client-tag to disable block action for follow-up request with trusted Referer and disabling it again reusing the connection (based on test 4)
+</name>
+<command option="no-include">
+-s --write-out '%{stderr}%{response_code}\n' --referer "http://p.p/client-tags" 'http://p.p/toggle-client-tag?tag=overrule-blocks&toggle-state=1&expires=1' --next -s --include --output log/curl%TESTNUMBER.out --write-out '%{stderr}%{response_code}\n' http://%HOSTIP:%HTTPPORT/block-request/ --next -s --write-out '%{stderr}%{response_code}\n' --referer "http://p.p/client-tags" 'http://p.p/toggle-client-tag?tag=overrule-blocks&toggle-state=0&expires=1' --next --write-out '%{stderr}%{response_code}\n' http://%HOSTIP:%HTTPPORT/block-request/
+</command>
+</client>
+
+<verify>
+<stderr>
+302
+200
+302
+403
+</stderr>
+</verify>
+</testcase>

@@ -1,0 +1,105 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter img-reorder
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here are some strings the img-reorder filter should modify:
+
+<img alt="blafasel" src="http://example.org/">
+<img alt="blafasel" title="blafasel" src="http://example.org/">
+<img alt='blafasel' title='blafasel' src="http://example.org/">
+<img width="100" height="100" src="http://example.org/">
+<img width=100 height=100 src="http://example.org/">
+<img width=100 height='100' src="http://example.org/">
+<img width="100" height=100 src="http://example.org/">
+<img width="100" height=100 src="http://example.org/">
+<img width=100 src="http://example.org/" height='100'>
+<img  src="http://example.org/" width="100" height=100>
+<img width="100" height=100 src="http://example.org/">
+
+<img src="http://example.org/" alt="blafasel">
+
+<img data-index="0" class="lazy" src="" data-original="blafasel.jpg" title="">
+<img data-index="0" class="lazy" src='' data-original='blafasel.jpg' title="">
+
+<img data-index="0" class="lazy" src="a" data-original="blafasel.jpg" title="">
+<img data-index="0" class="lazy" src='b' data-original='blafasel.jpg' title="">
+
+<img width=888 height=573 src=socket.png>
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 1089
+
+# Here are some strings the img-reorder filter should modify:
+
+<img src="http://example.org/" alt="blafasel">
+<img src="http://example.org/" alt="blafasel" title="blafasel">
+<img src="http://example.org/" alt='blafasel' title='blafasel'>
+<img src="http://example.org/" width="100" height="100">
+<img src="http://example.org/" width=100 height=100>
+<img src="http://example.org/" width=100 height='100'>
+<img src="http://example.org/" width="100" height=100>
+<img src="http://example.org/" width="100" height=100>
+<img src="http://example.org/" width=100 height='100'>
+<img src="http://example.org/" width="100" height=100>
+<img src="http://example.org/" width="100" height=100>
+
+<img src="http://example.org/" alt="blafasel">
+
+<img data-index="0" class="lazy" src="" data-original="blafasel.jpg" title="">
+<img data-index="0" class="lazy" src='' data-original='blafasel.jpg' title="">
+
+<img src="a" data-index="0" class="lazy" data-original="blafasel.jpg" title="">
+<img src='b' data-index="0" class="lazy" data-original='blafasel.jpg' title="">
+
+<img src=socket.png width=888 height=573>
+</data>
+</proxy-reply>
+
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{img-reorder}
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/img-reorder/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /img-reorder/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

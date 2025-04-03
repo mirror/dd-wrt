@@ -1,0 +1,61 @@
+<testcase>
+<info>
+<keywords>
+HTTPS
+HTTP POST
+client-body-filter
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+X-Connection: swsclose
+
+Received your input.
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 Connection established
+
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+X-Connection: swsclose
+
+Received your input.
+</data>
+</proxy-reply>
+
+<client>
+<server>
+https
+</server>
+<name>
+Modify parts of the client body with client-body-filter{blafasel-to-bumfidel}
+</name>
+<features>
+proxy
+</features>
+<command>
+-d "foo blafasel bar" --insecure https://%HOSTIP:%HTTPSPORT/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol nonewline="yes">
+POST /%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPSPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Content-Length: 16
+Content-Type: application/x-www-form-urlencoded
+
+foo bumfidel bar
+</protocol>
+</verify>
+</testcase>

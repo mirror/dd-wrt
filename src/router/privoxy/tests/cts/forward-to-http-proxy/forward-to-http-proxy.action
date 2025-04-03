@@ -1,0 +1,5 @@
+{+forward-override{forward-webserver 127.0.0.1:20000}}
+www.example.org/30002
+
+{+forward-override{forward .}}
+/40002

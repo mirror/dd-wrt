@@ -73,5 +73,6 @@ extern unsigned long get_certificate_serial(struct client_state *csp);
 extern int get_certificate_valid_from_date(char *buffer, size_t buffer_size, const char *fmt);
 extern int get_certificate_valid_to_date(char *buffer, size_t buffer_size, const char *fmt);
 extern int enforce_sane_certificate_state(const char *certificate, const char *key);
+extern int create_hexadecimal_hash_of_host(struct client_state *csp);
 
 #endif /* ndef SSL_COMMON_H_INCLUDED */

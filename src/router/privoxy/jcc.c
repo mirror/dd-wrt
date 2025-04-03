@@ -5,7 +5,7 @@
  * Purpose     :  Main file.  Contains main() method, main loop, and
  *                the main connection-handling function.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2022 the
+ * Copyright   :  Written by and Copyright (C) 2001-2023 the
  *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -2510,12 +2510,12 @@ static jb_err receive_encrypted_request_headers(struct client_state *csp)
 
    do
    {
-      log_error(LOG_LEVEL_HEADER, "Waiting for encrypted client headers");
+      log_error(LOG_LEVEL_HEADER, "Waiting for encrypted client headers.");
       if (!is_ssl_pending(&(csp->ssl_client_attr)) &&
           !data_is_available(csp->cfd, csp->config->socket_timeout))
       {
          log_error(LOG_LEVEL_CONNECT,
-            "Socket %d timed out while waiting for client headers", csp->cfd);
+            "Socket %d timed out while waiting for client headers.", csp->cfd);
          return JB_ERR_PARSE;
       }
       len = ssl_recv_data(&(csp->ssl_client_attr),
@@ -2523,7 +2523,7 @@ static jb_err receive_encrypted_request_headers(struct client_state *csp)
       if (len == 0)
       {
          log_error(LOG_LEVEL_CONNECT,
-            "Socket %d closed while waiting for client headers", csp->cfd);
+            "Socket %d closed while waiting for client headers.", csp->cfd);
          return JB_ERR_PARSE;
       }
       if (len == -1)
@@ -2537,7 +2537,7 @@ static jb_err receive_encrypted_request_headers(struct client_state *csp)
       p = strstr(csp->client_iob->cur, "\r\n\r\n");
    } while (p == NULL);
 
-   log_error(LOG_LEVEL_HEADER, "Encrypted headers received completely");
+   log_error(LOG_LEVEL_HEADER, "Encrypted headers received completely.");
 
    return JB_ERR_OK;
 }
@@ -4174,7 +4174,7 @@ static void handle_established_connection(struct client_state *csp)
                   else
                   {
                      log_error(LOG_LEVEL_CONNECT,
-                        "Keeping chunk offset at %lu despite flushing %ld bytes",
+                        "Keeping chunk offset at %lu despite flushing %ld bytes.",
                         chunk_offset, len);
                      /*
                       * If we can't parse the chunk-encoded data we should
@@ -6269,7 +6269,8 @@ static void listen_loop(void)
 
       if (!accept_connection(csp, bfds))
       {
-         log_error(LOG_LEVEL_CONNECT, "accept failed: %E");
+         log_error(LOG_LEVEL_CONNECT,
+            "Failed to accept() incoming connection: %E");
          freez(csp_list);
          continue;
       }

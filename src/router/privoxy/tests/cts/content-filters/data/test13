@@ -1,0 +1,84 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter jumping-windows
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here are some strings the jumping-windows filter should filter:
+
++window.moveto(
++this.moveto(
++self.moveto(
+
++window.moveby(
++this.moveby(
++self.moveby(
+
++window.resizeto(
++this.resizeto(
++self.resizeto(
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 177
+
+# Here are some strings the jumping-windows filter should filter:
+
++''.concat(
++''.concat(
++''.concat(
+
++''.concat(
++''.concat(
++''.concat(
+
++''.concat(
++''.concat(
++''.concat(
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{jumping-windows}
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/jumping-windows/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /jumping-windows/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

@@ -1,0 +1,97 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter unsolicited-popups
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here are some strings the unsolicited-popups filter should modify:
+
+# pcrs command 1:
+
+<head blafasel>
+
+# pcrs command 2:
+
+blafasel + window.open(
+blafasel - mapwindow.open(
+blafasel + mapthis.open(
+blafasel - mapparent.open(
+blafasel + window.open(
+blafasel = this.open(
+blafasel = parent.open(
+
+# pcrs command 3:
+
+aslkdfalksjfd </html>
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 520
+
+# Here are some strings the unsolicited-popups filter should modify:
+
+# pcrs command 1:
+
+<head blafasel><script>function PrivoxyWindowOpen(){return(null);}</script>
+
+# pcrs command 2:
+
+blafasel + PrivoxyWindowOpen(
+blafasel - PrivoxyWindowOpen(
+blafasel + PrivoxyWindowOpen(
+blafasel - PrivoxyWindowOpen(
+blafasel + PrivoxyWindowOpen(
+blafasel = PrivoxyWindowOpen(
+blafasel = PrivoxyWindowOpen(
+
+# pcrs command 3:
+
+aslkdfalksjfd </html><script>function PrivoxyWindowOpen(a, b, c){return(window.open(a, b, c));}</script>
+</data>
+</proxy-reply>
+
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{unsolicited-popups}
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/unsolicited-popups/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /unsolicited-popups/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

@@ -4,7 +4,7 @@
 <head>
   <title>Installation</title>
   <meta name="GENERATOR" content="Modular DocBook HTML Stylesheet Version 1.79">
-  <link rel="HOME" title="Privoxy 3.0.34 User Manual" href="index.html">
+  <link rel="HOME" title="Privoxy 4.0.0 User Manual" href="index.html">
   <link rel="PREVIOUS" title="Introduction" href="introduction.html">
   <link rel="NEXT" title="What's New in this Release" href="whatsnew.html">
   <link rel="STYLESHEET" type="text/css" href="../p_doc.css">
@@ -15,7 +15,7 @@
   <div class="NAVHEADER">
     <table summary="Header navigation table" width="100%" border="0" cellpadding="0" cellspacing="0">
       <tr>
-        <th colspan="3" align="center">Privoxy 3.0.34 User Manual</th>
+        <th colspan="3" align="center">Privoxy 4.0.0 User Manual</th>
       </tr>
       <tr>
         <td width="10%" align="left" valign="bottom"><a href="introduction.html" accesskey="P">Prev</a></td>
@@ -131,8 +131,8 @@
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN">  tar xzvf privoxy-3.0.34-stable-src.tar.gz
-  cd privoxy-3.0.34-stable</pre>
+            <pre class="SCREEN">  tar xzvf privoxy-4.0.0-stable-src.tar.gz
+  cd privoxy-4.0.0-stable</pre>
           </td>
         </tr>
       </table>
@@ -313,8 +313,9 @@
               </td>
             </tr>
           </table>
-          <p>Get the source code (.zip or .tar.gz) for tidy from <a href="https://github.com/htacg/tidy-html5/releases"
-          target="_top">https://github.com/htacg/tidy-html5/releases</a>, unzip into &lt;root-dir&#62; and build the
+          <p>If you want to build the documentation, get the source code (tar.gz) for tidy from <a href=
+          "https://github.com/htacg/tidy-html5/releases" target=
+          "_top">https://github.com/htacg/tidy-html5/releases</a>, unzip into &lt;root-dir&#62; and build the
           software:</p>
           <table border="0" bgcolor="#E0E0E0" width="100%">
             <tr>
@@ -339,27 +340,20 @@
               </td>
             </tr>
           </table>
-          <p>Get the latest 8.x PCRE code from <a href="https://sourceforge.net/projects/pcre/files/pcre/" target=
-          "_top">PCRE https://sourceforge.net/projects/pcre/files/pcre/</a> and build the static PCRE libraries
-          with</p>
+          <p>Get the latest 10.x PCRE code from <a href="https://github.com/PCRE2Project/pcre2/releases" target=
+          "_top">https://github.com/PCRE2Project/pcre2/releases</a> and build the static PCRE libraries with</p>
           <table border="0" bgcolor="#E0E0E0" width="100%">
             <tr>
               <td>
                 <pre class="SCREEN">  export CFLAGS="-O2 -fstack-protector-strong -D_FORTIFY_SOURCE=2"
   export LDFLAGS="-fstack-protector-strong"
-  export CPPFLAGS="-DPCRE_STATIC"
+  export CPPFLAGS="-DPCRE2_STATIC"
 
   ./configure  --host=i686-w64-mingw32 \
                --prefix=/usr/local/i686-w64-mingw32 \
-               --enable-utf  --enable-unicode-properties \
                --enable-jit \
                --enable-newline-is-anycrlf \
-               --enable-pcre16 \
-               --enable-pcre32 \
-               --disable-pcregrep-libbz2 \
-               --disable-pcregrep-libz \
-               --disable-pcretest-libreadline \
-               --disable-stack-for-recursion  \
+               --with-gnu-ld \
                --enable-static --disable-shared \
     &#38;&#38;  make</pre>
               </td>

@@ -1,0 +1,229 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter js-annoyances
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here are some strings the js-annoyances filter should modify:
+
+# pcrs command 1:
+
+blafasel.referrer
+
+# pcrs command 2:
+
+bla bla bla this.defaultstatus = "hoho" x y z
+bla bla bla window.status = "whatever" x y z
+
+# pcrs command 3:
+
+this.status = blafasel;
+window.defaultstatus= dieda;
+
+# pcrs command 4:
+
+<body onunload="box('query').focus();">
+
+# pcrs command 5:
+
+<script
+     window.onunload="do.something()"
+</script>
+
+# pcrs command 6:
+
+open (blafasel resizable="no");
+open(blafasel resizable='0');
+
+# pcrs command 7:
+
+open(blafasel location="no")
+open(blafasel location='0')
+
+# pcrs command 8:
+
+open(blafasel status="no")
+open(blafasel   status='0')
+
+# pcrs command 9:
+
+open(blafasel scrolling="no")
+open(blafasel   scrollbars='0')
+
+# pcrs command 10:
+
+open(blafasel menubar="no")
+open(blafasel   menubar='0')
+
+# pcrs command 11:
+
+open(blafasel toolbar="no")
+open(blafasel   toolbar='0')
+
+# pcrs command 12:
+
+open(blafasel directories="no")
+open(blafasel   directories='0')
+
+# pcrs command 13:
+
+open(blafasel fullscreen="no")
+open(blafasel   fullscreen='0')
+
+# pcrs command 14:
+
+open(blafasel alwaysraised="yes")
+open(blafasel alwayslowered='yes')
+
+# pcrs command 15:
+
+open(blafasel z-lock="yes")
+open(blafasel zlock='yes')
+
+# pcrs command 16:
+
+open(blafasel hotkeys="yes")
+open(blafasel   hotkeys='1')
+
+# pcrs command 17:
+
+open(blafasel titlebar="no")
+open(blafasel   titlebar='0')
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 1503
+
+# Here are some strings the js-annoyances filter should modify:
+
+# pcrs command 1:
+
+false.toString()
+
+# pcrs command 2:
+
+bla bla bla this.defaultstatus = (typeof(this.href) != 'undefined')?("hoho" + ' URL: ' + this.href):(this.defaultstatus) x y z
+bla bla bla window.status = (typeof(this.href) != 'undefined')?("whatever" + ' URL: ' + this.href):(window.status) x y z
+
+# pcrs command 3:
+
+
+
+
+# pcrs command 4:
+
+<body never="box('query').focus();">
+
+# pcrs command 5:
+
+<script
+     never="do.something()"
+</script>
+
+# pcrs command 6:
+
+open (blafasel resizable="yes");
+open(blafasel resizable='yes');
+
+# pcrs command 7:
+
+open(blafasel location="yes")
+open(blafasel location='yes')
+
+# pcrs command 8:
+
+open(blafasel status="yes")
+open(blafasel   status='yes')
+
+# pcrs command 9:
+
+open(blafasel scrolling="auto")
+open(blafasel   scrollbars='auto')
+
+# pcrs command 10:
+
+open(blafasel menubar="yes")
+open(blafasel   menubar='yes')
+
+# pcrs command 11:
+
+open(blafasel toolbar="yes")
+open(blafasel   toolbar='yes')
+
+# pcrs command 12:
+
+open(blafasel directories="yes")
+open(blafasel   directories='yes')
+
+# pcrs command 13:
+
+open(blafasel fullscreen="no")
+open(blafasel   fullscreen='0')
+
+# pcrs command 14:
+
+open(blafasel alwaysraised="no")
+open(blafasel alwayslowered='no')
+
+# pcrs command 15:
+
+open(blafasel z-lock="no")
+open(blafasel zlock='no')
+
+# pcrs command 16:
+
+open(blafasel hotkeys="no")
+open(blafasel   hotkeys='no')
+
+# pcrs command 17:
+
+open(blafasel titlebar="yes")
+open(blafasel   titlebar='yes')
+</data>
+</proxy-reply>
+
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{js-annoyances}
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/js-annoyances/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /js-annoyances/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

@@ -1,0 +1,61 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter crude-parental
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# This is a fake porn side the crude-parental filter should filter:
+Suck her dick here!!!
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 122
+
+This page has been blocked by <a href="http://p.p/">Privoxy's</a> crude-parental content filter based on the description.
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{crude-parental} pcrs command 3 with porn description C
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/crude-parental/porn-description-c/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /crude-parental/porn-description-c/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

@@ -1,0 +1,50 @@
+<testcase>
+<info>
+<keywords>
+HTTPS
+HTTP GET
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+Content-Length: 18
+
+Here's your data.
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+function FindProxyForURL(url, host) {
+    var proxy = "PROXY 127.0.0.1:9119; DIRECT";
+    var direct = "DIRECT";
+    if (isPlainHostName(host)) {
+        return direct;
+    }
+    if (url.substring(0, 4) == "ftp:" || url.substring(0, 6) == "rsync:") {
+        return direct;
+    }
+    return proxy;
+}
+</data>
+</proxy-reply>
+
+<client>
+<server>
+none
+</server>
+<name>
+CGI request for PAC file
+</name>
+<command option="no-include">
+http://config.privoxy.org/wpad.dat
+</command>
+</client>
+
+<verify>
+</verify>
+</testcase>

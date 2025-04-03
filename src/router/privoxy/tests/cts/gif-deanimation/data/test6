@@ -1,0 +1,59 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+gif deanimation
+</keywords>
+</info>
+
+<reply>
+<data nonewline="yes">
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: image/gif
+X-Control: swsclose
+Content-Length: 0
+
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 502 Server or forwarder response invalid
+Content-Type: text/plain
+Connection: close
+
+Bad response. The server or forwarder response doesn't look like HTTP.
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+Content-Length 0 and no body sent.
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/deanimate-gif/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /deanimate-gif/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+
+</protocol>
+<errorcode>
+0
+</errorcode>
+</verify>
+</testcase>

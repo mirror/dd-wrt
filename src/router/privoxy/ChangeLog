@@ -1,6 +1,153 @@
 --------------------------------------------------------------------
 ChangeLog for Privoxy
 --------------------------------------------------------------------
+*** Version 4.0.0 stable ***
+
+- Bug fixes:
+  - Add missing client-body-tagger data to the action_type_info[] struct
+    so lookups based on the action index work correctly again.
+    Prevents assertion failures or segfaults when trying to edit
+    an action file with the CGI editor.
+    The type of failure depended on whether or not assertions
+    were enabled and on whether or not Privoxy had been compiled
+    with FEATURE_EXTERNAL_FILTERS.
+    Regression introduced in Privoxy 3.0.34.
+    Patch submitted by Aaron Li in #940.
+  - Bump MAX_FILTER_TYPES which should have been done in d128e6aa4
+    when introducing the client-body-tagger{} action.
+    Prevents an assertion in cgi_edit_actions_for_url() from triggering
+    after e32d03e0 when using the CGI editor with assertions enabled.
+  - is_untrusted_url(): Search the encrypted headers for the Referer
+    when the client is using https and https inspection is enabled.
+    Fixes the trust mechanism for https requests.
+    Reported by Laurent Caumont in #1767.
+  - GNUMakefile.in: Let the install target work if no group is specified.
+  - GNUMakefile.in: Set GROUP_T when installing configuration files as root
+    and there is no privoxy user available so the install target doesn't
+    fail. Patch by Fabrice Fontaine.
+  - GNUmakefile.in: Don't exit if configuration files are installed as root
+    as this can be considered acceptable when cross-compiling
+    Privoxy inside an autobuilder with only a root user.
+    Patch by Fabrice Fontaine.
+  - configure.in: Fix argument types in gmtime_r() and localtime_r() probes.
+    Otherwise these probes always fail with stricter compilers
+    even if there is C library support for these functions.
+    Patch submitted by Florian Weimer in SF#149.
+  - Fix socks4 and socks4a support under glibc's source fortification.
+    With glibc's source fortification, gcc offers the compilation warning
+    resulting in a runtime abort() when using a socks4 or socks4a upstream proxy.
+    Despite the warning, the strlcpy() call in question is fine: gcc
+    misidentifies the size of the destination buffer, estimating to hold
+    only a single char while in fact the buffer stretches beyond the end of
+    the struct socks_op.
+    The issue was originally reported in the NixOS issue tracker at
+        https://github.com/NixOS/nixpkgs/issues/265654
+    prompted by an upgrade of glibc from 2.37-39 to 2.38-0.
+    Patch submitted by Ingo Blechschmid, joint work with
+    @esclear and @richi235.
+
+- General improvements:
+  - Allow to use wolfSSL for https inspection.
+    wolfSSL supports TLS 1.3 and can be significantly faster than
+    mbedTLS. Mainly tested on ElectroBSD amd64 where it can compete
+    with OpenSSL and LibreSSL:
+    https://www.fabiankeil.de/gehacktes/privoxy-tls-benchmarks/
+    To enable the support, install wolfSSL and run ./configure
+    with the --with-wolfssl option.
+    Sponsored by Privoxy project funds collected at SPI.
+  - Add an test framework that leverages the curl test suite.
+    Sponsored by Privoxy project funds collected at SPI.
+  - Add pcre2 support. Closes bug #935.
+    Initial patch submitted by Gagan Sidhu.
+  - Use SHA256 as hash algorithm for the certificate and key file names
+    instead of MD5. The known MD5 vulnerabilities shouldn't matter for
+    Privoxy's use case but it doesn't hurt to use a hash algorithm that
+    isn't deprecated.
+    Sponsored by: Robert Klemme
+  - Add support for mbedTLS 3.x. This removes a sanity check
+    (whether issuer key and issuer certificate match) that seems
+    overly cautious and fails to compile with mbedTLS 3.x as the
+    struct members are private. We don't have an equivalent check
+    in the OpenSSL or wolfSSL code either.
+  - Factor out newer_privoxy_version_required() and improve the logic
+    Previously 3.0.11 was considered newer than 4.0.0.
+  - init_error_log(): Include the reason for failures to open the log file.
+  - create_client_ssl_connection(): Don't keep the certificate lock
+    longer than necessary.
+  - Add periods to a bunch of log messages.
+  - normalize_lws(): Only log the 'Reducing whitespace ...' message
+    once per header
+  - log_error() Win32: Only call LogShowActivity() for debug level
+    LOG_LEVEL_REQUEST. As of b94bbe62a950, which was part of Privoxy 3.0.29,
+    LOG_LEVEL_REQUEST is used for all requests including crunched ones.
+    Previously LogShowActivity() was called twice for crunched
+    requests, (presumably) resulting in an aborted animation.
+  - Remove ./ prefix from tarball-dist files.
+  - create_client_ssl_connection(): Make it more obvious from an
+    error message that a function failed.
+  - Use stringify() instead of section_target() and remove section_target().
+    Like the XXX comment suggested this could be done my moving the hash
+    into the templates which seems preferable anyway.
+  - Prevent some compiler warnings.
+  - parse_numeric_value(): Expect a base-ten number.
+  - windows/MYconfigure: Have gcc diagnostics in color.
+
+- Action file improvements:
+  - Block requests to .amazon-adsystem.com/
+  - Block requests to 0.css-load.com/
+  - Block requests to html-load.com/ and 1.html-load.com/
+  - Block requests to b.6sc.co/
+  - Block requests to i.clean.gg/
+  - Block requests to s.cpx.to/
+  - Block requests to track.venatusmedia.com/
+  - Block requests to secure-eu.nmrodam.com/
+  - Block requests to o2.mouseflow.com/
+  - Disable fast-redirects for services.akteneinsichtsportal.de/
+  - Disable fast-redirects for /wp-content/plugins/pdf-viewer-for-elementor
+  - Disable fast-redirects for syndication.twitter.com/
+  - Disable fast-redirects for archive.softwareheritage.org/
+  - Disable fast-redirects to duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion/
+  - Disable fast-redirects for .creator-spring.com/_next/image
+  - Disable fast redirects for accounts.bahn.de/
+  - Unblock .datenschmutz.de/
+  - Unblock requests for 'adventur*.'
+  - Unblock adl.windows.com/
+    as it is apparently required to update from Windows 10 to 11.
+    Reported by Sam Varshavchik.
+
+- Privoxy-Log-Parser:
+  - Highlight 'Couldn't deliver the error message for [...]'.
+  - Highlight 'Failed to accept() incoming connection: Software caused connection abort'.
+  - Highlight 'Keeping chunk offset at 0 despite flushing 31 bytes.'.
+  - Highlight 'Not shutting down client connection on socket 8. The socket is no longer alive.'.
+  - Bump version to 0.9.6.
+
+- Privoxy-Regression-Test.pl:
+  - Let the --min-level option increase the --max-level
+    if the latter is smaller than the former.
+  - Add --curl option to use a non-default curl binary.
+  - Bump version to 0.7.5.
+
+- uagen:
+  - Bump BROWSER_VERSION and BROWSER_REVISION to match Firefox ESR 128.
+  - Bump version to 1.2.6.
+
+- Documentation:
+  - Add HOWTOs for https inspection and client-tags to user-manual.
+  - Suggest to use the force-text-mode action when filtering binary content
+    with external filters.
+  - Declare https-inspection non-experimental.
+  - FAQ: Mention that Privoxy Moral Licenses are available as well.
+  - Fix LibreSSL URL.
+  - Update perlre perldoc URL.
+  - config: Add SOCKS 5 to the list of supported protocols.
+  - In the Windows build section, note that one only needs tidy
+    to build the docs. If you're not building the docbook stuff you
+    don't need tidy.
+  - trust: Use the words 'allowlists' and 'blocklists'
+    instead of "whitelists" and "blacklists" which some
+    people consider to be less inclusive.
+
 *** Version 3.0.34 stable ***
 
 - Bug fixes:
@@ -3529,7 +3676,7 @@ being a mix of "U.S. English", "U.K. English" and "Irish English".
 
 
 ----------------------------------------------------------------------
-Copyright   :  Written by and Copyright (C) 2001-2023 the
+Copyright   :  Written by and Copyright (C) 2001-2025 the
                Privoxy team. https://www.privoxy.org/
 
                Based on the Internet Junkbuster originally written

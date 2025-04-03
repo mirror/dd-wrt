@@ -1,0 +1,17 @@
+{+https-inspection +ignore-certificate-errors}
+/
+
+{+client-header-filter{https-to-http}}
+/1-downgrade-to-http
+
+{+client-header-filter{truncate-path}}
+/2-remove-this
+
+{+client-header-filter{rewrite-host}}
+/3
+
+{+client-header-filter{non-matching-rewriter}}
+/4
+
+{+client-header-filter{invalid-http-version}}
+/5

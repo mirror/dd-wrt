@@ -1,0 +1,80 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter no-ping
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here are some strings the no-ping filter should filter:
+
+<a ping="http://www.example.org/ping-target" href="http://www.example.org/link-target">click here</a>
+
+<a ping='http://www.example.org/ping-target' href="http://www.example.org/link-target">click here</a>
+
+<area ping="http://www.example.org/ping-target" href="http://www.example.org/link-target">
+
+<area ping='http://www.example.org/ping-target' href="http://www.example.org/link-target">
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 836
+
+# Here are some strings the no-ping filter should filter:
+
+<strong style="color:white; background-color:red;" title="Privoxy removed ping target 'http://www.example.org/ping-target'">PING!</strong>
+<a href="http://www.example.org/link-target">click here</a>
+
+<strong style="color:white; background-color:red;" title="Privoxy removed ping target 'http://www.example.org/ping-target'">PING!</strong>
+<a href="http://www.example.org/link-target">click here</a>
+
+<strong style="color:white; background-color:red;" title="Privoxy removed ping target 'http://www.example.org/ping-target'">PING!</strong>
+<area href="http://www.example.org/link-target">
+
+<strong style="color:white; background-color:red;" title="Privoxy removed ping target 'http://www.example.org/ping-target'">PING!</strong>
+<area href="http://www.example.org/link-target">
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{no-ping}
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/no-ping/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /no-ping/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

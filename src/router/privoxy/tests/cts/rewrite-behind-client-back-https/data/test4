@@ -1,0 +1,54 @@
+<testcase>
+<info>
+<keywords>
+HTTPS
+HTTP GET
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+Content-Length: 18
+
+Here's your data.
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 Connection established
+
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+Content-Length: 18
+
+Here's your data.
+</data>
+</proxy-reply>
+
+<client>
+<server>
+https
+</server>
+<name>
+Client header filter that doesn't match anything. According to Valgrind it triggers a "Conditional jump or move depends on uninitialised value(s)"
+</name>
+<command>
+--insecure https:///%HOSTIP:%HTTPSPORT/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPSPORT
+User-Agent: curl/%VERSION
+Accept: */*
+
+</protocol>
+</verify>
+</testcase>

@@ -1,6 +1,6 @@
 # Note:  GNUmakefile is built automatically from GNUmakefile.in
 #
-# Written by and Copyright (C) 2001-2021 members of the
+# Written by and Copyright (C) 2001-2024 members of the
 # Privoxy team. https://www.privoxy.org/
 #
 # Based on the Internet Junkbuster originally written
@@ -243,6 +243,10 @@ OPENSSL_SRC      = @FEATURE_HTTPS_INSPECTION_ONLY_OPENSSL@openssl.c
 OPENSSL_OBJS     = @FEATURE_HTTPS_INSPECTION_ONLY_OPENSSL@$(OPENSSL_SRC:.c=.o)
 OPENSSL_HDRS     = @FEATURE_HTTPS_INSPECTION_ONLY_OPENSSL@$(OPENSSL_SRC:.c=.h)
 
+WOLFSSL_SRC      = @FEATURE_HTTPS_INSPECTION_ONLY_WOLFSSL@wolfssl.c
+WOLFSSL_OBJS     = @FEATURE_HTTPS_INSPECTION_ONLY_WOLFSSL@$(WOLFSSL_SRC:.c=.o)
+WOLFSSL_HDRS     = @FEATURE_HTTPS_INSPECTION_ONLY_WOLFSSL@$(WOLFSSL_SRC:.c=.h)
+
 PCRS_SRC     = @STATIC_PCRS_ONLY@pcrs.c
 PCRS_OBJS    = @STATIC_PCRS_ONLY@$(PCRS_SRC:.c=.@OBJEXT@)
 PCRS_HDRS    = @STATIC_PCRS_ONLY@$(PCRS_SRC:.c=.h)
@@ -262,9 +266,9 @@ SOCKET_LIB   = @SOCKET_LIB@
 # PThreads library, if needed.
 PTHREAD_LIB  = @PTHREAD_ONLY@@PTHREAD_LIB@
 
-SRCS         = $(C_SRC) $(CLIENT_TAG_SRC) $(FUZZ_SRC) $(W32_SRC) $(PCRS_SRC) $(REGEX_SRC) $(SSL_SRC) $(MBEDTLS_SRC) $(OPENSSL_SRC)
-OBJS         = $(C_OBJS) $(CLIENT_TAG_OBJS) $(FUZZ_OBJS) $(W32_OBJS) $(PCRS_OBJS) $(REGEX_OBJS) $(SSL_OBJS) $(MBEDTLS_OBJS) $(OPENSSL_OBJS)
-HDRS         = $(C_HDRS) $(W32_HDRS) $(PCRS_HDRS) $(REGEX_HDRS) $(SSL_HDRS) $(MBEDTLS_HDRS) $(OPENSSL_HDRS)
+SRCS         = $(C_SRC) $(CLIENT_TAG_SRC) $(FUZZ_SRC) $(W32_SRC) $(PCRS_SRC) $(REGEX_SRC) $(SSL_SRC) $(MBEDTLS_SRC) $(OPENSSL_SRC) $(WOLFSSL_SRC)
+OBJS         = $(C_OBJS) $(CLIENT_TAG_OBJS) $(FUZZ_OBJS) $(W32_OBJS) $(PCRS_OBJS) $(REGEX_OBJS) $(SSL_OBJS) $(MBEDTLS_OBJS) $(OPENSSL_OBJS) $(WOLFSSL_OBJS)
+HDRS         = $(C_HDRS) $(W32_HDRS) $(PCRS_HDRS) $(REGEX_HDRS) $(SSL_HDRS) $(MBEDTLS_HDRS) $(OPENSSL_HDRS) $(WOLFSSL_HDRS)
 LIBS         = @LIBS@ $(W32_LIB) $(SOCKET_LIB) $(PTHREAD_LIB)
 
 
@@ -440,7 +444,7 @@ tarball-dist: dist-check clean clobber
 	for i in `find . -type f -a -not \( -path "*/CVS*" -o -name ".*" \
 	-o -path "*/debian/*" -o -path "*/actions/*" -o -name "*.php" -o \
 	-name "PACKAGERS" -o -path "*.git/*" \
-	-o -path "*/doc/webserver/feeds*" \) | sort`; do \
+	-o -path "*/doc/webserver/feeds*" \) | sort | $(SED) 's@^\./@@'`; do \
 	   files="$$files privoxy-$(VERSION)-$(CODE_STATUS)/$$i"; \
 	done &&  \
 	cd .. && $(TAR) -cvhf privoxy-$(VERSION)-$(CODE_STATUS)-src.tar $$files ; \
@@ -918,17 +922,21 @@ install: CONF_DEST LOG_DEST PID_DEST check_doc GROUP_T
 					GROUP_T=privoxy ;\
 				else \
 					$(ECHO)  "******************************************************************" ;\
-					$(ECHO)  " WARNING! WARNING! installing config files as root!" ;\
+					$(ECHO)  " WARNING! Installing config files as root!" ;\
 					$(ECHO)  " It is strongly recommended to run $(PROGRAM) as a non-root user," ;\
 					$(ECHO)  " and to install the config files as that user and/or group!" ;\
 					$(ECHO)  " Please read INSTALL, and create a privoxy user and group!" ;\
 					$(ECHO)  "*******************************************************************" ;\
-					exit 1 ;\
+					GROUP_T=$(GROUP) ;\
 				fi ;\
 			else \
 				GROUP_T=$(GROUP) ;\
 			fi ;\
-			INSTALL_CONF="$(INSTALL_R) -g $$GROUP_T " ;\
+			if [ x$(GROUP_T) != x ]; then \
+				INSTALL_CONF="$(INSTALL_R) -g $$GROUP_T " ;\
+			else \
+				INSTALL_CONF="$(INSTALL_R)" ;\
+			fi ;\
 		else \
 			$(ECHO) "Superuser install, installing config files as $(USER):$(GROUP_T)" ;\
 			INSTALL_CONF="$(INSTALL_R) -o $(USER) -g $(GROUP_T)" ;\

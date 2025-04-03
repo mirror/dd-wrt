@@ -1,0 +1,48 @@
+<testcase>
+<info>
+<keywords>
+HTTPS
+HTTP GET
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+Content-Length: 18
+
+Here's your data.
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 Connection established
+
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+Content-Length: 18
+
+Here's your data.
+</data>
+</proxy-reply>
+
+
+<client>
+<server>
+http
+</server>
+<name>
+Rewrite behind the client's back: Downgrade from https to http
+</name>
+<command>
+--insecure https://%HOSTIP/%TESTNUMBER-downgrade-to-http-%HOSTIP:%HTTPPORT
+</command>
+</client>
+
+<verify>
+</verify>
+</testcase>

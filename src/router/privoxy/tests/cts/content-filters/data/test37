@@ -1,0 +1,74 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter github
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here are some strings the github filter should filter:
+
+<signup-prompt blafasel>
+Come join our proprietary platform!!!
+</signup-prompt>
+
+<div class="hx_cookie-banner>
+By the way, we are using cookies to track you.
+</div>
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 166
+
+# Here are some strings the github filter should filter:
+
+
+
+<div style="display:none;" class="hx_cookie-banner>
+By the way, we are using cookies to track you.
+</div>
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{github}
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/github/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /github/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

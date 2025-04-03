@@ -1,0 +1,5 @@
+CLIENT-BODY-TAGGER: blafasel Tags requests with "content contains blafasel" if the client body contains the word "blafasel"
+s@.*blafasel.*@content contains blafasel@s
+
+CLIENT-BODY-TAGGER: bumfidel Tags requests with "content contains bumfidel" if the client body contains the word "bumfidel"
+s@.*bumfidel.*@content contains bumfidel@s

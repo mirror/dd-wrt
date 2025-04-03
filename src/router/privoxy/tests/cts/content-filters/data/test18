@@ -1,0 +1,76 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter quicktime-kioskmode
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here are some strings the quicktime-kioskmode filter should filter:
+
+s/(<embed\s+[^>]*)kioskmode\s*=\s*(["']?)true\2/$1/ig
+
+<embed blafasel kioskmode="true">
+
+<embed blafasel kioskmode='true'>
+
+<embed blafasel kioskmode='true' tralala>
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 190
+
+# Here are some strings the quicktime-kioskmode filter should filter:
+
+s/(<embed\s+[^>]*)kioskmode\s*=\s*(["']?)true\2/$1/ig
+
+<embed blafasel >
+
+<embed blafasel >
+
+<embed blafasel  tralala>
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{quicktime-kioskmode}
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/quicktime-kioskmode/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /quicktime-kioskmode/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

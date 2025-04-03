@@ -1,0 +1,82 @@
+<testcase>
+<info>
+<keywords>
+HTTPS
+HTTP POST
+client-body-filter
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Connection: keep-alive
+Content-Type: text/html
+Content-Length: 21
+
+Received your input.
+</data>
+<data1>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+X-Connection: swsclose
+
+Received your input.
+</data1>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 Connection established
+
+HTTP/1.1 200 OK
+Connection: keep-alive
+Content-Type: text/html
+Content-Length: 21
+
+Received your input.
+</data>
+<data1>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+X-Connection: swsclose
+
+Received your input.
+</data1>
+</proxy-reply>
+
+<client>
+<server>
+https
+</server>
+<name>
+Modify parts of the client body of a request on a reused connection with client-body-filter{blafasel-to-bumfidel} (based on test 2)
+</name>
+<features>
+proxy
+</features>
+<command>
+--insecure https://%HOSTIP:%HTTPSPORT/%TESTNUMBER --next -d "foo blafasel bar" --insecure https://%HOSTIP:%HTTPSPORT/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol nonewline="yes">
+GET /%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPSPORT
+User-Agent: curl/%VERSION
+Accept: */*
+
+POST /%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPSPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Content-Length: 16
+Content-Type: application/x-www-form-urlencoded
+
+foo bumfidel bar
+</protocol>
+</verify>
+</testcase>

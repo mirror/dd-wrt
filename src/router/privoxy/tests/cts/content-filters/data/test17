@@ -1,0 +1,138 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter shockwave-flash
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here are some strings the shockwave-flash filter should filter:
+
+# pcrs command 1:
+
+<object blafasel macromedia tralala>bla bla bla</object>
+
+<object
+blafasel
+macromedia
+tralala
+>bla bla bla</object>
+
+<Object
+        blafasel
+                macromedia
+                        tralala
+                                >       bla     bla     bla
+</Object>
+
+# pcrs command 2:
+
+<embed blafasel application/x-shockwave-flash bumfidel>xyz</embed>
+
+<embed blafasel
+application/x-shockwave-flash
+bumfidel>xyz</embed>
+
+<embed blafasel
+       application/x-shockwave-flash
+       bumfidel>
+
+<embed blafasel src="https://example.org/flash-me.swf">
+
+XXX: The following strings don't get filter but probably should be:
+
+<embed
+blafasel
+        src="https://example.org/flash-me.swf">
+
+<EMBED
+blafasel
+        src="https://example.org/flash-me.swf">
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 739
+
+# Here are some strings the shockwave-flash filter should filter:
+
+# pcrs command 1:
+
+<!-- Squished Shockwave Object -->
+
+<object
+blafasel
+macromedia
+tralala
+>bla bla bla</object>
+
+<Object
+        blafasel
+                macromedia
+                        tralala
+                                >       bla     bla     bla
+</Object>
+
+# pcrs command 2:
+
+<!-- Squished Shockwave Flash Embed -->xyz</embed>
+
+<!-- Squished Shockwave Flash Embed -->xyz</embed>
+
+<!-- Squished Shockwave Flash Embed -->
+
+<!-- Squished Shockwave Flash Embed -->
+
+XXX: The following strings don't get filter but probably should be:
+
+<embed
+blafasel
+        src="https://example.org/flash-me.swf">
+
+<EMBED
+blafasel
+        src="https://example.org/flash-me.swf">
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{shockwave-flash}
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/shockwave-flash/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /shockwave-flash/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

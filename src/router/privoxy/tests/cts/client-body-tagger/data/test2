@@ -1,0 +1,51 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP POST
+client-body-tagger
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+X-Connection: swsclose
+
+Received your input.
+</data>
+</reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+Two requests to the same URL. The second one is large and blocked based on a tag applied with the client-body-tagger{blafasel}.
+</name>
+<features>
+proxy
+</features>
+<command>
+-s --write-out '%{stderr}%{response_code}\n' http://%HOSTIP:%HTTPPORT/%TESTNUMBER --next -d "blafasel%repeat[5000 x padding]%" -s --write-out '%{stderr}%{response_code}\n' http://%HOSTIP:%HTTPPORT/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+<stderr>
+200
+403
+</stderr>
+
+</verify>
+</testcase>

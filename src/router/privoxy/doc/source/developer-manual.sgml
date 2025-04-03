@@ -5,7 +5,7 @@
 <!entity p-intro SYSTEM "privoxy.sgml">
 <!entity history SYSTEM "history.sgml">
 <!entity seealso SYSTEM "seealso.sgml">
-<!entity p-version "3.0.34">
+<!entity p-version "4.0.0">
 <!entity p-status "stable">
 <!entity % p-not-stable "IGNORE">
 <!entity % p-stable "INCLUDE">
@@ -19,7 +19,7 @@
 
  Purpose     :  developer manual
 
- Copyright (C) 2001-2021 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2025 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ========================================================================
@@ -39,7 +39,7 @@
     <!-- Completely the wrong markup, but very little is allowed  -->
     <!-- in this part of an article. FIXME -->
       <ulink url="https://www.privoxy.org/user-manual/copyright.html">Copyright</ulink>
-      &my-copy; 2001-2021 by
+      &my-copy; 2001-2025 by
       <ulink url="https://www.privoxy.org/">Privoxy Developers</ulink>
      </subscript>
     </pubdate>
@@ -242,48 +242,21 @@ fk@t520 ~/git/privoxy $git checkout local-branch
 fk@t520 ~/git/privoxy $git rebase master
 Successfully rebased and updated refs/heads/local-branch.
 </programlisting>
-     <!--
-     <para>
-       Branches are used to fork a sub-development path from the main trunk.
-       Within the <literal>current</literal> module where the sources are, there
-       is always at least one <quote>branch</quote> from the main trunk
-       devoted to a stable release series. The main trunk is where active
-       development takes place for the next stable series (e.g. 3.2.x).
-       So just prior to each stable series (e.g. 3.0.x), a branch is created
-       just for stable series releases (e.g. 3.0.0 -> 3.0.1 -> 3.0.2, etc).
-       Once the initial stable release of any stable branch has taken place,
-       this branch is <emphasis>only used for bugfixes</emphasis>, which have
-       had prior testing before being committed to Git. (See <link
-       linkend="versionnumbers">Version Numbers</link> below for details on
-       versioning.)
-     </para>
-     -->
      <para>
       At one time there were two distinct branches: stable and unstable. The
       more drastic changes were to be in the unstable branch. These branches
       have now been merged to minimize time and effort of maintaining two
       branches.
      </para>
-    <!--
-     <para>
-       This will result in at least two active branches, which means there may
-       be occasions that require the same (or similar) item to be
-       checked into to two different places (assuming its a bugfix and needs
-       fixing in both the stable and unstable trees). This also means that in
-       order to have access to both trees, both will have to be checked out
-       separately. Use the <literal>cvs -r</literal> flag to check out a
-       branch, e.g: <literal>cvs co -r v_3_0_branch current</literal>.
-     </para>
-    -->
     </sect2>
 
     <sect2 id="gitcommit"><title>Git Commit Guidelines</title>
       <para>
         The source tree is the heart of every software project. Every effort must
         be made to ensure that it is readable, compilable and consistent at all
-        times. <!-- There are differing guidelines for the stable branch and the
-        main development trunk, and --> We expect anyone with Git access to strictly
-        adhere to the following guidelines:
+        times.
+        We expect anyone with Git access to strictly adhere to the following
+        guidelines:
       </para>
 
       <para>
@@ -327,50 +300,6 @@ Successfully rebased and updated refs/heads/local-branch.
          </listitem>
         </itemizedlist>
 
-<!--
-      <para>
-       Stable branches are handled with more care, especially after the
-       initial *.*.0 release, and we are just in bugfix mode. In addition to
-       the above, the below applies only to the stable branch (currently the
-       <literal>v_3_0_branch</literal> branch):
-      </para>
-
-      <para>
-       <itemizedlist>
-        <listitem>
-         <para>
-           Do not commit <emphasis>anything</emphasis> unless your proposed
-           changes have been well tested first, preferably by other members of the
-           project, or have prior approval of the project leaders or consensus
-           of the devel list.
-         </para>
-        </listitem>
-       <listitem>
-        <para>
-         Where possible, bugfixes and changes should be tested in the main
-         development trunk first. There may be occasions where this is not
-         feasible, though.
-        </para>
-       </listitem>
-       <listitem>
-        <para>
-          Alternately, proposed changes can be submitted as patches output by
-          <literal>git format-patch</literal> to the privoxy-devel mailing list
-          or alternatively to the patch tracker on Sourceforge:
-          <ulink url="https://sourceforge.net/p/ijbswa/patches/">
-                      https://sourceforge.net/p/ijbswa/patches/</ulink>.
-          Then ask for peer review.
-        </para>
-       </listitem>
-        <listitem>
-         <para>
-          Do not even think about anything except bugfixes. No new features!
-         </para>
-        </listitem>
-
-       </itemizedlist>
-      </para>
-    -->
     </sect2>
 
   </sect1>
@@ -2163,80 +2092,24 @@ $ afl-fuzz -i input/ -o output/ -f bla.filter -m none privoxy --fuzz filter bla.
         <itemizedlist>
           <listitem>
             <para>
-              X, the version major, is rarely ever changed. It is increased by one if
-              turning a development branch into stable substantially changes the functionality,
-              user interface or configuration syntax. Majors 1 and 2 were
+              X, the version major, is rarely ever changed. Majors 1 and 2 were
               <application>Junkbuster</application>, and 3 is the first stable
               <application>Privoxy</application> release.
             </para>
           </listitem>
           <listitem>
             <para>
- <!-- FIXME   this is not the way it works anymore -->
-              Y, the version minor, represents the branch within the major version.
-              At any point in time, there are two branches being maintained:
-              The stable branch, with an even minor, say, 2N, in which no functionality is
-              being added and only bug-fixes are made, and 2N+1, the development branch, in
-              which the further development of <application>Privoxy</application> takes
-              place.
-              This enables us to turn the code upside down and inside out, while at the same time
-              providing and maintaining a stable version.
-              The minor is reset to zero (and one) when the major is incremented. When a development
-              branch has matured to the point where it can be turned into stable, the old stable branch
-              2N is given up (i.e. no longer maintained), the former development branch 2N+1 becomes the
-              new stable branch 2N+2, and a new development branch 2N+3 is opened.
+             Y, the version minor, is increased for every release except for
+             pure bug fix releases in which case only Z, the point or sub version,
+             is increased.
             </para>
           </listitem>
           <listitem>
             <para>
-              Z, the point or sub version, represents a release of the software within a branch.
-              It is therefore incremented immediately after each software release.
-      <!-- FIXME   this is not the way it works any more
-              In development branches, only the even point versions correspond to actual releases,
-              while the odd ones denote the evolving state of the sources on Git in between.
-              It follows that Z is odd on Git in development branches most of the time. There, it gets
-              increased to an even number immediately before a code freeze, and is increased to an odd
-              number again immediately thereafter.
-              This ensures that builds from Git snapshots are easily distinguished from released versions.
-           didn't Fabian get rid of the even=stable, odd=dev convention for release numbering? -->
               The point version is reset to zero when the minor changes.
-            </para>
-            <para>
-              Stable branches work a little differently, since there should be
-              little to no development happening in such branches. Remember,
-              only bugfixes, which presumably should have had some testing
-              before being committed. Stable branches will then have their
-              version reported as <literal>0.0.0</literal>, during that period
-              between releases when changes are being added. This is to denote
-              that this code is <emphasis>not for release</emphasis>. Then
-              as the release nears, the version is bumped according: e.g.
-              <literal>3.0.1 -> 0.0.0 -> 3.0.2</literal>.
             </para>
           </listitem>
         </itemizedlist>
-    <para>
-     In summary, the main Git trunk is the development branch where new
-     features are being worked on for the next stable series. This should
-     almost always be where the most activity takes place. There is always at
-     least one stable branch from the trunk, e.g now it is
-     <literal>3.0</literal>, which is only used to release stable versions.
-     Once the initial *.0 release of the stable branch has been done, then as a
-     rule, only bugfixes that have had prior testing should be committed to
-     the stable branch. Once there are enough bugfixes to justify a new
-     release, the version of this branch is again incremented Example: 3.0.0
-     -> 3.0.1 -> 3.0.2, etc are all stable releases from within the stable
-     branch. 3.1.x is currently the main trunk, and where work on 3.2.x is
-     taking place. If any questions, please post to the devel list
-     <emphasis>before</emphasis> committing to a stable branch!
-    </para>
-    <para>
-     Developers should remember too that if they commit a bugfix to the stable
-     branch, this will more than likely require a separate submission to the
-     main trunk, since these are separate development trees within Git. If you
-     are working on both, then this would require at least two separate check
-     outs (i.e main trunk, <emphasis>and</emphasis> the stable release branch,
-     which is <literal>v_3_0_branch</literal> at the moment).
-    </para>
 
     </sect2>
 
@@ -2874,6 +2747,31 @@ git clone ssh://git@git.privoxy.org:23/git/OSXPackageBuilder.git
      If you have made errors, or need to make changes, you can go through
      essentially the same steps, but select <literal>Edit Release</literal>,
      instead of <literal>Add Release</literal>.
+    </para>
+   </sect2>
+
+   <sect2 id="update-rss-feed">
+    <title>Updating the RSS feed</title>
+    <para>
+     Once the packages are uploaded to SourceForge they should be
+     mirrored on the Privoxy websites
+     (<ulink url="https://www.privoxy.org/">https://www.privoxy.org/</ulink>
+      and
+      <ulink url="http://l3tczdiiwoo63iwxty4lhs6p7eaxop5micbn7vbliydgv63x5zrrrfyd.onion/">http://l3tczdiiwoo63iwxty4lhs6p7eaxop5micbn7vbliydgv63x5zrrrfyd.onion/</ulink>).
+     This is usually done by Fabian who uses a couple of shell functions
+     for this that aren't documented or published yet.
+    </para>
+    <para>
+     Once the packages are uploaded to the mirror the RSS feed has to
+     be regenerated with a command like:
+    </para>
+    <programlisting>
+     fk@t520 ~/git/privoxy $utils/create-package-feed.pl /tank/backups/sourceforge/frs/project/ijbswa/ doc/webserver/feeds/privoxy-releases.xm
+    </programlisting>
+    <para>
+     The updated RSS feed then has to be uploaded to the SourceForge webserver
+     and mirrored on the Privoxy websites again. This, too, is usually done
+     by Fabian with undocumented and unpublished shell functions.
     </para>
    </sect2>
 

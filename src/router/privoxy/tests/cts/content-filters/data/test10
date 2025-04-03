@@ -1,0 +1,108 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter banners-by-link
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here is some HTML that the banners-by-link filter should modify:
+
+# pcrs command 1:
+
+<a href="http://www.example.org/adclick/blafasel"><img src="https://www.example.org/img-link-target" width="123" height="345">
+<a href="http://www.example.org/advert/blafasel"><img src="https://www.example.org/img-link-target" width="123" height="345">
+<a href="http://atwola.com/link"><img src="https://www.example.org/img-link-target" width="123" height="345">
+<a href="http://atwola.com/redir"><img src="https://www.example.org/img-link-target" width="123" height="345">
+<a href="http://doubleclick.net/jump/"><img src="https://www.example.org/img-link-target" width="123" height="345">
+<a href="http://www.example.org/blafasel/counter"><img src="https://www.example.org/img-link-target" width="123" height="345">
+<a href="http://www.example.org/blafasel/tracker"><img src="https://www.example.org/img-link-target" width="123" height="345">
+<a href="http://www.example.org/blafasel/keep-me&type=tracker"><img src="https://www.example.org/img-link-target" width="123" height="345">
+<a href="http://adlog.pl"><img src="https://www.example.org/img-link-target" width="123" height="345">
+
+# pcrs command 2:
+
+<a href="http://www.example.org/adclick/blafasel"><img src="https://www.example.org/img-link-target">
+<a href="http://www.example.org/advert/blafasel"><img src="https://www.example.org/img-link-target">
+<a href="http://atwola.com/link"><img src="https://www.example.org/img-link-target">
+<a href="http://atwola.com/redir"><img src="https://www.example.org/img-link-target">
+<a href="http://doubleclick.net/jump/"><img src="https://www.example.org/img-link-target">
+<a href="http://www.example.org/blafasel/counter"><img src="https://www.example.org/img-link-target">
+<a href="http://www.example.org/blafasel/tracker"><img src="https://www.example.org/img-link-target">
+<a href="http://www.example.org/blafasel/keep-me&type=tracker"><img src="https://www.example.org/img-link-target">
+<a href="http://adlog.pl"><img src="https://www.example.org/img-link-target">
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 3256
+
+# Here is some HTML that the banners-by-link filter should modify:
+
+# pcrs command 1:
+
+<img width="123" height="345" src="http://config.privoxy.org/send-banner?type=auto" border="0" title="Killed https://www.example.org/img-link-target by link to http://www.example.org/adclick/blafasel">
+<img width="123" height="345" src="http://config.privoxy.org/send-banner?type=auto" border="0" title="Killed https://www.example.org/img-link-target by link to http://www.example.org/advert/blafasel">
+<img width="123" height="345" src="http://config.privoxy.org/send-banner?type=auto" border="0" title="Killed https://www.example.org/img-link-target by link to http://atwola.com/link">
+<img width="123" height="345" src="http://config.privoxy.org/send-banner?type=auto" border="0" title="Killed https://www.example.org/img-link-target by link to http://atwola.com/redir">
+<img width="123" height="345" src="http://config.privoxy.org/send-banner?type=auto" border="0" title="Killed https://www.example.org/img-link-target by link to http://doubleclick.net/jump/">
+<img width="123" height="345" src="http://config.privoxy.org/send-banner?type=auto" border="0" title="Killed https://www.example.org/img-link-target by link to http://www.example.org/blafasel/counter">
+<img width="123" height="345" src="http://config.privoxy.org/send-banner?type=auto" border="0" title="Killed https://www.example.org/img-link-target by link to http://www.example.org/blafasel/tracker">
+<a href="http://www.example.org/blafasel/keep-me&type=tracker"><img src="https://www.example.org/img-link-target" width="123" height="345">
+<img width="123" height="345" src="http://config.privoxy.org/send-banner?type=auto" border="0" title="Killed https://www.example.org/img-link-target by link to http://adlog.pl">
+
+# pcrs command 2:
+
+<img src="http://config.privoxy.org/send-banner?type=auto" border="0" title="Killed https://www.example.org/img-link-target by link to http://www.example.org/adclick/blafasel">
+<img src="http://config.privoxy.org/send-banner?type=auto" border="0" title="Killed https://www.example.org/img-link-target by link to http://www.example.org/advert/blafasel">
+<img src="http://config.privoxy.org/send-banner?type=auto" border="0" title="Killed https://www.example.org/img-link-target by link to http://atwola.com/link">
+<img src="http://config.privoxy.org/send-banner?type=auto" border="0" title="Killed https://www.example.org/img-link-target by link to http://atwola.com/redir">
+<img src="http://config.privoxy.org/send-banner?type=auto" border="0" title="Killed https://www.example.org/img-link-target by link to http://doubleclick.net/jump/">
+<img src="http://config.privoxy.org/send-banner?type=auto" border="0" title="Killed https://www.example.org/img-link-target by link to http://www.example.org/blafasel/counter">
+<img src="http://config.privoxy.org/send-banner?type=auto" border="0" title="Killed https://www.example.org/img-link-target by link to http://www.example.org/blafasel/tracker">
+<a href="http://www.example.org/blafasel/keep-me&type=tracker"><img src="https://www.example.org/img-link-target">
+<img src="http://config.privoxy.org/send-banner?type=auto" border="0" title="Killed https://www.example.org/img-link-target by link to http://adlog.pl">
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{banners-by-link}
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/banners-by-link/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /banners-by-link/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

@@ -1,0 +1,89 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter all-popups
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here are some strings the all-popups filter should modify:
+
+# pcrs command 1:
+
++ mapwindow.open(
++ window.open(
++ this.open(
++ parent.open(
+
+# pcrs command 2:
+
+ target  = "blank"
+ target  =   'blank'
+ target  =   "new"
+ target  =   'new'
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 178
+
+# Here are some strings the all-popups filter should modify:
+
+# pcrs command 1:
+
++ mapwindow.concat(
++ window.concat(
++ this.concat(
++ parent.concat(
+
+# pcrs command 2:
+
+ 
+ 
+ 
+ 
+</data>
+</proxy-reply>
+
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{all-popups}
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/all-popups/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /all-popups/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

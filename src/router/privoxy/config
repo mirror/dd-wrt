@@ -1,6 +1,6 @@
-#        Sample Configuration File for Privoxy 3.0.34
+#        Sample Configuration File for Privoxy 4.0.0
 #
-# Copyright (C) 2001-2023 Privoxy Developers https://www.privoxy.org/
+# Copyright (C) 2001-2025 Privoxy Developers https://www.privoxy.org/
 #
 #####################################################################
 #                                                                   #
@@ -1300,7 +1300,7 @@ enable-proxy-authentication-forwarding 0
 #  visits.
 #
 #  Also specified here are SOCKS proxies. Privoxy supports the SOCKS
-#  4 and SOCKS 4A protocols.
+#  4, SOCKS 4A and SOCKS 5 protocols.
 #
 #
 #  5.1. forward

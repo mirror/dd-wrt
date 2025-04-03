@@ -1,0 +1,45 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+Content-Length: 29
+
+Not actually used.
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 400 Malformed request after rewriting
+Content-Type: text/plain
+Connection: close
+
+Bad request. Messed up with header filters.
+</data>
+</proxy-reply>
+
+
+<client>
+<server>
+none
+</server>
+<name>
+Rewrite behind the client's back: invalid upgrade to https
+</name>
+<command>
+http://%HOSTIP/%TESTNUMBER-upgrade-to-https
+</command>
+</client>
+
+<verify>
+</verify>
+</testcase>

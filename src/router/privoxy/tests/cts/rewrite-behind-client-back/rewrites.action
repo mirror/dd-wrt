@@ -1,0 +1,14 @@
+{+client-header-filter{http-to-https}}
+/1-upgrade-to-https
+
+{+client-header-filter{truncate-path}}
+/2-remove-this
+
+{+client-header-filter{rewrite-host}}
+/3
+
+{+client-header-filter{non-matching-rewriter}}
+/4
+
+{+client-header-filter{invalid-http-version}}
+/5

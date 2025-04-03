@@ -1,0 +1,132 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter blogspot
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here are some strings the blogspot filter should filter:
+
+# pcrs command 1:
+
+</head>
+
+# pcrs command 2:
+
+<body blafasel>
+   <div id="space-for-ie"></div>
+
+# pcrs command 2 does not filter these because it only hits once:
+
+   <div id="content"
+   <div id="wrap4"
+   <div id="wrapper"
+
+# pcrs command 3:
+
+<div style="blafasel width:30em
+
+# pcrs command 4:
+
+background:url("http://www.blogblog.com/roundersblafasel") tralala;
+
+# pcrs command 5:
+
+background:#abc url("http://www.blogblog.com/roundersblafasel") tralala;@
+
+# pcrs command 6:
+
+XXX: TODO
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 946
+
+# Here are some strings the blogspot filter should filter:
+
+# pcrs command 1:
+
+<style type="text/css">
+ /* Style sheet inserted by Privoxy's blogspot filter. */
+ #powered-by {display: none !important;}
+ #wrap4, #wrapper {margin-top: 0px }
+ #blogheader, #header {margin-top: 0.5em !important}
+ #content {width: 98% }
+ #main {width: 70% }
+ #sidebar {width: 29% }
+ .post-body {overflow: auto;}
+ .blogComments {width: 100%; overflow: auto;}
+</style>
+</head>
+
+# pcrs command 2:
+
+<body> <!-- Privoxy's blogspot filter ditched some garbage here -->
+
+# pcrs command 2 does not filter these because it only hits once:
+
+   <div id="content"
+   <div id="wrap4"
+   <div id="wrapper"
+
+# pcrs command 3:
+
+<div style="blafasel width: 100%
+
+# pcrs command 4:
+
+/*background:url("http://www.blogblog.com/roundersblafasel") tralala;*/
+
+# pcrs command 5:
+
+background:#abc ;/* url("http://www.blogblog.com/roundersblafasel") tralala;*/@
+
+# pcrs command 6:
+
+XXX: TODO
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{blogspot} XXX: incomplete test coverage
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/blogspot/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /blogspot/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

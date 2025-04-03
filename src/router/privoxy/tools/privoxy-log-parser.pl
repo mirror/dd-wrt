@@ -23,7 +23,7 @@
 #         hash key as input.
 #       - Add --compress and --decompress options.
 #
-# Copyright (c) 2007-2022 Fabian Keil <fk@fabiankeil.de>
+# Copyright (c) 2007-2024 Fabian Keil <fk@fabiankeil.de>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -43,7 +43,7 @@ use warnings;
 use Getopt::Long;
 
 use constant {
-    PRIVOXY_LOG_PARSER_VERSION => '0.9.5',
+    PRIVOXY_LOG_PARSER_VERSION => '0.9.6',
     # Feel free to mess with these ...
     DEFAULT_BACKGROUND => 'black',  # Choose registered colour (like 'black')
     DEFAULT_TEXT_COLOUR => 'white', # Choose registered colour (like 'black')
@@ -1574,6 +1574,11 @@ sub handle_loglevel_connect($) {
 
         $c =~ s@(?<=accept failed: )(.*)@$h{'Error'}$1$h{'Standard'}@;
 
+    } elsif ($c =~ m/^Failed to accept\(\) incoming connection:/) {
+
+        # Failed to accept() incoming connection: Software caused connection abort
+        $c =~ s@(?<=connection: )(.*)@$h{'Error'}$1$h{'Standard'}@;
+
     } elsif ($c =~ m/^Overriding forwarding settings/) {
 
         # Overriding forwarding settings based on 'forward 10.0.0.1:8123'
@@ -1958,6 +1963,23 @@ sub handle_loglevel_connect($) {
         # Client successfully connected over TLSv1.3 (TLS_AES_128_GCM_SHA256).
         $c =~ s@(?<=connected over )(TLSv\d\.\d)@$h{'tls-version'}$1$h{'Standard'}@;
         $c =~ s@(?<=\()([^)]+)@$h{'cipher-suite'}$1$h{'Standard'}@;
+
+    } elsif ($c =~ m/^Couldn't deliver the error message for/) {
+
+        # Couldn't deliver the error message for https://m.media-amazon.com/[...] through client socket 18 using TLS/SSL
+        $c = highlight_matched_url($c, "(?<=error message for )[^ ]*");
+        $c =~ s@(?<=client socket )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+
+    } elsif ($c =~ m/^Keeping chunk offset at/) {
+
+        # Keeping chunk offset at 0 despite flushing 31 bytes.
+        $c =~ s@(?<=offset at )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+        $c =~ s@(?<=flushing )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+
+    } elsif ($c =~ m/^Not shutting down client connection on/) {
+
+        # Not shutting down client connection on socket 8. The socket is no longer alive.
+        $c =~ s@(?<=socket )(\d+)@$h{'Number'}$1$h{'Standard'}@;
 
     } elsif ($c =~ m/^Looks like we / or
              $c =~ m/^Unsetting keep-alive flag/ or

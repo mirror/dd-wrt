@@ -1,0 +1,56 @@
+<testcase>
+<info>
+<keywords>
+HTTPS
+HTTP GET
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Content-Length: 9
+
+Blafasel
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 Connection established
+
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Content-Length: 9
+Connection: close
+
+Blafasel
+</data>
+</proxy-reply>
+
+<client>
+<features>
+SSL
+</features>
+<server>
+https
+</server>
+<name>
+HTTP client header order 3 through https. Only a few headers to sort.
+</name>
+<command>
+--insecure https://%HOSTIP:%HTTPSPORT/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPSPORT
+User-Agent: curl/%VERSION
+Accept: */*
+
+</protocol>
+</verify>
+</testcase>

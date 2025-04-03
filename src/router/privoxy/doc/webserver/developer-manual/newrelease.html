@@ -40,47 +40,18 @@
       3.0.0), where:</p>
       <ul>
         <li>
-          <p>X, the version major, is rarely ever changed. It is increased by one if turning a development branch into
-          stable substantially changes the functionality, user interface or configuration syntax. Majors 1 and 2 were
-          <span class="APPLICATION">Junkbuster</span>, and 3 is the first stable <span class=
-          "APPLICATION">Privoxy</span> release.</p>
+          <p>X, the version major, is rarely ever changed. Majors 1 and 2 were <span class=
+          "APPLICATION">Junkbuster</span>, and 3 is the first stable <span class="APPLICATION">Privoxy</span>
+          release.</p>
         </li>
         <li>
-          <p>Y, the version minor, represents the branch within the major version. At any point in time, there are two
-          branches being maintained: The stable branch, with an even minor, say, 2N, in which no functionality is being
-          added and only bug-fixes are made, and 2N+1, the development branch, in which the further development of
-          <span class="APPLICATION">Privoxy</span> takes place. This enables us to turn the code upside down and inside
-          out, while at the same time providing and maintaining a stable version. The minor is reset to zero (and one)
-          when the major is incremented. When a development branch has matured to the point where it can be turned into
-          stable, the old stable branch 2N is given up (i.e. no longer maintained), the former development branch 2N+1
-          becomes the new stable branch 2N+2, and a new development branch 2N+3 is opened.</p>
+          <p>Y, the version minor, is increased for every release except for pure bug fix releases in which case only
+          Z, the point or sub version, is increased.</p>
         </li>
         <li>
-          <p>Z, the point or sub version, represents a release of the software within a branch. It is therefore
-          incremented immediately after each software release. The point version is reset to zero when the minor
-          changes.</p>
-          <p>Stable branches work a little differently, since there should be little to no development happening in
-          such branches. Remember, only bugfixes, which presumably should have had some testing before being committed.
-          Stable branches will then have their version reported as <tt class="LITERAL">0.0.0</tt>, during that period
-          between releases when changes are being added. This is to denote that this code is <span class=
-          "emphasis"><i class="EMPHASIS">not for release</i></span>. Then as the release nears, the version is bumped
-          according: e.g. <tt class="LITERAL">3.0.1 -&#62; 0.0.0 -&#62; 3.0.2</tt>.</p>
+          <p>The point version is reset to zero when the minor changes.</p>
         </li>
       </ul>
-      <p>In summary, the main Git trunk is the development branch where new features are being worked on for the next
-      stable series. This should almost always be where the most activity takes place. There is always at least one
-      stable branch from the trunk, e.g now it is <tt class="LITERAL">3.0</tt>, which is only used to release stable
-      versions. Once the initial *.0 release of the stable branch has been done, then as a rule, only bugfixes that
-      have had prior testing should be committed to the stable branch. Once there are enough bugfixes to justify a new
-      release, the version of this branch is again incremented Example: 3.0.0 -&#62; 3.0.1 -&#62; 3.0.2, etc are all
-      stable releases from within the stable branch. 3.1.x is currently the main trunk, and where work on 3.2.x is
-      taking place. If any questions, please post to the devel list <span class="emphasis"><i class=
-      "EMPHASIS">before</i></span> committing to a stable branch!</p>
-      <p>Developers should remember too that if they commit a bugfix to the stable branch, this will more than likely
-      require a separate submission to the main trunk, since these are separate development trees within Git. If you
-      are working on both, then this would require at least two separate check outs (i.e main trunk, <span class=
-      "emphasis"><i class="EMPHASIS">and</i></span> the stable release branch, which is <tt class=
-      "LITERAL">v_3_0_branch</tt> at the moment).</p>
     </div>
     <div class="SECT2">
       <h2 class="SECT2"><a name="BEFORERELEASE" id="BEFORERELEASE">6.2. Before the Release</a></h2>
@@ -492,7 +463,7 @@
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="PROGRAMLISTING">  dch -v 3.0.34-1</pre>
+              <pre class="PROGRAMLISTING">  dch -v 4.0.0-1</pre>
             </td>
           </tr>
         </table>
@@ -509,7 +480,7 @@
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="PROGRAMLISTING">  lintian -iI ../build-area/privoxy_3.0.34-1_amd64.changes</pre>
+              <pre class="PROGRAMLISTING">  lintian -iI ../build-area/privoxy_4.0.0-1_amd64.changes</pre>
             </td>
           </tr>
         </table>
@@ -518,7 +489,7 @@
           <tr>
             <td>
               <pre class=
-              "PROGRAMLISTING">  sudo cowbuilder --build --basepath /var/cache/pbuilder/base.cow ../build-area/privoxy_3.0.34-1.dsc</pre>
+              "PROGRAMLISTING">  sudo cowbuilder --build --basepath /var/cache/pbuilder/base.cow ../build-area/privoxy_4.0.0-1.dsc</pre>
             </td>
           </tr>
         </table>
@@ -527,19 +498,19 @@
           <tr>
             <td>
               <pre class=
-              "PROGRAMLISTING">  autopkgtest /var/cache/pbuilder/result/privoxy_3.0.34-1_amd64.changes -s -- schroot sid</pre>
+              "PROGRAMLISTING">  autopkgtest /var/cache/pbuilder/result/privoxy_4.0.0-1_amd64.changes -s -- schroot sid</pre>
             </td>
           </tr>
         </table>
         <p>Or just push the changes to salsa.debian.org, where a CI pipeline is defined for the package, that builds
         and tests it.</p>
         <p>If everything is okay, run cowbuilder with i386 and amd64 environments for current Debian stable release and
-        build privoxy_3.0.34-1_i386.deb and privoxy_3.0.34-1_amd64.deb. Then sign both files:</p>
+        build privoxy_4.0.0-1_i386.deb and privoxy_4.0.0-1_amd64.deb. Then sign both files:</p>
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="PROGRAMLISTING">  gpg --detach-sign --armor privoxy_3.0.34-1_i386.deb
-  gpg --detach-sign --armor privoxy_3.0.34-1_amd64.deb</pre>
+              <pre class="PROGRAMLISTING">  gpg --detach-sign --armor privoxy_4.0.0-1_i386.deb
+  gpg --detach-sign --armor privoxy_4.0.0-1_amd64.deb</pre>
             </td>
           </tr>
         </table>
@@ -652,7 +623,27 @@
       <tt class="LITERAL">Edit Release</tt>, instead of <tt class="LITERAL">Add Release</tt>.</p>
     </div>
     <div class="SECT2">
-      <h2 class="SECT2"><a name="AFTERRELEASE" id="AFTERRELEASE">6.5. After the Release</a></h2>
+      <h2 class="SECT2"><a name="UPDATE-RSS-FEED" id="UPDATE-RSS-FEED">6.5. Updating the RSS feed</a></h2>
+      <p>Once the packages are uploaded to SourceForge they should be mirrored on the Privoxy websites (<a href=
+      "https://www.privoxy.org/" target="_top">https://www.privoxy.org/</a> and <a href=
+      "http://l3tczdiiwoo63iwxty4lhs6p7eaxop5micbn7vbliydgv63x5zrrrfyd.onion/" target=
+      "_top">http://l3tczdiiwoo63iwxty4lhs6p7eaxop5micbn7vbliydgv63x5zrrrfyd.onion/</a>). This is usually done by
+      Fabian who uses a couple of shell functions for this that aren't documented or published yet.</p>
+      <p>Once the packages are uploaded to the mirror the RSS feed has to be regenerated with a command like:</p>
+      <table border="0" bgcolor="#E0E0E0" width="100%">
+        <tr>
+          <td>
+            <pre class=
+            "PROGRAMLISTING">       fk@t520 ~/git/privoxy $utils/create-package-feed.pl /tank/backups/sourceforge/frs/project/ijbswa/ doc/webserver/feeds/privoxy-releases.xm
+      </pre>
+          </td>
+        </tr>
+      </table>
+      <p>The updated RSS feed then has to be uploaded to the SourceForge webserver and mirrored on the Privoxy websites
+      again. This, too, is usually done by Fabian with undocumented and unpublished shell functions.</p>
+    </div>
+    <div class="SECT2">
+      <h2 class="SECT2"><a name="AFTERRELEASE" id="AFTERRELEASE">6.6. After the Release</a></h2>
       <p>When all (or: most of the) packages have been uploaded and made available, send an email to the <a href=
       "mailto:privoxy-announce@lists.privoxy.org" target="_top">announce mailing list</a>, Subject: "Announcing Privoxy
       X.Y.Z $CODE_STATUS". Be sure to include the <a href="https://sourceforge.net/projects/ijbswa/files/" target=

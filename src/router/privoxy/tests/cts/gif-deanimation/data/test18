@@ -1,0 +1,64 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+gif deanimation
+</keywords>
+</info>
+
+<reply>
+<data nonewline="yes">
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: image/gif
+X-Control: swsclose
+Content-Encoding: gzip
+
+%hex[%1f%8b%08%08%35%d6%22%60%00%03%61%6e%69%6d%61%74%69%6f%6e%2d%77%69%74%68%6f%75%74%2d%63%6f%6d%6d%65%6e%74%2e%67%69%66%00%73%f7%74%b3%b0%4c%14%61%10%61%68%60%62%f8%c7%c0%20%e7%f4%4e%f1%3f%b7%9f%6b%48%b0%b3%63%80%ab%91%9e%01%33%23%03%03%83%e2%4f%16%06%2e%86%ff%0c%3a%40%36%03%48%31%03%93%60%4f%ff%ca%d3%6f%f9%17%cf%d9%72%ab%7b%f3%bd%3d%bf%d7%8b%62%55%d5%82%a1%ca%1a%00%1f%8e%7e%77%73%00%00%00]hex%
+</data>
+</reply>
+
+<proxy-reply>
+<data nonewline="yes">
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: image/gif
+X-Control: swsclose
+Content-Length: 58
+
+%hex[%47%49%46%38%39%61%14%00%14%00%80%02%00%fe%00%00%1e%42%ee%21%f9%04%00%0a%00%ff%00%2c%00%00%00%00%14%00%14%00%00%02%11%84%8f%a9%cb%ed%0f%a3%9c%b4%da%8b%b3%de%bc%fb%af%15%00%3b]hex%
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+Compressed gif. Valid data.
+</name>
+<features>
+proxy
+</features>
+<command>
+-H "Accept-Encoding: gzip" http://%HOSTIP:%HTTPPORT/deanimate-gif/last-frame/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /deanimate-gif/last-frame/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Accept-Encoding: gzip
+
+</protocol>
+<errorcode>
+0
+</errorcode>
+</verify>
+</testcase>

@@ -1,0 +1,63 @@
+<testcase>
+<info>
+<keywords>
+HTTPS
+HTTP POST
+client-body-filter
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+
+Received your input.
+
+Will keep the connection open despite the "Connection: Close" header.
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 Connection established
+
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+
+Received your input.
+
+Will keep the connection open despite the "Connection: Close" header.
+</data>
+</proxy-reply>
+
+<client>
+<server>
+https
+</server>
+<name>
+Using client-body-filter{blafasel-to-bumfidel} with server connection that times out after delivering the response
+</name>
+<features>
+proxy
+</features>
+<command>
+-d "blafasel" --insecure https://%HOSTIP:%HTTPSPORT/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol nonewline="yes">
+POST /%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPSPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Content-Length: 8
+Content-Type: application/x-www-form-urlencoded
+
+bumfidel
+</protocol>
+</verify>
+</testcase>

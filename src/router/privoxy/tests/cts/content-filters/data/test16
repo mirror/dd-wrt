@@ -1,0 +1,216 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter demoronizer
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here are some supposedly moronic byte sequences the demoronizer filter should filter:
+
+# pcrs command 1:
+
+&#012 
+&#123 
+&#255 
+
+# pcrs command 2:
+
+%hex[ %E2%80%94 ]hex%
+
+# pcrs command 3:
+
+%hex[ %82 ]hex%
+
+# pcrs command 4 (commented out, no change expected):
+
+%hex[ %83 ]hex%
+
+# pcrs command 5:
+
+%hex[ %84 ]hex%
+
+# pcrs command 6:
+
+%hex[ %85 ]hex%
+
+# pcrs command 7 (commented out, no change expected):
+
+%hex[ %88 ]hex%
+
+# pcrs command 8 (commented out, no change expected):
+
+%hex[ %89 ]hex%
+
+# pcrs command 9:
+
+%hex[ %8B ]hex%
+
+# pcrs command 10:
+
+%hex[ %8C ]hex%
+
+# pcrs command 11:
+
+%hex[ %91 ]hex%
+
+# pcrs command 12:
+
+%hex[ %92 ]hex%
+
+# pcrs command 13:
+
+%hex[ %92%94 ]hex%
+
+# pcrs command 14:
+
+%hex[ %95 ]hex%
+
+# pcrs command 15:
+
+%hex[ %96 ]hex%
+
+# pcrs command 16:
+
+%hex[ %97 ]hex%
+
+# pcrs command 17 (commented out, no change expected):
+
+%hex[ %98 ]hex%
+
+# pcrs command 18 (commented out, no change expected):
+
+%hex[ %99 ]hex%
+
+# pcrs command 19
+
+%hex[ %9B ]hex%/>
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 771
+
+# Here are some supposedly moronic byte sequences the demoronizer filter should filter:
+
+# pcrs command 1:
+
+&#012; 
+&#123; 
+&#255; 
+
+# pcrs command 2:
+
+  --  
+
+# pcrs command 3:
+
+ , 
+
+# pcrs command 4 (commented out, no change expected):
+
+%hex[ %83 ]hex%
+
+# pcrs command 5:
+
+ ,, 
+
+# pcrs command 6:
+
+ ... 
+
+# pcrs command 7 (commented out, no change expected):
+
+%hex[ %88 ]hex%
+
+# pcrs command 8 (commented out, no change expected):
+
+%hex[ %89 ]hex%
+
+# pcrs command 9:
+
+ < 
+
+# pcrs command 10:
+
+ Oe 
+
+# pcrs command 11:
+
+ ` 
+
+# pcrs command 12:
+
+ ' 
+
+# pcrs command 13:
+
+ '" 
+
+# pcrs command 14:
+
+ &middot; 
+
+# pcrs command 15:
+
+ - 
+
+# pcrs command 16:
+
+ -- 
+
+# pcrs command 17 (commented out, no change expected):
+
+%hex[ %98 ]hex%
+
+# pcrs command 18 (commented out, no change expected):
+
+%hex[ %99 ]hex%
+
+# pcrs command 19
+
+ > />
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{demoronizer}
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/demoronizer/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /demoronizer/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

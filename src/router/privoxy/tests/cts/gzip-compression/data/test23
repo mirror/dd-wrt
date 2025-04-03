@@ -1,0 +1,71 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+deflate compression
+skip
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+Content-Encoding: deflate
+X-Control: swsclose
+
+%hex[%0b%ce%cf%4d%55%48%49%4d%cb%49%2c%49%55%48%cd%4b%ce%4f%49%4d%]hex%
+Bogus data blafasel
+</data>
+</reply>
+
+# The actual reply does not contain a line break after the trailing NUL byte
+# but we can't currently express this as the </data> tag has to be on its
+# own line.
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+Content-Encoding: deflate
+X-Control: swsclose
+
+%hex[%0b%ce%cf%4d%55%48%49%4d%cb%49%2c%49%55%48%cd%4b%ce%4f%49%4d%]hex%
+Bogus data blafasel
+%hex[%00]hex%
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+deflate-encoded content. Corrupted data.
+</name>
+<features>
+proxy
+</features>
+<command>
+-H "Accept-Encoding: deflate" http://%HOSTIP:%HTTPPORT/deflate-compressed-data/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /deflate-compressed-data/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Accept-Encoding: deflate
+
+</protocol>
+<errorcode>
+0
+</errorcode>
+</verify>
+</testcase>

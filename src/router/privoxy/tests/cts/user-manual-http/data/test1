@@ -1,0 +1,27 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+</keywords>
+</info>
+
+<client>
+<server>
+none
+</server>
+<name>
+CGI request for the user manual while delivery has been disabled by specifying a http:// URL
+</name>
+<command>
+-s --write-out '%{stderr}%{response_code}\n' --head http://config.privoxy.org/user-manual/
+</command>
+</client>
+
+# It would be better to test more than just the status code
+<verify>
+<stderr>
+404
+</stderr>
+</verify>
+</testcase>

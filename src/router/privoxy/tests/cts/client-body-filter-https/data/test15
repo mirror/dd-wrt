@@ -1,0 +1,72 @@
+<testcase>
+<info>
+<keywords>
+HTTPS
+HTTP POST
+client-body-filter
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Content-Length: 21
+Content-Type: text/html
+
+Received your input.
+</data>
+<data1>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+X-Connection: swsclose
+
+Received your input.
+</data1>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 Connection established
+
+HTTP/1.1 200 OK
+Content-Length: 21
+Content-Type: text/html
+
+Received your input.
+</data>
+</proxy-reply>
+
+<client>
+<server>
+https
+</server>
+<name>
+Two filters applied to client request on a reused connection reusing the already filtered content (based on test 7)
+</name>
+<features>
+proxy
+</features>
+<command>
+--insecure https://%HOSTIP:%HTTPSPORT/bumfidel-to-tralala/%TESTNUMBER --next -d "blafasel" --insecure https://%HOSTIP:%HTTPSPORT/bumfidel-to-tralala/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol nonewline="yes">
+GET /bumfidel-to-tralala/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPSPORT
+User-Agent: curl/%VERSION
+Accept: */*
+
+POST /bumfidel-to-tralala/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPSPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Content-Length: 7
+Content-Type: application/x-www-form-urlencoded
+
+tralala
+</protocol>
+</verify>
+</testcase>

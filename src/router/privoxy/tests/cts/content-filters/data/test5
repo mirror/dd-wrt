@@ -1,0 +1,89 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter refresh-tags
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here are some strings the refresh-tags filter should modify:
+
+<meta http-equiv="refresh" content="15; url=https://www.privoxy.org/">
+<meta http-equiv='refresh' content='20; url=https://www.privoxy.org/'>
+
+# Here are some strings the refresh-tags filter should not modify:
+
+<meta http-equiv="refresh" content="1; url=https://www.privoxy.org/">
+<meta http-equiv='refresh' content='2; url=https://www.privoxy.org/'>
+<meta http-equiv='refresh' content='3; url=https://www.privoxy.org/'>
+<meta http-equiv='refresh' content='4; url=https://www.privoxy.org/'>
+<meta http-equiv='refresh' content='5; url=https://www.privoxy.org/'>
+<meta http-equiv='refresh' content='6; url=https://www.privoxy.org/'>
+<meta http-equiv='refresh' content='7; url=https://www.privoxy.org/'>
+<meta http-equiv='refresh' content='8; url=https://www.privoxy.org/'>
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 803
+
+# Here are some strings the refresh-tags filter should modify:
+
+<link rev="x-refresh" href="https://www.privoxy.org/">
+<link rev="x-refresh" href="https://www.privoxy.org/">
+
+# Here are some strings the refresh-tags filter should not modify:
+
+<meta http-equiv="refresh" content="1; url=https://www.privoxy.org/">
+<meta http-equiv='refresh' content='2; url=https://www.privoxy.org/'>
+<meta http-equiv='refresh' content='3; url=https://www.privoxy.org/'>
+<meta http-equiv='refresh' content='4; url=https://www.privoxy.org/'>
+<meta http-equiv='refresh' content='5; url=https://www.privoxy.org/'>
+<meta http-equiv='refresh' content='6; url=https://www.privoxy.org/'>
+<meta http-equiv='refresh' content='7; url=https://www.privoxy.org/'>
+<meta http-equiv='refresh' content='8; url=https://www.privoxy.org/'>
+</data>
+</proxy-reply>
+
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{refresh-tags}
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/refresh-tags/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /refresh-tags/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

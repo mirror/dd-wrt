@@ -1,0 +1,68 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP POST
+client-body-filter
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+X-Connection: swsclose
+
+Received your first request.
+</data>
+<data1>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+X-Connection: swsclose
+
+Received your second request.
+</data1>
+</reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+Attempt to apply client-body-filter{blafasel-to-bumfidel} to client request that is too large to buffer.
+</name>
+<features>
+proxy
+</features>
+# Sending the first request to appease the test framework.
+# We mainly care about the second request which is too large for Privoxy to buffer it.
+<command>
+http://%HOSTIP:%HTTPPORT/first-request/%TESTNUMBER --next -d @log/post-data-%TESTNUMBER http://%HOSTIP:%HTTPPORT/second-request/%TESTNUMBER
+</command>
+<file name="log/post-data-%TESTNUMBER">
+blafasel%repeat[20000 x padding]%
+</file>
+</client>
+
+<verify>
+<protocol nonewline="yes">
+GET /first-request/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+POST /second-request/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Content-Length: 140008
+Content-Type: application/x-www-form-urlencoded
+Connection: close
+
+blafasel%repeat[20000 x padding]%
+</protocol>
+</verify>
+</testcase>

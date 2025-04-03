@@ -1,0 +1,17 @@
+{+server-header-filter{x-httpd-php-to-html}}
+/x-httpd-php-to-html/
+
+{+server-header-filter{html-to-xml}}
+/html-to-xml/
+
+{+server-header-filter{xml-to-html}}
+/xml-to-html/
+
+{+client-header-filter{hide-tor-exit-notation}}
+/hide-tor-exit-notation/
+
+{+client-header-filter{no-brotli-accepted}}
+/no-brotli-accepted/
+
+{+server-header-filter{less-download-windows}}
+/less-download-windows/

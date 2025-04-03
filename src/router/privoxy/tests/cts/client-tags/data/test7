@@ -1,0 +1,38 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+</keywords>
+</info>
+
+<proxy-reply>
+<data>
+HTTP/1.1 302 Done dealing with toggle request
+Location: //config.privoxy.org/client-tags
+Access-Control-Allow-Origin: http://www.electrobsd.org/
+Access-Control-Allow-Methods: GET,POST
+Access-Control-Allow-Headers: X-Requested-With
+Access-Control-Max-Age: 86400
+Content-Length: 0
+X-Ignore-Header: Date
+Date: Sun, 28 Mar 2021 09:35:05 GMT
+
+</data>
+</proxy-reply>
+
+<client>
+<server>
+none
+</server>
+<name>
+Confirm that the cors-allowed-origin directives results in headers being are added to CGI responses.
+</name>
+<command>
+--head --referer http://www.electrobsd.org/ 'http://p.p/toggle-client-tag'
+</command>
+</client>
+
+<verify>
+</verify>
+</testcase>

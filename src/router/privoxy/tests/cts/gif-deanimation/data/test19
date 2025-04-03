@@ -1,0 +1,62 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+gif deanimation
+</keywords>
+</info>
+
+<reply>
+<data nonewline="yes">
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: image/gif
+X-Control: swsclose
+
+%hex[%47%49%46%38%39%61%ea%00%3c%00%f0%00%00%00%2c%ff%00%00%00%21%f9%04%00%64%00%00%00%21%ff%0b%4e%45%54%53%43%41%50%45%32%2e%30%03%01%ff%00%00%2c%00%00%00%00%ea%00%3c%00%00%02%8e%84%8f%a9%cb%ed%0f%a3%9c%b4%da%8b%b3%de%bc%fb%0f%86%e2%48%96%e6%89%a6%ea%ca%b6%ee%0b%c7%f2%4c%d7%f6%8d%e7%fa%ce%f7%fe%0f%0c%0a%87%c4%a2%f1%88%4c%2a%97%cc%a6%f3%09%8d%4a%a7%d4%aa%f5%8a%cd%6a%b7%dc%ae%f7%0b%0e%8b%c7%e4%b2%f9%8c%4e%ab%d7%ec%b6%fb%0d%8f%cb%e7%f4%ba%fd%8e%cf%eb%f7%fc%be%ff%0f%18%28%38%48%58%68%78%88%98%a8%b8%c8%d8%e8%f8%08%19%29%39%49%59%69%79%89%99%a9%b9%c9%d9%e9%f9%09%1a%2a%3a%4a%5a%6a%7a%8a%9a%aa%ba%0a%51%00%00%21%f9%04%00%64%00%00%00%2c%00%00%00%00%ea%00%3c%00%80%00%00%00%00%00%00%02%8e%84%8f%a9%cb%ed%0f%a3%9c%b4%da%8b%b3%de%bc%fb%0f%86%e2%48%96%e6%89%a6%ea%ca%b6%ee%0b%c7%f2%4c%d7%f6%8d%e7%fa%ce%f7%fe%0f%0c%0a%87%c4%a2%f1%88%4c%2a%97%cc%a6%f3%09%8d%4a%a7%d4%aa%f5%8a%cd%6a%b7%dc%ae%f7%0b%0e%8b%c7%e4%b2%f9%8c%4e%ab%d7%ec%b6%fb%0d%8f%cb%e7%f4%ba%fd%8e%cf%eb%f7%fc%be%ff%0f%18%28%38%48%58%68%78%88%98%a8%b8%c8%d8%e8%f8%08%19%29%39%49%59%69%79%89%99%a9%b9%c9%d9%e9%f9%09%1a%2a%3a%4a%5a%6a%7a%8a%9a%aa%ba%0a%51%00%00%21%f9%04%00%64%00%00%00%2c%00%00%00%00%ea%00%3c%00%80%ff%00%50%00%00%00%02%8e%84%8f%a9%cb%ed%0f%a3%9c%b4%da%8b%b3%de%bc%fb%0f%86%e2%48%96%e6%89%a6%ea%ca%b6%ee%0b%c7%f2%4c%d7%f6%8d%e7%fa%ce%f7%fe%0f%0c%0a%87%c4%a2%f1%88%4c%2a%97%cc%a6%f3%09%8d%4a%a7%d4%aa%f5%8a%cd%6a%b7%dc%ae%f7%0b%0e%8b%c7%e4%b2%f9%8c%4e%ab%d7%ec%b6%fb%0d%8f%cb%e7%f4%ba%fd%8e%cf%eb%f7%fc%be%ff%0f%18%28%38%48%58%68%78%88%98%a8%b8%c8%d8%e8%f8%08%19%29%39%49%59%69%79%89%99%a9%b9%c9%d9%e9%f9%09%1a%2a%3a%4a%5a%6a%7a%8a%9a%aa%ba%0a%51%00%00%21%f9%04%00%64%00%00%00%2c%00%00%00%00%ea%00%3c%00%80%00%f0%ff%00%00%00%02%8e%84%8f%a9%cb%ed%0f%a3%9c%b4%da%8b%b3%de%bc%fb%0f%86%e2%48%96%e6%89%a6%ea%ca%b6%ee%0b%c7%f2%4c%d7%f6%8d%e7%fa%ce%f7%fe%0f%0c%0a%87%c4%a2%f1%88%4c%2a%97%cc%a6%f3%09%8d%4a%a7%d4%aa%f5%8a%cd%6a%b7%dc%ae%f7%0b%0e%8b%c7%e4%b2%f9%8c%4e%ab%d7%ec%b6%fb%0d%8f%cb%e7%f4%ba%fd%8e%cf%eb%f7%fc%be%ff%0f%18%28%38%48%58%68%78%88%98%a8%b8%c8%d8%e8%f8%08%19%29%39%49%59%69%79%89%99%a9%b9%c9%d9%e9%f9%09%1a%2a%3a%4a%5a%6a%7a%8a%9a%aa%ba%0a%51%00%00%21%f9%04%00%64%00%00%00%2c%00%00%00%00%ea%00%3c%00%80%66%ff%00%00%00%00%02%8e%84%8f%a9%cb%ed%0f%a3%9c%b4%da%8b%b3%de%bc%fb%0f%86%e2%48%96%e6%89%a6%ea%ca%b6%ee%0b%c7%f2%4c%d7%f6%8d%e7%fa%ce%f7%fe%0f%0c%0a%87%c4%a2%f1%88%4c%2a%97%cc%a6%f3%09%8d%4a%a7%d4%aa%f5%8a%cd%6a%b7%dc%ae%f7%0b%0e%8b%c7%e4%b2%f9%8c%4e%ab%d7%ec%b6%fb%0d%8f%cb%e7%f4%ba%fd%8e%cf%eb%f7%fc%be%ff%0f%18%28%38%48%58%68%78%88%98%a8%b8%c8%d8%e8%f8%08%19%29%39%49%59%69%79%89%99%a9%b9%c9%d9%e9%f9%09%1a%2a%3a%4a%5a%6a%7a%8a%9a%aa%ba%0a%51%00%00%21%f9%04%00%64%00%00%00%2c%00%00%00%00%ea%00%3c%00%80%ff%a8%00%00%00%00%02%8e%84%8f%a9%cb%ed%0f%a3%9c%b4%da%8b%b3%de%bc%fb%0f%86%e2%48%96%e6%89%a6%ea%ca%b6%ee%0b%c7%f2%4c%d7%f6%8d%e7%fa%ce%f7%fe%0f%0c%0a%87%c4%a2%f1%88%4c%2a%97%cc%a6%f3%09%8d%4a%a7%d4%aa%f5%8a%cd%6a%b7%dc%ae%f7%0b%0e%8b%c7%e4%b2%f9%8c%4e%ab%d7%ec%b6%fb%0d%8f%cb%e7%f4%ba%fd%8e%cf%eb%f7%fc%be%ff%0f%18%28%38%48%58%68%78%88%98%a8%b8%c8%d8%e8%f8%08%19%29%39%49%59%69%79%89%99%a9%b9%c9%d9%e9%f9%09%1a%2a%3a%4a%5a%6a%7a%8a%9a%aa%ba%0a%51%00%00%21%f9%04%00%64%00%00%00%2c%00%00%00%00%ea%00%3c%00%80%ff%24%00%00%00%00%02%8e%84%8f%a9%cb%ed%0f%a3%9c%b4%da%8b%b3%de%bc%fb%0f%86%e2%48%96%e6%89%a6%ea%ca%b6%ee%0b%c7%f2%4c%d7%f6%8d%e7%fa%ce%f7%fe%0f%0c%0a%87%c4%a2%f1%88%4c%2a%97%cc%a6%f3%09%8d%4a%a7%d4%aa%f5%8a%cd%6a%b7%dc%ae%f7%0b%0e%8b%c7%e4%b2%f9%8c%4e%ab%d7%ec%b6%fb%0d%8f%cb%e7%f4%ba%fd%8e%cf%eb%f7%fc%be%ff%0f%18%28%38%48%58%68%78%88%98%a8%b8%c8%d8%e8%f8%08%19%29%39%49%59%69%79%89%99%a9%b9%c9%d9%e9%f9%09%1a%2a%3a%4a%5a%6a%7a%8a%9a%aa%ba%0a%51%00%00%21%f9%04%00%64%00%00%00%2c%00%00%00%00%ea%00%3c%00%80%49%00%ff%00%00%00%02%8e%84%8f%a9%cb%ed%0f%a3%9c%b4%da%8b%b3%de%bc%fb%0f%86%e2%48%96%e6%89%a6%ea%ca%b6%ee%0b%c7%f2%4c%d7%f6%8d%e7%fa%ce%f7%fe%0f%0c%0a%87%c4%a2%f1%88%4c%2a%97%cc%a6%f3%09%8d%4a%a7%d4%aa%f5%8a%cd%6a%b7%dc%ae%f7%0b%0e%8b%c7%e4%b2%f9%8c%4e%ab%d7%ec%b6%fb%0d%8f%cb%e7%f4%ba%fd%8e%cf%eb%f7%fc%be%ff%0f%18%28%38%48%58%68%78%88%98%a8%b8%c8%d8%e8%f8%08%19%29%39%49%59%69%79%89%99%a9%b9%c9%d9%e9%f9%09%1a%2a%3a%4a%5a%6a%7a%8a%9a%aa%ba%0a%51%00%00%21%f9%04%00%64%00%00%00%2c%00%00%00%00%ea%00%3c%00%80%00%ff%f8%00%00%00%02%8e%84%8f%a9%cb%ed%0f%a3%9c%b4%da%8b%b3%de%bc%fb%0f%86%e2%48%96%e6%89%a6%ea%ca%b6%ee%0b%c7%f2%4c%d7%f6%8d%e7%fa%ce%f7%fe%0f%0c%0a%87%c4%a2%f1%88%4c%2a%97%cc%a6%f3%09%8d%4a%a7%d4%aa%f5%8a%cd%6a%b7%dc%ae%f7%0b%0e%8b%c7%e4%b2%f9%8c%4e%ab%d7%ec%b6%fb%0d%8f%cb%e7%f4%ba%fd%8e%cf%eb%f7%fc%be%ff%0f%18%28%38%48%58%68%78%88%98%a8%b8%c8%d8%e8%f8%08%19%29%39%49%59%69%79%89%99%a9%b9%c9%d9%e9%f9%09%1a%2a%3a%4a%5a%6a%7a%8a%9a%aa%ba%0a%51%00%00%21%f9%04%00%64%00%00%00%2c%00%00%00%00%ea%00%3c%00%80%00%ff%66%00%00%00%02%8e%84%8f%a9%cb%ed%0f%a3%9c%b4%da%8b%b3%de%bc%fb%0f%86%e2%48%96%e6%89%a6%ea%ca%b6%ee%0b%c7%f2%4c%d7%f6%8d%e7%fa%ce%f7%fe%0f%0c%0a%87%c4%a2%f1%88%4c%2a%97%cc%a6%f3%09%8d%4a%a7%d4%aa%f5%8a%cd%6a%b7%dc%ae%f7%0b%0e%8b%c7%e4%b2%f9%8c%4e%ab%d7%ec%b6%fb%0d%8f%cb%e7%f4%ba%fd%8e%cf%eb%f7%fc%be%ff%0f%18%28%38%48%58%68%78%88%98%a8%b8%c8%d8%e8%f8%08%19%29%39%49%59%69%79%89%99%a9%b9%c9%d9%e9%f9%09%1a%2a%3a%4a%5a%6a%7a%8a%9a%aa%ba%0a%51%00%00%3b]hex%
+</data>
+</reply>
+
+<proxy-reply>
+<data nonewline="yes">
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: image/gif
+X-Control: swsclose
+Content-Length: 189
+
+%hex[%47%49%46%38%39%61%ea%00%3c%00%f0%00%00%00%2c%ff%00%00%00%21%f9%04%00%64%00%00%00%2c%00%00%00%00%ea%00%3c%00%80%00%ff%66%00%00%00%02%8e%84%8f%a9%cb%ed%0f%a3%9c%b4%da%8b%b3%de%bc%fb%0f%86%e2%48%96%e6%89%a6%ea%ca%b6%ee%0b%c7%f2%4c%d7%f6%8d%e7%fa%ce%f7%fe%0f%0c%0a%87%c4%a2%f1%88%4c%2a%97%cc%a6%f3%09%8d%4a%a7%d4%aa%f5%8a%cd%6a%b7%dc%ae%f7%0b%0e%8b%c7%e4%b2%f9%8c%4e%ab%d7%ec%b6%fb%0d%8f%cb%e7%f4%ba%fd%8e%cf%eb%f7%fc%be%ff%0f%18%28%38%48%58%68%78%88%98%a8%b8%c8%d8%e8%f8%08%19%29%39%49%59%69%79%89%99%a9%b9%c9%d9%e9%f9%09%1a%2a%3a%4a%5a%6a%7a%8a%9a%aa%ba%0a%51%00%00%3b]hex%
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+Valid gif. Multiple frames. Choosing the last one.
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/deanimate-gif/last-frame/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /deanimate-gif/last-frame/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+
+</protocol>
+<errorcode>
+0
+</errorcode>
+</verify>
+</testcase>

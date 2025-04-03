@@ -1,0 +1,62 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+client-header-filter no-brotli-accepted
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 0
+
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 0
+
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++client-header-filter{no-brotli-accepted}
+</name>
+<features>
+proxy
+</features>
+<command>
+--head -H "Accept-Encoding: br" -H "Accept-Encoding: gzip, br" -H "Accept-Encoding: br, gzip" http://%HOSTIP:%HTTPPORT/no-brotli-accepted/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+HEAD /no-brotli-accepted/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Accept-Encoding: 
+Accept-Encoding: gzip
+Accept-Encoding: gzip
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

@@ -1,0 +1,49 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP POST
+client-body-filter
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+X-Connection: swsclose
+
+Received your input.
+</data>
+</reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+Applying client-body-filter{blafasel-to-bumfidel} to client request that is too large to read at once and arrives slowly
+</name>
+<features>
+proxy
+</features>
+<command>
+--limit-rate 4k -d "blafasel%repeat[5000 x padding]%" http://%HOSTIP:%HTTPPORT/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol nonewline="yes">
+POST /%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Content-Length: 35008
+Content-Type: application/x-www-form-urlencoded
+Connection: close
+
+bumfidel%repeat[5000 x padding]%
+</protocol>
+</verify>
+</testcase>

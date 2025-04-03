@@ -47,7 +47,7 @@
 # s - section
 # p - pattern
 # u - old value of URL
-# jumptarget - append to eal URL to jump to relevant section
+# jumptarget - append anchor to eal URL to jump to relevant section
 #
 #############################################################################
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
@@ -113,7 +113,7 @@ function validate(text)
             <input type="text" name="u" value="@u@" size="78" class="pattern"><br>
             <input type="submit" value="Submit"> &nbsp;
             <input type="reset" value="Reset"> &nbsp;
-            <a class="cmd" href="edit-actions-list?f=@f@@jumptarget@">Cancel</a>
+            <a class="cmd" href="edit-actions-list?f=@f@#@jumptarget@">Cancel</a>
           </p>
         </form>
       </td>

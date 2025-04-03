@@ -17,7 +17,7 @@
 # - Document magic Expect Header values
 # - Internal fuzz support?
 #
-# Copyright (c) 2007-2021 Fabian Keil <fk@fabiankeil.de>
+# Copyright (c) 2007-2024 Fabian Keil <fk@fabiankeil.de>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -38,7 +38,7 @@ use strict;
 use Getopt::Long;
 
 use constant {
-    PRT_VERSION => 'Privoxy-Regression-Test 0.7.3',
+    PRT_VERSION => 'Privoxy-Regression-Test 0.7.5',
  
     CURL => 'curl',
 
@@ -1456,7 +1456,7 @@ sub get_page_with_curl($) {
 
     my $parameters = shift;
     my @buffer;
-    my $curl_line = CURL;
+    my $curl_line = get_cli_option('curl');
     my $retries_left = get_cli_option('retries') + 1;
     my $failure_reason;
 
@@ -1694,6 +1694,7 @@ sub help() {
 
 Options and their default values if they have any:
     [--check-bad-ssl]
+    [--curl $cli_options{'curl'}]
     [--debug $cli_options{'debug'}]
     [--forks $cli_options{'forks'}]
     [--fuzzer-address]
@@ -1735,6 +1736,7 @@ sub init_cli_options() {
     our $log_level;
     our $proxy;
 
+    $cli_options{'curl'}      = CURL;
     $cli_options{'debug'}     = $log_level;
     $cli_options{'forks'}     = CLI_FORKS;
     $cli_options{'loops'}     = CLI_LOOPS;
@@ -1756,6 +1758,7 @@ sub parse_cli_options() {
 
     GetOptions (
         'check-bad-ssl'      => \$cli_options{'check-bad-ssl'},
+        'curl=s'             => \$cli_options{'curl'},
         'debug=i'            => \$cli_options{'debug'},
         'forks=i'            => \$cli_options{'forks'},
         'fuzzer-address=s'   => \$cli_options{'fuzzer-address'},
@@ -1779,6 +1782,11 @@ sub parse_cli_options() {
         'version'            => sub {print_version && exit(0)}
     ) or exit(1);
     $log_level |= $cli_options{'debug'};
+
+    if ($cli_options{'min-level'} > $cli_options{'max-level'}) {
+        log_message("Increasing --max-level to --min-level " . $cli_options{'min-level'});
+        $cli_options{'max-level'} = $cli_options{'min-level'};
+    }
 }
 
 sub cli_option_is_set($) {
@@ -1893,8 +1901,8 @@ B<privoxy-regression-test> - A regression test "framework" for Privoxy.
 
 =head1 SYNOPSIS
 
-B<privoxy-regression-test> [B<--check-bad-ssl>] [B<--debug bitmask>] [B<--forks> forks]
-[B<--fuzzer-feeding>] [B<--fuzzer-feeding>] [B<--help>] [B<--level level>]
+B<privoxy-regression-test> [B<--check-bad-ssl>] [B<--curl curl>] [B<--debug bitmask>]
+[B<--forks> forks] [B<--fuzzer-feeding>] [B<--fuzzer-feeding>] [B<--help>] [B<--level level>]
 [B<--local-test-file testfile>] [B<--loops count>] [B<--max-level max-level>]
 [B<--max-time max-time>] [B<--min-level min-level>] B<--privoxy-address proxy-address>
 B<--privoxy-cgi-prefix cgi-prefix> [B<--retries retries>] [B<--test-number test-number>]
@@ -2050,6 +2058,8 @@ certificate issues. Only works if Privoxy has been compiled
 with FEATURE_HTTPS_INSPECTION, has been configured properly
 and can reach the Internet.
 
+B<--curl curl> Use a non-default curl binary.
+
 B<--debug bitmask> Add the bitmask provided as integer
 to the debug settings.
 
@@ -2097,6 +2107,8 @@ a fuzzer.
 
 B<--min-level min-level> Only execute tests with a B<level>
 above or equal to the numerical B<min-level>.
+If the B<min-level> is larger than the B<max-level>,
+the B<max-level> is set to the B<min-level>.
 
 B<--privoxy-address proxy-address> Privoxy's listening address.
 If it's not set, the value of the environment variable http_proxy

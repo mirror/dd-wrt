@@ -1,0 +1,71 @@
+<testcase>
+<info>
+<keywords>
+HTTPS
+HTTP POST
+client-body-filter
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Content-Length: 21
+Content-Type: text/html
+
+Received your input.
+</data>
+<data1>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+X-Connection: swsclose
+
+Received your input.
+</data1>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 Connection established
+
+HTTP/1.1 200 OK
+Content-Length: 21
+Content-Type: text/html
+
+Received your input.
+</data>
+<data1>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+X-Connection: swsclose
+
+Received your input.
+</data1>
+</proxy-reply>
+
+<client>
+<server>
+https
+</server>
+<name>
+Attempt to apply client-body-filter{blafasel-to-bumfidel} to client request that does not completely arrive in time on a reused connection. (based on test 10)
+</name>
+<features>
+proxy
+</features>
+# Sending the first request to appease the test framework.
+# We mainly care about the second request where we overwrite the Content-Length
+# header so curl sends less data than Privoxy expects.
+<command>
+-s --insecure https://%HOSTIP:%HTTPSPORT/first-request/%TESTNUMBER --next -s --write-out '%{stderr}%{response_code}\n' --limit-rate 5000 -d "blafasel%repeat[100 x padding]%" -H "Content-Length: 8000" --insecure https://%HOSTIP:%HTTPSPORT/second-request/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<stderr>
+400
+</stderr>
+</verify>
+</testcase>

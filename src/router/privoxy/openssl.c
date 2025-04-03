@@ -8,7 +8,7 @@
  *
  * Copyright   :  Written by and Copyright (c) 2020 Maxim Antonov <mantonov@gmail.com>
  *                Copyright (C) 2017 Vaclav Svec. FIT CVUT.
- *                Copyright (C) 2018-2022 by Fabian Keil <fk@fabiankeil.de>
+ *                Copyright (C) 2018-2024 by Fabian Keil <fk@fabiankeil.de>
  *
  *                This program is free software; you can redistribute it
  *                and/or modify it under the terms of the GNU General
@@ -36,8 +36,15 @@
 #include <openssl/bn.h>
 #include <openssl/opensslv.h>
 #include <openssl/pem.h>
-#include <openssl/md5.h>
+#include <openssl/sha.h>
 #include <openssl/x509v3.h>
+#ifdef _WIN32
+/* https://www.openssl.org/docs/faq.html
+   I’ve compiled a program under Windows and it crashes: Why?
+   tl,dr: because it needs this include:
+*/
+#include <openssl/applink.c>
+#endif /* _WIN32 */
 
 #include "config.h"
 #include "project.h"
@@ -699,8 +706,8 @@ exit:
  *
  * Function    :  host_to_hash
  *
- * Description :  Creates MD5 hash from host name. Host name is loaded
- *                from structure csp and saved again into it.
+ * Description :  Creates a sha256 hash from host name. The host name
+ *                is taken from the csp structure and stored into it.
  *
  * Parameters  :
  *          1  :  csp = Current client state (buffers, headers, etc...)
@@ -711,25 +718,11 @@ exit:
  *********************************************************************/
 static int host_to_hash(struct client_state *csp)
 {
-   int ret = 0;
-
-   memset(csp->http->hash_of_host, 0, sizeof(csp->http->hash_of_host));
-   MD5((unsigned char *)csp->http->host, strlen(csp->http->host),
+   SHA256((unsigned char *)csp->http->host, strlen(csp->http->host),
       csp->http->hash_of_host);
 
-   /* Converting hash into string with hex */
-   size_t i = 0;
-   for (; i < 16; i++)
-   {
-      if ((ret = sprintf((char *)csp->http->hash_of_host_hex + 2 * i, "%02x",
-         csp->http->hash_of_host[i])) < 0)
-      {
-         log_error(LOG_LEVEL_ERROR, "Sprintf return value: %d", ret);
-         return -1;
-      }
-   }
+   return create_hexadecimal_hash_of_host(csp);
 
-   return 0;
 }
 
 
@@ -790,17 +783,16 @@ extern int create_client_ssl_connection(struct client_state *csp)
     * certificate and key inconsistence must be locked.
     */
    privoxy_mutex_lock(&certificate_mutex);
-
    ret = generate_host_certificate(csp);
+   privoxy_mutex_unlock(&certificate_mutex);
+
    if (ret < 0)
    {
       log_error(LOG_LEVEL_ERROR,
-         "generate_host_certificate failed: %d", ret);
-      privoxy_mutex_unlock(&certificate_mutex);
+         "generate_host_certificate() failed: %d", ret);
       ret = -1;
       goto exit;
    }
-   privoxy_mutex_unlock(&certificate_mutex);
 
    if (!(ssl_attr->openssl_attr.ctx = SSL_CTX_new(SSLv23_server_method())))
    {
@@ -1489,8 +1481,10 @@ static int generate_key(struct client_state *csp, char **key_buf)
 {
    int ret = 0;
    char* key_file_path;
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
    BIGNUM *exp;
    RSA *rsa;
+#endif
    EVP_PKEY *key;
 
    key_file_path = make_certs_path(csp->config->certificate_directory,
@@ -1509,6 +1503,7 @@ static int generate_key(struct client_state *csp, char **key_buf)
       return 0;
    }
 
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
    exp = BN_new();
    rsa = RSA_new();
    key = EVP_PKEY_new();
@@ -1541,6 +1536,15 @@ static int generate_key(struct client_state *csp, char **key_buf)
       ret = -1;
       goto exit;
    }
+#else
+   key = EVP_RSA_gen(RSA_KEYSIZE);
+   if (key == NULL)
+   {
+      log_error(LOG_LEVEL_ERROR, "EVP_RSA_gen() failed");
+      ret = -1;
+      goto exit;
+   }
+#endif
 
    /*
     * Exporting private key into file
@@ -1557,6 +1561,7 @@ exit:
    /*
     * Freeing used variables
     */
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
    if (exp)
    {
       BN_free(exp);
@@ -1565,6 +1570,7 @@ exit:
    {
       RSA_free(rsa);
    }
+#endif
    if (key)
    {
       EVP_PKEY_free(key);

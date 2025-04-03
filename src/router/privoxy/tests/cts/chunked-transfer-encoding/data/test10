@@ -1,0 +1,59 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+chunked transfer encoding
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+Transfer-Encoding: chunked
+X-Control: swsclose
+
+100
+%repeat[255 x A]%
+
+100
+%repeat[255 x B]%
+
+100
+%repeat[255 x C]%
+
+Bogus data.
+</data>
+</reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+Chunked transfer encoding - Multiple chunks, bogus data instead of last chunk.
+</name>
+<features>
+proxy
+</features>
+<command>
+--raw http://%HOSTIP:%HTTPPORT/chunked-transfer-encoding/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /chunked-transfer-encoding/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+
+</protocol>
+<errorcode>
+18
+</errorcode>
+</verify>
+</testcase>

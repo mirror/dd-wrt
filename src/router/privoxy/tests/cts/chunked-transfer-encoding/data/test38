@@ -1,0 +1,116 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+chunked transfer encoding
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: keep-alive
+Content-Type: text/html
+Transfer-Encoding: chunked
+
+12345
+%repeat[74564 x A]%
+
+67891
+%repeat[424080 x B]%
+
+31337
+%repeat[201526 x C]%
+
+31337
+%repeat[201526 x D]%
+
+31337
+%repeat[201526 x E]%
+
+0
+
+</data>
+<data1>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+X-Connection: swsclose
+Content-Type: text/html
+
+Here's your unchunked data.
+</data1>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: keep-alive
+Content-Type: text/html
+Transfer-Encoding: chunked
+
+12345
+%repeat[74564 x A]%
+
+67891
+%repeat[424080 x B]%
+
+31337
+%repeat[201526 x C]%
+
+31337
+%repeat[201526 x D]%
+
+31337
+%repeat[201526 x E]%
+
+0
+
+</data>
+<data1>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+X-Connection: swsclose
+Content-Type: text/html
+
+Here's your unchunked data.
+</data1>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+Chunked transfer encoding - Multiple largish chunks on connection that is kept alive. Filtering enabled but content too large to buffer.
+</name>
+<features>
+proxy
+</features>
+<command>
+--max-time 20 --raw http://%HOSTIP:%HTTPPORT/chunked-transfer-encoding/%TESTNUMBER0000 --raw http://%HOSTIP:%HTTPPORT/unchunked-content/%TESTNUMBER0001
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /chunked-transfer-encoding/%TESTNUMBER0000 HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+
+GET /unchunked-content/%TESTNUMBER0001 HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+
+</protocol>
+<errorcode>
+0
+</errorcode>
+</verify>
+</testcase>

@@ -1,0 +1,134 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter site-specifics
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here are some strings the site-specifics filter should filter:
+
+# pcrs command 1:
+
+indexOf("x11")
+
+# pcrs command 2 (XXX: should probably kill the parens as well):
+
+mylogfunc()
+
+# pcrs command 3:
+
+<a href="http://www.example.org/">Continue to message</a>
+<a href="http://www.example.org/">Weiter zu Nachricht</a>
+
+# pcrs command 4:
+
+<input type="hidden" name="REDIRECT" value="http://www.example.org/">
+
+# pcrs command 5:
+
+<IMG SRC="http://media.monster.com/mm/usen/my/no_thanks_211x40.gif" blafasel>
+
+# pcrs command 6:
+
+<img blafasel onload="alert('blafasel')"
+
+# pcrs command 7:
+
+<INPUT name="1234" type="RADIO" value="0" CHECKED 
+<INPUT name="123" type="RADIO" value="0" CHECKED 
+<INPUT name="12" type="RADIO" value="0" CHECKED 
+
+# pcrs command 8:
+
+<INPUT name="12" type="RADIO" value="3" 
+<INPUT name="123" type="RADIO" value="3" 
+<INPUT name="1233" type="RADIO" value="3" 
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 888
+
+# Here are some strings the site-specifics filter should filter:
+
+# pcrs command 1:
+
+indexOf("x13")
+
+# pcrs command 2 (XXX: should probably kill the parens as well):
+
+()
+
+# pcrs command 3:
+
+<meta http-equiv="refresh" content="0; URL=http://www.example.org/">
+<meta http-equiv="refresh" content="0; URL=http://www.example.org/">
+
+# pcrs command 4:
+
+<meta http-equiv="refresh" content="0; URL=http://www.example.org/">
+
+# pcrs command 5:
+
+<meta http-equiv="refresh" content="0; URL=http://my.monster.com/resume.asp">
+
+# pcrs command 6:
+
+<img blafasel never="alert('blafasel')"
+
+# pcrs command 7:
+
+<INPUT name="1234" type="RADIO" value="0"
+<INPUT name="123" type="RADIO" value="0"
+<INPUT name="12" type="RADIO" value="0"
+
+# pcrs command 8:
+
+<INPUT name="12" type="RADIO" value="3"  checked
+<INPUT name="123" type="RADIO" value="3"  checked
+<INPUT name="1233" type="RADIO" value="3"  checked
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{site-specifics}
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/site-specifics/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /site-specifics/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

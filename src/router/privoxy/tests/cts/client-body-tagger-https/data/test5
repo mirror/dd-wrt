@@ -1,0 +1,71 @@
+<testcase>
+<info>
+<keywords>
+HTTPS
+HTTP POST
+client-body-tagger
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+X-Connection: swsclose
+
+Received your input.
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 Connection established
+
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+X-Connection: swsclose
+
+Received your input.
+</data>
+</proxyreply>
+
+<client>
+<server>
+https
+</server>
+<name>
+Two requests to the same URL. The second one is a POST request but it's not expected to be blocked due to a tag.
+</name>
+<features>
+proxy
+</features>
+<command>
+-s --write-out '%{stderr}%{response_code}\n' --insecure https://%HOSTIP:%HTTPSPORT/%TESTNUMBER --next -d "%repeat[5000 x padding]%bumfidel" -s --write-out '%{stderr}%{response_code}\n' --insecure https://%HOSTIP:%HTTPSPORT/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol nonewline="yes">
+GET /%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPSPORT
+User-Agent: curl/%VERSION
+Accept: */*
+
+POST /%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPSPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Content-Length: 35008
+Content-Type: application/x-www-form-urlencoded
+
+%repeat[5000 x padding]%bumfidel
+</protocol>
+<stderr>
+200
+200
+</stderr>
+
+</verify>
+</testcase>

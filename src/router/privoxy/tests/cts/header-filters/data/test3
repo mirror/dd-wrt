@@ -1,0 +1,67 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+server-header-filter xml-to-html
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: application/xhtml+xml; blafasel
+Content-Type: application/xml; blafasel
+Content-Type: application/xml
+Content-Type: text/xml; blafasel
+Content-Type: text/xml
+X-Control: swsclose
+Content-Length: 0
+
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html; blafasel
+Content-Type: text/html; blafasel
+Content-Type: text/html
+Content-Type: text/html; blafasel
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 0
+
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++server-header-filter{xml-to-html}
+</name>
+<features>
+proxy
+</features>
+<command>
+--head http://%HOSTIP:%HTTPPORT/xml-to-html/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+HEAD /xml-to-html/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

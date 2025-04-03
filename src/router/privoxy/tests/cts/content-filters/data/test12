@@ -1,0 +1,92 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter tiny-textforms
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here are some tiny textforms the tiny-textforms filter should filter:
+
+# pcrs command 1:
+
+<textarea rows="10" cols="10">
+<textarea cols="10" rows="10">
+<textarea rows='5' cols="5">
+<textarea cols='7' rows='7'>
+
+<!-- The filter actual makes large forms tynier ... -->
+<textarea rows="100" cols="100">
+<textarea cols="1000" rows="1000">
+
+# pcrs command 2:
+
+<textarea wrap="hard">
+<textarea wrap='hard'>
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 379
+
+# Here are some tiny textforms the tiny-textforms filter should filter:
+
+# pcrs command 1:
+
+<textarea rows="40" cols="80">
+<textarea rows="40" cols="80">
+<textarea rows="40" cols="80">
+<textarea rows='40' cols='80'>
+
+<!-- The filter actual makes large forms tynier ... -->
+<textarea rows="40" cols="80">
+<textarea rows="40" cols="80">
+
+# pcrs command 2:
+
+<textarea >
+<textarea >
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{tiny-textforms}
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/tiny-textforms/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /tiny-textforms/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

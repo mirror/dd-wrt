@@ -8,7 +8,7 @@
 <!entity history SYSTEM "history.sgml">
 <!entity copyright SYSTEM "copyright.sgml">
 <!entity license SYSTEM "license.sgml">
-<!entity p-version "3.0.34">
+<!entity p-version "4.0.0">
 <!entity p-status "stable">
 <!entity % p-not-stable "IGNORE">
 <!entity % p-stable "INCLUDE">
@@ -25,7 +25,7 @@
 
  Purpose     :  FAQ
 
- Copyright (C) 2001-2023 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2025 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  Based partially on the Internet Junkbuster FAQ originally written by and
@@ -513,6 +513,12 @@ warranty? Registration?</title>
  <ulink url="mailto:fk@fabiankeil.de">Fabian Keil</ulink> (Privoxy's SPI liaison)
  directly.
 </para>
+
+<para>
+ If you want to support Fabian directly, you can also buy a
+ <ulink url="https://www.fabiankeil.de/gehacktes/privoxy-moral-license/">Privoxy Moral License</ulink>.
+</para>
+
 </sect3>
 </sect2>
 <sect2 id="sponsor"><title>How can I become a sponsor and get my logo or link on privoxy.org?</title>

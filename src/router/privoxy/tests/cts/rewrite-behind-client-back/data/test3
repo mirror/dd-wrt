@@ -1,0 +1,42 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Content-Length: 9
+
+Blafasel
+</data>
+</reply>
+
+
+<client>
+<server>
+http
+</server>
+<name>
+Rewrite host behind the client's back
+</name>
+<command>
+http://www.example.org/%TESTNUMBER-%HOSTIP:%HTTPPORT
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /%TESTNUMBER HTTP/1.1
+Host: www.example.org
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

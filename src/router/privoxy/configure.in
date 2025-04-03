@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 dnl
-dnl Written by and Copyright (C) 2001-2023 the
+dnl Written by and Copyright (C) 2001-2025 the
 dnl Privoxy team. https://www.privoxy.org/
 dnl
 dnl Based on the Internet Junkbuster originally written
@@ -78,14 +78,14 @@ dnl and will be used for CGI output. Increment version number and
 dnl set status to "UNRELEASED" whenever git differs from the last
 dnl release and no new release is near.
 
-VERSION_MAJOR=3
+VERSION_MAJOR=4
 VERSION_MINOR=0
-VERSION_POINT=34
+VERSION_POINT=0
 CODE_STATUS="stable"
 
 dnl Timestamp (date +%s) used by the mtree-spec target.
 dnl Should be updated before releases but forgetting it isn't critical.
-SOURCE_DATE_EPOCH=1672586827
+SOURCE_DATE_EPOCH=1735969800
 
 dnl =================================================================
 dnl Substitute the version numbers
@@ -615,9 +615,9 @@ AC_CHECK_FUNC(gmtime_r, [
   AC_TRY_COMPILE([
 #   include <time.h>
   ], [
-    struct time *t;
-    struct tm *tm;
-    (void) gmtime_r(t, tm)
+    time_t t;
+    struct tm tm;
+    (void) gmtime_r(&t, &tm)
   ], [
     AC_MSG_RESULT(ok)
     AC_DEFINE(HAVE_GMTIME_R)
@@ -633,9 +633,9 @@ AC_CHECK_FUNC(localtime_r, [
   AC_TRY_COMPILE([
 #   include <time.h>
   ], [
-    struct time *t;
-    struct tm *tm;
-    (void) localtime_r(t, tm)
+    time_t t;
+    struct tm tm;
+    (void) localtime_r(&t, &tm)
   ], [
     AC_MSG_RESULT(ok)
     AC_DEFINE(HAVE_LOCALTIME_R)
@@ -863,12 +863,48 @@ else
   ])
 fi
 
+AC_ARG_ENABLE(pcre2,
+[  --disable-pcre2                  Don't try to use pcre2 even if it's available],
+[enableval2=$enableval],
+[enableval2=yes])
+if test $enableval2 = yes; then
+  try_pcre2=yes
+else
+  AC_MSG_WARN([Ignoring pcre2 even if it's available])
+  try_pcre2=no
+  have_pcre2=no
+fi
+
+if test $try_pcre2 != no; then
 dnl =================================================================
 dnl Checks for libraries.
 dnl =================================================================
 dnl Note: Some systems may have the library but not the system header
 dnl       file, so we must check for both.
 dnl       Also check for correct version
+AC_CHECK_LIB(pcre2-8, pcre2_compile_8, [
+   AC_CHECK_HEADER(pcre2.h, [
+      AC_EGREP_HEADER(pcre2_pattern_info, pcre2.h,[have_pcre2=yes; AC_DEFINE(HAVE_PCRE2)], [AC_MSG_WARN([[pcre2 old version installed]]); have_pcre2=no])
+   ], [
+      AC_CHECK_HEADER(pcre2/pcre2.h, [
+         AC_EGREP_HEADER(pcre2_pattern_info, pcre2/pcre2.h, [have_pcre2=yes; AC_DEFINE(PCRE2_H_IN_SUBDIR)], [AC_MSG_WARN([[pcre2 old version installed]]); have_pcre2=no])
+      ], [have_pcre2=no])
+   ], [#define PCRE2_CODE_UNIT_WIDTH 8])
+], [have_pcre2=no])
+
+AC_CHECK_LIB(pcre2-posix, regcomp, [
+   AC_CHECK_HEADER(pcre2posix.h, [
+      AC_EGREP_HEADER(pcre2_regerror, pcre2posix.h, [have_pcre2posix=yes],[AC_MSG_WARN([[pcre2posix old version installed]]); have_pcre2posix=no])
+   ], [
+      AC_CHECK_HEADER(pcre/pcre2posix.h, [
+         AC_EGREP_HEADER(pcre2_regerror, pcre2/pcre2posix.h,  [have_pcre2posix=yes; AC_DEFINE(PCRE2POSIX_H_IN_SUBDIR)],[AC_MSG_WARN([[pcre2posix old version installed]]); have_pcre2posix=no])
+      ], [have_pcre2posix=no])
+   ])
+], [have_pcre2posix=no], -lpcre2-8)
+fi
+
+if test $have_pcre2 = "no"; then
+
 AC_CHECK_LIB(pcre, pcre_compile, [
    AC_CHECK_HEADER(pcre.h, [
       AC_EGREP_HEADER(pcre_fullinfo, pcre.h, [have_pcre=yes], [AC_MSG_WARN([[pcre old version installed]]); have_pcre=no])
@@ -889,6 +925,7 @@ AC_CHECK_LIB(pcreposix, regcomp, [
    ])
 ], [have_pcreposix=no], -lpcre)
 
+fi
 dnl ================================================================
 dnl libpcrs is temporarily disabled.
 dnl
@@ -1095,6 +1132,33 @@ fi
 # we don't need pcreposix, then link pcre dynamically; else
 # build it and link statically
 #
+
+#check for libpcre2 first. then regular pcre
+
+if test $have_pcre2 = "yes"; then
+  echo "using libpcre2"
+  STATIC_PCRE_ONLY=#
+  LIBS="$LIBS -lpcre2-8 -lpcre2-posix"
+  if test "$use_static_pcre" = "yes"; then
+    pcre_dyn=no
+    AC_DEFINE(PCRE2_STATIC,1,[Define to statically link to the pcre2 library on Windows.])
+#     see pcre2-10.42/src/pcre2.h line 54
+#       #if defined(_WIN32) && !defined(PCRE2_STATIC)
+#       #  ifndef PCRE2_EXP_DECL
+#       #    define PCRE2_EXP_DECL  extern __declspec(dllimport)
+#       #  endif
+#       #endif
+#     If you want to statically link a program against a PCRE2 library in the form of
+#     a non-dll .a file, you must define PCRE2_STATIC before including src/pcre2.h.
+#     Otherwise the exported functions will be declared __declspec(dllimport),
+#     with unwanted results.  eg: build failures with error messages like
+#       undefined reference to `_imp__pcre2_compile_8'
+  else
+    pcre_dyn=yes
+    AC_DEFINE(FEATURE_DYNAMIC_PCRE,1,[Define to dynamically link to pcre.])
+  fi
+else
+
 if test $have_pcre = "yes"; then
   echo "using libpcre"
   STATIC_PCRE_ONLY=#
@@ -1116,7 +1180,8 @@ if test $have_pcre = "yes"; then
     AC_DEFINE(FEATURE_DYNAMIC_PCRE,1,[Define to dynamically link to pcre.])
   fi
 else
-  AC_MSG_ERROR(pcre library not detected.)
+  AC_MSG_ERROR(Detected neither pcre2 nor pcre library.)
+fi
 fi
 
 AC_DEFINE(FEATURE_CONNECTION_KEEP_ALIVE)
@@ -1229,6 +1294,45 @@ if test X"$OPT_OPENSSL" != Xno; then
   fi
 fi
 AC_SUBST(FEATURE_HTTPS_INSPECTION_ONLY_OPENSSL)
+
+dnl ========================================================
+dnl check for wolfSSL which can be used for https inspection
+dnl ========================================================
+FEATURE_HTTPS_INSPECTION_ONLY_WOLFSSL=#
+OPT_WOLFSSL=no
+AC_ARG_WITH(wolfssl,dnl
+AC_HELP_STRING([--with-wolfssl], [Enable wolfSSL detection for https inspection.])
+AC_HELP_STRING([--without-wolfssl], [Disable wolfSSL detection]),
+  OPT_WOLFSSL=$withval)
+
+if test X"$OPT_WOLFSSL" != Xno; then
+    if test X"$OPT_MBEDTLS" != Xno; then
+        AC_MSG_ERROR([wolfSSL and mbedTLS support can't be enabled at the same time])
+    fi
+    if test X"$OPT_OPENSSL" != Xno; then
+        AC_MSG_ERROR([wolfSSL and OpenSSL support can't be enabled at the same time])
+    fi
+
+    AC_CHECK_LIB(wolfssl, wolfSSL_Init, [HAVE_WOLFSSL_INIT="yes"])
+
+    if test "x$HAVE_WOLFSSL_INIT" = "xyes"; then
+        AC_DEFINE(FEATURE_HTTPS_INSPECTION, 1, [if SSL/TLS is enabled])
+        AC_DEFINE(FEATURE_HTTPS_INSPECTION_WOLFSSL, 1, [if Wolfssl is enabled])
+        AC_SUBST(FEATURE_HTTPS_INSPECTION_WOLFSSL, [1])
+        FEATURE_HTTPS_INSPECTION="yes"
+        FEATURE_HTTPS_INSPECTION_WOLFSSL="yes"
+    fi
+
+    if test "x$FEATURE_HTTPS_INSPECTION_WOLFSSL" = "xyes"; then
+    AC_MSG_NOTICE([Detected wolfSSL. Enabling https inspection.])
+
+    LIBS="$LIBS -lwolfssl"
+
+    FEATURE_HTTPS_INSPECTION_ONLY=
+    FEATURE_HTTPS_INSPECTION_ONLY_WOLFSSL=
+  fi
+fi
+AC_SUBST(FEATURE_HTTPS_INSPECTION_ONLY_WOLFSSL)
 
 AC_SUBST(FEATURE_HTTPS_INSPECTION_ONLY)
 

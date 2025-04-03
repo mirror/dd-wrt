@@ -21,7 +21,7 @@
 #                 and enhancements are better placed in user.action,
 #                 the match-all section has been moved to match-all.action.
 #
-#  Copyright   :  Written by and Copyright (C) 2001-2022 the
+#  Copyright   :  Written by and Copyright (C) 2001-2025 the
 #                 Privoxy team. https://www.privoxy.org/
 #
 # Feedback welcome, for details please have a look at:
@@ -120,7 +120,7 @@
 # wouldn't fit here.
 #
 # Perl compatible regular expressions are used. See the pcre/docs/ directory or
-# man perlre (also available at http://perldoc.perl.org/perlre.html) for
+# man perlre (also available at https://perldoc.perl.org/perlre) for
 # details. The appendix to our User Manual also has some detail.
 #
 # Please note that matching in the path is CASE INSENSITIVE by default, but
@@ -680,11 +680,14 @@ ad[udmw]*.
 adbl*.
 adam*.
 adapt*.
+# URL = http://adl.windows.com/appraiseradl/2024_12_11_03_55_AMD64.cab
+adl.windows.com/
 adob*.
 adrenaline.
 adtp*.
 adv[oia]*.
-adventure*.
+# URL = https://adventurist.me/posts/00328
+adventur*.
 .*road*.
 .olympiad*.
 .*load*.
@@ -959,6 +962,14 @@ odb.outbrain.com/
 elsa.memoinsights.com/t
 # Blocked URL = https://ups.xplosion.de/ctx?event_id=ctx_json&_sid=24141&hostSiteUrl=https://www.presseportal.de/blaulicht/pm/12415/5302821&referrer=&userAgent=Mozilla/5.0%20(X11;%20FreeBSD%20amd64;%20rv:91.0)%20Gecko/20100101%20Firefox/91.0&userLang=en-CA&gdpr=1&gdpr_consent=[...]
 ups.xplosion.de/
+# Blocked URL = https://s.cpx.to/fire.js?pid=13058&ref=https%3A%2F%2Fexplosm.net%2Fcomics%2Fnewyears-2008&url=https%3A%2F%2Fexplosm.net%2Fcomics%2Fdave-shortnew-8%23comic&hn_ver=57&fid=715e92a0-477c-4ef4-b655-6ed9edc0e94b&gcv=CPuOj0APuOj0AAKAvAENDFCsAP_AAH_AAAwIJbtX_H__bW9r8f5_aft0eY1P9_j77uQzDhfNk-4F3L_W_JwX52E7NF36tq4KmR4Eu3LBIUNlHNHUTVmwaokVryHsak2cpTNKJ6BEkHMRO2dYGF5umxtjeQKY5_p_d3fx2D-t_dv-39z3z81Xn3dZf-_0-PCdU5_9Dfn9fRfb-9IL9_78v8v8_9_rk2_eX_3_79_7_H9-f_84JcAEmGrcQBdmUODNoGEUCIEYVhARQKACCgGFogIAHBwU7IwCfWESAFAKAIwIgQ4AoyIBAAAJAEhEAEgRYIAAABAIAAQAIBEIAGBgEFABYCAQAAgOgYohQACBIQJEREQpgQFQJBAS2VCCUF0hphAFWWAFAIjYKABEEgIrAAEBYOAYIkBKxYIEmINogAGAFAKJUK1FJ6aAhYzMAAAA.YAAAAAAAAAAA
+s.cpx.to/
+# Blocked URL = https://track.venatusmedia.com/dual/track_enc
+track.venatusmedia.com/
+# Blocked URL = https://o2.mouseflow.com/init?v=17.96&p=bd33e8bf-4f45-437f-9bda...&s=a6ac920f1ba63b3...&page=090...2f0d2&ret=0&u=62...fa1&href=https%3A%2F%2Fauth.leaseweb.com%2FloginCustomer&url=auth.leaseweb.com%2Flogincustomer&ref=https%3A%2F%2Fsecure.leaseweb.com%2F&title=Leaseweb%20Authorization%20Server&res=1366x768&tz=-60&to=0&dnt=1&ori=&dw=1362&dh=621&time=727&pxr=1&gdpr=1
+o2.mouseflow.com/
+# Blocked URL = https://secure-eu.nmrodam.com/cgi-bin/gn?prd=dcr&ci=de-910483&ch=de-910483_b01__vermischtes__P&asn=_vermischtes_&fp_id=&fp_cr_tm=&fp_acc_tm=&fp_emm_tm=&ve_id=&sessionId=vu0qoho115ipzkihhkxsztnvalijv1695918791&prv=1&c6=vc,b01&ca=NA&c13=asid,PE3FB63C1-D0BE-4D42-95B5-7B383C43C5F8&c32=segA,a_vermischtes_article&c33=segB,CPI&c34=segC,Firefox%20102&c15=apn,&sup=1&segment2=&segment1=&forward=0&plugv=&playerv=&ad=0&cr=D&c9=devid,&enc=true&c1=nuid,999&at=timer&rt=text&c16=sdkv,bj.6.0.0&c27=cln,30&crs=&lat=&lon=&c29=plid,16959187913574064&c30=bldv,6.0.0.673&st=dcragf&c7=osgrp,&c8=devgrp,&c10=plt,&c40=adbid,&c14=osver,NA&c26=dmap,1&dd=&hrd=&wkd=&c35=adrsid,&c36=cref1,&c37=cref2,&c11=agg,1&c12=apv,&c51=adl,0&c52=noad,0&pc=NA&c53=fef,n&c54=oad,&c55=cref3,&c57=adldf,2&ai=247660590&c3=st,c&c64=starttm,1695918795&adid=247660590&c58=isLive,false&c59=sesid,&c61=createtm,1695918850&c63=pipMode,&uoo=&c68=bndlid,&nodeTM=&logTM=&c73=phtype,&c74=dvcnm,&c76=adbsnid,&c44=progen,&davty=2&si=https%3A%2F%2Fwww.welt.de%2Fvermischtes%2Farticle247660590%2FBerlin-Mann-traegt-islamische-Muetze-als-Mode-Accessoire-und-wird-attackiert.html%3Fsource%3Dpuerto-reco-2_ABC-V32.7.C_already_read&c66=mediaurl,&sdd=&c62=sendTime,1695918850&rnd=889711
+secure-eu.nmrodam.com/
 
 {+block{Might be a web-bug that is an image.} -handle-as-empty-document +handle-as-image}
 #MASTER# BLOCK-REFERRER: http://versiontracker.com and many others. 10/20/06
@@ -1025,6 +1036,10 @@ eu-tlp01.kameleoon.eu/
 #MASTER# BLOCK-REFERRER: https://arstechnica.com/gadgets/2021/04/xinuos-finishes-picking-up-scos-mantle-by-suing-red-hat-and-ibm/
 # Blocked URL = https://fpa-events.arstechnica.com/plogger/?rand=1617351238373&plid=36453403&idsite=arstechnica.com&url=https%3A%2F%2Farstechnica.com%2Fgadgets%2F2021%2F04%2Fxinuos-finishes-picking-up-scos-mantle-by-suing-red-hat-and-ibm%2F&urlref=&screen=1366x768%7C1366x768%7C24&data=%7B%7D&sid=1&surl=https%3A%2F%2Farstechnica.com%2Fgadgets%2F2021%2F04%2Fxinuos-finishes-picking-up-scos-mantle-by-suing-red-hat-and-ibm%2F&sref=&sts=1617351085989&slts=0&date=Fri+Apr+02+2021+10%3A13%3A58+GMT%2B0200+(CEST)&action=heartbeat&inc=4&tt=4371&pvid=50890683&u=pid%3Df5e180d3fca67aa29521f1510e59850b
 fpa-events.arstechnica.com/
+# Blocked URL = https://i.clean.gg/1a
+i.clean.gg/
+# Blocked URL = https://b.6sc.co/v1/beacon/img.gif?token=b194ff4ae786d6e71c726afec1072e2d&svisitor=null&visitor=c1673763-898c-465c-804d-847a5020228f&session=06a7c5ea-3f53-4552-87ed-cb6f9f69d70e&event=active_time_track&q=%7B%22currentTime%22%3A%22Tue%2C%2014%20Jan%202025%2013%3A25%3A40%20GMT%22%2C%22lastTrackTime%22%3A%22Tue%2C%2014%20Jan%202025%2013%3A24%3A19%20GMT%22%2C%22timeSpent%22%3A%2281017%22%2C%22totalTimeSpent%22%3A%221136532%22%7D&isIframe=false&m=%7B%22description%22%3A%22Linux%20creator%20Linus%20Torvalds%20announced%20a%20playful%20giveaway%20for%20kernel%20contributors%3A%20he%27ll%20hand-build%20a%20guitar%20effects%20pedal%20for%20one%20lucky%20developer%20selected%20at%20random%2C%20using%20his%20holiday%20hobby%20skills%20with%20pedal%20kits.%20To%20qualify%2C%20developers%20must%20have%20a%202024%20commit%20in%20Torvalds%27%20kernel%20git%20tree%20and%20email...%22%2C%22keywords%22%3A%22%22%2C%22title%22%3A%22Linus%20Torvalds%20Offers%20to%20Build%20Guitar%20Effects%20Pedal%20For%20Kernel%20Developer%20-%20Slashdot%22%7D&cb=&r=&thirdParty=%7B%7D&v2=1&pageURL=https%3A%2F%2Flinux.slashdot.org%2Fstory%2F25%2F01%2F13%2F2131230%2Flinus-torvalds-offers-to-build-guitar-effects-pedal-for-kernel-developer&pageViewId=af73d297-2d5c-468b-87ff-6ebde4ebe8d2&webTagId=58729049-be80-466a-9abf-b3911430bbd8&v=1.1.31
+b.6sc.co/
 
 
 #############################################################################
@@ -1244,6 +1259,14 @@ cas.criteo.com/
 # Blocked URL = https://trc-events.taboola.com/1301520/log/3/unip?en=pre_d_eng_tb&tos=382558&scd=49&ssd=1&est=1611317562537&ver=27&isls=true&src=i&invt=192000&tim=1611317945096&mrir=tto&vi=1611317562534&ref=https%3A%2F%2Fhtml.duckduckgo.com%2F&cv=20201217-8-RELEASE&item-url=https%3A%2F%2Fgenius.com%2FLords-of-acid-pussy-lyrics
 # Blocked URL = https://trc.taboola.com/slashdot/trc/3/json?tim=18%3A22%3A49.655&lti=deflated&data=%7B%22id%22%3A608%2C%22ii%22%3A%22_homepage_%22%2C%22it%22%3A%22home%22%2C%22sd%22%3Anull%2C%22ui%22%3Anull%2C%22uifp%22%3Anull%2C%22lbt%22%3A1612905877491%2C%22vi%22%3A1613064169633%2C%22cv%22%3A%2220210209-24-RELEASE%22%2C%22uiv%22%3A%22default%22%2C%22u%22%3A%22https%3A%2F%2Fmobile.slashdot.org%2Fstory%2F21%2F02%2F11%2F0036248%2Fapple-privacy-chief-north-dakota-bill-threatens-to-destroy-the-iphone-as-you-know-it%22%2C%22bv%22%3A%220%22%2C%22ul%22%3A%5B%22en-CA%22%5D%2C%22btv%22%3A%220%22%2C%22bad%22%3A-1%2C%22sw%22%3A1366%2C%22sh%22%3A768%2C%22bw%22%3A1362%2C%22sde%22%3A%221.000%22%2C%22bh%22%3A636%2C%22dw%22%3A1350%2C%22dh%22%3A10270%2C%22r%22%3A%5B%7B%22li%22%3A%22rbox-h2m%22%2C%22s%22%3A4%2C%22uim%22%3A%22thumbnails-rr2%3Aabp%3D0%22%2C%22uip%22%3A%22Below%20Article%20Thumbnails%22%2C%22orig_uip%22%3A%22Below%20Article%20Thumbnails%22%2C%22cd%22%3A255.5%2C%22mw%22%3A300%7D%2C%7B%22li%22%3A%22rbox-h2m%22%2C%22s%22%3A5%2C%22uim%22%3A%22text-links-a%3Aabp%3D0%22%2C%22uip%22%3A%22Below%20Article%20Text%20Links%22%2C%22orig_uip%22%3A%22Below%20Article%20Text%20Links%22%2C%22cd%22%3A9961.4501953125%2C%22mw%22%3A964.5%7D%5D%2C%22cacheKey%22%3A%22home%3D_homepage_%2CBelow%20Article%20Text%20Links%3Dtext-links-a%3Aabp%3D0%2C%2CBelow%20Article%20Thumbnails%3Dthumbnails-rr2%3Aabp%3D0%22%2C%22cb%22%3A%22TRC.callbacks.recommendations_1%22%2C%22lt%22%3A%22deflated%22%7D
 trc*.taboola.com/
+# Blocked URL = https://aax-eu.amazon-adsystem.com/s/iu3?d=imdb.com&a1=&a2=&cb=453310028601&pId=&r=1&rP=https%3A%2F%2Fwww.imdb.com%2Fname%2Fnm0117857%2F%3Fref_%3Dtt_cl_t_6&encoding=server&prid=0101ff30386eadcce1be353b6dd0ce30239fc4dca18ca56529951fd9f5776995a685&gdpr=1&gdpr_consent=&gdpr_consent_avl=
+.amazon-adsystem.com/
+# Blocked URL = https://html-load.com/contents/linux.slashdot.org/-1/70/984/a/dggnaga6a6acaysuuaga652aw2g7ydg9gag75uygsy2gna66gaayeagg7aya6au26gsgegig9ay2yayagdg7a6g9g7gwl
+html-load.com/
+# Blocked URL = https://1.html-load.com/contents/tech.slashdot.org/-1/70/984/583/a/irrr5ffovojo2uuobhp5fh0h8oph83hudhphy3h0uhkhtdh1hto8th4o8f32ogo9dosojh8huoj5d3fnoyorovhynoyorh0huhto8y2htg5fyobhx5osobolxh2oaoyp9oyphx53ojfo8huh0h4osfh4hy5hpojh8huoj5d3fhp32ghxh8huo8gshugh4ojosnolh6noyoyh4o8opo3wnoyoynolhmhxo6htdf5osh299hx5h4htg5fosoz99
+1.html-load.com/
+# Blocked URL = https://0.css-load.com/contents/hardware.slashdot.org/0/489/127/364/a/vkdsgkckckjkskiffk5ksks28kck6k5d2pksgw28jdk62c2cfwmk5k928ks3ek1d28k2k5kmjkc2pk5jw28kgkj2028ksks2pvk5kcwkw283ek1e1242ae24xk5wj28kgkj2028ksksxvk5kcwkw282pk5ksks28kc3ek1k5wj28kgkj2028ksksxk9jk5ksks28ksxvk5kcwkw282pk5ksks28kck69kjk9
+0.css-load.com/
 
 
 #----------------------------------------------------------------------------
@@ -2051,6 +2074,8 @@ adv-archiv.dfn-cert.de/
 pinkstinks.de/
 # URL = https://www.eff.org/files/styles/teaser/public/banner_library/repro-rights-hd-3b.jpg?itok=uCnCHOj5
 .eff.org/
+# URL = https://www.datenschmutz.de/banner-square.png
+.datenschmutz.de/
 
 
 #############################################################################
@@ -2287,6 +2312,20 @@ twitter.com/.*/status/
 launchpad.net/
 # URL = https://consent.youtube.com/m?continue=https%3A%2F%2Fwww.youtube.com%2Fplaylist%3Flist%3DPLeF8ZihVdpFfttOtsot131byFrDVztt8T%26cbrd%3D1%26cbrd%3D1&gl=AT&m=0&pc=yt&hl=en&src=1
 consent.youtube.com/
+# URL = https://services.akteneinsichtsportal.de/oauth/authorize?client_id=ae-portal&redirect_uri=https%3A%2F%2Fwww.akteneinsichtsportal.de%2Fweb%2Fguest%2Faktenuebersicht&response_type=code&scope=read&state=0yT8EN
+services.akteneinsichtsportal.de/
+# URL = https://bpe-online.de/wp-content/plugins/pdf-viewer-for-elementor/assets/pdfjs/web/viewer.html?file=https://bpe-online.de/wp-content/uploads/2020/11/HarmReductionLeitfadenzumrisikoarmenAbsetzenvonPsychopharmaka2EdOnline.pdf&embedded=true
+/wp-content/plugins/pdf-viewer-for-elementor
+# URL = https://syndication.twitter.com/i/jot/embeds?l=%7B%22_category_%22%3A%22tfw_client_event%22%2C%22triggered_on%22%3A1709138733184%2C%22event_namespace%22%3A%7B%22client%22%3A%22tfw%22%2C%22page%22%3A%22tweet%22%2C%22action%22%3A%22seen%22%2C%22section%22%3A%22main%22%2C%22component%22%3A%22privacy-notice%22%7D%2C%22context%22%3A%22horizon%22%2C%22client_version%22%3A%222615f7e52b7e0%3A1702314776716%22%2C%22dnt%22%3Afalse%2C%22widget_id%22%3A%22twitter-widget-6%22%2C%22widget_origin%22%3A%22https%3A%2F%2Fwww.danisch.de%2Fblog%2F2024%2F01%2F31%2Fwas-ist-faschismus%2F%22%2C%22widget_frame%22%3A%22false%22%2C%22widget_partner%22%3A%22%22%2C%22widget_site_screen_name%22%3A%22%22%2C%22widget_site_user_id%22%3A%22%22%2C%22widget_creator_screen_name%22%3A%22%22%2C%22widget_creator_user_id%22%3A%22%22%2C%22widget_iframe_version%22%3A%22da31e07063cce%3A1708130301554%22%2C%22item_ids%22%3A%5B%221752320689309143351%22%5D%2C%22item_details%22%3A%7B%221752320689309143351%22%3A%7B%22item_type%22%3A0%7D%7D%7D
+syndication.twitter.com/
+# URL = https://archive.softwareheritage.org/browse/origin/directory/?origin_url=https://github.com/tukaani-project/xz
+archive.softwareheritage.org/
+# URL = https://accounts.bahn.de/auth/realms/db/protocol/openid-connect/auth?redirect_uri=https%3A%2F%2Fwww.bahn.de%2F.resources%2Fbahn-common-light%2Fwebresources%2Fassets%2Fhtml%2Fauth.v1.html&client_id=kf_web&response_type=code&state=n5YWCG28EH&scope=openid%20vendo&response_mode=fragment&prompt=none&code_challenge=6oD6Udoq5PCYo_7jt1b5ICMbxoGqYmAoBpIQuOEAK0c&code_challenge_method=S256
+accounts.bahn.de/
+# URL = https://openbsd.creator-spring.com/_next/image?url=https%3A%2F%2Fimages.teespring.com%2Fv3%2Fimage%2FlULcQNlagtH6rVH3Nw5sYWm2MRU%2F800%2F800.jpg
+.creator-spring.com/_next/image
+# URL = https://duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion/iu/?u=https%3A%2F%2Ftse4.mm.bing.net%2Fth%3Fid%3DOIP.JNbKidcpiIxSgywXqxj1GAHaFC%26pid%3DApi&f=1&ipt=3754158f389c998b95c12d25e257114f092a3830762e99ba45a66f75b9a0cd3f&ipo=images
+duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion/
 
 {+redirect{s@.*url=@http://@} -block}
 # Sticky Actions = +redirect -block

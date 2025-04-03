@@ -1,0 +1,88 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter yahoo
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here are some strings the yahoo filter should filter:
+
+# pcrs command 1:
+
+</head>
+
+# pcrs command 2:
+
+<textarea id="composeArea" blafasel width:545px;
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 904
+
+# Here are some strings the yahoo filter should filter:
+
+# pcrs command 1:
+
+
+<style type="text/css">
+ /* Style sheet inserted by Privoxy's yahoo filter. */
+ #symadbn, #ymadbn, .yschbox, .yschhd, .bbox, #yschsec, #sec, #yschanswr, .yschftad, .yschspn, .yschspns, #ygrp-sponsored-links, #nwad, #MWA2, #MSCM, #yregad, #sponsored-links, #ks-ypn-ads, .ad, #east, #ygrp-vital, .ads {display: none !important;}
+ #yschpri, #yschweb, #pri, #web, #main, .yschttl, .abstr, .res 
+ {width: 99% !important; max-width: 100% !important;}
+ .yschttl, .res, .res.indent, #web {padding: 0px; margin: 0px !important;}
+ #web {padding-left: 0.5em}
+ #yschqcon, #yschtg {width: auto !important; /* No useless horizontal scrollbar please */}
+ #composebox #compose_editorArea {width: 70% !important; /* reasonably sized reply textarea please */
+ </style>
+</head>
+
+
+# pcrs command 2:
+
+<textarea id="composeArea" blafasel width:70%;
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{yahoo}
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/yahoo/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /yahoo/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

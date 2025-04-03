@@ -1,0 +1,61 @@
+<testcase>
+<info>
+<keywords>
+HTTPS
+HTTP POST
+client-body-tagger
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Content-Length: 21
+Content-Type: text/html
+
+Received your input.
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 Connection established
+
+HTTP/1.1 200 OK
+Content-Length: 21
+Content-Type: text/html
+
+Received your input.
+</data>
+</proxyreply>
+
+<client>
+<server>
+https
+</server>
+<name>
+Two requests to the same URL on a reused connection. The second one is large and blocked based on a tag. Offending phrase in the middle of the content. (based on test 4)
+</name>
+<features>
+proxy
+</features>
+<command>
+-s --write-out '%{stderr}%{response_code}\n' --insecure https://%HOSTIP:%HTTPSPORT/%TESTNUMBER --next -d "%repeat[5000 x padding]% blafasel tralala" -s --write-out '%{stderr}%{response_code}\n' --insecure https://%HOSTIP:%HTTPSPORT/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPSPORT
+User-Agent: curl/%VERSION
+Accept: */*
+
+</protocol>
+<stderr>
+200
+403
+</stderr>
+
+</verify>
+</testcase>

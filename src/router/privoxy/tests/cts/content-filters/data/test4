@@ -1,0 +1,81 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter content-cookies
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here are some strings the content-cookies filter should modify:
+
+# pcrs command 1:
+
+blafasel.cookie=tralala=12
+blafasel.cookie='aab=keep-me-unmodified'
+
+# pcrs command 2:
+
+<meta http-equiv="set-cookie" content="blafasel=123">
+<meta http-equiv='set-cookie' content="blafasel=123">
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 215
+
+# Here are some strings the content-cookies filter should modify:
+
+# pcrs command 1:
+
+ZappedCookie=tralala=12
+blafasel.cookie='aab=keep-me-unmodified'
+
+# pcrs command 2:
+
+<!-- ZappedCookie -->
+<!-- ZappedCookie -->
+</data>
+</proxy-reply>
+
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{content-cookies}
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/content-cookies/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /content-cookies/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

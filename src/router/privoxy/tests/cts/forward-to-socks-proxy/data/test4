@@ -1,0 +1,63 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+Blafasel
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+Blafasel
+</data>
+</proxy-reply>
+
+
+<client>
+<server>
+http
+socks4
+</server>
+<precheck>
+# XXX: The test also requires that localhost resolves to 127.0.0.1 ...
+perl -e "print 'Test requires %HOSTIP 127.0.0.1' if ('%HOSTIP' ne '127.0.0.1');"
+</precheck>
+<name>
+Request forwarded through a SOCKS5 proxy. Destination host specified by domain name.
+</name>
+<features>
+proxy
+</features>
+<command>
+http://localhost:%HTTPPORT/socks5/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /socks5/%TESTNUMBER HTTP/1.1
+Host: localhost:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+
+</protocol>
+</verify>
+</testcase>

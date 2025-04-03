@@ -1,0 +1,64 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP POST
+client-body-filter
+# This test currently doesn't work. Privoxy shuffles the data
+# to the server and once that's done the connection times out.
+# Sending no Content-Length header is an error but truncating the
+# request still doesn't seem ideal. Probably Privoxy should reject
+# the request instead of forwarding it.
+skip
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+
+Received your input.
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 Connection established
+
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+
+Received your input.
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+Attempt to apply client-body-filter{blafasel-to-bumfidel} to client request without Content-Length header
+</name>
+<features>
+proxy
+</features>
+<command>
+--limit-rate 1000 -d "blafasel%repeat[5000 x padding]%" -H "Content-Length:" http://%HOSTIP:%HTTPPORT/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol nonewline="yes">
+POST /%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Content-Type: application/x-www-form-urlencoded
+
+bumfidel%repeat[5000 x padding]%
+</protocol>
+</verify>
+</testcase>

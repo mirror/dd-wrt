@@ -1,0 +1,59 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+HTTP proxy
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+Blafasel
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+Blafasel
+</data>
+</proxy-reply>
+
+
+<client>
+<server>
+http
+</server>
+<name>
+Request forwarded through an HTTP proxy
+</name>
+<features>
+proxy
+</features>
+<command>
+http://www.example.org/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET http://www.example.org/%TESTNUMBER HTTP/1.1
+Host: www.example.org
+User-Agent: curl/%VERSION
+Accept: */*
+
+</protocol>
+</verify>
+</testcase>

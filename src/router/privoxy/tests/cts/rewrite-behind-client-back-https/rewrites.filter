@@ -1,0 +1,16 @@
+CLIENT-HEADER-FILTER: https-to-http Downgrade protocol to http
+s@^(\w+) (/\d-downgrade-to-http)-(\d+\.\d+\.\d+\.\d+\:\d+)@$1 http://$3$2@i
+
+CLIENT-HEADER-FILTER: truncate-path Removes '-remove-this' from the path
+s@(/\d)-remove-this (HTTP/1.1)@$1 $2@i
+
+CLIENT-HEADER-FILTER: rewrite-host Replaces the host with the one specified in the path
+s@GET /(\d)-(\d+\.\d+\.\d+\.\d+\:\d+) (HTTP/1.1)@GET https://$2/$1 $3@i
+
+# Results in Conditional jump or move depends on uninitialised value(s)?
+CLIENT-HEADER-FILTER: non-matching-rewriter Does not actually match
+s@/-@@
+
+CLIENT-HEADER-FILTER: invalid-http-version Rewrites the request line with an invalid HTTP version
+s@HTTP/1.1@HTTP/9000@
+

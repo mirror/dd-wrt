@@ -1,0 +1,100 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter sourceforge
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here are some strings the sourceforge filter should filter:
+
+# pcrs command 1:
+
+<div id="banner-sterling" blafasel
+
+# pcrs command 2:
+
+<section id="nels" blafasel
+
+# pcrs command 3:
+
+<aside class="m-wide-widget m-wide-projects-widget " blafasel
+
+# pcrs command 4:
+
+<div id="newsletter-floating" blafasel
+
+# pcrs command 5:
+
+<div class="sterling" id="banner-sterling" blafasel
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 488
+
+# Here are some strings the sourceforge filter should filter:
+
+# pcrs command 1:
+
+<div id="banner-sterling" style="display:none;" blafasel
+
+# pcrs command 2:
+
+<section id="nels" style="display:none;" blafasel
+
+# pcrs command 3:
+
+<aside class="m-wide-widget m-wide-projects-widget " style="display:none;" blafasel
+
+# pcrs command 4:
+
+<div id="newsletter-floating" style="display:none;" blafasel
+
+# pcrs command 5:
+
+<div class="sterling" id="banner-sterling" style="display:none;" blafasel
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{sourceforge}
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/sourceforge/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /sourceforge/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

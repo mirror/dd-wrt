@@ -1,0 +1,62 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+gif deanimation
+</keywords>
+</info>
+
+<reply>
+<data nonewline="yes">
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: image/gif
+X-Control: swsclose
+
+%hex[%47%49%46%38%39%61%14%00%14%00%f0%00%00%fe%00%00%00%00%00%21%f9%04%00%c8%00%00%00%21%ff%0b%4e%45%54%53%43%41%50%45%32%2e%30%03%01%00%00%00%2c%00%00%00%00%14%00%14%00%00%02%11%84%8f%a9%cb%ed%0f%a3%9c%b4%da%8b%b3%de%bc%fb%af%15%00%21%f9%04%00%c8%00%00%00%2c%00%00%00%00%14%00%14%00%80%1e%42%ee%00%00%00%02%11%84%8f%a9%cb%ed%0f%a3%9c%b4%da%8b%b3%de%bc%fb%af%15%00%3b]hex%
+</data>
+</reply>
+
+<proxy-reply>
+<data nonewline="yes">
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: image/gif
+X-Control: swsclose
+Content-Length: 64
+
+%hex[%47%49%46%38%39%61%14%00%14%00%f0%00%00%fe%00%00%00%00%00%21%f9%04%00%c8%00%00%00%2c%00%00%00%00%14%00%14%00%80%1e%42%ee%00%00%00%02%11%84%8f%a9%cb%ed%0f%a3%9c%b4%da%8b%b3%de%bc%fb%af%15%00%3b]hex%
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+Valid gif. No comment. Two frames. Multiple extension blocks in a row. Using last frame
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/deanimate-gif/last-frame/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /deanimate-gif/last-frame/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+
+</protocol>
+<errorcode>
+0
+</errorcode>
+</verify>
+</testcase>

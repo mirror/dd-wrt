@@ -1,0 +1,8 @@
+CLIENT-BODY-FILTER: blafasel-to-bumfidel Changes "blafasel" to "bumfidel"
+s@blafasel@bumfidel@
+
+CLIENT-BODY-FILTER: bumfidel-to-tralala Changes "bumfidel" to "tralala"
+s@bumfidel@tralala@
+
+CLIENT-BODY-FILTER: empty-body Only applies to empty content bodies
+s@^$@empty-body detected that there was no data@

@@ -903,6 +903,7 @@ jb_err decompress_iob(struct client_state *csp)
 static void normalize_lws(char *header)
 {
    char *p = header;
+   int reducing_white_space_message_logged = 0;
 
    while (*p != '\0')
    {
@@ -914,7 +915,11 @@ static void normalize_lws(char *header)
          {
             q++;
          }
-         log_error(LOG_LEVEL_HEADER, "Reducing whitespace in '%s'", header);
+         if (!reducing_white_space_message_logged)
+         {
+            log_error(LOG_LEVEL_HEADER, "Reducing whitespace in '%s'", header);
+            reducing_white_space_message_logged = 1;
+         }
          string_move(p+1, q);
       }
 

@@ -12,7 +12,7 @@
  *
  *                Stick to the short names in this file for consistency.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2014 the
+ * Copyright   :  Written by and Copyright (C) 2001-2023 the
  *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -253,6 +253,12 @@ static const struct action_type_info action_type_info[] =
       "P", "CLIENT-BODY-FILTER"
    },
    {
+      ACTION_MULTI_CLIENT_BODY_TAGGER,
+      "client-body-tagger-params", "client-body-tagger",
+      "client-body-tagger-all", "client_body_tagger_all",
+      "Q", "CLIENT-BODY-TAGGER"
+   },
+   {
       ACTION_MULTI_ADD_HEADER,
       "add-header-params", "add-header",
       "add-header-all", "add_header_all",
@@ -362,38 +368,6 @@ static jb_err get_file_name_param(struct client_state *csp,
 	                                   const struct map *parameters,
 	                                   const char *param_name,
 	                                   const char **pfilename);
-
-/* Internal convenience functions */
-static char *section_target(const unsigned sectionid);
-
-/*********************************************************************
- *
- * Function    :  section_target
- *
- * Description :  Given an unsigned (section id) n, produce a dynamically
- *                allocated string of the form #l<n>, for use in link
- *                targets.
- *
- *                XXX: The hash should be moved into the templates
- *                to make this function more generic and render
- *                stringify() obsolete.
- *
- * Parameters  :
- *          1  :  sectionid = start line number of section
- *
- * Returns     :  String with link target, or NULL if out of
- *                memory
- *
- *********************************************************************/
-static char *section_target(const unsigned sectionid)
-{
-   char buf[30];
-
-   snprintf(buf, sizeof(buf), "#l%u", sectionid);
-   return(strdup(buf));
-
-}
-
 
 /*********************************************************************
  *
@@ -552,7 +526,7 @@ jb_err cgi_edit_actions_url_form(struct client_state *csp,
    if (!err) err = map(exports, "v", 1, file->version_str, 1);
    if (!err) err = map(exports, "p", 1, url_encode(lookup(parameters, "p")), 0);
    if (!err) err = map(exports, "u", 1, html_encode(cur_line->unprocessed), 0);
-   if (!err) err = map(exports, "jumptarget", 1, section_target(section_start_line_number), 0);
+   if (!err) err = map(exports, "jumptarget", 1, stringify(section_start_line_number), 0);
 
    edit_free_file(file);
 
@@ -712,7 +686,7 @@ jb_err cgi_edit_actions_remove_url_form(struct client_state *csp,
    if (!err) err = map(exports, "v", 1, file->version_str, 1);
    if (!err) err = map(exports, "p", 1, url_encode(lookup(parameters, "p")), 0);
    if (!err) err = map(exports, "u", 1, html_encode(cur_line->unprocessed), 0);
-   if (!err) err = map(exports, "jumptarget", 1, section_target(section_start_line_number), 0);
+   if (!err) err = map(exports, "jumptarget", 1, stringify(section_start_line_number), 0);
    if (!err) err = map(exports, "actions-file", 1, html_encode(file->filename), 0);
 
    edit_free_file(file);
@@ -2797,8 +2771,8 @@ jb_err cgi_edit_actions_for_url(struct client_state *csp,
 
    for (i = 0; !err && i < SZ(string_action_type_info); i++)
    {
-      err = action_render_string_actions_template(exports, cur_line->data.action, filter_template,
-                                                  &string_action_type_info[i]);
+      err = action_render_string_actions_template(exports,
+         cur_line->data.action, filter_template, &string_action_type_info[i]);
    }
    freez(filter_template);
 
@@ -2891,7 +2865,7 @@ jb_err cgi_edit_actions_for_url(struct client_state *csp,
          if ((csp->rlist[i] != NULL) && (csp->rlist[i]->f != NULL))
          {
             filter_group = csp->rlist[i]->f;
-            for (;(!err) && (filter_group != NULL); filter_group = filter_group->next)
+            for (; (!err) && (filter_group != NULL); filter_group = filter_group->next)
             {
                char current_mode = 'x';
                char number[20];
@@ -2901,6 +2875,7 @@ jb_err cgi_edit_actions_for_url(struct client_state *csp,
                const int multi_action_index = action_type_info[type].multi_action_index;
 
                assert(type < MAX_FILTER_TYPES);
+               assert(multi_action_index < ACTION_MULTI_COUNT);
 
                filter_name = cur_line->data.action->multi_add[multi_action_index]->first;
                while ((filter_name != NULL)
@@ -4487,8 +4462,9 @@ static jb_err actions_to_radio(struct map * exports,
  *
  * Function    :  action_render_string_actions_template
  *
- * Description :  Converts a actionsfile entry into HTML template for actions with string
- *                filters (currently SUPPRESS-TAG actions only)
+ * Description : Converts an actionsfile entry into HTML template for
+ *               actions with string filters (currently SUPPRESS-TAG
+ *               actions only)
  *
  * Parameters  :
  *          1  :  exports = List of substitutions to add to.
@@ -4500,9 +4476,9 @@ static jb_err actions_to_radio(struct map * exports,
  *                JB_ERR_MEMORY on out-of-memory
  *
  *********************************************************************/
-static jb_err action_render_string_actions_template(struct map * exports,
+static jb_err action_render_string_actions_template(struct map *exports,
                                        const struct action_spec *action,
-                                       const char* action_template,
+                                       const char *action_template,
                                        const struct string_action_type_info *string_action_type)
 {
    jb_err err = JB_ERR_OK;
@@ -4515,6 +4491,8 @@ static jb_err action_render_string_actions_template(struct map * exports,
        char radio;
        struct list_entry *list;
    };
+
+   assert(type->multi_action_index < ACTION_MULTI_COUNT);
 
    struct action_multi desc[] = {
        { 'y', action->multi_add[type->multi_action_index][0].first },

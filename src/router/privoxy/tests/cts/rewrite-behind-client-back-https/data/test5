@@ -1,0 +1,47 @@
+<testcase>
+<info>
+<keywords>
+HTTPS
+HTTP GET
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+Content-Length: 18
+
+Here's your data.
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 Connection established
+
+HTTP/1.1 400 Malformed request after rewriting
+Content-Type: text/plain
+Connection: close
+
+Bad request. Messed up with header filters.
+</data>
+</proxy-reply>
+
+
+<client>
+<server>
+none
+</server>
+<name>
+Rewrite behind the client's back: unsupporte http version
+</name>
+<command>
+--insecure https://%HOSTIP/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+</verify>
+</testcase>

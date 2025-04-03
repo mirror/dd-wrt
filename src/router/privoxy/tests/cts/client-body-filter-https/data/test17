@@ -1,0 +1,84 @@
+<testcase>
+<info>
+<keywords>
+HTTPS
+HTTP POST
+client-body-filter
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Content-Length: 29
+Content-Type: text/html
+
+Received your first request.
+</data>
+<data1>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+X-Connection: swsclose
+
+Received your second request.
+</data1>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 Connection established
+
+HTTP/1.1 200 OK
+Content-Length: 29
+Content-Type: text/html
+
+Received your first request.
+</data>
+<data1>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+X-Connection: swsclose
+
+Received your second request.
+</data1>
+</proxy-reply>
+
+<client>
+<server>
+https
+</server>
+<name>
+Attempt to apply client-body-filter{blafasel-to-bumfidel} to client request on reused connection that is too large to buffer. (based on test12)
+</name>
+<features>
+proxy
+</features>
+# We mainly care about the second request which is too large for Privoxy to buffer it.
+<command>
+--insecure https://%HOSTIP:%HTTPSPORT/first-request/%TESTNUMBER --next -d @log/post-data-%TESTNUMBER --insecure https://%HOSTIP:%HTTPSPORT/second-request/%TESTNUMBER
+</command>
+<file name="log/post-data-%TESTNUMBER">
+blafasel%repeat[20000 x padding]%
+</file>
+</client>
+
+<verify>
+<protocol nonewline="yes">
+GET /first-request/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPSPORT
+User-Agent: curl/%VERSION
+Accept: */*
+
+POST /second-request/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPSPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Content-Length: 140008
+Content-Type: application/x-www-form-urlencoded
+
+blafasel%repeat[20000 x padding]%
+</protocol>
+</verify>
+</testcase>

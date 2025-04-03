@@ -1,0 +1,60 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP POST
+client-body-tagger
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+X-Connection: swsclose
+
+Received your input.
+</data>
+</reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+Two requests to the same URL. The second one is a POST request and a client-body-filter is enabled based on a tag.
+</name>
+<features>
+proxy
+</features>
+<command>
+-s --write-out '%{stderr}%{response_code}\n' http://%HOSTIP:%HTTPPORT/tag-bumfidel-requests/%TESTNUMBER --next -d "%repeat[5000 x padding]%bumfidel" -s --write-out '%{stderr}%{response_code}\n' http://%HOSTIP:%HTTPPORT/tag-bumfidel-requests/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol nonewline="yes">
+GET /tag-bumfidel-requests/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+POST /tag-bumfidel-requests/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Content-Length: 35007
+Content-Type: application/x-www-form-urlencoded
+Connection: close
+
+%repeat[5000 x padding]%tralala
+</protocol>
+<stderr>
+200
+200
+</stderr>
+
+</verify>
+</testcase>

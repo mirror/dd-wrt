@@ -1,0 +1,8 @@
+{+client-body-filter{blafasel-to-bumfidel}}
+/
+
+{+client-body-filter{bumfidel-to-tralala}}
+/bumfidel-to-tralala
+
+{+client-body-filter{empty-body}}
+/.*/empty-body/

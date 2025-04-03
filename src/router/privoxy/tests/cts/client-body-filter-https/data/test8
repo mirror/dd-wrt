@@ -1,0 +1,61 @@
+<testcase>
+<info>
+<keywords>
+HTTPS
+HTTP POST
+client-body-filter
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+X-Connection: swsclose
+
+Received your input.
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 Connection established
+
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+X-Connection: swsclose
+
+Received your input.
+</data>
+</proxy-reply>
+
+<client>
+<server>
+https
+</server>
+<name>
+Three filters applied to client request reusing the already filtered content. Last filter does not modify content.
+</name>
+<features>
+proxy
+</features>
+<command>
+-d "blafasel" --insecure https://%HOSTIP:%HTTPSPORT/bumfidel-to-tralala/empty-body/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol nonewline="yes">
+POST /bumfidel-to-tralala/empty-body/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPSPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Content-Length: 7
+Content-Type: application/x-www-form-urlencoded
+
+tralala
+</protocol>
+</verify>
+</testcase>

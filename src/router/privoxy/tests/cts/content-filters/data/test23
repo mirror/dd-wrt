@@ -1,0 +1,124 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter msn
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here are some strings the msn filter should filter:
+
+# pcrs command 1:
+
+</head>
+
+# pcrs command 2:
+
+<div id="ads_blafasel">
+<div id='ads_foo'>
+
+# pcrs command 3:
+
+<div blafasel class="sb_ads_blafasel">
+<div blafasel class='sb_ads_foo'>
+
+# pcrs command 4:
+
+<a href="http://g.msn.com/blafasel\?http://www.example.org/&amp;&amp;DI=tralala"
+
+# pcrs command 5:
+
+<a href="http://www.example.org" gping="http://www.example/ping.cgi"
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 1488
+
+# Here are some strings the msn filter should filter:
+
+# pcrs command 1:
+
+<style type="text/css">
+ /* Style sheet inserted by Privoxy's msn filter. */
+ .msn_ads, #at, #ar, .mktmsg {display: none !important;}
+ #results, #b_results, .flank, .results_area_flank, .results_area_stroke,
+ #results_area, #content, .sb_tlst, .sa_cc, .sb_ph, #sw_main,
+ .content, .b_content, #sw_foot, #bf, #sw_content, #sidebar, #pag
+ {width: 99% !important; min-width: 99% !important;
+ max-width: 100% !important; /* width:100% sometimes causes horizontal scrollbars */}
+ /* Remove 'related' ads */
+ .b_ad, .b_adlabel {clear: both; display:none;}
+ /* Remove "suggestions". They are next to worthless but partly overlap with the search results */
+ .suggestion, #nys_right, #nys {clear: both; display:none;}
+ /* Remove "Related searches" at the left side of the main results.
+    They are next to worthless, too, and also are still present below the main search results */
+ #b_results > .b_ans {clear: both; display:none;}
+ #s_notf_div,
+  /* Overlay ads to enable Facebook 'likes' in search results. */
+ .sn_container {display:none !important;}
+ #content, #b_content {padding: 0px 0px 0px 0px}
+ </style>
+</head>
+
+# pcrs command 2:
+
+<div class="msn_ads">
+<div class="msn_ads">
+
+# pcrs command 3:
+
+<div blafasel class="msn_ads">
+<div blafasel class="msn_ads">
+
+# pcrs command 4:
+
+<a href="http://www.example.org/"
+
+# pcrs command 5:
+
+<a href="http://www.example.org"  title="URL cleaned up by Privoxy's msn filter"
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{msn}
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/msn/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /msn/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

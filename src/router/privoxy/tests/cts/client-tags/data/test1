@@ -1,0 +1,26 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+</keywords>
+</info>
+
+<client>
+<server>
+none
+</server>
+<name>
+Request to blocked URL with now client-tags active
+</name>
+<command>
+-s --write-out '%{stderr}%{response_code}\n' http://www.electrobsd.org/block-request/
+</command>
+</client>
+
+<verify>
+<stderr>
+403
+</stderr>
+</verify>
+</testcase>

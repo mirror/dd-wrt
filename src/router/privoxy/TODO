@@ -10,10 +10,6 @@ https://www.privoxy.org/donate
 
 1)  Add more regression tests. Filters should be tested automatically
     (variables too). Could probably reuse large parts of Privoxy-Filter-Test.
-    Note that there is currently work in progress to leverage curl's
-    test suite, patches have been submitted upstream:
-    https://curl.se/mail/lib-2014-06/0070.html
-    https://curl.se/mail/lib-2021-01/0068.html
 
 3)  Fix some more XXX: comments.
 
@@ -377,7 +373,7 @@ https://www.privoxy.org/donate
      currently can result in client requests to config.privoxy.org on the
      Internet which may not be desirable.
 
-150) Add blacklistd support.
+150) Add blocklistd support (https://man.netbsd.org/blocklistd.8).
 
 151) Let the dok-tidy target work cross-platform without introducing
      a ton of white-space changes that hide the content changes.
@@ -421,10 +417,6 @@ https://www.privoxy.org/donate
 
 163) Use subdirectories in the certificate-directory to lower the number
      of files per directory.
-
-164) Evaluate switching from pcreposix(3) to pcre's native api
-     for URL matching which allows to compile the patterns once
-     at load-time.
 
 165) Add a max-connections-per-client directive.
 
@@ -473,10 +465,6 @@ https://www.privoxy.org/donate
 
 183) Properly deal with proxy responses that arrive in multiple pieces
      when https inspecting while using a forwarding proxy.
-
-184) Add support for wolfSSL. Work in progress, expected to be
-     committed after the 3.0.34 release. Funded with donations
-     made to the Privoxy project.
 
 185) The mbedTLS and OpenSSL versions of generate_host_certificate()
      should only be called when necessary and the check should be
@@ -538,6 +526,15 @@ https://www.privoxy.org/donate
      on others. It would also allow to limit the accepted CA certificates
      for given domains instead of accepting all that are specified with
      the trusted-cas-file directive.
+
+202) Allow to use multiple log files with different debug settings.
+     Suggested by Jonathan Marten in FR#607.
+
+203) Add HTTP/2 support.
+
+204) Make the Privoxy website available over IPv6.
+
+205) Document how commit messages should look like.
 
 ##########################################################################
 

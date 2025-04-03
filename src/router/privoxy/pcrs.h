@@ -33,8 +33,17 @@
  *********************************************************************/
 
 
+#ifdef HAVE_PCRE2
+#define PCRE2_CODE_UNIT_WIDTH 8
+#define PCREn(x) PCRE2_ ## x
+#ifndef _PCRE2_H
+#include <pcre2.h>
+#endif
+#else
+#define PCREn(x) PCRE_ ## x
 #ifndef _PCRE_H
 #include <pcre.h>
+#endif
 #endif
 
 /*
@@ -55,22 +64,23 @@
  * They are supposed to be handled together with PCRE error
  * codes and have to start with an offset to prevent overlaps.
  *
- * PCRE 6.7 uses error codes from -1 to -21, PCRS error codes
- * below -100 should be safe for a while.
+ * PCRE 6.7 uses error codes from -1 to -21,
+ * PCRE2 10.42 uses error codes from -66 to 101.
+ * PCRS error codes below -300 should be safe for a while.
  */
-#define PCRS_ERR_NOMEM           -100      /* Failed to acquire memory. */
-#define PCRS_ERR_CMDSYNTAX       -101      /* Syntax of s///-command */
-#define PCRS_ERR_STUDY           -102      /* pcre error while studying the pattern */
-#define PCRS_ERR_BADJOB          -103      /* NULL job pointer, pattern or substitute */
-#define PCRS_WARN_BADREF         -104      /* Backreference out of range */
-#define PCRS_WARN_TRUNCATION     -105      /* At least one pcrs variable was too big,
+#define PCRS_ERR_NOMEM           -300      /* Failed to acquire memory. */
+#define PCRS_ERR_CMDSYNTAX       -301      /* Syntax of s///-command */
+#define PCRS_ERR_STUDY           -302      /* pcre error while studying the pattern */
+#define PCRS_ERR_BADJOB          -303      /* NULL job pointer, pattern or substitute */
+#define PCRS_WARN_BADREF         -304      /* Backreference out of range */
+#define PCRS_WARN_TRUNCATION     -305      /* At least one pcrs variable was too big,
                                             * only the first part was used. */
 
 /* Flags */
-#define PCRS_GLOBAL          1      /* Job should be applied globally, as with perl's g option */
-#define PCRS_TRIVIAL         2      /* Backreferences in the substitute are ignored */
-#define PCRS_SUCCESS         4      /* Job did previously match */
-#define PCRS_DYNAMIC         8      /* Job is dynamic (used to disable JIT compilation) */
+#define PCRS_GLOBAL          0x08000000u      /* Job should be applied globally, as with perl's g option */
+#define PCRS_TRIVIAL         0x10000000u      /* Backreferences in the substitute are ignored */
+#define PCRS_SUCCESS         0x20000000u      /* Job did previously match */
+#define PCRS_DYNAMIC         0x40000000u      /* Job is dynamic (used to disable JIT compilation) */
 
 
 /*
@@ -107,10 +117,14 @@ typedef struct {
 /* A PCRS job */
 
 typedef struct PCRS_JOB {
+#ifdef HAVE_PCRE2
+    pcre2_code *pattern;
+#else
   pcre *pattern;                            /* The compiled pcre pattern */
   pcre_extra *hints;                        /* The pcre hints for the pattern */
+#endif
   int options;                              /* The pcre options (numeric) */
-  int flags;                                /* The pcrs and user flags (see "Flags" above) */
+  unsigned int flags;                       /* The pcrs and user flags (see "Flags" above) */
   pcrs_substitute *substitute;              /* The compiled pcrs substitute */
   struct PCRS_JOB *next;                    /* Pointer for chaining jobs to joblists */
 } pcrs_job;

@@ -1,0 +1,54 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Content-Length: 9
+
+Blafasel
+</data>
+</reply>
+
+
+<client>
+<server>
+http
+</server>
+<name>
+HTTP client header order 4. Left over headers.
+</name>
+<command>
+-H "Bum: Tschaka" -H "Blafasel: Die da" -H "Origin: https://www.privoxy.org/" -H "Cache-Control: max-age=315576000" -H "If-Modified-Since: Thu, 07 Jan 2021 22:05:31 GMT" -H "Upgrade-Insecure-Requests: 1" -H "DNT: 1" -H "Pragma: no-cache" -H "Cookie: yolo=123" -H "Referer: https://www.example.org/" -H "Accept-Encoding: gzip" -H "Proxy-Connection: keep-alive" -H "Accept: */*" -H "Accept-Language: en-CA" -H "Host: %HOSTIP:%HTTPPORT" --user-agent "Client with unsorted headers" http://%HOSTIP:%HTTPPORT/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: Client with unsorted headers
+Accept: */*
+Accept-Language: en-CA
+Accept-Encoding: gzip
+Referer: https://www.example.org/
+Cookie: yolo=123
+DNT: 1
+Connection: close
+Pragma: no-cache
+Upgrade-Insecure-Requests: 1
+If-Modified-Since: Thu, 07 Jan 2021 22:05:31 GMT
+Cache-Control: max-age=315576000
+Origin: https://www.privoxy.org/
+Bum: Tschaka
+Blafasel: Die da
+
+</protocol>
+</verify>
+</testcase>

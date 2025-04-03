@@ -1,0 +1,3 @@
+# Enable a filter so Privoxy decompresses the content
+{+filter{img-reorder}}
+/

@@ -1,0 +1,63 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+gzip compression
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+Content-Encoding: gzip
+X-Control: swsclose
+
+%hex[%1f%8b%08%00%00%00%00%00%00%03%03%00%00%00%00%00%00%00%00%00]hex%
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 0
+
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+gzip-encoded content. Valid gzip data, no compressed content
+</name>
+<features>
+proxy
+</features>
+<command>
+-H "Accept-Encoding: gzip" http://%HOSTIP:%HTTPPORT/gzip-compressed-data/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /gzip-compressed-data/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Accept-Encoding: gzip
+
+</protocol>
+<errorcode>
+0
+</errorcode>
+</verify>
+</testcase>

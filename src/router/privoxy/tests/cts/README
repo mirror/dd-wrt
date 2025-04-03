@@ -1,0 +1,52 @@
+This directory contains tests that leverage curl's test suite (cts).
+
+For details about curl see: https://curl.se/
+
+Some temporary hints are below:
+
+From the parent directory of the directory with the
+Privoxy sources do:
+
+ git clone https://github.com/curl/curl.git
+
+ cd curl
+ git checkout -b cts-compatible-with-privoxy-tests curl-7_85_0
+
+ # Build curl as described in GIT-INFO. Note that the configure
+ # call needs to explicitly choose a TLS library. For example
+ # by adding "--with-openssl".
+
+ # Install stunnel
+
+ # Test that curl's tests are working without Privoxy
+ make test
+
+You can then cd back into privoxy/tests/cts and execute the
+tests by running:
+
+  run-privoxy-tests.sh
+
+The script takes care of starting Privoxy with a configuration expected
+by the tests. Note that unlike privoxy-regression-test.pl it currently
+does not automatically check that Privoxy has been built with all the
+features required for the tests to work and simply tries to execute
+all tests.
+
+The tests are divided into multiple test scenarios.
+
+Each test scenario has its own subdirectory with a Privoxy
+configuration file called privoxy.conf and a data directory
+containing the test files.
+
+The tests are written using the "curl test suite file format"
+described at:
+https://github.com/curl/curl/blob/master/tests/FILEFORMAT.md
+
+One extension made is that a <proxy-reply> section is supported
+which will be used when checking the test results instead of using
+the <reply> section that would be used otherwise.
+
+This extension is supported by loading a custom perl library
+(privoxy-runtests.pm) when running runtests.pl. Loading the library
+is done with runtests-wrapper.sh which also sets a couple of other
+required options and is normally called through run-privoxy-tests.sh.

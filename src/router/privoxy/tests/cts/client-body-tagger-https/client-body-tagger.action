@@ -1,0 +1,11 @@
+{+client-body-tagger{blafasel}}
+/
+
+{+block{Request body contains blafasel}}
+TAG:^content contains blafasel$
+
+{+client-body-tagger{bumfidel}}
+/tag-bumfidel-requests/
+
+{+client-body-filter{bumfidel-to-tralala}}
+TAG:^content contains bumfidel$

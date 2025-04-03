@@ -1,0 +1,115 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter google
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here are some strings the google filter should filter:
+
+# pcrs command 1:
+
+</head>
+
+# pcrs command 2:
+
+<div style="padding-top:11px;min-width:500px">
+
+# pcrs command 3:
+
+<table cellspacing=0 cellpadding=0 width=25% align=right bgcolor=#ffffff border=0
+
+# pcrs command 3 does not filter these because it only hits one pattern:
+
+</font></td></tr></tbody></table><table align="right" bgcolor="#ffffff"
+
+<table cellspacing=0 cellpadding=0 align=right bgcolor=#ffffff border=0
+
+<table style="clear:both" align=right width=25% cellspacing="0" cellpadding="0" border="0" bgcolor="#ffffff"
+
+# pcrs command 4:
+
+<br clear=all><table border=0 cellpadding=9><tr><td
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 1023
+
+# Here are some strings the google filter should filter:
+
+# pcrs command 1:
+
+<style type="text/css">
+ /* Style sheet inserted by Privoxy's google filter. */
+ #fbc, #fbl, #ra, .rhh {visibility: hidden !important;}
+ #tpa1,#tpa2,#tpa3,#tpa4,#tpa5,#tpa5, #spl, .ch, #ads, #toolbar, #google_ads_frame, #mbEnd {display: none !important;}
+ .main_body, .j, #res, .med, .hd, .g, .s
+ {width: 99%; max-width: 100%; margin-left: 0; margin-right: 0;}
+ </style>
+</head>
+
+# pcrs command 2:
+
+<div id="main_body">
+
+# pcrs command 3:
+
+<table cellspacing=0 cellpadding=0 width=25% align=right bgcolor=#ffffff border=0 id="ads"
+
+# pcrs command 3 does not filter these because it only hits one pattern:
+
+</font></td></tr></tbody></table><table align="right" bgcolor="#ffffff"
+
+<table cellspacing=0 cellpadding=0 align=right bgcolor=#ffffff border=0
+
+<table style="clear:both" align=right width=25% cellspacing="0" cellpadding="0" border="0" bgcolor="#ffffff"
+
+# pcrs command 4:
+
+<br clear=all><table id="toolbar" border=0 cellpadding=9><tr><td
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{google} - multiple pcrs commands triggered
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/google/multiple-pcrs-commands/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /google/multiple-pcrs-commands/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

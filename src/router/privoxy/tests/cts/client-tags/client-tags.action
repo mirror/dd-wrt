@@ -1,0 +1,8 @@
+{+block{Blocked based on the path}}
+/block-request/
+
+{-block}
+CLIENT-TAG:^overrule-blocks$
+
+{-filter}
+CLIENT-TAG:^overrule-filters$

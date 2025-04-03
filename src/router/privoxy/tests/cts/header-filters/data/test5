@@ -1,0 +1,60 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+client-header-filter hide-tor-exit-notation
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 0
+
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 0
+
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++client-header-filter{hide-tor-exit-notation} with https:// Referer:
+</name>
+<features>
+proxy
+</features>
+<command>
+--head -H "Referer: https://www.example.org.blafasel.exit/secure/" -H "Host: www.example.org.blafasel.exit" http://%HOSTIP:%HTTPPORT/hide-tor-exit-notation/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+HEAD /hide-tor-exit-notation/%TESTNUMBER HTTP/1.1
+Host: www.example.org
+User-Agent: curl/%VERSION
+Accept: */*
+Referer: https://www.example.org/secure/
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

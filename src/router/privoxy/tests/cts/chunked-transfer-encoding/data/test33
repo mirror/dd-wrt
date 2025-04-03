@@ -1,0 +1,68 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+chunked transfer encoding
+# XXX: Test requires "writesize" support that hasn't been upstreamed yet.
+skip
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Content-Type: text/html
+Transfer-Encoding: chunked
+
+2
+A
+
+3
+BB
+
+4
+CCC
+
+5
+DDDD
+
+FF
+%repeat[254 x F]%
+
+0
+
+</data>
+<servercmd>
+writesize: 200
+writedelay: 20
+</servercmd>
+</reply>
+
+
+<client>
+<server>
+http
+</server>
+<name>
+Chunked transfer encoding - Multiple small chunks received with the server headers, other chunks received separately.
+</name>
+<features>
+proxy
+</features>
+<command>
+--raw http://%HOSTIP:%HTTPPORT/no-filter/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /no-filter/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+
+</protocol>
+</verify>
+</testcase>

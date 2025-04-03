@@ -1,0 +1,102 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter webbugs
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here is some HTML that the webbugs filter should squash:
+
+<img width="0" height="0" src="http://www.example.org/tracker.cgi">
+<img width='0' height='0' src="http://www.example.org/tracker.cgi">
+<img height="0" width="0" src="http://www.example.org/tracker.cgi">
+<img height='0' width='0'  src="http://www.example.org/tracker.cgi">
+
+<img width="0" height="1" src="http://www.example.org/tracker.cgi">
+<img width='0' height='1' src="http://www.example.org/tracker.cgi">
+<img height="0" width="1" src="http://www.example.org/tracker.cgi">
+<img height='0' width='1'  src="http://www.example.org/tracker.cgi">
+
+<img width="1" height="0" src="http://www.example.org/tracker.cgi">
+<img width='1' height='0' src="http://www.example.org/tracker.cgi">
+<img height="1" width="0" src="http://www.example.org/tracker.cgi">
+<img height='1' width='0'  src="http://www.example.org/tracker.cgi">
+
+<img width="1" height="1" src="http://www.example.org/tracker.cgi">
+<img width='1' height='1' src="http://www.example.org/tracker.cgi">
+<img height="1" width="1" src="http://www.example.org/tracker.cgi">
+<img height='1' width='1'  src="http://www.example.org/tracker.cgi">
+
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 80
+
+# Here is some HTML that the webbugs filter should squash:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{webbugs}
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/webbugs/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /webbugs/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

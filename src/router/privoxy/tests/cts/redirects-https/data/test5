@@ -1,0 +1,47 @@
+<testcase>
+<info>
+<keywords>
+HTTPS
+HTTP GET
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+Content-Length: 29
+
+Not actually used.
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 Connection established
+
+HTTP/1.1 302 Local Redirect from Privoxy
+Location: https://www.privoxy.org/path-replaced
+Content-Length: 0
+X-Ignore-Header: Date
+Date: Sun, 10 Jan 2021 08:13:02 GMT
+
+</data>
+</proxy-reply>
+
+<client>
+<server>
+none
+</server>
+<name>
+Redirect to https://www.privoxy.org/path-replaced using a pcrs command
+</name>
+<command>
+--insecure https://www.privoxy.org/%TESTNUMBER-replace-me
+</command>
+</client>
+
+<verify>
+</verify>
+</testcase>

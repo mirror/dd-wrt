@@ -4,7 +4,7 @@
 <head>
   <title>What's New in this Release</title>
   <meta name="GENERATOR" content="Modular DocBook HTML Stylesheet Version 1.79">
-  <link rel="HOME" title="Privoxy 3.0.34 User Manual" href="index.html">
+  <link rel="HOME" title="Privoxy 4.0.0 User Manual" href="index.html">
   <link rel="PREVIOUS" title="Installation" href="installation.html">
   <link rel="NEXT" title="Quickstart to Using Privoxy" href="quickstart.html">
   <link rel="STYLESHEET" type="text/css" href="../p_doc.css">
@@ -15,7 +15,7 @@
   <div class="NAVHEADER">
     <table summary="Header navigation table" width="100%" border="0" cellpadding="0" cellspacing="0">
       <tr>
-        <th colspan="3" align="center">Privoxy 3.0.34 User Manual</th>
+        <th colspan="3" align="center">Privoxy 4.0.0 User Manual</th>
       </tr>
       <tr>
         <td width="10%" align="left" valign="bottom"><a href="installation.html" accesskey="P">Prev</a></td>
@@ -27,51 +27,58 @@
   </div>
   <div class="SECT1">
     <h1 class="SECT1"><a name="WHATSNEW" id="WHATSNEW">3. What's New in this Release</a></h1>
-    <p><span class="APPLICATION">Privoxy 3.0.34</span> fixes a few minor bugs and comes with a couple of general
-    improvements and new features.</p>
-    <p>Changes in <span class="APPLICATION">Privoxy 3.0.34</span> stable:</p>
+    <p><span class="APPLICATION">Privoxy 4.0.0</span> fixes a few minor bugs and comes with a couple of general
+    improvements and new features. HTTPS inspection is no longer considered experimental.</p>
+    <p>Two new features have been funded by donations. If you can, please consider <a href=
+    "https://www.privoxy.org/donate" target="_top">making a donation</a> to support future improvements.</p>
+    <p>Changes in <span class="APPLICATION">Privoxy 4.0.0</span> stable:</p>
     <ul>
       <li>
         <p>Bug fixes:</p>
         <ul>
           <li>
-            <p>Improve the handling of chunk-encoded responses by buffering the data even if filters are disabled and
-            properly keeping track of where the various chunks are supposed to start and end. Previously Privoxy would
-            merely check the last bytes received to see if they looked like the last-chunk. This failed to work if the
-            last-chunk wasn't received in one read and could also result in actual data being misdetected as
-            last-chunk. Should fix: SF support request #1739. Reported by: withoutname.</p>
+            <p>Add missing client-body-tagger data to the action_type_info[] struct so lookups based on the action
+            index work correctly again. Prevents assertion failures or segfaults when trying to edit an action file
+            with the CGI editor. The type of failure depended on whether or not assertions were enabled and on whether
+            or not Privoxy had been compiled with FEATURE_EXTERNAL_FILTERS. Regression introduced in Privoxy 3.0.34.
+            Patch submitted by Aaron Li in #940.</p>
           </li>
           <li>
-            <p>remove_chunked_transfer_coding(): Refuse to de-chunk invalid data Previously the data could get
-            corrupted even further. Now we simply pass the unmodified data to the client.</p>
+            <p>Bump MAX_FILTER_TYPES which should have been done in d128e6aa4 when introducing the client-body-tagger{}
+            action. Prevents an assertion in cgi_edit_actions_for_url() from triggering after e32d03e0 when using the
+            CGI editor with assertions enabled.</p>
           </li>
           <li>
-            <p>gif_deanimate(): Tolerate multiple image extensions in a row. This allows to deanimate all the gifs on:
-            https://commons.wikimedia.org/wiki/Category:Animated_smilies Fixes SF bug #795 reported by Celejar.</p>
+            <p>is_untrusted_url(): Search the encrypted headers for the Referer when the client is using https and
+            https inspection is enabled. Fixes the trust mechanism for https requests. Reported by Laurent Caumont in
+            #1767.</p>
           </li>
           <li>
-            <p>OpenSSL generate_host_certificate(): Use X509_get_subject_name() instead of X509_get_issuer_name() to
-            get the issuer for generated website certificates so there are no warnings in the browser when using an
-            intermediate CA certificate instead of a self-signed root certificate. Problem reported and patch submitted
-            by Chakib Benziane.</p>
+            <p>GNUMakefile.in: Let the install target work if no group is specified.</p>
           </li>
           <li>
-            <p>can_filter_request_body(): Fix a log message that contained a spurious u.</p>
+            <p>GNUMakefile.in: Set GROUP_T when installing configuration files as root and there is no privoxy user
+            available so the install target doesn't fail. Patch by Fabrice Fontaine.</p>
           </li>
           <li>
-            <p>handle_established_connection(): Check for pending TLS data from the client before checking if data is
-            available on the connection. The TLS library may have already consumed all the data from the client
-            response in which case poll() and select() will not detect that data is available to be read. Sponsored by:
-            Robert Klemme.</p>
+            <p>GNUmakefile.in: Don't exit if configuration files are installed as root as this can be considered
+            acceptable when cross-compiling Privoxy inside an autobuilder with only a root user. Patch by Fabrice
+            Fontaine.</p>
           </li>
           <li>
-            <p>ssl_send_certificate_error(): Don't crash if there's no certificate information available. This is only
-            relevant when Privoxy is built with wolfSSL 5.0.0 or later (code not yet published). Earlier wolfSSL
-            versions or the other TLS backends don't seem to trigger the crash.</p>
+            <p>configure.in: Fix argument types in gmtime_r() and localtime_r() probes. Otherwise these probes always
+            fail with stricter compilers even if there is C library support for these functions. Patch submitted by
+            Florian Weimer in SF#149.</p>
           </li>
           <li>
-            <p>socks5_connect(): Add support for target hosts specified as IPv4 address Previously the IP address was
-            sent as domain.</p>
+            <p>Fix socks4 and socks4a support under glibc's source fortification. With glibc's source fortification,
+            gcc offers the compilation warning resulting in a runtime abort() when using a socks4 or socks4a upstream
+            proxy. Despite the warning, the strlcpy() call in question is fine: gcc misidentifies the size of the
+            destination buffer, estimating to hold only a single char while in fact the buffer stretches beyond the end
+            of the struct socks_op. The issue was originally reported in the <a href=
+            "https://github.com/NixOS/nixpkgs/issues/265654" target="_top">NixOS issue tracker</a> prompted by an
+            upgrade of glibc from 2.37-39 to 2.38-0. Patch submitted by Ingo Blechschmid, joint work with @esclear and
+            @richi235.</p>
           </li>
         </ul>
       </li>
@@ -79,46 +86,69 @@
         <p>General improvements:</p>
         <ul>
           <li>
-            <p>Add a client-body-tagger action which creates tags based on the content of the request body. Sponsored
-            by: Robert Klemme.</p>
+            <p>Allow to use wolfSSL for https inspection. wolfSSL supports TLS 1.3 and can be significantly faster than
+            mbedTLS. Mainly tested on ElectroBSD amd64 where it can <a href=
+            "https://www.fabiankeil.de/gehacktes/privoxy-tls-benchmarks/" target="_top">compete with OpenSSL and
+            LibreSSL</a> To enable the support, install wolfSSL and run ./configure with the --with-wolfssl option.
+            Sponsored by Privoxy project funds collected at SPI.</p>
           </li>
           <li>
-            <p>When client-body filters are enabled, buffer the whole request before opening a connection to the
-            server. Makes it less likely that the server connection times out and we don't open a connection if the
-            buffering fails anyway. Sponsored by: Robert Klemme.</p>
+            <p>Add an test framework that leverages the curl test suite. Sponsored by Privoxy project funds collected
+            at SPI.</p>
           </li>
           <li>
-            <p>Add periods to a couple of log messages.</p>
+            <p>Add pcre2 support. Closes bug #935. Initial patch submitted by Gagan Sidhu.</p>
           </li>
           <li>
-            <p>accept_connection(): Add missing space to a log message.</p>
+            <p>Use SHA256 as hash algorithm for the certificate and key file names instead of MD5. The known MD5
+            vulnerabilities shouldn't matter for Privoxy's use case but it doesn't hurt to use a hash algorithm that
+            isn't deprecated. Sponsored by: Robert Klemme</p>
           </li>
           <li>
-            <p>Initialize ca-related defaults with strdup_or_die() so errors aren't silently ignored.</p>
+            <p>Add support for mbedTLS 3.x. This removes a sanity check (whether issuer key and issuer certificate
+            match) that seems overly cautious and fails to compile with mbedTLS 3.x as the struct members are private.
+            We don't have an equivalent check in the OpenSSL or wolfSSL code either.</p>
           </li>
           <li>
-            <p>make_path: Use malloc_or_die() in cases where allocation errors were already fatal anyway.</p>
+            <p>Factor out newer_privoxy_version_required() and improve the logic Previously 3.0.11 was considered newer
+            than 4.0.0.</p>
           </li>
           <li>
-            <p>handle_established_connection(): Improve an error message slightly.</p>
+            <p>init_error_log(): Include the reason for failures to open the log file.</p>
           </li>
           <li>
-            <p>receive_client_request(): Reject https URLs without CONNECT request.</p>
+            <p>create_client_ssl_connection(): Don't keep the certificate lock longer than necessary.</p>
           </li>
           <li>
-            <p>Include all requests in the statistics if mutexes are available. Previously in case of reused
-            connections only the last request got counted. The statistics still aren't perfect but it's an
-            improvement.</p>
+            <p>Add periods to a bunch of log messages.</p>
           </li>
           <li>
-            <p>Add read_socks_reply() and start using it in socks5_connect() to apply the socket timeout more
-            consistently.</p>
+            <p>normalize_lws(): Only log the 'Reducing whitespace ...' message once per header</p>
           </li>
           <li>
-            <p>socks5_connect(): Deal with domain names in the socks reply</p>
+            <p>log_error() Win32: Only call LogShowActivity() for debug level LOG_LEVEL_REQUEST. As of b94bbe62a950,
+            which was part of Privoxy 3.0.29, LOG_LEVEL_REQUEST is used for all requests including crunched ones.
+            Previously LogShowActivity() was called twice for crunched requests, (presumably) resulting in an aborted
+            animation.</p>
           </li>
           <li>
-            <p>Add a filter for bundeswehr.de that hides the cookie and privacy info banner.</p>
+            <p>Remove ./ prefix from tarball-dist files.</p>
+          </li>
+          <li>
+            <p>create_client_ssl_connection(): Make it more obvious from an error message that a function failed.</p>
+          </li>
+          <li>
+            <p>Use stringify() instead of section_target() and remove section_target(). Like the XXX comment suggested
+            this could be done my moving the hash into the templates which seems preferable anyway.</p>
+          </li>
+          <li>
+            <p>Prevent some compiler warnings.</p>
+          </li>
+          <li>
+            <p>parse_numeric_value(): Expect a base-ten number.</p>
+          </li>
+          <li>
+            <p>windows/MYconfigure: Have gcc diagnostics in color.</p>
           </li>
         </ul>
       </li>
@@ -126,56 +156,62 @@
         <p>Action file improvements:</p>
         <ul>
           <li>
-            <p>Disable filter{banners-by-size} for .freiheitsfoo.de/.</p>
+            <p>Block requests to .amazon-adsystem.com/</p>
           </li>
           <li>
-            <p>Disable filter{banners-by-size} for freebsdfoundation.org/.</p>
+            <p>Block requests to 0.css-load.com/</p>
           </li>
           <li>
-            <p>Disable fast-redirects for consent.youtube.com/.</p>
+            <p>Block requests to html-load.com/ and 1.html-load.com/</p>
           </li>
           <li>
-            <p>Block requests to ups.xplosion.de/.</p>
+            <p>Block requests to b.6sc.co/</p>
           </li>
           <li>
-            <p>Block requests for elsa.memoinsights.com/t.</p>
+            <p>Block requests to i.clean.gg/</p>
           </li>
           <li>
-            <p>Fix a typo in a test.</p>
+            <p>Block requests to s.cpx.to/</p>
           </li>
           <li>
-            <p>Disable fast-redirects for launchpad.net/.</p>
+            <p>Block requests to track.venatusmedia.com/</p>
           </li>
           <li>
-            <p>Unblock .eff.org/.</p>
+            <p>Block requests to secure-eu.nmrodam.com/</p>
           </li>
           <li>
-            <p>Stop unblocking .org/.*(image|banner) which appears to be too generous The example URL
-            http://www.gnu.org/graphics/gnu-head-banner.png is already unblocked due to .gnu.org being unblocked.</p>
+            <p>Block requests to o2.mouseflow.com/</p>
           </li>
           <li>
-            <p>Unblock adfd.org/.</p>
+            <p>Disable fast-redirects for services.akteneinsichtsportal.de/</p>
           </li>
           <li>
-            <p>Disable filter{banners-by-link} for .eff.org/.</p>
+            <p>Disable fast-redirects for /wp-content/plugins/pdf-viewer-for-elementor</p>
           </li>
           <li>
-            <p>Block requests to odb.outbrain.com/.</p>
+            <p>Disable fast-redirects for syndication.twitter.com/</p>
           </li>
           <li>
-            <p>Disable fast-redirects for .gandi.net/.</p>
+            <p>Disable fast-redirects for archive.softwareheritage.org/</p>
           </li>
           <li>
-            <p>Disable fast-redirects{} for .onion/.*/status/.</p>
+            <p>Disable fast-redirects to duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion/</p>
           </li>
           <li>
-            <p>Disable fast-redirects{} for twitter.com/.*/status/.</p>
+            <p>Disable fast-redirects for .creator-spring.com/_next/image</p>
           </li>
           <li>
-            <p>Unblock pinkstinks.de/.</p>
+            <p>Disable fast redirects for accounts.bahn.de/</p>
           </li>
           <li>
-            <p>Disable fast-redirects for .hagalil.com/.</p>
+            <p>Unblock .datenschmutz.de/</p>
+          </li>
+          <li>
+            <p>Unblock requests for 'adventur*.'</p>
+          </li>
+          <li>
+            <p>Unblock adl.windows.com/ as it is apparently required to update from Windows 10 to 11. Reported by Sam
+            Varshavchik.</p>
           </li>
         </ul>
       </li>
@@ -183,16 +219,33 @@
         <p>Privoxy-Log-Parser:</p>
         <ul>
           <li>
-            <p>Bump version to 0.9.5.</p>
+            <p>Highlight 'Couldn't deliver the error message for [...]'.</p>
           </li>
           <li>
-            <p>Highlight more log messages.</p>
+            <p>Highlight 'Failed to accept() incoming connection: Software caused connection abort'.</p>
           </li>
           <li>
-            <p>Highlight the Crunch reason only once. Previously the "crunch reason" could also be highlighted when the
-            URL contained a matching string. The real crunch reason only occurs once per line, so there's no need to
-            continue looking for it after it has been found once. While at it, add a comment with an example log
-            line.</p>
+            <p>Highlight 'Keeping chunk offset at 0 despite flushing 31 bytes.'.</p>
+          </li>
+          <li>
+            <p>Highlight 'Not shutting down client connection on socket 8. The socket is no longer alive.'.</p>
+          </li>
+          <li>
+            <p>Bump version to 0.9.6.</p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>Privoxy-Regression-Test.pl:</p>
+        <ul>
+          <li>
+            <p>Let the --min-level option increase the --max-level if the latter is smaller than the former.</p>
+          </li>
+          <li>
+            <p>Add --curl option to use a non-default curl binary.</p>
+          </li>
+          <li>
+            <p>Bump version to 0.7.5.</p>
           </li>
         </ul>
       </li>
@@ -200,49 +253,10 @@
         <p>uagen:</p>
         <ul>
           <li>
-            <p>Bump version to 1.2.4.</p>
+            <p>Bump BROWSER_VERSION and BROWSER_REVISION to match Firefox ESR 128.</p>
           </li>
           <li>
-            <p>Update BROWSER_VERSION and BROWSER_REVISION to 102.0 to match the User-Agent of the current Firefox
-            ESR.</p>
-          </li>
-          <li>
-            <p>Explicitly document that changing the 'Gecko token' is suspicious.</p>
-          </li>
-          <li>
-            <p>Consistently use a lower-case 'c' as copyright symbol.</p>
-          </li>
-          <li>
-            <p>Bump copyright.</p>
-          </li>
-          <li>
-            <p>Add 'aarch64' as Linux architecture.</p>
-          </li>
-          <li>
-            <p>Add OpenBSD architecture 'arm64'.</p>
-          </li>
-          <li>
-            <p>Stop using sparc64 as FreeBSD architecture. It hasn't been supported for a while now.</p>
-          </li>
-        </ul>
-      </li>
-      <li>
-        <p>Build system:</p>
-        <ul>
-          <li>
-            <p>Makefile: Add a 'dok' target that depends on the 'error' target to show the "You are not using GNU make
-            or did nor run configure" message.</p>
-          </li>
-          <li>
-            <p>configure: Fix --with-msan option. Also (probably) reported by Andrew Savchenko.</p>
-          </li>
-        </ul>
-      </li>
-      <li>
-        <p>macOS build system:</p>
-        <ul>
-          <li>
-            <p>Enable HTTPS inspection when building the macOS binary (using OpenSSL as TLS library).</p>
+            <p>Bump version to 1.2.6.</p>
           </li>
         </ul>
       </li>
@@ -250,23 +264,34 @@
         <p>Documentation:</p>
         <ul>
           <li>
-            <p>Add OpenSSL to the list of libraries that may be licensed under the Apache 2.0 license in which case the
-            linked Privoxy binary has to be distributed under the GPLv3 or later.</p>
+            <p>Add HOWTOs for https inspection and client-tags to user-manual.</p>
           </li>
           <li>
-            <p>config: Fix the documented ca-directory default value. Reported by avoidr.</p>
+            <p>Suggest to use the force-text-mode action when filtering binary content with external filters.</p>
           </li>
           <li>
-            <p>Rebuild developer-manual and tidy with 'HTML Tidy for FreeBSD version 5.8.0'.</p>
+            <p>Declare https-inspection non-experimental.</p>
           </li>
           <li>
-            <p>Update developer manual with new macOS packaging instructions.</p>
+            <p>FAQ: Mention that <a href="https://www.fabiankeil.de/gehacktes/privoxy-moral-license/" target=
+            "_top">Privoxy Moral Licenses</a> are available as well.</p>
           </li>
           <li>
-            <p>Note that the FreeBSD installation instructions work for ElectroBSD as well.</p>
+            <p>Fix LibreSSL URL.</p>
           </li>
           <li>
-            <p>Note that FreeBSD/ElectroBSD users can try to install Privoxy as binary package using 'pkg'.</p>
+            <p>Update perlre perldoc URL.</p>
+          </li>
+          <li>
+            <p>config: Add SOCKS 5 to the list of supported protocols.</p>
+          </li>
+          <li>
+            <p>In the Windows build section, note that one only needs tidy to build the docs. If you're not building
+            the docbook stuff you don't need tidy.</p>
+          </li>
+          <li>
+            <p>trust: Use the words 'allowlists' and 'blocklists' instead of "whitelists" and "blacklists" which some
+            people consider to be less inclusive.</p>
           </li>
         </ul>
       </li>

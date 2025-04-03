@@ -1,0 +1,62 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter crude-parental
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# This is a site which contains the word sex which should trigger the crude-parental filter:
+
+Here it comes again: SEX!!!!
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 170
+
+<html><head><title>Blocked</title></head><body><h3>Blocked by <a href="http://p.p/">Privoxy's</a> crude-parental filter due to possible adult content.</h3></body></html>
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{crude-parental} with page containing "sex"
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/crude-parental/pornsite-1/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /crude-parental/pornsite-1/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

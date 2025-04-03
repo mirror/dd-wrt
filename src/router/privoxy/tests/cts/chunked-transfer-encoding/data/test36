@@ -1,0 +1,77 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+chunked transfer encoding
+# XXX: Test requires "writesize" support that hasn't been upstreamed yet.
+skip
+</keywords>
+</info>
+
+<reply>
+<data nonewline="yes">
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: keep-alive
+Content-Type: text/html
+Transfer-Encoding: chunked
+
+FE
+%repeat[253 x A]%
+
+A The previous size could be valid but the line does not end with CRLF %repeat[1000 x Padding]%
+</data>
+# We only send parts of the response and then wait longer
+# than Privoxy's socket-timeout to make sure Privoxy always
+# forwards the same data to curl.
+<servercmd>
+writesize: 4000
+writedelay: 4000
+</servercmd>
+</reply>
+<reply>
+
+<proxy-reply>
+<data nonewline="yes">
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: keep-alive
+Content-Type: text/html
+Transfer-Encoding: chunked
+
+FE
+%repeat[253 x A]%
+
+A The previous size could be valid but the line does not end with CRLF %repeat[505 x Padding]%P
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+Chunked transfer encoding - Invalid chunk-size line. Filtering disabled.
+</name>
+<features>
+proxy
+</features>
+<command timeout="20">
+--raw http://%HOSTIP:%HTTPPORT/no-filter/chunked-content/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /no-filter/chunked-content/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+
+</protocol>
+<errorcode>
+18
+</errorcode>
+</verify>
+</testcase>

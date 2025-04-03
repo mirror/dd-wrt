@@ -6,7 +6,7 @@
  *                using a "forwarder" (i.e. HTTP proxy and/or a SOCKS4
  *                or SOCKS5 proxy).
  *
- * Copyright   :  Written by and Copyright (C) 2001-2021 the
+ * Copyright   :  Written by and Copyright (C) 2001-2023 the
  *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -37,6 +37,7 @@
 #include "config.h"
 
 #include <stdio.h>
+#include <stddef.h>
 #include <sys/types.h>
 
 #ifndef _WIN32
@@ -837,7 +838,13 @@ static jb_socket socks4_connect(const struct forward_spec *fwd,
 
    /* build a socks request for connection to the web server */
 
-   strlcpy(&(c->userid), socks_userid, sizeof(buf) - sizeof(struct socks_op));
+   /*
+    * The more straightforward &(c->userid) destination pointer can
+    * cause some gcc versions to misidentify the size of the destination
+    * buffer, tripping the runtime check of glibc's source fortification.
+    */
+   strlcpy(buf + offsetof(struct socks_op, userid), socks_userid,
+      sizeof(buf) - sizeof(struct socks_op));
 
    csiz = sizeof(*c) + sizeof(socks_userid) - sizeof(c->userid) - sizeof(c->padding);
 

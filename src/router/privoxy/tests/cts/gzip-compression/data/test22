@@ -1,0 +1,65 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+deflate compression
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+Content-Encoding: deflate
+X-Control: swsclose
+
+%hex[%0b%ce%cf%4d%55%48%49%4d%cb%49%2c%49%55%48%cd%4b%ce%4f%49%4d%51%48%49%2c%49%d4%e3%f2%4b%2d%57%c8%c9%cc%4b%55%c8%48%2d%4a%d5%e3%02%00]hex%
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 42
+
+Some deflate encoded data.
+New line here.
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+deflate-encoded content. Valid.
+</name>
+<features>
+proxy
+</features>
+<command>
+-H "Accept-Encoding: deflate" http://%HOSTIP:%HTTPPORT/deflate-compressed-data/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /deflate-compressed-data/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Accept-Encoding: deflate
+
+</protocol>
+<errorcode>
+0
+</errorcode>
+</verify>
+</testcase>

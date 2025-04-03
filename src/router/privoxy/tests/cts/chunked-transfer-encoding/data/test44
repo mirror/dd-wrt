@@ -1,0 +1,64 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+chunked transfer encoding
+# Does not work yet
+skip
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: keep-alive
+Content-Type: text/html
+Transfer-Encoding: chunked
+
+FE
+%repeat[253 x A]%
+
+0
+
+</data>
+<servercmd>
+writedelay: 20
+writesize: 136
+</servercmd>
+</reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+Chunked transfer encoding - Multiple chunks, first chunk partially arrives with server headers with connection keep-alive. Filtering disabled.
+</name>
+<features>
+proxy
+</features>
+<command>
+--raw http://%HOSTIP:%HTTPPORT/no-filter/%TESTNUMBER --max-time 2 --raw http://%HOSTIP:%HTTPPORT/no-filter/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /no-filter/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+
+GET /no-filter/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+
+</protocol>
+<errorcode>
+0
+</errorcode>
+</verify>
+</testcase>

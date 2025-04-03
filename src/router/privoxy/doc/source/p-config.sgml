@@ -90,7 +90,7 @@
  Sample Configuration File for Privoxy &p-version;
 </title>
 <para>
-Copyright (C) 2001-2023 Privoxy Developers https://www.privoxy.org/
+Copyright (C) 2001-2025 Privoxy Developers https://www.privoxy.org/
 </para>
 
 <literallayout>
@@ -2113,7 +2113,7 @@ permit-access  [::ffff:192.0.2.0]/120
 
 <para>
  Also specified here are SOCKS proxies. <application>Privoxy</application>
- supports the SOCKS 4 and SOCKS 4A protocols.
+ supports the SOCKS 4, SOCKS 4A and SOCKS 5 protocols.
 </para>
 
 <sect3 renderas="sect4" id="forward"><title>forward</title>

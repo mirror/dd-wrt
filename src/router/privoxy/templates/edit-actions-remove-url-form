@@ -49,7 +49,7 @@
 # section
 # pattern
 # oldval
-# jumptarget - append to eal URL to jump to relevant section
+# jumptarget - append anchor to eal URL to jump to relevant section
 #
 #############################################################################
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
@@ -96,7 +96,7 @@
         <p>
           <a class="cmd" href="edit-actions-remove-url?f=@f@&amp;v=@v@&amp;p=@p@">OK</a>
           &nbsp;
-          <a class="cmd" href="edit-actions-list?f=@f@@jumptarget@">Cancel</a>
+          <a class="cmd" href="edit-actions-list?f=@f@#@jumptarget@">Cancel</a>
         </p>
       </td>
     </tr>

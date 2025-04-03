@@ -1,0 +1,59 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+server-header-filter x-httpd-php-to-html
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: application/x-httpd-php
+X-Control: swsclose
+Content-Length: 0
+
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 0
+
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++server-header-filter{x-httpd-php-to-html}
+</name>
+<features>
+proxy
+</features>
+<command>
+--head http://%HOSTIP:%HTTPPORT/x-httpd-php-to-html/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+HEAD /x-httpd-php-to-html/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

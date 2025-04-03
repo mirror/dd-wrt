@@ -1,0 +1,11 @@
+{+redirect{http://www.privoxy.org}}
+/1-redirect-me-to-www.privoxy.org
+
+{+redirect{https://www.privoxy.org}}
+/2-redirect-me-to-www.privoxy.org
+
+{+redirect{s@http://www.example.org/.*@http://www.privoxy.org/@}}
+/3-redirect-me-to-www.privoxy.org
+
+{+redirect{s@http://www.privoxy.org/\d-replace-me@http://www.privoxy.org/path-replaced@}}
+/4-replace-me

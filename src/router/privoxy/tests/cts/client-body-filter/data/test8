@@ -1,0 +1,49 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP POST
+client-body-filter
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+X-Connection: swsclose
+
+Received your input.
+</data>
+</reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+Three filters applied to client request reusing the already filtered content. Last filter does not modify content.
+</name>
+<features>
+proxy
+</features>
+<command>
+-d "blafasel" http://%HOSTIP:%HTTPPORT/bumfidel-to-tralala/empty-body/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol nonewline="yes">
+POST /bumfidel-to-tralala/empty-body/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Content-Length: 7
+Content-Type: application/x-www-form-urlencoded
+Connection: close
+
+tralala
+</protocol>
+</verify>
+</testcase>

@@ -1,0 +1,78 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+server-header-filter less-download-windows
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Disposition: blafasel filename="foo.png" tralala
+Content-Disposition: blafasel filename="foo.gif" tralala
+Content-Disposition: blafasel filename="foo.jpeg" tralala
+Content-Disposition: blafasel filename="foo.jpg" tralala
+Content-Disposition: blafasel filename="foo.diff" tralala
+Content-Disposition: blafasel filename="foo.patch" tralala
+Content-Disposition: blafasel filename="foo.dpatch" tralala
+Content-Disposition: blafasel filename='foo.c' tralala
+Content-Disposition: blafasel filename="foo.h" tralala
+Content-Disposition: blafasel filename=foo.pl tralala
+Content-Disposition: blafasel filename="foo.shar" tralala
+Content-Type: message/news
+Content-Type: message/rfc822
+Content-Type: message/text-blafasel
+Content-Type: application/x-sh
+Content-Type: application/x-sh 
+X-Control: swsclose
+Content-Length: 0
+
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/plain
+Content-Type: text/plain
+Content-Type: message/text-blafasel
+Content-Type: text/plain
+Content-Type: text/plain
+X-Control: swsclose
+Content-Length: 0
+
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
++server-header-filter{less-download-windows}
+</name>
+<features>
+proxy
+</features>
+<command>
+--head http://%HOSTIP:%HTTPPORT/less-download-windows/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+HEAD /less-download-windows/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>

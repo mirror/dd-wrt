@@ -1,0 +1,95 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+chunked transfer encoding
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: keep-alive
+Content-Type: text/html
+Transfer-Encoding: chunked
+
+10
+%repeat[9 x A]%
+
+0
+
+</data>
+<data1>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+X-Connection: swsclose
+Content-Type: text/html
+
+Here's your unchunked data.
+</data1>
+<servercmd>
+writesize: 10000
+</servercmd>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: keep-alive
+Content-Type: text/html
+Transfer-Encoding: chunked
+
+10
+%repeat[9 x A]%
+
+0
+
+</data>
+<data1>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+X-Connection: swsclose
+Content-Type: text/html
+
+Here's your unchunked data.
+</data1>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+Chunked transfer encoding - Small chunks that are received together with the sever headers. Filtering disabled.
+</name>
+<features>
+proxy
+</features>
+<command>
+--raw http://%HOSTIP:%HTTPPORT/no-filter/chunked-content/%TESTNUMBER0000 --max-time 2 --raw http://%HOSTIP:%HTTPPORT/no-filter/unchunked-content/%TESTNUMBER0001
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /no-filter/chunked-content/%TESTNUMBER0000 HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+
+GET /no-filter/unchunked-content/%TESTNUMBER0001 HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+
+</protocol>
+<errorcode>
+0
+</errorcode>
+</verify>
+</testcase>

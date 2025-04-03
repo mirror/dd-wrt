@@ -20,6 +20,7 @@ fi
 # --enable-mingw32                Use mingw32 for a Windows GUI
 # --enable-static-linking         Use static linking instead of dynamic linking (and not have
 #                                 to put all the .DLLs in the path or the same dir as Privoxy)
+# --disable-pcre2                 Don't try to use the pcre2 library even if it's available
 # --disable-pthread               Use native threads instead of POSIX pthreads library
 # --disable-dynamic-pcre          Use the built-in, static pcre, even if libpcre is available
 # --with-docbook=yes              Enable docbook documentation creation
@@ -37,6 +38,11 @@ export CPPFLAGS=""
 export LDFLAGS=""
 # start with initially empty flags
 
+
+CFLAGS="${CFLAGS} -fdiagnostics-color=always"
+# Have gcc diagnostics be in color even if stderr is not going to a terminal.
+# It's nice having warnings in color even if I run a script that does
+#   'make 2>&1 | tee log.make'
 
 CFLAGS="${CFLAGS} -fstack-protector-strong -D_FORTIFY_SOURCE=2"
 LDFLAGS="${LDFLAGS} -fstack-protector-strong"
@@ -80,7 +86,6 @@ LDFLAGS="${LDFLAGS} -Wl,--nxcompat"
 #   $ peflags -v privoxy.exe
 #   privoxy.exe: coff(0x0106[+executable_image,+line_nums_stripped,+32bit_machine]) pe(0x0140[+dynamicbase,+nxcompat])
 
-
 LDFLAGS="${LDFLAGS} -Wl,--dynamicbase,--export-all-symbols"
 # https://en.wikipedia.org/wiki/Address_space_layout_randomization
 # https://stackoverflow.com/questions/24283918/how-can-i-enable-aslr-dep-and-safeseh-on-an-exe-in-codeblocks-using-mingw
@@ -102,6 +107,9 @@ CFLAGS="${CFLAGS} -Wno-unused-parameter -Wno-unused-but-set-variable"
 
 #-no-# CFLAGS="${CFLAGS} -Wconversion"
 #   way too many warnings for things that don't look like a problem
+
+CFLAGS="${CFLAGS} -Wno-deprecated-declarations"
+#   way too many warnings in openssl.c about RSA deprecated-declarations
 
 #-no-# CFLAGS="${CFLAGS} -Werror"
 # Turn all warnings into errors.
@@ -129,8 +137,24 @@ CFLAGS="${CFLAGS} -Wshadow"
 # *sigh* build my own pcre so I can do static linking
 # Get the 8.x PCRE library from
 #   https://sourceforge.net/projects/pcre/files/pcre/
-inc="/source/pcre-8.45/"
-lib="/source/pcre-8.45/.libs"
+# Get the 10.x PCRE2 library from
+#   https://github.com/PCRE2Project/pcre2/releases
+#
+#
+usepcre2=yes
+#
+#
+if [ "$usepcre2" = "yes" ]; then
+    PCREOPT=""
+    inc="/source/pcre2-10.44/src/"
+      # need pcre2.h
+    lib="/source/pcre2-10.44/.libs"
+      # need libpcre2-8.a & libpcre2-posix.a
+else
+    PCREOPT="--disable-pcre2"
+    inc="/source/pcre-8.45/"
+    lib="/source/pcre-8.45/.libs"
+fi
 CPPFLAGS="${CPPFLAGS} -I${inc}"
 LDFLAGS="${LDFLAGS} -L${lib}"
 
@@ -141,17 +165,20 @@ LDFLAGS="${LDFLAGS} -L${lib}"
 ##   which is backward-compatible and will be supported for at least
 ##   3 years.
 # Get the 2.28.x mbedtls library from  https://github.com/Mbed-TLS/mbedtls/tags
-inc="/source/mbedtls-2.28.2/include"
-lib="/source/mbedtls-2.28.2/library"
+# Release Notes: https://github.com/Mbed-TLS/mbedtls/releases/tag/v2.28.4
 
-MITMOPT="--with-mbedtls"
-CPPFLAGS="${CPPFLAGS} -I${inc}"
-LDFLAGS="${LDFLAGS} -L${lib}"
+##MITMOPT="--with-mbedtls"
+##inc="/source/mbedtls-2.28.4/include"
+##lib="/source/mbedtls-2.28.4/library"
+##CPPFLAGS="${CPPFLAGS} -I${inc}"
+##LDFLAGS="${LDFLAGS} -L${lib}"
+
+MITMOPT="--with-openssl"
 
 # brotli
 # Get the brotli library from  https://github.com/google/brotli/releases
-inc="/source/brotli-1.0.9/c/include"
-lib="/source/brotli-1.0.9/.libs"
+inc="/source/brotli-1.1.0/build/installed/include"
+lib="/source/brotli-1.1.0/build/installed/lib"
 BROTLIOPT="--with-brotli"
 CPPFLAGS="${CPPFLAGS} -I${inc}"
 LDFLAGS="${LDFLAGS} -L${lib}"
@@ -167,13 +194,15 @@ echo "LDFLAGS=${LDFLAGS}"
 #    --target: only used to build a cross-compiling toolchain.
 
 ./configure  --host=i686-w64-mingw32  --enable-mingw32  --enable-zlib \
+             --enable-compression  \
              --enable-extended-statistics \
+             ${PCREOPT} \
              --enable-pcre-host-patterns \
              --enable-static-linking \
              --enable-strptime-sanity-checks \
              --disable-pthread  \
              --with-brotli  \
-             --with-mbedtls \
+             ${MITMOPT} \
              --with-docbook=yes
 
 #  -- done --

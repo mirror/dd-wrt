@@ -2,7 +2,7 @@
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-  <title>Privoxy 3.0.34 User Manual</title>
+  <title>Privoxy 4.0.0 User Manual</title>
   <meta name="GENERATOR" content="Modular DocBook HTML Stylesheet Version 1.79">
   <link rel="NEXT" title="Introduction" href="introduction.html">
   <link rel="STYLESHEET" type="text/css" href="../p_doc.css">
@@ -12,8 +12,8 @@
 <body class="ARTICLE" bgcolor="#EEEEEE" text="#000000" link="#0000FF" vlink="#840084" alink="#0000FF">
   <div class="ARTICLE">
     <div class="TITLEPAGE">
-      <h1 class="TITLE"><a name="AEN2" id="AEN2">Privoxy 3.0.34 User Manual</a></h1>
-      <p class="PUBDATE"><sub><a href="copyright.html">Copyright</a> &copy; 2001-2023 by <a href=
+      <h1 class="TITLE"><a name="AEN2" id="AEN2">Privoxy 4.0.0 User Manual</a></h1>
+      <p class="PUBDATE"><sub><a href="copyright.html">Copyright</a> &copy; 2001-2025 by <a href=
       "https://www.privoxy.org/" target="_top">Privoxy Developers</a></sub><br></p>
       <div>
         <div class="ABSTRACT">
@@ -291,46 +291,65 @@
           </dl>
         </dd>
         <dt>10. <a href="templates.html">Privoxy's Template Files</a></dt>
-        <dt>11. <a href="contact.html">Contacting the Developers, Bug Reporting and Feature Requests</a></dt>
+        <dt>11. <a href="howto.html">HOWTOs</a></dt>
         <dd>
           <dl>
-            <dt>11.1. <a href="contact.html#SUFFICIENT-INFORMATION">Please provide sufficient information</a></dt>
-            <dt>11.2. <a href="contact.html#CONTACT-SUPPORT">Get Support</a></dt>
-            <dt>11.3. <a href="contact.html#REPORTING">Reporting Problems</a></dt>
+            <dt>11.1. <a href="howto.html#H2-HTTPS-INSPECTION">HTTPS-Inspection HOWTO</a></dt>
             <dd>
               <dl>
-                <dt>11.3.1. <a href="contact.html#CONTACT-ADS">Reporting Ads or Other Configuration Problems</a></dt>
-                <dt>11.3.2. <a href="contact.html#CONTACT-BUGS">Reporting Bugs</a></dt>
+                <dt>11.1.1. <a href="howto.html#H2-HI-TLS">How TLS Certificates for websites work</a></dt>
+                <dt>11.1.2. <a href="howto.html#H2-HI-WORKS">How HTTPS inspection works</a></dt>
+                <dt>11.1.3. <a href="howto.html#H2-HI-INVALID-CERT">What happens, if the original certificate is
+                invalid?</a></dt>
+                <dt>11.1.4. <a href="howto.html#H2-HI-PREREQUISITES">HTTPS inspection prerequisites</a></dt>
+                <dt>11.1.5. <a href="howto.html#H2-HI-CONFIG">Configuring HTTPS inspection in Privoxy</a></dt>
+                <dt>11.1.6. <a href="howto.html#H2-HI-BROWSER">Browser configuration</a></dt>
+                <dt>11.1.7. <a href="howto.html#H2-HI-ENABLE">Enabeling HTTPS inspection</a></dt>
               </dl>
             </dd>
-            <dt>11.4. <a href="contact.html#SECURITY-CONTACT">Reporting security problems</a></dt>
-            <dt>11.5. <a href="contact.html#MAILING-LISTS">Mailing Lists</a></dt>
-            <dt>11.6. <a href="contact.html#SF-TRACKERS">SourceForge support trackers</a></dt>
+            <dt>11.2. <a href="howto.html#H2-CLIENT-TAGS">Client Tags HOWTO</a></dt>
           </dl>
         </dd>
-        <dt>12. <a href="copyright.html">Privoxy Copyright, License and History</a></dt>
+        <dt>12. <a href="contact.html">Contacting the Developers, Bug Reporting and Feature Requests</a></dt>
         <dd>
           <dl>
-            <dt>12.1. <a href="copyright.html#LICENSE">License</a></dt>
+            <dt>12.1. <a href="contact.html#SUFFICIENT-INFORMATION">Please provide sufficient information</a></dt>
+            <dt>12.2. <a href="contact.html#CONTACT-SUPPORT">Get Support</a></dt>
+            <dt>12.3. <a href="contact.html#REPORTING">Reporting Problems</a></dt>
             <dd>
               <dl>
-                <dt>12.1.1. <a href="copyright.html#GPLV2">GNU General Public License version 2</a></dt>
-                <dt>12.1.2. <a href="copyright.html#GPLV3">GNU General Public License version 3</a></dt>
-                <dt>12.1.3. <a href="copyright.html#THIRD-PARTY-LICENSES">Third-party licenses and copyrights</a></dt>
+                <dt>12.3.1. <a href="contact.html#CONTACT-ADS">Reporting Ads or Other Configuration Problems</a></dt>
+                <dt>12.3.2. <a href="contact.html#CONTACT-BUGS">Reporting Bugs</a></dt>
               </dl>
             </dd>
-            <dt>12.2. <a href="copyright.html#HISTORY">History</a></dt>
-            <dt>12.3. <a href="copyright.html#AUTHORS">Authors</a></dt>
+            <dt>12.4. <a href="contact.html#SECURITY-CONTACT">Reporting security problems</a></dt>
+            <dt>12.5. <a href="contact.html#MAILING-LISTS">Mailing Lists</a></dt>
+            <dt>12.6. <a href="contact.html#SF-TRACKERS">SourceForge support trackers</a></dt>
           </dl>
         </dd>
-        <dt>13. <a href="seealso.html">See Also</a></dt>
-        <dt>14. <a href="appendix.html">Appendix</a></dt>
+        <dt>13. <a href="copyright.html">Privoxy Copyright, License and History</a></dt>
         <dd>
           <dl>
-            <dt>14.1. <a href="appendix.html#REGEX">Regular Expressions</a></dt>
-            <dt>14.2. <a href="appendix.html#INTERNAL-PAGES">Privoxy's Internal Pages</a></dt>
-            <dt>14.3. <a href="appendix.html#CHAIN">Chain of Events</a></dt>
-            <dt>14.4. <a href="appendix.html#ACTIONSANAT">Troubleshooting: Anatomy of an Action</a></dt>
+            <dt>13.1. <a href="copyright.html#LICENSE">License</a></dt>
+            <dd>
+              <dl>
+                <dt>13.1.1. <a href="copyright.html#GPLV2">GNU General Public License version 2</a></dt>
+                <dt>13.1.2. <a href="copyright.html#GPLV3">GNU General Public License version 3</a></dt>
+                <dt>13.1.3. <a href="copyright.html#THIRD-PARTY-LICENSES">Third-party licenses and copyrights</a></dt>
+              </dl>
+            </dd>
+            <dt>13.2. <a href="copyright.html#HISTORY">History</a></dt>
+            <dt>13.3. <a href="copyright.html#AUTHORS">Authors</a></dt>
+          </dl>
+        </dd>
+        <dt>14. <a href="seealso.html">See Also</a></dt>
+        <dt>15. <a href="appendix.html">Appendix</a></dt>
+        <dd>
+          <dl>
+            <dt>15.1. <a href="appendix.html#REGEX">Regular Expressions</a></dt>
+            <dt>15.2. <a href="appendix.html#INTERNAL-PAGES">Privoxy's Internal Pages</a></dt>
+            <dt>15.3. <a href="appendix.html#CHAIN">Chain of Events</a></dt>
+            <dt>15.4. <a href="appendix.html#ACTIONSANAT">Troubleshooting: Anatomy of an Action</a></dt>
           </dl>
         </dd>
       </dl>

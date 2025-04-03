@@ -225,10 +225,16 @@
 /* Define if pcre.h must be included as <pcre/pcre.h>
  */
 #undef PCRE_H_IN_SUBDIR
+#undef PCRE2_H_IN_SUBDIR
+
+#undef HAVE_PCRE2
+#undef HAVE_PCRE2POSIX
 
 /* Define if pcreposix.h must be included as <pcre/pcreposix.h>
  */
 #undef PCREPOSIX_H_IN_SUBDIR
+
+#undef PCRE2POSIX_H_IN_SUBDIR
 
 @BOTTOM@
 

@@ -4,7 +4,7 @@
  *
  * Purpose     :  Declares functions to parse/crunch headers and pages.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2020 the
+ * Copyright   :  Written by and Copyright (C) 2001-2024 the
  *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -74,7 +74,7 @@
 #include "win32.h"
 #endif
 
-typedef char *(*filter_function_ptr)();
+typedef char *(*filter_function_ptr)(struct client_state *csp);
 static filter_function_ptr get_filter_function(const struct client_state *csp);
 static jb_err prepare_for_filtering(struct client_state *csp);
 static void apply_url_actions(struct current_action_spec *action,
@@ -172,6 +172,14 @@ static int match_sockaddr(const struct sockaddr_storage *network,
    unsigned int addr_len;
    in_port_t *network_port, *netmask_port, *address_port;
    int i;
+
+   network_addr = NULL;
+   netmask_addr = NULL;
+   address_addr = NULL;
+   addr_len = 0;
+   network_port = NULL;
+   netmask_port = NULL;
+   address_port = NULL;
 
    if (network->ss_family != netmask->ss_family)
    {
@@ -333,6 +341,10 @@ int acl_addr(const char *aspec, struct access_control_addr *aca)
 #endif /* def HAVE_RFC2553 */
    char *p;
    char *acl_spec = NULL;
+
+   mask_data = NULL;
+   mask_port = NULL;
+   addr_len = 0;
 
 #ifdef HAVE_RFC2553
    /* XXX: Depend on ai_family */
@@ -1381,7 +1393,7 @@ int is_untrusted_url(const struct client_state *csp)
    struct block_spec *b;
    struct pattern_spec **trusted_url;
    struct http_request rhttp[1];
-   const char * referer;
+   const char *referer;
    jb_err err;
 
    /*
@@ -1405,12 +1417,24 @@ int is_untrusted_url(const struct client_state *csp)
       }
    }
 
-   if (NULL == (referer = get_header_value(csp->headers, "Referer:")))
+#ifdef FEATURE_HTTPS_INSPECTION
+   if (client_use_ssl(csp))
    {
-      /* no referrer was supplied */
-      return 1;
+      if (NULL == (referer = get_header_value(csp->https_headers, "Referer:")))
+      {
+         /* no referrer was supplied */
+         return 1;
+      }
    }
-
+   else
+#endif
+   {
+      if (NULL == (referer = get_header_value(csp->headers, "Referer:")))
+      {
+         /* no referrer was supplied */
+         return 1;
+      }
+   }
 
    /*
     * If not, do we maybe trust its referrer?

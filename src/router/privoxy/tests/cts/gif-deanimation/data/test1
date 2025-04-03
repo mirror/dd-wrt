@@ -1,0 +1,61 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+gzip compression
+</keywords>
+</info>
+
+<reply>
+<data nonewline="yes">
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: image/gif
+X-Control: swsclose
+
+GIF89a000000000000000000;
+</data>
+</reply>
+
+<proxy-reply>
+<data nonewline="yes">
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: image/gif
+X-Control: swsclose
+
+GIF89a000000000000000000;
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+Invalid gif.
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/deanimate-gif/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /deanimate-gif/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+
+</protocol>
+<errorcode>
+0
+</errorcode>
+</verify>
+</testcase>

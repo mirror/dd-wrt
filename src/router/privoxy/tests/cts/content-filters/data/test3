@@ -1,0 +1,121 @@
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+filter js-annoyances
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+
+# Here are some strings the html-annoyances filter should modify:
+
+# pcrs command 1:
+
+<a href="http://www.example.org/" resizable="no">click here!</a>
+<a href="http://www.example.org/" resizable='0'>click here!</a>
+
+# pcrs command 2:
+
+<a href="http://www.example.org/" location="no">click here!</a>
+<a href="http://www.example.org/" location='0'>click here!</a>
+
+# pcrs command 3:
+
+<a href="http://www.example.org/" status="no">click here!</a>
+<a href="http://www.example.org/" status='0'>click here!</a>
+
+# pcrs command 4:
+
+<a href="http://www.example.org/" scrolling="no">click here!</a>
+<a href="http://www.example.org/" scrolling='0'>click here!</a>
+
+# pcrs command 5:
+
+<a href="http://www.example.org/" menubar="no">click here!</a>
+<a href="http://www.example.org/" menubar='0'>click here!</a>
+
+# pcrs command 6:
+
+<blink>Blink! Blink! Blink!</blink>
+<marquee>Annoying marquee text!</marquee>
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 22 Jul 2010 11:22:33 GMT
+Connection: close
+Content-Type: text/html
+X-Control: swsclose
+Content-Length: 880
+
+# Here are some strings the html-annoyances filter should modify:
+
+# pcrs command 1:
+
+<a href="http://www.example.org/" resizable="yes">click here!</a>
+<a href="http://www.example.org/" resizable='yes'>click here!</a>
+
+# pcrs command 2:
+
+<a href="http://www.example.org/" location="yes">click here!</a>
+<a href="http://www.example.org/" location='yes'>click here!</a>
+
+# pcrs command 3:
+
+<a href="http://www.example.org/" status="yes">click here!</a>
+<a href="http://www.example.org/" status='yes'>click here!</a>
+
+# pcrs command 4:
+
+<a href="http://www.example.org/" scrolling="auto">click here!</a>
+<a href="http://www.example.org/" scrolling='auto'>click here!</a>
+
+# pcrs command 5:
+
+<a href="http://www.example.org/" menubar="yes">click here!</a>
+<a href="http://www.example.org/" menubar='yes'>click here!</a>
+
+# pcrs command 6:
+
+Blink! Blink! Blink!
+Annoying marquee text!
+</data>
+</proxy-reply>
+
+
+<client>
+<server>
+http
+</server>
+<name>
++filter{html-annoyances}
+</name>
+<features>
+proxy
+</features>
+<command>
+http://%HOSTIP:%HTTPPORT/html-annoyances/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /html-annoyances/%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Connection: close
+
+</protocol>
+</verify>
+</testcase>
