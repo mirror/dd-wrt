@@ -169,7 +169,7 @@ void start_dhcp6c(void)
 					fprintf(fpc, ";\n");
 				}
 				if (*vendorclass) {
-					fprintf(fpc, "send raw-option 16 00:00:04:0e:%02X:%02X", strlen(vendorclass) >> 8,
+					fprintf(fpc, "send raw-option 16 00:00:04:0e:%02zX:%02zX", strlen(vendorclass) >> 8,
 						strlen(vendorclass) & 0xff); // 00:00:04:0e enterprise id for sagecom
 					int i;
 					for (i = 0; i < strlen(vendorclass); i++)
@@ -177,7 +177,7 @@ void start_dhcp6c(void)
 					fprintf(fpc, ";\n");
 				}
 				if (*userclass) {
-					fprintf(fpc, "send raw-option 15 %02X:%02X", strlen(userclass) >> 8,
+					fprintf(fpc, "send raw-option 15 %02zX:%02zX", strlen(userclass) >> 8,
 						strlen(userclass) & 0xff); // must convert to hex
 					int i;
 					for (i = 0; i < strlen(userclass); i++)
