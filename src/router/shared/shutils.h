@@ -222,6 +222,8 @@ char *iso_strdup(const char *str);
 #define free dd_free
 #define strdup dd_strdup
 */
+#define compile_time_assert(cond) char a[cond ? 1: 0]
+
 static inline char * strlcpyhelp(char *dst, const char *s, size_t len) {
 	strlcpy(dst, s, len);
 	return dst;
