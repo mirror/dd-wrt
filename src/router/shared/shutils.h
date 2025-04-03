@@ -190,8 +190,8 @@ static inline char * strlcathelp(char *dst, const char *s, size_t len) {
 #define strcat(buf, s1) sizeof(buf) == sizeof(void *) ? strcat(buf, s1) : strlcathelp(buf, s1, sizeof(buf))
 
 #ifndef FROM_NVRAM
-extern int dd_sprintf(char *str, const char *fmt, ...);
-extern int dd_snprintf(char *str, size_t len, const char *fmt, ...);
+extern int dd_sprintf(char *str, const char *fmt, ...) __attribute__((format (printf, 2, 3)));
+extern int dd_snprintf(char *str, size_t len, const char *fmt, ...) __attribute__((format (printf, 3, 4)));
 
 void *dd_malloc(size_t size);
 /*
