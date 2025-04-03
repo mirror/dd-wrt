@@ -43,7 +43,7 @@ EJ_VISIBLE void ej_dumplog(webs_t wp, int argc, char_t **argv)
 	char *type;
 
 	time_t tm;
-	char *verdict, *src, *dst, *proto, *spt, *dpt, *in, *out;
+	char *verdict = "", *src, *dst, *proto, *spt, *dpt, *in, *out;
 	char src_old[32] = "", dpt_old[32] = "", dst_old[32] = "", proto_old[32] = "";
 
 	int _dport, _sport;
@@ -74,6 +74,8 @@ EJ_VISIBLE void ej_dumplog(webs_t wp, int argc, char_t **argv)
 			verdict = "Accepted";
 		else if (!strncmp(line, "<4>REJECT", 9))
 			verdict = "Rejected";
+		else if (!strncmp(line, "<4>portscan", 11))
+			verdict = "Portscan";
 		else if (!strncmp(line, "<4>[", 4)) {
 			// kernel timings included
 			line = strchr(line, ']');
@@ -86,6 +88,8 @@ EJ_VISIBLE void ej_dumplog(webs_t wp, int argc, char_t **argv)
 				verdict = "Accepted";
 			else if (!strncmp(line, "REJECT", 6))
 				verdict = "Rejected";
+			else if (!strncmp(line, "portscan", 8))
+				verdict = "Portscan";
 			else
 				continue;
 		} else
