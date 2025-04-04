@@ -147,10 +147,11 @@ install-common:
 
 install : install-common
 ifneq ($(CONFIG_WOLFSSL),y)
-	install -m755 vpnc.openssl $(DESTDIR)$(SBINDIR)
+	install -D -m755 vpnc.openssl $(DESTDIR)$(SBINDIR)/vpnc
 else
-	install -m755 vpnc.wolfssl $(DESTDIR)$(SBINDIR)
-endif	-rm -rf $(DESTDIR)/usr/share
+	install -D -m755 vpnc.wolfssl $(DESTDIR)$(SBINDIR)/vpnc
+endif	
+	-rm -rf $(DESTDIR)/usr/share
 	-rm -rf $(DESTDIR)/usr/include
 	-rm -rf $(DESTDIR)/usr/lib
 	-rm -f $(DESTDIR)/usr/bin/gpg-error*
