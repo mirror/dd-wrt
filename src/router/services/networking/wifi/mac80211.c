@@ -465,8 +465,11 @@ void configure_single_ath9k(int count)
 	sprintf(wl, "wlan%d_mode", count);
 	apm = nvram_default_get(wl, "ap");
 
-	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap") || !strcmp(apm, "apup") || !strcmp(apm, "sta") || !strcmp(apm, "wet")) {
+	if (!strcmp(apm, "ap") || !strcmp(apm, "apup") || !strcmp(apm, "sta") || !strcmp(apm, "wet")) {
 		eval("iw", wif, "interface", "add", dev, "type", "managed");
+		strcpy(primary, dev);
+	} else if (!strcmp(apm, "wdsap")) {
+		eval("iw", wif, "interface", "add", dev, "type", "managed", "mtikwds", "on");
 		strcpy(primary, dev);
 	} else if (!strcmp(apm, "wdssta")) {
 		eval("iw", wif, "interface", "add", dev, "type", "managed", "4addr", "on", "mtikwds", "off");
