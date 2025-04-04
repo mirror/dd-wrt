@@ -65,6 +65,7 @@ lnstat: $(LNSTATOBJ) $(SSOBJ)
 install: all
 	make -C db/build_unix install DESTDIR=$(INSTALLDIR)
 	rm -rf $(INSTALLDIR)/$(DESTDIR)/usr/include
+	rm -rf $(INSTALLDIR)/$(DESTDIR)/usr/bin
 	rm -rf $(INSTALLDIR)/$(DESTDIR)/usr/docs
 	rm -f $(INSTALLDIR)/$(DESTDIR)/usr/lib/*.la
 	mkdir -p $(INSTALLDIR)/$(DESTDIR)/usr/sbin
