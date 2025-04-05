@@ -94,7 +94,7 @@ void show_roaming(webs_t wp, char *var)
 
 		websWrite(wp, "<div id=\"%s_iddomain\">\n", vvar);
 		{
-			if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var) ||
+			if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var) || nvram_nmatch("wdsap_mtik", "%s_mode", var) ||
 			    nvram_nmatch("apup", "%s_mode", var)) {
 				websWrite(wp, "<div class=\"setting\">\n");
 				show_caption(wp, "label", "roaming.nas", NULL);
@@ -138,7 +138,7 @@ void show_roaming(webs_t wp, char *var)
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</fieldset> <br />\n");
 	}
-	if (!nvram_nmatch("ap", "%s_mode", var) && !nvram_nmatch("wdsap", "%s_mode", var) && !nvram_nmatch("apup", "%s_mode", var))
+	if (!nvram_nmatch("ap", "%s_mode", var) && !nvram_nmatch("wdsap", "%s_mode", var) && !nvram_nmatch("wdsap_mtik", "%s_mode", var) && !nvram_nmatch("apup", "%s_mode", var))
 		return;
 
 	char s80211v[64];
@@ -318,7 +318,7 @@ static int ej_show_roaming_single(webs_t wp, int argc, char_t **argv, char *pref
 		websWrite(wp, "] HWAddr [%s]</legend>\n", nvram_safe_get(mac));
 		show_roaming(wp, prefix);
 		websWrite(wp, "</fieldset>\n<br />\n");
-		if (nvram_nmatch("ap", "%s_mode", prefix) || nvram_nmatch("wdsap", "%s_mode", prefix) ||
+		if (nvram_nmatch("ap", "%s_mode", prefix) || nvram_nmatch("wdsap", "%s_mode", prefix) || nvram_nmatch("wdsap_mtik", "%s_mode", prefix) ||
 		    nvram_nmatch("apup", "%s_mode", prefix))
 			cnt++;
 	}
@@ -338,7 +338,7 @@ static int ej_show_roaming_single(webs_t wp, int argc, char_t **argv, char *pref
 		websWrite(wp, "]</legend>\n");
 		show_roaming(wp, var);
 		websWrite(wp, "</fieldset>\n<br />\n");
-		if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var) ||
+		if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var) || nvram_nmatch("wdsap_mtik", "%s_mode", var) ||
 		    nvram_nmatch("apup", "%s_mode", var))
 			cnt++;
 	}

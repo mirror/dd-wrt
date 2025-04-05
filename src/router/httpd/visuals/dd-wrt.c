@@ -109,7 +109,7 @@ int is_ap(const char *prefix)
 {
 	char ap[16];
 	sprintf(ap, "%s_mode", prefix);
-	return nvram_match(ap, "ap") || nvram_match(ap, "wdsap") || nvram_match(ap, "apup");
+	return nvram_match(ap, "ap") || nvram_match(ap, "wdsap") || nvram_match(ap, "wdsap_mtik") || nvram_match(ap, "apup");
 }
 
 int is_vap_ap(const char *prefix)
@@ -121,7 +121,7 @@ int is_vap_ap(const char *prefix)
 	foreach(var, vifs, next) {
 		char ap[16];
 		sprintf(ap, "%s_mode", var);
-		if (nvram_match(ap, "ap") || nvram_match(ap, "wdsap") || nvram_match(ap, "apup"))
+		if (nvram_match(ap, "ap") || nvram_match(ap, "wdsap") || nvram_match(ap, "wdsap_mtik") || nvram_match(ap, "apup"))
 			return 1;
 	}
 	return 0;
@@ -2562,6 +2562,8 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		if (has_wdsap(var)) {
 			websWrite(wp, "document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n",
 				  nvram_match(wl_mode, "wdsap") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"wdsap_mtik\\\" %s >\" + wl_basic.wdsap_mtik + \"</option>\");\n",
+				  nvram_match(wl_mode, "wdsap_mtik") ? "selected=\\\"selected\\\"" : "");
 		}
 #if 0
 		if (has_mesh(var))
@@ -2600,6 +2602,8 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			  nvram_match(wl_mode, "ap") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n",
 			  nvram_match(wl_mode, "wdsap") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"wdsap_mtik\\\" %s >\" + wl_basic.wdsap_mtik + \"</option>\");\n",
+			  nvram_match(wl_mode, "wdsap_mtik") ? "selected=\\\"selected\\\"" : "");
 #if 0
 		if (has_mesh(var))
 			websWrite(wp, "document.write(\"<option value=\\\"mesh\\\" %s >\" + wl_basic.mesh + \"</option>\");\n", nvram_match(wl_mode, "mesh") ? "selected=\\\"selected\\\"" : "");
@@ -3310,6 +3314,10 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 						wp,
 						"document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n",
 						nvram_match(wl_mode, "wdsap") ? "selected=\\\"selected\\\"" : "");
+					websWrite(
+						wp,
+						"document.write(\"<option value=\\\"wdsap_mtik\\\" %s >\" + wl_basic.wdsap_mtik + \"</option>\");\n",
+						nvram_match(wl_mode, "wdsap_mtik") ? "selected=\\\"selected\\\"" : "");
 				}
 				if (has_apup(prefix)) {
 					websWrite(
@@ -4293,6 +4301,10 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 						wp,
 						"document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n",
 						nvram_match(wl_mode, "wdsap") ? "selected=\\\"selected\\\"" : "");
+					websWrite(
+						wp,
+						"document.write(\"<option value=\\\"wdsap_mtik\\\" %s >\" + wl_basic.wdsap_mtik + \"</option>\");\n",
+						nvram_match(wl_mode, "wdsap_mtik") ? "selected=\\\"selected\\\"" : "");
 				}
 				if (has_apup(prefix)) {
 					websWrite(
