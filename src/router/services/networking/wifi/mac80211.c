@@ -2873,7 +2873,7 @@ skip:;
 						log_eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr);
 					}
 				}
-				if (strcmp(m2, "wdsap_mtik")) {
+				if (!strcmp(m2, "wdsap_mtik")) {
 					eval("iw", "dev", var, "set", "mtikwds", "on");
 				}
 				if (strcmp(m2, "sta")) {
