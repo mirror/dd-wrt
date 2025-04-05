@@ -182,7 +182,7 @@ void setupKey(const char *prefix)
 	sprintf(akm, "%s_akm", prefix);
 	sprintf(mode, "%s_mode", prefix);
 	if (nvram_match(akm, "wep") &&
-	    (nvram_match(mode, "ap") || nvram_match(mode, "wdsap") || nvram_match(mode, "apup") || nvram_match(mode, "adhoc"))) {
+	    (nvram_match(mode, "ap") || nvram_match(mode, "wdsap") || nvram_match(mode, "wdsap_mtik") || nvram_match(mode, "apup") || nvram_match(mode, "adhoc"))) {
 		char key[16];
 		int cnt = 1;
 		int i;
@@ -1322,7 +1322,7 @@ void start_ses_led_control(void)
 		sprintf(net, "%s_net_mode", ath);
 		if (nvram_match(net, "disabled"))
 			continue;
-		if (nvram_nmatch("ap", "%s_mode", ath) || nvram_nmatch("wdsap", "%s_mode", ath) ||
+		if (nvram_nmatch("ap", "%s_mode", ath) || nvram_nmatch("wdsap", "%s_mode", ath) || nvram_nmatch("wdsap_mtik", "%s_mode", ath) ||
 		    nvram_nmatch("apup", "%s_mode", ath)) {
 			sprintf(akm, "%s_akm", ath);
 			if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "owe") ||
@@ -2131,7 +2131,7 @@ static void configure_single(int count, char **configs, int *configidx)
 	char primary[32] = { 0 };
 	// create original primary interface
 	apm = nvram_default_get(wl, "ap");
-	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap")) {
+	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap") || !strcmp(apm, "wdsap_mtik")) {
 		eval("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "ap");
 		strcpy(primary, dev);
 	}
@@ -2145,7 +2145,7 @@ static void configure_single(int count, char **configs, int *configidx)
 				if (!strcmp(vapm, "wet") || !strcmp(vapm, "sta") || !strcmp(vapm, "wdssta") ||
 				    !strcmp(vapm, "wdssta_mtik"))
 					eval("wlanconfig", var, "create", "wlandev", wif, "wlanmode", "sta", "nosbeacon");
-				else if (!strcmp(vapm, "ap") || !strcmp(vapm, "wdsap"))
+				else if (!strcmp(vapm, "ap") || !strcmp(vapm, "wdsap") || !strcmp(vapm, "wdsap_mtik"))
 					eval("wlanconfig", var, "create", "wlandev", wif, "wlanmode", "ap");
 				else
 					eval("wlanconfig", var, "create", "wlandev", wif, "wlanmode", "adhoc", "nosbeacon");
@@ -2162,14 +2162,14 @@ static void configure_single(int count, char **configs, int *configidx)
 			}
 		}
 
-	if (strcmp(apm, "ap") && strcmp(apm, "wdsap")) {
+	if (strcmp(apm, "ap") && strcmp(apm, "wdsap") && strcmp(apm, "wdsap_mtik")) {
 		if (!strcmp(apm, "wet") || !strcmp(apm, "wdssta") || !strcmp(apm, "wdssta_mtik") || !strcmp(apm, "sta")) {
 			if (vif)
 				eval("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta", "nosbeacon");
 			else
 				eval("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta");
 
-		} else if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap"))
+		} else if (!strcmp(apm, "ap")|| !strcmp(apm, "wdsap")  || !strcmp(apm, "wdsap_mtik"))
 			eval("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "ap");
 		else
 			eval("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "adhoc", "nosbeacon");
@@ -2388,10 +2388,10 @@ static void configure_single(int count, char **configs, int *configidx)
 		eval("iwpriv", dev, "channelshift", "0");
 		break;
 	}
-	if (!strcmp(apm, "wdssta") || !strcmp(apm, "wdsap") || !strcmp(apm, "wdssta_mtik"))
+	if (!strcmp(apm, "wdssta") || !strcmp(apm, "wdsap") || !strcmp(apm, "wdsap_mtik") || !strcmp(apm, "wdssta_mtik"))
 		eval("iwpriv", dev, "wds", "1");
 
-	if (!strcmp(apm, "wdsap"))
+	if (!strcmp(apm, "wdsap") || !strcmp(apm, "wdsap_mtik"))
 		eval("iwpriv", dev, "wdssep", "1");
 	else
 		eval("iwpriv", dev, "wdssep", "0");
@@ -2499,7 +2499,7 @@ static void configure_single(int count, char **configs, int *configidx)
 			sprintf(isolate, "%s_ap_isolate", var);
 			if (nvram_default_matchi(isolate, 1, 0))
 				eval("iwpriv", var, "ap_bridge", "0");
-			if (!strcmp(mvap, "wdssta") || !strcmp(mvap, "wdsap") || !strcmp(mvap, "wdssta_mtik"))
+			if (!strcmp(mvap, "wdssta") || !strcmp(mvap, "wdsap") || !strcmp(mvap, "wdsap_mtik") || !strcmp(mvap, "wdssta_mtik"))
 				eval("iwpriv", var, "wds", "1");
 			eval("iwpriv", var, "addmtikie", "1");
 
@@ -2508,7 +2508,7 @@ static void configure_single(int count, char **configs, int *configidx)
 
 			if (!strcmp(mvap, "wdsap") && !isBond(var))
 #else
-			if (!strcmp(mvap, "wdsap"))
+			if (!strcmp(mvap, "wdsap") || !strcmp(mvap, "wdsap_mtik"))
 #endif
 				eval("iwpriv", var, "wdssep", "1");
 			else

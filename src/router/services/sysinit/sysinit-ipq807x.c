@@ -494,7 +494,7 @@ int nss_disabled(int setcur)
 		vifs = nvram_safe_get(wifivifs);
 		if (vifs != NULL && *vifs) {
 			foreach(var, vifs, next) {
-				if ((nvram_nmatch("wdsap", "%s_mode", var) || nvram_nmatch("apup", "%s_mode", var)) &&
+				if ((nvram_nmatch("wdsap", "%s_mode", var) || nvram_nmatch("wdsap_mtik", "%s_mode", var) || nvram_nmatch("apup", "%s_mode", var)) &&
 				    !nvram_nmatch("disabled", "%s_net_mode", var))
 					return 1;
 			}

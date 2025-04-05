@@ -465,10 +465,10 @@ void configure_single_ath9k(int count)
 	sprintf(wl, "wlan%d_mode", count);
 	apm = nvram_default_get(wl, "ap");
 
-	if (!strcmp(apm, "ap") || !strcmp(apm, "apup") || !strcmp(apm, "sta") || !strcmp(apm, "wet")) {
+	if (!strcmp(apm, "ap") || !strcmp(apm, "apup") || !strcmp(apm, "wdsap") || !strcmp(apm, "sta") || !strcmp(apm, "wet")) {
 		eval("iw", wif, "interface", "add", dev, "type", "managed");
 		strcpy(primary, dev);
-	} else if (!strcmp(apm, "wdsap")) {
+	} else if (!strcmp(apm, "wdsap_mtik")) {
 		eval("iw", wif, "interface", "add", dev, "type", "managed", "mtikwds", "on");
 		strcpy(primary, dev);
 	} else if (!strcmp(apm, "wdssta")) {
@@ -1678,7 +1678,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	fprintf(fp, "disassoc_low_ack=%s\n", nvram_default_get(lowack, "0"));
 
 	char *mode = nvram_nget("%s_mode", ifname);
-	if (!strcmp(mode, "wdsap") || !strcmp(mode, "apup"))
+	if (!strcmp(mode, "wdsap") || !strcmp(mode, "apup") || !strcmp(mode, "wdsap_mtik"))
 		fprintf(fp, "wds_sta=1\n");
 	if (!strcmp(mode, "apup"))
 		fprintf(fp, "apup=1\n");
@@ -2701,7 +2701,7 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 					    nvram_nmatch("disabled", "%s_mode", var))
 						continue;
 					last = ctrl;
-					if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var))
+					if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var) || nvram_nmatch("wdsap_mtik", "%s_mode", var))
 						break;
 				}
 				ctrl = last;
@@ -2801,7 +2801,7 @@ void post_hostapd_actions(int count)
 					    nvram_nmatch("disabled", "%s_mode", var))
 						continue;
 					last = ctrl;
-					if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var))
+					if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var) || nvram_nmatch("wdsap_mtik", "%s_mode", var))
 						break;
 				}
 				ctrl = last;
@@ -2885,7 +2885,7 @@ skip:;
 				}
 			}
 		}
-		if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap") || !strcmp(apm, "apup")) {
+		if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap") || !strcmp(apm, "wdsap_mtik") || !strcmp(apm, "apup")) {
 			int s;
 			for (s = 1; s <= 10; s++) {
 				char wdsvarname[32] = { 0 };
