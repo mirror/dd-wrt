@@ -3199,6 +3199,7 @@ wl_basic.adhoc="Ad-Hoc";
 wl_basic.wdssta="Station (WDS)";
 wl_basic.wdssta_mtik="Station (Mikrotik WDS)";
 wl_basic.wdsap="AP (WDS)";
+wl_basic.wdsap_mtik="AP (Mikrotik WDS)";
 wl_basic.apup="AP (WDS + APuP)";
 wl_basic.mesh="Mesh / 802.11s";
 wl_basic.fw_type="Firmware Type";

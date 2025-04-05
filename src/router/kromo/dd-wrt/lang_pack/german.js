@@ -2797,6 +2797,7 @@ wl_basic.clientRelayd="Client-Brücke (Gerouted)";
 wl_basic.adhoc="Adhoc";
 wl_basic.wdssta="Client (WDS)";
 wl_basic.wdsap="AP (WDS)";
+wl_basic.wdsap_mtik="AP (Mikrotik WDS)";
 wl_basic.apup="AP (WDS + APuP)";
 wl_basic.mixed="Gemischt";
 wl_basic.bft="Direktes Beamforming";
