@@ -112,7 +112,8 @@
 #define TARG_RST "logreject"
 #else
 #define TARG_PASS "ACCEPT"
-#define TARG_RST "REJECT --reject-with tcp-reset"
+#define TARG_RST_TCP "REJECT --reject-with tcp-reset"
+#define TARG_RST "REJECT"
 #endif
 
 #if 0
@@ -144,6 +145,7 @@ static unsigned int count = 0;
 static char log_accept[15];
 static char log_drop[15];
 static char log_reject[64];
+static char log_reject_tcp[64];
 static int web_lanport = HTTP_PORT;
 
 static unsigned int now_wday, now_hrmin;
@@ -1727,7 +1729,7 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 			ports[len] = '\0';
 
 			if (!strcmp(protocol, "tcp") || !strcmp(protocol, "both")) {
-				save2file_A("advgrp_%d -p tcp --dport %s -j %s", seq, ports, log_reject);
+				save2file_A("advgrp_%d -p tcp --dport %s -j %s", seq, ports, log_reject_tcp);
 			}
 			if (!strcmp(protocol, "udp") || !strcmp(protocol, "both"))
 				save2file_A("advgrp_%d -p udp --dport %s -j %s", seq, ports, log_reject);
@@ -1891,20 +1893,20 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 		/* commonly used protocols, decending */
 		/*		save2file_A("advgrp_%d -m layer7 --l7proto bt -j %s", seq, log_reject); */
 #ifndef HAVE_OPENDPI
-		save2file_A("advgrp_%d  -p tcp -m layer7 --l7proto ares -j %s", seq, log_reject);
+		save2file_A("advgrp_%d  -p tcp -m layer7 --l7proto ares -j %s", seq, log_reject_tcp);
 		save2file_A("advgrp_%d -m layer7 --l7proto bt4 -j %s", seq, log_reject);
 		save2file_A("advgrp_%d -m layer7 --l7proto bt1 -j %s", seq, log_reject);
 		save2file_A("advgrp_%d -m layer7 --l7proto bittorrent -j %s", seq, log_reject);
 		save2file_A("advgrp_%d -m layer7 --l7proto bt2 -j %s", seq, log_reject);
-		save2file_A("advgrp_%d -p tcp -m layer7 --l7proto gnutella -j %s", seq, log_reject);
+		save2file_A("advgrp_%d -p tcp -m layer7 --l7proto gnutella -j %s", seq, log_reject_tcp);
 		save2file_A("advgrp_%d -m layer7 --l7proto applejuice -j %s", seq, log_reject);
-		save2file_A("advgrp_%d -p tcp -m layer7 --l7proto directconnect -j %s", seq, log_reject);
-		save2file_A("advgrp_%d -p tcp -m layer7 --l7proto soulseek -j %s", seq, log_reject);
-		save2file_A("advgrp_%d -p tcp -m layer7 --l7proto openft -j %s", seq, log_reject);
+		save2file_A("advgrp_%d -p tcp -m layer7 --l7proto directconnect -j %s", seq, log_reject_tcp);
+		save2file_A("advgrp_%d -p tcp -m layer7 --l7proto soulseek -j %s", seq, log_reject_tcp);
+		save2file_A("advgrp_%d -p tcp -m layer7 --l7proto openft -j %s", seq, log_reject_tcp);
 		save2file_A("advgrp_%d -m layer7 --l7proto fasttrack -j %s", seq, log_reject);
 		save2file_A("advgrp_%d -m layer7 --l7proto imesh -j %s", seq, log_reject);
 		save2file_A("advgrp_%d -m layer7 --l7proto audiogalaxy -j %s", seq, log_reject);
-		save2file_A("advgrp_%d -p tcp -m layer7 --l7proto bearshare -j %s", seq, log_reject);
+		save2file_A("advgrp_%d -p tcp -m layer7 --l7proto bearshare -j %s", seq, log_reject_tcp);
 		/* atm rarly used protocols */
 		save2file_A("advgrp_%d -m layer7 --l7proto edonkey -j %s", seq, log_reject);
 		save2file_A("advgrp_%d -m layer7 --l7proto freenet -j %s", seq, log_reject);
@@ -1912,9 +1914,9 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 		save2file_A("advgrp_%d -m layer7 --l7proto goboogy -j %s", seq, log_reject);
 		save2file_A("advgrp_%d -m layer7 --l7proto hotline -j %s", seq, log_reject);
 		/*	 	save2file_A("advgrp_%d -m layer7 --l7proto kugoo -j %s", seq, log_reject);// xunlei, kugoo, winmx block websurfing */
-		save2file_A("advgrp_%d -p tcp -m layer7 --l7proto mute -j %s", seq, log_reject);
-		save2file_A("advgrp_%d -p tcp -m layer7 --l7proto napster -j %s", seq, log_reject);
-		save2file_A("advgrp_%d -p tcp -m layer7 --l7proto soribada -j %s", seq, log_reject);
+		save2file_A("advgrp_%d -p tcp -m layer7 --l7proto mute -j %s", seq, log_reject_tcp);
+		save2file_A("advgrp_%d -p tcp -m layer7 --l7proto napster -j %s", seq, log_reject_tcp);
+		save2file_A("advgrp_%d -p tcp -m layer7 --l7proto soribada -j %s", seq, log_reject_tcp);
 		save2file_A("advgrp_%d -m layer7 --l7proto tesla -j %s", seq, log_reject);
 #endif
 		/*		save2file_A("advgrp_%d -p tcp -m layer7 --l7proto winmx -j %s", seq, log_reject);
@@ -1927,7 +1929,7 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 	wordlist = nvram_nget("filter_web_host%d", seq);
 	if (wordlist && strcmp(wordlist, "")) {
 		insmod("ipt_webstr");
-		save2file_A("advgrp_%d -p tcp -m webstr --host \"%s\" -j %s", seq, wordlist, log_reject);
+		save2file_A("advgrp_%d -p tcp -m webstr --host \"%s\" -j %s", seq, wordlist, log_reject_tcp);
 #if !defined(ARCH_broadcom) && !defined(HAVE_RTG32) || defined(HAVE_BCMMODERN)
 		char var[256];
 		char *next;
@@ -1940,7 +1942,7 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 			if (strstr(var, "https://"))
 				offset = 8;
 			save2file_A("advgrp_%d -p tcp -m string --string \"%s\" --algo bm --from 1 --to 600 -j %s", seq,
-				    &var[offset], log_reject);
+				    &var[offset], log_reject_tcp);
 			wordlist = next + 8;
 		}
 
@@ -1952,7 +1954,7 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 	wordlist = nvram_nget("filter_web_url%d", seq);
 	if (wordlist && strcmp(wordlist, "")) {
 		insmod("ipt_webstr");
-		save2file_A("advgrp_%d -p tcp -m webstr --url \"%s\" -j %s", seq, wordlist, log_reject);
+		save2file_A("advgrp_%d -p tcp -m webstr --url \"%s\" -j %s", seq, wordlist, log_reject_tcp);
 #if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN) && !defined(HAVE_RTG32)
 		char var[256];
 		char *next;
@@ -1965,7 +1967,7 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 			if (strstr(var, "https://"))
 				offset = 8;
 			save2file_A("advgrp_%d -p tcp -m string --string \"%s\" --algo bm --from 1 --to 600 -j %s", seq,
-				    &var[offset], log_reject);
+				    &var[offset], log_reject_tcp);
 			wordlist = next + 8;
 		}
 #endif
@@ -2773,7 +2775,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	// lanface, wanface, HTTP_PORT, webfilter, log_reject);
 	if (nvram_invmatch("filter", "off") && webfilter && *wanface) {
 		insmod("ipt_webstr");
-		save2file_A_forward("-i %s -o %s -p tcp -m webstr --content %d -j %s", lanface, wanface, webfilter, log_reject);
+		save2file_A_forward("-i %s -o %s -p tcp -m webstr --content %d -j %s", lanface, wanface, webfilter, log_reject_tcp);
 	}
 
 	/*
@@ -3080,7 +3082,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 	save2file(
 		"*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n:SECURITY - [0:0]\n:tarpit - [0:0]\n:portscan - [0:0]");
 	if (log_level > 0) {
-		save2file(":logaccept - [0:0]\n:logdrop - [0:0]\n:logreject - [0:0]");
+		save2file(":logaccept - [0:0]\n:logdrop - [0:0]\n:logreject - [0:0]\n:logreject_tcp - [0:0]");
 #ifdef FLOOD_PROTECT
 		save2file(":limaccept - [0:0]\n");
 #endif
@@ -3251,11 +3253,15 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 		 * logreject chain 
 		 */
 #ifndef HAVE_MICRO
-		if (nvram_matchi("log_rejected", 1))
+		if (nvram_matchi("log_rejected", 1)) {
 			save2file_A(
-				"logreject -j LOG --log-prefix \"REJECT \" --log-tcp-sequence --log-tcp-options --log-ip-options");
+				"logreject -j LOG --log-prefix \"REJECT \" --log-ip-options");
+			save2file_A(
+				"logreject_tcp -j LOG --log-prefix \"REJECT \" --log-tcp-sequence --log-tcp-options --log-ip-options");
+		}
 #endif
-		save2file_A("logreject -p tcp -j REJECT --reject-with tcp-reset");
+		save2file_A("logreject -j REJECT");
+		save2file_A("logreject_tcp -p tcp -j REJECT --reject-with tcp-reset");
 #ifdef FLOOD_PROTECT
 		/*
 		 * limaccept chain 
@@ -3663,10 +3669,13 @@ static void run_firewall6(char *vifs)
 		/*
 		 * logreject chain 
 		 */
-		if (nvram_matchi("log_rejected", 1))
-			eval("ip6tables", "-A", "logreject", "-j", "LOG", "--log-prefix", "REJECT ", "--log-tcp-sequence",
+		if (nvram_matchi("log_rejected", 1)) {
+			eval("ip6tables", "-A", "logreject", "-j", "LOG", "--log-prefix", "REJECT ", "--log-ip-options");
+			eval("ip6tables", "-A", "logreject_tcp", "-j", "LOG", "--log-prefix", "REJECT ", "--log-tcp-sequence",
 			     "--log-tcp-options", "--log-ip-options");
-		eval("ip6tables", "-A", "logreject", "-p", "tcp", "-j", "REJECT", "--reject-with", "icmp6-adm-prohibited");
+		}
+		eval("ip6tables", "-A", "logreject_tcp", "-p", "tcp", "-j", "REJECT", "--reject-with", "icmp6-adm-prohibited");
+		eval("ip6tables", "-A", "logreject", "-p", "tcp", "-j", "REJECT");
 #ifdef FLOOD_PROTECT
 		/*
 		 * limaccept chain 
@@ -3894,6 +3903,11 @@ void start_firewall(void)
 		sprintf(log_reject, "%s", "logreject");
 	else
 		sprintf(log_reject, "%s", TARG_RST);
+
+	if (log_level >= 1)
+		sprintf(log_reject_tcp, "%s", "logreject_tcp");
+	else
+		sprintf(log_reject_tcp, "%s", TARG_RST_TCP);
 	/*
 	 * Get NVRAM value into globle variable 
 	 */
