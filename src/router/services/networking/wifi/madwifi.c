@@ -181,8 +181,8 @@ void setupKey(const char *prefix)
 
 	sprintf(akm, "%s_akm", prefix);
 	sprintf(mode, "%s_mode", prefix);
-	if (nvram_match(akm, "wep") &&
-	    (nvram_match(mode, "ap") || nvram_match(mode, "wdsap") || nvram_match(mode, "wdsap_mtik") || nvram_match(mode, "apup") || nvram_match(mode, "adhoc"))) {
+	if (nvram_match(akm, "wep") && (nvram_match(mode, "ap") || nvram_match(mode, "wdsap") || nvram_match(mode, "wdsap_mtik") ||
+					nvram_match(mode, "apup") || nvram_match(mode, "adhoc"))) {
 		char key[16];
 		int cnt = 1;
 		int i;
@@ -235,13 +235,13 @@ void get_pairwise(const char *prefix, char *pwstring, char *grpstring, int isadh
 	if (nvram_nmatch("1", "%s_ccmp-256", prefix)) {
 		strspcattach(pwstring, "CCMP-256");
 		if (grpstring) {
-				strspcattach(temp_grpstring, "CCMP-256 GCMP-256 GCMP CCMP");
+			strspcattach(temp_grpstring, "CCMP-256 GCMP-256 GCMP CCMP");
 		}
 	}
 	if (nvram_nmatch("1", "%s_gcmp-256", prefix) || iswpa3_192) {
 		strspcattach(pwstring, "GCMP-256");
 		if (grpstring) {
-				strspcattach(temp_grpstring, "GCMP-256 GCMP CCMP");
+			strspcattach(temp_grpstring, "GCMP-256 GCMP CCMP");
 		}
 	}
 	if (nvram_nmatch("1", "%s_gcmp", prefix) || iswpa3_128) {
@@ -1322,8 +1322,8 @@ void start_ses_led_control(void)
 		sprintf(net, "%s_net_mode", ath);
 		if (nvram_match(net, "disabled"))
 			continue;
-		if (nvram_nmatch("ap", "%s_mode", ath) || nvram_nmatch("wdsap", "%s_mode", ath) || nvram_nmatch("wdsap_mtik", "%s_mode", ath) ||
-		    nvram_nmatch("apup", "%s_mode", ath)) {
+		if (nvram_nmatch("ap", "%s_mode", ath) || nvram_nmatch("wdsap", "%s_mode", ath) ||
+		    nvram_nmatch("wdsap_mtik", "%s_mode", ath) || nvram_nmatch("apup", "%s_mode", ath)) {
 			sprintf(akm, "%s_akm", ath);
 			if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "owe") ||
 			    nvhas(akm, "psk2-sha256") || nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") ||
@@ -2169,7 +2169,7 @@ static void configure_single(int count, char **configs, int *configidx)
 			else
 				eval("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta");
 
-		} else if (!strcmp(apm, "ap")|| !strcmp(apm, "wdsap")  || !strcmp(apm, "wdsap_mtik"))
+		} else if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap") || !strcmp(apm, "wdsap_mtik"))
 			eval("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "ap");
 		else
 			eval("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "adhoc", "nosbeacon");
@@ -2499,7 +2499,8 @@ static void configure_single(int count, char **configs, int *configidx)
 			sprintf(isolate, "%s_ap_isolate", var);
 			if (nvram_default_matchi(isolate, 1, 0))
 				eval("iwpriv", var, "ap_bridge", "0");
-			if (!strcmp(mvap, "wdssta") || !strcmp(mvap, "wdsap") || !strcmp(mvap, "wdsap_mtik") || !strcmp(mvap, "wdssta_mtik"))
+			if (!strcmp(mvap, "wdssta") || !strcmp(mvap, "wdsap") || !strcmp(mvap, "wdsap_mtik") ||
+			    !strcmp(mvap, "wdssta_mtik"))
 				eval("iwpriv", var, "wds", "1");
 			eval("iwpriv", var, "addmtikie", "1");
 

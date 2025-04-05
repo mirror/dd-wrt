@@ -2701,7 +2701,8 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 					    nvram_nmatch("disabled", "%s_mode", var))
 						continue;
 					last = ctrl;
-					if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var) || nvram_nmatch("wdsap_mtik", "%s_mode", var))
+					if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var) ||
+					    nvram_nmatch("wdsap_mtik", "%s_mode", var))
 						break;
 				}
 				ctrl = last;
@@ -2801,7 +2802,8 @@ void post_hostapd_actions(int count)
 					    nvram_nmatch("disabled", "%s_mode", var))
 						continue;
 					last = ctrl;
-					if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var) || nvram_nmatch("wdsap_mtik", "%s_mode", var))
+					if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var) ||
+					    nvram_nmatch("wdsap_mtik", "%s_mode", var))
 						break;
 				}
 				ctrl = last;
@@ -2871,7 +2873,9 @@ skip:;
 						log_eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr);
 					}
 				}
-
+				if (strcmp(m2, "wdsap_mtik")) {
+					eval("iw", "dev", var, "set", "mtikwds", "on");
+				}
 				if (strcmp(m2, "sta")) {
 					if (nvram_default_matchi(bridged, 1, 1)) {
 						eval("ifconfig", dev, "0.0.0.0", "up");
