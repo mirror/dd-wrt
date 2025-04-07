@@ -244,7 +244,7 @@
  "block_wan"  "Block WAN Request"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "block_portscan"  "Block Port Scans"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "block_tarpit"  "TARPIT bad connections"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
- "block_syncflood"  "Block Syncflood"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
+ "block_syncflood"  "Block Syncflood"  "RANGE"  "1" "255" "FALSE" "0"
  "block_udpflood"  "Block udpflood"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "block_pod"  "Block ping of death"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "geoip_whitelist" "Allow these countries" "NULL" "TRUE" "0"
