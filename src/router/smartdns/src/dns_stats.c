@@ -22,7 +22,7 @@
 
 struct dns_stats dns_stats;
 
-#ifndef __LP64__
+#if !defined(__LP64__) && (!defined(__arm__) || __ARM_ARCH < 7)
 /* mips, powerpc, i386 cannot handle this */
 unsigned long long __sync_add_and_fetch_8(volatile void *p, unsigned long long v)
 {
@@ -38,7 +38,6 @@ unsigned long long __sync_lock_test_and_set_8(volatile void *p, unsigned long lo
 	return ret;
 }
 #endif
-
 
 #define SAMPLE_PERIOD 5
 
