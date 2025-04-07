@@ -185,7 +185,8 @@ static bool usbnet_needs_usb_name_format(struct usbnet *dev, struct net_device *
 	 * naming. Preserve this..
 	 */
 	return (dev->driver_info->flags & FLAG_POINTTOPOINT) != 0 &&
-		 is_local_ether_addr(net->dev_addr);
+		(is_zero_ether_addr(net->dev_addr) ||
+		 is_local_ether_addr(net->dev_addr));
 }
 
 static void intr_complete (struct urb *urb)
