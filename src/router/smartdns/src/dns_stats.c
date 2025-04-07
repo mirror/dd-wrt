@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2024 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2025 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,21 +16,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "dns_stats.h"
-#include "stddef.h"
-#include "string.h"
+#include "smartdns/dns_stats.h"
+#include <stddef.h>
+#include <string.h>
 
 struct dns_stats dns_stats;
 
 #ifndef __LP64__
 /* mips, powerpc, i386 cannot handle this */
-unsigned long long __sync_add_and_fetch_8(volatile unsigned long long *ptr, unsigned long long v)
+unsigned long long __sync_add_and_fetch_8(volatile void *p, unsigned long long v)
 {
+	volatile unsigned long long *ptr = (unsigned long long *)p;
 	*ptr += v;
 	return *ptr;
 }
-unsigned long long __sync_lock_test_and_set_8(volatile unsigned long long *ptr, unsigned long long v)
+unsigned long long __sync_lock_test_and_set_8(volatile void *p, unsigned long long v)
 {
+	volatile unsigned long long *ptr = (unsigned long long *)p;
 	volatile unsigned long long ret = *ptr;
 	*ptr = v;
 	return ret;

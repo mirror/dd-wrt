@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2024 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2025 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,19 +17,20 @@
  */
 
 #define _GNU_SOURCE
-#include "dns_client.h"
-#include "atomic.h"
-#include "dns.h"
-#include "dns_conf.h"
-#include "dns_server.h"
-#include "dns_stats.h"
-#include "fast_ping.h"
-#include "hashtable.h"
-#include "http_parse.h"
-#include "list.h"
-#include "proxy.h"
-#include "tlog.h"
-#include "util.h"
+#include "smartdns/dns_client.h"
+#include "smartdns/dns.h"
+#include "smartdns/dns_conf.h"
+#include "smartdns/dns_server.h"
+#include "smartdns/dns_stats.h"
+#include "smartdns/fast_ping.h"
+#include "smartdns/http_parse.h"
+#include "smartdns/lib/atomic.h"
+#include "smartdns/lib/hashtable.h"
+#include "smartdns/lib/list.h"
+#include "smartdns/proxy.h"
+#include "smartdns/tlog.h"
+#include "smartdns/util.h"
+
 #include <arpa/inet.h>
 #include <ctype.h>
 #include <errno.h>
@@ -1904,7 +1905,7 @@ static void _dns_client_query_get(struct dns_query_struct *query)
 	}
 }
 
-static struct dns_conn_stream *_dns_client_conn_stream_new(void)
+__attribute__((unused)) static struct dns_conn_stream *_dns_client_conn_stream_new(void)
 {
 	struct dns_conn_stream *stream = NULL;
 
@@ -1925,14 +1926,14 @@ static struct dns_conn_stream *_dns_client_conn_stream_new(void)
 	return stream;
 }
 
-static void _dns_client_conn_stream_get(struct dns_conn_stream *stream)
+__attribute__((unused)) static void _dns_client_conn_stream_get(struct dns_conn_stream *stream)
 {
 	if (atomic_inc_return(&stream->refcnt) <= 1) {
 		BUG("stream ref is invalid");
 	}
 }
 
-static void _dns_client_conn_stream_put(struct dns_conn_stream *stream)
+__attribute__((unused)) static void _dns_client_conn_stream_put(struct dns_conn_stream *stream)
 {
 	int refcnt = atomic_dec_return(&stream->refcnt);
 	if (refcnt) {
@@ -1965,7 +1966,8 @@ static void _dns_client_conn_stream_put(struct dns_conn_stream *stream)
 	free(stream);
 }
 
-static void _dns_client_conn_server_streams_free(struct dns_server_info *server_info, struct dns_query_struct *query)
+__attribute__((unused)) static void _dns_client_conn_server_streams_free(struct dns_server_info *server_info,
+																		 struct dns_query_struct *query)
 {
 	struct dns_conn_stream *stream = NULL;
 	struct dns_conn_stream *tmp = NULL;

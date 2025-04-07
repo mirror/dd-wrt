@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2024 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2025 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,13 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "http_parse.h"
-#include "hash.h"
-#include "hashtable.h"
-#include "jhash.h"
-#include "list.h"
-#include "qpack.h"
-#include "util.h"
+#include "smartdns/http_parse.h"
+#include "smartdns/lib/hash.h"
+#include "smartdns/lib/hashtable.h"
+#include "smartdns/lib/jhash.h"
+#include "smartdns/lib/list.h"
+#include "smartdns/lib/qpack.h"
+#include "smartdns/util.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

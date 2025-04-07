@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2024 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2025 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,12 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "dns_conf.h"
-#include "idna.h"
-#include "list.h"
-#include "rbtree.h"
-#include "tlog.h"
-#include "util.h"
+#include "smartdns/dns_conf.h"
+#include "smartdns/lib/idna.h"
+#include "smartdns/lib/list.h"
+#include "smartdns/lib/rbtree.h"
+#include "smartdns/tlog.h"
+#include "smartdns/util.h"
 #include <errno.h>
 #include <getopt.h>
 #include <glob.h>

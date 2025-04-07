@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2023 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2025 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,11 +17,11 @@
  */
 
 #include "client.h"
-#include "dns.h"
-#include "http_parse.h"
 #include "include/utils.h"
 #include "server.h"
-#include "util.h"
+#include "smartdns/dns.h"
+#include "smartdns/http_parse.h"
+#include "smartdns/util.h"
 #include "gtest/gtest.h"
 #include <fstream>
 
@@ -132,7 +132,6 @@ TEST_F(HTTP, http1_1_response_serialize)
 	EXPECT_STREQ(buffer, data);
 	http_head_destroy(http_head);
 }
-
 
 TEST_F(HTTP, http3_0_parse)
 {

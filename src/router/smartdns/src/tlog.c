@@ -1,6 +1,6 @@
 #ifdef NEED_PRINTF
 #include <stdio.h>
-#include "tlog.h"
+#include "smartdns/tlog.h"
 /*
  * tinylog
  * Copyright (C) 2018-2024 Nick Peng <pymumu@gmail.com>
