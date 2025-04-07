@@ -2358,10 +2358,33 @@ int set_http_host(const char *uri_host, int port, int default_port, char *host)
 	is_ipv6 = check_is_ipv6(uri_host);
 	if (port == default_port) {
 		snprintf(host, DNS_MAX_CNAME_LEN, "%s%s%s", is_ipv6 == 0 ? "[" : "", uri_host, is_ipv6 == 0 ? "]" : "");
-	} else  {
-		snprintf(host, DNS_MAX_CNAME_LEN, "%s%s%s:%d", is_ipv6 == 0 ? "[" : "", uri_host, is_ipv6 == 0 ? "]" : "", port);
+	} else {
+		snprintf(host, DNS_MAX_CNAME_LEN, "%s%s%s:%d", is_ipv6 == 0 ? "[" : "", uri_host, is_ipv6 == 0 ? "]" : "",
+				 port);
 	}
 	return 0;
+}
+
+int decode_hex(int ch)
+{
+	if ('0' <= ch && ch <= '9') {
+		return ch - '0';
+	} else if ('A' <= ch && ch <= 'F') {
+		return ch - 'A' + 0xa;
+	} else if ('a' <= ch && ch <= 'f') {
+		return ch - 'a' + 0xa;
+	} else {
+		return -1;
+	}
+}
+
+int dns_is_quic_supported(void)
+{
+#ifdef OSSL_QUIC1_VERSION
+	return 1;
+#else
+	return 0;
+#endif
 }
 
 #if defined(DEBUG) || defined(TEST)

@@ -196,6 +196,10 @@ int dns_packet_save(const char *dir, const char *type, const char *from, const v
 
 int dns_packet_debug(const char *packet_file);
 
+int dns_is_quic_supported(void);
+
+int decode_hex(int ch);
+
 #ifdef __cplusplus
 }
 #endif /*__cplusplus */

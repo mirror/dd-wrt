@@ -81,7 +81,8 @@ static void _help(void)
 #ifdef DEBUG
 		"  -N [file]     dump dns packet to file.\n"
 #endif
-		"  --cache-print [file] print cache.\n"
+		"  --cache-print [file]  print cache.\n"
+		"  --is-quic-supported   is quic http3 supported.\n"
 		""
 
 		"Online help: https://pymumu.github.io/smartdns\n"
@@ -93,7 +94,7 @@ static void _help(void)
 
 static void _smartdns_get_version(char *str_ver, int str_ver_len)
 {
-	char commit_ver[TMP_BUFF_LEN_32] = {0};
+	char commit_ver[TMP_BUFF_LEN_32 * 2] = {0};
 #ifdef COMMIT_VERION
 	snprintf(commit_ver, sizeof(commit_ver), " (%s)", COMMIT_VERION);
 #endif
@@ -196,6 +197,7 @@ static int _smartdns_prepare_server_flags(struct client_dns_server_flags *flags,
 		flag_udp->ttl = server->ttl;
 	} break;
 #ifdef HAVE_OPENSSL
+	case DNS_SERVER_HTTP3:
 	case DNS_SERVER_HTTPS: {
 		struct client_dns_server_flag_https *flag_http = &flags->https;
 		if (server->spki[0] != 0) {
@@ -210,8 +212,10 @@ static int _smartdns_prepare_server_flags(struct client_dns_server_flags *flags,
 		safe_strncpy(flag_http->path, server->path, sizeof(flag_http->path));
 		safe_strncpy(flag_http->httphost, server->httphost, sizeof(flag_http->httphost));
 		safe_strncpy(flag_http->tls_host_verify, server->tls_host_verify, sizeof(flag_http->tls_host_verify));
+		safe_strncpy(flag_http->alpn, server->alpn, DNS_MAX_ALPN_LEN);
 		flag_http->skip_check_cert = server->skip_check_cert;
 	} break;
+	case DNS_SERVER_QUIC:
 	case DNS_SERVER_TLS: {
 		struct client_dns_server_flag_tls *flag_tls = &flags->tls;
 		if (server->spki[0] != 0) {
@@ -224,6 +228,7 @@ static int _smartdns_prepare_server_flags(struct client_dns_server_flags *flags,
 		}
 		safe_strncpy(flag_tls->hostname, server->hostname, sizeof(flag_tls->hostname));
 		safe_strncpy(flag_tls->tls_host_verify, server->tls_host_verify, sizeof(flag_tls->tls_host_verify));
+		safe_strncpy(flag_tls->alpn, server->alpn, DNS_MAX_ALPN_LEN);
 		flag_tls->skip_check_cert = server->skip_check_cert;
 	} break;
 #endif
@@ -794,7 +799,6 @@ static int _smartdns_create_datadir(void)
 	int unused __attribute__((unused)) = 0;
 
 	safe_strncpy(data_dir, dns_conf_get_data_dir(), PATH_MAX);
-	dir_name(data_dir);
 
 	if (get_uid_gid(&uid, &gid) != 0) {
 		return -1;
@@ -822,6 +826,10 @@ static int _set_rlimit(void)
 	value.rlim_cur = 40;
 	value.rlim_max = 40;
 	setrlimit(RLIMIT_NICE, &value);
+
+	value.rlim_cur = 1024 * 10;
+	value.rlim_max = 1024 * 10;
+	setrlimit(RLIMIT_NOFILE, &value);
 	return 0;
 }
 
@@ -1022,8 +1030,10 @@ int smartdns_main(int argc, char *argv[])
 	sigset_t empty_sigblock;
 	struct stat sb;
 
-	static struct option long_options[] = {
-		{"cache-print", required_argument, NULL, 256}, {"help", no_argument, NULL, 'h'}, {NULL, 0, NULL, 0}};
+	static struct option long_options[] = {{"cache-print", required_argument, NULL, 256},
+										   {"is-quic-supported", no_argument, NULL, 257},
+										   {"help", no_argument, NULL, 'h'},
+										   {NULL, 0, NULL, 0}};
 
 	safe_strncpy(config_file, SMARTDNS_CONF_FILE, MAX_LINE_LEN);
 
@@ -1077,6 +1087,16 @@ int smartdns_main(int argc, char *argv[])
 		case 256:
 			tlog_set_early_printf(1, 1, 1);
 			return dns_cache_print(optarg);
+			break;
+		case 257:
+			if (dns_is_quic_supported() == 0) {
+				fprintf(stdout, "quic is not supported.\n");
+				return 1;
+			} else {
+				fprintf(stdout, "quic is supported.\n");
+				return 0;
+			}
+			return 0;
 			break;
 		default:
 			fprintf(stderr, "unknown option, please run %s -h for help.\n", argv[0]);

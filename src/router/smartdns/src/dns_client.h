@@ -43,6 +43,8 @@ typedef enum {
 	DNS_SERVER_TCP,
 	DNS_SERVER_TLS,
 	DNS_SERVER_HTTPS,
+	DNS_SERVER_QUIC,
+	DNS_SERVER_HTTP3,
 	DNS_SERVER_MDNS,
 	DNS_SERVER_TYPE_END,
 } dns_server_type_t;
@@ -128,6 +130,7 @@ struct client_dns_server_flag_tls {
 	int spi_len;
 	char hostname[DNS_MAX_CNAME_LEN];
 	char tls_host_verify[DNS_MAX_CNAME_LEN];
+	char alpn[DNS_MAX_ALPN_LEN];
 	char skip_check_cert;
 };
 
@@ -139,6 +142,7 @@ struct client_dns_server_flag_https {
 	char proxyname[DNS_MAX_CNAME_LEN];
 	char path[DNS_MAX_CNAME_LEN];
 	char tls_host_verify[DNS_MAX_CNAME_LEN];
+	char alpn[DNS_MAX_ALPN_LEN];
 	char skip_check_cert;
 };
 

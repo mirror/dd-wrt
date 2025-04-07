@@ -26,6 +26,7 @@
 #include <getopt.h>
 #include <glob.h>
 #include <libgen.h>
+#include <openssl/ssl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -879,6 +880,7 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 		{"tcp-keepalive", required_argument, NULL, 263}, /* tcp keepalive */
 		{"subnet-all-query-types", no_argument, NULL, 264}, /* send subnent for all query types.*/
 		{"fallback", no_argument, NULL, 265}, /* fallback */
+		{"alpn", required_argument, NULL, 266}, /* alpn */
 		{NULL, no_argument, NULL, 0}
 	};
 	/* clang-format on */
@@ -914,6 +916,15 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 		if (strcasecmp(scheme, "https") == 0) {
 			type = DNS_SERVER_HTTPS;
 			default_port = DEFAULT_DNS_HTTPS_PORT;
+		} else if (strcasecmp(scheme, "http3") == 0) {
+			type = DNS_SERVER_HTTP3;
+			default_port = DEFAULT_DNS_HTTPS_PORT;
+		} else if (strcasecmp(scheme, "h3") == 0) {
+			type = DNS_SERVER_HTTP3;
+			default_port = DEFAULT_DNS_HTTPS_PORT;
+		} else if (strcasecmp(scheme, "quic") == 0) {
+			type = DNS_SERVER_QUIC;
+			default_port = DEFAULT_DNS_QUIC_PORT;
 		} else if (strcasecmp(scheme, "tls") == 0) {
 			type = DNS_SERVER_TLS;
 			default_port = DEFAULT_DNS_TLS_PORT;
@@ -927,6 +938,14 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 			default_port = DEFAULT_DNS_PORT;
 		} else {
 			tlog(TLOG_ERROR, "invalid scheme: %s", scheme);
+			return -1;
+		}
+	}
+
+	if (dns_is_quic_supported() == 0) {
+		if (type == DNS_SERVER_QUIC || type == DNS_SERVER_HTTP3) {
+			tlog(TLOG_ERROR, "QUIC/HTTP3 is not supported in this version.");
+			tlog(TLOG_ERROR, "Please install the latest release with QUIC/HTTP3 support.");
 			return -1;
 		}
 	}
@@ -1061,6 +1080,10 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 			server->fallback = 1;
 			break;
 		}
+		case 266: {
+			safe_strncpy(server->alpn, optarg, DNS_MAX_ALPN_LEN);
+			break;
+		}
 		default:
 			if (optind > optind_last) {
 				tlog(TLOG_WARN, "unknown server option: %s at '%s:%d'.", argv[optind - 1], conf_get_conf_file(),
@@ -1110,7 +1133,7 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 	server->ttl = ttl;
 	server->drop_packet_latency_ms = drop_packet_latency_ms;
 
-	if (server->type == DNS_SERVER_HTTPS) {
+	if (server->type == DNS_SERVER_HTTPS || server->type == DNS_SERVER_HTTP3) {
 		if (server->path[0] == 0) {
 			safe_strncpy(server->path, "/", sizeof(server->path));
 		}
@@ -3232,6 +3255,22 @@ static int _config_server_https(void *data, int argc, char *argv[])
 	return ret;
 }
 #endif
+
+static int _config_server_quic(void *data, int argc, char *argv[])
+{
+	int ret = 0;
+	ret = _config_server(argc, argv, DNS_SERVER_QUIC, DEFAULT_DNS_QUIC_PORT);
+
+	return ret;
+}
+
+static int _config_server_http3(void *data, int argc, char *argv[])
+{
+	int ret = 0;
+	ret = _config_server(argc, argv, DNS_SERVER_HTTP3, DEFAULT_DNS_HTTPS_PORT);
+
+	return ret;
+}
 
 static int _conf_domain_rule_nameserver(const char *domain, const char *group_name)
 {
@@ -5990,6 +6029,9 @@ static struct config_item _config_item[] = {
 	CONF_CUSTOM("server-tls", _config_server_tls, NULL),
 	CONF_CUSTOM("server-https", _config_server_https, NULL),
 #endif
+	CONF_CUSTOM("server-h3", _config_server_http3, NULL),
+	CONF_CUSTOM("server-http3", _config_server_http3, NULL),
+	CONF_CUSTOM("server-quic", _config_server_quic, NULL),
 	CONF_YESNO("mdns-lookup", &dns_conf.mdns_lookup),
 	CONF_YESNO("local-ptr-enable", &dns_conf.local_ptr_enable),
 	CONF_CUSTOM("nameserver", _config_nameserver, NULL),
