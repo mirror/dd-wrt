@@ -942,6 +942,7 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 		}
 	}
 
+#ifdef HAVE_OPENSSL
 	if (dns_is_quic_supported() == 0) {
 		if (type == DNS_SERVER_QUIC || type == DNS_SERVER_HTTP3) {
 			tlog(TLOG_ERROR, "QUIC/HTTP3 is not supported in this version.");
@@ -949,6 +950,7 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 			return -1;
 		}
 	}
+#endif
 
 	/* if port is not defined, set port to default 53 */
 	if (port == PORT_NOT_DEFINED) {
@@ -3254,7 +3256,6 @@ static int _config_server_https(void *data, int argc, char *argv[])
 
 	return ret;
 }
-#endif
 
 static int _config_server_quic(void *data, int argc, char *argv[])
 {
@@ -3271,6 +3272,7 @@ static int _config_server_http3(void *data, int argc, char *argv[])
 
 	return ret;
 }
+#endif
 
 static int _conf_domain_rule_nameserver(const char *domain, const char *group_name)
 {
@@ -6028,10 +6030,10 @@ static struct config_item _config_item[] = {
 #ifdef HAVE_OPENSSL
 	CONF_CUSTOM("server-tls", _config_server_tls, NULL),
 	CONF_CUSTOM("server-https", _config_server_https, NULL),
-#endif
 	CONF_CUSTOM("server-h3", _config_server_http3, NULL),
 	CONF_CUSTOM("server-http3", _config_server_http3, NULL),
 	CONF_CUSTOM("server-quic", _config_server_quic, NULL),
+#endif
 	CONF_YESNO("mdns-lookup", &dns_conf.mdns_lookup),
 	CONF_YESNO("local-ptr-enable", &dns_conf.local_ptr_enable),
 	CONF_CUSTOM("nameserver", _config_nameserver, NULL),

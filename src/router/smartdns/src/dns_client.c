@@ -255,9 +255,11 @@ struct dns_conn_stream {
 	struct dns_query_struct *query;
 	struct dns_server_info *server_info;
 
+#ifdef HAVE_OPENSSL
 	union {
 		SSL *quic_stream;
 	};
+#endif
 };
 
 /* query struct */
@@ -1625,8 +1627,8 @@ static void _dns_client_shutdown_socket(struct dns_server_info *server_info)
 			shutdown(server_info->fd, SHUT_RDWR);
 		}
 		break;
-	case DNS_SERVER_QUIC:
 #ifdef HAVE_OPENSSL
+	case DNS_SERVER_QUIC:
 	case DNS_SERVER_TLS:
 	case DNS_SERVER_HTTP3:
 	case DNS_SERVER_HTTPS:
@@ -1918,7 +1920,9 @@ __attribute__((unused)) static struct dns_conn_stream *_dns_client_conn_stream_n
 	memset(stream, 0, sizeof(*stream));
 	INIT_LIST_HEAD(&stream->server_list);
 	INIT_LIST_HEAD(&stream->query_list);
+#ifdef HAVE_OPENSSL
 	stream->quic_stream = NULL;
+#endif
 	stream->server_info = NULL;
 	stream->query = NULL;
 	atomic_set(&stream->refcnt, 1);
@@ -1982,11 +1986,13 @@ __attribute__((unused)) static void _dns_client_conn_server_streams_free(struct 
 
 		list_del_init(&stream->server_list);
 		stream->server_info = NULL;
+#ifdef HAVE_OPENSSL
 		if (stream->quic_stream) {
 			SSL_shutdown(stream->quic_stream);
 			SSL_free(stream->quic_stream);
 			stream->quic_stream = NULL;
 		}
+#endif
 		_dns_client_conn_stream_put(stream);
 	}
 	pthread_mutex_unlock(&server_info->lock);
@@ -4470,6 +4476,7 @@ static int _dns_client_process_tls(struct dns_server_info *server_info, struct e
 		event->events = EPOLLOUT;
 	}
 
+#ifdef HAVE_OPENSSL
 	if (server_info->type == DNS_SERVER_QUIC || server_info->type == DNS_SERVER_HTTP3) {
 /* QUIC */
 #ifdef OSSL_QUIC1_VERSION
@@ -4479,7 +4486,7 @@ static int _dns_client_process_tls(struct dns_server_info *server_info, struct e
 		goto errout;
 #endif
 	}
-
+#endif
 	return _dns_client_process_tcp(server_info, event, now);
 errout:
 	pthread_mutex_lock(&client.server_list_lock);

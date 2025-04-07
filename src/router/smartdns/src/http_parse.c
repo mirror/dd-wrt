@@ -947,6 +947,7 @@ static int _http_head_serialize_http2_0(struct http_head *http_head, uint8_t *bu
 	return -2;
 }
 
+#ifdef HAVE_OPENSSL
 static int _quicvarint_encode(uint64_t value, uint8_t *buffer, int buffer_size)
 {
 	if (value <= 63) {
@@ -1584,17 +1585,19 @@ static int _http_head_serialize_http3_0(struct http_head *http_head, uint8_t *bu
 
 	return offset;
 }
-
+#endif
 int http_head_parse(struct http_head *http_head, const unsigned char *data, int data_len)
 {
 	if (http_head->http_version == HTTP_VERSION_1_1) {
 		return _http_head_parse_http1_1(http_head, data, data_len);
 	} else if (http_head->http_version == HTTP_VERSION_2_0) {
 		return _http_head_parse_http2_0(http_head, data, data_len);
-	} else if (http_head->http_version == HTTP_VERSION_3_0) {
+	} 
+#ifdef HAVE_OPENSSL
+	else if (http_head->http_version == HTTP_VERSION_3_0) {
 		return _http_head_parse_http3_0(http_head, data, data_len);
 	}
-
+#endif
 	return -2;
 }
 
@@ -1608,10 +1611,12 @@ int http_head_serialize(struct http_head *http_head, void *buffer, int buffer_le
 		return _http_head_serialize_http1_1(http_head, buffer, buffer_len);
 	} else if (http_head->http_version == HTTP_VERSION_2_0) {
 		return _http_head_serialize_http2_0(http_head, buffer, buffer_len);
-	} else if (http_head->http_version == HTTP_VERSION_3_0) {
+	} 
+#ifdef HAVE_OPENSSL
+	else if (http_head->http_version == HTTP_VERSION_3_0) {
 		return _http_head_serialize_http3_0(http_head, buffer, buffer_len);
 	}
-
+#endif
 	return -2;
 }
 
