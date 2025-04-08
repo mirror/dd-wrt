@@ -246,7 +246,6 @@ unsigned int ieee80211_ieee2mhz(const char *prefix, unsigned int chan)
 
 #ifndef HAVE_MADWIFI
 
-
 #if defined(HAVE_RT2880) || defined(HAVE_RT61)
 char *getRADev(const char *prefix)
 {
@@ -1126,7 +1125,7 @@ int wl_getbssid(char *wl, char *mac)
 	struct ether_addr ea;
 
 	wl_ioctl(wl, WLC_GET_BSSID, &ea, ETHER_ADDR_LEN);
-	ether_etoa((const char*)&ea, mac);
+	ether_etoa((const char *)&ea, mac);
 	return 0;
 }
 
@@ -2688,7 +2687,7 @@ static struct wifidevices wdevices[] = {
 	{ "MWL88W8964 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x11ab, 0x2b40, PCI_ANY, PCI_ANY, NULL },
 	{ "MWL88W8864 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x11ab, 0x2a55, PCI_ANY, PCI_ANY, NULL },
 	{ "MWL88W8897 802.11ac", QAM256 | CHANNELSURVEY, 0x11ab, 0x2b38, PCI_ANY, PCI_ANY, NULL },
-	{ "WIL6210 802.11ad",  SURVEY_NOPERIOD, 0x1ae9, 0x0310, PCI_ANY, PCI_ANY, NULL },
+	{ "WIL6210 802.11ad", SURVEY_NOPERIOD, 0x1ae9, 0x0310, PCI_ANY, PCI_ANY, NULL },
 	{ "MWLSD8887 802.11ac", CHANNELSURVEY, 0x02df, 0x9135, PCI_ANY, PCI_ANY, NULL },
 	{ "MT7615E 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3, 0x7615, PCI_ANY, PCI_ANY, NULL },
 	{ "MT7663 802.11ac", QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x14c3, 0x7663, PCI_ANY, PCI_ANY, NULL },
