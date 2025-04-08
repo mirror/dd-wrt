@@ -14,6 +14,9 @@
 
 #ifndef _shutils_h_
 #define _shutils_h_
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include <malloc.h>
 #include <string.h>
 #include <stdio.h>
@@ -142,8 +145,8 @@ struct nvram_param {
 extern struct nvram_param *load_defaults(void);
 extern void free_defaults(struct nvram_param *);
 
-extern char *strattach(char *src, const char *attach, const char *delimiter);
-extern char *strspcattach(char *src, const char *attach);
+extern char *strattach(char *src, size_t maxlen, const char *attach, const char *delimiter);
+extern char *strspcattach(char *src, size_t maxlen, const char *attach);
 
 extern int dd_system(const char *command);
 extern int sysprintf(const char *fmt, ...) __attribute__((format (printf, 1, 2)));
@@ -176,6 +179,7 @@ extern int strhas(char *list, char *key);
  * @param       buf     buffer large enough to hold both strings
  * @return      buf
  */
+size_t strlcat (char *, const char *, size_t);
 char *strcat_r(const char *s1, const char *s2, char *buf);
 char *strlcat_r(const char *s1, const char *s2, char *buf, size_t len);
 char *dd_strncat(char *dst, const char *src, size_t len);

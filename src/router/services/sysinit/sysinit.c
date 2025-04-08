@@ -3476,7 +3476,7 @@ void start_nvram(void)
 						snprintf(newvalue, slen, "%s wlan%s", newvalue, &entry[3]);
 
 				} else {
-					strspcattach(newvalue, entry);
+					strspcattach(newvalue, slen, entry);
 				}
 				first = 0;
 			}

@@ -120,7 +120,7 @@ static void fillENC(const char *text)
 		if (!strcmp(var, text))
 			return;
 	}
-	strspcattach(buf, text);
+	strspcattach(buf, sizeof(site_survey_lists[sscount].ENCINFO), text);
 }
 
 static struct nla_policy survey_policy[NL80211_SURVEY_INFO_MAX + 1] = {
@@ -355,11 +355,9 @@ static int print_bss_handler(struct nl_msg *msg, void *arg)
 		site_survey_lists[sscount].channel |=
 			(ieee80211_mhz2ieee(global_ifname, site_survey_lists[sscount].frequency) & 0xff);
 	}
-	if (sscount < (SITE_SURVEY_NUM - 1))
+	if (sscount < (SITE_SURVEY_NUM - 1)) {
 		sscount++;
 	}
-
-
 	return NL_SKIP;
 }
 
@@ -873,7 +871,7 @@ static void print_ht_op(const uint8_t type, uint8_t len, const uint8_t *data)
 }
 
 //  end of iw copied code
-void mac80211_scan(struct unl *unl, char *interface)
+void mac80211_scan(struct unl *unl, const char *interface)
 {
 	struct nl_msg *msg;
 	int wdev;
@@ -893,7 +891,7 @@ nla_put_failure:
 static int write_site_survey(void);
 static int local_open_site_survey(void);
 
-void mac80211_site_survey(char *interface)
+void mac80211_site_survey(const char *interface)
 {
 	noise = malloc(7000 * sizeof(int));
 	active = malloc(7000 * sizeof(unsigned long long));

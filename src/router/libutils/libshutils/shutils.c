@@ -1148,22 +1148,22 @@ int getMTD(char *name)
 	return device;
 }
 
-char *strattach(char *src, const char *attach, const char *delimiter)
+char *strattach(char *src, size_t maxlen, const char *attach, const char *delimiter)
 {
 	if (!src || !delimiter)
 		return NULL;
 	if (!*src) {
-		strcpy(src, attach);
+		strlcpy(src, attach, maxlen);
 	} else {
-		strcat(src, delimiter);
-		strcat(src, attach);
+		strlcat(src, delimiter, maxlen);
+		strlcat(src, attach, maxlen);
 	}
 	return src;
 }
 
-char *strspcattach(char *src, const char *attach)
+char *strspcattach(char *src, size_t maxlen, const char *attach)
 {
-	return strattach(src, attach, " ");
+	return strattach(src, maxlen, attach, " ");
 }
 
 #undef malloc

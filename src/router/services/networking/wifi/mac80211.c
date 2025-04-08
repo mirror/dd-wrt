@@ -714,7 +714,7 @@ int is_6ghz_freq_prefix(const char *prefix, int freq)
 	return is_6ghz_freq(freq);
 }
 
-void get_pairwise(const char *prefix, char *pwstring, char *grpstring, int isadhoc, int ismesh);
+void get_pairwise(const char *prefix, char *pwstring, size_t plen, char *grpstring, size_t glen, int isadhoc, int ismesh);
 
 void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int aoss)
 {
@@ -1380,7 +1380,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				fprintf(fp, "he_mu_edca_ac_vo_ecwmax=7\n");
 				fprintf(fp, "he_mu_edca_ac_vo_timer=255\n");
 				char color[32];
-				sprintf(color, "bss_color", prefix);
+				sprintf(color, "%s_bss_color", prefix);
 				int c = nvram_default_geti(color, 128);
 				if (c > 0) {
 					fprintf(fp, "he_bss_color=%d\n", c);
@@ -2362,7 +2362,7 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 		fprintf(fp, "\n");
 		char pwstring[128] = { 0 };
 		char grpstring[128] = { 0 };
-		get_pairwise(prefix, pwstring, grpstring, isadhoc, ismesh);
+		get_pairwise(prefix, pwstring, sizeof(pwstring), grpstring, sizeof(grpstring), isadhoc, ismesh);
 #ifdef HAVE_80211W
 		if (nvram_default_matchi(mfp, 1, 0) || ((ispsk2sha256 || ispsk3) && (!ispsk2 && !ispsk)))
 			fprintf(fp, "\tieee80211w=2\n");

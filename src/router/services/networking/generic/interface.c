@@ -680,13 +680,13 @@ void start_setup_vlans(void)
 			char strvid[32];
 			sprintf(strvid, "%d*", vlan_number);
 			if (vlan_number < 5 && vlan_number >= 0) {
-				strspcattach(portsettings[i], vlan);
+				strspcattach(portsettings[i],32, vlan);
 			} else if ((vlan_number == 5 || vlan_number == 8 || vlan_number == 7) && !ast) {
-				strspcattach(portsettings[i], vlan);
+				strspcattach(portsettings[i],32, vlan);
 			} else if ((vlan_number == 5 || vlan_number == 8 || vlan_number == 7) && ast) {
-				strspcattach(portsettings[i], strvid);
+				strspcattach(portsettings[i],32, strvid);
 			} else {
-				strspcattach(portsettings[i], vlan);
+				strspcattach(portsettings[i],32, vlan);
 			}
 		}
 	}

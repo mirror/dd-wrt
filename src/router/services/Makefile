@@ -95,7 +95,7 @@ ifneq ($(CONFIG_DIST),"micro-special")
 #BCFLAGS += -DNEED_NOPRINTF
 endif
 
-CFLAGS += $(BCFLAGS)
+CFLAGS += $(BCFLAGS) -g3
 
 HCFLAGS	 += -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ 
 HCFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN
