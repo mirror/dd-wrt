@@ -6,6 +6,9 @@ endif
 ifeq ($(CONFIG_X86),y)
 MAC80211_PATH=compat-wireless-nss
 endif
+ifeq ($(CONFIG_NEWPORT),y)
+MAC80211_PATH=compat-wireless-nss
+endif
 #ifeq ($(CONFIG_IPQ806X),y)
 #MAC80211_PATH=compat-wireless-nss
 #endif

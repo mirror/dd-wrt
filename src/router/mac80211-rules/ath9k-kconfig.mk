@@ -454,6 +454,8 @@ ifeq ($(CONFIG_MAC80211_RTLWIFI),y)
 	-cp -av $(TOP)/firmwares/wireless/rtlwifi/* $(INSTALLDIR)/ath9k/lib/firmware/rtlwifi
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/rtw88
 	-cp -av $(TOP)/firmwares/wireless/rtw88/* $(INSTALLDIR)/ath9k/lib/firmware/rtw88
+	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/rtw89
+	-cp -av $(TOP)/firmwares/wireless/rtw89/* $(INSTALLDIR)/ath9k/lib/firmware/rtw89
 endif
 ifeq ($(CONFIG_WIL6210),y)	
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
@@ -517,6 +519,10 @@ ifeq ($(CONFIG_IPQ6018),y)
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/QCN9074/hw1.0 && rm -f cal-pci-0000:01:00.0.bin && ln -s /tmp/cal-pci-0000:01:00.0.bin cal-pci-0000:01:00.0.bin 
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/QCN9074/hw1.0 && rm -f caldata2.bin && ln -s /tmp/caldata2.bin caldata.bin 
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/QCN9074/hw1.0 && rm -f board2.bin && ln -s /tmp/board2.bin board.bin 
+else
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ6018
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ8074
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ5018
 endif
 
 ifeq ($(CONFIG_ATH10K),y)
