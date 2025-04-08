@@ -182,7 +182,7 @@ void showOptions_trans(webs_t wp, char *propname, char *names, char **trans, cha
 	char var[80];
 	int cnt = 0;
 	if (!select)
-	    select = "";
+		select = "";
 
 	websWrite(wp, "<select name=\"%s\">\n", propname);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
@@ -208,7 +208,7 @@ void showOptions_ext_trans(webs_t wp, char *propname, char *names, char **trans,
 	char var[80];
 	int cnt = 0;
 	if (!select)
-	    select = "";
+		select = "";
 
 	websWrite(wp, "<select name=\"%s\"%s>\n", propname, disabled ? " disabled=\"true\"" : "");
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
@@ -229,7 +229,7 @@ void showOptionsNames(webs_t wp, char *label, char *propname, char *valuenames, 
 	char var[80];
 	int idx = 0;
 	if (!select)
-	    select = "";
+		select = "";
 
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", label, NULL);
@@ -248,7 +248,7 @@ void showIfOptions_ext(webs_t wp, char *propname, char *names, char *select, int
 	const char *next;
 	char var[80];
 	if (!select)
-	    select = "";
+		select = "";
 
 	websWrite(wp, "<select name=\"%s\"%s>\n", propname, disabled ? " disabled=\"true\"" : "");
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
@@ -270,7 +270,7 @@ void showOptionsChoose(webs_t wp, char *propname, char *names, char **trans, cha
 	char var[80];
 	int cnt = 0;
 	if (!select)
-	    select = "";
+		select = "";
 
 	websWrite(wp, "<select name=\"%s\">\n", propname);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");

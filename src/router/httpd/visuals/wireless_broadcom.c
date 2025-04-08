@@ -482,7 +482,6 @@ EJ_VISIBLE void ej_can_not_survey(webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "0");
 }
 
-
 EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 {
 	channel_info_t ci;

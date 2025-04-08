@@ -202,7 +202,7 @@ void nvram_status_get(webs_t wp, char *type, int trans)
 			ipv6addr = getifaddr(buf, "ip6tun", AF_INET6, 0);
 		if (nvram_match("ipv6_typ", "ipv6pd")) {
 			ipv6addr = getifaddr(buf, safe_get_wan_face(wan_if_buffer), AF_INET6, 0);
-			if (!ipv6addr || ipv6addr[0] == '\0' || !strncmp(ipv6addr,"fe", 2)) {
+			if (!ipv6addr || ipv6addr[0] == '\0' || !strncmp(ipv6addr, "fe", 2)) {
 				ipv6addr = getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, 0);
 			}
 		}

@@ -1743,7 +1743,7 @@ EJ_VISIBLE void ej_show_wanipinfo(webs_t wp, int argc, char_t **argv) // Eko
 		ipv6addr = getifaddr(buf, "ip6tun", AF_INET6, 0);
 	if (nvram_match("ipv6_typ", "ipv6pd")) {
 		ipv6addr = getifaddr(buf, safe_get_wan_face(wan_if_buffer), AF_INET6, 0);
-		if (!ipv6addr || ipv6addr[0] == '\0' || !strncmp(ipv6addr,"fe", 2)) {
+		if (!ipv6addr || ipv6addr[0] == '\0' || !strncmp(ipv6addr, "fe", 2)) {
 			ipv6addr = getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, 0);
 		}
 	}
@@ -2009,7 +2009,7 @@ EJ_VISIBLE void ej_get_txpower(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "N/A");
 		return;
 	}
-	    
+
 	if (nvram_match(net_mode, "disabled") || nvram_match(mode, "disabled")) {
 		txpower = 0;
 		websWrite(wp, "%s", live_translate(wp, "wl_basic.radio_off"));

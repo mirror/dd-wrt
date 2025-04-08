@@ -2562,8 +2562,10 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		if (has_wdsap(var)) {
 			websWrite(wp, "document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n",
 				  nvram_match(wl_mode, "wdsap") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"wdsap_mtik\\\" %s >\" + wl_basic.wdsap_mtik + \"</option>\");\n",
-				  nvram_match(wl_mode, "wdsap_mtik") ? "selected=\\\"selected\\\"" : "");
+			websWrite(
+				wp,
+				"document.write(\"<option value=\\\"wdsap_mtik\\\" %s >\" + wl_basic.wdsap_mtik + \"</option>\");\n",
+				nvram_match(wl_mode, "wdsap_mtik") ? "selected=\\\"selected\\\"" : "");
 		}
 #if 0
 		if (has_mesh(var))

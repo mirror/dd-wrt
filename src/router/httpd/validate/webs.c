@@ -204,7 +204,7 @@ void save_wifi(webs_t wp)
 	char *var = websGetVar(wp, "wifi_display", NULL);
 
 	if (var) {
-			nvram_set("wifi_display", var);
+		nvram_set("wifi_display", var);
 	}
 }
 
@@ -2551,8 +2551,8 @@ Need parsing to get the file data out of the POST data
 				upload_set("usepsk", "1");
 				upload_set("psk", output);
 			}
-			if (sscanf(buf, "AllowedIPs = %[^\n]", output) == 1) {	//scans until newline otherwise will scan until space
-				sprintf(allowedips, "%s%s%s",allowedips, !line ? "" : ", ", output);
+			if (sscanf(buf, "AllowedIPs = %[^\n]", output) == 1) { //scans until newline otherwise will scan until space
+				sprintf(allowedips, "%s%s%s", allowedips, !line ? "" : ", ", output);
 				line++;
 			}
 			if (sscanf(buf, "Endpoint = %s", output) == 1) {
