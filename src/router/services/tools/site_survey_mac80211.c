@@ -367,7 +367,9 @@ static void print_ie(const struct ie_print *p, const uint8_t type, uint8_t len, 
 
 	if (!p->print)
 		return;
-
+	char debuginfo[64];
+	sprintf(debuginfo, "print_ie: type %d, len %d\n", type, len);
+	airbag_setpostinfo(debuginfo);
 	if (len < p->minlen || len > p->maxlen) {
 		return;
 	}
