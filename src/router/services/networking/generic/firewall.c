@@ -1754,7 +1754,8 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 				int i;
 				for (i = 0; i < sizeof(ubnt_telemetry) / sizeof(ubnt_telemetry[0]); i++)
 					save2file_A("advgrp_%d -d %d.%d.%d.%d -j %s", seq, ubnt_telemetry[i].ip1,
-						    ubnt_telemetry[i].ip2, ubnt_telemetry[i].ip3, ubnt_telemetry[i].ip4, log_reject);
+						    ubnt_telemetry[i].ip2, ubnt_telemetry[i].ip3, ubnt_telemetry[i].ip4,
+						    log_reject);
 			}
 #ifndef HAVE_OPENDPI
 			else if (!strcmp(protocol, "l7")) {
@@ -1973,12 +1974,12 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 #endif
 	}
 #ifdef HAVE_GEOIP
-		if (*nvram_safe_get("geoip_bl")) {
-			save2file_A("advgrp_%d -m geoip --dst-cc \"%s\" -j %s", nvram_safe_get("geoip_bl"), log_reject);
-		}
-		if (*nvram_safe_get("geoip_wl")) {
-			save2file_A("advgrp_%d -m geoip ! --dst-cc \"%s\" -j %s", seq, nvram_safe_get("geoip_wl"), log_reject);
-		}
+	if (*nvram_safe_get("geoip_bl")) {
+		save2file_A("advgrp_%d -m geoip --dst-cc \"%s\" -j %s", nvram_safe_get("geoip_bl"), log_reject);
+	}
+	if (*nvram_safe_get("geoip_wl")) {
+		save2file_A("advgrp_%d -m geoip ! --dst-cc \"%s\" -j %s", seq, nvram_safe_get("geoip_wl"), log_reject);
+	}
 #endif
 
 	/*
@@ -3146,10 +3147,12 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 		}
 #ifdef HAVE_GEOIP
 		if (*nvram_safe_get("geoip_blacklist")) {
-			save2file_A_security("-i %s -m geoip --src-cc \"%s\" -j tarpit", wanface, nvram_safe_get("geoip_blacklist"));
+			save2file_A_security("-i %s -m geoip --src-cc \"%s\" -j tarpit", wanface,
+					     nvram_safe_get("geoip_blacklist"));
 		}
 		if (*nvram_safe_get("geoip_whitelist")) {
-			save2file_A_security("-i %s -m geoip ! --src-cc \"%s\" -j tarpit", wanface, nvram_safe_get("geoip_whitelist"));
+			save2file_A_security("-i %s -m geoip ! --src-cc \"%s\" -j tarpit", wanface,
+					     nvram_safe_get("geoip_whitelist"));
 		}
 #endif
 		save2file_A_input("-j SECURITY");
@@ -3254,8 +3257,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 		 */
 #ifndef HAVE_MICRO
 		if (nvram_matchi("log_rejected", 1)) {
-			save2file_A(
-				"logreject -j LOG --log-prefix \"REJECT \" --log-ip-options");
+			save2file_A("logreject -j LOG --log-prefix \"REJECT \" --log-ip-options");
 			save2file_A(
 				"logreject_tcp -j LOG --log-prefix \"REJECT \" --log-tcp-sequence --log-tcp-options --log-ip-options");
 		}
