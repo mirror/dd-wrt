@@ -392,14 +392,17 @@ EJ_VISIBLE void ej_show_cpufeatures(webs_t wp, int argc, char_t **argv)
 					int namelen = strlen(cpufeatures[i].name);
 					if (!strcmp(word, cpufeatures[i].field)) {
 						int resultlen = 0;
+						int curlen = 0;
 						if (!result) {
 							result = malloc(namelen + 1);
+							curlen = namelen + 1;
 							bzero(result, namelen);
 						} else {
 							resultlen = strlen(result);
 							result = realloc(result, resultlen + namelen + 2);
+							curlen = resultlen + namelen + 2;
 						}
-						strspcattach(result, cpufeatures[i].name);
+						strspcattach(result, curlen, cpufeatures[i].name);
 					}
 				}
 			}

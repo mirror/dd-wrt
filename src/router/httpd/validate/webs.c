@@ -548,7 +548,7 @@ static void s_addDeletion(char *word, char *arg)
 	if (*(oldarg)) {
 		char *newarg = safe_malloc(strlen(oldarg) + strlen(word) + 2);
 
-		strspcattach(newarg, word);
+		strspcattach(newarg, strlen(oldarg) + strlen(word) + 2, word);
 		nvram_set(arg, newarg);
 		debug_free(newarg);
 	} else
@@ -1252,31 +1252,31 @@ _8021xprv
 		}
 		char akm[128] = { 0 };
 		if (nvram_nmatch("1", "%s_psk", prefix))
-			strspcattach(akm, "psk");
+			strspcattach(akm, sizeof(akm), "psk");
 		if (nvram_nmatch("1", "%s_psk2", prefix))
-			strspcattach(akm, "psk2");
+			strspcattach(akm, sizeof(akm), "psk2");
 		if (nvram_nmatch("1", "%s_psk2-sha256", prefix))
-			strspcattach(akm, "psk2-sha256");
+			strspcattach(akm, sizeof(akm), "psk2-sha256");
 		if (nvram_nmatch("1", "%s_psk3", prefix))
-			strspcattach(akm, "psk3");
+			strspcattach(akm, sizeof(akm), "psk3");
 		if (nvram_nmatch("1", "%s_wpa", prefix))
-			strspcattach(akm, "wpa");
+			strspcattach(akm, sizeof(akm), "wpa");
 		if (nvram_nmatch("1", "%s_wpa2", prefix))
-			strspcattach(akm, "wpa2");
+			strspcattach(akm, sizeof(akm), "wpa2");
 		if (nvram_nmatch("1", "%s_wpa2-sha256", prefix))
-			strspcattach(akm, "wpa2-sha256");
+			strspcattach(akm, sizeof(akm), "wpa2-sha256");
 		if (nvram_nmatch("1", "%s_wpa2-sha384", prefix))
-			strspcattach(akm, "wpa2-sha384");
+			strspcattach(akm, sizeof(akm), "wpa2-sha384");
 		if (nvram_nmatch("1", "%s_wpa3", prefix))
-			strspcattach(akm, "wpa3");
+			strspcattach(akm, sizeof(akm), "wpa3");
 		if (nvram_nmatch("1", "%s_owe", prefix))
-			strspcattach(akm, "owe");
+			strspcattach(akm, sizeof(akm), "owe");
 		if (nvram_nmatch("1", "%s_wpa3-192", prefix)) {
-			strspcattach(akm, "wpa3-192");
+			strspcattach(akm, sizeof(akm), "wpa3-192");
 			nvram_nset("1", "%s_gcmp-256", prefix);
 		}
 		if (nvram_nmatch("1", "%s_wpa3-128", prefix)) {
-			strspcattach(akm, "wpa3-128");
+			strspcattach(akm, sizeof(akm), "wpa3-128");
 			nvram_nset("1", "%s_gcmp", prefix);
 		}
 
@@ -1298,31 +1298,31 @@ _8021xprv
 		_copytonv_prefix(wp, "wpa3-128", prefix);
 		char akm[128] = { 0, 0 };
 		if (nvram_nmatch("1", "%s_leap", prefix))
-			strspcattach(akm, "leap");
+			strspcattach(akm, sizeof(akm), "leap");
 		if (nvram_nmatch("1", "%s_peap", prefix))
-			strspcattach(akm, "peap");
+			strspcattach(akm, sizeof(akm), "peap");
 		if (nvram_nmatch("1", "%s_tls", prefix))
-			strspcattach(akm, "tls");
+			strspcattach(akm, sizeof(akm), "tls");
 		if (nvram_nmatch("1", "%s_ttls", prefix))
-			strspcattach(akm, "ttls");
+			strspcattach(akm, sizeof(akm), "ttls");
 		if (nvram_nmatch("1", "%s_802.1x", prefix))
-			strspcattach(akm, "802.1x");
+			strspcattach(akm, sizeof(akm), "802.1x");
 		if (nvram_nmatch("1", "%s_wpa", prefix))
-			strspcattach(akm, "wpa");
+			strspcattach(akm, sizeof(akm), "wpa");
 		if (nvram_nmatch("1", "%s_wpa2", prefix))
-			strspcattach(akm, "wpa2");
+			strspcattach(akm, sizeof(akm), "wpa2");
 		if (nvram_nmatch("1", "%s_wpa2-sha256", prefix))
-			strspcattach(akm, "wpa2-sha256");
+			strspcattach(akm, sizeof(akm), "wpa2-sha256");
 		if (nvram_nmatch("1", "%s_wpa2-sha384", prefix))
-			strspcattach(akm, "wpa2-sha384");
+			strspcattach(akm, sizeof(akm), "wpa2-sha384");
 		if (nvram_nmatch("1", "%s_wpa3", prefix))
-			strspcattach(akm, "wpa3");
+			strspcattach(akm, sizeof(akm), "wpa3");
 		if (nvram_nmatch("1", "%s_wpa3-192", prefix)) {
-			strspcattach(akm, "wpa3-192");
+			strspcattach(akm, sizeof(akm), "wpa3-192");
 			nvram_nset("1", "%s_gcmp-192", prefix);
 		}
 		if (nvram_nmatch("1", "%s_wpa3-128", prefix)) {
-			strspcattach(akm, "wpa3-128");
+			strspcattach(akm, sizeof(akm), "wpa3-128");
 			nvram_nset("1", "%s_gcmp", prefix);
 		}
 		nvram_set(n2, akm);
@@ -4351,7 +4351,7 @@ void remove_vifs_single(const char *prefix, int vap)
 		foreach(word, vifs, next) {
 			if (gp == elements - 1)
 				break;
-			strspcattach(copy, word);
+			strspcattach(copy, slen, word);
 			gp++;
 		}
 		nvram_set(wif, copy);
@@ -6147,15 +6147,15 @@ void set_security(webs_t wp)
 		_copytonv_prefix(wp, "psk3", ifname);
 		_copytonv_prefix(wp, "owe", ifname);
 		if (nvram_nmatch("1", "%s_psk", ifname))
-			strspcattach(akm, "psk");
+			strspcattach(akm, sizeof(akm), "psk");
 		if (nvram_nmatch("1", "%s_owe", ifname))
-			strspcattach(akm, "owe");
+			strspcattach(akm, sizeof(akm), "owe");
 		if (nvram_nmatch("1", "%s_psk2", ifname))
-			strspcattach(akm, "psk2");
+			strspcattach(akm, sizeof(akm), "psk2");
 		if (nvram_nmatch("1", "%s_psk2-sha256", ifname))
-			strspcattach(akm, "psk2-sha256");
+			strspcattach(akm, sizeof(akm), "psk2-sha256");
 		if (nvram_nmatch("1", "%s_psk3", ifname))
-			strspcattach(akm, "psk3");
+			strspcattach(akm, sizeof(akm), "psk3");
 		nvram_set(n2, akm);
 	}
 	if (ifname && !strcmp(prefix2, "8021X")) {
@@ -6173,15 +6173,15 @@ void set_security(webs_t wp)
 		_copytonv_prefix(wp, "wpa3-192", ifname);
 		_copytonv_prefix(wp, "wpa3-128", ifname);
 		if (nvram_nmatch("1", "%s_802.1x", ifname))
-			strspcattach(akm, "802.1x");
+			strspcattach(akm, sizeof(akm), "802.1x");
 		if (nvram_nmatch("1", "%s_leap", ifname))
-			strspcattach(akm, "leap");
+			strspcattach(akm, sizeof(akm), "leap");
 		if (nvram_nmatch("1", "%s_peap", ifname))
-			strspcattach(akm, "peap");
+			strspcattach(akm, sizeof(akm), "peap");
 		if (nvram_nmatch("1", "%s_tls", ifname))
-			strspcattach(akm, "tls");
+			strspcattach(akm, sizeof(akm), "tls");
 		if (nvram_nmatch("1", "%s_ttls", ifname))
-			strspcattach(akm, "ttls");
+			strspcattach(akm, sizeof(akm), "ttls");
 		nvram_set(n2, akm);
 	}
 	if (ifname && (!strcmp(prefix2, "wpa") || !strcmp(prefix2, "8021X"))) {
@@ -6199,21 +6199,21 @@ void set_security(webs_t wp)
 		_copytonv_prefix(wp, "wpa3-192", ifname);
 		_copytonv_prefix(wp, "wpa3-128", ifname);
 		if (nvram_nmatch("1", "%s_wpa", ifname))
-			strspcattach(akm, "wpa");
+			strspcattach(akm, sizeof(akm), "wpa");
 		if (nvram_nmatch("1", "%s_wpa2", ifname))
-			strspcattach(akm, "wpa2");
+			strspcattach(akm, sizeof(akm), "wpa2");
 		if (nvram_nmatch("1", "%s_wpa2-sha256", ifname))
-			strspcattach(akm, "wpa2-sha256");
+			strspcattach(akm, sizeof(akm), "wpa2-sha256");
 		if (nvram_nmatch("1", "%s_wpa2-sha384", ifname))
-			strspcattach(akm, "wpa2-sha384");
+			strspcattach(akm, sizeof(akm), "wpa2-sha384");
 		if (nvram_nmatch("1", "%s_wpa3", ifname))
-			strspcattach(akm, "wpa3");
+			strspcattach(akm, sizeof(akm), "wpa3");
 		if (nvram_nmatch("1", "%s_wpa3-192", ifname)) {
-			strspcattach(akm, "wpa3-192");
+			strspcattach(akm, sizeof(akm), "wpa3-192");
 			nvram_nset("1", "%s_gcmp-256", ifname);
 		}
 		if (nvram_nmatch("1", "%s_wpa3-128", ifname)) {
-			strspcattach(akm, "wpa3-128");
+			strspcattach(akm, sizeof(akm), "wpa3-128");
 			nvram_nset("1", "%s_gcmp", ifname);
 		}
 		nvram_set(n2, akm);
@@ -6426,23 +6426,25 @@ void portvlan_remove(webs_t wp)
 	if (val >= 0) {
 		char *vlist = nvram_safe_get("portvlanlist");
 		char *vlanlist = malloc(strlen(vlist));
+		int vlen = strlen(vlist);
 		vlanlist[0] = 0;
 		const char *next;
 		char portvlan[32];
 		int i = 0, a;
 		foreach(portvlan, vlist, next) {
 			if (val != i) {
-				strspcattach(vlanlist, portvlan);
+				strspcattach(vlanlist, vlen, portvlan);
 			} else {
 				for (a = 0; a < ports; a++) {
 					char var[32];
 					char *list = nvram_nget("port%dvlans", a);
 					char *newlist = strdup(list);
+					int llen = strlen(list);
 					newlist[0] = 0;
 					const char *next2;
 					foreach(var, list, next2) {
 						if (atoi(var) != i) {
-							strspcattach(newlist, var);
+							strspcattach(newlist, llen, var);
 						}
 					}
 					nvram_nset(newlist, "port%dvlans", a);
