@@ -113,7 +113,7 @@ static const struct ie_print ieprinters[] = {
 static void fillENC(const char *text)
 {
 	char *buf;
-	char var[64];
+	char var[128];
 	const char *next;
 	buf = site_survey_lists[sscount].ENCINFO;
 	foreach(var, buf, next) {
@@ -262,13 +262,20 @@ static void print_wifi_wpa(const uint8_t type, uint8_t len, const uint8_t *data)
 
 static void print_ssid(const uint8_t type, uint8_t len, const uint8_t *data)
 {
-	if (!(site_survey_lists[sscount].extcap & CAP_MESH))
+	if (!(site_survey_lists[sscount].extcap & CAP_MESH)) {
+		memset(site_survey_lists[sscount].SSID,0,sizeof(site_survey_lists[sscount].SSID));
+		if (len > 32)
+		    len = 32;
 		memcpy(site_survey_lists[sscount].SSID, data, len);
+	}
 }
 
 static void print_mesh_ssid(const uint8_t type, uint8_t len, const uint8_t *data)
 {
 	site_survey_lists[sscount].extcap |= CAP_MESH;
+	memset(site_survey_lists[sscount].SSID,0,sizeof(site_survey_lists[sscount].SSID));
+	if (len > 32)
+		len = 32;
 	memcpy(site_survey_lists[sscount].SSID, data, len);
 }
 
@@ -348,7 +355,10 @@ static int print_bss_handler(struct nl_msg *msg, void *arg)
 		site_survey_lists[sscount].channel |=
 			(ieee80211_mhz2ieee(global_ifname, site_survey_lists[sscount].frequency) & 0xff);
 	}
-	sscount++;
+	if (sscount < (SITE_SURVEY_NUM - 1))
+		sscount++;
+	}
+
 
 	return NL_SKIP;
 }
