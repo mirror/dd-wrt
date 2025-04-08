@@ -1013,7 +1013,7 @@ qca8k_setup_mdio_bus(struct qca8k_priv *priv)
 			return err;
 		}
 
-		if (!dsa_is_user_port(priv->ds, reg))
+		if (reg == 0 || reg == 6)
 			continue;
 
 		of_get_phy_mode(port, &mode);
@@ -1088,16 +1088,18 @@ qca8k_setup_mac_pwr_sel(struct qca8k_priv *priv)
 
 static int qca8k_find_cpu_port(struct dsa_switch *ds)
 {
-	struct qca8k_priv *priv = ds->priv;
+	int i;
 
-	/* Find the connected cpu port. Valid port are 0 or 6 */
 	if (dsa_is_cpu_port(ds, 0))
 		return 0;
 
-	dev_dbg(priv->dev, "port 0 is not the CPU port. Checking port 6");
-
 	if (dsa_is_cpu_port(ds, 6))
 		return 6;
+
+	/* PHY-to-PHY link */
+	for (i = 1; i <= 5; i++)
+		if (dsa_is_cpu_port(ds, i))
+			return i;
 
 	return -EINVAL;
 }
@@ -1394,12 +1396,11 @@ static void qca8k_phylink_get_caps(struct dsa_switch *ds, int port,
 {
 	switch (port) {
 	case 0: /* 1st CPU port */
-		if (dsa_is_cpu_port(ds, port)) {
 		phy_interface_set_rgmii(config->supported_interfaces);
 		__set_bit(PHY_INTERFACE_MODE_SGMII,
 			  config->supported_interfaces);
 		break;
-		}
+
 	case 1:
 	case 2:
 	case 3:
@@ -1546,11 +1547,10 @@ static int qca8k_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 		return -EINVAL;
 	}
 
-	/* Enable/disable SerDes auto-negotiation as necessary */
-	val = neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED ?
-		0 : QCA8K_PWS_SERDES_AEN_DIS;
-
-	ret = qca8k_rmw(priv, QCA8K_REG_PWS, QCA8K_PWS_SERDES_AEN_DIS, val);
+	/* Enable SerDes auto-negotiation always.
+	 * So fixed-link can work.
+	 */
+	ret = qca8k_rmw(priv, QCA8K_REG_PWS, QCA8K_PWS_SERDES_AEN_DIS, 0);
 	if (ret)
 		return ret;
 
