@@ -56,8 +56,7 @@ static void run_on_mount(char *p)
 			setenv("LD_LIBRARY_PATH",
 			       "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
 #ifdef HAVE_JEMALLOC
-			setenv("LD_PRELOAD",
-			       "/usr/lib/libjemalloc.so", 1);
+			setenv("LD_PRELOAD", "/usr/lib/libjemalloc.so", 1);
 #endif
 
 			system(path);

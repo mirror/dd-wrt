@@ -39,7 +39,7 @@ void start_usteer(void)
 	const char *next;
 	int i;
 	char *ssid_list = NULL;
-	if (pidof("hostapd")<=0)
+	if (pidof("hostapd") <= 0)
 		return;
 	for (i = 0; i < c; i++) {
 		sprintf(dev, "wlan%d", i);
