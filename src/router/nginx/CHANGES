@@ -1,4 +1,82 @@
 
+Changes with nginx 1.26.3                                        05 Feb 2025
+
+    *) Security: insufficient check in virtual servers handling with TLSv1.3
+       SNI allowed to reuse SSL sessions in a different virtual server, to
+       bypass client SSL certificates verification (CVE-2025-23419).
+
+    *) Bugfix: in the ngx_http_mp4_module.
+       Thanks to Nils Bars.
+
+    *) Workaround: "gzip filter failed to use preallocated memory" alerts
+       appeared in logs when using zlib-ng.
+
+    *) Bugfix: nginx could not build libatomic library using the library
+       sources if the --with-libatomic=DIR option was used.
+
+    *) Bugfix: nginx now ignores QUIC version negotiation packets from
+       clients.
+
+    *) Bugfix: nginx could not be built on Solaris 10 and earlier with the
+       ngx_http_v3_module.
+
+    *) Bugfixes in HTTP/3.
+
+
+Changes with nginx 1.26.2                                        14 Aug 2024
+
+    *) Security: processing of a specially crafted mp4 file by the
+       ngx_http_mp4_module might cause a worker process crash
+       (CVE-2024-7347).
+       Thanks to Nils Bars.
+
+
+Changes with nginx 1.26.1                                        29 May 2024
+
+    *) Security: when using HTTP/3, processing of a specially crafted QUIC
+       session might cause a worker process crash, worker process memory
+       disclosure on systems with MTU larger than 4096 bytes, or might have
+       potential other impact (CVE-2024-32760, CVE-2024-31079,
+       CVE-2024-35200, CVE-2024-34161).
+       Thanks to Nils Bars of CISPA.
+
+    *) Bugfix: reduced memory consumption for long-lived requests if "gzip",
+       "gunzip", "ssi", "sub_filter", or "grpc_pass" directives are used.
+
+    *) Bugfix: nginx could not be built by gcc 14 if the --with-libatomic
+       option was used.
+       Thanks to Edgar Bonet.
+
+    *) Bugfix: in HTTP/3.
+
+
+Changes with nginx 1.26.0                                        23 Apr 2024
+
+    *) 1.26.x stable branch.
+
+
+Changes with nginx 1.25.5                                        16 Apr 2024
+
+    *) Feature: virtual servers in the stream module.
+
+    *) Feature: the ngx_stream_pass_module.
+
+    *) Feature: the "deferred", "accept_filter", and "setfib" parameters of
+       the "listen" directive in the stream module.
+
+    *) Feature: cache line size detection for some architectures.
+       Thanks to Piotr Sikora.
+
+    *) Feature: support for Homebrew on Apple Silicon.
+       Thanks to Piotr Sikora.
+
+    *) Bugfix: Windows cross-compilation bugfixes and improvements.
+       Thanks to Piotr Sikora.
+
+    *) Bugfix: unexpected connection closure while using 0-RTT in QUIC.
+       Thanks to Vladimir Khomutov.
+
+
 Changes with nginx 1.25.4                                        14 Feb 2024
 
     *) Security: when using HTTP/3 a segmentation fault might occur in a

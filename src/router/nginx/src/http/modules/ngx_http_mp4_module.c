@@ -3099,7 +3099,8 @@ static ngx_int_t
 ngx_http_mp4_crop_stsc_data(ngx_http_mp4_file_t *mp4,
     ngx_http_mp4_trak_t *trak, ngx_uint_t start)
 {
-    uint32_t               start_sample, chunk, samples, id, next_chunk, n,
+    uint64_t               n;
+    uint32_t               start_sample, chunk, samples, id, next_chunk,
                            prev_samples;
     ngx_buf_t             *data, *buf;
     ngx_uint_t             entries, target_chunk, chunk_samples;
@@ -3155,12 +3156,19 @@ ngx_http_mp4_crop_stsc_data(ngx_http_mp4_file_t *mp4,
 
         next_chunk = ngx_mp4_get_32value(entry->chunk);
 
+        if (next_chunk < chunk) {
+            ngx_log_error(NGX_LOG_ERR, mp4->file.log, 0,
+                          "unordered mp4 stsc chunks in \"%s\"",
+                          mp4->file.name.data);
+            return NGX_ERROR;
+        }
+
         ngx_log_debug5(NGX_LOG_DEBUG_HTTP, mp4->file.log, 0,
                        "sample:%uD, chunk:%uD, chunks:%uD, "
                        "samples:%uD, id:%uD",
                        start_sample, chunk, next_chunk - chunk, samples, id);
 
-        n = (next_chunk - chunk) * samples;
+        n = (uint64_t) (next_chunk - chunk) * samples;
 
         if (start_sample < n) {
             goto found;
@@ -3168,7 +3176,10 @@ ngx_http_mp4_crop_stsc_data(ngx_http_mp4_file_t *mp4,
 
         start_sample -= n;
 
-        prev_samples = samples;
+        if (next_chunk > chunk) {
+            prev_samples = samples;
+        }
+
         chunk = next_chunk;
         samples = ngx_mp4_get_32value(entry->samples);
         id = ngx_mp4_get_32value(entry->id);
@@ -3178,11 +3189,18 @@ ngx_http_mp4_crop_stsc_data(ngx_http_mp4_file_t *mp4,
 
     next_chunk = trak->chunks + 1;
 
+    if (next_chunk < chunk) {
+        ngx_log_error(NGX_LOG_ERR, mp4->file.log, 0,
+                      "unordered mp4 stsc chunks in \"%s\"",
+                      mp4->file.name.data);
+        return NGX_ERROR;
+    }
+
     ngx_log_debug4(NGX_LOG_DEBUG_HTTP, mp4->file.log, 0,
                    "sample:%uD, chunk:%uD, chunks:%uD, samples:%uD",
                    start_sample, chunk, next_chunk - chunk, samples);
 
-    n = (next_chunk - chunk) * samples;
+    n = (uint64_t) (next_chunk - chunk) * samples;
 
     if (start_sample > n) {
         ngx_log_error(NGX_LOG_ERR, mp4->file.log, 0,
@@ -3200,6 +3218,12 @@ found:
         ngx_log_error(NGX_LOG_ERR, mp4->file.log, 0,
                       "zero number of samples in \"%s\"",
                       mp4->file.name.data);
+        return NGX_ERROR;
+    }
+
+    if (chunk == 0) {
+        ngx_log_error(NGX_LOG_ERR, mp4->file.log, 0,
+                      "zero chunk in \"%s\"", mp4->file.name.data);
         return NGX_ERROR;
     }
 

@@ -295,6 +295,11 @@ ngx_quic_parse_packet(ngx_quic_header_t *pkt)
         return NGX_ERROR;
     }
 
+    if (pkt->version == 0) {
+        /* version negotiation */
+        return NGX_ERROR;
+    }
+
     if (!ngx_quic_supported_version(pkt->version)) {
         return NGX_ABORT;
     }
@@ -1747,6 +1752,14 @@ ngx_quic_parse_transport_params(u_char *p, u_char *end, ngx_quic_tp_t *tp,
             ngx_log_error(NGX_LOG_INFO, log, 0,
                           "quic failed to parse"
                           " transport param id:0x%xL length", id);
+            return NGX_ERROR;
+        }
+
+        if ((size_t) (end - p) < len) {
+            ngx_log_error(NGX_LOG_INFO, log, 0,
+                          "quic failed to parse"
+                          " transport param id:0x%xL, data length %uL too long",
+                          id, len);
             return NGX_ERROR;
         }
 
