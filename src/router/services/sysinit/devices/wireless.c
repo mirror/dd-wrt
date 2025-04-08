@@ -315,6 +315,21 @@ int load_rtlwifi(void)
 		rmmod("rtw88_pci");
 		rmmod("rtw88_core");
 	}
+	wificnt = 0;
+	insmod("rtw89_core");
+	insmod("rtw89_pci");
+	insmod("rtw89_8851b");
+	insmod("rtw89_8852a");
+	insmod("rtw89_8852b");
+	insmod("rtw89_8852c");
+	wificnt += detectchange("rtw89_8851be");
+	wificnt += detectchange("rtw89_8852ae");
+	wificnt += detectchange("rtw89_8852be");
+	wificnt += detectchange("rtw89_8852ce");
+	if (!wificnt) {
+		eval("modprobe","-r","rtw89_pci");
+		eval("modprobe","-r","rtw89_core");
+	}
 	return 0;
 }
 
