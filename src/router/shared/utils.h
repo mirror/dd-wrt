@@ -1618,9 +1618,9 @@ char *getRADev(const char *prefix);
 	} while (0)
 #else
 #define dd_syslog(a, args...) syslog(a, ##args);
-void dd_loginfo(const char *servicename, const char *fmt, ...) __attribute__((format (printf, 2, 3))); 
-void dd_logdebug(const char *servicename, const char *fmt, ...) __attribute__((format (printf, 2, 3)));
-void dd_logerror(const char *servicename, const char *fmt, ...) __attribute__((format (printf, 2, 3)));
+void dd_loginfo(const char *servicename, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+void dd_logdebug(const char *servicename, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+void dd_logerror(const char *servicename, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 void dd_logstart(const char *servicename, int ret);
 #endif
 #endif
@@ -1669,7 +1669,7 @@ void set_named_smp_affinity_list(char *name, char *cpulist, int entry);
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 int ifconfig(char *name, int flags, char *addr, char *netmask);
 
-int writevaproc(char *value, char *fmt, ...) __attribute__((format (printf, 2, 3))); 
+int writevaproc(char *value, char *fmt, ...) __attribute__((format(printf, 2, 3)));
 
 void MAC_ADD(char *mac);
 void MAC_SUB(char *mac);

@@ -102,7 +102,6 @@ extern int dhd_bssiovar_setbuf(char *ifname, char *iovar, int bssidx, void *para
 extern int dhd_bssiovar_set(char *ifname, char *iovar, int bssidx, void *param, int paramlen);
 extern int dhd_bssiovar_setint(char *ifname, char *iovar, int bssidx, int val);
 
-
 #endif
 /*
  * Returns the list of associated stations in the pre-existing buffer list 
@@ -544,7 +543,7 @@ int has_subeamforming(const char *interface);
 int has_mubeamforming(const char *interface);
 extern char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vht160, int vht8080, int subf, int mubf);
 #else
-static inline char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vht160, int vht8080, int subf, int mubf) 
+static inline char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vht160, int vht8080, int subf, int mubf)
 {
 	return NULL;
 }

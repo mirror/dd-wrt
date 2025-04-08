@@ -38,7 +38,7 @@
 #define DEBUG_HTTPD 1
 #define DEBUG_SERVICE 2
 
-extern void dd_debug(int target, const char *fmt, ...) __attribute__((format (printf, 2, 3)));
+extern void dd_debug(int target, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 
 #if defined(HAVE_X86) || defined(HAVE_NEWPORT) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900)) //special treatment
 extern int debug_ready(void);
@@ -149,7 +149,7 @@ extern char *strattach(char *src, size_t maxlen, const char *attach, const char 
 extern char *strspcattach(char *src, size_t maxlen, const char *attach);
 
 extern int dd_system(const char *command);
-extern int sysprintf(const char *fmt, ...) __attribute__((format (printf, 1, 2)));
+extern int sysprintf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 extern int f_exists(const char *path); // note: anything but a directory
 
 extern char *get_filter_services(void);
@@ -179,13 +179,14 @@ extern int strhas(char *list, char *key);
  * @param       buf     buffer large enough to hold both strings
  * @return      buf
  */
-size_t strlcat (char *, const char *, size_t);
+size_t strlcat(char *, const char *, size_t);
 char *strcat_r(const char *s1, const char *s2, char *buf);
 char *strlcat_r(const char *s1, const char *s2, char *buf, size_t len);
 char *dd_strncat(char *dst, const char *src, size_t len);
 size_t dd_strlcat(char *dst, const char *src, size_t len);
 
-static inline char * strlcathelp(char *dst, const char *s, size_t len) {
+static inline char *strlcathelp(char *dst, const char *s, size_t len)
+{
 	strlcat(dst, s, len);
 	return dst;
 }
@@ -194,8 +195,8 @@ static inline char * strlcathelp(char *dst, const char *s, size_t len) {
 #define strcat(buf, s1) sizeof(buf) == sizeof(void *) ? strcat(buf, s1) : strlcathelp(buf, s1, sizeof(buf))
 
 #ifndef FROM_NVRAM
-extern int dd_sprintf(char *str, const char *fmt, ...) __attribute__((format (printf, 2, 3)));
-extern int dd_snprintf(char *str, size_t len, const char *fmt, ...) __attribute__((format (printf, 3, 4)));
+extern int dd_sprintf(char *str, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+extern int dd_snprintf(char *str, size_t len, const char *fmt, ...) __attribute__((format(printf, 3, 4)));
 
 void *dd_malloc(size_t size);
 /*
@@ -226,13 +227,13 @@ char *iso_strdup(const char *str);
 #define free dd_free
 #define strdup dd_strdup
 */
-#define compile_time_assert(cond) char a[cond ? 1: 0]
+#define compile_time_assert(cond) char a[cond ? 1 : 0]
 
-static inline char * strlcpyhelp(char *dst, const char *s, size_t len) {
+static inline char *strlcpyhelp(char *dst, const char *s, size_t len)
+{
 	strlcpy(dst, s, len);
 	return dst;
 }
-
 
 #define strcpy(dst, src) (sizeof(dst) == sizeof(void *) ? strcpy(dst, src) : strlcpyhelp(dst, src, sizeof(dst) - 1))
 #define sprintf(output, format, args...)                                         \

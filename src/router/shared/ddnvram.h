@@ -59,7 +59,7 @@ extern int nvram_exists(const char *name);
 
 extern int nvram_empty(const char *name);
 
-extern int nvram_nexists(const char *fmt, ...) __attribute__((format (printf, 1, 2)));
+extern int nvram_nexists(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 
 extern void nvram_safe_unset(const char *name);
 
@@ -116,19 +116,19 @@ extern char *nvram_default_get(const char *var, const char *def);
 
 extern int nvram_default_geti(const char *var, const int def);
 
-extern char *nvram_nget(const char *fmt, ...) __attribute__((format (printf, 1, 2)));
-extern char *nvram_default_nget(const char *def, const char *fmt, ...) __attribute__((format (printf, 2, 3)));
-extern int nvram_default_ngeti(const int def, const char *fmt, ...) __attribute__((format (printf, 2, 3)));
+extern char *nvram_nget(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+extern char *nvram_default_nget(const char *def, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+extern int nvram_default_ngeti(const int def, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 
-extern int nvram_nset(const char *value, const char *fmt, ...) __attribute__((format (printf, 2, 3)));
+extern int nvram_nset(const char *value, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 
-extern int nvram_nseti(const int value, const char *fmt, ...) __attribute__((format (printf, 2, 3)));
+extern int nvram_nseti(const int value, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 
-extern int nvram_nmatch(const char *match, const char *fmt, ...) __attribute__((format (printf, 2, 3)));
-extern int nvram_default_nmatch(const char *match, const char *def, const char *fmt, ...) __attribute__((format (printf, 3, 4)));
-extern int nvram_default_nmatchi(const int match, const int def, const char *fmt, ...) __attribute__((format (printf, 3, 4)));
+extern int nvram_nmatch(const char *match, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+extern int nvram_default_nmatch(const char *match, const char *def, const char *fmt, ...) __attribute__((format(printf, 3, 4)));
+extern int nvram_default_nmatchi(const int match, const int def, const char *fmt, ...) __attribute__((format(printf, 3, 4)));
 
-extern int nvram_nmatchi(const int match, const char *fmt, ...) __attribute__((format (printf, 2, 3)));
+extern int nvram_nmatchi(const int match, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 
 extern int nvram_geti(const char *name);
 
@@ -139,7 +139,7 @@ extern int nvram_state(char *name);
 extern int nvram_state_change(char *name);
 extern int nvram_delstates(char *list);
 
-int nvram_ngeti(const char *fmt, ...) __attribute__((format (printf, 1, 2)));
+int nvram_ngeti(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 
 int nvhas(char *nvname, char *key);
 

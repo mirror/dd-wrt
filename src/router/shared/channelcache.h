@@ -76,25 +76,24 @@ static void _invalidate_channelcache(void)
 	}
 }
 
-#define INITVALUECACHEi(prefix)         \
+#define INITVALUECACHEi(prefix)        \
 	static unsigned int __set = 0; \
 	static unsigned int __val = 0; \
-	int dn, ret = 0;                \
-	dn = prefix[4] - '0';                \
+	int dn, ret = 0;               \
+	dn = prefix[4] - '0';          \
 	if (dn >= 0 && dn <= 9 && !(__set & (1 << dn))) {
-
 #define INITVALUECACHE() INITVALUECACHEi(prefix)
 
-#define EXITVALUECACHE()                    \
-	}                                   \
-	else                                \
-	{                                   \
-		return !!(__val & (1 << dn)); \
-	}                                   \
-out_cache:;                                 \
-	if (dn <= 9 && dn >= 0 && ret != -1) {            \
-		__set |= 1 << dn;           \
-		__val |= (!!ret) << dn;     \
+#define EXITVALUECACHE()                       \
+	}                                      \
+	else                                   \
+	{                                      \
+		return !!(__val & (1 << dn));  \
+	}                                      \
+out_cache:;                                    \
+	if (dn <= 9 && dn >= 0 && ret != -1) { \
+		__set |= 1 << dn;              \
+		__val |= (!!ret) << dn;        \
 	}
 #define RETURNVALUE(val)        \
 	{                       \

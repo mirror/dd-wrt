@@ -64,7 +64,7 @@ int airbag_name_thread(const char *name);
  * - %%u for unsigned integers
  * @return Number of characters written
  */
-int airbag_printf(int fd, const char *fmt, ...) __attribute__((format (printf, 2, 3)));
+int airbag_printf(int fd, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 
 /** Looks up the file name, function name, and offset corresponding to pc.
  * Writes text representation to fd.
