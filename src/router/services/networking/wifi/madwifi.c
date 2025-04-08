@@ -205,7 +205,7 @@ void setupKey(const char *prefix)
 	}
 }
 
-void get_pairwise(const char *prefix, char *pwstring, size_t pwstrlen,  char *grpstring, size_t grpstrlen,  int isadhoc, int ismesh)
+void get_pairwise(const char *prefix, char *pwstring, size_t pwstrlen, char *grpstring, size_t grpstrlen, int isadhoc, int ismesh)
 {
 	char temp_grpstring[256] = { 0, 0 };
 	char akm[16];
@@ -214,7 +214,7 @@ void get_pairwise(const char *prefix, char *pwstring, size_t pwstrlen,  char *gr
 	int iswpa3_128 = nvhas(akm, "wpa3-128");
 	int iswpa3 = nvhas(akm, "wpa3");
 	if (nvram_nmatch("1", "%s_ccmp", prefix)) {
-		strspcattach(pwstring,pwstrlen, "CCMP");
+		strspcattach(pwstring, pwstrlen, "CCMP");
 		if (grpstring) {
 #if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
 			if (isadhoc)
@@ -228,24 +228,24 @@ void get_pairwise(const char *prefix, char *pwstring, size_t pwstrlen,  char *gr
 		}
 	}
 	if (nvram_nmatch("1", "%s_tkip", prefix)) {
-		strspcattach(pwstring,pwstrlen, "TKIP");
+		strspcattach(pwstring, pwstrlen, "TKIP");
 		if (grpstring)
 			strspcattach(temp_grpstring, sizeof(temp_grpstring), "TKIP");
 	}
 	if (nvram_nmatch("1", "%s_ccmp-256", prefix)) {
-		strspcattach(pwstring,pwstrlen, "CCMP-256");
+		strspcattach(pwstring, pwstrlen, "CCMP-256");
 		if (grpstring) {
 			strspcattach(temp_grpstring, sizeof(temp_grpstring), "CCMP-256 GCMP-256 GCMP CCMP");
 		}
 	}
 	if (nvram_nmatch("1", "%s_gcmp-256", prefix) || iswpa3_192) {
-		strspcattach(pwstring,pwstrlen, "GCMP-256");
+		strspcattach(pwstring, pwstrlen, "GCMP-256");
 		if (grpstring) {
 			strspcattach(temp_grpstring, sizeof(temp_grpstring), "GCMP-256 GCMP CCMP");
 		}
 	}
 	if (nvram_nmatch("1", "%s_gcmp", prefix) || iswpa3_128) {
-		strspcattach(pwstring,pwstrlen, "GCMP");
+		strspcattach(pwstring, pwstrlen, "GCMP");
 		if (grpstring) {
 			if (has_ad(prefix))
 				strspcattach(temp_grpstring, sizeof(temp_grpstring), "GCMP");
@@ -287,7 +287,7 @@ void eap_sta_key_mgmt(FILE *fp, const char *prefix)
 	const int iswpa2sha384 = _has_wpa3 ? nvhas(akm, "wpa2-sha384") : 0;
 	char pwstring[128] = { 0 };
 	char grpstring[128] = { 0 };
-	get_pairwise(prefix, pwstring, sizeof(pwstring), grpstring,sizeof(grpstring), 0, 0);
+	get_pairwise(prefix, pwstring, sizeof(pwstring), grpstring, sizeof(grpstring), 0, 0);
 	if (*pwstring && (iswpa2 || iswpa || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 || iswpa2sha384)) {
 		fprintf(fp, "\tpairwise=%s\n", pwstring);
 		fprintf(fp, "\tgroup=%s\n", grpstring);
@@ -728,7 +728,7 @@ void setupSupplicant(const char *prefix, char *ssidoverride)
 
 		char pwstring[128] = { 0 };
 		char grpstring[128] = { 0 };
-		get_pairwise(prefix, pwstring, sizeof(pwstring), grpstring,sizeof(grpstring), 0, 0);
+		get_pairwise(prefix, pwstring, sizeof(pwstring), grpstring, sizeof(grpstring), 0, 0);
 #ifdef HAVE_80211W
 		if (nvram_default_matchi(mfp, -1, 0))
 			fprintf(fp, "\tieee80211w=1\n");
