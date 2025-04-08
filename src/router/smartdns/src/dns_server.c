@@ -44,12 +44,14 @@
 #include <net/if.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
+#ifdef HAVE_OPENSSL
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 #include <openssl/ssl.h>
 #include <openssl/x509.h>
+#endif
 #include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
@@ -214,10 +216,12 @@ struct dns_server_conn_tcp_server {
 	struct dns_server_conn_head head;
 };
 
+#ifdef HAVE_OPENSSL
 struct dns_server_conn_tls_server {
 	struct dns_server_conn_head head;
 	SSL_CTX *ssl_ctx;
 };
+#endif
 
 struct dns_server_conn_tcp_client {
 	struct dns_server_conn_head head;
@@ -233,12 +237,14 @@ struct dns_server_conn_tcp_client {
 	dns_server_client_status status;
 };
 
+#ifdef HAVE_OPENSSL
 struct dns_server_conn_tls_client {
 	struct dns_server_conn_tcp_client tcp;
 	SSL *ssl;
 	int ssl_want_write;
 	pthread_mutex_t ssl_lock;
 };
+#endif
 
 /* ip address lists of domain */
 struct dns_ip_address {
@@ -7675,11 +7681,13 @@ static int _dns_server_update_request_connection_timeout(struct dns_server_conn_
 		struct dns_server_conn_tcp_client *tcpclient = (struct dns_server_conn_tcp_client *)conn;
 		tcpclient->conn_idle_timeout = timeout;
 	} break;
+#ifdef HAVE_OPENSSL
 	case DNS_CONN_TYPE_TLS_CLIENT:
 	case DNS_CONN_TYPE_HTTPS_CLIENT: {
 		struct dns_server_conn_tls_client *tlsclient = (struct dns_server_conn_tls_client *)conn;
 		tlsclient->tcp.conn_idle_timeout = timeout;
 	} break;
+#endif
 	default:
 		break;
 	}
@@ -7928,7 +7936,6 @@ static int _dns_server_socket_ssl_recv(struct dns_server_conn_tls_client *tls_cl
 
 	return ret;
 }
-#endif
 
 static int _dns_server_ssl_poll_event(struct dns_server_conn_tls_client *tls_client, int ssl_ret)
 {
@@ -7955,6 +7962,7 @@ static int _dns_server_ssl_poll_event(struct dns_server_conn_tls_client *tls_cli
 errout:
 	return -1;
 }
+#endif
 
 static int _dns_server_tcp_socket_send(struct dns_server_conn_tcp_client *tcp_client, void *data, int data_len)
 {
@@ -8247,6 +8255,7 @@ static int _dns_server_tcp_process_requests(struct dns_server_conn_tcp_client *t
 	return 0;
 }
 
+#ifdef HAVE_OPENSSL
 static int _dns_server_tls_want_write(struct dns_server_conn_tcp_client *tcpclient)
 {
 	if (tcpclient->head.type == DNS_CONN_TYPE_TLS_CLIENT || tcpclient->head.type == DNS_CONN_TYPE_HTTPS_CLIENT) {
@@ -8258,11 +8267,16 @@ static int _dns_server_tls_want_write(struct dns_server_conn_tcp_client *tcpclie
 
 	return 0;
 }
+#endif
 
 static int _dns_server_tcp_send(struct dns_server_conn_tcp_client *tcpclient)
 {
 	int len = 0;
+#ifdef HAVE_OPENSSL
 	while (tcpclient->sndbuff.size > 0 || _dns_server_tls_want_write(tcpclient) == 1) {
+#else
+	while (tcpclient->sndbuff.size > 0) {
+#endif
 		len = _dns_server_tcp_socket_send(tcpclient, tcpclient->sndbuff.buf, tcpclient->sndbuff.size);
 		if (len < 0) {
 			if (errno == EAGAIN) {

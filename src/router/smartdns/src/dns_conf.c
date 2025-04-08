@@ -26,7 +26,9 @@
 #include <getopt.h>
 #include <glob.h>
 #include <libgen.h>
+#ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

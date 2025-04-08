@@ -32,8 +32,11 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <libgen.h>
+#include <limits.h>
+#ifdef HAVE_OPENSSL
 #include <openssl/err.h>
 #include <openssl/ssl.h>
+#endif
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>

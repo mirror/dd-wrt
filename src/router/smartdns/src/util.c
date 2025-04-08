@@ -36,9 +36,11 @@
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 #include <netinet/tcp.h>
+#ifdef HAVE_OPENSSL
 #include <openssl/crypto.h>
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
+#endif
 #include <poll.h>
 #include <pthread.h>
 #include <pwd.h>
@@ -1197,6 +1199,7 @@ int netlink_get_neighbors(int family,
 	return ret;
 }
 
+#ifdef HAVE_OPENSSL
 unsigned char *SSL_SHA256(const unsigned char *d, size_t n, unsigned char *md)
 {
 	static unsigned char m[SHA256_DIGEST_LENGTH];
@@ -1219,7 +1222,6 @@ unsigned char *SSL_SHA256(const unsigned char *d, size_t n, unsigned char *md)
 	return (md);
 }
 
-#ifdef HAVE_OPENSSL
 int SSL_base64_decode_ext(const char *in, unsigned char *out, int max_outlen, int url_safe, int auto_padding)
 {
 	size_t inlen = strlen(in);
@@ -1559,7 +1561,6 @@ out:
 
 	return ret;
 }
-#endif
 #if OPENSSL_API_COMPAT < 0x10100000
 #define THREAD_STACK_SIZE (16 * 1024)
 static pthread_mutex_t *lock_cs;
@@ -1582,7 +1583,6 @@ static __attribute__((unused)) unsigned long _pthreads_thread_id(void)
 	ret = (unsigned long)pthread_self();
 	return (ret);
 }
-#ifdef HAVE_OPENSSL
 void SSL_CRYPTO_thread_setup(void)
 {
 	int i = 0;

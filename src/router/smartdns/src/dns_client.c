@@ -44,10 +44,12 @@
 #include <netinet/ip6.h>
 #include <netinet/ip_icmp.h>
 #include <netinet/tcp.h>
+#ifdef HAVE_OPENSSL
 #include <openssl/err.h>
 #include <openssl/rand.h>
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
+#endif
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1057,6 +1059,7 @@ static void _dns_client_group_remove_all(void)
 		_dns_client_remove_group(group);
 	}
 }
+#ifdef HAVE_OPENSSL
 
 int dns_client_spki_decode(const char *spki, unsigned char *spki_data_out, int spki_data_out_max_len)
 {
@@ -1078,7 +1081,6 @@ static char *_dns_client_server_get_tls_host_verify(struct dns_server_info *serv
 	switch (server_info->type) {
 	case DNS_SERVER_UDP: {
 	} break;
-#ifdef HAVE_OPENSSL
 	case DNS_SERVER_HTTP3:
 	case DNS_SERVER_HTTPS: {
 		struct client_dns_server_flag_https *flag_https = &server_info->flags.https;
@@ -1089,7 +1091,6 @@ static char *_dns_client_server_get_tls_host_verify(struct dns_server_info *serv
 		struct client_dns_server_flag_tls *flag_tls = &server_info->flags.tls;
 		tls_host_verify = flag_tls->tls_host_verify;
 	} break;
-#endif
 	case DNS_SERVER_TCP:
 		break;
 	case DNS_SERVER_MDNS:
@@ -1115,7 +1116,6 @@ static char *_dns_client_server_get_spki(struct dns_server_info *server_info, in
 	switch (server_info->type) {
 	case DNS_SERVER_UDP: {
 	} break;
-#ifdef HAVE_OPENSSL
 	case DNS_SERVER_HTTP3:
 	case DNS_SERVER_HTTPS: {
 		struct client_dns_server_flag_https *flag_https = &server_info->flags.https;
@@ -1128,7 +1128,6 @@ static char *_dns_client_server_get_spki(struct dns_server_info *server_info, in
 		spki = flag_tls->spki;
 		*spki_len = flag_tls->spi_len;
 	} break;
-#endif
 	case DNS_SERVER_TCP:
 		break;
 	case DNS_SERVER_MDNS:
@@ -1145,7 +1144,6 @@ static char *_dns_client_server_get_spki(struct dns_server_info *server_info, in
 	return spki;
 }
 
-#ifdef HAVE_OPENSSL
 static int _dns_client_set_trusted_cert(SSL_CTX *ssl_ctx)
 {
 	char *cafile = NULL;
