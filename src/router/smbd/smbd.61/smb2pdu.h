@@ -246,17 +246,10 @@ struct preauth_integrity_info {
 };
 
 /* offset is sizeof smb2_negotiate_rsp but rounded up to 8 bytes. */
-#ifdef CONFIG_SMB_SERVER_KERBEROS5
 /* sizeof(struct smb2_negotiate_rsp) =
  * header(64) + response(64) + GSS_LENGTH(96) + GSS_PADDING(0)
  */
 #define OFFSET_OF_NEG_CONTEXT	0xe0
-#else
-/* sizeof(struct smb2_negotiate_rsp) =
- * header(64) + response(64) + GSS_LENGTH(74) + GSS_PADDING(6)
- */
-#define OFFSET_OF_NEG_CONTEXT	0xd0
-#endif
 
 #define SMB2_PREAUTH_INTEGRITY_CAPABILITIES	cpu_to_le16(1)
 #define SMB2_ENCRYPTION_CAPABILITIES		cpu_to_le16(2)

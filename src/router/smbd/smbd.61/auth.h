@@ -8,13 +8,8 @@
 
 #include "ntlmssp.h"
 
-#ifdef CONFIG_SMB_SERVER_KERBEROS5
 #define AUTH_GSS_LENGTH		96
 #define AUTH_GSS_PADDING	0
-#else
-#define AUTH_GSS_LENGTH		74
-#define AUTH_GSS_PADDING	6
-#endif
 
 #define CIFS_HMAC_MD5_HASH_SIZE	(16)
 #define CIFS_NTHASH_SIZE	(16)

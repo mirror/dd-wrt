@@ -2657,13 +2657,11 @@ err_out:
 }
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0)
-static inline bool is_dot_dotdot(const char *name, size_t len)
+static inline bool ksmbd_is_dot_dotdot(const char *name, size_t len)
 {
 	return len && unlikely(name[0] == '.') &&
 		(len == 1 || (len == 2 && name[1] == '.'));
 }
-#endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
 static bool __dir_empty(struct dir_context *ctx, const char *name, int namlen,
@@ -2675,7 +2673,7 @@ static int __dir_empty(struct dir_context *ctx, const char *name, int namlen,
 	struct ksmbd_readdir_data *buf;
 
 	buf = container_of(ctx, struct ksmbd_readdir_data, ctx);
-	if (!is_dot_dotdot(name, namlen))
+	if (!ksmbd_is_dot_dotdot(name, namlen))
 		buf->dirent_count++;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
