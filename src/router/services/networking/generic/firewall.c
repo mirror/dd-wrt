@@ -3365,6 +3365,7 @@ static void run_firewall6(char *vifs)
 		eval("ip6tables", "-N", "logdrop");
 		eval("ip6tables", "-N", "logaccept");
 		eval("ip6tables", "-N", "logreject");
+		eval("ip6tables", "-N", "logreject_tcp");
 #ifdef FLOOD_PROTECT
 		eval("ip6tables", "-N", "limaccept");
 #endif
@@ -3675,7 +3676,7 @@ static void run_firewall6(char *vifs)
 			     "--log-tcp-options", "--log-ip-options");
 		}
 		eval("ip6tables", "-A", "logreject_tcp", "-p", "tcp", "-j", "REJECT", "--reject-with", "icmp6-adm-prohibited");
-		eval("ip6tables", "-A", "logreject", "-p", "tcp", "-j", "REJECT");
+		eval("ip6tables", "-A", "logreject", "-j", "REJECT");
 #ifdef FLOOD_PROTECT
 		/*
 		 * limaccept chain 
