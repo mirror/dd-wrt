@@ -263,9 +263,9 @@ static void print_wifi_wpa(const uint8_t type, uint8_t len, const uint8_t *data)
 static void print_ssid(const uint8_t type, uint8_t len, const uint8_t *data)
 {
 	if (!(site_survey_lists[sscount].extcap & CAP_MESH)) {
-		memset(site_survey_lists[sscount].SSID,0,sizeof(site_survey_lists[sscount].SSID));
+		memset(site_survey_lists[sscount].SSID, 0, sizeof(site_survey_lists[sscount].SSID));
 		if (len > 32)
-		    len = 32;
+			len = 32;
 		memcpy(site_survey_lists[sscount].SSID, data, len);
 	}
 }
@@ -273,7 +273,7 @@ static void print_ssid(const uint8_t type, uint8_t len, const uint8_t *data)
 static void print_mesh_ssid(const uint8_t type, uint8_t len, const uint8_t *data)
 {
 	site_survey_lists[sscount].extcap |= CAP_MESH;
-	memset(site_survey_lists[sscount].SSID,0,sizeof(site_survey_lists[sscount].SSID));
+	memset(site_survey_lists[sscount].SSID, 0, sizeof(site_survey_lists[sscount].SSID));
 	if (len > 32)
 		len = 32;
 	memcpy(site_survey_lists[sscount].SSID, data, len);
