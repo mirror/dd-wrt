@@ -22,6 +22,9 @@ Currently supported devices with corresponding firmwares:
 RTL8812AU
     rtw8812a_fw.bin
 
+RTL8814AE/RTL8814AU
+    rtw8814a_fw.bin
+
 RTL8821AU
     rtw8821a_fw.bin
 
