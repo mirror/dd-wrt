@@ -709,7 +709,7 @@ int has_vaps(const char *prefix)
 
 int is_6ghz_freq_prefix(const char *prefix, int freq)
 {
-	if (!is_ath11k(prefix))
+	if (!is_ath11k(prefix) && !has_ax(prefix))
 		return 0;
 	return is_6ghz_freq(freq);
 }

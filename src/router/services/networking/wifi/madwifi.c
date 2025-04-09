@@ -357,7 +357,7 @@ void addvhtcaps(const char *prefix, FILE *fp)
 #define IEEE80211_VHT_CAP_SOUNDING_DIMENSIONS_MASK (7 << IEEE80211_VHT_CAP_SOUNDING_DIMENSIONS_SHIFT)
 
 	unsigned int mask;
-	if (is_mt7615(prefix) || is_ath10k(prefix) || is_ath11k(prefix) || is_brcmfmac(prefix) || is_mt7915(prefix) ||
+	if (is_mt7615(prefix) || is_ath10k(prefix) || is_ath11k(prefix) || is_brcmfmac(prefix) || has_ax(prefix) || is_mt7915(prefix) ||
 	    is_mt7921(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x2(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		if ((has_ac(prefix) || has_ax(prefix)) &&
