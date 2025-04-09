@@ -144,7 +144,11 @@ int load_mac80211(void)
 
 int load_iwlwifi(void)
 {
-	insmod("libipw");
+	modprobe("lib80211");
+	modprobe("lib80211_crypt_ccmp");
+	modprobe("lib80211_crypt_tkip");
+	modprobe("lib80211_crypt_wep");
+	modprobe("libipw");
 	if (!detectchange("ipw2100") && !detectchange("ipw2200"))
 		rmmod("libipw");
 	insmod("iwlegacy");
@@ -168,6 +172,7 @@ int load_ath11k(void)
 		insmod("qrtr");
 		insmod("mhi");
 		insmod("qrtr-mhi");
+		insmod("qmi_helpers");
 		insmod("ath11k_pci");
 	}
 	return 0;
@@ -198,6 +203,7 @@ int load_mt76(void)
 	insmod("mt76x0u");
 	insmod("mt7603e");
 	insmod("mt7915e");
+	insmod("mt792x-lib");
 	insmod("mt7921-common");
 	insmod("mt76-sdio");
 	insmod("mt7921e");
@@ -366,7 +372,8 @@ int load_ath9k(void)
 	int od = nvram_default_geti("power_overdrive", 0);
 	char overdrive[32];
 	sprintf(overdrive, "overdrive=%d", od);
-
+	insmod("ath9k_hw");
+	insmod("ath9k_common");
 #ifdef HAVE_WZRG450
 	eval("insmod", "ath9k", overdrive, "blink=1");
 #elif HAVE_PERU
