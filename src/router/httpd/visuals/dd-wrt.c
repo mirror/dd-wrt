@@ -5791,7 +5791,7 @@ static int suiteb192(const char *prefix)
 
 static int disable_if_6ghz(const char *prefix)
 {
-	return !has_6ghz(prefix);
+	return !has_6ghz(prefix) || !nvram_nmatch("ax6-only", "%s_net_mode", prefix);
 }
 
 static int wpaauth(const char *prefix)
