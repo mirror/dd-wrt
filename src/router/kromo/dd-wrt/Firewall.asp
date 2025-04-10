@@ -259,7 +259,7 @@ addEvent(window, "unload", function() {
 										<% ifndef("TARPIT", "-->"); %>
 										<div class="setting">
 											<div class="label"><% tran("firewall.syncflood"); %></div>
-											<input class="spaceradio" type="checkbox" value="1" name="_block_syncflood" <% nvc("block_syncflood", "1"); %> />&nbsp;<input class="num" maxlength="8" size="6" name="tcp_maxhit" value="<% nvg("tcp_maxhit"); %>" />&nbsp;<% tran("firewall.tcp_maxhit"); %>
+											<input class="spaceradio" type="checkbox" value="1" name="_block_syncflood" <% nvc("block_syncflood", "1"); %> />&nbsp;<input class="num" maxlength="8" size="6" name="tcp_maxhit" value="<% nvg("tcp_maxhit"); %>" onblur="valid_range(this,1,255,firewall.tcp_maxhit)" />&nbsp;<% tran("firewall.tcp_maxhit"); %>
 										</div>
 										<div class="setting">
 											<div class="label"><% tran("firewall.udpflood"); %></div>
@@ -271,7 +271,7 @@ addEvent(window, "unload", function() {
 										</div>
 										<% ifndef("MULTICAST", "<!--"); %>
 										<div class="setting">
-											<div class="label"><% tran("firewall.muticast"); %></div>
+											<div class="label"><% tran("firewall.multicast"); %></div>
 											<input class="spaceradio" type="checkbox" value="1" name="_block_multicast" <% nvc("block_multicast", "1"); %> />
 										</div>
 										<% ifndef("MULTICAST", "-->"); %>
