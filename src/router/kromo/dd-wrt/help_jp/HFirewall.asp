@@ -23,7 +23,7 @@
 				<dt><% tran("firewall.ping"); %></dt>
 				<dd>有効である場合、Internet側からのPingに応答しません</dd>
 				
-				<dt><% tran("firewall.muticast"); %></dt>
+				<dt><% tran("firewall.multicast"); %></dt>
 				<dd>LAN側から転送されたMulticastパケットをフィルタします。</dd>
 				
 				<dt><% tran("filter.nat"); %></dt>

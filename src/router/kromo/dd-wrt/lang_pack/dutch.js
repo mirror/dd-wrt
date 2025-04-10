@@ -630,7 +630,7 @@ firewall.applet="Filter Java Applets";
 firewall.activex="Filter ActiveX";
 firewall.legend3="Blokkeer WAN Aanvragen";
 firewall.ping="Blokkeer Anonieme WAN Aanvragen  (ping)";
-firewall.muticast="Filter Multicast";
+firewall.multicast="Filter Multicast";
 
 filter.nat="Filter WAN NAT Redirection";
 filter.port113="Filter IDENT (Port 113)";

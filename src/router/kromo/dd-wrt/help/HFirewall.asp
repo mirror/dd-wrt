@@ -27,7 +27,7 @@
 				<% tran("hfirewall.page17"); %>
 				<dt><% tran("firewall.pod"); %></dt>
 				<% tran("hfirewall.page18"); %>
-				<dt><% tran("firewall.muticast"); %></dt>
+				<dt><% tran("firewall.multicast"); %></dt>
 				<% tran("hfirewall.page6"); %>
 				<dt><% tran("filter.nat"); %></dt>
 				<% tran("hfirewall.page7"); %>

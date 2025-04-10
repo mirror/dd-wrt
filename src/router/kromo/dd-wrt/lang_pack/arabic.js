@@ -594,7 +594,7 @@ firewall.applet="Filter Java Applets";
 firewall.activex="Filter ActiveX";
 firewall.legend3="Block WAN Requests";
 firewall.ping="Block Anonymous WAN Requests (ping)";
-firewall.muticast="Filter Multicast";
+firewall.multicast="Filter Multicast";
 
 filter.nat="Filter WAN NAT Redirection";
 filter.port113="Filter IDENT (Port 113)";

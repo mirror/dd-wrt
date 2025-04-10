@@ -599,7 +599,7 @@ firewall.applet="過濾 Java Applets";
 firewall.activex="過濾 ActiveX";
 firewall.legend3="禁止來自WAN端的請求";
 firewall.ping="不回應 Internet的 ping";
-firewall.muticast="過濾多點傳播";
+firewall.multicast="過濾多點傳播";
 
 filter.nat="過濾WAN NAT Redirection";
 filter.port113="過濾IDENT (埠 113)";

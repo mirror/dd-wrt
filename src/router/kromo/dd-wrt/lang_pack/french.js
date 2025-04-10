@@ -569,7 +569,7 @@ firewall.applet="Filtre Applets Java";
 firewall.activex="Filtre ActiveX";
 firewall.legend3="Blocage des requêtes WAN";
 firewall.ping="Bloquer les requêtes WAN anonymes (ping)";
-firewall.muticast="Filtre Multidiffusion";
+firewall.multicast="Filtre Multidiffusion";
 
 filter.nat="Filtre de redirection NAT WAN";
 filter.port113="Filtre IDENT (port 113)";

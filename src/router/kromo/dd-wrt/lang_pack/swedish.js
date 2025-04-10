@@ -608,7 +608,7 @@ firewall.applet="Filtrera Java Applets";
 firewall.activex="Filtrera ActiveX";
 firewall.legend3="Blockera WAN Förfrågningar";
 firewall.ping="Blockera Anonym WAN Trafik (ping)";
-firewall.muticast="Filtrera Multicast";
+firewall.multicast="Filtrera Multicast";
 
 filter.nat="Filter WAN NAT Omdirigering";
 filter.port113="Filtrera IDENT (Port 113)";

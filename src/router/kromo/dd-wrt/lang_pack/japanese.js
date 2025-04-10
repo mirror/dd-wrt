@@ -628,7 +628,7 @@ firewall.applet="Javaアプレットをフィルターする";
 firewall.activex="ActiveXをフィルターする";
 firewall.legend3="インターネット側からのパケット遮断";
 firewall.ping="Pingに応答しない";
-firewall.muticast="マルチキャストをフィルターする";
+firewall.multicast="マルチキャストをフィルターする";
 
 filter.nat="NATリダイレクションをフィルターする";
 filter.port113="IDENT (Port 113) をフィルターする";

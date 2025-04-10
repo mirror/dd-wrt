@@ -528,7 +528,7 @@ firewall.applet="Java Appletek szűrése";
 firewall.activex="ActiveX szűrés";
 firewall.legend3="WAN kérések blokkolása";
 firewall.ping="Anonymous WAN kérések (ping) blokkolása";
-firewall.muticast="Multicast szűrés";
+firewall.multicast="Multicast szűrés";
 
 filter.nat="WAN NAT átirányítás szűrés";
 filter.port113="IDENT (Port 113) szűrés";

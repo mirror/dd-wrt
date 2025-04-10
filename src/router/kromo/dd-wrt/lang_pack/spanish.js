@@ -633,7 +633,7 @@ firewall.applet="Filtrado de Applets Java";
 firewall.activex="Filtrado de ActiveX";
 firewall.legend3="Bloqueo de Peticiones WAN";
 firewall.ping="Bloqueo ping del exterior";
-firewall.muticast="Filtrado Multicast";
+firewall.multicast="Filtrado Multicast";
 
 filter.nat="Filtrado de Redirección NAT en Internet";
 filter.port113="Filtro IDENT (Puerto 113)";
