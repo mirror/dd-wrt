@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <malloc.h>
+#include <string.h>
 
 
 int main(int argc, char *argv[])
@@ -10,6 +12,7 @@ fseek(in,0,SEEK_END);
 size_t len = ftell(in);
 rewind(in);
 char *mem=malloc(len + (1024*1024));
+memset(mem, 0, len + (1024*1024));
 fread(mem,len,1,in);
 size_t i;
 size_t rlen;
