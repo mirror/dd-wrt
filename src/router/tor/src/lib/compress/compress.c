@@ -54,7 +54,7 @@ static atomic_counter_t total_compress_allocation;
  * large range of possible values. IMO, anything over 8 is probably safe; IMO
  * anything under 50 is probably sufficient.
  */
-#define MAX_UNCOMPRESSION_FACTOR 25
+#define MAX_UNCOMPRESSION_FACTOR 50
 #define CHECK_FOR_COMPRESSION_BOMB_AFTER (1024*64)
 /** @} */
 
