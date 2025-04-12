@@ -136,7 +136,7 @@
  "block_syncflood"  "Block Syncflood"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "block_udpflood"  "Block udpflood"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "block_pod"  "Block ping of death"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
- "tcp_maxhit" "TCP SYN Flood Limit" "NULL" "FALSE" "0"
+ "tcp_maxhit" "TCP SYN Flood Limit" "RANGE" "1" "255" "FALSE" "0"
  "udp_maxhit" "UDP Flood Limit" "NULL" "FALSE" "0"
  "icmp_maxhit" "ICMP Flood Limit" "NULL" "FALSE" "0"
  "ident_pass"  "IDENT passthrough"  "CHOICE" "2" "0"  "1"  "TRUE" "0"  
