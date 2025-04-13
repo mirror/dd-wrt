@@ -2070,7 +2070,7 @@ photosyst(struct sstat *si)
 	if ( chdir(origdir) == -1)
 		mcleanstop(55, "failed to change to %s\n", origdir);
 
-#ifndef	NOPERFEVENT
+#if !defined(NOPERFEVENT) && defined(PERF_FLAG_FD_CLOEXEC)
 	/*
 	** get low-level CPU event counters
 	*/
@@ -2761,7 +2761,7 @@ getwwwstat(unsigned short port, struct wwwstat *wp)
 ** retrieve low-level CPU events:
 ** 	instructions and cycles per CPU
 */
-#ifndef	NOPERFEVENT
+#if !defined(NOPERFEVENT) && defined(PERF_FLAG_FD_CLOEXEC)
 
 void
 do_perfevents(char *tagname, char *tagvalue)
