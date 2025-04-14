@@ -1553,8 +1553,7 @@ upnp.titl="UPnP";
 upnp.h2="UPnP設定";
 upnp.legend="ポート変換リスト";
 upnp.legend2="UPnP 設定";
-upnp.serv="UPnP サービス";
-upnp.url="Presentation URLを送る";
+upnp.serv="UPnP IGD サービス";
 upnp.msg1="消去";
 upnp.msg2="すべて消去してもよろしいですか？";
 

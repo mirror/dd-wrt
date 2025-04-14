@@ -1628,8 +1628,7 @@ upnp.titl="UPnP";
 upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Reenviaments";
 upnp.legend2="Configuració UPnP";
-upnp.serv="Servei UPnP";
-upnp.url="Envia el URL de presentació";
+upnp.serv="Servei UPnP IGD";
 upnp.msg1="Feu clic per suprimir una entrada";
 upnp.msg2="Suprimir totes les entrades?";
 

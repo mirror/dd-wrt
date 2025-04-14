@@ -2300,12 +2300,11 @@ hupgrad.right2="Klicken Sie auf den <em>Durchsuchen...</em>-Button, um eine Firm
 
 upnp.titl="UPnP";
 upnp.h2="Universal Plug and Play (UPnP)";
-upnp.legend="Weiterleitungen";
+upnp.legend="Aktive Port-Weiterleitungen";
 upnp.legend2="UPnP-Konfiguration";
-upnp.serv="UPnP-Dienst";
-upnp.url="Sende Präsentations-URL";
-upnp.msg1="Klicken Sie hier, um die Lease zu löschen";
-upnp.msg2="Alle Einträge löschen?";
+upnp.serv="UPnP IGD Dienst";
+upnp.msg1="Klicken Sie hier, um die Port-Weiterleitung zu löschen";
+upnp.msg2="Alle Port-Weiterleitungen löschen?";
 
 //help container
 
