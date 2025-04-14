@@ -424,8 +424,8 @@ static int action_GetTotalPacketsReceived(UPNP_CONTEXT *context, UPNP_SERVICE *s
 }
 /* >> AUTO GENERATED FUNCTION */
 
-/* << AUTO GENERATED FUNCTION: action_GetActiveConnections() */
-static int action_GetActiveConnections(UPNP_CONTEXT *context, UPNP_SERVICE *service, IN_ARGUMENT *in_argument,
+/* << AUTO GENERATED FUNCTION: action_GetActiveConnection() */
+static int action_GetActiveConnection(UPNP_CONTEXT *context, UPNP_SERVICE *service, IN_ARGUMENT *in_argument,
 				       OUT_ARGUMENT *out_argument)
 {
 	UPNP_IN_HINT(IN_ARGUMENT *in_NewActiveConnectionIndex = UPNP_IN_ARG("NewActiveConnectionIndex");)
@@ -518,7 +518,7 @@ static ACTION_ARGUMENT arg_out_GetCommonLinkProperties[] = {
 	{ "NewPhysicalLinkStatus", UPNP_TYPE_STR, STATEVAR_PHYSICALLINKSTATUS }
 };
 
-static ACTION_ARGUMENT arg_out_GetMaximumActiveConnections[] = { { "NewMaximumActiveConnections", UPNP_TYPE_UI2,
+static ACTION_ARGUMENT arg_out_GetMaximumActiveConnection[] = { { "NewMaximumActiveConnections", UPNP_TYPE_UI2,
 								   STATEVAR_MAXIMUMACTIVECONNECTIONS } };
 
 static ACTION_ARGUMENT arg_out_GetTotalBytesSent[] = { { "NewTotalBytesSent", UPNP_TYPE_UI4, STATEVAR_TOTALBYTESSENT } };
@@ -531,16 +531,16 @@ static ACTION_ARGUMENT arg_out_GetTotalBytesReceived[] = { { "NewTotalBytesRecei
 static ACTION_ARGUMENT arg_out_GetTotalPacketsReceived[] = { { "NewTotalPacketsReceived", UPNP_TYPE_UI4,
 							       STATEVAR_TOTALPACKETSRECEIVED } };
 
-static ACTION_ARGUMENT arg_in_GetActiveConnections[] = { { "NewActiveConnectionIndex", UPNP_TYPE_UI2,
+static ACTION_ARGUMENT arg_in_GetActiveConnection[] = { { "NewActiveConnectionIndex", UPNP_TYPE_UI2,
 							   STATEVAR_NUMBEROFACTIVECONNECTIONS } };
 
-static ACTION_ARGUMENT arg_out_GetActiveConnections[] = {
+static ACTION_ARGUMENT arg_out_GetActiveConnection[] = {
 	{ "NewActiveConnDeviceContainer", UPNP_TYPE_STR, STATEVAR_ACTIVECONNECTIONDEVICECONTAINER },
 	{ "NewActiveConnectionServiceID", UPNP_TYPE_STR, STATEVAR_ACTIVECONNECTIONSERVICEID }
 };
 
 UPNP_ACTION action_x_wancommoninterfaceconfig[] = {
-	{ "GetActiveConnections", 1, arg_in_GetActiveConnections, 2, arg_out_GetActiveConnections, &action_GetActiveConnections },
+	{ "GetActiveConnection", 1, arg_in_GetActiveConnection, 2, arg_out_GetActiveConnection, &action_GetActiveConnection },
 	{ "GetCommonLinkProperties", 0, 0, 4, arg_out_GetCommonLinkProperties, &action_GetCommonLinkProperties },
 	{ "GetEnabledForInternet", 0, 0, 1, arg_out_GetEnabledForInternet, &action_GetEnabledForInternet },
 	{ "GetMaximumActiveConnections", 0, 0, 1, arg_out_GetMaximumActiveConnections, &action_GetMaximumActiveConnections },
