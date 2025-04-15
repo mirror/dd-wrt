@@ -34,7 +34,7 @@ in the source distribution for its full text.
 const ProcessFieldData Process_fields[LAST_PROCESSFIELD] = {
    [0] = { .name = "", .title = NULL, .description = NULL, .flags = 0, },
    [PID] = { .name = "PID", .title = "PID", .description = "Process/thread ID", .flags = 0, .pidColumn = true, },
-   [COMM] = { .name = "Command", .title = "Command ", .description = "Command line", .flags = 0, },
+   [COMM] = { .name = "Command", .title = "Command ", .description = "Command line (insert as last column only)", .flags = 0, },
    [STATE] = { .name = "STATE", .title = "S ", .description = "Process state (S sleeping, R running, D disk, Z zombie, T traced, W paging, I idle)", .flags = 0, },
    [PPID] = { .name = "PPID", .title = "PPID", .description = "Parent process ID", .flags = 0, .pidColumn = true, },
    [PGRP] = { .name = "PGRP", .title = "PGRP", .description = "Process group ID", .flags = 0, .pidColumn = true, },
@@ -62,7 +62,7 @@ const ProcessFieldData Process_fields[LAST_PROCESSFIELD] = {
    [M_DRS] = { .name = "M_DRS", .title = " DATA ", .description = "Size of the .data segment plus stack usage of the process (DATA)", .flags = 0, .defaultSortDesc = true, },
    [M_LRS] = { .name = "M_LRS", .title = "  LIB ", .description = "The library size of the process (calculated from memory maps)", .flags = PROCESS_FLAG_LINUX_LRS_FIX, .defaultSortDesc = true, },
    [ST_UID] = { .name = "ST_UID", .title = "UID", .description = "User ID of the process owner", .flags = 0, },
-   [PERCENT_CPU] = { .name = "PERCENT_CPU", .title = " CPU%", .description = "Percentage of the CPU time the process used in the last sampling", .flags = 0, .defaultSortDesc = true, .autoWidth = true, },
+   [PERCENT_CPU] = { .name = "PERCENT_CPU", .title = " CPU%", .description = "Percentage of the CPU time the process used in the last sampling", .flags = 0, .defaultSortDesc = true, .autoWidth = true, .autoTitleRightAlign = true, },
    [PERCENT_NORM_CPU] = { .name = "PERCENT_NORM_CPU", .title = "NCPU%", .description = "Normalized percentage of the CPU time the process used in the last sampling (normalized by cpu count)", .flags = 0, .defaultSortDesc = true, .autoWidth = true, },
    [PERCENT_MEM] = { .name = "PERCENT_MEM", .title = "MEM% ", .description = "Percentage of the memory the process is using, based on resident memory size", .flags = 0, .defaultSortDesc = true, },
    [USER] = { .name = "USER", .title = "USER       ", .description = "Username of the process owner (or user ID if name cannot be determined)", .flags = 0, },
@@ -106,16 +106,19 @@ const ProcessFieldData Process_fields[LAST_PROCESSFIELD] = {
    [CWD] = { .name = "CWD", .title = "CWD                       ", .description = "The current working directory of the process", .flags = PROCESS_FLAG_CWD, },
    [AUTOGROUP_ID] = { .name = "AUTOGROUP_ID", .title = "AGRP", .description = "The autogroup identifier of the process", .flags = PROCESS_FLAG_LINUX_AUTOGROUP, },
    [AUTOGROUP_NICE] = { .name = "AUTOGROUP_NICE", .title = " ANI", .description = "Nice value (the higher the value, the more other processes take priority) associated with the process autogroup", .flags = PROCESS_FLAG_LINUX_AUTOGROUP, },
+   [ISCONTAINER] = { .name = "ISCONTAINER", .title = "CONT ", .description = "Whether the process is running inside a child container", .flags = PROCESS_FLAG_LINUX_CONTAINER, },
 #ifdef SCHEDULER_SUPPORT
    [SCHEDULERPOLICY] = { .name = "SCHEDULERPOLICY", .title = "SCHED ", .description = "Current scheduling policy of the process", .flags = PROCESS_FLAG_SCHEDPOL, },
 #endif
+   [GPU_TIME] = { .name = "GPU_TIME", .title = "GPU_TIME ", .description = "Total GPU time", .flags = PROCESS_FLAG_LINUX_GPU, .defaultSortDesc = true, },
+   [GPU_PERCENT] = { .name = "GPU_PERCENT", .title = " GPU% ", .description = "Percentage of the GPU time the process used in the last sampling", .flags = PROCESS_FLAG_LINUX_GPU, .defaultSortDesc = true, },
 };
 
 Process* LinuxProcess_new(const Machine* host) {
    LinuxProcess* this = xCalloc(1, sizeof(LinuxProcess));
    Object_setClass(this, Class(LinuxProcess));
    Process_init(&this->super, host);
-   return &this->super;
+   return (Process*)this;
 }
 
 void Process_delete(Object* cast) {
@@ -152,6 +155,9 @@ static int LinuxProcess_effectiveIOPriority(const LinuxProcess* this) {
 #define SYS_ioprio_set __NR_ioprio_set
 #endif
 
+/*
+ * Gather I/O scheduling class and priority (thread-specific data)
+ */
 IOPriority LinuxProcess_updateIOPriority(Process* p) {
    IOPriority ioprio = 0;
 // Other OSes masquerading as Linux (NetBSD?) don't have this syscall
@@ -239,6 +245,8 @@ static void LinuxProcess_rowWriteField(const Row* super, RichString* str, Proces
    switch (field) {
    case CMINFLT: Row_printCount(str, lp->cminflt, coloring); return;
    case CMAJFLT: Row_printCount(str, lp->cmajflt, coloring); return;
+   case GPU_PERCENT: Row_printPercentage(lp->gpu_percent, buffer, n, 5, &attr); break;
+   case GPU_TIME: Row_printNanoseconds(str, lp->gpu_time, coloring); return;
    case M_DRS: Row_printBytes(str, lp->m_drs * lhost->pageSize, coloring); return;
    case M_LRS:
       if (lp->m_lrs) {
@@ -276,9 +284,18 @@ static void LinuxProcess_rowWriteField(const Row* super, RichString* str, Proces
    #ifdef HAVE_VSERVER
    case VXID: xSnprintf(buffer, n, "%5u ", lp->vxid); break;
    #endif
-   case CGROUP: xSnprintf(buffer, n, "%-*.*s ", Row_fieldWidths[CGROUP], Row_fieldWidths[CGROUP], lp->cgroup ? lp->cgroup : "N/A"); break;
-   case CCGROUP: xSnprintf(buffer, n, "%-*.*s ", Row_fieldWidths[CCGROUP], Row_fieldWidths[CCGROUP], lp->cgroup_short ? lp->cgroup_short : (lp->cgroup ? lp->cgroup : "N/A")); break;
-   case CONTAINER: xSnprintf(buffer, n, "%-*.*s ", Row_fieldWidths[CONTAINER], Row_fieldWidths[CONTAINER], lp->container_short ? lp->container_short : "N/A"); break;
+   case CGROUP:
+      xSnprintf(buffer, n, "%-*.*s ", Row_fieldWidths[CGROUP], Row_fieldWidths[CGROUP], lp->cgroup ? lp->cgroup : "N/A");
+      RichString_appendWide(str, attr, buffer);
+      return;
+   case CCGROUP:
+      xSnprintf(buffer, n, "%-*.*s ", Row_fieldWidths[CCGROUP], Row_fieldWidths[CCGROUP], lp->cgroup_short ? lp->cgroup_short : (lp->cgroup ? lp->cgroup : "N/A"));
+      RichString_appendWide(str, attr, buffer);
+      return;
+   case CONTAINER:
+      xSnprintf(buffer, n, "%-*.*s ", Row_fieldWidths[CONTAINER], Row_fieldWidths[CONTAINER], lp->container_short ? lp->container_short : "N/A");
+      RichString_appendWide(str, attr, buffer);
+      return;
    case OOM: xSnprintf(buffer, n, "%4u ", lp->oom); break;
    case IO_PRIORITY: {
       int klass = IOPriority_class(lp->ioPriority);
@@ -309,7 +326,10 @@ static void LinuxProcess_rowWriteField(const Row* super, RichString* str, Proces
       }
       xSnprintf(buffer, n, "%5lu ", lp->ctxt_diff);
       break;
-   case SECATTR: snprintf(buffer, n, "%-*.*s ", Row_fieldWidths[SECATTR], Row_fieldWidths[SECATTR], lp->secattr ? lp->secattr : "N/A"); break;
+   case SECATTR:
+      snprintf(buffer, n, "%-*.*s ", Row_fieldWidths[SECATTR], Row_fieldWidths[SECATTR], lp->secattr ? lp->secattr : "N/A");
+      RichString_appendWide(str, attr, buffer);
+      return;
    case AUTOGROUP_ID:
       if (lp->autogroup_id != -1) {
          xSnprintf(buffer, n, "%4ld ", lp->autogroup_id);
@@ -327,6 +347,19 @@ static void LinuxProcess_rowWriteField(const Row* super, RichString* str, Proces
       } else {
          attr = CRT_colors[PROCESS_SHADOW];
          xSnprintf(buffer, n, "N/A ");
+      }
+      break;
+   case ISCONTAINER:
+      switch (this->isRunningInContainer) {
+      case TRI_ON:
+         xSnprintf(buffer, n, "YES  ");
+         break;
+      case TRI_OFF:
+         xSnprintf(buffer, n, "NO   ");
+         break;
+      default:
+         attr = CRT_colors[PROCESS_SHADOW];
+         xSnprintf(buffer, n, "N/A  ");
       }
       break;
    default:
@@ -422,6 +455,17 @@ static int LinuxProcess_compareByKey(const Process* v1, const Process* v2, Proce
       return SPACESHIP_NUMBER(p1->autogroup_id, p2->autogroup_id);
    case AUTOGROUP_NICE:
       return SPACESHIP_NUMBER(p1->autogroup_nice, p2->autogroup_nice);
+   case GPU_PERCENT: {
+      int r = compareRealNumbers(p1->gpu_percent, p2->gpu_percent);
+      if (r)
+         return r;
+
+      return SPACESHIP_NUMBER(p1->gpu_time, p2->gpu_time);
+   }
+   case GPU_TIME:
+      return SPACESHIP_NUMBER(p1->gpu_time, p2->gpu_time);
+   case ISCONTAINER:
+      return SPACESHIP_NUMBER(v1->isRunningInContainer, v2->isRunningInContainer);
    default:
       return Process_compareByKey_Base(v1, v2, key);
    }

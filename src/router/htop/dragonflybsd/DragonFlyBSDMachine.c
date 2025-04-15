@@ -119,7 +119,7 @@ Machine* Machine_new(UsersTable* usersTable, uid_t userId) {
 }
 
 void Machine_delete(Machine* super) {
-   const DragonFlyBSDMachine* this = (const DragonFlyBSDMachine*) super;
+   DragonFlyBSDMachine* this = (DragonFlyBSDMachine*) super;
 
    Machine_done(super);
 
@@ -223,7 +223,7 @@ static void DragonFlyBSDMachine_scanCPUTime(Machine* super) {
 }
 
 static void DragonFlyBSDMachine_scanMemoryInfo(Machine* super) {
-   DragonFlyBSDMachine* this = (DragonFlyBSDProcessTable*) super;
+   DragonFlyBSDMachine* this = (DragonFlyBSDMachine*) super;
 
    // @etosan:
    // memory counter relationships seem to be these:
@@ -240,18 +240,20 @@ static void DragonFlyBSDMachine_scanMemoryInfo(Machine* super) {
    sysctl(MIB_hw_physmem, 2, &(super->totalMem), &len, NULL, 0);
    super->totalMem /= 1024;
 
-   sysctl(MIB_vm_stats_vm_v_active_count, 4, &(this->memActive), &len, NULL, 0);
-   this->memActive *= this->pageSizeKb;
+   unsigned long long int memActive = 0;
+   sysctl(MIB_vm_stats_vm_v_active_count, 4, &memActive, &len, NULL, 0);
+   memActive *= this->pageSizeKb;
 
-   sysctl(MIB_vm_stats_vm_v_wire_count, 4, &(this->memWire), &len, NULL, 0);
-   this->memWire *= this->pageSizeKb;
+   unsigned long long int memWire = 0;
+   sysctl(MIB_vm_stats_vm_v_wire_count, 4, &memWire, &len, NULL, 0);
+   memWire *= this->pageSizeKb;
 
    sysctl(MIB_vfs_bufspace, 2, &(super->buffersMem), &len, NULL, 0);
    super->buffersMem /= 1024;
 
    sysctl(MIB_vm_stats_vm_v_cache_count, 4, &(super->cachedMem), &len, NULL, 0);
    super->cachedMem *= this->pageSizeKb;
-   super->usedMem = this->memActive + this->memWire;
+   super->usedMem = memActive + memWire;
 
    struct kvm_swap swap[16];
    int nswap = kvm_getswapinfo(this->kd, swap, ARRAYSIZE(swap), 0);
@@ -319,7 +321,7 @@ retry:
    free(jails);
 }
 
-char* DragonFlyBSDMachine_readJailName(DragonFlyBSDMachine* host, int jailid) {
+char* DragonFlyBSDMachine_readJailName(const DragonFlyBSDMachine* host, int jailid) {
    char* hostname;
    char* jname;
 
@@ -338,4 +340,12 @@ void Machine_scan(Machine* super) {
    DragonFlyBSDMachine_scanMemoryInfo(super);
    DragonFlyBSDMachine_scanCPUTime(super);
    DragonFlyBSDMachine_scanJails(this);
+}
+
+bool Machine_isCPUonline(const Machine* host, unsigned int id) {
+   assert(id < host->existingCPUs);
+   (void)host; (void)id;
+
+   // TODO: Support detecting online / offline CPUs.
+   return true;
 }

@@ -48,10 +48,20 @@ typedef struct CPUData_ {
 
    #ifdef HAVE_SENSORS_SENSORS_H
    double temperature;
+
+   int physicalID;      /* different for each CPU socket */
+   int coreID;          /* same for hyperthreading */
+   int ccdID;           /* same for each AMD chiplet */
    #endif
 
    bool online;
 } CPUData;
+
+typedef struct GPUEngineData_ {
+   unsigned long long int prevTime, curTime;  /* absolute GPU time in nano seconds */
+   char* key;                                 /* engine name */
+   struct GPUEngineData_* next;
+} GPUEngineData;
 
 typedef struct LinuxMachine_ {
    Machine super;
@@ -68,10 +78,18 @@ typedef struct LinuxMachine_ {
 
    CPUData* cpuData;
 
+   #ifdef HAVE_SENSORS_SENSORS_H
+   int maxPhysicalID;
+   int maxCoreID;
+   #endif
+
    memory_t totalHugePageMem;
    memory_t usedHugePageMem[HTOP_HUGEPAGE_COUNT];
 
    memory_t availableMem;
+
+   unsigned long long int prevGpuTime, curGpuTime;  /* total absolute GPU time in nano seconds */
+   GPUEngineData* gpuEngineData;
 
    ZfsArcStats zfs;
    ZramStats zram;

@@ -342,7 +342,7 @@ int CommandLine_run(int argc, char** argv) {
 
    Machine* host = Machine_new(ut, flags.userId);
    ProcessTable* pt = ProcessTable_new(host, flags.pidMatchList);
-   Settings* settings = Settings_new(host->activeCPUs, dm, dc, ds);
+   Settings* settings = Settings_new(host, dm, dc, ds);
    Machine_populateTablesFromSettings(host, settings, &pt->super);
 
    Header* header = Header_new(host, 2);
@@ -411,6 +411,10 @@ int CommandLine_run(int argc, char** argv) {
    CRT_done();
 
    if (settings->changed) {
+#ifndef NDEBUG
+      if (!String_eq(settings->initialFilename, settings->filename))
+         fprintf(stderr, "Configuration %s was resolved to %s\n", settings->initialFilename, settings->filename);
+#endif /* NDEBUG */
       int r = Settings_write(settings, false);
       if (r < 0)
          fprintf(stderr, "Can not save configuration to %s: %s\n", settings->filename, strerror(-r));

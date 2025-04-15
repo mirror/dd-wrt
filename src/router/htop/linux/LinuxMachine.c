@@ -78,7 +78,7 @@ static void LinuxMachine_updateCPUcount(LinuxMachine* this) {
          continue;
 
 #ifdef HAVE_OPENAT
-      int cpuDirFd = openat(dirfd(dir), entry->d_name, O_DIRECTORY | O_PATH | O_NOFOLLOW);
+      int cpuDirFd = openat(xDirfd(dir), entry->d_name, O_DIRECTORY | O_PATH | O_NOFOLLOW);
       if (cpuDirFd < 0)
          continue;
 #else
@@ -302,8 +302,8 @@ static void LinuxMachine_scanZramInfo(LinuxMachine* this) {
       memory_t orig_data_size = 0;
       memory_t compr_data_size = 0;
 
-      if (!fscanf(disksize_file, "%llu\n", &size) ||
-          !fscanf(mm_stat_file, "    %llu       %llu", &orig_data_size, &compr_data_size)) {
+      if (1 != fscanf(disksize_file, "%llu\n", &size) ||
+          2 != fscanf(mm_stat_file, "    %llu       %llu", &orig_data_size, &compr_data_size)) {
          fclose(disksize_file);
          fclose(mm_stat_file);
          break;
@@ -342,10 +342,10 @@ static void LinuxMachine_scanZfsArcstats(LinuxMachine* this) {
             sscanf(buffer + strlen(label), " %*2u %32llu", variable);          \
             break;                                                             \
          } else (void) 0 /* Require a ";" after the macro use. */
-      #define tryReadFlag(label, variable, flag)                               \
-         if (String_startsWith(buffer, label)) {                               \
-            (flag) = sscanf(buffer + strlen(label), " %*2u %32llu", variable); \
-            break;                                                             \
+      #define tryReadFlag(label, variable, flag)                                      \
+         if (String_startsWith(buffer, label)) {                                      \
+            (flag) = (1 == sscanf(buffer + strlen(label), " %*2u %32llu", variable)); \
+            break;                                                                    \
          } else (void) 0 /* Require a ";" after the macro use. */
 
       switch (buffer[0]) {
@@ -408,7 +408,9 @@ static void LinuxMachine_scanCPUTime(LinuxMachine* this) {
    if (!file)
       CRT_fatalError("Cannot open " PROCSTATFILE);
 
-   unsigned int lastAdjCpuId = 0;
+   // Add an extra phantom thread for a later loop
+   bool adjCpuIdProcessed[super->existingCPUs+2];
+   memset(adjCpuIdProcessed, 0, sizeof(adjCpuIdProcessed));
 
    for (unsigned int i = 0; i <= super->existingCPUs; i++) {
       char buffer[PROC_LINE_LENGTH + 1];
@@ -438,12 +440,6 @@ static void LinuxMachine_scanCPUTime(LinuxMachine* this) {
 
       if (adjCpuId > super->existingCPUs)
          break;
-
-      for (unsigned int j = lastAdjCpuId + 1; j < adjCpuId; j++) {
-         // Skipped an ID, but /proc/stat is ordered => got offline CPU
-         memset(&(this->cpuData[j]), '\0', sizeof(CPUData));
-      }
-      lastAdjCpuId = adjCpuId;
 
       // Guest time is already accounted in usertime
       usertime -= guest;
@@ -482,16 +478,32 @@ static void LinuxMachine_scanCPUTime(LinuxMachine* this) {
       cpuData->stealTime = steal;
       cpuData->guestTime = virtalltime;
       cpuData->totalTime = totaltime;
+
+      adjCpuIdProcessed[adjCpuId] = true;
+   }
+
+   // Set the extra phantom thread as checked to make sure to mark trailing offline threads correctly in the loop
+   adjCpuIdProcessed[super->existingCPUs+1] = true;
+   unsigned int lastAdjCpuIdProcessed = 0;
+   for (unsigned int i = 0; i <= super->existingCPUs+1; i++) {
+      if (adjCpuIdProcessed[i]) {
+         for (unsigned int j = lastAdjCpuIdProcessed+1; j < i; j++) {
+            // Skipped an ID, but /proc/stat is ordered => threads in between are offline
+            memset(&(this->cpuData[j]), '\0', sizeof(CPUData));
+         }
+         lastAdjCpuIdProcessed = i;
+      }
    }
 
    this->period = (double)this->cpuData[0].totalPeriod / super->activeCPUs;
 
-   char buffer[PROC_LINE_LENGTH + 1];
-   while (fgets(buffer, sizeof(buffer), file)) {
-      if (String_startsWith(buffer, "procs_running")) {
-         ProcessTable* pt = (ProcessTable*) super->processTable;
-         pt->runningTasks = strtoul(buffer + strlen("procs_running"), NULL, 10);
-         break;
+   if (!ferror(file) && !feof(file)) {
+      char buffer[PROC_LINE_LENGTH + 1];
+      while (fgets(buffer, sizeof(buffer), file)) {
+         if (String_startsWith(buffer, "procs_running")) {
+            this->runningTasks = (unsigned int) strtoul(buffer + strlen("procs_running"), NULL, 10);
+            break;
+         }
       }
    }
 
@@ -606,6 +618,100 @@ static void scanCPUFrequencyFromCPUinfo(LinuxMachine* this) {
    }
 }
 
+#ifdef HAVE_SENSORS_SENSORS_H
+static void LinuxMachine_fetchCPUTopologyFromCPUinfo(LinuxMachine* this) {
+   const Machine* super = &this->super;
+
+   FILE* file = fopen(PROCCPUINFOFILE, "r");
+   if (file == NULL)
+      return;
+
+   int cpuid = -1;
+   int coreid = -1;
+   int physicalid = -1;
+
+   int max_physicalid = -1;
+   int max_coreid = -1;
+
+   while (!feof(file)) {
+      char *buffer = String_readLine(file);
+      if (!buffer)
+         break;
+
+      if (buffer[0] == '\0') {	/* empty line after each cpu */
+         if (cpuid >= 0 && (unsigned int)cpuid < super->existingCPUs) {
+            CPUData* cpuData = &(this->cpuData[cpuid + 1]);
+            cpuData->coreID = coreid;
+            cpuData->physicalID = physicalid;
+
+            if (coreid > max_coreid)
+               max_coreid = coreid;
+            if (physicalid > max_physicalid)
+               max_physicalid = physicalid;
+
+            cpuid = -1;
+            coreid = -1;
+            physicalid = -1;
+         }
+      } else if (String_startsWith(buffer, "processor")) {
+         sscanf(buffer, "processor : %d", &cpuid);
+      } else if (String_startsWith(buffer, "physical id")) {
+         sscanf(buffer, "physical id : %d", &physicalid);
+      } else if (String_startsWith(buffer, "core id")) {
+         sscanf(buffer, "core id : %d", &coreid);
+      }
+
+      free(buffer);
+   }
+
+   this->maxPhysicalID = max_physicalid;
+   this->maxCoreID = max_coreid;
+
+   fclose(file);
+}
+
+static void LinuxMachine_assignCCDs(LinuxMachine* this, int ccds) {
+   /* For AMD k10temp/zenpower, temperatures are provided for CCDs only,
+      which is an aggregate of multiple cores.
+      There's no obvious mapping between hwmon sensors and sockets and CCDs.
+      Assume both are iterated in order.
+      Hypothesis: Each CCD has same size N = #Cores/#CCD
+      and is assigned N coreID in sequence.
+      Also assume all CPUs have same number of CCDs. */
+
+   const Machine* super = &this->super;
+   CPUData *cpus = this->cpuData;
+
+   if (ccds == 0) {
+      for (size_t i = 0; i < super->existingCPUs + 1; i++) {
+         cpus[i].ccdID = -1;
+      }
+      return;
+   }
+
+   int coresPerCCD = super->existingCPUs / ccds;
+
+   int ccd = 0;
+   int nc = coresPerCCD;
+   for (int p = 0; p <= (int)this->maxPhysicalID; p++) {
+      for (int c = 0; c <= (int)this->maxCoreID; c++) {
+         for (size_t i = 1; i <= super->existingCPUs; i++) {
+            if (cpus[i].physicalID != p || cpus[i].coreID != c)
+               continue;
+
+            cpus[i].ccdID = ccd;
+
+            if (--nc <= 0) {
+               nc = coresPerCCD;
+               ccd++;
+            }
+         }
+      }
+   }
+}
+
+#endif
+
 static void LinuxMachine_scanCPUFrequency(LinuxMachine* this) {
    const Machine* super = &this->super;
 
@@ -628,7 +734,11 @@ void Machine_scan(Machine* super) {
    LinuxMachine_scanCPUTime(this);
 
    const Settings* settings = super->settings;
-   if (settings->showCPUFrequency)
+   if (settings->showCPUFrequency
+#ifdef HAVE_SENSORS_SENSORS_H
+       || settings->showCPUTemperature
+#endif
+   )
       LinuxMachine_scanCPUFrequency(this);
 
    #ifdef HAVE_SENSORS_SENSORS_H
@@ -677,12 +787,29 @@ Machine* Machine_new(UsersTable* usersTable, uid_t userId) {
    // Initialize CPU count
    LinuxMachine_updateCPUcount(this);
 
+   #ifdef HAVE_SENSORS_SENSORS_H
+   // Fetch CPU topology
+   LinuxMachine_fetchCPUTopologyFromCPUinfo(this);
+   int ccds = LibSensors_countCCDs();
+   LinuxMachine_assignCCDs(this, ccds);
+   #endif
+
    return super;
 }
 
 void Machine_delete(Machine* super) {
    LinuxMachine* this = (LinuxMachine*) super;
+   GPUEngineData* gpuEngineData = this->gpuEngineData;
+
    Machine_done(super);
+
+   while (gpuEngineData) {
+      GPUEngineData* next = gpuEngineData->next;
+      free(gpuEngineData->key);
+      free(gpuEngineData);
+      gpuEngineData = next;
+   }
+
    free(this->cpuData);
    free(this);
 }

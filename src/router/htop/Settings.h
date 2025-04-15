@@ -13,6 +13,7 @@ in the source distribution for its full text.
 
 #include "Hashtable.h"
 #include "HeaderLayout.h"
+#include "MeterMode.h"
 #include "Row.h"
 #include "RowField.h"
 
@@ -22,6 +23,7 @@ in the source distribution for its full text.
 #define CONFIG_READER_MIN_VERSION 3
 
 struct DynamicScreen_;  // IWYU pragma: keep
+struct Machine_;        // IWYU pragma: keep
 struct Table_;          // IWYU pragma: keep
 
 typedef struct {
@@ -34,7 +36,7 @@ typedef struct {
 typedef struct {
    size_t len;
    char** names;
-   int* modes;
+   MeterModeId* modes;
 } MeterColumnSetting;
 
 typedef struct ScreenSettings_ {
@@ -54,6 +56,8 @@ typedef struct ScreenSettings_ {
 
 typedef struct Settings_ {
    char* filename;
+   char* initialFilename;
+   bool writeConfig; /* whether to write the current settings on exit */
    int config_version;
    HeaderLayout hLayout;
    MeterColumnSetting* hColumns;
@@ -97,6 +101,7 @@ typedef struct Settings_ {
    bool accountGuestInCPUMeter;
    bool headerMargin;
    bool screenTabs;
+   bool showCachedMemory;
    #ifdef HAVE_GETMOUSE
    bool enableMouse;
    #endif
@@ -125,7 +130,7 @@ void Settings_delete(Settings* this);
 
 int Settings_write(const Settings* this, bool onCrash);
 
-Settings* Settings_new(unsigned int initialCpuCount, Hashtable* dynamicMeters, Hashtable* dynamicColumns, Hashtable* dynamicScreens);
+Settings* Settings_new(const struct Machine_* host, Hashtable* dynamicMeters, Hashtable* dynamicColumns, Hashtable* dynamicScreens);
 
 ScreenSettings* Settings_newScreen(Settings* this, const ScreenDefaults* defaults);
 

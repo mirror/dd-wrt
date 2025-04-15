@@ -89,7 +89,7 @@ void Row_setPidColumnWidth(pid_t maxPid) {
       return;
    }
 
-   Row_pidDigits = (int)log10(maxPid) + 1;
+   Row_pidDigits = countDigits((size_t)maxPid, 10);
    assert(Row_pidDigits <= ROW_MAX_PID_DIGITS);
 }
 
@@ -99,7 +99,7 @@ void Row_setUidColumnWidth(uid_t maxUid) {
       return;
    }
 
-   Row_uidDigits = (int)log10(maxUid) + 1;
+   Row_uidDigits = countDigits((size_t)maxUid, 10);
    assert(Row_uidDigits <= ROW_MAX_UID_DIGITS);
 }
 
@@ -154,7 +154,7 @@ static const char* alignedTitleProcessField(ProcessField field, char* titleBuffe
    }
 
    if (Process_fields[field].autoWidth) {
-      if (field == PERCENT_CPU)
+      if (Process_fields[field].autoTitleRightAlign)
          xSnprintf(titleBuffer, titleBufferSize, "%*s ", Row_fieldWidths[field], title);
       else
          xSnprintf(titleBuffer, titleBufferSize, "%-*.*s ", Row_fieldWidths[field], Row_fieldWidths[field], title);
@@ -292,7 +292,6 @@ invalidNumber:
       color = CRT_colors[PROCESS_SHADOW];
 
    RichString_appendAscii(str, color, "  N/A ");
-   return;
 }
 
 void Row_printBytes(RichString* str, unsigned long long number, bool coloring) {
@@ -336,6 +335,13 @@ void Row_printCount(RichString* str, unsigned long long number, bool coloring) {
 void Row_printTime(RichString* str, unsigned long long totalHundredths, bool coloring) {
    char buffer[10];
    int len;
+
+   if (totalHundredths == 0) {
+      int shadowColor = coloring ? CRT_colors[PROCESS_SHADOW] : CRT_colors[PROCESS];
+
+      RichString_appendAscii(str, shadowColor, " 0:00.00 ");
+      return;
+   }
 
    int yearColor = coloring ? CRT_colors[LARGE_NUMBER]      : CRT_colors[PROCESS];
    int dayColor  = coloring ? CRT_colors[PROCESS_GIGABYTES] : CRT_colors[PROCESS];
@@ -396,6 +402,58 @@ void Row_printTime(RichString* str, unsigned long long totalHundredths, bool col
    }
 }
 
+void Row_printNanoseconds(RichString* str, unsigned long long totalNanoseconds, bool coloring) {
+   if (totalNanoseconds == 0) {
+      int shadowColor = coloring ? CRT_colors[PROCESS_SHADOW] : CRT_colors[PROCESS];
+
+      RichString_appendAscii(str, shadowColor, "     0ns ");
+      return;
+   }
+
+   char buffer[10];
+   int len;
+   int baseColor = CRT_colors[PROCESS];
+
+   if (totalNanoseconds < 1000000) {
+      len = xSnprintf(buffer, sizeof(buffer), "%6luns ", (unsigned long)totalNanoseconds);
+      RichString_appendnAscii(str, baseColor, buffer, len);
+      return;
+   }
+
+   unsigned long long totalMicroseconds = totalNanoseconds / 1000;
+   if (totalMicroseconds < 1000000) {
+      len = xSnprintf(buffer, sizeof(buffer), ".%06lus ", (unsigned long)totalMicroseconds);
+      RichString_appendnAscii(str, baseColor, buffer, len);
+      return;
+   }
+
+   unsigned long long totalSeconds = totalMicroseconds / 1000000;
+   unsigned long microseconds = totalMicroseconds % 1000000;
+   if (totalSeconds < 60) {
+      int width = 5;
+      unsigned long fraction = microseconds / 10;
+      if (totalSeconds >= 10) {
+         width--;
+         fraction /= 10;
+      }
+      len = xSnprintf(buffer, sizeof(buffer), "%u.%0*lus ", (unsigned int)totalSeconds, width, fraction);
+      RichString_appendnAscii(str, baseColor, buffer, len);
+      return;
+   }
+
+   if (totalSeconds < 600) {
+      unsigned int minutes = totalSeconds / 60;
+      unsigned int seconds = totalSeconds % 60;
+      unsigned int milliseconds = microseconds / 1000;
+      len = xSnprintf(buffer, sizeof(buffer), "%u:%02u.%03u ", minutes, seconds, milliseconds);
+      RichString_appendnAscii(str, baseColor, buffer, len);
+      return;
+   }
+
+   unsigned long long totalHundredths = totalMicroseconds / 1000 / 10;
+   Row_printTime(str, totalHundredths, coloring);
+}
+
 void Row_printRate(RichString* str, double rate, bool coloring) {
    char buffer[16];
 
@@ -442,6 +500,11 @@ void Row_printLeftAlignedField(RichString* str, int attr, const char* content, u
 }
 
 int Row_printPercentage(float val, char* buffer, size_t n, uint8_t width, int* attr) {
+   assert(n >= 6 && width >= 4 && "Invalid width in Row_printPercentage()");
+   // truncate in favour of abort in xSnprintf()
+   width = (uint8_t)CLAMP(width, 4, n - 2);
+   assert(width < n - 1 && "Insufficient space to print column");
+
    if (isNonnegative(val)) {
       if (val < 0.05F)
          *attr = CRT_colors[PROCESS_SHADOW];

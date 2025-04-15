@@ -37,7 +37,7 @@ const ProcessFieldData Process_fields[LAST_PROCESSFIELD] = {
    [COMM] = {
       .name = "Command",
       .title = "Command ",
-      .description = "Command line",
+      .description = "Command line (insert as last column only)",
       .flags = 0,
    },
    [STATE] = {
@@ -151,6 +151,7 @@ const ProcessFieldData Process_fields[LAST_PROCESSFIELD] = {
       .flags = 0,
       .defaultSortDesc = true,
       .autoWidth = true,
+      .autoTitleRightAlign = true,
    },
    [PERCENT_NORM_CPU] = {
       .name = "PERCENT_NORM_CPU",
@@ -218,7 +219,7 @@ Process* NetBSDProcess_new(const Machine* host) {
    NetBSDProcess* this = xCalloc(1, sizeof(NetBSDProcess));
    Object_setClass(this, Class(NetBSDProcess));
    Process_init(&this->super, host);
-   return &this->super;
+   return (Process*)this;
 }
 
 void Process_delete(Object* cast) {

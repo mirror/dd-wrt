@@ -36,7 +36,7 @@ void MainPanel_updateLabels(MainPanel* this, bool list, bool filter) {
 }
 
 static void MainPanel_idSearch(MainPanel* this, int ch) {
-   Panel* super = (Panel*) this;
+   Panel* super = &this->super;
    pid_t id = ch - 48 + this->idSearch;
    for (int i = 0; i < Panel_size(super); i++) {
       const Row* row = (const Row*) Panel_get(super, i);
@@ -92,7 +92,7 @@ static HandlerResult MainPanel_eventHandler(Panel* super, int ch) {
       } else {
          reaction |= Action_setSortKey(settings, field);
       }
-      reaction |= HTOP_RECALCULATE | HTOP_REDRAW_BAR | HTOP_SAVE_SETTINGS;
+      reaction |= HTOP_RECALCULATE | HTOP_REDRAW_BAR | HTOP_UPDATE_PANELHDR | HTOP_SAVE_SETTINGS;
       result = HANDLED;
    } else if (EVENT_IS_SCREEN_TAB_CLICK(ch)) {
       int x = EVENT_SCREEN_TAB_GET_X(ch);
@@ -159,7 +159,7 @@ int MainPanel_selectedRow(MainPanel* this) {
 }
 
 bool MainPanel_foreachRow(MainPanel* this, MainPanel_foreachRowFn fn, Arg arg, bool* wasAnyTagged) {
-   Panel* super = (Panel*) this;
+   Panel* super = &this->super;
    bool ok = true;
    bool anyTagged = false;
    for (int i = 0; i < Panel_size(super); i++) {
@@ -236,12 +236,11 @@ void MainPanel_setFunctionBar(MainPanel* this, bool readonly) {
 }
 
 void MainPanel_delete(Object* object) {
-   Panel* super = (Panel*) object;
    MainPanel* this = (MainPanel*) object;
    MainPanel_setFunctionBar(this, false);
    FunctionBar_delete(this->readonlyBar);
-   Panel_done(super);
    IncSet_delete(this->inc);
    free(this->keys);
+   Panel_done(&this->super);
    free(this);
 }

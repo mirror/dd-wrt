@@ -1,0 +1,31 @@
+#
+# pcp-htop(1) configuration file - see pcp-htop(5)
+#
+
+[udp_send_packets]
+heading = UDPS
+caption = UDP_SEND
+width = 6
+metric = bpf.proc.net.udp.send.packets
+description = Count of UDP packets sent
+
+[udp_send_bytes]
+heading = UDPSB
+caption = UDP_SEND_BYTES
+width = 6
+metric = bpf.proc.net.udp.send.bytes
+description = Cumulative bytes sent via UDP
+
+[udp_recv_packets]
+heading = UDPR
+caption = UDP_RECV
+width = 6
+metric = bpf.proc.net.udp.recv.packets
+description = Count of UDP packets received
+
+[udp_recv_bytes]
+heading = UDPRB
+caption = UDP_RECV_BYTES
+width = 6
+metric = bpf.proc.net.udp.recv.bytes
+description = Cumulative bytes received via UDP

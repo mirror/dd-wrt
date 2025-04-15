@@ -33,6 +33,7 @@ in the source distribution for its full text.
 #ifdef BUILD_STATIC
 
 #define sym_sd_bus_open_system sd_bus_open_system
+#define sym_sd_bus_open_user sd_bus_open_user
 #define sym_sd_bus_get_property_string sd_bus_get_property_string
 #define sym_sd_bus_get_property_trivial sd_bus_get_property_trivial
 #define sym_sd_bus_unref sd_bus_unref
@@ -407,8 +408,9 @@ const MeterClass SystemdMeter_class = {
    .updateValues = SystemdMeter_updateValues,
    .done = SystemdMeter_done,
    .defaultMode = TEXT_METERMODE,
+   .supportedModes = (1 << TEXT_METERMODE),
    .maxItems = 0,
-   .total = 100.0,
+   .total = 0.0,
    .attributes = SystemdMeter_attributes,
    .name = "Systemd",
    .uiName = "Systemd state",
@@ -425,8 +427,9 @@ const MeterClass SystemdUserMeter_class = {
    .updateValues = SystemdMeter_updateValues,
    .done = SystemdMeter_done,
    .defaultMode = TEXT_METERMODE,
+   .supportedModes = (1 << TEXT_METERMODE),
    .maxItems = 0,
-   .total = 100.0,
+   .total = 0.0,
    .attributes = SystemdMeter_attributes,
    .name = "SystemdUser",
    .uiName = "Systemd user state",

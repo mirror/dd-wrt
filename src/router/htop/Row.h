@@ -154,12 +154,13 @@ void Row_printCount(RichString* str, unsigned long long number, bool coloring);
 /* Takes time in hundredths of a seconds. Prints 9 columns. */
 void Row_printTime(RichString* str, unsigned long long totalHundredths, bool coloring);
 
+/* Takes time in nanoseconds. Prints 9 columns. */
+void Row_printNanoseconds(RichString* str, unsigned long long totalNanoseconds, bool coloring);
+
 /* Takes rate in bare unit (base 1024) per second. Prints 12 columns. */
 void Row_printRate(RichString* str, double rate, bool coloring);
 
 int Row_printPercentage(float val, char* buffer, size_t n, uint8_t width, int* attr);
-
-void Row_display(const Object* cast, RichString* out);
 
 static inline int Row_idEqualCompare(const void* v1, const void* v2) {
    const int p1 = ((const Row*)v1)->id;

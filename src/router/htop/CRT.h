@@ -14,6 +14,9 @@ in the source distribution for its full text.
 #include "Settings.h"
 
 
+#define SCREEN_TAB_MARGIN_LEFT 2
+#define SCREEN_TAB_COLUMN_GAP  1
+
 typedef enum TreeStr_ {
    TREE_STR_VERT,
    TREE_STR_RTEE,
@@ -121,6 +124,11 @@ typedef enum ColorElements_ {
    CPU_SOFTIRQ,
    CPU_STEAL,
    CPU_GUEST,
+   GPU_ENGINE_1,
+   GPU_ENGINE_2,
+   GPU_ENGINE_3,
+   GPU_ENGINE_4,
+   GPU_RESIDUE,
    PANEL_EDIT,
    SCREENS_OTH_BORDER,
    SCREENS_OTH_TEXT,
@@ -168,6 +176,9 @@ void CRT_handleSIGSEGV(int signal) ATTR_NORETURN;
 #define KEY_RECLICK   KEY_F(32)
 #define KEY_SHIFT_TAB KEY_F(33)
 #define KEY_ALT(x)    (KEY_F(64 - 26) + ((x) - 'A'))
+#define KEY_FOCUS_IN  (KEY_MAX + 'I')
+#define KEY_FOCUS_OUT (KEY_MAX + 'O')
+#define KEY_DEL_MAC   127
 
 extern const char* CRT_degreeSign;
 
@@ -206,6 +217,10 @@ int CRT_readKey(void);
 void CRT_disableDelay(void);
 
 void CRT_enableDelay(void);
+
+static inline void CRT_updateDelay(void) {
+   CRT_enableDelay(); // pushes new delay setting into halfdelay(3X)
+}
 
 void CRT_setColors(int colorScheme);
 

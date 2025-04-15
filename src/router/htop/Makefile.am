@@ -24,7 +24,7 @@ pixmap_DATA = htop.png
 appicondir = $(datadir)/icons/hicolor/scalable/apps
 appicon_DATA = htop.svg
 
-AM_CFLAGS += -D_XOPEN_SOURCE_EXTENDED -DSYSCONFDIR="\"$(sysconfdir)\"" -I"$(top_srcdir)/$(my_htop_platform)"
+AM_CFLAGS += -DSYSCONFDIR="\"$(sysconfdir)\"" -I"$(top_srcdir)/$(my_htop_platform)"
 AM_LDFLAGS =
 
 myhtopsources = \
@@ -134,6 +134,7 @@ myhtopheaders = \
 	MemoryMeter.h \
 	MemorySwapMeter.h \
 	Meter.h \
+	MeterMode.h \
 	MetersPanel.h \
 	NetworkIOMeter.h \
 	Object.h \
@@ -172,6 +173,8 @@ linux_platform_headers = \
 	generic/hostname.h \
 	generic/uname.h \
 	linux/CGroupUtils.h \
+	linux/GPU.h \
+	linux/GPUMeter.h \
 	linux/HugePageMeter.h \
 	linux/IOPriority.h \
 	linux/IOPriorityPanel.h \
@@ -196,6 +199,8 @@ linux_platform_sources = \
 	generic/hostname.c \
 	generic/uname.c \
 	linux/CGroupUtils.c \
+	linux/GPU.c \
+	linux/GPUMeter.c \
 	linux/HugePageMeter.c \
 	linux/IOPriorityPanel.c \
 	linux/LibSensors.c \
@@ -209,6 +214,11 @@ linux_platform_sources = \
 	linux/ZramMeter.c \
 	zfs/ZfsArcMeter.c \
 	zfs/ZfsCompressedArcMeter.c
+
+if HAVE_DELAYACCT
+linux_platform_headers += linux/LibNl.h
+linux_platform_sources += linux/LibNl.c
+endif
 
 if HTOP_LINUX
 AM_LDFLAGS += -rdynamic
@@ -498,10 +508,14 @@ cppcheck:
 	cppcheck -q -v . --enable=all -DHAVE_OPENVZ
 
 dist-hook: $(top_distdir)/configure
-	@if grep 'pkg_m4_absent' '$(top_distdir)/configure'; then \
-	   echo 'configure is generated without pkg.m4. Please supply pkg.m4 and run ./autogen.sh to rebuild the configure script.'>&2; \
+	@if test "x$$FORCE_MAKE_DIST" != x || \
+	   grep 'pkg_m4_included' '$(top_distdir)/configure' >/dev/null; then :; \
+	else \
+	   echo 'ERROR: The configure script has incomplete pkg-config support and regenerating it is advised. Set FORCE_MAKE_DIST=1 to ignore this warning.'>&2; \
 	   (exit 1); \
-	else :; \
+	fi
+	@if grep 'PACKAGE_VERSION.*-g' '$(top_distdir)/configure'; then \
+	  echo 'WARNING: You are building a dist from a git version. Better run make dist outside of a .git repo on a tagged release.'>&2; \
 	fi
 
 .PHONY: lcov
