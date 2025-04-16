@@ -17,18 +17,19 @@
 BIN=smartdns
 SMARTDNS_LIB=libsmartdns.a
 SMARTDNS_TEST_LIB=libsmartdns-test.a
-OBJS_LIB=$(patsubst %.c,%.o,$(wildcard *.c)) $(patsubst %.c,%.o,$(wildcard */*.c))
-OBJS_MAIN=$(filter-out main.o, $(patsubst %.c,%.o,$(wildcard *.c)))
-TEST_OBJS=$(patsubst %.o,%_test.o,$(OBJS_MAIN) $(OBJS_LIB))
+# libs without main.o
+OBJS=$(filter-out main.o, $(patsubst %.c,%.o,$(wildcard *.c)) $(patsubst %.c,%.o,$(wildcard */*.c)))
+# libs without lib/%.o
+LINT_OBJS=$(filter-out lib/%.o, $(OBJS))
+TEST_OBJS=$(patsubst %.o,%_test.o,$(OBJS))
 MAIN_OBJ = main.o
-OBJS=$(OBJS_MAIN) $(OBJS_LIB)
 
 
 # cflags
 ifndef CFLAGS
 CFLAGS =-O2 -g -Wall -Wstrict-prototypes -fno-omit-frame-pointer -Wstrict-aliasing -funwind-tables -Wmissing-prototypes -Wshadow -Wextra -Wno-unused-parameter -Wno-implicit-fallthrough
 endif
-override CFLAGS +=-Iinclude $(LTO)
+override CFLAGS += -Iinclude $(LTO)
 override CFLAGS += -DBASE_FILE_NAME='"$(notdir $<)"'
 ifdef VER
 override CFLAGS += -DSMARTDNS_VERION='"$(VER)"'
@@ -74,7 +75,7 @@ $(SMARTDNS_LIB): $(OBJS)
 	$(AR) $(LTOPLUGIN) rcs $@ $^
 
 clang-tidy:
-	clang-tidy -p=. $(OBJS_MAIN:.o=.c) -- $(CFLAGS)
+	clang-tidy -p=. $(LINT_OBJS:.o=.c) -- $(CFLAGS)
 
 clean:
 	$(RM) $(OBJS) $(BIN) $(SMARTDNS_LIB) $(MAIN_OBJ) $(SMARTDNS_TEST_LIB) $(TEST_OBJS)

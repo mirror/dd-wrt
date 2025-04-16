@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (C) 2018-2024 Ruilin Peng (Nick) <pymumu@gmail.com>.
+ * Copyright (C) 2018-2025 Ruilin Peng (Nick) <pymumu@gmail.com>.
  *
  * smartdns is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -208,7 +208,7 @@ typedef int(conf_error_handler)(const char *key, const char *value, const char *
 
 int conf_parse_key_values(char *line, int *key_num, char **keys, char **values);
 
-int load_conf(const char *file, struct config_item items[], conf_error_handler handler);
+int load_conf(const char *file, const struct config_item items[], conf_error_handler handler);
 
 void load_exit(void);
 
