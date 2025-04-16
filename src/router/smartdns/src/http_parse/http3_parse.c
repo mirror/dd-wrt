@@ -21,7 +21,7 @@
 #include "qpack.h"
 
 #include <stdio.h>
-
+#ifdef HAVE_OPENSSL
 #define HTTP3_HEADER_FRAME 1
 #define HTTP3_DATA_FRAME 0
 
@@ -672,3 +672,4 @@ int http_head_serialize_http3_0(struct http_head *http_head, uint8_t *buffer, in
 
 	return offset;
 }
+#endif

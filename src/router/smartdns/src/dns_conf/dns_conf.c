@@ -125,18 +125,22 @@ static struct config_item _config_item[] = {
 	CONF_YESNO("resolv-hostname", &dns_conf.resolv_hostname),
 	CONF_CUSTOM("bind", _config_bind_ip_udp, NULL),
 	CONF_CUSTOM("bind-tcp", _config_bind_ip_tcp, NULL),
+#ifdef HAVE_OPENSSL
 	CONF_CUSTOM("bind-tls", _config_bind_ip_tls, NULL),
 	CONF_CUSTOM("bind-https", _config_bind_ip_https, NULL),
 	CONF_CUSTOM("bind-cert-file", _config_option_parser_filepath, &dns_conf.bind_ca_file),
 	CONF_CUSTOM("bind-cert-key-file", _config_option_parser_filepath, &dns_conf.bind_ca_key_file),
 	CONF_STRING("bind-cert-key-pass", dns_conf.bind_ca_key_pass, DNS_MAX_PATH),
+#endif
 	CONF_CUSTOM("server", _config_server_udp, NULL),
 	CONF_CUSTOM("server-tcp", _config_server_tcp, NULL),
+#ifdef HAVE_OPENSSL
 	CONF_CUSTOM("server-tls", _config_server_tls, NULL),
 	CONF_CUSTOM("server-https", _config_server_https, NULL),
 	CONF_CUSTOM("server-h3", _config_server_http3, NULL),
 	CONF_CUSTOM("server-http3", _config_server_http3, NULL),
 	CONF_CUSTOM("server-quic", _config_server_quic, NULL),
+#endif
 	CONF_YESNO("mdns-lookup", &dns_conf.mdns_lookup),
 	CONF_YESNO("local-ptr-enable", &dns_conf.local_ptr_enable),
 	CONF_CUSTOM("nameserver", _config_nameserver, NULL),
@@ -144,7 +148,9 @@ static struct config_item _config_item[] = {
 	CONF_CUSTOM("address", _config_address, NULL),
 	CONF_CUSTOM("cname", _config_cname, NULL),
 	CONF_CUSTOM("srv-record", _config_srv_record, NULL),
+#ifdef HAVE_OPENSSL
 	CONF_CUSTOM("https-record", _config_https_record, NULL),
+#endif
 	CONF_CUSTOM("proxy-server", _config_proxy_server, NULL),
 	CONF_YESNO_FUNC("ipset-timeout", _dns_conf_group_yesno, group_member(ipset_nftset.ipset_timeout_enable)),
 	CONF_CUSTOM("ipset", _config_ipset, NULL),

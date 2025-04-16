@@ -75,9 +75,11 @@ void *_new_dns_rule_ext(enum domain_rule domain_rule, int ext_size)
 	case DOMAIN_RULE_CNAME:
 		size = sizeof(struct dns_cname_rule);
 		break;
+#ifdef HAVE_OPENSSL
 	case DOMAIN_RULE_HTTPS:
 		size = sizeof(struct dns_https_record_rule);
 		break;
+#endif
 	case DOMAIN_RULE_TTL:
 		size = sizeof(struct dns_ttl_rule);
 		break;
@@ -734,6 +736,7 @@ int _config_domain_rules(void *data, int argc, char *argv[])
 
 			break;
 		}
+#ifdef HAVE_OPENSSL
 		case 'h': {
 			const char *https_record = optarg;
 			if (https_record == NULL) {
@@ -747,6 +750,7 @@ int _config_domain_rules(void *data, int argc, char *argv[])
 
 			break;
 		}
+#endif
 		case 'p': {
 			const char *ipsetname = optarg;
 			if (ipsetname == NULL) {

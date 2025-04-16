@@ -28,8 +28,10 @@
 #include "smartdns/dns_server.h"
 #include "smartdns/tlog.h"
 #include "smartdns/util.h"
-
+#include <stdio.h>
+#ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
+#endif
 #include <pthread.h>
 
 #ifdef __cplusplus
@@ -186,12 +188,12 @@ struct dns_server_conn_udp {
 struct dns_server_conn_tcp_server {
 	struct dns_server_conn_head head;
 };
-
+#ifdef HAVE_OPENSSL
 struct dns_server_conn_tls_server {
 	struct dns_server_conn_head head;
 	SSL_CTX *ssl_ctx;
 };
-
+#endif
 struct dns_server_conn_tcp_client {
 	struct dns_server_conn_head head;
 	struct dns_conn_buf recvbuff;
@@ -206,13 +208,14 @@ struct dns_server_conn_tcp_client {
 	dns_server_client_status status;
 };
 
+#ifdef HAVE_OPENSSL
 struct dns_server_conn_tls_client {
 	struct dns_server_conn_tcp_client tcp;
 	SSL *ssl;
 	int ssl_want_write;
 	pthread_mutex_t ssl_lock;
 };
-
+#endif
 /* ip address lists of domain */
 struct dns_ip_address {
 	struct hlist_node node;

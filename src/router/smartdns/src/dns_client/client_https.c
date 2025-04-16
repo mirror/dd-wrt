@@ -23,6 +23,7 @@
 #include "server_info.h"
 
 #include "smartdns/http_parse.h"
+#ifdef HAVE_OPENSSL
 
 int _dns_client_send_https(struct dns_server_info *server_info, void *packet, unsigned short len)
 {
@@ -80,3 +81,4 @@ int _dns_client_send_https(struct dns_server_info *server_info, void *packet, un
 
 	return 0;
 }
+#endif

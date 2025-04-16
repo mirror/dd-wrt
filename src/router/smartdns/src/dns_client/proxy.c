@@ -24,6 +24,7 @@
 #include "proxy.h"
 #include "server_info.h"
 
+#include <errno.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 

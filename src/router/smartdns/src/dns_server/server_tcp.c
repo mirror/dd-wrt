@@ -149,7 +149,9 @@ int _dns_server_tcp_socket_send(struct dns_server_conn_tcp_client *tcp_client, v
 {
 	if (tcp_client->head.type == DNS_CONN_TYPE_TCP_CLIENT) {
 		return send(tcp_client->head.fd, data, data_len, MSG_NOSIGNAL);
-	} else if (tcp_client->head.type == DNS_CONN_TYPE_TLS_CLIENT ||
+	} 
+#ifdef HAVE_OPENSSL
+	else if (tcp_client->head.type == DNS_CONN_TYPE_TLS_CLIENT ||
 			   tcp_client->head.type == DNS_CONN_TYPE_HTTPS_CLIENT) {
 		struct dns_server_conn_tls_client *tls_client = (struct dns_server_conn_tls_client *)tcp_client;
 		tls_client->ssl_want_write = 0;
@@ -160,7 +162,9 @@ int _dns_server_tcp_socket_send(struct dns_server_conn_tcp_client *tcp_client, v
 			}
 		}
 		return ret;
-	} else {
+	} 
+#endif
+	else {
 		return -1;
 	}
 }
@@ -169,7 +173,9 @@ int _dns_server_tcp_socket_recv(struct dns_server_conn_tcp_client *tcp_client, v
 {
 	if (tcp_client->head.type == DNS_CONN_TYPE_TCP_CLIENT) {
 		return recv(tcp_client->head.fd, data, data_len, MSG_NOSIGNAL);
-	} else if (tcp_client->head.type == DNS_CONN_TYPE_TLS_CLIENT ||
+	} 
+#ifdef HAVE_OPENSSL
+	else if (tcp_client->head.type == DNS_CONN_TYPE_TLS_CLIENT ||
 			   tcp_client->head.type == DNS_CONN_TYPE_HTTPS_CLIENT) {
 		struct dns_server_conn_tls_client *tls_client = (struct dns_server_conn_tls_client *)tcp_client;
 		int ret = _dns_server_socket_ssl_recv(tls_client, data, data_len);
@@ -181,7 +187,9 @@ int _dns_server_tcp_socket_recv(struct dns_server_conn_tcp_client *tcp_client, v
 		}
 
 		return ret;
-	} else {
+	} 
+#endif
+	else {
 		return -1;
 	}
 }
@@ -248,6 +256,7 @@ static int _dns_server_tcp_process_one_request(struct dns_server_conn_tcp_client
 			goto out;
 		}
 
+#ifdef HAVE_OPENSSL
 		if (tcpclient->head.type == DNS_CONN_TYPE_HTTPS_CLIENT) {
 			if ((total_len - proceed_len) <= 0) {
 				ret = RECV_ERROR_AGAIN;
@@ -337,7 +346,9 @@ static int _dns_server_tcp_process_one_request(struct dns_server_conn_tcp_client
 			}
 
 			proceed_len += len;
-		} else {
+		} else 
+#endif
+		{
 			if ((total_len - proceed_len) <= (int)sizeof(unsigned short)) {
 				ret = RECV_ERROR_AGAIN;
 				goto out;
@@ -394,6 +405,7 @@ errout:
 		free(base64_query);
 	}
 
+#ifdef HAVE_OPENSSL
 	if (tcpclient->head.type == DNS_CONN_TYPE_HTTPS_CLIENT) {
 		if (ret == RECV_ERROR_BAD_PATH) {
 			_dns_server_reply_http_error(tcpclient, 404, "Not Found", "Not Found");
@@ -401,6 +413,7 @@ errout:
 			_dns_server_reply_http_error(tcpclient, 400, "Bad Request", "Bad Request");
 		}
 	}
+#endif
 
 	return ret;
 }
@@ -447,6 +460,7 @@ int _dns_server_tcp_process_requests(struct dns_server_conn_tcp_client *tcpclien
 	return 0;
 }
 
+#ifdef HAVE_OPENSSL
 static int _dns_server_tls_want_write(struct dns_server_conn_tcp_client *tcpclient)
 {
 	if (tcpclient->head.type == DNS_CONN_TYPE_TLS_CLIENT || tcpclient->head.type == DNS_CONN_TYPE_HTTPS_CLIENT) {
@@ -458,12 +472,17 @@ static int _dns_server_tls_want_write(struct dns_server_conn_tcp_client *tcpclie
 
 	return 0;
 }
+#endif
 
 static int _dns_server_tcp_send(struct dns_server_conn_tcp_client *tcpclient)
 {
 	int len = 0;
+#ifdef HAVE_OPENSSL
 	while (tcpclient->sndbuff.size > 0 || _dns_server_tls_want_write(tcpclient) == 1) {
-		len = _dns_server_tcp_socket_send(tcpclient, tcpclient->sndbuff.buf, tcpclient->sndbuff.size);
+#else
+	while (tcpclient->sndbuff.size > 0) {
+#endif	
+	len = _dns_server_tcp_socket_send(tcpclient, tcpclient->sndbuff.buf, tcpclient->sndbuff.size);
 		if (len < 0) {
 			if (errno == EAGAIN) {
 				return RECV_ERROR_AGAIN;

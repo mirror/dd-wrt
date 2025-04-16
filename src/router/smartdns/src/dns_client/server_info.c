@@ -318,6 +318,7 @@ int _dns_client_server_add(const char *server_ip, const char *server_host, int p
 
 		sock_type = SOCK_DGRAM;
 	} break;
+#ifdef HAVE_OPENSSL
 	case DNS_SERVER_HTTP3: {
 		struct client_dns_server_flag_https *flag_https = &flags->https;
 		spki_data_len = flag_https->spi_len;
@@ -356,6 +357,7 @@ int _dns_client_server_add(const char *server_ip, const char *server_host, int p
 		sock_type = SOCK_STREAM;
 		skip_check_cert = flag_tls->skip_check_cert;
 	} break;
+#endif
 	case DNS_SERVER_TCP:
 		sock_type = SOCK_STREAM;
 		break;
@@ -446,6 +448,7 @@ int _dns_client_server_add(const char *server_ip, const char *server_host, int p
 		}
 	}
 
+#ifdef HAVE_OPENSSL
 	/* if server type is TLS, create ssl context */
 	if (server_type == DNS_SERVER_TLS || server_type == DNS_SERVER_HTTPS || server_type == DNS_SERVER_QUIC ||
 		server_type == DNS_SERVER_HTTP3) {
@@ -463,7 +466,7 @@ int _dns_client_server_add(const char *server_ip, const char *server_host, int p
 			server_info->skip_check_cert = 1;
 		}
 	}
-
+#endif
 	/* safe address info */
 	if (gai->ai_addrlen > sizeof(server_info->in6)) {
 		tlog(TLOG_ERROR, "addr len invalid, %d, %zd, %d", gai->ai_addrlen, sizeof(server_info->addr),
@@ -533,20 +536,22 @@ const char *_dns_server_get_type_string(dns_server_type_t type)
 	case DNS_SERVER_TCP:
 		type_str = "tcp";
 		break;
+#ifdef HAVE_OPENSSL
 	case DNS_SERVER_TLS:
 		type_str = "tls";
 		break;
 	case DNS_SERVER_HTTPS:
 		type_str = "https";
 		break;
-	case DNS_SERVER_MDNS:
-		type_str = "mdns";
-		break;
 	case DNS_SERVER_HTTP3:
 		type_str = "http3";
 		break;
 	case DNS_SERVER_QUIC:
 		type_str = "quic";
+		break;
+#endif
+	case DNS_SERVER_MDNS:
+		type_str = "mdns";
 		break;
 	default:
 		break;
@@ -561,6 +566,7 @@ void _dns_client_close_socket_ext(struct dns_server_info *server_info, int no_de
 		return;
 	}
 
+#ifdef HAVE_OPENSSL
 	if (server_info->ssl) {
 		/* Shutdown ssl */
 		if (server_info->status == DNS_SERVER_STATUS_CONNECTED) {
@@ -603,7 +609,7 @@ void _dns_client_close_socket_ext(struct dns_server_info *server_info, int no_de
 		BIO_meth_free(server_info->bio_method);
 		server_info->bio_method = NULL;
 	}
-
+#endif
 	/* remove fd from epoll */
 	if (server_info->fd > 0) {
 		epoll_ctl(client.epoll_fd, EPOLL_CTL_DEL, server_info->fd, NULL);
@@ -646,6 +652,7 @@ void _dns_client_shutdown_socket(struct dns_server_info *server_info)
 			shutdown(server_info->fd, SHUT_RDWR);
 		}
 		break;
+#ifdef HAVE_OPENSSL
 	case DNS_SERVER_QUIC:
 	case DNS_SERVER_TLS:
 	case DNS_SERVER_HTTP3:
@@ -659,6 +666,7 @@ void _dns_client_shutdown_socket(struct dns_server_info *server_info)
 		}
 		atomic_set(&server_info->is_alive, 0);
 		break;
+#endif
 	case DNS_SERVER_MDNS:
 		break;
 	default:
@@ -679,12 +687,14 @@ void _dns_client_server_close(struct dns_server_info *server_info)
 
 	_dns_client_close_socket(server_info);
 
+#ifdef HAVE_OPENSSL
 	if (server_info->ssl_session) {
 		SSL_SESSION_free(server_info->ssl_session);
 		server_info->ssl_session = NULL;
 	}
 
 	server_info->ssl_ctx = NULL;
+#endif
 }
 
 /* remove all servers information */

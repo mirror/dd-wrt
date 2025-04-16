@@ -969,6 +969,7 @@ int _dns_server_get_expired_ttl_reply(struct dns_request *request, struct dns_ca
 	return request->conf->dns_serve_expired_reply_ttl;
 }
 
+#ifdef HAVE_OPENSSL
 int _dns_server_process_https_svcb(struct dns_request *request)
 {
 	struct dns_https_record_rule *https_record_rule = _dns_server_get_dns_rule(request, DOMAIN_RULE_HTTPS);
@@ -1017,6 +1018,7 @@ int _dns_server_process_https_svcb(struct dns_request *request)
 
 	return -1;
 }
+#endif
 
 void _dns_server_request_set_client(struct dns_request *request, struct dns_server_conn_head *conn)
 {

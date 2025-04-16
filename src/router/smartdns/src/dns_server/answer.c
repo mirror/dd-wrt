@@ -230,6 +230,7 @@ static int _dns_server_process_answer_AAAA(struct dns_rrs *rrs, struct dns_reque
 	return ret;
 }
 
+#ifdef HAVE_OPENSSL
 static int _dns_server_process_answer_HTTPS(struct dns_rrs *rrs, struct dns_request *request, const char *domain,
 											char *cname, unsigned int result_flag)
 {
@@ -348,6 +349,7 @@ static int _dns_server_process_answer_HTTPS(struct dns_rrs *rrs, struct dns_requ
 
 	return 0;
 }
+#endif
 
 int _dns_server_process_answer(struct dns_request *request, const char *domain, struct dns_packet *packet,
 							   unsigned int result_flag, int *need_passthrouh)
@@ -449,6 +451,7 @@ int _dns_server_process_answer(struct dns_request *request, const char *domain, 
 				request->ttl_cname = _dns_server_get_conf_ttl(request, ttl);
 				tlog(TLOG_DEBUG, "name: %s ttl: %d cname: %s\n", domain_name, ttl, cname);
 			} break;
+#ifdef HAVE_OPENSSL
 			case DNS_T_HTTPS: {
 				ret = _dns_server_process_answer_HTTPS(rrs, request, domain, cname, result_flag);
 				if (ret == -1) {
@@ -464,6 +467,7 @@ int _dns_server_process_answer(struct dns_request *request, const char *domain, 
 					_dns_server_request_complete(request);
 				}
 			} break;
+#endif
 			case DNS_T_SOA: {
 				/* if DNS64 enabled, skip check SOA. */
 				if (_dns_server_is_dns64_request(request)) {

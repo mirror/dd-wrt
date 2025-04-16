@@ -25,10 +25,12 @@
 extern "C" {
 #endif /*__cplusplus */
 
+#ifdef HAVE_OPENSSL
 int _dns_client_send_http3(struct dns_query_struct *query, struct dns_server_info *server_info, void *packet,
 						   unsigned short len);
 
 int _dns_client_process_recv_http3(struct dns_server_info *server_info, struct dns_conn_stream *conn_stream);
+#endif
 #ifdef __cplusplus
 }
 #endif /*__cplusplus */

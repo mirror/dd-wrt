@@ -19,7 +19,9 @@
 #include "connection.h"
 #include "dns_server.h"
 
+#ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
+#endif
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 
@@ -53,6 +55,7 @@ void _dns_server_conn_release(struct dns_server_conn_head *conn)
 		return;
 	}
 
+#ifdef HAVE_OPENSSL
 	if (conn->type == DNS_CONN_TYPE_TLS_CLIENT || conn->type == DNS_CONN_TYPE_HTTPS_CLIENT) {
 		struct dns_server_conn_tls_client *tls_client = (struct dns_server_conn_tls_client *)conn;
 		if (tls_client->ssl != NULL) {
@@ -67,6 +70,7 @@ void _dns_server_conn_release(struct dns_server_conn_head *conn)
 			tls_server->ssl_ctx = NULL;
 		}
 	}
+#endif
 
 	if (conn->fd > 0) {
 		close(conn->fd);
@@ -109,6 +113,7 @@ void _dns_server_close_socket_server(void)
 	list_for_each_entry_safe(conn, tmp, &server.conn_list, list)
 	{
 		switch (conn->type) {
+#ifdef HAVE_OPENSSL
 		case DNS_CONN_TYPE_HTTPS_SERVER:
 		case DNS_CONN_TYPE_TLS_SERVER: {
 			struct dns_server_conn_tls_server *tls_server = (struct dns_server_conn_tls_server *)conn;
@@ -119,6 +124,7 @@ void _dns_server_close_socket_server(void)
 			_dns_server_client_close(conn);
 			break;
 		}
+#endif
 		case DNS_CONN_TYPE_UDP_SERVER:
 		case DNS_CONN_TYPE_TCP_SERVER:
 			_dns_server_client_close(conn);
@@ -164,11 +170,13 @@ int _dns_server_update_request_connection_timeout(struct dns_server_conn_head *c
 		struct dns_server_conn_tcp_client *tcpclient = (struct dns_server_conn_tcp_client *)conn;
 		tcpclient->conn_idle_timeout = timeout;
 	} break;
+#ifdef HAVE_OPENSSL
 	case DNS_CONN_TYPE_TLS_CLIENT:
 	case DNS_CONN_TYPE_HTTPS_CLIENT: {
 		struct dns_server_conn_tls_client *tlsclient = (struct dns_server_conn_tls_client *)conn;
 		tlsclient->tcp.conn_idle_timeout = timeout;
 	} break;
+#endif
 	default:
 		break;
 	}

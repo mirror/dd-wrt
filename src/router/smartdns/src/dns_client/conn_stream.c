@@ -33,7 +33,9 @@ struct dns_conn_stream *_dns_client_conn_stream_new(void)
 	memset(stream, 0, sizeof(*stream));
 	INIT_LIST_HEAD(&stream->server_list);
 	INIT_LIST_HEAD(&stream->query_list);
+#ifdef HAVE_OPENSSL
 	stream->quic_stream = NULL;
+#endif
 	stream->server_info = NULL;
 	stream->query = NULL;
 	atomic_set(&stream->refcnt, 1);
@@ -58,11 +60,12 @@ void _dns_client_conn_stream_put(struct dns_conn_stream *stream)
 		return;
 	}
 
+#ifdef HAVE_OPENSSL
 	if (stream->quic_stream) {
 		SSL_free(stream->quic_stream);
 		stream->quic_stream = NULL;
 	}
-
+#endif
 	if (stream->query) {
 		list_del_init(&stream->query_list);
 		stream->query = NULL;
@@ -94,6 +97,7 @@ void _dns_client_conn_server_streams_free(struct dns_server_info *server_info, s
 
 		list_del_init(&stream->server_list);
 		stream->server_info = NULL;
+#ifdef HAVE_OPENSSL
 		if (stream->quic_stream) {
 #ifdef OSSL_QUIC1_VERSION
 			SSL_stream_reset(stream->quic_stream, NULL, 0);
@@ -101,6 +105,7 @@ void _dns_client_conn_server_streams_free(struct dns_server_info *server_info, s
 			SSL_free(stream->quic_stream);
 			stream->quic_stream = NULL;
 		}
+#endif
 		_dns_client_conn_stream_put(stream);
 	}
 	pthread_mutex_unlock(&server_info->lock);

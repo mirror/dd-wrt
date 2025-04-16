@@ -1093,10 +1093,13 @@ int smartdns_main(int argc, char *argv[])
 			return dns_cache_print(optarg);
 			break;
 		case 257:
+#ifdef HAVE_OPENSSL
 			if (dns_is_quic_supported() == 0) {
 				fprintf(stdout, "quic is not supported.\n");
 				return 1;
-			} else {
+			} else 
+#endif
+			{
 				fprintf(stdout, "quic is supported.\n");
 				return 0;
 			}

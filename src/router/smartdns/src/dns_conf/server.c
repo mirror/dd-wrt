@@ -131,6 +131,7 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 		}
 	}
 
+#ifdef HAVE_OPENSSL
 	if (dns_is_quic_supported() == 0) {
 		if (type == DNS_SERVER_QUIC || type == DNS_SERVER_HTTP3) {
 			tlog(TLOG_ERROR, "QUIC/HTTP3 is not supported in this version.");
@@ -138,7 +139,7 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 			return -1;
 		}
 	}
-
+#endif
 	/* if port is not defined, set port to default 53 */
 	if (port == PORT_NOT_DEFINED) {
 		port = default_port;

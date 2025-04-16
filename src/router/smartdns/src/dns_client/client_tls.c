@@ -17,6 +17,7 @@
  */
 
 #define _GNU_SOURCE
+#ifdef HAVE_OPENSSL
 
 #include "client_tls.h"
 #include "client_quic.h"
@@ -1087,3 +1088,4 @@ int _dns_client_send_tls(struct dns_server_info *server_info, void *packet, unsi
 
 	return 0;
 }
+#endif

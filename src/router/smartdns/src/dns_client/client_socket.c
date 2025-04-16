@@ -42,6 +42,7 @@ int _dns_client_create_socket(struct dns_server_info *server_info)
 		return _dns_client_create_socket_udp_mdns(server_info);
 	} else if (server_info->type == DNS_SERVER_TCP) {
 		return _dns_client_create_socket_tcp(server_info);
+#ifdef HAVE_OPENSSL
 	} else if (server_info->type == DNS_SERVER_TLS) {
 		struct client_dns_server_flag_tls *flag_tls = NULL;
 		flag_tls = &server_info->flags.tls;
@@ -66,6 +67,7 @@ int _dns_client_create_socket(struct dns_server_info *server_info)
 			alpn = flag_https->alpn;
 		}
 		return _dns_client_create_socket_quic(server_info, flag_https->hostname, alpn);
+#endif
 	} else {
 		return -1;
 	}
@@ -79,6 +81,7 @@ int _dns_client_socket_send(struct dns_server_info *server_info)
 		return -1;
 	} else if (server_info->type == DNS_SERVER_TCP) {
 		return send(server_info->fd, server_info->send_buff.data, server_info->send_buff.len, MSG_NOSIGNAL);
+#ifdef HAVE_OPENSSL
 	} else if (server_info->type == DNS_SERVER_TLS || server_info->type == DNS_SERVER_HTTPS ||
 			   server_info->type == DNS_SERVER_QUIC || server_info->type == DNS_SERVER_HTTP3) {
 		int write_len = server_info->send_buff.len;
@@ -96,6 +99,7 @@ int _dns_client_socket_send(struct dns_server_info *server_info)
 			}
 		}
 		return ret;
+#endif
 	} else if (server_info->type == DNS_SERVER_MDNS) {
 		return -1;
 	} else {
@@ -110,6 +114,7 @@ int _dns_client_socket_recv(struct dns_server_info *server_info)
 	} else if (server_info->type == DNS_SERVER_TCP) {
 		return recv(server_info->fd, server_info->recv_buff.data + server_info->recv_buff.len,
 					DNS_TCP_BUFFER - server_info->recv_buff.len, 0);
+#ifdef HAVE_OPENSSL
 	} else if (server_info->type == DNS_SERVER_TLS || server_info->type == DNS_SERVER_HTTPS ||
 			   server_info->type == DNS_SERVER_QUIC || server_info->type == DNS_SERVER_HTTP3) {
 		int ret = _dns_client_socket_ssl_recv(server_info, server_info->recv_buff.data + server_info->recv_buff.len,
@@ -122,6 +127,7 @@ int _dns_client_socket_recv(struct dns_server_info *server_info)
 		}
 
 		return ret;
+#endif
 	} else if (server_info->type == DNS_SERVER_MDNS) {
 		return -1;
 	} else {

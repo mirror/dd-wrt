@@ -22,6 +22,7 @@
 #include "smartdns/lib/stringutil.h"
 #include "smartdns/util.h"
 
+#ifdef HAVE_OPENSSL
 static int _conf_domain_rule_https_copy_alpn(char *alpn_data, int max_alpn_len, const char *alpn_str)
 {
 	const char *ptr = NULL;
@@ -218,3 +219,4 @@ errout:
 	tlog(TLOG_ERROR, "add https-record %s:%s failed", domain, value);
 	return -1;
 }
+#endif

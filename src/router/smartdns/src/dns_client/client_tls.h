@@ -26,6 +26,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus */
+#ifdef HAVE_OPENSSL
 
 int _dns_client_socket_ssl_send(struct dns_server_info *server, const void *buf, int num);
 
@@ -46,7 +47,7 @@ int _dns_client_process_tls(struct dns_server_info *server_info, struct epoll_ev
 SSL_CTX *_ssl_ctx_get(int is_quic);
 
 int _ssl_shutdown(struct dns_server_info *server);
-
+#endif
 #ifdef __cplusplus
 }
 #endif /*__cplusplus */

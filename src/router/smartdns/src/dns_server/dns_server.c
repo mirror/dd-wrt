@@ -96,8 +96,10 @@ int _dns_reply_inpacket(struct dns_request *request, unsigned char *inpacket, in
 		ret = _dns_server_reply_tcp(request, (struct dns_server_conn_tcp_client *)conn, inpacket, inpacket_len);
 	} else if (conn->type == DNS_CONN_TYPE_TLS_CLIENT) {
 		ret = _dns_server_reply_tcp(request, (struct dns_server_conn_tcp_client *)conn, inpacket, inpacket_len);
+#ifdef HAVE_OPENSSL
 	} else if (conn->type == DNS_CONN_TYPE_HTTPS_CLIENT) {
 		ret = _dns_server_reply_https(request, (struct dns_server_conn_tcp_client *)conn, inpacket, inpacket_len);
+#endif
 	} else {
 		ret = -1;
 	}
@@ -289,9 +291,11 @@ int _dns_server_do_query(struct dns_request *request, int skip_notify_event)
 		goto clean_exit;
 	}
 
+#ifdef HAVE_OPENSSL
 	if (_dns_server_process_https_svcb(request) != 0) {
 		goto clean_exit;
 	}
+#endif
 
 	if (_dns_server_process_smartdns_domain(request) == 0) {
 		goto clean_exit;
@@ -565,6 +569,7 @@ static int _dns_server_process(struct dns_server_conn_head *conn, struct epoll_e
 			tlog(TLOG_DEBUG, "process TCP packet from %s failed.",
 				 get_host_by_addr(name, sizeof(name), (struct sockaddr *)&tcpclient->addr));
 		}
+#ifdef HAVE_OPENSSL
 	} else if (conn->type == DNS_CONN_TYPE_TLS_SERVER || conn->type == DNS_CONN_TYPE_HTTPS_SERVER) {
 		struct dns_server_conn_tls_server *tls_server = (struct dns_server_conn_tls_server *)conn;
 		ret = _dns_server_tls_accept(tls_server, event, now);
@@ -576,6 +581,7 @@ static int _dns_server_process(struct dns_server_conn_head *conn, struct epoll_e
 			tlog(TLOG_DEBUG, "process TLS packet from %s failed.",
 				 get_host_by_addr(name, sizeof(name), (struct sockaddr *)&tls_client->tcp.addr));
 		}
+#endif
 	} else {
 		tlog(TLOG_ERROR, "unsupported dns server type %d", conn->type);
 		_dns_server_client_close(conn);
@@ -609,6 +615,7 @@ static int _dns_server_socket(void)
 				goto errout;
 			}
 			break;
+#ifdef HAVE_OPENSSL
 		case DNS_BIND_TYPE_HTTPS:
 			if (_dns_server_socket_tls(bind_ip, DNS_CONN_TYPE_HTTPS_SERVER) != 0) {
 				goto errout;
@@ -619,6 +626,7 @@ static int _dns_server_socket(void)
 				goto errout;
 			}
 			break;
+#endif
 		default:
 			break;
 		}

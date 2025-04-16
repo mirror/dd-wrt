@@ -210,10 +210,12 @@ static int _dns_client_process(struct dns_server_info *server_info, struct epoll
 	} else if (server_info->type == DNS_SERVER_TCP) {
 		/* receive from tcp */
 		return _dns_client_process_tcp(server_info, event, now);
+#ifdef HAVE_OPENSSL
 	} else if (server_info->type == DNS_SERVER_TLS || server_info->type == DNS_SERVER_HTTPS ||
 			   server_info->type == DNS_SERVER_QUIC || server_info->type == DNS_SERVER_HTTP3) {
 		/* receive from tls */
 		return _dns_client_process_tls(server_info, event, now);
+#endif
 	} else {
 		return -1;
 	}
@@ -319,6 +321,7 @@ int _dns_client_send_packet(struct dns_query_struct *query, void *packet, int le
 				ret = _dns_client_send_tcp(server_info, packet_data, packet_data_len);
 				send_err = errno;
 				break;
+#ifdef HAVE_OPENSSL
 			case DNS_SERVER_TLS:
 				/* tls query */
 				ret = _dns_client_send_tls(server_info, packet_data, packet_data_len);
@@ -329,10 +332,6 @@ int _dns_client_send_packet(struct dns_query_struct *query, void *packet, int le
 				ret = _dns_client_send_https(server_info, packet_data, packet_data_len);
 				send_err = errno;
 				break;
-			case DNS_SERVER_MDNS:
-				/* mdns query */
-				ret = _dns_client_send_udp_mdns(server_info, packet_data, packet_data_len);
-				break;
 			case DNS_SERVER_QUIC:
 				/* quic query */
 				ret = _dns_client_send_quic(query, server_info, packet_data, packet_data_len);
@@ -342,6 +341,11 @@ int _dns_client_send_packet(struct dns_query_struct *query, void *packet, int le
 				/* http3 query */
 				ret = _dns_client_send_http3(query, server_info, packet_data, packet_data_len);
 				send_err = errno;
+				break;
+#endif
+			case DNS_SERVER_MDNS:
+				/* mdns query */
+				ret = _dns_client_send_udp_mdns(server_info, packet_data, packet_data_len);
 				break;
 			default:
 				/* unsupported query type */
@@ -733,6 +737,7 @@ void dns_client_exit(void)
 
 	pthread_mutex_destroy(&client.server_list_lock);
 	pthread_mutex_destroy(&client.domain_map_lock);
+#ifdef HAVE_OPENSSL
 	if (client.ssl_ctx) {
 		SSL_CTX_free(client.ssl_ctx);
 		client.ssl_ctx = NULL;
@@ -742,6 +747,7 @@ void dns_client_exit(void)
 		SSL_CTX_free(client.ssl_quic_ctx);
 		client.ssl_quic_ctx = NULL;
 	}
+#endif
 
 	is_client_init = 0;
 }

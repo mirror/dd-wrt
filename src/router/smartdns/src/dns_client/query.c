@@ -337,7 +337,10 @@ int _dns_client_add_hashmap(struct dns_query_struct *query)
 	int loop = 0;
 
 	while (loop++ <= 32) {
-		if (RAND_bytes((unsigned char *)&query->sid, sizeof(query->sid)) != 1) {
+#ifdef HAVE_OPENSSL
+		if (RAND_bytes((unsigned char *)&query->sid, sizeof(query->sid)) != 1) 
+#endif
+		{
 			query->sid = random();
 		}
 

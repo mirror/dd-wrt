@@ -30,6 +30,7 @@
 #include <pthread.h>
 #include <string.h>
 #include <sys/epoll.h>
+#ifdef HAVE_OPENSSL
 
 static ssize_t _ssl_read(struct dns_server_conn_tls_client *conn, void *buff, int num)
 {
@@ -476,3 +477,4 @@ errout:
 	}
 	return -1;
 }
+#endif

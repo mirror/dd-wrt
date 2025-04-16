@@ -27,6 +27,7 @@
 extern "C" {
 #endif /*__cplusplus */
 
+#ifdef HAVE_OPENSSL
 int _dns_server_ssl_poll_event(struct dns_server_conn_tls_client *tls_client, int ssl_ret);
 
 int _dns_server_tls_accept(struct dns_server_conn_tls_server *tls_server, struct epoll_event *event, unsigned long now);
@@ -39,6 +40,7 @@ int _dns_server_process_tls(struct dns_server_conn_tls_client *tls_client, struc
 							unsigned long now);
 
 int _dns_server_socket_tls(struct dns_bind_ip *bind_ip, DNS_CONN_TYPE conn_type);
+#endif
 #ifdef __cplusplus
 }
 #endif /*__cplusplus */

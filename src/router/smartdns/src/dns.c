@@ -2285,6 +2285,7 @@ static int _dns_decode_opt(struct dns_context *context, dns_rr_type type, unsign
 	return 0;
 }
 
+#ifdef HAVE_OPENSSL
 static int _dns_encode_HTTPS(struct dns_context *context, struct dns_rrs *rrs)
 {
 	int ret = 0;
@@ -2429,6 +2430,7 @@ static int _dns_decode_HTTPS(struct dns_context *context, const char *domain, dn
 
 	return 0;
 }
+#endif
 
 static int _dns_decode_qd(struct dns_context *context)
 {
@@ -2591,6 +2593,7 @@ static int _dns_decode_an(struct dns_context *context, dns_rr_type type)
 		dns_set_OPT_option(packet, ttl);
 		dns_set_OPT_payload_size(packet, qclass);
 	} break;
+#ifdef HAVE_OPENSSL
 	case DNS_T_HTTPS: {
 		unsigned char *https_start = context->ptr;
 		ret = _dns_decode_HTTPS(context, domain, type, ttl, rr_len);
@@ -2604,6 +2607,7 @@ static int _dns_decode_an(struct dns_context *context, dns_rr_type type)
 			return -1;
 		}
 	} break;
+#endif
 	default: {
 		unsigned char raw_data[1024];
 		if (_dns_left_len(context) < rr_len || rr_len >= (int)sizeof(raw_data)) {
@@ -2698,12 +2702,14 @@ static int _dns_encode_an(struct dns_context *context, struct dns_rrs *rrs)
 			return -1;
 		}
 		break;
+#ifdef HAVE_OPENSSL
 	case DNS_T_HTTPS:
 		ret = _dns_encode_HTTPS(context, rrs);
 		if (ret < 0) {
 			return -1;
 		}
 		break;
+#endif
 	default:
 		ret = _dns_encode_raw(context, rrs);
 		if (ret < 0) {

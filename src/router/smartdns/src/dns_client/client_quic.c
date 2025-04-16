@@ -34,6 +34,7 @@
 #include <openssl/x509v3.h>
 #include <sys/epoll.h>
 #include <sys/ioctl.h>
+#ifdef HAVE_OPENSSL
 
 #ifdef OSSL_QUIC1_VERSION
 static int _dns_client_quic_bio_recvmmsg(BIO *bio, BIO_MSG *msg, size_t stride, size_t num_msg, uint64_t flags,
@@ -717,3 +718,4 @@ int _dns_client_send_quic(struct dns_query_struct *query, struct dns_server_info
 #endif
 	return 0;
 }
+#endif

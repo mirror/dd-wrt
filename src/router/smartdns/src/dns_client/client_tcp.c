@@ -313,8 +313,11 @@ int _dns_client_process_tcp(struct dns_server_info *server_info, struct epoll_ev
 			server_info->status = DNS_SERVER_STATUS_DISCONNECTED;
 		}
 
+#ifdef HAVE_OPENSSL
 		if (server_info->send_buff.len > 0 || server_info->ssl_want_write == 1) {
-			/* send existing send_buffer data  */
+#else
+		if (server_info->send_buff.len > 0) {
+#endif			/* send existing send_buffer data  */
 			len = _dns_client_socket_send(server_info);
 			if (len < 0) {
 				if (errno == EAGAIN) {

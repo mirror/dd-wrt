@@ -23,6 +23,7 @@
 #include "conn_stream.h"
 
 #include "smartdns/http_parse.h"
+#ifdef HAVE_OPENSSL
 
 int _dns_client_send_http3(struct dns_query_struct *query, struct dns_server_info *server_info, void *packet,
 						   unsigned short len)
@@ -138,4 +139,6 @@ errout:
 
 	return -1;
 }
+#endif
+
 #endif

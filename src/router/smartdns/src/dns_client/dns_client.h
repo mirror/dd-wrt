@@ -26,11 +26,15 @@
 #include "smartdns/lib/hashtable.h"
 #include "smartdns/lib/list.h"
 #include "smartdns/tlog.h"
-
+#include <pthread.h>
+#include <stdio.h>
+#include <errno.h>
+#ifdef HAVE_OPENSSL
 #include <openssl/err.h>
 #include <openssl/rand.h>
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -89,13 +93,14 @@ struct dns_server_info {
 	int fd;
 	int ttl;
 	int ttl_range;
+#ifdef HAVE_OPENSSL
 	SSL *ssl;
 	int ssl_write_len;
 	int ssl_want_write;
 	SSL_CTX *ssl_ctx;
 	SSL_SESSION *ssl_session;
 	BIO_METHOD *bio_method;
-
+#endif
 	struct proxy_conn *proxy;
 
 	pthread_mutex_t lock;
@@ -189,9 +194,11 @@ struct dns_client {
 	struct list_head dns_server_list;
 	struct dns_server_group *default_group;
 
+#ifdef HAVE_OPENSSL
 	SSL_CTX *ssl_ctx;
 	SSL_CTX *ssl_quic_ctx;
 	int ssl_verify_skip;
+#endif
 
 	/* query list */
 	struct list_head dns_request_list;
@@ -228,9 +235,11 @@ struct dns_conn_stream {
 	struct dns_query_struct *query;
 	struct dns_server_info *server_info;
 
+#ifdef HAVE_OPENSSL
 	union {
 		SSL *quic_stream;
 	};
+#endif
 };
 
 /* query struct */

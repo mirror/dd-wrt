@@ -18,6 +18,7 @@
 
 #include "wake_event.h"
 
+#include <errno.h>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 

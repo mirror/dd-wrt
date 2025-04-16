@@ -18,6 +18,7 @@
 
 #include "qpack.h"
 
+#ifdef HAVE_OPENSSL
 static const uint8_t _qpack_huffman_bit[64] = {
 	249, 50,  115, 39,  38,  79, 147, 39, 38,  100, 249, 50,  114, 100, 242, 100, 228, 228, 206, 77,  52, 228,
 	204, 203, 202, 114, 102, 79, 147, 39, 76,  156, 153, 62,  76,  156, 156, 153, 62,  76,  156, 153, 60, 154,
@@ -707,3 +708,4 @@ struct qpack_header_field *qpack_get_static_header_field(int index)
 	}
 	return &_http3_static_header_table[index];
 }
+#endif

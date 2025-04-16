@@ -26,7 +26,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus */
-
+#ifdef HAVE_OPENSSL
 int _dns_client_create_socket_quic(struct dns_server_info *server_info, const char *hostname, const char *alpn);
 
 int _dns_client_send_quic(struct dns_query_struct *query, struct dns_server_info *server_info, void *packet,
@@ -36,6 +36,7 @@ int _dns_client_send_quic_data(struct dns_query_struct *query, struct dns_server
 							   unsigned short len);
 
 int _dns_client_process_quic(struct dns_server_info *server_info, struct epoll_event *event, unsigned long now);
+#endif
 #ifdef __cplusplus
 }
 #endif /*__cplusplus */

@@ -23,6 +23,7 @@
 #include <openssl/x509v3.h>
 #include <pthread.h>
 #include <sys/stat.h>
+#ifdef HAVE_OPENSSL
 
 int generate_cert_key(const char *key_path, const char *cert_path, const char *san, int days)
 {
@@ -367,3 +368,29 @@ int dns_is_quic_supported(void)
 	return 0;
 #endif
 }
+#else
+int SSL_base64_encode(const void *_in, int inlen, char *out)
+{
+	char *in = (char*)_in;
+	static const char b64str[64] = "./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+	int outlen=0;
+	while (inlen && outlen) {
+		*out++ = b64str[(in[0] >> 2) & 0x3f];
+		outlen++;
+		*out++ = b64str[((in[0] << 4) + (--inlen ? in[1] >> 4 : 0)) & 0x3f];
+		outlen++;
+		*out++ = (inlen ? b64str[((in[1] << 2) + (--inlen ? in[2] >> 6 : 0)) & 0x3f] : '=');
+		outlen++;
+		*out++ = inlen ? b64str[in[2] & 0x3f] : '=';
+		outlen++;
+		if (inlen)
+			inlen--;
+		if (inlen)
+			in += 3;
+	}
+	*out = '\0';
+	outlen++;
+	return outlen;
+}
+
+#endif
