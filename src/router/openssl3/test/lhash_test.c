@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2024 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2017-2025 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright (c) 2017, Oracle and/or its affiliates.  All rights reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
@@ -710,9 +710,9 @@ shutdown:
 
 end_free:
     shutting_down = 1;
+    ossl_ht_free(m_ht);
     CRYPTO_THREAD_lock_free(worker_lock);
     CRYPTO_THREAD_lock_free(testrand_lock);
-    ossl_ht_free(m_ht);
 end:
     return ret;
 }

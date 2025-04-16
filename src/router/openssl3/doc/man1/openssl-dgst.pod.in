@@ -116,9 +116,13 @@ Filename to output to, or standard output by default.
 
 =item B<-sign> I<filename>|I<uri>
 
-Digitally sign the digest using the given private key. Note this option
-does not support Ed25519 or Ed448 private keys. Use the L<openssl-pkeyutl(1)>
-command instead for this.
+Digitally sign the digest using the given private key.
+
+Note that for algorithms that only support one-shot signing
+(such as Ed25519, ED448, ML-DSA-44, ML-DSA-65 andML-DSA-87) the digest must not
+be set. For these algorithms the input is buffered (and not digested) before
+signing. For these algorithms, if the input is larger than 16MB an error
+will occur.
 
 =item B<-keyform> B<DER>|B<PEM>|B<P12>|B<ENGINE>
 
@@ -281,7 +285,7 @@ The B<-engine> and B<-engine_impl> options were deprecated in OpenSSL 3.0.
 
 =head1 COPYRIGHT
 
-Copyright 2000-2024 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2000-2025 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy

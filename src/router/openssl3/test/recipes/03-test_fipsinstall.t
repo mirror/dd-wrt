@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 2019-2024 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2019-2025 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -63,7 +63,7 @@ my @commandline =
         ( 'x942kdf_key_check',              'x942kdf-key-check' )
     );
 
-plan tests => 35 + (scalar @pedantic_okay) + (scalar @pedantic_fail)
+plan tests => 40 + (scalar @pedantic_okay) + (scalar @pedantic_fail)
               + 4 * (scalar @commandline);
 
 my $infile = bldtop_file('providers', platform->dso('fips'));
@@ -150,7 +150,6 @@ ok(!run(app(['openssl', 'fipsinstall', '-in', 'dummy.tmp', '-module', $infile,
              '-section_name', 'fips_sect', '-verify'])),
    "fipsinstall verify fail");
 
-
 # output a fips.cnf file containing mac data
 ok(run(app(['openssl', 'fipsinstall', '-out', 'fips.cnf', '-module', $infile,
             '-provider_name', 'fips', '-mac_name', 'HMAC',
@@ -164,6 +163,23 @@ ok(run(app(['openssl', 'fipsinstall', '-in', 'fips.cnf', '-module', $infile,
             '-macopt', 'digest:SHA256', '-macopt', "hexkey:$fipskey",
             '-section_name', 'fips_sect', '-verify'])),
    "fipsinstall verify");
+
+# Test that default options for fipsinstall output the 'install-status' for
+# FIPS 140-2 providers.
+SKIP: {
+    run(test(["fips_version_test", "-config", $provconf, "<3.1.0"]),
+             capture => 1, statusvar => \my $exit);
+
+    skip "Skipping FIPS 140-3 provider", 2
+        if !$exit;
+
+    ok(find_line_file('install-mac = ', 'fips.cnf') == 1,
+       'FIPS 140-2 should output install-mac');
+
+    ok(find_line_file('install-status = INSTALL_SELF_TEST_KATS_RUN',
+                      'fips.cnf') == 1,
+       'FIPS 140-2 should output install-status');
+}
 
 # Skip Tests if POST is disabled
 SKIP: {
@@ -333,18 +349,47 @@ SKIP: {
        "fipsinstall fails when the signature result is corrupted");
 }
 
-# corrupt an Asymmetric cipher test
+# corrupt ML-KEM tests
 SKIP: {
-    skip "Skipping Asymmetric RSA corruption test because of no rsa in this build", 1
-        if disabled("rsa") || disabled("fips-post");
-    run(test(["fips_version_test", "-config", $provconf, "<3.5.0"]),
+    skip "Skipping ML_KEM corruption tests because of no ML-KEM in this build", 4
+        if disabled("ml-kem") || disabled("fips-post");
+
+    run(test(["fips_version_test", "-config", $provconf, ">=3.5.0"]),
              capture => 1, statusvar => \my $exit);
-    skip "FIPS provider version is too new for Asymmetric RSA corruption test", 1
+    skip "FIPS provider version doesn't support ML-KEM", 4
         if !$exit;
+
     ok(!run(app(['openssl', 'fipsinstall', '-out', 'fips.cnf', '-module', $infile,
-                '-corrupt_desc', 'RSA_Encrypt',
-                '-corrupt_type', 'KAT_AsymmetricCipher'])),
-       "fipsinstall fails when the asymmetric cipher result is corrupted");
+                '-provider_name', 'fips', '-mac_name', 'HMAC',
+                '-macopt', 'digest:SHA256', '-macopt', "hexkey:$fipskey",
+                '-section_name', 'fips_sect',
+                '-corrupt_desc', 'ML-KEM',
+                '-corrupt_type', 'KAT_AsymmetricKeyGeneration'])),
+       "fipsinstall fails when the ML-KEM key generation result is corrupted");
+
+    ok(!run(app(['openssl', 'fipsinstall', '-out', 'fips.cnf', '-module', $infile,
+                '-provider_name', 'fips', '-mac_name', 'HMAC',
+                '-macopt', 'digest:SHA256', '-macopt', "hexkey:$fipskey",
+                '-section_name', 'fips_sect',
+                '-corrupt_desc', 'KEM_Encap',
+                '-corrupt_type', 'KAT_KEM'])),
+       "fipsinstall fails when the ML-KEM encapsulate result is corrupted");
+
+    ok(!run(app(['openssl', 'fipsinstall', '-out', 'fips.cnf', '-module', $infile,
+                '-provider_name', 'fips', '-mac_name', 'HMAC',
+                '-macopt', 'digest:SHA256', '-macopt', "hexkey:$fipskey",
+                '-section_name', 'fips_sect',
+                '-corrupt_desc', 'KEM_Decap',
+                '-corrupt_type', 'KAT_KEM'])),
+       "fipsinstall fails when the ML-KEM decapsulate result is corrupted");
+
+    ok(!run(app(['openssl', 'fipsinstall', '-out', 'fips.cnf', '-module', $infile,
+                '-provider_name', 'fips', '-mac_name', 'HMAC',
+                '-macopt', 'digest:SHA256', '-macopt', "hexkey:$fipskey",
+                '-section_name', 'fips_sect',
+                '-corrupt_desc', 'KEM_Decap_Reject',
+                '-corrupt_type', 'KAT_KEM'])),
+       "fipsinstall fails when the ML-KEM decapsulate implicit failure result is corrupted");
 }
 
 # 'local' ensures that this change is only done in this file.
@@ -470,4 +515,3 @@ foreach my $cp (@commandline) {
     ok(find_line_file("${l} = 1", "fips-${o}.cnf") == 1,
        "fipsinstall enables ${l} with -${o} option");
 }
-

@@ -273,7 +273,8 @@ The following options can be set:
 
         Select the proof of possession method to use. Possible values are:
 
-            OSSL_CRMF_POPO_NONE       - ProofOfPossession field omitted
+            OSSL_CRMF_POPO_NONE       - ProofOfPossession field omitted,
+                                        which implies central key generation
             OSSL_CRMF_POPO_RAVERIFIED - assert that the RA has already
                                         verified the PoPo
             OSSL_CRMF_POPO_SIGNATURE  - sign a value with private key,
@@ -380,10 +381,14 @@ The default is C</>.
 
 OSSL_CMP_CTX_set1_server() sets the given server I<address>
 (which may be a hostname or IP address or NULL) in the given I<ctx>.
+If OSSL_CMP_CTX_get_transfer_cb_arg() sets a non-NULL argument,
+this server address information is used for diagnostic output only.
 
 OSSL_CMP_CTX_set_serverPort() sets the port of the CMP server to connect to.
 If not used or the I<port> argument is 0
 the default port applies, which is 80 for HTTP and 443 for HTTPS.
+If OSSL_CMP_CTX_get_transfer_cb_arg() sets a non-NULL argument,
+this server port information is used for diagnostic output only.
 
 OSSL_CMP_CTX_set1_proxy() sets the HTTP proxy to be used for connecting to
 the given CMP server unless overruled by any "no_proxy" settings (see below).
@@ -418,6 +423,8 @@ a structure containing arguments such as an B<SSL_CTX> structure,
 optionally to be used by the http connect/disconnect callback function.
 I<arg> is not consumed, and it must therefore explicitly be freed when not
 needed any more. I<arg> may be NULL to clear the entry.
+If a non-NULL argument is set, it is an error to use OSSL_CMP_CTX_set1_proxy()
+or OSSL_CMP_CTX_set1_no_proxy() for setting non-NULL strings.
 
 OSSL_CMP_CTX_get_http_cb_arg() gets the argument, respectively the pointer to a
 structure containing arguments, previously set by
@@ -872,9 +879,12 @@ OSSL_CMP_CTX_get0_validatedSrvCert() were added in OpenSSL 3.2.
 
 OSSL_CMP_CTX_get0_geninfo_ITAVs() was added in OpenSSL 3.3.
 
+Support for central key generation, requested via B<OSSL_CRMF_POPO_NONE>,
+was added in OpenSSL 3.5.
+
 =head1 COPYRIGHT
 
-Copyright 2007-2024 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2007-2025 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy

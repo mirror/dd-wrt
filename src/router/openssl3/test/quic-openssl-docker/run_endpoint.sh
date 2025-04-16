@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -euxo pipefail
-
 CURLRC=~/testcase_curlrc
 
 # Set up the routing needed for the simulation
@@ -37,54 +35,79 @@ if [ "$ROLE" == "client" ]; then
     rm -f $CURLRC 
 
     case "$TESTCASE" in
-    "http3"|"transfer")
-    echo -e "--verbose\n--parallel" >> $CURLRC
-    generate_outputs_http3
-    dump_curlrc
-        SSL_CERT_FILE=/certs/ca.pem curl --config $CURLRC 
-        if [ $? -ne 0 ]
-        then
-            exit 1
-        fi
+    "http3")
+        echo -e "--verbose\n--parallel" >> $CURLRC
+        generate_outputs_http3
+        dump_curlrc
+        SSL_CERT_FILE=/certs/ca.pem curl --config $CURLRC || exit 1
         exit 0
         ;;
-    "handshake")
-       OUTFILE=$(basename $REQUESTS)
-       echo -e "--verbose\n--http3\n-H \"Connection: close\"\n-o /downloads/$OUTFILE\n--url $REQUESTS" >> $CURLRC
-       dump_curlrc
-       SSL_CERT_FILE=/certs/ca.pem curl --config $CURLRC 
-       if [ $? -ne 0 ]
-       then
-           exit 1
-       fi
-       exit 0
-       ;; 
-    "retry")
-       OUTFILE=$(basename $REQUESTS)
-       SSL_CERT_FILE=/certs/ca.pem curl --verbose --http3 -o /downloads/$OUTFILE $REQUESTS
-       if [ $? -ne 0 ]
-       then
-           exit 1
-       fi
-       exit 0
-       ;; 
+    "handshake"|"transfer"|"retry"|"ipv6")
+        HOSTNAME=none
+        for req in $REQUESTS
+        do
+            OUTFILE=$(basename $req)
+            if [ "$HOSTNAME" == "none" ]
+            then
+                HOSTNAME=$(printf "%s\n" "$req" | sed -ne 's,^https://\([^/:]*\).*,\1,p')
+                HOSTPORT=$(printf "%s\n" "$req" | sed -ne 's,^https://[^:/]*:\([^/]*\).*,\1,p')
+            fi
+            echo -n "$OUTFILE " >> ./reqfile.txt
+        done
+        SSLKEYLOGFILE=/logs/keys.log SSL_CERT_FILE=/certs/ca.pem SSL_CERT_DIR=/certs quic-hq-interop $HOSTNAME $HOSTPORT ./reqfile.txt || exit 1
+        exit 0
+        ;;
+    "resumption")
+        for req in $REQUESTS
+        do
+            OUTFILE=$(basename $req)
+            echo -n "$OUTFILE " > ./reqfile.txt
+            HOSTNAME=$(printf "%s\n" "$req" | sed -ne 's,^https://\([^/:]*\).*,\1,p')
+            HOSTPORT=$(printf "%s\n" "$req" | sed -ne 's,^https://[^:/]*:\([^/]*\).*,\1,p')
+            SSL_SESSION_FILE=./session.db SSLKEYLOGFILE=/logs/keys.log SSL_CERT_FILE=/certs/ca.pem SSL_CERT_DIR=/certs quic-hq-interop $HOSTNAME $HOSTPORT ./reqfile.txt || exit 1
+        done
+        exit 0
+        ;;
     "chacha20")
-       OUTFILE=$(basename $REQUESTS)
-       SSL_CERT_FILE=/certs/ca.pem curl --verbose --tlsv1.3 --tls13-ciphers TLS_CHACHA20_POLY1305_SHA256 --http3 -o /downloads/$OUTFILE $REQUESTS
-       if [ $? -ne 0 ]
-       then
-           exit 1
-       fi
-       exit 0
-       ;; 
+        for req in $REQUESTS
+        do
+            OUTFILE=$(basename $req)
+            printf "%s " "$OUTFILE" >> ./reqfile.txt
+            HOSTNAME=$(printf "%s\n" "$req" | sed -ne 's,^https://\([^/:]*\).*,\1,p')
+            HOSTPORT=$(printf "%s\n" "$req" | sed -ne 's,^https://[^:/]*:\([^/]*\).*,\1,p')
+        done
+        SSL_CIPHER_SUITES=TLS_CHACHA20_POLY1305_SHA256 SSL_SESSION_FILE=./session.db SSLKEYLOGFILE=/logs/keys.log SSL_CERT_FILE=/certs/ca.pem SSL_CERT_DIR=/certs quic-hq-interop $HOSTNAME $HOSTPORT ./reqfile.txt || exit 1
+        exit 0
+        ;;
     *)
         echo "UNSUPPORTED TESTCASE $TESTCASE"
         exit 127
         ;;
     esac
 elif [ "$ROLE" == "server" ]; then
-    echo "UNSUPPORTED"
-    exit 127
+    echo "TESTCASE is $TESTCASE"
+    rm -f $CURLRC 
+    case "$TESTCASE" in
+    "handshake"|"transfer"|"ipv6")
+        NO_ADDR_VALIDATE=yes SSLKEYLOGFILE=/logs/keys.log FILEPREFIX=/www quic-hq-interop-server 443 /certs/cert.pem /certs/priv.key
+        ;;
+    "retry")
+        SSLKEYLOGFILE=/logs/keys.log FILEPREFIX=/www quic-hq-interop-server 443 /certs/cert.pem /certs/priv.key
+        ;;
+    "resumption")
+        NO_ADDR_VALIDATE=yes SSLKEYLOGFILE=/logs/keys.log FILEPREFIX=/www quic-hq-interop-server 443 /certs/cert.pem /certs/priv.key
+        ;;
+    "http3")
+        FILEPREFIX=/www/ SSLKEYLOGFILE=/logs/keys.log ossl-nghttp3-demo-server 443 /certs/cert.pem /certs/priv.key
+        ;;
+    "chacha20")
+        SSL_CIPHER_SUITES=TLS_CHACHA20_POLY1305_SHA256 SSLKEYLOGFILE=/logs/keys.log FILEPREFIX=/www quic-hq-interop-server 443 /certs/cert.pem /certs/priv.key
+        ;;
+    *)
+        echo "UNSUPPORTED TESTCASE $TESTCASE"
+        exit 127
+        ;;
+    esac
 else
     echo "Unknown ROLE $ROLE"
     exit 127

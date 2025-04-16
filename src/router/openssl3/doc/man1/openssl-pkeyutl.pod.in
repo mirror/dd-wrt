@@ -33,7 +33,7 @@ B<openssl> B<pkeyutl>
 [B<-decap>]
 [B<-kdf> I<algorithm>]
 [B<-kdflen> I<length>]
-[B<-kemop> I<operation>]
+[B<-kemop> I<mode>]
 [B<-pkeyopt> I<opt>:I<value>]
 [B<-pkeyopt_passin> I<opt>[:I<passarg>]]
 [B<-hexdump>]
@@ -73,7 +73,10 @@ For signature algorithms like RSA, DSA and ECDSA,
 the default digest algorithm is SHA256. For SM2, it is SM3.
 
 This option can only be used with B<-sign> and B<-verify>.
-For EdDSA (the Ed25519 and Ed448 algorithms) this option is required.
+For EdDSA (the Ed25519 and Ed448 algorithms) this option
+is implied since OpenSSL 3.5, and required in earlier versions.
+
+The B<-digest> option implies B<-rawin> since OpenSSL 3.5.
 
 =item B<-digest> I<algorithm>
 
@@ -84,7 +87,8 @@ if the signature algorithm does not require preprocessing the input through
 a pluggable hash function before signing (for instance, EdDSA). If this option
 is omitted but the signature algorithm requires one and the B<-rawin> option
 is given, a default value will be used (see B<-rawin> for details).
-If this option is present, then the B<-rawin> option is required.
+If this option is present, then the B<-rawin> option
+is implied since OpenSSL 3.5, and required in earlier versions.
 
 At this time, HashEdDSA (the ph or "prehash" variant of EdDSA) is not supported,
 so the B<-digest> option cannot be used with EdDSA.
@@ -95,7 +99,11 @@ Specifies the output filename to write to or standard output by default.
 
 =item B<-secret> I<filename>
 
-Specifies the output filename to write the secret to on I<-encap>.
+Specifies the shared-secret output filename for when performing encapsulation
+via the B<-encap> option or decapsulation via the B<-decap> option.
+The B<-encap> option also produces a separate (public) ciphertext output which
+is by default written to standard output, but being I<binary> non-text data,
+is typically also redirected to a file selected via the I<-out> option.
 
 =item B<-sigfile> I<file>
 
@@ -190,28 +198,56 @@ See L<openssl-format-options(1)> for details.
 
 =item B<-encap>
 
-Encapsulate a generated secret using a private key.
-The encapsulated result (binary data) is written to standard output by default,
-or else to the file specified with I<-out>.
+Use a Key Encapsulation Mechanism (B<KEM>) to B<encapsulate> a shared-secret to
+a peer's B<public> key.
+The encapsulated result (or ciphertext, non-text binary data) is written to
+standard output by default, or else to the file specified with I<-out>.
 The I<-secret> option must also be provided to specify the output file for the
-secret value generated in the encapsulation process.
+derived shared-secret value generated in the encapsulation process.
+Encapsulation is supported with a number of public key algorithms, currently:
+L<ML-KEM|EVP_PKEY-ML-KEM(7)>,
+L<X25519|EVP_KEM-X25519(7)>,
+L<X449|EVP_KEM-X448(7)>,
+and
+L<EC|EVP_KEM-EC(7)>.
+The ECX and EC algorithms use the
+L<RFC9180|https://www.rfc-editor.org/rfc/rfc9180> DHKEM construction.
+Encapsulation is also supported with L<RSA|EVP_KEM-RSA(7)> keys via the
+B<RSASVE> construction.
+
+At the API level, encapsulation and decapsulation are also supported for a few
+hybrid ECDHE (no DHKEM) plus B<ML-KEM> algorithms, but these are intended
+primarily for use with TLS and should not be used standalone.
+There are in any case no standard public and private key formats for the hybrid
+algorithms, so it is not possible to provide the required key material.
 
 =item B<-decap>
 
-Decapsulate the secret using a private key.
-The result (binary data) is written to standard output by default, or else to
-the file specified with I<-out>.
+Decode an encapsulated secret, with the use of a B<-private> key, to derive the
+same shared-secret as that obtained when the secret was encapsulated to the
+corresponding public key.
+The encapsulated secret is by default read from the standard input, or else
+from the file specified with B<-in>.
+The derived shared-secret is written to the file specified with the B<-secret>
+option, which I<must> also be provided.
+Decapsulation is supported with a number of public key algorithms, currently:
+L<ML-KEM|EVP_PKEY-ML-KEM(7)>,
+L<X25519|EVP_KEM-X25519(7)>,
+L<X448|EVP_KEM-X448(7)>,
+and
+L<EC|EVP_KEM-EC(7)>.
+The ECX and EC algorithms use the
+L<RFC9180|https://www.rfc-editor.org/rfc/rfc9180> DHKEM construction.
+Decapsulation is also supported with L<RSA|EVP_KEM-RSA(7)> keys via the
+B<RSASVE> construction.
 
-=item B<-kemop> I<operation>
+=item B<-kemop> I<mode>
 
-This option is used for I<-encap>/I<-decap> commands and specifies the KEM
-operation specific for the key algorithm when there is no default KEM
-operation.
-If the algorithm has the default KEM operation, this option can be omitted.
-
-See L<EVP_PKEY_CTX_set_kem_op(3)> and algorithm-specific KEM documentation e.g.
-L<EVP_KEM-RSA(7)>, L<EVP_KEM-EC(7)>, L<EVP_KEM-X25519(7)>, and
-L<EVP_KEM-X448(7)>.
+This option is used with the I<-encap>/I<-decap> commands and specifies the KEM
+I<mode> specific for the key algorithm when there is no default way to
+encapsulate and decapsulate shared secrets with the chosen key type.
+All the supported algorithms presently support only their default I<mode>, and
+this option, though available, is not required.
 
 =item B<-kdf> I<algorithm>
 
@@ -401,6 +437,31 @@ for the B<-pkeyopt> B<digest> option.
 The X25519 and X448 algorithms support key derivation only. Currently there are
 no additional options.
 
+=head1 ML-DSA-44, ML-DSA-65 AND ML-DSA-87 ALGORITHMS
+
+The B<ML-DSA> algorithms support signing and verification of "raw" messages.
+No preliminary hashing is performed.
+
+The signing operation supports a B<deterministic>:I<bool> option,
+with I<bool> set to C<1> if a deterministic signature is to be generated
+with a fixed all zero random input.
+By default, or if the I<bool> is C<0> a random entropy value is used.
+A deterministic result can also be obtained by specifying an explicit
+entropy value via the B<hextest-entropy>:I<value> parameter.
+Deterministic B<ML-DSA> signing should only be used in tests.
+
+See L<EVP_SIGNATURE-ML-DSA(7)> for additional options and detail.
+
+=head1 ML-KEM-512, ML-KEM-768 AND ML-KEM-1024 ALGORITHMS
+
+The ML-KEM algorithms support encapsulation and decapsulation only.
+The encapsulation operation supports a B<hexikme>:I<entropy> option,
+with I<entropy> the 64 hexadecimal digit encoding of a 32-byte value.
+This should only be used in tests, known or leaked values of the option may
+compromise the generated shared secret.
+
+See L<EVP_KEM-ML-KEM(7)> for additional detail.
+
 =head1 ED25519 AND ED448 ALGORITHMS
 
 These algorithms only support signing and verifying. OpenSSL only implements the
@@ -502,6 +563,13 @@ L<EVP_PKEY_CTX_set_hkdf_md(3)>,
 L<EVP_PKEY_CTX_set_tls1_prf_md(3)>,
 
 =head1 HISTORY
+
+Since OpenSSL 3.5,
+the B<-digest> option implies B<-rawin>, and these two options are
+no longer required when signing or verifying with an Ed25519 or Ed448 key.
+
+Also since OpenSSL 3.5, the B<-kemop> option is no longer required for any of
+the supported algorithms, the only supported B<mode> is now the default.
 
 The B<-engine> option was deprecated in OpenSSL 3.0.
 

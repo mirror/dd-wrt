@@ -1,6 +1,7 @@
 abort
 accept
 aligned_alloc
+atoi
 bcmp
 bind
 calloc
@@ -130,6 +131,7 @@ shutdown
 sigaction
 sleep
 socket
+socketpair
 sprintf
 stderr
 stdin

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2024 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2016-2025 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -295,7 +295,6 @@ static int torture_rw_high(void)
 }
 
 
-# ifndef OPENSSL_SYS_MACOSX 
 static CRYPTO_RCU_LOCK *rcu_lock = NULL;
 
 static int writer1_done = 0;
@@ -435,7 +434,7 @@ static int _torture_rcu(void)
     writer2_done = 0;
     rcu_torture_result = 1;
 
-    rcu_lock = ossl_rcu_lock_new(1, NULL);
+    rcu_lock = ossl_rcu_lock_new(contention == 2 ? 4 : 1, NULL);
     if (rcu_lock == NULL)
         goto out;
 
@@ -492,7 +491,12 @@ static int torture_rcu_high(void)
     contention = 1;
     return _torture_rcu();
 }
-# endif
+
+static int torture_rcu_high2(void)
+{
+    contention = 2;
+    return _torture_rcu();
+}
 #endif
 
 static CRYPTO_ONCE once_run = CRYPTO_ONCE_STATIC_INIT;
@@ -1329,10 +1333,9 @@ int setup_tests(void)
 #if defined(OPENSSL_THREADS)
     ADD_TEST(torture_rw_low);
     ADD_TEST(torture_rw_high);
-# ifndef OPENSSL_SYS_MACOSX
     ADD_TEST(torture_rcu_low);
     ADD_TEST(torture_rcu_high);
-# endif
+    ADD_TEST(torture_rcu_high2);
 #endif
     ADD_TEST(test_once);
     ADD_TEST(test_thread_local);

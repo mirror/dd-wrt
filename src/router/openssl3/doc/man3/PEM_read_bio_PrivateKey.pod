@@ -320,7 +320,7 @@ structure.
 The PEM functions have many common arguments.
 
 The I<bp> BIO parameter (if present) specifies the BIO to read from
-or write to.
+or write to. The I<bp> BIO parameter B<MUST NOT> be NULL.
 
 The I<fp> FILE parameter (if present) specifies the FILE pointer to
 read from or write to.
@@ -585,6 +585,9 @@ PEM_write_bio_DSAparams(), PEM_write_DSAparams(),
 PEM_read_bio_DHparams(), PEM_read_DHparams(),
 PEM_write_bio_DHparams() and PEM_write_DHparams() were deprecated in 3.0.
 
+PEM_read_bio_X509_ACERT(), PEM_read_X509_ACERT(),
+PEM_write_bio_X509_ACERT(), PEM_write_X509_ACERT()
+were added in OpenSSL 3.4.
 
 =head1 COPYRIGHT
 

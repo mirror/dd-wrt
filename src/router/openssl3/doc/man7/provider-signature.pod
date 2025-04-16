@@ -485,6 +485,8 @@ Section 4 "Security Considerations".  The default value for
 nonce B<k> as defined in FIPS 186-4 Section 6.3 "Secret Number
 Generation".
 
+The FIPS provider does not support deterministic digital signature generation.
+
 =item "kat" (B<OSSL_SIGNATURE_PARAM_KAT>) <unsigned integer>
 
 Sets a flag to modify the sign operation to return an error if the initial
@@ -611,7 +613,7 @@ were added in OpenSSL 3.4.
 
 =head1 COPYRIGHT
 
-Copyright 2019-2024 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2019-2025 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy

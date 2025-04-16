@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2024 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2006-2025 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -142,17 +142,22 @@ int TS_RESP_CTX_set_signer_cert(TS_RESP_CTX *ctx, X509 *signer)
         ERR_raise(ERR_LIB_TS, TS_R_INVALID_SIGNER_CERTIFICATE_PURPOSE);
         return 0;
     }
+    if (!X509_up_ref(signer))
+        return 0;
+
     X509_free(ctx->signer_cert);
     ctx->signer_cert = signer;
-    X509_up_ref(ctx->signer_cert);
+
     return 1;
 }
 
 int TS_RESP_CTX_set_signer_key(TS_RESP_CTX *ctx, EVP_PKEY *key)
 {
+    if (!EVP_PKEY_up_ref(key))
+        return 0;
+
     EVP_PKEY_free(ctx->signer_key);
     ctx->signer_key = key;
-    EVP_PKEY_up_ref(ctx->signer_key);
 
     return 1;
 }

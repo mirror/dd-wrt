@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 2015-2024 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2015-2025 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -16,7 +16,7 @@ use OpenSSL::Test qw/:DEFAULT srctop_file/;
 
 setup("test_x509");
 
-plan tests => 97;
+plan tests => 134;
 
 # Prevent MSys2 filename munging for arguments that look like file paths but
 # aren't
@@ -41,6 +41,18 @@ ok(run(app(["openssl", "x509", "-text", "-in", $pem, "-out", $out_utf8,
             "-nameopt", "utf8"])));
 is(cmp_text($out_utf8, $utf),
    0, 'Comparing utf8 output with cyrillic.utf8');
+
+SKIP: {
+    skip "EdDSA disabled", 2 if disabled("ecx");
+
+    $pem = srctop_file(@certs, "tab-in-dn.pem");
+    my $out_text = "out-tab-in-dn.text";
+    my $text = srctop_file(@certs, "tab-in-dn.text");
+    ok(run(app(["openssl", "x509", "-text", "-noout",
+            "-in", $pem, "-out", $out_text])));
+    is(cmp_text($out_text, $text),
+       0, 'Comparing default output with tab-in-dn.text');
+}
 
 SKIP: {
     skip "DES disabled", 1 if disabled("des");
@@ -303,6 +315,131 @@ my $iobo_cert = srctop_file(@certs, "ext-issuedOnBehalfOf.pem");
 cert_contains($iobo_cert,
               "DirName:CN = Wildboar",
               1, 'X.509 Issued On Behalf Of');
+
+my $auth_att_id_cert = srctop_file(@certs, "ext-authorityAttributeIdentifier.pem");
+cert_contains($auth_att_id_cert,
+              "DirName:CN = Wildboar",
+              1, 'X.509 Authority Attribute Identifier');
+cert_contains($auth_att_id_cert,
+              "Issuer Serial: 01030507",
+              1, 'X.509 Authority Attribute Identifier');
+cert_contains($auth_att_id_cert,
+              "Issuer UID: B2",
+              1, 'X.509 Authority Attribute Identifier');
+
+my $role_spec_cert = srctop_file(@certs, "ext-roleSpecCertIdentifier.pem");
+cert_contains($role_spec_cert,
+              "Role Name: DirName:CN = Wildboar",
+              1, 'X.509 Role Spec Certificate Identifier');
+cert_contains($role_spec_cert,
+              "Role Certificate Issuer: DirName:CN",
+              1, 'X.509 Role Spec Certificate Identifier');
+cert_contains($role_spec_cert,
+              "Role Certificate Serial Number: 33818120 \\(0x2040608\\)",
+              1, 'X.509 Role Spec Certificate Identifier');
+cert_contains($role_spec_cert,
+              "DNS:wildboarsoftware.com",
+              1, 'X.509 Role Spec Certificate Identifier');
+cert_contains($role_spec_cert,
+              "Registered ID:description",
+              1, 'X.509 Role Spec Certificate Identifier');
+
+my $attr_desc_cert = srctop_file(@certs, "ext-attributeDescriptor.pem");
+cert_contains($attr_desc_cert,
+              "Identifier: 2.5.4.3",
+              1, 'X.509 Attribute Descriptor');
+# This comes from the syntax field, which starts on the next line.
+cert_contains($attr_desc_cert,
+              "UnboundedDirectoryString",
+              1, 'X.509 Attribute Descriptor');
+cert_contains($attr_desc_cert,
+              "Name: commonName",
+              1, 'X.509 Attribute Descriptor');
+# These comes from the dominationRule field.
+cert_contains($attr_desc_cert,
+              "Privilege Policy Identifier: 2.5.4.10",
+              1, 'X.509 Attribute Descriptor');
+cert_contains($attr_desc_cert,
+              "DirName:CN = Wildboar",
+              1, 'X.509 Attribute Descriptor');
+cert_contains($attr_desc_cert,
+              "Algorithm: sha256",
+              1, 'X.509 Attribute Descriptor');
+
+my $time_spec_abs_cert = srctop_file(@certs, "ext-timeSpecification-absolute.pem");
+cert_contains($time_spec_abs_cert,
+              "Timezone: UTC-05:00",
+              1, 'X.509 Time Specification (Absolute)');
+cert_contains($time_spec_abs_cert,
+              "Absolute: Any time between Dec 20 13:07:21 2022 GMT and Dec 20 13:07:21 2022 GMT",
+              1, 'X.509 Time Specification (Absolute)');
+
+my $time_spec_per_cert = srctop_file(@certs, "ext-timeSpecification-periodic.pem");
+cert_contains($time_spec_per_cert,
+              "Timezone: UTC-05:00",
+              1, 'X.509 Time Specification (Periodic)');
+cert_contains($time_spec_per_cert,
+              "NOT this time:",
+              1, 'X.509 Time Specification (Periodic)');
+cert_contains($time_spec_per_cert,
+              "05:43:21 - 12:34:56",
+              1, 'X.509 Time Specification (Periodic)');
+cert_contains($time_spec_per_cert,
+              "Days of the week: SUN, MON",
+              1, 'X.509 Time Specification (Periodic)');
+cert_contains($time_spec_per_cert,
+              "Weeks of the month: 3, 4",
+              1, 'X.509 Time Specification (Periodic)');
+cert_contains($time_spec_per_cert,
+              "Months: MAY, JUN",
+              1, 'X.509 Time Specification (Periodic)');
+cert_contains($time_spec_per_cert,
+              "Years: 2022, 2023",
+              1, 'X.509 Time Specification (Periodic)');
+cert_contains($time_spec_per_cert,
+              "Months: JUL, AUG",
+              1, 'X.509 Time Specification (Periodic)');
+cert_contains($time_spec_per_cert,
+              "Years: 2023, 2024",
+              1, 'X.509 Time Specification (Periodic)');
+
+my $attr_map_cert = srctop_file(@certs, "ext-attributeMappings.pem");
+cert_contains($attr_map_cert,
+              "commonName == localityName",
+              1, 'X.509 Attribute Mappings');
+# localityName has an INTEGER value here, which was intentional to test the
+# display of non-string values.
+cert_contains($attr_map_cert,
+              "commonName:asdf == localityName:03:3E",
+              1, 'X.509 Attribute Mappings');
+
+my $aaa_cert = srctop_file(@certs, "ext-allowedAttributeAssignments.pem");
+cert_contains($aaa_cert,
+              "Attribute Type: commonName",
+              1, 'X.509 Allowed Attribute Assignments');
+cert_contains($aaa_cert,
+              "Holder Domain: email:jonathan.wilbur",
+              1, 'X.509 Allowed Attribute Assignments');
+
+my $aa_idp_cert = srctop_file(@certs, "ext-aAissuingDistributionPoint.pem");
+cert_contains($aa_idp_cert,
+              "DirName:CN = Wildboar",
+              1, 'X.509 Attribute Authority Issuing Distribution Point');
+cert_contains($aa_idp_cert,
+              "CA Compromise",
+              1, 'X.509 Attribute Authority Issuing Distribution Point');
+cert_contains($aa_idp_cert,
+              "Indirect CRL: TRUE",
+              1, 'X.509 Attribute Authority Issuing Distribution Point');
+cert_contains($aa_idp_cert,
+              "Contains User Attribute Certificates: TRUE",
+              1, 'X.509 Attribute Authority Issuing Distribution Point');
+cert_contains($aa_idp_cert,
+              "Contains Attribute Authority \\(AA\\) Certificates: TRUE",
+              1, 'X.509 Attribute Authority Issuing Distribution Point');
+cert_contains($aa_idp_cert,
+              "Contains Source Of Authority \\(SOA\\) Public Key Certificates: TRUE",
+              1, 'X.509 Attribute Authority Issuing Distribution Point');
 
 sub test_errors { # actually tests diagnostics of OSSL_STORE
     my ($expected, $cert, @opts) = @_;
