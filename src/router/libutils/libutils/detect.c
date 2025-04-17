@@ -1426,7 +1426,7 @@ generic:;
 				fread(ver, 8, 1, fp);
 				fclose(fp);
 				char rname[32];
-				if (!strcmp(rev, "C"))
+				if (rev[0]=='C')
 					sprintf(rname, "Asus RT-AX89X-B2\n");
 				else
 					sprintf(rname, "Asus RT-AX89X-B1\n");
