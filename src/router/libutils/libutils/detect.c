@@ -1426,7 +1426,10 @@ generic:;
 				fread(ver, 8, 1, fp);
 				fclose(fp);
 				char rname[32];
-				sprintf(rname, "Asus RT-AX89X-%s %s\n", rev, ver);
+				if (!strcmp(rev, "C"))
+					sprintf(rname, "Asus RT-AX89X-B2\n");
+				else
+					sprintf(rname, "Asus RT-AX89X-B1\n");
 				setRouter(rname);
 			} else {
 				setRouter("Asus RT-AX89X");
