@@ -16,32 +16,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _DNS_CLIENT_CLIENT_SOCKET_
-#define _DNS_CLIENT_CLIENT_SOCKET_
+#ifndef _FAST_PING_FAKE_H_
+#define _FAST_PING_FAKE_H_
 
-#include "dns_client.h"
+#include "fast_ping.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus */
 
-int _dns_client_send_data_to_buffer(struct dns_server_info *server_info, void *packet, int len);
+void _fast_ping_fake_put(struct fast_ping_fake_ip *fake);
 
-int _dns_client_copy_data_to_buffer(struct dns_server_info *server_info, void *packet, int len);
+void _fast_ping_fake_remove(struct fast_ping_fake_ip *fake);
 
-int _dns_client_socket_send(struct dns_server_info *server_info);
+void _fast_ping_fake_get(struct fast_ping_fake_ip *fake);
 
-int _dns_client_socket_recv(struct dns_server_info *server_info);
+struct fast_ping_fake_ip *_fast_ping_fake_find(FAST_PING_TYPE ping_type, struct sockaddr *addr, int addr_len);
 
-int _dns_client_create_socket(struct dns_server_info *server_info);
+void _fast_ping_remove_all_fake_ip(void);
 
-void _dns_client_close_socket(struct dns_server_info *server_info);
+int _fast_ping_process_fake(struct ping_host_struct *ping_host, struct timeval *now);
 
-void _dns_client_close_socket_ext(struct dns_server_info *server_info, int no_del_conn_list);
-
-void _dns_client_shutdown_socket(struct dns_server_info *server_info);
+int _fast_ping_send_fake(struct ping_host_struct *ping_host, struct fast_ping_fake_ip *fake);
 
 #ifdef __cplusplus
 }
 #endif /*__cplusplus */
-#endif
+#endif // !_FAST_PING_H_

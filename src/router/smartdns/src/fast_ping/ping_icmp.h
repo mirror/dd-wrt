@@ -16,32 +16,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _DNS_CLIENT_CLIENT_SOCKET_
-#define _DNS_CLIENT_CLIENT_SOCKET_
+#ifndef _FAST_PING_ICMP_H_
+#define _FAST_PING_ICMP_H_
 
-#include "dns_client.h"
+#include "fast_ping.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus */
 
-int _dns_client_send_data_to_buffer(struct dns_server_info *server_info, void *packet, int len);
+int _fast_ping_sendping_v4(struct ping_host_struct *ping_host);
 
-int _dns_client_copy_data_to_buffer(struct dns_server_info *server_info, void *packet, int len);
+struct fast_ping_packet *_fast_ping_icmp_packet(struct ping_host_struct *ping_host, struct msghdr *msg,
+												u_char *packet_data, int data_len);
 
-int _dns_client_socket_send(struct dns_server_info *server_info);
+int _fast_ping_sockaddr_ip_cmp(struct sockaddr *first_addr, socklen_t first_addr_len, struct sockaddr *second_addr,
+							   socklen_t second_addr_len);
 
-int _dns_client_socket_recv(struct dns_server_info *server_info);
+uint16_t _fast_ping_checksum(uint16_t *header, size_t len);
 
-int _dns_client_create_socket(struct dns_server_info *server_info);
+int _fast_ping_icmp_create_socket(struct ping_host_struct *ping_host);
 
-void _dns_client_close_socket(struct dns_server_info *server_info);
+int _fast_ping_process_icmp(struct ping_host_struct *ping_host, struct timeval *now);
 
-void _dns_client_close_socket_ext(struct dns_server_info *server_info, int no_del_conn_list);
-
-void _dns_client_shutdown_socket(struct dns_server_info *server_info);
+int _fast_ping_get_addr_by_icmp(const char *ip_str, int port, struct addrinfo **out_gai, FAST_PING_TYPE *out_ping_type);
 
 #ifdef __cplusplus
 }
 #endif /*__cplusplus */
-#endif
+#endif // !_FAST_PING_ICMP_H_
