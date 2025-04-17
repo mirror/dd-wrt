@@ -2327,8 +2327,7 @@ upnp.titl="UPnP";
 upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Przekierowania";
 upnp.legend2="Konfiguracja UPnP";
-upnp.serv="Usługa UPnP";
-upnp.url="Prześlij adres URL prezentacji";
+upnp.serv="Usługa UPnP IGD";
 upnp.msg1="Kliknij, aby usunąć wpis";
 upnp.msg2="Usunąć wszystkie wpisy?";
 
@@ -2341,8 +2340,6 @@ hupnp.right4="Allows applications to automatically configure port forwarding.";
 hupnp.page1="<dd>Universal Plug and Play (UPnP) is a set of computer network protocols. This Microsoft technology is for automatic configuration of devices. The goals of UPnP are to allow devices to connect seamlessly and to simplify the implementation of networks in the home and corporate environments. UPnP achieves this by defining and publishing UPnP device control protocols built upon open, Internet-based communication standards.</dd>";
 hupnp.page2="<dd>The UPnP forwards table shows all open ports forwarded automatically by the UPnP process. You can delete forwards by clicking the trash can or click the <em>Delete All</em> button to clear all forwards.</dd>";
 hupnp.page3="<dd>Allows applications to automatically setup port forwarding rules.</dd>";
-hupnp.page4="<dd>If enabled, all UPnP port forwarding rules are deleted when the router starts up.</dd>";
-hupnp.page5="<dd>If enabled, a presentation URL tag is sent with the device description. This allows the router to show up in <em>Windows's My Network Places</em>. <br /><br />div class=\"note\"><h4>Note</h4><div>When enabling this option you may need to reboot your PC.</div></div></dd><dd>Click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>";
 
 // ** VPN.asp **//
 

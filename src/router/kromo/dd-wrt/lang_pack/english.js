@@ -2615,12 +2615,11 @@ hupgrad.page1="<dd>New firmware versions are posted at <a href=\"https:\/\/dd-wr
 var upnp=new Object();
 upnp.titl="UPnP";
 upnp.h2="Universal Plug and Play (UPnP)";
-upnp.legend="Forwards";
+upnp.legend="Active Port Forwards";
 upnp.legend2="UPnP Configuration";
-upnp.serv="UPnP Service";
-upnp.url="Send presentation URL";
-upnp.msg1="Click to delete entry";
-upnp.msg2="Delete all entries?";
+upnp.serv="UPnP IGD Service";
+upnp.msg1="Click to delete port forward";
+upnp.msg2="Delete all port forwards?";
 
 //help container
 var hupnp=new Object();
@@ -2631,8 +2630,6 @@ hupnp.right4="Allows applications to automatically configure port forwarding.";
 hupnp.page1="<dd>Also known as UPnP it is a set of network protocols used for the automatic configuration of devices. The goals of UPnP are to allow devices to connect seamlessly and to simplify the implementation of home or corporate environment networks. UPnP achieves this by defining and publishing device control protocols built upon open, Internet-based communication standards.</dd>";
 hupnp.page2="<dd>The UPnP forwards table shows all open ports forwarded automatically by the UPnP process. You can delete forwards by clicking <i>remove icon</i> or the <em>" + sbutton.delall + "</em> button to clear the undesired entries.</dd>";
 hupnp.page3="<dd>Allows applications to automatically setup port forwarding rules.</dd>";
-hupnp.page4="<dd>If enabled, all UPnP port forwarding rules are deleted when the router starts up.</dd>";
-hupnp.page5="<dd>If enabled, a presentation URL tag is sent with the device description. This allows the router to show up in <em>Windows's My Network Places</em>.<br /><br />div class=\"note\"><h4>Note:</h4><div>When enabling this option you may need to reboot your computer.</div></div></dd><dd>Click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
 
 // ** VPN.asp **//
 var vpn=new Object();

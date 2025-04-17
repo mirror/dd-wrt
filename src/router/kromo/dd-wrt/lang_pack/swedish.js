@@ -1500,8 +1500,7 @@ upnp.titl="UPnP";
 upnp.h2="Universell Plug and Play (UPnP)";
 upnp.legend="Forwards";
 upnp.legend2="UPnP Konfig";
-upnp.serv="UPnP Tjänst";
-upnp.url="Sänd Presentations URL";
+upnp.serv="UPnP IGD Tjänst";
 upnp.msg1="Klicka för att radera ";
 upnp.msg2="Radera alla rader?";
 
