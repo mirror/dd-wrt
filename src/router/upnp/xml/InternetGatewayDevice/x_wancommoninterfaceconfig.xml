@@ -101,7 +101,7 @@
 				</argumentList>
 		</action>
 		<action>
-			<name>GetActiveConnections</name>
+			<name>GetActiveConnection</name>
 				<argumentList>
 					<argument>
 						<name>NewActiveConnectionIndex</name>
