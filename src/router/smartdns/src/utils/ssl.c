@@ -18,12 +18,12 @@
 
 #include "smartdns/util.h"
 
+#ifdef HAVE_OPENSSL
 #include <openssl/crypto.h>
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
 #include <pthread.h>
 #include <sys/stat.h>
-#ifdef HAVE_OPENSSL
 
 int generate_cert_key(const char *key_path, const char *cert_path, const char *san, int days)
 {

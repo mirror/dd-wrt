@@ -17,6 +17,7 @@
  */
 #define _GNU_SOURCE
 
+#ifdef HAVE_OPENSSL
 #include "server_tls.h"
 #include "connection.h"
 #include "dns_server.h"
@@ -30,7 +31,6 @@
 #include <pthread.h>
 #include <string.h>
 #include <sys/epoll.h>
-#ifdef HAVE_OPENSSL
 
 static ssize_t _ssl_read(struct dns_server_conn_tls_client *conn, void *buff, int num)
 {

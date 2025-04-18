@@ -25,8 +25,9 @@
 #include "client_tls.h"
 #include "client_udp.h"
 #include "conn_stream.h"
-
+#ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
+#endif
 #include <sys/epoll.h>
 
 int _dns_client_create_socket(struct dns_server_info *server_info)
