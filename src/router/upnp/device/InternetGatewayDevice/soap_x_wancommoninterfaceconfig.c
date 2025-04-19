@@ -518,7 +518,7 @@ static ACTION_ARGUMENT arg_out_GetCommonLinkProperties[] = {
 	{ "NewPhysicalLinkStatus", UPNP_TYPE_STR, STATEVAR_PHYSICALLINKSTATUS }
 };
 
-static ACTION_ARGUMENT arg_out_GetMaximumActiveConnection[] = { { "NewMaximumActiveConnections", UPNP_TYPE_UI2,
+static ACTION_ARGUMENT arg_out_GetMaximumActiveConnections[] = { { "NewMaximumActiveConnections", UPNP_TYPE_UI2,
 								   STATEVAR_MAXIMUMACTIVECONNECTIONS } };
 
 static ACTION_ARGUMENT arg_out_GetTotalBytesSent[] = { { "NewTotalBytesSent", UPNP_TYPE_UI4, STATEVAR_TOTALBYTESSENT } };
