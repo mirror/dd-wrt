@@ -379,7 +379,9 @@ obj-$(CONFIG_HWMON) += hwmon
 #obj-$(CONFIG_RSTATS) += rstats
 obj-$(CONFIG_STABRIDGE) += stabridge
 obj-$(CONFIG_EOP_TUNNEL) += eop-tunnel
+ifneq ($(CONFIG_OPENSSL),y)
 obj-$(CONFIG_AIRCRACK) += libnltiny aircrack-ng pcre zlib
+endif
 obj-$(CONFIG_MOXA) += moxa
 obj-$(CONFIG_BONDING) += ifenslave
 obj-$(CONFIG_NSTX) += nstx
