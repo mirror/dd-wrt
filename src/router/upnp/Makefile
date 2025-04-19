@@ -20,7 +20,7 @@ endif
 CFG_BCMIGD ?= 1
 
 UPNP	:= $(TOP)/upnp/src/linux
-CFLAGS += $(COPTS) -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
+CFLAGS += $(COPTS) -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include -include $(TOP)/shared/shutils.h
 ifeq ($(strip $(CFG_BCMIGD)),1)
 CFLAGS  += -D__BCMIGD__
 endif

@@ -12,7 +12,7 @@
  * $Id: xml_InternetGatewayDevice.c,v 1.6 2008/01/29 10:14:07 Exp $
  */
 #include <upnp.h>
-
+#if 0
 char xml_InternetGatewayDevice[] = "<?xml version=\"1.0\"?>\n"
 				   "<root xmlns=\"urn:schemas-upnp-org:device-1-0\">\n"
 				   "<specVersion>\n"
@@ -182,3 +182,4 @@ char xml_InternetGatewayDevice[] = "<?xml version=\"1.0\"?>\n"
 				   "\n";
 
 char xml_InternetGatewayDevice_real[sizeof(xml_InternetGatewayDevice) + 128];
+#endif
