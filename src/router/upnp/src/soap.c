@@ -267,16 +267,28 @@ void soap_send_error(UPNP_CONTEXT *context, int error)
 		err_str = "Invalid Argument";
 		break;
 
-	case SOAP_OUT_OF_SYNC:
-		err_str = "Out of Sync";
-		break;
-
 	case SOAP_INVALID_VARIABLE:
 		err_str = "Invalid Variable";
 		break;
 
 	case SOAP_DEVICE_INTERNAL_ERROR:
 		err_str = "Action Failed";
+		break;
+
+	case SOAP_ACTION_NOT_AUTHORIZED:
+		err_str = "Action not authorized";
+		break;
+
+	case SOAP_SPECIFIED_ARRAY_INDEX_INVALID:
+		err_str = "SpecifiedArrayIndexInvalid";
+		break;
+
+	case SOAP_NO_SUCH_ENTRY_IN_ARRAY:
+		err_str = "NoSuchEntryInArray";
+		break;
+
+	case SOAP_CONFLICT_IN_MAPPING_ENTRY:
+		err_str = "ConflictInMappingEntry";
 		break;
 
 	default:
@@ -312,7 +324,7 @@ void soap_send_error(UPNP_CONTEXT *context, int error)
 		      "Content-Type: text/xml; charset=\"utf-8\"\r\n"
 		      "Date: %s\r\n"
 		      "EXT: \r\n"
-		      "Server: POSIX, UPnP/1.0 %s/%s\r\n"
+		      "Server: POSIX UPnP/1.0 %s/%s\r\n"
 		      "Connection: close\r\n"
 		      "\r\n"
 		      "%s",
@@ -346,7 +358,7 @@ void soap_send(UPNP_CONTEXT *context)
 			   "Content-Type: text/xml; charset=\"utf-8\"\r\n"
 			   "Date: %s\r\n"
 			   "EXT: \r\n"
-			   "Server: POSIX, UPnP/1.0 %s/%s\r\n"
+			   "Server: POSIX UPnP/1.0 %s/%s\r\n"
 			   "Connection: close\r\n"
 			   "\r\n"
 			   "%s",

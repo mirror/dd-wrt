@@ -72,9 +72,9 @@ int upnp_osl_read_config(UPNP_CONFIG *config)
 	memset(config, 0, sizeof(*config));
 
 	/* Get OS/VER */
-	strcpy(config->os_name, "DD-WRT Linux");
+	strcpy(config->os_name, "DD-WRT");
 
-	strcpy(config->os_ver, "V30");
+	strcpy(config->os_ver, nvram_safe_get("os_version"));
 
 	/* initialize upnp_config to default values */
 	if ((value = nvram_get("upnp_port")))
@@ -90,7 +90,7 @@ int upnp_osl_read_config(UPNP_CONFIG *config)
 	if ((value = nvram_get("upnp_sub_timeout")))
 		config->sub_time = atoi(value);
 	else
-		config->sub_time = 900;
+		config->sub_time = 1800;
 
 	return 0;
 }
