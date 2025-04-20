@@ -168,7 +168,7 @@ static void watchdog(void)
 					target = 10000;
 				target *= 255;
 				target /= 10000;
-				sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon1/pwm1", target);
+				sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon6/pwm1", target);
 			}
 		}
 #endif
