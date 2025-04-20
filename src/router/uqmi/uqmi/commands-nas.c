@@ -801,7 +801,7 @@ cmd_nas_get_tx_rx_info_prepare(struct qmi_dev *qmi, struct qmi_request *req, str
 }
 
 static void
-print_lte_info(int32_t cell_id, int16_t rsrp, int16_t rsrq, int16_t rssi)
+print_lte_info(int32_t cell_id, int16_t rsrq, int16_t rsrp, int16_t rssi)
 {
 	blobmsg_add_u32(&status, "physical_cell_id", cell_id);
 	blobmsg_add_double(&status, "rsrq", ((double)rsrq)/10);
