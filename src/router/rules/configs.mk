@@ -87,8 +87,8 @@ obj-y += portscan
 CONFIG_PORTSCAN=y
 endif
 
-ifneq ($(CONFIG_MIMALLOC),y)
-ifneq ($(CONFIG_MIMALLOC_SECURE),y)
+#ifneq ($(CONFIG_MIMALLOC),y)
+#ifneq ($(CONFIG_MIMALLOC_SECURE),y)
 ifeq ($(ARCH),mips)
 ifeq ($(CONFIG_FREERADIUS),y)
 CONFIG_JEMALLOC=y
@@ -117,7 +117,31 @@ endif
 endif
 endif
 endif
+#endif
+#endif
+ifeq ($(ARCH),arm)
+CONFIG_JEMALLOC=y
+COPTS+=-DHAVE_JEMALLOC=y
 endif
+ifeq ($(ARCH),aarch64)
+CONFIG_JEMALLOC=y
+COPTS+=-DHAVE_JEMALLOC=y
+endif
+ifeq ($(ARCHITECTURE),northstar)
+CONFIG_JEMALLOC=y
+COPTS+=-DHAVE_JEMALLOC=y
+endif
+ifeq ($(ARCH),mips64)
+CONFIG_JEMALLOC=y
+COPTS+=-DHAVE_JEMALLOC=y
+endif
+ifeq ($(ARCH),i386)
+CONFIG_JEMALLOC=y
+COPTS+=-DHAVE_JEMALLOC=y
+endif
+ifeq ($(ARCH),x86_64)
+CONFIG_JEMALLOC=y
+COPTS+=-DHAVE_JEMALLOC=y
 endif
 
 
