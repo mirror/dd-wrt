@@ -12,8 +12,8 @@ install:
 ifeq ($(CONFIG_IPQ6018),y)
 	mkdir -p $(INSTALLDIR)$(FIRMWAREDIR)/marvell
 	cp -v aqr/AQR* $(INSTALLDIR)$(FIRMWAREDIR)/marvell
-	mkdir -p $(INSTALLDIR)$(FIRMWAREDIR)/qca
-	cp -v qca/* $(INSTALLDIR)$(FIRMWAREDIR)/qca
+	mkdir -p $(INSTALLDIR)$(FIRMWAREDIR)/IPQ5018
+	cp -v IPQ5018/* $(INSTALLDIR)$(FIRMWAREDIR)/IPQ5018
 endif
 ifeq ($(CONFIG_MVEBU),y)
 	mkdir $(INSTALLDIR)$(FIRMWAREDIR)/mrvl
