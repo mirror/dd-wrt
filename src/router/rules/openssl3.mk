@@ -86,6 +86,8 @@ ifeq ($(CONFIG_FREERADIUS),y)
 	-install -D openssl3/apps/openssl $(INSTALLDIR)/openssl/usr/sbin/openssl 
 endif
 	-mkdir -p $(INSTALLDIR)/openssl/etc/ssl
+	-mkdir -p $(INSTALLDIR)/openssl/etc/ssl/certs
+	install -D $(TOP)/ca-bundle/cert.pem $(INSTALLDIR)/openssl/etc/ssl/certs/ca-certificates.crt
 	-touch $(INSTALLDIR)/openssl/etc/ssl/openssl.cnf
 
 	install -d $(INSTALLDIR)/openssl/etc/ssl/modules.cnf.d $(INSTALLDIR)/openssl/usr/lib/engines-3 $(INSTALLDIR)/openssl/usr/lib/ossl-modules
