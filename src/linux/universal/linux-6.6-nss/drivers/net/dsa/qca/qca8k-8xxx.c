@@ -1400,7 +1400,6 @@ static void qca8k_phylink_get_caps(struct dsa_switch *ds, int port,
 		__set_bit(PHY_INTERFACE_MODE_SGMII,
 			  config->supported_interfaces);
 		break;
-
 	case 1:
 	case 2:
 	case 3:
@@ -1547,12 +1546,11 @@ static int qca8k_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 		return -EINVAL;
 	}
 
-	/* Enable SerDes auto-negotiation always.
-	 * So fixed-link can work.
-	 */
-	ret = qca8k_rmw(priv, QCA8K_REG_PWS, QCA8K_PWS_SERDES_AEN_DIS, 0);
-	if (ret)
-		return ret;
+	/* Enable/disable SerDes auto-negotiation as necessary */
+	val = neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED ?
+		0 : QCA8K_PWS_SERDES_AEN_DIS;
+
+	ret = qca8k_rmw(priv, QCA8K_REG_PWS, QCA8K_PWS_SERDES_AEN_DIS, val);
 
 	/* Configure the SGMII parameters */
 	ret = qca8k_read(priv, QCA8K_REG_SGMII_CTRL, &val);
