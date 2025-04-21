@@ -1207,7 +1207,9 @@
  */
 #define LINKTYPE_ATSC_ALP	289
 
-#define LINKTYPE_HIGH_MATCHING_MAX	289		/* highest value in the "matching" range */
+#define LINKTYPE_DSA_TAG_QCA	290
+
+#define LINKTYPE_HIGH_MATCHING_MAX	290		/* highest value in the "matching" range */
 
 /*
  * The DLT_ and LINKTYPE_ values in the "matching" range should be the
