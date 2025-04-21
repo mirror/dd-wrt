@@ -61,7 +61,7 @@ static const struct printer printers[] = {
 	{ brcm_tag_prepend_if_print, DLT_DSA_TAG_BRCM_PREPEND },
 #endif
 #ifdef DLT_DSA_TAG_QCA
-	{ ether_if_print,	DLT_DSA_TAG_QCA },
+	{ qca_tag_if_print,	DLT_DSA_TAG_QCA },
 #endif
 #ifdef DLT_BLUETOOTH_HCI_H4_WITH_PHDR
 	{ bt_if_print,		DLT_BLUETOOTH_HCI_H4_WITH_PHDR},
