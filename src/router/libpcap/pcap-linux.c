@@ -5472,7 +5472,7 @@ static struct dsa_proto {
 	 *
 	 *    https://elixir.bootlin.com/linux/v6.13.2/source/net/dsa/tag_qca.c
 	 */
-	{ "qca", DLT_EN10MB },
+	{ "qca", DLT_DSA_TAG_QCA },
 
 	/*
 	 * Type 2, with Ethertype 0x8899, assigned to Realtek;
