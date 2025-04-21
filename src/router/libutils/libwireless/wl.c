@@ -1905,7 +1905,19 @@ void mac80211_radio_on_off(int idx, int on)
 	char secmode[16];
 	char tpt[16];
 	char prefix[32];
-	static int radiostate[8] = { 1, 1, 1, 1, 1, 1, 1, 1 };
+	unsigned char radiostate[8];
+	FILE *fp = fopen("/tmp/radiostates", "rb");
+	if (!fp) {
+		fp = fopen("/tmp/radiostates", "wb");
+		if (fp) {
+			memset(radiostate, 1, sizeof(radiostate));
+			fwrite(radiostate, 1, sizeof(radiostate), fp);
+			fclose(fp);
+		}
+	} else {
+		fread(radiostate, 1, sizeof(radiostate), fp);
+		fclose(fp);
+	}
 	sprintf(prefix, "wlan%d", idx);
 	int needrestart = 1;
 	if (idx >= ARRAY_SIZE(radiostate))
@@ -1916,6 +1928,11 @@ void mac80211_radio_on_off(int idx, int on)
 	}
 	nvram_nseti(!on, "%s_off", prefix);
 	radiostate[idx] = on;
+	fp = fopen("/tmp/radiostates", "wb");
+	if (fp) {
+		fwrite(radiostate, 1, sizeof(radiostate), fp);
+		fclose(fp);
+	}
 	eval("startservice", "configurewifi", "-f");
 	eval("restart", "dnsmasq");
 	eval("startservice", "resetleds", "-f");
@@ -2673,11 +2690,9 @@ static struct wifidevices wdevices[] = {
 	{ "Atheros AR5008", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0xff1c, PCI_ANY, PCI_ANY, NULL },
 	{ "Atheros AR922x 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0xff1d, PCI_ANY, PCI_ANY,
 	  NULL },
-	{ "QCA9565 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0036, PCI_ANY,
-	  PCI_ANY, NULL },
-	{ "QCA988x 802.11ac",
-	  SPECTRAL | FWSWITCH | QAM256 | QAM256BUG | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x003c, PCI_ANY,
-	  PCI_ANY, NULL },
+	{ "QCA9565 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0036, PCI_ANY, PCI_ANY, NULL },
+	{ "QCA988x 802.11ac", SPECTRAL | FWSWITCH | QAM256 | QAM256BUG | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
+	  0x003c, PCI_ANY, PCI_ANY, NULL },
 	{ "QCA6174 802.11ac", SPECTRAL | QAM256 | CHANNELSURVEY, 0x168c, 0x003e, PCI_ANY, PCI_ANY, NULL },
 	{ "QCA99X0 802.11ac",
 	  WAVE2 | SPECTRAL | FWSWITCH | QAM256 | QAM256BUG | CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA | AR900B, 0x168c,
@@ -2687,20 +2702,15 @@ static struct wifidevices wdevices[] = {
 	{ "QCA9984 802.11ac",
 	  DUALBAND | WAVE2 | SPECTRAL | FWSWITCH | QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA | BEACONVAP100, 0x168c,
 	  0x0046, PCI_ANY, PCI_ANY, NULL },
-	{ "QCA9887 802.11ac",
-	  SPECTRAL | FWSWITCH | QAM256 | QAM256BUG | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x0050, PCI_ANY,
-	  PCI_ANY, NULL },
+	{ "QCA9887 802.11ac", SPECTRAL | FWSWITCH | QAM256 | QAM256BUG | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c,
+	  0x0050, PCI_ANY, PCI_ANY, NULL },
 	{ "QCA9888 802.11ac",
 	  WAVE2 | SPECTRAL | FWSWITCH | QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA | BEACONVAP100, 0x168c, 0x0056,
 	  PCI_ANY, PCI_ANY, NULL },
-	{ "QCN9074 802.11ax", AX | WAVE2 | SPECTRAL | CHANNELSURVEY | BEACONVAP100, 0x17cb, 0x1104, PCI_ANY,
-	  PCI_ANY, NULL },
-	{ "QCN9224 802.11ax", AX | WAVE2 | SPECTRAL | CHANNELSURVEY | BEACONVAP100, 0x17cb, 0x1109, PCI_ANY,
-	  PCI_ANY, NULL },
-	{ "WCN6855 802.11ax", AX | WAVE2 | SPECTRAL | CHANNELSURVEY | BEACONVAP100, 0x17cb, 0x1103, PCI_ANY,
-	  PCI_ANY, NULL },
-	{ "QCA6390 802.11ax", AX | WAVE2 | SPECTRAL | CHANNELSURVEY | BEACONVAP100, 0x17cb, 0x1101, PCI_ANY,
-	  PCI_ANY, NULL },
+	{ "QCN9074 802.11ax", AX | WAVE2 | SPECTRAL | CHANNELSURVEY | BEACONVAP100, 0x17cb, 0x1104, PCI_ANY, PCI_ANY, NULL },
+	{ "QCN9224 802.11ax", AX | WAVE2 | SPECTRAL | CHANNELSURVEY | BEACONVAP100, 0x17cb, 0x1109, PCI_ANY, PCI_ANY, NULL },
+	{ "WCN6855 802.11ax", AX | WAVE2 | SPECTRAL | CHANNELSURVEY | BEACONVAP100, 0x17cb, 0x1103, PCI_ANY, PCI_ANY, NULL },
+	{ "QCA6390 802.11ax", AX | WAVE2 | SPECTRAL | CHANNELSURVEY | BEACONVAP100, 0x17cb, 0x1101, PCI_ANY, PCI_ANY, NULL },
 	{ "Wilocity WIL6210 802.11ad", SURVEY_NOPERIOD, 0x1ae9, 0x0310, PCI_ANY, PCI_ANY, NULL },
 	{ "Ubiquiti QCA988x 802.11ac", SPECTRAL | FWSWITCH | QAM256 | CHANNELSURVEY | CHWIDTH_5_10_MHZ, 0x0777, 0x11ac, PCI_ANY,
 	  PCI_ANY, NULL },
@@ -3327,12 +3337,12 @@ static struct wifidevices wdevices[] = {
 	  PCI_ANY, "ar933x_wmac" },
 	{ "Atheros AR934x 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY,
 	  PCI_ANY, "ar934x_wmac" },
-	{ "QCA955x 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY,
-	  PCI_ANY, PCI_ANY, "qca955x_wmac" },
-	{ "QCA953x 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY,
-	  PCI_ANY, PCI_ANY, "qca953x_wmac" },
-	{ "QCA956x 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY,
-	  PCI_ANY, PCI_ANY, "qca956x_wmac" },
+	{ "QCA955x 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY,
+	  "qca955x_wmac" },
+	{ "QCA953x 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY,
+	  "qca953x_wmac" },
+	{ "QCA956x 802.11n", SPECTRAL | CHANNELSURVEY | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY,
+	  "qca956x_wmac" },
 	{ "Atheros AR231X", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY,
 	  "ar231x-wmac.0" },
 	{ "Atheros AR231X", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY,
@@ -3343,8 +3353,8 @@ static struct wifidevices wdevices[] = {
 	{ "QCA4018 802.11ac",
 	  WAVE2 | SPECTRAL | FWSWITCH | CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA | BEACONVAP100 | AR900B, PCI_ANY, PCI_ANY,
 	  PCI_ANY, PCI_ANY, "soc/a800000.wifi" },
-	{ "802.11ax", AX | WAVE2 | SPECTRAL | CHANNELSURVEY | BEACONVAP100 | VHT160_2BY2, PCI_ANY, PCI_ANY,
-	  PCI_ANY, PCI_ANY, "soc@0/c000000.wifi" },
+	{ "802.11ax", AX | WAVE2 | SPECTRAL | CHANNELSURVEY | BEACONVAP100 | VHT160_2BY2, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY,
+	  "soc@0/c000000.wifi" },
 
 };
 
