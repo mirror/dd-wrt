@@ -5426,7 +5426,7 @@ static struct dsa_proto {
 	 *
 	 *    https://elixir.bootlin.com/linux/v6.13.2/source/net/dsa/tag_mtk.c#L15
 	 */
-	{ "mtk", DLT_EN10MB },
+	{ "mtk", DLT_DSA_TAG_MTK },
 
 	/*
 	 * None is special and indicates that the interface does not have

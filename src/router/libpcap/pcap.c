@@ -3372,6 +3372,7 @@ static struct dlt_choice dlt_choices[] = {
 	DLT_CHOICE(USB_2_0, "USB 2.0/1.1/1.0 as transmitted over the cable"),
 	DLT_CHOICE(ATSC_ALP, "ATSC Link-Layer Protocol packets"),
 	DLT_CHOICE(DSA_TAG_QCA, "Qualcomm Atheros DSA"),
+	DLT_CHOICE(DSA_TAG_MTK, "Mediatek DSA"),
 	DLT_CHOICE_SENTINEL
 };
 

@@ -1580,6 +1580,8 @@
 
 #define DLT_DSA_TAG_QCA		290
 
+#define DLT_DSA_TAG_MTK		291
+
 /*
  * In case the code that includes this file (directly or indirectly)
  * has also included OS files that happen to define DLT_HIGH_MATCHING_MAX,
@@ -1590,6 +1592,6 @@
 #ifdef DLT_HIGH_MATCHING_MAX
 #undef DLT_HIGH_MATCHING_MAX
 #endif
-#define DLT_HIGH_MATCHING_MAX	290	/* highest value in the "matching" range */
+#define DLT_HIGH_MATCHING_MAX	291	/* highest value in the "matching" range */
 
 #endif /* !defined(lib_pcap_dlt_h) */
