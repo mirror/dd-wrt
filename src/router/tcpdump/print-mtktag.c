@@ -32,40 +32,28 @@
 
 #define ETHER_TYPE_LEN		2
 
-#define QCA_TAG_LEN		2
-
-static const struct tok qca_tag_type_values[] = {
-	{ 0, "Normal" },
-	{ 1, "MiB" },
-	{ 2, "Ack"},
-	{ 0, NULL }
-};
-
+#define MTK_TAG_LEN		4
 
 static void
-qca_tag_print(netdissect_options *ndo, const u_char *bp)
+mtk_tag_print(netdissect_options *ndo, const u_char *bp)
 {
 	uint16_t tag;
 
-	tag = GET_BE_U_2(bp);
+	tag = GET_BE_U_4(bp);
 	
-	ND_PRINT("QCA tag ver: %d", (tag >> 14) & 0x3);
-	ND_PRINT(", Type: %s", tok2str(qca_tag_type_values, "unknown", (tag >> 6) & 0x1f));
-	ND_PRINT(", Prio: %d", (tag >> 11) & 7);
-	ND_PRINT(", Tagged: %s", ((tag >> 3) & 0x1) ? "Yes" : "No");
-	ND_PRINT(", Port: %d", tag & 7);
+	ND_PRINT("MTK tag Port: %d", tag & 7);
 	ND_PRINT(", ");
 }
 
 void
-qca_tag_if_print(netdissect_options *ndo, const struct pcap_pkthdr *h,
+mtk_tag_if_print(netdissect_options *ndo, const struct pcap_pkthdr *h,
 		  const u_char *p)
 {
 	u_int caplen = h->caplen;
 	u_int length = h->len;
 
-	ndo->ndo_protocol = "qca-tag";
+	ndo->ndo_protocol = "mtk-tag";
 	ndo->ndo_ll_hdr_len +=
 		ether_switch_tag_print(ndo, p, length, caplen,
-				       qca_tag_print, QCA_TAG_LEN);
+				       mtk_tag_print, MTK_TAG_LEN);
 }

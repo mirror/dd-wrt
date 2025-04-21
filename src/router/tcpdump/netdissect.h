@@ -520,6 +520,7 @@ extern void arcnet_linux_if_print IF_PRINTER_ARGS;
 extern void atm_if_print IF_PRINTER_ARGS;
 extern void brcm_tag_if_print IF_PRINTER_ARGS;
 extern void qca_tag_if_print IF_PRINTER_ARGS;
+extern void mtk_tag_if_print IF_PRINTER_ARGS;
 extern void brcm_tag_prepend_if_print IF_PRINTER_ARGS;
 extern void bt_if_print IF_PRINTER_ARGS;
 extern void chdlc_if_print IF_PRINTER_ARGS;
