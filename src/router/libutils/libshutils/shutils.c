@@ -1782,7 +1782,7 @@ long getmemtotal(void)
 	return getmeminfo(0);
 }
 
-void recovery_states(const char *name, void *state, size_t len)
+void recover_states(const char *name, void *state, size_t len)
 {
 	char path[64];
 	sprintf(path, "/tmp/%s.state");
