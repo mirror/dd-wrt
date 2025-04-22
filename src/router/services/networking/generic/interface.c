@@ -476,7 +476,7 @@ void start_setup_vlans(void)
 		if (strlen(ports)) {
 			//                          sw_user_lan_ports_vlan_config "7" "6" "0" "0" "0" "normal_lan"
 			//                          sw_user_lan_ports_vlan_config "1" "" "0" "1" "0" "wan"
-			sysprintf(". /usr/sbin/config_vlan.sh \"%d\" \"%s\" \"0\" \"0\" \"0\" \"normal_lan\"");
+			sysprintf(". /usr/sbin/config_vlan.sh \"%d\" \"%s\" \"0\" \"0\" \"0\" \"normal_lan\"", vlan_number, ports);
 		}
 	}
 
