@@ -1901,7 +1901,7 @@ static void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value)
 void mac80211_radio_on_off(int idx, int on)
 {
 	char debugstring[64];
-	int fp;
+	int f;
 	char secmode[16];
 	char tpt[16];
 	char prefix[32];
@@ -1960,14 +1960,14 @@ void mac80211_radio_on_off(int idx, int on)
 		set_ath10kreg(prefix, pcu_diag_reg, value);*/
 	} else {
 		sprintf(debugstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/diag", mac80211_get_phy_idx(idx));
-		fp = open(debugstring, O_WRONLY);
-		if (fp) {
+		f = open(debugstring, O_WRONLY);
+		if (f) {
 			if (on)
-				write(fp, "0", sizeof("0") - 1);
+				write(f, "0", sizeof("0") - 1);
 			else
-				write(fp, "3", sizeof("3") - 1);
+				write(f, "3", sizeof("3") - 1);
 			fprintf(stderr, "ath9k radio %d: phy%d wlan%d\n", on, mac80211_get_phy_idx(idx), idx);
-			close(fp);
+			close(f);
 		}
 	}
 	// LED
@@ -1984,11 +1984,11 @@ void mac80211_radio_on_off(int idx, int on)
 	else
 		sprintf(debugstring, "/sys/class/leds/ath9k-phy%d/trigger", mac80211_get_phy_idx(idx));
 #endif
-	fp = open(debugstring, O_WRONLY);
-	if (fp) {
+	f = open(debugstring, O_WRONLY);
+	if (f) {
 		if (on) {
 			sprintf(tpt, "phy%dtpt", mac80211_get_phy_idx(idx));
-			write(fp, tpt, strlen(tpt));
+			write(f, tpt, strlen(tpt));
 			sprintf(secmode, "wlan%d_akm", idx);
 			if (nvram_exists(secmode) && !nvram_match(secmode, "disabled")) {
 				// needs refinements
@@ -1998,7 +1998,7 @@ void mac80211_radio_on_off(int idx, int on)
 					led_control(LED_SEC1, LED_ON);
 			}
 		} else {
-			write(fp, "none", sizeof("none") - 1);
+			write(f, "none", sizeof("none") - 1);
 #ifdef HAVE_WZRHPAG300NH
 			if (idx == 0) {
 				led_control(LED_SEC0, LED_OFF);
@@ -2007,7 +2007,7 @@ void mac80211_radio_on_off(int idx, int on)
 			}
 #endif
 		}
-		close(fp);
+		close(f);
 	}
 }
 
