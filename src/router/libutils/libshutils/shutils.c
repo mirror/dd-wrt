@@ -1782,6 +1782,33 @@ long getmemtotal(void)
 	return getmeminfo(0);
 }
 
+void recovery_states(const char *name, void *state, size_t len)
+{
+	char path[64];
+	sprintf(path, "/tmp/%s.state");
+	FILE *fp = fopen(path, "rb");
+	if (!fp) {
+		fp = fopen(path, "wb");
+		if (fp) {
+			fwrite(state, 1, len, fp);
+			fclose(fp);
+		}
+	} else {
+		fread(state, 1, len, fp);
+		fclose(fp);
+	}
+}
+
+void store_states(const char *name, void *state, size_t len)
+{
+	char path[64];
+	sprintf(path, "/tmp/%s.state");
+	FILE *fp = fopen(path, "wb");
+	if (fp) {
+		fwrite(state, 1, len, fp);
+		fclose(fp);
+	}
+}
 #ifdef MEMDEBUG
 /* some special code for memory leak tracking */
 

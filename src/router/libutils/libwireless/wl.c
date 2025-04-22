@@ -1905,19 +1905,8 @@ void mac80211_radio_on_off(int idx, int on)
 	char secmode[16];
 	char tpt[16];
 	char prefix[32];
-	unsigned char radiostate[8];
-	FILE *fp = fopen("/tmp/radiostates", "rb");
-	if (!fp) {
-		fp = fopen("/tmp/radiostates", "wb");
-		if (fp) {
-			memset(radiostate, 1, sizeof(radiostate));
-			fwrite(radiostate, 1, sizeof(radiostate), fp);
-			fclose(fp);
-		}
-	} else {
-		fread(radiostate, 1, sizeof(radiostate), fp);
-		fclose(fp);
-	}
+	unsigned char radiostate[8] = { 1, 1, 1, 1, 1, 1, 1, 1 };
+	recover_states("radio", radiostate, sizeof(radiostate));
 	sprintf(prefix, "wlan%d", idx);
 	int needrestart = 1;
 	if (idx >= ARRAY_SIZE(radiostate))
@@ -1928,11 +1917,7 @@ void mac80211_radio_on_off(int idx, int on)
 	}
 	nvram_nseti(!on, "%s_off", prefix);
 	radiostate[idx] = on;
-	fp = fopen("/tmp/radiostates", "wb");
-	if (fp) {
-		fwrite(radiostate, 1, sizeof(radiostate), fp);
-		fclose(fp);
-	}
+	store_states("radio", radiostate, sizeof(radiostate));
 	eval("startservice", "configurewifi", "-f");
 	eval("restart", "dnsmasq");
 	eval("startservice", "resetleds", "-f");

@@ -185,6 +185,9 @@ char *strlcat_r(const char *s1, const char *s2, char *buf, size_t len);
 char *dd_strncat(char *dst, const char *src, size_t len);
 size_t dd_strlcat(char *dst, const char *src, size_t len);
 
+void recovery_states(const char *name, void *state, size_t len);
+void store_states(const char *name, void *state, size_t len);
+
 static inline char *strlcathelp(char *dst, const char *s, size_t len)
 {
 	strlcat(dst, s, len);
