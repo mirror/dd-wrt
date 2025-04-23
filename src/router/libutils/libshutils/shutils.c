@@ -1785,7 +1785,7 @@ long getmemtotal(void)
 void recover_states(const char *name, void *state, size_t len)
 {
 	char path[64];
-	sprintf(path, "/tmp/%s.state");
+	sprintf(path, "/tmp/%s.state", name);
 	FILE *fp = fopen(path, "rb");
 	if (!fp) {
 		fp = fopen(path, "wb");
@@ -1802,7 +1802,7 @@ void recover_states(const char *name, void *state, size_t len)
 void store_states(const char *name, void *state, size_t len)
 {
 	char path[64];
-	sprintf(path, "/tmp/%s.state");
+	sprintf(path, "/tmp/%s.state", name);
 	FILE *fp = fopen(path, "wb");
 	if (fp) {
 		fwrite(state, 1, len, fp);
