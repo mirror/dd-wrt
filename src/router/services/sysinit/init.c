@@ -115,7 +115,6 @@ void start_hostname(void)
 		setdomainname(domain, strlen(domain));
 }
 
-#define getRouterName() nvram_exists(NVROUTER_ALT) ? nvram_safe_get(NVROUTER_ALT) : nvram_safe_get(NVROUTER)
 
 void start_post_sysinit(void)
 {
@@ -185,53 +184,53 @@ void start_post_sysinit(void)
 #ifndef HAVE_CORENET
 #ifdef HAVE_TMK
 	fprintf(fp, "KMT-WAS %s (c) " BUILD_YEAR " KMT GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST,
-		SVN_REVISION, getRouterName());
+		SVN_REVISION, getRouter());
 #elif HAVE_SANSFIL
 	fprintf(fp, "SANSFIL %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n",
-		DIST, SVN_REVISION, getRouterName());
+		DIST, SVN_REVISION, getRouter());
 #elif HAVE_KORENRON
 	fprintf(fp, "KORENRON %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n",
-		DIST, SVN_REVISION, getRouterName());
+		DIST, SVN_REVISION, getRouter());
 #elif HAVE_TESTEM
 	fprintf(fp, "TESTEM %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST,
-		SVN_REVISION, getRouterName());
+		SVN_REVISION, getRouter());
 #elif HAVE_HOBBIT
 	fprintf(fp, "HQ-NDS %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST,
-		SVN_REVISION, getRouterName());
+		SVN_REVISION, getRouter());
 #elif HAVE_ONNET
 #ifdef HAVE_ONNET_BLANK
 	fprintf(fp, "Enterprise AP %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST,
-		SVN_REVISION, getRouterName());
+		SVN_REVISION, getRouter());
 #elif HAVE_UNFY
 	//fprintf(fp, "UNIFY %s (c) 2013 \nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 	fprintf(fp, "Firmware %s (c) " BUILD_YEAR " \nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION,
-		getRouterName());
+		getRouter());
 #else
 	fprintf(fp, "OTAi %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST,
-		SVN_REVISION, getRouterName());
+		SVN_REVISION, getRouter());
 #endif
 #elif HAVE_RAYTRONIK
 	fprintf(fp, "RAYTRONIK %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n",
-		DIST, SVN_REVISION, getRouterName());
+		DIST, SVN_REVISION, getRouter());
 #elif HAVE_ANTAIRA
-	fprintf(fp, "Antaira %s\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
+	fprintf(fp, "Antaira %s\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouter());
 #elif HAVE_HDWIFI
 	fprintf(fp, "HDWIFI %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST,
-		SVN_REVISION, getRouterName());
+		SVN_REVISION, getRouter());
 #elif HAVE_NDTRADE
 	fprintf(fp, "ND TRADE %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n",
-		DIST, SVN_REVISION, getRouterName());
+		DIST, SVN_REVISION, getRouter());
 #else
 #ifdef DIST
 	if (*(DIST))
 		fprintf(fp, "DD-WRT v3.0-r%s %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE "\nBoard: %s\n",
-			SVN_REVISION, DIST, getRouterName());
+			SVN_REVISION, DIST, getRouter());
 	else
 		fprintf(fp, "DD-WRT v3.0-r%s custom (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE "\nBoard: %s\n",
-			SVN_REVISION, getRouterName());
+			SVN_REVISION, getRouter());
 #else
 	fprintf(fp, "DD-WRT v3.0-r%s custom (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE "\nBoard: %s\n",
-		SVN_REVISION, getRouterName());
+		SVN_REVISION, getRouter());
 #endif
 #endif
 #endif
