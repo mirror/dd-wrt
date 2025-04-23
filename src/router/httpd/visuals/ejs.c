@@ -1330,7 +1330,6 @@ again:;
 	return;
 }
 
-#define getRouterName() nvram_exists(NVROUTER_ALT) ? nvram_safe_get(NVROUTER_ALT) : nvram_safe_get(NVROUTER)
 EJ_VISIBLE void ej_get_sysmodel(webs_t wp, int argc, char_t **argv)
 {
 #ifdef HAVE_XIOCOM
@@ -1402,25 +1401,24 @@ EJ_VISIBLE void ej_get_sysmodel(webs_t wp, int argc, char_t **argv)
 	} else if (nvram_match(NVROUTER, "Alfa AP120C")) {
 		websWrite(wp, "OTAi 600dbdc");
 	} else {
-		websWrite(wp, "OTAi %s", getRouterName());
+		websWrite(wp, "OTAi %s", getRouter());
 	}
 #endif
 #elif HAVE_SANSFIL
 	websWrite(wp, "%s", "SANSFIL");
 #elif HAVE_KORENRON
-	websWrite(wp, "KORENRON %s", getRouterName());
+	websWrite(wp, "KORENRON %s", getRouter());
 #elif HAVE_TESTEM
-	websWrite(wp, "TESTEM %s", getRouterName());
+	websWrite(wp, "TESTEM %s", getRouter());
 #elif HAVE_HOBBIT
-	websWrite(wp, "HQ-NDS %s", getRouterName());
+	websWrite(wp, "HQ-NDS %s", getRouter());
 #elif HAVE_RAYTRONIK
-	websWrite(wp, "RN-150M %s", getRouterName());
+	websWrite(wp, "RN-150M %s", getRouter());
 #else
-	websWrite(wp, "%s", getRouterName());
+	websWrite(wp, "%s", getRouter());
 #endif
 }
 
-#undef getRouterName
 EJ_VISIBLE void ej_get_syskernel(webs_t wp, int argc, char_t **argv)
 {
 	struct utsname name;
