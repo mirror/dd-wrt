@@ -196,12 +196,15 @@ static void setRouter(const char *name)
 
 const char *getRouter(void)
 {
-	char *n = nvram_safe_get(NVROUTER);
+	char *r = nvram_exists(NVROUTER_ALT) ? nvram_safe_get(NVROUTER_ALT) : nvram_safe_get(NVROUTER);
 	char *r = nvram_safe_get("router_rev");
 	static char routername[64];
+	static char *p = NULL;
+	if (p)
+	    return p;
 	snprintf(routername, sizeof(routername) - 1, "%s%s%s", *n ? n : "Unknown Model", *r ? "-" : "", *r ? r : "");
-
-	return routername;
+	p = routername;
+	return p;
 }
 
 int internal_getRouterBrand()
