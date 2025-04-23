@@ -3685,7 +3685,7 @@ static int devicecountbydriver_ath5kahb(const char *prefix)
 }
 
 #endif
-static int devicecountbydriver(const const char *prefix, const char *drivername, const char *module)
+static int devicecountbydriver(const char *prefix, const char *drivername, const char *module)
 {
 	glob_t globbuf;
 	char globstring[128];

@@ -196,7 +196,7 @@ static void setRouter(const char *name)
 
 const char *getRouter(void)
 {
-	char *r = nvram_exists(NVROUTER_ALT) ? nvram_safe_get(NVROUTER_ALT) : nvram_safe_get(NVROUTER);
+	char *n = nvram_exists(NVROUTER_ALT) ? nvram_safe_get(NVROUTER_ALT) : nvram_safe_get(NVROUTER);
 	char *r = nvram_safe_get("router_rev");
 	static char routername[64];
 	static char *p = NULL;
