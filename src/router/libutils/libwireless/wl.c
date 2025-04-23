@@ -4510,7 +4510,7 @@ int wlconf_up(char *name)
 				eval("wl", "-i", var, "down");
 				eval("wl", "-i", var, "apsta", "0");
 				eval("wl", "-i", var, "up");
-				eval("wl", "-i", var, "radioname", getRouter());
+				eval("wl", "-i", var, "radioname", nvram_safe_get("router_name"));
 			}
 			eval("wl", "-i", name, "down");
 			eval("wl", "-i", name, "apsta", "1");
@@ -4519,7 +4519,7 @@ int wlconf_up(char *name)
 		}
 	}
 	eval("ifconfig", name, "up");
-	eval("wl", "-i", name, "radioname", getRouter());
+	eval("wl", "-i", name, "radioname", nvram_safe_get("router_name"));
 	//      eval("startservice", "emf", "-f");
 	return ret;
 }
