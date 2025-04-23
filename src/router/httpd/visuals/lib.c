@@ -57,7 +57,7 @@ int getTrialCount(void);
 
 EJ_VISIBLE void ej_get_backup_name(webs_t wp, int argc, char_t **argv)
 {
-	char *name = nvram_safe_get("router_name");
+	char *name = getRouter();
 	char *printname;
 	asprintf(&printname, "nvrambak_r%s%s%s_%s.bin", SVN_REVISION, *name ? "_" : "", *name ? name : "",
 		 nvram_safe_get("DD_BOARD"));
@@ -249,7 +249,7 @@ EJ_VISIBLE void ej_get_web_page_name(webs_t wp, int argc, char_t **argv)
 EJ_VISIBLE void ej_get_model_name(webs_t wp, int argc, char_t **argv)
 {
 	// return websWrite(wp,"%s",MODEL_NAME);
-	websWrite(wp, "%s", nvram_safe_get("router_name"));
+	websWrite(wp, "%s", getRouter());
 }
 
 EJ_VISIBLE void ej_show_logo(webs_t wp, int argc, char_t **argv)
