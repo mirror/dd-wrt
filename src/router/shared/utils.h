@@ -868,7 +868,7 @@ const char *getifaddr(char *buf, char *ifname, int family, int linklocal);
 const char *getifaddr_any(char *buf, char *ifname, int family);
 extern int weekday(int month, int day, int year);
 extern int getRouterBrand(void);
-extern char *getRouter(void);
+extern const char *getRouter(void);
 extern int diag_led(int type, int act);
 extern int C_led(int i);
 extern int get_single_ip(char *ipaddr, int which);
