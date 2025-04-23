@@ -3114,7 +3114,7 @@ int do_vsp_page(unsigned char method, struct mime_handler *handler, char *url, w
 
 	websWrite(stream, "DEVICE_VSP_VERSION=0.1\n");
 	websWrite(stream, "DEVICE_VENDOR=BUFFALO INC.\n");
-	websWrite(stream, "DEVICE_MODEL=%s DDWRT\n", nvram_safe_get("DD_BOARD"));
+	websWrite(stream, "DEVICE_MODEL=%s DDWRT\n", getRouter());
 	websWrite(stream, "DEVICE_FIRMWARE_VERSION=1.00\n");
 	char *reg = getUEnv("region");
 	if (!reg)

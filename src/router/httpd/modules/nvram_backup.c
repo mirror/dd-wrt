@@ -250,7 +250,7 @@ static int nv_file_out(unsigned char method, struct mime_handler *handler, char 
 	char *name = nvram_safe_get("router_name");
 	char fname[128];
 	snprintf(fname, sizeof(fname), "nvrambak_r%s%s%s_%s.bin", SVN_REVISION, *name ? "_" : "", *name ? name : "",
-		 getRouter);
+		 getRouter());
 	nvram_backup("/tmp/nvrambak.bin");
 
 #ifdef HAVE_ANTAIRA

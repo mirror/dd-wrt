@@ -150,7 +150,7 @@ static void do_pagehead(webs_t wp, int argc, char_t **argv, int pwc) // Eko
 #elif HAVE_SANSFIL
 	websWrite(wp, "<title>SANSFIL (build %s)", SVN_REVISION);
 #else
-	websWrite(wp, "<title>%s (build %s)", getRouter(), SVN_REVISION);
+	websWrite(wp, "<title>%s (build %s)", nvram_safe_get("router_name"), SVN_REVISION);
 #endif
 	if (*(argv[0])) {
 		websWrite(wp, " - %s", live_translate(wp, argv[0]));
@@ -160,10 +160,10 @@ static void do_pagehead(webs_t wp, int argc, char_t **argv, int pwc) // Eko
 		websWrite(wp, "<script type=\"text/javascript\">");
 		if (!*(argv[0])) {
 			websWrite(wp, "history.pushState({urlPath:'%s'}, \"%s (build %s)\", '%s')\n", wp->path,
-				  getRouter(), SVN_REVISION, wp->path);
+				  nvram_safe_get("router_name"), SVN_REVISION, wp->path);
 		} else {
 			websWrite(wp, "history.pushState({urlPath:'%s'}, \"%s (build %s) - %s\", '%s')\n", wp->path,
-				  getRouter(), SVN_REVISION, live_translate(wp, argv[0]), wp->path);
+				  nvram_safe_get("router_name"), SVN_REVISION, live_translate(wp, argv[0]), wp->path);
 		}
 		websWrite(wp, "</script>");
 	}
