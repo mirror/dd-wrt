@@ -104,7 +104,7 @@ static void getBoardMAC(char *mac)
 }
 #endif
 
-void setRouter(char *name)
+static void setRouter(const char *name)
 {
 	if (name)
 		nvram_set(NVROUTER, name);
@@ -194,11 +194,14 @@ void setRouter(char *name)
 #endif
 }
 
-char *getRouter()
+const char *getRouter(void)
 {
 	char *n = nvram_safe_get(NVROUTER);
+	char *r = nvram_safe_get("router_rev");
+	static char routername[64];
+	snprintf(routername, sizeof(routername) - 1, "%s%s%s", *n ? n : "Unknown Model", *r ? "-" : "", *r ? r : "");
 
-	return *n ? n : "Unknown Model";
+	return routername;
 }
 
 int internal_getRouterBrand()
@@ -1426,17 +1429,14 @@ generic:;
 				fread(ver, 8, 1, fp);
 				fclose(fp);
 				char rname[32];
-				if (rev[0]=='C')
-					sprintf(rname, "Asus RT-AX89X-B2\n");
+				if (rev[0] == 'C')
+					nvram_set("router_rev", "B2");
 				else
-					sprintf(rname, "Asus RT-AX89X-B1\n");
+					nvram_set("router_rev", "B1");
 				setRouter(rname);
-			} else {
-				setRouter("Asus RT-AX89X");
 			}
-		} else {
-			setRouter("Asus RT-AX89X");
 		}
+		setRouter("Asus RT-AX89X");
 		return ROUTER_ASUS_AX89X;
 	}
 	if (!strcmp(modelstr, "MX4200v1")) {
