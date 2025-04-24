@@ -1061,7 +1061,7 @@ static char **_getIfListB(const char *ifprefix, int bridgesonly, int noports, in
 	char *ignorelist_default[] = { "wifi", "ifb", "imq", "etherip", "lo",	  "teql",   "gre",   "ppp",
 				       "aux",  "ctf", "tap", "sit",	"ip6tnl", "miireg", "nssifb" };
 
-	char *ignorelist = nvram_match("dsa", "1") ? ignorelist_dsa : ignorlist_default;
+	char **ignorelist = nvram_match("dsa", "1") ? ignorelist_dsa : ignorelist_default;
 	int len = nvram_match("dsa", "1") ? sizeof(ignorelist_dsa) / sizeof(ignorelist_dsa[0]) :
 					    sizeof(ignorelist_default) / sizeof(ignorelist_default[0]);
 
