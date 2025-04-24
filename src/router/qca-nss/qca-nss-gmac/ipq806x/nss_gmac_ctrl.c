@@ -1024,6 +1024,12 @@ static int32_t nss_gmac_of_get_pdata(struct device_node *np,
 	if (of_property_read_u32(np, "qcom,mmds-mask", &gmaccfg->mmds_mask))
 		gmaccfg->mmds_mask = 0;
 
+	gmaccfg->phy_node = of_parse_phandle(np, "phy-handle", 0);
+	if (!gmaccfg->phy_node) {
+		pr_err("%s: error parsing phy-handle\n", np->name);
+		return -EFAULT;
+	}
+
 	of_property_read_u32(np, "qcom,aux-clk-freq", &gmacdev->aux_clk_freq);
 
 	of_get_phy_mode(np, &gmaccfg->phy_mii_type);
@@ -1397,7 +1403,17 @@ static int32_t nss_gmac_probe(struct platform_device *pdev)
 	/*
 	 * Connect PHY
 	 */
-	if (test_bit(__NSS_GMAC_LINKPOLL, &gmacdev->flags)) {
+	if (dp_priv->phy_node) {
+		gmacdev->phydev = of_phy_connect(netdev, gmacdev->phy_node,
+		        &nss_gmac_adjust_link, 0,
+		        gmacdev->phy_mii_type);
+		if (!(gmacdev->phydev)) {
+			netdev_err(netdev, "failed to connect to phy device\n");
+ 			goto phy_setup_fail;
+ 		}
+ 		phy_attached_info(gmacdev->phydev);
+
+	} else if (test_bit(__NSS_GMAC_LINKPOLL, &gmacdev->flags)) {
 #if (LINUX_VERSION_CODE <= KERNEL_VERSION(3, 8, 0))
 		gmacdev->phydev = phy_connect(netdev, (const char *)phy_id,
 					      &nss_gmac_adjust_link, 0, phyif);

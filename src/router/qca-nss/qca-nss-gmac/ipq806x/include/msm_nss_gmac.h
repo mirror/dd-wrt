@@ -314,6 +314,7 @@ extern int32_t nss_gmac_get_phy_profile(void);
 extern int32_t nss_gmac_fixup_platform_data(void);
 #endif
 struct msm_nss_gmac_platform_data {
+	struct device_node *phy_node;	/* Phy device OF node */
 	uint32_t phy_mdio_addr;		/* MDIO address of the connected PHY */
 	uint32_t poll_required;		/* [0/1] Link status poll? */
 	uint32_t rgmii_delay;
