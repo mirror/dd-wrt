@@ -1150,11 +1150,11 @@ void start_restore_defaults(void)
 					 { 0, 0 } };
 #elif HAVE_IPQ806X
 	struct nvram_param ipq806x[] = { { "lan_ifname", "br0" },
-					 { "lan_ifnames", "eth0 eth1 wlan0 wlan1" },
-					 { "wan_ifname", "eth0" },
-					 { "wan_ifname2", "eth0" },
-					 { "wan_ifnames", "eth0" },
-					 { "wan_default", "eth0" },
+					 { "lan_ifnames", "wan lan1 lan2 lan3 lan4 wlan0 wlan1" },
+					 { "wan_ifname", "wan" },
+					 { "wan_ifname2", "wan" },
+					 { "wan_ifnames", "wan" },
+					 { "wan_default", "wan" },
 					 { 0, 0 } };
 	struct nvram_param habanero[] = { { "lan_ifname", "br0" },
 					  { "lan_ifnames", "eth0 eth1 wlan0 wlan1" },
