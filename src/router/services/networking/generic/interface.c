@@ -745,7 +745,7 @@ int flush_interfaces(void)
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0 vlan1 vlan2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_IPQ806X
 	int brand = getRouterBrand();
-	if (brand == ROUTER_HABANERO || wrt_brand == ROUTER_ASUS_AC58U || wrt_brand == ROUTER_LINKSYS_EA8300)
+	if (brand == ROUTER_HABANERO || brand == ROUTER_ASUS_AC58U || brand == ROUTER_LINKSYS_EA8300)
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 	else
 	snprintf(all_ifnames, 255, "%s %s %s", "wan lan1 lan2 lan3 lan4", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
