@@ -843,7 +843,6 @@ void start_sysinit(void)
 
 		break;
 	}
-
 	switch (board) {
 	case ROUTER_ASUS_AC58U:
 		nvram_seti("sw_cpuport", 0);
@@ -883,14 +882,14 @@ void start_sysinit(void)
 	case ROUTER_NETGEAR_R7800:
 	case ROUTER_NETGEAR_R7500V2:
 	case ROUTER_NETGEAR_R7500:
-		nvram_seti("sw_wancpuport", 0);
-		nvram_seti("sw_lancpuport", 6);
 		nvram_unset("sw_cpuport");
-		nvram_seti("sw_wan", 5);
-		nvram_seti("sw_lan1", 4);
-		nvram_seti("sw_lan2", 3);
-		nvram_seti("sw_lan3", 2);
-		nvram_seti("sw_lan4", 1);
+		nvram_unset("sw_wancpuport");
+		nvram_unset("sw_lancpuport");
+		nvram_unset("sw_wan");
+		nvram_unset("sw_lan1");
+		nvram_unset("sw_lan2");
+		nvram_unset("sw_lan3");
+		nvram_unset("sw_lan4");
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "600000");
 		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_governor", "performance");
@@ -901,14 +900,14 @@ void start_sysinit(void)
 		set_named_smp_affinity("eth1", 1, 1);
 		break;
 	case ROUTER_ASROCK_G10:
-		nvram_seti("sw_wancpuport", 0);
-		nvram_seti("sw_lancpuport", 6);
 		nvram_unset("sw_cpuport");
-		nvram_seti("sw_wan", 1);
-		nvram_seti("sw_lan1", 2);
-		nvram_seti("sw_lan2", 3);
-		nvram_seti("sw_lan3", 4);
-		nvram_seti("sw_lan4", 5);
+		nvram_unset("sw_wancpuport");
+		nvram_unset("sw_lancpuport");
+		nvram_unset("sw_wan");
+		nvram_unset("sw_lan1");
+		nvram_unset("sw_lan2");
+		nvram_unset("sw_lan3");
+		nvram_unset("sw_lan4");
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "600000");
 		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_governor", "performance");
@@ -921,13 +920,14 @@ void start_sysinit(void)
 	case ROUTER_LINKSYS_EA8500:
 	default:
 		nvram_unset("sw_cpuport");
-		nvram_seti("sw_wancpuport", 0);
-		nvram_seti("sw_lancpuport", 6);
-		nvram_seti("sw_wan", 5);
-		nvram_seti("sw_lan1", 1);
-		nvram_seti("sw_lan2", 2);
-		nvram_seti("sw_lan3", 3);
-		nvram_seti("sw_lan4", 4);
+		nvram_unset("sw_wancpuport");
+		nvram_unset("sw_lancpuport");
+		nvram_unset("sw_wan");
+		nvram_unset("sw_lan1");
+		nvram_unset("sw_lan2");
+		nvram_unset("sw_lan3");
+		nvram_unset("sw_lan4");
+		nvram_unset("sw_cpuport");
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "600000");
 		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_governor", "performance");

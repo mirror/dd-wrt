@@ -680,13 +680,13 @@ void start_setup_vlans(void)
 			char strvid[32];
 			sprintf(strvid, "%d*", vlan_number);
 			if (vlan_number < 5 && vlan_number >= 0) {
-				strspcattach(portsettings[i],32, vlan);
+				strspcattach(portsettings[i], 32, vlan);
 			} else if ((vlan_number == 5 || vlan_number == 8 || vlan_number == 7) && !ast) {
-				strspcattach(portsettings[i],32, vlan);
+				strspcattach(portsettings[i], 32, vlan);
 			} else if ((vlan_number == 5 || vlan_number == 8 || vlan_number == 7) && ast) {
-				strspcattach(portsettings[i],32, strvid);
+				strspcattach(portsettings[i], 32, strvid);
 			} else {
-				strspcattach(portsettings[i],32, vlan);
+				strspcattach(portsettings[i], 32, vlan);
 			}
 		}
 	}
@@ -721,7 +721,8 @@ int flush_interfaces(void)
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_IPQ6018
 	int brand = getRouterBrand();
-	snprintf(all_ifnames, 255, "%s %s %s", "wan lan1 lan2 lan3 lan4", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "wan lan1 lan2 lan3 lan4", nvram_safe_get("lan_ifnames"),
+		 nvram_safe_get("wan_ifnames"));
 #elif HAVE_VENTANA
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_NEWPORT
@@ -746,9 +747,10 @@ int flush_interfaces(void)
 #elif HAVE_IPQ806X
 	int brand = getRouterBrand();
 	if (brand == ROUTER_HABANERO || brand == ROUTER_ASUS_AC58U || brand == ROUTER_LINKSYS_EA8300)
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+		snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 	else
-	snprintf(all_ifnames, 255, "%s %s %s", "wan lan1 lan2 lan3 lan4", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+		snprintf(all_ifnames, 255, "%s %s %s", "wan lan1 lan2 lan3 lan4", nvram_safe_get("lan_ifnames"),
+			 nvram_safe_get("wan_ifnames"));
 #elif HAVE_WDR4900
 	snprintf(all_ifnames, 255, "%s %s %s", "vlan1 vlan2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_RB600
