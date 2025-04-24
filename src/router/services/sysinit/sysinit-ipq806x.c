@@ -706,6 +706,7 @@ void start_sysinit(void)
 			set_hwaddr("eth1", maddr);
 			set_hwaddr("eth0", maddr);
 		}
+		insmod("qca8k");
 		start_finishupgrade();
 		if (getbootdevice())
 			nvram_seti("bootpartition", 1);
@@ -723,14 +724,17 @@ void start_sysinit(void)
 			nvram_set("lan_hwaddr", maddr);
 			nvram_commit();
 		}
+		insmod("qca8k");
 		set_envtools(10, "0x0", "0x20000", "0x20000");
 		break;
 	case ROUTER_NETGEAR_R7500V2:
 	case ROUTER_NETGEAR_R7800:
+		insmod("qca8k");
 		set_envtools(2, "0x0", "0x40000", "0x20000");
 		break;
 
 	case ROUTER_NETGEAR_R7500:
+		insmod("qca8k");
 		set_envtools(10, "0x0", "0x20000", "0x20000");
 	default:
 		break;
