@@ -252,11 +252,22 @@
 	pinctrl-0 = <&mdio0_pins>;
 	pinctrl-names = "default";
 
+	phy0: ethernet-phy@0 {
+		device_type = "ethernet-phy";
+		reg = <0>;
+	};
+
+	phy4: ethernet-phy@4 {
+		device_type = "ethernet-phy";
+		reg = <4>;
+	};
+
 	switch@10 {
 		compatible = "qca,qca8337";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <0x10>;
+
 
 		ports {
 			#address-cells = <1>;
@@ -358,8 +369,6 @@
 
 	phy-mode = "rgmii";
 	qcom,id = <1>;
-	qcom,phy_mdio_addr = <4>;
-	qcom,poll_required = <0>;
 	qcom,rgmii_delay = <1>;
 	qcom,phy-mdio-addr = <4>;
 	qcom,poll-required = <0>;
@@ -373,6 +382,7 @@
 	pinctrl-names = "default";
 
 	mtd-mac-address = <&art 6>;
+	phy-handle = <&phy4>;
 
 	fixed-link {
 		speed = <1000>;
@@ -385,8 +395,6 @@
 
 	phy-mode = "sgmii";
 	qcom,id = <2>;
-	qcom,phy_mdio_addr = <0>;	/* none */
-	qcom,poll_required = <0>;	/* no polling */
 	qcom,rgmii_delay = <0>;
 	qcom,phy-mdio-addr = <0>;
 	qcom,poll-required = <0>;	
@@ -397,6 +405,7 @@
 	mdiobus = <&mdio0>;
 
 	mtd-mac-address = <&art 0>;
+	phy-handle = <&phy0>;
 
 	fixed-link {
 		speed = <1000>;
