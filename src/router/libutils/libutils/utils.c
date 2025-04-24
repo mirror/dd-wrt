@@ -1053,9 +1053,18 @@ static char **_getIfListB(const char *ifprefix, int bridgesonly, int noports, in
 #if defined(HAVE_MVEBU) || defined(HAVE_IPQ6018)
 	char *ignorelist[] = { "wifi", "ifb", "imq", "etherip", "lo",	  "teql",   "gre",    "ppp",
 			       "aux",  "ctf", "tap", "sit",	"ip6tnl", "miireg", "nssifb", "eth" };
+	int len = sizeof(ignorelist) / sizeof(ignorelist[0]);
 #else
-	char *ignorelist[] = { "wifi", "ifb", "imq", "etherip", "lo",	  "teql",   "gre",   "ppp",
-			       "aux",  "ctf", "tap", "sit",	"ip6tnl", "miireg", "nssifb" };
+	char *ignorelist_dsa[] = { "wifi", "ifb", "imq", "etherip", "lo",     "teql",	"gre",	  "ppp",
+				   "aux",  "ctf", "tap", "sit",	    "ip6tnl", "miireg", "nssifb", "eth" };
+
+	char *ignorelist_default[] = { "wifi", "ifb", "imq", "etherip", "lo",	  "teql",   "gre",   "ppp",
+				       "aux",  "ctf", "tap", "sit",	"ip6tnl", "miireg", "nssifb" };
+
+	char *ignorelist = nvram_match("dsa", "1") ? ignorelist_dsa : ignorlist_default;
+	int len = nvram_match("dsa", "1") ? sizeof(ignorelist_dsa) / sizeof(ignorelist_dsa[0]) :
+					    sizeof(ignorelist_default) / sizeof(ignorelist_default[0]);
+
 #endif
 	char ifname[32];
 
@@ -1085,7 +1094,7 @@ static char **_getIfListB(const char *ifprefix, int bridgesonly, int noports, in
 				}
 			} else {
 				int i;
-				for (i = 0; i < sizeof(ignorelist) / sizeof(ignorelist[0]); i++) {
+				for (i = 0; i < len; i++) {
 					if (!strncmp(ifname, ignorelist[i], strlen(ignorelist[i]))) {
 						skip = 1;
 						break;
