@@ -184,6 +184,14 @@
 	reset-gpios = <&qcom_pinmux 63 GPIO_ACTIVE_HIGH>;
 	reset-post-delay-us = <12000>;
 
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+	};
+
+	phy4: ethernet-phy@4 {
+		reg = <4>;
+	};
+
 	switch@10 {
 		compatible = "qca,qca8337";
 		#address-cells = <1>;
@@ -296,6 +304,8 @@
 	pinctrl-0 = <&rgmii2_pins>;
 	pinctrl-names = "default";
 
+	phy-handle = <&phy0>;
+
 	fixed-link {
 		speed = <1000>;
 		full-duplex;
@@ -310,6 +320,7 @@
 
 	phy-mode = "sgmii";
 	qcom,id = <2>;
+	phy-handle = <&phy4>;
 
 	fixed-link {
 		speed = <1000>;

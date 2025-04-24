@@ -262,6 +262,16 @@
 	pinctrl-0 = <&mdio0_pins>;
 	pinctrl-names = "default";
 
+	phy0: ethernet-phy@0 {
+		device_type = "ethernet-phy";
+		reg = <0>;
+	};
+
+	phy4: ethernet-phy@4 {
+		device_type = "ethernet-phy";
+		reg = <4>;
+	};
+
 	switch@10 {
 		compatible = "qca,qca8337";
 		#address-cells = <1>;
@@ -375,7 +385,8 @@
 	pinctrl-names = "default";
 
 
-			mtd-mac-address = <&art 6>;
+	mtd-mac-address = <&art 6>;
+	phy-handle = <&phy4>;
 
 	fixed-link {
 		speed = <1000>;
@@ -392,7 +403,8 @@
 	qcom,id = <2>;
 
 
-			mtd-mac-address = <&art 0>;
+	mtd-mac-address = <&art 0>;
+	phy-handle = <&phy0>;
 
 	fixed-link {
 		speed = <1000>;
