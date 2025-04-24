@@ -266,6 +266,7 @@ struct nss_gmac_dev {
 #ifdef CONFIG_MDIO
 	struct mdio_if_info mdio_ctl;   /* Generic support for MDIO */
 #endif
+	struct msm_nss_gmac_platform_data *gmaccfg;
 };
 
 /**

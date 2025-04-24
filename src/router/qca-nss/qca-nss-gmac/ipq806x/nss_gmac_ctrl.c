@@ -1181,6 +1181,8 @@ nss_gmac_cmn_init_ok:
 	return ret;
 }
 
+extern struct nss_gmac_data_plane_ops nss_gmac_slowpath_ops;
+
 /**
  * @brief Function to initialize the Linux network interface.
  * Linux dependent Network interface is setup here. This provides
@@ -1224,6 +1226,10 @@ static int32_t nss_gmac_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	}
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0))
+	/* max_mtu is set to 1500 in ether_setup() */
+	netdev->max_mtu = ETH_MAX_MTU;
+#endif
 	gmacdev = netdev_priv(netdev);
 	memset((void *)gmacdev, 0, sizeof(struct nss_gmac_dev));
 
@@ -1255,6 +1261,7 @@ static int32_t nss_gmac_probe(struct platform_device *pdev)
 	gmacdev->phy_mii_type = gmaccfg->phy_mii_type;
 	gmacdev->phy_base = gmaccfg->phy_mdio_addr;
 	gmacdev->rgmii_delay = gmaccfg->rgmii_delay;
+	gmacdev->gmaccfg = gmaccfg;
 
 	if (ctx.socver == 0)
 		ctx.socver = gmaccfg->socver;
@@ -1404,17 +1411,54 @@ static int32_t nss_gmac_probe(struct platform_device *pdev)
 	/*
 	 * Connect PHY
 	 */
-	if (dp_priv->phy_node) {
-		gmacdev->phydev = of_phy_connect(netdev, gmacdev->phy_node,
+
+	if (gmaccfg->phy_node) {
+		SET_NETDEV_DEV(netdev, &pdev->dev);
+		gmacdev->data_plane_ops = &nss_gmac_slowpath_ops;
+		gmacdev->data_plane_ctx = gmacdev->netdev;
+
+		gmacdev->phydev = of_phy_connect(netdev, gmaccfg->phy_node,
 		        &nss_gmac_adjust_link, 0,
 		        gmacdev->phy_mii_type);
 		if (!(gmacdev->phydev)) {
 			netdev_err(netdev, "failed to connect to phy device\n");
- 			goto phy_setup_fail;
+			ret = -EIO;
+			goto nss_gmac_phy_attach_fail;
  		}
+		nss_gmac_update_features(gmacdev->phydev->supported,
+					 gmacdev->phydev->advertising);
+		gmacdev->phydev->irq = PHY_POLL;
+		netdev_info(netdev, "PHY %s attach OK\n", phy_id);
+		/*
+		 * reset corresponding Phy
+		 */
+		nss_gmac_reset_phy(gmacdev, gmacdev->phy_base);
+
+		if (gmacdev->phy_mii_type == PHY_INTERFACE_MODE_RGMII) {
+			/*
+			 * RGMII Tx delay
+			 */
+			netdev_info(netdev, "%s: Program RGMII Tx delay..... \n", __func__);
+			mdiobus_write(gmacdev->miibus, gmacdev->phy_base, 0x1D, 0x05);
+			mdiobus_write(gmacdev->miibus, gmacdev->phy_base, 0x1E, 0x100);
+			mdiobus_write(gmacdev->miibus, gmacdev->phy_base, 0x1D, 0x0B);
+			mdiobus_write(gmacdev->miibus, gmacdev->phy_base, 0x1E,
+				(0xBC00 | AR8xxx_PHY_RGMII_TX_DELAY_VAL(gmacdev->rgmii_delay)));
+		}
+
+		/*
+		 * XXX: Test code to verify if MDIO access is OK. Remove after
+		 * bringup.
+		 */
+		netdev_info(netdev, "%s MII_PHYSID1 - 0x%04x\n", netdev->name,
+		      nss_gmac_mii_rd_reg(gmacdev, gmacdev->phy_base, MII_PHYSID1));
+		netdev_info(netdev, "%s MII_PHYSID2 - 0x%04x\n", netdev->name,
+		      nss_gmac_mii_rd_reg(gmacdev, gmacdev->phy_base, MII_PHYSID2));
+
  		phy_attached_info(gmacdev->phydev);
 
 	} else if (test_bit(__NSS_GMAC_LINKPOLL, &gmacdev->flags)) {
+		SET_NETDEV_DEV(netdev, &pdev->dev);
 #if (LINUX_VERSION_CODE <= KERNEL_VERSION(3, 8, 0))
 		gmacdev->phydev = phy_connect(netdev, (const char *)phy_id,
 					      &nss_gmac_adjust_link, 0, phyif);
