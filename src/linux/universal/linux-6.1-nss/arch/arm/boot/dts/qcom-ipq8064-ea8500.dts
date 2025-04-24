@@ -82,9 +82,3 @@
 &sata {
 	status = "okay";
 };
-
-&mdio0 {
-	phy4: ethernet-phy@4 {
-		reg = <4>;
-	};
-};
