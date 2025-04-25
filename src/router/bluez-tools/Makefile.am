@@ -8,6 +8,6 @@ dist-hook:
 
 CLEANFILES = $(top_srcdir)/.version
 
-SUBDIRS = src
+SUBDIRS = doc src
 
 EXTRA_DIST = git-version-gen

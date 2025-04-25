@@ -58,5 +58,12 @@ LIBREADLINE="-lreadline"
 
 AC_SUBST(LIBREADLINE)
 
-AC_CONFIG_FILES([Makefile src/Makefile])
+AC_ARG_WITH([manpages],
+	[AS_HELP_STRING([--without-manpages], [disable building the manual pages])],
+	[],
+	[AC_CHECK_PROG(POD2MAN, [pod2man], [pod2man])
+	AS_IF([test -z "x$POD2MAN"],
+		    [AC_MSG_WARN([Couldn't find $POD2MAN, won't build manpages])])])
+
+AC_CONFIG_FILES([Makefile src/Makefile doc/Makefile])
 AC_OUTPUT

@@ -33,6 +33,11 @@ bt-agent
  authorize a connection/service request, etc)
 
 
+bt-audio
+========
+
+- Connect to devices to play audio from them
+
 bt-device
 =========
 

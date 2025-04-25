@@ -27,3 +27,4 @@ src/bt-serial
 stamp-h1
 test_*
 tmp/
+*.1

@@ -1,6 +1,6 @@
 =head1 NAME
 
-bt-adapter - a bluetooth agent
+bt-agent - a bluetooth agent
 
 =head1 SYNOPSIS
 
