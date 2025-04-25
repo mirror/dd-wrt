@@ -150,7 +150,8 @@ void start_setup_vlans(void)
 {
 	int blen = nvram_geti("portvlan_count");
 #ifdef HAVE_SWCONFIG
-
+	if (nvram_match("dsa","1"))
+		return;
 	if (!nvram_exists("sw_cpuport") && !nvram_exists("sw_wancpuport"))
 		return;
 #ifdef HAVE_R9000
