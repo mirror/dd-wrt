@@ -956,6 +956,23 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", macaddr);
 	}
 
+	switch (board) {
+	case ROUTER_HABANERO:
+	case ROUTER_ASUS_AC58U:
+	case ROUTER_LINKSYS_EA8300:
+		break;
+	default:
+		if (nvram_geti("nvram_ver") < 12) {
+			nvram_set("nvram_ver", "12");
+			nvram_set("wan_ifname2", "wan");
+			nvram_set("wan_ifname", "wan");
+			nvram_set("wan_ifnames", "wan");
+			nvram_set("wan_default", "wan");
+			nvram_set("wan_iface", "wan");
+		}
+		break;
+	}
+
 	/*
 	 * Set a sane date 
 	 */
