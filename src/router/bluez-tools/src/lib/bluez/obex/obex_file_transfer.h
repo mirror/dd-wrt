@@ -31,7 +31,7 @@ extern "C" {
 #include <glib-object.h>
 
 #define OBEX_FILE_TRANSFER_DBUS_SERVICE "org.bluez.obex"
-#define OBEX_FILE_TRANSFER_DBUS_INTERFACE "org.bluez.obex.FileTransfer"
+#define OBEX_FILE_TRANSFER_DBUS_INTERFACE "org.bluez.obex.FileTransfer1"
 
 /*
  * Type macros

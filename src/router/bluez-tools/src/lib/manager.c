@@ -84,45 +84,6 @@ GVariant *manager_get_managed_objects(Manager *self, GError **error)
     return retVal;
 }
 
-const gchar *manager_default_adapter(Manager *self, GError **error)
-{
-    g_assert(MANAGER_IS(self));
-
-    GVariant *objects = NULL;
-    objects = manager_get_managed_objects(self, error);
-    if (objects == NULL)
-        return NULL;
-
-    const gchar *object_path;
-    GVariant *ifaces_and_properties;
-    GVariantIter i;
-
-    g_variant_iter_init(&i, objects);
-    while (g_variant_iter_next(&i, "{&o@a{sa{sv}}}", &object_path, &ifaces_and_properties))
-    {
-        const gchar *interface_name;
-        GVariant *properties;
-        GVariantIter ii;
-        g_variant_iter_init(&ii, ifaces_and_properties);
-        while (g_variant_iter_next(&ii, "{&s@a{sv}}", &interface_name, &properties))
-        {
-            if (g_strstr_len(g_ascii_strdown(interface_name, -1), -1, "adapter"))
-            {
-                const gchar *retVal = g_strdup(object_path);
-                g_variant_unref(properties);
-                g_variant_unref(ifaces_and_properties);
-                g_variant_unref(objects);
-                return retVal;
-            }
-            g_variant_unref(properties);
-        }
-        g_variant_unref(ifaces_and_properties);
-    }
-    g_variant_unref(objects);
-
-    return NULL;
-}
-
 const gchar *manager_find_adapter(Manager *self, const gchar *pattern, GError **error)
 {
     g_assert(MANAGER_IS(self));
@@ -136,43 +97,78 @@ const gchar *manager_find_adapter(Manager *self, const gchar *pattern, GError **
     GVariant *ifaces_and_properties;
     GVariantIter i;
 
+    gchar *pattern_lowercase = NULL;
+    if (pattern != NULL)
+    {
+        pattern_lowercase = g_ascii_strdown(pattern, -1);
+    }
+
     g_variant_iter_init(&i, objects);
-    while (g_variant_iter_next(&i, "{&o@a{sa{sv}}}", &object_path, &ifaces_and_properties))
+    gboolean still_looking = TRUE;
+    while (still_looking && g_variant_iter_next(&i, "{&o@a{sa{sv}}}", &object_path, &ifaces_and_properties))
     {
         const gchar *interface_name;
-        GVariant *properties;
         GVariantIter ii;
+        GVariant* properties;
         g_variant_iter_init(&ii, ifaces_and_properties);
         while (g_variant_iter_next(&ii, "{&s@a{sv}}", &interface_name, &properties))
         {
-            if (g_strstr_len(g_ascii_strdown(interface_name, -1), -1, "adapter"))
+            gchar *interface_name_lowercase = g_ascii_strdown(interface_name, -1);
+            if (strstr(interface_name_lowercase, "adapter"))
             {
-                const gchar *object_base_name = g_path_get_basename(object_path);
-                if (g_strstr_len(g_ascii_strdown(object_base_name, -1), -1, g_ascii_strdown(pattern, -1)))
+                g_free(interface_name_lowercase);
+
+                if (!pattern_lowercase)
                 {
-                    const gchar *retVal = g_strdup(object_path);
-                    g_variant_unref(properties);
-                    g_variant_unref(ifaces_and_properties);
-                    g_variant_unref(objects);
-                    return retVal;
+                    still_looking = FALSE;
+                    break;
                 }
-                const gchar *address = g_variant_get_string(g_variant_lookup_value(properties, "Address", NULL), NULL);
-                if (g_strstr_len(g_ascii_strdown(address, -1), -1, g_ascii_strdown(pattern, -1)))
+
+                gchar *object_base_name_original = g_path_get_basename(object_path);
+                gchar *object_base_name = g_ascii_strdown(interface_name, -1);
+                g_free(object_base_name_original);
+
+                if (strstr(object_base_name, pattern_lowercase))
                 {
-                    gchar *retVal = g_strdup(object_path);
-                    g_variant_unref(properties);
-                    g_variant_unref(ifaces_and_properties);
-                    g_variant_unref(objects);
-                    return retVal;
+                    still_looking = FALSE;
+                    g_free(object_base_name);
+                    break;
                 }
+
+                g_free(object_base_name);
+
+                const gchar *address_original = g_variant_get_string(g_variant_lookup_value(properties, "Address", NULL), NULL);
+                gchar *address = g_ascii_strdown(address_original, -1);
+
+                if (strstr(address, pattern_lowercase))
+                {
+                    still_looking = FALSE;
+                    g_free(address);
+                    break;
+                }
+                g_free(address);
             }
+            else
+            {
+                g_free(interface_name_lowercase);
+            }
+
             g_variant_unref(properties);
         }
+
         g_variant_unref(ifaces_and_properties);
     }
     g_variant_unref(objects);
+    g_free(pattern_lowercase);
 
-    return NULL;
+    if (still_looking)
+    {
+        return NULL;
+    }
+    else
+    {
+        return object_path;
+    }
 }
 
 GPtrArray *manager_get_adapters(Manager *self)
@@ -204,8 +200,11 @@ GPtrArray *manager_get_adapters(Manager *self)
         g_variant_iter_init(&ii, ifaces_and_properties);
         while (g_variant_iter_next(&ii, "{&s@a{sv}}", &interface_name, &properties))
         {
-            if (g_strstr_len(g_ascii_strdown(interface_name, -1), -1, "adapter"))
+            char* interface_name_lowercase = g_ascii_strdown(interface_name, -1);
+            if (strstr(interface_name_lowercase, "adapter"))
                 g_ptr_array_add(adapter_array, (gpointer) g_strdup(object_path));
+
+            g_free(interface_name_lowercase);
             g_variant_unref(properties);
         }
         g_variant_unref(ifaces_and_properties);

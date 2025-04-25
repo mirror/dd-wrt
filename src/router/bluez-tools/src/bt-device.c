@@ -331,9 +331,9 @@ static GHashTable *_bt_device_sdp_browse(const gchar *device_path, const gchar *
         }
         
         if(pattern == NULL || strlen(pattern) == 0)
-            execl("/bin/sdptool", "/bin/sdptool", "browse", "--xml", device_path, (char *) 0);
+            execlp("sdptool", "sdptool", "browse", "--xml", device_path, (char *) 0);
         else
-            execl("/bin/sdptool", "/bin/sdptool", "browse", "--xml", "--uuid", pattern, device_path, (char *) 0);
+            execlp("sdptool", "sdptool", "browse", "--xml", "--uuid", pattern, device_path, (char *) 0);
         
     }
     if(pid == -1)

@@ -194,7 +194,7 @@ GVariant *obex_file_transfer_get_file(ObexFileTransfer *self, const gchar *targe
 	g_assert(OBEX_FILE_TRANSFER_IS(self));
 	GVariant *ret = NULL;
 	GVariant *proxy_ret = g_dbus_proxy_call_sync(self->priv->proxy, "GetFile", g_variant_new ("(ss)", targetfile, sourcefile), G_DBUS_CALL_FLAGS_NONE, -1, NULL, error);
-	if (proxy_ret != NULL)
+	if (proxy_ret == NULL)
 		return NULL;
 	ret = g_variant_ref_sink(proxy_ret);
 	g_variant_unref(proxy_ret);
@@ -207,9 +207,8 @@ GVariant *obex_file_transfer_list_folder(ObexFileTransfer *self, GError **error)
 	g_assert(OBEX_FILE_TRANSFER_IS(self));
 	GVariant *ret = NULL;
 	GVariant *proxy_ret = g_dbus_proxy_call_sync(self->priv->proxy, "ListFolder", NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, error);
-	if (proxy_ret != NULL)
+	if (proxy_ret == NULL)
 		return NULL;
-	proxy_ret = g_variant_get_child_value(proxy_ret, 0);
 	ret = g_variant_ref_sink(proxy_ret);
 	g_variant_unref(proxy_ret);
 	return ret;
@@ -227,8 +226,8 @@ GVariant *obex_file_transfer_put_file(ObexFileTransfer *self, const gchar *sourc
 {
 	g_assert(OBEX_FILE_TRANSFER_IS(self));
 	GVariant *ret = NULL;
-	GVariant *proxy_ret = g_dbus_proxy_call_sync(self->priv->proxy, "PutFile", g_variant_new ("(ss)", targetfile, sourcefile), G_DBUS_CALL_FLAGS_NONE, -1, NULL, error);
-	if (proxy_ret != NULL)
+	GVariant *proxy_ret = g_dbus_proxy_call_sync(self->priv->proxy, "PutFile", g_variant_new ("(ss)", sourcefile, targetfile), G_DBUS_CALL_FLAGS_NONE, -1, NULL, error);
+	if (proxy_ret == NULL)
 		return NULL;
 	ret = g_variant_ref_sink(proxy_ret);
 	g_variant_unref(proxy_ret);

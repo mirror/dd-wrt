@@ -31,6 +31,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <unistd.h>
+#include <syslog.h>
 
 #include <glib.h>
 #include <glib/gstdio.h>
@@ -151,13 +152,23 @@ term_signal_handler(gpointer data)
 	return G_SOURCE_REMOVE;
 }
 
+static void print_handler(const gchar *msg) {
+	syslog(LOG_INFO, "%s", msg);
+}
+
+static void printerr_handler(const gchar *msg) {
+	syslog(LOG_ERR, "%s", msg);
+}
+
 static gchar *capability_arg = NULL;
 static gboolean daemon_arg = FALSE;
+static gboolean syslog_arg = FALSE;
 
 static GOptionEntry entries[] = {
 	{"capability", 'c', 0, G_OPTION_ARG_STRING, &capability_arg, "Agent capability", "<capability>"},
 	{"pin", 'p', 0, G_OPTION_ARG_STRING, &pin_arg, "Path to the PIN's file"},
 	{"daemon", 'd', 0, G_OPTION_ARG_NONE, &daemon_arg, "Run in background (as daemon)"},
+	{"syslog", 's', 0, G_OPTION_ARG_NONE, &syslog_arg, "Redirect output to syslog"},
 	{NULL}
 };
 
@@ -190,6 +201,12 @@ int main(int argc, char *argv[])
 		g_print("%s: %s\n", g_get_prgname(), error->message);
 		g_print("Try `%s --help` for more information.\n", g_get_prgname());
 		exit(EXIT_FAILURE);
+	}
+
+	if (syslog_arg) {
+		openlog("bt-agent", LOG_PID | LOG_CONS, LOG_DAEMON);
+		g_set_print_handler(print_handler);
+		g_set_printerr_handler(printerr_handler);
 	}
 
 	if (capability_arg) {
@@ -293,6 +310,10 @@ int main(int argc, char *argv[])
 	g_object_unref(manager);
 
 	dbus_disconnect();
+
+	if (syslog_arg) {
+		closelog();
+	}
 
 	exit(EXIT_SUCCESS);
 }

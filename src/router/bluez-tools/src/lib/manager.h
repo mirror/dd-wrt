@@ -54,7 +54,6 @@ extern "C" {
      * Method definitions.
      */
     GVariant *manager_get_managed_objects(Manager *self, GError **error);
-    const gchar *manager_default_adapter(Manager *self, GError **error);
     const gchar *manager_find_adapter(Manager *self, const gchar *pattern, GError **error);
     GPtrArray *manager_get_adapters(Manager *self);
     const gchar **manager_get_devices(Manager *self, const gchar *adapter_pattern);

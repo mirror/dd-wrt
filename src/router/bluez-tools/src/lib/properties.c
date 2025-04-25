@@ -205,12 +205,12 @@ static void _properties_create_gdbus_proxy(Properties *self, GError **error)
 {
     if(self->priv->dbus_type && self->priv->dbus_service_name && self->priv->dbus_object_path)
     {
-        if(g_ascii_strcasecmp(g_ascii_strdown(self->priv->dbus_type, -1), "system") == 0)
+        if(g_ascii_strcasecmp(self->priv->dbus_type, "system") == 0)
         {
             g_assert(system_conn != NULL);
             self->priv->proxy = g_dbus_proxy_new_sync(system_conn, G_DBUS_PROXY_FLAGS_NONE, NULL, self->priv->dbus_service_name, self->priv->dbus_object_path, PROPERTIES_DBUS_INTERFACE, NULL, error);
         }
-        else if(g_ascii_strcasecmp(g_ascii_strdown(self->priv->dbus_type, -1), "session") == 0)
+        else if(g_ascii_strcasecmp(self->priv->dbus_type, "session") == 0)
         {
             g_assert(session_conn != NULL);
             self->priv->proxy = g_dbus_proxy_new_sync(session_conn, G_DBUS_PROXY_FLAGS_NONE, NULL, self->priv->dbus_service_name, self->priv->dbus_object_path, PROPERTIES_DBUS_INTERFACE, NULL, error);
