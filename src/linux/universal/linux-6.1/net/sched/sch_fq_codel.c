@@ -304,10 +304,6 @@ begin:
 			    &flow->cvars, &q->cstats, qdisc_pkt_len,
 			    codel_get_enqueue_time, drop_func, dequeue_func);
 
-	/* If our qlen is 0 qdisc_tree_reduce_backlog() will deactivate
-	 * parent class, dequeue in parent qdisc will do the same if we
-	 * return skb. Temporary increment qlen if we have skb.
-	 */
 	if (q->cstats.drop_count) {
 		if (skb)
 			sch->q.qlen++;
