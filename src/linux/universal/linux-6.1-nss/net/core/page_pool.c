@@ -842,7 +842,13 @@ static void page_pool_release_retry(struct work_struct *wq)
 	int cpu, inflight;
 
 	inflight = page_pool_release(pool);
-	if (!inflight)
+	/* In rare cases, a driver bug may cause inflight to go negative.
+	 * Don't reschedule release if inflight is 0 or negative.
+	 * - If 0, the page_pool has been destroyed
+	 * - if negative, we will never recover
+	 * in both cases no reschedule is necessary.
+	 */
+	if (inflight <= 0)
 		return;
 
 	/* Run NET_RX_SOFTIRQ in order to free pending skbs in softnet_data
