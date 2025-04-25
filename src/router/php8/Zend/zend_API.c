@@ -22,6 +22,7 @@
 #include "zend.h"
 #include "zend_execute.h"
 #include "zend_API.h"
+#include "zend_hash.h"
 #include "zend_modules.h"
 #include "zend_extensions.h"
 #include "zend_constants.h"
@@ -1612,8 +1613,12 @@ ZEND_API zend_result zend_update_class_constants(zend_class_entry *class_type) /
 		/* Use the default properties table to also update initializers of private properties
 		 * that have been shadowed in a child class. */
 		for (uint32_t i = 0; i < class_type->default_properties_count; i++) {
-			val = &default_properties_table[i];
 			prop_info = class_type->properties_info_table[i];
+			if (!prop_info) {
+				continue;
+			}
+
+			val = &default_properties_table[OBJ_PROP_TO_NUM(prop_info->offset)];
 			if (Z_TYPE_P(val) == IS_CONSTANT_AST
 					&& UNEXPECTED(update_property(val, prop_info) != SUCCESS)) {
 				return FAILURE;
@@ -3263,21 +3268,17 @@ ZEND_API zend_result zend_get_module_started(const char *module_name) /* {{{ */
 }
 /* }}} */
 
-static int clean_module_class(zval *el, void *arg) /* {{{ */
-{
-	zend_class_entry *ce = (zend_class_entry *)Z_PTR_P(el);
-	int module_number = *(int *)arg;
-	if (ce->type == ZEND_INTERNAL_CLASS && ce->info.internal.module->module_number == module_number) {
-		return ZEND_HASH_APPLY_REMOVE;
-	} else {
-		return ZEND_HASH_APPLY_KEEP;
-	}
-}
-/* }}} */
-
 static void clean_module_classes(int module_number) /* {{{ */
 {
-	zend_hash_apply_with_argument(EG(class_table), clean_module_class, (void *) &module_number);
+	/* Child classes may reuse structures from parent classes, so destroy in reverse order. */
+	Bucket *bucket;
+	ZEND_HASH_REVERSE_FOREACH_BUCKET(EG(class_table), bucket) {
+		zend_class_entry *ce = Z_CE(bucket->val);
+		if (ce->type == ZEND_INTERNAL_CLASS && ce->info.internal.module->module_number == module_number) {
+			zend_hash_del_bucket(EG(class_table), bucket);
+		}
+	} ZEND_HASH_FOREACH_END();
+
 }
 /* }}} */
 
