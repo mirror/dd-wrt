@@ -47,6 +47,7 @@ bluez-install:
 	rm -rf $(INSTALLDIR)/bluez/usr/lib/pkgconfig
 	rm -rf $(INSTALLDIR)/bluez/usr/share
 	rm -rf $(INSTALLDIR)/bluez/usr/var
+	rm -rf $(INSTALLDIR)/bluez/tmp
 
 bluez-clean:
 	-$(MAKE) -C bluez clean
