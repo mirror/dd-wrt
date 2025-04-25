@@ -1016,7 +1016,17 @@ void start_overclocking(void)
 
 char *enable_dtag_vlan(int enable)
 {
-	return "eth0";
+	int board = getRouterBrand();
+	switch (board) {
+	case ROUTER_HABANERO:
+	case ROUTER_ASUS_AC58U:
+	case ROUTER_LINKSYS_EA8300:
+		return "eth0";
+		break;
+	default:
+		return "wan";
+		break;
+	}
 }
 
 char *set_wan_state(int state)
