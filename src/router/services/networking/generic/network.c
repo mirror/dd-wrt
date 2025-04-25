@@ -816,14 +816,14 @@ void start_lan(void)
 	switch (board) {
 	case ROUTER_TRENDNET_TEW827:
 		if (getSTA() || getWET() || CANBRIDGE()) {
-			nvram_setz(lan_ifnames, "eth0 eth1 wlan0");
+			nvram_setz(lan_ifnames, "wan lan1 lan2 lan3 lan4 wlan0");
 			PORTSETUPWAN("");
 		} else {
-			nvram_setz(lan_ifnames, "eth0 eth1 wlan0");
-			PORTSETUPWAN("eth0");
+			nvram_setz(lan_ifnames, "wan lan1 lan2 lan3 lan4 wlan0");
+			PORTSETUPWAN("wan");
 		}
-		nvram_set("wan_default", "eth0");
-		strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
+		nvram_set("wan_default", "wan");
+		strncpy(ifr.ifr_name, "lan1", IFNAMSIZ);
 		break;
 	case ROUTER_ASUS_AC58U:
 	case ROUTER_LINKSYS_EA8300:
