@@ -15,7 +15,7 @@
 extern "C" {
 #endif
 
-#define L_ECC_MAX_DIGITS 6
+#define L_ECC_MAX_DIGITS 9
 #define L_ECC_SCALAR_MAX_BYTES		L_ECC_MAX_DIGITS * 8
 #define L_ECC_POINT_MAX_BYTES		L_ECC_SCALAR_MAX_BYTES * 2
 

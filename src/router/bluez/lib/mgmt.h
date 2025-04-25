@@ -104,6 +104,7 @@ struct mgmt_rp_read_index_list {
 #define MGMT_SETTING_CIS_PERIPHERAL	BIT(19)
 #define MGMT_SETTING_ISO_BROADCASTER	BIT(20)
 #define MGMT_SETTING_ISO_SYNC_RECEIVER	BIT(21)
+#define MGMT_SETTING_LL_PRIVACY		BIT(22)
 
 #define MGMT_OP_READ_INFO		0x0004
 struct mgmt_rp_read_info {
@@ -678,6 +679,7 @@ struct mgmt_rp_get_device_flags {
 
 #define DEVICE_FLAG_REMOTE_WAKEUP	BIT(0)
 #define DEVICE_FLAG_DEVICE_PRIVACY	BIT(1)
+#define DEVICE_FLAG_ADDRESS_RESOLUTION	BIT(2)
 
 #define MGMT_OP_SET_DEVICE_FLAGS	0x0050
 #define MGMT_SET_DEVICE_FLAGS_SIZE	11
@@ -797,7 +799,16 @@ struct mgmt_cp_mesh_send {
 
 #define MGMT_OP_MESH_SEND_CANCEL	0x005A
 struct mgmt_cp_mesh_send_cancel {
-	uint8_t handle;
+		uint8_t handle;
+} __packed;
+
+#define MGMT_OP_HCI_CMD_SYNC		0x005B
+struct mgmt_cp_hci_cmd_sync {
+	uint16_t opcode;
+	uint8_t  event;
+	uint8_t  timeout;
+	uint16_t params_len;
+	uint8_t  params[];
 } __packed;
 
 #define MGMT_EV_CMD_COMPLETE		0x0001

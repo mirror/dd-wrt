@@ -37,13 +37,14 @@
 #include "player.h"
 #include "mgmt.h"
 #include "assistant.h"
+#include "hci.h"
 
 /* String display constants */
 #define COLORED_NEW	COLOR_GREEN "NEW" COLOR_OFF
 #define COLORED_CHG	COLOR_YELLOW "CHG" COLOR_OFF
 #define COLORED_DEL	COLOR_RED "DEL" COLOR_OFF
 
-#define PROMPT_ON	"[bluetooth]# "
+#define PROMPT_ON	"[bluetoothctl]> "
 #define PROMPT_OFF	"Waiting to connect to bluetoothd..."
 
 static DBusConnection *dbus_conn;
@@ -333,7 +334,7 @@ static void set_default_device(GDBusProxy *proxy, const char *attribute)
 	path = g_dbus_proxy_get_path(proxy);
 
 	dbus_message_iter_get_basic(&iter, &desc);
-	desc = g_strdup_printf("[%s%s%s]# ", desc,
+	desc = g_strdup_printf("[%s%s%s]> ", desc,
 				attribute ? ":" : "",
 				attribute ? attribute + strlen(path) : "");
 
@@ -1713,6 +1714,7 @@ static void cmd_info(int argc, char *argv[])
 	print_property(proxy, "AdvertisingFlags");
 	print_property(proxy, "AdvertisingData");
 	print_property(proxy, "Sets");
+	print_property(proxy, "PreferredBearer");
 
 	battery_proxy = find_proxies_by_path(battery_proxies,
 					g_dbus_proxy_get_path(proxy));
@@ -1968,12 +1970,43 @@ static void cmd_remove(int argc, char *argv[])
 	remove_device(proxy);
 }
 
+struct connection_data {
+	GDBusProxy *proxy;
+	char *uuid;
+};
+
+static void connection_setup(DBusMessageIter *iter, void *user_data)
+{
+	struct connection_data *data = user_data;
+
+	if (!data->uuid)
+		return;
+
+	dbus_message_iter_append_basic(iter, DBUS_TYPE_STRING, &data->uuid);
+}
+
+static void format_connection_profile(char *output, size_t size,
+							const char *uuid)
+{
+	const char *text;
+
+	text = bt_uuidstr_to_str(uuid);
+	if (!text)
+		text = uuid;
+
+	snprintf(output, size, " profile \"%s\"", text);
+}
+
 static void connect_reply(DBusMessage *message, void *user_data)
 {
-	GDBusProxy *proxy = user_data;
+	struct connection_data *data = user_data;
+	GDBusProxy *proxy = data->proxy;
 	DBusError error;
 
 	dbus_error_init(&error);
+
+	g_free(data->uuid);
+	g_free(data);
 
 	if (dbus_set_error_from_message(&error, message) == TRUE) {
 		bt_shell_printf("Failed to connect: %s %s\n", error.name,
@@ -1990,6 +2023,9 @@ static void connect_reply(DBusMessage *message, void *user_data)
 
 static void cmd_connect(int argc, char *argv[])
 {
+	struct connection_data *data;
+	const char *method = "Connect";
+	char profile[128] = "";
 	GDBusProxy *proxy;
 
 	if (check_default_ctrl() == FALSE)
@@ -2001,21 +2037,35 @@ static void cmd_connect(int argc, char *argv[])
 		return bt_shell_noninteractive_quit(EXIT_FAILURE);
 	}
 
-	if (g_dbus_proxy_method_call(proxy, "Connect", NULL, connect_reply,
-							proxy, NULL) == FALSE) {
+	data = new0(struct connection_data, 1);
+	data->proxy = proxy;
+
+	if (argc == 3) {
+		method = "ConnectProfile";
+		data->uuid = g_strdup(argv[2]);
+		format_connection_profile(profile, sizeof(profile), argv[2]);
+	}
+
+	if (g_dbus_proxy_method_call(proxy, method, connection_setup,
+					connect_reply, data, NULL) == FALSE) {
 		bt_shell_printf("Failed to connect\n");
 		return bt_shell_noninteractive_quit(EXIT_FAILURE);
 	}
 
-	bt_shell_printf("Attempting to connect to %s\n", argv[1]);
+	bt_shell_printf("Attempting to connect%s to %s\n", profile, argv[1]);
 }
 
 static void disconn_reply(DBusMessage *message, void *user_data)
 {
-	GDBusProxy *proxy = user_data;
+	struct connection_data *data = user_data;
+	const bool profile_disconnected = data->uuid != NULL;
+	GDBusProxy *proxy = data->proxy;
 	DBusError error;
 
 	dbus_error_init(&error);
+
+	g_free(data->uuid);
+	g_free(data);
 
 	if (dbus_set_error_from_message(&error, message) == TRUE) {
 		bt_shell_printf("Failed to disconnect: %s\n", error.name);
@@ -2023,9 +2073,13 @@ static void disconn_reply(DBusMessage *message, void *user_data)
 		return bt_shell_noninteractive_quit(EXIT_FAILURE);
 	}
 
-	bt_shell_printf("Successful disconnected\n");
+	bt_shell_printf("Disconnection successful\n");
 
-	if (proxy == default_dev)
+	/* If only a single profile was disconnected, the device itself might
+	 * still be connected. In that case, let the property change handler
+	 * take care of setting the default device to NULL.
+	 */
+	if (proxy == default_dev && !profile_disconnected)
 		set_default_device(NULL, NULL);
 
 	return bt_shell_noninteractive_quit(EXIT_SUCCESS);
@@ -2033,20 +2087,92 @@ static void disconn_reply(DBusMessage *message, void *user_data)
 
 static void cmd_disconn(int argc, char *argv[])
 {
+	struct connection_data *data;
+	const char *method = "Disconnect";
+	char profile[128] = "";
 	GDBusProxy *proxy;
 
 	proxy = find_device(argc, argv);
 	if (!proxy)
 		return bt_shell_noninteractive_quit(EXIT_FAILURE);
 
-	if (g_dbus_proxy_method_call(proxy, "Disconnect", NULL, disconn_reply,
-							proxy, NULL) == FALSE) {
+	data = new0(struct connection_data, 1);
+	data->proxy = proxy;
+
+	if (argc == 3) {
+		method = "DisconnectProfile";
+		data->uuid = g_strdup(argv[2]);
+		format_connection_profile(profile, sizeof(profile), argv[2]);
+	}
+
+	if (g_dbus_proxy_method_call(proxy, method, connection_setup,
+					disconn_reply, data, NULL) == FALSE) {
 		bt_shell_printf("Failed to disconnect\n");
 		return bt_shell_noninteractive_quit(EXIT_FAILURE);
 	}
 
-	bt_shell_printf("Attempting to disconnect from %s\n",
+	bt_shell_printf("Attempting to disconnect%s from %s\n", profile,
 						proxy_address(proxy));
+}
+
+static void cmd_wake(int argc, char *argv[])
+{
+	GDBusProxy *proxy;
+	dbus_bool_t value;
+	char *str;
+
+	proxy = find_device(argc, argv);
+	if (!proxy)
+		return bt_shell_noninteractive_quit(EXIT_FAILURE);
+
+	if (argc <= 2) {
+		print_property(proxy, "WakeAllowed");
+		return;
+	}
+
+	if (!strcasecmp(argv[2], "on")) {
+		value = TRUE;
+	} else if (!strcasecmp(argv[2], "off")) {
+		value = FALSE;
+	} else {
+		bt_shell_printf("Invalid value %s\n", argv[2]);
+		return bt_shell_noninteractive_quit(EXIT_FAILURE);
+	}
+
+	str = g_strdup_printf("wake %s", value == TRUE ? "on" : "off");
+
+	if (g_dbus_proxy_set_property_basic(proxy, "WakeAllowed",
+					DBUS_TYPE_BOOLEAN, &value,
+					generic_callback, str, g_free))
+		return;
+
+	g_free(str);
+
+	return bt_shell_noninteractive_quit(EXIT_FAILURE);
+}
+
+static void cmd_bearer(int argc, char *argv[])
+{
+	GDBusProxy *proxy;
+	char *str;
+
+	proxy = find_device(argc, argv);
+	if (!proxy)
+		return bt_shell_noninteractive_quit(EXIT_FAILURE);
+
+	if (argc <= 2) {
+		print_property(proxy, "PreferredBearer");
+		return;
+	}
+
+	str = strdup(argv[2]);
+
+	if (g_dbus_proxy_set_property_basic(proxy, "PreferredBearer",
+					DBUS_TYPE_STRING, &str,
+					generic_callback, str, free))
+		return;
+
+	return bt_shell_noninteractive_quit(EXIT_FAILURE);
 }
 
 static void cmd_list_attributes(int argc, char *argv[])
@@ -2099,7 +2225,7 @@ static void set_default_local_attribute(char *attr)
 	default_local_attr = attr;
 	default_attr = NULL;
 
-	desc = g_strdup_printf("[%s]# ", attr);
+	desc = g_strdup_printf("[%s]> ", attr);
 
 	bt_shell_set_prompt(desc, COLOR_BLUE);
 	g_free(desc);
@@ -2538,22 +2664,52 @@ static char *ad_generator(const char *text, int state)
 
 static void cmd_advertise_uuids(int argc, char *argv[])
 {
-	ad_advertise_uuids(dbus_conn, argc, argv);
+	ad_advertise_uuids(dbus_conn, AD_TYPE_AD, argc, argv);
+}
+
+static void cmd_advertise_solicit(int argc, char *argv[])
+{
+	ad_advertise_solicit(dbus_conn, AD_TYPE_AD, argc, argv);
 }
 
 static void cmd_advertise_service(int argc, char *argv[])
 {
-	ad_advertise_service(dbus_conn, argc, argv);
+	ad_advertise_service(dbus_conn, AD_TYPE_AD, argc, argv);
 }
 
 static void cmd_advertise_manufacturer(int argc, char *argv[])
 {
-	ad_advertise_manufacturer(dbus_conn, argc, argv);
+	ad_advertise_manufacturer(dbus_conn, AD_TYPE_AD, argc, argv);
 }
 
 static void cmd_advertise_data(int argc, char *argv[])
 {
-	ad_advertise_data(dbus_conn, argc, argv);
+	ad_advertise_data(dbus_conn, AD_TYPE_AD, argc, argv);
+}
+
+static void cmd_advertise_sr_uuids(int argc, char *argv[])
+{
+	ad_advertise_uuids(dbus_conn, AD_TYPE_SRD, argc, argv);
+}
+
+static void cmd_advertise_sr_solicit(int argc, char *argv[])
+{
+	ad_advertise_solicit(dbus_conn, AD_TYPE_SRD, argc, argv);
+}
+
+static void cmd_advertise_sr_service(int argc, char *argv[])
+{
+	ad_advertise_service(dbus_conn, AD_TYPE_SRD, argc, argv);
+}
+
+static void cmd_advertise_sr_manufacturer(int argc, char *argv[])
+{
+	ad_advertise_manufacturer(dbus_conn, AD_TYPE_SRD, argc, argv);
+}
+
+static void cmd_advertise_sr_data(int argc, char *argv[])
+{
+	ad_advertise_data(dbus_conn, AD_TYPE_SRD, argc, argv);
 }
 
 static void cmd_advertise_discoverable(int argc, char *argv[])
@@ -2753,22 +2909,52 @@ static void cmd_advertise_rsi(int argc, char *argv[])
 
 static void ad_clear_uuids(void)
 {
-	ad_disable_uuids(dbus_conn);
+	ad_disable_uuids(dbus_conn, AD_TYPE_AD);
+}
+
+static void ad_clear_solicit(void)
+{
+	ad_disable_solicit(dbus_conn, AD_TYPE_AD);
 }
 
 static void ad_clear_service(void)
 {
-	ad_disable_service(dbus_conn);
+	ad_disable_service(dbus_conn, AD_TYPE_AD);
 }
 
 static void ad_clear_manufacturer(void)
 {
-	ad_disable_manufacturer(dbus_conn);
+	ad_disable_manufacturer(dbus_conn, AD_TYPE_AD);
 }
 
 static void ad_clear_data(void)
 {
-	ad_disable_data(dbus_conn);
+	ad_disable_data(dbus_conn, AD_TYPE_AD);
+}
+
+static void ad_clear_sr_uuids(void)
+{
+	ad_disable_uuids(dbus_conn, AD_TYPE_SRD);
+}
+
+static void ad_clear_sr_solicit(void)
+{
+	ad_disable_solicit(dbus_conn, AD_TYPE_SRD);
+}
+
+static void ad_clear_sr_service(void)
+{
+	ad_disable_service(dbus_conn, AD_TYPE_SRD);
+}
+
+static void ad_clear_sr_manufacturer(void)
+{
+	ad_disable_manufacturer(dbus_conn, AD_TYPE_SRD);
+}
+
+static void ad_clear_sr_data(void)
+{
+	ad_disable_data(dbus_conn, AD_TYPE_SRD);
 }
 
 static void ad_clear_tx_power(void)
@@ -2819,9 +3005,15 @@ static void ad_clear_interval(void)
 
 static const struct clear_entry ad_clear[] = {
 	{ "uuids",		ad_clear_uuids },
+	{ "solicit",		ad_clear_solicit },
 	{ "service",		ad_clear_service },
 	{ "manufacturer",	ad_clear_manufacturer },
 	{ "data",		ad_clear_data },
+	{ "sr-uuids",		ad_clear_sr_uuids },
+	{ "sr-solicit",		ad_clear_sr_solicit },
+	{ "sr-service",		ad_clear_sr_service },
+	{ "sr-manufacturer",	ad_clear_sr_manufacturer },
+	{ "sr-data",		ad_clear_sr_data },
 	{ "tx-power",		ad_clear_tx_power },
 	{ "name",		ad_clear_name },
 	{ "appearance",		ad_clear_appearance },
@@ -2922,6 +3114,8 @@ static const struct bt_shell_menu advertise_menu = {
 	.entries = {
 	{ "uuids", "[uuid1 uuid2 ...]", cmd_advertise_uuids,
 			"Set/Get advertise uuids" },
+	{ "solicit", "[uuid1 uuid2 ...]", cmd_advertise_solicit,
+			"Set/Get advertise solicit uuids" },
 	{ "service", "[uuid] [data=xx xx ...]", cmd_advertise_service,
 			"Set/Get advertise service data" },
 	{ "manufacturer", "[id] [data=xx xx ...]",
@@ -2929,6 +3123,17 @@ static const struct bt_shell_menu advertise_menu = {
 			"Set/Get advertise manufacturer data" },
 	{ "data", "[type] [data=xx xx ...]", cmd_advertise_data,
 			"Set/Get advertise data" },
+	{ "sr-uuids", "[uuid1 uuid2 ...]", cmd_advertise_sr_uuids,
+			"Set/Get scan response uuids" },
+	{ "sr-solicit", "[uuid1 uuid2 ...]", cmd_advertise_sr_solicit,
+			"Set/Get scan response solicit uuids" },
+	{ "sr-service", "[uuid] [data=xx xx ...]", cmd_advertise_sr_service,
+			"Set/Get scan response service data" },
+	{ "sr-manufacturer", "[id] [data=xx xx ...]",
+			cmd_advertise_sr_manufacturer,
+			"Set/Get scan response manufacturer data" },
+	{ "sr-data", "[type] [data=xx xx ...]", cmd_advertise_sr_data,
+			"Set/Get scan response data" },
 	{ "discoverable", "[on/off]", cmd_advertise_discoverable,
 			"Set/Get advertise discoverable" },
 	{ "discoverable-timeout", "[seconds]",
@@ -3125,10 +3330,17 @@ static const struct bt_shell_menu main_menu = {
 								dev_generator },
 	{ "remove",       "<dev>",    cmd_remove, "Remove device",
 							dev_generator },
-	{ "connect",      "<dev>",    cmd_connect, "Connect device",
+	{ "connect",      "<dev> [uuid]", cmd_connect,
+				"Connect a device and all its profiles or "
+				"optionally connect a single profile only",
 							dev_generator },
-	{ "disconnect",   "[dev]",    cmd_disconn, "Disconnect device",
+	{ "disconnect",   "[dev] [uuid]", cmd_disconn,
+				"Disconnect a device or optionally disconnect "
+				"a single profile only", dev_generator },
+	{ "wake",         "[dev] [on/off]",    cmd_wake, "Get/Set wake support",
 							dev_generator },
+	{ "bearer",       "<dev> [last-seen/bredr/le]", cmd_bearer,
+				"Get/Set preferred bearer", dev_generator },
 	{ } },
 };
 
@@ -3181,6 +3393,9 @@ int main(int argc, char *argv[])
 	int timeout;
 	unsigned int timeout_id;
 
+	if (!argsisutf8(argc, argv))
+		return -EINVAL;
+
 	bt_shell_init(argc, argv, &opt);
 	bt_shell_set_menu(&main_menu);
 	bt_shell_add_submenu(&advertise_menu);
@@ -3207,6 +3422,7 @@ int main(int argc, char *argv[])
 	player_add_submenu();
 	mgmt_add_submenu();
 	assistant_add_submenu();
+	hci_add_submenu();
 
 	client = g_dbus_client_new(dbus_conn, "org.bluez", "/org/bluez");
 
@@ -3229,6 +3445,7 @@ int main(int argc, char *argv[])
 	player_remove_submenu();
 	mgmt_remove_submenu();
 	assistant_remove_submenu();
+	hci_remove_submenu();
 
 	g_dbus_client_unref(client);
 

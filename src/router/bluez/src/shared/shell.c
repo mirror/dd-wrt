@@ -362,7 +362,7 @@ static struct input *input_new(int fd)
 
 	io = io_new(fd);
 	if (!io)
-		return false;
+		return NULL;
 
 	input = new0(struct input, 1);
 	input->io = io;
@@ -678,6 +678,9 @@ static int shell_exec(int argc, char *argv[])
 	if (!data.menu || !argv[0])
 		return -EINVAL;
 
+	if (!argsisutf8(argc, argv))
+		return -EINVAL;
+
 	err  = menu_exec(default_menu, argc, argv);
 	if (err == -ENOENT) {
 		err  = menu_exec(data.menu->entries, argc, argv);
@@ -719,6 +722,7 @@ void bt_shell_printf(const char *fmt, ...)
 		saved_line = rl_copy_text(0, rl_end);
 		if (!data.saved_prompt)
 			rl_save_prompt();
+		rl_clear_visible_line();
 		rl_reset_line_state();
 	}
 
@@ -1268,7 +1272,6 @@ static void rl_init(void)
 	/* Allow conditional parsing of the ~/.inputrc file. */
 	rl_readline_name = data.name;
 
-	setlinebuf(stdout);
 	rl_attempted_completion_function = shell_completion;
 
 	rl_erase_empty_line = 1;
@@ -1405,6 +1408,8 @@ done:
 
 	mainloop_init();
 
+	/* Always set stdout as line buffered */
+	setlinebuf(stdout);
 	rl_init();
 
 	data.init = true;

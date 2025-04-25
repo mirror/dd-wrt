@@ -138,7 +138,7 @@
 
 #define AVRCP_BROWSING_TIMEOUT		1
 #define AVRCP_CT_VERSION		0x0106
-#define AVRCP_TG_VERSION		0x0105
+#define AVRCP_TG_VERSION		0x0106
 
 #define AVRCP_SCOPE_MEDIA_PLAYER_LIST			0x00
 #define AVRCP_SCOPE_MEDIA_PLAYER_VFS			0x01
@@ -414,7 +414,7 @@ static sdp_record_t *avrcp_ct_record(bool browsing)
 	sdp_record_t *record;
 	sdp_data_t *psm[2], *version, *features;
 	uint16_t lp = AVCTP_CONTROL_PSM;
-	uint16_t avctp_ver = 0x0103;
+	uint16_t avctp_ver = 0x0104;
 	uint16_t feat = ( AVRCP_FEATURE_CATEGORY_1 |
 					AVRCP_FEATURE_CATEGORY_2 |
 					AVRCP_FEATURE_CATEGORY_3 |
@@ -493,7 +493,7 @@ static sdp_record_t *avrcp_tg_record(bool browsing)
 	sdp_record_t *record;
 	sdp_data_t *psm_control, *version, *features;
 	uint16_t lp = AVCTP_CONTROL_PSM;
-	uint16_t avctp_ver = 0x0103;
+	uint16_t avctp_ver = 0x0104;
 	uint16_t feat = ( AVRCP_FEATURE_CATEGORY_1 |
 					AVRCP_FEATURE_CATEGORY_2 |
 					AVRCP_FEATURE_CATEGORY_3 |
@@ -1793,7 +1793,7 @@ static uint8_t avrcp_handle_set_absolute_volume(struct avrcp *session,
 		goto err;
 	}
 
-	volume = pdu->params[0] & 0x7F;
+	volume = pdu->params[0] = pdu->params[0] & 0x7F;
 
 	media_transport_update_device_volume(session->dev, volume);
 
@@ -1963,7 +1963,8 @@ static size_t handle_vendordep_pdu(struct avctp *conn, uint8_t transaction,
 
 	if (be16_to_cpu(pdu->params_len) != operand_count) {
 		DBG("AVRCP PDU parameters length don't match");
-		pdu->params_len = cpu_to_be16(operand_count);
+		pdu->params[0] = AVRCP_STATUS_PARAM_NOT_FOUND;
+		goto err_metadata;
 	}
 
 	for (handler = session->control_handlers; handler->pdu_id; handler++) {
@@ -2660,6 +2661,11 @@ static gboolean avrcp_list_items_rsp(struct avctp *conn, uint8_t *operands,
 	uint64_t items;
 	size_t i;
 	int err = 0;
+
+	if (player->p == NULL) {
+		media_player_list_complete(player->user_data, NULL, -EINVAL);
+		return FALSE;
+	}
 
 	if (pdu == NULL) {
 		err = -ETIMEDOUT;
@@ -4268,7 +4274,7 @@ static void target_init(struct avrcp *session)
 	if (target->version < 0x0104)
 		return;
 
-	if (!avrcp_volume_supported(target))
+	if (avrcp_volume_supported(target))
 		session->supported_events |=
 				(1 << AVRCP_EVENT_VOLUME_CHANGED);
 

@@ -336,6 +336,7 @@ Read Controller Information Command
 		19	Connected Isochronous Stream - Peripheral
 		20	Isochronous Broadcaster
 		21	Synchronized Receiver
+		22	LL Privacy
 
 	This command generates a Command Complete event on success or
 	a Command Status event on failure.
@@ -2500,6 +2501,7 @@ Read Extended Controller Index List Command
 		0x08	I2C
 		0x09	SMD
 		0x0A	VIRTIO
+		0x0B	IPC
 
 	Controllers marked as RAW only operation are currently not listed
 	by this command.
@@ -3428,6 +3430,7 @@ Get Device Flags Command
 
 		0	Remote Wakeup enabled
 		1	Device Privacy Mode enabled
+		2	Address Resolution enabled
 
 	This command generates a Command Complete event on success
 	or a Command Status event on failure.
@@ -3987,6 +3990,36 @@ Cancel Transmit Mesh Packet Command
 	For each mesh packet canceled, the Mesh Packet Transmission Complete
 	event will be generated, regardless of whether the packet was sent
 	successfully.
+
+	Possible errors:	Failed
+				Invalid Parameters
+
+Send HCI command and wait for event Command
+===========================================
+
+	Command Code:		0x005B
+	Controller Index:	<controller id>
+	Command Parameters:	Opcode (2 Octets)
+				Event (1 Octet)
+				Timeout (1 Octet)
+				Parameter Length (2 Octets)
+				Parameter (variable)
+	Return Parameters:	Response (1-variable Octets)
+
+	This command may be used to send a HCI command and wait for an
+	(optional) event.
+
+	The HCI command is specified by the Opcode, any arbitrary is supported
+	including vendor commands, but contrary to the like of
+	Raw/User channel it is run as an HCI command send by the kernel
+	since it uses its command synchronization thus it is possible to wait
+	for a specific event as a response.
+
+	Setting event to 0x00 will cause the command to wait for either
+	HCI Command Status or HCI Command Complete.
+
+	Timeout is specified in seconds, setting it to 0 will cause the
+	default timeout to be used.
 
 	Possible errors:	Failed
 				Invalid Parameters

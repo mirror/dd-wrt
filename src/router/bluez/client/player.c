@@ -4,7 +4,7 @@
  *  BlueZ - Bluetooth protocol stack for Linux
  *
  *  Copyright (C) 2020  Intel Corporation. All rights reserved.
- *  Copyright 2023-2024 NXP
+ *  Copyright 2023-2025 NXP
  *
  *
  */
@@ -147,6 +147,15 @@ struct transport {
 	struct io *timer_io;
 	int num;
 };
+
+struct transport_select_args {
+	GDBusProxy *proxy;
+	struct queue *links;
+	struct queue *selecting;
+};
+
+static void transport_set_links(struct transport_select_args *args);
+static void transport_select(struct transport_select_args *args);
 
 static void endpoint_unregister(void *data)
 {
@@ -2087,8 +2096,12 @@ static DBusMessage *endpoint_select_properties_reply(struct endpoint *ep,
 		/* Adjust the SDU size based on the number of
 		 * locations/channels that is being requested.
 		 */
-		if (channels > 1)
-			qos->sdu *= channels;
+		if (channels > 1) {
+			if (ep->broadcast)
+				cfg->qos.bcast.io_qos.sdu *= channels;
+			else
+				cfg->qos.ucast.io_qos.sdu *= channels;
+		}
 	}
 
 	dbus_message_iter_init_append(reply, &iter);
@@ -3724,7 +3737,7 @@ add_meta:
 			endpoint_set_metadata_cfg, cfg);
 }
 
-static void config_endpoint_iso_group(const char *input, void *user_data)
+static void config_endpoint_sync_factor(const char *input, void *user_data)
 {
 	struct endpoint_config *cfg = user_data;
 	char *endptr = NULL;
@@ -3733,7 +3746,7 @@ static void config_endpoint_iso_group(const char *input, void *user_data)
 	bool found = false;
 
 	if (!strcasecmp(input, "a") || !strcasecmp(input, "auto")) {
-		cfg->ep->iso_group = BT_ISO_QOS_GROUP_UNSET;
+		cfg->qos.bcast.sync_factor = BT_ISO_SYNC_FACTOR;
 	} else {
 		value = strtol(input, &endptr, 0);
 
@@ -3742,7 +3755,7 @@ static void config_endpoint_iso_group(const char *input, void *user_data)
 			return bt_shell_noninteractive_quit(EXIT_FAILURE);
 		}
 
-		cfg->ep->iso_group = value;
+		cfg->qos.bcast.sync_factor = value;
 	}
 
 	/* Check if Channel Allocation is present in caps */
@@ -3761,6 +3774,54 @@ static void config_endpoint_iso_group(const char *input, void *user_data)
 				"Enter Metadata (value/no):",
 				endpoint_set_metadata_cfg, cfg);
 	}
+}
+
+static void config_endpoint_iso_stream(const char *input, void *user_data)
+{
+	struct endpoint_config *cfg = user_data;
+	char *endptr = NULL;
+	int value;
+
+	if (!strcasecmp(input, "a") || !strcasecmp(input, "auto")) {
+		cfg->ep->iso_stream = BT_ISO_QOS_STREAM_UNSET;
+	} else {
+		value = strtol(input, &endptr, 0);
+
+		if (!endptr || *endptr != '\0' || value > UINT8_MAX) {
+			bt_shell_printf("Invalid argument: %s\n", input);
+			return bt_shell_noninteractive_quit(EXIT_FAILURE);
+		}
+
+		cfg->ep->iso_stream = value;
+	}
+
+	bt_shell_prompt_input(cfg->ep->path,
+			"Enter sync factor (value/auto):",
+			config_endpoint_sync_factor, cfg);
+}
+
+static void config_endpoint_iso_group(const char *input, void *user_data)
+{
+	struct endpoint_config *cfg = user_data;
+	char *endptr = NULL;
+	int value;
+
+	if (!strcasecmp(input, "a") || !strcasecmp(input, "auto")) {
+		cfg->ep->iso_group = BT_ISO_QOS_GROUP_UNSET;
+	} else {
+		value = strtol(input, &endptr, 0);
+
+		if (!endptr || *endptr != '\0' || value > UINT8_MAX) {
+			bt_shell_printf("Invalid argument: %s\n", input);
+			return bt_shell_noninteractive_quit(EXIT_FAILURE);
+		}
+
+		cfg->ep->iso_group = value;
+	}
+
+	bt_shell_prompt_input(cfg->ep->path,
+		"BIS (auto/value):",
+		config_endpoint_iso_stream, cfg);
 }
 
 static void endpoint_set_config_bcast(struct endpoint_config *cfg)
@@ -4860,21 +4921,39 @@ static void acquire_reply(DBusMessage *message, void *user_data)
 	return bt_shell_noninteractive_quit(EXIT_FAILURE);
 }
 
+static void free_transport_select_args(struct transport_select_args *args)
+{
+	queue_destroy(args->links, NULL);
+	queue_destroy(args->selecting, NULL);
+	g_free(args);
+}
+
 static void select_reply(DBusMessage *message, void *user_data)
 {
 	DBusError error;
+	struct transport_select_args *args = user_data;
+	GDBusProxy *link;
 
 	dbus_error_init(&error);
 
 	if (dbus_set_error_from_message(&error, message) == TRUE) {
 		bt_shell_printf("Failed to select: %s\n", error.name);
 		dbus_error_free(&error);
+		free_transport_select_args(args);
 		return bt_shell_noninteractive_quit(EXIT_FAILURE);
 	}
 
 	bt_shell_printf("Select successful\n");
 
-	return bt_shell_noninteractive_quit(EXIT_SUCCESS);
+	/* Select next link */
+	link = queue_pop_head(args->selecting);
+	if (link) {
+		args->proxy = link;
+		transport_select(args);
+	} else {
+		free_transport_select_args(args);
+		return bt_shell_noninteractive_quit(EXIT_SUCCESS);
+	}
 }
 
 static void unselect_reply(DBusMessage *message, void *user_data)
@@ -5136,24 +5215,23 @@ static void cmd_acquire_transport(int argc, char *argv[])
 
 static void set_bcode_cb(const DBusError *error, void *user_data)
 {
-	GDBusProxy *proxy = user_data;
+	struct transport_select_args *args = user_data;
 
 	if (dbus_error_is_set(error)) {
 		bt_shell_printf("Failed to set broadcast code: %s\n",
 								error->name);
+		free_transport_select_args(args);
 		return bt_shell_noninteractive_quit(EXIT_FAILURE);
 	}
 
 	bt_shell_printf("Setting broadcast code succeeded\n");
 
-	if (!g_dbus_proxy_method_call(proxy, "Select", NULL,
-				select_reply, proxy, NULL))
-		return bt_shell_noninteractive_quit(EXIT_FAILURE);
+	transport_select(args);
 }
 
 static void set_bcode(const char *input, void *user_data)
 {
-	GDBusProxy *proxy = user_data;
+	struct transport_select_args *args = user_data;
 	char *bcode;
 
 	if (!strcasecmp(input, "n") || !strcasecmp(input, "no"))
@@ -5161,27 +5239,39 @@ static void set_bcode(const char *input, void *user_data)
 	else
 		bcode = g_strdup(input);
 
-	if (g_dbus_proxy_set_property_dict(proxy, "QoS",
+	if (g_dbus_proxy_set_property_dict(args->proxy, "QoS",
 				set_bcode_cb, user_data,
 				NULL, "BCode", DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE,
 				strlen(bcode), bcode, NULL) == FALSE) {
 		bt_shell_printf("Setting broadcast code failed\n");
 		g_free(bcode);
+		free_transport_select_args(args);
 		return bt_shell_noninteractive_quit(EXIT_FAILURE);
 	}
 
 	g_free(bcode);
 }
 
-static void transport_select(void *data, void *user_data)
+static void transport_select(struct transport_select_args *args)
 {
-	GDBusProxy *proxy = data;
+	if (!g_dbus_proxy_method_call(args->proxy, "Select", NULL,
+					select_reply, args, NULL)) {
+		bt_shell_printf("Failed select transport\n");
+		free_transport_select_args(args);
+		return bt_shell_noninteractive_quit(EXIT_FAILURE);
+	}
+}
+
+static void transport_set_bcode(struct transport_select_args *args)
+{
 	DBusMessageIter iter, array, entry, value;
 	unsigned char encryption;
 	const char *key;
 
-	if (g_dbus_proxy_get_property(proxy, "QoS", &iter) == FALSE)
-		return;
+	if (g_dbus_proxy_get_property(args->proxy, "QoS", &iter) == FALSE) {
+		free_transport_select_args(args);
+		return bt_shell_noninteractive_quit(EXIT_FAILURE);
+	}
 
 	dbus_message_iter_recurse(&iter, &array);
 
@@ -5197,7 +5287,7 @@ static void transport_select(void *data, void *user_data)
 			if (encryption == 1) {
 				bt_shell_prompt_input("",
 					"Enter brocast code[value/no]:",
-					set_bcode, proxy);
+					set_bcode, args);
 				return;
 			}
 			break;
@@ -5205,11 +5295,10 @@ static void transport_select(void *data, void *user_data)
 		dbus_message_iter_next(&array);
 	}
 
-	if (!g_dbus_proxy_method_call(proxy, "Select", NULL,
-					select_reply, proxy, NULL)) {
-		bt_shell_printf("Failed select transport\n");
-		return;
-	}
+	/* Go straight to selecting transport, if Broadcast Code
+	 * is not required.
+	 */
+	transport_select(args);
 }
 
 static void transport_unselect(GDBusProxy *proxy, bool prompt)
@@ -5223,60 +5312,106 @@ static void transport_unselect(GDBusProxy *proxy, bool prompt)
 
 static void set_links_cb(const DBusError *error, void *user_data)
 {
-	GDBusProxy *link = user_data;
+	struct transport_select_args *args = user_data;
+	GDBusProxy *link;
+
+	link = queue_pop_head(args->links);
+
+	if (queue_isempty(args->links)) {
+		queue_destroy(args->links, NULL);
+		args->links = NULL;
+	}
 
 	if (dbus_error_is_set(error)) {
 		bt_shell_printf("Failed to set link %s: %s\n",
 						g_dbus_proxy_get_path(link),
 						error->name);
+		free_transport_select_args(args);
 		return bt_shell_noninteractive_quit(EXIT_FAILURE);
 	}
 
 	bt_shell_printf("Successfully linked transport %s\n",
 						g_dbus_proxy_get_path(link));
+
+	if (!args->selecting)
+		args->selecting = queue_new();
+
+	/* Enqueue link to mark that it is ready to be selected */
+	queue_push_tail(args->selecting, link);
+
+	/* Continue setting the remanining links */
+	transport_set_links(args);
+}
+
+static void transport_set_links(struct transport_select_args *args)
+{
+	GDBusProxy *link;
+	const char *path;
+
+	link = queue_peek_head(args->links);
+	if (link) {
+		path = g_dbus_proxy_get_path(link);
+
+		if (g_dbus_proxy_set_property_array(args->proxy, "Links",
+					DBUS_TYPE_OBJECT_PATH,
+					&path, 1, set_links_cb,
+					args, NULL) == FALSE) {
+			bt_shell_printf("Linking transport %s failed\n", path);
+			free_transport_select_args(args);
+			return bt_shell_noninteractive_quit(EXIT_FAILURE);
+		}
+
+		return;
+	}
+
+	/* If all links have been set, check is transport requires the
+	 * user to provide a Broadcast Code.
+	 */
+	transport_set_bcode(args);
 }
 
 static void cmd_select_transport(int argc, char *argv[])
 {
-	GDBusProxy *proxy = NULL, *link;
-	struct queue *links = queue_new();
-	const char *path;
+	GDBusProxy *link = NULL;
+	struct transport_select_args *args;
 	int i;
+
+	args = g_new0(struct transport_select_args, 1);
 
 	for (i = 1; i < argc; i++) {
 		link = g_dbus_proxy_lookup(transports, NULL, argv[i],
 					BLUEZ_MEDIA_TRANSPORT_INTERFACE);
 		if (!link) {
 			bt_shell_printf("Transport %s not found\n", argv[i]);
-			return bt_shell_noninteractive_quit(EXIT_FAILURE);
+			goto fail;
 		}
 
 		if (find_transport(link)) {
 			bt_shell_printf("Transport %s already acquired\n",
 					argv[i]);
-			return bt_shell_noninteractive_quit(EXIT_FAILURE);
+			goto fail;
 		}
 
-		queue_push_tail(links, link);
-
-		if (!proxy) {
-			proxy = link;
+		if (!args->proxy) {
+			args->proxy = link;
 			continue;
 		}
 
-		path = g_dbus_proxy_get_path(link);
+		if (!args->links)
+			args->links = queue_new();
 
-		if (g_dbus_proxy_set_property_array(proxy, "Links",
-					DBUS_TYPE_OBJECT_PATH,
-					&path, 1, set_links_cb,
-					link, NULL) == FALSE) {
-			bt_shell_printf("Linking transport %s failed\n",
-								argv[i]);
-			return bt_shell_noninteractive_quit(EXIT_FAILURE);
-		}
+		/* Enqueue all links */
+		queue_push_tail(args->links, link);
 	}
 
-	queue_foreach(links, transport_select, NULL);
+	/* Link streams before selecting one by one */
+	transport_set_links(args);
+
+	return;
+
+fail:
+	free_transport_select_args(args);
+	return bt_shell_noninteractive_quit(EXIT_FAILURE);
 }
 
 static void cmd_unselect_transport(int argc, char *argv[])
@@ -5440,10 +5575,11 @@ static int transport_send_seq(struct transport *transport, int fd, uint32_t num)
 
 		offset = lseek(fd, 0, SEEK_CUR);
 
-		bt_shell_echo("[seq %d %d.%03ds] send: %zd/%zd bytes",
+		bt_shell_echo("[seq %d %d.%03ds] send: %lld/%lld bytes",
 				transport->seq, secs,
 				(nsecs + 500000) / 1000000,
-				offset, transport->stat.st_size);
+				(long long)offset,
+				(long long)transport->stat.st_size);
 	}
 
 	free(buf);

@@ -101,29 +101,31 @@ static struct {
 	const char	*name;
 	uint16_t	class;
 } bt_services[] = {
-	{ "pbap",	PBAP_SVCLASS_ID			},
-	{ "sap",	SAP_SVCLASS_ID			},
-	{ "ftp",	OBEX_FILETRANS_SVCLASS_ID	},
-	{ "bpp",	BASIC_PRINTING_SVCLASS_ID	},
+	{ "a2dp-sink",	AUDIO_SINK_SVCLASS_ID		},
+	{ "a2dp-source",AUDIO_SOURCE_SVCLASS_ID		},
 	{ "bip",	IMAGING_SVCLASS_ID		},
-	{ "synch",	IRMC_SYNC_SVCLASS_ID		},
+	{ "bpp",	BASIC_PRINTING_SVCLASS_ID	},
 	{ "dun",	DIALUP_NET_SVCLASS_ID		},
-	{ "opp",	OBEX_OBJPUSH_SVCLASS_ID		},
 	{ "fax",	FAX_SVCLASS_ID			},
-	{ "spp",	SERIAL_PORT_SVCLASS_ID		},
-	{ "hsp",	HEADSET_SVCLASS_ID		},
-	{ "hsp-hs",	HEADSET_SVCLASS_ID		},
-	{ "hsp-ag",	HEADSET_AGW_SVCLASS_ID		},
+	{ "ftp",	OBEX_FILETRANS_SVCLASS_ID	},
+	{ "gnss",	GNSS_SERVER_SVCLASS_ID		},
 	{ "hfp",	HANDSFREE_SVCLASS_ID		},
-	{ "hfp-hf",	HANDSFREE_SVCLASS_ID		},
 	{ "hfp-ag",	HANDSFREE_AGW_SVCLASS_ID	},
-	{ "pbap-pce",	PBAP_PCE_SVCLASS_ID		},
-	{ "pbap-pse",	PBAP_PSE_SVCLASS_ID		},
-	{ "map-mse",	MAP_MSE_SVCLASS_ID		},
+	{ "hfp-hf",	HANDSFREE_SVCLASS_ID		},
+	{ "hsp",	HEADSET_SVCLASS_ID		},
+	{ "hsp-ag",	HEADSET_AGW_SVCLASS_ID		},
+	{ "hsp-hs",	HEADSET_SVCLASS_ID		},
 	{ "map-mas",	MAP_MSE_SVCLASS_ID		},
 	{ "map-mce",	MAP_MCE_SVCLASS_ID		},
 	{ "map-mns",	MAP_MCE_SVCLASS_ID		},
-	{ "gnss",	GNSS_SERVER_SVCLASS_ID		},
+	{ "map-mse",	MAP_MSE_SVCLASS_ID		},
+	{ "opp",	OBEX_OBJPUSH_SVCLASS_ID		},
+	{ "pbap",	PBAP_SVCLASS_ID			},
+	{ "pbap-pce",	PBAP_PCE_SVCLASS_ID		},
+	{ "pbap-pse",	PBAP_PSE_SVCLASS_ID		},
+	{ "sap",	SAP_SVCLASS_ID			},
+	{ "spp",	SERIAL_PORT_SVCLASS_ID		},
+	{ "synch",	IRMC_SYNC_SVCLASS_ID		},
 	{ }
 };
 
@@ -169,8 +171,8 @@ static int string2uuid16(uuid_t *uuid, const char *string)
 char *bt_name2string(const char *pattern)
 {
 	uuid_t uuid;
-	uint16_t uuid16;
-	int i;
+	unsigned int uuid16;
+	char *endptr = NULL;
 
 	/* UUID 128 string format */
 	if (is_uuid128(pattern))
@@ -182,11 +184,9 @@ char *bt_name2string(const char *pattern)
 		goto proceed;
 
 	/* HEX format */
-	uuid16 = strtol(pattern, NULL, 16);
-	for (i = 0; bt_services[i].class; i++) {
-		if (bt_services[i].class == uuid16)
-			goto proceed;
-	}
+	uuid16 = strtoul(pattern, &endptr, 16);
+	if (uuid16 <= 0xffff && *endptr == '\0')
+		goto proceed;
 
 	return NULL;
 

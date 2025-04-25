@@ -61,6 +61,7 @@ AC_DEFUN([COMPILER_FLAGS], [
 		with_cflags="$with_cflags -Wcast-align"
 		with_cflags="$with_cflags -Wswitch-enum"
 		with_cflags="$with_cflags -Wformat -Wformat-security"
+		with_cflags="$with_cflags -Wstringop-overflow"
 		with_cflags="$with_cflags -DG_DISABLE_DEPRECATED"
 		with_cflags="$with_cflags -DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_28"
 		with_cflags="$with_cflags -DGLIB_VERSION_MAX_ALLOWED=GLIB_VERSION_2_32"
@@ -133,6 +134,21 @@ AC_DEFUN([MISC_FLAGS], [
 	if (test "$enable_coverage" = "yes"); then
 		misc_cflags="$misc_cflags --coverage"
 		misc_ldflags="$misc_ldflags --coverage"
+	fi
+	if (test "$USE_MAINTAINER_MODE" = "yes"); then
+		AC_CACHE_CHECK([whether ${CC-cc} accepts -D_FORTIFY_SOURCE=3],
+						ac_cv_prog_cc_fortify_source_3, [
+			echo '#include <errno.h>' > fortify.c
+			if test -z "`${CC-cc} ${CFLAGS} ${misc_cflags} -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3 -c fortify.c  2>&1`"; then
+				ac_cv_prog_cc_fortify_source_3=yes
+			else
+				ac_cv_prog_cc_fortify_source_3=no
+			fi
+			rm -f fortify.c fortify.o
+		])
+		if test "${ac_cv_prog_cc_fortify_source_3}" = "yes"; then
+			misc_cflags="$misc_cflags -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3"
+		fi
 	fi
 	misc_cflags="$misc_cflags -ffunction-sections -fdata-sections"
 	misc_ldflags="$misc_ldflags -Wl,--gc-sections"

@@ -387,13 +387,13 @@ const uint8_t *cert_get_extension(struct l_cert *cert,
 
 		seq = asn1_der_find_elem(ext, end - ext, 0, &tag, &len);
 		if (unlikely(!seq || tag != ASN1_ID_SEQUENCE))
-			return false;
+			return NULL;
 
 		ext = seq + len;
 
 		oid = asn1_der_find_elem(seq, len, 0, &tag, &oid_len);
 		if (unlikely(!oid || tag != ASN1_ID_OID))
-			return false;
+			return NULL;
 
 		if (!asn1_oid_eq(ext_id, oid_len, oid))
 			continue;
@@ -403,7 +403,7 @@ const uint8_t *cert_get_extension(struct l_cert *cert,
 
 		if (data && tag == ASN1_ID_BOOLEAN) {
 			if (data_len != 1)
-				return false;
+				return NULL;
 
 			critical = *data != 0;	/* Tolerate BER booleans */
 
@@ -411,7 +411,7 @@ const uint8_t *cert_get_extension(struct l_cert *cert,
 		}
 
 		if (unlikely(!data || tag != ASN1_ID_OCTET_STRING))
-			return false;
+			return NULL;
 
 		if (out_critical)
 			*out_critical = critical;

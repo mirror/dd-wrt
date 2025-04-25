@@ -111,6 +111,7 @@ struct bt_voice {
 
 #define BT_VOICE_TRANSPARENT			0x0003
 #define BT_VOICE_CVSD_16BIT			0x0060
+#define BT_VOICE_TRANSPARENT_16BIT		0x0063
 
 #define BT_PHY			14
 
@@ -152,6 +153,18 @@ struct bt_voice {
 #define BT_ISO_QOS_BIS_UNSET	0xff
 
 #define BT_ISO_SYNC_TIMEOUT	0x07d0 /* 20 secs */
+
+/* For an ISO Broadcaster, this value is used to compute
+ * the desired Periodic Advertising Interval as a function
+ * of SDU interval, based on the formula:
+ *
+ * PA_Interval = SDU_Interval * sync_factor
+ *
+ * This is useful for adjusting how frequent to send PA
+ * announcements for Broadcast Sinks to discover, depending
+ * on scenario.
+ */
+#define BT_ISO_SYNC_FACTOR	0x01
 
 #define BT_ISO_QOS_GROUP_UNSET	0xff
 #define BT_ISO_QOS_STREAM_UNSET	0xff

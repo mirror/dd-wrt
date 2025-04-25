@@ -64,7 +64,8 @@ Connect the disconnected bearer if already connected.
 are skip and check latest seen bearer.
 .sp
 3. Connect last seen bearer, in case the timestamps are the same BR/EDR
-takes precedence.
+takes precedence, or in case \fBPreferredBearer\fP has been set to a
+specific bearer then that is used instead.
 .sp
 Possible errors:
 .INDENT 0.0
@@ -438,6 +439,32 @@ dictionary which can contain the following:
 .TP
 .B byte Rank
 Rank of the device in the Set.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS string PreferredBearer [readwrite, optional, experimental]
+.INDENT 0.0
+.INDENT 3.5
+Indicate the preferred bearer when initiating a connection, only
+available for dual\-mode devices.
+.sp
+When changing from \(dqbredr\(dq to \(dqle\(dq the device will be removed from the
+\(aqauto\-connect\(aq list so it won\(aqt automatically be connected when
+adverting.
+.sp
+Note: Changes only take effect when the device is disconnected.
+.sp
+Possible values:
+.INDENT 0.0
+.TP
+.B \(dqlast\-seen\(dq
+Connect to last seen bearer first. Default.
+.TP
+.B \(dqbredr\(dq
+Connect to BR/EDR first.
+.TP
+.B \(dqle\(dq
+Connect to LE first.
 .UNINDENT
 .UNINDENT
 .UNINDENT

@@ -408,6 +408,7 @@ static void get_message_cb(void *session, int err, gboolean fmore,
 	}
 
 	g_string_append(mas->buffer, chunk);
+	mas->finished = TRUE;
 
 proceed:
 	if (err != -EAGAIN)
@@ -612,10 +613,10 @@ static void *message_open(const char *name, int oflag, mode_t mode,
 		return NULL;
 	}
 
+	mas->buffer = g_string_new("");
+
 	*err = messages_get_message(mas->backend_data, name, 0,
 			get_message_cb, mas);
-
-	mas->buffer = g_string_new("");
 
 	if (*err < 0)
 		return NULL;
@@ -781,6 +782,36 @@ static void *notification_registration_open(const char *name, int oflag,
 	return mas;
 }
 
+static void *message_get_instance_open(const char *name, int oflag,
+					mode_t mode, void *driver_data,
+					size_t *size, int *err)
+{
+	struct mas_session *mas = driver_data;
+
+	DBG("");
+
+	mas->buffer = g_string_new("Mas Instance 0");
+	mas->finished = TRUE;
+	*err = 0;
+
+	return mas;
+}
+
+static void *message_notification_filter_open(const char *name, int oflag,
+					mode_t mode, void *driver_data,
+					size_t *size, int *err)
+{
+	struct mas_session *mas = driver_data;
+
+	DBG("");
+
+	/* TODO notifcation filter add */
+	mas->finished = TRUE;
+	*err = 0;
+
+	return mas;
+}
+
 static const struct obex_service_driver mas = {
 	.name = "Message Access server",
 	.service = OBEX_MAS,
@@ -865,6 +896,26 @@ static const struct obex_mime_type_driver mime_message_update = {
 	.write = any_write,
 };
 
+static struct obex_mime_type_driver mime_message_instance = {
+	.target = MAS_TARGET,
+	.target_size = TARGET_SIZE,
+	.mimetype = "x-bt/MASInstanceInformation",
+	.open = message_get_instance_open,
+	.close = any_close,
+	.read = any_read,
+	.write = any_write,
+};
+
+static struct obex_mime_type_driver mime_message_notification_filter = {
+	.target = MAS_TARGET,
+	.target_size = TARGET_SIZE,
+	.mimetype = "x-bt/MAP-notification-filter",
+	.open = message_notification_filter_open,
+	.close = any_close,
+	.read = any_read,
+	.write = any_write,
+};
+
 static const struct obex_mime_type_driver *map_drivers[] = {
 	&mime_map,
 	&mime_message,
@@ -873,6 +924,8 @@ static const struct obex_mime_type_driver *map_drivers[] = {
 	&mime_notification_registration,
 	&mime_message_status,
 	&mime_message_update,
+	&mime_message_instance,
+	&mime_message_notification_filter,
 	NULL
 };
 

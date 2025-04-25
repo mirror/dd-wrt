@@ -1,0 +1,445 @@
+'\" t
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "SCO" "7" "March 2025" "BlueZ" "Linux System Administration"
+.SH NAME
+sco \- SCO transport
+.SH SYNOPSIS
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+#include <sys/socket.h>
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/sco.h>
+
+sco_socket = socket(PF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_SCO);
+.EE
+.UNINDENT
+.UNINDENT
+.SH DESCRIPTION
+.sp
+The SCO logical transport, is a symmetric, point\-to\-point transport between the
+Central and a specific Peripheral. The SCO logical transport reserves slots and
+can therefore be considered as a circuit\-switched connection between the Central
+and the Peripheral.
+.sp
+In addition to the reserved slots, when eSCO is supported, a retransmission
+window follows immediately after. Together, the reserved slots and the
+retransmission window form the complete eSCO window.
+.SH SOCKET ADDRESS
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+struct sockaddr_sco {
+    sa_family_t     sco_family;
+    bdaddr_t        sco_bdaddr;
+};
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+struct sockaddr_sco addr;
+
+memset(&addr, 0, sizeof(addr));
+addr.sco_family = AF_BLUETOOTH;
+bacpy(&addr.sco_bdaddr, bdaddr);
+.EE
+.UNINDENT
+.UNINDENT
+.SH SOCKET OPTIONS
+.sp
+The socket options listed below can be set by using \fBsetsockopt(2)\fP and read
+with \fBgetsockopt(2)\fP with the socket level set to SOL_BLUETOOTH.
+.SS BT_SECURITY (since Linux 2.6.30)
+.sp
+Channel security level, possible values:
+.TS
+box center;
+l|l|l|l.
+T{
+Value
+T}	T{
+Security Level
+T}	T{
+Link Key Type
+T}	T{
+Encryption
+T}
+_
+T{
+\fBBT_SECURITY_SDP\fP
+T}	T{
+0 (SDP Only)
+T}	T{
+None
+T}	T{
+Not required
+T}
+_
+T{
+\fBBT_SECURITY_LOW\fP
+T}	T{
+1 (Low)
+T}	T{
+Unauthenticated
+T}	T{
+Not required
+T}
+_
+T{
+\fBBT_SECURITY_MEDIUM\fP
+T}	T{
+2 (Medium \- default)
+T}	T{
+Unauthenticated
+T}	T{
+Desired
+T}
+_
+T{
+\fBBT_SECURITY_HIGH\fP
+T}	T{
+3 (High)
+T}	T{
+Authenticated
+T}	T{
+Required
+T}
+_
+T{
+\fBBT_SECURITY_FIPS\fP (since Linux 3.15)
+T}	T{
+4 (Secure Only)
+T}	T{
+Authenticated (P\-256 based Secure Simple Pairing and Secure Authentication)
+T}	T{
+Required
+T}
+.TE
+.sp
+Example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+int level = BT_SECURITY_HIGH;
+int err = setsockopt(sco_socket, SOL_BLUETOOTH, BT_SECURITY, &level,
+                     sizeof(level));
+if (err == \-1) {
+    perror(\(dqsetsockopt\(dq);
+    return 1;
+}
+.EE
+.UNINDENT
+.UNINDENT
+.SS BT_DEFER_SETUP (since Linux 2.6.30)
+.sp
+Channel defer connection setup, this control if the connection procedure
+needs to be authorized by userspace before responding which allows
+authorization at profile level, possible values:
+.TS
+box center;
+l|l|l.
+T{
+Value
+T}	T{
+Description
+T}	T{
+Authorization
+T}
+_
+T{
+\fB0\fP
+T}	T{
+Disable (default)
+T}	T{
+Not required
+T}
+_
+T{
+\fB1\fP
+T}	T{
+Enable
+T}	T{
+Required
+T}
+.TE
+.sp
+Example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+int defer_setup = 1;
+int err = setsockopt(sco_socket, SOL_BLUETOOTH, BT_DEFER_SETUP,
+                     &defer_setup, sizeof(defer_setup));
+if (err == \-1) {
+    perror(\(dqsetsockopt\(dq);
+    return err;
+}
+
+err = listen(sco_socket, 5);
+if (err) {
+    perror(\(dqlisten\(dq);
+    return err;
+}
+
+struct sockaddr_sco remote_addr = {0};
+socklen_t addr_len = sizeof(remote_addr);
+int new_socket = accept(sco_socket, (struct sockaddr*)&remote_addr,
+                        &addr_len);
+if (new_socket < 0) {
+    perror(\(dqaccept\(dq);
+    return new_socket;
+}
+
+/* To complete the connection setup of new_socket read 1 byte */
+char c;
+struct pollfd pfd;
+
+memset(&pfd, 0, sizeof(pfd));
+pfd.fd = new_socket;
+pfd.events = POLLOUT;
+
+err = poll(&pfd, 1, 0);
+if (err) {
+    perror(\(dqpoll\(dq);
+    return err;
+}
+
+if (!(pfd.revents & POLLOUT)) {
+    err = read(sk, &c, 1);
+    if (err < 0) {
+        perror(\(dqread\(dq);
+        return err;
+    }
+}
+.EE
+.UNINDENT
+.UNINDENT
+.SS BT_VOICE (since Linux 3.11)
+.sp
+Transport voice settings, possible values:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+struct bt_voice {
+    uint16_t setting;
+};
+.EE
+.UNINDENT
+.UNINDENT
+.TS
+box center;
+l|l|l.
+T{
+Define
+T}	T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+\fBBT_VOICE_TRANSPARENT\fP
+T}	T{
+0x0003
+T}	T{
+Transparent output
+T}
+_
+T{
+\fBBT_VOICE_CVSD_16BIT\fP
+T}	T{
+0x0060
+T}	T{
+C\-VSD output PCM 16\-bit input
+T}
+_
+T{
+\fBBT_VOICE_TRANSPARENT_16BIT\fP
+T}	T{
+0x0063
+T}	T{
+Transparent output PCM 16\-bit input
+T}
+.TE
+.sp
+Example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+struct bt_voice voice;
+
+memset(&voice, 0, sizeof(voice));
+voice.setting = BT_VOICE_TRANSPARENT;
+int err = setsockopt(sco_socket, SOL_BLUETOOTH, BT_VOICE, &voice,
+                     sizeof(voice));
+if (err == \-1) {
+    perror(\(dqsetsockopt\(dq);
+    return 1;
+}
+.EE
+.UNINDENT
+.UNINDENT
+.SS BT_PHY (since Linux 5.10)
+.sp
+Transport supported PHY(s), possible values:
+.TS
+box center;
+l|l|l.
+T{
+Define
+T}	T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+\fBBT_PHY_BR_1M_1SLOT\fP
+T}	T{
+BIT 0
+T}	T{
+BR 1Mbps 1SLOT
+T}
+_
+T{
+\fBBT_PHY_BR_1M_3SLOT\fP
+T}	T{
+BIT 1
+T}	T{
+BR 1Mbps 3SLOT
+T}
+_
+T{
+\fBBT_PHY_BR_2M_1SLOT\fP
+T}	T{
+BIT 3
+T}	T{
+EDR 2Mbps 1SLOT
+T}
+_
+T{
+\fBBT_PHY_BR_2M_3SLOT\fP
+T}	T{
+BIT 4
+T}	T{
+EDR 2Mbps 3SLOT
+T}
+_
+T{
+\fBBT_PHY_BR_3M_1SLOT\fP
+T}	T{
+BIT 6
+T}	T{
+EDR 3Mbps 1SLOT
+T}
+_
+T{
+\fBBT_PHY_BR_3M_3SLOT\fP
+T}	T{
+BIT 7
+T}	T{
+EDR 3Mbps 3SLOT
+T}
+.TE
+.SS BT_CODEC (since Linux 5.14)
+.sp
+Transport codec offload, possible values:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+struct bt_codec {
+    uint8_t id;
+    uint16_t cid;
+    uint16_t vid;
+    uint8_t data_path_id;
+    uint8_t num_caps;
+    struct codec_caps {
+        uint8_t len;
+        uint8_t data[];
+    } caps[];
+} __attribute__((packed));
+
+struct bt_codecs {
+    uint8_t num_codecs;
+    struct bt_codec codecs[];
+} __attribute__((packed));
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+char buffer[sizeof(struct bt_codecs) + sizeof(struct bt_codec)];
+struct bt_codec *codecs = (void *)buffer;
+
+memset(codecs, 0, sizeof(codecs));
+codec\->num_codecs = 1;
+codecs\->codecs[0].id = 0x05;
+codecs\->codecs[0].data_path_id = 1;
+
+int err = setsockopt(sco_socket, SOL_BLUETOOTH, BT_CODEC, codecs,
+                     sizeof(buffer));
+if (err == \-1) {
+    perror(\(dqsetsockopt\(dq);
+    return 1;
+}
+.EE
+.UNINDENT
+.UNINDENT
+.SH RESOURCES
+.sp
+ <http://www.bluez.org> 
+.SH REPORTING BUGS
+.sp
+ <linux\-bluetooth@vger.kernel.org> 
+.SH SEE ALSO
+.sp
+socket(7), scotest(1)
+.SH COPYRIGHT
+Free use of this software is granted under the terms of the GNU
+Lesser General Public Licenses (LGPL).
+.\" Generated by docutils manpage writer.
+.

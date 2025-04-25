@@ -343,6 +343,76 @@ LIB_EXPORT bool l_streq0(const char *a, const char *b)
 	return a == b || (a && b && !strcmp(a, b));
 }
 
+/**
+ * l_util_oidstring:
+ * @buf: buffer pointer
+ * @len: length of buffer
+ *
+ * Returns: a newly allocated string for OID in numeric representation.
+ * In case of error, Null is returned.
+ **/
+LIB_EXPORT char *l_util_oidstring(const void *buf, size_t len)
+{
+	const unsigned char *ptr = buf;
+	char *str;
+	size_t str_len;
+	size_t str_max;
+	size_t i;
+
+	if (unlikely(!buf) || unlikely(len < 2))
+		return NULL;
+
+	/* A very simple initial estimation */
+	str_max = 4 + (len - 1) * 2;
+	str = l_malloc(str_max);
+
+	str_len = snprintf(str, str_max, "%u.%u", ptr[0] / 40, ptr[0] % 40);
+
+	/* In the unlikely case the initial buffer is too small */
+	if (unlikely(str_len >= str_max)) {
+		str_max = str_len + 1;
+		str = l_realloc(str, str_max);
+		str_len = sprintf(str, "%u.%u", ptr[0] / 40, ptr[0] % 40);
+	}
+
+	i = 1;
+
+	while (i < len) {
+		unsigned long value = 0;
+		unsigned char byte;
+		size_t have_space;
+		size_t l;
+
+		do {
+			/*
+			 * Shift the current value by 7 bits to make room
+			 * for the lower 7 bits of the byte in the stream.
+			 */
+			byte = ptr[i++];
+			value = (value << 7) | (byte & 0x7F);
+
+			/* This is a malformed OID */
+			if (i > len) {
+				l_free(str);
+				return NULL;
+			}
+		} while (byte & 0x80);
+
+		have_space = str_max - str_len;
+		l = snprintf(str + str_len, have_space, ".%lu", value);
+
+		if (l >= have_space) {
+			str_max = str_len + l + 1;
+			str = l_realloc(str, str_max);
+			l = sprintf(str + str_len, ".%lu", value);
+		}
+
+		str_len += l;
+	}
+
+	return str;
+}
+
 static char *hexstring_common(const unsigned char *buf, size_t len,
 				const char hexdigits[static 16])
 {

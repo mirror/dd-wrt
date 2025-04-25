@@ -20,6 +20,12 @@
 #include <dbus/dbus.h>
 
 #include "gdbus.h"
+
+/* define MAX_INPUT for musl */
+#ifndef MAX_INPUT
+#define MAX_INPUT _POSIX_MAX_INPUT
+#endif
+
 #include "src/shared/util.h"
 
 #ifndef MAX_INPUT
@@ -806,6 +812,9 @@ static struct generic_data *invalidate_parent_data(DBusConnection *conn,
 		goto done;
 
 	if (child == NULL || g_slist_find(data->objects, child) != NULL)
+		goto done;
+
+	if (g_slist_find(parent->objects, child))
 		goto done;
 
 	data->objects = g_slist_prepend(data->objects, child);

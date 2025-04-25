@@ -22,6 +22,7 @@
 #include "lib/sdp.h"
 #include "lib/sdp_lib.h"
 #include "lib/uuid.h"
+#include "lib/mgmt.h"
 #include "btio/btio.h"
 #include "gdbus/gdbus.h"
 #include "src/shared/util.h"
@@ -738,9 +739,18 @@ static void gap_car_read_cb(struct gatt_db_attribute *attrib,
 					uint8_t opcode, struct bt_att *att,
 					void *user_data)
 {
-	uint8_t value = 0x01;
+	uint8_t value = 0x00;
 
 	DBG("GAP Central Address Resolution read request\n");
+
+	if (btd_opts.defaults.le.addr_resolution) {
+		struct btd_device *device;
+
+		device = btd_adapter_find_device_by_fd(bt_att_get_fd(att));
+		if (device)
+			value = btd_device_flags_enabled(device,
+						DEVICE_FLAG_ADDRESS_RESOLUTION);
+	}
 
 	gatt_db_attribute_read_result(attrib, id, 0, &value, sizeof(value));
 }
@@ -863,10 +873,13 @@ static void populate_gap_service(struct btd_gatt_database *database)
 {
 	bt_uuid_t uuid;
 	struct gatt_db_attribute *service, *attrib;
+	bool ll_privacy = btd_adapter_has_settings(database->adapter,
+						MGMT_SETTING_LL_PRIVACY);
 
 	/* Add the GAP service */
 	bt_uuid16_create(&uuid, UUID_GAP);
-	service = gatt_db_add_service(database->db, &uuid, true, 7);
+	service = gatt_db_add_service(database->db, &uuid, true,
+						ll_privacy ? 7 : 5);
 
 	/*
 	 * Device Name characteristic.
@@ -888,15 +901,19 @@ static void populate_gap_service(struct btd_gatt_database *database)
 							NULL, database);
 	gatt_db_attribute_set_fixed_length(attrib, 2);
 
-	/*
-	 * Central Address Resolution characteristic.
-	 */
-	bt_uuid16_create(&uuid, GATT_CHARAC_CAR);
-	attrib = gatt_db_service_add_characteristic(service, &uuid,
+	/* Only enable Central Address Resolution if LL Privacy is supported */
+	if (ll_privacy) {
+		/*
+		 * Central Address Resolution characteristic.
+		 */
+		bt_uuid16_create(&uuid, GATT_CHARAC_CAR);
+		attrib = gatt_db_service_add_characteristic(service, &uuid,
 							BT_ATT_PERM_READ,
 							BT_GATT_CHRC_PROP_READ,
 							gap_car_read_cb,
 							NULL, database);
+	}
+
 	gatt_db_attribute_set_fixed_length(attrib, 1);
 
 	gatt_db_service_set_active(service, true);
@@ -1235,7 +1252,8 @@ static void server_feat_read_cb(struct gatt_db_attribute *attrib,
 		goto done;
 	}
 
-	value |= BT_GATT_CHRC_SERVER_FEAT_EATT;
+	if (btd_opts.gatt_channels > 1)
+		value |= BT_GATT_CHRC_SERVER_FEAT_EATT;
 
 done:
 	gatt_db_attribute_read_result(attrib, id, ecode, &value, sizeof(value));
@@ -2591,6 +2609,24 @@ static bool sock_hup(struct io *io, void *user_data)
 	return false;
 }
 
+static bool sock_io_write(struct io *io, void *user_data)
+{
+	uint8_t buf[] = { 1 };
+	struct iovec iov = { buf, sizeof(buf) };
+
+	/* Send a 1 to the server as confirmation */
+	io_send(io, &iov, 1);
+
+	return false;
+}
+
+static void sock_io_conf(void *user_data)
+{
+	struct io *io = user_data;
+
+	io_set_write_handler(io, sock_io_write, NULL, NULL);
+}
+
 static bool sock_io_read(struct io *io, void *user_data)
 {
 	struct client_io *client = user_data;
@@ -2598,6 +2634,8 @@ static bool sock_io_read(struct io *io, void *user_data)
 	uint8_t buf[512];
 	int fd = io_get_fd(io);
 	ssize_t bytes_read;
+	struct notify notify;
+	struct device_state *state;
 
 	if (fd < 0) {
 		error("io_get_fd() returned %d\n", fd);
@@ -2608,8 +2646,22 @@ static bool sock_io_read(struct io *io, void *user_data)
 	if (bytes_read <= 0)
 		return false;
 
-	gatt_notify_cb(chrc->attrib, chrc->ccc, buf, bytes_read, client->att,
-				client->chrc->service->app->database);
+	memset(&notify, 0, sizeof(notify));
+
+	notify.database = client->chrc->service->app->database;
+	notify.handle = gatt_db_attribute_get_handle(chrc->attrib);
+	notify.ccc_handle = gatt_db_attribute_get_handle(chrc->ccc);
+	notify.value = (void *) buf;
+	notify.len = bytes_read;
+	notify.conf = sock_io_conf;
+	notify.user_data = io;
+
+
+	state = find_device_state_by_att(notify.database, client->att);
+	if (!state)
+		return false;
+
+	send_notification_to_device(state, &notify);
 
 	return true;
 }

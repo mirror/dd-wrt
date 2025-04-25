@@ -52,6 +52,7 @@ static bool start_dbus_session;
 static bool start_daemon = false;
 static bool start_emulator = false;
 static bool start_monitor = false;
+static bool qemu_host_cpu = false;
 static int num_devs = 0;
 static const char *qemu_binary = NULL;
 static const char *kernel_image = NULL;
@@ -211,13 +212,10 @@ static char *const qemu_argv[] = {
 	"-monitor", "none",
 	"-display", "none",
 	"-machine", "type=q35,accel=kvm:tcg",
-	"-m", "192M",
-	"-nographic",
+	"-m", "256M",
 	"-net", "none",
-	"-no-acpi",
-	"-no-hpet",
 	"-no-reboot",
-	"-fsdev", "local,id=fsdev-root,path=/,readonly,security_model=none,"
+	"-fsdev", "local,id=fsdev-root,path=/,readonly=on,security_model=none,"
 	"multidevs=remap",
 	"-device", "virtio-9p-pci,fsdev=fsdev-root,mount_tag=/dev/root",
 	"-chardev", "stdio,id=con,mux=on",
@@ -282,7 +280,7 @@ static void start_qemu(void)
 				testargs);
 
 	argv = alloca(sizeof(qemu_argv) +
-				(sizeof(char *) * (4 + (num_devs * 4))));
+				(sizeof(char *) * (6 + (num_devs * 4))));
 	memcpy(argv, qemu_argv, sizeof(qemu_argv));
 
 	pos = (sizeof(qemu_argv) / sizeof(char *)) - 1;
@@ -293,6 +291,11 @@ static void start_qemu(void)
 		exit(1);
 	}
 	argv[0] = (char *) qemu_binary;
+
+	if (qemu_host_cpu) {
+		argv[pos++] = "-cpu";
+		argv[pos++] = "host";
+	}
 
 	argv[pos++] = "-kernel";
 	argv[pos++] = (char *) kernel_image;
@@ -1173,6 +1176,7 @@ static void usage(void)
 		"\t-A, --audio[=path]     Start audio server\n"
 		"\t-u, --unix [path]      Provide serial device\n"
 		"\t-q, --qemu <path>      QEMU binary\n"
+		"\t-H, --qemu-host-cpu    Use host CPU (requires KVM support)\n"
 		"\t-k, --kernel <image>   Kernel image (bzImage)\n"
 		"\t-h, --help             Show help options\n");
 }
@@ -1187,6 +1191,7 @@ static const struct option main_options[] = {
 	{ "emulator", no_argument,      NULL, 'l' },
 	{ "monitor", no_argument,       NULL, 'm' },
 	{ "qemu",    required_argument, NULL, 'q' },
+	{ "qemu-host-cpu", no_argument, NULL, 'H' },
 	{ "kernel",  required_argument, NULL, 'k' },
 	{ "audio",   optional_argument, NULL, 'A' },
 	{ "version", no_argument,       NULL, 'v' },
@@ -1208,7 +1213,7 @@ int main(int argc, char *argv[])
 	for (;;) {
 		int opt;
 
-		opt = getopt_long(argc, argv, "aubdslmq:k:A::vh", main_options,
+		opt = getopt_long(argc, argv, "aubdslmq:Hk:A::vh", main_options,
 								NULL);
 		if (opt < 0)
 			break;
@@ -1238,6 +1243,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'q':
 			qemu_binary = optarg;
+			break;
+		case 'H':
+			qemu_host_cpu = true;
 			break;
 		case 'k':
 			kernel_image = optarg;

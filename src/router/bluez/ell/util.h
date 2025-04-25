@@ -243,6 +243,16 @@ static inline void l_put_be64(uint64_t val, void *ptr)
 void *l_malloc(size_t size) __attribute__ ((warn_unused_result, malloc));
 void *l_memdup(const void *mem, size_t size)
 			__attribute__ ((warn_unused_result, malloc));
+
+static inline void * __attribute__((nonnull(1))) l_memcpy(void *dest,
+						const void *src, size_t n)
+{
+	if (!n)
+		return dest;
+
+	return __builtin_memcpy(dest, src, n);
+}
+
 void l_free(void *ptr);
 DEFINE_CLEANUP_FUNC(l_free);
 
@@ -307,6 +317,8 @@ size_t l_strlcpy(char* dst, const char *src, size_t len);
 bool l_str_has_prefix(const char *str, const char *prefix);
 bool l_str_has_suffix(const char *str, const char *suffix);
 bool l_streq0(const char *a, const char *b);
+
+char *l_util_oidstring(const void *buf, size_t len);
 
 char *l_util_hexstring(const void *buf, size_t len);
 char *l_util_hexstring_upper(const void *buf, size_t len);

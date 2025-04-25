@@ -408,6 +408,18 @@ static const char *lookup_checksum(enum l_checksum_type checksum)
 	case L_CHECKSUM_SHA512:
 		ret = "sha512";
 		break;
+	case L_CHECKSUM_SHA3_224:
+		ret = "sha3-224";
+		break;
+	case L_CHECKSUM_SHA3_256:
+		ret = "sha3-256";
+		break;
+	case L_CHECKSUM_SHA3_384:
+		ret = "sha3-384";
+		break;
+	case L_CHECKSUM_SHA3_512:
+		ret = "sha3-512";
+		break;
 	}
 
 	return ret;

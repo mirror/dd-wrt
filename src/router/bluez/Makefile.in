@@ -98,100 +98,98 @@ noinst_PROGRAMS = $(am__EXEEXT_7) $(am__EXEEXT_8) $(am__EXEEXT_9) \
 	$(am__EXEEXT_18)
 pkglibexec_PROGRAMS = src/bluetoothd$(EXEEXT) $(am__EXEEXT_19) \
 	$(am__EXEEXT_20) $(am__EXEEXT_21)
-@LIBRARY_TRUE@am__append_1 = $(lib_headers)
-@LIBRARY_TRUE@am__append_2 = lib/libbluetooth.la
-@EXTERNAL_ELL_FALSE@am__append_3 = ell/libell-internal.la
-@LIBSHARED_ELL_TRUE@am__append_4 = src/libshared-ell.la
-@READLINE_TRUE@am__append_5 = src/shared/shell.c src/shared/shell.h
-@ADMIN_TRUE@am__append_6 = admin
-@ADMIN_TRUE@am__append_7 = plugins/admin.c
-@NFC_TRUE@am__append_8 = neard
-@NFC_TRUE@am__append_9 = plugins/neard.c
-@SAP_TRUE@am__append_10 = sap
-@SAP_TRUE@am__append_11 = profiles/sap/main.c profiles/sap/manager.h \
+@DATAFILES_TRUE@@OBEX_TRUE@am__append_1 = obexd/src/obex.conf
+@LIBRARY_TRUE@am__append_2 = $(lib_headers)
+@LIBRARY_TRUE@am__append_3 = lib/libbluetooth.la
+@EXTERNAL_ELL_FALSE@am__append_4 = ell/libell-internal.la
+@LIBSHARED_ELL_TRUE@am__append_5 = src/libshared-ell.la
+@READLINE_TRUE@am__append_6 = src/shared/shell.c src/shared/shell.h
+@ADMIN_TRUE@am__append_7 = admin
+@ADMIN_TRUE@am__append_8 = plugins/admin.c
+@NFC_TRUE@am__append_9 = neard
+@NFC_TRUE@am__append_10 = plugins/neard.c
+@SAP_TRUE@am__append_11 = sap
+@SAP_TRUE@am__append_12 = profiles/sap/main.c profiles/sap/manager.h \
 @SAP_TRUE@			profiles/sap/manager.c profiles/sap/server.h \
 @SAP_TRUE@			profiles/sap/server.c profiles/sap/sap.h \
 @SAP_TRUE@			profiles/sap/sap-dummy.c
 
-@A2DP_TRUE@am__append_12 = a2dp
-@A2DP_TRUE@am__append_13 = profiles/audio/source.h profiles/audio/source.c \
+@A2DP_TRUE@am__append_13 = a2dp
+@A2DP_TRUE@am__append_14 = profiles/audio/source.h profiles/audio/source.c \
 @A2DP_TRUE@			profiles/audio/sink.h profiles/audio/sink.c \
 @A2DP_TRUE@			profiles/audio/a2dp.h profiles/audio/a2dp.c \
 @A2DP_TRUE@			profiles/audio/avdtp.h profiles/audio/avdtp.c \
-@A2DP_TRUE@			profiles/audio/media.h profiles/audio/media.c \
-@A2DP_TRUE@			profiles/audio/transport.h profiles/audio/transport.c \
 @A2DP_TRUE@			profiles/audio/a2dp-codecs.h
 
-@AVRCP_TRUE@am__append_14 = avrcp
-@AVRCP_TRUE@am__append_15 = profiles/audio/control.h profiles/audio/control.c \
+@AVRCP_TRUE@am__append_15 = avrcp
+@AVRCP_TRUE@am__append_16 = profiles/audio/control.h profiles/audio/control.c \
 @AVRCP_TRUE@			profiles/audio/avctp.h profiles/audio/avctp.c \
-@AVRCP_TRUE@			profiles/audio/avrcp.h profiles/audio/avrcp.c \
-@AVRCP_TRUE@			profiles/audio/player.h profiles/audio/player.c
+@AVRCP_TRUE@			profiles/audio/avrcp.h profiles/audio/avrcp.c
 
-@NETWORK_TRUE@am__append_16 = network
-@NETWORK_TRUE@am__append_17 = profiles/network/manager.c \
+@NETWORK_TRUE@am__append_17 = network
+@NETWORK_TRUE@am__append_18 = profiles/network/manager.c \
 @NETWORK_TRUE@			profiles/network/bnep.h profiles/network/bnep.c \
 @NETWORK_TRUE@			profiles/network/server.h profiles/network/server.c \
 @NETWORK_TRUE@			profiles/network/connection.h \
 @NETWORK_TRUE@			profiles/network/connection.c
 
-@HID_TRUE@am__append_18 = input
-@HID_TRUE@am__append_19 = profiles/input/manager.c \
+@HID_TRUE@am__append_19 = input
+@HID_TRUE@am__append_20 = profiles/input/manager.c \
 @HID_TRUE@			profiles/input/server.h profiles/input/server.c \
 @HID_TRUE@			profiles/input/device.h profiles/input/device.c \
 @HID_TRUE@			profiles/input/hidp_defs.h profiles/input/sixaxis.h
 
-@HOG_TRUE@am__append_20 = hog
-@HOG_TRUE@am__append_21 = profiles/input/hog.c \
+@HOG_TRUE@am__append_21 = hog
+@HOG_TRUE@am__append_22 = profiles/input/hog.c \
 @HOG_TRUE@			profiles/input/hog-lib.c profiles/input/hog-lib.h \
 @HOG_TRUE@			profiles/deviceinfo/dis.c profiles/deviceinfo/dis.h \
 @HOG_TRUE@			profiles/battery/bas.c profiles/battery/bas.h \
 @HOG_TRUE@			profiles/scanparam/scpp.c profiles/scanparam/scpp.h \
 @HOG_TRUE@			profiles/input/suspend.h profiles/input/suspend-none.c
 
-@HEALTH_TRUE@am__append_22 = health
-@HEALTH_TRUE@am__append_23 = profiles/health/mcap.h profiles/health/mcap.c \
+@HEALTH_TRUE@am__append_23 = health
+@HEALTH_TRUE@am__append_24 = profiles/health/mcap.h profiles/health/mcap.c \
 @HEALTH_TRUE@			profiles/health/hdp_main.c profiles/health/hdp_types.h \
 @HEALTH_TRUE@			profiles/health/hdp_manager.h \
 @HEALTH_TRUE@			profiles/health/hdp_manager.c \
 @HEALTH_TRUE@			profiles/health/hdp.h profiles/health/hdp.c \
 @HEALTH_TRUE@			profiles/health/hdp_util.h profiles/health/hdp_util.c
 
-@MIDI_TRUE@am__append_24 = midi
-@MIDI_TRUE@am__append_25 = profiles/midi/midi.c \
+@MIDI_TRUE@am__append_25 = midi
+@MIDI_TRUE@am__append_26 = profiles/midi/midi.c \
 @MIDI_TRUE@			profiles/midi/libmidi.h \
 @MIDI_TRUE@			profiles/midi/libmidi.c
 
-@MIDI_TRUE@am__append_26 = $(ALSA_CFLAGS)
-@MIDI_TRUE@am__append_27 = $(ALSA_LIBS)
-@SIXAXIS_TRUE@am__append_28 = sixaxis
-@SIXAXIS_TRUE@am__append_29 = plugins/sixaxis.c
-@SIXAXIS_TRUE@am__append_30 = $(UDEV_LIBS)
-@BAP_TRUE@am__append_31 = bap
-@BAP_TRUE@am__append_32 = profiles/audio/bap.h profiles/audio/bap.c
-@BASS_TRUE@am__append_33 = bass
-@BASS_TRUE@am__append_34 = profiles/audio/bass.h profiles/audio/bass.c
-@MCP_TRUE@am__append_35 = mcp
-@MCP_TRUE@am__append_36 = profiles/audio/mcp.c
-@VCP_TRUE@am__append_37 = vcp
-@VCP_TRUE@am__append_38 = profiles/audio/vcp.c
-@MICP_TRUE@am__append_39 = micp
-@MICP_TRUE@am__append_40 = profiles/audio/micp.c
-@CCP_TRUE@am__append_41 = ccp
-@CCP_TRUE@am__append_42 = profiles/audio/ccp.c
-@CSIP_TRUE@am__append_43 = csip
-@CSIP_TRUE@am__append_44 = profiles/audio/csip.c
-@ASHA_TRUE@am__append_45 = asha
-@ASHA_TRUE@am__append_46 = profiles/audio/asha.h profiles/audio/asha.c
-@EXTERNAL_PLUGINS_TRUE@am__append_47 = src/bluetooth.ver
+@MIDI_TRUE@am__append_27 = $(ALSA_CFLAGS)
+@MIDI_TRUE@am__append_28 = $(ALSA_LIBS)
+@SIXAXIS_TRUE@am__append_29 = sixaxis
+@SIXAXIS_TRUE@am__append_30 = plugins/sixaxis.c
+@SIXAXIS_TRUE@am__append_31 = $(UDEV_LIBS)
+@BAP_TRUE@am__append_32 = bap
+@BAP_TRUE@am__append_33 = profiles/audio/bap.c
+@BASS_TRUE@am__append_34 = bass
+@BASS_TRUE@am__append_35 = profiles/audio/bass.c
+@MCP_TRUE@am__append_36 = mcp
+@MCP_TRUE@am__append_37 = profiles/audio/mcp.c
+@VCP_TRUE@am__append_38 = vcp
+@VCP_TRUE@am__append_39 = profiles/audio/vcp.h profiles/audio/vcp.c
+@MICP_TRUE@am__append_40 = micp
+@MICP_TRUE@am__append_41 = profiles/audio/micp.c
+@CCP_TRUE@am__append_42 = ccp
+@CCP_TRUE@am__append_43 = profiles/audio/ccp.c
+@CSIP_TRUE@am__append_44 = csip
+@CSIP_TRUE@am__append_45 = profiles/audio/csip.c
+@ASHA_TRUE@am__append_46 = asha
+@ASHA_TRUE@am__append_47 = profiles/audio/asha.h profiles/audio/asha.c
+@EXTERNAL_PLUGINS_TRUE@am__append_48 = src/bluetooth.ver
 
 # SPDX-License-Identifier: GPL-2.0
-@CLIENT_TRUE@am__append_48 = client/bluetoothctl
-@MONITOR_TRUE@am__append_49 = monitor/btmon
-@MANPAGES_TRUE@@MONITOR_TRUE@am__append_50 = monitor/btmon.1
-@LOGGER_TRUE@am__append_51 = tools/btmon-logger
-@LOGGER_TRUE@@SYSTEMD_TRUE@am__append_52 = tools/bluetooth-logger.service
-@TESTING_TRUE@am__append_53 = emulator/btvirt emulator/b1ee emulator/hfp \
+@CLIENT_TRUE@am__append_49 = client/bluetoothctl
+@MONITOR_TRUE@am__append_50 = monitor/btmon
+@MANPAGES_TRUE@@MONITOR_TRUE@am__append_51 = monitor/btmon.1
+@LOGGER_TRUE@am__append_52 = tools/btmon-logger
+@LOGGER_TRUE@@SYSTEMD_TRUE@am__append_53 = tools/bluetooth-logger.service
+@TESTING_TRUE@am__append_54 = emulator/btvirt emulator/b1ee emulator/hfp \
 @TESTING_TRUE@					peripheral/btsensor tools/3dsp \
 @TESTING_TRUE@					tools/mgmt-tester tools/gap-tester \
 @TESTING_TRUE@					tools/l2cap-tester tools/sco-tester \
@@ -200,11 +198,11 @@ pkglibexec_PROGRAMS = src/bluetoothd$(EXEEXT) $(am__EXEEXT_19) \
 @TESTING_TRUE@					tools/userchan-tester tools/iso-tester \
 @TESTING_TRUE@					tools/mesh-tester tools/ioctl-tester
 
-@TOOLS_TRUE@am__append_54 = tools/rctest tools/l2test tools/l2ping tools/bluemoon \
+@TOOLS_TRUE@am__append_55 = tools/rctest tools/l2test tools/l2ping tools/bluemoon \
 @TOOLS_TRUE@		tools/hex2hcd tools/mpris-proxy tools/btattach tools/isotest
 
-@TOOLS_TRUE@am__append_55 = tools/bdaddr tools/avinfo tools/avtest \
-@TOOLS_TRUE@			tools/scotest tools/amptest tools/hwdb \
+@TOOLS_TRUE@am__append_56 = tools/bdaddr tools/avinfo tools/avtest \
+@TOOLS_TRUE@			tools/scotest tools/hwdb \
 @TOOLS_TRUE@			tools/hcieventmask tools/hcisecfilter \
 @TOOLS_TRUE@			tools/btinfo tools/btconfig \
 @TOOLS_TRUE@			tools/btsnoop tools/btproxy \
@@ -217,71 +215,71 @@ pkglibexec_PROGRAMS = src/bluetoothd$(EXEEXT) $(am__EXEEXT_19) \
 @TOOLS_TRUE@			tools/test-runner tools/check-selftest \
 @TOOLS_TRUE@			tools/gatt-service profiles/iap/iapd
 
-@SYSTEMD_TRUE@@TOOLS_TRUE@am__append_56 = tools/mpris-proxy.service
-@MANPAGES_TRUE@@TOOLS_TRUE@am__append_57 = tools/rctest.1 tools/l2ping.1 tools/btattach.1 tools/isotest.1 \
+@SYSTEMD_TRUE@@TOOLS_TRUE@am__append_57 = tools/mpris-proxy.service
+@MANPAGES_TRUE@@TOOLS_TRUE@am__append_58 = tools/rctest.1 tools/l2ping.1 tools/btattach.1 tools/isotest.1 \
 @MANPAGES_TRUE@@TOOLS_TRUE@		tools/btmgmt.1 client/bluetoothctl.1 \
 @MANPAGES_TRUE@@TOOLS_TRUE@		client/bluetoothctl-mgmt.1 \
 @MANPAGES_TRUE@@TOOLS_TRUE@		client/bluetoothctl-monitor.1 client/bluetoothctl-admin.1 \
 @MANPAGES_TRUE@@TOOLS_TRUE@		client/bluetoothctl-advertise.1 client/bluetoothctl-endpoint.1 \
 @MANPAGES_TRUE@@TOOLS_TRUE@		client/bluetoothctl-gatt.1 client/bluetoothctl-player.1 \
 @MANPAGES_TRUE@@TOOLS_TRUE@		client/bluetoothctl-scan.1 client/bluetoothctl-transport.1 \
-@MANPAGES_TRUE@@TOOLS_TRUE@		client/bluetoothctl-assistant.1
+@MANPAGES_TRUE@@TOOLS_TRUE@		client/bluetoothctl-assistant.1 client/bluetoothctl-hci.1
 
-@DEPRECATED_TRUE@@MESH_TRUE@@TOOLS_TRUE@am__append_58 = tools/meshctl
-@DEPRECATED_TRUE@@MESH_TRUE@@TOOLS_TRUE@am__append_59 = tools/mesh-gatt/local_node.json tools/mesh-gatt/prov_db.json
-@MESH_TRUE@@TOOLS_TRUE@am__append_60 = tools/mesh-cfgclient \
+@DEPRECATED_TRUE@@MESH_TRUE@@TOOLS_TRUE@am__append_59 = tools/meshctl
+@DEPRECATED_TRUE@@MESH_TRUE@@TOOLS_TRUE@am__append_60 = tools/mesh-gatt/local_node.json tools/mesh-gatt/prov_db.json
+@MESH_TRUE@@TOOLS_TRUE@am__append_61 = tools/mesh-cfgclient \
 @MESH_TRUE@@TOOLS_TRUE@	tools/mesh-cfgtest
-@DEPRECATED_TRUE@@TOOLS_TRUE@am__append_61 = tools/hciattach tools/hciconfig tools/hcitool tools/hcidump \
+@DEPRECATED_TRUE@@TOOLS_TRUE@am__append_62 = tools/hciattach tools/hciconfig tools/hcitool tools/hcidump \
 @DEPRECATED_TRUE@@TOOLS_TRUE@			tools/rfcomm tools/sdptool tools/ciptool
 
-@DEPRECATED_TRUE@@MANPAGES_TRUE@@TOOLS_TRUE@am__append_62 = tools/hciattach.1 tools/hciconfig.1 \
+@DEPRECATED_TRUE@@MANPAGES_TRUE@@TOOLS_TRUE@am__append_63 = tools/hciattach.1 tools/hciconfig.1 \
 @DEPRECATED_TRUE@@MANPAGES_TRUE@@TOOLS_TRUE@			tools/hcitool.1 tools/hcidump.1 \
 @DEPRECATED_TRUE@@MANPAGES_TRUE@@TOOLS_TRUE@			tools/rfcomm.1 tools/sdptool.1 tools/ciptool.1
 
 @HID2HCI_TRUE@udev_PROGRAMS = tools/hid2hci$(EXEEXT)
-@HID2HCI_TRUE@@MANPAGES_TRUE@am__append_63 = tools/hid2hci.1
-@READLINE_TRUE@am__append_64 = tools/btmgmt tools/obex-client-tool tools/obex-server-tool \
+@HID2HCI_TRUE@@MANPAGES_TRUE@am__append_64 = tools/hid2hci.1
+@READLINE_TRUE@am__append_65 = tools/btmgmt tools/obex-client-tool tools/obex-server-tool \
 @READLINE_TRUE@			tools/bluetooth-player tools/obexctl
 
-@DEPRECATED_TRUE@@READLINE_TRUE@am__append_65 = attrib/gatttool
+@DEPRECATED_TRUE@@READLINE_TRUE@am__append_66 = attrib/gatttool
 @CUPS_TRUE@cups_PROGRAMS = profiles/cups/bluetooth$(EXEEXT)
-@BTPCLIENT_TRUE@am__append_66 = tools/btpclient tools/btpclientctl
+@BTPCLIENT_TRUE@am__append_67 = tools/btpclient tools/btpclientctl
 
 # SPDX-License-Identifier: GPL-2.0
-@OBEX_TRUE@@SYSTEMD_TRUE@am__append_67 = obexd/src/obex.service
-@EXPERIMENTAL_TRUE@@OBEX_TRUE@am__append_68 = pcsuite
-@EXPERIMENTAL_TRUE@@OBEX_TRUE@am__append_69 = obexd/plugins/pcsuite.c
-@OBEX_TRUE@am__append_70 = obexd/plugins/phonebook-dummy.c obexd/plugins/phonebook-ebook.c \
+@OBEX_TRUE@@SYSTEMD_TRUE@am__append_68 = obexd/src/obex.service
+@EXPERIMENTAL_TRUE@@OBEX_TRUE@am__append_69 = pcsuite
+@EXPERIMENTAL_TRUE@@OBEX_TRUE@am__append_70 = obexd/plugins/pcsuite.c
+@OBEX_TRUE@am__append_71 = obexd/plugins/phonebook-dummy.c obexd/plugins/phonebook-ebook.c \
 @OBEX_TRUE@				obexd/plugins/phonebook-tracker.c
 
-@OBEX_TRUE@am__append_71 = obexd/src/obexd
-@ANDROID_TRUE@am__append_72 = -DANDROID_VERSION=0x050100
-@ANDROID_TRUE@am__append_73 = android/system-emulator \
+@OBEX_TRUE@am__append_72 = obexd/src/obexd
+@ANDROID_TRUE@am__append_73 = -DANDROID_VERSION=0x050100
+@ANDROID_TRUE@am__append_74 = android/system-emulator \
 @ANDROID_TRUE@	android/bluetoothd-snoop android/bluetoothd \
 @ANDROID_TRUE@	android/avdtptest android/haltest \
 @ANDROID_TRUE@	android/android-tester android/ipc-tester
-@ANDROID_TRUE@am__append_74 = android/bluetooth.default.la \
+@ANDROID_TRUE@am__append_75 = android/bluetooth.default.la \
 @ANDROID_TRUE@	android/audio.a2dp.default.la \
 @ANDROID_TRUE@	android/audio.sco.default.la
-@ANDROID_TRUE@am__append_75 = android/test-ipc
+@ANDROID_TRUE@am__append_76 = android/test-ipc
 
 # SPDX-License-Identifier: GPL-2.0
-@DATAFILES_TRUE@@MESH_TRUE@am__append_76 = mesh/bluetooth-mesh.conf
-@DATAFILES_TRUE@@MESH_TRUE@am__append_77 = mesh/mesh-main.conf
-@MESH_TRUE@@SYSTEMD_TRUE@am__append_78 = mesh/bluetooth-mesh.service
-@MESH_TRUE@@SYSTEMD_TRUE@am__append_79 = mesh/org.bluez.mesh.service
-@MESH_TRUE@am__append_80 = mesh/bluetooth-meshd
-@MANPAGES_TRUE@@MESH_TRUE@am__append_81 = mesh/bluetooth-meshd.8
-@MESH_TRUE@am__append_82 = mesh/bluetooth-meshd.8
-@HID2HCI_TRUE@am__append_83 = $(rules_DATA)
-@OBEX_TRUE@am__append_84 = unit/test-gobex-header unit/test-gobex-packet unit/test-gobex \
+@DATAFILES_TRUE@@MESH_TRUE@am__append_77 = mesh/bluetooth-mesh.conf
+@DATAFILES_TRUE@@MESH_TRUE@am__append_78 = mesh/mesh-main.conf
+@MESH_TRUE@@SYSTEMD_TRUE@am__append_79 = mesh/bluetooth-mesh.service
+@MESH_TRUE@@SYSTEMD_TRUE@am__append_80 = mesh/org.bluez.mesh.service
+@MESH_TRUE@am__append_81 = mesh/bluetooth-meshd
+@MANPAGES_TRUE@@MESH_TRUE@am__append_82 = mesh/bluetooth-meshd.8
+@MESH_TRUE@am__append_83 = mesh/bluetooth-meshd.8
+@HID2HCI_TRUE@am__append_84 = $(rules_DATA)
+@OBEX_TRUE@am__append_85 = unit/test-gobex-header unit/test-gobex-packet unit/test-gobex \
 @OBEX_TRUE@			unit/test-gobex-transfer unit/test-gobex-apparam
 
-@MIDI_TRUE@am__append_85 = unit/test-midi
-@MESH_TRUE@am__append_86 = unit/test-mesh-crypto
-@MAINTAINER_MODE_TRUE@am__append_87 = $(unit_tests)
+@MIDI_TRUE@am__append_86 = unit/test-midi
+@MESH_TRUE@am__append_87 = unit/test-mesh-crypto
+@MAINTAINER_MODE_TRUE@am__append_88 = $(unit_tests)
 TESTS = $(am__EXEEXT_17)
-@DBUS_RUN_SESSION_TRUE@am__append_88 = dbus-run-session --
+@DBUS_RUN_SESSION_TRUE@am__append_89 = dbus-run-session --
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
@@ -346,8 +344,7 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(cupsdir)" \
 @TESTING_TRUE@	tools/ioctl-tester$(EXEEXT)
 @TOOLS_TRUE@am__EXEEXT_8 = tools/bdaddr$(EXEEXT) tools/avinfo$(EXEEXT) \
 @TOOLS_TRUE@	tools/avtest$(EXEEXT) tools/scotest$(EXEEXT) \
-@TOOLS_TRUE@	tools/amptest$(EXEEXT) tools/hwdb$(EXEEXT) \
-@TOOLS_TRUE@	tools/hcieventmask$(EXEEXT) \
+@TOOLS_TRUE@	tools/hwdb$(EXEEXT) tools/hcieventmask$(EXEEXT) \
 @TOOLS_TRUE@	tools/hcisecfilter$(EXEEXT) tools/btinfo$(EXEEXT) \
 @TOOLS_TRUE@	tools/btconfig$(EXEEXT) tools/btsnoop$(EXEEXT) \
 @TOOLS_TRUE@	tools/btproxy$(EXEEXT) tools/btiotest$(EXEEXT) \
@@ -1023,7 +1020,8 @@ am__client_bluetoothctl_SOURCES_DIST = client/main.c client/print.h \
 	client/advertising.c client/adv_monitor.h client/adv_monitor.c \
 	client/gatt.h client/gatt.c client/admin.h client/admin.c \
 	client/player.h client/player.c client/mgmt.h client/mgmt.c \
-	client/assistant.h client/assistant.c
+	client/assistant.h client/assistant.c client/hci.h \
+	client/hci.c
 @CLIENT_TRUE@am_client_bluetoothctl_OBJECTS = client/main.$(OBJEXT) \
 @CLIENT_TRUE@	client/print.$(OBJEXT) client/display.$(OBJEXT) \
 @CLIENT_TRUE@	client/agent.$(OBJEXT) \
@@ -1031,7 +1029,7 @@ am__client_bluetoothctl_SOURCES_DIST = client/main.c client/print.h \
 @CLIENT_TRUE@	client/adv_monitor.$(OBJEXT) \
 @CLIENT_TRUE@	client/gatt.$(OBJEXT) client/admin.$(OBJEXT) \
 @CLIENT_TRUE@	client/player.$(OBJEXT) client/mgmt.$(OBJEXT) \
-@CLIENT_TRUE@	client/assistant.$(OBJEXT)
+@CLIENT_TRUE@	client/assistant.$(OBJEXT) client/hci.$(OBJEXT)
 client_bluetoothctl_OBJECTS = $(am_client_bluetoothctl_OBJECTS)
 @CLIENT_TRUE@client_bluetoothctl_DEPENDENCIES =  \
 @CLIENT_TRUE@	lib/libbluetooth-internal.la \
@@ -1046,14 +1044,13 @@ am__emulator_btvirt_SOURCES_DIST = emulator/main.c monitor/bt.h \
 	emulator/server.c emulator/vhci.h emulator/vhci.c \
 	emulator/btdev.h emulator/btdev.c emulator/bthost.h \
 	emulator/bthost.c emulator/smp.c emulator/phy.h emulator/phy.c \
-	emulator/amp.h emulator/amp.c emulator/le.h emulator/le.c
+	emulator/le.h emulator/le.c
 @TESTING_TRUE@am_emulator_btvirt_OBJECTS = emulator/main.$(OBJEXT) \
 @TESTING_TRUE@	emulator/serial.$(OBJEXT) \
 @TESTING_TRUE@	emulator/server.$(OBJEXT) \
 @TESTING_TRUE@	emulator/vhci.$(OBJEXT) emulator/btdev.$(OBJEXT) \
 @TESTING_TRUE@	emulator/bthost.$(OBJEXT) emulator/smp.$(OBJEXT) \
-@TESTING_TRUE@	emulator/phy.$(OBJEXT) emulator/amp.$(OBJEXT) \
-@TESTING_TRUE@	emulator/le.$(OBJEXT)
+@TESTING_TRUE@	emulator/phy.$(OBJEXT) emulator/le.$(OBJEXT)
 emulator_btvirt_OBJECTS = $(am_emulator_btvirt_OBJECTS)
 @TESTING_TRUE@emulator_btvirt_DEPENDENCIES =  \
 @TESTING_TRUE@	lib/libbluetooth-internal.la \
@@ -1271,22 +1268,22 @@ profiles_iap_iapd_OBJECTS = $(am_profiles_iap_iapd_OBJECTS)
 @TOOLS_TRUE@profiles_iap_iapd_DEPENDENCIES =  \
 @TOOLS_TRUE@	gdbus/libgdbus-internal.la $(am__DEPENDENCIES_1) \
 @TOOLS_TRUE@	$(am__DEPENDENCIES_1)
-am__src_bluetoothd_SOURCES_DIST = plugins/hostname.c plugins/wiimote.c \
-	plugins/autopair.c plugins/policy.c plugins/admin.c \
-	plugins/neard.c profiles/sap/main.c profiles/sap/manager.h \
+am__src_bluetoothd_SOURCES_DIST = plugins/hostname.c \
+	plugins/autopair.c plugins/policy.c profiles/audio/media.h \
+	profiles/audio/media.c profiles/audio/transport.h \
+	profiles/audio/transport.c profiles/audio/player.h \
+	profiles/audio/player.c plugins/admin.c plugins/neard.c \
+	profiles/sap/main.c profiles/sap/manager.h \
 	profiles/sap/manager.c profiles/sap/server.h \
 	profiles/sap/server.c profiles/sap/sap.h \
 	profiles/sap/sap-dummy.c profiles/audio/source.h \
 	profiles/audio/source.c profiles/audio/sink.h \
 	profiles/audio/sink.c profiles/audio/a2dp.h \
 	profiles/audio/a2dp.c profiles/audio/avdtp.h \
-	profiles/audio/avdtp.c profiles/audio/media.h \
-	profiles/audio/media.c profiles/audio/transport.h \
-	profiles/audio/transport.c profiles/audio/a2dp-codecs.h \
+	profiles/audio/avdtp.c profiles/audio/a2dp-codecs.h \
 	profiles/audio/control.h profiles/audio/control.c \
 	profiles/audio/avctp.h profiles/audio/avctp.c \
 	profiles/audio/avrcp.h profiles/audio/avrcp.c \
-	profiles/audio/player.h profiles/audio/player.c \
 	profiles/network/manager.c profiles/network/bnep.h \
 	profiles/network/bnep.c profiles/network/server.h \
 	profiles/network/server.c profiles/network/connection.h \
@@ -1308,9 +1305,8 @@ am__src_bluetoothd_SOURCES_DIST = plugins/hostname.c plugins/wiimote.c \
 	profiles/scanparam/scan.c profiles/deviceinfo/deviceinfo.c \
 	profiles/midi/midi.c profiles/midi/libmidi.h \
 	profiles/midi/libmidi.c profiles/battery/battery.c \
-	plugins/sixaxis.c profiles/audio/bap.h profiles/audio/bap.c \
-	profiles/audio/bass.h profiles/audio/bass.c \
-	profiles/audio/mcp.c profiles/audio/vcp.c \
+	plugins/sixaxis.c profiles/audio/bap.c profiles/audio/bass.c \
+	profiles/audio/mcp.c profiles/audio/vcp.h profiles/audio/vcp.c \
 	profiles/audio/micp.c profiles/audio/ccp.c \
 	profiles/audio/csip.c profiles/audio/asha.h \
 	profiles/audio/asha.c attrib/att.h attrib/att-database.h \
@@ -1341,14 +1337,11 @@ am__src_bluetoothd_SOURCES_DIST = plugins/hostname.c plugins/wiimote.c \
 @A2DP_TRUE@	profiles/audio/bluetoothd-source.$(OBJEXT) \
 @A2DP_TRUE@	profiles/audio/bluetoothd-sink.$(OBJEXT) \
 @A2DP_TRUE@	profiles/audio/bluetoothd-a2dp.$(OBJEXT) \
-@A2DP_TRUE@	profiles/audio/bluetoothd-avdtp.$(OBJEXT) \
-@A2DP_TRUE@	profiles/audio/bluetoothd-media.$(OBJEXT) \
-@A2DP_TRUE@	profiles/audio/bluetoothd-transport.$(OBJEXT)
+@A2DP_TRUE@	profiles/audio/bluetoothd-avdtp.$(OBJEXT)
 @AVRCP_TRUE@am__objects_21 =  \
 @AVRCP_TRUE@	profiles/audio/bluetoothd-control.$(OBJEXT) \
 @AVRCP_TRUE@	profiles/audio/bluetoothd-avctp.$(OBJEXT) \
-@AVRCP_TRUE@	profiles/audio/bluetoothd-avrcp.$(OBJEXT) \
-@AVRCP_TRUE@	profiles/audio/bluetoothd-player.$(OBJEXT)
+@AVRCP_TRUE@	profiles/audio/bluetoothd-avrcp.$(OBJEXT)
 @NETWORK_TRUE@am__objects_22 =  \
 @NETWORK_TRUE@	profiles/network/bluetoothd-manager.$(OBJEXT) \
 @NETWORK_TRUE@	profiles/network/bluetoothd-bnep.$(OBJEXT) \
@@ -1382,9 +1375,11 @@ am__src_bluetoothd_SOURCES_DIST = plugins/hostname.c plugins/wiimote.c \
 @CSIP_TRUE@am__objects_34 = profiles/audio/bluetoothd-csip.$(OBJEXT)
 @ASHA_TRUE@am__objects_35 = profiles/audio/bluetoothd-asha.$(OBJEXT)
 am__objects_36 = plugins/bluetoothd-hostname.$(OBJEXT) \
-	plugins/bluetoothd-wiimote.$(OBJEXT) \
 	plugins/bluetoothd-autopair.$(OBJEXT) \
-	plugins/bluetoothd-policy.$(OBJEXT) $(am__objects_17) \
+	plugins/bluetoothd-policy.$(OBJEXT) \
+	profiles/audio/bluetoothd-media.$(OBJEXT) \
+	profiles/audio/bluetoothd-transport.$(OBJEXT) \
+	profiles/audio/bluetoothd-player.$(OBJEXT) $(am__objects_17) \
 	$(am__objects_18) $(am__objects_19) $(am__objects_20) \
 	$(am__objects_21) $(am__objects_22) $(am__objects_23) \
 	$(am__objects_24) $(am__objects_25) \
@@ -1452,9 +1447,6 @@ am__tools_advtest_SOURCES_DIST = tools/advtest.c
 tools_advtest_OBJECTS = $(am_tools_advtest_OBJECTS)
 @TOOLS_TRUE@tools_advtest_DEPENDENCIES = lib/libbluetooth-internal.la \
 @TOOLS_TRUE@	src/libshared-mainloop.la
-tools_amptest_SOURCES = tools/amptest.c
-tools_amptest_OBJECTS = tools/amptest.$(OBJEXT)
-@TOOLS_TRUE@tools_amptest_DEPENDENCIES = lib/libbluetooth-internal.la
 tools_avinfo_SOURCES = tools/avinfo.c
 tools_avinfo_OBJECTS = tools/avinfo.$(OBJEXT)
 @TOOLS_TRUE@tools_avinfo_DEPENDENCIES = lib/libbluetooth-internal.la
@@ -1660,9 +1652,9 @@ tools_hciconfig_OBJECTS = $(am_tools_hciconfig_OBJECTS)
 @DEPRECATED_TRUE@@TOOLS_TRUE@	lib/libbluetooth-internal.la
 am__tools_hcidump_SOURCES_DIST = tools/hcidump.c tools/parser/parser.h \
 	tools/parser/parser.c tools/parser/lmp.c tools/parser/hci.c \
-	tools/parser/l2cap.h tools/parser/l2cap.c tools/parser/amp.c \
-	tools/parser/smp.c tools/parser/att.c tools/parser/sdp.h \
-	tools/parser/sdp.c tools/parser/rfcomm.h tools/parser/rfcomm.c \
+	tools/parser/l2cap.h tools/parser/l2cap.c tools/parser/smp.c \
+	tools/parser/att.c tools/parser/sdp.h tools/parser/sdp.c \
+	tools/parser/rfcomm.h tools/parser/rfcomm.c \
 	tools/parser/bnep.c tools/parser/cmtp.c tools/parser/hidp.c \
 	tools/parser/hcrp.c tools/parser/avdtp.c tools/parser/avctp.c \
 	tools/parser/avrcp.c tools/parser/sap.c tools/parser/obex.c \
@@ -1674,7 +1666,6 @@ am__tools_hcidump_SOURCES_DIST = tools/hcidump.c tools/parser/parser.h \
 @DEPRECATED_TRUE@@TOOLS_TRUE@	tools/parser/lmp.$(OBJEXT) \
 @DEPRECATED_TRUE@@TOOLS_TRUE@	tools/parser/hci.$(OBJEXT) \
 @DEPRECATED_TRUE@@TOOLS_TRUE@	tools/parser/l2cap.$(OBJEXT) \
-@DEPRECATED_TRUE@@TOOLS_TRUE@	tools/parser/amp.$(OBJEXT) \
 @DEPRECATED_TRUE@@TOOLS_TRUE@	tools/parser/smp.$(OBJEXT) \
 @DEPRECATED_TRUE@@TOOLS_TRUE@	tools/parser/att.$(OBJEXT) \
 @DEPRECATED_TRUE@@TOOLS_TRUE@	tools/parser/sdp.$(OBJEXT) \
@@ -2306,13 +2297,13 @@ am__depfiles_remade = android/$(DEPDIR)/a2dp-sink.Po \
 	client/$(DEPDIR)/adv_monitor.Po \
 	client/$(DEPDIR)/advertising.Po client/$(DEPDIR)/agent.Po \
 	client/$(DEPDIR)/assistant.Po client/$(DEPDIR)/display.Po \
-	client/$(DEPDIR)/gatt.Po client/$(DEPDIR)/main.Po \
-	client/$(DEPDIR)/mgmt.Po client/$(DEPDIR)/player.Po \
-	client/$(DEPDIR)/print.Po ell/$(DEPDIR)/base64.Plo \
-	ell/$(DEPDIR)/cert-crypto.Plo ell/$(DEPDIR)/cert.Plo \
-	ell/$(DEPDIR)/checksum.Plo ell/$(DEPDIR)/cipher.Plo \
-	ell/$(DEPDIR)/dbus-client.Plo ell/$(DEPDIR)/dbus-filter.Plo \
-	ell/$(DEPDIR)/dbus-message.Plo \
+	client/$(DEPDIR)/gatt.Po client/$(DEPDIR)/hci.Po \
+	client/$(DEPDIR)/main.Po client/$(DEPDIR)/mgmt.Po \
+	client/$(DEPDIR)/player.Po client/$(DEPDIR)/print.Po \
+	ell/$(DEPDIR)/base64.Plo ell/$(DEPDIR)/cert-crypto.Plo \
+	ell/$(DEPDIR)/cert.Plo ell/$(DEPDIR)/checksum.Plo \
+	ell/$(DEPDIR)/cipher.Plo ell/$(DEPDIR)/dbus-client.Plo \
+	ell/$(DEPDIR)/dbus-filter.Plo ell/$(DEPDIR)/dbus-message.Plo \
 	ell/$(DEPDIR)/dbus-name-cache.Plo \
 	ell/$(DEPDIR)/dbus-service.Plo ell/$(DEPDIR)/dbus-util.Plo \
 	ell/$(DEPDIR)/dbus.Plo ell/$(DEPDIR)/ecc-external.Plo \
@@ -2329,7 +2320,7 @@ am__depfiles_remade = android/$(DEPDIR)/a2dp-sink.Po \
 	ell/$(DEPDIR)/tls-extensions.Plo ell/$(DEPDIR)/tls-record.Plo \
 	ell/$(DEPDIR)/tls-suites.Plo ell/$(DEPDIR)/tls.Plo \
 	ell/$(DEPDIR)/utf8.Plo ell/$(DEPDIR)/util.Plo \
-	ell/$(DEPDIR)/uuid.Plo emulator/$(DEPDIR)/amp.Po \
+	ell/$(DEPDIR)/uuid.Plo \
 	emulator/$(DEPDIR)/android_android_tester-btdev.Po \
 	emulator/$(DEPDIR)/android_android_tester-bthost.Po \
 	emulator/$(DEPDIR)/android_android_tester-hciemu.Po \
@@ -2432,7 +2423,6 @@ am__depfiles_remade = android/$(DEPDIR)/a2dp-sink.Po \
 	plugins/$(DEPDIR)/bluetoothd-neard.Po \
 	plugins/$(DEPDIR)/bluetoothd-policy.Po \
 	plugins/$(DEPDIR)/bluetoothd-sixaxis.Po \
-	plugins/$(DEPDIR)/bluetoothd-wiimote.Po \
 	profiles/audio/$(DEPDIR)/bluetoothd-a2dp.Po \
 	profiles/audio/$(DEPDIR)/bluetoothd-asha.Po \
 	profiles/audio/$(DEPDIR)/bluetoothd-avctp.Po \
@@ -2633,9 +2623,9 @@ am__depfiles_remade = android/$(DEPDIR)/a2dp-sink.Po \
 	src/shared/$(DEPDIR)/libshared_mainloop_la-util.Plo \
 	src/shared/$(DEPDIR)/libshared_mainloop_la-vcp.Plo \
 	tools/$(DEPDIR)/3dsp.Po tools/$(DEPDIR)/advtest.Po \
-	tools/$(DEPDIR)/amptest.Po tools/$(DEPDIR)/avinfo.Po \
-	tools/$(DEPDIR)/avtest.Po tools/$(DEPDIR)/bcmfw.Po \
-	tools/$(DEPDIR)/bdaddr.Po tools/$(DEPDIR)/bluemoon.Po \
+	tools/$(DEPDIR)/avinfo.Po tools/$(DEPDIR)/avtest.Po \
+	tools/$(DEPDIR)/bcmfw.Po tools/$(DEPDIR)/bdaddr.Po \
+	tools/$(DEPDIR)/bluemoon.Po \
 	tools/$(DEPDIR)/bluetooth-player.Po \
 	tools/$(DEPDIR)/bnep-tester.Po tools/$(DEPDIR)/bneptest.Po \
 	tools/$(DEPDIR)/btattach.Po tools/$(DEPDIR)/btconfig.Po \
@@ -2690,8 +2680,7 @@ am__depfiles_remade = android/$(DEPDIR)/a2dp-sink.Po \
 	tools/mesh/$(DEPDIR)/agent.Po tools/mesh/$(DEPDIR)/cfgcli.Po \
 	tools/mesh/$(DEPDIR)/keys.Po tools/mesh/$(DEPDIR)/mesh-db.Po \
 	tools/mesh/$(DEPDIR)/remote.Po tools/mesh/$(DEPDIR)/util.Po \
-	tools/parser/$(DEPDIR)/amp.Po tools/parser/$(DEPDIR)/att.Po \
-	tools/parser/$(DEPDIR)/avctp.Po \
+	tools/parser/$(DEPDIR)/att.Po tools/parser/$(DEPDIR)/avctp.Po \
 	tools/parser/$(DEPDIR)/avdtp.Po \
 	tools/parser/$(DEPDIR)/avrcp.Po tools/parser/$(DEPDIR)/bnep.Po \
 	tools/parser/$(DEPDIR)/bpa.Po tools/parser/$(DEPDIR)/capi.Po \
@@ -2765,8 +2754,8 @@ SOURCES = $(android_audio_a2dp_default_la_SOURCES) \
 	$(profiles_cups_bluetooth_SOURCES) \
 	$(profiles_iap_iapd_SOURCES) $(src_bluetoothd_SOURCES) \
 	$(nodist_src_bluetoothd_SOURCES) $(tools_3dsp_SOURCES) \
-	$(tools_advtest_SOURCES) tools/amptest.c tools/avinfo.c \
-	tools/avtest.c tools/bcmfw.c $(tools_bdaddr_SOURCES) \
+	$(tools_advtest_SOURCES) tools/avinfo.c tools/avtest.c \
+	tools/bcmfw.c $(tools_bdaddr_SOURCES) \
 	$(tools_bluemoon_SOURCES) $(tools_bluetooth_player_SOURCES) \
 	$(tools_bnep_tester_SOURCES) $(tools_bneptest_SOURCES) \
 	$(tools_btattach_SOURCES) $(tools_btconfig_SOURCES) \
@@ -2845,9 +2834,8 @@ DIST_SOURCES = $(am__android_audio_a2dp_default_la_SOURCES_DIST) \
 	$(am__profiles_iap_iapd_SOURCES_DIST) \
 	$(am__src_bluetoothd_SOURCES_DIST) \
 	$(am__tools_3dsp_SOURCES_DIST) \
-	$(am__tools_advtest_SOURCES_DIST) tools/amptest.c \
-	tools/avinfo.c tools/avtest.c tools/bcmfw.c \
-	$(am__tools_bdaddr_SOURCES_DIST) \
+	$(am__tools_advtest_SOURCES_DIST) tools/avinfo.c \
+	tools/avtest.c tools/bcmfw.c $(am__tools_bdaddr_SOURCES_DIST) \
 	$(am__tools_bluemoon_SOURCES_DIST) \
 	$(am__tools_bluetooth_player_SOURCES_DIST) \
 	$(am__tools_bnep_tester_SOURCES_DIST) \
@@ -3343,21 +3331,21 @@ top_srcdir = @top_srcdir@
 
 # SPDX-License-Identifier: GPL-2.0
 AM_MAKEFLAGS = --no-print-directory
-AM_CPPFLAGS = $(am__append_72) $(DBUS_CFLAGS) $(GLIB_CFLAGS) \
+AM_CPPFLAGS = $(am__append_73) $(DBUS_CFLAGS) $(GLIB_CFLAGS) \
 	-I$(builddir)/lib
-lib_LTLIBRARIES = $(am__append_2)
+lib_LTLIBRARIES = $(am__append_3)
 noinst_LIBRARIES = 
 noinst_LTLIBRARIES = lib/libbluetooth-internal.la \
-	gdbus/libgdbus-internal.la $(am__append_3) \
+	gdbus/libgdbus-internal.la $(am__append_4) \
 	src/libshared-glib.la src/libshared-mainloop.la \
-	$(am__append_4)
+	$(am__append_5)
 CLEANFILES = $(ell_built_sources) $(builtin_files) obexd/src/builtin.h \
-	$(am__append_83)
+	$(am__append_84)
 EXTRA_DIST = src/org.bluez.service src/genbuiltin src/bluetooth.conf \
 	src/main.conf profiles/network/network.conf \
-	profiles/input/input.conf $(am__append_59) $(am__append_70) \
-	obexd/src/genbuiltin android/Android.mk android/README \
-	android/compat/readline/history.h \
+	profiles/input/input.conf obexd/src/obex.conf $(am__append_60) \
+	$(am__append_71) obexd/src/genbuiltin android/Android.mk \
+	android/README android/compat/readline/history.h \
 	android/compat/readline/readline.h android/compat/wordexp.h \
 	android/bluetoothd-wrapper.c android/log.c \
 	android/bluetoothd.te android/bluetoothd_snoop.te \
@@ -3406,7 +3394,7 @@ EXTRA_DIST = src/org.bluez.service src/genbuiltin src/bluetooth.conf \
 	doc/test-coverage.txt doc/test-runner.rst \
 	doc/settings-storage.txt doc/mgmt-api.txt doc/health-api.txt \
 	doc/sap-api.txt doc/hci.rst doc/l2cap.rst doc/rfcomm.rst \
-	doc/org.bluez.Adapter.rst doc/org.bluez.Device.rst \
+	doc/sco.rst doc/org.bluez.Adapter.rst doc/org.bluez.Device.rst \
 	doc/org.bluez.DeviceSet.rst doc/org.bluez.AgentManager.rst \
 	doc/org.bluez.Agent.rst doc/org.bluez.ProfileManager.rst \
 	doc/org.bluez.Profile.rst doc/org.bluez.NetworkServer.rst \
@@ -3440,7 +3428,7 @@ EXTRA_DIST = src/org.bluez.service src/genbuiltin src/bluetooth.conf \
 	doc/pics-opp.txt doc/pixit-opp.txt doc/pts-opp.txt \
 	doc/btsnoop.txt tools/magic.btsnoop $(manual_pages) $(patsubst \
 	%.1,%.rst, $(patsubst %.8,%.rst,$(manual_pages)))
-pkginclude_HEADERS = $(am__append_1)
+pkginclude_HEADERS = $(am__append_2)
 AM_CFLAGS = $(MISC_CFLAGS) $(WARNING_CFLAGS) $(UDEV_CFLAGS) $(LIBEBOOK_CFLAGS) \
 				$(LIBEDATASERVER_CFLAGS) $(ell_cflags)
 
@@ -3448,22 +3436,23 @@ AM_LDFLAGS = $(MISC_LDFLAGS)
 confdir = $(sysconfdir)/bluetooth
 statedir = $(localstatedir)/lib/bluetooth
 @DATAFILES_TRUE@dbusdir = $(DBUS_CONFDIR)/dbus-1/system.d
-@DATAFILES_TRUE@dbus_DATA = src/bluetooth.conf $(am__append_76)
+@DATAFILES_TRUE@dbus_DATA = src/bluetooth.conf $(am__append_1) \
+@DATAFILES_TRUE@	$(am__append_77)
 @DATAFILES_TRUE@conf_DATA = src/main.conf profiles/input/input.conf \
-@DATAFILES_TRUE@	profiles/network/network.conf $(am__append_77)
+@DATAFILES_TRUE@	profiles/network/network.conf $(am__append_78)
 @DATAFILES_TRUE@state_DATA = 
 @SYSTEMD_TRUE@systemdsystemunitdir = $(SYSTEMD_SYSTEMUNITDIR)
 @SYSTEMD_TRUE@systemdsystemunit_DATA = src/bluetooth.service \
-@SYSTEMD_TRUE@	$(am__append_52) $(am__append_78)
+@SYSTEMD_TRUE@	$(am__append_53) $(am__append_79)
 @SYSTEMD_TRUE@systemduserunitdir = $(SYSTEMD_USERUNITDIR)
-@SYSTEMD_TRUE@systemduserunit_DATA = $(am__append_56) $(am__append_67)
+@SYSTEMD_TRUE@systemduserunit_DATA = $(am__append_57) $(am__append_68)
 @SYSTEMD_TRUE@dbussystembusdir = $(DBUS_SYSTEMBUSDIR)
 @SYSTEMD_TRUE@dbussystembus_DATA = src/org.bluez.service \
-@SYSTEMD_TRUE@	$(am__append_79)
+@SYSTEMD_TRUE@	$(am__append_80)
 plugindir = $(libdir)/bluetooth/plugins
 build_plugindir = $(plugindir)
 @MANPAGES_TRUE@man_MANS = src/bluetoothd.8 doc/hci.7 doc/l2cap.7 \
-@MANPAGES_TRUE@	doc/rfcomm.7 doc/org.bluez.Adapter.5 \
+@MANPAGES_TRUE@	doc/rfcomm.7 doc/sco.7 doc/org.bluez.Adapter.5 \
 @MANPAGES_TRUE@	doc/org.bluez.Device.5 \
 @MANPAGES_TRUE@	doc/org.bluez.DeviceSet.5 \
 @MANPAGES_TRUE@	doc/org.bluez.AgentManager.5 \
@@ -3505,11 +3494,11 @@ build_plugindir = $(plugindir)
 @MANPAGES_TRUE@	doc/org.bluez.obex.Message.5 \
 @MANPAGES_TRUE@	doc/org.bluez.obex.AgentManager.5 \
 @MANPAGES_TRUE@	doc/org.bluez.obex.Agent.5 \
-@MANPAGES_TRUE@	doc/org.bluez.obex.Image.5 $(am__append_50) \
-@MANPAGES_TRUE@	$(am__append_57) $(am__append_62) \
-@MANPAGES_TRUE@	$(am__append_63) $(am__append_81)
+@MANPAGES_TRUE@	doc/org.bluez.obex.Image.5 $(am__append_51) \
+@MANPAGES_TRUE@	$(am__append_58) $(am__append_63) \
+@MANPAGES_TRUE@	$(am__append_64) $(am__append_82)
 manual_pages = src/bluetoothd.8 doc/hci.7 doc/l2cap.7 doc/rfcomm.7 \
-	doc/org.bluez.Adapter.5 doc/org.bluez.Device.5 \
+	doc/sco.7 doc/org.bluez.Adapter.5 doc/org.bluez.Device.5 \
 	doc/org.bluez.DeviceSet.5 doc/org.bluez.AgentManager.5 \
 	doc/org.bluez.Agent.5 doc/org.bluez.ProfileManager.5 \
 	doc/org.bluez.Profile.5 doc/org.bluez.NetworkServer.5 \
@@ -3546,15 +3535,15 @@ manual_pages = src/bluetoothd.8 doc/hci.7 doc/l2cap.7 doc/rfcomm.7 \
 	client/bluetoothctl-advertise.1 client/bluetoothctl-endpoint.1 \
 	client/bluetoothctl-gatt.1 client/bluetoothctl-player.1 \
 	client/bluetoothctl-scan.1 client/bluetoothctl-transport.1 \
-	client/bluetoothctl-assistant.1 tools/hid2hci.1 \
-	$(am__append_82)
-plugin_LTLIBRARIES = $(am__append_74)
+	client/bluetoothctl-assistant.1 client/bluetoothctl-hci.1 \
+	tools/hid2hci.1 $(am__append_83)
+plugin_LTLIBRARIES = $(am__append_75)
 lib_sources = lib/bluetooth.c lib/hci.c lib/sdp.c
 lib_headers = lib/bluetooth.h lib/hci.h lib/hci_lib.h \
 		lib/sco.h lib/l2cap.h lib/sdp.h lib/sdp_lib.h \
 		lib/rfcomm.h lib/bnep.h lib/cmtp.h lib/hidp.h
 
-extra_headers = lib/mgmt.h lib/uuid.h lib/a2mp.h lib/amp.h lib/iso.h
+extra_headers = lib/mgmt.h lib/uuid.h lib/iso.h
 extra_sources = lib/uuid.c
 local_headers = $(foreach file,$(lib_headers), lib/bluetooth/$(notdir $(file)))
 BUILT_SOURCES = $(local_headers) $(ell_built_sources) src/builtin.h \
@@ -3684,7 +3673,7 @@ shared_sources = src/shared/io.h src/shared/timeout.h \
 	src/shared/csip.h src/shared/bass.h src/shared/bass.c \
 	src/shared/ccp.h src/shared/ccp.c src/shared/lc3.h \
 	src/shared/tty.h src/shared/bap-defs.h src/shared/asha.h \
-	src/shared/asha.c $(am__append_5)
+	src/shared/asha.c $(am__append_6)
 src_libshared_glib_la_SOURCES = $(shared_sources) \
 				src/shared/io-glib.c \
 				src/shared/timeout-glib.c \
@@ -3726,26 +3715,29 @@ gobex_sources = gobex/gobex.h gobex/gobex.c \
 
 
 # SPDX-License-Identifier: GPL-2.0
-builtin_modules = hostname wiimote autopair policy $(am__append_6) \
-	$(am__append_8) $(am__append_10) $(am__append_12) \
-	$(am__append_14) $(am__append_16) $(am__append_18) \
-	$(am__append_20) $(am__append_22) gap scanparam deviceinfo \
-	$(am__append_24) battery $(am__append_28) $(am__append_31) \
-	$(am__append_33) $(am__append_35) $(am__append_37) \
-	$(am__append_39) $(am__append_41) $(am__append_43) \
-	$(am__append_45)
-builtin_sources = plugins/hostname.c plugins/wiimote.c \
-	plugins/autopair.c plugins/policy.c $(am__append_7) \
+builtin_modules = hostname autopair policy $(am__append_7) \
 	$(am__append_9) $(am__append_11) $(am__append_13) \
 	$(am__append_15) $(am__append_17) $(am__append_19) \
-	$(am__append_21) $(am__append_23) profiles/gap/gas.c \
-	profiles/scanparam/scan.c profiles/deviceinfo/deviceinfo.c \
-	$(am__append_25) profiles/battery/battery.c $(am__append_29) \
-	$(am__append_32) $(am__append_34) $(am__append_36) \
-	$(am__append_38) $(am__append_40) $(am__append_42) \
-	$(am__append_44) $(am__append_46)
-builtin_cppflags = $(am__append_26)
-builtin_ldadd = $(am__append_27) $(am__append_30)
+	$(am__append_21) $(am__append_23) gap scanparam deviceinfo \
+	$(am__append_25) battery $(am__append_29) $(am__append_32) \
+	$(am__append_34) $(am__append_36) $(am__append_38) \
+	$(am__append_40) $(am__append_42) $(am__append_44) \
+	$(am__append_46)
+builtin_sources = plugins/hostname.c plugins/autopair.c \
+	plugins/policy.c profiles/audio/media.h profiles/audio/media.c \
+	profiles/audio/transport.h profiles/audio/transport.c \
+	profiles/audio/player.h profiles/audio/player.c \
+	$(am__append_8) $(am__append_10) $(am__append_12) \
+	$(am__append_14) $(am__append_16) $(am__append_18) \
+	$(am__append_20) $(am__append_22) $(am__append_24) \
+	profiles/gap/gas.c profiles/scanparam/scan.c \
+	profiles/deviceinfo/deviceinfo.c $(am__append_26) \
+	profiles/battery/battery.c $(am__append_30) $(am__append_33) \
+	$(am__append_35) $(am__append_37) $(am__append_39) \
+	$(am__append_41) $(am__append_43) $(am__append_45) \
+	$(am__append_47)
+builtin_cppflags = $(am__append_27)
+builtin_ldadd = $(am__append_28) $(am__append_31)
 src_bluetoothd_SOURCES = $(builtin_sources) $(attrib_sources) \
 	$(btio_sources) src/main.c src/log.h src/log.c src/backtrace.h \
 	src/backtrace.c src/rfkill.c src/btd.h src/sdpd.h \
@@ -3761,7 +3753,7 @@ src_bluetoothd_SOURCES = $(builtin_sources) $(attrib_sources) \
 	src/device.c src/dbus-common.c src/dbus-common.h src/eir.h \
 	src/eir.c src/adv_monitor.h src/adv_monitor.c src/battery.h \
 	src/battery.c src/settings.h src/settings.c src/set.h \
-	src/set.c $(am__append_47)
+	src/set.c $(am__append_48)
 src_bluetoothd_LDADD = lib/libbluetooth-internal.la \
 			gdbus/libgdbus-internal.la \
 			src/libshared-glib.la \
@@ -3790,15 +3782,15 @@ test_scripts = test/sap_client.py test/bluezutils.py test/dbusdef.py \
 	test/map-client test/example-advertisement \
 	test/example-gatt-server test/example-gatt-client \
 	test/test-gatt-profile test/test-mesh test/agent.py
-unit_tests = $(am__append_75) unit/test-tester unit/test-eir \
+unit_tests = $(am__append_76) unit/test-tester unit/test-eir \
 	unit/test-uuid unit/test-textfile unit/test-crc \
 	unit/test-crypto unit/test-ecc unit/test-ringbuf \
 	unit/test-queue unit/test-mgmt unit/test-uhid unit/test-sdp \
 	unit/test-avdtp unit/test-avctp unit/test-avrcp unit/test-hfp \
-	unit/test-gdbus-client $(am__append_84) unit/test-lib \
+	unit/test-gdbus-client $(am__append_85) unit/test-lib \
 	unit/test-gatt unit/test-hog unit/test-gattrib unit/test-bap \
-	unit/test-micp unit/test-bass unit/test-vcp $(am__append_85) \
-	$(am__append_86)
+	unit/test-micp unit/test-bass unit/test-vcp $(am__append_86) \
+	$(am__append_87)
 @CLIENT_TRUE@client_bluetoothctl_SOURCES = client/main.c \
 @CLIENT_TRUE@					client/print.h client/print.c \
 @CLIENT_TRUE@					client/display.h client/display.c \
@@ -3811,7 +3803,8 @@ unit_tests = $(am__append_75) unit/test-tester unit/test-eir \
 @CLIENT_TRUE@					client/admin.h client/admin.c \
 @CLIENT_TRUE@					client/player.h client/player.c \
 @CLIENT_TRUE@					client/mgmt.h client/mgmt.c \
-@CLIENT_TRUE@					client/assistant.h client/assistant.c
+@CLIENT_TRUE@					client/assistant.h client/assistant.c \
+@CLIENT_TRUE@					client/hci.h client/hci.c
 
 @CLIENT_TRUE@client_bluetoothctl_LDADD = lib/libbluetooth-internal.la \
 @CLIENT_TRUE@			gdbus/libgdbus-internal.la src/libshared-glib.la \
@@ -3863,7 +3856,6 @@ unit_tests = $(am__append_75) unit/test-tester unit/test-eir \
 @TESTING_TRUE@				emulator/bthost.h emulator/bthost.c \
 @TESTING_TRUE@				emulator/smp.c \
 @TESTING_TRUE@				emulator/phy.h emulator/phy.c \
-@TESTING_TRUE@				emulator/amp.h emulator/amp.c \
 @TESTING_TRUE@				emulator/le.h emulator/le.c
 
 @TESTING_TRUE@emulator_btvirt_LDADD = lib/libbluetooth-internal.la src/libshared-mainloop.la
@@ -4002,7 +3994,6 @@ unit_tests = $(am__append_75) unit/test-tester unit/test-eir \
 @TOOLS_TRUE@tools_avinfo_LDADD = lib/libbluetooth-internal.la
 @TOOLS_TRUE@tools_avtest_LDADD = lib/libbluetooth-internal.la
 @TOOLS_TRUE@tools_scotest_LDADD = lib/libbluetooth-internal.la
-@TOOLS_TRUE@tools_amptest_LDADD = lib/libbluetooth-internal.la
 @TOOLS_TRUE@tools_hwdb_LDADD = lib/libbluetooth-internal.la
 @TOOLS_TRUE@tools_hcieventmask_LDADD = lib/libbluetooth-internal.la
 @TOOLS_TRUE@tools_btinfo_SOURCES = tools/btinfo.c monitor/bt.h
@@ -4130,7 +4121,6 @@ unit_tests = $(am__append_75) unit/test-tester unit/test-eir \
 @DEPRECATED_TRUE@@TOOLS_TRUE@				tools/parser/lmp.c \
 @DEPRECATED_TRUE@@TOOLS_TRUE@				tools/parser/hci.c \
 @DEPRECATED_TRUE@@TOOLS_TRUE@				tools/parser/l2cap.h tools/parser/l2cap.c \
-@DEPRECATED_TRUE@@TOOLS_TRUE@				tools/parser/amp.c \
 @DEPRECATED_TRUE@@TOOLS_TRUE@				tools/parser/smp.c \
 @DEPRECATED_TRUE@@TOOLS_TRUE@				tools/parser/att.c \
 @DEPRECATED_TRUE@@TOOLS_TRUE@				tools/parser/sdp.h tools/parser/sdp.c \
@@ -4220,10 +4210,10 @@ unit_tests = $(am__append_75) unit/test-tester unit/test-eir \
 @OBEX_TRUE@@SYSTEMD_TRUE@dbussessionbus_DATA = obexd/src/org.bluez.obex.service
 @OBEX_TRUE@obex_plugindir = $(libdir)/obex/plugins
 @OBEX_TRUE@obexd_builtin_modules = filesystem bluetooth \
-@OBEX_TRUE@	$(am__append_68) opp ftp irmc pbap mas mns
+@OBEX_TRUE@	$(am__append_69) opp ftp irmc pbap mas mns
 @OBEX_TRUE@obexd_builtin_sources = obexd/plugins/filesystem.c \
 @OBEX_TRUE@	obexd/plugins/filesystem.h \
-@OBEX_TRUE@	obexd/plugins/bluetooth.c $(am__append_69) \
+@OBEX_TRUE@	obexd/plugins/bluetooth.c $(am__append_70) \
 @OBEX_TRUE@	obexd/plugins/opp.c obexd/plugins/ftp.c \
 @OBEX_TRUE@	obexd/plugins/ftp.h obexd/plugins/irmc.c \
 @OBEX_TRUE@	obexd/plugins/pbap.c obexd/plugins/vcard.h \
@@ -4661,7 +4651,7 @@ unit_test_vcp_LDADD = src/libshared-glib.la \
 
 @MESH_TRUE@unit_test_mesh_crypto_LDADD = $(ell_ldadd)
 AM_TESTS_ENVIRONMENT = MALLOC_CHECK_=3 MALLOC_PERTURB_=69 \
-	$(am__append_88)
+	$(am__append_89)
 @VALGRIND_TRUE@LOG_COMPILER = valgrind --error-exitcode=1 --num-callers=30
 @VALGRIND_TRUE@LOG_FLAGS = --trace-children=yes --leak-check=full --show-reachable=no \
 @VALGRIND_TRUE@		--suppressions=$(srcdir)/tools/valgrind.supp --quiet
@@ -5788,6 +5778,8 @@ client/mgmt.$(OBJEXT): client/$(am__dirstamp) \
 	client/$(DEPDIR)/$(am__dirstamp)
 client/assistant.$(OBJEXT): client/$(am__dirstamp) \
 	client/$(DEPDIR)/$(am__dirstamp)
+client/hci.$(OBJEXT): client/$(am__dirstamp) \
+	client/$(DEPDIR)/$(am__dirstamp)
 
 client/bluetoothctl$(EXEEXT): $(client_bluetoothctl_OBJECTS) $(client_bluetoothctl_DEPENDENCIES) $(EXTRA_client_bluetoothctl_DEPENDENCIES) client/$(am__dirstamp)
 	@rm -f client/bluetoothctl$(EXEEXT)
@@ -5813,8 +5805,6 @@ emulator/bthost.$(OBJEXT): emulator/$(am__dirstamp) \
 emulator/smp.$(OBJEXT): emulator/$(am__dirstamp) \
 	emulator/$(DEPDIR)/$(am__dirstamp)
 emulator/phy.$(OBJEXT): emulator/$(am__dirstamp) \
-	emulator/$(DEPDIR)/$(am__dirstamp)
-emulator/amp.$(OBJEXT): emulator/$(am__dirstamp) \
 	emulator/$(DEPDIR)/$(am__dirstamp)
 emulator/le.$(OBJEXT): emulator/$(am__dirstamp) \
 	emulator/$(DEPDIR)/$(am__dirstamp)
@@ -6132,12 +6122,25 @@ plugins/$(DEPDIR)/$(am__dirstamp):
 	@: > plugins/$(DEPDIR)/$(am__dirstamp)
 plugins/bluetoothd-hostname.$(OBJEXT): plugins/$(am__dirstamp) \
 	plugins/$(DEPDIR)/$(am__dirstamp)
-plugins/bluetoothd-wiimote.$(OBJEXT): plugins/$(am__dirstamp) \
-	plugins/$(DEPDIR)/$(am__dirstamp)
 plugins/bluetoothd-autopair.$(OBJEXT): plugins/$(am__dirstamp) \
 	plugins/$(DEPDIR)/$(am__dirstamp)
 plugins/bluetoothd-policy.$(OBJEXT): plugins/$(am__dirstamp) \
 	plugins/$(DEPDIR)/$(am__dirstamp)
+profiles/audio/$(am__dirstamp):
+	@$(MKDIR_P) profiles/audio
+	@: > profiles/audio/$(am__dirstamp)
+profiles/audio/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) profiles/audio/$(DEPDIR)
+	@: > profiles/audio/$(DEPDIR)/$(am__dirstamp)
+profiles/audio/bluetoothd-media.$(OBJEXT):  \
+	profiles/audio/$(am__dirstamp) \
+	profiles/audio/$(DEPDIR)/$(am__dirstamp)
+profiles/audio/bluetoothd-transport.$(OBJEXT):  \
+	profiles/audio/$(am__dirstamp) \
+	profiles/audio/$(DEPDIR)/$(am__dirstamp)
+profiles/audio/bluetoothd-player.$(OBJEXT):  \
+	profiles/audio/$(am__dirstamp) \
+	profiles/audio/$(DEPDIR)/$(am__dirstamp)
 plugins/bluetoothd-admin.$(OBJEXT): plugins/$(am__dirstamp) \
 	plugins/$(DEPDIR)/$(am__dirstamp)
 plugins/bluetoothd-neard.$(OBJEXT): plugins/$(am__dirstamp) \
@@ -6159,12 +6162,6 @@ profiles/sap/bluetoothd-server.$(OBJEXT):  \
 profiles/sap/bluetoothd-sap-dummy.$(OBJEXT):  \
 	profiles/sap/$(am__dirstamp) \
 	profiles/sap/$(DEPDIR)/$(am__dirstamp)
-profiles/audio/$(am__dirstamp):
-	@$(MKDIR_P) profiles/audio
-	@: > profiles/audio/$(am__dirstamp)
-profiles/audio/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) profiles/audio/$(DEPDIR)
-	@: > profiles/audio/$(DEPDIR)/$(am__dirstamp)
 profiles/audio/bluetoothd-source.$(OBJEXT):  \
 	profiles/audio/$(am__dirstamp) \
 	profiles/audio/$(DEPDIR)/$(am__dirstamp)
@@ -6177,12 +6174,6 @@ profiles/audio/bluetoothd-a2dp.$(OBJEXT):  \
 profiles/audio/bluetoothd-avdtp.$(OBJEXT):  \
 	profiles/audio/$(am__dirstamp) \
 	profiles/audio/$(DEPDIR)/$(am__dirstamp)
-profiles/audio/bluetoothd-media.$(OBJEXT):  \
-	profiles/audio/$(am__dirstamp) \
-	profiles/audio/$(DEPDIR)/$(am__dirstamp)
-profiles/audio/bluetoothd-transport.$(OBJEXT):  \
-	profiles/audio/$(am__dirstamp) \
-	profiles/audio/$(DEPDIR)/$(am__dirstamp)
 profiles/audio/bluetoothd-control.$(OBJEXT):  \
 	profiles/audio/$(am__dirstamp) \
 	profiles/audio/$(DEPDIR)/$(am__dirstamp)
@@ -6190,9 +6181,6 @@ profiles/audio/bluetoothd-avctp.$(OBJEXT):  \
 	profiles/audio/$(am__dirstamp) \
 	profiles/audio/$(DEPDIR)/$(am__dirstamp)
 profiles/audio/bluetoothd-avrcp.$(OBJEXT):  \
-	profiles/audio/$(am__dirstamp) \
-	profiles/audio/$(DEPDIR)/$(am__dirstamp)
-profiles/audio/bluetoothd-player.$(OBJEXT):  \
 	profiles/audio/$(am__dirstamp) \
 	profiles/audio/$(DEPDIR)/$(am__dirstamp)
 profiles/network/bluetoothd-manager.$(OBJEXT):  \
@@ -6392,12 +6380,6 @@ tools/advtest.$(OBJEXT): tools/$(am__dirstamp) \
 tools/advtest$(EXEEXT): $(tools_advtest_OBJECTS) $(tools_advtest_DEPENDENCIES) $(EXTRA_tools_advtest_DEPENDENCIES) tools/$(am__dirstamp)
 	@rm -f tools/advtest$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(tools_advtest_OBJECTS) $(tools_advtest_LDADD) $(LIBS)
-tools/amptest.$(OBJEXT): tools/$(am__dirstamp) \
-	tools/$(DEPDIR)/$(am__dirstamp)
-
-tools/amptest$(EXEEXT): $(tools_amptest_OBJECTS) $(tools_amptest_DEPENDENCIES) $(EXTRA_tools_amptest_DEPENDENCIES) tools/$(am__dirstamp)
-	@rm -f tools/amptest$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(tools_amptest_OBJECTS) $(tools_amptest_LDADD) $(LIBS)
 tools/avinfo.$(OBJEXT): tools/$(am__dirstamp) \
 	tools/$(DEPDIR)/$(am__dirstamp)
 
@@ -6612,8 +6594,6 @@ tools/parser/lmp.$(OBJEXT): tools/parser/$(am__dirstamp) \
 tools/parser/hci.$(OBJEXT): tools/parser/$(am__dirstamp) \
 	tools/parser/$(DEPDIR)/$(am__dirstamp)
 tools/parser/l2cap.$(OBJEXT): tools/parser/$(am__dirstamp) \
-	tools/parser/$(DEPDIR)/$(am__dirstamp)
-tools/parser/amp.$(OBJEXT): tools/parser/$(am__dirstamp) \
 	tools/parser/$(DEPDIR)/$(am__dirstamp)
 tools/parser/smp.$(OBJEXT): tools/parser/$(am__dirstamp) \
 	tools/parser/$(DEPDIR)/$(am__dirstamp)
@@ -7321,6 +7301,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@client/$(DEPDIR)/assistant.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@client/$(DEPDIR)/display.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@client/$(DEPDIR)/gatt.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@client/$(DEPDIR)/hci.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@client/$(DEPDIR)/main.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@client/$(DEPDIR)/mgmt.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@client/$(DEPDIR)/player.Po@am__quote@ # am--include-marker
@@ -7365,7 +7346,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@ell/$(DEPDIR)/utf8.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@ell/$(DEPDIR)/util.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@ell/$(DEPDIR)/uuid.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@emulator/$(DEPDIR)/amp.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@emulator/$(DEPDIR)/android_android_tester-btdev.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@emulator/$(DEPDIR)/android_android_tester-bthost.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@emulator/$(DEPDIR)/android_android_tester-hciemu.Po@am__quote@ # am--include-marker
@@ -7508,7 +7488,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@plugins/$(DEPDIR)/bluetoothd-neard.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@plugins/$(DEPDIR)/bluetoothd-policy.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@plugins/$(DEPDIR)/bluetoothd-sixaxis.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@plugins/$(DEPDIR)/bluetoothd-wiimote.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@profiles/audio/$(DEPDIR)/bluetoothd-a2dp.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@profiles/audio/$(DEPDIR)/bluetoothd-asha.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@profiles/audio/$(DEPDIR)/bluetoothd-avctp.Po@am__quote@ # am--include-marker
@@ -7717,7 +7696,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/shared/$(DEPDIR)/libshared_mainloop_la-vcp.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tools/$(DEPDIR)/3dsp.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tools/$(DEPDIR)/advtest.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@tools/$(DEPDIR)/amptest.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tools/$(DEPDIR)/avinfo.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tools/$(DEPDIR)/avtest.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tools/$(DEPDIR)/bcmfw.Po@am__quote@ # am--include-marker
@@ -7808,7 +7786,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@tools/mesh/$(DEPDIR)/mesh-db.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tools/mesh/$(DEPDIR)/remote.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tools/mesh/$(DEPDIR)/util.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@tools/parser/$(DEPDIR)/amp.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tools/parser/$(DEPDIR)/att.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tools/parser/$(DEPDIR)/avctp.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tools/parser/$(DEPDIR)/avdtp.Po@am__quote@ # am--include-marker
@@ -10080,20 +10057,6 @@ plugins/bluetoothd-hostname.obj: plugins/hostname.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o plugins/bluetoothd-hostname.obj `if test -f 'plugins/hostname.c'; then $(CYGPATH_W) 'plugins/hostname.c'; else $(CYGPATH_W) '$(srcdir)/plugins/hostname.c'; fi`
 
-plugins/bluetoothd-wiimote.o: plugins/wiimote.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT plugins/bluetoothd-wiimote.o -MD -MP -MF plugins/$(DEPDIR)/bluetoothd-wiimote.Tpo -c -o plugins/bluetoothd-wiimote.o `test -f 'plugins/wiimote.c' || echo '$(srcdir)/'`plugins/wiimote.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) plugins/$(DEPDIR)/bluetoothd-wiimote.Tpo plugins/$(DEPDIR)/bluetoothd-wiimote.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='plugins/wiimote.c' object='plugins/bluetoothd-wiimote.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o plugins/bluetoothd-wiimote.o `test -f 'plugins/wiimote.c' || echo '$(srcdir)/'`plugins/wiimote.c
-
-plugins/bluetoothd-wiimote.obj: plugins/wiimote.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT plugins/bluetoothd-wiimote.obj -MD -MP -MF plugins/$(DEPDIR)/bluetoothd-wiimote.Tpo -c -o plugins/bluetoothd-wiimote.obj `if test -f 'plugins/wiimote.c'; then $(CYGPATH_W) 'plugins/wiimote.c'; else $(CYGPATH_W) '$(srcdir)/plugins/wiimote.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) plugins/$(DEPDIR)/bluetoothd-wiimote.Tpo plugins/$(DEPDIR)/bluetoothd-wiimote.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='plugins/wiimote.c' object='plugins/bluetoothd-wiimote.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o plugins/bluetoothd-wiimote.obj `if test -f 'plugins/wiimote.c'; then $(CYGPATH_W) 'plugins/wiimote.c'; else $(CYGPATH_W) '$(srcdir)/plugins/wiimote.c'; fi`
-
 plugins/bluetoothd-autopair.o: plugins/autopair.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT plugins/bluetoothd-autopair.o -MD -MP -MF plugins/$(DEPDIR)/bluetoothd-autopair.Tpo -c -o plugins/bluetoothd-autopair.o `test -f 'plugins/autopair.c' || echo '$(srcdir)/'`plugins/autopair.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) plugins/$(DEPDIR)/bluetoothd-autopair.Tpo plugins/$(DEPDIR)/bluetoothd-autopair.Po
@@ -10121,6 +10084,48 @@ plugins/bluetoothd-policy.obj: plugins/policy.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='plugins/policy.c' object='plugins/bluetoothd-policy.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o plugins/bluetoothd-policy.obj `if test -f 'plugins/policy.c'; then $(CYGPATH_W) 'plugins/policy.c'; else $(CYGPATH_W) '$(srcdir)/plugins/policy.c'; fi`
+
+profiles/audio/bluetoothd-media.o: profiles/audio/media.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT profiles/audio/bluetoothd-media.o -MD -MP -MF profiles/audio/$(DEPDIR)/bluetoothd-media.Tpo -c -o profiles/audio/bluetoothd-media.o `test -f 'profiles/audio/media.c' || echo '$(srcdir)/'`profiles/audio/media.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) profiles/audio/$(DEPDIR)/bluetoothd-media.Tpo profiles/audio/$(DEPDIR)/bluetoothd-media.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='profiles/audio/media.c' object='profiles/audio/bluetoothd-media.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o profiles/audio/bluetoothd-media.o `test -f 'profiles/audio/media.c' || echo '$(srcdir)/'`profiles/audio/media.c
+
+profiles/audio/bluetoothd-media.obj: profiles/audio/media.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT profiles/audio/bluetoothd-media.obj -MD -MP -MF profiles/audio/$(DEPDIR)/bluetoothd-media.Tpo -c -o profiles/audio/bluetoothd-media.obj `if test -f 'profiles/audio/media.c'; then $(CYGPATH_W) 'profiles/audio/media.c'; else $(CYGPATH_W) '$(srcdir)/profiles/audio/media.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) profiles/audio/$(DEPDIR)/bluetoothd-media.Tpo profiles/audio/$(DEPDIR)/bluetoothd-media.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='profiles/audio/media.c' object='profiles/audio/bluetoothd-media.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o profiles/audio/bluetoothd-media.obj `if test -f 'profiles/audio/media.c'; then $(CYGPATH_W) 'profiles/audio/media.c'; else $(CYGPATH_W) '$(srcdir)/profiles/audio/media.c'; fi`
+
+profiles/audio/bluetoothd-transport.o: profiles/audio/transport.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT profiles/audio/bluetoothd-transport.o -MD -MP -MF profiles/audio/$(DEPDIR)/bluetoothd-transport.Tpo -c -o profiles/audio/bluetoothd-transport.o `test -f 'profiles/audio/transport.c' || echo '$(srcdir)/'`profiles/audio/transport.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) profiles/audio/$(DEPDIR)/bluetoothd-transport.Tpo profiles/audio/$(DEPDIR)/bluetoothd-transport.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='profiles/audio/transport.c' object='profiles/audio/bluetoothd-transport.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o profiles/audio/bluetoothd-transport.o `test -f 'profiles/audio/transport.c' || echo '$(srcdir)/'`profiles/audio/transport.c
+
+profiles/audio/bluetoothd-transport.obj: profiles/audio/transport.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT profiles/audio/bluetoothd-transport.obj -MD -MP -MF profiles/audio/$(DEPDIR)/bluetoothd-transport.Tpo -c -o profiles/audio/bluetoothd-transport.obj `if test -f 'profiles/audio/transport.c'; then $(CYGPATH_W) 'profiles/audio/transport.c'; else $(CYGPATH_W) '$(srcdir)/profiles/audio/transport.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) profiles/audio/$(DEPDIR)/bluetoothd-transport.Tpo profiles/audio/$(DEPDIR)/bluetoothd-transport.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='profiles/audio/transport.c' object='profiles/audio/bluetoothd-transport.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o profiles/audio/bluetoothd-transport.obj `if test -f 'profiles/audio/transport.c'; then $(CYGPATH_W) 'profiles/audio/transport.c'; else $(CYGPATH_W) '$(srcdir)/profiles/audio/transport.c'; fi`
+
+profiles/audio/bluetoothd-player.o: profiles/audio/player.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT profiles/audio/bluetoothd-player.o -MD -MP -MF profiles/audio/$(DEPDIR)/bluetoothd-player.Tpo -c -o profiles/audio/bluetoothd-player.o `test -f 'profiles/audio/player.c' || echo '$(srcdir)/'`profiles/audio/player.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) profiles/audio/$(DEPDIR)/bluetoothd-player.Tpo profiles/audio/$(DEPDIR)/bluetoothd-player.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='profiles/audio/player.c' object='profiles/audio/bluetoothd-player.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o profiles/audio/bluetoothd-player.o `test -f 'profiles/audio/player.c' || echo '$(srcdir)/'`profiles/audio/player.c
+
+profiles/audio/bluetoothd-player.obj: profiles/audio/player.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT profiles/audio/bluetoothd-player.obj -MD -MP -MF profiles/audio/$(DEPDIR)/bluetoothd-player.Tpo -c -o profiles/audio/bluetoothd-player.obj `if test -f 'profiles/audio/player.c'; then $(CYGPATH_W) 'profiles/audio/player.c'; else $(CYGPATH_W) '$(srcdir)/profiles/audio/player.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) profiles/audio/$(DEPDIR)/bluetoothd-player.Tpo profiles/audio/$(DEPDIR)/bluetoothd-player.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='profiles/audio/player.c' object='profiles/audio/bluetoothd-player.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o profiles/audio/bluetoothd-player.obj `if test -f 'profiles/audio/player.c'; then $(CYGPATH_W) 'profiles/audio/player.c'; else $(CYGPATH_W) '$(srcdir)/profiles/audio/player.c'; fi`
 
 plugins/bluetoothd-admin.o: plugins/admin.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT plugins/bluetoothd-admin.o -MD -MP -MF plugins/$(DEPDIR)/bluetoothd-admin.Tpo -c -o plugins/bluetoothd-admin.o `test -f 'plugins/admin.c' || echo '$(srcdir)/'`plugins/admin.c
@@ -10262,34 +10267,6 @@ profiles/audio/bluetoothd-avdtp.obj: profiles/audio/avdtp.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o profiles/audio/bluetoothd-avdtp.obj `if test -f 'profiles/audio/avdtp.c'; then $(CYGPATH_W) 'profiles/audio/avdtp.c'; else $(CYGPATH_W) '$(srcdir)/profiles/audio/avdtp.c'; fi`
 
-profiles/audio/bluetoothd-media.o: profiles/audio/media.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT profiles/audio/bluetoothd-media.o -MD -MP -MF profiles/audio/$(DEPDIR)/bluetoothd-media.Tpo -c -o profiles/audio/bluetoothd-media.o `test -f 'profiles/audio/media.c' || echo '$(srcdir)/'`profiles/audio/media.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) profiles/audio/$(DEPDIR)/bluetoothd-media.Tpo profiles/audio/$(DEPDIR)/bluetoothd-media.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='profiles/audio/media.c' object='profiles/audio/bluetoothd-media.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o profiles/audio/bluetoothd-media.o `test -f 'profiles/audio/media.c' || echo '$(srcdir)/'`profiles/audio/media.c
-
-profiles/audio/bluetoothd-media.obj: profiles/audio/media.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT profiles/audio/bluetoothd-media.obj -MD -MP -MF profiles/audio/$(DEPDIR)/bluetoothd-media.Tpo -c -o profiles/audio/bluetoothd-media.obj `if test -f 'profiles/audio/media.c'; then $(CYGPATH_W) 'profiles/audio/media.c'; else $(CYGPATH_W) '$(srcdir)/profiles/audio/media.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) profiles/audio/$(DEPDIR)/bluetoothd-media.Tpo profiles/audio/$(DEPDIR)/bluetoothd-media.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='profiles/audio/media.c' object='profiles/audio/bluetoothd-media.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o profiles/audio/bluetoothd-media.obj `if test -f 'profiles/audio/media.c'; then $(CYGPATH_W) 'profiles/audio/media.c'; else $(CYGPATH_W) '$(srcdir)/profiles/audio/media.c'; fi`
-
-profiles/audio/bluetoothd-transport.o: profiles/audio/transport.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT profiles/audio/bluetoothd-transport.o -MD -MP -MF profiles/audio/$(DEPDIR)/bluetoothd-transport.Tpo -c -o profiles/audio/bluetoothd-transport.o `test -f 'profiles/audio/transport.c' || echo '$(srcdir)/'`profiles/audio/transport.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) profiles/audio/$(DEPDIR)/bluetoothd-transport.Tpo profiles/audio/$(DEPDIR)/bluetoothd-transport.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='profiles/audio/transport.c' object='profiles/audio/bluetoothd-transport.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o profiles/audio/bluetoothd-transport.o `test -f 'profiles/audio/transport.c' || echo '$(srcdir)/'`profiles/audio/transport.c
-
-profiles/audio/bluetoothd-transport.obj: profiles/audio/transport.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT profiles/audio/bluetoothd-transport.obj -MD -MP -MF profiles/audio/$(DEPDIR)/bluetoothd-transport.Tpo -c -o profiles/audio/bluetoothd-transport.obj `if test -f 'profiles/audio/transport.c'; then $(CYGPATH_W) 'profiles/audio/transport.c'; else $(CYGPATH_W) '$(srcdir)/profiles/audio/transport.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) profiles/audio/$(DEPDIR)/bluetoothd-transport.Tpo profiles/audio/$(DEPDIR)/bluetoothd-transport.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='profiles/audio/transport.c' object='profiles/audio/bluetoothd-transport.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o profiles/audio/bluetoothd-transport.obj `if test -f 'profiles/audio/transport.c'; then $(CYGPATH_W) 'profiles/audio/transport.c'; else $(CYGPATH_W) '$(srcdir)/profiles/audio/transport.c'; fi`
-
 profiles/audio/bluetoothd-control.o: profiles/audio/control.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT profiles/audio/bluetoothd-control.o -MD -MP -MF profiles/audio/$(DEPDIR)/bluetoothd-control.Tpo -c -o profiles/audio/bluetoothd-control.o `test -f 'profiles/audio/control.c' || echo '$(srcdir)/'`profiles/audio/control.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) profiles/audio/$(DEPDIR)/bluetoothd-control.Tpo profiles/audio/$(DEPDIR)/bluetoothd-control.Po
@@ -10331,20 +10308,6 @@ profiles/audio/bluetoothd-avrcp.obj: profiles/audio/avrcp.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='profiles/audio/avrcp.c' object='profiles/audio/bluetoothd-avrcp.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o profiles/audio/bluetoothd-avrcp.obj `if test -f 'profiles/audio/avrcp.c'; then $(CYGPATH_W) 'profiles/audio/avrcp.c'; else $(CYGPATH_W) '$(srcdir)/profiles/audio/avrcp.c'; fi`
-
-profiles/audio/bluetoothd-player.o: profiles/audio/player.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT profiles/audio/bluetoothd-player.o -MD -MP -MF profiles/audio/$(DEPDIR)/bluetoothd-player.Tpo -c -o profiles/audio/bluetoothd-player.o `test -f 'profiles/audio/player.c' || echo '$(srcdir)/'`profiles/audio/player.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) profiles/audio/$(DEPDIR)/bluetoothd-player.Tpo profiles/audio/$(DEPDIR)/bluetoothd-player.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='profiles/audio/player.c' object='profiles/audio/bluetoothd-player.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o profiles/audio/bluetoothd-player.o `test -f 'profiles/audio/player.c' || echo '$(srcdir)/'`profiles/audio/player.c
-
-profiles/audio/bluetoothd-player.obj: profiles/audio/player.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT profiles/audio/bluetoothd-player.obj -MD -MP -MF profiles/audio/$(DEPDIR)/bluetoothd-player.Tpo -c -o profiles/audio/bluetoothd-player.obj `if test -f 'profiles/audio/player.c'; then $(CYGPATH_W) 'profiles/audio/player.c'; else $(CYGPATH_W) '$(srcdir)/profiles/audio/player.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) profiles/audio/$(DEPDIR)/bluetoothd-player.Tpo profiles/audio/$(DEPDIR)/bluetoothd-player.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='profiles/audio/player.c' object='profiles/audio/bluetoothd-player.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o profiles/audio/bluetoothd-player.obj `if test -f 'profiles/audio/player.c'; then $(CYGPATH_W) 'profiles/audio/player.c'; else $(CYGPATH_W) '$(srcdir)/profiles/audio/player.c'; fi`
 
 profiles/network/bluetoothd-manager.o: profiles/network/manager.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bluetoothd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT profiles/network/bluetoothd-manager.o -MD -MP -MF profiles/network/$(DEPDIR)/bluetoothd-manager.Tpo -c -o profiles/network/bluetoothd-manager.o `test -f 'profiles/network/manager.c' || echo '$(srcdir)/'`profiles/network/manager.c
@@ -12601,6 +12564,7 @@ distclean: distclean-am
 	-rm -f client/$(DEPDIR)/assistant.Po
 	-rm -f client/$(DEPDIR)/display.Po
 	-rm -f client/$(DEPDIR)/gatt.Po
+	-rm -f client/$(DEPDIR)/hci.Po
 	-rm -f client/$(DEPDIR)/main.Po
 	-rm -f client/$(DEPDIR)/mgmt.Po
 	-rm -f client/$(DEPDIR)/player.Po
@@ -12645,7 +12609,6 @@ distclean: distclean-am
 	-rm -f ell/$(DEPDIR)/utf8.Plo
 	-rm -f ell/$(DEPDIR)/util.Plo
 	-rm -f ell/$(DEPDIR)/uuid.Plo
-	-rm -f emulator/$(DEPDIR)/amp.Po
 	-rm -f emulator/$(DEPDIR)/android_android_tester-btdev.Po
 	-rm -f emulator/$(DEPDIR)/android_android_tester-bthost.Po
 	-rm -f emulator/$(DEPDIR)/android_android_tester-hciemu.Po
@@ -12788,7 +12751,6 @@ distclean: distclean-am
 	-rm -f plugins/$(DEPDIR)/bluetoothd-neard.Po
 	-rm -f plugins/$(DEPDIR)/bluetoothd-policy.Po
 	-rm -f plugins/$(DEPDIR)/bluetoothd-sixaxis.Po
-	-rm -f plugins/$(DEPDIR)/bluetoothd-wiimote.Po
 	-rm -f profiles/audio/$(DEPDIR)/bluetoothd-a2dp.Po
 	-rm -f profiles/audio/$(DEPDIR)/bluetoothd-asha.Po
 	-rm -f profiles/audio/$(DEPDIR)/bluetoothd-avctp.Po
@@ -12997,7 +12959,6 @@ distclean: distclean-am
 	-rm -f src/shared/$(DEPDIR)/libshared_mainloop_la-vcp.Plo
 	-rm -f tools/$(DEPDIR)/3dsp.Po
 	-rm -f tools/$(DEPDIR)/advtest.Po
-	-rm -f tools/$(DEPDIR)/amptest.Po
 	-rm -f tools/$(DEPDIR)/avinfo.Po
 	-rm -f tools/$(DEPDIR)/avtest.Po
 	-rm -f tools/$(DEPDIR)/bcmfw.Po
@@ -13088,7 +13049,6 @@ distclean: distclean-am
 	-rm -f tools/mesh/$(DEPDIR)/mesh-db.Po
 	-rm -f tools/mesh/$(DEPDIR)/remote.Po
 	-rm -f tools/mesh/$(DEPDIR)/util.Po
-	-rm -f tools/parser/$(DEPDIR)/amp.Po
 	-rm -f tools/parser/$(DEPDIR)/att.Po
 	-rm -f tools/parser/$(DEPDIR)/avctp.Po
 	-rm -f tools/parser/$(DEPDIR)/avdtp.Po
@@ -13298,6 +13258,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f client/$(DEPDIR)/assistant.Po
 	-rm -f client/$(DEPDIR)/display.Po
 	-rm -f client/$(DEPDIR)/gatt.Po
+	-rm -f client/$(DEPDIR)/hci.Po
 	-rm -f client/$(DEPDIR)/main.Po
 	-rm -f client/$(DEPDIR)/mgmt.Po
 	-rm -f client/$(DEPDIR)/player.Po
@@ -13342,7 +13303,6 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ell/$(DEPDIR)/utf8.Plo
 	-rm -f ell/$(DEPDIR)/util.Plo
 	-rm -f ell/$(DEPDIR)/uuid.Plo
-	-rm -f emulator/$(DEPDIR)/amp.Po
 	-rm -f emulator/$(DEPDIR)/android_android_tester-btdev.Po
 	-rm -f emulator/$(DEPDIR)/android_android_tester-bthost.Po
 	-rm -f emulator/$(DEPDIR)/android_android_tester-hciemu.Po
@@ -13485,7 +13445,6 @@ maintainer-clean: maintainer-clean-am
 	-rm -f plugins/$(DEPDIR)/bluetoothd-neard.Po
 	-rm -f plugins/$(DEPDIR)/bluetoothd-policy.Po
 	-rm -f plugins/$(DEPDIR)/bluetoothd-sixaxis.Po
-	-rm -f plugins/$(DEPDIR)/bluetoothd-wiimote.Po
 	-rm -f profiles/audio/$(DEPDIR)/bluetoothd-a2dp.Po
 	-rm -f profiles/audio/$(DEPDIR)/bluetoothd-asha.Po
 	-rm -f profiles/audio/$(DEPDIR)/bluetoothd-avctp.Po
@@ -13694,7 +13653,6 @@ maintainer-clean: maintainer-clean-am
 	-rm -f src/shared/$(DEPDIR)/libshared_mainloop_la-vcp.Plo
 	-rm -f tools/$(DEPDIR)/3dsp.Po
 	-rm -f tools/$(DEPDIR)/advtest.Po
-	-rm -f tools/$(DEPDIR)/amptest.Po
 	-rm -f tools/$(DEPDIR)/avinfo.Po
 	-rm -f tools/$(DEPDIR)/avtest.Po
 	-rm -f tools/$(DEPDIR)/bcmfw.Po
@@ -13785,7 +13743,6 @@ maintainer-clean: maintainer-clean-am
 	-rm -f tools/mesh/$(DEPDIR)/mesh-db.Po
 	-rm -f tools/mesh/$(DEPDIR)/remote.Po
 	-rm -f tools/mesh/$(DEPDIR)/util.Po
-	-rm -f tools/parser/$(DEPDIR)/amp.Po
 	-rm -f tools/parser/$(DEPDIR)/att.Po
 	-rm -f tools/parser/$(DEPDIR)/avctp.Po
 	-rm -f tools/parser/$(DEPDIR)/avdtp.Po
@@ -13923,7 +13880,7 @@ uninstall-man: uninstall-man1 uninstall-man5 uninstall-man7 \
 
 
 bluetoothd-fix-permissions:
-	install -dm555 $(DESTDIR)$(confdir)
+	install -dm755 $(DESTDIR)$(confdir)
 	install -dm700 $(DESTDIR)$(statedir)
 @BTPCLIENT_TRUE@tools/btpclient.$(OBJEXT): src/libshared-ell.la ell/internal
 

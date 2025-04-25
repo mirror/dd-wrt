@@ -5,7 +5,7 @@
  *
  *  Copyright (C) 2006-2007  Nokia Corporation
  *  Copyright (C) 2004-2009  Marcel Holtmann <marcel@holtmann.org>
- *  Copyright 2023-2024 NXP
+ *  Copyright 2023-2025 NXP
  *
  *
  */
@@ -38,15 +38,23 @@
 #include "src/shared/bass.h"
 #include "src/shared/io.h"
 
-#include "asha.h"
+#ifdef HAVE_A2DP
 #include "avdtp.h"
-#include "media.h"
-#include "transport.h"
 #include "a2dp.h"
 #include "sink.h"
 #include "source.h"
+#ifdef HAVE_AVRCP
 #include "avrcp.h"
-#include "bass.h"
+#endif
+#endif
+
+#ifdef HAVE_ASHA
+#include "asha.h"
+#endif
+
+#include "media.h"
+#include "transport.h"
+#include "vcp.h"
 
 #define MEDIA_TRANSPORT_INTERFACE "org.bluez.MediaTransport1"
 
@@ -88,6 +96,9 @@ struct a2dp_transport {
 	uint16_t		delay;
 	int8_t			volume;
 	guint			watch;
+	guint			resume_id;
+	gboolean		cancel_resume;
+	guint			cancel_id;
 };
 
 struct bap_transport {
@@ -114,8 +125,8 @@ struct media_transport_ops {
 	void (*set_state)(struct media_transport *transport,
 				transport_state_t state);
 	void *(*get_stream)(struct media_transport *transport);
-	int8_t (*get_volume)(struct media_transport *transport);
-	int (*set_volume)(struct media_transport *transport, int8_t level);
+	int (*get_volume)(struct media_transport *transport);
+	int (*set_volume)(struct media_transport *transport, int level);
 	int (*set_delay)(struct media_transport *transport, uint16_t delay);
 	void (*update_links)(const struct media_transport *transport);
 	GDestroyNotify destroy;
@@ -384,6 +395,7 @@ static gboolean media_transport_set_fd(struct media_transport *transport,
 	return TRUE;
 }
 
+#ifdef HAVE_A2DP
 static void *transport_a2dp_get_stream(struct media_transport *transport)
 {
 	struct a2dp_sep *sep = media_endpoint_get_sep(transport->endpoint);
@@ -394,21 +406,109 @@ static void *transport_a2dp_get_stream(struct media_transport *transport)
 	return a2dp_sep_get_stream(sep);
 }
 
+static void a2dp_suspend_complete(struct avdtp *session, int err,
+							void *user_data)
+{
+	struct media_owner *owner = user_data;
+	struct media_transport *transport = owner->transport;
+	struct a2dp_transport *a2dp = transport->data;
+	struct a2dp_sep *sep = media_endpoint_get_sep(transport->endpoint);
+
+	/* Release always succeeds */
+	if (owner->pending) {
+		owner->pending->id = 0;
+		media_request_reply(owner->pending, 0);
+		media_owner_remove(owner);
+	}
+
+	a2dp_sep_unlock(sep, a2dp->session);
+	transport_set_state(transport, TRANSPORT_STATE_IDLE);
+	media_transport_remove_owner(transport);
+}
+
+static guint transport_a2dp_suspend(struct media_transport *transport,
+						struct media_owner *owner)
+{
+	struct a2dp_transport *a2dp = transport->data;
+	struct media_endpoint *endpoint = transport->endpoint;
+	struct a2dp_sep *sep = media_endpoint_get_sep(endpoint);
+
+	if (owner != NULL) {
+		if (a2dp->resume_id) {
+			a2dp->cancel_resume = TRUE;
+			return a2dp->resume_id;
+		}
+
+		return a2dp_suspend(a2dp->session, sep, a2dp_suspend_complete,
+									owner);
+	}
+
+	transport_set_state(transport, TRANSPORT_STATE_IDLE);
+	a2dp_sep_unlock(sep, a2dp->session);
+
+	return 0;
+}
+
+static gboolean a2dp_cancel_resume_cb(void *user_data)
+{
+	struct media_owner *owner = user_data;
+	struct media_transport *transport = owner->transport;
+	struct a2dp_transport *a2dp = transport->data;
+	guint id;
+
+	a2dp->cancel_id = 0;
+
+	if (!owner->pending)
+		goto fail;
+
+	owner->pending->id = 0;
+
+	/* The suspend fails e.g. if stream was closed/aborted. This happens if
+	 * SetConfiguration() was called while we were waiting for the START to
+	 * complete.
+	 *
+	 * We bail out from the Release() with error in that case.
+	 */
+	id = transport_a2dp_suspend(transport, owner);
+	if (id)
+		owner->pending->id = id;
+	else
+		goto fail;
+
+	return FALSE;
+
+fail:
+	media_transport_remove_owner(transport);
+	return FALSE;
+}
+
 static void a2dp_resume_complete(struct avdtp *session, int err,
 							void *user_data)
 {
 	struct media_owner *owner = user_data;
 	struct media_request *req = owner->pending;
 	struct media_transport *transport = owner->transport;
+	struct a2dp_transport *a2dp = transport->data;
 	struct avdtp_stream *stream;
 	int fd;
 	uint16_t imtu, omtu;
 	gboolean ret;
 
+	a2dp->resume_id = 0;
+
+	if (!req)
+		goto fail;
+
 	req->id = 0;
 
 	if (err)
 		goto fail;
+
+	if (a2dp->cancel_resume) {
+		DBG("cancel resume");
+		a2dp->cancel_id = g_idle_add(a2dp_cancel_resume_cb, owner);
+		return;
+	}
 
 	stream = transport_a2dp_get_stream(transport);
 	if (stream == NULL)
@@ -446,15 +546,20 @@ static guint transport_a2dp_resume(struct media_transport *transport,
 	struct a2dp_sep *sep = media_endpoint_get_sep(endpoint);
 	guint id;
 
+	if (a2dp->resume_id || a2dp->cancel_id)
+		return 0;
+
 	if (a2dp->session == NULL) {
 		a2dp->session = a2dp_avdtp_get(transport->device);
 		if (a2dp->session == NULL)
 			return 0;
 	}
 
-	if (state_in_use(transport->state))
-		return a2dp_resume(a2dp->session, sep, a2dp_resume_complete,
+	if (state_in_use(transport->state)) {
+		id = a2dp_resume(a2dp->session, sep, a2dp_resume_complete,
 									owner);
+		goto done;
+	}
 
 	if (a2dp_sep_lock(sep, a2dp->session) == FALSE)
 		return 0;
@@ -469,61 +574,61 @@ static guint transport_a2dp_resume(struct media_transport *transport,
 	if (transport->state == TRANSPORT_STATE_IDLE)
 		transport_set_state(transport, TRANSPORT_STATE_REQUESTING);
 
+done:
+	a2dp->resume_id = id;
+	a2dp->cancel_resume = FALSE;
 	return id;
-}
-
-static void a2dp_suspend_complete(struct avdtp *session, int err,
-							void *user_data)
-{
-	struct media_owner *owner = user_data;
-	struct media_transport *transport = owner->transport;
-	struct a2dp_transport *a2dp = transport->data;
-	struct a2dp_sep *sep = media_endpoint_get_sep(transport->endpoint);
-
-	/* Release always succeeds */
-	if (owner->pending) {
-		owner->pending->id = 0;
-		media_request_reply(owner->pending, 0);
-		media_owner_remove(owner);
-	}
-
-	a2dp_sep_unlock(sep, a2dp->session);
-	transport_set_state(transport, TRANSPORT_STATE_IDLE);
-	media_transport_remove_owner(transport);
-}
-
-static guint transport_a2dp_suspend(struct media_transport *transport,
-						struct media_owner *owner)
-{
-	struct a2dp_transport *a2dp = transport->data;
-	struct media_endpoint *endpoint = transport->endpoint;
-	struct a2dp_sep *sep = media_endpoint_get_sep(endpoint);
-
-	if (owner != NULL)
-		return a2dp_suspend(a2dp->session, sep, a2dp_suspend_complete,
-									owner);
-
-	transport_set_state(transport, TRANSPORT_STATE_IDLE);
-	a2dp_sep_unlock(sep, a2dp->session);
-
-	return 0;
 }
 
 static void transport_a2dp_cancel(struct media_transport *transport, guint id)
 {
+	struct a2dp_transport *a2dp = transport->data;
+
+	/* a2dp_cancel() results to ABORT->IDLE->disconnect. For START we
+	 * instead wait the operation out.
+	 */
+	if (id == a2dp->resume_id) {
+		a2dp->cancel_resume = TRUE;
+		return;
+	}
+
 	a2dp_cancel(id);
 }
 
-static int8_t transport_a2dp_get_volume(struct media_transport *transport)
+static void transport_a2dp_remove_owner(struct media_transport *transport,
+					struct media_owner *owner)
+{
+	struct a2dp_transport *a2dp = transport->data;
+
+	/* Cancel any pending operations for the owner */
+
+	if (a2dp->cancel_id) {
+		g_source_remove(a2dp->cancel_id);
+		a2dp->cancel_id = 0;
+	}
+
+	if (a2dp->resume_id) {
+		a2dp_cancel(a2dp->resume_id);
+		a2dp->resume_id = 0;
+	}
+
+	a2dp->cancel_resume = FALSE;
+}
+
+static int transport_a2dp_get_volume(struct media_transport *transport)
 {
 	struct a2dp_transport *a2dp = transport->data;
 	return a2dp->volume;
 }
 
+#ifdef HAVE_AVRCP
 static int transport_a2dp_src_set_volume(struct media_transport *transport,
-					int8_t level)
+					int level)
 {
 	struct a2dp_transport *a2dp = transport->data;
+
+	if (level < 0 || level > 127)
+		return -EINVAL;
 
 	if (a2dp->volume == level)
 		return 0;
@@ -532,10 +637,13 @@ static int transport_a2dp_src_set_volume(struct media_transport *transport,
 }
 
 static int transport_a2dp_snk_set_volume(struct media_transport *transport,
-					int8_t level)
+					int level)
 {
 	struct a2dp_transport *a2dp = transport->data;
 	bool notify;
+
+	if (level < 0 || level > 127)
+		return -EINVAL;
 
 	if (a2dp->volume == level)
 		return 0;
@@ -551,6 +659,7 @@ static int transport_a2dp_snk_set_volume(struct media_transport *transport,
 
 	return avrcp_set_volume(transport->device, level, notify);
 }
+#endif
 
 static int transport_a2dp_snk_set_delay(struct media_transport *transport,
 					uint16_t delay)
@@ -581,6 +690,7 @@ static int transport_a2dp_snk_set_delay(struct media_transport *transport,
 
 	return avdtp_delay_report(a2dp->session, stream, delay);
 }
+#endif /* HAVE_A2DP */
 
 static void media_owner_exit(DBusConnection *connection, void *user_data)
 {
@@ -804,10 +914,12 @@ static DBusMessage *release(DBusConnection *conn, DBusMessage *msg,
 
 		member = dbus_message_get_member(owner->pending->msg);
 		/* Cancel Acquire request if that exist */
-		if (g_str_equal(member, "Acquire"))
+		if (g_str_equal(member, "Acquire")) {
+			media_request_reply(owner->pending, ECANCELED);
 			media_owner_remove(owner);
-		else
+		} else {
 			return btd_error_in_progress(msg);
+		}
 	}
 
 	transport_set_state(transport, TRANSPORT_STATE_SUSPENDING);
@@ -891,6 +1003,7 @@ static gboolean get_state(const GDBusPropertyTable *property,
 	return TRUE;
 }
 
+#ifdef HAVE_A2DP
 static gboolean delay_reporting_exists(const GDBusPropertyTable *property,
 							void *data)
 {
@@ -971,11 +1084,12 @@ static void set_delay_report(const GDBusPropertyTable *property,
 
 	g_dbus_pending_property_success(id);
 }
+#endif /* HAVE_A2DP */
 
 static gboolean volume_exists(const GDBusPropertyTable *property, void *data)
 {
 	struct media_transport *transport = data;
-	int8_t volume;
+	int volume;
 
 	if (media_transport_get_volume(transport, &volume))
 		return FALSE;
@@ -983,8 +1097,7 @@ static gboolean volume_exists(const GDBusPropertyTable *property, void *data)
 	return volume >= 0;
 }
 
-int media_transport_get_volume(struct media_transport *transport,
-					int8_t *volume)
+int media_transport_get_volume(struct media_transport *transport, int *volume)
 {
 	if (transport->ops && transport->ops->get_volume) {
 		*volume = transport->ops->get_volume(transport);
@@ -998,7 +1111,7 @@ static gboolean get_volume(const GDBusPropertyTable *property,
 					DBusMessageIter *iter, void *data)
 {
 	struct media_transport *transport = data;
-	int8_t level;
+	int level;
 	uint16_t volume;
 
 	if (media_transport_get_volume(transport, &level))
@@ -1012,7 +1125,7 @@ static gboolean get_volume(const GDBusPropertyTable *property,
 }
 
 static int media_transport_set_volume(struct media_transport *transport,
-					int8_t level)
+					int level)
 {
 	DBG("Transport %s level %d", transport->path, level);
 
@@ -1038,15 +1151,13 @@ static void set_volume(const GDBusPropertyTable *property,
 	}
 
 	dbus_message_iter_get_basic(iter, &arg);
-	if (arg > INT8_MAX) {
+	err = media_transport_set_volume(transport, arg);
+	if (err == -EINVAL) {
 		g_dbus_pending_property_error(id,
 				ERROR_INTERFACE ".InvalidArguments",
-				"Volume must not be larger than 127");
+				"Invalid volume value");
 		return;
-	}
-
-	err = media_transport_set_volume(transport, arg);
-	if (err) {
+	} else if (err) {
 		error("Unable to set volume: %s (%d)", strerror(-err), err);
 		g_dbus_pending_property_error(id,
 						ERROR_INTERFACE ".Failed",
@@ -1101,6 +1212,7 @@ static const GDBusMethodTable transport_methods[] = {
 	{ },
 };
 
+#ifdef HAVE_A2DP
 static const GDBusPropertyTable transport_a2dp_properties[] = {
 	{ "Device", "o", get_device },
 	{ "UUID", "s", get_uuid },
@@ -1114,6 +1226,7 @@ static const GDBusPropertyTable transport_a2dp_properties[] = {
 				G_DBUS_PROPERTY_FLAG_EXPERIMENTAL },
 	{ }
 };
+#endif /* HAVE_A2DP */
 
 static void append_io_qos(DBusMessageIter *dict, struct bt_bap_io_qos *qos)
 {
@@ -1310,6 +1423,7 @@ static const GDBusPropertyTable transport_bap_uc_properties[] = {
 	{ "Location", "u", get_location },
 	{ "Metadata", "ay", get_metadata },
 	{ "Links", "ao", get_links, NULL, links_exists },
+	{ "Volume", "q", get_volume, set_volume, volume_exists },
 	{ }
 };
 
@@ -1422,7 +1536,7 @@ static void set_bcast_qos(const GDBusPropertyTable *property,
 			 * for the encrypted stream, request the code from
 			 * Broadcast Assistants, if any are available.
 			 */
-			bass_req_bcode(bap->stream, bcast_qos_set,
+			bt_bap_req_bcode(bap->stream, bcast_qos_set,
 						GUINT_TO_POINTER(id));
 			return;
 		}
@@ -1448,6 +1562,7 @@ static const GDBusPropertyTable transport_bap_bc_properties[] = {
 	{ }
 };
 
+#ifdef HAVE_ASHA
 static gboolean get_asha_delay(const GDBusPropertyTable *property,
 					DBusMessageIter *iter, void *data)
 {
@@ -1473,7 +1588,9 @@ static const GDBusPropertyTable transport_asha_properties[] = {
 	{ "Volume", "q", get_volume, set_volume, volume_exists },
 	{ }
 };
+#endif /* HAVE_ASHA */
 
+#ifdef HAVE_A2DP
 static void transport_a2dp_destroy(void *data)
 {
 	struct a2dp_transport *a2dp = data;
@@ -1503,6 +1620,7 @@ static void transport_a2dp_snk_destroy(void *data)
 
 	transport_a2dp_destroy(data);
 }
+#endif /* HAVE_A2DP */
 
 static void media_transport_free(void *data)
 {
@@ -1588,6 +1706,7 @@ static DBusMessage *unselect_transport(DBusConnection *conn, DBusMessage *msg,
 	return dbus_message_new_method_return(msg);
 }
 
+#ifdef HAVE_A2DP
 static void sink_state_changed(struct btd_service *service,
 						sink_state_t old_state,
 						sink_state_t new_state,
@@ -1648,6 +1767,7 @@ static void *transport_a2dp_snk_init(struct media_transport *transport,
 
 	return a2dp;
 }
+#endif /* HAVE_A2DP */
 
 static void bap_enable_complete(struct bt_bap_stream *stream,
 					uint8_t code, uint8_t reason,
@@ -2072,6 +2192,20 @@ static void bap_connecting(struct bt_bap_stream *stream, bool state, int fd,
 	bap_update_links(transport);
 }
 
+static int transport_bap_get_volume(struct media_transport *transport)
+{
+	return bt_audio_vcp_get_volume(transport->device);
+}
+
+static int transport_bap_set_volume(struct media_transport *transport,
+								int volume)
+{
+	if (volume < 0 || volume > 255)
+		return -EINVAL;
+
+	return bt_audio_vcp_set_volume(transport->device, volume) ? 0 : -EIO;
+}
+
 static void transport_bap_destroy(void *data)
 {
 	struct bap_transport *bap = data;
@@ -2099,6 +2233,7 @@ static void *transport_bap_init(struct media_transport *transport, void *stream)
 	return bap;
 }
 
+#ifdef HAVE_ASHA
 static void asha_transport_sync_state(struct media_transport *transport,
 						struct bt_asha_device *asha_dev)
 {
@@ -2225,7 +2360,7 @@ static void transport_asha_cancel(struct media_transport *transport, guint id)
 	}
 }
 
-static int8_t transport_asha_get_volume(struct media_transport *transport)
+static int transport_asha_get_volume(struct media_transport *transport)
 {
 	struct bt_asha_device *asha_dev = transport->data;
 	int8_t volume;
@@ -2240,10 +2375,13 @@ static int8_t transport_asha_get_volume(struct media_transport *transport)
 }
 
 static int transport_asha_set_volume(struct media_transport *transport,
-								int8_t volume)
+							int volume)
 {
 	struct bt_asha_device *asha_dev = transport->data;
 	int scaled_volume;
+
+	if (volume < 0 || volume > 127)
+		return -EINVAL;
 
 	/* Convert 0-127 to -128-0 */
 	scaled_volume = ((((int) volume) * 128) / 127) - 128;
@@ -2256,6 +2394,7 @@ static void *transport_asha_init(struct media_transport *transport, void *data)
 	/* We just store the struct asha_device on the transport */
 	return data;
 }
+#endif /* HAVE_ASHA */
 
 #define TRANSPORT_OPS(_uuid, _props, _set_owner, _remove_owner, _init, \
 		      _resume, _suspend, _cancel, _set_state, _get_stream, \
@@ -2280,7 +2419,8 @@ static void *transport_asha_init(struct media_transport *transport, void *data)
 }
 
 #define A2DP_OPS(_uuid, _init, _set_volume, _set_delay, _destroy) \
-	TRANSPORT_OPS(_uuid, transport_a2dp_properties, NULL, NULL, _init, \
+	TRANSPORT_OPS(_uuid, transport_a2dp_properties, NULL, \
+			transport_a2dp_remove_owner, _init,	      \
 			transport_a2dp_resume, transport_a2dp_suspend, \
 			transport_a2dp_cancel, NULL, \
 			transport_a2dp_get_stream, transport_a2dp_get_volume, \
@@ -2292,7 +2432,8 @@ static void *transport_asha_init(struct media_transport *transport, void *data)
 			transport_bap_init, \
 			transport_bap_resume, transport_bap_suspend, \
 			transport_bap_cancel, _set_state, \
-			transport_bap_get_stream, NULL, NULL, NULL, \
+			transport_bap_get_stream, transport_bap_get_volume, \
+			transport_bap_set_volume, NULL, \
 			_update_links, transport_bap_destroy)
 
 #define BAP_UC_OPS(_uuid) \
@@ -2313,19 +2454,31 @@ static void *transport_asha_init(struct media_transport *transport, void *data)
 			NULL, NULL, NULL)
 
 static const struct media_transport_ops transport_ops[] = {
+#ifdef HAVE_A2DP
 	A2DP_OPS(A2DP_SOURCE_UUID, transport_a2dp_src_init,
+#ifdef HAVE_AVRCP
 			transport_a2dp_src_set_volume,
+#else
+			NULL,
+#endif
 			NULL,
 			transport_a2dp_src_destroy),
 	A2DP_OPS(A2DP_SINK_UUID, transport_a2dp_snk_init,
+#ifdef HAVE_AVRCP
 			transport_a2dp_snk_set_volume,
+#else
+			NULL,
+#endif
 			transport_a2dp_snk_set_delay,
 			transport_a2dp_snk_destroy),
+#endif /* HAVE_A2DP */
 	BAP_UC_OPS(PAC_SOURCE_UUID),
 	BAP_UC_OPS(PAC_SINK_UUID),
 	BAP_BC_OPS(BCAA_SERVICE_UUID),
 	BAP_BC_OPS(BAA_SERVICE_UUID),
+#ifdef HAVE_ASHA
 	ASHA_OPS(ASHA_PROFILE_UUID),
+#endif /* HAVE_ASHA */
 };
 
 static const struct media_transport_ops *
@@ -2440,25 +2593,29 @@ struct btd_device *media_transport_get_dev(struct media_transport *transport)
 }
 
 void media_transport_update_volume(struct media_transport *transport,
-								int8_t volume)
+								int volume)
 {
-	struct a2dp_transport *a2dp = transport->data;
-
 	if (volume < 0)
 		return;
 
-	/* Check if volume really changed */
-	if (a2dp->volume == volume)
-		return;
+	if (media_endpoint_get_sep(transport->endpoint)) {
+		struct a2dp_transport *a2dp = transport->data;
 
-	a2dp->volume = volume;
+		if (volume > 127)
+			return;
 
+		/* Check if volume really changed */
+		if (a2dp->volume == volume)
+			return;
+
+		a2dp->volume = volume;
+	}
 	g_dbus_emit_property_changed(btd_get_dbus_connection(),
 					transport->path,
 					MEDIA_TRANSPORT_INTERFACE, "Volume");
 }
 
-int8_t media_transport_get_device_volume(struct btd_device *dev)
+int media_transport_get_device_volume(struct btd_device *dev)
 {
 	GSList *l;
 
@@ -2473,7 +2630,7 @@ int8_t media_transport_get_device_volume(struct btd_device *dev)
 
 		/* Volume is A2DP only */
 		if (media_endpoint_get_sep(transport->endpoint)) {
-			int8_t volume;
+			int volume;
 
 			if (!media_transport_get_volume(transport, &volume))
 				return volume;
@@ -2487,7 +2644,7 @@ int8_t media_transport_get_device_volume(struct btd_device *dev)
 }
 
 void media_transport_update_device_volume(struct btd_device *dev,
-								int8_t volume)
+								int volume)
 {
 	GSList *l;
 
@@ -2497,16 +2654,19 @@ void media_transport_update_device_volume(struct btd_device *dev,
 	/* Attempt to locate the transport to set its volume */
 	for (l = transports; l; l = l->next) {
 		struct media_transport *transport = l->data;
+		const char *uuid = media_endpoint_get_uuid(transport->endpoint);
 		if (transport->device != dev)
 			continue;
 
-		/* Volume is A2DP only */
-		if (media_endpoint_get_sep(transport->endpoint)) {
+		/* Volume is A2DP and BAP only */
+		if (media_endpoint_get_sep(transport->endpoint) ||
+				strcasecmp(uuid, PAC_SINK_UUID) ||
+				strcasecmp(uuid, PAC_SOURCE_UUID) ||
+				strcasecmp(uuid, BAA_SERVICE_UUID)) {
 			media_transport_update_volume(transport, volume);
-			return;
+			break;
 		}
 	}
 
-	/* If transport volume doesn't exists add to device_volume */
 	btd_device_set_volume(dev, volume);
 }

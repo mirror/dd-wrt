@@ -647,6 +647,9 @@ static void settings_changed(struct btd_adapter *adapter, uint32_t settings)
 		if (adapter->supported_settings & MGMT_SETTING_LE)
 			btd_adv_manager_refresh(adapter->adv_manager);
 	}
+	if (changed_mask & MGMT_SETTING_CONNECTABLE)
+		g_dbus_emit_property_changed(dbus_conn, adapter->path,
+					     ADAPTER_INTERFACE, "Connectable");
 
 	if (changed_mask & MGMT_SETTING_BONDABLE) {
 		g_dbus_emit_property_changed(dbus_conn, adapter->path,
@@ -3996,6 +3999,13 @@ static struct link_key_info *get_key_info(GKeyFile *key_file, const char *peer,
 	str2ba(peer, &info->bdaddr);
 	info->bdaddr_type = bdaddr_type;
 
+	/* Fix up address type if it was stored with the wrong
+	 * address type since Load Link Keys are only meant to
+	 * work with BR/EDR addresses as per MGMT documentation.
+	 */
+	if (info->bdaddr_type != BDADDR_BREDR)
+		info->bdaddr_type = BDADDR_BREDR;
+
 	if (!strncmp(str, "0x", 2))
 		str2buf(&str[2], info->key, sizeof(info->key));
 	else
@@ -4036,6 +4046,13 @@ static struct smp_ltk_info *get_ltk(GKeyFile *key_file, const char *peer,
 
 	str2ba(peer, &ltk->bdaddr);
 	ltk->bdaddr_type = peer_type;
+
+	/* Fix up address type if it was stored with the wrong
+	 * address type since Load Long Term Keys are only meant
+	 * to work with LE addresses as per MGMT documentation.
+	 */
+	if (ltk->bdaddr_type == BDADDR_BREDR)
+		ltk->bdaddr_type = BDADDR_LE_PUBLIC;
 
 	/*
 	 * Long term keys should respond to an identity address which can
@@ -4119,7 +4136,8 @@ static struct irk_info *get_irk_info(GKeyFile *key_file, const char *peer,
 	struct irk_info *irk = NULL;
 	char *str;
 
-	str = g_key_file_get_string(key_file, "IdentityResolvingKey", "Key", NULL);
+	str = g_key_file_get_string(key_file, "IdentityResolvingKey", "Key",
+					NULL);
 	if (!str || strlen(str) < 32)
 		goto failed;
 
@@ -4127,6 +4145,13 @@ static struct irk_info *get_irk_info(GKeyFile *key_file, const char *peer,
 
 	str2ba(peer, &irk->bdaddr);
 	irk->bdaddr_type = bdaddr_type;
+
+	/* Fix up address type if it was stored with the wrong
+	 * address type since Load Identity Keys are only meant
+	 * to work with LE addresses as per MGMT documentation.
+	 */
+	if (irk->bdaddr_type == BDADDR_BREDR)
+		irk->bdaddr_type = BDADDR_LE_PUBLIC;
 
 	if (!strncmp(str, "0x", 2))
 		str2buf(&str[2], irk->val, sizeof(irk->val));
@@ -5002,27 +5027,11 @@ static void load_devices(struct btd_adapter *adapter)
 			goto free;
 		}
 
-		if (key_info) {
-			/* Fix up address type if it was stored with the wrong
-			 * address type since Load Link Keys are only meant to
-			 * work with BR/EDR addresses as per MGMT documentation.
-			 */
-			if (key_info->bdaddr_type != BDADDR_BREDR)
-				key_info->bdaddr_type = BDADDR_BREDR;
-
+		if (key_info)
 			keys = g_slist_append(keys, key_info);
-		}
 
-		if (ltk_info) {
-			/* Fix up address type if it was stored with the wrong
-			 * address type since Load Long Term Keys are only meant
-			 * to work with LE addresses as per MGMT documentation.
-			 */
-			if (ltk_info->bdaddr_type == BDADDR_BREDR)
-				ltk_info->bdaddr_type = BDADDR_LE_PUBLIC;
-
+		if (ltk_info)
 			ltks = g_slist_append(ltks, ltk_info);
-		}
 
 		if (peripheral_ltk_info)
 			ltks = g_slist_append(ltks, peripheral_ltk_info);
@@ -5245,7 +5254,7 @@ void device_resolved_drivers(struct btd_adapter *adapter,
 static void adapter_add_device(struct btd_adapter *adapter,
 						struct btd_device *device)
 {
-	adapter->devices = g_slist_append(adapter->devices, device);
+	adapter->devices = g_slist_prepend(adapter->devices, device);
 	device_added_drivers(adapter, device);
 }
 
@@ -5576,6 +5585,7 @@ static void set_device_privacy_complete(uint8_t status, uint16_t length,
 	if (status != MGMT_STATUS_SUCCESS) {
 		error("Set device flags return status: %s",
 					mgmt_errstr(status));
+		btd_device_set_pending_flags(dev, 0);
 		return;
 	}
 
@@ -5626,8 +5636,13 @@ static void add_device_complete(uint8_t status, uint16_t length,
 	if (btd_opts.device_privacy) {
 		uint32_t flags = btd_device_get_current_flags(dev);
 
-		/* Set Device Privacy Mode has not set the flag yet. */
+		/* Set Device Privacy Mode if it has not set the flag yet. */
 		if (!(flags & DEVICE_FLAG_DEVICE_PRIVACY)) {
+			/* Include the pending flags, or they may get
+			 * overwritten.
+			 */
+			flags |= btd_device_get_pending_flags(dev);
+
 			adapter_set_device_flags(adapter, dev, flags |
 						DEVICE_FLAG_DEVICE_PRIVACY,
 						set_device_privacy_complete,
@@ -5680,22 +5695,31 @@ void adapter_set_device_flags(struct btd_adapter *adapter,
 				mgmt_request_func_t func, void *user_data)
 {
 	struct mgmt_cp_set_device_flags cp;
+	uint32_t current = btd_device_get_current_flags(device);
 	uint32_t supported = btd_device_get_supported_flags(device);
 	uint32_t pending = btd_device_get_pending_flags(device);
 	const bdaddr_t *bdaddr;
 	uint8_t bdaddr_type;
+	bool ll_privacy = btd_adapter_has_settings(adapter,
+						MGMT_SETTING_LL_PRIVACY);
 
 	if (!btd_has_kernel_features(KERNEL_CONN_CONTROL) ||
 				(supported | flags) != supported)
 		return;
 
 	/* Check if changing flags are pending */
-	if (flags == (flags & pending))
+	if ((current ^ flags) == (flags & pending))
 		return;
 
 	/* Set Device Privacy Mode if it has not set the flag yet. */
 	if (btd_opts.device_privacy && !(flags & DEVICE_FLAG_DEVICE_PRIVACY))
 		flags |= DEVICE_FLAG_DEVICE_PRIVACY & supported & ~pending;
+
+	/* Set Address Resolution if it has not been set the flag yet. */
+	if (ll_privacy && btd_opts.defaults.le.addr_resolution &&
+			device_address_is_private(device) &&
+			!(flags & DEVICE_FLAG_ADDRESS_RESOLUTION))
+		flags |= DEVICE_FLAG_ADDRESS_RESOLUTION & supported & ~pending;
 
 	bdaddr = device_get_address(device);
 	bdaddr_type = btd_device_get_bdaddr_type(device);

@@ -4,7 +4,7 @@
  *  BlueZ - Bluetooth protocol stack for Linux
  *
  *  Copyright (C) 2022  Intel Corporation. All rights reserved.
- *  Copyright 2023-2024 NXP
+ *  Copyright 2023-2025 NXP
  *
  *
  */
@@ -56,24 +56,15 @@
 #include "src/log.h"
 #include "src/error.h"
 
-#include "bap.h"
-#include "bass.h"
-
 #define ISO_SOCKET_UUID "6fbaf188-05e0-496a-9885-d6ddfdb4e03e"
 #define PACS_UUID_STR "00001850-0000-1000-8000-00805f9b34fb"
 #define BCAAS_UUID_STR "00001852-0000-1000-8000-00805f9b34fb"
 #define MEDIA_ENDPOINT_INTERFACE "org.bluez.MediaEndpoint1"
 #define MEDIA_INTERFACE "org.bluez.Media1"
 
-/* Periodic advertisments are performed by an idle timer, which,
- * at every tick, checks a queue for pending PA requests.
- * When there is no pending requests, an item is popped from the
- * queue, marked as pending and then it gets processed.
- */
-#define PA_IDLE_TIMEOUT 2
-
 struct bap_setup {
 	struct bap_ep *ep;
+	struct bap_data *data;
 	struct bt_bap_stream *stream;
 	struct bt_bap_qos qos;
 	int (*qos_parser)(struct bap_setup *setup, const char *key, int var,
@@ -101,15 +92,9 @@ struct bap_ep {
 	struct queue *setups;
 };
 
-struct bap_adapter {
-	struct btd_adapter *adapter;
-	unsigned int pa_timer_id;
-	struct queue *bcast_pa_requests;
-};
-
 struct bap_data {
 	struct btd_device *device;
-	struct bap_adapter *adapter;
+	struct btd_adapter *adapter;
 	struct btd_service *service;
 	struct bt_bap *bap;
 	unsigned int ready_id;
@@ -121,69 +106,12 @@ struct bap_data {
 	struct queue *bcast_snks;
 	struct queue *streams;
 	GIOChannel *listen_io;
+	unsigned int io_id;
 	int selecting;
 	void *user_data;
 };
 
-enum {
-	BAP_PA_SHORT_REQ = 0,	/* Request for short PA sync */
-	BAP_PA_LONG_REQ,	/* Request for long PA sync */
-	BAP_PA_BIG_SYNC_REQ,	/* Request for PA Sync and BIG Sync */
-};
-
-struct bap_bcast_pa_req {
-	uint8_t type;
-	bool in_progress;
-	struct bap_data *bap_data;
-	union {
-		struct btd_service *service;
-		struct queue *setups;
-	} data;
-	unsigned int io_id;	/* io_id for BIG Info watch */
-	GIOChannel *io;
-};
-
 static struct queue *sessions;
-static struct queue *adapters;
-
-/* Structure holding the parameters for Periodic Advertisement create sync.
- * The full QOS is populated at the time the user selects and endpoint and
- * configures it using SetConfiguration.
- */
-static struct bt_iso_qos bap_sink_pa_qos = {
-	.bcast = {
-		.options		= 0x00,
-		.skip			= 0x0000,
-		.sync_timeout		= BT_ISO_SYNC_TIMEOUT,
-		.sync_cte_type	= 0x00,
-		/* TODO: The following parameters are not needed for PA Sync.
-		 * They will be removed when the kernel checks will be removed.
-		 */
-		.big			= BT_ISO_QOS_BIG_UNSET,
-		.bis			= BT_ISO_QOS_BIS_UNSET,
-		.encryption		= 0x00,
-		.bcode			= {0x00},
-		.mse			= 0x00,
-		.timeout		= BT_ISO_SYNC_TIMEOUT,
-		.sync_factor		= 0x07,
-		.packing		= 0x00,
-		.framing		= 0x00,
-		.in = {
-			.interval	= 10000,
-			.latency	= 10,
-			.sdu		= 40,
-			.phy		= 0x02,
-			.rtn		= 2,
-		},
-		.out = {
-			.interval	= 10000,
-			.latency	= 10,
-			.sdu		= 40,
-			.phy		= 0x02,
-			.rtn		= 2,
-		}
-	}
-};
 
 static bool bap_data_set_user_data(struct bap_data *data, void *user_data)
 {
@@ -219,10 +147,11 @@ static void bap_data_free(struct bap_data *data)
 		g_io_channel_unref(data->listen_io);
 	}
 
-	if (data->service) {
+	if (data->io_id)
+		g_source_remove(data->io_id);
+
+	if (data->service && btd_service_get_user_data(data->service) == data)
 		btd_service_set_user_data(data->service, NULL);
-		bt_bap_set_user_data(data->bap, NULL);
-	}
 
 	queue_destroy(data->snks, ep_unregister);
 	queue_destroy(data->srcs, ep_unregister);
@@ -382,7 +311,7 @@ static gboolean get_device(const GDBusPropertyTable *property,
 	const char *path;
 
 	if (bt_bap_pac_get_type(ep->lpac) == BT_BAP_BCAST_SOURCE)
-		path = adapter_get_path(ep->data->adapter->adapter);
+		path = adapter_get_path(ep->data->adapter);
 	else
 		path = device_get_path(ep->data->device);
 
@@ -874,7 +803,7 @@ static struct bap_setup *setup_new(struct bap_ep *ep)
 		/* Mark BIG and BIS to be auto assigned */
 		setup->qos.bcast.big = BT_ISO_QOS_BIG_UNSET;
 		setup->qos.bcast.bis = BT_ISO_QOS_BIS_UNSET;
-		setup->qos.bcast.sync_factor = 0x01;
+		setup->qos.bcast.sync_factor = BT_ISO_SYNC_FACTOR;
 		setup->qos.bcast.sync_timeout = BT_ISO_SYNC_TIMEOUT;
 		setup->qos.bcast.timeout = BT_ISO_SYNC_TIMEOUT;
 		setup->qos_parser = setup_parse_bcast_qos;
@@ -932,6 +861,83 @@ static void setup_free(void *data)
 	free(setup);
 }
 
+static bool match_io_qos(const struct bt_bap_io_qos *io_qos,
+		const struct bt_bap_io_qos *match)
+{
+	if (io_qos->interval != match->interval)
+		return false;
+
+	if (io_qos->latency != match->latency)
+		return false;
+
+	if (io_qos->sdu != match->sdu)
+		return false;
+
+	if (io_qos->phy != match->phy)
+		return false;
+
+	if (io_qos->rtn != match->rtn)
+		return false;
+
+	return true;
+}
+
+static bool match_bcast_qos(const struct bt_bap_bcast_qos *qos,
+		const struct bt_bap_bcast_qos *match)
+{
+	if (qos->sync_factor != match->sync_factor)
+		return false;
+
+	if (qos->packing != match->packing)
+		return false;
+
+	if (qos->framing != match->framing)
+		return false;
+
+	if (qos->encryption != match->encryption)
+		return false;
+
+	if (qos->encryption && util_iov_memcmp(qos->bcode, match->bcode))
+		return false;
+
+	if (qos->options != match->options)
+		return false;
+
+	if (qos->skip != match->skip)
+		return false;
+
+	if (qos->sync_timeout != match->sync_timeout)
+		return false;
+
+	if (qos->sync_cte_type != match->sync_cte_type)
+		return false;
+
+	if (qos->mse != match->mse)
+		return false;
+
+	if (qos->timeout != match->timeout)
+		return false;
+
+	if (qos->pa_sync != match->pa_sync)
+		return false;
+
+	return match_io_qos(&qos->io_qos, &match->io_qos);
+}
+
+static bool setup_mismatch_qos(const void *data, const void *user_data)
+{
+	const struct bap_setup *setup = data;
+	const struct bap_setup *match = user_data;
+
+	/* Match setups that are part of the same BIG */
+	if (setup == match ||
+		setup->qos.bcast.big == BT_ISO_QOS_BIG_UNSET ||
+		setup->qos.bcast.big != match->qos.bcast.big)
+		return false;
+
+	return !match_bcast_qos(&setup->qos.bcast, &match->qos.bcast);
+}
+
 static DBusMessage *set_configuration(DBusConnection *conn, DBusMessage *msg,
 								void *data)
 {
@@ -963,6 +969,15 @@ static DBusMessage *set_configuration(DBusConnection *conn, DBusMessage *msg,
 		setup_free(setup);
 		return btd_error_invalid_args(msg);
 	}
+
+	if (bt_bap_pac_get_type(ep->lpac) == BT_BAP_BCAST_SOURCE)
+		/* All streams in a BIG should have the same QoS.
+		 * Check that the new configuration matches previous ones.
+		 */
+		if (queue_find(setup->ep->setups, setup_mismatch_qos, setup)) {
+			setup_free(setup);
+			return btd_error_invalid_args(msg);
+		}
 
 	setup->stream = bt_bap_stream_new(ep->data->bap, ep->lpac, ep->rpac,
 						&setup->qos, setup->caps);
@@ -996,12 +1011,19 @@ static DBusMessage *set_configuration(DBusConnection *conn, DBusMessage *msg,
 	return NULL;
 }
 
+static bool stream_io_unset(const void *data, const void *user_data)
+{
+	struct bt_bap_stream *stream = (struct bt_bap_stream *)data;
+
+	return !bt_bap_stream_get_io(stream);
+}
+
 static void iso_bcast_confirm_cb(GIOChannel *io, GError *err, void *user_data)
 {
-	struct bap_bcast_pa_req *req = user_data;
-	struct bap_setup *setup;
+	struct bap_setup *setup = user_data;
+	struct bt_bap_stream *stream = setup->stream;
 	int fd;
-	struct bap_data *bap_data = req->bap_data;
+	struct bap_data *bap_data = setup->data;
 
 	DBG("BIG Sync completed");
 
@@ -1009,69 +1031,39 @@ static void iso_bcast_confirm_cb(GIOChannel *io, GError *err, void *user_data)
 	 * to the order of the BISes that were enqueued before
 	 * calling bt_io_bcast_accept.
 	 */
-	setup = queue_pop_head(req->data.setups);
-
-	if (queue_isempty(req->data.setups)) {
-		/* All fds have been notified. Mark service as connected. */
-		btd_service_connecting_complete(bap_data->service, 0);
-
-		if (req->io) {
-			g_io_channel_unref(req->io);
-			g_io_channel_shutdown(req->io, TRUE, NULL);
-			req->io = NULL;
-		}
-
-		queue_remove(bap_data->adapter->bcast_pa_requests, req);
-		queue_destroy(req->data.setups, NULL);
-		free(req);
-	}
+	if (bt_bap_stream_get_io(stream))
+		stream = queue_find(bt_bap_stream_io_get_links(stream),
+				stream_io_unset, NULL);
 
 	fd = g_io_channel_unix_get_fd(io);
 
-	if (bt_bap_stream_set_io(setup->stream, fd)) {
+	if (bt_bap_stream_set_io(stream, fd))
 		g_io_channel_set_close_on_unref(io, FALSE);
-		return;
+
+	if (!queue_find(bt_bap_stream_io_get_links(stream),
+				stream_io_unset, NULL)) {
+		/* All fds have been notified. Mark service as connected. */
+		btd_service_connecting_complete(bap_data->service, 0);
+
+		g_io_channel_unref(bap_data->listen_io);
+		g_io_channel_shutdown(bap_data->listen_io, TRUE, NULL);
+		bap_data->listen_io = NULL;
 	}
 }
 
-static void print_ltv(size_t i, uint8_t l, uint8_t t, uint8_t *v,
-		void *user_data)
-{
-	util_debug(user_data, NULL, "CC #%zu: l:%u t:%u", i, l, t);
-	util_hexdump(' ', v, l, user_data, NULL);
-}
-
 static void create_stream_for_bis(struct bap_data *bap_data,
-		struct bt_bap_pac *lpac, struct bt_iso_qos *qos,
+		struct bt_bap_pac *lpac, struct bt_bap_qos *qos,
 		struct iovec *caps, struct iovec *meta, char *path)
 {
 	struct bap_setup *setup;
 
 	setup = setup_new(NULL);
+	setup->qos = *qos;
 
-	/* Create BAP QoS structure */
-	setup->qos.bcast.big = qos->bcast.big;
-	setup->qos.bcast.bis = qos->bcast.bis;
-	setup->qos.bcast.sync_factor = qos->bcast.sync_factor;
-	setup->qos.bcast.packing = qos->bcast.packing;
-	setup->qos.bcast.framing = qos->bcast.framing;
-	setup->qos.bcast.encryption = qos->bcast.encryption;
-	if (setup->qos.bcast.encryption)
-		setup->qos.bcast.bcode = util_iov_new(qos->bcast.bcode,
-						sizeof(qos->bcast.bcode));
-	setup->qos.bcast.options = qos->bcast.options;
-	setup->qos.bcast.skip = qos->bcast.skip;
-	setup->qos.bcast.sync_timeout = qos->bcast.sync_timeout;
-	setup->qos.bcast.sync_cte_type =
-			qos->bcast.sync_cte_type;
-	setup->qos.bcast.mse = qos->bcast.mse;
-	setup->qos.bcast.timeout = qos->bcast.timeout;
-	setup->qos.bcast.io_qos.interval =
-			qos->bcast.in.interval;
-	setup->qos.bcast.io_qos.latency = qos->bcast.in.latency;
-	setup->qos.bcast.io_qos.phy = qos->bcast.in.phy;
-	setup->qos.bcast.io_qos.rtn = qos->bcast.in.rtn;
-	setup->qos.bcast.io_qos.sdu = qos->bcast.in.sdu;
+	/* Create an internal copy for bcode */
+	setup->qos.bcast.bcode = util_iov_dup(qos->bcast.bcode, 1);
+
+	setup->data = bap_data;
 
 	queue_push_tail(bap_data->bcast_snks, setup);
 
@@ -1086,180 +1078,40 @@ static void create_stream_for_bis(struct bap_data *bap_data,
 			NULL, NULL);
 }
 
-static bool parse_base(struct bap_data *bap_data, struct bt_iso_base *base,
-		struct bt_iso_qos *qos, util_debug_func_t func)
+static void bis_handler(uint8_t bis, uint8_t sgrp, struct iovec *caps,
+	struct iovec *meta, struct bt_bap_qos *qos, void *user_data)
 {
-	struct iovec iov = {
-		.iov_base = base->base,
-		.iov_len = base->base_len,
-	};
-	uint32_t pres_delay;
-	uint8_t num_subgroups;
-	bool ret = true;
+	struct bap_data *data = user_data;
+	struct bt_bap_pac *lpac;
+	char *path;
 
-	util_debug(func, NULL, "BASE len: %ld", iov.iov_len);
+	bt_bap_bis_probe(data->bap, bis, sgrp, caps, meta, qos);
 
-	if (!util_iov_pull_le24(&iov, &pres_delay))
-		return false;
-	util_debug(func, NULL, "PresentationDelay: %d", pres_delay);
+	/* Check if this BIS matches any local PAC */
+	bt_bap_verify_bis(data->bap, bis,
+			caps, &lpac);
 
-	if (!util_iov_pull_u8(&iov, &num_subgroups))
-		return false;
-	util_debug(func, NULL, "Number of Subgroups: %d", num_subgroups);
+	if (!lpac)
+		return;
 
-	/* Loop subgroups */
-	for (int idx = 0; idx < num_subgroups; idx++) {
-		uint8_t num_bis;
-		struct bt_bap_codec codec;
-		struct iovec *l2_caps = NULL;
-		struct iovec *meta = NULL;
+	if (asprintf(&path, "%s/bis%d",
+			device_get_path(data->device),
+			bis) < 0)
+		return;
 
-		util_debug(func, NULL, "Subgroup #%d", idx);
-
-		if (!util_iov_pull_u8(&iov, &num_bis)) {
-			ret = false;
-			goto fail;
-		}
-		util_debug(func, NULL, "Number of BISes: %d", num_bis);
-
-		memcpy(&codec,
-				util_iov_pull_mem(&iov,
-						sizeof(struct bt_bap_codec)),
-				sizeof(struct bt_bap_codec));
-		util_debug(func, NULL, "Codec: ID %d CID 0x%2.2x VID 0x%2.2x",
-				codec.id, codec.cid, codec.vid);
-
-		/* Level 2 */
-		/* Read Codec Specific Configuration */
-		l2_caps = new0(struct iovec, 1);
-		if (!util_iov_pull_u8(&iov, (void *)&l2_caps->iov_len)) {
-			ret = false;
-			goto group_fail;
-		}
-
-		util_iov_memcpy(l2_caps, util_iov_pull_mem(&iov,
-				l2_caps->iov_len),
-				l2_caps->iov_len);
-
-		/* Print Codec Specific Configuration */
-		util_debug(func, NULL, "CC len: %ld", l2_caps->iov_len);
-		util_ltv_foreach(l2_caps->iov_base, l2_caps->iov_len, NULL,
-				print_ltv, func);
-
-		/* Read Metadata */
-		meta = new0(struct iovec, 1);
-		if (!util_iov_pull_u8(&iov, (void *)&meta->iov_len)) {
-			ret = false;
-			goto group_fail;
-		}
-
-		util_iov_memcpy(meta,
-				util_iov_pull_mem(&iov, meta->iov_len),
-				meta->iov_len);
-
-		/* Print Metadata */
-		util_debug(func, NULL, "Metadata len: %i",
-				(uint8_t)meta->iov_len);
-		util_hexdump(' ', meta->iov_base, meta->iov_len, func, NULL);
-
-		/* Level 3 */
-		for (; num_bis; num_bis--) {
-			uint8_t bis_index;
-			struct iovec *l3_caps;
-			struct iovec *merged_caps;
-			struct bt_bap_pac *matched_lpac;
-			char *path;
-			int err;
-
-			if (!util_iov_pull_u8(&iov, &bis_index)) {
-				ret = false;
-				goto group_fail;
-			}
-
-			util_debug(func, NULL, "BIS #%d", bis_index);
-			err = asprintf(&path, "%s/bis%d",
-					device_get_path(bap_data->device),
-					bis_index);
-			if (err < 0)
-				continue;
-
-			/* Read Codec Specific Configuration */
-			l3_caps = new0(struct iovec, 1);
-			if (!util_iov_pull_u8(&iov,
-						(void *)&l3_caps->iov_len)) {
-				free(l3_caps);
-				free(path);
-				ret = false;
-				goto group_fail;
-			}
-
-			util_iov_memcpy(l3_caps,
-					util_iov_pull_mem(&iov,
-							l3_caps->iov_len),
-					l3_caps->iov_len);
-
-			/* Print Codec Specific Configuration */
-			util_debug(func, NULL, "CC Len: %d",
-					(uint8_t)l3_caps->iov_len);
-			util_ltv_foreach(l3_caps->iov_base,
-					l3_caps->iov_len, NULL, print_ltv,
-					func);
-
-			merged_caps = bt_bap_merge_caps(l2_caps, l3_caps);
-			if (!merged_caps) {
-				free(path);
-				continue;
-			}
-
-			bass_add_stream(bap_data->device, meta, merged_caps,
-						qos, idx, bis_index);
-
-			if (!bass_check_bis(bap_data->device, bis_index)) {
-				/* If this Broadcast Sink is acting as a Scan
-				 * Delegator, only attempt to create streams
-				 * for the BISes required by the peer Broadcast
-				 * Assistant.
-				 */
-				continue;
-			}
-
-			/* Check if this BIS matches any local PAC */
-			bt_bap_verify_bis(bap_data->bap, bis_index,
-					merged_caps, &matched_lpac);
-
-			if (matched_lpac == NULL) {
-				free(path);
-				continue;
-			}
-
-			create_stream_for_bis(bap_data, matched_lpac, qos,
-					merged_caps, meta, path);
-		}
-
-group_fail:
-		if (l2_caps != NULL)
-			free(l2_caps);
-		if (meta != NULL)
-			free(meta);
-		if (!ret)
-			break;
-	}
-
-fail:
-	if (!ret)
-		util_debug(func, NULL, "Unable to parse Base");
-
-	return ret;
+	create_stream_for_bis(data, lpac, qos,
+			caps, meta, path);
 }
 
 static gboolean big_info_report_cb(GIOChannel *io, GIOCondition cond,
 							gpointer user_data)
 {
 	GError *err = NULL;
-	struct bap_bcast_pa_req *req = user_data;
-	struct bap_data *data = btd_service_get_user_data(req->data.service);
+	struct bap_data *data = user_data;
 	struct bt_iso_base base;
 	struct bt_iso_qos qos;
+	struct iovec iov;
+	struct bt_bap_qos bap_qos = {0};
 
 	DBG("BIG Info received");
 
@@ -1271,7 +1123,7 @@ static gboolean big_info_report_cb(GIOChannel *io, GIOCondition cond,
 		error("%s", err->message);
 		g_error_free(err);
 		g_io_channel_shutdown(io, TRUE, NULL);
-		req->io_id = 0;
+		data->io_id = 0;
 		return FALSE;
 	}
 
@@ -1280,44 +1132,39 @@ static gboolean big_info_report_cb(GIOChannel *io, GIOCondition cond,
 	g_io_channel_unref(data->listen_io);
 	data->listen_io = NULL;
 
-	if (req->type == BAP_PA_LONG_REQ) {
-		/* If long-lived PA sync was requested, keep a reference
-		 * to the PA sync io to keep the sync active.
-		 */
-		data->listen_io = io;
-		g_io_channel_ref(io);
-	} else {
-		/* For short-lived PA, the sync is no longer needed at
-		 * this point, so the io can be closed.
-		 */
-		g_io_channel_shutdown(io, TRUE, NULL);
-	}
-
-	/* Notify the BASS plugin about the session. */
-	bass_bcast_probe(data->device, data->bap);
+	/* For short-lived PA, the sync is no longer needed at
+	 * this point, so the io can be closed.
+	 */
+	g_io_channel_shutdown(io, TRUE, NULL);
 
 	/* Analyze received BASE data and create remote media endpoints for each
 	 * BIS matching our capabilities
 	 */
-	parse_base(data, &base, &qos, bap_debug);
+	iov.iov_base = base.base;
+	iov.iov_len = base.base_len;
 
-	service_set_connecting(req->data.service);
+	/* Create BAP QoS structure */
+	bt_bap_iso_qos_to_bap_qos(&qos, &bap_qos);
 
-	queue_remove(data->adapter->bcast_pa_requests, req);
-	req->io_id = 0;
-	free(req);
+	bt_bap_parse_base(&iov, &bap_qos, bap_debug, bis_handler, data);
+
+	util_iov_free(bap_qos.bcast.bcode, 1);
+
+	service_set_connecting(data->service);
+
+	data->io_id = 0;
 
 	return FALSE;
 }
 
 static void iso_pa_sync_confirm_cb(GIOChannel *io, void *user_data)
 {
-	struct bap_bcast_pa_req *req = user_data;
+	struct bap_data *data = user_data;
 	/* PA Sync was established, wait for BIG Info report so that the
 	 * encryption flag is also available.
 	 */
 	DBG("PA Sync done");
-	req->io_id = g_io_add_watch(io, G_IO_OUT, big_info_report_cb,
+	data->io_id = g_io_add_watch(io, G_IO_OUT, big_info_report_cb,
 								user_data);
 }
 
@@ -1372,7 +1219,7 @@ static struct bap_ep *ep_register_bcast(struct bap_data *data,
 					struct bt_bap_pac *lpac,
 					struct bt_bap_pac *rpac)
 {
-	struct btd_adapter *adapter = data->adapter->adapter;
+	struct btd_adapter *adapter = data->adapter;
 	struct btd_device *device = data->device;
 	struct bap_ep *ep;
 	struct queue *queue;
@@ -2219,95 +2066,13 @@ static void setup_listen_io(struct bap_data *data, struct bt_bap_stream *stream,
 	data->listen_io = io;
 }
 
-static void check_pa_req_in_progress(void *data, void *user_data)
-{
-	struct bap_bcast_pa_req *req = data;
-
-	if (req->in_progress == TRUE)
-		*((bool *)user_data) = TRUE;
-}
-
-static int pa_sync(struct bap_bcast_pa_req *req);
-static void pa_and_big_sync(struct bap_bcast_pa_req *req);
-
-static gboolean pa_idle_timer(gpointer user_data)
-{
-	struct bap_adapter *adapter = user_data;
-	struct bap_bcast_pa_req *req;
-	bool in_progress = FALSE;
-
-	/* Handle timer if no request is in progress */
-	queue_foreach(adapter->bcast_pa_requests, check_pa_req_in_progress,
-			&in_progress);
-	if (in_progress == FALSE) {
-		req = queue_peek_head(adapter->bcast_pa_requests);
-		if (req != NULL)
-			switch (req->type) {
-			case BAP_PA_SHORT_REQ:
-				DBG("do short lived PA Sync");
-				pa_sync(req);
-				break;
-			case BAP_PA_LONG_REQ:
-				DBG("do long lived PA Sync");
-				pa_sync(req);
-				break;
-			case BAP_PA_BIG_SYNC_REQ:
-				DBG("do PA Sync and BIG Sync");
-				pa_and_big_sync(req);
-				break;
-			}
-		else {
-			/* pa_req queue is empty, stop the timer by returning
-			 * FALSE and set the pa_timer_id to 0. This will later
-			 * be used to check if the timer is active.
-			 */
-			adapter->pa_timer_id = 0;
-			return FALSE;
-		}
-	}
-
-	return TRUE;
-}
+static int pa_sync(struct bap_data *data);
+static void pa_and_big_sync(struct bap_setup *setup);
 
 static void setup_accept_io_broadcast(struct bap_data *data,
 					struct bap_setup *setup)
 {
-	struct bap_bcast_pa_req *req = new0(struct bap_bcast_pa_req, 1);
-	struct bap_adapter *adapter = data->adapter;
-	struct queue *links = bt_bap_stream_io_get_links(setup->stream);
-	const struct queue_entry *entry;
-
-	/* Timer could be stopped if all other requests were treated.
-	 * Check the state of the timer and turn it on so that this request
-	 * can also be treated.
-	 */
-	if (adapter->pa_timer_id == 0)
-		adapter->pa_timer_id = g_timeout_add_seconds(PA_IDLE_TIMEOUT,
-								pa_idle_timer,
-								adapter);
-
-	/* Add this request to the PA queue.
-	 * We don't need to check the queue here, as we cannot have
-	 * BAP_PA_BIG_SYNC_REQ before a short PA (BAP_PA_SHORT_REQ)
-	 */
-	req->type = BAP_PA_BIG_SYNC_REQ;
-	req->in_progress = FALSE;
-	req->bap_data = data;
-
-	req->data.setups = queue_new();
-
-	/* Enqueue all linked setups to the request */
-	queue_push_tail(req->data.setups, setup);
-
-	for (entry = queue_get_entries(links); entry;
-							entry = entry->next) {
-		struct bt_bap_stream *stream = entry->data;
-
-		queue_push_tail(req->data.setups,
-				bap_find_setup_by_stream(data, stream));
-	}
-
-	queue_push_tail(adapter->bcast_pa_requests, req);
+	pa_and_big_sync(setup);
 }
 
 static void setup_create_ucast_io(struct bap_data *data,
@@ -2697,6 +2462,8 @@ static void bap_state_bcast_sink(struct bt_bap_stream *stream,
 		return;
 
 	setup = bap_find_setup_by_stream(data, stream);
+	if (!setup)
+		return;
 
 	switch (new_state) {
 	case BT_BAP_STREAM_STATE_IDLE:
@@ -2849,17 +2616,6 @@ static bool match_device(const void *data, const void *match_data)
 	return bdata->device == device;
 }
 
-struct bt_bap *bap_get_session(struct btd_device *device)
-{
-	struct bap_data *data;
-
-	data = queue_find(sessions, match_device, device);
-	if (!data)
-		return NULL;
-
-	return data->bap;
-}
-
 static struct bap_data *bap_data_new(struct btd_device *device)
 {
 	struct bap_data *data;
@@ -2889,7 +2645,7 @@ static void bap_data_add(struct bap_data *data)
 
 	queue_push_tail(sessions, data);
 
-	if (data->service)
+	if (data->service && !btd_service_get_user_data(data->service))
 		btd_service_set_user_data(data->service, data);
 }
 
@@ -3060,10 +2816,8 @@ static void bap_detached(struct bt_bap *bap, void *user_data)
 	bap_data_remove(data);
 }
 
-static int pa_sync(struct bap_bcast_pa_req *req)
+static int pa_sync(struct bap_data *data)
 {
-	struct btd_service *service = req->data.service;
-	struct bap_data *data = btd_service_get_user_data(service);
 	GError *err = NULL;
 
 	if (data->listen_io) {
@@ -3072,13 +2826,13 @@ static int pa_sync(struct bap_bcast_pa_req *req)
 	}
 
 	DBG("Create PA sync with this source");
-	req->in_progress = TRUE;
-	data->listen_io = bt_io_listen(NULL, iso_pa_sync_confirm_cb, req,
+
+	data->listen_io = bt_io_listen(NULL, iso_pa_sync_confirm_cb, data,
 		NULL, &err,
 		BT_IO_OPT_SOURCE_BDADDR,
-		btd_adapter_get_address(data->adapter->adapter),
+		btd_adapter_get_address(data->adapter),
 		BT_IO_OPT_SOURCE_TYPE,
-		btd_adapter_get_address_type(data->adapter->adapter),
+		btd_adapter_get_address_type(data->adapter),
 		BT_IO_OPT_DEST_BDADDR,
 		device_get_address(data->device),
 		BT_IO_OPT_DEST_TYPE,
@@ -3096,9 +2850,9 @@ static int pa_sync(struct bap_bcast_pa_req *req)
 
 static void append_setup(void *data, void *user_data)
 {
-	struct bap_setup *setup = data;
+	struct bt_bap_stream *stream = data;
 	struct sockaddr_iso_bc *addr = user_data;
-	char *path = bt_bap_stream_get_user_data(setup->stream);
+	char *path = bt_bap_stream_get_user_data(stream);
 	int bis = 1;
 	int s_err;
 	const char *strbis = NULL;
@@ -3123,59 +2877,39 @@ static void append_setup(void *data, void *user_data)
 
 static void setup_refresh_qos(void *data, void *user_data)
 {
-	struct bap_setup *setup = data;
+	struct bt_bap_stream *stream = data;
+	struct bap_data *bap_data = user_data;
+	struct bap_setup *setup = bap_find_setup_by_stream(bap_data, stream);
 
-	setup->qos = *bt_bap_stream_get_qos(setup->stream);
+	setup->qos = *bt_bap_stream_get_qos(stream);
 }
 
 static void iso_do_big_sync(GIOChannel *io, void *user_data)
 {
 	GError *err = NULL;
-	struct bap_bcast_pa_req *req = user_data;
-	struct queue *setups = req->data.setups;
-	struct bap_setup *setup = queue_peek_head(setups);
-	struct bap_data *data = req->bap_data;
+	struct bap_setup *setup = user_data;
+	struct bap_data *data = setup->data;
 	struct sockaddr_iso_bc iso_bc_addr = {0};
 	struct bt_iso_qos qos;
+	struct queue *links = bt_bap_stream_io_get_links(setup->stream);
 
 	DBG("PA Sync done");
 
-	if (req->io) {
-		g_io_channel_unref(req->io);
-		g_io_channel_shutdown(req->io, TRUE, NULL);
-		req->io = io;
-		g_io_channel_ref(req->io);
-	}
-
-	iso_bc_addr.bc_bdaddr_type = btd_device_get_bdaddr_type(data->device);
-	memcpy(&iso_bc_addr.bc_bdaddr, device_get_address(data->device),
-			sizeof(bdaddr_t));
+	g_io_channel_unref(data->listen_io);
+	g_io_channel_shutdown(data->listen_io, TRUE, NULL);
+	data->listen_io = io;
+	g_io_channel_ref(data->listen_io);
 
 	/* Append each linked BIS to the BIG sync request */
-	queue_foreach(setups, append_setup, &iso_bc_addr);
+	append_setup(setup->stream, &iso_bc_addr);
+	queue_foreach(links, append_setup, &iso_bc_addr);
 
 	/* Refresh qos stored in setups */
-	queue_foreach(setups, setup_refresh_qos, NULL);
+	setup->qos = *bt_bap_stream_get_qos(setup->stream);
+	queue_foreach(links, setup_refresh_qos, data);
 
 	/* Set the user requested QOS */
-	memset(&qos, 0, sizeof(qos));
-	qos.bcast.big = setup->qos.bcast.big;
-	qos.bcast.bis = setup->qos.bcast.bis;
-	qos.bcast.sync_factor = setup->qos.bcast.sync_factor;
-	qos.bcast.packing = setup->qos.bcast.packing;
-	qos.bcast.framing = setup->qos.bcast.framing;
-	qos.bcast.encryption = setup->qos.bcast.encryption;
-	if (setup->qos.bcast.bcode && setup->qos.bcast.bcode->iov_base)
-		memcpy(qos.bcast.bcode, setup->qos.bcast.bcode->iov_base,
-				setup->qos.bcast.bcode->iov_len);
-	qos.bcast.options = setup->qos.bcast.options;
-	qos.bcast.skip = setup->qos.bcast.skip;
-	qos.bcast.sync_timeout = setup->qos.bcast.sync_timeout;
-	qos.bcast.sync_cte_type = setup->qos.bcast.sync_cte_type;
-	qos.bcast.mse = setup->qos.bcast.mse;
-	qos.bcast.timeout = setup->qos.bcast.timeout;
-	memcpy(&qos.bcast.out, &setup->qos.bcast.io_qos,
-			sizeof(struct bt_iso_io_qos));
+	bt_bap_qos_to_iso_qos(&setup->qos, &qos);
 
 	if (!bt_io_set(io, &err,
 			BT_IO_OPT_QOS, &qos,
@@ -3186,7 +2920,7 @@ static void iso_do_big_sync(GIOChannel *io, void *user_data)
 
 	if (!bt_io_bcast_accept(io,
 			iso_bcast_confirm_cb,
-			req, NULL, &err,
+			setup, NULL, &err,
 			BT_IO_OPT_ISO_BC_NUM_BIS,
 			iso_bc_addr.bc_num_bis, BT_IO_OPT_ISO_BC_BIS,
 			iso_bc_addr.bc_bis, BT_IO_OPT_INVALID)) {
@@ -3195,28 +2929,16 @@ static void iso_do_big_sync(GIOChannel *io, void *user_data)
 	}
 }
 
-static void pa_and_big_sync(struct bap_bcast_pa_req *req)
+static void pa_and_big_sync(struct bap_setup *setup)
 {
 	GError *err = NULL;
-	struct bap_data *bap_data = req->bap_data;
-
-	req->in_progress = TRUE;
-
-	if (bap_data->listen_io) {
-		/* If there is an active listen io for the BAP session
-		 * with the Broadcast Source, it means that PA sync is
-		 * already established. Go straight to establishing BIG
-		 * sync.
-		 */
-		iso_do_big_sync(bap_data->listen_io, req);
-		return;
-	}
+	struct bap_data *bap_data = setup->data;
 
 	DBG("Create PA sync with this source");
-	req->io = bt_io_listen(NULL, iso_do_big_sync, req,
+	bap_data->listen_io = bt_io_listen(NULL, iso_do_big_sync, setup,
 			NULL, &err,
 			BT_IO_OPT_SOURCE_BDADDR,
-			btd_adapter_get_address(bap_data->adapter->adapter),
+			btd_adapter_get_address(bap_data->adapter),
 			BT_IO_OPT_DEST_BDADDR,
 			device_get_address(bap_data->device),
 			BT_IO_OPT_DEST_TYPE,
@@ -3224,33 +2946,10 @@ static void pa_and_big_sync(struct bap_bcast_pa_req *req)
 			BT_IO_OPT_MODE, BT_IO_MODE_ISO,
 			BT_IO_OPT_QOS, &bap_sink_pa_qos,
 			BT_IO_OPT_INVALID);
-	if (!req->io) {
+	if (!bap_data->listen_io) {
 		error("%s", err->message);
 		g_error_free(err);
 	}
-}
-
-static bool match_bap_adapter(const void *data, const void *match_data)
-{
-	struct bap_adapter *adapter = (struct bap_adapter *)data;
-
-	return adapter->adapter == match_data;
-}
-
-void bap_scan_delegator_probe(struct btd_device *device)
-{
-	struct bap_data *data;
-
-	/* Create BAP session for the Broadcaster device */
-	data = bap_data_new(device);
-	data->device = device;
-
-	bap_data_add(data);
-
-	/* Add Broadcast Audio Announcement Service UUID
-	 * to device and probe service.
-	 */
-	btd_device_add_uuid(device, BCAAS_UUID_STR);
 }
 
 static int bap_bcast_probe(struct btd_service *service)
@@ -3258,8 +2957,6 @@ static int bap_bcast_probe(struct btd_service *service)
 	struct btd_device *device = btd_service_get_device(service);
 	struct btd_adapter *adapter = device_get_adapter(device);
 	struct btd_gatt_database *database = btd_adapter_get_database(adapter);
-	struct bap_bcast_pa_req *req;
-	uint8_t type = BAP_PA_LONG_REQ;
 	struct bap_data *data;
 
 	if (!btd_adapter_has_exp_feature(adapter, EXP_FEAT_ISO_SOCKET)) {
@@ -3267,27 +2964,10 @@ static int bap_bcast_probe(struct btd_service *service)
 		return -ENOTSUP;
 	}
 
-	data = queue_find(sessions, match_device, device);
-	if (data && data->service) {
-		error("Profile probed twice for the same device!");
-		return -EINVAL;
-	}
-
-	if (!data) {
-		data = bap_data_new(device);
-		data->device = device;
-		bap_data_add(data);
-
-		/* The Broadcaster was scanned autonomously,
-		 * so it should be probed short-lived.
-		 */
-		type = BAP_PA_SHORT_REQ;
-	}
-
+	data = bap_data_new(device);
 	data->service = service;
-	btd_service_set_user_data(service, data);
-
-	data->adapter = queue_find(adapters, match_bap_adapter, adapter);
+	data->adapter = adapter;
+	data->device = device;
 	data->bap = bt_bap_new(btd_gatt_database_get_db(database),
 			btd_gatt_database_get_db(database));
 	if (!data->bap) {
@@ -3295,15 +2975,16 @@ static int bap_bcast_probe(struct btd_service *service)
 		free(data);
 		return -EINVAL;
 	}
-
-	bt_bap_set_debug(data->bap, bap_debug, NULL, NULL);
-
 	data->bcast_snks = queue_new();
+
+	bt_bap_set_user_data(data->bap, service);
 
 	if (!bt_bap_attach(data->bap, NULL)) {
 		error("BAP unable to attach");
 		return -EINVAL;
 	}
+
+	bap_data_add(data);
 
 	data->ready_id = bt_bap_ready_register(data->bap, bap_ready, service,
 								NULL);
@@ -3312,66 +2993,40 @@ static int bap_bcast_probe(struct btd_service *service)
 	data->pac_id = bt_bap_pac_register(data->bap, pac_added_broadcast,
 				pac_removed_broadcast, data, NULL);
 
-	bt_bap_set_user_data(data->bap, service);
-
-	/* Start the PA timer if it hasn't been started yet */
-	if (data->adapter->pa_timer_id == 0)
-		data->adapter->pa_timer_id = g_timeout_add_seconds(
-							PA_IDLE_TIMEOUT,
-							pa_idle_timer,
-							data->adapter);
-
-	/* Enqueue this device advertisement so that we can create PA sync. */
-	DBG("enqueue service: %p", service);
-	req = new0(struct bap_bcast_pa_req, 1);
-	req->type = type;
-	req->in_progress = FALSE;
-	req->data.service = service;
-	queue_push_tail(data->adapter->bcast_pa_requests, req);
+	if (btd_service_get_user_data(service) == data)
+		/* If the reference to the bap session has been set as service
+		 * user data, it means the broadcaster was autonomously probed.
+		 * Thus, the Broadcast Sink needs to create short lived PA sync
+		 * to discover streams.
+		 *
+		 * If the service user data does not match the bap session, it
+		 * means that the broadcaster was probed via a Broadcast
+		 * Assistant from the BASS plugin, where stream discovery and
+		 * configuration will also be handled.
+		 */
+		pa_sync(data);
 
 	return 0;
-}
-
-static bool match_service(const void *data, const void *match_data)
-{
-	struct bap_bcast_pa_req *req = (struct bap_bcast_pa_req *)data;
-
-	return req->data.service == match_data;
 }
 
 static void bap_bcast_remove(struct btd_service *service)
 {
 	struct btd_device *device = btd_service_get_device(service);
 	struct bap_data *data;
-	struct bap_bcast_pa_req *req;
 	char addr[18];
 
 	ba2str(device_get_address(device), addr);
 	DBG("%s", addr);
 
-	data = btd_service_get_user_data(service);
+	data = queue_find(sessions, match_device, device);
 	if (!data) {
 		error("BAP service not handled by profile");
 		return;
 	}
-	/* Remove the corresponding entry from the pa_req queue. Any pa_req that
-	 * are in progress will be stopped by bap_data_remove which calls
-	 * bap_data_free.
-	 */
-	req = queue_remove_if(data->adapter->bcast_pa_requests,
-						match_service, service);
-	if (req && req->io_id) {
-		g_source_remove(req->io_id);
-		req->io_id = 0;
-	}
-	free(req);
 
-	/* Notify the BASS plugin about the removed session. */
-	bass_bcast_remove(device);
+	bt_bap_bis_remove(data->bap);
 
 	bap_data_remove(data);
-
-	bass_remove_stream(device);
 }
 
 static int bap_probe(struct btd_service *service)
@@ -3467,6 +3122,24 @@ static int bap_disconnect(struct btd_service *service)
 	return 0;
 }
 
+static int bap_bcast_disconnect(struct btd_service *service)
+{
+	struct btd_device *device = btd_service_get_device(service);
+	struct bap_data *data;
+
+	data = queue_find(sessions, match_device, device);
+	if (!data) {
+		error("BAP service not handled by profile");
+		return -EINVAL;
+	}
+
+	bt_bap_detach(data->bap);
+
+	btd_service_disconnecting_complete(service, 0);
+
+	return 0;
+}
+
 static int bap_adapter_probe(struct btd_profile *p, struct btd_adapter *adapter)
 {
 	struct btd_gatt_database *database = btd_adapter_get_database(adapter);
@@ -3503,16 +3176,9 @@ static int bap_adapter_probe(struct btd_profile *p, struct btd_adapter *adapter)
 	data->pac_id = bt_bap_pac_register(data->bap, pac_added_broadcast,
 					pac_removed_broadcast, data, NULL);
 
-	bt_bap_set_user_data(data->bap, adapter);
 	bap_data_set_user_data(data, adapter);
 
-	data->adapter = new0(struct bap_adapter, 1);
-	data->adapter->adapter = adapter;
-
-	if (adapters == NULL)
-		adapters = queue_new();
-	data->adapter->bcast_pa_requests = queue_new();
-	queue_push_tail(adapters, data->adapter);
+	data->adapter = adapter;
 
 	return 0;
 }
@@ -3526,15 +3192,6 @@ static void bap_adapter_remove(struct btd_profile *p,
 
 	ba2str(btd_adapter_get_address(adapter), addr);
 	DBG("%s", addr);
-
-	queue_destroy(data->adapter->bcast_pa_requests, free);
-	queue_remove(adapters, data->adapter);
-	free(data->adapter);
-
-	if (queue_isempty(adapters)) {
-		queue_destroy(adapters, NULL);
-		adapters = NULL;
-	}
 
 	if (!data) {
 		error("BAP service not handled by profile");
@@ -3564,7 +3221,7 @@ static struct btd_profile bap_bcast_profile = {
 	.remote_uuid	= BCAAS_UUID_STR,
 	.device_probe	= bap_bcast_probe,
 	.device_remove	= bap_bcast_remove,
-	.disconnect	= bap_disconnect,
+	.disconnect	= bap_bcast_disconnect,
 	.auto_connect	= false,
 	.experimental	= true,
 };

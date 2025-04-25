@@ -27,6 +27,10 @@ enum l_checksum_type {
 	L_CHECKSUM_SHA256,
 	L_CHECKSUM_SHA384,
 	L_CHECKSUM_SHA512,
+	L_CHECKSUM_SHA3_224,
+	L_CHECKSUM_SHA3_256,
+	L_CHECKSUM_SHA3_384,
+	L_CHECKSUM_SHA3_512,
 };
 
 struct l_checksum *l_checksum_new(enum l_checksum_type type);

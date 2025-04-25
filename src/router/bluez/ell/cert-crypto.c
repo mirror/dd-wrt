@@ -37,18 +37,23 @@ LIB_EXPORT bool l_cert_pkcs5_pbkdf1(enum l_checksum_type type,
 	struct l_checksum *checksum;
 
 	switch (type) {
+	case L_CHECKSUM_NONE:
+	case L_CHECKSUM_MD4:
+		return false;
 	case L_CHECKSUM_MD5:
 		hash_len = 16;
 		break;
 	case L_CHECKSUM_SHA1:
 		hash_len = 20;
 		break;
-	case L_CHECKSUM_NONE:
-	case L_CHECKSUM_MD4:
 	case L_CHECKSUM_SHA224:
 	case L_CHECKSUM_SHA256:
 	case L_CHECKSUM_SHA384:
 	case L_CHECKSUM_SHA512:
+	case L_CHECKSUM_SHA3_224:
+	case L_CHECKSUM_SHA3_256:
+	case L_CHECKSUM_SHA3_384:
+	case L_CHECKSUM_SHA3_512:
 		return false;
 	default:
 		return false;
@@ -100,6 +105,10 @@ LIB_EXPORT bool l_cert_pkcs5_pbkdf2(enum l_checksum_type type,
 	unsigned int i;
 
 	switch (type) {
+	case L_CHECKSUM_NONE:
+	case L_CHECKSUM_MD4:
+	case L_CHECKSUM_MD5:
+		return false;
 	case L_CHECKSUM_SHA1:
 		h_len = 20;
 		break;
@@ -115,9 +124,10 @@ LIB_EXPORT bool l_cert_pkcs5_pbkdf2(enum l_checksum_type type,
 	case L_CHECKSUM_SHA512:
 		h_len = 64;
 		break;
-	case L_CHECKSUM_NONE:
-	case L_CHECKSUM_MD4:
-	case L_CHECKSUM_MD5:
+	case L_CHECKSUM_SHA3_224:
+	case L_CHECKSUM_SHA3_256:
+	case L_CHECKSUM_SHA3_384:
+	case L_CHECKSUM_SHA3_512:
 		return false;
 	default:
 		return false;

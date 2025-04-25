@@ -1518,7 +1518,7 @@ LIB_EXPORT const char *l_settings_get_embedded_value(
 	struct embedded_group_data *group;
 
 	if (unlikely(!settings))
-		return false;
+		return NULL;
 
 	group = l_queue_find(settings->embedded_groups,
 					embedded_group_match, group_name);

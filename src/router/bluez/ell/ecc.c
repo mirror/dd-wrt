@@ -25,6 +25,64 @@
 #include "missing.h"
 
 /*
+ * RFC 5114 - Section 2.4 192-bit Random ECP Group
+ */
+#define P192_CURVE_P { 0xFFFFFFFFFFFFFFFFull, 0xFFFFFFFFFFFFFFFEull, \
+			0xFFFFFFFFFFFFFFFFull }
+#define P192_CURVE_GX { 0xF4FF0AFD82FF1012ull, 0x7CBF20EB43A18800ull, \
+			0x188DA80EB03090F6ull }
+#define P192_CURVE_GY { 0x73F977A11E794811ull, 0x631011ED6B24CDD5ull, \
+			0x07192B95FFC8DA78ull }
+#define P192_CURVE_N { 0x146BC9B1B4D22831ull, 0xFFFFFFFF99DEF836ull, \
+			0xFFFFFFFFFFFFFFFFull }
+#define P192_CURVE_B { 0xFEB8DEECC146B9B1ull, 0x0FA7E9AB72243049ull, \
+			0x64210519E59C80E7ull }
+
+static const struct l_ecc_curve p192 = {
+	.name = "secp192r1",
+	.ike_group = 25,
+	.tls_group = 19,
+	.ndigits = 3,
+	.g = {
+		.x = P192_CURVE_GX,
+		.y = P192_CURVE_GY,
+		.curve = &p192
+	},
+	.p = P192_CURVE_P,
+	.n = P192_CURVE_N,
+	.b = P192_CURVE_B,
+};
+
+/*
+ * RFC 5114 - Section 2.5 224-bit Random ECP Group
+ */
+#define P224_CURVE_P { 0x0000000000000001ull, 0xFFFFFFFF00000000ull, \
+			0xFFFFFFFFFFFFFFFFull, 0xFFFFFFFFull }
+#define P224_CURVE_GX { 0x343280D6115C1D21ull, 0x4A03C1D356C21122ull, \
+			0x6BB4BF7F321390B9ull, 0xB70E0CBDull }
+#define P224_CURVE_GY { 0x44D5819985007E34ull, 0xCD4375A05A074764ull, \
+			0xB5F723FB4C22DFE6ull, 0xBD376388ull }
+#define P224_CURVE_N { 0x13DD29455C5C2A3Dull, 0xFFFF16A2E0B8F03Eull, \
+			0xFFFFFFFFFFFFFFFFull, 0xFFFFFFFFull }
+#define P224_CURVE_B { 0x270B39432355FFB4ull, 0x5044B0B7D7BFD8BAull, \
+			0x0C04B3ABF5413256ull, 0xB4050A85ull }
+
+static const struct l_ecc_curve p224 = {
+	.name = "secp224r1",
+	.ike_group = 26,
+	.tls_group = 21,
+	.ndigits = 4,
+	.g = {
+		.x = P224_CURVE_GX,
+		.y = P224_CURVE_GY,
+		.curve = &p224
+	},
+	.p = P224_CURVE_P,
+	.n = P224_CURVE_N,
+	.b = P224_CURVE_B,
+};
+
+/*
  * RFC 5114 - Section 2.6 256-bit Random ECP Group
  */
 #define P256_CURVE_P { 0xFFFFFFFFFFFFFFFFull, 0x00000000FFFFFFFFull, \
@@ -89,9 +147,56 @@ static const struct l_ecc_curve p384 = {
 	.z = -12,
 };
 
+/*
+ * RFC 5114 - Section 2.8 521-bit Random ECP Group
+ */
+#define P521_CURVE_P { 0xFFFFFFFFFFFFFFFFull, 0xFFFFFFFFFFFFFFFFull, \
+			0xFFFFFFFFFFFFFFFFull, 0xFFFFFFFFFFFFFFFFull, \
+			0xFFFFFFFFFFFFFFFFull, 0xFFFFFFFFFFFFFFFFull, \
+			0xFFFFFFFFFFFFFFFFull, 0xFFFFFFFFFFFFFFFFull, \
+			0x000001FFull }
+#define P521_CURVE_GX { 0xF97E7E31C2E5BD66ull, 0x3348B3C1856A429Bull, \
+			0xFE1DC127A2FFA8DEull, 0xA14B5E77EFE75928ull, \
+			0xF828AF606B4D3DBAull, 0x9C648139053FB521ull, \
+			0x9E3ECB662395B442ull, 0x858E06B70404E9CDull, \
+			0x000000C6ull }
+#define P521_CURVE_GY { 0x88BE94769FD16650ull, 0x353C7086A272C240ull, \
+			0xC550B9013FAD0761ull, 0x97EE72995EF42640ull, \
+			0x17AFBD17273E662Cull, 0x98F54449579B4468ull, \
+			0x5C8A5FB42C7D1BD9ull, 0x39296A789A3BC004ull, \
+			0x00000118ull }
+#define P521_CURVE_N { 0xBB6FB71E91386409ull, 0x3BB5C9B8899C47AEull, \
+			0x7FCC0148F709A5D0ull, 0x51868783BF2F966Bull, \
+			0xFFFFFFFFFFFFFFFAull, 0xFFFFFFFFFFFFFFFFull, \
+			0xFFFFFFFFFFFFFFFFull, 0xFFFFFFFFFFFFFFFFull, \
+			0x000001FFull }
+#define P521_CURVE_B { 0xEF451FD46B503F00ull, 0x3573DF883D2C34F1ull, \
+			0x1652C0BD3BB1BF07ull, 0x56193951EC7E937Bull, \
+			0xB8B489918EF109E1ull, 0xA2DA725B99B315F3ull, \
+			0x929A21A0B68540EEull, 0x953EB9618E1C9A1Full, \
+			0x00000051ull }
+
+static const struct l_ecc_curve p521 = {
+	.name = "secp521r1",
+	.ike_group = 21,
+	.tls_group = 25,
+	.ndigits = 9,
+	.g = {
+		.x = P521_CURVE_GX,
+		.y = P521_CURVE_GY,
+		.curve = &p521
+	},
+	.p = P521_CURVE_P,
+	.n = P521_CURVE_N,
+	.b = P521_CURVE_B,
+};
+
 static const struct l_ecc_curve *curves[] = {
 	&p384,
 	&p256,
+	&p521,
+	&p224,
+	&p192,
 };
 
 /* Returns supported IKE groups, sorted by the highest effective key size */
@@ -923,19 +1028,31 @@ LIB_EXPORT struct l_ecc_scalar *l_ecc_scalar_new_reduced_1_to_n(
 	return c;
 }
 
+#define ECC_RANDOM_MAX_ITERATIONS 20
+
 LIB_EXPORT struct l_ecc_scalar *l_ecc_scalar_new_random(
 					const struct l_ecc_curve *curve)
 {
+	int iter = 0;
 	uint64_t r[L_ECC_MAX_DIGITS];
 
-	l_getrandom(r, curve->ndigits * 8);
-
-	while (_vli_cmp(r, curve->p, curve->ndigits) > 0 ||
-			_vli_cmp(r, curve->n, curve->ndigits) > 0 ||
-			_vli_is_zero_or_one(r, curve->ndigits))
+	while (iter++ < ECC_RANDOM_MAX_ITERATIONS) {
 		l_getrandom(r, curve->ndigits * 8);
 
-	return _ecc_constant_new(curve, r, curve->ndigits * 8);
+		if (curve == &p521)
+			r[8] &= 0x1ff;
+		else if (curve == &p224)
+			r[3] &= 0xffffffff;
+
+		if (_vli_cmp(r, curve->p, curve->ndigits) > 0 ||
+				_vli_cmp(r, curve->n, curve->ndigits) > 0 ||
+				_vli_is_zero_or_one(r, curve->ndigits))
+			continue;
+
+		return _ecc_constant_new(curve, r, curve->ndigits * 8);
+	}
+
+	return NULL;
 }
 
 LIB_EXPORT ssize_t l_ecc_scalar_get_data(const struct l_ecc_scalar *c,

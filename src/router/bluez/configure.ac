@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0
 AC_PREREQ(2.60)
-AC_INIT(bluez, 5.79)
+AC_INIT(bluez, 5.82)
 
 AM_INIT_AUTOMAKE([foreign subdir-objects color-tests silent-rules
 					tar-pax no-dist-gzip dist-xz])
@@ -70,7 +70,7 @@ AC_CHECK_LIB(pthread, pthread_create, dummy=yes,
 AC_CHECK_LIB(dl, dlopen, dummy=yes,
 			AC_MSG_ERROR(dynamic linking loader is required))
 
-AC_CHECK_HEADERS(string.h linux/types.h linux/if_alg.h linux/uinput.h linux/uhid.h sys/random.h)
+AC_CHECK_HEADERS(stdio.h string.h linux/types.h linux/if_alg.h linux/uinput.h linux/uhid.h sys/random.h)
 
 # basename may be only available in libgen.h with the POSIX behavior,
 # not desired here
@@ -176,10 +176,16 @@ AM_CONDITIONAL(SAP, test "${enable_sap}" = "yes")
 AC_ARG_ENABLE(a2dp, AS_HELP_STRING([--disable-a2dp],
 		[disable A2DP profile]), [enable_a2dp=${enableval}])
 AM_CONDITIONAL(A2DP, test "${enable_a2dp}" != "no")
+if test "${enable_a2dp}" != "no"; then
+	AC_DEFINE(HAVE_A2DP, 1, [Define to 1 if you have A2DP support.])
+fi
 
 AC_ARG_ENABLE(avrcp, AS_HELP_STRING([--disable-avrcp],
 		[disable AVRCP profile]), [enable_avrcp=${enableval}])
 AM_CONDITIONAL(AVRCP, test "${enable_avrcp}" != "no")
+if test "${enable_avrcp}" != "no"; then
+	AC_DEFINE(HAVE_AVRCP, 1, [Define to 1 if you have AVRCP support.])
+fi
 
 AC_ARG_ENABLE(network, AS_HELP_STRING([--disable-network],
 		[disable network profiles]), [enable_network=${enableval}])
@@ -228,6 +234,9 @@ AM_CONDITIONAL(CSIP, test "${enable_csip}" != "no")
 AC_ARG_ENABLE(asha, AS_HELP_STRING([--disable-asha],
 		[disable ASHA support]), [enable_asha=${enableval}])
 AM_CONDITIONAL(ASHA, test "${enable_asha}" != "no")
+if test "${enable_asha}" != "no"; then
+	AC_DEFINE(HAVE_ASHA, 1, [Define to 1 if you have ASHA support.])
+fi
 
 AC_ARG_ENABLE(tools, AS_HELP_STRING([--disable-tools],
 		[disable Bluetooth tools]), [enable_tools=${enableval}])
@@ -375,6 +384,13 @@ AC_ARG_ENABLE(testing, AS_HELP_STRING([--enable-testing],
 			[enable testing tools]),
 					[enable_testing=${enableval}])
 AM_CONDITIONAL(TESTING, test "${enable_testing}" = "yes")
+
+if (test "${enable_testing}" = "yes"); then
+   AC_CHECK_DECLS([SOF_TIMESTAMPING_TX_COMPLETION, SCM_TSTAMP_COMPLETION],
+	[], [], [[#include <time.h>
+		#include <linux/errqueue.h>
+		#include <linux/net_tstamp.h>]])
+fi
 
 AC_ARG_ENABLE(experimental, AS_HELP_STRING([--enable-experimental],
 			[enable experimental tools]),

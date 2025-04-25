@@ -40,7 +40,7 @@ Select a different index
 .INDENT 0.0
 .TP
 .B Usage
-\fB# select <index>\fP
+\fB> select <index>\fP
 .UNINDENT
 .SS revision
 .sp
@@ -48,7 +48,7 @@ Get the MGMT Revision
 .INDENT 0.0
 .TP
 .B Usage
-\fB# revision\fP
+\fB> revision\fP
 .UNINDENT
 .SS commands
 .sp
@@ -56,7 +56,7 @@ List supported commands
 .INDENT 0.0
 .TP
 .B Usage
-\fB# commands\fP
+\fB> commands\fP
 .UNINDENT
 .SS config
 .sp
@@ -64,7 +64,7 @@ Show configuration info
 .INDENT 0.0
 .TP
 .B Usage
-\fB# config\fP
+\fB> config\fP
 .UNINDENT
 .SS info
 .sp
@@ -72,7 +72,7 @@ Show controller info
 .INDENT 0.0
 .TP
 .B Usage
-\fB# info\fP
+\fB> info\fP
 .UNINDENT
 .SS extinfo
 .sp
@@ -80,7 +80,7 @@ Show extended controller info
 .INDENT 0.0
 .TP
 .B Usage
-\fB# extinfo\fP
+\fB> extinfo\fP
 .UNINDENT
 .SS auto\-power
 .sp
@@ -88,7 +88,7 @@ Power all available features
 .INDENT 0.0
 .TP
 .B Usage
-\fB# auto\-power\fP
+\fB> auto\-power\fP
 .UNINDENT
 .SS power
 .sp
@@ -96,7 +96,7 @@ Toggle powered state
 .INDENT 0.0
 .TP
 .B Usage
-\fB# power <on/off>\fP
+\fB> power <on/off>\fP
 .UNINDENT
 .SS discov
 .sp
@@ -104,7 +104,7 @@ Toggle discoverable state
 .INDENT 0.0
 .TP
 .B Usage
-\fB# discov <yes/no/limited> [timeout]\fP
+\fB> discov <yes/no/limited> [timeout]\fP
 .UNINDENT
 .SS connectable
 .sp
@@ -112,7 +112,7 @@ Toggle connectable state
 .INDENT 0.0
 .TP
 .B Usage
-\fB# connectable <on/off>\fP
+\fB> connectable <on/off>\fP
 .UNINDENT
 .SS fast\-conn
 .sp
@@ -120,7 +120,7 @@ Toggle fast connectable state
 .INDENT 0.0
 .TP
 .B Usage
-\fB# fast\-conn <on/off>\fP
+\fB> fast\-conn <on/off>\fP
 .UNINDENT
 .SS bondable
 .sp
@@ -128,7 +128,7 @@ Toggle bondable state
 .INDENT 0.0
 .TP
 .B Usage
-\fB# bondable <on/off>\fP
+\fB> bondable <on/off>\fP
 .UNINDENT
 .SS pairable
 .sp
@@ -136,7 +136,7 @@ Toggle bondable state
 .INDENT 0.0
 .TP
 .B Usage
-\fB# pairable <on/off>\fP
+\fB> pairable <on/off>\fP
 .UNINDENT
 .SS linksec
 .sp
@@ -144,7 +144,7 @@ Toggle link level security
 .INDENT 0.0
 .TP
 .B Usage
-\fB# linksec <on/off>\fP
+\fB> linksec <on/off>\fP
 .UNINDENT
 .SS ssp
 .sp
@@ -152,7 +152,7 @@ Toggle SSP mode
 .INDENT 0.0
 .TP
 .B Usage
-\fB# spp <on/off>\fP
+\fB> spp <on/off>\fP
 .UNINDENT
 .SS sc
 .sp
@@ -160,7 +160,7 @@ Toggle SC support
 .INDENT 0.0
 .TP
 .B Usage
-\fB# sc <on/off/only>\fP
+\fB> sc <on/off/only>\fP
 .UNINDENT
 .SS hs
 .sp
@@ -168,7 +168,7 @@ Toggle HS support
 .INDENT 0.0
 .TP
 .B Usage
-\fB# hs <on/off>\fP
+\fB> hs <on/off>\fP
 .UNINDENT
 .SS le
 .sp
@@ -176,7 +176,7 @@ Toggle LE support
 .INDENT 0.0
 .TP
 .B Usage
-\fB# le <on/off>\fP
+\fB> le <on/off>\fP
 .UNINDENT
 .SS advertising
 .sp
@@ -184,7 +184,7 @@ Toggle LE advertising
 .INDENT 0.0
 .TP
 .B Usage
-\fB# advertise <on/off>\fP
+\fB> advertise <on/off>\fP
 .UNINDENT
 .SS bredr
 .sp
@@ -192,7 +192,7 @@ Toggle BR/EDR support
 .INDENT 0.0
 .TP
 .B Usage
-\fB# bredr <on/off>\fP
+\fB> bredr <on/off>\fP
 .UNINDENT
 .SS privacy
 .sp
@@ -200,7 +200,7 @@ Toggle privacy support
 .INDENT 0.0
 .TP
 .B Usage
-\fB# privacy <on/off> [irk]\fP
+\fB> privacy <on/off> [irk]\fP
 .UNINDENT
 .SS class
 .sp
@@ -208,7 +208,7 @@ Set device major/minor class
 .INDENT 0.0
 .TP
 .B Usage
-\fB# class <major> <minor>\fP
+\fB> class <major> <minor>\fP
 .UNINDENT
 .SS disconnect
 .sp
@@ -216,7 +216,7 @@ Disconnect device
 .INDENT 0.0
 .TP
 .B Usage
-\fB# disconnect [\-t type] <remote address>\fP
+\fB> disconnect [\-t type] <remote address>\fP
 .UNINDENT
 .SS con
 .sp
@@ -224,7 +224,7 @@ List connections
 .INDENT 0.0
 .TP
 .B Usage
-\fB# con\fP
+\fB> con\fP
 .UNINDENT
 .SS find
 .sp
@@ -232,7 +232,7 @@ Discover nearby devices
 .INDENT 0.0
 .TP
 .B Usage
-\fB# find [\-l|\-b] [\-L]\fP
+\fB> find [\-l|\-b] [\-L]\fP
 .UNINDENT
 .SS find\-service
 .sp
@@ -240,7 +240,7 @@ Discover nearby service
 .INDENT 0.0
 .TP
 .B Usage
-\fB# find\-service [\-u UUID] [\-r RSSI_Threshold] [\-l|\-b]\fP
+\fB> find\-service [\-u UUID] [\-r RSSI_Threshold] [\-l|\-b]\fP
 .UNINDENT
 .SS stop\-find
 .sp
@@ -248,7 +248,7 @@ Stop discovery
 .INDENT 0.0
 .TP
 .B Usage
-\fB# stop\-find [\-l|\-b]\fP
+\fB> stop\-find [\-l|\-b]\fP
 .UNINDENT
 .SS name
 .sp
@@ -256,7 +256,7 @@ Set local name
 .INDENT 0.0
 .TP
 .B Usage
-\fB# name <name> [shortname]\fP
+\fB> name <name> [shortname]\fP
 .UNINDENT
 .SS pair
 .sp
@@ -264,7 +264,7 @@ Pair with a remote device
 .INDENT 0.0
 .TP
 .B Usage
-\fB# pair [\-c cap] [\-t type] <remote address>\fP
+\fB> pair [\-c cap] [\-t type] <remote address>\fP
 .UNINDENT
 .SS cancelpair
 .sp
@@ -272,7 +272,7 @@ Cancel pairing
 .INDENT 0.0
 .TP
 .B Usage
-\fB# cancelpair [\-t type] <remote address>\fP
+\fB> cancelpair [\-t type] <remote address>\fP
 .UNINDENT
 .SS unpair
 .sp
@@ -280,7 +280,7 @@ Unpair device
 .INDENT 0.0
 .TP
 .B Usage
-\fB# unpair [\-t type] <remote address>\fP
+\fB> unpair [\-t type] <remote address>\fP
 .UNINDENT
 .SS keys
 .sp
@@ -296,7 +296,7 @@ Load Long Term Keys
 .INDENT 0.0
 .TP
 .B Usage
-\fB# ltks\fP
+\fB> ltks\fP
 .UNINDENT
 .SS irks
 .sp
@@ -304,7 +304,7 @@ Load Identity Resolving Keys
 .INDENT 0.0
 .TP
 .B Usage
-\fB# irks [\-\-local index] [\-\-file file path]\fP
+\fB> irks [\-\-local index] [\-\-file file path]\fP
 .UNINDENT
 .SS block
 .sp
@@ -312,7 +312,7 @@ Block Device
 .INDENT 0.0
 .TP
 .B Usage
-\fB# block [\-t type] <remote address>\fP
+\fB> block [\-t type] <remote address>\fP
 .UNINDENT
 .SS unblock
 .sp
@@ -320,7 +320,7 @@ Unblock Device
 .INDENT 0.0
 .TP
 .B Usage
-\fB# unblock [\-t type] <remote address>\fP
+\fB> unblock [\-t type] <remote address>\fP
 .UNINDENT
 .SS add\-uuid
 .sp
@@ -328,7 +328,7 @@ Add UUID
 .INDENT 0.0
 .TP
 .B Usage
-\fB# add\-uuid <UUID> <service class hint>\fP
+\fB> add\-uuid <UUID> <service class hint>\fP
 .UNINDENT
 .SS rm\-uuid
 .sp
@@ -336,7 +336,7 @@ Remove UUID
 .INDENT 0.0
 .TP
 .B Usage
-\fB# rm\-uuid <UUID>\fP
+\fB> rm\-uuid <UUID>\fP
 .UNINDENT
 .SS clr\-uuids
 .sp
@@ -344,7 +344,7 @@ Clear UUIDs
 .INDENT 0.0
 .TP
 .B Usage
-\fB# clear\-uuids\fP
+\fB> clear\-uuids\fP
 .UNINDENT
 .SS local\-oob
 .sp
@@ -352,7 +352,7 @@ Local OOB data
 .INDENT 0.0
 .TP
 .B Usage
-\fB# local\-oob\fP
+\fB> local\-oob\fP
 .UNINDENT
 .SS remote\-oob
 .sp
@@ -360,7 +360,7 @@ Remote OOB data
 .INDENT 0.0
 .TP
 .B Usage
-\fB# remote\-oob [\-t <addr_type>] [\-r <rand192>] [\-h <hash192>]
+\fB> remote\-oob [\-t <addr_type>] [\-r <rand192>] [\-h <hash192>]
 [\-R <rand256>] [\-H <hash256>] <addr>\fP
 .UNINDENT
 .SS did
@@ -369,7 +369,7 @@ Set Device ID
 .INDENT 0.0
 .TP
 .B Usage
-\fB# did <source>:<vendor>:<product>:<version>\fP
+\fB> did <source>:<vendor>:<product>:<version>\fP
 .UNINDENT
 .SS static\-addr
 .sp
@@ -377,7 +377,7 @@ Set static address
 .INDENT 0.0
 .TP
 .B Usage
-\fB# static\-addr <address>\fP
+\fB> static\-addr <address>\fP
 .UNINDENT
 .SS public\-addr
 .sp
@@ -385,7 +385,7 @@ Set public address
 .INDENT 0.0
 .TP
 .B Usage
-\fB# public\-addr <address>\fP
+\fB> public\-addr <address>\fP
 .UNINDENT
 .SS ext\-config
 .sp
@@ -393,7 +393,7 @@ External configuration
 .INDENT 0.0
 .TP
 .B Usage
-\fB# ext\-config <on/off>\fP
+\fB> ext\-config <on/off>\fP
 .UNINDENT
 .SS debug\-keys
 .sp
@@ -401,7 +401,7 @@ Toggle debug keys
 .INDENT 0.0
 .TP
 .B Usage
-\fB# debug\-keys <on/off>\fP
+\fB> debug\-keys <on/off>\fP
 .UNINDENT
 .SS conn\-info
 .sp
@@ -409,7 +409,7 @@ Get connection information
 .INDENT 0.0
 .TP
 .B Usage
-\fB# conn\-info [\-t type] <remote address>\fP
+\fB> conn\-info [\-t type] <remote address>\fP
 .UNINDENT
 .SS io\-cap
 .sp
@@ -417,7 +417,7 @@ Set IO Capability
 .INDENT 0.0
 .TP
 .B Usage
-\fB# io\-cap <cap>\fP
+\fB> io\-cap <cap>\fP
 .UNINDENT
 .SS scan\-params
 .sp
@@ -425,7 +425,7 @@ Set Scan Parameters
 .INDENT 0.0
 .TP
 .B Usage
-\fB# scan\-params <interval> <window>\fP
+\fB> scan\-params <interval> <window>\fP
 .UNINDENT
 .SS get\-clock
 .sp
@@ -433,7 +433,7 @@ Get Clock Information
 .INDENT 0.0
 .TP
 .B Usage
-\fB# get\-clock [address]\fP
+\fB> get\-clock [address]\fP
 .UNINDENT
 .SS add\-device
 .sp
@@ -441,7 +441,7 @@ Add Device
 .INDENT 0.0
 .TP
 .B Usage
-\fB# add\-device [\-a action] [\-t type] <address>\fP
+\fB> add\-device [\-a action] [\-t type] <address>\fP
 .UNINDENT
 .SS del\-device
 .sp
@@ -449,7 +449,7 @@ Remove Device
 .INDENT 0.0
 .TP
 .B Usage
-\fB# del\-device [\-t type] <address>\fP
+\fB> del\-device [\-t type] <address>\fP
 .UNINDENT
 .SS clr\-devices
 .sp
@@ -457,7 +457,7 @@ Clear Devices
 .INDENT 0.0
 .TP
 .B Usage
-\fB# clr\-devices\fP
+\fB> clr\-devices\fP
 .UNINDENT
 .SS bredr\-oob
 .sp
@@ -465,7 +465,7 @@ Local OOB data (BR/EDR)
 .INDENT 0.0
 .TP
 .B Usage
-\fB# bredr\-oob\fP
+\fB> bredr\-oob\fP
 .UNINDENT
 .SS le\-oob
 .sp
@@ -473,7 +473,7 @@ Local OOB data (LE)
 .INDENT 0.0
 .TP
 .B Usage
-\fB# le\-oob\fP
+\fB> le\-oob\fP
 .UNINDENT
 .SS advinfo
 .sp
@@ -481,7 +481,7 @@ Show advertising features
 .INDENT 0.0
 .TP
 .B Usage
-\fB# advinfo\fP
+\fB> advinfo\fP
 .UNINDENT
 .SS advsize
 .sp
@@ -489,7 +489,7 @@ Show advertising size info
 .INDENT 0.0
 .TP
 .B Usage
-\fB# advsize [options] <instance_id>\fP
+\fB> advsize [options] <instance_id>\fP
 .UNINDENT
 .SS add\-adv
 .sp
@@ -497,7 +497,7 @@ Add advertising instance
 .INDENT 0.0
 .TP
 .B Usage
-\fB# add\-adv [options] <instance_id>\fP
+\fB> add\-adv [options] <instance_id>\fP
 .UNINDENT
 .SS rm\-adv
 .sp
@@ -505,7 +505,7 @@ Remove advertising instance
 .INDENT 0.0
 .TP
 .B Usage
-\fB# rm\-adv <instance_id>\fP
+\fB> rm\-adv <instance_id>\fP
 .UNINDENT
 .SS clr\-adv
 .sp
@@ -513,7 +513,7 @@ Clear advertising instances
 .INDENT 0.0
 .TP
 .B Usage
-\fB# clr\-adv\fP
+\fB> clr\-adv\fP
 .UNINDENT
 .SS add\-ext\-adv\-params
 .sp
@@ -521,7 +521,7 @@ Add extended advertising params
 .INDENT 0.0
 .TP
 .B Usage
-\fB# add\-ext\-adv\-parms [options] <instance_id>\fP
+\fB> add\-ext\-adv\-parms [options] <instance_id>\fP
 .UNINDENT
 .SS add\-ext\-adv\-data
 .sp
@@ -529,7 +529,7 @@ Add extended advertising data
 .INDENT 0.0
 .TP
 .B Usage
-\fB# add\-ext\-adv\-data [options] <instance_id>\fP
+\fB> add\-ext\-adv\-data [options] <instance_id>\fP
 .UNINDENT
 .SS appearance
 .sp
@@ -537,7 +537,7 @@ Set appearance
 .INDENT 0.0
 .TP
 .B Usage
-\fB# appearance <appearance>\fP
+\fB> appearance <appearance>\fP
 .UNINDENT
 .SS phy
 .sp
@@ -545,7 +545,7 @@ Get/Set PHY Configuration
 .INDENT 0.0
 .TP
 .B Usage
-\fB# phy [LE1MTX] [LE1MRX] [LE2MTX] [LE2MRX] [LECODEDTX] [LECODEDRX]
+\fB> phy [LE1MTX] [LE1MRX] [LE2MTX] [LE2MRX] [LECODEDTX] [LECODEDRX]
 [BR1M1SLOT] [BR1M3SLOT] [BR1M5SLOT][EDR2M1SLOT] [EDR2M3SLOT]
 [EDR2M5SLOT][EDR3M1SLOT] [EDR3M3SLOT] [EDR3M5SLOT]\fP
 .UNINDENT
@@ -555,7 +555,7 @@ Toggle Wideband\-Speech support
 .INDENT 0.0
 .TP
 .B Usage
-\fB# wbs <on/off>\fP
+\fB> wbs <on/off>\fP
 .UNINDENT
 .SS secinfo
 .sp
@@ -563,7 +563,7 @@ Show security information
 .INDENT 0.0
 .TP
 .B Usage
-\fB# secinfo\fP
+\fB> secinfo\fP
 .UNINDENT
 .SS expinfo
 .sp
@@ -571,7 +571,7 @@ Show experimental features
 .INDENT 0.0
 .TP
 .B Usage
-\fB# expinfo\fP
+\fB> expinfo\fP
 .UNINDENT
 .SS exp\-debug
 .sp
@@ -579,7 +579,7 @@ Set debug feature
 .INDENT 0.0
 .TP
 .B Usage
-\fB# exp\-debug <on/off>\fP
+\fB> exp\-debug <on/off>\fP
 .UNINDENT
 .SS exp\-privacy
 .sp
@@ -587,7 +587,7 @@ Set LL privacy feature
 .INDENT 0.0
 .TP
 .B Usage
-\fB# exp\-privacy <on/off>\fP
+\fB> exp\-privacy <on/off>\fP
 .UNINDENT
 .SS exp\-quality
 .sp
@@ -595,7 +595,7 @@ Set bluetooth quality report feature
 .INDENT 0.0
 .TP
 .B Usage
-\fB# exp\-quality <on/off>\fP
+\fB> exp\-quality <on/off>\fP
 .UNINDENT
 .SS exp\-offload
 .sp
@@ -603,7 +603,7 @@ Toggle codec support
 .INDENT 0.0
 .TP
 .B Usage
-\fB# exp\-offload <on/off>\fP
+\fB> exp\-offload <on/off>\fP
 .UNINDENT
 .SS read\-sysconfig
 .sp
@@ -611,7 +611,7 @@ Read System Configuration
 .INDENT 0.0
 .TP
 .B Usage
-\fB# read\-sysconfig\fP
+\fB> read\-sysconfig\fP
 .UNINDENT
 .SS set\-sysconfig
 .sp
@@ -619,7 +619,7 @@ Set System Configuration
 .INDENT 0.0
 .TP
 .B Usage
-\fB# set\-sysconfig <\-v|\-h> [options...]\fP
+\fB> set\-sysconfig <\-v|\-h> [options...]\fP
 .UNINDENT
 .SS get\-flags
 .sp
@@ -630,7 +630,7 @@ Set device flags
 .INDENT 0.0
 .TP
 .B Usage
-\fB# set\-flags [\-f flags] [\-t type] <address>\fP
+\fB> set\-flags [\-f flags] [\-t type] <address>\fP
 .UNINDENT
 .SH RESOURCES
 .sp
@@ -639,7 +639,7 @@ Set device flags
 .sp
  <linux\-bluetooth@vger.kernel.org> 
 .SH COPYRIGHT
-Free use of this software is granted under ther terms of the GNU
+Free use of this software is granted under the terms of the GNU
 Lesser General Public Licenses (LGPL).
 .\" Generated by docutils manpage writer.
 .

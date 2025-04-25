@@ -27,6 +27,7 @@
 #include "gdbus/gdbus.h"
 
 #include "obexd/src/log.h"
+#include "obexd/src/obexd.h"
 #include "obexd/src/map_ap.h"
 #include "map-event.h"
 
@@ -38,6 +39,17 @@
 #define OBEX_MAS_UUID \
 	"\xBB\x58\x2B\x40\x42\x0C\x11\xDB\xB0\xDE\x08\x00\x20\x0C\x9A\x66"
 #define OBEX_MAS_UUID_LEN 16
+#define SUPPORTED_FEATURES_TAG  0x29
+
+#define NOTIFICATION_REGISTRATION_FEATURE 0x00000001
+#define NOTIFICATION_FEATURE 0x00000002
+#define BROWSING_FEATURE 0x00000004
+#define UPLOADING_FEATURE 0x00000008
+#define DELETE_FEATURE 0x00000010
+#define INSTANCE_INFORMATION_FEATURE 0x00000020
+#define EXTENDED_EVENT_REPORT_1_1 0x00000040
+#define MESSAGES_LISTING_FORMAT_VERSION_1_1 0x00000200
+#define MAPSUPPORTEDFEATURES_IN_CONNECT_REQUEST 0x00080000
 
 #define MAP_INTERFACE "org.bluez.obex.MessageAccess1"
 #define MAP_MSG_INTERFACE "org.bluez.obex.Message1"
@@ -49,6 +61,12 @@
 
 #define CHARSET_NATIVE 0
 #define CHARSET_UTF8 1
+
+#define SDP_MESSAGE_TYPE_EMAIL		0x01
+#define SDP_MESSAGE_TYPE_SMS_GSM	0x02
+#define SDP_MESSAGE_TYPE_SMS_CDMA	0x04
+#define SDP_MESSAGE_TYPE_MMS		0x08
+#define SDP_MESSAGE_TYPE_IM		0x10
 
 static const char * const filter_list[] = {
 	"subject",
@@ -122,6 +140,11 @@ struct map_msg {
 	uint64_t attachment_size;
 	uint8_t flags;
 	char *folder;
+	char *delivery_status;
+	uint64_t conversation_id;
+	char *conversation_name;
+	char *direction;
+	char *attachment_mime_types;
 	GDBusPendingPropertySet pending;
 };
 
@@ -417,6 +440,10 @@ static void map_msg_free(void *data)
 	g_free(msg->recipient_address);
 	g_free(msg->type);
 	g_free(msg->status);
+	g_free(msg->delivery_status);
+	g_free(msg->conversation_name);
+	g_free(msg->direction);
+	g_free(msg->attachment_mime_types);
 	g_free(msg);
 }
 
@@ -777,6 +804,93 @@ static void set_deleted(const GDBusPropertyTable *property,
 	set_status(property, iter, id, STATUS_DELETE, data);
 }
 
+static gboolean delivery_status_exists(const GDBusPropertyTable *property,
+								void *data)
+{
+	struct map_msg *msg = data;
+
+	return msg->delivery_status != NULL;
+}
+
+static gboolean get_delivery_status(const GDBusPropertyTable *property,
+					DBusMessageIter *iter, void *data)
+{
+	struct map_msg *msg = data;
+
+	dbus_message_iter_append_basic(iter, DBUS_TYPE_STRING,
+						&msg->delivery_status);
+
+	return TRUE;
+}
+
+static gboolean get_conversation_id(const GDBusPropertyTable *property,
+					DBusMessageIter *iter, void *data)
+{
+	struct map_msg *msg = data;
+
+	dbus_message_iter_append_basic(iter, DBUS_TYPE_UINT64,
+						&msg->conversation_id);
+
+	return TRUE;
+}
+
+static gboolean conversation_name_exists(const GDBusPropertyTable *property,
+								void *data)
+{
+	struct map_msg *msg = data;
+
+	return msg->conversation_name != NULL;
+}
+
+static gboolean get_conversation_name(const GDBusPropertyTable *property,
+					DBusMessageIter *iter, void *data)
+{
+	struct map_msg *msg = data;
+
+	dbus_message_iter_append_basic(iter, DBUS_TYPE_STRING,
+						&msg->conversation_name);
+
+	return TRUE;
+}
+
+static gboolean direction_exists(const GDBusPropertyTable *property,
+								void *data)
+{
+	struct map_msg *msg = data;
+
+	return msg->direction != NULL;
+}
+
+static gboolean get_direction(const GDBusPropertyTable *property,
+					DBusMessageIter *iter, void *data)
+{
+	struct map_msg *msg = data;
+
+	dbus_message_iter_append_basic(iter, DBUS_TYPE_STRING,
+							&msg->direction);
+
+	return TRUE;
+}
+
+static gboolean attachment_mime_exists(const GDBusPropertyTable *property,
+								void *data)
+{
+	struct map_msg *msg = data;
+
+	return msg->attachment_mime_types != NULL;
+}
+
+static gboolean get_attachment_mime_types(const GDBusPropertyTable *property,
+					DBusMessageIter *iter, void *data)
+{
+	struct map_msg *msg = data;
+
+	dbus_message_iter_append_basic(iter, DBUS_TYPE_STRING,
+						&msg->attachment_mime_types);
+
+	return TRUE;
+}
+
 static const GDBusMethodTable map_msg_methods[] = {
 	{ GDBUS_METHOD("Get",
 			GDBUS_ARGS({ "targetfile", "s" },
@@ -808,6 +922,14 @@ static const GDBusPropertyTable map_msg_properties[] = {
 	{ "Sent", "b", get_sent },
 	{ "Protected", "b", get_protected },
 	{ "Deleted", "b", NULL, set_deleted },
+	{ "DeliveryStatus", "s", get_delivery_status, NULL,
+						delivery_status_exists },
+	{ "ConversationId", "t", get_conversation_id },
+	{ "ConversationName", "s", get_conversation_name, NULL,
+						conversation_name_exists },
+	{ "Direction", "s", get_direction, NULL, direction_exists },
+	{ "AttachmentMimeTypes", "s", get_attachment_mime_types, NULL,
+						attachment_mime_exists },
 	{ }
 };
 
@@ -1060,6 +1182,67 @@ static void parse_protected(struct map_msg *msg, const char *value)
 						MAP_MSG_INTERFACE, "Protected");
 }
 
+static void parse_delivery_status(struct map_msg *msg, const char *value)
+{
+	if (g_strcmp0(msg->delivery_status, value) == 0)
+		return;
+
+	g_free(msg->delivery_status);
+	msg->delivery_status = g_strdup(value);
+
+	g_dbus_emit_property_changed(conn, msg->path,
+					MAP_MSG_INTERFACE, "DeliveryStatus");
+}
+
+static void parse_conversation_id(struct map_msg *msg, const char *value)
+{
+	uint64_t conversation_id = strtoull(value, NULL, 16);
+
+	if (msg->conversation_id == conversation_id)
+		return;
+
+	msg->conversation_id = conversation_id;
+
+	g_dbus_emit_property_changed(conn, msg->path, MAP_MSG_INTERFACE,
+						"ConversationId");
+}
+
+static void parse_conversation_name(struct map_msg *msg, const char *value)
+{
+	if (g_strcmp0(msg->conversation_name, value) == 0)
+		return;
+
+	g_free(msg->conversation_name);
+	msg->conversation_name = g_strdup(value);
+
+	g_dbus_emit_property_changed(conn, msg->path, MAP_MSG_INTERFACE,
+						"ConversationName");
+}
+
+static void parse_direction(struct map_msg *msg, const char *value)
+{
+	if (g_strcmp0(msg->direction, value) == 0)
+		return;
+
+	g_free(msg->direction);
+	msg->direction = g_strdup(value);
+
+	g_dbus_emit_property_changed(conn, msg->path, MAP_MSG_INTERFACE,
+						"Direction");
+}
+
+static void parse_mime_types(struct map_msg *msg, const char *value)
+{
+	if (g_strcmp0(msg->attachment_mime_types, value) == 0)
+		return;
+
+	g_free(msg->attachment_mime_types);
+	msg->attachment_mime_types = g_strdup(value);
+
+	g_dbus_emit_property_changed(conn, msg->path, MAP_MSG_INTERFACE,
+						"AttachmentMimeTypes");
+}
+
 static const struct map_msg_parser {
 	const char *name;
 	void (*func) (struct map_msg *msg, const char *value);
@@ -1080,6 +1263,11 @@ static const struct map_msg_parser {
 		{ "read", parse_read },
 		{ "sent", parse_sent },
 		{ "protected", parse_protected },
+		{ "delivery_status", parse_delivery_status},
+		{ "conversation_id", parse_conversation_id},
+		{ "conversation_name", parse_conversation_name},
+		{ "direction", parse_direction},
+		{ "attachment_mime_types", parse_mime_types},
 		{ }
 };
 
@@ -1821,6 +2009,45 @@ static const GDBusMethodTable map_methods[] = {
 	{ }
 };
 
+static gboolean get_supported_types(const GDBusPropertyTable *property,
+					DBusMessageIter *iter, void *user_data)
+{
+	struct map_data *map = user_data;
+	DBusMessageIter entry;
+	const char *str;
+
+	dbus_message_iter_open_container(iter, DBUS_TYPE_ARRAY,
+					DBUS_TYPE_STRING_AS_STRING, &entry);
+	if (map->supported_message_types & SDP_MESSAGE_TYPE_EMAIL) {
+		str = "EMAIL";
+		dbus_message_iter_append_basic(&entry, DBUS_TYPE_STRING, &str);
+	}
+	if (map->supported_message_types & SDP_MESSAGE_TYPE_SMS_GSM) {
+		str = "SMS_GSM";
+		dbus_message_iter_append_basic(&entry, DBUS_TYPE_STRING, &str);
+	}
+	if (map->supported_message_types & SDP_MESSAGE_TYPE_SMS_CDMA) {
+		str = "SMS_CDMA";
+		dbus_message_iter_append_basic(&entry, DBUS_TYPE_STRING, &str);
+	}
+	if (map->supported_message_types & SDP_MESSAGE_TYPE_MMS) {
+		str = "MMS";
+		dbus_message_iter_append_basic(&entry, DBUS_TYPE_STRING, &str);
+	}
+	if (map->supported_message_types & SDP_MESSAGE_TYPE_IM) {
+		str = "IM";
+		dbus_message_iter_append_basic(&entry, DBUS_TYPE_STRING, &str);
+	}
+	dbus_message_iter_close_container(iter, &entry);
+
+	return TRUE;
+}
+
+static const GDBusPropertyTable map_properties[] = {
+	{ "SupportedTypes", "as", get_supported_types },
+	{ }
+};
+
 static void map_msg_remove(void *data)
 {
 	struct map_msg *msg = data;
@@ -2008,6 +2235,35 @@ static void parse_service_record(struct map_data *map)
 		map->supported_features = 0x0000001f;
 }
 
+static void *map_supported_features(struct obc_session *session)
+{
+	const void *data;
+	uint32_t supported_features;
+
+	/* Supported Feature Bits */
+	data = obc_session_get_attribute(session,
+					SDP_ATTR_MAP_SUPPORTED_FEATURES);
+	if (!data)
+		return NULL;
+
+	supported_features = *(uint32_t *) data;
+	if (!supported_features)
+		return NULL;
+
+	if (supported_features & MAPSUPPORTEDFEATURES_IN_CONNECT_REQUEST)
+		return g_obex_apparam_set_uint32(NULL, SUPPORTED_FEATURES_TAG,
+				NOTIFICATION_REGISTRATION_FEATURE |
+				NOTIFICATION_FEATURE |
+				BROWSING_FEATURE |
+				UPLOADING_FEATURE |
+				DELETE_FEATURE |
+				INSTANCE_INFORMATION_FEATURE |
+				EXTENDED_EVENT_REPORT_1_1 |
+				MESSAGES_LISTING_FORMAT_VERSION_1_1);
+
+	return NULL;
+}
+
 static int map_probe(struct obc_session *session)
 {
 	struct map_data *map;
@@ -2030,7 +2286,7 @@ static int map_probe(struct obc_session *session)
 	set_notification_registration(map, true);
 
 	if (!g_dbus_register_interface(conn, path, MAP_INTERFACE, map_methods,
-					NULL, NULL, map, map_free)) {
+					NULL, map_properties, map, map_free)) {
 		map_free(map);
 
 		return -ENOMEM;
@@ -2053,6 +2309,7 @@ static struct obc_driver map = {
 	.uuid = MAS_UUID,
 	.target = OBEX_MAS_UUID,
 	.target_len = OBEX_MAS_UUID_LEN,
+	.supported_features = map_supported_features,
 	.probe = map_probe,
 	.remove = map_remove
 };
@@ -2063,7 +2320,7 @@ int map_init(void)
 
 	DBG("");
 
-	conn = dbus_bus_get(DBUS_BUS_SESSION, NULL);
+	conn = obex_get_dbus_connection();
 	if (!conn)
 		return -EIO;
 

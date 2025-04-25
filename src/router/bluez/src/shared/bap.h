@@ -4,7 +4,7 @@
  *  BlueZ - Bluetooth protocol stack for Linux
  *
  *  Copyright (C) 2022  Intel Corporation. All rights reserved.
- *  Copyright 2023-2024 NXP
+ *  Copyright 2023-2025 NXP
  *
  */
 
@@ -39,6 +39,18 @@ typedef void (*bt_bap_stream_func_t)(struct bt_bap_stream *stream,
 					uint8_t code, uint8_t reason,
 					void *user_data);
 typedef void (*bt_bap_func_t)(struct bt_bap *bap, void *user_data);
+
+typedef void (*bt_bap_bis_func_t)(uint8_t bis, uint8_t sgrp,
+		struct iovec *caps, struct iovec *meta,
+		struct bt_bap_qos *qos, void *user_data);
+
+typedef void (*bt_bap_bcode_reply_t)(void *user_data, int err);
+
+typedef void (*bt_bap_bcode_func_t)(struct bt_bap_stream *stream,
+				bt_bap_bcode_reply_t reply, void *reply_data,
+				void *user_data);
+
+extern struct bt_iso_qos bap_sink_pa_qos;
 
 /* Local PAC related functions */
 struct bt_bap_pac_qos {
@@ -259,3 +271,37 @@ void bt_bap_verify_bis(struct bt_bap *bap, uint8_t bis_index,
 		struct iovec *caps,
 		struct bt_bap_pac **lpac);
 
+bool bt_bap_parse_base(struct iovec *base,
+			struct bt_bap_qos *qos,
+			util_debug_func_t func,
+			bt_bap_bis_func_t handler,
+			void *user_data);
+
+unsigned int bt_bap_bis_cb_register(struct bt_bap *bap,
+				bt_bap_bis_func_t probe,
+				bt_bap_func_t remove,
+				void *user_data,
+				bt_bap_destroy_func_t destroy);
+bool bt_bap_bis_cb_unregister(struct bt_bap *bap, unsigned int id);
+
+void bt_bap_bis_probe(struct bt_bap *bap, uint8_t bis, uint8_t sgrp,
+	struct iovec *caps, struct iovec *meta, struct bt_bap_qos *qos);
+void bt_bap_bis_remove(struct bt_bap *bap);
+
+void bt_bap_req_bcode(struct bt_bap_stream *stream,
+				bt_bap_bcode_reply_t reply,
+				void *reply_data);
+
+unsigned int bt_bap_bcode_cb_register(struct bt_bap *bap,
+				bt_bap_bcode_func_t func,
+				void *user_data,
+				bt_bap_destroy_func_t destroy);
+
+bool bt_bap_bcode_cb_unregister(struct bt_bap *bap, unsigned int id);
+
+struct bt_bap *bt_bap_get_session(struct bt_att *att, struct gatt_db *db);
+
+void bt_bap_iso_qos_to_bap_qos(struct bt_iso_qos *iso_qos,
+				struct bt_bap_qos *bap_qos);
+void bt_bap_qos_to_iso_qos(struct bt_bap_qos *bap_qos,
+				struct bt_iso_qos *iso_qos);

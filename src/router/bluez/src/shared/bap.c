@@ -4,7 +4,7 @@
  *  BlueZ - Bluetooth protocol stack for Linux
  *
  *  Copyright (C) 2022  Intel Corporation. All rights reserved.
- *  Copyright 2023-2024 NXP
+ *  Copyright 2023-2025 NXP
  *
  */
 
@@ -76,6 +76,21 @@ struct bt_bap_state {
 	unsigned int id;
 	bt_bap_state_func_t func;
 	bt_bap_connecting_func_t connecting;
+	bt_bap_destroy_func_t destroy;
+	void *data;
+};
+
+struct bt_bap_bis_cb {
+	unsigned int id;
+	bt_bap_bis_func_t probe;
+	bt_bap_func_t remove;
+	bt_bap_destroy_func_t destroy;
+	void *data;
+};
+
+struct bt_bap_bcode_cb {
+	unsigned int id;
+	bt_bap_bcode_func_t func;
 	bt_bap_destroy_func_t destroy;
 	void *data;
 };
@@ -180,6 +195,8 @@ struct bt_bap {
 	struct queue *pac_cbs;
 	struct queue *ready_cbs;
 	struct queue *state_cbs;
+	struct queue *bis_cbs;
+	struct queue *bcode_cbs;
 
 	bt_bap_debug_func_t debug_func;
 	bt_bap_destroy_func_t debug_destroy;
@@ -276,6 +293,7 @@ struct bt_bap_stream {
 	uint8_t old_state;
 	uint8_t state;
 	unsigned int state_id;
+	struct queue *pending_states;
 	bool client;
 	void *user_data;
 };
@@ -331,6 +349,45 @@ struct bt_bis {
 static struct queue *bap_db;
 static struct queue *bap_cbs;
 static struct queue *sessions;
+
+/* Structure holding the parameters for Periodic Advertisement create sync.
+ * The full QOS is populated at the time the user selects and endpoint and
+ * configures it using SetConfiguration.
+ */
+struct bt_iso_qos bap_sink_pa_qos = {
+	.bcast = {
+		.options		= 0x00,
+		.skip			= 0x0000,
+		.sync_timeout		= BT_ISO_SYNC_TIMEOUT,
+		.sync_cte_type	= 0x00,
+		/* TODO: The following parameters are not needed for PA Sync.
+		 * They will be removed when the kernel checks will be removed.
+		 */
+		.big			= BT_ISO_QOS_BIG_UNSET,
+		.bis			= BT_ISO_QOS_BIS_UNSET,
+		.encryption		= 0x00,
+		.bcode			= {0x00},
+		.mse			= 0x00,
+		.timeout		= BT_ISO_SYNC_TIMEOUT,
+		.sync_factor		= 0x07,
+		.packing		= 0x00,
+		.framing		= 0x00,
+		.in = {
+			.interval	= 10000,
+			.latency	= 10,
+			.sdu		= 40,
+			.phy		= 0x02,
+			.rtn		= 2,
+		},
+		.out = {
+			.interval	= 10000,
+			.latency	= 10,
+			.sdu		= 40,
+			.phy		= 0x02,
+			.rtn		= 2,
+		}
+	}
+};
 
 static void bap_stream_set_io(void *data, void *user_data);
 static void stream_find_io(void *data, void *user_data);
@@ -645,7 +702,7 @@ static void bap_disconnected(int err, void *user_data)
 	bt_bap_detach(bap);
 }
 
-static struct bt_bap *bap_get_session(struct bt_att *att, struct gatt_db *db)
+struct bt_bap *bt_bap_get_session(struct bt_att *att, struct gatt_db *db)
 {
 	const struct queue_entry *entry;
 	struct bt_bap *bap;
@@ -658,6 +715,9 @@ static struct bt_bap *bap_get_session(struct bt_att *att, struct gatt_db *db)
 	}
 
 	bap = bt_bap_new(db, NULL);
+	if (!bap)
+		return NULL;
+
 	bap->att = att;
 
 	bt_bap_attach(bap, NULL);
@@ -828,7 +888,7 @@ static void ascs_ase_read(struct gatt_db_attribute *attrib,
 	struct bt_ascs_ase_status rsp;
 
 	if (ase)
-		bap = bap_get_session(att, ase->ascs->bdb->db);
+		bap = bt_bap_get_session(att, ase->ascs->bdb->db);
 
 	if (bap)
 		ep = bap_get_endpoint(bap->local_eps, bap->ldb, attrib);
@@ -1063,6 +1123,23 @@ static void stream_notify_metadata(struct bt_bap_stream *stream)
 	free(status);
 }
 
+static void stream_notify_release(struct bt_bap_stream *stream)
+{
+	struct bt_bap_endpoint *ep = stream->ep;
+	struct bt_ascs_ase_status status;
+
+	DBG(stream->bap, "stream %p", stream);
+
+
+	memset(&status, 0, sizeof(status));
+	status.id = ep->id;
+	ep->state = BT_BAP_STREAM_STATE_RELEASING;
+	status.state = ep->state;
+
+	gatt_db_attribute_notify(ep->attr, (void *)&status, sizeof(status),
+					bt_bap_get_att(stream->bap));
+}
+
 static struct bt_bap *bt_bap_ref_safe(struct bt_bap *bap)
 {
 	if (!bap || !bap->ref_count || !queue_find(sessions, NULL, bap))
@@ -1129,6 +1206,7 @@ static void bap_stream_free(void *data)
 	struct bt_bap_stream *stream = data;
 
 	timeout_remove(stream->state_id);
+	queue_destroy(stream->pending_states, NULL);
 
 	if (stream->ep)
 		stream->ep->stream = NULL;
@@ -1629,19 +1707,11 @@ static bool bap_queue_req(struct bt_bap *bap, struct bt_bap_req *req)
 	return true;
 }
 
-static bool stream_notify_state(void *data)
+static void stream_notify(struct bt_bap_stream *stream, uint8_t state)
 {
-	struct bt_bap_stream *stream = data;
-	struct bt_bap_endpoint *ep = stream->ep;
+	DBG(stream->bap, "stream %p state %d", stream, state);
 
-	DBG(stream->bap, "stream %p", stream);
-
-	if (stream->state_id) {
-		timeout_remove(stream->state_id);
-		stream->state_id = 0;
-	}
-
-	switch (ep->state) {
+	switch (state) {
 	case BT_ASCS_ASE_STATE_IDLE:
 		break;
 	case BT_ASCS_ASE_STATE_CONFIG:
@@ -1655,7 +1725,28 @@ static bool stream_notify_state(void *data)
 	case BT_ASCS_ASE_STATE_DISABLING:
 		stream_notify_metadata(stream);
 		break;
+	case BT_ASCS_ASE_STATE_RELEASING:
+		stream_notify_release(stream);
+		break;
 	}
+}
+
+static bool stream_notify_state(void *data)
+{
+	struct bt_bap_stream *stream = data;
+	struct bt_bap_endpoint *ep = stream->ep;
+	uint8_t state;
+
+	if (stream->state_id) {
+		timeout_remove(stream->state_id);
+		stream->state_id = 0;
+	}
+
+	/* Notify any pending states before notifying ep->state */
+	while ((state = PTR_TO_UINT(queue_pop_head(stream->pending_states))))
+		stream_notify(stream, state);
+
+	stream_notify(stream, ep->state);
 
 	return false;
 }
@@ -1681,6 +1772,10 @@ static void bap_ucast_set_state(struct bt_bap_stream *stream, uint8_t state)
 		stream->state_id = timeout_add(BAP_PROCESS_TIMEOUT,
 						stream_notify_state,
 						stream, NULL);
+	else /* If a state_id is already pending then queue the old one */
+		queue_push_tail(stream->pending_states,
+				UINT_TO_PTR(ep->old_state));
+
 
 done:
 	bap_stream_state_changed(stream);
@@ -1938,7 +2033,8 @@ static uint8_t stream_disable(struct bt_bap_stream *stream, struct iovec *rsp)
 	 */
 	if (stream->ep->dir == BT_BAP_SINK)
 		stream_set_state(stream, BT_BAP_STREAM_STATE_QOS);
-	else
+
+	if (stream->ep->dir == BT_BAP_SOURCE)
 		stream_set_state(stream, BT_BAP_STREAM_STATE_DISABLING);
 
 	return 0;
@@ -2068,17 +2164,28 @@ static unsigned int bap_ucast_metadata(struct bt_bap_stream *stream,
 
 static uint8_t stream_release(struct bt_bap_stream *stream, struct iovec *rsp)
 {
-	struct bt_bap_pac *pac;
-
 	DBG(stream->bap, "stream %p", stream);
 
 	ascs_ase_rsp_success(rsp, stream->ep->id);
 
-	pac = stream->lpac;
-	if (pac->ops && pac->ops->clear)
-		pac->ops->clear(stream, pac->user_data);
-
-	stream_set_state(stream, BT_BAP_STREAM_STATE_IDLE);
+	/* In case the stream IO is already down the released transition needs
+	 * to take action immeditely.
+	 */
+	if (!stream->io) {
+		switch (bt_bap_stream_get_state(stream)) {
+		case BT_BAP_STREAM_STATE_CONFIG:
+			/* Released (no caching) */
+			stream_set_state(stream, BT_BAP_STREAM_STATE_RELEASING);
+			stream_set_state(stream, BT_BAP_STREAM_STATE_IDLE);
+			break;
+		default:
+			/* Released (caching) */
+			stream_set_state(stream, BT_BAP_STREAM_STATE_RELEASING);
+			stream_set_state(stream, BT_BAP_STREAM_STATE_CONFIG);
+			break;
+		}
+	} else
+		stream_set_state(stream, BT_BAP_STREAM_STATE_RELEASING);
 
 	return 0;
 }
@@ -2625,6 +2732,7 @@ static struct bt_bap_stream *bap_stream_new(struct bt_bap *bap,
 	stream->cc = util_iov_dup(data, 1);
 	stream->client = client;
 	stream->ops = bap_stream_new_ops(stream);
+	stream->pending_states = queue_new();
 
 	queue_push_tail(bap->streams, stream);
 
@@ -3388,7 +3496,7 @@ static void ascs_ase_cp_write(struct gatt_db_attribute *attrib,
 				void *user_data)
 {
 	struct bt_ascs *ascs = user_data;
-	struct bt_bap *bap = bap_get_session(att, ascs->bdb->db);
+	struct bt_bap *bap = bt_bap_get_session(att, ascs->bdb->db);
 	struct iovec iov = {
 		.iov_base = (void *) value,
 		.iov_len = len,
@@ -4190,6 +4298,26 @@ static void bap_state_free(void *data)
 	free(state);
 }
 
+static void bap_bis_cb_free(void *data)
+{
+	struct bt_bap_bis_cb *bis_cb = data;
+
+	if (bis_cb->destroy)
+		bis_cb->destroy(bis_cb->data);
+
+	free(bis_cb);
+}
+
+static void bap_bcode_cb_free(void *data)
+{
+	struct bt_bap_bcode_cb *cb = data;
+
+	if (cb->destroy)
+		cb->destroy(cb->data);
+
+	free(cb);
+}
+
 static void bap_ep_free(void *data)
 {
 	struct bt_bap_endpoint *ep = data;
@@ -4228,6 +4356,8 @@ static void bap_free(void *data)
 	queue_destroy(bap->pac_cbs, pac_changed_free);
 	queue_destroy(bap->ready_cbs, bap_ready_free);
 	queue_destroy(bap->state_cbs, bap_state_free);
+	queue_destroy(bap->bis_cbs, bap_bis_cb_free);
+	queue_destroy(bap->bcode_cbs, bap_bcode_cb_free);
 	queue_destroy(bap->local_eps, free);
 	queue_destroy(bap->remote_eps, bap_ep_free);
 
@@ -4310,6 +4440,8 @@ struct bt_bap *bt_bap_new(struct gatt_db *ldb, struct gatt_db *rdb)
 	bap->ready_cbs = queue_new();
 	bap->streams = queue_new();
 	bap->state_cbs = queue_new();
+	bap->bis_cbs = queue_new();
+	bap->bcode_cbs = queue_new();
 	bap->local_eps = queue_new();
 
 	if (!rdb)
@@ -5519,6 +5651,98 @@ bool bt_bap_state_unregister(struct bt_bap *bap, unsigned int id)
 	return false;
 }
 
+unsigned int bt_bap_bis_cb_register(struct bt_bap *bap,
+				bt_bap_bis_func_t probe,
+				bt_bap_func_t remove,
+				void *user_data,
+				bt_bap_destroy_func_t destroy)
+{
+	struct bt_bap_bis_cb *bis_cb;
+	static unsigned int id;
+
+	if (!bap)
+		return 0;
+
+	bis_cb = new0(struct bt_bap_bis_cb, 1);
+	bis_cb->id = ++id ? id : ++id;
+	bis_cb->probe = probe;
+	bis_cb->remove = remove;
+	bis_cb->destroy = destroy;
+	bis_cb->data = user_data;
+
+	queue_push_tail(bap->bis_cbs, bis_cb);
+
+	return bis_cb->id;
+}
+
+static bool match_bis_cb_id(const void *data, const void *match_data)
+{
+	const struct bt_bap_bis_cb *bis_cb = data;
+	unsigned int id = PTR_TO_UINT(match_data);
+
+	return (bis_cb->id == id);
+}
+
+bool bt_bap_bis_cb_unregister(struct bt_bap *bap, unsigned int id)
+{
+	struct bt_bap_bis_cb *bis_cb;
+
+	if (!bap)
+		return false;
+
+	bis_cb = queue_remove_if(bap->bis_cbs, match_bis_cb_id,
+						UINT_TO_PTR(id));
+	if (!bis_cb)
+		return false;
+
+	bap_bis_cb_free(bis_cb);
+
+	return false;
+}
+
+void bt_bap_bis_probe(struct bt_bap *bap, uint8_t bis, uint8_t sgrp,
+	struct iovec *caps, struct iovec *meta, struct bt_bap_qos *qos)
+{
+	const struct queue_entry *entry;
+
+	if (!bt_bap_ref_safe(bap))
+		return;
+
+	entry = queue_get_entries(bap->bis_cbs);
+
+	while (entry) {
+		struct bt_bap_bis_cb *cb = entry->data;
+
+		entry = entry->next;
+
+		if (cb->probe)
+			cb->probe(bis, sgrp, caps, meta, qos, cb->data);
+	}
+
+	bt_bap_unref(bap);
+}
+
+void bt_bap_bis_remove(struct bt_bap *bap)
+{
+	const struct queue_entry *entry;
+
+	if (!bt_bap_ref_safe(bap))
+		return;
+
+	entry = queue_get_entries(bap->bis_cbs);
+
+	while (entry) {
+		struct bt_bap_bis_cb *cb = entry->data;
+
+		entry = entry->next;
+
+		if (cb->remove)
+			cb->remove(bap, cb->data);
+	}
+
+	bt_bap_unref(bap);
+}
+
 const char *bt_bap_stream_statestr(uint8_t state)
 {
 	switch (state) {
@@ -6172,8 +6396,10 @@ static bool stream_io_disconnected(struct io *io, void *user_data)
 
 	DBG(stream->bap, "stream %p io disconnected", stream);
 
-	bt_bap_stream_set_io(stream, -1);
+	if (stream->ep->state == BT_ASCS_ASE_STATE_RELEASING)
+		stream_set_state(stream, BT_BAP_STREAM_STATE_CONFIG);
 
+	bt_bap_stream_set_io(stream, -1);
 	return false;
 }
 
@@ -6921,6 +7147,24 @@ static void bap_sink_check_level2_ltv(size_t i, uint8_t l, uint8_t t,
 		util_ltv_push(merge_data->result, l, t, v);
 }
 
+static void bap_sink_append_level3_ltv(size_t i, uint8_t l, uint8_t t,
+		uint8_t *v, void *user_data)
+{
+	struct bt_ltv_extract *merge_data = user_data;
+
+	merge_data->value = NULL;
+	util_ltv_foreach(merge_data->result->iov_base,
+			merge_data->result->iov_len,
+			&t,
+			bap_sink_check_level3_ltv, merge_data);
+
+	/* If the LTV at level 3 was not found in merged configuration,
+	 * append value
+	 */
+	if (!merge_data->value)
+		util_ltv_push(merge_data->result, l, t, v);
+}
+
 static void check_local_pac(void *data, void *user_data)
 {
 	struct bt_ltv_match *compare_data = user_data;
@@ -7028,6 +7272,14 @@ struct iovec *bt_bap_merge_caps(struct iovec *l2_caps, struct iovec *l3_caps)
 			NULL,
 			bap_sink_check_level2_ltv, &merge_data);
 
+	/* Append LTVs at level 3 (BIS) that were not found at
+	 * level 2 (subgroup)
+	 */
+	util_ltv_foreach(l3_caps->iov_base,
+			l3_caps->iov_len,
+			NULL,
+			bap_sink_append_level3_ltv, &merge_data);
+
 	return merge_data.result;
 }
 
@@ -7066,4 +7318,258 @@ void bt_bap_verify_bis(struct bt_bap *bap, uint8_t bis_index,
 		*lpac = NULL;
 	}
 
+}
+
+bool bt_bap_parse_base(struct iovec *iov,
+			struct bt_bap_qos *qos,
+			util_debug_func_t func,
+			bt_bap_bis_func_t handler,
+			void *user_data)
+{
+	uint32_t delay;
+	uint8_t sgrps;
+	bool ret = true;
+
+	util_debug(func, NULL, "BASE len: %zd", iov->iov_len);
+
+	if (!util_iov_pull_le24(iov, &delay))
+		return false;
+
+	util_debug(func, NULL, "PresentationDelay: %d", delay);
+
+	if (!util_iov_pull_u8(iov, &sgrps))
+		return false;
+
+	util_debug(func, NULL, "Number of Subgroups: %d", sgrps);
+
+	/* Loop subgroups */
+	for (int idx = 0; idx < sgrps; idx++) {
+		uint8_t num_bis;
+		struct bt_bap_codec *codec;
+		struct iovec l2_cc;
+		uint8_t l2_cc_len;
+		struct iovec meta;
+		uint8_t meta_len;
+
+		util_debug(func, NULL, "Subgroup #%d", idx);
+
+		if (!util_iov_pull_u8(iov, &num_bis)) {
+			ret = false;
+			goto done;
+		}
+
+		util_debug(func, NULL, "Number of BISes: %d", num_bis);
+
+		codec = util_iov_pull_mem(iov, sizeof(*codec));
+
+		util_debug(func, NULL, "Codec: ID %d CID 0x%2.2x VID 0x%2.2x",
+				codec->id, codec->cid, codec->vid);
+
+		/* Level 2 */
+		/* Read Codec Specific Configuration */
+		if (!util_iov_pull_u8(iov, &l2_cc_len)) {
+			ret = false;
+			goto done;
+		}
+
+		l2_cc.iov_base = util_iov_pull_mem(iov, l2_cc_len);
+		l2_cc.iov_len = l2_cc_len;
+
+		/* Print Codec Specific Configuration */
+		util_debug(func, NULL, "CC len: %zd", l2_cc.iov_len);
+		bt_bap_debug_config(l2_cc.iov_base, l2_cc.iov_len,
+								func, NULL);
+
+		/* Read Metadata */
+		if (!util_iov_pull_u8(iov, &meta_len)) {
+			ret = false;
+			goto done;
+		}
+
+		meta.iov_base = util_iov_pull_mem(iov, meta_len);
+		meta.iov_len = meta_len;
+
+		/* Print Metadata */
+		util_debug(func, NULL, "Metadata len: %i",
+				(uint8_t)meta.iov_len);
+		bt_bap_debug_metadata(meta.iov_base, meta.iov_len,
+							func, NULL);
+
+		/* Level 3 */
+		for (; num_bis; num_bis--) {
+			uint8_t bis_index;
+			struct iovec l3_cc;
+			uint8_t l3_cc_len;
+			struct iovec *bis_cc;
+
+			if (!util_iov_pull_u8(iov, &bis_index)) {
+				ret = false;
+				goto done;
+			}
+
+			util_debug(func, NULL, "BIS #%d", bis_index);
+
+			/* Read Codec Specific Configuration */
+			if (!util_iov_pull_u8(iov, &l3_cc_len)) {
+				ret = false;
+				goto done;
+			}
+
+			l3_cc.iov_base = util_iov_pull_mem(iov,
+							l3_cc_len);
+			l3_cc.iov_len = l3_cc_len;
+
+			/* Print Codec Specific Configuration */
+			util_debug(func, NULL, "CC Len: %d",
+					(uint8_t)l3_cc.iov_len);
+
+			bt_bap_debug_config(l3_cc.iov_base,
+						l3_cc.iov_len,
+						func, NULL);
+
+			bis_cc = bt_bap_merge_caps(&l2_cc, &l3_cc);
+			if (!bis_cc)
+				continue;
+
+			handler(bis_index, idx, bis_cc, &meta,
+				qos, user_data);
+
+			util_iov_free(bis_cc, 1);
+		}
+	}
+
+done:
+	if (!ret)
+		util_debug(func, NULL, "Unable to parse Base");
+
+	return ret;
+}
+
+void bt_bap_req_bcode(struct bt_bap_stream *stream,
+				bt_bap_bcode_reply_t reply,
+				void *reply_data)
+{
+	const struct queue_entry *entry;
+
+	if (!bap_stream_valid(stream))
+		return;
+
+	bt_bap_stream_ref(stream);
+
+	if (!bt_bap_ref_safe(stream->bap))
+		goto done;
+
+	entry = queue_get_entries(stream->bap->bcode_cbs);
+
+	while (entry) {
+		struct bt_bap_bcode_cb *cb = entry->data;
+
+		entry = entry->next;
+
+		if (cb->func)
+			cb->func(stream, reply, reply_data, cb->data);
+	}
+
+	bt_bap_unref(stream->bap);
+
+done:
+	bt_bap_stream_unref(stream);
+}
+
+unsigned int bt_bap_bcode_cb_register(struct bt_bap *bap,
+				bt_bap_bcode_func_t func,
+				void *user_data,
+				bt_bap_destroy_func_t destroy)
+{
+	struct bt_bap_bcode_cb *cb;
+	static unsigned int id;
+
+	if (!bap)
+		return 0;
+
+	cb = new0(struct bt_bap_bcode_cb, 1);
+	cb->id = ++id ? id : ++id;
+	cb->func = func;
+	cb->destroy = destroy;
+	cb->data = user_data;
+
+	queue_push_tail(bap->bcode_cbs, cb);
+
+	return cb->id;
+}
+
+static bool match_bcode_cb_id(const void *data, const void *match_data)
+{
+	const struct bt_bap_bcode_cb *cb = data;
+	unsigned int id = PTR_TO_UINT(match_data);
+
+	return (cb->id == id);
+}
+
+bool bt_bap_bcode_cb_unregister(struct bt_bap *bap, unsigned int id)
+{
+	struct bt_bap_bcode_cb *cb;
+
+	if (!bap)
+		return false;
+
+	cb = queue_remove_if(bap->bcode_cbs, match_bcode_cb_id,
+						UINT_TO_PTR(id));
+	if (!cb)
+		return false;
+
+	bap_bcode_cb_free(cb);
+
+	return false;
+}
+
+void bt_bap_iso_qos_to_bap_qos(struct bt_iso_qos *iso_qos,
+				struct bt_bap_qos *bap_qos)
+{
+	bap_qos->bcast.big = iso_qos->bcast.big;
+	bap_qos->bcast.bis = iso_qos->bcast.bis;
+	bap_qos->bcast.sync_factor = iso_qos->bcast.sync_factor;
+	bap_qos->bcast.packing = iso_qos->bcast.packing;
+	bap_qos->bcast.framing = iso_qos->bcast.framing;
+	bap_qos->bcast.encryption = iso_qos->bcast.encryption;
+	if (bap_qos->bcast.encryption)
+		bap_qos->bcast.bcode = util_iov_new(iso_qos->bcast.bcode,
+						sizeof(iso_qos->bcast.bcode));
+	bap_qos->bcast.options = iso_qos->bcast.options;
+	bap_qos->bcast.skip = iso_qos->bcast.skip;
+	bap_qos->bcast.sync_timeout = iso_qos->bcast.sync_timeout;
+	bap_qos->bcast.sync_cte_type =
+			iso_qos->bcast.sync_cte_type;
+	bap_qos->bcast.mse = iso_qos->bcast.mse;
+	bap_qos->bcast.timeout = iso_qos->bcast.timeout;
+	bap_qos->bcast.io_qos.interval =
+			iso_qos->bcast.in.interval;
+	bap_qos->bcast.io_qos.latency = iso_qos->bcast.in.latency;
+	bap_qos->bcast.io_qos.phy = iso_qos->bcast.in.phy;
+	bap_qos->bcast.io_qos.rtn = iso_qos->bcast.in.rtn;
+	bap_qos->bcast.io_qos.sdu = iso_qos->bcast.in.sdu;
+}
+
+void bt_bap_qos_to_iso_qos(struct bt_bap_qos *bap_qos,
+				struct bt_iso_qos *iso_qos)
+{
+	memset(iso_qos, 0, sizeof(*iso_qos));
+
+	iso_qos->bcast.big = bap_qos->bcast.big;
+	iso_qos->bcast.bis = bap_qos->bcast.bis;
+	iso_qos->bcast.sync_factor = bap_qos->bcast.sync_factor;
+	iso_qos->bcast.packing = bap_qos->bcast.packing;
+	iso_qos->bcast.framing = bap_qos->bcast.framing;
+	iso_qos->bcast.encryption = bap_qos->bcast.encryption;
+	if (bap_qos->bcast.bcode && bap_qos->bcast.bcode->iov_base)
+		memcpy(iso_qos->bcast.bcode, bap_qos->bcast.bcode->iov_base,
+				bap_qos->bcast.bcode->iov_len);
+	iso_qos->bcast.options = bap_qos->bcast.options;
+	iso_qos->bcast.skip = bap_qos->bcast.skip;
+	iso_qos->bcast.sync_timeout = bap_qos->bcast.sync_timeout;
+	iso_qos->bcast.sync_cte_type = bap_qos->bcast.sync_cte_type;
+	iso_qos->bcast.mse = bap_qos->bcast.mse;
+	iso_qos->bcast.timeout = bap_qos->bcast.timeout;
+	memcpy(&iso_qos->bcast.out, &bap_qos->bcast.io_qos,
+			sizeof(struct bt_iso_io_qos));
 }

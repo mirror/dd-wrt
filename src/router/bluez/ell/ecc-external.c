@@ -420,6 +420,55 @@ static void vli_mmod_fast_192(uint64_t *result, const uint64_t *product,
 /* Computes result = product % curve_prime
  * from http://www.nsa.gov/ia/_files/nist-routines.pdf
  */
+static void vli_mmod_fast_224(uint64_t *result, const uint64_t *product,
+				const uint64_t *curve_prime, uint64_t *tmp)
+{
+	int carry = 0;
+	const unsigned int ndigits = 4;
+
+	/* t */
+	vli_set(result, product, ndigits);
+	result[3] &= 0xffffffff;
+
+	/* s1 */
+	tmp[0] = 0;
+	tmp[1] = product[3] & 0xffffffff00000000ull;
+	tmp[2] = product[4];
+	tmp[3] = product[5] & 0xffffffff;
+	_vli_add(result, result, tmp, ndigits);
+
+	/* s2 */
+	tmp[1] = product[5] & 0xffffffff00000000ull;
+	tmp[2] = product[6];
+	tmp[3] = 0;
+	_vli_add(result, result, tmp, ndigits);
+
+	/* d1 */
+	tmp[0] = (product[3] >> 32) | (product[4] << 32);
+	tmp[1] = (product[4] >> 32) | (product[5] << 32);
+	tmp[2] = (product[5] >> 32) | (product[6] << 32);
+	tmp[3] = product[6] >> 32;
+	carry -= _vli_sub(result, result, tmp, ndigits);
+
+	/* d2 */
+	tmp[0] = (product[5] >> 32) | (product[6] << 32);
+	tmp[1] = product[6] >> 32;
+	tmp[2] = tmp[3] = 0;
+	carry -= _vli_sub(result, result, tmp, ndigits);
+
+	if (carry < 0) {
+		do {
+			carry += _vli_add(result, result, curve_prime, ndigits);
+		} while (carry < 0);
+	} else {
+		while (carry || _vli_cmp(curve_prime, result, ndigits) != 1)
+			carry -= _vli_sub(result, result, curve_prime, ndigits);
+	}
+}
+
+/* Computes result = product % curve_prime
+ * from http://www.nsa.gov/ia/_files/nist-routines.pdf
+ */
 static void vli_mmod_fast_256(uint64_t *result, const uint64_t *product,
 				const uint64_t *curve_prime, uint64_t *tmp)
 {
@@ -624,21 +673,48 @@ static void vli_mmod_fast_384(uint64_t *result, const uint64_t *product,
 
 /* Computes result = product % curve_prime
  *  from http://www.nsa.gov/ia/_files/nist-routines.pdf
-*/
+ */
+static void vli_mmod_fast_521(uint64_t *result, const uint64_t *product,
+				const uint64_t *curve_prime, uint64_t *tmp)
+{
+	const unsigned int ndigits = 9;
+	size_t i;
+
+	/* Initialize result with lowest 521 bits from product */
+	vli_set(result, product, ndigits);
+	result[8] &= 0x1ff;
+
+	for (i = 0; i < ndigits; i++)
+		tmp[i] = (product[8 + i] >> 9) | (product[9 + i] << 55);
+	tmp[8] &= 0x1ff;
+
+	_vli_mod_add(result, result, tmp, curve_prime, ndigits);
+}
+
+/* Computes result = product % curve_prime
+ *  from http://www.nsa.gov/ia/_files/nist-routines.pdf
+ */
 bool _vli_mmod_fast(uint64_t *result, const uint64_t *product,
 			const uint64_t *curve_prime, unsigned int ndigits)
 {
 	uint64_t tmp[2 * L_ECC_MAX_DIGITS];
+	unsigned int nbits = _vli_num_bits(curve_prime, ndigits);
 
-	switch (ndigits) {
-	case 3:
+	switch (nbits) {
+	case 192:
 		vli_mmod_fast_192(result, product, curve_prime, tmp);
 		break;
-	case 4:
+	case 224:
+		vli_mmod_fast_224(result, product, curve_prime, tmp);
+		break;
+	case 256:
 		vli_mmod_fast_256(result, product, curve_prime, tmp);
 		break;
-	case 6:
+	case 384:
 		vli_mmod_fast_384(result, product, curve_prime, tmp);
+		break;
+	case 521:
+		vli_mmod_fast_521(result, product, curve_prime, tmp);
 		break;
 	default:
 		return false;
@@ -964,13 +1040,18 @@ void _ecc_point_mult(struct l_ecc_point *result,
 	uint64_t sk[2][L_ECC_MAX_DIGITS];
 	int i, nb;
 	unsigned int ndigits = curve->ndigits;
+	unsigned int nbits = _vli_num_bits(curve->n, ndigits);
 	int num_bits;
 	int carry;
 
 	carry = _vli_add(sk[0], scalar, curve->n, ndigits);
 	_vli_add(sk[1], sk[0], curve->n, ndigits);
 	scalar = sk[!carry];
-	num_bits = sizeof(uint64_t) * ndigits * 8 + 1;
+	/* secp224r1 and secp521r1 curves */
+	if (nbits == 224 || nbits == 521)
+		num_bits = nbits + 2;
+	else
+		num_bits = sizeof(uint64_t) * ndigits * 8 + 1;
 
 	vli_set(rx[1], point->x, ndigits);
 	vli_set(ry[1], point->y, ndigits);

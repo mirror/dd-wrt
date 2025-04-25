@@ -40,7 +40,7 @@ List available endpoints.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# list [local]\fP
+\fB> list [local]\fP
 .UNINDENT
 .SS show
 .sp
@@ -48,7 +48,7 @@ Endpoint information.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# show [endpoint]\fP
+\fB> show [endpoint]\fP
 .UNINDENT
 .SS register
 .sp
@@ -56,52 +56,52 @@ Register Endpoint.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# register <UUID> <codec[:company]> [capabilities...]\fP
+\fB> register <UUID> <codec[:company]> [capabilities...]\fP
 .TP
 .B Example LC3 BAP source
 .nf
-\fB#endpoint.register 00002bcb\-0000\-1000\-8000\-00805f9b34fb 0x06\fP
-\fB#Auto Accept (yes/no):\fP y
-\fB#Max Transports (auto/value):\fP a
-\fB#Locations:\fP a
-\fB#Supported Context (value):\fP 3
-\fB#Context (value):\fP 3
-\fB#CIG (auto/value):\fP a
-\fB#CIS (auto/value):\fP a
+\fB>endpoint.register 00002bcb\-0000\-1000\-8000\-00805f9b34fb 0x06\fP
+\fB>Auto Accept (yes/no):\fP y
+\fB>Max Transports (auto/value):\fP a
+\fB>Locations:\fP a
+\fB>Supported Context (value):\fP 3
+\fB>Context (value):\fP 3
+\fB>CIG (auto/value):\fP a
+\fB>CIS (auto/value):\fP a
 .fi
 .sp
 .TP
 .B Example LC3 BAP sink with extra capabilities
 .nf
-\fB#endpoint.register 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06 \(dq0x03 0xe5 0x03 0x00 0x02 0xe6 0x07\(dq\fP
-\fB#Enter Metadata (value/no):\fP n
-\fB#Auto Accept (yes/no):\fP y
-\fB#Max Transports (auto/value):\fP a
-\fB#Locations:\fP a
-\fB#Supported Context (value):\fP 3
-\fB#Context (value):\fP 3
-\fB#CIG (auto/value):\fP a
-\fB#CIS (auto/value):\fP a
+\fB>endpoint.register 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06 \(dq0x03 0xe5 0x03 0x00 0x02 0xe6 0x07\(dq\fP
+\fB>Enter Metadata (value/no):\fP n
+\fB>Auto Accept (yes/no):\fP y
+\fB>Max Transports (auto/value):\fP a
+\fB>Locations:\fP a
+\fB>Supported Context (value):\fP 3
+\fB>Context (value):\fP 3
+\fB>CIG (auto/value):\fP a
+\fB>CIS (auto/value):\fP a
 .fi
 .sp
 .TP
 .B Example LC3 BAP Broadcast source
 .nf
-\fB#endpoint.register 00001852\-0000\-1000\-8000\-00805f9b34fb 0x06\fP
-\fB#Auto Accept (yes/no):\fP y
-\fB#Max Transports (auto/value):\fP a
-\fB#Locations:\fP 3
-\fB#Supported Context (value):\fP 1
+\fB>endpoint.register 00001852\-0000\-1000\-8000\-00805f9b34fb 0x06\fP
+\fB>Auto Accept (yes/no):\fP y
+\fB>Max Transports (auto/value):\fP a
+\fB>Locations:\fP 3
+\fB>Supported Context (value):\fP 1
 .fi
 .sp
 .TP
 .B Example LC3 BAP Broadcast sink
 .nf
-\fB#endpoint.register 00001851\-0000\-1000\-8000\-00805f9b34fb 0x06\fP
-\fB#Auto Accept (yes/no):\fP y
-\fB#Max Transports (auto/value):\fP a
-\fB#Locations:\fP 3
-\fB#Supported Context (value):\fP 1
+\fB>endpoint.register 00001851\-0000\-1000\-8000\-00805f9b34fb 0x06\fP
+\fB>Auto Accept (yes/no):\fP y
+\fB>Max Transports (auto/value):\fP a
+\fB>Locations:\fP 3
+\fB>Supported Context (value):\fP 1
 .fi
 .sp
 .UNINDENT
@@ -118,7 +118,7 @@ Unregister Endpoint.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# unregister <UUID/object>\fP
+\fB> unregister <UUID/object>\fP
 .UNINDENT
 .sp
 Note:
@@ -131,7 +131,7 @@ Configure Endpoint.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# config <endpoint> <local endpoint> [preset]\fP
+\fB> config <endpoint> <local endpoint> [preset]\fP
 .UNINDENT
 .sp
 Note:
@@ -144,26 +144,26 @@ List available presets.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# presets <endpoint>/<UUID> [codec[:company]] [preset] [codec config] [metadata]\fP
+\fB> presets <endpoint>/<UUID> [codec[:company]] [preset] [codec config] [metadata]\fP
 .TP
 .B Example using endpoint
 .nf
-\fB#presets /local/endpoint/ep0 32_1_1\fP
-\fB#presets /local/endpoint/ep0\fP
+\fB>presets /local/endpoint/ep0 32_1_1\fP
+\fB>presets /local/endpoint/ep0\fP
 Preset 32_1_1
-Configuration.#0: len 0x02 type 0x01
+Configuration.**>0: len 0x02 type 0x01
 Configuration.Sampling Frequency: 32 Khz (0x06)
-Configuration.#1: len 0x02 type 0x02
+Configuration.**>1: len 0x02 type 0x02
 Configuration.Frame Duration: 7.5 ms (0x00)
-Configuration.#2: len 0x03 type 0x04
+Configuration.**>2: len 0x03 type 0x04
 Configuration.Frame Length: 60 (0x003c)
 .fi
 .sp
 .TP
 .B Example using UUID
 .nf
-\fB#presets 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06 32_1_1\fP
-\fB#presets 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06\fP
+\fB>presets 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06 32_1_1\fP
+\fB>presets 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06\fP
 \&...
 \fB*32_1_1\fP
 .fi
@@ -171,20 +171,20 @@ Configuration.Frame Length: 60 (0x003c)
 .TP
 .B Example setting up LC3 custom preset
 .nf
-\fB#presets 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06 custom\fP
-\fB#[Codec] Enter frequency (Khz):\fP 48
-\fB#[Codec] Enter frame duration (ms):\fP 10
-\fB#[Codec] Enter channel allocation:\fP 3
-\fB#[Codec] Enter frame length:\fP 100
-\fB#[QoS] Enter Target Latency (Low, Balance, High):\fP Low
-\fB#[QoS] Enter SDU Interval (us):\fP 1000
-\fB#[QoS] Enter Framing (Unframed, Framed):\fP Unframed
-\fB#[QoS] Enter PHY (1M, 2M):\fP 2M
-\fB#[QoS] Enter Max SDU:\fP 200
-\fB#[QoS] Enter RTN:\fP 3
-\fB#[QoS] Enter Max Transport Latency (ms):\fP 10
-\fB#[QoS] Enter Presentation Delay (us):\fP 20000
-\fB#presets 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06\fP
+\fB>presets 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06 custom\fP
+\fB>[Codec] Enter frequency (Khz):\fP 48
+\fB>[Codec] Enter frame duration (ms):\fP 10
+\fB>[Codec] Enter channel allocation:\fP 3
+\fB>[Codec] Enter frame length:\fP 100
+\fB>[QoS] Enter Target Latency (Low, Balance, High):\fP Low
+\fB>[QoS] Enter SDU Interval (us):\fP 1000
+\fB>[QoS] Enter Framing (Unframed, Framed):\fP Unframed
+\fB>[QoS] Enter PHY (1M, 2M):\fP 2M
+\fB>[QoS] Enter Max SDU:\fP 200
+\fB>[QoS] Enter RTN:\fP 3
+\fB>[QoS] Enter Max Transport Latency (ms):\fP 10
+\fB>[QoS] Enter Presentation Delay (us):\fP 20000
+\fB>presets 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06\fP
 \&...
 \fB*custom\fP
 .fi
@@ -192,20 +192,20 @@ Configuration.Frame Length: 60 (0x003c)
 .TP
 .B Example setting up LC3 custom preset with extra configuration
 .nf
-\fB#presets 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06 custom \(dq0x03 0xe8 0x00 0x00 0x02 0xe9 0x00\(dq\fP
-\fB#[Codec] Enter frequency (Khz):\fP 48
-\fB#[Codec] Enter frame duration (ms):\fP 10
-\fB#[Codec] Enter channel allocation:\fP 3
-\fB#[Codec] Enter frame length:\fP 100
-\fB#[QoS] Enter Target Latency (Low, Balance, High):\fP Low
-\fB#[QoS] Enter SDU Interval (us):\fP 1000
-\fB#[QoS] Enter Framing (Unframed, Framed):\fP Unframed
-\fB#[QoS] Enter PHY (1M, 2M):\fP 2M
-\fB#[QoS] Enter Max SDU:\fP 200
-\fB#[QoS] Enter RTN:\fP 3
-\fB#[QoS] Enter Max Transport Latency (ms):\fP 10
-\fB#[QoS] Enter Presentation Delay (us):\fP 20000
-\fB#presets 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06\fP
+\fB>presets 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06 custom \(dq0x03 0xe8 0x00 0x00 0x02 0xe9 0x00\(dq\fP
+\fB>[Codec] Enter frequency (Khz):\fP 48
+\fB>[Codec] Enter frame duration (ms):\fP 10
+\fB>[Codec] Enter channel allocation:\fP 3
+\fB>[Codec] Enter frame length:\fP 100
+\fB>[QoS] Enter Target Latency (Low, Balance, High):\fP Low
+\fB>[QoS] Enter SDU Interval (us):\fP 1000
+\fB>[QoS] Enter Framing (Unframed, Framed):\fP Unframed
+\fB>[QoS] Enter PHY (1M, 2M):\fP 2M
+\fB>[QoS] Enter Max SDU:\fP 200
+\fB>[QoS] Enter RTN:\fP 3
+\fB>[QoS] Enter Max Transport Latency (ms):\fP 10
+\fB>[QoS] Enter Presentation Delay (us):\fP 20000
+\fB>presets 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06\fP
 \&...
 \fB*custom\fP
 .fi
@@ -218,7 +218,7 @@ Configuration.Frame Length: 60 (0x003c)
 .sp
  <linux\-bluetooth@vger.kernel.org> 
 .SH COPYRIGHT
-Free use of this software is granted under ther terms of the GNU
+Free use of this software is granted under the terms of the GNU
 Lesser General Public Licenses (LGPL).
 .\" Generated by docutils manpage writer.
 .

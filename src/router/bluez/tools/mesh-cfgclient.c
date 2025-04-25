@@ -38,7 +38,7 @@
 #include "tools/mesh/model.h"
 #include "tools/mesh/remote.h"
 
-#define PROMPT_ON	"[mesh-cfgclient]# "
+#define PROMPT_ON	"[mesh-cfgclient]> "
 #define PROMPT_OFF	"Waiting to connect to bluetooth-meshd..."
 
 #define CFG_SRV_MODEL	0x0000
@@ -2529,8 +2529,10 @@ static bool setup_cfg_storage(void)
 				return false;
 			}
 		} else if (errno == ENOENT) {
-			if (mkdir(mesh_dir, 0700) != 0)
+			if (mkdir(mesh_dir, 0700) != 0) {
+				l_error("Cannot create %s", mesh_dir);
 				return false;
+			}
 		} else {
 			perror("Cannot open config directory");
 			return false;

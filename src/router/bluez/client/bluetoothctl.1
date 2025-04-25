@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "BLUETOOTHCTL" "1" "November 2022" "BlueZ" "Linux System Administration"
+.TH "BLUETOOTHCTL" "1" "March 2024" "BlueZ" "Linux System Administration"
 .SH NAME
 bluetoothctl \- Bluetooth Control Command Line Tool
 .SH SYNOPSIS
@@ -69,7 +69,7 @@ List available controllers.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# list\fP
+\fB> list\fP
 .UNINDENT
 .SS show
 .sp
@@ -77,7 +77,7 @@ Controller information.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# show [ctrl]\fP
+\fB> show [ctrl]\fP
 .UNINDENT
 .SS select
 .sp
@@ -85,7 +85,7 @@ Select default controller.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# select <ctrl>\fP
+\fB> select <ctrl>\fP
 .UNINDENT
 .SS devices
 .sp
@@ -93,7 +93,7 @@ List available devices, with an optional property as the filter.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# devices [Paired/Bonded/Trusted/Connected]\fP
+\fB> devices [Paired/Bonded/Trusted/Connected]\fP
 .UNINDENT
 .SS system\-alias
 .sp
@@ -101,7 +101,7 @@ Set controller alias.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# system\-alias <name>\fP
+\fB> system\-alias <name>\fP
 .UNINDENT
 .SS reset\-alias
 .sp
@@ -109,7 +109,7 @@ Reset controller alias.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# reset\-alias\fP
+\fB> reset\-alias\fP
 .UNINDENT
 .SS power
 .sp
@@ -120,7 +120,7 @@ is put into a suspend state.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# power <on/off>\fP
+\fB> power <on/off>\fP
 .UNINDENT
 .SS advertise
 .sp
@@ -137,7 +137,7 @@ device.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# advertise <on/off/type>\fP
+\fB> advertise <on/off/type>\fP
 .UNINDENT
 .SS set\-alias
 .sp
@@ -145,7 +145,7 @@ Set device alias.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# set\-alias <alias>\fP
+\fB> set\-alias <alias>\fP
 .UNINDENT
 .SS scan
 .sp
@@ -180,7 +180,7 @@ are connected/paired otherwise they are removed after some time.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# scan <on/off/bredr/le>\fP
+\fB> scan <on/off/bredr/le>\fP
 .UNINDENT
 .SS pair
 .sp
@@ -202,7 +202,7 @@ mechanism.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# pair <dev>\fP
+\fB> pair <dev>\fP
 .UNINDENT
 .SS pairable
 .sp
@@ -213,7 +213,7 @@ not accept any pairing requests.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# pairable <on/off>\fP
+\fB> pairable <on/off>\fP
 .UNINDENT
 .SS discoverable
 .sp
@@ -231,7 +231,7 @@ It will use a random address if supported by the controller. The length of time
 .INDENT 0.0
 .TP
 .B Usage
-\fB# discoverable <on/off>\fP
+\fB> discoverable <on/off>\fP
 .UNINDENT
 .SS discoverable\-timeout
 .sp
@@ -241,7 +241,7 @@ The time in seconds that \(dqdiscoverable on\(dq is valid.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# discoverable\-timeout [value]\fP
+\fB> discoverable\-timeout [value]\fP
 .UNINDENT
 .SS agent
 .sp
@@ -255,7 +255,7 @@ KeyboardOnly, NoInputNoOutput.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# agent <on/off/capability>\fP
+\fB> agent <on/off/capability>\fP
 .UNINDENT
 .SS default\-agent
 .sp
@@ -265,7 +265,7 @@ After selecting the agent this will make it the default agent.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# default\-agent\fP
+\fB> default\-agent\fP
 .UNINDENT
 .SS trust
 .sp
@@ -273,7 +273,7 @@ Trust device.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# trust <dev>\fP
+\fB> trust <dev>\fP
 .UNINDENT
 .SS untrust
 .sp
@@ -281,7 +281,7 @@ Untrust device.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# untrust <dev>\fP
+\fB> untrust <dev>\fP
 .UNINDENT
 .SS block
 .sp
@@ -289,7 +289,7 @@ Block device.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# block <dev>\fP
+\fB> block <dev>\fP
 .UNINDENT
 .SS unblock
 .sp
@@ -297,7 +297,7 @@ Unblock device
 .INDENT 0.0
 .TP
 .B Usage
-\fB# unblock <dev>\fP
+\fB> unblock <dev>\fP
 .UNINDENT
 .SS remove
 .sp
@@ -305,13 +305,20 @@ Remove device.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# remove <dev>\fP
+\fB> remove <dev>\fP
 .UNINDENT
 .SS connect
 .sp
 Connect device.
 .sp
 This will initiate a connection to a device.
+.sp
+By default this commands tries to connect all the profiles the remote device
+supports and have been flagged as auto\-connectable. In case when the UUID of
+the remote service is given only that service will be connected. The UUID can
+be either a short form (16\-bit UUID) or a long form (128\-bit UUID). There are
+also some special values for well\-known profiles like \(dqa2dp\-sink\(dq,
+\(dqa2dp\-source\(dq, \(dqhfp\-hf\(dq, \(dqhfp\-ag\(dq, \(dqftp\(dq or \(dqspp\(dq.
 .sp
 To connect with an LE device the controller must have an active scan report of
 the device it wants to connect to.
@@ -322,18 +329,34 @@ again to connect assuming the device is advertising.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# connect <dev>\fP
+\fB> connect <dev> [uuid]\fP
+.TP
+.B Example
+\fB> connect 1C:48:F9:9D:81:5C\fP
+.TP
+.B Example
+\fB> connect 1C:48:F9:9D:81:5C hsp\-hs\fP
+.TP
+.B Example
+\fB> connect 1C:48:F9:9D:81:5C 00001108\-0000\-1000\-8000\-00805f9b34fb\fP
+.TP
+.B Example
+\fB> connect 1C:48:F9:9D:81:5C 0x1108\fP
 .UNINDENT
 .SS disconnect
 .sp
 Disconnect device.
+.sp
+By default this commands disconnects all profiles and then terminates the
+connection. In case when the UUID of the remote service is given only that
+service will be disconnected.
 .sp
 For LE when disconnecting from an active connection the device address is not
 needed.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# disconnect <dev>\fP
+\fB> disconnect <dev> [uuid]\fP
 .UNINDENT
 .SS info
 .sp
@@ -341,7 +364,40 @@ Device information.
 .INDENT 0.0
 .TP
 .B Usage
-\fB# info <dev>\fP
+\fB> info <dev>\fP
+.UNINDENT
+.SS bearer
+.sp
+Get/Set preferred bearer.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> bearer <dev> [last\-seen/bredr/le]\fP
+.TP
+.B Example get preferred bearer
+.nf
+> bearer <addr>
+.in +2
+PreferredBearer: last\-seen
+.in -2
+.fi
+.sp
+.TP
+.B Example set preferred bearer to LE
+.nf
+> bearer <addr> le
+[CHG] Device <addr> PreferredBearer: le
+Changing le succeeded
+.fi
+.sp
+.TP
+.B Example set preferred bearer to BREDR
+.nf
+> bearer <addr> bredr
+[CHG] Device <addr> PreferredBearer: bredr
+Changing bredr succeeded
+.fi
+.sp
 .UNINDENT
 .SH ADVERTISE SUBMENU
 .sp

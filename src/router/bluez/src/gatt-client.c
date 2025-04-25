@@ -66,6 +66,7 @@ struct btd_gatt_client {
 struct service {
 	struct btd_gatt_client *client;
 	bool primary;
+	bool claimed;
 	uint16_t start_handle;
 	uint16_t end_handle;
 	bt_uuid_t uuid;
@@ -140,8 +141,8 @@ static bool uuid_cmp(const bt_uuid_t *uuid, uint16_t u16)
 static gboolean descriptor_get_handle(const GDBusPropertyTable *property,
 					DBusMessageIter *iter, void *data)
 {
-	struct service *desc = data;
-	uint16_t handle = desc->start_handle;
+	struct descriptor *desc = data;
+	uint16_t handle = desc->handle;
 
 	dbus_message_iter_append_basic(iter, DBUS_TYPE_UINT16, &handle);
 
@@ -617,6 +618,14 @@ static DBusMessage *descriptor_write_value(DBusConnection *conn,
 		return btd_error_invalid_args(msg);
 
 	/*
+	 * Check if service was previously claimed by a plugin and if we shall
+	 * consider it read-only, in that case return not authorized.
+	 */
+	if (desc->chrc->service->claimed &&
+			btd_opts.gatt_export == BT_GATT_EXPORT_READ_ONLY)
+		return btd_error_not_authorized(msg);
+
+	/*
 	 * Don't allow writing to Client Characteristic Configuration
 	 * descriptors. We achieve this through the StartNotify and StopNotify
 	 * methods on GattCharacteristic1.
@@ -1047,6 +1056,14 @@ static DBusMessage *characteristic_write_value(DBusConnection *conn,
 		return btd_error_invalid_args(msg);
 
 	/*
+	 * Check if service was previously claimed by a plugin and if we shall
+	 * consider it read-only, in that case return not authorized.
+	 */
+	if (chrc->service->claimed &&
+			btd_opts.gatt_export == BT_GATT_EXPORT_READ_ONLY)
+		return btd_error_not_authorized(msg);
+
+	/*
 	 * Decide which write to use based on characteristic properties. For now
 	 * we don't perform signed writes since gatt-client doesn't support them
 	 * and the user can always encrypt the through pairing. The procedure to
@@ -1294,6 +1311,14 @@ static DBusMessage *characteristic_acquire_write(DBusConnection *conn,
 
 	if (!gatt)
 		return btd_error_failed(msg, "Not connected");
+
+	/*
+	 * Check if service was previously claimed by a plugin and if we shall
+	 * consider it read-only, in that case return not authorized.
+	 */
+	if (chrc->service->claimed &&
+			btd_opts.gatt_export == BT_GATT_EXPORT_READ_ONLY)
+		return btd_error_not_authorized(msg);
 
 	if (chrc->write_io)
 		return btd_error_not_permitted(msg, "Write acquired");
@@ -1556,7 +1581,8 @@ static DBusMessage *characteristic_acquire_notify(DBusConnection *conn,
 	if (!queue_isempty(chrc->notify_clients))
 		return btd_error_in_progress(msg);
 
-	if (!(chrc->props & BT_GATT_CHRC_PROP_NOTIFY))
+	if (!(chrc->props & (BT_GATT_CHRC_PROP_NOTIFY |
+			BT_GATT_CHRC_PROP_INDICATE)))
 		return btd_error_not_supported(msg);
 
 	client = notify_client_create(chrc, sender);
@@ -1601,8 +1627,8 @@ static DBusMessage *characteristic_start_notify(DBusConnection *conn,
 	if (chrc->notify_io)
 		return btd_error_not_permitted(msg, "Notify acquired");
 
-	if (!(chrc->props & BT_GATT_CHRC_PROP_NOTIFY ||
-				chrc->props & BT_GATT_CHRC_PROP_INDICATE))
+	if (!(chrc->props & (BT_GATT_CHRC_PROP_NOTIFY |
+				BT_GATT_CHRC_PROP_INDICATE)))
 		return btd_error_not_supported(msg);
 
 	/* Each client can only have one active notify session. */
@@ -1942,17 +1968,39 @@ static void service_free(void *data)
 	free(service);
 }
 
+static bool match_service_handle(const void *a, const void *b)
+{
+	const struct service *service = a;
+	uint16_t start_handle = PTR_TO_UINT(b);
+
+	return service->start_handle == start_handle;
+}
+
 static struct service *service_create(struct gatt_db_attribute *attr,
 						struct btd_gatt_client *client)
 {
 	struct service *service;
 	const char *device_path = device_get_path(client->device);
 	bt_uuid_t uuid;
+	uint16_t start_handle, end_handle;
+	bool primary;
+
+	gatt_db_attribute_get_service_data(attr, &start_handle,
+							&end_handle,
+							&primary,
+							&uuid);
+
+	/* Check if service is already on list then return NULL to skip it */
+	service = queue_find(client->services, match_service_handle,
+						UINT_TO_PTR(start_handle));
+	if (service)
+		return NULL;
 
 	service = new0(struct service, 1);
 	service->chrcs = queue_new();
 	service->incl_services = queue_new();
 	service->client = client;
+	service->claimed = gatt_db_service_get_claimed(attr);
 
 	gatt_db_attribute_get_service_data(attr, &service->start_handle,
 							&service->end_handle,
@@ -2096,8 +2144,15 @@ static void export_service(struct gatt_db_attribute *attr, void *user_data)
 	struct btd_gatt_client *client = user_data;
 	struct service *service;
 
-	if (gatt_db_service_get_claimed(attr))
-		return;
+	if (gatt_db_service_get_claimed(attr)) {
+		switch (btd_opts.gatt_export) {
+		case BT_GATT_EXPORT_OFF:
+			return;
+		case BT_GATT_EXPORT_READ_ONLY:
+		case BT_GATT_EXPORT_READ_WRITE:
+			break;
+		}
+	}
 
 	service = service_create(attr, client);
 	if (!service)
@@ -2110,14 +2165,6 @@ static void export_service(struct gatt_db_attribute *attr, void *user_data)
 	}
 
 	queue_push_tail(client->services, service);
-}
-
-static bool match_service_handle(const void *a, const void *b)
-{
-	const struct service *service = a;
-	uint16_t start_handle = PTR_TO_UINT(b);
-
-	return service->start_handle == start_handle;
 }
 
 struct update_incl_data {

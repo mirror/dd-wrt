@@ -9,12 +9,29 @@
 /* Define if external plugin support is required */
 #undef EXTERNAL_PLUGINS
 
+/* Define to 1 if you have A2DP support. */
+#undef HAVE_A2DP
+
+/* Define to 1 if you have ASHA support. */
+#undef HAVE_ASHA
+
+/* Define to 1 if you have AVRCP support. */
+#undef HAVE_AVRCP
+
 /* Define to 1 if you have the backtrace support. */
 #undef HAVE_BACKTRACE_SUPPORT
 
 /* Define to 1 if you have the declaration of 'basename', and to 0 if you
    don't. */
 #undef HAVE_DECL_BASENAME
+
+/* Define to 1 if you have the declaration of 'SCM_TSTAMP_COMPLETION', and to
+   0 if you don't. */
+#undef HAVE_DECL_SCM_TSTAMP_COMPLETION
+
+/* Define to 1 if you have the declaration of
+   'SOF_TIMESTAMPING_TX_COMPLETION', and to 0 if you don't. */
+#undef HAVE_DECL_SOF_TIMESTAMPING_TX_COMPLETION
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H

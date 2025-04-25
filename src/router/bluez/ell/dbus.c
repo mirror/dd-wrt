@@ -1697,10 +1697,10 @@ LIB_EXPORT void *l_dbus_object_get_data(struct l_dbus *dbus, const char *object,
 					const char *interface)
 {
 	if (unlikely(!dbus))
-		return false;
+		return NULL;
 
 	if (unlikely(!dbus->tree))
-		return false;
+		return NULL;
 
 	return _dbus_object_tree_get_interface_data(dbus->tree, object,
 							interface);
@@ -1825,8 +1825,14 @@ LIB_EXPORT unsigned int l_dbus_add_signal_watch(struct l_dbus *dbus,
 	va_start(args, member);
 
 	rule_len = 0;
-	while (va_arg(args, enum l_dbus_match_type) != L_DBUS_MATCH_NONE)
+	while (true) {
+		type = va_arg(args, enum l_dbus_match_type);
+		if (type == L_DBUS_MATCH_NONE)
+			break;
+
+		va_arg(args, const char *);
 		rule_len++;
+	}
 
 	va_end(args);
 

@@ -109,6 +109,7 @@ static const char *br_options[] = {
 };
 
 static const char *le_options[] = {
+	"CentralAddressResolution",
 	"MinAdvertisementInterval",
 	"MaxAdvertisementInterval",
 	"MultiAdvertisementRotationInterval",
@@ -148,6 +149,7 @@ static const char *gatt_options[] = {
 	"ExchangeMTU",
 	"Channels",
 	"Client",
+	"ExportClaimedServices",
 	NULL
 };
 
@@ -581,6 +583,11 @@ static void parse_br_config(GKeyFile *config)
 static void parse_le_config(GKeyFile *config)
 {
 	static const struct config_param params[] = {
+		{ "CentralAddressResolution",
+		  &btd_opts.defaults.le.addr_resolution,
+		  sizeof(btd_opts.defaults.le.addr_resolution),
+		  0,
+		  1},
 		{ "MinAdvertisementInterval",
 		  &btd_opts.defaults.le.min_adv_interval,
 		  sizeof(btd_opts.defaults.le.min_adv_interval),
@@ -708,9 +715,12 @@ static bool match_experimental(const void *data, const void *match_data)
 bool btd_kernel_experimental_enabled(const char *uuid)
 {
 	if (!btd_opts.kernel)
-		false;
+		return false;
 
-	return queue_find(btd_opts.kernel, match_experimental, uuid);
+	if (queue_find(btd_opts.kernel, match_experimental, uuid))
+		return true;
+
+	return false;
 }
 
 static const char *valid_uuids[] = {
@@ -1066,6 +1076,33 @@ static void parse_gatt_cache(GKeyFile *config)
 	g_free(str);
 }
 
+static enum bt_gatt_export_t parse_gatt_export_str(const char *str)
+{
+	if (!strcmp(str, "no") || !strcmp(str, "false") ||
+				!strcmp(str, "off")) {
+		return BT_GATT_EXPORT_OFF;
+	} else if (!strcmp(str, "read-only")) {
+		return BT_GATT_EXPORT_READ_ONLY;
+	} else if (!strcmp(str, "read-write")) {
+		return BT_GATT_EXPORT_READ_WRITE;
+	}
+
+	DBG("Invalid value for ExportClaimedServices=%s", str);
+	return BT_GATT_EXPORT_READ_ONLY;
+}
+
+static void parse_gatt_export(GKeyFile *config)
+{
+	char *str = NULL;
+
+	parse_config_string(config, "GATT", "ExportClaimedServices", &str);
+	if (!str)
+		return;
+
+	btd_opts.gatt_export = parse_gatt_export_str(str);
+	g_free(str);
+}
+
 static void parse_gatt(GKeyFile *config)
 {
 	parse_gatt_cache(config);
@@ -1073,8 +1110,9 @@ static void parse_gatt(GKeyFile *config)
 	parse_config_u16(config, "GATT", "ExchangeMTU", &btd_opts.gatt_mtu,
 				BT_ATT_DEFAULT_LE_MTU, BT_ATT_MAX_LE_MTU);
 	parse_config_u8(config, "GATT", "Channels", &btd_opts.gatt_channels,
-				1, 5);
+				1, 6);
 	parse_config_bool(config, "GATT", "Client", &btd_opts.gatt_client);
+	parse_gatt_export(config);
 }
 
 static void parse_csis_sirk(GKeyFile *config)
@@ -1205,6 +1243,7 @@ static void init_defaults(void)
 	btd_opts.defaults.num_entries = 0;
 	btd_opts.defaults.br.page_scan_type = 0xFFFF;
 	btd_opts.defaults.br.scan_type = 0xFFFF;
+	btd_opts.defaults.le.addr_resolution = 0x01;
 	btd_opts.defaults.le.enable_advmon_interleave_scan = 0xFF;
 
 	if (sscanf(VERSION, "%hhu.%hhu", &major, &minor) != 2)
@@ -1219,6 +1258,7 @@ static void init_defaults(void)
 	btd_opts.gatt_mtu = BT_ATT_MAX_LE_MTU;
 	btd_opts.gatt_channels = 1;
 	btd_opts.gatt_client = true;
+	btd_opts.gatt_export = BT_GATT_EXPORT_READ_ONLY;
 
 	btd_opts.avdtp.session_mode = BT_IO_MODE_BASIC;
 	btd_opts.avdtp.stream_mode = BT_IO_MODE_BASIC;
