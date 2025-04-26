@@ -218,28 +218,28 @@
 
 			port@1 {
 				reg = <1>;
-				label = "lan4";
+				label = "lan1";
 				phy-mode = "internal";
 				phy-handle = <&phy_port1>;
 			};
 
 			port@2 {
 				reg = <2>;
-				label = "lan3";
+				label = "lan2";
 				phy-mode = "internal";
 				phy-handle = <&phy_port2>;
 			};
 
 			port@3 {
 				reg = <3>;
-				label = "lan2";
+				label = "lan3";
 				phy-mode = "internal";
 				phy-handle = <&phy_port3>;
 			};
 
 			port@4 {
 				reg = <4>;
-				label = "lan1";
+				label = "lan4";
 				phy-mode = "internal";
 				phy-handle = <&phy_port4>;
 			};
