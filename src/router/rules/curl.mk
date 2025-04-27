@@ -111,7 +111,7 @@ curl-configure: openssl zlib
 	--disable-websockets \
 	--disable-headers-api \
 	--enable-static \
-	--with-ca-bundle=/etc/ssl/ca-bundle.crt \
+	--with-ca-bundle=/etc/ssl/certs/ca-certificates.crt \
 	--without-openssl \
 	--with-bearssl \
 	--prefix=/usr \
