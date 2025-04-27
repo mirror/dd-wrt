@@ -319,17 +319,9 @@ if(!$opt_n) {
         report "Get certdata with curl!";
         my $proto = !$opt_k ? "--proto =https" : "";
         my $quiet = $opt_q ? "-s" : "";
-        my @out = `curl -w %{response_code} $proto $quiet -o "$txt" "$url"`;
-        if(!$? && @out && $out[0] == 200) {
+        my @out = `wget -O "$txt" "$url"`;
           $fetched = 1;
           report "Downloaded $txt";
-        }
-        else {
-          report "Failed downloading via HTTPS with curl";
-          if(-e $txt && !unlink($txt)) {
-            report "Failed to remove '$txt': $!";
-          }
-        }
       }
       else {
         report "curl lacks https support";
