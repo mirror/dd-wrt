@@ -505,8 +505,8 @@ qca8k_bulk_read(void *ctx, const void *reg_buf, size_t reg_len,
 		void *val_buf, size_t val_len)
 {
 	int i, count = val_len / sizeof(u32), ret;
-	u32 reg = *(u32 *)reg_buf & U16_MAX;
 	struct qca8k_priv *priv = ctx;
+	u32 reg = *(u16 *)reg_buf;
 
 	if (priv->mgmt_master &&
 	    !qca8k_read_eth(priv, reg, val_buf, val_len))
@@ -527,8 +527,8 @@ qca8k_bulk_gather_write(void *ctx, const void *reg_buf, size_t reg_len,
 			const void *val_buf, size_t val_len)
 {
 	int i, count = val_len / sizeof(u32), ret;
-	u32 reg = *(u32 *)reg_buf & U16_MAX;
 	struct qca8k_priv *priv = ctx;
+	u32 reg = *(u16 *)reg_buf;
 	u32 *val = (u32 *)val_buf;
 
 	if (priv->mgmt_master &&
@@ -1013,7 +1013,7 @@ qca8k_setup_mdio_bus(struct qca8k_priv *priv)
 			return err;
 		}
 
-		if (!dsa_is_user_port(priv->ds, reg))
+		if (reg == 0 || reg == 6)
 			continue;
 
 		of_get_phy_mode(port, &mode);
@@ -1088,16 +1088,18 @@ qca8k_setup_mac_pwr_sel(struct qca8k_priv *priv)
 
 static int qca8k_find_cpu_port(struct dsa_switch *ds)
 {
-	struct qca8k_priv *priv = ds->priv;
+	int i;
 
-	/* Find the connected cpu port. Valid port are 0 or 6 */
 	if (dsa_is_cpu_port(ds, 0))
 		return 0;
 
-	dev_dbg(priv->dev, "port 0 is not the CPU port. Checking port 6");
-
 	if (dsa_is_cpu_port(ds, 6))
 		return 6;
+
+	/* PHY-to-PHY link */
+	for (i = 1; i <= 5; i++)
+		if (dsa_is_cpu_port(ds, i))
+			return i;
 
 	return -EINVAL;
 }
@@ -1398,7 +1400,6 @@ static void qca8k_phylink_get_caps(struct dsa_switch *ds, int port,
 		__set_bit(PHY_INTERFACE_MODE_SGMII,
 			  config->supported_interfaces);
 		break;
-
 	case 1:
 	case 2:
 	case 3:
@@ -1422,8 +1423,6 @@ static void qca8k_phylink_get_caps(struct dsa_switch *ds, int port,
 
 	config->mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE |
 		MAC_10 | MAC_100 | MAC_1000FD;
-
-	config->legacy_pre_march2020 = false;
 }
 
 static void
@@ -1521,7 +1520,7 @@ static void qca8k_pcs_get_state(struct phylink_pcs *pcs,
 		state->pause |= MLO_PAUSE_TX;
 }
 
-static int qca8k_pcs_config(struct phylink_pcs *pcs, unsigned int mode,
+static int qca8k_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			    phy_interface_t interface,
 			    const unsigned long *advertising,
 			    bool permit_pause_to_mac)
@@ -1547,14 +1546,14 @@ static int qca8k_pcs_config(struct phylink_pcs *pcs, unsigned int mode,
 		return -EINVAL;
 	}
 
-	/* Enable/disable SerDes auto-negotiation as necessary */
 	ret = qca8k_read(priv, QCA8K_REG_PWS, &val);
 	if (ret)
 		return ret;
-	if (phylink_autoneg_inband(mode))
+	if (phylink_autoneg_inband(neg_mode))
 		val &= ~QCA8K_PWS_SERDES_AEN_DIS;
 	else
 		val |= QCA8K_PWS_SERDES_AEN_DIS;
+
 	qca8k_write(priv, QCA8K_REG_PWS, val);
 
 	/* Configure the SGMII parameters */
@@ -1626,6 +1625,7 @@ static void qca8k_setup_pcs(struct qca8k_priv *priv, struct qca8k_pcs *qpcs,
 			    int port)
 {
 	qpcs->pcs.ops = &qca8k_pcs_ops;
+//	qpcs->pcs.neg_mode = true;
 
 	/* We don't have interrupts for link changes, so we need to poll */
 	qpcs->pcs.poll = true;
@@ -1935,7 +1935,7 @@ static void qca8k_setup_hol_fixup(struct qca8k_priv *priv, int port)
 static int
 qca8k_setup(struct dsa_switch *ds)
 {
-	struct qca8k_priv *priv = (struct qca8k_priv *)ds->priv;
+	struct qca8k_priv *priv = ds->priv;
 	struct dsa_port *dp;
 	int cpu_port, ret;
 	u32 mask;
@@ -2013,6 +2013,12 @@ qca8k_setup(struct dsa_switch *ds)
 			dev_err(priv->dev, "failed enabling QCA header mode on port %d", dp->index);
 			return ret;
 		}
+
+		/* Disable learning by default on all ports */
+		ret = regmap_clear_bits(priv->regmap, QCA8K_PORT_LOOKUP_CTRL(dp->index),
+								QCA8K_PORT_LOOKUP_LEARN);
+		if (ret)
+			return ret;
 	}
 
 	/* Forward all unknown frames to CPU port for Linux processing */
@@ -2039,11 +2045,6 @@ qca8k_setup(struct dsa_switch *ds)
 		ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(port),
 				QCA8K_PORT_LOOKUP_MEMBER,
 				BIT(cpu_port));
-		if (ret)
-			return ret;
-
-		ret = regmap_clear_bits(priv->regmap, QCA8K_PORT_LOOKUP_CTRL(port),
-					QCA8K_PORT_LOOKUP_LEARN);
 		if (ret)
 			return ret;
 
@@ -2097,6 +2098,9 @@ qca8k_setup(struct dsa_switch *ds)
 
 	/* Set max number of LAGs supported */
 	ds->num_lag_ids = QCA8K_NUM_LAGS;
+
+	/* HW learn on CPU port is limited and require manual setting */
+	ds->assisted_learning_on_cpu_port = true;
 
 	return 0;
 }
