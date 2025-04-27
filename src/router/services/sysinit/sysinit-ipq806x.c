@@ -746,6 +746,11 @@ void start_sysinit(void)
 		if (maddr) {
 			set_hwaddr("eth1", maddr);
 			set_hwaddr("eth0", maddr);
+			set_hwaddr("wan", maddr);
+			set_hwaddr("lan1", maddr);
+			set_hwaddr("lan2", maddr);
+			set_hwaddr("lan3", maddr);
+			set_hwaddr("lan4", maddr);
 			nvram_set("lan_hwaddr", maddr);
 			nvram_commit();
 		}
