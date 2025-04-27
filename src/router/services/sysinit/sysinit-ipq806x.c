@@ -718,6 +718,11 @@ void start_sysinit(void)
 		if (maddr) {
 			set_hwaddr("eth0", getUEnv("wan_mac"));
 			set_hwaddr("eth1", getUEnv("lan_mac"));
+			set_hwaddr("wan", getUEnv("wan_mac"));
+			set_hwaddr("lan1", getUEnv("lan_mac"));
+			set_hwaddr("lan2", getUEnv("lan_mac"));
+			set_hwaddr("lan3", getUEnv("lan_mac"));
+			set_hwaddr("lan4", getUEnv("lan_mac"));
 		}
 		start_finishupgrade();
 		if (getbootdevice())
@@ -731,6 +736,11 @@ void start_sysinit(void)
 		if (maddr) {
 			set_hwaddr("eth1", maddr);
 			set_hwaddr("eth0", maddr);
+			set_hwaddr("wan", maddr);
+			set_hwaddr("lan1", maddr);
+			set_hwaddr("lan2", maddr);
+			set_hwaddr("lan3", maddr);
+			set_hwaddr("lan4", maddr);
 		}
 		start_finishupgrade();
 		if (getbootdevice())
