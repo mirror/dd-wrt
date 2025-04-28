@@ -952,12 +952,12 @@ void start_sysinit(void)
 		set_named_smp_affinity("eth1", 1, 1);
 		break;
 	case ROUTER_LINKSYS_EA8500:
+	default:
 		eval("ip", "link", "set", "wan", "type", "dsa", "master", "eth0");
 		eval("ip", "link", "set", "lan1", "type", "dsa", "master", "eth1");
 		eval("ip", "link", "set", "lan2", "type", "dsa", "master", "eth1");
 		eval("ip", "link", "set", "lan3", "type", "dsa", "master", "eth1");
 		eval("ip", "link", "set", "lan4", "type", "dsa", "master", "eth1");
-	default:
 		nvram_unset("sw_cpuport");
 		nvram_unset("sw_wancpuport");
 		nvram_unset("sw_lancpuport");
