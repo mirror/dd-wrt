@@ -708,8 +708,11 @@ endif
 	sed -i 's/\CONFIG_FEATURE_EDITING_HISTORY=15/CONFIG_FEATURE_EDITING_HISTORY=30/g' busybox/.config
 	sed -i 's/\# CONFIG_FEATURE_EDITING_SAVEHISTORY is not set/CONFIG_FEATURE_EDITING_SAVEHISTORY=y/g' busybox/.config
 	echo "CONFIG_FEATURE_EDITING_SAVE_ON_EXIT=y" >> busybox/.config
+ifeq ($(CONFIG_IPQ806X),y)
 	echo "CONFIG_DSA=y" >> busybox/.config
-
+else
+	echo "# CONFIG_DSA is not set" >> busybox/.config
+endif
 	cd busybox && make oldconfig
 	
 #	-$(MAKE) -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
