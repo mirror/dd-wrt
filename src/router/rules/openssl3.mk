@@ -130,21 +130,6 @@ endif
 endif
 endif
 endif
-ifeq ($(ARCH),mips64)
-OPENSSL_OPTIONS += -O3
-endif
-ifeq ($(ARCH),x86_64)
-OPENSSL_OPTIONS += -O3
-endif
-ifeq ($(ARCH),i386)
-OPENSSL_OPTIONS += -O3
-endif
-ifeq ($(ARCH),aarch64)
-OPENSSL_OPTIONS += -O3
-endif
-ifeq ($(ARCH),arm)
-OPENSSL_OPTIONS += -O3
-endif
 
 
 openssl-configure:
