@@ -38,6 +38,14 @@ static const struct tok qca_tag_type_values[] = {
 	{ 0, "Normal" },
 	{ 1, "MiB" },
 	{ 2, "Ack"},
+	{ 3, "802.1X"},
+	{ 4, "Reserved ARL"},
+	{ 5, "RIPv1"},
+	{ 6, "DHCP"},
+	{ 7, "PPPoE Discovery"},
+	{ 8, "ARP"},
+	{ 0xa, "IGMP"},
+	{ 0xb, "MLD"},
 	{ 0, NULL }
 };
 
