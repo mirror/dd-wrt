@@ -711,7 +711,11 @@ endif
 ifeq ($(CONFIG_IPQ806X),y)
 	echo "CONFIG_DSA=y" >> busybox/.config
 else
+ifeq ($(CONFIG_IPQ6018),y)
+	echo "CONFIG_DSA=y" >> busybox/.config
+else
 	echo "# CONFIG_DSA is not set" >> busybox/.config
+endif
 endif
 	cd busybox && make oldconfig
 	
