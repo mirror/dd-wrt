@@ -433,17 +433,25 @@ int FAST_FUNC rta_addattr8(struct rtattr *rta, int maxlen, int type, uint8_t dat
 	return rta_addattr_l(rta, maxlen, type, &data, sizeof(data));
 }
 
-void FAST_FUNC parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len)
-{
-	memset(tb, 0, (max + 1) * sizeof(tb[0]));
 
+void FAST_FUNC parse_rtattr_flags(struct rtattr *tb[], int max, struct rtattr *rta,
+		       int len, unsigned short flags)
+{
+	unsigned short type;
+
+	memset(tb, 0, sizeof(struct rtattr *) * (max + 1));
 	while (RTA_OK(rta, len)) {
-		if (rta->rta_type <= max) {
-			tb[rta->rta_type] = rta;
-		}
+		type = rta->rta_type & ~flags;
+		if ((type <= max) && (!tb[type]))
+			tb[type] = rta;
 		rta = RTA_NEXT(rta, len);
 	}
-	if (len) {
+	if (len)
 		bb_error_msg("deficit %d, rta_len=%d!", len, rta->rta_len);
-	}
+	return;
+}
+
+void FAST_FUNC parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len)
+{
+	parse_rtattr_flags(tb, max, rta, len, 0);
 }

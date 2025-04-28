@@ -52,6 +52,11 @@ static ALWAYS_INLINE void rtnl_send(struct rtnl_handle *rth, const void *buf, in
 	// and convert to void, inline.
 }
 
+static inline const char *rta_getattr_str(const struct rtattr *rta)
+{
+	return (const char *)RTA_DATA(rta);
+}
+
 extern int addattr32(struct nlmsghdr *n, int maxlen, int type, uint32_t data) FAST_FUNC;
 extern int addattr8(struct nlmsghdr *n, int maxlen, int type, uint8_t data) FAST_FUNC;
 extern int addattr_l(struct nlmsghdr *n, int maxlen, int type, void *data, int alen) FAST_FUNC;
@@ -60,6 +65,11 @@ extern int rta_addattr8(struct rtattr *rta, int maxlen, int type, uint8_t data) 
 extern int rta_addattr_l(struct rtattr *rta, int maxlen, int type, void *data, int alen) FAST_FUNC;
 
 extern void parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len) FAST_FUNC;
+extern void parse_rtattr_flags(struct rtattr *tb[], int max, struct rtattr *rta,
+			      int len, unsigned short flags);
+#define parse_rtattr_nested(tb, max, rta) \
+	(parse_rtattr_flags((tb), (max), RTA_DATA(rta), RTA_PAYLOAD(rta), \
+			    NLA_F_NESTED))
 
 POP_SAVED_FUNCTION_VISIBILITY
 

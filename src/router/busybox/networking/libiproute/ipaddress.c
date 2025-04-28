@@ -123,6 +123,39 @@ static void print_queuelen(char *name)
 		printf("qlen %d", ifr.ifr_qlen);
 }
 
+static void print_link_dsa(struct rtattr *tb[])
+{
+	if (tb[IFLA_DSA_MASTER]) {
+		uint32_t conduit = *(uint32_t *)RTA_DATA(tb[IFLA_DSA_MASTER]);
+
+		printf("conduit %s ", ll_index_to_name(conduit));
+	}
+}
+
+static void print_linktype(struct rtattr *tb)
+{
+	struct rtattr *linkinfo[IFLA_INFO_MAX + 1];
+	char slave[32];
+
+	parse_rtattr_nested(linkinfo, IFLA_INFO_MAX, tb);
+
+	if (linkinfo[IFLA_INFO_KIND]) {
+		const char *kind = rta_getattr_str(linkinfo[IFLA_INFO_KIND]);
+		struct rtattr *attr[IFLA_DSA_MAX + 1], **data = NULL;
+
+		bb_putchar('\n');
+		printf("    %s ", kind);
+
+		if (linkinfo[IFLA_INFO_DATA]) {
+			parse_rtattr_nested(attr, IFLA_DSA_MAX, linkinfo[IFLA_INFO_DATA]);
+			data = attr;
+		}
+		if (!strcmp(kind, "dsa")) {
+			print_link_dsa(data);
+		}
+	}
+}
+
 static NOINLINE int print_linkinfo(const struct nlmsghdr *n)
 {
 	struct ifinfomsg *ifi = NLMSG_DATA(n);
@@ -222,13 +255,11 @@ static NOINLINE int print_linkinfo(const struct nlmsghdr *n)
 						      b1, sizeof(b1)));
 		}
 	}
-	if (tb[IFLA_DSA_MASTER]) {
-		uint32_t conduit = *(uint32_t *)RTA_DATA(tb[IFLA_DSA_MASTER]);
-
-		bb_putchar('\n');
-		printf("conduit %s ",
-			     ll_index_to_name(conduit));
+#ifdef ENABLE_DSA
+	if (tb[IFLA_LINKINFO]) {
+		print_linktype(tb[IFLA_LINKINFO]);
 	}
+#endif
 	bb_putchar('\n');
 	/*fflush_all();*/
 	return 0;
