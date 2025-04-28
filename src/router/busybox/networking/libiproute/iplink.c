@@ -1920,8 +1920,9 @@ static int vxlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 
 
 /* Return value becomes exitcode. It's okay to not return at all */
-static int do_add_or_delete(char **argv, const unsigned rtm)
+static int do_add_or_delete(char **argv, const unsigned rtm, unsigned int flags, int set)
 {
+	char **oldargv = argv;
 	static const char keywords[] ALIGN1 =
 		"link\0""name\0""type\0""dev\0""address\0";
 	enum {
@@ -1947,11 +1948,9 @@ static int do_add_or_delete(char **argv, const unsigned rtm)
 	memset(&req, 0, sizeof(req));
 
 	req.n.nlmsg_len = NLMSG_LENGTH(sizeof(struct ifinfomsg));
-	req.n.nlmsg_flags = NLM_F_REQUEST;
+	req.n.nlmsg_flags = NLM_F_REQUEST | flags;
 	req.n.nlmsg_type = rtm;
 	req.i.ifi_family = preferred_family;
-	if (rtm == RTM_NEWLINK)
-		req.n.nlmsg_flags |= NLM_F_CREATE|NLM_F_EXCL;
 
 	/* NB: update iplink_full_usage if you extend this code */
 
@@ -1991,6 +1990,10 @@ static int do_add_or_delete(char **argv, const unsigned rtm)
 	if (type_str && rtm == RTM_NEWLINK) {
 		struct rtattr *linkinfo = NLMSG_TAIL(&req.n);
 
+		if (set && strcmp(type_str, "dsa")) {
+			return do_set(oldargv);
+		}
+
 		addattr_l(&req.n, sizeof(req), IFLA_LINKINFO, NULL, 0);
 		addattr_l(&req.n, sizeof(req), IFLA_INFO_KIND, type_str,
 				strlen(type_str));
@@ -2021,7 +2024,7 @@ static int do_add_or_delete(char **argv, const unsigned rtm)
 #endif
 			data->rta_len = (void *)NLMSG_TAIL(&req.n) - (void *)data;
 		}
-
+    
 		linkinfo->rta_len = (void *)NLMSG_TAIL(&req.n) - (void *)linkinfo;
 	}
 	/* Allow "ip link add dev" and "ip link add name" */
@@ -2073,10 +2076,8 @@ int FAST_FUNC do_iplink(char **argv)
 		if (key < 0) /* invalid argument */
 			invarg_1_to_2(*argv, applet_name);
 		argv++;
-		if (key <= 1) /* add/delete */
-			return do_add_or_delete(argv, key ? RTM_DELLINK : RTM_NEWLINK);
-		if (key == 2) /* set */
-			return do_set(argv);
+		if (key <= 2) /* add/delete */
+			return do_add_or_delete(argv, key == 1 ? RTM_DELLINK : RTM_NEWLINK, key == 0 ? NLM_F_CREATE|NLM_F_EXCL : 0, key == 2);
 	}
 	/* show, lst, list */
 	return ipaddr_list_link(argv);
