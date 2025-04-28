@@ -32,6 +32,14 @@
 //config:	help
 //config:	Short form of "ip link"
 //config:
+//config:config DSA
+//config:	bool "dsa support"
+//config:	default y
+//config:	select FEATURE_DSA
+//config:	depends on IPLINK
+//config:	help
+//config:	dsa support for iplink"
+//config:
 //config:config VXLAN
 //config:	bool "vxlan support"
 //config:	default y
@@ -277,7 +285,7 @@
 //       ip link show [ DEVICE | group GROUP ] [up] [master DEV] [type TYPE]
 //       ip link help [ TYPE ]
 //TYPE := { vlan | veth | vcan | dummy | ifb | macvlan | macvtap |
-//          bridge | bond | ipoib | ip6tnl | ipip | sit | vxlan | ipvlan |
+//          bridge | bond | ipoib | ip6tnl | ipip | sit | vxlan | dsa | ipvlan |
 //          macvlan | gre | gretap | ip6gre | ip6gretap | vti | nlmon |
 //          bond_slave | ipvlan | geneve | bridge_slave | vrf }
 //usage:

@@ -986,6 +986,53 @@ static void vrf_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 	addattr_l(n, size, IFLA_VRF_TABLE, &table, sizeof(table));
 }
 
+#ifndef IFLA_DSA_MAX
+enum {
+	IFLA_DSA_UNSPEC,
+	IFLA_DSA_CONDUIT,
+	/* Deprecated, use IFLA_DSA_CONDUIT instead */
+	IFLA_DSA_MASTER = IFLA_DSA_CONDUIT,
+	__IFLA_DSA_MAX,
+};
+
+#define IFLA_DSA_MAX	(__IFLA_DSA_MAX - 1)
+#endif
+
+static void invarg(const char *msg, const char *arg)
+{
+	bb_error_msg_and_die("Error: argument \"%s\" is wrong: %s", arg, msg);
+}
+
+
+static void dsa_explain(void)
+{
+	bb_simple_error_msg_and_die("Usage: ... dsa [ conduit DEVICE ]\n");
+}
+
+static void dsa_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
+{
+
+	uint32_t table;
+	while(*argv) {
+		if (strcmp(*argv, "conduit") == 0 ||
+		    strcmp(*argv, "master") == 0) {
+			uint32_t ifindex;
+
+			NEXT_ARG();
+			ifindex = xll_name_to_index(*argv);
+			if (!ifindex)
+				invarg("Device does not exist\n", *argv);
+			addattr_l(n, 1024, IFLA_DSA_MASTER, &ifindex, 4);
+		} else if (strcmp(*argv, "help") == 0) {
+			dsa_explain();
+			return;
+		} else {
+			bb_error_msg_and_die("dsa: unknown command \"%s\"?", *argv);
+		}
+		argv++;
+	}
+}
+
 /* VXLAN section */
 enum {
 	IFLA_VXLAN_UNSPEC,
@@ -1143,11 +1190,6 @@ static void nodev(const char *dev)
 #ifndef LABEL_MAX_MASK
 #define     LABEL_MAX_MASK          0xFFFFFU
 #endif
-
-static void invarg(const char *msg, const char *arg)
-{
-	bb_error_msg_and_die("Error: argument \"%s\" is wrong: %s", arg, msg);
-}
 
 static int addattr(struct nlmsghdr *n, int maxlen, int type)
 {
@@ -1972,6 +2014,10 @@ static int do_add_or_delete(char **argv, const unsigned rtm)
 #if ENABLE_MACVLAN
 			else if (strcmp(type_str, "macvlan") == 0)
 				macvlan_parse_opt(argv, &req.n, sizeof(req));
+#endif
+#if ENABLE_DSA
+			else if (strcmp(type_str, "dsa") == 0)
+				dsa_parse_opt(argv, &req.n, sizeof(req));
 #endif
 			data->rta_len = (void *)NLMSG_TAIL(&req.n) - (void *)data;
 		}

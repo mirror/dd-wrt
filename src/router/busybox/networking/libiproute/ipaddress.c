@@ -88,6 +88,20 @@ static void print_link_flags(unsigned flags, unsigned mdown)
 	printf("> ");
 }
 
+/* DSA section */
+
+#ifndef IFLA_DSA_MAX
+enum {
+	IFLA_DSA_UNSPEC,
+	IFLA_DSA_CONDUIT,
+	/* Deprecated, use IFLA_DSA_CONDUIT instead */
+	IFLA_DSA_MASTER = IFLA_DSA_CONDUIT,
+	__IFLA_DSA_MAX,
+};
+
+#define IFLA_DSA_MAX	(__IFLA_DSA_MAX - 1)
+#endif
+
 static void print_queuelen(char *name)
 {
 	struct ifreq ifr;
@@ -207,6 +221,13 @@ static NOINLINE int print_linkinfo(const struct nlmsghdr *n)
 						      ifi->ifi_type,
 						      b1, sizeof(b1)));
 		}
+	}
+	if (tb[IFLA_DSA_MASTER]) {
+		uint32_t conduit = *(uint32_t *)RTA_DATA(tb[IFLA_DSA_MASTER]);
+
+		bb_putchar('\n');
+		printf("conduit %s ",
+			     ll_index_to_name(conduit));
 	}
 	bb_putchar('\n');
 	/*fflush_all();*/
