@@ -128,6 +128,17 @@ static int __cvmx_helper_sgmii_hardware_init_one_time(int interface, int index)
 	return 0;
 }
 
+static int __cvmx_helper_need_g15618(void)
+{
+	if (cvmx_sysinfo_get()->board_type == CVMX_BOARD_TYPE_SIM ||
+	    OCTEON_IS_MODEL(OCTEON_CN63XX) ||
+	    OCTEON_IS_MODEL(OCTEON_CN66XX_PASS1_X) ||
+	    OCTEON_IS_MODEL(OCTEON_CN68XX))
+		return 1;
+	else
+		return 0;
+}
+
 /**
  * Initialize the SERTES link for the first time or after a loss
  * of link.
@@ -171,6 +182,39 @@ static int __cvmx_helper_sgmii_hardware_init_link(int interface, int index)
 	 */
 	control_reg.s.rst_an = 1;
 	control_reg.s.an_en = 1;
+	control_reg.s.pwr_dn = 0;
+	cvmx_write_csr(CVMX_PCSX_MRX_CONTROL_REG(index, interface),
+		       control_reg.u64);
+
+	/* Force a PCS reset by powering down the PCS interface
+	 * This is needed to deal with broken Qualcomm/Atheros PHYs and switches
+	 * which never recover if PCS is not power cycled.  The alternative
+	 * is to power cycle or hardware reset the Qualcomm devices whenever
+	 * SGMII is initialized.
+	 *
+	 * This is needed for the QCA8033 PHYs as well as the QCA833X switches
+	 * to work.  The QCA8337 switch has additional SGMII problems and is
+	 * best avoided if at all possible.  Failure to power cycle PCS prevents
+	 * any traffic from flowing between Octeon and Qualcomm devices if there
+	 * is a warm reset.  Even a software reset to the Qualcomm device will
+	 * not work.
+	 *
+	 * Note that this problem has been reported between Qualcomm and other
+	 * vendor's processors as well so this problem is not unique to
+	 * Qualcomm and Octeon.
+	 *
+	 * Power cycling PCS doesn't hurt anything with non-Qualcomm devices
+	 * other than adding a 25ms delay during initialization.
+	 */
+	control_reg.s.pwr_dn = 1;
+	cvmx_write_csr(CVMX_PCSX_MRX_CONTROL_REG(index, interface),
+		       control_reg.u64);
+	cvmx_read_csr(CVMX_PCSX_MRX_CONTROL_REG(index, interface));
+
+	if (cvmx_sysinfo_get()->board_type != CVMX_BOARD_TYPE_SIM)
+		/* 25ms should be enough, 10ms is too short */
+		mdelay(25);
+
 	control_reg.s.pwr_dn = 0;
 	cvmx_write_csr(CVMX_PCSX_MRX_CONTROL_REG(index, interface),
 		       control_reg.u64);
@@ -511,9 +555,47 @@ cvmx_helper_link_info_t __cvmx_helper_sgmii_link_get(int ipd_port)
 int __cvmx_helper_sgmii_link_set(int ipd_port,
 				 cvmx_helper_link_info_t link_info)
 {
+	union cvmx_pcsx_mrx_control_reg control_reg;
 	int interface = cvmx_helper_get_interface_num(ipd_port);
 	int index = cvmx_helper_get_interface_index_num(ipd_port);
-	__cvmx_helper_sgmii_hardware_init_link(interface, index);
+
+		/* For some devices, i.e. the Qualcomm QCA8337 switch we need to power
+	 * down the PCS interface when the link goes down and power it back
+	 * up when the link returns.
+	 */
+	if (link_info.s.link_up || !__cvmx_helper_need_g15618()) {
+		__cvmx_helper_sgmii_hardware_init_link(interface, index);
+	} else {
+		union cvmx_pcsx_miscx_ctl_reg pcsx_miscx_ctl_reg;
+
+		pcsx_miscx_ctl_reg.u64 = cvmx_read_csr(CVMX_PCSX_MISCX_CTL_REG(index, interface));
+
+		/* Disable autonegotiation when MAC mode is enabled or
+		 * autonegotiation is disabled.
+		 */
+		control_reg.u64 = cvmx_read_csr(CVMX_PCSX_MRX_CONTROL_REG(index, interface));
+		if (pcsx_miscx_ctl_reg.s.mac_phy == 0 ||
+		    !cvmx_read_csr(CVMX_PCSX_ANX_RESULTS_REG(index, interface))) {
+
+			control_reg.s.an_en = 0;
+			control_reg.s.spdmsb = 1;
+			control_reg.s.spdlsb = 0;
+			control_reg.s.dup = 1;
+
+		}
+		cvmx_write_csr(CVMX_PCSX_MRX_CONTROL_REG(index, interface),
+			       control_reg.u64);
+		cvmx_read_csr(CVMX_PCSX_MRX_CONTROL_REG(index, interface));
+		/*
+		 * Use GMXENO to force the link down it will get
+		 * reenabled later...
+		 */
+		pcsx_miscx_ctl_reg.s.gmxeno = 1;
+		cvmx_write_csr(CVMX_PCSX_MISCX_CTL_REG(index, interface),
+			       pcsx_miscx_ctl_reg.u64);
+		cvmx_read_csr(CVMX_PCSX_MISCX_CTL_REG(index, interface));
+		return 0;
+	}
 	return __cvmx_helper_sgmii_hardware_init_link_speed(interface, index,
 							    link_info);
 }

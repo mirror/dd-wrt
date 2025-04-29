@@ -421,7 +421,11 @@ static int cvm_oct_common_set_mac_address(struct net_device *dev, void *addr)
 int cvm_oct_common_init(struct net_device *dev)
 {
 	struct octeon_ethernet *priv = netdev_priv(dev);
+	const u8 *label = NULL;
 	const u8 *mac = NULL;
+
+	if (priv->of_node)
+		label = of_get_property(priv->of_node, "label", NULL);
 
 	if (priv->of_node)
 		mac = of_get_mac_address(priv->of_node);
@@ -458,6 +462,9 @@ int cvm_oct_common_init(struct net_device *dev)
 
 	if (dev->netdev_ops->ndo_stop)
 		dev->netdev_ops->ndo_stop(dev);
+
+	if (!IS_ERR_OR_NULL(label))
+		dev_alloc_name(dev, label);
 
 	return 0;
 }

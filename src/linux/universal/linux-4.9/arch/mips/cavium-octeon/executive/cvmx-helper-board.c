@@ -169,6 +169,7 @@ int cvmx_helper_board_get_mii_address(int ipd_port)
 		else
 			return -1;
 	case CVMX_BOARD_TYPE_UBNT_E100:
+	case CVMX_BOARD_TYPE_UBNT_USG:
 		if (ipd_port == 0) {
 			return 7;
 		} else if (ipd_port == 1) {
@@ -400,6 +401,7 @@ int __cvmx_helper_board_interface_probe(int interface, int supported_ports)
 int __cvmx_helper_board_hardware_enable(int interface)
 {
 	if (cvmx_sysinfo_get()->board_type == CVMX_BOARD_TYPE_UBNT_E100
+	    || cvmx_sysinfo_get()->board_type == CVMX_BOARD_TYPE_UBNT_USG)
 	    || cvmx_sysinfo_get()->board_type == CVMX_BOARD_TYPE_UBNT_E120) {
 		cvmx_write_csr(CVMX_ASXX_RX_CLK_SETX(0, interface), 0);
 		cvmx_write_csr(CVMX_ASXX_TX_CLK_SETX(0, interface), 0x16);
@@ -432,6 +434,14 @@ int __cvmx_helper_board_hardware_enable(int interface)
 		cvmx_write_csr(CVMX_ASXX_TX_CLK_SETX(1, interface), 0x10);
 		cvmx_write_csr(CVMX_ASXX_RX_CLK_SETX(2, interface), 0);
 		cvmx_write_csr(CVMX_ASXX_TX_CLK_SETX(2, interface), 0x10);
+	} else if (cvmx_sysinfo_get()->board_type ==
+			CVMX_BOARD_TYPE_UBNT_USG) {
+		cvmx_write_csr(CVMX_ASXX_RX_CLK_SETX(0, interface), 0);
+		cvmx_write_csr(CVMX_ASXX_TX_CLK_SETX(0, interface), 0x10);
+		cvmx_write_csr(CVMX_ASXX_RX_CLK_SETX(1, interface), 0);
+		cvmx_write_csr(CVMX_ASXX_TX_CLK_SETX(1, interface), 0x10);
+		cvmx_write_csr(CVMX_ASXX_RX_CLK_SETX(2, interface), 0);
+		cvmx_write_csr(CVMX_ASXX_TX_CLK_SETX(2, interface), 0x10);
 	}
 	return 0;
 }
@@ -451,6 +461,7 @@ enum cvmx_helper_board_usb_clock_types __cvmx_helper_board_usb_get_clock_type(vo
 	case CVMX_BOARD_TYPE_LANAI2_G:
 	case CVMX_BOARD_TYPE_NIC10E_66:
 	case CVMX_BOARD_TYPE_UBNT_E100:
+	case CVMX_BOARD_TYPE_UBNT_USG:
 	case CVMX_BOARD_TYPE_UBNT_E120:
 		return USB_CLOCK_TYPE_CRYSTAL_12;
 	case CVMX_BOARD_TYPE_NIC10E:
