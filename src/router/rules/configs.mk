@@ -149,7 +149,7 @@ obj-$(CONFIG_LIBIPT) += iptables-ipt
 obj-$(CONFIG_IPSEC) += ipsec
 #obj-$(CONFIG_LIBPCAP) += libpcap
 obj-$(CONFIG_WIVIZ) += wiviz2
-ifneq ($(CONFIG_OPENSSL),y)
+ifeq ($(CONFIG_OPENSSL),y)
 obj-$(CONFIG_TCPDUMP) += libpcap tcpdump
 endif
 obj-$(CONFIG_KISMETDRONE) += kismet-devel
@@ -405,7 +405,7 @@ obj-$(CONFIG_HWMON) += hwmon
 #obj-$(CONFIG_RSTATS) += rstats
 obj-$(CONFIG_STABRIDGE) += stabridge
 obj-$(CONFIG_EOP_TUNNEL) += eop-tunnel
-ifneq ($(CONFIG_OPENSSL),y)
+ifeq ($(CONFIG_OPENSSL),y)
 obj-$(CONFIG_AIRCRACK) += libnltiny aircrack-ng pcre zlib
 endif
 obj-$(CONFIG_MOXA) += moxa
