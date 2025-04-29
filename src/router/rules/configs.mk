@@ -149,7 +149,9 @@ obj-$(CONFIG_LIBIPT) += iptables-ipt
 obj-$(CONFIG_IPSEC) += ipsec
 #obj-$(CONFIG_LIBPCAP) += libpcap
 obj-$(CONFIG_WIVIZ) += wiviz2
+ifneq ($(CONFIG_OPENSSL),y)
 obj-$(CONFIG_TCPDUMP) += libpcap tcpdump
+endif
 obj-$(CONFIG_KISMETDRONE) += kismet-devel
 obj-$(CONFIG_NETSTATNAT) += netstatnat
 obj-$(CONFIG_SES) += ses
