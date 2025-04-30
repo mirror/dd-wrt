@@ -58,8 +58,8 @@ ALL=	${OBJS} madwifi_multi
 all:	$(ALL)
 
 INCS=	-I. -I$(HAL) -I$(TOP) -I$(ATH_HAL)
-CFLAGS:=	-Wall -Os
-ALL_CFLAGS:= $(INCS) $(DEBUG) -DNEED_PRINTF -DHOSTAPD  -D_GNU_SOURCE
+CFLAGS+=	-Wall -Os
+ALL_CFLAGS:= $(INCS) $(DEBUG) $(CFLAGS) -DNEED_PRINTF -DHOSTAPD  -D_GNU_SOURCE
 
 include $(SRCBASE)/router/.config
 
