@@ -16,10 +16,10 @@ int main(int argc, char **argv)
 restart:
 	if (strstr(argv[0], "btrfstune"))
 		return btrfstune_main(argc, argv);
-	else if (strstr(argv[0], "btrfs"))
-		return btrfs_main(argc, argv);
 	else if (strstr(argv[0], "mkfs.btrfs"))
 		return mkfs_main(argc, argv);
+	else if (strstr(argv[0], "btrfs"))
+		return btrfs_main(argc, argv);
 
 	if (!restart && argc > 1) {
 		argv++;
