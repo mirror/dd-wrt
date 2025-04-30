@@ -1,11 +1,13 @@
 export MAKE := make -j 4
 
 
-COPTS+=  -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -fno-unwind-tables -fno-asynchronous-unwind-tables -DNDEBUG -Wno-unused-variable -Wno-unused-parameter
+S_COPTS+=  -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -fno-unwind-tables -fno-asynchronous-unwind-tables -DNDEBUG -Wno-unused-variable -Wno-unused-parameter
 
 ifeq ($(AGGRESSIVE_SIZE),y)
-COPTS+= -falign-jumps=1 -falign-labels=1 -falign-loops=1 -falign-functions=1 -fno-guess-branch-probability -funsigned-char -finline-limit=0 -fno-builtin-printf
+S_COPTS+= -falign-jumps=1 -falign-labels=1 -falign-loops=1 -falign-functions=1 -fno-guess-branch-probability -funsigned-char -finline-limit=0 -fno-builtin-printf
 endif
+CFLAGS+=$(S_COPTS)
+COPTS+=$(S_COPTS)
 
 export GCCAR := ${shell which $(ARCH)-linux-ar}
 export GCCRANLIB := ${shell which $(ARCH)-linux-ranlib}

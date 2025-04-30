@@ -10,10 +10,12 @@ export GCCRANLIB := ${shell which $(ARCH)-linux-gcc-ranlib}
 
 
 #COPTS+= -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -fno-unwind-tables -fno-asynchronous-unwind-tables -funsigned-char
-COPTS+=  -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -DNDEBUG -Wno-unused-variable -Wno-unused-parameter -Wno-unused-function -Wno-unused-but-set-variable -std=gnu17
+S_COPTS:=-D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -DNDEBUG -Wno-unused-variable -Wno-unused-parameter -Wno-unused-function -Wno-unused-but-set-variable -std=gnu17
 ifeq ($(AGGRESSIVE_SIZE),y)
-COPTS+= -falign-jumps=1 -falign-labels=1 -falign-loops=1 -falign-functions=1 -fno-guess-branch-probability -funsigned-char -finline-limit=0 -fno-builtin-printf
+S_COPTS+= -falign-jumps=1 -falign-labels=1 -falign-loops=1 -falign-functions=1 -fno-guess-branch-probability -funsigned-char -finline-limit=0 -fno-builtin-printf
 endif
+CFLAGS+=$(S_COPTS)
+COPTS+=$(S_COPTS)
 
 ifeq ($(ARCH),arm)
 #MUSLVARIANT:=-mimalloc
