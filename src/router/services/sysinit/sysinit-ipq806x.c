@@ -718,14 +718,14 @@ void start_sysinit(void)
 		if (maddr) {
 			eval("ifconfig", "eth1", "up");
 			eval("ifconfig", "eth0", "up");
-			sleep(2);
+			sleep(3);
 			set_hwaddr("eth0", getUEnv("wan_mac"));
 			set_hwaddr("eth1", getUEnv("lan_mac"));
-			set_hwaddr("wan", getUEnv("wan_mac"));
 			set_hwaddr("lan1", getUEnv("lan_mac"));
 			set_hwaddr("lan2", getUEnv("lan_mac"));
 			set_hwaddr("lan3", getUEnv("lan_mac"));
 			set_hwaddr("lan4", getUEnv("lan_mac"));
+			set_hwaddr("wan", getUEnv("wan_mac"));
 		}
 		start_finishupgrade();
 		if (getbootdevice())
@@ -739,14 +739,14 @@ void start_sysinit(void)
 		if (maddr) {
 			eval("ifconfig", "eth1", "up");
 			eval("ifconfig", "eth0", "up");
-			sleep(2);
+			sleep(3);
 			set_hwaddr("eth1", maddr);
 			set_hwaddr("eth0", maddr);
-			set_hwaddr("wan", maddr);
 			set_hwaddr("lan1", maddr);
 			set_hwaddr("lan2", maddr);
 			set_hwaddr("lan3", maddr);
 			set_hwaddr("lan4", maddr);
+			set_hwaddr("wan", maddr);
 		}
 		start_finishupgrade();
 		if (getbootdevice())
@@ -762,14 +762,14 @@ void start_sysinit(void)
 		if (maddr) {
 			eval("ifconfig", "eth1", "up");
 			eval("ifconfig", "eth0", "up");
-			sleep(2);
+			sleep(3);
 			set_hwaddr("eth1", maddr);
 			set_hwaddr("eth0", maddr);
-			set_hwaddr("wan", maddr);
 			set_hwaddr("lan1", maddr);
 			set_hwaddr("lan2", maddr);
 			set_hwaddr("lan3", maddr);
 			set_hwaddr("lan4", maddr);
+			set_hwaddr("wan", maddr);
 			nvram_set("lan_hwaddr", maddr);
 			nvram_commit();
 		}
