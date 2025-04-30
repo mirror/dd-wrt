@@ -1088,7 +1088,7 @@ qca8k_setup_mac_pwr_sel(struct qca8k_priv *priv)
 
 static int qca8k_find_cpu_port(struct dsa_switch *ds)
 {
-//	int i;
+	int i;
 
 	if (dsa_is_cpu_port(ds, 0))
 		return 0;
@@ -1097,9 +1097,9 @@ static int qca8k_find_cpu_port(struct dsa_switch *ds)
 		return 6;
 
 	/* PHY-to-PHY link */
-//	for (i = 1; i <= 5; i++)
-//		if (dsa_is_cpu_port(ds, i))
-//			return i;
+	for (i = 1; i <= 5; i++)
+		if (dsa_is_cpu_port(ds, i))
+			return i;
 
 	return -EINVAL;
 }
