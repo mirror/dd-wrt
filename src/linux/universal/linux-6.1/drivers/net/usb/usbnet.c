@@ -178,6 +178,7 @@ int usbnet_get_ethernet_addr(struct usbnet *dev, int iMACAddress)
 }
 EXPORT_SYMBOL_GPL(usbnet_get_ethernet_addr);
 
+
 static bool usbnet_needs_usb_name_format(struct usbnet *dev, struct net_device *net)
 {
 	/* Point to point devices which don't have a real MAC address
@@ -1776,7 +1777,8 @@ usbnet_probe (struct usb_interface *udev, const struct usb_device_id *prod)
 		 * is two-host (these links keep "usb%d")
 		 */
 		if ((dev->driver_info->flags & FLAG_ETHER) != 0 &&
-		    !usbnet_needs_usb_name_format(dev, net))
+		    ((dev->driver_info->flags & FLAG_POINTTOPOINT) == 0 ||
+		     (net->dev_addr [0] & 0x02) == 0))
 			strscpy(net->name, "eth%d", sizeof(net->name));
 		/* WLAN devices should always be named "wlan%d" */
 		if ((dev->driver_info->flags & FLAG_WLAN) != 0)
