@@ -1,4 +1,4 @@
-EXTRA_CFLAGS+=$(DISABLE_LTO)
+EXTRA_CFLAGS+=$(DISABLE_LTO) -std=gnu89
 
 # Objects to go into the VDSO.
 obj-vdso-y := elf.o gettimeofday.o sigreturn.o
