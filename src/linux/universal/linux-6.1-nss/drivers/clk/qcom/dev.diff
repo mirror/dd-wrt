@@ -1,0 +1,68 @@
+Index: Makefile
+===================================================================
+--- Makefile	(revision 56426)
++++ Makefile	(working copy)
+@@ -117,3 +117,4 @@
+ obj-$(CONFIG_KPSS_XCC) += kpss-xcc.o
+ obj-$(CONFIG_QCOM_HFPLL) += hfpll.o
+ obj-$(CONFIG_KRAITCC) += krait-cc.o
++EXTRA_CFLAGS:= -g
+\ No newline at end of file
+Index: clk-rcg.h
+===================================================================
+--- clk-rcg.h	(revision 56426)
++++ clk-rcg.h	(working copy)
+@@ -14,7 +14,7 @@
+ 
+ struct freq_conf {
+ 	u8 src;
+-	u8 pre_div;
++	u16 pre_div;
+ 	u16 m;
+ 	u16 n;
+ };
+Index: gcc-ipq806x.c
+===================================================================
+--- gcc-ipq806x.c	(revision 56426)
++++ gcc-ipq806x.c	(working copy)
+@@ -1356,7 +1356,7 @@
+ 	{  20210000, P_PLL8,  1, 1,  19 },
+ 	{  24000000, P_PLL8,  4, 1,   4 },
+ 	{  48000000, P_PLL8,  4, 1,   2 },
+-	{  51200000, P_PLL8,  1, 2,  15 },
++	{  52000000, P_PLL8,  1, 2,  15 }, /* 51.2 Mhz */
+ 	{  64000000, P_PLL8,  3, 1,   2 },
+ 	{  96000000, P_PLL8,  4, 0,   0 },
+ 	{ 192000000, P_PLL8,  2, 0,   0 },
+Index: krait-cc.c
+===================================================================
+--- krait-cc.c	(revision 56426)
++++ krait-cc.c	(working copy)
+@@ -40,6 +40,8 @@
+ 	0,
+ };
+ 
++static DEFINE_SPINLOCK(qcom_notifier_lock);
++
+ /*
+  * Notifier function for switching the muxes to safe parent
+  * while the hfpll is getting reprogrammed.
+@@ -49,8 +51,10 @@
+ 			     void *data)
+ {
+ 	int ret = 0;
++	unsigned long flags;
+ 	struct krait_mux_clk *mux = container_of(nb, struct krait_mux_clk,
+ 						 clk_nb);
++	spin_lock_irqsave(&qcom_notifier_lock, flags);
+ 	/* Switch to safe parent */
+ 	if (event == PRE_RATE_CHANGE) {
+ 		mux->old_index = krait_mux_clk_ops.get_parent(&mux->hw);
+@@ -67,6 +71,7 @@
+ 							   mux->old_index);
+ 	}
+ 
++	spin_unlock_irqrestore(&qcom_notifier_lock, flags);
+ 	return notifier_from_errno(ret);
+ }
+ 

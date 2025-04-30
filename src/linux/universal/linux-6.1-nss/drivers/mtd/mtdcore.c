@@ -530,10 +530,34 @@ static int mtd_nvmem_add(struct mtd_info *mtd)
 	struct device_node *node = mtd_get_of_node(mtd);
 	struct nvmem_config config = {};
 
-	config.id = -1;
+	/*
+	 * Do NOT register NVMEM device for any partition that is meant to be
+	 * handled by a U-Boot env driver. That would result in associating two
+	 * different NVMEM devices with the same OF node.
+	 *
+	 * An example of unwanted behaviour of above (forwardtrace):
+	 * of_get_mac_addr_nvmem()
+	 * of_nvmem_cell_get()
+	 * __nvmem_device_get()
+	 *
+	 * We can't have __nvmem_device_get() return "mtdX" NVMEM device instead
+	 * of U-Boot env NVMEM device. That would result in failing to find
+	 * NVMEM cell.
+	 *
+	 * This issue seems to affect U-Boot env case only and will go away with
+	 * switch to NVMEM layouts.
+	 */
+	if (of_device_is_compatible(node, "u-boot,env") ||
+	    of_device_is_compatible(node, "u-boot,env-redundant-bool") ||
+	    of_device_is_compatible(node, "u-boot,env-redundant-count") ||
+	    of_device_is_compatible(node, "brcm,env"))
+		return 0;
+
+	config.id = NVMEM_DEVID_NONE;
 	config.dev = &mtd->dev;
 	config.name = dev_name(&mtd->dev);
 	config.owner = THIS_MODULE;
+	config.add_legacy_fixed_of_cells = of_device_is_compatible(node, "nvmem-cells");
 	config.reg_read = mtd_nvmem_reg_read;
 	config.size = mtd->size;
 	config.word_size = 1;
@@ -541,18 +565,16 @@ static int mtd_nvmem_add(struct mtd_info *mtd)
 	config.read_only = true;
 	config.root_only = true;
 	config.ignore_wp = true;
-	config.no_of_node = !of_device_is_compatible(node, "nvmem-cells");
 	config.priv = mtd;
 
 	mtd->nvmem = nvmem_register(&config);
 	if (IS_ERR(mtd->nvmem)) {
 		/* Just ignore if there is no NVMEM support in the kernel */
-		if (PTR_ERR(mtd->nvmem) == -EOPNOTSUPP) {
+		if (PTR_ERR(mtd->nvmem) == -EOPNOTSUPP)
 			mtd->nvmem = NULL;
-		} else {
-			dev_err(&mtd->dev, "Failed to register NVMEM device\n");
-			return PTR_ERR(mtd->nvmem);
-		}
+		else
+			return dev_err_probe(&mtd->dev, PTR_ERR(mtd->nvmem),
+					     "Failed to register NVMEM device\n");
 	}
 
 	return 0;
