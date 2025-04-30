@@ -5,6 +5,7 @@ MAKE_FLAGS+=VERBOSE=0
 SOFTETHER_PKG_BUILD_DIR=$(TOP)/softether
 SOFTETHER_CMAKE_OPTIONS=-DCURSES_LIBRARY=$(TOP)/ncurses/lib \
 		    -DCURSES_INCLUDE_PATH=$(TOP)/ncurses/include \
+		    -DSODIUM_INCLUDE_DIRS=$(TOP)/libsodium/src/libsodium/include \
 		    -DOPENSSL_CRYPTO_LIBRARY=$(SSLPATH)/libcrypto.so \
 		    -DOPENSSL_SSL_LIBRARY=$(SSLPATH)/libssl.so \
 		    -DOPENSSL_INCLUDE_DIR=$(SSLPATH)/include \
