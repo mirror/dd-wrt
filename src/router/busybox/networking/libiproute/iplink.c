@@ -2566,7 +2566,7 @@ static int do_add_or_delete(char **argv, const unsigned rtm, unsigned int flags,
 	if (type_str && rtm == RTM_NEWLINK) {
 		struct rtattr *linkinfo = NLMSG_TAIL(&req.n);
 
-		if (set && strcmp(type_str, "dsa")) {
+		if (set && strcmp(type_str, "dsa") && strcmp(type_str, "bridge")) {
 			return do_set(oldargv);
 		}
 
