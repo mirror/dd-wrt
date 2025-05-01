@@ -53,6 +53,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 	char *stpoptions = "STP Off";
 	char *stpoptions_trans[] = { "share.stp", "share.off" };
 #endif
+	show_caption_pp(wp, NULL, "networking.vlan_forwarding", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.snooping", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.prio", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.forward_delay", "<th>", "</th>\n");
@@ -69,6 +70,13 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "<td>");
 		showOptions_trans(wp, bridge_name, stpoptions, stpoptions_trans, "Off");
 		websWrite(wp, "</td>");
+
+		sprintf(bridge_name, "bridgevlan%d", count);
+		websWrite(wp, "<td>");
+		showOptions_trans(wp, bridge_name, "On Off", (char *[]){ "share.on", "share.off" },
+				  nvram_default_matchi("br0_vlan", 1, 0) ? "On" : "Off");
+		websWrite(wp, "</td>");
+
 		sprintf(bridge_name, "bridgemcastbr%d", count);
 		websWrite(wp, "<td>");
 		showOptions_trans(wp, bridge_name, "On Off", (char *[]){ "share.on", "share.off" },
@@ -128,6 +136,15 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "<td>");
 		showOptions_trans(wp, bridge_name, stpoptions, stpoptions_trans, stp);
 		websWrite(wp, "</td>");
+
+		sprintf(bridge_name, "bridgevlan%d", count);
+		char vlan_filter[32];
+		sprintf(vlan_filter, "%s_vlan", bridge);
+		websWrite(wp, "<td>");
+		showOptions_trans(wp, bridge_name, "On Off", (char *[]){ "share.on", "share.off" },
+				  nvram_default_matchi(vlan_filter, 1, 0) ? "On" : "Off");
+		websWrite(wp, "</td>");
+
 		sprintf(bridge_name, "bridgemcastbr%d", count);
 		char mcast[32];
 		sprintf(mcast, "%s_mcast", bridge);
@@ -197,6 +214,10 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 		sprintf(bridge_name, "bridgestp%d", i);
 		websWrite(wp, "<td>");
 		showOptions_trans(wp, bridge_name, stpoptions, stpoptions_trans, "STP");
+		websWrite(wp, "</td>");
+		sprintf(bridge_name, "bridgevlan%d", count);
+		websWrite(wp, "<td>");
+		showOptions_trans(wp, bridge_name, "On Off", (char *[]){ "share.on", "share.off" }, "Off");
 		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgemcastbr%d", count);
 		websWrite(wp, "<td>");

@@ -4858,7 +4858,7 @@ void save_networking(webs_t wp)
 
 	for (i = 0; i < bridgescount; i++) {
 		int max_age, forward_delay;
-		char *ifname, *tag, *prio, *mtu, *mcast, s_forward_delay[32], s_max_age[32];
+		char *ifname, *tag, *prio, *mtu, *mcast, *vlan, s_forward_delay[32], s_max_age[32];
 		char var[32];
 		char ipaddr[32];
 		char netmask[32];
@@ -4872,6 +4872,19 @@ void save_networking(webs_t wp)
 		tag = websGetVar(wp, var, "Off");
 		if (!tag)
 			break;
+
+		sprintf(var, "bridgevlan%d", i);
+		vlan = websGetVar(wp, var, NULL);
+		if (!vlan || !*vlan) {
+			break;
+		} else {
+			sprintf(n, "%s_vlan", ifname);
+			if (!strcmp(vlan, "On"))
+				nvram_seti(n, 1);
+			else
+				nvram_seti(n, 0);
+		}
+
 		sprintf(var, "bridgemcastbr%d", i);
 		mcast = websGetVar(wp, var, NULL);
 		if (!mcast || !*mcast) {

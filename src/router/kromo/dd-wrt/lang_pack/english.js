@@ -1590,6 +1590,7 @@ networking.hairpin="Hairpin Mode";
 networking.bridge="Bridge";
 networking.forward_delay="Forward Delay";
 networking.max_age="Max Age";
+networking.vlan_forwarding="VLAN Forwarding";
 networking.snooping="IGMP Snooping";
 networking.unicast="Multicast to Unicast";
 networking.assign="Assignment";
