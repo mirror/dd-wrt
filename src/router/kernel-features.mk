@@ -1,7 +1,7 @@
 define kernelfeatures
 	sed -i 's/\# CONFIG_PRINTK_TIME is not set/CONFIG_PRINTK_TIME=y/g' $(LINUXDIR)/.config
 	if [ "$(CONFIG_VLAN_FILTERING)" = "y" ]; then \
-		sed -i 's/\# CONFIG_BRIDGE_VLAN_FILTERING is not set/CONFIG_BRIDGE_VLAN_FILTERING=y/g' $(LINUXDIR)/.config \
+		sed -i 's/\# CONFIG_BRIDGE_VLAN_FILTERING is not set/CONFIG_BRIDGE_VLAN_FILTERING=y/g' $(LINUXDIR)/.config; \
 	fi
 	echo "CONFIG_INOTIFY_USER=y" >> $(LINUXDIR)/.config
 	echo "# CONFIG_RANDOM_TRUST_BOOTLOADER is not set" >> $(LINUXDIR)/.config
