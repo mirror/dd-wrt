@@ -29,6 +29,29 @@
 #include <sys/ioctl.h>
 //#include <libbridge.h>
 
+#ifdef HAVE_VLAN_FILTERING
+int br_set_vlan_filtering(const char *br, int on)
+{
+	sysprintf("echo %d > /sys/devices/virtual/net/%s/bridge/vlan_filtering", on, br);
+	return 0;
+}
+
+int br_has_vlan_filtering(void)
+{
+	return f_exists("/sys/devices/virtual/net/br0/bridge/vlan_filtering");
+}
+#else
+int br_set_vlan_filtering(const char *br, int on) // unsupported
+{
+	return 0;
+}
+
+int br_has_vlan_filtering(void)
+{
+	return 0;
+}
+#endif
+
 #ifdef HAVE_MICRO
 
 int brctl_main(int argc, char **argv)
@@ -68,15 +91,6 @@ int br_set_port_stp(const char *br, char *port, int on) // unsupported
 	return br_set_filterbpdu(br, port, on);
 }
 
-int br_set_vlan_filtering(const char *br, int on) // unsupported
-{
-	return 0;
-}
-
-int br_has_vlan_filtering(void)
-{
-	return 0;
-}
 #else
 
 int br_set_port_hairpin(const char *br, char *port, int on)
@@ -234,17 +248,6 @@ int br_set_bridge_prio(const char *br, int prio)
 
 #endif
 
-int br_set_vlan_filtering(const char *br, int on)
-{
-	sysprintf("echo %d > /sys/devices/virtual/net/%s/bridge/vlan_filtering", on, br);
-	return 0;
-}
-
-int br_has_vlan_filtering(void)
-{
-    return f_exists("/sys/devices/virtual/net/br0/bridge/vlan_filtering");
-}
-
 int br_add_bridge(const char *brname)
 {
 	dd_loginfo("bridge", "bridge %s successfully added", brname);
@@ -304,7 +307,6 @@ int br_del_bridge(const char *brname)
 #endif
 	return eval("brctl", "delbr", brname);
 }
-
 
 void set_multicast_to_unicast(const char *dev)
 {
@@ -396,6 +398,5 @@ int br_del_interface(const char *br, const char *dev)
 #endif
 	return ret;
 }
-
 
 #endif
