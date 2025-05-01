@@ -1288,7 +1288,7 @@ static struct gozila_action gozila_actions[] = {
 	{ "Routing", "add_olsrd", "", REFRESH, "add_olsrd" },
 	{ "Routing", "del_olsrd", "", REFRESH, "del_olsrd" },
 #endif
-#ifdef HAVE_VLAN_FILTERIMG
+#ifdef HAVE_VLAN_FILTERING
 	{ "Networking", "add_vlanfilter", "", REFRESH, "add_vlanfilter" },
 	{ "Networking", "del_vlanfilter", "", REFRESH, "del_vlanfilter" },
 #endif
