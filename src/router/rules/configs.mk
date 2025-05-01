@@ -192,6 +192,7 @@ obj-$(CONFIG_MADWIFI) += relayd
 endif
 obj-$(CONFIG_ETC) += etc
 #obj-$(CONFIG_VLAN) += vlan
+obj-$(CONFIG_VLAN_FILTERING) += bridge
 obj-$(CONFIG_IPROUTE2) += iproute2
 obj-$(CONFIG_EBTABLES) += ebtables
 obj-$(CONFIG_SSTP) += libevent sstp-client
