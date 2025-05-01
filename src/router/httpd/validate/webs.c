@@ -4707,6 +4707,34 @@ void save_networking(webs_t wp)
 	// save vlan stuff
 	char buffer[1024];
 
+	if (vlan) {
+		int filtercount = nvram_geti("vlan_tagcount");
+		bzero(buffer, 1024);
+		for (i = 0; i < filtercount; i++) {
+			char *ifname, *tag, *pvid, *untagged;
+			char var[32];
+
+			sprintf(var, "filterifname%d", i);
+			ifname = websGetSaneVar(wp, var, "none");
+			sprintf(var, "filtertag%d", i);
+			tag = websGetSaneVar(wp, var, "0");
+			sprintf(var, "filterpvid%d", i);
+			pvid = websGetSaneVar(wp, var, "0");
+			sprintf(var, "filteruntagged%d", i);
+			untagged = websGetSaneVar(wp, var, "0");
+			strcat(buffer, ifname);
+			strcat(buffer, ">");
+			strcat(buffer, tag);
+			strcat(buffer, ">");
+			strcat(buffer, pvid);
+			strcat(buffer, ">");
+			strcat(buffer, untagged);
+			if (i < filtercount - 1)
+				strcat(buffer, " ");
+		}
+		nvram_set("vlan_filters", buffer);
+	}
+
 	bzero(buffer, 1024);
 	for (i = 0; i < vlancount; i++) {
 		char *ifname, *tag, *prio, *type;
@@ -5094,7 +5122,7 @@ void del_filters(webs_t wp)
 			if (!tag || !port)
 				break;
 			char names[32];
-			eval("bridge","vlan","del","dev",tag,"vid",port);
+			eval("bridge", "vlan", "del", "dev", tag, "vid", port);
 		}
 		count++;
 	}
@@ -5110,7 +5138,6 @@ void del_filters(webs_t wp)
 
 	return;
 }
-
 
 void add_vlan(webs_t wp)
 {
