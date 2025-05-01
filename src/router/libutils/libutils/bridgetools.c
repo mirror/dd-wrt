@@ -233,6 +233,18 @@ int br_set_bridge_prio(const char *br, int prio)
 }
 
 #endif
+
+int br_set_vlan_filtering(const char *br, int on)
+{
+	sysprintf("echo %d > /sys/devices/virtual/net/%s/bridge/vlan_filtering", on, br);
+	return 0;
+}
+
+int br_has_vlan_filtering(void)
+{
+    return f_exists("/sys/devices/virtual/net/br0/bridge/vlan_filtering");
+}
+
 int br_add_bridge(const char *brname)
 {
 	dd_loginfo("bridge", "bridge %s successfully added", brname);
@@ -385,15 +397,5 @@ int br_del_interface(const char *br, const char *dev)
 	return ret;
 }
 
-int br_set_vlan_filtering(const char *br, int on)
-{
-	sysprintf("echo %d > /sys/devices/virtual/net/%s/bridge/vlan_filtering", br, on);
-	return 0;
-}
-
-int br_has_vlan_filtering(void)
-{
-    return f_exists("/sys/devices/virtual/net/br0/bridge/vlan_filtering");
-}
 
 #endif
