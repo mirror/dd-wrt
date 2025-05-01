@@ -717,6 +717,11 @@ else
 	echo "# CONFIG_DSA is not set" >> busybox/.config
 endif
 endif
+ifeq ($(CONFIG_VLAN_FORWARDING),y)
+	echo "CONFIG_BRIDGE=y" >> busybox/.config
+else
+	echo "# CONFIG_BRIDGE is not set" >> busybox/.config
+endif
 	cd busybox && make oldconfig
 	
 #	-$(MAKE) -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
