@@ -717,7 +717,7 @@ else
 	echo "# CONFIG_DSA is not set" >> busybox/.config
 endif
 endif
-ifeq ($(CONFIG_VLAN_FORWARDING),y)
+ifeq ($(CONFIG_VLAN_FILTERING),y)
 	echo "CONFIG_BRIDGE=y" >> busybox/.config
 else
 	echo "# CONFIG_BRIDGE is not set" >> busybox/.config
