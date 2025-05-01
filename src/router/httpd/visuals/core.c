@@ -175,8 +175,7 @@ void showAutoOption(webs_t wp, char *propname, char *nvname, int nodisable)
 	websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 }
 #endif
-
-void showOptions_trans(webs_t wp, char *propname, char *names, char **trans, char *select)
+void showOptions_trans_ext(webs_t wp, char *propname, char *names, char **trans, char *select, char *prop)
 {
 	const char *next;
 	char var[80];
@@ -184,7 +183,7 @@ void showOptions_trans(webs_t wp, char *propname, char *names, char **trans, cha
 	if (!select)
 		select = "";
 
-	websWrite(wp, "<select name=\"%s\">\n", propname);
+	websWrite(wp, "<select name=\"%s\" %s>\n", propname,prop);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	foreach(var, names, next) {
 		if (trans)
@@ -195,6 +194,17 @@ void showOptions_trans(webs_t wp, char *propname, char *names, char **trans, cha
 				  select && !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", var);
 	}
 	websWrite(wp, "//]]>\n</script>\n</select>\n");
+}
+
+void showOptions_trans(webs_t wp, char *propname, char *names, char **trans, char *select)
+{
+	showOptions_trans_ext(wp, propname, names, trans, select, "");
+}
+
+
+void showOptions_ext(webs_t wp, char *propname, char *names, char *select, char *prop)
+{
+	showOptions_trans_ext(wp, propname, names, NULL, select, prop);
 }
 
 void showOptions(webs_t wp, char *propname, char *names, char *select)

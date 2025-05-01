@@ -62,6 +62,7 @@
 #ifdef HAVE_SAMBA_SERVER
 #include <jansson.h>
 #endif
+#include <libbridge.h>
 
 //debug
 #include <syslog.h>
@@ -4876,26 +4877,20 @@ void save_networking(webs_t wp)
 		if (vlan) {
 			sprintf(var, "bridgevlan%d", i);
 			vlan = websGetVar(wp, var, NULL);
+			sprintf(n, "%s_vlan", ifname);
 			if (!vlan || !*vlan) {
-				break;
+				nvram_seti(n, 0);
 			} else {
-				sprintf(n, "%s_vlan", ifname);
-				if (!strcmp(vlan, "On"))
-					nvram_seti(n, 1);
-				else
-					nvram_seti(n, 0);
+				nvram_seti(n, 1);
 			}
 		}
 		sprintf(var, "bridgemcastbr%d", i);
 		mcast = websGetVar(wp, var, NULL);
+		sprintf(n, "%s_mcast", ifname);
 		if (!mcast || !*mcast) {
-			break;
+			nvram_seti(n, 0);
 		} else {
-			sprintf(n, "%s_mcast", ifname);
-			if (!strcmp(mcast, "On"))
-				nvram_seti(n, 1);
-			else
-				nvram_seti(n, 0);
+			nvram_seti(n, 1);
 		}
 		sprintf(var, "bridgeprio%d", i);
 		prio = websGetVar(wp, var, "32768");

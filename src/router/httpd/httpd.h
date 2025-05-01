@@ -211,7 +211,9 @@ void showRadioNoDef(webs_t wp, char *propname, char *nvname, int val);
 void showAutoOption(webs_t wp, char *propname, char *nvname, int nodisable);
 #endif
 void showOptions(webs_t wp, char *propname, char *names, char *select);
+void showOptions_ext(webs_t wp, char *propname, char *names, char *select, char *prop);
 void showOptions_trans(webs_t wp, char *propname, char *names, char **trans, char *select);
+void showOptions_trans_ext(webs_t wp, char *propname, char *names, char **trans, char *select, char *prop);
 void showOptions_ext_trans(webs_t wp, char *propname, char *names, char **trans, char *select, int disabled);
 void showOptionsNames(webs_t wp, char *label, char *propname, char *valuenames, char **names, char *select);
 void showIfOptions_ext(webs_t wp, char *propname, char *names, char *select, int disabled);
