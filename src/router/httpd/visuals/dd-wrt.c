@@ -1345,6 +1345,7 @@ void show_legend(webs_t wp, char *labelname, int translate)
 #endif
 
 #include "vlantagging.c"
+#include "vlanfiltering.c"
 #include "mdhcp.c"
 #include "bridging.c"
 #endif
