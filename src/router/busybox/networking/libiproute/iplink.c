@@ -2271,7 +2271,7 @@ static void bridge_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 
 			addattr16(n, 1024, IFLA_BR_GROUP_FWD_MASK, fwd_mask);
 		} else if (arg == ARG_group_address) {
-			char llabuf[32];
+			unsigned char llabuf[32];
 			int len;
 
 			NEXT_ARG();
