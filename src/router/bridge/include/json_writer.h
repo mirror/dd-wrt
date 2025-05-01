@@ -13,6 +13,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <sys/time.h>
 
 /* Opaque class structure */
 typedef struct json_writer json_writer_t;
