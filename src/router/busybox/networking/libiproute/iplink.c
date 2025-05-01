@@ -2598,8 +2598,10 @@ static int do_add_or_delete(char **argv, const unsigned rtm, unsigned int flags,
 			else if (strcmp(type_str, "dsa") == 0)
 				dsa_parse_opt(argv, &req.n, sizeof(req));
 #endif
+#if ENABLE_BRIDGE
 			else if (strcmp(type_str, "bridge") == 0)
 				bridge_parse_opt(argv, &req.n, sizeof(req));
+#endif
 			data->rta_len = (void *)NLMSG_TAIL(&req.n) - (void *)data;
 		}
     
