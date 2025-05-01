@@ -285,7 +285,7 @@ int br_add_bridge(const char *brname)
 		set_hwaddr(brname, nvram_safe_get("lan_hwaddr"));
 	}
 
-	br_set_vlan_filtering(brname, nvram_safe_get(vlan));
+	br_set_vlan_filtering(brname, nvram_geti(vlan));
 
 	return ret;
 }
