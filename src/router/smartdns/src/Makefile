@@ -44,11 +44,11 @@ endif
 CXXFLAGS+= -Wall -std=c++11 
 override CXXFLAGS +=-Iinclude
 
-+USE_ATOMIC := $(shell printf '$(HASH)include <stdint.h>\nvoid main() { uint64_t value=0;__sync_add_and_fetch(&value, 1);}' | $(CC) -x c - -o /dev/null >/dev/null 2>&1 && echo -n 1 || echo -n 0)
-+ifeq ($(USE_ATOMIC), 0)
-+ override CFLAGS += -DUSE_ATOMIC
-+ override LDFLAGS += -latomic 
-+endif
+USE_ATOMIC := $(shell printf '$(HASH)include <stdint.h>\nvoid main() { uint64_t value=0;__sync_add_and_fetch(&value, 1);}' | $(CC) -x c - -o /dev/null >/dev/null 2>&1 && echo -n 1 || echo -n 0)
+ifeq ($(USE_ATOMIC), 0)
+ override CFLAGS += -DUSE_ATOMIC
+ override LDFLAGS += -latomic 
+endif
 
 # ldflags
 override LDFLAGS += $(LDLTO)
