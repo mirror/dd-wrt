@@ -308,6 +308,9 @@ void start_init_stop(void)
 #ifdef HAVE_IPTOOLS
 	stop_service(arpd);
 #endif
+#ifdef HAVE_VLAN_FILTERING
+	stop_service(vlanfiltering);
+#endif
 #ifdef HAVE_VLANTAGGING
 	stop_service(bridging);
 #endif
@@ -446,6 +449,9 @@ void start_init_start(void)
 #ifdef HAVE_VLANTAGGING
 	start_service(bridging);
 #endif
+#ifdef HAVE_VLAN_FILTERING
+	start_service(vlanfiltering);
+#endif
 #ifdef HAVE_USTEER
 	start_service(ubus);
 #endif
@@ -468,6 +474,9 @@ void start_init_start(void)
 #ifdef HAVE_VLANTAGGING
 	start_service(vlantagging);
 	start_service(bridgesif);
+#endif
+#ifdef HAVE_VLAN_FILTERING
+	start_service(vlanfiltering);
 #endif
 #ifdef HAVE_IPTOOLS
 	start_service(arpd);

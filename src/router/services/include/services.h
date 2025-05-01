@@ -180,6 +180,7 @@ DECLARE_SERVICE(upnpd);
 DECLARE_SERVICE(usteer);
 DECLARE_SERVICE(vifs);
 DECLARE_SERVICE(vlantagging);
+DECLARE_SERVICE(vlanfiltering);
 DECLARE_SERVICE(vncrepeater);
 DECLARE_SERVICE(vpn_modules);
 DECLARE_SERVICE(wan);
