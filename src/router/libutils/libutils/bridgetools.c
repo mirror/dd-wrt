@@ -68,6 +68,15 @@ int br_set_port_stp(const char *br, char *port, int on) // unsupported
 	return br_set_filterbpdu(br, port, on);
 }
 
+int br_set_vlan_filtering(const char *br, int on) // unsupported
+{
+	return 0;
+}
+
+int br_has_vlan_filtering(void)
+{
+	return 0;
+}
 #else
 
 int br_set_port_hairpin(const char *br, char *port, int on)
@@ -280,6 +289,7 @@ int br_del_bridge(const char *brname)
 	return eval("brctl", "delbr", brname);
 }
 
+
 void set_multicast_to_unicast(const char *dev)
 {
 	if (isbridged(dev)) {
@@ -369,6 +379,17 @@ int br_del_interface(const char *br, const char *dev)
 //      eval("emf", "del", "iface", br, dev);
 #endif
 	return ret;
+}
+
+int br_set_vlan_filtering(const char *br, int on)
+{
+	sysprintf("echo %d > /sys/devices/virtual/net/%s/bridge/vlan_filtering", br, on);
+	return 0;
+}
+
+int br_has_vlan_filtering(void)
+{
+    return f_exists("/sys/devices/virtual/net/br0/bridge/vlan_filtering");
 }
 
 #endif
