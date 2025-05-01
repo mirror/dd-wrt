@@ -5044,6 +5044,74 @@ void save_networking(webs_t wp)
 	applytake(value);
 }
 
+void add_filter(webs_t wp)
+{
+	char word[256];
+	const char *next, *wordlist;
+	int count = 0;
+	save_networking(wp);
+	int realcount = nvram_geti("vlan_filtercount");
+
+	if (realcount == 0) {
+		wordlist = nvram_safe_get("vlan_filters");
+		foreach(word, wordlist, next) {
+			count++;
+		}
+		realcount = count;
+	}
+	realcount++;
+	char var[32];
+
+	sprintf(var, "%d", realcount);
+	nvram_set("vlan_filtercount", var);
+	nvram_async_commit();
+	return;
+}
+
+void del_filters(webs_t wp)
+{
+	char word[256];
+	int realcount = 0;
+	const char *next, *wordlist;
+	char *newwordlist;
+	save_networking(wp);
+	int todel = websGetVari(wp, "del_value", -1);
+
+	wordlist = nvram_safe_get("vlan_filters");
+	newwordlist = (char *)calloc(strlen(wordlist) + 2, 1);
+	if (!newwordlist)
+		return;
+	int count = 0;
+
+	foreach(word, wordlist, next) {
+		if (count != todel) {
+			strcat(newwordlist, word);
+			strcat(newwordlist, " ");
+		} else {
+			char *port = word;
+			char *tag = strsep(&port, ">");
+
+			if (!tag || !port)
+				break;
+			char names[32];
+			eval("bridge","vlan","del","dev",tag,"vid",port);
+		}
+		count++;
+	}
+
+	char var[32];
+
+	realcount = nvram_geti("vlan_filtercount") - 1;
+	sprintf(var, "%d", realcount);
+	nvram_set("vlan_filtercount", var);
+	nvram_set("vlan_filters", newwordlist);
+	nvram_async_commit();
+	debug_free(newwordlist);
+
+	return;
+}
+
+
 void add_vlan(webs_t wp)
 {
 	char word[256];

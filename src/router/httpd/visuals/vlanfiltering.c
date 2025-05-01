@@ -43,39 +43,33 @@ EJ_VISIBLE void ej_show_vlanfiltering(webs_t wp, int argc, char_t **argv)
 
 	wordlist = nvram_safe_get("vlan_filters");
 	foreach(word, wordlist, next) {
-		GETENTRYBYIDX(tag, word, 0);
-		GETENTRYBYIDX(port, word, 1);
-		GETENTRYBYIDX(prio, word, 2);
-		GETENTRYBYIDX(type, word, 3);
+		GETENTRYBYIDX(ifname, word, 0);
+		GETENTRYBYIDX(vlan, word, 1);
+		GETENTRYBYIDX(pvid, word, 2);
+		GETENTRYBYIDX(untagged, word, 3);
 		if (!tag || !port)
 			break;
-		if (!prio)
-			prio = "0";
-		if (!type)
-			type = "0";
 		char vlan_name[32];
 		websWrite(wp, "<tr>\n");
 		websWrite(wp, "<td>");
-		sprintf(vlan_name, "vlanifname%d", count);
+		sprintf(vlan_name, "filterifname%d", count);
 		showIfOptions(wp, vlan_name, buffer, tag);
 		websWrite(wp, "</td>\n");
 		//tag number
-		sprintf(vlan_name, "vlantag%d", count);
+		sprintf(vlan_name, "filtertag%d", count);
 		websWrite(wp, "<td>");
-		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" />\n", vlan_name, port);
+		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" />\n", vlan_name, vlan);
 		websWrite(wp, "</td>\n");
-		//priority
-		sprintf(vlan_name, "vlanprio%d", count);
+		//pvid
+		sprintf(vlan_name, "filterpvid%d", count);
 		websWrite(wp, "<td>");
-		showOptions(wp, vlan_name, "0 1 2 3 4 5 6 7", prio);
+		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s>\n", vlan_name, !strcmp(pvid,"1") ? "checked" : "");
 		websWrite(wp, "</td>\n");
-#ifdef HAVE_8021AD
-		//type
-		sprintf(vlan_name, "vlantype%d", count);
+		//untagged
+		sprintf(vlan_name, "filteruntagged%d", count);
 		websWrite(wp, "<td>");
-		showOptions_trans(wp, vlan_name, "0 1", (char *[]){ "networking.vlan8021q", "networking.vlan8021ad" }, type);
+		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s>\n", vlan_name, !strcmp(untagged,"1") ? "checked" : "");
 		websWrite(wp, "</td>\n");
-#endif
 		websWrite(
 			wp,
 			"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"vlan_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
@@ -93,30 +87,32 @@ EJ_VISIBLE void ej_show_vlanfiltering(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "<tr>\n");
 		websWrite(wp, "<td>");
 
-		sprintf(vlan_name, "vlanifname%d", i);
+		sprintf(vlan_name, "filterifname%d", i);
 		showIfOptions(wp, vlan_name, buffer, "");
 		websWrite(wp, "</td>\n");
 
-		sprintf(vlan_name, "vlantag%d", i);
+
 		//tag number
+		sprintf(vlan_name, "filtertag%d", count);
 		websWrite(wp, "<td>");
 		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"5\" value=\"0\" />\n", vlan_name);
 		websWrite(wp, "</td>\n");
-		//priority
-		sprintf(vlan_name, "vlanprio%d", i);
+
+		//pvid
+		sprintf(vlan_name, "filterpvid%d", count);
 		websWrite(wp, "<td>");
-		showOptions(wp, vlan_name, "0 1 2 3 4 5 6 7", "0");
+		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\">\n", vlan_name);
 		websWrite(wp, "</td>\n");
-#ifdef HAVE_8021AD
-		//type
-		sprintf(vlan_name, "vlantype%d", count);
+
+		//untagged
+		sprintf(vlan_name, "filteruntagged%d", count);
 		websWrite(wp, "<td>");
-		showOptions_trans(wp, vlan_name, "0 1", (char *[]){ "networking.vlan8021q", "networking.vlan8021ad" }, "0");
+		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\">\n", vlan_name);
 		websWrite(wp, "</td>\n");
-#endif
+
 		websWrite(
 			wp,
-			"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"vlan_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+			"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"filter_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 			i);
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "</tr>\n");
@@ -125,17 +121,13 @@ EJ_VISIBLE void ej_show_vlanfiltering(webs_t wp, int argc, char_t **argv)
 	char var[32];
 
 	sprintf(var, "%d", totalcount);
-	nvram_set("vlan_tagcount", var);
+	nvram_set("vlan_filtercount", var);
 	websWrite(wp, "<tr>\n");
-#ifdef HAVE_8021AD
 	websWrite(wp, "<td colspan=\"4\">&nbsp;</td>\n");
-#else
-	websWrite(wp, "<td colspan=\"3\">&nbsp;</td>\n");
-#endif
 	websWrite(wp, "<td class=\"center\">\n");
 	websWrite(
 		wp,
-		"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"add\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vlan_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
+		"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"add\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.add + \"\\\" onclick=\\\"filter_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
 	websWrite(wp, "</td>\n");
 	websWrite(wp, "</tr>\n");
 	websWrite(wp, "</tbody></table>\n");

@@ -305,6 +305,10 @@ static struct callmap gozila_map[] = {
 	{ "add_olsrd", &add_olsrd },
 	{ "del_olsrd", &del_olsrd },
 #endif
+#ifdef HAVE_VLAN_FILTERING
+	{ "add_filter", &add_filter },
+	{ "del_filter", &del_filter },
+#endif
 #ifdef HAVE_VLANTAGGING
 	{ "add_vlan", &add_vlan },
 	{ "add_bridge", &add_bridge },
