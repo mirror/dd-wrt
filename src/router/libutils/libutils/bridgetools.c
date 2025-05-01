@@ -45,11 +45,6 @@ int br_set_vlan_filtering(const char *br, int on) // unsupported
 {
 	return 0;
 }
-
-int br_has_vlan_filtering(void)
-{
-	return 0;
-}
 #endif
 
 #ifdef HAVE_MICRO

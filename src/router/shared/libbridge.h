@@ -95,8 +95,13 @@ extern int br_set_path_cost(const char *br, const char *p, int path_cost);
 extern int br_read_fdb(const char *br, struct fdb_entry *fdbs, unsigned long skip, int num);
 extern void set_multicast_to_unicast(const char *ifname);
 extern int br_set_vlan_filtering(const char *br, int on);
+#ifdef HAVE_VLAN_FILTERING
 extern int br_has_vlan_filtering(void);
-
+#else
+static inline int br_has_vlan_filtering(void) {
+return 0;
+}
+#endif
 #ifndef HAVE_MICRO
 extern void sync_multicast_to_unicast(void);
 #else
