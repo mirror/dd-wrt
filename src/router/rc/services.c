@@ -473,6 +473,9 @@ static void handle_index(void)
 	stop_service_f("arpd"); //
 #endif
 #ifdef HAVE_VLANTAGGING
+	stop_service_f("vlanfiltering"); //
+#endif
+#ifdef HAVE_VLANTAGGING
 	stop_service_f("bridgesif"); //
 	stop_service_f("vlantagging"); //
 #endif
@@ -528,6 +531,9 @@ static void handle_index(void)
 #ifdef HAVE_VLANTAGGING
 	start_service("vlantagging");
 	start_service("bridgesif");
+#endif
+#ifdef HAVE_VLAN_FILTERING
+	start_service("vlanfiltering");
 #endif
 #ifdef HAVE_IPTOOLS
 	start_service("arpd");
@@ -604,6 +610,9 @@ static void handle_hotspot(void)
 #ifdef HAVE_IPTOOLS
 	stop_service_f("arpd"); //
 #endif
+#ifdef HAVE_VLAN_FILTERING
+	stop_service_f("vlanfiltering");
+#endif
 #ifdef HAVE_VLANTAGGING
 	stop_service_f("bridgesif");
 	stop_service_f("vlantagging");
@@ -657,6 +666,9 @@ static void handle_hotspot(void)
 #ifdef HAVE_VLANTAGGING
 	start_service("vlantagging");
 	start_service("bridgesif");
+#endif
+#ifdef HAVE_VLAN_FILTERING
+	start_service("vlanfiltering");
 #endif
 #ifdef HAVE_IPTOOLS
 	start_service("arpd"); //
@@ -988,6 +1000,9 @@ static void handle_pppoe(void)
 #ifdef HAVE_IPTOOLS
 	stop_service_f("arpd"); //
 #endif
+#ifdef HAVE_VLAN_FILTERING
+	stop_service_f("vlanfiltering");
+#endif
 #ifdef HAVE_VLANTAGGING
 	stop_service_f("bridgesif");
 	stop_service_f("vlantagging");
@@ -1029,6 +1044,9 @@ static void handle_pppoe(void)
 #ifdef HAVE_VLANTAGGING
 	start_service("vlantagging");
 	start_service("bridgesif");
+#endif
+#ifdef HAVE_VLAN_FILTERING
+	start_service("vlanfiltering");
 #endif
 #ifdef HAVE_IPTOOLS
 	start_service("arpd"); //
@@ -1289,6 +1307,9 @@ static void handle_wireless(void)
 #ifdef HAVE_IPTOOLS
 	stop_service("arpd"); //
 #endif
+#ifdef HAVE_VLAN_FILTERING
+	stop_service("vlanfiltering");
+#endif
 #ifdef HAVE_VLANTAGGING
 	stop_service("bridgesif");
 	stop_service("vlantagging");
@@ -1327,6 +1348,9 @@ static void handle_wireless(void)
 #ifdef HAVE_VLANTAGGING
 	start_service("vlantagging");
 	start_service("bridgesif");
+#endif
+#ifdef HAVE_VLAN_FILTERING
+	start_service("vlanfiltering");
 #endif
 #ifdef HAVE_IPTOOLS
 	start_service("arpd"); //
@@ -1422,6 +1446,9 @@ static void handle_wireless_2(void)
 #ifdef HAVE_IPTOOLS
 	stop_service("arpd"); //
 #endif
+#ifdef HAVE_VLAN_FILTERING
+	stop_service("vlanfiltering");
+#endif
 #ifdef HAVE_VLANTAGGING
 	stop_service("bridgesif");
 	stop_service("vlantagging");
@@ -1460,6 +1487,9 @@ static void handle_wireless_2(void)
 #ifdef HAVE_VLANTAGGING
 	start_service("vlantagging");
 	start_service("bridgesif");
+#endif
+#ifdef HAVE_VLAN_FILTERING
+	start_service("vlanfiltering");
 #endif
 #ifdef HAVE_IPTOOLS
 	start_service("arpd");
