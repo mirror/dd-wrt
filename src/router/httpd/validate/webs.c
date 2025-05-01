@@ -5096,7 +5096,7 @@ void add_filter(webs_t wp)
 	return;
 }
 
-void del_filters(webs_t wp)
+void del_filter(webs_t wp)
 {
 	char word[256];
 	int realcount = 0;

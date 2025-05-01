@@ -19,8 +19,8 @@
  *
  * $Id:
  */
-
 #ifdef HAVE_VLAN_FILTERING
+#include <libbridge.h>
 EJ_VISIBLE void ej_show_vlanfiltering(webs_t wp, int argc, char_t **argv)
 {
 	char buffer[256];
@@ -49,13 +49,13 @@ EJ_VISIBLE void ej_show_vlanfiltering(webs_t wp, int argc, char_t **argv)
 			GETENTRYBYIDX(vlan, word, 1);
 			GETENTRYBYIDX(pvid, word, 2);
 			GETENTRYBYIDX(untagged, word, 3);
-			if (!tag || !port)
+			if (!ifname || !vlan)
 				break;
 			char vlan_name[32];
 			websWrite(wp, "<tr>\n");
 			websWrite(wp, "<td>");
 			sprintf(vlan_name, "filterifname%d", count);
-			showIfOptions(wp, vlan_name, buffer, tag);
+			showIfOptions(wp, vlan_name, buffer, ifname);
 			websWrite(wp, "</td>\n");
 			//tag number
 			sprintf(vlan_name, "filtertag%d", count);
