@@ -40,6 +40,14 @@
 //config:	help
 //config:	dsa support for iplink"
 //config:
+//config:config BRIDGE
+//config:	bool "bridge vlan filtering support"
+//config:	default y
+//config:	select FEATURE_BRIDGE
+//config:	depends on IPLINK
+//config:	help
+//config:	bridge vlan filtering support for iplink"
+//config:
 //config:config VXLAN
 //config:	bool "vxlan support"
 //config:	default y
