@@ -238,7 +238,6 @@ static int sr_config_cgi(unsigned char method, struct mime_handler *handler, cha
 
 static int do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *attachment);
 
-
 static int nv_file_out(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
 {
 	int ret;
@@ -249,8 +248,7 @@ static int nv_file_out(unsigned char method, struct mime_handler *handler, char 
 #endif
 	char *name = nvram_safe_get("router_name");
 	char fname[128];
-	snprintf(fname, sizeof(fname), "nvrambak_r%s%s%s_%s.bin", SVN_REVISION, *name ? "_" : "", *name ? name : "",
-		 getRouter());
+	snprintf(fname, sizeof(fname), "nvrambak_r%s%s%s_%s.bin", SVN_REVISION, *name ? "_" : "", *name ? name : "", getRouter());
 	nvram_backup("/tmp/nvrambak.bin");
 
 #ifdef HAVE_ANTAIRA
