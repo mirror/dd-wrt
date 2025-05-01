@@ -172,6 +172,7 @@ addEvent(window, "unload", function() {
 								 <legend><% tran("networking.legend"); %></legend>
 								 <% show_vlantagging(); %>
 							</fieldset><br />
+							<% show_vlanfiltering(); %>
 							<h2><% tran("networking.h22"); %></h2>
 							<fieldset>
 								<legend><% tran("networking.legend2"); %></legend>
