@@ -239,9 +239,11 @@ int br_add_bridge(const char *brname)
 	char ipaddr[32];
 	char brmcast[32];
 	char hwaddr[32];
+	char vlan[32];
 	char tmp[256];
 
 	sprintf(brmcast, "%s_mcast", brname);
+	sprintf(vlan, "%s_vlan", brname);
 	sprintf(ipaddr, "%s_ipaddr", brname);
 	sprintf(hwaddr, "%s_hwaddr", brname);
 	char netmask[32];
@@ -270,6 +272,8 @@ int br_add_bridge(const char *brname)
 	} else {
 		set_hwaddr(brname, nvram_safe_get("lan_hwaddr"));
 	}
+
+	br_set_vlan_filtering(brname, nvram_safe_get(vlan));
 
 	return ret;
 }
