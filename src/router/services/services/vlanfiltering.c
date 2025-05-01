@@ -65,7 +65,7 @@ void start_vlanfiltering(void)
 	char word[256];
 	const char *next, *wordlist;
 
-	wordlist = nvram_safe_get("vlan_filtering");
+	wordlist = nvram_safe_get("vlan_filters");
 	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(ifname, word, 0);
 		GETENTRYBYIDX(vlan, word, 1);
@@ -90,7 +90,7 @@ void stop_vlanfiltering(void)
 	char word[256];
 	const char *next, *wordlist;
 
-	wordlist = nvram_safe_get("vlan_filtering");
+	wordlist = nvram_safe_get("vlan_filters");
 	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(ifname, word, 0);
 		GETENTRYBYIDX(vlan, word, 1);
