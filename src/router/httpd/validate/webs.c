@@ -4708,7 +4708,7 @@ void save_networking(webs_t wp)
 	char buffer[1024];
 
 	if (vlan) {
-		int filtercount = nvram_geti("vlan_tagcount");
+		int filtercount = nvram_geti("vlan_filtercount");
 		bzero(buffer, 1024);
 		for (i = 0; i < filtercount; i++) {
 			char *ifname, *tag, *pvid, *untagged;
