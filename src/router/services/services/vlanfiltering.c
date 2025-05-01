@@ -1,7 +1,7 @@
 /*
- * vlantagging.c
+ * vlanfíltering.c
  *
- * Copyright (C) 2007 - 2024 Sebastian Gottschall <s.gottschall@dd-wrt.com>
+ * Copyright (C) 2007 - 2025 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -71,19 +71,18 @@ void start_vlanfiltering(void)
 		GETENTRYBYIDX(vlan, word, 1);
 		GETENTRYBYIDX(pvid, word, 2);
 		GETENTRYBYIDX(untagged, word, 3);
-		if (!ifname || !vlan || !pvid || !untagged ) {
+		if (!ifname || !vlan || !pvid || !untagged) {
 			break;
 		}
-		char *args[4]={NULL,NULL,NULL,NULL};
-		int cnt=0;
-		if (!strcmp(pvid,"1"))
-		    args[cnt++]="pvid";
-		if (!strcmp(untagged,"1"))
-		    args[cnt++]="untagged";
-		args[cnt++]="master";
-		eval("bridge","vlan","add","dev",ifname,"vid",vlan,args[0],args[1],args[2]);
+		char *args[4] = { NULL, NULL, NULL, NULL };
+		int cnt = 0;
+		if (!strcmp(pvid, "1"))
+			args[cnt++] = "pvid";
+		if (!strcmp(untagged, "1"))
+			args[cnt++] = "untagged";
+		args[cnt++] = "master";
+		eval("bridge", "vlan", "add", "dev", ifname, "vid", vlan, args[0], args[1], args[2]);
 	}
-
 }
 
 void stop_vlanfiltering(void)
@@ -97,12 +96,11 @@ void stop_vlanfiltering(void)
 		GETENTRYBYIDX(vlan, word, 1);
 		GETENTRYBYIDX(pvid, word, 2);
 		GETENTRYBYIDX(untagged, word, 3);
-		if (!ifname || !vlan || !pvid || !untagged ) {
+		if (!ifname || !vlan || !pvid || !untagged) {
 			break;
 		}
-		eval("bridge","vlan","del","dev",ifname,"vid",vlan);
+		eval("bridge", "vlan", "del", "dev", ifname, "vid", vlan);
 	}
-
 }
 
 #endif
