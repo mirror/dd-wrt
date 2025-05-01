@@ -149,7 +149,7 @@ include rules/httpd.mk
 include rules/jansson.mk
 include rules/rc.mk
 include rules/www.mk
-include rules/bridge.mk
+include rules/brctl.mk
 include rules/busybox.mk
 include rules/dnsmasq.mk
 include rules/nettle.mk
