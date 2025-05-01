@@ -57,6 +57,7 @@ static inline const char *rta_getattr_str(const struct rtattr *rta)
 	return (const char *)RTA_DATA(rta);
 }
 
+extern int addattr64(struct nlmsghdr *n, int maxlen, int type, uint64_t data) FAST_FUNC;
 extern int addattr32(struct nlmsghdr *n, int maxlen, int type, uint32_t data) FAST_FUNC;
 extern int addattr8(struct nlmsghdr *n, int maxlen, int type, uint8_t data) FAST_FUNC;
 extern int addattr_l(struct nlmsghdr *n, int maxlen, int type, void *data, int alen) FAST_FUNC;

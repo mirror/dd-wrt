@@ -83,6 +83,7 @@ void get_prefix(inet_prefix *dst, char *arg, int family) FAST_FUNC;
 
 unsigned get_unsigned(char *arg, const char *errmsg) FAST_FUNC;
 uint32_t get_u32(char *arg, const char *errmsg) FAST_FUNC;
+uint64_t get_u64(char *arg, const char *errmsg) FAST_FUNC;
 uint8_t get_u8(char *arg, const char *errmsg) FAST_FUNC;
 uint16_t get_u16(const char *arg, const char *errmsg) FAST_FUNC;
 

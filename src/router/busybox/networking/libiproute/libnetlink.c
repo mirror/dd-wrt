@@ -375,6 +375,9 @@ int FAST_FUNC addattr32(struct nlmsghdr *n, int maxlen, int type, uint32_t data)
 }
 
 
+
+
+
 int FAST_FUNC addattr_l(struct nlmsghdr *n, int maxlen, int type, void *data, int alen)
 {
 	int len = RTA_LENGTH(alen);
@@ -392,6 +395,11 @@ int FAST_FUNC addattr_l(struct nlmsghdr *n, int maxlen, int type, void *data, in
 }
 
 int FAST_FUNC addattr8(struct nlmsghdr *n, int maxlen, int type, uint8_t data)
+{
+	return addattr_l(n, maxlen, type, &data, sizeof(data));
+}
+
+int FAST_FUNC addattr64(struct nlmsghdr *n, int maxlen, int type, uint64_t data)
 {
 	return addattr_l(n, maxlen, type, &data, sizeof(data));
 }
