@@ -183,7 +183,7 @@ void showOptions_trans_ext(webs_t wp, char *propname, char *names, char **trans,
 	if (!select)
 		select = "";
 
-	websWrite(wp, "<select name=\"%s\" %s>\n", propname,prop);
+	websWrite(wp, "<select name=\"%s\" %s>\n", propname, prop);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	foreach(var, names, next) {
 		if (trans)
@@ -200,7 +200,6 @@ void showOptions_trans(webs_t wp, char *propname, char *names, char **trans, cha
 {
 	showOptions_trans_ext(wp, propname, names, trans, select, "");
 }
-
 
 void showOptions_ext(webs_t wp, char *propname, char *names, char *select, char *prop)
 {

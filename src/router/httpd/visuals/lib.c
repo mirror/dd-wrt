@@ -59,8 +59,7 @@ EJ_VISIBLE void ej_get_backup_name(webs_t wp, int argc, char_t **argv)
 {
 	char *name = nvram_safe_get("router_name");
 	char *printname;
-	asprintf(&printname, "nvrambak_r%s%s%s_%s.bin", SVN_REVISION, *name ? "_" : "", *name ? name : "",
-		 getRouter());
+	asprintf(&printname, "nvrambak_r%s%s%s_%s.bin", SVN_REVISION, *name ? "_" : "", *name ? name : "", getRouter());
 	if (!printname)
 		return;
 	int len = strlen(printname);
