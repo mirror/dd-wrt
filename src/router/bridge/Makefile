@@ -28,6 +28,7 @@ bridge: $(BROBJ) $(LIBNETLINK)
 	$(CC) $^ $(LDFLAGS) $(LDLIBS) -o $@
 
 install: all
+	mkdir -p $(INSTALLDIR)/usr/sbin
 	install -m 0755 bridge $(INSTALLDIR)/usr/sbin
 
 clean:
