@@ -5072,7 +5072,7 @@ void save_networking(webs_t wp)
 	applytake(value);
 }
 
-void add_filter(webs_t wp)
+void add_vlanfilter(webs_t wp)
 {
 	char word[256];
 	const char *next, *wordlist;
@@ -5096,7 +5096,7 @@ void add_filter(webs_t wp)
 	return;
 }
 
-void del_filter(webs_t wp)
+void del_vlanfilter(webs_t wp)
 {
 	char word[256];
 	int realcount = 0;

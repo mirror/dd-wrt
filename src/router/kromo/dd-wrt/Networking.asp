@@ -10,7 +10,7 @@ function vlan_add_submit(F) {
 
 function filter_add_submit(F) {
 	F.change_action.value="gozila_cgi";
-	F.submit_type.value = "add_filter";
+	F.submit_type.value = "add_vlanfilter";
 	F.submit();
 }
 
@@ -59,7 +59,7 @@ function vlan_del_submit(F,I) {
 
 function filter_del_submit(F,I) {
 	F.change_action.value="gozila_cgi";
-	F.submit_type.value = "del_filter";
+	F.submit_type.value = "del_vlanfilter";
 	F.del_value.value=I;
 	F.submit();
 }
