@@ -273,7 +273,7 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"deezer",
 	"instagram",
 	"microsoft",
-	"starcraft",
+	"blizzard",
 	"teredo",
 	"hotspotshield",
 	"imo",
@@ -507,6 +507,9 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"lagofast",
 	"gearup_booster",
 	"llm",
+	"ubiquiti",
+	"msdo",
+	"rockstar_games",
 	NULL,
 };
 
