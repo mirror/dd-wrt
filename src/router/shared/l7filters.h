@@ -93,6 +93,7 @@ static l7filters filters_list[] = {
 	{ "bittorrent", PDPI, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "bjnp", NDPI_ONLY, 0, NULL },
+	{ "blizzard", NDPI_ONLY, 0, NULL },
 	{ "bloomberg", NDPI_ONLY, 0, NULL },
 	{ "bluesky", NDPI_ONLY, 0, NULL },
 	{ "c1222", NDPI_ONLY, 0, NULL },
@@ -449,6 +450,7 @@ static l7filters filters_list[] = {
 	{ "mqtt", NDPI_ONLY, 0, NULL },
 	{ "ms_onedrive", NDPI_ONLY, 0, NULL },
 	{ "ms_rpch", NDPI_ONLY, 0, NULL },
+	{ "msdo", NDPI_ONLY, 0, NULL },
 #endif
 	{ "msn-filetransfer", L7_ONLY, 0, NULL },
 	{ "msnmessenger", L7_ONLY, 0, NULL },
@@ -603,6 +605,7 @@ static l7filters filters_list[] = {
 	{ "rlogin", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "rmcp", NDPI_ONLY, 0, NULL },
+	{ "rockstar_games", NDPI_ONLY, 0, NULL },
 	{ "roblox", NDPI_ONLY, 0, NULL },
 	{ "roughtime", NDPI_ONLY, 0, NULL },
 #endif
@@ -691,7 +694,6 @@ static l7filters filters_list[] = {
 #endif
 	{ "ssl", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "starcraft", NDPI_ONLY, 0, NULL },
 	{ "steam", NDPI_ONLY, 0, NULL },
 #endif
 	{ "stomp", DPI, 0, NULL },
@@ -781,6 +783,7 @@ static l7filters filters_list[] = {
 	{ "tuya_lp", NDPI_ONLY, 0, NULL },
 	{ "twitch", NDPI_ONLY, 0, NULL },
 	{ "twitter", NDPI_ONLY, 0, NULL },
+	{ "ubiquiti", NDPI_ONLY, 0, NULL },
 #endif
 	{ "ubnt-telemetry", FILTER_CUSTOM, 0, NULL },
 #ifdef HAVE_OPENDPI
