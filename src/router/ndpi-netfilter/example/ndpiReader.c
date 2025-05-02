@@ -240,7 +240,6 @@ struct receiver *receivers = NULL, *topReceivers = NULL;
 
 #define WIRESHARK_METADATA_SERVERNAME	0x01
 #define WIRESHARK_METADATA_JA4C		0x02
-#define WIRESHARK_METADATA_TLS_HEURISTICS_MATCHING_FINGERPRINT	0x03
 
 struct ndpi_packet_tlv {
   u_int16_t type;
@@ -4849,22 +4848,6 @@ static void ndpi_process_packet(u_char *args,
         tot_len += 4 + htons(tlv->length);
         tlv = (struct ndpi_packet_tlv *)&trailer->metadata[tot_len];
       }
-      if(flow->ssh_tls.obfuscated_heur_matching_set.pkts[0] != 0) {
-        tlv->type = ntohs(WIRESHARK_METADATA_TLS_HEURISTICS_MATCHING_FINGERPRINT);
-        tlv->length = ntohs(sizeof(struct ndpi_tls_obfuscated_heuristic_matching_set));
-        struct ndpi_tls_obfuscated_heuristic_matching_set *s =  (struct ndpi_tls_obfuscated_heuristic_matching_set *)tlv->data;
-        s->bytes[0] = ntohl(flow->ssh_tls.obfuscated_heur_matching_set.bytes[0]);
-        s->bytes[1] = ntohl(flow->ssh_tls.obfuscated_heur_matching_set.bytes[1]);
-        s->bytes[2] = ntohl(flow->ssh_tls.obfuscated_heur_matching_set.bytes[2]);
-        s->bytes[3] = ntohl(flow->ssh_tls.obfuscated_heur_matching_set.bytes[3]);
-        s->pkts[0] = ntohl(flow->ssh_tls.obfuscated_heur_matching_set.pkts[0]);
-        s->pkts[1] = ntohl(flow->ssh_tls.obfuscated_heur_matching_set.pkts[1]);
-        s->pkts[2] = ntohl(flow->ssh_tls.obfuscated_heur_matching_set.pkts[2]);
-        s->pkts[3] = ntohl(flow->ssh_tls.obfuscated_heur_matching_set.pkts[3]);
-        /* TODO: boundary check */
-        tot_len += 4 + htons(tlv->length);
-        tlv = (struct ndpi_packet_tlv *)&trailer->metadata[tot_len];
-      }
 
       flow->detection_completed = 2; /* Avoid exporting metadata again.
                                         If we really want to have the metadata on Wireshark for *all*
@@ -6494,7 +6477,7 @@ void ballTreeUnitTest() {
 /* *********************************************** */
 
 void cryptDecryptUnitTest() {
-  u_char enc_dec_key[64] = "9dedb817e5a8805c1de62eb8982665b9a2b4715174c34d23b9a46ffafacfb2a7" /* SHA256("nDPI") */;
+  u_char enc_dec_key[] = "9dedb817e5a8805c1de62eb8982665b9a2b4715174c34d23b9a46ffafacfb2a7" /* SHA256("nDPI") */;
   const char *test_string = "The quick brown fox jumps over the lazy dog";
   char *enc, *dec;
   u_int16_t e_len, d_len, t_len = strlen(test_string);

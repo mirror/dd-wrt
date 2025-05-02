@@ -559,8 +559,8 @@ int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
 	bool valid = true;
 
         ndpi_hostname_sni_set(flow, payload + off + 4, ndpi_min(len, payload_length - off - 4), NDPI_HOSTNAME_NORM_ALL);
-        NDPI_LOG_DBG(ndpi_struct, "Realm [%s]\n", flow->host_server_name);
-
+        NDPI_LOG_DBG(ndpi_struct, "Realm [%s]\n", flow->host_server_name);       
+	
 	/* Some Realm contain junk, so let's validate it */
 	for(i=0; flow->host_server_name[i] != '\0'; i++) {
 	  if(flow->host_server_name[i] == '?') {
@@ -583,6 +583,11 @@ int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
 	    *app_proto = NDPI_PROTOCOL_TELEGRAM_VOIP;
 	  } else if(strstr(flow->host_server_name, "viber") != NULL) {
 	    *app_proto = NDPI_PROTOCOL_VIBER_VOIP;
+	  } else if(strstr(flow->host_server_name, "turn.cloudflare.com") != NULL) {
+	    /* The latest signal implementations hide behind cloudflare */
+	    if(signal_search_into_cache(ndpi_struct, flow)) {
+	      *app_proto = NDPI_PROTOCOL_SIGNAL_VOIP;
+	    }
 	  }
 	} else
 	  flow->host_server_name[0] = '\0';
@@ -966,6 +971,13 @@ static int stun_search_again(struct ndpi_detection_module_struct *ndpi_struct,
       /* TODO: store RTP information in 'struct rtp_info' */
       NDPI_LOG_INFO(ndpi_struct, "Found RTP over STUN\n");
 
+      if(flow->stun.t_start != 0) {
+        flow->stun.t_end = ndpi_get_current_time(flow);
+      } else if(flow->stun.rtp_counters[0] != 0 && flow->stun.rtp_counters[1] != 0) {
+        flow->stun.t_start = ndpi_get_current_time(flow);
+        flow->stun.t_end = ndpi_get_current_time(flow);
+      }
+
       rtp_get_stream_type(packet->payload[1] & 0x7F, &flow->flow_multimedia_types, flow->detected_protocol_stack[0]);
 
       if(flow->detected_protocol_stack[0] != NDPI_PROTOCOL_RTP &&
@@ -1263,6 +1275,61 @@ static void ndpi_search_stun(struct ndpi_detection_module_struct *ndpi_struct, s
   /* TODO: can we stop earlier? */
   if(flow->packet_counter > 5)
     NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+}
+
+/* ************************************************************* */
+
+static u_int64_t get_signal_key(struct ndpi_flow_struct *flow)
+{
+  if(flow->is_ipv6)
+    return ndpi_quick_hash64((const char *)flow->c_address.v6, 16);
+  else
+    return flow->c_address.v4;
+}
+
+/* ************************************************************* */
+
+int signal_search_into_cache(struct ndpi_detection_module_struct *ndpi_struct,
+                            struct ndpi_flow_struct *flow)
+{
+  u_int64_t key;
+  u_int16_t dummy;
+
+  if(ndpi_struct->signal_cache) {
+    key = get_signal_key(flow);
+
+    if(ndpi_lru_find_cache(ndpi_struct->signal_cache, key,
+                           &dummy, 0 /* Don't remove it as it can be used for other connections */,
+			   ndpi_get_current_time(flow))) {
+#ifdef DEBUG_SIGNAL_LRU
+      printf("[LRU SIGNAL] Found %lu [%u <-> %u]\n", key, ntohs(flow->c_port), ntohs(flow->s_port));
+#endif
+      return 1;
+    } else {
+#ifdef DEBUG_SIGNAL_LRU
+      printf("[LRU SIGNAL] Not found %lu [%u <-> %u]\n", key, ntohs(flow->c_port), ntohs(flow->s_port));
+#endif
+    }      
+  }
+  
+  return 0;
+}
+
+/* ************************************************************* */
+
+void signal_add_to_cache(struct ndpi_detection_module_struct *ndpi_struct,
+                        struct ndpi_flow_struct *flow)
+{
+  u_int64_t key;
+
+  if(ndpi_struct->signal_cache) {
+    key = get_signal_key(flow);
+#ifdef DEBUG_SIGNAL_LRU
+    printf("[LRU SIGNAL] ADDING %lu [%u <-> %u]\n", key, ntohs(flow->c_port), ntohs(flow->s_port));
+#endif
+    ndpi_lru_add_to_cache(ndpi_struct->signal_cache, key, 1 /* dummy */,
+                          ndpi_get_current_time(flow));
+  }
 }
 
 /* ************************************************************ */

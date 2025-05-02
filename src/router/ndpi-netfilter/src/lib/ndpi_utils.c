@@ -57,9 +57,21 @@
 #include "third_party/include/libinjection.h"
 #include "third_party/include/libinjection_sqli.h"
 #include "third_party/include/libinjection_xss.h"
-#include "third_party/include/uthash.h"
 #include "third_party/include/rce_injection.h"
+
+#else
+
+#if __GNUC__ >= 14 && LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0)
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 #endif
+
+#undef current
+#endif
+
+#define uthash_malloc(sz) ndpi_malloc(sz)
+#define uthash_free(ptr,sz) ndpi_free(ptr)
+
+#include "third_party/include/uthash.h"
 
 #include "ndpi_replace_printf.h"
 
@@ -78,14 +90,12 @@ struct pcre2_struct {
 };
 #endif
 
-#ifndef __KERNEL__
 typedef struct {
   char *key;
   u_int16_t value16;
   UT_hash_handle hh;
 } ndpi_str_hash_priv;
 
-#endif
 /* ****************************************** */
 
 /* implementation of the punycode check function */
@@ -2227,8 +2237,8 @@ const char* ndpi_risk2str(ndpi_risk_enum risk) {
   case NDPI_SMB_INSECURE_VERSION:
     return("SMB Insecure Vers");
 
-  case NDPI_TLS_SUSPICIOUS_ESNI_USAGE:
-    return("TLS Susp ESNI Usage");
+  case NDPI_FREE_21:
+    return("FREE21");
 
   case NDPI_UNSAFE_PROTOCOL:
     return("Unsafe Protocol");
@@ -2317,8 +2327,8 @@ const char* ndpi_risk2str(ndpi_risk_enum risk) {
   case NDPI_TCP_ISSUES:
     return("TCP Connection Issues");
 
-  case NDPI_FULLY_ENCRYPTED:
-    return("Fully Encrypted Flow");
+  case NDPI_FREE_51:
+    return("FREE51");
 
   case NDPI_TLS_ALPN_SNI_MISMATCH:
     return("ALPN/SNI Mismatch");
@@ -2389,8 +2399,8 @@ const char* ndpi_risk2code(ndpi_risk_enum risk) {
     return STRINGIFY(NDPI_SSH_OBSOLETE_SERVER_VERSION_OR_CIPHER);
   case NDPI_SMB_INSECURE_VERSION:
     return STRINGIFY(NDPI_SMB_INSECURE_VERSION);
-  case NDPI_TLS_SUSPICIOUS_ESNI_USAGE:
-    return STRINGIFY(NDPI_TLS_SUSPICIOUS_ESNI_USAGE);
+  case NDPI_FREE_21:
+    return STRINGIFY(NDPI_FREE_21);
   case NDPI_UNSAFE_PROTOCOL:
     return STRINGIFY(NDPI_TLS_SUSPICIOUS_ESNI_USAGE);
   case NDPI_DNS_SUSPICIOUS_TRAFFIC:
@@ -2449,8 +2459,8 @@ const char* ndpi_risk2code(ndpi_risk_enum risk) {
     return STRINGIFY(NDPI_MINOR_ISSUES);
   case NDPI_TCP_ISSUES:
     return STRINGIFY(NDPI_MINOR_ISSUES);
-  case NDPI_FULLY_ENCRYPTED:
-    return STRINGIFY(NDPI_FULLY_ENCRYPTED);
+  case NDPI_FREE_51:
+    return STRINGIFY(NDPI_FREE_51);
   case NDPI_TLS_ALPN_SNI_MISMATCH:
     return STRINGIFY(NDPI_TLS_ALPN_SNI_MISMATCH);
   case NDPI_MALWARE_HOST_CONTACTED:
@@ -2512,10 +2522,10 @@ ndpi_risk_enum ndpi_code2risk(const char* risk) {
     return(NDPI_SSH_OBSOLETE_SERVER_VERSION_OR_CIPHER);
   else if(strcmp(STRINGIFY(NDPI_SMB_INSECURE_VERSION), risk) == 0)
     return(NDPI_SMB_INSECURE_VERSION);
-  else if(strcmp(STRINGIFY(NDPI_TLS_SUSPICIOUS_ESNI_USAGE), risk) == 0)
-    return(NDPI_TLS_SUSPICIOUS_ESNI_USAGE);
+  else if(strcmp(STRINGIFY(NDPI_FREE_21), risk) == 0)
+    return(NDPI_FREE_21);
   else if(strcmp(STRINGIFY(NDPI_UNSAFE_PROTOCOL), risk) == 0)
-    return(NDPI_TLS_SUSPICIOUS_ESNI_USAGE);
+    return(NDPI_UNSAFE_PROTOCOL);
   else if(strcmp(STRINGIFY(NDPI_DNS_SUSPICIOUS_TRAFFIC), risk) == 0)
     return(NDPI_DNS_SUSPICIOUS_TRAFFIC);
   else if(strcmp(STRINGIFY(NDPI_TLS_MISSING_SNI), risk) == 0)
@@ -2572,8 +2582,8 @@ ndpi_risk_enum ndpi_code2risk(const char* risk) {
     return(NDPI_MINOR_ISSUES);
   else if(strcmp(STRINGIFY(NDPI_TCP_ISSUES), risk) == 0)
     return(NDPI_MINOR_ISSUES);
-  else if(strcmp(STRINGIFY(NDPI_FULLY_ENCRYPTED), risk) == 0)
-    return(NDPI_FULLY_ENCRYPTED);
+  else if(strcmp(STRINGIFY(NDPI_FREE_51), risk) == 0)
+    return(NDPI_FREE_51);
   else if(strcmp(STRINGIFY(NDPI_TLS_ALPN_SNI_MISMATCH), risk) == 0)
     return(NDPI_TLS_ALPN_SNI_MISMATCH);
   else if(strcmp(STRINGIFY(NDPI_MALWARE_HOST_CONTACTED), risk) == 0)
@@ -2691,7 +2701,7 @@ const char *ndpi_risk_shortnames[NDPI_MAX_RISK] = {
   "ssh_obsolete_client",
   "ssh_obsolete_server",
   "smb_insecure_ver",           /* NDPI_SMB_INSECURE_VERSION */
-  "tls_esni",
+  "free21",
   "unsafe_proto",
   "dns_susp",
   "tls_no_sni",
@@ -2721,7 +2731,7 @@ const char *ndpi_risk_shortnames[NDPI_MAX_RISK] = {
   "periodic_flow",
   "minor_issues",
   "tcp_issues",                 /* NDPI_TCP_ISSUES */
-  "fully_encrypted",
+  "free51",
   "tls_alpn_mismatch",
   "malware_host",
   "binary_data_transfer",
@@ -2819,7 +2829,6 @@ ndpi_http_method ndpi_http_str2method(const char* method, u_int16_t method_len) 
 
 /* ******************************************************************** */
 
-#ifndef __KERNEL__
 int ndpi_hash_init(ndpi_str_hash **h) {
   if (h == NULL)
     return 1;
@@ -2908,7 +2917,7 @@ int ndpi_hash_add_entry(ndpi_str_hash **h, char *key, u_int8_t key_len, u_int16_
 
   return 0;
 }
-#endif
+
 /* ********************************************************************************* */
 
 static u_int64_t ndpi_host_ip_risk_ptree_match(struct ndpi_detection_module_struct *ndpi_str,
@@ -3042,6 +3051,15 @@ static int is_flowrisk_enabled(struct ndpi_detection_module_struct *ndpi_str, nd
 
 /* ********************************************************************************* */
 
+int is_flowrisk_info_enabled(struct ndpi_detection_module_struct *ndpi_str, ndpi_risk_enum flowrisk_id)
+{
+  if(NDPI_COMPARE_PROTOCOL_TO_BITMASK(ndpi_str->cfg.flowrisk_info_bitmask, flowrisk_id) == 0)
+    return 0;
+  return 1;
+}
+
+/* ********************************************************************************* */
+
 void ndpi_handle_risk_exceptions(struct ndpi_detection_module_struct *ndpi_str,
 				 struct ndpi_flow_struct *flow) {
   if(flow->risk == 0) return; /* Nothing to do */
@@ -3121,7 +3139,7 @@ void ndpi_set_risk(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_fl
 // FIXME
 // #ifndef __KERNEL__
     if(flow->risk != 0 /* check if it has been masked */) {
-      if(ndpi_str->cfg.flow_risk_infos_enabled &&
+      if(is_flowrisk_info_enabled(ndpi_str, r) &&
          risk_message != NULL) {
 	if(flow->num_risk_infos < MAX_NUM_RISK_INFOS) {
 	  char *s = ndpi_strdup(risk_message);
@@ -3134,7 +3152,7 @@ void ndpi_set_risk(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_fl
 	}
       }
     }
-  } else if(ndpi_str->cfg.flow_risk_infos_enabled && risk_message) {
+  } else if(is_flowrisk_info_enabled(ndpi_str, r) && risk_message) {
     u_int8_t i;
 
     for(i = 0; i < flow->num_risk_infos; i++)
@@ -3168,7 +3186,7 @@ void ndpi_unset_risk(struct ndpi_detection_module_struct *ndpi_str,
 
     flow->risk &= ~v;
 
-    if(!ndpi_str->cfg.flow_risk_infos_enabled)
+    if(!is_flowrisk_info_enabled(ndpi_str, r))
       return;
 
     for(i = 0; i < flow->num_risk_infos; i++) {
@@ -3891,7 +3909,7 @@ const char *ndpi_lru_cache_idx_to_name(lru_cache_type idx)
 {
   const char *names[NDPI_LRUCACHE_MAX] = { "ookla", "bittorrent", "stun",
                                            "tls_cert", "mining", "msteams",
-                                           "fpc_dns" };
+                                           "fpc_dns", "signal" };
 
   if(idx < 0 || idx >= NDPI_LRUCACHE_MAX)
     return "unknown";
@@ -4245,14 +4263,16 @@ char* ndpi_quick_decrypt(const char *encrypted_msg,
 
 /* ************************************************************** */
 
-const char* ndpi_print_os_hint(u_int8_t os_hint) {
+const char* ndpi_print_os_hint(ndpi_os os_hint) {
   switch(os_hint) {
-  case os_hint_windows:          return("Windows");
-  case os_hint_macos:            return("macOS");
-  case os_hint_ios_ipad_os:      return("iOS/iPad");
-  case os_hint_android:          return("Android");
-  case os_hint_linux:            return("Linux");
-  case os_hint_freebsd:          return("FreeBSD");
+  case ndpi_os_windows:          return("Windows");
+  case ndpi_os_macos:            return("macOS");
+  case ndpi_os_ios_ipad_os:      return("iOS/iPad");
+  case ndpi_os_android:          return("Android");
+  case ndpi_os_linux:            return("Linux");
+  case ndpi_os_freebsd:          return("FreeBSD");
+  default:
+    break;
   }
 
   return("Unknown");
@@ -4302,7 +4322,7 @@ ndpi_protocol_qoe_category_t ndpi_find_protocol_qoe(struct ndpi_detection_module
   else
     return(ndpi_str->proto_defaults[protoId].qoeCategory);
 }
-			     
+
 /* ************************************************************** */
 
 /* https://gitlab.com/wireshark/wireshark/-/blob/master/epan/dissectors/packet-rtp.c */
@@ -4352,7 +4372,7 @@ const char* ndpi_rtp_payload_type2str(u_int8_t payload_type, u_int32_t evs_paylo
       case 0x7: return("AMR-WB IO 23.05 kbps");
       case 0x8: return("AMR-WB IO 23.85 kbps");
       case 0x9: return("AMR-WB IO 2.0 kbps SID");
-	
+
 	/* ** */
 	/* Dummy SWB 30 offset */
       case 0x3+30: return("SWB 9.6 kbps");
@@ -4364,7 +4384,7 @@ const char* ndpi_rtp_payload_type2str(u_int8_t payload_type, u_int32_t evs_paylo
       case 0x9+30: return("SWB 64 kbps");
       case 0xa+30: return("SWB 96 kbps");
       case 0xb+30: return("SWB 128 kbps");
-	
+
 
       case    48: return("EVS Primary SID 2.4");
       case   136: return("EVS AMR-WB IO 6.6");
@@ -4393,4 +4413,30 @@ const char* ndpi_rtp_payload_type2str(u_int8_t payload_type, u_int32_t evs_paylo
     break;
   default:  return("Unknown");
   }
+}
+
+/* ************************************************************** */
+
+u_char* ndpi_str_to_utf8(u_char *in, u_int in_len, u_char *out, u_int out_len) {
+  if(out_len < ((in_len*2)+1)) {
+    out[0] = '\0';
+  } else {
+    u_int i = 0, j = 0;
+
+    while((i < in_len) && (in[i] != '\0')) {
+      if(in[i] < 0x80) {
+	out[j] = in[i];
+	i++, j++;
+      } else {
+	out[j] = 0xC0 +(in[i] >> 6);
+	j++;
+	out[j] = 0x80 | (in[i] & 0x3F);
+	i++, j++;
+      }
+    }
+
+    out[j] = '\0';
+  }
+
+  return(out);
 }

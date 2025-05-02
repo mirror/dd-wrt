@@ -195,6 +195,9 @@ struct ndpi_global_context {
   
   /* FPC DNS cache */
   struct ndpi_lru_cache *fpc_dns_global_cache;
+
+  /* Signal STUN cache */
+  struct ndpi_lru_cache *signal_global_cache;
 };
 
 #define CFG_MAX_LEN	256
@@ -256,7 +259,10 @@ struct ndpi_detection_module_config_struct {
   int fpc_dns_cache_num_entries;
   int fpc_dns_cache_ttl;
   int fpc_dns_cache_scope;
-  
+  int signal_cache_num_entries;
+  int signal_cache_ttl;
+  int signal_cache_scope;
+
   /* Protocols */
 
   int http_request_content_type_enabled;
@@ -337,9 +343,9 @@ struct ndpi_detection_module_config_struct {
   NDPI_PROTOCOL_BITMASK monitoring;
 
   NDPI_PROTOCOL_BITMASK flowrisk_bitmask;
+  NDPI_PROTOCOL_BITMASK flowrisk_info_bitmask;
 
   int flow_risk_lists_enabled;
-  int flow_risk_infos_enabled;
   int risk_anonymous_subscriber_list_icloudprivaterelay_enabled;
   int risk_anonymous_subscriber_list_protonvpn_enabled;
   int risk_anonymous_subscriber_list_tor_exit_nodes_enabled;
@@ -397,7 +403,7 @@ struct ndpi_detection_module_struct {
    * update automa_type above
    */
 
-  ndpi_str_hash *malicious_ja4_hashmap, *malicious_sha1_hashmap;
+  ndpi_str_hash *malicious_ja4_hashmap, *malicious_sha1_hashmap, *tcp_fingerprint_hashmap;
   spinlock_t host_automa_lock;
 
   ndpi_list *trusted_issuer_dn;
@@ -438,6 +444,9 @@ struct ndpi_detection_module_struct {
 
   /* NDPI_PROTOCOL_OOKLA */
   struct ndpi_lru_cache *ookla_cache;
+
+  /* NDPI_PROTOCOL_SIGNAL */
+  struct ndpi_lru_cache *signal_cache;
 
   /* NDPI_PROTOCOL_BITTORRENT */
   struct ndpi_lru_cache *bittorrent_cache;
@@ -718,6 +727,7 @@ NDPI_STATIC bool ndpi_cache_address(struct ndpi_detection_module_struct *ndpi_st
 			u_int32_t epoch_now, u_int32_t ttl);
 
 NDPI_STATIC int is_monitoring_enabled(struct ndpi_detection_module_struct *ndpi_str, int protoId);
+NDPI_STATIC int is_flowrisk_info_enabled(struct ndpi_detection_module_struct *ndpi_str, ndpi_risk_enum flowrisk_id);
 
 /* TLS */
 NDPI_STATIC int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
@@ -737,6 +747,12 @@ NDPI_STATIC void switch_extra_dissection_to_tls_obfuscated_heur(struct ndpi_dete
 NDPI_STATIC int ookla_search_into_cache(struct ndpi_detection_module_struct* ndpi_struct,
                             struct ndpi_flow_struct* flow);
 NDPI_STATIC void ookla_add_to_cache(struct ndpi_detection_module_struct *ndpi_struct,
+                        struct ndpi_flow_struct *flow);
+
+/* SIGNAL */
+int signal_search_into_cache(struct ndpi_detection_module_struct* ndpi_struct,
+                            struct ndpi_flow_struct* flow);
+void signal_add_to_cache(struct ndpi_detection_module_struct *ndpi_struct,
                         struct ndpi_flow_struct *flow);
 
 /* QUIC */
@@ -874,7 +890,7 @@ NDPI_STATIC void init_sonos_dissector(struct ndpi_detection_module_struct *ndpi_
 NDPI_STATIC void init_spotify_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_ssh_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_tls_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-NDPI_STATIC void init_starcraft_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_blizzard_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_steam_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_stun_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_syslog_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
@@ -894,7 +910,6 @@ NDPI_STATIC void init_vnc_dissector(struct ndpi_detection_module_struct *ndpi_st
 NDPI_STATIC void init_vxlan_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_warcraft3_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_whois_das_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-NDPI_STATIC void init_world_of_warcraft_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_world_of_kung_fu_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_xbox_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_xdmcp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
@@ -1047,6 +1062,7 @@ NDPI_STATIC void init_paltalk_dissector(struct ndpi_detection_module_struct *ndp
 NDPI_STATIC void init_dicom_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_lagofast_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_gearup_booster_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_msdo_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 
 
 #ifdef CUSTOM_NDPI_PROTOCOLS

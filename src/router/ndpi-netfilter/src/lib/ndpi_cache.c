@@ -212,6 +212,9 @@ NDPI_STATIC int ndpi_get_lru_cache_stats(struct ndpi_global_context *g_ctx,
   case NDPI_LRUCACHE_FPC_DNS:
     ndpi_lru_get_stats(is_local ? ndpi_struct->fpc_dns_cache : g_ctx->fpc_dns_global_cache, stats);
     return 0;
+  case NDPI_LRUCACHE_SIGNAL:
+    ndpi_lru_get_stats(is_local ? ndpi_struct->signal_cache : g_ctx->signal_global_cache, stats);
+    return 0;
   default:
     return -1;
   }

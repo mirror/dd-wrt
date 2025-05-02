@@ -113,7 +113,7 @@ _P(NDPI_PROTOCOL_GUILDWARS),
 _P(NDPI_PROTOCOL_AMAZON_ALEXA),
 _P(NDPI_PROTOCOL_KERBEROS),
 _P(NDPI_PROTOCOL_LDAP),
-_P(NDPI_PROTOCOL_MAPLESTORY),
+_P(NDPI_PROTOCOL_NEXON),
 _P(NDPI_PROTOCOL_MSSQL_TDS),
 _P(NDPI_PROTOCOL_PPTP),
 _P(NDPI_PROTOCOL_WARCRAFT3),
@@ -125,7 +125,7 @@ _P(NDPI_PROTOCOL_DROPBOX),
 _P(NDPI_PROTOCOL_GMAIL),
 _P(NDPI_PROTOCOL_GOOGLE_MAPS),
 _P(NDPI_PROTOCOL_YOUTUBE),
-_P(NDPI_PROTOCOL_FREE_125),
+_P(NDPI_PROTOCOL_MOZILLA),
 _P(NDPI_PROTOCOL_GOOGLE),
 _P(NDPI_PROTOCOL_MS_RPCH),
 _P(NDPI_PROTOCOL_NETFLOW),
@@ -213,7 +213,7 @@ _P(NDPI_PROTOCOL_TINC),
 _P(NDPI_PROTOCOL_DEEZER),
 _P(NDPI_PROTOCOL_INSTAGRAM),
 _P(NDPI_PROTOCOL_MICROSOFT),
-_P(NDPI_PROTOCOL_STARCRAFT),
+_P(NDPI_PROTOCOL_BLIZZARD),
 _P(NDPI_PROTOCOL_TEREDO),
 _P(NDPI_PROTOCOL_HOTSPOT_SHIELD),
 _P(NDPI_PROTOCOL_IMO),
@@ -442,13 +442,19 @@ _P(NDPI_PROTOCOL_DICOM),
 _P(NDPI_PROTOCOL_PARAMOUNTPLUS),
 _P(NDPI_PROTOCOL_YANDEX_ALICE),
 _P(NDPI_PROTOCOL_VIVOX),
-_P(NDPI_PROTOCOL_DIGITALOCEAN)
+_P(NDPI_PROTOCOL_DIGITALOCEAN),
+_P(NDPI_PROTOCOL_RUTUBE),
+_P(NDPI_PROTOCOL_LAGOFAST),
+_P(NDPI_PROTOCOL_GEARUP_BOOSTER),
+_P(NDPI_PROTOCOL_LLM),
+_P(NDPI_PROTOCOL_UBIQUITY)
 
 };
 #include "inc_generated/ndpi_amazon_aws_match.c.inc"
 #include "inc_generated/ndpi_asn_alibaba.c.inc"
 #include "inc_generated/ndpi_asn_apple.c.inc"
 #include "inc_generated/ndpi_asn_avast.c.inc"
+#include "inc_generated/ndpi_asn_blizzard.c.inc"
 #include "inc_generated/ndpi_asn_bloomberg.c.inc"
 #include "inc_generated/ndpi_asn_discord.c.inc"
 #include "inc_generated/ndpi_asn_disney_plus.c.inc"
@@ -466,7 +472,6 @@ _P(NDPI_PROTOCOL_DIGITALOCEAN)
 #include "inc_generated/ndpi_asn_opendns.c.inc"
 #include "inc_generated/ndpi_asn_riotgames.c.inc"
 #include "inc_generated/ndpi_asn_roblox.c.inc"
-#include "inc_generated/ndpi_asn_starcraft.c.inc"
 #include "inc_generated/ndpi_asn_steam.c.inc"
 #include "inc_generated/ndpi_asn_teamviewer.c.inc"
 #include "inc_generated/ndpi_asn_telegram.c.inc"
@@ -496,6 +501,7 @@ _P(NDPI_PROTOCOL_DIGITALOCEAN)
 #include "inc_generated/ndpi_protonvpn_in_match.c.inc"
 #include "inc_generated/ndpi_protonvpn_out_match.c.inc"
 #include "inc_generated/ndpi_surfshark_match.c.inc"
+#include "inc_generated/ndpi_tor_exit_nodes_match.c.inc"
 #include "inc_generated/ndpi_tor_match.c.inc"
 #include "inc_generated/ndpi_whatsapp_match.c.inc"
 #include "inc_generated/ndpi_zoom_match.c.inc"
@@ -505,6 +511,7 @@ static ndpi_network * ip4list[] = {
  &ndpi_protocol_alibaba_protocol_list[0],
  &ndpi_protocol_apple_protocol_list[0],
  &ndpi_protocol_avast_protocol_list[0],
+ &ndpi_protocol_blizzard_protocol_list[0],
  &ndpi_protocol_bloomberg_protocol_list[0],
  &ndpi_protocol_discord_protocol_list[0],
  &ndpi_protocol_disneyplus_protocol_list[0],
@@ -522,7 +529,6 @@ static ndpi_network * ip4list[] = {
  &ndpi_protocol_opendns_protocol_list[0],
  &ndpi_protocol_riotgames_protocol_list[0],
  &ndpi_protocol_roblox_protocol_list[0],
- &ndpi_protocol_starcraft_protocol_list[0],
  &ndpi_protocol_steam_protocol_list[0],
  &ndpi_protocol_teamviewer_protocol_list[0],
  &ndpi_protocol_telegram_protocol_list[0],
@@ -552,6 +558,7 @@ static ndpi_network * ip4list[] = {
  &ndpi_protocol_protonvpn_protocol_list[0],
  &ndpi_anonymous_subscriber_protonvpn_protocol_list[0],
  &ndpi_protocol_surfshark_protocol_list[0],
+ &ndpi_anonymous_subscriber_tor_exit_nodes_protocol_list[0],
  &ndpi_protocol_tor_protocol_list[0],
  &ndpi_protocol_whatsapp_protocol_list[0],
  &ndpi_protocol_zoom_protocol_list[0]
@@ -561,6 +568,7 @@ static char * ip4list_file[] = {
  "inc_generated/ndpi_asn_alibaba.c.inc",
  "inc_generated/ndpi_asn_apple.c.inc",
  "inc_generated/ndpi_asn_avast.c.inc",
+ "inc_generated/ndpi_asn_blizzard.c.inc",
  "inc_generated/ndpi_asn_bloomberg.c.inc",
  "inc_generated/ndpi_asn_discord.c.inc",
  "inc_generated/ndpi_asn_disney_plus.c.inc",
@@ -578,7 +586,6 @@ static char * ip4list_file[] = {
  "inc_generated/ndpi_asn_opendns.c.inc",
  "inc_generated/ndpi_asn_riotgames.c.inc",
  "inc_generated/ndpi_asn_roblox.c.inc",
- "inc_generated/ndpi_asn_starcraft.c.inc",
  "inc_generated/ndpi_asn_steam.c.inc",
  "inc_generated/ndpi_asn_teamviewer.c.inc",
  "inc_generated/ndpi_asn_telegram.c.inc",
@@ -608,6 +615,7 @@ static char * ip4list_file[] = {
  "inc_generated/ndpi_protonvpn_in_match.c.inc",
  "inc_generated/ndpi_protonvpn_out_match.c.inc",
  "inc_generated/ndpi_surfshark_match.c.inc",
+ "inc_generated/ndpi_tor_exit_nodes_match.c.inc",
  "inc_generated/ndpi_tor_match.c.inc",
  "inc_generated/ndpi_whatsapp_match.c.inc",
  "inc_generated/ndpi_zoom_match.c.inc"
@@ -617,6 +625,7 @@ static ndpi_network6 * ip6list[] = {
  &ndpi_protocol_alibaba_protocol_list_6[0],
  &ndpi_protocol_apple_protocol_list_6[0],
  &ndpi_protocol_avast_protocol_list_6[0],
+ &ndpi_protocol_blizzard_protocol_list_6[0],
  &ndpi_protocol_bloomberg_protocol_list_6[0],
  &ndpi_protocol_discord_protocol_list_6[0],
  &ndpi_protocol_disneyplus_protocol_list_6[0],
@@ -634,7 +643,6 @@ static ndpi_network6 * ip6list[] = {
  &ndpi_protocol_opendns_protocol_list_6[0],
  &ndpi_protocol_riotgames_protocol_list_6[0],
  &ndpi_protocol_roblox_protocol_list_6[0],
- &ndpi_protocol_starcraft_protocol_list_6[0],
  &ndpi_protocol_steam_protocol_list_6[0],
  &ndpi_protocol_teamviewer_protocol_list_6[0],
  &ndpi_protocol_telegram_protocol_list_6[0],
@@ -664,6 +672,7 @@ static ndpi_network6 * ip6list[] = {
  &ndpi_protocol_protonvpn_protocol_list_6[0],
  &ndpi_anonymous_subscriber_protonvpn_protocol_list_6[0],
  &ndpi_protocol_surfshark_protocol_list_6[0],
+ &ndpi_anonymous_subscriber_tor_exit_nodes_protocol_list_6[0],
  &ndpi_protocol_tor_protocol_list_6[0],
  &ndpi_protocol_whatsapp_protocol_list_6[0],
  &ndpi_protocol_zoom_protocol_list_6[0]
@@ -673,6 +682,7 @@ static char * ip6list_file[] = {
  "inc_generated/ndpi_asn_alibaba.c.inc",
  "inc_generated/ndpi_asn_apple.c.inc",
  "inc_generated/ndpi_asn_avast.c.inc",
+ "inc_generated/ndpi_asn_blizzard.c.inc",
  "inc_generated/ndpi_asn_bloomberg.c.inc",
  "inc_generated/ndpi_asn_discord.c.inc",
  "inc_generated/ndpi_asn_disney_plus.c.inc",
@@ -690,7 +700,6 @@ static char * ip6list_file[] = {
  "inc_generated/ndpi_asn_opendns.c.inc",
  "inc_generated/ndpi_asn_riotgames.c.inc",
  "inc_generated/ndpi_asn_roblox.c.inc",
- "inc_generated/ndpi_asn_starcraft.c.inc",
  "inc_generated/ndpi_asn_steam.c.inc",
  "inc_generated/ndpi_asn_teamviewer.c.inc",
  "inc_generated/ndpi_asn_telegram.c.inc",
@@ -720,6 +729,7 @@ static char * ip6list_file[] = {
  "inc_generated/ndpi_protonvpn_in_match.c.inc",
  "inc_generated/ndpi_protonvpn_out_match.c.inc",
  "inc_generated/ndpi_surfshark_match.c.inc",
+ "inc_generated/ndpi_tor_exit_nodes_match.c.inc",
  "inc_generated/ndpi_tor_match.c.inc",
  "inc_generated/ndpi_whatsapp_match.c.inc",
  "inc_generated/ndpi_zoom_match.c.inc"

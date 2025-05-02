@@ -444,6 +444,7 @@ static int process_answers(struct ndpi_detection_module_struct *ndpi_struct,
 				         time,
 				         flow->protos.dns.rsp_addr_ttl[flow->protos.dns.num_rsp_addr]);
 		      }
+
               ++flow->protos.dns.num_rsp_addr;
             }
 
@@ -451,9 +452,8 @@ static int process_answers(struct ndpi_detection_module_struct *ndpi_struct,
               found = 1;
           }
 
-          /* Add to FPC DNS cache */
-          if(flow->protos.dns.num_rsp_addr == 1 && /* Only the first one */
-             ndpi_struct->cfg.fpc_enabled &&
+          /* Add (all addresses) to FPC DNS cache */
+          if(ndpi_struct->cfg.fpc_enabled &&
              proto->app_protocol != NDPI_PROTOCOL_UNKNOWN &&
              proto->app_protocol != proto->master_protocol &&
              ndpi_struct->fpc_dns_cache) {
@@ -461,6 +461,9 @@ static int process_answers(struct ndpi_detection_module_struct *ndpi_struct,
                                   fpc_dns_cache_key_from_packet(packet->payload + x, data_len),
                                   proto->app_protocol,
                                   ndpi_get_current_time(flow));
+
+            NDPI_LOG_DBG(ndpi_struct, "Adding entry to fpc_dns: %s proto %d\n",
+                         data_len == 4 ? "ipv4" : "ipv6", proto->app_protocol);
           }
         }
 
@@ -835,11 +838,15 @@ static void search_dns(struct ndpi_detection_module_struct *ndpi_struct, struct 
     flow->protos.dns.num_answers = dns_header.num_answers + dns_header.authority_rrs + dns_header.additional_rrs;
 
     if(flow->protos.dns.reply_code != 0) {
-      char str[32], buf[16];
+      if(is_flowrisk_info_enabled(ndpi_struct, NDPI_ERROR_CODE_DETECTED)) {
+        char str[32], buf[16];
 
-      snprintf(str, sizeof(str), "DNS Error Code %s",
-               dns_error_code2string(flow->protos.dns.reply_code, buf, sizeof(buf)));
-      ndpi_set_risk(ndpi_struct, flow, NDPI_ERROR_CODE_DETECTED, str);
+        snprintf(str, sizeof(str), "DNS Error Code %s",
+                 dns_error_code2string(flow->protos.dns.reply_code, buf, sizeof(buf)));
+        ndpi_set_risk(ndpi_struct, flow, NDPI_ERROR_CODE_DETECTED, str);
+      } else {
+        ndpi_set_risk(ndpi_struct, flow, NDPI_ERROR_CODE_DETECTED, NULL);
+      }
     } else {
       if(ndpi_isset_risk(flow, NDPI_SUSPICIOUS_DGA_DOMAIN)) {
         ndpi_set_risk(ndpi_struct, flow, NDPI_RISKY_DOMAIN, "DGA Name Query with no Error Code");
@@ -873,10 +880,14 @@ static void search_dns(struct ndpi_detection_module_struct *ndpi_struct, struct 
        packet->udp &&
        packet->payload_packet_len > PKT_LEN_ALERT &&
        packet->payload_packet_len > flow->protos.dns.edns0_udp_payload_size) {
-      char str[48];
+      if(is_flowrisk_info_enabled(ndpi_struct, NDPI_DNS_LARGE_PACKET)) {
+        char str[48];
 
-      snprintf(str, sizeof(str), "%u Bytes DNS Packet", packet->payload_packet_len);
-      ndpi_set_risk(ndpi_struct, flow, NDPI_DNS_LARGE_PACKET, str);
+        snprintf(str, sizeof(str), "%u Bytes DNS Packet", packet->payload_packet_len);
+        ndpi_set_risk(ndpi_struct, flow, NDPI_DNS_LARGE_PACKET, str);
+      } else {
+        ndpi_set_risk(ndpi_struct, flow, NDPI_DNS_LARGE_PACKET, NULL);
+      }
     }
 
     NDPI_LOG_DBG2(ndpi_struct, "Response: [num_queries=%d][num_answers=%d][reply_code=%u][rsp_type=%u][host_server_name=%s]\n",

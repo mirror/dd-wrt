@@ -315,7 +315,7 @@
     <ClCompile Include="..\src\lib\protocols\spotify.c" />
     <ClCompile Include="..\src\lib\protocols\ssdp.c" />
     <ClCompile Include="..\src\lib\protocols\ssh.c" />
-    <ClCompile Include="..\src\lib\protocols\starcraft.c" />
+    <ClCompile Include="..\src\lib\protocols\blizzard.c" />
     <ClCompile Include="..\src\lib\protocols\steam.c" />
     <ClCompile Include="..\src\lib\protocols\stun.c" />
     <ClCompile Include="..\src\lib\protocols\syslog.c" />
@@ -339,7 +339,6 @@
     <ClCompile Include="..\src\lib\protocols\warcraft3.c" />
     <ClCompile Include="..\src\lib\protocols\whoisdas.c" />
     <ClCompile Include="..\src\lib\protocols\world_of_kung_fu.c" />
-    <ClCompile Include="..\src\lib\protocols\world_of_warcraft.c" />
     <ClCompile Include="..\src\lib\protocols\xbox.c" />
     <ClCompile Include="..\src\lib\protocols\xdmcp.c" />
     <ClCompile Include="..\src\lib\protocols\zattoo.c" />
@@ -398,6 +397,7 @@
     <ClCompile Include="..\src\lib\protocols\lustre.c" />
     <ClCompile Include="..\src\lib\protocols\dingtalk.c" />
     <ClCompile Include="..\src\lib\protocols\paltalk.c" />
+    <ClCompile Include="..\src\lib\protocols\msdo.c" />
     <ClCompile Include="..\src\lib\third_party\src\gcrypt_light.c" />
     <ClCompile Include="..\src\lib\third_party\src\libcache.c" />
     <ClCompile Include="..\src\lib\third_party\src\libinjection_html5.c" />

@@ -5,6 +5,16 @@ This page provides the list of the protocols/applications supported by nDPI. For
 
 Work in progress!
 
+
+.. _Proto 31
+
+`NDPI_PROTOCOL_UBNTAC2`
+=======================
+AirControl network management application by Ubiquiti Networks.
+
+References: `Main site: <https://community.ui.com/questions/Introduction-to-airControl/7cdb2648-113c-480f-b000-659b803d1afe/>`_
+
+
 .. _Proto 32:
 
 `NDPI_PROTOCOL_BFCP`
@@ -143,6 +153,15 @@ References: `Main site: <https://www.callofduty.com/mobile/>`_
 Google Meet is a video conferencing service from Google.
 
 References: `Main site: <https://meet.google.com/>`_
+
+
+.. _Proto 213:
+
+`NDPI_PROTOCOL_BLIZZARD`
+========================
+Blizzard Entertainment is an American video game developer and publisher, and a subsidiary of Activision Blizzard. The company is best known for producing the role-playing game World of Warcraft as well as video game franchises Diablo, StarCraft, and Overwatch.
+
+References: `Main site: <https://www.blizzard.com>`_
 
 
 .. _Proto 235:
@@ -1141,6 +1160,7 @@ RUTUBE is a Russian video platform. It includes a library of licensed content in
 
 References: `Main site <http://rutube.ru/>`_
 
+
 .. _Proto 444:
 
 `NDPI_PROTOCOL_LAGOFAST`
@@ -1149,6 +1169,7 @@ LagoFast Game Booster ensures ultra-smooth gaming on any device with reduced lag
 
 References: `Main site <https://www.lagofast.com/>`_
 
+
 .. _Proto 445:
 
 `NDPI_PROTOCOL_GEARUP_BOOSTER`
@@ -1156,3 +1177,39 @@ References: `Main site <https://www.lagofast.com/>`_
 A game booster that reduces game lag.
 
 References: `Main site <https://www.gearupbooster.com/>`_
+
+
+.. _Proto 446:
+
+`NDPI_PROTOCOL_LLM`
+===================
+Traffic about generic LLM services (i.e. chatgpt, deepseek, gemini,...).
+
+References: `OpenAI <https://openai.com/>`_, `DeepSeek <https://www.deepseek.com/>`_
+
+
+.. _Proto 447:
+
+`NDPI_PROTOCOL_UBIQUITY`
+========================
+Generic traffic from Ubiquity site and services
+
+References: `Main site <https://www.ui.com/>`_
+
+
+.. _Proto 448:
+
+`NDPI_PROTOCOL_MSDO`
+========================
+Microsoft Delivery Optimization is a cloud-managed, peer-to-peer distribution service that enables efficient delivery of Windows updates, apps, and content by allowing devices to share download data with each other on local networks or the internet.
+
+References: `Main site <https://learn.microsoft.com/en-us/windows/deployment/do/waas-delivery-optimization>`_
+
+
+.. _Proto 449:
+
+`NDPI_PROTOCOL_ROCKSTAR_GAMES`
+===============================
+Traffic related to Rockstar Games services, including game downloads, authentication, online services, and Rockstar Launcher activities.
+
+References: `Main site <https://www.rockstargames.com/>`_

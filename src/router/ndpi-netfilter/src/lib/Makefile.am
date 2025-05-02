@@ -57,6 +57,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/bitcoin.c \
 		     protocols/bittorrent.c \
 		     protocols/bjnp.c \
+		     protocols/blizzard.c \
 		     protocols/c1222.c \
 		     protocols/can.c \
 		     protocols/capwap.c \
@@ -167,6 +168,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/mpegts.c \
 		     protocols/mpegdash.c \
 		     protocols/mqtt.c \
+		     protocols/msdo.c \
 		     protocols/mssql_tds.c \
 		     protocols/mumble.c \
 		     protocols/munin.c \
@@ -234,7 +236,6 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/spotify.c \
 		     protocols/ssdp.c \
 		     protocols/ssh.c \
-		     protocols/starcraft.c \
 		     protocols/steam.c \
 		     protocols/steam_datagram_relay.c \
 		     protocols/stomp.c \
@@ -273,7 +274,6 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/websocket.c \
 		     protocols/whoisdas.c \
 		     protocols/world_of_kung_fu.c \
-		     protocols/world_of_warcraft.c \
 		     protocols/wsd.c \
 		     protocols/xbox.c \
 		     protocols/xdmcp.c \

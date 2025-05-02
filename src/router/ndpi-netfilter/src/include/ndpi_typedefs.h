@@ -144,7 +144,7 @@ typedef enum {
   NDPI_SSH_OBSOLETE_CLIENT_VERSION_OR_CIPHER,
   NDPI_SSH_OBSOLETE_SERVER_VERSION_OR_CIPHER,
   NDPI_SMB_INSECURE_VERSION, /* 20 */
-  NDPI_TLS_SUSPICIOUS_ESNI_USAGE,
+  NDPI_FREE_21,                                          /* FREE */
   NDPI_UNSAFE_PROTOCOL,
   NDPI_DNS_SUSPICIOUS_TRAFFIC,
   NDPI_TLS_MISSING_SNI,
@@ -176,12 +176,13 @@ typedef enum {
   NDPI_PERIODIC_FLOW,          /* Set in case a flow repeats at a specific pace [used by apps on top of nDPI] */
   NDPI_MINOR_ISSUES,           /* Generic packet issues (e.g. DNS with 0 TTL) */
   NDPI_TCP_ISSUES,    /* 50 */ /* TCP issues such as connection failed or scan */
-  NDPI_FULLY_ENCRYPTED,        /* This (unknown) session is fully encrypted */
+  NDPI_FREE_51,                                         /* FREE */
   NDPI_TLS_ALPN_SNI_MISMATCH,  /* Invalid ALPN/SNI combination */
   NDPI_MALWARE_HOST_CONTACTED, /* Flow client contacted a malware host */
   NDPI_BINARY_DATA_TRANSFER,   /* Attempt to transfer something in binary format */
   NDPI_PROBING_ATTEMPT,        /* Probing attempt (e.g. TCP connection with no data exchanged or unidirection traffic for bidirectional flows such as SSH) */
   NDPI_OBFUSCATED_TRAFFIC,
+  /* Before allocating a new risk here, check if there are FREE entries above */
 
   /* Leave this as last member */
   NDPI_MAX_RISK /* must be <= 63 due to (**) */
@@ -829,7 +830,7 @@ typedef enum {
   NDPI_LRUCACHE_MINING,
   NDPI_LRUCACHE_MSTEAMS,
   NDPI_LRUCACHE_FPC_DNS, /* FPC DNS cache */
-
+  NDPI_LRUCACHE_SIGNAL,
   NDPI_LRUCACHE_MAX	/* Last one! */
 } lru_cache_type;
 
@@ -989,9 +990,6 @@ struct ndpi_flow_tcp_struct {
   /* NDPI_PROTOCOL_DOFUS */
   u_int32_t dofus_stage:1;
 
-  /* NDPI_PROTOCOL_WORLDOFWARCRAFT */
-  u_int32_t wow_stage:2;
-
   /* NDPI_PROTOCOL_MAIL_POP */
   u_int32_t mail_pop_stage:2;
 
@@ -1143,7 +1141,12 @@ typedef enum {
 
 #define NUM_BREEDS (NDPI_PROTOCOL_UNRATED+1)
 
-/* Abstract categories to group the protocols. */
+/*
+  Abstract categories to group the protocols.
+
+  IMPORTANT
+  Keep in sync with categories[] on ndpi_main.c
+*/
 typedef enum {
   NDPI_PROTOCOL_CATEGORY_UNSPECIFIED = 0,   /* For general services and unknown protocols */
   NDPI_PROTOCOL_CATEGORY_MEDIA,             /* Multimedia and streaming */
@@ -1207,15 +1210,27 @@ typedef enum {
   */
   CUSTOM_CATEGORY_ANTIMALWARE      = 105,
 
-  /*
-    Crypto Currency e.g Bitcoin, Litecoin, Etherum ..et.
-  */
-  NDPI_PROTOCOL_CATEGORY_CRYPTO_CURRENCY = 106,
+  /* Crypto Currency e.g Bitcoin, Litecoin, Etherum ..et. */
+  NDPI_PROTOCOL_CATEGORY_CRYPTO_BLOCKCHAIN = 106,
 
   /* Gambling websites */
   NDPI_PROTOCOL_CATEGORY_GAMBLING = 107,
   NDPI_PROTOCOL_CATEGORY_HEALTH,
   NDPI_PROTOCOL_CATEGORY_ARTIFICIAL_INTELLIGENCE,
+  NDPI_PROTOCOL_CATEGORY_FINANCE,
+  NDPI_PROTOCOL_CATEGORY_NEWS,
+  NDPI_PROTOCOL_CATEGORY_SPORT,
+  NDPI_PROTOCOL_CATEGORY_BUSINESS,
+  NDPI_PROTOCOL_CATEGORY_INTERNET_HOSTING,          /* Internet sites including hosting */
+  NDPI_PROTOCOL_CATEGORY_BLOCKCHAIN_CRYPTO,
+  NDPI_PROTOCOL_CATEGORY_BLOG_FORUM,
+  NDPI_PROTOCOL_CATEGORY_GOVERNMENT,
+  NDPI_PROTOCOL_CATEGORY_EDUCATION,
+  NDPI_PROTOCOL_CATEGORY_CND_PROXY,
+  NDPI_PROTOCOL_CATEGORY_HARDWARE_SOFTWARE,
+  NDPI_PROTOCOL_CATEGORY_DATING,
+  NDPI_PROTOCOL_CATEGORY_TRAVEL,
+  NDPI_PROTOCOL_CATEGORY_FOOD,
 
   /*
     IMPORTANT
@@ -1369,25 +1384,20 @@ struct ndpi_metadata_monitoring {
   } protos;
 };
 
-enum operating_system_hint {
-  os_hint_unknown     = 0,
-  os_hint_windows     = 1,
-  os_hint_macos       = 2,
-  os_hint_ios_ipad_os = 3,
-  os_hint_android     = 4,
-  os_hint_linux       = 5,
-  os_hint_freebsd     = 6,
-  os_hint_unused2     = 7
-};
+typedef enum {
+  ndpi_os_unknown     = 0,
+  ndpi_os_windows     = 1,
+  ndpi_os_macos       = 2,
+  ndpi_os_ios_ipad_os = 3,
+  ndpi_os_android     = 4,
+  ndpi_os_linux       = 5,
+  ndpi_os_freebsd     = 6,
+  ndpi_os_MAX_OS      = 7 /* Keep it as last */
+} ndpi_os;
 
 struct os_fingerprint {
   const char *fingerprint;
-  enum operating_system_hint os;
-};
-
-struct ndpi_tls_obfuscated_heuristic_matching_set {
-  u_int32_t bytes[4];
-  u_int32_t pkts[4];
+  ndpi_os os;
 };
 
 struct rtp_info {
@@ -1476,7 +1486,7 @@ struct ndpi_flow_struct {
 
   struct {
     char *fingerprint;
-    enum operating_system_hint os_hint;
+    ndpi_os os_hint;
   } tcp;
 
   /*
@@ -1516,13 +1526,13 @@ struct ndpi_flow_struct {
     u_int8_t num_xor_relayed_addresses, num_xor_mapped_addresses;
     u_int8_t num_non_stun_pkt, non_stun_pkt_len[2];
     u_int16_t rtp_counters[2];
+    u_int32_t t_start, t_end;
   } stun;
 
   struct {
     message_t message[2]; /* Directions */
     u_int8_t certificate_processed:1, change_cipher_from_client:1, change_cipher_from_server:1, from_opportunistic_tls:1, from_rdp:1, pad:3;
     struct tls_obfuscated_heuristic_state *obfuscated_heur_state;
-    struct ndpi_tls_obfuscated_heuristic_matching_set *obfuscated_heur_matching_set;
   } tls_quic; /* Used also by DTLS and POPS/IMAPS/SMTPS/FTPS */
 
   struct rtp_info rtp[2 /* directions */];
@@ -1727,9 +1737,6 @@ struct ndpi_flow_struct {
 
   /* NDPI_PROTOCOL_ZATTOO */
   u_int8_t zattoo_stage:3;
-
-  /* NDPI_PROTOCOL_STARCRAFT */
-  u_int8_t starcraft_udp_stage : 3;	// 0-7
 
   /* NDPI_PROTOCOL_OOKLA */
   u_int8_t ookla_stage : 1;
