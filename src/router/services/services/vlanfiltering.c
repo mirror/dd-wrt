@@ -1,5 +1,5 @@
 /*
- * vlanfíltering.c
+ * vlanfiltering.c
  *
  * Copyright (C) 2007 - 2025 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *
