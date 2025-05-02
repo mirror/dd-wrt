@@ -243,7 +243,7 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/ssh.c"
 #undef NDPI_CURRENT_PROTO
-#include "protocols/starcraft.c"
+#include "protocols/blizzard.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/steam.c"
 #undef NDPI_CURRENT_PROTO
@@ -300,8 +300,6 @@
 #include "protocols/wireguard.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/world_of_kung_fu.c"
-#undef NDPI_CURRENT_PROTO
-#include "protocols/world_of_warcraft.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/wsd.c"
 #undef NDPI_CURRENT_PROTO
@@ -518,4 +516,6 @@
 #include "protocols/gearup_booster.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/nexon.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/msdo.c"
 #undef NDPI_CURRENT_PROTO
