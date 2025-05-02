@@ -68,6 +68,11 @@ extern int rta_addattr_l(struct rtattr *rta, int maxlen, int type, void *data, i
 extern void parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len) FAST_FUNC;
 extern void parse_rtattr_flags(struct rtattr *tb[], int max, struct rtattr *rta,
 			      int len, unsigned short flags) FAST_FUNC;
+
+#ifndef NLA_F_NESTED
+#define NLA_F_NESTED		(1 << 15)
+#endif
+
 #define parse_rtattr_nested(tb, max, rta) \
 	(parse_rtattr_flags((tb), (max), RTA_DATA(rta), RTA_PAYLOAD(rta), \
 			    NLA_F_NESTED))
