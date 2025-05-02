@@ -1732,8 +1732,7 @@ upnp.titl="UPnP";
 upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Posredovanja";
 upnp.legend2="Konfiguracija UPnP";
-upnp.serv="UPnP storitev";
-upnp.url="Pošlji predstavitveni URL";
+upnp.serv="UPnP IGD storitev";
 upnp.msg1="Kliknite za izbris vnosa";
 upnp.msg2="Izbrišem vse vnose?";
 

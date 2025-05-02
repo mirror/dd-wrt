@@ -1392,8 +1392,7 @@ upnp.titl="UPnP";
 upnp.h2="通用即插即用 (UPnP)";
 upnp.legend="虛擬伺服器（映射）";
 upnp.legend2="UPnP設定";
-upnp.serv="UPnP伺服器";
-upnp.url="發布 UPnP網址";
+upnp.serv="UPnP IGD伺服器";
 upnp.msg1="刪除租用";
 upnp.msg2="刪除所有項目？";
 

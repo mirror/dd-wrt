@@ -2296,8 +2296,7 @@ upnp.titl="UPnP";
 upnp.h2="Universální Plug & Play (UPnP)";
 upnp.legend="Předávání";
 upnp.legend2="UPnP Konfigurace";
-upnp.serv="Služba UPnP";
-upnp.url="Odeslat prezentační URL";
+upnp.serv="Služba UPnP IGD";
 upnp.msg1="Kliknutím odeberte položku";
 upnp.msg2="Odebrat všechny položky?";
 
@@ -2310,8 +2309,7 @@ hupnp.right4="Umožňuje aplikacím automaticky konfigurovat předávání port�
 hupnp.page1="<dd>Universální Plug and Play (UPnP) je sada počítačových síťových protokolů. Tato technologie společnosti Microsoft je pro automatickou konfiguraci zařízení. Cílem UPnP je umožnit zařízením bezproblémové připojení a zjednodušení implementace sítě v domácím a podnikovém prostředí. UPnP toho dosahuje definováním a publikováním protokolů řízení zařízení UPnP založených na otevřených komunikačních standardech založených na internetu.</dd>";
 hupnp.page2="<dd>Tabulka předávání UPnP zobrazuje všechny otevřené porty, které byly automaticky předávány procesem UPnP. Můžete odebrat předávání kliknutím na koš nebo kliknutím na tlačítko <em>Odebrat vše</em> a všechny předávání odebrat.</dd>";
 hupnp.page3="<dd>Umožňuje aplikacím automaticky nastavit předávání portů.</dd>";
-hupnp.page4="<dd>Pokud je povoleno, budou při spuštění Routeru odstraněna všechna předávání portů UPnP.</dd>";
-hupnp.page5="<dd>Je-li povoleno, je odesílána značka URL prezentace s popisem zařízení. To umožňuje, aby se Router zobrazil v <em>Místa v síti Windows</em>. <br /><br />div class=\"note\"><h4>Poznámka</h4><div>Když povolíte tuto možnost, budete možná muset restartovat počítač.</div></div></dd><dd>Klikněte na <i>Uložit nastavení</i> pro uložení nastavení. Kliknutím na <i>Zrušit změny</i> zrušíte neuložené změny.</dd>";
+
 // ** VPN.asp **//
 //
 vpn.titl="Průchody VPN";
