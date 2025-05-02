@@ -914,11 +914,11 @@ void start_sysinit(void)
 		nvram_unset("sw_lan2");
 		nvram_unset("sw_lan3");
 		nvram_unset("sw_lan4");
-		eval("ip", "link", "set", "wan", "type", "dsa", "master", "eth0");
-		eval("ip", "link", "set", "lan1", "type", "dsa", "master", "eth1");
-		eval("ip", "link", "set", "lan2", "type", "dsa", "master", "eth1");
-		eval("ip", "link", "set", "lan3", "type", "dsa", "master", "eth1");
-		eval("ip", "link", "set", "lan4", "type", "dsa", "master", "eth1");
+		eval("ip", "link", "set", "wan", "type", "dsa", "master", "eth1");
+		eval("ip", "link", "set", "lan1", "type", "dsa", "master", "eth0");
+		eval("ip", "link", "set", "lan2", "type", "dsa", "master", "eth0");
+		eval("ip", "link", "set", "lan3", "type", "dsa", "master", "eth0");
+		eval("ip", "link", "set", "lan4", "type", "dsa", "master", "eth0");
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "600000");
 		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_governor", "performance");
@@ -937,11 +937,11 @@ void start_sysinit(void)
 		nvram_unset("sw_lan2");
 		nvram_unset("sw_lan3");
 		nvram_unset("sw_lan4");
-		eval("ip", "link", "set", "wan", "type", "dsa", "master", "eth0");
-		eval("ip", "link", "set", "lan1", "type", "dsa", "master", "eth1");
-		eval("ip", "link", "set", "lan2", "type", "dsa", "master", "eth1");
-		eval("ip", "link", "set", "lan3", "type", "dsa", "master", "eth1");
-		eval("ip", "link", "set", "lan4", "type", "dsa", "master", "eth1");
+		eval("ip", "link", "set", "wan", "type", "dsa", "master", "eth1");
+		eval("ip", "link", "set", "lan1", "type", "dsa", "master", "eth0");
+		eval("ip", "link", "set", "lan2", "type", "dsa", "master", "eth0");
+		eval("ip", "link", "set", "lan3", "type", "dsa", "master", "eth0");
+		eval("ip", "link", "set", "lan4", "type", "dsa", "master", "eth0");
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "600000");
 		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_governor", "performance");
@@ -953,11 +953,11 @@ void start_sysinit(void)
 		break;
 	case ROUTER_LINKSYS_EA8500:
 	default:
-		eval("ip", "link", "set", "wan", "type", "dsa", "master", "eth0");
-		eval("ip", "link", "set", "lan1", "type", "dsa", "master", "eth1");
-		eval("ip", "link", "set", "lan2", "type", "dsa", "master", "eth1");
-		eval("ip", "link", "set", "lan3", "type", "dsa", "master", "eth1");
-		eval("ip", "link", "set", "lan4", "type", "dsa", "master", "eth1");
+		eval("ip", "link", "set", "wan", "type", "dsa", "master", "eth1");
+		eval("ip", "link", "set", "lan1", "type", "dsa", "master", "eth0");
+		eval("ip", "link", "set", "lan2", "type", "dsa", "master", "eth0");
+		eval("ip", "link", "set", "lan3", "type", "dsa", "master", "eth0");
+		eval("ip", "link", "set", "lan4", "type", "dsa", "master", "eth0");
 		nvram_unset("sw_cpuport");
 		nvram_unset("sw_wancpuport");
 		nvram_unset("sw_lancpuport");
