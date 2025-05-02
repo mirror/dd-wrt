@@ -12,6 +12,7 @@
 #include "utils.h"
 
 #include <netinet/if_ether.h>
+#define ETH_P_TEB	0x6558		/* Trans Ether Bridging		*/
 #define ETH_P_PAE	0x888E		/* Port Access Entity (IEEE 802.1X) */
 #define ETH_P_PROFINET	0x8892		/* PROFINET			*/
 #define ETH_P_REALTEK	0x8899          /* Multiple proprietary protocols */
