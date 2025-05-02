@@ -32,7 +32,9 @@
 #ifdef HAVE_VLAN_FILTERING
 int br_set_vlan_filtering(const char *br, int on)
 {
-	sysprintf("echo %d > /sys/devices/virtual/net/%s/bridge/vlan_filtering", on, br);
+	char s_on[32];
+	sprintf(s_on, "%d", on);
+	eval("ip", "link", "set", "dev", br, "type", "bridge", "vlan_filtering", s_on);
 	return 0;
 }
 
