@@ -2116,13 +2116,6 @@ static void bridge_explain(void)
 	);
 }
 
-void br_dump_bridge_id(const struct ifla_bridge_id *id, char *buf, size_t len)
-{
-	char eaddr[18];
-
-	ether_ntoa_r((const struct ether_addr *)id->addr, eaddr);
-	snprintf(buf, len, "%.2x%.2x.%s", id->prio[0], id->prio[1], eaddr);
-}
 static void bridge_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size) {
 
 	int arg;
@@ -2494,6 +2487,286 @@ static void bridge_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 	return;
 }
 
+static void bridge_slave_explain(void)
+{
+	bb_simple_error_msg_and_die(
+		"Usage: ... bridge_slave [ fdb_flush ]\n"
+		"			[ state STATE ]\n"
+		"			[ priority PRIO ]\n"
+		"			[ cost COST ]\n"
+		"			[ guard {on | off} ]\n"
+		"			[ hairpin {on | off} ]\n"
+		"			[ fastleave {on | off} ]\n"
+		"			[ root_block {on | off} ]\n"
+		"			[ learning {on | off} ]\n"
+		"			[ flood {on | off} ]\n"
+		"			[ proxy_arp {on | off} ]\n"
+		"			[ proxy_arp_wifi {on | off} ]\n"
+		"			[ mcast_router MULTICAST_ROUTER ]\n"
+		"			[ mcast_fast_leave {on | off} ]\n"
+		"			[ mcast_flood {on | off} ]\n"
+		"			[ bcast_flood {on | off} ]\n"
+		"			[ mcast_to_unicast {on | off} ]\n"
+		"			[ group_fwd_mask MASK ]\n"
+		"			[ neigh_suppress {on | off} ]\n"
+		"			[ neigh_vlan_suppress {on | off} ]\n"
+		"			[ vlan_tunnel {on | off} ]\n"
+		"			[ isolated {on | off} ]\n"
+		"			[ locked {on | off} ]\n"
+		"			[ mab {on | off} ]\n"
+		"			[ backup_port DEVICE ] [ nobackup_port ]\n"
+	);
+}
+
+static bool matches(const char *prefix, const char *string)
+{
+	if (!*prefix)
+		return true;
+	while (*string && *prefix == *string) {
+		prefix++;
+		string++;
+	}
+
+	return !!*prefix;
+}
+
+static int parse_one_of(const char *msg, const char *realval, const char * const *list,
+		 size_t len, int *p_err)
+{
+	int i;
+
+	for (i = 0; i < len; i++) {
+		if (list[i] && matches(realval, list[i]) == 0) {
+			*p_err = 0;
+			return i;
+		}
+	}
+
+
+	fprintf(stderr, "Error: argument of \"%s\" must be one of ", msg);
+	for (i = 0; i < len; i++)
+		if (list[i])
+			fprintf(stderr, "\"%s\", ", list[i]);
+	fprintf(stderr, "not \"%s\"\n", realval);
+	*p_err = -EINVAL;
+	return 0;
+}
+
+static bool parse_on_off(const char *msg, const char *realval, int *p_err)
+{
+	static const char * const values_on_off[] = { "off", "on" };
+
+	return parse_one_of(msg, realval, values_on_off, ARRAY_SIZE(values_on_off), p_err);
+}
+
+
+static void bridge_slave_parse_on_off(const char *arg_name, const char *arg_val,
+				      struct nlmsghdr *n, int type)
+{
+	int ret;
+	__u8 val = parse_on_off(arg_name, arg_val, &ret);
+
+	if (ret)
+		exit(1);
+	addattr8(n, 1024, type, val);
+}
+
+static void bridge_slave_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
+{
+	uint8_t state;
+	uint16_t priority;
+	uint32_t cost;
+	int arg;
+
+	static const char keywords[] ALIGN1 =
+		"fdb_flush\0"
+		"state\0"
+		"priority\0"
+		"cost\0"
+		"hairpin\0"
+		"guard\0"
+		"root_block\0"
+		"fastleave\0"
+		"learning\0"
+		"flood\0"
+		"mcast_flood\0"
+		"bcast_flood\0"
+		"mcast_to_unicast\0"
+		"proxy_arp\0"
+		"proxy_arp_wifi\0"
+		"mcast_router\0"
+		"mcast_fast_leave\0"
+		"neigh_suppress\0"
+		"neigh_vlan_suppress\0"
+		"group_fwd_mask\0"
+		"vlan_tunnel\0"
+		"isolated\0"
+		"locked\0"
+		"mab\0"
+		"backup_port\0"
+		"nobackup_port\0"
+		"help\0"
+	;
+
+	enum {
+		ARG_fdb_flush = 0,
+		ARG_state,
+		ARG_priority,
+		ARG_cost,
+		ARG_hairpin,
+		ARG_guard,
+		ARG_root_block,
+		ARG_fastleave,
+		ARG_learning,
+		ARG_flood,
+		ARG_mcast_flood,
+		ARG_bcast_flood,
+		ARG_mcast_to_unicast,
+		ARG_proxy_arp,
+		ARG_proxy_arp_wifi,
+		ARG_mcast_router,
+		ARG_mcast_fast_leave,
+		ARG_neigh_suppress,
+		ARG_neigh_vlan_suppress,
+		ARG_group_fwd_mask,
+		ARG_vlan_tunnel,
+		ARG_isolated,
+		ARG_locked,
+		ARG_mab,
+		ARG_backup_port,
+		ARG_nobackup_port,
+		ARG_help,
+	};
+
+	while (*argv) {
+		arg = index_in_substrings(keywords, *argv);
+		if (arg < 0)
+			invarg_1_to_2(*argv, "type bridge_slave");
+
+		if (arg == ARG_fdb_flush) {
+			addattr(n, 1024, IFLA_BRPORT_FLUSH);
+		} else if (arg == ARG_state) {
+			NEXT_ARG();
+			state = get_u8(*argv,"state is invalid");
+			addattr8(n, 1024, IFLA_BRPORT_STATE, state);
+		} else if (arg == ARG_priority) {
+			NEXT_ARG();
+			priority = get_u16(*argv, "priority is invalid");
+			addattr16(n, 1024, IFLA_BRPORT_PRIORITY, priority);
+		} else if (arg == ARG_cost) {
+			NEXT_ARG();
+			cost = get_u32(*argv, "cost is invalid");
+			addattr32(n, 1024, IFLA_BRPORT_COST, cost);
+		} else if (arg == ARG_hairpin) {
+			NEXT_ARG();
+			bridge_slave_parse_on_off("hairpin", *argv, n,
+						  IFLA_BRPORT_MODE);
+		} else if (arg == ARG_guard) {
+			NEXT_ARG();
+			bridge_slave_parse_on_off("guard", *argv, n,
+						  IFLA_BRPORT_GUARD);
+		} else if (arg == ARG_root_block) {
+			NEXT_ARG();
+			bridge_slave_parse_on_off("root_block", *argv, n,
+						  IFLA_BRPORT_PROTECT);
+		} else if (arg == ARG_fastleave) {
+			NEXT_ARG();
+			bridge_slave_parse_on_off("fastleave", *argv, n,
+						  IFLA_BRPORT_FAST_LEAVE);
+		} else if (arg == ARG_learning) {
+			NEXT_ARG();
+			bridge_slave_parse_on_off("learning", *argv, n,
+						  IFLA_BRPORT_LEARNING);
+		} else if (arg == ARG_flood) {
+			NEXT_ARG();
+			bridge_slave_parse_on_off("flood", *argv, n,
+						  IFLA_BRPORT_UNICAST_FLOOD);
+		} else if (arg == ARG_mcast_flood) {
+			NEXT_ARG();
+			bridge_slave_parse_on_off("mcast_flood", *argv, n,
+						  IFLA_BRPORT_MCAST_FLOOD);
+		} else if (arg == ARG_bcast_flood) {
+			NEXT_ARG();
+			bridge_slave_parse_on_off("bcast_flood", *argv, n,
+						  IFLA_BRPORT_BCAST_FLOOD);
+		} else if (arg == ARG_mcast_to_unicast) {
+			NEXT_ARG();
+			bridge_slave_parse_on_off("mcast_to_unicast", *argv, n,
+						  IFLA_BRPORT_MCAST_TO_UCAST);
+		} else if (arg == ARG_proxy_arp) {
+			NEXT_ARG();
+			bridge_slave_parse_on_off("proxy_arp", *argv, n,
+						  IFLA_BRPORT_PROXYARP);
+		} else if (arg == ARG_proxy_arp_wifi) {
+			NEXT_ARG();
+			bridge_slave_parse_on_off("proxy_arp_wifi", *argv, n,
+						  IFLA_BRPORT_PROXYARP_WIFI);
+		} else if (arg == ARG_mcast_router) {
+			uint8_t mcast_router;
+
+			NEXT_ARG();
+			mcast_router = get_u8(*argv, "invalid mcast_router");
+			addattr8(n, 1024, IFLA_BRPORT_MULTICAST_ROUTER,
+				 mcast_router);
+		} else if (arg == ARG_mcast_fast_leave) {
+			NEXT_ARG();
+			bridge_slave_parse_on_off("mcast_fast_leave", *argv, n,
+						  IFLA_BRPORT_FAST_LEAVE);
+		} else if (arg == ARG_neigh_suppress) {
+			NEXT_ARG();
+			bridge_slave_parse_on_off("neigh_suppress", *argv, n,
+						  IFLA_BRPORT_NEIGH_SUPPRESS);
+		} else if (arg == ARG_neigh_vlan_suppress) {
+			NEXT_ARG();
+			bridge_slave_parse_on_off("neigh_vlan_suppress", *argv,
+						  n, IFLA_BRPORT_NEIGH_VLAN_SUPPRESS);
+		} else if (arg == ARG_group_fwd_mask) {
+			uint16_t mask;
+
+			NEXT_ARG();
+			mask = get_u16(*argv, "invalid group_fwd_mask");
+			addattr16(n, 1024, IFLA_BRPORT_GROUP_FWD_MASK, mask);
+		} else if (arg == ARG_vlan_tunnel) {
+			NEXT_ARG();
+			bridge_slave_parse_on_off("vlan_tunnel", *argv, n,
+						  IFLA_BRPORT_VLAN_TUNNEL);
+		} else if (arg == ARG_isolated) {
+			NEXT_ARG();
+			bridge_slave_parse_on_off("isolated", *argv, n,
+						  IFLA_BRPORT_ISOLATED);
+		} else if (arg == ARG_locked) {
+			NEXT_ARG();
+			bridge_slave_parse_on_off("locked", *argv, n,
+						  IFLA_BRPORT_LOCKED);
+		} else if (arg == ARG_mab) {
+			NEXT_ARG();
+			bridge_slave_parse_on_off("mab", *argv, n,
+						  IFLA_BRPORT_MAB);
+		} else if (arg == ARG_backup_port) {
+			int ifindex;
+
+			NEXT_ARG();
+			ifindex = xll_name_to_index(*argv);
+			if (!ifindex)
+				invarg("Device does not exist\n", *argv);
+			addattr32(n, 1024, IFLA_BRPORT_BACKUP_PORT, ifindex);
+		} else if (arg == ARG_nobackup_port) {
+			addattr32(n, 1024, IFLA_BRPORT_BACKUP_PORT, 0);
+		} else if (arg == ARG_help) {
+			bridge_slave_explain();
+			return;
+		} else {
+			bb_error_msg_and_die("bridge_slave: unknown option \"%s\"?\n",
+				*argv);
+			return;
+		}
+		argv++;
+	}
+
+	return;
+}
+
+
 
 /* Return value becomes exitcode. It's okay to not return at all */
 static int do_add_or_delete(char **argv, const unsigned rtm, unsigned int flags, int set)
@@ -2566,7 +2839,7 @@ static int do_add_or_delete(char **argv, const unsigned rtm, unsigned int flags,
 	if (type_str && rtm == RTM_NEWLINK) {
 		struct rtattr *linkinfo = NLMSG_TAIL(&req.n);
 
-		if (set && strcmp(type_str, "dsa") && strcmp(type_str, "bridge")) {
+		if (set && strcmp(type_str, "dsa") && strcmp(type_str, "bridge") && strcmp(type_str, "bridge_slave")) {
 			return do_set(oldargv);
 		}
 
@@ -2601,6 +2874,8 @@ static int do_add_or_delete(char **argv, const unsigned rtm, unsigned int flags,
 #if ENABLE_BRIDGE
 			else if (strcmp(type_str, "bridge") == 0)
 				bridge_parse_opt(argv, &req.n, sizeof(req));
+			else if (strcmp(type_str, "bridge_slave") == 0)
+				bridge_slave_parse_opt(argv, &req.n, sizeof(req));
 #endif
 			data->rta_len = (void *)NLMSG_TAIL(&req.n) - (void *)data;
 		}
