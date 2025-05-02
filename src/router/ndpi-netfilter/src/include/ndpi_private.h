@@ -750,9 +750,9 @@ NDPI_STATIC void ookla_add_to_cache(struct ndpi_detection_module_struct *ndpi_st
                         struct ndpi_flow_struct *flow);
 
 /* SIGNAL */
-int signal_search_into_cache(struct ndpi_detection_module_struct* ndpi_struct,
+NDPI_STATIC int signal_search_into_cache(struct ndpi_detection_module_struct* ndpi_struct,
                             struct ndpi_flow_struct* flow);
-void signal_add_to_cache(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC void signal_add_to_cache(struct ndpi_detection_module_struct *ndpi_struct,
                         struct ndpi_flow_struct *flow);
 
 /* QUIC */

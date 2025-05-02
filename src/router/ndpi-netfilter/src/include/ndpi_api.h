@@ -156,7 +156,7 @@ extern "C" {
    */
   NDPI_STATIC u_int16_t ndpi_network_ptree_match(struct ndpi_detection_module_struct *ndpi_struct,
 				     struct in_addr *pin);
-  u_int16_t ndpi_network_ptree6_match(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC u_int16_t ndpi_network_ptree6_match(struct ndpi_detection_module_struct *ndpi_str,
 				      struct in6_addr *pin);
 
   /**
@@ -613,7 +613,7 @@ extern "C" {
    * @par     protoId       = the protocol identifier we're searhing
    *
    */
-  ndpi_protocol_qoe_category_t ndpi_find_protocol_qoe(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC ndpi_protocol_qoe_category_t ndpi_find_protocol_qoe(struct ndpi_detection_module_struct *ndpi_str,
 						      u_int16_t protoId);
 
   /**
@@ -623,7 +623,7 @@ extern "C" {
    * @par     evs_payload_type = EVS payload type (only in case payload_type is EVS)
    * @return  The symbolic payload type or "Unknown" if not found
    */
-  const char* ndpi_rtp_payload_type2str(u_int8_t payload_type, u_int32_t evs_payload_type);
+  NDPI_STATIC const char* ndpi_rtp_payload_type2str(u_int8_t payload_type, u_int32_t evs_payload_type);
 
   /**
    * Check if subprotocols of the specified master protocol are just
@@ -915,7 +915,7 @@ extern "C" {
     -1  Duplicated fingerprint
     -2  Unable to add a new entry
   */
-  int ndpi_add_tcp_fingerprint(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC   int ndpi_add_tcp_fingerprint(struct ndpi_detection_module_struct *ndpi_str,
 			       char *fingerprint, ndpi_os os);
 
 #ifndef __KERNEL__
@@ -2521,7 +2521,7 @@ extern "C" {
    *
    * @return The destination string buffer
    */
-  u_char* ndpi_str_to_utf8(u_char *in, u_int in_len, u_char *out, u_int out_len);
+NDPI_STATIC u_char* ndpi_str_to_utf8(u_char *in, u_int in_len, u_char *out, u_int out_len);
   
     
 #ifdef __cplusplus

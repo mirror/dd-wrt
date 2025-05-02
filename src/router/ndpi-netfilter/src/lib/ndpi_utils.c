@@ -2679,7 +2679,7 @@ u_int16_t ndpi_risk2score(ndpi_risk risk,
   return(score);
 }
 
-const char *ndpi_risk_shortnames[NDPI_MAX_RISK] = {
+static const char *ndpi_risk_shortnames[NDPI_MAX_RISK] = {
   "unknown",                    /* NDPI_NO_RISK */
   "xss",
   "sql",

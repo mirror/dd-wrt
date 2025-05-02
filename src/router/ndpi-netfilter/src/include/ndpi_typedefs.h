@@ -191,7 +191,7 @@ typedef enum {
 typedef u_int64_t ndpi_risk; /* (**) */
 
 /*Used mainly by configuration */
-extern const char *ndpi_risk_shortnames[NDPI_MAX_RISK];
+//extern const char *ndpi_risk_shortnames[NDPI_MAX_RISK];
 
 typedef enum {
   NDPI_PARAM_HOSTNAME  /* char* */,
