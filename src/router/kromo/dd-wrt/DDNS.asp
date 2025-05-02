@@ -173,20 +173,20 @@ addEvent(window, "unload", function() {
 								<% nvlsm("ddns_enable","0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 28 29 30 31 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 61 62 63 64 65","<!--"); %>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.token);</script></div>
-									<input name="ddns_username" size="35" maxlength="64" onblur="valid_name(this,share.token)" value="<% get_ddns_value("ddns_username"); %>" />
+									<input name="ddns_username" size="35" maxlength="80" onblur="valid_name(this,share.token)" value="<% get_ddns_value("ddns_username"); %>" />
 								</div>
 								<% nvlsm("ddns_enable","0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 28 29 30 31 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 61 62 63 64 65","-->"); %>
 								</div>
 								<% nvlsm("ddns_enable","0 5 27 28 32 11 60","<!--"); %>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.usrname);</script></div>
-									<input name="ddns_username" size="35" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% get_ddns_value("ddns_username"); %>" />
+									<input name="ddns_username" size="35" maxlength="80" onblur="valid_name(this,share.usrname)" value="<% get_ddns_value("ddns_username"); %>" />
 								</div>
 								<% nvlsm("ddns_enable","0 5 27 28 32 11 60","-->"); %>
 								<% nvlsm("ddns_enable","0 27 32 5 60","<!--"); %>
 								<div class="setting">
 		  							<div class="label"><script type="text/javascript"><% nvelsm("ddns_enable","28","Capture(share.token);","Capture(share.passwd);"); %></script></div>
-									<input type="password" autocomplete="new-password" id="ddns_passwd" name="ddns_passwd" size="35" maxlength="64" onblur="valid_name(this,<% nvelsm("ddns_enable","28","share.token","share.passwd"); %>)" value="<% get_ddns_value("ddns_passwd"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd" name="ddns_passwd" size="35" maxlength="80" onblur="valid_name(this,<% nvelsm("ddns_enable","28","share.token","share.passwd"); %>)" value="<% get_ddns_value("ddns_passwd"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>			
 								<% nvlsm("ddns_enable","0 27 32 5 60","-->"); %>
@@ -231,11 +231,11 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
-									<input name="ddns_username" size="35" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% get_ddns_value("ddns_username"); %>" />
+									<input name="ddns_username" size="35" maxlength="80" onblur="valid_name(this,share.usrname)" value="<% get_ddns_value("ddns_username"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="new-password" id="ddns_passwd" name="ddns_passwd" size="35" maxlength="64" onblur="valid_name(this,share.passwd)" value="<% get_ddns_value("ddns_passwd"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd" name="ddns_passwd" size="35" maxlength="80" onblur="valid_name(this,share.passwd)" value="<% get_ddns_value("ddns_passwd"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
