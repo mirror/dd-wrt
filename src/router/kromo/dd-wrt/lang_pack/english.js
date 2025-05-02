@@ -1587,7 +1587,7 @@ networking.vlantype="Type";
 networking.vlan8021q="802.1q";
 networking.vlan8021ad="802.1ad";
 networking.iface="Interface";
-networking.tg_number="Tag Number";
+networking.tg_number="VLAN ID";
 networking.prio="Prio";
 networking.pathcost="Path Cost";
 networking.hairpin="Hairpin Mode";
@@ -1648,7 +1648,7 @@ hnetworking.right2="To use multiple DHCP servers, first enable dnsmasq as a DHCP
 
 //help page
 hnetworking.page1="<dd>Allows you to transfer different independent network streams by using just one interface. This is done by inserting a small TAG within the Ethernet header. By identifying this tag these Ethernet packets can be split up again on the other side to create new interface out of it. Using this option together with the bridging option allows you to create different transfer networks which can be bridged to a Wireless Interface to separate the Router Management network from the network accessible by the User. This is useful for large ISP networks.</dd>";
-hnetworking.page2="<dd>Allows you to create a new VLAN interface out of a standard interface by filtering the interface using a defined TAG number.</dd>";
+hnetworking.page2="<dd>Allows you to create a new VLAN interface out of a standard interface by filtering the interface using a defined VLAN ID.</dd>";
 hnetworking.page3="<dd>Creates a new empty network bridge for later use. STP means Spanning Tree Protocol and with PRIO you are able to set the bridge priority order. The lowest number has the highest priority.</dd>";
 hnetworking.page4="<dd>Allows you to assign any valid interface to a network bridge. Consider setting the Wireless Interface options to Bridged if you want to assign any Wireless Interface here. Any system specific bridge setting can be overridden here in this field. </dd><dd>Click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
 
