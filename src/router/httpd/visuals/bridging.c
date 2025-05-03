@@ -65,34 +65,34 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 	show_caption_pp(wp, NULL, "networking.max_age", "<th>", "</th>\n");
 	websWrite(wp, "<th>MTU</th>\n");
 	websWrite(wp, "<th>Root MAC</th>\n");
-	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></thead>\n");
+	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></tr></thead><tbody>\n");
 
 	if (!br0found) {
 		sprintf(bridge_name, "bridgename%d", count);
-		websWrite(wp, "<tbody><tr><td><input class=\"num\" name=\"%s\" size=\"3\" value=\"br0\" /></td>\n", bridge_name);
+		websWrite(wp, "<tr><td><input class=\"num\" name=\"%s\" size=\"3\" value=\"br0\" /></td>\n", bridge_name);
 
 		sprintf(bridge_name, "bridgestp%d", count);
 		websWrite(wp, "<td>");
 		showOptions_trans_ext(wp, bridge_name, stpoptions, stpoptions_trans, "Off", "min-width=\"0\"");
 		websWrite(wp, "</td>");
 
-		websWrite(wp, "<td rowspan=\"%d\">", 1 + (vlan * 3));
+		websWrite(wp, "<td style=\"border: 1px solid black;\">");
 		if (vlan) {
 			sprintf(bridge_name, "bridgevlan%d", count);
-			websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s>%s<br />\n", bridge_name,
+			websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s />%s<br />\n", bridge_name,
 				  nvram_default_matchi("br0_vlan", 1, 0) ? "checked" : "",
 				  tran_string(buf, sizeof(buf), "networking.vlan_forwarding"));
 			sprintf(bridge_name, "bridgead%d", count);
-			websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s>%s<br />\n", bridge_name,
+			websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s />%s<br />\n", bridge_name,
 				  nvram_default_matchi("br0_ad", 1, 0) ? "checked" : "",
 				  tran_string(buf, sizeof(buf), "networking.vlan8021ad"));
 			sprintf(bridge_name, "bridgenoll%d", count);
-			websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s>%s<br />\n", bridge_name,
+			websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s />%s<br />\n", bridge_name,
 				  nvram_default_matchi("br0_noll", 1, 0) ? "" : "checked",
 				  tran_string(buf, sizeof(buf), "networking.ll_learn"));
 		}
 		sprintf(bridge_name, "bridgemcastbr%d", count);
-		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s>%s\n", bridge_name,
+		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s />%s\n", bridge_name,
 			  nvram_default_matchi("br0_mcast", 1, 0) ? "checked" : "",
 			  tran_string(buf, sizeof(buf), "networking.snooping"));
 		websWrite(wp, "</td>");
@@ -118,7 +118,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 
 		websWrite(
 			wp,
-			"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" disabled />\");\n//]]>\n</script></td></tr>\n");
+			"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" disabled /></td>\");\n//]]>\n</script></tr>\n");
 
 		count++;
 	}
@@ -152,7 +152,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 		showOptions_trans_ext(wp, bridge_name, stpoptions, stpoptions_trans, stp, "min-width=\"0\"");
 		websWrite(wp, "</td>");
 
-		websWrite(wp, "<td rowspan=\"%d\">", 1 + (vlan * 3));
+		websWrite(wp, "<td style=\"border: 1px solid black;\">");
 		if (vlan) {
 			sprintf(bridge_name, "bridgevlan%d", count);
 			char vlan_filter[32];
@@ -175,7 +175,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 		sprintf(bridge_name, "bridgemcastbr%d", count);
 		char mcast[32];
 		sprintf(mcast, "%s_mcast", bridge);
-		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s>%s\n", bridge_name,
+		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s />%s\n", bridge_name,
 			  nvram_default_matchi(mcast, 1, 0) ? "checked" : "", tran_string(buf, sizeof(buf), "networking.snooping"));
 		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgeprio%d", count);
@@ -196,7 +196,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 			  mtu != NULL ? mtu : "1500");
 		if (!strcmp(bridge, "br0")) {
 			sprintf(bridge_name, "lan_hwaddr");
-			websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"16\" value=\"%s\" /></td>\n",
+			websWrite(wp, "<td class=\"center\" ><input class=\"num\" name=\"%s\" size=\"16\" value=\"%s\" /></td>\n",
 				  bridge_name, nvram_safe_get(bridge_name));
 		} else {
 			char macbuf[32];
@@ -218,7 +218,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 		if (strcmp(bridge, "br0")) {
 			websWrite(
 				wp,
-				"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td></tr>\n",
+				"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" /></td>\");\n//]]>\n</script></tr>\n",
 				count);
 			// don't show that here, since that is under Basic Setup
 			/*			websWrite(wp, "<tr><td colspan=\"7\" class=\"center\">");
@@ -227,7 +227,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 		} else {
 			websWrite(
 				wp,
-				"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" disabled />\");\n//]]>\n</script></td></tr>\n");
+				"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" disabled /></td>\");\n//]]>\n</script></tr>\n");
 		}
 		count++;
 	}
@@ -241,7 +241,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "<td>");
 		showOptions_trans_ext(wp, bridge_name, stpoptions, stpoptions_trans, "STP", "min-width=\"0\"");
 		websWrite(wp, "</td>");
-		websWrite(wp, "<td rowspan=\"%d\">", 1 + (vlan * 3));
+		websWrite(wp, "<td style=\"border: 1px solid black;\">");
 		if (vlan) {
 			sprintf(bridge_name, "bridgevlan%d", count);
 			websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\">%s<br />\n", bridge_name,
@@ -254,7 +254,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 				  tran_string(buf, sizeof(buf), "networking.ll_learn"));
 		}
 		sprintf(bridge_name, "bridgemcastbr%d", count);
-		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\">%s\n", bridge_name,
+		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" />%s\n", bridge_name,
 			  tran_string(buf, sizeof(buf), "networking.snooping"));
 		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgeprio%d", i);
@@ -274,7 +274,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "<td></td>");
 		websWrite(
 			wp,
-			"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td></tr>\n",
+			"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" /></td>\");\n//]]>\n</script></tr>\n",
 			i);
 		totalcount++;
 	}
@@ -285,9 +285,8 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 
 	websWrite(
 		wp,
-		"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"add\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.add + \"\\\" onclick=\\\"bridge_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
+		"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"add\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.add + \"\\\" onclick=\\\"bridge_add_submit(this.form)\\\" /></td>\");\n//]]>\n</script>\n");
 	char var[32];
-	websWrite(wp, "</td>");
 	websWrite(wp, "</tr>");
 
 	sprintf(var, "%d", totalcount);
