@@ -139,7 +139,7 @@ EJ_VISIBLE void ej_show_ipvsassignments(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "</tr>");
 		websWrite(wp, "</table>");
-		websWrite(wp, "</fieldset><br/>\n");
+		websWrite(wp, "</fieldset><br />\n");
 
 		char var[32];
 		sprintf(var, "%d", totalcount);
@@ -164,7 +164,7 @@ EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t **argv)
 	show_caption_pp(wp, NULL, "networking.ipvs_config", "<legend>", "</legend>\n");
 	showOptionsLabel(wp, "networking.ipvs_role", "ipvsrole", "Master Backup",
 			 nvram_default_match("ipvs_role", "master", "master") ? "Master" : "Backup");
-	websWrite(wp, "</fieldset><br/>\n");
+	websWrite(wp, "</fieldset><br />\n");
 	websWrite(wp, "<fieldset>\n");
 	show_caption_pp(wp, NULL, "networking.create_ipvs", "<legend>", "</legend>\n");
 
@@ -273,7 +273,7 @@ EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "</td>\n");
 	websWrite(wp, "</tr>");
 	websWrite(wp, "</tbody></table>\n");
-	websWrite(wp, "</fieldset><br/>\n");
+	websWrite(wp, "</fieldset><br />\n");
 
 	char var[32];
 	sprintf(var, "%d", totalcount);

@@ -157,7 +157,7 @@ EJ_VISIBLE void ej_dlna_sharepaths(webs_t wp, int argc, char_t **argv)
 		debug_free(cs);
 	}
 
-	websWrite(wp, "</tbody></table>\n<br/>");
+	websWrite(wp, "</tbody></table>\n<br />");
 
 	// add button
 	websWrite(

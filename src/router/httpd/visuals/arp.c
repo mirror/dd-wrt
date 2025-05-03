@@ -145,7 +145,7 @@ static int addtable(struct arptable **tbl, char *mac, char *ip, char *ifname, lo
 			table[i].out += out;
 			table[i].total += total;
 			char *oldip = table[i].ip;
-			asprintf(&table[i].ip, "%s<br>%s", oldip, ip);
+			asprintf(&table[i].ip, "%s<br />%s", oldip, ip);
 			debug_free(oldip);
 			if (strlen(ip) < 16) {
 				table[i].proto |= 1;

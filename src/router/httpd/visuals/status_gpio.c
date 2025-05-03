@@ -62,7 +62,7 @@ EJ_VISIBLE void ej_show_status_gpio_output(webs_t wp, int argc, char_t **argv)
 				//disable
 				websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" name=\"%s\" value=\"0\" %s />\n", nvgpio,
 					  nvram_match(nvgpio, "0") ? "checked=\"checked\"" : "");
-				websWrite(wp, "<script type=\"text/javascript\">Capture(share.disable)</script><br>");
+				websWrite(wp, "<script type=\"text/javascript\">Capture(share.disable)</script><br />");
 			}
 		}
 		debug_free(var);
@@ -100,7 +100,7 @@ EJ_VISIBLE void ej_show_status_gpio_input(webs_t wp, int argc, char_t **argv)
 					wp,
 					"<input class=\"spaceradio\" type=\"radio\" name=\"%s\" value=\"0\" disabled=\"true\" %s />\n",
 					nvgpio, get_gpio(atoi(var)) ? "checked=\"checked\"" : "");
-				websWrite(wp, "<script type=\"text/javascript\">Capture(share.disable)</script><br>");
+				websWrite(wp, "<script type=\"text/javascript\">Capture(share.disable)</script><br />");
 			}
 		}
 		debug_free(var);

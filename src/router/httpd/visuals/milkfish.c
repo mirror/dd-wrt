@@ -40,7 +40,7 @@ EJ_VISIBLE void ej_exec_milkfish_service(webs_t wp, int argc, char_t **argv)
 	if ((fp = popen(request, "r"))) {
 		while (fgets(line, sizeof(line), fp) != NULL) {
 			websWrite(wp, line);
-			websWrite(wp, "<br>");
+			websWrite(wp, "<br />");
 		}
 		pclose(fp);
 	}

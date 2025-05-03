@@ -1230,7 +1230,7 @@ static void show_bgscan_options(webs_t wp, char *prefix)
 	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" value=\"%s\" />\n", signal,
 		  nvram_default_get(signal, "300"));
 	websWrite(wp, "</div>\n");
-	websWrite(wp, "</fieldset><br/>\n");
+	websWrite(wp, "</fieldset><br />\n");
 }
 
 #ifdef HAVE_USB
@@ -1292,7 +1292,7 @@ EJ_VISIBLE void ej_show_usb_diskinfo(webs_t wp, int argc, char_t **argv)
 
 	if (!mounted) {
 		websWrite(wp, "%s", live_translate(wp, "status_router.notavail"));
-		websWrite(wp, "<br>");
+		websWrite(wp, "<br />");
 	}
 	return;
 }
@@ -1315,7 +1315,7 @@ EJ_VISIBLE void ej_show_mmc_cardinfo(webs_t wp, int argc, char_t **argv)
 		fclose(fp);
 	} else {
 		show_caption_simple(wp, "status_router.notavail");
-		websWrite(wp, "<br>");
+		websWrite(wp, "<br />");
 	}
 	return;
 }
@@ -2466,7 +2466,7 @@ static void show_droplowsignal(webs_t wp, char *prefix)
 				signal, nvram_default_get(signal, "3"));
 			websWrite(wp, "</div>\n");
 
-			websWrite(wp, "</fieldset><br/>\n");
+			websWrite(wp, "</fieldset><br />\n");
 		} else if (is_station(prefix)) {
 			show_bgscan_options(wp, prefix);
 		}
@@ -2793,7 +2793,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		if (is_ap8x(prefix) && count == 4) {
 			websWrite(wp, "<div class=\"warning\">\n");
 			websWrite(wp, "<p><script type=\"text/javascript\">Capture(wl_basic.ap83_vap_note)</script></p>\n");
-			websWrite(wp, "</div>\n<br>\n");
+			websWrite(wp, "</div>\n<br />\n");
 		}
 	}
 #ifndef HAVE_GUESTPORT
@@ -4989,7 +4989,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			mesh_num(wp, prefix, "mesh_plink_timeout", 6, 0);
 			mesh_radio(wp, prefix, "mesh_connected_to_gate", 0);
 			mesh_radio(wp, prefix, "mesh_connected_to_as", 0);
-			websWrite(wp, "</fieldset><br/>\n");
+			websWrite(wp, "</fieldset><br />\n");
 		}
 	}
 	if (is_ath10k(prefix) && has_fwswitch(prefix)) {
@@ -5609,7 +5609,7 @@ EJ_VISIBLE void ej_show_wireless(webs_t wp, int argc, char_t **argv)
 		"<input title=\"Site survey (wlan1)\" class=\"button\" type=\"button\" name=\"site_survey\" value=\"Wireless site survey (wlan1)\" onclick=\"openWindow('Site_Survey-wlan1.asp', 760, 700)\"/>");
 	websWrite(wp, "</div>");
 	websWrite(wp, "</fieldset>");
-	websWrite(wp, "<br><br/>");
+	websWrite(wp, "<br /><br />");
 #endif
 
 #ifndef HAVE_MADWIFI
@@ -6674,7 +6674,7 @@ void show_80211X(webs_t wp, char *prefix)
 		websWrite(wp, "document.getElementById(\"%s_ttls8021xaddopt\").value = %s_ttls8021xaddopt;\n", prefix, prefix);
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</div>\n");
-		websWrite(wp, "</fieldset><br/>\n");
+		websWrite(wp, "</fieldset><br />\n");
 	}
 	// peap authentication
 	if (nvhas(akm, "peap")) {
@@ -6733,7 +6733,7 @@ void show_80211X(webs_t wp, char *prefix)
 		websWrite(wp, "document.getElementById(\"%s_peap8021xaddopt\").value = %s_peap8021xaddopt;\n", prefix, prefix);
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</div>\n");
-		websWrite(wp, "</fieldset><br/>\n");
+		websWrite(wp, "</fieldset><br />\n");
 	}
 	// leap authentication
 	if (nvhas(akm, "leap")) {
@@ -6772,7 +6772,7 @@ void show_80211X(webs_t wp, char *prefix)
 		websWrite(wp, "document.getElementById(\"%s_leap8021xaddopt\").value = %s_leap8021xaddopt;\n", prefix, prefix);
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</div>\n");
-		websWrite(wp, "</fieldset><br/>\n");
+		websWrite(wp, "</fieldset><br />\n");
 	}
 	// tls authentication
 	if (nvhas(akm, "tls")) {
@@ -6850,7 +6850,7 @@ void show_80211X(webs_t wp, char *prefix)
 		websWrite(wp, "document.getElementById(\"%s_tls8021xaddopt\").value = %s_tls8021xaddopt;\n", prefix, prefix);
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</div>\n");
-		websWrite(wp, "</fieldset><br/>\n");
+		websWrite(wp, "</fieldset><br />\n");
 	}
 }
 #endif
@@ -7198,7 +7198,7 @@ EJ_VISIBLE void ej_get_uptime(webs_t wp, int argc, char_t **argv)
 	else
 		websWrite(wp, "%u min", upminutes);
 #ifdef HAVE_ESPOD
-	websWrite(wp, "<br>");
+	websWrite(wp, "<br />");
 #else
 	websWrite(wp, ",  ");
 #endif

@@ -485,7 +485,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 				int peers = nvram_default_geti(temp, 0);
 				int peer;
 				for (peer = 0; peer < peers; peer++) {
-					websWrite(wp, "<br><fieldset>\n");
+					websWrite(wp, "<br /><fieldset>\n");
 
 					//name legend
 					snprintf(temp, sizeof(temp), "oet%d_namep%d", tun, peer);
@@ -518,7 +518,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 					}
 					websWrite(wp,
 						  "</div>\n"); // end show/hide idclconfig
-					websWrite(wp, "</fieldset><br>\n");
+					websWrite(wp, "</fieldset><br />\n");
 
 					show_oet_radio_peer(wp, "eoip.wireguard_endpoint", "oet%d_endpoint%d", tun, peer, 0,
 							    "onclick=\"show_layer_ext(this, 'idendpoint%d_peer%d', true)\"",
@@ -611,7 +611,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 							fclose(svg);
 							websWrite(wp, "<div class=\"setting\">\n");
 							wfputs(buf, wp);
-							websWrite(wp, "<br><script type=\"text/javascript\">\n");
+							websWrite(wp, "<br /><script type=\"text/javascript\">\n");
 							websWrite(wp, "//<![CDATA[\n");
 							websWrite(
 								wp,
@@ -695,7 +695,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 					websWrite(wp, "</fieldset>\n");
 				}
 
-				websWrite(wp, "<br>\n");
+				websWrite(wp, "<br />\n");
 
 				websWrite(wp, "<div class=\"center\">\n");
 				{
@@ -708,7 +708,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 				}
 				websWrite(wp, "</div>\n");
 
-				websWrite(wp, "<br>\n");
+				websWrite(wp, "<br />\n");
 
 #endif
 			}
@@ -919,7 +919,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_dns46',%s);\n", tun, tun,
 			  nvram_nmatchi(0, "oet%d_dnspbr", tun) ? "false" : "true");
 		websWrite(wp, "//]]>\n</script>\n");
-		websWrite(wp, "</fieldset><br>\n");
+		websWrite(wp, "</fieldset><br />\n");
 	}
 	websWrite(wp, "<div class=\"center\">\n");
 	{
@@ -955,6 +955,6 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 	//this.form only for *elements* to refer to the form, use 'this' or 'document.eop' or better document.forms['eop']  without an element
 	websWrite(wp, "show_layer_ext(this, 'idwgimport', false);\n");
 	websWrite(wp, "//]]>\n</script>\n");
-	websWrite(wp, "<br>\n");
+	websWrite(wp, "<br />\n");
 }
 #endif
