@@ -53,7 +53,7 @@ endif
 endif
 endif
 endif
-	make -C btrfsprogs all
+	make -C btrfsprogs btrfs.box
 	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
 	rm -rf $(INSTALLDIR)/util-linux/usr/bin
 	rm -rf $(INSTALLDIR)/util-linux/bin
@@ -113,19 +113,18 @@ endif
 endif
 endif
 endif
-	-make -C btrfsprogs install DESTDIR=$(INSTALLDIR)/btrfsprogs prefix=/usr
+	mkdir -p $(INSTALLDIR)/btrfsprogs/usr/bin
+	install -m0755 $(TOP)/btrfsprogs/btrfs.box $(INSTALLDIR)/btrfsprogs/usr/bin/btrfs
+	cd $(INSTALLDIR)/btrfsprogs/usr/bin && ln -sf btrfs mkfs.btrfs
+	cd $(INSTALLDIR)/btrfsprogs/usr/bin && ln -sf btrfs btrfstune
+	cd $(INSTALLDIR)/btrfsprogs/usr/bin && ln -sf btrfs btrfsck
+	cd $(INSTALLDIR)/btrfsprogs/usr/bin && ln -sf btrfs btrfs-convert
+#	-make -C btrfsprogs install DESTDIR=$(INSTALLDIR)/btrfsprogs prefix=/usr
 	rm -rf $(INSTALLDIR)/util-linux/usr/tmp 
-	#-rm -f $(INSTALLDIR)/btrfsprogs/usr/bin/btrfs*
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/include
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/lib
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/lib64
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/share
-	rm -f $(INSTALLDIR)/btrfsprogs/usr/bin/btrfs-*
-	rm -f $(INSTALLDIR)/btrfsprogs/usr/bin/btrfck
-	#rm -f $(INSTALLDIR)/btrfsprogs/usr/bin/btrfs
-	#rm -f $(INSTALLDIR)/btrfsprogs/usr/bin/fsck.btrfs
-	#rm -f $(INSTALLDIR)/btrfsprogs/usr/bin/btrfsck
-	#rm -f $(INSTALLDIR)/btrfsprogs/usr/bin/btrfstune
 	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
 	rm -rf $(INSTALLDIR)/util-linux/usr/bin
 	rm -rf $(INSTALLDIR)/util-linux/bin
