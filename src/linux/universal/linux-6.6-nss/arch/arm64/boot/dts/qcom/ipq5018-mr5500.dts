@@ -264,9 +264,11 @@
 				switch_access_mode = "mdio";
 				mdio-bus = <&mdio1>;
 				reset_gpio = <0x227>;
+#if 0
 				switch_cpu_bmp = <0x40>;  /* cpu port bitmap (Port 6 GMAC) */
-				switch_lan_bmp = <0x3e>;  /* lan port bitmap (Port 5..3 GMAC) */
-				switch_wan_bmp = <0x00>;  /* wan port bitmap (Port 2 GMAC) */
+				switch_lan_bmp = <0x1e>;  /* lan port bitmap (Port 5..3 GMAC) */
+				switch_wan_bmp = <0x20>;  /* wan port bitmap (Port 2 GMAC) */
+#endif
 				qca,ar8327-initvals = <
 						0x00004 0x7600000   /* PAD0_MODE */
 						0x00008 0x1000000   /* PAD5_MODE */
@@ -324,6 +326,7 @@
 			phy-handle = <&ge_phy>;
 
 		};*/
+
 
 		dp1: dp1 {
 			device_type = "network";
@@ -432,8 +435,8 @@
 					full-duplex;
 				};
 			};
-			
 
+			
 			port@1 {
 				reg = <1>;
 				phy-handle = <&qca8337_0>;
