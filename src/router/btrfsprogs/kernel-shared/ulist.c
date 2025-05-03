@@ -2,11 +2,27 @@
  * Copyright (C) 2011 STRATO AG
  * written by Arne Jansen <sensille@gmx.net>
  * Distributed under the GNU GPL license version 2.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License v2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public
+ * License along with this program; if not, write to the
+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+ * Boston, MA 021110-1307, USA.
  */
 
 #include "kerncompat.h"
-#include "ulist.h"
-#include "ctree.h"
+#include <errno.h>
+#include "kernel-lib/rbtree.h"
+#include "kernel-shared/ulist.h"
+#include "kernel-shared/messages.h"
 
 /*
  * ulist is a generic data structure to hold a collection of unique u64
@@ -37,8 +53,9 @@
  * loop would be similar to the above.
  */
 
-/**
- * ulist_init - freshly initialize a ulist
+/*
+ * Freshly initialize a ulist.
+ *
  * @ulist:	the ulist to initialize
  *
  * Note: don't use this function to init an already used ulist, use
@@ -51,14 +68,15 @@ void ulist_init(struct ulist *ulist)
 	ulist->nnodes = 0;
 }
 
-/**
- * ulist_fini - free up additionally allocated memory for the ulist
+/*
+ * Free up additionally allocated memory for the ulist.
+ *
  * @ulist:	the ulist from which to free the additional memory
  *
  * This is useful in cases where the base 'struct ulist' has been statically
  * allocated.
  */
-static void ulist_fini(struct ulist *ulist)
+void ulist_release(struct ulist *ulist)
 {
 	struct ulist_node *node;
 	struct ulist_node *next;
@@ -70,8 +88,9 @@ static void ulist_fini(struct ulist *ulist)
 	INIT_LIST_HEAD(&ulist->nodes);
 }
 
-/**
- * ulist_reinit - prepare a ulist for reuse
+/*
+ * Prepare a ulist for reuse.
+ *
  * @ulist:	ulist to be reused
  *
  * Free up all additional memory allocated for the list elements and reinit
@@ -79,12 +98,13 @@ static void ulist_fini(struct ulist *ulist)
  */
 void ulist_reinit(struct ulist *ulist)
 {
-	ulist_fini(ulist);
+	ulist_release(ulist);
 	ulist_init(ulist);
 }
 
-/**
- * ulist_alloc - dynamically allocate a ulist
+/*
+ * Dynamically allocate a ulist.
+ *
  * @gfp_mask:	allocation flags to for base allocation
  *
  * The allocated ulist will be returned in an initialized state.
@@ -101,17 +121,18 @@ struct ulist *ulist_alloc(gfp_t gfp_mask)
 	return ulist;
 }
 
-/**
- * ulist_free - free dynamically allocated ulist
+/*
+ * Free dynamically allocated ulist.
+ *
  * @ulist:	ulist to free
  *
- * It is not necessary to call ulist_fini before.
+ * It is not necessary to call ulist_release before.
  */
 void ulist_free(struct ulist *ulist)
 {
 	if (!ulist)
 		return;
-	ulist_fini(ulist);
+	ulist_release(ulist);
 	kfree(ulist);
 }
 
@@ -163,8 +184,9 @@ static int ulist_rbtree_insert(struct ulist *ulist, struct ulist_node *ins)
 	return 0;
 }
 
-/**
- * ulist_add - add an element to the ulist
+/*
+ * Add an element to the ulist.
+ *
  * @ulist:	ulist to add the element to
  * @val:	value to add to ulist
  * @aux:	auxiliary value to store along with val
@@ -216,7 +238,8 @@ int ulist_add_merge(struct ulist *ulist, u64 val, u64 aux,
 }
 
 /*
- * ulist_del - delete one node from ulist
+ * Delete one node from ulist.
+ *
  * @ulist:	ulist to remove node from
  * @val:	value to delete
  * @aux:	aux to delete
@@ -242,8 +265,9 @@ int ulist_del(struct ulist *ulist, u64 val, u64 aux)
 	return 0;
 }
 
-/**
- * ulist_next - iterate ulist
+/*
+ * Iterate ulist.
+ *
  * @ulist:	ulist to iterate
  * @uiter:	iterator variable, initialized with ULIST_ITER_INIT(&iterator)
  *
@@ -258,7 +282,7 @@ int ulist_del(struct ulist *ulist, u64 val, u64 aux)
  * It is allowed to call ulist_add during an enumeration. Newly added items
  * are guaranteed to show up in the running enumeration.
  */
-struct ulist_node *ulist_next(struct ulist *ulist, struct ulist_iterator *uiter)
+struct ulist_node *ulist_next(const struct ulist *ulist, struct ulist_iterator *uiter)
 {
 	struct ulist_node *node;
 

@@ -5,7 +5,7 @@
  *
  * libbtrfsutil is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2.1 of the License, or
  * (at your option) any later version.
  *
  * libbtrfsutil is distributed in the hope that it will be useful,
@@ -17,8 +17,8 @@
  * along with libbtrfsutil.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef BTRFS_UTIL_H
-#define BTRFS_UTIL_H
+#ifndef _LIBBTRFSUTIL_BTRFSUTIL_H_
+#define _LIBBTRFSUTIL_BTRFSUTIL_H_
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -26,12 +26,14 @@
 #include <sys/time.h>
 
 #define BTRFS_UTIL_VERSION_MAJOR 1
-#define BTRFS_UTIL_VERSION_MINOR 0
-#define BTRFS_UTIL_VERSION_PATCH 0
+#define BTRFS_UTIL_VERSION_MINOR 3
+#define BTRFS_UTIL_VERSION_PATCH 2
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define LIBBTRFSUTIL_ALIAS(orig)
 
 /**
  * enum btrfs_util_error - libbtrfsutil error codes.
@@ -63,6 +65,10 @@ enum btrfs_util_error {
 	BTRFS_UTIL_ERROR_SYNC_FAILED,
 	BTRFS_UTIL_ERROR_START_SYNC_FAILED,
 	BTRFS_UTIL_ERROR_WAIT_SYNC_FAILED,
+	BTRFS_UTIL_ERROR_GET_SUBVOL_INFO_FAILED,
+	BTRFS_UTIL_ERROR_GET_SUBVOL_ROOTREF_FAILED,
+	BTRFS_UTIL_ERROR_INO_LOOKUP_USER_FAILED,
+	BTRFS_UTIL_ERROR_FS_INFO_FAILED,
 };
 
 /**
@@ -75,48 +81,88 @@ enum btrfs_util_error {
 const char *btrfs_util_strerror(enum btrfs_util_error err);
 
 /**
+ * btrfs_util_sync() - Alias of btrfs_fs_util_sync(), do not use in new code.
+ */
+enum btrfs_util_error btrfs_util_sync(const char *path);
+
+/**
  * btrfs_util_sync() - Force a sync on a specific Btrfs filesystem.
  * @path: Path on a Btrfs filesystem.
  *
  * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
  */
-enum btrfs_util_error btrfs_util_sync(const char *path);
+enum btrfs_util_error btrfs_util_fs_sync(const char *path)
+LIBBTRFSUTIL_ALIAS(btrfs_util_sync);
 
 /**
- * btrfs_util_sync_fd() - See btrfs_util_sync().
+ * btrfs_util_sync_fd() - Alias of btrfs_util_fs_sync_fd(), do not use in new code.
  */
 enum btrfs_util_error btrfs_util_sync_fd(int fd);
 
 /**
- * btrfs_util_start_sync() - Start a sync on a specific Btrfs filesystem but
+ * btrfs_util_fs_sync_fd() - See btrfs_util_fs_sync().
+ */
+enum btrfs_util_error btrfs_util_fs_sync_fd(int fd)
+LIBBTRFSUTIL_ALIAS(btrfs_util_sync_fd);
+
+/**
+ * btrfs_util_start_sync() - Alias of btrfs_util_fs_start_sync(), do not use in new code.
+ */
+enum btrfs_util_error btrfs_util_start_sync(const char *path, uint64_t *transid);
+
+/**
+ * btrfs_util_fs_start_sync() - Start a sync on a specific Btrfs filesystem but
  * don't wait for it.
  * @path: Path on a Btrfs filesystem.
  * @transid: Returned transaction ID which can be waited on with
- * btrfs_util_wait_sync(). This can be %NULL.
+ * btrfs_util_fs_wait_sync(). This can be %NULL.
  *
  * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
  */
-enum btrfs_util_error btrfs_util_start_sync(const char *path,
-					    uint64_t *transid);
+enum btrfs_util_error btrfs_util_fs_start_sync(const char *path, uint64_t *transid)
+LIBBTRFSUTIL_ALIAS(btrfs_util_start_sync);
 
 /**
- * btrfs_util_start_sync_fd() - See btrfs_util_start_sync().
+ * btrfs_util_start_sync_fd() - Alias of btrfs_util_fs_start_sync_fd(), do not use in new code.
  */
 enum btrfs_util_error btrfs_util_start_sync_fd(int fd, uint64_t *transid);
 
 /**
- * btrfs_util_wait_sync() - Wait for a transaction with a given ID to sync.
+ * btrfs_util_fs_start_sync_fd() - See btrfs_util_start_sync().
+ */
+enum btrfs_util_error btrfs_util_fs_start_sync_fd(int fd, uint64_t *transid)
+LIBBTRFSUTIL_ALIAS(btrfs_util_start_sync_fd);
+
+/**
+ * btrfs_util_wait_sync() - Alias of btrfs_util_fs_wait_sync(), do not use in new code.
+ */
+enum btrfs_util_error btrfs_util_wait_sync(const char *path, uint64_t transid);
+
+/**
+ * btrfs_util_fs_wait_sync() - Wait for a transaction with a given ID to sync.
  * @path: Path on a Btrfs filesystem.
  * @transid: Transaction ID to wait for, or zero for the current transaction.
  *
  * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
  */
-enum btrfs_util_error btrfs_util_wait_sync(const char *path, uint64_t transid);
+enum btrfs_util_error btrfs_util_fs_wait_sync(const char *path, uint64_t transid)
+LIBBTRFSUTIL_ALIAS(btrfs_util_wait_sync);
 
 /**
- * btrfs_util_wait_sync_fd() - See btrfs_util_wait_sync().
+ * btrfs_util_wait_sync_fd() - Alias of btrfs_util_fs_wait_sync_fd(), do not use in new code.
  */
 enum btrfs_util_error btrfs_util_wait_sync_fd(int fd, uint64_t transid);
+
+/**
+ * btrfs_util_fs_wait_sync_fd() - See btrfs_util_fs_wait_sync().
+ */
+enum btrfs_util_error btrfs_util_fs_wait_sync_fd(int fd, uint64_t transid)
+LIBBTRFSUTIL_ALIAS(btrfs_util_wait_sync_fd);
+
+/**
+ * btrfs_util_is_subvolume() - Alias of btrfs_util_subvolume_is_valid(), do not use in new code.
+ */
+enum btrfs_util_error btrfs_util_is_subvolume(const char *path);
 
 /**
  * btrfs_util_is_subvolume() - Return whether a given path is a Btrfs subvolume.
@@ -127,7 +173,8 @@ enum btrfs_util_error btrfs_util_wait_sync_fd(int fd, uint64_t transid);
  * %BTRFS_UTIL_ERROR_NOT_SUBVOLUME if @path is not a subvolume, non-zero error
  * code on any other failure.
  */
-enum btrfs_util_error btrfs_util_is_subvolume(const char *path);
+enum btrfs_util_error btrfs_util_subvolume_is_valid(const char *path)
+LIBBTRFSUTIL_ALIAS(btrfs_util_is_subvolume);
 
 /**
  * btrfs_util_is_subvolume_fd() - See btrfs_util_is_subvolume().
@@ -135,22 +182,44 @@ enum btrfs_util_error btrfs_util_is_subvolume(const char *path);
 enum btrfs_util_error btrfs_util_is_subvolume_fd(int fd);
 
 /**
- * btrfs_util_subvolume_id() - Get the ID of the subvolume containing a path.
+ * btrfs_util_subvolume_is_valid_fd() - See btrfs_util_subvolume_is_valid().
+ */
+enum btrfs_util_error btrfs_util_subvolume_is_valid_fd(int fd)
+LIBBTRFSUTIL_ALIAS(btrfs_util_is_subvolume_fd);
+
+/**
+ * btrfs_util_subvolume_id() - Alias of btrfs_util_subvolume_get_id(), do not use in new code.
+ */
+enum btrfs_util_error btrfs_util_subvolume_id(const char *path, uint64_t *id_ret);
+
+/**
+ * btrfs_util_subvolume_get_id() - Get the ID of the subvolume containing a path.
  * @path: Path on a Btrfs filesystem.
  * @id_ret: Returned subvolume ID.
  *
  * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
  */
-enum btrfs_util_error btrfs_util_subvolume_id(const char *path,
-					      uint64_t *id_ret);
+enum btrfs_util_error btrfs_util_subvolume_get_id(const char *path, uint64_t *id_ret)
+LIBBTRFSUTIL_ALIAS(btrfs_util_subvolume_id);
 
 /**
- * btrfs_util_subvolume_id_fd() - See btrfs_util_subvolume_id().
+ * btrfs_util_subvolume_id_fd() - Alias of btrfs_util_subvolume_get_id_fd(), do not use in new code.
  */
 enum btrfs_util_error btrfs_util_subvolume_id_fd(int fd, uint64_t *id_ret);
 
 /**
- * btrfs_util_subvolume_path() - Get the path of the subvolume with a given ID
+ * btrfs_util_subvolume_get_id_fd() - See btrfs_util_subvolume_get_id().
+ */
+enum btrfs_util_error btrfs_util_subvolume_get_id_fd(int fd, uint64_t *id_ret)
+LIBBTRFSUTIL_ALIAS(btrfs_util_subvolume_id_fd);
+
+/**
+ * btrfs_util_subvolume_path() - Alias of btrfs_util_subvolume_get_path(), do not use in new code.
+ */
+enum btrfs_util_error btrfs_util_subvolume_path(const char *path, uint64_t id, char **path_ret);
+
+/**
+ * btrfs_util_subvolume_get_path() - Get the path of the subvolume with a given ID
  * relative to the filesystem root.
  * @path: Path on a Btrfs filesystem.
  * @id: ID of subvolume to set as the default. If zero is given, the subvolume
@@ -161,14 +230,19 @@ enum btrfs_util_error btrfs_util_subvolume_id_fd(int fd, uint64_t *id_ret);
  *
  * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
  */
-enum btrfs_util_error btrfs_util_subvolume_path(const char *path, uint64_t id,
-						char **path_ret);
+enum btrfs_util_error btrfs_util_subvolume_get_path(const char *path, uint64_t id, char **path_ret)
+LIBBTRFSUTIL_ALIAS(btrfs_util_subvolume_path);
 
 /**
- * btrfs_util_subvolume_path_fd() - See btrfs_util_subvolume_path().
+ * btrfs_util_subvolume_path_fd() - Alias of btrfs_util_subvolume_get_path_fd(), do not use in new code.
  */
-enum btrfs_util_error btrfs_util_subvolume_path_fd(int fd, uint64_t id,
-						   char **path_ret);
+enum btrfs_util_error btrfs_util_subvolume_path_fd(int fd, uint64_t id, char **path_ret);
+
+/**
+ * btrfs_util_subvolume_get_path_fd() - See btrfs_util_subvolume_get_path().
+ */
+enum btrfs_util_error btrfs_util_subvolume_get_path_fd(int fd, uint64_t id, char **path_ret)
+LIBBTRFSUTIL_ALIAS(btrfs_util_subvolume_path_fd);
 
 /**
  * struct btrfs_util_subvolume_info - Information about a Btrfs subvolume.
@@ -257,6 +331,12 @@ struct btrfs_util_subvolume_info {
 };
 
 /**
+ * btrfs_util_subvolume_info() - Alias of (), do not use in new code.
+ */
+enum btrfs_util_error btrfs_util_subvolume_info(const char *path, uint64_t id,
+						struct btrfs_util_subvolume_info *subvol);
+
+/**
  * btrfs_util_subvolume_info() - Get information about a subvolume.
  * @path: Path in a Btrfs filesystem. This may be any path in the filesystem; it
  * does not have to refer to a subvolume unless @id is zero.
@@ -266,37 +346,61 @@ struct btrfs_util_subvolume_info {
  * to check whether the subvolume exists; %BTRFS_UTIL_ERROR_SUBVOLUME_NOT_FOUND
  * will be returned if it does not.
  *
- * This requires appropriate privilege (CAP_SYS_ADMIN).
+ * This requires appropriate privilege (CAP_SYS_ADMIN) unless @id is zero and
+ * the kernel supports BTRFS_IOC_GET_SUBVOL_INFO (kernel >= 4.18).
  *
  * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
  */
-enum btrfs_util_error btrfs_util_subvolume_info(const char *path, uint64_t id,
-						struct btrfs_util_subvolume_info *subvol);
+enum btrfs_util_error btrfs_util_subvolume_get_info(const char *path, uint64_t id,
+						    struct btrfs_util_subvolume_info *subvol)
+LIBBTRFSUTIL_ALIAS(btrfs_util_subvolume_info);
 
 /**
- * btrfs_util_subvolume_info_fd() - See btrfs_util_subvolume_info().
+ * btrfs_util_subvolume_info_fd() - Alias of btrfs_util_subvolume_get_info_fd(), do not use in new code.
  */
 enum btrfs_util_error btrfs_util_subvolume_info_fd(int fd, uint64_t id,
 						   struct btrfs_util_subvolume_info *subvol);
 
 /**
- * btrfs_util_get_subvolume_read_only() - Get whether a subvolume is read-only.
+ * btrfs_util_subvolume_get_info_fd() - See btrfs_util_subvolume_get_info().
+ */
+enum btrfs_util_error btrfs_util_subvolume_get_info_fd(int fd, uint64_t id,
+						       struct btrfs_util_subvolume_info *subvol)
+LIBBTRFSUTIL_ALIAS(btrfs_util_subvolume_info_fd);
+
+/**
+ * btrfs_util_get_subvolume_read_only() - Alias of btrfs_util_subvolume_get_read_only(), do not use in new code.
+ */
+enum btrfs_util_error btrfs_util_get_subvolume_read_only(const char *path, bool *ret);
+
+/**
+ * btrfs_util_subvolume_get_read_only() - Get whether a subvolume is read-only.
  * @path: Subvolume path.
  * @ret: Returned read-only flag.
  *
  * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
  */
-enum btrfs_util_error btrfs_util_get_subvolume_read_only(const char *path,
-							 bool *ret);
+enum btrfs_util_error btrfs_util_subvolume_get_read_only(const char *path, bool *ret)
+LIBBTRFSUTIL_ALIAS(btrfs_util_get_subvolume_read_only);
 
 /**
- * btrfs_util_get_subvolume_read_only_fd() - See
- * btrfs_util_get_subvolume_read_only().
+ * btrfs_util_get_subvolume_read_only_fd() - Alias of btrfs_util_subvolume_get_read_only_fd(), do not use in new code.
  */
 enum btrfs_util_error btrfs_util_get_subvolume_read_only_fd(int fd, bool *ret);
 
 /**
- * btrfs_util_set_subvolume_read_only() - Set whether a subvolume is read-only.
+ * btrfs_util_subvolume_get_read_only_fd() - See btrfs_util_subvolume_get_read_only().
+ */
+enum btrfs_util_error btrfs_util_subvolume_get_read_only_fd(int fd, bool *ret)
+LIBBTRFSUTIL_ALIAS(btrfs_util_get_subvolume_read_only_fd);
+
+/**
+ * btrfs_util_set_subvolume_read_only() - Alias of btrfs_util_subvolume_set_read_only(), do not use in new code.
+ */
+enum btrfs_util_error btrfs_util_set_subvolume_read_only(const char *path, bool read_only);
+
+/**
+ * btrfs_util_subvolume_set_read_only() - Set whether a subvolume is read-only.
  * @path: Subvolume path.
  * @read_only: New value of read-only flag.
  *
@@ -304,18 +408,27 @@ enum btrfs_util_error btrfs_util_get_subvolume_read_only_fd(int fd, bool *ret);
  *
  * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
  */
-enum btrfs_util_error btrfs_util_set_subvolume_read_only(const char *path,
-							 bool read_only);
+enum btrfs_util_error btrfs_util_subvolume_set_read_only(const char *path, bool read_only)
+LIBBTRFSUTIL_ALIAS(btrfs_util_set_subvolume_read_only);
 
 /**
- * btrfs_util_set_subvolume_read_only_fd() - See
- * btrfs_util_set_subvolume_read_only().
+ * btrfs_util_set_subvolume_read_only_fd() - Alias of btrfs_util_subvolume_set_read_only_fd(), do not use in new code.
  */
-enum btrfs_util_error btrfs_util_set_subvolume_read_only_fd(int fd,
-							    bool read_only);
+enum btrfs_util_error btrfs_util_set_subvolume_read_only_fd(int fd, bool read_only);
 
 /**
- * btrfs_util_get_default_subvolume() - Get the default subvolume for a
+ * btrfs_util_subvolume_set_read_only_fd() - See btrfs_util_subvolume_set_read_only().
+ */
+enum btrfs_util_error btrfs_util_subvolume_set_read_only_fd(int fd, bool read_only)
+LIBBTRFSUTIL_ALIAS(btrfs_util_set_subvolume_read_only_fd);
+
+/**
+ * btrfs_util_get_default_subvolume() - Alias of btrfs_util_subvolume_get_default(), do not use in new code.
+ */
+enum btrfs_util_error btrfs_util_get_default_subvolume(const char *path, uint64_t *id_ret);
+
+/**
+ * btrfs_util_subvolume_get_default() - Get the default subvolume for a
  * filesystem.
  * @path: Path on a Btrfs filesystem.
  * @id_ret: Returned subvolume ID.
@@ -324,18 +437,28 @@ enum btrfs_util_error btrfs_util_set_subvolume_read_only_fd(int fd,
  *
  * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
  */
-enum btrfs_util_error btrfs_util_get_default_subvolume(const char *path,
-						       uint64_t *id_ret);
+enum btrfs_util_error btrfs_util_subvolume_get_default(const char *path, uint64_t *id_ret)
+LIBBTRFSUTIL_ALIAS(btrfs_util_get_default_subvolume);
 
 /**
  * btrfs_util_get_default_subvolume_fd() - See
  * btrfs_util_get_default_subvolume().
  */
-enum btrfs_util_error btrfs_util_get_default_subvolume_fd(int fd,
-							  uint64_t *id_ret);
+enum btrfs_util_error btrfs_util_get_default_subvolume_fd(int fd, uint64_t *id_ret);
 
 /**
- * btrfs_util_set_default_subvolume() - Set the default subvolume for a
+ * btrfs_util__subvolume_get_default_fd() - See btrfs_util_subvolume_get_default().
+ */
+enum btrfs_util_error btrfs_util_subvolume_get_default_fd(int fd, uint64_t *id_ret)
+LIBBTRFSUTIL_ALIAS(btrfs_util_get_default_subvolume_fd);
+
+/**
+ * btrfs_util_set_default_subvolume() - Alias of btrfs_util_subvolume_set_default(), do not use in new code.
+ */
+enum btrfs_util_error btrfs_util_set_default_subvolume(const char *path, uint64_t id);
+
+/**
+ * btrfs_util_subvolume_set_default() - Set the default subvolume for a
  * filesystem.
  * @path: Path in a Btrfs filesystem. This may be any path in the filesystem; it
  * does not have to refer to a subvolume unless @id is zero.
@@ -346,50 +469,71 @@ enum btrfs_util_error btrfs_util_get_default_subvolume_fd(int fd,
  *
  * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
  */
-enum btrfs_util_error btrfs_util_set_default_subvolume(const char *path,
-						       uint64_t id);
+enum btrfs_util_error btrfs_util_subvolume_set_default(const char *path, uint64_t id)
+LIBBTRFSUTIL_ALIAS(btrfs_util_set_default_subvolume);
 
 /**
- * btrfs_util_set_default_subvolume_fd() - See
- * btrfs_util_set_default_subvolume().
+ * btrfs_util_set_default_subvolume_fd() - Alias of btrfs_util_subvolume_set_default_fd(), do not use in new code.
  */
 enum btrfs_util_error btrfs_util_set_default_subvolume_fd(int fd, uint64_t id);
+
+/**
+ * btrfs_util_subvolume_set_default_fd() - See
+ * btrfs_util_subvolume_set_default().
+ */
+enum btrfs_util_error btrfs_util_subvolume_set_default_fd(int fd, uint64_t id)
+LIBBTRFSUTIL_ALIAS(btrfs_util_set_default_subvolume_fd);
 
 struct btrfs_util_qgroup_inherit;
 
 /**
- * btrfs_util_create_subvolume() - Create a new subvolume.
+ * btrfs_util_create_subvolume() - Alias of btrfs_util_subvolume_create(), do not use in new code.
+ */
+enum btrfs_util_error btrfs_util_create_subvolume(const char *path, int flags,
+						  uint64_t *unused,
+						  struct btrfs_util_qgroup_inherit *qgroup_inherit);
+
+/**
+ * btrfs_util_subvolume_create() - Create a new subvolume.
  * @path: Where to create the subvolume.
  * @flags: Must be zero.
- * @async_transid: If not NULL, create the subvolume asynchronously (i.e.,
- * without waiting for it to commit it to disk) and return the transaction ID
- * that it was created in. This transaction ID can be waited on with
- * btrfs_util_wait_sync().
+ * @unused: No longer used (since 5.15)
  * @qgroup_inherit: Qgroups to inherit from, or NULL.
  *
  * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
  */
-enum btrfs_util_error btrfs_util_create_subvolume(const char *path, int flags,
-						  uint64_t *async_transid,
-						  struct btrfs_util_qgroup_inherit *qgroup_inherit);
+enum btrfs_util_error btrfs_util_subvolume_create(const char *path, int flags,
+						  uint64_t *unused,
+						  struct btrfs_util_qgroup_inherit *qgroup_inherit)
+LIBBTRFSUTIL_ALIAS(btrfs_util_create_subvolume);
 
 /**
- * btrfs_util_create_subvolume_fd() - Create a new subvolume given its parent
+ * btrfs_util_create_subvolume_fd() - Alias of btrfs_util_subvolume_create_fd(), do not use in new code.
+ */
+enum btrfs_util_error btrfs_util_create_subvolume_fd(int parent_fd,
+						     const char *name,
+						     int flags,
+						     uint64_t *unused,
+						     struct btrfs_util_qgroup_inherit *qgroup_inherit);
+
+/**
+ * btrfs_util_subvolume_create_fd() - Create a new subvolume given its parent
  * and name.
  * @parent_fd: File descriptor of the parent directory where the subvolume
  * should be created.
  * @name: Name of the subvolume to create.
  * @flags: See btrfs_util_create_subvolume().
- * @async_transid: See btrfs_util_create_subvolume().
+ * @unused: See btrfs_util_create_subvolume().
  * @qgroup_inherit: See btrfs_util_create_subvolume().
  *
  * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
  */
-enum btrfs_util_error btrfs_util_create_subvolume_fd(int parent_fd,
+enum btrfs_util_error btrfs_util_subvolume_create_fd(int parent_fd,
 						     const char *name,
 						     int flags,
-						     uint64_t *async_transid,
-						     struct btrfs_util_qgroup_inherit *qgroup_inherit);
+						     uint64_t *unused,
+						     struct btrfs_util_qgroup_inherit *qgroup_inherit)
+LIBBTRFSUTIL_ALIAS(btrfs_util_create_subvolume_fd);
 
 /**
  * BTRFS_UTIL_CREATE_SNAPSHOT_RECURSIVE - Also snapshot subvolumes beneath the
@@ -400,55 +544,81 @@ enum btrfs_util_error btrfs_util_create_subvolume_fd(int parent_fd,
  * %BTRFS_UTIL_CREATE_SNAPSHOT_READ_ONLY. It requires appropriate privilege
  * (CAP_SYS_ADMIN).
  */
-#define BTRFS_UTIL_CREATE_SNAPSHOT_RECURSIVE (1 << 0)
+#define BTRFS_UTIL_CREATE_SNAPSHOT_RECURSIVE (1U << 0)
 /**
  * BTRFS_UTIL_CREATE_SNAPSHOT_READ_ONLY - Create a read-only snapshot.
  */
-#define BTRFS_UTIL_CREATE_SNAPSHOT_READ_ONLY (1 << 1)
-#define BTRFS_UTIL_CREATE_SNAPSHOT_MASK ((1 << 2) - 1)
+#define BTRFS_UTIL_CREATE_SNAPSHOT_READ_ONLY	(1U << 1)
+#define BTRFS_UTIL_CREATE_SNAPSHOT_MASK		((1U << 2) - 1)
 
 /**
- * btrfs_util_create_snapshot() - Create a new snapshot from a source subvolume
+ * btrfs_util_create_snapshot() - Alias of btrfs_util_subvolume_snapshot(), do not use in new code.
+ */
+enum btrfs_util_error btrfs_util_create_snapshot(const char *source,
+						 const char *path, int flags,
+						 uint64_t *unused,
+						 struct btrfs_util_qgroup_inherit *qgroup_inherit);
+
+/**
+ * btrfs_util_subvolume_snapshot() - Create a new snapshot from a source subvolume
  * path.
  * @source: Path of the existing subvolume to snapshot.
  * @path: Where to create the snapshot.
  * @flags: Bitmask of BTRFS_UTIL_CREATE_SNAPSHOT_* flags.
- * @async_transid: See btrfs_util_create_subvolume(). If
- * %BTRFS_UTIL_CREATE_SNAPSHOT_RECURSIVE was in @flags, then this will contain
- * the largest transaction ID of all created subvolumes.
+ * @unused: See btrfs_util_create_subvAlias of (), do not use in new code.olume().
  * @qgroup_inherit: See btrfs_util_create_subvolume().
  *
  * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
  */
-enum btrfs_util_error btrfs_util_create_snapshot(const char *source,
-						 const char *path, int flags,
-						 uint64_t *async_transid,
-						 struct btrfs_util_qgroup_inherit *qgroup_inherit);
+enum btrfs_util_error btrfs_util_subvolume_snapshot(const char *source,
+						    const char *path, int flags,
+						    uint64_t *unused,
+						    struct btrfs_util_qgroup_inherit *qgroup_inherit)
+LIBBTRFSUTIL_ALIAS(btrfs_util_create_snapshot);
 
 /**
- * btrfs_util_create_snapshot_fd() - See btrfs_util_create_snapshot().
+ * btrfs_util_create_snapshot_fd() - Alias of btrfs_util_subvolume_snapshot_fd(), do not use in new code.
  */
 enum btrfs_util_error btrfs_util_create_snapshot_fd(int fd, const char *path,
 						    int flags,
-						    uint64_t *async_transid,
+						    uint64_t *unused,
 						    struct btrfs_util_qgroup_inherit *qgroup_inherit);
 
 /**
- * btrfs_util_create_snapshot_fd2() - Create a new snapshot from a source
+ * btrfs_util_subvolume_snapshot_fd() - See btrfs_util_subvolume_snapshot().
+ */
+enum btrfs_util_error btrfs_util_subvolume_snapshot_fd(int fd, const char *path,
+						       int flags,
+						       uint64_t *unused,
+						       struct btrfs_util_qgroup_inherit *qgroup_inherit)
+LIBBTRFSUTIL_ALIAS(btrfs_util_create_snapshot_fd);
+
+/**
+ * btrfs_util_create_snapshot_fd2() -Alias of btrfs_util_subvolume_snapshot_fd2(), do not use in new code.
+ */
+enum btrfs_util_error btrfs_util_create_snapshot_fd2(int fd, int parent_fd,
+						     const char *name,
+						     int flags,
+						     uint64_t *unused,
+						     struct btrfs_util_qgroup_inherit *qgroup_inherit);
+
+/**
+ * btrfs_util_subvolume_snapshot_fd2() - Create a new snapshot from a source
  * subvolume file descriptor and a target parent file descriptor and name.
  * @fd: File descriptor of the existing subvolume to snapshot.
  * @parent_fd: File descriptor of the parent directory where the snapshot should
  * be created.
  * @name: Name of the snapshot to create.
- * @flags: See btrfs_util_create_snapshot().
- * @async_transid: See btrfs_util_create_snapshot().
- * @qgroup_inherit: See btrfs_util_create_snapshot().
+ * @flags: See btrfs_util_subvolume_snapshot().
+ * @unused: See btrfs_util_subvolume_snapshot().
+ * @qgroup_inherit: See btrfs_util_subvolume_snapshot().
  */
-enum btrfs_util_error btrfs_util_create_snapshot_fd2(int fd, int parent_fd,
-						     const char *name,
-						     int flags,
-						     uint64_t *async_transid,
-						     struct btrfs_util_qgroup_inherit *qgroup_inherit);
+enum btrfs_util_error btrfs_util_subvolume_snapshot_fd2(int fd, int parent_fd,
+							const char *name,
+							int flags,
+							uint64_t *unused,
+							struct btrfs_util_qgroup_inherit *qgroup_inherit)
+LIBBTRFSUTIL_ALIAS(btrfs_util_create_snapshot_fd2);
 
 /**
  * BTRFS_UTIL_DELETE_SUBVOLUME_RECURSIVE - Delete subvolumes beneath the given
@@ -458,30 +628,67 @@ enum btrfs_util_error btrfs_util_create_snapshot_fd2(int fd, int parent_fd,
  * error. Note that this is currently implemented in userspace non-atomically.
  * It requires appropriate privilege (CAP_SYS_ADMIN).
  */
-#define BTRFS_UTIL_DELETE_SUBVOLUME_RECURSIVE (1 << 0)
-#define BTRFS_UTIL_DELETE_SUBVOLUME_MASK ((1 << 1) - 1)
+#define BTRFS_UTIL_DELETE_SUBVOLUME_RECURSIVE	(1U << 0)
+#define BTRFS_UTIL_DELETE_SUBVOLUME_MASK	((1U << 1) - 1)
 
 /**
- * btrfs_util_delete_subvolume() - Delete a subvolume or snapshot.
- * @path: Path of the subvolume to delete.
- * @flags: Bitmask of BTRFS_UTIL_DELETE_SUBVOLUME_* flags.
- *
- * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
+ * btrfs_util_delete_subvolume() - Alias of btrfs_util_subvolume_delete(), do not use in new code.
  */
 enum btrfs_util_error btrfs_util_delete_subvolume(const char *path, int flags);
 
 /**
- * btrfs_util_delete_subvolume_fd() - Delete a subvolume or snapshot given its
- * parent and name.
- * @parent_fd: File descriptor of the subvolume's parent directory.
- * @name: Name of the subvolume.
- * @flags: See btrfs_util_delete_subvolume().
+ * btrfs_util_subvolume_delete() - Delete a subvolume or snapshot.
+ * @path: Path of the subvolume to delete.
+ * @flags: Bitmask of BTRFS_UTIL_DELETE_SUBVOLUME_* flags.
+ *
+ * This requires appropriate privilege (CAP_SYS_ADMIN), unless the filesystem is
+ * mounted with 'user_subvol_rm_allowed'.
+ *
+ * NOTE: Since kernel 4.18 it is possible to delete an empty subvolume using
+ * rmdir.  The sysfs file /sys/fs/btrfs/features/rmdir_subvol indicates whether
+ * this feature is enabled or not.
  *
  * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
+ */
+enum btrfs_util_error btrfs_util_subvolume_delete(const char *path, int flags)
+LIBBTRFSUTIL_ALIAS(btrfs_util_delete_subvolume);
+
+/**
+ * btrfs_util_delete_subvolume_fd() - Alias of (), do not use in new code.
  */
 enum btrfs_util_error btrfs_util_delete_subvolume_fd(int parent_fd,
 						     const char *name,
 						     int flags);
+
+/**
+ * btrfs_util_subvolume_delete_fd() - Delete a subvolume or snapshot given its
+ * parent and name.
+ * @parent_fd: File descriptor of the subvolume's parent directory.
+ * @name: Name of the subvolume.
+ * @flags: See btrfs_util_subvolume_delete().
+ *
+ * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
+ */
+enum btrfs_util_error btrfs_util_subvolume_delete_fd(int parent_fd,
+						     const char *name,
+						     int flags)
+LIBBTRFSUTIL_ALIAS(btrfs_util_delete_subvolume_fd);
+
+/**
+ * btrfs_util_delete_subvolume_by_id_fd() -Alias of btrfs_util_subvolume_delete_by_id_fd(), do not use in new code.
+ */
+enum btrfs_util_error btrfs_util_delete_subvolume_by_id_fd(int fd, uint64_t subvolid);
+
+/**
+ * btrfs_util_subvolume_delete_by_id_fd() - Delete a subvolume or snapshot using
+ * subvolume id.
+ * @fd: File descriptor of the subvolume's parent directory.
+ * @subvolid: Subvolume id of the subvolume or snapshot to be deleted.
+ *
+ * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
+ */
+enum btrfs_util_error btrfs_util_subvolume_delete_by_id_fd(int fd, uint64_t subvolid)
+LIBBTRFSUTIL_ALIAS(btrfs_util_delete_subvolume_by_id_fd);
 
 struct btrfs_util_subvolume_iterator;
 
@@ -490,11 +697,19 @@ struct btrfs_util_subvolume_iterator;
  * behavior is pre-order, e.g., foo will be yielded before foo/bar. If this flag
  * is specified, foo/bar will be yielded before foo.
  */
-#define BTRFS_UTIL_SUBVOLUME_ITERATOR_POST_ORDER (1 << 0)
-#define BTRFS_UTIL_SUBVOLUME_ITERATOR_MASK ((1 << 1) - 1)
+#define BTRFS_UTIL_SUBVOLUME_ITERATOR_POST_ORDER	(1U << 0)
+#define BTRFS_UTIL_SUBVOLUME_ITERATOR_MASK		((1U << 1) - 1)
 
 /**
- * btrfs_util_create_subvolume_iterator() - Create an iterator over subvolumes
+ * btrfs_util_create_subvolume_iterator() - Alias of btrfs_util_subvolume_iter_create(), do not use in new code.
+ */
+enum btrfs_util_error btrfs_util_create_subvolume_iterator(const char *path,
+							   uint64_t top,
+							   int flags,
+							   struct btrfs_util_subvolume_iterator **ret);
+
+/**
+ * btrfs_util_subvolume_iter_create() - Create an iterator over subvolumes
  * in a Btrfs filesystem.
  * @path: Path in a Btrfs filesystem. This may be any path in the filesystem; it
  * does not have to refer to a subvolume unless @top is zero.
@@ -505,19 +720,25 @@ struct btrfs_util_subvolume_iterator;
  * @flags: Bitmask of BTRFS_UTIL_SUBVOLUME_ITERATOR_* flags.
  * @ret: Returned iterator.
  *
+ * Subvolume iterators require appropriate privilege (CAP_SYS_ADMIN) unless @top
+ * is zero and the kernel supports BTRFS_IOC_GET_SUBVOL_ROOTREF and
+ * BTRFS_IOC_INO_LOOKUP_USER (kernel >= 4.18). In this case, subvolumes which
+ * cannot be accessed (e.g., due to permissions or other mounts) will be
+ * skipped.
+ *
  * The returned iterator must be freed with
- * btrfs_util_destroy_subvolume_iterator().
+ * btrfs_util_subvolume_iter_destroy().
  *
  * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
  */
-enum btrfs_util_error btrfs_util_create_subvolume_iterator(const char *path,
-							   uint64_t top,
-							   int flags,
-							   struct btrfs_util_subvolume_iterator **ret);
+enum btrfs_util_error btrfs_util_subvolume_iter_create(const char *path,
+						       uint64_t top,
+						       int flags,
+						       struct btrfs_util_subvolume_iterator **ret)
+LIBBTRFSUTIL_ALIAS(btrfs_util_create_subvolume_iterator);
 
 /**
- * btrfs_util_create_subvolume_iterator_fd() - See
- * btrfs_util_create_subvolume_iterator().
+ * btrfs_util_create_subvolume_iterator_fd() - Alias of btrfs_util_subvolume_iter_create_fd(), do not use in new code.
  */
 enum btrfs_util_error btrfs_util_create_subvolume_iterator_fd(int fd,
 							      uint64_t top,
@@ -525,14 +746,34 @@ enum btrfs_util_error btrfs_util_create_subvolume_iterator_fd(int fd,
 							      struct btrfs_util_subvolume_iterator **ret);
 
 /**
- * btrfs_util_destroy_subvolume_iterator() - Destroy a subvolume iterator
- * previously created by btrfs_util_create_subvolume_iterator().
- * @iter: Iterator to destroy.
+ * btrfs_util_subvolume_iter_create_fd() - See btrfs_util_subvolume_iter_create().
+ */
+enum btrfs_util_error btrfs_util_subvolume_iter_create_fd(int fd,
+							  uint64_t top,
+							  int flags,
+							  struct btrfs_util_subvolume_iterator **ret)
+LIBBTRFSUTIL_ALIAS(btrfs_util_create_subvolume_iterator_fd);
+
+/**
+ * btrfs_util_destroy_subvolume_iterator() - Alias of btrfs_util_subvolume_iter_destroy(), do not use in new code.
  */
 void btrfs_util_destroy_subvolume_iterator(struct btrfs_util_subvolume_iterator *iter);
 
 /**
- * btrfs_util_subvolume_iterator_fd() - Get the file descriptor associated with
+ * btrfs_util_subvolume_iter_destroy() - Destroy a subvolume iterator
+ * previously created by btrfs_util_subvolume_iter_create().
+ * @iter: Iterator to destroy.
+ */
+void btrfs_util_subvolume_iter_destroy(struct btrfs_util_subvolume_iterator *iter)
+LIBBTRFSUTIL_ALIAS(btrfs_util_destroy_subvolume_iterator);
+
+/**
+ * btrfs_util_subvolume_iterator_fd() -Alias of btrfs_util_subvolume_iterator_get_fd(), do not use in new code.
+ */
+int btrfs_util_subvolume_iterator_fd(const struct btrfs_util_subvolume_iterator *iter);
+
+/**
+ * btrfs_util_subvolume_iterator_get_fd() - Get the file descriptor associated with
  * a subvolume iterator.
  * @iter: Iterator to get.
  *
@@ -542,10 +783,18 @@ void btrfs_util_destroy_subvolume_iterator(struct btrfs_util_subvolume_iterator 
  *
  * Return: File descriptor.
  */
-int btrfs_util_subvolume_iterator_fd(const struct btrfs_util_subvolume_iterator *iter);
+int btrfs_util_subvolume_iterator_get_fd(const struct btrfs_util_subvolume_iterator *iter)
+LIBBTRFSUTIL_ALIAS(btrfs_util_subvolume_iterator_fd);
 
 /**
- * btrfs_util_subvolume_iterator_next() - Get the next subvolume from a
+ * btrfs_util_subvolume_iterator_next() - Alias of btrfs_util_subvolume_iter_next(), do not use in new code.
+ */
+enum btrfs_util_error btrfs_util_subvolume_iterator_next(struct btrfs_util_subvolume_iterator *iter,
+							 char **path_ret,
+							 uint64_t *id_ret);
+
+/**
+ * btrfs_util_subvolume_iter_next() - Get the next subvolume from a
  * subvolume iterator.
  * @iter: Subvolume iterator.
  * @path_ret: Returned subvolume path, relative to the subvolume ID used to
@@ -553,35 +802,51 @@ int btrfs_util_subvolume_iterator_fd(const struct btrfs_util_subvolume_iterator 
  * Must be freed with free().
  * @id_ret: Returned subvolume ID. May be %NULL.
  *
- * This requires appropriate privilege (CAP_SYS_ADMIN).
+ * This requires appropriate privilege (CAP_SYS_ADMIN) for kernels < 4.18. See
+ * btrfs_util_create_subvolume_iterator().
  *
  * Return: %BTRFS_UTIL_OK on success, %BTRFS_UTIL_ERROR_STOP_ITERATION if there
  * are no more subvolumes, non-zero error code on failure.
  */
-enum btrfs_util_error btrfs_util_subvolume_iterator_next(struct btrfs_util_subvolume_iterator *iter,
-							 char **path_ret,
-							 uint64_t *id_ret);
+enum btrfs_util_error btrfs_util_subvolume_iter_next(struct btrfs_util_subvolume_iterator *iter,
+						     char **path_ret,
+						     uint64_t *id_ret)
+LIBBTRFSUTIL_ALIAS(btrfs_util_subvolume_iterator_next);
 
 /**
- * btrfs_util_subvolume_iterator_next_info() - Get information about the next
- * subvolume for a subvolume iterator.
- * @iter: Subvolume iterator.
- * @path_ret: See btrfs_util_subvolume_iterator_next().
- * @subvol: Returned subvolume information.
- *
- * This convenience function basically combines
- * btrfs_util_subvolume_iterator_next() and btrfs_util_subvolume_info().
- *
- * This requires appropriate privilege (CAP_SYS_ADMIN).
- *
- * Return: See btrfs_util_subvolume_iterator_next().
+ * btrfs_util_subvolume_iterator_next_info() - Alias of btrfs_util_subvolume_iter_next_info(), do not use in new code.
  */
 enum btrfs_util_error btrfs_util_subvolume_iterator_next_info(struct btrfs_util_subvolume_iterator *iter,
 							      char **path_ret,
 							      struct btrfs_util_subvolume_info *subvol);
 
 /**
- * btrfs_util_deleted_subvolumes() - Get a list of subvolume which have been
+ * btrfs_util_subvolume_iter_next_info() - Get information about the next
+ * subvolume for a subvolume iterator.
+ * @iter: Subvolume iterator.
+ * @path_ret: See btrfs_util_subvolume_iter_next().
+ * @subvol: Returned subvolume information.
+ *
+ * This convenience function basically combines
+ * btrfs_util_subvolume_iter_next() and btrfs_util_subvolume_info().
+ *
+ * This requires appropriate privilege (CAP_SYS_ADMIN) for kernels < 4.18. See
+ * btrfs_util_create_subvolume_iterator().
+ *
+ * Return: See btrfs_util_subvolume_iter_next().
+ */
+enum btrfs_util_error btrfs_util_subvolume_iter_next_info(struct btrfs_util_subvolume_iterator *iter,
+							  char **path_ret,
+							  struct btrfs_util_subvolume_info *subvol)
+LIBBTRFSUTIL_ALIAS(btrfs_util_subvolume_iterator_next_info);
+
+/**
+ * btrfs_util_deleted_subvolumes() - Alias of btrfs_util_subvolume_list_deleted(), do not use in new code.
+ */
+enum btrfs_util_error btrfs_util_deleted_subvolumes(const char *path, uint64_t **ids, size_t *n);
+
+/**
+ * btrfs_util_subvolume_list_deleted() - Get a list of subvolume which have been
  * deleted but not yet cleaned up.
  * @path: Path on a Btrfs filesystem.
  * @ids: Returned array of subvolume IDs.
@@ -591,36 +856,51 @@ enum btrfs_util_error btrfs_util_subvolume_iterator_next_info(struct btrfs_util_
  *
  * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
  */
-enum btrfs_util_error btrfs_util_deleted_subvolumes(const char *path,
-						    uint64_t **ids,
-						    size_t *n);
+enum btrfs_util_error btrfs_util_subvolume_list_deleted(const char *path, uint64_t **ids, size_t *n)
+LIBBTRFSUTIL_ALIAS(btrfs_util_deleted_subvolumes);
 
 /**
- * btrfs_util_deleted_subvolumes_fd() - See btrfs_util_deleted_subvolumes().
+ * btrfs_util_deleted_subvolumes_fd() - See btrfs_util_subvolume_list_deleted().
  */
-enum btrfs_util_error btrfs_util_deleted_subvolumes_fd(int fd, uint64_t **ids,
-						       size_t *n);
+enum btrfs_util_error btrfs_util_deleted_subvolumes_fd(int fd, uint64_t **ids, size_t *n);
 
 /**
- * btrfs_util_create_qgroup_inherit() - Create a qgroup inheritance specifier
- * for btrfs_util_create_subvolume() or btrfs_util_create_snapshot().
+ * btrfs_util_subvolume_list_deleted_fd() - See btrfs_util_subvolume_list_deleted().
+ */
+enum btrfs_util_error btrfs_util_subvolume_list_deleted_fd(int fd, uint64_t **ids, size_t *n)
+LIBBTRFSUTIL_ALIAS(btrfs_util_deleted_subvolumes_fd);
+
+/**
+ * btrfs_util_create_qgroup_inherit() - Alias of btrfs_util_qgroup_inherit_create(), do not use in new code.
+ */
+enum btrfs_util_error btrfs_util_create_qgroup_inherit(int flags, struct btrfs_util_qgroup_inherit **ret);
+
+/**
+ * btrfs_util_qgroup_inherit_create() - Create a qgroup inheritance specifier
+ * for btrfs_util_create_subvolume() or btrfs_util_subvolume_snapshot().
  * @flags: Must be zero.
  * @ret: Returned qgroup inheritance specifier.
  *
  * The returned structure must be freed with
- * btrfs_util_destroy_qgroup_inherit().
+ * btrfs_util_qgroup_inherit_destroy().
  *
  * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
  */
-enum btrfs_util_error btrfs_util_create_qgroup_inherit(int flags,
-						       struct btrfs_util_qgroup_inherit **ret);
+enum btrfs_util_error btrfs_util_qgroup_inherit_create(int flags, struct btrfs_util_qgroup_inherit **ret)
+LIBBTRFSUTIL_ALIAS(btrfs_util_create_qgroup_inherit);
 
 /**
- * btrfs_util_destroy_qgroup_inherit() - Destroy a qgroup inheritance specifier
+ * btrfs_util_destroy_qgroup_inherit() - Alias of btrfs_util_qgroup_inherit_destroy(), do not use in new code.
+ */
+void btrfs_util_destroy_qgroup_inherit(struct btrfs_util_qgroup_inherit *inherit);
+
+/**
+ * btrfs_util_qgroup_inherit_destroy() - Destroy a qgroup inheritance specifier
  * previously created with btrfs_util_create_qgroup_inherit().
  * @inherit: Specifier to destroy.
  */
-void btrfs_util_destroy_qgroup_inherit(struct btrfs_util_qgroup_inherit *inherit);
+void btrfs_util_qgroup_inherit_destroy(struct btrfs_util_qgroup_inherit *inherit)
+LIBBTRFSUTIL_ALIAS(btrfs_util_destroy_qgroup_inherit);
 
 /**
  * btrfs_util_qgroup_inherit_add_group() - Add inheritance from a qgroup to a
@@ -643,8 +923,10 @@ enum btrfs_util_error btrfs_util_qgroup_inherit_add_group(struct btrfs_util_qgro
 void btrfs_util_qgroup_inherit_get_groups(const struct btrfs_util_qgroup_inherit *inherit,
 					  const uint64_t **groups, size_t *n);
 
+#undef LIBBTRFSUTIL_ALIAS
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* BTRFS_UTIL_H */
+#endif /* _LIBBTRFSUTIL_BTRFSUTIL_H_ */

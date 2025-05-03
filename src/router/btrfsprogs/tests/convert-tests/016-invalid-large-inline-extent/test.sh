@@ -2,13 +2,14 @@
 # Check if btrfs-convert refuses to rollback the filesystem, and leave the fs
 # and the convert image untouched
 
-source "$TEST_TOP/common"
-source "$TEST_TOP/common.convert"
+source "$TEST_TOP/common" || exit
+source "$TEST_TOP/common.convert" || exit
+
+check_prereq btrfs-convert
+check_global_prereq mke2fs
 
 setup_root_helper
 prepare_test_dev
-check_prereq btrfs-convert
-check_global_prereq mke2fs
 
 convert_test_prep_fs ext4 mke2fs -t ext4 -b 4096
 

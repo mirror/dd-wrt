@@ -16,6 +16,13 @@
  * Boston, MA 021110-1307, USA.
  */
 
+#define _BSD_SOURCE
+#define _DEFAULT_SOURCE
+#define _LARGEFILE64_SOURCE
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include "kerncompat.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,10 +33,11 @@
 #include <errno.h>
 #include <sys/sysmacros.h>
 #include <sys/stat.h>
+#include <sys/xattr.h>
 #include <assert.h>
 #include <time.h>
 #include <stdint.h>
-#include "tests/sha.h"
+#include "crypto/sha.h"
 
 #define CS_SIZE 32
 #define CHUNKS	128
@@ -40,7 +48,6 @@
 #endif
 
 /* TODO: add hardlink recognition */
-/* TODO: add xattr/acl */
 
 struct excludes {
 	char *path;
@@ -71,17 +78,18 @@ enum _flags {
 	FLAG_MTIME,
 	FLAG_CTIME,
 	FLAG_DATA,
+	FLAG_XATTRS,
 	FLAG_OPEN_ERROR,
 	FLAG_STRUCTURE,
 	NUM_FLAGS
 };
 
-const char flchar[] = "ugoamcdes";
+const char flchar[] = "ugoamcdtes";
 char line[65536];
 
-int flags[NUM_FLAGS] = {1, 1, 1, 1, 1, 0, 1, 0, 0};
+int flags[NUM_FLAGS] = {1, 1, 1, 1, 1, 0, 1, 1, 0, 0};
 
-char *
+static char *
 getln(char *buf, int size, FILE *fp)
 {
 	char *p;
@@ -98,7 +106,7 @@ getln(char *buf, int size, FILE *fp)
 	return p;
 }
 
-void
+static void
 parse_flag(int c)
 {
 	int i;
@@ -118,39 +126,39 @@ parse_flag(int c)
 	exit(-1);
 }
 
-void
+static void
 parse_flags(char *p)
 {
 	while (*p)
 		parse_flag(*p++);
 }
 
-void
+static void
 usage(void)
 {
 	fprintf(stderr, "usage: fssum <options> <path>\n");
 	fprintf(stderr, "  options:\n");
-	fprintf(stderr, "    -f          : write out a full manifest file\n");
-	fprintf(stderr, "    -w <file>   : send output to file\n");
-	fprintf(stderr, "    -v          : verbose mode (debugging only)\n");
-	fprintf(stderr,
-		"    -r <file>   : read checksum or manifest from file\n");
-	fprintf(stderr, "    -[ugoamcde] : specify which fields to include in checksum calculation.\n");
-	fprintf(stderr, "         u      : include uid\n");
-	fprintf(stderr, "         g      : include gid\n");
-	fprintf(stderr, "         o      : include mode\n");
-	fprintf(stderr, "         m      : include mtime\n");
-	fprintf(stderr, "         a      : include atime\n");
-	fprintf(stderr, "         c      : include ctime\n");
-	fprintf(stderr, "         d      : include file data\n");
-	fprintf(stderr, "         e      : include open errors (aborts otherwise)\n");
-	fprintf(stderr, "         s      : include block structure (holes)\n");
-	fprintf(stderr, "    -[UGOAMCDES]: exclude respective field from calculation\n");
-	fprintf(stderr, "    -n          : reset all flags\n");
-	fprintf(stderr, "    -N          : set all flags\n");
-	fprintf(stderr, "    -x path     : exclude path when building checksum (multiple ok)\n");
-	fprintf(stderr, "    -h          : this help\n\n");
-	fprintf(stderr, "The default field mask is ugoamCdES. If the checksum/manifest is read from a\n");
+	fprintf(stderr, "    -f           : write out a full manifest file\n");
+	fprintf(stderr, "    -w <file>    : send output to file\n");
+	fprintf(stderr, "    -v           : verbose mode (debugging only)\n");
+	fprintf(stderr, "    -r <file>    : read checksum or manifest from file\n");
+	fprintf(stderr, "    -[ugoamcdtes]: specify which fields to include in checksum calculation.\n");
+	fprintf(stderr, "         u       : include uid\n");
+	fprintf(stderr, "         g       : include gid\n");
+	fprintf(stderr, "         o       : include mode\n");
+	fprintf(stderr, "         m       : include mtime\n");
+	fprintf(stderr, "         a       : include atime\n");
+	fprintf(stderr, "         c       : include ctime\n");
+	fprintf(stderr, "         d       : include file data\n");
+	fprintf(stderr, "         t       : include xattrs\n");
+	fprintf(stderr, "         e       : include open errors (aborts otherwise)\n");
+	fprintf(stderr, "         s       : include block structure (holes)\n");
+	fprintf(stderr, "    -[UGOAMCDTES]: exclude respective field from calculation\n");
+	fprintf(stderr, "    -n           : reset all flags\n");
+	fprintf(stderr, "    -N           : set all flags\n");
+	fprintf(stderr, "    -x path      : exclude path when building checksum (multiple ok)\n");
+	fprintf(stderr, "    -h           : this help\n\n");
+	fprintf(stderr, "The default field mask is ugoamCdtES. If the checksum/manifest is read from a\n");
 	fprintf(stderr, "file, the mask is taken from there and the values given on the command line\n");
 	fprintf(stderr, "are ignored.\n");
 	exit(-1);
@@ -158,7 +166,7 @@ usage(void)
 
 static char buf[65536];
 
-void *
+static void *
 alloc(size_t sz)
 {
 	void *p = malloc(sz);
@@ -171,44 +179,44 @@ alloc(size_t sz)
 	return p;
 }
 
-void
+static void
 sum_init(sum_t *cs)
 {
 	SHA256Reset(&cs->sha);
 }
 
-void
+static void
 sum_fini(sum_t *cs)
 {
 	SHA256Result(&cs->sha, cs->out);
 }
 
-void
-sum_add(sum_t *cs, void *buf, int size)
+static void
+sum_add(sum_t *cs, void *data, int size)
 {
-	SHA256Input(&cs->sha, buf, size);
+	SHA256Input(&cs->sha, data, size);
 }
 
-void
+static void
 sum_add_sum(sum_t *dst, sum_t *src)
 {
 	sum_add(dst, src->out, sizeof(src->out));
 }
 
-void
+static void
 sum_add_u64(sum_t *dst, uint64_t val)
 {
 	uint64_t v = cpu_to_le64(val);
 	sum_add(dst, &v, sizeof(v));
 }
 
-void
+static void
 sum_add_time(sum_t *dst, time_t t)
 {
 	sum_add_u64(dst, t);
 }
 
-char *
+static char *
 sum_to_string(sum_t *dst)
 {
 	int i;
@@ -220,78 +228,123 @@ sum_to_string(sum_t *dst)
 	return s;
 }
 
-int
-sum_file_data_permissive(int fd, sum_t *dst)
+static int
+namecmp(const void *aa, const void *bb)
 {
-	int ret;
-	off_t pos;
-	off_t old;
+	char * const *a = aa;
+	char * const *b = bb;
+
+	return strcmp(*a, *b);
+}
+
+static int
+sum_xattrs(int fd, sum_t *dst)
+{
+	ssize_t buflen;
+	ssize_t len;
+	char *buffer;
+	char *p;
+	char **names = NULL;
+	int num_xattrs = 0;
+	int ret = 0;
 	int i;
-	uint64_t zeros = 0;
 
-	pos = lseek(fd, 0, SEEK_CUR);
-	if (pos == (off_t)-1)
-		return errno == ENXIO ? 0 : -2;
+	buflen = flistxattr(fd, NULL, 0);
+	if (buflen < 0)
+		return -errno;
+	/* no xattrs exist */
+	if (buflen == 0)
+		return 0;
 
-	while (1) {
-		old = pos;
-		pos = lseek(fd, pos, SEEK_DATA);
-		if (pos == (off_t)-1) {
-			if (errno == ENXIO) {
-				ret = 0;
-				pos = lseek(fd, 0, SEEK_END);
-				if (pos != (off_t)-1)
-					zeros += pos - old;
-			} else {
-				ret = -2;
-			}
-			break;
-		}
-		ret = read(fd, buf, sizeof(buf));
-		assert(ret); /* eof found by lseek */
-		if (ret <= 0)
-			break;
-		if (old < pos) /* hole */
-			zeros += pos - old;
-		for (i = 0; i < ret; ++i) {
-			for (old = i; buf[i] == 0 && i < ret; ++i)
-				;
-			if (old < i) /* code like a hole */
-				zeros += i - old;
-			if (i == ret)
-				break;
-			if (zeros) {
-				if (verbose >= 2)
-					fprintf(stderr,
-						"adding %llu zeros to sum\n",
-						(unsigned long long)zeros);
-				sum_add_u64(dst, 0);
-				sum_add_u64(dst, zeros);
-				zeros = 0;
-			}
-			for (old = i; buf[i] != 0 && i < ret; ++i)
-				;
-			if (verbose >= 2)
-				fprintf(stderr, "adding %u non-zeros to sum\n",
-					i - (int)old);
-			sum_add(dst, buf + old, i - old);
-		}
-		pos += ret;
+	buffer = malloc(buflen);
+	if (!buffer)
+		return -ENOMEM;
+
+	buflen = flistxattr(fd, buffer, buflen);
+	if (buflen < 0) {
+		ret = -errno;
+		goto out;
 	}
 
-	if (zeros) {
-		if (verbose >= 2)
-			fprintf(stderr,
-				"adding %llu zeros to sum (finishing)\n",
-				(unsigned long long)zeros);
-		sum_add_u64(dst, 0);
-		sum_add_u64(dst, zeros);
+	/*
+	 * Keep the list of xattrs sorted, because the order in which they are
+	 * listed is filesystem dependent, so we want to get the same checksum
+	 * on different filesystems.
+	 */
+
+	p = buffer;
+	len = buflen;
+	while (len > 0) {
+		int keylen;
+
+		keylen = strlen(p) + 1; /* +1 for NULL terminator */
+		len -= keylen;
+		p += keylen;
+		num_xattrs++;
 	}
+
+	names = malloc(sizeof(char *) * num_xattrs);
+	if (!names) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	p = buffer;
+	for (i = 0; i < num_xattrs; i++) {
+		names[i] = p;
+		p += strlen(p) + 1; /* +1 for NULL terminator */
+	}
+
+	qsort(names, num_xattrs, sizeof(char *), namecmp);
+
+	for (i = 0; i < num_xattrs; i++) {
+		len = fgetxattr(fd, names[i], NULL, 0);
+		if (len < 0) {
+			ret = -errno;
+			goto out;
+		}
+		sum_add(dst, names[i], strlen(names[i]));
+		/* no value */
+		if (len == 0)
+			continue;
+		p = malloc(len);
+		if (!p) {
+			ret = -ENOMEM;
+			goto out;
+		}
+		len = fgetxattr(fd, names[i], p, len);
+		if (len < 0) {
+			ret = -errno;
+			free(p);
+			goto out;
+		}
+		sum_add(dst, p, len);
+		free(p);
+	}
+out:
+	free(buffer);
+	free(names);
 
 	return ret;
 }
 
-int
+static int
+sum_file_data_permissive(int fd, sum_t *dst)
+{
+	int ret;
+
+	while (1) {
+		ret = read(fd, buf, sizeof(buf));
+		if (ret < 0)
+			return -errno;
+		sum_add(dst, buf, ret);
+		if (ret < sizeof(buf))
+			break;
+	}
+	return 0;
+}
+
+static int
 sum_file_data_strict(int fd, sum_t *dst)
 {
 	int ret;
@@ -319,7 +372,7 @@ sum_file_data_strict(int fd, sum_t *dst)
 	}
 }
 
-char *
+static char *
 escape(char *in)
 {
 	char *out = alloc(strlen(in) * 3 + 1);
@@ -339,19 +392,19 @@ escape(char *in)
 	return out;
 }
 
-void
+static void
 excess_file(const char *fn)
 {
 	printf("only in local fs: %s\n", fn);
 }
 
-void
+static void
 missing_file(const char *fn)
 {
 	printf("only in remote fs: %s\n", fn);
 }
 
-int
+static int
 pathcmp(const char *a, const char *b)
 {
 	int len_a = strlen(a);
@@ -369,7 +422,7 @@ pathcmp(const char *a, const char *b)
 	return strcmp(a, b);
 }
 
-void
+static void
 check_match(char *fn, char *local_m, char *remote_m,
 	    char *local_c, char *remote_c)
 {
@@ -388,7 +441,7 @@ check_match(char *fn, char *local_m, char *remote_m,
 char *prev_fn;
 char *prev_m;
 char *prev_c;
-void
+static void
 check_manifest(char *fn, char *m, char *c, int last_call)
 {
 	char *rem_m;
@@ -459,16 +512,7 @@ malformed:
 		excess_file(fn);
 }
 
-int
-namecmp(const void *aa, const void *bb)
-{
-	char * const *a = aa;
-	char * const *b = bb;
-
-	return strcmp(*a, *b);
-}
-
-void
+static void
 sum(int dirfd, int level, sum_t *dircs, char *path_prefix, char *path_in)
 {
 	DIR *d;
@@ -480,8 +524,15 @@ sum(int dirfd, int level, sum_t *dircs, char *path_prefix, char *path_in)
 	int ret;
 	int fd;
 	int excl;
+	int error = 0;
 	sum_file_data_t sum_file_data = flags[FLAG_STRUCTURE] ?
 			sum_file_data_strict : sum_file_data_permissive;
+	struct stat dir_st;
+
+	if (fstat(dirfd, &dir_st)) {
+		perror("fstat");
+		exit(-1);
+	}
 
 	d = fdopendir(dirfd);
 	if (!d) {
@@ -492,25 +543,28 @@ sum(int dirfd, int level, sum_t *dircs, char *path_prefix, char *path_in)
 		if (!strcmp(de->d_name, ".") || !strcmp(de->d_name, ".."))
 			continue;
 		if (entries == alloclen) {
+			void *tmp;
+
 			alloclen += CHUNKS;
-			namelist = realloc(namelist,
-					   alloclen * sizeof(*namelist));
-			if (!namelist) {
-				fprintf(stderr, "malloc failed\n");
-				exit(-1);
+			tmp = realloc(namelist, alloclen * sizeof(*namelist));
+			if (!tmp) {
+				fprintf(stderr, "realloc failed\n");
+				error = 1;
+				goto free_namelist;
 			}
+			namelist = tmp;
 		}
 		namelist[entries] = strdup(de->d_name);
 		if (!namelist[entries]) {
-			fprintf(stderr, "malloc failed\n");
-			exit(-1);
+			fprintf(stderr, "stdup failed\n");
+			error = 1;
+			goto free_namelist;
 		}
 		++entries;
 	}
-
 	qsort(namelist, entries, sizeof(*namelist), namecmp);
 	for (i = 0; i < entries; ++i) {
-		struct stat64 st;
+		struct stat st;
 		sum_t cs;
 		sum_t meta;
 		char *path;
@@ -528,14 +582,21 @@ sum(int dirfd, int level, sum_t *dircs, char *path_prefix, char *path_in)
 		ret = fchdir(dirfd);
 		if (ret == -1) {
 			perror("fchdir");
-			exit(-1);
+			error = 1;
+			goto free_namelist;
 		}
-		ret = lstat64(namelist[i], &st);
+		ret = lstat(namelist[i], &st);
 		if (ret) {
 			fprintf(stderr, "stat failed for %s/%s: %m\n",
 				path_prefix, path);
-			exit(-1);
+			error = 1;
+			goto free_namelist;
 		}
+
+		/* We are crossing into a different subvol, skip this subtree. */
+		if (st.st_dev != dir_st.st_dev)
+			goto next;
+
 		sum_add_u64(&meta, level);
 		sum_add(&meta, namelist[i], strlen(namelist[i]));
 		if (!S_ISDIR(st.st_mode))
@@ -552,6 +613,28 @@ sum(int dirfd, int level, sum_t *dircs, char *path_prefix, char *path_in)
 			sum_add_time(&meta, st.st_mtime);
 		if (flags[FLAG_CTIME])
 			sum_add_time(&meta, st.st_ctime);
+		if (flags[FLAG_XATTRS] &&
+		    (S_ISDIR(st.st_mode) || S_ISREG(st.st_mode))) {
+			fd = openat(dirfd, namelist[i], 0);
+			if (fd == -1 && flags[FLAG_OPEN_ERROR]) {
+				sum_add_u64(&meta, errno);
+			} else if (fd == -1) {
+				fprintf(stderr, "open failed for %s/%s: %m\n",
+					path_prefix, path);
+				exit(-1);
+			} else {
+				ret = sum_xattrs(fd, &meta);
+				close(fd);
+				if (ret < 0) {
+					errno = -ret;
+					fprintf(stderr,
+						"failed to read xattrs from "
+						"%s/%s: %m\n",
+						path_prefix, path);
+					exit(-1);
+				}
+			}
+		}
 		if (S_ISDIR(st.st_mode)) {
 			fd = openat(dirfd, namelist[i], 0);
 			if (fd == -1 && flags[FLAG_OPEN_ERROR]) {
@@ -627,11 +710,15 @@ sum(int dirfd, int level, sum_t *dircs, char *path_prefix, char *path_in)
 		sum_add_sum(dircs, &meta);
 next:
 		free(path);
-		free(namelist[i]);
 	}
 
-	free(namelist);
+free_namelist:
 	closedir(d);
+	for (i = 0; i < entries; i++)
+		free(namelist[i]);
+	free(namelist);
+	if (error)
+		exit(-1);
 }
 
 int
@@ -650,7 +737,7 @@ main(int argc, char *argv[])
 	int plen;
 	int elen;
 	int n_flags = 0;
-	const char *allopts = "heEfuUgGoOaAmMcCdDsSnNw:r:vx:";
+	const char *allopts = "heEfuUgGoOaAmMcCdDtTsSnNw:r:vx:";
 
 	out_fp = stdout;
 	while ((c = getopt(argc, argv, allopts)) != EOF) {
@@ -672,6 +759,8 @@ main(int argc, char *argv[])
 		case 'C':
 		case 'd':
 		case 'D':
+		case 'T':
+		case 't':
 		case 'e':
 		case 'E':
 		case 's':

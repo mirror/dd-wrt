@@ -1,12 +1,18 @@
 # Btrfs-progs tests
 
-A testsuite covering functionality of btrfs-progs, ie. the checker, image, mkfs
+A testsuite covering functionality of btrfs-progs, i.e. the checker, image, mkfs
 and similar tools. There are no additional requirements on kernel features
 (other than `CONFIG_BTRFS_FS` built-in or module), the
 tests build on top of the core functionality like snapshots and device
 management. In some cases optional features are turned on by mkfs and the
 filesystem image could be mounted, such tests might fail if there's lack of
 support.
+
+The testsuite follows the principles:
+
+- gather all output to logs
+- stop on first failure (do not clean up until the problem is investigated)
+- detect available capabilities in the system, skip if missing
 
 ## Quick start
 
@@ -26,7 +32,7 @@ $ ./misc-tests.sh
 ```
 
 The verbose output of the tests is logged into a file named after the test
-category, eg. `fsck-tests-results.txt`.
+category, e.g. `fsck-tests-results.txt`.
 
 ## Selective testing
 
@@ -41,16 +47,26 @@ where `MASK` is a glob expression that will execute only tests
 that match the MASK. Here the test number comes handy:
 
 ```shell
-$ make TEST=001\* test-fsck
-$ TEST=001\* ./fsck-tests.sh
+$ make TEST=001\* test-fsck      # in tests/
+$ TEST=001\* ./fsck-tests.sh     # in the top directory
 ```
 
 will run the first test in fsck-tests subdirectory. If the test directories
-follow a good naming scheme, it's possible to select a subset eg. like the
-convert tests for ext[234] filesystems.
+follow a good naming scheme, it's possible to select a subset e.g. like the
+convert tests for ext[234] filesystems using mask 'TEST='\*ext[234]\*'.
+
+When running tests in a sequence and one fails, testing can be started from
+that test skipping all the ones that are supposed to pass, like:
+
+```shell
+$ make TEST_FROM=004\* test-fsck
+```
+
+This will skip any tests found in the directory that precede *004*, assuming
+that there is such test.
 
 
-## Test structure
+## Test directory structure
 
 *tests/fsck-tests/*
 
@@ -72,7 +88,7 @@ convert tests for ext[234] filesystems.
 
   * tests for command line interface, option coverage, weird option combinations that should not work
   * not necessary to do any functional testing, could be rather lightweight
-  * functional tests should go to to other test dirs
+  * functional tests should go to other test directories
   * the driver script will only execute `./test.sh` in the test directory
 
 *tests/misc-tests/*
@@ -88,7 +104,7 @@ convert tests for ext[234] filesystems.
 
   * default testing image, available as `TEST_DEV` variable, the file is never
     deleted by the scripts but truncated to 0 bytes, so it keeps it's
-    permissions. It's eg. possible to host it on NFS, make it `chmod a+w` for
+    permissions. It's e.g. possible to host it on NFS, make it `chmod a+w` for
     root.
 
 
@@ -101,23 +117,43 @@ checking or catch failures at runtime. This can be done by setting the
 `INSTRUMENT` environment variable:
 
 ```shell
-INSTRUMENT=valgrind ./fuzz-tests.sh    # in tests/
 make INSTRUMENT=valgrind test-fuzz     # in the top directory
+INSTRUMENT=valgrind ./fuzz-tests.sh    # in tests/
 ```
 
 The variable is prepended to the command *unquoted*, all sorts of shell tricks
 are possible.
 
 Note: instrumentation is not applied to privileged commands (anything that uses
-the root helper).
+the root helper), with exception of all commands built from git that will
+be instrumented even if run with the sudo helper.
+
+```shell
+run_check $SUDO_HELPER mount /dev/sdx /mnt           # no instrumentation
+run_check $SUDO_HELPER "$TOP/btrfs" check /dev/sdx   # with instrumentation
+```
+
+Instrumented commands: btrfs, btrfs-image, btrfs-convert, btrfs-tune, mkfs.btrfs,
+btrfs-select-super, btrfs-find-root, btrfs-corrupt-block.
+
+As mentioned above, instrumentation tools are like `valgrind` or potentially
+`gdb` with some init script that will let the commands run until an exception
+occurs, possibly allowing to continue interactively debugging.
 
 ### Verbosity, test tuning
+
+* `TEST_FROM=glob` -- start testing from the first test that matches the *glob*
+  expression and skip anything before that, this can be combined with the
+  `TEST` variable that takes precedence
 
 * `TEST_LOG=tty` -- setting the variable will print all commands executed by
   some of the wrappers (`run_check` etc), other commands are not printed to the
   terminal (but the full output is in the log)
 
 * `TEST_LOG=dump` -- dump the entire testing log when a test fails
+
+* `TEST_FLAVOR` -- run binaries of specified flavor, which is dynamic build by
+  default, or *static* using all the build binaries with *.static* suffix
 
 * `TEST_ENABLE_OVERRIDE` -- defined either as make arguments or via
   `tests/common.local` to enable additional arguments to some commands, using
@@ -126,14 +162,33 @@ the root helper).
 * `TEST_ARGS_CHECK` -- user-defined arguments to `btrfs check`, before the
   test-specific arguments
 
+* `TEST_ARGS_MKFS` -- user-defined arguments to `mkfs.btrfs`, before the
+  test-specific arguments
+
+* `TEST_ARGS_CONVERT` -- user-defined arguments to `btrfs-convert`, before the
+  test-specific arguments
+
 Multiple values can be separated by `,`.
+
+For example, running all fsck tests with the `--mode=lowmem` option can be done
+as
+
+```shell
+$ make TEST_ENABLE_OVERRIDE=true TEST_ARGS_CHECK=--mode=lowmem test-check
+```
+
+Specifically, fsck-tests that are known to be able to repair images in the
+lowmem mode should be marked using a file `.lowmem_repairable` in the test
+directory. Then the fsck-tests with the 'mode=lowmem' will continue when image
+repair is requested.
 
 ### Permissions
 
 Some commands require root privileges (to mount/umount, access loop devices or
 call privileged ioctls).  It is assumed that `sudo` will work in some way (no
 password, password asked and cached). Note that instrumentation is not applied
-in this case, for safety reasons. You need to modify the test script instead.
+in this case, for safety reasons or because the tools refuse to run under root.
+You need to modify the test script instead.
 
 ### Cleanup
 
@@ -143,12 +198,14 @@ loop devices are kept. This should help to investigate the test failure but at
 least the mounts and loop devices need to be cleaned before the next run.
 
 This is partially done by the script `clean-tests.sh`, you may want to check
-the loop devices as they are managed on a per-test basis.
+the loop devices as they are managed on a per-test basis, see the output of
+command `losetup` and eventually delete all existing loop devices with `losetup
+-D`.
 
 ### Prototyping tests, quick tests
 
 There's a script `test-console.sh` that will run shell commands in a loop and
-logs the output with the testing environment set up. It sources the common
+log the output with the testing environment set up. It sources the common
 helper scripts so the shell functions are available.
 
 ### Runtime dependencies
@@ -162,15 +219,16 @@ specific tests need the following packages installed: `acl`, `attr`,
 
 1. Pick the category for the new test or fallback to `misc-tests` if not sure. For
 an easy start copy an existing `test.sh` script from some test that might be
-close to the purpose of your new test. The environment setup includes the
+close to the purpose of your new test, or use one of the templates in the
+[tests/template/](template/) directory. The environment setup includes the
 common scripts and/or prepares the test devices. Other scripts contain examples
 how to do mkfs, mount, unmount, check, loop device management etc.
 
 2. Use the highest unused number in the sequence, write a short descriptive title
-and join by dashes `-`. This will become the directory name, eg. `012-subvolume-sync-must-wait`.
+and join by dashes `-`. This will become the directory name, e.g. `012-subvolume-sync-must-wait`.
 
 3. Write a short description of the bug and how it's tested to the comment at the
-begining of `test.sh`. You don't need to add the file to git yet. Don't forget
+beginning of `test.sh`. You don't need to add the file to git yet. Don't forget
 to make the file executable, otherwise it's not going to be executed by the
 infrastructure.
 
@@ -178,33 +236,34 @@ infrastructure.
 
 5. **Test your test.** Use the `TEST` variable to jump right to your test:
 ```shell
-$ make TEST=012\* tests-misc           # from top directory
-$ TEST=012\* ./misc-tests.sh           # from tests/
+$ make TEST=012\* tests-misc           # from the top or tests/ directory
+$ TEST=012\* ./misc-tests.sh           # alternatively from tests/
 ```
 
 6. The commit changelog should reference a commit that either introduced or
-  fixed the bug (or both). Subject line of the shall mention the name of the
-  new directory for ease of search, eg. `btrfs-progs: tests: add 012-subvolume-sync-must-wait`
+  fixed the bug (or both). Subject line of the could mention the name of the
+  new directory for ease of search (e.g. `btrfs-progs: tests: add 012-subvolume-sync-must-wait`)
+  or a brief description of the test case (e.g. `btrfs-progs: tests: add case for waiting on subvolume sync after deletion`)
 
-7. A commit that fixes a bug should be applied before the test that verifies
+7. A commit that fixes a bug should be applied *before* the test that verifies
   the fix. This is to keep the git history bisectable.
 
 
 ### Test images
 
 Most tests should be able to create the test images from scratch, using regular
-commands and file operation. The commands also document the testcase and use
-the teste code and kernel of the environment.
+commands and file operations. The commands also document the test case and use
+the test code and kernel of the environment.
 
 In other cases, a pre-created image may be the right way if the above does not
-work (eg. comparing output, requesting an exact layout or some intermediate
+work (e.g. comparing output, requesting an exact layout or some intermediate
 state that would be hard to achieve otherwise).
 
 * images that don't need data and valid checksums can be created by
   `btrfs-image`, the image can be compressed by the tool itself (file extension
   `.img`) or compressed externally (recognized is `.img.xz`)
 
-* raw images that are binary dump of an existing image, created eg. from a
+* raw images that are binary dump of an existing image, created e.g. from a
   sparse file (`.raw` or `.raw.xz`)
 
 Use `xz --best` and try to get the smallest size as the file is stored in git.
@@ -244,7 +303,8 @@ There are some utilities that are not distributed but are necessary for the
 tests. They are in the top level directory of the testsuite and their path
 cannot be set.
 
-The tests assume write acesss to their directories.
+The tests assume write access to their directories and an existing `/tmp`
+directory.
 
 
 # Coding style, best practices
@@ -254,11 +314,12 @@ The tests assume write acesss to their directories.
 * quote all variables by default, any path, even the TOP could need that, and
   we use it everywhere
   * even if the variable is safe, use quotes for consistency and to ease
-    reading the code
+    reading the code (syntax highlighting in editors)
   * there are exceptions:
     * `$SUDO_HELPER` as it might be intentionally unset
+    * conditionally set options that are stored in a variable
 * use `#!/bin/bash` explicitly
-* check for all external dependencies (`check_prereq_global`)
+* check for all external dependencies (`check_global_prereq`)
 * check for internal dependencies (`check_prereq`), though the basic set is
   always built when the tests are started through make
 * use functions instead of repeating code
@@ -273,11 +334,108 @@ The tests assume write acesss to their directories.
   `xfs_io` that's conveniently used in fstests but we'd require `xfsprogs`,
   so use `dd` instead
 * throw away (redirect to */dev/null*) output of commands unless it's justified
-  (ie. really too much text, unnecessary slowdown) -- the test output log is
+  (i.e. really too much text, unnecessary slowdown) -- the test output log is
   regenerated all the time and we need to be able to analyze test failures or
   just observe how the tests progress
 * cleanup after failed test -- the testsuite stops on first failure and the
-  developer can eg. access the environment that the test created and do further
+  developer can e.g. access the environment that the test created and do further
   debugging
   * this might change in the future so the tests cover as much as possible, but
     this would require to enhance all tests with a cleanup phase
+
+## Simple test template
+
+The file `tests/common` provides shell functions to ease writing common things
+like setting up the test devices, making or mounting a filesystem, setting up
+loop devices.
+
+
+```shell
+#!/bin/bash
+# Simple test to create a new filesystem and test that it can be mounted
+
+source "$TEST_TOP/common"
+
+setup_root_helper
+prepare_test_dev
+
+run_check_mkfs_test_dev
+run_check_mount_test_dev
+run_check $SUDO_HELPER dd if=/dev/zero of="$TEST_MNT"/file bs=1M count=1
+run_check_umount_test_dev
+```
+
+Each test should be briefly described, source the helpers like `run_check`. The
+root helper is the `sudo` wrapper that can be used as `$SUDO_HELPER` variable.
+The implicit variables for testing device is `$TEST_DEV` mounted at `$TEST_MNT`.
+The mkfs and mount helpers take arguments that are then injected into the right
+place in the respective command.
+
+Besides the setup and cleanup code, the main test in this example is `dd` that
+writes 1MiB to a file in the newly created filesystem.
+
+## Multiple device test template
+
+Tests that need more devices can utilize the loop devices, an example test of
+the above:
+
+```shell
+# Create a new multi-device filesystem and test that it can be mounted
+
+source "$TEST_TOP/common"
+
+setup_root_helper
+setup_loopdevs 4
+prepare_loopdevs
+TEST_DEV=${loopdevs[1]}
+
+run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f -d raid1 -m raid1 "${loopdevs[@]}"
+run_check_mount_test_dev
+run_check $SUDO_HELPER dd if=/dev/zero of="$TEST_MNT"/file bs=1M count=1
+run_check_umount_test_dev
+
+cleanup_loopdevs
+```
+
+## A 'btrfs check' test template
+
+The easiest way to test an image is to put it to the test directory, without
+the `test.sh` script. All images found are simply processed by the shell
+function `check_image` with default parameters.
+
+Any tweaks to the 'check' subcommand can be done by redefining the function:
+
+```shell
+source "$TEST_TOP/common"
+
+check_image() {
+	run_check "$TOP/btrfs" check --readonly "$1"
+}
+
+check_all_images
+```
+
+The images can be stored in various formats, see section 'Test images'.
+
+
+## Misc hints
+
+There are several helpers in `tests/common`, it's recommended to read through
+that file or other tests to get the idea how easy writing a test really is.
+
+* result
+  * `_fail` - a failure condition has been found
+  * `_not_run` - some prerequisite condition is not met, e.g. missing kernel functionality
+* messages
+  * `_log` - message printed to the result file (e.g.
+    `tests/mkfs-tests-results.txt`), and not printed to the terminal
+  * `_log_stdout` - ditto but it is printed to the terminal
+* execution helpers
+  * `run_check` - should be used for basically all commands, the command and arguments
+  are stored to the results log for debugging and the return value is checked so there
+  are no silent failures even for the "unimportant" commands
+  * `run_check_stdout` - like the above but the output can be processed further, e.g. filtering
+  out some data or looking for some specific string
+  * `run_mayfail` - the command is allowed to fail in a non-fatal way (e.g. no segfault),
+  there's also the `run_mayfail_stdout` variant
+  * `run_mustfail` - expected failure, note that the first argument is mandatory message describing unexpected pass condition

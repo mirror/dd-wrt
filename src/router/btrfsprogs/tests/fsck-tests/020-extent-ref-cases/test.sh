@@ -14,8 +14,13 @@
 #   Containing a block group and its first extent at
 #   the beginning of leaf.
 #   Which caused false alert for lowmem mode.
+#
+# Special cases with some rare backref types
+# * reloc tree
+#   For both fs tree and data reloc tree.
+#   Special for its backref pointing to itself and its short life span.
 
-source "$TEST_TOP/common"
+source "$TEST_TOP/common" || exit
 
 check_prereq btrfs
 

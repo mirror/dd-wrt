@@ -1,142 +1,69 @@
-# Guard against environment variables
-MAN8_TXT =
+# Source files for manual pages are listed in conf.py in variable man_pages
 
-# Top level commands
-MAN8_TXT += btrfs.asciidoc
-MAN8_TXT += btrfs-convert.asciidoc
-MAN8_TXT += btrfs-find-root.asciidoc
-MAN8_TXT += btrfs-image.asciidoc
-MAN8_TXT += btrfs-map-logical.asciidoc
-MAN8_TXT += btrfs-select-super.asciidoc
-MAN8_TXT += btrfstune.asciidoc
-MAN8_TXT += fsck.btrfs.asciidoc
-MAN8_TXT += mkfs.btrfs.asciidoc
+# You can set these variables from the command line, and also from the
+# environment for the first two.
+SPHINXOPTS    ?= -N
+SPHINXBUILD   ?= sphinx-build
+SOURCEDIR     = .
+BUILDDIR      = _build
 
-# Sub commands for btrfs
-MAN8_TXT += btrfs-subvolume.asciidoc
-MAN8_TXT += btrfs-filesystem.asciidoc
-MAN8_TXT += btrfs-balance.asciidoc
-MAN8_TXT += btrfs-device.asciidoc
-MAN8_TXT += btrfs-scrub.asciidoc
-MAN8_TXT += btrfs-check.asciidoc
-MAN8_TXT += btrfs-rescue.asciidoc
-MAN8_TXT += btrfs-inspect-internal.asciidoc
-MAN8_TXT += btrfs-send.asciidoc
-MAN8_TXT += btrfs-receive.asciidoc
-MAN8_TXT += btrfs-quota.asciidoc
-MAN8_TXT += btrfs-qgroup.asciidoc
-MAN8_TXT += btrfs-replace.asciidoc
-MAN8_TXT += btrfs-restore.asciidoc
-MAN8_TXT += btrfs-property.asciidoc
-
-# Category 5 manual page
-MAN5_TXT += btrfs-man5.asciidoc
-
-MAN3_TXT += btrfs-ioctl.asciidoc
-
-MAN_TXT = $(MAN3_TXT) $(MAN8_TXT) $(MAN5_TXT)
-MAN_XML = $(patsubst %.asciidoc,%.xml,$(MAN_TXT))
-MAN_HTML = $(patsubst %.asciidoc,%.html,$(MAN_TXT))
-GZ_MAN3 = $(patsubst %.asciidoc,%.3.gz,$(MAN3_TXT))
-GZ_MAN5 = $(patsubst %.asciidoc,%.5.gz,$(MAN5_TXT))
-GZ_MAN8 = $(patsubst %.asciidoc,%.8.gz,$(MAN8_TXT))
-
-mandir ?= $(prefix)/share/man
-man3dir = $(mandir)/man3
-man5dir = $(mandir)/man5
-man8dir = $(mandir)/man8
-
-ifeq (@ASCIIDOC_TOOL@,asciidoc)
-ASCIIDOC = @ASCIIDOC@
-ASCIIDOC_ARGS = -abtrfs_version=$(BTRFS_VERSION) -f asciidoc.conf
-ASCIIDOC_HTML = html
-ASCIIDOC_DOCBOOK = docbook
-ASCIIDOC_DEPS = asciidoc.conf
-endif
-ifeq (@ASCIIDOC_TOOL@,asciidoctor)
-ASCIIDOC = @ASCIIDOCTOR@
-ASCIIDOC_ARGS = -abtrfs_version=$(BTRFS_VERSION)
-ASCIIDOC_HTML = xhtml5
-ASCIIDOC_DOCBOOK = docbook45
-ASCIIDOC_DEPS = 
-endif
-
-MANPAGE_XSL = manpage-normal.xsl
-XMLTO = @XMLTO@
-XMLTO_EXTRA =
-XMLTO_EXTRA = -m manpage-bold-literal.xsl
-GZIPCMD = @GZIP@
 INSTALL = @INSTALL@
 RM = @RM@
 RMDIR = @RMDIR@
 LN_S = @LN_S@
-MV = @MV@
 SED = @SED@
-BTRFS_VERSION = $(shell $(SED) -n 's/.*PACKAGE_VERSION "\(.*\)"/\1/p'\
-		  ../config.h)
+BTRFS_VERSION = $(shell $(SED) -n 's/.*PACKAGE_VERSION "\(.*\)"/\1/p' ../config.h)
 
 ifneq ($(findstring $(MAKEFLAGS),s),s)
 ifndef V
 	QUIET_RM	= @
-	QUIET_ASCIIDOC	= @echo "    [ASCII]  $@";
-	QUIET_XMLTO	= @echo "    [XMLTO]  $@";
-	QUIET_GZIP	= @echo "    [GZ]     $@";
+	QUIET_SPHINX	= @echo "  SPHINX   $@";
+	SPHINXOPTS     += -q
 endif
 endif
 
+mandir ?= $(prefix)/share/man
+man2dir = $(mandir)/man2
+man3dir = $(mandir)/man3
+man5dir = $(mandir)/man5
+man8dir = $(mandir)/man8
+
+.PHONY: all man help
+
+# Build manual pages by default
 all: man
-man: man3 man5 man8
-man3: $(GZ_MAN3)
-man5: $(GZ_MAN5)
-man8: $(GZ_MAN8)
-html: $(MAN_HTML)
 
-install: install-man
+# Workaround for old sphinx that requires the contents.rst file
+man:
+	@if [ "$$(sphinx-build --version | cut -d' ' -f2)" \< "1.7.7" ]; then \
+		touch contents.rst; \
+	fi
 
-install-man: man
+	$(QUIET_SPHINX)$(SPHINXBUILD) -M man "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+help:
+	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+install: man
+	$(INSTALL) -d -m 755 $(DESTDIR)$(man2dir)
 	$(INSTALL) -d -m 755 $(DESTDIR)$(man5dir)
 	$(INSTALL) -d -m 755 $(DESTDIR)$(man8dir)
-	$(INSTALL) -m 644 $(GZ_MAN5) $(DESTDIR)$(man5dir)
-	# the source file name of btrfs.5 clashes with section 8 page, but we
-	# want to keep the code generic
-	$(MV) $(DESTDIR)$(man5dir)/btrfs-man5.5.gz $(DESTDIR)$(man5dir)/btrfs.5.gz
-	$(INSTALL) -m 644 $(GZ_MAN8) $(DESTDIR)$(man8dir)
-	$(LN_S) -f btrfs-check.8.gz $(DESTDIR)$(man8dir)/btrfsck.8.gz
+	$(INSTALL) -m 644 $(BUILDDIR)/man/*.2 $(DESTDIR)$(man2dir)
+	$(INSTALL) -m 644 $(BUILDDIR)/man/*.5 $(DESTDIR)$(man5dir)
+	$(INSTALL) -m 644 $(BUILDDIR)/man/*.8 $(DESTDIR)$(man8dir)
+	$(INSTALL) -m 644 btrfsck.8 $(DESTDIR)$(man8dir)
 
 uninstall:
-	cd $(DESTDIR)$(man8dir); rm -f btrfs-check.8.gz $(GZ_MAN8)
+	cd $(DESTDIR)$(man8dir); rm -f btrfs-check.8 $(MAN8)
 	$(RMDIR) -p --ignore-fail-on-non-empty $(DESTDIR)$(man8dir)
 
 clean:
-	$(QUIET_RM)$(RM) -f *.xml *.xml+ *.3 *.3.gz *.5 *.5.gz *.8 *.8.gz *.html
+	$(QUIET_RM)$(RM) -rf $(BUILDDIR)/*
+	$(QUIET_RM)$(RM) -df -- $(BUILDDIR)
+	$(QUIET_RM)$(RM) -f contents.rst
 
-%.3.gz : %.3
-	$(QUIET_GZIP)$(GZIPCMD) -n -c $< > $@
 
-%.5.gz : %.5
-	$(QUIET_GZIP)$(GZIPCMD) -n -c $< > $@
-
-%.8.gz : %.8
-	$(QUIET_GZIP)$(GZIPCMD) -n -c $< > $@
-
-%.3 : %.xml
-	$(QUIET_XMLTO)$(RM) -f $@ && \
-	$(XMLTO) -m $(MANPAGE_XSL) $(XMLTO_EXTRA) man $<
-
-%.5 : %.xml
-	$(QUIET_XMLTO)$(RM) -f $@ && \
-	$(XMLTO) -m $(MANPAGE_XSL) $(XMLTO_EXTRA) man $<
-
-%.8 : %.xml
-	$(QUIET_XMLTO)$(RM) -f $@ && \
-	$(XMLTO) -m $(MANPAGE_XSL) $(XMLTO_EXTRA) man $<
-
-%.xml : %.asciidoc $(ASCIIDOC_DEPS)
-	$(QUIET_ASCIIDOC)$(RM) -f $@+ $@ && \
-	$(ASCIIDOC) $(ASCIIDOC_ARGS) -b $(ASCIIDOC_DOCBOOK) -d manpage -o $@+ $< && \
-	$(MV) $@+ $@
-
-%.html : %.asciidoc $(ASCIIDOC_DEPS)
-	$(QUIET_ASCIIDOC)$(RM) -f $@+ $@ && \
-	$(ASCIIDOC) $(ASCIIDOC_ARGS) -b $(ASCIIDOC_HTML) -d article -o $@+ $< && \
-	$(MV) $@+ $@
+# Catch-all target: route all unknown targets to Sphinx using the new
+# "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
+%:
+	$(QUIET_SPHINX)$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Test that any superblock is correctly detected and fixed by btrfs rescue
 
-source "$TEST_TOP/common"
+source "$TEST_TOP/common" || exit
 
 check_prereq btrfs
 check_prereq mkfs.btrfs
@@ -10,12 +10,11 @@ check_prereq btrfs-select-super
 setup_root_helper
 prepare_test_dev 260G
 
-# Create the test file system.
-run_check $SUDO_HELPER "$TOP"/mkfs.btrfs -f "$TEST_DEV"
+run_check_mkfs_test_dev
 
-function check_corruption {
-	local sb_offset=$1
-	local source_sb=$2
+check_corruption() {
+	local sb_offset="$1"
+	local source_sb="$2"
 
 	# First we ensure we can mount it successfully
 	run_check_mount_test_dev
@@ -38,7 +37,7 @@ function check_corruption {
 	# Now run btrfs rescue which should fix the superblock. It uses 2
 	# to signal success of recovery use mayfail to ignore that retval
 	# but still log the output of the command
-	run_mayfail $SUDO_HELPER "$TOP"/btrfs rescue super-recover -yv "$TEST_DEV"
+	run_mayfail $SUDO_HELPER "$TOP/btrfs" rescue super-recover -yv "$TEST_DEV"
 	if [ $? != 2 ]; then
 		_fail "couldn't rescue super"
 	fi

@@ -5,7 +5,7 @@
  *
  * libbtrfsutil is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2.1 of the License, or
  * (at your option) any later version.
  *
  * libbtrfsutil is distributed in the hope that it will be useful,
@@ -19,6 +19,7 @@
 
 #include "btrfsutilpy.h"
 
+#if 0
 static int fd_converter(PyObject *o, void *p)
 {
 	int *fd = p;
@@ -40,89 +41,53 @@ static int fd_converter(PyObject *o, void *p)
 	*fd = tmp;
 	return 1;
 }
+#endif
 
 int path_converter(PyObject *o, void *p)
 {
 	struct path_arg *path = p;
-	int is_index, is_bytes, is_unicode;
-	PyObject *bytes = NULL;
-	Py_ssize_t length = 0;
-	char *tmp;
 
 	if (o == NULL) {
 		path_cleanup(p);
 		return 1;
 	}
 
-	path->object = path->cleanup = NULL;
-	Py_INCREF(o);
-
 	path->fd = -1;
+	path->path = NULL;
+	path->length = 0;
+	path->bytes = NULL;
+	if (path->allow_fd && PyIndex_Check(o)) {
+		PyObject *fd_obj;
+		int overflow;
+		long fd;
 
-	is_index = path->allow_fd && PyIndex_Check(o);
-	is_bytes = PyBytes_Check(o);
-	is_unicode = PyUnicode_Check(o);
-
-	if (!is_index && !is_bytes && !is_unicode) {
-		_Py_IDENTIFIER(__fspath__);
-		PyObject *func;
-
-		func = _PyObject_LookupSpecial(o, &PyId___fspath__);
-		if (func == NULL)
-			goto err_format;
-		Py_DECREF(o);
-		o = PyObject_CallFunctionObjArgs(func, NULL);
-		Py_DECREF(func);
-		if (o == NULL)
+		fd_obj = PyNumber_Index(o);
+		if (!fd_obj)
 			return 0;
-		is_bytes = PyBytes_Check(o);
-		is_unicode = PyUnicode_Check(o);
-	}
-
-	if (is_unicode) {
-		if (!PyUnicode_FSConverter(o, &bytes))
-			goto err;
-	} else if (is_bytes) {
-		bytes = o;
-		Py_INCREF(bytes);
-	} else if (is_index) {
-		if (!fd_converter(o, &path->fd))
-			goto err;
-		path->path = NULL;
-		goto out;
+		fd = PyLong_AsLongAndOverflow(fd_obj, &overflow);
+		Py_DECREF(fd_obj);
+		if (fd == -1 && PyErr_Occurred())
+			return 0;
+		if (overflow > 0 || fd > INT_MAX) {
+			PyErr_SetString(PyExc_OverflowError, "fd is greater than maximum");
+			return 0;
+		}
+		if (fd < 0) {
+			PyErr_SetString(PyExc_ValueError, "fd is negative");
+			return 0;
+		}
+		path->fd = fd;
 	} else {
-err_format:
-		PyErr_Format(PyExc_TypeError, "expected %s, not %s",
-			     path->allow_fd ? "string, bytes, os.PathLike, or integer" :
-			     "string, bytes, or os.PathLike",
-			     Py_TYPE(o)->tp_name);
-		goto err;
+		if (!PyUnicode_FSConverter(o, &path->bytes)) {
+			path->object = path->bytes = NULL;
+			return 0;
+		}
+		path->path = PyBytes_AS_STRING(path->bytes);
+		path->length = PyBytes_GET_SIZE(path->bytes);
 	}
-
-	length = PyBytes_GET_SIZE(bytes);
-	tmp = PyBytes_AS_STRING(bytes);
-	if ((size_t)length != strlen(tmp)) {
-		PyErr_SetString(PyExc_TypeError,
-				"path has embedded nul character");
-		goto err;
-	}
-
-	path->path = tmp;
-	if (bytes == o)
-		Py_DECREF(bytes);
-	else
-		path->cleanup = bytes;
-	path->fd = -1;
-
-out:
-	path->length = length;
+	Py_INCREF(o);
 	path->object = o;
 	return Py_CLEANUP_SUPPORTED;
-
-err:
-	Py_XDECREF(o);
-	Py_XDECREF(bytes);
-	return 0;
 }
 
 PyObject *list_from_uint64_array(const uint64_t *arr, size_t n)
@@ -150,8 +115,8 @@ PyObject *list_from_uint64_array(const uint64_t *arr, size_t n)
 
 void path_cleanup(struct path_arg *path)
 {
+	Py_CLEAR(path->bytes);
 	Py_CLEAR(path->object);
-	Py_CLEAR(path->cleanup);
 }
 
 static PyMethodDef btrfsutil_methods[] = {
@@ -233,23 +198,26 @@ static PyMethodDef btrfsutil_methods[] = {
 	 "this ID instead of the given path"},
 	{"create_subvolume", (PyCFunction)create_subvolume,
 	 METH_VARARGS | METH_KEYWORDS,
-	 "create_subvolume(path, async=False)\n\n"
+	 "create_subvolume(path, async_=False, qgroup_inherit=None)\n\n"
 	 "Create a new subvolume.\n\n"
 	 "Arguments:\n"
 	 "path -- string, bytes, or path-like object\n"
-	 "async -- create the subvolume without waiting for it to commit to\n"
-	 "disk and return the transaction ID"},
+	 "async_ -- no longer used\n"
+	 "qgroup_inherit -- optional QgroupInherit object of qgroups to\n"
+	 "inherit from"},
 	{"create_snapshot", (PyCFunction)create_snapshot,
 	 METH_VARARGS | METH_KEYWORDS,
-	 "create_snapshot(source, path, recursive=False, read_only=False, async=False)\n\n"
+	 "create_snapshot(source, path, recursive=False, read_only=False,\n"
+	 "                async_=False, qgroup_inherit=None)\n\n"
 	 "Create a new snapshot.\n\n"
 	 "Arguments:\n"
 	 "source -- string, bytes, path-like object, or open file descriptor\n"
 	 "path -- string, bytes, or path-like object\n"
 	 "recursive -- also snapshot child subvolumes\n"
 	 "read_only -- create a read-only snapshot\n"
-	 "async -- create the subvolume without waiting for it to commit to\n"
-	 "disk and return the transaction ID"},
+	 "async_ -- no longer used\n"
+	 "qgroup_inherit -- optional QgroupInherit object of qgroups to\n"
+	 "inherit from"},
 	{"delete_subvolume", (PyCFunction)delete_subvolume,
 	 METH_VARARGS | METH_KEYWORDS,
 	 "delete_subvolume(path, recursive=False)\n\n"

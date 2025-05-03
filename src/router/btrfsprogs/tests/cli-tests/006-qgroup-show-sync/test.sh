@@ -2,7 +2,7 @@
 #
 # simple test of qgroup show --sync option
 
-source "$TEST_TOP/common"
+source "$TEST_TOP/common" || exit
 
 check_prereq mkfs.btrfs
 check_prereq btrfs
@@ -10,7 +10,7 @@ check_prereq btrfs
 setup_root_helper
 prepare_test_dev 1g
 
-run_check "$TOP/mkfs.btrfs" -f "$TEST_DEV"
+run_check_mkfs_test_dev
 run_check_mount_test_dev
 
 run_check $SUDO_HELPER "$TOP/btrfs" subvolume create "$TEST_MNT/Sub"

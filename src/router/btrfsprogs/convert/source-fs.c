@@ -15,10 +15,20 @@
  */
 
 #include "kerncompat.h"
+#include <errno.h>
+#include <string.h>
 #include <unistd.h>
-#include "internal.h"
-#include "disk-io.h"
-#include "volumes.h"
+#include "kernel-lib/sizes.h"
+#include "kernel-shared/accessors.h"
+#include "kernel-shared/ctree.h"
+#include "kernel-shared/disk-io.h"
+#include "kernel-shared/volumes.h"
+#include "kernel-shared/transaction.h"
+#include "common/utils.h"
+#include "common/internal.h"
+#include "common/messages.h"
+#include "common/extent-cache.h"
+#include "common/extent-tree-utils.h"
 #include "convert/common.h"
 #include "convert/source-fs.h"
 
@@ -53,7 +63,7 @@ int ext2_acl_count(size_t size)
 	}
 }
 
-static u64 intersect_with_reserved(u64 bytenr, u64 num_bytes)
+const struct simple_range *intersect_with_reserved(u64 bytenr, u64 num_bytes)
 {
 	int i;
 
@@ -61,10 +71,10 @@ static u64 intersect_with_reserved(u64 bytenr, u64 num_bytes)
 		const struct simple_range *range = &btrfs_reserved_ranges[i];
 
 		if (bytenr < range_end(range) &&
-		    bytenr + num_bytes >= range->start)
-			return range_end(range);
+		    bytenr + num_bytes > range->start)
+			return range;
 	}
-	return 0;
+	return NULL;
 }
 
 void init_convert_context(struct btrfs_convert_context *cctx)
@@ -74,6 +84,7 @@ void init_convert_context(struct btrfs_convert_context *cctx)
 	cache_tree_init(&cctx->used_space);
 	cache_tree_init(&cctx->data_chunks);
 	cache_tree_init(&cctx->free_space);
+	cache_tree_init(&cctx->free_space_initial);
 }
 
 void clean_convert_context(struct btrfs_convert_context *cctx)
@@ -81,21 +92,22 @@ void clean_convert_context(struct btrfs_convert_context *cctx)
 	free_extent_cache_tree(&cctx->used_space);
 	free_extent_cache_tree(&cctx->data_chunks);
 	free_extent_cache_tree(&cctx->free_space);
+	free_extent_cache_tree(&cctx->free_space_initial);
 }
 
 int block_iterate_proc(u64 disk_block, u64 file_block,
 		              struct blk_iterate_data *idata)
 {
 	int ret = 0;
-	u64 reserved_boundary;
+	const struct simple_range *reserved;
 	int do_barrier;
 	struct btrfs_root *root = idata->root;
-	struct btrfs_block_group_cache *cache;
+	struct btrfs_block_group *cache;
 	u32 sectorsize = root->fs_info->sectorsize;
 	u64 bytenr = disk_block * sectorsize;
 
-	reserved_boundary = intersect_with_reserved(bytenr, sectorsize);
-	do_barrier = reserved_boundary || disk_block >= idata->boundary;
+	reserved = intersect_with_reserved(bytenr, sectorsize);
+	do_barrier = reserved || disk_block >= idata->boundary;
 	if ((idata->num_blocks > 0 && do_barrier) ||
 	    (file_block > idata->first_block + idata->num_blocks) ||
 	    (disk_block != idata->disk_block + idata->num_blocks)) {
@@ -115,12 +127,16 @@ int block_iterate_proc(u64 disk_block, u64 file_block,
 				goto fail;
 		}
 
-		if (reserved_boundary) {
-			bytenr = reserved_boundary;
+		if (reserved) {
+			bytenr = range_end(reserved);
 		} else {
 			cache = btrfs_lookup_block_group(root->fs_info, bytenr);
-			BUG_ON(!cache);
-			bytenr = cache->key.objectid + cache->key.offset;
+			if (!cache) {
+				error("block group %llu not found", bytenr);
+				ret = -EUCLEAN;
+				goto fail;
+			}
+			bytenr = cache->start + cache->length;
 		}
 
 		idata->first_block = file_block;
@@ -169,15 +185,33 @@ int convert_insert_dirent(struct btrfs_trans_handle *trans,
 {
 	int ret;
 	u64 inode_size;
+	struct btrfs_inode_item dummy_iitem = { 0 };
 	struct btrfs_key location = {
 		.objectid = objectid,
-		.offset = 0,
 		.type = BTRFS_INODE_ITEM_KEY,
+		.offset = 0,
 	};
 
 	ret = btrfs_insert_dir_item(trans, root, name, name_len,
 				    dir, &location, file_type, index_cnt);
 	if (ret)
+		return ret;
+
+	btrfs_set_stack_inode_mode(&dummy_iitem, btrfs_type_to_imode(file_type));
+	btrfs_set_stack_inode_generation(&dummy_iitem, trans->transid);
+	btrfs_set_stack_inode_transid(&dummy_iitem, trans->transid);
+	/*
+	 * We must have an INOTE_ITEM before INODE_REF, or tree-checker won't
+	 * be happy.
+	 * The content of the INODE_ITEM would be properly updated when iterating
+	 * that child inode, but we should still try to make it as valid as
+	 * possible, or we may still trigger some tree checker.
+	 */
+	ret = btrfs_insert_inode(trans, root, objectid, &dummy_iitem);
+	/* The inode item is already there, just skip it. */
+	if (ret == -EEXIST)
+		ret = 0;
+	if (ret < 0)
 		return ret;
 	ret = btrfs_insert_inode_ref(trans, root, name, name_len,
 				     objectid, dir, index_cnt);
@@ -201,7 +235,7 @@ int read_disk_extent(struct btrfs_root *root, u64 bytenr,
 	ret = 0;
 fail:
 	if (ret > 0)
-		ret = -1;
+		ret = -EIO;
 	return ret;
 }
 
@@ -217,7 +251,7 @@ int record_file_blocks(struct blk_iterate_data *data,
 	int ret = 0;
 	struct btrfs_root *root = data->root;
 	struct btrfs_root *convert_root = data->convert_root;
-	struct btrfs_path path;
+	struct btrfs_path path = { 0 };
 	u32 sectorsize = root->fs_info->sectorsize;
 	u64 file_pos = file_block * sectorsize;
 	u64 old_disk_bytenr = disk_block * sectorsize;
@@ -226,11 +260,9 @@ int record_file_blocks(struct blk_iterate_data *data,
 
 	/* Hole, pass it to record_file_extent directly */
 	if (old_disk_bytenr == 0)
-		return btrfs_record_file_extent(data->trans, root,
+		return btrfs_convert_file_extent(data->trans, root,
 				data->objectid, data->inode, file_pos, 0,
 				num_bytes);
-
-	btrfs_init_path(&path);
 
 	/*
 	 * Search real disk bytenr from convert root
@@ -282,7 +314,7 @@ int record_file_blocks(struct blk_iterate_data *data,
 			real_disk_bytenr = 0;
 		cur_len = min(key.offset + extent_num_bytes,
 			      old_disk_bytenr + num_bytes) - cur_off;
-		ret = btrfs_record_file_extent(data->trans, data->root,
+		ret = btrfs_convert_file_extent(data->trans, data->root,
 					data->objectid, data->inode, file_pos,
 					real_disk_bytenr, cur_len);
 		if (ret < 0)

@@ -5,7 +5,7 @@
  *
  * libbtrfsutil is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2.1 of the License, or
  * (at your option) any later version.
  *
  * libbtrfsutil is distributed in the hope that it will be useful,
@@ -30,9 +30,9 @@ PyObject *is_subvolume(PyObject *self, PyObject *args, PyObject *kwds)
 		return NULL;
 
 	if (path.path)
-		err = btrfs_util_is_subvolume(path.path);
+		err = btrfs_util_subvolume_is_valid(path.path);
 	else
-		err = btrfs_util_is_subvolume_fd(path.fd);
+		err = btrfs_util_subvolume_is_valid_fd(path.fd);
 	if (err == BTRFS_UTIL_OK) {
 		path_cleanup(&path);
 		Py_RETURN_TRUE;
@@ -59,9 +59,9 @@ PyObject *subvolume_id(PyObject *self, PyObject *args, PyObject *kwds)
 		return NULL;
 
 	if (path.path)
-		err = btrfs_util_subvolume_id(path.path, &id);
+		err = btrfs_util_subvolume_get_id(path.path, &id);
 	else
-		err = btrfs_util_subvolume_id_fd(path.fd, &id);
+		err = btrfs_util_subvolume_get_id_fd(path.fd, &id);
 	if (err) {
 		SetFromBtrfsUtilErrorWithPath(err, &path);
 		path_cleanup(&path);
@@ -86,9 +86,9 @@ PyObject *subvolume_path(PyObject *self, PyObject *args, PyObject *kwds)
 		return NULL;
 
 	if (path.path)
-		err = btrfs_util_subvolume_path(path.path, id, &subvol_path);
+		err = btrfs_util_subvolume_get_path(path.path, id, &subvol_path);
 	else
-		err = btrfs_util_subvolume_path_fd(path.fd, id, &subvol_path);
+		err = btrfs_util_subvolume_get_path_fd(path.fd, id, &subvol_path);
 	if (err) {
 		SetFromBtrfsUtilErrorWithPath(err, &path);
 		path_cleanup(&path);
@@ -172,9 +172,9 @@ PyObject *subvolume_info(PyObject *self, PyObject *args, PyObject *kwds)
 		return NULL;
 
 	if (path.path)
-		err = btrfs_util_subvolume_info(path.path, id, &subvol);
+		err = btrfs_util_subvolume_get_info(path.path, id, &subvol);
 	else
-		err = btrfs_util_subvolume_info_fd(path.fd, id, &subvol);
+		err = btrfs_util_subvolume_get_info_fd(path.fd, id, &subvol);
 	if (err) {
 		SetFromBtrfsUtilErrorWithPath(err, &path);
 		path_cleanup(&path);
@@ -228,10 +228,9 @@ PyObject *get_subvolume_read_only(PyObject *self, PyObject *args, PyObject *kwds
 		return NULL;
 
 	if (path.path) {
-		err = btrfs_util_get_subvolume_read_only(path.path, &read_only);
+		err = btrfs_util_subvolume_get_read_only(path.path, &read_only);
 	} else {
-		err = btrfs_util_get_subvolume_read_only_fd(path.fd,
-							    &read_only);
+		err = btrfs_util_subvolume_get_read_only_fd(path.fd, &read_only);
 	}
 	if (err) {
 		SetFromBtrfsUtilErrorWithPath(err, &path);
@@ -257,9 +256,9 @@ PyObject *set_subvolume_read_only(PyObject *self, PyObject *args, PyObject *kwds
 		return NULL;
 
 	if (path.path)
-		err = btrfs_util_set_subvolume_read_only(path.path, read_only);
+		err = btrfs_util_subvolume_set_read_only(path.path, read_only);
 	else
-		err = btrfs_util_set_subvolume_read_only_fd(path.fd, read_only);
+		err = btrfs_util_subvolume_set_read_only_fd(path.fd, read_only);
 	if (err) {
 		SetFromBtrfsUtilErrorWithPath(err, &path);
 		path_cleanup(&path);
@@ -282,9 +281,9 @@ PyObject *get_default_subvolume(PyObject *self, PyObject *args, PyObject *kwds)
 		return NULL;
 
 	if (path.path)
-		err = btrfs_util_get_default_subvolume(path.path, &id);
+		err = btrfs_util_subvolume_get_default(path.path, &id);
 	else
-		err = btrfs_util_get_default_subvolume_fd(path.fd, &id);
+		err = btrfs_util_subvolume_get_default_fd(path.fd, &id);
 	if (err) {
 		SetFromBtrfsUtilErrorWithPath(err, &path);
 		path_cleanup(&path);
@@ -307,9 +306,9 @@ PyObject *set_default_subvolume(PyObject *self, PyObject *args, PyObject *kwds)
 		return NULL;
 
 	if (path.path)
-		err = btrfs_util_set_default_subvolume(path.path, id);
+		err = btrfs_util_subvolume_set_default(path.path, id);
 	else
-		err = btrfs_util_set_default_subvolume_fd(path.fd, id);
+		err = btrfs_util_subvolume_set_default_fd(path.fd, id);
 	if (err) {
 		SetFromBtrfsUtilErrorWithPath(err, &path);
 		path_cleanup(&path);
@@ -322,7 +321,7 @@ PyObject *set_default_subvolume(PyObject *self, PyObject *args, PyObject *kwds)
 
 PyObject *create_subvolume(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	static char *keywords[] = {"path", "async", "qgroup_inherit", NULL};
+	static char *keywords[] = {"path", "async_", "qgroup_inherit", NULL};
 	struct path_arg path = {.allow_fd = false};
 	enum btrfs_util_error err;
 	int async = 0;
@@ -334,7 +333,7 @@ PyObject *create_subvolume(PyObject *self, PyObject *args, PyObject *kwds)
 					 &async, &QgroupInherit_type, &inherit))
 		return NULL;
 
-	err = btrfs_util_create_subvolume(path.path, 0, async ? &transid : NULL,
+	err = btrfs_util_subvolume_create(path.path, 0, async ? &transid : NULL,
 					  inherit ? inherit->inherit : NULL);
 	if (err) {
 		SetFromBtrfsUtilErrorWithPath(err, &path);
@@ -352,7 +351,7 @@ PyObject *create_subvolume(PyObject *self, PyObject *args, PyObject *kwds)
 PyObject *create_snapshot(PyObject *self, PyObject *args, PyObject *kwds)
 {
 	static char *keywords[] = {
-		"source", "path", "recursive", "read_only", "async",
+		"source", "path", "recursive", "read_only", "async_",
 		"qgroup_inherit", NULL,
 	};
 	struct path_arg src = {.allow_fd = true}, dst = {.allow_fd = false};
@@ -375,13 +374,13 @@ PyObject *create_snapshot(PyObject *self, PyObject *args, PyObject *kwds)
 		flags |= BTRFS_UTIL_CREATE_SNAPSHOT_READ_ONLY;
 
 	if (src.path) {
-		err = btrfs_util_create_snapshot(src.path, dst.path, flags,
-						 async ? &transid : NULL,
-						 inherit ? inherit->inherit : NULL);
-	} else {
-		err = btrfs_util_create_snapshot_fd(src.fd, dst.path, flags,
+		err = btrfs_util_subvolume_snapshot(src.path, dst.path, flags,
 						    async ? &transid : NULL,
 						    inherit ? inherit->inherit : NULL);
+	} else {
+		err = btrfs_util_subvolume_snapshot_fd(src.fd, dst.path, flags,
+						       async ? &transid : NULL,
+						       inherit ? inherit->inherit : NULL);
 	}
 	if (err) {
 		SetFromBtrfsUtilErrorWithPaths(err, &src, &dst);
@@ -414,7 +413,7 @@ PyObject *delete_subvolume(PyObject *self, PyObject *args, PyObject *kwds)
 	if (recursive)
 		flags |= BTRFS_UTIL_DELETE_SUBVOLUME_RECURSIVE;
 
-	err = btrfs_util_delete_subvolume(path.path, flags);
+	err = btrfs_util_subvolume_delete(path.path, flags);
 	if (err) {
 		SetFromBtrfsUtilErrorWithPath(err, &path);
 		path_cleanup(&path);
@@ -439,9 +438,9 @@ PyObject *deleted_subvolumes(PyObject *self, PyObject *args, PyObject *kwds)
 		return NULL;
 
 	if (path.path)
-		err = btrfs_util_deleted_subvolumes(path.path, &ids, &n);
+		err = btrfs_util_subvolume_list_deleted(path.path, &ids, &n);
 	else
-		err = btrfs_util_deleted_subvolumes_fd(path.fd, &ids, &n);
+		err = btrfs_util_subvolume_list_deleted_fd(path.fd, &ids, &n);
 	if (err) {
 		SetFromBtrfsUtilErrorWithPath(err, &path);
 		path_cleanup(&path);
@@ -463,7 +462,7 @@ typedef struct {
 
 static void SubvolumeIterator_dealloc(SubvolumeIterator *self)
 {
-	btrfs_util_destroy_subvolume_iterator(self->iter);
+	btrfs_util_subvolume_iter_destroy(self->iter);
 	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
@@ -482,8 +481,7 @@ static PyObject *SubvolumeIterator_next(SubvolumeIterator *self)
 	if (self->info) {
 		struct btrfs_util_subvolume_info subvol;
 
-		err = btrfs_util_subvolume_iterator_next_info(self->iter, &path,
-							      &subvol);
+		err = btrfs_util_subvolume_iter_next_info(self->iter, &path, &subvol);
 		if (err == BTRFS_UTIL_ERROR_STOP_ITERATION) {
 			PyErr_SetNone(PyExc_StopIteration);
 			return NULL;
@@ -496,7 +494,7 @@ static PyObject *SubvolumeIterator_next(SubvolumeIterator *self)
 	} else {
 		uint64_t id;
 
-		err = btrfs_util_subvolume_iterator_next(self->iter, &path, &id);
+		err = btrfs_util_subvolume_iter_next(self->iter, &path, &id);
 		if (err == BTRFS_UTIL_ERROR_STOP_ITERATION) {
 			PyErr_SetNone(PyExc_StopIteration);
 			return NULL;
@@ -525,7 +523,7 @@ static int SubvolumeIterator_init(SubvolumeIterator *self, PyObject *args,
 	static char *keywords[] = {"path", "top", "info", "post_order", NULL};
 	struct path_arg path = {.allow_fd = true};
 	enum btrfs_util_error err;
-	unsigned long long top = 5;
+	unsigned long long top = 0;
 	int info = 0;
 	int post_order = 0;
 	int flags = 0;
@@ -539,12 +537,9 @@ static int SubvolumeIterator_init(SubvolumeIterator *self, PyObject *args,
 		flags |= BTRFS_UTIL_SUBVOLUME_ITERATOR_POST_ORDER;
 
 	if (path.path) {
-		err = btrfs_util_create_subvolume_iterator(path.path, top,
-							   flags, &self->iter);
+		err = btrfs_util_subvolume_iter_create(path.path, top, flags, &self->iter);
 	} else {
-		err = btrfs_util_create_subvolume_iterator_fd(path.fd, top,
-							      flags,
-							      &self->iter);
+		err = btrfs_util_subvolume_iter_create_fd(path.fd, top, flags, &self->iter);
 	}
 	if (err) {
 		SetFromBtrfsUtilErrorWithPath(err, &path);
@@ -560,7 +555,7 @@ static int SubvolumeIterator_init(SubvolumeIterator *self, PyObject *args,
 static PyObject *SubvolumeIterator_close(SubvolumeIterator *self)
 {
 	if (self->iter) {
-		btrfs_util_destroy_subvolume_iterator(self->iter);
+		btrfs_util_subvolume_iter_destroy(self->iter);
 		self->iter = NULL;
 	}
 	Py_RETURN_NONE;
@@ -573,7 +568,7 @@ static PyObject *SubvolumeIterator_fileno(SubvolumeIterator *self)
 				"operation on closed iterator");
 		return NULL;
 	}
-	return PyLong_FromLong(btrfs_util_subvolume_iterator_fd(self->iter));
+	return PyLong_FromLong(btrfs_util_subvolume_iterator_get_fd(self->iter));
 }
 
 static PyObject *SubvolumeIterator_enter(SubvolumeIterator *self)
@@ -629,39 +624,13 @@ static PyMethodDef SubvolumeIterator_methods[] = {
 
 PyTypeObject SubvolumeIterator_type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
-	"btrfsutil.SubvolumeIterator",		/* tp_name */
-	sizeof(SubvolumeIterator),		/* tp_basicsize */
-	0,					/* tp_itemsize */
-	(destructor)SubvolumeIterator_dealloc,	/* tp_dealloc */
-	NULL,					/* tp_print */
-	NULL,					/* tp_getattr */
-	NULL,					/* tp_setattr */
-	NULL,					/* tp_as_async */
-	NULL,					/* tp_repr */
-	NULL,					/* tp_as_number */
-	NULL,					/* tp_as_sequence */
-	NULL,					/* tp_as_mapping */
-	NULL,					/* tp_hash  */
-	NULL,					/* tp_call */
-	NULL,					/* tp_str */
-	NULL,					/* tp_getattro */
-	NULL,					/* tp_setattro */
-	NULL,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,			/* tp_flags */
-	SubvolumeIterator_DOC,			/* tp_doc */
-	NULL,					/* tp_traverse */
-	NULL,					/* tp_clear */
-	NULL,					/* tp_richcompare */
-	0,					/* tp_weaklistoffset */
-	PyObject_SelfIter,			/* tp_iter */
-	(iternextfunc)SubvolumeIterator_next,	/* tp_iternext */
-	SubvolumeIterator_methods,		/* tp_methods */
-	NULL,					/* tp_members */
-	NULL,					/* tp_getset */
-	NULL,					/* tp_base */
-	NULL,					/* tp_dict */
-	NULL,					/* tp_descr_get */
-	NULL,					/* tp_descr_set */
-	0,					/* tp_dictoffset */
-	(initproc)SubvolumeIterator_init,	/* tp_init */
+	.tp_name		= "btrfsutil.SubvolumeIterator",
+	.tp_basicsize		= sizeof(SubvolumeIterator),
+	.tp_dealloc		= (destructor)SubvolumeIterator_dealloc,
+	.tp_flags		= Py_TPFLAGS_DEFAULT,
+	.tp_doc			= SubvolumeIterator_DOC,
+	.tp_iter		= PyObject_SelfIter,
+	.tp_iternext		= (iternextfunc)SubvolumeIterator_next,
+	.tp_methods		= SubvolumeIterator_methods,
+	.tp_init		= (initproc)SubvolumeIterator_init,
 };

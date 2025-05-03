@@ -1,10 +1,10 @@
 #!/bin/bash
 # test btrfs-image with a missing device (uses loop devices)
 #
-# - btrfs-image must not loop indefinetelly
+# - btrfs-image must not loop indefinitely
 # - btrfs-image will expectedly fail to produce the dump
 
-source "$TEST_TOP/common"
+source "$TEST_TOP/common" || exit
 
 check_prereq btrfs-image
 check_prereq mkfs.btrfs
@@ -24,6 +24,7 @@ test_run()
 	run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f -d raid1 -m raid1 "$dev1" "$dev2"
 
 	# we need extents to trigger reading from all devices
+	cond_wait_for_loopdevs
 	run_check $SUDO_HELPER mount "$dev1" "$TEST_MNT"
 	run_check $SUDO_HELPER dd if=/dev/zero of="$TEST_MNT/a" bs=1M count=10
 	run_check $SUDO_HELPER dd if=/dev/zero of="$TEST_MNT/b" bs=4k count=1000 conv=sync

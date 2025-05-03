@@ -2,13 +2,14 @@
 # Regression test for mkfs.btrfs --rootdir with inline file extents
 # For any large inline file extent, btrfs check could already report it
 
-source "$TEST_TOP/common"
+source "$TEST_TOP/common" || exit
 
 check_prereq mkfs.btrfs
 
+setup_root_helper
 prepare_test_dev
 
-tmp=$(mktemp -d --tmpdir btrfs-progs-mkfs.rootdirXXXXXXX)
+tmp=$(_mktemp_dir mkfs-rootdir)
 
 pagesize=$(getconf PAGESIZE)
 create_file()
@@ -20,9 +21,8 @@ create_file()
 
 test_mkfs_rootdir()
 {
-	nodesize=$1
-	run_check "$TOP/mkfs.btrfs" --nodesize "$nodesize" -f --rootdir "$tmp" \
-		"$TEST_DEV"
+	local nodesize=$1
+	run_check_mkfs_test_dev --nodesize "$nodesize" --rootdir "$tmp"
 	run_check $SUDO_HELPER "$TOP/btrfs" check "$TEST_DEV"
 }
 

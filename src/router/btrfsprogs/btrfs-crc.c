@@ -19,8 +19,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "crc32c.h"
-#include "utils.h"
+#include "crypto/crc32c.h"
+#include "common/utils.h"
 
 void print_usage(int status)
 {
@@ -52,7 +52,7 @@ int main(int argc, char **argv)
 			length = atol(optarg);
 			break;
 		case 'c':
-			sscanf(optarg, "%li", &checksum);
+			sscanf(optarg, "%lu", &checksum);
 			loop = 1;
 			break;
 		case 's':
@@ -70,13 +70,13 @@ int main(int argc, char **argv)
 
 	if (!loop) {
 		if (check_argc_exact(argc - optind, 1))
-			print_usage(255);
+			return 1;
 
 		printf("%12u - %s\n", crc32c(~1, str, strlen(str)), str);
 		return 0;
 	}
 	if (check_argc_exact(argc - optind, 0))
-		print_usage(255);
+		return 1;
 
 	buf = malloc(length);
 	if (!buf)

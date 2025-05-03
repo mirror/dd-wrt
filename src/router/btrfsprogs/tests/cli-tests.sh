@@ -8,11 +8,11 @@ if [ -z "$TOP" ]; then
 	TOP=$(readlink -f "$SCRIPT_DIR/../")
 	if [ -f "$TOP/configure.ac" ]; then
 		# inside git
-		TEST_TOP="$TOP/tests/"
+		TEST_TOP="$TOP/tests"
 		INTERNAL_BIN="$TOP"
 	else
 		# external, defaults to system binaries
-		TOP=$(dirname `which btrfs`)
+		TOP=$(dirname `type -p btrfs`)
 		TEST_TOP="$SCRIPT_DIR"
 		INTERNAL_BIN="$TEST_TOP"
 	fi
@@ -46,10 +46,23 @@ check_kernel_support
 
 # The tests are driven by their custom script called 'test.sh'
 
+test_found=0
+
 for i in $(find "$TEST_TOP/cli-tests" -maxdepth 1 -mindepth 1 -type d	\
 	${TEST:+-name "$TEST"} | sort)
 do
 	name=$(basename "$i")
+	if ! [ -z "$TEST_FROM" ]; then
+		if [ "$test_found" == 0 ]; then
+			case "$name" in
+				$TEST_FROM) test_found=1;;
+			esac
+		fi
+		if [ "$test_found" == 0 ]; then
+			printf "    [TEST/cli]   %-32s (SKIPPED)\n" "$name"
+			continue
+		fi
+	fi
 	cd "$i"
 	if [ -x test.sh ]; then
 		echo "=== START TEST $i" >> "$RESULTS"
@@ -59,7 +72,7 @@ do
 			if [[ $TEST_LOG =~ dump ]]; then
 				cat "$RESULTS"
 			fi
-			_fail "test failed for case $(basename $i)"
+			_fail "test failed for case $name"
 		fi
 	fi
 	cd "$TEST_TOP"

@@ -19,6 +19,11 @@ try-run = $(shell set -e;               \
  cc-option = $(call try-run,\
          $(CC) $(CFLAGS) $(1) -c -x c /dev/null -o "$$TMP",$(1),$(2))
 
+# cc-disable-warning
+# Usage: cflags-y += $(call cc-disable-warning,unused-but-set-variable)
+cc-disable-warning = $(call try-run, \
+	$(CC) -Werror $(CFLAGS) -W$(strip $(1)) -c -x c /dev/null -o "$$TMP",-Wno-$(strip $(1)))
+
 # From linux.git/scripts/Makefile.extrawarn
 # ==========================================================================
 #
@@ -47,14 +52,17 @@ warning-1 += -Wold-style-definition
 warning-1 += $(call cc-option, -Wmissing-include-dirs)
 warning-1 += $(call cc-option, -Wunused-but-set-variable)
 warning-1 += $(call cc-disable-warning, missing-field-initializers)
+warning-1 += $(call cc-disable-warning, format-truncation)
+warning-1 += $(call cc-disable-warning, sign-compare)
+warning-2 += $(call cc-option, -Waddress-of-packed-member)
 
 warning-2 := -Waggregate-return
 warning-2 += -Wcast-align
 warning-2 += -Wdisabled-optimization
 warning-2 += -Wnested-externs
-warning-2 += -Wshadow
 warning-2 += $(call cc-option, -Wlogical-op)
 warning-2 += $(call cc-option, -Wmissing-field-initializers)
+warning-2 += $(call cc-option, -Wformat-truncation)
 
 warning-3 := -Wbad-function-cast
 warning-3 += -Wcast-qual
@@ -66,6 +74,7 @@ warning-3 += -Wredundant-decls
 warning-3 += -Wswitch-default
 warning-3 += $(call cc-option, -Wpacked-bitfield-compat)
 warning-3 += $(call cc-option, -Wvla)
+warning-3 += $(call cc-option, -Wsign-compare)
 
 warning := $(warning-$(findstring 1, $(BUILD_ENABLE_EXTRA_GCC_CHECKS)))
 warning += $(warning-$(findstring 2, $(BUILD_ENABLE_EXTRA_GCC_CHECKS)))

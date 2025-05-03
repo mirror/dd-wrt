@@ -1,7 +1,7 @@
 #!/bin/bash
 # test btrfstune options that enable filesystem features
 
-source "$TEST_TOP/common"
+source "$TEST_TOP/common" || exit
 
 check_prereq mkfs.btrfs
 check_prereq btrfstune
@@ -25,8 +25,7 @@ test_feature()
 	tuneopt="$2"
 	sbflag="$3"
 
-	run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f \
-		${mkfsfeatures:+-O ^"$mkfsfeatures"} "$TEST_DEV"
+	run_check_mkfs_test_dev ${mkfsfeatures:+-O ^"$mkfsfeatures"}
 	if run_check_stdout "$TOP/btrfs" inspect-internal dump-super "$TEST_DEV" | \
 			grep -q "$sbflag"; then
 		_fail "FAIL: feature $sbflag must not be set on the base image"

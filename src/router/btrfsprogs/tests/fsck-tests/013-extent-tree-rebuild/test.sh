@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source "$TEST_TOP/common"
+source "$TEST_TOP/common" || exit
 
 check_prereq btrfs-corrupt-block
 check_prereq mkfs.btrfs
@@ -12,8 +12,7 @@ prepare_test_dev
 # test whether fsck can rebuild a corrupted extent tree
 test_extent_tree_rebuild()
 {
-	run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$TEST_DEV"
-
+	run_check_mkfs_test_dev
 	run_check_mount_test_dev
 	generate_dataset small
 
@@ -36,7 +35,7 @@ test_extent_tree_rebuild()
 
 	$SUDO_HELPER "$TOP/btrfs" check "$TEST_DEV" >& /dev/null && \
 			_fail "btrfs check should detect failure"
-	run_check $SUDO_HELPER "$TOP/btrfs" check --repair --init-extent-tree "$TEST_DEV"
+	run_check $SUDO_HELPER "$TOP/btrfs" check --repair --force --init-extent-tree "$TEST_DEV"
 	run_check $SUDO_HELPER "$TOP/btrfs" check "$TEST_DEV"
 }
 

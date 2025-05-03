@@ -24,11 +24,7 @@
 #ifndef _LINUX_RBTREE_AUGMENTED_H
 #define _LINUX_RBTREE_AUGMENTED_H
 
-#include "rbtree.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "kernel-lib/rbtree.h"
 
 /*
  * Please note - only struct rb_augment_callbacks and the prototypes for
@@ -62,6 +58,17 @@ rb_insert_augmented(struct rb_node *node, struct rb_root *root,
 {
 	__rb_insert_augmented(node, root, augment->rotate);
 }
+
+static inline void
+rb_insert_augmented_cached(struct rb_node *node,
+			   struct rb_root_cached *root, bool newleft,
+			   const struct rb_augment_callbacks *augment)
+{
+	if (newleft)
+		root->rb_leftmost = node;
+	rb_insert_augmented(node, &root->rb_root, augment);
+}
+
 
 #define RB_DECLARE_CALLBACKS(rbstatic, rbname, rbstruct, rbfield,	\
 			     rbtype, rbaugmented, rbcompute)		\
@@ -242,8 +249,13 @@ rb_erase_augmented(struct rb_node *node, struct rb_root *root,
 		__rb_erase_color(rebalance, root, augment->rotate);
 }
 
-#ifdef __cplusplus
+static __always_inline void
+rb_erase_augmented_cached(struct rb_node *node, struct rb_root_cached *root,
+			  const struct rb_augment_callbacks *augment)
+{
+	if (root->rb_leftmost == node)
+		root->rb_leftmost = rb_next(node);
+	rb_erase_augmented(node, &root->rb_root, augment);
 }
-#endif
 
 #endif	/* _LINUX_RBTREE_AUGMENTED_H */

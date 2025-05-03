@@ -6,7 +6,7 @@
 #
 # Note: sock type is skipped in this test
 
-source "$TEST_TOP/common"
+source "$TEST_TOP/common" || exit
 
 check_prereq mkfs.btrfs
 check_prereq btrfs
@@ -20,7 +20,7 @@ prepare_test_dev
 check_global_prereq mknod
 check_global_prereq dd
 
-tmp=$(mktemp -d --tmpdir btrfs-progs-mkfs.rootdirXXXXXXX)
+tmp=$(_mktemp_dir mkfs-rootdir)
 
 run_check mkdir "$tmp/dir"
 run_check mkdir -p "$tmp/dir/in/dir"
@@ -29,7 +29,7 @@ run_check $SUDO_HELPER mknod "$tmp/char" c 1 1
 run_check $SUDO_HELPER mknod "$tmp/block" b 1 1
 run_check dd if=/dev/zero bs=1M count=1 of="$tmp/regular"
 
-run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f -r "$tmp" "$TEST_DEV"
+run_check_mkfs_test_dev -r "$tmp"
 
 rm -rf -- "$tmp"
 

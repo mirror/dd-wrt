@@ -15,12 +15,19 @@
  */
 
 #include "kerncompat.h"
-#include "internal.h"
-#include "messages.h"
-#include "utils.h"
-#include "kernel-lib/crc32c.h"
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+#include "kernel-lib/rbtree.h"
+#include "kernel-shared/accessors.h"
+#include "kernel-shared/uapi/btrfs_tree.h"
+#include "kernel-shared/ctree.h"
+#include "kernel-shared/extent_io.h"
+#include "common/internal.h"
+#include "common/messages.h"
+#include "common/utils.h"
+#include "crypto/crc32c.h"
 #include "image/sanitize.h"
-#include "extent_io.h"
 
 /*
  * Reverse CRC-32C table
@@ -118,7 +125,7 @@ static void find_collision_calc_suffix(unsigned long current_crc,
 /*
  * Check if suffix is valid according to our file name conventions
  */
-static int find_collision_is_suffix_valid(const char *suffix)
+static bool find_collision_is_suffix_valid(const char *suffix)
 {
 	int i;
 	char c;
@@ -126,9 +133,9 @@ static int find_collision_is_suffix_valid(const char *suffix)
 	for (i = 0; i < 4; i++) {
 		c = suffix[i];
 		if (c < ' ' || c > 126 || c == '/')
-			return 0;
+			return false;
 	}
-	return 1;
+	return true;
 }
 
 static int find_collision_reverse_crc32c(struct name *val, u32 name_len)
@@ -256,7 +263,7 @@ static char *find_collision(struct rb_root *name_tree, char *name,
 
 	val = malloc(sizeof(struct name));
 	if (!val) {
-		error("cannot sanitize name, not enough memory");
+		error_msg(ERROR_MSG_MEMORY, "sanitize name");
 		free(name);
 		return NULL;
 	}
@@ -267,7 +274,7 @@ static char *find_collision(struct rb_root *name_tree, char *name,
 	val->len = name_len;
 	val->sub = malloc(name_len);
 	if (!val->sub) {
-		error("cannot sanitize name, not enough memory");
+		error_msg(ERROR_MSG_MEMORY, "sanitize name");
 		free(val);
 		free(name);
 		return NULL;
@@ -325,7 +332,7 @@ static void sanitize_dir_item(enum sanitize_mode sanitize,
 	int free_garbage = (sanitize == SANITIZE_NAMES);
 
 	dir_item = btrfs_item_ptr(eb, slot, struct btrfs_dir_item);
-	total_len = btrfs_item_size_nr(eb, slot);
+	total_len = btrfs_item_size(eb, slot);
 	while (cur < total_len) {
 		this_len = sizeof(*dir_item) +
 			btrfs_dir_name_len(eb, dir_item) +
@@ -336,7 +343,7 @@ static void sanitize_dir_item(enum sanitize_mode sanitize,
 		if (sanitize == SANITIZE_COLLISIONS) {
 			buf = malloc(name_len);
 			if (!buf) {
-				error("cannot sanitize name, not enough memory");
+				error_msg(ERROR_MSG_MEMORY, "sanitize name");
 				return;
 			}
 			read_extent_buffer(eb, buf, name_ptr, name_len);
@@ -345,7 +352,7 @@ static void sanitize_dir_item(enum sanitize_mode sanitize,
 			garbage = generate_garbage(name_len);
 		}
 		if (!garbage) {
-			error("cannot sanitize name, not enough memory");
+			error_msg(ERROR_MSG_MEMORY, "sanitize name");
 			return;
 		}
 		write_extent_buffer(eb, garbage, name_ptr, name_len);
@@ -371,7 +378,7 @@ static void sanitize_inode_ref(enum sanitize_mode sanitize,
 	int len;
 	int free_garbage = (sanitize == SANITIZE_NAMES);
 
-	item_size = btrfs_item_size_nr(eb, slot);
+	item_size = btrfs_item_size(eb, slot);
 	ptr = btrfs_item_ptr_offset(eb, slot);
 	while (cur_offset < item_size) {
 		if (ext) {
@@ -391,7 +398,7 @@ static void sanitize_inode_ref(enum sanitize_mode sanitize,
 		if (sanitize == SANITIZE_COLLISIONS) {
 			buf = malloc(len);
 			if (!buf) {
-				error("cannot sanitize name, not enough memory");
+				error_msg(ERROR_MSG_MEMORY, "sanitize name");
 				return;
 			}
 			read_extent_buffer(eb, buf, name_ptr, len);
@@ -401,7 +408,7 @@ static void sanitize_inode_ref(enum sanitize_mode sanitize,
 		}
 
 		if (!garbage) {
-			error("cannot sanitize name, not enough memory");
+			error_msg(ERROR_MSG_MEMORY, "sanitize name");
 			return;
 		}
 		write_extent_buffer(eb, garbage, name_ptr, len);
@@ -442,10 +449,12 @@ void sanitize_name(enum sanitize_mode sanitize, struct rb_root *name_tree,
 		int slot)
 {
 	struct extent_buffer *eb;
+	u32 item_ptr_off = btrfs_item_ptr_offset(src, slot);
+	u32 item_ptr_size = btrfs_item_size(src, slot);
 
 	eb = alloc_dummy_eb(src->start, src->len);
 	if (!eb) {
-		error("cannot sanitize name, not enough memory");
+		error_msg(ERROR_MSG_MEMORY, "sanitize name");
 		return;
 	}
 
@@ -469,7 +478,11 @@ void sanitize_name(enum sanitize_mode sanitize, struct rb_root *name_tree,
 		break;
 	}
 
-	memcpy(dst, eb->data, eb->len);
+	/*
+	 * Only overwrite the sanitized part, or we can overwrite previous
+	 * sanitized value with the old values from @src.
+	 */
+	memcpy(dst + item_ptr_off, eb->data + item_ptr_off, item_ptr_size);
 	free(eb);
 }
 

@@ -1,16 +1,7 @@
 #!/bin/bash
 # test for "subvolume get-default/set-default"
 
-check_default_id()
-{
-	id=$(run_check_stdout $SUDO_HELPER "$TOP/btrfs" subvolume get-default .) \
-		|| { echo "$id"; exit 1; }
-	if $(echo "$id" | grep -vq "ID $1"); then
-		_fail "subvolume get-default: default id is not $1, but $id"
-	fi
-}
-
-source "$TEST_TOP/common"
+source "$TEST_TOP/common" || exit
 
 check_prereq mkfs.btrfs
 check_prereq btrfs
@@ -18,9 +9,18 @@ check_prereq btrfs
 setup_root_helper
 prepare_test_dev
 
-run_check "$TOP/mkfs.btrfs" -f "$TEST_DEV"
+check_default_id()
+{
+	id=$(run_check_stdout $SUDO_HELPER "$TOP/btrfs" subvolume get-default .) \
+		|| { echo "$id"; exit 1; }
+	if echo "$id" | grep -vq "ID $1"; then
+		_fail "subvolume get-default: default id is not $1, but $id"
+	fi
+}
+
+run_check_mkfs_test_dev
 run_check_mount_test_dev
-cd "$TEST_MNT"
+cd "$TEST_MNT" || _fail "Cannot cd into TEST_MNT $TEST_MNT"
 
 check_default_id 5
 

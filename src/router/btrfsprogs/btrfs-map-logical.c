@@ -16,20 +16,28 @@
  * Boston, MA 021110-1307, USA.
  */
 
+#include "kerncompat.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <getopt.h>
-#include "kerncompat.h"
-#include "ctree.h"
-#include "volumes.h"
-#include "disk-io.h"
-#include "print-tree.h"
-#include "transaction.h"
-#include "list.h"
-#include "utils.h"
-#include "help.h"
+#include <errno.h>
+#include <string.h>
+#include "kernel-lib/sizes.h"
+#include "kernel-shared/accessors.h"
+#include "kernel-shared/uapi/btrfs_tree.h"
+#include "kernel-shared/ctree.h"
+#include "kernel-shared/extent_io.h"
+#include "kernel-shared/volumes.h"
+#include "kernel-shared/disk-io.h"
+#include "common/internal.h"
+#include "common/messages.h"
+#include "common/help.h"
+#include "common/extent-cache.h"
+#include "common/extent-tree-utils.h"
+#include "common/string-utils.h"
+#include "cmds/commands.h"
 
 #define BUFFER_SIZE SZ_64K
 
@@ -41,6 +49,7 @@ static FILE *info_file;
 static int map_one_extent(struct btrfs_fs_info *fs_info,
 			  u64 *logical_ret, u64 *len_ret, int search_forward)
 {
+	struct btrfs_root *extent_root;
 	struct btrfs_path *path;
 	struct btrfs_key key;
 	u64 logical;
@@ -58,13 +67,18 @@ static int map_one_extent(struct btrfs_fs_info *fs_info,
 	key.type = 0;
 	key.offset = 0;
 
-	ret = btrfs_search_slot(NULL, fs_info->extent_root, &key, path,
-				0, 0);
+	extent_root = btrfs_extent_root(fs_info, logical);
+	ret = btrfs_search_slot(NULL, extent_root, &key, path, 0, 0);
 	if (ret < 0)
 		goto out;
 	BUG_ON(ret == 0);
 	ret = 0;
 
+	if (path->slots[0] >= btrfs_header_nritems(path->nodes[0])) {
+		ret = btrfs_next_leaf(extent_root, path);
+		if (ret)
+			goto out;
+	}
 again:
 	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
 	if ((search_forward && key.objectid < logical) ||
@@ -72,10 +86,10 @@ again:
 	    (key.type != BTRFS_EXTENT_ITEM_KEY &&
 	     key.type != BTRFS_METADATA_ITEM_KEY)) {
 		if (!search_forward)
-			ret = btrfs_previous_extent_item(fs_info->extent_root,
+			ret = btrfs_previous_extent_item(extent_root,
 							 path, 0);
 		else
-			ret = btrfs_next_extent_item(fs_info->extent_root,
+			ret = btrfs_next_extent_item(extent_root,
 						     path, 0);
 		if (ret)
 			goto out;
@@ -113,15 +127,16 @@ static int __print_mapping_info(struct btrfs_fs_info *fs_info, u64 logical,
 		ret = btrfs_map_block(fs_info, READ, logical + cur_offset,
 				      &cur_len, &multi, mirror_num, NULL);
 		if (ret) {
+			errno = -ret;
 			fprintf(info_file,
-				"Error: fails to map mirror%d logical %llu: %s\n",
-				mirror_num, logical, strerror(-ret));
+				"Error: fails to map mirror%d logical %llu: %m\n",
+				mirror_num, logical);
 			return ret;
 		}
 		for (i = 0; i < multi->num_stripes; i++) {
 			device = multi->stripes[i].dev;
 			fprintf(info_file,
-				"mirror %d logical %Lu physical %Lu device %s\n",
+				"mirror %d logical %llu physical %llu device %s\n",
 				mirror_num, logical + cur_offset,
 				multi->stripes[0].physical,
 				device->name);
@@ -170,20 +185,21 @@ static int write_extent_content(struct btrfs_fs_info *fs_info, int out_fd,
 
 	while (cur_offset < length) {
 		cur_len = min_t(u64, length - cur_offset, BUFFER_SIZE);
-		ret = read_extent_data(fs_info, buffer,
-				       logical + cur_offset, &cur_len, mirror);
+		ret = read_data_from_disk(fs_info, buffer,
+					  logical + cur_offset, &cur_len,
+					  mirror);
 		if (ret < 0) {
-			fprintf(stderr,
-				"Failed to read extent at [%llu, %llu]: %s\n",
-				logical, logical + length, strerror(-ret));
+			errno = -ret;
+			error("failed to read extent at [%llu, %llu]: %m",
+				logical, logical + length);
 			return ret;
 		}
 		ret = write(out_fd, buffer, cur_len);
 		if (ret < 0 || ret != cur_len) {
 			if (ret > 0)
 				ret = -EINTR;
-			fprintf(stderr, "output file write failed: %s\n",
-				strerror(-ret));
+			errno = -ret;
+			error("output file write failed: %m");
 			return ret;
 		}
 		cur_offset += cur_len;
@@ -191,16 +207,20 @@ static int write_extent_content(struct btrfs_fs_info *fs_info, int out_fd,
 	return ret;
 }
 
-__attribute__((noreturn))
-static void print_usage(void)
-{
-	printf("usage: btrfs-map-logical [options] device\n");
-	printf("\t-l Logical extent to map\n");
-	printf("\t-c Copy of the extent to read (usually 1 or 2)\n");
-	printf("\t-o Output file to hold the extent\n");
-	printf("\t-b Number of bytes to read\n");
-	exit(1);
-}
+static const char * const map_logical_usage[] = {
+	"btrfs-map-logical [options] device",
+	"Map logical address on a device",
+	"",
+	OPTLINE("-l OFFSET", "logical extent to map"),
+	OPTLINE("-c COPY", "copy of the extent to read (usually 1 or 2)"),
+	OPTLINE("-o FILE", "output file to hold the extent"),
+	OPTLINE("-b BYTES", "number of bytes to read"),
+	NULL
+};
+
+static const struct cmd_struct map_logical_cmd = {
+	.usagestr = map_logical_usage
+};
 
 int main(int argc, char **argv)
 {
@@ -245,23 +265,22 @@ int main(int argc, char **argv)
 				output_file = strdup(optarg);
 				break;
 			default:
-				print_usage();
+				usage(&map_logical_cmd, 1);
 		}
 	}
 	set_argv0(argv);
 	if (check_argc_min(argc - optind, 1))
-		print_usage();
+		return 1;
 	if (logical == 0)
-		print_usage();
+		usage(&map_logical_cmd, 1);
 
 	dev = argv[optind];
 
-	radix_tree_init();
 	cache_tree_init(&root_cache);
 
 	root = open_ctree(dev, 0, 0);
 	if (!root) {
-		fprintf(stderr, "Open ctree failed\n");
+		error("open ctree failed");
 		free(output_file);
 		exit(1);
 	}
@@ -293,8 +312,9 @@ int main(int argc, char **argv)
 	/* First find the nearest extent */
 	ret = map_one_extent(root->fs_info, &cur_logical, &cur_len, 0);
 	if (ret < 0) {
-		fprintf(stderr, "Failed to find extent at [%llu,%llu): %s\n",
-			cur_logical, cur_logical + cur_len, strerror(-ret));
+		errno = -ret;
+		error("failed to find extent at [%llu,%llu): %m",
+			cur_logical, cur_logical + cur_len);
 		goto out_close_fd;
 	}
 	/*
@@ -305,15 +325,13 @@ int main(int argc, char **argv)
 	if (ret > 0) {
 		ret = map_one_extent(root->fs_info, &cur_logical, &cur_len, 1);
 		if (ret < 0) {
-			fprintf(stderr,
-				"Failed to find extent at [%llu,%llu): %s\n",
-				cur_logical, cur_logical + cur_len,
-				strerror(-ret));
+			errno = -ret;
+			error("Failed to find extent at [%llu,%llu): %m",
+				cur_logical, cur_logical + cur_len);
 			goto out_close_fd;
 		}
 		if (ret > 0) {
-			fprintf(stderr,
-				"Failed to find any extent at [%llu,%llu)\n",
+			error("failed to find any extent at [%llu,%llu)",
 				cur_logical, cur_logical + cur_len);
 			goto out_close_fd;
 		}
@@ -353,7 +371,7 @@ int main(int argc, char **argv)
 	}
 
 	if (!found) {
-		fprintf(stderr, "No extent found at range [%llu,%llu)\n",
+		error("no extent found at range [%llu,%llu)",
 			logical, logical + bytes);
 	}
 out_close_fd:

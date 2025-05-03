@@ -1,9 +1,10 @@
 #!/bin/bash
 
-source "$TEST_TOP/common"
+source "$TEST_TOP/common" || exit
+
+check_prereq btrfs
 
 setup_root_helper
-check_prereq btrfs
 
 # redefine the one provided by common
 check_image() {

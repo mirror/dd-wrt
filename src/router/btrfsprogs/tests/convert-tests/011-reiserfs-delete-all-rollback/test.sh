@@ -1,17 +1,18 @@
 #!/bin/bash
 # create a base image, convert to btrfs, remove all files, rollback the reiserfs image
 
-source "$TEST_TOP/common"
-source "$TEST_TOP/common.convert"
+source "$TEST_TOP/common" || exit
+source "$TEST_TOP/common.convert" || exit
 
 if ! check_kernel_support_reiserfs >/dev/null; then
 	_not_run "no reiserfs support"
 fi
 
-setup_root_helper
-prepare_test_dev
 check_prereq btrfs-convert
 check_global_prereq mkreiserfs
+
+setup_root_helper
+prepare_test_dev
 
 # simple wrapper for a convert test
 # $1: btrfs features, argument to -O
@@ -32,12 +33,16 @@ do_test() {
 	convert_test_preamble "$features" "$msg" "$nodesize" "$@"
 	convert_test_prep_fs reiserfs "$@"
 	populate_fs
-	CHECKSUMTMP=$(mktemp --tmpdir btrfs-progs-convert.XXXXXXXXXX)
+	CHECKSUMTMP=$(_mktemp convert)
 	convert_test_gen_checksums "$CHECKSUMTMP"
 
 	run_check_umount_test_dev
 
 	convert_test_do_convert "$features" "$nodesize"
+
+	if ! convert_can_mount "$features"; then
+		return 0
+	fi
 
 	run_check_mount_test_dev
 	convert_test_post_check_checksums "$CHECKSUMTMP"
@@ -63,10 +68,10 @@ do_test() {
 	rm "$CHECKSUMTMP"
 }
 
-for feature in '' 'extref' 'skinny-metadata' 'no-holes'; do
+# Iterate over defaults and options that are not tied to hardware capabilities
+# or number of devices
+for feature in '' 'block-group-tree'; do
 	do_test "$feature" "reiserfs 4k nodesize" 4096 mkreiserfs -b 4096
-	do_test "$feature" "reiserfs 8k nodesize" 8192 mkreiserfs -b 4096
 	do_test "$feature" "reiserfs 16k nodesize" 16384 mkreiserfs -b 4096
-	do_test "$feature" "reiserfs 32k nodesize" 32768 mkreiserfs -b 4096
 	do_test "$feature" "reiserfs 64k nodesize" 65536 mkreiserfs -b 4096
 done

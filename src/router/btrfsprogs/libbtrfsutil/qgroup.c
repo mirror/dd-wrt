@@ -5,7 +5,7 @@
  *
  * libbtrfsutil is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2.1 of the License, or
  * (at your option) any later version.
  *
  * libbtrfsutil is distributed in the hope that it will be useful,
@@ -18,9 +18,8 @@
  */
 
 #include <errno.h>
-#include <stdarg.h>
 #include <stdlib.h>
-#include <string.h>
+#include <stdint.h>
 
 #include "btrfsutil_internal.h"
 
@@ -47,11 +46,15 @@ PUBLIC enum btrfs_util_error btrfs_util_create_qgroup_inherit(int flags,
 
 	return BTRFS_UTIL_OK;
 }
+PUBLIC enum btrfs_util_error btrfs_util_qgroup_inherit_create(int flags, struct btrfs_util_qgroup_inherit **ret)
+LIBBTRFSUTIL_ALIAS(btrfs_util_create_qgroup_inherit);
 
 PUBLIC void btrfs_util_destroy_qgroup_inherit(struct btrfs_util_qgroup_inherit *inherit)
 {
 	free(inherit);
 }
+PUBLIC void btrfs_util_qgroup_inherit_destroy(struct btrfs_util_qgroup_inherit *inherit)
+LIBBTRFSUTIL_ALIAS(btrfs_util_destroy_qgroup_inherit);
 
 PUBLIC enum btrfs_util_error btrfs_util_qgroup_inherit_add_group(struct btrfs_util_qgroup_inherit **inherit,
 								 uint64_t qgroupid)

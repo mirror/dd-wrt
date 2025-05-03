@@ -61,14 +61,20 @@ convert_test_prep_fs() {
 	local fstype
 	local force
 	local mountopts
+	local oldsize
 
 	fstype="$1"
 	shift
+	# Use device size that was set before, or the default 512M
+	oldsize=$(stat --format=%s "$TEST_DEV")
+	if [ -z "$oldsize" ]; then
+		oldssize=512M
+	fi
 	# TEST_DEV not removed as the file might have special permissions, eg.
 	# when test image is on NFS and would not be writable for root
 	run_check truncate -s 0 "$TEST_DEV"
 	# 256MB is the smallest acceptable btrfs image.
-	run_check truncate -s 512M "$TEST_DEV"
+	run_check truncate -s "$oldsize" "$TEST_DEV"
 	force=
 	mountopts=
 	case "$fstype" in
@@ -77,6 +83,8 @@ convert_test_prep_fs() {
 	reiserfs)
 		force=-ff
 		mountopts="-o acl,user_xattr,attrs" ;;
+	ntfs)
+		force=-F ;;
 	*)
 		_fail "unknown filesystem to convert: $fstype"
 	esac
@@ -88,7 +96,7 @@ convert_test_prep_fs() {
 	# create a file inside the fs before convert, to make sure there is
 	# data covering btrfs backup superblock range (64M)
 	run_check $SUDO_HELPER dd if=/dev/zero bs=1M count=64 \
-		of="$TEST_MNT/convert_space_holder"
+		of="$TEST_MNT/convert_space_holder" status=noxfer
 }
 
 # generate md5 checksums of files on $TEST_MNT
@@ -97,7 +105,7 @@ convert_test_gen_checksums() {
 	_assert_path "$1"
 
 	run_check $SUDO_HELPER dd if=/dev/zero of="$TEST_MNT/test" "bs=$nodesize" \
-		count=1 >/dev/null 2>&1
+		count=1 status=noxfer >/dev/null 2>&1
 	run_check_stdout $SUDO_HELPER find "$TEST_MNT" -type f ! -name 'image' -exec md5sum {} \+ > "$1"
 }
 # list $TEST_MNT data set file permissions.
@@ -107,41 +115,49 @@ convert_test_perm() {
 
 	_assert_path "$1"
 	PERMTMP="$1"
-	FILES_LIST=$(mktemp --tmpdir btrfs-progs-convert.fileslistXXXXXX)
+	FILES_LIST=$($SUDO_HELPER mktemp --tmpdir btrfs-progs-convert-filelist.XXXXXX)
 
 	run_check $SUDO_HELPER dd if=/dev/zero of="$TEST_MNT/test" "bs=$nodesize" \
-		count=1 >/dev/null 2>&1
+		count=1 status=noxfer >/dev/null 2>&1
 	run_check_stdout $SUDO_HELPER find "$TEST_MNT" -type f ! -name 'image' -fprint "$FILES_LIST"
 	# Fix directory entries order
-	sort "$FILES_LIST" -o "$FILES_LIST"
-	for file in `cat "$FILES_LIST"` ;do
+	$SUDO_HELPER sort "$FILES_LIST" -o "$FILES_LIST"
+	for file in `$SUDO_HELPER cat "$FILES_LIST"` ;do
 		run_check_stdout $SUDO_HELPER getfacl --absolute-names "$file" >> "$PERMTMP"
 	done
-	rm -- "$FILES_LIST"
+	$SUDO_HELPER rm -- "$FILES_LIST"
 }
 # list acls of files on $TEST_MNT
 # $1: path where the acls will be stored
 convert_test_acl() {
 	local ACLSTMP
 	ACLTMP="$1"
-	FILES_LIST=$(mktemp --tmpdir btrfs-progs-convert.fileslistXXXXXX)
+	FILES_LIST=$($SUDO_HELPER mktemp --tmpdir btrfs-progs-convert-filelist.XXXXXX)
 
 	run_check_stdout $SUDO_HELPER find "$TEST_MNT/acls" -type f -fprint "$FILES_LIST"
 	# Fix directory entries order
-	sort "$FILES_LIST" -o "$FILES_LIST"
-	for file in `cat "$FILES_LIST"`;do
+	$SUDO_HELPER sort "$FILES_LIST" -o "$FILES_LIST"
+	for file in `$SUDO_HELPER cat "$FILES_LIST"`;do
 		run_check_stdout $SUDO_HELPER getfattr --absolute-names -d "$file" >> "$ACLTMP"
 	done
-	rm -- "$FILES_LIST"
+	$SUDO_HELPER rm -- "$FILES_LIST"
 }
 
 # do conversion with given features and nodesize, fsck afterwards
 # $1: features, argument of -O, can be empty
 # $2: nodesize, argument of -N, can be empty
+# #3: (optional) filesystem type, default: btrfs
 convert_test_do_convert() {
-	run_check "$TOP/btrfs-convert" ${1:+-O "$1"} ${2:+-N "$2"} "$TEST_DEV"
+	export BTRFS_PROGS_DEBUG_STRICT_CHUNK_ALIGNMENT=y
+	if [ "$3" = "ntfs" ]; then
+		# Features and nodesize are not supported
+		run_check "ntfs2btrfs" "$TEST_DEV"
+	else
+		run_check "$TOP/btrfs-convert" ${1:+-O "$1"} ${2:+-N "$2"} "$TEST_DEV"
+	fi
 	run_check "$TOP/btrfs" check "$TEST_DEV"
 	run_check "$TOP/btrfs" inspect-internal dump-super -Ffa "$TEST_DEV"
+	unset BTRFS_PROGS_DEBUG_STRICT_CHUNK_ALIGNMENT
 }
 
 # post conversion check, verify file permissions.
@@ -152,7 +168,7 @@ convert_test_post_check_permissions() {
 
 	_assert_path "$1"
 	EXT_PERMTMP="$1"
-	BTRFS_PERMTMP=$(mktemp --tmpdir btrfs-progs-convert.permXXXXXX)
+	BTRFS_PERMTMP=$(mktemp --tmpdir btrfs-progs-convert-perms.XXXXXX)
 	convert_test_perm "$BTRFS_PERMTMP"
 
 	btrfs_perm=`md5sum "$BTRFS_PERMTMP" | cut -f1 -d' '`
@@ -175,7 +191,7 @@ convert_test_post_check_acl() {
 
 	_assert_path "$1"
 	EXT_ACLTMP="$1"
-	BTRFS_ACLTMP=$(mktemp --tmpdir btrfs-progs-convert.aclsXXXXXXX)
+	BTRFS_ACLTMP=$(mktemp --tmpdir btrfs-progs-convert-acls.XXXXXXX)
 	convert_test_acl "$BTRFS_ACLTMP"
 
 	btrfs_acl=`md5sum "$BTRFS_ACLTMP" | cut -f1 -d' '`
@@ -198,19 +214,47 @@ convert_test_post_check_checksums() {
 		grep -q 'FAILED' && _fail "file validation failed"
 }
 
+# Check if convert can mount the image based on features
+# $1: name of the feature
+convert_can_mount() {
+	local features="$1"
+
+	if [ "$features" = 'block-group-tree' ]; then
+		if ! [ -f "/sys/fs/btrfs/features/block_group_tree" ]; then
+			_log "Skip mount checks due to missing support of block-group-tree"
+			return 1
+		fi
+	fi
+	if [ "$features" = 'raid-stripe-tree' ]; then
+		if ! [ -f "/sys/fs/btrfs/features/raid_stripe_tree" ]; then
+			_log "Skip mount checks due to missing support of raid-stripe-tree"
+			return 1
+		fi
+	fi
+
+	return 0
+}
+
 # post conversion checks, all three in one call, on an unmounted image
-# $1: file with checksums
-# $2: file with permissions.
-# $3: file with acl entries.
+# $1: features for mount compatibility checks
+# $2: file with checksums
+# $3: file with permissions.
+# $4: file with acl entries.
 convert_test_post_checks_all() {
-	_assert_path "$1"
+	local features="$1"
+
 	_assert_path "$2"
 	_assert_path "$3"
+	_assert_path "$4"
+
+	if ! convert_can_mount "$features"; then
+		return 0
+	fi
 
 	run_check_mount_test_dev
-	convert_test_post_check_checksums "$1"
-	convert_test_post_check_permissions "$2"
-	convert_test_post_check_acl "$3"
+	convert_test_post_check_checksums "$2"
+	convert_test_post_check_permissions "$3"
+	convert_test_post_check_acl "$4"
 
 	# Create a large file to trigger data chunk allocation
 	generate_dataset "large"
@@ -229,6 +273,7 @@ convert_test_post_rollback() {
 	case "$1" in
 		ext[234]) types=ext2,ext3,ext4 ;;
 		reiserfs) types=reiserfs ;;
+		ntfs) types=ntfs ;;
 		*) _fail "unknown filesystem type to check: $1" ;;
 	esac
 
@@ -258,17 +303,17 @@ convert_test() {
 	convert_test_preamble "$features" "$msg" "$nodesize" "$@"
 	convert_test_prep_fs "$fstype" "$@"
 	populate_fs
-	CHECKSUMTMP=$(mktemp --tmpdir btrfs-progs-convert.XXXXXXXXXX)
-	EXT_PERMTMP=$(mktemp --tmpdir btrfs-progs-convert.permXXXXXX)
-	EXT_ACLTMP=$(mktemp --tmpdir btrfs-progs-convert.aclsXXXXXXX)
+	CHECKSUMTMP=$(mktemp --tmpdir btrfs-progs-convert-csums.XXXXXX)
+	EXT_PERMTMP=$(mktemp --tmpdir btrfs-progs-convert-perms.XXXXXX)
+	EXT_ACLTMP=$(mktemp --tmpdir btrfs-progs-convert-acls.XXXXXX)
 	convert_test_gen_checksums "$CHECKSUMTMP"
 	convert_test_perm "$EXT_PERMTMP"
 	convert_test_acl "$EXT_ACLTMP"
 
 	run_check_umount_test_dev
 
-	convert_test_do_convert "$features" "$nodesize"
-	convert_test_post_checks_all "$CHECKSUMTMP" "$EXT_PERMTMP" "$EXT_ACLTMP"
+	convert_test_do_convert "$features" "$nodesize" "$fstype"
+	convert_test_post_checks_all "$features" "$CHECKSUMTMP" "$EXT_PERMTMP" "$EXT_ACLTMP"
 	rm -- "$CHECKSUMTMP"
 	rm -- "$EXT_PERMTMP"
 	rm -- "$EXT_ACLTMP"
@@ -285,6 +330,21 @@ check_kernel_support_reiserfs()
 {
 	if ! grep -iq 'reiserfs' /proc/filesystems; then
 		echo "WARNING: reiserfs filesystem not listed in /proc/filesystems, some tests might be skipped"
+		return 1
+	fi
+	return 0
+}
+
+load_module_ntfs()
+{
+	# Load NTFS3 that has write support
+	$SUDO_HELPER modprobe ntfs3
+}
+
+check_kernel_support_ntfs()
+{
+	if ! grep -iq 'ntfs' /proc/filesystems; then
+		echo "WARNING: ntfs filesystem not listed in /proc/filesystems, some tests might be skipped"
 		return 1
 	fi
 	return 0

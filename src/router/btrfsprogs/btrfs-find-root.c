@@ -16,31 +16,208 @@
  * Boston, MA 021110-1307, USA.
  */
 
+#include "kerncompat.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <zlib.h>
 #include <getopt.h>
+#include <errno.h>
+#include <unistd.h>
+#include "kernel-shared/accessors.h"
+#include "kernel-shared/uapi/btrfs_tree.h"
+#include "kernel-shared/ctree.h"
+#include "kernel-shared/disk-io.h"
+#include "kernel-shared/volumes.h"
+#include "kernel-shared/extent_io.h"
+#include "kernel-shared/tree-checker.h"
+#include "common/box.h"
+#include "common/extent-cache.h"
+#include "common/help.h"
+#include "common/messages.h"
+#include "common/string-utils.h"
+#include "cmds/commands.h"
 
-#include "kerncompat.h"
-#include "ctree.h"
-#include "disk-io.h"
-#include "print-tree.h"
-#include "transaction.h"
-#include "list.h"
-#include "volumes.h"
-#include "utils.h"
-#include "crc32c.h"
-#include "extent-cache.h"
-#include "find-root.h"
-#include "help.h"
+/*
+ * Find-root will restore the search result in a 2-level trees.
+ * Search result is a cache_tree consisted of generation_cache.
+ * Each generation cache records the highest level of this generation
+ * and all the tree blocks with this generation.
+ *
+ * <result>
+ * cache_tree ----> generation_cache: gen:1 level: 2  eb_tree ----> eb1
+ *		|						|-> eb2
+ *		|						......
+ *		|-> generation_cache: gen:2 level: 3  eb_tree ---> eb3
+ *
+ * In the above example, generation 1's highest level is 2, but have multiple
+ * eb with same generation, so the root of generation 1 must be missing,
+ * possibly has already been overwritten.
+ * On the other hand, generation 2's highest level is 3 and we find only one
+ * eb for it, so it may be the root of generation 2.
+ */
 
-static void find_root_usage(void)
+struct btrfs_find_root_gen_cache {
+	struct cache_extent cache;	/* cache->start is generation */
+	u64 highest_level;
+	struct cache_tree eb_tree;
+};
+
+struct btrfs_find_root_filter {
+	u64 objectid;	/* Only search tree with this objectid */
+	u64 generation; /* Only record tree block with higher or
+			   equal generation */
+	u8 level;	/* Only record tree block with higher or
+			   equal level */
+	u8 match_level;
+	u64 match_gen;
+	int search_all;
+	/*
+	 * If set search_all, even the tree block matches match_gen
+	 * and match_level and objectid, still continue searching
+	 * This *WILL* take *TONS* of extra time.
+	 */
+};
+int btrfs_find_root_search(struct btrfs_fs_info *fs_info,
+			   struct btrfs_find_root_filter *filter,
+			   struct cache_tree *result,
+			   struct cache_extent **match);
+
+static void btrfs_find_root_free(struct cache_tree *result)
 {
-	fprintf(stderr, "Usage: find-roots [-a] [-o search_objectid] "
-		"[ -g search_generation ] [ -l search_level ] <device>\n");
+	struct btrfs_find_root_gen_cache *gen_cache;
+	struct cache_extent *cache;
+
+	cache = first_cache_extent(result);
+	while (cache) {
+		gen_cache = container_of(cache,
+				struct btrfs_find_root_gen_cache, cache);
+		free_extent_cache_tree(&gen_cache->eb_tree);
+		remove_cache_extent(result, cache);
+		free(gen_cache);
+		cache = first_cache_extent(result);
+	}
+}
+
+/* Return value is the same as btrfs_find_root_search(). */
+static int add_eb_to_result(struct extent_buffer *eb,
+			    struct cache_tree *result,
+			    u32 nodesize,
+			    struct btrfs_find_root_filter *filter,
+			    struct cache_extent **match)
+{
+	u64 generation = btrfs_header_generation(eb);
+	u64 level = btrfs_header_level(eb);
+	u64 owner = btrfs_header_owner(eb);
+	u64 start = eb->start;
+	struct cache_extent *cache;
+	struct btrfs_find_root_gen_cache *gen_cache = NULL;
+	int ret = 0;
+
+	if (owner != filter->objectid || level < filter->level ||
+	    generation < filter->generation)
+		return ret;
+
+	/*
+	 * Get the generation cache or create one
+	 *
+	 * NOTE: search_cache_extent() may return cache that doesn't cover
+	 * the range. So we need an extra check to make sure it's the right one.
+	 */
+	cache = search_cache_extent(result, generation);
+	if (!cache || cache->start != generation) {
+		gen_cache = malloc(sizeof(*gen_cache));
+		BUG_ON(!gen_cache);
+		cache = &gen_cache->cache;
+		cache->start = generation;
+		cache->size = 1;
+		cache->objectid = 0;
+		gen_cache->highest_level = 0;
+		cache_tree_init(&gen_cache->eb_tree);
+
+		ret = insert_cache_extent(result, cache);
+		if (ret < 0)
+			return ret;
+	}
+	gen_cache = container_of(cache, struct btrfs_find_root_gen_cache,
+				 cache);
+
+	/* Higher level, clean tree and insert the new one */
+	if (level > gen_cache->highest_level) {
+		free_extent_cache_tree(&gen_cache->eb_tree);
+		gen_cache->highest_level = level;
+		/* Fall into the insert routine */
+	}
+
+	/* Same level, insert it into the eb_tree */
+	if (level == gen_cache->highest_level) {
+		ret = add_cache_extent(&gen_cache->eb_tree,
+				       start, nodesize);
+		if (ret < 0 && ret != -EEXIST)
+			return ret;
+		ret = 0;
+	}
+	if (generation == filter->match_gen &&
+	    level == filter->match_level &&
+	    !filter->search_all) {
+		ret = 1;
+		if (match)
+			*match = search_cache_extent(&gen_cache->eb_tree,
+						     start);
+	}
+	return ret;
+}
+
+/*
+ * Return 0 if iterating all the metadata extents.
+ * Return 1 if found root with given gen/level and set *match to it.
+ * Return <0 if error happens
+ */
+int btrfs_find_root_search(struct btrfs_fs_info *fs_info,
+			   struct btrfs_find_root_filter *filter,
+			   struct cache_tree *result,
+			   struct cache_extent **match)
+{
+	struct extent_buffer *eb;
+	u64 chunk_offset = 0;
+	u64 chunk_size = 0;
+	u64 offset = 0;
+	u32 nodesize = btrfs_super_nodesize(fs_info->super_copy);
+	int suppress_errors = 0;
+	int ret = 0;
+
+	suppress_errors = fs_info->suppress_check_block_errors;
+	fs_info->suppress_check_block_errors = 1;
+	while (1) {
+		if (filter->objectid != BTRFS_CHUNK_TREE_OBJECTID)
+			ret = btrfs_next_bg_metadata(fs_info,
+						  &chunk_offset,
+						  &chunk_size);
+		else
+			ret = btrfs_next_bg_system(fs_info,
+						&chunk_offset,
+						&chunk_size);
+		if (ret) {
+			if (ret == -ENOENT)
+				ret = 0;
+			break;
+		}
+		for (offset = chunk_offset;
+		     offset < chunk_offset + chunk_size;
+		     offset += nodesize) {
+			struct btrfs_tree_parent_check check = { 0 };
+
+			eb = read_tree_block(fs_info, offset, &check);
+			if (!eb || IS_ERR(eb))
+				continue;
+			ret = add_eb_to_result(eb, result, nodesize, filter,
+					       match);
+			free_extent_buffer(eb);
+			if (ret)
+				goto out;
+		}
+	}
+out:
+	fs_info->suppress_check_block_errors = suppress_errors;
+	return ret;
 }
 
 /*
@@ -73,7 +250,7 @@ static void get_root_gen_and_level(u64 objectid, struct btrfs_fs_info *fs_info,
 		break;
 	case BTRFS_TREE_LOG_OBJECTID:
 		level = btrfs_super_log_root_level(super);
-		gen = btrfs_super_log_root_transid(super);
+		gen = btrfs_super_generation(super) + 1;
 		break;
 	case BTRFS_UUID_TREE_OBJECTID:
 		gen = btrfs_super_uuid_tree_generation(super);
@@ -143,18 +320,35 @@ static void print_find_root_result(struct cache_tree *result,
 	}
 }
 
-int main(int argc, char **argv)
+static const char * const btrfs_find_root_usage[] = {
+	"btrfs-find-usage [options] <device>",
+	"Attempt to find tree roots on the device",
+	"",
+	OPTLINE("-a", "search through all metadata even if the root has been found"),
+	OPTLINE("-o OBJECTID", "filter by the tree's object id"),
+	OPTLINE("-l LEVEL", "filter by tree level, (default: 0)"),
+	OPTLINE("-g GENERATION", "filter by tree generation"),
+	NULL
+};
+
+static const struct cmd_struct btrfs_find_root_cmd = {
+	"btrfs-find-root", NULL, btrfs_find_root_usage, NULL, 0,
+};
+
+int BOX_MAIN(find_root)(int argc, char **argv)
 {
 	struct btrfs_fs_info *fs_info;
 	struct btrfs_find_root_filter filter = {0};
 	struct cache_tree result;
 	struct cache_extent *found;
+	struct open_ctree_args oca = { 0 };
 	int ret;
 
 	/* Default to search root tree */
 	filter.objectid = BTRFS_ROOT_TREE_OBJECTID;
 	filter.match_gen = (u64)-1;
 	filter.match_level = (u8)-1;
+	opterr = 0;
 	while (1) {
 		static const struct option long_options[] = {
 			{ "help", no_argument, NULL, GETOPT_VAL_HELP},
@@ -179,24 +373,23 @@ int main(int argc, char **argv)
 			filter.level = arg_strtou64(optarg);
 			break;
 		case GETOPT_VAL_HELP:
+			usage(&btrfs_find_root_cmd, 0);
+			return 0;
 		default:
-			find_root_usage();
-			exit(c != GETOPT_VAL_HELP);
+			usage(&btrfs_find_root_cmd, 1);
 		}
 	}
 
 	set_argv0(argv);
-	if (check_argc_min(argc - optind, 1)) {
-		find_root_usage();
-		exit(1);
-	}
+	if (check_argc_min(argc - optind, 1))
+		return 1;
 
-	fs_info = open_ctree_fs_info(argv[optind], 0, 0, 0,
-			OPEN_CTREE_CHUNK_ROOT_ONLY |
-			OPEN_CTREE_IGNORE_CHUNK_TREE_ERROR);
+	oca.filename = argv[optind];
+	oca.flags = OPEN_CTREE_CHUNK_ROOT_ONLY | OPEN_CTREE_IGNORE_CHUNK_TREE_ERROR;
+	fs_info = open_ctree_fs_info(&oca);
 	if (!fs_info) {
 		error("open ctree failed");
-		exit(1);
+		return 1;
 	}
 	cache_tree_init(&result);
 
@@ -204,8 +397,8 @@ int main(int argc, char **argv)
 			       &filter.match_gen, &filter.match_level);
 	ret = btrfs_find_root_search(fs_info, &filter, &result, &found);
 	if (ret < 0) {
-		fprintf(stderr, "Fail to search the tree root: %s\n",
-			strerror(-ret));
+		errno = -ret;
+		error("fail to search the tree root: %m");
 		goto out;
 	}
 	if (ret > 0) {

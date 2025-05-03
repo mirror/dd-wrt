@@ -4,7 +4,7 @@
 # only do mkfs and fsck check, no mounting as
 # sub/multi-pagesize is not supported yet
 
-source "$TEST_TOP/common"
+source "$TEST_TOP/common" || exit
 
 check_prereq mkfs.btrfs
 check_prereq btrfs
@@ -17,8 +17,10 @@ features="^mixed-bg"
 # caller need to check whether the combination is valid
 do_test()
 {
-	sectorsize=$1
-	nodesize=$2
+	local sectorsize=$1
+	local nodesize=$2
+	local ret
+
 	run_mayfail "$TOP/mkfs.btrfs" -f -O "$features" -n "$nodesize" -s "$sectorsize" \
 		"$TEST_DEV"
 	ret=$?

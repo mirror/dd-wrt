@@ -2,13 +2,15 @@
 # create a base image, convert to btrfs, remove all files, rollback the ext4 image
 # note: ext4 only
 
-source "$TEST_TOP/common"
-source "$TEST_TOP/common.convert"
+source "$TEST_TOP/common" || exit
+source "$TEST_TOP/common.convert" || exit
+
+check_prereq btrfs-convert
+check_global_prereq mke2fs
 
 setup_root_helper
 prepare_test_dev
-check_prereq btrfs-convert
-check_global_prereq mke2fs
+check_kernel_support_acl
 
 # simple wrapper for a convert test
 # $1: btrfs features, argument to -O
@@ -29,12 +31,16 @@ do_test() {
 	convert_test_preamble "$features" "$msg" "$nodesize" "$@"
 	convert_test_prep_fs ext4 "$@"
 	populate_fs
-	CHECKSUMTMP=$(mktemp --tmpdir btrfs-progs-convert.XXXXXXXXXX)
+	CHECKSUMTMP=$(_mktemp convert)
 	convert_test_gen_checksums "$CHECKSUMTMP"
 
 	run_check_umount_test_dev
 
 	convert_test_do_convert "$features" "$nodesize"
+
+	if ! convert_can_mount "$features"; then
+		return 0
+	fi
 
 	run_check_mount_test_dev
 	convert_test_post_check_checksums "$CHECKSUMTMP"
@@ -57,13 +63,13 @@ do_test() {
 	convert_test_post_check_checksums "$CHECKSUMTMP"
 	run_check_umount_test_dev
 
-	rm "$CHECKSUMTMP"
+	rm -- "$CHECKSUMTMP"
 }
 
-for feature in '' 'extref' 'skinny-metadata' 'no-holes'; do
+# Iterate over defaults and options that are not tied to hardware capabilities
+# or number of devices
+for feature in '' 'block-group-tree'; do
 	do_test "$feature" "ext4 4k nodesize" 4096 mke2fs -t ext4 -b 4096
-	do_test "$feature" "ext4 8k nodesize" 8192 mke2fs -t ext4 -b 4096
 	do_test "$feature" "ext4 16k nodesize" 16384 mke2fs -t ext4 -b 4096
-	do_test "$feature" "ext4 32k nodesize" 32768 mke2fs -t ext4 -b 4096
 	do_test "$feature" "ext4 64k nodesize" 65536 mke2fs -t ext4 -b 4096
 done

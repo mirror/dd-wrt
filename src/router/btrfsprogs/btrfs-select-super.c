@@ -16,27 +16,32 @@
  * Boston, MA 021110-1307, USA.
  */
 
+#include "kerncompat.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <getopt.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include "kerncompat.h"
-#include "ctree.h"
-#include "volumes.h"
-#include "disk-io.h"
-#include "print-tree.h"
-#include "transaction.h"
-#include "list.h"
-#include "utils.h"
-#include "help.h"
+#include "kernel-shared/ctree.h"
+#include "kernel-shared/volumes.h"
+#include "kernel-shared/disk-io.h"
+#include "common/help.h"
+#include "common/open-utils.h"
+#include "common/messages.h"
+#include "common/string-utils.h"
+#include "cmds/commands.h"
 
-static void print_usage(void)
-{
-	printf("usage: btrfs-select-super -s number dev\n");
-	printf("\t-s super   copy of superbloc to overwrite the primary one (values: 1, 2)\n");
-	exit(1);
-}
+static const char * const select_super_usage[] = {
+	"btrfs-select-super -s number dev",
+	"Overwrite primary superblock by selected copy",
+	""
+	OPTLINE("-s super", "copy of superblock to overwrite the primary one (values: 1, 2)"),
+	NULL
+};
+
+static const struct cmd_struct select_super_cmd = {
+	.usagestr = select_super_usage
+};
 
 int main(int argc, char **argv)
 {
@@ -54,30 +59,28 @@ int main(int argc, char **argv)
 			case 's':
 				num = arg_strtou64(optarg);
 				if (num >= BTRFS_SUPER_MIRROR_MAX) {
-					fprintf(stderr,
-						"ERROR: super mirror should be less than: %d\n",
+					error("super mirror should be less than: %d",
 						BTRFS_SUPER_MIRROR_MAX);
 					exit(1);
 				}
 				bytenr = btrfs_sb_offset(((int)num));
 				break;
 			default:
-				print_usage();
+				usage(&select_super_cmd, 1);
 		}
 	}
 	set_argv0(argv);
 	if (check_argc_exact(argc - optind, 1))
-		print_usage();
+		return 1;
 
 	if (bytenr == 0) {
-		fprintf(stderr, "Please select the super copy with -s\n");
-		print_usage();
+		error("please select the super copy with -s");
+		usage(&select_super_cmd, 1);
 	}
 
-	radix_tree_init();
-
 	if((ret = check_mounted(argv[optind])) < 0) {
-		error("cannot check mount status: %s", strerror(-ret));
+		errno = -ret;
+		error("cannot check mount status: %m");
 		return ret;
 	} else if(ret) {
 		error("%s is currently mounted, aborting", argv[optind]);
@@ -87,7 +90,7 @@ int main(int argc, char **argv)
 	root = open_ctree(argv[optind], bytenr, 1);
 
 	if (!root) {
-		fprintf(stderr, "Open ctree failed\n");
+		error("open ctree failed");
 		return 1;
 	}
 
@@ -99,8 +102,7 @@ int main(int argc, char **argv)
 	 * transaction commit.  We just want the super copy we pulled off the
 	 * disk to overwrite all the other copies
 	 */
-	printf("using SB copy %llu, bytenr %llu\n", (unsigned long long)num,
-	       (unsigned long long)bytenr);
+	printf("using SB copy %llu, bytenr %llu\n", num, bytenr);
 	close_ctree(root);
 	btrfs_close_all_devices();
 	return ret;

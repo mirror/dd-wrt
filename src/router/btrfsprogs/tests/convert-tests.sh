@@ -9,11 +9,11 @@ if [ -z "$TOP" ]; then
 	TOP=$(readlink -f "$SCRIPT_DIR/../")
 	if [ -f "$TOP/configure.ac" ]; then
 		# inside git
-		TEST_TOP="$TOP/tests/"
+		TEST_TOP="$TOP/tests"
 		INTERNAL_BIN="$TOP"
 	else
 		# external, defaults to system binaries
-		TOP=$(dirname `which btrfs`)
+		TOP=$(dirname `type -p btrfs`)
 		TEST_TOP="$SCRIPT_DIR"
 		INTERNAL_BIN="$TEST_TOP"
 	fi
@@ -50,12 +50,25 @@ check_global_prereq getfacl
 check_global_prereq setfacl
 check_global_prereq md5sum
 
+test_found=0
+
 run_one_test() {
 	local testdir
 	local testname
 
 	testdir="$1"
 	testname=$(basename "$testdir")
+	if ! [ -z "$TEST_FROM" ]; then
+		if [ "$test_found" == 0 ]; then
+			case "$testname" in
+				$TEST_FROM) test_found=1;;
+			esac
+		fi
+		if [ "$test_found" == 0 ]; then
+			printf "    [TEST/conv]   %-40s (SKIPPED)\n" "$testname"
+			return
+		fi
+	fi
 	echo "    [TEST/conv]   $testname"
 	cd "$testdir"
 	echo "=== START TEST $testname" >> "$RESULTS"
@@ -70,6 +83,7 @@ run_one_test() {
 			fi
 			_fail "test failed for case $testname"
 		fi
+		check_test_results "$RESULTS" "$testname"
 	else
 		_fail "custom test script not found"
 	fi

@@ -1,14 +1,15 @@
 #!/bin/bash
 # check that the toplevel subvolume is not listed as regular or deleted
 
-source "$TEST_TOP/common"
+source "$TEST_TOP/common" || exit
 
 check_prereq mkfs.btrfs
 check_prereq btrfs
 
+setup_root_helper
 prepare_test_dev
 
-run_check "$TOP/mkfs.btrfs" -f "$TEST_DEV"
+run_check_mkfs_test_dev
 run_check_mount_test_dev
 run_check_stdout $SUDO_HELPER "$TOP/btrfs" subvolume list "$TEST_MNT" |
 	grep -i -q "id 5" && _fail "found toplevel among regular"

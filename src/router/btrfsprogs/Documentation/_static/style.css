@@ -1,0 +1,46 @@
+.wy-nav-content {
+    max-width: 1200px !important;
+}
+
+.wy-table-responsive {
+	white-space: normal !important;
+}
+
+.wy-table-responsive table td, .wy-table-responsive table th {
+	white-space: normal !important;
+}
+
+.green {
+	color: green;
+}
+
+.statusok {
+	color: green;
+}
+
+.statusmok {
+	/* color: orange; */
+	/* color: #ffae42; */
+	color: darkorange;
+}
+
+.statusunstable {
+	color: red;
+}
+
+.statusunsupp {
+	color: darkorange;
+}
+
+.statusincompat {
+	color: goldenrod;
+};
+
+table.main-table {
+	border: 1px;
+	width: 100%;
+}
+
+td.main-table-col {
+	width: 33%;
+}

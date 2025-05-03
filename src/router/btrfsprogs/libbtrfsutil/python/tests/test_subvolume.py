@@ -17,13 +17,22 @@
 
 import fcntl
 import errno
+import multiprocessing
 import os
 import os.path
 from pathlib import PurePath
+import subprocess
 import traceback
 
 import btrfsutil
-from tests import BtrfsTestCase, HAVE_PATH_LIKE
+from tests import (
+    BtrfsTestCase,
+    drop_privs,
+    HAVE_PATH_LIKE,
+    NOBODY_UID,
+    regain_privs,
+    skipUnlessHaveNobody,
+)
 
 
 class TestSubvolume(BtrfsTestCase):
@@ -56,6 +65,18 @@ class TestSubvolume(BtrfsTestCase):
             with self.subTest(type=type(arg)):
                 self.assertEqual(btrfsutil.subvolume_id(arg), 5)
 
+    def test_subvolume_id_error(self):
+        fd = os.open('/dev/null', os.O_RDONLY)
+        try:
+            btrfsutil.subvolume_id(fd)
+        except Exception:
+            pass
+        finally:
+            # btrfs_util_subvolume_get_id_fd() had a bug that would erroneously
+            # close the provided file descriptor. In that case, this will fail
+            # with EBADF.
+            os.close(fd)
+
     def test_subvolume_path(self):
         btrfsutil.create_subvolume(os.path.join(self.mountpoint, 'subvol1'))
         os.mkdir(os.path.join(self.mountpoint, 'dir1'))
@@ -87,7 +108,7 @@ class TestSubvolume(BtrfsTestCase):
         finally:
             os.chdir(pwd)
 
-    def test_subvolume_info(self):
+    def _test_subvolume_info(self, subvol, snapshot):
         for arg in self.path_or_fd(self.mountpoint):
             with self.subTest(type=type(arg)):
                 info = btrfsutil.subvolume_info(arg)
@@ -100,7 +121,7 @@ class TestSubvolume(BtrfsTestCase):
                 self.assertEqual(info.parent_uuid, bytes(16))
                 self.assertEqual(info.received_uuid, bytes(16))
                 self.assertNotEqual(info.generation, 0)
-                self.assertEqual(info.ctransid, 0)
+                self.assertGreaterEqual(info.ctransid, 0)
                 self.assertEqual(info.otransid, 0)
                 self.assertEqual(info.stransid, 0)
                 self.assertEqual(info.rtransid, 0)
@@ -108,9 +129,6 @@ class TestSubvolume(BtrfsTestCase):
                 self.assertIsInstance(info.otime, float)
                 self.assertEqual(info.stime, 0)
                 self.assertEqual(info.rtime, 0)
-
-        subvol = os.path.join(self.mountpoint, 'subvol')
-        btrfsutil.create_subvolume(subvol)
 
         info = btrfsutil.subvolume_info(subvol)
         self.assertEqual(info.id, 256)
@@ -132,19 +150,44 @@ class TestSubvolume(BtrfsTestCase):
         self.assertEqual(info.rtime, 0)
 
         subvol_uuid = info.uuid
-        snapshot = os.path.join(self.mountpoint, 'snapshot')
-        btrfsutil.create_snapshot(subvol, snapshot)
 
         info = btrfsutil.subvolume_info(snapshot)
         self.assertEqual(info.parent_uuid, subvol_uuid)
 
         # TODO: test received_uuid, stransid, rtransid, stime, and rtime
 
+    def test_subvolume_info(self):
+        subvol = os.path.join(self.mountpoint, 'subvol')
+        btrfsutil.create_subvolume(subvol)
+        snapshot = os.path.join(self.mountpoint, 'snapshot')
+        btrfsutil.create_snapshot(subvol, snapshot)
+
+        self._test_subvolume_info(subvol, snapshot)
+
         for arg in self.path_or_fd(self.mountpoint):
             with self.subTest(type=type(arg)):
                 with self.assertRaises(btrfsutil.BtrfsUtilError) as e:
                     # BTRFS_EXTENT_TREE_OBJECTID
                     btrfsutil.subvolume_info(arg, 2)
+                self.assertEqual(e.exception.btrfsutilerror,
+                                 btrfsutil.ERROR_SUBVOLUME_NOT_FOUND)
+
+    @skipUnlessHaveNobody
+    def test_subvolume_info_unprivileged(self):
+        subvol = os.path.join(self.mountpoint, 'subvol')
+        btrfsutil.create_subvolume(subvol)
+        snapshot = os.path.join(self.mountpoint, 'snapshot')
+        btrfsutil.create_snapshot(subvol, snapshot)
+
+        with drop_privs():
+            try:
+                btrfsutil.subvolume_info(self.mountpoint)
+            except OSError as e:
+                if e.errno == errno.ENOTTY:
+                    self.skipTest('BTRFS_IOC_GET_SUBVOL_INFO is not available')
+                else:
+                    raise
+            self._test_subvolume_info(subvol, snapshot)
 
     def test_read_only(self):
         for arg in self.path_or_fd(self.mountpoint):
@@ -201,10 +244,6 @@ class TestSubvolume(BtrfsTestCase):
 
         btrfsutil.create_subvolume(subvol + '6//')
         self.assertTrue(btrfsutil.is_subvolume(subvol + '6'))
-
-        transid = btrfsutil.create_subvolume(subvol + '7', async=True)
-        self.assertTrue(btrfsutil.is_subvolume(subvol + '7'))
-        self.assertGreater(transid, 0)
 
         # Test creating subvolumes under '/' in a chroot.
         pid = os.fork()
@@ -265,12 +304,8 @@ class TestSubvolume(BtrfsTestCase):
         btrfsutil.create_snapshot(subvol, snapshot + '2', recursive=True)
         self.assertTrue(os.path.exists(os.path.join(snapshot + '2', 'nested/more_nested/nested_dir')))
 
-        transid = btrfsutil.create_snapshot(subvol, snapshot + '3', recursive=True, async=True)
-        self.assertTrue(os.path.exists(os.path.join(snapshot + '3', 'nested/more_nested/nested_dir')))
-        self.assertGreater(transid, 0)
-
-        btrfsutil.create_snapshot(subvol, snapshot + '4', read_only=True)
-        self.assertTrue(btrfsutil.get_subvolume_read_only(snapshot + '4'))
+        btrfsutil.create_snapshot(subvol, snapshot + '3', read_only=True)
+        self.assertTrue(btrfsutil.get_subvolume_read_only(snapshot + '3'))
 
     def test_delete_subvolume(self):
         subvol = os.path.join(self.mountpoint, 'subvol')
@@ -328,58 +363,219 @@ class TestSubvolume(BtrfsTestCase):
             with self.subTest(type=type(arg)):
                 self.assertEqual(btrfsutil.deleted_subvolumes(arg), [256])
 
-    def test_subvolume_iterator(self):
-        pwd = os.getcwd()
-        try:
-            os.chdir(self.mountpoint)
-            btrfsutil.create_subvolume('foo')
+    def _test_subvolume_iterator(self):
+        btrfsutil.create_subvolume('foo')
 
-            path, subvol = next(btrfsutil.SubvolumeIterator('.', info=True))
+        with btrfsutil.SubvolumeIterator('.', info=True) as it:
+            path, subvol = next(it)
             self.assertEqual(path, 'foo')
             self.assertIsInstance(subvol, btrfsutil.SubvolumeInfo)
             self.assertEqual(subvol.id, 256)
             self.assertEqual(subvol.parent_id, 5)
+            self.assertRaises(StopIteration, next, it)
 
-            btrfsutil.create_subvolume('foo/bar')
-            btrfsutil.create_subvolume('foo/bar/baz')
+        btrfsutil.create_subvolume('foo/bar')
+        btrfsutil.create_subvolume('foo/bar/baz')
 
-            subvols = [
-                ('foo', 256),
-                ('foo/bar', 257),
-                ('foo/bar/baz', 258),
-            ]
+        subvols = [
+            ('foo', 256),
+            ('foo/bar', 257),
+            ('foo/bar/baz', 258),
+        ]
 
-            for arg in self.path_or_fd('.'):
-                with self.subTest(type=type(arg)):
-                    self.assertEqual(list(btrfsutil.SubvolumeIterator(arg)), subvols)
-            self.assertEqual(list(btrfsutil.SubvolumeIterator('.', top=0)), subvols)
+        for arg in self.path_or_fd('.'):
+            with self.subTest(type=type(arg)), btrfsutil.SubvolumeIterator(arg) as it:
+                self.assertEqual(list(it), subvols)
+        with btrfsutil.SubvolumeIterator('.', top=0) as it:
+            self.assertEqual(list(it), subvols)
+        if os.geteuid() == 0:
+            with btrfsutil.SubvolumeIterator('foo', top=5) as it:
+                self.assertEqual(list(it), subvols)
 
-            self.assertEqual(list(btrfsutil.SubvolumeIterator('.', post_order=True)),
+        with btrfsutil.SubvolumeIterator('.', post_order=True) as it:
+            self.assertEqual(list(it),
                              [('foo/bar/baz', 258),
                               ('foo/bar', 257),
                               ('foo', 256)])
 
-            subvols = [
-                ('bar', 257),
-                ('bar/baz', 258),
-            ]
+        subvols = [
+            ('bar', 257),
+            ('bar/baz', 258),
+        ]
 
-            self.assertEqual(list(btrfsutil.SubvolumeIterator('.', top=256)), subvols)
-            self.assertEqual(list(btrfsutil.SubvolumeIterator('foo', top=0)), subvols)
+        if os.geteuid() == 0:
+            with btrfsutil.SubvolumeIterator('.', top=256) as it:
+                self.assertEqual(list(it), subvols)
+        with btrfsutil.SubvolumeIterator('foo') as it:
+            self.assertEqual(list(it), subvols)
+        with btrfsutil.SubvolumeIterator('foo', top=0) as it:
+            self.assertEqual(list(it), subvols)
 
-            os.rename('foo/bar/baz', 'baz')
-            self.assertEqual(sorted(btrfsutil.SubvolumeIterator('.')),
-                             [('baz', 258),
-                              ('foo', 256),
-                              ('foo/bar', 257)])
+        os.rename('foo/bar/baz', 'baz')
+        os.mkdir('dir')
+        btrfsutil.create_subvolume('dir/qux')
+        os.mkdir('dir/qux/dir2')
+        btrfsutil.create_subvolume('dir/qux/dir2/quux')
 
-            with btrfsutil.SubvolumeIterator('.') as it:
-                self.assertGreaterEqual(it.fileno(), 0)
-                it.close()
-                with self.assertRaises(ValueError):
-                    next(iter(it))
-                with self.assertRaises(ValueError):
-                    it.fileno()
-                it.close()
+        subvols = [
+            ('baz', 258),
+            ('dir/qux', 259),
+            ('dir/qux/dir2/quux', 260),
+            ('foo', 256),
+            ('foo/bar', 257),
+        ]
+
+        # Test various corner cases of the unprivileged implementation
+        # where we can't access the subvolume.
+        if os.geteuid() != 0:
+            with regain_privs():
+                # We don't have permission to traverse the path.
+                os.mkdir('directory_perms', 0o700)
+                btrfsutil.create_subvolume('directory_perms/subvol')
+
+                # We don't have permission to resolve the subvolume path.
+                os.mkdir('subvol_perms', 0o755)
+                btrfsutil.create_subvolume('subvol_perms/subvol')
+                os.chmod('subvol_perms/subvol', 0o700)
+
+                # The path doesn't exist.
+                os.mkdir('enoent', 0o755)
+                btrfsutil.create_subvolume('enoent/subvol')
+                subprocess.check_call(['mount', '-t', 'tmpfs', 'tmpfs', 'enoent'])
+
+                # The path exists but it's not a subvolume.
+                os.mkdir('notsubvol', 0o755)
+                btrfsutil.create_subvolume('notsubvol/subvol')
+                subprocess.check_call(['mount', '-t', 'tmpfs', 'tmpfs', 'notsubvol'])
+                os.mkdir('notsubvol/subvol')
+
+                # The path exists and is a subvolume, but on a different
+                # filesystem.
+                os.mkdir('wrongfs', 0o755)
+                btrfsutil.create_subvolume('wrongfs/subvol')
+                other_mountpoint, _ = self.mount_btrfs()
+                subprocess.check_call(['mount', '--bind', '--',
+                                       other_mountpoint, 'wrongfs/subvol'])
+
+                # The path exists and is a subvolume on the same
+                # filesystem, but not the right one.
+                os.mkdir('wrongsubvol', 0o755)
+                btrfsutil.create_subvolume('wrongsubvol/subvol')
+                subprocess.check_call(['mount', '--bind', 'baz', 'wrongsubvol/subvol'])
+
+
+        with btrfsutil.SubvolumeIterator('.') as it:
+            self.assertEqual(sorted(it), subvols)
+        with btrfsutil.SubvolumeIterator('.', post_order=True) as it:
+            self.assertEqual(sorted(it), subvols)
+
+        with btrfsutil.SubvolumeIterator('.') as it:
+            self.assertGreaterEqual(it.fileno(), 0)
+            it.close()
+            with self.assertRaises(ValueError):
+                next(iter(it))
+            with self.assertRaises(ValueError):
+                it.fileno()
+            it.close()
+
+    def test_subvolume_iterator(self):
+        pwd = os.getcwd()
+        try:
+            os.chdir(self.mountpoint)
+            self._test_subvolume_iterator()
+        finally:
+            os.chdir(pwd)
+
+    def _skip_unless_have_unprivileged_subvolume_iterator(self, path):
+        with drop_privs():
+            try:
+                for _ in btrfsutil.SubvolumeIterator(path):
+                    break
+            except OSError as e:
+                if e.errno == errno.ENOTTY:
+                    self.skipTest('BTRFS_IOC_GET_SUBVOL_ROOTREF is not available')
+                else:
+                    raise
+
+    @skipUnlessHaveNobody
+    def test_subvolume_iterator_unprivileged(self):
+        os.chown(self.mountpoint, NOBODY_UID, -1)
+        pwd = os.getcwd()
+        try:
+            os.chdir(self.mountpoint)
+            self._skip_unless_have_unprivileged_subvolume_iterator('.')
+            with drop_privs():
+                self._test_subvolume_iterator()
+        finally:
+            os.chdir(pwd)
+
+    @staticmethod
+    def _create_and_delete_subvolume(i):
+        dir_name = f'dir{i}'
+        subvol_name = dir_name + '/subvol'
+        while True:
+            os.mkdir(dir_name)
+            btrfsutil.create_subvolume(subvol_name)
+            btrfsutil.delete_subvolume(subvol_name)
+            os.rmdir(dir_name)
+
+    def _test_subvolume_iterator_race(self):
+        procs = []
+        fd = os.open('.', os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            for i in range(10):
+                procs.append(
+                    multiprocessing.Process(
+                        target=self._create_and_delete_subvolume,
+                        args=(i,),
+                        daemon=True,
+                    )
+                )
+            for proc in procs:
+                proc.start()
+            for i in range(1000):
+                with btrfsutil.SubvolumeIterator(fd) as it:
+                    for _ in it:
+                        pass
+        finally:
+            for proc in procs:
+                proc.terminate()
+                proc.join()
+            os.close(fd)
+
+    def test_subvolume_iterator_race(self):
+        pwd = os.getcwd()
+        try:
+            os.chdir(self.mountpoint)
+            self._test_subvolume_iterator_race()
+        finally:
+            os.chdir(pwd)
+
+    def test_subvolume_iterator_race_unprivileged(self):
+        os.chown(self.mountpoint, NOBODY_UID, -1)
+        pwd = os.getcwd()
+        try:
+            os.chdir(self.mountpoint)
+            self._skip_unless_have_unprivileged_subvolume_iterator('.')
+            with drop_privs():
+                self._test_subvolume_iterator_race()
+        finally:
+            os.chdir(pwd)
+
+    def test_subvolume_iterator_fd_unprivileged(self):
+        pwd = os.getcwd()
+        try:
+            os.chdir(self.mountpoint)
+            btrfsutil.create_subvolume('subvol')
+            with drop_privs():
+                fd = os.open('.', os.O_RDONLY | os.O_DIRECTORY)
+                try:
+                    with btrfsutil.SubvolumeIterator(fd) as it:
+                        for _ in it:
+                            break
+                finally:
+                    # A bug in SubvolumeIterator previously made it close the
+                    # passed in fd, so this would fail with EBADF.
+                    os.close(fd)
         finally:
             os.chdir(pwd)

@@ -2,7 +2,7 @@
 #
 # test label settings
 
-source "$TEST_TOP/common"
+source "$TEST_TOP/common" || exit
 
 check_prereq mkfs.btrfs
 check_prereq btrfs
@@ -10,7 +10,7 @@ check_prereq btrfs
 setup_root_helper
 
 prepare_test_dev
-run_check "$TOP/mkfs.btrfs" -L BTRFS-TEST-LABEL -f "$TEST_DEV"
+run_check_mkfs_test_dev -L BTRFS-TEST-LABEL
 run_check_mount_test_dev
 run_check $SUDO_HELPER chmod a+rw "$TEST_MNT"
 

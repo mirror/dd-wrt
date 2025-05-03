@@ -14,17 +14,35 @@ For the btrfs-convert utility:
 - e2fsprogs - ext2/ext3/ext4 file system libraries, or called e2fslibs
 - libreiserfscore - reiserfs file system library version >= 3.6.27
 
+Optionally, the checksums based on cryptographic hashes can be implemented by
+external libraries. Builtin implementations are provided in case the library
+dependencies are not desired.
+
+- libgcrypt >= 1.8.0
+- libsodium >= 1.0.4
+- libkcapi >= 1.0.0
+- Botan >= 3.0.0
+- OpenSSL >= 3.2.0
+
+Optionally, multipath device detection requires libudev and running udev
+daemon, as it's the only source of the path information. Static build has a
+fallback and does not need static version of libudev.
+
+- libudev
+
+For zoned device support, the system headers installed in /usr/include/linux
+must be 5.10 or newer.
+
 Generating documentation:
 
-- asciidoc - text document format tool
-- xmlto - text document format tool
-
-XATTR library should be provided by the standard C library or by
-
-- libattr - extended attribute library
+- sphinx
 
 Please note that the package names may differ according to the distribution.
-See https://btrfs.wiki.kernel.org/index.php/Btrfs_source_repositories#Dependencies .
+
+Optionally, for testsuite utility fsstress:
+
+- libaio
+- liburing
 
 
 Building from sources
@@ -62,7 +80,7 @@ documented in the Makefile.
 The build utilizes autotools, dependencies for generating the configure
 scripts are:
 
-* autconf, autoheader
+* autoconf, autoheader
 * automake, aclocal
 * pkg-config
 
@@ -81,6 +99,36 @@ of the libraries.
 The resulting binaries have the '.static' suffix, the intermediate object
 files do not conflict with the normal (dynamic) build.
 
+There are pre-built static binaries for download available at the latest
+release (under Assets), https://github.com/kdave/btrfs-progs/releases .
+
+
+All-in-one binary (busybox style)
+---------------------------------
+
+Since version 5.2 it's possible to build a single binary that can act as other
+standalone tools, based on the file name:
+
+    $ make btrfs.box
+    $ mv btrfs.box btrfs
+    $ ln -s btrfs mkfs.btrfs
+
+The list of built-ins can be obtained by
+
+    $ btrfs help --box
+
+The basic set will always contain: mkfs.btrfs, btrfs-image, btrfs-convert.
+
+
+32bit build on 64bit host
+-------------------------
+
+The combination of 32bit build on 64bit host could work but depends on the
+libraries that must provide the 32bit versions, or even 32bit static versions.
+This is fairly uncommon on contemporary distributions and building 32bit
+versions on a 32bit host is recommended.
+
 
 References:
-* https://btrfs.wiki.kernel.org
+* https://btrfs.readthedocs.io
+* https://btrfs.wiki.kernel.org (outdated)

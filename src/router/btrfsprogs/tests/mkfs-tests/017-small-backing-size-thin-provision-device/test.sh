@@ -2,11 +2,12 @@
 # mkfs.btrfs must fail on a thin provision device with very small backing size
 # and big virtual size.
 
-source "$TEST_TOP/common"
+source "$TEST_TOP/common" || exit
 
 check_prereq mkfs.btrfs
 check_global_prereq udevadm
-check_global_prereq dmsetup
+check_dm_target_support linear
+check_dm_target_support thin thin-pool
 
 setup_root_helper
 prepare_test_dev
@@ -53,8 +54,7 @@ fi
 meta_dev_offset=0
 total_data_dev_size=$(($meta_dev_offset + $meta_dev_size + $data_dev_size))
 
-run_check truncate -s0 img
-chmod a+w img
+_mktemp_local img
 run_check truncate -s"$(($total_data_dev_size * $sector_size))" img
 
 dm_backing_dev=`run_check_stdout $SUDO_HELPER losetup --find --show img`

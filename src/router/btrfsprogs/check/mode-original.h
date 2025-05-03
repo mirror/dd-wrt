@@ -21,7 +21,12 @@
 #ifndef __BTRFS_CHECK_MODE_ORIGINAL_H__
 #define __BTRFS_CHECK_MODE_ORIGINAL_H__
 
-#include "rbtree-utils.h"
+#include "kerncompat.h"
+#include "kernel-lib/rbtree.h"
+#include "kernel-lib/list.h"
+#include "kernel-shared/uapi/btrfs_tree.h"
+#include "common/extent-cache.h"
+#include "common/rbtree-utils.h"
 
 struct extent_backref {
 	struct rb_node node;
@@ -57,21 +62,6 @@ static inline struct data_backref* to_data_backref(struct extent_backref *back)
 	return container_of(back, struct data_backref, node);
 }
 
-/*
- * Much like data_backref, just removed the undetermined members
- * and change it to use list_head.
- * During extent scan, it is stored in root->orphan_data_extent.
- * During fs tree scan, it is then moved to inode_rec->orphan_data_extents.
- */
-struct orphan_data_extent {
-	struct list_head list;
-	u64 root;
-	u64 objectid;
-	u64 offset;
-	u64 disk_bytenr;
-	u64 disk_len;
-};
-
 struct tree_backref {
 	struct extent_backref node;
 	union {
@@ -94,7 +84,7 @@ struct extent_record {
 	struct rb_root backref_tree;
 	struct list_head list;
 	struct cache_extent cache;
-	struct btrfs_disk_key parent_key;
+	struct btrfs_key parent_key;
 	u64 start;
 	u64 max_size;
 	u64 nr;
@@ -105,6 +95,7 @@ struct extent_record {
 	u64 info_objectid;
 	u32 num_duplicates;
 	u8 info_level;
+	u8 level;
 	unsigned int flag_block_full_backref:2;
 	unsigned int found_rec:1;
 	unsigned int content_checked:1;
@@ -150,19 +141,19 @@ struct root_item_record {
 	struct btrfs_key drop_key;
 };
 
-#define REF_ERR_NO_DIR_ITEM		(1 << 0)
-#define REF_ERR_NO_DIR_INDEX		(1 << 1)
-#define REF_ERR_NO_INODE_REF		(1 << 2)
-#define REF_ERR_DUP_DIR_ITEM		(1 << 3)
-#define REF_ERR_DUP_DIR_INDEX		(1 << 4)
-#define REF_ERR_DUP_INODE_REF		(1 << 5)
-#define REF_ERR_INDEX_UNMATCH		(1 << 6)
-#define REF_ERR_FILETYPE_UNMATCH	(1 << 7)
-#define REF_ERR_NAME_TOO_LONG		(1 << 8) // 100
-#define REF_ERR_NO_ROOT_REF		(1 << 9)
-#define REF_ERR_NO_ROOT_BACKREF		(1 << 10)
-#define REF_ERR_DUP_ROOT_REF		(1 << 11)
-#define REF_ERR_DUP_ROOT_BACKREF	(1 << 12)
+#define REF_ERR_NO_DIR_ITEM		(1U <<  0)
+#define REF_ERR_NO_DIR_INDEX		(1U <<  1)
+#define REF_ERR_NO_INODE_REF		(1U <<  2)
+#define REF_ERR_DUP_DIR_ITEM		(1U <<  3)
+#define REF_ERR_DUP_DIR_INDEX		(1U <<  4)
+#define REF_ERR_DUP_INODE_REF		(1U <<  5)
+#define REF_ERR_INDEX_UNMATCH		(1U <<  6)
+#define REF_ERR_FILETYPE_UNMATCH	(1U <<  7)
+#define REF_ERR_NAME_TOO_LONG		(1U <<  8) // 100
+#define REF_ERR_NO_ROOT_REF		(1U <<  9)
+#define REF_ERR_NO_ROOT_BACKREF		(1U << 10)
+#define REF_ERR_DUP_ROOT_REF		(1U << 11)
+#define REF_ERR_DUP_ROOT_BACKREF	(1U << 12)
 
 struct file_extent_hole {
 	struct rb_node node;
@@ -170,24 +161,40 @@ struct file_extent_hole {
 	u64 len;
 };
 
-#define I_ERR_NO_INODE_ITEM		(1 << 0)
-#define I_ERR_NO_ORPHAN_ITEM		(1 << 1)
-#define I_ERR_DUP_INODE_ITEM		(1 << 2)
-#define I_ERR_DUP_DIR_INDEX		(1 << 3)
-#define I_ERR_ODD_DIR_ITEM		(1 << 4)
-#define I_ERR_ODD_FILE_EXTENT		(1 << 5)
-#define I_ERR_BAD_FILE_EXTENT		(1 << 6)
-#define I_ERR_FILE_EXTENT_OVERLAP	(1 << 7)
-#define I_ERR_FILE_EXTENT_DISCOUNT	(1 << 8) // 100
-#define I_ERR_DIR_ISIZE_WRONG		(1 << 9)
-#define I_ERR_FILE_NBYTES_WRONG		(1 << 10) // 400
-#define I_ERR_ODD_CSUM_ITEM		(1 << 11)
-#define I_ERR_SOME_CSUM_MISSING		(1 << 12)
-#define I_ERR_LINK_COUNT_WRONG		(1 << 13)
-#define I_ERR_FILE_EXTENT_ORPHAN	(1 << 14)
-#define I_ERR_FILE_EXTENT_TOO_LARGE	(1 << 15)
-#define I_ERR_ODD_INODE_FLAGS		(1 << 16)
-#define I_ERR_INLINE_RAM_BYTES_WRONG	(1 << 17)
+struct unaligned_extent_rec_t {
+	struct list_head list;
+
+	u64 objectid;
+	u64 owner;
+	u64 offset;
+
+	u64 bytenr;
+};
+
+#define I_ERR_NO_INODE_ITEM		(1U <<  0)
+#define I_ERR_NO_ORPHAN_ITEM		(1U <<  1)
+#define I_ERR_DUP_INODE_ITEM		(1U <<  2)
+#define I_ERR_DUP_DIR_INDEX		(1U <<  3)
+#define I_ERR_ODD_DIR_ITEM		(1U <<  4)
+#define I_ERR_ODD_FILE_EXTENT		(1U <<  5)
+#define I_ERR_BAD_FILE_EXTENT		(1U <<  6)
+#define I_ERR_FILE_EXTENT_OVERLAP	(1U <<  7)
+#define I_ERR_FILE_EXTENT_DISCOUNT	(1U <<  8) // 100
+#define I_ERR_DIR_ISIZE_WRONG		(1U <<  9)
+#define I_ERR_FILE_NBYTES_WRONG		(1U << 10) // 400
+#define I_ERR_ODD_CSUM_ITEM		(1U << 11)
+#define I_ERR_SOME_CSUM_MISSING		(1U << 12)
+#define I_ERR_LINK_COUNT_WRONG		(1U << 13)
+#define I_ERR_UNALIGNED_EXTENT_REC	(1U << 14)
+#define I_ERR_FILE_EXTENT_TOO_LARGE	(1U << 15)
+#define I_ERR_ODD_INODE_FLAGS		(1U << 16)
+#define I_ERR_INLINE_RAM_BYTES_WRONG	(1U << 17)
+#define I_ERR_MISMATCH_DIR_HASH		(1U << 18)
+#define I_ERR_INVALID_IMODE		(1U << 19)
+#define I_ERR_INVALID_GEN		(1U << 20)
+#define I_ERR_INVALID_NLINK		(1U << 21)
+#define I_ERR_INVALID_XATTR		(1U << 22)
+#define I_ERR_DEPRECATED_FREE_INO	(1U << 23)
 
 struct inode_record {
 	struct list_head backrefs;
@@ -201,6 +208,8 @@ struct inode_record {
 	unsigned int nodatasum:1;
 	int errors;
 
+	struct list_head unaligned_extent_recs;
+
 	u64 ino;
 	u32 nlink;
 	u32 imode;
@@ -212,9 +221,21 @@ struct inode_record {
 	u64 extent_start;
 	u64 extent_end;
 	struct rb_root holes;
-	struct list_head orphan_extents;
+	struct list_head mismatch_dir_hash;
 
 	u32 refs;
+};
+
+/*
+ * To record one dir_item with mismatch hash.
+ *
+ * Since the hash is incorrect, we must record the hash (key).
+ */
+struct mismatch_dir_hash_record {
+	struct list_head list;
+	struct btrfs_key key;
+	int namelen;
+	/* namebuf follows here */
 };
 
 struct root_backref {

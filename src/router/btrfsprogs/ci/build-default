@@ -1,0 +1,18 @@
+#!/bin/sh
+# usage: $0 [optional arguments to configure]
+
+if ! [ -f "./autogen.sh" ]; then
+       echo "ERROR: cannot find autogen.sh, run from the top level directory"
+       exit 1
+fi
+
+set -e
+
+jobs=`grep -c ^processor /proc/cpuinfo`
+
+./autogen.sh
+./configure "$@"
+echo "D=$D"
+make -j $jobs
+make -j $jobs btrfs.box
+make hash-speedtest hash-vectest ioctl-test json-formatter-test string-table-test

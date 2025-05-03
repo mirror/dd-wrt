@@ -2,14 +2,15 @@
 # check that sanitized names with matching crc do not contain unprintable
 # characters, namely 0x7f
 
-source "$TEST_TOP/common"
+source "$TEST_TOP/common" || exit
 
 check_prereq mkfs.btrfs
 check_prereq btrfs
 
+setup_root_helper
 prepare_test_dev
 
-run_check "$TOP/mkfs.btrfs" -f "$TEST_DEV"
+run_check_mkfs_test_dev
 run_check_mount_test_dev
 run_check $SUDO_HELPER chmod a+rw "$TEST_MNT"
 
@@ -18,6 +19,9 @@ touch "$TEST_MNT/|5gp!"
 
 run_check_umount_test_dev
 
+_mktemp_local img
+_mktemp_local img.restored
+_mktemp_local img.dump
 run_check $SUDO_HELPER "$TOP/btrfs-image" -ss "$TEST_DEV" img
 run_check $SUDO_HELPER "$TOP/btrfs-image" -r img img.restored
 run_check_stdout $SUDO_HELPER "$TOP/btrfs" inspect-internal dump-tree img.restored > img.dump

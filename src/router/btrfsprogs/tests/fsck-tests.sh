@@ -8,7 +8,7 @@ if [ -z "$TOP" ]; then
 	TOP=$(readlink -f "$SCRIPT_DIR/../")
 	if [ -f "$TOP/configure.ac" ]; then
 		# inside git
-		TEST_TOP="$TOP/tests/"
+		TEST_TOP="$TOP/tests"
 		INTERNAL_BIN="$TOP"
 	else
 		# external, defaults to system binaries
@@ -48,12 +48,27 @@ check_prereq btrfs
 check_prereq btrfstune
 check_kernel_support
 
+test_found=0
+
 run_one_test() {
+	local testdir
 	local testname
 
-	testname="$1"
+	testdir="$1"
+	testname=$(basename "$testdir")
+	if ! [ -z "$TEST_FROM" ]; then
+		if [ "$test_found" == 0 ]; then
+			case "$testname" in
+				$TEST_FROM) test_found=1;;
+			esac
+		fi
+		if [ "$test_found" == 0 ]; then
+			printf "    [TEST/fsck]   %-32s (SKIPPED)\n" "$testname"
+			return
+		fi
+	fi
 	echo "    [TEST/fsck]   $(basename $testname)"
-	cd "$testname"
+	cd "$testdir"
 	echo "=== START TEST $testname" >> "$RESULTS"
 	if [ -x test.sh ]; then
 		# Type 2
@@ -62,8 +77,16 @@ run_one_test() {
 			if [[ $TEST_LOG =~ dump ]]; then
 				cat "$RESULTS"
 			fi
-			_fail "test failed for case $(basename $testname)"
+			_fail "test failed for case $testname"
 		fi
+		# These tests have overridden check_image() and their images may
+		# have intentional unaligned metadata to trigger subpage
+		# warnings (like fsck/018), skip the check for their subpage
+		# warnings.
+		#
+		# We care about subpage related warnings for write operations
+		# (mkfs/convert/repair), not those read-only checks on crafted
+		# images.
 	else
 		# Type 1
 		check_all_images

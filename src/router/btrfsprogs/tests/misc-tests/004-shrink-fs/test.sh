@@ -4,19 +4,26 @@
 # are able to resize (shrink) it to that size.
 #
 
-source "$TEST_TOP/common"
+source "$TEST_TOP/common" || exit
 
 check_prereq mkfs.btrfs
 check_prereq btrfs
 
 setup_root_helper
 
+_get_min_dev_size()
+{
+	size=$(run_check_stdout $SUDO_HELPER "$TOP/btrfs" inspect-internal \
+		min-dev-size ${1:+--id "$1"} "$TEST_MNT" |		   \
+		grep -e "^[[:digit:]]\+.*)$" | cut -d ' ' -f 1)
+	echo "$size"
+}
+
 # Optionally take id of the device to shrink
 shrink_test()
 {
-	min_size=$(run_check_stdout $SUDO_HELPER "$TOP/btrfs" inspect-internal min-dev-size ${1:+--id "$1"}  "$TEST_MNT")
-	min_size=$(echo "$min_size" | cut -d ' ' -f 1)
-	echo "min size = ${min_size}" >> "$RESULTS"
+	min_size=$(_get_min_dev_size "$1")
+	_log "min size = ${min_size}"
 	if [ -z "$min_size" ]; then
 		_fail "Failed to parse minimum size"
 	fi
@@ -25,7 +32,9 @@ shrink_test()
 
 run_check truncate -s 20G "$IMAGE"
 run_check "$TOP/mkfs.btrfs" -f "$IMAGE"
-run_check $SUDO_HELPER mount "$IMAGE" "$TEST_MNT"
+# Disable the new default async discard, which makes empty block group cleanup
+# async.
+run_check $SUDO_HELPER mount -o nodiscard "$IMAGE" "$TEST_MNT"
 run_check $SUDO_HELPER chmod a+rw "$TEST_MNT"
 
 # Create 7 data block groups, each with a size of 1Gb.

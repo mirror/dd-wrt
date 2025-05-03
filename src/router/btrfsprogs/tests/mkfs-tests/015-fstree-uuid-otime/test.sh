@@ -1,7 +1,7 @@
 #!/bin/bash
 # verify that mkfs fills the uuid and otime for FS_TREE
 
-source "$TEST_TOP/common"
+source "$TEST_TOP/common" || exit
 
 check_prereq mkfs.btrfs
 check_prereq btrfs
@@ -17,10 +17,10 @@ prepare_test_dev
 #         otime 1521656113.0 (2018-03-21 19:15:13)
 #         drop key (0 UNKNOWN.0 0) level 0
 
-run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$@" "$TEST_DEV"
+run_check_mkfs_test_dev
 # match not-all-zeros in the first part
 uuid=$(run_check_stdout $SUDO_HELPER "$TOP/btrfs" inspect-internal dump-tree -t root "$TEST_DEV" | \
-	grep -A 3 "FS_TREE ROOT_ITEM 0" | grep 'uuid ')
+	grep -A 5 "FS_TREE ROOT_ITEM 0" | grep 'uuid ')
 
 if [ $? != 0 ]; then
 	_fail "uuid for FS_TREE not found"
@@ -31,5 +31,5 @@ if [ "$uuid" = '00000000-0000-0000-0000-000000000000' ]; then
 fi
 
 run_check_stdout $SUDO_HELPER "$TOP/btrfs" inspect-internal dump-tree -t root "$TEST_DEV" | \
-	grep -A 5 "FS_TREE ROOT_ITEM 0" | grep -q 'otime ' || \
+	grep -A 10 "FS_TREE ROOT_ITEM 0" | grep -q 'otime ' || \
 	_fail "otime for FS_TREE not found"

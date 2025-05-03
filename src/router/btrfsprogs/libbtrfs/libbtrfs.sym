@@ -1,0 +1,12 @@
+LIBBTRFS_0.1 {
+global:
+	/* common/send-stream.h */
+	btrfs_read_and_process_send_stream;	/* used */
+
+	/* common/send-utils.h */
+	subvol_uuid_search;			/* used */
+	subvol_uuid_search_init;		/* used */
+	btrfs_subvolid_resolve;			/* used */
+local:
+	*;
+};

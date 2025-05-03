@@ -5,7 +5,7 @@
  *
  * libbtrfsutil is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2.1 of the License, or
  * (at your option) any later version.
  *
  * libbtrfsutil is distributed in the hope that it will be useful,
@@ -45,6 +45,14 @@ static const char * const error_messages[] = {
 	[BTRFS_UTIL_ERROR_SYNC_FAILED] = "Could not sync filesystem",
 	[BTRFS_UTIL_ERROR_START_SYNC_FAILED] = "Could not start filesystem sync",
 	[BTRFS_UTIL_ERROR_WAIT_SYNC_FAILED] = "Could not wait for filesystem sync",
+	[BTRFS_UTIL_ERROR_GET_SUBVOL_INFO_FAILED] =
+		"Could not get subvolume information with BTRFS_IOC_GET_SUBVOL_INFO",
+	[BTRFS_UTIL_ERROR_GET_SUBVOL_ROOTREF_FAILED] =
+		"Could not get rootref information with BTRFS_IOC_GET_SUBVOL_ROOTREF",
+	[BTRFS_UTIL_ERROR_INO_LOOKUP_USER_FAILED] =
+		"Could not resolve subvolume path with BTRFS_IOC_INO_LOOKUP_USER",
+	[BTRFS_UTIL_ERROR_FS_INFO_FAILED] =
+		"Could not get filesystem information",
 };
 
 PUBLIC const char *btrfs_util_strerror(enum btrfs_util_error err)

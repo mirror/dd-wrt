@@ -4,7 +4,7 @@
 # deletion.  Orphan inode/root is not referenced and will have an orphan
 # item, which should not be reported as error.
 
-source "$TEST_TOP/common"
+source "$TEST_TOP/common" || exit
 
 check_prereq btrfs
 
@@ -13,7 +13,7 @@ check_image() {
 		     "$TOP/btrfs" check "$1"
 	# Above command can fail due to other bugs, so add extra check to
 	# ensure we can fix qgroup without problems.
-	run_check "$TOP/btrfs" check --repair "$1"
+	run_check "$TOP/btrfs" check --repair --force "$1"
 }
 
 check_all_images

@@ -1,0 +1,424 @@
+/*
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License v2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public
+ * License along with this program; if not, write to the
+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+ * Boston, MA 021110-1307, USA.
+ */
+
+#include "kerncompat.h"
+#include <stdio.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <uuid/uuid.h>
+#include "kernel-shared/uapi/btrfs.h"
+#include "common/messages.h"
+#include "common/format-output.h"
+#include "common/utils.h"
+#include "common/units.h"
+#include "cmds/commands.h"
+
+static void print_uuid(const u8 *uuid)
+{
+	char uuidparse[BTRFS_UUID_UNPARSED_SIZE];
+
+	if (uuid_is_null(uuid)) {
+		printf("null");
+	} else {
+		uuid_unparse(uuid, uuidparse);
+		printf("%s", uuidparse);
+	}
+}
+
+static void print_escaped(const char *str)
+{
+	while (*str) {
+		switch (*str) {
+		case '\b':			/* 0x08 */
+			putchar('\\');
+			putchar('b');
+			break;
+		case '\t':			/* 0x09 */
+			putchar('\\');
+			putchar('t');
+			break;
+		case '\n':			/* 0x0a */
+			putchar('\\');
+			putchar('n');
+			break;
+		case '\f':			/* 0x0c */
+			putchar('\\');
+			putchar('f');
+			break;
+		case '\r':			/* 0x0d */
+			putchar('\\');
+			putchar('r');
+			break;
+		/* Other control characters from 0 .. 31 */
+		case '\v':			/* 0x0b */
+		case 0x00 ... 0x07:
+		case 0x0e ... 0x1f:
+			printf("\\u%04x", *str);
+			break;
+		/* '/' (solidus) not escaped */
+		case '"':
+		case '\\':
+			putchar('\\');
+			fallthrough;
+		default:
+			putchar(*str);
+		}
+		str++;
+	}
+}
+
+static void fmt_indent1(int indent)
+{
+	while (indent--)
+		putchar(' ');
+}
+
+static void fmt_indent2(int indent)
+{
+	while (indent--) {
+		putchar(' ');
+		putchar(' ');
+	}
+}
+
+static void fmt_error(struct format_ctx *fctx)
+{
+	internal_error("formatting json: depth=%d", fctx->depth);
+	exit(1);
+}
+
+static void fmt_inc_depth(struct format_ctx *fctx)
+{
+	if (fctx->depth >= JSON_NESTING_LIMIT - 1) {
+		internal_error("nesting too deep, limit %d", JSON_NESTING_LIMIT);
+		exit(1);
+	}
+	fctx->depth++;
+}
+
+static void fmt_dec_depth(struct format_ctx *fctx)
+{
+	if (fctx->depth < 1) {
+		internal_error("nesting below first level");
+		exit(1);
+	}
+	fctx->depth--;
+}
+
+static void fmt_separator(struct format_ctx *fctx)
+{
+	if (bconf.output_format == CMD_FORMAT_JSON) {
+		/* Check current depth */
+		if (fctx->memb[fctx->depth] == 0) {
+			/* First member, only indent */
+			putchar('\n');
+			fmt_indent2(fctx->depth);
+			fctx->memb[fctx->depth] = 1;
+		} else if (fctx->memb[fctx->depth] == 1) {
+			/* Something has been printed already */
+			printf(",\n");
+			fmt_indent2(fctx->depth);
+			fctx->memb[fctx->depth] = 2;
+		} else {
+			/* N-th member */
+			printf(",\n");
+			fmt_indent2(fctx->depth);
+		}
+	}
+}
+
+/* Detect formats or values that must not be quoted (null, bool) */
+static bool fmt_set_unquoted(struct format_ctx *fctx, const struct rowspec *row,
+			     va_list args)
+{
+	static const char *types[] = { "%llu", "bool" };
+
+	for (int i = 0; i < sizeof(types) / sizeof(types[0]); i++)
+		if (strcmp(types[i], row->fmt) == 0)
+			return true;
+
+	/* Null value */
+	if (strcmp("uuid", row->fmt) == 0) {
+		va_list tmpargs;
+		const u8 *uuid;
+
+		va_copy(tmpargs, args);
+		uuid = va_arg(tmpargs, const u8 *);
+
+		if (uuid_is_null(uuid)) {
+			va_end(tmpargs);
+			return true;
+		}
+		va_end(tmpargs);
+	}
+	return false;
+}
+
+void fmt_start(struct format_ctx *fctx, const struct rowspec *spec, int width,
+		int indent)
+{
+	memset(fctx, 0, sizeof(*fctx));
+	fctx->width = width;
+	fctx->indent = indent;
+	fctx->rowspec = spec;
+	fctx->depth = 1;
+
+	if (bconf.output_format & CMD_FORMAT_JSON) {
+		putchar('{');
+		/* The top level is a map and is the first one */
+		fctx->jtype[fctx->depth] = JSON_TYPE_MAP;
+		fctx->memb[fctx->depth] = 0;
+		fmt_print_start_group(fctx, "__header", JSON_TYPE_MAP);
+		fmt_separator(fctx);
+		printf("\"version\": \"1\"");
+		fctx->memb[fctx->depth] = 1;
+		fmt_print_end_group(fctx, "__header");
+	}
+}
+
+void fmt_end(struct format_ctx *fctx)
+{
+	if (fctx->depth != 1)
+		fprintf(stderr, "WARNING: wrong nesting\n");
+
+	/* Close, no continuation to print */
+	if (bconf.output_format & CMD_FORMAT_JSON) {
+		fmt_dec_depth(fctx);
+		fmt_separator(fctx);
+		printf("}\n");
+	}
+}
+
+void fmt_start_list_value(struct format_ctx *fctx)
+{
+	if (bconf.output_format == CMD_FORMAT_TEXT) {
+		fmt_indent1(fctx->indent);
+	} else if (bconf.output_format == CMD_FORMAT_JSON) {
+		fmt_separator(fctx);
+		fmt_indent2(fctx->depth);
+		putchar('"');
+	}
+}
+
+void fmt_end_list_value(struct format_ctx *fctx)
+{
+	if (bconf.output_format == CMD_FORMAT_TEXT)
+		putchar('\n');
+	else if (bconf.output_format == CMD_FORMAT_JSON)
+		putchar('"');
+}
+
+void fmt_start_value(struct format_ctx *fctx, const struct rowspec *row)
+{
+	if (bconf.output_format == CMD_FORMAT_TEXT) {
+		if (strcmp(row->fmt, "list") == 0)
+			putchar('\n');
+		else if (strcmp(row->fmt, "map") == 0)
+			putchar('\n');
+	} else if (bconf.output_format == CMD_FORMAT_JSON) {
+		if (strcmp(row->fmt, "list") == 0) {
+		} else if (strcmp(row->fmt, "map") == 0) {
+		} else if (fctx->unquoted) {
+		} else {
+			putchar('"');
+		}
+	}
+}
+
+/*
+ * Newline depends on format type:
+ * - json does delayed continuation "," in case there's a following object
+ * - plain text always ends with a newline
+ */
+void fmt_end_value(struct format_ctx *fctx, const struct rowspec *row)
+{
+	if (bconf.output_format == CMD_FORMAT_TEXT)
+		putchar('\n');
+	if (bconf.output_format == CMD_FORMAT_JSON) {
+		if (strcmp(row->fmt, "list") == 0) {
+		} else if (strcmp(row->fmt, "map") == 0) {
+		} else if (fctx->unquoted) {
+		} else {
+			putchar('"');
+		}
+	}
+}
+
+void fmt_print_start_group(struct format_ctx *fctx, const char *name,
+		enum json_type jtype)
+{
+	if (bconf.output_format == CMD_FORMAT_JSON) {
+		fmt_separator(fctx);
+		fmt_inc_depth(fctx);
+		fctx->jtype[fctx->depth] = jtype;
+		fctx->memb[fctx->depth] = 0;
+		if (name)
+			printf("\"%s\": ", name);
+		if (jtype == JSON_TYPE_MAP)
+			putchar('{');
+		else if (jtype == JSON_TYPE_ARRAY)
+			putchar('[');
+		else
+			fmt_error(fctx);
+	}
+}
+
+void fmt_print_end_group(struct format_ctx *fctx, const char *name)
+{
+	if (bconf.output_format == CMD_FORMAT_JSON) {
+		/* Whatever was on previous line won't continue with "," */
+		const enum json_type jtype = fctx->jtype[fctx->depth];
+
+		fmt_dec_depth(fctx);
+		putchar('\n');
+		fmt_indent2(fctx->depth);
+		if (jtype == JSON_TYPE_MAP)
+			putchar('}');
+		else if (jtype == JSON_TYPE_ARRAY)
+			putchar(']');
+		else
+			fmt_error(fctx);
+	}
+}
+
+/* Use rowspec to print according to currently set output format */
+void fmt_print(struct format_ctx *fctx, const char* key, ...)
+{
+	va_list args;
+	const struct rowspec *row;
+	bool found = false;
+
+	va_start(args, key);
+	row = &fctx->rowspec[0];
+
+	while (row->key) {
+		if (strcmp(key, row->key) == 0) {
+			found = true;
+			break;
+		}
+		row++;
+	}
+	if (!found) {
+		internal_error("unknown key: %s", key);
+		exit(1);
+	}
+
+	if (bconf.output_format == CMD_FORMAT_TEXT) {
+		const bool print_colon = row->out_text[0];
+		int len;
+
+		/* Print indented key name */
+		fmt_indent1(fctx->indent);
+		len = strlen(row->out_text);
+
+		printf("%s", row->out_text);
+		if (print_colon) {
+			putchar(':');
+			len++;
+		}
+		/* Align start for the value */
+		fmt_indent1(fctx->width - len);
+	} else if (bconf.output_format == CMD_FORMAT_JSON) {
+		if (strcmp(row->fmt, "list") == 0) {
+			fmt_print_start_group(fctx, row->out_json,
+					JSON_TYPE_ARRAY);
+		} else if (strcmp(row->fmt, "map") == 0) {
+			fmt_print_start_group(fctx, row->out_json,
+					JSON_TYPE_MAP);
+		} else {
+			/* Simple key/values */
+			fmt_separator(fctx);
+			if (row->out_json)
+				printf("\"%s\": ", row->out_json);
+		}
+	}
+
+	fctx->unquoted = fmt_set_unquoted(fctx, row, args);
+	fmt_start_value(fctx, row);
+
+	if (row->fmt[0] == '%') {
+		vprintf(row->fmt, args);
+	} else if (strcmp(row->fmt, "bool") == 0) {
+		/* Bool is passed as int to varargs */
+		bool value = va_arg(args, int);
+
+		printf("%s", value ? "true" : "false");
+	} else if (strcmp(row->fmt, "str") == 0) {
+		const char *str = va_arg(args, const char *);
+
+		print_escaped(str);
+	} else if (strcmp(row->fmt, "uuid") == 0) {
+		const u8 *uuid = va_arg(args, const u8*);
+
+		print_uuid(uuid);
+	} else if (strcmp(row->fmt, "date-time") == 0) {
+		const time_t ts = va_arg(args, time_t);
+
+		if (ts) {
+			char tstr[256];
+			struct tm tm;
+
+			localtime_r(&ts, &tm);
+			strftime(tstr, 256, "%Y-%m-%d %X %z", &tm);
+			printf("%s", tstr);
+		} else {
+			putchar('-');
+		}
+	} else if (strcmp(row->fmt, "duration") == 0) {
+		const u64 seconds = va_arg(args, u64);
+		unsigned int days = seconds / (24 * 60 * 60);
+		unsigned int hours = (seconds % (24 * 60 * 60)) / (60 * 60);
+		unsigned int minutes = (seconds % (60 * 60)) / 60;
+		unsigned int sec = seconds % 60;
+
+		if (days > 0)
+			printf("%u days %02u:%02u:%02u", days, hours, minutes, sec);
+		else
+			printf("%02u:%02u:%02u", hours, minutes, sec);
+	} else if (strcmp(row->fmt, "list") == 0) {
+	} else if (strcmp(row->fmt, "map") == 0) {
+	} else if (strcmp(row->fmt, "qgroupid") == 0) {
+		/*
+		 * Level is u16 but promoted to int when it's a vararg, callers
+		 * should add explicit cast.
+		 */
+		const int level = va_arg(args, int);
+		const u64 id = va_arg(args, u64);
+
+		printf("%hu/%llu", level, id);
+	} else if (strcmp(row->fmt, "size-or-none") == 0) {
+		const u64 size = va_arg(args, u64);
+		const unsigned int unit_mode = va_arg(args, unsigned int);
+
+		if (size)
+			printf("%s", pretty_size_mode(size, unit_mode));
+		else
+			putchar('-');
+	} else if (strcmp(row->fmt, "size") == 0) {
+		const u64 size = va_arg(args, u64);
+		const unsigned int unit_mode = va_arg(args, unsigned int);
+
+		printf("%s", pretty_size_mode(size, unit_mode));
+	} else {
+		internal_error("unknown format %s", row->fmt);
+	}
+
+	fmt_end_value(fctx, row);
+	va_end(args);
+}

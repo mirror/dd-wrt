@@ -1,7 +1,7 @@
 #!/bin/bash
 # Test zstd compression support on a prebuilt btrfs image
 
-source "$TEST_TOP/common"
+source "$TEST_TOP/common" || exit
 
 check_prereq btrfs
 check_global_prereq md5sum
@@ -29,7 +29,7 @@ run_check_stdout "$TOP/btrfs" inspect-internal dump-super -f "$image" \
 	|| _fail "btrfs inspect-internal dump-super no incompat COMPRESS_ZSTD"
 
 # Create a temporary directory and restore the filesystem
-restore_tmp=$(mktemp --tmpdir -d btrfs-progs-022-zstd-compression.XXXXXXXXXX)
+restore_tmp=$(_mktemp_dir restore)
 run_check "$TOP/btrfs" restore "$image" "$restore_tmp"
 
 # Expect 3 files
