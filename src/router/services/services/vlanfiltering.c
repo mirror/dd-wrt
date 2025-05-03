@@ -81,6 +81,7 @@ void start_vlanfiltering(void)
 		if (!strcmp(untagged, "1"))
 			args[cnt++] = "untagged";
 		args[cnt++] = "master";
+		eval("bridge", "vlan", "add", "dev", getBridge(ifname), "vid", vlan, "self");
 		eval("bridge", "vlan", "add", "dev", ifname, "vid", vlan, args[0], args[1], args[2]);
 	}
 }
@@ -99,6 +100,7 @@ void stop_vlanfiltering(void)
 		if (!ifname || !vlan || !pvid || !untagged) {
 			break;
 		}
+		eval("bridge", "vlan", "del", "dev", getBridge(ifname), "vid", vlan);
 		eval("bridge", "vlan", "del", "dev", ifname, "vid", vlan);
 	}
 }
