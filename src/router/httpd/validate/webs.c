@@ -4911,7 +4911,7 @@ void save_networking(webs_t wp)
 			} else {
 				nvram_seti(n, 1);
 			}
-			sprintf(var, "bridgevad%d", i);
+			sprintf(var, "bridgead%d", i);
 			vlan = websGetVar(wp, var, NULL);
 			sprintf(n, "%s_ad", ifname);
 			if (!vlan || !*vlan) {
