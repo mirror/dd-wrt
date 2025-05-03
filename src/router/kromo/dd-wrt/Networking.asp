@@ -185,12 +185,12 @@ addEvent(window, "unload", function() {
 								 <legend><% tran("networking.legend"); %></legend>
 								 <% show_vlantagging(); %>
 							</fieldset><br />
-							<% show_vlanfiltering(); %>
 							<h2><% tran("networking.h22"); %></h2>
 							<fieldset>
 								<legend><% tran("networking.legend2"); %></legend>
 								<% show_bridgenames(); %>
 							</fieldset><br />
+							<% show_vlanfiltering(); %>
 							<fieldset>
 								<legend><% tran("networking.legend3"); %></legend>
 								<% show_bridgeifnames(); %>
