@@ -5124,8 +5124,8 @@ void del_vlanfilter(webs_t wp)
 			strcat(newwordlist, word);
 			strcat(newwordlist, " ");
 		} else {
-			char *port = word;
-			char *tag = strsep(&port, ">");
+			GETENTRYBYIDX(tag, word, 0);
+			GETENTRYBYIDX(port, word, 1);
 
 			if (!tag || !port)
 				break;
@@ -5191,8 +5191,8 @@ void del_vlan(webs_t wp)
 			strcat(newwordlist, word);
 			strcat(newwordlist, " ");
 		} else {
-			char *port = word;
-			char *tag = strsep(&port, ">");
+			GETENTRYBYIDX(tag, word, 0);
+			GETENTRYBYIDX(port, word, 1);
 
 			if (!tag || !port)
 				break;
