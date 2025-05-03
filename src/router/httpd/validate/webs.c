@@ -4911,6 +4911,14 @@ void save_networking(webs_t wp)
 			} else {
 				nvram_seti(n, 1);
 			}
+			sprintf(var, "bridgevad%d", i);
+			vlan = websGetVar(wp, var, NULL);
+			sprintf(n, "%s_ad", ifname);
+			if (!vlan || !*vlan) {
+				nvram_seti(n, 0);
+			} else {
+				nvram_seti(n, 1);
+			}
 		}
 		sprintf(var, "bridgemcastbr%d", i);
 		mcast = websGetVar(wp, var, NULL);
