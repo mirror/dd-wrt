@@ -1424,6 +1424,8 @@ portserv.h2="Port-Dienste";
 // ** Networking.asp **//
 
 networking.h2="VLAN Tagging";
+networking.hfiltering="Bridge VLAN Filterung";
+networking.flegend="VLAN Filter";
 networking.settings="Einstellungen";
 networking.legend="Tagging";
 networking.h22="Bridging";
