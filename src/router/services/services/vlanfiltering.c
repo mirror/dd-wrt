@@ -82,6 +82,7 @@ void start_vlanfiltering(void)
 			args[cnt++] = "untagged";
 		args[cnt++] = "master";
 		eval("bridge", "vlan", "add", "dev", getBridge(ifname), "vid", vlan, "self"); /* allow bridge to receive vlan */
+		eval("bridge", "vlan", "del", "dev", ifname, "vid", "1"); /* del default pvid */
 		eval("bridge", "vlan", "add", "dev", ifname, "vid", vlan, args[0], args[1], args[2]);
 	}
 }
