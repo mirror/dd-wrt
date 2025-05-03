@@ -156,4 +156,8 @@
  */
 #define max_t(type, x, y)	__careful_cmp((type)(x), (type)(y), >)
 
+#ifndef FS_NOCOW_FL
+#define FS_NOCOW_FL			0x00800000 /* Do not cow file */
+#endif
+
 #endif

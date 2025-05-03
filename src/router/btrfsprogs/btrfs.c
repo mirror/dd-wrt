@@ -435,14 +435,14 @@ int main(int argc, char **argv)
 #ifdef ENABLE_BOX
 	} else if (!strcmp(bname, "mkfs.btrfs")) {
 		return mkfs_main(argc, argv);
-	} else if (!strcmp(bname, "btrfs-image")) {
-		return image_main(argc, argv);
+//	} else if (!strcmp(bname, "btrfs-image")) {
+//		return image_main(argc, argv);
 	} else if (!strcmp(bname, "btrfs-convert")) {
 		return convert_main(argc, argv);
 	} else if (!strcmp(bname, "btrfstune")) {
 		return btrfstune_main(argc, argv);
-	} else if (!strcmp(bname, "btrfs-find-root")) {
-		return find_root_main(argc, argv);
+//	} else if (!strcmp(bname, "btrfs-find-root")) {
+//		return find_root_main(argc, argv);
 #endif
 	} else {
 		int shift;

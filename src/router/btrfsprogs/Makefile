@@ -82,8 +82,8 @@ DEPMKDIR = mkdir -p $(dir $@).deps/
 
 include Makefile.extrawarn
 
-EXTRA_CFLAGS :=
-EXTRA_LDFLAGS :=
+EXTRA_CFLAGS := $(LTO)
+EXTRA_LDFLAGS := $(LDLTO)
 
 DEBUG_CFLAGS_DEFAULT = -O0 -U_FORTIFY_SOURCE -ggdb3 -DINJECT
 DEBUG_CFLAGS_INTERNAL =
