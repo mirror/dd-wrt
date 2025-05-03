@@ -3952,8 +3952,10 @@ int HETxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int bw)
 
 int VHTTxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned int bw)
 {
+	int ht = 0;
 	if (vhtmcs == -1) {
 		vhtmcs = HTtoVHTindex(mcs);
+		ht = 1;
 	}
 	mcs = vhtmcs;
 
@@ -4018,29 +4020,37 @@ int VHTTxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned 
 	};
 
 	int nss = 8;
+	int clip = 9;
 	if (mcs < 70) {
+		clip = 8;
 		nss = 7;
 	}
 	if (mcs < 60) {
 		nss = 6;
 	}
 	if (mcs < 50) {
+		clip = 8;
 		nss = 5;
 	}
 	if (mcs < 40) {
+		clip = 8;
 		nss = 4;
 	}
 	if (mcs < 30) {
 		nss = 3;
 	}
 	if (mcs < 20) {
+		clip = 8;
 		nss = 2;
 	}
 	if (mcs < 10) {
+		clip = 8;
 		nss = 1;
 	}
 
 	int newmcs = mcs / nss;
+	if (ht)
+		clip = 7;
 	unsigned int bitrate;
 	int idx = 0;
 	switch (bw) {
@@ -4053,6 +4063,9 @@ int VHTTxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned 
 	case 40:
 		idx = 1;
 		break;
+	case 20:
+		if (newmcs > clip)
+		    newmcs = clip;
 	}
 
 	bitrate = base[idx][newmcs];
