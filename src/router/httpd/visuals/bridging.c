@@ -76,7 +76,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 		showOptions_trans_ext(wp, bridge_name, stpoptions, stpoptions_trans, "Off", "min-width=\"0\"");
 		websWrite(wp, "</td>");
 
-		websWrite(wp, "<td rowspan=\"%d\">", 1 + (vlan * 2));
+		websWrite(wp, "<td rowspan=\"%d\">", 1 + (vlan * 3));
 		if (vlan) {
 			sprintf(bridge_name, "bridgevlan%d", count);
 			websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s>%s</br>\n", bridge_name,
@@ -84,8 +84,12 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 				  tran_string(buf, sizeof(buf), "networking.vlan_forwarding"));
 			sprintf(bridge_name, "bridgead%d", count);
 			websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s>%s</br>\n", bridge_name,
-				  nvram_default_matchi("br0_vlan", 1, 0) ? "checked" : "",
+				  nvram_default_matchi("br0_ad", 1, 0) ? "checked" : "",
 				  tran_string(buf, sizeof(buf), "networking.vlan8021ad"));
+			sprintf(bridge_name, "bridgenoll%d", count);
+			websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s>%s</br>\n", bridge_name,
+				  nvram_default_matchi("br0_noll", 1, 0) ? "" : "checked",
+				  tran_string(buf, sizeof(buf), "networking.ll_learn"));
 		}
 		sprintf(bridge_name, "bridgemcastbr%d", count);
 		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s>%s\n", bridge_name,
@@ -148,7 +152,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 		showOptions_trans_ext(wp, bridge_name, stpoptions, stpoptions_trans, stp, "min-width=\"0\"");
 		websWrite(wp, "</td>");
 
-		websWrite(wp, "<td rowspan=\"%d\">", 1 + (vlan * 2));
+		websWrite(wp, "<td rowspan=\"%d\">", 1 + (vlan * 3));
 		if (vlan) {
 			sprintf(bridge_name, "bridgevlan%d", count);
 			char vlan_filter[32];
@@ -161,6 +165,12 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 			websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s>%s</br>\n", bridge_name,
 				  nvram_default_matchi(vlan_filter, 1, 0) ? "checked" : "",
 				  tran_string(buf, sizeof(buf), "networking.vlan8021ad"));
+
+			sprintf(bridge_name, "bridgenoll%d", count);
+			sprintf(vlan_filter, "%s_noll", bridge);
+			websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s>%s</br>\n", bridge_name,
+				  nvram_default_matchi(vlan_filter, 1, 0) ? "" : "checked",
+				  tran_string(buf, sizeof(buf), "networking.ll_learn"));
 		}
 		sprintf(bridge_name, "bridgemcastbr%d", count);
 		char mcast[32];
@@ -231,14 +241,17 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "<td>");
 		showOptions_trans_ext(wp, bridge_name, stpoptions, stpoptions_trans, "STP", "min-width=\"0\"");
 		websWrite(wp, "</td>");
-		websWrite(wp, "<td rowspan=\"%d\">", 1 + (vlan * 2));
+		websWrite(wp, "<td rowspan=\"%d\">", 1 + (vlan * 3));
 		if (vlan) {
 			sprintf(bridge_name, "bridgevlan%d", count);
 			websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\">%s</br>\n", bridge_name,
 				  tran_string(buf, sizeof(buf), "networking.vlan_forwarding"));
 			sprintf(bridge_name, "bridgead%d", count);
 			websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\">%s</br>\n", bridge_name,
-				  tran_string(buf, sizeof(buf), "networking.networking.vlan8021ad"));
+				  tran_string(buf, sizeof(buf), "networking.vlan8021ad"));
+			sprintf(bridge_name, "bridgenoll%d", count);
+			websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" checked>%s</br>\n", bridge_name,
+				  tran_string(buf, sizeof(buf), "networking.ll_learn"));
 		}
 		sprintf(bridge_name, "bridgemcastbr%d", count);
 		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\">%s\n", bridge_name,
