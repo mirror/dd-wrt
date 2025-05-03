@@ -1346,6 +1346,34 @@ long long wifi_getrate(char *ifname)
 		    nvram_nmatch("acn-mixed", "%s_net_mode", physical)) //
 			vhtmcs = mac80211_get_maxvhtmcs(physical);
 		int mcs = mac80211_get_maxmcs(physical);
+		int ant = atoi(nvram_nget("%s_txantenna", ifname));
+		/* in case the mcs index returned is bullshit. we hae seen this on ath9k based drivers, we simple use antenna config for max mcs */
+		switch (ant) {
+		case 255:
+			mcs = 63;
+			break;
+		case 127:
+			mcs = 55;
+			break;
+		case 63:
+			mcs = 47;
+			break;
+		case 31:
+			mcs = 39;
+			break;
+		case 15:
+			mcs = 31;
+			break;
+		case 7:
+			mcs = 23;
+			break;
+		case 3:
+			mcs = 15;
+			break;
+		case 1:
+			mcs = 7;
+			break;
+		}
 		int novht = 0;
 		if (is_ath10k(ifname) && has_2ghz(physical))
 			novht = nvram_nmatch("0", "%s_turbo_qam", physical);
@@ -4065,7 +4093,7 @@ int VHTTxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned 
 		break;
 	case 20:
 		if (newmcs > clip)
-		    newmcs = clip;
+			newmcs = clip;
 	}
 
 	bitrate = base[idx][newmcs];
