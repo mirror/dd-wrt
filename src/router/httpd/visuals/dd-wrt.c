@@ -5609,7 +5609,7 @@ EJ_VISIBLE void ej_show_wireless(webs_t wp, int argc, char_t **argv)
 		"<input title=\"Site survey (wlan1)\" class=\"button\" type=\"button\" name=\"site_survey\" value=\"Wireless site survey (wlan1)\" onclick=\"openWindow('Site_Survey-wlan1.asp', 760, 700)\"/>");
 	websWrite(wp, "</div>");
 	websWrite(wp, "</fieldset>");
-	websWrite(wp, "<br></br>");
+	websWrite(wp, "<br><br/>");
 #endif
 
 #ifndef HAVE_MADWIFI

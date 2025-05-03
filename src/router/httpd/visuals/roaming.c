@@ -201,7 +201,7 @@ void show_roaming(webs_t wp, char *var)
 		}
 	}
 	websWrite(wp, "</div>\n");
-	websWrite(wp, "</fieldset> </br>\n");
+	websWrite(wp, "</fieldset> <br/>\n");
 	websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(roaming.s80211k)</script></legend>");
 
 	char s80211k[64];
