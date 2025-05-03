@@ -77,15 +77,6 @@ int xhci_mvebu_mbus_init_quirk(struct usb_hcd *hcd)
 	return 0;
 }
 
-int xhci_mvebu_a3700_init_quirk(struct usb_hcd *hcd)
-{
-	struct xhci_hcd	*xhci = hcd_to_xhci(hcd);
-
-	/* Without reset on resume, the HC won't work at all */
-	xhci->quirks |= XHCI_RESET_ON_RESUME;
-	return 0;
-}
-
 int xhci_mvebu_vbus_init_quirk(void)
 {
         int gpio = BLKN_GPIO;
