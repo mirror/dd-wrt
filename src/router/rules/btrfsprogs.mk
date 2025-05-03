@@ -9,6 +9,7 @@ btrfsprogs-configure: lzo zstd zlib
 		--disable-static \
 		--enable-shared \
 		--disable-python \
+		--disable-convert \
 		--disable-backtrace \
 		--disable-documentation \
 		root_prefix=$(INSTALLDIR)/btrfsprogs \
@@ -118,7 +119,7 @@ endif
 	cd $(INSTALLDIR)/btrfsprogs/usr/bin && ln -sf btrfs mkfs.btrfs
 	cd $(INSTALLDIR)/btrfsprogs/usr/bin && ln -sf btrfs btrfstune
 	cd $(INSTALLDIR)/btrfsprogs/usr/bin && ln -sf btrfs btrfsck
-	cd $(INSTALLDIR)/btrfsprogs/usr/bin && ln -sf btrfs btrfs-convert
+#	cd $(INSTALLDIR)/btrfsprogs/usr/bin && ln -sf btrfs btrfs-convert
 #	-make -C btrfsprogs install DESTDIR=$(INSTALLDIR)/btrfsprogs prefix=/usr
 	rm -rf $(INSTALLDIR)/util-linux/usr/tmp 
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/include
