@@ -28,7 +28,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/syscall.h>
-#include <sys/stat.h>
 #include <unistd.h>
 
 /*
@@ -109,6 +108,9 @@ _statx(int fd, const char *path, int flags, unsigned int mask, void *stx)
 #endif
 #ifndef STATX_DIOALIGN
 #define	STATX_DIOALIGN	(1<<13)
+#endif
+#ifndef S_IFMT
+#define	S_IFMT 0170000
 #endif
 
 typedef struct {
