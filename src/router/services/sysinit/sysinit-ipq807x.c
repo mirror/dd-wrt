@@ -1197,6 +1197,15 @@ void start_sysinit(void)
 	}
 	insmod("qca-ssdk");
 	insmod("qca-nss-dp");
+
+/*	switch (brand) {
+	case ROUTER_LINKSYS_MR5500:
+		insmod("qca8k");
+		break;
+	case ROUTER_LINKSYS_MX5500:
+		insmod("qca8k");
+		break;
+	}*/
 	int mtd = getMTD("art");
 	if (mtd == -1)
 		mtd = getMTD("ART");
