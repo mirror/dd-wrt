@@ -34,6 +34,7 @@ int br_set_vlan_filtering(const char *br, int on)
 {
 	char s_on[32];
 	sprintf(s_on, "%d", on);
+	eval("ip", "link", "set", "dev", br, "type", "bridge", "no_linklocal_learn", nvram_default_nget("0", "%s_noll", br));
 	eval("ip", "link", "set", "dev", br, "type", "bridge", "vlan_filtering", s_on);
 	if (on) {
 		eval("ip", "link", "set", "dev", br, "type", "bridge", "vlan_default_pvid", "1");
