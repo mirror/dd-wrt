@@ -10,6 +10,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <net/if.h>
 #include <netinet/in.h>
 #include <linux/if_link.h>
@@ -23,18 +24,16 @@
 
 static unsigned int filter_index;
 
-#define VXLAN_ID_LEN 15
-
-#define __stringify_1(x...) #x
-#define __stringify(x...) __stringify_1(x)
+/* max len of "<start>-<end>" */
+#define VXLAN_ID_LEN 17
 
 static void usage(void)
 {
 	fprintf(stderr,
 		"Usage: bridge vni { add | del } vni VNI\n"
 		"		[ { group | remote } IP_ADDRESS ]\n"
-	        "		[ dev DEV ]\n"
-		"       bridge vni { show }\n"
+		"		dev DEV\n"
+		"       bridge vni { show } [ dev DEV ]\n"
 		"\n"
 		"Where:	VNI	:= 0-16777215\n"
 	       );
@@ -49,13 +48,12 @@ static int parse_vni_filter(const char *argv, struct nlmsghdr *n, int reqsize,
 	int group_type = AF_UNSPEC;
 	struct rtattr *nlvlist_e;
 	char *v;
-	int i;
 
 	if (group && is_addrtype_inet(group))
 		group_type = (group->family == AF_INET) ?  VXLAN_VNIFILTER_ENTRY_GROUP :
 						     VXLAN_VNIFILTER_ENTRY_GROUP6;
 
-	for (i = 0; vni; i++) {
+	while (vni != NULL) {
 		__u32 vni_start = 0, vni_end = 0;
 
 		v = strchr(vni, '-');
@@ -93,7 +91,7 @@ static int vni_modify(int cmd, int argc, char **argv)
 		.n.nlmsg_type = cmd,
 		.tmsg.family = PF_BRIDGE,
 	};
-	bool group_present = false;
+	bool daddr_present = false;
 	inet_prefix daddr;
 	char *vni = NULL;
 	char *d = NULL;
@@ -105,27 +103,22 @@ static int vni_modify(int cmd, int argc, char **argv)
 		} else if (strcmp(*argv, "vni") == 0) {
 			NEXT_ARG();
 			if (vni)
-				invarg("duplicate vni", *argv);
+				duparg("vni", *argv);
 			vni = *argv;
 		} else if (strcmp(*argv, "group") == 0) {
-			if (group_present)
-				invarg("duplicate group", *argv);
-			if (is_addrtype_inet_not_multi(&daddr)) {
-				fprintf(stderr, "vxlan: both group and remote");
-				fprintf(stderr, " cannot be specified\n");
-				return -1;
-			}
 			NEXT_ARG();
+			if (daddr_present)
+				duparg("destination", *argv);
 			get_addr(&daddr, *argv, AF_UNSPEC);
 			if (!is_addrtype_inet_multi(&daddr))
 				invarg("invalid group address", *argv);
-			group_present = true;
+			daddr_present = true;
 		} else if (strcmp(*argv, "remote") == 0) {
-			if (group_present)
-				invarg("duplicate group", *argv);
 			NEXT_ARG();
+			if (daddr_present)
+				duparg("destination", *argv);
 			get_addr(&daddr, *argv, AF_UNSPEC);
-			group_present = true;
+			daddr_present = true;
 		} else {
 			if (strcmp(*argv, "help") == 0)
 				usage();
@@ -139,7 +132,7 @@ static int vni_modify(int cmd, int argc, char **argv)
 	}
 
 	parse_vni_filter(vni, &req.n, sizeof(req),
-			 (group_present ? &daddr : NULL));
+			 (daddr_present ? &daddr : NULL));
 
 	req.tmsg.ifindex = ll_name_to_index(d);
 	if (req.tmsg.ifindex == 0) {
@@ -153,11 +146,11 @@ static int vni_modify(int cmd, int argc, char **argv)
 	return 0;
 }
 
-static void open_vni_port(int ifi_index, const char *fmt)
+static void open_vni_port(int ifi_index)
 {
 	open_json_object(NULL);
 	print_color_string(PRINT_ANY, COLOR_IFNAME, "ifname",
-			   "%-" __stringify(IFNAMSIZ) "s  ",
+			   "%-" textify(IFNAMSIZ) "s  ",
 			   ll_index_to_name(ifi_index));
 	open_json_array(PRINT_JSON, "vnis");
 }
@@ -166,18 +159,6 @@ static void close_vni_port(void)
 {
 	close_json_array(PRINT_JSON, NULL);
 	close_json_object();
-}
-
-static void print_range(const char *name, __u32 start, __u32 id)
-{
-	char end[64];
-
-	snprintf(end, sizeof(end), "%sEnd", name);
-
-	print_uint(PRINT_ANY, name, " %u", start);
-	if (start != id)
-		print_uint(PRINT_ANY, end, "-%-14u ", id);
-
 }
 
 static void print_vnifilter_entry_stats(struct rtattr *stats_attr)
@@ -190,8 +171,8 @@ static void print_vnifilter_entry_stats(struct rtattr *stats_attr)
 			   RTA_PAYLOAD(stats_attr), NLA_F_NESTED);
 
 	print_nl();
-	print_string(PRINT_FP, NULL, "%-" __stringify(IFNAMSIZ) "s   ", "");
-	print_string(PRINT_FP, NULL, "RX: ", "");
+	print_string(PRINT_FP, NULL, "%-" textify(IFNAMSIZ) "s    RX: ",
+		     "");
 
 	if (stb[VNIFILTER_ENTRY_STATS_RX_BYTES]) {
 		stat = rta_getattr_u64(stb[VNIFILTER_ENTRY_STATS_RX_BYTES]);
@@ -211,8 +192,8 @@ static void print_vnifilter_entry_stats(struct rtattr *stats_attr)
 	}
 
 	print_nl();
-	print_string(PRINT_FP, NULL, "%-" __stringify(IFNAMSIZ) "s   ", "");
-	print_string(PRINT_FP, NULL, "TX: ", "");
+	print_string(PRINT_FP, NULL, "%-" textify(IFNAMSIZ) "s    TX: ",
+		     "");
 
 	if (stb[VNIFILTER_ENTRY_STATS_TX_BYTES]) {
 		stat = rta_getattr_u64(stb[VNIFILTER_ENTRY_STATS_TX_BYTES]);
@@ -237,7 +218,8 @@ static void print_vni(struct rtattr *t, int ifindex)
 {
 	struct rtattr *ttb[VXLAN_VNIFILTER_ENTRY_MAX+1];
 	__u32 vni_start = 0;
-	__u32 vni_end = 0;
+	unsigned int width;
+	__u32 vni_end;
 
 	parse_rtattr_flags(ttb, VXLAN_VNIFILTER_ENTRY_MAX, RTA_DATA(t),
 			   RTA_PAYLOAD(t), NLA_F_NESTED);
@@ -247,11 +229,13 @@ static void print_vni(struct rtattr *t, int ifindex)
 
 	if (ttb[VXLAN_VNIFILTER_ENTRY_END])
 		vni_end = rta_getattr_u32(ttb[VXLAN_VNIFILTER_ENTRY_END]);
-
-	if (vni_end)
-		print_range("vni", vni_start, vni_end);
 	else
-		print_uint(PRINT_ANY, "vni", " %-14u", vni_start);
+		vni_end = vni_start;
+
+	open_json_object(NULL);
+	width = print_range("vni", vni_start, vni_end);
+	if (!is_json_context())
+		printf("%-*s  ", VXLAN_ID_LEN - width, "");
 
 	if (ttb[VXLAN_VNIFILTER_ENTRY_GROUP]) {
 		__be32 addr = rta_getattr_u32(ttb[VXLAN_VNIFILTER_ENTRY_GROUP]);
@@ -260,12 +244,12 @@ static void print_vni(struct rtattr *t, int ifindex)
 			if (IN_MULTICAST(ntohl(addr)))
 				print_string(PRINT_ANY,
 					     "group",
-					     " %s",
+					     "%s",
 					     format_host(AF_INET, 4, &addr));
 			else
 				print_string(PRINT_ANY,
 					     "remote",
-					     " %s",
+					     "%s",
 					     format_host(AF_INET, 4, &addr));
 		}
 	} else if (ttb[VXLAN_VNIFILTER_ENTRY_GROUP6]) {
@@ -276,14 +260,14 @@ static void print_vni(struct rtattr *t, int ifindex)
 			if (IN6_IS_ADDR_MULTICAST(&addr))
 				print_string(PRINT_ANY,
 					     "group",
-					     " %s",
+					     "%s",
 					     format_host(AF_INET6,
 							 sizeof(struct in6_addr),
 							 &addr));
 			else
 				print_string(PRINT_ANY,
 					     "remote",
-					     " %s",
+					     "%s",
 					     format_host(AF_INET6,
 							 sizeof(struct in6_addr),
 							 &addr));
@@ -294,14 +278,14 @@ static void print_vni(struct rtattr *t, int ifindex)
 		print_vnifilter_entry_stats(ttb[VXLAN_VNIFILTER_ENTRY_STATS]);
 
 	close_json_object();
-	print_string(PRINT_FP, NULL, "%s", _SL_);
+	print_nl();
 }
 
 int print_vnifilter_rtm(struct nlmsghdr *n, void *arg)
 {
 	struct tunnel_msg *tmsg = NLMSG_DATA(n);
 	int len = n->nlmsg_len;
-	bool first = true;
+	bool opened = false;
 	struct rtattr *t;
 	FILE *fp = arg;
 	int rem;
@@ -333,32 +317,24 @@ int print_vnifilter_rtm(struct nlmsghdr *n, void *arg)
 
 	rem = len;
 	for (t = TUNNEL_RTA(tmsg); RTA_OK(t, rem); t = RTA_NEXT(t, rem)) {
-		unsigned short rta_type = t->rta_type & NLA_TYPE_MASK;
-
-		if (rta_type != VXLAN_VNIFILTER_ENTRY)
+		if (rta_type(t) != VXLAN_VNIFILTER_ENTRY)
 			continue;
-		if (first) {
-			open_vni_port(tmsg->ifindex, "%s");
-			open_json_object(NULL);
-			first = false;
+
+		if (!opened) {
+			open_vni_port(tmsg->ifindex);
+			opened = true;
 		} else {
-			open_json_object(NULL);
-			print_string(PRINT_FP, NULL, "%-" __stringify(IFNAMSIZ) "s  ", "");
+			print_string(PRINT_FP, NULL, "%-" textify(IFNAMSIZ) "s  ", "");
 		}
 
 		print_vni(t, tmsg->ifindex);
 	}
-	close_vni_port();
 
-	print_string(PRINT_FP, NULL, "%s", _SL_);
+	if (opened)
+		close_vni_port();
 
 	fflush(stdout);
 	return 0;
-}
-
-static int print_vnifilter_rtm_filter(struct nlmsghdr *n, void *arg)
-{
-	return print_vnifilter_rtm(n, arg);
 }
 
 static int vni_show(int argc, char **argv)
@@ -393,15 +369,12 @@ static int vni_show(int argc, char **argv)
 		exit(1);
 	}
 
-	if (!is_json_context()) {
-		printf("%-" __stringify(IFNAMSIZ) "s  %-"
-		       __stringify(VXLAN_ID_LEN) "s  %-"
-		       __stringify(15) "s",
-		       "dev", "vni", "group/remote");
-		printf("\n");
-	}
+	if (!is_json_context())
+		printf("%-" textify(IFNAMSIZ) "s  %-"
+		       textify(VXLAN_ID_LEN) "s  group/remote\n", "dev",
+		       "vni");
 
-	ret = rtnl_dump_filter(&rth, print_vnifilter_rtm_filter, NULL);
+	ret = rtnl_dump_filter(&rth, print_vnifilter_rtm, NULL);
 	if (ret < 0) {
 		fprintf(stderr, "Dump ternminated\n");
 		exit(1);
@@ -420,7 +393,8 @@ int do_vni(int argc, char **argv)
 	if (argc > 0) {
 		if (strcmp(*argv, "add") == 0)
 			return vni_modify(RTM_NEWTUNNEL, argc-1, argv+1);
-		if (strcmp(*argv, "delete") == 0)
+		if (strcmp(*argv, "delete") == 0 ||
+		    strcmp(*argv, "del") == 0)
 			return vni_modify(RTM_DELTUNNEL, argc-1, argv+1);
 		if (strcmp(*argv, "show") == 0 ||
 		    strcmp(*argv, "lst") == 0 ||

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0
-BROBJ = bridge.o fdb.o monitor.o link.o mdb.o vlan.o vni.o utils.o json_print.o json_writer.o color.o rt_names.o libnetlink.o ll_proto.o ll_addr.o ll_map.o mpls_ntop.o mpls_pton.o ax25_ntop.o netrom_ntop.o rose_ntop.o namespace.o
+BROBJ = bridge.o fdb.o monitor.o link.o mdb.o vlan.o vni.o utils.o json_print.o json_writer.o color.o rt_names.o libnetlink.o ll_proto.o ll_addr.o ll_map.o mpls_ntop.o mpls_pton.o ax25_ntop.o netrom_ntop.o rose_ntop.o namespace.o mst.o
 
-CFLAGS += -Iinclude -Iinclude/uapi -D_GNU_SOURCE $(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF
+CFLAGS += -Iinclude -Iinclude/uapi -D_GNU_SOURCE $(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF -DCONF_COLOR=COLOR_OPT_AUTO
 CFLAGS += -DHAVE_SETNS
 CFLAGS += -DHAVE_HANDLE_AT
 #HAVE_SELINUX:=y
@@ -25,7 +25,7 @@ HAVE_BERKELEY_DB:=y
 all: bridge
 
 bridge: $(BROBJ) $(LIBNETLINK)
-	$(CC) $^ $(LDFLAGS) $(LDLIBS) -o $@
+	$(CC) $^ $(LDFLAGS) $(CFLAGS) $(LDLIBS) -o $@
 
 install: all
 	mkdir -p $(INSTALLDIR)/usr/sbin

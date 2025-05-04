@@ -111,6 +111,10 @@ int nl_dump_ext_ack(const struct nlmsghdr *nlh, nl_ext_ack_fn_t errfn)
 			err_nlh = &err->msg;
 	}
 
+	if (tb[NLMSGERR_ATTR_MISS_TYPE])
+		fprintf(stderr, "Missing required attribute type %u\n",
+			mnl_attr_get_u32(tb[NLMSGERR_ATTR_MISS_TYPE]));
+
 	if (errfn)
 		return errfn(msg, off, err_nlh);
 
@@ -197,7 +201,6 @@ int rtnl_open_byproto(struct rtnl_handle *rth, unsigned int subscriptions,
 	rth->proto = protocol;
 	rth->fd = socket(AF_NETLINK, SOCK_RAW | SOCK_CLOEXEC, protocol);
 	if (rth->fd < 0) {
-		fprintf(stderr, "protocol %d\n", protocol);
 		perror("Cannot open netlink socket");
 		return -1;
 	}
@@ -728,12 +731,14 @@ int rtnl_dump_request_n(struct rtnl_handle *rth, struct nlmsghdr *n)
 static int rtnl_dump_done(struct nlmsghdr *h,
 			  const struct rtnl_dump_filter_arg *a)
 {
-	int len = *(int *)NLMSG_DATA(h);
+	int len;
 
 	if (h->nlmsg_len < NLMSG_LENGTH(sizeof(int))) {
 		fprintf(stderr, "DONE truncated\n");
 		return -1;
 	}
+
+	len = *(int *)NLMSG_DATA(h);
 
 	if (len < 0) {
 		errno = -len;

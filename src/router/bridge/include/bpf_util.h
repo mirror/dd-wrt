@@ -1,10 +1,6 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 /*
  * bpf_util.h	BPF common code
- *
- *		This program is free software; you can distribute it and/or
- *		modify it under the terms of the GNU General Public License
- *		as published by the Free Software Foundation; either version
- *		2 of the License, or (at your option) any later version.
  *
  * Authors:	Daniel Borkmann <daniel@iogearbox.net>
  *		Jiri Pirko <jiri@resnulli.us>
@@ -277,10 +273,10 @@ void bpf_print_ops(struct rtattr *bpf_ops, __u16 len);
 
 int bpf_prog_load_dev(enum bpf_prog_type type, const struct bpf_insn *insns,
 		      size_t size_insns, const char *license, __u32 ifindex,
-		      char *log, size_t size_log);
+		      char *log, size_t size_log, bool verbose);
 int bpf_program_load(enum bpf_prog_type type, const struct bpf_insn *insns,
 		     size_t size_insns, const char *license, char *log,
-		     size_t size_log);
+		     size_t size_log, bool verbose);
 
 int bpf_prog_attach_fd(int prog_fd, int target_fd, enum bpf_attach_type type);
 int bpf_prog_detach_fd(int target_fd, enum bpf_attach_type type);

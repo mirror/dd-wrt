@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <endian.h>
 #include <asm/types.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
@@ -260,6 +261,26 @@ static inline __u64 rta_getattr_u64(const struct rtattr *rta)
 	memcpy(&tmp, RTA_DATA(rta), sizeof(__u64));
 	return tmp;
 }
+static inline __u64 rta_getattr_uint(const struct rtattr *rta)
+{
+	switch (RTA_PAYLOAD(rta)) {
+	case sizeof(__u8):
+		return rta_getattr_u8(rta);
+	case sizeof(__u16):
+		return rta_getattr_u16(rta);
+	case sizeof(__u32):
+		return rta_getattr_u32(rta);
+	case sizeof(__u64):
+		return rta_getattr_u64(rta);
+	}
+	return -1ULL;
+}
+
+static inline __be64 rta_getattr_be64(const struct rtattr *rta)
+{
+	return htobe64(rta_getattr_u64(rta));
+}
+
 static inline __s32 rta_getattr_s32(const struct rtattr *rta)
 {
 	return *(__s32 *)RTA_DATA(rta);
@@ -274,6 +295,10 @@ static inline __s64 rta_getattr_s64(const struct rtattr *rta)
 static inline const char *rta_getattr_str(const struct rtattr *rta)
 {
 	return (const char *)RTA_DATA(rta);
+}
+static inline int rta_type(const struct rtattr *rta)
+{
+	return rta->rta_type & NLA_TYPE_MASK;
 }
 
 int rtnl_listen_all_nsid(struct rtnl_handle *);
