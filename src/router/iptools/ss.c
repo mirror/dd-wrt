@@ -24,6 +24,7 @@
 #include <stdbool.h>
 #include <limits.h>
 #include <stdarg.h>
+#include <ctype.h>
 
 #include "ss_util.h"
 #include "utils.h"
@@ -33,6 +34,7 @@
 #include "version.h"
 #include "rt_names.h"
 #include "cg_map.h"
+#include "selinux.h"
 
 #include <linux/tcp.h>
 #include <linux/unix_diag.h>
@@ -49,6 +51,26 @@
 #include <linux/tipc_sockets_diag.h>
 #include <linux/tls.h>
 #include <linux/mptcp.h>
+
+#ifdef HAVE_LIBBPF
+/* If libbpf is new enough (0.6+), support for pretty-printing BPF socket-local
+ * storage is enabled, otherwise we emit a warning and disable it.
+ * ENABLE_BPF_SKSTORAGE_SUPPORT is only used to gate the socket-local storage
+ * feature, so this wouldn't prevent any feature relying on HAVE_LIBBPF to be
+ * usable.
+ */
+#define ENABLE_BPF_SKSTORAGE_SUPPORT
+
+#include <bpf/bpf.h>
+#include <bpf/btf.h>
+#include <bpf/libbpf.h>
+#include <linux/btf.h>
+
+#if ((LIBBPF_MAJOR_VERSION == 0) && (LIBBPF_MINOR_VERSION < 6))
+#warning "libbpf version 0.6 or later is required, disabling BPF socket-local storage support"
+#undef ENABLE_BPF_SKSTORAGE_SUPPORT
+#endif
+#endif
 
 #if HAVE_RPC
 #include <rpc/rpc.h>
@@ -71,42 +93,10 @@
 #define BUF_CHUNKS_MAX 5	/* Maximum number of allocated buffer chunks */
 #define LEN_ALIGN(x) (((x) + 1) & ~1)
 
-#if HAVE_SELINUX
-#include <selinux/selinux.h>
-#else
-/* Stubs for SELinux functions */
-static int is_selinux_enabled(void)
-{
-	return -1;
-}
-
-static int getpidcon(pid_t pid, char **context)
-{
-	*context = NULL;
-	return -1;
-}
-
-static int getfilecon(char *path, char **context)
-{
-	*context = NULL;
-	return -1;
-}
-
-static int security_get_initial_context(char *name,  char **context)
-{
-	*context = NULL;
-	return -1;
-}
-
-static void freecon(char *context)
-{
-	free(context);
-}
-#endif
-
 int preferred_family = AF_UNSPEC;
 static int show_options;
 int show_details;
+static int show_queues = 1;
 static int show_processes;
 static int show_threads;
 static int show_mem;
@@ -132,8 +122,8 @@ enum col_id {
 	COL_SERV,
 	COL_RADDR,
 	COL_RSERV,
-	COL_EXT,
 	COL_PROC,
+	COL_EXT,
 	COL_MAX
 };
 
@@ -242,6 +232,8 @@ enum {
 	SS_LAST_ACK,
 	SS_LISTEN,
 	SS_CLOSING,
+	SS_NEW_SYN_RECV, /* Kernel only value, not for use in user space */
+	SS_BOUND_INACTIVE,
 	SS_MAX
 };
 
@@ -487,19 +479,6 @@ static void filter_merge_defaults(struct filter *f)
 	}
 }
 
-static FILE *generic_proc_open(const char *env, const char *name)
-{
-	const char *p = getenv(env);
-	char store[128];
-
-	if (!p) {
-		p = getenv("PROC_ROOT") ? : "/proc";
-		snprintf(store, sizeof(store)-1, "%s/%s", p, name);
-		p = store;
-	}
-
-	return fopen(p, "r");
-}
 #define net_tcp_open()		generic_proc_open("PROC_NET_TCP", "net/tcp")
 #define net_tcp6_open()		generic_proc_open("PROC_NET_TCP6", "net/tcp6")
 #define net_udp_open()		generic_proc_open("PROC_NET_UDP", "net/udp")
@@ -627,8 +606,9 @@ static void user_ent_hash_build_task(char *path, int pid, int tid)
 
 			fp = fopen(stat, "r");
 			if (fp) {
-				if (fscanf(fp, "%*d (%[^)])", task) < 1)
+				if (fscanf(fp, "%*d (%[^)])", task) < 1) {
 					; /* ignore */
+				}
 				fclose(fp);
 			}
 		}
@@ -709,6 +689,7 @@ static void user_ent_hash_build(void)
 				snprintf(name + nameoff, sizeof(name) - nameoff, "%d/", tid);
 				user_ent_hash_build_task(name, pid, tid);
 			}
+			closedir(task_dir);
 		}
 	}
 	closedir(dir);
@@ -895,6 +876,8 @@ struct tcpstat {
 	double		    min_rtt;
 	unsigned int 	    rcv_ooopack;
 	unsigned int	    snd_wnd;
+	unsigned int	    rcv_wnd;
+	unsigned int	    rehash;
 	int		    rcv_space;
 	unsigned int        rcv_ssthresh;
 	unsigned long long  busy_time;
@@ -903,6 +886,7 @@ struct tcpstat {
 	unsigned long long  bytes_sent;
 	unsigned long long  bytes_retrans;
 	bool		    has_ts_opt;
+	bool		    has_usec_ts_opt;
 	bool		    has_sack_opt;
 	bool		    has_ecn_opt;
 	bool		    has_ecnseen_opt;
@@ -1059,11 +1043,11 @@ static int buf_update(int len)
 }
 
 /* Append content to buffer as part of the current field */
-__attribute__((format(printf, 1, 2)))
-static void out(const char *fmt, ...)
+__attribute__((format(printf, 1, 0)))
+static void vout(const char *fmt, va_list args)
 {
 	struct column *f = current_field;
-	va_list args;
+	va_list _args;
 	char *pos;
 	int len;
 
@@ -1074,16 +1058,25 @@ static void out(const char *fmt, ...)
 		buffer.head = buf_chunk_new();
 
 again:	/* Append to buffer: if we have a new chunk, print again */
+	va_copy(_args, args);
 
 	pos = buffer.cur->data + buffer.cur->len;
-	va_start(args, fmt);
 
 	/* Limit to tail room. If we hit the limit, buf_update() will tell us */
-	len = vsnprintf(pos, buf_chunk_avail(buffer.tail), fmt, args);
-	va_end(args);
+	len = vsnprintf(pos, buf_chunk_avail(buffer.tail), fmt, _args);
 
 	if (buf_update(len))
 		goto again;
+}
+
+__attribute__((format(printf, 1, 2)))
+static void out(const char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	vout(fmt, args);
+	va_end(args);
 }
 
 static int print_left_spacing(struct column *f, int stored, int printed)
@@ -1183,7 +1176,9 @@ static void buf_free_all(void)
 	buffer.chunks = 0;
 }
 
-/* Get current screen width, returns -1 if TIOCGWINSZ fails */
+/* Get current screen width. Returns -1 if TIOCGWINSZ fails and there's
+ * no COLUMNS variable in the environment.
+ */
 static int render_screen_width(void)
 {
 	int width = -1;
@@ -1194,6 +1189,17 @@ static int render_screen_width(void)
 		if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) != -1) {
 			if (w.ws_col > 0)
 				width = w.ws_col;
+		}
+	}
+
+	if (width == -1) {
+		const char *p = getenv("COLUMNS");
+		int c;
+
+		if (p) {
+			c = atoi(p);
+			if (c > 0)
+				width = c;
 		}
 	}
 
@@ -1409,6 +1415,8 @@ static void sock_state_print(struct sockstat *s)
 		[SS_LAST_ACK] = "LAST-ACK",
 		[SS_LISTEN] =	"LISTEN",
 		[SS_CLOSING] = "CLOSING",
+		[SS_NEW_SYN_RECV] = "UNDEF", /* Never returned by kernel */
+		[SS_BOUND_INACTIVE] = "UNDEF", /* Never returned by kernel */
 	};
 
 	switch (s->local.family) {
@@ -1448,10 +1456,13 @@ static void sock_state_print(struct sockstat *s)
 		out("%s", sstate_name[s->state]);
 	}
 
-	field_set(COL_RECVQ);
-	out("%-6d", s->rq);
-	field_set(COL_SENDQ);
-	out("%-6d", s->wq);
+	if (show_queues) {
+		field_set(COL_RECVQ);
+		out("%-6d", s->rq);
+		field_set(COL_SENDQ);
+		out("%-6d", s->wq);
+	}
+
 	field_set(COL_ADDR);
 }
 
@@ -1505,7 +1516,7 @@ static const char *print_ms_timer(unsigned int timeout)
 		sprintf(buf+strlen(buf), "%d%s", secs, msecs ? "." : "sec");
 	}
 	if (msecs)
-		sprintf(buf+strlen(buf), "%03dms", msecs);
+		sprintf(buf+strlen(buf), "%03d%s", msecs, secs ? "sec" : "ms");
 	return buf;
 }
 
@@ -1732,7 +1743,7 @@ static void inet_addr_print(const inet_prefix *a, int port,
 
 struct aafilter {
 	inet_prefix	addr;
-	int		port;
+	long		port;
 	unsigned int	iface;
 	__u32		mark;
 	__u32		mask;
@@ -2255,7 +2266,7 @@ void *parse_hostcond(char *addr, bool is_port)
 		port = find_port(addr, is_port);
 		if (port) {
 			if (*port && strcmp(port, "*")) {
-				if (get_integer(&a.port, port, 0)) {
+				if (get_long(&a.port, port, 0)) {
 					if ((a.port = xll_name_to_index(port)) <= 0)
 						return NULL;
 				}
@@ -2278,7 +2289,7 @@ void *parse_hostcond(char *addr, bool is_port)
 		port = find_port(addr, is_port);
 		if (port) {
 			if (*port && strcmp(port, "*")) {
-				if (get_integer(&a.port, port, 0)) {
+				if (get_long(&a.port, port, 0)) {
 					if (strcmp(port, "kernel") == 0)
 						a.port = 0;
 					else
@@ -2334,7 +2345,7 @@ void *parse_hostcond(char *addr, bool is_port)
 			*port++ = 0;
 
 		if (*port && *port != '*') {
-			if (get_integer(&a.port, port, 0)) {
+			if (get_long(&a.port, port, 0)) {
 				struct servent *se1 = NULL;
 				struct servent *se2 = NULL;
 
@@ -2450,6 +2461,8 @@ static void proc_ctx_print(struct sockstat *s)
 			free(buf);
 		}
 	}
+
+	field_next();
 }
 
 static void inet_stats_print(struct sockstat *s, bool v6only)
@@ -2590,6 +2603,8 @@ static void tcp_stats_print(struct tcpstat *s)
 
 	if (s->has_ts_opt)
 		out(" ts");
+	if (s->has_usec_ts_opt)
+		out(" usec_ts");
 	if (s->has_sack_opt)
 		out(" sack");
 	if (s->has_ecn_opt)
@@ -2741,6 +2756,10 @@ static void tcp_stats_print(struct tcpstat *s)
 		out(" rcv_ooopack:%u", s->rcv_ooopack);
 	if (s->snd_wnd)
 		out(" snd_wnd:%u", s->snd_wnd);
+	if (s->rcv_wnd)
+		out(" rcv_wnd:%u", s->rcv_wnd);
+	if (s->rehash)
+		out(" rehash:%u", s->rehash);
 }
 
 static void tcp_timer_print(struct tcpstat *s)
@@ -2906,6 +2925,20 @@ static void print_skmeminfo(struct rtattr *tb[], int attrtype)
 	out(")");
 }
 
+/* like lib/utils.c print_escape_buf(), but use out(), not printf()! */
+static void out_escape_buf(const __u8 *buf, size_t len, const char *escape)
+{
+	size_t i;
+
+	for (i = 0; i < len; ++i) {
+		if (isprint(buf[i]) && buf[i] != '\\' &&
+		    !strchr(escape, buf[i]))
+			out("%c", buf[i]);
+		else
+			out("\\%03o", buf[i]);
+	}
+}
+
 static void print_md5sig(struct tcp_diag_md5sig *sig)
 {
 	out("%s/%d=",
@@ -2913,7 +2946,7 @@ static void print_md5sig(struct tcp_diag_md5sig *sig)
 			sig->tcpm_family == AF_INET6 ? 16 : 4,
 			&sig->tcpm_addr),
 	    sig->tcpm_prefixlen);
-	print_escape_buf(sig->tcpm_key, sig->tcpm_keylen, " ,");
+	out_escape_buf(sig->tcpm_key, sig->tcpm_keylen, " ,");
 }
 
 static void tcp_tls_version(struct rtattr *attr)
@@ -2982,12 +3015,6 @@ static void tcp_tls_conf(const char *name, struct rtattr *attr)
 	}
 }
 
-static void tcp_tls_zc_sendfile(struct rtattr *attr)
-{
-	if (attr)
-		out(" zc_ro_tx");
-}
-
 static void mptcp_subflow_info(struct rtattr *tb[])
 {
 	u_int32_t flags = 0;
@@ -3028,16 +3055,16 @@ static void mptcp_subflow_info(struct rtattr *tb[])
 		    rta_getattr_u32(tb[MPTCP_SUBFLOW_ATTR_TOKEN_LOC]),
 		    rta_getattr_u8(tb[MPTCP_SUBFLOW_ATTR_ID_LOC]));
 	if (tb[MPTCP_SUBFLOW_ATTR_MAP_SEQ])
-		out(" seq:%llx",
+		out(" seq:%llu",
 		    rta_getattr_u64(tb[MPTCP_SUBFLOW_ATTR_MAP_SEQ]));
 	if (tb[MPTCP_SUBFLOW_ATTR_MAP_SFSEQ])
-		out(" sfseq:%x",
+		out(" sfseq:%u",
 		    rta_getattr_u32(tb[MPTCP_SUBFLOW_ATTR_MAP_SFSEQ]));
 	if (tb[MPTCP_SUBFLOW_ATTR_SSN_OFFSET])
-		out(" ssnoff:%x",
+		out(" ssnoff:%u",
 		    rta_getattr_u32(tb[MPTCP_SUBFLOW_ATTR_SSN_OFFSET]));
 	if (tb[MPTCP_SUBFLOW_ATTR_MAP_DATALEN])
-		out(" maplen:%x",
+		out(" maplen:%u",
 		    rta_getattr_u32(tb[MPTCP_SUBFLOW_ATTR_MAP_DATALEN]));
 }
 
@@ -3067,6 +3094,7 @@ static void tcp_show_info(const struct nlmsghdr *nlh, struct inet_diag_msg *r,
 
 		if (show_options) {
 			s.has_ts_opt	   = TCPI_HAS_OPT(info, TCPI_OPT_TIMESTAMPS);
+			s.has_usec_ts_opt  = TCPI_HAS_OPT(info, TCPI_OPT_USEC_TS);
 			s.has_sack_opt	   = TCPI_HAS_OPT(info, TCPI_OPT_SACK);
 			s.has_ecn_opt	   = TCPI_HAS_OPT(info, TCPI_OPT_ECN);
 			s.has_ecnseen_opt  = TCPI_HAS_OPT(info, TCPI_OPT_ECN_SEEN);
@@ -3183,6 +3211,8 @@ static void tcp_show_info(const struct nlmsghdr *nlh, struct inet_diag_msg *r,
 		s.bytes_retrans = info->tcpi_bytes_retrans;
 		s.rcv_ooopack = info->tcpi_rcv_ooopack;
 		s.snd_wnd = info->tcpi_snd_wnd;
+		s.rcv_wnd = info->tcpi_rcv_wnd;
+		s.rehash = info->tcpi_rehash;
 		tcp_stats_print(&s);
 		free(s.dctcp);
 		free(s.bbr_info);
@@ -3218,7 +3248,10 @@ static void tcp_show_info(const struct nlmsghdr *nlh, struct inet_diag_msg *r,
 			tcp_tls_cipher(tlsinfo[TLS_INFO_CIPHER]);
 			tcp_tls_conf("rxconf", tlsinfo[TLS_INFO_RXCONF]);
 			tcp_tls_conf("txconf", tlsinfo[TLS_INFO_TXCONF]);
-			tcp_tls_zc_sendfile(tlsinfo[TLS_INFO_ZC_RO_TX]);
+			if (!!tlsinfo[TLS_INFO_ZC_RO_TX])
+				out(" zc_ro_tx");
+			if (!!tlsinfo[TLS_INFO_RX_NO_PAD])
+				out(" no_pad_rx");
 		}
 		if (ulpinfo[INET_ULP_INFO_MPTCP]) {
 			struct rtattr *sfinfo[MPTCP_SUBFLOW_ATTR_MAX + 1] =
@@ -3234,17 +3267,17 @@ static void tcp_show_info(const struct nlmsghdr *nlh, struct inet_diag_msg *r,
 static void mptcp_stats_print(struct mptcp_info *s)
 {
 	if (s->mptcpi_subflows)
-		out(" subflows:%d", s->mptcpi_subflows);
+		out(" subflows:%u", s->mptcpi_subflows);
 	if (s->mptcpi_add_addr_signal)
-		out(" add_addr_signal:%d", s->mptcpi_add_addr_signal);
+		out(" add_addr_signal:%u", s->mptcpi_add_addr_signal);
 	if (s->mptcpi_add_addr_accepted)
-		out(" add_addr_accepted:%d", s->mptcpi_add_addr_accepted);
+		out(" add_addr_accepted:%u", s->mptcpi_add_addr_accepted);
 	if (s->mptcpi_subflows_max)
-		out(" subflows_max:%d", s->mptcpi_subflows_max);
+		out(" subflows_max:%u", s->mptcpi_subflows_max);
 	if (s->mptcpi_add_addr_signal_max)
-		out(" add_addr_signal_max:%d", s->mptcpi_add_addr_signal_max);
+		out(" add_addr_signal_max:%u", s->mptcpi_add_addr_signal_max);
 	if (s->mptcpi_add_addr_accepted_max)
-		out(" add_addr_accepted_max:%d", s->mptcpi_add_addr_accepted_max);
+		out(" add_addr_accepted_max:%u", s->mptcpi_add_addr_accepted_max);
 	if (s->mptcpi_flags & MPTCP_INFO_FLAG_FALLBACK)
 		out(" fallback");
 	if (s->mptcpi_flags & MPTCP_INFO_FLAG_REMOTE_KEY_RECEIVED)
@@ -3252,11 +3285,35 @@ static void mptcp_stats_print(struct mptcp_info *s)
 	if (s->mptcpi_token)
 		out(" token:%x", s->mptcpi_token);
 	if (s->mptcpi_write_seq)
-		out(" write_seq:%llx", s->mptcpi_write_seq);
+		out(" write_seq:%llu", s->mptcpi_write_seq);
 	if (s->mptcpi_snd_una)
-		out(" snd_una:%llx", s->mptcpi_snd_una);
+		out(" snd_una:%llu", s->mptcpi_snd_una);
 	if (s->mptcpi_rcv_nxt)
-		out(" rcv_nxt:%llx", s->mptcpi_rcv_nxt);
+		out(" rcv_nxt:%llu", s->mptcpi_rcv_nxt);
+	if (s->mptcpi_local_addr_used)
+		out(" local_addr_used:%u", s->mptcpi_local_addr_used);
+	if (s->mptcpi_local_addr_max)
+		out(" local_addr_max:%u", s->mptcpi_local_addr_max);
+	if (s->mptcpi_csum_enabled)
+		out(" csum_enabled:%u", s->mptcpi_csum_enabled);
+	if (s->mptcpi_retransmits)
+		out(" retransmits:%u", s->mptcpi_retransmits);
+	if (s->mptcpi_bytes_retrans)
+		out(" bytes_retrans:%llu", s->mptcpi_bytes_retrans);
+	if (s->mptcpi_bytes_sent)
+		out(" bytes_sent:%llu", s->mptcpi_bytes_sent);
+	if (s->mptcpi_bytes_received)
+		out(" bytes_received:%llu", s->mptcpi_bytes_received);
+	if (s->mptcpi_bytes_acked)
+		out(" bytes_acked:%llu", s->mptcpi_bytes_acked);
+	if (s->mptcpi_subflows_total)
+		out(" subflows_total:%u", s->mptcpi_subflows_total);
+	if (s->mptcpi_last_data_sent)
+		out(" last_data_sent:%u", s->mptcpi_last_data_sent);
+	if (s->mptcpi_last_data_recv)
+		out(" last_data_recv:%u", s->mptcpi_last_data_recv);
+	if (s->mptcpi_last_ack_recv)
+		out(" last_ack_recv:%u", s->mptcpi_last_ack_recv);
 }
 
 static void mptcp_show_info(const struct nlmsghdr *nlh, struct inet_diag_msg *r,
@@ -3377,6 +3434,319 @@ static void parse_diag_msg(struct nlmsghdr *nlh, struct sockstat *s)
 	memcpy(s->remote.data, r->id.idiag_dst, s->local.bytelen);
 }
 
+#ifdef ENABLE_BPF_SKSTORAGE_SUPPORT
+
+#define MAX_NR_BPF_MAP_ID_OPTS 32
+
+struct btf;
+
+static struct bpf_map_opts {
+	unsigned int nr_maps;
+	struct bpf_sk_storage_map_info {
+		unsigned int id;
+		int fd;
+		struct bpf_map_info info;
+		struct btf *btf;
+		struct btf_dump *dump;
+	} maps[MAX_NR_BPF_MAP_ID_OPTS];
+	bool show_all;
+} bpf_map_opts;
+
+static void bpf_map_opts_mixed_error(void)
+{
+	fprintf(stderr,
+		"ss: --bpf-maps and --bpf-map-id cannot be used together\n");
+}
+
+static int bpf_maps_opts_load_btf(struct bpf_map_info *info, struct btf **btf)
+{
+	if (info->btf_value_type_id) {
+		*btf = btf__load_from_kernel_by_id(info->btf_id);
+		if (!*btf) {
+			fprintf(stderr, "ss: failed to load BTF for map ID %u\n",
+				info->id);
+			return -1;
+		}
+	} else {
+		*btf = NULL;
+	}
+
+	return 0;
+}
+
+__attribute__((format(printf, 2, 0)))
+static void out_bpf_sk_storage_print_fn(void *ctx, const char *fmt, va_list args)
+{
+	vout(fmt, args);
+}
+
+static int bpf_map_opts_load_info(unsigned int map_id)
+{
+	struct btf_dump_opts dopts = {
+		.sz = sizeof(struct btf_dump_opts)
+	};
+	struct bpf_map_info info = {};
+	uint32_t len = sizeof(info);
+	struct btf_dump *dump;
+	struct btf *btf;
+	int fd;
+	int r;
+
+	if (bpf_map_opts.nr_maps == MAX_NR_BPF_MAP_ID_OPTS) {
+		fprintf(stderr,
+			"ss: too many (> %u) BPF socket-local storage maps found, skipping map ID %u\n",
+			MAX_NR_BPF_MAP_ID_OPTS, map_id);
+		return 0;
+	}
+
+	fd = bpf_map_get_fd_by_id(map_id);
+	if (fd < 0) {
+		if (errno == -ENOENT)
+			return 0;
+
+		fprintf(stderr, "ss: cannot get fd for BPF map ID %u%s\n",
+			map_id, errno == EPERM ?
+			": missing root permissions, CAP_BPF, or CAP_SYS_ADMIN" : "");
+		return -1;
+	}
+
+	r = bpf_obj_get_info_by_fd(fd, &info, &len);
+	if (r) {
+		fprintf(stderr, "ss: failed to get info for BPF map ID %u\n",
+			map_id);
+		close(fd);
+		return -1;
+	}
+
+	if (info.type != BPF_MAP_TYPE_SK_STORAGE) {
+		fprintf(stderr,
+			"ss: BPF map with ID %s has type ID %d, expecting %d ('sk_storage')\n",
+			optarg, info.type, BPF_MAP_TYPE_SK_STORAGE);
+		close(fd);
+		return -1;
+	}
+
+	r = bpf_maps_opts_load_btf(&info, &btf);
+	if (r) {
+		close(fd);
+		return -1;
+	}
+
+	dump = btf_dump__new(btf, out_bpf_sk_storage_print_fn, NULL, &dopts);
+	if (!dump) {
+		btf__free(btf);
+		close(fd);
+		fprintf(stderr, "Failed to create btf_dump object\n");
+		return -1;
+	}
+
+	bpf_map_opts.maps[bpf_map_opts.nr_maps].id = map_id;
+	bpf_map_opts.maps[bpf_map_opts.nr_maps].fd = fd;
+	bpf_map_opts.maps[bpf_map_opts.nr_maps].info = info;
+	bpf_map_opts.maps[bpf_map_opts.nr_maps].btf = btf;
+	bpf_map_opts.maps[bpf_map_opts.nr_maps++].dump = dump;
+
+	return 0;
+}
+
+static struct bpf_sk_storage_map_info *bpf_map_opts_get_info(
+	unsigned int map_id)
+{
+	unsigned int i;
+	int r;
+
+	for (i = 0; i < bpf_map_opts.nr_maps; ++i) {
+		if (bpf_map_opts.maps[i].id == map_id)
+			return &bpf_map_opts.maps[i];
+	}
+
+	r = bpf_map_opts_load_info(map_id);
+	if (r)
+		return NULL;
+
+	return &bpf_map_opts.maps[bpf_map_opts.nr_maps - 1];
+}
+
+static int bpf_map_opts_add_id(const char *optarg)
+{
+	size_t optarg_len;
+	unsigned long id;
+	char *end;
+
+	if (bpf_map_opts.show_all) {
+		bpf_map_opts_mixed_error();
+		return -1;
+	}
+
+	optarg_len = strlen(optarg);
+	id = strtoul(optarg, &end, 0);
+	if (end != optarg + optarg_len || id == 0 || id >= UINT32_MAX) {
+		fprintf(stderr, "ss: invalid BPF map ID %s\n", optarg);
+		return -1;
+	}
+
+	/* Force lazy loading of the map's data. */
+	if (!bpf_map_opts_get_info(id))
+		return -1;
+
+	return 0;
+}
+
+static void bpf_map_opts_destroy(void)
+{
+	int i;
+
+	for (i = 0; i < bpf_map_opts.nr_maps; ++i) {
+		btf_dump__free(bpf_map_opts.maps[i].dump);
+		btf__free(bpf_map_opts.maps[i].btf);
+		close(bpf_map_opts.maps[i].fd);
+	}
+}
+
+static struct rtattr *bpf_map_opts_alloc_rta(void)
+{
+	struct rtattr *stgs_rta, *fd_rta;
+	size_t total_size;
+	unsigned int i;
+	void *buf;
+
+	/* If bpf_map_opts.show_all == true, we will send an empty message to
+	 * the kernel, which will return all the socket-local data attached to
+	 * a socket, no matter their map ID
+	 */
+	if (bpf_map_opts.show_all) {
+		total_size = RTA_LENGTH(0);
+	} else {
+		total_size = RTA_LENGTH(RTA_LENGTH(sizeof(int)) *
+					bpf_map_opts.nr_maps);
+	}
+
+	buf = malloc(total_size);
+	if (!buf)
+		return NULL;
+
+	stgs_rta = buf;
+	stgs_rta->rta_type = INET_DIAG_REQ_SK_BPF_STORAGES | NLA_F_NESTED;
+	stgs_rta->rta_len = total_size;
+
+	/* If inet_show_netlink() retries fetching socket data, nr_maps might
+	 * be different from 0, even with show_all == true, so we return early
+	 * to avoid inserting specific map IDs into the request.
+	 */
+	if (bpf_map_opts.show_all)
+		return stgs_rta;
+
+	buf = RTA_DATA(stgs_rta);
+	for (i = 0; i < bpf_map_opts.nr_maps; i++) {
+		int *fd;
+
+		fd_rta = buf;
+		fd_rta->rta_type = SK_DIAG_BPF_STORAGE_REQ_MAP_FD;
+		fd_rta->rta_len = RTA_LENGTH(sizeof(int));
+
+		fd = RTA_DATA(fd_rta);
+		*fd = bpf_map_opts.maps[i].fd;
+
+		buf += fd_rta->rta_len;
+	}
+
+	return stgs_rta;
+}
+
+static void out_bpf_sk_storage_oneline(struct bpf_sk_storage_map_info *info,
+	const void *data, size_t len)
+{
+	struct btf_dump_type_data_opts opts = {
+		.sz = sizeof(struct btf_dump_type_data_opts),
+		.emit_zeroes = 1,
+		.compact = 1
+	};
+	int r;
+
+	out(" map_id:%d", info->id);
+	r = btf_dump__dump_type_data(info->dump, info->info.btf_value_type_id,
+				     data, len, &opts);
+	if (r < 0)
+		out("failed to dump data: %d", r);
+}
+
+static void out_bpf_sk_storage_multiline(struct bpf_sk_storage_map_info *info,
+	const void *data, size_t len)
+{
+	struct btf_dump_type_data_opts opts = {
+		.sz = sizeof(struct btf_dump_type_data_opts),
+		.indent_level = 2,
+		.emit_zeroes = 1
+	};
+	int r;
+
+	out("\n\tmap_id:%d [\n", info->id);
+
+	r = btf_dump__dump_type_data(info->dump, info->info.btf_value_type_id,
+				     data, len, &opts);
+	if (r < 0)
+		out("\t\tfailed to dump data: %d", r);
+
+	out("\n\t]");
+}
+
+static void out_bpf_sk_storage(int map_id, const void *data, size_t len)
+{
+	struct bpf_sk_storage_map_info *map_info;
+
+	map_info = bpf_map_opts_get_info(map_id);
+	if (!map_info) {
+		/* The kernel might return a map we can't get info for, skip
+		 * it but print the other ones.
+		 */
+		out("\n\tmap_id: %d failed to fetch info, skipping\n", map_id);
+		return;
+	}
+
+	if (map_info->info.value_size != len) {
+		fprintf(stderr,
+			"map_id: %d: invalid value size, expecting %u, got %lu\n",
+			map_id, map_info->info.value_size, len);
+		return;
+	}
+
+	if (oneline)
+		out_bpf_sk_storage_oneline(map_info, data, len);
+	else
+		out_bpf_sk_storage_multiline(map_info, data, len);
+}
+
+static void show_sk_bpf_storages(struct rtattr *bpf_stgs)
+{
+	struct rtattr *tb[SK_DIAG_BPF_STORAGE_MAX + 1], *bpf_stg;
+	unsigned int rem, map_id;
+	struct rtattr *value;
+
+	for (bpf_stg = RTA_DATA(bpf_stgs), rem = RTA_PAYLOAD(bpf_stgs);
+		RTA_OK(bpf_stg, rem); bpf_stg = RTA_NEXT(bpf_stg, rem)) {
+
+		if ((bpf_stg->rta_type & NLA_TYPE_MASK) != SK_DIAG_BPF_STORAGE)
+			continue;
+
+		parse_rtattr_nested(tb, SK_DIAG_BPF_STORAGE_MAX,
+				    (struct rtattr *)bpf_stg);
+
+		if (tb[SK_DIAG_BPF_STORAGE_MAP_ID]) {
+			map_id = rta_getattr_u32(tb[SK_DIAG_BPF_STORAGE_MAP_ID]);
+			value = tb[SK_DIAG_BPF_STORAGE_MAP_VALUE];
+
+			out_bpf_sk_storage(map_id, RTA_DATA(value),
+					   RTA_PAYLOAD(value));
+		}
+	}
+}
+
+static bool bpf_map_opts_is_enabled(void)
+{
+	return bpf_map_opts.nr_maps || bpf_map_opts.show_all;
+}
+#endif
+
 static int inet_show_sock(struct nlmsghdr *nlh,
 			  struct sockstat *s)
 {
@@ -3384,8 +3754,9 @@ static int inet_show_sock(struct nlmsghdr *nlh,
 	struct inet_diag_msg *r = NLMSG_DATA(nlh);
 	unsigned char v6only = 0;
 
-	parse_rtattr(tb, INET_DIAG_MAX, (struct rtattr *)(r+1),
-		     nlh->nlmsg_len - NLMSG_LENGTH(sizeof(*r)));
+	parse_rtattr_flags(tb, INET_DIAG_MAX, (struct rtattr *)(r+1),
+			   nlh->nlmsg_len - NLMSG_LENGTH(sizeof(*r)),
+			   NLA_F_NESTED);
 
 	if (tb[INET_DIAG_PROTOCOL])
 		s->type = rta_getattr_u8(tb[INET_DIAG_PROTOCOL]);
@@ -3482,6 +3853,11 @@ static int inet_show_sock(struct nlmsghdr *nlh,
 	}
 	sctp_ino = s->ino;
 
+#ifdef ENABLE_BPF_SKSTORAGE_SUPPORT
+	if (tb[INET_DIAG_SK_BPF_STORAGES])
+		show_sk_bpf_storages(tb[INET_DIAG_SK_BPF_STORAGES]);
+#endif
+
 	return 0;
 }
 
@@ -3563,13 +3939,14 @@ static int sockdiag_send(int family, int fd, int protocol, struct filter *f)
 {
 	struct sockaddr_nl nladdr = { .nl_family = AF_NETLINK };
 	DIAG_REQUEST(req, struct inet_diag_req_v2 r);
+	struct rtattr *bpf_rta = NULL;
 	char    *bc = NULL;
 	int	bclen;
 	__u32	proto;
 	struct msghdr msg;
 	struct rtattr rta_bc;
 	struct rtattr rta_proto;
-	struct iovec iov[5];
+	struct iovec iov[6];
 	int iovlen = 1;
 
 	if (family == PF_UNSPEC)
@@ -3622,6 +3999,20 @@ static int sockdiag_send(int family, int fd, int protocol, struct filter *f)
 		iovlen += 2;
 	}
 
+#ifdef ENABLE_BPF_SKSTORAGE_SUPPORT
+	if (bpf_map_opts_is_enabled()) {
+		bpf_rta = bpf_map_opts_alloc_rta();
+		if (!bpf_rta) {
+			fprintf(stderr,
+				"ss: cannot alloc request for --bpf-map\n");
+			return -1;
+		}
+
+		iov[iovlen++] = (struct iovec){ bpf_rta, bpf_rta->rta_len };
+		req.nlh.nlmsg_len += bpf_rta->rta_len;
+	}
+#endif
+
 	msg = (struct msghdr) {
 		.msg_name = (void *)&nladdr,
 		.msg_namelen = sizeof(nladdr),
@@ -3630,9 +4021,12 @@ static int sockdiag_send(int family, int fd, int protocol, struct filter *f)
 	};
 
 	if (sendmsg(fd, &msg, 0) < 0) {
+		free(bpf_rta);
 		close(fd);
 		return -1;
 	}
+
+	free(bpf_rta);
 
 	return 0;
 }
@@ -4072,9 +4466,9 @@ static void unix_stats_print(struct sockstat *s, struct filter *f)
 	sock_state_print(s);
 
 	sock_addr_print(s->name ?: "*", " ",
-			int_to_str(s->lport, port_name), NULL);
+			uint_to_str(s->lport, port_name), NULL);
 	sock_addr_print(s->peer_name ?: "*", " ",
-			int_to_str(s->rport, port_name), NULL);
+			uint_to_str(s->rport, port_name), NULL);
 
 	proc_ctx_print(s);
 }
@@ -4537,9 +4931,9 @@ static int packet_show_line(char *buf, const struct filter *f, int fam)
 			&type, &prot, &iface, &state,
 			&rq, &uid, &ino);
 
-	if (stat.type == SOCK_RAW && !(f->dbs&(1<<PACKET_R_DB)))
+	if (type == SOCK_RAW && !(f->dbs & (1<<PACKET_R_DB)))
 		return 0;
-	if (stat.type == SOCK_DGRAM && !(f->dbs&(1<<PACKET_DG_DB)))
+	if (type == SOCK_DGRAM && !(f->dbs & (1<<PACKET_DG_DB)))
 		return 0;
 
 	stat.type  = type;
@@ -5342,6 +5736,7 @@ static void _usage(FILE *dest)
 "   -r, --resolve       resolve host names\n"
 "   -a, --all           display all sockets\n"
 "   -l, --listening     display listening sockets\n"
+"   -B, --bound-inactive display TCP bound but inactive sockets\n"
 "   -o, --options       show timer information\n"
 "   -e, --extended      show detailed socket information\n"
 "   -m, --memory        show socket memory usage\n"
@@ -5353,6 +5748,10 @@ static void _usage(FILE *dest)
 "       --tos           show tos and priority information\n"
 "       --cgroup        show cgroup information\n"
 "   -b, --bpf           show bpf filter socket information\n"
+#ifdef ENABLE_BPF_SKSTORAGE_SUPPORT
+"       --bpf-maps      show all BPF socket-local storage maps\n"
+"       --bpf-map-id=MAP-ID    show a BPF socket-local storage map\n"
+#endif
 "   -E, --events        continually display sockets as they are destroyed\n"
 "   -Z, --context       display task SELinux security contexts\n"
 "   -z, --contexts      display task and socket SELinux security contexts\n"
@@ -5376,6 +5775,7 @@ static void _usage(FILE *dest)
 "\n"
 "   -K, --kill          forcibly close sockets, display what was closed\n"
 "   -H, --no-header     Suppress header line\n"
+"   -Q, --no-queues     Suppress sending and receiving queue columns\n"
 "   -O, --oneline       socket's data printed on a single line\n"
 "       --inet-sockopt  show various inet socket options\n"
 "\n"
@@ -5424,8 +5824,16 @@ static int scan_state(const char *state)
 		[SS_LAST_ACK] = "last-ack",
 		[SS_LISTEN] =	"listening",
 		[SS_CLOSING] = "closing",
+		[SS_NEW_SYN_RECV] = "new-syn-recv",
+		[SS_BOUND_INACTIVE] = "bound-inactive",
 	};
 	int i;
+
+	/* NEW_SYN_RECV is a kernel implementation detail. It shouldn't be used
+	 * or even be visible by users.
+	 */
+	if (strcasecmp(state, "new-syn-recv") == 0)
+		goto wrong_state;
 
 	if (strcasecmp(state, "close") == 0 ||
 	    strcasecmp(state, "closed") == 0)
@@ -5449,6 +5857,7 @@ static int scan_state(const char *state)
 			return (1<<i);
 	}
 
+wrong_state:
 	fprintf(stderr, "ss: wrong state name: %s\n", state);
 	exit(-1);
 }
@@ -5468,6 +5877,9 @@ static int scan_state(const char *state)
 #define OPT_CGROUP 261
 
 #define OPT_INET_SOCKOPT 262
+
+#define OPT_BPF_MAPS 263
+#define OPT_BPF_MAP_ID 264
 
 static const struct option long_opts[] = {
 	{ "numeric", 0, 0, 'n' },
@@ -5490,6 +5902,7 @@ static const struct option long_opts[] = {
 	{ "vsock", 0, 0, OPT_VSOCK },
 	{ "all", 0, 0, 'a' },
 	{ "listening", 0, 0, 'l' },
+	{ "bound-inactive", 0, 0, 'B' },
 	{ "ipv4", 0, 0, '4' },
 	{ "ipv6", 0, 0, '6' },
 	{ "packet", 0, 0, '0' },
@@ -5509,10 +5922,15 @@ static const struct option long_opts[] = {
 	{ "cgroup", 0, 0, OPT_CGROUP },
 	{ "kill", 0, 0, 'K' },
 	{ "no-header", 0, 0, 'H' },
+	{ "no-queues", 0, 0, 'Q' },
 	{ "xdp", 0, 0, OPT_XDPSOCK},
 	{ "mptcp", 0, 0, 'M' },
 	{ "oneline", 0, 0, 'O' },
 	{ "inet-sockopt", 0, 0, OPT_INET_SOCKOPT },
+#ifdef ENABLE_BPF_SKSTORAGE_SUPPORT
+	{ "bpf-maps", 0, 0, OPT_BPF_MAPS},
+	{ "bpf-map-id", 1, 0, OPT_BPF_MAP_ID},
+#endif
 	{ 0 }
 
 };
@@ -5528,7 +5946,7 @@ int main(int argc, char *argv[])
 	int state_filter = 0;
 
 	while ((ch = getopt_long(argc, argv,
-				 "dhaletuwxnro460spTbEf:mMiA:D:F:vVzZN:KHSO",
+				 "dhalBetuwxnro460spTbEf:mMiA:D:F:vVzZN:KHQSO",
 				 long_opts, NULL)) != EOF) {
 		switch (ch) {
 		case 'n':
@@ -5592,6 +6010,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'l':
 			state_filter = (1 << SS_LISTEN) | (1 << SS_CLOSE);
+			break;
+		case 'B':
+			state_filter = 1 << SS_BOUND_INACTIVE;
 			break;
 		case '4':
 			filter_af_set(&current_filter, AF_INET);
@@ -5684,7 +6105,7 @@ int main(int argc, char *argv[])
 			show_sock_ctx++;
 			/* fall through */
 		case 'Z':
-			if (is_selinux_enabled() <= 0) {
+			if (!is_selinux_enabled()) {
 				fprintf(stderr, "ss: SELinux is not enabled.\n");
 				exit(1);
 			}
@@ -5709,12 +6130,28 @@ int main(int argc, char *argv[])
 		case 'H':
 			show_header = 0;
 			break;
+		case 'Q':
+			show_queues = 0;
+			break;
 		case 'O':
 			oneline = 1;
 			break;
 		case OPT_INET_SOCKOPT:
 			show_inet_sockopt = 1;
 			break;
+#ifdef ENABLE_BPF_SKSTORAGE_SUPPORT
+		case OPT_BPF_MAPS:
+			if (bpf_map_opts.nr_maps) {
+				bpf_map_opts_mixed_error();
+				return -1;
+			}
+			bpf_map_opts.show_all = true;
+			break;
+		case OPT_BPF_MAP_ID:
+			if (bpf_map_opts_add_id(optarg))
+				exit(1);
+			break;
+#endif
 		case 'h':
 			help();
 		case '?':
@@ -5804,6 +6241,14 @@ int main(int argc, char *argv[])
 	if (ssfilter_parse(&current_filter.f, argc, argv, filter_fp))
 		usage();
 
+	if (!show_processes)
+		columns[COL_PROC].disabled = 1;
+
+	if (!show_queues) {
+		columns[COL_SENDQ].disabled = 1;
+		columns[COL_RECVQ].disabled = 1;
+	}
+
 	if (!(current_filter.dbs & (current_filter.dbs - 1)))
 		columns[COL_NETID].disabled = 1;
 
@@ -5845,6 +6290,10 @@ int main(int argc, char *argv[])
 
 	if (show_processes || show_threads || show_proc_ctx || show_sock_ctx)
 		user_ent_destroy();
+
+#ifdef ENABLE_BPF_SKSTORAGE_SUPPORT
+	bpf_map_opts_destroy();
+#endif
 
 	render();
 

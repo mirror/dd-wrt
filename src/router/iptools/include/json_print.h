@@ -1,10 +1,6 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 /*
- * json_print.h		"print regular or json output, based on json_writer".
- *
- *             This program is free software; you can redistribute it and/or
- *             modify it under the terms of the GNU General Public License
- *             as published by the Free Software Foundation; either version
- *             2 of the License, or (at your option) any later version.
+ * json_print.h		print regular or json output, based on json_writer.
  *
  * Authors:    Julien Fortin, <julien@cumulusnetworks.com>
  */
@@ -100,6 +96,8 @@ static inline int print_rate(bool use_iec, enum output_type t,
 {
 	return print_color_rate(use_iec, t, COLOR_NONE, key, fmt, rate);
 }
+
+unsigned int print_range(const char *name, __u32 start, __u32 end);
 
 int print_color_bool_opt(enum output_type type, enum color_attr color,
 			 const char *key, bool value, bool show);

@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+/* SPDX-License-Identifier: GPL-2.0 or BSD-3-Clause */
 #ifndef __BPF_API__
 #define __BPF_API__
 
@@ -253,7 +253,7 @@ static int BPF_FUNC(skb_set_tunnel_opt, struct __sk_buff *skb,
 # define memmove(d, s, n)	__builtin_memmove((d), (s), (n))
 #endif
 
-/* FIXME: __builtin_memcmp() is not yet fully useable unless llvm bug
+/* FIXME: __builtin_memcmp() is not yet fully usable unless llvm bug
  * https://llvm.org/bugs/show_bug.cgi?id=26218 gets resolved. Also
  * this one would generate a reloc entry (non-map), otherwise.
  */

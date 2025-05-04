@@ -14,11 +14,12 @@
 #include <netdb.h>
 #include <db_185.h>
 #include <sys/ioctl.h>
-#include <sys/poll.h>
+#include <poll.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/uio.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/time.h>
 #include <time.h>
 #include <signal.h>
@@ -35,7 +36,8 @@
 #include "rt_names.h"
 
 DB	*dbase;
-char	*dbname = "/var/lib/arpd/arpd.db";
+char const	default_dbname[] = ARPDDIR "/arpd.db";
+char const	*dbname = default_dbname;
 
 int	ifnum;
 int	*ifvec;
@@ -435,13 +437,10 @@ static void get_kern_msg(void)
 	struct iovec iov;
 	char   buf[8192];
 	struct msghdr msg = {
-		.msg_name = (void *)&nladdr, 
+		.msg_name = &nladdr,
 		.msg_namelen = sizeof(nladdr),
-		.msg_iov = &iov,	
+		.msg_iov = &iov,
 		.msg_iovlen = 1,
-		.msg_control = NULL,	
-		.msg_controllen = 0,
-		.msg_flags = 0
 	};
 
 	iov.iov_base = buf;
@@ -495,8 +494,7 @@ static void get_arp_pkt(void)
 	if (ifnum && !handle_if(sll.sll_ifindex))
 		return;
 
-	/* Sanity checks */
-
+	/* Validate packet */
 	if (n < sizeof(*a) ||
 	    (a->ar_op != htons(ARPOP_REQUEST) &&
 	     a->ar_op != htons(ARPOP_REPLY)) ||
@@ -668,6 +666,13 @@ int main(int argc, char **argv)
 				exit(-1);
 			}
 			ifvec[i] = ifr.ifr_ifindex;
+		}
+	}
+
+	if (strcmp(default_dbname, dbname) == 0) {
+		if (mkdir(ARPDDIR, 0755) != 0 && errno != EEXIST) {
+			perror("create_db_dir");
+			exit(-1);
 		}
 	}
 

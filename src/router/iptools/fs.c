@@ -41,7 +41,7 @@ static int name_to_handle_at(int dirfd, const char *pathname,
 	struct file_handle *handle, int *mount_id, int flags)
 {
 	return syscall(__NR_name_to_handle_at, dirfd, pathname, handle,
-	               mount_id, flags);
+		       mount_id, flags);
 }
 
 static int open_by_handle_at(int mount_fd, struct file_handle *handle, int flags)
@@ -223,7 +223,8 @@ char *get_cgroup2_path(__u64 id, bool full)
 
 	fd = open_by_handle_at(mnt_fd, fhp, 0);
 	if (fd < 0) {
-		fprintf(stderr, "Failed to open cgroup2 by ID\n");
+		if (errno != ESTALE)
+			fprintf(stderr, "Failed to open cgroup2 by ID\n");
 		goto out;
 	}
 

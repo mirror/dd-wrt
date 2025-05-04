@@ -24,11 +24,13 @@ int mnlu_gen_socket_sndrcv(struct mnlu_gen_socket *nlg, const struct nlmsghdr *n
 			   mnl_cb_t data_cb, void *data);
 
 struct mnl_socket *mnlu_socket_open(int bus);
+int mnl_add_nl_group(struct mnl_socket *nl, unsigned int group);
 struct nlmsghdr *mnlu_msg_prepare(void *buf, uint32_t nlmsg_type, uint16_t flags,
 				  void *extra_header, size_t extra_header_size);
 int mnlu_socket_recv_run(struct mnl_socket *nl, unsigned int seq, void *buf, size_t buf_size,
 			 mnl_cb_t cb, void *data);
 int mnlu_gen_socket_recv_run(struct mnlu_gen_socket *nlg, mnl_cb_t cb,
 			     void *data);
+int mnlu_gen_cmd_dump_policy(struct mnlu_gen_socket *nlg, uint8_t cmd);
 
 #endif /* __MNL_UTILS_H__ */

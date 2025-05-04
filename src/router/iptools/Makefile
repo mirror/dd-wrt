@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0
-SSOBJ=libnetlink.o utils.o inet_proto.o rt_names.o json_print.o color.o ll_addr.o rose_ntop.o netrom_ntop.o ax25_ntop.o json_writer.o ll_map.o ll_proto.o mpls_pton.o mpls_ntop.o cg_map.o namespace.o fs.o
+SSOBJ=libnetlink.o utils.o inet_proto.o rt_names.o json_print.o color.o ll_addr.o rose_ntop.o netrom_ntop.o ax25_ntop.o json_writer.o ll_map.o ll_proto.o mpls_pton.o mpls_ntop.o cg_map.o namespace.o fs.o selinux.o
 LNSTATOBJ=lnstat.o lnstat_util.o
 
 TARGETS=ss nstat ifstat rtacct lnstat
-CFLAGS += -Iinclude -Iinclude/uapi -Idb/staging/usr/include -I$(TOP)/libmnl/include -D_GNU_SOURCE $(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF
+CFLAGS += -Iinclude -Iinclude/uapi -Idb/staging/usr/include -I$(TOP)/libmnl/include -D_GNU_SOURCE $(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF -DARPDDIR=\"/var/lib/arpd\"
 LDFLAGS += -Ldb/staging/usr/lib -L$(TOP)/libmnl/src/.libs
 
 include config.mk

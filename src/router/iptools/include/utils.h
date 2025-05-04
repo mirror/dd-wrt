@@ -37,9 +37,13 @@ extern int batch_mode;
 extern int numeric;
 extern bool do_all;
 extern int echo_request;
+extern int use_iec;
 
-#ifndef CONFDIR
-#define CONFDIR		"/etc/iproute2"
+#ifndef CONF_USR_DIR
+#define CONF_USR_DIR "/usr/lib/iproute2"
+#endif
+#ifndef CONF_ETC_DIR
+#define CONF_ETC_DIR "/etc/iproute2"
 #endif
 
 #define SPRINT_BSIZE 64
@@ -139,6 +143,7 @@ int get_addr_rta(inet_prefix *dst, const struct rtattr *rta, int family);
 int get_addr_ila(__u64 *val, const char *arg);
 
 int read_prop(const char *dev, char *prop, long *value);
+int get_long(long *val, const char *arg, int base);
 int get_integer(int *val, const char *arg, int base);
 int get_unsigned(unsigned *val, const char *arg, int base);
 int get_time_rtt(unsigned *val, const char *arg, int *raw);
@@ -194,7 +199,7 @@ int check_ifname(const char *);
 int check_altifname(const char *name);
 int get_ifname(char *, const char *);
 const char *get_ifname_rta(int ifindex, const struct rtattr *rta);
-bool matches(const char *prefix, const char *string);
+int matches(const char *prefix, const char *string);
 int inet_addr_match(const inet_prefix *a, const inet_prefix *b, int bits);
 int inet_addr_match_rta(const inet_prefix *m, const struct rtattr *rta);
 
@@ -305,6 +310,7 @@ unsigned int print_name_and_link(const char *fmt,
 extern int cmdlineno;
 
 char *int_to_str(int val, char *buf);
+char *uint_to_str(unsigned int val, char *buf);
 int get_guid(__u64 *guid, const char *arg);
 int get_real_family(int rtm_type, int rtm_family);
 
@@ -331,12 +337,16 @@ int get_time(unsigned int *time, const char *str);
 int get_time64(__s64 *time, const char *str);
 char *sprint_time(__u32 time, char *buf);
 char *sprint_time64(__s64 time, char *buf);
+void print_num(FILE *fp, unsigned int width, uint64_t count);
 
 int do_batch(const char *name, bool force,
 	     int (*cmd)(int argc, char *argv[], void *user), void *user);
 
 int parse_one_of(const char *msg, const char *realval, const char * const *list,
 		 size_t len, int *p_err);
+int parse_one_of_deprecated(const char *msg, const char *realval,
+			    const char * const *list,
+			    size_t len, int *p_err);
 bool parse_on_off(const char *msg, const char *realval, int *p_err);
 
 int parse_mapping_num_all(__u32 *keyp, const char *key);
@@ -384,5 +394,10 @@ int proto_a2n(unsigned short *id, const char *buf,
 	      const struct proto *proto_tb, size_t tb_len);
 const char *proto_n2a(unsigned short id, char *buf, int len,
 		      const struct proto *proto_tb, size_t tb_len);
+
+FILE *generic_proc_open(const char *env, const char *name);
+
+int open_fds_add(int fd);
+void open_fds_close(void);
 
 #endif /* __UTILS_H__ */

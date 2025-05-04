@@ -17,7 +17,7 @@
 #include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <sys/poll.h>
+#include <poll.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <signal.h>
@@ -51,7 +51,7 @@ int sub_type;
 char info_source[128];
 int source_mismatch;
 
-#define MAXS (sizeof(struct rtnl_link_stats)/sizeof(__u32))
+#define MAXS (sizeof(struct rtnl_link_stats64)/sizeof(__u64))
 #define NO_SUB_TYPE 0xffff
 
 struct ifstat_ent {
@@ -60,7 +60,7 @@ struct ifstat_ent {
 	int			ifindex;
 	unsigned long long	val[MAXS];
 	double			rate[MAXS];
-	unsigned int		ival[MAXS];
+	__u64			ival[MAXS];
 };
 
 static const char *stats[MAXS] = {
@@ -74,19 +74,25 @@ static const char *stats[MAXS] = {
 	"tx_dropped",
 	"multicast",
 	"collisions",
+
 	"rx_length_errors",
 	"rx_over_errors",
 	"rx_crc_errors",
 	"rx_frame_errors",
 	"rx_fifo_errors",
 	"rx_missed_errors",
+
 	"tx_aborted_errors",
 	"tx_carrier_errors",
 	"tx_fifo_errors",
 	"tx_heartbeat_errors",
 	"tx_window_errors",
+
 	"rx_compressed",
-	"tx_compressed"
+	"tx_compressed",
+	"rx_nohandler",
+
+	"rx_otherhost_dropped",
 };
 
 struct ifstat_ent *kern_db;
@@ -117,19 +123,27 @@ static int get_nlmsg_extended(struct nlmsghdr *m, void *arg)
 		return 0;
 
 	len -= NLMSG_LENGTH(sizeof(*ifsm));
-	if (len < 0)
+	if (len < 0) {
+		errno = EINVAL;
 		return -1;
+	}
 
 	parse_rtattr(tb, IFLA_STATS_MAX, IFLA_STATS_RTA(ifsm), len);
 	if (tb[filter_type] == NULL)
 		return 0;
 
 	n = malloc(sizeof(*n));
-	if (!n)
-		abort();
+	if (!n) {
+		errno = ENOMEM;
+		return -1;
+	}
 
 	n->ifindex = ifsm->ifindex;
 	n->name = strdup(ll_index_to_name(ifsm->ifindex));
+	if (!n->name) {
+		free(n);
+		return -1;
+	}
 
 	if (sub_type == NO_SUB_TYPE) {
 		memcpy(&n->val, RTA_DATA(tb[filter_type]), sizeof(n->val));
@@ -161,23 +175,47 @@ static int get_nlmsg(struct nlmsghdr *m, void *arg)
 		return 0;
 
 	len -= NLMSG_LENGTH(sizeof(*ifi));
-	if (len < 0)
+	if (len < 0) {
+		errno = EINVAL;
 		return -1;
+	}
 
 	if (!(ifi->ifi_flags&IFF_UP))
 		return 0;
 
 	parse_rtattr(tb, IFLA_MAX, IFLA_RTA(ifi), len);
-	if (tb[IFLA_IFNAME] == NULL || tb[IFLA_STATS] == NULL)
+	if (tb[IFLA_IFNAME] == NULL)
 		return 0;
 
 	n = malloc(sizeof(*n));
-	if (!n)
-		abort();
+	if (!n) {
+		errno = ENOMEM;
+		return -1;
+	}
+
 	n->ifindex = ifi->ifi_index;
 	n->name = strdup(RTA_DATA(tb[IFLA_IFNAME]));
-	memcpy(&n->ival, RTA_DATA(tb[IFLA_STATS]), sizeof(n->ival));
+	if (!n->name) {
+		free(n);
+		return -1;
+	}
+
 	memset(&n->rate, 0, sizeof(n->rate));
+
+	if (tb[IFLA_STATS64]) {
+		memcpy(&n->ival, RTA_DATA(tb[IFLA_STATS64]), sizeof(n->ival));
+	} else if (tb[IFLA_STATS]) {
+		__u32 *stats = RTA_DATA(tb[IFLA_STATS]);
+
+		/* expand 32 bit values to 64 bit */
+		for (i = 0; i < MAXS; i++)
+			n->ival[i] = stats[i];
+	} else {
+		/* missing stats? */
+		free(n);
+		return 0;
+	}
+
 	for (i = 0; i < MAXS; i++)
 		n->val[i] = n->ival[i];
 	n->next = kern_db;
@@ -204,7 +242,7 @@ static void load_info(void)
 		}
 
 		if (rtnl_dump_filter(&rth, get_nlmsg_extended, NULL) < 0) {
-			fprintf(stderr, "Dump terminated\n");
+			perror("Dump terminated\n");
 			exit(1);
 		}
 	} else {
@@ -214,7 +252,7 @@ static void load_info(void)
 		}
 
 		if (rtnl_dump_filter(&rth, get_nlmsg, NULL) < 0) {
-			fprintf(stderr, "Dump terminated\n");
+			perror("Dump terminated\n");
 			exit(1);
 		}
 	}
@@ -371,10 +409,10 @@ static void format_rate(FILE *fp, const unsigned long long *vals,
 		fprintf(fp, "%8llu ", vals[i]);
 
 	if (rates[i] > mega) {
-		sprintf(temp, "%uM", (unsigned int)(rates[i]/mega));
+		snprintf(temp, sizeof(temp), "%uM", (unsigned int)(rates[i]/mega));
 		fprintf(fp, "%-6s ", temp);
 	} else if (rates[i] > kilo) {
-		sprintf(temp, "%uK", (unsigned int)(rates[i]/kilo));
+		snprintf(temp, sizeof(temp), "%uK", (unsigned int)(rates[i]/kilo));
 		fprintf(fp, "%-6s ", temp);
 	} else
 		fprintf(fp, "%-6u ", (unsigned int)rates[i]);
@@ -392,10 +430,10 @@ static void format_pair(FILE *fp, const unsigned long long *vals, int i, int k)
 		fprintf(fp, "%8llu ", vals[i]);
 
 	if (vals[k] > giga) {
-		sprintf(temp, "%uM", (unsigned int)(vals[k]/mega));
+		snprintf(temp, sizeof(temp), "%uM", (unsigned int)(vals[k]/mega));
 		fprintf(fp, "%-6s ", temp);
 	} else if (vals[k] > mega) {
-		sprintf(temp, "%uK", (unsigned int)(vals[k]/kilo));
+		snprintf(temp, sizeof(temp), "%uK", (unsigned int)(vals[k]/kilo));
 		fprintf(fp, "%-6s ", temp);
 	} else
 		fprintf(fp, "%-6u ", (unsigned int)vals[k]);
@@ -608,7 +646,7 @@ static void update_db(int interval)
 				int i;
 
 				for (i = 0; i < MAXS; i++) {
-					if ((long)(h1->ival[i] - n->ival[i]) < 0) {
+					if (h1->ival[i] < n->ival[i]) {
 						memset(n->ival, 0, sizeof(n->ival));
 						break;
 					}
@@ -667,7 +705,7 @@ static void server_loop(int fd)
 	p.fd = fd;
 	p.events = p.revents = POLLIN;
 
-	sprintf(info_source, "%d.%lu sampling_interval=%d time_const=%d",
+	snprintf(info_source, sizeof(info_source), "%d.%lu sampling_interval=%d time_const=%d",
 		getpid(), (unsigned long)random(), scan_interval/1000, time_constant/1000);
 
 	load_info();
@@ -885,7 +923,7 @@ int main(int argc, char *argv[])
 
 	sun.sun_family = AF_UNIX;
 	sun.sun_path[0] = 0;
-	sprintf(sun.sun_path+1, "ifstat%d", getuid());
+	snprintf(sun.sun_path + 1, sizeof(sun.sun_path) - 1, "ifstat%d", getuid());
 
 	if (scan_interval > 0) {
 		if (time_constant == 0)
@@ -929,8 +967,10 @@ int main(int argc, char *argv[])
 				 "%s/.%s_ifstat.u%d", P_tmpdir, stats_type,
 				 getuid());
 
-	if (reset_history)
-		unlink(hist_name);
+	if (reset_history && unlink(hist_name) < 0) {
+		perror("ifstat: unlink history file");
+		exit(-1);
+	}
 
 	if (!ignore_history || !no_update) {
 		struct stat stb;
