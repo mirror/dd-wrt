@@ -200,6 +200,10 @@ static void set_stp_state(char *bridge, char *stp)
 {
 	br_set_stp_state(bridge, strcmp(stp, "Off") ? 1 : 0);
 #ifdef HAVE_MSTP
+	if (!strcmp(stp, "MSTP") && nvram_nmatch("1", "%s_vlan", bridge))
+		eval("ip", "link", "set", "dev", bridge, "type", "bridge", "mst_enable", "1");
+	else
+		eval("ip", "link", "set", "dev", bridge, "type", "bridge", "mst_enable", "0");
 	if (strcmp(stp, "Off"))
 		eval("mstpctl", "addbridge", bridge);
 	else
