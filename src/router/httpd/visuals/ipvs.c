@@ -36,13 +36,13 @@ EJ_VISIBLE void ej_show_ipvsassignments(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "<fieldset>\n");
 		show_caption_pp(wp, NULL, "networking.ipvs_targets", "<legend>", "</legend>\n");
 
-		websWrite(wp, "<table cellspacing=\"5\" summary=\"ipvstargets\" id=\"ipvstarget_table\" class=\"table\"><tr>\n");
+		websWrite(wp, "<table cellspacing=\"5\" summary=\"ipvstargets\" id=\"ipvstarget_table\" class=\"table\"><thread><tr>\n");
 		show_caption_pp(wp, NULL, "networking.ipvs_name", "<th>", "</th>\n");
 		show_caption_pp(wp, NULL, "networking.ipvs_targetip", "<th>", "</th>\n");
 		show_caption_pp(wp, NULL, "networking.ipvs_targetport", "<th>", "</th>\n");
 		show_caption_pp(wp, NULL, "networking.ipvs_weight", "<th>", "</th>\n");
 		show_caption_pp(wp, NULL, "wl_basic.masquerade", "<th>", "</th>\n");
-		show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th>\n");
+		show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></tr></thread><tbody>\n");
 
 		wordlist = nvram_safe_get("ipvstarget");
 
@@ -138,6 +138,7 @@ EJ_VISIBLE void ej_show_ipvsassignments(webs_t wp, int argc, char_t **argv)
 			"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"add\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.add + \"\\\" onclick=\\\"ipvstarget_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "</tr>");
+		websWrite(wp, "</tbody>");
 		websWrite(wp, "</table>");
 		websWrite(wp, "</fieldset><br />\n");
 
@@ -174,7 +175,7 @@ EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t **argv)
 	show_caption_pp(wp, NULL, "networking.ipvs_sourceport", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "share.proto", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.ipvs_scheduler", "<th>", "</th>\n");
-	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></thead><tbody>\n");
+	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></tr></thead><tbody>\n");
 
 	wordlist = nvram_safe_get("ipvs");
 

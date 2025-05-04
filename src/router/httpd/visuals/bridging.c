@@ -453,7 +453,7 @@ EJ_VISIBLE void ej_show_bridgeifnames(webs_t wp, int argc, char_t **argv)
 	show_caption_pp(wp, NULL, "networking.prio", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.pathcost", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.hairpin", "<th class=\"center\">", "</th>\n");
-	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></thead>\n");
+	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></tr></thead>\n");
 
 	wordlist = nvram_safe_get("bridgesif");
 	foreach(word, wordlist, next) {
