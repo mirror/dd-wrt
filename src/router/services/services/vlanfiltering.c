@@ -105,7 +105,7 @@ void stop_vlanfiltering(void)
 		char tmp[256];
 		eval("bridge", "vlan", "del", "dev", getBridge(ifname, tmp), "vid", vlan);
 		eval("bridge", "vlan", "del", "dev", ifname, "vid", vlan);
-		if (!nvram_nmatch("1", "%s_trunk", getBridge(ifname, tmp))) {
+		if (!nvram_nmatch("1", "%s_trunk", getBridge(ifname, tmp)))
 			eval("bridge", "vlan", "add", "dev", ifname, "vid", "1", "pvid", "untagged"); /* add default pvid */
 	}
 }
