@@ -225,6 +225,7 @@ static int phylink_interface_max_speed(phy_interface_t interface)
 
 	case PHY_INTERFACE_MODE_XGMII:
 	case PHY_INTERFACE_MODE_RXAUI:
+	case PHY_INTERFACE_MODE_HSGMII:
 	case PHY_INTERFACE_MODE_XAUI:
 	case PHY_INTERFACE_MODE_10GBASER:
 	case PHY_INTERFACE_MODE_10GKR:
@@ -535,6 +536,7 @@ unsigned long phylink_get_capabilities(phy_interface_t interface,
 
 	case PHY_INTERFACE_MODE_XGMII:
 	case PHY_INTERFACE_MODE_RXAUI:
+	case PHY_INTERFACE_MODE_HSGMII:
 	case PHY_INTERFACE_MODE_XAUI:
 	case PHY_INTERFACE_MODE_10GBASER:
 	case PHY_INTERFACE_MODE_10GKR:
@@ -923,6 +925,7 @@ static int phylink_parse_mode(struct phylink *pl,
 			fallthrough;
 		case PHY_INTERFACE_MODE_USXGMII:
 		case PHY_INTERFACE_MODE_10GKR:
+		case PHY_INTERFACE_MODE_HSGMII:
 		case PHY_INTERFACE_MODE_10GBASER:
 			phylink_set(pl->supported, 10baseT_Half);
 			phylink_set(pl->supported, 10baseT_Full);
@@ -2399,6 +2402,11 @@ int phylink_ethtool_ksettings_set(struct phylink *pl,
 		 *   the presence of a PHY, this should not be changed as that
 		 *   should be determined from the media side advertisement.
 		 */
+		if (pl->phydev->drv->get_port && pl->phydev->drv->set_port) {
+			if(pl->phydev->drv->get_port(pl->phydev) != kset->base.port) {
+				pl->phydev->drv->set_port(pl->phydev, kset->base.port);
+			}
+		}
 		return phy_ethtool_ksettings_set(pl->phydev, &phy_kset);
 	}
 
@@ -2701,8 +2709,11 @@ int phylink_ethtool_get_eee(struct phylink *pl, struct ethtool_eee *eee)
 
 	ASSERT_RTNL();
 
-	if (pl->phydev)
+	if (pl->phydev) {
+		if (pl->phydev->drv->get_eee)
+			return pl->phydev->drv->get_eee(pl->phydev, eee);
 		ret = phy_ethtool_get_eee(pl->phydev, eee);
+	}
 
 	return ret;
 }
@@ -2719,8 +2730,11 @@ int phylink_ethtool_set_eee(struct phylink *pl, struct ethtool_eee *eee)
 
 	ASSERT_RTNL();
 
-	if (pl->phydev)
+	if (pl->phydev) {
+		if (pl->phydev->drv->set_eee)
+			return pl->phydev->drv->set_eee(pl->phydev, eee);
 		ret = phy_ethtool_set_eee(pl->phydev, eee);
+	}
 
 	return ret;
 }
@@ -3023,6 +3037,7 @@ static void phylink_sfp_detach(void *upstream, struct sfp_bus *bus)
 static const phy_interface_t phylink_sfp_interface_preference[] = {
 	PHY_INTERFACE_MODE_25GBASER,
 	PHY_INTERFACE_MODE_USXGMII,
+	PHY_INTERFACE_MODE_HSGMII,
 	PHY_INTERFACE_MODE_10GBASER,
 	PHY_INTERFACE_MODE_5GBASER,
 	PHY_INTERFACE_MODE_2500BASEX,

@@ -170,6 +170,13 @@ source "drivers/net/ethernet/rdc/Kconfig"
 source "drivers/net/ethernet/realtek/Kconfig"
 source "drivers/net/ethernet/renesas/Kconfig"
 source "drivers/net/ethernet/rocker/Kconfig"
+
+config NET_RTL838X
+	tristate "Realtek rtl838x Ethernet MAC support"
+	depends on MACH_REALTEK_RTL
+	help
+	  Say Y here if you want to use the Realtek rtl838x Gbps Ethernet MAC.
+
 source "drivers/net/ethernet/samsung/Kconfig"
 source "drivers/net/ethernet/seeq/Kconfig"
 source "drivers/net/ethernet/sgi/Kconfig"

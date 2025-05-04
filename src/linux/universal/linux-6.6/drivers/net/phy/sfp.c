@@ -665,10 +665,64 @@ static int sfp_i2c_write(struct sfp *sfp, bool a2, u8 dev_addr, void *buf,
 	return ret == ARRAY_SIZE(msgs) ? len : 0;
 }
 
+static int sfp_smbus_read(struct sfp *sfp, bool a2, u8 dev_addr, void *buf,
+			  size_t len)
+{
+	u8 bus_addr = a2 ? 0x51 : 0x50, *val = buf;
+	union i2c_smbus_data data;
+	int ret;
+
+	bus_addr -= 0x40;
+
+	while (len > 0) {
+		ret = i2c_smbus_xfer(sfp->i2c, i2c_mii_phy_addr(bus_addr), 0,
+				     I2C_SMBUS_READ, dev_addr,
+				     I2C_SMBUS_BYTE_DATA, &data);
+		if (ret)
+			return ret;
+		*val++ = data.byte;
+		dev_addr++;
+		len--;
+	}
+
+	return val - (u8 *)buf;
+}
+
+static int sfp_smbus_write(struct sfp *sfp, bool a2, u8 dev_addr, void *buf,
+			  size_t len)
+{
+	u8 bus_addr = a2 ? 0x51 : 0x50, *val = buf;
+	union i2c_smbus_data data;
+	int ret;
+
+	bus_addr -= 0x40;
+
+	while (len > 0) {
+		data.byte = *val++;
+		ret = i2c_smbus_xfer(sfp->i2c, i2c_mii_phy_addr(bus_addr), 0,
+				     I2C_SMBUS_WRITE, dev_addr,
+				     I2C_SMBUS_BYTE_DATA, &data);
+		if (ret)
+			return ret;
+		dev_addr++;
+		len--;
+	}
+
+	return val - (u8 *)buf;
+}
+
 static int sfp_i2c_configure(struct sfp *sfp, struct i2c_adapter *i2c)
 {
-	if (!i2c_check_functionality(i2c, I2C_FUNC_I2C))
-		return -EINVAL;
+	if (!i2c_check_functionality(i2c, I2C_FUNC_I2C)) {
+		if (i2c_check_functionality(i2c, I2C_FUNC_SMBUS_BYTE_DATA)) {
+			sfp->i2c = i2c;
+			sfp->read = sfp_smbus_read;
+			sfp->write = sfp_smbus_write;
+
+			return 0;
+		} else
+			return -EINVAL;
+	}
 
 	sfp->i2c = i2c;
 	sfp->read = sfp_i2c_read;
@@ -696,6 +750,29 @@ static int sfp_i2c_mdiobus_create(struct sfp *sfp)
 	}
 
 	sfp->i2c_mii = i2c_mii;
+
+	return 0;
+}
+
+static int sfp_sm_mdiobus_create(struct sfp *sfp)
+{
+	struct mii_bus *sm_mii;
+	int ret;
+
+	sm_mii = mdio_smbus_alloc(sfp->dev, sfp->i2c, sfp->mdio_protocol);
+	if (IS_ERR(sm_mii))
+		return PTR_ERR(sm_mii);
+
+	sm_mii->name = "SFP SMBus";
+	sm_mii->phy_mask = ~0;
+
+	ret = mdiobus_register(sm_mii);
+	if (ret < 0) {
+		mdiobus_free(sm_mii);
+		return ret;
+	}
+
+	sfp->i2c_mii = sm_mii;
 
 	return 0;
 }
@@ -1559,6 +1636,10 @@ static void sfp_hwmon_probe(struct work_struct *work)
 	struct sfp *sfp = container_of(work, struct sfp, hwmon_probe.work);
 	int err;
 
+	/* Avoid duplicate hwmon devices when re-probing */
+	if (sfp->hwmon_dev)
+		return;
+
 	/* hwmon interface needs to access 16bit registers in atomic way to
 	 * guarantee coherency of the diagnostic monitoring data. If it is not
 	 * possible to guarantee coherency because EEPROM is broken in such way
@@ -1873,8 +1954,14 @@ static void sfp_sm_fault(struct sfp *sfp, unsigned int next_state, bool warn)
 
 static int sfp_sm_add_mdio_bus(struct sfp *sfp)
 {
-	if (sfp->mdio_protocol != MDIO_I2C_NONE)
+	if (sfp->mdio_protocol == MDIO_I2C_NONE)
+		return 0;
+
+	if (i2c_check_functionality(sfp->i2c, I2C_FUNC_I2C))
 		return sfp_i2c_mdiobus_create(sfp);
+
+	if (i2c_check_functionality(sfp->i2c, I2C_FUNC_SMBUS_BYTE_DATA))
+		return sfp_sm_mdiobus_create(sfp);
 
 	return 0;
 }
@@ -2417,6 +2504,13 @@ static void sfp_sm_module(struct sfp *sfp, unsigned int event)
 		sfp_sm_mod_next(sfp, SFP_MOD_WAITDEV, 0);
 		return;
 	}
+
+	/* Re-probe the SFP modules when an interface is brought up, as the MAC
+	 * do not report its link status (This means Phylink wouldn't be
+	 * triggered if the PHY had a link before a MAC is brought up).
+	 */
+	if (event == SFP_E_DEV_UP && sfp->sm_mod_state == SFP_MOD_PRESENT)
+		sfp_sm_mod_next(sfp, SFP_MOD_PROBE, T_SERIAL);
 
 	switch (sfp->sm_mod_state) {
 	default:

@@ -31,7 +31,7 @@ void __init fw_init_cmdline(void)
 	}
 
 	/* Validate environment pointer. */
-	if (fw_arg2 < CKSEG0)
+	if (fw_arg2 < CKSEG0 || fw_arg2 >= CKSEG2)
 		_fw_envp = NULL;
 	else
 		_fw_envp = (int *)fw_arg2;

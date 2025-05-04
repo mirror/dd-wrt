@@ -522,4 +522,11 @@ config LOONGSON2_THERMAL
 	  is higher than the high temperature threshold or lower than the low
 	  temperature threshold, the interrupt will occur.
 
+config REALTEK_THERMAL
+	tristate "Realtek RTL838x and RTL930x thermal sensor support"
+	depends on RTL838X || RTL930X || COMPILE_TEST
+	depends on THERMAL_OF
+	help
+	  Support thermal sensor in Realtek RTL838x and RTL930x SoCs
+
 endif

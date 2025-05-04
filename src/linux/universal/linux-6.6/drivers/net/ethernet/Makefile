@@ -81,6 +81,7 @@ obj-$(CONFIG_NET_VENDOR_REALTEK) += realtek/
 obj-$(CONFIG_NET_VENDOR_RENESAS) += renesas/
 obj-$(CONFIG_NET_VENDOR_RDC) += rdc/
 obj-$(CONFIG_NET_VENDOR_ROCKER) += rocker/
+obj-$(CONFIG_NET_RTL838X) += rtl838x_eth.o
 obj-$(CONFIG_NET_VENDOR_SAMSUNG) += samsung/
 obj-$(CONFIG_NET_VENDOR_SEEQ) += seeq/
 obj-$(CONFIG_NET_VENDOR_SILAN) += silan/

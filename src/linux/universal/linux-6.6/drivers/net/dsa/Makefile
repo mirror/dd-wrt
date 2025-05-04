@@ -24,5 +24,6 @@ obj-y				+= mv88e6xxx/
 obj-y				+= ocelot/
 obj-y				+= qca/
 obj-y				+= realtek/
+obj-y				+= rtl83xx/
 obj-y				+= sja1105/
 obj-y				+= xrs700x/

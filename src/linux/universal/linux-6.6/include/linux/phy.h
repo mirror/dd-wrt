@@ -148,6 +148,7 @@ typedef enum {
 	PHY_INTERFACE_MODE_XGMII,
 	PHY_INTERFACE_MODE_XLGMII,
 	PHY_INTERFACE_MODE_MOCA,
+	PHY_INTERFACE_MODE_HSGMII,
 	PHY_INTERFACE_MODE_PSGMII,
 	PHY_INTERFACE_MODE_QSGMII,
 	PHY_INTERFACE_MODE_TRGMII,
@@ -256,6 +257,8 @@ static inline const char *phy_modes(phy_interface_t interface)
 		return "xlgmii";
 	case PHY_INTERFACE_MODE_MOCA:
 		return "moca";
+	case PHY_INTERFACE_MODE_HSGMII:
+		return "hsgmii";
 	case PHY_INTERFACE_MODE_PSGMII:
 		return "psgmii";
 	case PHY_INTERFACE_MODE_QSGMII:
@@ -294,7 +297,7 @@ static inline const char *phy_modes(phy_interface_t interface)
 #define PHY_INIT_TIMEOUT	100000
 #define PHY_FORCE_TIMEOUT	10
 
-#define PHY_MAX_ADDR	32
+#define PHY_MAX_ADDR	64
 
 /* Used when trying to connect to a specific phy (mii bus id:phy device id) */
 #define PHY_ID_FMT "%s:%02x"
@@ -1174,6 +1177,10 @@ struct phy_driver {
 	 */
 	int (*led_polarity_set)(struct phy_device *dev, int index,
 				unsigned long modes);
+	int (*get_port)(struct phy_device *dev);
+	int (*set_port)(struct phy_device *dev, int port);
+	int (*get_eee)(struct phy_device *dev, struct ethtool_eee *e);
+	int (*set_eee)(struct phy_device *dev, struct ethtool_eee *e);
 };
 #define to_phy_driver(d) container_of(to_mdio_common_driver(d),		\
 				      struct phy_driver, mdiodrv)

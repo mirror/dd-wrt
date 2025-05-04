@@ -6,7 +6,7 @@ struct device;
 struct net_device;
 
 #define DSA_MAX_SWITCHES	4
-#define DSA_MAX_PORTS		12
+#define DSA_MAX_PORTS		54
 #define DSA_RTABLE_NONE		-1
 
 struct dsa_chip_data {
