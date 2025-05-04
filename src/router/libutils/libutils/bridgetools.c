@@ -37,13 +37,18 @@ int br_set_vlan_filtering(const char *br, int on)
 	eval("ip", "link", "set", "dev", br, "type", "bridge", "no_linklocal_learn", nvram_default_nget("0", "%s_noll", br));
 	eval("ip", "link", "set", "dev", br, "type", "bridge", "vlan_filtering", s_on);
 	if (on) {
-		eval("ip", "link", "set", "dev", br, "type", "bridge", "vlan_default_pvid", "1");
+		if (nvram_nmatch("1", "%s_trunk", br)) {
+			eval("ip", "link", "set", "dev", br, "type", "bridge", "vlan_default_pvid", "0");
+
+		} else {
+			eval("ip", "link", "set", "dev", br, "type", "bridge", "vlan_default_pvid", "1");
+			eval("bridge", "vlan", "add", "dev", br, "vid", "1", "self", "pvid",
+			     "untagged"); /* set default pvid in case it got lost */
+		}
 		if (nvram_nmatch("1", "%s_ad", br))
 			eval("ip", "link", "set", "dev", br, "type", "bridge", "vlan_protocol", "802.1ad");
 		else
 			eval("ip", "link", "set", "dev", br, "type", "bridge", "vlan_protocol", "802.1Q");
-		eval("bridge", "vlan", "add", "dev", br, "vid", "1", "self", "pvid",
-		     "untagged"); /* set default pvid in case it got lost */
 	}
 	return 0;
 }
