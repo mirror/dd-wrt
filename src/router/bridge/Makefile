@@ -25,7 +25,7 @@ HAVE_BERKELEY_DB:=y
 all: bridge
 
 bridge: $(BROBJ) $(LIBNETLINK)
-	$(CC) $^ $(LDFLAGS) $(CFLAGS) $(LDLIBS) -o $@
+	$(CC) $^ $(LDFLAGS) $(CFLAGS) $(LDLTO) $(LDLIBS) -o $@
 
 install: all
 	mkdir -p $(INSTALLDIR)/usr/sbin
