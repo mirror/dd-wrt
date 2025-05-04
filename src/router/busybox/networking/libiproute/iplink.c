@@ -1969,6 +1969,8 @@ enum {
 	IFLA_BR_VLAN_STATS_PER_PORT,
 	IFLA_BR_MULTI_BOOLOPT,
 	IFLA_BR_MCAST_QUERIER_STATE,
+	IFLA_BR_FDB_N_LEARNED,
+	IFLA_BR_FDB_MAX_LEARNED,
 	__IFLA_BR_MAX,
 };
 
@@ -2081,10 +2083,12 @@ static void bridge_explain(void)
 		"		  [ max_age MAX_AGE ]\n"
 		"		  [ ageing_time AGEING_TIME ]\n"
 		"		  [ stp_state STP_STATE ]\n"
+		"		  [ mst_enabled MST_ENABLED ]\n"
 		"		  [ priority PRIORITY ]\n"
 		"		  [ group_fwd_mask MASK ]\n"
 		"		  [ group_address ADDRESS ]\n"
 		"		  [ no_linklocal_learn NO_LINKLOCAL_LEARN ]\n"
+		"		  [ fdb_max_learned FDB_MAX_LEARNED ]\n"
 		"		  [ vlan_filtering VLAN_FILTERING ]\n"
 		"		  [ vlan_protocol VLAN_PROTOCOL ]\n"
 		"		  [ vlan_default_pvid VLAN_DEFAULT_PVID ]\n"
@@ -2128,12 +2132,14 @@ static void bridge_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 		"max_age\0"
 		"ageing_time\0"
 		"stp_state\0"
+		"mst_enabled\0"
 		"priority\0"
 		"vlan_filtering\0"
 		"vlan_protocol\0"
 		"group_fwd_mask\0"
 		"group_address\0"
 		"no_linklocal_learn\0"
+		"fdb_max_learned\0"
 		"fdb_flush\0"
 		"vlan_default_pvid\0"
 		"vlan_stats_enabled\0"
@@ -2168,12 +2174,14 @@ static void bridge_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 		ARG_max_age,
 		ARG_ageing_time,
 		ARG_stp_state,
+		ARG_mst_enabled,
 		ARG_priority,
 		ARG_vlan_filtering,
 		ARG_vlan_protocol,
 		ARG_group_fwd_mask,
 		ARG_group_address,
 		ARG_no_linklocal_learn,
+		ARG_fdb_max_learned,
 		ARG_fdb_flush,
 		ARG_vlan_default_pvid,
 		ARG_vlan_stats_enabled,
@@ -2233,6 +2241,24 @@ static void bridge_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 			val = get_u32(*argv, "invalid stp_state");
 
 			addattr32(n, 1024, IFLA_BR_STP_STATE, val);
+		} else if (arg == ARG_mst_enabled) {
+			uint32_t mst_bit = 1 << BR_BOOLOPT_MST_ENABLE;
+			uint8_t mst_enabled;
+
+			NEXT_ARG();
+			mst_enabled = get_u8(*argv, "invalid mst_enabled");
+			bm.optmask |= mst_bit;
+			if (mst_enabled)
+				bm.optval |= mst_bit;
+			else
+				bm.optval &= ~mst_bit;
+		} else if (arg == ARG_fdb_max_learned) {
+			uint32_t fdb_max_learned;
+
+			NEXT_ARG();
+			fdb_max_learned = get_u32(*argv, "invalid fdb_max_learned");
+
+			addattr32(n, 1024, IFLA_BR_FDB_MAX_LEARNED, fdb_max_learned);
 		} else if (arg == ARG_priority) {
 			uint16_t prio;
 
