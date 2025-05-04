@@ -49,3 +49,6 @@ d19a80db7 | netfilter: nf_tables: incorrect error path handling with NFT_MSG_NEW
 f8f51085b | lsm: new security_file_ioctl_compat() hook
 b73377124 | scsi: qla2xxx: Fix command flush on cable pull
 93f0133b9 | tcp: properly terminate timers for kernel sockets
+
+4.19-st:
+d6ff1c114 | pps: Fix a use-after-free
