@@ -385,7 +385,7 @@ void bridge_bpdu_rcv(int if_index, const unsigned char *data, int len)
 
     /* sanity checks */
     TSTM(br == prt->bridge,, "Bridge mismatch. This bridge is '%s' but port "
-        "'%s' belongs to bridge '%s'", br->sysdeps.name, prt->bridge->sysdeps.name);
+        "'%s' belongs to bridge '%s'", br->sysdeps.name, prt->sysdeps.name, prt->bridge->sysdeps.name);
     TSTM(prt->sysdeps.up,, "Port '%s' should be up", prt->sysdeps.name);
 
     /* Validate Ethernet and LLC header,

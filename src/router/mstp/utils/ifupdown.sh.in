@@ -299,7 +299,7 @@ if [ "$MODE" = 'start' ]; then
     if [ -z "$bridge_forward_delay" ] || [ "$root_forward_delay" != "${bridge_forward_delay%[!0-9]*}" ]; then
       bridge_forward_delay=0
     fi
-    if [ $root_forward_delay -gt $bridge_forward_delay ]; then
+    if [ "$root_forward_delay" -gt "$bridge_forward_delay" ]; then
       maxwait="$root_forward_delay"
     else
       maxwait="$bridge_forward_delay"
@@ -308,7 +308,7 @@ if [ "$MODE" = 'start' ]; then
   fi
 
   # Wait for STP to converge
-  if [ $maxwait -ne 0 ]; then
+  if [ "$maxwait" -ne 0 ]; then
     echo
     echo "Waiting for STP on bridge '$IFACE' to converge (mstpctl_maxwait is $maxwait seconds)."
 
@@ -316,7 +316,7 @@ if [ "$MODE" = 'start' ]; then
     sleep 0.1 2>/dev/null && maxwait=$((maxwait*10))
 
     count=0 ; transitioned='' ; converged=''
-    while [ -z "$converged" ] && [ $count -lt $maxwait ]; do
+    while [ -z "$converged" ] && [ "$count" -lt "$maxwait" ]; do
       sleep 0.1 2>/dev/null || sleep 1
       count=$((count+1))
 

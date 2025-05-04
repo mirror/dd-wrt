@@ -117,7 +117,7 @@ int ethtool_get_speed_duplex(char *ifname, int *speed, int *duplex)
         ERROR("Cannot get speed/duplex for %s: %m\n", ifname);
         return -1;
     }
-    *speed = ecmd.speed;   /* Ethtool speed is in Mbps */
+    *speed = ethtool_cmd_speed(&ecmd); /* Ethtool speed is in Mbps */
     *duplex = ecmd.duplex; /* We have same convention as ethtool.
                                0 = half, 1 = full */
     return 0;

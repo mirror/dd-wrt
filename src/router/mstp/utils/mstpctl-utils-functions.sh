@@ -2,7 +2,7 @@
 
 mstpctl_parse_ports()
 {
-  while [ x"${1+set}" = xset ]
+  while [ "${1+set}" = set ]
   do
     # For compatibility: the 'all' option.
     case $1 in
@@ -50,6 +50,6 @@ EOAI
 	;;
     esac
 
-    echo $i
+    echo "$i"
   done
 }
