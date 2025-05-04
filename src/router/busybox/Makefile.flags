@@ -35,7 +35,7 @@ CFLAGS += $(call cc-option,-Wno-format-security,)
 # warn about C99 declaration after statement
 CFLAGS += $(call cc-option,-Wdeclaration-after-statement,)
 CFLAGS += $(LTO)
-LDFLAGS += $(LDLTO)
+LDFLAGS += $(COPTS) $(LTO) $(LDLTO)
 # If you want to add more -Wsomething above, make sure that it is
 # still possible to build bbox without warnings.
 
