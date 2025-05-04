@@ -1569,6 +1569,7 @@ var networking=new Object();
 networking.hfiltering="Bridge VLAN Filtering";
 networking.flegend="VLAN Filters";
 networking.settings="Settings";
+networking.trunking="Trunking";
 networking.ll_learn="Linklocal Learn";
 networking.pvid="Port VLAN ID";
 networking.untagged="Untagged";
