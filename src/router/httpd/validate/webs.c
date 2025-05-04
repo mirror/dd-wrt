@@ -4923,9 +4923,9 @@ void save_networking(webs_t wp)
 			vlan = websGetVar(wp, var, NULL);
 			sprintf(n, "%s_noll", ifname);
 			if (!vlan || !*vlan) {
-				nvram_seti(n, 0);
-			} else {
 				nvram_seti(n, 1);
+			} else {
+				nvram_seti(n, 0);
 			}
 		}
 		sprintf(var, "bridgemcastbr%d", i);
