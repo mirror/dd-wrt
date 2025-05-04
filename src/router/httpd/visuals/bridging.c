@@ -49,11 +49,11 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "<th><script type=\"text/javascript\">Capture(nas.raidnametbl)</script></th>\n");
 	show_caption_pp(wp, NULL, "networking.stp", "<th width=\"5%%\">", "</th>\n");
 #ifdef HAVE_MSTP
-	char *stpoptions = "STP RSTP MSTP Off";
-	char *stpoptions_trans[] = { "share.stp", "share.rstp", "share.mstp", "share.off" };
+	char *stpoptions = "Off STP RSTP MSTP";
+	char *stpoptions_trans[] = { "share.off", "share.stp", "share.rstp", "share.mstp"  };
 #else
-	char *stpoptions = "STP Off";
-	char *stpoptions_trans[] = { "share.stp", "share.off" };
+	char *stpoptions = "Off STP";
+	char *stpoptions_trans[] = { "share.off", "share.stp"  };
 #endif
 	//	if (vlan)
 	//		show_caption_pp(wp, NULL, "networking.vlan_forwarding", "<th>", "</th>\n");
