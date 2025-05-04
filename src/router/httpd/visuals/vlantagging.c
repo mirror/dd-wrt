@@ -36,7 +36,7 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t **argv)
 #ifdef HAVE_8021AD
 	show_caption_pp(wp, NULL, "networking.vlantype", "<th>", "</th>\n");
 #endif
-	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></thead><tbody>\n");
+	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></tr></thead><tbody>\n");
 
 	wordlist = nvram_safe_get("vlan_tags");
 	foreach(word, wordlist, next) {
