@@ -254,7 +254,7 @@ enum {
 	BR_FDB_ADDED_BY_EXT_LEARN,
 	BR_FDB_OFFLOADED,
 	BR_FDB_NOTIFY,
-	BR_FDB_NOTIFY_INACTIVE
+	BR_FDB_NOTIFY_INACTIVE,
 	BR_FDB_LOCKED,
 	BR_FDB_DYNAMIC_LEARNED,
 };
@@ -1757,14 +1757,6 @@ static inline u16 br_vlan_flags(const struct net_bridge_vlan *v, u16 pvid)
 	return 0;
 }
 
-static inline void __br_notify(int group, int type, const void *data)
-{
-	br_notify_hook_t *notify_hook = rcu_dereference(br_notify_hook);
-
-	if (notify_hook)
-		notify_hook(group, type, data);
-}
-
 #endif
 
 /* br_vlan_options.c */
@@ -2258,4 +2250,14 @@ struct nd_msg *br_is_nd_neigh_msg(struct sk_buff *skb, struct nd_msg *m);
 #define __br_get(__hook, __default, __args ...) \
 		(__hook ? (__hook(__args)) : (__default))
 /* QCA NSS ECM support - End */
+
+static inline void __br_notify(int group, int type, const void *data)
+{
+	br_notify_hook_t *notify_hook = rcu_dereference(br_notify_hook);
+
+	if (notify_hook)
+		notify_hook(group, type, data);
+}
+
+
 #endif
