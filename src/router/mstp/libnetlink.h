@@ -19,6 +19,8 @@ struct rtnl_handle
 int rtnl_open(struct rtnl_handle *rth, unsigned subscriptions);
 int rtnl_open_byproto(struct rtnl_handle *rth, unsigned subscriptions,
                       int protocol);
+int rtnl_add_nl_group(struct rtnl_handle *rth, unsigned int group)
+	__attribute__((warn_unused_result));
 void rtnl_close(struct rtnl_handle *rth);
 int rtnl_wilddump_request(struct rtnl_handle *rth, int fam, int type);
 int rtnl_dump_request(struct rtnl_handle *rth, int type, void *req, int len);
@@ -32,11 +34,20 @@ int rtnl_talk(struct rtnl_handle *rtnl, struct nlmsghdr *n, pid_t peer,
               void *jarg);
 int rtnl_send(struct rtnl_handle *rth, const char *buf, int);
 
+int addattr(struct nlmsghdr *n, int maxlen, int type);
 int addattr8(struct nlmsghdr *n, int maxlen, int type, __u8 data);
+int addattr16(struct nlmsghdr *n, int maxlen, int type, __u16 data);
 int addattr32(struct nlmsghdr *n, int maxlen, int type, __u32 data);
+int addattr64(struct nlmsghdr *n, int maxlen, int type, __u64 data);
+int addattrstrz(struct nlmsghdr *n, int maxlen, int type, const char *data);
+
 int addattr_l(struct nlmsghdr *n, int maxlen, int type, const void *data,
               int alen);
 int addraw_l(struct nlmsghdr *n, int maxlen, const void *data, int len);
+struct rtattr *addattr_nest(struct nlmsghdr *n, int maxlen, int type);
+int addattr_nest_end(struct nlmsghdr *n, struct rtattr *nest);
+struct rtattr *addattr_nest_compat(struct nlmsghdr *n, int maxlen, int type, const void *data, int len);
+int addattr_nest_compat_end(struct nlmsghdr *n, struct rtattr *nest);
 int rta_addattr8(struct rtattr *rta, int maxlen, int type, __u8 data);
 int rta_addattr16(struct rtattr *rta, int maxlen, int type, __u16 data);
 int rta_addattr32(struct rtattr *rta, int maxlen, int type, __u32 data);
@@ -63,5 +74,10 @@ int rtnl_from_file(FILE *, rtnl_filter_t handler, void *jarg);
 
 #define NLMSG_TAIL(nmsg) \
     ((struct rtattr *) (((void *) (nmsg)) + NLMSG_ALIGN((nmsg)->nlmsg_len)))
+
+#ifndef BRVLAN_RTA
+#define BRVLAN_RTA(r) \
+	((struct rtattr *)(((char *)(r)) + NLMSG_ALIGN(sizeof(struct br_vlan_msg))))
+#endif
 
 #endif /* __LIBNETLINK_H__ */

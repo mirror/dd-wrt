@@ -43,4 +43,6 @@ int get_bridge_portno(char *if_name);
 char *index_to_name(int index, char *name);
 char *index_to_port_name(int index, char *name);
 
+const char *stp_state_name(__u8 state);
+
 #endif /* NETIF_UTILS_H */

@@ -31,6 +31,8 @@
 #include <net/if.h>
 #include <linux/if_ether.h>
 
+#define VLAN_BITMAP_SIZE        (4096/32)
+
 typedef struct
 {
     int if_index;
@@ -38,6 +40,9 @@ typedef struct
     char name[IFNAMSIZ];
 
     bool up;
+
+    __u32 vlans[VLAN_BITMAP_SIZE];
+    bool mst_en;
 } sysdep_br_data_t;
 
 typedef struct
@@ -48,6 +53,8 @@ typedef struct
 
     bool up;
     int speed, duplex;
+
+    __u32 vlans[VLAN_BITMAP_SIZE];
 } sysdep_if_data_t;
 
 #define GET_PORT_SPEED(port)    ((port)->sysdeps.speed)
@@ -79,9 +86,13 @@ typedef struct
 
 extern struct rtnl_handle rth_state;
 
-int init_bridge_ops(void);
+int init_netlink_ops(void);
 
 int bridge_notify(int br_index, int if_index, bool newlink, unsigned flags);
+
+int bridge_mst_notify(int if_index, bool mst_en);
+
+int bridge_vlan_notify(int if_index, bool newvlan, __u16 vid);
 
 void bridge_bpdu_rcv(int ifindex, const unsigned char *data, int len);
 

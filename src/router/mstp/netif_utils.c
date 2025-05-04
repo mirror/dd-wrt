@@ -33,6 +33,7 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <net/if.h>
+#include <linux/if_bridge.h>
 #include <linux/if_ether.h>
 #include <linux/ethtool.h>
 #include <linux/sockios.h>
@@ -176,4 +177,21 @@ int get_bridge_portno(char *if_name)
 out:
     close(fd);
     return res;
+}
+
+static const char *port_states[] =
+{
+    [BR_STATE_DISABLED] = "disabled",
+    [BR_STATE_LISTENING] = "listening",
+    [BR_STATE_LEARNING] = "learning",
+    [BR_STATE_FORWARDING] = "forwarding",
+    [BR_STATE_BLOCKING] = "blocking",
+};
+
+const char *stp_state_name(__u8 state)
+{
+    if (state <= BR_STATE_BLOCKING)
+	    return port_states[state];
+    else
+	    return port_states[BR_STATE_DISABLED];
 }

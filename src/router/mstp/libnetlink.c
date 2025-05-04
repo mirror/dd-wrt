@@ -37,6 +37,12 @@
 #define RTNL_RCV_BUFSIZE	DEFAULT_RTNL_BUFSIZE
 #endif
 
+int rtnl_add_nl_group(struct rtnl_handle *rth, unsigned int group)
+{
+	return setsockopt(rth->fd, SOL_NETLINK, NETLINK_ADD_MEMBERSHIP,
+			  &group, sizeof(group));
+}
+
 void rtnl_close(struct rtnl_handle *rth)
 {
 	close(rth->fd);
@@ -501,40 +507,34 @@ int rtnl_from_file(FILE * rtnl, rtnl_filter_t handler, void *jarg)
 	}
 }
 
-int addattr32(struct nlmsghdr *n, int maxlen, int type, __u32 data)
+int addattr(struct nlmsghdr *n, int maxlen, int type)
 {
-	int len = RTA_LENGTH(4);
-	struct rtattr *rta;
-	if (NLMSG_ALIGN(n->nlmsg_len) + len > maxlen) {
-		ERROR(
-			"addattr32: Error! max allowed bound %d exceeded\n",
-			maxlen);
-		return -1;
-	}
-	rta = NLMSG_TAIL(n);
-	rta->rta_type = type;
-	rta->rta_len = len;
-	memcpy(RTA_DATA(rta), &data, 4);
-	n->nlmsg_len = NLMSG_ALIGN(n->nlmsg_len) + len;
-	return 0;
+	return addattr_l(n, maxlen, type, NULL, 0);
 }
 
 int addattr8(struct nlmsghdr *n, int maxlen, int type, __u8 data)
 {
-	int len = RTA_LENGTH(1);
-	struct rtattr *rta;
-	if (NLMSG_ALIGN(n->nlmsg_len) + len > maxlen) {
-		ERROR(
-			"addattr8: Error! max allowed bound %d exceeded\n",
-			maxlen);
-		return -1;
-	}
-	rta = NLMSG_TAIL(n);
-	rta->rta_type = type;
-	rta->rta_len = len;
-	memcpy(RTA_DATA(rta), &data, 1);
-	n->nlmsg_len = NLMSG_ALIGN(n->nlmsg_len) + len;
-	return 0;
+	return addattr_l(n, maxlen, type, &data, sizeof(__u8));
+}
+
+int addattr16(struct nlmsghdr *n, int maxlen, int type, __u16 data)
+{
+	return addattr_l(n, maxlen, type, &data, sizeof(__u16));
+}
+
+int addattr32(struct nlmsghdr *n, int maxlen, int type, __u32 data)
+{
+	return addattr_l(n, maxlen, type, &data, sizeof(__u32));
+}
+
+int addattr64(struct nlmsghdr *n, int maxlen, int type, __u64 data)
+{
+	return addattr_l(n, maxlen, type, &data, sizeof(__u64));
+}
+
+int addattrstrz(struct nlmsghdr *n, int maxlen, int type, const char *str)
+{
+	return addattr_l(n, maxlen, type, str, strlen(str)+1);
 }
 
 int addattr_l(struct nlmsghdr *n, int maxlen, int type, const void *data,
@@ -570,6 +570,39 @@ int addraw_l(struct nlmsghdr *n, int maxlen, const void *data, int len)
 	memset((void *)NLMSG_TAIL(n) + len, 0, NLMSG_ALIGN(len) - len);
 	n->nlmsg_len = NLMSG_ALIGN(n->nlmsg_len) + NLMSG_ALIGN(len);
 	return 0;
+}
+
+struct rtattr *addattr_nest(struct nlmsghdr *n, int maxlen, int type)
+{
+	struct rtattr *nest = NLMSG_TAIL(n);
+
+	addattr_l(n, maxlen, type, NULL, 0);
+	return nest;
+}
+
+int addattr_nest_end(struct nlmsghdr *n, struct rtattr *nest)
+{
+	nest->rta_len = (void *)NLMSG_TAIL(n) - (void *)nest;
+	return n->nlmsg_len;
+}
+
+struct rtattr *addattr_nest_compat(struct nlmsghdr *n, int maxlen, int type,
+				   const void *data, int len)
+{
+	struct rtattr *start = NLMSG_TAIL(n);
+
+	addattr_l(n, maxlen, type, data, len);
+	addattr_nest(n, maxlen, type);
+	return start;
+}
+
+int addattr_nest_compat_end(struct nlmsghdr *n, struct rtattr *start)
+{
+	struct rtattr *nest = (void *)start + NLMSG_ALIGN(start->rta_len);
+
+	start->rta_len = (void *)NLMSG_TAIL(n) - (void *)start;
+	addattr_nest_end(n, nest);
+	return n->nlmsg_len;
 }
 
 int rta_addattr32(struct rtattr *rta, int maxlen, int type, __u32 data)
@@ -672,4 +705,17 @@ int parse_rtattr_byindex(struct rtattr *tb[], int max, struct rtattr *rta,
 		ERROR("!!!Deficit %d, rta_len=%d\n", len,
 			rta->rta_len);
 	return i;
+}
+
+int __parse_rtattr_nested_compat(struct rtattr *tb[], int max, struct rtattr *rta,
+			         int len)
+{
+	if (RTA_PAYLOAD(rta) < len)
+		return -1;
+	if (RTA_PAYLOAD(rta) >= RTA_ALIGN(len) + sizeof(struct rtattr)) {
+		rta = RTA_DATA(rta) + RTA_ALIGN(len);
+		return parse_rtattr_nested(tb, max, rta);
+	}
+	memset(tb, 0, sizeof(struct rtattr *) * max);
+	return 0;
 }

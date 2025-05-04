@@ -442,6 +442,7 @@ typedef struct
 
 typedef struct
 {
+    struct list_head list; /* anchor in global list of ports */
     struct list_head br_list; /* anchor in bridge's list of ports */
     bridge_t * bridge;
     __be16 port_number;
@@ -584,6 +585,7 @@ void MSTP_IN_set_mst_config_id(bridge_t *br, __u16 revision, __u8 *name);
 
 /* External actions (outputs) */
 void MSTP_OUT_set_state(per_tree_port_t *ptp, int new_state);
+void MSTP_OUT_set_vid2mstid(bridge_t *br, __u16 vid, __u16 mstid);
 void MSTP_OUT_flush_all_fids(per_tree_port_t *ptp);
 void MSTP_OUT_set_ageing_time(port_t *prt, unsigned int ageingTime);
 void MSTP_OUT_tx_bpdu(port_t *prt, bpdu_t *bpdu, int size);
