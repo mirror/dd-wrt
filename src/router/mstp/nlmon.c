@@ -15,6 +15,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <linux/if_bridge.h>
@@ -44,22 +45,13 @@ enum
     IF_LINK_MODE_DORMANT, /* limit upward transition to dormant */
 };
 
-static const char *port_states[] =
-{
-    [BR_STATE_DISABLED] = "disabled",
-    [BR_STATE_LISTENING] = "listening",
-    [BR_STATE_LEARNING] = "learning",
-    [BR_STATE_FORWARDING] = "forwarding",
-    [BR_STATE_BLOCKING] = "blocking",
-};
-
 static struct rtnl_handle rth;
-static struct epoll_event_handler br_handler;
+static struct epoll_event_handler nl_handler;
 
 struct rtnl_handle rth_state;
 
-static int dump_msg(const struct sockaddr_nl *who, struct nlmsghdr *n,
-                    void *arg)
+static int dump_br_msg(const struct sockaddr_nl *who, struct nlmsghdr *n,
+                       void *arg)
 {
     struct ifinfomsg *ifi = NLMSG_DATA(n);
     struct rtattr * tb[IFLA_MAX + 1];
@@ -147,7 +139,7 @@ static int dump_msg(const struct sockaddr_nl *who, struct nlmsghdr *n,
     {
         uint8_t state = *(uint8_t *)RTA_DATA(tb[IFLA_PROTINFO]);
         if(state <= BR_STATE_BLOCKING)
-            LOG("state %s", port_states[state]);
+            LOG("state %s", stp_state_name(state));
         else
             LOG("state (%d)", state);
     }
@@ -161,12 +153,114 @@ static int dump_msg(const struct sockaddr_nl *who, struct nlmsghdr *n,
     else
         br_index = -1;
 
+    if(br_index >= 0 && tb[IFLA_LINKINFO])
+    {
+        struct rtattr *tbli[__IFLA_INFO_MAX + 1];
+        char *kind = NULL;
+
+        parse_rtattr_nested(tbli, IFLA_INFO_MAX, tb[IFLA_LINKINFO]);
+        if (tbli[IFLA_INFO_KIND])
+        {
+            kind = (char *)RTA_DATA(tbli[IFLA_INFO_KIND]);
+        }
+
+        if (kind && !strcmp("bridge", kind) && tbli[IFLA_INFO_DATA])
+        {
+            struct rtattr *tbbr[__IFLA_BR_MAX + 1];
+
+            parse_rtattr_nested(tbbr, __IFLA_BR_MAX, tbli[IFLA_INFO_DATA]);
+
+            if (tbbr[IFLA_BR_MULTI_BOOLOPT])
+            {
+                struct br_boolopt_multi *bm;
+                bool mst_en;
+
+                bm = (struct br_boolopt_multi *)RTA_DATA(tbbr[IFLA_BR_MULTI_BOOLOPT]);
+                mst_en = !!(bm->optval & (1u << BR_BOOLOPT_MST_ENABLE));
+
+                bridge_mst_notify(br_index, mst_en);
+            }
+
+        }
+    }
+
     bridge_notify(br_index, ifi->ifi_index, newlink, ifi->ifi_flags);
 
     return 0;
 }
 
-static inline void br_ev_handler(uint32_t events, struct epoll_event_handler *h)
+static int dump_vlan_msg(const struct sockaddr_nl *who, struct nlmsghdr *n,
+                    void *arg)
+{
+    struct br_vlan_msg *bvm = NLMSG_DATA(n);
+    int len = n->nlmsg_len;
+    struct rtattr *pos;
+    int ifindex;
+
+    bool newvlan = n->nlmsg_type == RTM_NEWVLAN;
+
+    len -= NLMSG_LENGTH(sizeof(*bvm));
+    if(len < 0)
+        return -1;
+
+    if (bvm->family != AF_BRIDGE)
+        return 0;
+
+    ifindex = bvm->ifindex;
+
+    LOG("%d: %sVLAN ", ifindex, (newvlan ? "NEW" : "DEL"));
+
+    for(pos = BRVLAN_RTA(bvm); RTA_OK(pos, len); pos = RTA_NEXT(pos, len))
+    {
+        struct rtattr *tb[BRIDGE_VLANDB_ENTRY_MAX + 1];
+        struct bridge_vlan_info *info = NULL;
+        __u16 i, range = 0;
+	
+        if((pos->rta_type & NLA_TYPE_MASK) != BRIDGE_VLANDB_ENTRY)
+	  continue;
+
+        parse_rtattr_nested(tb, BRIDGE_VLANDB_ENTRY_MAX, pos);
+
+        if (tb[BRIDGE_VLANDB_ENTRY_INFO])
+            info = RTA_DATA(tb[BRIDGE_VLANDB_ENTRY_INFO]);
+        if (tb[BRIDGE_VLANDB_ENTRY_RANGE])
+            range = *(__u16 *)RTA_DATA(tb[BRIDGE_VLANDB_ENTRY_RANGE]);
+
+        if(!info)
+        {
+            ERROR("BUG: nil bridge_vlan_info\n");
+            continue;
+        }
+
+        LOG("%d: info->vid %i, range %i", ifindex, info->vid, range);
+
+        if(!range)
+            range = info->vid;
+
+        for(i = info->vid; i <= range; i++)
+            bridge_vlan_notify(ifindex, newvlan, i);
+    }
+
+    return 0;
+}
+
+static int dump_msg(const struct sockaddr_nl *who, struct nlmsghdr *n,
+                    void *arg)
+{
+    switch (n->nlmsg_type)
+    {
+        case RTM_NEWLINK:
+        case RTM_DELLINK:
+            return dump_br_msg(who, n, arg);
+        case RTM_NEWVLAN:
+        case RTM_DELVLAN:
+            return dump_vlan_msg(who, n, arg);
+        default:
+            return 0;
+    }
+}
+
+static inline void nl_ev_handler(uint32_t events, struct epoll_event_handler *h)
 {
     if(rtnl_listen(&rth, dump_msg, stdout) < 0)
     {
@@ -174,8 +268,10 @@ static inline void br_ev_handler(uint32_t events, struct epoll_event_handler *h)
     }
 }
 
-int init_bridge_ops(void)
+int init_netlink_ops(void)
 {
+    bool have_vlandb = false;
+
     if(rtnl_open(&rth, RTMGRP_LINK) < 0)
     {
         ERROR("Couldn't open rtnl socket for monitoring\n");
@@ -186,6 +282,15 @@ int init_bridge_ops(void)
     {
         ERROR("Couldn't open rtnl socket for setting state\n");
         return -1;
+    }
+
+    if(rtnl_add_nl_group(&rth, RTNLGRP_BRVLAN) < 0)
+    {
+        ERROR("Couldn't join RTNLGRP_BRVLAN\n");
+    }
+    else
+    {
+        have_vlandb = true;
     }
 
     if(rtnl_wilddump_request(&rth, PF_BRIDGE, RTM_GETLINK) < 0)
@@ -200,17 +305,32 @@ int init_bridge_ops(void)
         return -1;
     }
 
+    if(have_vlandb)
+    {
+        if(rtnl_wilddump_request(&rth, PF_BRIDGE, RTM_GETVLAN) < 0)
+        {
+            ERROR("Cannot send vlandb dump request: %m\n");
+            return -1;
+        }
+
+        if(rtnl_dump_filter(&rth, dump_msg, stdout, NULL, NULL) < 0)
+        {
+            ERROR("Vlandb dump terminated\n");
+            return -1;
+        }
+    }
+
     if(fcntl(rth.fd, F_SETFL, O_NONBLOCK) < 0)
     {
         ERROR("Error setting O_NONBLOCK: %m\n");
         return -1;
     }
 
-    br_handler.fd = rth.fd;
-    br_handler.arg = NULL;
-    br_handler.handler = br_ev_handler;
+    nl_handler.fd = rth.fd;
+    nl_handler.arg = NULL;
+    nl_handler.handler = nl_ev_handler;
 
-    if(add_epoll(&br_handler) < 0)
+    if(add_epoll(&nl_handler) < 0)
         return -1;
 
     return 0;
