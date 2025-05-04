@@ -42,25 +42,25 @@ make_db:
 	make -C db/build_unix install DESTDIR=$(TOP)/iptools/db/staging
 
 ss: ss.o ssfilter_check.o ssfilter.tab.o $(SSOBJ)
-	$(QUIET_LINK)$(CC) $^ $(LDFLAGS) $(LDLIBS) -o $@
+	$(QUIET_LINK)$(CC) $^ $(CFLAGS) $(LDLTO) $(LDFLAGS) $(LDLIBS) -o $@
 
 nstat: nstat.o $(SSOBJ)
-	$(QUIET_CC)$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o nstat $^ $(LDLIBS) -lm
+	$(QUIET_CC)$(CC) $(CFLAGS) $(LDLTO) $(CPPFLAGS) $(LDFLAGS) -o nstat $^ $(LDLIBS) -lm
 
 ifstat: ifstat.o $(SSOBJ)
-	$(QUIET_CC)$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o ifstat $^ $(LDLIBS) -lm
+	$(QUIET_CC)$(CC) $(CFLAGS) $(LDLTO) $(CPPFLAGS) $(LDFLAGS) -o ifstat $^ $(LDLIBS) -lm
 
 rtacct: rtacct.o $(SSOBJ)
-	$(QUIET_CC)$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o rtacct $^ $(LDLIBS) -lm
+	$(QUIET_CC)$(CC) $(CFLAGS) $(LDLTO) $(CPPFLAGS) $(LDFLAGS) -o rtacct $^ $(LDLIBS) -lm
 
 arpd: arpd.o $(SSOBJ)
-	$(QUIET_CC)$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o arpd $^ $(LDLIBS) -ldb
+	$(QUIET_CC)$(CC) $(CFLAGS) $(LDLTO) $(CPPFLAGS) $(LDFLAGS) -o arpd $^ $(LDLIBS) -ldb
 
 ssfilter.tab.c: ssfilter.y
 	$(QUIET_YACC)$(YACC) -b ssfilter ssfilter.y
 
 lnstat: $(LNSTATOBJ) $(SSOBJ)
-	$(QUIET_LINK)$(CC) $^ $(LDFLAGS) $(LDLIBS) -o $@
+	$(QUIET_LINK)$(CC) $^ $(CFLAGS) $(LDLTO) $(LDFLAGS) $(LDLIBS) -o $@
 
 install: all
 	make -C db/build_unix install DESTDIR=$(INSTALLDIR)
