@@ -279,6 +279,7 @@ int stop_process_timeout(const char *name, const char *desc, int timeout);
 int stop_process_hard(const char *name, const char *desc);
 
 void network_delay(const char *service);
+void set_stp_state(char *bridge, char *stp);
 
 char *getMacAddr(char *ifname, char *mac, size_t len);
 

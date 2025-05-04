@@ -196,7 +196,7 @@ void stop_vlantagging(void)
 	}
 }
 
-static void set_stp_state(char *bridge, char *stp)
+void set_stp_state(char *bridge, char *stp)
 {
 	br_set_stp_state(bridge, strcmp(stp, "Off") ? 1 : 0);
 #ifdef HAVE_MSTP
@@ -258,8 +258,6 @@ void start_bridgesif(void)
 #ifdef HAVE_MICRO
 	br_init();
 #endif
-	set_stp_state("br0", getBridgeSTPType("br0", stp));
-
 	wordlist = nvram_safe_get("bridgesif");
 	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(tag, word, 0);

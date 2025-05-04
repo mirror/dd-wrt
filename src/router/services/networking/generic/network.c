@@ -2079,7 +2079,9 @@ void start_lan(void)
 			set_wan_state(1);
 	}
 	if (strncmp(lan_ifname, "br0", 3) == 0) {
+		char stp[256];
 		br_add_bridge(lan_ifname);
+		set_stp_state(lan_ifname, getBridgeSTPType(ifname, stp));
 		eval("ifconfig", lan_ifname, "promisc");
 		char word[256];
 		br_set_stp_state(lan_ifname, getBridgeSTP(lan_ifname, word));
