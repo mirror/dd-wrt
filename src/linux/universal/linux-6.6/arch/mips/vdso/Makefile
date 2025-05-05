@@ -24,6 +24,8 @@ ifndef CONFIG_64BIT
 ccflags-vdso += -DBUILD_VDSO32
 endif
 
+ccflags-vdso += -std=gnu89
+
 #
 # The -fno-jump-tables flag only prevents the compiler from generating
 # jump tables but does not prevent the compiler from emitting absolute
