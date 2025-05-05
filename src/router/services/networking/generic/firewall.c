@@ -3827,7 +3827,7 @@ void start_firewall(void)
 #endif
 #endif
 #if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_IPQ806X) || defined(HAVE_LAGUNA) || defined(HAVE_CAMBRIA) || \
-	defined(HAVE_IPQ6018) || defined(HAVE_NEWPORT) || defined(HAVE_NORTHSTAR) || defined(HAVE_OCTEON) || defined(HAVE_80211AC)
+	defined(HAVE_IPQ6018) || defined(HAVE_NEWPORT) || defined(HAVE_NORTHSTAR) || defined(HAVE_OCTEON) || defined(HAVE_80211AC) || defined(HAVE_REALTEK)
 	writeprocsysnet("core/somaxconn", nvram_default_get("net.core.somaxconn", "1024"));
 	writeprocsysnet("ipv4/tcp_max_syn_backlog", nvram_default_get("net.ipv4.tcp_max_syn_backlog", "1024"));
 	writeprocsysnet("core/rmem_default", nvram_default_get("net.core.rmem_default", "262144"));

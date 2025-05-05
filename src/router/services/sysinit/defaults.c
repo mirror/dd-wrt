@@ -411,6 +411,8 @@ struct nvram_param srouter_defaults[] = {
 	{ "wan_proto", "disabled" },	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_IPQ6018
 	{ "wan_proto", "disabled" },	/* [static|dhcp|pppoe|disabled] */
+#elif HAVE_REALTEK
+	{ "wan_proto", "disabled" },	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_VENTANA
 	{ "wan_proto", "disabled" },	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_MAGICBOX

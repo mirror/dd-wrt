@@ -707,9 +707,9 @@ void start_setup_vlans(void)
 
 int flush_interfaces(void)
 {
-	char all_ifnames[256] = { 0 }, *c;
+	char all_ifnames[512] = { 0 }, *c;
 	const char *next;
-	char buff[128], buff2[128];
+	char buff[512], buff2[512];
 
 #ifdef HAVE_MADWIFI
 #ifdef HAVE_GATEWORX
@@ -720,6 +720,8 @@ int flush_interfaces(void)
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_LAGUNA
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+#elif HAVE_REALTEK
+	snprintf(all_ifnames, 255, "%s %s %s", "lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8 lan9 lan10 lan11 lan12 lan13 lan14 lan15 lan16 lan17 lan18 lan19 lan20 lan21 lan22 lan23 lan24 lan25 lan26 lan27 lan28 lan29 lan30 lan31 lan32 lan33 lan34 lan35 lan36 lan37 lan38 lan39 lan40 lan41 lan42 lan43 lan44 lan45 lan46 lan47 lan48 lan9", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_IPQ6018
 	int brand = getRouterBrand();
 	snprintf(all_ifnames, 255, "%s %s %s", "wan lan1 lan2 lan3 lan4", nvram_safe_get("lan_ifnames"),

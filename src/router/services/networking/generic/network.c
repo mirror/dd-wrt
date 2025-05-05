@@ -657,7 +657,7 @@ void reset_hwaddr(char *ifname)
 	defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_RT2880) || defined(HAVE_LS2) || defined(HAVE_LS5) ||       \
 	defined(HAVE_SOLO51) || defined(HAVE_WHRAG108) || defined(HAVE_PB42) || defined(HAVE_LSX) || defined(HAVE_DANUBE) ||   \
 	defined(HAVE_STORM) || defined(HAVE_OPENRISC) || defined(HAVE_ADM5120) || defined(HAVE_TW6600) || defined(HAVE_CA8) || \
-	defined(HAVE_IPQ6018) || defined(HAVE_EROUTER)
+	defined(HAVE_IPQ6018) || defined(HAVE_EROUTER) || defined(HAVE_REALTEK)
 			nvram_set("et0macaddr", def);
 #endif
 #ifdef HAVE_XSCALE
@@ -696,7 +696,7 @@ void start_lan(void)
 	char eabuf[32];
 	char lan_ifname[64]; //= strdup(nvram_safe_get("lan_ifname"));
 	char wan_ifname[64]; //= strdup(nvram_safe_get("wan_ifname"));
-	char lan_ifnames[128]; //= strdup(nvram_safe_get("lan_ifnames"));
+	char lan_ifnames[512]; //= strdup(nvram_safe_get("lan_ifnames"));
 	char name[80];
 	const char *next;
 	char realname[80];
@@ -1731,6 +1731,17 @@ void start_lan(void)
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
+#elif defined(HAVE_REALTEK)
+	nvram_setz(lan_ifnames, "lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8 lan9 lan10 lan11 lan12 lan13 lan14 lan15 lan16 lan17 lan18 lan19 lan20 lan21 lan22 lan23 lan24 lan25 lan26 lan27 lan28 lan29 lan30 lan31 lan32 lan33 lan34 lan35 lan36 lan37 lan38 lan39 lan40 lan41 lan42 lan43 lan44 lan45 lan46 lan47 lan48 lan9");
+	if (getSTA() || getWET() || CANBRIDGE()) {
+		PORTSETUPWAN("");
+	} else {
+		PORTSETUPWAN("lan1");
+	}
+	nvram_set("wan_default", "lan1");
+	if (nvram_match("et0macaddr", ""))
+		nvram_set("et0macaddr", get_hwaddr("lan1", macaddr));
+	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif defined(HAVE_IPQ6018)
 	int brand = getRouterBrand();
 	switch (brand) {
@@ -2120,7 +2131,7 @@ void start_lan(void)
 	!defined(HAVE_WHRAG108) && !defined(HAVE_X86) && !defined(HAVE_LS2) && !defined(HAVE_LS5) && !defined(HAVE_CA8) &&       \
 	!defined(HAVE_TW6600) && !defined(HAVE_PB42) && !defined(HAVE_LSX) && !defined(HAVE_DANUBE) && !defined(HAVE_STORM) &&   \
 	!defined(HAVE_OPENRISC) && !defined(HAVE_ADM5120) && !defined(HAVE_RT2880) && !defined(HAVE_SOLO51) &&                   \
-	!defined(HAVE_EROUTER) && !defined(HAVE_IPQ806X) && !defined(HAVE_R9000) && !defined(HAVE_IPQ6018)
+	!defined(HAVE_EROUTER) && !defined(HAVE_IPQ806X) && !defined(HAVE_R9000) && !defined(HAVE_IPQ6018) && !defined(HAVE_REALTEK)
 			if (!strcmp(name, "eth2")) {
 				strcpy(realname, "wlan0");
 			} else
@@ -2607,6 +2618,9 @@ void start_lan(void)
 #define HAVE_RB500
 #endif
 #ifdef HAVE_IPQ6018
+#define HAVE_RB500
+#endif
+#ifdef HAVE_REALTEK
 #define HAVE_RB500
 #endif
 #ifdef HAVE_NEWPORT

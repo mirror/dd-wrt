@@ -119,6 +119,7 @@ static void svqos_reset_ports(void)
 #ifndef HAVE_LAGUNA
 #ifndef HAVE_VENTANA
 #ifndef HAVE_IPQ6018
+#ifndef HAVE_REALTEK
 #ifndef HAVE_NEWPORT
 #ifndef HAVE_EROUTER
 #ifndef HAVE_OPENRISC
@@ -168,6 +169,7 @@ static void svqos_reset_ports(void)
 #endif
 #endif
 #endif
+#endif
 }
 
 static int svqos_set_ports(void)
@@ -185,6 +187,7 @@ static int svqos_set_ports(void)
 #ifndef HAVE_X86
 #ifndef HAVE_LAGUNA
 #ifndef HAVE_IPQ6018
+#ifndef HAVE_REALTEK
 #ifndef HAVE_VENTANA
 #ifndef HAVE_NEWPORT
 #ifndef HAVE_EROUTER
@@ -216,6 +219,7 @@ static int svqos_set_ports(void)
 			writevaproc(lvl, "/proc/switch/eth0/port/%d/prio", loop);
 		}
 	}
+#endif
 #endif
 #endif
 #endif
