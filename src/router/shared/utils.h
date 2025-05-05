@@ -1219,9 +1219,14 @@ extern int pidof(const char *name);
 extern int killall(const char *name, int sig);
 extern int getifcount(const char *ifprefix);
 extern int getIfByIdx(char *ifname, int index);
+
+#define BRIDGESONLY 0x1
+#define NOPORTS 0x2
+#define NOBRIDGES 0x4
+
 extern int getIfList(char *buffer, size_t len, const char *ifprefix);
 extern int getIfListNoPorts(char *buffer, size_t len, const char *ifprefix);
-extern int getIfListB(char *buffer, size_t len, const char *ifprefix, int bridgesonly, int nosort, int noport);
+extern int getIfListB(char *buffer, size_t len, const char *ifprefix, int flags, int nosort);
 extern void getIfLists(char *eths, size_t size);
 extern int ifexists(const char *ifname);
 extern void getinterfacelist(const char *ifprefix, char *buffer);

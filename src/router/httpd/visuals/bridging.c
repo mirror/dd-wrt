@@ -1,4 +1,5 @@
 /*
+
  * bridging.c
  *
  * Copyright (C) 2005 - 2024 Sebastian Gottschall <s.gottschall@dd-wrt.com>
@@ -23,7 +24,6 @@
 
 EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 {
-	char buffer[256];
 	int count = 0;
 	int br0found = 0;
 	char word[256];
@@ -33,7 +33,6 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 	char bridge_name[32];
 	int vlan = br_has_vlan_filtering();
 	char buf[256];
-	getIfList(buffer, sizeof(buffer), NULL);
 	int realcount = nvram_default_geti("bridges_count", 0);
 
 	wordlist = nvram_safe_get("bridges");
@@ -425,9 +424,9 @@ EJ_VISIBLE void ej_show_bridgeifnames(webs_t wp, int argc, char_t **argv)
 	char word[256];
 	const char *next, *wordlist;
 	bzero(finalbuffer, 512);
-	getIfList(bufferif, sizeof(bufferif), NULL);
+	getIfListB(bufferif, sizeof(bufferif), NULL, NOBRIDGES, 1);
 	foreach(word, bufferif, next) {
-		if (!isbridge(word) && strcmp(word, "lo") && !strchr(word, ':')) {
+		if (strcmp(word, "lo") && !strchr(word, ':')) {
 			strcat(finalbuffer, " ");
 			strcat(finalbuffer, word);
 		}
@@ -435,7 +434,7 @@ EJ_VISIBLE void ej_show_bridgeifnames(webs_t wp, int argc, char_t **argv)
 	strcpy(bufferif, finalbuffer);
 	int i;
 
-	getIfListB(finalbuffer, sizeof(finalbuffer), NULL, 1, 1, 0);
+	getIfListB(finalbuffer, sizeof(finalbuffer), NULL, BRIDGESONLY, 1);
 	char *checkbuffer = calloc(strlen(finalbuffer) + 6, 1);
 	strcpy(checkbuffer, "none ");
 	strcat(checkbuffer, finalbuffer);

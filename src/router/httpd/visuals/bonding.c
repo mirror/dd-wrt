@@ -48,7 +48,7 @@ EJ_VISIBLE void ej_show_bondings(webs_t wp, int argc, char_t **argv)
 
 	getIfListNoPorts(bufferif, sizeof(bufferif), DEFAULT_ETH_LIST);
 	int i;
-	getIfListB(buffer, sizeof(buffer), NULL, 1, 1, 1);
+	getIfListB(buffer, sizeof(buffer), NULL, BRIDGESONLY | NOPORTS, 1);
 	strcat(bufferif, " ");
 	strcat(bufferif, buffer);
 

@@ -256,7 +256,7 @@ static int zebra_ospf_init(void)
 		getIfList(eths2, sizeof(eths2), "ppp tun");
 		strcat(eths, " ");
 		strcat(eths, eths2);
-		getIfListB(bufferif, sizeof(bufferif), NULL, 1, 1, 1);
+		getIfListB(bufferif, sizeof(bufferif), NULL, BRIDGESONLY | NOPORTS, 1);
 		foreach(var, eths, next) {
 			if (!strcmp("etherip0", var))
 				continue;

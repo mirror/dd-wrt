@@ -937,6 +937,10 @@ int ifexists(const char *ifname)
 	return getifcount(ifname) > 0 ? 1 : 0;
 }
 
+#define BRIDGESONLY 0x1
+#define NOPORTS 0x2
+#define NOBRIDGES 0x4
+
 int getifcount(const char *ifprefix)
 {
 	/*
@@ -948,7 +952,7 @@ int getifcount(const char *ifprefix)
 	 */
 	char *iflist = calloc(256, 1);
 
-	int c = getIfListB(iflist, 256, ifprefix, 0, 1, 0);
+	int c = getIfListB(iflist, 256, ifprefix, 0, 1);
 
 	free(iflist);
 	return c;
@@ -992,12 +996,12 @@ void strtrim_right(char *p, int c)
 
 int getIfList(char *buffer, size_t len, const char *ifprefix)
 {
-	return getIfListB(buffer, len, ifprefix, 0, 0, 0);
+	return getIfListB(buffer, len, ifprefix, 0, 0);
 }
 
 int getIfListNoPorts(char *buffer, size_t len, const char *ifprefix)
 {
-	return getIfListB(buffer, len, ifprefix, 0, 0, 1);
+	return getIfListB(buffer, len, ifprefix, NOPORTS, 0);
 }
 
 static int ifcompare(const void *a, const void *b)
@@ -1043,9 +1047,10 @@ int getIfByIdx(char *ifname, int index)
 #endif
 }
 
+
 // returns a physical interfacelist filtered by ifprefix. if ifprefix is
 // NULL, all valid interfaces will be returned
-static char **_getIfListB(const char *ifprefix, int bridgesonly, int noports, int *cnt)
+static char **_getIfListB(const char *ifprefix, int flags, int *cnt)
 {
 	FILE *in = fopen("/proc/net/dev", "rb");
 	if (!in)
@@ -1067,6 +1072,9 @@ static char **_getIfListB(const char *ifprefix, int bridgesonly, int noports, in
 
 #endif
 	char ifname[32];
+	int bridgesonly = flags & BRIDGESONLY;
+	int noports = flags & NOPORTS;
+	int nobridges = flags & NOBRIDGES;
 
 	// skip the first 2 lines
 	skipline(in);
@@ -1087,6 +1095,8 @@ static char **_getIfListB(const char *ifprefix, int bridgesonly, int noports, in
 			ifname[ifcount++] = 0;
 			int skip = 0;
 			if (bridgesonly && !isbridge(ifname))
+				skip = 1;
+			if (nobridges && isbridge(ifname))
 				skip = 1;
 			if (ifprefix) {
 				if (strncmp(ifname, ifprefix, strlen(ifprefix))) {
@@ -1126,7 +1136,7 @@ sort:;
 	*cnt = count;
 	return sort;
 }
-int getIfListB(char *buffer, size_t len, const char *ifprefix, int bridgesonly, int nosort, int noports)
+int getIfListB(char *buffer, size_t len, const char *ifprefix, int flags, int nosort)
 {
 	char word[32];
 	const char *next;
@@ -1137,7 +1147,7 @@ int getIfListB(char *buffer, size_t len, const char *ifprefix, int bridgesonly, 
 	bzero(buffer, len);
 	if (ifprefix) {
 		foreach(word, ifprefix, next) {
-			char **presort = _getIfListB(word, bridgesonly, noports, &cnt);
+			char **presort = _getIfListB(word, flags, &cnt);
 			if (presort) {
 				if (!sort) {
 					sort = presort;
@@ -1152,7 +1162,7 @@ int getIfListB(char *buffer, size_t len, const char *ifprefix, int bridgesonly, 
 			}
 		}
 	} else {
-		sort = _getIfListB(ifprefix, bridgesonly, noports, &sortcount);
+		sort = _getIfListB(ifprefix, flags, &sortcount);
 	}
 	if (!sort)
 		return 0;
