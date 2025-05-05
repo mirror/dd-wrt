@@ -143,7 +143,7 @@
 				openwrt,ih-magic = <0x83800000>;
 			};
 			partition@fe0000 {
-				label = "jffs2";
+				label = "nvram";
 				reg = <0xfe0000 0x20000>;
 			};
 		};
