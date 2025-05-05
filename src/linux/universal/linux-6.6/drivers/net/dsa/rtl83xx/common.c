@@ -158,6 +158,9 @@ int rtl_table_write(struct table_reg *r, int idx)
 	return rtl_table_exec(r, true, idx);
 }
 
+/* Returns the address of the ith data register of table register r
+ * the address is relative to the beginning of the Switch-IO block at 0xbb000000
+ */
 /* Port register accessor functions for the RTL838x and RTL930X SoCs */
 void rtl838x_mask_port_reg(u64 clear, u64 set, int reg)
 {
@@ -1698,12 +1701,10 @@ err_register_nb:
 	return err;
 }
 
-static int rtl83xx_sw_remove(struct platform_device *pdev)
+static void rtl83xx_sw_remove(struct platform_device *pdev)
 {
 	/* TODO: */
 	pr_debug("Removing platform driver for rtl83xx-sw\n");
-
-	return 0;
 }
 
 static const struct of_device_id rtl83xx_switch_of_ids[] = {
@@ -1716,7 +1717,7 @@ MODULE_DEVICE_TABLE(of, rtl83xx_switch_of_ids);
 
 static struct platform_driver rtl83xx_switch_driver = {
 	.probe = rtl83xx_sw_probe,
-	.remove = rtl83xx_sw_remove,
+	.remove_new = rtl83xx_sw_remove,
 	.driver = {
 		.name = "rtl83xx-switch",
 		.pm = NULL,

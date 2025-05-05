@@ -612,6 +612,8 @@ struct macsec_ops;
  * @irq_rerun: Flag indicating interrupts occurred while PHY was suspended,
  *             requiring a rerun of the interrupt handler after resume
  * @interface: enum phy_interface_t value
+ * @possible_interfaces: bitmap if interface modes that the attached PHY
+ *			 will switch between depending on media speed.
  * @skb: Netlink message for cable diagnostics
  * @nest: Netlink nest used for cable diagnostics
  * @ehdr: nNtlink header for cable diagnostics
@@ -681,6 +683,7 @@ struct phy_device {
 	u32 dev_flags;
 
 	phy_interface_t interface;
+	DECLARE_PHY_INTERFACE_MASK(possible_interfaces);
 
 	/*
 	 * forced speed & duplex (no autoneg)
@@ -875,8 +878,9 @@ struct phy_led {
 
 /* Modes for PHY LED configuration */
 enum phy_led_modes {
-	PHY_LED_ACTIVE_LOW = 0,
-	PHY_LED_INACTIVE_HIGH_IMPEDANCE = 1,
+	PHY_LED_ACTIVE_HIGH = 0,
+	PHY_LED_ACTIVE_LOW = 1,
+	PHY_LED_INACTIVE_HIGH_IMPEDANCE = 2,
 
 	/* keep it last */
 	__PHY_LED_MODES_NUM,

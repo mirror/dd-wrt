@@ -69,9 +69,6 @@ struct table_reg *rtl_table_get(rtl838x_tbl_reg_t r, int t);
 void rtl_table_release(struct table_reg *r);
 int rtl_table_read(struct table_reg *r, int idx);
 int rtl_table_write(struct table_reg *r, int idx);
-/* Returns the address of the ith data register of table register r
- * the address is relative to the beginning of the Switch-IO block at 0xbb000000
- */
 static inline u16 rtl_table_data(struct table_reg *r, int i)
 {
 	if (i >= r->max_data)
@@ -88,6 +85,7 @@ static inline void rtl_table_data_w(struct table_reg *r, u32 v, int i)
 {
 	sw_w32(v, rtl_table_data(r, i));
 }
+
 
 void __init rtl83xx_setup_qos(struct rtl838x_switch_priv *priv);
 
