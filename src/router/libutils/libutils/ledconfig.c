@@ -60,6 +60,10 @@ static void getledconfig(struct ledconfig *cfg)
 	// Y=0:normal, Y=1:inverted, Z:gpio
 	// number (f=disabled)
 	{
+#ifdef HAVE_REALTEK
+	case ROUTER_REALTEK:
+		break;
+#endif
 #ifndef HAVE_BUFFALO
 	case ROUTER_BOARD_TECHNAXX3G:
 		cfg->usb_gpio = GPIO_LOW | 0x9;

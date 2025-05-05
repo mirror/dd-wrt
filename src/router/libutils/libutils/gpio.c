@@ -379,7 +379,7 @@ void set_gpio(int gpio, int value)
 		}
 	}
 }
-#elif defined(HAVE_ALPINE)
+#elif defined(HAVE_ALPINE) || defined(HAVE_REALTEK)
 
 int get_gpio(int gpio)
 {
