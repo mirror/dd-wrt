@@ -209,7 +209,10 @@ const char *getRouter(void)
 
 int internal_getRouterBrand()
 {
-#if defined(HAVE_ALLNETWRT) && !defined(HAVE_ECB9750)
+#ifdef HAVE_REALTEK
+	setRouter("Zyxel GS1900-48");
+	return ROUTER_REALTEK;
+#elif defined(HAVE_ALLNETWRT) && !defined(HAVE_ECB9750)
 	unsigned long boardnum = strtoul(nvram_safe_get("boardnum"), NULL, 0);
 
 	if (boardnum == 8 && nvram_match("boardtype", "0x048e") && nvram_match("boardrev", "0x11")) {
