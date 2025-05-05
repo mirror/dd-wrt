@@ -232,6 +232,9 @@ ifeq ($(CONFIG_FMS2111),y)
 CFLAGS += -DHAVE_FMS2111 -DHAVE_WLANLED -D_GNU_SOURCE  -I$(TOP)/libubox  -I$(TOP)/libnl-tiny/include
 endif
 endif
+ifeq ($(CONFIG_REALTEK),y)
+CFLAGS += -DHAVE_REALTEK
+endif
 ifeq ($(CONFIG_WASP),y)
 CFLAGS += -DHAVE_WASP
 endif
