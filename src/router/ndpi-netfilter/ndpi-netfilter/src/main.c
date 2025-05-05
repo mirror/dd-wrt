@@ -647,10 +647,14 @@ static void *malloc_wrapper(size_t size)
 
 static void free_wrapper(void *freeable)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,12,0)
+		kvfree(freeable);
+#else
 	if (is_vmalloc_addr(freeable))
 		vfree(freeable);
 	else
 		kfree(freeable);
+#endif
 }
 
 static void fill_prefix_any(ndpi_prefix_t *p, union nf_inet_addr const *ip,int family) {
