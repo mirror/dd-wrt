@@ -23,7 +23,6 @@ ccflags-vdso := \
 ifndef CONFIG_64BIT
 ccflags-vdso += -DBUILD_VDSO32
 endif
-
 ccflags-vdso += -std=gnu89
 
 #

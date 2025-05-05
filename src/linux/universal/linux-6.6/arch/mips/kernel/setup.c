@@ -46,8 +46,6 @@
 #include <asm/prom.h>
 #include <asm/fw/fw.h>
 
-#define MIPS_MEM_TEST_PATTERN		0xaa5555aa
-
 #ifdef CONFIG_MIPS_ELF_APPENDED_DTB
 char __section(".appended_dtb") __appended_dtb[0x100000];
 #endif /* CONFIG_MIPS_ELF_APPENDED_DTB */
@@ -92,12 +90,14 @@ static struct resource bss_resource = { .name = "Kernel bss", };
 unsigned long __kaslr_offset __ro_after_init;
 EXPORT_SYMBOL(__kaslr_offset);
 
-static u32 detect_magic __initdata;
-
 #ifdef CONFIG_MIPS_AUTO_PFN_OFFSET
 unsigned long ARCH_PFN_OFFSET;
 EXPORT_SYMBOL(ARCH_PFN_OFFSET);
 #endif
+
+#ifndef CONFIG_64BIT
+static u32 detect_magic __initdata;
+#define MIPS_MEM_TEST_PATTERN		0xaa5555aa
 
 void __init detect_memory_region(phys_addr_t start, phys_addr_t sz_min, phys_addr_t sz_max)
 {
@@ -121,6 +121,7 @@ void __init detect_memory_region(phys_addr_t start, phys_addr_t sz_min, phys_add
 
 	memblock_add(start, size);
 }
+#endif /* CONFIG_64BIT */
 
 /*
  * Manage initrd
