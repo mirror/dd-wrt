@@ -54,6 +54,20 @@
 #include "devices/wireless.c"
 #include "devices/ethtools.c"
 
+void set_envtools(int mtd, char *offset, char *envsize, char *blocksize, int nums)
+{
+	char m[32];
+	sprintf(m, "/dev/mtd%d", mtd);
+	FILE *fp = fopen("/tmp/fw_env.config", "wb");
+	if (fp) {
+		if (nums)
+			fprintf(fp, "%s\t%s\t%s\t%s\t%d\n", m, offset, envsize, blocksize, nums);
+		else
+			fprintf(fp, "%s\t%s\t%s\t%s\n", m, offset, envsize, blocksize);
+		fclose(fp);
+	}
+}
+
 
 void start_sysinit(void)
 {
@@ -68,6 +82,9 @@ void start_sysinit(void)
 	 */
 
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
+	int mtd = getMTD("u-boot-env");
+	if (mtd != -1)
+		set_envtools(mtd, "0x0", "0x10000", "0x10000", 0);
 
 	/*
 	 * network drivers 
