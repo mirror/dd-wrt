@@ -158,26 +158,6 @@ int rtl_table_write(struct table_reg *r, int idx)
 	return rtl_table_exec(r, true, idx);
 }
 
-/* Returns the address of the ith data register of table register r
- * the address is relative to the beginning of the Switch-IO block at 0xbb000000
- */
-inline u16 rtl_table_data(struct table_reg *r, int i)
-{
-	if (i >= r->max_data)
-		i = r->max_data - 1;
-	return r->data + i * 4;
-}
-
-inline u32 rtl_table_data_r(struct table_reg *r, int i)
-{
-	return sw_r32(rtl_table_data(r, i));
-}
-
-inline void rtl_table_data_w(struct table_reg *r, u32 v, int i)
-{
-	sw_w32(v, rtl_table_data(r, i));
-}
-
 /* Port register accessor functions for the RTL838x and RTL930X SoCs */
 void rtl838x_mask_port_reg(u64 clear, u64 set, int reg)
 {
