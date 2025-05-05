@@ -25,14 +25,13 @@ EJ_VISIBLE void ej_show_vlanfiltering(webs_t wp, int argc, char_t **argv)
 {
 	char buffer[512];
 	char finalbuffer[512];
-	char buffer[256];
 	int count = 0;
 	char word[256];
 	const char *next, *wordlist;
 	int has_vlan = br_has_vlan_filtering();
 	if (has_vlan) {
 		bzero(finalbuffer, 512);
-		getIfListB(buffer, sizeof(bufferif), NULL, NOBRIDGES, 1);
+		getIfListB(buffer, sizeof(buffer), NULL, NOBRIDGES, 1);
 		foreach(word, buffer, next) {
 			if (isbridged(word)) {
 				strcat(finalbuffer, " ");
@@ -44,7 +43,6 @@ EJ_VISIBLE void ej_show_vlanfiltering(webs_t wp, int argc, char_t **argv)
 		websWrite(wp,
 			  "<fieldset>\n<legend><script type=\"text/javascript\">Capture(networking.flegend)</script></legend>\n");
 
-		getIfList(buffer, sizeof(buffer), NULL);
 		int totalcount = 0;
 		int realcount = nvram_default_geti("vlan_filtercount", 0);
 		websWrite(wp, "<table cellspacing=\"4\" summary=\"filters\" id=\"filters_table\" class=\"table\"><thead><tr>\n");
