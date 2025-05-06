@@ -6,19 +6,19 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
-	aliases {
+/*	aliases {
 		led-boot = &led_sys;
 		led-failsafe = &led_sys;
 		led-running = &led_sys;
 		led-upgrade = &led_sys;
-	};
+	};*/
 
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x8000000>;
 	};
 
-	keys {
+/*	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
 
@@ -39,7 +39,7 @@
 			label = "green:sys";
 			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 		};
-	};
+	};*/
 };
 
 &spi0 {
