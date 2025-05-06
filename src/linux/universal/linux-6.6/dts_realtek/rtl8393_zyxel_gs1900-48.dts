@@ -9,19 +9,19 @@
 	compatible = "zyxel,gs1900-48", "realtek,rtl8393-soc";
 	model = "Zyxel GS1900-48";
 
-	aliases {
+/*	aliases {
 		led-boot = &led_sys;
 		led-failsafe = &led_sys;
 		led-running = &led_sys;
 		led-upgrade = &led_sys;
-	};
+	};*/
 
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x8000000>;
 	};
 
-	leds {
+/*	leds {
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinmux_disable_sys_led>;
 		compatible = "gpio-leds";
@@ -42,7 +42,7 @@
 			linux,code = <KEY_RESTART>;
 			debounce-interval = <100>;
 		};
-	};
+	};*/
 
 	/* i2c of the left SFP cage: port 49 */
 	i2c0: i2c-gpio-0 {
