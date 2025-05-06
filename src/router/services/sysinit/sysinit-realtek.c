@@ -88,10 +88,7 @@ void start_sysinit(void)
 		char name[32];
 		int i;
 		for (i = 1; i < 51; i++) {
-			if (i < 10)
-				sprintf(name, "lan0%d", i);
-			else
-				sprintf(name, "lan%d", i);
+			sprintf(name, "lan%02d", i);
 			set_hwaddr(name, mac);
 			MAC_ADD(mac);
 		}
