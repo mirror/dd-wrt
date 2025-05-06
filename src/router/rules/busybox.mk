@@ -262,6 +262,15 @@ ifeq ($(ARCH),aarch64)
 	echo "CONFIG_FEATURE_TOP_INTERACTIVE=y" >> busybox/.config
 	echo "CONFIG_FEATURE_POWERTOP_INTERACTIVE=y" >> busybox/.config
 endif
+ifeq ($(CONFIG_REALTEK),y)
+	cp busybox/.config_laguna busybox/.config
+	sed -i 's/\# CONFIG_UBIUPDATEVOL is not set/CONFIG_UBIUPDATEVOL=y/g' busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_TOP_SMP_CPU is not set/CONFIG_FEATURE_TOP_SMP_CPU=y/g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_TOP_SMP_PROCESS is not set/CONFIG_FEATURE_TOP_SMP_PROCESS=y/g' busybox/.config
+	echo "CONFIG_FEATURE_TOP_INTERACTIVE=y" >> busybox/.config
+	echo "CONFIG_FEATURE_POWERTOP_INTERACTIVE=y" >> busybox/.config
+endif
 ifeq ($(ARCH),arm)
 	cp busybox/.config_xscale busybox/.config
 ifeq ($(ARCHITECTURE),storm)
@@ -711,10 +720,14 @@ endif
 ifeq ($(CONFIG_IPQ806X),y)
 	echo "CONFIG_DSA=y" >> busybox/.config
 else
+ifeq ($(CONFIG_REALTEK),y)
+	echo "CONFIG_DSA=y" >> busybox/.config
+else
 ifeq ($(CONFIG_IPQ6018),y)
 	echo "CONFIG_DSA=y" >> busybox/.config
 else
 	echo "# CONFIG_DSA is not set" >> busybox/.config
+endif
 endif
 endif
 ifeq ($(CONFIG_VLAN_FILTERING),y)
