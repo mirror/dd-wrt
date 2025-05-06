@@ -77,11 +77,15 @@
 				label = "jffs2";
 				reg = <0x160000 0x100000>;
 			};
-			partition@b260000 {
-				label = "firmware";
-				reg = <0x260000 0xda0000>;
+			partition@260000 {
+				label = "linux";
+				reg = <0x260000 0xd80000>;
 				compatible = "openwrt,uimage", "denx,uimage";
 				openwrt,ih-magic = <0x83800000>;
+			};
+			partition@fe0000 {
+				label = "nvram";
+				reg = <0xfe0000 0x20000>;
 			};
 		};
 	};
