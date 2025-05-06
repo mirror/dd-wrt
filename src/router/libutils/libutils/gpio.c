@@ -394,12 +394,12 @@ void set_gpio(int gpio, int value)
 
 int get_gpio(int gpio)
 {
-	return get_linux_gpio(gpio - 512);
+	return get_linux_gpio(gpio + 512);
 }
 
 void set_gpio(int gpio, int value)
 {
-	set_linux_gpio(gpio - 512, value);
+	set_linux_gpio(gpio + 512, value);
 }
 #elif defined(HAVE_IPQ6018)
 int get_gpio(int gpio)
