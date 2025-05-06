@@ -281,11 +281,15 @@ kernel-relink-phase:
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
 
+ifneq ($(CONFIG_REALTEK),y)
 	-$(MAKE) -f Makefile.$(MAKEEXT) ath9k
 	-$(MAKE) -f Makefile.$(MAKEEXT) ath9k-install
+endif
 	-$(MAKE) -f Makefile.$(MAKEEXT) libutils
+ifneq ($(CONFIG_REALTEK),y)
 	-$(MAKE) -f Makefile.$(MAKEEXT) madwifi
 	-$(MAKE) -f Makefile.$(MAKEEXT) madwifi-install
+endif
 	-$(MAKE) -f Makefile.$(MAKEEXT) batman-adv
 	-$(MAKE) -f Makefile.$(MAKEEXT) batman-adv-install
 	-$(MAKE) -f Makefile.$(MAKEEXT) ndpi-netfilter
