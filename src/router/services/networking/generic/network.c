@@ -2091,6 +2091,8 @@ void start_lan(void)
 	}
 	if (strncmp(lan_ifname, "br0", 3) == 0) {
 		char stp[256];
+		eval("ifconfig", lan_ifname, "down");
+		br_del_bridge(lan_ifname);
 		br_add_bridge(lan_ifname);
 		set_stp_state(lan_ifname, getBridgeSTPType(lan_ifname, stp));
 		eval("ifconfig", lan_ifname, "promisc");
@@ -2514,6 +2516,7 @@ void start_lan(void)
 			ifconfig("br1", 0, 0, 0);
 
 			// eval ("ifconfig", "br1", "down");
+			eval("ifconfig", "br1", "down");
 			br_del_bridge("br1");
 			br_add_bridge("br1");
 			char word[256];
