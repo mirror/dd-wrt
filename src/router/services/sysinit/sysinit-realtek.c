@@ -68,13 +68,11 @@ void set_envtools(int mtd, char *offset, char *envsize, char *blocksize, int num
 	}
 }
 
-
 void start_sysinit(void)
 {
 	time_t tm = 0;
 	struct ifreq ifr;
 	int s;
-	char mac[32];
 	FILE *fp;
 
 	/*
@@ -85,7 +83,19 @@ void start_sysinit(void)
 	int mtd = getMTD("u-boot-env");
 	if (mtd != -1)
 		set_envtools(mtd, "0x0", "0x10000", "0x10000", 0);
-
+	char *mac = getUEnv("mac_start");
+	if (mac) {
+		char name[32];
+		int i;
+		for (i = 1; i < 51; i++) {
+			if (i < 10)
+				sprintf(name, "lan0%d", i);
+			else
+				sprintf(name, "lan%d", i);
+			set_hwaddr(name, mac);
+			MAC_ADD(mac);
+		}
+	}
 	/*
 	 * network drivers 
 	 */

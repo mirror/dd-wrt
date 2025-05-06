@@ -678,7 +678,7 @@ static char *getUEnvExt(char *name)
 
 #if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS) || defined(HAVE_WMBR_G300NH) || defined(HAVE_WZRG450) ||           \
 	defined(HAVE_DIR810L) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_ALPINE) || defined(HAVE_VENTANA) || \
-	defined(HAVE_IPQ6018) || defined(HAVE_PERU)
+	defined(HAVE_IPQ6018) || defined(HAVE_PERU) || defined(HAVE_REALTEK)
 void *getUEnv(char *name)
 {
 #ifdef HAVE_WZRG300NH
