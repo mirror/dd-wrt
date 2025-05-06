@@ -249,6 +249,26 @@ int internal_getRouterBrand()
 		setRouter("Zyxel GS1900-16");
 		return ROUTER_REALTEK_GENERIC;
 	}
+	if (!strcmp(modelstr, "GS1900-10HP")) {
+		setRouter("Zyxel GS1900-10HP");
+		return ROUTER_REALTEK_GENERIC;
+	}
+	if (!strcmp(modelstr, "GS1900-8") && !strcmp(version,"v1")) {
+		setRouter("Zyxel GS1900-8 v1");
+		return ROUTER_REALTEK_GENERIC;
+	}
+	if (!strcmp(modelstr, "GS1900-8") && !strcmp(version,"v2")) {
+		setRouter("Zyxel GS1900-8 v2");
+		return ROUTER_REALTEK_GENERIC;
+	}
+	if (!strcmp(modelstr, "GS1900-8HP") && !strcmp(version,"v1")) {
+		setRouter("Zyxel GS1900-8HP v1");
+		return ROUTER_REALTEK_GENERIC;
+	}
+	if (!strcmp(modelstr, "GS1900-8HP") && !strcmp(version,"v2")) {
+		setRouter("Zyxel GS1900-8HP v2");
+		return ROUTER_REALTEK_GENERIC;
+	}
 
 	setRouter("Realtek Generic Switch");
 	return ROUTER_REALTEK_GENERIC;
