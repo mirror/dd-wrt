@@ -24,11 +24,14 @@ bool i2c_mii_valid_phy_id(int phy_id)
 {
 	return phy_id != 0x10 && phy_id != 0x11;
 }
+EXPORT_SYMBOL(i2c_mii_valid_phy_id);
 
 unsigned int i2c_mii_phy_addr(int phy_id)
 {
 	return phy_id + 0x40;
 }
+
+EXPORT_SYMBOL(i2c_mii_phy_addr);
 
 static int i2c_mii_read_default_c45(struct mii_bus *bus, int phy_id, int devad,
 				    int reg)
