@@ -1736,11 +1736,11 @@ void start_lan(void)
 	if (getSTA() || getWET() || CANBRIDGE()) {
 		PORTSETUPWAN("");
 	} else {
-		PORTSETUPWAN("lan1");
+		PORTSETUPWAN("lan01");
 	}
-	nvram_set("wan_default", "lan1");
+	nvram_set("wan_default", "lan01");
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr", get_hwaddr("lan1", macaddr));
+		nvram_set("et0macaddr", get_hwaddr("lan01", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif defined(HAVE_IPQ6018)
 	int brand = getRouterBrand();
