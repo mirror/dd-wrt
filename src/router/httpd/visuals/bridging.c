@@ -123,7 +123,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 			  bridge_name);
 
 		sprintf(bridge_name, "lan_hwaddr");
-		websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"16\" value=\"%s\" /></td>\n",
+		websWrite(wp, "<td style=\"vertical-align:top\" class=\"center\"><input class=\"num\" name=\"%s\" size=\"16\" value=\"%s\" /></td>\n",
 			  bridge_name, nvram_safe_get(bridge_name));
 
 		websWrite(
