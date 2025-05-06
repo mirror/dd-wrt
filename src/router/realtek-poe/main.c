@@ -60,11 +60,8 @@ static void load_port_config(struct config *cfg, int id)
 {
 	const char *id_str, *enable, *priority, *poe_plus;
 	char name[32];
-	if (id < 10)
-		sprintf(name, "lan0%d",id);
-	else
-		sprintf(name, "lan%d",id);
 
+	sprintf(name, "lan%02d",id);
 	enable = nvram_nget("%s_poe_enable");
 	priority = nvram_nget("%s_poe_priority");
 	poe_plus = nvram_nget("%s_poe_plus");
