@@ -188,6 +188,21 @@ EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "unknown");
 	return;
 }
+#elif HAVE_REALTEK
+EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
+{
+	FILE *fp = fopen("/sys/kernel/debug/clk/cpu_clk/clk_rate", "rb");
+	if (fp) {
+		int freq;
+		fscanf(fp, "%d", &freq);
+		fclose(fp);
+		websWrite(wp, "%d", freq / 1000000);
+		return;
+	} else {
+		websWrite(wp, "unknown");
+	}
+	return;
+}
 #else
 EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 {
