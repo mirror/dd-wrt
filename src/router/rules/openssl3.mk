@@ -113,6 +113,12 @@ endif
 ifeq ($(CONFIG_IPQ6018),y)
 OPENSSL_OPTIONS += enable-devcryptoeng enable-afalgeng
 endif
+ifeq ($(CONFIG_REALTEK),y)
+OPENSSL_OPTIONS += enable-devcryptoeng enable-afalgeng
+endif
+ifeq ($(CONFIG_X86),y)
+OPENSSL_OPTIONS += enable-devcryptoeng enable-afalgeng
+endif
 #ifeq ($(CONFIG_ALPINE),y)
 #OPENSSL_OPTIONS += enable-devcryptoeng
 #endif
@@ -137,7 +143,7 @@ openssl-configure:
 			--prefix=/usr \
 			--libdir=/usr/lib \
 			--openssldir=/etc/ssl \
-			$(COPTS) $(MIPS16_OPT) $(OPENSSL_CMAKEFLAGS) -Os -DNDEBUG \
+			$(COPTS) $(OPENSSL_CMAKEFLAGS) -Os -DNDEBUG \
 			$(TARGET_LDFLAGS) -ldl -lrt -L$(TOP)/libucontext -lucontext \
 			$(OPENSSL_NO_CIPHERS) \
 			$(OPENSSL_OPTIONS)
