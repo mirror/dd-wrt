@@ -199,6 +199,12 @@ static int getbuttonstate()
 	int ret = !get_gpio(31);
 	return ret;
 }
+#elif defined(HAVE_REALTEK)
+static int getbuttonstate()
+{
+	int ret = !get_gpio(27);
+	return ret;
+}
 #elif defined(HAVE_IPQ6018)
 static int getbuttonstate()
 {
@@ -1106,7 +1112,7 @@ static void resetbtn_period_check(int sig)
 	// time(&t);
 	// DEBUG("resetbutton: now time=%d\n", t);
 
-#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) ||    \
+#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_REALTEK) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) ||    \
 	defined(HAVE_GATEWORX) || defined(HAVE_STORM) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600) ||         \
 	defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_WP54G) || defined(HAVE_NP28G) || defined(HAVE_SOLO51) ||            \
 	defined(HAVE_OPENRISC) || defined(HAVE_DANUBE) || defined(HAVE_WDR4900) || defined(HAVE_VENTANA) || defined(HAVE_AC622) || \
@@ -1220,7 +1226,7 @@ static void resetbtn_period_check(int sig)
 
 	int state = 0;
 
-#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || (HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) ||             \
+#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_REALTEK) || (HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) ||             \
 	defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_STORM) || defined(HAVE_LS2) || defined(HAVE_CA8) ||       \
 	defined(HAVE_TW6600) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_WP54G) || defined(HAVE_NP28G) ||            \
 	defined(HAVE_SOLO51) || defined(HAVE_OPENRISC) || defined(HAVE_DANUBE) || defined(HAVE_UNIWIP) || defined(HAVE_EROUTER) || \
