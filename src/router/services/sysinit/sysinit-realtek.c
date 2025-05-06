@@ -82,7 +82,7 @@ void start_sysinit(void)
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
 	int mtd = getMTD("u-boot-env");
 	if (mtd != -1)
-		set_envtools(mtd, "0x0", "0x10000", "0x10000", 0);
+		set_envtools(mtd, "0x0", "0x400", "0x10000", 0);
 	char *mac = getUEnv("mac_start");
 	if (mac) {
 		char name[32];
