@@ -210,8 +210,48 @@ const char *getRouter(void)
 int internal_getRouterBrand()
 {
 #ifdef HAVE_REALTEK
-	setRouter("Zyxel GS1900-48");
-	return ROUTER_REALTEK;
+	FILE *fp = fopen("/sys/firmware/devicetree/base/model", "rb");
+	if (!fp) {
+		fprintf(stderr, "error opening device tree\n");
+		setRouter("Realtek Generic Switch");
+		return ROUTER_REALTEK_GENERIC;
+	}
+	char vendorstr[32];
+	char modelstr[32];
+	char version[32];
+	fscanf(fp, "%s %s %s", &vendorstr[0], &modelstr[0], &version[0]);
+	fclose(fp);
+	if (!strcmp(modelstr, "GS1900-48")) {
+		setRouter("Zyxel GS1900-48");
+		return ROUTER_ZYXEL_GS190048;
+	}
+	if (!strcmp(modelstr, "GS1900-24HP") && !strcmp(version,"v1")) {
+		setRouter("Zyxel GS1900-24HP v1");
+		return ROUTER_REALTEK_GENERIC;
+	}
+	if (!strcmp(modelstr, "GS1900-24HP") && !strcmp(version,"v2")) {
+		setRouter("Zyxel GS1900-24HP v2");
+		return ROUTER_REALTEK_GENERIC;
+	}
+	if (!strcmp(modelstr, "GS1900-24EP")) {
+		setRouter("Zyxel GS1900-24EP");
+		return ROUTER_REALTEK_GENERIC;
+	}
+	if (!strcmp(modelstr, "GS1900-24E")) {
+		setRouter("Zyxel GS1900-24E");
+		return ROUTER_REALTEK_GENERIC;
+	}
+	if (!strcmp(modelstr, "GS1900-24") && !strcmp(version,"v1")) {
+		setRouter("Zyxel GS1900-24 v1");
+		return ROUTER_REALTEK_GENERIC;
+	}
+	if (!strcmp(modelstr, "GS1900-16")) {
+		setRouter("Zyxel GS1900-16");
+		return ROUTER_REALTEK_GENERIC;
+	}
+
+	setRouter("Realtek Generic Switch");
+	return ROUTER_REALTEK_GENERIC;
 #elif defined(HAVE_ALLNETWRT) && !defined(HAVE_ECB9750)
 	unsigned long boardnum = strtoul(nvram_safe_get("boardnum"), NULL, 0);
 

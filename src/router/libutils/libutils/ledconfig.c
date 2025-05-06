@@ -61,7 +61,7 @@ static void getledconfig(struct ledconfig *cfg)
 	// number (f=disabled)
 	{
 #ifdef HAVE_REALTEK
-	case ROUTER_REALTEK:
+	case ROUTER_ZYXEL_GS190048:
 		cfg->power_gpio = 0;
 		cfg->diag_gpio = GPIO_LOW | 0;
 		break;
