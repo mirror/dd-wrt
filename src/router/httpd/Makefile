@@ -1349,6 +1349,9 @@ endif
 ifeq ($(CONFIG_WASP),y)
 CFLAGS += -DHAVE_WASP
 endif
+ifeq ($(CONFIG_REALTEK),y)
+CFLAGS += -DHAVE_REALTEK
+endif
 ifeq ($(CONFIG_WR650AC),y)
 CFLAGS += -DHAVE_WR650AC
 endif
