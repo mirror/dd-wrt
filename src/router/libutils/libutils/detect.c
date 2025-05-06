@@ -227,47 +227,47 @@ int internal_getRouterBrand()
 	}
 	if (!strcmp(modelstr, "GS1900-24HP") && !strcmp(version,"v1")) {
 		setRouter("Zyxel GS1900-24HP v1");
-		return ROUTER_REALTEK_GENERIC;
+		return ROUTER_ZYXEL_GS190048;
 	}
 	if (!strcmp(modelstr, "GS1900-24HP") && !strcmp(version,"v2")) {
 		setRouter("Zyxel GS1900-24HP v2");
-		return ROUTER_REALTEK_GENERIC;
+		return ROUTER_ZYXEL_GS190048;
 	}
 	if (!strcmp(modelstr, "GS1900-24EP")) {
 		setRouter("Zyxel GS1900-24EP");
-		return ROUTER_REALTEK_GENERIC;
+		return ROUTER_ZYXEL_GS190048;
 	}
 	if (!strcmp(modelstr, "GS1900-24E")) {
 		setRouter("Zyxel GS1900-24E");
-		return ROUTER_REALTEK_GENERIC;
+		return ROUTER_ZYXEL_GS190048;
 	}
 	if (!strcmp(modelstr, "GS1900-24") && !strcmp(version,"v1")) {
 		setRouter("Zyxel GS1900-24 v1");
-		return ROUTER_REALTEK_GENERIC;
+		return ROUTER_ZYXEL_GS190048;
 	}
 	if (!strcmp(modelstr, "GS1900-16")) {
 		setRouter("Zyxel GS1900-16");
-		return ROUTER_REALTEK_GENERIC;
+		return ROUTER_ZYXEL_GS190048;
 	}
 	if (!strcmp(modelstr, "GS1900-10HP")) {
 		setRouter("Zyxel GS1900-10HP");
-		return ROUTER_REALTEK_GENERIC;
+		return ROUTER_ZYXEL_GS190048;
 	}
 	if (!strcmp(modelstr, "GS1900-8") && !strcmp(version,"v1")) {
 		setRouter("Zyxel GS1900-8 v1");
-		return ROUTER_REALTEK_GENERIC;
+		return ROUTER_ZYXEL_GS190048;
 	}
 	if (!strcmp(modelstr, "GS1900-8") && !strcmp(version,"v2")) {
 		setRouter("Zyxel GS1900-8 v2");
-		return ROUTER_REALTEK_GENERIC;
+		return ROUTER_ZYXEL_GS190048;
 	}
 	if (!strcmp(modelstr, "GS1900-8HP") && !strcmp(version,"v1")) {
 		setRouter("Zyxel GS1900-8HP v1");
-		return ROUTER_REALTEK_GENERIC;
+		return ROUTER_ZYXEL_GS190048;
 	}
 	if (!strcmp(modelstr, "GS1900-8HP") && !strcmp(version,"v2")) {
 		setRouter("Zyxel GS1900-8HP v2");
-		return ROUTER_REALTEK_GENERIC;
+		return ROUTER_ZYXEL_GS190048;
 	}
 
 	setRouter("Realtek Generic Switch");
