@@ -825,6 +825,8 @@
 
 #define ROUTER_LINKSYS_MX5300 0x11f143
 
+#define ROUTER_REALTEK 0x12011b
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 
