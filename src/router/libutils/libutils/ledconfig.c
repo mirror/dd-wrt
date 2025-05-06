@@ -62,8 +62,8 @@ static void getledconfig(struct ledconfig *cfg)
 	{
 #ifdef HAVE_REALTEK
 	case ROUTER_REALTEK:
-		cfg->power_gpio = 512;
-		cfg->diag_gpio = GPIO_LOW | 512;
+		cfg->power_gpio = 0;
+		cfg->diag_gpio = GPIO_LOW | 0;
 		break;
 #endif
 #ifndef HAVE_BUFFALO
