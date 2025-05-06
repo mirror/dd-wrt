@@ -137,7 +137,7 @@
 				reg = <0x160000 0x100000>;
 			};
 			partition@260000 {
-				label = "firmware";
+				label = "linux";
 				reg = <0x260000 0xd80000>;
 				compatible = "openwrt,uimage", "denx,uimage";
 				openwrt,ih-magic = <0x83800000>;
