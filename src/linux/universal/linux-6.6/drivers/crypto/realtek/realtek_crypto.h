@@ -323,6 +323,23 @@ extern void rtcr_finish_request(struct rtcr_crypto_dev *cdev, int opmode,
 				int totallen);
 extern int rtcr_wait_for_request(struct rtcr_crypto_dev *cdev, int idx);
 
-extern inline int rtcr_inc_src_idx(int idx, int cnt);
-extern inline int rtcr_inc_dst_idx(int idx, int cnt);
+static inline int rtcr_inc_src_idx(int idx, int cnt)
+{
+	return (idx + cnt) & (RTCR_SRC_RING_SIZE - 1);
+}
+
+static inline int rtcr_inc_dst_idx(int idx, int cnt)
+{
+	return (idx + cnt) & (RTCR_DST_RING_SIZE - 1);
+}
+
+static inline int rtcr_inc_buf_idx(int idx, int cnt)
+{
+	return (idx + cnt) & (RTCR_BUF_RING_SIZE - 1);
+}
+
+static inline int rtcr_space_plus_pad(int len)
+{
+	return (len + 31) & ~31;
+}
 #endif

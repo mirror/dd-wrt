@@ -16,26 +16,6 @@
 
 #include "realtek_crypto.h"
 
-inline int rtcr_inc_src_idx(int idx, int cnt)
-{
-	return (idx + cnt) & (RTCR_SRC_RING_SIZE - 1);
-}
-
-inline int rtcr_inc_dst_idx(int idx, int cnt)
-{
-	return (idx + cnt) & (RTCR_DST_RING_SIZE - 1);
-}
-
-inline int rtcr_inc_buf_idx(int idx, int cnt)
-{
-	return (idx + cnt) & (RTCR_BUF_RING_SIZE - 1);
-}
-
-inline int rtcr_space_plus_pad(int len)
-{
-	return (len + 31) & ~31;
-}
-
 int rtcr_alloc_ring(struct rtcr_crypto_dev *cdev, int srclen, int *srcidx,
 		    int *dstidx, int buflen, char **buf)
 {
