@@ -449,7 +449,7 @@ static void __print_he_capa(const __u16 *mac_cap, const __u16 *phy_cap, const __
 	size_t mcs_used;
 	const char *pre = indent ? "\t" : "";
 
-	if (le16toh(phy_cap[0])) & BIT(1 + 8)) {
+	if (le16toh(phy_cap[0]) & BIT(1 + 8)) {
 		site_survey_lists[sscount].channel |= 0x1000;
 		fillENC("HE40");
 	}
