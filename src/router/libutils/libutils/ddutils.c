@@ -1496,9 +1496,9 @@ int doMultiCast(void)
 		ifcount++;
 	}
 
-	char ifnames[256];
+	char ifnames[512];
 
-	getIfLists(ifnames, 256);
+	getIfLists(ifnames, 512);
 	foreach(name, ifnames, next) {
 		if (strcmp(safe_get_wan_face(wan_if_buffer), name) && strcmp(nvram_safe_get("lan_ifname"), name) &&
 		    strcmp(nvram_safe_get("tvnicfrom"), name)) {

@@ -954,9 +954,9 @@ int getifcount(const char *ifprefix)
 	 * FILE *in = popen (devcall, "rb"); if (in == NULL) return 0; int count;
 	 * fscanf (in, "%d", &count); pclose (in); return count;
 	 */
-	char *iflist = calloc(256, 1);
+	char *iflist = calloc(512, 1);
 
-	int c = getIfListB(iflist, 256, ifprefix, 0, 1);
+	int c = getIfListB(iflist, 512, ifprefix, 0, 1);
 
 	free(iflist);
 	return c;
