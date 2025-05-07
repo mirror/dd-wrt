@@ -65,8 +65,8 @@ MODULE_PARM_DESC(mesh, "use 11.4 fw instead of 12.5 for mesh support");
 #elif defined(NSS_HAL_IPQ50XX_SUPPORT)
 #define NSS_AP0_IMAGE "qca-nss0-maple.bin"
 #define NSS_AP1_IMAGE "qca-nss1-maple.bin"
-#define NSS_AP0_IMAGE_ALT "qca-nss0-maple-12.5.bin"
-#define NSS_AP1_IMAGE_ALT "qca-nss1-maple-12.5.bin"
+#define NSS_AP0_IMAGE_ALT "qca-nss0-maple.bin"
+#define NSS_AP1_IMAGE_ALT "qca-nss1-maple.bin"
 #else
 #define NSS_AP0_IMAGE "qca-nss0.bin"
 #define NSS_AP1_IMAGE "qca-nss1.bin"
