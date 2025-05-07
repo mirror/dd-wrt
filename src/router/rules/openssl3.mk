@@ -130,7 +130,9 @@ ifneq ($(ARCH),x86_64)
 ifneq ($(ARCH),i386)
 ifneq ($(ARCH),aarch64)
 ifneq ($(ARCH),arm)
+ifneq ($(CONFIG_REALTEK),y)
 OPENSSL_OPTIONS += -DOPENSSL_SMALL_FOOTPRINT
+endif
 endif
 endif
 endif
