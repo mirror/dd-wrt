@@ -330,7 +330,7 @@ endif
 	$(MAKE) -j 4 -C $(LINUXDIR) vmlinux EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"  KBUILD_MODPOST_WARN=1
 
 	$(ARCH)-linux-objcopy -O binary $(strip-flags) -g $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
-	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc2 -lp2 -pb2 -d25 > lzma-loader/broadcom/vmlinux.lzma
+	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc2 -lp2 -pb2 > lzma-loader/broadcom/vmlinux.lzma
 	gzip -9 -c $(ARCH)-uclibc/vmlinus > $(ARCH)-uclibc/vmlinus.gzip
 	make -C lzma-loader/broadcom clean
 	make -C lzma-loader/broadcom 
@@ -348,7 +348,7 @@ bootloader:
 	    $(MAKE) -j 4 -C $(LINUXDIR) modules ; \
 	fi
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
-	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc2 -lp2 -pb2 -d25 > lzma-loader/broadcom/vmlinux.lzma
+	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc2 -lp2 -pb2 > lzma-loader/broadcom/vmlinux.lzma
 	make -C lzma-loader/broadcom clean
 	make -C lzma-loader/broadcom 
 	cp lzma-loader/broadcom/lzma.elf $(ARCH)-uclibc/lzma_vmlinux
@@ -356,7 +356,7 @@ bootloader:
 
 loader:
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
-	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc2 -lp2 -pb2 -d25 > lzma-loader/broadcom/vmlinux.lzma
+	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc2 -lp2 -pb2 > lzma-loader/broadcom/vmlinux.lzma
 	make -C lzma-loader/broadcom clean
 	make -C lzma-loader/broadcom 
 	cp lzma-loader/broadcom/lzma.elf $(ARCH)-uclibc/lzma_vmlinux
@@ -623,7 +623,7 @@ ifeq ($(CONFIG_KAID),y)
 	cp kaid/kaid $(TARGETDIR)/usr/sbin
 endif
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin 
-	../../opt/loader-0.02/lzma e -lc3 -lp2 -pb2 -d25 mipsel-uclibc/vmlinux.bin mipsel-uclibc/vmlinuz
+	../../opt/loader-0.02/lzma e -lc3 -lp2 -pb2 mipsel-uclibc/vmlinux.bin mipsel-uclibc/vmlinuz
 	cp ../../opt/etc/config/* mipsel-uclibc/target/etc/config
 	../../tools/process_nvramconfigfile mipsel-uclibc/target/etc/config/*.nvramconfig
 
@@ -828,7 +828,7 @@ endif
 	
 #	objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUXDIR)/vmlinux_opt mipsel-uclibc/vmlinux
 #	objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUXDIR)/vmlinux mipsel-uclibc/vmlinux2
-#	../../opt/loader-0.02/lzma e -lc2 -lp2 -pb2 -d25 mipsel-uclibc/vmlinux2 mipsel-uclibc/vmlinuz2
+#	../../opt/loader-0.02/lzma e -lc2 -lp2 -pb2 mipsel-uclibc/vmlinux2 mipsel-uclibc/vmlinuz2
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/target.squashfs -noappend -root-owned -le
 #endif
 #

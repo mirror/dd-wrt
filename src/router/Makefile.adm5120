@@ -391,7 +391,7 @@ endif
 #	mkfs.jffs2 --pad --big-endian --squash -e 0x20000 -o $(ARCH)-uclibc/dd-wrt.jffs2 -d $(ARCH)-uclibc/target
 	echo -ne '\xde\xad\xc0\xde' >> $(ARCH)-uclibc/dd-wrt.jffs2
 	mipsel-linux-uclibc-objcopy -O binary $(LINUXDIR)/vmlinux mipsel-uclibc/vmlinus
-	lzma e -lc1 -lp2 -pb2 -d25 mipsel-uclibc/vmlinus mipsel-uclibc/vmlinus.lzma
+	lzma e -lc1 -lp2 -pb2 mipsel-uclibc/vmlinus mipsel-uclibc/vmlinus.lzma
 	make -C lzma-loader/adm5120 all
 	gzip -9 lzma-loader/adm5120/loader.bin
 	mv lzma-loader/adm5120/loader.bin.gz mipsel-uclibc/vmlinus.gz_na

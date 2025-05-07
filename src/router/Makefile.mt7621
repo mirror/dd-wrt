@@ -474,13 +474,13 @@ r6800:
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux-r6220 $(ARCH)-uclibc/vmlinux-r6220.bin
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux-wac124 $(ARCH)-uclibc/vmlinux-wac124.bin
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux-3700 $(ARCH)-uclibc/vmlinux-3700.bin
-	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.lzma
-	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux-r6850.bin $(ARCH)-uclibc/vmlinux-r6850.lzma
-	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux-r6260.bin $(ARCH)-uclibc/vmlinux-r6260.lzma
-	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux-r6350.bin $(ARCH)-uclibc/vmlinux-r6350.lzma
-	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux-r6220.bin $(ARCH)-uclibc/vmlinux-r6220.lzma
-	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux-wac124.bin $(ARCH)-uclibc/vmlinux-wac124.lzma
-	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux-3700.bin $(ARCH)-uclibc/vmlinux-3700.lzma
+	lzma e -lc1 -lp2 -pb2 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.lzma
+	lzma e -lc1 -lp2 -pb2 $(ARCH)-uclibc/vmlinux-r6850.bin $(ARCH)-uclibc/vmlinux-r6850.lzma
+	lzma e -lc1 -lp2 -pb2 $(ARCH)-uclibc/vmlinux-r6260.bin $(ARCH)-uclibc/vmlinux-r6260.lzma
+	lzma e -lc1 -lp2 -pb2 $(ARCH)-uclibc/vmlinux-r6350.bin $(ARCH)-uclibc/vmlinux-r6350.lzma
+	lzma e -lc1 -lp2 -pb2 $(ARCH)-uclibc/vmlinux-r6220.bin $(ARCH)-uclibc/vmlinux-r6220.lzma
+	lzma e -lc1 -lp2 -pb2 $(ARCH)-uclibc/vmlinux-wac124.bin $(ARCH)-uclibc/vmlinux-wac124.lzma
+	lzma e -lc1 -lp2 -pb2 $(ARCH)-uclibc/vmlinux-3700.bin $(ARCH)-uclibc/vmlinux-3700.lzma
 	make -C lzma-loader/mt7621 clean
 	make -C lzma-loader/mt7621 LOADER_DATA=$(TOP)/$(ARCH)-uclibc/vmlinux.lzma
 	cd $(TOP)/$(ARCH)-uclibc/ ; $(TOP)/mkimage/mkimage -A mips -O linux -C none -T kernel -a 80001000 -e $(shell readelf -h $(TOP)/lzma-loader/mt7621/loader.elf | grep "Entry" | awk '{print $$4}') -n "DD-WRT v24 Linux Kernel Image"  -d $(TOP)/lzma-loader/mt7621/loader.bin root-lzmaloader-mt7621.uimage
@@ -843,13 +843,13 @@ ifeq ($(CONFIG_R6800),y)
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux-r6220 $(ARCH)-uclibc/vmlinux-r6220.bin
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux-wac124 $(ARCH)-uclibc/vmlinux-wac124.bin
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux-3700 $(ARCH)-uclibc/vmlinux-3700.bin
-	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.lzma
-	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux-r6850.bin $(ARCH)-uclibc/vmlinux-r6850.lzma
-	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux-r6260.bin $(ARCH)-uclibc/vmlinux-r6260.lzma
-	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux-r6350.bin $(ARCH)-uclibc/vmlinux-r6350.lzma
-	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux-r6220.bin $(ARCH)-uclibc/vmlinux-r6220.lzma
-	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux-wac124.bin $(ARCH)-uclibc/vmlinux-wac124.lzma
-	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux-3700.bin $(ARCH)-uclibc/vmlinux-3700.lzma
+	lzma e -lc1 -lp2 -pb2 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.lzma
+	lzma e -lc1 -lp2 -pb2 $(ARCH)-uclibc/vmlinux-r6850.bin $(ARCH)-uclibc/vmlinux-r6850.lzma
+	lzma e -lc1 -lp2 -pb2 $(ARCH)-uclibc/vmlinux-r6260.bin $(ARCH)-uclibc/vmlinux-r6260.lzma
+	lzma e -lc1 -lp2 -pb2 $(ARCH)-uclibc/vmlinux-r6350.bin $(ARCH)-uclibc/vmlinux-r6350.lzma
+	lzma e -lc1 -lp2 -pb2 $(ARCH)-uclibc/vmlinux-r6220.bin $(ARCH)-uclibc/vmlinux-r6220.lzma
+	lzma e -lc1 -lp2 -pb2 $(ARCH)-uclibc/vmlinux-wac124.bin $(ARCH)-uclibc/vmlinux-wac124.lzma
+	lzma e -lc1 -lp2 -pb2 $(ARCH)-uclibc/vmlinux-3700.bin $(ARCH)-uclibc/vmlinux-3700.lzma
 	make -C lzma-loader/mt7621 clean
 	make -C lzma-loader/mt7621 LOADER_DATA=$(TOP)/$(ARCH)-uclibc/vmlinux.lzma
 	cd $(TOP)/$(ARCH)-uclibc/ ; $(TOP)/mkimage/mkimage -A mips -O linux -C none -T kernel -a 80001000 -e $(shell readelf -h $(TOP)/lzma-loader/mt7621/loader.elf | grep "Entry" | awk '{print $$4}') -n "DD-WRT v24 Linux Kernel Image"  -d $(TOP)/lzma-loader/mt7621/loader.bin root-lzmaloader-mt7621.uimage
