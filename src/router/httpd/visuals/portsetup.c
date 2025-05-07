@@ -22,7 +22,6 @@
 void show_ipnetmask(webs_t wp, char *var);
 int registered_has_cap(int cap);
 
-extern char *getTXQ(char *ifname);
 EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t **argv)
 {
 	char wan_if_buffer[33];
