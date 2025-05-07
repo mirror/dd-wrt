@@ -4703,11 +4703,11 @@ void save_networking(webs_t wp)
 	int bondcount = nvram_geti("bonding_count");
 #endif
 	int i;
-	int vlan = br_has_vlan_filtering();
+	int has_vlan = br_has_vlan_filtering();
 	// save vlan stuff
 	char buffer[1024];
 
-	if (vlan) {
+	if (has_vlan) {
 		int filtercount = nvram_geti("vlan_filtercount");
 		bzero(buffer, 1024);
 		for (i = 0; i < filtercount; i++) {
@@ -4902,7 +4902,8 @@ void save_networking(webs_t wp)
 		if (!tag)
 			break;
 
-		if (vlan) {
+		if (has_vlan) {
+			char *vlan;
 			sprintf(var, "bridgevlan%d", i);
 			vlan = websGetVar(wp, var, NULL);
 			sprintf(n, "%s_vlan", ifname);
