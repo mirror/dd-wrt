@@ -1283,14 +1283,15 @@ static void __print_he_capa(const __u16 *mac_cap,
 
 	#define PRINT_HE_CAP(_var, _idx, _bit, _str) \
 	do { \
-		if (_var[_idx] & BIT(_bit)) \
+		if (le16toh(_var[_idx]) & BIT(_bit)) \
 			printf("%s\t\t\t" _str "\n", pre); \
 	} while (0)
 
 	#define PRINT_HE_CAP_MASK(_var, _idx, _shift, _mask, _str) \
 	do { \
-		if ((_var[_idx] >> _shift) & _mask) \
-			printf("%s\t\t\t" _str ": %d\n", pre, (_var[_idx] >> _shift) & _mask); \
+		if ((le16toh(_var[_idx]) >> _shift) & _mask) \
+			printf("%s\t\t\t" _str ": %d\n", pre, \
+			       (le16toh(_var[_idx]) >> _shift) & _mask); \
 	} while (0)
 
 	#define PRINT_HE_MAC_CAP(...) PRINT_HE_CAP(mac_cap, __VA_ARGS__)
@@ -1301,7 +1302,7 @@ static void __print_he_capa(const __u16 *mac_cap,
 
 	printf("%s\t\tHE MAC Capabilities (0x", pre);
 	for (i = 0; i < 3; i++)
-		printf("%04x", mac_cap[i]);
+		printf("%04x", le16toh(mac_cap[i]));
 	printf("):\n");
 
 	PRINT_HE_MAC_CAP(0, 0, "+HTC HE Supported");
@@ -1415,18 +1416,18 @@ static void __print_he_capa(const __u16 *mac_cap,
 		char *bw[] = { "<= 80", "160", "80+80" };
 		int j;
 
-		if ((phy_cap[0] & (phy_cap_support[i] << 8)) == 0)
+		if ((le16toh(phy_cap[0]) & (phy_cap_support[i] << 8)) == 0)
 			continue;
 
 		/* Supports more, but overflow? Abort. */
-		if ((i * 2 + 2) * sizeof(mcs_set[0]) >= mcs_len)
+		if ((i * 2 + 2) * sizeof(le16toh(mcs_set[0])) >= mcs_len)
 			return;
 
 		for (j = 0; j < 2; j++) {
 			int k;
 			printf("%s\t\tHE %s MCS and NSS set %s MHz\n", pre, j ? "TX" : "RX", bw[i]);
 			for (k = 0; k < 8; k++) {
-				__u16 mcs = mcs_set[(i * 2) + j];
+				__u16 mcs = le16toh(mcs_set[(i * 2) + j]);
 				mcs >>= k * 2;
 				mcs &= 0x3;
 				printf("%s\t\t\t%d streams: ", pre, k + 1);
@@ -1449,7 +1450,7 @@ static void __print_he_capa(const __u16 *mac_cap,
 			ppet_len = 0;
 	}
 
-	if (ppet_len && (phy_cap[3] & BIT(15))) {
+	if (ppet_len && (le16toh(phy_cap[3]) & BIT(15))) {
 		printf("%s\t\tPPE Threshold ", pre);
 		for (i = 0; i < ppet_len; i++)
 			if (ppet[i])
@@ -1775,7 +1776,7 @@ void print_he_operation(const uint8_t *ie, int len)
 {
 	uint8_t oper_parameters[3] = {ie[0], ie[1], ie[2] };
 	uint8_t bss_color = ie[3];
-	uint16_t nss_mcs_set = *(uint16_t*)(&ie[4]);
+	uint16_t nss_mcs_set = le16toh(*(uint16_t *)(&ie[4]));
 	uint8_t vht_oper_present = oper_parameters[1] & 0x40;
 	uint8_t co_hosted_bss_present = oper_parameters[1] & 0x80;
 	uint8_t uhb_operation_info_present = oper_parameters[2] & 0x02;
@@ -1788,7 +1789,7 @@ void print_he_operation(const uint8_t *ie, int len)
 		printf("\t\t\tTWT Required\n");
 
 	printf("\t\t\tTXOP Duration RTS Threshold: %hu\n",
-	       (*(uint16_t*)(oper_parameters)) >> 4 & 0x03ff);
+	       le16toh((*(uint16_t *)(oper_parameters))) >> 4 & 0x03ff);
 	if (oper_parameters[1] & 0x40)
 		printf("\t\t\tVHT Operation Information Present\n");
 
