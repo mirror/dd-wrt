@@ -331,8 +331,6 @@ void start_bridging(void)
 	start_set_routes();
 }
 
-extern char *getMTU(char *);
-
 char *getRealBridge(const char *ifname, char *word)
 {
 	const char *next, *wordlist;

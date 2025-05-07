@@ -608,6 +608,14 @@ static void do_portsetup(char *lan, char *ifname)
 	if (nvram_default_matchi(var, 1, 1)) {
 		br_add_interface(getBridge(IFMAP(ifname), tmp), IFMAP(ifname));
 	} else {
+		if (strncmp(ifname, "wl", 2) == 0) { // this is not an ethernet driver
+			ifconfig(ifname, IFUP, "0.0.0.0", NULL);
+		}
+		eval("ifconfig", ifname, "mtu", getMTU(ifname));
+		eval("ifconfig", ifname, "txqueuelen", getTXQ(ifname));
+		if (!nvram_nmatch("", "%s_hwaddr", ifname))
+			set_hwaddr(ifname, nvram_nget("%s_hwaddr", ifname));
+
 		ifconfig(ifname, IFUP, nvram_nget("%s_ipaddr", IFMAP(ifname)), nvram_nget("%s_netmask", ifname));
 		log_eval("gratarp", ifname);
 	}
@@ -2140,30 +2148,9 @@ void start_lan(void)
 #endif
 				strcpy(realname, name);
 
-			fprintf(stderr, "name=[%s] lan_ifname=[%s]\n", realname, lan_ifname);
-
-			/*
-			 * Bring up interface 
-			 */
-			if (ifconfig(realname, IFUP, "0.0.0.0", NULL)) {
-				continue;
-			}
 			// set proper mtu
-
-			if (strncmp(realname, "wlan", 4) != 0) { // this is not an ethernet driver
-				eval("ifconfig", realname,
-				     "down"); //fixup for some ethernet drivers
-			}
-			eval("ifconfig", realname, "mtu", getMTU(realname));
-			eval("ifconfig", realname, "txqueuelen", getTXQ(realname));
-			if (!nvram_nmatch("", "%s_hwaddr", realname))
-				set_hwaddr(realname, nvram_nget("%s_hwaddr", realname));
-
-			if (strncmp(realname, "wlan", 4) != 0) { // this is not an ethernet driver
-				eval("ifconfig", realname,
-				     "up"); //fixup for some ethernet drivers
-			}
-
+			if (!ifexists(realname))
+				continue;
 			/*
 			 * Set the logical bridge address to that of the first interface 
 			 */

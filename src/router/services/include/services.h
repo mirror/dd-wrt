@@ -256,9 +256,6 @@ char *getmdhcp(int count, int index, char *buffer);
 
 void stop_openvpn_wandone(void);
 
-char *getMTU(char *ifname);
-char *getTXQ(char *ifname);
-
 int br_add_bridge(const char *brname);
 int br_del_bridge(const char *brname);
 int br_add_interface(const char *br, const char *dev);
