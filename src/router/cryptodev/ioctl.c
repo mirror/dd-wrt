@@ -661,7 +661,7 @@ clonefd(struct file *filp)
 
 	return ret;
 }
-
+#define ENABLE_SYNC 1
 #ifdef ENABLE_ASYNC
 /* enqueue a job for asynchronous completion
  *
