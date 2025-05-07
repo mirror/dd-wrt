@@ -246,8 +246,8 @@ static int zebra_ospf_init(void)
 	} else {
 		const char *next;
 		char var[80];
-		char eths[256];
-		char eths2[256];
+		char eths[512];
+		char eths2[512];
 		char bufferif[512];
 
 		bzero(eths, sizeof(eths));

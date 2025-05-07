@@ -46,7 +46,7 @@ void start_privoxy(void)
 	int whitelist = 0;
 	const char *next;
 	char var[80];
-	char vifs[256];
+	char vifs[512];
 	char *ip = nvram_safe_get("lan_ipaddr");
 	char *mask = nvram_safe_get("lan_netmask");
 	char *webif_port = nvram_safe_get("http_lanport");
@@ -142,7 +142,7 @@ void stop_privoxy(void)
 	char *transp = nvram_safe_get("privoxy_transp_exclude");
 	const char *next;
 	char var[80];
-	char vifs[256];
+	char vifs[512];
 
 	sysprintf("iptables -t nat -D PREROUTING -p tcp ! -d %s --dport 80 -j DNAT --to %s:8118", wan, ip);
 	//	sysprintf("iptables -t nat -D PREROUTING -p tcp ! -d %s --dport 443 -j DNAT --to %s:8118", wan, ip);

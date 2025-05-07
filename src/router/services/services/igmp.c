@@ -71,7 +71,7 @@ void start_igmprt(void)
 			"phyint %s:0 disabled\n",
 			nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ifname"));
 	}
-	char ifnames[256];
+	char ifnames[512];
 
 	getIfLists(ifnames, sizeof(ifnames));
 	foreach(name, ifnames, next) {

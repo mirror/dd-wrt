@@ -636,7 +636,7 @@ void start_dnsmasq(void)
 				fprintf(fp, ",%s", ip);
 #endif
 		}
-		char vifs[256];
+		char vifs[512];
 		getIfLists(vifs, sizeof(vifs));
 		char var[256], *wordlist;
 		const char *next;
@@ -656,7 +656,7 @@ void start_dnsmasq(void)
 		if (canlan()) {
 			fprintf(fp, "%s", nvram_safe_get("lan_ifname"));
 		}
-		char vifs[256];
+		char vifs[512];
 		getIfLists(vifs, sizeof(vifs));
 		char var[256], *wordlist;
 		const char *next;
