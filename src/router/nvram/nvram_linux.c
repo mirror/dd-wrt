@@ -243,7 +243,7 @@ int nvram_unset(const char *name)
 int _nvram_commit(void)
 {
 	if (nvram_match("flash_active", "1")) {
-		fprintf(stderr, "not allowed, flash process in progress");
+		fprintf(stderr, "not allowed. Firmware update in progress\n");
 		return 1;
 	}
 	int ret = -1;
