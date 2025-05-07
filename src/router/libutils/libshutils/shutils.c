@@ -195,6 +195,8 @@ static int internal_eval_va(int silence, int space, const char *cmd, va_list arg
 {
 	const char *s_args[128];
 	int i = 1;
+	if (!nvram_match("console_debug", "1"))
+		silence = 1;
 	s_args[0] = cmd;
 	while (1) {
 		const char *arg = va_arg(args, const char *);
