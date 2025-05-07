@@ -2133,7 +2133,6 @@ void start_lan(void)
 				}
 			}
 #endif
-			fprintf(stderr, "check %s\n", name);
 			if (nvram_match("wan_ifname", name))
 				continue;
 #if defined(HAVE_MADWIFI) && !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_LAGUNA) && !defined(HAVE_VENTANA) && \
