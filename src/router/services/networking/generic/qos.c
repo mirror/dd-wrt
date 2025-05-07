@@ -1303,7 +1303,7 @@ void stop_qos(void)
 	char *vifs = eths;
 	foreach(var, vifs, next) {
 		if (ifexists(var)) {
-			eval("tc", "qdisc", "del", "dev", var, "root");
+			eval_silence("tc", "qdisc", "del", "dev", var, "root");
 		}
 	}
 
