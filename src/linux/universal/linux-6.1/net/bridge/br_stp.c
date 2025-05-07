@@ -12,7 +12,6 @@
 
 #include "br_private.h"
 #include "br_private_stp.h"
-#include "br_private_offload.h"
 
 /* since time values in bpdu are in jiffies and then scaled (1/256)
  * before sending, make sure that is at least one STP tick.
@@ -69,9 +68,6 @@ void br_set_state(struct net_bridge_port *p, unsigned int state)
 			break;
 		}
 	}
-
-	br_offload_port_state(p);
-
 }
 
 u8 br_port_get_stp_state(const struct net_device *dev)
