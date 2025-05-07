@@ -43,12 +43,12 @@ CFLAGS		= -D__KERNEL__ -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
 		  -mabi=32 -march=mips32r2 \
 		  -Wa,-32 -Wa,-march=mips32r2 -Wa,-mips32r2 -Wa,--trap
 CFLAGS		+= -D_LZMA_PROB32
-CFLAGS		+= -flto
+CFLAGS		+= $(LTO)
 CFLAGS		+= $(CACHE_FLAGS)
 
 ASFLAGS		= $(CFLAGS) -D__ASSEMBLY__
 
-LDFLAGS		= -static -Wl,--gc-sections -Wl,-no-warn-mismatch
+LDFLAGS		= -static -Wl,--gc-sections -Wl,-no-warn-mismatch $(LTO) $(LDLTO)
 LDFLAGS		+= -Wl,-e,startup -T loader.lds -Wl,-Ttext,$(LZMA_TEXT_START)
 LDFLAGS		+= -flto -fwhole-program -Wl,-z,max-page-size=4096
 
