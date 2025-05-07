@@ -22,7 +22,6 @@
 #include <linux/rculist.h>
 #include "br_private.h"
 #include "br_private_tunnel.h"
-#include "br_private_offload.h"
 
 static int
 br_netif_receive_skb(struct net *net, struct sock *sk, struct sk_buff *skb)
@@ -223,7 +222,6 @@ int br_handle_frame_finish(struct net *net, struct sock *sk, struct sk_buff *skb
 			dst->used = now;
 		br_forward(dst->dst, skb, local_rcv, false);
 	} else {
-		br_offload_skb_disable(skb);
 	  /* QCA qca-mcs support - Start */
 		if (pdst) {
 			br_forward(pdst, skb, local_rcv, false);
@@ -363,9 +361,6 @@ static rx_handler_result_t br_handle_frame(struct sk_buff **pskb)
 	memset(skb->cb, 0, sizeof(struct br_input_skb_cb));
 
 	p = br_port_get_rcu(skb->dev);
-	if (br_offload_input(p, skb))
-		return RX_HANDLER_CONSUMED;
-
 	if (p->flags & BR_VLAN_TUNNEL)
 		br_handle_ingress_vlan_tunnel(skb, p, nbp_vlan_group_rcu(p));
 

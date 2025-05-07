@@ -18,7 +18,6 @@
 #include <net/switchdev.h>
 
 #include "br_private.h"
-#include "br_private_offload.h"
 
 /*
  * Handle changes in state of network devices enslaved to a bridge.
@@ -390,10 +389,6 @@ static int __init br_init(void)
 	if (err)
 		goto err_out;
 
-	err = br_offload_init();
-	if (err)
-		goto err_out0;
-
 	err = register_pernet_subsys(&br_net_ops);
 	if (err)
 		goto err_out1;
@@ -443,8 +438,6 @@ err_out3:
 err_out2:
 	unregister_pernet_subsys(&br_net_ops);
 err_out1:
-	br_offload_fini();
-err_out0:
 	br_fdb_fini();
 err_out:
 	stp_proto_unregister(&br_stp_proto);
@@ -467,7 +460,6 @@ static void __exit br_deinit(void)
 #if IS_ENABLED(CONFIG_ATM_LANE)
 	br_fdb_test_addr_hook = NULL;
 #endif
-	br_offload_fini();
 	br_fdb_fini();
 }
 
