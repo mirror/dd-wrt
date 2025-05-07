@@ -449,21 +449,21 @@ static void __print_he_capa(const __u16 *mac_cap, const __u16 *phy_cap, const __
 	size_t mcs_used;
 	const char *pre = indent ? "\t" : "";
 
-	if (phy_cap[0] & BIT(1 + 8)) {
+	if (le16toh(phy_cap[0])) & BIT(1 + 8)) {
 		site_survey_lists[sscount].channel |= 0x1000;
 		fillENC("HE40");
 	}
-	if (phy_cap[0] & BIT(2 + 8)) {
+	if (le16toh(phy_cap[0]) & BIT(2 + 8)) {
 		site_survey_lists[sscount].channel |= 0x1000;
 		site_survey_lists[sscount].channel |= 0x100;
 		fillENC("HE40");
 		fillENC("HE80");
 	}
-	if (phy_cap[0] & BIT(3 + 8)) {
+	if (le16toh(phy_cap[0]) & BIT(3 + 8)) {
 		site_survey_lists[sscount].channel |= 0x200;
 		fillENC("HE160");
 	}
-	if (phy_cap[0] & BIT(4 + 8)) {
+	if (le16toh(phy_cap[0]) & BIT(4 + 8)) {
 		site_survey_lists[sscount].channel |= 0x200;
 		fillENC("HE80+80");
 	}
@@ -477,7 +477,7 @@ static void __print_he_capa(const __u16 *mac_cap, const __u16 *phy_cap, const __
 
 	int k;
 	for (k = 0; k < 8; k++) {
-		__u16 mcs = mcs_set[0];
+		__u16 mcs = le16toh(mcs_set[0]);
 		mcs >>= k * 2;
 		mcs &= 0x3;
 		if (mcs != 3) {
@@ -509,7 +509,7 @@ void print_he_operation(const uint8_t *ie, int len)
 {
 	uint8_t oper_parameters[3] = { ie[0], ie[1], ie[2] };
 	uint8_t bss_color = ie[3];
-	uint16_t nss_mcs_set = *(uint16_t *)(&ie[4]);
+	uint16_t nss_mcs_set = le16toh(*(uint16_t *)(&ie[4]));
 	uint8_t vht_oper_present = oper_parameters[1] & 0x40;
 	uint8_t co_hosted_bss_present = oper_parameters[1] & 0x80;
 	uint8_t uhb_operation_info_present = oper_parameters[2] & 0x02;
