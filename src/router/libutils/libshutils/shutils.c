@@ -212,7 +212,7 @@ static int internal_eval_va(int silence, int space, const char *cmd, va_list arg
 		if (!arg)
 			break;
 	}
-	int ret = _evalpid((char *const *)s_args, silence ? NULL : ">/dev/console", 0, NULL);
+	int ret = _evalpid((char *const *)s_args, silence ? ">/dev/null 2>&1" : ">/dev/console", 0, NULL);
 	i = 1;
 	while (1) {
 		if (!space || !s_args[i])
@@ -1890,7 +1890,8 @@ void dd_loginfo(const char *servicename, const char *fmt, ...)
 	va_start(args, (char *)fmt);
 	vasprintf(&str, fmt, args);
 	va_end(args);
-	fprintf(stdout, "[%s] : %s\n", servicename, str);
+	if (nvram_match("console_debug","1"))
+		fprintf(stderr, "[%s] : %s\n", servicename, str);
 	dd_syslog(LOG_INFO, "[%s] : %s", servicename, str);
 	free(str);
 }
