@@ -93,6 +93,7 @@ void start_sysinit(void)
 			MAC_ADD(mac);
 		}
 	}
+	insmod("cryptodev");
 	/*
 	 * network drivers 
 	 */
