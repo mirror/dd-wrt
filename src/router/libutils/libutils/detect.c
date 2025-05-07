@@ -225,6 +225,10 @@ int internal_getRouterBrand()
 		setRouter("Zyxel GS1900-48");
 		return ROUTER_ZYXEL_GS190048;
 	}
+	if (!strcmp(modelstr, "GS1900-48HP") && !strcmp(version,"v2")) {
+		setRouter("Zyxel GS1900HP-48 v2");
+		return ROUTER_ZYXEL_GS190048;
+	}
 	if (!strcmp(modelstr, "GS1900-24HP") && !strcmp(version,"v1")) {
 		setRouter("Zyxel GS1900-24HP v1");
 		return ROUTER_ZYXEL_GS190048;
