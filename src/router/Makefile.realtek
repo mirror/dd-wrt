@@ -186,6 +186,10 @@ ifeq ($(CONFIG_OPTIMIZE_FOR_SPEED),y)
 	sed -i 's/CONFIG_CC_OPTIMIZE_FOR_SIZE=y/\# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set/g' $(LINUXDIR)/.config
 	sed -i 's/\# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE is not set/CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y/g' $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_OPTIMIZE_FOR_SIZE),y)
+	sed -i 's/CONFIG_CC_OPTIMIZE_FOR_SIZE=y/\# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set/g' $(LINUXDIR)/.config
+	sed -i 's/\# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE is not set/CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y/g' $(LINUXDIR)/.config
+endif
 	$(kernelfeatures)
 	$(MAKE) -C $(LINUXDIR) ARCH=mips oldconfig	
 
@@ -237,6 +241,13 @@ wndr:
 	-$(MAKE) -f Makefile.pb42 validate MAXIMUM_SIZE=26214400 EX_PATH=$(ARCH)-uclibc/wndr3700v4-factory.img
 	-$(MAKE) -f Makefile.pb42 validate MAXIMUM_SIZE=26214400 EX_PATH=$(ARCH)-uclibc/wndr4300-factory.img
 
+compress_lzma:
+	cat $(ARCH)-uclibc/vmlinux.bin | lzma e -si -so -eos -lc2 -lp2 -pb2 -d25 > lzma-loader/realtek/vmlinux.lzma
+	make -C lzma-loader/realtek clean
+	make -C lzma-loader/realtek 
+	dd if=lzma-loader/realtek/lzma.elf of=$(ARCH)-uclibc/lzma_vmlinux bs=65536 conv=sync
+	$(ARCH)-linux-objcopy -O binary lzma-loader/realtek/lzma.elf $(ARCH)-uclibc/lzma_vmlinus 
+	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/lzma_vmlinus > $(ARCH)-uclibc/vmlinux.bin.deflate
 
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
@@ -426,13 +437,12 @@ endif
 	cp $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux
 
 	cp $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bak 
-	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
-#	mips-linux-uclibc-objcopy -O binary $(strip-flags) -g $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bin
 
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
 	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8393_zyxel_gs1900-48.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8393_zyxel_gs1900-48.dts
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8393_zyxel_gs1900-48.dtb $(ARCH)-uclibc/image-rtl8393_zyxel_gs1900-48.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8393_zyxel_gs1900-48.dtb >> $(ARCH)-uclibc/vmlinux.bin
-#	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
+#	make -f Makefile.realtek compress_lzma
 	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
 	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'MIPS DD-WRT Linux-6.6.89' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-48 bs=64k conv=sync
@@ -440,6 +450,19 @@ endif
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-48
 	(echo -n "V9.99(AAHN.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900-48
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900-48.trx $(ARCH)-uclibc/vmlinux-gs1900-48
+
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8393_zyxel_gs1900hp-v2-48.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8393_zyxel_gs1900hp-v2-48.dts
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8393_zyxel_gs1900hp-v2-48.dtb $(ARCH)-uclibc/image-rtl8393_zyxel_gs1900hp-v2-48.dtb.tmp
+	cat $(ARCH)-uclibc/image-rtl8393_zyxel_gs1900hp-v2-48.dtb >> $(ARCH)-uclibc/vmlinux.bin
+#	make -f Makefile.realtek compress_lzma
+	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
+	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'MIPS DD-WRT Linux-6.6.89' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900hp-v2-48 bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900hp-v2-48
+	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900hp-v2-48
+	(echo -n "V9.99(ABTQ.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-gs1900hp-v2-48
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1900hp-v2-48.trx $(ARCH)-uclibc/vmlinux-gs1900hp-v2-48
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
 	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8382_zyxel_gs1900-16.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8382_zyxel_gs1900-16.dts
