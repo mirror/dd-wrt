@@ -1510,8 +1510,8 @@ EJ_VISIBLE void ej_show_bandwidth(webs_t wp, int argc, char_t **argv)
 	char name[180];
 	const char *next, *bnext;
 	char var[80];
-	char eths[256];
-	char eths2[256];
+	char eths[512];
+	char eths2[512];
 	char bword[256];
 	glob_t globbuf;
 	char *globstring;

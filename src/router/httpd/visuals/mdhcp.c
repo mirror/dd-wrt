@@ -22,7 +22,7 @@
 
 EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t **argv)
 {
-	char buffer[256];
+	char buffer[512];
 	char buf[128];
 	int count = 0;
 	char word[256];

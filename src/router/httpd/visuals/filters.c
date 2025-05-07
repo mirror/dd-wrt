@@ -364,8 +364,8 @@ EJ_VISIBLE void ej_show_filterif(webs_t wp, int argc, char_t **argv)
 		  !strcmp(ifs, nvram_safe_get("lan_ifname")) ? "selected=\"selected\"" : "");
 	const char *next;
 	char var[80];
-	char eths[256];
-	char eth2[256];
+	char eths[512];
+	char eth2[512];
 	getIfLists(eths, sizeof(eths));
 	getIfListNoPorts(eth2, sizeof(eth2), "ppp");
 	strcat(eths, " ");

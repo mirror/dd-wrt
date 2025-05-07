@@ -118,7 +118,7 @@ EJ_VISIBLE void ej_show_olsrd(webs_t wp, int argc, char_t **argv)
 		}
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "route.olsrd_newiface", NULL);
-		char buffer[256];
+		char buffer[512];
 
 		getIfListNoPorts(buffer, sizeof(buffer), NULL);
 		showIfOptions(wp, "olsrd_ifname", buffer, "");

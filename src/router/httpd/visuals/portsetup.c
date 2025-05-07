@@ -29,7 +29,7 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t **argv)
 	const char *next, *bnext;
 	char var[64];
 	char eths[512];
-	char bword[265];
+	char bword[256];
 	char bufferif[512];
 	char buf[128];
 

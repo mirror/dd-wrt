@@ -32,7 +32,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t **argv)
 	char *bridge, *prio, *mtu, *mcast, *mac;
 	char bridge_name[32];
 	int vlan = br_has_vlan_filtering();
-	char buf[256];
+	char buf[512];
 	int realcount = nvram_default_geti("bridges_count", 0);
 
 	wordlist = nvram_safe_get("bridges");

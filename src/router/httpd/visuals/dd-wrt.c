@@ -1134,7 +1134,7 @@ EJ_VISIBLE void ej_show_wifiselect(webs_t wp, int argc, char_t **argv)
 {
 	const char *next;
 	char var[32];
-	char eths[256];
+	char eths[512];
 
 	int count = getdevicecount();
 
@@ -7661,8 +7661,8 @@ EJ_VISIBLE void ej_show_ifselect(webs_t wp, int argc, char_t **argv)
 		  nvram_match(ifname, nvram_safe_get("lan_ifname")) ? "selected=\"selected\"" : "");
 	const char *next;
 	char var[80];
-	char eths[256];
-	char eth2[256];
+	char eths[512];
+	char eth2[512];
 	getIfLists(eths, sizeof(eths));
 	getIfList(eth2, sizeof(eth2), "ppp");
 	strcat(eths, " ");
@@ -7686,7 +7686,7 @@ EJ_VISIBLE void ej_show_iflist(webs_t wp, int argc, char_t **argv)
 	char wan_if_buffer[33];
 	const char *next;
 	char var[80];
-	char buffer[256];
+	char buffer[512];
 	char *prefix = NULL;
 	if (argc > 0)
 		prefix = argv[0];

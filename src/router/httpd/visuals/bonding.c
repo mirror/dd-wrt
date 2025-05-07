@@ -21,9 +21,9 @@
  */
 EJ_VISIBLE void ej_show_bondings(webs_t wp, int argc, char_t **argv)
 {
-	char buffer[256];
+	char buffer[512];
 	char bufferif[512];
-	char bondnames[256];
+	char bondnames[512];
 	int count = 0;
 	char word[256];
 	const char *next, *wordlist;

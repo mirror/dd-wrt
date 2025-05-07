@@ -45,7 +45,7 @@
 
 EJ_VISIBLE void ej_show_dnsipv6if(webs_t wp, int argc, char_t **argv)
 {
-	char bufferif[256];
+	char bufferif[512];
 	int count = 1;
 	int maxcount = 4;
 	char temp[64];
