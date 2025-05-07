@@ -812,7 +812,7 @@ EJ_VISIBLE void validate_portsetup(webs_t wp, char *value, struct variable *v)
 {
 	const char *next;
 	char var[64];
-	char eths[256];
+	char eths[512];
 
 	getIfLists(eths, sizeof(eths));
 	foreach(var, eths, next) {

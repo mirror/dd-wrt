@@ -1981,7 +1981,7 @@ void validate_dnsipv6(webs_t wp, char *value, struct variable *v)
 {
 	//egc handling/validating interface choice, called in opt/et/config/base.nvramconfig:138 -> base.c:229
 	char bufferif[512] = { 0 };
-	char dnsipv6if[128] = { 0 };
+	char dnsipv6if[512] = { 0 };
 	char word[32] = { 0 };
 	const char *next;
 	int idx = 0;
