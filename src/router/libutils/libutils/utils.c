@@ -320,7 +320,7 @@ char *getBridgeMTU(const char *ifname, char *word)
 	return "1500";
 }
 
-char *getMTU(char *ifname)
+char *getMTU(const char *ifname)
 {
 	if (!ifname)
 		return "1500";
@@ -330,7 +330,7 @@ char *getMTU(char *ifname)
 	return mtu;
 }
 
-char *getTXQ(char *ifname)
+char *getTXQ(const char *ifname)
 {
 	if (!ifname)
 		return "1000";

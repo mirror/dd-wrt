@@ -1168,7 +1168,8 @@ void lcdmessaged(char *dual, char *message);
 #endif
 
 extern char *getBridgeMTU(const char *, char *word);
-extern char *getMTU(char *);
+extern char *getMTU(const char *);
+extern char *getTXQ(const char *);
 extern int getBridgeSTP(char *br, char *word);
 extern char *get_NFServiceMark(char *buffer, size_t len, char *service, uint32 mark);
 

@@ -364,19 +364,17 @@ int br_add_interface(const char *br, const char *dev)
 	sprintf(netmask, "%s_netmask", dev);
 	sprintf(hwaddr, "%s_hwaddr", dev);
 
-	eval("ifconfig", dev, "0.0.0.0");
 	if (strncmp(dev, "wl", 2) != 0) { // this is not an ethernet driver
 		eval("ifconfig", dev, "down"); //fixup for some ethernet drivers
 	}
 	if (!nvram_match(hwaddr, ""))
 		set_hwaddr(dev, nvram_safe_get(hwaddr));
+	eval("ifconfig", dev, "txqueuelen", getTXQ(dev));
 	eval("ifconfig", dev, "mtu", getBridgeMTU(br, tmp));
-	if (strncmp(dev, "wl", 2) != 0) { // this is not an ethernet driver
-		eval("ifconfig", dev, "up");
-	}
+	eval("ifconfig", dev, "0.0.0.0", "up");
 
-	dd_loginfo("bridge", "interface %s successfully added to bridge %s", dev, br);
 	int ret = eval("brctl", "addif", br, dev);
+	dd_loginfo("bridge", "interface %s successfully added to bridge %s", dev, br);
 #ifdef HAVE_80211AC
 //      eval("emf", "add", "iface", br, dev);
 #endif
