@@ -426,10 +426,9 @@ config QSEMI_PHY
 	help
 	  Currently supports the qs6612
 
-config REALTEK_PHY
-	tristate "Realtek PHYs"
-	help
-	  Supports the Realtek 821x PHY.
+source "drivers/net/phy/realtek/Kconfig"
+
+source "drivers/net/phy/rtl8261n/Kconfig"
 
 config REALTEK_SOC_PHY
 	tristate "Realtek SoC PHYs"
@@ -437,7 +436,6 @@ config REALTEK_SOC_PHY
 	help
 	  Supports the PHYs found in combination with Realtek Switch SoCs
 
-source "drivers/net/phy/rtl8261n/Kconfig"
 
 config RENESAS_PHY
 	tristate "Renesas PHYs"

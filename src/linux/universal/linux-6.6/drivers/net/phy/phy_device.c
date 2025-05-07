@@ -1247,6 +1247,8 @@ int phy_init_hw(struct phy_device *phydev)
 	if (ret < 0)
 		return ret;
 
+	phy_interface_zero(phydev->possible_interfaces);
+
 	if (phydev->drv->config_init) {
 		ret = phydev->drv->config_init(phydev);
 		if (ret < 0)
@@ -3223,10 +3225,16 @@ static int of_phy_led(struct phy_device *phydev,
 	if (index > U8_MAX)
 		return -EINVAL;
 
+	if (of_property_read_bool(led, "active-high"))
+		set_bit(PHY_LED_ACTIVE_HIGH, &modes);
 	if (of_property_read_bool(led, "active-low"))
 		set_bit(PHY_LED_ACTIVE_LOW, &modes);
 	if (of_property_read_bool(led, "inactive-high-impedance"))
 		set_bit(PHY_LED_INACTIVE_HIGH_IMPEDANCE, &modes);
+
+	if (WARN_ON(modes & BIT(PHY_LED_ACTIVE_LOW) &&
+		    modes & BIT(PHY_LED_ACTIVE_HIGH)))
+		return -EINVAL;
 
 	if (modes) {
 		/* Return error if asked to set polarity modes but not supported */
