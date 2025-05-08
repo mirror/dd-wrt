@@ -1513,10 +1513,15 @@ sslKeys_t *keys;
 
 webs_t get_connection(void)
 {
-	static webs_t pool[16 * 2];
+	static webs_t pool[16 * 2] = { NULL };
 	static int count;
+	if (pool[0] == NULL) {
+		int i;
+		for (i = 0; i < http_maxconn * 2; i++)
+			pool[i] = safe_malloc(sizeof(webs));
+	}
 	webs_t conn_fp = pool[count++];
-	if (count == http_maxconn)
+	if (count == http_maxconn * 2)
 		count = 0;
 	if (!conn_fp)
 		conn_fp = safe_malloc(sizeof(webs));

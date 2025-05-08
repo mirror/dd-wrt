@@ -2004,7 +2004,7 @@ do_apply_post(char *url, webs_t stream, size_t len, char *boundary)
 		stream->post_buf = (char *)malloc(len + 1);
 
 		if (!stream->post_buf) {
-			dd_logerror("httpd", "The POST data exceed length limit! (allocation of %ld bytes failed)", len + 1);
+			dd_logerror("httpd", "The POST data exceed length limit! (allocation of %zu bytes failed)", len + 1);
 			return -1;
 		}
 		/*
@@ -2021,7 +2021,7 @@ do_apply_post(char *url, webs_t stream, size_t len, char *boundary)
 		if (len) {
 			char *buf = malloc(len);
 			if (!buf) {
-				dd_logerror("httpd", "The POST data exceed length limit! (remaining request of length %ld failed)",
+				dd_logerror("httpd", "The POST data exceed length limit! (remaining request of length %zu failed)",
 					    len);
 				return -1;
 			}
