@@ -227,7 +227,12 @@ static void *handle_request(void *conn_fp);
 #define SEM_POST sem_post
 #define SEM_INIT sem_init
 
+#ifdef _SC_NPROCESSORS_ONLN
+#define HTTP_MAXCONN sysconf(_SC_NPROCESSORS_ONLN) * 4
+#else
 #define HTTP_MAXCONN 16
+#endif
+
 static sem_t semaphore;
 #ifdef __UCLIBC__
 static pthread_mutex_t crypt_mutex;
