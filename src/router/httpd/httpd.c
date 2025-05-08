@@ -1407,7 +1407,7 @@ out:;
 	wfclose(conn_fp);
 	bzero(conn_fp,
 	      sizeof(webs)); // erase to delete any traces of stored passwords or usernames
-	conn_fp->dead = true;
+	conn_fp->dead = 1;
 	SEM_POST(&semaphore);
 	return NULL;
 }
@@ -1519,15 +1519,15 @@ webs_t get_connection(void)
 		int i;
 		for (i = 0; i < http_maxconn * 2; i++) {
 			pool[i] = safe_malloc(sizeof(webs));
-			pool[i]->dead = true;
+			pool[i]->dead = 1;
 		}
 	}
 again:;
 	webs_t conn_fp = pool[count++];
-	if (conn_fp->dead == false) {
+	if (conn_fp->dead == 0) {
 		goto again;
 	}
-	conn_fp->dead = false;
+	conn_fp->dead = 0;
 	if (count == http_maxconn * 2)
 		count = 0;
 	if (!conn_fp)
