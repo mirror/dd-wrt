@@ -32,7 +32,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 -->
 <svg xml:space='preserve' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' width='100%' height='100%' viewBox='0 0 700 300' preserveAspectRatio='none' onload='init(evt)' encoding='UTF-8'>
-<g id='graph' style='font-family: system-ui; font-weight: 900;'>
+<g id='graph' style='font-family: system-ui; font-weight: 900'>
 
 	<path id='graph_out' d='' fill='red' fill-opacity='0.5' stroke='red' stroke-width='1' stroke-opacity='1' />
 	<path id='graph_in'  d='' fill='green' fill-opacity='0.5' stroke='green' stroke-width='1' stroke-opacity='1' />
