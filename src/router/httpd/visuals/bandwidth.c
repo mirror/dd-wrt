@@ -25,7 +25,7 @@ static void show_bwif_row(webs_t wp, char ifname[4][32], char name[4][128])
 	int i;
 	websWrite(wp, "<table cellspacing=\"4\" summary=\"bandwidth\" id=\"bandwidth_table\" class=\"table\"><thead><tr>\n");
 	for (i = 0; i < 4; i++) {
-		websWrite(wp, "<th width=\"25%%\">%s</th>\n", name[i] ? name[i] : "");
+		websWrite(wp, "<th width=\"25%%\">%s</th>\n", name[i][0] ? name[i] : "");
 	}
 	websWrite(wp, "</tr></thead>\n");
 	websWrite(wp, "<tbody>\n");
