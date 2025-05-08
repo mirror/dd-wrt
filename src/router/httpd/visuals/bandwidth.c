@@ -20,7 +20,7 @@
  * $Id:
  */
 
-void show_bwif_line(webs_t wp, char ifname[4][32], char name[4][32])
+static void show_bwif_row(webs_t wp, char ifname[4][32], char name[4][128])
 {
 	int i;
 	websWrite(wp, "<table cellspacing=\"4\" summary=\"bandwidth\" id=\"bandwidth_table\" class=\"table\"><thead><tr>\n");
@@ -48,22 +48,22 @@ void show_bwif_line(webs_t wp, char ifname[4][32], char name[4][32])
 }
 struct bwcontext {
 	char ifname[4][32];
-	char name[4][32];
+	char name[4][128];
 	int count;
 };
 
-void show_bwif(webs_t wp, struct bwcontext *ctx, char *ifname, char *name)
+static void show_bwif(webs_t wp, struct bwcontext *ctx, char *ifname, char *name)
 {
 	if (!ctx->count) {
 		memset(ctx->ifname, 0, sizeof(ctx->ifname));
 		memset(ctx->name, 0, sizeof(ctx->name));
 	}
 	strlcpy(ctx->ifname[ctx->count], ifname, 32);
-	strlcpy(ctx->name[ctx->count], name, 32);
+	strlcpy(ctx->name[ctx->count], name, 128);
 	ctx->count++;
 	if (ctx->count == 4) {
 		ctx->count = 0;
-		show_bwif_line(wp, ctx->ifname, ctx->name);
+		show_bwif_row(wp, ctx->ifname, ctx->name);
 	}
 }
 
@@ -214,7 +214,8 @@ skip:;
 	sprintf(name, "%s", tran_string(buf, sizeof(buf), "wl_wimax.titl"));
 	show_bwif(wp, &ctx, "ofdm", name);
 #endif
-	if (ctx.count > 0)
-		show_bwif_line(wp, ctx.ifname, ctx.name);
+	if (ctx.count > 0) {
+		show_bwif_row(wp, ctx.ifname, ctx.name);
+	}
 	websWrite(wp, "</fieldset>\n");
 }
