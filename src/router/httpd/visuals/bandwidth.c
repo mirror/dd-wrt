@@ -20,13 +20,12 @@
  * $Id:
  */
 
-void show_bwif_line(webs_t wp, char *ifname[4], char *name[4])
+void show_bwif_line(webs_t wp, char ifname[4][32], char name[4][32])
 {
 	int i;
 	websWrite(wp, "<table cellspacing=\"4\" summary=\"bandwidth\" id=\"bandwidth_table\" class=\"table\"><thead><tr>\n");
 	for (i = 0; i < 4; i++) {
 		websWrite(wp, "<th width=\"25%%\">%s</th>\n", name[i] ? name[i] : "");
-		free(name[i]);
 	}
 	websWrite(wp, "</tr></thead>\n");
 	websWrite(wp, "<tbody>\n");
@@ -35,12 +34,11 @@ void show_bwif_line(webs_t wp, char *ifname[4], char *name[4])
 	char buf[128];
 	for (i = 0; i < 4; i++) {
 		websWrite(wp, "<td>\n");
-		if (ifname[i]) {
+		if (ifname[i][0]) {
 			websWrite(
 				wp,
 				"<iframe title=\"\" src=\"/graph_if.svg?%s\" width=\"100%%\" height=\"25%%\" frameborder=\"0\" type=\"image/svg+xml\">\n",
 				ifname[i]);
-			free(ifname[i]);
 		}
 		websWrite(wp, "</iframe>\n");
 		websWrite(wp, "</td>\n");
@@ -49,8 +47,8 @@ void show_bwif_line(webs_t wp, char *ifname[4], char *name[4])
 	websWrite(wp, "</table>\n");
 }
 struct bwcontext {
-	char *ifname[4];
-	char *name[4];
+	char ifname[4][32];
+	char name[4][32];
 	int count;
 };
 
@@ -60,8 +58,8 @@ void show_bwif(webs_t wp, struct bwcontext *ctx, char *ifname, char *name)
 		memset(ctx->ifname, 0, sizeof(ctx->ifname));
 		memset(ctx->name, 0, sizeof(ctx->name));
 	}
-	ctx->ifname[ctx->count] = strdup(ifname);
-	ctx->name[ctx->count] = strdup(name);
+	strlcpy(ctx->ifname[ctx->count], ifname, 32);
+	strlcpy(ctx->name[ctx->count], name, 32);
 	ctx->count++;
 	if (ctx->count == 4) {
 		ctx->count = 0;
