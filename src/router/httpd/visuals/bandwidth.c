@@ -25,7 +25,7 @@ void show_bwif_line(webs_t wp, char *ifname[4], char *name[4])
 	int i;
 	websWrite(wp, "<table cellspacing=\"4\" summary=\"bandwidth\" id=\"bandwidth_table\" class=\"table\"><thead><tr>\n");
 	for (i = 0; i < 4; i++) {
-		websWrite(wp, "<th>%s</th>\n", name[i] ? name[i] : "");
+		websWrite(wp, "<th width=\"25%%\">%s</th>\n", name[i] ? name[i] : "");
 		free(name[i]);
 	}
 	websWrite(wp, "</tr></thead>\n");
@@ -38,7 +38,7 @@ void show_bwif_line(webs_t wp, char *ifname[4], char *name[4])
 		if (ifname[i]) {
 			websWrite(
 				wp,
-				"<iframe title=\"\" src=\"/graph_if.svg?%s\" width=\"25%%\" height=\"25%%\" frameborder=\"0\" type=\"image/svg+xml\">\n",
+				"<iframe title=\"\" src=\"/graph_if.svg?%s\" width=\"100%%\" height=\"25%%\" frameborder=\"0\" type=\"image/svg+xml\">\n",
 				ifname[i]);
 			free(ifname[i]);
 		}
@@ -69,7 +69,7 @@ void show_bwif(webs_t wp, struct bwcontext *ctx, char *ifname, char *name)
 	}
 }
 
-void show EJ_VISIBLE void ej_show_bandwidth(webs_t wp, int argc, char_t **argv)
+void EJ_VISIBLE ej_show_bandwidth(webs_t wp, int argc, char_t **argv)
 {
 	char wan_if_buffer[33];
 	char name[180];
@@ -77,16 +77,17 @@ void show EJ_VISIBLE void ej_show_bandwidth(webs_t wp, int argc, char_t **argv)
 	char var[80];
 	char eths[512];
 	char eths2[512];
+	char buf[128];
 	char bword[256];
 	glob_t globbuf;
 	char *globstring;
 	int globresult;
 	int c;
 	struct bwcontext ctx;
-	memset(ctx,0,sizeof(ctx));
+	memset(&ctx,0,sizeof(ctx));
 	websWrite(wp, "<fieldset>\n");
-	wensWrite(wp, "<legend>%s</legend>\n", tran_string(buf, sizeof(buf), "status_band.h2"));
-	show_bwif(wp, nvram_safe_get("lan_ifname"), "LAN");
+	websWrite(wp, "<legend>%s</legend>\n", tran_string(buf, sizeof(buf), "status_band.h2"));
+	show_bwif(wp, &ctx, nvram_safe_get("lan_ifname"), "LAN");
 	getIfLists(eths, sizeof(eths));
 	//add ppp interfacs
 	getIfList(eths2, sizeof(eths2), "ppp tun");
@@ -120,7 +121,6 @@ void show EJ_VISIBLE void ej_show_bandwidth(webs_t wp, int argc, char_t **argv)
 		show_bwif(wp, &ctx, var, name);
 skip:;
 	}
-	char buf[128];
 	if (!nvram_match("wan_proto", "disabled")) {
 		if (getSTA()) {
 			snprintf(name, sizeof(name), "%s WAN (%s)", tran_string(buf, sizeof(buf), "share.wireless"),
