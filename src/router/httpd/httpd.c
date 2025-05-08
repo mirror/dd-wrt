@@ -1403,12 +1403,12 @@ out:;
 #ifndef HAVE_MUSL
 	PTHREAD_MUTEX_UNLOCK(&httpd_mutex);
 #endif
-	SEM_POST(&semaphore);
-
 	wfflush(conn_fp);
 	wfclose(conn_fp);
 	bzero(conn_fp,
 	      sizeof(webs)); // erase to delete any traces of stored passwords or usernames
+	conn_fp->dead = true;
+	SEM_POST(&semaphore);
 	return NULL;
 }
 
@@ -1517,10 +1517,17 @@ webs_t get_connection(void)
 	static int count;
 	if (pool[0] == NULL) {
 		int i;
-		for (i = 0; i < http_maxconn * 2; i++)
+		for (i = 0; i < http_maxconn * 2; i++) {
 			pool[i] = safe_malloc(sizeof(webs));
+			pool[i]->dead = true;
+		}
 	}
+again:;
 	webs_t conn_fp = pool[count++];
+	if (conn_fp->dead == false) {
+		goto again;
+	}
+	conn_fp->dead = false;
 	if (count == http_maxconn * 2)
 		count = 0;
 	if (!conn_fp)
