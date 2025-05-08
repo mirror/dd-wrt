@@ -241,6 +241,7 @@ static pthread_mutex_t crypt_mutex;
 static pthread_mutex_t httpd_mutex;
 #endif
 static pthread_mutex_t input_mutex;
+static pthread_mutex_t accept_mutex;
 
 #ifdef __UCLIBC__
 #define CRYPT_MUTEX_INIT pthread_mutex_init
@@ -907,9 +908,13 @@ static void *handle_request(void *arg)
 	size_t content_length = 0;
 	char *line;
 	long method_type;
+
 	conn_fp->p = &global_vars;
 	if (!conn_fp->p->filter_id)
 		conn_fp->p->filter_id = 1;
+#ifndef HAVE_MUSL
+	PTHREAD_MUTEX_UNLOCK(&accept_mutex);
+#endif
 
 	dd_logdebug("httpd", "thread start");
 	PTHREAD_MUTEX_LOCK(&input_mutex); // barrier. block until input is done. otherwise global members get async
@@ -1532,6 +1537,7 @@ int main(int argc, char **argv)
 	fd_set lfdset;
 	int maxfd;
 	airbag_init();
+	pthread_mutex_t accept_mutex;
 	srouter_defaults = load_defaults();
 #ifdef HAVE_HTTPS
 	int do_ssl = 0;
@@ -1560,6 +1566,7 @@ int main(int argc, char **argv)
 	PTHREAD_MUTEX_INIT(&httpd_mutex, NULL);
 #endif
 	PTHREAD_MUTEX_INIT(&input_mutex, NULL);
+	PTHREAD_MUTEX_INIT(&accept_mutex, NULL);
 #if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
 	PTHREAD_MUTEX_INIT(&global_vars.mutex_contr, NULL);
 #ifdef HAVE_WIVIZ
@@ -1790,9 +1797,11 @@ int main(int argc, char **argv)
 
 	/* Loop forever handling requests */
 	for (;;) {
+		PTHREAD_MUTEX_LOCK(&accept_mutex);
 		webs_t conn_fp = safe_malloc(sizeof(webs));
 		if (!conn_fp) {
 			dd_logerror("httpd", "Out of memory while creating new connection");
+			PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 			continue;
 		}
 		bzero(conn_fp, sizeof(webs));
@@ -1833,10 +1842,12 @@ int main(int argc, char **argv)
 		if (select(maxfd + 1, &lfdset, NULL, NULL, NULL) < 0) {
 			if (errno == EINTR || errno == EAGAIN) {
 				SEM_POST(&semaphore);
+				PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 				continue; /* try again */
 			}
 			perror("select");
 			SEM_POST(&semaphore);
+			PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 			continue;
 		}
 
@@ -1863,6 +1874,7 @@ int main(int argc, char **argv)
 			dd_logdebug("httpd", "error on accept errno %d", errno);
 			perror("accept");
 			SEM_POST(&semaphore);
+			PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 			continue;
 		}
 		if (!SSL_ENABLED() || !DO_SSL(conn_fp)) {
@@ -1877,12 +1889,14 @@ int main(int argc, char **argv)
 			fprintf(stderr, "http(s)d: nothing to do...\n");
 			close(conn_fp->conn_fd);
 			SEM_POST(&semaphore);
+			PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 			continue;
 		}
 		get_client_ip_mac(conn_fp);
 		if (check_blocklist("httpd", conn_fp->http_client_ip)) {
 			close(conn_fp->conn_fd);
 			SEM_POST(&semaphore);
+			PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 			continue;
 		}
 
@@ -1891,6 +1905,7 @@ int main(int argc, char **argv)
 				fprintf(stderr, "http(s)d: nothing to do...\n");
 				close(conn_fp->conn_fd);
 				SEM_POST(&semaphore);
+				PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 				continue;
 			}
 #ifdef HAVE_OPENSSL
@@ -1924,6 +1939,7 @@ int main(int argc, char **argv)
 
 				SSL_free(conn_fp->ssl);
 				SEM_POST(&semaphore);
+				PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 				continue;
 			}
 
@@ -1940,6 +1956,7 @@ int main(int argc, char **argv)
 				printf("ssl_init failed\n");
 				close(conn_fp->conn_fd);
 				SEM_POST(&semaphore);
+				PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 				continue;
 			}
 			ssl_set_endpoint(&conn_fp->ssl, SSL_IS_SERVER);
@@ -1959,6 +1976,7 @@ int main(int argc, char **argv)
 				printf("ssl_server_start failed\n");
 				close(conn_fp->conn_fd);
 				SEM_POST(&semaphore);
+				PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 				continue;
 			}
 
@@ -1971,6 +1989,7 @@ int main(int argc, char **argv)
 				fprintf(stderr, "httpd: nothing to do...\n");
 				close(conn_fp->conn_fd);
 				SEM_POST(&semaphore);
+				PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 				continue;
 			}
 			conn_fp->conn_fd_out = dup(conn_fp->conn_fd);
@@ -1979,12 +1998,14 @@ int main(int argc, char **argv)
 				dd_logdebug("httpd", "fd error error %d", errno);
 				close(conn_fp->conn_fd);
 				SEM_POST(&semaphore);
+				PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 				continue;
 			}
 			if (!(conn_fp->fp_out = fdopen(conn_fp->conn_fd_out, "w"))) {
 				dd_logdebug("httpd", "fd error error %d", errno);
 				close(conn_fp->conn_fd);
 				SEM_POST(&semaphore);
+				PTHREAD_MUTEX_UNLOCK(&accept_mutex);
 				continue;
 			}
 			//                      setlinebuf(conn_fp->fp_in);
