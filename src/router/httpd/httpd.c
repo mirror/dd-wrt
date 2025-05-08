@@ -1432,11 +1432,13 @@ static void settimeouts(webs_t wp, int secs)
 	struct timeval tv;
 	tv.tv_sec = secs;
 	tv.tv_usec = 0;
-	if (setsockopt(wp->conn_fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0)
+	if (setsockopt(wp->conn_fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0) {
 		perror("setsockopt(SO_SNDTIMEO)");
-	if (setsockopt(wp->conn_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
+	}
+	if (setsockopt(wp->conn_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
 		perror("setsockopt(SO_RCVTIMEO)");
-}
+	}
+}		
 
 static void handle_sigchld(int sig)
 {
@@ -1819,13 +1821,15 @@ int main(int argc, char **argv)
 
 	/* Loop forever handling requests */
 	for (;;) {
+		SEM_WAIT(&semaphore);
+		PTHREAD_MUTEX_LOCK(&accept_mutex);
 		webs_t conn_fp = get_connection();
 		if (!conn_fp) {
 			dd_logerror("httpd", "Out of memory while creating new connection");
+			PTHREAD_MUTEX_UNLOCK(&accept_mutex);
+			SEM_POST(&semaphore);
 			continue;
 		}
-		SEM_WAIT(&semaphore);
-		PTHREAD_MUTEX_LOCK(&accept_mutex);
 		errno = 0; // workaround for musl bug
 		FD_ZERO(&lfdset);
 		maxfd = -1;

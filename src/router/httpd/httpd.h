@@ -238,4 +238,11 @@ int wfflush(webs_t fp);
 int issuperchannel(void);
 void applytake(char *value);
 
+#define linedebug() \
+	{ \
+	char buf[128]; \
+	sprintf(buf, "%s:%d\n", __func__,__LINE__); \
+	airbag_setpostinfo(buf); \
+	}
+
 #endif /* _httpd_h_ */
