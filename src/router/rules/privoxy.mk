@@ -20,9 +20,10 @@ endif
 	$(STRIP) $(INSTALLDIR)/privoxy/usr/sbin/privoxy
 
 privoxy-clean:
-	$(MAKE) -C privoxy clean
+	@true
 
 privoxy-configure: pcre-configure pcre zlib
+	-$(MAKE) -C privoxy clean
 	mkdir -p privoxy/openssl
 	mkdir -p privoxy/wolfssl
 	cd privoxy && autoheader && autoconf
