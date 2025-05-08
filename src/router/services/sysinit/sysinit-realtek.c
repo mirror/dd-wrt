@@ -93,6 +93,7 @@ void start_sysinit(void)
 			MAC_ADD(mac);
 		}
 	}
+	nvram_set("dsa","1"); // flag to hide eth0
 	insmod("cryptodev");
 	/*
 	 * network drivers 
