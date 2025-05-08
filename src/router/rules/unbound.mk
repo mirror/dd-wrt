@@ -15,7 +15,9 @@ UNBOUND_COPTS += -DNEED_PRINTF
 endif
 
 unbound-configure:
-	cd unbound && ./configure --disable-ecdsa \
+	mkdir -p unbound/openssl
+	mkdir -p unbound/wolfssl
+	cd unbound/openssl && ../configure --disable-ecdsa \
 		--disable-gost \
 		--enable-allsymbols \
 		--enable-tfo-client \
@@ -30,16 +32,41 @@ unbound-configure:
 		--host=$(ARCH)-linux \
 		CC="$(CC)" \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(UNBOUND_COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSLPATH)" \
-		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSLPATH)"
+		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSLPATH) -lcrypto -lssl"
+
+	cd unbound/wolfssl && ../configure --disable-ecdsa \
+		--disable-gost \
+		--enable-allsymbols \
+		--enable-tfo-client \
+		--enable-tfo-server \
+		--enable-subnet \
+		--with-chroot-dir=/tmp \
+		--with-ssl="$(WOLFSSL_SSLPATH)/wolfssl" \
+		--with-pthreads \
+		--prefix=/usr \
+		--libdir=/usr/lib \
+		--sysconfdir=/etc \
+		--host=$(ARCH)-linux \
+		CC="$(CC)" \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(UNBOUND_COPTS) -DEVP_sha256=wolfSSL_EVP_sha256 -DHAVE_SESSION_TICKET -DOPENSSL_ALL -DOPENSSL_EXTRA -I$(WOLFSSL_SSLPATH) -I$(WOLFSSL_SSLPATH)/standard -I$(WOLFSSL_SSLPATH)/standard/wolfssl  -I$(WOLFSSL_SSLPATH)/wolfssl -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(WOLFSSL_SSLPATH)/standard/src/.libs" \
+		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(WOLFSSL_SSLPATH)/standard/src/.libs -lwolfssl"
 
 unbound: 
-	$(MAKE) -C unbound
-
+ifeq ($(CONFIG_WOLFSSL),y)
+	$(MAKE) -C unbound/wolfssl
+else
+	$(MAKE) -C unbound/openssl
+endif
 unbound-clean: 
-	if test -e "unbound/Makefile"; then $(MAKE) -C unbound clean ; fi
+	if test -e "unbound/openssl/Makefile"; then $(MAKE) -C unbound/openssl clean ; fi
+	if test -e "unbound/wolfssl/Makefile"; then $(MAKE) -C unbound/wolfssl clean ; fi
 
 unbound-install: 
-	$(MAKE) -C unbound install DESTDIR=$(INSTALLDIR)/unbound
+ifeq ($(CONFIG_WOLFSSL),y)
+	$(MAKE) -C unbound/wolfssl install DESTDIR=$(INSTALLDIR)/unbound
+else
+	$(MAKE) -C unbound/openssl install DESTDIR=$(INSTALLDIR)/unbound
+endif
 	mkdir -p $(INSTALLDIR)/unbound/etc/unbound
 	cp unbound/config/* $(INSTALLDIR)/unbound/etc/unbound
 	rm -rf $(INSTALLDIR)/unbound/usr/include
