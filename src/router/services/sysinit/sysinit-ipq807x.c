@@ -521,15 +521,15 @@ static void load_nss(int profile, int maple, int cores, char *type)
 	snprintf(driver, sizeof(driver), "qca-nss-dp-%s", type);
 
 	if (profile == 256)
-		eval_silence("insmod", driver, "mem_profile=2");
+		eval("insmod", driver, "mem_profile=2");
 	else if (profile == 512)
-		eval_silence("insmod", driver, "mem_profile=1");
+		eval("insmod", driver, "mem_profile=1");
 	else
-		eval_silence("insmod", driver, "mem_profile=0");
+		eval("insmod", driver, "mem_profile=0");
 
 	snprintf(driver, sizeof(driver), "qca-nss-drv-%s", type);
 
-	eval_silence("insmod", driver, use_nss_11_4(1) ? "mesh=1" : "mesh=0", nss_disabled(1) ? "disable_nss=1" : "disable_nss=0");
+	eval("insmod", driver, use_nss_11_4(1) ? "mesh=1" : "mesh=0", nss_disabled(1) ? "disable_nss=1" : "disable_nss=0");
 	if (!nss_disabled(0)) {
 		loadnss("qca-nss-crypto", type);
 		loadnss("qca-nss-cfi-cryptoapi", type);
@@ -538,7 +538,7 @@ static void load_nss(int profile, int maple, int cores, char *type)
 	insmod("cryptodev");
 	set_memprofile(cores, 1, profile);
 
-	eval_silence("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
+	eval("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
 	if (!nss_disabled(0)) {
 		loadnss("qca-nss-pppoe", type);
 		loadnss("qca-nss-vlan", type);
@@ -703,15 +703,15 @@ void start_initvlans(void)
 		/* setup vlan config */
 
 		sysprintf("echo 0 > /sys/ssdk/dev_id");
-		eval_silence("ssdk_sh", "port", "frameMaxSize", "set", "2", "0x800");
+		eval("ssdk_sh", "port", "frameMaxSize", "set", "2", "0x800");
 
 		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
-		eval_silence("ssdk_sh", "port", "flowctrlforcemode", "set", "2", "enable");
-		eval_silence("ssdk_sh", "port", "flowctrl", "set", "2", "enable");
+		eval("ssdk_sh", "port", "flowctrlforcemode", "set", "2", "enable");
+		eval("ssdk_sh", "port", "flowctrl", "set", "2", "enable");
 
-		eval_silence("ssdk_sh", "debug", "uniphy", "set", "0", "0x24", "0x54", "4");
-		eval_silence("ssdk_sh", "debug", "uniphy", "set", "0", "0x21c", "0x288a", "4");
-		eval_silence("ssdk_sh", "debug", "uniphy", "set", "0", "0x19c", "0xbea0", "4");
+		eval("ssdk_sh", "debug", "uniphy", "set", "0", "0x24", "0x54", "4");
+		eval("ssdk_sh", "debug", "uniphy", "set", "0", "0x21c", "0x288a", "4");
+		eval("ssdk_sh", "debug", "uniphy", "set", "0", "0x19c", "0xbea0", "4");
 		sysprintf("echo 1 > /sys/ssdk/dev_id");
 
 		break;
@@ -719,16 +719,16 @@ void start_initvlans(void)
 		/* setup vlan config */
 
 		sysprintf("echo 0 > /sys/ssdk/dev_id");
-		eval_silence("ssdk_sh", "port", "frameMaxSize", "set", "2", "0x800");
+		eval("ssdk_sh", "port", "frameMaxSize", "set", "2", "0x800");
 
 		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
-		eval_silence("ssdk_sh", "port", "flowctrlforcemode", "set", "2", "enable");
-		eval_silence("ssdk_sh", "port", "flowctrl", "set", "2", "enable");
+		eval("ssdk_sh", "port", "flowctrlforcemode", "set", "2", "enable");
+		eval("ssdk_sh", "port", "flowctrl", "set", "2", "enable");
 
 		sysprintf("echo 0 > /sys/ssdk/dev_id");
-		eval_silence("ssdk_sh", "debug", "uniphy", "set", "0", "0x24", "0x54", "4");
-		eval_silence("ssdk_sh", "debug", "uniphy", "set", "0", "0x21c", "0x288a", "4");
-		eval_silence("ssdk_sh", "debug", "uniphy", "set", "0", "0x19c", "0xbea0", "4");
+		eval("ssdk_sh", "debug", "uniphy", "set", "0", "0x24", "0x54", "4");
+		eval("ssdk_sh", "debug", "uniphy", "set", "0", "0x21c", "0x288a", "4");
+		eval("ssdk_sh", "debug", "uniphy", "set", "0", "0x19c", "0xbea0", "4");
 		sysprintf("echo 1 > /sys/ssdk/dev_id");
 
 		break;
@@ -749,20 +749,20 @@ static void setscaling(int maxfreq)
 
 static void disableportlearn(void)
 {
-	eval_silence("ssdk_sh", "fdb", "portLearn", "set", "0", "disable");
-	eval_silence("ssdk_sh", "fdb", "portLearn", "set", "1", "disable");
-	eval_silence("ssdk_sh", "fdb", "portLearn", "set", "2", "disable");
-	eval_silence("ssdk_sh", "fdb", "portLearn", "set", "3", "disable");
-	eval_silence("ssdk_sh", "fdb", "portLearn", "set", "4", "disable");
-	eval_silence("ssdk_sh", "fdb", "portLearn", "set", "5", "disable");
-	eval_silence("ssdk_sh", "stp", "portState", "set", "0", "0", "forward");
-	eval_silence("ssdk_sh", "stp", "portState", "set", "0", "1", "forward");
-	eval_silence("ssdk_sh", "stp", "portState", "set", "0", "2", "forward");
-	eval_silence("ssdk_sh", "stp", "portState", "set", "0", "3", "forward");
-	eval_silence("ssdk_sh", "stp", "portState", "set", "0", "4", "forward");
-	eval_silence("ssdk_sh", "stp", "portState", "set", "0", "5", "forward");
-	eval_silence("ssdk_sh", "fdb", "learnCtrl", "set", "disable");
-	eval_silence("ssdk_sh", "fdb", "entry", "flush", "1");
+	eval("ssdk_sh", "fdb", "portLearn", "set", "0", "disable");
+	eval("ssdk_sh", "fdb", "portLearn", "set", "1", "disable");
+	eval("ssdk_sh", "fdb", "portLearn", "set", "2", "disable");
+	eval("ssdk_sh", "fdb", "portLearn", "set", "3", "disable");
+	eval("ssdk_sh", "fdb", "portLearn", "set", "4", "disable");
+	eval("ssdk_sh", "fdb", "portLearn", "set", "5", "disable");
+	eval("ssdk_sh", "stp", "portState", "set", "0", "0", "forward");
+	eval("ssdk_sh", "stp", "portState", "set", "0", "1", "forward");
+	eval("ssdk_sh", "stp", "portState", "set", "0", "2", "forward");
+	eval("ssdk_sh", "stp", "portState", "set", "0", "3", "forward");
+	eval("ssdk_sh", "stp", "portState", "set", "0", "4", "forward");
+	eval("ssdk_sh", "stp", "portState", "set", "0", "5", "forward");
+	eval("ssdk_sh", "fdb", "learnCtrl", "set", "disable");
+	eval("ssdk_sh", "fdb", "entry", "flush", "1");
 }
 
 static void wait_for_eth(const char *eth)
@@ -1216,13 +1216,13 @@ void start_sysinit(void)
 	case ROUTER_LINKSYS_MR5500:
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
 		start_initvlans();
-		eval_silence("ifconfig", "lan1", "up");
+		eval("ifconfig", "lan1", "up");
 		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_LINKSYS_MX5500:
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
 		start_initvlans();
-		eval_silence("ifconfig", "wan", "up");
+		eval("ifconfig", "wan", "up");
 		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_LINKSYS_MR7350:
@@ -1302,7 +1302,7 @@ void start_sysinit(void)
 		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/link_10");
 		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/link_100");
 		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/link_1000");
-		eval_silence("mount", "-t", "ubifs", "-o", "sync", "ubi0:rootfs_data", "/jffs");
+		eval("mount", "-t", "ubifs", "-o", "sync", "ubi0:rootfs_data", "/jffs");
 		setscaling(0);
 		disableportlearn();
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
@@ -1369,10 +1369,10 @@ static void load_ath11k_internal(int profile, int pci, int nss, int frame_mode, 
 	insmod("qmi_helpers");
 	if (nss) {
 		insmod("mac80211");
-		eval_silence("insmod", driver_ath11k, driver_frame_mode, overdrive, driver_regionvariant);
+		eval("insmod", driver_ath11k, driver_frame_mode, overdrive, driver_regionvariant);
 	} else {
-		eval_silence("insmod", "mac80211", "nss_redirect=0");
-		eval_silence("insmod", driver_ath11k, "nss_offload=0", driver_frame_mode, overdrive, driver_regionvariant);
+		eval("insmod", "mac80211", "nss_redirect=0");
+		eval("insmod", driver_ath11k, "nss_offload=0", driver_frame_mode, overdrive, driver_regionvariant);
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect"); // required if nss_redirect is enabled
 	}
 	insmod(driver_ath11k_ahb);
@@ -1541,7 +1541,7 @@ void start_resetbc(void)
 	case ROUTER_LINKSYS_MX4200V2:
 	case ROUTER_LINKSYS_MX4300:
 		if (!nvram_match("nobcreset", "1"))
-			eval_silence("mtd", "resetbc", "s_env");
+			eval("mtd", "resetbc", "s_env");
 		break;
 	}
 }

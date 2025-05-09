@@ -129,15 +129,8 @@
 			eval_va(cmd, ##args, NULL);    \
 		}                                      \
 	}
-#define eval_silenceip6(cmd, args...)                       \
-	{                                                   \
-		if (nvram_match("ipv6_enable", "1")) {      \
-			eval_va_silence(cmd, ##args, NULL); \
-		}                                           \
-	}
 #else
 #define evalip6(...)
-#define eval_silenceip6(...)
 #endif
 
 static char *suspense = NULL;
@@ -2145,10 +2138,10 @@ static int update_filter(int mode, int seq)
 	 * iptables -t mangle -I lan2wan 3 -j macgrp_9 
 	 */
 	if (mode == 1) { /* insert */
-		eval_silence("iptables", "-D", "lan2wan", "-j", target_ip);
+		eval("iptables", "-D", "lan2wan", "-j", target_ip);
 		eval("iptables", "-I", "lan2wan", "-j", target_ip);
 	} else { /* delete */
-		eval_silence("iptables", "-D", "lan2wan", "-j", target_ip);
+		eval("iptables", "-D", "lan2wan", "-j", target_ip);
 	}
 	unlock();
 	return 0;
@@ -2977,21 +2970,21 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 		save2file_A_postrouting("-m mark --mark 0x100000 -j CLASSIFY --set-class 0:1");
 		save2file_A_postrouting("-o %s -p udp --dport 67 -j CLASSIFY --set-class 0:0", wanface);
 
-		eval_silenceip6("ip6tables", "-t", "mangle", "-D", "PREROUTING", "-i", wanface, "-j", "MARK", "--set-mark",
+		evalip6("ip6tables", "-t", "mangle", "-D", "PREROUTING", "-i", wanface, "-j", "MARK", "--set-mark",
 				"0x100000");
-		eval_silenceip6("ip6tables", "-t", "mangle", "-A", "PREROUTING", "-i", wanface, "-j", "MARK", "--set-mark",
+		evalip6("ip6tables", "-t", "mangle", "-A", "PREROUTING", "-i", wanface, "-j", "MARK", "--set-mark",
 				"0x100000");
-		eval_silenceip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wanface, "-j", "MARK", "--set-mark",
+		evalip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wanface, "-j", "MARK", "--set-mark",
 				"0x100000");
-		eval_silenceip6("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wanface, "-j", "MARK", "--set-mark",
+		evalip6("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wanface, "-j", "MARK", "--set-mark",
 				"0x100000");
-		eval_silenceip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j",
+		evalip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j",
 				"CLASSIFY", "--set-class", "0:1");
-		eval_silenceip6("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j",
+		evalip6("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j",
 				"CLASSIFY", "--set-class", "0:1");
-		eval_silenceip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wanface, "-p", "udp", "--dport", "547",
+		evalip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wanface, "-p", "udp", "--dport", "547",
 				"-j", "CLASSIFY", "--set-class", "0:0");
-		eval_silenceip6("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wanface, "-p", "udp", "--dport", "547",
+		evalip6("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wanface, "-p", "udp", "--dport", "547",
 				"-j", "CLASSIFY", "--set-class", "0:0");
 	}
 	if (nvram_matchi("filter_tos", 1)) {
@@ -3001,9 +2994,9 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 			save2file_A_postrouting("-o %s -j MARK --set-mark 0x100000", wanface);
 		}
 		save2file_A_postrouting("-m mark --mark 0x100000 -j TOS --set-tos 0x00");
-		eval_silenceip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j", "TOS",
+		evalip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j", "TOS",
 				"--set-tos", "0x00");
-		eval_silenceip6("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j", "TOS",
+		evalip6("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j", "TOS",
 				"--set-tos", "0x00");
 	}
 #endif
@@ -3029,9 +3022,9 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 #ifdef HAVE_PRIVOXY
 	if ((nvram_matchi("privoxy_enable", 1)) && (nvram_matchi("wshaper_enable", 1))) {
 		save2file("-I OUTPUT -p tcp --sport 8118 -j IMQ --todev 0");
-		eval_silenceip6("ip6tables", "-t", "mangle", "-D", "OUTPUT", "-p", "tcp", "--sport", "8118", "-j", "IMQ", "--todev",
+		evalip6("ip6tables", "-t", "mangle", "-D", "OUTPUT", "-p", "tcp", "--sport", "8118", "-j", "IMQ", "--todev",
 				"0");
-		eval_silenceip6("ip6tables", "-t", "mangle", "-I", "OUTPUT", "-p", "tcp", "--sport", "8118", "-j", "IMQ", "--todev",
+		evalip6("ip6tables", "-t", "mangle", "-I", "OUTPUT", "-p", "tcp", "--sport", "8118", "-j", "IMQ", "--todev",
 				"0");
 	}
 #endif

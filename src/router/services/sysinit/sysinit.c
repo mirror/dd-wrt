@@ -116,7 +116,7 @@ static void internal_runStartup(char *folder, char *extension)
 		    strspn(entry[n]->d_name, "K1234567890") == 3) { // K* scripts
 			sprintf(fullname, "%s/%s", folder, entry[n]->d_name);
 			if (!stat(fullname, &filestat) && (filestat.st_mode & S_IXUSR))
-				eval_silence(fullname);
+				eval(fullname);
 			free(entry[n]);
 			n++;
 			continue;
@@ -125,7 +125,7 @@ static void internal_runStartup(char *folder, char *extension)
 		    strspn(entry[n]->d_name, "S1234567890") == 3) { // S* scripts
 			sprintf(fullname, "%s/%s", folder, entry[n]->d_name);
 			if (!stat(fullname, &filestat) && (filestat.st_mode & S_IXUSR))
-				eval_silence(fullname);
+				eval(fullname);
 			free(entry[n]);
 			n++;
 			continue;
@@ -152,7 +152,7 @@ static void internal_runStartup(char *folder, char *extension)
 #endif
 
 			sprintf(fullname, "%s/%s", folder, entry[n]->d_name);
-			eval_silence(fullname);
+			eval(fullname);
 			// execute script
 		}
 		free(entry[n]);
