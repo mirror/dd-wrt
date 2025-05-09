@@ -3792,7 +3792,6 @@ static int rtl8218b_ext_phy_probe(struct phy_device *phydev)
 	pr_info("probe %s\n", __func__,__LINE__);
 	if (soc_info.family == RTL8390_FAMILY_ID) {
 		value = sw_r32(RTL8390_LED_SW_P_EN_CTRL_ADDR(addr));
-		pr_info("enable led for port %d (value was 0x%08X)\n", addr, value);
 		value |= RTL8390_LED_SW_P_EN_CTRL_SW_CTRL_LED_EN_MASK(addr);
 		sw_w32(value, RTL8390_LED_SW_P_EN_CTRL_ADDR(addr));
 	}

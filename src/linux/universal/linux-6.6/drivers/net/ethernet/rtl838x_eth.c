@@ -1984,7 +1984,6 @@ static int rtmdio_839x_reset(struct mii_bus *bus)
 	int addr;
 	for (addr = 0;addr < RTL839X_CPU_PORT;addr++) {
 		value = sw_r32(RTL8390_LED_SW_P_EN_CTRL_ADDR(addr));
-		pr_info("eth: enable led for port %d (value was 0x%08X)\n", addr, value);
 		value |= RTL8390_LED_SW_P_EN_CTRL_SW_CTRL_LED_EN_MASK(addr);
 		sw_w32(value, RTL8390_LED_SW_P_EN_CTRL_ADDR(addr));
 	}
