@@ -3789,12 +3789,12 @@ static int rtl8218b_ext_phy_probe(struct phy_device *phydev)
 	/* All base addresses of the PHYs start at multiples of 8 */
 	devm_phy_package_join(dev, phydev, addr & (~7),
 				sizeof(struct rtl83xx_shared_private));
-	pr_info("probe %s\n", __func__,__LINE__);
+/*	pr_info("probe %s\n", __func__,__LINE__);
 	if (soc_info.family == RTL8390_FAMILY_ID) {
 		value = sw_r32(RTL8390_LED_SW_P_EN_CTRL_ADDR(addr));
 		value |= RTL8390_LED_SW_P_EN_CTRL_SW_CTRL_LED_EN_MASK(addr);
 		sw_w32(value, RTL8390_LED_SW_P_EN_CTRL_ADDR(addr));
-	}
+	}*/
 
 	if (!(addr % 8)) {
 		struct rtl83xx_shared_private *shared = phydev->shared->priv;

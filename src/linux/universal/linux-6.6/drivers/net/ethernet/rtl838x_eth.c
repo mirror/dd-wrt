@@ -1980,13 +1980,14 @@ static int rtmdio_838x_reset(struct mii_bus *bus)
 
 static int rtmdio_839x_reset(struct mii_bus *bus)
 {
-	uint32_t value;
-	int addr;
+	uint32_t value, oldvalue;
+/*	int addr;
 	for (addr = 0;addr < RTL839X_CPU_PORT;addr++) {
-		value = sw_r32(RTL8390_LED_SW_P_EN_CTRL_ADDR(addr));
-		value |= RTL8390_LED_SW_P_EN_CTRL_SW_CTRL_LED_EN_MASK(addr);
+		oldvalue = value = sw_r32(RTL8390_LED_SW_P_EN_CTRL_ADDR(addr));
+		value &= ~RTL8390_LED_SW_P_EN_CTRL_SW_CTRL_LED_EN_MASK(addr);
+		pr_info("led was 0x%08X is now %0x08X\n", oldvalue, value);
 		sw_w32(value, RTL8390_LED_SW_P_EN_CTRL_ADDR(addr));
-	}
+	}*/
 	return 0;
 
 	pr_debug("%s called\n", __func__);
