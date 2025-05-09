@@ -97,6 +97,10 @@ glib20-configure: libffi-configure libffi zlib-configure zlib util-linux-configu
 	ln -f -r -s ${shell which $(ARCH)-openwrt-linux-gcc-ar} ${shell which $(CROSS_COMPILE)gcc}-ar
 	ln -f -r -s ${shell which $(ARCH)-openwrt-linux-gcc-ranlib} ${shell which $(CROSS_COMPILE)gcc}-ranlib
 	ln -f -r -s ${shell which $(ARCH)-openwrt-linux-gcc-nm} ${shell which $(CROSS_COMPILE)gcc}-nm
+
+	ln -f -r -s ${shell which $(ARCH)-openwrt-linux-gcc-ar} ${shell which $(ARCH)-linux-gcc}-ar
+	ln -f -r -s ${shell which $(ARCH)-openwrt-linux-gcc-ranlib} ${shell which $(ARCH)-linux-gcc}-ranlib
+	ln -f -r -s ${shell which $(ARCH)-openwrt-linux-gcc-nm} ${shell which $(ARCH)-linux-gcc}-nm
 	echo "[binaries]" > $(TOP)/glib20/libglib/cross.txt
 	echo "c = '$(subst ccache ,,$(CC))'" >> $(TOP)/glib20/libglib/cross.txt
 	echo "cpp = '$(subst ccache ,,$(CXX))'" >> $(TOP)/glib20/libglib/cross.txt

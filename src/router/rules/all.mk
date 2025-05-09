@@ -414,7 +414,7 @@ include rules/jemalloc.mk
 #
 
 %:
-	[ ! -d $* ] || make -C $*
+	[ ! -d $* ] || make -C $* CONFIG_PORTSCAN=$(CONFIG_PORTSCAN)
 
 %-distclean:
 	[ ! -d $* ] || $(MAKE) -C $* clean

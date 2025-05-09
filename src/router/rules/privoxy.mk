@@ -29,7 +29,7 @@ privoxy-configure: pcre-configure pcre zlib
 	cd privoxy && autoheader && autoconf
 	cp -f privoxy/config.h.in privoxy/openssl
 	cp -f privoxy/config.h.in privoxy/wolfssl
-	cd privoxy && rm -rf config.{cache,status} \
+	-cd privoxy && rm -rf config.{cache,status} \
 	&& ./configure ac_cv_func_setpgrp_void=yes \
 		--prefix=/usr \
 		--enable-compression \
@@ -41,12 +41,13 @@ privoxy-configure: pcre-configure pcre zlib
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -I$(SSLPATH)/include -I$(TOP)/zlib -I$(TOP)/pcre -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CPPFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -I$(SSLPATH)/include -I$(TOP)/zlib -I$(TOP)/pcre -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		LDFLAGS="$(COPTS) $(MIPS16_OPT) $(LDLTO) -L$(SSLPATH) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/zlib -L$(TOP)/pcre/.libs -lz -fPIC"
-	CC="ccache $(ARCH)-linux-uclibc-gcc" \
+
+	-CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -I$(SSLPATH)/include -I$(TOP)/zlib -I$(TOP)/pcre -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -I$(SSLPATH)/include -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(COPTS) $(MIPS16_OPT) $(LDLTO) -L$(SSLPATH) -L$(TOP)/zlib -L$(TOP)/pcre/.libs -ffunction-sections -fdata-sections -Wl,--gc-sections -lz -fPIC"
+	LDFLAGS="$(COPTS) $(MIPS16_OPT) $(LDLTO) -L$(SSLPATH) -L$(TOP)/zlib -L$(TOP)/pcre/.libs -ffunction-sections -fdata-sections -Wl,--gc-sections -lz -fPIC" \
 	$(MAKE) -C privoxy
-	install -D privoxy/privoxy privoxy/openssl
+	-install -D privoxy/privoxy privoxy/openssl
 
 
 	-cd privoxy && rm -rf config.{cache,status} \
@@ -61,9 +62,9 @@ privoxy-configure: pcre-configure pcre zlib
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DOPENSSL_EXTRA  -I$(WOLFSSL_SSLPATH)/standard -I$(WOLFSSL_SSLPATH)/standard/wolfssl -I$(WOLFSSL_SSLPATH)  -I$(WOLFSSL_SSLPATH)/wolfssl -I$(TOP)/zlib -I$(TOP)/pcre -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CPPFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DOPENSSL_EXTRA -I$(WOLFSSL_SSLPATH)/standard -I$(WOLFSSL_SSLPATH)/standard/wolfssl -I$(WOLFSSL_SSLPATH)  -I$(WOLFSSL_SSLPATH)/wolfssl -I$(TOP)/zlib -I$(TOP)/pcre -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		LDFLAGS="$(COPTS) $(MIPS16_OPT) $(LDLTO) -L$(WOLFSSL_SSLPATH)/standard/src/.libs -lwolfssl -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/zlib -L$(TOP)/pcre/.libs -lz -fPIC"
-	CC="ccache $(ARCH)-linux-uclibc-gcc" \
+	-CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DOPENSSL_EXTRA -I$(WOLFSSL_SSLPATH)/standard -I$(WOLFSSL_SSLPATH)/standard/wolfssl -I$(WOLFSSL_SSLPATH)  -I$(WOLFSSL_SSLPATH)/wolfssl -I$(TOP)/zlib -I$(TOP)/pcre -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DOPENSSL_EXTRA -I$(WOLFSSL_SSLPATH)/standard -I$(WOLFSSL_SSLPATH)/standard/wolfssl -I$(WOLFSSL_SSLPATH)  -I$(WOLFSSL_SSLPATH)/wolfssl -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="$(COPTS) $(MIPS16_OPT) $(LDLTO) -L$(WOLFSSL_SSLPATH)/standard/src/.libs -lwolfssl -L$(TOP)/zlib -L$(TOP)/pcre/.libs -ffunction-sections -fdata-sections -Wl,--gc-sections -lz -fPIC"
-	-$(MAKE) -C privoxy
+	$(MAKE) -C privoxy
 	-install -D privoxy/privoxy privoxy/wolfssl
