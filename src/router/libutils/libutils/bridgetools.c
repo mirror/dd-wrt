@@ -401,7 +401,7 @@ int br_del_interface(const char *br, const char *dev)
 {
 	if (!ifexists(dev))
 		return -1;
-	int ret = eval_silence("brctl", "delif", br, dev);
+	int ret = eval("brctl", "delif", br, dev);
 	dd_loginfo("bridge", "interface %s successfully deleted from bridge %s", dev, br);
 #ifdef HAVE_80211AC
 //      eval("emf", "del", "iface", br, dev);
