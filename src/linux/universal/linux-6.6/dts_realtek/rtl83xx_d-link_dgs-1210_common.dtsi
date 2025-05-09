@@ -55,12 +55,16 @@
 				label = "board-name";
 				reg = <0x000c0000 0x40000>;
 			};
-			partition@280000 {
-				label = "firmware";
+			partition@100000 {
+				label = "linux";
 				compatible = "denx,uimage";
-				reg = <0x00100000 0xd80000>;
+				reg = <0x00100000 0xd60000>;
 			};
-			partition@be80000 {
+			partition@e60000 {
+				label = "nvram";
+				reg = <0x00e60000 0x20000>;
+			};
+			partition@e80000 {
 				label = "kernel2";
 				reg = <0x00e80000 0x180000>;
 			};
