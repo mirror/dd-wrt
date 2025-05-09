@@ -51,7 +51,7 @@ unbound-configure:
 		--sysconfdir=/etc \
 		--host=$(ARCH)-linux \
 		CC="$(CC)" \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(UNBOUND_COPTS) -DEVP_sha256=wolfSSL_EVP_sha256 -DHAVE_SESSION_TICKET -DOPENSSL_ALL -DOPENSSL_EXTRA -I$(WOLFSSL_SSLPATH) -I$(WOLFSSL_SSLPATH)/standard -I$(WOLFSSL_SSLPATH)/standard/wolfssl  -I$(WOLFSSL_SSLPATH)/wolfssl -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(WOLFSSL_SSLPATH)/standard/src/.libs" \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(UNBOUND_COPTS) -DEVP_sha256=wolfSSL_EVP_sha256 -DHAVE_SESSION_TICKET -DOPENSSL_ALL -DOPENSSL_EXTRA -I$(WOLFSSL_SSLPATH)/standard/wolfssl -I$(WOLFSSL_SSLPATH)/standard  -I$(WOLFSSL_SSLPATH) -I$(WOLFSSL_SSLPATH)/wolfssl -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(WOLFSSL_SSLPATH)/standard/src/.libs" \
 		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(WOLFSSL_SSLPATH)/standard/src/.libs -lwolfssl"
 
 unbound: 
