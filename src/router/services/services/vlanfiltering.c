@@ -81,15 +81,33 @@ void start_vlanfiltering(void)
 		if (!strcmp(untagged, "1"))
 			args[cnt++] = "untagged";
 		char tmp[256];
-		if (isbridge(ifname)) {
-			args[cnt++] = "self";
-			eval("bridge", "vlan", "del", "dev", ifname, "vid", vlan);
-			eval("bridge", "vlan", "add", "dev", ifname, "vid", vlan, args[0], args[1], args[2]);
-		} else {
+		if (!isbridge(ifname)) {
 			args[cnt++] = "master";
 			eval("bridge", "vlan", "add", "dev", getBridge(ifname, tmp), "vid", vlan,
 			     "self"); /* allow bridge to receive vlan */
 			eval("bridge", "vlan", "del", "dev", ifname, "vid", "1"); /* del default pvid */
+			eval("bridge", "vlan", "add", "dev", ifname, "vid", vlan, args[0], args[1], args[2]);
+		}
+	}
+
+	foreach(word, wordlist, next) {
+		GETENTRYBYIDX(ifname, word, 0);
+		GETENTRYBYIDX(vlan, word, 1);
+		GETENTRYBYIDX(pvid, word, 2);
+		GETENTRYBYIDX(untagged, word, 3);
+		if (!ifname || !vlan || !pvid || !untagged) {
+			break;
+		}
+		char *args[4] = { NULL, NULL, NULL, NULL };
+		int cnt = 0;
+		if (!strcmp(pvid, "1"))
+			args[cnt++] = "pvid";
+		if (!strcmp(untagged, "1"))
+			args[cnt++] = "untagged";
+		char tmp[256];
+		if (isbridge(ifname)) {
+			args[cnt++] = "self";
+			eval("bridge", "vlan", "del", "dev", ifname, "vid", vlan);
 			eval("bridge", "vlan", "add", "dev", ifname, "vid", vlan, args[0], args[1], args[2]);
 		}
 	}
