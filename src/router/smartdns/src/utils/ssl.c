@@ -26,6 +26,7 @@
 #include <openssl/crypto.h>
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
+#include <openssl/pem.h>
 #include <pthread.h>
 #include <sys/stat.h>
 

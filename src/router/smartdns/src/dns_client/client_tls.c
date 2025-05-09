@@ -531,12 +531,19 @@ int _dns_client_socket_ssl_send_ext(struct dns_server_info *server, SSL *ssl, co
 		char buff[256];
 		ssl_err = ERR_get_error();
 		int ssl_reason = ERR_GET_REASON(ssl_err);
+#ifdef HAVE_WOLFSSL
+		if (ssl_reason == SSL_R_BAD_LENGTH) {
+			errno = EAGAIN;
+			return -1;
+		}
+#else
 		if (ssl_reason == SSL_R_UNINITIALIZED || ssl_reason == SSL_R_PROTOCOL_IS_SHUTDOWN ||
 			ssl_reason == SSL_R_BAD_LENGTH || ssl_reason == SSL_R_SHUTDOWN_WHILE_IN_INIT ||
 			ssl_reason == SSL_R_BAD_WRITE_RETRY) {
 			errno = EAGAIN;
 			return -1;
 		}
+#endif
 
 		tlog(TLOG_ERROR, "server %s SSL write fail error: %s", server->ip, ERR_error_string(ssl_err, buff));
 		errno = EFAULT;
@@ -591,11 +598,13 @@ int _dns_client_socket_ssl_recv_ext(struct dns_server_info *server, SSL *ssl, vo
 		int ssl_reason = ERR_GET_REASON(ssl_err);
 
 		switch (ssl_reason) {
+#ifndef HAVE_WOLFSSL
 		case SSL_R_UNINITIALIZED:
 			errno = EAGAIN;
 			return -1;
 		case SSL_R_SHUTDOWN_WHILE_IN_INIT:
 		case SSL_R_PROTOCOL_IS_SHUTDOWN:
+#endif
 #ifdef SSL_R_STREAM_FINISHED
 		case SSL_R_STREAM_FINISHED:
 #endif

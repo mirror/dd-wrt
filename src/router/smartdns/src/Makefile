@@ -62,6 +62,10 @@ ifeq ($(SSL), yes)
 override LDFLAGS += -lssl -lcrypto -rdynamic
 override CFLAGS += -DHAVE_OPENSSL -DNEED_PRINTF
 endif
+ifeq ($(WOLFSSL), yes)
+override LDFLAGS += -lwolfssl -rdynamic
+override CFLAGS += -DHAVE_OPENSSL -DHAVE_WOLFSSL -DOPENSSL_ALL -DNEED_PRINTF
+endif
 
 
 .PHONY: all clean

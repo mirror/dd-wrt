@@ -122,13 +122,19 @@ int _dns_server_socket_ssl_send(struct dns_server_conn_tls_client *tls_client, c
 	case SSL_ERROR_SSL:
 		ssl_err = ERR_get_error();
 		int ssl_reason = ERR_GET_REASON(ssl_err);
+#ifdef HAVE_WOLFSSL
+		if (ssl_reason == SSL_R_BAD_LENGTH) {
+			errno = EAGAIN;
+			return -1;
+		}
+#else
 		if (ssl_reason == SSL_R_UNINITIALIZED || ssl_reason == SSL_R_PROTOCOL_IS_SHUTDOWN ||
 			ssl_reason == SSL_R_BAD_LENGTH || ssl_reason == SSL_R_SHUTDOWN_WHILE_IN_INIT ||
 			ssl_reason == SSL_R_BAD_WRITE_RETRY) {
 			errno = EAGAIN;
 			return -1;
 		}
-
+#endif
 		tlog(TLOG_ERROR, "SSL write fail error no:  %s(%d)\n", ERR_reason_error_string(ssl_err), ssl_reason);
 		errno = EFAULT;
 		ret = -1;
@@ -178,14 +184,15 @@ int _dns_server_socket_ssl_recv(struct dns_server_conn_tls_client *tls_client, v
 	case SSL_ERROR_SSL:
 		ssl_err = ERR_get_error();
 		int ssl_reason = ERR_GET_REASON(ssl_err);
+#ifndef HAVE_WOLFSSL
 		if (ssl_reason == SSL_R_UNINITIALIZED) {
 			errno = EAGAIN;
 			return -1;
 		}
-
 		if (ssl_reason == SSL_R_SHUTDOWN_WHILE_IN_INIT || ssl_reason == SSL_R_PROTOCOL_IS_SHUTDOWN) {
 			return 0;
 		}
+#endif
 
 #ifdef SSL_R_UNEXPECTED_EOF_WHILE_READING
 		if (ssl_reason == SSL_R_UNEXPECTED_EOF_WHILE_READING) {
