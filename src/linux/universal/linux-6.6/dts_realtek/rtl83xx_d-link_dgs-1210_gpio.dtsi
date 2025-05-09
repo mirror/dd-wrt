@@ -7,7 +7,7 @@
 		open-source;
 	};
 
-	keys: keys {
+/*	keys: keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
 
@@ -16,7 +16,7 @@
 			gpios = <&gpio1 33 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
-	};
+	};*/
 };
 
 &mdio_aux {
