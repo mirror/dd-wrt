@@ -1,6 +1,6 @@
 /* esp32-crypt.h
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -216,8 +216,11 @@ enum {
 **   Turns on diagnostic messages for SHA mutex. Note that given verbosity,
 **   there may be TLS timing issues encountered. Use with caution.
 **
+** DEBUG_WOLFSSL_ESP32_HEAP
+**   Prints heap memory usage
+**
 ** DEBUG_WOLFSSL_ESP32_UNFINISHED_HW
-**   This may be interesting in that HW may have been unnessearily locked
+**   This may be interesting in that HW may have been unnecessarily locked
 **   for hash that was never completed. (typically encountered at `free1` time)
 **
 ** LOG_LOCAL_LEVEL
@@ -234,11 +237,11 @@ enum {
 **   Shows a warning when mulm falls back for minimum number of bits.
 **
 ** WOLFSSL_DEBUG_ESP_HW_MULTI_RSAMAX_BITS
-**   Shows a marning when multiplication math bits have exceeded hardware
+**   Shows a warning when multiplication math bits have exceeded hardware
 **   capabilities and will fall back to slower software.
 **
 ** WOLFSSL_DEBUG_ESP_HW_MOD_RSAMAX_BITS
-**   Shows a marning when modular math bits have exceeded hardware capabilities
+**   Shows a warning when modular math bits have exceeded hardware capabilities
 **   and will fall back to slower software.
 **
 ** NO_HW_MATH_TEST
@@ -330,7 +333,7 @@ enum {
         #include <driver/periph_ctrl.h>
     #endif
 
-    #if ESP_IDF_VERSION_MAJOR >= 4
+    #if ESP_IDF_VERSION_MAJOR == 4 || (ESP_IDF_VERSION_MAJOR == 5 && ESP_IDF_VERSION_MINOR < 4)
         #include <esp32/rom/ets_sys.h>
     #else
         #include <rom/ets_sys.h>
@@ -375,9 +378,7 @@ enum {
         #include <driver/periph_ctrl.h>
     #endif
 
-    #if ESP_IDF_VERSION_MAJOR >= 4
-        /* #include <esp32/rom/ets_sys.h> */
-    #else
+    #if ESP_IDF_VERSION_MAJOR < 4
         #include <rom/ets_sys.h>
     #endif
 
@@ -411,9 +412,7 @@ enum {
         #include <driver/periph_ctrl.h>
     #endif
 
-    #if ESP_IDF_VERSION_MAJOR >= 4
-    /* #include <esp32/rom/ets_sys.h> */
-    #else
+    #if ESP_IDF_VERSION_MAJOR < 4
         #include <rom/ets_sys.h>
     #endif
 
@@ -447,9 +446,7 @@ enum {
         #include <driver/periph_ctrl.h>
     #endif
 
-    #if ESP_IDF_VERSION_MAJOR >= 4
-        /* #include <esp32/rom/ets_sys.h> */
-    #else
+    #if ESP_IDF_VERSION_MAJOR < 4
         #include <rom/ets_sys.h>
     #endif
 
@@ -719,24 +716,16 @@ extern "C"
 */
 
 #ifndef NO_AES
-    #if ESP_IDF_VERSION_MAJOR >= 4
-        #include "esp32/rom/aes.h"
-    #elif defined(CONFIG_IDF_TARGET_ESP8266)
-        /* no hardware includes for ESP8266*/
-    #else
-        /* TODO: Confirm for older versions: */
-        /* #include "rom/aes.h" */
-    #endif
+    /* wolfSSL does not use Espressif rom/aes.h */
+    struct Aes; /* see wolcrypt/aes.h */
 
-    typedef enum tagES32_AES_PROCESS /* TODO what's this ? */
+    typedef enum tagES32_AES_PROCESS
     {
         ESP32_AES_LOCKHW            = 1,
         ESP32_AES_UPDATEKEY_ENCRYPT = 2,
         ESP32_AES_UPDATEKEY_DECRYPT = 3,
         ESP32_AES_UNLOCKHW          = 4
     } ESP32_AESPROCESS;
-
-    struct Aes; /* see aes.h */
 #if  defined(WOLFSSL_HW_METRICS)
     WOLFSSL_LOCAL int esp_hw_show_aes_metrics(void);
     WOLFSSL_LOCAL int wc_esp32AesUnupportedLengthCountAdd(void);
@@ -780,7 +769,14 @@ extern "C"
 
     #define SHA_CTX ETS_SHAContext
 
-    #if ESP_IDF_VERSION_MAJOR >= 4
+    #if ESP_IDF_VERSION_MAJOR > 5 || (ESP_IDF_VERSION_MAJOR == 5 && ESP_IDF_VERSION_MINOR >= 4)
+        #include "rom/sha.h"
+        #if defined(CONFIG_IDF_TARGET_ESP32)
+            #define WC_ESP_SHA_TYPE enum SHA_TYPE
+        #else
+            #define WC_ESP_SHA_TYPE SHA_TYPE
+        #endif
+    #elif ESP_IDF_VERSION_MAJOR >= 4
         #if defined(CONFIG_IDF_TARGET_ESP32)
             #include "esp32/rom/sha.h"
             #define WC_ESP_SHA_TYPE enum SHA_TYPE

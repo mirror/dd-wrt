@@ -1,6 +1,6 @@
 /* user_settings.h
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -76,4 +76,5 @@
 
 #define NO_FILESYSTEM
 
+#define XSTRCASECMP(s1,s2) strcmp((s1),(s2))
 

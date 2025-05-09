@@ -1,6 +1,6 @@
 /* keys.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -22,11 +22,7 @@
 
 /* Name change compatibility layer no longer needs to be included here */
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
 #if !defined(WOLFCRYPT_ONLY) && !defined(NO_TLS)
 
@@ -127,6 +123,9 @@ int GetCipherSpec(word16 side, byte cipherSuite0, byte cipherSuite,
         }
     }
 #endif /* NO_WOLFSSL_CLIENT */
+
+    /* Initialize specs */
+    XMEMSET(specs, 0, sizeof(CipherSpecs));
 
     /* Chacha extensions, 0xcc */
     if (cipherSuite0 == CHACHA_BYTE) {
@@ -3908,7 +3907,8 @@ int DeriveKeys(WOLFSSL* ssl)
             XMEMCPY(shaInput + idx, ssl->arrays->clientRandom, RAN_LEN);
             if (ret == 0) {
                 ret = wc_ShaUpdate(sha, shaInput,
-                    (KEY_PREFIX + SECRET_LEN + 2 * RAN_LEN) - KEY_PREFIX + j);
+                    (KEY_PREFIX + SECRET_LEN + 2 * RAN_LEN) - KEY_PREFIX +
+                        (word32)(j));
             }
             if (ret == 0) {
                 ret = wc_ShaFinal(sha, shaOutput);
@@ -3942,12 +3942,13 @@ int DeriveKeys(WOLFSSL* ssl)
 
 static int CleanPreMaster(WOLFSSL* ssl)
 {
-    int i, ret, sz = ssl->arrays->preMasterSz;
+    int i, ret, sz = (int)(ssl->arrays->preMasterSz);
 
     for (i = 0; i < sz; i++)
         ssl->arrays->preMasterSecret[i] = 0;
 
-    ret = wc_RNG_GenerateBlock(ssl->rng, ssl->arrays->preMasterSecret, sz);
+    ret = wc_RNG_GenerateBlock(ssl->rng, ssl->arrays->preMasterSecret,
+                                                            (word32)(sz));
     if (ret != 0)
         return ret;
 
@@ -4035,8 +4036,8 @@ static int MakeSslMasterSecret(WOLFSSL* ssl)
             }
 
             idx = 0;
-            XMEMCPY(shaInput, prefix, i + 1);
-            idx += i + 1;
+            XMEMCPY(shaInput, prefix, (size_t)(i + 1));
+            idx += (word32)(i + 1);
 
             XMEMCPY(shaInput + idx, ssl->arrays->preMasterSecret, pmsSz);
             idx += pmsSz;

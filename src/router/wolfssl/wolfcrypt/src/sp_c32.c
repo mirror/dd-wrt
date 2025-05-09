@@ -1,6 +1,6 @@
 /* sp.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -21,16 +21,11 @@
 
 /* Implementation by Sean Parkinson. */
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
 #if defined(WOLFSSL_HAVE_SP_RSA) || defined(WOLFSSL_HAVE_SP_DH) || \
     defined(WOLFSSL_HAVE_SP_ECC)
 
-#include <wolfssl/wolfcrypt/error-crypt.h>
 #include <wolfssl/wolfcrypt/cpuid.h>
 #ifdef NO_INLINE
     #include <wolfssl/wolfcrypt/misc.h>

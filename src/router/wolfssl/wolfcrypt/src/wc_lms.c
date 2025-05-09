@@ -1,6 +1,6 @@
 /* wc_lms.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -19,13 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-#include <wolfssl/wolfcrypt/settings.h>
-#include <wolfssl/wolfcrypt/error-crypt.h>
-#include <wolfssl/wolfcrypt/logging.h>
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
 #if defined(WOLFSSL_HAVE_LMS) && defined(WOLFSSL_WC_LMS)
 #include <wolfssl/wolfcrypt/wc_lms.h>
@@ -352,14 +346,14 @@ static const wc_LmsParamsMap wc_lms_map[] = {
                  WC_SHA256_192_DIGEST_SIZE) },
 #endif
 #if LMS_MAX_HEIGHT >= 20
-    { WC_LMS_PARM_L1_H20_W2 , "LMS/HSS_SHA256/192_L1_H20_W2",
-      LMS_PARAMS(1, 20, 2, 1, LMS_SHA256_M32_H20, LMOTS_SHA256_N32_W2,
+    { WC_LMS_PARM_SHA256_192_L1_H20_W2 , "LMS/HSS_SHA256/192_L1_H20_W2",
+      LMS_PARAMS(1, 20, 2, 1, LMS_SHA256_M24_H20, LMOTS_SHA256_N24_W2,
                  WC_SHA256_192_DIGEST_SIZE) },
-    { WC_LMS_PARM_L1_H20_W4 , "LMS/HSS_SHA256/192_L1_H20_W4",
-      LMS_PARAMS(1, 20, 4, 2, LMS_SHA256_M32_H20, LMOTS_SHA256_N32_W4,
+    { WC_LMS_PARM_SHA256_192_L1_H20_W4 , "LMS/HSS_SHA256/192_L1_H20_W4",
+      LMS_PARAMS(1, 20, 4, 2, LMS_SHA256_M24_H20, LMOTS_SHA256_N24_W4,
                  WC_SHA256_192_DIGEST_SIZE) },
-    { WC_LMS_PARM_L1_H20_W8 , "LMS/HSS_SHA256/192_L1_H20_W8",
-      LMS_PARAMS(1, 20, 8, 3, LMS_SHA256_M32_H20, LMOTS_SHA256_N32_W8,
+    { WC_LMS_PARM_SHA256_192_L1_H20_W8 , "LMS/HSS_SHA256/192_L1_H20_W8",
+      LMS_PARAMS(1, 20, 8, 3, LMS_SHA256_M24_H20, LMOTS_SHA256_N24_W8,
                  WC_SHA256_192_DIGEST_SIZE) },
 #endif
 #endif /* WOLFSSL_LMS_SHA256_192 */
@@ -1162,7 +1156,8 @@ int wc_LmsKey_ImportPubRaw(LmsKey* key, const byte* in, word32 inLen)
     if (ret == 0) {
         XMEMCPY(key->pub, in, inLen);
 
-        key->state = WC_LMS_STATE_VERIFYONLY;
+        if (key->state != WC_LMS_STATE_OK)
+            key->state = WC_LMS_STATE_VERIFYONLY;
     }
 
     return ret;
@@ -1261,6 +1256,30 @@ int wc_LmsKey_Verify(LmsKey* key, const byte* sig, word32 sigSz,
     }
 
     return ret;
+}
+
+/* Get the Key ID from the raw private key data.
+ *
+ * PRIV = Q | PARAMS | SEED | I
+ * where I is the Key ID.
+ *
+ * @param [in] priv    Private key data.
+ * @param [in] privSz  Size of private key data.
+ * @param  Pointer to 16 byte Key ID in the private key.
+ * @return  NULL on failure.
+ */
+const byte * wc_LmsKey_GetKidFromPrivRaw(const byte * priv, word32 privSz)
+{
+    word32 seedSz = privSz - LMS_Q_LEN + HSS_PRIV_KEY_PARAM_SET_LEN - LMS_I_LEN;
+
+    if (priv == NULL) {
+        return NULL;
+    }
+    if ((seedSz != WC_SHA256_192_DIGEST_SIZE) &&
+            (seedSz != WC_SHA256_DIGEST_SIZE)) {
+        return NULL;
+    }
+    return priv - LMS_I_LEN;
 }
 
 #endif /* WOLFSSL_HAVE_LMS && WOLFSSL_WC_LMS */

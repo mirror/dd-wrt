@@ -1,6 +1,6 @@
 /* wolfssl-component include/user_settings.h
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -19,6 +19,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 #define WOLFSSL_ESPIDF_COMPONENT_VERSION 0x01
+
+/* Examples such as test and benchmark are known to cause watchdog timeouts.
+ * Note this is often set in project Makefile:
+ * CFLAGS += -DWOLFSSL_ESP_NO_WATCHDOG=1 */
+#define WOLFSSL_ESP_NO_WATCHDOG 1
 
 /* The Espressif project config file. See also sdkconfig.defaults */
 #include "sdkconfig.h"
@@ -105,7 +110,6 @@
     /* We don't use WiFi, so don't compile in the esp-sdk-lib WiFi helpers: */
     /* #define USE_WOLFSSL_ESP_SDK_WIFI */
     #define TEST_ESPIDF_ALL_WOLFSSL
-
 #elif defined(CONFIG_WOLFSSL_EXAMPLE_NAME_BENCHMARK)
     /* See https://github.com/wolfSSL/wolfssl/tree/master/IDE/Espressif/ESP-IDF/examples/wolfssl_benchmark */
     /* We don't use WiFi, so don't compile in the esp-sdk-lib WiFi helpers: */
@@ -208,8 +212,8 @@
 #ifdef CONFIG_WOLFSSL_ENABLE_KYBER
     /* Kyber typically needs a minimum 10K stack */
     #define WOLFSSL_EXPERIMENTAL_SETTINGS
-    #define WOLFSSL_HAVE_KYBER
-    #define WOLFSSL_WC_KYBER
+    #define WOLFSSL_HAVE_MLKEM
+    #define WOLFSSL_WC_MLKEM
     #define WOLFSSL_SHA3
     #if defined(CONFIG_IDF_TARGET_ESP8266)
         /* With limited RAM, we'll disable some of the Kyber sizes: */
@@ -217,6 +221,17 @@
         #define WOLFSSL_NO_KYBER768
         #define NO_SESSION_CACHE
     #endif
+#endif
+
+/* Enable AES for all examples */
+#ifdef NO_AES
+    #warning "Found NO_AES, wolfSSL AES Cannot be enabled. Check config."
+#else
+    #define WOLFSSL_AES
+    #define WOLFSSL_AES_COUNTER
+
+    /* Typically only needed for wolfssl_test, see docs. */
+    #define WOLFSSL_AES_DIRECT
 #endif
 
 /* Pick a cert buffer size: */
@@ -273,6 +288,10 @@
 
 /* Optionally enable some wolfSSH settings */
 #if defined(ESP_ENABLE_WOLFSSH) || defined(CONFIG_ESP_ENABLE_WOLFSSH)
+    /* Enable wolfSSH. Espressif examples need a few more settings, below */
+    #undef  WOLFSSL_WOLFSSH
+    #define WOLFSSL_WOLFSSH
+
     /* The default SSH Windows size is massive for an embedded target.
      * Limit it: */
     #define DEFAULT_WINDOW_SZ 2000
@@ -386,7 +405,10 @@
 #if defined(CONFIG_IDF_TARGET_ESP32C2) || \
     defined(CONFIG_IDF_TARGET_ESP8684)
     /* Optionally set smaller size here */
-    #define HAVE_FFDHE_4096
+    #ifdef HAVE_FFDHE_4096
+        /* this size may be problematic on the C2 */
+    #endif
+    #define HAVE_FFDHE_2048
 #else
     #define HAVE_FFDHE_4096
 #endif

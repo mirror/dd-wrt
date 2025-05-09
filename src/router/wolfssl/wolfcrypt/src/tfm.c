@@ -1,6 +1,6 @@
 /* tfm.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -19,7 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
-
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
 /*
  * Based on public domain TomsFastMath 0.10 by Tom St Denis, tomstdenis@iahu.ca,
@@ -30,13 +30,6 @@
  *  Edited by Moises Guimaraes (moises@wolfssl.com)
  *  to fit wolfSSL's needs.
  */
-
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-/* in case user set USE_FAST_MATH there */
-#include <wolfssl/wolfcrypt/settings.h>
 
 #ifdef USE_FAST_MATH
 
@@ -4575,6 +4568,9 @@ void fp_zero(fp_int *a)
 
 void fp_clear(fp_int *a)
 {
+#ifdef HAVE_FIPS
+    fp_forcezero(a);
+#else
     int size;
     a->used = 0;
     a->sign = FP_ZPOS;
@@ -4585,6 +4581,7 @@ void fp_clear(fp_int *a)
 #endif
     XMEMSET(a->dp, 0, size * sizeof(fp_digit));
     fp_free(a);
+#endif
 }
 
 void fp_forcezero (mp_int * a)

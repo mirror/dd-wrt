@@ -1,6 +1,6 @@
 /* armv8-32-sha3-asm
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -25,30 +25,29 @@
  *       ../wolfssl/wolfcrypt/src/port/arm/armv8-32-sha3-asm.c
  */
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif /* HAVE_CONFIG_H */
-#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/libwolfssl_sources_asm.h>
 #include <wolfssl/wolfcrypt/error-crypt.h>
 
 #ifdef WOLFSSL_ARMASM
 #if !defined(__aarch64__) && !defined(WOLFSSL_ARMASM_THUMB2)
 #include <stdint.h>
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif /* HAVE_CONFIG_H */
-#include <wolfssl/wolfcrypt/settings.h>
-#include <wolfssl/wolfcrypt/error-crypt.h>
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 #ifdef WOLFSSL_ARMASM_INLINE
 
 #ifdef __IAR_SYSTEMS_ICC__
 #define __asm__        asm
 #define __volatile__   volatile
+#define WOLFSSL_NO_VAR_ASSIGN_REG
 #endif /* __IAR_SYSTEMS_ICC__ */
 #ifdef __KEIL__
 #define __asm__        __asm
 #define __volatile__   volatile
 #endif /* __KEIL__ */
+#ifdef __ghs__
+#define __asm__        __asm
+#define __volatile__
+#define WOLFSSL_NO_VAR_ASSIGN_REG
+#endif /* __ghs__ */
 #ifdef WOLFSSL_SHA3
 #ifndef WOLFSSL_ARMASM_NO_NEON
 static const word64 L_sha3_arm2_neon_rt[] = {
@@ -68,14 +67,24 @@ static const word64 L_sha3_arm2_neon_rt[] = {
 
 #include <wolfssl/wolfcrypt/sha3.h>
 
+#ifndef WOLFSSL_NO_VAR_ASSIGN_REG
 void BlockSha3(word64* state_p)
+#else
+void BlockSha3(word64* state)
+#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
 {
+#ifndef WOLFSSL_NO_VAR_ASSIGN_REG
     register word64* state asm ("r0") = (word64*)state_p;
     register word64* L_sha3_arm2_neon_rt_c asm ("r1") =
         (word64*)&L_sha3_arm2_neon_rt;
+#else
+    register word64* L_sha3_arm2_neon_rt_c = (word64*)&L_sha3_arm2_neon_rt;
+
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "sub	sp, sp, #16\n\t"
+        "mov	r1, %[L_sha3_arm2_neon_rt]\n\t"
         "mov	r2, #24\n\t"
         "mov	r3, sp\n\t"
         "vld1.8	{d0-d3}, [%[state]]!\n\t"
@@ -332,9 +341,15 @@ void BlockSha3(word64* state_p)
         "vst1.8	{d20-d23}, [%[state]]!\n\t"
         "vst1.8	{d24}, [%[state]]\n\t"
         "add	sp, sp, #16\n\t"
+#ifndef WOLFSSL_NO_VAR_ASSIGN_REG
         : [state] "+r" (state),
           [L_sha3_arm2_neon_rt] "+r" (L_sha3_arm2_neon_rt_c)
         :
+#else
+        :
+        : [state] "r" (state),
+          [L_sha3_arm2_neon_rt] "r" (L_sha3_arm2_neon_rt_c)
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
         : "memory", "cc", "r2", "r3", "d0", "d1", "d2", "d3", "d4", "d5", "d6",
             "d7", "d8", "d9", "d10", "d11", "d12", "d13", "d14", "d15", "d16",
             "d17", "d18", "d19", "d20", "d21", "d22", "d23", "d24", "d25",
@@ -361,13 +376,23 @@ static const word64 L_sha3_arm2_rt[] = {
 
 #include <wolfssl/wolfcrypt/sha3.h>
 
+#ifndef WOLFSSL_NO_VAR_ASSIGN_REG
 void BlockSha3(word64* state_p)
+#else
+void BlockSha3(word64* state)
+#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
 {
+#ifndef WOLFSSL_NO_VAR_ASSIGN_REG
     register word64* state asm ("r0") = (word64*)state_p;
     register word64* L_sha3_arm2_rt_c asm ("r1") = (word64*)&L_sha3_arm2_rt;
+#else
+    register word64* L_sha3_arm2_rt_c = (word64*)&L_sha3_arm2_rt;
+
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "sub	sp, sp, #0xcc\n\t"
+        "mov	r1, %[L_sha3_arm2_rt]\n\t"
         "mov	r2, #12\n\t"
         "\n"
     "L_sha3_arm32_begin_%=: \n\t"
@@ -462,8 +487,7 @@ void BlockSha3(word64* state_p)
         "eor	r3, r3, r5, lsl #1\n\t"
         /* Calc b[0] and XOR t[0] into s[x*5+0] */
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-        "ldr	r4, [%[state]]\n\t"
-        "ldr	r5, [%[state], #4]\n\t"
+        "ldm	r0, {r4, r5}\n\t"
 #else
         "ldrd	r4, r5, [%[state]]\n\t"
 #endif
@@ -500,8 +524,7 @@ void BlockSha3(word64* state_p)
         "eor	r10, r10, r2\n\t"
         "eor	r11, r11, r3\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-        "str	r4, [%[state]]\n\t"
-        "str	r5, [%[state], #4]\n\t"
+        "stm	r0, {r4, r5}\n\t"
 #else
         "strd	r4, r5, [%[state]]\n\t"
 #endif
@@ -676,8 +699,7 @@ void BlockSha3(word64* state_p)
         "str	lr, [sp, #20]\n\t"
         /* Calc t[1] */
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-        "ldr	r2, [sp]\n\t"
-        "ldr	r3, [sp, #4]\n\t"
+        "ldm	sp, {r2, r3}\n\t"
 #else
         "ldrd	r2, r3, [sp]\n\t"
 #endif
@@ -836,8 +858,7 @@ void BlockSha3(word64* state_p)
         "ldrd	r2, r3, [sp, #24]\n\t"
 #endif
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-        "ldr	r4, [sp]\n\t"
-        "ldr	r5, [sp, #4]\n\t"
+        "ldm	sp, {r4, r5}\n\t"
 #else
         "ldrd	r4, r5, [sp]\n\t"
 #endif
@@ -911,8 +932,7 @@ void BlockSha3(word64* state_p)
         /* Row Mix */
         /* Row 0 */
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-        "ldr	r2, [%[state]]\n\t"
-        "ldr	r3, [%[state], #4]\n\t"
+        "ldm	r0, {r2, r3}\n\t"
 #else
         "ldrd	r2, r3, [%[state]]\n\t"
 #endif
@@ -988,8 +1008,7 @@ void BlockSha3(word64* state_p)
         "str	lr, [sp, #36]\n\t"
         /* Get constant */
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-        "ldr	r10, [r1]\n\t"
-        "ldr	r11, [r1, #4]\n\t"
+        "ldm	r1, {r10, r11}\n\t"
 #else
         "ldrd	r10, r11, [r1]\n\t"
 #endif
@@ -1445,8 +1464,7 @@ void BlockSha3(word64* state_p)
         "eor	r3, r3, r5, lsl #1\n\t"
         /* Calc b[0] and XOR t[0] into s[x*5+0] */
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-        "ldr	r4, [sp]\n\t"
-        "ldr	r5, [sp, #4]\n\t"
+        "ldm	sp, {r4, r5}\n\t"
 #else
         "ldrd	r4, r5, [sp]\n\t"
 #endif
@@ -1483,8 +1501,7 @@ void BlockSha3(word64* state_p)
         "eor	r10, r10, r2\n\t"
         "eor	r11, r11, r3\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-        "str	r4, [sp]\n\t"
-        "str	r5, [sp, #4]\n\t"
+        "stm	sp, {r4, r5}\n\t"
 #else
         "strd	r4, r5, [sp]\n\t"
 #endif
@@ -1659,8 +1676,7 @@ void BlockSha3(word64* state_p)
         "str	lr, [%[state], #20]\n\t"
         /* Calc t[1] */
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-        "ldr	r2, [%[state]]\n\t"
-        "ldr	r3, [%[state], #4]\n\t"
+        "ldm	r0, {r2, r3}\n\t"
 #else
         "ldrd	r2, r3, [%[state]]\n\t"
 #endif
@@ -1819,8 +1835,7 @@ void BlockSha3(word64* state_p)
         "ldrd	r2, r3, [%[state], #24]\n\t"
 #endif
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-        "ldr	r4, [%[state]]\n\t"
-        "ldr	r5, [%[state], #4]\n\t"
+        "ldm	r0, {r4, r5}\n\t"
 #else
         "ldrd	r4, r5, [%[state]]\n\t"
 #endif
@@ -1894,8 +1909,7 @@ void BlockSha3(word64* state_p)
         /* Row Mix */
         /* Row 0 */
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-        "ldr	r2, [sp]\n\t"
-        "ldr	r3, [sp, #4]\n\t"
+        "ldm	sp, {r2, r3}\n\t"
 #else
         "ldrd	r2, r3, [sp]\n\t"
 #endif
@@ -1971,8 +1985,7 @@ void BlockSha3(word64* state_p)
         "str	lr, [%[state], #36]\n\t"
         /* Get constant */
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-        "ldr	r10, [r1]\n\t"
-        "ldr	r11, [r1, #4]\n\t"
+        "ldm	r1, {r10, r11}\n\t"
 #else
         "ldrd	r10, r11, [r1]\n\t"
 #endif
@@ -2342,8 +2355,13 @@ void BlockSha3(word64* state_p)
         "subs	r2, r2, #1\n\t"
         "bne	L_sha3_arm32_begin_%=\n\t"
         "add	sp, sp, #0xcc\n\t"
+#ifndef WOLFSSL_NO_VAR_ASSIGN_REG
         : [state] "+r" (state), [L_sha3_arm2_rt] "+r" (L_sha3_arm2_rt_c)
         :
+#else
+        :
+        : [state] "r" (state), [L_sha3_arm2_rt] "r" (L_sha3_arm2_rt_c)
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
         : "memory", "cc", "r2", "r3", "r12", "lr", "r4", "r5", "r6", "r7", "r8",
             "r9", "r10", "r11"
     );

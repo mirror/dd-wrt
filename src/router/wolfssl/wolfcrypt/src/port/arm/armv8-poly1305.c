@@ -1,6 +1,6 @@
 /* armv8-poly1305.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -19,24 +19,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
+
 /*
- * Based off the public domain implementations by Andrew Moon
+ * Based on the public domain implementations by Andrew Moon
  * and Daniel J. Bernstein
  */
-
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-#include <wolfssl/wolfcrypt/settings.h>
-#include <wolfssl/wolfcrypt/types.h>
 
 #ifdef WOLFSSL_ARMASM
 
 #ifdef HAVE_POLY1305
 #include <wolfssl/wolfcrypt/poly1305.h>
-#include <wolfssl/wolfcrypt/error-crypt.h>
-#include <wolfssl/wolfcrypt/logging.h>
 #include <wolfssl/wolfcrypt/cpuid.h>
 #ifdef NO_INLINE
     #include <wolfssl/wolfcrypt/misc.h>
@@ -938,6 +931,14 @@ int wc_Poly1305SetKey(Poly1305* ctx, const byte* key, word32 keySz)
         "ADDS       x8, x8, x14\n\t"
         "ADCS       x9, x9, x15\n\t"
         "ADC        x10, x10, xzr\n\t"
+        /* Get high bits from r^2[2]. */
+        "AND        x11, x10, -4\n\t"
+        "AND        x10, x10, 3\n\t"
+        "ADD        x11, x11, x11, LSR 2\n\t"
+        /* Add top bits. */
+        "ADDS       x8, x8, x11\n\t"
+        "ADCS       x9, x9, xzr\n\t"
+        "ADC        x10, x10, xzr\n\t"
         /* 130-bits: Base 64 -> Base 26 */
         "EXTR       x15, x10, x9, #40\n\t"
         "AND        x14, x20, x9, LSR #14\n\t"
@@ -1150,7 +1151,11 @@ void poly1305_block_thumb2(Poly1305* ctx, const unsigned char* m)
  */
 void poly1305_blocks_arm32(Poly1305* ctx, const unsigned char* m, size_t bytes)
 {
-    poly1305_blocks_arm32_16(ctx, m, bytes, 1);
+#ifndef WOLFSSL_ARMASM_NO_NEON
+    poly1305_arm32_blocks(ctx, m, bytes);
+#else
+    poly1305_arm32_blocks_16(ctx, m, bytes, 1);
+#endif
 }
 
 /* Process 16 bytes of message.
@@ -1160,7 +1165,7 @@ void poly1305_blocks_arm32(Poly1305* ctx, const unsigned char* m, size_t bytes)
  */
 void poly1305_block_arm32(Poly1305* ctx, const unsigned char* m)
 {
-    poly1305_blocks_arm32_16(ctx, m, POLY1305_BLOCK_SIZE, 1);
+    poly1305_arm32_blocks_16(ctx, m, POLY1305_BLOCK_SIZE, 1);
 }
 #endif
 
@@ -1219,6 +1224,16 @@ int wc_Poly1305Final(Poly1305* ctx, byte* mac)
 
     /* Process the remaining partial block - last block. */
     if (ret == 0) {
+    #if !defined(WOLFSSL_ARMASM_THUMB2) && !defined(WOLFSSL_ARMASM_NO_NEON)
+        if (ctx->leftover >= POLY1305_BLOCK_SIZE) {
+             size_t len = ctx->leftover & (~(POLY1305_BLOCK_SIZE - 1));
+             poly1305_arm32_blocks(ctx, ctx->buffer, len);
+             ctx->leftover -= len;
+             if (ctx->leftover) {
+                 XMEMCPY(ctx->buffer, ctx->buffer + len, ctx->leftover);
+             }
+        }
+    #endif
         if (ctx->leftover) {
              size_t i = ctx->leftover;
              ctx->buffer[i++] = 1;
@@ -1229,7 +1244,7 @@ int wc_Poly1305Final(Poly1305* ctx, byte* mac)
              poly1305_blocks_thumb2_16(ctx, ctx->buffer, POLY1305_BLOCK_SIZE,
                  0);
         #else
-             poly1305_blocks_arm32_16(ctx, ctx->buffer, POLY1305_BLOCK_SIZE, 0);
+             poly1305_arm32_blocks_16(ctx, ctx->buffer, POLY1305_BLOCK_SIZE, 0);
         #endif
         }
 

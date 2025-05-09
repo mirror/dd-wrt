@@ -1,6 +1,6 @@
 /* sp_int.h
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -210,8 +210,10 @@ extern "C" {
 #elif defined(WOLFSSL_SP_X86_64_ASM) || defined(WOLFSSL_SP_X86_64)
     #if SP_ULONG_BITS == 64 || SP_ULLONG_BITS == 64
         #define SP_WORD_SIZE 64
-        #define HAVE_INTEL_AVX1
-        #ifndef NO_AVX2_SUPPORT
+        #ifndef HAVE_INTEL_AVX1
+            #define HAVE_INTEL_AVX1
+        #endif
+        #if !defined(NO_AVX2_SUPPORT) && !defined(HAVE_INTEL_AVX2)
             #define HAVE_INTEL_AVX2
         #endif
     #elif SP_ULONG_BITS == 32
@@ -262,7 +264,7 @@ extern "C" {
 #define SP_WORD_SIZEOF  (SP_WORD_SIZE / 8)
 
 /* Define the types used. */
-#ifdef HAVE___UINT128_T
+#if defined(HAVE___UINT128_T) && !defined(NO_INT128)
     #ifdef __SIZEOF_INT128__
         typedef __uint128_t   sp_uint128;
         typedef  __int128_t    sp_int128;
@@ -385,11 +387,11 @@ extern "C" {
 /* Non-blocking ECC operation context. */
 typedef struct sp_ecc_ctx {
     #ifdef WOLFSSL_SP_521
-    byte data[66*80]; /* stack data */
+    XALIGNED(4) byte data[66*80]; /* stack data */
     #elif defined(WOLFSSL_SP_384)
-    byte data[48*80]; /* stack data */
+    XALIGNED(4) byte data[48*80]; /* stack data */
     #else
-    byte data[32*80]; /* stack data */
+    XALIGNED(4) byte data[32*80]; /* stack data */
     #endif
 } sp_ecc_ctx_t;
 #endif
@@ -702,7 +704,10 @@ typedef struct sp_ecc_ctx {
     do {                                                                       \
         int ii;                                                                \
         if ((a)->used > 0) {                                                   \
-            for (ii = (int)(a)->used - 1; ii >= 0 && (a)->dp[ii] == 0; ii--) { \
+            for (ii = (int)(a)->used - 1; ii >= 0; ii--) {                     \
+                if ((a)->dp[ii] != 0) {                                        \
+                    break;                                                     \
+                }                                                              \
             }                                                                  \
             (a)->used = (wc_mp_size_t)(ii + 1);                                \
         }                                                                      \

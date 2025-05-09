@@ -1,6 +1,6 @@
 /* error-crypt.h
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -135,7 +135,8 @@ enum wolfCrypt_ErrorCodes {
     ED25519_KAT_FIPS_E = -163,  /* Ed25519 Known answer test failure */
     ED448_KAT_FIPS_E   = -164,  /* Ed448 Known answer test failure */
     PBKDF2_KAT_FIPS_E  = -165,  /* PBKDF2 Known answer test failure */
-    /* -166..-169 unused. */
+    WC_KEY_MISMATCH_E  = -166,  /* Error for private/public key mismatch */
+    /* -167..-169 unused. */
 
     ECC_BAD_ARG_E      = -170,  /* ECC input argument of wrong type */
     ASN_ECC_KEY_E      = -171,  /* ASN ECC bad input */
@@ -302,11 +303,12 @@ enum wolfCrypt_ErrorCodes {
     WC_SPAN2_FIRST_E    = -1000,
 
     DEADLOCK_AVERTED_E  = -1000, /* Deadlock averted -- retry the call */
+    ASCON_AUTH_E        = -1001, /* ASCON Authentication check failure */
 
-    WC_SPAN2_LAST_E     = -1000, /* Update to indicate last used error code */
+    WC_SPAN2_LAST_E     = -1001, /* Update to indicate last used error code */
     WC_SPAN2_MIN_CODE_E = -1999, /* Last usable code in span 2 */
 
-    WC_LAST_E           = -1000, /* the last code used either here or in
+    WC_LAST_E           = -1001, /* the last code used either here or in
                                   * error-ssl.h
                                   */
 
@@ -325,7 +327,7 @@ wc_static_assert((int)MIN_CODE_E <= (int)WC_SPAN2_MIN_CODE_E);
 #ifdef NO_ERROR_STRINGS
     #define wc_GetErrorString(error) "no support for error strings built in"
     #define wc_ErrorString(err, buf) \
-        (void)err; XSTRNCPY((buf), wc_GetErrorString((err)), \
+        (void)(err); XSTRNCPY((buf), wc_GetErrorString(err), \
         WOLFSSL_MAX_ERROR_SZ);
 
 #else

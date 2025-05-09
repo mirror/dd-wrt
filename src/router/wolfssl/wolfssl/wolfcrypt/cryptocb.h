@@ -1,6 +1,6 @@
 /* cryptocb.h
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -74,12 +74,12 @@
 #if defined(WOLFSSL_SHA512) || defined(WOLFSSL_SHA384)
     #include <wolfssl/wolfcrypt/sha512.h>
 #endif
-#ifdef WOLFSSL_HAVE_KYBER
-    #include <wolfssl/wolfcrypt/kyber.h>
-#ifdef WOLFSSL_WC_KYBER
-    #include <wolfssl/wolfcrypt/wc_kyber.h>
+#ifdef WOLFSSL_HAVE_MLKEM
+    #include <wolfssl/wolfcrypt/mlkem.h>
+#ifdef WOLFSSL_WC_MLKEM
+    #include <wolfssl/wolfcrypt/wc_mlkem.h>
 #elif defined(HAVE_LIBOQS)
-    #include <wolfssl/wolfcrypt/ext_kyber.h>
+    #include <wolfssl/wolfcrypt/ext_mlkem.h>
 #endif
 #endif
 #if defined(HAVE_DILITHIUM)
@@ -99,6 +99,38 @@ enum wc_CryptoCbCmdType {
 
     WC_CRYPTOCB_CMD_TYPE_MAX = WC_CRYPTOCB_CMD_TYPE_UNREGISTER
 };
+#endif
+
+
+#if defined(HAVE_AESGCM) || defined(HAVE_AESCCM)
+typedef struct {
+    Aes*        aes;
+    byte*       out;
+    const byte* in;
+    word32      sz;
+    const byte* nonce;
+    word32      nonceSz;
+    const byte* iv;
+    word32      ivSz;
+    byte*       authTag;
+    word32      authTagSz;
+    const byte* authIn;
+    word32      authInSz;
+} wc_CryptoCb_AesAuthEnc;
+typedef struct {
+    Aes*        aes;
+    byte*       out;
+    const byte* in;
+    word32      sz;
+    const byte* nonce;
+    word32      nonceSz;
+    const byte* iv;
+    word32      ivSz;
+    const byte* authTag;
+    word32      authTagSz;
+    const byte* authIn;
+    word32      authInSz;
+} wc_CryptoCb_AesAuthDec;
 #endif
 
 /* Crypto Information Structure for callbacks */
@@ -222,7 +254,7 @@ typedef struct wc_CryptoInfo {
                 byte         contextLen;
             } ed25519verify;
         #endif
-        #if defined(WOLFSSL_HAVE_KYBER)
+        #if defined(WOLFSSL_HAVE_MLKEM)
             struct {
                 WC_RNG*     rng;
                 int         size;
@@ -262,6 +294,9 @@ typedef struct wc_CryptoInfo {
                 WC_RNG*     rng;
                 void*       key;
                 int         type; /* enum wc_PqcSignatureType */
+                const byte* context;
+                byte        contextLen;
+                word32      preHashType; /* enum wc_HashType */
             } pqc_sign;
             struct {
                 const byte* sig;
@@ -271,6 +306,9 @@ typedef struct wc_CryptoInfo {
                 int*        res;
                 void*       key;
                 int         type; /* enum wc_PqcSignatureType */
+                const byte* context;
+                byte        contextLen;
+                word32      preHashType; /* enum wc_HashType */
             } pqc_verify;
             struct {
                 void*       key;
@@ -291,56 +329,12 @@ typedef struct wc_CryptoInfo {
         union {
 #endif
         #ifdef HAVE_AESGCM
-            struct {
-                Aes*        aes;
-                byte*       out;
-                const byte* in;
-                word32      sz;
-                const byte* iv;
-                word32      ivSz;
-                byte*       authTag;
-                word32      authTagSz;
-                const byte* authIn;
-                word32      authInSz;
-            } aesgcm_enc;
-            struct {
-                Aes*        aes;
-                byte*       out;
-                const byte* in;
-                word32      sz;
-                const byte* iv;
-                word32      ivSz;
-                const byte* authTag;
-                word32      authTagSz;
-                const byte* authIn;
-                word32      authInSz;
-            } aesgcm_dec;
+            wc_CryptoCb_AesAuthEnc aesgcm_enc;
+            wc_CryptoCb_AesAuthDec aesgcm_dec;
         #endif /* HAVE_AESGCM */
         #ifdef HAVE_AESCCM
-            struct {
-                Aes*        aes;
-                byte*       out;
-                const byte* in;
-                word32      sz;
-                const byte* nonce;
-                word32      nonceSz;
-                byte*       authTag;
-                word32      authTagSz;
-                const byte* authIn;
-                word32      authInSz;
-            } aesccm_enc;
-            struct {
-                Aes*        aes;
-                byte*       out;
-                const byte* in;
-                word32      sz;
-                const byte* nonce;
-                word32      nonceSz;
-                const byte* authTag;
-                word32      authTagSz;
-                const byte* authIn;
-                word32      authInSz;
-            } aesccm_dec;
+            wc_CryptoCb_AesAuthEnc aesccm_enc;
+            wc_CryptoCb_AesAuthDec aesccm_dec;
         #endif /* HAVE_AESCCM */
         #if defined(HAVE_AES_CBC)
             struct {
@@ -381,7 +375,7 @@ typedef struct wc_CryptoInfo {
     } cipher;
 #endif /* !NO_AES || !NO_DES3 */
 #if !defined(NO_SHA) || !defined(NO_SHA256) || \
-    defined(WOLFSSL_SHA512) || defined(WOLFSSL_SHA384)
+    defined(WOLFSSL_SHA384) || defined(WOLFSSL_SHA512) || defined(WOLFSSL_SHA3)
     struct {
         int type; /* enum wc_HashType */
         const byte* in;
@@ -550,7 +544,7 @@ WOLFSSL_LOCAL int wc_CryptoCb_Ed25519Verify(const byte* sig, word32 sigLen,
     const byte* context, byte contextLen);
 #endif /* HAVE_ED25519 */
 
-#if defined(WOLFSSL_HAVE_KYBER)
+#if defined(WOLFSSL_HAVE_MLKEM)
 WOLFSSL_LOCAL int wc_CryptoCb_PqcKemGetDevId(int type, void* key);
 
 WOLFSSL_LOCAL int wc_CryptoCb_MakePqcKemKey(WC_RNG* rng, int type,
@@ -563,7 +557,7 @@ WOLFSSL_LOCAL int wc_CryptoCb_PqcEncapsulate(byte* ciphertext,
 WOLFSSL_LOCAL int wc_CryptoCb_PqcDecapsulate(const byte* ciphertext,
     word32 ciphertextLen, byte* sharedSecret, word32 sharedSecretLen,
     int type, void* key);
-#endif /* WOLFSSL_HAVE_KYBER */
+#endif /* WOLFSSL_HAVE_MLKEM */
 
 #if defined(HAVE_FALCON) || defined(HAVE_DILITHIUM)
 WOLFSSL_LOCAL int wc_CryptoCb_PqcSigGetDevId(int type, void* key);
@@ -572,10 +566,12 @@ WOLFSSL_LOCAL int wc_CryptoCb_MakePqcSignatureKey(WC_RNG* rng, int type,
     int keySize, void* key);
 
 WOLFSSL_LOCAL int wc_CryptoCb_PqcSign(const byte* in, word32 inlen, byte* out,
-    word32 *outlen, WC_RNG* rng, int type, void* key);
+    word32 *outlen, const byte* context, byte contextLen, word32 preHashType,
+    WC_RNG* rng, int type, void* key);
 
 WOLFSSL_LOCAL int wc_CryptoCb_PqcVerify(const byte* sig, word32 siglen,
-    const byte* msg, word32 msglen, int* res, int type, void* key);
+    const byte* msg, word32 msglen, const byte* context, byte contextLen,
+    word32 preHashType, int* res, int type, void* key);
 
 WOLFSSL_LOCAL int wc_CryptoCb_PqcSignatureCheckPrivKey(void* key, int type,
     const byte* pubKey, word32 pubKeySz);

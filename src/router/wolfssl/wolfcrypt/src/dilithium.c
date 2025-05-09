@@ -1,6 +1,6 @@
 /* dilithium.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -130,13 +130,7 @@
  *   shift equivalent.
  */
 
-
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-/* in case user set HAVE_PQC there */
-#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
 #ifndef WOLFSSL_DILITHIUM_NO_ASN1
 #include <wolfssl/wolfcrypt/asn.h>
@@ -151,7 +145,6 @@
 #include <wolfssl/wolfcrypt/dilithium.h>
 #include <wolfssl/wolfcrypt/hash.h>
 #include <wolfssl/wolfcrypt/sha3.h>
-#include <wolfssl/wolfcrypt/error-crypt.h>
 #ifdef NO_INLINE
     #include <wolfssl/wolfcrypt/misc.h>
 #else
@@ -2195,7 +2188,7 @@ static int dilithium_rej_ntt_poly_ex(wc_Shake* shake128, byte* seed, sword32* a,
 static int dilithium_rej_ntt_poly(wc_Shake* shake128, byte* seed, sword32* a,
     void* heap)
 {
-    int ret;
+    int ret = 0;
 #if defined(WOLFSSL_SMALL_STACK)
     byte* h = NULL;
 #else
@@ -2212,7 +2205,8 @@ static int dilithium_rej_ntt_poly(wc_Shake* shake128, byte* seed, sword32* a,
     }
 #endif
 
-    ret = dilithium_rej_ntt_poly_ex(shake128, seed, a, h);
+    if (ret == 0)
+        ret = dilithium_rej_ntt_poly_ex(shake128, seed, a, h);
 
 #if defined(WOLFSSL_SMALL_STACK)
     XFREE(h, heap, DYNAMIC_TYPE_DILITHIUM);
@@ -6076,6 +6070,7 @@ static int dilithium_sign_with_seed_mu(dilithium_key* key,
             ret = MEMORY_E;
         }
         else {
+            XMEMSET(key->s1, 0, params->aSz);
             key->s2 = key->s1  + params->s1Sz / sizeof(*s1);
             key->t0 = key->s2  + params->s2Sz / sizeof(*s2);
         }
@@ -7223,6 +7218,9 @@ static int dilithium_verify_mu(dilithium_key* key, const byte* mu,
         if (key->a == NULL) {
             ret = MEMORY_E;
         }
+        else {
+            XMEMSET(key->a, 0, params->aSz);
+        }
     }
 #endif
     if (ret == 0) {
@@ -7236,6 +7234,9 @@ static int dilithium_verify_mu(dilithium_key* key, const byte* mu,
             DYNAMIC_TYPE_DILITHIUM);
         if (key->t1 == NULL) {
             ret = MEMORY_E;
+        }
+        else {
+            XMEMSET(key->t1, 0, params->s2Sz);
         }
     }
 #endif
@@ -7259,6 +7260,7 @@ static int dilithium_verify_mu(dilithium_key* key, const byte* mu,
             ret = MEMORY_E;
         }
         else {
+            XMEMSET(z, 0, allocSz);
             c   = z  + params->s1Sz / sizeof(*z);
             w   = c  + DILITHIUM_N;
 #ifndef WC_DILITHIUM_CACHE_PUB_VECTORS
@@ -7387,6 +7389,7 @@ static int dilithium_verify_mu(dilithium_key* key, const byte* mu,
             ret = MEMORY_E;
         }
         else {
+            XMEMSET(z, 0, allocSz);
             c     = z + params->s1Sz / sizeof(*t1);
             w     = c + DILITHIUM_N;
             t1    = w + DILITHIUM_N;
@@ -8014,8 +8017,8 @@ int wc_dilithium_sign_ctx_msg(const byte* ctx, byte ctxLen, const byte* msg,
         if (key->devId != INVALID_DEVID)
     #endif
         {
-            ret = wc_CryptoCb_PqcSign(msg, msgLen, sig, sigLen, rng,
-                WC_PQC_SIG_TYPE_DILITHIUM, key);
+            ret = wc_CryptoCb_PqcSign(msg, msgLen, sig, sigLen, ctx, ctxLen,
+                    WC_HASH_TYPE_NONE, rng, WC_PQC_SIG_TYPE_DILITHIUM, key);
             if (ret != WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE))
                 return ret;
             /* fall-through when unavailable */
@@ -8065,8 +8068,8 @@ int wc_dilithium_sign_msg(const byte* msg, word32 msgLen, byte* sig,
         if (key->devId != INVALID_DEVID)
     #endif
         {
-            ret = wc_CryptoCb_PqcSign(msg, msgLen, sig, sigLen, rng,
-                WC_PQC_SIG_TYPE_DILITHIUM, key);
+            ret = wc_CryptoCb_PqcSign(msg, msgLen, sig, sigLen, NULL, 0,
+                    WC_HASH_TYPE_NONE, rng, WC_PQC_SIG_TYPE_DILITHIUM, key);
             if (ret != WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE))
                 return ret;
             /* fall-through when unavailable */
@@ -8116,6 +8119,22 @@ int wc_dilithium_sign_ctx_hash(const byte* ctx, byte ctxLen, int hashAlg,
     if ((ret == 0) && (ctx == NULL) && (ctxLen > 0)) {
         ret = BAD_FUNC_ARG;
     }
+
+#ifdef WOLF_CRYPTO_CB
+    if (ret == 0) {
+    #ifndef WOLF_CRYPTO_CB_FIND
+        if (key->devId != INVALID_DEVID)
+    #endif
+        {
+            ret = wc_CryptoCb_PqcSign(hash, hashLen, sig, sigLen, ctx, ctxLen,
+                    hashAlg, rng, WC_PQC_SIG_TYPE_DILITHIUM, key);
+            if (ret != WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE))
+                return ret;
+            /* fall-through when unavailable */
+            ret = 0;
+        }
+    }
+#endif
 
     if (ret == 0) {
         /* Sign message. */
@@ -8291,6 +8310,22 @@ int wc_dilithium_verify_ctx_msg(const byte* sig, word32 sigLen, const byte* ctx,
         ret = BAD_FUNC_ARG;
     }
 
+#ifdef WOLF_CRYPTO_CB
+    if (ret == 0) {
+    #ifndef WOLF_CRYPTO_CB_FIND
+        if (key->devId != INVALID_DEVID)
+    #endif
+        {
+            ret = wc_CryptoCb_PqcVerify(sig, sigLen, msg, msgLen, ctx, ctxLen,
+                    WC_HASH_TYPE_NONE, res, WC_PQC_SIG_TYPE_DILITHIUM, key);
+            if (ret != WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE))
+                return ret;
+            /* fall-through when unavailable */
+            ret = 0;
+        }
+    }
+#endif
+
     if (ret == 0) {
         /* Verify message with signature. */
     #ifdef WOLFSSL_WC_DILITHIUM
@@ -8329,21 +8364,21 @@ int wc_dilithium_verify_msg(const byte* sig, word32 sigLen, const byte* msg,
         ret = BAD_FUNC_ARG;
     }
 
-    #ifdef WOLF_CRYPTO_CB
+#ifdef WOLF_CRYPTO_CB
     if (ret == 0) {
-        #ifndef WOLF_CRYPTO_CB_FIND
+    #ifndef WOLF_CRYPTO_CB_FIND
         if (key->devId != INVALID_DEVID)
-        #endif
+    #endif
         {
-            ret = wc_CryptoCb_PqcVerify(sig, sigLen, msg, msgLen, res,
-                WC_PQC_SIG_TYPE_DILITHIUM, key);
+            ret = wc_CryptoCb_PqcVerify(sig, sigLen, msg, msgLen, NULL, 0,
+                    WC_HASH_TYPE_NONE, res, WC_PQC_SIG_TYPE_DILITHIUM, key);
             if (ret != WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE))
                 return ret;
             /* fall-through when unavailable */
             ret = 0;
         }
     }
-    #endif
+#endif
 
     if (ret == 0) {
         /* Verify message with signature. */
@@ -8386,6 +8421,22 @@ int wc_dilithium_verify_ctx_hash(const byte* sig, word32 sigLen,
     if ((ret == 0) && (ctx == NULL) && (ctxLen > 0)) {
         ret = BAD_FUNC_ARG;
     }
+
+#ifdef WOLF_CRYPTO_CB
+    if (ret == 0) {
+    #ifndef WOLF_CRYPTO_CB_FIND
+        if (key->devId != INVALID_DEVID)
+    #endif
+        {
+            ret = wc_CryptoCb_PqcVerify(sig, sigLen, hash, hashLen, ctx, ctxLen,
+                    hashAlg, res, WC_PQC_SIG_TYPE_DILITHIUM, key);
+            if (ret != WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE))
+                return ret;
+            /* fall-through when unavailable */
+            ret = 0;
+        }
+    }
+#endif
 
     if (ret == 0) {
         /* Verify message with signature. */
@@ -8892,8 +8943,9 @@ int wc_dilithium_check_key(dilithium_key* key)
      */
 
     if (ret == 0) {
-        params = key->params;
         unsigned int allocSz;
+
+        params = key->params;
 
         /* s1-L, s2-K, t0-K, t-K, t1-K */
         allocSz = params->s1Sz + 4 * params->s2Sz;
@@ -8908,6 +8960,7 @@ int wc_dilithium_check_key(dilithium_key* key)
             ret = MEMORY_E;
         }
         else {
+            XMEMSET(s1, 0, allocSz);
             s2 = s1 + params->s1Sz / sizeof(*s1);
             t0 = s2 + params->s2Sz / sizeof(*s2);
             t  = t0 + params->s2Sz / sizeof(*t0);
@@ -9197,6 +9250,9 @@ int wc_dilithium_import_public(const byte* in, word32 inLen, dilithium_key* key)
             if (key->t1 == NULL) {
                 ret = MEMORY_E;
             }
+            else {
+                XMEMSET(key->t1, 0, key->params->s2Sz);
+            }
         }
     #endif
     }
@@ -9212,6 +9268,9 @@ int wc_dilithium_import_public(const byte* in, word32 inLen, dilithium_key* key)
                 DYNAMIC_TYPE_DILITHIUM);
             if (key->a == NULL) {
                 ret = MEMORY_E;
+            }
+            else {
+                XMEMSET(key->a, 0, key->params->aSz);
             }
         }
     #endif
@@ -9282,6 +9341,9 @@ static int dilithium_set_priv_key(const byte* priv, word32 privSz,
             if (key->a == NULL) {
                 ret = MEMORY_E;
             }
+            else {
+                XMEMSET(key->a, 0, params->aSz);
+            }
         }
     }
 #endif
@@ -9302,6 +9364,9 @@ static int dilithium_set_priv_key(const byte* priv, word32 privSz,
             key->heap, DYNAMIC_TYPE_DILITHIUM);
         if (key->s1 == NULL) {
             ret = MEMORY_E;
+        }
+        else {
+            XMEMSET(key->s1, 0, params->s1Sz + params->s2Sz + params->s2Sz);
         }
         if (ret == 0) {
             /* Set pointers into allocated memory. */
@@ -9524,6 +9589,42 @@ static int mapOidToSecLevel(word32 oid)
     }
 }
 
+/* Get OID sum from dilithium key */
+int dilithium_get_oid_sum(dilithium_key* key, int* keyFormat) {
+    int ret = 0;
+
+    #if defined(WOLFSSL_DILITHIUM_FIPS204_DRAFT)
+    if (key->params == NULL) {
+        ret = BAD_FUNC_ARG;
+    }
+    else if (key->params->level == WC_ML_DSA_44_DRAFT) {
+        *keyFormat = DILITHIUM_LEVEL2k;
+    }
+    else if (key->params->level == WC_ML_DSA_65_DRAFT) {
+        *keyFormat = DILITHIUM_LEVEL3k;
+    }
+    else if (key->params->level == WC_ML_DSA_87_DRAFT) {
+        *keyFormat = DILITHIUM_LEVEL5k;
+    }
+    else
+    #endif /* WOLFSSL_DILITHIUM_FIPS204_DRAFT */
+    if (key->level == WC_ML_DSA_44) {
+        *keyFormat = ML_DSA_LEVEL2k;
+    }
+    else if (key->level == WC_ML_DSA_65) {
+        *keyFormat = ML_DSA_LEVEL3k;
+    }
+    else if (key->level == WC_ML_DSA_87) {
+        *keyFormat = ML_DSA_LEVEL5k;
+    }
+    else {
+        /* Level is not set */
+        ret = ALGO_ID_E;
+    }
+
+    return ret;
+}
+
 #if defined(WOLFSSL_DILITHIUM_PRIVATE_KEY)
 
 /* Decode the DER encoded Dilithium key.
@@ -9563,8 +9664,13 @@ int wc_Dilithium_PrivateKeyDecode(const byte* input, word32* inOutIdx,
 
     if (ret == 0) {
         /* Get OID sum for level. */
+        if (key->level == 0) { /* Check first, because key->params will be NULL
+                               * when key->level = 0 */
+            /* Level not set by caller, decode from DER */
+            keytype = ANONk;
+        }
     #if defined(WOLFSSL_DILITHIUM_FIPS204_DRAFT)
-        if (key->params == NULL) {
+        else if (key->params == NULL) {
             ret = BAD_FUNC_ARG;
         }
         else if (key->params->level == WC_ML_DSA_44_DRAFT) {
@@ -9576,9 +9682,8 @@ int wc_Dilithium_PrivateKeyDecode(const byte* input, word32* inOutIdx,
         else if (key->params->level == WC_ML_DSA_87_DRAFT) {
             keytype = DILITHIUM_LEVEL5k;
         }
-        else
     #endif
-        if (key->level == WC_ML_DSA_44) {
+        else if (key->level == WC_ML_DSA_44) {
             keytype = ML_DSA_LEVEL2k;
         }
         else if (key->level == WC_ML_DSA_65) {
@@ -9588,8 +9693,7 @@ int wc_Dilithium_PrivateKeyDecode(const byte* input, word32* inOutIdx,
             keytype = ML_DSA_LEVEL5k;
         }
         else {
-            /* Level not set by caller, decode from DER */
-            keytype = ANONk; /* 0, not a valid key type in this situation*/
+            ret = BAD_FUNC_ARG;
         }
     }
 

@@ -1,6 +1,6 @@
 /* poly1305.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -36,16 +36,10 @@ and Daniel J. Bernstein
  *                     303.004 MiB/s with and 1874.194 MiB/s without.
  */
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
 #ifdef HAVE_POLY1305
 #include <wolfssl/wolfcrypt/poly1305.h>
-#include <wolfssl/wolfcrypt/error-crypt.h>
-#include <wolfssl/wolfcrypt/logging.h>
 #include <wolfssl/wolfcrypt/cpuid.h>
 #ifdef NO_INLINE
     #include <wolfssl/wolfcrypt/misc.h>
@@ -529,6 +523,7 @@ int wc_Poly1305SetKey(Poly1305* ctx, const byte* key, word32 keySz)
     #endif
         poly1305_setkey_avx(ctx, key);
     RESTORE_VECTOR_REGISTERS();
+    ctx->started = 0;
 #elif defined(POLY130564)
 
     /* r &= 0xffffffc0ffffffc0ffffffc0fffffff */
@@ -813,13 +808,49 @@ int wc_Poly1305Update(Poly1305* ctx, const byte* m, word32 bytes)
     printf("\n");
 #endif
 
+#if defined(WOLFSSL_ARMASM) && !defined(WOLFSSL_ARMASM_THUMB2) && \
+    !defined(WOLFSSL_ARMASM_NO_NEON)
+    /* handle leftover */
+    if (ctx->leftover) {
+        size_t want = sizeof(ctx->buffer) - ctx->leftover;
+        if (want > bytes)
+            want = bytes;
+
+        for (i = 0; i < want; i++)
+            ctx->buffer[ctx->leftover + i] = m[i];
+        bytes -= (word32)want;
+        m += want;
+        ctx->leftover += want;
+        if (ctx->leftover < sizeof(ctx->buffer)) {
+            return 0;
+        }
+
+        poly1305_blocks(ctx, ctx->buffer, sizeof(ctx->buffer));
+        ctx->leftover = 0;
+    }
+
+    /* process full blocks */
+    if (bytes >= sizeof(ctx->buffer)) {
+        size_t want = bytes & ~((size_t)POLY1305_BLOCK_SIZE - 1);
+
+        poly1305_blocks(ctx, m, want);
+        m += want;
+        bytes -= (word32)want;
+    }
+
+    /* store leftover */
+    if (bytes) {
+        for (i = 0; i < bytes; i++)
+            ctx->buffer[ctx->leftover + i] = m[i];
+        ctx->leftover += bytes;
+    }
+#else
 #ifdef USE_INTEL_POLY1305_SPEEDUP
     #ifdef HAVE_INTEL_AVX2
     if (IS_INTEL_AVX2(intel_flags)) {
         SAVE_VECTOR_REGISTERS(return _svr_ret;);
 
         /* handle leftover */
-
         if (ctx->leftover) {
             size_t want = sizeof(ctx->buffer) - ctx->leftover;
             if (want > bytes)
@@ -835,8 +866,10 @@ int wc_Poly1305Update(Poly1305* ctx, const byte* m, word32 bytes)
                 return 0;
             }
 
-            if (!ctx->started)
+            if (!ctx->started) {
                 poly1305_calc_powers_avx2(ctx);
+                ctx->started = 1;
+            }
             poly1305_blocks_avx2(ctx, ctx->buffer, sizeof(ctx->buffer));
             ctx->leftover = 0;
         }
@@ -845,8 +878,10 @@ int wc_Poly1305Update(Poly1305* ctx, const byte* m, word32 bytes)
         if (bytes >= sizeof(ctx->buffer)) {
             size_t want = bytes & ~(sizeof(ctx->buffer) - 1);
 
-            if (!ctx->started)
+            if (!ctx->started) {
                 poly1305_calc_powers_avx2(ctx);
+                ctx->started = 1;
+            }
             poly1305_blocks_avx2(ctx, m, want);
             m += want;
             bytes -= (word32)want;
@@ -902,6 +937,7 @@ int wc_Poly1305Update(Poly1305* ctx, const byte* m, word32 bytes)
             ctx->leftover += bytes;
         }
     }
+#endif
 
     return 0;
 }

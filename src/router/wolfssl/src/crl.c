@@ -1,6 +1,6 @@
 /* crl.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -19,6 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
 /*
 CRL Options:
@@ -32,11 +33,6 @@ CRL Options:
  *                         Return any errors encountered during loading CRL
  *                         from a directory.
 */
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-#include <wolfssl/wolfcrypt/settings.h>
 
 #ifndef WOLFCRYPT_ONLY
 #ifdef HAVE_CRL
@@ -87,6 +83,13 @@ int InitCRL(WOLFSSL_CRL* crl, WOLFSSL_CERT_MANAGER* cm)
         WOLFSSL_MSG("Init Mutex failed");
         return BAD_MUTEX_E;
     }
+#ifdef OPENSSL_ALL
+    {
+        int ret;
+        wolfSSL_RefInit(&crl->ref, &ret);
+        (void)ret;
+    }
+#endif
 
     return 0;
 }
@@ -213,7 +216,7 @@ static void CRL_Entry_free(CRL_Entry* crle, void* heap)
 
     WOLFSSL_ENTER("FreeCRL_Entry");
 
-    while (tmp) {
+    while (tmp != NULL) {
         next = tmp->next;
         XFREE(tmp, heap, DYNAMIC_TYPE_REVOKED);
         tmp = next;
@@ -241,11 +244,24 @@ void FreeCRL(WOLFSSL_CRL* crl, int dynamic)
 {
     CRL_Entry* tmp;
 
+    WOLFSSL_ENTER("FreeCRL");
+
     if (crl == NULL)
         return;
 
+#ifdef OPENSSL_ALL
+    {
+        int ret;
+        int doFree = 0;
+        wolfSSL_RefDec(&crl->ref, &doFree, &ret);
+        if (ret != 0)
+            WOLFSSL_MSG("Couldn't lock x509 mutex");
+        if (!doFree)
+            return;
+    }
+#endif
+
     tmp = crl->crlList;
-    WOLFSSL_ENTER("FreeCRL");
 #ifdef HAVE_CRL_MONITOR
     if (crl->monitors[0].path)
         XFREE(crl->monitors[0].path, crl->heap, DYNAMIC_TYPE_CRL_MONITOR);
@@ -898,7 +914,7 @@ static RevokedCert *DupRevokedCertList(RevokedCert* in, void* heap)
 static CRL_Entry* DupCRL_Entry(const CRL_Entry* ent, void* heap)
 {
     CRL_Entry *dupl;
-    const size_t copyOffset = OFFSETOF(CRL_Entry, verifyMutex) +
+    const size_t copyOffset = WC_OFFSETOF(CRL_Entry, verifyMutex) +
             sizeof(ent->verifyMutex);
 #ifdef CRL_STATIC_REVOKED_LIST
     if (ent->totalCerts > CRL_MAX_REVOKED_CERTS) {
@@ -916,9 +932,17 @@ static CRL_Entry* DupCRL_Entry(const CRL_Entry* ent, void* heap)
 
 #ifndef CRL_STATIC_REVOKED_LIST
     dupl->certs = DupRevokedCertList(ent->certs, heap);
+    if (ent->certs != NULL && dupl->certs == NULL) {
+        CRL_Entry_free(dupl, heap);
+        return NULL;
+    }
 #endif
 #ifdef OPENSSL_EXTRA
     dupl->issuer = wolfSSL_X509_NAME_dup(ent->issuer);
+    if (ent->issuer != NULL && dupl->issuer == NULL) {
+        CRL_Entry_free(dupl, heap);
+        return NULL;
+    }
 #endif
 
     if (!ent->verified) {
@@ -1027,6 +1051,7 @@ static int DupX509_CRL(WOLFSSL_X509_CRL *dupl, const WOLFSSL_X509_CRL* crl)
             if (dupl->monitors[0].path != NULL) {
                 XFREE(dupl->monitors[0].path, dupl->heap,
                         DYNAMIC_TYPE_CRL_MONITOR);
+                dupl->monitors[0].path = NULL;
             }
             return MEMORY_E;
         }
@@ -1034,6 +1059,8 @@ static int DupX509_CRL(WOLFSSL_X509_CRL *dupl, const WOLFSSL_X509_CRL* crl)
 #endif
 
     dupl->crlList = DupCRL_list(crl->crlList, dupl->heap);
+    if (dupl->crlList == NULL)
+        return MEMORY_E;
 #ifdef HAVE_CRL_IO
     dupl->crlIOCb = crl->crlIOCb;
 #endif
@@ -1775,6 +1802,10 @@ int LoadCRL(WOLFSSL_CRL* crl, const char* path, int type, int monitor)
             ret = ProcessFile(NULL, name, type, CRL_TYPE, NULL, 0, crl, VERIFY);
             if (ret != WOLFSSL_SUCCESS) {
                 WOLFSSL_MSG("CRL file load failed");
+                wc_ReadDirClose(readCtx);
+            #ifdef WOLFSSL_SMALL_STACK
+                XFREE(readCtx, crl->heap, DYNAMIC_TYPE_TMP_BUFFER);
+            #endif
                 return ret;
             }
         }

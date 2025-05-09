@@ -1,6 +1,6 @@
 /* renesas-tsip-crypt.h
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -98,13 +98,13 @@ enum {
 
 typedef enum {
     #ifdef WOLFSSL_RENESAS_TSIP_CRYPTONLY
-    TSIP_KEY_TYPE_RSA1024      = 1, /* TSIP_RSA1024 */
+    TSIP_KEY_TYPE_RSA1024      = 1, /* RSA 1024 */
     #endif
-    TSIP_KEY_TYPE_RSA2048      = 2, /* TSIP_RSA2048 */
-    TSIP_KEY_TYPE_RSA3072      = 3, /* TSIP_RSA3072 */
-    TSIP_KEY_TYPE_RSA4096      = 4, /* TSIP_RSA4096 */
-    TSIP_KEY_TYPE_ECDSAP256    = 5, /* TSIP_ECCP256 */
-    TSIP_KEY_TYPE_ECDSAP384    = 6, /* TSIP_ECCP384 */
+    TSIP_KEY_TYPE_RSA2048      = 2, /* RSA 2048 */
+    TSIP_KEY_TYPE_RSA3072      = 3, /* RSA 3072 */
+    TSIP_KEY_TYPE_RSA4096      = 4, /* RSA 4096 */
+    TSIP_KEY_TYPE_ECDSAP256    = 5, /* ECC P256 */
+    TSIP_KEY_TYPE_ECDSAP384    = 6, /* ECC P384 */
 } wolfssl_TSIP_KEY_TYPE;
 
 
@@ -301,10 +301,14 @@ typedef struct TsipUserCtx {
 /* for tsip crypt only mode */
 #ifdef WOLFSSL_RENESAS_TSIP_CRYPTONLY
 #ifndef NO_RSA
+    #if defined(TSIP_RSAES_1024) && TSIP_RSAES_1024 == 1
     tsip_rsa1024_private_key_index_t* rsa1024pri_keyIdx;
     tsip_rsa1024_public_key_index_t*  rsa1024pub_keyIdx;
+    #endif
+    #if defined(TSIP_RSAES_2048) && TSIP_RSAES_2048 == 1
     tsip_rsa2048_private_key_index_t* rsa2048pri_keyIdx;
     tsip_rsa2048_public_key_index_t*  rsa2048pub_keyIdx;
+    #endif
 #endif
 #ifdef HAVE_ECC
     #ifdef HAVE_ECC_SIGN

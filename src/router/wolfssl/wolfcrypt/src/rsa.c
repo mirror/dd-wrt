@@ -1,6 +1,6 @@
 /* rsa.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -26,12 +26,8 @@ This library provides the interface to the RSA.
 RSA keys can be used to encrypt, decrypt, sign and verify data.
 
 */
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
 
-#include <wolfssl/wolfcrypt/settings.h>
-#include <wolfssl/wolfcrypt/error-crypt.h>
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
 #ifndef NO_RSA
 
@@ -53,7 +49,7 @@ RSA keys can be used to encrypt, decrypt, sign and verify data.
 #if defined(WOLFSSL_XILINX_CRYPT_VERSAL)
 #include <xsecure_rsaclient.h>
 #endif
-#ifdef WOLFSSL_SE050
+#if defined(WOLFSSL_SE050) && !defined(WOLFSSL_SE050_NO_RSA)
 #include <wolfssl/wolfcrypt/port/nxp/se050_port.h>
 #endif
 #ifdef WOLFSSL_HAVE_SP_RSA
@@ -95,7 +91,6 @@ RSA Key Size Configuration:
 
 
 #include <wolfssl/wolfcrypt/random.h>
-#include <wolfssl/wolfcrypt/logging.h>
 #ifdef WOLF_CRYPTO_CB
     #include <wolfssl/wolfcrypt/cryptocb.h>
 #endif
@@ -298,7 +293,7 @@ int wc_InitRsaKey_Id(RsaKey* key, unsigned char* id, int len, void* heap,
                      int devId)
 {
     int ret = 0;
-#ifdef WOLFSSL_SE050
+#if defined(WOLFSSL_SE050) && !defined(WOLFSSL_SE050_NO_RSA)
     /* SE050 TLS users store a word32 at id, need to cast back */
     word32* keyPtr = NULL;
 #endif
@@ -312,7 +307,7 @@ int wc_InitRsaKey_Id(RsaKey* key, unsigned char* id, int len, void* heap,
     if (ret == 0 && id != NULL && len != 0) {
         XMEMCPY(key->id, id, (size_t)len);
         key->idLen = len;
-    #ifdef WOLFSSL_SE050
+    #if defined(WOLFSSL_SE050) && !defined(WOLFSSL_SE050_NO_RSA)
         /* Set SE050 ID from word32, populate RsaKey with public from SE050 */
         if (len == (int)sizeof(word32)) {
             keyPtr = (word32*)key->id;
@@ -521,7 +516,7 @@ static int cc310_RSA_GenerateKeyPair(RsaKey* key, int size, long e)
 }
 #endif /* WOLFSSL_CRYPTOCELL */
 
-#ifdef WOLFSSL_SE050
+#if defined(WOLFSSL_SE050) && !defined(WOLFSSL_SE050_NO_RSA)
 /* Use specified hardware key ID with RsaKey operations. Unlike devId,
  * keyId is a word32 so can handle key IDs larger than an int.
  *
@@ -646,6 +641,8 @@ static int _ifc_pairwise_consistency_test(RsaKey* key, WC_RNG* rng)
     ret = wc_RsaEncryptSize(key);
     if (ret < 0)
         return ret;
+    else if (ret == 0)
+        return BAD_FUNC_ARG;
     sigLen = (word32)ret;
 
     WOLFSSL_MSG("Doing RSA consistency test");
@@ -1756,6 +1753,7 @@ static int RsaUnPad_PSS(byte *pkcsBlock, unsigned int pkcsBlockLen,
     if (tmp == NULL) {
         return MEMORY_E;
     }
+    XMEMSET(tmp, 0, (size_t)maskLen);
 #endif
 
     if ((ret = RsaMGF(mgf, pkcsBlock + maskLen, (word32)hLen, tmp, (word32)maskLen,
@@ -3162,11 +3160,12 @@ static int wc_RsaFunction_ex(const byte* in, word32 inLen, byte* out,
                              int checkSmallCt)
 {
     int ret = 0;
-    (void)rng;
-    (void)checkSmallCt;
 #if defined(WOLF_CRYPTO_CB) && defined(WOLF_CRYPTO_CB_RSA_PAD)
     RsaPadding padding;
 #endif
+
+    (void)rng;
+    (void)checkSmallCt;
 
     if (key == NULL || in == NULL || inLen == 0 || out == NULL ||
             outLen == NULL || *outLen == 0 || type == RSA_TYPE_UNKNOWN) {
@@ -3365,7 +3364,7 @@ static int RsaPublicEncryptEx(const byte* in, word32 inLen, byte* out,
             return cc310_RsaSSL_Sign(in, inLen, out, outLen, key,
                                   cc310_hashModeRSA(hash, 0));
         }
-    #elif defined(WOLFSSL_SE050)
+    #elif defined(WOLFSSL_SE050) && !defined(WOLFSSL_SE050_NO_RSA)
         if (rsa_type == RSA_PUBLIC_ENCRYPT && pad_value == RSA_BLOCK_TYPE_2) {
             return se050_rsa_public_encrypt(in, inLen, out, outLen, key,
                                             rsa_type, pad_value, pad_type, hash,
@@ -3527,7 +3526,7 @@ static int RsaPrivateDecryptEx(const byte* in, word32 inLen, byte* out,
             return cc310_RsaSSL_Verify(in, inLen, out, key,
                                        cc310_hashModeRSA(hash, 0));
         }
-    #elif defined(WOLFSSL_SE050)
+    #elif defined(WOLFSSL_SE050) && !defined(WOLFSSL_SE050_NO_RSA)
         if (rsa_type == RSA_PRIVATE_DECRYPT && pad_value == RSA_BLOCK_TYPE_2) {
             ret = se050_rsa_private_decrypt(in, inLen, out, outLen, key,
                                             rsa_type, pad_value, pad_type, hash,
@@ -3600,6 +3599,9 @@ static int RsaPrivateDecryptEx(const byte* in, word32 inLen, byte* out,
         ret = wc_CryptoCb_RsaPad(in, inLen, out,
                             &outLen, rsa_type, key, rng, &padding);
         if (ret != WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE)) {
+            if (ret == 0) {
+                ret = (int)outLen;
+            }
             break;
         }
     }
@@ -4061,11 +4063,12 @@ int wc_RsaPSS_CheckPadding_ex2(const byte* in, word32 inSz, byte* sig,
     int ret = 0;
     byte sigCheckBuf[WC_MAX_DIGEST_SIZE*2 + RSA_PSS_PAD_SZ];
     byte *sigCheck = sigCheckBuf;
-
+    int digSz;
     (void)bits;
 
-    if (in == NULL || sig == NULL ||
-                               inSz != (word32)wc_HashGetDigestSize(hashType)) {
+    digSz = wc_HashGetDigestSize(hashType);
+
+    if (in == NULL || sig == NULL || digSz < 0 || inSz != (word32)digSz) {
         ret = BAD_FUNC_ARG;
     }
 
@@ -4780,7 +4783,8 @@ int wc_CheckProbablePrime(const byte* pRaw, word32 pRawSz,
 int wc_MakeRsaKey(RsaKey* key, int size, long e, WC_RNG* rng)
 {
 #ifndef WC_NO_RNG
-#if !defined(WOLFSSL_CRYPTOCELL) && !defined(WOLFSSL_SE050)
+#if !defined(WOLFSSL_CRYPTOCELL) && \
+    (!defined(WOLFSSL_SE050) || defined(WOLFSSL_SE050_NO_RSA))
 #ifdef WOLFSSL_SMALL_STACK
     mp_int *p = NULL;
     mp_int *q = NULL;
@@ -4823,7 +4827,7 @@ int wc_MakeRsaKey(RsaKey* key, int size, long e, WC_RNG* rng)
 #if defined(WOLFSSL_CRYPTOCELL)
     err = cc310_RSA_GenerateKeyPair(key, size, e);
     goto out;
-#elif defined(WOLFSSL_SE050)
+#elif defined(WOLFSSL_SE050) && !defined(WOLFSSL_SE050_NO_RSA)
     err = se050_rsa_create_key(key, size, e);
     goto out;
 #else
@@ -4859,17 +4863,17 @@ int wc_MakeRsaKey(RsaKey* key, int size, long e, WC_RNG* rng)
     #endif
     {
         err = wc_CryptoCb_MakeRsaKey(key, size, e, rng);
-        #ifndef WOLF_CRYPTO_CB_ONLY_RSA
-        if (err != WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE))
-            goto out;
-        /* fall-through when unavailable */
-        #endif
-        #ifdef WOLF_CRYPTO_CB_ONLY_RSA
-        if (err == WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE))
+    #ifdef WOLF_CRYPTO_CB_ONLY_RSA
+        if (err == WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE)) {
             err = NO_VALID_DEVID;
             goto out;
         }
-        #endif
+    #else
+        if (err != WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE)) {
+            goto out;
+        }
+        /* fall-through when unavailable */
+    #endif
     }
 #endif
 

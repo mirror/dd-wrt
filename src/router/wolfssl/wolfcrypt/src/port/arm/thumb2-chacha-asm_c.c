@@ -1,6 +1,6 @@
 /* thumb2-chacha-asm
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -21,13 +21,11 @@
 
 /* Generated using (from wolfssl):
  *   cd ../scripts
- *   ruby ./chacha/chacha.rb thumb2 ../wolfssl/wolfcrypt/src/port/arm/thumb2-chacha-asm.c
+ *   ruby ./chacha/chacha.rb \
+ *       thumb2 ../wolfssl/wolfcrypt/src/port/arm/thumb2-chacha-asm.c
  */
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif /* HAVE_CONFIG_H */
-#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/libwolfssl_sources_asm.h>
 #include <wolfssl/wolfcrypt/error-crypt.h>
 
 #ifdef WOLFSSL_ARMASM
@@ -72,7 +70,7 @@ void wc_chacha_setiv(word32* x, const byte* iv, word32 counter)
         "STM	r3, {r4, r5, r6}\n\t"
         : [x] "+r" (x), [iv] "+r" (iv), [counter] "+r" (counter)
         :
-        : "memory", "r3", "r4", "r5", "r6", "cc"
+        : "memory", "cc", "r3", "r4", "r5", "r6"
     );
 }
 
@@ -91,7 +89,13 @@ void wc_chacha_setkey(word32* x, const byte* key, word32 keySz)
     register word32* x __asm__ ("r0") = (word32*)x_p;
     register const byte* key __asm__ ("r1") = (const byte*)key_p;
     register word32 keySz __asm__ ("r2") = (word32)keySz_p;
-    register word32* L_chacha_thumb2_constants_c __asm__ ("r3") = (word32*)&L_chacha_thumb2_constants;
+    register word32* L_chacha_thumb2_constants_c __asm__ ("r3") =
+        (word32*)&L_chacha_thumb2_constants;
+
+#else
+    register word32* L_chacha_thumb2_constants_c =
+        (word32*)&L_chacha_thumb2_constants;
+
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -134,21 +138,16 @@ void wc_chacha_setkey(word32* x, const byte* key, word32 keySz)
     "L_chacha_thumb2_setkey_same_keyb_ytes_%=:\n\t"
 #endif
         "STM	%[x], {r3, r4, r5, r6}\n\t"
-#ifndef WOLFSSL_NO_VAR_ASSIGN_REG
         : [x] "+r" (x), [key] "+r" (key), [keySz] "+r" (keySz),
           [L_chacha_thumb2_constants] "+r" (L_chacha_thumb2_constants_c)
         :
-        : "memory", "r4", "r5", "r6", "r7", "cc"
-#else
-        : [x] "+r" (x), [key] "+r" (key), [keySz] "+r" (keySz)
-        : [L_chacha_thumb2_constants] "r" (L_chacha_thumb2_constants)
-        : "memory", "r4", "r5", "r6", "r7", "cc"
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+        : "memory", "cc", "r4", "r5", "r6", "r7"
     );
 }
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void wc_chacha_crypt_bytes(ChaCha* ctx_p, byte* c_p, const byte* m_p, word32 len_p)
+void wc_chacha_crypt_bytes(ChaCha* ctx_p, byte* c_p, const byte* m_p,
+    word32 len_p)
 #else
 void wc_chacha_crypt_bytes(ChaCha* ctx, byte* c, const byte* m, word32 len)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
@@ -177,7 +176,7 @@ void wc_chacha_crypt_bytes(ChaCha* ctx, byte* c, const byte* m, word32 len)
         "STRD	r4, r5, [sp, #16]\n\t"
         "STRD	r6, r7, [sp, #24]\n\t"
         /* Load x[0]..x[12] into registers. */
-        "LDM	lr, {%[ctx], %[c], %[m], %[len], r4, r5, r6, r7, r8, r9, r10, r11, r12}\n\t"
+        "LDM	lr, {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12}\n\t"
         /* 10x 2 full rounds to perform. */
         "MOV	lr, #0xa\n\t"
         "STR	lr, [sp, #48]\n\t"
@@ -448,7 +447,7 @@ void wc_chacha_crypt_bytes(ChaCha* ctx, byte* c, const byte* m, word32 len)
         "LDR	lr, [sp, #32]\n\t"
         "ADD	r12, lr, #0x44\n\t"
         "STM	r12!, {%[ctx], %[c], %[m], %[len], r4, r5, r6, r7}\n\t"
-        "LDM	sp, {%[ctx], %[c], %[m], %[len], r4, r5, r6, r7}\n\t"
+        "LDM	sp, {r0, r1, r2, r3, r4, r5, r6, r7}\n\t"
         "STM	r12, {%[ctx], %[c], %[m], %[len], r4, r5, r6, r7}\n\t"
         "LDRD	%[m], %[len], [sp, #40]\n\t"
         "LDR	%[c], [sp, #36]\n\t"
@@ -580,12 +579,14 @@ void wc_chacha_crypt_bytes(ChaCha* ctx, byte* c, const byte* m, word32 len)
         "ADD	sp, sp, #0x34\n\t"
         : [ctx] "+r" (ctx), [c] "+r" (c), [m] "+r" (m), [len] "+r" (len)
         :
-        : "memory", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "lr", "cc"
+        : "memory", "cc", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11",
+            "r12", "lr"
     );
 }
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void wc_chacha_use_over(byte* over_p, byte* output_p, const byte* input_p, word32 len_p)
+void wc_chacha_use_over(byte* over_p, byte* output_p, const byte* input_p,
+    word32 len_p)
 #else
 void wc_chacha_use_over(byte* over, byte* output, const byte* input, word32 len)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
@@ -719,9 +720,10 @@ void wc_chacha_use_over(byte* over, byte* output, const byte* input, word32 len)
 #else
     "L_chacha_thumb2_over_done_%=:\n\t"
 #endif
-        : [over] "+r" (over), [output] "+r" (output), [input] "+r" (input), [len] "+r" (len)
+        : [over] "+r" (over), [output] "+r" (output), [input] "+r" (input),
+          [len] "+r" (len)
         :
-        : "memory", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "cc"
+        : "memory", "cc", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11"
     );
 }
 

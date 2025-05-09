@@ -27,7 +27,7 @@
 
 /* camellia.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -52,18 +52,11 @@
  *  http://info.isl.ntt.co.jp/crypt/eng/camellia/specifications.html
  */
 
-
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
 #ifdef HAVE_CAMELLIA
 
 #include <wolfssl/wolfcrypt/camellia.h>
-#include <wolfssl/wolfcrypt/error-crypt.h>
-#include <wolfssl/wolfcrypt/logging.h>
 #ifdef NO_INLINE
     #include <wolfssl/wolfcrypt/misc.h>
 #else

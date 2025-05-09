@@ -1,6 +1,6 @@
 /* hash.h
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -81,16 +81,6 @@ enum wc_MACAlgorithm {
     rmd_mac,
     blake2b_mac,
     sm3_mac
-};
-
-enum wc_HashFlags {
-    WC_HASH_FLAG_NONE =     0x00000000,
-    WC_HASH_FLAG_WILLCOPY = 0x00000001, /* flag to indicate hash will be copied */
-    WC_HASH_FLAG_ISCOPY =   0x00000002, /* hash is copy */
-#ifdef WOLFSSL_SHA3
-    WC_HASH_SHA3_KECCAK256 =0x00010000, /* Older KECCAK256 */
-#endif
-    WOLF_ENUM_DUMMY_LAST_ELEMENT(WC_HASH)
 };
 
 /* hash union */

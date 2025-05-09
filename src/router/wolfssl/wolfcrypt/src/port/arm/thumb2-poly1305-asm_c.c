@@ -1,6 +1,6 @@
 /* thumb2-poly1305-asm
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -21,13 +21,11 @@
 
 /* Generated using (from wolfssl):
  *   cd ../scripts
- *   ruby ./poly1305/poly1305.rb thumb2 ../wolfssl/wolfcrypt/src/port/arm/thumb2-poly1305-asm.c
+ *   ruby ./poly1305/poly1305.rb \
+ *       thumb2 ../wolfssl/wolfcrypt/src/port/arm/thumb2-poly1305-asm.c
  */
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif /* HAVE_CONFIG_H */
-#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/libwolfssl_sources_asm.h>
 #include <wolfssl/wolfcrypt/error-crypt.h>
 
 #ifdef WOLFSSL_ARMASM
@@ -47,9 +45,11 @@
 #include <wolfssl/wolfcrypt/poly1305.h>
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void poly1305_blocks_thumb2_16(Poly1305* ctx_p, const byte* m_p, word32 len_p, int notLast_p)
+void poly1305_blocks_thumb2_16(Poly1305* ctx_p, const byte* m_p, word32 len_p,
+    int notLast_p)
 #else
-void poly1305_blocks_thumb2_16(Poly1305* ctx, const byte* m, word32 len, int notLast)
+void poly1305_blocks_thumb2_16(Poly1305* ctx, const byte* m, word32 len,
+    int notLast)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -195,7 +195,7 @@ void poly1305_blocks_thumb2_16(Poly1305* ctx, const byte* m, word32 len, int not
         "MOV	r12, %[ctx]\n\t"
         "MLA	r11, %[notLast], %[len], r11\n\t"
 #else
-        "LDM	%[m], {%[ctx], %[m], %[len], %[notLast]}\n\t"
+        "LDM	%[m], {r0, r1, r2, r3}\n\t"
         /* r[0] * h[0] */
         "UMULL	r10, r11, %[ctx], r4\n\t"
         /* r[1] * h[0] */
@@ -288,9 +288,11 @@ void poly1305_blocks_thumb2_16(Poly1305* ctx, const byte* m, word32 len, int not
     "L_poly1305_thumb2_16_done_%=:\n\t"
 #endif
         "ADD	sp, sp, #0x1c\n\t"
-        : [ctx] "+r" (ctx), [m] "+r" (m), [len] "+r" (len), [notLast] "+r" (notLast)
+        : [ctx] "+r" (ctx), [m] "+r" (m), [len] "+r" (len),
+          [notLast] "+r" (notLast)
         :
-        : "memory", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "lr", "cc"
+        : "memory", "cc", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11",
+            "r12", "lr"
     );
 }
 
@@ -307,7 +309,13 @@ void poly1305_set_key(Poly1305* ctx, const byte* key)
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
     register Poly1305* ctx __asm__ ("r0") = (Poly1305*)ctx_p;
     register const byte* key __asm__ ("r1") = (const byte*)key_p;
-    register word32* L_poly1305_thumb2_clamp_c __asm__ ("r2") = (word32*)&L_poly1305_thumb2_clamp;
+    register word32* L_poly1305_thumb2_clamp_c __asm__ ("r2") =
+        (word32*)&L_poly1305_thumb2_clamp;
+
+#else
+    register word32* L_poly1305_thumb2_clamp_c =
+        (word32*)&L_poly1305_thumb2_clamp;
+
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -342,16 +350,10 @@ void poly1305_set_key(Poly1305* ctx, const byte* key)
         "STM	r10, {r5, r6, r7, r8, r9}\n\t"
         /* Zero leftover */
         "STR	r5, [%[ctx], #52]\n\t"
-#ifndef WOLFSSL_NO_VAR_ASSIGN_REG
         : [ctx] "+r" (ctx), [key] "+r" (key),
           [L_poly1305_thumb2_clamp] "+r" (L_poly1305_thumb2_clamp_c)
         :
-        : "memory", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "cc"
-#else
-        : [ctx] "+r" (ctx), [key] "+r" (key)
-        : [L_poly1305_thumb2_clamp] "r" (L_poly1305_thumb2_clamp)
-        : "memory", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "cc"
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+        : "memory", "cc", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10"
     );
 }
 
@@ -412,7 +414,8 @@ void poly1305_final(Poly1305* ctx, byte* mac)
         "STM	r11, {r2, r3, r4, r5}\n\t"
         : [ctx] "+r" (ctx), [mac] "+r" (mac)
         :
-        : "memory", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "cc"
+        : "memory", "cc", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",
+            "r11"
     );
 }
 

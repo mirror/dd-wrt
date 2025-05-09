@@ -1,6 +1,6 @@
 /* sha3.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -19,12 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
-
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
 #if defined(WOLFSSL_SHA3) && !defined(WOLFSSL_XILINX_CRYPT) && \
    !defined(WOLFSSL_AFALG_XILINX_SHA3)
@@ -40,7 +35,6 @@
 #endif
 
 #include <wolfssl/wolfcrypt/sha3.h>
-#include <wolfssl/wolfcrypt/error-crypt.h>
 #include <wolfssl/wolfcrypt/hash.h>
 
 #ifdef WOLF_CRYPTO_CB
@@ -761,7 +755,9 @@ static int Sha3Update(wc_Sha3* sha3, const byte* data, word32 len, byte p)
     if (SHA3_BLOCK == sha3_block_avx2)
         RESTORE_VECTOR_REGISTERS();
 #endif
-    XMEMCPY(sha3->t, data, len);
+    if (len > 0) {
+        XMEMCPY(sha3->t, data, len);
+    }
     sha3->i = (byte)(sha3->i + len);
 
     return 0;
@@ -1499,6 +1495,10 @@ int wc_Shake128_Absorb(wc_Shake* shake, const byte* data, word32 len)
 {
     int ret;
 
+    if ((shake == NULL) || (data == NULL && len != 0)) {
+        return BAD_FUNC_ARG;
+    }
+
     ret = Sha3Update(shake, data, len, WC_SHA3_128_COUNT);
     if (ret == 0) {
         byte hash[1];
@@ -1526,6 +1526,9 @@ int wc_Shake128_Absorb(wc_Shake* shake, const byte* data, word32 len)
  */
 int wc_Shake128_SqueezeBlocks(wc_Shake* shake, byte* out, word32 blockCnt)
 {
+    if ((shake == NULL) || (out == NULL && blockCnt != 0)) {
+        return BAD_FUNC_ARG;
+    }
 #if defined(WOLFSSL_LINUXKM) && defined(USE_INTEL_SPEEDUP)
     if (SHA3_BLOCK == sha3_block_avx2)
         SAVE_VECTOR_REGISTERS(return _svr_ret;);
@@ -1644,6 +1647,10 @@ int wc_Shake256_Absorb(wc_Shake* shake, const byte* data, word32 len)
 {
     int ret;
 
+    if ((shake == NULL) || (data == NULL && len != 0)) {
+        return BAD_FUNC_ARG;
+    }
+
     ret = Sha3Update(shake, data, len, WC_SHA3_256_COUNT);
     if (ret == 0) {
         byte hash[1];
@@ -1664,6 +1671,9 @@ int wc_Shake256_Absorb(wc_Shake* shake, const byte* data, word32 len)
  */
 int wc_Shake256_SqueezeBlocks(wc_Shake* shake, byte* out, word32 blockCnt)
 {
+    if ((shake == NULL) || (out == NULL && blockCnt != 0)) {
+        return BAD_FUNC_ARG;
+    }
 #if defined(WOLFSSL_LINUXKM) && defined(USE_INTEL_SPEEDUP)
     if (SHA3_BLOCK == sha3_block_avx2)
         SAVE_VECTOR_REGISTERS(return _svr_ret;);

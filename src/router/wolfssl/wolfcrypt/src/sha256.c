@@ -1,6 +1,6 @@
 /* sha256.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -38,12 +38,7 @@ on the specific device platform.
 
 */
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-#include <wolfssl/wolfcrypt/settings.h>
-#include <wolfssl/wolfcrypt/types.h>
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
 /*
  * SHA256 Build Options:
@@ -77,7 +72,6 @@ on the specific device platform.
 #endif
 
 #include <wolfssl/wolfcrypt/sha256.h>
-#include <wolfssl/wolfcrypt/error-crypt.h>
 #include <wolfssl/wolfcrypt/cpuid.h>
 #include <wolfssl/wolfcrypt/hash.h>
 
@@ -126,8 +120,6 @@ on the specific device platform.
     /* Already brought in by sha256.h */
     /* #include <wolfssl/wolfcrypt/port/maxim/max3266x.h> */
 #else
-
-#include <wolfssl/wolfcrypt/logging.h>
 
 #ifdef NO_INLINE
     #include <wolfssl/wolfcrypt/misc.h>
@@ -209,7 +201,8 @@ on the specific device platform.
         #define SHA256_UPDATE_REV_BYTES(ctx) (sha256->sha_method == SHA256_C)
     #else
         #define SHA256_UPDATE_REV_BYTES(ctx) \
-            (!IS_INTEL_AVX1(intel_flags) && !IS_INTEL_AVX2(intel_flags))
+            (!IS_INTEL_AVX1(intel_flags) && !IS_INTEL_AVX2(intel_flags) && \
+             !IS_INTEL_SHA(intel_flags))
     #endif
 #elif defined(FREESCALE_MMCAU_SHA)
     #define SHA256_UPDATE_REV_BYTES(ctx)    0 /* reverse not needed on update */
@@ -1652,7 +1645,8 @@ static int InitSha256(wc_Sha256* sha256)
         #ifdef WC_C_DYNAMIC_FALLBACK
         if (sha256->sha_method != SHA256_C)
         #else
-        if (IS_INTEL_AVX1(intel_flags) || IS_INTEL_AVX2(intel_flags))
+        if (IS_INTEL_AVX1(intel_flags) || IS_INTEL_AVX2(intel_flags) ||
+            IS_INTEL_SHA(intel_flags))
         #endif
         #endif
         {
@@ -2590,7 +2584,7 @@ int wc_Sha256Copy(wc_Sha256* src, wc_Sha256* dst)
 #endif
 
 #ifdef WOLFSSL_HASH_FLAGS
-     dst->flags |= WC_HASH_FLAG_ISCOPY;
+    dst->flags |= WC_HASH_FLAG_ISCOPY;
 #endif
 
 #if defined(WOLFSSL_HASH_KEEP)

@@ -1,6 +1,6 @@
 /* misc.h
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -134,6 +134,9 @@ WOLFSSL_LOCAL int CharIsWhiteSpace(char ch);
 WOLFSSL_LOCAL byte ctMaskGT(int a, int b);
 WOLFSSL_LOCAL byte ctMaskGTE(int a, int b);
 WOLFSSL_LOCAL int  ctMaskIntGTE(int a, int b);
+#ifdef WORD64_AVAILABLE
+WOLFSSL_LOCAL word32 ctMaskWord32GTE(word32 a, word32 b);
+#endif
 WOLFSSL_LOCAL byte ctMaskLT(int a, int b);
 WOLFSSL_LOCAL byte ctMaskLTE(int a, int b);
 WOLFSSL_LOCAL byte ctMaskEq(int a, int b);

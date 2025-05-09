@@ -1,6 +1,6 @@
 /* testsuite.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -52,7 +52,9 @@
 #include <examples/server/server.h>
 #include <examples/client/client.h>
 
-#include "tests/utils.h"
+#include <testsuite/utils.h>
+/* include source file to not change all the testsuite build systems */
+#include <testsuite/utils.c>
 
 #ifndef NO_SHA256
 void file_test(const char* file, byte* check);

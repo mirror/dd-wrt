@@ -1,6 +1,6 @@
 /* client.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -431,16 +431,40 @@ static void SetKeyShare(WOLFSSL* ssl, int onlyKeyShare, int useX25519,
             if (XSTRCMP(pqcAlg, "P384_ML_KEM_768") == 0) {
                 group = WOLFSSL_P384_ML_KEM_768;
             }
+            else if (XSTRCMP(pqcAlg, "P256_ML_KEM_768") == 0) {
+                group = WOLFSSL_P256_ML_KEM_768;
+            }
             else
         #endif
         #ifndef WOLFSSL_NO_ML_KEM_1024
             if (XSTRCMP(pqcAlg, "P521_ML_KEM_1024") == 0) {
                 group = WOLFSSL_P521_ML_KEM_1024;
             }
+            else if (XSTRCMP(pqcAlg, "P384_ML_KEM_1024") == 0) {
+                group = WOLFSSL_P384_ML_KEM_1024;
+            }
+            else
+        #endif
+        #if !defined(WOLFSSL_NO_ML_KEM_512) && defined(HAVE_CURVE25519)
+            if (XSTRCMP(pqcAlg, "X25519_ML_KEM_512") == 0) {
+                group = WOLFSSL_X25519_ML_KEM_512;
+            }
+            else
+        #endif
+        #if !defined(WOLFSSL_NO_ML_KEM_768) && defined(HAVE_CURVE25519)
+            if (XSTRCMP(pqcAlg, "X25519_ML_KEM_768") == 0) {
+                group = WOLFSSL_X25519_ML_KEM_768;
+            }
+            else
+        #endif
+        #if !defined(WOLFSSL_NO_ML_KEM_768) && defined(HAVE_CURVE448)
+            if (XSTRCMP(pqcAlg, "X448_ML_KEM_768") == 0) {
+                group = WOLFSSL_X448_ML_KEM_768;
+            }
             else
         #endif
     #endif /* WOLFSSL_NO_ML_KEM */
-    #ifdef WOLFSSL_KYBER_ORIGINAL
+    #ifdef WOLFSSL_MLKEM_KYBER
         #ifndef WOLFSSL_NO_KYBER512
             if (XSTRCMP(pqcAlg, "KYBER_LEVEL1") == 0) {
                 group = WOLFSSL_KYBER_LEVEL1;
@@ -469,6 +493,9 @@ static void SetKeyShare(WOLFSSL* ssl, int onlyKeyShare, int useX25519,
             if (XSTRCMP(pqcAlg, "P384_KYBER_LEVEL3") == 0) {
                 group = WOLFSSL_P384_KYBER_LEVEL3;
             }
+            else if (XSTRCMP(pqcAlg, "P256_KYBER_LEVEL3") == 0) {
+                group = WOLFSSL_P256_KYBER_LEVEL3;
+            }
             else
         #endif
         #ifndef WOLFSSL_NO_KYBER1024
@@ -477,7 +504,25 @@ static void SetKeyShare(WOLFSSL* ssl, int onlyKeyShare, int useX25519,
             }
             else
         #endif
-    #endif /* WOLFSSL_KYBER_ORIGINAL */
+        #if !defined(WOLFSSL_NO_KYBER512) && defined(HAVE_CURVE25519)
+            if (XSTRCMP(pqcAlg, "X25519_KYBER_LEVEL1") == 0) {
+                group = WOLFSSL_X25519_KYBER_LEVEL1;
+            }
+            else
+        #endif
+        #if !defined(WOLFSSL_NO_KYBER768) && defined(HAVE_CURVE25519)
+            if (XSTRCMP(pqcAlg, "X25519_KYBER_LEVEL3") == 0) {
+                group = WOLFSSL_X25519_KYBER_LEVEL3;
+            }
+            else
+        #endif
+        #if !defined(WOLFSSL_NO_KYBER768) && defined(HAVE_CURVE448)
+            if (XSTRCMP(pqcAlg, "X448_KYBER_LEVEL3") == 0) {
+                group = WOLFSSL_X448_KYBER_LEVEL3;
+            }
+            else
+        #endif
+    #endif /* WOLFSSL_MLKEM_KYBER */
             {
                 err_sys("invalid post-quantum KEM specified");
             }
@@ -1378,12 +1423,18 @@ static const char* client_usage_msg[][78] = {
 #ifndef WOLFSSL_NO_ML_KEM
             "            ML_KEM_512, ML_KEM_768, ML_KEM_1024, P256_ML_KEM_512,"
             "\n"
-            "            P384_ML_KEM_768, P521_ML_KEM_1024\n"
+            "            P384_ML_KEM_768, P256_ML_KEM_768, P521_ML_KEM_1024,\n"
+            "            P384_ML_KEM_1024, X25519_ML_KEM_512, "
+            "X25519_ML_KEM_768,\n"
+            "            X448_ML_KEM_768\n"
 #endif
-#ifdef WOLFSSL_KYBER_ORIGINAL
+#ifdef WOLFSSL_MLKEM_KYBER
             "            KYBER_LEVEL1, KYBER_LEVEL3, KYBER_LEVEL5, "
             "P256_KYBER_LEVEL1,\n"
-            "            P384_KYBER_LEVEL3, P521_KYBER_LEVEL5\n"
+            "            P384_KYBER_LEVEL3, P256_KYBER_LEVEL3, "
+            "P521_KYBER_LEVEL5,\n"
+            "            X25519_KYBER_LEVEL1, X25519_KYBER_LEVEL3, "
+            "X448_KYBER_LEVEL3\n"
 #endif
             "",
                                                                         /* 69 */
@@ -1628,7 +1679,7 @@ static const char* client_usage_msg[][78] = {
             "\n"
             "            P384_ML_KEM_768, P521_ML_KEM_1024\n"
 #endif
-#ifdef WOLFSSL_KYBER_ORIGINAL
+#ifdef WOLFSSL_MLKEM_KYBER
             "            KYBER_LEVEL1, KYBER_LEVEL3, KYBER_LEVEL5, "
             "P256_KYBER_LEVEL1,\n"
             "            P384_KYBER_LEVEL3, P521_KYBER_LEVEL5\n"
@@ -2909,13 +2960,16 @@ THREAD_RETURN WOLFSSL_THREAD client_test(void* args)
                 break;
 #endif
 
-#if defined(WOLFSSL_TLS13) &&  defined(HAVE_SUPPORTED_CURVES) && \
-    defined(HAVE_PQC)
+#if defined(HAVE_PQC)
             case 259:
+            {
                 usePqc = 1;
+    #if defined(WOLFSSL_TLS13) &&  defined(HAVE_SUPPORTED_CURVES)
                 onlyKeyShare = 3;
+    #endif
                 pqcAlg = myoptarg;
-                break;
+            }
+            break;
 #endif
 #ifdef WOLFSSL_SYS_CA_CERTS
             case 263:
@@ -3280,7 +3334,7 @@ THREAD_RETURN WOLFSSL_THREAD client_test(void* args)
 #ifdef WOLFSSL_SRTP
     if (dtlsSrtpProfiles != NULL) {
         if (wolfSSL_CTX_set_tlsext_use_srtp(ctx, dtlsSrtpProfiles)
-                                                           != WOLFSSL_SUCCESS) {
+                                                           != 0) {
             err_sys("unable to set DTLS SRTP profile");
         }
     }

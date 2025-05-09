@@ -1,6 +1,6 @@
 /* wifi_connect.h
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -109,7 +109,7 @@
     ** the config you want - ie #define EXAMPLE_WIFI_SSID "mywifissid"
     */
     #if defined(CONFIG_ESP_WIFI_SSID)
-        /* tyically from ESP32 with ESP-IDF v4 to v5 */
+        /* typically from ESP32 with ESP-IDF v4 to v5 */
         #define EXAMPLE_ESP_WIFI_SSID CONFIG_ESP_WIFI_SSID
     #elif defined(CONFIG_EXAMPLE_WIFI_SSID)
         /* typically from ESP8266 rtos-sdk/v3.4 */

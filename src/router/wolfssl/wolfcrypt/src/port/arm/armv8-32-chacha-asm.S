@@ -1,6 +1,6 @@
 /* armv8-32-chacha-asm
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -25,10 +25,7 @@
  *       ../wolfssl/wolfcrypt/src/port/arm/armv8-32-chacha-asm.S
  */
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif /* HAVE_CONFIG_H */
-#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/libwolfssl_sources_asm.h>
 
 #ifdef WOLFSSL_ARMASM
 #if !defined(__aarch64__) && !defined(WOLFSSL_ARMASM_THUMB2)

@@ -1,6 +1,6 @@
 /* ssl_certman.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -19,11 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
 #include <wolfssl/internal.h>
 
@@ -401,6 +397,7 @@ WOLFSSL_STACK* wolfSSL_CertManagerGetCerts(WOLFSSL_CERT_MANAGER* cm)
         /* Decode certificate. */
         if ((!err) && (wolfSSL_sk_X509_push(sk, x509) <= 0)) {
             wolfSSL_X509_free(x509);
+            x509 = NULL;
             err = 1;
         }
     }

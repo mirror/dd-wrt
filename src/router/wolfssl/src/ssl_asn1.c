@@ -1,6 +1,6 @@
 /* ssl_asn1.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -19,13 +19,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
-#include <wolfssl/wolfcrypt/settings.h>
-
- #include <wolfssl/internal.h>
+#include <wolfssl/internal.h>
 #ifndef WC_NO_RNG
     #include <wolfssl/wolfcrypt/random.h>
 #endif
@@ -797,9 +793,18 @@ static int wolfssl_asn1_bit_string_grow(WOLFSSL_ASN1_BIT_STRING* bitStr,
     int ret = 1;
     byte* tmp;
 
+#ifdef WOLFSSL_NO_REALLOC
+    tmp = (byte*)XMALLOC((size_t)len, NULL, DYNAMIC_TYPE_OPENSSL);
+    if (tmp != NULL && bitStr->data != NULL) {
+       XMEMCPY(tmp, bitStr->data, bitStr->length);
+       XFREE(bitStr->data, NULL, DYNAMIC_TYPE_OPENSSL);
+       bitStr->data = NULL;
+    }
+#else
     /* Realloc to length required. */
     tmp = (byte*)XREALLOC(bitStr->data, (size_t)len, NULL,
         DYNAMIC_TYPE_OPENSSL);
+#endif
     if (tmp == NULL) {
         ret = 0;
     }
@@ -1084,36 +1089,36 @@ static int wolfssl_asn1_integer_require_len(WOLFSSL_ASN1_INTEGER* a, int len,
  */
 WOLFSSL_ASN1_INTEGER* wolfSSL_ASN1_INTEGER_dup(const WOLFSSL_ASN1_INTEGER* src)
 {
-    WOLFSSL_ASN1_INTEGER* dup = NULL;
+    WOLFSSL_ASN1_INTEGER* dst = NULL;
 
     WOLFSSL_ENTER("wolfSSL_ASN1_INTEGER_dup");
 
     /* Check for object to duplicate. */
     if (src != NULL) {
         /* Create a new ASN.1 INTEGER object to be copied into. */
-        dup = wolfSSL_ASN1_INTEGER_new();
+        dst = wolfSSL_ASN1_INTEGER_new();
     }
     /* Check for object to copy into. */
-    if (dup != NULL) {
+    if (dst != NULL) {
         /* Copy simple fields. */
-        dup->length   = src->length;
-        dup->negative = src->negative;
-        dup->type     = src->type;
+        dst->length   = src->length;
+        dst->negative = src->negative;
+        dst->type     = src->type;
 
         if (!src->isDynamic) {
             /* Copy over data from/to fixed buffer. */
-            XMEMCPY(dup->intData, src->intData, WOLFSSL_ASN1_INTEGER_MAX);
+            XMEMCPY(dst->intData, src->intData, WOLFSSL_ASN1_INTEGER_MAX);
         }
-        else if (wolfssl_asn1_integer_require_len(dup, src->length, 0) == 0) {
-            wolfSSL_ASN1_INTEGER_free(dup);
-            dup = NULL;
+        else if (wolfssl_asn1_integer_require_len(dst, src->length, 0) == 0) {
+            wolfSSL_ASN1_INTEGER_free(dst);
+            dst = NULL;
         }
         else {
-            XMEMCPY(dup->data, src->data, (size_t)src->length);
+            XMEMCPY(dst->data, src->data, (size_t)src->length);
         }
     }
 
-    return dup;
+    return dst;
 }
 #endif /* OPENSSL_EXTRA || WOLFSSL_WPAS_SMALL */
 
@@ -3814,7 +3819,6 @@ static int wolfssl_asn1_time_to_secs(const WOLFSSL_ASN1_TIME* t,
  * @param [in]  from  ASN.1 TIME object as start time.
  * @param [in]  to    ASN.1 TIME object as end time.
  * @return  1 on success.
- * @return  0 when days or secs is NULL.
  * @return  0 when conversion of time fails.
  */
 int wolfSSL_ASN1_TIME_diff(int *days, int *secs, const WOLFSSL_ASN1_TIME *from,
@@ -3824,21 +3828,15 @@ int wolfSSL_ASN1_TIME_diff(int *days, int *secs, const WOLFSSL_ASN1_TIME *from,
 
     WOLFSSL_ENTER("wolfSSL_ASN1_TIME_diff");
 
-    /* Validate parameters. */
-    if (days == NULL) {
-        WOLFSSL_MSG("days is NULL");
-        ret = 0;
+    if ((from == NULL) && (to == NULL)) {
+        if (days != NULL) {
+            *days = 0;
+        }
+        if (secs != NULL) {
+            *secs = 0;
+        }
     }
-    if ((ret == 1) && (secs == NULL)) {
-        WOLFSSL_MSG("secs is NULL");
-        ret = 0;
-    }
-
-    if ((ret == 1) && ((from == NULL) && (to == NULL))) {
-        *days = 0;
-        *secs = 0;
-    }
-    else if (ret == 1) {
+    else {
         const long long SECS_PER_DAY = 24 * 60 * 60;
         long long fromSecs;
         long long toSecs = 0;
@@ -3849,8 +3847,13 @@ int wolfSSL_ASN1_TIME_diff(int *days, int *secs, const WOLFSSL_ASN1_TIME *from,
         }
         if (ret == 1) {
             long long diffSecs = toSecs - fromSecs;
-            *days = (int) (diffSecs / SECS_PER_DAY);
-            *secs = (int) (diffSecs - ((long long)*days * SECS_PER_DAY));
+            if (days != NULL) {
+                *days = (int) (diffSecs / SECS_PER_DAY);
+            }
+            if (secs != NULL) {
+                *secs = (int) (diffSecs -
+                        ((long long)(diffSecs / SECS_PER_DAY) * SECS_PER_DAY));
+            }
         }
     }
 

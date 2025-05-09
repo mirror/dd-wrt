@@ -1,6 +1,6 @@
 /* thumb2-poly1305-asm
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -21,13 +21,11 @@
 
 /* Generated using (from wolfssl):
  *   cd ../scripts
- *   ruby ./poly1305/poly1305.rb thumb2 ../wolfssl/wolfcrypt/src/port/arm/thumb2-poly1305-asm.S
+ *   ruby ./poly1305/poly1305.rb \
+ *       thumb2 ../wolfssl/wolfcrypt/src/port/arm/thumb2-poly1305-asm.S
  */
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif /* HAVE_CONFIG_H */
-#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/libwolfssl_sources_asm.h>
 
 #ifdef WOLFSSL_ARMASM
 #ifdef WOLFSSL_ARMASM_THUMB2

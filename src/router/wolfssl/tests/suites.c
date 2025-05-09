@@ -1,6 +1,6 @@
 /* suites.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -168,7 +168,7 @@ static int IsValidCipherSuite(const char* line, char *suite, size_t suite_spc)
     return valid;
 }
 
-#ifdef WOLFSSL_HAVE_KYBER
+#if defined(WOLFSSL_HAVE_MLKEM)
 static int IsKyberLevelAvailable(const char* line)
 {
     int available = 0;
@@ -201,7 +201,7 @@ static int IsKyberLevelAvailable(const char* line)
         }
         #endif
     #endif
-    #ifdef WOLFSSL_KYBER_ORIGINAL
+    #ifdef WOLFSSL_MLKEM_KYBER
         if ((size_t)end - (size_t)begin == 12) {
         #ifndef WOLFSSL_NO_KYBER512
             if (XSTRNCMP(begin, "KYBER_LEVEL1", 12) == 0) {
@@ -222,7 +222,14 @@ static int IsKyberLevelAvailable(const char* line)
     #endif
     }
 
+#if defined(WOLFSSL_MLKEM_NO_MAKE_KEY) || \
+    defined(WOLFSSL_MLKEM_NO_ENCAPSULATE) || \
+    defined(WOLFSSL_MLKEM_NO_DECAPSULATE)
+    (void)available;
+    return begin == NULL;
+#else
     return (begin == NULL) || available;
+#endif
 }
 #endif
 
@@ -361,8 +368,8 @@ static int execute_test_case(int svr_argc, char** svr_argv,
     func_args cliArgs = {0, NULL, 0, NULL, NULL, NULL};
     func_args svrArgs = {0, NULL, 0, NULL, NULL, NULL};
 #else
-    func_args cliArgs = {cli_argc, cli_argv, 0, NULL, NULL};
-    func_args svrArgs = {svr_argc, svr_argv, 0, NULL, NULL};
+    func_args cliArgs = {0, NULL, 0, NULL, NULL};
+    func_args svrArgs = {0, NULL, 0, NULL, NULL};
 #endif
 
     tcp_ready   ready;
@@ -379,17 +386,14 @@ static int execute_test_case(int svr_argc, char** svr_argv,
 #ifdef WOLFSSL_NO_CLIENT_AUTH
     int         reqClientCert;
 #endif
-
 #if defined(WOLFSSL_SRTP) && defined(WOLFSSL_COND)
     srtp_test_helper srtp_helper;
 #endif
 
-#if defined(WOLFSSL_TIRTOS) || defined(WOLFSSL_SRTP)
     cliArgs.argc = cli_argc;
     cliArgs.argv = cli_argv;
     svrArgs.argc = svr_argc;
     svrArgs.argv = svr_argv;
-#endif
 
     /* Is Valid Cipher and Version Checks */
     /* build command list for the Is checks below */
@@ -410,7 +414,7 @@ static int execute_test_case(int svr_argc, char** svr_argv,
         #endif
         return NOT_BUILT_IN;
     }
-#ifdef WOLFSSL_HAVE_KYBER
+#ifdef WOLFSSL_HAVE_MLKEM
     if (!IsKyberLevelAvailable(commandLine)) {
         #ifdef DEBUG_SUITE_TESTS
             printf("Kyber level not supported in build: %s\n", commandLine);
@@ -988,9 +992,8 @@ int SuiteTest(int argc, char** argv)
         args.return_code = EXIT_FAILURE;
         goto exit;
     }
-    #ifdef HAVE_LIBOQS
-    /* add TLSv13 pq tests */
-    XSTRLCPY(argv0[1], "tests/test-tls13-pq-2.conf", sizeof(argv0[1]));
+    /* add TLSv13 pq hybrid tests */
+    XSTRLCPY(argv0[1], "tests/test-tls13-pq-hybrid.conf", sizeof(argv0[1]));
     printf("starting TLSv13 post-quantum groups tests\n");
     test_harness(&args);
     if (args.return_code != 0) {
@@ -998,34 +1001,20 @@ int SuiteTest(int argc, char** argv)
         args.return_code = EXIT_FAILURE;
         goto exit;
     }
-    #endif
-    #endif
-    #ifdef HAVE_PQC
-    /* add TLSv13 pq tests */
-    XSTRLCPY(argv0[1], "tests/test-tls13-pq.conf", sizeof(argv0[1]));
-    printf("starting TLSv13 post-quantum groups tests\n");
-    test_harness(&args);
-    if (args.return_code != 0) {
-        printf("error from script %d\n", args.return_code);
-        args.return_code = EXIT_FAILURE;
-        goto exit;
-    }
-    #ifdef HAVE_LIBOQS
-    /* add TLSv13 pq tests */
-    XSTRLCPY(argv0[1], "tests/test-tls13-pq-2.conf", sizeof(argv0[1]));
-    printf("starting TLSv13 post-quantum groups tests\n");
-    test_harness(&args);
-    if (args.return_code != 0) {
-        printf("error from script %d\n", args.return_code);
-        args.return_code = EXIT_FAILURE;
-        goto exit;
-    }
-    #endif
     #endif
     #if defined(HAVE_PQC) && defined(WOLFSSL_DTLS13)
     /* add DTLSv13 pq tests */
     XSTRLCPY(argv0[1], "tests/test-dtls13-pq.conf", sizeof(argv0[1]));
     printf("starting DTLSv13 post-quantum groups tests\n");
+    test_harness(&args);
+    if (args.return_code != 0) {
+        printf("error from script %d\n", args.return_code);
+        args.return_code = EXIT_FAILURE;
+        goto exit;
+    }
+    /* add DTLSv13 pq hybrid tests */
+    XSTRLCPY(argv0[1], "tests/test-dtls13-pq-hybrid.conf", sizeof(argv0[1]));
+    printf("starting DTLSv13 post-quantum 2 groups tests\n");
     test_harness(&args);
     if (args.return_code != 0) {
         printf("error from script %d\n", args.return_code);
@@ -1042,20 +1031,8 @@ int SuiteTest(int argc, char** argv)
         args.return_code = EXIT_FAILURE;
         goto exit;
     }
-    #endif
-    #ifdef HAVE_LIBOQS
-    /* add DTLSv13 pq 2 tests */
-    XSTRLCPY(argv0[1], "tests/test-dtls13-pq-2.conf", sizeof(argv0[1]));
-    printf("starting DTLSv13 post-quantum 2 groups tests\n");
-    test_harness(&args);
-    if (args.return_code != 0) {
-        printf("error from script %d\n", args.return_code);
-        args.return_code = EXIT_FAILURE;
-        goto exit;
-    }
-    #ifdef WOLFSSL_DTLS_CH_FRAG
-    /* add DTLSv13 pq 2 frag tests */
-    XSTRLCPY(argv0[1], "tests/test-dtls13-pq-2-frag.conf", sizeof(argv0[1]));
+    /* add DTLSv13 pq hybrid frag tests */
+    XSTRLCPY(argv0[1], "tests/test-dtls13-pq-hybrid-frag.conf", sizeof(argv0[1]));
     printf("starting DTLSv13 post-quantum 2 groups tests with fragmentation\n");
     test_harness(&args);
     if (args.return_code != 0) {
@@ -1063,7 +1040,6 @@ int SuiteTest(int argc, char** argv)
         args.return_code = EXIT_FAILURE;
         goto exit;
     }
-    #endif
     #endif
     #endif
 #endif

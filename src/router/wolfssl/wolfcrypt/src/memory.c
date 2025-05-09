@@ -1,6 +1,6 @@
 /* memory.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -19,20 +19,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
+/* inhibit "#undef current" in linuxkm_wc_port.h, included from wc_port.h,
+ * because needed in linuxkm_memory.c, included below.
+ */
+#define WOLFSSL_LINUXKM_NEED_LINUX_CURRENT
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-#ifdef WOLFSSL_LINUXKM
-    /* inhibit "#undef current" in linuxkm_wc_port.h, included from wc_port.h,
-     * because needed in linuxkm_memory.c, included below.
-     */
-    #define WOLFSSL_NEED_LINUX_CURRENT
-#endif
-
-#include <wolfssl/wolfcrypt/types.h>
-#include <wolfssl/wolfcrypt/error-crypt.h>
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
 /*
 Possible memory options:
@@ -81,8 +73,6 @@ void *z_realloc(void *ptr, size_t size)
 #ifdef USE_WOLFSSL_MEMORY
 
 #include <wolfssl/wolfcrypt/memory.h>
-#include <wolfssl/wolfcrypt/error-crypt.h>
-#include <wolfssl/wolfcrypt/logging.h>
 
 #if defined(WOLFSSL_DEBUG_MEMORY) && defined(WOLFSSL_DEBUG_MEMORY_PRINT)
 #include <stdio.h>
@@ -1764,7 +1754,7 @@ WOLFSSL_LOCAL int SAVE_VECTOR_REGISTERS2_fuzzer(void) {
     }
     (void)lrand48_r(&wc_svr_fuzzing_state, &result);
     if (result & 1)
-        return IO_FAILED_E;
+        return WC_NO_ERR_TRACE(IO_FAILED_E);
     else
         return 0;
 }
@@ -1804,7 +1794,7 @@ WOLFSSL_LOCAL int SAVE_VECTOR_REGISTERS2_fuzzer(void) {
 
     balance_bit = !balance_bit;
 
-    return ((prn & 1) ^ balance_bit) ? IO_FAILED_E : 0;
+    return ((prn & 1) ^ balance_bit) ? WC_NO_ERR_TRACE(IO_FAILED_E) : 0;
 }
 
 #endif /* !HAVE_THREAD_LS */

@@ -1,6 +1,6 @@
 /* sha512.h
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -224,7 +224,7 @@ struct wc_Sha512 {
 
 #endif /* HAVE_FIPS */
 
-#ifdef WOLFSSL_SHA512
+#if defined(WOLFSSL_SHA512) || defined(WOLFSSL_SHA384)
 
 #ifdef WOLFSSL_ARMASM
 #ifdef __aarch64__

@@ -1,6 +1,6 @@
 /* quic.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -19,14 +19,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
   /* Name change compatibility layer no longer needs to be included here */
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-#include <wolfssl/wolfcrypt/settings.h>
 #ifdef NO_INLINE
     #include <wolfssl/wolfcrypt/misc.h>
 #else
@@ -154,17 +150,15 @@ static int quic_record_append(WOLFSSL *ssl, QuicRecord *qr, const uint8_t *data,
         }
     }
 
-    if (quic_record_complete(qr) || len == 0) {
-        return 0;
+    if (!quic_record_complete(qr) && len != 0) {
+        missing = qr->len - qr->end;
+        if (len > missing) {
+            len = missing;
+        }
+        XMEMCPY(qr->data + qr->end, data, len);
+        qr->end += (word32)len;
+        consumed += len;
     }
-
-    missing = qr->len - qr->end;
-    if (len > missing) {
-        len = missing;
-    }
-    XMEMCPY(qr->data + qr->end, data, len);
-    qr->end += (word32)len;
-    consumed += len;
 
 cleanup:
     *pconsumed = (ret == WOLFSSL_SUCCESS) ? consumed : 0;
@@ -927,8 +921,12 @@ int wolfSSL_quic_forward_secrets(WOLFSSL* ssl, int ktype, int side)
         goto cleanup;
     }
 
-    ret = !ssl->quic.method->set_encryption_secrets(
-        ssl, level, rx_secret, tx_secret, ssl->specs.hash_size);
+    if(!ssl->quic.method->set_encryption_secrets(
+        ssl, level, rx_secret, tx_secret, ssl->specs.hash_size)) {
+        WOLFSSL_MSG("WOLFSSL_QUIC_FORWARD_SECRETS failed");
+        ret = WOLFSSL_FATAL_ERROR;
+        goto cleanup;
+    }
 
     /* Having installed the secrets, any future read/write will happen
      * at the level. Except early data, which is detected on the record

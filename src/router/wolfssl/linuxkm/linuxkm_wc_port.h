@@ -1,6 +1,6 @@
 /* linuxkm_wc_port.h
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -28,6 +28,11 @@
 
     #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0)
         #error Unsupported kernel.
+    #endif
+
+    #if defined(HAVE_FIPS) && defined(LINUXKM_LKCAPI_REGISTER_AESXTS) && defined(CONFIG_CRYPTO_MANAGER_EXTRA_TESTS)
+        /* CONFIG_CRYPTO_MANAGER_EXTRA_TESTS expects AES-XTS-384 to work, even when CONFIG_CRYPTO_FIPS, but FIPS 140-3 only allows AES-XTS-256 and AES-XTS-512. */
+        #error CONFIG_CRYPTO_MANAGER_EXTRA_TESTS is incompatible with FIPS wolfCrypt AES-XTS -- please reconfigure the target kernel to disable CONFIG_CRYPTO_MANAGER_EXTRA_TESTS.
     #endif
 
     #ifdef HAVE_CONFIG_H
@@ -132,7 +137,13 @@
              * fortify_panic().
              */
             extern void __my_fortify_panic(const char *name) __noreturn __cold;
-            #define fortify_panic __my_fortify_panic
+            #if LINUX_VERSION_CODE >= KERNEL_VERSION(6,9,0)
+                /* see linux 3d965b33e40d9 */
+                #define fortify_panic(func, write, avail, size, retfail) \
+                        __my_fortify_panic(#func)
+            #else
+                #define fortify_panic __my_fortify_panic
+            #endif
         #endif
 
         /* the _FORTIFY_SOURCE macros and implementations for several string
@@ -282,7 +293,10 @@
         #include <linux/scatterlist.h>
         #include <crypto/scatterwalk.h>
         #include <crypto/internal/aead.h>
+        #include <crypto/internal/hash.h>
         #include <crypto/internal/skcipher.h>
+        #include <crypto/internal/akcipher.h>
+        #include <crypto/internal/kpp.h>
 
         /* the LKCAPI assumes that expanded encrypt and decrypt keys will stay
          * loaded simultaneously, and the Linux in-tree implementations have two
@@ -490,10 +504,6 @@
 
     #if defined(__PIE__) && !defined(USE_WOLFSSL_LINUXKM_PIE_REDIRECT_TABLE)
         #error "compiling -fPIE requires PIE redirect table."
-    #endif
-
-    #if defined(HAVE_FIPS) && !defined(HAVE_LINUXKM_PIE_SUPPORT)
-        #error "FIPS build requires PIE support."
     #endif
 
     #ifdef USE_WOLFSSL_LINUXKM_PIE_REDIRECT_TABLE
@@ -854,7 +864,7 @@
     /* remove this multifariously conflicting macro, picked up from
      * Linux arch/<arch>/include/asm/current.h.
      */
-    #ifndef WOLFSSL_NEED_LINUX_CURRENT
+    #ifndef WOLFSSL_LINUXKM_NEED_LINUX_CURRENT
         #undef current
     #endif
 
@@ -869,7 +879,11 @@
      */
     #define key_update wc_key_update
 
-    #define lkm_printf(format, args...) printk(KERN_INFO "wolfssl: %s(): " format, __func__, ## args)
+    #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0)
+        #define lkm_printf(format, args...) _printk(KERN_INFO "wolfssl: %s(): " format, __func__, ## args)
+    #else
+        #define lkm_printf(format, args...) printk(KERN_INFO "wolfssl: %s(): " format, __func__, ## args)
+    #endif
     #define printf(...) lkm_printf(__VA_ARGS__)
 
     #ifdef HAVE_FIPS

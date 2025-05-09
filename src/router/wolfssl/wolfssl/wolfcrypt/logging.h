@@ -1,6 +1,6 @@
 /* logging.h
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -135,7 +135,7 @@ WOLFSSL_API void wolfSSL_SetLoggingPrefix(const char* prefix);
     WOLFSSL_LOCAL unsigned long wc_PeekErrorNodeLineData(
             const char **file, int *line, const char **data, int *flags,
             int (*ignore_err)(int err));
-    WOLFSSL_LOCAL unsigned long wc_GetErrorNodeErr(void);
+    WOLFSSL_LOCAL int wc_GetErrorNodeErr(void);
     #if !defined(NO_FILESYSTEM) && !defined(NO_STDIO_FILESYSTEM)
         WOLFSSL_API void wc_ERR_print_errors_fp(XFILE fp);
         WOLFSSL_API void wc_ERR_print_errors_cb(int (*cb)(const char *str,
@@ -174,7 +174,7 @@ WOLFSSL_API void wolfSSL_SetLoggingPrefix(const char* prefix);
     #define WOLFSSL_STUB(m) \
         WOLFSSL_MSG(WOLFSSL_LOG_CAT(wolfSSL Stub, m, not implemented))
     WOLFSSL_API int WOLFSSL_IS_DEBUG_ON(void);
-#if defined(XVSNPRINTF)
+#if defined(XVSNPRINTF) && !defined(NO_WOLFSSL_MSG_EX)
     WOLFSSL_API void WOLFSSL_MSG_EX(const char* fmt, ...);
     #define HAVE_WOLFSSL_MSG_EX
 #else

@@ -1,6 +1,6 @@
 /* examples/configs/user_settings_platformio.h
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -51,8 +51,8 @@
 #if 0
     /* Kyber typically needs a minimum 10K stack */
     #define WOLFSSL_EXPERIMENTAL_SETTINGS
-    #define WOLFSSL_HAVE_KYBER
-    #define WOLFSSL_WC_KYBER
+    #define WOLFSSL_HAVE_MLKEM
+    #define WOLFSSL_WC_MLKEM
     #define WOLFSSL_SHA3
 #endif
 

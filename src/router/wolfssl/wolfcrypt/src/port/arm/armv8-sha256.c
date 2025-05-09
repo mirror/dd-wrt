@@ -1,6 +1,6 @@
 /* armv8-sha256.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -19,12 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
-
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
 #ifdef WOLFSSL_ARMASM
 #if !defined(NO_SHA256) || defined(WOLFSSL_SHA224)
@@ -47,8 +42,6 @@
         return 0;
     }
 #endif
-#include <wolfssl/wolfcrypt/logging.h>
-#include <wolfssl/wolfcrypt/error-crypt.h>
 #include <wolfssl/wolfcrypt/cpuid.h>
 
 #ifdef NO_INLINE
@@ -141,7 +134,7 @@ static const FLASH_QUALIFIER ALIGN32 word32 K[64] = {
             W = (word32*)XMALLOC(sizeof(word32) * WC_SHA256_BLOCK_SIZE, NULL,
                                                            DYNAMIC_TYPE_DIGEST);
             if (W == NULL)
-                return MEMORY_E;
+                return;
             sha256->W = W;
         }
     #elif defined(WOLFSSL_SMALL_STACK)
@@ -149,7 +142,7 @@ static const FLASH_QUALIFIER ALIGN32 word32 K[64] = {
         W = (word32*)XMALLOC(sizeof(word32) * WC_SHA256_BLOCK_SIZE, NULL,
                                                        DYNAMIC_TYPE_TMP_BUFFER);
         if (W == NULL)
-            return MEMORY_E;
+            return;
     #else
         word32 W[WC_SHA256_BLOCK_SIZE];
     #endif
@@ -927,10 +920,10 @@ static WC_INLINE int Sha256Final(wc_Sha256* sha256, byte* hash)
             : [digest] "m" (sha256->digest),
               [buffer] "m" (sha256->buffer),
               "0" (hash)
-                : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
-                                  "v8",  "v9",  "v10", "v11", "v12", "v13", "v14",
-                                  "v15", "v16", "v17", "v18", "v19", "v20", "v21",
-                                  "v22", "v23", "v24", "v25"
+                : "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+                            "v8",  "v9",  "v10", "v11", "v12", "v13", "v14",
+                            "v15", "v16", "v17", "v18", "v19", "v20", "v21",
+                            "v22", "v23", "v24", "v25", "cc"
         );
     }
     else {
@@ -1206,7 +1199,8 @@ static WC_INLINE int Sha256Final(wc_Sha256* sha256, byte* hash)
     if (sha256->buffLen > WC_SHA256_PAD_SIZE) {
         word32* bufPt = sha256->buffer;
         word32* digPt = sha256->digest;
-        XMEMSET(&local[sha256->buffLen], 0, WC_SHA256_BLOCK_SIZE - sha256->buffLen);
+        XMEMSET(&local[sha256->buffLen], 0,
+            WC_SHA256_BLOCK_SIZE - sha256->buffLen);
         sha256->buffLen += WC_SHA256_BLOCK_SIZE - sha256->buffLen;
         __asm__ volatile (
         "#load leftover data\n"
@@ -1645,7 +1639,8 @@ extern void Transform_Sha256_Len(wc_Sha256* sha256, const byte* data,
 #endif
 
 /* ARMv8 hardware acceleration Aarch32 and Thumb2 */
-static WC_INLINE int Sha256Update(wc_Sha256* sha256, const byte* data, word32 len)
+static WC_INLINE int Sha256Update(wc_Sha256* sha256, const byte* data,
+    word32 len)
 {
     int ret = 0;
     /* do block size increments */
@@ -1914,6 +1909,10 @@ int wc_Sha256Copy(wc_Sha256* src, wc_Sha256* dst)
     }
 #endif
 
+#ifdef WOLFSSL_HASH_FLAGS
+    dst->flags |= WC_HASH_FLAG_ISCOPY;
+#endif
+
     return ret;
 }
 
@@ -2142,6 +2141,10 @@ int wc_Sha256HashBlock(wc_Sha256* sha256, const unsigned char* data,
             return BAD_FUNC_ARG;
 
         XMEMCPY(dst, src, sizeof(wc_Sha224));
+
+    #ifdef WOLFSSL_HASH_FLAGS
+        dst->flags |= WC_HASH_FLAG_ISCOPY;
+    #endif
 
         return ret;
     }

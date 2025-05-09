@@ -1,6 +1,6 @@
 /* lms.h
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -127,6 +127,9 @@ enum wc_LmsParm {
     WC_LMS_PARM_SHA256_192_L1_H10_W8 = 42,
     WC_LMS_PARM_SHA256_192_L1_H15_W2 = 43,
     WC_LMS_PARM_SHA256_192_L1_H15_W4 = 44,
+    WC_LMS_PARM_SHA256_192_L1_H20_W2 = 53,
+    WC_LMS_PARM_SHA256_192_L1_H20_W4 = 54,
+    WC_LMS_PARM_SHA256_192_L1_H20_W8 = 55,
     WC_LMS_PARM_SHA256_192_L2_H10_W2 = 45,
     WC_LMS_PARM_SHA256_192_L2_H10_W4 = 46,
     WC_LMS_PARM_SHA256_192_L2_H10_W8 = 47,
@@ -183,6 +186,9 @@ WOLFSSL_API int  wc_LmsKey_Verify(LmsKey * key, const byte * sig, word32 sigSz,
     const byte * msg, int msgSz);
 WOLFSSL_API const char * wc_LmsKey_ParmToStr(enum wc_LmsParm lmsParm);
 WOLFSSL_API const char * wc_LmsKey_RcToStr(enum wc_LmsRc lmsRc);
+
+WOLFSSL_API const byte * wc_LmsKey_GetKidFromPrivRaw(const byte * priv,
+    word32 privSz);
 #ifdef __cplusplus
     } /* extern "C" */
 #endif

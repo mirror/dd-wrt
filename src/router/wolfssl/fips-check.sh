@@ -29,7 +29,7 @@ WOLFSSL_REPO="${WOLFSSL_REPO:-git@github.com:wolfssl/wolfssl.git}"
 
 Usage() {
     cat <<usageText
-Usage: $0 [flavor] [keep]
+Usage: $0 [flavor] [keep] [nomakecheck] [nodoconfigure] [noautogen]
 Flavor is one of:
     linuxv2 (FIPSv2, use for Win10)
     fipsv2-OE-ready (ready FIPSv2)
@@ -42,7 +42,10 @@ Flavor is one of:
     wolfrand
     wolfentropy
     v6.0.0
-Keep (default off) retains the temp dir $TEST_DIR for inspection.
+keep: (default off) retains the temp dir $TEST_DIR for inspection.
+nomakecheck: (default off) don't run make check
+nodoconfigure: (default off) don't run configure
+noautogen: (default off) don't run autogen
 
 Example:
     $0 windows keep
@@ -237,9 +240,9 @@ linuxv5|linuxv5.2.1)
   )
   ;;
 v6.0.0)
-  WOLF_REPO_TAG='WCv6.0.0-RC1'
-  FIPS_REPO_TAG='WCv6.0.0-RC1'
-  ASM_PICKUPS_TAG='WCv6.0.0-RC2'
+  WOLF_REPO_TAG='WCv6.0.0-RC5'
+  FIPS_REPO_TAG='WCv6.0.0-RC4'
+  ASM_PICKUPS_TAG='WCv6.0.0-RC4'
   FIPS_OPTION='v6'
   FIPS_FILES=(
     "wolfcrypt/src/fips.c:${FIPS_REPO_TAG}"
@@ -261,6 +264,8 @@ v6.0.0)
     "wolfcrypt/src/port/arm/armv8-32-curve25519.S:${WOLF_REPO_TAG}"
     "wolfcrypt/src/port/arm/armv8-32-sha256-asm_c.c:${ASM_PICKUPS_TAG}"
     "wolfcrypt/src/port/arm/armv8-32-sha256-asm.S:${WOLF_REPO_TAG}"
+    "wolfcrypt/src/port/arm/armv8-32-sha3-asm_c.c:${WOLF_REPO_TAG}"
+    "wolfcrypt/src/port/arm/armv8-32-sha3-asm.S:${WOLF_REPO_TAG}"
     "wolfcrypt/src/port/arm/armv8-32-sha512-asm_c.c:${ASM_PICKUPS_TAG}"
     "wolfcrypt/src/port/arm/armv8-32-sha512-asm.S:${WOLF_REPO_TAG}"
     "wolfcrypt/src/port/arm/armv8-aes.c:${ASM_PICKUPS_TAG}"
@@ -306,6 +311,8 @@ v6.0.0)
     "wolfcrypt/src/port/arm/thumb2-curve25519.S:${WOLF_REPO_TAG}"
     "wolfcrypt/src/port/arm/thumb2-sha256-asm_c.c:${WOLF_REPO_TAG}"
     "wolfcrypt/src/port/arm/thumb2-sha256-asm.S:${WOLF_REPO_TAG}"
+    "wolfcrypt/src/port/arm/thumb2-sha3-asm_c.c:${WOLF_REPO_TAG}"
+    "wolfcrypt/src/port/arm/thumb2-sha3-asm.S:${WOLF_REPO_TAG}"
     "wolfcrypt/src/port/arm/thumb2-sha512-asm_c.c:${WOLF_REPO_TAG}"
     "wolfcrypt/src/port/arm/thumb2-sha512-asm.S:${WOLF_REPO_TAG}"
     "wolfssl/wolfcrypt/aes.h:${WOLF_REPO_TAG}"
@@ -326,6 +333,9 @@ v6.0.0)
     "wolfssl/wolfcrypt/sha256.h:${WOLF_REPO_TAG}"
     "wolfssl/wolfcrypt/sha3.h:${WOLF_REPO_TAG}"
     "wolfssl/wolfcrypt/sha512.h:${WOLF_REPO_TAG}"
+    "wolfcrypt/src/port/riscv/riscv-64-sha256.c:${WOLF_REPO_TAG}"
+    "wolfcrypt/src/port/riscv/riscv-64-sha3.c:${WOLF_REPO_TAG}"
+    "wolfcrypt/src/port/riscv/riscv-64-sha512.c:${WOLF_REPO_TAG}"
   )
   ;;
 fips-ready|fips-dev)

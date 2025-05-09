@@ -1,6 +1,6 @@
 /* wc_lms_impl.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -37,13 +37,9 @@
  *   Enable when memory is limited.
  */
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
-#include <wolfssl/wolfcrypt/settings.h>
 #include <wolfssl/wolfcrypt/wc_lms.h>
-#include <wolfssl/wolfcrypt/error-crypt.h>
 
 #ifdef NO_INLINE
     #include <wolfssl/wolfcrypt/misc.h>
@@ -1339,10 +1335,10 @@ static void wc_lmots_public_key_encode(const LmsParams* params,
     const byte* priv_i = priv + LMS_Q_LEN + params->hash_len;
 
     /* u32str(type) || ... || T(1) */
-    c32toa(params->lmsType, pub);
+    c32toa(params->lmsType & LMS_H_W_MASK, pub);
     pub += 4;
     /* u32str(type) || u32str(otstype) || ... || T(1) */
-    c32toa(params->lmOtsType, pub);
+    c32toa(params->lmOtsType & LMS_H_W_MASK, pub);
     pub += 4;
     /* u32str(type) || u32str(otstype) || I || T(1) */
     XMEMCPY(pub, priv_i, LMS_I_LEN);
@@ -1365,14 +1361,14 @@ static int wc_lmots_public_key_check(const LmsParams* params, const byte* pub)
     ato32(pub, &type);
     pub += 4;
     /* Compare with parameters. */
-    if (type != params->lmsType) {
+    if (type != (params->lmsType & LMS_H_W_MASK)) {
         ret = PUBLIC_KEY_E;
     }
     if (ret == 0) {
         /* Get node hash and Winternitz width type. */
         ato32(pub, &type);
         /* Compare with parameters. */
-        if (type != params->lmOtsType) {
+        if (type != (params->lmOtsType & LMS_H_W_MASK)) {
             ret = PUBLIC_KEY_E;
         }
     }
@@ -2097,8 +2093,10 @@ static int wc_lms_treehash_update(LmsState* state, LmsPrivState* privState,
 #endif /* WOLFSSL_SMALL_STACK */
 
     /* Public key, root node, is top of data stack. */
-    XMEMCPY(stack, stackCache->stack, params->height * params->hash_len);
-    sp = stack + stackCache->offset;
+    if (ret == 0) {
+        XMEMCPY(stack, stackCache->stack, params->height * params->hash_len);
+        sp = stack + stackCache->offset;
+    }
 
     /* Compute all nodes requested. */
     for (i = min_idx; (ret == 0) && (i <= max_idx); i++) {
@@ -2193,7 +2191,7 @@ static int wc_lms_treehash_update(LmsState* state, LmsPrivState* privState,
         }
     }
 
-    if (!useRoot) {
+    if (!useRoot && (ret == 0)) {
         /* Copy stack back. */
         XMEMCPY(stackCache->stack, stack, params->height * params->hash_len);
         stackCache->offset = (word32)((size_t)sp - (size_t)stack);
@@ -2248,7 +2246,7 @@ static int wc_lms_sign(LmsState* state, const byte* priv, const byte* msg,
     s += LMS_Q_LEN;
 
     /* ots_signature = sig = u32str(type) || ... */
-    c32toa(state->params->lmOtsType, s);
+    c32toa(state->params->lmOtsType & LMS_H_W_MASK, s);
     s += LMS_TYPE_LEN;
     /* Sign this level.
      * S = u32str(q) || ots_signature || ... */
@@ -2257,7 +2255,7 @@ static int wc_lms_sign(LmsState* state, const byte* priv, const byte* msg,
         /* Skip over ots_signature. */
         s += params->hash_len + params->p * params->hash_len;
         /* S = u32str(q) || ots_signature || u32str(type) || ... */
-        c32toa(params->lmsType, s);
+        c32toa(params->lmsType & LMS_H_W_MASK, s);
     }
 
     return ret;
@@ -2278,13 +2276,13 @@ static void wc_lms_sig_copy(const LmsParams* params, const byte* y,
     XMEMCPY(sig, priv, LMS_Q_LEN);
     sig += LMS_Q_LEN;
     /* S = u32str(q) || ... */
-    c32toa(params->lmOtsType, sig);
+    c32toa(params->lmOtsType & LMS_H_W_MASK, sig);
     sig += LMS_TYPE_LEN;
     /* S = u32str(q) || ots_signature || ... */
     XMEMCPY(sig, y, params->hash_len + params->p * params->hash_len);
     sig += params->hash_len + params->p * params->hash_len;
     /* S = u32str(q) || ots_signature || u32str(type) || ... */
-    c32toa(params->lmsType, sig);
+    c32toa(params->lmsType & LMS_H_W_MASK, sig);
 }
 #endif /* !WOLFSSL_WC_LMS_SMALL && !WOLFSSL_LMS_NO_SIG_CACHE */
 #endif /* !WOLFSSL_LMS_VERIFY_ONLY */
@@ -3478,7 +3476,9 @@ static int wc_hss_sign_build_sig(LmsState* state, byte* priv_raw,
     /* Build from bottom up. */
     for (i = params->levels - 1; (ret == 0) && (i >= 0); i--) {
         byte* p = priv + i * (LMS_Q_LEN + params->hash_len + LMS_I_LEN);
+    #if !defined(WOLFSSL_LMS_MAX_LEVELS) || WOLFSSL_LMS_MAX_LEVELS > 1
         byte* root = NULL;
+    #endif
     #ifndef WOLFSSL_LMS_NO_SIG_CACHE
         int store_p = 0;
         word32 q_32 = LMS_Q_AT_LEVEL(q, params->levels, i,
@@ -3489,10 +3489,12 @@ static int wc_hss_sign_build_sig(LmsState* state, byte* priv_raw,
 
         /* Move to start of next signature at this level. */
         sig -= LMS_SIG_LEN(params->height, params->p, params->hash_len);
+    #if !defined(WOLFSSL_LMS_MAX_LEVELS) || WOLFSSL_LMS_MAX_LEVELS > 1
         if (i != 0) {
             /* Put root node into signature at this index. */
             root = sig - params->hash_len;
         }
+    #endif
 
     #ifndef WOLFSSL_LMS_NO_SIG_CACHE
         /* Check if we have a cached version of C and the p hashes that we
@@ -3528,10 +3530,12 @@ static int wc_hss_sign_build_sig(LmsState* state, byte* priv_raw,
             /* Copy the authentication path out of the private key. */
             XMEMCPY(s, priv_key->state[i].auth_path,
                 params->height * params->hash_len);
+        #if !defined(WOLFSSL_LMS_MAX_LEVELS) || WOLFSSL_LMS_MAX_LEVELS > 1
             /* Copy the root node into signature unless at top. */
             if (i != 0) {
                 XMEMCPY(root, priv_key->state[i].root, params->hash_len);
             }
+        #endif
         }
         if ((ret == 0) && (i != 0)) {
             /* Create public data for this level if there is another. */

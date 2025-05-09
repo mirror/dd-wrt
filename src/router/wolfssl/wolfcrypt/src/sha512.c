@@ -1,6 +1,6 @@
 /* sha512.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -19,12 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
-
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
 #if (defined(WOLFSSL_SHA512) || defined(WOLFSSL_SHA384)) && \
     (!defined(WOLFSSL_ARMASM) && !defined(WOLFSSL_ARMASM_NO_NEON)) && \
@@ -56,7 +51,6 @@
 #endif
 
 #include <wolfssl/wolfcrypt/sha512.h>
-#include <wolfssl/wolfcrypt/error-crypt.h>
 #include <wolfssl/wolfcrypt/cpuid.h>
 #include <wolfssl/wolfcrypt/hash.h>
 
@@ -72,8 +66,6 @@
 #if defined(USE_SLOW_SHA2) && !defined(USE_SLOW_SHA512)
     #define USE_SLOW_SHA512
 #endif
-
-#include <wolfssl/wolfcrypt/logging.h>
 
 #ifdef NO_INLINE
     #include <wolfssl/wolfcrypt/misc.h>
@@ -1402,21 +1394,15 @@ static WC_INLINE int Sha512Final(wc_Sha512* sha512)
 
 static int Sha512FinalRaw(wc_Sha512* sha512, byte* hash, size_t digestSz)
 {
-#ifdef LITTLE_ENDIAN_ORDER
-    word64 digest[WC_SHA512_DIGEST_SIZE / sizeof(word64)];
-#endif
-
     if (sha512 == NULL || hash == NULL) {
         return BAD_FUNC_ARG;
     }
 
 #ifdef LITTLE_ENDIAN_ORDER
-    ByteReverseWords64((word64*)digest, (word64*)sha512->digest,
-                                                         WC_SHA512_DIGEST_SIZE);
-    XMEMCPY(hash, digest, digestSz);
-#else
-    XMEMCPY(hash, sha512->digest, digestSz);
+    ByteReverseWords64(sha512->digest, sha512->digest, WC_SHA512_DIGEST_SIZE);
 #endif
+
+    XMEMCPY(hash, sha512->digest, digestSz);
 
     return 0;
 }
@@ -1807,21 +1793,15 @@ int wc_Sha384Update(wc_Sha384* sha384, const byte* data, word32 len)
 
 int wc_Sha384FinalRaw(wc_Sha384* sha384, byte* hash)
 {
-#ifdef LITTLE_ENDIAN_ORDER
-    word64 digest[WC_SHA384_DIGEST_SIZE / sizeof(word64)];
-#endif
-
     if (sha384 == NULL || hash == NULL) {
         return BAD_FUNC_ARG;
     }
 
 #ifdef LITTLE_ENDIAN_ORDER
-    ByteReverseWords64((word64*)digest, (word64*)sha384->digest,
-                                                         WC_SHA384_DIGEST_SIZE);
-    XMEMCPY(hash, digest, WC_SHA384_DIGEST_SIZE);
-#else
-    XMEMCPY(hash, sha384->digest, WC_SHA384_DIGEST_SIZE);
+    ByteReverseWords64(sha384->digest, sha384->digest, WC_SHA384_DIGEST_SIZE);
 #endif
+
+    XMEMCPY(hash, sha384->digest, WC_SHA384_DIGEST_SIZE);
 
     return 0;
 }

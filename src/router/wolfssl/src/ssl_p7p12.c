@@ -1,6 +1,6 @@
 /* ssl_p7p12.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -19,11 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
 #if defined(OPENSSL_EXTRA) && (defined(HAVE_FIPS) || defined(HAVE_SELFTEST))
     #include <wolfssl/wolfcrypt/pkcs7.h>
@@ -231,6 +227,7 @@ WOLFSSL_STACK* wolfSSL_PKCS7_to_stack(PKCS7* pkcs7)
         if (x509) {
             if (wolfSSL_sk_X509_push(ret, x509) <= 0) {
                 wolfSSL_X509_free(x509);
+                x509 = NULL;
                 WOLFSSL_MSG("wolfSSL_sk_X509_push error");
                 goto error;
             }
@@ -1180,6 +1177,8 @@ PKCS7* wolfSSL_SMIME_read_PKCS7(WOLFSSL_BIO* in,
                                           DYNAMIC_TYPE_PKCS7);
             if (canonSection == NULL) {
                 goto error;
+            } else {
+                XMEMSET(canonSection, 0, (word32)canonSize);
             }
 
             lineLen = wolfSSL_BIO_gets(in, section, remainLen);
@@ -1912,12 +1911,14 @@ int wolfSSL_PKCS12_parse(WC_PKCS12* pkcs12, const char* psw,
                 WOLFSSL_MSG("Issue with parsing certificate");
                 FreeDecodedCert(DeCert);
                 wolfSSL_X509_free(x509);
+                x509 = NULL;
             }
             else {
                 if (CopyDecodedToX509(x509, DeCert) != 0) {
                     WOLFSSL_MSG("Failed to copy decoded cert");
                     FreeDecodedCert(DeCert);
                     wolfSSL_X509_free(x509);
+                    x509 = NULL;
                     wolfSSL_sk_X509_pop_free(*ca, NULL); *ca = NULL;
                     XFREE(pk, heap, DYNAMIC_TYPE_PUBLIC_KEY);
                     XFREE(certData, heap, DYNAMIC_TYPE_PKCS);
@@ -1937,6 +1938,7 @@ int wolfSSL_PKCS12_parse(WC_PKCS12* pkcs12, const char* psw,
                 if (wolfSSL_sk_X509_push(*ca, x509) <= 0) {
                     WOLFSSL_MSG("Failed to push x509 onto stack");
                     wolfSSL_X509_free(x509);
+                    x509 = NULL;
                     wolfSSL_sk_X509_pop_free(*ca, NULL); *ca = NULL;
                     XFREE(pk, heap, DYNAMIC_TYPE_PUBLIC_KEY);
                     XFREE(certData, heap, DYNAMIC_TYPE_PKCS);

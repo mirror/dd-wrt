@@ -1,6 +1,6 @@
 /* mem_track.h
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -596,7 +596,7 @@ static WC_INLINE int StackSizeCheck(struct func_args* args, thread_func tf)
 #endif
 
 #ifdef PTHREAD_STACK_MIN
-    if (stackSize < PTHREAD_STACK_MIN)
+    if (stackSize < (size_t)PTHREAD_STACK_MIN)
         stackSize = PTHREAD_STACK_MIN;
 #endif
 
@@ -677,7 +677,7 @@ static WC_INLINE int StackSizeCheck_launch(struct func_args* args,
     struct stack_size_debug_context* shim_args;
 
 #ifdef PTHREAD_STACK_MIN
-    if (stackSize < PTHREAD_STACK_MIN)
+    if (stackSize < (size_t)PTHREAD_STACK_MIN)
         stackSize = PTHREAD_STACK_MIN;
 #endif
 

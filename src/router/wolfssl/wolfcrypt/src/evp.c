@@ -1,6 +1,6 @@
 /* evp.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -19,12 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
-
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
 #if !defined(WOLFSSL_EVP_INCLUDED)
     #ifndef WOLFSSL_IGNORE_FILE_WARN
@@ -52,67 +47,67 @@ static const struct s_ent {
     const char *name;
 } md_tbl[] = {
 #ifndef NO_MD4
-    {WC_HASH_TYPE_MD4, WC_NID_md4, "MD4"},
+    {WC_HASH_TYPE_MD4, WC_NID_md4, WC_SN_md4},
 #endif /* NO_MD4 */
 
 #ifndef NO_MD5
-    {WC_HASH_TYPE_MD5, WC_NID_md5, "MD5"},
+    {WC_HASH_TYPE_MD5, WC_NID_md5, WC_SN_md5},
 #endif /* NO_MD5 */
 
 #ifndef NO_SHA
-    {WC_HASH_TYPE_SHA, WC_NID_sha1, "SHA1"},
+    {WC_HASH_TYPE_SHA, WC_NID_sha1, WC_SN_sha1},
     {WC_HASH_TYPE_SHA, WC_NID_sha1, "SHA"}, /* Leave for backwards compatibility */
 #endif /* NO_SHA */
 
 #ifdef WOLFSSL_SHA224
-    {WC_HASH_TYPE_SHA224, WC_NID_sha224, "SHA224"},
+    {WC_HASH_TYPE_SHA224, WC_NID_sha224, WC_SN_sha224},
 #endif /* WOLFSSL_SHA224 */
 #ifndef NO_SHA256
-    {WC_HASH_TYPE_SHA256, WC_NID_sha256, "SHA256"},
+    {WC_HASH_TYPE_SHA256, WC_NID_sha256, WC_SN_sha256},
 #endif
 
 #ifdef WOLFSSL_SHA384
-    {WC_HASH_TYPE_SHA384, WC_NID_sha384, "SHA384"},
+    {WC_HASH_TYPE_SHA384, WC_NID_sha384, WC_SN_sha384},
 #endif /* WOLFSSL_SHA384 */
 
 #ifdef WOLFSSL_SHA512
-    {WC_HASH_TYPE_SHA512, WC_NID_sha512, "SHA512"},
+    {WC_HASH_TYPE_SHA512, WC_NID_sha512, WC_SN_sha512},
 #endif /* WOLFSSL_SHA512 */
 
 #if defined(WOLFSSL_SHA512) && !defined(WOLFSSL_NOSHA512_224)
-    {WC_HASH_TYPE_SHA512_224, WC_NID_sha512_224, "SHA512_224"},
+    {WC_HASH_TYPE_SHA512_224, WC_NID_sha512_224, WC_SN_sha512_224},
 #endif /* WOLFSSL_SHA512 && !WOLFSSL_NOSHA512_224 */
 
 #if defined(WOLFSSL_SHA512) && !defined(WOLFSSL_NOSHA512_256)
-    {WC_HASH_TYPE_SHA512_256, WC_NID_sha512_256, "SHA512_256"},
+    {WC_HASH_TYPE_SHA512_256, WC_NID_sha512_256, WC_SN_sha512_256},
 #endif /* WOLFSSL_SHA512 && !WOLFSSL_NOSHA512_256 */
 
 #ifndef WOLFSSL_NOSHA3_224
-    {WC_HASH_TYPE_SHA3_224, WC_NID_sha3_224, "SHA3_224"},
+    {WC_HASH_TYPE_SHA3_224, WC_NID_sha3_224, WC_SN_sha3_224},
 #endif
 #ifndef WOLFSSL_NOSHA3_256
-    {WC_HASH_TYPE_SHA3_256, WC_NID_sha3_256, "SHA3_256"},
+    {WC_HASH_TYPE_SHA3_256, WC_NID_sha3_256, WC_SN_sha3_256},
 #endif
 #ifndef WOLFSSL_NOSHA3_384
-    {WC_HASH_TYPE_SHA3_384, WC_NID_sha3_384, "SHA3_384"},
+    {WC_HASH_TYPE_SHA3_384, WC_NID_sha3_384, WC_SN_sha3_384},
 #endif
 #ifndef WOLFSSL_NOSHA3_512
-    {WC_HASH_TYPE_SHA3_512, WC_NID_sha3_512, "SHA3_512"},
+    {WC_HASH_TYPE_SHA3_512, WC_NID_sha3_512, WC_SN_sha3_512},
 #endif
 #ifdef WOLFSSL_SM3
-    {WC_HASH_TYPE_SM3, WC_NID_sm3, "SM3"},
+    {WC_HASH_TYPE_SM3, WC_NID_sm3, WC_SN_sm3},
 #endif /* WOLFSSL_SHA512 */
 #ifdef HAVE_BLAKE2
-    {WC_HASH_TYPE_BLAKE2B, WC_NID_blake2b512, "BLAKE2B512"},
+    {WC_HASH_TYPE_BLAKE2B, WC_NID_blake2b512, WC_SN_blake2b512},
 #endif
 #ifdef HAVE_BLAKE2S
-    {WC_HASH_TYPE_BLAKE2S, WC_NID_blake2s256, "BLAKE2S256"},
+    {WC_HASH_TYPE_BLAKE2S, WC_NID_blake2s256, WC_SN_blake2s256},
 #endif
 #ifdef WOLFSSL_SHAKE128
-    {WC_HASH_TYPE_SHAKE128, WC_NID_shake128, "SHAKE128"},
+    {WC_HASH_TYPE_SHAKE128, WC_NID_shake128, WC_SN_shake128},
 #endif
 #ifdef WOLFSSL_SHAKE256
-    {WC_HASH_TYPE_SHAKE256, WC_NID_shake256, "SHAKE256"},
+    {WC_HASH_TYPE_SHAKE256, WC_NID_shake256, WC_SN_shake256},
 #endif
     {WC_HASH_TYPE_NONE, 0, NULL}
 };
@@ -1059,6 +1054,14 @@ int wolfSSL_EVP_CipherUpdate(WOLFSSL_EVP_CIPHER_CTX *ctx,
     }
 
     switch (ctx->cipherType) {
+        case WC_NULL_CIPHER_TYPE:
+            if (out == NULL) {
+                WOLFSSL_MSG("Bad argument");
+                return WOLFSSL_FAILURE;
+            }
+            XMEMMOVE(out, in, inl);
+            *outl = inl;
+            return WOLFSSL_SUCCESS;
 #if !defined(NO_AES) && defined(HAVE_AESGCM)
         case WC_AES_128_GCM_TYPE:
         case WC_AES_192_GCM_TYPE:
@@ -2046,6 +2049,165 @@ static unsigned int cipherType(const WOLFSSL_EVP_CIPHER *cipher)
       else return 0;
 }
 
+/* Getter function for cipher type string
+ *
+ * cipherType  cipherType enum value to get string for
+ *
+ * Returns string representation of the cipher type or NULL if not found
+ */
+const char* wolfSSL_EVP_CIPHER_type_string(unsigned int cipherType)
+{
+    WOLFSSL_ENTER("wolfSSL_EVP_CIPHER_type_string");
+
+    switch (cipherType) {
+#ifndef NO_DES3
+        case WC_DES_CBC_TYPE:           return EVP_DES_CBC;
+        case WC_DES_EDE3_CBC_TYPE:      return EVP_DES_EDE3_CBC;
+        case WC_DES_ECB_TYPE:           return EVP_DES_ECB;
+        case WC_DES_EDE3_ECB_TYPE:      return EVP_DES_EDE3_ECB;
+#endif
+#if !defined(NO_AES)
+    #if defined(HAVE_AES_CBC) || defined(WOLFSSL_AES_DIRECT)
+        #ifdef WOLFSSL_AES_128
+        case WC_AES_128_CBC_TYPE:       return EVP_AES_128_CBC;
+        #endif
+        #ifdef WOLFSSL_AES_192
+        case WC_AES_192_CBC_TYPE:       return EVP_AES_192_CBC;
+        #endif
+        #ifdef WOLFSSL_AES_256
+        case WC_AES_256_CBC_TYPE:       return EVP_AES_256_CBC;
+        #endif
+    #endif /* HAVE_AES_CBC || WOLFSSL_AES_DIRECT */
+    #if defined(WOLFSSL_AES_CFB)
+        #ifndef WOLFSSL_NO_AES_CFB_1_8
+            #ifdef WOLFSSL_AES_128
+            case WC_AES_128_CFB1_TYPE:      return EVP_AES_128_CFB1;
+            #endif
+            #ifdef WOLFSSL_AES_192
+            case WC_AES_192_CFB1_TYPE:      return EVP_AES_192_CFB1;
+            #endif
+            #ifdef WOLFSSL_AES_256
+            case WC_AES_256_CFB1_TYPE:      return EVP_AES_256_CFB1;
+            #endif
+            #ifdef WOLFSSL_AES_128
+            case WC_AES_128_CFB8_TYPE:      return EVP_AES_128_CFB8;
+            #endif
+            #ifdef WOLFSSL_AES_192
+            case WC_AES_192_CFB8_TYPE:      return EVP_AES_192_CFB8;
+            #endif
+            #ifdef WOLFSSL_AES_256
+            case WC_AES_256_CFB8_TYPE:      return EVP_AES_256_CFB8;
+            #endif
+        #endif /* !WOLFSSL_NO_AES_CFB_1_8 */
+        #ifdef WOLFSSL_AES_128
+        case WC_AES_128_CFB128_TYPE:    return EVP_AES_128_CFB128;
+        #endif
+        #ifdef WOLFSSL_AES_192
+        case WC_AES_192_CFB128_TYPE:    return EVP_AES_192_CFB128;
+        #endif
+        #ifdef WOLFSSL_AES_256
+        case WC_AES_256_CFB128_TYPE:    return EVP_AES_256_CFB128;
+        #endif
+    #endif /* WOLFSSL_AES_CFB */
+    #if defined(WOLFSSL_AES_OFB)
+        #ifdef WOLFSSL_AES_128
+        case WC_AES_128_OFB_TYPE:       return EVP_AES_128_OFB;
+        #endif
+        #ifdef WOLFSSL_AES_192
+        case WC_AES_192_OFB_TYPE:       return EVP_AES_192_OFB;
+        #endif
+        #ifdef WOLFSSL_AES_256
+        case WC_AES_256_OFB_TYPE:       return EVP_AES_256_OFB;
+        #endif
+    #endif /* WOLFSSL_AES_OFB */
+    #if defined(WOLFSSL_AES_XTS) && (!defined(HAVE_FIPS) || FIPS_VERSION_GE(5,3))
+        #ifdef WOLFSSL_AES_128
+        case WC_AES_128_XTS_TYPE:       return EVP_AES_128_XTS;
+        #endif
+        #ifdef WOLFSSL_AES_256
+        case WC_AES_256_XTS_TYPE:       return EVP_AES_256_XTS;
+        #endif
+    #endif /* WOLFSSL_AES_XTS && (!defined(HAVE_FIPS) || FIPS_VERSION_GE(5,3)) */
+    #if defined(HAVE_AESGCM)
+        #ifdef WOLFSSL_AES_128
+        case WC_AES_128_GCM_TYPE:       return EVP_AES_128_GCM;
+        #endif
+        #ifdef WOLFSSL_AES_192
+        case WC_AES_192_GCM_TYPE:       return EVP_AES_192_GCM;
+        #endif
+        #ifdef WOLFSSL_AES_256
+        case WC_AES_256_GCM_TYPE:       return EVP_AES_256_GCM;
+        #endif
+    #endif /* HAVE_AESGCM */
+    #if defined(HAVE_AESCCM)
+        #ifdef WOLFSSL_AES_128
+        case WC_AES_128_CCM_TYPE:       return EVP_AES_128_CCM;
+        #endif
+        #ifdef WOLFSSL_AES_192
+        case WC_AES_192_CCM_TYPE:       return EVP_AES_192_CCM;
+        #endif
+        #ifdef WOLFSSL_AES_256
+        case WC_AES_256_CCM_TYPE:       return EVP_AES_256_CCM;
+        #endif
+    #endif /* HAVE_AESCCM */
+    #if defined(WOLFSSL_AES_COUNTER)
+        #ifdef WOLFSSL_AES_128
+        case WC_AES_128_CTR_TYPE:       return EVP_AES_128_CTR;
+        #endif
+        #ifdef WOLFSSL_AES_192
+        case WC_AES_192_CTR_TYPE:       return EVP_AES_192_CTR;
+        #endif
+        #ifdef WOLFSSL_AES_256
+        case WC_AES_256_CTR_TYPE:       return EVP_AES_256_CTR;
+        #endif
+    #endif /* WOLFSSL_AES_COUNTER */
+    #if defined(HAVE_AES_ECB)
+        #ifdef WOLFSSL_AES_128
+        case WC_AES_128_ECB_TYPE:       return EVP_AES_128_ECB;
+        #endif
+        #ifdef WOLFSSL_AES_192
+        case WC_AES_192_ECB_TYPE:       return EVP_AES_192_ECB;
+        #endif
+        #ifdef WOLFSSL_AES_256
+        case WC_AES_256_ECB_TYPE:       return EVP_AES_256_ECB;
+        #endif
+    #endif /* HAVE_AES_ECB */
+#endif /* !NO_AES */
+#if defined(HAVE_ARIA)
+        case WC_ARIA_128_GCM_TYPE:      return EVP_ARIA_128_GCM;
+        case WC_ARIA_192_GCM_TYPE:      return EVP_ARIA_192_GCM;
+        case WC_ARIA_256_GCM_TYPE:      return EVP_ARIA_256_GCM;
+#endif /* HAVE_ARIA */
+#ifndef NO_RC4
+        case WC_ARC4_TYPE:              return EVP_ARC4;
+#endif
+#if defined(HAVE_CHACHA) && defined(HAVE_POLY1305)
+        case WC_CHACHA20_POLY1305_TYPE: return EVP_CHACHA20_POLY1305;
+#endif
+#ifdef HAVE_CHACHA
+        case WC_CHACHA20_TYPE:          return EVP_CHACHA20;
+#endif
+#ifdef WOLFSSL_SM4_ECB
+        case WC_SM4_ECB_TYPE:           return EVP_SM4_ECB;
+#endif
+#ifdef WOLFSSL_SM4_CBC
+        case WC_SM4_CBC_TYPE:           return EVP_SM4_CBC;
+#endif
+#ifdef WOLFSSL_SM4_CTR
+        case WC_SM4_CTR_TYPE:           return EVP_SM4_CTR;
+#endif
+#ifdef WOLFSSL_SM4_GCM
+        case WC_SM4_GCM_TYPE:           return EVP_SM4_GCM;
+#endif
+#ifdef WOLFSSL_SM4_CCM
+        case WC_SM4_CCM_TYPE:           return EVP_SM4_CCM;
+#endif
+        case WC_NULL_CIPHER_TYPE:       return EVP_NULL;
+        default:
+            return NULL;
+    }
+}
+
 int wolfSSL_EVP_CIPHER_block_size(const WOLFSSL_EVP_CIPHER *cipher)
 {
     if (cipher == NULL)
@@ -2633,7 +2795,7 @@ int wolfSSL_EVP_PKEY_derive(WOLFSSL_EVP_PKEY_CTX *ctx, unsigned char *key, size_
             return WOLFSSL_FAILURE;
         }
         if (ctx->pkey->hkdfMode == WOLFSSL_EVP_PKEY_HKDEF_MODE_EXTRACT_AND_EXPAND) {
-            if (wc_HKDF(hkdfHashType, ctx->pkey->hkdfKey, ctx->pkey->hkdfKeySz,
+            if (wc_HKDF((int)hkdfHashType, ctx->pkey->hkdfKey, ctx->pkey->hkdfKeySz,
                         ctx->pkey->hkdfSalt, ctx->pkey->hkdfSaltSz,
                         ctx->pkey->hkdfInfo, ctx->pkey->hkdfInfoSz, key,
                         (word32)*keylen) != 0) {
@@ -2642,7 +2804,7 @@ int wolfSSL_EVP_PKEY_derive(WOLFSSL_EVP_PKEY_CTX *ctx, unsigned char *key, size_
             }
         }
         else if (ctx->pkey->hkdfMode == WOLFSSL_EVP_PKEY_HKDEF_MODE_EXTRACT_ONLY) {
-            if (wc_HKDF_Extract(hkdfHashType, ctx->pkey->hkdfSalt,
+            if (wc_HKDF_Extract((int)hkdfHashType, ctx->pkey->hkdfSalt,
                                 ctx->pkey->hkdfSaltSz, ctx->pkey->hkdfKey,
                                 ctx->pkey->hkdfKeySz, key) != 0) {
                 WOLFSSL_MSG("wc_HKDF_Extract failed.");
@@ -2659,7 +2821,7 @@ int wolfSSL_EVP_PKEY_derive(WOLFSSL_EVP_PKEY_CTX *ctx, unsigned char *key, size_
             }
         }
         else if (ctx->pkey->hkdfMode == WOLFSSL_EVP_PKEY_HKDEF_MODE_EXPAND_ONLY) {
-            if (wc_HKDF_Expand(hkdfHashType, ctx->pkey->hkdfKey,
+            if (wc_HKDF_Expand((int)hkdfHashType, ctx->pkey->hkdfKey,
                                ctx->pkey->hkdfKeySz, ctx->pkey->hkdfInfo,
                                ctx->pkey->hkdfInfoSz, key,
                                (word32)*keylen) != 0) {
@@ -3316,14 +3478,44 @@ int wolfSSL_EVP_PKEY_verify(WOLFSSL_EVP_PKEY_CTX *ctx, const unsigned char *sig,
  */
 int wolfSSL_EVP_PKEY_bits(const WOLFSSL_EVP_PKEY *pkey)
 {
-    int bytes;
+    int ret = 0;
 
-    if (pkey == NULL) return 0;
-    WOLFSSL_ENTER("wolfSSL_EVP_PKEY_bits");
-    if ((bytes = wolfSSL_EVP_PKEY_size((WOLFSSL_EVP_PKEY*)pkey)) ==0) return 0;
-    if (bytes < 0)
+    if (pkey == NULL)
         return 0;
-    return bytes*8;
+
+    WOLFSSL_ENTER("wolfSSL_EVP_PKEY_bits");
+
+    switch (pkey->type) {
+#ifndef NO_RSA
+    case WC_EVP_PKEY_RSA:
+        ret = (int)wolfSSL_RSA_size((const WOLFSSL_RSA*)(pkey->rsa));
+        break;
+#endif /* !NO_RSA */
+
+#ifndef NO_DSA
+    case WC_EVP_PKEY_DSA:
+        if (pkey->dsa == NULL ||
+                (!pkey->dsa->exSet &&
+                        SetDsaExternal(pkey->dsa) != WOLFSSL_SUCCESS))
+            break;
+        ret = wolfSSL_BN_num_bytes(pkey->dsa->p);
+        break;
+#endif
+
+#ifdef HAVE_ECC
+    case WC_EVP_PKEY_EC:
+        if (pkey->ecc == NULL || pkey->ecc->internal == NULL) {
+            WOLFSSL_MSG("No ECC key has been set");
+            break;
+        }
+        ret = wc_ecc_size((ecc_key*)(pkey->ecc->internal));
+        break;
+#endif /* HAVE_ECC */
+
+    default:
+        break;
+    }
+    return ret > 0 ? ret * 8 : 0;
 }
 
 
@@ -3530,12 +3722,11 @@ int wolfSSL_EVP_PKEY_keygen(WOLFSSL_EVP_PKEY_CTX *ctx,
     return ret;
 }
 
-/* Get the size in bytes for WOLFSSL_EVP_PKEY key
+/* Get the maximum suitable size for the operations that can be done with pkey
  *
  * pkey WOLFSSL_EVP_PKEY structure to get key size of
  *
- * returns the size of a key on success which is the maximum size of a
- *         signature
+ * returns the recommended size of buffers
  */
 int wolfSSL_EVP_PKEY_size(WOLFSSL_EVP_PKEY *pkey)
 {
@@ -3563,7 +3754,7 @@ int wolfSSL_EVP_PKEY_size(WOLFSSL_EVP_PKEY *pkey)
             WOLFSSL_MSG("No ECC key has been set");
             break;
         }
-        return wc_ecc_size((ecc_key*)(pkey->ecc->internal));
+        return wc_ecc_sig_size((ecc_key*)(pkey->ecc->internal));
 #endif /* HAVE_ECC */
 
     default:
@@ -3732,7 +3923,6 @@ int wolfSSL_EVP_PKEY_missing_parameters(WOLFSSL_EVP_PKEY *pkey)
 int wolfSSL_EVP_PKEY_cmp(const WOLFSSL_EVP_PKEY *a, const WOLFSSL_EVP_PKEY *b)
 {
     int ret = -1; /* failure */
-    int a_sz = 0, b_sz = 0;
 
     if (a == NULL || b == NULL)
         return WS_RETURN_CODE(ret, WOLFSSL_FAILURE);
@@ -3745,40 +3935,47 @@ int wolfSSL_EVP_PKEY_cmp(const WOLFSSL_EVP_PKEY *a, const WOLFSSL_EVP_PKEY *b)
     switch (a->type) {
 #ifndef NO_RSA
     case WC_EVP_PKEY_RSA:
-        a_sz = (int)wolfSSL_RSA_size((const WOLFSSL_RSA*)(a->rsa));
-        b_sz = (int)wolfSSL_RSA_size((const WOLFSSL_RSA*)(b->rsa));
+        if (wolfSSL_RSA_size((const WOLFSSL_RSA*)(a->rsa)) <= 0 ||
+                wolfSSL_RSA_size((const WOLFSSL_RSA*)(b->rsa)) <= 0) {
+            return WS_RETURN_CODE(ret, WOLFSSL_FAILURE);
+        }
+
+        if (mp_cmp(&((RsaKey*)a->rsa->internal)->n,
+                   &((RsaKey*)b->rsa->internal)->n) != MP_EQ) {
+            return WS_RETURN_CODE(ret, WOLFSSL_FAILURE);
+        }
+
+        if (mp_cmp(&((RsaKey*)a->rsa->internal)->e,
+                   &((RsaKey*)b->rsa->internal)->e) != MP_EQ) {
+            return WS_RETURN_CODE(ret, WOLFSSL_FAILURE);
+        }
         break;
 #endif /* !NO_RSA */
 #ifdef HAVE_ECC
     case WC_EVP_PKEY_EC:
         if (a->ecc == NULL || a->ecc->internal == NULL ||
-            b->ecc == NULL || b->ecc->internal == NULL) {
+            b->ecc == NULL || b->ecc->internal == NULL ||
+            wc_ecc_size((ecc_key*)a->ecc->internal) <= 0 ||
+            wc_ecc_size((ecc_key*)b->ecc->internal) <= 0 ||
+            a->ecc->group == NULL || b->ecc->group == NULL) {
             return ret;
         }
-        a_sz = wc_ecc_size((ecc_key*)(a->ecc->internal));
-        b_sz = wc_ecc_size((ecc_key*)(b->ecc->internal));
+
+        /* check curve */
+        if (a->ecc->group->curve_idx != b->ecc->group->curve_idx) {
+            return WS_RETURN_CODE(ret, WOLFSSL_FAILURE);
+        }
+
+        if (wc_ecc_cmp_point(&((ecc_key*)a->ecc->internal)->pubkey,
+                             &((ecc_key*)b->ecc->internal)->pubkey) != 0) {
+            return WS_RETURN_CODE(ret, WOLFSSL_FAILURE);
+        }
         break;
 #endif /* HAVE_ECC */
     default:
         return WS_RETURN_CODE(ret, -2);
     } /* switch (a->type) */
 
-    /* check size */
-    if (a_sz <= 0 || b_sz <= 0 || a_sz != b_sz) {
-        return WS_RETURN_CODE(ret, WOLFSSL_FAILURE);
-    }
-
-    /* check public key size */
-    if (a->pkey_sz > 0 && b->pkey_sz > 0 && a->pkey_sz != b->pkey_sz) {
-        return WS_RETURN_CODE(ret, WOLFSSL_FAILURE);
-    }
-
-    /* check public key */
-    if (a->pkey.ptr && b->pkey.ptr) {
-        if (XMEMCMP(a->pkey.ptr, b->pkey.ptr, (size_t)a->pkey_sz) != 0) {
-            return WS_RETURN_CODE(ret, WOLFSSL_FAILURE);
-        }
-    }
 #if defined(WOLFSSL_ERROR_CODE_OPENSSL)
     ret = 1; /* the keys match */
 #else
@@ -3795,17 +3992,10 @@ int wolfSSL_EVP_PKEY_cmp(const WOLFSSL_EVP_PKEY *a, const WOLFSSL_EVP_PKEY *b)
 static int DH_param_check(WOLFSSL_DH* dh_key)
 {
     int ret = WOLFSSL_SUCCESS;
-    WOLFSSL_BN_CTX* ctx = NULL;
     WOLFSSL_BIGNUM *num1 = NULL;
     WOLFSSL_BIGNUM *num2 = NULL;
 
     WOLFSSL_ENTER("DH_param_check");
-
-    ctx = wolfSSL_BN_CTX_new();
-    if (ctx == NULL) {
-        WOLFSSL_MSG("failed to allocate memory");
-        return WOLFSSL_FAILURE;
-    }
 
     num1 = wolfSSL_BN_new();
     num2 = wolfSSL_BN_new();
@@ -3840,7 +4030,7 @@ static int DH_param_check(WOLFSSL_DH* dh_key)
         dh_key->q != NULL)
     {
         if (ret == WOLFSSL_SUCCESS &&
-            wolfSSL_BN_mod_exp(num1, dh_key->g, dh_key->q, dh_key->p, ctx)
+            wolfSSL_BN_mod_exp(num1, dh_key->g, dh_key->q, dh_key->p, NULL)
                == WC_NO_ERR_TRACE(WOLFSSL_FAILURE))
         {
             WOLFSSL_MSG("BN_mod_exp failed");
@@ -3855,7 +4045,7 @@ static int DH_param_check(WOLFSSL_DH* dh_key)
 #if !defined(NO_RSA) && defined(WOLFSSL_KEY_GEN)
         /* test if the number q is prime. */
         if (ret == WOLFSSL_SUCCESS &&
-            (wolfSSL_BN_is_prime_ex(dh_key->q, 64, ctx, NULL) <= 0)) {
+            (wolfSSL_BN_is_prime_ex(dh_key->q, 64, NULL, NULL) <= 0)) {
             WOLFSSL_MSG("dh_key->q is not prime or error during check.");
             ret = WOLFSSL_FAILURE;
         } /* else TODO check q div q - 1. need BN_div */
@@ -3863,7 +4053,6 @@ static int DH_param_check(WOLFSSL_DH* dh_key)
     }
 
     /* clean up */
-    wolfSSL_BN_CTX_free(ctx);
     wolfSSL_BN_free(num1);
     wolfSSL_BN_free(num2);
 
@@ -4043,9 +4232,13 @@ int wolfSSL_EVP_SignFinal(WOLFSSL_EVP_MD_CTX *ctx, unsigned char *sigret,
                 pkey->ecc);
         if (ecdsaSig == NULL)
             return WOLFSSL_FAILURE;
+        /* get signature length only */
         ret = wolfSSL_i2d_ECDSA_SIG(ecdsaSig, NULL);
-        if (ret <= 0 || ret > (int)*siglen)
+        if (ret <= 0 || ret > (int)*siglen) {
+            wolfSSL_ECDSA_SIG_free(ecdsaSig);
             return WOLFSSL_FAILURE;
+        }
+        /* perform validation of signature */
         ret = wolfSSL_i2d_ECDSA_SIG(ecdsaSig, &sigret);
         wolfSSL_ECDSA_SIG_free(ecdsaSig);
         if (ret <= 0 || ret > (int)*siglen)
@@ -4262,69 +4455,69 @@ static int wolfssl_evp_md_to_hash_type(const WOLFSSL_EVP_MD *type,
     int ret = 0;
 
 #ifndef NO_SHA256
-    if (XSTRCMP(type, "SHA256") == 0) {
+    if (XSTRCMP(type, WC_SN_sha256) == 0) {
         *hashType = WC_SHA256;
     }
     else
 #endif
 #ifndef NO_SHA
-    if ((XSTRCMP(type, "SHA") == 0) || (XSTRCMP(type, "SHA1") == 0)) {
+    if ((XSTRCMP(type, "SHA") == 0) || (XSTRCMP(type, WC_SN_sha1) == 0)) {
         *hashType = WC_SHA;
     }
     else
 #endif /* NO_SHA */
 #ifdef WOLFSSL_SHA224
-    if (XSTRCMP(type, "SHA224") == 0) {
+    if (XSTRCMP(type, WC_SN_sha224) == 0) {
         *hashType = WC_SHA224;
     }
     else
 #endif
 #ifdef WOLFSSL_SHA384
-    if (XSTRCMP(type, "SHA384") == 0) {
+    if (XSTRCMP(type, WC_SN_sha384) == 0) {
         *hashType = WC_SHA384;
     }
     else
 #endif
 #ifdef WOLFSSL_SHA512
-    if (XSTRCMP(type, "SHA512") == 0) {
+    if (XSTRCMP(type, WC_SN_sha512) == 0) {
         *hashType = WC_SHA512;
     }
     else
 #endif
 #ifdef WOLFSSL_SHA3
     #ifndef WOLFSSL_NOSHA3_224
-        if (XSTRCMP(type, "SHA3_224") == 0) {
+        if (XSTRCMP(type, WC_SN_sha3_224) == 0) {
             *hashType = WC_SHA3_224;
         }
         else
     #endif
     #ifndef WOLFSSL_NOSHA3_256
-        if (XSTRCMP(type, "SHA3_256") == 0) {
+        if (XSTRCMP(type, WC_SN_sha3_256) == 0) {
             *hashType = WC_SHA3_256;
         }
         else
     #endif
     #ifndef WOLFSSL_NOSHA3_384
-        if (XSTRCMP(type, "SHA3_384") == 0) {
+        if (XSTRCMP(type, WC_SN_sha3_384) == 0) {
             *hashType = WC_SHA3_384;
         }
         else
     #endif
     #ifndef WOLFSSL_NOSHA3_512
-        if (XSTRCMP(type, "SHA3_512") == 0) {
+        if (XSTRCMP(type, WC_SN_sha3_512) == 0) {
             *hashType = WC_SHA3_512;
         }
         else
     #endif
 #endif
 #ifdef WOLFSSL_SM3
-    if (XSTRCMP(type, "SM3") == 0) {
+    if (XSTRCMP(type, WC_SN_sm3) == 0) {
         *hashType = WC_SM3;
     }
     else
 #endif
 #ifndef NO_MD5
-    if (XSTRCMP(type, "MD5") == 0) {
+    if (XSTRCMP(type, WC_SN_md5) == 0) {
         *hashType = WC_MD5;
     }
     else
@@ -4644,7 +4837,9 @@ int wolfSSL_EVP_DigestSignFinal(WOLFSSL_EVP_MD_CTX *ctx, unsigned char *sig,
                                              ctx->pctx->pkey->ecc);
             if (ecdsaSig == NULL)
                 break;
-            len = wolfSSL_i2d_ECDSA_SIG(ecdsaSig, &sig);
+            len = wolfSSL_i2d_ECDSA_SIG(ecdsaSig, NULL);
+            if (len > 0 && (size_t)len <= *siglen)
+                len = wolfSSL_i2d_ECDSA_SIG(ecdsaSig, &sig);
             wolfSSL_ECDSA_SIG_free(ecdsaSig);
             if (len == 0)
                 break;
@@ -4867,6 +5062,7 @@ int wolfSSL_PKCS5_PBKDF2_HMAC(const char *pass, int passlen,
 {
     const char *nostring = "";
     int ret = 0;
+    enum wc_HashType pbkdf2HashType;
 
     if (pass == NULL) {
         passlen = 0;
@@ -4875,8 +5071,10 @@ int wolfSSL_PKCS5_PBKDF2_HMAC(const char *pass, int passlen,
         passlen = (int)XSTRLEN(pass);
     }
 
+    pbkdf2HashType = EvpMd2MacType(digest);
+
     ret = wc_PBKDF2((byte*)out, (byte*)pass, passlen, (byte*)salt, saltlen,
-                    iter, keylen, EvpMd2MacType(digest));
+                    iter, keylen, pbkdf2HashType);
     if (ret == 0)
         return WOLFSSL_SUCCESS;
     else
@@ -6299,14 +6497,16 @@ void wolfSSL_EVP_init(void)
                 case WC_AES_256_OFB_TYPE:
     #endif
                     wc_AesFree(&ctx->cipher.aes);
-                    ctx->flags &= ~WOLFSSL_EVP_CIPH_LOW_LEVEL_INITED;
+                    ctx->flags &=
+                        (unsigned long)~WOLFSSL_EVP_CIPH_LOW_LEVEL_INITED;
                     break;
     #if defined(WOLFSSL_AES_XTS) && \
         (!defined(HAVE_FIPS) || FIPS_VERSION_GE(5,3))
                 case WC_AES_128_XTS_TYPE:
                 case WC_AES_256_XTS_TYPE:
                     wc_AesXtsFree(&ctx->cipher.xts);
-                    ctx->flags &= ~WOLFSSL_EVP_CIPH_LOW_LEVEL_INITED;
+                    ctx->flags &=
+                        (unsigned long)~WOLFSSL_EVP_CIPH_LOW_LEVEL_INITED;
                     break;
     #endif
 #endif /* AES */
@@ -6875,7 +7075,7 @@ void wolfSSL_EVP_init(void)
                 ret = wc_AriaInitCrypt(&ctx->cipher.aria, MC_ALGID_ARIA_256BITKEY);
                 break;
             default:
-                WOLFSSL_MSG("Not implemented cipherType");
+                WOLFSSL_MSG("Unimplemented cipherType");
                 return WOLFSSL_NOT_IMPLEMENTED; /* This should never happen */
         }
         if (ret != 0) {
@@ -8258,9 +8458,9 @@ void wolfSSL_EVP_init(void)
     }
 #endif /* !NO_AES || !NO_DES3 */
 
-    static int IsCipherTypeAEAD(unsigned char cipherType)
+    static int IsCipherTypeAEAD(unsigned int type)
     {
-        switch (cipherType) {
+        switch (type) {
             case WC_AES_128_GCM_TYPE:
             case WC_AES_192_GCM_TYPE:
             case WC_AES_256_GCM_TYPE:
@@ -9367,22 +9567,22 @@ int wolfSSL_EVP_MD_pkey_type(const WOLFSSL_EVP_MD* type)
     WOLFSSL_ENTER("wolfSSL_EVP_MD_pkey_type");
 
     if (type != NULL) {
-        if (XSTRCMP(type, "MD5") == 0) {
+        if (XSTRCMP(type, WC_SN_md5) == 0) {
             ret = WC_NID_md5WithRSAEncryption;
         }
-        else if (XSTRCMP(type, "SHA1") == 0) {
+        else if (XSTRCMP(type, WC_SN_sha1) == 0) {
             ret = WC_NID_sha1WithRSAEncryption;
         }
-        else if (XSTRCMP(type, "SHA224") == 0) {
+        else if (XSTRCMP(type, WC_SN_sha224) == 0) {
             ret = WC_NID_sha224WithRSAEncryption;
         }
-        else if (XSTRCMP(type, "SHA256") == 0) {
+        else if (XSTRCMP(type, WC_SN_sha256) == 0) {
             ret = WC_NID_sha256WithRSAEncryption;
         }
-        else if (XSTRCMP(type, "SHA384") == 0) {
+        else if (XSTRCMP(type, WC_SN_sha384) == 0) {
             ret = WC_NID_sha384WithRSAEncryption;
         }
-        else if (XSTRCMP(type, "SHA512") == 0) {
+        else if (XSTRCMP(type, WC_SN_sha512) == 0) {
             ret = WC_NID_sha512WithRSAEncryption;
         }
     }
@@ -9936,54 +10136,44 @@ static const struct alias {
             const char *alias;
 } digest_alias_tbl[] =
 {
-    {"MD4", "md4"},
-    {"MD5", "md5"},
-    {"SHA1", "sha1"},
-    {"SHA1", "SHA"},
-    {"SHA224", "sha224"},
-    {"SHA256", "sha256"},
-    {"SHA384", "sha384"},
-    {"SHA512", "sha512"},
-    {"SHA512_224", "sha512_224"},
-    {"SHA3_224", "sha3_224"},
-    {"SHA3_256", "sha3_256"},
-    {"SHA3_384", "sha3_384"},
-    {"SHA3_512", "sha3_512"},
-    {"SM3", "sm3"},
-    {"BLAKE2B512", "blake2b512"},
-    {"BLAKE2S256", "blake2s256"},
-    {"SHAKE128", "shake128"},
-    {"SHAKE256", "shake256"},
+    {WC_SN_md4, "md4"},
+    {WC_SN_md5, "md5"},
+    {WC_SN_sha1, "sha1"},
+    {WC_SN_sha1, "SHA"},
+    {WC_SN_sha224, "sha224"},
+    {WC_SN_sha256, "sha256"},
+    {WC_SN_sha384, "sha384"},
+    {WC_SN_sha512, "sha512"},
+    {WC_SN_sha512_224, "sha512_224"},
+    {WC_SN_sha3_224, "sha3_224"},
+    {WC_SN_sha3_256, "sha3_256"},
+    {WC_SN_sha3_384, "sha3_384"},
+    {WC_SN_sha3_512, "sha3_512"},
+    {WC_SN_sm3, "sm3"},
+    {WC_SN_blake2b512, "blake2b512"},
+    {WC_SN_blake2s256, "blake2s256"},
+    {WC_SN_shake128, "shake128"},
+    {WC_SN_shake256, "shake256"},
     { NULL, NULL}
 };
 
 const WOLFSSL_EVP_MD *wolfSSL_EVP_get_digestbyname(const char *name)
 {
-    char nameUpper[15]; /* 15 bytes should be enough for any name */
-    size_t i;
-
     const struct alias  *al;
     const struct s_ent *ent;
 
-    for (i = 0; i < sizeof(nameUpper) && name[i] != '\0'; i++) {
-        nameUpper[i] = (char)XTOUPPER((unsigned char) name[i]);
-    }
-    if (i < sizeof(nameUpper))
-        nameUpper[i] = '\0';
-    else
-        return NULL;
-
-    name = nameUpper;
-    for (al = digest_alias_tbl; al->name != NULL; al++)
+    for (al = digest_alias_tbl; al->name != NULL; al++) {
         if(XSTRCMP(name, al->alias) == 0) {
             name = al->name;
             break;
         }
+    }
 
-    for (ent = md_tbl; ent->name != NULL; ent++)
+    for (ent = md_tbl; ent->name != NULL; ent++) {
         if(XSTRCMP(name, ent->name) == 0) {
             return (WOLFSSL_EVP_MD *)ent->name;
         }
+    }
     return NULL;
 }
 
@@ -10017,7 +10207,7 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD* type)
     const WOLFSSL_EVP_MD* wolfSSL_EVP_md4(void)
     {
         WOLFSSL_ENTER("EVP_md4");
-        return wolfSSL_EVP_get_digestbyname("MD4");
+        return wolfSSL_EVP_get_digestbyname(WC_SN_md4);
     }
 
 #endif /* !NO_MD4 */
@@ -10028,7 +10218,7 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD* type)
     const WOLFSSL_EVP_MD* wolfSSL_EVP_md5(void)
     {
         WOLFSSL_ENTER("EVP_md5");
-        return wolfSSL_EVP_get_digestbyname("MD5");
+        return wolfSSL_EVP_get_digestbyname(WC_SN_md5);
     }
 
 #endif /* !NO_MD5 */
@@ -10040,8 +10230,8 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD* type)
      */
     const WOLFSSL_EVP_MD* wolfSSL_EVP_blake2b512(void)
     {
-        WOLFSSL_ENTER("EVP_blake2b512");
-        return wolfSSL_EVP_get_digestbyname("BLAKE2b512");
+        WOLFSSL_ENTER("wolfSSL_EVP_blake2b512");
+        return wolfSSL_EVP_get_digestbyname(WC_SN_blake2b512);
     }
 
 #endif
@@ -10080,7 +10270,7 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD* type)
     const WOLFSSL_EVP_MD* wolfSSL_EVP_sha1(void)
     {
         WOLFSSL_ENTER("EVP_sha1");
-        return wolfSSL_EVP_get_digestbyname("SHA1");
+        return wolfSSL_EVP_get_digestbyname(WC_SN_sha1);
     }
 #endif /* NO_SHA */
 
@@ -10089,7 +10279,7 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD* type)
     const WOLFSSL_EVP_MD* wolfSSL_EVP_sha224(void)
     {
         WOLFSSL_ENTER("EVP_sha224");
-        return wolfSSL_EVP_get_digestbyname("SHA224");
+        return wolfSSL_EVP_get_digestbyname(WC_SN_sha224);
     }
 
 #endif /* WOLFSSL_SHA224 */
@@ -10098,7 +10288,7 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD* type)
     const WOLFSSL_EVP_MD* wolfSSL_EVP_sha256(void)
     {
         WOLFSSL_ENTER("EVP_sha256");
-        return wolfSSL_EVP_get_digestbyname("SHA256");
+        return wolfSSL_EVP_get_digestbyname(WC_SN_sha256);
     }
 
 #ifdef WOLFSSL_SHA384
@@ -10106,7 +10296,7 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD* type)
     const WOLFSSL_EVP_MD* wolfSSL_EVP_sha384(void)
     {
         WOLFSSL_ENTER("EVP_sha384");
-        return wolfSSL_EVP_get_digestbyname("SHA384");
+        return wolfSSL_EVP_get_digestbyname(WC_SN_sha384);
     }
 
 #endif /* WOLFSSL_SHA384 */
@@ -10116,7 +10306,7 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD* type)
     const WOLFSSL_EVP_MD* wolfSSL_EVP_sha512(void)
     {
         WOLFSSL_ENTER("EVP_sha512");
-        return wolfSSL_EVP_get_digestbyname("SHA512");
+        return wolfSSL_EVP_get_digestbyname(WC_SN_sha512);
     }
 
 #ifndef WOLFSSL_NOSHA512_224
@@ -10124,7 +10314,7 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD* type)
     const WOLFSSL_EVP_MD* wolfSSL_EVP_sha512_224(void)
     {
         WOLFSSL_ENTER("EVP_sha512_224");
-        return wolfSSL_EVP_get_digestbyname("SHA512_224");
+        return wolfSSL_EVP_get_digestbyname(WC_SN_sha512_224);
     }
 
 #endif /* !WOLFSSL_NOSHA512_224 */
@@ -10133,7 +10323,7 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD* type)
     const WOLFSSL_EVP_MD* wolfSSL_EVP_sha512_256(void)
     {
         WOLFSSL_ENTER("EVP_sha512_256");
-        return wolfSSL_EVP_get_digestbyname("SHA512_256");
+        return wolfSSL_EVP_get_digestbyname(WC_SN_sha512_256);
     }
 
 #endif /* !WOLFSSL_NOSHA512_224 */
@@ -10145,7 +10335,7 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD* type)
     const WOLFSSL_EVP_MD* wolfSSL_EVP_sha3_224(void)
     {
         WOLFSSL_ENTER("EVP_sha3_224");
-        return wolfSSL_EVP_get_digestbyname("SHA3_224");
+        return wolfSSL_EVP_get_digestbyname(WC_SN_sha3_224);
     }
 #endif /* WOLFSSL_NOSHA3_224 */
 
@@ -10154,7 +10344,7 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD* type)
     const WOLFSSL_EVP_MD* wolfSSL_EVP_sha3_256(void)
     {
         WOLFSSL_ENTER("EVP_sha3_256");
-        return wolfSSL_EVP_get_digestbyname("SHA3_256");
+        return wolfSSL_EVP_get_digestbyname(WC_SN_sha3_256);
     }
 #endif /* WOLFSSL_NOSHA3_256 */
 
@@ -10162,7 +10352,7 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD* type)
     const WOLFSSL_EVP_MD* wolfSSL_EVP_sha3_384(void)
     {
         WOLFSSL_ENTER("EVP_sha3_384");
-        return wolfSSL_EVP_get_digestbyname("SHA3_384");
+        return wolfSSL_EVP_get_digestbyname(WC_SN_sha3_384);
     }
 #endif /* WOLFSSL_NOSHA3_384 */
 
@@ -10170,7 +10360,7 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD* type)
     const WOLFSSL_EVP_MD* wolfSSL_EVP_sha3_512(void)
     {
         WOLFSSL_ENTER("EVP_sha3_512");
-        return wolfSSL_EVP_get_digestbyname("SHA3_512");
+        return wolfSSL_EVP_get_digestbyname(WC_SN_sha3_512);
     }
 #endif /* WOLFSSL_NOSHA3_512 */
 
@@ -10196,7 +10386,7 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD* type)
     const WOLFSSL_EVP_MD* wolfSSL_EVP_sm3(void)
     {
         WOLFSSL_ENTER("EVP_sm3");
-        return wolfSSL_EVP_get_digestbyname("SM3");
+        return wolfSSL_EVP_get_digestbyname(WC_SN_sm3);
     }
 #endif /* WOLFSSL_SM3 */
 
@@ -10482,17 +10672,21 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD* type)
                     /* Not an error since an unused struct could be free'd or
                      * reset. */
                     break;
+            #if defined(WOLFSSL_SHA3) && defined(WOLFSSL_SHAKE128)
+                case WC_HASH_TYPE_SHAKE128:
+                    wc_Shake128_Free(&ctx->hash.digest.shake);
+                    break;
+            #endif
+            #if defined(WOLFSSL_SHA3) && defined(WOLFSSL_SHAKE256)
+                case WC_HASH_TYPE_SHAKE256:
+                    wc_Shake256_Free(&ctx->hash.digest.shake);
+                    break;
+            #endif
                 case WC_HASH_TYPE_MD2:
                 case WC_HASH_TYPE_MD4:
                 case WC_HASH_TYPE_MD5_SHA:
                 case WC_HASH_TYPE_BLAKE2B:
                 case WC_HASH_TYPE_BLAKE2S:
-            #if defined(WOLFSSL_SHA3) && defined(WOLFSSL_SHAKE128)
-                case WC_HASH_TYPE_SHAKE128:
-            #endif
-            #if defined(WOLFSSL_SHA3) && defined(WOLFSSL_SHAKE256)
-                case WC_HASH_TYPE_SHAKE256:
-            #endif
                 default:
                     ret = WOLFSSL_FAILURE;
                     break;
@@ -10526,76 +10720,92 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD* type)
              XMEMSET(&ctx->hash.digest, 0, sizeof(WOLFSSL_Hasher));
         } else
     #ifndef NO_SHA
-        if ((XSTRCMP(md, "SHA") == 0) || (XSTRCMP(md, "SHA1") == 0)) {
+        if ((XSTRCMP(md, "SHA") == 0) || (XSTRCMP(md, WC_SN_sha1) == 0)) {
              ret = wolfSSL_SHA_Init(&(ctx->hash.digest.sha));
         } else
     #endif
     #ifndef NO_SHA256
-        if (XSTRCMP(md, "SHA256") == 0) {
+        if (XSTRCMP(md, WC_SN_sha256) == 0) {
              ret = wolfSSL_SHA256_Init(&(ctx->hash.digest.sha256));
         } else
     #endif
     #ifdef WOLFSSL_SHA224
-        if (XSTRCMP(md, "SHA224") == 0) {
+        if (XSTRCMP(md, WC_SN_sha224) == 0) {
              ret = wolfSSL_SHA224_Init(&(ctx->hash.digest.sha224));
         } else
     #endif
     #ifdef WOLFSSL_SHA384
-        if (XSTRCMP(md, "SHA384") == 0) {
+        if (XSTRCMP(md, WC_SN_sha384) == 0) {
              ret = wolfSSL_SHA384_Init(&(ctx->hash.digest.sha384));
         } else
     #endif
     #if !defined(HAVE_FIPS) && !defined(HAVE_SELFTEST) && \
         defined(WOLFSSL_SHA512) && !defined(WOLFSSL_NOSHA512_224)
-        if (XSTRCMP(md, "SHA512_224") == 0) {
+        if (XSTRCMP(md, WC_SN_sha512_224) == 0) {
              ret = wolfSSL_SHA512_224_Init(&(ctx->hash.digest.sha512));
         } else
     #endif
     #if !defined(HAVE_FIPS) && !defined(HAVE_SELFTEST) && \
         defined(WOLFSSL_SHA512) && !defined(WOLFSSL_NOSHA512_256)
-        if (XSTRCMP(md, "SHA512_256") == 0) {
+        if (XSTRCMP(md, WC_SN_sha512_256) == 0) {
              ret = wolfSSL_SHA512_256_Init(&(ctx->hash.digest.sha512));
         } else
     #endif
     #ifdef WOLFSSL_SHA512
-        if (XSTRCMP(md, "SHA512") == 0) {
+        if (XSTRCMP(md, WC_SN_sha512) == 0) {
              ret = wolfSSL_SHA512_Init(&(ctx->hash.digest.sha512));
         } else
     #endif
     #ifndef NO_MD4
-        if (XSTRCMP(md, "MD4") == 0) {
+        if (XSTRCMP(md, WC_SN_md4) == 0) {
             wolfSSL_MD4_Init(&(ctx->hash.digest.md4));
         } else
     #endif
     #ifndef NO_MD5
-        if (XSTRCMP(md, "MD5") == 0) {
+        if (XSTRCMP(md, WC_SN_md5) == 0) {
             ret = wolfSSL_MD5_Init(&(ctx->hash.digest.md5));
         } else
     #endif
 #ifdef WOLFSSL_SHA3
     #ifndef WOLFSSL_NOSHA3_224
-        if (XSTRCMP(md, "SHA3_224") == 0) {
+        if (XSTRCMP(md, WC_SN_sha3_224) == 0) {
              ret = wolfSSL_SHA3_224_Init(&(ctx->hash.digest.sha3_224));
         } else
     #endif
     #ifndef WOLFSSL_NOSHA3_256
-        if (XSTRCMP(md, "SHA3_256") == 0) {
+        if (XSTRCMP(md, WC_SN_sha3_256) == 0) {
              ret = wolfSSL_SHA3_256_Init(&(ctx->hash.digest.sha3_256));
         } else
     #endif
     #ifndef WOLFSSL_NOSHA3_384
-        if (XSTRCMP(md, "SHA3_384") == 0) {
+        if (XSTRCMP(md, WC_SN_sha3_384) == 0) {
              ret = wolfSSL_SHA3_384_Init(&(ctx->hash.digest.sha3_384));
         } else
     #endif
     #ifndef WOLFSSL_NOSHA3_512
-        if (XSTRCMP(md, "SHA3_512") == 0) {
+        if (XSTRCMP(md, WC_SN_sha3_512) == 0) {
              ret = wolfSSL_SHA3_512_Init(&(ctx->hash.digest.sha3_512));
+        } else
+    #endif
+    #ifdef WOLFSSL_SHAKE128
+        if (XSTRCMP(md, WC_SN_shake128) == 0) {
+            if (wc_InitShake128(&(ctx->hash.digest.shake), NULL,
+                INVALID_DEVID) != 0) {
+                ret = WOLFSSL_FAILURE;
+            }
+        } else
+    #endif
+    #ifdef WOLFSSL_SHAKE256
+        if (XSTRCMP(md, WC_SN_shake256) == 0) {
+            if (wc_InitShake256(&(ctx->hash.digest.shake), NULL,
+                INVALID_DEVID) != 0) {
+                ret = WOLFSSL_FAILURE;
+            }
         } else
     #endif
 #endif
     #ifdef WOLFSSL_SM3
-        if (XSTRCMP(md, "SM3") == 0) {
+        if (XSTRCMP(md, WC_SN_sm3) == 0) {
              ret = wc_InitSm3(&ctx->hash.digest.sm3, NULL, INVALID_DEVID);
              if (ret == 0) {
                 ret = WOLFSSL_SUCCESS;
@@ -10723,17 +10933,28 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD* type)
                 }
                 break;
         #endif
+        #if defined(WOLFSSL_SHA3) && defined(WOLFSSL_SHAKE128)
+            case WC_HASH_TYPE_SHAKE128:
+                if (wc_Shake128_Update(&ctx->hash.digest.shake,
+                        (const byte*)data, (word32)sz) == 0) {
+
+                    ret = WOLFSSL_SUCCESS;
+                }
+                break;
+        #endif
+        #if defined(WOLFSSL_SHA3) && defined(WOLFSSL_SHAKE256)
+            case WC_HASH_TYPE_SHAKE256:
+                if (wc_Shake256_Update(&ctx->hash.digest.shake,
+                        (const byte*)data, (word32)sz) == 0) {
+                    ret = WOLFSSL_SUCCESS;
+                }
+                break;
+        #endif
             case WC_HASH_TYPE_NONE:
             case WC_HASH_TYPE_MD2:
             case WC_HASH_TYPE_MD5_SHA:
             case WC_HASH_TYPE_BLAKE2B:
             case WC_HASH_TYPE_BLAKE2S:
-        #if defined(WOLFSSL_SHA3) && defined(WOLFSSL_SHAKE128)
-            case WC_HASH_TYPE_SHAKE128:
-        #endif
-        #if defined(WOLFSSL_SHA3) && defined(WOLFSSL_SHAKE256)
-            case WC_HASH_TYPE_SHAKE256:
-        #endif
             default:
                 return WOLFSSL_FAILURE;
         }
@@ -10742,14 +10963,11 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD* type)
     }
 
     /* WOLFSSL_SUCCESS on ok */
-    int wolfSSL_EVP_DigestFinal(WOLFSSL_EVP_MD_CTX* ctx, unsigned char* md,
-                               unsigned int* s)
+    static int wolfSSL_EVP_DigestFinal_Common(WOLFSSL_EVP_MD_CTX* ctx,
+            unsigned char* md, unsigned int* s, enum wc_HashType macType)
     {
         int ret = WC_NO_ERR_TRACE(WOLFSSL_FAILURE);
-        enum wc_HashType macType;
 
-        WOLFSSL_ENTER("EVP_DigestFinal");
-        macType = EvpMd2MacType(wolfSSL_EVP_MD_CTX_md(ctx));
         switch (macType) {
             case WC_HASH_TYPE_MD4:
         #ifndef NO_MD4
@@ -10848,22 +11066,83 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD* type)
                 if (s) *s = WC_SM3_DIGEST_SIZE;
                 break;
         #endif
+        #if defined(WOLFSSL_SHA3) && defined(WOLFSSL_SHAKE128)
+            case WC_HASH_TYPE_SHAKE128:
+                if (wc_Shake128_Final(&ctx->hash.digest.shake, md, *s) == 0) {
+                    ret = WOLFSSL_SUCCESS;
+                }
+                break;
+        #endif
+        #if defined(WOLFSSL_SHA3) && defined(WOLFSSL_SHAKE256)
+            case WC_HASH_TYPE_SHAKE256:
+                if (wc_Shake256_Final(&ctx->hash.digest.shake, md, *s) == 0) {
+                    ret = WOLFSSL_SUCCESS;
+                }
+                break;
+        #endif
             case WC_HASH_TYPE_NONE:
             case WC_HASH_TYPE_MD2:
             case WC_HASH_TYPE_MD5_SHA:
             case WC_HASH_TYPE_BLAKE2B:
             case WC_HASH_TYPE_BLAKE2S:
-        #if defined(WOLFSSL_SHA3) && defined(WOLFSSL_SHAKE128)
-            case WC_HASH_TYPE_SHAKE128:
-        #endif
-        #if defined(WOLFSSL_SHA3) && defined(WOLFSSL_SHAKE256)
-            case WC_HASH_TYPE_SHAKE256:
-        #endif
             default:
                 return WOLFSSL_FAILURE;
         }
 
         return ret;
+    }
+
+    int wolfSSL_EVP_DigestFinal(WOLFSSL_EVP_MD_CTX* ctx, unsigned char* md,
+                               unsigned int* s)
+    {
+        enum wc_HashType macType;
+
+        WOLFSSL_ENTER("wolfSSL_EVP_DigestFinal");
+        macType = EvpMd2MacType(wolfSSL_EVP_MD_CTX_md(ctx));
+        switch (macType) {
+            case WC_HASH_TYPE_MD4:
+            case WC_HASH_TYPE_MD5:
+            case WC_HASH_TYPE_SHA:
+            case WC_HASH_TYPE_SHA224:
+            case WC_HASH_TYPE_SHA256:
+            case WC_HASH_TYPE_SHA384:
+            case WC_HASH_TYPE_SHA512:
+        #ifndef WOLFSSL_NOSHA512_224
+            case WC_HASH_TYPE_SHA512_224:
+        #endif /* !WOLFSSL_NOSHA512_224 */
+        #ifndef WOLFSSL_NOSHA512_256
+            case WC_HASH_TYPE_SHA512_256:
+        #endif /* !WOLFSSL_NOSHA512_256 */
+            case WC_HASH_TYPE_SHA3_224:
+            case WC_HASH_TYPE_SHA3_256:
+            case WC_HASH_TYPE_SHA3_384:
+            case WC_HASH_TYPE_SHA3_512:
+        #ifdef WOLFSSL_SM3
+            case WC_HASH_TYPE_SM3:
+        #endif
+            case WC_HASH_TYPE_NONE:
+            case WC_HASH_TYPE_MD2:
+            case WC_HASH_TYPE_MD5_SHA:
+            case WC_HASH_TYPE_BLAKE2B:
+            case WC_HASH_TYPE_BLAKE2S:
+                break;
+
+        #if defined(WOLFSSL_SHA3) && defined(WOLFSSL_SHAKE128)
+            case WC_HASH_TYPE_SHAKE128:
+                *s = 16; /* if mixing up XOF with plain digest 128 bit is
+                          * default for SHAKE128 */
+                break;
+        #endif
+        #if defined(WOLFSSL_SHA3) && defined(WOLFSSL_SHAKE256)
+            case WC_HASH_TYPE_SHAKE256:
+                *s = 32; /* if mixing up XOF with plain digest 256 bit is
+                          * default for SHAKE256 */
+                break;
+        #endif
+            default:
+                return WOLFSSL_FAILURE;
+        }
+        return wolfSSL_EVP_DigestFinal_Common(ctx, md, s, macType);
     }
 
     /* WOLFSSL_SUCCESS on ok */
@@ -10873,6 +11152,46 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD* type)
         WOLFSSL_ENTER("EVP_DigestFinal_ex");
         return wolfSSL_EVP_DigestFinal(ctx, md, s);
     }
+
+
+    /* XOF stands for extendable-output functions. This is used for algos such
+     * as SHAKE256.
+     *
+     * returns 1 (WOLFSSL_SUCCESS) on success and 0 (WOLFSSL_FAILURE) on fail */
+    int wolfSSL_EVP_DigestFinalXOF(WOLFSSL_EVP_MD_CTX *ctx, unsigned char *md,
+        size_t sz)
+    {
+        unsigned int len;
+        enum wc_HashType macType;
+
+        WOLFSSL_ENTER("wolfSSL_EVP_DigestFinalXOF");
+        len = (unsigned int)sz;
+
+        macType = EvpMd2MacType(wolfSSL_EVP_MD_CTX_md(ctx));
+        return wolfSSL_EVP_DigestFinal_Common(ctx, md, &len, macType);
+    }
+
+
+    unsigned long wolfSSL_EVP_MD_flags(const WOLFSSL_EVP_MD *md)
+    {
+        enum wc_HashType macType;
+
+        macType = EvpMd2MacType(md);
+        switch ((int)macType) {
+            case WC_HASH_TYPE_BLAKE2B:
+            case WC_HASH_TYPE_BLAKE2S:
+        #if defined(WOLFSSL_SHA3) && defined(WOLFSSL_SHAKE128)
+            case WC_HASH_TYPE_SHAKE128:
+        #endif
+        #if defined(WOLFSSL_SHA3) && defined(WOLFSSL_SHAKE256)
+            case WC_HASH_TYPE_SHAKE256:
+        #endif
+                return WOLFSSL_EVP_MD_FLAG_XOF;
+            default:
+                return 0;
+        }
+    }
+
 
     void wolfSSL_EVP_cleanup(void)
     {
@@ -10884,6 +11203,10 @@ const WOLFSSL_EVP_MD* wolfSSL_EVP_get_digestbynid(int id)
     WOLFSSL_MSG("wolfSSL_get_digestbynid");
 
     switch(id) {
+#ifndef NO_MD4
+        case WC_NID_md4:
+            return wolfSSL_EVP_md4();
+#endif
 #ifndef NO_MD5
         case WC_NID_md5:
             return wolfSSL_EVP_md5();
@@ -10928,64 +11251,64 @@ int wolfSSL_EVP_MD_block_size(const WOLFSSL_EVP_MD* type)
     }
 
 #ifndef NO_SHA
-    if ((XSTRCMP(type, "SHA") == 0) || (XSTRCMP(type, "SHA1") == 0)) {
+    if ((XSTRCMP(type, "SHA") == 0) || (XSTRCMP(type, WC_SN_sha1) == 0)) {
         return WC_SHA_BLOCK_SIZE;
     } else
 #endif
 #ifndef NO_SHA256
-    if (XSTRCMP(type, "SHA256") == 0) {
+    if (XSTRCMP(type, WC_SN_sha256) == 0) {
         return WC_SHA256_BLOCK_SIZE;
     } else
 #endif
 #ifndef NO_MD4
-    if (XSTRCMP(type, "MD4") == 0) {
+    if (XSTRCMP(type, WC_SN_md4) == 0) {
         return WC_MD4_BLOCK_SIZE;
     } else
 #endif
 #ifndef NO_MD5
-    if (XSTRCMP(type, "MD5") == 0) {
+    if (XSTRCMP(type, WC_SN_md5) == 0) {
         return WC_MD5_BLOCK_SIZE;
     } else
 #endif
 #ifdef WOLFSSL_SHA224
-    if (XSTRCMP(type, "SHA224") == 0) {
+    if (XSTRCMP(type, WC_SN_sha224) == 0) {
         return WC_SHA224_BLOCK_SIZE;
     } else
 #endif
 #ifdef WOLFSSL_SHA384
-    if (XSTRCMP(type, "SHA384") == 0) {
+    if (XSTRCMP(type, WC_SN_sha384) == 0) {
         return WC_SHA384_BLOCK_SIZE;
     } else
 #endif
 #ifdef WOLFSSL_SHA512
-    if (XSTRCMP(type, "SHA512") == 0) {
+    if (XSTRCMP(type, WC_SN_sha512) == 0) {
         return WC_SHA512_BLOCK_SIZE;
     } else
 #endif
 #ifdef WOLFSSL_SHA3
 #ifndef WOLFSSL_NOSHA3_224
-    if (XSTRCMP(type, "SHA3_224") == 0) {
+    if (XSTRCMP(type, WC_SN_sha3_224) == 0) {
         return WC_SHA3_224_BLOCK_SIZE;
     } else
 #endif
 #ifndef WOLFSSL_NOSHA3_256
-    if (XSTRCMP(type, "SHA3_256") == 0) {
+    if (XSTRCMP(type, WC_SN_sha3_256) == 0) {
         return WC_SHA3_256_BLOCK_SIZE;
     } else
 #endif
 #ifndef WOLFSSL_NOSHA3_384
-    if (XSTRCMP(type, "SHA3_384") == 0) {
+    if (XSTRCMP(type, WC_SN_sha3_384) == 0) {
         return WC_SHA3_384_BLOCK_SIZE;
     } else
 #endif
 #ifndef WOLFSSL_NOSHA3_512
-    if (XSTRCMP(type, "SHA3_512") == 0) {
+    if (XSTRCMP(type, WC_SN_sha3_512) == 0) {
         return WC_SHA3_512_BLOCK_SIZE;
-    }
+    } else
 #endif
 #endif /* WOLFSSL_SHA3 */
 #ifdef WOLFSSL_SM3
-    if (XSTRCMP(type, "SM3") == 0) {
+    if (XSTRCMP(type, WC_SN_sm3) == 0) {
         return WC_SM3_BLOCK_SIZE;
     } else
 #endif
@@ -11003,74 +11326,74 @@ int wolfSSL_EVP_MD_size(const WOLFSSL_EVP_MD* type)
     }
 
 #ifndef NO_SHA
-    if ((XSTRCMP(type, "SHA") == 0) || (XSTRCMP(type, "SHA1") == 0)) {
+    if ((XSTRCMP(type, "SHA") == 0) || (XSTRCMP(type, WC_SN_sha1) == 0)) {
         return WC_SHA_DIGEST_SIZE;
     } else
 #endif
 #ifndef NO_SHA256
-    if (XSTRCMP(type, "SHA256") == 0) {
+    if (XSTRCMP(type, WC_SN_sha256) == 0) {
         return WC_SHA256_DIGEST_SIZE;
     } else
 #endif
 #ifndef NO_MD4
-    if (XSTRCMP(type, "MD4") == 0) {
+    if (XSTRCMP(type, WC_SN_md4) == 0) {
         return WC_MD4_DIGEST_SIZE;
     } else
 #endif
 #ifndef NO_MD5
-    if (XSTRCMP(type, "MD5") == 0) {
+    if (XSTRCMP(type, WC_SN_md5) == 0) {
         return WC_MD5_DIGEST_SIZE;
     } else
 #endif
 #ifdef WOLFSSL_SHA224
-    if (XSTRCMP(type, "SHA224") == 0) {
+    if (XSTRCMP(type, WC_SN_sha224) == 0) {
         return WC_SHA224_DIGEST_SIZE;
     } else
 #endif
 #ifdef WOLFSSL_SHA384
-    if (XSTRCMP(type, "SHA384") == 0) {
+    if (XSTRCMP(type, WC_SN_sha384) == 0) {
         return WC_SHA384_DIGEST_SIZE;
     } else
 #endif
 #ifdef WOLFSSL_SHA512
-    if (XSTRCMP(type, "SHA512") == 0) {
+    if (XSTRCMP(type, WC_SN_sha512) == 0) {
         return WC_SHA512_DIGEST_SIZE;
     } else
 #ifndef WOLFSSL_NOSHA512_224
-    if (XSTRCMP(type, "SHA512_224") == 0) {
+    if (XSTRCMP(type, WC_SN_sha512_224) == 0) {
         return WC_SHA512_224_DIGEST_SIZE;
     } else
 #endif
 #ifndef WOLFSSL_NOSHA512_256
-    if (XSTRCMP(type, "SHA512_256") == 0) {
+    if (XSTRCMP(type, WC_SN_sha512_256) == 0) {
         return WC_SHA512_256_DIGEST_SIZE;
     } else
 #endif
 #endif
 #ifdef WOLFSSL_SHA3
 #ifndef WOLFSSL_NOSHA3_224
-    if (XSTRCMP(type, "SHA3_224") == 0) {
+    if (XSTRCMP(type, WC_SN_sha3_224) == 0) {
         return WC_SHA3_224_DIGEST_SIZE;
     } else
 #endif
 #ifndef WOLFSSL_NOSHA3_256
-    if (XSTRCMP(type, "SHA3_256") == 0) {
+    if (XSTRCMP(type, WC_SN_sha3_256) == 0) {
         return WC_SHA3_256_DIGEST_SIZE;
     } else
 #endif
 #ifndef WOLFSSL_NOSHA3_384
-    if (XSTRCMP(type, "SHA3_384") == 0) {
+    if (XSTRCMP(type, WC_SN_sha3_384) == 0) {
         return WC_SHA3_384_DIGEST_SIZE;
     } else
 #endif
 #ifndef WOLFSSL_NOSHA3_512
-    if (XSTRCMP(type, "SHA3_512") == 0) {
+    if (XSTRCMP(type, WC_SN_sha3_512) == 0) {
         return WC_SHA3_512_DIGEST_SIZE;
     } else
 #endif
 #endif /* WOLFSSL_SHA3 */
 #ifdef WOLFSSL_SM3
-    if (XSTRCMP(type, "SM3") == 0) {
+    if (XSTRCMP(type, WC_SN_sm3) == 0) {
         return WC_SM3_DIGEST_SIZE;
     }
 #endif
@@ -12182,7 +12505,7 @@ int wolfSSL_EVP_PKEY_print_public(WOLFSSL_BIO* out,
         case WC_EVP_PKEY_RSA:
 
 #if !defined(NO_RSA)
-            keybits = wolfSSL_EVP_PKEY_size((WOLFSSL_EVP_PKEY*)pkey) * 8;
+            keybits = wolfSSL_EVP_PKEY_bits((WOLFSSL_EVP_PKEY*)pkey);
             res     = PrintPubKeyRSA(
                         out,
                         (byte*)(pkey->pkey.ptr), /* buffer for pkey raw data */
@@ -12198,7 +12521,7 @@ int wolfSSL_EVP_PKEY_print_public(WOLFSSL_BIO* out,
         case WC_EVP_PKEY_EC:
 
 #if defined(HAVE_ECC)
-            keybits = wolfSSL_EVP_PKEY_size((WOLFSSL_EVP_PKEY*)pkey) * 8;
+            keybits = wolfSSL_EVP_PKEY_bits((WOLFSSL_EVP_PKEY*)pkey);
             res     = PrintPubKeyEC(
                         out,
                         (byte*)(pkey->pkey.ptr),  /* buffer for pkey raw data */
@@ -12214,7 +12537,7 @@ int wolfSSL_EVP_PKEY_print_public(WOLFSSL_BIO* out,
         case WC_EVP_PKEY_DSA:
 
 #if !defined(NO_DSA)
-            keybits = wolfSSL_EVP_PKEY_size((WOLFSSL_EVP_PKEY*)pkey) * 8;
+            keybits = wolfSSL_EVP_PKEY_bits((WOLFSSL_EVP_PKEY*)pkey);
             res     = PrintPubKeyDSA(
                         out,
                         (byte*)(pkey->pkey.ptr),  /* buffer for pkey raw data */
@@ -12230,7 +12553,7 @@ int wolfSSL_EVP_PKEY_print_public(WOLFSSL_BIO* out,
         case WC_EVP_PKEY_DH:
 
 #if defined(WOLFSSL_DH_EXTRA)
-            keybits = wolfSSL_EVP_PKEY_size((WOLFSSL_EVP_PKEY*)pkey) * 8;
+            keybits = wolfSSL_EVP_PKEY_bits((WOLFSSL_EVP_PKEY*)pkey);
             res     = PrintPubKeyDH(
                         out,
                         (byte*)(pkey->pkey.ptr),  /* buffer for pkey raw data */
@@ -12263,64 +12586,64 @@ int wolfSSL_EVP_get_hashinfo(const WOLFSSL_EVP_MD* evp,
     }
 
 #ifndef NO_SHA
-    if ((XSTRCMP("SHA", evp) == 0) || (XSTRCMP("SHA1", evp) == 0)) {
+    if ((XSTRCMP("SHA", evp) == 0) || (XSTRCMP(WC_SN_sha1, evp) == 0)) {
         hash = WC_HASH_TYPE_SHA;
     } else
 #endif
 #ifdef WOLFSSL_SHA224
-    if (XSTRCMP("SHA224", evp) == 0) {
+    if (XSTRCMP(WC_SN_sha224, evp) == 0) {
         hash = WC_HASH_TYPE_SHA224;
     } else
 #endif
 #ifndef NO_SHA256
-    if (XSTRCMP("SHA256", evp) == 0) {
+    if (XSTRCMP(WC_SN_sha256, evp) == 0) {
         hash = WC_HASH_TYPE_SHA256;
     } else
 #endif
 #ifdef WOLFSSL_SHA384
-    if (XSTRCMP("SHA384", evp) == 0) {
+    if (XSTRCMP(WC_SN_sha384, evp) == 0) {
         hash = WC_HASH_TYPE_SHA384;
     } else
 #endif
 #ifdef WOLFSSL_SHA512
-    if (XSTRCMP("SHA512", evp) == 0) {
+    if (XSTRCMP(WC_SN_sha512, evp) == 0) {
         hash = WC_HASH_TYPE_SHA512;
     } else
 #ifndef WOLFSSL_NOSHA512_224
-    if (XSTRCMP("SHA512_224", evp) == 0) {
+    if (XSTRCMP(WC_SN_sha512_224, evp) == 0) {
         hash = WC_HASH_TYPE_SHA512_224;
     } else
 #endif
 #ifndef WOLFSSL_NOSHA512_256
-    if (XSTRCMP("SHA512_256", evp) == 0) {
+    if (XSTRCMP(WC_SN_sha512_256, evp) == 0) {
         hash = WC_HASH_TYPE_SHA512_256;
     } else
 #endif
 #endif
 #ifdef WOLFSSL_SHA3
 #ifndef WOLFSSL_NOSHA3_224
-    if (XSTRCMP("SHA3_224", evp) == 0) {
+    if (XSTRCMP(WC_SN_sha3_224, evp) == 0) {
         hash = WC_HASH_TYPE_SHA3_224;
     } else
 #endif
 #ifndef WOLFSSL_NOSHA3_256
-    if (XSTRCMP("SHA3_256", evp) == 0) {
+    if (XSTRCMP(WC_SN_sha3_256, evp) == 0) {
         hash = WC_HASH_TYPE_SHA3_256;
     } else
 #endif
 #ifndef WOLFSSL_NOSHA3_384
-    if (XSTRCMP("SHA3_384", evp) == 0) {
+    if (XSTRCMP(WC_SN_sha3_384, evp) == 0) {
         hash = WC_HASH_TYPE_SHA3_384;
     } else
 #endif
 #ifndef WOLFSSL_NOSHA3_512
-    if (XSTRCMP("SHA3_512", evp) == 0) {
+    if (XSTRCMP(WC_SN_sha3_512, evp) == 0) {
         hash = WC_HASH_TYPE_SHA3_512;
     } else
 #endif
 #endif /* WOLFSSL_SHA3 */
 #ifdef WOLFSSL_SM3
-    if (XSTRCMP("SM3", evp) == 0) {
+    if (XSTRCMP(WC_SN_sm3, evp) == 0) {
         hash = WC_HASH_TYPE_SM3;
     } else
 #endif
@@ -12330,12 +12653,12 @@ int wolfSSL_EVP_get_hashinfo(const WOLFSSL_EVP_MD* evp,
     } else
 #endif
 #ifndef NO_MD4
-    if (XSTRCMP("MD4", evp) == 0) {
+    if (XSTRCMP(WC_SN_md4, evp) == 0) {
         hash = WC_HASH_TYPE_MD4;
     } else
 #endif
 #ifndef NO_MD5
-    if (XSTRCMP("MD5", evp) == 0) {
+    if (XSTRCMP(WC_SN_md5, evp) == 0) {
         hash = WC_HASH_TYPE_MD5;
     } else
 #endif

@@ -1,6 +1,6 @@
 /* ge_operations.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -22,19 +22,13 @@
 
  /* Based On Daniel J Bernstein's ed25519 Public Domain ref10 work. */
 
-
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
 #ifdef HAVE_ED25519
 #ifndef ED25519_SMALL /* run when not defined to use small memory math */
 
 #include <wolfssl/wolfcrypt/ge_operations.h>
 #include <wolfssl/wolfcrypt/ed25519.h>
-#include <wolfssl/wolfcrypt/error-crypt.h>
 #ifdef NO_INLINE
     #include <wolfssl/wolfcrypt/misc.h>
 #else
@@ -9392,7 +9386,7 @@ B is the Ed25519 base point (x,4/5) with x positive.
 int ge_double_scalarmult_vartime(ge_p2 *r, const unsigned char *a,
                                  const ge_p3 *A, const unsigned char *b)
 {
-#if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_SP_NO_MALLOC)
+#if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
   signed char *aslide = NULL;
   signed char *bslide = NULL;
   ge_cached *Ai = NULL; /* A,3A,5A,7A,9A,11A,13A,15A */
@@ -9413,7 +9407,7 @@ int ge_double_scalarmult_vartime(ge_p2 *r, const unsigned char *a,
 #endif
   int i;
 
-#if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_SP_NO_MALLOC)
+#if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
   if (((aslide = (signed char *)XMALLOC(SLIDE_SIZE, NULL, DYNAMIC_TYPE_TMP_BUFFER))== NULL) ||
       ((bslide = (signed char *)XMALLOC(SLIDE_SIZE, NULL, DYNAMIC_TYPE_TMP_BUFFER))== NULL) ||
       ((Ai = (ge_cached *)XMALLOC(8 * sizeof(*Ai), NULL, DYNAMIC_TYPE_TMP_BUFFER))== NULL) ||
@@ -9475,7 +9469,7 @@ int ge_double_scalarmult_vartime(ge_p2 *r, const unsigned char *a,
   }
 #endif
 
-#if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_SP_NO_MALLOC)
+#if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
   out:
 
   XFREE(aslide, NULL, DYNAMIC_TYPE_TMP_BUFFER);

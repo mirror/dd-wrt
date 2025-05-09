@@ -1,6 +1,6 @@
 /* dtls.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -18,6 +18,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
+
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
 /*
  * WOLFSSL_DTLS_NO_HVR_ON_RESUME
@@ -45,12 +47,6 @@
  *     DTLS 1.3. The user MUST call wolfSSL_dtls13_allow_ch_frag() on the server
  *     to explicitly enable this during runtime.
  */
-
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
-#include <wolfssl/wolfcrypt/settings.h>
 
 #ifndef WOLFCRYPT_ONLY
 
@@ -365,7 +361,8 @@ static int FindExtByType(WolfSSL_ConstVector* ret, word16 extType,
         ato16(exts.elements + idx, &type);
         idx += OPAQUE16_LEN;
         idx += ReadVector16(exts.elements + idx, &ext);
-        if (idx > exts.size)
+        if (idx > exts.size ||
+                ext.elements + ext.size > exts.elements + exts.size)
             return BUFFER_ERROR;
         if (type == extType) {
             XMEMCPY(ret, &ext, sizeof(ext));
@@ -498,7 +495,7 @@ static int TlsCheckSupportedVersion(const WOLFSSL* ssl,
                          ch->extension, &tlsxFound);
     if (ret != 0)
         return ret;
-    if (!tlsxFound) {
+    if (!tlsxFound || tlsxSupportedVersions.elements == NULL) {
         *isTls13 = 0;
         return 0;
     }
@@ -847,8 +844,6 @@ static int SendStatelessReplyDtls13(const WOLFSSL* ssl, WolfSSL_CH* ch)
         WOLFSSL* nonConstSSL = (WOLFSSL*)ssl;
         TLSX* sslExts = nonConstSSL->extensions;
 
-        if (ret != 0)
-            goto dtls13_cleanup;
         nonConstSSL->options.tls = 1;
         nonConstSSL->options.tls1_1 = 1;
         nonConstSSL->options.tls1_3 = 1;
@@ -1221,7 +1216,7 @@ int TLSX_ConnectionID_Use(WOLFSSL* ssl)
     info = (CIDInfo*)XMALLOC(sizeof(CIDInfo), ssl->heap, DYNAMIC_TYPE_TLSX);
     if (info == NULL)
         return MEMORY_ERROR;
-    ext = (WOLFSSL**)XMALLOC(sizeof(WOLFSSL**), ssl->heap, DYNAMIC_TYPE_TLSX);
+    ext = (WOLFSSL**)XMALLOC(sizeof(WOLFSSL*), ssl->heap, DYNAMIC_TYPE_TLSX);
     if (ext == NULL) {
         XFREE(info, ssl->heap, DYNAMIC_TYPE_TLSX);
         return MEMORY_ERROR;

@@ -1,6 +1,6 @@
 /* asn1.h
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -39,6 +39,7 @@
 #define d2i_ASN1_OBJECT       wolfSSL_d2i_ASN1_OBJECT
 #define c2i_ASN1_OBJECT       wolfSSL_c2i_ASN1_OBJECT
 
+#define V_ASN1_BIT_STRING               WOLFSSL_V_ASN1_BIT_STRING
 #define V_ASN1_INTEGER                  WOLFSSL_V_ASN1_INTEGER
 #define V_ASN1_NEG                      WOLFSSL_V_ASN1_NEG
 #define V_ASN1_NEG_INTEGER              WOLFSSL_V_ASN1_NEG_INTEGER
@@ -218,11 +219,11 @@ typedef struct WOLFSSL_ASN1_ITEM WOLFSSL_ASN1_ITEM;
             mtype##_member_data, \
             sizeof(mtype##_member_data) / sizeof(WOLFSSL_ASN1_TEMPLATE), \
             sizeof(mtype) ,\
-            OFFSETOF(mtype, type) \
+            WC_OFFSETOF(mtype, type) \
     };
 
 #define ASN1_TYPE(type, member, tag, first_byte, exp, seq) \
-    OFFSETOF(type, member), tag, first_byte, exp, seq
+    WC_OFFSETOF(type, member), tag, first_byte, exp, seq
 
 /* Function callbacks need to be defined immediately otherwise we will
  * incorrectly expand the type. Ex: ASN1_INTEGER -> WOLFSSL_ASN1_INTEGER */

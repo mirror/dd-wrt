@@ -1,6 +1,6 @@
 /* wolfssl_dummy.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -59,4 +59,9 @@ void abort(void)
     while(1);
 }
 
+/* dummy return true when char is alphanumeric character */
+int isascii(const char *s)
+{
+    return isalnum(s);
+}
 

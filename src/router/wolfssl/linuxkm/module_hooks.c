@@ -1,6 +1,6 @@
 /* module_hooks.c -- module load/unload hooks for libwolfssl.ko
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -27,16 +27,10 @@
 #endif
 #endif
 
-#define FIPS_NO_WRAPPERS
+#define WOLFSSL_LINUXKM_NEED_LINUX_CURRENT
 
-#define WOLFSSL_NEED_LINUX_CURRENT
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-#include <wolfssl/wolfcrypt/settings.h>
-#include <wolfssl/wolfcrypt/error-crypt.h>
 #ifdef WOLFCRYPT_ONLY
     #include <wolfssl/version.h>
 #else
@@ -45,9 +39,11 @@
 #ifdef HAVE_FIPS
     #include <wolfssl/wolfcrypt/fips_test.h>
 #endif
-#ifndef NO_CRYPT_TEST
+#if !defined(NO_CRYPT_TEST) || defined(LINUXKM_LKCAPI_REGISTER)
     #include <wolfcrypt/test/test.h>
 #endif
+#include <wolfssl/wolfcrypt/random.h>
+#include <wolfssl/wolfcrypt/sha256.h>
 
 static int libwolfssl_cleanup(void) {
     int ret;
@@ -114,9 +110,6 @@ static void lkmFipsCb(int ok, int err, const char* hash)
 #endif
 
 #ifdef WOLFCRYPT_FIPS_CORE_DYNAMIC_HASH_VALUE
-#ifndef CONFIG_MODULE_SIG
-#error WOLFCRYPT_FIPS_CORE_DYNAMIC_HASH_VALUE requires a CONFIG_MODULE_SIG kernel.
-#endif
 static int updateFipsHash(void);
 #endif
 
@@ -141,10 +134,12 @@ static int wolfssl_init(void)
     int ret;
 
 #ifdef WOLFCRYPT_FIPS_CORE_DYNAMIC_HASH_VALUE
+#ifdef CONFIG_MODULE_SIG
     if (THIS_MODULE->sig_ok == false) {
         pr_err("wolfSSL module load aborted -- bad or missing module signature with FIPS dynamic hash.\n");
         return -ECANCELED;
     }
+#endif
     ret = updateFipsHash();
     if (ret < 0) {
         pr_err("wolfSSL module load aborted -- updateFipsHash: %s\n",wc_GetErrorString(ret));
@@ -244,33 +239,6 @@ static int wolfssl_init(void)
         }
         return -ECANCELED;
     }
-
-    pr_info("FIPS 140-3 wolfCrypt-fips v%d.%d.%d%s%s startup "
-            "self-test succeeded.\n",
-#ifdef HAVE_FIPS_VERSION_MAJOR
-            HAVE_FIPS_VERSION_MAJOR,
-#else
-            HAVE_FIPS_VERSION,
-#endif
-#ifdef HAVE_FIPS_VERSION_MINOR
-            HAVE_FIPS_VERSION_MINOR,
-#else
-            0,
-#endif
-#ifdef HAVE_FIPS_VERSION_PATCH
-            HAVE_FIPS_VERSION_PATCH,
-#else
-            0,
-#endif
-#ifdef HAVE_FIPS_VERSION_PORT
-            "-",
-            HAVE_FIPS_VERSION_PORT
-#else
-            "",
-            ""
-#endif
-        );
-
 #endif /* HAVE_FIPS */
 
 #ifdef WC_RNG_SEED_CB
@@ -297,6 +265,40 @@ static int wolfssl_init(void)
     }
 #endif
 
+#if defined(HAVE_FIPS) && FIPS_VERSION3_GT(5,2,0)
+    ret = wc_RunAllCast_fips();
+    if (ret != 0) {
+        pr_err("wc_RunAllCast_fips() failed with return value %d\n", ret);
+        return -ECANCELED;
+    }
+
+    pr_info("FIPS 140-3 wolfCrypt-fips v%d.%d.%d%s%s startup "
+            "self-test succeeded.\n",
+#ifdef HAVE_FIPS_VERSION_MAJOR
+            HAVE_FIPS_VERSION_MAJOR,
+#else
+            HAVE_FIPS_VERSION,
+#endif
+#ifdef HAVE_FIPS_VERSION_MINOR
+            HAVE_FIPS_VERSION_MINOR,
+#else
+            0,
+#endif
+#ifdef HAVE_FIPS_VERSION_PATCH
+            HAVE_FIPS_VERSION_PATCH,
+#else
+            0,
+#endif
+#ifdef HAVE_FIPS_VERSION_PORT
+            "-",
+            HAVE_FIPS_VERSION_PORT
+#else
+            "",
+            ""
+#endif
+        );
+#endif /* HAVE_FIPS && FIPS_VERSION3_GT(5,2,0) */
+
 #ifndef NO_CRYPT_TEST
     ret = wolfcrypt_test(NULL);
     if (ret < 0) {
@@ -307,8 +309,10 @@ static int wolfssl_init(void)
     }
     pr_info("wolfCrypt self-test passed.\n");
 #else
+#if !defined(HAVE_FIPS) || FIPS_VERSION3_LE(5,2,0)
     pr_info("skipping full wolfcrypt_test() "
             "(configure with --enable-crypttests to enable).\n");
+#endif
 #endif
 
 #ifdef LINUXKM_LKCAPI_REGISTER
@@ -639,8 +643,8 @@ extern const unsigned int wolfCrypt_FIPS_ro_end[];
 #define FIPS_IN_CORE_KEY_SZ 32
 #define FIPS_IN_CORE_VERIFY_SZ FIPS_IN_CORE_KEY_SZ
 typedef int (*fips_address_function)(void);
-#define MAX_FIPS_DATA_SZ  100000
-#define MAX_FIPS_CODE_SZ 1000000
+#define MAX_FIPS_DATA_SZ 10000000
+#define MAX_FIPS_CODE_SZ 10000000
 extern int GenBase16_Hash(const byte* in, int length, char* out, int outSz);
 
 static int updateFipsHash(void)
@@ -748,6 +752,8 @@ static int updateFipsHash(void)
         goto out;
     }
 
+    WC_SANITIZE_DISABLE();
+
     ret = crypto_shash_update(desc, (byte *)(wc_ptr_t)first, (word32)code_sz);
     if (ret) {
         pr_err("crypto_shash_update failed: err %d\n", ret);
@@ -773,6 +779,8 @@ static int updateFipsHash(void)
         ret = BAD_STATE_E;
         goto out;
     }
+
+    WC_SANITIZE_ENABLE();
 
     ret = crypto_shash_final(desc, hash);
     if (ret) {

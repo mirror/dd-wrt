@@ -1,6 +1,6 @@
 /* armv8-32-sha3-asm
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2025 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -25,10 +25,7 @@
  *       ../wolfssl/wolfcrypt/src/port/arm/armv8-32-sha3-asm.S
  */
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif /* HAVE_CONFIG_H */
-#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/libwolfssl_sources_asm.h>
 
 #ifdef WOLFSSL_ARMASM
 #if !defined(__aarch64__) && !defined(WOLFSSL_ARMASM_THUMB2)
@@ -510,8 +507,7 @@ L_sha3_arm32_begin:
 	eor	r3, r3, r5, lsl #1
 	# Calc b[0] and XOR t[0] into s[x*5+0]
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-	ldr	r4, [r0]
-	ldr	r5, [r0, #4]
+	ldm	r0, {r4, r5}
 #else
 	ldrd	r4, r5, [r0]
 #endif
@@ -548,8 +544,7 @@ L_sha3_arm32_begin:
 	eor	r10, r10, r2
 	eor	r11, r11, r3
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-	str	r4, [r0]
-	str	r5, [r0, #4]
+	stm	r0, {r4, r5}
 #else
 	strd	r4, r5, [r0]
 #endif
@@ -724,8 +719,7 @@ L_sha3_arm32_begin:
 	str	lr, [sp, #20]
 	# Calc t[1]
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-	ldr	r2, [sp]
-	ldr	r3, [sp, #4]
+	ldm	sp, {r2, r3}
 #else
 	ldrd	r2, r3, [sp]
 #endif
@@ -884,8 +878,7 @@ L_sha3_arm32_begin:
 	ldrd	r2, r3, [sp, #24]
 #endif
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-	ldr	r4, [sp]
-	ldr	r5, [sp, #4]
+	ldm	sp, {r4, r5}
 #else
 	ldrd	r4, r5, [sp]
 #endif
@@ -959,8 +952,7 @@ L_sha3_arm32_begin:
 	# Row Mix
 	# Row 0
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-	ldr	r2, [r0]
-	ldr	r3, [r0, #4]
+	ldm	r0, {r2, r3}
 #else
 	ldrd	r2, r3, [r0]
 #endif
@@ -1036,8 +1028,7 @@ L_sha3_arm32_begin:
 	str	lr, [sp, #36]
 	# Get constant
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-	ldr	r10, [r1]
-	ldr	r11, [r1, #4]
+	ldm	r1, {r10, r11}
 #else
 	ldrd	r10, r11, [r1]
 #endif
@@ -1493,8 +1484,7 @@ L_sha3_arm32_begin:
 	eor	r3, r3, r5, lsl #1
 	# Calc b[0] and XOR t[0] into s[x*5+0]
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-	ldr	r4, [sp]
-	ldr	r5, [sp, #4]
+	ldm	sp, {r4, r5}
 #else
 	ldrd	r4, r5, [sp]
 #endif
@@ -1531,8 +1521,7 @@ L_sha3_arm32_begin:
 	eor	r10, r10, r2
 	eor	r11, r11, r3
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-	str	r4, [sp]
-	str	r5, [sp, #4]
+	stm	sp, {r4, r5}
 #else
 	strd	r4, r5, [sp]
 #endif
@@ -1707,8 +1696,7 @@ L_sha3_arm32_begin:
 	str	lr, [r0, #20]
 	# Calc t[1]
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-	ldr	r2, [r0]
-	ldr	r3, [r0, #4]
+	ldm	r0, {r2, r3}
 #else
 	ldrd	r2, r3, [r0]
 #endif
@@ -1867,8 +1855,7 @@ L_sha3_arm32_begin:
 	ldrd	r2, r3, [r0, #24]
 #endif
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-	ldr	r4, [r0]
-	ldr	r5, [r0, #4]
+	ldm	r0, {r4, r5}
 #else
 	ldrd	r4, r5, [r0]
 #endif
@@ -1942,8 +1929,7 @@ L_sha3_arm32_begin:
 	# Row Mix
 	# Row 0
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-	ldr	r2, [sp]
-	ldr	r3, [sp, #4]
+	ldm	sp, {r2, r3}
 #else
 	ldrd	r2, r3, [sp]
 #endif
@@ -2019,8 +2005,7 @@ L_sha3_arm32_begin:
 	str	lr, [r0, #36]
 	# Get constant
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-	ldr	r10, [r1]
-	ldr	r11, [r1, #4]
+	ldm	r1, {r10, r11}
 #else
 	ldrd	r10, r11, [r1]
 #endif

@@ -40,6 +40,8 @@ jobs:
            --enable-dtls-mtu',
           '--enable-dtls --enable-dtlscid --enable-dtls13 --enable-secure-renegotiation
             --enable-psk --enable-aesccm --enable-nullcipher CPPFLAGS=-DWOLFSSL_STATIC_RSA',
+          '--enable-ascon --enable-experimental',
+          '--enable-ascon CPPFLAGS=-DWOLFSSL_ASCON_UNROLL --enable-experimental',
         ]
     name: make check
     if: github.repository_owner == 'wolfssl'
@@ -82,6 +84,7 @@ jobs:
         os: [ ubuntu-22.04, macos-latest ]
         user-settings: [
           # Add new user_settings.h here
+          'examples/configs/user_settings_eccnonblock.h',
           'examples/configs/user_settings_min_ecc.h',
           'examples/configs/user_settings_wolfboot_keytools.h',
           'examples/configs/user_settings_wolftpm.h',
