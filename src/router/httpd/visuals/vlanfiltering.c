@@ -31,7 +31,7 @@ EJ_VISIBLE void ej_show_vlanfiltering(webs_t wp, int argc, char_t **argv)
 	int has_vlan = br_has_vlan_filtering();
 	if (has_vlan) {
 		bzero(finalbuffer, 512);
-		getIfListB(buffer, sizeof(buffer), NULL, NOBRIDGES, 1);
+		getIfListB(buffer, sizeof(buffer), NULL, 0, 1);
 		foreach(word, buffer, next) {
 			if (isbridged(word)) {
 				strcat(finalbuffer, " ");
