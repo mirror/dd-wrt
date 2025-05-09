@@ -310,6 +310,44 @@ int internal_getRouterBrand()
 		setRouter("HPE 1920-48G-PoE+ 370W (JG928A)");
 		return ROUTER_HP_1920;
 	}
+	if (!strcmp(modelstr, "DGS-1210-10MP")) {
+		setRouter("D-Link DGS-1210-10MP F");
+		return ROUTER_DGS_1210;
+	}
+	if (!strcmp(modelstr, "DGS-1210-10P")) {
+		setRouter("D-Link DGS-1210-10P");
+		return ROUTER_DGS_1210;
+	}
+
+	if (!strcmp(modelstr, "DGS-1210-16")) {
+		setRouter("D-Link DGS-1210-16");
+		return ROUTER_DGS_1210;
+	}
+
+	if (!strcmp(modelstr, "DGS-1210-20")) {
+		setRouter("D-Link DGS-1210-20");
+		return ROUTER_DGS_1210;
+	}
+
+	if (!strcmp(modelstr, "DGS-1210-26")) {
+		setRouter("D-Link DGS-1210-26");
+		return ROUTER_DGS_1210;
+	}
+
+	if (!strcmp(modelstr, "DGS-1210-28")) {
+		setRouter("D-Link DGS-1210-28");
+		return ROUTER_DGS_1210;
+	}
+
+	if (!strcmp(modelstr, "DGS-1210-28MP")) {
+		setRouter("D-Link DGS-1210-28MP F");
+		return ROUTER_DGS_1210;
+	}
+
+	if (!strcmp(modelstr, "DGS-1210-28P")) {
+		setRouter("D-Link DGS-1210-28P F");
+		return ROUTER_DGS_1210;
+	}
 
 	setRouter("Realtek Generic Switch");
 	return ROUTER_REALTEK_GENERIC;
