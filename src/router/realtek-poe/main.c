@@ -62,9 +62,9 @@ static void load_port_config(struct config *cfg, int id)
 	char name[32];
 
 	sprintf(name, "lan%02d",id);
-	enable = nvram_nget("%s_poe_enable");
-	priority = nvram_nget("%s_poe_priority");
-	poe_plus = nvram_nget("%s_poe_plus");
+	enable = nvram_default_nget("1", "%s_poe_enable", name);
+	priority = nvram_nget("%s_poe_priority", name);
+	poe_plus = nvram_nget("%s_poe_plus", name);
 
 	cfg->port_count = MAX(cfg->port_count, id);
 	id--;
