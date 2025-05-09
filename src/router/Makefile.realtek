@@ -823,7 +823,7 @@ endif
 	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f bs=1572864 count=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f.kernel_part; \
 	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f bs=1572864 skip=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f.rootfs_part; \
 	tools/realtek/cameo-imghdr.py $(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f.kernel_part $(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f.kernel_part.hex \
-		"DGS-1210-10mp-f" os 2 \
+		"DGS-1210-10MP" os 2 \
 		2 \
 		32 \
 		0x80100000; \
@@ -851,7 +851,7 @@ endif
 	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-10p bs=1572864 count=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-10p.kernel_part; \
 	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-10p bs=1572864 skip=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-10p.rootfs_part; \
 	tools/realtek/cameo-imghdr.py $(ARCH)-uclibc/vmlinux-dgs-1210-10p.kernel_part $(ARCH)-uclibc/vmlinux-dgs-1210-10p.kernel_part.hex \
-		"DGS-1210-10p" os 2 \
+		"DGS-1210-10P" os 2 \
 		2 \
 		32 \
 		0x80100000; \
@@ -986,7 +986,7 @@ endif
 	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f bs=1572864 count=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f.kernel_part; \
 	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f bs=1572864 skip=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f.rootfs_part; \
 	tools/realtek/cameo-imghdr.py $(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f.kernel_part $(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f.kernel_part.hex \
-		"DGS-1210-28mp-f" os 2 \
+		"DGS-1210-28MP" os 2 \
 		2 \
 		32 \
 		0x80100000; \
@@ -1013,7 +1013,7 @@ endif
 	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-28p-f bs=1572864 count=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-28p-f.kernel_part; \
 	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-28p-f bs=1572864 skip=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-28p-f.rootfs_part; \
 	tools/realtek/cameo-imghdr.py $(ARCH)-uclibc/vmlinux-dgs-1210-28p-f.kernel_part $(ARCH)-uclibc/vmlinux-dgs-1210-28p-f.kernel_part.hex \
-		"DGS-1210-28p-f" os 2 \
+		"DGS-1210-28P" os 2 \
 		2 \
 		32 \
 		0x80100000; \
