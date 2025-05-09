@@ -49,7 +49,7 @@ privoxy-configure: pcre-configure pcre zlib
 	install -D privoxy/privoxy privoxy/openssl
 
 
-	cd privoxy && rm -rf config.{cache,status} \
+	-cd privoxy && rm -rf config.{cache,status} \
 	&& ./configure ac_cv_func_setpgrp_void=yes \
 		--prefix=/usr \
 		--enable-compression \
