@@ -81,9 +81,14 @@
 			};
 
 			partition@300000 {
-				label = "firmware";
+				label = "linux";
 				compatible = "h3c,vfs-firmware";
-				reg = <0x300000 0x1cf0000>;
+				reg = <0x300000 0x1cd0000>;
+			};
+
+			partition@1fd0000 {
+				label = "nvram";
+				reg = <0x1fd0000 0x20000>;
 			};
 
 			partition@1ff0000 {
