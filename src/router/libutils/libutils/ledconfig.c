@@ -69,6 +69,10 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->power_gpio = 9;
 		cfg->diag_gpio = GPIO_LOW | 9;
 		break;
+	case ROUTER_DGS_1210:
+		cfg->power_gpio = 0;
+		cfg->diag_gpio = GPIO_LOW | 0;
+		break;
 #endif
 #ifndef HAVE_BUFFALO
 	case ROUTER_BOARD_TECHNAXX3G:
