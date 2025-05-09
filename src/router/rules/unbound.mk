@@ -7,6 +7,9 @@ endif
 ifeq ($(ARCH),i386)
 UNBOUND_COPTS += -DNEED_PRINTF
 endif
+ifeq ($(CONFIG_REALTEK),y)
+UNBOUND_COPTS += -DNEED_PRINTF
+endif
 ifeq ($(ARCH),x86_64)
 UNBOUND_COPTS += -DNEED_PRINTF
 endif
