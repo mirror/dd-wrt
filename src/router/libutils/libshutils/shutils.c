@@ -191,7 +191,7 @@ void dd_debug(int target, const char *fmt, ...)
 	return;
 }
 
-static int internal_eval_va(int silence, int space, const char *cmd, va_list args)
+static int internal_eval_va(int space, const char *cmd, va_list args)
 {
 	const char *s_args[128];
 	int i = 1;
@@ -228,7 +228,7 @@ int eval_va(const char *cmd, ...)
 {
 	va_list args;
 	va_start(args, (char *)cmd);
-	int ret = internal_eval_va(0, 0, cmd, args);
+	int ret = internal_eval_va(0, cmd, args);
 	va_end(args);
 	return ret;
 }
@@ -237,35 +237,18 @@ int log_eval_va(const char *cmd, ...)
 {
 	va_list args;
 	va_start(args, (char *)cmd);
-	int ret = internal_eval_va(0, 0, cmd, args);
+	int ret = internal_eval_va(0, cmd, args);
 	va_end(args);
 	dd_logstart(cmd, ret);
 	return ret;
 }
 
-int eval_va_silence(const char *cmd, ...)
-{
-	va_list args;
-	va_start(args, (char *)cmd);
-	int ret = internal_eval_va(1, 0, cmd, args);
-	va_end(args);
-	return ret;
-}
 
 int eval_va_space(const char *cmd, ...)
 {
 	va_list args;
 	va_start(args, (char *)cmd);
-	int ret = internal_eval_va(0, 1, cmd, args);
-	va_end(args);
-	return ret;
-}
-
-int eval_va_silence_space(const char *cmd, ...)
-{
-	va_list args;
-	va_start(args, (char *)cmd);
-	int ret = internal_eval_va(1, 1, cmd, args);
+	int ret = internal_eval_va(1, cmd, args);
 	va_end(args);
 	return ret;
 }
