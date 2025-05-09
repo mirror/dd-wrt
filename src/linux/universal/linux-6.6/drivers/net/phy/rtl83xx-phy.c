@@ -3776,19 +3776,31 @@ static int rtl8214c_phy_probe(struct phy_device *phydev)
 	return 0;
 }
 
+#define RTL8390_LED_SW_P_EN_CTRL_ADDR(port)                                                                    (0x12C + (((port / 10) << 2))) /* port: 0-51 */
+  #define RTL8390_LED_SW_P_EN_CTRL_SW_CTRL_LED_EN_OFFSET(port)                                                 ((port % 0xA) * 3)
+  #define RTL8390_LED_SW_P_EN_CTRL_SW_CTRL_LED_EN_MASK(port)                                                   (0x7 << RTL8390_LED_SW_P_EN_CTRL_SW_CTRL_LED_EN_OFFSET(port))
+
+
 static int rtl8218b_ext_phy_probe(struct phy_device *phydev)
 {
 	struct device *dev = &phydev->mdio.dev;
 	int addr = phydev->mdio.addr;
-
+	uint32_t value;
 	/* All base addresses of the PHYs start at multiples of 8 */
 	devm_phy_package_join(dev, phydev, addr & (~7),
 				sizeof(struct rtl83xx_shared_private));
+	pr_info("probe %s\n", __func__,__LINE__);
+	if (soc_info.family == RTL8390_FAMILY_ID) {
+		value = sw_r32(RTL8390_LED_SW_P_EN_CTRL_ADDR(addr));
+		pr_info("enable led for port %d (value was 0x%08X)\n", addr, value);
+		value |= RTL8390_LED_SW_P_EN_CTRL_SW_CTRL_LED_EN_MASK(addr);
+		sw_w32(value, RTL8390_LED_SW_P_EN_CTRL_ADDR(addr));
+	}
 
 	if (!(addr % 8)) {
 		struct rtl83xx_shared_private *shared = phydev->shared->priv;
 		shared->name = "RTL8218B (external)";
-		if (soc_info.family == RTL8380_FAMILY_ID) {
+		if (soc_info.family == RTL8390_FAMILY_ID) {
 			/* Configuration must be done while patching still possible */
 			return rtl8380_configure_ext_rtl8218b(phydev);
 		}

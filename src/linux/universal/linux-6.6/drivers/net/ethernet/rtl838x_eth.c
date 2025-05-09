@@ -1959,6 +1959,12 @@ static int rtmdio_93xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 	return 0;
 }
 
+#define RTL8390_LED_SW_P_EN_CTRL_ADDR(port)                                                                    (0x12C + (((port / 10) << 2))) /* port: 0-51 */
+  #define RTL8390_LED_SW_P_EN_CTRL_SW_CTRL_LED_EN_OFFSET(port)                                                 ((port % 0xA) * 3)
+  #define RTL8390_LED_SW_P_EN_CTRL_SW_CTRL_LED_EN_MASK(port)                                                   (0x7 << RTL8390_LED_SW_P_EN_CTRL_SW_CTRL_LED_EN_OFFSET(port))
+
+
+
 static int rtmdio_838x_reset(struct mii_bus *bus)
 {
 	pr_debug("%s called\n", __func__);
@@ -1974,6 +1980,14 @@ static int rtmdio_838x_reset(struct mii_bus *bus)
 
 static int rtmdio_839x_reset(struct mii_bus *bus)
 {
+	uint32_t value;
+	int addr;
+	for (addr = 0;addr < RTL839X_CPU_PORT;addr++) {
+		value = sw_r32(RTL8390_LED_SW_P_EN_CTRL_ADDR(addr));
+		pr_info("eth: enable led for port %d (value was 0x%08X)\n", addr, value);
+		value |= RTL8390_LED_SW_P_EN_CTRL_SW_CTRL_LED_EN_MASK(addr);
+		sw_w32(value, RTL8390_LED_SW_P_EN_CTRL_ADDR(addr));
+	}
 	return 0;
 
 	pr_debug("%s called\n", __func__);
@@ -1983,6 +1997,7 @@ static int rtmdio_839x_reset(struct mii_bus *bus)
 	sw_w32(0x00000000, RTL839X_SMI_PORT_POLLING_CTRL + 4);
 	/* Disable PHY polling via SoC */
 	sw_w32_mask(1 << 7, 0, RTL839X_SMI_GLB_CTRL);
+
 
 	/* Probably should reset all PHYs here... */
 	return 0;
