@@ -64,7 +64,7 @@ static void load_port_config(struct config *cfg, int id)
 	sprintf(name, "lan%02d",id);
 	enable = nvram_default_nget("1", "%s_poe_enable", name);
 	priority = nvram_nget("%s_poe_priority", name);
-	poe_plus = nvram_nget("%s_poe_plus", name);
+	poe_plus = nvram_default_nget("1", "%s_poe_plus", name); // 802.3at
 
 	cfg->port_count = MAX(cfg->port_count, id);
 	id--;
