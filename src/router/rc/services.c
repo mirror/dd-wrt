@@ -484,6 +484,7 @@ static void handle_index(void)
 #endif
 
 	stop_service_f("usteer"); //
+	stop_service_f("poe");
 	stop_service_f("ubus"); //
 	stop_service_f("lan"); //
 #ifdef HAVE_IPVS
@@ -500,6 +501,7 @@ static void handle_index(void)
 	start_service("bridging");
 #endif
 	start_service_force("ubus");
+	start_service_force("poe");
 	start_service_force("lan");
 	start_service_force("setup_vlans");
 #ifdef HAVE_IPVS
@@ -624,6 +626,7 @@ static void handle_hotspot(void)
 	stop_service_f("ipvs");
 #endif
 	stop_service_f("lan");
+	stop_service_f("poe");
 	stop_service_f("usteer");
 	stop_service_f("ubus");
 #ifdef HAVE_VLANTAGGING
@@ -650,6 +653,7 @@ static void handle_hotspot(void)
 //      start_service("wlconf");
 #endif
 	start_service("ubus");
+	start_service("poe");
 	start_service("lan");
 	start_service_force("setup_vlans");
 #ifdef HAVE_IPVS
@@ -1011,6 +1015,7 @@ static void handle_pppoe(void)
 	stop_service_f("ipvs");
 #endif
 	stop_service_f("lan");
+	stop_service_f("poe");
 	stop_service_f("usteer");
 	stop_service_f("ubus");
 #ifdef HAVE_BONDING
@@ -1028,6 +1033,7 @@ static void handle_pppoe(void)
 	start_service("bridging");
 #endif
 	start_service("ubus");
+	start_service("poe");
 	start_service("lan");
 	start_service_force("setup_vlans");
 #ifdef HAVE_IPVS
@@ -1325,6 +1331,7 @@ static void handle_wireless(void)
 #endif
 	stop_running_main(0, NULL);
 	stop_service("lan");
+	stop_service("poe");
 	stop_service("usteer");
 	stop_service("ubus");
 #ifdef HAVE_VLANTAGGING
@@ -1334,6 +1341,7 @@ static void handle_wireless(void)
 //      start_service("wlconf");
 #endif
 	start_service_force("ubus");
+	start_service_force("poe");
 	start_service_force("lan");
 	start_service_force("setup_vlans");
 #ifdef HAVE_IPVS
@@ -1460,6 +1468,7 @@ static void handle_wireless_2(void)
 	stop_service_f("ipvs");
 #endif
 	stop_service("lan");
+	stop_service("poe");
 	stop_service("usteer");
 	stop_service("ubus");
 #ifdef HAVE_VLANTAGGING
@@ -1473,6 +1482,7 @@ static void handle_wireless_2(void)
 	start_service("bridging");
 #endif
 	start_service_force("ubus");
+	start_service_force("poe");
 	start_service_force("lan");
 	start_service_force("setup_vlans");
 #ifdef HAVE_IPVS
