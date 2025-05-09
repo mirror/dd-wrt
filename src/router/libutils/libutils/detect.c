@@ -273,6 +273,43 @@ int internal_getRouterBrand()
 		setRouter("Zyxel GS1900-8HP v2");
 		return ROUTER_ZYXEL_GS190048;
 	}
+	if (!strcmp(modelstr, "HPE 1920-8G") && !strcmp(version,"(JG920A)")) {
+		setRouter("HPE 1920-8G (JG920A)");
+		return ROUTER_HP_1920;
+	}
+	if (!strcmp(modelstr, "HPE 1920-8G-PoE+") && !strcmp(version,"65W")) {
+		setRouter("HPE 1920-8G-PoE+ 65W (JG921A)");
+		return ROUTER_HP_1920;
+	}
+	if (!strcmp(modelstr, "HPE 1920-8G-PoE+") && !strcmp(version,"180W")) {
+		setRouter("HPE 1920-8G-PoE+ 180W (JG922A)");
+		return ROUTER_HP_1920;
+	}
+	if (!strcmp(modelstr, "HPE 1920-16G") && !strcmp(version,"(JG923A)")) {
+		setRouter("HPE 1920-16G (JG923A)");
+		return ROUTER_HP_1920;
+	}
+	if (!strcmp(modelstr, "HPE 1920-24G") && !strcmp(version,"(JG924A)")) {
+		setRouter("HPE 1920-24G (JG924A)");
+		return ROUTER_HP_1920;
+	}
+	if (!strcmp(modelstr, "HPE 1920-24G-PoE+") && !strcmp(version,"180W")) {
+		setRouter("HPE 1920-24G-PoE+ 180W (JG925A)");
+		return ROUTER_HP_1920;
+	}
+
+	if (!strcmp(modelstr, "HPE 1920-24G-PoE+") && !strcmp(version,"370W")) {
+		setRouter("HPE 1920-24G-PoE+ 370W (JG926A)");
+		return ROUTER_HP_1920;
+	}
+	if (!strcmp(modelstr, "HPE 1920-48G") && !strcmp(version,"(JG927A)")) {
+		setRouter("HPE 1920-48G (JG927A)");
+		return ROUTER_HP_1920;
+	}
+	if (!strcmp(modelstr, "HPE 1920-48G-PoE") && !strcmp(version,"(JG928A)")) {
+		setRouter("HPE 1920-48G-PoE+ 370W (JG928A)");
+		return ROUTER_HP_1920;
+	}
 
 	setRouter("Realtek Generic Switch");
 	return ROUTER_REALTEK_GENERIC;
