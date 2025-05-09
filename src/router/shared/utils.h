@@ -829,7 +829,9 @@
 
 #define ROUTER_HP_1920 0x1210ff
 
-#define ROUTER_REALTEK_GENERIC 0x1220ff
+#define ROUTER_DGS_1210 0x122157
+
+#define ROUTER_REALTEK_GENERIC 0x1230ff
 
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
