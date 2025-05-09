@@ -1532,6 +1532,7 @@ again:;
 	if (count >= http_maxconn * 2)
 		count = 0;
 	if (conn_fp->dead == 0) {
+		dd_logdebug("httpd", "connection mem pool is full!");
 		usleep(100 * 1000);
 		goto again;
 	}
