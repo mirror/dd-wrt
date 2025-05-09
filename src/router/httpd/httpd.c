@@ -1527,14 +1527,15 @@ webs_t get_connection(void)
 	}
 again:;
 	webs_t conn_fp = pool[count++];
+	if (!conn_fp)
+		conn_fp = safe_malloc(sizeof(webs));
+	if (count >= http_maxconn * 2)
+		count = 0;
 	if (conn_fp->dead == 0) {
+		usleep(100 * 1000);
 		goto again;
 	}
 	conn_fp->dead = 0;
-	if (count == http_maxconn * 2)
-		count = 0;
-	if (!conn_fp)
-		conn_fp = safe_malloc(sizeof(webs));
 	memset(conn_fp, 0, sizeof(*conn_fp));
 	return conn_fp;
 }
