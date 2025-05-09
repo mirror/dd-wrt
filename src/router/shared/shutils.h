@@ -78,13 +78,10 @@ int _log_evalpid(char *const argv[], char *path, int timeout, int *ppid);
 extern int eval_va(const char *cmd, ...);
 extern int log_eval_va(const char *cmd, ...);
 extern int eval_va_space(const char *cmd, ...);
-extern int eval_va_silence(const char *cmd, ...);
-extern int eval_va_silence_space(const char *cmd, ...);
 
 #define eval(cmd, args...) eval_va(cmd, ##args, NULL)
 #define log_eval(cmd, args...) log_eval_va(cmd, ##args, NULL)
 #define eval_space(cmd, args...) eval_va_space(cmd, ##args, NULL)
-#define eval_silence(cmd, args...) eval_va_silence(cmd, ##args, NULL)
 
 int check_pid(int pid, char *name);
 int check_pidfromfile(char *pidfile, char *name);
