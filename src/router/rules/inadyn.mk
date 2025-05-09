@@ -57,7 +57,7 @@ inadyn-configure: wolfssl openssl
 		--localstatedir=/tmp \
 		--host=$(ARCH)-linux \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		OpenSSL_CFLAGS="-DOPENSSL_EXTRA -I$(WOLFSSL_SSLPATH) -I$(WOLFSSL_SSLPATH)/standard -I$(WOLFSSL_SSLPATH)/standard/wolfssl  -I$(WOLFSSL_SSLPATH)/wolfssl" \
+		OpenSSL_CFLAGS="-DOPENSSL_EXTRA  -include $(TOP)/wolfssl/standard/wolfssl/options.h -I$(WOLFSSL_SSLPATH)/standard -I$(WOLFSSL_SSLPATH)/standard/wolfssl -I$(WOLFSSL_SSLPATH) -I$(WOLFSSL_SSLPATH)/wolfssl" \
 		OpenSSL_LIBS="-L$(WOLFSSL_SSLPATH)/standard/src/.libs -lwolfssl" \
 		confuse_CFLAGS="-I$(TOP)/inadynv2/libconfuse/src" \
 		confuse_LIBS="-L$(TOP)/inadynv2/libconfuse/src/.libs -lconfuse" \
