@@ -1514,6 +1514,7 @@ static size_t sslbufferwrite(struct sslbuffer *buffer, char *data, size_t datale
 sslKeys_t *keys;
 #endif
 
+#if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
 webs_t get_connection(void)
 {
 	static webs_t pool[16 * 2] = { NULL };
@@ -1540,7 +1541,16 @@ again:;
 	memset(conn_fp, 0, sizeof(*conn_fp));
 	return conn_fp;
 }
-
+#else
+webs_t get_connection(void)
+{
+	static webs_t pool = NULL;
+	
+	if (!pool)
+		pool = safe_malloc(sizeof(webs));
+	return pool;
+}
+#endif
 int main(int argc, char **argv)
 {
 	usockaddr host_addr4;
