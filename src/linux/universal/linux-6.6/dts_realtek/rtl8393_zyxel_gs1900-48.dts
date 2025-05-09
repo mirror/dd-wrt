@@ -146,7 +146,7 @@
 			};
 			partition@fullflash {
 				label = "fullflash";
-				reg = <0x0 0xffffff>;
+				reg = <0x0 0x1000000>;
 			};
 		};
 	};
