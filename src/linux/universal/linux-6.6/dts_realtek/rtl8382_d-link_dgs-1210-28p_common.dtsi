@@ -35,13 +35,13 @@
 	};
 };
 
-&keys {
+/*&keys {
 	mode {
 		label = "mode";
 		gpios = <&gpio1 30 GPIO_ACTIVE_LOW>;
 		linux,code = <BTN_0>;
 	};
-};
+};*/
 
 &uart1 {
 	status = "okay";
