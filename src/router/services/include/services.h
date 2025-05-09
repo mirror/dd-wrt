@@ -204,6 +204,7 @@ DECLARE_SERVICE(atm);
 DECLARE_SERVICE(emf);
 DECLARE_SERVICE(nas);
 DECLARE_SERVICE(qtn);
+DECLARE_SERVICE(poe);
 
 #if defined(HAVE_IPQ6018)
 int nss_disabled(int setcur);

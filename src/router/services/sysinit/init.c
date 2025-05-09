@@ -325,7 +325,10 @@ void start_init_stop(void)
 #ifdef HAVE_USTEER
 	stop_service(usteer);
 #endif
-#ifdef HAVE_USTEER
+#ifdef HAVE_REALTEK
+	stop_service(poe);
+#endif
+#if defined(HAVE_USTEER) || defined(HAVE_REALTEK)
 	stop_service(ubus);
 #endif
 	stop_service(lan);
@@ -452,8 +455,11 @@ void start_init_start(void)
 #ifdef HAVE_VLAN_FILTERING
 	start_service(vlanfiltering);
 #endif
-#ifdef HAVE_USTEER
+#if defined(HAVE_USTEER) || defined(HAVE_REALTEK)
 	start_service(ubus);
+#endif
+#if defined(HAVE_REALTEK)
+	start_service(poe);
 #endif
 	start_service(lan);
 	/* we need todo it a second time since the bridge did not exist before */
