@@ -779,6 +779,252 @@ endif
 		-f dd-wrt-kernel.bin
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-hpe_1920-24g-poe-370w.trx $(ARCH)-uclibc/vmlinux-hpe_1920-24g-poe-370w.vfs
 
+#dlink
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8393_d-link_dgs-1210-52.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8393_d-link_dgs-1210-52.dts
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8393_d-link_dgs-1210-52.dtb $(ARCH)-uclibc/image-rtl8393_d-link_dgs-1210-52.dtb.tmp
+	cat $(ARCH)-uclibc/image-rtl8393_d-link_dgs-1210-52.dtb >> $(ARCH)-uclibc/vmlinux.bin
+	make -f Makefile.realtek compress_lzma
+	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'MIPS DD-WRT Linux-6.6.89' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/cameo-tag.py $(ARCH)-uclibc/vmlinux.bin.uimage 1572864
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-52 bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-dgs-1210-52
+	cp $(ARCH)-uclibc/vmlinux-dgs-1210-52 $(ARCH)-uclibc/vmlinux.bin.uimage
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-52 bs=16 conv=sync
+	echo -n "DD-WRT" >> $(ARCH)-uclibc/vmlinux-dgs-1210-52
+	dd if=/dev/zero bs=25 count=1 >> $(ARCH)-uclibc/vmlinux-dgs-1210-52
+	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-52 bs=1572864 count=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-52.kernel_part; \
+	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-52 bs=1572864 skip=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-52.rootfs_part; \
+	tools/realtek/cameo-imghdr.py $(ARCH)-uclibc/vmlinux-dgs-1210-52.kernel_part $(ARCH)-uclibc/vmlinux-dgs-1210-52.kernel_part.hex \
+		"DGS-1210-52" os 2 \
+		2 \
+		32 \
+		0x80100000; \
+	tools/realtek/cameo-imghdr.py $(ARCH)-uclibc/vmlinux-dgs-1210-52.rootfs_part $(ARCH)-uclibc/vmlinux-dgs-1210-52.rootfs_part.hex \
+		"DGS-1210-52" squashfs 3 \
+		2 \
+		32; \
+	cat $(ARCH)-uclibc/vmlinux-dgs-1210-52.kernel_part.hex $(ARCH)-uclibc/vmlinux-dgs-1210-52.rootfs_part.hex > $(ARCH)-uclibc/vmlinux-dgs-1210-52.factory
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-dgs-1210-52.trx $(ARCH)-uclibc/vmlinux-dgs-1210-52.factory
+
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8380_d-link_dgs-1210-10mp-f.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8380_d-link_dgs-1210-10mp-f.dts
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8380_d-link_dgs-1210-10mp-f.dtb $(ARCH)-uclibc/image-rtl8380_d-link_dgs-1210-10mp-f.dtb.tmp
+	cat $(ARCH)-uclibc/image-rtl8380_d-link_dgs-1210-10mp-f.dtb >> $(ARCH)-uclibc/vmlinux.bin
+	make -f Makefile.realtek compress_lzma
+	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'MIPS DD-WRT Linux-6.6.89' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/cameo-tag.py $(ARCH)-uclibc/vmlinux.bin.uimage 1572864
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f
+	cp $(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f $(ARCH)-uclibc/vmlinux.bin.uimage
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f bs=16 conv=sync
+	echo -n "DD-WRT" >> $(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f
+	dd if=/dev/zero bs=25 count=1 >> $(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f
+	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f bs=1572864 count=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f.kernel_part; \
+	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f bs=1572864 skip=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f.rootfs_part; \
+	tools/realtek/cameo-imghdr.py $(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f.kernel_part $(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f.kernel_part.hex \
+		"DGS-1210-10mp-f" os 2 \
+		2 \
+		32 \
+		0x80100000; \
+	tools/realtek/cameo-imghdr.py $(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f.rootfs_part $(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f.rootfs_part.hex \
+		"DGS-1210-10mp-f" squashfs 3 \
+		2 \
+		32; \
+	cat $(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f.kernel_part.hex $(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f.rootfs_part.hex > $(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f.factory
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-dgs-1210-10mp-f.trx $(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f.factory
+
+
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-10p.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8382_d-link_dgs-1210-10p.dts
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-10p.dtb $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-10p.dtb.tmp
+	cat $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-10p.dtb >> $(ARCH)-uclibc/vmlinux.bin
+	make -f Makefile.realtek compress_lzma
+	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'MIPS DD-WRT Linux-6.6.89' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/cameo-tag.py $(ARCH)-uclibc/vmlinux.bin.uimage 1572864
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-10p bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-dgs-1210-10p
+	cp $(ARCH)-uclibc/vmlinux-dgs-1210-10p $(ARCH)-uclibc/vmlinux.bin.uimage
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-10p bs=16 conv=sync
+	echo -n "DD-WRT" >> $(ARCH)-uclibc/vmlinux-dgs-1210-10p
+	dd if=/dev/zero bs=25 count=1 >> $(ARCH)-uclibc/vmlinux-dgs-1210-10p
+	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-10p bs=1572864 count=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-10p.kernel_part; \
+	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-10p bs=1572864 skip=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-10p.rootfs_part; \
+	tools/realtek/cameo-imghdr.py $(ARCH)-uclibc/vmlinux-dgs-1210-10p.kernel_part $(ARCH)-uclibc/vmlinux-dgs-1210-10p.kernel_part.hex \
+		"DGS-1210-10p" os 2 \
+		2 \
+		32 \
+		0x80100000; \
+	tools/realtek/cameo-imghdr.py $(ARCH)-uclibc/vmlinux-dgs-1210-10p.rootfs_part $(ARCH)-uclibc/vmlinux-dgs-1210-10p.rootfs_part.hex \
+		"DGS-1210-10p" squashfs 3 \
+		2 \
+		32; \
+	cat $(ARCH)-uclibc/vmlinux-dgs-1210-10p.kernel_part.hex $(ARCH)-uclibc/vmlinux-dgs-1210-10p.rootfs_part.hex > $(ARCH)-uclibc/vmlinux-dgs-1210-10p.factory
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-dgs-1210-10p.trx $(ARCH)-uclibc/vmlinux-dgs-1210-10p.factory
+
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-16.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8382_d-link_dgs-1210-16.dts
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-16.dtb $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-16.dtb.tmp
+	cat $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-16.dtb >> $(ARCH)-uclibc/vmlinux.bin
+	make -f Makefile.realtek compress_lzma
+	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'MIPS DD-WRT Linux-6.6.89' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/cameo-tag.py $(ARCH)-uclibc/vmlinux.bin.uimage 1572864
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-16 bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-dgs-1210-16
+	cp $(ARCH)-uclibc/vmlinux-dgs-1210-16 $(ARCH)-uclibc/vmlinux.bin.uimage
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-16 bs=16 conv=sync
+	echo -n "DD-WRT" >> $(ARCH)-uclibc/vmlinux-dgs-1210-16
+	dd if=/dev/zero bs=25 count=1 >> $(ARCH)-uclibc/vmlinux-dgs-1210-16
+	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-16 bs=1572864 count=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-16.kernel_part; \
+	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-16 bs=1572864 skip=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-16.rootfs_part; \
+	tools/realtek/cameo-imghdr.py $(ARCH)-uclibc/vmlinux-dgs-1210-16.kernel_part $(ARCH)-uclibc/vmlinux-dgs-1210-16.kernel_part.hex \
+		"DGS-1210-16" os 2 \
+		2 \
+		32 \
+		0x80100000; \
+	tools/realtek/cameo-imghdr.py $(ARCH)-uclibc/vmlinux-dgs-1210-16.rootfs_part $(ARCH)-uclibc/vmlinux-dgs-1210-16.rootfs_part.hex \
+		"DGS-1210-16" squashfs 3 \
+		2 \
+		32; \
+	cat $(ARCH)-uclibc/vmlinux-dgs-1210-16.kernel_part.hex $(ARCH)-uclibc/vmlinux-dgs-1210-16.rootfs_part.hex > $(ARCH)-uclibc/vmlinux-dgs-1210-16.factory
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-dgs-1210-16.trx $(ARCH)-uclibc/vmlinux-dgs-1210-16.factory
+
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-20.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8382_d-link_dgs-1210-20.dts
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-20.dtb $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-20.dtb.tmp
+	cat $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-20.dtb >> $(ARCH)-uclibc/vmlinux.bin
+	make -f Makefile.realtek compress_lzma
+	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'MIPS DD-WRT Linux-6.6.89' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/cameo-tag.py $(ARCH)-uclibc/vmlinux.bin.uimage 1572864
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-20 bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-dgs-1210-20
+	cp $(ARCH)-uclibc/vmlinux-dgs-1210-20 $(ARCH)-uclibc/vmlinux.bin.uimage
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-20 bs=16 conv=sync
+	echo -n "DD-WRT" >> $(ARCH)-uclibc/vmlinux-dgs-1210-20
+	dd if=/dev/zero bs=25 count=1 >> $(ARCH)-uclibc/vmlinux-dgs-1210-20
+	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-20 bs=1572864 count=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-20.kernel_part; \
+	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-20 bs=1572864 skip=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-20.rootfs_part; \
+	tools/realtek/cameo-imghdr.py $(ARCH)-uclibc/vmlinux-dgs-1210-20.kernel_part $(ARCH)-uclibc/vmlinux-dgs-1210-20.kernel_part.hex \
+		"DGS-1210-20" os 2 \
+		2 \
+		32 \
+		0x80100000; \
+	tools/realtek/cameo-imghdr.py $(ARCH)-uclibc/vmlinux-dgs-1210-20.rootfs_part $(ARCH)-uclibc/vmlinux-dgs-1210-20.rootfs_part.hex \
+		"DGS-1210-20" squashfs 3 \
+		2 \
+		32; \
+	cat $(ARCH)-uclibc/vmlinux-dgs-1210-20.kernel_part.hex $(ARCH)-uclibc/vmlinux-dgs-1210-20.rootfs_part.hex > $(ARCH)-uclibc/vmlinux-dgs-1210-20.factory
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-dgs-1210-20.trx $(ARCH)-uclibc/vmlinux-dgs-1210-20.factory
+
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-26.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8382_d-link_dgs-1210-26.dts
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-26.dtb $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-26.dtb.tmp
+	cat $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-26.dtb >> $(ARCH)-uclibc/vmlinux.bin
+	make -f Makefile.realtek compress_lzma
+	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'MIPS DD-WRT Linux-6.6.89' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/cameo-tag.py $(ARCH)-uclibc/vmlinux.bin.uimage 1572864
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-26 bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-dgs-1210-26
+	cp $(ARCH)-uclibc/vmlinux-dgs-1210-26 $(ARCH)-uclibc/vmlinux.bin.uimage
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-26 bs=16 conv=sync
+	echo -n "DD-WRT" >> $(ARCH)-uclibc/vmlinux-dgs-1210-26
+	dd if=/dev/zero bs=25 count=1 >> $(ARCH)-uclibc/vmlinux-dgs-1210-26
+	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-26 bs=1572864 count=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-26.kernel_part; \
+	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-26 bs=1572864 skip=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-26.rootfs_part; \
+	tools/realtek/cameo-imghdr.py $(ARCH)-uclibc/vmlinux-dgs-1210-26.kernel_part $(ARCH)-uclibc/vmlinux-dgs-1210-26.kernel_part.hex \
+		"DGS-1210-26" os 2 \
+		2 \
+		32 \
+		0x80100000; \
+	tools/realtek/cameo-imghdr.py $(ARCH)-uclibc/vmlinux-dgs-1210-26.rootfs_part $(ARCH)-uclibc/vmlinux-dgs-1210-26.rootfs_part.hex \
+		"DGS-1210-26" squashfs 3 \
+		2 \
+		32; \
+	cat $(ARCH)-uclibc/vmlinux-dgs-1210-26.kernel_part.hex $(ARCH)-uclibc/vmlinux-dgs-1210-26.rootfs_part.hex > $(ARCH)-uclibc/vmlinux-dgs-1210-26.factory
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-dgs-1210-26.trx $(ARCH)-uclibc/vmlinux-dgs-1210-26.factory
+
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-28.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8382_d-link_dgs-1210-28.dts
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-28.dtb $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-28.dtb.tmp
+	cat $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-28.dtb >> $(ARCH)-uclibc/vmlinux.bin
+	make -f Makefile.realtek compress_lzma
+	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'MIPS DD-WRT Linux-6.6.89' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/cameo-tag.py $(ARCH)-uclibc/vmlinux.bin.uimage 1572864
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-28 bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-dgs-1210-28
+	cp $(ARCH)-uclibc/vmlinux-dgs-1210-28 $(ARCH)-uclibc/vmlinux.bin.uimage
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-28 bs=16 conv=sync
+	echo -n "DD-WRT" >> $(ARCH)-uclibc/vmlinux-dgs-1210-28
+	dd if=/dev/zero bs=25 count=1 >> $(ARCH)-uclibc/vmlinux-dgs-1210-28
+	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-28 bs=1572864 count=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-28.kernel_part; \
+	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-28 bs=1572864 skip=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-28.rootfs_part; \
+	tools/realtek/cameo-imghdr.py $(ARCH)-uclibc/vmlinux-dgs-1210-28.kernel_part $(ARCH)-uclibc/vmlinux-dgs-1210-28.kernel_part.hex \
+		"DGS-1210-28" os 2 \
+		2 \
+		32 \
+		0x80100000; \
+	tools/realtek/cameo-imghdr.py $(ARCH)-uclibc/vmlinux-dgs-1210-28.rootfs_part $(ARCH)-uclibc/vmlinux-dgs-1210-28.rootfs_part.hex \
+		"DGS-1210-28" squashfs 3 \
+		2 \
+		32; \
+	cat $(ARCH)-uclibc/vmlinux-dgs-1210-28.kernel_part.hex $(ARCH)-uclibc/vmlinux-dgs-1210-28.rootfs_part.hex > $(ARCH)-uclibc/vmlinux-dgs-1210-28.factory
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-dgs-1210-28.trx $(ARCH)-uclibc/vmlinux-dgs-1210-28.factory
+
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-28mp-f.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8382_d-link_dgs-1210-28mp-f.dts
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-28mp-f.dtb $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-28mp-f.dtb.tmp
+	cat $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-28mp-f.dtb >> $(ARCH)-uclibc/vmlinux.bin
+	make -f Makefile.realtek compress_lzma
+	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'MIPS DD-WRT Linux-6.6.89' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/cameo-tag.py $(ARCH)-uclibc/vmlinux.bin.uimage 1572864
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f
+	cp $(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f $(ARCH)-uclibc/vmlinux.bin.uimage
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f bs=16 conv=sync
+	echo -n "DD-WRT" >> $(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f
+	dd if=/dev/zero bs=25 count=1 >> $(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f
+	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f bs=1572864 count=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f.kernel_part; \
+	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f bs=1572864 skip=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f.rootfs_part; \
+	tools/realtek/cameo-imghdr.py $(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f.kernel_part $(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f.kernel_part.hex \
+		"DGS-1210-28mp-f" os 2 \
+		2 \
+		32 \
+		0x80100000; \
+	tools/realtek/cameo-imghdr.py $(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f.rootfs_part $(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f.rootfs_part.hex \
+		"DGS-1210-28mp-f" squashfs 3 \
+		2 \
+		32; \
+	cat $(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f.kernel_part.hex $(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f.rootfs_part.hex > $(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f.factory
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-dgs-1210-28mp-f.trx $(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f.factory
+
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-28p-f.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8382_d-link_dgs-1210-28p-f.dts
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-28p-f.dtb $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-28p-f.dtb.tmp
+	cat $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-28p-f.dtb >> $(ARCH)-uclibc/vmlinux.bin
+	make -f Makefile.realtek compress_lzma
+	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'MIPS DD-WRT Linux-6.6.89' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/cameo-tag.py $(ARCH)-uclibc/vmlinux.bin.uimage 1572864
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-28p-f bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-dgs-1210-28p-f
+	cp $(ARCH)-uclibc/vmlinux-dgs-1210-28p-f $(ARCH)-uclibc/vmlinux.bin.uimage
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-28p-f bs=16 conv=sync
+	echo -n "DD-WRT" >> $(ARCH)-uclibc/vmlinux-dgs-1210-28p-f
+	dd if=/dev/zero bs=25 count=1 >> $(ARCH)-uclibc/vmlinux-dgs-1210-28p-f
+	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-28p-f bs=1572864 count=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-28p-f.kernel_part; \
+	dd if=$(ARCH)-uclibc/vmlinux-dgs-1210-28p-f bs=1572864 skip=1 of=$(ARCH)-uclibc/vmlinux-dgs-1210-28p-f.rootfs_part; \
+	tools/realtek/cameo-imghdr.py $(ARCH)-uclibc/vmlinux-dgs-1210-28p-f.kernel_part $(ARCH)-uclibc/vmlinux-dgs-1210-28p-f.kernel_part.hex \
+		"DGS-1210-28p-f" os 2 \
+		2 \
+		32 \
+		0x80100000; \
+	tools/realtek/cameo-imghdr.py $(ARCH)-uclibc/vmlinux-dgs-1210-28p-f.rootfs_part $(ARCH)-uclibc/vmlinux-dgs-1210-28p-f.rootfs_part.hex \
+		"DGS-1210-28p-f" squashfs 3 \
+		2 \
+		32; \
+	cat $(ARCH)-uclibc/vmlinux-dgs-1210-28p-f.kernel_part.hex $(ARCH)-uclibc/vmlinux-dgs-1210-28p-f.rootfs_part.hex > $(ARCH)-uclibc/vmlinux-dgs-1210-28p-f.factory
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-dgs-1210-28p-f.trx $(ARCH)-uclibc/vmlinux-dgs-1210-28p-f.factory
+
+
 include rules/all.mk
 
 .PHONY: all clean distclean mrproper install package
