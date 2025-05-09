@@ -1594,7 +1594,9 @@ int main(int argc, char **argv)
 	ctr_drbg_context ctr_drbg;
 	const char *pers = "ssl_server";
 #endif
+#if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
 	http_maxconn = HTTP_MAXCONN;
+#endif
 
 	CRYPT_MUTEX_INIT(&crypt_mutex, NULL);
 	SEM_INIT(&semaphore, 0, http_maxconn);
