@@ -103,9 +103,13 @@ endif
 	$(MAKE) -C $(TOP)/ipeth/libplist
 	$(MAKE) -C $(TOP)/ipeth/libusbmuxd 
 	$(MAKE) -C $(TOP)/ipeth/libimobiledevice/openssl
+ifneq ($(CONFIG_OPENSSL),y)
 	$(MAKE) -C $(TOP)/ipeth/libimobiledevice/wolfssl
+endif
 	$(MAKE) -C $(TOP)/ipeth/usbmuxd/openssl
+ifneq ($(CONFIG_OPENSSL),y)
 	$(MAKE) -C $(TOP)/ipeth/usbmuxd/wolfssl
+endif
 	$(MAKE) -C $(TOP)/ipeth/ipheth-pair clean
 	$(MAKE) -C $(TOP)/ipeth/ipheth-pair
 	
@@ -113,9 +117,13 @@ ipeth-clean:
 	$(MAKE) -C $(TOP)/ipeth/libplist clean
 	$(MAKE) -C $(TOP)/ipeth/libusbmuxd clean
 	$(MAKE) -C $(TOP)/ipeth/libimobiledevice/openssl clean
+ifneq ($(CONFIG_OPENSSL),y)
 	$(MAKE) -C $(TOP)/ipeth/libimobiledevice/wolfssl clean
+endif
 	$(MAKE) -C $(TOP)/ipeth/usbmuxd/openssl clean
+ifneq ($(CONFIG_OPENSSL),y)
 	$(MAKE) -C $(TOP)/ipeth/usbmuxd/wolfssl clean
+endif
 	$(MAKE) -C $(TOP)/ipeth/ipheth-pair clean
 
 ipeth-install:
