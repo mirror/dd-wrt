@@ -849,7 +849,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 					websWrite(wp, "<input type=\"hidden\" name=\"oet%d_ipaddr\" value=\"0.0.0.0\"/>\n", tun);
 					snprintf(temp, sizeof(temp), "oet%d_ipaddr", tun);
 					snprintf(temp2, sizeof(temp2), "oet%d_netmask", tun);
-					show_ip_cidr(wp, NULL, temp, 0, "share.ip", temp2, "share.subnet");
+					show_ip_cidr(wp, NULL, temp, 1, "share.ip", temp2, "share.subnet");
 				}
 				websWrite(wp, "</div>\n");
 			}
@@ -862,7 +862,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 					websWrite(wp, "<input type=\"hidden\" name=\"vxlan%d_ipaddr\" value=\"0.0.0.0\"/>\n", tun);
 					snprintf(temp, sizeof(temp), "vxlan%d_ipaddr", tun);
 					snprintf(temp2, sizeof(temp2), "vxlan%d_netmask", tun);
-					show_ip_cidr(wp, NULL, temp, 0, "share.ip", temp2, "share.subnet");
+					show_ip_cidr(wp, NULL, temp, 1, "share.ip", temp2, "share.subnet");
 				}
 				websWrite(wp, "</div>\n");
 			}

@@ -108,7 +108,7 @@ void show_ipnetmask(webs_t wp, char *var)
 	show_caption(wp, "label", "share.ip", NULL);
 	char temp[32];
 	sprintf(temp, "%s_netmask", var);
-	show_ip_cidr(wp, var, "ipaddr", 0, "share.ip", temp, "share.subnet");
+	show_ip_cidr(wp, var, "ipaddr", 1, "share.ip", temp, "share.subnet");
 	websWrite(wp, "</div>\n");
 }
 

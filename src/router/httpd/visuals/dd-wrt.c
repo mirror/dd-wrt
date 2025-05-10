@@ -2313,7 +2313,7 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 	websWrite(wp, "<input type=\"hidden\" name=\"%s_ipaddr\" value=\"4\" />\n", var);
 	char netmask[32];
 	sprintf(netmask, "%s_netmask", var);
-	show_ip_cidr(wp, var, "ipaddr", 0, "share.ip", netmask, "share.subnet");
+	show_ip_cidr(wp, var, "ipaddr", 1, "share.ip", netmask, "share.subnet");
 	websWrite(wp, "</div>\n");
 #ifdef HAVE_MADWIFI
 /*if (dual)
