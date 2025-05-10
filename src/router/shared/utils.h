@@ -833,6 +833,10 @@
 
 #define ROUTER_REALTEK_GENERIC 0x1230ff
 
+#define ROUTER_NETGEAR_GS 0x123100
+
+#define ROUTER_NETGEAR_GS750E 0x12410b
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 
