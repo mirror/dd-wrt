@@ -348,7 +348,30 @@ int internal_getRouterBrand()
 		setRouter("D-Link DGS-1210-28P F");
 		return ROUTER_DGS_1210;
 	}
-
+	if (!strcmp(modelstr, "GS750E")) {
+		setRouter("Netgear GS750E");
+		return ROUTER_NETGEAR_GS750E;
+	}
+	if (!strcmp(modelstr, "GS108T")) {
+		setRouter("Netgear GS108T v3");
+		return ROUTER_NETGEAR_GS;
+	}
+	if (!strcmp(modelstr, "GS110TPP")) {
+		setRouter("Netgear GS110TPP v1");
+		return ROUTER_NETGEAR_GS;
+	}
+	if (!strcmp(modelstr, "GS110TUP")) {
+		setRouter("Netgear GS110TUP v1");
+		return ROUTER_NETGEAR_GS;
+	}
+	if (!strcmp(modelstr, "GS308T")) {
+		setRouter("Netgear GS308T v1");
+		return ROUTER_NETGEAR_GS;
+	}
+	if (!strcmp(modelstr, "GS310TP")) {
+		setRouter("Netgear GS310TP v1");
+		return ROUTER_NETGEAR_GS;
+	}
 	setRouter("Realtek Generic Switch");
 	return ROUTER_REALTEK_GENERIC;
 #elif defined(HAVE_ALLNETWRT) && !defined(HAVE_ECB9750)
