@@ -1,7 +1,7 @@
 /*
- * sysinit-wasp.c
+ * sysinit-realtek.c
  *
- * Copyright (C) 2012 - 2024 Sebastian Gottschall <s.gottschall@dd-wrt.com>
+ * Copyright (C) 2012 - 2025 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -119,13 +119,9 @@ int check_pmon_nv(void)
 	return 0;
 }
 
-void start_overclocking(void)
-{
-}
-
 char *enable_dtag_vlan(int enable)
 {
-	return "eth0";
+	return "lan1";
 }
 
 char *set_wan_state(int state)
