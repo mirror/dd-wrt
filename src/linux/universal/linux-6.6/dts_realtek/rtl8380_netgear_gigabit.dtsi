@@ -120,12 +120,6 @@
 				reg = <0x1160000 0x020000>;
 			};
 
-			partition@200000 {
-				label = "jffs2";
-				reg = <0x0200000 0x0100000>;
-				read-only;
-			};
-
 			partition@1180000 {
 				label = "runtime2";
 				reg = <0x1180000 0x0e80000>;
