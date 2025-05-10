@@ -85,7 +85,6 @@
 			partition@0 {
 				label = "u-boot";
 				reg = <0x0000000 0x00e0000>;
-				read-only;
 			};
 
 			partition@e0000 {
@@ -111,9 +110,20 @@
 			};
 
 			firmware: partition@300000 {
-				label = "firmware";
+				label = "linux";
 				compatible = "openwrt,uimage", "denx,uimage";
-				reg = <0x0300000 0x0e80000>;
+				reg = <0x0300000 0x0e60000>;
+			};
+
+			partition@1160000 {
+				label = "nvram";
+				reg = <0x1160000 0x020000>;
+			};
+
+			partition@200000 {
+				label = "jffs2";
+				reg = <0x0200000 0x0100000>;
+				read-only;
 			};
 
 			partition@1180000 {

@@ -44,8 +44,8 @@
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "firmware";
-				reg = <0x0 0x760000>;
+				label = "linux";
+				reg = <0x0 0x740000>;
 				compatible = "openwrt,uimage", "denx,uimage";
 				openwrt,ih-magic = <0x174e4741>;
 			};
@@ -69,13 +69,11 @@
 			partition@0 {
 				label = "u-boot";
 				reg = <0x0 0x80000>;
-				read-only;
 			};
 
 			partition@80000 {
 				label = "u-boot-env";
 				reg = <0x80000 0x10000>;
-				read-only;
 			};
 
 			partition@90000 {
@@ -96,7 +94,12 @@
 
 			fwconcat0: partition@1a0000 {
 				label = "runtime";
-				reg = <0x1a0000 0x660000>;
+				reg = <0x1a0000 0x640000>;
+			};
+
+			partition@7e0000 {
+				label = "nvram";
+				reg = <0x7e0000 0x020000>;
 			};
 		};
 	};

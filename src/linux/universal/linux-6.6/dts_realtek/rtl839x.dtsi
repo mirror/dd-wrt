@@ -140,6 +140,12 @@
 		opp13 {
 			opp-hz = /bits/ 64 <750000000>;
 		};
+/*		opp14 {
+			opp-hz = /bits/ 64 <800000000>;
+		};
+		opp15 {
+			opp-hz = /bits/ 64 <850000000>;
+		};*/
 	};
 
 	aliases {
