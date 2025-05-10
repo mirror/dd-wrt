@@ -931,7 +931,7 @@ static void *handle_request(void *arg)
 #ifndef HAVE_MUSL
 	PTHREAD_MUTEX_UNLOCK(&httpd_mutex);
 #endif
-	setnaggle(conn_fp, 1);
+	setnaggle(conn_fp, 0);
 
 	line = malloc(LINE_LEN);
 	/* Initialize the request variables. */
