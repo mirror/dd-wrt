@@ -142,3 +142,14 @@ void start_wifi_drivers(void)
 void start_arch_defaults(void)
 {
 }
+void start_overclocking(void)
+{
+	char *oclock = nvram_safe_get("overclocking");
+	if (*oclock) {
+		sysprintf("echo userspace > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor");
+		sysprintf("echo %s000 > /sys/devices/system/cpu/cpufreq/policy0/scaling_setspeed", oclock);
+	} else {
+		sysprintf("echo userspace > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor");
+		sysprintf("echo 750000 > /sys/devices/system/cpu/cpufreq/policy0/scaling_setspeed", oclock);
+	}
+}
