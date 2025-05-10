@@ -403,19 +403,19 @@ static void setnaggle(webs_t wp, int on)
 	int r;
 
 	if (!DO_SSL(wp)) {
-#if defined(TCP_NOPUSH)
+#if defined(TCP_CORK)
 		/* Set the TCP_NOPUSH socket option, to try and avoid the 0.2 second
 		 ** delay between sending the headers and sending the data.  A better
 		 ** solution is writev() (as used in thttpd), or send the headers with
 		 ** send(MSG_MORE) (only available in Linux so far).
 		 */
 		r = on;
-		(void)setsockopt(wp->conn_fd, IPPROTO_TCP, TCP_NOPUSH, (void *)&r, sizeof(r));
+		(void)setsockopt(wp->conn_fd, IPPROTO_TCP, TCP_CORK, (void *)&r, sizeof(r));
 #endif
-		if (on) {
-			r = 1;
-			(void)setsockopt(wp->conn_fd, IPPROTO_TCP, TCP_NODELAY, (void *)&r, sizeof(r));
-		}
+//		if (on) {
+//			r = 1;
+//			(void)setsockopt(wp->conn_fd, IPPROTO_TCP, TCP_NODELAY, (void *)&r, sizeof(r));
+//		}
 	}
 }
 
@@ -1427,17 +1427,20 @@ static void handle_server_sig_int(int sig)
 	exit(0);
 }
 
-static void settimeouts(webs_t wp, int secs)
+static int settimeouts(webs_t wp, int secs)
 {
 	struct timeval tv;
 	tv.tv_sec = secs;
 	tv.tv_usec = 0;
 	if (setsockopt(wp->conn_fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0) {
 		perror("setsockopt(SO_SNDTIMEO)");
+		return -1;
 	}
 	if (setsockopt(wp->conn_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
 		perror("setsockopt(SO_RCVTIMEO)");
+		return -1;
 	}
+	return 0;
 }
 
 static void handle_sigchld(int sig)
@@ -1920,7 +1923,12 @@ int main(int argc, char **argv)
 		}
 
 		/* Make sure we don't linger a long time if the other end disappears */
-		settimeouts(conn_fp, timeout);
+		if (settimeouts(conn_fp, timeout)) {
+			close(conn_fp->conn_fd);
+			PTHREAD_MUTEX_UNLOCK(&accept_mutex);
+			SEM_POST(&semaphore);
+			continue;
+		}
 		//              fcntl(conn_fp->conn_fd, F_SETFD, fcntl(conn_fp->conn_fd, F_GETFD) | FD_CLOEXEC);
 		int action = check_action();
 		if (action == ACT_SW_RESTORE || action == ACT_HW_RESTORE) {
