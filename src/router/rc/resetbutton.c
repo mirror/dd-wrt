@@ -207,6 +207,10 @@ static int getbuttonstate()
 		return !get_gpio(27);
 	case ROUTER_DGS_1210:
 		return !get_gpio(57);
+	case ROUTER_NETGEAR_GS750E:
+		return !get_gpio(11);
+	case ROUTER_NETGEAR_GS:
+		return !get_gpio(0);
 	default:
 		return 0;
 	}
