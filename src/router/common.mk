@@ -3,7 +3,7 @@ export LTO := -flto -fwhole-program -flto-partition=none
 export LTOAUTO := -flto=auto -fno-fat-lto-objects
 export LDLTOAUTO := -fuse-ld=bfd -flto=auto -fuse-linker-plugin
 export LTOMIN := -flto
-export LDLTO := $(LTO) -flto=$(shell getconf _NPROCESSORS_ONLN) -fuse-linker-plugin
+export LDLTO := -flto=$(shell getconf _NPROCESSORS_ONLN) -fuse-linker-plugin
 export LTOPLUGIN := --plugin=$(shell $(CROSS_COMPILE)gcc --print-file-name=liblto_plugin.so)
 export GCCAR := ${shell which $(ARCH)-linux-gcc-ar}
 export GCCRANLIB := ${shell which $(ARCH)-linux-gcc-ranlib}
