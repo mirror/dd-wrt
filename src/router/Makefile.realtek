@@ -1024,6 +1024,68 @@ endif
 	cat $(ARCH)-uclibc/vmlinux-dgs-1210-28p-f.kernel_part.hex $(ARCH)-uclibc/vmlinux-dgs-1210-28p-f.rootfs_part.hex > $(ARCH)-uclibc/vmlinux-dgs-1210-28p-f.factory
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-dgs-1210-28p-f.trx $(ARCH)-uclibc/vmlinux-dgs-1210-28p-f.factory
 
+#netgear
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8393_netgear_gs750e.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8393_netgear_gs750e.dts
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8393_netgear_gs750e.dtb $(ARCH)-uclibc/image-rtl8393_netgear_gs750e.dtb.tmp
+	cat $(ARCH)-uclibc/image-rtl8393_netgear_gs750e.dtb >> $(ARCH)-uclibc/vmlinux.bin
+	make -f Makefile.realtek compress_lzma
+	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x174e4741  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs750e bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs750e
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs750e.trx $(ARCH)-uclibc/vmlinux-gs750e
+
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8380_netgear_gs108t-v3.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8380_netgear_gs108t-v3.dts
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8380_netgear_gs108t-v3.dtb $(ARCH)-uclibc/image-rtl8380_netgear_gs108t-v3.dtb.tmp
+	cat $(ARCH)-uclibc/image-rtl8380_netgear_gs108t-v3.dtb >> $(ARCH)-uclibc/vmlinux.bin
+	make -f Makefile.realtek compress_lzma
+	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n '9.9.9.9' -M 0x4e474520  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs108t-v3 bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs108t-v3
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs108t-v3.trx $(ARCH)-uclibc/vmlinux-gs108t-v3
+
+
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8380_netgear_gs110tpp-v1.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8380_netgear_gs110tpp-v1.dts
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8380_netgear_gs110tpp-v1.dtb $(ARCH)-uclibc/image-rtl8380_netgear_gs110tpp-v1.dtb.tmp
+	cat $(ARCH)-uclibc/image-rtl8380_netgear_gs110tpp-v1.dtb >> $(ARCH)-uclibc/vmlinux.bin
+	make -f Makefile.realtek compress_lzma
+	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n '9.9.9.9' -M 0x4e474520  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs110tpp-v1 bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs110tpp-v1
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs110tpp-v1.trx $(ARCH)-uclibc/vmlinux-gs110tpp-v1
+
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8380_netgear_gs110tup-v1.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8380_netgear_gs110tup-v1.dts
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8380_netgear_gs110tup-v1.dtb $(ARCH)-uclibc/image-rtl8380_netgear_gs110tup-v1.dtb.tmp
+	cat $(ARCH)-uclibc/image-rtl8380_netgear_gs110tup-v1.dtb >> $(ARCH)-uclibc/vmlinux.bin
+	make -f Makefile.realtek compress_lzma
+	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x4e474720  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs110tup-v1 bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs110tup-v1
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs110tup-v1.trx $(ARCH)-uclibc/vmlinux-gs110tup-v1
+
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8380_netgear_gs308t-v1.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8380_netgear_gs308t-v1.dts
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8380_netgear_gs308t-v1.dtb $(ARCH)-uclibc/image-rtl8380_netgear_gs308t-v1.dtb.tmp
+	cat $(ARCH)-uclibc/image-rtl8380_netgear_gs308t-v1.dtb >> $(ARCH)-uclibc/vmlinux.bin
+	make -f Makefile.realtek compress_lzma
+	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x4e474720  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs308t-v1 bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs308t-v1
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs308t-v1.trx $(ARCH)-uclibc/vmlinux-gs308t-v1
+
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl8380_netgear_gs310tp-v1.dtb.tmp $(LINUXDIR)/dts_realtek/rtl8380_netgear_gs310tp-v1.dts
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8380_netgear_gs310tp-v1.dtb $(ARCH)-uclibc/image-rtl8380_netgear_gs310tp-v1.dtb.tmp
+	cat $(ARCH)-uclibc/image-rtl8380_netgear_gs310tp-v1.dtb >> $(ARCH)-uclibc/vmlinux.bin
+	make -f Makefile.realtek compress_lzma
+	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x4e474720  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs310tp-v1 bs=64k conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs310tp-v1
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs310tp-v1.trx $(ARCH)-uclibc/vmlinux-gs310tp-v1
+
 
 include rules/all.mk
 
