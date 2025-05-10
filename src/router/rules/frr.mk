@@ -86,17 +86,17 @@ frr-install:
 	rm -rf $(INSTALLDIR)/frr/usr/tmp 
 	cp -urv $(TOP)/frr/tools/etc $(INSTALLDIR)/frr
 
-#	rm -rf $(INSTALLDIR)/frr/tmp
-#	rm -rf $(INSTALLDIR)/frr/usr/info
-#	rm -rf $(INSTALLDIR)/frr/usr/share
+	rm -rf $(INSTALLDIR)/frr/tmp
+	rm -rf $(INSTALLDIR)/frr/usr/info
+	rm -rf $(INSTALLDIR)/frr/usr/share
 	rm -rf $(INSTALLDIR)/frr/usr/include
-#	rm -rf $(INSTALLDIR)/frr/usr/etc
-#	rm -rf $(INSTALLDIR)/frr/usr/man
-#	rm -f $(INSTALLDIR)/frr/usr/lib/*.a
-#	rm -f $(INSTALLDIR)/frr/usr/lib/*.la
-#	rm -f $(INSTALLDIR)/frr/usr/lib/frr/modules/*.la
-#	rm -f $(INSTALLDIR)/frr/usr/bin/bgp_btoa
-#	rm -f $(INSTALLDIR)/frr/usr/bin/test_igmpv3_join
+	rm -rf $(INSTALLDIR)/frr/usr/etc
+	rm -rf $(INSTALLDIR)/frr/usr/man
+	rm -f $(INSTALLDIR)/frr/usr/lib/*.a
+	rm -f $(INSTALLDIR)/frr/usr/lib/*.la
+	rm -f $(INSTALLDIR)/frr/usr/lib/frr/modules/*.la
+	rm -f $(INSTALLDIR)/frr/usr/bin/bgp_btoa
+	rm -f $(INSTALLDIR)/frr/usr/bin/test_igmpv3_join
 	mkdir -p $(INSTALLDIR)/frr/usr/bin
 
 frr-clean:
