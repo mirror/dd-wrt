@@ -54,6 +54,9 @@
 #ifdef HAVE_HABANERO
 static unsigned int qca4019_clocks[] = { 48, 200, 384, 413, 448, 500, 512, 537, 565, 597, 632, 672, 716, 768, 823, 896, 0 };
 #endif
+#ifdef HAVE_REALTEK
+static unsigned int realtek_clocks[] = { 425, 450, 475, 500, 525, 550, 575, 600, 625, 650, 675, 700, 725, 750, 0 };
+#endif
 #ifdef HAVE_ALPINE
 static unsigned int alpine_clocks[] = {
 	533, 800, 1200, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 0
@@ -131,6 +134,12 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 		nvram_set("clkfreq", "716");
 	}
 	c = qca4019_clocks;
+#elif defined(HAVE_REALTEK)
+	if (!*oclk) {
+		oclk = "750";
+		nvram_set("clkfreq", "750");
+	}
+	c = realtek_clocks;
 #elif defined(HAVE_NORTHSTAR)
 	switch (rev) {
 	case 11:
@@ -183,7 +192,7 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 	int i = 0;
 
 	//check if cpu clock list contains current clkfreq
-#if defined(HAVE_IPQ6018) || defined(HAVE_HABANERO) || defined(HAVE_ALPINE)
+#if defined(HAVE_IPQ6018) || defined(HAVE_HABANERO) || defined(HAVE_REALTEK) || defined(HAVE_ALPINE)
 	int in_clock_array = 1;
 #else
 	int in_clock_array = 0;
