@@ -123,14 +123,11 @@ void start_sysinit(void)
 		}
 		break;
 	}
-	if (nvram_match("DD_BOARD","D-Link DGS-1210-28P F") ||
-	nvram_match("DD_BOARD","D-Link DGS-1210-28MP F")
-	{
+	if (nvram_match("DD_BOARD", "D-Link DGS-1210-28P F") || nvram_match("DD_BOARD", "D-Link DGS-1210-28MP F")) {
 		sysprintf("1 > /sys/class/hwmon/hwmon0/pwm1_enable");
 		sysprintf("250 > /sys/class/hwmon/hwmon0/pwm1_enable");
 	}
-	
-	d-link,dgs-1210-28p-f|d-link,dgs-1210-28mp-f
+
 	nvram_set("dsa", "1"); // flag to hide eth0
 	insmod("cryptodev");
 	/*
