@@ -837,7 +837,7 @@
 
 #define ROUTER_NETGEAR_GS750E 0x12410b
 
-#define ROUTER_LINKSYS_LGS 0x12410b
+#define ROUTER_LINKSYS_LGS 0x12510b
 
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
