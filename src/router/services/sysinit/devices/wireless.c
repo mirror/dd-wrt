@@ -364,6 +364,7 @@ int load_ath5k(void)
 	insmod("ath5k");
 	if (!detectchange(NULL))
 		rmmod("ath5k");
+	return 0;
 }
 
 int load_ath9k(void)
@@ -395,6 +396,7 @@ int load_ath9k(void)
 	if (!totalwifi)
 		rmmod("ath");
 	delete_ath9k_devices(NULL);
+	return 0;
 }
 
 int load_madwifi(void)
