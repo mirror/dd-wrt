@@ -34,7 +34,7 @@
 #include "compressor.h"
 #include "lzma_xz_options.h"
 
-#define DBVERSION 7
+#define DBVERSION 8
 static struct bcj bcj[] = { { "x86", LZMA_FILTER_X86, 0, 0 },
 			    { "powerpc", LZMA_FILTER_POWERPC, 0, 0 },
 			    { "ia64", LZMA_FILTER_IA64, 0, 0 },
@@ -212,6 +212,7 @@ struct MATRIXENTRY {
 	int pb;
 	int lc;
 	int lp;
+	int mf;
 	int used;
 };
 
@@ -232,16 +233,106 @@ static struct MATRIXENTRY matrix[] = {
 	{ 4, 1, 3 }, { 4, 1, 4 }, { 4, 2, 0 }, { 4, 2, 1 }, { 4, 2, 2 }, { 4, 2, 3 }, { 4, 2, 4 }, { 4, 3, 0 }, { 4, 3, 1 },
 	{ 4, 3, 2 }, { 4, 3, 3 }, { 4, 3, 4 }, { 4, 4, 0 }, { 4, 4, 1 }, { 4, 4, 2 }, { 4, 4, 3 }, { 4, 4, 4 },
 };
+
+	LZMA_MF_HC3     = 0x03,
+		/**<
+		 * \brief       Hash Chain with 2- and 3-byte hashing
+		 *
+		 * Minimum nice_len: 3
+		 *
+		 * Memory usage:
+		 *  - dict_size <= 16 MiB: dict_size * 7.5
+		 *  - dict_size > 16 MiB: dict_size * 5.5 + 64 MiB
+		 */
+
+	LZMA_MF_HC4     = 0x04,
+		/**<
+		 * \brief       Hash Chain with 2-, 3-, and 4-byte hashing
+		 *
+		 * Minimum nice_len: 4
+		 *
+		 * Memory usage:
+		 *  - dict_size <= 32 MiB: dict_size * 7.5
+		 *  - dict_size > 32 MiB: dict_size * 6.5
+		 */
+
+	LZMA_MF_BT2     = 0x12,
+		/**<
+		 * \brief       Binary Tree with 2-byte hashing
+		 *
+		 * Minimum nice_len: 2
+		 *
+		 * Memory usage: dict_size * 9.5
+		 */
+
+	LZMA_MF_BT3     = 0x13,
+		/**<
+		 * \brief       Binary Tree with 2- and 3-byte hashing
+		 *
+		 * Minimum nice_len: 3
+		 *
+		 * Memory usage:
+		 *  - dict_size <= 16 MiB: dict_size * 11.5
+		 *  - dict_size > 16 MiB: dict_size * 9.5 + 64 MiB
+		 */
+
+	LZMA_MF_BT4     = 0x14
+		/**<
+		 * \brief       Binary Tree with 2-, 3-, and 4-byte hashing
+		 *
+		 * Minimum nice_len: 4
+		 *
+		 * Memory usage:
+		 *  - dict_size <= 32 MiB: dict_size * 11.5
+		 *  - dict_size > 32 MiB: dict_size * 10.5
+		 */
 #endif
 static struct MATRIXENTRY matrix[] = {
-	{ 0, 0, 0 }, { 0, 0, 1 }, { 0, 0, 2 }, { 0, 0, 3 }, { 0, 0, 4 }, { 0, 1, 0 }, { 0, 1, 1 }, { 0, 1, 2 }, { 0, 1, 3 },
-	{ 0, 2, 0 }, { 0, 2, 1 }, { 0, 2, 2 }, { 0, 3, 0 }, { 0, 3, 1 }, { 0, 4, 0 }, { 1, 0, 0 }, { 1, 0, 1 }, { 1, 0, 2 },
-	{ 1, 0, 3 }, { 1, 0, 4 }, { 1, 1, 0 }, { 1, 1, 1 }, { 1, 1, 2 }, { 1, 1, 3 }, { 1, 2, 0 }, { 1, 2, 1 }, { 1, 2, 2 },
-	{ 1, 3, 0 }, { 1, 3, 1 }, { 1, 4, 0 }, { 2, 0, 0 }, { 2, 0, 1 }, { 2, 0, 2 }, { 2, 0, 3 }, { 2, 0, 4 }, { 2, 1, 0 },
-	{ 2, 1, 1 }, { 2, 1, 2 }, { 2, 1, 3 }, { 2, 2, 0 }, { 2, 2, 1 }, { 2, 2, 2 }, { 2, 3, 0 }, { 2, 3, 1 }, { 2, 4, 0 },
-	{ 3, 0, 0 }, { 3, 0, 1 }, { 3, 0, 2 }, { 3, 0, 3 }, { 3, 0, 4 }, { 3, 1, 0 }, { 3, 1, 1 }, { 3, 1, 2 }, { 3, 1, 3 },
-	{ 3, 2, 0 }, { 3, 2, 1 }, { 3, 2, 2 }, { 3, 3, 0 }, { 3, 3, 1 }, { 3, 4, 0 }, { 4, 0, 0 }, { 4, 0, 1 }, { 4, 0, 2 },
-	{ 4, 0, 3 }, { 4, 0, 4 }, { 4, 1, 0 }, { 4, 1, 1 }, { 4, 1, 2 }, { 4, 1, 3 }, { 4, 2, 0 }, { 4, 2, 1 }, { 4, 3, 0 },
+	{ 0, 0, 0 ,0x3}, { 0, 0, 1 ,0x3}, { 0, 0, 2 ,0x3}, { 0, 0, 3 ,0x3}, { 0, 0, 4 ,0x3}, { 0, 1, 0 ,0x3}, { 0, 1, 1 ,0x3}, { 0, 1, 2 ,0x3}, { 0, 1, 3 ,0x3},
+	{ 0, 2, 0 ,0x3}, { 0, 2, 1 ,0x3}, { 0, 2, 2 ,0x3}, { 0, 3, 0 ,0x3}, { 0, 3, 1 ,0x3}, { 0, 4, 0 ,0x3}, { 1, 0, 0 ,0x3}, { 1, 0, 1 ,0x3}, { 1, 0, 2 ,0x3},
+	{ 1, 0, 3 ,0x3}, { 1, 0, 4 ,0x3}, { 1, 1, 0 ,0x3}, { 1, 1, 1 ,0x3}, { 1, 1, 2 ,0x3}, { 1, 1, 3 ,0x3}, { 1, 2, 0 ,0x3}, { 1, 2, 1 ,0x3}, { 1, 2, 2 ,0x3},
+	{ 1, 3, 0 ,0x3}, { 1, 3, 1 ,0x3}, { 1, 4, 0 ,0x3}, { 2, 0, 0 ,0x3}, { 2, 0, 1 ,0x3}, { 2, 0, 2 ,0x3}, { 2, 0, 3 ,0x3}, { 2, 0, 4 ,0x3}, { 2, 1, 0 ,0x3},
+	{ 2, 1, 1 ,0x3}, { 2, 1, 2 ,0x3}, { 2, 1, 3 ,0x3}, { 2, 2, 0 ,0x3}, { 2, 2, 1 ,0x3}, { 2, 2, 2 ,0x3}, { 2, 3, 0 ,0x3}, { 2, 3, 1 ,0x3}, { 2, 4, 0 ,0x3},
+	{ 3, 0, 0 ,0x3}, { 3, 0, 1 ,0x3}, { 3, 0, 2 ,0x3}, { 3, 0, 3 ,0x3}, { 3, 0, 4 ,0x3}, { 3, 1, 0 ,0x3}, { 3, 1, 1 ,0x3}, { 3, 1, 2 ,0x3}, { 3, 1, 3 ,0x3},
+	{ 3, 2, 0 ,0x3}, { 3, 2, 1 ,0x3}, { 3, 2, 2 ,0x3}, { 3, 3, 0 ,0x3}, { 3, 3, 1 ,0x3}, { 3, 4, 0 ,0x3}, { 4, 0, 0 ,0x3}, { 4, 0, 1 ,0x3}, { 4, 0, 2 ,0x3},
+	{ 4, 0, 3 ,0x3}, { 4, 0, 4 ,0x3}, { 4, 1, 0 ,0x3}, { 4, 1, 1 ,0x3}, { 4, 1, 2 ,0x3}, { 4, 1, 3 ,0x3}, { 4, 2, 0 ,0x3}, { 4, 2, 1 ,0x3}, { 4, 3, 0 ,0x3},
+
+	{ 0, 0, 0 ,0x4}, { 0, 0, 1 ,0x4}, { 0, 0, 2 ,0x4}, { 0, 0, 3 ,0x4}, { 0, 0, 4 ,0x4}, { 0, 1, 0 ,0x4}, { 0, 1, 1 ,0x4}, { 0, 1, 2 ,0x4}, { 0, 1, 3 ,0x4},
+	{ 0, 2, 0 ,0x4}, { 0, 2, 1 ,0x4}, { 0, 2, 2 ,0x4}, { 0, 3, 0 ,0x4}, { 0, 3, 1 ,0x4}, { 0, 4, 0 ,0x4}, { 1, 0, 0 ,0x4}, { 1, 0, 1 ,0x4}, { 1, 0, 2 ,0x4},
+	{ 1, 0, 3 ,0x4}, { 1, 0, 4 ,0x4}, { 1, 1, 0 ,0x4}, { 1, 1, 1 ,0x4}, { 1, 1, 2 ,0x4}, { 1, 1, 3 ,0x4}, { 1, 2, 0 ,0x4}, { 1, 2, 1 ,0x4}, { 1, 2, 2 ,0x4},
+	{ 1, 3, 0 ,0x4}, { 1, 3, 1 ,0x4}, { 1, 4, 0 ,0x4}, { 2, 0, 0 ,0x4}, { 2, 0, 1 ,0x4}, { 2, 0, 2 ,0x4}, { 2, 0, 3 ,0x4}, { 2, 0, 4 ,0x4}, { 2, 1, 0 ,0x4},
+	{ 2, 1, 1 ,0x4}, { 2, 1, 2 ,0x4}, { 2, 1, 3 ,0x4}, { 2, 2, 0 ,0x4}, { 2, 2, 1 ,0x4}, { 2, 2, 2 ,0x4}, { 2, 3, 0 ,0x4}, { 2, 3, 1 ,0x4}, { 2, 4, 0 ,0x4},
+	{ 3, 0, 0 ,0x4}, { 3, 0, 1 ,0x4}, { 3, 0, 2 ,0x4}, { 3, 0, 3 ,0x4}, { 3, 0, 4 ,0x4}, { 3, 1, 0 ,0x4}, { 3, 1, 1 ,0x4}, { 3, 1, 2 ,0x4}, { 3, 1, 3 ,0x4},
+	{ 3, 2, 0 ,0x4}, { 3, 2, 1 ,0x4}, { 3, 2, 2 ,0x4}, { 3, 3, 0 ,0x4}, { 3, 3, 1 ,0x4}, { 3, 4, 0 ,0x4}, { 4, 0, 0 ,0x4}, { 4, 0, 1 ,0x4}, { 4, 0, 2 ,0x4},
+	{ 4, 0, 3 ,0x4}, { 4, 0, 4 ,0x4}, { 4, 1, 0 ,0x4}, { 4, 1, 1 ,0x4}, { 4, 1, 2 ,0x4}, { 4, 1, 3 ,0x4}, { 4, 2, 0 ,0x4}, { 4, 2, 1 ,0x4}, { 4, 3, 0 ,0x4},
+
+	{ 0, 0, 0 ,0x12}, { 0, 0, 1 ,0x12}, { 0, 0, 2 ,0x12}, { 0, 0, 3 ,0x12}, { 0, 0, 4 ,0x12}, { 0, 1, 0 ,0x12}, { 0, 1, 1 ,0x12}, { 0, 1, 2 ,0x12}, { 0, 1, 3 ,0x12},
+	{ 0, 2, 0 ,0x12}, { 0, 2, 1 ,0x12}, { 0, 2, 2 ,0x12}, { 0, 3, 0 ,0x12}, { 0, 3, 1 ,0x12}, { 0, 4, 0 ,0x12}, { 1, 0, 0 ,0x12}, { 1, 0, 1 ,0x12}, { 1, 0, 2 ,0x12},
+	{ 1, 0, 3 ,0x12}, { 1, 0, 4 ,0x12}, { 1, 1, 0 ,0x12}, { 1, 1, 1 ,0x12}, { 1, 1, 2 ,0x12}, { 1, 1, 3 ,0x12}, { 1, 2, 0 ,0x12}, { 1, 2, 1 ,0x12}, { 1, 2, 2 ,0x12},
+	{ 1, 3, 0 ,0x12}, { 1, 3, 1 ,0x12}, { 1, 4, 0 ,0x12}, { 2, 0, 0 ,0x12}, { 2, 0, 1 ,0x12}, { 2, 0, 2 ,0x12}, { 2, 0, 3 ,0x12}, { 2, 0, 4 ,0x12}, { 2, 1, 0 ,0x12},
+	{ 2, 1, 1 ,0x12}, { 2, 1, 2 ,0x12}, { 2, 1, 3 ,0x12}, { 2, 2, 0 ,0x12}, { 2, 2, 1 ,0x12}, { 2, 2, 2 ,0x12}, { 2, 3, 0 ,0x12}, { 2, 3, 1 ,0x12}, { 2, 4, 0 ,0x12},
+	{ 3, 0, 0 ,0x12}, { 3, 0, 1 ,0x12}, { 3, 0, 2 ,0x12}, { 3, 0, 3 ,0x12}, { 3, 0, 4 ,0x12}, { 3, 1, 0 ,0x12}, { 3, 1, 1 ,0x12}, { 3, 1, 2 ,0x12}, { 3, 1, 3 ,0x12},
+	{ 3, 2, 0 ,0x12}, { 3, 2, 1 ,0x12}, { 3, 2, 2 ,0x12}, { 3, 3, 0 ,0x12}, { 3, 3, 1 ,0x12}, { 3, 4, 0 ,0x12}, { 4, 0, 0 ,0x12}, { 4, 0, 1 ,0x12}, { 4, 0, 2 ,0x12},
+	{ 4, 0, 3 ,0x12}, { 4, 0, 4 ,0x12}, { 4, 1, 0 ,0x12}, { 4, 1, 1 ,0x12}, { 4, 1, 2 ,0x12}, { 4, 1, 3 ,0x12}, { 4, 2, 0 ,0x12}, { 4, 2, 1 ,0x12}, { 4, 3, 0 ,0x12},
+
+	{ 0, 0, 0 ,0x13}, { 0, 0, 1 ,0x13}, { 0, 0, 2 ,0x13}, { 0, 0, 3 ,0x13}, { 0, 0, 4 ,0x13}, { 0, 1, 0 ,0x13}, { 0, 1, 1 ,0x13}, { 0, 1, 2 ,0x13}, { 0, 1, 3 ,0x13},
+	{ 0, 2, 0 ,0x13}, { 0, 2, 1 ,0x13}, { 0, 2, 2 ,0x13}, { 0, 3, 0 ,0x13}, { 0, 3, 1 ,0x13}, { 0, 4, 0 ,0x13}, { 1, 0, 0 ,0x13}, { 1, 0, 1 ,0x13}, { 1, 0, 2 ,0x13},
+	{ 1, 0, 3 ,0x13}, { 1, 0, 4 ,0x13}, { 1, 1, 0 ,0x13}, { 1, 1, 1 ,0x13}, { 1, 1, 2 ,0x13}, { 1, 1, 3 ,0x13}, { 1, 2, 0 ,0x13}, { 1, 2, 1 ,0x13}, { 1, 2, 2 ,0x13},
+	{ 1, 3, 0 ,0x13}, { 1, 3, 1 ,0x13}, { 1, 4, 0 ,0x13}, { 2, 0, 0 ,0x13}, { 2, 0, 1 ,0x13}, { 2, 0, 2 ,0x13}, { 2, 0, 3 ,0x13}, { 2, 0, 4 ,0x13}, { 2, 1, 0 ,0x13},
+	{ 2, 1, 1 ,0x13}, { 2, 1, 2 ,0x13}, { 2, 1, 3 ,0x13}, { 2, 2, 0 ,0x13}, { 2, 2, 1 ,0x13}, { 2, 2, 2 ,0x13}, { 2, 3, 0 ,0x13}, { 2, 3, 1 ,0x13}, { 2, 4, 0 ,0x13},
+	{ 3, 0, 0 ,0x13}, { 3, 0, 1 ,0x13}, { 3, 0, 2 ,0x13}, { 3, 0, 3 ,0x13}, { 3, 0, 4 ,0x13}, { 3, 1, 0 ,0x13}, { 3, 1, 1 ,0x13}, { 3, 1, 2 ,0x13}, { 3, 1, 3 ,0x13},
+	{ 3, 2, 0 ,0x13}, { 3, 2, 1 ,0x13}, { 3, 2, 2 ,0x13}, { 3, 3, 0 ,0x13}, { 3, 3, 1 ,0x13}, { 3, 4, 0 ,0x13}, { 4, 0, 0 ,0x13}, { 4, 0, 1 ,0x13}, { 4, 0, 2 ,0x13},
+	{ 4, 0, 3 ,0x13}, { 4, 0, 4 ,0x13}, { 4, 1, 0 ,0x13}, { 4, 1, 1 ,0x13}, { 4, 1, 2 ,0x13}, { 4, 1, 3 ,0x13}, { 4, 2, 0 ,0x13}, { 4, 2, 1 ,0x13}, { 4, 3, 0 ,0x13},
+
+	{ 0, 0, 0 ,0x14}, { 0, 0, 1 ,0x14}, { 0, 0, 2 ,0x14}, { 0, 0, 3 ,0x14}, { 0, 0, 4 ,0x14}, { 0, 1, 0 ,0x14}, { 0, 1, 1 ,0x14}, { 0, 1, 2 ,0x14}, { 0, 1, 3 ,0x14},
+	{ 0, 2, 0 ,0x14}, { 0, 2, 1 ,0x14}, { 0, 2, 2 ,0x14}, { 0, 3, 0 ,0x14}, { 0, 3, 1 ,0x14}, { 0, 4, 0 ,0x14}, { 1, 0, 0 ,0x14}, { 1, 0, 1 ,0x14}, { 1, 0, 2 ,0x14},
+	{ 1, 0, 3 ,0x14}, { 1, 0, 4 ,0x14}, { 1, 1, 0 ,0x14}, { 1, 1, 1 ,0x14}, { 1, 1, 2 ,0x14}, { 1, 1, 3 ,0x14}, { 1, 2, 0 ,0x14}, { 1, 2, 1 ,0x14}, { 1, 2, 2 ,0x14},
+	{ 1, 3, 0 ,0x14}, { 1, 3, 1 ,0x14}, { 1, 4, 0 ,0x14}, { 2, 0, 0 ,0x14}, { 2, 0, 1 ,0x14}, { 2, 0, 2 ,0x14}, { 2, 0, 3 ,0x14}, { 2, 0, 4 ,0x14}, { 2, 1, 0 ,0x14},
+	{ 2, 1, 1 ,0x14}, { 2, 1, 2 ,0x14}, { 2, 1, 3 ,0x14}, { 2, 2, 0 ,0x14}, { 2, 2, 1 ,0x14}, { 2, 2, 2 ,0x14}, { 2, 3, 0 ,0x14}, { 2, 3, 1 ,0x14}, { 2, 4, 0 ,0x14},
+	{ 3, 0, 0 ,0x14}, { 3, 0, 1 ,0x14}, { 3, 0, 2 ,0x14}, { 3, 0, 3 ,0x14}, { 3, 0, 4 ,0x14}, { 3, 1, 0 ,0x14}, { 3, 1, 1 ,0x14}, { 3, 1, 2 ,0x14}, { 3, 1, 3 ,0x14},
+	{ 3, 2, 0 ,0x14}, { 3, 2, 1 ,0x14}, { 3, 2, 2 ,0x14}, { 3, 3, 0 ,0x14}, { 3, 3, 1 ,0x14}, { 3, 4, 0 ,0x14}, { 4, 0, 0 ,0x14}, { 4, 0, 1 ,0x14}, { 4, 0, 2 ,0x14},
+	{ 4, 0, 3 ,0x14}, { 4, 0, 4 ,0x14}, { 4, 1, 0 ,0x14}, { 4, 1, 1 ,0x14}, { 4, 1, 2 ,0x14}, { 4, 1, 3 ,0x14}, { 4, 2, 0 ,0x14}, { 4, 2, 1 ,0x14}, { 4, 3, 0 ,0x14},
+
 };
 static pthread_spinlock_t p_mutex;
 
@@ -325,7 +416,7 @@ failed:
 	return -1;
 }
 
-static int xz_compress2(void *strm, unsigned char *dest, void *src, int size, int block_size, int *error, int lc, int lp, int pb,
+static int xz_compress2(void *strm, unsigned char *dest, void *src, int size, int block_size, int *error, int lc, int lp, int pb,int mf,
 			int *filterid, int *bcjid)
 {
 	int i;
@@ -348,6 +439,7 @@ static int xz_compress2(void *strm, unsigned char *dest, void *src, int size, in
 		stream->opt.lc = lc;
 		stream->opt.lp = lp;
 		stream->opt.pb = pb;
+		stream->opt.mf = mf;
 		stream->opt.nice_len = 273;
 
 		stream->opt.dict_size = stream->dictionary_size;
@@ -403,7 +495,7 @@ failed:
 }
 
 static int xz_compress2_byfilter(void *strm, unsigned char *dest, void *src, int size, int block_size, int *error, int lc, int lp,
-				 int pb, int i)
+				 int pb, int mf, int i)
 {
 	lzma_ret res = 0;
 	struct xz_stream *stream = strm;
@@ -423,6 +515,7 @@ static int xz_compress2_byfilter(void *strm, unsigned char *dest, void *src, int
 	stream->opt.lc = lc;
 	stream->opt.lp = lp;
 	stream->opt.pb = pb;
+	stream->opt.pb = mf;
 	stream->opt.nice_len = 273;
 
 	stream->opt.dict_size = stream->dictionary_size;
@@ -470,7 +563,7 @@ typedef unsigned long uLongf;
 #include <unistd.h>
 typedef struct DBENTRY {
 	char hash[32];
-	unsigned short fail : 1, pb : 5, lc : 5, lp : 5;
+	unsigned short fail : 1, pb : 3, lc : 3, lp : 3, mf: 5;
 	unsigned char filterid;
 } __attribute__((packed)) DBENTRY;
 
@@ -505,7 +598,7 @@ static int matchcount = 0;
 static int unmatchcount = 0;
 static int db_filters = 0;
 static int counts[256];
-static int checkparameters(struct xz_stream *stream, char *src, int len, int *pb, int *lc, int *lp, int *fail, int *filterid, unsigned char *sum)
+static int checkparameters(struct xz_stream *stream, char *src, int len, int *pb, int *lc, int *lp, int *mf, int *fail, int *filterid, unsigned char *sum)
 {
 	struct sha256 sha;
 	sha256_init(&sha);
@@ -567,6 +660,7 @@ static int checkparameters(struct xz_stream *stream, char *src, int len, int *pb
 			*pb = db[i].pb;
 			*lc = db[i].lc;
 			*lp = db[i].lp;
+			*mf = db[i].mf;
 			*fail = db[i].fail;
 			*filterid = db[i].filterid;
 			pthread_spin_unlock(&p_mutex);
@@ -577,7 +671,7 @@ static int checkparameters(struct xz_stream *stream, char *src, int len, int *pb
 	return -1;
 }
 
-static void writeparameters(int pb, int lc, int lp, int fail, int filterid, unsigned char *sum)
+static void writeparameters(int pb, int lc, int lp, int mf, int fail, int filterid, unsigned char *sum)
 {
 	pthread_spin_lock(&p_mutex);
 	db = realloc(db, dblen + sizeof(*db));
@@ -588,6 +682,7 @@ static void writeparameters(int pb, int lc, int lp, int fail, int filterid, unsi
 	db[nextoffset].pb = pb;
 	db[nextoffset].lp = lp;
 	db[nextoffset].lc = lc;
+	db[nextoffset].mf = mf;
 	db[nextoffset].filterid = filterid;
 	pthread_spin_unlock(&p_mutex);
 }
@@ -618,6 +713,7 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 	int lp;
 	int lc;
 	int pb;
+	int mf;
 	int b = -1;
 	int filterid = 0;
 	int taken = -1;
@@ -625,14 +721,14 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 	struct xz_stream *stream = s_strm;
 	if (!special) {
 //		fprintf(stderr, "check param\n");
-		int ret = checkparameters(stream, src, sourceLen, &pb, &lc, &lp, &s_fail, &filterid, hash);
+		int ret = checkparameters(stream, src, sourceLen, &pb, &lc, &lp, &mf, &s_fail, &filterid, hash);
 		if (!ret) {
 			matchcount++;
 			if (s_fail) {
 				return 0;
 			}
 			//			printf("db entry %d, lc %d lp %d pb %d filterid %d\n", sizeof(*db), lc, lp, pb, filterid);
-			int len = xz_compress2_byfilter(s_strm, dst, src, sourceLen, block_size, error, lc, lp, pb, filterid);
+			int len = xz_compress2_byfilter(s_strm, dst, src, sourceLen, block_size, error, lc, lp, pb, mf, filterid);
 			return len;
 		}
 		unmatchcount++;
@@ -643,9 +739,10 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 		int takelcvalue = matrix[testcount].lc;
 		int takepbvalue = matrix[testcount].pb;
 		int takelpvalue = matrix[testcount].lp;
+		int takemfvalue = matrix[testcount].mf;
 		int error2 = 0;
 		int f;
-		test3len = xz_compress2(s_strm, test2, src, sourceLen, block_size, &error2, takelcvalue, takelpvalue, takepbvalue,
+		test3len = xz_compress2(s_strm, test2, src, sourceLen, block_size, &error2, takelcvalue, takelpvalue, takepbvalue, takemfvalue,
 					&f, &b);
 		if (!error2 && test3len > 0 && test3len < test1len) {
 			test1len = test3len;
@@ -666,7 +763,7 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 	if (!special) {
 		if (taken >= 0)
 			counts[taken]++;
-		writeparameters(pb, lc, lp, s_fail, filterid, hash);
+		writeparameters(pb, lc, lp, mf, s_fail, filterid, hash);
 	}
 	return test1len;
 }
@@ -703,7 +800,7 @@ int xz_deinit(void)
 	writedb();
 	for (testcount = 0; testcount < sizeof(matrix) / sizeof(struct MATRIXENTRY); testcount++) {
 		if (matrix[testcount].used)
-			printf("{%d,%d,%d},\n", matrix[testcount].pb, matrix[testcount].lc, matrix[testcount].lp);
+			printf("{%d,%d,%d,%d},\n", matrix[testcount].pb, matrix[testcount].lc, matrix[testcount].lp, matrix[testcount].mf);
 	}
 
 	printf("learning db matches %d unmatches %d\n", matchcount, unmatchcount);

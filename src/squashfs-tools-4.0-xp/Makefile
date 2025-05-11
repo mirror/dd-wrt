@@ -237,7 +237,7 @@ endif
 all: mksquashfs unsquashfs
 
 mksquashfs: $(MKSQUASHFS_OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -flto=jobserver -fuse-linker-plugin $(EXTRA_LDFLAGS) $(MKSQUASHFS_OBJS)  $(LIBS) -o $@
+	$(CC) $(CFLAGS) $(LDFLAGS) -flto -fwhole-program -flto=jobserver -fuse-linker-plugin $(EXTRA_LDFLAGS) $(MKSQUASHFS_OBJS)  $(LIBS) -o $@
 
 mksquashfs.o: Makefile mksquashfs.c squashfs_fs.h squashfs_swap.h mksquashfs.h \
 	sort.h pseudo.h compressor.h xattr.h action.h error.h progressbar.h \
