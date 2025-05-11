@@ -89,6 +89,6 @@ chmod +x $imgdir/iss_nand_imageupgrade.sh
 
 cp $1 $imgdir/series_vmlinux.bix
 
-tar cf $2 -C $tmpdir image/
+./tools/realtek/tar cf $2 -C $tmpdir image/
 
 rm -rf $tmpdir
