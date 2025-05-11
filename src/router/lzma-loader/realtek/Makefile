@@ -50,7 +50,7 @@ ASFLAGS		= $(CFLAGS) -D__ASSEMBLY__
 
 LDFLAGS		= -static -Wl,--gc-sections -Wl,-no-warn-mismatch $(LTO) $(LDLTO)
 LDFLAGS		+= -Wl,-e,startup -T loader.lds -Wl,-Ttext,$(LZMA_TEXT_START)
-LDFLAGS		+= $(LTO) $(LDLTO) -Wl,-z,max-page-size=4096 $(LTO)
+LDFLAGS		+= $(LDLTO) -Wl,-z,max-page-size=4096 $(LTO)
 
 O_FORMAT 	= $(shell $(OBJDUMP) -i | head -2 | grep elf32)
 
@@ -108,7 +108,7 @@ cache.o : cache.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 %.o : %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -mips16 -c -o $@ $<
 
 %.o : %.S
 	$(CC) $(ASFLAGS) -c -o $@ $<
