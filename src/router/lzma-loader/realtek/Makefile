@@ -43,14 +43,14 @@ CFLAGS		= -D__KERNEL__ -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
 		  -mabi=32 -march=mips32r2 \
 		  -Wa,-32 -Wa,-march=mips32r2 -Wa,-mips32r2 -Wa,--trap
 CFLAGS		+= -D_LZMA_PROB32
-#CFLAGS		+= $(LTO)
+CFLAGS		+= $(LTO)
 CFLAGS		+= $(CACHE_FLAGS)
 
 ASFLAGS		= $(CFLAGS) -D__ASSEMBLY__
 
 LDFLAGS		= -static -Wl,--gc-sections -Wl,-no-warn-mismatch $(LTO) $(LDLTO)
 LDFLAGS		+= -Wl,-e,startup -T loader.lds -Wl,-Ttext,$(LZMA_TEXT_START)
-LDFLAGS		+= $(LDLTO) -Wl,-z,max-page-size=4096 $(LTO)
+LDFLAGS		+= $(LTO) $(LDLTO) -Wl,-z,max-page-size=4096 $(LTO)
 
 O_FORMAT 	= $(shell $(OBJDUMP) -i | head -2 | grep elf32)
 
@@ -108,7 +108,7 @@ cache.o : cache.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 %.o : %.c
-	$(CC) $(CFLAGS) -mips16 -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 %.o : %.S
 	$(CC) $(ASFLAGS) -c -o $@ $<
