@@ -84,7 +84,7 @@ void start_sysinit(void)
 	char *mac;
 
 	switch (getRouterBrand()) {
-	case ROUTER_HP_1920: 
+	case ROUTER_HP_1920:
 		FILE *fp = openMTD("factory");
 		if (fp) {
 			fseek(fp, 0x68, SEEK_SET);
@@ -93,7 +93,7 @@ void start_sysinit(void)
 			int i;
 			char mac[32];
 			char bin[6];
-			fread(bin, 6,1, fp);
+			fread(bin, 6, 1, fp);
 			fclose(fp);
 			ether_etoa(bin, mac);
 			MAC_ADD(mac);
@@ -101,13 +101,13 @@ void start_sysinit(void)
 			for (i = 1; i < 51; i++) {
 				sprintf(name, "lan%02d", i);
 				if (ifexists(name)) {
-				set_hwaddr(name, mac);
-				MAC_ADD(mac);
+					set_hwaddr(name, mac);
+					MAC_ADD(mac);
 				}
 			}
 		}
 		break;
-	default: 
+	default:
 		mtd = getMTD("u-boot-env");
 		if (mtd != -1)
 			set_envtools(mtd, "0x0", "0x400", "0x10000", 0);
@@ -122,8 +122,15 @@ void start_sysinit(void)
 			}
 		}
 		break;
-	
 	}
+	if (nvram_match("DD_BOARD","D-Link DGS-1210-28P F") ||
+	nvram_match("DD_BOARD","D-Link DGS-1210-28MP F")
+	{
+		sysprintf("1 > /sys/class/hwmon/hwmon0/pwm1_enable");
+		sysprintf("250 > /sys/class/hwmon/hwmon0/pwm1_enable");
+	}
+	
+	d-link,dgs-1210-28p-f|d-link,dgs-1210-28mp-f
 	nvram_set("dsa", "1"); // flag to hide eth0
 	insmod("cryptodev");
 	/*
