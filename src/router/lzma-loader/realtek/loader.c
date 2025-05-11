@@ -25,18 +25,30 @@
 
 #include "config.h"
 #include "cache.h"
-#include "printf.h"
+//#include "printf.h"
 #include "LzmaDecode.h"
+
+extern void board_putc(int ch);
+
+static void print(char *s)
+{
+    int i=0;
+    while(s[i]) {
+	board_putc(s[i]);
+	if (s[i] == '\n') board_putc('\r');
+	i++;
+    }
+}
 
 #define KSEG0			0x80000000
 #define KSEG1			0xa0000000
 
 #define KSEG1ADDR(a)		((((unsigned)(a)) & 0x1fffffffU) | KSEG1)
 
-#define LZMA_DEBUG
+//#define LZMA_DEBUG
 
 #ifdef LZMA_DEBUG
-#  define DBG(f, a...)	printf(f, ## a)
+#  define DBG(f, a...)	print(f)
 #else
 #  define DBG(f, a...)	do {} while (0)
 #endif
@@ -82,7 +94,7 @@ static const char *kernel_argv[] = {
 
 static void halt(void)
 {
-	printf("\nSystem halted!\n");
+	print("\nSystem halted!\n");
 	for(;;);
 }
 
@@ -177,7 +189,7 @@ static void lzma_init_data(void)
 
 	flash_base = (unsigned char *) KSEG1ADDR(CONFIG_FLASH_START);
 
-	printf("Looking for OpenWrt image... ");
+	print("Looking for OpenWrt image... ");
 
 	for (flash_ofs = CONFIG_FLASH_OFFS;
 	     flash_ofs <= (CONFIG_FLASH_OFFS + CONFIG_FLASH_MAX);
@@ -194,11 +206,11 @@ static void lzma_init_data(void)
 	}
 
 	if (hdr == NULL) {
-		printf("not found!\n");
+		print("not found!\n");
 		halt();
 	}
 
-	printf("found at 0x%08x\n", flash_base + flash_ofs);
+	print("found at 0x%08x\n", flash_base + flash_ofs);
 
 	kernel_ofs = sizeof(struct image_header);
 	kernel_size = get_be32(&hdr->ih_size);
@@ -218,37 +230,37 @@ void loader_main(unsigned long reg_a0, unsigned long reg_a1,
 
 	board_init();
 
-	printf("\n\nOpenWrt kernel loader for MIPS based SoC\n");
-	printf("Copyright (C) 2011 Gabor Juhos <juhosg@openwrt.org>\n");
+	print("\n\nOpenWrt kernel loader for MIPS based SoC\n");
+	print("Copyright (C) 2011 Gabor Juhos <juhosg@openwrt.org>\n");
 
 	lzma_init_data();
 
 	res = lzma_init_props();
 	if (res != LZMA_RESULT_OK) {
-		printf("Incorrect LZMA stream properties!\n");
+		print("Incorrect LZMA stream properties!\n");
 		halt();
 	}
 
-	printf("Decompressing kernel... ");
+	print("Decompressing kernel... ");
 
 	res = lzma_decompress((unsigned char *) kernel_la);
 	if (res != LZMA_RESULT_OK) {
-		printf("failed, ");
+		print("failed, ");
 		switch (res) {
 		case LZMA_RESULT_DATA_ERROR:
-			printf("data error!\n");
+			print("data error!\n");
 			break;
 		default:
-			printf("unknown error %d!\n", res);
+			print("unknown error!\n");
 		}
 		halt();
 	} else {
-		printf("done!\n");
+		print("done!\n");
 	}
 
 	flush_cache(kernel_la, lzma_outsize);
 
-	printf("Starting kernel at %08x...\n\n", kernel_la);
+	print("Starting kernel...\n\n");
 
 #ifdef CONFIG_KERNEL_CMDLINE
 	reg_a0 = kernel_argc;
