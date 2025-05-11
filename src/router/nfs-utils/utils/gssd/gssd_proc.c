@@ -172,7 +172,7 @@ do_downcall(int k5_fd, uid_t uid, struct authgss_private_data *pd,
 	pthread_t tid = pthread_self();
 
 	if (get_verbosity() > 1)
-		printerr(2, "do_downcall(0x%lx): lifetime_rec=%s acceptor=%.*s\n",
+		printerr(2, "do_downcall(%p): lifetime_rec=%s acceptor=%.*s\n",
 			tid, sec2time(lifetime_rec), (int)acceptor->length, (char *)acceptor->value);
 	buf_size = sizeof(uid) + sizeof(timeout) + sizeof(pd->pd_seq_win) +
 		sizeof(pd->pd_ctx_hndl.length) + pd->pd_ctx_hndl.length +
@@ -199,7 +199,7 @@ do_downcall(int k5_fd, uid_t uid, struct authgss_private_data *pd,
 	return;
 out_err:
 	free(buf);
-	printerr(1, "do_downcall(0x%lx): Failed to write downcall!\n", tid);
+	printerr(1, "do_downcall(%p): Failed to write downcall!\n", tid);
 	return;
 }
 
@@ -212,7 +212,7 @@ do_error_downcall(int k5_fd, uid_t uid, int err)
 	int	zero = 0;
 	pthread_t tid = pthread_self();
 
-	printerr(2, "do_error_downcall(0x%lx): uid %d err %d\n", tid, uid, err);
+	printerr(2, "do_error_downcall(%p): uid %d err %d\n", tid, uid, err);
 
 	if (WRITE_BYTES(&p, end, uid)) goto out_err;
 	if (WRITE_BYTES(&p, end, timeout)) goto out_err;
@@ -374,7 +374,7 @@ create_auth_rpc_client(struct clnt_info *clp,
 
 	/* create an rpc connection to the nfs server */
 
-	printerr(3, "create_auth_rpc_client(0x%lx): creating %s client for server %s\n", 
+	printerr(3, "create_auth_rpc_client(%p): creating %s client for server %s\n", 
 		tid, clp->protocol, clp->servername);
 
 	protocol = IPPROTO_TCP;
@@ -418,7 +418,7 @@ create_auth_rpc_client(struct clnt_info *clp,
 	if (!tgtname)
 		tgtname = clp->servicename;
 
-	printerr(3, "create_auth_rpc_client(0x%lx): creating context with server %s\n", 
+	printerr(3, "create_auth_rpc_client(%p): creating context with server %s\n", 
 		tid, tgtname);
 #ifdef HAVE_TIRPC_GSS_SECCREATE
 	memset(&req, 0, sizeof(req));
@@ -569,7 +569,7 @@ krb5_not_machine_creds(struct clnt_info *clp, uid_t uid, char *tgtname,
 	int		err, resp = -1;
 	pthread_t tid = pthread_self();
 
-	printerr(2, "krb5_not_machine_creds(0x%lx): uid %d tgtname %s\n", 
+	printerr(2, "krb5_not_machine_creds(%p): uid %d tgtname %s\n", 
 		tid, uid, tgtname);
 
 	*chg_err = change_identity(uid);
@@ -618,7 +618,7 @@ krb5_use_machine_creds(struct clnt_info *clp, uid_t uid,
 	int	success = 0;
 	pthread_t tid = pthread_self();
 
-	printerr(2, "krb5_use_machine_creds(0x%lx): uid %d tgtname %s\n", 
+	printerr(2, "krb5_use_machine_creds(%p): uid %d tgtname %s\n", 
 		tid, uid, tgtname);
 
 	do {
@@ -959,7 +959,7 @@ start_upcall_thread(void (*func)(struct clnt_upcall_info *), struct clnt_upcall_
 		free(tinfo);
 		return ret;
 	}
-	printerr(2, "start_upcall_thread(0x%lx): created thread id 0x%lx\n", 
+	printerr(2, "start_upcall_thread(%p): created thread id %p\n", 
 		tid, th);
 
 	tinfo->tid = th;
@@ -1024,7 +1024,7 @@ handle_gssd_upcall(struct clnt_info *clp)
 	}
 	lbuf[lbuflen-1] = 0;
 
-	printerr(2, "\n%s(0x%lx): '%s' (%s)\n", __func__, tid,
+	printerr(2, "\n%s(%p): '%s' (%s)\n", __func__, tid,
 		 lbuf, clp->relpath);
 
 	for (p = strtok(lbuf, " "); p; p = strtok(NULL, " ")) {

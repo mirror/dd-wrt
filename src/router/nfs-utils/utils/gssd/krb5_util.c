@@ -420,7 +420,7 @@ gssd_get_single_krb5_cred(krb5_context context,
 	now += 300;
 	pthread_mutex_lock(&ple_lock);
 	if (ple->ccname && ple->endtime > now && !nocache && !force_renew) {
-		printerr(3, "%s(0x%lx): Credentials in CC '%s' are good until %s",
+		printerr(3, "%s(%p): Credentials in CC '%s' are good until %s",
 			 __func__, tid, ple->ccname, ctime((time_t *)&ple->endtime));
 		code = 0;
 		pthread_mutex_unlock(&ple_lock);
@@ -478,7 +478,7 @@ gssd_get_single_krb5_cred(krb5_context context,
 	pthread_mutex_unlock(&ple_lock);
 
 	code = 0;
-	printerr(2, "%s(0x%lx): principal '%s' ccache:'%s'\n",
+	printerr(2, "%s(%p): principal '%s' ccache:'%s'\n",
 		__func__, tid, pname, ple->ccname);
   out:
 	if (opts)
@@ -614,7 +614,7 @@ get_full_hostname(const char *inhost, char *outhost, int outhostlen)
 	/* Get full target hostname */
 	retval = getaddrinfo(inhost, NULL, &hints, &addrs);
 	if (retval) {
-		printerr(1, "%s(0x%lx): getaddrinfo(%s) failed: %s\n",
+		printerr(1, "%s(%p): getaddrinfo(%s) failed: %s\n",
 			 __func__, tid, inhost, gai_strerror(retval));
 		goto out;
 	}
@@ -624,7 +624,7 @@ get_full_hostname(const char *inhost, char *outhost, int outhostlen)
 	    *c = tolower(*c);
 
 	if (get_verbosity() && strcmp(inhost, outhost))
-		printerr(1, "%s(0x%0lx): inhost '%s' different than outhost '%s'\n", 
+		printerr(1, "%s(%p): inhost '%s' different than outhost '%s'\n", 
 			 __func__, tid, inhost, outhost);
 
 	retval = 0;
@@ -968,7 +968,7 @@ find_keytab_entry(krb5_context context, krb5_keytab kt,
 					tried_upper = 1;
 				}
 			} else {
-				printerr(2, "find_keytab_entry(0x%lx): Success getting keytab entry for '%s'\n",tid, spn);
+				printerr(2, "find_keytab_entry(%p): Success getting keytab entry for '%s'\n",tid, spn);
 				retval = 0;
 				goto out;
 			}

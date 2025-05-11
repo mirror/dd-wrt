@@ -535,7 +535,7 @@ scan_active_thread_list(void)
 			 * upcall_thread_info from the list and free it.
 			 */
 			if (tret == PTHREAD_CANCELED)
-				printerr(2, "watchdog: thread id 0x%lx cancelled successfully\n",
+				printerr(2, "watchdog: thread id %p cancelled successfully\n",
 						info->tid);
 			saveprev = info->list.tqe_prev;
 			TAILQ_REMOVE(&active_thread_list, info, list);
@@ -552,14 +552,14 @@ scan_active_thread_list(void)
 			 */
 			if (now.tv_sec >= info->timeout.tv_sec) {
 				if (cancel_timed_out_upcalls && !(info->flags & UPCALL_THREAD_CANCELED)) {
-					printerr(0, "watchdog: thread id 0x%lx timed out\n",
+					printerr(0, "watchdog: thread id %p timed out\n",
 							info->tid);
 					pthread_cancel(info->tid);
 					info->flags |= (UPCALL_THREAD_CANCELED|UPCALL_THREAD_WARNED);
 					do_error_downcall(info->fd, info->uid, -ETIMEDOUT);
 				} else {
 					if (!(info->flags & UPCALL_THREAD_WARNED)) {
-						printerr(0, "watchdog: thread id 0x%lx running for %lld seconds\n",
+						printerr(0, "watchdog: thread id %p running for %lld seconds\n",
 								info->tid,
 								(long long int)(now.tv_sec - info->timeout.tv_sec + upcall_timeout));
 						info->flags |= UPCALL_THREAD_WARNED;
@@ -580,7 +580,7 @@ scan_active_thread_list(void)
 			break;
 		default:
 			/* EDEADLK, EINVAL, and ESRCH... none of which should happen! */
-			printerr(0, "watchdog: attempt to join thread id 0x%lx returned %d (%s)!\n",
+			printerr(0, "watchdog: attempt to join thread id %p returned %d (%s)!\n",
 					info->tid, err, strerror(err));
 			break;
 		}
