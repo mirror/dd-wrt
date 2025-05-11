@@ -125,7 +125,7 @@ void start_sysinit(void)
 	}
 	if (nvram_match("DD_BOARD", "D-Link DGS-1210-28P F") || nvram_match("DD_BOARD", "D-Link DGS-1210-28MP F")) {
 		sysprintf("1 > /sys/class/hwmon/hwmon0/pwm1_enable");
-		sysprintf("250 > /sys/class/hwmon/hwmon0/pwm1_enable");
+		sysprintf("250 > /sys/class/hwmon/hwmon0/pwm1");
 	}
 
 	nvram_set("dsa", "1"); // flag to hide eth0
