@@ -1541,6 +1541,7 @@ int softkill(char *name);
 int getmask(char *netmask);
 int doMultiCast(void);
 int getMTD(char *name);
+FILE *openMTD(char *name);
 void getIPFromName(char *name, char *ip, size_t len);
 int jffs_mounted(void);
 
