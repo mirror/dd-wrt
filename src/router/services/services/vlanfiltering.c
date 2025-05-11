@@ -81,36 +81,44 @@ void start_vlanfiltering(void)
 	const char *next, *wordlist;
 	char *args[4] = { NULL, NULL, NULL, NULL };
 
-	iterate_filters(if (!isbridge(ifname)) {
-		eval("bridge", "vlan", "del", "dev", ifname, "vid", "1"); /* del default pvid */
+	iterate_filters({
+		if (!isbridge(ifname)) {
+			eval("bridge", "vlan", "del", "dev", ifname, "vid", "1"); /* del default pvid */
+		}
 	});
-	iterate_filters(if (!isbridge(ifname)) {
-		int cnt = 0;
-		if (!strcmp(pvid, "1"))
-			args[cnt++] = "pvid";
-		if (!strcmp(untagged, "1"))
-			args[cnt++] = "untagged";
-		args[cnt++] = "master";
-		args[cnt++] = NULL;
-		char tmp[256];
-		eval("bridge", "vlan", "add", "dev", getBridge(ifname, tmp), "vid", vlan,
-		     "self"); /* allow bridge to receive vlan with vid X */
-		eval("bridge", "vlan", "add", "dev", ifname, "vid", vlan, args[0], args[1], args[2]); /* add vlan to port */
+	iterate_filters({
+		if (!isbridge(ifname)) {
+			int cnt = 0;
+			if (!strcmp(pvid, "1"))
+				args[cnt++] = "pvid";
+			if (!strcmp(untagged, "1"))
+				args[cnt++] = "untagged";
+			args[cnt++] = "master";
+			args[cnt++] = NULL;
+			char tmp[256];
+			eval("bridge", "vlan", "add", "dev", getBridge(ifname, tmp), "vid", vlan,
+			     "self"); /* allow bridge to receive vlan with vid X */
+			eval("bridge", "vlan", "add", "dev", ifname, "vid", vlan, args[0], args[1], args[2]); /* add vlan to port */
+		}
 	});
-	iterate_filters(if (isbridge(ifname)) {
-		eval("bridge", "vlan", "del", "dev", ifname, "vid",
-		     vlan); /* if a custom filter for bridges is defined, remove it, this can also be used to override the default pvic */
+	iterate_filters({
+		if (isbridge(ifname)) {
+			eval("bridge", "vlan", "del", "dev", ifname, "vid",
+			     vlan); /* if a custom filter for bridges is defined, remove it, this can also be used to override the default pvid */
+		}
 	});
-	iterate_filters(if (isbridge(ifname)) {
-		int cnt = 0;
-		if (!strcmp(pvid, "1"))
-			args[cnt++] = "pvid";
-		if (!strcmp(untagged, "1"))
-			args[cnt++] = "untagged";
-		args[cnt++] = "self";
-		args[cnt++] = NULL;
-		eval("bridge", "vlan", "add", "dev", ifname, "vid", vlan, args[0], args[1],
-		     args[2]); /* if a custom filter for brisges is defined, now add them all here */
+	iterate_filters({
+		if (isbridge(ifname)) {
+			int cnt = 0;
+			if (!strcmp(pvid, "1"))
+				args[cnt++] = "pvid";
+			if (!strcmp(untagged, "1"))
+				args[cnt++] = "untagged";
+			args[cnt++] = "self";
+			args[cnt++] = NULL;
+			eval("bridge", "vlan", "add", "dev", ifname, "vid", vlan, args[0], args[1],
+			     args[2]); /* if a custom filter for brisges is defined, now add them all here */
+		}
 	});
 }
 
@@ -119,11 +127,13 @@ void stop_vlanfiltering(void)
 	char word[256];
 	const char *next, *wordlist;
 
-	iterate_filters(char tmp[256]; eval("bridge", "vlan", "del", "dev", getBridge(ifname, tmp), "vid", vlan);
-			eval("bridge", "vlan", "del", "dev", ifname, "vid", vlan);
-			if (!nvram_nmatch("1", "%s_trunk", getBridge(ifname, tmp)))
-				eval("bridge", "vlan", "add", "dev", ifname, "vid", "1", "pvid", "untagged"); /* add default pvid */
-	);
+	iterate_filters({
+		char tmp[256];
+		eval("bridge", "vlan", "del", "dev", getBridge(ifname, tmp), "vid", vlan);
+		eval("bridge", "vlan", "del", "dev", ifname, "vid", vlan);
+		if (!nvram_nmatch("1", "%s_trunk", getBridge(ifname, tmp)))
+			eval("bridge", "vlan", "add", "dev", ifname, "vid", "1", "pvid", "untagged"); /* add default pvid */
+	});
 }
 
 #endif
