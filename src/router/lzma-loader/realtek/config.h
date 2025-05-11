@@ -13,15 +13,15 @@
 #define _CONFIG_H_
 
 #ifndef CONFIG_FLASH_OFFS
-#define CONFIG_FLASH_OFFS	0
+#define CONFIG_FLASH_OFFS 0
 #endif
 
 #ifndef CONFIG_FLASH_MAX
-#define CONFIG_FLASH_MAX	0
+#define CONFIG_FLASH_MAX 0
 #endif
 
 #ifndef CONFIG_FLASH_STEP
-#define CONFIG_FLASH_STEP	0x1000
+#define CONFIG_FLASH_STEP 0x1000
 #endif
 
 #endif /* _CONFIG_H_ */

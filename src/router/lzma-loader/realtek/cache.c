@@ -17,15 +17,14 @@
 #include "cacheops.h"
 #include "config.h"
 
-#define cache_op(op,addr)						\
-	__asm__ __volatile__(						\
-	"	.set	push					\n"	\
-	"	.set	noreorder				\n"	\
-	"	.set	mips3\n\t				\n"	\
-	"	cache	%0, %1					\n"	\
-	"	.set	pop					\n"	\
-	:								\
-	: "i" (op), "R" (*(unsigned char *)(addr)))
+#define cache_op(op, addr)                           \
+	__asm__ __volatile__("	.set	push					\n"     \
+			     "	.set	noreorder				\n" \
+			     "	.set	mips3\n\t				\n" \
+			     "	cache	%0, %1					\n"  \
+			     "	.set	pop					\n"      \
+			     :                       \
+			     : "i"(op), "R"(*(unsigned char *)(addr)))
 
 void flush_cache(unsigned long start_addr, unsigned long size)
 {

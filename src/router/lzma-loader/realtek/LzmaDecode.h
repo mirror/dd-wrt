@@ -47,9 +47,8 @@
 #define LZMA_RESULT_DATA_ERROR 1
 
 #ifdef _LZMA_IN_CB
-typedef struct _ILzmaInCallback
-{
-  int (*Read)(void *object, const unsigned char **buffer, SizeT *bufferSize);
+typedef struct _ILzmaInCallback {
+	int (*Read)(void *object, const unsigned char **buffer, SizeT *bufferSize);
 } ILzmaInCallback;
 #endif
 
@@ -58,15 +57,14 @@ typedef struct _ILzmaInCallback
 
 #define LZMA_PROPERTIES_SIZE 5
 
-typedef struct _CLzmaProperties
-{
-  int lc;
-  int lp;
-  int pb;
-  #ifdef _LZMA_OUT_READ
-  UInt32 DictionarySize;
-  #endif
-}CLzmaProperties;
+typedef struct _CLzmaProperties {
+	int lc;
+	int lp;
+	int pb;
+#ifdef _LZMA_OUT_READ
+	UInt32 DictionarySize;
+#endif
+} CLzmaProperties;
 
 int LzmaDecodeProperties(CLzmaProperties *propsRes, const unsigned char *propsData, int size);
 
@@ -74,40 +72,42 @@ int LzmaDecodeProperties(CLzmaProperties *propsRes, const unsigned char *propsDa
 
 #define kLzmaNeedInitId (-2)
 
-typedef struct _CLzmaDecoderState
-{
-  CLzmaProperties Properties;
-  CProb *Probs;
+typedef struct _CLzmaDecoderState {
+	CLzmaProperties Properties;
+	CProb *Probs;
 
-  #ifdef _LZMA_IN_CB
-  const unsigned char *Buffer;
-  const unsigned char *BufferLim;
-  #endif
+#ifdef _LZMA_IN_CB
+	const unsigned char *Buffer;
+	const unsigned char *BufferLim;
+#endif
 
-  #ifdef _LZMA_OUT_READ
-  unsigned char *Dictionary;
-  UInt32 Range;
-  UInt32 Code;
-  UInt32 DictionaryPos;
-  UInt32 GlobalPos;
-  UInt32 DistanceLimit;
-  UInt32 Reps[4];
-  int State;
-  int RemainLen;
-  unsigned char TempDictionary[4];
-  #endif
+#ifdef _LZMA_OUT_READ
+	unsigned char *Dictionary;
+	UInt32 Range;
+	UInt32 Code;
+	UInt32 DictionaryPos;
+	UInt32 GlobalPos;
+	UInt32 DistanceLimit;
+	UInt32 Reps[4];
+	int State;
+	int RemainLen;
+	unsigned char TempDictionary[4];
+#endif
 } CLzmaDecoderState;
 
 #ifdef _LZMA_OUT_READ
-#define LzmaDecoderInit(vs) { (vs)->RemainLen = kLzmaNeedInitId; }
+#define LzmaDecoderInit(vs)                        \
+	{                                          \
+		(vs)->RemainLen = kLzmaNeedInitId; \
+	}
 #endif
 
 int LzmaDecode(CLzmaDecoderState *vs,
-    #ifdef _LZMA_IN_CB
-    ILzmaInCallback *inCallback,
-    #else
-    const unsigned char *inStream, SizeT inSize, SizeT *inSizeProcessed,
-    #endif
-    unsigned char *outStream, SizeT outSize, SizeT *outSizeProcessed);
+#ifdef _LZMA_IN_CB
+	       ILzmaInCallback *inCallback,
+#else
+	       const unsigned char *inStream, SizeT inSize, SizeT *inSizeProcessed,
+#endif
+	       unsigned char *outStream, SizeT outSize, SizeT *outSizeProcessed);
 
 #endif
