@@ -178,6 +178,22 @@ static void watchdog(void)
 //              writeprocsys("vm/drop_caches", "3");    // flush fs cache
 //#endif
 //#endif
+#ifdef HAVE_REALTEK
+		if (nvram_match("DD_BOARD", "D-Link DGS-1210-28P F") || nvram_match("DD_BOARD", "D-Link DGS-1210-28MP F")) {
+			int psu = 0;
+			FILE *tempfp;
+			tempfp = fopen("/sys/class/hwmon/hwmon0/temp1_input", "rb");
+			if (tempfp) {
+				fscanf(tempfp, "%d", &psu);
+				fclose(tempfp);
+				if (psu >= 51000) {
+					sysprintf("/bin/echo 250 > /sys/class/hwmon/hwmon0/pwm1", target);
+				} else {
+					sysprintf("/bin/echo 156 > /sys/class/hwmon/hwmon0/pwm1", target);
+				}
+			}
+		}
+#endif
 #ifdef HAVE_R9000
 		int cpu = 0, wifi1 = 0, wifi2 = 0, wifi3_mac = 0, wifi3_phy = 0;
 		FILE *tempfp;
