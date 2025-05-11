@@ -182,14 +182,14 @@ static void watchdog(void)
 		if (nvram_match("DD_BOARD", "D-Link DGS-1210-28P F") || nvram_match("DD_BOARD", "D-Link DGS-1210-28MP F")) {
 			int psu = 0;
 			FILE *tempfp;
-			tempfp = fopen("/sys/class/hwmon/hwmon0/temp1_input", "rb");
+			tempfp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
 			if (tempfp) {
 				fscanf(tempfp, "%d", &psu);
 				fclose(tempfp);
 				if (psu >= 51000) {
-					sysprintf("/bin/echo 250 > /sys/class/hwmon/hwmon0/pwm1", target);
+					sysprintf("/bin/echo 250 > /sys/class/hwmon/hwmon1/pwm1", target);
 				} else {
-					sysprintf("/bin/echo 156 > /sys/class/hwmon/hwmon0/pwm1", target);
+					sysprintf("/bin/echo 156 > /sys/class/hwmon/hwmon1/pwm1", target);
 				}
 			}
 		}
