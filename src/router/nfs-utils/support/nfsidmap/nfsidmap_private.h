@@ -40,6 +40,8 @@ struct conf_list *get_local_realms(void);
 void free_local_realms(void);
 int get_nostrip(void);
 int get_reformat_group(void);
+size_t get_pwnam_buflen(void);
+size_t get_grnam_buflen(void);
 
 typedef enum {
 	IDTYPE_USER = 1,

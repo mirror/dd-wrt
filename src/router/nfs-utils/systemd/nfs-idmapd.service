@@ -1,5 +1,6 @@
 [Unit]
 Description=NFSv4 ID-name mapping service
+Documentation=man:idmapd(8)
 DefaultDependencies=no
 Requires=rpc_pipefs.target
 After=rpc_pipefs.target local-fs.target network-online.target

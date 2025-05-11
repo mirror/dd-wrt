@@ -34,10 +34,7 @@
 #include "pseudoflavors.h"
 #include "xcommon.h"
 #include "reexport.h"
-
-#ifdef HAVE_JUNCTION_SUPPORT
 #include "fsloc.h"
-#endif
 
 #ifdef USE_BLKID
 #include "blkid/blkid.h"
@@ -65,7 +62,7 @@ static ssize_t cache_read(int fd, char *buf, size_t len)
 	return nfsd_path_read(fd, buf, len);
 }
 
-static ssize_t cache_write(int fd, const char *buf, size_t len)
+static ssize_t cache_write(int fd, void *buf, size_t len)
 {
 	return nfsd_path_write(fd, buf, len);
 }
@@ -999,7 +996,6 @@ static void nfsd_retry_fh(struct delayed *d)
 	*dp = d;
 }
 
-#ifdef HAVE_JUNCTION_SUPPORT
 static void write_fsloc(char **bp, int *blen, struct exportent *ep)
 {
 	struct servers *servers;
@@ -1022,7 +1018,6 @@ static void write_fsloc(char **bp, int *blen, struct exportent *ep)
 	qword_addint(bp, blen, servers->h_referral);
 	release_replicas(servers);
 }
-#endif
 
 static void write_secinfo(char **bp, int *blen, struct exportent *ep, int flag_mask, int extra_flag)
 {
@@ -1120,9 +1115,7 @@ static int dump_to_cache(int f, char *buf, int blen, char *domain,
 		qword_addint(&bp, &blen, exp->e_anongid);
 		qword_addint(&bp, &blen, fsidnum);
 
-#ifdef HAVE_JUNCTION_SUPPORT
 		write_fsloc(&bp, &blen, exp);
-#endif
 		write_secinfo(&bp, &blen, exp, flag_mask, do_fsidnum ? NFSEXP_FSID : 0);
 		if (exp->e_uuid == NULL || different_fs) {
 			char u[16];

@@ -35,6 +35,10 @@ if CONFIG_JUNCTION
 OPTDIRS += nfsref
 endif
 
+if CONFIG_NFSDCTL
+OPTDIRS += nfsdctl
+endif
+
 SUBDIRS = \
 	exportfs \
 	mountd \

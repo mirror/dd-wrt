@@ -40,6 +40,7 @@
 #include "nls.h"
 #include "mount.h"
 #include "error.h"
+#include "network.h"
 
 #ifdef HAVE_RPCSVC_NFS_PROT_H
 #include <rpcsvc/nfs_prot.h>
@@ -199,7 +200,8 @@ void sys_mount_errors(char *server, int error, int will_retry, int bg)
  * @error: errno value to report
  *
  */
-void mount_error(const char *spec, const char *mount_point, int error)
+void mount_error(const char *spec, const char *mount_point, int error,
+		 struct mount_options *options)
 {
 	switch(error) {
 	case EACCES:
@@ -249,6 +251,14 @@ void mount_error(const char *spec, const char *mount_point, int error)
 		break;
 	case EALREADY:
 		/* Error message has already been provided */
+		break;
+	case EPROTO:
+		if (options && po_rightmost(options, nfs_transport_opttbl) == 2)
+			nfs_error(_("%s: %s: is routing being done via an interface supporting RDMA?"),
+				  progname, strerror(error));
+		else
+			nfs_error(_("%s: %s"),
+				  progname, strerror(error));
 		break;
 	default:
 		nfs_error(_("%s: %s for %s on %s"),

@@ -1,6 +1,8 @@
 #ifndef REEXPORT_H
 #define REEXPORT_H
 
+#include <unistd.h>
+
 #include "nfslib.h"
 
 enum {

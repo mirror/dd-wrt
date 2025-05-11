@@ -469,7 +469,7 @@ int nfs4mount(const char *spec, const char *node, int flags,
 	if (!fake) {
 		if (mount(spec, node, "nfs4",
 				flags & ~(MS_USER|MS_USERS), &data)) {
-			mount_error(spec, node, errno);
+			mount_error(spec, node, errno, NULL);
 			goto fail;
 		}
 	}

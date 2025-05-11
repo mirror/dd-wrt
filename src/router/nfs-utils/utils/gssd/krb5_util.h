@@ -27,6 +27,7 @@ int gssd_k5_remove_bad_service_cred(char *srvname);
 #ifdef HAVE_SET_ALLOWABLE_ENCTYPES
 extern int limit_to_legacy_enctypes;
 int limit_krb5_enctypes(struct rpc_gss_sec *sec);
+int get_allowed_enctypes(void);
 #endif
 
 /*

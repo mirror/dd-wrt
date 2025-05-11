@@ -24,9 +24,11 @@
 #ifndef _NFS_UTILS_MOUNT_ERROR_H
 #define _NFS_UTILS_MOUNT_ERROR_H
 
+#include "parse_opt.h"
+
 char *nfs_strerror(unsigned int);
 
-void mount_error(const char *, const char *, int);
+void mount_error(const char *, const char *, int, struct mount_options *);
 void rpc_mount_errors(char *, int, int);
 void sys_mount_errors(char *, int, int, int);
 

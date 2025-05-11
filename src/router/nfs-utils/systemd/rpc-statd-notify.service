@@ -1,5 +1,6 @@
 [Unit]
 Description=Notify NFS peers of a restart
+Documentation=man:sm-notify(8) man:rpc.statd(8)
 DefaultDependencies=no
 Wants=network-online.target
 After=local-fs.target network-online.target nss-lookup.target

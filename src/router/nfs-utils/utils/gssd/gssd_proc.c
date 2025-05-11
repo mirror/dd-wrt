@@ -72,6 +72,9 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <syscall.h>
+#ifdef HAVE_TIRPC_GSS_SECCREATE
+#include <rpc/rpcsec_gss.h>
+#endif
 
 #include "gssd.h"
 #include "err_util.h"
@@ -170,7 +173,7 @@ do_downcall(int k5_fd, uid_t uid, struct authgss_private_data *pd,
 
 	if (get_verbosity() > 1)
 		printerr(2, "do_downcall(0x%lx): lifetime_rec=%s acceptor=%.*s\n",
-			tid, sec2time(lifetime_rec), acceptor->length, acceptor->value);
+			tid, sec2time(lifetime_rec), (int)acceptor->length, (char *)acceptor->value);
 	buf_size = sizeof(uid) + sizeof(timeout) + sizeof(pd->pd_seq_win) +
 		sizeof(pd->pd_ctx_hndl.length) + pd->pd_ctx_hndl.length +
 		sizeof(context_token->length) + context_token->length +
@@ -286,14 +289,14 @@ populate_port(struct sockaddr *sa, const socklen_t salen,
 
 	port = nfs_getport(sa, salen, program, version, protocol);
 	if (!port) {
-		printerr(0, "ERROR: unable to obtain port for prog %ld "
-			    "vers %ld\n", program, version);
+		printerr(0, "ERROR: unable to obtain port for prog %lu "
+			    "vers %lu\n", (long unsigned int)program, (long unsigned int)version);
 		return 0;
 	}
 
 set_port:
 	printerr(2, "DEBUG: setting port to %hu for prog %lu vers %lu\n", port,
-		 program, version);
+		 (long unsigned int)program, (long unsigned int)version);
 
 	switch (sa->sa_family) {
 	case AF_INET:
@@ -332,6 +335,11 @@ create_auth_rpc_client(struct clnt_info *clp,
 	struct timeval	timeout;
 	struct sockaddr		*addr = (struct sockaddr *) &clp->addr;
 	socklen_t		salen;
+#ifdef HAVE_TIRPC_GSS_SECCREATE
+	rpc_gss_options_req_t	req;
+	rpc_gss_options_ret_t	ret;
+	char			mechanism[] = "kerberos_v5";
+#endif
 	pthread_t tid = pthread_self();
 
 	sec.qop = GSS_C_QOP_DEFAULT;
@@ -412,9 +420,17 @@ create_auth_rpc_client(struct clnt_info *clp,
 
 	printerr(3, "create_auth_rpc_client(0x%lx): creating context with server %s\n", 
 		tid, tgtname);
+#ifdef HAVE_TIRPC_GSS_SECCREATE
+	memset(&req, 0, sizeof(req));
+	req.my_cred = sec.cred;
+	auth = rpc_gss_seccreate(rpc_clnt, tgtname, mechanism,
+			rpcsec_gss_svc_none, NULL, &req, &ret);
+#else
 	auth = authgss_create_default(rpc_clnt, tgtname, &sec);
+#endif
 	if (!auth) {
-		if (sec.minor_status == KRB5KRB_AP_ERR_BAD_INTEGRITY) {
+#ifdef HAVE_TIRPC_GSS_SECCREATE
+		if (ret.minor_status == KRB5KRB_AP_ERR_BAD_INTEGRITY) {
 			printerr(2, "WARNING: server=%s failed context "
 				 "creation with KRB5_AP_ERR_BAD_INTEGRITY\n",
 				 clp->servername);
@@ -424,19 +440,23 @@ create_auth_rpc_client(struct clnt_info *clp,
 			else
 				retval = gssd_k5_remove_bad_service_cred(clp->servername);
 			if (!retval) {
-				auth = authgss_create_default(rpc_clnt, tgtname,
-						&sec);
+				auth = rpc_gss_seccreate(rpc_clnt, tgtname,
+						mechanism, rpcsec_gss_svc_none,
+						NULL, &req, &ret);
 				if (auth)
 					goto success;
 			}
 		}
+#endif
 		/* Our caller should print appropriate message */
 		printerr(2, "WARNING: Failed to create krb5 context for "
 			    "user with uid %d for server %s\n",
 			 uid, tgtname);
 		goto out_fail;
 	}
+#ifdef HAVE_TIRPC_GSS_SECCREATE
 success:
+#endif
 	/* Success !!! */
 	rpc_clnt->cl_auth = auth;
 	*clnt_return = rpc_clnt;
@@ -471,7 +491,10 @@ success:
 static int
 change_identity(uid_t uid)
 {
-	struct passwd	*pw;
+	struct passwd  pw;
+	struct passwd *ppw;
+	char *pw_tmp;
+	long tmplen;
 	int res;
 
 	/* drop list of supplimentary groups first */
@@ -484,15 +507,25 @@ change_identity(uid_t uid)
 		return errno;
 	}
 
+	tmplen = sysconf(_SC_GETPW_R_SIZE_MAX);
+	if (tmplen < 0)
+		tmplen = 16384;
+
+	pw_tmp = malloc(tmplen);
+	if (!pw_tmp) {
+		printerr(0, "WARNING: unable to allocate passwd buffer\n");
+		return errno ? errno : ENOMEM;
+	}
+
 	/* try to get pwent for user */
-	pw = getpwuid(uid);
-	if (!pw) {
+	res = getpwuid_r(uid, &pw, pw_tmp, tmplen, &ppw);
+	if (!ppw) {
 		/* if that doesn't work, try to get one for "nobody" */
-		errno = 0;
-		pw = getpwnam("nobody");
-		if (!pw) {
+		res = getpwnam_r("nobody", &pw, pw_tmp, tmplen, &ppw);
+		if (!ppw) {
 			printerr(0, "WARNING: unable to determine gid for uid %u\n", uid);
-			return errno ? errno : ENOENT;
+			free(pw_tmp);
+			return res ? res : ENOENT;
 		}
 	}
 
@@ -503,12 +536,13 @@ change_identity(uid_t uid)
 	 * other threads. To bypass this, we have to call syscall() directly.
 	 */
 #ifdef __NR_setresgid32
-	res = syscall(SYS_setresgid32, pw->pw_gid, pw->pw_gid, pw->pw_gid);
+	res = syscall(SYS_setresgid32, pw.pw_gid, pw.pw_gid, pw.pw_gid);
 #else 
-	res = syscall(SYS_setresgid, pw->pw_gid, pw->pw_gid, pw->pw_gid);
+	res = syscall(SYS_setresgid, pw.pw_gid, pw.pw_gid, pw.pw_gid);
 #endif
+	free(pw_tmp);
 	if (res != 0) {
-		printerr(0, "WARNING: failed to set gid to %u!\n", pw->pw_gid);
+		printerr(0, "WARNING: failed to set gid to %u!\n", pw.pw_gid);
 		return errno;
 	}
 

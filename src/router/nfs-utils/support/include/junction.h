@@ -26,6 +26,16 @@
 #ifndef _NFS_JUNCTION_H_
 #define _NFS_JUNCTION_H_
 
+/* For musl, refered to glibc's sys/cdefs.h */
+#ifndef __attribute_malloc__
+#define __attribute_malloc__ __attribute__((__malloc__))
+#endif
+
+/* For musl, refered to glibc's sys/stat.h */
+#ifndef ALLPERMS
+#define ALLPERMS (S_ISUID|S_ISGID|S_ISVTX|S_IRWXU|S_IRWXG|S_IRWXO)/* 07777 */
+#endif
+
 #include <stdint.h>
 
 /*

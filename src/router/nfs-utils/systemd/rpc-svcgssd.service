@@ -1,5 +1,6 @@
 [Unit]
 Description=RPC security service for NFS server
+Documentation=man:rpc.svcgssd(8)
 DefaultDependencies=no
 After=local-fs.target
 PartOf=nfs-server.service

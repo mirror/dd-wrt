@@ -1,5 +1,6 @@
 [Unit]
 Description=NFSD configuration filesystem
+After=systemd-modules-load.service
 
 [Mount]
 What=nfsd

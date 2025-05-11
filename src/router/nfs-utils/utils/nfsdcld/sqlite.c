@@ -1337,6 +1337,11 @@ sqlite_iterate_recovery(int (*cb)(struct cld_client *clnt), struct cld_client *c
 		id_len = sqlite3_column_bytes(stmt, 0);
 		if (id_len > NFS4_OPAQUE_LIMIT)
 			id_len = NFS4_OPAQUE_LIMIT;
+		if (id_len == 0) {
+			xlog(L_ERROR, "%s: Skipping client record with null id",
+				__func__);
+			continue;
+		}
 
 		memset(&cmsg->cm_u, 0, sizeof(cmsg->cm_u));
 #if UPCALL_VERSION >= 2

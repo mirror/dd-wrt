@@ -27,7 +27,9 @@ any command line arguments to daemons so as to configure their
 behavior.  In many case such configuration can be performed by making
 changes to
 .I /etc/nfs.conf
-or other configuration files.  When that is not convenient, a
+or other configuration files (see
+.BR nfs.conf (5)).
+When that is not convenient, a
 distribution might provide systemd "drop-in" files which replace the
 .B ExecStart=
 setting to start the program with different arguments.  For example a
@@ -89,7 +91,7 @@ Most NFS daemons can be restarted at any time.  They will reload any
 state that they need, and continue servicing requests.  This is rarely
 necessary though.
 .PP
-When configuration changesare make, it can be hard to know exactly
+When configuration changes are made, it can be hard to know exactly
 which services need to be restarted to ensure that the configuration
 takes effect.  The simplest approach, which is often the best, is to
 restart everything.  To help with this, the
@@ -171,6 +173,12 @@ running, it can be masked with
 /etc/nfsmount.conf
 .br
 /etc/idmapd.conf
+.P
+Also similar files in 
+.B /usr/etc
+and in related
+.I conf.d
+drop-in directories.
 .SH SEE ALSO
 .BR systemd.unit (5),
 .BR nfs.conf (5),

@@ -72,7 +72,7 @@ static struct timeval retrans_interval =
 static struct option longopts[] =
 {
 	{ "help", 0, 0, 'h' },
-	{ "host", 0, 0, 'H' },
+	{ "host", 1, 0, 'H' },
 	{ "name", 1, 0, 'n' },
 	{ "program", 1, 0, 'P' },
 	{ "version", 1, 0, 'v' },
@@ -136,7 +136,7 @@ main(int argc, char **argv)
 	my_name[0] = '\0';
 	host[0] = '\0';
 
-	while ((arg = getopt_long(argc, argv, "hHn:P:v:", longopts,
+	while ((arg = getopt_long(argc, argv, "hH:n:P:v:", longopts,
 				  NULL)) != EOF) {
 		switch (arg) {
 		case 'H':

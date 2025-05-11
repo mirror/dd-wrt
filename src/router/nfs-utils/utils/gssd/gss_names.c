@@ -65,7 +65,7 @@ get_krb5_hostbased_name(gss_buffer_desc *name, char **hostbased_name)
 	if (strchr(name->value, '@') && strchr(name->value, '/')) {
 		if ((sname = calloc(name->length, 1)) == NULL) {
 			printerr(0, "ERROR: get_krb5_hostbased_name failed "
-				 "to allocate %d bytes\n", name->length);
+				 "to allocate %zd bytes\n", name->length);
 			return -1;
 		}
 		/* read in name and instance and replace '/' with '@' */
@@ -102,7 +102,7 @@ get_hostbased_client_name(gss_name_t client_name, gss_OID mech,
 	}
 	if (name.length >= 0xffff) {	    /* don't overflow */
 		printerr(0, "ERROR: get_hostbased_client_name: "
-			 "received gss_name is too long (%d bytes)\n",
+			 "received gss_name is too long (%zd bytes)\n",
 			 name.length);
 		goto out_rel_buf;
 	}

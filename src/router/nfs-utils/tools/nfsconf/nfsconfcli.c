@@ -135,19 +135,8 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	if (mode != MODE_SET && mode != MODE_UNSET) {
-		if (conf_init_file(confpath)) {
-			/* config file was missing or had an error, warn about it */
-			if (verbose || mode != MODE_ISSET) {
-				fprintf(stderr, "Error loading config file %s\n",
-					confpath);
-			}
-
-			/* this isnt fatal for --isset */
-			if (mode != MODE_ISSET)
-				return 1;
-		}
-	}
+	if (mode != MODE_SET && mode != MODE_UNSET)
+		conf_init_file(confpath);
 
 	/* --dump mode, output the current configuration */
 	if (mode == MODE_DUMP) {

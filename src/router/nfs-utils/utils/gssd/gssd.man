@@ -346,6 +346,15 @@ flag.
 Equivalent to
 .BR -l .
 .TP
+.B allowed-enctypes
+Allows you to restrict
+.B rpc.gssd
+to using a subset of the encryption types permitted by the kernel and the krb5
+libraries.  This is useful if you need to interoperate with an NFS server that
+does not have support for the newer SHA2 and Camellia encryption types, for
+example.  This configuration file option does not have an equivalent
+command-line option.
+.TP
 .B context-timeout
 Equivalent to
 .BR -t .
@@ -383,6 +392,17 @@ Setting to
 is equivalent to providing the
 .B -H
 flag.
+.TP
+.B use-gss-proxy
+Setting this to 1 allows
+.BR gssproxy (8)
+to intercept GSSAPI calls and service them on behalf of
+.BR rpc.gssd ,
+enabling certain features such as keytab-based client initiation.
+Note that this is unrelated to the functionality that
+.BR gssproxy (8)
+provides on behalf of the NFS server.  For more information, see
+.BR https://github.com/gssapi/gssproxy/blob/main/docs/NFS.md#nfs-client .
 .P
 In addtion, the following value is recognized from the
 .B [general]
@@ -396,7 +416,8 @@ Equivalent to
 .BR rpc.svcgssd (8),
 .BR kerberos (1),
 .BR kinit (1),
-.BR krb5.conf (5)
+.BR krb5.conf (5),
+.BR gssproxy (8)
 .SH AUTHORS
 .br
 Dug Song <dugsong@umich.edu>

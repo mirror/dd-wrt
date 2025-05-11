@@ -53,33 +53,37 @@ nfsref \- manage NFS referrals
 NFS version 4 introduces the concept of
 .I file system referrals
 to NFS.
-A file system referral is like a symbolic link on a file server
-to another file system share, possibly on another file server.
-On an NFS client, a referral behaves like an automounted directory.
-The client, under the server's direction, mounts a new NFS export
-automatically when an application first accesses that directory.
 .P
-Referrals are typically used to construct a single file name space
-across multiple file servers.
-Because file servers control the shape of the name space,
-no client configuration is required,
-and all clients see the same referral information.
+A file system referral is like a symbolic link
+(or,
+.IR symlink )
+to another file system share, typically on another file server.
+An NFS client, under the server's direction,
+mounts the referred-to NFS export
+automatically when an application first accesses it.
 .P
-The Linux NFS server supports NFS version 4 referrals.
-Administrators can specify the
-.B refer=
-export option in
-.I /etc/exports
-to configure a list of exports from which the client can choose.
-See
-.BR exports (5)
-for details.
+NFSv4 referrals can be used to transparently redirect clients
+to file systems that have been moved elsewhere, or
+to construct a single file name space across multiple file servers.
+Because file servers control the shape of the whole file name space,
+no client configuration is required.
 .P
 .SH DESCRIPTION
+A
+.I junction
+is a file system object on an NFS server that,
+when an NFS client encounters it, triggers a referral.
+Similar to a symlink, a junction contains one or more target locations
+that the server sends to clients in the form of an NFSv4 referral.
+.P
+On Linux, an existing directory can be converted to a junction
+and back atomically and without the loss of the directory contents.
+When a directory acts as a junction, it's local content is hidden
+from NFSv4 clients.
+.P
 The
 .BR nfsref (8)
-command is a simple way to get started managing junction metadata.
-Other administrative commands provide richer access to junction information.
+command is a simple way to get started managing junctions and their content.
 .SS Subcommands
 Valid
 .BR nfsref (8)
@@ -135,6 +139,10 @@ For the
 .B add
 subcommand, the default value if this option is not specified is
 .BR nfs-basic .
+The
+.B nfs-fedfs
+type is not used in this implementation.
+.IP
 For the
 .B remove
 and
@@ -163,18 +171,12 @@ you might issue this command as root:
 .sp
 # mkdir /home
 .br
-# nfsref --type=nfs-basic add /home home.example.net /
+# nfsref add /home home.example.net /
 .br
 Created junction /home.
 .sp
 .RE
-.SH FILES
-.TP
-.I /etc/exports
-NFS server export table
 .SH "SEE ALSO"
-.BR exports (5)
-.sp
-RFC 5661 for a description of NFS version 4 referrals
+RFC 8881 for a description of the NFS version 4 referral mechanism
 .SH "AUTHOR"
 Chuck Lever <chuck.lever@oracle.com>

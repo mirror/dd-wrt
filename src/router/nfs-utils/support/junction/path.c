@@ -23,6 +23,12 @@
  *	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
  */
 
+/* For musl */
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#include <limits.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
 

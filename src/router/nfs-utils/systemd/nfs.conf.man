@@ -2,10 +2,13 @@
 .SH NAME
 nfs.conf \- general configuration for NFS daemons and tools
 .SH SYNOPSIS
+.I /usr/etc/nfs.conf
+.I /usr/etc/nfs.conf.d/
 .I /etc/nfs.conf
+.I /etc/nfs.conf.d/
 .SH DESCRIPTION
 .PP
-This file contains site-specific configuration for various NFS daemons
+These files contain site-specific configuration for various NFS daemons
 and other processes.  Most configuration can also be passed to
 processes via command line arguments, but it can be more convenient to
 have a central file.  In particular, this encourages consistent
@@ -156,19 +159,6 @@ is equivalent to providing the
 option.
 
 .TP
-.B nfsdcltrack
-Recognized values:
-.BR storagedir .
-
-The
-.B nfsdcltrack
-program is run directly by the Linux kernel and there is no
-opportunity to provide command line arguments, so the configuration
-file is the only way to configure this program.  See
-.BR nfsdcltrack (8)
-for details.
-
-.TP
 .B nfsd
 Recognized values:
 .BR threads ,
@@ -314,17 +304,18 @@ See
 for deatils.
 
 .SH FILES
-.TP 10n
+.I /usr/etc/nfs.conf
+.br
+.I /usr/etc/nfs.conf.d/*.conf
+.br
 .I /etc/nfs.conf
-Default NFS client configuration file
-.TP 10n
-.I /etc/nfs.conf.d
-When this directory exists and files ending 
-with ".conf" exist, those files will be
-used to set configuration variables. These
-files will override variables set in /etc/nfs.conf
+.br
+.I /etc/nfs.conf.d/*.conf
+.br
+.IP
+Various configuration files read in order.  Later settings override
+earlier settings.
 .SH SEE ALSO
-.BR nfsdcltrack (8),
 .BR rpc.nfsd (8),
 .BR rpc.mountd (8),
 .BR nfsmount.conf (5).

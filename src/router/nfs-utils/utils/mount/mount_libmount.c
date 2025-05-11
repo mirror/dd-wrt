@@ -442,7 +442,7 @@ int main(int argc, char *argv[])
 	mnt_init_debug(0);
 	cxt = mnt_new_context();
 	if (!cxt) {
-		nfs_error(_("Can't initilize libmount: %s"),
+		nfs_error(_("Can't initialize libmount: %s"),
 					strerror(errno));
 		rc = EX_FAIL;
 		goto done;

@@ -186,6 +186,10 @@ infrequently used request types are retried after 1.1 seconds.
 After each retransmission, the NFS client doubles the timeout for
 that request,
 up to a maximum timeout length of 60 seconds.
+.IP
+Any timeo value greater than default value will be set to the default value.
+For TCP and RDMA, default value is 600 (60 seconds).
+For UDP, default value is 60 (6 seconds).
 .TP 1.5i
 .BI retrans= n
 The number of times the NFS client retries a request before
@@ -211,15 +215,18 @@ or smaller than the
 setting. The largest read payload supported by the Linux NFS client
 is 1,048,576 bytes (one megabyte).
 .IP
-The
+The allowed
 .B rsize
-value is a positive integral multiple of 1024.
+value is a positive integral multiple of
+system's page size
+or a power of two if it is less than
+system's page size.
 Specified
 .B rsize
 values lower than 1024 are replaced with 4096; values larger than
 1048576 are replaced with 1048576. If a specified value is within the supported
-range but not a multiple of 1024, it is rounded down to the nearest
-multiple of 1024.
+range but not such an allowed value, it is rounded down to the nearest
+allowed value.
 .IP
 If an
 .B rsize
@@ -253,16 +260,19 @@ setting. The largest write payload supported by the Linux NFS client
 is 1,048,576 bytes (one megabyte).
 .IP
 Similar to
-.B rsize
-, the
+.BR rsize ,
+the allowed
 .B wsize
-value is a positive integral multiple of 1024.
+value is a positive integral multiple of
+system's page size
+or a power of two if it is less than
+system's page size.
 Specified
 .B wsize
 values lower than 1024 are replaced with 4096; values larger than
 1048576 are replaced with 1048576. If a specified value is within the supported
-range but not a multiple of 1024, it is rounded down to the nearest
-multiple of 1024.
+range but not such an allowed value, it is rounded down to the nearest
+allowed value.
 .IP
 If a
 .B wsize
@@ -424,11 +434,16 @@ option may also be used by some pNFS drivers to decide how many
 connections to set up to the data servers.
 .TP 1.5i
 .BR rdirplus " / " nordirplus
-Selects whether to use NFS v3 or v4 READDIRPLUS requests.
-If this option is not specified, the NFS client uses READDIRPLUS requests
-on NFS v3 or v4 mounts to read small directories.
-Some applications perform better if the client uses only READDIR requests
-for all directories.
+Selects whether to use NFS v3 or v4 READDIRPLUS requests.  If this option is
+not specified, the NFS client uses a heuristic to optimize performance by
+choosing READDIR vs READDIRPLUS based on how often the calling process uses
+the additional attributes returned from READDIRPLUS.  Some applications
+perform better if the client uses only READDIR requests for all directories.
+.TP 1.5i
+.BR rdirplus={none|force}
+If set to "force", the NFS client always attempts to use READDIRPLUS
+requests.  If set to "none", the behavior is the same as
+.B nordirplus.
 .TP 1.5i
 .BI retry= n
 The number of minutes that the
@@ -608,6 +623,17 @@ option is not specified,
 the default behavior depends on the kernel version,
 but is usually equivalent to
 .BR "xprtsec=none" .
+.TP 1.5i
+.BI noalignwrite
+This option disables the default behavior of extending buffered write operations
+to full page boundaries.
+.IP
+Normally, the NFS client rounds non-aligned buffered writes up to the system
+page size, which can lead to "lost writes" when multiple clients write
+concurrently to distinct non-overlapping regions. Use this option when your
+applications perform non-aligned buffered writes and you can guarantee that file
+regions do not overlap, thus avoiding the need for file locking.
+.IP
 .SS "Options for NFS versions 2 and 3 only"
 Use these options, along with the options in the above subsection,
 for NFS versions 2 and 3 only.
@@ -964,7 +990,7 @@ Some server features misbehave in the face of a migration-compatible
 identification string.
 The
 .B nomigration
-option retains the use of a traditional client indentification string
+option retains the use of a traditional client identification string
 which is compatible with legacy NFS servers.
 This is also the behavior if neither option is specified.
 A client's open and lock state cannot be migrated transparently
@@ -1832,7 +1858,7 @@ auxiliary services such as the NLM service can choose
 any unused port number at random.
 .P
 Common firewall configurations block the well-known rpcbind port.
-In the absense of an rpcbind service,
+In the absence of an rpcbind service,
 the server administrator fixes the port number
 of NFS-related services so that the firewall
 can allow access to specific NFS service ports.

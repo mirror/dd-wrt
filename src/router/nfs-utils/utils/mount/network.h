@@ -93,4 +93,6 @@ void mnt_closeclnt(CLIENT *, int);
 int nfs_umount_do_umnt(struct mount_options *options,
 		       char **hostname, char **dirname);
 
+extern const char *nfs_transport_opttbl[];
+
 #endif	/* _NFS_UTILS_MOUNT_NETWORK_H */

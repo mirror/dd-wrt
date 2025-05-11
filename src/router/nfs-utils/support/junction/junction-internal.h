@@ -28,6 +28,7 @@
 
 #include <libxml/tree.h>
 #include <libxml/xpath.h>
+#include <libxml/parser.h>
 
 /**
  ** Names of extended attributes that store junction data

@@ -47,7 +47,7 @@ xtab_read(char *xtab, char *lockfn, int is_export)
 	setexportent(xtab, "r");
 	if (is_export == 1)
 		v4root_needed = 1;
-	while ((xp = getexportent(is_export==0, 0)) != NULL) {
+	while ((xp = getexportent(is_export==0)) != NULL) {
 		if (!(exp = export_lookup(xp->e_hostname, xp->e_path, is_export != 1)) &&
 		    !(exp = export_create(xp, is_export!=1))) {
                         if(xp->e_hostname) {

@@ -1,0 +1,323 @@
+'\" t
+.\"     Title: nfsdctl
+.\"    Author: Jeff Layton
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2025-01-09
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "NFSDCTL" "8" "2025-01-09" "\ \&" "\ \&"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
+nfsdctl \- control program for the Linux kernel NFS server
+.SH "SYNOPSIS"
+.sp
+\fBnfsdctl\fP [ \fIOPTION\fP ] COMMAND ...
+.SH "DESCRIPTION"
+.sp
+nfsdctl is a control and query program for the in\-kernel NFS server. There are several
+subcommands (documented below) that allow the admin to configure or query different
+aspects of the NFS server.
+.sp
+To get information about different subcommand usage, pass the subcommand the
+\-\-help parameter. For example:
+.sp
+.if n .RS 4
+.nf
+.fam C
+nfsdctl listener \-\-help
+.fam
+.fi
+.if n .RE
+.SH "OPTIONS"
+.sp
+\fB\-d, \-\-debug\fP
+.RS 4
+Enable debug logging
+.RE
+.sp
+\fB\-h, \-\-help\fP
+.RS 4
+Print program help text
+.RE
+.sp
+\fB\-s, \-\-syslog\fP
+.RS 4
+Log to syslog instead of to stderr (the default)
+.RE
+.sp
+\fB\-V, \-\-version\fP
+.RS 4
+Print program version
+.RE
+.SH "SUBCOMMANDS"
+.sp
+Each subcommand can also accept its own set of options and arguments. The
+\-\-help option is standard for all subcommands:
+.sp
+\fBautostart\fP
+.RS 4
+Start the server using the settings in the [nfsd] section of /etc/nfs.conf.
+This subcommand takes no arguments. Note that if a "threads=" value is not set in
+nfs.conf, 16 server threads will be brought online.
+.RE
+.sp
+\fBlistener\fP
+.RS 4
+Get/set the listening sockets for the server. Run this without arguments to
+get a list of the sockets on which the server is currently listening. To add
+or remove sockets, pass it whitespace\-separated strings in the format:
+.sp
+.if n .RS 4
+.nf
+.fam C
+{ +|\- }{ protocol }:{ address }:{ port }
+.fam
+.fi
+.if n .RE
+.sp
+.if n .RS 4
+.nf
+.fam C
+The fields are:
+.fam
+.fi
+.if n .RE
+.sp
+.if n .RS 4
+.nf
+.fam C
++ to add a listener, \- to remove one
+protocol: protocol name (e.g. tcp, udp, rdma)
+address: hostname or address
+port: port number or service name
+.fam
+.fi
+.if n .RE
+.sp
+.if n .RS 4
+.nf
+.fam C
+All fields are required, except for the address. If address is an empty string,
+then the listeners will be opened for INADDR_ANY and IN6ADDR_ANY_INIT for ipv6
+(if enabled). The address can be either a hostname or an IP address. IPv4
+addresses must be in dotted\-quad form. IPv6 addresses should be in standard
+colon separated form, and must be enclosed in square brackets.
+.fam
+.fi
+.if n .RE
+.RE
+.sp
+\fBnlm\fP
+.RS 4
+Get information about NLM (lockd) settings in the current net namespace. This
+subcommand takes no arguments.
+.RE
+.sp
+\fBstatus\fP
+.RS 4
+Get information about RPCs currently executing in the server. This subcommand
+takes no arguments.
+.RE
+.sp
+\fBthreads\fP
+.RS 4
+Get/set the number of running nfsd threads in each pool. Pass a list of
+integers to change the currently active number of threads. Passing it a
+value of 0 will shut down the NFS server. Run this without arguments to
+get the current number of running threads in each pool.
+.RE
+.sp
+\fBversion\fP
+.RS 4
+Get/set the enabled NFS versions for the server. Run without arguments to
+get a list of supported versions and whether they are currently enabled or
+disabled. To enable or disable a version, pass it a string in the format:
+.sp
+.if n .RS 4
+.nf
+.fam C
+{ +|\- }{ MAJOR }{.{ MINOR }}
+.fam
+.fi
+.if n .RE
+.sp
+.if n .RS 4
+.nf
+.fam C
+The fields are:
+.fam
+.fi
+.if n .RE
+.sp
+.if n .RS 4
+.nf
+.fam C
++ to enable a version, \- to disable
+MAJOR: the major version integer value
+MINOR: the minor version integer value
+.fam
+.fi
+.if n .RE
+.sp
+.if n .RS 4
+.nf
+.fam C
+The minorversion field is optional. If not given, it will disable or enable
+all minorversions for that major version.
+.fam
+.fi
+.if n .RE
+.sp
+.if n .RS 4
+.nf
+.fam C
+Note that versions can only be set when there are no nfsd threads running.
+.fam
+.fi
+.if n .RE
+.RE
+.sp
+\fBpool\-mode\fP
+.RS 4
+Get/set the host\(cqs pool mode. This will cause the server to start threads
+that are pinned to either the CPU or the NUMA node. This can only be set
+when there are no nfsd threads running.
+.sp
+.if n .RS 4
+.nf
+.fam C
+The available options are:
+  global:  single large pool
+  percpu:  pool per CPU
+  pernode: pool per NUMA node
+  auto:    choose a mode based on host configuration
+.fam
+.fi
+.if n .RE
+.RE
+.SH "EXAMPLES"
+.sp
+Start the server with the settings in nfs.conf:
+.sp
+.if n .RS 4
+.nf
+.fam C
+nfsdctl autostart
+.fam
+.fi
+.if n .RE
+.sp
+Get a list of current listening sockets:
+.sp
+.if n .RS 4
+.nf
+.fam C
+nfsdctl listener
+.fam
+.fi
+.if n .RE
+.sp
+Show the supported and enabled NFS versions:
+.sp
+.if n .RS 4
+.nf
+.fam C
+nfsdctl version
+.fam
+.fi
+.if n .RE
+.sp
+Add TCP listener on all addresses (both v4 and v6), port 2049:
+.sp
+.if n .RS 4
+.nf
+.fam C
+nfsdctl listener +tcp::2049
+.fam
+.fi
+.if n .RE
+.sp
+Add RDMA listener on 1.2.3.4 port 20049:
+.sp
+.if n .RS 4
+.nf
+.fam C
+nfsdctl listener +rdma:1.2.3.4:20049
+.fam
+.fi
+.if n .RE
+.sp
+Add same listener on IPv6 address f00::ba4 port 20050:
+.sp
+.if n .RS 4
+.nf
+.fam C
+nfsdctl listener +rdma:[f00::ba4]:20050
+.fam
+.fi
+.if n .RE
+.sp
+Enable NFS version 3, disable v4.0:
+.sp
+.if n .RS 4
+.nf
+.fam C
+nfsdctl version +3 \-4.0
+.fam
+.fi
+.if n .RE
+.sp
+Change the number of running threads in first pool to 256:
+.sp
+.if n .RS 4
+.nf
+.fam C
+nfsdctl threads 256
+.fam
+.fi
+.if n .RE
+.sp
+Set the pool\-mode to "pernode":
+.sp
+.if n .RS 4
+.nf
+.fam C
+nfsdctl pool\-mode pernode
+.fam
+.fi
+.if n .RE
+.SH "NOTES"
+.sp
+nfsdctl is intended to supersede rpc.nfsd(8), which controls the nfs server
+using the files under /proc/fs/nfsd. nfsdctl instead uses a netlink(7)
+interface to achieve the same goals.
+.sp
+Most of the commands that query the NFS server can be run as an unprivileged
+user, but configuring the server typically requires an account with elevated
+privileges.
+.SH "SEE ALSO"
+.sp
+nfs.conf(5), rpc.nfsd(8), rpc.mountd(8), exports(5), exportfs(8), rpc.rquotad(8), nfsstat(8), netconfig(5)
+.SH "AUTHOR"
+.sp
+Jeff Layton

@@ -50,7 +50,7 @@ install-exec-hook:
 	  ln -sf mount.nfs mount.nfs4 && \
 	  ln -sf mount.nfs umount.nfs && \
 	  ln -sf mount.nfs umount.nfs4 && \
-	  chmod 4511 mount.nfs )
+	  chmod 4711 mount.nfs )
 uninstall-hook:
 	(cd $(DESTDIR)$(sbindir) && \
 	    rm -f mount.nfs4 umount.nfs umount.nfs4)

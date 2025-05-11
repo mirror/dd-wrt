@@ -94,13 +94,11 @@ xstrconcat4 (const char *s, const char *t, const char *u, const char *v) {
 void
 nfs_error (const char *fmt, ...) {
      va_list args;
-     char *fmt2;
 
-     fmt2 = xstrconcat2 (fmt, "\n");
      va_start (args, fmt);
-     vfprintf (stderr, fmt2, args);
+     vfprintf (stderr, fmt, args);
+     fprintf (stderr, "\n");
      va_end (args);
-     free (fmt2);
 }
 
 /* Make a canonical pathname from PATH.  Returns a freshly malloced string.

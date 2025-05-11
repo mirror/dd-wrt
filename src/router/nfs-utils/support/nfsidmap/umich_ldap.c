@@ -200,6 +200,7 @@ static int set_krb5_ccname(const char *krb5_ccache_name)
 		IDMAP_LOG(5, ("Failed to set creds cache for kerberos, err(%d)",
 			      retval));
 	}
+	free(env);
 #endif /* else HAVE_GSS_KRB5_CCACHE_NAME */
 out:
 	return retval;

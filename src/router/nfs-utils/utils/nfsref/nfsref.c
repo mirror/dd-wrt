@@ -24,8 +24,6 @@
  */
 
 #include <sys/types.h>
-#include <sys/capability.h>
-#include <sys/prctl.h>
 #include <sys/stat.h>
 
 #include <stdbool.h>

@@ -298,13 +298,13 @@ set.
 
 The
 .I nocrossmnt
-option can explictly disable
+option can explicitly disable
 .I crossmnt
 if it was previously set.  This is rarely useful.
 .TP
-.IR no_subtree_check
-This option disables subtree checking, which has mild security
-implications, but can improve reliability in some circumstances.
+.IR subtree_check
+This option enables subtree checking, which can have mild security
+benefits, but can decrease reliability in some circumstances.
 
 If a subdirectory of a filesystem is exported, but the whole
 filesystem isn't then whenever a NFS request arrives, the server must
@@ -325,6 +325,9 @@ filesystem is exported with
 .I no_root_squash
 (see below), even if the file itself allows more general access.
 
+For more information about the security implications, refer to the
+Subdirectory Exports section.
+
 As a general guide, a home directory filesystem, which is normally
 exported at the root and may see lots of file renames, should be
 exported with subtree checking disabled.  A filesystem which is mostly
@@ -332,19 +335,21 @@ readonly, and at least doesn't see many file renames (e.g. /usr or
 /var) and for which subdirectories may be exported, should probably be
 exported with subtree checks enabled.
 
-The default of having subtree checks enabled, can be explicitly
+The default of having subtree checks disabled, can be explicitly
 requested with
-.IR subtree_check .
+.IR no_subtree_check .
 
-From release 1.1.0 of nfs-utils onwards, the default will be
+Before release 1.1.0 of nfs-utils, the default was
+.IR subtree_check .
+Since release 1.1.0, the default is
 .I no_subtree_check
-as subtree_checking tends to cause more problems than it is worth.
+as subtree checking tends to cause more problems than it is worth.
 If you genuinely require subtree checking, you should explicitly put
 that option in the
 .B exports
 file.  If you put neither option,
 .B exportfs
-will warn you that the change is pending.
+will warn you that the change has occurred.
 
 .TP
 .IR insecure_locks
@@ -445,6 +450,9 @@ the given list an alternative location for the filesystem.
 filesystem is not required; so, for example,
 .IR "mount --bind" " /path /path"
 is sufficient.)
+
+This option affects only NFSv4 clients. Other clients will ignore
+all "refer=" parts.
 .TP
 .IR replicas= path@host[+host][:path@host[+host]]
 If the client asks for alternative locations for the export point, it
@@ -575,8 +583,12 @@ however, this has drawbacks:
 
 First, it may be possible for a malicious user to access files on the
 filesystem outside of the exported subdirectory, by guessing filehandles
-for those other files.  The only way to prevent this is by using the
-.IR no_subtree_check
+for those other files.
+In some cases a malicious user may also be able to access files on other
+filesystems that have not been exported by replacing the exported
+subdirectory with a symbolic link to any other directory.
+The only way to prevent this is by using the
+.IR subtree_check
 option, which can cause other problems.
 
 Second, export options may not be enforced in the way that you would

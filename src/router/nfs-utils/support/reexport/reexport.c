@@ -25,6 +25,7 @@ static int fsidd_srv = -1;
 static bool connect_fsid_service(void)
 {
 	struct sockaddr_un addr;
+	socklen_t addr_len;
 	char *sock_file;
 	int ret;
 	int s;
@@ -37,9 +38,12 @@ static bool connect_fsid_service(void)
 	memset(&addr, 0, sizeof(struct sockaddr_un));
 	addr.sun_family = AF_UNIX;
 	strncpy(addr.sun_path, sock_file, sizeof(addr.sun_path) - 1);
-	if (addr.sun_path[0] == '@')
+	addr_len = sizeof(struct sockaddr_un);
+	if (addr.sun_path[0] == '@') {
 		/* "abstract" socket namespace */
+		addr_len = offsetof(struct sockaddr_un, sun_path) + strlen(addr.sun_path);
 		addr.sun_path[0] = 0;
+	}
 
 	s = socket(AF_UNIX, SOCK_SEQPACKET, 0);
 	if (s == -1) {
@@ -47,7 +51,7 @@ static bool connect_fsid_service(void)
 		return false;
 	}
 
-	ret = connect(s, (const struct sockaddr *)&addr, sizeof(struct sockaddr_un));
+	ret = connect(s, (const struct sockaddr *)&addr, addr_len);
 	if (ret == -1) {
 		xlog(L_WARNING, "Unable to connect %s: %m, is fsidd running?\n", sock_file);
 		return false;

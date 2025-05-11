@@ -116,3 +116,19 @@ int get_reformat_group(void)
 
 	return reformat_group;
 }
+
+size_t get_pwnam_buflen(void)
+{
+	long buflen = sysconf(_SC_GETPW_R_SIZE_MAX);
+	if (buflen == -1)
+		buflen = 16384;
+	return (size_t)buflen;
+}
+
+size_t get_grnam_buflen(void)
+{
+	long buflen = sysconf(_SC_GETGR_R_SIZE_MAX);
+	if (buflen == -1)
+		buflen = 16384;
+	return (size_t)buflen;
+}

@@ -205,7 +205,8 @@ nfssvc_setfds(const struct addrinfo *hints, const char *node, const char *port)
 			rc = errno;
 			goto error;
 		}
-		if (addr->ai_protocol == IPPROTO_TCP && listen(sockfd, 64)) {
+		if (addr->ai_protocol == IPPROTO_TCP &&
+		    listen(sockfd, SOMAXCONN)) {
 			xlog(L_ERROR, "unable to create listening socket: "
 				"errno %d (%m)", errno);
 			rc = errno;

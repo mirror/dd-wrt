@@ -290,7 +290,7 @@ junction_parse_xml_buf(const char *pathname, const char *name,
 {
 	xmlDocPtr tmp;
 
-	tmp = xmlParseMemory(buf, (int)len);
+	tmp = xmlReadMemory(buf, (int)len, NULL, NULL, 0);
 	if (tmp == NULL) {
 		xlog(D_GENERAL, "Failed to parse XML in %s(%s)\n",
 			pathname, name);
@@ -387,7 +387,6 @@ junction_xml_write(const char *pathname, const char *name, xmlDocPtr doc)
 		return retval;
 
 	retval = FEDFS_ERR_SVRFAULT;
-	xmlIndentTreeOutput = 1;
 	xmlDocDumpFormatMemoryEnc(doc, &buf, &len, "UTF-8", 1);
 	if (len < 0)
 		goto out;

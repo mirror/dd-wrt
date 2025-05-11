@@ -107,7 +107,7 @@ junction_flush_exports_cache(void)
 		xlog(D_GENERAL, "%s: time(3) failed", __func__);
 		return FEDFS_ERR_SVRFAULT;
 	}
-	snprintf(flushtime, sizeof(flushtime), "%ld\n", now);
+	snprintf(flushtime, sizeof(flushtime), "%lld\n", (long long)now);
 
 	for (i = 0; junction_proc_files[i] != NULL; i++) {
 		retval = junction_write_time(junction_proc_files[i], flushtime);

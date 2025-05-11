@@ -111,7 +111,7 @@ struct rmtabent {
  * configuration file parsing
  */
 void			setexportent(char *fname, char *type);
-struct exportent *	getexportent(int,int);
+struct exportent *	getexportent(int);
 void 			secinfo_show(FILE *fp, struct exportent *ep);
 void			xprtsecinfo_show(FILE *fp, struct exportent *ep);
 void			putexportent(struct exportent *xep);

@@ -1,5 +1,6 @@
 [Unit]
 Description=pNFS block layout mapping daemon
+Documentation=man:blkmapd(8)
 DefaultDependencies=no
 Conflicts=umount.target
 After=rpc_pipefs.target

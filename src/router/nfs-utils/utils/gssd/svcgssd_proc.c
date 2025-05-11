@@ -102,10 +102,10 @@ do_svc_downcall(gss_buffer_desc *out_handle, struct svc_cred *cred,
 	qword_addint(&bp, &blen, cred->cr_uid);
 	qword_addint(&bp, &blen, cred->cr_gid);
 	qword_addint(&bp, &blen, cred->cr_ngroups);
-	printerr(2, "mech: %s, hndl len: %d, ctx len %d, timeout: %d (%d from now), "
+	printerr(2, "mech: %s, hndl len: %zd, ctx len %zd, timeout: %lld (%lld from now), "
 		 "clnt: %s, uid: %d, gid: %d, num aux grps: %d:\n",
 		 fname, out_handle->length, context_token->length,
-		 endtime, endtime - time(0),
+		 (long long int)endtime, (long long int)(endtime - time(0)),
 		 client_name ? client_name : "<null>",
 		 cred->cr_uid, cred->cr_gid, cred->cr_ngroups);
 	for (i=0; i < cred->cr_ngroups; i++) {
@@ -232,7 +232,7 @@ get_ids(gss_name_t client_name, gss_OID mech, struct svc_cred *cred)
 	}
 	if (name.length >= 0xffff || /* be certain name.length+1 doesn't overflow */
 	    !(sname = calloc(name.length + 1, 1))) {
-		printerr(0, "WARNING: get_ids: error allocating %d bytes "
+		printerr(0, "WARNING: get_ids: error allocating %zd bytes "
 			"for sname\n", name.length + 1);
 		gss_release_buffer(&min_stat, &name);
 		goto out;
@@ -360,7 +360,7 @@ handle_nullreq(char *cp) {
 	if (in_handle.length != 0) { /* CONTINUE_INIT case */
 		if (in_handle.length != sizeof(ctx)) {
 			printerr(0, "WARNING: handle_nullreq: "
-				    "input handle has unexpected length %d\n",
+				    "input handle has unexpected length %zd\n",
 				    in_handle.length);
 			goto out_err;
 		}

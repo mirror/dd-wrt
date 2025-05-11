@@ -858,7 +858,7 @@ noauth_flavors:
 	if (!fake) {
 		if (mount(spec, node, "nfs",
 				flags & ~(MS_USER|MS_USERS), &data)) {
-			mount_error(spec, node, errno);
+			mount_error(spec, node, errno, NULL);
 			goto fail;
 		}
 	}

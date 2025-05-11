@@ -198,7 +198,7 @@ initialize client tracking in the following order:  First, the \fBnfsdcld\fR upc
 the \fBnfsdcltrack\fR usermodehelper upcall.  Finally, the legacy client tracking.
 .PP
 This daemon should be run as root, as the pipe that it uses to communicate
-with the kernel is only accessable by root. The daemon however does drop all
+with the kernel is only accessible by root. The daemon however does drop all
 superuser capabilities after starting. Because of this, the \fIstoragedir\fR
 should be owned by root, and be readable and writable by owner.
 .PP

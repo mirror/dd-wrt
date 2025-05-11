@@ -365,12 +365,12 @@ gssd_read_service_info(int dirfd, struct clnt_info *clp)
 
 fail:
 	printerr(0, "ERROR: failed to parse %s/info\n", clp->relpath);
-	clp->upcall_address = strdup(address);
-	clp->upcall_port = strdup(port);
+	clp->upcall_address = address ? strdup(address) : NULL;
+	clp->upcall_port = port ? strdup(port) : NULL;
 	clp->upcall_program = program;
 	clp->upcall_vers = version;
-	clp->upcall_protoname = strdup(protoname);
-	clp->upcall_service = strdup(service);
+	clp->upcall_protoname = protoname ? strdup(protoname) : NULL;
+	clp->upcall_service = service ? strdup(service) : NULL;
 	free(servername);
 	free(protoname);
 	clp->servicename = NULL;
@@ -559,9 +559,9 @@ scan_active_thread_list(void)
 					do_error_downcall(info->fd, info->uid, -ETIMEDOUT);
 				} else {
 					if (!(info->flags & UPCALL_THREAD_WARNED)) {
-						printerr(0, "watchdog: thread id 0x%lx running for %ld seconds\n",
+						printerr(0, "watchdog: thread id 0x%lx running for %lld seconds\n",
 								info->tid,
-								now.tv_sec - info->timeout.tv_sec + upcall_timeout);
+								(long long int)(now.tv_sec - info->timeout.tv_sec + upcall_timeout));
 						info->flags |= UPCALL_THREAD_WARNED;
 					}
 				}
@@ -1231,6 +1231,12 @@ main(int argc, char *argv[])
 #endif
 
 	daemon_init(fg);
+
+#ifdef HAVE_SET_ALLOWABLE_ENCTYPES
+	rc = get_allowed_enctypes();
+	if (rc)
+		exit(EXIT_FAILURE);
+#endif
 
 	if (gssd_check_mechs() != 0)
 		errx(1, "Problem with gssapi library");

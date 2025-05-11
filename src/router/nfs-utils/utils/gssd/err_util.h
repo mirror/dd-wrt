@@ -32,7 +32,7 @@
 #define _ERR_UTIL_H_
 
 void initerr(char *progname, int verbosity, int fg);
-void printerr(int priority, char *format, ...);
+void printerr(int priority, char *format, ...) __attribute__ ((format (printf, 2, 3)));
 int get_verbosity(void);
 char * sec2time(int);
 

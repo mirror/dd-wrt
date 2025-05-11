@@ -43,7 +43,7 @@ and will be shifted to lower case before being passed to the filesystem.
 .PP
 Boolean mount options which do not need an equals sign must be given as
 .RI \[dq] option =True".
-Instead of preceeding such an option with
+Instead of preceding such an option with
 .RB \[dq] no \[dq]
 its negation must be given as
 .RI \[dq] option =False".
@@ -115,16 +115,17 @@ All mounts to the '/export/home' export will be performed in
 the background (i.e. done asynchronously).
 .RE
 .SH FILES
-.TP 10n
+.I /usr/etc/nfsmount.conf
+.br
+.I /usr/etc/nfsmount.conf.d/*.conf
+.br
 .I /etc/nfsmount.conf
-Default NFS mount configuration file
-.TP 10n
-.I /etc/nfsmount.conf.d
-When this directory exists and files ending
-with ".conf" exist, those files will be
-used to set configuration variables. These
-files will override variables set
-in /etc/nfsmount.conf
+.br
+.I /etc/nfsmount.conf.d/*.conf
+.br
+.IP
+Default NFS mount configuration files, variables set in the later file
+over-ride those in the earlier file.
 .PD
 .SH SEE ALSO
 .BR nfs (5),

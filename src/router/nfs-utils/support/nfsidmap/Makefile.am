@@ -40,15 +40,15 @@ nsswitch_la_SOURCES = nss.c nfsidmap_common.c
 nsswitch_la_LDFLAGS = -module -avoid-version
 nsswitch_la_LIBADD = ../../support/nfs/libnfsconf.la
 
-static_la_SOURCES = static.c
+static_la_SOURCES = static.c nfsidmap_common.c
 static_la_LDFLAGS = -module -avoid-version
 static_la_LIBADD = ../../support/nfs/libnfsconf.la
 
-regex_la_SOURCES = regex.c
+regex_la_SOURCES = regex.c nfsidmap_common.c
 regex_la_LDFLAGS = -module -avoid-version
 regex_la_LIBADD = ../../support/nfs/libnfsconf.la
 
-umich_ldap_la_SOURCES = umich_ldap.c
+umich_ldap_la_SOURCES = umich_ldap.c nfsidmap_common.c
 umich_ldap_la_LDFLAGS = -module -avoid-version
 umich_ldap_la_LIBADD = -lldap $(KRB5_GSS_LIB) ../../support/nfs/libnfsconf.la
 

@@ -46,6 +46,7 @@
 
 #include "nfsidmap.h"
 #include "nfsidmap_plugin.h"
+#include "nfsidmap_private.h"
 
 #define CONFIG_GET_STRING nfsidmap_config_get
 extern const char *nfsidmap_config_get(const char *, const char *);
@@ -95,7 +96,7 @@ static struct passwd *regex_getpwnam(const char *name, const char *UNUSED(domain
 {
 	struct passwd *pw;
 	struct pwbuf *buf;
-	size_t buflen = sysconf(_SC_GETPW_R_SIZE_MAX);
+	size_t buflen = get_pwnam_buflen();
 	char *localname;
 	size_t namelen;
 	int err;
@@ -175,7 +176,7 @@ static struct group *regex_getgrnam(const char *name, const char *UNUSED(domain)
 {
 	struct group *gr;
 	struct grbuf *buf;
-	size_t buflen = sysconf(_SC_GETGR_R_SIZE_MAX);
+	size_t buflen = get_grnam_buflen();
 	char *localgroup;
 	char *groupname;
 	size_t namelen;
@@ -366,7 +367,7 @@ static int regex_uid_to_name(uid_t uid, char *domain, char *name, size_t len)
 	struct passwd *pw = NULL;
 	struct passwd pwbuf;
 	char *buf;
-	size_t buflen = sysconf(_SC_GETPW_R_SIZE_MAX);
+	size_t buflen = get_pwnam_buflen();
 	int err = -ENOMEM;
 
 	buf = malloc(buflen);
@@ -392,7 +393,7 @@ static int regex_gid_to_name(gid_t gid, char *UNUSED(domain), char *name, size_t
 	struct group grbuf;
 	char *buf;
     const char *name_prefix;
-	size_t buflen = sysconf(_SC_GETGR_R_SIZE_MAX);
+	size_t buflen = get_grnam_buflen();
 	int err;
     char * groupname = NULL;
 

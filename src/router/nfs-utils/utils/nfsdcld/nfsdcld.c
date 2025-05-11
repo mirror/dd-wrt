@@ -716,35 +716,60 @@ reply:
 	}
 }
 
+static int
+cld_pipe_read_msg(struct cld_client *clnt)
+{
+	ssize_t len, left_len;
+	ssize_t hdr_len = sizeof(struct cld_msg_hdr);
+	struct cld_msg_hdr *hdr = (struct cld_msg_hdr *)&clnt->cl_u;
+
+	len = atomicio(read, clnt->cl_fd, hdr, hdr_len);
+
+	if (len <= 0) {
+		xlog(L_ERROR, "%s: pipe read failed: %m", __func__);
+		goto fail_read;
+	}
+
+	switch (hdr->cm_vers) {
+	case 1:
+		left_len = sizeof(struct cld_msg) - hdr_len;
+		break;
+	case 2:
+		left_len = sizeof(struct cld_msg_v2) - hdr_len;
+		break;
+	default:
+		xlog(L_ERROR, "%s: unsupported upcall version: %hu",
+			__func__, hdr->cm_vers);
+		goto fail_read;
+	}
+
+	len = atomicio(read, clnt->cl_fd, hdr + 1, left_len);
+
+	if (len <= 0) {
+		xlog(L_ERROR, "%s: pipe read failed: %m", __func__);
+		goto fail_read;
+	}
+
+	return 0;
+
+fail_read:
+	cld_pipe_open(clnt);
+	return -1;
+}
+
 static void
 cldcb(int UNUSED(fd), short which, void *data)
 {
-	ssize_t len;
 	struct cld_client *clnt = data;
-#if UPCALL_VERSION >= 2
-	struct cld_msg_v2 *cmsg = &clnt->cl_u.cl_msg_v2;
-#else
-	struct cld_msg *cmsg = &clnt->cl_u.cl_msg;
-#endif
+	struct cld_msg_hdr *hdr = (struct cld_msg_hdr *)&clnt->cl_u;
 
 	if (which != EV_READ)
 		goto out;
 
-	len = atomicio(read, clnt->cl_fd, cmsg, sizeof(*cmsg));
-	if (len <= 0) {
-		xlog(L_ERROR, "%s: pipe read failed: %m", __func__);
-		cld_pipe_open(clnt);
+	if (cld_pipe_read_msg(clnt) < 0)
 		goto out;
-	}
 
-	if (cmsg->cm_vers > UPCALL_VERSION) {
-		xlog(L_ERROR, "%s: unsupported upcall version: %hu",
-				__func__, cmsg->cm_vers);
-		cld_pipe_open(clnt);
-		goto out;
-	}
-
-	switch(cmsg->cm_cmd) {
+	switch (hdr->cm_cmd) {
 	case Cld_Create:
 		cld_create(clnt);
 		break;
@@ -765,7 +790,7 @@ cldcb(int UNUSED(fd), short which, void *data)
 		break;
 	default:
 		xlog(L_WARNING, "%s: command %u is not yet implemented",
-				__func__, cmsg->cm_cmd);
+				__func__, hdr->cm_cmd);
 		cld_not_implemented(clnt);
 	}
 out:

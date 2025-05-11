@@ -54,7 +54,7 @@ main(int argc, char **argv)
 	char *		module = NULL;
 	int		c;
 
-	cdename = malloc(strlen(basename(argv[0])));
+	cdename = malloc(strlen(basename(argv[0])) + 1);
 	if (cdename == NULL) {
 	  fprintf(stderr, "failed in malloc\n");
 	  exit(1);

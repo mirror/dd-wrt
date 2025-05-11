@@ -123,15 +123,15 @@ int chk_mountpoint(const char *mount_point)
 	struct stat sb;
 
 	if (stat(mount_point, &sb) < 0){
-		mount_error(NULL, mount_point, errno);
+		mount_error(NULL, mount_point, errno, NULL);
 		return 1;
 	}
 	if (S_ISDIR(sb.st_mode) == 0){
-		mount_error(NULL, mount_point, ENOTDIR);
+		mount_error(NULL, mount_point, ENOTDIR, NULL);
 		return 1;
 	}
 	if (getuid() != 0 && geteuid() != 0 && access(mount_point, X_OK) < 0) {
-		mount_error(NULL, mount_point, errno);
+		mount_error(NULL, mount_point, errno, NULL);
 		return 1;
 	}
 

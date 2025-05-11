@@ -137,7 +137,7 @@ v4root_support(void)
 	if (!warned) {
 		xlog(L_WARNING, "Kernel does not have pseudo root support.");
 		xlog(L_WARNING, "NFS v4 mounts will be disabled unless fsid=0");
-		xlog(L_WARNING, "is specfied in /etc/exports file.");
+		xlog(L_WARNING, "is specified in /etc/exports file.");
 		warned++;
 	}
 	return 0;

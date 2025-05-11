@@ -62,7 +62,7 @@ extern char    *conf_get_str(const char *, const char *);
 extern char    *conf_get_str_with_def(const char *, const char *, char *);
 extern char    *conf_get_section(const char *, const char *, const char *);
 extern char    *conf_get_entry(const char *, const char *, const char *);
-extern int      conf_init_file(const char *);
+extern void     conf_init_file(const char *);
 extern void     conf_cleanup(void);
 extern int      conf_match_num(const char *, const char *, int);
 extern int      conf_remove(int, const char *, const char *);

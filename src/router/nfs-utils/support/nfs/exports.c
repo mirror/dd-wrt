@@ -32,6 +32,7 @@
 #include "xio.h"
 #include "pseudoflavors.h"
 #include "reexport.h"
+#include "nfsd_path.h"
 
 #define EXPORT_DEFAULT_FLAGS	\
   (NFSEXP_READONLY|NFSEXP_ROOTSQUASH|NFSEXP_GATHERED_WRITES|NFSEXP_NOSUBTREECHECK)
@@ -59,7 +60,7 @@ static int	*squids = NULL, nsquids = 0,
 
 static int	getexport(char *exp, int len);
 static int	getpath(char *path, int len);
-static int	parseopts(char *cp, struct exportent *ep, int warn, int *had_subtree_opt_ptr);
+static int	parseopts(char *cp, struct exportent *ep, int *had_subtree_opt_ptr);
 static int	parsesquash(char *list, int **idp, int *lenp, char **ep);
 static int	parsenum(char **cpp);
 static void	freesquash(void);
@@ -109,7 +110,7 @@ static void init_exportent (struct exportent *ee, int fromkernel)
 }
 
 struct exportent *
-getexportent(int fromkernel, int fromexports)
+getexportent(int fromkernel)
 {
 	static struct exportent	ee, def_ee;
 	char		exp[512], *hostname;
@@ -147,7 +148,7 @@ getexportent(int fromkernel, int fromexports)
 	 * we're not reading from the kernel.
 	 */
 	if (exp[0] == '-' && !fromkernel) {
-		if (parseopts(exp + 1, &def_ee, 0, &has_default_subtree_opts) < 0)
+		if (parseopts(exp + 1, &def_ee, &has_default_subtree_opts) < 0)
 			return NULL;
 
 		has_default_opts = 1;
@@ -185,22 +186,22 @@ getexportent(int fromkernel, int fromexports)
 	}
 	ee.e_hostname = xstrdup(hostname);
 
-	if (parseopts(opt, &ee, fromexports && !has_default_subtree_opts, NULL) < 0) {
-                if(ee.e_hostname)
-                {
-                    xfree(ee.e_hostname);
-                    ee.e_hostname=NULL;
-                }
-                if(ee.e_uuid)
-                {
-                    xfree(ee.e_uuid);
-                    ee.e_uuid=NULL;
-                }
+	if (parseopts(opt, &ee, NULL) < 0) {
+		if(ee.e_hostname)
+		{
+			xfree(ee.e_hostname);
+			ee.e_hostname=NULL;
+		}
+		if(ee.e_uuid)
+		{
+			xfree(ee.e_uuid);
+			ee.e_uuid=NULL;
+		}
 
 		return NULL;
-        }
+	}
 	/* resolve symlinks */
-	if (realpath(ee.e_path, rpath) != NULL) {
+	if (nfsd_realpath(ee.e_path, rpath) != NULL) {
 		rpath[sizeof (rpath) - 1] = '\0';
 		strncpy(ee.e_path, rpath, sizeof (ee.e_path) - 1);
 		ee.e_path[sizeof (ee.e_path) - 1] = '\0';
@@ -433,7 +434,7 @@ mkexportent(char *hname, char *path, char *options)
 	}
 	strncpy(ee.e_path, path, sizeof (ee.e_path));
 	ee.e_path[sizeof (ee.e_path) - 1] = '\0';
-	if (parseopts(options, &ee, 0, NULL) < 0)
+	if (parseopts(options, &ee, NULL) < 0)
 		return NULL;
 	return &ee;
 }
@@ -441,7 +442,7 @@ mkexportent(char *hname, char *path, char *options)
 int
 updateexportent(struct exportent *eep, char *options)
 {
-	if (parseopts(options, eep, 0, NULL) < 0)
+	if (parseopts(options, eep, NULL) < 0)
 		return 0;
 	return 1;
 }
@@ -632,7 +633,7 @@ void fix_pseudoflavor_flags(struct exportent *ep)
  * Parse option string pointed to by cp and set mount options accordingly.
  */
 static int
-parseopts(char *cp, struct exportent *ep, int warn, int *had_subtree_opt_ptr)
+parseopts(char *cp, struct exportent *ep, int *had_subtree_opt_ptr)
 {
 	int	had_subtree_opt = 0;
 	char 	*flname = efname?efname:"command line";
@@ -852,13 +853,6 @@ bad_option:
 	ep->e_nsqgids = nsqgids;
 
 out:
-	if (warn && !had_subtree_opt)
-		xlog(L_WARNING, "%s [%d]: Neither 'subtree_check' or 'no_subtree_check' specified for export \"%s:%s\".\n"
-				"  Assuming default behaviour ('no_subtree_check').\n"
-				"  NOTE: this default has changed since nfs-utils version 1.0.x\n",
-
-				flname, flline,
-				ep->e_hostname, ep->e_path);
 	if (had_subtree_opt_ptr)
 		*had_subtree_opt_ptr = had_subtree_opt;
 

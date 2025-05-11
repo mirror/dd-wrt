@@ -8,7 +8,7 @@ PATH="/sbin:/usr/sbin:/bin:/usr/bin"
 
 # Use flock to serialize the running of this script
 exec 9> /run/rpc.statd.lock
-flock -e 9
+flock -x 9
 
 if [ -s /run/rpc.statd.pid ] &&
        [ "1$(cat /run/rpc.statd.pid)" -gt 1 ] &&

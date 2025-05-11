@@ -26,6 +26,11 @@ AC_DEFUN([AC_LIBTIRPC], [
                                     [Define to 1 if your tirpc library provides libtirpc_set_debug])],,
                          [${LIBS}])])
 
+     AS_IF([test -n "${LIBTIRPC}"],
+           [AC_CHECK_LIB([tirpc], [rpc_gss_seccreate],
+                         [AC_DEFINE([HAVE_TIRPC_GSS_SECCREATE], [1],
+                                    [Define to 1 if your tirpc library provides rpc_gss_seccreate])],,
+                         [${LIBS}])])
   AC_SUBST([AM_CPPFLAGS])
   AC_SUBST(LIBTIRPC)
 

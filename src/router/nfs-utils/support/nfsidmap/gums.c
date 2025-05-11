@@ -475,7 +475,7 @@ static int translate_to_uid(char *local_uid, uid_t *uid, uid_t *gid)
 	int ret = -1;
 	struct passwd *pw = NULL;
 	struct pwbuf *buf = NULL;
-	size_t buflen = sysconf(_SC_GETPW_R_SIZE_MAX);
+	size_t buflen = get_pwnam_buflen();
 
 	buf = malloc(sizeof(*buf) + buflen);
 	if (buf == NULL)
@@ -501,7 +501,7 @@ static int translate_to_gid(char *local_gid, uid_t *gid)
 	struct group *gr = NULL;
 	struct group grbuf;
 	char *buf = NULL;
-	size_t buflen = sysconf(_SC_GETGR_R_SIZE_MAX);
+	size_t buflen = get_grnam_buflen();
 	int ret = -1;
 
 	do {

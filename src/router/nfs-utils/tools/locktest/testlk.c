@@ -81,8 +81,8 @@ main(int argc, char **argv)
 		if (fl.l_type == F_UNLCK) {
 			printf("%s: no conflicting lock\n", fname);
 		} else {
-			printf("%s: conflicting lock by %d on (%zd;%zd)\n",
-				fname, fl.l_pid, fl.l_start, fl.l_len);
+			printf("%s: conflicting lock by %d on (%lld;%lld)\n",
+				fname, fl.l_pid, (long long)fl.l_start, (long long)fl.l_len);
 		}
 		return 0;
 	}

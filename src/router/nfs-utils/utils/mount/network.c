@@ -88,7 +88,7 @@ static const char *nfs_nfs_pgmtbl[] = {
 	NULL,
 };
 
-static const char *nfs_transport_opttbl[] = {
+const char *nfs_transport_opttbl[] = {
 	"udp",
 	"tcp",
 	"rdma",

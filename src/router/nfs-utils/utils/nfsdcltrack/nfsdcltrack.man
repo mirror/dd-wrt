@@ -80,7 +80,7 @@ section.  For example:
 .br
   storagedir = /shared/nfs/nfsdcltrack
 .in -5
-Debuging to syslog can also be enabled by setting "debug = 1" in this file.
+Debugging to syslog can also be enabled by setting "debug = 1" in this file.
 .SH "LEGACY TRANSITION MECHANISM"
 .IX Header "LEGACY TRANSITION MECHANISM"
 The Linux kernel NFSv4 server has historically tracked this information

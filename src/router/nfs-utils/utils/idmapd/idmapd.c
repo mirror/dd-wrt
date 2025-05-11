@@ -556,7 +556,7 @@ dirscancb(int fd, short UNUSED(which), void *data)
 			if (nfsopen(ic) == -1) {
 				close(ic->ic_dirfd);
 				free(ic);
-				goto out;
+				continue;
 			}
 
 			if (verbose > 2)
