@@ -1133,7 +1133,7 @@ int getMTD(char *name)
 	return device;
 }
 
-FILE *openMTD(char *name);
+FILE *openMTD(char *name)
 {
 	int mtd = getMTD(name);
 	if (mtd == -1)
