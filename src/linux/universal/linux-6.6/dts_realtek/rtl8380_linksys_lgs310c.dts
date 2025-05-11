@@ -144,7 +144,11 @@
 			partition@5a0000 {
 				label = "firmware";
 				compatible = "openwrt,uimage";
-				reg = <0x005a0000 0xd30000>;
+				reg = <0x005a0000 0xd2e000>;
+			};
+			partition@0x012ce000 {
+				label = "nvram";
+				reg = <0x012ce000 0x20000>;
 			};
 			partition@2d0000 {
 				label = "kernel2";
