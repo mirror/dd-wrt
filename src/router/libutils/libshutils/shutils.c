@@ -244,7 +244,6 @@ int log_eval_va(const char *cmd, ...)
 	return ret;
 }
 
-
 int eval_va_space(const char *cmd, ...)
 {
 	va_list args;
@@ -1134,6 +1133,15 @@ int getMTD(char *name)
 	return device;
 }
 
+FILE *openMTD(char *name);
+{
+	int mtd = getMTD(name);
+	if (mtd == -1)
+		return NULL;
+	char dev[32];
+	sprintf(dev, "/dev/mtdblock%d", mtd);
+	return fopen(dev, "rb");
+}
 char *strattach(char *src, size_t maxlen, const char *attach, const char *delimiter)
 {
 	if (!src || !delimiter)
@@ -1876,7 +1884,7 @@ void dd_loginfo(const char *servicename, const char *fmt, ...)
 	va_start(args, (char *)fmt);
 	vasprintf(&str, fmt, args);
 	va_end(args);
-	if (nvram_match("console_debug","1"))
+	if (nvram_match("console_debug", "1"))
 		fprintf(stderr, "[%s] : %s\n", servicename, str);
 	dd_syslog(LOG_INFO, "[%s] : %s", servicename, str);
 	free(str);
