@@ -372,6 +372,10 @@ int internal_getRouterBrand()
 		setRouter("Netgear GS310TP v1");
 		return ROUTER_NETGEAR_GS;
 	}
+	if (!strcmp(modelstr, "LGS310C")) {
+		setRouter("Linksys LGS310C");
+		return ROUTER_LINKSYS_LGS;
+	}
 	setRouter("Realtek Generic Switch");
 	return ROUTER_REALTEK_GENERIC;
 #elif defined(HAVE_ALLNETWRT) && !defined(HAVE_ECB9750)
