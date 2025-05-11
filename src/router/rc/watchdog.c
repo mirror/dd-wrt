@@ -187,9 +187,9 @@ static void watchdog(void)
 				fscanf(tempfp, "%d", &psu);
 				fclose(tempfp);
 				if (psu >= 51000) {
-					sysprintf("/bin/echo 250 > /sys/class/hwmon/hwmon1/pwm1");
+					sysprintf("/bin/echo 250 > /sys/class/hwmon/hwmon0/pwm1");
 				} else {
-					sysprintf("/bin/echo 156 > /sys/class/hwmon/hwmon1/pwm1");
+					sysprintf("/bin/echo 156 > /sys/class/hwmon/hwmon0/pwm1");
 				}
 			}
 		}
