@@ -80,20 +80,51 @@ void start_sysinit(void)
 	 */
 
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
-	int mtd = getMTD("u-boot-env");
-	if (mtd != -1)
-		set_envtools(mtd, "0x0", "0x400", "0x10000", 0);
-	char *mac = getUEnv("mac_start");
-	if (mac) {
-		char name[32];
-		int i;
-		for (i = 1; i < 51; i++) {
-			sprintf(name, "lan%02d", i);
-			set_hwaddr(name, mac);
+	int mtd;
+	char *mac;
+
+	switch (getRouterBrand()) {
+	case ROUTER_HP_1920: 
+		FILE *fp = openMTD("factory");
+		if (fp) {
+			fseek(fp, 0x68, SEEK_SET);
+
+			char name[32];
+			int i;
+			char mac[32];
+			char bin[6];
+			fread(bin, 6,1, fp);
+			fclose(fp);
+			ether_etoa(bin, mac);
 			MAC_ADD(mac);
+			MAC_ADD(mac);
+			for (i = 1; i < 51; i++) {
+				sprintf(name, "lan%02d", i);
+				if (ifexists(name)) {
+				set_hwaddr(name, mac);
+				MAC_ADD(mac);
+				}
+			}
 		}
+		break;
+	default: 
+		mtd = getMTD("u-boot-env");
+		if (mtd != -1)
+			set_envtools(mtd, "0x0", "0x400", "0x10000", 0);
+		char *mac = getUEnv("mac_start");
+		if (mac) {
+			char name[32];
+			int i;
+			for (i = 1; i < 53; i++) {
+				sprintf(name, "lan%02d", i);
+				set_hwaddr(name, mac);
+				MAC_ADD(mac);
+			}
+		}
+		break;
+	
 	}
-	nvram_set("dsa","1"); // flag to hide eth0
+	nvram_set("dsa", "1"); // flag to hide eth0
 	insmod("cryptodev");
 	/*
 	 * network drivers 
