@@ -60,100 +60,53 @@
 
 #ifdef HAVE_VLAN_FILTERING
 
+#define iterate_filters(command)                                      \
+	{                                                             \
+		wordlist = nvram_safe_get("vlan_filters");            \
+		foreach(word, wordlist, next) {                       \
+			GETENTRYBYIDX(ifname, word, 0);               \
+			GETENTRYBYIDX(vlan, word, 1);                 \
+			GETENTRYBYIDX(pvid, word, 2);                 \
+			GETENTRYBYIDX(untagged, word, 3);             \
+			if (!ifname || !vlan || !pvid || !untagged) { \
+				break;                                \
+			}                                             \
+			char *args[4] = { NULL, NULL, NULL, NULL };   \
+			int cnt = 0;                                  \
+			if (!strcmp(pvid, "1"))                       \
+				args[cnt++] = "pvid";                 \
+			if (!strcmp(untagged, "1"))                   \
+				args[cnt++] = "untagged";             \
+			command;                                      \
+		}                                                     \
+	}
+
 void start_vlanfiltering(void)
 {
 	char word[256];
 	const char *next, *wordlist;
 
-	wordlist = nvram_safe_get("vlan_filters");
-
-
-	foreach(word, wordlist, next) {
-		GETENTRYBYIDX(ifname, word, 0);
-		GETENTRYBYIDX(vlan, word, 1);
-		GETENTRYBYIDX(pvid, word, 2);
-		GETENTRYBYIDX(untagged, word, 3);
-		if (!ifname || !vlan || !pvid || !untagged) {
-			break;
-		}
-		char *args[4] = { NULL, NULL, NULL, NULL };
-		int cnt = 0;
-		if (!strcmp(pvid, "1"))
-			args[cnt++] = "pvid";
-		if (!strcmp(untagged, "1"))
-			args[cnt++] = "untagged";
+	iterate_filters(if (!isbridge(ifname)) {
+		args[cnt++] = "master";
+		eval("bridge", "vlan", "del", "dev", ifname, "vid", "1"); /* del default pvid */
+	});
+	iterate_filters(if (!isbridge(ifname)) {
+		args[cnt++] = "master";
 		char tmp[256];
-		if (!isbridge(ifname)) {
-			args[cnt++] = "master";
-			eval("bridge", "vlan", "del", "dev", ifname, "vid", "1"); /* del default pvid */
-		}
-	}
-
-
-	foreach(word, wordlist, next) {
-		GETENTRYBYIDX(ifname, word, 0);
-		GETENTRYBYIDX(vlan, word, 1);
-		GETENTRYBYIDX(pvid, word, 2);
-		GETENTRYBYIDX(untagged, word, 3);
-		if (!ifname || !vlan || !pvid || !untagged) {
-			break;
-		}
-		char *args[4] = { NULL, NULL, NULL, NULL };
-		int cnt = 0;
-		if (!strcmp(pvid, "1"))
-			args[cnt++] = "pvid";
-		if (!strcmp(untagged, "1"))
-			args[cnt++] = "untagged";
-		char tmp[256];
-		if (!isbridge(ifname)) {
-			args[cnt++] = "master";
-			eval("bridge", "vlan", "add", "dev", getBridge(ifname, tmp), "vid", vlan,
-			     "self"); /* allow bridge to receive vlan */
-			eval("bridge", "vlan", "add", "dev", ifname, "vid", vlan, args[0], args[1], args[2]);
-		}
-	}
-
-	foreach(word, wordlist, next) {
-		GETENTRYBYIDX(ifname, word, 0);
-		GETENTRYBYIDX(vlan, word, 1);
-		GETENTRYBYIDX(pvid, word, 2);
-		GETENTRYBYIDX(untagged, word, 3);
-		if (!ifname || !vlan || !pvid || !untagged) {
-			break;
-		}
-		char *args[4] = { NULL, NULL, NULL, NULL };
-		int cnt = 0;
-		if (!strcmp(pvid, "1"))
-			args[cnt++] = "pvid";
-		if (!strcmp(untagged, "1"))
-			args[cnt++] = "untagged";
-		char tmp[256];
-		if (isbridge(ifname)) {
-			args[cnt++] = "self";
-			eval("bridge", "vlan", "del", "dev", ifname, "vid", vlan);
-		}
-	}
-
-	foreach(word, wordlist, next) {
-		GETENTRYBYIDX(ifname, word, 0);
-		GETENTRYBYIDX(vlan, word, 1);
-		GETENTRYBYIDX(pvid, word, 2);
-		GETENTRYBYIDX(untagged, word, 3);
-		if (!ifname || !vlan || !pvid || !untagged) {
-			break;
-		}
-		char *args[4] = { NULL, NULL, NULL, NULL };
-		int cnt = 0;
-		if (!strcmp(pvid, "1"))
-			args[cnt++] = "pvid";
-		if (!strcmp(untagged, "1"))
-			args[cnt++] = "untagged";
-		char tmp[256];
-		if (isbridge(ifname)) {
-			args[cnt++] = "self";
-			eval("bridge", "vlan", "add", "dev", ifname, "vid", vlan, args[0], args[1], args[2]);
-		}
-	}
+		eval("bridge", "vlan", "add", "dev", getBridge(ifname, tmp), "vid", vlan,
+		     "self"); /* allow bridge to receive vlan with vid X */
+		eval("bridge", "vlan", "add", "dev", ifname, "vid", vlan, args[0], args[1], args[2]); /* add vlan to port */
+	});
+	iterate_filters(if (isbridge(ifname)) {
+		args[cnt++] = "self";
+		eval("bridge", "vlan", "del", "dev", ifname, "vid",
+		     vlan); /* if a custom filter for bridges is defined, remove it, this can also be used to override the default pvic */
+	});
+	iterate_filters(if (isbridge(ifname)) {
+		args[cnt++] = "self";
+		eval("bridge", "vlan", "add", "dev", ifname, "vid", vlan, args[0], args[1],
+		     args[2]); /* if a custom filter for brisges is defined, now add them all here */
+	});
 }
 
 void stop_vlanfiltering(void)
@@ -161,21 +114,11 @@ void stop_vlanfiltering(void)
 	char word[256];
 	const char *next, *wordlist;
 
-	wordlist = nvram_safe_get("vlan_filters");
-	foreach(word, wordlist, next) {
-		GETENTRYBYIDX(ifname, word, 0);
-		GETENTRYBYIDX(vlan, word, 1);
-		GETENTRYBYIDX(pvid, word, 2);
-		GETENTRYBYIDX(untagged, word, 3);
-		if (!ifname || !vlan || !pvid || !untagged) {
-			break;
-		}
-		char tmp[256];
-		eval("bridge", "vlan", "del", "dev", getBridge(ifname, tmp), "vid", vlan);
-		eval("bridge", "vlan", "del", "dev", ifname, "vid", vlan);
-		if (!nvram_nmatch("1", "%s_trunk", getBridge(ifname, tmp)))
-			eval("bridge", "vlan", "add", "dev", ifname, "vid", "1", "pvid", "untagged"); /* add default pvid */
-	}
+	iterate_filters(char tmp[256]; eval("bridge", "vlan", "del", "dev", getBridge(ifname, tmp), "vid", vlan);
+			eval("bridge", "vlan", "del", "dev", ifname, "vid", vlan);
+			if (!nvram_nmatch("1", "%s_trunk", getBridge(ifname, tmp)))
+				eval("bridge", "vlan", "add", "dev", ifname, "vid", "1", "pvid", "untagged"); /* add default pvid */
+	);
 }
 
 #endif
