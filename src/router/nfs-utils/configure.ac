@@ -350,7 +350,7 @@ AC_CHECK_FUNC([getservbyname], ,
 AC_CHECK_LIB([crypt], [crypt], [LIBCRYPT="-lcrypt"])
 
 AC_CHECK_HEADERS([sched.h], [], [])
-AC_CHECK_FUNCS([unshare fstatat], [] , [])
+AC_CHECK_FUNCS([unshare fstatat statx], [] , [])
 AC_LIBPTHREAD([])
 
 # rpc/rpc.h can come from the glibc or from libtirpc
