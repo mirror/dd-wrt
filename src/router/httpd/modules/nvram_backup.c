@@ -165,7 +165,7 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 				len -= strlen(buf);
 				buf[1] = '\0'; // we only want the 1st digit
 				keepsettings = atoi(buf);
-				dd_syslog(LOG_INFO, "keep already existing settings %d", force);
+				dd_syslog(LOG_INFO, "keep already existing settings %d", keepsettings);
 			} else if (strstr(buf, "name=\"file\"")) {
 				break;
 			}
