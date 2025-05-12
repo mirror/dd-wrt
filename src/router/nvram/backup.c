@@ -516,7 +516,7 @@ int nvram_restore(char *filename, int force, int keepsettings)
 				}
 			      success:;
 				if (c && !nvram_critical(name)) {
-					if (!keepsettigns || !*nvram_safe_get(name))
+					if (!keepsettings || !*nvram_safe_get(name))
 					nvram_immed_set(name, value);
 				}
 				free(value);
