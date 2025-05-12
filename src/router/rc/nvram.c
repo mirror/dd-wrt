@@ -119,7 +119,8 @@ static int nvram_main(int argc, char **argv)
 			"clear | erase    : Delete all NVRAM names and data, but retain system variables.\n" //
 			"backup filename  : Backup all stored NVRAM variables data to specified filename.\n" //
 			"restore filename : Restore NVRAM names and data, not overwrite system variables.\n" //
-			"--force          : WARNING override device name compatibility check for restore.\n");
+			"--force          : WARNING override device name compatibility check for restore.\n" //
+			"--keepsettings   : keeps previous existing settings. only empty values will be restored.\n");
 		exit(0);
 	}
 
@@ -127,6 +128,7 @@ static int nvram_main(int argc, char **argv)
 	 * Process the remaining arguments. 
 	 */
 	int force = 0;
+	int keepsettings = 0;
 	for (; *argv; argv++) {
 		if (!strncmp(*argv, "get", 3) && strncmp(*argv, "getall", 6)) {
 			if (*++argv) {
@@ -164,9 +166,11 @@ static int nvram_main(int argc, char **argv)
 			}
 		} else if (!strncmp(*argv, "--force", 7)) {
 			force = 1;
+		} else if (!strncmp(*argv, "--keepsettings", 7)) {
+			keepsettings = 1;
 		} else if (!strncmp(*argv, "restore", 7)) {
 			if (*++argv) {
-				int ret = nvram_restore(*argv, force);
+				int ret = nvram_restore(*argv, force, keepsettings);
 				if (ret == -1) {
 					fprintf(stderr, "can't write %s\n", *argv);
 					free(buf);

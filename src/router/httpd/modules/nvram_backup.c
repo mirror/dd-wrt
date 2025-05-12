@@ -101,6 +101,7 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 	wp->restore_ret = EINVAL;
 	int force = 0;
 	int keepip = 0;
+	int keepsettings = 0;
 #ifdef HAVE_REGISTER
 	if (!wp->isregistered_real) {
 		return -1;
@@ -148,6 +149,23 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 				buf[1] = '\0'; // we only want the 1st digit
 				force = atoi(buf);
 				dd_syslog(LOG_INFO, "force backup restore %d", force);
+			} else if (strstr(buf, "name=\"keepsettings\"")) {
+				while (len > 0 && strcmp(buf, "\n") && strcmp(buf, "\r\n")) {
+					if (!wfgets(buf, MIN(len + 1, 1024), wp, NULL)) {
+						debug_free(buf);
+						return -1;
+					}
+
+					len -= strlen(buf);
+				}
+				if (!wfgets(buf, MIN(len + 1, 1024), wp, NULL)) {
+					debug_free(buf);
+					return -1;
+				}
+				len -= strlen(buf);
+				buf[1] = '\0'; // we only want the 1st digit
+				keepsettings = atoi(buf);
+				dd_syslog(LOG_INFO, "keep already existing settings %d", force);
 			} else if (strstr(buf, "name=\"file\"")) {
 				break;
 			}
@@ -191,7 +209,7 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 	strncpy(lanip, nvram_safe_get("lan_ipaddr"), sizeof(lanip));
 	char langw[64];
 	strncpy(langw, nvram_safe_get("lan_gateway"), sizeof(langw));
-	int ret = nvram_restore("/tmp/restore.bin", force);
+	int ret = nvram_restore("/tmp/restore.bin", force, keepsettings);
 	if (ret < 0)
 		wp->restore_ret = 99;
 	else

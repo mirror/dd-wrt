@@ -612,6 +612,7 @@ config.mess3="W A R N U N G";
 config.mess4="Laden Sie nur Dateien hoch, welche mit der selben Firmware auf dem selben Routermodell erstellt wurden!";
 config.force="Ignoriere Router Modelprüfung";
 config.keepip="Router IP behalten";
+config.keepsettings="Vorhandene Einstellungen behalten";
 
 //help container
 

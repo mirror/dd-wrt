@@ -413,7 +413,7 @@ static void save(FILE * fp, char *p, int not)
 
 #define getRouterName() nvram_exists(NVROUTER_ALT)?nvram_safe_get(NVROUTER_ALT):nvram_safe_get(NVROUTER)
 
-int nvram_restore(char *filename, int force)
+int nvram_restore(char *filename, int force, int keepsettings)
 {
 	char sign[7];
 //      char *nvram_ver = NULL;
@@ -437,7 +437,8 @@ int nvram_restore(char *filename, int force)
 		len -= 6;
 		if (!strcmp(sign, "DD-WRT")) {
 			if (c) {
-				nvram_clear();
+				if (!keepsettings)
+					nvram_clear();
 				nvram_open();
 			}
 			unsigned char b;
@@ -515,6 +516,7 @@ int nvram_restore(char *filename, int force)
 				}
 			      success:;
 				if (c && !nvram_critical(name)) {
+					if (!keepsettigns || !*nvram_safe_get(name))
 					nvram_immed_set(name, value);
 				}
 				free(value);

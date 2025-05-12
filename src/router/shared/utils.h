@@ -1584,7 +1584,7 @@ int writestr(char *path, char *a);
 
 int nvram_backup(char *filename);
 
-int nvram_restore(char *filename, int force);
+int nvram_restore(char *filename, int force, int keepsettings);
 
 const char *getdefaultconfig(char *service, char *path, size_t len, char *configname);
 
