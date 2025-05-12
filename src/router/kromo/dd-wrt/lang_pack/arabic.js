@@ -1409,12 +1409,11 @@ hupgrad.right2="Click on the <em>Browse...</em> button to select the firmware fi
 
 upnp.titl="UPnP";
 upnp.h2="Universal Plug and Play (UPnP)";
-upnp.legend="Forwards";
+upnp.legend="Active Port Forwards";
 upnp.legend2="UPnP Configuration";
-upnp.serv="UPnP Service";
-upnp.url="Send presentation URL";
-upnp.msg1="Click to delete entry";
-upnp.msg2="Delete all entries?";
+upnp.serv="UPnP IGD Service";
+upnp.msg1="Click to delete port forward";
+upnp.msg2="Delete all port forwards?";
 
 //help container
 

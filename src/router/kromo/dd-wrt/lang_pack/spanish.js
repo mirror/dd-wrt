@@ -1556,8 +1556,7 @@ upnp.titl="UPnP";
 upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Redirección";
 upnp.legend2="Configuración UPnP";
-upnp.serv="Servicio UPnP";
-upnp.url="Enviar URL de Presentación";
+upnp.serv="Servicio UPnP IGD";
 upnp.msg1="Clic para borrar Lease";
 upnp.msg2="¿Borrar Entradas?";
 

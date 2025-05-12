@@ -1529,8 +1529,7 @@ upnp.titl="UPnP";
 upnp.h2="Universal Plug en Play (UPnP)";
 upnp.legend="Forwards";
 upnp.legend2="UPnP Configuratie";
-upnp.serv="UPnP Service";
-upnp.url="Presentatie URL zenden";
+upnp.serv="UPnP IGD Service";
 upnp.msg1="Klik om de waarde te verwijderen";
 upnp.msg2="Alle waarden verwijderen?";
 
