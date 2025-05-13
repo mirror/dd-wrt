@@ -42,8 +42,8 @@ frr-configure: ncurses json-c readline libyang libcap libcares protobuf-c-config
 	cd frr/build && cp -vR lib/* hosttools/lib
 	cd frr/build && ../configure \
 		--host=$(ARCH)-uclibc-linux \
-		--localstatedir=/var/run \
-		--libdir=/usr/tmp \
+		--localstatedir=/var \
+		--libdir=/usr/lib \
 		--with-vtysh-pager=less  \
 		--disable-eigrpd \
 		--disable-pbrd \
