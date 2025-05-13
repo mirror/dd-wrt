@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r8431 | brainslayer | 2025-05-14 00:52:10 +0700 (Wed, 14 May 2025) | 1 line
+
+mac80211: do not offer a mesh path if forwarding is disabled
+------------------------------------------------------------------------
 r8430 | brainslayer | 2025-05-14 00:50:54 +0700 (Wed, 14 May 2025) | 1 line
 
 mac80211: do not offer a mesh path if forwarding is disabled
