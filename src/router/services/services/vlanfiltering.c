@@ -96,8 +96,9 @@ void start_vlanfiltering(void)
 			args[cnt++] = "master";
 			args[cnt++] = NULL;
 			char tmp[256];
-			eval("bridge", "vlan", "add", "dev", getBridge(ifname, tmp), "vid", vlan,
-			     "self"); /* allow bridge to receive vlan with vid X */
+			eval("bridge", "vlan", "del", "dev", getBridge(ifname, tmp), "vid", "1"); /* del default pvid if custom vlans are defined */
+//			eval("bridge", "vlan", "add", "dev", getBridge(ifname, tmp), "vid", vlan,
+//			     "self"); /* allow bridge to receive vlan with vid X */
 			eval("bridge", "vlan", "add", "dev", ifname, "vid", vlan, args[0], args[1], args[2]); /* add vlan to port */
 		}
 	});
