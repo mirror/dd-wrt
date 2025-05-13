@@ -208,14 +208,14 @@
 				label = "jffs2";
 				reg = <0x200000 0x100000>;
 			};
-			partition@b300000 {
-				label = "firmware";
+			partition@300000 {
+				label = "linux";
 				reg = <0x300000 0xce0000>;
 				compatible = "openwrt,uimage", "denx,uimage";
 				openwrt,ih-magic = <0x93001250>;
 			};
 			partition@fe0000 {
-				label = "log";
+				label = "nvram";
 				reg = <0xfe0000 0x20000>;
 			};
 		};

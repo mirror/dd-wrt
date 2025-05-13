@@ -142,7 +142,7 @@
 				reg = <0x000a0000 0x500000>;
 			};
 			partition@5a0000 {
-				label = "firmware";
+				label = "linux";
 				compatible = "openwrt,uimage";
 				reg = <0x005a0000 0xd2e000>;
 			};
