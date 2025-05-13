@@ -3,9 +3,12 @@
 # CMake configuration for btop
 #
 
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.25)
 
 # Disable in-source builds since they would override the Makefile
+if("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
+  message(FATAL_ERROR "In-source builds are not allowed")
+endif()
 
 project("btop"
   DESCRIPTION "A monitor of resources"
@@ -62,12 +65,32 @@ add_executable(btop
   src/btop_tools.cpp
 )
 
+if(APPLE)
+  target_sources(btop PRIVATE src/osx/btop_collect.cpp src/osx/sensors.cpp src/osx/smc.cpp)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" OR CMAKE_SYSTEM_NAME STREQUAL "MidnightBSD")
+  target_sources(btop PRIVATE src/freebsd/btop_collect.cpp)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "OpenBSD")
+  target_sources(btop PRIVATE src/openbsd/btop_collect.cpp src/openbsd/sysctlbyname.cpp)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "NetBSD")
+  target_sources(btop PRIVATE src/netbsd/btop_collect.cpp)
+elseif(LINUX)
   target_sources(btop PRIVATE src/linux/btop_collect.cpp)
+  if(BTOP_GPU)
+    target_sources(btop PRIVATE
+      src/linux/intel_gpu_top/intel_gpu_top.c
+      src/linux/intel_gpu_top/igt_perf.c
+      src/linux/intel_gpu_top/intel_device_info.c
+      src/linux/intel_gpu_top/intel_name_lookup_shim.c
+    )
+  endif()
+else()
+  message(FATAL_ERROR "${CMAKE_SYSTEM_NAME} is not supported")
+endif()
 
-#check_include_file_cxx(ranges CXX_HAVE_RANGES)
-#if(NOT CXX_HAVE_RANGES)
-#  message(FATAL_ERROR "The compiler doesn't support <ranges>")
-#endif()
+check_include_file_cxx(ranges CXX_HAVE_RANGES)
+if(NOT CXX_HAVE_RANGES)
+  message(FATAL_ERROR "The compiler doesn't support <ranges>")
+endif()
 
 # Generate build info
 execute_process(
@@ -105,6 +128,18 @@ if(BTOP_PEDANTIC)
 endif()
 if(BTOP_WERROR)
   target_compile_options(btop PRIVATE -Werror)
+endif()
+
+if(NOT APPLE)
+  target_compile_options(btop PRIVATE -fstack-clash-protection)
+endif()
+check_cxx_compiler_flag(-fstack-protector HAS_FSTACK_PROTECTOR)
+if(HAS_FSTACK_PROTECTOR)
+  target_compile_options(btop PRIVATE -fstack-protector)
+endif()
+check_cxx_compiler_flag(-fcf-protection HAS_FCF_PROTECTION)
+if(HAS_FCF_PROTECTION)
+  target_compile_options(btop PRIVATE -fcf-protection)
 endif()
 
 target_compile_definitions(btop PRIVATE
