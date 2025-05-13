@@ -93,6 +93,12 @@ void __init identify_rtl9302(void)
 	case 0x93022010:
 		soc_info.name = "RTL9302D 24x2.5G";
 		break;
+	case 0x93014010:
+		soc_info.name = "RTL9301H 4x2.5G";
+		break;
+	case 0x93016810:
+		soc_info.name = "RTL9301H 15x1G";
+		break;
 	case 0x93020800:
 		soc_info.name = "RTL9302A";
 		break;
@@ -108,6 +114,9 @@ void __init identify_rtl9302(void)
 	case 0x93023001:
 		soc_info.name = "RTL9302F";
 		break;
+	case 0x93036810:
+		soc_info.name = "RTL9303 8x10G";
+		break;
 	default:
 		soc_info.name = "RTL9302";
 	}
@@ -122,13 +131,13 @@ void __init prom_init(void)
 	model = model >> 16 & 0xFFFF;
 
 	if ((model != 0x8328) && (model != 0x8330) && (model != 0x8332)
-	    && (model != 0x8380) && (model != 0x8382)) {
+	    && (model != 0x8380) && (model != 0x8382) && (model != 0x8381)) {
 		model = sw_r32(RTL839X_MODEL_NAME_INFO);
 		pr_info("RTL839X model is %x\n", model);
 		model = model >> 16 & 0xFFFF;
 	}
 
-	if ((model & 0x8390) != 0x8380 && (model & 0x8390) != 0x8390) {
+	if ((model & 0x8380) != 0x8380 && (model & 0x8390) != 0x8390) {
 		model = sw_r32(RTL93XX_MODEL_NAME_INFO);
 		pr_info("RTL93XX model is %x\n", model);
 		model = model >> 16 & 0xFFFF;
@@ -147,6 +156,10 @@ void __init prom_init(void)
 		break;
 	case 0x8380:
 		soc_info.name = "RTL8380";
+		soc_info.family = RTL8380_FAMILY_ID;
+		break;
+	case 0x8381:
+		soc_info.name = "RTL8381";
 		soc_info.family = RTL8380_FAMILY_ID;
 		break;
 	case 0x8382:
@@ -169,17 +182,38 @@ void __init prom_init(void)
 		soc_info.name = "RTL8393";
 		soc_info.family = RTL8390_FAMILY_ID;
 		break;
+	case 0x8396:
+		soc_info.name = "RTL8396";
+		soc_info.family = RTL8390_FAMILY_ID;
+		break;
 	case 0x9301:
-		soc_info.name = "RTL9301";
 		soc_info.family = RTL9300_FAMILY_ID;
+		soc_info.name = "RTL9301";
+		identify_rtl9302();
 		break;
 	case 0x9302:
+		soc_info.name = "RTL9302";
 		identify_rtl9302();
 		soc_info.family = RTL9300_FAMILY_ID;
 		break;
 	case 0x9303:
 		soc_info.name = "RTL9303";
+		identify_rtl9302();
 		soc_info.family = RTL9300_FAMILY_ID;
+		break;
+	case 0x9310:
+		soc_info.name = "RTL9310";
+		identify_rtl9302();
+		soc_info.family = RTL9310_FAMILY_ID;
+		break;
+	case 0x9311:
+		soc_info.name = "RTL9311";
+		identify_rtl9302();
+		soc_info.family = RTL9310_FAMILY_ID;
+		break;
+	case 0x9312:
+		soc_info.name = "RTL9312";
+		soc_info.family = RTL9310_FAMILY_ID;
 		break;
 	case 0x9313:
 		soc_info.name = "RTL9313";
