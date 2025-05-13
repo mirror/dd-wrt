@@ -23,9 +23,11 @@ tab-size = 4
 #include <deque>
 #include <filesystem>
 #include <string>
+#include <string_view>
 #include <tuple>
-#include <vector>
 #include <unordered_map>
+#include <vector>
+
 #include <unistd.h>
 
 // From `man 3 getifaddrs`: <net/if.h> must be included before <ifaddrs.h>
@@ -34,7 +36,7 @@ tab-size = 4
 #include <ifaddrs.h>
 // clang-format on
 
-#if defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
 # include <kvm.h>
 #endif
 
@@ -67,7 +69,6 @@ namespace Global {
 }
 
 namespace Runner {
-
 	extern atomic<bool> active;
 	extern atomic<bool> reading;
 	extern atomic<bool> stopping;
@@ -93,7 +94,7 @@ namespace Shared {
 
 	extern long coreCount, page_size, clk_tck;
 
-#if defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
 	struct KvmDeleter {
 		void operator()(kvm_t* handle) {
 			kvm_close(handle);
@@ -111,14 +112,15 @@ namespace Gpu {
 	extern vector<int> x_vec, y_vec;
 	extern vector<bool> redraw;
 	extern int shown;
-	extern vector<char> shown_panels;
+	extern int count;
+	extern vector<int> shown_panels;
 	extern vector<string> gpu_names;
 	extern vector<int> gpu_b_height_offsets;
 	extern long long gpu_pwr_total_max;
 
 	extern std::unordered_map<string, deque<long long>> shared_gpu_percent; // averages, power/vram total
 
-  const array mem_names { "used"s, "free"s };
+	const array mem_names { "used"s, "free"s };
 
 	//* Container for process information // TODO
 	/*struct proc_info {
@@ -232,6 +234,8 @@ namespace Cpu {
 
 	//* Get battery info from /sys
 	auto get_battery() -> tuple<int, float, long, string>;
+
+	string trim_name(string);
 }
 
 namespace Mem {
@@ -312,7 +316,11 @@ namespace Net {
 		int status;
 	public:
 		IfAddrsPtr() { status = getifaddrs(&ifaddr); }
-		~IfAddrsPtr() { freeifaddrs(ifaddr); }
+		~IfAddrsPtr() noexcept { freeifaddrs(ifaddr); }
+		IfAddrsPtr(const IfAddrsPtr &) = delete;
+		IfAddrsPtr& operator=(IfAddrsPtr& other) = delete;
+		IfAddrsPtr(IfAddrsPtr &&) = delete;
+		IfAddrsPtr& operator=(IfAddrsPtr&& other) = delete;
 		[[nodiscard]] constexpr auto operator()() -> struct ifaddrs* { return ifaddr; }
 		[[nodiscard]] constexpr auto get() -> struct ifaddrs* { return ifaddr; }
 		[[nodiscard]] constexpr auto get_status() const noexcept -> int { return status; };
@@ -407,7 +415,7 @@ namespace Proc {
 	auto collect(bool no_update = false) -> vector<proc_info>&;
 
 	//* Update current selection and view, returns -1 if no change otherwise the current selection
-	int selection(const string& cmd_key);
+	int selection(const std::string_view cmd_key);
 
 	//* Draw contents of proc box using <plist> as data source
 	string draw(const vector<proc_info>& plist, bool force_redraw = false, bool data_same = false);
@@ -423,6 +431,8 @@ namespace Proc {
 	//* Recursive sort of process tree
 	void tree_sort(vector<tree_proc>& proc_vec, const string& sorting,
 				   bool reverse, int& c_index, const int index_max, bool collapsed = false);
+
+	auto matches_filter(const proc_info& proc, const std::string& filter) -> bool;
 
 	//* Generate process tree list
 	void _tree_gen(proc_info& cur_proc, vector<proc_info>& in_procs, vector<tree_proc>& out_procs,

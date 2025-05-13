@@ -53,6 +53,7 @@ namespace Config {
 #ifdef GPU_SUPPORT
 	const vector<string> show_gpu_values = { "Auto", "On", "Off" };
 #endif
+    const vector<string> base_10_bitrate_values = { "Auto", "True", "False" };
 	extern vector<string> current_boxes;
 	extern vector<string> preset_list;
 	extern vector<string> available_batteries;
@@ -62,17 +63,19 @@ namespace Config {
 
 	[[nodiscard]] std::optional<std::filesystem::path> get_config_dir() noexcept;
 
-	//* Check if string only contains space separated valid names for boxes
-	bool check_boxes(const string& boxes);
+	//* Check if string only contains space separated valid names for boxes and set current_boxes
+	bool set_boxes(const string& boxes);
+
+	bool validBoxSizes(const string& boxes);
 
 	//* Toggle box and update config string shown_boxes
-	void toggle_box(const string& box);
+	bool toggle_box(const string& box);
 
 	//* Parse and setup config value presets
 	bool presetsValid(const string& presets);
 
 	//* Apply selected preset
-	void apply_preset(const string& preset);
+	bool apply_preset(const string& preset);
 
 	bool _locked(const std::string_view name);
 
@@ -124,4 +127,6 @@ namespace Config {
 
 	//* Write the config file to disk
 	void write();
+
+	auto get_log_file() -> std::optional<std::filesystem::path>;
 }

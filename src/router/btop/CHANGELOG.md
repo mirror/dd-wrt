@@ -1,3 +1,90 @@
+## v1.4.3
+
+References | Description | Author(s)
+--- | --- | ---
+c3b225f | Revert e266ccd which broke str_to_upper() and str_to_lower() | @aristocratos
+#1137 | Enable additional checks in libc++ with the new hardening mode | @imwints
+#1135 | Remove redundant optimization flag | @imwints
+#1139 | Ignore incomplete filter regex, issue #1133 | @imwints
+
+## v1.4.2
+
+References | Description | Author(s)
+--- | --- | ---
+f1482fe | Fix process arguments appearing outside proc box by replacing ASCII control codes with blankspace, issue #1080 | @aristocratos
+#1130 | Fix problems shown by clang-tidy's performance checks | @imwints
+#1120 | Fix wrong error message and documentation of renamed option --utf-force | @t-webber @imwints
+#1128 | Flatten cmake module path | @imwints
+#1129 | CMake: Remove option to use mold  | @imwints
+#1047 | Update Terminus font link, fix typo, spelling, and grammar | @QinCai-rui
+#929 | Please clang with sanitizers | @bad-co-de
+#1126 | Fix MacOS tree-mode + aggregate memory/thread scaling issue | @xaskii
+#993 | Fix typo: Mhz -> MHz | @NyCodeGHG
+
+## v1.4.1
+
+References | Description | Author(s)
+--- | --- | ---
+#1111 #1112 | Various code fixes | @imwints
+#930 #931 | Various code fixes | @bad-co-de
+#1061 | Fixed typo | @polluks
+#1110 | Move the config parser in it's own module  | @imwints
+#1101 | Adding a menu option to show bitrates in base 10 separate from the setting to show bytes/bits in base 10 | @georgev93
+#1079 | Allow MidnightBSD to build btop using the existing freebsd support. | @laffer1
+#1098 | Use XDG_STATE_HOME to save logs | @imwints
+#1092 | Bump CMake version to 3.25 required for LINUX variable | @imwints
+#1058 | Replace brackets with arrows in net and proc box | @taha-yassine
+#1091 | Bump bundled fmt to 11.1.4 | @imwints
+#725 | cmake:  link to CMAKE_DL_LIBS | @alalazo
+#990 | Fix phoenix-night.theme marked as executable | @sertonix
+#1034 | Add Kanagawa-lotus and Kanagawa-wave themes | @philikarus
+#973 | Bump NetBSD version to 10.1 and FreeBSD version to 14.2. | @fraggerfox
+#1072 | Add dark version of adwaita theme: adwaita-dark | @k0tran
+#1036 | Resetting last selection on page navigation in optionsMenu to avoid unordered_map error | @seth-wood
+#1029 | Share the CPU name trimming code between platforms | @yarrick
+#1033 | Update Ryzen name trimming | @yarrick
+#1030 | Drop macos 12 build, add v14 and v15 | @yarrick
+#1028 | Fix cmake-macos workflow | @yarrick
+#1027 | Bump version of deprecated upload-artifact step | @yarrick
+#1025 | Update obsolete egrep call | @tywkeene
+b52069c | Fix menu crash when GPU_SUPPORT=false, issue #989 | @aristocratos
+#961 | Add 'Everforest Ligth Medium' theme | @mstuttgart
+#960 | Support intel GPUs before Gen-6 (patch from upstream) | @w8jcik
+#958 | intel_name_lookup_shim.c (get_intel_device_name): Fix SEGFAULT | @artyom-poptsov
+2e7208d | Fix rsmi_measure_pcie_speeds not saving, issue #934 | @aristocratos
+f3446ed | Show GPU Watt fractions when below 100W | @aristocratos
+
+| + more from @imwints @aristocratos
+
+Big thanks to @imwints for helping out with project maintenance, PR reviews and merging!
+
+## v1.4.0
+
+References | Description | Author(s)
+--- | --- | ---
+#703 | NetBSD Support | @fraggerfox
+#903 | Intel GPU support | @bjia56
+161e8f4 | Added warnings when toggling boxes and terminal size is to small | @aristocratos
+4210f5f | Fix missing core percentages, issue #792 | @aristocratos
+35857f8 | Various fixes for drawing GPU related information | @aristocratos
+#879 | fix divide 0 error when caculating disk usage percentage (#791) | @flylai
+#884 | fix io_graph_speeds parsing | @feihtthief
+#863 | V1 of Phoenix Night theme | @Firehawke
+3f384c0 | Fixed missing CPU core temps when too small to show core temp graphs, issues #792 #867 | @aristocratos
+97d2fb5 | Fixed missing IO graphs in IO mode, issue #867 | @aristocratos
+#840 | fix zero temp (#467) | @joske
+#850 | Fix comments (parsing) in theme files | @acidghost
+#806 | Add regex filtering | @imwints
+#836 | Fix typo in file existences check for voltage_now | @vsey
+#835 | Show time in days when remaining battery exceeds an estimation of 24h | @imwints
+#819 | (AMD Gpu) fix pwr_usage not being defined correctly during rsmi collection | @kalkafox
+#831 | macOS: fix crash if there exists a uid not associated with any user | @thecoder-001
+#796 | Fix rsmi device name buffer size | @davc0n
+#807 | Add gruvbox_light theme | @kk9uk
+#724 | Create man page for btop in Markdown | @ottok
+#734 | Include metadata in binary version output `btop --version` | @imwints
+#771 | collect: Fix reading of battery power draw on Linux | @Derppening
+
 ## v1.3.2
 
 Description | Author(s) | References
@@ -180,7 +267,7 @@ Fixed incorrect used and available memory for OSX | | 4461a43
 
 * Fixed: Wrong memory unit when shorten and size is less than 10, by @mohi001
 
-* Fixed: Use cpu cores avarage temp if missing cpu package temp for FreeBSD
+* Fixed: Use cpu cores average temp if missing cpu package temp for FreeBSD
 
 * Changed: Enter symbol to a more common variant
 
@@ -476,7 +563,7 @@ Fixed incorrect used and available memory for OSX | | 4461a43
 
 * Fixed: Sizing constraints bug on start and boxes can be toggled from size error screen
 
-* Fixed: UTF-8 check crashing if LANG was set to non existant locale
+* Fixed: UTF-8 check crashing if LANG was set to non existent locale
 
 ## v1.0.4
 

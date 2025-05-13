@@ -18,7 +18,9 @@ tab-size = 4
 
 #include <array>
 #include <atomic>
+#include <filesystem>
 #include <fstream>
+#include <optional>
 #include <ranges>
 #include <string_view>
 #include <utility>
@@ -195,6 +197,8 @@ namespace Config {
 
 		{"net_iface", 			"#* Starts with the Network Interface specified here."},
 
+	    {"base_10_bitrate",     "#* \"True\" shows bitrates in base 10 (Kbps, Mbps). \"False\" shows bitrates in binary sizes (Kibps, Mibps, etc.). \"Auto\" uses base_10_sizes."},
+
 		{"show_battery", 		"#* Show battery stats in top right if battery is present."},
 
 		{"selected_battery",	"#* Which battery to use if multiple are present. \"Auto\" for auto detection."},
@@ -207,9 +211,9 @@ namespace Config {
 
 		{"nvml_measure_pcie_speeds",
 								"#* Measure PCIe throughput on NVIDIA cards, may impact performance on certain cards."},
-
+		{"rsmi_measure_pcie_speeds",
+								"#* Measure PCIe throughput on AMD cards, may impact performance on certain cards."},
 		{"gpu_mirror_graph",	"#* Horizontally mirror the GPU graph."},
-
 		{"custom_gpu_name0",	"#* Custom gpu0 model name, empty string to disable."},
 		{"custom_gpu_name1",	"#* Custom gpu1 model name, empty string to disable."},
 		{"custom_gpu_name2",	"#* Custom gpu2 model name, empty string to disable."},
@@ -241,6 +245,7 @@ namespace Config {
 		{"disks_filter", ""},
 		{"io_graph_speeds", ""},
 		{"net_iface", ""},
+		{"base_10_bitrate", "Auto"},
 		{"log_level", "WARNING"},
 		{"proc_filter", ""},
 		{"proc_command", ""},
@@ -306,7 +311,8 @@ namespace Config {
 		{"proc_aggregate", false},
 	#ifdef GPU_SUPPORT
 		{"nvml_measure_pcie_speeds", true},
-		{"gpu_mirror_graph", true},
+		{"rsmi_measure_pcie_speeds", true},
+		{"gpu_mirror_graph", true}
 	#endif
 	};
 	std::unordered_map<std::string_view, bool> boolsTmp;
@@ -320,7 +326,7 @@ namespace Config {
 		{"selected_depth", 0},
 		{"proc_start", 0},
 		{"proc_selected", 0},
-		{"proc_last_selected", 0},
+		{"proc_last_selected", 0}
 	};
 	std::unordered_map<std::string_view, int> intsTmp;
 
@@ -438,7 +444,7 @@ namespace Config {
 	}
 
 	//* Apply selected preset
-	void apply_preset(const string& preset) {
+	bool apply_preset(const string& preset) {
 		string boxes;
 
 		for (const auto& box : ssplit(preset, ',')) {
@@ -449,18 +455,26 @@ namespace Config {
 
 		auto min_size = Term::get_min_size(boxes);
 		if (Term::width < min_size.at(0) or Term::height < min_size.at(1)) {
-			return;
+			return false;
 		}
 
 		for (const auto& box : ssplit(preset, ',')) {
 			const auto& vals = ssplit(box, ':');
-			if (vals.at(0) == "cpu") set("cpu_bottom", (vals.at(1) == "0" ? false : true));
-			else if (vals.at(0) == "mem") set("mem_below_net", (vals.at(1) == "0" ? false : true));
-			else if (vals.at(0) == "proc") set("proc_left", (vals.at(1) == "0" ? false : true));
+			if (vals.at(0) == "cpu") {
+				set("cpu_bottom", (vals.at(1) != "0"));
+			} else if (vals.at(0) == "mem") {
+				set("mem_below_net", (vals.at(1) != "0"));
+			} else if (vals.at(0) == "proc") {
+				set("proc_left", (vals.at(1) != "0"));
+			}
 			set("graph_symbol_" + vals.at(0), vals.at(2));
 		}
 
-		if (check_boxes(boxes)) set("shown_boxes", boxes);
+		if (set_boxes(boxes)) {
+			set("shown_boxes", boxes);
+			return true;
+		}
+		return false;
 	}
 
 	void lock() {
@@ -500,6 +514,11 @@ namespace Config {
 		return false;
 	}
 
+	bool validBoxSizes(const string& boxes) {
+		auto min_size = Term::get_min_size(boxes);
+		return (Term::width >= min_size.at(0) and Term::height >= min_size.at(1));
+	}
+
 	bool stringValid(const std::string_view name, const string& value) {
 		if (name == "log_level" and not v_contains(Logger::log_levels, value))
 			validError = "Invalid log_level: " + value;
@@ -510,8 +529,16 @@ namespace Config {
 		else if (name.starts_with("graph_symbol_") and (value != "default" and not v_contains(valid_graph_symbols, value)))
 			validError = fmt::format("Invalid graph symbol identifier for {}: {}", name, value);
 
-		else if (name == "shown_boxes" and not Global::init_conf and not value.empty() and not check_boxes(value))
-			validError = "Invalid box name(s) in shown_boxes!";
+		else if (name == "shown_boxes" and not Global::init_conf) {
+			if (value.empty())
+				validError = "No boxes selected!";
+			else if (not validBoxSizes(value))
+				validError = "Terminal too small to display entered boxes!";
+			else if (not set_boxes(value))
+				validError = "Invalid box name(s) in shown_boxes!";
+			else
+				return true;
+		}
 
 	#ifdef GPU_SUPPORT
 		else if (name == "show_gpu_info" and not v_contains(show_gpu_values, value))
@@ -563,12 +590,12 @@ namespace Config {
 	}
 
 	string getAsString(const std::string_view name) {
-		if (bools.contains(name))
-			return (bools.at(name) ? "True" : "False");
-		else if (ints.contains(name))
-			return to_string(ints.at(name));
-		else if (strings.contains(name))
-			return strings.at(name);
+		if (auto it = bools.find(name); it != bools.end())
+			return it->second ? "True" : "False";
+		if (auto it = ints.find(name); it != ints.end())
+			return to_string(it->second);
+		if (auto it = strings.find(name); it != strings.end())
+			return it->second;
 		return "";
 	}
 
@@ -616,14 +643,14 @@ namespace Config {
 		locked = false;
 	}
 
-	bool check_boxes(const string& boxes) {
+	bool set_boxes(const string& boxes) {
 		auto new_boxes = ssplit(boxes);
 		for (auto& box : new_boxes) {
 			if (not v_contains(valid_boxes, box)) return false;
 		#ifdef GPU_SUPPORT
 			if (box.starts_with("gpu")) {
-				size_t gpu_num = stoi(box.substr(3)) + 1;
-				if (std::cmp_greater(gpu_num, Gpu::gpu_names.size())) return false;
+				int gpu_num = stoi(box.substr(3)) + 1;
+				if (gpu_num > Gpu::count) return false;
 			}
 		#endif
 		}
@@ -631,7 +658,7 @@ namespace Config {
 		return true;
 	}
 
-	void toggle_box(const string& box) {
+	bool toggle_box(const string& box) {
 		auto old_boxes = current_boxes;
 		auto box_pos = rng::find(current_boxes, box);
 		if (box_pos == current_boxes.end())
@@ -649,10 +676,11 @@ namespace Config {
 
 		if (Term::width < min_size.at(0) or Term::height < min_size.at(1)) {
 			current_boxes = old_boxes;
-			return;
+			return false;
 		}
 
 		Config::set("shown_boxes", new_boxes);
+		return true;
 	}
 
 	void load(const fs::path& conf_file, vector<string>& load_warnings) {
@@ -670,7 +698,8 @@ namespace Config {
 		std::ifstream cread(conf_file);
 		if (cread.good()) {
 			vector<string> valid_names;
-			for (auto &n : descriptions)
+			valid_names.reserve(descriptions.size());
+			for (const auto &n : descriptions)
 				valid_names.push_back(n[0]);
 			if (string v_string; cread.peek() != '#' or (getline(cread, v_string, '\n') and not s_contains(v_string, Global::Version)))
 				write_new = true;
@@ -733,7 +762,7 @@ namespace Config {
 		std::ofstream cwrite(conf_file, std::ios::trunc);
 		if (cwrite.good()) {
 			cwrite << "#? Config file for btop v. " << Global::Version << "\n";
-			for (auto [name, description] : descriptions) {
+			for (const auto& [name, description] : descriptions) {
 				cwrite << "\n" << (description.empty() ? "" : description + "\n")
 						<< name << " = ";
 				if (strings.contains(name))
@@ -745,5 +774,39 @@ namespace Config {
 				cwrite << "\n";
 			}
 		}
+	}
+
+	static auto get_xdg_state_dir() -> std::optional<std::filesystem::path> {
+		std::optional<std::filesystem::path> xdg_state_home;
+
+		{
+			const auto xdg_state_home_ptr = std::getenv("XDG_STATE_HOME");
+			if (xdg_state_home_ptr != nullptr) {
+				xdg_state_home = std::make_optional(fs::path(xdg_state_home_ptr));
+			} else {
+				const auto home_ptr = std::getenv("HOME");
+				if (home_ptr != nullptr) {
+					xdg_state_home = std::make_optional(std::filesystem::path(home_ptr) / ".local" / "state");
+				}
+			}
+		}
+
+		if (xdg_state_home.has_value()) {
+			std::error_code err;
+			std::filesystem::create_directories(xdg_state_home.value(), err);
+			if (err) {
+				return std::nullopt;
+			}
+			return std::make_optional(xdg_state_home.value());
+		}
+		return std::nullopt;
+	}
+
+	auto get_log_file() -> std::optional<std::filesystem::path> {
+		auto xdg_state_home = get_xdg_state_dir();
+		if (xdg_state_home.has_value()) {
+			return std::make_optional(std::filesystem::path(xdg_state_home.value()) / "btop.log");
+		}
+		return std::nullopt;
 	}
 }

@@ -46,9 +46,14 @@ stage/
 *.out
 *.app
 
+# Compiled man page
+btop.1
+
 build
 bin
 btop
+/obj/
+config.h
 .*/
 
 # Optional libraries
@@ -79,6 +84,7 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 _deps
+CMakeUserPresets.json
 
 # CLion
 cmake-build-*

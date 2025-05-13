@@ -216,42 +216,7 @@ namespace Cpu {
 			Logger::error("Failed to get CPU name");
 			return name;
 		}
-		name = string(buffer);
-
-		auto name_vec = ssplit(name);
-
-		if ((s_contains(name, "Xeon"s) or v_contains(name_vec, "Duo"s)) and v_contains(name_vec, "CPU"s)) {
-			auto cpu_pos = v_index(name_vec, "CPU"s);
-			if (cpu_pos < name_vec.size() - 1 and not name_vec.at(cpu_pos + 1).ends_with(')'))
-				name = name_vec.at(cpu_pos + 1);
-			else
-				name.clear();
-		} else if (v_contains(name_vec, "Ryzen"s)) {
-			auto ryz_pos = v_index(name_vec, "Ryzen"s);
-			name = "Ryzen" + (ryz_pos < name_vec.size() - 1 ? ' ' + name_vec.at(ryz_pos + 1) : "") + (ryz_pos < name_vec.size() - 2 ? ' ' + name_vec.at(ryz_pos + 2) : "");
-		} else if (s_contains(name, "Intel"s) and v_contains(name_vec, "CPU"s)) {
-			auto cpu_pos = v_index(name_vec, "CPU"s);
-			if (cpu_pos < name_vec.size() - 1 and not name_vec.at(cpu_pos + 1).ends_with(')') and name_vec.at(cpu_pos + 1) != "@")
-				name = name_vec.at(cpu_pos + 1);
-			else
-				name.clear();
-		} else
-			name.clear();
-
-		if (name.empty() and not name_vec.empty()) {
-			for (const auto &n : name_vec) {
-				if (n == "@") break;
-				name += n + ' ';
-			}
-			name.pop_back();
-			for (const auto& replace : {"Processor", "CPU", "(R)", "(TM)", "Intel", "AMD", "Core"}) {
-				name = s_replace(name, replace, "");
-				name = s_replace(name, "  ", " ");
-			}
-			name = trim(name);
-		}
-
-		return name;
+		return trim_name(string(buffer));
 	}
 
 	bool get_sensors() {
@@ -265,7 +230,7 @@ namespace Cpu {
 				got_sensors = true;
 				int temp;
 				size_t size = sizeof(temp);
-				sysctlbyname("dev.cpu.0.coretemp.tjmax", &temp, &size, nullptr, 0); //asuming the max temp is same for all cores
+				sysctlbyname("dev.cpu.0.coretemp.tjmax", &temp, &size, nullptr, 0); //assuming the max temp is same for all cores
 				temp = (temp - 2732) / 10; // since it's an int, it's multiplied by 10, and offset to absolute zero...
 				current_cpu.temp_max = temp;
 			}
@@ -586,7 +551,7 @@ namespace Mem {
 		// this code is for ZFS mounts
 		for (const auto &poolName : Mem::zpools) {
 			char sysCtl[1024];
-			snprintf(sysCtl, sizeof(sysCtl), "sysctl kstat.zfs.%s.dataset | egrep \'dataset_name|nread|nwritten\'", poolName.c_str());
+			snprintf(sysCtl, sizeof(sysCtl), "sysctl kstat.zfs.%s.dataset | grep -E \'dataset_name|nread|nwritten\'", poolName.c_str());
 			PipeWrapper f = PipeWrapper(sysCtl, "r");
 			if (f()) {
 				char buf[512];
@@ -771,8 +736,13 @@ namespace Mem {
 				disk.total = vfs.f_blocks * vfs.f_frsize;
 				disk.free = vfs.f_bfree * vfs.f_frsize;
 				disk.used = disk.total - disk.free;
-				disk.used_percent = round((double)disk.used * 100 / disk.total);
-				disk.free_percent = 100 - disk.used_percent;
+				if (disk.total != 0) {
+					disk.used_percent = round((double)disk.used * 100 / disk.total);
+					disk.free_percent = 100 - disk.used_percent;
+				} else {
+					disk.used_percent = 0;
+					disk.free_percent = 0;
+				}
 			}
 
 			//? Setup disks order in UI and add swap if enabled
@@ -907,7 +877,7 @@ namespace Net {
 				}
 			}
 
-			//? Get total recieved and transmitted bytes + device address if no ip was found
+			//? Get total received and transmitted bytes + device address if no ip was found
 			for (const auto &iface : interfaces) {
 				for (const string dir : {"download", "upload"}) {
 					auto &saved_stat = net.at(iface).stat.at(dir);
@@ -1239,18 +1209,13 @@ namespace Proc {
 			filter_found = 0;
 			for (auto& p : current_procs) {
 				if (not tree and not filter.empty()) {
-						if (not s_contains_ic(to_string(p.pid), filter)
-						and not s_contains_ic(p.name, filter)
-						and not s_contains_ic(p.cmd, filter)
-						and not s_contains_ic(p.user, filter)) {
-							p.filtered = true;
-							filter_found++;
-							}
-						else {
-							p.filtered = false;
-						}
+					if (!matches_filter(p, filter)) {
+						p.filtered = true;
+						filter_found++;
+					} else {
+						p.filtered = false;
 					}
-				else {
+				} else {
 					p.filtered = false;
 				}
 			}

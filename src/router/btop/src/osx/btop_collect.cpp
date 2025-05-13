@@ -212,42 +212,7 @@ namespace Cpu {
 			Logger::error("Failed to get CPU name");
 			return name;
 		}
-		name = string(buffer);
-
-		auto name_vec = ssplit(name);
-
-		if ((s_contains(name, "Xeon"s) or v_contains(name_vec, "Duo"s)) and v_contains(name_vec, "CPU"s)) {
-			auto cpu_pos = v_index(name_vec, "CPU"s);
-			if (cpu_pos < name_vec.size() - 1 and not name_vec.at(cpu_pos + 1).ends_with(')'))
-				name = name_vec.at(cpu_pos + 1);
-			else
-				name.clear();
-		} else if (v_contains(name_vec, "Ryzen"s)) {
-			auto ryz_pos = v_index(name_vec, "Ryzen"s);
-			name = "Ryzen" + (ryz_pos < name_vec.size() - 1 ? ' ' + name_vec.at(ryz_pos + 1) : "") + (ryz_pos < name_vec.size() - 2 ? ' ' + name_vec.at(ryz_pos + 2) : "");
-		} else if (s_contains(name, "Intel"s) and v_contains(name_vec, "CPU"s)) {
-			auto cpu_pos = v_index(name_vec, "CPU"s);
-			if (cpu_pos < name_vec.size() - 1 and not name_vec.at(cpu_pos + 1).ends_with(')') and name_vec.at(cpu_pos + 1) != "@")
-				name = name_vec.at(cpu_pos + 1);
-			else
-				name.clear();
-		} else
-			name.clear();
-
-		if (name.empty() and not name_vec.empty()) {
-			for (const auto &n : name_vec) {
-				if (n == "@") break;
-				name += n + ' ';
-			}
-			name.pop_back();
-				for (const auto& replace : {"Processor", "CPU", "(R)", "(TM)", "Intel", "AMD", "Apple", "Core"}) {
-					name = s_replace(name, replace, "");
-					name = s_replace(name, "  ", " ");
-				}
-				name = trim(name);
-		}
-
-		return name;
+		return trim_name(string(buffer));
 	}
 
 	bool get_sensors() {
@@ -606,7 +571,7 @@ namespace Mem {
 
 		mach_port_t libtop_master_port;
 		if (IOMasterPort(bootstrap_port, &libtop_master_port)) {
-			Logger::error("errot getting master port");
+			Logger::error("error getting master port");
 			return;
 		}
 		/* Get the list of all drive objects. */
@@ -795,8 +760,13 @@ namespace Mem {
 				disk.total = vfs.f_blocks * vfs.f_frsize;
 				disk.free = vfs.f_bfree * vfs.f_frsize;
 				disk.used = disk.total - disk.free;
-				disk.used_percent = round((double)disk.used * 100 / disk.total);
-				disk.free_percent = 100 - disk.used_percent;
+				if (disk.total != 0) {
+					disk.used_percent = round((double)disk.used * 100 / disk.total);
+					disk.free_percent = 100 - disk.used_percent;
+				} else {
+					disk.used_percent = 0;
+					disk.free_percent = 0;
+				}
 			}
 
 			//? Setup disks order in UI and add swap if enabled
@@ -940,7 +910,7 @@ namespace Net {
 				}
 			}
 
-			//? Get total recieved and transmitted bytes + device address if no ip was found
+			//? Get total received and transmitted bytes + device address if no ip was found
 			for (const auto &iface : interfaces) {
 				for (const string dir : {"download", "upload"}) {
 					auto &saved_stat = net.at(iface).stat.at(dir);
@@ -1249,19 +1219,28 @@ namespace Proc {
 						new_proc.ppid = kproc.kp_eproc.e_ppid;
 						new_proc.cpu_s = kproc.kp_proc.p_starttime.tv_sec * 1'000'000 + kproc.kp_proc.p_starttime.tv_usec;
 						struct passwd *pwd = getpwuid(kproc.kp_eproc.e_ucred.cr_uid);
-						new_proc.user = pwd->pw_name;
+                        if (pwd != nullptr) {
+                            new_proc.user = pwd->pw_name;
+                        } else {
+                            new_proc.user = std::to_string(kproc.kp_eproc.e_ucred.cr_uid);
+                        }
 					}
 					new_proc.p_nice = kproc.kp_proc.p_nice;
 					new_proc.state = kproc.kp_proc.p_stat;
 
 					//? Get threads, mem and cpu usage
-					struct proc_taskinfo pti;
+					struct proc_taskinfo pti{};
 					if (sizeof(pti) == proc_pidinfo(new_proc.pid, PROC_PIDTASKINFO, 0, &pti, sizeof(pti))) {
 						new_proc.threads = pti.pti_threadnum;
 						new_proc.mem = pti.pti_resident_size;
 						cpu_t = pti.pti_total_user + pti.pti_total_system;
 
 						if (new_proc.cpu_t == 0) new_proc.cpu_t = cpu_t;
+					} else {
+						// Reset memory value if process info cannot be accessed (bad permissions or zombie processes)
+						new_proc.threads = 0;
+						new_proc.mem = 0;
+						cpu_t = new_proc.cpu_t;
 					}
 
 					//? Process cpu usage since last update
@@ -1301,7 +1280,7 @@ namespace Proc {
 			filter_found = 0;
 			for (auto &p : current_procs) {
 				if (not tree and not filter.empty()) {
-					if (not s_contains_ic(to_string(p.pid), filter) and not s_contains_ic(p.name, filter) and not s_contains_ic(p.cmd, filter) and not s_contains_ic(p.user, filter)) {
+					if (!matches_filter(p, filter)) {
 						p.filtered = true;
 						filter_found++;
 					} else {

@@ -8,10 +8,9 @@ cmake_minimum_required(VERSION 3.20)
 # Disable in-source builds since they would override the Makefile
 
 project("btop"
-  VERSION 1.3.0
   DESCRIPTION "A monitor of resources"
   HOMEPAGE_URL "https://github.com/aristocratos/btop"
-  LANGUAGES CXX
+  LANGUAGES CXX C
 )
 
 include(CheckCXXCompilerFlag)
@@ -20,7 +19,7 @@ include(CheckIPOSupported)
 include(CMakeDependentOption)
 
 # Make our Find<Package>.cmake files available
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 
 # When the build type is not set we can't fortify
 if(NOT CMAKE_BUILD_TYPE)
@@ -34,13 +33,17 @@ set(CMAKE_COLOR_DIAGNOSTICS ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(BTOP_STATIC "Link btop statically" OFF)
-option(BTOP_LTO "Enable LTO" ON)
-option(BTOP_USE_MOLD "Use mold to link btop" OFF)
 option(BTOP_PEDANTIC "Enable a bunch of additional warnings" OFF)
 option(BTOP_WERROR "Compile with warnings as errors" OFF)
-option(BTOP_FORTIFY "Detect buffer overflows with _FORTIFY_SOURCE=3" ON)
 option(BTOP_GPU "Enable GPU support" ON)
 cmake_dependent_option(BTOP_RSMI_STATIC "Link statically to ROCm SMI" OFF "BTOP_GPU" OFF)
+
+# Enable LTO in release builds by default
+if(CMAKE_BUILD_TYPE MATCHES "Rel(ease|WithDebInfo)")
+  option(BTOP_LTO "Enable LTO" ON)
+else()
+  option(BTOP_LTO "Enable LTO" OFF)
+endif()
 
 if(BTOP_STATIC AND NOT APPLE)
   # Set this before calling find_package
@@ -49,6 +52,7 @@ endif()
 
 add_executable(btop
   src/btop.cpp
+  src/btop_cli.cpp
   src/btop_config.cpp
   src/btop_draw.cpp
   src/btop_input.cpp
@@ -65,13 +69,30 @@ add_executable(btop
 #  message(FATAL_ERROR "The compiler doesn't support <ranges>")
 #endif()
 
+# Generate build info
+execute_process(
+  COMMAND "git" "rev-parse" "--short" "HEAD"
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+  OUTPUT_VARIABLE GIT_COMMIT
+  OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+set(CONFIGURE_COMMAND
+    "cmake -DBTOP_STATIC=${BTOP_STATIC} -DBTOP_GPU=${BTOP_GPU}"
+)
+get_filename_component(CXX_COMPILER_BASENAME "${CMAKE_CXX_COMPILER}" NAME)
+set(COMPILER "${CXX_COMPILER_BASENAME}")
+set(COMPILER_VERSION "${CMAKE_CXX_COMPILER_VERSION}")
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h @ONLY IMMEDIATE)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
 # Check for and enable LTO
-check_ipo_supported(RESULT ipo_supported)
-if(ipo_supported AND BTOP_LTO)
-  set_target_properties(btop PROPERTIES INTERPROCEDURAL_OPTIMIZATION ON)
+if(BTOP_LTO)
+  check_ipo_supported(RESULT ipo_supported)
+  if(ipo_supported)
+    set_target_properties(btop PROPERTIES INTERPROCEDURAL_OPTIMIZATION ON)
+  endif()
 endif()
 
-target_compile_options(btop PRIVATE -Wall -Wextra -Wpedantic -ftree-vectorize)
+target_compile_options(btop PRIVATE -Wall -Wextra -Wpedantic)
 
 if(BTOP_PEDANTIC)
   target_compile_options(btop PRIVATE
@@ -89,9 +110,7 @@ endif()
 target_compile_definitions(btop PRIVATE
   FMT_HEADER_ONLY
   _FILE_OFFSET_BITS=64
-  $<$<CONFIG:Debug>:_GLIBCXX_ASSERTIONS _LIBCPP_ENABLE_ASSERTIONS=1>
-  # Only has an effect with optimizations enabled
-  $<$<AND:$<NOT:$<CONFIG:Debug>>,$<BOOL:${BTOP_FORTIFY}>>:_FORTIFY_SOURCE=3>
+  $<$<CONFIG:Debug>:_GLIBCXX_ASSERTIONS _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG>
 )
 
 target_include_directories(btop SYSTEM PRIVATE include)
@@ -108,7 +127,7 @@ if(LINUX AND BTOP_GPU)
   if(BTOP_RSMI_STATIC)
     # ROCm doesn't properly add it's folders to the module path if `CMAKE_MODULE_PATH` is already
     # set
-    # We could also manully append ROCm's path here
+    # We could also manually append ROCm's path here
     set(_CMAKE_MODULE_PATH CMAKE_MODULE_PATH)
     unset(CMAKE_MODULE_PATH)
 
@@ -129,10 +148,9 @@ if(LINUX AND BTOP_GPU)
 
     target_link_libraries(btop ROCm)
   endif()
-endif()
-
-if(BTOP_USE_MOLD)
-  target_link_options(btop PRIVATE -fuse-ld=mold)
+  if(NOT BTOP_STATIC)
+    target_link_libraries(btop ${CMAKE_DL_LIBS})
+  endif()
 endif()
 
 if(BTOP_STATIC)
@@ -140,12 +158,12 @@ if(BTOP_STATIC)
   target_link_options(btop PRIVATE -static LINKER:--fatal-warnings)
 endif()
 
-# Other platform depdendent flags
+# Other platform dependent flags
 if(APPLE)
   target_link_libraries(btop
     $<LINK_LIBRARY:FRAMEWORK,CoreFoundation> $<LINK_LIBRARY:FRAMEWORK,IOKit>
   )
-elseif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" OR CMAKE_SYSTEM_NAME STREQUAL "MidnightBSD")
   # Avoid version mismatch for libstdc++ when a specific version of GCC is installed and not the
   # default one since all use the default ones RPATH
   if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -154,6 +172,12 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
       INSTALL_RPATH "/usr/local/lib/gcc${GCC_VERSION_MAJOR}"
       BUILD_WITH_INSTALL_RPATH TRUE
     )
+
+    # The gcc compiler wrapper doesn't add '--eh-frame-hdr' on FreeBSD with static builds
+    # https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=278551
+    if(BTOP_STATIC)
+      target_link_options(btop PRIVATE LINKER:--eh-frame-hdr)
+    endif()
   endif()
 
   find_package(devstat REQUIRED)
@@ -169,6 +193,32 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "OpenBSD")
   endif()
   find_package(kvm REQUIRED)
   target_link_libraries(btop kvm::kvm)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "NetBSD")
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(btop PRIVATE -static-libstdc++)
+  endif()
+  find_package(kvm REQUIRED)
+  find_package(proplib REQUIRED)
+  target_link_libraries(btop kvm::kvm proplib::proplib)
+endif()
+
+
+# Check if lowdown is installed
+find_program(LOWDOWN_EXECUTABLE lowdown)
+
+if(LOWDOWN_EXECUTABLE)
+  # Custom target to compile Markdown to man page using lowdown
+  add_custom_command(
+    OUTPUT btop.1
+    COMMAND lowdown -s -T man -o btop.1 ${CMAKE_CURRENT_SOURCE_DIR}/manpage.md
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/manpage.md
+    VERBATIM
+  )
+  add_custom_target(generate_manpage ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/btop.1)
+  # Install the man page
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/btop.1" DESTINATION "share/man/man1")
+else()
+  message(STATUS "Command 'lowdown' not found: skipping generating man page btop.1")
 endif()
 
 install(TARGETS btop RUNTIME)
@@ -176,4 +226,3 @@ install(FILES "btop.desktop" DESTINATION "share/applications")
 install(FILES "Img/icon.png" DESTINATION "share/icons/hicolor/48x48/apps" RENAME "btop.png")
 install(FILES "Img/icon.svg" DESTINATION "share/icons/hicolor/scalable/apps" RENAME "btop.svg")
 install(DIRECTORY "themes" DESTINATION "share/btop")
-

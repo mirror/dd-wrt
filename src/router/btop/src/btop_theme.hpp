@@ -32,7 +32,7 @@ namespace Theme {
 	extern std::filesystem::path theme_dir;
 	extern std::filesystem::path user_theme_dir;
 
-	//* Contains "Default" and "TTY" at indeces 0 and 1, otherwise full paths to theme files
+	//* Contains "Default" and "TTY" at indices 0 and 1, otherwise full paths to theme files
 	extern vector<string> themes;
 
 	//* Generate escape sequence for 24-bit or 256 color and return as a string
@@ -61,9 +61,9 @@ namespace Theme {
 	inline const string& c(const string& name) { return colors.at(name); }
 
 	//* Return array of escape codes for color gradient <name>
-	inline const array<string, 101>& g(string name) { return gradients.at(name); }
+	inline const array<string, 101>& g(const string& name) { return gradients.at(name); }
 
 	//* Return array of red, green and blue in decimal for color <name>
-	inline const std::array<int, 3>& dec(string name) { return rgbs.at(name); }
+	inline const std::array<int, 3>& dec(const string& name) { return rgbs.at(name); }
 
 }

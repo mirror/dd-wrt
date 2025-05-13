@@ -304,7 +304,7 @@ namespace Theme {
 
 			for (const auto& [name, source_arr] : rgbs) {
 				if (not name.ends_with("_start")) continue;
-				const string color_name = rtrim(name, "_start");
+				const string color_name { rtrim(name, "_start") };
 
 				//? input_colors[start,mid,end][red,green,blue]
 				const array<array<int, 3>, 3> input_colors = {
@@ -357,7 +357,7 @@ namespace Theme {
 
 			for (const auto& c : colors) {
 				if (not c.first.ends_with("_start")) continue;
-				const string base_name = rtrim(c.first, "_start");
+				const string base_name { rtrim(c.first, "_start") };
 				string section = "_start";
 				int split = colors.at(base_name + "_mid").empty() ? 50 : 33;
 				for (int i : iota(0, 101)) {
@@ -372,20 +372,25 @@ namespace Theme {
 
 		//* Load a .theme file from disk
 		auto loadFile(const string& filename) {
-			std::unordered_map<string, string> theme_out;
 			const fs::path filepath = filename;
 			if (not fs::exists(filepath))
 				return Default_theme;
 
 			std::ifstream themefile(filepath);
 			if (themefile.good()) {
+				std::unordered_map<string, string> theme_out;
 				Logger::debug("Loading theme file: " + filename);
 				while (not themefile.bad()) {
+					if (themefile.peek() == '#') {
+						themefile.ignore(SSmax, '\n');
+						continue;
+					}
 					themefile.ignore(SSmax, '[');
 					if (themefile.eof()) break;
 					string name, value;
 					getline(themefile, name, ']');
 					if (not Default_theme.contains(name)) {
+						themefile.ignore(SSmax, '\n');
 						continue;
 					}
 					themefile.ignore(SSmax, '=');
@@ -394,6 +399,7 @@ namespace Theme {
 					if (themefile.peek() == '"') {
 						themefile.ignore(1);
 						getline(themefile, value, '"');
+						themefile.ignore(SSmax, '\n');
 					}
 					else getline(themefile, value, '\n');
 
