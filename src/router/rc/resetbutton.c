@@ -205,6 +205,8 @@ static int getbuttonstate()
 	switch (getRouterBrand()) {
 	case ROUTER_ZYXEL_GS190048:
 		return !get_gpio(27);
+	case ROUTER_ZYXEL_XGS1250:
+		return !get_gpio(22);
 	case ROUTER_DGS_1210:
 		return !get_gpio(57);
 	case ROUTER_LINKSYS_LGS:
