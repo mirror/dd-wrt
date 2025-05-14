@@ -1013,6 +1013,20 @@ void start_sysinit(void)
 	} else {
 		fprintf(stderr, "board data failed\n");
 	}
+	if (brand == ROUTER_ASUS_AX89X) {
+		FILE *fp = fopen(mtdpath, "rb");
+		if (fp) {
+			fseek(fp, 14, SEEK_SET);
+			unsigned int newmac2[6];
+			fread(newmac2, 6, 1, fp);
+			fclose(fp);
+			static char tempaddr[32];
+			maddr = tempaddr;
+			sprintf(maddr, "%02X:%02X:%02X:%02X:%02X:%02X", newmac2[0] & 0xff, newmac2[1] & 0xff, newmac2[2] & 0xff,
+				newmac2[3] & 0xff, newmac2[4] & 0xff, newmac2[5] & 0xff);
+			MAC_ADD(maddr);
+		}
+	}
 	wait_for_eth("wan");
 	wait_for_eth("lan1");
 	unsigned int newmac[6];
@@ -1031,6 +1045,12 @@ void start_sysinit(void)
 		set_hwaddr("lan2", ethaddr);
 		set_hwaddr("lan3", ethaddr);
 		set_hwaddr("lan4", ethaddr);
+		set_hwaddr("lan5", ethaddr);
+		set_hwaddr("lan6", ethaddr);
+		set_hwaddr("lan7", ethaddr);
+		set_hwaddr("lan8", ethaddr);
+		set_hwaddr("10gcopper", ethaddr);
+		set_hwaddr("10gsfp", ethaddr);
 	}
 	switch (brand) {
 	case ROUTER_LINKSYS_MR7350:
