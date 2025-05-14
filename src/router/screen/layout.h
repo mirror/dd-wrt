@@ -34,30 +34,36 @@
 
 #define MAXLAY 10
 
-struct layout
-{
-  struct layout   *lay_next;
-  char            *lay_title;
-  int              lay_number;
-  struct canvas    lay_canvas;
-  struct canvas   *lay_forecv;
-  struct canvas   *lay_cvlist;
-  int              lay_autosave;
+typedef struct Layout Layout;
+struct Layout {
+	Layout   *lay_next;
+	char            *lay_title;
+	int              lay_number;
+	Canvas           lay_canvas;
+	Canvas          *lay_forecv;
+	Canvas 	        *lay_cvlist;
+	int              lay_autosave;
 };
 
-extern void  AutosaveLayout __P((struct layout *));
-extern void  LoadLayout __P((struct layout *, struct canvas *));
-extern void  NewLayout __P((char *, int));
-extern void  SaveLayout __P((char *, struct canvas *));
-extern void  ShowLayouts __P((int));
-extern struct layout *FindLayout __P((char *));
-extern void  UpdateLayoutCanvas __P((struct canvas *, struct win *));
-extern struct layout *CreateLayout __P((char *, int));
-extern void  RemoveLayout __P((struct layout *));
-extern int   LayoutDumpCanvas __P((struct canvas *, char *));
+void  FreeLayoutCv(Canvas *c);
+Layout *CreateLayout(char *, int);
+void  AutosaveLayout (Layout *);
+void  LoadLayout (Layout *);
+void  NewLayout (char *, int);
+void  SaveLayout (char *, Canvas *);
+void  ShowLayouts (int);
+Layout *FindLayout (char *);
+void  UpdateLayoutCanvas (Canvas *, Window *);
+Layout *CreateLayout (char *, int);
+void  RemoveLayout (Layout *);
+int   LayoutDumpCanvas (Canvas *, char *);
 
-extern void RenameLayout __P((struct layout *, const char *));
-extern int RenumberLayout __P((struct layout *, int));
+void RenameLayout (Layout *, const char *);
+int RenumberLayout (Layout *, int);
+
+/* global variables */
+
+extern Layout *layout_attach, *layout_last, layout_last_marker;
+extern Layout *layouts;
 
 #endif /* SCREEN_LAYOUT_H */
-

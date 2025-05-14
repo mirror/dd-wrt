@@ -27,29 +27,36 @@
  * $Id$ GNU
  */
 
-#ifndef __SCHED_H
-#define __SCHED_H
+#ifndef SCREEN_SCHED_H
+#define SCREEN_SCHED_H
 
+#include <stdbool.h>
 #include <sys/time.h>
 
-struct event
-{
-  struct event *next;
-  void (*handler) __P((struct event *, char *));
-  char *data;
-  int fd;
-  int type;
-  int pri;
-  struct timeval timeout;
-  int queued;		/* in evs queue */
-  int active;		/* in fdset */
-  int *condpos;		/* only active if condpos - condneg > 0 */
-  int *condneg;
+typedef enum {
+	EV_TIMEOUT	= 0,
+	EV_READ		= 1,
+	EV_WRITE	= 2,
+	EV_ALWAYS	= 3
+} EventType;
+
+typedef struct Event Event;
+struct Event {
+	Event *next;
+	void (*handler) (Event *, void *);
+	void *data;
+	int fd;
+	EventType type;
+	int priority;
+	int timeout;		/* timeout in milliseconds */
+	bool queued;		/* in evs queue */
+	int *condpos;		/* only active if condpos - condneg > 0 */
+	int *condneg;
 };
 
-#define EV_TIMEOUT	0
-#define EV_READ		1
-#define EV_WRITE	2
-#define EV_ALWAYS	3
+void evenq (Event *);
+void evdeq (Event *);
+void SetTimeout (Event *, int);
+void sched (void) __attribute__((__noreturn__));
 
-#endif
+#endif /* SCREEN_SCHED_H */

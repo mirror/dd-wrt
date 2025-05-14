@@ -26,31 +26,33 @@
  ****************************************************************
  */
 
+#include "config.h"
+
+#include "sched.h"
+
+#include <poll.h>
+#include <stdint.h>
 #include <sys/types.h>
-#if !defined(sun) && !defined(B43) && !defined(ISC) && !defined(pyr) && !defined(_CX_UX)
-# include <time.h>
-#endif
+#include <time.h>
 #include <sys/time.h>
 
-#include "config.h"
 #include "screen.h"
-#include "extern.h"
 
-static struct event *evs;
-static struct event *tevs;
-static struct event *nextev;
+static Event *evs;
+static Event *tevs;
+static Event *nextev;
 static int calctimeout;
+static struct pollfd *pfd;
+static int pfd_cnt;
 
-static struct event *calctimo __P((void));
-#if (defined(sgi) && defined(SVR4)) || defined(__osf__) || defined(M_UNIX)
-static int sgihack __P((void));
-#endif
 
-void
-evenq(struct event *ev)
+static Event *calctimo(void);
+
+void evenq(Event *ev)
 {
-	struct event *evp, **evpp;
-	debug3("New event fd %d type %d queued %d\n", ev -> fd, ev -> type, ev -> queued);
+	int i = 0;
+
+	Event *evp, **evpp;
 	if (ev->queued)
 		return;
 	evpp = &evs;
@@ -58,20 +60,29 @@ evenq(struct event *ev)
 		calctimeout = 1;
 		evpp = &tevs;
 	}
+
 	for (; (evp = *evpp); evpp = &evp->next)
-		if (ev->pri > evp->pri)
+		if (ev->priority > evp->priority)
 			break;
 	ev->next = evp;
 	*evpp = ev;
-	ev->queued = 1;
+	ev->queued = true;
+
+	/* check if we need more pollfd */
+	for (evp = evs; evp; evp = evp->next)
+		if (evp->type == EV_READ || evp->type == EV_WRITE)
+			i++;
+
+	if (i > pfd_cnt) {
+		pfd_cnt = i;
+		pfd = realloc(pfd, pfd_cnt * sizeof(struct pollfd));
+	}
 }
 
-void
-evdeq(struct event *ev)
+void evdeq(Event *ev)
 {
-	struct event *evp, **evpp;
-	debug3("Deq event fd %d type %d queued %d\n", ev -> fd, ev -> type, ev -> queued);
-	if (!ev->queued)
+	Event *evp, **evpp;
+	if (!ev || !ev->queued)
 		return;
 	evpp = &evs;
 	if (ev->type == EV_TIMEOUT) {
@@ -81,192 +92,124 @@ evdeq(struct event *ev)
 	for (; (evp = *evpp); evpp = &evp->next)
 		if (evp == ev)
 			break;
-	ASSERT(evp);
 	*evpp = ev->next;
-	ev->queued = 0;
+	ev->queued = false;
 	if (ev == nextev)
 		nextev = nextev->next;
+
+	/* mark fd to be skipped (see checks in sched()) */
+	for (int i = 0; i < pfd_cnt; i++)
+		if (pfd[i].fd == ev->fd)
+			pfd[i].fd = -pfd[i].fd;
 }
 
-static struct event *
-calctimo()
+static Event *calctimo(void)
 {
-	struct event *ev, *min;
+	Event *ev, *min;
 	long mins;
 
-	if ((min = tevs) == 0)
-		return 0;
-	mins = min->timeout.tv_sec;
+	if ((min = tevs) == NULL)
+		return NULL;
+	mins = min->timeout;
 	for (ev = tevs->next; ev; ev = ev->next) {
-		ASSERT(ev->type == EV_TIMEOUT);
-		if (mins < ev->timeout.tv_sec)
-			continue;
-		if (mins > ev->timeout.tv_sec || min->timeout.tv_usec > ev->timeout.tv_usec) {
+		if (mins > ev->timeout) {
 			min = ev;
-			mins = ev->timeout.tv_sec;
+			mins = ev->timeout;
 		}
 	}
 	return min;
 }
 
-void
-sched()
+void sched(void)
 {
-	struct event *ev;
-	fd_set r, w, *set;
-	struct event *timeoutev = 0;
-	struct timeval timeout;
-	int nsel;
+	Event *ev;
+	Event *timeoutev = NULL;
+	int timeout;
+	int i, n;
 
 	for (;;) {
 		if (calctimeout)
 			timeoutev = calctimo();
 		if (timeoutev) {
-			gettimeofday(&timeout, NULL);
+			struct timeval now;
+			gettimeofday(&now, NULL);
 			/* tp - timeout */
-			timeout.tv_sec = timeoutev->timeout.tv_sec - timeout.tv_sec;
-			timeout.tv_usec = timeoutev->timeout.tv_usec - timeout.tv_usec;
-
-			if (timeout.tv_usec < 0) {
-				timeout.tv_usec += 1000000;
-				timeout.tv_sec--;
-			}
-			if (timeout.tv_sec < 0) {
-				timeout.tv_usec = 0;
-				timeout.tv_sec = 0;
-			}
+			timeout = timeoutev->timeout - (now.tv_sec * 1000 + now.tv_usec / 1000);
+			if (timeout < 0)
+				timeout = 0;
 		}
-#ifdef DEBUG
-		debug("waiting for events");
-		if (timeoutev)
-			debug2(" timeout %ld secs %ld usecs", (long)timeout.tv_sec, (long)timeout.tv_usec);
-		debug(":\n");
-		for (ev = evs; ev; ev = ev->next)
-			debug3(" - fd %d type %d pri %d\n", ev->fd, ev->type, ev->pri);
-		if (tevs)
-			debug("timed events:\n");
-		for (ev = tevs; ev; ev = ev->next)
-			debug3(" - pri %d sec %ld usec %ld\n", ev->pri,
-				(long)ev->timeout.tv_sec, (long)ev->timeout.tv_usec);
-#endif
 
-		FD_ZERO(&r);
-		FD_ZERO(&w);
+		memset(pfd, 0, sizeof(struct pollfd) * pfd_cnt);
+		i = 0;
 		for (ev = evs; ev; ev = ev->next) {
-			if (ev->condpos && *ev->condpos <= (ev->condneg ? *ev->condneg : 0)) {
-				debug2(" - cond ev fd %d type %d failed\n", ev->fd, ev->type);
-				continue;
+			if (ev->condpos && *ev->condpos <= (ev->condneg ? *ev->condneg : 0))
+				goto skip;
+			if (ev->type == EV_READ) {
+				pfd[i].fd = ev->fd;
+				pfd[i].events = POLLIN;
+			} else if (ev->type == EV_WRITE) {
+				pfd[i].fd = ev->fd;
+				pfd[i].events = POLLOUT;
 			}
-			if (ev->type == EV_READ)
-				FD_SET(ev->fd, &r);
-			else if (ev->type == EV_WRITE)
-				FD_SET(ev->fd, &w);
+skip:
+			if (ev->type == EV_READ || ev->type == EV_WRITE)
+				i++;
 		}
 
-#ifdef DEBUG
-		debug("readfds:");
-		for (nsel = 0; nsel < FD_SETSIZE; nsel++)
-			if (FD_ISSET(nsel, &r))
-				debug1(" %d", nsel);
-		debug("\n");
-		debug("writefds:");
-		for (nsel = 0; nsel < FD_SETSIZE; nsel++)
-			if (FD_ISSET(nsel, &w))
-				debug1(" %d", nsel);
-		debug("\n");
-#endif
-
-		nsel = select(FD_SETSIZE, &r, &w, (fd_set *)0, timeoutev ? &timeout : (struct timeval *)0);
-		if (nsel < 0) {
+		n = poll(pfd, i, timeoutev ? timeout : 1000);
+		if (n < 0) {
 			if (errno != EINTR) {
-#if defined(sgi) && defined(SVR4)
-				if (errno == EIO && sgihack())
-					continue;
-#endif
-#if defined(__osf__) || defined(M_UNIX)
-				/* OSF/1 3.x, SCO bug: EBADF */
-				/* OSF/1 4.x bug: EIO */
-				if ((errno == EIO || errno == EBADF) && sgihack())
-					continue;
-#endif
-				Panic(errno, "select");
+				Panic(errno, "poll");
 			}
-			nsel = 0;
-		} else if (nsel == 0) {		/* timeout */
-			debug("TIMEOUT!\n");
-			ASSERT(timeoutev);
-			evdeq(timeoutev);
-			timeoutev->handler(timeoutev, timeoutev->data);
+			n = 0;
+		} else if (n == 0) {	/* timeout */
+			if (timeoutev) {
+				evdeq(timeoutev);
+				timeoutev->handler(timeoutev, timeoutev->data);
+			}
 		}
-#ifdef SELECT_BROKEN
-      /*
-       * Sequents select emulation counts a descriptor which is
-       * readable and writeable only as one hit. Waaaaa.
-       */
-		if (nsel)
-			nsel = 2 * FD_SETSIZE;
-#endif
+
+		i = 0;
 
 		for (ev = evs; ev; ev = nextev) {
 			nextev = ev->next;
-			if (ev->type != EV_ALWAYS) {
-				set = ev->type == EV_READ ? &r : &w;
-				if (nsel == 0 || !FD_ISSET(ev->fd, set))
+			switch (ev->type) {
+			case EV_READ:
+			case EV_WRITE:
+				/* check if we parsed all events from poll()
+				 * if we did just continue, as we may still
+				 * need to run EV_ALWAYS event */
+				if (n == 0)
 					continue;
-				nsel--;
+				/* check if we have anything to do for EV_READ
+				 * or EV_WRITE, or if event is still queued,
+				 * if not skip to the next event */
+				if (!pfd[i].revents || pfd[i].fd < 0) {
+					i++;
+					continue;
+				}
+				/* this is one of events from poll(), decrease
+				 * counter */
+				n--;
+				/* advance pollfd pointer */
+				i++;
+				__attribute__ ((fallthrough));
+			default:
+				if (ev->condpos && *ev->condpos <= (ev->condneg ? *ev->condneg : 0))
+					continue;
+				ev->handler(ev, ev->data);
 			}
-			if (ev->condpos &&
-			    *ev->condpos <= (ev->condneg ? *ev->condneg : 0))
-				continue;
-			debug2(" + hit ev fd %d type %d!\n", ev->fd, ev->type);
-			ev->handler(ev, ev->data);
 		}
 	}
 }
 
-void
-SetTimeout(struct event *ev, int timo)
+void SetTimeout(Event *ev, int timo)
 {
-	ASSERT(ev->type == EV_TIMEOUT);
-	debug2("event %lx new timeout %d ms\n", (long)ev, timo);
-	gettimeofday(&ev->timeout, NULL);
-	ev->timeout.tv_sec += timo / 1000;
-	ev->timeout.tv_usec += (timo % 1000) * 1000;
+	struct timeval now;
+	gettimeofday(&now, NULL);
 
-	if (ev->timeout.tv_usec > 1000000) {
-		ev->timeout.tv_usec -= 1000000;
-		ev->timeout.tv_sec++;
-	}
+	ev->timeout = (now.tv_sec * 1000 + now.tv_usec / 1000) + timo;
+
 	if (ev->queued)
 		calctimeout = 1;
 }
-
-#if (defined(sgi) && defined(SVR4)) || defined(__osf__) || defined(M_UNIX)
-/* do we still need it?
-                    @anaumov */
-extern struct display *display, *displays;
-static int
-sgihack()
-{
-	fd_set r, w;
-	struct timeval tv;
-
-	debug("IRIX5.2 workaround: searching for bad display\n");
-	for (display = displays; display;) {
-		FD_ZERO(&r);
-		FD_ZERO(&w);
-		FD_SET(D_userfd, &r);
-		FD_SET(D_userfd, &w);
-		tv.tv_sec = tv.tv_usec = 0;
-		if (select(FD_SETSIZE, &r, &w, (fd_set *)0, &tv) == -1) {
-			if (errno == EINTR)
-				continue;
-			Hangup();	/* goodbye display */
-			return 1;
-		}
-		display = display->d_next;
-	}
-	return 0;
-}
-
-#endif

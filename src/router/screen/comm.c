@@ -8,14 +8,6 @@
  *      Michael Schroeder (mlschroe@immd4.informatik.uni-erlangen.de)
  * Copyright (c) 1987 Oliver Laumann
  *
-#ifdef HAVE_BRAILLE
- * Modified by:
- *      Authors:  Hadi Bargi Rangin  bargi@dots.physics.orst.edu
- *                Bill Barry         barryb@dots.physics.orst.edu
- *
- * Modifications Copyright (c) 1995 by
- * Science Access Project, Oregon State University.
-#endif
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,313 +28,204 @@
  */
 
 #include "config.h"
-#include "os.h"
-#include "acls.h"
-#include "comm.h"
 
-#define bcopy :-(		/* or include screen.h here */
+#include "comm.h"
 
 /* Must be in alpha order ! */
 
 struct comm comms[RC_LAST + 1] =
 {
-#ifdef MULTIUSER
-  { "acladd",		ARGS_1234 },
-  { "aclchg",		ARGS_23 },
-  { "acldel",		ARGS_1 },
-  { "aclgrp",		ARGS_12 },
-  { "aclumask",		ARGS_1|ARGS_ORMORE },
+  { "acladd",		ARGS_1234,			{NULL} },
+  { "aclchg",		ARGS_23,			{NULL} },
+  { "acldel",		ARGS_1,				{NULL} },
+  { "aclgrp",		ARGS_12,			{NULL} },
+  { "aclumask",		ARGS_1|ARGS_ORMORE,		{NULL} },
+  { "activity",		ARGS_1,				{NULL} },
+  { "addacl",		ARGS_1234,			{NULL} },
+  { "allpartial",	NEED_DISPLAY|ARGS_1,		{NULL} },
+  { "altscreen",	ARGS_01,			{NULL} },
+  { "at",		ARGS_2|ARGS_ORMORE,		{NULL} },
+  { "auth",		ARGS_1,                         {NULL} },
+  { "autodetach",	ARGS_1,				{NULL} },
+  { "autonuke",		NEED_DISPLAY|ARGS_1,		{NULL} },
+  { "backtick",		ARGS_1|ARGS_ORMORE,		{NULL} },
+  { "bce",		NEED_FORE|ARGS_01,		{NULL} },
+  { "bell",		ARGS_01,			{NULL} },
+  { "bell_msg",		ARGS_01,			{NULL} },
+  { "bind",		ARGS_1|ARGS_ORMORE,		{NULL} },
+  { "bindkey",		ARGS_0|ARGS_ORMORE,		{NULL} },
+  { "blanker",		NEED_DISPLAY|ARGS_0,		{NULL} },
+  { "blankerprg",	ARGS_0|ARGS_ORMORE,		{NULL} },
+  { "break",		NEED_FORE|ARGS_01,		{NULL} },
+  { "breaktype",	NEED_FORE|ARGS_01,		{NULL} },
+  { "bufferfile",	ARGS_01,			{NULL} },
+  { "bumpleft",		NEED_FORE|ARGS_0,		{NULL} },
+  { "bumpright",	NEED_FORE|ARGS_0,		{NULL} },
+  { "c1",		NEED_FORE|ARGS_01,		{NULL} },
+  { "caption",		ARGS_123,			{NULL} },
+  { "chacl",		ARGS_23,			{NULL} },
+  { "charset",          NEED_FORE|ARGS_1,		{NULL} },
+  { "chdir",		ARGS_01,			{NULL} },
+  { "cjkwidth",		ARGS_01,			{NULL} },
+  { "clear",		NEED_FORE|ARGS_0,		{NULL} },
+  { "collapse",		ARGS_0,				{NULL} },
+  { "colon",		NEED_LAYER|ARGS_01,		{NULL} },
+  { "command",		NEED_DISPLAY|ARGS_02,		{NULL} },
+  { "compacthist",	ARGS_01,			{NULL} },
+  { "console",		NEED_FORE|ARGS_01,		{NULL} },
+  { "copy",		NEED_FORE|NEED_DISPLAY|ARGS_0,	{NULL} },
+  { "crlf",		ARGS_01,			{NULL} },
+  { "defautonuke",	ARGS_1,				{NULL} },
+  { "defbce",		ARGS_1,				{NULL} },
+  { "defbreaktype",	ARGS_01,			{NULL} },
+  { "defc1",		ARGS_1,				{NULL} },
+  { "defcharset",       ARGS_01,			{NULL} },
+  { "defdynamictitle",	ARGS_1,				{NULL} },
+  { "defencoding",	ARGS_1,				{NULL} },
+  { "defescape",	ARGS_1,				{NULL} },
+  { "defflow",		ARGS_12,			{NULL} },
+  { "defgr",		ARGS_1,				{NULL} },
+  { "defhstatus",	ARGS_01,			{NULL} },
+  { "defkanji",		ARGS_1,				{NULL} },
+  { "deflog",		ARGS_1,				{NULL} },
+#if defined(ENABLE_UTMP)
+  { "deflogin",		ARGS_1,				{NULL} },
 #endif
-  { "activity",		ARGS_1 },
-#ifdef MULTIUSER
-  { "addacl",		ARGS_1234 },
+  { "defmode",		ARGS_1,				{NULL} },
+  { "defmonitor",	ARGS_1,				{NULL} },
+  { "defmousetrack",	ARGS_1,				{NULL} },
+  { "defnonblock",	ARGS_1,				{NULL} },
+  { "defobuflimit",	ARGS_1,				{NULL} },
+  { "defscrollback",	ARGS_1,				{NULL} },
+  { "defshell",		ARGS_1,				{NULL} },
+  { "defsilence",	ARGS_1,				{NULL} },
+  { "defslowpaste",	ARGS_1,				{NULL} },
+  { "defutf8",		ARGS_1,				{NULL} },
+  { "defwrap",		ARGS_1,				{NULL} },
+  { "defwritelock",	ARGS_1,				{NULL} },
+  { "detach",		NEED_DISPLAY|ARGS_01,		{NULL} },
+  { "digraph",		NEED_LAYER|ARGS_012,		{NULL} },
+  { "dinfo",		NEED_DISPLAY|ARGS_0,		{NULL} },
+  { "displays",		NEED_LAYER|ARGS_0,		{NULL} },
+  { "dumptermcap",	NEED_FORE|ARGS_0,		{NULL} },
+  { "dynamictitle",	ARGS_1,				{NULL} },
+  { "echo",		CAN_QUERY|ARGS_12,		{NULL} },
+  { "encoding",		ARGS_12,			{NULL} },
+  { "escape",		ARGS_1,				{NULL} },
+  { "eval",		ARGS_1|ARGS_ORMORE,		{NULL} },
+  { "exec",		ARGS_0|ARGS_ORMORE,		{NULL} },
+  { "fit",		NEED_DISPLAY|ARGS_0,		{NULL} },
+  { "flow",		NEED_FORE|ARGS_01,		{NULL} },
+  { "focus",		NEED_DISPLAY|ARGS_01,		{NULL} },
+  { "focusminsize",	ARGS_02,			{NULL} },
+  { "gr",		NEED_FORE|ARGS_01,		{NULL} },
+  { "group",            NEED_FORE|ARGS_01,		{NULL} },
+  { "hardcopy",		NEED_FORE|ARGS_012,		{NULL} },
+  { "hardcopy_append",	ARGS_1,				{NULL} },
+  { "hardcopydir",	ARGS_01,			{NULL} },
+  { "hardstatus",	ARGS_012,			{NULL} },
+  { "height",		ARGS_0123,			{NULL} },
+  { "help",		NEED_LAYER|ARGS_02,		{NULL} },
+  { "history",		NEED_DISPLAY|NEED_FORE|ARGS_0,	{NULL} },
+  { "hstatus",		NEED_FORE|ARGS_1,		{NULL} },
+  { "idle",		ARGS_0|ARGS_ORMORE,		{NULL} },
+  { "ignorecase",	ARGS_01,			{NULL} },
+  { "info",		CAN_QUERY|NEED_LAYER|ARGS_0,	{NULL} },
+  { "kanji",		NEED_FORE|ARGS_12,		{NULL} },
+  { "kill",		NEED_FORE|ARGS_01,		{NULL} },
+  { "lastmsg",		CAN_QUERY|NEED_DISPLAY|ARGS_0,	{NULL} },
+  { "layout",           ARGS_1|ARGS_ORMORE,		{NULL} },
+  { "license",		NEED_LAYER|ARGS_0,		{NULL} },
+  { "lockscreen",	NEED_DISPLAY|ARGS_0,		{NULL} },
+  { "log",		NEED_FORE|ARGS_01,		{NULL} },
+  { "logfile",		ARGS_012,			{NULL} },
+#if defined(ENABLE_UTMP)
+  { "login",		NEED_FORE|ARGS_01,		{NULL} },
 #endif
-  { "allpartial",	NEED_DISPLAY|ARGS_1 },
-  { "altscreen",	ARGS_01 },
-  { "at",		ARGS_2|ARGS_ORMORE },
-#ifdef COLOR
-  { "attrcolor",	ARGS_12 },
-#endif
-  { "autodetach",	ARGS_1 },
-#ifdef AUTO_NUKE
-  { "autonuke",		NEED_DISPLAY|ARGS_1 },
-#endif
-  { "backtick",		ARGS_1|ARGS_ORMORE },
-#ifdef COLOR
-  { "bce",		NEED_FORE|ARGS_01 },
-#endif
-
-#ifdef HAVE_BRAILLE
-/* keywords for braille display (bd) */
-  { "bd_bc_down",	ARGS_0 },
-  { "bd_bc_left",	ARGS_0 },
-  { "bd_bc_right",	ARGS_0 },
-  { "bd_bc_up",		ARGS_0 },
-  { "bd_bell",		ARGS_01 },
-  { "bd_braille_table",	ARGS_01 },
-  { "bd_eightdot",	ARGS_01 },
-  { "bd_info",		ARGS_01 },
-  { "bd_link",		ARGS_01 },
-  { "bd_lower_left",	ARGS_0 },
-  { "bd_lower_right",	ARGS_0 },
-  { "bd_ncrc",		ARGS_01 },
-  { "bd_port",		ARGS_01 },
-  { "bd_scroll",	ARGS_01 },
-  { "bd_skip",		ARGS_01 },
-  { "bd_start_braille",	ARGS_01 },
-  { "bd_type",		ARGS_01 },
-  { "bd_upper_left",	ARGS_0 },
-  { "bd_upper_right",	ARGS_0 },
-  { "bd_width",		ARGS_01 },
-#endif
-
-  { "bell",		ARGS_01 },
-  { "bell_msg",		ARGS_01 },
-  { "bind",		ARGS_1|ARGS_ORMORE },
-#ifdef MAPKEYS
-  { "bindkey",		ARGS_0|ARGS_ORMORE },
-#endif
-  { "blanker",		NEED_DISPLAY|ARGS_0},
-#ifdef BLANKER_PRG
-  { "blankerprg",	ARGS_0|ARGS_ORMORE },
-#endif
-  { "break",		NEED_FORE|ARGS_01 },
-  { "breaktype",	NEED_FORE|ARGS_01 },
-#ifdef COPY_PASTE
-  { "bufferfile",	ARGS_01 },
-#endif
-  { "bumpleft",		NEED_FORE|ARGS_0 },
-  { "bumpright",	NEED_FORE|ARGS_0 },
-  { "c1",		NEED_FORE|ARGS_01 },
-  { "caption",		ARGS_12 },
-#ifdef MULTIUSER
-  { "chacl",		ARGS_23 },
-#endif
-  { "charset",          NEED_FORE|ARGS_1 },
-  { "chdir",		ARGS_01 },
-#ifdef DW_CHARS
-  { "cjkwidth",		ARGS_01 },
-#endif
-  { "clear",		NEED_FORE|ARGS_0 },
-  { "collapse",		ARGS_0 },
-  { "colon",		NEED_LAYER|ARGS_01 },
-  { "command",		NEED_DISPLAY|ARGS_02 },
-#ifdef COPY_PASTE
-  { "compacthist",	ARGS_01 },
-#endif
-  { "console",		NEED_FORE|ARGS_01 },
-#ifdef COPY_PASTE
-  { "copy",		NEED_FORE|NEED_DISPLAY|ARGS_0 },
-  { "crlf",		ARGS_01 },
-#endif
-  { "debug",		ARGS_01 },
-#ifdef AUTO_NUKE
-  { "defautonuke",	ARGS_1 },
-#endif
-#ifdef COLOR
-  { "defbce",		ARGS_1 },
-#endif
-  { "defbreaktype",	ARGS_01 },
-  { "defc1",		ARGS_1 },
-  { "defcharset",       ARGS_01 },
-  { "defdynamictitle",	ARGS_1 },
-#ifdef ENCODINGS
-  { "defencoding",	ARGS_1 },
-#endif
-  { "defescape",	ARGS_1 },
-  { "defflow",		ARGS_12 },
-  { "defgr",		ARGS_1 },
-  { "defhstatus",	ARGS_01 },
-#ifdef ENCODINGS
-  { "defkanji",		ARGS_1 },
-#endif
-  { "deflog",		ARGS_1 },
-#if defined(UTMPOK) && defined(LOGOUTOK)
-  { "deflogin",		ARGS_1 },
-#endif
-  { "defmode",		ARGS_1 },
-  { "defmonitor",	ARGS_1 },
-  { "defmousetrack",	ARGS_1 },
-#ifdef MULTI
-  { "defnonblock",	ARGS_1 },
-#endif
-  { "defobuflimit",	ARGS_1 },
-#ifdef COPY_PASTE
-  { "defscrollback",	ARGS_1 },
-#endif
-  { "defshell",		ARGS_1 },
-  { "defsilence",	ARGS_1 },
-  { "defslowpaste",	ARGS_1 },
-#ifdef UTF8
-  { "defutf8",		ARGS_1 },
-#endif
-  { "defwrap",		ARGS_1 },
-  { "defwritelock",	ARGS_1 },
-#ifdef DETACH
-  { "detach",		NEED_DISPLAY|ARGS_01 },
-#endif
-  { "digraph",		NEED_LAYER|ARGS_012 },
-  { "dinfo",		NEED_DISPLAY|ARGS_0 },
-  { "displays",		NEED_LAYER|ARGS_0 },
-  { "dumptermcap",	NEED_FORE|ARGS_0 },
-  { "dynamictitle",	ARGS_1 },
-  { "echo",		CAN_QUERY|ARGS_12 },
-#ifdef ENCODINGS
-  { "encoding",		ARGS_12 },
-#endif
-  { "escape",		ARGS_1 },
-  { "eval",		ARGS_1|ARGS_ORMORE },
-#ifdef PSEUDOS
-  { "exec",		ARGS_0|ARGS_ORMORE },
-#endif
-  { "fit",		NEED_DISPLAY|ARGS_0 },
-  { "flow",		NEED_FORE|ARGS_01 },
-  { "focus",		NEED_DISPLAY|ARGS_01 },
-  { "focusminsize",	ARGS_02 },
-  { "gr",		NEED_FORE|ARGS_01 },
-  { "group",            NEED_FORE|ARGS_01 },
-  { "hardcopy",		NEED_FORE|ARGS_012 },
-  { "hardcopy_append",	ARGS_1 },
-  { "hardcopydir",	ARGS_01 },
-  { "hardstatus",	ARGS_012 },
-  { "height",		ARGS_0123 },
-  { "help",		NEED_LAYER|ARGS_02 },
-#ifdef COPY_PASTE
-  { "history",		NEED_DISPLAY|NEED_FORE|ARGS_0 },
-#endif
-  { "hstatus",		NEED_FORE|ARGS_1 },
-  { "idle",		ARGS_0|ARGS_ORMORE },
-  { "ignorecase",	ARGS_01 },
-  { "info",		CAN_QUERY|NEED_LAYER|ARGS_0 },
-#ifdef ENCODINGS
-  { "kanji",		NEED_FORE|ARGS_12 },
-#endif
-  { "kill",		NEED_FORE|ARGS_0 },
-  { "lastmsg",		CAN_QUERY|NEED_DISPLAY|ARGS_0 },
-  { "layout",           ARGS_1|ARGS_ORMORE},
-  { "license",		NEED_LAYER|ARGS_0 },
-#ifdef LOCK
-  { "lockscreen",	NEED_DISPLAY|ARGS_0 },
-#endif
-  { "log",		NEED_FORE|ARGS_01 },
-  { "logfile",		ARGS_012 },
-#if defined(UTMPOK) && defined(LOGOUTOK)
-  { "login",		NEED_FORE|ARGS_01 },
-#endif
-  { "logtstamp",	ARGS_012 },
-#ifdef MAPKEYS
-  { "mapdefault",	NEED_DISPLAY|ARGS_0 },
-  { "mapnotnext",	NEED_DISPLAY|ARGS_0 },
-  { "maptimeout",	ARGS_01 },
-#endif
-#ifdef COPY_PASTE
-  { "markkeys",		ARGS_1 },
-#endif
-  { "maxwin",		ARGS_01 },
-  { "meta",		NEED_LAYER|ARGS_0 },
-  { "monitor",		NEED_FORE|ARGS_01 },
-  { "mousetrack",	NEED_DISPLAY | ARGS_01 },
-  { "msgminwait",	ARGS_1 },
-  { "msgwait",		ARGS_1 },
-#ifdef MULTIUSER
-  { "multiuser",	ARGS_1 },
-#endif
-  { "nethack",		ARGS_1 },
-  { "next",		ARGS_0 },
-#ifdef MULTI
-  { "nonblock",		NEED_DISPLAY|ARGS_01 },
-#endif
-  { "number",		CAN_QUERY|NEED_FORE|ARGS_01 },
-  { "obuflimit",	NEED_DISPLAY|ARGS_01 },
-  { "only",		NEED_DISPLAY|ARGS_0 },
-  { "other",		ARGS_0 },
-  { "partial",		NEED_FORE|ARGS_01 },
-#ifdef PASSWORD
-  { "password",		ARGS_01 },
-#endif
-#ifdef COPY_PASTE
-  { "paste",		NEED_LAYER|ARGS_012 },
-  { "pastefont",	ARGS_01 },
-#endif
-  { "pow_break",	NEED_FORE|ARGS_01 },
-#if defined(DETACH) && defined(POW_DETACH)
-  { "pow_detach",	NEED_DISPLAY|ARGS_0 },
-  { "pow_detach_msg",	ARGS_01 },
-#endif
-  { "prev",		ARGS_0 },
-  { "printcmd",		ARGS_01 },
-  { "process",		NEED_DISPLAY|ARGS_01 },
-  { "quit",		ARGS_0 },
-#ifdef COPY_PASTE
-  { "readbuf",		ARGS_0123 },
-#endif
-  { "readreg",          ARGS_0|ARGS_ORMORE },
-  { "redisplay",	NEED_DISPLAY|ARGS_0 },
-  { "register",		ARGS_24 },
-  { "remove",		NEED_DISPLAY|ARGS_0 },
-#ifdef COPY_PASTE
-  { "removebuf",	ARGS_0 },
-#endif
-  { "rendition",	ARGS_23 },
-  { "reset",		NEED_FORE|ARGS_0 },
-  { "resize",		NEED_DISPLAY|ARGS_0|ARGS_ORMORE },
-  { "screen",		ARGS_0|ARGS_ORMORE },
-#ifdef COPY_PASTE
-  { "scrollback",	NEED_FORE|ARGS_1 },
-#endif
-  { "select",		CAN_QUERY|ARGS_01 },
-  { "sessionname",	ARGS_01 },
-  { "setenv",		ARGS_012 },
-  { "setsid",		ARGS_1 },
-  { "shell",		ARGS_1 },
-  { "shelltitle",	ARGS_1 },
-  { "silence",		NEED_FORE|ARGS_01 },
-  { "silencewait",	ARGS_1 },
-  { "sleep",		ARGS_1 },
-  { "slowpaste",	NEED_FORE|ARGS_01 },
-  { "sorendition",      ARGS_012 },
-  { "sort",		ARGS_0},
-  { "source",		ARGS_1 },
-  { "split",		NEED_DISPLAY|ARGS_01 },
-  { "startup_message",	ARGS_1 },
-  { "stuff",		NEED_LAYER|ARGS_012 },
-#ifdef MULTIUSER
-  { "su",		NEED_DISPLAY|ARGS_012 },
-#endif
-#ifdef BSDJOBS
-  { "suspend",		NEED_DISPLAY|ARGS_0 },
-#endif
-  { "term",		ARGS_1 },
-  { "termcap",		ARGS_23 },
-  { "termcapinfo",	ARGS_23 },
-  { "terminfo",		ARGS_23 },
-  { "time",		CAN_QUERY|ARGS_01 },
-  { "title",		CAN_QUERY|NEED_FORE|ARGS_01 },
-  { "umask",		ARGS_1|ARGS_ORMORE },
-  { "unbindall",	ARGS_0 },
-  { "unsetenv",		ARGS_1 },
-#ifdef UTF8
-  { "utf8",		NEED_FORE|ARGS_012 },
-#endif
-  { "vbell",		ARGS_01 },
-  { "vbell_msg",	ARGS_01 },
-  { "vbellwait",	ARGS_1 },
-  { "verbose",		ARGS_01 },
-  { "version",		ARGS_0 },
-  { "wall",		NEED_DISPLAY|ARGS_1},
-  { "width",		ARGS_0123 },
-  { "windowlist",	ARGS_012 },
-  { "windows",		CAN_QUERY|ARGS_01 },
-  { "wrap",		NEED_FORE|ARGS_01 },
-#ifdef COPY_PASTE
-  { "writebuf",		ARGS_0123 },
-#endif
-  { "writelock",	NEED_FORE|ARGS_01 },
-  { "xoff",		NEED_LAYER|ARGS_0 },
-  { "xon",		NEED_LAYER|ARGS_0 },
-#ifdef ZMODEM
-  { "zmodem",		ARGS_012 },
-#endif
-  { "zombie",		ARGS_012 },
-  { "zombie_timeout", ARGS_1 }
+  { "logtstamp",	ARGS_012,			{NULL} },
+  { "mapdefault",	NEED_DISPLAY|ARGS_0,		{NULL} },
+  { "mapnotnext",	NEED_DISPLAY|ARGS_0,		{NULL} },
+  { "maptimeout",	ARGS_01,			{NULL} },
+  { "markkeys",		ARGS_1,				{NULL} },
+  { "meta",		NEED_LAYER|ARGS_0,		{NULL} },
+  { "monitor",		NEED_FORE|ARGS_01,		{NULL} },
+  { "mousetrack",	NEED_DISPLAY | ARGS_01,		{NULL} },
+  { "msgminwait",	ARGS_1,				{NULL} },
+  { "msgwait",		ARGS_1,				{NULL} },
+  { "multiinput",	ARGS_01,			{NULL} },
+  { "multiuser",	ARGS_1,				{NULL} },
+  { "next",		ARGS_0,				{NULL} },
+  { "nonblock",		NEED_DISPLAY|ARGS_01,		{NULL} },
+  { "number",		CAN_QUERY|NEED_FORE|ARGS_01,	{NULL} },
+  { "obuflimit",	NEED_DISPLAY|ARGS_01,		{NULL} },
+  { "only",		NEED_DISPLAY|ARGS_0,		{NULL} },
+  { "other",		ARGS_0,				{NULL} },
+  { "parent",		ARGS_0,				{NULL} },
+  { "partial",		NEED_FORE|ARGS_01,		{NULL} },
+  { "paste",		NEED_LAYER|ARGS_012,		{NULL} },
+  { "pastefont",	ARGS_01,			{NULL} },
+  { "pow_break",	NEED_FORE|ARGS_01,		{NULL} },
+  { "pow_detach",	NEED_DISPLAY|ARGS_01,		{NULL} },
+  { "pow_detach_msg",	ARGS_01,			{NULL} },
+  { "prev",		ARGS_0,				{NULL} },
+  { "printcmd",		ARGS_01,			{NULL} },
+  { "process",		NEED_DISPLAY|ARGS_01,		{NULL} },
+  { "quit",		ARGS_01,			{NULL} },
+  { "readbuf",		ARGS_0123,			{NULL} },
+  { "readreg",          ARGS_0|ARGS_ORMORE,		{NULL} },
+  { "redisplay",	NEED_DISPLAY|ARGS_0,		{NULL} },
+  { "register",		ARGS_24,			{NULL} },
+  { "remove",		NEED_DISPLAY|ARGS_0,		{NULL} },
+  { "removebuf",	ARGS_0,				{NULL} },
+  { "rendition",	ARGS_2,				{NULL} },
+  { "reset",		NEED_FORE|ARGS_0,		{NULL} },
+  { "resize",		NEED_DISPLAY|ARGS_0|ARGS_ORMORE,{NULL} },
+  { "screen",		ARGS_0|ARGS_ORMORE,		{NULL} },
+  { "scrollback",	NEED_FORE|ARGS_1,		{NULL} },
+  { "select",		CAN_QUERY|ARGS_01,		{NULL} },
+  { "sessionname",	ARGS_01,			{NULL} },
+  { "setenv",		ARGS_012,			{NULL} },
+  { "setsid",		ARGS_1,				{NULL} },
+  { "shell",		ARGS_1,				{NULL} },
+  { "shelltitle",	ARGS_1,				{NULL} },
+  { "silence",		NEED_FORE|ARGS_01,		{NULL} },
+  { "silencewait",	ARGS_1,				{NULL} },
+  { "sleep",		ARGS_1,				{NULL} },
+  { "slowpaste",	NEED_FORE|ARGS_01,		{NULL} },
+  { "sorendition",      ARGS_012,			{NULL} },
+  { "sort",		ARGS_0,				{NULL} },
+  { "source",		ARGS_1,				{NULL} },
+  { "split",		NEED_DISPLAY|ARGS_01,		{NULL} },
+  { "startup_message",	ARGS_1,				{NULL} },
+  { "status",		ARGS_12,			{NULL} },
+  { "stuff",		NEED_LAYER|ARGS_012,		{NULL} },
+  { "su",		NEED_DISPLAY|ARGS_012,		{NULL} },
+  { "suspend",		NEED_DISPLAY|ARGS_0,		{NULL} },
+  { "term",		ARGS_1,				{NULL} },
+  { "termcap",		ARGS_23,			{NULL} },
+  { "termcapinfo",	ARGS_23,			{NULL} },
+  { "terminfo",		ARGS_23,			{NULL} },
+  { "title",		CAN_QUERY|NEED_FORE|ARGS_01,	{NULL} },
+  { "truecolor",	ARGS_1,				{NULL} },
+  { "umask",		ARGS_1|ARGS_ORMORE,		{NULL} },
+  { "unbindall",	ARGS_0,				{NULL} },
+  { "unsetenv",		ARGS_1,				{NULL} },
+  { "utf8",		NEED_FORE|ARGS_012,		{NULL} },
+  { "vbell",		ARGS_01,			{NULL} },
+  { "vbell_msg",	ARGS_01,			{NULL} },
+  { "vbellwait",	ARGS_1,				{NULL} },
+  { "verbose",		ARGS_01,			{NULL} },
+  { "version",		ARGS_0,				{NULL} },
+  { "wall",		NEED_DISPLAY|ARGS_1,		{NULL} },
+  { "width",		ARGS_0123,			{NULL} },
+  { "windowlist",	ARGS_012,			{NULL} },
+  { "windows",		CAN_QUERY|ARGS_01,		{NULL} },
+  { "wrap",		NEED_FORE|ARGS_01,		{NULL} },
+  { "writebuf",		ARGS_0123,			{NULL} },
+  { "writelock",	NEED_FORE|ARGS_01,		{NULL} },
+  { "xoff",		NEED_LAYER|ARGS_0,		{NULL} },
+  { "xon",		NEED_LAYER|ARGS_0,		{NULL} },
+  { "zmodem",		ARGS_012,			{NULL} },
+  { "zombie",		ARGS_012,			{NULL} },
+  { "zombie_timeout",	ARGS_1,				{NULL} }
 };

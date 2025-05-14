@@ -2,9 +2,6 @@
 # Example of a user's .screenrc file
 #
 
-# This is how one can set a reattach password:
-# password ODSJQf.4IJN7E    # "1234"
-
 # no annoying audible bell, please
 vbell on
 
@@ -15,7 +12,7 @@ autodetach on
 startup_message off
 
 # emulate .logout message
-pow_detach_msg "Screen session of \$LOGNAME \$:cr:\$:nl:ended."
+pow_detach_msg "Screen session of $LOGNAME detached."
 
 # advertise hardstatus support to $TERMCAP
 # termcapinfo  * '' 'hs:ts=\E_:fs=\E\\:ds=\E_\E\\'
@@ -31,6 +28,9 @@ pow_detach_msg "Screen session of \$LOGNAME \$:cr:\$:nl:ended."
 # defhstatus "screen: ^En (^Et)"
 
 defscrollback 1000
+
+# more convenient status messages location
+# status	top right
 
 # don't kill window after the process died
 # zombie "^["

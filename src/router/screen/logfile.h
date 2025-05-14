@@ -27,15 +27,20 @@
  * $Id$ GNU
  */
 
-struct logfile
-{
-  struct logfile *next;
-  FILE *fp;		/* a hopefully uniq filepointer to the log file */
-  char *name;		/* the name. used to reopen, when stat fails. */
-  int opencount;	/* synchronize logfopen() and logfclose() */
-  int writecount;	/* increments at logfwrite(), counts write() and fflush() */
-  int flushcount;	/* increments at logfflush(), zeroed at logfwrite() */
-  struct stat *st;	/* how the file looks like */
+#ifndef SCREEN_LOGFILE_H
+#define SCREEN_LOGFILE_H
+
+#include <stdio.h>
+
+typedef struct Log Log;
+struct Log {
+	Log *next;
+	FILE *fp;	/* a hopefully uniq filepointer to the log file */
+	char *name;	/* the name. used to reopen, when stat fails. */
+	int opencount;	/* synchronize logfopen() and logfclose() */
+	int writecount;	/* increments at logfwrite(), counts write() and fflush() */
+	int flushcount;	/* increments at logfflush(), zeroed at logfwrite() */
+	struct stat *st;/* how the file looks like */
 };
 
 /*
@@ -44,44 +49,36 @@ struct logfile
  * otherwise.
  * example: l = logfopen(name, islogfile(name) : NULL ? fopen(name, "a"));
  */
-struct logfile *logfopen __P((char *name, FILE *fp));
+Log *logfopen (char *name, FILE *fp);
 
 /*
  * lookup a logfile by name. This is useful, so that we can provide
- * logfopen with a nonzero second argument, exactly when needed. 
+ * logfopen with a nonzero second argument, exactly when needed.
  * islogfile(NULL); returns nonzero if there are any open logfiles at all.
  */
-int islogfile __P((char *name));
+int islogfile (char *name);
 
-/* 
+/*
  * logfclose does free()
  */
-int logfclose __P((struct logfile *));
-int logfwrite __P((struct logfile *, char *, int));
+int logfclose (Log *);
+int logfwrite (Log *, char *, size_t);
 
-/* 
+/*
  * logfflush should be called periodically. If no argument is passed,
  * all logfiles are flushed, else the specified file
  * the number of flushed filepointers is returned
  */
-int logfflush __P((struct logfile *ifany));
+int logfflush (Log *ifany);
 
-/* 
- * a reopen function may be registered here, in case you want to bring your 
- * own (more secure open), it may come along with a private data pointer.
- * this function is called, whenever logfwrite/logfflush detect that the
- * file has been (re)moved, truncated or changed by someone else.
- * if you provide NULL as parameter to logreopen_register, the builtin
- * reopen function will be reactivated.
- */
-void logreopen_register __P((int (*fn) __P((char *, int, struct logfile *)) ));
-
-/* 
+/*
  * Your custom reopen function is required to reuse the exact
- * filedescriptor. 
+ * filedescriptor.
  * See logfile.c for further specs and an example.
  *
  * lf_move_fd may help you here, if you do not have dup2(2).
  * It closes fd and opens wantfd to access whatever fd accessed.
  */
-int lf_move_fd __P((int fd, int wantfd));
+int lf_move_fd (int fd, int wantfd);
+
+#endif /*  SCREEN_LOGFILE_H */

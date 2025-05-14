@@ -83,6 +83,7 @@ struct term term[T_N] =
   { "CD", T_STR  },
   { "ce", T_STR  },
   { "cb", T_STR  },
+  { "E3", T_STR  },
 
 /* initialise */
   { "is", T_STR  },
@@ -100,12 +101,14 @@ struct term term[T_N] =
 
 /* attributes */
 /* define T_ATTR */
+/* order is important for how we set up attributes */
   { "mh", T_STR  },
   { "us", T_STR  },
   { "md", T_STR  },
   { "mr", T_STR  },
   { "so", T_STR  },
   { "mb", T_STR  },
+  { "ZH", T_STR  },
   { "ue", T_STR  },
   { "se", T_STR  },
   { "me", T_STR  },
@@ -113,6 +116,7 @@ struct term term[T_N] =
   { "sg", T_NUM  },
   { "ug", T_NUM  },
   { "sa", T_STR  },
+  { "ZR", T_STR  },
 
 /* color */
   { "AF", T_STR  },

@@ -20,8 +20,8 @@
 		'-h:Set the size of the scrollback history buffer.' \
 		'-i[Interrupt output sooner when flow control is on.]' \
 		'-l[Login mode on (update /var/run/utmp), -ln = off.]' \
-		'-list[Do nothing, just list our SockDir.]' \
-		'-ls[Do nothing, just list our SockDir.]' \
+		'-list[Do nothing, just list our SocketDir.]' \
+		'-ls[Do nothing, just list our SocketDir.]' \
 		"-L[Terminal's last character can be safely updated.]" \
 		'-m[ignore $STY variable, do create a new screen session.]' \
 		'-O[Choose optimal output rather than exact vt100 emulation.]' \
@@ -35,9 +35,9 @@
 		'-T:Use term as $TERM for windows, rather than "screen".' \
 		'-U[Tell screen to use UTF-8 encoding.]' \
 		'-v[Print "Screen version 3.09.11beta (FAU) 11-Oct-01".]' \
-		'-wipe[Do nothing, just clean up SockDir.]' \
+		'-wipe[Do nothing, just clean up SocketDir.]' \
 		'-x[Attach to a not detached screen. (Multi display mode).]' \
-		'-X[Execute <cmd> as a screen command in the specified session.]:Handling Tag screencmd:( acladd  addacl  aclchg  acldel  aclgrp  aclumask  activity  allpartial  at  attrcolor  autodetach  autonuke  bce  bell_msg  bind  bindkey  break  breaktype  bufferfile  c1  caption  charset  chdir  clear  colon  command  compacthist  console  copy  copy_reg  crlf  debug  defc1  defautonuke  defbce  defbreaktype  defcharset  defescape  defflow  defgr  defhstatus  defkanji  deflogin  defmode  defmonitor  defobuflimit  defscrollback  defshell  defsilence  defslowpaste  defutf8  defwrap  defwritelock  detach  dinfo  displays  digraph  dumptermcap  echo  escape  exec  fit  flow  focus  gr  hardcopy  hardcopy_append  hardcopydir  hardstatus  height  help  history  hstatus  info  ins_reg  kill  lastmsg  license  lockscreen  log  logfile  login  logtstamp  mapdefault  mapnotnext  maptimeout  markkeys  meta  monitor  msgminwait  msgwait  multiuser  nethack  next  nonblock  number  obu!
+		'-X[Execute <cmd> as a screen command in the specified session.]:Handling Tag screencmd:( acladd  addacl  aclchg  acldel  aclgrp  aclumask  activity  allpartial  at  attrcolor  autodetach  autonuke  bce  bell_msg  bind  bindkey  break  breaktype  bufferfile  c1  caption  charset  chdir  clear  colon  command  compacthist  console  copy  copy_reg  crlf  debug  defc1  defautonuke  defbce  defbreaktype  defcharset  defescape  defflow  defgr  defhstatus  defkanji  deflogin  defmode  defmonitor  defobuflimit  defscrollback  defshell  defsilence  defslowpaste  defutf8  defwrap  defwritelock  detach  dinfo  displays  digraph  dumptermcap  echo  escape  exec  fit  flow  focus  gr  hardcopy  hardcopy_append  hardcopydir  hardstatus  height  help  history  hstatus  info  ins_reg  kill  lastmsg  license  lockscreen  log  logfile  login  logtstamp  mapdefault  mapnotnext  maptimeout  markkeys  meta  monitor  msgminwait  msgwait  multiuser next  nonblock  number  obu!
 !
 flimit  only  other  partial  password  paste  pastefont  pow_break  pow_detach  pow_detach_msg  prev  printcmd  process  quit  readbuf  readreg  redisplay  register  remove  removebuf  reset  resize  screen  scrollback  select  sessionname  setenv  shell  shelltitle  silence  silencewait  sleep  slowpaste  sorendition  split  startup_message  stuff  su  term  termcap  terminfo  termcapinfo  time  title  unsetenv  utf8  vbell  vbell_msg  vbellwait  verbose  version  wall  width  windows  wrap  writebuf  writelock  xoff  xon  zombie)'
 case $state in

@@ -8,7 +8,7 @@
 @finalout
 @setchapternewpage odd
 @c %**end of header
-@set version 4.9.1
+@set version 5.0.0
 
 @direntry
 * Screen: (screen).             Full-screen window manager.
@@ -25,7 +25,7 @@
 @ifinfo
 This file documents the @code{Screen} virtual terminal manager.
 
-Copyright (c) 1993-2023 Free Software Foundation, Inc.
+Copyright (c) 1993-2024 Free Software Foundation, Inc.
 
 Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
@@ -53,11 +53,11 @@ by the Foundation.
 @title Screen
 @subtitle The virtual terminal manager
 @subtitle for Version @value{version}
-@subtitle Aug 2023
+@subtitle Aug 2024
 
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 1993-2023 Free Software Foundation, Inc.
+Copyright @copyright{} 1993-2024 Free Software Foundation, Inc.
 
 Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
@@ -372,6 +372,12 @@ brings up the windowlist on the blank window, while a @samp{+} will
 create new window. The command will not be executed if the specified
 window could not be found.
 
+@item -P
+Turns authentication on. By default @code{screen} allows to attach without
+enter the user's password. This option changes this behavior, i.e.
+enables authentication.
+The same effect can be done by using "auth on" command.
+
 @item -q
 Suppress printing of error messages. In combination with @samp{-ls} the exit 
 value is set as follows: 9 indicates a directory without sessions. 10 
@@ -500,7 +506,7 @@ the files @file{.screenrc} in the user's home directory and
 @file{/usr/local/etc/screenrc}.  These defaults can be overridden in the 
 following ways:
 For the global screenrc file @code{screen} searches for the environment
-variable @code{$SYSSCREENRC} (this override feature may be disabled at
+variable @code{$SYSTEM_SCREENRC} (this override feature may be disabled at
 compile-time).  The user specific screenrc file is
 searched for in @code{$SCREENRC}, then 
 @file{@code{$HOME}/.screenrc}.  The command line option @samp{-c}
@@ -754,10 +760,11 @@ Send a ^S (ASCII XOFF) to the current window.  @xref{XON/XOFF}.
 (split)@*
 Split the current region horizontally into two new ones.  @xref{Regions}.
 
-@item @kbd{C-a t}
-@itemx @kbd{C-a C-t}
-(time)@*
-Show the load average and xref.  @xref{Time}.
+@item @kbd{C-a u}
+@itemx @kbd{C-a C-u}
+(parent)@*
+Switch to the parent window.
+@xref{Selecting}.
 
 @item @kbd{C-a v}
 (version)@*
@@ -886,6 +893,9 @@ Enables support for the "alternate screen" terminal capability.  @xref{Redisplay
 Execute a command at other displays or windows.  @xref{At}.
 @item attrcolor @var{attrib} [@var{attribute/color-modifier}]
 Map attributes to colors.  @xref{Attrcolor}.
+@item auth @var{state}
+This command enables/disables password protection for the screen session.
+It is off by default (authentication is disabled).
 @item autodetach @var{state}
 Automatically detach the session on SIGHUP.  @xref{Detach}.
 @item autonuke @var{state}
@@ -944,8 +954,6 @@ Enter copy mode.  @xref{Copy}.
 Removed. Use @code{paste} instead.  @xref{Registers}.
 @item crlf @var{state}
 Select line break behavior for copying.  @xref{Line Termination}.
-@item debug @var{state}
-Suppress/allow debugging output.  @xref{Debug}.
 @item defautonuke @var{state}
 Select default autonuke behavior.  @xref{Autonuke}.
 @item defbce @var{state}
@@ -1100,8 +1108,6 @@ Don't try to do keymapping on the next keystroke.  @xref{Bindkey Control}.
 Set the inter-character timeout used for keymapping. @xref{Bindkey Control}.
 @item markkeys @var{string}
 Rebind keys in copy mode.  @xref{Copy Mode Keys}.
-@item maxwin @var{n}
-Set the maximum window number. @xref{Maxwin}.
 @item meta
 Insert the command character.  @xref{Command Character}.
 @item monitor [@var{state}]
@@ -1114,8 +1120,6 @@ Set minimum message wait.  @xref{Message Wait}.
 Set default message wait.  @xref{Message Wait}.
 @item multiuser @var{state}
 Go into single or multi user mode. @xref{Multiuser Session}.
-@item nethack @var{state}
-Use @code{nethack}-like error messages.  @xref{Nethack}.
 @item next
 Switch to the next window.  @xref{Selecting}.
 @item nonblock [@var{state}|@var{numsecs}]
@@ -1128,10 +1132,10 @@ Select output buffer limit.  @xref{Obuflimit}.
 Kill all other regions.  @xref{Regions}.
 @item other
 Switch to the window you were in last.  @xref{Selecting}.
+@item parent
+Switch to the parent window.  @xref{Selecting}.
 @item partial @var{state}
 Set window to partial refresh.  @xref{Redisplay}.
-@item password [@var{crypted_pw}]
-Set reattach password.  @xref{Detach}.
 @item paste [@var{src_regs} [@var{dest_reg}]]
 Paste contents of paste buffer or registers somewhere.  @xref{Paste}.
 @item pastefont [@var{state}]
@@ -1179,7 +1183,7 @@ Name this session.  @xref{Session Name}.
 @item setenv [@var{var} [@var{string}]]
 Set an environment variable for new windows.  @xref{Setenv}.
 @item setsid @var{state}
-Control process group creation for windows.  @xref{Setsid}.
+Controll process group creation for windows.  @xref{Setsid}.
 @item shell @var{command}
 Set the default program for new windows.  @xref{Shell}.
 @item shelltitle @var{title}
@@ -1214,8 +1218,6 @@ Tweak termcap entries for best performance.  @xref{Termcap Syntax}.
 Ditto, for terminfo systems.  @xref{Termcap Syntax}.
 @item termcapinfo @var{term} @var{terminal-tweaks} [@var{window-tweaks}]
 Ditto, for both systems.  @xref{Termcap Syntax}.
-@item time [@var{string}]
-Display time and load average.  @xref{Time}.
 @item title [@var{windowtitle}]
 Set the name of the current window.  @xref{Title Command}.
 @item umask [@var{users}]+/-@var{bits} ...
@@ -1264,9 +1266,8 @@ Keep dead windows.  @xref{Zombie}.
 This section describes the commands for creating a new window for
 running programs.  When a new window is created, the first available
 number is assigned to it.
-The number of windows is set by the MAXWIN configuration parameter
-(which defaults to 100), but it can be changed by using @code{maxwin}
-command.
+The number of windows is limited at compile-time by the MAXWIN
+configuration parameter (which defaults to 40).
 
 @menu
 * Chdir::                       Change the working directory for new windows.
@@ -1366,7 +1367,7 @@ you'd like to run a tty-enhancer which is expecting to execute the
 program specified in @code{$SHELL}.  
 If the command begins with a @samp{-} character, the shell will be started as a
 login-shell. Typical shells do only minimal initialization when not started as a login-shell.
-E.g. Bash will not read your @file{~/.bash_profile} unless it is a login-shell.
+E.g. Bash will not read your @file{~/.bashrc} unless it is a login-shell.
 
 @code{defshell} is currently a synonym to the @code{shell} .screenrc command.
 @end deffn
@@ -1425,12 +1426,6 @@ Usually 300, 1200, 9600 or 19200. This affects transmission as well as
 receive speed.
 @item cs8 or cs7
 Specify the transmission of eight (or seven) bits per byte.
-@item cstopb or -cstopb
-Specify two (or one) stop bits per character
-@item parenb or -parenb
-Generate parity bit in output and expect parity bit in input
-@item parodd or -parodd
-Set odd (or even) parity
 @item ixon or -ixon
 Enables (or disables) software flow-control (CTRL-S/CTRL-Q) for sending
 data.
@@ -1564,6 +1559,13 @@ pressing space.)
 @deffn Command prev
 (@kbd{C-a p}, @kbd{C-a C-p}, @kbd{C-a C-h}, @kbd{C-a @key{Backspace}})@*
 Switch to the previous window (the opposite of @kbd{C-a n}).
+@end deffn
+
+@kindex u
+@kindex C-u
+@deffn Command parent
+(@kbd{C-a u}, @kbd{C-a C-u})@*
+Switch to the parent window.
 @end deffn
 
 @node Other Window, Select, Next and Previous, Selecting
@@ -1770,7 +1772,8 @@ Without a parameter, the current message is shown.
 @kindex C-x
 @deffn Command lockscreen
 (@kbd{C-a x}, @kbd{C-a C-x})@*
-Call a screenlock program. Screen does not accept any
+Call a screenlock program (@file{/local/bin/lck} or @file{/usr/bin/lock}
+or a builtin, if no other is available). Screen does not accept any
 command keys until this program terminates. Meanwhile processes in the
 windows may continue, as the windows are in the detached state.
 The screenlock program may be changed through the environment variable
@@ -2218,7 +2221,7 @@ resize min      minimize current region
 Without any arguments, @code{screen} will prompt for how you would
 like to resize the current region.
 
-See @code{focusminsize} if you want to restrict the minimum size a region can have.
+See @code{focusminsize} if you want to restrict the minimun size a region can have.
 
 @end deffn
 
@@ -3546,7 +3549,7 @@ with @samp{-U}, otherwise @code{off}.
 
 @deffn Command cjkwidth [state]
 (none)@*
-Toggle how ambiguous characters are treated. If cjkwidth is on screen
+Toggle how ambiguoous characters are treated. If cjkwidth is on screen
 interprets them as double (full) width characters. If off then they are seen
 as one cell (half) width characters.
 @end deffn
@@ -3695,7 +3698,7 @@ or last non-whitespace character on the line.
 
 @noindent
 @kbd{f}/@kbd{F}, @kbd{t}/@kbd{T} move the cursor forward/backward to the 
-next occurrence of the target. (eg, '3fy' will move the cursor to the 3rd
+next occurence of the target. (eg, '3fy' will move the cursor to the 3rd 
 'y' to the right.)
 
 @noindent
@@ -5128,12 +5131,9 @@ categories.
 * Bumpleft::			Swaps window with previous one on window list.
 * Bumpright::			Swaps window with next one on window list.
 * Collapse::			Collapses window list.
-* Debug::                       Suppress/allow debugging output.
 * License::                     Display the disclaimer page.
-* Nethack::                     Use @code{nethack}-like error messages.
 * Nonblock::			Disable flow-control to a display.
 * Number::                      Change the current window's number.
-* Time::                        Display the time and load average.
 * Verbose::                     Display window creation commands.
 * Version::                     Display the version of @code{screen}.
 * Zombie::                      Keep dead windows.
@@ -5143,7 +5143,6 @@ categories.
 * Attrcolor::			Map attributes to colors.
 * Setsid::			Change process group management.
 * Eval::			Parse and execute arguments.
-* Maxwin::			Set the maximum window number.
 * Backtick::			Program a command for a backtick string escape.
 * Screen Saver::		Define a screen safer.
 * Zmodem::			Define how screen treats zmodem requests.
@@ -5242,25 +5241,14 @@ Exchanges windows positions on window list, with window having bigger number
 (right to current one).
 @end deffn
 
-@node Collapse, Debug, Bumpright, Miscellaneous
+@node Collapse, License, Bumpright, Miscellaneous
 @section Collapse
 @deffn Command collapse
 (none)@*
 Changes windows numbers, so there is no gaps between them.
 @end deffn
 
-@node Debug, License, Collapse, Miscellaneous
-@section Debug
-@deffn Command debug [on|off]
-(none)@*
-Turns runtime debugging on or off. If @code{screen} has been compiled with
-option @code{-DDEBUG} debugging is available and is turned on per default.
-Note that this command only affects debugging output from the main 
-@samp{SCREEN} process correctly. Debug output from attacher processes can only
-be turned off once and forever.
-@end deffn
-
-@node License, Nethack, Debug, Miscellaneous
+@node License, Collapse, Miscellaneous
 @section License
 @kindex ,
 @deffn Command license
@@ -5269,23 +5257,7 @@ Display the disclaimer page. This is done whenever @code{screen} is
 started without options, which should be often enough.
 @end deffn
 
-@node Nethack, Nonblock, License, Miscellaneous
-@section Nethack
-@deffn Command nethack state
-(none)@*
-Changes the kind of error messages used by @code{screen}.  When you are
-familiar with the game @code{nethack}, you may enjoy the nethack-style
-messages which will often blur the facts a little, but are much funnier
-to read. Anyway, standard messages often tend to be unclear as well.
-
-This option is only available if @code{screen} was compiled with the
-NETHACK flag defined (@pxref{Installation}). The default setting is then
-determined by the presence of the environment variable
-@code{$NETHACKOPTIONS} and the file @code{~/.nethackrc} - if either one is
-present, the default is @code{on}.
-@end deffn
-
-@node Nonblock, Number, Nethack, Miscellaneous
+@node Nonblock, Number, Miscellaneous
 @section Nonblock
 @deffn Command nonblock [@var{state}|@var{numsecs}]
 Tell screen how to deal with user interfaces (displays) that cease to
@@ -5305,7 +5277,7 @@ Same as the @code{nonblock} command except that the default setting for
 displays is changed. Initial setting is @code{off}.
 @end deffn
 
-@node Number, Time, Nonblock, Miscellaneous
+@node Number, Nonblock, Miscellaneous
 @section Number
 @kindex N
 @deffn Command number [[+|-]@var{n}]
@@ -5317,21 +5289,7 @@ plus (`+') or minus (`-') will change the window's number by the relative
 amount specified.
 @end deffn
 
-@node Time, Verbose, Number, Miscellaneous
-@section Time
-@kindex t
-@kindex C-t
-@deffn Command time [@var{string}]
-(@kbd{C-a t}, @kbd{C-a C-t})@*
-Uses the message line to display the time of day, the host name, and the
-load averages over 1, 5, and 15 minutes (if this is available on your
-system).  For window-specific information use @code{info} (@pxref{Info}).
-If a @var{string} is specified, it changes the format of the time report
-like it is described in the string escapes chapter (@pxref{String Escapes}).
-Screen uses a default of @samp{%c:%s %M %d %H%? %l%?}.
-@end deffn
-
-@node Verbose, Version, Time, Miscellaneous
+@node Verbose, Version, Miscellaneous
 @section Verbose
 @deffn Command verbose [on|off]
 If verbose is switched on, the command name is echoed, whenever a window
@@ -5387,7 +5345,7 @@ sequence @code{ESC [ 5 i}, but pipe the output into @var{cmd}.
 This should normally be a command like @samp{lpr} or
 @samp{cat > /tmp/scrprint}.
 @code{Printcmd} without an argument displays the current setting.
-The ansi sequence @code{ESC [ 4 i} ends printing and closes the pipe.
+The ansi sequence @code{ESC \} ends printing and closes the pipe.
 
 Warning: Be careful with this command! If other user have write
 access to your terminal, they will be able to fire off print commands.
@@ -5454,23 +5412,14 @@ The default is @code{on}, of course. This command is probably useful
 only in rare circumstances.
 @end deffn
 
-@node Eval, Maxwin, Setsid, Miscellaneous
+@node Eval, , Setsid, Miscellaneous
 @section Eval
 @deffn Command eval @var{command1} [@var{command2} ...]
 (none)@*
 Parses and executes each argument as separate command.
 @end deffn
 
-@node Maxwin, Backtick, Eval, Miscellaneous
-@section Maxwin
-@deffn Command maxwin @var{n}
-(none)@*
-Set the maximum window number screen will create. Doesn't affect 
-already existing windows. The number can be increased only when there are no
-existing windows.
-@end deffn
-
-@node Backtick, Screen Saver, Maxwin, Miscellaneous
+@node Backtick, Screen Saver, , Miscellaneous
 @section Backtick
 @deffn Command backtick @var{id} @var{lifespan} @var{autorefresh} @var{command} [@var{args}]
 @deffnx Command backtick @var{id}
@@ -5578,8 +5527,6 @@ day number
 weekday name
 @item E
 sets %? to true if the escape character has been pressed.
-@item e
-encoding
 @item f
 flags of the window. @xref{Windows}, for meanings of the various flags.
 @item F
@@ -5588,6 +5535,8 @@ sets %? to true if the window has the focus
 hardstatus of the window
 @item H
 hostname of the system
+@item O
+count of screen windows. Prefix with @code{'-'} to limit to current window group.
 @item l
 current load of the system
 @item m
@@ -5598,8 +5547,6 @@ month name
 window number
 @item P
 sets %? to true if the current region is in copy/paste mode
-@item s
-seconds
 @item S
 session name
 @item t
@@ -5686,65 +5633,58 @@ standout
 @item B
 blinking
 @end table
-Colors are coded either as a hexadecimal number or two letters specifying
-the desired background and foreground color (in that order). The following
-colors are known:
+The  old format of specifying colors by letters (k,r,g,y,b,m,c,w) is
+now deprecated. Colors are coded as 0-7 for basic ANSI, 0-255 for 256
+color mode, or for truecolor, either a hexadecimal code starting with
+x, or HTML notation as either 3 or 6 hexadecimal digits.
+Foreground and background are specified by putting a semicolon between
+them.
+Ex: @code{#FFF;#000} or @code{i7;0} is white on a black background.
+
+The following numbers are for basic ANSI:
+
 @table @code
-@item k
+@item 0
 black
-@item r
+@item 1
 red
-@item g
+@item 2
 green
-@item y
+@item 3
 yellow
-@item b
+@item 4
 blue
-@item m
+@item 5
 magenta
-@item c
+@item 6
 cyan
-@item w
+@item 7
 white
-@item d
-default color
-@item .
-leave color unchanged
 @end table
-The capitalized versions of the letter specify bright colors. You can also
-use the pseudo-color @samp{i} to set just the brightness and leave the color
-unchanged.
 
-A one digit/letter color description is treated as foreground or
-background color dependent on the current attributes: if reverse mode is
-set, the background color is changed instead of the foreground color.
-If you don't like this, prefix the color with a @samp{.}. If you want
-the same behavior for two-letter color descriptions, also prefix them
-with a @samp{.}.
-
+You can also use the pseudo-color 'i' to set just the brightness
+and leave the color unchanged.
 As a special case, @samp{%@{-@}} restores the attributes and colors that
 were set before the last change was made (i.e. pops one level of the
 color-change stack).
 
-@noindent
 Examples:
 @table @samp
-@item G
+@item i2
 set color to bright green
 @item +b r
 use bold red
-@item = yd
-clear all attributes, write in default color on yellow background.
-@item %-Lw%@{= BW@}%50>%n%f* %t%@{-@}%+Lw%<
-The available windows centered at the current win dow and truncated to
-the available width. The current window is displayed white on blue.
+@item #F00;FFA
+write in bright red color on a pale yellow background
+@item %-Lw%@{#AAA;#006@}%50>%n%f* %t%@{-@}%+Lw%<
+The  available windows centered at the current window and truncated
+to the available width. The current window is displayed white on blue.
 This can be used with @samp{hardstatus alwayslastline}.
-@item %?%F%@{.R.@}%?%3n %t%? [%h]%?
+@item %?%F%@{;2@}%?%3n %t%? [%h]%?
 The window number and title and the window's hardstatus, if one is set.
 Also use a red background if this is the active focus.
 Useful for @samp{caption string}.
 @end table
-
 
 @node Environment, Files, String Escapes, Top
 @chapter Environment Variables
@@ -5762,9 +5702,6 @@ Number of lines on the terminal (overrides termcap entry).
 
 @item LOCKPRG
 Screen lock program.
-
-@item NETHACKOPTIONS
-Turns on @code{nethack} option.
 
 @item PATH
 Used for locating programs to run.
@@ -5787,7 +5724,7 @@ Alternate socket name. If @code{screen} is invoked, and the environment variable
 @code{STY} is set, then it creates only a window in the running @code{screen}
 session rather than starting a new session.
 
-@item SYSSCREENRC
+@item SYSTEM_SCREENRC
 Alternate system screenrc file.
 
 @item TERM
@@ -5805,12 +5742,12 @@ Window number of a window (at creation time).
 @cindex files
 
 @table @file
-@item .../screen-4.?.??/etc/screenrc
-@itemx .../screen-4.?.??/etc/etcscreenrc
+@item .../screen-5.0.0/etc/screenrc
+@itemx .../screen-5.0.0/etc/etcscreenrc
 Examples in the @code{screen} distribution package for private and
 global initialization files.
 
-@item @code{$SYSSCREENRC}
+@item @code{$SYSTEM_SCREENRC}
 @itemx /local/etc/screenrc
 @code{screen} initialization commands
 
@@ -5869,8 +5806,7 @@ Contributors @*
 ============
 
 @verbatim
-     Maarten ter Huurne <maarten@treewalker.org>,
-     Jussi Kukkonen <jussi.kukkonen@intel.com>,
+     Eric S. Raymond <esr@thyrsus.com>,
      Thomas Renninger <treen@suse.com>,
      Axel Beckert <abe@deuxchevaux.org>,
      Ken Beal <kbeal@@amber.ssd.csd.harris.com>,
@@ -5997,15 +5933,12 @@ features.
 @section Reporting Bugs
 @cindex bug report
 
-If you find a bug in @code{Screen}, please send mail to
+If you find a bug in @code{Screen}, please send electronic mail to
 @w{@samp{screen-devel@@gnu.org}}.  Include the version number
 of @code{Screen} which you are using.  Also include in your message the
 hardware and operating system, the compiler used to compile, a
 description of the bug behavior, and the conditions that triggered the
-bug. Please recompile @code{screen} with the @samp{-DDEBUG} options
-enabled, reproduce the bug, and have a look at the debug output written to
-the directory @file{/tmp/debug}. If necessary quote suspect passages from the
-debug output and show the contents of your @file{config.h} if it matters.
+bug.
 
 @node Availability,  , Reporting Bugs, Bugs
 @section Availability

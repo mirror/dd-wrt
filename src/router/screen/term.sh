@@ -16,9 +16,18 @@ cat << EOF > term.h
  * This file is automagically created from term.c -- DO NOT EDIT
  */
 
+
 #define T_FLG 0
 #define T_NUM 1
 #define T_STR 2
+
+extern int tgetent(char *, const char *);
+extern int tgetflag(char *);
+extern int tgetnum(char *);
+extern char *tgetstr(char *, char **);
+extern char *tgoto(const char *, int, int);
+extern int tputs(const char *, int, int (*)(int));
+extern char *tparm(char *str, ...);
 
 struct term
 {
@@ -32,6 +41,8 @@ union tcu
   int num;
   char *str;
 };
+
+extern struct term term[];
 
 EOF
 
@@ -76,14 +87,12 @@ nolist = 1;
 nolist = 0;
 }
 END {
-  printf "\n#ifdef MAPKEYS\n"
   printf "#  define KMAPDEFSTART %d\n", min
   printf "#  define NKMAPDEF %d\n", max-min+1
   printf "#  define KMAPADEFSTART %d\n", amin
   printf "#  define NKMAPADEF %d\n", amax-amin+1
   printf "#  define KMAPMDEFSTART %d\n", mmin
   printf "#  define NKMAPMDEF %d\n", mmax-mmin+1
-  printf "#endif\n"
 }
 ' | sed -e s/NUM/num/ -e s/STR/str/ -e s/FLG/flg/ \
 >> term.h
@@ -94,9 +103,8 @@ cat << EOF > kmapdef.c
  * This file is automagically created from term.c -- DO NOT EDIT
  */
 
-#include "config.h"
+#include "kmapdef.h"
 
-#ifdef MAPKEYS
 
 EOF
 
@@ -160,7 +168,7 @@ END {
     else
       printf "\n"
   }
-  printf "};\n\n#endif\n"
+  printf "};\n"
 }
 ' >> kmapdef.c
 

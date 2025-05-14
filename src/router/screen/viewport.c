@@ -26,104 +26,52 @@
  ****************************************************************
  */
 
-#include "config.h"
-#include "screen.h"
-#include "extern.h"
 #include "viewport.h"
 
-extern struct display *display;
+#include "screen.h"
 
-int RethinkDisplayViewports() {
-  struct canvas *cv;
-  struct viewport *vp, *vpn;
+int RethinkDisplayViewports(void) {
+	Viewport *viewport, *viewport_next;
 
-  /* free old viewports */
-  for (cv = display->d_cvlist; cv; cv = cv->c_next) {
-    for (vp = cv->c_vplist; vp; vp = vpn) {
-      vp->v_canvas = 0;
-      vpn = vp->v_next;
-      bzero((char *)vp, sizeof(*vp));
-      free(vp);
-    }
-    cv->c_vplist = 0;
-  }
-  display->d_vpxmin = -1;
-  display->d_vpxmax = -1;
+	/* free old viewports */
+	for (Canvas *canvas = display->d_cvlist; canvas; canvas = canvas->c_next) {
+		for (viewport = canvas->c_vplist; viewport; viewport = viewport_next) {
+			viewport_next = viewport->v_next;
+			memset((char *)viewport, 0, sizeof(Viewport));
+			free(viewport);
+		}
+		canvas->c_vplist = NULL;
+	}
+	display->d_vpxmin = -1;
+	display->d_vpxmax = -1;
 
-  for (cv = display->d_cvlist; cv; cv = cv->c_next) {
-    if ((vp = (struct viewport *)malloc(sizeof *vp)) == 0)
-      return -1;
-#ifdef HOLE
-    vp->v_canvas = cv;
-    vp->v_xs = cv->c_xs;
-    vp->v_ys = (cv->c_ys + cv->c_ye) / 2;
-    vp->v_xe = cv->c_xe;
-    vp->v_ye = cv->c_ye;
-    vp->v_xoff = cv->c_xoff;
-    vp->v_yoff = cv->c_yoff;
-    vp->v_next = cv->c_vplist;
-    cv->c_vplist = vp;
+	for (Canvas *canvas = display->d_cvlist; canvas; canvas = canvas->c_next) {
+		if ((viewport = malloc(sizeof(Viewport))) == NULL) {
+			return -1;
+		}
+		viewport->v_canvas = canvas;
+		viewport->v_xs = canvas->c_xs;
+		viewport->v_ys = canvas->c_ys;
+		viewport->v_xe = canvas->c_xe;
+		viewport->v_ye = canvas->c_ye;
+		viewport->v_xoff = canvas->c_xoff;
+		viewport->v_yoff = canvas->c_yoff;
+		viewport->v_next = canvas->c_vplist;
+		canvas->c_vplist = viewport;
 
-    if ((vp = (struct viewport *)malloc(sizeof *vp)) == 0)
-      return -1;
-    vp->v_canvas = cv;
-    vp->v_xs = (cv->c_xs + cv->c_xe) / 2;
-    vp->v_ys = (3 * cv->c_ys + cv->c_ye) / 4;
-    vp->v_xe = cv->c_xe;
-    vp->v_ye = (cv->c_ys + cv->c_ye) / 2 - 1;
-    vp->v_xoff = cv->c_xoff;
-    vp->v_yoff = cv->c_yoff;
-    vp->v_next = cv->c_vplist;
-    cv->c_vplist = vp;
-
-    if ((vp = (struct viewport *)malloc(sizeof *vp)) == 0)
-      return -1;
-    vp->v_canvas = cv;
-    vp->v_xs = cv->c_xs;
-    vp->v_ys = (3 * cv->c_ys + cv->c_ye) / 4;
-    vp->v_xe = (3 * cv->c_xs + cv->c_xe) / 4 - 1;
-    vp->v_ye = (cv->c_ys + cv->c_ye) / 2 - 1;
-    vp->v_xoff = cv->c_xoff;
-    vp->v_yoff = cv->c_yoff;
-    vp->v_next = cv->c_vplist;
-    cv->c_vplist = vp;
-
-    if ((vp = (struct viewport *)malloc(sizeof *vp)) == 0)
-      return -1;
-    vp->v_canvas = cv;
-    vp->v_xs = cv->c_xs;
-    vp->v_ys = cv->c_ys;
-    vp->v_xe = cv->c_xe;
-    vp->v_ye = (3 * cv->c_ys + cv->c_ye) / 4 - 1;
-    vp->v_xoff = cv->c_xoff;
-    vp->v_yoff = cv->c_yoff;
-    vp->v_next = cv->c_vplist;
-    cv->c_vplist = vp;
-#else
-    vp->v_canvas = cv;
-    vp->v_xs = cv->c_xs;
-    vp->v_ys = cv->c_ys;
-    vp->v_xe = cv->c_xe;
-    vp->v_ye = cv->c_ye;
-    vp->v_xoff = cv->c_xoff;
-    vp->v_yoff = cv->c_yoff;
-    vp->v_next = cv->c_vplist;
-    cv->c_vplist = vp;
-#endif
-
-    if (cv->c_xs < display->d_vpxmin || display->d_vpxmin == -1)
-      display->d_vpxmin = cv->c_xs;
-    if (cv->c_xe > display->d_vpxmax || display->d_vpxmax == -1)
-      display->d_vpxmax = cv->c_xe;
-  }
-  return 0;
+		if (canvas->c_xs < display->d_vpxmin || display->d_vpxmin == -1) {
+			display->d_vpxmin = canvas->c_xs;
+		}
+		if (canvas->c_xe > display->d_vpxmax || display->d_vpxmax == -1) {
+			display->d_vpxmax = canvas->c_xe;
+		}
+	}
+	return 0;
 }
 
-void RethinkViewportOffsets(struct canvas *cv)
-{
-  struct viewport *vp;
-  for (vp = cv->c_vplist; vp; vp = vp->v_next) {
-    vp->v_xoff = cv->c_xoff;
-    vp->v_yoff = cv->c_yoff;
-  }
+void RethinkViewportOffsets(Canvas *canvas) {
+	for (Viewport *viewport = canvas->c_vplist; viewport; viewport = viewport->v_next) {
+		viewport->v_xoff = canvas->c_xoff;
+		viewport->v_yoff = canvas->c_yoff;
+	}
 }

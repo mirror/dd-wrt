@@ -1,26 +1,52 @@
+Version 5.0.0 (28/08/24):
+  * Rewriten autentication mechanism
+  * Add escape %T to show current tty for window
+  * Add escape %O to show number of currently open windows
+  * Use wcwdith() instead of UTF-8 hard-coded tables
+  * New commands:
+	- auth [on|off]
+	  Provides password protection
+	- status [top|up|down|bottom] [left|right]
+	  The status window by default is in bottom-left corner.
+	  This command can move status messages to any corner of the screen.
+	- truecolor [on|off]
+	- multiinput
+	  Input to multiple windows at the same time
+  * Removed commands:
+	- time
+	- debug
+	- password
+	- maxwin
+	- nethack
+  * Fixes:
+	- Screen buffers ESC keypresses indefinitely
+	- Crashes after passing through a zmodem transfer
+	- Fix double -U issue
+
 Version 4.9.1 (20/08/2023):
   * Support stop/parity bits on serial port (#23952)
   * Add needed system headers in checks and return values
     for implicit function declarations
   * Fixes:
-    - Avoid zombies after shell exit (#25089)
-    - Missed signal sending permission check on failed
-      query messages (CVE-2023-24626)
-    - manpage fixes
-    - source code fixes during cleanup
-    - UTF-8 encoding can emit invalid UTF-8 sequences
-      for out of range unicode values (#62097)
+	- Avoid zombies after shell exit (#25089)
+	- Missed signal sending permission check on failed query
+	  messages (CVE-2023-24626)
+	- manpage fixes
+	- source code fixes during cleanup
+	- UTF-8 encoding can emit invalid UTF-8 sequences for out of
+	  range unicode values (#62097)
 
 Version 4.9.0 (30/01/2022):
   * Hardstatus option for used encoding (escape string '%e')
   * OpenBSD uses native openpty() from its utils.h
   * Fixes:
-    - fix combining char handling that could lead to a segfault
-    - CVE-2021-26937: possible denial of service via a crafted UTF-8 character sequence (bug #60030)
-    - make screen exit code be 0 when checking --help
-    - session names limit is 80 symbols (bug #61534)
-    - option -X ignores specified user in multiuser env (bug #37437)
-    - a lot of reformations/fixes/cleanups (man page and source code)
+	- fix combining char handling that could lead to a segfault
+	- CVE-2021-26937: possible denial of service via a crafted
+	  UTF-8 character sequence (bug #60030)
+	- make screen exit code be 0 when checking --help
+	- session names limit is 80 symbols (bug #61534)
+	- option -X ignores specified user in multiuser env (bug #37437)
+	- a lot of reformations/fixes/cleanups (man page and source code)
 
 Version 4.8.0 (05/02/2020):
   * Improve startup time by only polling for files to close
@@ -101,7 +127,8 @@ Version 4.2.0 (17/04/2014):
   New Commands:
   * 'unbindall' to unbind all commands
   * 'up', 'down', 'left', 'right' sub-commands for 'focus'
-  * 'rendition' to specify rendition to use in caption/hardstatus for window-names that have bell/monitor/silence/so turned on.
+  * 'rendition' to specify rendition to use in caption/hardstatus for
+     window-names that have bell/monitor/silence/so turned on.
   * 'layout', with the following sub-commands
 	- 'title'
 	- 'number'
@@ -134,8 +161,8 @@ Version 4.2.0 (17/04/2014):
 	'digraph >= ≥' or 'digraph >= U+2265'
     Using '0' as the second parameter will remove the digraph.
   * 'stuff' will prompt for input if there's nothing to stuff.
-  * The argument to ":number" can be prefixed with '+' or '-' to use it as a
-    relative argument.
+  * The argument to ":number"
+    can be prefixed with '+' or '-' to use it as a relative argument.
   * '-g' parameter to 'windowlist' to show nested list of windows.
   * '//group' parameter to 'screen' to create a grouped window.
   * 'blankerprg' shows the currently set command on no argument.

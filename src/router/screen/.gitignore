@@ -17,5 +17,5 @@ kmapdef.c
 osdef.h
 term.h
 screen
+screen.exe
 stamp-h.in
-tty.c

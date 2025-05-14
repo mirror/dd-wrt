@@ -1,5 +1,5 @@
 .\" vi:set wm=5
-.TH SCREEN 1 "2023 Aug 20" "GNU Screen 4.9.1"
+.TH SCREEN 1 "Aug 2024" "GNU Screen 5.0.0"
 .
 .
 .SH NAME
@@ -299,6 +299,13 @@ selects the blank window. As a special case for reattach, \*Q=\*U
 brings up the windowlist on the blank window, while a \*Q+\*U
 will create a new window. The command will not be
 executed if the specified window could not be found.
+.TP 5
+.B \-P
+Turns authentication on. By default
+.I screen
+allows to attach without enter the user's password.
+This option changes this behavior, i.e. enables authentication.
+The same effect can be done by using "auth on" command.
 .TP 5
 .B \-q
 Suppress printing of error messages. In combination with \*Q-ls\*U the exit 
@@ -639,14 +646,6 @@ Split the current region horizontally into two new ones.
 See also \fIonly, remove, focus\fP.
 T}
 _
-T{
-C-a t,
-.br
-C-a C-t
-T};(time);T{
-Show system information.
-T}
-_
 C-a v;(version);T{
 Display the version and compilation date.
 T}
@@ -654,6 +653,7 @@ _
 C-a C-v;(digraph);T{
 Enter digraph.
 T}
+_
 T{
 C-a w,
 .br
@@ -1013,6 +1013,14 @@ already.
 attrcolor i "+b"
 .PP
 Make bright colored text also bold.
+.RE
+.TP
+.BR "auth [ on | off ]"
+.RS 0
+.PP
+This command enables/disables password protection for the
+.I screen
+session. It is off by default (authentication is disabled).
 .RE
 .TP
 .BR "autodetach [ on | off ]"
@@ -1653,17 +1661,6 @@ This affects the copying of text regions with the `C-a [' command. If it is set
 to `on', lines will be separated by the two character sequence `CR' - `LF'. 
 Otherwise (default) only `LF' is used.
 When no parameter is given, the state is toggled.
-.RE
-.TP
-.BR "debug [ on | off ]"
-.RS 0
-.PP
-Turns runtime debugging on or off. If 
-.I screen
-has been compiled with option \-DDEBUG debugging available and is turned on per
-default. Note that this command only affects debugging output from the main 
-\*QSCREEN\*U process correctly. Debug output from attacher processes can only
-be turned off once and forever.
 .RE
 .TP
 .BR "defc1 [ on | off ]"
@@ -2775,14 +2772,6 @@ As shown in this example, multiple keys can be assigned to one function in a
 single statement.
 .RE
 .TP
-.BI "maxwin " num
-.RS 0
-.PP
-Set the maximum window number screen will create. Doesn't affect
-already existing windows. The number can be increased only when there are no
-existing windows.
-.RE
-.TP
 .B meta
 .RS 0
 .PP
@@ -2840,24 +2829,6 @@ operation is singleuser. In multiuser mode the commands `acladd',
 can be used to enable (and disable) other users accessing this 
 .I screen
 session. 
-.RE
-.TP
-.BR "nethack [ on | off ]"
-.RS 0
-.PP
-Changes the kind of error messages used by
-.IR screen .
-When you are familiar with the game \*Qnethack\*U, you may enjoy the
-nethack-style messages which will often blur the facts a little, but are
-much funnier to read. Anyway, standard messages often tend to be unclear as
-well.
-.br
-This option is only available if
-.I screen
-was compiled with the NETHACK flag defined. The
-default setting is then determined by the presence of the environment 
-variable $NETHACKOPTIONS and the file ~/.nethackrc - if either one is present,
-the default is \fBon\fP.
 .RE
 .TP
 .B next
@@ -3258,8 +3229,7 @@ When a new window is established, the first available number
 is assigned to this window.
 Thus, the first window can be activated by \*Qselect 0\*U.
 The number of windows is set by the MAXWIN
-configuration parameter (which defaults to 100),
-but it can be changed by using `maxwin' command.
+configuration parameter (which defaults to 100).
 There are two special WindowIDs, \*Q\-\*U selects the
 internal blank window and \*Q.\*U selects the current window. The
 latter is useful if used with screen's \*Q\-X\*U option.
@@ -3584,19 +3554,6 @@ See the discussion on the \*QVIRTUAL TERMINAL\*U in this manual, and the termcap
 man page for more information on termcap definitions.
 .RE
 .TP
-.B time
-.RI [ string ]
-.RS 0
-.PP
-Uses the message line to display the time of day, the host name, and the load
-averages over 1, 5, and 15 minutes (if this is available on your system).
-For window specific information, use \*Qinfo\*U.
-
-If a string is specified, it changes the format of the time report like it is
-described in the \*QSTRING ESCAPES\*U chapter. Screen uses a default of
-"%c:%s %M %d %H%? %l%?".
-.RE
-.TP
 .BR "title " [ \fIwindowtitle ]
 .RS 0
 .PP
@@ -3605,6 +3562,16 @@ specified,
 .I screen
 prompts for one. This command was known as `aka' in previous
 releases.
+.RE
+.TP
+.BR "truecolor " [ on | off ]
+.RS 0
+.PP
+Enables truecolor support. Currently autodetection of truecolor support cannot
+be done reliably, as such it's left to user to enable. Default is off.
+Known terminals that may support it are: iTerm2, Konsole, st.
+Xterm includes support for truecolor escapes but converts them back to indexed
+256 color space.
 .RE
 .TP
 .BI "unbindall "
@@ -4064,6 +4031,20 @@ is used instead.
 Here is the full list of supported escapes:
 .IP %
 the escape character itself
+.IP A
+AM or PM. 'AM' stands for the Latin 'ante meridiem', translating to
+"before midday". This is the time before noon. 'PM' stands for post
+meridiem or 'after midday' – the time after noon.
+.IP a
+the same as 'A', but written in small letters: 'am' or 'pm'.
+.IP C
+12 hours time format like 1:48
+.IP c
+the same like 'C', but uses 24 hours time format (for example, 13:48)
+.IP D
+day of the week (for example, Mon, Wed, Fri)
+.IP d
+day of the month (number).
 .IP E
 sets %? to true if the escape character has been pressed.
 .IP e
@@ -4076,6 +4057,12 @@ sets %? to true if the window has the focus
 hardstatus of the window
 .IP H
 hostname of the system
+.IP O
+The count of screen windows. Prefix with '-' to limit to current window group.
+.IP M
+name of the month (for example, Aug, Dec)
+.IP m
+month of the year (number)
 .IP n
 window number
 .IP P
@@ -4098,6 +4085,10 @@ all window numbers and names except the current one
 the executed command including arguments running in this windows
 .IP X
 the executed command without arguments running in this windows
+.IP Y
+year (four numbers like '2024')
+.IP y
+last two digits of the year (for example, '24')
 .IP ?
 the part to the next '%?' is displayed only if a '%' escape
 inside the part expands to a non-empty string
@@ -4163,64 +4154,57 @@ bold
 .IP r
 reverse
 .IP s
-/standout
+standout
 .IP B
 blinking
 .PD
 .PP
-Colors are coded either as a hexadecimal number or two letters specifying
-the desired background and foreground color (in that order). The following
-colors are known:
-.IP k
+The old format of specifying colors by letters (k,r,g,y,b,m,c,w) is now
+deprecated. Colors are coded as 0-7 for basic ANSI, 0-255 for 256 color
+mode, or for truecolor, either a hexadecimal code starting with x, or
+HTML notation as either 3 or 6 hexadecimal digits. Foreground and background
+are specified by putting a semicolon between them. Ex: \*Q#FFF;#000\*U or
+\*Qi7;0\*U is white on a black background.
+.PP
+The following numbers are for basic ANSI:
+.IP 0
 black
 .PD 0
-.IP r
+.IP 1
 red
-.IP g
+.IP 2
 green
-.IP y
+.IP 3
 yellow
-.IP b
+.IP 4
 blue
-.IP m
+.IP 5
 magenta
-.IP c
+.IP 6
 cyan
-.IP w
+.IP 7
 white
-.IP d
-default color
-.IP .
-leave color unchanged
 .PD
 .PP
-The capitalized versions of the letter specify bright colors. You can also
-use the pseudo-color 'i' to set just the brightness and leave the color
-unchanged.
-.br
-A one digit/letter color description is treated as foreground or
-background color dependent on the current attributes: if reverse mode is
-set, the background color is changed instead of the foreground color.
-If you don't like this, prefix the color with a \*Q.\*U. If you want
-the same behavior for two-letter color descriptions, also prefix them
-with a \*Q.\*U.
+You can also use the pseudo-color 'i' to set just the brightness and
+leave the color unchanged.
 .br
 As a special case, \*Q%{\-}\*U restores the attributes and colors that
 were set before the last change was made (i.e., pops one level of the
 color-change stack).
 .PP
 Examples:
-.IP "\*QG\*U"
+.IP "\*Qi2\*U"
 set color to bright green
 .IP "\*Q+b r\*U"
 use bold red
-.IP "\*Q= yd\*U"
-clear all attributes, write in default color on yellow background.
-.IP "%\-Lw%{= BW}%50>%n%f* %t%{\-}%+Lw%<"
+.IP "\*Q#F00;FFA\*U"
+write in bright red color on a pale yellow background.
+.IP "%\-Lw%{#AAA;#006}%50>%n%f* %t%{\-}%+Lw%<"
 The available windows centered at the current window and truncated to
 the available width. The current window is displayed white on blue.
 This can be used with \*Qhardstatus alwayslastline\*U.
-.IP "%?%F%{.R.}%?%3n %t%? [%h]%?"
+.IP "%?%F%{;2}%?%3n %t%? [%h]%?"
 The window number and title and the window's hardstatus, if one is set.
 Also use a red background if this is the active focus. Useful for
 \*Qcaption string\*U.
@@ -5180,8 +5164,6 @@ Directory in which to look for .screenrc.
 Number of lines on the terminal (overrides termcap entry).
 .IP LOCKPRG
 Screen lock program.
-.IP NETHACKOPTIONS
-Turns on nethack option.
 .IP PATH
 Used for locating programs to run.
 .IP SCREENCAP
@@ -5206,12 +5188,12 @@ Window number of a window (at creation time).
 
 .SH FILES
 .PD 0
-.IP .../screen-4.?.??/etc/screenrc 34
-.IP .../screen-4.?.??/etc/etcscreenrc
+.IP .../screen-5.0.0/etc/screenrc 34
+.IP .../screen-5.0.0/etc/etcscreenrc
 Examples in the 
 .I screen
 distribution package for private and global initialization files.
-.IP $SYSSCREENRC 
+.IP $SYSSCREENRC
 .IP /usr/local/etc/screenrc
 .I screen
 initialization commands
@@ -5219,7 +5201,7 @@ initialization commands
 .IP $HOME/.screenrc
 Read in after /usr/local/etc/screenrc
 .IP $SCREENDIR/S\-<login>
-.IP /local/screens/S\-<login>
+.IP $HOME/.screen
 Socket directories (default)
 .IP /usr/tmp/screens/S\-<login>
 Alternate socket directories.
@@ -5252,7 +5234,7 @@ and Alexander Naumov <alexander_naumov@opensuse.org>.
 
 .SH COPYLEFT
 .nf
-Copyright (c) 2018-2023
+Copyright (c) 2018-2024
 	Alexander Naumov <alexander_naumov@opensuse.org>
 	Amadeusz Slawinski <amade@asmblr.net>
 Copyright (c) 2015-2017
@@ -5273,24 +5255,10 @@ Copyright (C) 1993-2003
 Copyright (C) 1987 Oliver Laumann
 .fi
 
-.PP
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 3, or (at your option)
-any later version.
-.PP
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-.PP
-You should have received a copy of the GNU General Public License
-along with this program (see the file COPYING); if not, write to the
-Free Software Foundation, Inc.,
-59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
-
 .SH CONTRIBUTORS
 .nf
+Elizaveta Sytsevich <elipandasyts@gmail.com>,
+Julian Kolesnikov <julyfortune101@gmail.com>,
 Vincent Lefevre <vincent@vinc17.net>,
 Carl Drougge <bearded@longhaired.org>,
 Maarten ter Huurne <maarten@treewalker.org>,
@@ -5384,9 +5352,6 @@ To detach a
 .I screen
 session use the \-D or \-d command line option.
 .IP \(bu
-If a password is set, the command line options \-d and \-D still detach a
-session without asking.
-.IP \(bu
 Both \*Qbreaktype\*U and \*Qdefbreaktype\*U change the break generating
 method used by all terminal devices. The first should change a window
 specific setting, where the latter should change only the default for new 
@@ -5397,9 +5362,6 @@ sourced. Each user's personal settings have to be included in the .screenrc
 file from which the session is booted, or have to be changed manually.
 .IP \(bu
 A weird imagination is most useful to gain full advantage of all the features.
-.PP
-Send bug-reports, fixes, enhancements, t-shirts, money, beer & pizza to
-.BR screen-devel@gnu.org .
 
 .SH "SEE ALSO"
 .BR termcap(5),

@@ -19,14 +19,19 @@ cat << EOF > comm.h
  * This file is automagically created from comm.c -- DO NOT EDIT
  */
 
+#ifndef SCREEN_COMM_H
+#define SCREEN_COMM_H
+
+#include "acls.h"
+
 struct comm
 {
   char *name;
   int flags;
-#ifdef MULTIUSER
   AclBits userbits[ACL_BITS_PER_CMD];
-#endif
 };
+
+extern struct comm comms[];
 
 #define ARGS_MASK	(3)
 
@@ -71,6 +76,8 @@ struct action
 
 #define RC_ILLEGAL -1
 
+#endif /* SCREEN_COMM_H */
+
 EOF
 $AWK < ${srcdir}/comm.c >> comm.h '
 /^  [{] ".*/	{   if (old > $2) {
@@ -81,7 +88,7 @@ $AWK < ${srcdir}/comm.c >> comm.h '
 	}
 '
 
-$CC -E -I. -I${srcdir} ${srcdir}/comm.c > comm.cpp
+$CC -E -I. -I${srcdir} ${srcdir}/comm.c > comm.cpp || exit $?
 sed < comm.cpp \
   -n \
   -e '/^ *{ "/y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/' \

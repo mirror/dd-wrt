@@ -1,7 +1,7 @@
 #
 # Makefile template for screen 
 #
-# See machine dependent config.h for more configuration options.
+# See machine dependant config.h for more configuration options.
 #
 
 srcdir = @srcdir@
@@ -19,22 +19,21 @@ datadir = @datadir@
 # don't forget to change mandir and infodir in doc/Makefile.
 bindir  = $(exec_prefix)/bin
 
-VERSION = @VERSION@
+VERSION = @PACKAGE_VERSION@
 SCREEN = screen-$(VERSION)
 
-GIT_REV = 
-DEFS = @DEFS@ -DGIT_REV=\"$(GIT_REV)\"
-
-ETCSCREENRC = @ETCSCREENRC@
-ifeq (${ETCSCREENRC}, )
-ETCSCREENRC=$(prefix)/etc/screenrc
+DATE_FMT = %Y-%m-%d %H:%m:%S
+ifdef SOURCE_DATE_EPOCH
+    BUILD_DATE := $(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+$(DATE_FMT)"  2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+$(DATE_FMT)" 2>/dev/null || date -u "+$(DATE_FMT)")
+else
+    BUILD_DATE := $(shell date "+$(DATE_FMT)")
 endif
+
 SCREENENCODINGS = $(datadir)/screen/utf8encodings
 
 CC = @CC@
-CFLAGS = @CFLAGS@
-CPPFLAGS = @CPPFLAGS@ -DETCSCREENRC='"$(ETCSCREENRC)"' \
-           -DSCREENENCODINGS='"$(SCREENENCODINGS)"'
+CFLAGS = @CFLAGS@ -Wall -Wextra -std=c17
+CPPFLAGS = @CPPFLAGS@ -iquote. -DSCREENENCODINGS='"$(SCREENENCODINGS)"' -DBUILD_DATE='"$(BUILD_DATE)"'
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 
@@ -47,31 +46,19 @@ INSTALL_DATA = @INSTALL_DATA@
 
 AWK = @AWK@
 
-### Chose some debug configuration options:
-# -DDEBUG
-#	Turn on really heavy debug output. This is written to 
-#	/tmp/debug/{SCREEN,screen}.<pid>. Look at these files and quote 
-#	questionable sections when sending bug-reports to the author.
-# -DDUMPSHADOW
-#	With shadow-pw screen would never dump core. Use this option if
-#	you still want to have a core. Use only for debugging.
-OPTIONS=
-#OPTIONS= -DDEBUG
-
 SHELL=/bin/sh
 
-CFILES=	screen.c ansi.c fileio.c mark.c misc.c resize.c socket.c \
-	search.c tty.c term.c window.c utmp.c loadav.c putenv.c help.c \
-	termcap.c input.c attacher.c pty.c process.c display.c comm.c \
-	kmapdef.c acls.c braille.c braille_tsi.c logfile.c layer.c \
-	sched.c teln.c nethack.c encoding.c canvas.c layout.c viewport.c \
-	list_display.c list_generic.c list_window.c
-OFILES=	screen.o ansi.o fileio.o mark.o misc.o resize.o socket.o \
-	search.o tty.o term.o window.o utmp.o loadav.o putenv.o help.o \
-	termcap.o input.o attacher.o pty.o process.o display.o comm.o \
-	kmapdef.o acls.o braille.o braille_tsi.o logfile.o layer.o \
-	list_generic.o list_display.o list_window.o \
-	sched.o teln.o nethack.o encoding.o canvas.o layout.o viewport.o
+CFILES=	screen.c \
+	acls.c ansi.c attacher.c backtick.c canvas.c comm.c \
+	display.c encoding.c fileio.c help.c input.c kmapdef.c layer.c \
+	layout.c list_display.c list_generic.c list_license.o list_window.c logfile.c mark.c \
+	misc.c process.c pty.c resize.c sched.c search.c socket.c telnet.c \
+	term.c termcap.c tty.c utmp.c viewport.c window.c winmsg.c \
+	winmsgbuf.c winmsgcond.c
+OFILES=$(CFILES:c=o)
+
+TESTCFILES := $(wildcard tests/test-*.c)
+TESTBIN := $(TESTCFILES:.c=)
 
 all:	screen
 
@@ -79,10 +66,17 @@ screen: $(OFILES)
 	$(CC) $(LDFLAGS) -o $@ $(OFILES) $(LIBS)
 
 .c.o:
-	$(CC) -c $(M_CFLAGS) $(CPPFLAGS) $(DEFS) \
-	    $(OPTIONS) $(CFLAGS) $<
+	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 
-install_bin: .version screen installdirs
+check: $(TESTBIN)
+	for f in $(TESTBIN); do \
+		echo "$$f"; \
+		"$$f" || exit $$?; \
+	done
+tests/test-%: tests/test-%.c %.o tests/mallocmock.o tests/macros.h tests/signature.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -o $@ $*.o tests/mallocmock.o
+
+install_bin: screen installdirs
 	-if [ -f $(DESTDIR)$(bindir)/$(SCREEN) ] && [ ! -f $(DESTDIR)$(bindir)/$(SCREEN).old ]; \
 		then mv $(DESTDIR)$(bindir)/$(SCREEN) $(DESTDIR)$(bindir)/$(SCREEN).old; fi
 	$(INSTALL_PROGRAM) screen $(DESTDIR)$(bindir)/$(SCREEN)
@@ -110,34 +104,20 @@ installdirs:
 	$(srcdir)/etc/mkinstalldirs $(DESTDIR)$(bindir) $(DESTDIR)$(SCREENENCODINGS)
 	cd doc ; $(MAKE) installdirs
 
-uninstall: .version
+uninstall:
 	rm -f $(DESTDIR)$(bindir)/$(SCREEN)
 	rm -f $(DESTDIR)$(bindir)/screen
 	-mv $(DESTDIR)$(bindir)/screen.old $(DESTDIR)$(bindir)/screen
 	rm -f $(DESTDIR)$(ETCSCREENRC)
 	cd doc; $(MAKE) uninstall
 
-shadow:
-	mkdir shadow;
-	cd shadow; ln -s ../*.[ch] ../*.in ../*.sh ../configure ../doc ../terminfo ../etc .
-	rm -f shadow/term.h shadow/tty.c shadow/comm.h shadow/osdef.h
-	echo "install all Makefiles and config:" > shadow/Makefile
-	echo "	rm -f config.cache" >> shadow/Makefile
-	echo "	sh ./configure" >> shadow/Makefile
-	
 term.h: term.c term.sh
 	AWK=$(AWK) srcdir=$(srcdir) sh $(srcdir)/term.sh
 
 kmapdef.c: term.h
 
-tty.c:	tty.sh 
-	sh $(srcdir)/tty.sh tty.c
-
-comm.h: comm.c comm.sh config.h
+comm.h: comm.c comm.sh config.h term.h
 	AWK=$(AWK) CC="$(CC) $(CFLAGS)" srcdir=${srcdir} sh $(srcdir)/comm.sh
-
-osdef.h: osdef.sh config.h osdef.h.in
-	CPP="$(CPP) $(CPPFLAGS)" srcdir=${srcdir} sh $(srcdir)/osdef.sh
 
 docs:
 	cd doc; $(MAKE) dvi screen.info
@@ -146,110 +126,19 @@ dvi info screen.info:
 	-cd doc; $(MAKE) $@
 
 mostlyclean:
-	rm -f $(OFILES) screen config.cache osdef0.c osdef1.sed osdef2.sed
+	rm -f $(OFILES) screen config.cache
 
-clean celan: mostlyclean
-	rm -f tty.c term.h comm.h osdef.h kmapdef.c core
-
-# Delete all files from the current directory that are created by 
-# configuring or building the program.
-# building of term.h/comm.h requires awk. Keep it in the distribution
-# we keep config.h, as this file knows where 'make dist' finds the ETCSCREENRC.
-#distclean:	mostlyclean
-#	rm -f $(SCREEN).tar $(SCREEN).tar.gz
-#	rm -f config.status Makefile
-#	rm -f osdef.h doc/Makefile
-
-maintainer-clean:
-	@echo "This command is not even intended for maintainers to use;"
-	@echo "it deletes files that may require special tools to rebuild."
-
+clean: mostlyclean
+	rm -f term.h comm.h kmapdef.c core
 
 # Delete everything from the current directory that can be
 # reconstructed with this Makefile.
-realclean: .version mostlyclean
+distclean: mostlyclean
 	rm -f $(SCREEN).tar $(SCREEN).tar.gz
 	rm -f config.status Makefile doc/Makefile
-	rm -f tty.c term.h comm.h osdef.h kmapdef.c
+	rm -f term.h comm.h kmapdef.c
 	rm -f config.h
-	echo "install all Makefiles and config:" > Makefile
-	echo "  sh ./configure" >> Makefile
-
-tags TAGS: $(CFILES)
-	-ctags    *.sh $(CFILES) *.h
-	-etags    *.sh $(CFILES) *.h
-
-dist: .version $(SCREEN).tar.gz
-
-$(SCREEN).tar: .version term.h comm.h tty.c kmapdef.c
-	-rm -rf dist
-	mkdir dist
-	mkdir dist/$(SCREEN)
-	ln acls.h ansi.h display.h extern.h logfile.h mark.h os.h \
-	   layer.h patchlevel.h screen.h window.h image.h \
-	   osdef.h.in term.sh tty.sh comm.sh osdef.sh braille.h \
-	   sched.h \
-	   $(CFILES) \
-	   ChangeLog COPYING INSTALL NEWS* TODO install.sh \
-	   dist/$(SCREEN)
-	cd dist/$(SCREEN); mv tty.c tty.c.dist
-	cd dist/$(SCREEN); mv kmapdef.c kmapdef.c.dist
-	ln configure.in configure dist/$(SCREEN)
-	sed -e 's@"/local/screens@"/tmp/screens@' -e 's@"/local@"/usr/local@g' < config.h.in > dist/$(SCREEN)/config.h.in
-	sed -e 's@[	 ]/local@ /usr/local@g' -e 's/^CFLAGS = -g/CFLAGS = -O/' < Makefile.in > dist/$(SCREEN)/Makefile.in
-	ln term.h dist/$(SCREEN)/term.h.dist
-	ln comm.h dist/$(SCREEN)/comm.h.dist
-	ln README dist/$(SCREEN)/README
-	mkdir dist/$(SCREEN)/terminfo
-	cd terminfo; ln 8bits README checktc.c screencap \
-	  screeninfo.src test.txt tetris.c \
-	  ../dist/$(SCREEN)/terminfo
-	mkdir dist/$(SCREEN)/etc
-	cd etc; ln * ../dist/$(SCREEN)/etc
-	mkdir dist/$(SCREEN)/utf8encodings
-	cd utf8encodings; ln * ../dist/$(SCREEN)/utf8encodings
-	# sed -e 's/^startup/#startup/' -e 's/^autodetach/#autodetach/' < $(ETCSCREENRC) > dist/$(SCREEN)/etc/etcscreenrc 
-	cp $(HOME)/.screenrc dist/$(SCREEN)/etc/screenrc
-	mkdir dist/$(SCREEN)/doc
-	sed -e 's@/local/emacs@/usr/local@g' < doc/Makefile.in > dist/$(SCREEN)/doc/Makefile.in
-	cd doc; ln FAQ README.DOTSCREEN screen.1 screen.texinfo fdpat.ps make.help window_to_display.ps \
-	  ../dist/$(SCREEN)/doc
-	cd doc; if test -f screen.info; then ln screen.info* \
-	   ../dist/$(SCREEN)/doc; fi
-	cd dist/$(SCREEN)/doc; ln -s ../install.sh .
-	cd dist/$(SCREEN); ln -s doc/FAQ .
-	echo "install all Makefiles and config:" > dist/$(SCREEN)/Makefile
-	echo "	rm -f config.cache" >> dist/$(SCREEN)/Makefile
-	echo "	sh ./configure"     >> dist/$(SCREEN)/Makefile
-	cd dist; tar cf ../$(SCREEN).tar $(SCREEN)
-	rm -rf dist
-
-$(SCREEN).tar.gz: $(SCREEN).tar
-	gzip -nf $(SCREEN).tar || gzip -f $(SCREEN).tar
-
-# Perform self-tests (if any).
-check:
-
-lint:
-	lint -I. $(CFILES)
-
-saber:
-	#load $(CFLAGS) screen.c ansi.c $(LIBS)
-
-config:
-	rm -f config.cache
-	sh ./configure
-
-
-###############################################################################
-
-.version:
-	@rev=`sed < $(srcdir)/patchlevel.h -n -e '/#define REV/s/#define REV  *//p'`; \
-	vers=`sed < $(srcdir)/patchlevel.h -n -e '/#define VERS/s/#define VERS  *//p'`; \
-	pat=`sed < $(srcdir)/patchlevel.h -n -e '/#define PATCHLEVEL/s/#define PATCHLEVEL  *//p'`; \
-	if [ "$${rev}.$${vers}.$${pat}" != "$(VERSION)" ]; then \
-	echo "This distribution is screen-$${rev}.$${vers}.$${pat}, but"; \
-	echo "the Makefile is from $(VERSION). Please update!"; exit 1; fi
+	rm -rf autom4te.cache
 
 ###############################################################################
 
@@ -278,79 +167,117 @@ depend.in: $(CFILES) term.h
 ###############################################################################
 
 ### Dependencies:
-screen.o: layout.h viewport.h canvas.h screen.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h braille.h \
- patchlevel.h logfile.h extern.h
-ansi.o: layout.h viewport.h canvas.h ansi.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h braille.h extern.h \
+screen.o: screen.c config.h screen.h os.h ansi.h sched.h acls.h comm.h \
+ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
+ logfile.h winmsg.h winmsgbuf.h winmsgcond.h backtick.h \
+ fileio.h mark.h attacher.h encoding.h help.h misc.h process.h socket.h \
+ termcap.h tty.h utmp.h
+ansi.o: ansi.c config.h screen.h os.h ansi.h sched.h acls.h comm.h \
+ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
+ logfile.h winmsg.h winmsgbuf.h winmsgcond.h backtick.h encoding.h \
+ fileio.h help.h mark.h misc.h process.h resize.h
+fileio.o: fileio.c config.h screen.h os.h ansi.h sched.h acls.h comm.h \
+ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
+ logfile.h fileio.h misc.h process.h winmsgbuf.h termcap.h encoding.h
+mark.o: mark.c config.h screen.h os.h ansi.h sched.h acls.h comm.h \
+ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
+ logfile.h encoding.h fileio.h mark.h process.h winmsgbuf.h search.h
+misc.o: misc.c config.h screen.h os.h ansi.h sched.h acls.h comm.h \
+ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
  logfile.h
-fileio.o: layout.h viewport.h canvas.h fileio.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h extern.h
-mark.o: layout.h viewport.h canvas.h mark.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h mark.h extern.h
-misc.o: layout.h viewport.h canvas.h misc.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h extern.h
-resize.o: layout.h viewport.h canvas.h resize.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h extern.h
-socket.o: layout.h viewport.h canvas.h socket.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h extern.h
-search.o: layout.h viewport.h canvas.h search.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h mark.h extern.h
-tty.o: layout.h viewport.h canvas.h tty.c config.h screen.h os.h osdef.h ansi.h acls.h comm.h \
- layer.h term.h image.h display.h window.h extern.h
-term.o: layout.h viewport.h canvas.h term.c term.h
-window.o: layout.h viewport.h canvas.h window.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h extern.h logfile.h
-utmp.o: layout.h viewport.h canvas.h utmp.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h extern.h
-loadav.o: layout.h viewport.h canvas.h loadav.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h extern.h
-putenv.o: layout.h viewport.h canvas.h putenv.c config.h
-help.o: layout.h viewport.h canvas.h help.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h extern.h list_generic.h
-termcap.o: layout.h viewport.h canvas.h termcap.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h extern.h
-input.o: layout.h viewport.h canvas.h input.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h extern.h
-attacher.o: layout.h viewport.h canvas.h attacher.c config.h screen.h os.h osdef.h ansi.h \
- acls.h comm.h layer.h term.h image.h display.h window.h extern.h
-pty.o: layout.h viewport.h canvas.h pty.c config.h screen.h os.h osdef.h ansi.h acls.h comm.h \
- layer.h term.h image.h display.h window.h extern.h
-process.o: layout.h viewport.h canvas.h process.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h extern.h logfile.h
-display.o: layout.h viewport.h canvas.h display.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h extern.h braille.h
-canvas.o: layout.h viewport.h canvas.h canvas.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h extern.h \
- braille.h
-comm.o: layout.h viewport.h canvas.h comm.c config.h acls.h comm.h
-kmapdef.o: layout.h viewport.h canvas.h kmapdef.c config.h
-acls.o: layout.h viewport.h canvas.h acls.c config.h screen.h os.h osdef.h ansi.h acls.h comm.h \
- layer.h term.h image.h display.h window.h extern.h
-braille.o: layout.h viewport.h canvas.h braille.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h extern.h braille.h
-braille_tsi.o: layout.h viewport.h canvas.h braille_tsi.c config.h screen.h os.h osdef.h ansi.h \
- acls.h comm.h layer.h term.h image.h display.h window.h extern.h \
- braille.h
-logfile.o: layout.h viewport.h canvas.h logfile.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h extern.h logfile.h
-layer.o: layout.h viewport.h canvas.h layer.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h extern.h
-sched.o: layout.h viewport.h canvas.h sched.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h extern.h logfile.h
-teln.o: layout.h viewport.h canvas.h teln.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h extern.h
-nethack.o: layout.h viewport.h canvas.h nethack.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h extern.h
-encoding.o: layout.h viewport.h canvas.h encoding.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h extern.h
-layout.o: layout.h viewport.h canvas.h layout.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h extern.h \
- braille.h
-viewport.o: layout.h viewport.h canvas.h viewport.c config.h screen.h os.h osdef.h ansi.h acls.h \
- comm.h layer.h term.h image.h display.h window.h extern.h \
- braille.h
-list_generic.o: list_generic.h list_generic.c layer.h screen.h osdef.h
-list_display.o: list_generic.h list_display.c layer.h screen.h osdef.h
-list_window.o: list_generic.h list_window.c window.h layer.h screen.h osdef.h comm.h
-
+resize.o: resize.c config.h screen.h os.h ansi.h sched.h acls.h comm.h \
+ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
+ logfile.h process.h winmsgbuf.h resize.h telnet.h
+socket.o: socket.c config.h screen.h os.h ansi.h sched.h acls.h comm.h \
+ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
+ logfile.h encoding.h fileio.h list_generic.h misc.h process.h \
+ winmsgbuf.h resize.h socket.h termcap.h tty.h utmp.h
+search.o: search.c config.h screen.h os.h ansi.h sched.h acls.h comm.h \
+ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
+ logfile.h mark.h input.h
+tty.o: tty.c config.h screen.h os.h ansi.h sched.h acls.h comm.h layer.h \
+ term.h image.h canvas.h display.h layout.h viewport.h window.h logfile.h \
+ fileio.h misc.h pty.h telnet.h tty.h
+term.o: term.c term.h
+window.o: window.c config.h screen.h os.h ansi.h sched.h acls.h comm.h \
+ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
+ logfile.h winmsg.h winmsgbuf.h winmsgcond.h backtick.h fileio.h help.h \
+ input.h mark.h misc.h process.h pty.h resize.h telnet.h termcap.h tty.h \
+ utmp.h
+utmp.o: utmp.c config.h screen.h os.h ansi.h sched.h acls.h comm.h \
+ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
+ logfile.h misc.h tty.h utmp.h
+help.o: help.c config.h screen.h os.h ansi.h sched.h acls.h comm.h \
+ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
+ logfile.h misc.h list_generic.h process.h winmsgbuf.h
+termcap.o: termcap.c config.h screen.h os.h ansi.h sched.h acls.h comm.h \
+ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
+ logfile.h encoding.h misc.h process.h winmsgbuf.h resize.h termcap.h
+input.o: input.c config.h screen.h os.h ansi.h sched.h acls.h comm.h \
+ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
+ logfile.h misc.h
+attacher.o: attacher.c config.h screen.h os.h ansi.h sched.h acls.h \
+ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
+ window.h logfile.h misc.h socket.h tty.h
+pty.o: pty.c config.h screen.h os.h ansi.h sched.h acls.h comm.h layer.h \
+ term.h image.h canvas.h display.h layout.h viewport.h window.h logfile.h
+process.o: process.c config.h screen.h os.h ansi.h sched.h acls.h comm.h \
+ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
+ logfile.h winmsg.h winmsgbuf.h winmsgcond.h backtick.h encoding.h \
+ fileio.h help.h input.h kmapdef.h list_generic.h mark.h misc.h process.h \
+ resize.h search.h socket.h telnet.h termcap.h tty.h utmp.h
+display.o: display.c config.h screen.h os.h ansi.h sched.h acls.h comm.h \
+ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
+ logfile.h winmsg.h winmsgbuf.h winmsgcond.h backtick.h encoding.h mark.h \
+ misc.h process.h pty.h resize.h termcap.h tty.h
+comm.o: comm.c config.h os.h screen.h ansi.h sched.h acls.h comm.h \
+ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
+ logfile.h
+kmapdef.o: kmapdef.c config.h
+acls.o: acls.c config.h screen.h os.h ansi.h sched.h acls.h comm.h \
+ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
+ logfile.h mark.h misc.h process.h winmsgbuf.h
+logfile.o: logfile.c config.h screen.h os.h ansi.h sched.h acls.h comm.h \
+ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
+ logfile.h misc.h
+layer.o: layer.c config.h screen.h os.h ansi.h sched.h acls.h comm.h \
+ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
+ logfile.h encoding.h mark.h tty.h
+winmsg.o: winmsg.c config.h screen.h os.h ansi.h sched.h acls.h comm.h \
+ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
+ logfile.h winmsg.h winmsgbuf.h winmsgcond.h backtick.h fileio.h \
+ process.h mark.h
+winmsgbuf.o: winmsgbuf.c winmsgbuf.h screen.h os.h ansi.h sched.h acls.h \
+ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
+ window.h logfile.h
+winmsgcond.o: winmsgcond.c winmsgcond.h
+backtick.o: backtick.c backtick.h screen.h os.h ansi.h sched.h acls.h \
+ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
+ window.h logfile.h fileio.h
+sched.o: sched.c config.h screen.h os.h ansi.h sched.h acls.h comm.h \
+ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
+ logfile.h
+telnet.o: telnet.c config.h comm.h
+encoding.o: encoding.c config.h screen.h os.h ansi.h sched.h acls.h \
+ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
+ window.h logfile.h encoding.h fileio.h
+canvas.o: canvas.c config.h screen.h os.h ansi.h sched.h acls.h comm.h \
+ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
+ logfile.h help.h list_generic.h resize.h
+layout.o: layout.c config.h screen.h os.h ansi.h sched.h acls.h comm.h \
+ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
+ logfile.h fileio.h misc.h process.h winmsgbuf.h resize.h
+viewport.o: viewport.c config.h screen.h os.h ansi.h sched.h acls.h \
+ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
+ window.h logfile.h
+list_display.o: list_display.c config.h screen.h os.h ansi.h sched.h \
+ acls.h comm.h layer.h term.h image.h canvas.h display.h layout.h \
+ viewport.h window.h logfile.h list_generic.h misc.h
+list_generic.o: list_generic.c config.h screen.h os.h ansi.h sched.h \
+ acls.h comm.h layer.h term.h image.h canvas.h display.h layout.h \
+ viewport.h window.h logfile.h input.h list_generic.h misc.h
+list_window.o: list_window.c config.h screen.h os.h ansi.h sched.h acls.h \
+ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
+ window.h logfile.h winmsg.h winmsgbuf.h winmsgcond.h backtick.h input.h \
+ list_generic.h misc.h process.h
+list_license.o: list_license.c list_generic.h misc.h comm.h

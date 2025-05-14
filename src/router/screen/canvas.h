@@ -30,6 +30,9 @@
 #ifndef SCREEN_CANVAS_H
 #define SCREEN_CANVAS_H
 
+#include "layer.h"
+#include "sched.h"
+
 #define SLICE_UNKN 0
 #define SLICE_VERT (1 << 0)
 #define SLICE_HORI (1 << 1)
@@ -37,65 +40,67 @@
 #define SLICE_THIS (1 << 2)	/* used in equal test */
 #define SLICE_GLOBAL (1 << 3)
 
-struct canvas
-{
-  struct canvas   *c_next;	/* next canvas on display */
-  struct display  *c_display;	/* back pointer to display */
+typedef struct Display Display;
+typedef struct Viewport Viewport;
+typedef struct Window Window;
 
-  struct canvas   *c_slnext;	/* next canvas in display slice */
-  struct canvas   *c_slprev;	/* prev canvas in display slice */
-  struct canvas   *c_slperp;	/* perpendicular slice */
-  struct canvas   *c_slback;	/* perpendicular slice back pointer */
-  int              c_slorient;  /* our slice orientation */
-  int              c_slweight;	/* size ratio */
+typedef struct Canvas Canvas;
+struct Canvas {
+	Canvas   *c_next;		/* next canvas on display */
+	Display  *c_display;		/* back pointer to display */
 
-  struct viewport *c_vplist;
-  struct layer    *c_layer;	/* layer on this canvas */
-  struct canvas   *c_lnext;	/* next canvas that displays layer */
-  struct layer     c_blank;	/* bottom layer, always blank */
-  int              c_xoff;	/* canvas x offset on display */
-  int              c_yoff;	/* canvas y offset on display */
-  int              c_xs;
-  int              c_xe;
-  int              c_ys;
-  int              c_ye;
-  struct event     c_captev;	/* caption changed event */
+	Canvas   *c_slnext;		/* next canvas in display slice */
+	Canvas   *c_slprev;		/* prev canvas in display slice */
+	Canvas   *c_slperp;		/* perpendicular slice */
+	Canvas   *c_slback;		/* perpendicular slice back pointer */
+	int              c_slorient;	/* our slice orientation */
+	int              c_slweight;	/* size ratio */
+
+	Viewport	*c_vplist;
+	Layer    *c_layer;		/* layer on this canvas */
+	Canvas   *c_lnext;		/* next canvas that displays layer */
+	Layer     c_blank;		/* bottom layer, always blank */
+	int              c_xoff;	/* canvas x offset on display */
+	int              c_yoff;	/* canvas y offset on display */
+	int              c_xs;
+	int              c_xe;
+	int              c_ys;
+	int              c_ye;
+	Event     c_captev;		/* caption changed event */
 };
 
-struct win;			/* forward declaration */
+void  SetCanvasWindow (Canvas *, Window *);
+void  SetForeCanvas (Display *, Canvas *);
+Canvas *FindCanvas (int, int);
+int   MakeDefaultCanvas (void);
+int   AddCanvas (int);
+void  RemCanvas (void);
+void  OneCanvas (void);
+void  FreeCanvas (Canvas *);
+int   CountCanvas (Canvas *);
+void  ResizeCanvas (Canvas *);
+void  RecreateCanvasChain (void);
+void  RethinkViewportOffsets (Canvas *);
+int   CountCanvasPerp (Canvas *);
+void  EqualizeCanvas (Canvas *, bool);
+void  DupLayoutCv (Canvas *, Canvas *, bool);
+void  PutWindowCv (Canvas *);
 
-extern void  SetCanvasWindow __P((struct canvas *, struct win *));
-extern void  SetForeCanvas __P((struct display *, struct canvas *));
-extern struct canvas *FindCanvas __P((int, int));
-extern int   MakeDefaultCanvas __P((void));
-extern int   AddCanvas __P((int));
-extern void  RemCanvas __P((void));
-extern void  OneCanvas __P((void));
-extern void  FreeCanvas __P((struct canvas *));
-extern void  ResizeCanvas __P((struct canvas *));
-extern void  RecreateCanvasChain __P((void));
-extern void  RethinkViewportOffsets __P((struct canvas *));
-extern int   CountCanvasPerp __P((struct canvas *));
-extern void  EqualizeCanvas __P((struct canvas *, int));
-extern void  DupLayoutCv __P((struct canvas *, struct canvas *, int));
-extern void  PutWindowCv __P((struct canvas *));
-
-#define CV_CALL(cv, cmd)			\
-{						\
-  struct display *olddisplay = display;		\
-  struct layer *oldflayer = flayer;		\
-  struct layer *l = cv->c_layer;		\
-  struct canvas *cvlist = l->l_cvlist;		\
-  struct canvas *cvlnext = cv->c_lnext;		\
-  flayer = l;					\
-  l->l_cvlist = cv;				\
-  cv->c_lnext = 0;				\
-  cmd;						\
-  flayer = oldflayer;				\
-  l->l_cvlist = cvlist;				\
-  cv->c_lnext = cvlnext;			\
-  display = olddisplay;				\
+#define CV_CALL(cv, cmd)		\
+{					\
+  Display *olddisplay = display;	\
+  Layer *oldflayer = flayer;		\
+  Layer *l = cv->c_layer;		\
+  Canvas *cvlist = l->l_cvlist;		\
+  Canvas *cvlnext = cv->c_lnext;	\
+  flayer = l;				\
+  l->l_cvlist = cv;			\
+  cv->c_lnext = NULL;			\
+  cmd;					\
+  flayer = oldflayer;			\
+  l->l_cvlist = cvlist;			\
+  cv->c_lnext = cvlnext;		\
+  display = olddisplay;			\
 }
 
 #endif /* SCREEN_CANVAS_H */
-

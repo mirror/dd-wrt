@@ -27,67 +27,17 @@
  * $Id$ GNU
  */
 
+#ifndef SCREEN_SCREEN_H
+#define SCREEN_SCREEN_H
+
+#include "config.h"
+
+#include <stdbool.h>
+
 #include "os.h"
 
-#if defined(__STDC__)
-# ifndef __P
-#  define __P(a) a
-# endif
-#else
-# ifndef __P
-#  define __P(a) ()
-# endif
-# define const
-#endif
-
-#include "osdef.h"
-
-#include "ansi.h"
-#include "sched.h"
-#include "acls.h"
-#include "comm.h"
-#include "layer.h"
-#include "term.h"
-
-
-#ifdef DEBUG
-# define STATIC		/* a function that the debugger should see */
-#else
-# define STATIC static
-#endif
-
-#ifdef DEBUG
-# define DEBUGDIR "/tmp/debug"
-# define debugf(a)       do {if(dfp){fprintf a;fflush(dfp);}} while (0)
-# define debug(x)        debugf((dfp,x))
-# define debug1(x,a)     debugf((dfp,x,a))
-# define debug2(x,a,b)   debugf((dfp,x,a,b))
-# define debug3(x,a,b,c) debugf((dfp,x,a,b,c))
-  extern FILE *dfp;
-#else
-# define debugf(a)       do {} while (0)
-# define debug(x)        debugf(x)
-# define debug1(x,a)     debugf(x)
-# define debug2(x,a,b)   debugf(x)
-# define debug3(x,a,b,c) debugf(x)
-#endif
-
-#ifndef DEBUG
-# define NOASSERT
-#endif
-
-#ifndef NOASSERT
-# if defined(__STDC__)
-#  define ASSERT(lousy_cpp) do {if (!(lousy_cpp)) {if (!dfp) opendebug(0, 1);debug2("ASSERT("#lousy_cpp") failed file %s line %d\n", __FILE__, __LINE__);abort();}} while (0)
-# else
-#  define ASSERT(lousy_cpp) do {if (!(lousy_cpp)) {if (!dfp) opendebug(0, 1);debug2("ASSERT(lousy_cpp) failed file %s line %d\n", __FILE__, __LINE__);abort();}} while (0)
-# endif
-#else
-# define ASSERT(lousy_cpp) do {} while (0)
-#endif
-
 /* here comes my own Free: jw. */
-#define Free(a) {if ((a) == 0) abort(); else free((void *)(a)); (a)=0;}
+#define Free(a) {if ((a) == NULL) abort(); else free((void *)(a)); (a)=NULL;}
 
 #define Ctrl(c) ((c)&037)
 
@@ -103,51 +53,22 @@
  */
 #define MAXHISTHEIGHT		3000
 #define DEFAULTHISTHEIGHT	100
-#if defined(NAME_MAX) && NAME_MAX < 16
-# define DEFAULT_BUFFERFILE     "/tmp/screen-xchg"
-#else
-# define DEFAULT_BUFFERFILE	"/tmp/screen-exchange"
-#endif
+#define DEFAULT_BUFFERFILE	"/tmp/screen-exchange"
 
-
-#if defined(hpux) && !(defined(VSUSP) && defined(VDSUSP) && defined(VWERASE) && defined(VLNEXT))
-# define HPUX_LTCHARS_HACK
-#endif
-
-struct mode
-{
-#ifdef POSIX
-  struct termios tio;
-# ifdef HPUX_LTCHARS_HACK
-  struct ltchars m_ltchars;
-# endif /* HPUX_LTCHARS_HACK */
-#else /* POSIX */
-# ifdef TERMIO
-  struct termio tio;
-#  ifdef CYTERMIO
-  int m_mapkey;
-  int m_mapscreen;
-  int m_backspace;
-#  endif
-# else /* TERMIO */
-  struct sgttyb m_ttyb;
-  struct tchars m_tchars;
-  struct ltchars m_ltchars;
-  int m_ldisc;
-  int m_lmode;
-# endif /* TERMIO */
-#endif /* POSIX */
-#if defined(KANJI) && defined(TIOCKSET)
-  struct jtchars m_jtchars;
-  int m_knjmode;
+struct mode {
+	struct termios tio;
+#if defined(TIOCKSET)
+	struct jtchars m_jtchars;
+	int m_knjmode;
 #endif
 };
 
 
-/* #include "logfile.h" */	/* (requires stat.h) struct logfile */
+#include "ansi.h"
 #include "image.h"
-#include "canvas.h"
-#include "display.h"
+#include "layer.h"
+#include "sched.h"
+#include "term.h"
 #include "window.h"
 
 /*
@@ -176,7 +97,7 @@ struct mode
 #define MSG_QUERY       9
 
 /*
- * versions of struct msg:
+ * versions of struct Message:
  * 0:	screen version 3.6.6 (version count introduced)
  * 1:	screen version 4.1.0devel	(revisions e3fc19a upto 8147d08)
  * 					 A few revisions after 8147d08 incorrectly
@@ -184,63 +105,54 @@ struct mode
  * 2:	screen version 4.1.0devel	(revisions 8b46d8a upto YYYYYYY)
  * 3:	screen version 4.2.0		(was incorrectly originally. Patched here)
  * 4:	screen version 4.2.1		(bumped once again due to changed terminal and login length)
- * 5: 	screen version 4.4.0		(fix screenterm size)
  */
-#define MSG_VERSION	5
+#define MSG_VERSION	4
 
 #define MSG_REVISION	(('m'<<24) | ('s'<<16) | ('g'<<8) | MSG_VERSION)
-struct msg
-{
-  int protocol_revision;	/* reduce harm done by incompatible messages */
-  int type;
-  char m_tty[MAXPATHLEN];	/* ttyname */
-  union
-    {
-      struct
-	{
-	  int lflag;
-	  int aflag;
-	  int flowflag;
-	  int hheight;		/* size of scrollback buffer */
-	  int nargs;
-	  char line[MAXPATHLEN];
-	  char dir[MAXPATHLEN];
-	  char screenterm[MAXTERMLEN + 1];	/* is screen really "screen" ? */
-	}
-      create;
-      struct
-	{
-	  char auser[MAXLOGINLEN + 1];	/* username */
-	  int apid;		/* pid of frontend */
-	  int adaptflag;	/* adapt window size? */
-	  int lines, columns;	/* display size */
-	  char preselect[20];
-	  int esc;		/* his new escape character unless -1 */
-	  int meta_esc;		/* his new meta esc character unless -1 */
-	  char envterm[MAXTERMLEN + 1];	/* terminal type */
-	  int encoding;		/* encoding of display */
-	  int detachfirst;      /* whether to detach remote sessions first */
-	}
-      attach;
-      struct 
-	{
-	  char duser[MAXLOGINLEN + 1];	/* username */
-	  int dpid;		/* pid of frontend */
-	}
-      detach;
-      struct 
-	{
-	  char auser[MAXLOGINLEN + 1];	/* username */
-	  int nargs;
-	  char cmd[MAXPATHLEN];	/* command */
-	  int apid;		/* pid of frontend */
-	  char preselect[20];
-	  char writeback[MAXPATHLEN];  /* The socket to write the result.
-					  Only used for MSG_QUERY */
-	}
-      command;
-      char message[MAXPATHLEN * 2];
-    } m;
+typedef struct Message Message;
+struct Message {
+	int protocol_revision;	/* reduce harm done by incompatible messages */
+	int type;
+	char m_tty[MAXPATHLEN];	/* ttyname */
+	union {
+		struct {
+			int lflag;
+			int Lflag;
+			bool aflag;
+			int flowflag;
+			int hheight;			/* size of scrollback buffer */
+			int nargs;
+			char line[MAXPATHLEN];
+			char dir[MAXPATHLEN];
+			char screenterm[MAXTERMLEN + 1];/* is screen really "screen" ? */
+		} create;
+		struct {
+			char auser[MAXLOGINLEN + 1];	/* username */
+			pid_t apid;			/* pid of frontend */
+			int adaptflag;			/* adapt window size? */
+			int lines, columns;		/* display size */
+			char preselect[20];
+			int esc;			/* his new escape character unless -1 */
+			int meta_esc;			/* his new meta esc character unless -1 */
+			char envterm[MAXTERMLEN + 1];	/* terminal type */
+			int encoding;			/* encoding of display */
+			int detachfirst;		/* whether to detach remote sessions first */
+		} attach;
+		struct {
+			char duser[MAXLOGINLEN + 1];	/* username */
+			pid_t dpid;			/* pid of frontend */
+		} detach;
+		struct {
+			char auser[MAXLOGINLEN + 1];	/* username */
+			int nargs;
+			char cmd[MAXPATHLEN + 1];	/* command */
+			pid_t apid;		/* pid of frontend */
+			char preselect[20];
+			char writeback[MAXPATHLEN];	/* The socket to write the result.
+							   Only used for MSG_QUERY */
+			} command;
+		char message[MAXPATHLEN * 2];
+	} m;
 };
 
 /*
@@ -250,10 +162,6 @@ struct msg
 #define SIG_POWER_BYE	SIGUSR1
 #define SIG_LOCK	SIGUSR2
 #define SIG_STOP	SIGTSTP
-#ifdef SIGIO
-#define SIG_NODEBUG	SIGIO		/* triggerd by command 'debug off' */
-#endif
-
 
 #define BELL		(Ctrl('g'))
 #define VBELLWAIT	1 /* No. of seconds a vbell will be displayed */
@@ -279,8 +187,6 @@ struct msg
 #define SILENCE_FOUND   2 /* Window is silent */
 #define SILENCE_DONE    3 /* Window is silent and user is notified */
 
-extern char strnomem[];
-
 /*
  * line modes used by Input()
  */
@@ -290,22 +196,18 @@ extern char strnomem[];
 #define INP_EVERY	4
 
 
-#ifdef MULTIUSER
 struct acl
 {
   struct acl *next;
   char *name;
 };
-#endif
 
 /* register list */
 #define MAX_PLOP_DEFS 256
 
-struct baud_values
-{
-  int idx;	/* the index in the bsd-is padding lookup table */
-  int bps;	/* bits per seconds */
-  int sym;	/* symbol defined in ttydev.h */
+struct baud_values {
+	int bps;	/* bits per seconds */
+	int sym;	/* symbol defined in bits/termios.h */
 };
 
 /*
@@ -314,3 +216,112 @@ struct baud_values
 #define WLIST_NUM 0
 #define WLIST_MRU 1
 #define WLIST_NESTED 2
+
+void  SigHup (int);
+void  eexit (int) __attribute__((__noreturn__));
+void  Detach (int);
+void  Hangup (void);
+void  Kill (pid_t, int);
+void  Msg (int, const char *, ...) __attribute__((format(printf, 2, 3)));
+void  Panic (int, const char *, ...) __attribute__((format(printf, 2, 3))) __attribute__((__noreturn__));
+void  QueryMsg (int, const char *, ...) __attribute__((format(printf, 2, 3)));
+void  Dummy (int, const char *, ...) __attribute__((format(printf, 2, 3)));
+void  Finit (int) __attribute__((__noreturn__));
+void  MakeNewEnv (void);
+void  PutWinMsg (char *, int, int);
+void  setbacktick (int, int, int, char **);
+
+/* global variables */
+
+/* Content of the tty symlink when attach_tty_is_in_new_ns == true. */
+extern char attach_tty_name_in_ns[];
+extern char strnomem[];
+extern char HostName[];
+extern char SocketPath[MAXPATHLEN];
+extern char *attach_tty;
+extern char *attach_term;
+extern char *captionstring;
+extern char *hardcopydir;
+extern char *home;
+extern char *hstatusstring;
+extern char *logtstamp_string;
+extern char *multi;
+extern char *preselect;
+extern char *screenencodings;
+extern char *screenlogfile;
+extern char *wliststr;
+extern char *wlisttit;
+extern char *ActivityString;
+extern char *BellString;
+extern char *BufferFile;
+extern char *LoginName;
+extern char *PowDetachString;
+extern char *RcFileName;
+extern char *ShellArgs[];
+extern char *ShellProg;
+extern char *SocketMatch;
+extern char *SocketName;
+extern char *VisualBellString;
+extern char **NewEnv;
+
+extern bool adaptflag;
+extern bool auto_detach;
+extern bool cjkwidth;
+extern bool default_startup;
+extern bool do_auth;
+extern bool hastruecolor;
+extern bool iflag;
+extern bool logtstamp_on;
+extern bool lsflag;
+extern bool quietflag;
+extern bool wipeflag;
+extern bool xflag;
+/* Indicator whether the current tty exists in another namespace. */
+extern bool attach_tty_is_in_new_ns;
+
+extern int af;
+extern int attach_fd;
+extern int dflag;
+extern int force_vt;
+extern int log_flush;
+extern int logtstamp_after;
+extern uid_t multi_uid;
+extern int multiattach;
+extern int nversion;
+extern uid_t own_uid;
+extern int queryflag;
+extern int rflag;
+extern int tty_mode;
+extern int tty_oldmode;
+extern pid_t MasterPid;
+extern int MsgMinWait;
+extern int MsgWait;
+extern int ServerSocket;
+extern int SilenceWait;
+extern int VBellWait;
+extern int ZombieKey_destroy;
+extern int ZombieKey_onerror;
+extern int ZombieKey_resurrect;
+
+extern Window *console_window;
+extern Window *fore;
+extern Window *mru_window;
+extern Window *first_window;
+extern Window *last_window;
+
+extern Layer *flayer;
+
+extern Event logflushev;
+extern Event serv_read;
+
+extern struct mode attach_Mode;
+
+extern gid_t eff_gid;
+extern gid_t real_gid;
+
+extern uid_t eff_uid;
+extern uid_t real_uid;
+
+extern struct passwd *ppp;
+
+#endif /* SCREEN_SCREEN_H */
