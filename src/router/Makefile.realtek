@@ -248,8 +248,10 @@ compress_lzma:
 	lzma e -pb2 -lc1 -lp2 $(ARCH)-uclibc/vmlinux.bin lzma-loader/realtek/vmlinux.lzma
 	make -C lzma-loader/realtek clean LOADER_DATA=$(TOP)/lzma-loader/realtek/vmlinux.lzma SUBTARGET=rtl839x
 	make -C lzma-loader/realtek LOADER_DATA=$(TOP)/lzma-loader/realtek/vmlinux.lzma SUBTARGET=rtl839x
-	tools/realtek/libdeflate-gzip -f -12 -c $(TOP)/lzma-loader/realtek/loader.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
-#	cp $(TOP)/lzma-loader/realtek/loader.bin  $(ARCH)-uclibc/vmlinux.bin.deflate
+#	tools/realtek/libdeflate-gzip -f -12 -c $(TOP)/lzma-loader/realtek/loader.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
+	cp $(TOP)/lzma-loader/realtek/loader.bin  $(ARCH)-uclibc/vmlinux.bin.deflate
+	dd if=$(ARCH)-uclibc/vmlinux.bin.deflate of=$(TOP)/lzma-loader/realtek/loader.bin bs=16 conv=sync
+	cp $(TOP)/lzma-loader/realtek/loader.bin  $(ARCH)-uclibc/vmlinux.bin.deflate
 
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
@@ -446,9 +448,9 @@ ifeq ($(CONFIG_RTL930X),y)
 	cat $(ARCH)-uclibc/image-rtl9302_zyxel_xgs1250-12.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x93001250  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux.bin.deflate
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x93001250  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-xgs1250-12 bs=64k conv=sync
-	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-xgs1250-12
 	echo VERS >> $(ARCH)-uclibc/vmlinux-xgs1250-12
 	(echo -n "V9.99(ABWE.0) | "; date  +%m/%d/%Y) >> $(ARCH)-uclibc/vmlinux-xgs1250-12
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-xgs1250-12.trx $(ARCH)-uclibc/vmlinux-xgs1250-12
@@ -462,7 +464,7 @@ ifneq ($(CONFIG_RTL838X),y)
 	cat $(ARCH)-uclibc/image-rtl8393_zyxel_gs1900-48.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-48 bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-48
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-48
@@ -475,7 +477,7 @@ ifneq ($(CONFIG_RTL838X),y)
 	cat $(ARCH)-uclibc/image-rtl8393_zyxel_gs1900-48hp-v2.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-48hp-v2 bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-48hp-v2
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-48hp-v2
@@ -490,7 +492,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	cat $(ARCH)-uclibc/image-rtl8382_zyxel_gs1900-16.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-16 bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-16
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-16
@@ -503,7 +505,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	cat $(ARCH)-uclibc/image-rtl8382_zyxel_gs1900-24-v1.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-24-v1 bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-24-v1
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-24-v1
@@ -516,7 +518,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	cat $(ARCH)-uclibc/image-rtl8382_zyxel_gs1900-24e.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-24e bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-24e
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-24e
@@ -529,7 +531,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	cat $(ARCH)-uclibc/image-rtl8382_zyxel_gs1900-24ep.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-24ep bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-24ep
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-24ep
@@ -542,7 +544,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	cat $(ARCH)-uclibc/image-rtl8382_zyxel_gs1900-24hp-v1.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-24hp-v1 bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-24hp-v1
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-24hp-v1
@@ -555,7 +557,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	cat $(ARCH)-uclibc/image-rtl8382_zyxel_gs1900-24hp-v2.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-24hp-v2 bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-24hp-v2
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-24hp-v2
@@ -568,7 +570,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	cat $(ARCH)-uclibc/image-rtl8380_zyxel_gs1900-10hp.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-10hp bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-10hp
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-10hp
@@ -581,7 +583,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	cat $(ARCH)-uclibc/image-rtl8380_zyxel_gs1900-8-v1.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-8-v1 bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-8-v1
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-8-v1
@@ -594,7 +596,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	cat $(ARCH)-uclibc/image-rtl8380_zyxel_gs1900-8-v2.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-8-v2 bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-8-v2
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-8-v2
@@ -607,7 +609,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	cat $(ARCH)-uclibc/image-rtl8380_zyxel_gs1900-8hp-v1.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-8hp-v1 bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-8hp-v1
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-8hp-v1
@@ -620,7 +622,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	cat $(ARCH)-uclibc/image-rtl8380_zyxel_gs1900-8hp-v2.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
 #	tools/realtek/libdeflate-gzip -f -12 -c $(ARCH)-uclibc/vmlinux.bin > $(ARCH)-uclibc/vmlinux.bin.deflate
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x83800000  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs1900-8hp-v2 bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs1900-8hp-v2
 	echo VERS >> $(ARCH)-uclibc/vmlinux-gs1900-8hp-v2
@@ -808,7 +810,7 @@ ifneq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8393_d-link_dgs-1210-52.dtb $(ARCH)-uclibc/image-rtl8393_d-link_dgs-1210-52.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8393_d-link_dgs-1210-52.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	tools/realtek/cameo-tag.py $(ARCH)-uclibc/vmlinux.bin.uimage 1572864
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-52 bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-dgs-1210-52
@@ -836,7 +838,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8380_d-link_dgs-1210-10mp-f.dtb $(ARCH)-uclibc/image-rtl8380_d-link_dgs-1210-10mp-f.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8380_d-link_dgs-1210-10mp-f.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	tools/realtek/cameo-tag.py $(ARCH)-uclibc/vmlinux.bin.uimage 1572864
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-dgs-1210-10mp-f
@@ -864,7 +866,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-10p.dtb $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-10p.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-10p.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	tools/realtek/cameo-tag.py $(ARCH)-uclibc/vmlinux.bin.uimage 1572864
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-10p bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-dgs-1210-10p
@@ -891,7 +893,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-16.dtb $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-16.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-16.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	tools/realtek/cameo-tag.py $(ARCH)-uclibc/vmlinux.bin.uimage 1572864
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-16 bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-dgs-1210-16
@@ -918,7 +920,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-20.dtb $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-20.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-20.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	tools/realtek/cameo-tag.py $(ARCH)-uclibc/vmlinux.bin.uimage 1572864
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-20 bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-dgs-1210-20
@@ -945,7 +947,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-26.dtb $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-26.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-26.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	tools/realtek/cameo-tag.py $(ARCH)-uclibc/vmlinux.bin.uimage 1572864
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-26 bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-dgs-1210-26
@@ -972,7 +974,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-28.dtb $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-28.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-28.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	tools/realtek/cameo-tag.py $(ARCH)-uclibc/vmlinux.bin.uimage 1572864
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-28 bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-dgs-1210-28
@@ -999,7 +1001,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-28mp-f.dtb $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-28mp-f.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-28mp-f.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	tools/realtek/cameo-tag.py $(ARCH)-uclibc/vmlinux.bin.uimage 1572864
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-dgs-1210-28mp-f
@@ -1026,7 +1028,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-28p-f.dtb $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-28p-f.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8382_d-link_dgs-1210-28p-f.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	tools/realtek/cameo-tag.py $(ARCH)-uclibc/vmlinux.bin.uimage 1572864
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-dgs-1210-28p-f bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-dgs-1210-28p-f
@@ -1055,7 +1057,7 @@ ifneq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8393_netgear_gs750e.dtb $(ARCH)-uclibc/image-rtl8393_netgear_gs750e.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8393_netgear_gs750e.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x174e4741  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x174e4741  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs750e bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs750e
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs750e.trx $(ARCH)-uclibc/vmlinux-gs750e
@@ -1066,7 +1068,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8380_netgear_gs108t-v3.dtb $(ARCH)-uclibc/image-rtl8380_netgear_gs108t-v3.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8380_netgear_gs108t-v3.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n '9.9.9.9' -M 0x4e474520  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n '9.9.9.9' -M 0x4e474520  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs108t-v3 bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs108t-v3
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs108t-v3.trx $(ARCH)-uclibc/vmlinux-gs108t-v3
@@ -1075,7 +1077,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8380_netgear_gs110tpp-v1.dtb $(ARCH)-uclibc/image-rtl8380_netgear_gs110tpp-v1.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8380_netgear_gs110tpp-v1.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n '9.9.9.9' -M 0x4e474520  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n '9.9.9.9' -M 0x4e474520  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs110tpp-v1 bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs110tpp-v1
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs110tpp-v1.trx $(ARCH)-uclibc/vmlinux-gs110tpp-v1
@@ -1085,7 +1087,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8380_netgear_gs110tup-v1.dtb $(ARCH)-uclibc/image-rtl8380_netgear_gs110tup-v1.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8380_netgear_gs110tup-v1.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x4e474720  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x4e474720  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs110tup-v1 bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs110tup-v1
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs110tup-v1.trx $(ARCH)-uclibc/vmlinux-gs110tup-v1
@@ -1095,7 +1097,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8380_netgear_gs308t-v1.dtb $(ARCH)-uclibc/image-rtl8380_netgear_gs308t-v1.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8380_netgear_gs308t-v1.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x4e474720  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x4e474720  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs308t-v1 bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs308t-v1
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs308t-v1.trx $(ARCH)-uclibc/vmlinux-gs308t-v1
@@ -1105,7 +1107,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8380_netgear_gs310tp-v1.dtb $(ARCH)-uclibc/image-rtl8380_netgear_gs310tp-v1.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8380_netgear_gs310tp-v1.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x4e474720  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x4e474720  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-gs310tp-v1 bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-gs310tp-v1
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs310tp-v1.trx $(ARCH)-uclibc/vmlinux-gs310tp-v1
@@ -1115,7 +1117,7 @@ ifeq ($(CONFIG_RTL838X),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl8380_linksys_lgs310c.dtb $(ARCH)-uclibc/image-rtl8380_linksys_lgs310c.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl8380_linksys_lgs310c.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
-	tools/realtek/mkimage -A mips -O linux -T kernel -C gzip -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
+	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 	dd if=$(ARCH)-uclibc/vmlinux.bin.uimage of=$(ARCH)-uclibc/vmlinux-lgs310c bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/vmlinux-lgs310c
 	tools/realtek/linksys-image.sh $(ARCH)-uclibc/vmlinux-lgs310c $(ARCH)-uclibc/vmlinux-lgs310c.linksys-image 60402060
