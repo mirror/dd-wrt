@@ -6096,7 +6096,7 @@ void show_preshared(webs_t wp, char *prefix)
 	websWrite(wp, "</div>\n");
 #else
 	if (nvram_nmatch("1", "%s_psk3", prefix) && !nvram_nmatch("1", "%s_psk", prefix) && !nvram_nmatch("1", "%s_psk2", prefix) &&
-	    !nvram_nmatch("1", "%s_psk2sha256", prefix)) {
+	    !nvram_nmatch("1", "%s_psk2-sha256", prefix)) {
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wpa.sae_key", NULL);
 		sprintf(var, "%s_sae_key", prefix);
