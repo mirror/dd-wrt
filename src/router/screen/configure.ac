@@ -117,9 +117,9 @@ AC_ARG_WITH(system_screenrc, AS_HELP_STRING([--with-system_screenrc],
 	    [with_system_screenrc=$withval],
 	    [with_system_screenrc=/etc/screenrc])
 AC_ARG_WITH(pty-mode, AS_HELP_STRING([--with-pty-mode],
-	    [set pty mode (default: 0622)]),
+	    [set pty mode (default: 0620)]),
 	    [with_pty_mode=$withval],
-	    [with_pty_mode=0622])
+	    [with_pty_mode=0620])
 AC_ARG_WITH(pty-group, AS_HELP_STRING([--with-pty-group],
 	    [set pty group (default: 5)]),
 	    [with_pty_group=$withval],

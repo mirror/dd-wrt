@@ -291,8 +291,6 @@ extern int nversion;
 extern uid_t own_uid;
 extern int queryflag;
 extern int rflag;
-extern int tty_mode;
-extern int tty_oldmode;
 extern pid_t MasterPid;
 extern int MsgMinWait;
 extern int MsgWait;

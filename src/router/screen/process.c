@@ -117,7 +117,7 @@ char NullStr[] = "";
 struct plop plop_tab[MAX_PLOP_DEFS];
 
 #ifndef PTY_MODE
-#define PTY_MODE 0622
+#define PTY_MODE 0620
 #endif
 
 int TtyMode = PTY_MODE;
