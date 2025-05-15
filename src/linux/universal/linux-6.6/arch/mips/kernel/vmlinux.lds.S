@@ -57,7 +57,11 @@ SECTIONS
 	/* . = 0xa800000000300000; */
 	. = 0xffffffff80300000;
 #endif
+#ifdef CONFIG_RTL931X
+	. = 0x80220000;
+#else
 	. = LINKER_LOAD_ADDRESS;
+#endif
 	/* read-only */
 	_text = .;	/* Text and read-only data */
 	.text : {

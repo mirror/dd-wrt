@@ -696,6 +696,7 @@ static void rtl83xx_phylink_mac_config(struct dsa_switch *ds, int port,
 	struct dsa_port *dp = dsa_to_port(ds, port);
 	struct rtl838x_switch_priv *priv = ds->priv;
 	u32 mcr;
+	pr_info("%s:%d port %d\n", __func__,__LINE__, port);
 
 	pr_debug("%s port %d, mode %x\n", __func__, port, mode);
 
@@ -720,6 +721,14 @@ static void rtl83xx_phylink_mac_config(struct dsa_switch *ds, int port,
 	sw_w32(mcr, priv->r->mac_force_mode_ctrl(port));
 }
 
+static u8 port_sds[RTL931X_CPU_PORT] = {2, 0, 0, 0, 0, 0, 0, 0,
+				 3, 0, 0, 0, 0, 0, 0, 0,
+				 4, 0, 0, 0, 0, 0, 0, 0,
+				 5, 0, 0, 0, 0, 0, 0, 0,
+				 6, 0, 0, 0, 0, 0, 0, 0,
+				 7, 0, 0, 0, 0, 0, 0, 0,
+				 8, 0, 9, 0, 0, 0, 0, 0};
+
 static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 					unsigned int mode,
 					const struct phylink_link_state *state)
@@ -728,6 +737,26 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 	int sds_num;
 	u32 reg, band;
 
+	pr_info("%s: speed %d\n", __func__, state->speed);
+	sds_num = port_sds[port];
+	switch (state->speed) {
+	case SPEED_10000:
+		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_USXGMII);		
+		break;
+	case SPEED_2500:
+		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_HSGMII);
+		break;
+	case SPEED_5000:
+		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_QSGMII);
+		break;
+	case SPEED_1000:
+		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_SGMII);
+		break;
+	default:
+		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_SGMII);
+		break;
+	}
+#if 0
 	sds_num = priv->ports[port].sds_num;
 	pr_info("%s: speed %d sds_num %d\n", __func__, state->speed, sds_num);
 
@@ -789,6 +818,7 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 		reg |= RTL931X_DUPLEX_MODE;
 
 	sw_w32(reg, priv->r->mac_force_mode_ctrl(port));
+#endif
 
 }
 
@@ -798,6 +828,7 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	int sds_num;
+	pr_info("%s:%d port %d\n", __func__,__LINE__, port);
 
 	/* Nothing to be done for the CPU-port */
 	if (port == priv->cpu_port)

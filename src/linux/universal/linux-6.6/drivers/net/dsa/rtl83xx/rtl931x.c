@@ -1681,6 +1681,7 @@ const struct rtl838x_reg rtl931x_reg = {
 	.set_vlan_igr_filter = rtl931x_set_igr_filter,
 	.set_vlan_egr_filter = rtl931x_set_egr_filter,
 	.set_distribution_algorithm = rtl931x_set_distribution_algorithm,
+	.l2_hash_seed = rtl931x_l2_hash_seed,
 	.l2_hash_key = rtl931x_l2_hash_key,
 	.read_mcast_pmask = rtl931x_read_mcast_pmask,
 	.write_mcast_pmask = rtl931x_write_mcast_pmask,

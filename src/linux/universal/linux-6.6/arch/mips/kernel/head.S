@@ -60,11 +60,13 @@
 	.endm
 
 #ifndef CONFIG_NO_EXCEPT_FILL
+#ifndef CONFIG_RTL931X
 	/*
 	 * Reserved space for exception handlers.
 	 * Necessary for machines which link their kernels at KSEG0.
 	 */
 	.fill	0x400
+#endif
 #endif
 
 EXPORT(_stext)
