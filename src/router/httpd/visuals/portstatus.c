@@ -103,7 +103,7 @@ static void show_portif_row(webs_t wp, char ifname[4][32], int max)
 						websWrite(wp, "<td class=\"status_yellow center\">\n");
 					else if (status.speed >= 1000)
 						websWrite(wp, "<td class=\"status_green center\">\n");
-					websWrite(wp, "%d %s", status.speed, status.fd ? "HD" : "FD");
+					websWrite(wp, "%d%s", status.speed, status.fd ? "HD" : "FD");
 				} else {
 					websWrite(wp, "<td class=\"status_red center\">\n");
 					websWrite(wp, "down");
