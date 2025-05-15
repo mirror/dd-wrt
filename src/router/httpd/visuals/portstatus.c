@@ -77,8 +77,8 @@ void EJ_VISIBLE ej_show_portstatus(webs_t wp, int argc, char_t **argv)
 	int c;
 	struct portcontext ctx;
 	memset(&ctx,0,sizeof(ctx));
+	websWrite(wp, "<h2>%s</h2>\n", tran_string(buf, sizeof(buf), "networking.portstatus"));
 	websWrite(wp, "<fieldset>\n");
-	websWrite(wp, "<legend>%s</legend>\n", tran_string(buf, sizeof(buf), "networking.portstatus"));
 	getIfLists(eths, sizeof(eths));
 
 	foreach(var, eths, next) {
