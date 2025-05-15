@@ -181,6 +181,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="portsetup" value="1" />
 							<input type="hidden" name="commit" value="1" />
 							<% show_portstatus(); %>
+
 							<h2><% tran("networking.h2"); %></h2>
 							<fieldset>
 								 <legend><% tran("networking.legend"); %></legend>
